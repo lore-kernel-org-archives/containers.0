@@ -1,7 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 07/21] userns: Use kgids for sysctl_ping_group_range
-Date: Mon, 13 Aug 2012 13:18:21 -0700
-Message-ID: <1344889115-21610-7-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 08/21] net ip6 flowlabel: Make owner a union of struct pid *
+	and kuid_t
+Date: Mon, 13 Aug 2012 13:18:22 -0700
+Message-ID: <1344889115-21610-8-git-send-email-ebiederm@xmission.com>
 References: <87ehnav9n5.fsf@xmission.com>
 	<1344889115-21610-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -19,196 +20,194 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Vasiliy Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
+Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-- Store sysctl_ping_group_range as a paire of kgid_t values
-  instead of a pair of gid_t values.
-- Move the kgid conversion work from ping_init_sock into ipv4_ping_group_range
-- For invalid cases reset to the default disabled state.
+Correct a long standing omission and use struct pid in the owner
+field of struct ip6_flowlabel when the share type is IPV6_FL_S_PROCESS.
+This guarantees we don't have issues when pid wraparound occurs.
 
-With the kgid_t conversion made part of the original value sanitation
-from userspace understand how the code will react becomes clearer
-and it becomes possible to set the sysctl ping group range from
-something other than the initial user namespace.
+Use a kuid_t in the owner field of struct ip6_flowlabel when the
+share type is IPV6_FL_S_USER to add user namespace support.
 
-Cc: Vasiliy Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
+In /proc/net/ip6_flowlabel capture the current pid namespace when
+opening the file and release the pid namespace when the file is
+closed ensuring we print the pid owner value that is meaning to
+the reader of the file.  Similarly use from_kuid_munged to print
+uid values that are meaningful to the reader of the file.
+
+This requires exporting pid_nr_ns so that ipv6 can continue to built
+as a module.  Yoiks what silliness
+
+Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- include/net/netns/ipv4.h   |    3 ++-
- init/Kconfig               |    1 -
- net/ipv4/ping.c            |   18 ++++++------------
- net/ipv4/sysctl_net_ipv4.c |   42 +++++++++++++++++++++++++++---------------
- 4 files changed, 35 insertions(+), 29 deletions(-)
+ include/net/ipv6.h       |    5 +++-
+ init/Kconfig             |    1 -
+ kernel/pid.c             |    1 +
+ net/ipv6/ip6_flowlabel.c |   50 +++++++++++++++++++++++++++++++++++++++------
+ 4 files changed, 48 insertions(+), 9 deletions(-)
 
-diff --git a/include/net/netns/ipv4.h b/include/net/netns/ipv4.h
-index 1474dd6..3516dc0 100644
---- a/include/net/netns/ipv4.h
-+++ b/include/net/netns/ipv4.h
-@@ -5,6 +5,7 @@
- #ifndef __NETNS_IPV4_H__
- #define __NETNS_IPV4_H__
- 
-+#include <linux/uidgid.h>
- #include <net/inet_frag.h>
- 
- struct tcpm_hash_bucket;
-@@ -62,7 +63,7 @@ struct netns_ipv4 {
- 	int sysctl_icmp_ratemask;
- 	int sysctl_icmp_errors_use_inbound_ifaddr;
- 
--	unsigned int sysctl_ping_group_range[2];
-+	kgid_t sysctl_ping_group_range[2];
- 	long sysctl_tcp_mem[3];
- 
- 	atomic_t rt_genid;
+diff --git a/include/net/ipv6.h b/include/net/ipv6.h
+index 01c34b3..c8a2024 100644
+--- a/include/net/ipv6.h
++++ b/include/net/ipv6.h
+@@ -222,7 +222,10 @@ struct ip6_flowlabel {
+ 	struct ipv6_txoptions	*opt;
+ 	unsigned long		linger;
+ 	u8			share;
+-	u32			owner;
++	union {
++		struct pid *pid;
++		kuid_t uid;
++	} owner;
+ 	unsigned long		lastuse;
+ 	unsigned long		expires;
+ 	struct net		*fl_net;
 diff --git a/init/Kconfig b/init/Kconfig
-index 25a6ebb..f857f97 100644
+index f857f97..64ff9ce 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
 @@ -948,7 +948,6 @@ config UIDGID_CONVERTED
  	depends on NETFILTER_XT_MATCH_RECENT = n
  	depends on NETFILTER_XT_TARGET_LOG = n
  	depends on NETFILTER_NETLINK_LOG = n
--	depends on INET = n
- 	depends on IPV6 = n
+-	depends on IPV6 = n
  	depends on AF_RXRPC = n
  	depends on NET_KEY = n
-diff --git a/net/ipv4/ping.c b/net/ipv4/ping.c
-index bee5eeb..8f3d054 100644
---- a/net/ipv4/ping.c
-+++ b/net/ipv4/ping.c
-@@ -185,10 +185,10 @@ exit:
- 	return sk;
+ 	depends on INET_DIAG = n
+diff --git a/kernel/pid.c b/kernel/pid.c
+index e86b291a..aebd4f5 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -479,6 +479,7 @@ pid_t pid_nr_ns(struct pid *pid, struct pid_namespace *ns)
+ 	}
+ 	return nr;
  }
++EXPORT_SYMBOL_GPL(pid_nr_ns);
  
--static void inet_get_ping_group_range_net(struct net *net, gid_t *low,
--					  gid_t *high)
-+static void inet_get_ping_group_range_net(struct net *net, kgid_t *low,
-+					  kgid_t *high)
+ pid_t pid_vnr(struct pid *pid)
  {
--	gid_t *data = net->ipv4.sysctl_ping_group_range;
-+	kgid_t *data = net->ipv4.sysctl_ping_group_range;
- 	unsigned int seq;
+diff --git a/net/ipv6/ip6_flowlabel.c b/net/ipv6/ip6_flowlabel.c
+index 9772fbd..c836a6a 100644
+--- a/net/ipv6/ip6_flowlabel.c
++++ b/net/ipv6/ip6_flowlabel.c
+@@ -22,6 +22,7 @@
+ #include <linux/seq_file.h>
+ #include <linux/slab.h>
+ #include <linux/export.h>
++#include <linux/pid_namespace.h>
  
- 	do {
-@@ -203,19 +203,13 @@ static void inet_get_ping_group_range_net(struct net *net, gid_t *low,
- static int ping_init_sock(struct sock *sk)
+ #include <net/net_namespace.h>
+ #include <net/sock.h>
+@@ -90,6 +91,11 @@ static struct ip6_flowlabel *fl_lookup(struct net *net, __be32 label)
+ 
+ static void fl_free(struct ip6_flowlabel *fl)
  {
- 	struct net *net = sock_net(sk);
--	gid_t group = current_egid();
--	gid_t range[2];
-+	kgid_t group = current_egid();
- 	struct group_info *group_info = get_current_groups();
- 	int i, j, count = group_info->ngroups;
- 	kgid_t low, high;
- 
--	inet_get_ping_group_range_net(net, range, range+1);
--	low = make_kgid(&init_user_ns, range[0]);
--	high = make_kgid(&init_user_ns, range[1]);
--	if (!gid_valid(low) || !gid_valid(high) || gid_lt(high, low))
--		return -EACCES;
--
--	if (range[0] <= group && group <= range[1])
-+	inet_get_ping_group_range_net(net, &low, &high);
-+	if (gid_lte(low, group) && gid_lte(group, high))
- 		return 0;
- 
- 	for (i = 0; i < group_info->nblocks; i++) {
-diff --git a/net/ipv4/sysctl_net_ipv4.c b/net/ipv4/sysctl_net_ipv4.c
-index 1b5ce96..3e78c79 100644
---- a/net/ipv4/sysctl_net_ipv4.c
-+++ b/net/ipv4/sysctl_net_ipv4.c
-@@ -76,9 +76,9 @@ static int ipv4_local_port_range(ctl_table *table, int write,
- }
- 
- 
--static void inet_get_ping_group_range_table(struct ctl_table *table, gid_t *low, gid_t *high)
-+static void inet_get_ping_group_range_table(struct ctl_table *table, kgid_t *low, kgid_t *high)
- {
--	gid_t *data = table->data;
-+	kgid_t *data = table->data;
- 	unsigned int seq;
- 	do {
- 		seq = read_seqbegin(&sysctl_local_ports.lock);
-@@ -89,12 +89,12 @@ static void inet_get_ping_group_range_table(struct ctl_table *table, gid_t *low,
- }
- 
- /* Update system visible IP port range */
--static void set_ping_group_range(struct ctl_table *table, gid_t range[2])
-+static void set_ping_group_range(struct ctl_table *table, kgid_t low, kgid_t high)
- {
--	gid_t *data = table->data;
-+	kgid_t *data = table->data;
- 	write_seqlock(&sysctl_local_ports.lock);
--	data[0] = range[0];
--	data[1] = range[1];
-+	data[0] = low;
-+	data[1] = high;
- 	write_sequnlock(&sysctl_local_ports.lock);
- }
- 
-@@ -103,21 +103,33 @@ static int ipv4_ping_group_range(ctl_table *table, int write,
- 				 void __user *buffer,
- 				 size_t *lenp, loff_t *ppos)
- {
-+	struct user_namespace *user_ns = current_user_ns();
- 	int ret;
--	gid_t range[2];
-+	gid_t urange[2];
-+	kgid_t low, high;
- 	ctl_table tmp = {
--		.data = &range,
--		.maxlen = sizeof(range),
-+		.data = &urange,
-+		.maxlen = sizeof(urange),
- 		.mode = table->mode,
- 		.extra1 = &ip_ping_group_range_min,
- 		.extra2 = &ip_ping_group_range_max,
- 	};
- 
--	inet_get_ping_group_range_table(table, range, range + 1);
-+	inet_get_ping_group_range_table(table, &low, &high);
-+	urange[0] = from_kgid_munged(user_ns, low);
-+	urange[1] = from_kgid_munged(user_ns, high);
- 	ret = proc_dointvec_minmax(&tmp, write, buffer, lenp, ppos);
- 
--	if (write && ret == 0)
--		set_ping_group_range(table, range);
-+	if (write && ret == 0) {
-+		low = make_kgid(user_ns, urange[0]);
-+		high = make_kgid(user_ns, urange[1]);
-+		if (!gid_valid(low) || !gid_valid(high) ||
-+		    (urange[1] < urange[0]) || gid_lt(high, low)) {
-+			low = make_kgid(&init_user_ns, 1);
-+			high = make_kgid(&init_user_ns, 0);
-+		}
-+		set_ping_group_range(table, low, high);
++	switch (fl->share) {
++	case IPV6_FL_S_PROCESS:
++		put_pid(fl->owner.pid);
++		break;
 +	}
+ 	if (fl) {
+ 		release_net(fl->fl_net);
+ 		kfree(fl->opt);
+@@ -394,10 +400,10 @@ fl_create(struct net *net, struct sock *sk, struct in6_flowlabel_req *freq,
+ 	case IPV6_FL_S_ANY:
+ 		break;
+ 	case IPV6_FL_S_PROCESS:
+-		fl->owner = current->pid;
++		fl->owner.pid = get_task_pid(current, PIDTYPE_PID);
+ 		break;
+ 	case IPV6_FL_S_USER:
+-		fl->owner = current_euid();
++		fl->owner.uid = current_euid();
+ 		break;
+ 	default:
+ 		err = -EINVAL;
+@@ -561,7 +567,10 @@ recheck:
+ 				err = -EPERM;
+ 				if (fl1->share == IPV6_FL_S_EXCL ||
+ 				    fl1->share != fl->share ||
+-				    fl1->owner != fl->owner)
++				    ((fl1->share == IPV6_FL_S_PROCESS) &&
++				     (fl1->owner.pid == fl->owner.pid)) ||
++				    ((fl1->share == IPV6_FL_S_USER) &&
++				     uid_eq(fl1->owner.uid, fl->owner.uid)))
+ 					goto release;
  
- 	return ret;
+ 				err = -EINVAL;
+@@ -621,6 +630,7 @@ done:
+ 
+ struct ip6fl_iter_state {
+ 	struct seq_net_private p;
++	struct pid_namespace *pid_ns;
+ 	int bucket;
+ };
+ 
+@@ -699,6 +709,7 @@ static void ip6fl_seq_stop(struct seq_file *seq, void *v)
+ 
+ static int ip6fl_seq_show(struct seq_file *seq, void *v)
+ {
++	struct ip6fl_iter_state *state = ip6fl_seq_private(seq);
+ 	if (v == SEQ_START_TOKEN)
+ 		seq_printf(seq, "%-5s %-1s %-6s %-6s %-6s %-8s %-32s %s\n",
+ 			   "Label", "S", "Owner", "Users", "Linger", "Expires", "Dst", "Opt");
+@@ -708,7 +719,11 @@ static int ip6fl_seq_show(struct seq_file *seq, void *v)
+ 			   "%05X %-1d %-6d %-6d %-6ld %-8ld %pi6 %-4d\n",
+ 			   (unsigned int)ntohl(fl->label),
+ 			   fl->share,
+-			   (int)fl->owner,
++			   ((fl->share == IPV6_FL_S_PROCESS) ?
++			    pid_nr_ns(fl->owner.pid, state->pid_ns) :
++			    ((fl->share == IPV6_FL_S_USER) ?
++			     from_kuid_munged(seq_user_ns(seq), fl->owner.uid) :
++			     0)),
+ 			   atomic_read(&fl->users),
+ 			   fl->linger/HZ,
+ 			   (long)(fl->expires - jiffies)/HZ,
+@@ -727,8 +742,29 @@ static const struct seq_operations ip6fl_seq_ops = {
+ 
+ static int ip6fl_seq_open(struct inode *inode, struct file *file)
+ {
+-	return seq_open_net(inode, file, &ip6fl_seq_ops,
+-			    sizeof(struct ip6fl_iter_state));
++	struct seq_file *seq;
++	struct ip6fl_iter_state *state;
++	int err;
++
++	err = seq_open_net(inode, file, &ip6fl_seq_ops,
++			   sizeof(struct ip6fl_iter_state));
++
++	if (!err) {
++		seq = file->private_data;
++		state = ip6fl_seq_private(seq);
++		rcu_read_lock();
++		state->pid_ns = get_pid_ns(task_active_pid_ns(current));
++		rcu_read_unlock();
++	}
++	return err;
++}
++
++static int ip6fl_seq_release(struct inode *inode, struct file *file)
++{
++	struct seq_file *seq = file->private_data;
++	struct ip6fl_iter_state *state = ip6fl_seq_private(seq);
++	put_pid_ns(state->pid_ns);
++	return seq_release_net(inode, file);
  }
-@@ -786,7 +798,7 @@ static struct ctl_table ipv4_net_table[] = {
- 	{
- 		.procname	= "ping_group_range",
- 		.data		= &init_net.ipv4.sysctl_ping_group_range,
--		.maxlen		= sizeof(init_net.ipv4.sysctl_ping_group_range),
-+		.maxlen		= sizeof(gid_t)*2,
- 		.mode		= 0644,
- 		.proc_handler	= ipv4_ping_group_range,
- 	},
-@@ -830,8 +842,8 @@ static __net_init int ipv4_sysctl_init_net(struct net *net)
- 	 * Sane defaults - nobody may create ping sockets.
- 	 * Boot scripts should set this to distro-specific group.
- 	 */
--	net->ipv4.sysctl_ping_group_range[0] = 1;
--	net->ipv4.sysctl_ping_group_range[1] = 0;
-+	net->ipv4.sysctl_ping_group_range[0] = make_kgid(&init_user_ns, 1);
-+	net->ipv4.sysctl_ping_group_range[1] = make_kgid(&init_user_ns, 0);
  
- 	tcp_init_mem(net);
+ static const struct file_operations ip6fl_seq_fops = {
+@@ -736,7 +772,7 @@ static const struct file_operations ip6fl_seq_fops = {
+ 	.open		=	ip6fl_seq_open,
+ 	.read		=	seq_read,
+ 	.llseek		=	seq_lseek,
+-	.release	=	seq_release_net,
++	.release	=	ip6fl_seq_release,
+ };
  
+ static int __net_init ip6_flowlabel_proc_init(struct net *net)
 -- 
 1.7.5.4
