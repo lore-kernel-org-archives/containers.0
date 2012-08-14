@@ -1,11 +1,12 @@
-From: vaibhav shinde <v.bhav.shinde-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: cgroup block io issue
-Date: Tue, 14 Aug 2012 15:56:14 +0530
-Message-ID: <CAB5gotvNMkJtHhzYz3brkhqkSLziBxU4HZx7XksnrDxbJ6ph+g@mail.gmail.com>
+From: "Muralidhar, Rajeev D" <rajeev.d.muralidhar-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Subject: Linux C/R: VNC server/Xterm checkpoint/recovery
+Date: Tue, 14 Aug 2012 10:29:36 +0000
+Message-ID: <604C0E70D2B64644B0BCE6939D9F7D0325AB8D@BGSMSX102.gar.corp.intel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,40 +16,12 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi all,
+HI all,
 
-I am facing the same issue regarding cgroup block io behavior as mentioned
-by Naveen in the below link
-*http://lkml.org/lkml/2012/7/27/35*
+I am a newbie to Linux C/R. Can someone please tell me if I can checkpoint and restart VNC sessions with Linux C/R? what is the easiest way to test this out? Also, if the VNC session was running Xterms, will they be restored with Linux C/R? 
 
-I am testing using following tunnable parameters-
-
-*              blkio.throttle.write_bps_device (set to different cgroups
-depending on default readings)*
-*              blkio.throttle.read_bps_device *
-*              blkio.throttle.write_iops_device * *
-*
-*              blkio.throttle.read_iops_device * *
-*
-*              blkio.weight (range 100-1000)*
-
-I tested once using a user level application that creates few processes
-with two threads in each process.
-The threads perform read and write operations using 'dd' command and
-records the readings.
-
-The readings achieved from above test appear unpredictable to me.
-
-Can you suggest any method or testcase for analyzing the behavior of
- cgroup block io in case of threads.
-
-Thanks in advance
-
-
-Kind Regards,
-Vaibhav Shinde
-*
-*
+Thanks,
+Rajeev
