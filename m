@@ -1,11 +1,18 @@
-From: MAILER-DAEMON-Yf6N2gRyW82EVqv0pETR8A@public.gmane.org
-Subject: failure notice
-Date: 14 Aug 2012 05:56:24 +0200
-Message-ID: <20120815032501.EC9C178D@mail.linuxfoundation.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 06/21] userns: Print out socket uids in a user namespace
+	aware fashion.
+Date: Tue, 14 Aug 2012 21:47:09 -0700
+Message-ID: <87has4hicy.fsf@xmission.com>
+References: <87ehnav9n5.fsf@xmission.com>
+	<1344889115-21610-1-git-send-email-ebiederm@xmission.com>
+	<1344889115-21610-6-git-send-email-ebiederm@xmission.com>
+	<201208132326.35045.remi@remlab.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <201208132326.35045.remi-AzDNUFsAnHasTnJN9+BGXg@public.gmane.org> (=?utf-8?Q?=22R=C3=A9mi?=
+	Denis-Courmont"'s message of "Mon, 13 Aug 2012 23:26:34 +0300")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,68 +22,26 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: =?utf-8?Q?R=C3=A9mi_Denis-Courmont?= <remi-AzDNUFsAnHasTnJN9+BGXg@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi. This is the qmail-send program at s02.3pix.nl.
-I'm afraid I wasn't able to deliver your message to the following addresses.
-This is a permanent error; I've given up. Sorry it didn't work out.
-
-<adage-jG/AHqQBv7mELgA04lAiVw@public.gmane.org>:
-38.102.228.16 does not like recipient.
-Remote host said: 550 This account is not allowed...adage-jG/AHqQBv7mELgA04lAiVw@public.gmane.org
-Giving up on 38.102.228.16.
-
-<adagio-jG/AHqQBv7mELgA04lAiVw@public.gmane.org>:
-38.102.228.16 does not like recipient.
-Remote host said: 550 This account is not allowed...adagio-jG/AHqQBv7mELgA04lAiVw@public.gmane.org
-Giving up on 38.102.228.16.
-
-<adaj_h-jG/AHqQBv7mELgA04lAiVw@public.gmane.org>:
-38.102.228.18 does not like recipient.
-Remote host said: 550 This account is not allowed...adaj_h-jG/AHqQBv7mELgA04lAiVw@public.gmane.org
-Giving up on 38.102.228.18.
-
-<adamant-jG/AHqQBv7mELgA04lAiVw@public.gmane.org>:
-38.102.228.17 does not like recipient.
-Remote host said: 550 This account is not allowed...adamant-jG/AHqQBv7mELgA04lAiVw@public.gmane.org
-Giving up on 38.102.228.17.
-
-<adamsfamily-jG/AHqQBv7mELgA04lAiVw@public.gmane.org>:
-38.102.228.18 failed after I sent the message.
-Remote host said: 550 litemail18.bigfoot.com Message marked as SPAM, denied [9.500000]
-
---- Below this line is a copy of the message.
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 58714 invoked from network); 14 Aug 2012 04:48:11 +0200
-Received: from unknown (HELO server1.linesearchbar.com) (67.212.81.158)
-  by s02.3pix.nl with ESMTPA; 14 Aug 2012 04:48:11 +0200
-Received: from [67.212.81.158] by server1.linesearchbar.com id XVx73IBwY4xVNq; Mon, 13 Aug 2012 22:48:10 -0400
-Message-ID: <007201cd79c7$3ba90d80$14000a0a-HQcOjwhNS1czlmahCj5iVsTo8j6oEMgcAL8bYrjMMd8@public.gmane.org>
-From: "OrderCo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <adage-jG/AHqQBv7mELgA04lAiVw@public.gmane.org>
-Subject: Invoice
-Date: Mon, 13 Aug 2012 22:48:10 -0400
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: 8bit
-
-
-
-
-Dear, 
-
-Thank you for the order, 
-id: 621516340.
-
-Your credit card will be charged for 337 dollars.
-
-Information about the order and delivery located at:
-
-http://tempo-www.heliabrine.com/pdf/Service.zip?id.download=adage-jG/AHqQBv7mELgA04lAiVw@public.gmane.org_mxkoNulpxjP
-
-____________________________
-Best regards, ticket service.
-Tel. / Fax.: (877) 643 68 325              
+IlLDqW1pIERlbmlzLUNvdXJtb250IiA8cmVtaUByZW1sYWIubmV0PiB3cml0ZXM6Cgo+IExlIGx1
+bmRpIDEzIGFvw7t0IDIwMTIgMjM6MTg6MjAsIHZvdXMgYXZleiDDqWNyaXQgOgo+PiBGcm9tOiAi
+RXJpYyBXLiBCaWVkZXJtYW4iIDxlYmllZGVybUB4bWlzc2lvbi5jb20+Cj4+IAo+PiBDYzogRGF2
+aWQgTWlsbGVyIDxkYXZlbUBkYXZlbWxvZnQubmV0Pgo+PiBDYzogQWxleGV5IEt1em5ldHNvdiA8
+a3V6bmV0QG1zMi5pbnIuYWMucnU+Cj4+IENjOiBKYW1lcyBNb3JyaXMgPGptb3JyaXNAbmFtZWku
+b3JnPgo+PiBDYzogSGlkZWFraSBZT1NISUZVSkkgPHlvc2hmdWppQGxpbnV4LWlwdjYub3JnPgo+
+PiBDYzogUGF0cmljayBNY0hhcmR5IDxrYWJlckB0cmFzaC5uZXQ+Cj4+IENjOiBBcm5hbGRvIENh
+cnZhbGhvIGRlIE1lbG8gPGFjbWVAZ2hvc3Rwcm90b2NvbHMubmV0Pgo+PiBDYzogVmxhZCBZYXNl
+dmljaCA8dnlhc2V2aWNoQGdtYWlsLmNvbT4KPj4gQ2M6IFNyaWRoYXIgU2FtdWRyYWxhIDxzcmlA
+dXMuaWJtLmNvbT4KPj4gQWNrZWQtYnk6IFNlcmdlIEhhbGx5biA8c2VyZ2UuaGFsbHluQGNhbm9u
+aWNhbC5jb20+Cj4+IFNpZ25lZC1vZmYtYnk6IEVyaWMgVy4gQmllZGVybWFuIDxlYmllZGVybUB4
+bWlzc2lvbi5jb20+Cj4KPiBGV0lXLCAuLi4KCldlbGwgSSB3aWxsIHRha2UgZXZlcnkgYml0IG9m
+IHJldmlldyBJIGNhbiBnZXQuICBJdCBjYW4gYmUgdGVycmlibHkKZW1iYXJyYXNzaW5nIHRvIGRp
+c2NvdmVyIHlvdSBtZXNzZWQgdXAgdWlkL2dpZCBoYW5kbGluZyBhbmQgbm8gb25lCm5vdGljZWQg
+dGhlIHNlY3VyaXR5IGhvbGUgZm9yIDMga2VybmVsIHJlbGVhc2VzLi4uCgo+IEFja2VkLUJ5OiBS
+w6ltaSBEZW5pcy1Db3VybW9udCA8cmVtaUByZW1sYWIubmV0PgpfX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250
+YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3Vu
+ZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
