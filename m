@@ -1,16 +1,17 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [REVIEW][PATCH 0/21] User namespace changes to the networking
-	stack.
-Date: Tue, 14 Aug 2012 23:37:42 -0700
-Message-ID: <87boicfyo9.fsf@xmission.com>
+From: Jamal Hadi Salim <jhs-jkUAjuhPggJWk0Htik3J/w@public.gmane.org>
+Subject: Re: [PATCH 15/21] net sched: Pass the skb into change so it can
+	access NETLINK_CB
+Date: Wed, 15 Aug 2012 04:11:54 -0400
+Message-ID: <1345018314.20443.4.camel@mojatatu>
 References: <87ehnav9n5.fsf@xmission.com>
-	<20120814.171203.1784557890475348401.davem@davemloft.net>
+	<1344889115-21610-1-git-send-email-ebiederm@xmission.com>
+	<1344889115-21610-15-git-send-email-ebiederm@xmission.com>
+Reply-To: jhs-jkUAjuhPggJWk0Htik3J/w@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120814.171203.1784557890475348401.davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org> (David
-	Miller's message of "Tue, 14 Aug 2012 17:12:03 -0700 (PDT)")
+In-Reply-To: <1344889115-21610-15-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,48 +21,30 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org> writes:
+On Mon, 2012-08-13 at 13:18 -0700, Eric W. Biederman wrote:
+> From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> 
+> cls_flow.c plays with uids and gids.  Unless I misread that
+> code it is possible for classifiers to depend on the specific uid and
+> gid values.  Therefore I need to know the user namespace of the
+> netlink socket that is installing the packet classifiers.  Pass
+> in the rtnetlink skb so I can access the NETLINK_CB of the passed
+> packet.  In particular I want access to sk_user_ns(NETLINK_CB(in_skb).ssk).
+> 
+> Pass in not the user namespace but the incomming rtnetlink skb into
+> the the classifier change routines as that is generally the more useful
+> parameter.
+> 
+> Cc: Jamal Hadi Salim <jhs-jkUAjuhPggJWk0Htik3J/w@public.gmane.org>
+> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-> From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-> Date: Mon, 13 Aug 2012 13:07:10 -0700
->
->> 
->> This is a modest set of changes against the current networking stack to
->> enable basic user namespace support.  Allowing the code to compile with
->> user namespaces enabled and removing the assumption that there is only
->> the initial user namespace.
->> 
->> Work to relax the privilege checks in the networking stack from
->> "capable(CAP_NET_ADMIN)" or "capable(CAP_NET_RAW)" to
->> "ns_capable(net->user_ns, CAP_NET_ADMIN)" or 
->> "ns_capable(net->user_ns, CAP_NET_RAW)" allowing root in a user
->> namespace to control a network namespace will come later.
->> 
->> David there are just enough interdependencies between the user namespace
->> bits that I intend to merge them all through my user namespace tree.
->> After the review is complete I will add these patches to my for-next
->> branch of my user-namespace.git tree where I do not intend to rebase.
->> If it make sense to pull these into net-next to avoid or reduce
->> conflicts that should not be a problem.
->
-> Looks fine to me, you can add:
->
-> Acked-by: David S. Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
->
-> to all of this stuff.  Let me know when something is stable in your
-> tree, and I can therefore pull from it into net-next.
 
-All of these patches + 2 others trivial userns bug fixes are now
-in my for-next branch at:
+Acked-by: Jamal Hadi Salim <jhs-jkUAjuhPggJWk0Htik3J/w@public.gmane.org>
 
-git.kernel.org:/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-next
-
-I won't be rebasing that branch so feel free to merge it into net-next
-if you are so inclined.  It will be a day or two before I get my next
-chunk of patches posted, reviewed and ready to join my for-next branch.
-
-Eric
+cheers,
+jamal
