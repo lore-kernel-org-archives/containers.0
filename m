@@ -1,14 +1,16 @@
-From: "Muralidhar, Rajeev D" <rajeev.d.muralidhar-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Subject: RE: Linux C/R: VNC server/Xterm checkpoint/recovery
-Date: Mon, 20 Aug 2012 16:09:27 +0000
-Message-ID: <604C0E70D2B64644B0BCE6939D9F7D0327074E@BGSMSX102.gar.corp.intel.com>
-References: <604C0E70D2B64644B0BCE6939D9F7D0325AB8D@BGSMSX102.gar.corp.intel.com>
+From: Vasiliy Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
+Subject: Re: [PATCH 07/21] userns: Use kgids for sysctl_ping_group_range
+Date: Mon, 20 Aug 2012 22:09:23 +0400
+Message-ID: <20120820180923.GA13669@cachalot>
+References: <87ehnav9n5.fsf@xmission.com>
+	<1344889115-21610-1-git-send-email-ebiederm@xmission.com>
+	<1344889115-21610-7-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <604C0E70D2B64644B0BCE6939D9F7D0325AB8D-yHIBzpp8AekFyVwBAnZdSLfspsVTdybXVpNB7YpNyf8@public.gmane.org>
-Content-Language: en-US
+Content-Disposition: inline
+In-Reply-To: <1344889115-21610-7-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,31 +20,32 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
+On Mon, Aug 13, 2012 at 13:18 -0700, Eric W. Biederman wrote:
+> From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> 
+> - Store sysctl_ping_group_range as a paire of kgid_t values
+>   instead of a pair of gid_t values.
+> - Move the kgid conversion work from ping_init_sock into ipv4_ping_group_range
+> - For invalid cases reset to the default disabled state.
+> 
+> With the kgid_t conversion made part of the original value sanitation
+> from userspace understand how the code will react becomes clearer
+> and it becomes possible to set the sysctl ping group range from
+> something other than the initial user namespace.
+> 
+> Cc: Vasiliy Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
+> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Any help on this? 
+Looks good.
 
-Thanks
-Rajeev
-
-
------Original Message-----
-From: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org [mailto:containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org] On Behalf Of Muralidhar, Rajeev D
-Sent: Tuesday, August 14, 2012 4:00 PM
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Subject: Linux C/R: VNC server/Xterm checkpoint/recovery
-
-HI all,
-
-I am a newbie to Linux C/R. Can someone please tell me if I can checkpoint and restart VNC sessions with Linux C/R? what is the easiest way to test this out? Also, if the VNC session was running Xterms, will they be restored with Linux C/R? 
+Acked-by: Vasiliy Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
 
 Thanks,
-Rajeev
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
+-- 
+Vasiliy Kulikov
+http://www.openwall.com - bringing security into open computing environments
