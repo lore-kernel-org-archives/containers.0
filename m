@@ -1,16 +1,16 @@
-From: "Muralidhar, Rajeev D" <rajeev.d.muralidhar-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Subject: RE: Linux C/R: VNC server/Xterm checkpoint/recovery
-Date: Tue, 21 Aug 2012 04:17:11 +0000
-Message-ID: <604C0E70D2B64644B0BCE6939D9F7D03271F3C@BGSMSX102.gar.corp.intel.com>
-References: <604C0E70D2B64644B0BCE6939D9F7D0325AB8D@BGSMSX102.gar.corp.intel.com>
-	<604C0E70D2B64644B0BCE6939D9F7D0327074E@BGSMSX102.gar.corp.intel.com>
-	<20120820213406.GC5703@amd1>
+From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Subject: Re: [REVIEW][PATCH 0/21] User namespace changes to the networking
+	stack.
+Date: Fri, 24 Aug 2012 21:42:37 -0400 (EDT)
+Message-ID: <20120824.214237.2157641321364380276.davem@davemloft.net>
+References: <87ehnav9n5.fsf@xmission.com>
+	<20120814.171203.1784557890475348401.davem@davemloft.net>
+	<87boicfyo9.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120820213406.GC5703@amd1>
-Content-Language: en-US
+In-Reply-To: <87boicfyo9.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,49 +20,47 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Thanks Serge, I will try that out. 
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Date: Tue, 14 Aug 2012 23:37:42 -0700
 
+> David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org> writes:
+> 
+>> From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+>> Date: Mon, 13 Aug 2012 13:07:10 -0700
+>>
+>>> 
+>>> This is a modest set of changes against the current networking stack to
+>>> enable basic user namespace support.  Allowing the code to compile with
+>>> user namespaces enabled and removing the assumption that there is only
+>>> the initial user namespace.
+>>> 
+>>> Work to relax the privilege checks in the networking stack from
+>>> "capable(CAP_NET_ADMIN)" or "capable(CAP_NET_RAW)" to
+>>> "ns_capable(net->user_ns, CAP_NET_ADMIN)" or 
+>>> "ns_capable(net->user_ns, CAP_NET_RAW)" allowing root in a user
+>>> namespace to control a network namespace will come later.
+>>> 
+>>> David there are just enough interdependencies between the user namespace
+>>> bits that I intend to merge them all through my user namespace tree.
+>>> After the review is complete I will add these patches to my for-next
+>>> branch of my user-namespace.git tree where I do not intend to rebase.
+>>> If it make sense to pull these into net-next to avoid or reduce
+>>> conflicts that should not be a problem.
+>>
+>> Looks fine to me, you can add:
+>>
+>> Acked-by: David S. Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+>>
+>> to all of this stuff.  Let me know when something is stable in your
+>> tree, and I can therefore pull from it into net-next.
+> 
+> All of these patches + 2 others trivial userns bug fixes are now
+> in my for-next branch at:
+> 
+> git.kernel.org:/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-next
 
------Original Message-----
-From: Serge Hallyn [mailto:serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org] 
-Sent: Tuesday, August 21, 2012 3:04 AM
-To: Muralidhar, Rajeev D
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Subject: Re: Linux C/R: VNC server/Xterm checkpoint/recovery
-
-See http://criu.org/Main_Page
-
-Quoting Muralidhar, Rajeev D (rajeev.d.muralidhar-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org):
-> Hi,
-> 
-> Any help on this? 
-> 
-> Thanks
-> Rajeev
-> 
-> 
-> -----Original Message-----
-> From: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org [mailto:containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org] On Behalf Of Muralidhar, Rajeev D
-> Sent: Tuesday, August 14, 2012 4:00 PM
-> To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> Subject: Linux C/R: VNC server/Xterm checkpoint/recovery
-> 
-> HI all,
-> 
-> I am a newbie to Linux C/R. Can someone please tell me if I can checkpoint and restart VNC sessions with Linux C/R? what is the easiest way to test this out? Also, if the VNC session was running Xterms, will they be restored with Linux C/R? 
-> 
-> Thanks,
-> Rajeev
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+Ok I finally got around to pushing this into net-next, thanks.
