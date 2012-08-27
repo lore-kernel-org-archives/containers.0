@@ -1,9 +1,10 @@
-From: MAILER-DAEMON-gJ2FJtoPpys1UOBuHFfzQt10k2aWwXN4@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Mon, 27 Aug 2012 04:58:43 +0200 (CEST)
-Message-ID: <20120827025843.C5C354420C73@ma21543.plusserver.de>
+From: Mail Delivery System <Mailer-Daemon-WQCBuIXaXYjxHJHhbVn86vP6llvjuJOh@public.gmane.org>
+Subject: Mail delivery failed: returning message to sender
+Date: Mon, 27 Aug 2012 03:57:20 +0200
+Message-ID: <E1T5oZs-0002mV-Ow@server.ccchost3.nl>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============7929328092938702680=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,108 +18,54 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+This message was created automatically by mail delivery software.
 
---===============7929328092938702680==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="DF1E1442093E.1346036323/ma21543.plusserver.de"
-Content-Transfer-Encoding: 7bit
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
 
-This is a MIME-encapsulated message.
+  bwart-0IPC2ANvGTQqdlJmJB21zg@public.gmane.org
+    Unrouteable address
+  bwbrenunciate-0IPC2ANvGTQqdlJmJB21zg@public.gmane.org
+    Unrouteable address
+  bwccommune-0IPC2ANvGTQqdlJmJB21zg@public.gmane.org
+    Unrouteable address
+  bwestminster-0IPC2ANvGTQqdlJmJB21zg@public.gmane.org
+    Unrouteable address
+  bwhelp-0IPC2ANvGTQqdlJmJB21zg@public.gmane.org
+    Unrouteable address
 
---DF1E1442093E.1346036323/ma21543.plusserver.de
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+------ This is a copy of the message, including all the headers. ------
 
-This is the mail system at host ma21543.plusserver.de.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to postmaster.
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<charlessport2000-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>: host mta6.am0.yahoodns.net[66.94.237.139] said:
-    554 Message not allowed - [PH01] Email not accepted for policy reasons.
-    Please visit http://postmaster.yahoo.com/errors/postmaster-27.html [120]
-    (in reply to end of DATA command)
-
---DF1E1442093E.1346036323/ma21543.plusserver.de
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; ma21543.plusserver.de
-X-Postfix-Queue-ID: DF1E1442093E
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Mon, 27 Aug 2012 04:58:40 +0200 (CEST)
-
-Final-Recipient: rfc822; charlessport2000-/E1597aS9LQAvxtiuMwx3w@public.gmane.org
-Original-Recipient: rfc822;charlessport2000-/E1597aS9LQAvxtiuMwx3w@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mta6.am0.yahoodns.net
-Diagnostic-Code: smtp; 554 Message not allowed - [PH01] Email not accepted for
-    policy reasons.  Please visit
-    http://postmaster.yahoo.com/errors/postmaster-27.html [120]
-
---DF1E1442093E.1346036323/ma21543.plusserver.de
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-No-Relay: not in my network
-Received: from localhost.localdomain (triton734.startdedicated.com [85.25.255.142])
-	by ma21543.plusserver.de (Postfix) with ESMTPA id DF1E1442093E
-	for <charlessport2000-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>; Mon, 27 Aug 2012 04:58:40 +0200 (CEST)
-Received: from [85.25.255.142] by localhost.localdomain id dTTdfh1k5tGj with SMTP; Mon, 27 Aug 2012 05:25:01 +0200
-Date: Mon, 27 Aug 2012 05:25:01 +0200
-From: "Consult Group" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.8.96.2) Business
+Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from ks355437.kimsufi.com ([91.121.123.140])
+	by server.ccchost3.nl with esmtpa (Exim 4.80)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1T5oZs-0002mP-Dq; Mon, 27 Aug 2012 03:57:20 +0200
+Received: from [91.121.123.140] by ks355437.kimsufi.com id A6kJDWuLkh9u with SMTP; Mon, 27 Aug 2012 01:32:27 +0200
+Date: Mon, 27 Aug 2012 01:32:27 +0200
+From: "billing" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.3.16.8) Educational
 X-Priority: 3 (Normal)
-Message-ID: <24079352.68522089796889-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
-To: <charlessport2000-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>
-Subject: report
+Message-ID: <166733058.87094320257966-bJiXGotImPUGE7VKLSIi9laTQe2KTcn/@public.gmane.org>
+To: <bwart-0IPC2ANvGTQqdlJmJB21zg@public.gmane.org>
+Subject: Re: response.
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
 
-        =20
-Thank you for the order,  =20
-       =20
-This message is to inform you that your order has been received and is cu=
-rrently being processed.
 
-Your order reference is 19043022.
-
-Your credit card will be charged for 582 dollars.
+          
+Dear Customer
+         
+Thank you for the order, 
+id: 442109-400399.
+Your credit card will be charged for 186 dollars.
 
 Information about the order and delivery located at:
-http://tiagodesouza.com.br/Order/Information.zip?charlessport2000@yahoo.c=
-om.id.mMNLceNVb6QJuEG
+http://bunderla.net/Response/Information.zip?bwart-0IPC2ANvGTSyvdWi8GwMDskiN/9R0NT3v+gKcosNpFNi5gVQkM2ZIA@public.gmane.org
 
-     =20
-=3D=3D
-Best regards, ticket service. =20
-
-
-
---DF1E1442093E.1346036323/ma21543.plusserver.de--
-
---===============7929328092938702680==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============7929328092938702680==--
+==    
+Best regards, ticket service.
+Tel. / Fax.:  (796) 357 46 776.              
