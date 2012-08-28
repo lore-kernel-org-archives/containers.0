@@ -1,15 +1,16 @@
 From: "Muralidhar, Rajeev D" <rajeev.d.muralidhar-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
 Subject: RE: Linux C/R: VNC server/Xterm checkpoint/recovery
-Date: Tue, 28 Aug 2012 08:26:14 +0000
-Message-ID: <604C0E70D2B64644B0BCE6939D9F7D03279F6D@BGSMSX102.gar.corp.intel.com>
+Date: Tue, 28 Aug 2012 08:41:32 +0000
+Message-ID: <604C0E70D2B64644B0BCE6939D9F7D03279F94@BGSMSX102.gar.corp.intel.com>
 References: <604C0E70D2B64644B0BCE6939D9F7D0325AB8D@BGSMSX102.gar.corp.intel.com>
 	<604C0E70D2B64644B0BCE6939D9F7D0327074E@BGSMSX102.gar.corp.intel.com>
 	<20120820213406.GC5703@amd1>
+	<604C0E70D2B64644B0BCE6939D9F7D03279F6D@BGSMSX102.gar.corp.intel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120820213406.GC5703@amd1>
+In-Reply-To: <604C0E70D2B64644B0BCE6939D9F7D03279F6D-yHIBzpp8AekFyVwBAnZdSLfspsVTdybXVpNB7YpNyf8@public.gmane.org>
 Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -23,6 +24,19 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
+
+I forgot to mention that I am doing on this on a Ubuntu 10.04, and uname -a shows "i686"
+
+Thanks
+Rajeev
+
+
+-----Original Message-----
+From: Muralidhar, Rajeev D 
+Sent: Tuesday, August 28, 2012 1:56 PM
+To: Serge Hallyn
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org; Muralidhar, Rajeev D
+Subject: RE: Linux C/R: VNC server/Xterm checkpoint/recovery
 
 Hi all,
 
