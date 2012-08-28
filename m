@@ -1,16 +1,11 @@
 From: "Muralidhar, Rajeev D" <rajeev.d.muralidhar-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Subject: RE: Linux C/R: VNC server/Xterm checkpoint/recovery
-Date: Tue, 28 Aug 2012 08:41:32 +0000
-Message-ID: <604C0E70D2B64644B0BCE6939D9F7D03279F94@BGSMSX102.gar.corp.intel.com>
-References: <604C0E70D2B64644B0BCE6939D9F7D0325AB8D@BGSMSX102.gar.corp.intel.com>
-	<604C0E70D2B64644B0BCE6939D9F7D0327074E@BGSMSX102.gar.corp.intel.com>
-	<20120820213406.GC5703@amd1>
-	<604C0E70D2B64644B0BCE6939D9F7D03279F6D@BGSMSX102.gar.corp.intel.com>
+Subject: Error compiling CRtools-0.1..
+Date: Tue, 28 Aug 2012 11:10:18 +0000
+Message-ID: <604C0E70D2B64644B0BCE6939D9F7D0327A1C6@BGSMSX102.gar.corp.intel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <604C0E70D2B64644B0BCE6939D9F7D03279F6D-yHIBzpp8AekFyVwBAnZdSLfspsVTdybXVpNB7YpNyf8@public.gmane.org>
 Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -21,9 +16,51 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+To: "Muralidhar, Rajeev D" <rajeev.d.muralidhar-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
+
+OK it seems like one error was that 
+
+#include "restorer.h" 
+
+Was missing from syscall-common-x86-64., which has the definition of rcx.
+
+Now I can proceed one step further in compilation, but I get these errors:
+
+In file included from ./include/types.h:7,
+                 from ./include/restorer.h:8,
+                 from syscall-common-x86-64.S:2,
+                 from syscall-x86-64.S:3:
+./include/bitops.h:50:3: error: #error x86-32 is not implemented yet
+In file included from ./include/restorer.h:8,
+                 from syscall-common-x86-64.S:2,
+                 from syscall-x86-64.S:3:
+./include/types.h:180:3: error: #error x86-32 bit mode not yet implemented
+In file included from ./include/syscall.h:4,
+                 from ./include/lock.h:11,
+                 from ./include/restorer.h:10,
+                 from syscall-common-x86-64.S:2,
+                 from syscall-x86-64.S:3:
+./include/syscall-types.h:17:3: error: #error x86-32 bit mode not yet implemented
+In file included from syscall-common-x86-64.S:2,
+                 from syscall-x86-64.S:3:
+./include/restorer.h:20:3: error: #error Only x86-64 is supported
+
+I have a Core i5 laptop, running Ubuntu 10.04. uname -m shows "i686". 
+
+Does this mean that CR tools will run only on x86_64, but will never work on 32-bit systems? (Isnt Intel x86_64 is backward compatible with 32-bit?)
+
+Thanks for your help in advance. 
+Rajeev
+
+
+-----Original Message-----
+From: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org [mailto:containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org] On Behalf Of Muralidhar, Rajeev D
+Sent: Tuesday, August 28, 2012 2:12 PM
+To: Serge Hallyn
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Subject: RE: Linux C/R: VNC server/Xterm checkpoint/recovery
 
 I forgot to mention that I am doing on this on a Ubuntu 10.04, and uname -a shows "i686"
 
@@ -174,3 +211,7 @@ Quoting Muralidhar, Rajeev D (rajeev.d.muralidhar-ral2JQCrhuEAvxtiuMwx3w@public.
 > Containers mailing list
 > Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 > https://lists.linuxfoundation.org/mailman/listinfo/containers
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
