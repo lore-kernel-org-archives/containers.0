@@ -1,12 +1,11 @@
-From: "Stock100" <marketing-/0rwUHiUgYCGJGYlWa3Ukdi2O/JbrIOy@public.gmane.org>
-Subject: 2012 STOCK MARKET REVIEW & FORECAST
-Date: Wed, 29 Aug 2012 03:35:53 -0700
-Message-ID: <D6A5B09D06AD49679AA655DCE5B25D84@u16379804>
+From: MAILER-DAEMON-i29cUA4h1xqD2xfEYUDpZg@public.gmane.org
+Subject: failure notice
+Date: 29 Aug 2012 12:35:08 +0000
+Message-ID: <20120829124632.21DEC825@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Class: urn:content-classes:message
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,75 +18,51 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-containers
- 
-???? <http://stock100.com/> 
- 
-Since the start of 2012, the market has seen large volatility with no
-measurable gains. Most investors got hurt in the process. Event the long
-term investors are getting nervous.
- 
-It takes skills to be making money in this market. The tools used by the
-pros are usually kept away from you. Now, there is a global market site
-that offers tools historically reserved for the pros: WWW.STOCK100.COM
-<http://www.stock100.com/>   .
-The site is now free for all to use. Still relatively unknown to the
-investors, be the early birds to see it and use it!
- 
-Do you know the following 5 stocks have completely opposite movements
-with Dow Jones Industrial Index?
- 
-Symbol
-Name
-8/16/2012
-Match%
-EFZ <http://stock100.com/symbol_submit_EFZ.html> 
-ProShares ...
-46.25
--91%
-EFU <http://stock100.com/symbol_submit_EFU.html> 
-ProShares ...
-20.53
--91%
-DPK <http://stock100.com/symbol_submit_DPK.html> 
-Direxion D...
-23.57
--91%
-EDZ <http://stock100.com/symbol_submit_EDZ.html> 
-Direxion D...
-12.64
--91%
-EEV <http://stock100.com/symbol_submit_EEV.html> 
-ProShares ...
-26.3
--90%
- 
-Do you know the following 5 stocks have been selected by the computer
-algorithm?
- 
-Name
-8/16/2012
-Forecast%
-Dawson Geop... <http://stock100.com/symbol_submit_DWSN.aspx> 
-22.71
-21.57%
-Virtusa Cor... <http://stock100.com/symbol_submit_VRTU.aspx> 
-16.9
-14.70%
-Terra Nova ... <http://stock100.com/symbol_submit_TTT.aspx> 
-18.64
-17.14%
-Kemet Corpo... <http://stock100.com/symbol_submit_KEM.aspx> 
-4.62
-19.72%
-Liquidity S... <http://stock100.com/symbol_submit_LQDT.aspx> 
-45.74
-20.13%
- 
-Don't miss it!
- 
-???? <http://stock100.com/>  
- 
- 
-Please email: remove-oQouceREq8lWk0Htik3J/w@public.gmane.org   to be removed from receiving future
-marketing materials.
+Hi. This is the qmail-send program at mail.imgw.com.
+I'm afraid I wasn't able to deliver your message to the following addresses.
+This is a permanent error; I've given up. Sorry it didn't work out.
+
+<cas77476d-nTrIU9Q+ylj8CsxYSU2Q1fXRex20P6io@public.gmane.org>:
+Sorry, no mailbox here by that name. (#5.1.1)
+
+--- Below this line is a copy of the message.
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: (qmail 13700 invoked by uid 5082); 29 Aug 2012 12:34:09 +0000
+Received: from 188.165.230.187 by m3300uspln2.cust.aops-eds.com (envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, uid 5078) with qmail-scanner-1.25-st-qms 
+ (clamdscan: 0.97/12978. perlscan: 1.25-st-qms.  
+ Clear:RC:0(188.165.230.187):. 
+ Processed in 1.354857 secs); 29 Aug 2012 12:34:09 -0000
+X-Antivirus-MYDOMAIN-Mail-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org via m3300uspln2.cust.aops-eds.com
+X-Antivirus-MYDOMAIN: 1.25-st-qms (Clear:RC:0(188.165.230.187):. Processed in 1.354857 secs Process 11901)
+Received: from ns213760.ovh.net (188.165.230.187)
+  by mail.imgw.com with SMTP; 29 Aug 2012 12:34:07 +0000
+Received: from [188.165.230.187] by ns213760.ovh.net id Z2lug5LgMLz6; Wed, 29 Aug 2012 14:34:08 +0200
+Message-ID: <009a01cd85e2$8ee3a880$14000a0a-e0r/WXrHWLdnXn40ka+A6Q@public.gmane.org>
+From: "CFX Group." <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <cas77476d-nTrIU9Q+ylj8CsxYSU2Q1fXRex20P6io@public.gmane.org>
+Subject: Order N629131980
+Date: Wed, 29 Aug 2012 14:34:08 +0200
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: 8bit
+
+
+
+
+Dear client, {#FIRST_DESCR}!
+
+Thank you for the order, 
+
+id: 047655526.
+
+Your credit card will be charged for 1242 dollars.
+
+Information about the order and delivery located at:
+
+http://dactam.com/Information/Order.zip
+
+____________________________
+Best regards, ticket service.
+Tel./Fax.: (800) 308 37 690              
