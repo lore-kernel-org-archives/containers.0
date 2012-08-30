@@ -1,22 +1,10 @@
-From: Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [CRIU] Re: Error compiling CRtools-0.1..
-Date: Thu, 30 Aug 2012 18:33:26 +0400
-Message-ID: <20120830143326.GO21422@moon>
-References: <604C0E70D2B64644B0BCE6939D9F7D0327E011@BGSMSX102.gar.corp.intel.com>
-	<20120830125557.GB8474@amd1> <20120830131058.GK21422@moon>
-	<604C0E70D2B64644B0BCE6939D9F7D0327E623@BGSMSX102.gar.corp.intel.com>
-	<20120830133033.GL21422@moon>
-	<604C0E70D2B64644B0BCE6939D9F7D0327E674@BGSMSX102.gar.corp.intel.com>
-	<20120830134513.GM21422@moon>
-	<604C0E70D2B64644B0BCE6939D9F7D0327E6C0@BGSMSX102.gar.corp.intel.com>
-	<20120830140431.GN21422@moon>
-	<604C0E70D2B64644B0BCE6939D9F7D0327E721@BGSMSX102.gar.corp.intel.com>
+From: Mail Delivery Subsystem <MAILER-DAEMON-lS3aF5YVCN2eAwRm9RwgQUEOCMrvLtNR@public.gmane.org>
+Subject: Returned mail: see transcript for details
+Date: Thu, 30 Aug 2012 21:03:15 +0100
+Message-ID: <201208302003.q7UK3Fp6021629@nicmail1.iomart.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============0719008514235563391=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <604C0E70D2B64644B0BCE6939D9F7D0327E721-yHIBzpp8AekFyVwBAnZdSLfspsVTdybXVpNB7YpNyf8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,26 +14,80 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Muralidhar, Rajeev D" <rajeev.d.muralidhar-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Cc: "criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org" <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Aug 30, 2012 at 02:27:17PM +0000, Muralidhar, Rajeev D wrote:
-> Hi Cyril,
-> 
-> Here is output of uname -a
-> 
-> rdmurali@tapovan:~/Linux-CR/crtools-0.1$ uname -a
-> Linux tapovan 3.6.0-rc1 #2 SMP Thu Aug 30 08:38:17 IST 2012 x86_64 x86_64 x86_64 GNU/Linux
-> 
-> I got the kernel repo from: http://git.kernel.org/?p=linux/kernel/git/gorcunov/linux-cr.git;a=summary 
-> 
-> But I guess I didn't take crtools-3.6-rc1. OK let me get that branch and try. 
-> 
-> Will keep you posted. 
+This is a MIME-encapsulated message
 
-OK. As to your initial message -- we don't yet support terminals c/r, there are
-experimental patches flying around but they are not yet merged into main
-crtools repo. Hope this will be implemented pretty soon.
+--===============0719008514235563391==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="q7UK3Fp6021629.1346356995/nicmail1.iomart.com"
 
-	Cyrill
+This is a MIME-encapsulated message
+
+--q7UK3Fp6021629.1346356995/nicmail1.iomart.com
+
+The original message was received at Thu, 30 Aug 2012 21:03:12 +0100
+from ns213760.ovh.net [188.165.230.187]
+
+   ----- The following addresses had permanent fatal errors -----
+<mail-Mrm7p1EmV4a93tldrlGRnkNHDMkBftLB9dF7HbQ/qKg@public.gmane.org>
+    (reason: 550 5.2.0 Mail rejete. Mail rejected. ouk_506 [506])
+
+   ----- Transcript of session follows -----
+... while talking to mail-in.freeserve.com.:
+>>> DATA
+<<< 550 5.2.0 Mail rejete. Mail rejected. ouk_506 [506]
+554 5.0.0 Service unavailable
+
+--q7UK3Fp6021629.1346356995/nicmail1.iomart.com
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; nicmail1.iomart.com
+Received-From-MTA: DNS; ns213760.ovh.net
+Arrival-Date: Thu, 30 Aug 2012 21:03:12 +0100
+
+Final-Recipient: RFC822; sue-WkOsq8rD7gfTOb0LngeTATZ6kYW4cE4MKnZSZiQdtc4@public.gmane.org
+Action: failed
+Status: 5.2.0
+Remote-MTA: DNS; mail-in.freeserve.com
+Diagnostic-Code: SMTP; 550 5.2.0 Mail rejete. Mail rejected. ouk_506 [506]
+Last-Attempt-Date: Thu, 30 Aug 2012 21:03:15 +0100
+
+--q7UK3Fp6021629.1346356995/nicmail1.iomart.com
+Content-Type: text/rfc822-headers
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from ns213760.ovh.net (ns213760.ovh.net [188.165.230.187])
+	by nicmail1.iomart.com (8.12.11.20060308/8.12.11) with ESMTP id q7UK3Cp6021579
+	for <mail-Mrm7p1EmV4a93tldrlGRnkNHDMkBftLB9dF7HbQ/qKg@public.gmane.org>; Thu, 30 Aug 2012 21:03:12 +0100
+Received: from [188.165.230.187] by ns213760.ovh.net id NDsGjrGJqfq4 with SMTP; Thu, 30 Aug 2012 22:03:15 +0200
+Date: Thu, 30 Aug 2012 22:03:15 +0200
+From: "Supportpay" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.5.39.3) Educational
+X-Priority: 3 (Normal)
+Message-ID: <27221453.05647575498266-e0r/WXrHWLdnXn40ka+A6Q@public.gmane.org>
+To: <mail-Mrm7p1EmV4a93tldrlGRnkNHDMkBftLB9dF7HbQ/qKg@public.gmane.org>
+Subject: Order.
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: 8bit
+X-Spam-Status: No, score=-1.5 required=8.0 tests=BAYES_00 autolearn=ham
+	version=3.3.1
+X-Spam-Checker-Version: SpamAssassin 3.3.1 (2010-03-16) on nicsa3.iomart.com
+
+--q7UK3Fp6021629.1346356995/nicmail1.iomart.com--
+
+
+--===============0719008514235563391==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============0719008514235563391==--
