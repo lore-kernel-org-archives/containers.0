@@ -1,10 +1,13 @@
-From: Mail Delivery Subsystem <MAILER-DAEMON-lS3aF5YVCN2eAwRm9RwgQUEOCMrvLtNR@public.gmane.org>
-Subject: Returned mail: see transcript for details
-Date: Thu, 30 Aug 2012 21:03:15 +0100
-Message-ID: <201208302003.q7UK3Fp6021629@nicmail1.iomart.com>
+From: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Virtualizing /proc/sys/kernel/random/boot_id per container ?
+Date: Thu, 30 Aug 2012 14:18:32 -0700
+Message-ID: <20120830211832.GA3297@redhat.com>
+Reply-To: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============0719008514235563391=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,79 +18,33 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message
+One of the features that SystemD folks have asked us to fix in LXC, is
+to make sure that /proc/sys/kernel/random/boot_id changes each time a
+container is started.
 
---===============0719008514235563391==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="q7UK3Fp6021629.1346356995/nicmail1.iomart.com"
+The current semantics are that this file produces a new random UUID each
+time the host OS is booted. Obviously each time we start a container now,
+they just see the host's random boot_id, so from a container's POV this
+does not change each time it starts.
 
-This is a MIME-encapsulated message
+There seems to be general agreement that, aside from the PID directories,
+changes to data in  proc should be done by a FUSE filesystem overlay of
+some kind. We could use that mechanism to fix 'boot_id' in userspace, but
+I'm wondering if this is a better candidate for dealing with in kernel
+space, since as well as the /proc/sys tree, the data is also visible via
+the sysctl() system call which a FUSE overlay won't address.
 
---q7UK3Fp6021629.1346356995/nicmail1.iomart.com
+The kernel doesn't have a real concept of a 'container' to associate
+a boot_id value with as such, but maybe it is reasonable to associate
+a boot_id value with each PID namespace ?
 
-The original message was received at Thu, 30 Aug 2012 21:03:12 +0100
-from ns213760.ovh.net [188.165.230.187]
-
-   ----- The following addresses had permanent fatal errors -----
-<mail-Mrm7p1EmV4a93tldrlGRnkNHDMkBftLB9dF7HbQ/qKg@public.gmane.org>
-    (reason: 550 5.2.0 Mail rejete. Mail rejected. ouk_506 [506])
-
-   ----- Transcript of session follows -----
-... while talking to mail-in.freeserve.com.:
->>> DATA
-<<< 550 5.2.0 Mail rejete. Mail rejected. ouk_506 [506]
-554 5.0.0 Service unavailable
-
---q7UK3Fp6021629.1346356995/nicmail1.iomart.com
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; nicmail1.iomart.com
-Received-From-MTA: DNS; ns213760.ovh.net
-Arrival-Date: Thu, 30 Aug 2012 21:03:12 +0100
-
-Final-Recipient: RFC822; sue-WkOsq8rD7gfTOb0LngeTATZ6kYW4cE4MKnZSZiQdtc4@public.gmane.org
-Action: failed
-Status: 5.2.0
-Remote-MTA: DNS; mail-in.freeserve.com
-Diagnostic-Code: SMTP; 550 5.2.0 Mail rejete. Mail rejected. ouk_506 [506]
-Last-Attempt-Date: Thu, 30 Aug 2012 21:03:15 +0100
-
---q7UK3Fp6021629.1346356995/nicmail1.iomart.com
-Content-Type: text/rfc822-headers
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from ns213760.ovh.net (ns213760.ovh.net [188.165.230.187])
-	by nicmail1.iomart.com (8.12.11.20060308/8.12.11) with ESMTP id q7UK3Cp6021579
-	for <mail-Mrm7p1EmV4a93tldrlGRnkNHDMkBftLB9dF7HbQ/qKg@public.gmane.org>; Thu, 30 Aug 2012 21:03:12 +0100
-Received: from [188.165.230.187] by ns213760.ovh.net id NDsGjrGJqfq4 with SMTP; Thu, 30 Aug 2012 22:03:15 +0200
-Date: Thu, 30 Aug 2012 22:03:15 +0200
-From: "Supportpay" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.5.39.3) Educational
-X-Priority: 3 (Normal)
-Message-ID: <27221453.05647575498266-e0r/WXrHWLdnXn40ka+A6Q@public.gmane.org>
-To: <mail-Mrm7p1EmV4a93tldrlGRnkNHDMkBftLB9dF7HbQ/qKg@public.gmane.org>
-Subject: Order.
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: 8bit
-X-Spam-Status: No, score=-1.5 required=8.0 tests=BAYES_00 autolearn=ham
-	version=3.3.1
-X-Spam-Checker-Version: SpamAssassin 3.3.1 (2010-03-16) on nicsa3.iomart.com
-
---q7UK3Fp6021629.1346356995/nicmail1.iomart.com--
-
-
---===============0719008514235563391==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============0719008514235563391==--
+Regards,
+Daniel
+-- 
+|: http://berrange.com      -o-    http://www.flickr.com/photos/dberrange/ :|
+|: http://libvirt.org              -o-             http://virt-manager.org :|
+|: http://autobuild.org       -o-         http://search.cpan.org/~danberr/ :|
+|: http://entangle-photo.org       -o-       http://live.gnome.org/gtk-vnc :|
