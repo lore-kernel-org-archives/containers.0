@@ -1,10 +1,15 @@
-From: MAILER-DAEMON-i9wRM+HIrmnmtl4Z8vJ8Kg761KYD1DLY@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Fri, 31 Aug 2012 04:09:18 +0100 (BST)
-Message-ID: <20120831030918.497416540B7@smtp-in-72.livemail.co.uk>
+From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Subject: Re: Virtualizing /proc/sys/kernel/random/boot_id per container ?
+Date: Fri, 31 Aug 2012 08:25:36 -0500
+Message-ID: <20120831132536.GA24262@amd1>
+References: <20120830211832.GA3297@redhat.com>
+ <878vcwjabu.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============8932109115499958220=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <878vcwjabu.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,107 +19,54 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+> 
+> > One of the features that SystemD folks have asked us to fix in LXC, is
+> > to make sure that /proc/sys/kernel/random/boot_id changes each time a
+> > container is started.
+> 
+> There may be a good reason for this.  Most of the time what I have seen
+> of kernel requests from the direction of SystemD is that while there may
+> be a real problem but usually their imagined solution is not a
+> particularly good solution.  So a description of the problem is needed.
+> 
+> Justifying something with just SystemD wants this is a good way to get
+> a nack.
+> 
+> > The current semantics are that this file produces a new random UUID each
+> > time the host OS is booted. Obviously each time we start a container now,
+> > they just see the host's random boot_id, so from a container's POV this
+> > does not change each time it starts.
+> 
+> That is correct.  As I recall the contract with boot_id is to provide
+> a unique per boot value to assist in dealing with boots etc.  I seem
+> to recall emacs uses the combination of hostname+boot_id to help
+> generate unique lock files names.
+> 
+> I would definitely need a refresher on how boot_id is used in practice
+> by applications other than SystemD before I could suggest a good design.
+> 
+> There is also a question of uptime.
+> 
+> > There seems to be general agreement that, aside from the PID directories,
+> > changes to data in  proc should be done by a FUSE filesystem overlay of
+> > some kind.
+> 
+> No.  I have yet to see a justification for using FUSE in containers on
+> top of proc files.
+> 
+> I have seen a lot of bad ideas suggested like hacking /proc/cpuinfo
+> instead of providing a proper mechanism to tell applications how
+> parallel they can/should be.
 
---===============8932109115499958220==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="25A076540AE.1346382558/smtp-in-72.livemail.co.uk"
-Content-Transfer-Encoding: 7bit
+Should we be talking about a new set of library functions to gather info
+like available memory and cpus, etc?  The library functions could internally
+take into account the per-host procfiles, cgroup info, and, as the need
+arises, new sources of information.
 
-This is a MIME-encapsulated message.
-
---25A076540AE.1346382558/smtp-in-72.livemail.co.uk
-Content-Description: Notification
-Content-Type: text/plain
-
-This is the Postfix program at host smtp-in-72.livemail.co.uk.
-
-I'm sorry to have to inform you that the message returned
-below could not be delivered to one or more destinations.
-
-For further assistance, please send mail to <postmaster>
-
-If you do so, please include this problem report. You can
-delete your own text from the message returned below.
-
-			The Postfix program
-
-<contact-NPyeqMHhNVVBDgjK7y7TUQ@public.gmane.org>: host mailserver.cofiroc.com[213.171.216.114] said: 550
-    <contact-NPyeqMHhNVVBDgjK7y7TUQ@public.gmane.org>: Recipient address rejected: User unknown in virtual
-    mailbox table (in reply to RCPT TO command)
-
---25A076540AE.1346382558/smtp-in-72.livemail.co.uk
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; smtp-in-72.livemail.co.uk
-X-Postfix-Queue-ID: 25A076540AE
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Fri, 31 Aug 2012 04:09:18 +0100 (BST)
-
-Final-Recipient: rfc822; contact-NPyeqMHhNVVBDgjK7y7TUQ@public.gmane.org
-Action: failed
-Status: 5.0.0
-Diagnostic-Code: X-Postfix; host mailserver.cofiroc.com[213.171.216.114] said:
-    550 <contact-NPyeqMHhNVVBDgjK7y7TUQ@public.gmane.org>: Recipient address rejected: User unknown in
-    virtual mailbox table (in reply to RCPT TO command)
-
---25A076540AE.1346382558/smtp-in-72.livemail.co.uk
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
-
-Received: from Postfix filter 42a77884ce2a0a03efc6bb50a6dcdb21 (unknown [127.0.0.1])
-	by smtp-in-72.livemail.co.uk (Postfix) with SMTP id 25A076540AE
-	for <contact-NPyeqMHhNVUqdlJmJB21zg@public.gmane.org>; Fri, 31 Aug 2012 04:09:18 +0100 (BST)
-Received: from ns213760.ovh.net (ns213760.ovh.net [188.165.230.187])
-	by smtp-in-72.livemail.co.uk (Postfix) with ESMTP id F281A6540AE
-	for <contact-NPyeqMHhNVUqdlJmJB21zg@public.gmane.org>; Fri, 31 Aug 2012 04:09:17 +0100 (BST)
-Received: from [188.165.230.187] by ns213760.ovh.net id dQbszvxrAKwA with SMTP; Fri, 31 Aug 2012 05:09:18 +0200
-Date: Fri, 31 Aug 2012 05:09:18 +0200
-From: "Consult2 " <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.5.3.9) Home
-X-Priority: 3 (Normal)
-Message-ID: <88164876.61835425413543-e0r/WXrHWLdnXn40ka+A6Q@public.gmane.org>
-To: <contact-NPyeqMHhNVUqdlJmJB21zg@public.gmane.org>
-Subject: Reply id 59158237401
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-X-Original-To: contact-NPyeqMHhNVUqdlJmJB21zg@public.gmane.org
-Content-Transfer-Encoding: quoted-printable
-
-
-
-
-Dear User, {#FIRST_DESCR}.
-
-Sorry for the delay.
-
-Update your account information.
-
-http://timelesseventsmgt.com/Order/Order.zip
-
-
-=3D=3D
-Best regards,
-Tel./Fax.: (498) 439 70 256
-
-
-
---25A076540AE.1346382558/smtp-in-72.livemail.co.uk--
-
---===============8932109115499958220==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============8932109115499958220==--
+-serge
