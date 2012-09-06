@@ -1,14 +1,15 @@
-From: "cmcc.dylan" <dx10years-KN7UnAbNpbg@public.gmane.org>
-Subject: Re:Re: the perfomance of lxc is not better than kvm+virtio
-Date: Thu, 6 Sep 2012 22:01:28 +0800 (CST)
-Message-ID: <21d457be.9cee.1399be2b299.Coremail.dx10years@126.com>
+From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: the perfomance of lxc is not better than kvm+virtio
+Date: Thu, 6 Sep 2012 18:39:54 +0400
+Message-ID: <5048B5BA.3070802@parallels.com>
 References: <369c0ce8.7437.1399ac363cf.Coremail.dx10years@126.com>
 	<DF13143A-64A8-459C-B415-B3E661611C2A@parallels.com>
+	<21d457be.9cee.1399be2b299.Coremail.dx10years@126.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="gbk"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <DF13143A-64A8-459C-B415-B3E661611C2A-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <21d457be.9cee.1399be2b299.Coremail.dx10years-KN7UnAbNpbg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,66 +19,24 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Kirill Korotaev <dev-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: "cmcc.dylan" <dx10years-KN7UnAbNpbg@public.gmane.org>
+Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kirill Korotaev <dev-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-VGhhbmtzIEtpcmlsbCEKIAo+MS4gSGF2ZSB5b3UgdXNlZCBzZXBhcmF0ZSBzbWFsbCBwYXJ0aXRp
-b24gZm9yIGJlbmNobWFya2luZz8gRGlzayBwZXJmb3JtYW5jZSB2YXJpZXMgYWJvdXQgMnggdGlt
-ZXMgYWNyb3NzIHRoZSBwbGF0ZS4uLi4KPgpCZWNhdXNlIGknYW0gc3RpbGwgYSBub3ZpY2UgaW4g
-TFhDLCBzbyB3aGF0IGRvZXMgeW91ciBleGFjdGx5IG1lYW5zIGFib3V0ICJ1c2VkIHNlcGFyYXRl
-IHNtYWxsIHBhcnRpdGlvbiBmb3IgYmVuY2htYXJraW5nIj8KRG8geW91IG1lYW4gdGhlIHJvb3Rm
-cyBvZiBjb250YWluZXIgbW91bnRlZCBpbiBhIHNlcGFyYXRlIHBhcnRpdGlvbj8KSW4gbXkgZXhw
-ZXJpbWVudCwgaSB1c2UgaW96b25lIHRlc3QgY2FzZSBvZiB0aGUgcGhvcm9uaXggdGVzdCBzdWl0
-ZSBhbmQgaSBjcmVhdGUgYSBseGMgaW5zdGFuY2UgdXNlIHRoZSB4bWwgY29uZmlnIGZpbGUgYXMg
-Zm9sbG93czoKPGRvbWFpbiB0eXBlPSJseGMiPgogIDxuYW1lPnVidW50dV9seGM8L25hbWU+CiAg
-PG1lbW9yeT4yMDQ4NTc2PC9tZW1vcnk+CiAgPG9zPgogICAgPHR5cGU+ZXhlPC90eXBlPgogICAg
-PGluaXQ+L3NiaW4vaW5pdDwvaW5pdD4KICA8L29zPgogIDx2Y3B1PjQ8L3ZjcHU+CiAgPGNsb2Nr
-IG9mZnNldD0idXRjIi8+CiAgPG9uX3Bvd2Vyb2ZmPmRlc3Ryb3k8L29uX3Bvd2Vyb2ZmPgogIDxv
-bl9yZWJvb3Q+cmVzdGFydDwvb25fcmVib290PgogIDxvbl9jcmFzaD5kZXN0cm95PC9vbl9jcmFz
-aD4KICA8ZGV2aWNlcz4KICAgIDxlbXVsYXRvcj4vdXNyL2xpYi9saWJ2aXJ0L2xpYnZpcnRfbHhj
-PC9lbXVsYXRvcj4KICAgIDxmaWxlc3lzdGVtIHR5cGU9Im1vdW50Ij4KICAgICAgPHNvdXJjZSBk
-aXI9Ii92YXIvbGliL2x4Yy9teS1jb250YWluZXIvcm9vdGZzIi8+CiAgICAgIDx0YXJnZXQgZGly
-PSIvIi8+CiAgICA8L2ZpbGVzeXN0ZW0+CiAgICA8aW50ZXJmYWNlIHR5cGU9J2JyaWRnZSc+CiAg
-ICAgICAgICA8c291cmNlIGJyaWRnZT0na3ZtYnIwJy8+CiAgICAgICAgICA8bWFjIGFkZHJlc3M9
-JzAwOjExOjIyOjM0OjM0OjM0Jy8+CiAgICAgICAgPC9pbnRlcmZhY2U+CiAgPGNvbnNvbGUgdHlw
-ZT0icHR5Ii8+CiAgPC9kZXZpY2VzPgo8L2RvbWFpbj4KCgo+Mi4gNTk2IGFuZCBldmVuIDcwME1C
-L3NlYyBtYWtlcyBtZSB0aGluayB5b3UgbWVhc3VyZSBub3QgcmVhbCBkaXNrIEkvTywgYnV0IG1l
-bW9yeSAoY2FjaGUpLgppJ20gYWxzbyB0aGluayB0aGlzIGlzIGEgcmVzdWx0cyBkdWUgdG8gY2Fj
-aGUsIGZvciBleGFtcGxlIHBhZ2UgY2FjaGUgaW4gdGhlIGhvc3Qgb3MuIERvIHlvdSBoYXZlIHNv
-bWUgaWRlYXMgYnlwYXNzaW5nIG1lbW9yeSBjYWNoZT8KCgo+My4gaW96b25lIGlzIG5vdCBhIHRy
-dXN0YWJsZSBiZW5jaG1hcmssIGl0IHJlYWxseSBzdWNrcy4KPgpJcyB0aGVyZSBiZW5jaG1hcmsg
-YmV0dGVyIHRoYW4gaW96b25lICBhbmQgY2FuIHlvdSBnaXZlIG1lIHNvbWUgYWR2aWNlIGZvciBp
-byBiZW5jaG1hcms/Cj40LiBWTXMgbWF5IGhhdmUgd3JvbmcgdGltZSBmbG93IGluc2lkZSB0aGUg
-Z3Vlc3Qgd2hpY2ggbWF5IGJlIHNsb3dlciB0aGVuIHJlYWwgd2FsbCBjbG9ja3MuIFNvIGl0IHRh
-a2VzIHNvbWV0aW1lcyAibGVzcyIgdGltZSBmb3IgYmVuY2htYXJrIHRvIGNvbXBsZXRlIGFuZCBv
-YnZpb3VzbHkgcGVyZm9ybWFuY2UgcmVzdWx0cyAiZmFzdGVyIi4KPgo+NS4gVk1zIGFuZCBjb250
-YWluZXJzIGFyZSBjb21wYXJhYmxlIG9uIDEgcm90YXRpb25hbCBIREQuIFZNIG92ZXJoZWFkIGJl
-Y29tZXMgbXVjaCBtb3JlIHZpc2libGUgb24gZmFzdCBTU0Qgb3IgU0FOIGRyaXZlcyB3aGVyZSBw
-ZXJmb3JtYW5jZSBjYW4gZ2V0IGFzIGhpZ2ggYXMgPjFHQi9zZWMuCkkgdGhpbmsgdGhlIHNwZWVk
-IG9mIGlvIGlzIHRoZSBrZXkgZmFjdG9yIHRoYXQgYWZmZWN0cyB0aGUgdm0ncyBwZXJmb3JtYW5j
-ZSwgaXMgdGhhdCByaWdodD8gClRoYW5rcyBmb3IgeW91ciBoZWxwIGFnYWluIQoKQXQgMjAxMi0w
-OS0wNiAxNzoyNzoyNCwiS2lyaWxsIEtvcm90YWV2IiA8ZGV2QHBhcmFsbGVscy5jb20+IHdyb3Rl
-Ogo+MS4gSGF2ZSB5b3UgdXNlZCBzZXBhcmF0ZSBzbWFsbCBwYXJ0aXRpb24gZm9yIGJlbmNobWFy
-a2luZz8gRGlzayBwZXJmb3JtYW5jZSB2YXJpZXMgYWJvdXQgMnggdGltZXMgYWNyb3NzIHRoZSBw
-bGF0ZS4uLi4KPgo+Mi4gNTk2IGFuZCBldmVuIDcwME1CL3NlYyBtYWtlcyBtZSB0aGluayB5b3Ug
-bWVhc3VyZSBub3QgcmVhbCBkaXNrIEkvTywgYnV0IG1lbW9yeSAoY2FjaGUpLgo+Cj4zLiBpb3pv
-bmUgaXMgbm90IGEgdHJ1c3RhYmxlIGJlbmNobWFyaywgaXQgcmVhbGx5IHN1Y2tzLgo+Cj40LiBW
-TXMgbWF5IGhhdmUgd3JvbmcgdGltZSBmbG93IGluc2lkZSB0aGUgZ3Vlc3Qgd2hpY2ggbWF5IGJl
-IHNsb3dlciB0aGVuIHJlYWwgd2FsbCBjbG9ja3MuIFNvIGl0IHRha2VzIHNvbWV0aW1lcyAibGVz
-cyIgdGltZSBmb3IgYmVuY2htYXJrIHRvIGNvbXBsZXRlIGFuZCBvYnZpb3VzbHkgcGVyZm9ybWFu
-Y2UgcmVzdWx0cyAiZmFzdGVyIi4KPgo+NS4gVk1zIGFuZCBjb250YWluZXJzIGFyZSBjb21wYXJh
-YmxlIG9uIDEgcm90YXRpb25hbCBIREQuIFZNIG92ZXJoZWFkIGJlY29tZXMgbXVjaCBtb3JlIHZp
-c2libGUgb24gZmFzdCBTU0Qgb3IgU0FOIGRyaXZlcyB3aGVyZSBwZXJmb3JtYW5jZSBjYW4gZ2V0
-IGFzIGhpZ2ggYXMgPjFHQi9zZWMuCj4KPlRoYW5rcywKPktpcmlsbAo+Cj4KPk9uIFNlcCA2LCAy
-MDEyLCBhdCAxMjo0NyAsIGNtY2MuZHlsYW4gd3JvdGU6Cj4KPj4gICBBcyB3ZSBhbGwga25vd24g
-dGhlIHBlcmZvcm1hbmNlIG9mIGx4YyBpcyBuZWFyIHRvIG5hdGl2ZS4gSSBkbyBhIGlvem9uZSB0
-ZXN0IHRvIGNvbXBhcmUgdGhlIHBlcmZvcm1hbmNlIG9mIGx4Yywga3ZtIGFuZCBrdm0rdmlydGlv
-LiBIb3dlcnZlcqOsaSBmaW5kIGt2bSt2aXJ0aW8gaGFzIHRoZSBiZXN0IHBlcmZvcm1hbmNloaMK
-Pj4gQWxsICB0ZXN0IGVudmlyb21lbnQgaXMgdXNlIHRoZSBzYW1lIGNvbmZpZ3VyYXRpb24gYXMg
-IHZjcHU9NCBhbmQgbWVtb3J5PTJHCj4+IFRoZSByZXN1bHRzIGFzIGZvbGxvd3MKPj4gCj4+IEkg
-ZG9uJ3QgdW5kZXJzdGFuZCB3aHkgaXQgaXOjrCBwbGVhc2UgZ2l2ZSBtZSBzb21lIGhlbHAgdG8g
-ZXhwbGFpbiB0aGlzIHJlc3VsdC48aW96b25lLnBuZz48QVRUMDAwMDEuYz4KPgpfX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcg
-bGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMu
-bGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+On 09/06/2012 06:01 PM, cmcc.dylan wrote:
+> 
+> 
+>> >2. 596 and even 700MB/sec makes me think you measure not real disk I/O, but memory (cache).
+> i'm also think this is a results due to cache, for example page cache in the host os. Do you have some ideas bypassing memory cache?
+> 
+> 
+Check your kvm command line. IIRC, KVM has a fully-cached mode of
+operation. Writes to guest "disk" will not actually reach the disk for a
+while. While this is nice, this is an unfair comparison from a benchmark
+PoV, because of you are, of course, trading away a bit of your
+data-safety. It is still safe against guest power-off, but not
+necessarily against host power-off. Also, since there is no magic, this
+can hurt you in very dense scenarios.
+
+The "-drive" parameter will probably have a "cache" specifier, which is
+what you are looking for.
