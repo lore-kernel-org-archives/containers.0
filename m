@@ -1,15 +1,14 @@
-From: Zhu Yanhai <zhu.yanhai-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: Re: the perfomance of lxc is not better than kvm+virtio
-Date: Fri, 7 Sep 2012 09:22:20 +0800
-Message-ID: <CAC8teKWuBNJ_gxbRpVAmDXpyzxM0jneKu6-FqheT-xs=q3A5xA@mail.gmail.com>
-References: <369c0ce8.7437.1399ac363cf.Coremail.dx10years@126.com>
-	<DF13143A-64A8-459C-B415-B3E661611C2A@parallels.com>
-	<21d457be.9cee.1399be2b299.Coremail.dx10years@126.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH] user_ns: compile bug fix in quota.h
+Date: Thu, 06 Sep 2012 19:00:21 -0700
+Message-ID: <87y5kmlhhm.fsf@xmission.com>
+References: <504848EC.3010904@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <21d457be.9cee.1399be2b299.Coremail.dx10years-KN7UnAbNpbg@public.gmane.org>
+In-Reply-To: <504848EC.3010904-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> (Zhao Hongjiang's message of "Thu,
+	06 Sep 2012 14:55:40 +0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,48 +18,25 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "cmcc.dylan" <dx10years-KN7UnAbNpbg@public.gmane.org>
-Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kirill Korotaev <dev-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+To: Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Pj4zLiBpb3pvbmUgaXMgbm90IGEgdHJ1c3RhYmxlIGJlbmNobWFyaywgaXQgcmVhbGx5IHN1Y2tz
-Lgo+Pgo+IElzIHRoZXJlIGJlbmNobWFyayBiZXR0ZXIgdGhhbiBpb3pvbmUgIGFuZCBjYW4geW91
-IGdpdmUgbWUgc29tZSBhZHZpY2UgZm9yIGlvIGJlbmNobWFyaz8KCkknZCBwcmVmZXIgZmlvICho
-dHRwOi8vZ2l0Lmtlcm5lbC5vcmcvP3A9bGludXgva2VybmVsL2dpdC9heGJvZS9maW8uZ2l0O2E9
-c3VtbWFyeSkKCi16eWgKCj4+NC4gVk1zIG1heSBoYXZlIHdyb25nIHRpbWUgZmxvdyBpbnNpZGUg
-dGhlIGd1ZXN0IHdoaWNoIG1heSBiZSBzbG93ZXIgdGhlbiByZWFsIHdhbGwgY2xvY2tzLiBTbyBp
-dCB0YWtlcyBzb21ldGltZXMgImxlc3MiIHRpbWUgZm9yIGJlbmNobWFyayB0byBjb21wbGV0ZSBh
-bmQgb2J2aW91c2x5IHBlcmZvcm1hbmNlIHJlc3VsdHMgImZhc3RlciIuCj4+Cj4+NS4gVk1zIGFu
-ZCBjb250YWluZXJzIGFyZSBjb21wYXJhYmxlIG9uIDEgcm90YXRpb25hbCBIREQuIFZNIG92ZXJo
-ZWFkIGJlY29tZXMgbXVjaCBtb3JlIHZpc2libGUgb24gZmFzdCBTU0Qgb3IgU0FOIGRyaXZlcyB3
-aGVyZSBwZXJmb3JtYW5jZSBjYW4gZ2V0IGFzIGhpZ2ggYXMgPjFHQi9zZWMuCj4gSSB0aGluayB0
-aGUgc3BlZWQgb2YgaW8gaXMgdGhlIGtleSBmYWN0b3IgdGhhdCBhZmZlY3RzIHRoZSB2bSdzIHBl
-cmZvcm1hbmNlLCBpcyB0aGF0IHJpZ2h0Pwo+IFRoYW5rcyBmb3IgeW91ciBoZWxwIGFnYWluIQo+
-Cj4gQXQgMjAxMi0wOS0wNiAxNzoyNzoyNCwiS2lyaWxsIEtvcm90YWV2IiA8ZGV2QHBhcmFsbGVs
-cy5jb20+IHdyb3RlOgo+PjEuIEhhdmUgeW91IHVzZWQgc2VwYXJhdGUgc21hbGwgcGFydGl0aW9u
-IGZvciBiZW5jaG1hcmtpbmc/IERpc2sgcGVyZm9ybWFuY2UgdmFyaWVzIGFib3V0IDJ4IHRpbWVz
-IGFjcm9zcyB0aGUgcGxhdGUuLi4uCj4+Cj4+Mi4gNTk2IGFuZCBldmVuIDcwME1CL3NlYyBtYWtl
-cyBtZSB0aGluayB5b3UgbWVhc3VyZSBub3QgcmVhbCBkaXNrIEkvTywgYnV0IG1lbW9yeSAoY2Fj
-aGUpLgo+Pgo+PjMuIGlvem9uZSBpcyBub3QgYSB0cnVzdGFibGUgYmVuY2htYXJrLCBpdCByZWFs
-bHkgc3Vja3MuCj4+Cj4+NC4gVk1zIG1heSBoYXZlIHdyb25nIHRpbWUgZmxvdyBpbnNpZGUgdGhl
-IGd1ZXN0IHdoaWNoIG1heSBiZSBzbG93ZXIgdGhlbiByZWFsIHdhbGwgY2xvY2tzLiBTbyBpdCB0
-YWtlcyBzb21ldGltZXMgImxlc3MiIHRpbWUgZm9yIGJlbmNobWFyayB0byBjb21wbGV0ZSBhbmQg
-b2J2aW91c2x5IHBlcmZvcm1hbmNlIHJlc3VsdHMgImZhc3RlciIuCj4+Cj4+NS4gVk1zIGFuZCBj
-b250YWluZXJzIGFyZSBjb21wYXJhYmxlIG9uIDEgcm90YXRpb25hbCBIREQuIFZNIG92ZXJoZWFk
-IGJlY29tZXMgbXVjaCBtb3JlIHZpc2libGUgb24gZmFzdCBTU0Qgb3IgU0FOIGRyaXZlcyB3aGVy
-ZSBwZXJmb3JtYW5jZSBjYW4gZ2V0IGFzIGhpZ2ggYXMgPjFHQi9zZWMuCj4+Cj4+VGhhbmtzLAo+
-PktpcmlsbAo+Pgo+Pgo+Pk9uIFNlcCA2LCAyMDEyLCBhdCAxMjo0NyAsIGNtY2MuZHlsYW4gd3Jv
-dGU6Cj4+Cj4+PiAgIEFzIHdlIGFsbCBrbm93biB0aGUgcGVyZm9ybWFuY2Ugb2YgbHhjIGlzIG5l
-YXIgdG8gbmF0aXZlLiBJIGRvIGEgaW96b25lIHRlc3QgdG8gY29tcGFyZSB0aGUgcGVyZm9ybWFu
-Y2Ugb2YgbHhjLCBrdm0gYW5kIGt2bSt2aXJ0aW8uIEhvd2VydmVy77yMaSBmaW5kIGt2bSt2aXJ0
-aW8gaGFzIHRoZSBiZXN0IHBlcmZvcm1hbmNl44CCCj4+PiBBbGwgIHRlc3QgZW52aXJvbWVudCBp
-cyB1c2UgdGhlIHNhbWUgY29uZmlndXJhdGlvbiBhcyAgdmNwdT00IGFuZCBtZW1vcnk9MkcKPj4+
-IFRoZSByZXN1bHRzIGFzIGZvbGxvd3MKPj4+Cj4+PiBJIGRvbid0IHVuZGVyc3RhbmQgd2h5IGl0
-IGlz77yMIHBsZWFzZSBnaXZlIG1lIHNvbWUgaGVscCB0byBleHBsYWluIHRoaXMgcmVzdWx0Ljxp
-b3pvbmUucG5nPjxBVFQwMDAwMS5jPgo+Pgo+IF9fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fCj4gQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKPiBDb250YWluZXJz
-QGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCj4gaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRp
-b24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycwpfX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWlu
-ZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0
-aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
+
+> From: Zhao Hongjiang <zhaohongjiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+>
+> Failed to build userns-always-map-user-v53 from Eric's latest
+> user_ns branch with GCC 4.4.4 compiler due to violation of
+> C89 standard.
+
+Thanks.
+
+Given that they are C99 style initializers in general I don't see how
+taking one member out of the initializer and leaving the other solves
+the C89 violation.  But I do remember that gcc has historically had some
+interesting problems with C99 initializers, so in this case I have just
+opted to not use an initializer for either field, which should
+make older gcc versions.
+
+Eric
