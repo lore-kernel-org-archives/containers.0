@@ -1,14 +1,15 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH] user_ns: compile bug fix in quota.h
-Date: Thu, 06 Sep 2012 19:00:21 -0700
-Message-ID: <87y5kmlhhm.fsf@xmission.com>
-References: <504848EC.3010904@gmail.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCH REPOST RFC cgroup/for-3.7] cgroup: mark subsystems with
+	broken hierarchy support and whine if cgroups are nested for them
+Date: Mon, 10 Sep 2012 15:33:55 -0700
+Message-ID: <20120910223355.GD7677__24731.3257227235$1347316454$gmane$org@google.com>
+References: <20120910223125.GC7677@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <504848EC.3010904-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> (Zhao Hongjiang's message of "Thu,
-	06 Sep 2012 14:55:40 +0800")
+Content-Disposition: inline
+In-Reply-To: <20120910223125.GC7677-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,25 +19,249 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Paul Mackerras <paulus-eUNUBHrolfbYtjvyW6yDsg@public.gmane.org>, "Aneesh Kumar K.V" <aneesh.kumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Arnaldo Carvalho de Melo <acme-f8uhVLnGfZaxAyOMLChx1axOck334EZe@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>, "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Paul Turner <pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
+(forgot cc'ing containers / cgroups mailing lists and used the old
+ address for Li.  Reposting.  Sorry for the noise.)
 
-> From: Zhao Hongjiang <zhaohongjiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
->
-> Failed to build userns-always-map-user-v53 from Eric's latest
-> user_ns branch with GCC 4.4.4 compiler due to violation of
-> C89 standard.
+Currently, cgroup hierarchy support is a mess.  cpu related subsystems
+behave correctly - configuration, accounting and control on a parent
+properly cover its children.  blkio and freezer completely ignore
+hierarchy and treat all cgroups as if they're directly under the root
+cgroup.  Others show yet different behaviors.
 
-Thanks.
+These differing interpretations of cgroup hierarchy make using cgroup
+confusing and it impossible to co-mount controllers into the same
+hierarchy and obtain sane behavior.
 
-Given that they are C99 style initializers in general I don't see how
-taking one member out of the initializer and leaving the other solves
-the C89 violation.  But I do remember that gcc has historically had some
-interesting problems with C99 initializers, so in this case I have just
-opted to not use an initializer for either field, which should
-make older gcc versions.
+Eventually, we want full hierarchy support from all subsystems and
+probably a unified hierarchy.  Users using separate hierarchies
+expecting completely different behaviors depending on the mounted
+subsystem is deterimental to making any progress on this front.
 
-Eric
+This patch adds cgroup_subsys.broken_hierarchy and sets it to %true
+for controllers which are lacking in hierarchy support.  The goal of
+this patch is two-fold.
+
+* Move users away from using hierarchy on currently non-hierarchical
+  subsystems, so that implementing proper hierarchy support on those
+  doesn't surprise them.
+
+* Keep track of which controllers are broken how and nudge the
+  subsystems to implement proper hierarchy support.
+
+For now, start with a single warning message.  We can whine louder
+later on.
+
+(I tried to document what's broken and how it should be fixed.  If I
+ got something wrong, please let me know.)
+
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Cc: Paul Turner <pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
+Cc: Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>
+Cc: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Paul Mackerras <paulus-eUNUBHrolfbYtjvyW6yDsg@public.gmane.org>
+Cc: Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Arnaldo Carvalho de Melo <acme-f8uhVLnGfZaxAyOMLChx1axOck334EZe@public.gmane.org>
+Cc: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>
+Cc: Aneesh Kumar K.V <aneesh.kumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+---
+ block/blk-cgroup.c        |    8 ++++++++
+ include/linux/cgroup.h    |   15 +++++++++++++++
+ kernel/cgroup.c           |   11 ++++++++++-
+ kernel/cgroup_freezer.c   |    8 ++++++++
+ kernel/events/core.c      |    7 +++++++
+ mm/memcontrol.c           |   12 +++++++++---
+ net/core/netprio_cgroup.c |   12 +++++++++++-
+ net/sched/cls_cgroup.c    |    9 +++++++++
+ security/device_cgroup.c  |    9 +++++++++
+ 9 files changed, 86 insertions(+), 5 deletions(-)
+
+--- a/block/blk-cgroup.c
++++ b/block/blk-cgroup.c
+@@ -737,6 +737,14 @@ struct cgroup_subsys blkio_subsys = {
+ 	.subsys_id = blkio_subsys_id,
+ 	.base_cftypes = blkcg_files,
+ 	.module = THIS_MODULE,
++
++	/*
++	 * blkio subsystem is utterly broken in terms of hierarchy support.
++	 * It treats all cgroups equally regardless of where they're
++	 * located in the hierarchy - all cgroups are treated as if they're
++	 * right below the root.  Fix it and remove the following.
++	 */
++	.broken_hierarchy = true,
+ };
+ EXPORT_SYMBOL_GPL(blkio_subsys);
+ 
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -503,6 +503,21 @@ struct cgroup_subsys {
+ 	 */
+ 	bool __DEPRECATED_clear_css_refs;
+ 
++	/*
++	 * If %false, this subsystem is properly hierarchical -
++	 * configuration, resource accounting and restriction on a parent
++	 * cgroup cover those of its children.  If %true, hierarchy support
++	 * is broken in some ways - some subsystems ignore hierarchy
++	 * completely while others are only implemented half-way.
++	 *
++	 * It's now diallowed to create nested cgroups if the subsystem is
++	 * broken and cgroup core will emit a warning message on such
++	 * cases.  Eventually, all subsystems will be made properly
++	 * hierarchical and this will go away.
++	 */
++	bool broken_hierarchy;
++	bool warned_broken_hierarchy;
++
+ #define MAX_CGROUP_TYPE_NAMELEN 32
+ 	const char *name;
+ 
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -4075,8 +4075,17 @@ static long cgroup_create(struct cgroup 
+ 		set_bit(CGRP_CLONE_CHILDREN, &cgrp->flags);
+ 
+ 	for_each_subsys(root, ss) {
+-		struct cgroup_subsys_state *css = ss->create(cgrp);
++		struct cgroup_subsys_state *css;
++
++		if (ss->broken_hierarchy && !ss->warned_broken_hierarchy &&
++		    parent->parent) {
++			pr_warning("cgroup: \"%s\" is not properly hierarchical yet, do not nest cgroups.\n",
++				   ss->name);
++			pr_warning("cgroup: \"memory\" requires setting use_hierarchy to 1 on the root.\n");
++			ss->warned_broken_hierarchy = true;
++		}
+ 
++		css = ss->create(cgrp);
+ 		if (IS_ERR(css)) {
+ 			err = PTR_ERR(css);
+ 			goto err_destroy;
+--- a/kernel/cgroup_freezer.c
++++ b/kernel/cgroup_freezer.c
+@@ -373,4 +373,12 @@ struct cgroup_subsys freezer_subsys = {
+ 	.can_attach	= freezer_can_attach,
+ 	.fork		= freezer_fork,
+ 	.base_cftypes	= files,
++
++	/*
++	 * freezer subsys doesn't handle hierarchy at all.  Frozen state
++	 * should be inherited through the hierarchy - if a parent is
++	 * frozen, all its children should be frozen.  Fix it and remove
++	 * the following.
++	 */
++	.broken_hierarchy = true,
+ };
+--- a/kernel/events/core.c
++++ b/kernel/events/core.c
+@@ -7285,5 +7285,12 @@ struct cgroup_subsys perf_subsys = {
+ 	.destroy	= perf_cgroup_destroy,
+ 	.exit		= perf_cgroup_exit,
+ 	.attach		= perf_cgroup_attach,
++
++	/*
++	 * perf_event cgroup doesn't handle nesting correctly.
++	 * ctx->nr_cgroups adjustments should be propagated through the
++	 * cgroup hierarchy.  Fix it and remove the following.
++	 */
++	.broken_hierarchy = true,
+ };
+ #endif /* CONFIG_CGROUP_PERF */
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -3855,12 +3855,17 @@ static int mem_cgroup_hierarchy_write(st
+ 	 */
+ 	if ((!parent_memcg || !parent_memcg->use_hierarchy) &&
+ 				(val == 1 || val == 0)) {
+-		if (list_empty(&cont->children))
++		if (list_empty(&cont->children)) {
+ 			memcg->use_hierarchy = val;
+-		else
++			/* we're fully hierarchical iff root uses hierarchy */
++			if (mem_cgroup_is_root(memcg))
++				mem_cgroup_subsys.broken_hierarchy = !val;
++		} else {
+ 			retval = -EBUSY;
+-	} else
++		}
++	} else {
+ 		retval = -EINVAL;
++	}
+ 
+ out:
+ 	cgroup_unlock();
+@@ -4953,6 +4958,7 @@ mem_cgroup_create(struct cgroup *cont)
+ 						&per_cpu(memcg_stock, cpu);
+ 			INIT_WORK(&stock->work, drain_local_stock);
+ 		}
++		mem_cgroup_subsys.broken_hierarchy = !memcg->use_hierarchy;
+ 		hotcpu_notifier(memcg_cpu_hotplug_callback, 0);
+ 	} else {
+ 		parent = mem_cgroup_from_cont(cont->parent);
+--- a/net/core/netprio_cgroup.c
++++ b/net/core/netprio_cgroup.c
+@@ -330,7 +330,17 @@ struct cgroup_subsys net_prio_subsys = {
+ 	.subsys_id	= net_prio_subsys_id,
+ #endif
+ 	.base_cftypes	= ss_files,
+-	.module		= THIS_MODULE
++	.module		= THIS_MODULE,
++
++	/*
++	 * net_prio has artificial limit on the number of cgroups and
++	 * disallows nesting making it impossible to co-mount it with other
++	 * hierarchical subsystems.  Remove the artificially low PRIOIDX_SZ
++	 * limit and properly nest configuration such that children follow
++	 * their parents' configurations by default and are allowed to
++	 * override and remove the following.
++	 */
++	.broken_hierarchy = trye,
+ };
+ 
+ static int netprio_device_event(struct notifier_block *unused,
+--- a/net/sched/cls_cgroup.c
++++ b/net/sched/cls_cgroup.c
+@@ -82,6 +82,15 @@ struct cgroup_subsys net_cls_subsys = {
+ #endif
+ 	.base_cftypes	= ss_files,
+ 	.module		= THIS_MODULE,
++
++	/*
++	 * While net_cls cgroup has the rudimentary hierarchy support of
++	 * inheriting the parent's classid on cgroup creation, it doesn't
++	 * properly propagates config changes in ancestors to their
++	 * descendents.  A child should follow the parent's configuration
++	 * but be allowed to override it.  Fix it and remove the following.
++	 */
++	.broken_hierarchy = true,
+ };
+ 
+ struct cls_cgroup_head {
+--- a/security/device_cgroup.c
++++ b/security/device_cgroup.c
+@@ -457,6 +457,15 @@ struct cgroup_subsys devices_subsys = {
+ 	.destroy = devcgroup_destroy,
+ 	.subsys_id = devices_subsys_id,
+ 	.base_cftypes = dev_cgroup_files,
++
++	/*
++	 * While devices cgroup has the rudimentary hierarchy support which
++	 * checks the parent's restriction, it doesn't properly propagates
++	 * config changes in ancestors to their descendents.  A child
++	 * should only be allowed to add more restrictions to the parent's
++	 * configuration.  Fix it and remove the following.
++	 */
++	.broken_hierarchy = true,
+ };
+ 
+ int __devcgroup_inode_permission(struct inode *inode, int mask)
