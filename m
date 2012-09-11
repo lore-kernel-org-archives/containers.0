@@ -1,7 +1,7 @@
 From: Mailer Delivery System <Mailer-Daemon-1HOZaDBbGgxaa/9Udqfwiw@public.gmane.org>
 Subject: Mail delivery failed: returning message to sender.
-Date: Tue, 11 Sep 2012 17:44:03 +0000
-Message-ID: <504f782c-63f9-39@store04.mail>
+Date: Tue, 11 Sep 2012 17:44:00 +0000
+Message-ID: <504f782c-63f9-36@store04.mail>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -22,9 +22,9 @@ This message was created automatically by mail delivery software.
 
 A message that you sent could not be delivered to its recipient.
 
-    reddishdd-ZhG5AQw8N7g033cLuSWQUNBc4/FLrbF6@public.gmane.org
+    plgg-ZhG5AQw8N7g033cLuSWQUNBc4/FLrbF6@public.gmane.org
         SMTP error from remote mailer after RCPT TO:
-        550 <reddishdd-ZhG5AQw8N7g033cLuSWQUNBc4/FLrbF6@public.gmane.org>, Recipient unknown
+        550 <plgg-ZhG5AQw8N7g033cLuSWQUNBc4/FLrbF6@public.gmane.org>, Recipient unknown
 
 ---- Here are the first 10 lines of the message, including all headers. ----
 Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
