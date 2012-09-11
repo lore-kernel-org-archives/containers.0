@@ -1,15 +1,14 @@
-From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH REPOST RFC cgroup/for-3.7] cgroup: mark subsystems with
 	broken hierarchy support and whine if cgroups are nested for them
-Date: Tue, 11 Sep 2012 12:04:33 +0200
-Message-ID: <20120911100433.GC8058@dhcp22.suse.cz>
+Date: Tue, 11 Sep 2012 20:38:51 +0800
+Message-ID: <504F30DB.60808__43775.5915023901$1347367297$gmane$org@huawei.com>
 References: <20120910223125.GC7677@google.com>
 	<20120910223355.GD7677@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 In-Reply-To: <20120910223355.GD7677-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -21,101 +20,45 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Mackerras <paulus-eUNUBHrolfbYtjvyW6yDsg@public.gmane.org>, "Aneesh Kumar K.V" <aneesh.kumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Arnaldo Carvalho de Melo <acme-f8uhVLnGfZaxAyOMLChx1axOck334EZe@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Turner <pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Paul Mackerras <paulus-eUNUBHrolfbYtjvyW6yDsg@public.gmane.org>, "Aneesh Kumar K.V" <aneesh.kumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Arnaldo Carvalho de Melo <acme-f8uhVLnGfZaxAyOMLChx1axOck334EZe@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Turner <pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-I like the approach in general but see the comments bellow:
+On 2012/9/11 6:33, Tejun Heo wrote:
+> (forgot cc'ing containers / cgroups mailing lists and used the old
+>  address for Li.  Reposting.  Sorry for the noise.)
+> 
+> Currently, cgroup hierarchy support is a mess.  cpu related subsystems
+> behave correctly - configuration, accounting and control on a parent
+> properly cover its children.  blkio and freezer completely ignore
+> hierarchy and treat all cgroups as if they're directly under the root
+> cgroup.  Others show yet different behaviors.
+> 
+> These differing interpretations of cgroup hierarchy make using cgroup
+> confusing and it impossible to co-mount controllers into the same
+> hierarchy and obtain sane behavior.
+> 
+> Eventually, we want full hierarchy support from all subsystems and
+> probably a unified hierarchy.  Users using separate hierarchies
+> expecting completely different behaviors depending on the mounted
+> subsystem is deterimental to making any progress on this front.
+> 
+> This patch adds cgroup_subsys.broken_hierarchy and sets it to %true
+> for controllers which are lacking in hierarchy support.  The goal of
+> this patch is two-fold.
+> 
+> * Move users away from using hierarchy on currently non-hierarchical
+>   subsystems, so that implementing proper hierarchy support on those
+>   doesn't surprise them.
+> 
+> * Keep track of which controllers are broken how and nudge the
+>   subsystems to implement proper hierarchy support.
+> 
+> For now, start with a single warning message.  We can whine louder
+> later on.
+> 
+> (I tried to document what's broken and how it should be fixed.  If I
+>  got something wrong, please let me know.)
+> 
 
-On Mon 10-09-12 15:33:55, Tejun Heo wrote:
-[...]
-> --- a/mm/memcontrol.c
-> +++ b/mm/memcontrol.c
-> @@ -3855,12 +3855,17 @@ static int mem_cgroup_hierarchy_write(st
->  	 */
->  	if ((!parent_memcg || !parent_memcg->use_hierarchy) &&
->  				(val == 1 || val == 0)) {
-> -		if (list_empty(&cont->children))
-> +		if (list_empty(&cont->children)) {
->  			memcg->use_hierarchy = val;
-> -		else
-> +			/* we're fully hierarchical iff root uses hierarchy */
-> +			if (mem_cgroup_is_root(memcg))
-> +				mem_cgroup_subsys.broken_hierarchy = !val;
-> +		} else {
->  			retval = -EBUSY;
-> -	} else
-> +		}
-> +	} else {
->  		retval = -EINVAL;
-> +	}
->  
->  out:
->  	cgroup_unlock();
-> @@ -4953,6 +4958,7 @@ mem_cgroup_create(struct cgroup *cont)
->  						&per_cpu(memcg_stock, cpu);
->  			INIT_WORK(&stock->work, drain_local_stock);
->  		}
-> +		mem_cgroup_subsys.broken_hierarchy = !memcg->use_hierarchy;
-
-Hmmm, this will warn even if we have
-root (default use_hierarchy=0)
- \
-  A (use_hierarchy=1)
-   \
-    B <- here
-
-which is unfortunate because it will add a noise to a reasonable
-configuration.
-I think this is fixable if you move the warning after 
-cgroup_subsys_state::create and broken_hierarchy would be set only if
-parent is not root and use_hierarchy==0 in mem_cgroup_create. Something
-like:
-
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 795e525..d5c93ab 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -4973,6 +4973,13 @@ mem_cgroup_create(struct cgroup *cont)
- 	} else {
- 		res_counter_init(&memcg->res, NULL);
- 		res_counter_init(&memcg->memsw, NULL);
-+		/*
-+		 * Deeper hierachy with use_hierarchy == false doesn't make
-+		 * much sense so let cgroup subsystem know about this unfortunate
-+		 * state in our controller.
-+		 */
-+		if (parent && parent != root_mem_cgroup)
-+			mem_cgroup_subsys.broken_hierarchy = true;
- 	}
- 	memcg->last_scanned_node = MAX_NUMNODES;
- 	INIT_LIST_HEAD(&memcg->oom_notify);
-
-What do you think?
-
->  		hotcpu_notifier(memcg_cpu_hotplug_callback, 0);
->  	} else {
->  		parent = mem_cgroup_from_cont(cont->parent);
-> --- a/net/core/netprio_cgroup.c
-> +++ b/net/core/netprio_cgroup.c
-> @@ -330,7 +330,17 @@ struct cgroup_subsys net_prio_subsys = {
->  	.subsys_id	= net_prio_subsys_id,
->  #endif
->  	.base_cftypes	= ss_files,
-> -	.module		= THIS_MODULE
-> +	.module		= THIS_MODULE,
-> +
-> +	/*
-> +	 * net_prio has artificial limit on the number of cgroups and
-> +	 * disallows nesting making it impossible to co-mount it with other
-> +	 * hierarchical subsystems.  Remove the artificially low PRIOIDX_SZ
-> +	 * limit and properly nest configuration such that children follow
-> +	 * their parents' configurations by default and are allowed to
-> +	 * override and remove the following.
-> +	 */
-> +	.broken_hierarchy = trye,
-
-typo
-
--- 
-Michal Hocko
-SUSE Labs
+So isn't cpuset broken too? child cpuset's cpu mask isn't necessary a subset
+of the parent's if the cpu_exclusive flag is not set.
