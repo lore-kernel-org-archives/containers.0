@@ -1,11 +1,17 @@
-From: Mailer Delivery System <Mailer-Daemon-1HOZaDBbGgxaa/9Udqfwiw@public.gmane.org>
-Subject: Mail delivery failed: returning message to sender.
-Date: Tue, 11 Sep 2012 17:46:51 +0000
-Message-ID: <504f78c2-78a8-36@store02a.zen.net.uk>
+From: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH UPDATED RFC cgroup/for-3.7] cgroup: mark subsystems with
+	broken hierarchy support and whine if cgroups are nested for them
+Date: Tue, 11 Sep 2012 16:50:28 -0400
+Message-ID: <20120911205027.GA25837@redhat.com>
+References: <20120910223125.GC7677@google.com>
+	<20120910223355.GD7677@google.com>
+	<20120911182356.GR7677@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20120911182356.GR7677-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,44 +21,15 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Paul Mackerras <paulus-eUNUBHrolfbYtjvyW6yDsg@public.gmane.org>, "Aneesh Kumar K.V" <aneesh.kumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Arnaldo Carvalho de Melo <acme-f8uhVLnGfZaxAyOMLChx1axOck334EZe@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Turner <pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This message was created automatically by mail delivery software.
+Hi Tejun,
+On Tue, Sep 11, 2012 at 11:23:56AM -0700, Tejun Heo wrote:
+> +			/* we're fully hierarchical iff root uses hierarchy */
 
-A message that you sent could not be delivered to its recipient.
+minor nit: s/iff/if/
 
-    qinco-ZhG5AQw8N7g033cLuSWQUNBc4/FLrbF6@public.gmane.org
-        SMTP error from remote mailer after RCPT TO:
-        550 <qinco-ZhG5AQw8N7g033cLuSWQUNBc4/FLrbF6@public.gmane.org>, Recipient unknown
-
----- Here are the first 10 lines of the message, including all headers. ----
-Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from myuhuru.com ([184.107.41.5])
-	by bastion01.mbc01.mail.zen.net.uk with esmtp (Exim 4.69)
-	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1TBUUG-00055Z-85; Tue, 11 Sep 2012 17:43:06 +0000
-Received: from [184.107.41.5] by myuhuru.com id 8En5IFI8JKTn; Tue, 11 Sep 2012 13:50:51 -0400
-Message-ID: <004b01cd9045$fa4b6280$0200a8c0-CrMfpG2hQDVBDgjK7y7TUQ@public.gmane.org>
-From: "Discount" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <plgg-ZhG5AQw8N7g033cLuSWQUNBc4/FLrbF6@public.gmane.org>
-Subject: Shopping Expert TM Monthly Newsletter!
-Date: Tue, 11 Sep 2012 13:50:51 -0400
-MIME-Version: 1.0
-Content-Type: text/html;
-	charset="utf-8"
-Content-Transfer-Encoding: 8bit
-X-ZenAWL-Match: false
-X-Originating-Bastion01-IP: [184.107.41.5]
-
-
-
-
-
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
-    <!--VUh    NxOaV6zZEDMKWc-->
-Dear Valued Customer,<br><p>
-          
-           Britain's supermarket chainshave finally launched ALL-IN-ONE Voucher.<br>
-               We are very proud to present the best deal yet for your favourite Store. Get &#163;30 worth of spending for just &#163;15 with this voucher. Costs you nothing, all you have to do is print it out and present on the till before paying.<br>
+-- 
+Aristeu
