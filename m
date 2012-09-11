@@ -1,7 +1,7 @@
 From: Mailer Delivery System <Mailer-Daemon-1HOZaDBbGgxaa/9Udqfwiw@public.gmane.org>
 Subject: Mail delivery failed: returning message to sender.
-Date: Tue, 11 Sep 2012 17:44:02 +0000
-Message-ID: <504f782c-63f9-37@store04.mail>
+Date: Tue, 11 Sep 2012 17:44:03 +0000
+Message-ID: <504f782c-63f9-39@store04.mail>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -22,9 +22,9 @@ This message was created automatically by mail delivery software.
 
 A message that you sent could not be delivered to its recipient.
 
-    reddish-ZhG5AQw8N7g033cLuSWQUNBc4/FLrbF6@public.gmane.org
-        SMTP error from remote mailer after DATA (Stage 2)
-        554 5.7.1 This message has been blocked because ASE reports it as spam. 
+    reddishdd-ZhG5AQw8N7g033cLuSWQUNBc4/FLrbF6@public.gmane.org
+        SMTP error from remote mailer after RCPT TO:
+        550 <reddishdd-ZhG5AQw8N7g033cLuSWQUNBc4/FLrbF6@public.gmane.org>, Recipient unknown
 
 ---- Here are the first 10 lines of the message, including all headers. ----
 Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
