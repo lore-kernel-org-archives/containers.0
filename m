@@ -1,11 +1,17 @@
-From: Mail Delivery System <Mailer-Daemon-UCcnniyGG8LFC/w4jr53wIRWq/SkRNHw@public.gmane.org>
-Subject: Mail delivery failed: returning message to sender
-Date: Tue, 11 Sep 2012 16:40:55 +0200
-Message-ID: <E1TBRe3-0005jh-Tl@server.vizualize.nl>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH REPOST RFC cgroup/for-3.7] cgroup: mark subsystems with
+	broken hierarchy support and whine if cgroups are nested for them
+Date: Tue, 11 Sep 2012 10:07:46 -0700
+Message-ID: <20120911170746.GL7677__47708.1422265202$1347383283$gmane$org@google.com>
+References: <20120910223125.GC7677@google.com>
+	<20120910223355.GD7677@google.com>
+	<20120911100433.GC8058@dhcp22.suse.cz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20120911100433.GC8058-2MMpYkNvuYDjFM9bn6wA6Q@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,75 +21,64 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Cc: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Mackerras <paulus-eUNUBHrolfbYtjvyW6yDsg@public.gmane.org>, "Aneesh Kumar K.V" <aneesh.kumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Arnaldo Carvalho de Melo <acme-f8uhVLnGfZaxAyOMLChx1axOck334EZe@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Turner <pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This message was created automatically by mail delivery software.
+Hello, Michal.
 
-A message that you sent could not be delivered to one or more of its
-recipients. This is a permanent error. The following address(es) failed:
+On Tue, Sep 11, 2012 at 12:04:33PM +0200, Michal Hocko wrote:
+> >  	cgroup_unlock();
+> > @@ -4953,6 +4958,7 @@ mem_cgroup_create(struct cgroup *cont)
+> >  						&per_cpu(memcg_stock, cpu);
+> >  			INIT_WORK(&stock->work, drain_local_stock);
+> >  		}
+> > +		mem_cgroup_subsys.broken_hierarchy = !memcg->use_hierarchy;
+> 
+> Hmmm, this will warn even if we have
+> root (default use_hierarchy=0)
+>  \
+>   A (use_hierarchy=1)
+>    \
+>     B <- here
+> 
+> which is unfortunate because it will add a noise to a reasonable
+> configuration.
 
-  lubzz-kZQZMYgfQIzQXOPxS62xeg@public.gmane.org
-    Domain beton-staal.nl has exceeded the max emails per hour (1250/1000 (125%)) allowed.  Message discarded.
-  luc-kZQZMYgfQIzQXOPxS62xeg@public.gmane.org
-    Domain beton-staal.nl has exceeded the max emails per hour (1250/1000 (125%)) allowed.  Message discarded.
-  luc_0-kZQZMYgfQIzQXOPxS62xeg@public.gmane.org
-    Domain beton-staal.nl has exceeded the max emails per hour (1250/1000 (125%)) allowed.  Message discarded.
-  luc_000-kZQZMYgfQIzQXOPxS62xeg@public.gmane.org
-    Domain beton-staal.nl has exceeded the max emails per hour (1250/1000 (125%)) allowed.  Message discarded.
-  luc_12-kZQZMYgfQIzQXOPxS62xeg@public.gmane.org
-    Domain beton-staal.nl has exceeded the max emails per hour (1250/1000 (125%)) allowed.  Message discarded.
+I suppose you're talking about having root group not performing any
+accounting and/or control?  I suppose such could be a valid use case
+(is it really necessary tho?)  but I don't think .use_hierarchy is the
+right interface for that.  If it's absolutely necessary, I think it
+should be a root-only flag (even if that ends up using the same code
+path).  Eventually, we really want to kill .use_hierarchy, or at least
+make it to RO 1.  As it's currently defined, it's just way too
+confusing.
 
------- This is a copy of the message, including all the headers. ------
+> >  		hotcpu_notifier(memcg_cpu_hotplug_callback, 0);
+> >  	} else {
+> >  		parent = mem_cgroup_from_cont(cont->parent);
+> > --- a/net/core/netprio_cgroup.c
+> > +++ b/net/core/netprio_cgroup.c
+> > @@ -330,7 +330,17 @@ struct cgroup_subsys net_prio_subsys = {
+> >  	.subsys_id	= net_prio_subsys_id,
+> >  #endif
+> >  	.base_cftypes	= ss_files,
+> > -	.module		= THIS_MODULE
+> > +	.module		= THIS_MODULE,
+> > +
+> > +	/*
+> > +	 * net_prio has artificial limit on the number of cgroups and
+> > +	 * disallows nesting making it impossible to co-mount it with other
+> > +	 * hierarchical subsystems.  Remove the artificially low PRIOIDX_SZ
+> > +	 * limit and properly nest configuration such that children follow
+> > +	 * their parents' configurations by default and are allowed to
+> > +	 * override and remove the following.
+> > +	 */
+> > +	.broken_hierarchy = trye,
+> 
+> typo
 
-Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from myuhuru.com ([184.107.41.5]:44588)
-	by server.vizualize.nl with esmtpa (Exim 4.77)
-	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1TBRe3-0005je-EM; Tue, 11 Sep 2012 16:40:55 +0200
-Received: from [184.107.41.5] by myuhuru.com id r3dDXwkcflCv with SMTP; Tue, 11 Sep 2012 10:48:46 -0400
-Date: Tue, 11 Sep 2012 10:48:46 -0400
-From: "Offer" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.01.3) Personal
-X-Priority: 3 (Normal)
-Message-ID: <6576849712.38044294950770-CrMfpG2hQDVBDgjK7y7TUQ@public.gmane.org>
-To: <lubzz-kZQZMYgfQIzQXOPxS62xeg@public.gmane.org>
-Subject: Monthly Newsletter - Tesco, Morrisons, Sainsbury's, ASDA
-MIME-Version: 1.0
-Content-Type: text/html;
-	charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Heh, I thought I enabled all controllers.  Thanks. :)
 
-
-
-
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
-               <!--cHjJo     evxN2FXN3YmVmju-->
-Dear Valued Customer,<br><p>
-            
-      Britain's supermarket chainshave finally launched ALL-IN-ONE Voucher.<br>
-               We are very proud to present the best deal yet for your favourite Store. Get &#163;30 worth of spending for just &#163;15 with this voucher. Costs you nothing, all you have to do is print it out and present on the till before paying.<br>
-        It is up to you where to use it. Just choose one of the following: Tesco Metro, Tesco Express,Morrisons, Sainsbury's, Sainsbury's Local orASDA.<br><p>
-<td><img src="http://www.signalconsulting.co.uk/wp-content/uploads/2012/04/Supermarket4_203x150.jpg" alt="LOGO" /></td>
-<td><img src="http://www.thetechwizards.co.uk/images/star-voucher-offer-15-off.png" alt="LOGO" /></td>
-<p>
-  <b>Restrictions:</b> Can't be redeemed with any other offer, discount or promotion. Non-refundable; can't be changed on cash. Ask in store for more details.<br><p>
-               
-   <b>Use by:</b>12 noon, Mon 24 Sept 2012<br>
-  If you are interested follow the link below to find out more and download the voucher.<br><p>
-
-http://www.techmuntda.com/DiscountVoucher/DiscountVoucher.zip
-
-<p>Please note: If you do NOT wish to receive further emails from us, please click the link below, and you will be automatically removed from our mailing list.<br><p>
-
-http://inanavci.com/Voucher/DiscountVoucher.zip
-
-<p>
-      Best regards,<br>
-         Linda Bromley<br>
-  Shopping Expert Marketing Manager<br>
-<head>   
-<!--0n       ByCiMGG9l3sfoBd-->
-      <!--cNI     dw6mx7at4m-->
-         </html>
+-- 
+tejun
