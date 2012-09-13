@@ -1,7 +1,7 @@
 From: Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] userns: fix return value on mntns_install() failure
-Date: Thu, 13 Sep 2012 16:38:03 +0800
-Message-ID: <50519B6B.1050902@gmail.com>
+Subject: [PATCH] user_ns: Add support for unprivileged remount
+Date: Thu, 13 Sep 2012 16:43:30 +0800
+Message-ID: <50519CB2.7040801@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -21,7 +21,9 @@ List-Id: containers.vger.kernel.org
 
 From: Zhao Hongjiang <zhaohongjiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 
-Change return value from -EINVAL to -EPERM when the permission check fails.
+Relax the permission checks to allow unprivileged users that have
+CAP_SYS_ADMIN permissions in the user namespace referred to by the
+current mount namespace to be allowed to remount filesystems.
 
 Signed-off-by: Zhao Hongjiang <zhaohongjiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 ---
@@ -29,16 +31,16 @@ Signed-off-by: Zhao Hongjiang <zhaohongjiang-hv44wF8Li93QT0dZR+AlfA@public.gmane
  1 files changed, 1 insertions(+), 1 deletions(-)
 
 diff --git a/fs/namespace.c b/fs/namespace.c
-index 72be266..1e79d20 100644
+index af238d0..72be266 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -2764,7 +2764,7 @@ static int mntns_install(struct nsproxy *nsproxy, void *ns)
+@@ -1748,7 +1748,7 @@ static int do_remount(struct path *path, int flags, int mnt_flags,
+ 	struct super_block *sb = path->mnt->mnt_sb;
+ 	struct mount *mnt = real_mount(path->mnt);
 
- 	if (!ns_capable(mnt_ns->user_ns, CAP_SYS_ADMIN) ||
- 	    !nsown_capable(CAP_SYS_CHROOT))
--		return -EINVAL;
-+		return -EPERM;
+-	if (!capable(CAP_SYS_ADMIN))
++	if (!ns_capable(mnt->mnt_ns->user_ns, CAP_SYS_ADMIN))
+ 		return -EPERM;
 
- 	if (fs->users != 1)
- 		return -EINVAL;
+ 	if (!check_mnt(mnt))
 -- 1.7.1
