@@ -1,15 +1,14 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH] user_ns: Add support for unprivileged remount
-Date: Fri, 14 Sep 2012 02:33:27 -0700
-Message-ID: <877grxdk48.fsf@xmission.com>
-References: <50519CB2.7040801@gmail.com> <87fw6lfwc3.fsf@xmission.com>
-	<5052F783.3040904@gmail.com>
+From: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Subject: Re: [RFC] cgroup TODOs
+Date: Fri, 14 Sep 2012 13:22:20 +0200
+Message-ID: <1347621740.7172.27.camel@twins>
+References: <20120913205827.GO7677@google.com>
+	<5052E7DF.7040000@parallels.com> <5052F4FF.6070508@huawei.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <5052F783.3040904-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> (Zhao Hongjiang's message of "Fri,
-	14 Sep 2012 17:23:15 +0800")
+In-Reply-To: <5052F4FF.6070508-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,39 +18,27 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Paul Mackerras <paulus-eUNUBHrolfbYtjvyW6yDsg@public.gmane.org>, "Aneesh Kumar K.V" <aneesh.kumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Arnaldo Carvalho de Melo <acme-f8uhVLnGfZaxAyOMLChx1axOck334EZe@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Turner <pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-WmhhbyBIb25namlhbmcgPHpoYW9ob25namlhbmczN0BnbWFpbC5jb20+IHdyaXRlczoKCj4gT24g
-MjAxMi05LTE0IDU6MjYsIEVyaWMgVy4gQmllZGVybWFuIHdyb3RlOgo+PiBaaGFvIEhvbmdqaWFu
-ZyA8emhhb2hvbmdqaWFuZzM3QGdtYWlsLmNvbT4gd3JpdGVzOgo+PiAKPj4+IEZyb206IFpoYW8g
-SG9uZ2ppYW5nIDx6aGFvaG9uZ2ppYW5nQGh1YXdlaS5jb20+Cj4+Pgo+Pj4gUmVsYXggdGhlIHBl
-cm1pc3Npb24gY2hlY2tzIHRvIGFsbG93IHVucHJpdmlsZWdlZCB1c2VycyB0aGF0IGhhdmUKPj4+
-IENBUF9TWVNfQURNSU4gcGVybWlzc2lvbnMgaW4gdGhlIHVzZXIgbmFtZXNwYWNlIHJlZmVycmVk
-IHRvIGJ5IHRoZQo+Pj4gY3VycmVudCBtb3VudCBuYW1lc3BhY2UgdG8gYmUgYWxsb3dlZCB0byBy
-ZW1vdW50IGZpbGVzeXN0ZW1zLgo+PiAKPj4gUmVtb3VudCBpbiBnZW5lcmFsIG1ha2UgZmlsZXN5
-c3RlbSBjb25maWd1cmF0aW9uIGNoYW5nZXMgbm90IG1vdW50IGxldmVsCj4+IGNoYW5nZXMuCj4+
-IAo+PiBJbiBnZW5lcmFsIHJlbW91bnQgaXMgbm90IHNhZmUgZm9yIHVucHJpdmllbGdlZCB1c2Vy
-cy4KPj4gCj4+IERvIHlvdSBoYXZlIGEgdXNlIGNhc2Ugd2hlcmUgeW91IG5lZWQgdG8gcmVtb3Vu
-dCBhIGZpbGVzeXN0ZW0/Cj4KPiBBcyB3ZSBjYW4gZG8gYSB1bW91bnQrbW91bnTvvIxJIGRvbid0
-IHNlZSB3aHkgcmVtb3VudCBvcGVyYXRpb24gaXMgbm90IGFsbG93ZWQuCj4gU2hvdWxkbid0IHdl
-IGFkZCBjaGVja3MgaW4gcmVtb3VudCBwYXRoIGluIHRoZSBzcGVjaWZpYyBmaWxlc3lzdGVtIHRv
-IGVuc3VyZQo+IHNhZmV0eSBpbnN0ZWFkIHdoZW4gd2UgZW5hYmxlIHVucHJpdmlsbGVnZWQgbW91
-bnQ/CgpCdXQgdGhlIHRoaW5nIGlzIHJlbW91bnQgIT0gbW91bnQrdW1vdW50LiAgUmVtb3VudCBp
-cyBjaGFuZ2UgbG93bGV2ZWwKZmlsZXN5c3RlbSBvcHRpb25zLgoKVGhlIGJhc2ljIGRhbmdlciBp
-cyBpZiBzb21lb25lIGluIHRoZSBwcmltYXJ5IHVzZXIgbmFtZXNwYWNlIG1vdW50ZWQgYQpmaWxl
-c3lzdGVtLCBhbmQgdGhlbiB3ZSBjbG9uZWQgdGhhdCBmaWxlc3lzdGVtLgoKdW1vdW50aW5nIGZp
-bGVzeXN0ZW1zIGlzIG9rLiAgVGhlcmUgcmVmZXJlbmNlIGNvdW50IHdpbGwgZHJvcCBvciB0aGV5
-CndpbGwganVzdCB1bm1vdW50IGlmIHRoZSByZWYgY291bnQgZ29lcyB0byB6ZXJvLgoKSG93ZXZl
-ciBtb3VudCAtbyByZW1vdW50IC1yIC9ob21lIGNvdWxkIHZlcnkgZWFzaWx5IHJlbW91bnQgZXZl
-cnlvbmUncwpob21lIGRpcmVjdG9yeSBpbiBhbGwgbW91bnQgbmFtZXNwYWNlcyByZWFkLW9ubHkg
-YnkgbWFraW5nIHRoZQpmaWxlc3lzdGVtIGl0c2VsZiByZWFkb25seS4KClRoYXQgZGFuZ2VyIGFw
-cGxpZXMgZXZlbiB0byBzb21lIGV4dGVudCBldmVuIGlmIHRoZSBvcHRpb25zIGFyZSBzYWZlIGZv
-cgp1cyB0byBwZXJmb3JtIGF0IHRoZSBmaWxlc3lzdGVtIGxldmVsLgoKTm93IHRoYXQgZG9lc24n
-dCBtZWFuIHJlbW91bnQgaXMgYSBob3BlbGVzcyBvcGVyYXRpb24uICBXaGF0IGl0IGRvZXMKbWVh
-biBpcyB0aGF0IHdlIG5lZWQgdG8gYmUgdmVyeSBjYXJlZnVsbHkgd2l0aCBlbmFibGluZyByZW1v
-dW50aW5nCm9mIGEgZmlsZXN5c3RlbS4KCkVyaWMKCl9fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNA
-bGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24u
-b3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On Fri, 2012-09-14 at 17:12 +0800, Li Zefan wrote:
+> > I think this is a pressing problem, yes, but not the only problem with
+> > cgroup lock. Even if we restrict its usage to cgroup core, we still can
+> > call cgroup functions, which will lock. And then we gain nothing.
+> > 
+> 
+> Agreed. The biggest issue in cpuset is if hotplug makes a cpuset's cpulist
+> empty the tasks in it will be moved to an ancestor cgroup, which requires
+> holding cgroup lock. We have to either change cpuset's behavior or eliminate
+> the global lock. 
+
+PJ (the original cpuset author) has always been very conservative in
+changing cpuset semantics/behaviour. Its being used at the big HPC labs
+and those people simply don't like change.
+
+It also ties in with us having to preserve ABI, Linus says you can only
+do so if nobody notices -- if a tree falls in a forest and there's
+nobody to hear it, it really didn't fall at all.
+
+Which I guess means we're going to have to split locks :-)
