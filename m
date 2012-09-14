@@ -1,22 +1,13 @@
-From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCH REPOST RFC cgroup/for-3.7] cgroup: mark subsystems with
-	broken hierarchy support and whine if cgroups are nested for them
-Date: Fri, 14 Sep 2012 12:19:06 +0400
-Message-ID: <5052E87A.1050405@parallels.com>
-References: <20120910223125.GC7677@google.com>
-	<20120910223355.GD7677@google.com>
-	<20120911100433.GC8058@dhcp22.suse.cz>
-	<5050568B.9090601@parallels.com>
-	<20120912154907.GW21579@dhcp22.suse.cz>
-	<20120912171120.GP7677@google.com>
-	<20120913121438.GC8055@dhcp22.suse.cz>
-	<20120913171832.GY7677@google.com>
-	<20120913173958.GA21381@dhcp22.suse.cz>
+From: Mike Galbraith <efault-Mmb7MZpHnFY@public.gmane.org>
+Subject: Re: [RFC] cgroup TODOs
+Date: Fri, 14 Sep 2012 11:04:44 +0200
+Message-ID: <1347613484.4340.132.camel__29302.5978179232$1347613506$gmane$org@marge.simpson.net>
+References: <20120913205827.GO7677@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120913173958.GA21381-2MMpYkNvuYDjFM9bn6wA6Q@public.gmane.org>
+In-Reply-To: <20120913205827.GO7677-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,55 +17,15 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Cc: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>, Paul Mackerras <paulus-eUNUBHrolfbYtjvyW6yDsg@public.gmane.org>, "Aneesh Kumar K.V" <aneesh.kumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Arnaldo Carvalho de Melo <acme-f8uhVLnGfZaxAyOMLChx1axOck334EZe@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Turner <pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Paul Mackerras <paulus-eUNUBHrolfbYtjvyW6yDsg@public.gmane.org>, "Aneesh Kumar K.V" <aneesh.kumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Arnaldo Carvalho de Melo <acme-f8uhVLnGfZaxAyOMLChx1axOck334EZe@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Turner <pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 09/13/2012 09:39 PM, Michal Hocko wrote:
-> On Thu 13-09-12 10:18:32, Tejun Heo wrote:
->> Hello, Michal.
->>
->> On Thu, Sep 13, 2012 at 02:14:38PM +0200, Michal Hocko wrote:
->>> I would like to see use_hierarchy go away. The only concern I have is 
->>> to warn only if somebody is doing something wrong (aka flat
->>> hierarchies). Or better put it this way. Do not warn in cases which do
->>> not change if use_hierarchy is gone or default changes to 1.
->>> An example:
->>> root (use_hierarchy=0)
->>>  | \
->>>  |  A (use_hierarchy=0)
->>>  |
->>>  B (use_hierarachy=1)
->>>  |\
->>>  C D
->>>
->>> is a perfectly sane configuration and I do not see any reason to fill
->>> logs with some scary warnings when A is created. There will be no
->>> semantical change in this setup When use_hierchy is gone.
->>>
->>> So the only thing I am proposing here is to warn only if something
->>> should be fixed in the configuration in order to be prepared for fully
->>> hierarchical (and that is a second level of children from root with
->>> use_hierachy==0).
->>>
->>> Does it make more sense now?
->>
->> Ah, okay, so what you're saying is that we shouldn't warn if 0
->> .use_hierarchys don't make any behavior difference from when they're
->> all 1, right?  
-> 
-> Exactly. 1st level of children under the root is exactly this kind of
-> setup.
-> 
->> If so, I have no objection.  Will incorporate your updated version.
-> 
-> Thanks!
-> 
-I want oppose it as well, but I believe part of this exercise is to make
-the need to have hierarchy widespread. Warning on the case
-1st-level-only case helps with that, even if we make more noise than we
-should.
+On Thu, 2012-09-13 at 13:58 -0700, Tejun Heo wrote:
 
-The reason I supported Tejun's proposal originally, is that I think that
-if we make the wrong amount of noise, being wrong by a surplus is better
-than being wrong by a deficit, in this case.
+> 7. Misc issues
+> 
+   * Extract synchronize_rcu() from user interface?  Exporting grace
+periods to userspace isn't wonderful for dynamic launchers.
+
+-Mike
