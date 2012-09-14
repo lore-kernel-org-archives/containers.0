@@ -1,11 +1,15 @@
-From: Jiri Slaby <jslaby-AlSwsSmVLrQ@public.gmane.org>
-Subject: include/linux/cgroup.h:553 suspicious rcu_dereference_check() usage!
-Date: Fri, 14 Sep 2012 11:23:22 +0200
-Message-ID: <5052F78A.7010007__15371.0312596106$1347614619$gmane$org@suse.cz>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH] user_ns: Add support for unprivileged remount
+Date: Fri, 14 Sep 2012 02:33:27 -0700
+Message-ID: <877grxdk48.fsf@xmission.com>
+References: <50519CB2.7040801@gmail.com> <87fw6lfwc3.fsf@xmission.com>
+	<5052F783.3040904@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <5052F783.3040904-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> (Zhao Hongjiang's message of "Fri,
+	14 Sep 2012 17:23:15 +0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,54 +19,39 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: Jiri Slaby <jirislaby-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux kernel mailing list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
-
-with current -next trees and LDEP enabled, I'm getting:
-===============================
-[ INFO: suspicious RCU usage. ]
-3.6.0-rc5-next-20120913+ #42 Not tainted
--------------------------------
-/home/latest/linux/include/linux/cgroup.h:553 suspicious
-rcu_dereference_check() usage!
-
-other info that might help us debug this:
-
-
-rcu_scheduler_active = 1, debug_locks = 0
-2 locks held by kdevtmpfs/23:
- #0:  (sb_writers){.+.+.+}, at: [<ffffffff8116873f>]
-mnt_want_write+0x1f/0x50
- #1:  (&sb->s_type->i_mutex_key#3/1){+.+.+.}, at: [<ffffffff811558af>]
-kern_path_create+0x7f/0x170
-
-stack backtrace:
-Pid: 23, comm: kdevtmpfs Not tainted 3.6.0-rc5-next-20120913+ #42
-Call Trace:
- [<ffffffff810c638d>] lockdep_rcu_suspicious+0xfd/0x130
- [<ffffffff8121541d>] devcgroup_inode_mknod+0x19d/0x240
- [<ffffffff8107bf54>] ? ns_capable+0x44/0x80
- [<ffffffff81156b21>] vfs_mknod+0x71/0xf0
- [<ffffffff813a8332>] handle_create.isra.2+0x72/0x200
- [<ffffffff813a85d4>] devtmpfsd+0x114/0x140
- [<ffffffff813a84c0>] ? handle_create.isra.2+0x200/0x200
- [<ffffffff81093ad6>] kthread+0xd6/0xe0
- [<ffffffff81654f24>] kernel_thread_helper+0x4/0x10
- [<ffffffff8165369d>] ? retint_restore_args+0xe/0xe
- [<ffffffff81093a00>] ? kthread_create_on_node+0x140/0x140
- [<ffffffff81654f20>] ? gs_change+0xb/0xb
-
-
-It's due to the commit "device_cgroup: convert device_cgroup internally
-to policy + exceptions". It removed rcu locks which are needed in
-task_devcgroup called in this chain: devcgroup_inode_mknod OR
-__devcgroup_inode_permission -> __devcgroup_inode_permission ->
-task_devcgroup -> task_subsys_state -> task_subsys_state_check.
-
-regards,
--- 
-js
-suse labs
+WmhhbyBIb25namlhbmcgPHpoYW9ob25namlhbmczN0BnbWFpbC5jb20+IHdyaXRlczoKCj4gT24g
+MjAxMi05LTE0IDU6MjYsIEVyaWMgVy4gQmllZGVybWFuIHdyb3RlOgo+PiBaaGFvIEhvbmdqaWFu
+ZyA8emhhb2hvbmdqaWFuZzM3QGdtYWlsLmNvbT4gd3JpdGVzOgo+PiAKPj4+IEZyb206IFpoYW8g
+SG9uZ2ppYW5nIDx6aGFvaG9uZ2ppYW5nQGh1YXdlaS5jb20+Cj4+Pgo+Pj4gUmVsYXggdGhlIHBl
+cm1pc3Npb24gY2hlY2tzIHRvIGFsbG93IHVucHJpdmlsZWdlZCB1c2VycyB0aGF0IGhhdmUKPj4+
+IENBUF9TWVNfQURNSU4gcGVybWlzc2lvbnMgaW4gdGhlIHVzZXIgbmFtZXNwYWNlIHJlZmVycmVk
+IHRvIGJ5IHRoZQo+Pj4gY3VycmVudCBtb3VudCBuYW1lc3BhY2UgdG8gYmUgYWxsb3dlZCB0byBy
+ZW1vdW50IGZpbGVzeXN0ZW1zLgo+PiAKPj4gUmVtb3VudCBpbiBnZW5lcmFsIG1ha2UgZmlsZXN5
+c3RlbSBjb25maWd1cmF0aW9uIGNoYW5nZXMgbm90IG1vdW50IGxldmVsCj4+IGNoYW5nZXMuCj4+
+IAo+PiBJbiBnZW5lcmFsIHJlbW91bnQgaXMgbm90IHNhZmUgZm9yIHVucHJpdmllbGdlZCB1c2Vy
+cy4KPj4gCj4+IERvIHlvdSBoYXZlIGEgdXNlIGNhc2Ugd2hlcmUgeW91IG5lZWQgdG8gcmVtb3Vu
+dCBhIGZpbGVzeXN0ZW0/Cj4KPiBBcyB3ZSBjYW4gZG8gYSB1bW91bnQrbW91bnTvvIxJIGRvbid0
+IHNlZSB3aHkgcmVtb3VudCBvcGVyYXRpb24gaXMgbm90IGFsbG93ZWQuCj4gU2hvdWxkbid0IHdl
+IGFkZCBjaGVja3MgaW4gcmVtb3VudCBwYXRoIGluIHRoZSBzcGVjaWZpYyBmaWxlc3lzdGVtIHRv
+IGVuc3VyZQo+IHNhZmV0eSBpbnN0ZWFkIHdoZW4gd2UgZW5hYmxlIHVucHJpdmlsbGVnZWQgbW91
+bnQ/CgpCdXQgdGhlIHRoaW5nIGlzIHJlbW91bnQgIT0gbW91bnQrdW1vdW50LiAgUmVtb3VudCBp
+cyBjaGFuZ2UgbG93bGV2ZWwKZmlsZXN5c3RlbSBvcHRpb25zLgoKVGhlIGJhc2ljIGRhbmdlciBp
+cyBpZiBzb21lb25lIGluIHRoZSBwcmltYXJ5IHVzZXIgbmFtZXNwYWNlIG1vdW50ZWQgYQpmaWxl
+c3lzdGVtLCBhbmQgdGhlbiB3ZSBjbG9uZWQgdGhhdCBmaWxlc3lzdGVtLgoKdW1vdW50aW5nIGZp
+bGVzeXN0ZW1zIGlzIG9rLiAgVGhlcmUgcmVmZXJlbmNlIGNvdW50IHdpbGwgZHJvcCBvciB0aGV5
+CndpbGwganVzdCB1bm1vdW50IGlmIHRoZSByZWYgY291bnQgZ29lcyB0byB6ZXJvLgoKSG93ZXZl
+ciBtb3VudCAtbyByZW1vdW50IC1yIC9ob21lIGNvdWxkIHZlcnkgZWFzaWx5IHJlbW91bnQgZXZl
+cnlvbmUncwpob21lIGRpcmVjdG9yeSBpbiBhbGwgbW91bnQgbmFtZXNwYWNlcyByZWFkLW9ubHkg
+YnkgbWFraW5nIHRoZQpmaWxlc3lzdGVtIGl0c2VsZiByZWFkb25seS4KClRoYXQgZGFuZ2VyIGFw
+cGxpZXMgZXZlbiB0byBzb21lIGV4dGVudCBldmVuIGlmIHRoZSBvcHRpb25zIGFyZSBzYWZlIGZv
+cgp1cyB0byBwZXJmb3JtIGF0IHRoZSBmaWxlc3lzdGVtIGxldmVsLgoKTm93IHRoYXQgZG9lc24n
+dCBtZWFuIHJlbW91bnQgaXMgYSBob3BlbGVzcyBvcGVyYXRpb24uICBXaGF0IGl0IGRvZXMKbWVh
+biBpcyB0aGF0IHdlIG5lZWQgdG8gYmUgdmVyeSBjYXJlZnVsbHkgd2l0aCBlbmFibGluZyByZW1v
+dW50aW5nCm9mIGEgZmlsZXN5c3RlbS4KCkVyaWMKCl9fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNA
+bGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24u
+b3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
