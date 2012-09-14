@@ -1,13 +1,11 @@
-From: Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH] user_ns: Add support for unprivileged remount
-Date: Fri, 14 Sep 2012 17:23:15 +0800
-Message-ID: <5052F783.3040904@gmail.com>
-References: <50519CB2.7040801@gmail.com> <87fw6lfwc3.fsf@xmission.com>
+From: Jiri Slaby <jslaby-AlSwsSmVLrQ@public.gmane.org>
+Subject: include/linux/cgroup.h:553 suspicious rcu_dereference_check() usage!
+Date: Fri, 14 Sep 2012 11:23:22 +0200
+Message-ID: <5052F78A.7010007__15371.0312596106$1347614619$gmane$org@suse.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87fw6lfwc3.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,25 +15,54 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: Jiri Slaby <jirislaby-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux kernel mailing list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gMjAxMi05LTE0IDU6MjYsIEVyaWMgVy4gQmllZGVybWFuIHdyb3RlOgo+IFpoYW8gSG9uZ2pp
-YW5nIDx6aGFvaG9uZ2ppYW5nMzdAZ21haWwuY29tPiB3cml0ZXM6Cj4gCj4+IEZyb206IFpoYW8g
-SG9uZ2ppYW5nIDx6aGFvaG9uZ2ppYW5nQGh1YXdlaS5jb20+Cj4+Cj4+IFJlbGF4IHRoZSBwZXJt
-aXNzaW9uIGNoZWNrcyB0byBhbGxvdyB1bnByaXZpbGVnZWQgdXNlcnMgdGhhdCBoYXZlCj4+IENB
-UF9TWVNfQURNSU4gcGVybWlzc2lvbnMgaW4gdGhlIHVzZXIgbmFtZXNwYWNlIHJlZmVycmVkIHRv
-IGJ5IHRoZQo+PiBjdXJyZW50IG1vdW50IG5hbWVzcGFjZSB0byBiZSBhbGxvd2VkIHRvIHJlbW91
-bnQgZmlsZXN5c3RlbXMuCj4gCj4gUmVtb3VudCBpbiBnZW5lcmFsIG1ha2UgZmlsZXN5c3RlbSBj
-b25maWd1cmF0aW9uIGNoYW5nZXMgbm90IG1vdW50IGxldmVsCj4gY2hhbmdlcy4KPiAKPiBJbiBn
-ZW5lcmFsIHJlbW91bnQgaXMgbm90IHNhZmUgZm9yIHVucHJpdmllbGdlZCB1c2Vycy4KPiAKPiBE
-byB5b3UgaGF2ZSBhIHVzZSBjYXNlIHdoZXJlIHlvdSBuZWVkIHRvIHJlbW91bnQgYSBmaWxlc3lz
-dGVtPwoKQXMgd2UgY2FuIGRvIGEgdW1vdW50K21vdW5077yMSSBkb24ndCBzZWUgd2h5IHJlbW91
-bnQgb3BlcmF0aW9uIGlzIG5vdCBhbGxvd2VkLgpTaG91bGRuJ3Qgd2UgYWRkIGNoZWNrcyBpbiBy
-ZW1vdW50IHBhdGggaW4gdGhlIHNwZWNpZmljIGZpbGVzeXN0ZW0gdG8gZW5zdXJlCnNhZmV0eSBp
-bnN0ZWFkIHdoZW4gd2UgZW5hYmxlIHVucHJpdmlsbGVnZWQgbW91bnQ/Cgo+IAo+IEVyaWMKPiAK
-Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5l
-cnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0
-cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVy
-cw==
+Hi,
+
+with current -next trees and LDEP enabled, I'm getting:
+===============================
+[ INFO: suspicious RCU usage. ]
+3.6.0-rc5-next-20120913+ #42 Not tainted
+-------------------------------
+/home/latest/linux/include/linux/cgroup.h:553 suspicious
+rcu_dereference_check() usage!
+
+other info that might help us debug this:
+
+
+rcu_scheduler_active = 1, debug_locks = 0
+2 locks held by kdevtmpfs/23:
+ #0:  (sb_writers){.+.+.+}, at: [<ffffffff8116873f>]
+mnt_want_write+0x1f/0x50
+ #1:  (&sb->s_type->i_mutex_key#3/1){+.+.+.}, at: [<ffffffff811558af>]
+kern_path_create+0x7f/0x170
+
+stack backtrace:
+Pid: 23, comm: kdevtmpfs Not tainted 3.6.0-rc5-next-20120913+ #42
+Call Trace:
+ [<ffffffff810c638d>] lockdep_rcu_suspicious+0xfd/0x130
+ [<ffffffff8121541d>] devcgroup_inode_mknod+0x19d/0x240
+ [<ffffffff8107bf54>] ? ns_capable+0x44/0x80
+ [<ffffffff81156b21>] vfs_mknod+0x71/0xf0
+ [<ffffffff813a8332>] handle_create.isra.2+0x72/0x200
+ [<ffffffff813a85d4>] devtmpfsd+0x114/0x140
+ [<ffffffff813a84c0>] ? handle_create.isra.2+0x200/0x200
+ [<ffffffff81093ad6>] kthread+0xd6/0xe0
+ [<ffffffff81654f24>] kernel_thread_helper+0x4/0x10
+ [<ffffffff8165369d>] ? retint_restore_args+0xe/0xe
+ [<ffffffff81093a00>] ? kthread_create_on_node+0x140/0x140
+ [<ffffffff81654f20>] ? gs_change+0xb/0xb
+
+
+It's due to the commit "device_cgroup: convert device_cgroup internally
+to policy + exceptions". It removed rcu locks which are needed in
+task_devcgroup called in this chain: devcgroup_inode_mknod OR
+__devcgroup_inode_permission -> __devcgroup_inode_permission ->
+task_devcgroup -> task_subsys_state -> task_subsys_state_check.
+
+regards,
+-- 
+js
+suse labs
