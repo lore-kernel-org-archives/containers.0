@@ -1,7 +1,7 @@
 From: Mail Delivery System <Mailer-Daemon-1HOZaDBbGgxaa/9Udqfwiw@public.gmane.org>
 Subject: Mail delivery failed: returning message to sender
 Date: Sat, 15 Sep 2012 00:34:43 +0000
-Message-ID: <E1TCgLL-0000R6-Pv@store01.mail.zen.net.uk>
+Message-ID: <E1TCgLL-0000R7-Py@store01.mail.zen.net.uk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -23,7 +23,7 @@ This message was created automatically by mail delivery software.
 A message that you sent could not be delivered to one or more of its
 recipients. This is a permanent error. The following address(es) failed:
 
-  pandrsecurities.co.uk/enquiriesn#vtuk.co.uk-1HOZaDBbGgxaa/9Udqfwiw@public.gmane.org
+  pandrsecurities.co.uk/enquiries#vtuk.co.uk-1HOZaDBbGgxaa/9Udqfwiw@public.gmane.org
     mailbox is full: retry timeout exceeded
 
 ------ This is a copy of the message's headers. ------
@@ -49,8 +49,8 @@ X-ZenAWL-Match: false
 X-Zen-Test-Spam-Score: 10
 X-Zen-Test-Spam-Bar: (+)
 X-Originating-Bastion04-IP: [96.30.18.66]
-X-Zen-Parent: enquiriesn-UGGEssRWkgC1Qrn1Bg8BZw@public.gmane.org
+X-Zen-Parent: enquiries-UGGEssRWkgC1Qrn1Bg8BZw@public.gmane.org
 X-Envelope-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-Envelope-To: enquiriesn-UGGEssRWkgC1Qrn1Bg8BZw@public.gmane.org
-X-Apparently-To: enquiriesn-UGGEssRWkgC1Qrn1Bg8BZw@public.gmane.org
+X-Envelope-To: enquiries-UGGEssRWkgC1Qrn1Bg8BZw@public.gmane.org
+X-Apparently-To: enquiries-UGGEssRWkgC1Qrn1Bg8BZw@public.gmane.org
 X-Zen-Loop2: a5ceeca5cc1bea54e0d1c75003651933
