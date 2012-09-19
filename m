@@ -1,15 +1,16 @@
 From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: [RFC] cgroup TODOs
-Date: Wed, 19 Sep 2012 16:02:03 +0200
-Message-ID: <20120919140203.GA5398__24814.4056801268$1348063347$gmane$org@dhcp22.suse.cz>
+Subject: [PATCH 2.6.32] memcg: warn on deeper hierarchies with use_hierarchy==0
+Date: Wed, 19 Sep 2012 16:03:08 +0200
+Message-ID: <20120919140308.GB5398@dhcp22.suse.cz>
 References: <20120913205827.GO7677@google.com>
 	<20120914150306.GQ28039@dhcp22.suse.cz>
+	<20120919140203.GA5398@dhcp22.suse.cz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20120914150306.GQ28039-2MMpYkNvuYDjFM9bn6wA6Q@public.gmane.org>
+In-Reply-To: <20120919140203.GA5398-2MMpYkNvuYDjFM9bn6wA6Q@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,33 +24,71 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Mackerras <paulus-eUNUBHrolfbYtjvyW6yDsg@public.gmane.org>, "Aneesh Kumar K.V" <aneesh.kumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Arnaldo Carvalho de Melo <acme-f8uhVLnGfZaxAyOMLChx1axOck334EZe@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Turner <pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-[CCing Dave, Ben]
 
-Just a short summary as you were not on the CC list. This is sort of
-follow up on https://lkml.org/lkml/2012/9/3/211. The end result is
-slightly different because Tejun did a more generic cgroup solution (see
-bellow). I cannot do the same for OpenSUSE so I will stick with the
-memcg specific patch.
+From 34be56e3e7e4f9c31381ce35247e0a0b7f972874 Mon Sep 17 00:00:00 2001
+From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Date: Tue, 4 Sep 2012 15:55:03 +0200
+Subject: [PATCH] memcg: warn on deeper hierarchies with use_hierarchy==0
 
-On Fri 14-09-12 17:03:06, Michal Hocko wrote:
-> I am currently planning to add a warning to most of the currenly
-> maintained distributions to have as big coverage as possible. No default
-> switch for obvious reasons but hopefuly we will get some feedback at
-> least.
+The memory controller supports both hierarchical and non-hierarchical
+behavior which is controlled by use_hierarchy knob (0 by default).
+The primary motivation for this distinction was an ineffectiveness
+of hierarchical accounting. This has improved a lot since it was
+introduced.
 
-Just for the record, I will post backports of the patch I ended up using
-for openSUSE 11.4 and 12.[12] and SLES-SP2 as a reply to this email (and
-2.6.32 in case somebody is interested).
+This schizophrenia makes the code and integration with other controllers
+more complicated (e.g. mounting it with fully hierarchical one could
+have an unexpected side effects) for no good reason so it would be good
+to make the memory controller behave only hierarchically.
 
-I hope other distributions can either go with this (which will never be
-merged but it should help to identify dubious usage of flat hierarchies
-without a risk of breaking anythign) or what Tejun has in his tree[1]
-8c7f6edb (cgroup: mark subsystems with broken hierarchy support and
-whine if cgroups are nested for them) which is more generic but it is
-also slightly more intrusive.
+It seems that there is no good reasons for deep cgroup hierarchies which
+are not truly hierarchical so we could set the default to 1. This might,
+however, lead to unexpected regressions when somebody relies on the
+current default behavior. For example, consider the following setup:
+		 Root[cpuset,memory]
+		  |
+		  A (use_hierarchy=0)
+		 / \
+		B  C
 
+All three A, B, C have some tasks and their memory limits. The hierarchy
+is created only because of the cpuset and its configuration.
+Say the default is changed. Then a memory pressure in C could influence
+both A and B which wouldn't happen before. The problem might be really
+hard to notice (unexpected slowdown).
+This configuration could be fixed up easily by reorganization, though:
+		 Root
+		  |
+		  A' (use_hierarchy=1, limit=unlimited, no tasks)
+		 /|\
+		A B C
+
+The problem is that we don't know whether somebody has an use case which
+cannot be transformed like that. Therefore this patch starts the slow
+transition to hierarchical only memory controller by warning users who
+are using flat hierarchies. The warning triggers only if a subgroup of
+non-root group is created with use_hierarchy==0.
+
+Signed-off-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
 ---
-[1] - git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git for-3.7-hierarchy
+ mm/memcontrol.c |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index f99f599..b61c34b 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -3106,6 +3106,11 @@ mem_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
+ 	} else {
+ 		parent = mem_cgroup_from_cont(cont->parent);
+ 		mem->use_hierarchy = parent->use_hierarchy;
++		WARN_ONCE(!mem->use_hierarchy && parent != root_mem_cgroup,
++				"Creating hierarchies with use_hierarchy==0 "
++				"(flat hierarchy) is considered deprecated. "
++				"If you believe that your setup is correct, "
++				"we kindly ask you to contact linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org and let us know");
+ 	}
+ 
+ 	if (parent && parent->use_hierarchy) {
 -- 
-Michal Hocko
-SUSE Labs
+1.7.10.4
