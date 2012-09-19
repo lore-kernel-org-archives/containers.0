@@ -1,17 +1,12 @@
-From: David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2.6.32] memcg: warn on deeper hierarchies with
-	use_hierarchy==0
-Date: Wed, 19 Sep 2012 12:38:18 -0700 (PDT)
-Message-ID: <alpine.DEB.2.00.1209191237020.749@chino.kir.corp.google.com>
-References: <20120913205827.GO7677@google.com>
-	<20120914150306.GQ28039@dhcp22.suse.cz>
-	<20120919140203.GA5398@dhcp22.suse.cz>
-	<20120919140308.GB5398@dhcp22.suse.cz>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCHSET RFC] cpu,
+	cpuacct: make cpu serve cpuacct files and deprecate cpuacct
+Date: Wed, 19 Sep 2012 15:43:42 -0700
+Message-ID: <1348094625-4471-1-git-send-email-tj__37753.2118036926$1348094651$gmane$org@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20120919140308.GB5398-2MMpYkNvuYDjFM9bn6wA6Q@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,29 +16,65 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Cc: Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>, Paul Mackerras <paulus-eUNUBHrolfbYtjvyW6yDsg@public.gmane.org>, "Aneesh Kumar K.V" <aneesh.kumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Arnaldo Carvalho de Melo <acme-f8uhVLnGfZaxAyOMLChx1axOck334EZe@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Turner <pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
+Cc: pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, kay.sievers-tD+1rO4QERM@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, mzxreary-uLTowLwuiw4b1SvskN2V4Q@public.gmane.org, davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 19 Sep 2012, Michal Hocko wrote:
+Hello,
 
-> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-> index f99f599..b61c34b 100644
-> --- a/mm/memcontrol.c
-> +++ b/mm/memcontrol.c
-> @@ -3106,6 +3106,11 @@ mem_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
->  	} else {
->  		parent = mem_cgroup_from_cont(cont->parent);
->  		mem->use_hierarchy = parent->use_hierarchy;
-> +		WARN_ONCE(!mem->use_hierarchy && parent != root_mem_cgroup,
-> +				"Creating hierarchies with use_hierarchy==0 "
-> +				"(flat hierarchy) is considered deprecated. "
-> +				"If you believe that your setup is correct, "
-> +				"we kindly ask you to contact linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org and let us know");
+This is an attempt at allowing quick deprecation and removal of
+cpuacct.  The patchset makes cpu serve the same cpuacct.* files and
+updates cgroup core such that it ignores cpuacct if requested to be
+co-mounted with cpu whether CONFIG_CGROUP_CPUACCT is enabled or not.
 
-When I deprecated /proc/pid/oom_adj (now removed), we did a WARN_ONCE() 
-and others complained that this unnecessarily alters userspace scripts 
-that a serious issue has occurred and Linus agreed that we shouldn't do 
-deprecation in this way.  The alternative is to use printk_once() instead.
+This de-couples cpuacct deprecation on kernel side from userland
+transition as long as userland is co-mounting cpu and cpuacct.  In
+this series, cpuacct implementation is simply copied into cpu, the
+goal being to provide base for proper optimization (most likely
+periodic collection of stats across the hierarchy).
 
-This applies to all three patches for this one, 3.0, and 3.2+.
+I didn't try to maintain everything the same.  /proc/cgroups and
+/proc/PID/cgroup may mis-represent or miss cpuacct entry.  Faking it
+completely is doable too but I'd like to keep it as simple as
+possible.
+
+* If cpuacct is not used, nothing changes of course.
+
+* If cpuacct is requested to be co-mounted with cpu, cpuacct is not
+  used.  It doesn't matter whether CONFIG_CGROUP_CPUACCT is enabled or
+  not.  cpu will provide cpusage.* statistics.
+
+* If cpuacct is requested to be mounted separately and cpuacct is
+  enabled, cgroup whines before mounting it.  If cpuacct is disabled,
+  it fails.
+
+I think the resulting behavior isn't too crazy and it should allow us
+to remove anything cpuacct related fairly soon.
+
+Longer term, I'd prefer to be able to drop the compatibility hack from
+cgroup core too although I don't think that's too urgent.  I think
+userland can either create symlinks for compatibility -
+e.g. /sys/fs/cgroup/cpuacct and /sys/fs/cgroup/cpu,cpucct both
+pointing to /sys/fs/cgroup/cpu - whether cpuacct exists or not, or
+just ignore anything cpuacct related.
+
+This series is based on for-3.7-hierarchy 8c7f6edbda0 ("cgroup: mark
+subsystems with broken hierarchy...") and also available in the
+following git branch.
+
+ git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-deprecate-cpuacct
+
+ include/linux/cgroup.h   |    1 
+ init/Kconfig             |   11 ++
+ kernel/cgroup.c          |   57 ++++++++++++-
+ kernel/sched/core.c      |  196 ++++++++++++++++++++++++++++++++++++++++++++++-
+ kernel/sched/fair.c      |    1 
+ kernel/sched/rt.c        |    1 
+ kernel/sched/sched.h     |    7 +
+ kernel/sched/stop_task.c |    1 
+ 8 files changed, 269 insertions(+), 6 deletions(-)
+
+Thanks.
+
+--
+tejun
