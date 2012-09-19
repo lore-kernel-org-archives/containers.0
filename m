@@ -1,7 +1,7 @@
 From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: [PATCH 2.6.32] memcg: warn on deeper hierarchies with use_hierarchy==0
-Date: Wed, 19 Sep 2012 16:03:08 +0200
-Message-ID: <20120919140308.GB5398@dhcp22.suse.cz>
+Subject: [PATCH 3.0] memcg: warn on deeper hierarchies with use_hierarchy==0
+Date: Wed, 19 Sep 2012 16:03:57 +0200
+Message-ID: <20120919140357.GC5398@dhcp22.suse.cz>
 References: <20120913205827.GO7677@google.com>
 	<20120914150306.GQ28039@dhcp22.suse.cz>
 	<20120919140203.GA5398@dhcp22.suse.cz>
@@ -24,8 +24,7 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Mackerras <paulus-eUNUBHrolfbYtjvyW6yDsg@public.gmane.org>, "Aneesh Kumar K.V" <aneesh.kumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Arnaldo Carvalho de Melo <acme-f8uhVLnGfZaxAyOMLChx1axOck334EZe@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Turner <pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-From 34be56e3e7e4f9c31381ce35247e0a0b7f972874 Mon Sep 17 00:00:00 2001
+From 9364396ddc0c8843fce3a7fda0255b39ba7e4f31 Mon Sep 17 00:00:00 2001
 From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
 Date: Tue, 4 Sep 2012 15:55:03 +0200
 Subject: [PATCH] memcg: warn on deeper hierarchies with use_hierarchy==0
@@ -75,13 +74,13 @@ Signed-off-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
  1 file changed, 5 insertions(+)
 
 diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index f99f599..b61c34b 100644
+index e013b8e..d8ec0cd 100644
 --- a/mm/memcontrol.c
 +++ b/mm/memcontrol.c
-@@ -3106,6 +3106,11 @@ mem_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
- 	} else {
+@@ -4976,6 +4976,11 @@ mem_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
  		parent = mem_cgroup_from_cont(cont->parent);
  		mem->use_hierarchy = parent->use_hierarchy;
+ 		mem->oom_kill_disable = parent->oom_kill_disable;
 +		WARN_ONCE(!mem->use_hierarchy && parent != root_mem_cgroup,
 +				"Creating hierarchies with use_hierarchy==0 "
 +				"(flat hierarchy) is considered deprecated. "
@@ -92,3 +91,7 @@ index f99f599..b61c34b 100644
  	if (parent && parent->use_hierarchy) {
 -- 
 1.7.10.4
+
+-- 
+Michal Hocko
+SUSE Labs
