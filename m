@@ -1,14 +1,13 @@
-From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCH 2/3] cgroup, sched: let cpu serve the same files as cpuacct
-Date: Thu, 20 Sep 2012 12:05:10 +0400
-Message-ID: <505ACE36.80603@parallels.com>
-References: <1348094625-4471-1-git-send-email-tj@kernel.org>
-	<1348094625-4471-3-git-send-email-tj@kernel.org>
+From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: [Announce] Checkpoint-restore tool v0.2
+Date: Thu, 20 Sep 2012 14:16:16 +0400
+Message-ID: <505AECF0.6070607@parallels.com>
+References: <500D09C9.7060903@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1348094625-4471-3-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <500D09C9.7060903-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,32 +17,33 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: pjt-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kay.sievers-tD+1rO4QERM@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, mzxreary-uLTowLwuiw4b1SvskN2V4Q@public.gmane.org, davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org
+To: Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, lwn-T1hC0tSOHrs@public.gmane.org, "criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org" <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: users-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, cgroups mailinglist <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 09/20/2012 02:43 AM, Tejun Heo wrote:
-> +
-> +void task_group_charge(struct task_struct *tsk, u64 cputime)
-> +{
-> +	struct task_group *tg;
-> +	int cpu = task_cpu(tsk);
-> +
-> +	rcu_read_lock();
-> +
-> +	tg = container_of(task_subsys_state(tsk, cpu_cgroup_subsys_id),
-> +			  struct task_group, css);
-> +
-> +	for (; tg; tg = tg->parent) {
-> +		u64 *cpuusage = per_cpu_ptr(tg->cpuusage, cpu);
-> +		*cpuusage += cputime;
-> +	}
-> +
-> +	rcu_read_unlock();
-> +}
->  #endif /* CONFIG_CGROUP_SCHED */
+Hi!
 
-The whole point of this merge is that this is not needed.
-This information is already available from exec_clock for fair tasks.
-for rt tasks, we have no exec clock, but do have a hierarchy walk a bit
-below the current cpuacct charge, that can be used for that purpose.
+I'm happy to announce that the next big step is done by the CRIU project.
+
+The major achievement so far -- the tool can now dump and restore a simple LXC
+container. Another notable feature is the initial support for PTYs which is enough
+to play with c/r of a container with active ssh sessions from outside, or with
+a screen app with some simple stuff running inside.
+
+A HOWTO describing an LXC container dump and restore is at http://criu.org/LXC
+
+
+The v0.2 can be downloaded from
+
+	http://download.openvz.org/criu/crtools-0.2.tar.bz2
+
+
+Other project resources are
+
+  documentation and news:             http://criu.org
+  mainling list:                      https://openvz.org/mailman/listinfo/criu
+  git repo:                           http://git.criu.org/?p=crtools.git
+  kernel with not-yet-merged patches: https://github.com/cyrillos/linux-2.6.git
+
+Thanks,
+Pavel
