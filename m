@@ -1,7 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 17/25] userns: Convert minix to use kuid/kgid where appropriate
-Date: Thu, 20 Sep 2012 04:41:58 -0700
-Message-ID: <1348141326-23355-17-git-send-email-ebiederm__47045.8703967326$1348143162$gmane$org@xmission.com>
+Subject: [PATCH 24/25] userns: Convert freevxfs to use kuid/kgid where
+	appropriate
+Date: Thu, 20 Sep 2012 04:42:05 -0700
+Message-ID: <1348141326-23355-24-git-send-email-ebiederm@xmission.com>
 References: <877grox6ql.fsf@xmission.com>
 	<1348141326-23355-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -19,77 +20,45 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
+Cc: Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/minix/inode.c |   16 ++++++++--------
- init/Kconfig     |    1 -
- 2 files changed, 8 insertions(+), 9 deletions(-)
+ fs/freevxfs/vxfs_inode.c |    4 ++--
+ init/Kconfig             |    1 -
+ 2 files changed, 2 insertions(+), 3 deletions(-)
 
-diff --git a/fs/minix/inode.c b/fs/minix/inode.c
-index 2a503ad..d0e42c6 100644
---- a/fs/minix/inode.c
-+++ b/fs/minix/inode.c
-@@ -460,8 +460,8 @@ static struct inode *V1_minix_iget(struct inode *inode)
- 		return ERR_PTR(-EIO);
- 	}
- 	inode->i_mode = raw_inode->i_mode;
--	inode->i_uid = (uid_t)raw_inode->i_uid;
--	inode->i_gid = (gid_t)raw_inode->i_gid;
-+	i_uid_write(inode, raw_inode->i_uid);
-+	i_gid_write(inode, raw_inode->i_gid);
- 	set_nlink(inode, raw_inode->i_nlinks);
- 	inode->i_size = raw_inode->i_size;
- 	inode->i_mtime.tv_sec = inode->i_atime.tv_sec = inode->i_ctime.tv_sec = raw_inode->i_time;
-@@ -493,8 +493,8 @@ static struct inode *V2_minix_iget(struct inode *inode)
- 		return ERR_PTR(-EIO);
- 	}
- 	inode->i_mode = raw_inode->i_mode;
--	inode->i_uid = (uid_t)raw_inode->i_uid;
--	inode->i_gid = (gid_t)raw_inode->i_gid;
-+	i_uid_write(inode, raw_inode->i_uid);
-+	i_gid_write(inode, raw_inode->i_gid);
- 	set_nlink(inode, raw_inode->i_nlinks);
- 	inode->i_size = raw_inode->i_size;
- 	inode->i_mtime.tv_sec = raw_inode->i_mtime;
-@@ -545,8 +545,8 @@ static struct buffer_head * V1_minix_update_inode(struct inode * inode)
- 	if (!raw_inode)
- 		return NULL;
- 	raw_inode->i_mode = inode->i_mode;
--	raw_inode->i_uid = fs_high2lowuid(inode->i_uid);
--	raw_inode->i_gid = fs_high2lowgid(inode->i_gid);
-+	raw_inode->i_uid = fs_high2lowuid(i_uid_read(inode));
-+	raw_inode->i_gid = fs_high2lowgid(i_gid_read(inode));
- 	raw_inode->i_nlinks = inode->i_nlink;
- 	raw_inode->i_size = inode->i_size;
- 	raw_inode->i_time = inode->i_mtime.tv_sec;
-@@ -572,8 +572,8 @@ static struct buffer_head * V2_minix_update_inode(struct inode * inode)
- 	if (!raw_inode)
- 		return NULL;
- 	raw_inode->i_mode = inode->i_mode;
--	raw_inode->i_uid = fs_high2lowuid(inode->i_uid);
--	raw_inode->i_gid = fs_high2lowgid(inode->i_gid);
-+	raw_inode->i_uid = fs_high2lowuid(i_uid_read(inode));
-+	raw_inode->i_gid = fs_high2lowgid(i_gid_read(inode));
- 	raw_inode->i_nlinks = inode->i_nlink;
- 	raw_inode->i_size = inode->i_size;
- 	raw_inode->i_mtime = inode->i_mtime.tv_sec;
+diff --git a/fs/freevxfs/vxfs_inode.c b/fs/freevxfs/vxfs_inode.c
+index ef67c95..f47df72 100644
+--- a/fs/freevxfs/vxfs_inode.c
++++ b/fs/freevxfs/vxfs_inode.c
+@@ -224,8 +224,8 @@ vxfs_iinit(struct inode *ip, struct vxfs_inode_info *vip)
+ {
+ 
+ 	ip->i_mode = vxfs_transmod(vip);
+-	ip->i_uid = (uid_t)vip->vii_uid;
+-	ip->i_gid = (gid_t)vip->vii_gid;
++	i_uid_write(ip, (uid_t)vip->vii_uid);
++	i_gid_write(ip, (gid_t)vip->vii_gid);
+ 
+ 	set_nlink(ip, vip->vii_nlink);
+ 	ip->i_size = vip->vii_size;
 diff --git a/init/Kconfig b/init/Kconfig
-index 80edba8..c69e085 100644
+index 3427832..355b1af 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -946,7 +946,6 @@ config UIDGID_CONVERTED
- 	depends on HPFS_FS = n
- 	depends on JFFS2_FS = n
- 	depends on JFS_FS = n
--	depends on MINIX_FS = n
- 	depends on NCP_FS = n
- 	depends on NFSD = n
- 	depends on NFS_FS = n
+@@ -955,7 +955,6 @@ config UIDGID_CONVERTED
+ 	depends on UBIFS_FS = n
+ 	depends on UDF_FS = n
+ 	depends on UFS_FS = n
+-	depends on VXFS_FS = n
+ 	depends on XFS_FS = n
+ 
+ 	depends on !UML || HOSTFS = n
 -- 
 1.7.5.4
