@@ -1,7 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 05/27] audit: kill audit_prepare_user_tty
-Date: Wed, 19 Sep 2012 18:52:07 -0700
-Message-ID: <1348105949-25454-5-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 06/27] audit: Simply AUDIT_TTY_SET and AUDIT_TTY_GET
+Date: Wed, 19 Sep 2012 18:52:08 -0700
+Message-ID: <1348105949-25454-6-git-send-email-ebiederm@xmission.com>
 References: <871uhx1n71.fsf@xmission.com>
 	<1348105949-25454-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -24,55 +24,75 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Now that netlink messages are processed in the context of the sender
-tty_audit_push_task can be called directly and audit_prepare_user_tty
-which only added looking up the task of the tty by process id is
-not needed.
+Use current instead of looking up the current up the current task by
+process identifier.  Netlink requests are processed in trhe context of
+the sending task so this is safe.
 
 Cc: Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 Cc: Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- kernel/audit.c |   20 +-------------------
- 1 files changed, 1 insertions(+), 19 deletions(-)
+ kernel/audit.c |   38 +++++++++++++-------------------------
+ 1 files changed, 13 insertions(+), 25 deletions(-)
 
 diff --git a/kernel/audit.c b/kernel/audit.c
-index fecb150..58f704b 100644
+index 58f704b..2a8728f 100644
 --- a/kernel/audit.c
 +++ b/kernel/audit.c
-@@ -468,24 +468,6 @@ static int kauditd_thread(void *dummy)
- 	return 0;
- }
- 
--static int audit_prepare_user_tty(pid_t pid, uid_t loginuid, u32 sessionid)
--{
--	struct task_struct *tsk;
--	int err;
+@@ -866,41 +866,29 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 		break;
+ 	case AUDIT_TTY_GET: {
+ 		struct audit_tty_status s;
+-		struct task_struct *tsk;
+-		unsigned long flags;
 -
--	rcu_read_lock();
--	tsk = find_task_by_vpid(pid);
--	if (!tsk) {
+-		rcu_read_lock();
+-		tsk = find_task_by_vpid(pid);
+-		if (tsk && lock_task_sighand(tsk, &flags)) {
+-			s.enabled = tsk->signal->audit_tty != 0;
+-			unlock_task_sighand(tsk, &flags);
+-		} else
+-			err = -ESRCH;
 -		rcu_read_unlock();
--		return -ESRCH;
--	}
--	get_task_struct(tsk);
--	rcu_read_unlock();
--	err = tty_audit_push_task(tsk, loginuid, sessionid);
--	put_task_struct(tsk);
--	return err;
--}
 -
- int audit_send_list(void *_dest)
- {
- 	struct audit_netlink_list *dest = _dest;
-@@ -748,7 +730,7 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
- 		if (err == 1) {
- 			err = 0;
- 			if (msg_type == AUDIT_USER_TTY) {
--				err = audit_prepare_user_tty(pid, loginuid,
-+				err = tty_audit_push_task(current, loginuid,
- 							     sessionid);
- 				if (err)
- 					break;
+-		if (!err)
+-			audit_send_reply(NETLINK_CB(skb).pid, seq,
+-					 AUDIT_TTY_GET, 0, 0, &s, sizeof(s));
++		struct task_struct *tsk = current;
++
++		spin_lock_irq(&tsk->sighand->siglock);
++		s.enabled = tsk->signal->audit_tty != 0;
++		spin_unlock_irq(&tsk->sighand->siglock);
++
++		audit_send_reply(NETLINK_CB(skb).pid, seq,
++				 AUDIT_TTY_GET, 0, 0, &s, sizeof(s));
+ 		break;
+ 	}
+ 	case AUDIT_TTY_SET: {
+ 		struct audit_tty_status *s;
+-		struct task_struct *tsk;
+-		unsigned long flags;
++		struct task_struct *tsk = current;
+ 
+ 		if (nlh->nlmsg_len < sizeof(struct audit_tty_status))
+ 			return -EINVAL;
+ 		s = data;
+ 		if (s->enabled != 0 && s->enabled != 1)
+ 			return -EINVAL;
+-		rcu_read_lock();
+-		tsk = find_task_by_vpid(pid);
+-		if (tsk && lock_task_sighand(tsk, &flags)) {
+-			tsk->signal->audit_tty = s->enabled != 0;
+-			unlock_task_sighand(tsk, &flags);
+-		} else
+-			err = -ESRCH;
+-		rcu_read_unlock();
++
++		spin_lock_irq(&tsk->sighand->siglock);
++		tsk->signal->audit_tty = s->enabled != 0;
++		spin_unlock_irq(&tsk->sighand->siglock);
+ 		break;
+ 	}
+ 	default:
 -- 
 1.7.5.4
