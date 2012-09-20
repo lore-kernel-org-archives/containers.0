@@ -1,7 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 11/27] userns: Convert the audit loginuid  to be a kuid
-Date: Wed, 19 Sep 2012 18:52:13 -0700
-Message-ID: <1348105949-25454-11-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 20/27] userns: Add kprojid_t and associated infrastructure in
+	projid.h
+Date: Wed, 19 Sep 2012 18:52:22 -0700
+Message-ID: <1348105949-25454-20-git-send-email-ebiederm@xmission.com>
 References: <871uhx1n71.fsf@xmission.com>
 	<1348105949-25454-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -24,698 +25,417 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Always store audit loginuids in type kuid_t.
+Implement kprojid_t a cousin of the kuid_t and kgid_t.
 
-Print loginuids by converting them into uids in the appropriate user
-namespace, and then printing the resulting uid.
+The per user namespace mapping of project id values can be set with
+/proc/<pid>/projid_map.
 
-Modify audit_get_loginuid to return a kuid_t.
+A full compliment of helpers is provided: make_kprojid, from_kprojid,
+from_kprojid_munged, kporjid_has_mapping, projid_valid, projid_eq,
+projid_eq, projid_lt.
 
-Modify audit_set_loginuid to take a kuid_t.
+Project identifiers are part of the generic disk quota interface,
+although it appears only xfs implements project identifiers currently.
 
-Modify /proc/<pid>/loginuid on read to convert the loginuid into the
-user namespace of the opener of the file.
+The xfs code allows anyone who has permission to set the project
+identifier on a file to use any project identifier so when
+setting up the user namespace project identifier mappings I do
+not require a capability.
 
-Modify /proc/<pid>/loginud on write to convert the loginuid
-rom the user namespace of the opener of the file.
-
-Cc: Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-Cc: Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org> ?
-Cc: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
+Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- drivers/tty/tty_audit.c           |   14 ++++++++------
- fs/proc/base.c                    |   12 ++++++++++--
- include/linux/audit.h             |    6 +++---
- include/linux/init_task.h         |    2 +-
- include/linux/sched.h             |    2 +-
- include/linux/tty.h               |    4 ++--
- include/net/netlabel.h            |    2 +-
- include/net/xfrm.h                |   23 ++++++++++++-----------
- kernel/audit.c                    |   20 ++++++++++----------
- kernel/audit_watch.c              |    2 +-
- kernel/auditfilter.c              |    7 ++++---
- kernel/auditsc.c                  |   20 +++++++++++---------
- net/core/dev.c                    |    2 +-
- net/netlabel/netlabel_unlabeled.c |    2 +-
- net/netlabel/netlabel_user.c      |    2 +-
- net/xfrm/xfrm_policy.c            |    8 ++++----
- net/xfrm/xfrm_state.c             |    6 +++---
- net/xfrm/xfrm_user.c              |   12 ++++++------
- 18 files changed, 80 insertions(+), 66 deletions(-)
+ fs/proc/base.c                 |   15 +++++
+ include/linux/projid.h         |  104 ++++++++++++++++++++++++++++++++
+ include/linux/user_namespace.h |    3 +
+ kernel/user.c                  |    8 +++
+ kernel/user_namespace.c        |  128 +++++++++++++++++++++++++++++++++++++++-
+ 5 files changed, 257 insertions(+), 1 deletions(-)
+ create mode 100644 include/linux/projid.h
 
-diff --git a/drivers/tty/tty_audit.c b/drivers/tty/tty_audit.c
-index 7c58669..5b59bd7 100644
---- a/drivers/tty/tty_audit.c
-+++ b/drivers/tty/tty_audit.c
-@@ -61,7 +61,7 @@ static void tty_audit_buf_put(struct tty_audit_buf *buf)
- }
- 
- static void tty_audit_log(const char *description, struct task_struct *tsk,
--			  uid_t loginuid, unsigned sessionid, int major,
-+			  kuid_t loginuid, unsigned sessionid, int major,
- 			  int minor, unsigned char *data, size_t size)
- {
- 	struct audit_buffer *ab;
-@@ -73,7 +73,9 @@ static void tty_audit_log(const char *description, struct task_struct *tsk,
- 
- 		audit_log_format(ab, "%s pid=%u uid=%u auid=%u ses=%u "
- 				 "major=%d minor=%d comm=", description,
--				 tsk->pid, uid, loginuid, sessionid,
-+				 tsk->pid, uid,
-+				 from_kuid(&init_user_ns, loginuid),
-+				 sessionid,
- 				 major, minor);
- 		get_task_comm(name, tsk);
- 		audit_log_untrustedstring(ab, name);
-@@ -89,7 +91,7 @@ static void tty_audit_log(const char *description, struct task_struct *tsk,
-  *	Generate an audit message from the contents of @buf, which is owned by
-  *	@tsk with @loginuid.  @buf->mutex must be locked.
-  */
--static void tty_audit_buf_push(struct task_struct *tsk, uid_t loginuid,
-+static void tty_audit_buf_push(struct task_struct *tsk, kuid_t loginuid,
- 			       unsigned int sessionid,
- 			       struct tty_audit_buf *buf)
- {
-@@ -112,7 +114,7 @@ static void tty_audit_buf_push(struct task_struct *tsk, uid_t loginuid,
-  */
- static void tty_audit_buf_push_current(struct tty_audit_buf *buf)
- {
--	uid_t auid = audit_get_loginuid(current);
-+	kuid_t auid = audit_get_loginuid(current);
- 	unsigned int sessionid = audit_get_sessionid(current);
- 	tty_audit_buf_push(current, auid, sessionid, buf);
- }
-@@ -179,7 +181,7 @@ void tty_audit_tiocsti(struct tty_struct *tty, char ch)
- 	}
- 
- 	if (should_audit && audit_enabled) {
--		uid_t auid;
-+		kuid_t auid;
- 		unsigned int sessionid;
- 
- 		auid = audit_get_loginuid(current);
-@@ -199,7 +201,7 @@ void tty_audit_tiocsti(struct tty_struct *tty, char ch)
-  * reference to the tty audit buffer if available.
-  * Flush the buffer or return an appropriate error code.
-  */
--int tty_audit_push_task(struct task_struct *tsk, uid_t loginuid, u32 sessionid)
-+int tty_audit_push_task(struct task_struct *tsk, kuid_t loginuid, u32 sessionid)
- {
- 	struct tty_audit_buf *buf = ERR_PTR(-EPERM);
- 	unsigned long flags;
 diff --git a/fs/proc/base.c b/fs/proc/base.c
-index 1b6c84c..138cff4 100644
+index 138cff4..acd1960 100644
 --- a/fs/proc/base.c
 +++ b/fs/proc/base.c
-@@ -1089,7 +1089,8 @@ static ssize_t proc_loginuid_read(struct file * file, char __user * buf,
- 	if (!task)
- 		return -ESRCH;
- 	length = scnprintf(tmpbuf, TMPBUFLEN, "%u",
--				audit_get_loginuid(task));
-+			   from_kuid(file->f_cred->user_ns,
-+				     audit_get_loginuid(task)));
- 	put_task_struct(task);
- 	return simple_read_from_buffer(buf, count, ppos, tmpbuf, length);
+@@ -2991,6 +2991,11 @@ static int proc_gid_map_open(struct inode *inode, struct file *file)
+ 	return proc_id_map_open(inode, file, &proc_gid_seq_operations);
  }
-@@ -1101,6 +1102,7 @@ static ssize_t proc_loginuid_write(struct file * file, const char __user * buf,
- 	char *page, *tmp;
- 	ssize_t length;
- 	uid_t loginuid;
-+	kuid_t kloginuid;
  
- 	rcu_read_lock();
- 	if (current != pid_task(proc_pid(inode), PIDTYPE_PID)) {
-@@ -1130,7 +1132,13 @@ static ssize_t proc_loginuid_write(struct file * file, const char __user * buf,
- 		goto out_free_page;
- 
- 	}
--	length = audit_set_loginuid(loginuid);
-+	kloginuid = make_kuid(file->f_cred->user_ns, loginuid);
-+	if (!uid_valid(kloginuid)) {
-+		length = -EINVAL;
-+		goto out_free_page;
-+	}
++static int proc_projid_map_open(struct inode *inode, struct file *file)
++{
++	return proc_id_map_open(inode, file, &proc_projid_seq_operations);
++}
 +
-+	length = audit_set_loginuid(kloginuid);
- 	if (likely(length == 0))
- 		length = count;
+ static const struct file_operations proc_uid_map_operations = {
+ 	.open		= proc_uid_map_open,
+ 	.write		= proc_uid_map_write,
+@@ -3006,6 +3011,14 @@ static const struct file_operations proc_gid_map_operations = {
+ 	.llseek		= seq_lseek,
+ 	.release	= proc_id_map_release,
+ };
++
++static const struct file_operations proc_projid_map_operations = {
++	.open		= proc_projid_map_open,
++	.write		= proc_projid_map_write,
++	.read		= seq_read,
++	.llseek		= seq_lseek,
++	.release	= proc_id_map_release,
++};
+ #endif /* CONFIG_USER_NS */
  
-diff --git a/include/linux/audit.h b/include/linux/audit.h
-index ca019bb..12367cb 100644
---- a/include/linux/audit.h
-+++ b/include/linux/audit.h
-@@ -527,7 +527,7 @@ static inline void audit_ptrace(struct task_struct *t)
- extern unsigned int audit_serial(void);
- extern int auditsc_get_stamp(struct audit_context *ctx,
- 			      struct timespec *t, unsigned int *serial);
--extern int  audit_set_loginuid(uid_t loginuid);
-+extern int  audit_set_loginuid(kuid_t loginuid);
- #define audit_get_loginuid(t) ((t)->loginuid)
- #define audit_get_sessionid(t) ((t)->sessionid)
- extern void audit_log_task_context(struct audit_buffer *ab);
-@@ -639,7 +639,7 @@ extern int audit_signals;
- #define audit_core_dumps(i) do { ; } while (0)
- #define audit_seccomp(i,s,c) do { ; } while (0)
- #define auditsc_get_stamp(c,t,s) (0)
--#define audit_get_loginuid(t) (-1)
-+#define audit_get_loginuid(t) (INVALID_UID)
- #define audit_get_sessionid(t) (-1)
- #define audit_log_task_context(b) do { ; } while (0)
- #define audit_ipc_obj(i) ((void)0)
-@@ -705,7 +705,7 @@ extern int		    audit_update_lsm_rules(void);
- extern int audit_filter_user(void);
- extern int audit_filter_type(int type);
- extern int  audit_receive_filter(int type, int pid, int seq,
--				void *data, size_t datasz, uid_t loginuid,
-+				void *data, size_t datasz, kuid_t loginuid,
- 				u32 sessionid, u32 sid);
- extern int audit_enabled;
- #else
-diff --git a/include/linux/init_task.h b/include/linux/init_task.h
-index 89f1cb1..6d087c5 100644
---- a/include/linux/init_task.h
-+++ b/include/linux/init_task.h
-@@ -92,7 +92,7 @@ extern struct group_info init_groups;
- 
- #ifdef CONFIG_AUDITSYSCALL
- #define INIT_IDS \
--	.loginuid = -1, \
-+	.loginuid = INVALID_UID, \
- 	.sessionid = -1,
- #else
- #define INIT_IDS
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index c147e70..f64d092 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -1426,7 +1426,7 @@ struct task_struct {
- 
- 	struct audit_context *audit_context;
- #ifdef CONFIG_AUDITSYSCALL
--	uid_t loginuid;
-+	kuid_t loginuid;
- 	unsigned int sessionid;
+ static int proc_pid_personality(struct seq_file *m, struct pid_namespace *ns,
+@@ -3113,6 +3126,7 @@ static const struct pid_entry tgid_base_stuff[] = {
+ #ifdef CONFIG_USER_NS
+ 	REG("uid_map",    S_IRUGO|S_IWUSR, proc_uid_map_operations),
+ 	REG("gid_map",    S_IRUGO|S_IWUSR, proc_gid_map_operations),
++	REG("projid_map", S_IRUGO|S_IWUSR, proc_projid_map_operations),
  #endif
- 	struct seccomp seccomp;
-diff --git a/include/linux/tty.h b/include/linux/tty.h
-index 9f47ab5..7298385 100644
---- a/include/linux/tty.h
-+++ b/include/linux/tty.h
-@@ -553,7 +553,7 @@ extern void tty_audit_fork(struct signal_struct *sig);
- extern void tty_audit_tiocsti(struct tty_struct *tty, char ch);
- extern void tty_audit_push(struct tty_struct *tty);
- extern int tty_audit_push_task(struct task_struct *tsk,
--			       uid_t loginuid, u32 sessionid);
-+			       kuid_t loginuid, u32 sessionid);
+ };
+ 
+@@ -3476,6 +3490,7 @@ static const struct pid_entry tid_base_stuff[] = {
+ #ifdef CONFIG_USER_NS
+ 	REG("uid_map",    S_IRUGO|S_IWUSR, proc_uid_map_operations),
+ 	REG("gid_map",    S_IRUGO|S_IWUSR, proc_gid_map_operations),
++	REG("projid_map", S_IRUGO|S_IWUSR, proc_projid_map_operations),
+ #endif
+ };
+ 
+diff --git a/include/linux/projid.h b/include/linux/projid.h
+new file mode 100644
+index 0000000..36517b9
+--- /dev/null
++++ b/include/linux/projid.h
+@@ -0,0 +1,104 @@
++#ifndef _LINUX_PROJID_H
++#define _LINUX_PROJID_H
++
++/*
++ * A set of types for the internal kernel types representing project ids.
++ *
++ * The types defined in this header allow distinguishing which project ids in
++ * the kernel are values used by userspace and which project id values are
++ * the internal kernel values.  With the addition of user namespaces the values
++ * can be different.  Using the type system makes it possible for the compiler
++ * to detect when we overlook these differences.
++ *
++ */
++#include <linux/types.h>
++
++struct user_namespace;
++extern struct user_namespace init_user_ns;
++
++typedef __kernel_uid32_t projid_t;
++
++#ifdef CONFIG_UIDGID_STRICT_TYPE_CHECKS
++
++typedef struct {
++	projid_t val;
++} kprojid_t;
++
++static inline projid_t __kprojid_val(kprojid_t projid)
++{
++	return projid.val;
++}
++
++#define KPROJIDT_INIT(value) (kprojid_t){ value }
++
++#else
++
++typedef projid_t kprojid_t;
++
++static inline projid_t __kprojid_val(kprojid_t projid)
++{
++	return projid;
++}
++
++#define KPROJIDT_INIT(value) ((kprojid_t) value )
++
++#endif
++
++#define INVALID_PROJID KPROJIDT_INIT(-1)
++#define OVERFLOW_PROJID 65534
++
++static inline bool projid_eq(kprojid_t left, kprojid_t right)
++{
++	return __kprojid_val(left) == __kprojid_val(right);
++}
++
++static inline bool projid_lt(kprojid_t left, kprojid_t right)
++{
++	return __kprojid_val(left) < __kprojid_val(right);
++}
++
++static inline bool projid_valid(kprojid_t projid)
++{
++	return !projid_eq(projid, INVALID_PROJID);
++}
++
++#ifdef CONFIG_USER_NS
++
++extern kprojid_t make_kprojid(struct user_namespace *from, projid_t projid);
++
++extern projid_t from_kprojid(struct user_namespace *to, kprojid_t projid);
++extern projid_t from_kprojid_munged(struct user_namespace *to, kprojid_t projid);
++
++static inline bool kprojid_has_mapping(struct user_namespace *ns, kprojid_t projid)
++{
++	return from_kprojid(ns, projid) != (projid_t)-1;
++}
++
++#else
++
++static inline kprojid_t make_kprojid(struct user_namespace *from, projid_t projid)
++{
++	return KPROJIDT_INIT(projid);
++}
++
++static inline projid_t from_kprojid(struct user_namespace *to, kprojid_t kprojid)
++{
++	return __kprojid_val(kprojid);
++}
++
++static inline projid_t from_kprojid_munged(struct user_namespace *to, kprojid_t kprojid)
++{
++	projid_t projid = from_kprojid(to, kprojid);
++	if (projid == (projid_t)-1)
++		projid = OVERFLOW_PROJID;
++	return projid;
++}
++
++static inline bool kprojid_has_mapping(struct user_namespace *ns, kprojid_t projid)
++{
++	return true;
++}
++
++#endif /* CONFIG_USER_NS */
++
++#endif /* _LINUX_PROJID_H */
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index 4e72922..95142ca 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -20,6 +20,7 @@ struct uid_gid_map {	/* 64 bytes -- 1 cache line */
+ struct user_namespace {
+ 	struct uid_gid_map	uid_map;
+ 	struct uid_gid_map	gid_map;
++	struct uid_gid_map	projid_map;
+ 	struct kref		kref;
+ 	struct user_namespace	*parent;
+ 	kuid_t			owner;
+@@ -49,8 +50,10 @@ static inline void put_user_ns(struct user_namespace *ns)
+ struct seq_operations;
+ extern struct seq_operations proc_uid_seq_operations;
+ extern struct seq_operations proc_gid_seq_operations;
++extern struct seq_operations proc_projid_seq_operations;
+ extern ssize_t proc_uid_map_write(struct file *, const char __user *, size_t, loff_t *);
+ extern ssize_t proc_gid_map_write(struct file *, const char __user *, size_t, loff_t *);
++extern ssize_t proc_projid_map_write(struct file *, const char __user *, size_t, loff_t *);
  #else
- static inline void tty_audit_add_data(struct tty_struct *tty,
- 				      unsigned char *data, size_t size)
-@@ -572,7 +572,7 @@ static inline void tty_audit_push(struct tty_struct *tty)
- {
+ 
+ static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
+diff --git a/kernel/user.c b/kernel/user.c
+index b815fef..750acff 100644
+--- a/kernel/user.c
++++ b/kernel/user.c
+@@ -38,6 +38,14 @@ struct user_namespace init_user_ns = {
+ 			.count = 4294967295U,
+ 		},
+ 	},
++	.projid_map = {
++		.nr_extents = 1,
++		.extent[0] = {
++			.first = 0,
++			.lower_first = 0,
++			.count = 4294967295U,
++		},
++	},
+ 	.kref = {
+ 		.refcount	= ATOMIC_INIT(3),
+ 	},
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 8660231..456a6b9 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -19,6 +19,7 @@
+ #include <linux/fs.h>
+ #include <linux/uaccess.h>
+ #include <linux/ctype.h>
++#include <linux/projid.h>
+ 
+ static struct kmem_cache *user_ns_cachep __read_mostly;
+ 
+@@ -295,6 +296,75 @@ gid_t from_kgid_munged(struct user_namespace *targ, kgid_t kgid)
  }
- static inline int tty_audit_push_task(struct task_struct *tsk,
--				      uid_t loginuid, u32 sessionid)
-+				      kuid_t loginuid, u32 sessionid)
+ EXPORT_SYMBOL(from_kgid_munged);
+ 
++/**
++ *	make_kprojid - Map a user-namespace projid pair into a kprojid.
++ *	@ns:  User namespace that the projid is in
++ *	@projid: Project identifier
++ *
++ *	Maps a user-namespace uid pair into a kernel internal kuid,
++ *	and returns that kuid.
++ *
++ *	When there is no mapping defined for the user-namespace projid
++ *	pair INVALID_PROJID is returned.  Callers are expected to test
++ *	for and handle handle INVALID_PROJID being returned.  INVALID_PROJID
++ *	may be tested for using projid_valid().
++ */
++kprojid_t make_kprojid(struct user_namespace *ns, projid_t projid)
++{
++	/* Map the uid to a global kernel uid */
++	return KPROJIDT_INIT(map_id_down(&ns->projid_map, projid));
++}
++EXPORT_SYMBOL(make_kprojid);
++
++/**
++ *	from_kprojid - Create a projid from a kprojid user-namespace pair.
++ *	@targ: The user namespace we want a projid in.
++ *	@kprojid: The kernel internal project identifier to start with.
++ *
++ *	Map @kprojid into the user-namespace specified by @targ and
++ *	return the resulting projid.
++ *
++ *	There is always a mapping into the initial user_namespace.
++ *
++ *	If @kprojid has no mapping in @targ (projid_t)-1 is returned.
++ */
++projid_t from_kprojid(struct user_namespace *targ, kprojid_t kprojid)
++{
++	/* Map the uid from a global kernel uid */
++	return map_id_up(&targ->projid_map, __kprojid_val(kprojid));
++}
++EXPORT_SYMBOL(from_kprojid);
++
++/**
++ *	from_kprojid_munged - Create a projiid from a kprojid user-namespace pair.
++ *	@targ: The user namespace we want a projid in.
++ *	@kprojid: The kernel internal projid to start with.
++ *
++ *	Map @kprojid into the user-namespace specified by @targ and
++ *	return the resulting projid.
++ *
++ *	There is always a mapping into the initial user_namespace.
++ *
++ *	Unlike from_kprojid from_kprojid_munged never fails and always
++ *	returns a valid projid.  This makes from_kprojid_munged
++ *	appropriate for use in syscalls like stat and where
++ *	failing the system call and failing to provide a valid projid are
++ *	not an options.
++ *
++ *	If @kprojid has no mapping in @targ OVERFLOW_PROJID is returned.
++ */
++projid_t from_kprojid_munged(struct user_namespace *targ, kprojid_t kprojid)
++{
++	projid_t projid;
++	projid = from_kprojid(targ, kprojid);
++
++	if (projid == (projid_t) -1)
++		projid = OVERFLOW_PROJID;
++	return projid;
++}
++EXPORT_SYMBOL(from_kprojid_munged);
++
++
+ static int uid_m_show(struct seq_file *seq, void *v)
  {
+ 	struct user_namespace *ns = seq->private;
+@@ -337,6 +407,27 @@ static int gid_m_show(struct seq_file *seq, void *v)
  	return 0;
  }
-diff --git a/include/net/netlabel.h b/include/net/netlabel.h
-index f674409..2c95d55 100644
---- a/include/net/netlabel.h
-+++ b/include/net/netlabel.h
-@@ -110,7 +110,7 @@ struct cipso_v4_doi;
- /* NetLabel audit information */
- struct netlbl_audit {
- 	u32 secid;
--	uid_t loginuid;
-+	kuid_t loginuid;
- 	u32 sessionid;
+ 
++static int projid_m_show(struct seq_file *seq, void *v)
++{
++	struct user_namespace *ns = seq->private;
++	struct uid_gid_extent *extent = v;
++	struct user_namespace *lower_ns;
++	projid_t lower;
++
++	lower_ns = seq_user_ns(seq);
++	if ((lower_ns == ns) && lower_ns->parent)
++		lower_ns = lower_ns->parent;
++
++	lower = from_kprojid(lower_ns, KPROJIDT_INIT(extent->lower_first));
++
++	seq_printf(seq, "%10u %10u %10u\n",
++		extent->first,
++		lower,
++		extent->count);
++
++	return 0;
++}
++
+ static void *m_start(struct seq_file *seq, loff_t *ppos, struct uid_gid_map *map)
+ {
+ 	struct uid_gid_extent *extent = NULL;
+@@ -362,6 +453,13 @@ static void *gid_m_start(struct seq_file *seq, loff_t *ppos)
+ 	return m_start(seq, ppos, &ns->gid_map);
+ }
+ 
++static void *projid_m_start(struct seq_file *seq, loff_t *ppos)
++{
++	struct user_namespace *ns = seq->private;
++
++	return m_start(seq, ppos, &ns->projid_map);
++}
++
+ static void *m_next(struct seq_file *seq, void *v, loff_t *pos)
+ {
+ 	(*pos)++;
+@@ -387,6 +485,13 @@ struct seq_operations proc_gid_seq_operations = {
+ 	.show = gid_m_show,
  };
  
-diff --git a/include/net/xfrm.h b/include/net/xfrm.h
-index d9509eb..1f217e2 100644
---- a/include/net/xfrm.h
-+++ b/include/net/xfrm.h
-@@ -662,7 +662,7 @@ struct xfrm_spi_skb_cb {
- /* Audit Information */
- struct xfrm_audit {
- 	u32	secid;
--	uid_t	loginuid;
-+	kuid_t	loginuid;
- 	u32	sessionid;
- };
++struct seq_operations proc_projid_seq_operations = {
++	.start = projid_m_start,
++	.stop = m_stop,
++	.next = m_next,
++	.show = projid_m_show,
++};
++
+ static DEFINE_MUTEX(id_map_mutex);
  
-@@ -681,13 +681,14 @@ static inline struct audit_buffer *xfrm_audit_start(const char *op)
- 	return audit_buf;
+ static ssize_t map_write(struct file *file, const char __user *buf,
+@@ -434,7 +539,7 @@ static ssize_t map_write(struct file *file, const char __user *buf,
+ 	/* Require the appropriate privilege CAP_SETUID or CAP_SETGID
+ 	 * over the user namespace in order to set the id mapping.
+ 	 */
+-	if (!ns_capable(ns, cap_setid))
++	if (cap_valid(cap_setid) && !ns_capable(ns, cap_setid))
+ 		goto out;
+ 
+ 	/* Get a buffer */
+@@ -584,9 +689,30 @@ ssize_t proc_gid_map_write(struct file *file, const char __user *buf, size_t siz
+ 			 &ns->gid_map, &ns->parent->gid_map);
  }
  
--static inline void xfrm_audit_helper_usrinfo(uid_t auid, u32 ses, u32 secid,
-+static inline void xfrm_audit_helper_usrinfo(kuid_t auid, u32 ses, u32 secid,
- 					     struct audit_buffer *audit_buf)
++ssize_t proc_projid_map_write(struct file *file, const char __user *buf, size_t size, loff_t *ppos)
++{
++	struct seq_file *seq = file->private_data;
++	struct user_namespace *ns = seq->private;
++	struct user_namespace *seq_ns = seq_user_ns(seq);
++
++	if (!ns->parent)
++		return -EPERM;
++
++	if ((seq_ns != ns) && (seq_ns != ns->parent))
++		return -EPERM;
++
++	/* Anyone can set any valid project id no capability needed */
++	return map_write(file, buf, size, ppos, -1,
++			 &ns->projid_map, &ns->parent->projid_map);
++}
++
+ static bool new_idmap_permitted(struct user_namespace *ns, int cap_setid,
+ 				struct uid_gid_map *new_map)
  {
- 	char *secctx;
- 	u32 secctx_len;
- 
--	audit_log_format(audit_buf, " auid=%u ses=%u", auid, ses);
-+	audit_log_format(audit_buf, " auid=%u ses=%u",
-+			 from_kuid(&init_user_ns, auid), ses);
- 	if (secid != 0 &&
- 	    security_secid_to_secctx(secid, &secctx, &secctx_len) == 0) {
- 		audit_log_format(audit_buf, " subj=%s", secctx);
-@@ -697,13 +698,13 @@ static inline void xfrm_audit_helper_usrinfo(uid_t auid, u32 ses, u32 secid,
- }
- 
- extern void xfrm_audit_policy_add(struct xfrm_policy *xp, int result,
--				  u32 auid, u32 ses, u32 secid);
-+				  kuid_t auid, u32 ses, u32 secid);
- extern void xfrm_audit_policy_delete(struct xfrm_policy *xp, int result,
--				  u32 auid, u32 ses, u32 secid);
-+				  kuid_t auid, u32 ses, u32 secid);
- extern void xfrm_audit_state_add(struct xfrm_state *x, int result,
--				 u32 auid, u32 ses, u32 secid);
-+				 kuid_t auid, u32 ses, u32 secid);
- extern void xfrm_audit_state_delete(struct xfrm_state *x, int result,
--				    u32 auid, u32 ses, u32 secid);
-+				    kuid_t auid, u32 ses, u32 secid);
- extern void xfrm_audit_state_replay_overflow(struct xfrm_state *x,
- 					     struct sk_buff *skb);
- extern void xfrm_audit_state_replay(struct xfrm_state *x,
-@@ -716,22 +717,22 @@ extern void xfrm_audit_state_icvfail(struct xfrm_state *x,
- #else
- 
- static inline void xfrm_audit_policy_add(struct xfrm_policy *xp, int result,
--				  u32 auid, u32 ses, u32 secid)
-+				  kuid_t auid, u32 ses, u32 secid)
- {
- }
- 
- static inline void xfrm_audit_policy_delete(struct xfrm_policy *xp, int result,
--				  u32 auid, u32 ses, u32 secid)
-+				  kuid_t auid, u32 ses, u32 secid)
- {
- }
- 
- static inline void xfrm_audit_state_add(struct xfrm_state *x, int result,
--				 u32 auid, u32 ses, u32 secid)
-+				 kuid_t auid, u32 ses, u32 secid)
- {
- }
- 
- static inline void xfrm_audit_state_delete(struct xfrm_state *x, int result,
--				    u32 auid, u32 ses, u32 secid)
-+				    kuid_t auid, u32 ses, u32 secid)
- {
- }
- 
-diff --git a/kernel/audit.c b/kernel/audit.c
-index 2e0dd5e..44a4b13 100644
---- a/kernel/audit.c
-+++ b/kernel/audit.c
-@@ -265,7 +265,7 @@ void audit_log_lost(const char *message)
- }
- 
- static int audit_log_config_change(char *function_name, int new, int old,
--				   uid_t loginuid, u32 sessionid, u32 sid,
-+				   kuid_t loginuid, u32 sessionid, u32 sid,
- 				   int allow_changes)
- {
- 	struct audit_buffer *ab;
-@@ -273,7 +273,7 @@ static int audit_log_config_change(char *function_name, int new, int old,
- 
- 	ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_CONFIG_CHANGE);
- 	audit_log_format(ab, "%s=%d old=%d auid=%u ses=%u", function_name, new,
--			 old, loginuid, sessionid);
-+			 old, from_kuid(&init_user_ns, loginuid), sessionid);
- 	if (sid) {
- 		char *ctx = NULL;
- 		u32 len;
-@@ -293,7 +293,7 @@ static int audit_log_config_change(char *function_name, int new, int old,
- }
- 
- static int audit_do_config_change(char *function_name, int *to_change,
--				  int new, uid_t loginuid, u32 sessionid,
-+				  int new, kuid_t loginuid, u32 sessionid,
- 				  u32 sid)
- {
- 	int allow_changes, rc = 0, old = *to_change;
-@@ -320,21 +320,21 @@ static int audit_do_config_change(char *function_name, int *to_change,
- 	return rc;
- }
- 
--static int audit_set_rate_limit(int limit, uid_t loginuid, u32 sessionid,
-+static int audit_set_rate_limit(int limit, kuid_t loginuid, u32 sessionid,
- 				u32 sid)
- {
- 	return audit_do_config_change("audit_rate_limit", &audit_rate_limit,
- 				      limit, loginuid, sessionid, sid);
- }
- 
--static int audit_set_backlog_limit(int limit, uid_t loginuid, u32 sessionid,
-+static int audit_set_backlog_limit(int limit, kuid_t loginuid, u32 sessionid,
- 				   u32 sid)
- {
- 	return audit_do_config_change("audit_backlog_limit", &audit_backlog_limit,
- 				      limit, loginuid, sessionid, sid);
- }
- 
--static int audit_set_enabled(int state, uid_t loginuid, u32 sessionid, u32 sid)
-+static int audit_set_enabled(int state, kuid_t loginuid, u32 sessionid, u32 sid)
- {
- 	int rc;
- 	if (state < AUDIT_OFF || state > AUDIT_LOCKED)
-@@ -349,7 +349,7 @@ static int audit_set_enabled(int state, uid_t loginuid, u32 sessionid, u32 sid)
- 	return rc;
- }
- 
--static int audit_set_failure(int state, uid_t loginuid, u32 sessionid, u32 sid)
-+static int audit_set_failure(int state, kuid_t loginuid, u32 sessionid, u32 sid)
- {
- 	if (state != AUDIT_FAIL_SILENT
- 	    && state != AUDIT_FAIL_PRINTK
-@@ -607,7 +607,7 @@ static int audit_netlink_ok(struct sk_buff *skb, u16 msg_type)
- }
- 
- static int audit_log_common_recv_msg(struct audit_buffer **ab, u16 msg_type,
--				     uid_t auid, u32 ses, u32 sid)
-+				     kuid_t auid, u32 ses, u32 sid)
- {
- 	int rc = 0;
- 	char *ctx = NULL;
-@@ -622,7 +622,7 @@ static int audit_log_common_recv_msg(struct audit_buffer **ab, u16 msg_type,
- 	audit_log_format(*ab, "pid=%d uid=%u auid=%u ses=%u",
- 			 task_tgid_vnr(current),
- 			 from_kuid(&init_user_ns, current_uid()),
--			 auid, ses);
-+			 from_kuid(&init_user_ns, auid), ses);
- 	if (sid) {
- 		rc = security_secid_to_secctx(sid, &ctx, &len);
- 		if (rc)
-@@ -644,7 +644,7 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
- 	int			err;
- 	struct audit_buffer	*ab;
- 	u16			msg_type = nlh->nlmsg_type;
--	uid_t			loginuid; /* loginuid of sender */
-+	kuid_t			loginuid; /* loginuid of sender */
- 	u32			sessionid;
- 	struct audit_sig_info   *sig_data;
- 	char			*ctx = NULL;
-diff --git a/kernel/audit_watch.c b/kernel/audit_watch.c
-index 3823281..1c22ec3 100644
---- a/kernel/audit_watch.c
-+++ b/kernel/audit_watch.c
-@@ -241,7 +241,7 @@ static void audit_watch_log_rule_change(struct audit_krule *r, struct audit_watc
- 		struct audit_buffer *ab;
- 		ab = audit_log_start(NULL, GFP_NOFS, AUDIT_CONFIG_CHANGE);
- 		audit_log_format(ab, "auid=%u ses=%u op=",
--				 audit_get_loginuid(current),
-+				 from_kuid(&init_user_ns, audit_get_loginuid(current)),
- 				 audit_get_sessionid(current));
- 		audit_log_string(ab, op);
- 		audit_log_format(ab, " path=");
-diff --git a/kernel/auditfilter.c b/kernel/auditfilter.c
-index b30320c..c4bcdba 100644
---- a/kernel/auditfilter.c
-+++ b/kernel/auditfilter.c
-@@ -1109,7 +1109,7 @@ static void audit_list_rules(int pid, int seq, struct sk_buff_head *q)
- }
- 
- /* Log rule additions and removals */
--static void audit_log_rule_change(uid_t loginuid, u32 sessionid, u32 sid,
-+static void audit_log_rule_change(kuid_t loginuid, u32 sessionid, u32 sid,
- 				  char *action, struct audit_krule *rule,
- 				  int res)
- {
-@@ -1121,7 +1121,8 @@ static void audit_log_rule_change(uid_t loginuid, u32 sessionid, u32 sid,
- 	ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_CONFIG_CHANGE);
- 	if (!ab)
- 		return;
--	audit_log_format(ab, "auid=%u ses=%u", loginuid, sessionid);
-+	audit_log_format(ab, "auid=%u ses=%u",
-+			 from_kuid(&init_user_ns, loginuid), sessionid);
- 	if (sid) {
- 		char *ctx = NULL;
- 		u32 len;
-@@ -1152,7 +1153,7 @@ static void audit_log_rule_change(uid_t loginuid, u32 sessionid, u32 sid,
-  * @sid: SE Linux Security ID of sender
-  */
- int audit_receive_filter(int type, int pid, int seq, void *data,
--			 size_t datasz, uid_t loginuid, u32 sessionid, u32 sid)
-+			 size_t datasz, kuid_t loginuid, u32 sessionid, u32 sid)
- {
- 	struct task_struct *tsk;
- 	struct audit_netlink_list *dest;
-diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-index 0b5b8a2..26fdfc0 100644
---- a/kernel/auditsc.c
-+++ b/kernel/auditsc.c
-@@ -149,7 +149,7 @@ struct audit_aux_data_execve {
- struct audit_aux_data_pids {
- 	struct audit_aux_data	d;
- 	pid_t			target_pid[AUDIT_AUX_PIDS];
--	uid_t			target_auid[AUDIT_AUX_PIDS];
-+	kuid_t			target_auid[AUDIT_AUX_PIDS];
- 	uid_t			target_uid[AUDIT_AUX_PIDS];
- 	unsigned int		target_sessionid[AUDIT_AUX_PIDS];
- 	u32			target_sid[AUDIT_AUX_PIDS];
-@@ -214,7 +214,7 @@ struct audit_context {
- 	int		    arch;
- 
- 	pid_t		    target_pid;
--	uid_t		    target_auid;
-+	kuid_t		    target_auid;
- 	uid_t		    target_uid;
- 	unsigned int	    target_sessionid;
- 	u32		    target_sid;
-@@ -1176,7 +1176,7 @@ static void audit_log_task_info(struct audit_buffer *ab, struct task_struct *tsk
- }
- 
- static int audit_log_pid_context(struct audit_context *context, pid_t pid,
--				 uid_t auid, uid_t uid, unsigned int sessionid,
-+				 kuid_t auid, uid_t uid, unsigned int sessionid,
- 				 u32 sid, char *comm)
- {
- 	struct audit_buffer *ab;
-@@ -1188,7 +1188,8 @@ static int audit_log_pid_context(struct audit_context *context, pid_t pid,
- 	if (!ab)
- 		return rc;
- 
--	audit_log_format(ab, "opid=%d oauid=%d ouid=%d oses=%d", pid, auid,
-+	audit_log_format(ab, "opid=%d oauid=%d ouid=%d oses=%d", pid,
-+			 from_kuid(&init_user_ns, auid),
- 			 uid, sessionid);
- 	if (security_secid_to_secctx(sid, &ctx, &len)) {
- 		audit_log_format(ab, " obj=(none)");
-@@ -1630,7 +1631,7 @@ static void audit_log_exit(struct audit_context *context, struct task_struct *ts
- 		  context->name_count,
- 		  context->ppid,
- 		  context->pid,
--		  tsk->loginuid,
-+		  from_kuid(&init_user_ns, tsk->loginuid),
- 		  context->uid,
- 		  context->gid,
- 		  context->euid, context->suid, context->fsuid,
-@@ -2291,14 +2292,14 @@ static atomic_t session_id = ATOMIC_INIT(0);
-  *
-  * Called (set) from fs/proc/base.c::proc_loginuid_write().
-  */
--int audit_set_loginuid(uid_t loginuid)
-+int audit_set_loginuid(kuid_t loginuid)
- {
- 	struct task_struct *task = current;
- 	struct audit_context *context = task->audit_context;
- 	unsigned int sessionid;
- 
- #ifdef CONFIG_AUDIT_LOGINUID_IMMUTABLE
--	if (task->loginuid != -1)
-+	if (uid_valid(task->loginuid))
- 		return -EPERM;
- #else /* CONFIG_AUDIT_LOGINUID_IMMUTABLE */
- 	if (!capable(CAP_AUDIT_CONTROL))
-@@ -2315,7 +2316,8 @@ int audit_set_loginuid(uid_t loginuid)
- 				"old auid=%u new auid=%u"
- 				" old ses=%u new ses=%u",
- 				task->pid, task_uid(task),
--				task->loginuid, loginuid,
-+				from_kuid(&init_user_ns, task->loginuid),
-+				from_kuid(&init_user_ns, loginuid),
- 				task->sessionid, sessionid);
- 			audit_log_end(ab);
- 		}
-@@ -2543,7 +2545,7 @@ int __audit_signal_info(int sig, struct task_struct *t)
- 	if (audit_pid && t->tgid == audit_pid) {
- 		if (sig == SIGTERM || sig == SIGHUP || sig == SIGUSR1 || sig == SIGUSR2) {
- 			audit_sig_pid = tsk->pid;
--			if (tsk->loginuid != -1)
-+			if (uid_valid(tsk->loginuid))
- 				audit_sig_uid = tsk->loginuid;
- 			else
- 				audit_sig_uid = uid;
-diff --git a/net/core/dev.c b/net/core/dev.c
-index 026bb4a..1c0d082 100644
---- a/net/core/dev.c
-+++ b/net/core/dev.c
-@@ -4524,7 +4524,7 @@ static int __dev_set_promiscuity(struct net_device *dev, int inc)
- 				"dev=%s prom=%d old_prom=%d auid=%u uid=%u gid=%u ses=%u",
- 				dev->name, (dev->flags & IFF_PROMISC),
- 				(old_flags & IFF_PROMISC),
--				audit_get_loginuid(current),
-+				from_kuid(&init_user_ns, audit_get_loginuid(current)),
- 				from_kuid(&init_user_ns, uid),
- 				from_kgid(&init_user_ns, gid),
- 				audit_get_sessionid(current));
-diff --git a/net/netlabel/netlabel_unlabeled.c b/net/netlabel/netlabel_unlabeled.c
-index e7ff694..729a345 100644
---- a/net/netlabel/netlabel_unlabeled.c
-+++ b/net/netlabel/netlabel_unlabeled.c
-@@ -1541,7 +1541,7 @@ int __init netlbl_unlabel_defconf(void)
- 	 * it is called is at bootup before the audit subsystem is reporting
- 	 * messages so don't worry to much about these values. */
- 	security_task_getsecid(current, &audit_info.secid);
--	audit_info.loginuid = 0;
-+	audit_info.loginuid = GLOBAL_ROOT_UID;
- 	audit_info.sessionid = 0;
- 
- 	entry = kzalloc(sizeof(*entry), GFP_KERNEL);
-diff --git a/net/netlabel/netlabel_user.c b/net/netlabel/netlabel_user.c
-index 9fae63f..9650c4a 100644
---- a/net/netlabel/netlabel_user.c
-+++ b/net/netlabel/netlabel_user.c
-@@ -109,7 +109,7 @@ struct audit_buffer *netlbl_audit_start_common(int type,
- 		return NULL;
- 
- 	audit_log_format(audit_buf, "netlabel: auid=%u ses=%u",
--			 audit_info->loginuid,
-+			 from_kuid(&init_user_ns, audit_info->loginuid),
- 			 audit_info->sessionid);
- 
- 	if (audit_info->secid != 0 &&
-diff --git a/net/xfrm/xfrm_policy.c b/net/xfrm/xfrm_policy.c
-index c5a5165..2f47515 100644
---- a/net/xfrm/xfrm_policy.c
-+++ b/net/xfrm/xfrm_policy.c
-@@ -2630,12 +2630,12 @@ static void xfrm_policy_fini(struct net *net)
- 
- 	flush_work(&net->xfrm.policy_hash_work);
- #ifdef CONFIG_XFRM_SUB_POLICY
--	audit_info.loginuid = -1;
-+	audit_info.loginuid = INVALID_UID;
- 	audit_info.sessionid = -1;
- 	audit_info.secid = 0;
- 	xfrm_policy_flush(net, XFRM_POLICY_TYPE_SUB, &audit_info);
- #endif
--	audit_info.loginuid = -1;
-+	audit_info.loginuid = INVALID_UID;
- 	audit_info.sessionid = -1;
- 	audit_info.secid = 0;
- 	xfrm_policy_flush(net, XFRM_POLICY_TYPE_MAIN, &audit_info);
-@@ -2742,7 +2742,7 @@ static void xfrm_audit_common_policyinfo(struct xfrm_policy *xp,
- }
- 
- void xfrm_audit_policy_add(struct xfrm_policy *xp, int result,
--			   uid_t auid, u32 sessionid, u32 secid)
-+			   kuid_t auid, u32 sessionid, u32 secid)
- {
- 	struct audit_buffer *audit_buf;
- 
-@@ -2757,7 +2757,7 @@ void xfrm_audit_policy_add(struct xfrm_policy *xp, int result,
- EXPORT_SYMBOL_GPL(xfrm_audit_policy_add);
- 
- void xfrm_audit_policy_delete(struct xfrm_policy *xp, int result,
--			      uid_t auid, u32 sessionid, u32 secid)
-+			      kuid_t auid, u32 sessionid, u32 secid)
- {
- 	struct audit_buffer *audit_buf;
- 
-diff --git a/net/xfrm/xfrm_state.c b/net/xfrm/xfrm_state.c
-index 5b228f9..fce6a49 100644
---- a/net/xfrm/xfrm_state.c
-+++ b/net/xfrm/xfrm_state.c
-@@ -2045,7 +2045,7 @@ void xfrm_state_fini(struct net *net)
- 	unsigned int sz;
- 
- 	flush_work(&net->xfrm.state_hash_work);
--	audit_info.loginuid = -1;
-+	audit_info.loginuid = INVALID_UID;
- 	audit_info.sessionid = -1;
- 	audit_info.secid = 0;
- 	xfrm_state_flush(net, IPSEC_PROTO_ANY, &audit_info);
-@@ -2112,7 +2112,7 @@ static void xfrm_audit_helper_pktinfo(struct sk_buff *skb, u16 family,
- }
- 
- void xfrm_audit_state_add(struct xfrm_state *x, int result,
--			  uid_t auid, u32 sessionid, u32 secid)
-+			  kuid_t auid, u32 sessionid, u32 secid)
- {
- 	struct audit_buffer *audit_buf;
- 
-@@ -2127,7 +2127,7 @@ void xfrm_audit_state_add(struct xfrm_state *x, int result,
- EXPORT_SYMBOL_GPL(xfrm_audit_state_add);
- 
- void xfrm_audit_state_delete(struct xfrm_state *x, int result,
--			     uid_t auid, u32 sessionid, u32 secid)
-+			     kuid_t auid, u32 sessionid, u32 secid)
- {
- 	struct audit_buffer *audit_buf;
- 
-diff --git a/net/xfrm/xfrm_user.c b/net/xfrm/xfrm_user.c
-index e75d8e4..9ea55db 100644
---- a/net/xfrm/xfrm_user.c
-+++ b/net/xfrm/xfrm_user.c
-@@ -575,7 +575,7 @@ static int xfrm_add_sa(struct sk_buff *skb, struct nlmsghdr *nlh,
- 	struct xfrm_state *x;
- 	int err;
- 	struct km_event c;
--	uid_t loginuid = audit_get_loginuid(current);
-+	kuid_t loginuid = audit_get_loginuid(current);
- 	u32 sessionid = audit_get_sessionid(current);
- 	u32 sid;
- 
-@@ -654,7 +654,7 @@ static int xfrm_del_sa(struct sk_buff *skb, struct nlmsghdr *nlh,
- 	int err = -ESRCH;
- 	struct km_event c;
- 	struct xfrm_usersa_id *p = nlmsg_data(nlh);
--	uid_t loginuid = audit_get_loginuid(current);
-+	kuid_t loginuid = audit_get_loginuid(current);
- 	u32 sessionid = audit_get_sessionid(current);
- 	u32 sid;
- 
-@@ -1369,7 +1369,7 @@ static int xfrm_add_policy(struct sk_buff *skb, struct nlmsghdr *nlh,
- 	struct km_event c;
- 	int err;
- 	int excl;
--	uid_t loginuid = audit_get_loginuid(current);
-+	kuid_t loginuid = audit_get_loginuid(current);
- 	u32 sessionid = audit_get_sessionid(current);
- 	u32 sid;
- 
-@@ -1624,7 +1624,7 @@ static int xfrm_get_policy(struct sk_buff *skb, struct nlmsghdr *nlh,
- 					    NETLINK_CB(skb).pid);
- 		}
- 	} else {
--		uid_t loginuid = audit_get_loginuid(current);
-+		kuid_t loginuid = audit_get_loginuid(current);
- 		u32 sessionid = audit_get_sessionid(current);
- 		u32 sid;
- 
-@@ -1918,7 +1918,7 @@ static int xfrm_add_pol_expire(struct sk_buff *skb, struct nlmsghdr *nlh,
- 
- 	err = 0;
- 	if (up->hard) {
--		uid_t loginuid = audit_get_loginuid(current);
-+		kuid_t loginuid = audit_get_loginuid(current);
- 		u32 sessionid = audit_get_sessionid(current);
- 		u32 sid;
- 
-@@ -1961,7 +1961,7 @@ static int xfrm_add_sa_expire(struct sk_buff *skb, struct nlmsghdr *nlh,
- 	km_state_expired(x, ue->hard, current->pid);
- 
- 	if (ue->hard) {
--		uid_t loginuid = audit_get_loginuid(current);
-+		kuid_t loginuid = audit_get_loginuid(current);
- 		u32 sessionid = audit_get_sessionid(current);
- 		u32 sid;
- 
++	/* Allow anyone to set a mapping that doesn't require privilege */
++	if (!cap_valid(cap_setid))
++		return true;
++
+ 	/* Allow the specified ids if we have the appropriate capability
+ 	 * (CAP_SETUID or CAP_SETGID) over the parent user namespace.
+ 	 */
 -- 
 1.7.5.4
