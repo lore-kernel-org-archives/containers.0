@@ -1,7 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 22/27] userns: Convert qutoactl
-Date: Wed, 19 Sep 2012 18:52:24 -0700
-Message-ID: <1348105949-25454-22-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 17/27] userns: Pass a userns parameter into posix_acl_to_xattr
+	and posix_acl_from_xattr
+Date: Wed, 19 Sep 2012 18:52:19 -0700
+Message-ID: <1348105949-25454-17-git-send-email-ebiederm@xmission.com>
 References: <871uhx1n71.fsf@xmission.com>
 	<1348105949-25454-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -19,340 +20,545 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, Mark Fasheh <mfasheh-IBi9RG/b67k@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Ben Myers <bpm-sJ/iWh9BUns@public.gmane.org>, Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alex Elder <elder-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Joel Becker <jlbec-aKy9MeLSZ9dg9hUCZPvPmw@public.gmane.org>
+Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andreas Dilger <adilger.kernel-m1MBpc4rdrD3fQ9qLvQP4Q@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Update the quotactl user space interface to successfull compile with
-user namespaces support enabled and to hand off quota identifiers to
-lower layers of the kernel in struct kqid instead of type and qid
-pairs.
+ - Pass the user namespace the uid and gid values in the xattr are stored
+   in into posix_acl_from_xattr.
 
-The quota on function is not converted because while it takes a quota
-type and an id.  The id is the on disk quota format to use, which
-is something completely different.
+ - Pass the user namespace kuid and kgid values should be converted into
+   when storing uid and gid values in an xattr in posix_acl_to_xattr.
 
-The signature of two struct quotactl_ops methods were changed to take
-struct kqid argumetns get_dqblk and set_dqblk.
+- Modify all callers of posix_acl_from_xattr and posix_acl_to_xattr to
+  pass in &init_user_ns.
 
-The dquot, xfs, and ocfs2 implementations of get_dqblk and set_dqblk
-are minimally changed so that the code continues to work with
-the change in parameter type.
+In the short term this change is not strictly needed but it makes the
+code clearer.  In the longer term this change is necessary to be able to
+mount filesystems outside of the initial user namespace that natively
+store posix acls in the linux xattr format.
 
-This is the first in a series of changes to always store quota
-identifiers in the kernel in struct kqid and only use raw type and qid
-values when interacting with on disk structures or userspace.  Always
-using struct kqid internally makes it hard to miss places that need
-conversion to or from the kernel internal values.
-
+Cc: Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>
+Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Andreas Dilger <adilger.kernel-m1MBpc4rdrD3fQ9qLvQP4Q@public.gmane.org>
 Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
-Cc: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
-Cc: Mark Fasheh <mfasheh-IBi9RG/b67k@public.gmane.org>
-Cc: Joel Becker <jlbec-aKy9MeLSZ9dg9hUCZPvPmw@public.gmane.org>
-Cc: Ben Myers <bpm-sJ/iWh9BUns@public.gmane.org>
-Cc: Alex Elder <elder-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/gfs2/quota.c          |   20 +++++++++++---------
- fs/quota/dquot.c         |    8 ++++----
- fs/quota/quota.c         |   28 ++++++++++++++++++++++------
- fs/xfs/xfs_quotaops.c    |   12 ++++++------
- include/linux/quota.h    |    4 ++--
- include/linux/quotaops.h |    4 ++--
- init/Kconfig             |    2 +-
- 7 files changed, 48 insertions(+), 30 deletions(-)
+ fs/9p/acl.c                     |    8 ++++----
+ fs/btrfs/acl.c                  |    8 ++++----
+ fs/ext2/acl.c                   |    4 ++--
+ fs/ext3/acl.c                   |    4 ++--
+ fs/ext4/acl.c                   |    4 ++--
+ fs/generic_acl.c                |    4 ++--
+ fs/gfs2/acl.c                   |   14 +++++++-------
+ fs/jffs2/acl.c                  |    4 ++--
+ fs/jfs/acl.c                    |    4 ++--
+ fs/jfs/xattr.c                  |    4 ++--
+ fs/nfs/nfs3acl.c                |    4 ++--
+ fs/nfsd/vfs.c                   |    8 ++++----
+ fs/ocfs2/acl.c                  |    4 ++--
+ fs/reiserfs/xattr_acl.c         |    4 ++--
+ fs/xattr_acl.c                  |   14 ++++++++------
+ fs/xfs/xfs_acl.c                |    4 ++--
+ include/linux/posix_acl_xattr.h |    6 ++++--
+ 17 files changed, 53 insertions(+), 49 deletions(-)
 
-diff --git a/fs/gfs2/quota.c b/fs/gfs2/quota.c
-index a3bde91..b311539 100644
---- a/fs/gfs2/quota.c
-+++ b/fs/gfs2/quota.c
-@@ -1469,7 +1469,7 @@ static int gfs2_quota_get_xstate(struct super_block *sb,
- 	return 0;
- }
+diff --git a/fs/9p/acl.c b/fs/9p/acl.c
+index 9a1d426..15b6791 100644
+--- a/fs/9p/acl.c
++++ b/fs/9p/acl.c
+@@ -37,7 +37,7 @@ static struct posix_acl *__v9fs_get_acl(struct p9_fid *fid, char *name)
+ 			return ERR_PTR(-ENOMEM);
+ 		size = v9fs_fid_xattr_get(fid, name, value, size);
+ 		if (size > 0) {
+-			acl = posix_acl_from_xattr(value, size);
++			acl = posix_acl_from_xattr(&init_user_ns, value, size);
+ 			if (IS_ERR(acl))
+ 				goto err_out;
+ 		}
+@@ -131,7 +131,7 @@ static int v9fs_set_acl(struct dentry *dentry, int type, struct posix_acl *acl)
+ 	buffer = kmalloc(size, GFP_KERNEL);
+ 	if (!buffer)
+ 		return -ENOMEM;
+-	retval = posix_acl_to_xattr(acl, buffer, size);
++	retval = posix_acl_to_xattr(&init_user_ns, acl, buffer, size);
+ 	if (retval < 0)
+ 		goto err_free_out;
+ 	switch (type) {
+@@ -251,7 +251,7 @@ static int v9fs_xattr_get_acl(struct dentry *dentry, const char *name,
+ 		return PTR_ERR(acl);
+ 	if (acl == NULL)
+ 		return -ENODATA;
+-	error = posix_acl_to_xattr(acl, buffer, size);
++	error = posix_acl_to_xattr(&init_user_ns, acl, buffer, size);
+ 	posix_acl_release(acl);
  
--static int gfs2_get_dqblk(struct super_block *sb, int type, qid_t id,
-+static int gfs2_get_dqblk(struct super_block *sb, struct kqid qid,
- 			  struct fs_disk_quota *fdq)
- {
- 	struct gfs2_sbd *sdp = sb->s_fs_info;
-@@ -1477,20 +1477,21 @@ static int gfs2_get_dqblk(struct super_block *sb, int type, qid_t id,
- 	struct gfs2_quota_data *qd;
- 	struct gfs2_holder q_gh;
- 	int error;
-+	int type;
+ 	return error;
+@@ -304,7 +304,7 @@ static int v9fs_xattr_set_acl(struct dentry *dentry, const char *name,
+ 		return -EPERM;
+ 	if (value) {
+ 		/* update the cached acl value */
+-		acl = posix_acl_from_xattr(value, size);
++		acl = posix_acl_from_xattr(&init_user_ns, value, size);
+ 		if (IS_ERR(acl))
+ 			return PTR_ERR(acl);
+ 		else if (acl) {
+diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+index 761e2cd..0c16e3d 100644
+--- a/fs/btrfs/acl.c
++++ b/fs/btrfs/acl.c
+@@ -61,7 +61,7 @@ struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
+ 		size = __btrfs_getxattr(inode, name, value, size);
+ 	}
+ 	if (size > 0) {
+-		acl = posix_acl_from_xattr(value, size);
++		acl = posix_acl_from_xattr(&init_user_ns, value, size);
+ 	} else if (size == -ENOENT || size == -ENODATA || size == 0) {
+ 		/* FIXME, who returns -ENOENT?  I think nobody */
+ 		acl = NULL;
+@@ -91,7 +91,7 @@ static int btrfs_xattr_acl_get(struct dentry *dentry, const char *name,
+ 		return PTR_ERR(acl);
+ 	if (acl == NULL)
+ 		return -ENODATA;
+-	ret = posix_acl_to_xattr(acl, value, size);
++	ret = posix_acl_to_xattr(&init_user_ns, acl, value, size);
+ 	posix_acl_release(acl);
  
- 	memset(fdq, 0, sizeof(struct fs_disk_quota));
- 
- 	if (sdp->sd_args.ar_quota == GFS2_QUOTA_OFF)
- 		return -ESRCH; /* Crazy XFS error code */
- 
--	if (type == USRQUOTA)
-+	if (qid.type == USRQUOTA)
- 		type = QUOTA_USER;
--	else if (type == GRPQUOTA)
-+	else if (qid.type == GRPQUOTA)
- 		type = QUOTA_GROUP;
- 	else
- 		return -EINVAL;
- 
--	error = qd_get(sdp, type, id, &qd);
-+	error = qd_get(sdp, type, from_kqid(&init_user_ns, qid), &qd);
- 	if (error)
- 		return error;
- 	error = do_glock(qd, FORCE, &q_gh);
-@@ -1500,7 +1501,7 @@ static int gfs2_get_dqblk(struct super_block *sb, int type, qid_t id,
- 	qlvb = (struct gfs2_quota_lvb *)qd->qd_gl->gl_lvb;
- 	fdq->d_version = FS_DQUOT_VERSION;
- 	fdq->d_flags = (type == QUOTA_USER) ? FS_USER_QUOTA : FS_GROUP_QUOTA;
--	fdq->d_id = id;
-+	fdq->d_id = from_kqid(&init_user_ns, qid);
- 	fdq->d_blk_hardlimit = be64_to_cpu(qlvb->qb_limit) << sdp->sd_fsb2bb_shift;
- 	fdq->d_blk_softlimit = be64_to_cpu(qlvb->qb_warn) << sdp->sd_fsb2bb_shift;
- 	fdq->d_bcount = be64_to_cpu(qlvb->qb_value) << sdp->sd_fsb2bb_shift;
-@@ -1514,7 +1515,7 @@ out:
- /* GFS2 only supports a subset of the XFS fields */
- #define GFS2_FIELDMASK (FS_DQ_BSOFT|FS_DQ_BHARD|FS_DQ_BCOUNT)
- 
--static int gfs2_set_dqblk(struct super_block *sb, int type, qid_t id,
-+static int gfs2_set_dqblk(struct super_block *sb, struct kqid qid,
- 			  struct fs_disk_quota *fdq)
- {
- 	struct gfs2_sbd *sdp = sb->s_fs_info;
-@@ -1526,11 +1527,12 @@ static int gfs2_set_dqblk(struct super_block *sb, int type, qid_t id,
- 	int alloc_required;
- 	loff_t offset;
- 	int error;
-+	int type;
- 
- 	if (sdp->sd_args.ar_quota == GFS2_QUOTA_OFF)
- 		return -ESRCH; /* Crazy XFS error code */
- 
--	switch(type) {
-+	switch(qid.type) {
- 	case USRQUOTA:
- 		type = QUOTA_USER;
- 		if (fdq->d_flags != FS_USER_QUOTA)
-@@ -1547,10 +1549,10 @@ static int gfs2_set_dqblk(struct super_block *sb, int type, qid_t id,
- 
- 	if (fdq->d_fieldmask & ~GFS2_FIELDMASK)
- 		return -EINVAL;
--	if (fdq->d_id != id)
-+	if (fdq->d_id != from_kqid(&init_user_ns, qid))
- 		return -EINVAL;
- 
--	error = qd_get(sdp, type, id, &qd);
-+	error = qd_get(sdp, type, from_kqid(&init_user_ns, qid), &qd);
- 	if (error)
- 		return error;
- 
-diff --git a/fs/quota/dquot.c b/fs/quota/dquot.c
-index 36a29b7..7714b16 100644
---- a/fs/quota/dquot.c
-+++ b/fs/quota/dquot.c
-@@ -2376,12 +2376,12 @@ static void do_get_dqblk(struct dquot *dquot, struct fs_disk_quota *di)
- 	spin_unlock(&dq_data_lock);
- }
- 
--int dquot_get_dqblk(struct super_block *sb, int type, qid_t id,
-+int dquot_get_dqblk(struct super_block *sb, struct kqid qid,
- 		    struct fs_disk_quota *di)
- {
- 	struct dquot *dquot;
- 
--	dquot = dqget(sb, id, type);
-+	dquot = dqget(sb, qid.type, from_kqid(&init_user_ns, qid));
- 	if (!dquot)
- 		return -ESRCH;
- 	do_get_dqblk(dquot, di);
-@@ -2488,13 +2488,13 @@ static int do_set_dqblk(struct dquot *dquot, struct fs_disk_quota *di)
- 	return 0;
- }
- 
--int dquot_set_dqblk(struct super_block *sb, int type, qid_t id,
-+int dquot_set_dqblk(struct super_block *sb, struct kqid qid,
- 		  struct fs_disk_quota *di)
- {
- 	struct dquot *dquot;
- 	int rc;
- 
--	dquot = dqget(sb, id, type);
-+	dquot = dqget(sb, qid.type, from_kqid(&init_user_ns, qid));
- 	if (!dquot) {
- 		rc = -ESRCH;
- 		goto out;
-diff --git a/fs/quota/quota.c b/fs/quota/quota.c
-index 6f15578..ff0135d 100644
---- a/fs/quota/quota.c
-+++ b/fs/quota/quota.c
-@@ -32,8 +32,8 @@ static int check_quotactl_permission(struct super_block *sb, int type, int cmd,
- 	/* allow to query information for dquots we "own" */
- 	case Q_GETQUOTA:
- 	case Q_XGETQUOTA:
--		if ((type == USRQUOTA && current_euid() == id) ||
--		    (type == GRPQUOTA && in_egroup_p(id)))
-+		if ((type == USRQUOTA && uid_eq(current_euid(), make_kuid(current_user_ns(), id))) ||
-+		    (type == GRPQUOTA && in_egroup_p(make_kgid(current_user_ns(), id))))
- 			break;
- 		/*FALLTHROUGH*/
- 	default:
-@@ -130,13 +130,17 @@ static void copy_to_if_dqblk(struct if_dqblk *dst, struct fs_disk_quota *src)
- static int quota_getquota(struct super_block *sb, int type, qid_t id,
- 			  void __user *addr)
- {
-+	struct kqid qid;
- 	struct fs_disk_quota fdq;
- 	struct if_dqblk idq;
- 	int ret;
- 
- 	if (!sb->s_qcop->get_dqblk)
- 		return -ENOSYS;
--	ret = sb->s_qcop->get_dqblk(sb, type, id, &fdq);
-+	qid = make_kqid(current_user_ns(), type, id);
-+	if (!qid_valid(qid))
-+		return -EINVAL;
-+	ret = sb->s_qcop->get_dqblk(sb, qid, &fdq);
- 	if (ret)
- 		return ret;
- 	copy_to_if_dqblk(&idq, &fdq);
-@@ -176,13 +180,17 @@ static int quota_setquota(struct super_block *sb, int type, qid_t id,
- {
- 	struct fs_disk_quota fdq;
- 	struct if_dqblk idq;
-+	struct kqid qid;
- 
- 	if (copy_from_user(&idq, addr, sizeof(idq)))
- 		return -EFAULT;
- 	if (!sb->s_qcop->set_dqblk)
- 		return -ENOSYS;
-+	qid = make_kqid(current_user_ns(), type, id);
-+	if (!qid_valid(qid))
-+		return -EINVAL;
- 	copy_from_if_dqblk(&fdq, &idq);
--	return sb->s_qcop->set_dqblk(sb, type, id, &fdq);
-+	return sb->s_qcop->set_dqblk(sb, qid, &fdq);
- }
- 
- static int quota_setxstate(struct super_block *sb, int cmd, void __user *addr)
-@@ -213,23 +221,31 @@ static int quota_setxquota(struct super_block *sb, int type, qid_t id,
- 			   void __user *addr)
- {
- 	struct fs_disk_quota fdq;
-+	struct kqid qid;
- 
- 	if (copy_from_user(&fdq, addr, sizeof(fdq)))
- 		return -EFAULT;
- 	if (!sb->s_qcop->set_dqblk)
- 		return -ENOSYS;
--	return sb->s_qcop->set_dqblk(sb, type, id, &fdq);
-+	qid = make_kqid(current_user_ns(), type, id);
-+	if (!qid_valid(qid))
-+		return -EINVAL;
-+	return sb->s_qcop->set_dqblk(sb, qid, &fdq);
- }
- 
- static int quota_getxquota(struct super_block *sb, int type, qid_t id,
- 			   void __user *addr)
- {
- 	struct fs_disk_quota fdq;
-+	struct kqid qid;
- 	int ret;
- 
- 	if (!sb->s_qcop->get_dqblk)
- 		return -ENOSYS;
--	ret = sb->s_qcop->get_dqblk(sb, type, id, &fdq);
-+	qid = make_kqid(current_user_ns(), type, id);
-+	if (!qid_valid(qid))
-+		return -EINVAL;
-+	ret = sb->s_qcop->get_dqblk(sb, qid, &fdq);
- 	if (!ret && copy_to_user(addr, &fdq, sizeof(fdq)))
- 		return -EFAULT;
  	return ret;
-diff --git a/fs/xfs/xfs_quotaops.c b/fs/xfs/xfs_quotaops.c
-index fed504f..71926d6 100644
---- a/fs/xfs/xfs_quotaops.c
-+++ b/fs/xfs/xfs_quotaops.c
-@@ -97,8 +97,7 @@ xfs_fs_set_xstate(
- STATIC int
- xfs_fs_get_dqblk(
- 	struct super_block	*sb,
--	int			type,
--	qid_t			id,
-+	struct kqid		qid,
- 	struct fs_disk_quota	*fdq)
- {
- 	struct xfs_mount	*mp = XFS_M(sb);
-@@ -108,14 +107,14 @@ xfs_fs_get_dqblk(
- 	if (!XFS_IS_QUOTA_ON(mp))
- 		return -ESRCH;
+@@ -141,7 +141,7 @@ static int btrfs_set_acl(struct btrfs_trans_handle *trans,
+ 			goto out;
+ 		}
  
--	return -xfs_qm_scall_getquota(mp, id, xfs_quota_type(type), fdq);
-+	return -xfs_qm_scall_getquota(mp, from_kqid(&init_user_ns, qid),
-+				      xfs_quota_type(qid.type), fdq);
+-		ret = posix_acl_to_xattr(acl, value, size);
++		ret = posix_acl_to_xattr(&init_user_ns, acl, value, size);
+ 		if (ret < 0)
+ 			goto out;
+ 	}
+@@ -169,7 +169,7 @@ static int btrfs_xattr_acl_set(struct dentry *dentry, const char *name,
+ 		return -EOPNOTSUPP;
+ 
+ 	if (value) {
+-		acl = posix_acl_from_xattr(value, size);
++		acl = posix_acl_from_xattr(&init_user_ns, value, size);
+ 		if (IS_ERR(acl))
+ 			return PTR_ERR(acl);
+ 
+diff --git a/fs/ext2/acl.c b/fs/ext2/acl.c
+index 35d6a3c..70bb1bc 100644
+--- a/fs/ext2/acl.c
++++ b/fs/ext2/acl.c
+@@ -350,7 +350,7 @@ ext2_xattr_get_acl(struct dentry *dentry, const char *name, void *buffer,
+ 		return PTR_ERR(acl);
+ 	if (acl == NULL)
+ 		return -ENODATA;
+-	error = posix_acl_to_xattr(acl, buffer, size);
++	error = posix_acl_to_xattr(&init_user_ns, acl, buffer, size);
+ 	posix_acl_release(acl);
+ 
+ 	return error;
+@@ -371,7 +371,7 @@ ext2_xattr_set_acl(struct dentry *dentry, const char *name, const void *value,
+ 		return -EPERM;
+ 
+ 	if (value) {
+-		acl = posix_acl_from_xattr(value, size);
++		acl = posix_acl_from_xattr(&init_user_ns, value, size);
+ 		if (IS_ERR(acl))
+ 			return PTR_ERR(acl);
+ 		else if (acl) {
+diff --git a/fs/ext3/acl.c b/fs/ext3/acl.c
+index c76832c..2cf6a80 100644
+--- a/fs/ext3/acl.c
++++ b/fs/ext3/acl.c
+@@ -369,7 +369,7 @@ ext3_xattr_get_acl(struct dentry *dentry, const char *name, void *buffer,
+ 		return PTR_ERR(acl);
+ 	if (acl == NULL)
+ 		return -ENODATA;
+-	error = posix_acl_to_xattr(acl, buffer, size);
++	error = posix_acl_to_xattr(&init_user_ns, acl, buffer, size);
+ 	posix_acl_release(acl);
+ 
+ 	return error;
+@@ -392,7 +392,7 @@ ext3_xattr_set_acl(struct dentry *dentry, const char *name, const void *value,
+ 		return -EPERM;
+ 
+ 	if (value) {
+-		acl = posix_acl_from_xattr(value, size);
++		acl = posix_acl_from_xattr(&init_user_ns, value, size);
+ 		if (IS_ERR(acl))
+ 			return PTR_ERR(acl);
+ 		else if (acl) {
+diff --git a/fs/ext4/acl.c b/fs/ext4/acl.c
+index a5c29bb..42b95fc 100644
+--- a/fs/ext4/acl.c
++++ b/fs/ext4/acl.c
+@@ -374,7 +374,7 @@ ext4_xattr_get_acl(struct dentry *dentry, const char *name, void *buffer,
+ 		return PTR_ERR(acl);
+ 	if (acl == NULL)
+ 		return -ENODATA;
+-	error = posix_acl_to_xattr(acl, buffer, size);
++	error = posix_acl_to_xattr(&init_user_ns, acl, buffer, size);
+ 	posix_acl_release(acl);
+ 
+ 	return error;
+@@ -397,7 +397,7 @@ ext4_xattr_set_acl(struct dentry *dentry, const char *name, const void *value,
+ 		return -EPERM;
+ 
+ 	if (value) {
+-		acl = posix_acl_from_xattr(value, size);
++		acl = posix_acl_from_xattr(&init_user_ns, value, size);
+ 		if (IS_ERR(acl))
+ 			return PTR_ERR(acl);
+ 		else if (acl) {
+diff --git a/fs/generic_acl.c b/fs/generic_acl.c
+index d0dddac..b3f3676 100644
+--- a/fs/generic_acl.c
++++ b/fs/generic_acl.c
+@@ -56,7 +56,7 @@ generic_acl_get(struct dentry *dentry, const char *name, void *buffer,
+ 	acl = get_cached_acl(dentry->d_inode, type);
+ 	if (!acl)
+ 		return -ENODATA;
+-	error = posix_acl_to_xattr(acl, buffer, size);
++	error = posix_acl_to_xattr(&init_user_ns, acl, buffer, size);
+ 	posix_acl_release(acl);
+ 
+ 	return error;
+@@ -77,7 +77,7 @@ generic_acl_set(struct dentry *dentry, const char *name, const void *value,
+ 	if (!inode_owner_or_capable(inode))
+ 		return -EPERM;
+ 	if (value) {
+-		acl = posix_acl_from_xattr(value, size);
++		acl = posix_acl_from_xattr(&init_user_ns, value, size);
+ 		if (IS_ERR(acl))
+ 			return PTR_ERR(acl);
+ 	}
+diff --git a/fs/gfs2/acl.c b/fs/gfs2/acl.c
+index bd4a589..f850020 100644
+--- a/fs/gfs2/acl.c
++++ b/fs/gfs2/acl.c
+@@ -63,7 +63,7 @@ struct posix_acl *gfs2_get_acl(struct inode *inode, int type)
+ 	if (len == 0)
+ 		return NULL;
+ 
+-	acl = posix_acl_from_xattr(data, len);
++	acl = posix_acl_from_xattr(&init_user_ns, data, len);
+ 	kfree(data);
+ 	return acl;
  }
+@@ -88,13 +88,13 @@ static int gfs2_acl_set(struct inode *inode, int type, struct posix_acl *acl)
+ 	const char *name = gfs2_acl_name(type);
  
- STATIC int
- xfs_fs_set_dqblk(
- 	struct super_block	*sb,
--	int			type,
--	qid_t			id,
-+	struct kqid		qid,
- 	struct fs_disk_quota	*fdq)
- {
- 	struct xfs_mount	*mp = XFS_M(sb);
-@@ -127,7 +126,8 @@ xfs_fs_set_dqblk(
- 	if (!XFS_IS_QUOTA_ON(mp))
- 		return -ESRCH;
+ 	BUG_ON(name == NULL);
+-	len = posix_acl_to_xattr(acl, NULL, 0);
++	len = posix_acl_to_xattr(&init_user_ns, acl, NULL, 0);
+ 	if (len == 0)
+ 		return 0;
+ 	data = kmalloc(len, GFP_NOFS);
+ 	if (data == NULL)
+ 		return -ENOMEM;
+-	error = posix_acl_to_xattr(acl, data, len);
++	error = posix_acl_to_xattr(&init_user_ns, acl, data, len);
+ 	if (error < 0)
+ 		goto out;
+ 	error = __gfs2_xattr_set(inode, name, data, len, 0, GFS2_EATYPE_SYS);
+@@ -166,12 +166,12 @@ int gfs2_acl_chmod(struct gfs2_inode *ip, struct iattr *attr)
+ 	if (error)
+ 		return error;
  
--	return -xfs_qm_scall_setqlim(mp, id, xfs_quota_type(type), fdq);
-+	return -xfs_qm_scall_setqlim(mp, from_kqid(&init_user_ns, qid),
-+				     xfs_quota_type(qid.type), fdq);
+-	len = posix_acl_to_xattr(acl, NULL, 0);
++	len = posix_acl_to_xattr(&init_user_ns, acl, NULL, 0);
+ 	data = kmalloc(len, GFP_NOFS);
+ 	error = -ENOMEM;
+ 	if (data == NULL)
+ 		goto out;
+-	posix_acl_to_xattr(acl, data, len);
++	posix_acl_to_xattr(&init_user_ns, acl, data, len);
+ 	error = gfs2_xattr_acl_chmod(ip, attr, data);
+ 	kfree(data);
+ 	set_cached_acl(&ip->i_inode, ACL_TYPE_ACCESS, acl);
+@@ -212,7 +212,7 @@ static int gfs2_xattr_system_get(struct dentry *dentry, const char *name,
+ 	if (acl == NULL)
+ 		return -ENODATA;
+ 
+-	error = posix_acl_to_xattr(acl, buffer, size);
++	error = posix_acl_to_xattr(&init_user_ns, acl, buffer, size);
+ 	posix_acl_release(acl);
+ 
+ 	return error;
+@@ -245,7 +245,7 @@ static int gfs2_xattr_system_set(struct dentry *dentry, const char *name,
+ 	if (!value)
+ 		goto set_acl;
+ 
+-	acl = posix_acl_from_xattr(value, size);
++	acl = posix_acl_from_xattr(&init_user_ns, value, size);
+ 	if (!acl) {
+ 		/*
+ 		 * acl_set_file(3) may request that we set default ACLs with
+diff --git a/fs/jffs2/acl.c b/fs/jffs2/acl.c
+index 922f146..42e4edc 100644
+--- a/fs/jffs2/acl.c
++++ b/fs/jffs2/acl.c
+@@ -363,7 +363,7 @@ static int jffs2_acl_getxattr(struct dentry *dentry, const char *name,
+ 		return PTR_ERR(acl);
+ 	if (!acl)
+ 		return -ENODATA;
+-	rc = posix_acl_to_xattr(acl, buffer, size);
++	rc = posix_acl_to_xattr(&init_user_ns, acl, buffer, size);
+ 	posix_acl_release(acl);
+ 
+ 	return rc;
+@@ -381,7 +381,7 @@ static int jffs2_acl_setxattr(struct dentry *dentry, const char *name,
+ 		return -EPERM;
+ 
+ 	if (value) {
+-		acl = posix_acl_from_xattr(value, size);
++		acl = posix_acl_from_xattr(&init_user_ns, value, size);
+ 		if (IS_ERR(acl))
+ 			return PTR_ERR(acl);
+ 		if (acl) {
+diff --git a/fs/jfs/acl.c b/fs/jfs/acl.c
+index 45559dc..d254d6d 100644
+--- a/fs/jfs/acl.c
++++ b/fs/jfs/acl.c
+@@ -64,7 +64,7 @@ struct posix_acl *jfs_get_acl(struct inode *inode, int type)
+ 		else
+ 			acl = ERR_PTR(size);
+ 	} else {
+-		acl = posix_acl_from_xattr(value, size);
++		acl = posix_acl_from_xattr(&init_user_ns, value, size);
+ 	}
+ 	kfree(value);
+ 	if (!IS_ERR(acl))
+@@ -100,7 +100,7 @@ static int jfs_set_acl(tid_t tid, struct inode *inode, int type,
+ 		value = kmalloc(size, GFP_KERNEL);
+ 		if (!value)
+ 			return -ENOMEM;
+-		rc = posix_acl_to_xattr(acl, value, size);
++		rc = posix_acl_to_xattr(&init_user_ns, acl, value, size);
+ 		if (rc < 0)
+ 			goto out;
+ 	}
+diff --git a/fs/jfs/xattr.c b/fs/jfs/xattr.c
+index 26683e1..42d67f9 100644
+--- a/fs/jfs/xattr.c
++++ b/fs/jfs/xattr.c
+@@ -685,7 +685,7 @@ static int can_set_system_xattr(struct inode *inode, const char *name,
+ 	 * POSIX_ACL_XATTR_ACCESS is tied to i_mode
+ 	 */
+ 	if (strcmp(name, POSIX_ACL_XATTR_ACCESS) == 0) {
+-		acl = posix_acl_from_xattr(value, value_len);
++		acl = posix_acl_from_xattr(&init_user_ns, value, value_len);
+ 		if (IS_ERR(acl)) {
+ 			rc = PTR_ERR(acl);
+ 			printk(KERN_ERR "posix_acl_from_xattr returned %d\n",
+@@ -710,7 +710,7 @@ static int can_set_system_xattr(struct inode *inode, const char *name,
+ 
+ 		return 0;
+ 	} else if (strcmp(name, POSIX_ACL_XATTR_DEFAULT) == 0) {
+-		acl = posix_acl_from_xattr(value, value_len);
++		acl = posix_acl_from_xattr(&init_user_ns, value, value_len);
+ 		if (IS_ERR(acl)) {
+ 			rc = PTR_ERR(acl);
+ 			printk(KERN_ERR "posix_acl_from_xattr returned %d\n",
+diff --git a/fs/nfs/nfs3acl.c b/fs/nfs/nfs3acl.c
+index e4498dc..4a1aafb 100644
+--- a/fs/nfs/nfs3acl.c
++++ b/fs/nfs/nfs3acl.c
+@@ -70,7 +70,7 @@ ssize_t nfs3_getxattr(struct dentry *dentry, const char *name,
+ 		if (type == ACL_TYPE_ACCESS && acl->a_count == 0)
+ 			error = -ENODATA;
+ 		else
+-			error = posix_acl_to_xattr(acl, buffer, size);
++			error = posix_acl_to_xattr(&init_user_ns, acl, buffer, size);
+ 		posix_acl_release(acl);
+ 	} else
+ 		error = -ENODATA;
+@@ -92,7 +92,7 @@ int nfs3_setxattr(struct dentry *dentry, const char *name,
+ 	else
+ 		return -EOPNOTSUPP;
+ 
+-	acl = posix_acl_from_xattr(value, size);
++	acl = posix_acl_from_xattr(&init_user_ns, value, size);
+ 	if (IS_ERR(acl))
+ 		return PTR_ERR(acl);
+ 	error = nfs3_proc_setacl(inode, type, acl);
+diff --git a/fs/nfsd/vfs.c b/fs/nfsd/vfs.c
+index a9269f1..3f67b8e 100644
+--- a/fs/nfsd/vfs.c
++++ b/fs/nfsd/vfs.c
+@@ -480,7 +480,7 @@ set_nfsv4_acl_one(struct dentry *dentry, struct posix_acl *pacl, char *key)
+ 	if (buf == NULL)
+ 		goto out;
+ 
+-	len = posix_acl_to_xattr(pacl, buf, buflen);
++	len = posix_acl_to_xattr(&init_user_ns, pacl, buf, buflen);
+ 	if (len < 0) {
+ 		error = len;
+ 		goto out;
+@@ -549,7 +549,7 @@ _get_posix_acl(struct dentry *dentry, char *key)
+ 	if (buflen <= 0)
+ 		return ERR_PTR(buflen);
+ 
+-	pacl = posix_acl_from_xattr(buf, buflen);
++	pacl = posix_acl_from_xattr(&init_user_ns, buf, buflen);
+ 	kfree(buf);
+ 	return pacl;
  }
+@@ -2264,7 +2264,7 @@ nfsd_get_posix_acl(struct svc_fh *fhp, int type)
+ 	if (size < 0)
+ 		return ERR_PTR(size);
  
- const struct quotactl_ops xfs_quotactl_operations = {
-diff --git a/include/linux/quota.h b/include/linux/quota.h
-index 00ac8d8..f96427a 100644
---- a/include/linux/quota.h
-+++ b/include/linux/quota.h
-@@ -461,8 +461,8 @@ struct quotactl_ops {
- 	int (*quota_sync)(struct super_block *, int);
- 	int (*get_info)(struct super_block *, int, struct if_dqinfo *);
- 	int (*set_info)(struct super_block *, int, struct if_dqinfo *);
--	int (*get_dqblk)(struct super_block *, int, qid_t, struct fs_disk_quota *);
--	int (*set_dqblk)(struct super_block *, int, qid_t, struct fs_disk_quota *);
-+	int (*get_dqblk)(struct super_block *, struct kqid, struct fs_disk_quota *);
-+	int (*set_dqblk)(struct super_block *, struct kqid, struct fs_disk_quota *);
- 	int (*get_xstate)(struct super_block *, struct fs_quota_stat *);
- 	int (*set_xstate)(struct super_block *, unsigned int, int);
- };
-diff --git a/include/linux/quotaops.h b/include/linux/quotaops.h
-index ec6b65f..bd3730d 100644
---- a/include/linux/quotaops.h
-+++ b/include/linux/quotaops.h
-@@ -87,9 +87,9 @@ int dquot_writeback_dquots(struct super_block *sb, int type);
- int dquot_quota_sync(struct super_block *sb, int type);
- int dquot_get_dqinfo(struct super_block *sb, int type, struct if_dqinfo *ii);
- int dquot_set_dqinfo(struct super_block *sb, int type, struct if_dqinfo *ii);
--int dquot_get_dqblk(struct super_block *sb, int type, qid_t id,
-+int dquot_get_dqblk(struct super_block *sb, struct kqid id,
- 		struct fs_disk_quota *di);
--int dquot_set_dqblk(struct super_block *sb, int type, qid_t id,
-+int dquot_set_dqblk(struct super_block *sb, struct kqid id,
- 		struct fs_disk_quota *di);
+-	acl = posix_acl_from_xattr(value, size);
++	acl = posix_acl_from_xattr(&init_user_ns, value, size);
+ 	kfree(value);
+ 	return acl;
+ }
+@@ -2297,7 +2297,7 @@ nfsd_set_posix_acl(struct svc_fh *fhp, int type, struct posix_acl *acl)
+ 		value = kmalloc(size, GFP_KERNEL);
+ 		if (!value)
+ 			return -ENOMEM;
+-		error = posix_acl_to_xattr(acl, value, size);
++		error = posix_acl_to_xattr(&init_user_ns, acl, value, size);
+ 		if (error < 0)
+ 			goto getout;
+ 		size = error;
+diff --git a/fs/ocfs2/acl.c b/fs/ocfs2/acl.c
+index a721907..260b162 100644
+--- a/fs/ocfs2/acl.c
++++ b/fs/ocfs2/acl.c
+@@ -452,7 +452,7 @@ static int ocfs2_xattr_get_acl(struct dentry *dentry, const char *name,
+ 		return PTR_ERR(acl);
+ 	if (acl == NULL)
+ 		return -ENODATA;
+-	ret = posix_acl_to_xattr(acl, buffer, size);
++	ret = posix_acl_to_xattr(&init_user_ns, acl, buffer, size);
+ 	posix_acl_release(acl);
  
- int __dquot_transfer(struct inode *inode, struct dquot **transfer_to);
-diff --git a/init/Kconfig b/init/Kconfig
-index 33d231c..15bb1dc 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -928,7 +928,7 @@ config UIDGID_CONVERTED
- 	depends on IMA = n
- 	depends on EVM = n
- 	depends on QUOTA = n
--	depends on QUOTACTL = n
-+	depends on QUOTA_NETLINK_INTERFACE = n
+ 	return ret;
+@@ -475,7 +475,7 @@ static int ocfs2_xattr_set_acl(struct dentry *dentry, const char *name,
+ 		return -EPERM;
  
- 	# Networking
- 	depends on NET_9P = n
+ 	if (value) {
+-		acl = posix_acl_from_xattr(value, size);
++		acl = posix_acl_from_xattr(&init_user_ns, value, size);
+ 		if (IS_ERR(acl))
+ 			return PTR_ERR(acl);
+ 		else if (acl) {
+diff --git a/fs/reiserfs/xattr_acl.c b/fs/reiserfs/xattr_acl.c
+index 44474f9..87d6911 100644
+--- a/fs/reiserfs/xattr_acl.c
++++ b/fs/reiserfs/xattr_acl.c
+@@ -30,7 +30,7 @@ posix_acl_set(struct dentry *dentry, const char *name, const void *value,
+ 		return -EPERM;
+ 
+ 	if (value) {
+-		acl = posix_acl_from_xattr(value, size);
++		acl = posix_acl_from_xattr(&init_user_ns, value, size);
+ 		if (IS_ERR(acl)) {
+ 			return PTR_ERR(acl);
+ 		} else if (acl) {
+@@ -77,7 +77,7 @@ posix_acl_get(struct dentry *dentry, const char *name, void *buffer,
+ 		return PTR_ERR(acl);
+ 	if (acl == NULL)
+ 		return -ENODATA;
+-	error = posix_acl_to_xattr(acl, buffer, size);
++	error = posix_acl_to_xattr(&init_user_ns, acl, buffer, size);
+ 	posix_acl_release(acl);
+ 
+ 	return error;
+diff --git a/fs/xattr_acl.c b/fs/xattr_acl.c
+index bf472ca..11efd83 100644
+--- a/fs/xattr_acl.c
++++ b/fs/xattr_acl.c
+@@ -73,7 +73,8 @@ void posix_acl_fix_xattr_to_user(void *value, size_t size)
+  * Convert from extended attribute to in-memory representation.
+  */
+ struct posix_acl *
+-posix_acl_from_xattr(const void *value, size_t size)
++posix_acl_from_xattr(struct user_namespace *user_ns,
++		     const void *value, size_t size)
+ {
+ 	posix_acl_xattr_header *header = (posix_acl_xattr_header *)value;
+ 	posix_acl_xattr_entry *entry = (posix_acl_xattr_entry *)(header+1), *end;
+@@ -112,14 +113,14 @@ posix_acl_from_xattr(const void *value, size_t size)
+ 
+ 			case ACL_USER:
+ 				acl_e->e_uid =
+-					make_kuid(&init_user_ns,
++					make_kuid(user_ns,
+ 						  le32_to_cpu(entry->e_id));
+ 				if (!uid_valid(acl_e->e_uid))
+ 					goto fail;
+ 				break;
+ 			case ACL_GROUP:
+ 				acl_e->e_gid =
+-					make_kgid(&init_user_ns,
++					make_kgid(user_ns,
+ 						  le32_to_cpu(entry->e_id));
+ 				if (!gid_valid(acl_e->e_gid))
+ 					goto fail;
+@@ -141,7 +142,8 @@ EXPORT_SYMBOL (posix_acl_from_xattr);
+  * Convert from in-memory to extended attribute representation.
+  */
+ int
+-posix_acl_to_xattr(const struct posix_acl *acl, void *buffer, size_t size)
++posix_acl_to_xattr(struct user_namespace *user_ns, const struct posix_acl *acl,
++		   void *buffer, size_t size)
+ {
+ 	posix_acl_xattr_header *ext_acl = (posix_acl_xattr_header *)buffer;
+ 	posix_acl_xattr_entry *ext_entry = ext_acl->a_entries;
+@@ -162,11 +164,11 @@ posix_acl_to_xattr(const struct posix_acl *acl, void *buffer, size_t size)
+ 		switch(acl_e->e_tag) {
+ 		case ACL_USER:
+ 			ext_entry->e_id =
+-				cpu_to_le32(from_kuid(&init_user_ns, acl_e->e_uid));
++				cpu_to_le32(from_kuid(user_ns, acl_e->e_uid));
+ 			break;
+ 		case ACL_GROUP:
+ 			ext_entry->e_id =
+-				cpu_to_le32(from_kgid(&init_user_ns, acl_e->e_gid));
++				cpu_to_le32(from_kgid(user_ns, acl_e->e_gid));
+ 			break;
+ 		default:
+ 			ext_entry->e_id = cpu_to_le32(ACL_UNDEFINED_ID);
+diff --git a/fs/xfs/xfs_acl.c b/fs/xfs/xfs_acl.c
+index ac702a6..1d32f1d 100644
+--- a/fs/xfs/xfs_acl.c
++++ b/fs/xfs/xfs_acl.c
+@@ -337,7 +337,7 @@ xfs_xattr_acl_get(struct dentry *dentry, const char *name,
+ 	if (acl == NULL)
+ 		return -ENODATA;
+ 
+-	error = posix_acl_to_xattr(acl, value, size);
++	error = posix_acl_to_xattr(&init_user_ns, acl, value, size);
+ 	posix_acl_release(acl);
+ 
+ 	return error;
+@@ -361,7 +361,7 @@ xfs_xattr_acl_set(struct dentry *dentry, const char *name,
+ 	if (!value)
+ 		goto set_acl;
+ 
+-	acl = posix_acl_from_xattr(value, size);
++	acl = posix_acl_from_xattr(&init_user_ns, value, size);
+ 	if (!acl) {
+ 		/*
+ 		 * acl_set_file(3) may request that we set default ACLs with
+diff --git a/include/linux/posix_acl_xattr.h b/include/linux/posix_acl_xattr.h
+index 8bd5fcf..ad93ad0 100644
+--- a/include/linux/posix_acl_xattr.h
++++ b/include/linux/posix_acl_xattr.h
+@@ -64,7 +64,9 @@ static inline void posix_acl_fix_xattr_to_user(void *value, size_t size)
+ }
+ #endif
+ 
+-struct posix_acl *posix_acl_from_xattr(const void *value, size_t size);
+-int posix_acl_to_xattr(const struct posix_acl *acl, void *buffer, size_t size);
++struct posix_acl *posix_acl_from_xattr(struct user_namespace *user_ns, 
++				       const void *value, size_t size);
++int posix_acl_to_xattr(struct user_namespace *user_ns,
++		       const struct posix_acl *acl, void *buffer, size_t size);
+ 
+ #endif	/* _POSIX_ACL_XATTR_H */
 -- 
 1.7.5.4
