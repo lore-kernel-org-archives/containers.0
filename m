@@ -1,8 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 04/27] audit: Use current instead of NETLINK_CREDS() in
-	audit_filter
-Date: Wed, 19 Sep 2012 18:52:06 -0700
-Message-ID: <1348105949-25454-4-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 05/27] audit: kill audit_prepare_user_tty
+Date: Wed, 19 Sep 2012 18:52:07 -0700
+Message-ID: <1348105949-25454-5-git-send-email-ebiederm@xmission.com>
 References: <871uhx1n71.fsf@xmission.com>
 	<1348105949-25454-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -25,96 +24,55 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Get caller process uid and gid and pid values from the current task
-instead of the NETLINK_CB.  This is simpler than passing NETLINK_CREDS
-from from audit_receive_msg to audit_filter_user_rules and avoid the
-chance of being hit by the occassional bugs in netlink uid/gid
-credential passing.  This is a safe changes because all netlink
-requests are processed in the task of the sending process.
+Now that netlink messages are processed in the context of the sender
+tty_audit_push_task can be called directly and audit_prepare_user_tty
+which only added looking up the task of the tty by process id is
+not needed.
 
 Cc: Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 Cc: Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- include/linux/audit.h |    2 +-
- kernel/audit.c        |    2 +-
- kernel/auditfilter.c  |   13 ++++++-------
- 3 files changed, 8 insertions(+), 9 deletions(-)
+ kernel/audit.c |   20 +-------------------
+ 1 files changed, 1 insertions(+), 19 deletions(-)
 
-diff --git a/include/linux/audit.h b/include/linux/audit.h
-index 36abf2a..9c9af0e 100644
---- a/include/linux/audit.h
-+++ b/include/linux/audit.h
-@@ -700,7 +700,7 @@ extern void 		    audit_log_secctx(struct audit_buffer *ab, u32 secid);
- extern int		    audit_update_lsm_rules(void);
- 
- 				/* Private API (for audit.c only) */
--extern int audit_filter_user(struct netlink_skb_parms *cb);
-+extern int audit_filter_user(void);
- extern int audit_filter_type(int type);
- extern int  audit_receive_filter(int type, int pid, int uid, int seq,
- 				void *data, size_t datasz, uid_t loginuid,
 diff --git a/kernel/audit.c b/kernel/audit.c
-index 7b7268e..fecb150 100644
+index fecb150..58f704b 100644
 --- a/kernel/audit.c
 +++ b/kernel/audit.c
-@@ -744,7 +744,7 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
- 		if (!audit_enabled && msg_type != AUDIT_USER_AVC)
- 			return 0;
+@@ -468,24 +468,6 @@ static int kauditd_thread(void *dummy)
+ 	return 0;
+ }
  
--		err = audit_filter_user(&NETLINK_CB(skb));
-+		err = audit_filter_user();
+-static int audit_prepare_user_tty(pid_t pid, uid_t loginuid, u32 sessionid)
+-{
+-	struct task_struct *tsk;
+-	int err;
+-
+-	rcu_read_lock();
+-	tsk = find_task_by_vpid(pid);
+-	if (!tsk) {
+-		rcu_read_unlock();
+-		return -ESRCH;
+-	}
+-	get_task_struct(tsk);
+-	rcu_read_unlock();
+-	err = tty_audit_push_task(tsk, loginuid, sessionid);
+-	put_task_struct(tsk);
+-	return err;
+-}
+-
+ int audit_send_list(void *_dest)
+ {
+ 	struct audit_netlink_list *dest = _dest;
+@@ -748,7 +730,7 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
  		if (err == 1) {
  			err = 0;
  			if (msg_type == AUDIT_USER_TTY) {
-diff --git a/kernel/auditfilter.c b/kernel/auditfilter.c
-index a6c3f1a..b754f43 100644
---- a/kernel/auditfilter.c
-+++ b/kernel/auditfilter.c
-@@ -1236,8 +1236,7 @@ int audit_compare_dname_path(const char *dname, const char *path,
- 	return strncmp(p, dname, dlen);
- }
- 
--static int audit_filter_user_rules(struct netlink_skb_parms *cb,
--				   struct audit_krule *rule,
-+static int audit_filter_user_rules(struct audit_krule *rule,
- 				   enum audit_state *state)
- {
- 	int i;
-@@ -1249,13 +1248,13 @@ static int audit_filter_user_rules(struct netlink_skb_parms *cb,
- 
- 		switch (f->type) {
- 		case AUDIT_PID:
--			result = audit_comparator(cb->creds.pid, f->op, f->val);
-+			result = audit_comparator(task_pid_vnr(current), f->op, f->val);
- 			break;
- 		case AUDIT_UID:
--			result = audit_comparator(cb->creds.uid, f->op, f->val);
-+			result = audit_comparator(current_uid(), f->op, f->val);
- 			break;
- 		case AUDIT_GID:
--			result = audit_comparator(cb->creds.gid, f->op, f->val);
-+			result = audit_comparator(current_gid(), f->op, f->val);
- 			break;
- 		case AUDIT_LOGINUID:
- 			result = audit_comparator(audit_get_loginuid(current),
-@@ -1287,7 +1286,7 @@ static int audit_filter_user_rules(struct netlink_skb_parms *cb,
- 	return 1;
- }
- 
--int audit_filter_user(struct netlink_skb_parms *cb)
-+int audit_filter_user(void)
- {
- 	enum audit_state state = AUDIT_DISABLED;
- 	struct audit_entry *e;
-@@ -1295,7 +1294,7 @@ int audit_filter_user(struct netlink_skb_parms *cb)
- 
- 	rcu_read_lock();
- 	list_for_each_entry_rcu(e, &audit_filter_list[AUDIT_FILTER_USER], list) {
--		if (audit_filter_user_rules(cb, &e->rule, &state)) {
-+		if (audit_filter_user_rules(&e->rule, &state)) {
- 			if (state == AUDIT_DISABLED)
- 				ret = 0;
- 			break;
+-				err = audit_prepare_user_tty(pid, loginuid,
++				err = tty_audit_push_task(current, loginuid,
+ 							     sessionid);
+ 				if (err)
+ 					break;
 -- 
 1.7.5.4
