@@ -1,8 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 07/25] userns: Convert adfs to use kuid and kgid where
-	appropriate
-Date: Thu, 20 Sep 2012 04:41:48 -0700
-Message-ID: <1348141326-23355-7-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 08/25] userns: Convert befs to use kuid/kgid where appropriate
+Date: Thu, 20 Sep 2012 04:41:49 -0700
+Message-ID: <1348141326-23355-8-git-send-email-ebiederm@xmission.com>
 References: <877grox6ql.fsf@xmission.com>
 	<1348141326-23355-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -28,110 +27,112 @@ From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/adfs/adfs.h  |    4 ++--
- fs/adfs/inode.c |    4 ++--
- fs/adfs/super.c |   21 +++++++++++++--------
- init/Kconfig    |    1 -
- 4 files changed, 17 insertions(+), 13 deletions(-)
+ fs/befs/befs.h     |    4 ++--
+ fs/befs/linuxvfs.c |   27 +++++++++++++++++++--------
+ init/Kconfig       |    1 -
+ 3 files changed, 21 insertions(+), 11 deletions(-)
 
-diff --git a/fs/adfs/adfs.h b/fs/adfs/adfs.h
-index 718ac1f..585adaf 100644
---- a/fs/adfs/adfs.h
-+++ b/fs/adfs/adfs.h
-@@ -46,8 +46,8 @@ struct adfs_sb_info {
- 	struct adfs_discmap *s_map;	/* bh list containing map		 */
- 	struct adfs_dir_ops *s_dir;	/* directory operations			 */
+diff --git a/fs/befs/befs.h b/fs/befs/befs.h
+index d9a40ab..b266428 100644
+--- a/fs/befs/befs.h
++++ b/fs/befs/befs.h
+@@ -20,8 +20,8 @@ typedef u64 befs_blocknr_t;
+  */
  
--	uid_t		s_uid;		/* owner uid				 */
--	gid_t		s_gid;		/* owner gid				 */
-+	kuid_t		s_uid;		/* owner uid				 */
-+	kgid_t		s_gid;		/* owner gid				 */
- 	umode_t		s_owner_mask;	/* ADFS owner perm -> unix perm		 */
- 	umode_t		s_other_mask;	/* ADFS other perm -> unix perm		 */
- 	int		s_ftsuffix;	/* ,xyz hex filetype suffix option */
-diff --git a/fs/adfs/inode.c b/fs/adfs/inode.c
-index 1dab6a1..e9bad50 100644
---- a/fs/adfs/inode.c
-+++ b/fs/adfs/inode.c
-@@ -304,8 +304,8 @@ adfs_notify_change(struct dentry *dentry, struct iattr *attr)
- 	 * we can't change the UID or GID of any file -
- 	 * we have a global UID/GID in the superblock
- 	 */
--	if ((ia_valid & ATTR_UID && attr->ia_uid != ADFS_SB(sb)->s_uid) ||
--	    (ia_valid & ATTR_GID && attr->ia_gid != ADFS_SB(sb)->s_gid))
-+	if ((ia_valid & ATTR_UID && !uid_eq(attr->ia_uid, ADFS_SB(sb)->s_uid)) ||
-+	    (ia_valid & ATTR_GID && !gid_eq(attr->ia_gid, ADFS_SB(sb)->s_gid)))
- 		error = -EPERM;
- 
- 	if (error)
-diff --git a/fs/adfs/super.c b/fs/adfs/super.c
-index bdaec92..22a0d7e 100644
---- a/fs/adfs/super.c
-+++ b/fs/adfs/super.c
+ typedef struct befs_mount_options {
+-	gid_t gid;
+-	uid_t uid;
++	kgid_t gid;
++	kuid_t uid;
+ 	int use_gid;
+ 	int use_uid;
+ 	int debug;
+diff --git a/fs/befs/linuxvfs.c b/fs/befs/linuxvfs.c
+index cf7f3c6..7f73a69 100644
+--- a/fs/befs/linuxvfs.c
++++ b/fs/befs/linuxvfs.c
 @@ -15,6 +15,7 @@
- #include <linux/seq_file.h>
- #include <linux/slab.h>
- #include <linux/statfs.h>
-+#include <linux/user_namespace.h>
- #include "adfs.h"
- #include "dir_f.h"
- #include "dir_fplus.h"
-@@ -130,10 +131,10 @@ static int adfs_show_options(struct seq_file *seq, struct dentry *root)
- {
- 	struct adfs_sb_info *asb = ADFS_SB(root->d_sb);
+ #include <linux/vfs.h>
+ #include <linux/parser.h>
+ #include <linux/namei.h>
++#include <linux/sched.h>
  
--	if (asb->s_uid != 0)
--		seq_printf(seq, ",uid=%u", asb->s_uid);
--	if (asb->s_gid != 0)
--		seq_printf(seq, ",gid=%u", asb->s_gid);
-+	if (!uid_eq(asb->s_uid, GLOBAL_ROOT_UID))
-+		seq_printf(seq, ",uid=%u", from_kuid_munged(&init_user_ns, asb->s_uid));
-+	if (!gid_eq(asb->s_gid, GLOBAL_ROOT_GID))
-+		seq_printf(seq, ",gid=%u", from_kgid_munged(&init_user_ns, asb->s_gid));
- 	if (asb->s_owner_mask != ADFS_DEFAULT_OWNER_MASK)
- 		seq_printf(seq, ",ownmask=%o", asb->s_owner_mask);
- 	if (asb->s_other_mask != ADFS_DEFAULT_OTHER_MASK)
-@@ -175,12 +176,16 @@ static int parse_options(struct super_block *sb, char *options)
+ #include "befs.h"
+ #include "btree.h"
+@@ -352,9 +353,11 @@ static struct inode *befs_iget(struct super_block *sb, unsigned long ino)
+ 	 */   
+ 
+ 	inode->i_uid = befs_sb->mount_opts.use_uid ?
+-	    befs_sb->mount_opts.uid : (uid_t) fs32_to_cpu(sb, raw_inode->uid);
++		befs_sb->mount_opts.uid :
++		make_kuid(&init_user_ns, fs32_to_cpu(sb, raw_inode->uid));
+ 	inode->i_gid = befs_sb->mount_opts.use_gid ?
+-	    befs_sb->mount_opts.gid : (gid_t) fs32_to_cpu(sb, raw_inode->gid);
++		befs_sb->mount_opts.gid :
++		make_kgid(&init_user_ns, fs32_to_cpu(sb, raw_inode->gid));
+ 
+ 	set_nlink(inode, 1);
+ 
+@@ -674,10 +677,12 @@ parse_options(char *options, befs_mount_options * opts)
+ 	char *p;
+ 	substring_t args[MAX_OPT_ARGS];
+ 	int option;
++	kuid_t uid;
++	kgid_t gid;
+ 
+ 	/* Initialize options */
+-	opts->uid = 0;
+-	opts->gid = 0;
++	opts->uid = GLOBAL_ROOT_UID;
++	opts->gid = GLOBAL_ROOT_GID;
+ 	opts->use_uid = 0;
+ 	opts->use_gid = 0;
+ 	opts->iocharset = NULL;
+@@ -696,23 +701,29 @@ parse_options(char *options, befs_mount_options * opts)
  		case Opt_uid:
- 			if (match_int(args, &option))
- 				return -EINVAL;
--			asb->s_uid = option;
-+			asb->s_uid = make_kuid(current_user_ns(), option);
-+			if (!uid_valid(asb->s_uid))
-+				return -EINVAL;
+ 			if (match_int(&args[0], &option))
+ 				return 0;
+-			if (option < 0) {
++			uid = INVALID_UID;
++			if (option >= 0)
++				uid = make_kuid(current_user_ns(), option);
++			if (!uid_valid(uid)) {
+ 				printk(KERN_ERR "BeFS: Invalid uid %d, "
+ 						"using default\n", option);
+ 				break;
+ 			}
+-			opts->uid = option;
++			opts->uid = uid;
+ 			opts->use_uid = 1;
  			break;
  		case Opt_gid:
- 			if (match_int(args, &option))
- 				return -EINVAL;
--			asb->s_gid = option;
-+			asb->s_gid = make_kgid(current_user_ns(), option);
-+			if (!gid_valid(asb->s_gid))
-+				return -EINVAL;
+ 			if (match_int(&args[0], &option))
+ 				return 0;
+-			if (option < 0) {
++			gid = INVALID_GID;
++			if (option >= 0)
++				gid = make_kgid(current_user_ns(), option);
++			if (!gid_valid(gid)) {
+ 				printk(KERN_ERR "BeFS: Invalid gid %d, "
+ 						"using default\n", option);
+ 				break;
+ 			}
+-			opts->gid = option;
++			opts->gid = gid;
+ 			opts->use_gid = 1;
  			break;
- 		case Opt_ownmask:
- 			if (match_octal(args, &option))
-@@ -369,8 +374,8 @@ static int adfs_fill_super(struct super_block *sb, void *data, int silent)
- 	sb->s_fs_info = asb;
- 
- 	/* set default options */
--	asb->s_uid = 0;
--	asb->s_gid = 0;
-+	asb->s_uid = GLOBAL_ROOT_UID;
-+	asb->s_gid = GLOBAL_ROOT_GID;
- 	asb->s_owner_mask = ADFS_DEFAULT_OWNER_MASK;
- 	asb->s_other_mask = ADFS_DEFAULT_OTHER_MASK;
- 	asb->s_ftsuffix = 0;
+ 		case Opt_charset:
 diff --git a/init/Kconfig b/init/Kconfig
-index 485c60a..20ddf0d 100644
+index 20ddf0d..d9bb344 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -933,7 +933,6 @@ config UIDGID_CONVERTED
- 
- 	# Filesystems
- 	depends on 9P_FS = n
--	depends on ADFS_FS = n
+@@ -936,7 +936,6 @@ config UIDGID_CONVERTED
  	depends on AFFS_FS = n
  	depends on AFS_FS = n
  	depends on AUTOFS4_FS = n
+-	depends on BEFS_FS = n
+ 	depends on BFS_FS = n
+ 	depends on BTRFS_FS = n
+ 	depends on CEPH_FS = n
 -- 
 1.7.5.4
