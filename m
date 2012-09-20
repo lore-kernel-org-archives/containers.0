@@ -1,7 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 10/27] audit: Add typespecific uid and gid comparators
-Date: Wed, 19 Sep 2012 18:52:12 -0700
-Message-ID: <1348105949-25454-10-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 21/27] userns: Implement struct kqid
+Date: Wed, 19 Sep 2012 18:52:23 -0700
+Message-ID: <1348105949-25454-21-git-send-email-ebiederm__48539.8193276071$1348107106$gmane$org@xmission.com>
 References: <871uhx1n71.fsf@xmission.com>
 	<1348105949-25454-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -24,520 +24,317 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-The audit filter code guarantees that uid are always compared with
-uids and gids are always compared with gids, as the comparason
-operations are type specific.  Take advantage of this proper to define
-audit_uid_comparator and audit_gid_comparator which use the type safe
-comparasons from uidgid.h.
+Add the data type struct kqid which holds the kernel internal form of
+the owning identifier of a quota.  struct kqid is a replacement for
+the implicit union of uid, gid and project id stored in an unsigned
+int and the quota type field that is was used in the quota data
+structures.  Making the data type explicit allows the kuid_t and
+kgid_t type safety to propogate more thoroughly through the code,
+revealing more places where uid/gid conversions need be made.
 
-Build on audit_uid_comparator and audit_gid_comparator and replace
-audit_compare_id with audit_compare_uid and audit_compare_gid.  This
-is one of those odd cases where being type safe and duplicating code
-leads to simpler shorter and more concise code.
+Along with the data type struct kqid comes the helper functions
+qid_eq, qid_lt, from_kqid, from_kqid_munged, qid_valid, make_kqid,
+make_kqid_invalid, make_kqid_uid, make_kqid_gid.
 
-Don't allow bitmask operations in uid and gid comparisons in
-audit_data_to_entry.  Bitmask operations are already denined in
-audit_rule_to_entry.
-
-Convert constants in audit_rule_to_entry and audit_data_to_entry into
-kuids and kgids when appropriate.
-
-Convert the uid and gid field in struct audit_names to be of type
-kuid_t and kgid_t respectively, so that the new uid and gid comparators
-can be applied in a type safe manner.
-
-Cc: Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-Cc: Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
+Cc: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- include/linux/audit.h |    2 +
- kernel/audit.h        |    2 +
- kernel/auditfilter.c  |  119 +++++++++++++++++++++++++++++++++++---
- kernel/auditsc.c      |  150 +++++++++++++++++++++++--------------------------
- 4 files changed, 184 insertions(+), 89 deletions(-)
+ fs/quota/Makefile     |    2 +-
+ fs/quota/kqid.c       |  132 +++++++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/quota.h |  125 ++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 258 insertions(+), 1 deletions(-)
+ create mode 100644 fs/quota/kqid.c
 
-diff --git a/include/linux/audit.h b/include/linux/audit.h
-index b9c5b22..ca019bb 100644
---- a/include/linux/audit.h
-+++ b/include/linux/audit.h
-@@ -442,6 +442,8 @@ struct audit_krule {
- struct audit_field {
- 	u32				type;
- 	u32				val;
-+	kuid_t				uid;
-+	kgid_t				gid;
- 	u32				op;
- 	char				*lsm_str;
- 	void				*lsm_rule;
-diff --git a/kernel/audit.h b/kernel/audit.h
-index 8167668..4b428bb 100644
---- a/kernel/audit.h
-+++ b/kernel/audit.h
-@@ -76,6 +76,8 @@ static inline int audit_hash_ino(u32 ino)
- 
- extern int audit_match_class(int class, unsigned syscall);
- extern int audit_comparator(const u32 left, const u32 op, const u32 right);
-+extern int audit_uid_comparator(kuid_t left, u32 op, kuid_t right);
-+extern int audit_gid_comparator(kgid_t left, u32 op, kgid_t right);
- extern int audit_compare_dname_path(const char *dname, const char *path,
- 				    int *dirlen);
- extern struct sk_buff *	    audit_make_reply(int pid, int seq, int type,
-diff --git a/kernel/auditfilter.c b/kernel/auditfilter.c
-index e242dd9..b30320c 100644
---- a/kernel/auditfilter.c
-+++ b/kernel/auditfilter.c
-@@ -342,6 +342,8 @@ static struct audit_entry *audit_rule_to_entry(struct audit_rule *rule)
- 
- 		f->type = rule->fields[i] & ~(AUDIT_NEGATE|AUDIT_OPERATORS);
- 		f->val = rule->values[i];
-+		f->uid = INVALID_UID;
-+		f->gid = INVALID_GID;
- 
- 		err = -EINVAL;
- 		if (f->op == Audit_bad)
-@@ -350,16 +352,32 @@ static struct audit_entry *audit_rule_to_entry(struct audit_rule *rule)
- 		switch(f->type) {
- 		default:
- 			goto exit_free;
--		case AUDIT_PID:
- 		case AUDIT_UID:
- 		case AUDIT_EUID:
- 		case AUDIT_SUID:
- 		case AUDIT_FSUID:
-+		case AUDIT_LOGINUID:
-+			/* bit ops not implemented for uid comparisons */
-+			if (f->op == Audit_bitmask || f->op == Audit_bittest)
-+				goto exit_free;
+diff --git a/fs/quota/Makefile b/fs/quota/Makefile
+index 5f9e9e2..c66c37c 100644
+--- a/fs/quota/Makefile
++++ b/fs/quota/Makefile
+@@ -2,6 +2,6 @@ obj-$(CONFIG_QUOTA)		+= dquot.o
+ obj-$(CONFIG_QFMT_V1)		+= quota_v1.o
+ obj-$(CONFIG_QFMT_V2)		+= quota_v2.o
+ obj-$(CONFIG_QUOTA_TREE)	+= quota_tree.o
+-obj-$(CONFIG_QUOTACTL)		+= quota.o
++obj-$(CONFIG_QUOTACTL)		+= quota.o kqid.o
+ obj-$(CONFIG_QUOTACTL_COMPAT)	+= compat.o
+ obj-$(CONFIG_QUOTA_NETLINK_INTERFACE)	+= netlink.o
+diff --git a/fs/quota/kqid.c b/fs/quota/kqid.c
+new file mode 100644
+index 0000000..2f97b0e
+--- /dev/null
++++ b/fs/quota/kqid.c
+@@ -0,0 +1,132 @@
++#include <linux/fs.h>
++#include <linux/quota.h>
++#include <linux/export.h>
 +
-+			f->uid = make_kuid(current_user_ns(), f->val);
-+			if (!uid_valid(f->uid))
-+				goto exit_free;
-+			break;
- 		case AUDIT_GID:
- 		case AUDIT_EGID:
- 		case AUDIT_SGID:
- 		case AUDIT_FSGID:
--		case AUDIT_LOGINUID:
-+			/* bit ops not implemented for gid comparisons */
-+			if (f->op == Audit_bitmask || f->op == Audit_bittest)
-+				goto exit_free;
-+
-+			f->gid = make_kgid(current_user_ns(), f->val);
-+			if (!gid_valid(f->gid))
-+				goto exit_free;
-+			break;
-+		case AUDIT_PID:
- 		case AUDIT_PERS:
- 		case AUDIT_MSGTYPE:
- 		case AUDIT_PPID:
-@@ -437,19 +455,39 @@ static struct audit_entry *audit_data_to_entry(struct audit_rule_data *data,
- 
- 		f->type = data->fields[i];
- 		f->val = data->values[i];
-+		f->uid = INVALID_UID;
-+		f->gid = INVALID_GID;
- 		f->lsm_str = NULL;
- 		f->lsm_rule = NULL;
- 		switch(f->type) {
--		case AUDIT_PID:
- 		case AUDIT_UID:
- 		case AUDIT_EUID:
- 		case AUDIT_SUID:
- 		case AUDIT_FSUID:
-+		case AUDIT_LOGINUID:
-+		case AUDIT_OBJ_UID:
-+			/* bit ops not implemented for uid comparisons */
-+			if (f->op == Audit_bitmask || f->op == Audit_bittest)
-+				goto exit_free;
-+
-+			f->uid = make_kuid(current_user_ns(), f->val);
-+			if (!uid_valid(f->uid))
-+				goto exit_free;
-+			break;
- 		case AUDIT_GID:
- 		case AUDIT_EGID:
- 		case AUDIT_SGID:
- 		case AUDIT_FSGID:
--		case AUDIT_LOGINUID:
-+		case AUDIT_OBJ_GID:
-+			/* bit ops not implemented for gid comparisons */
-+			if (f->op == Audit_bitmask || f->op == Audit_bittest)
-+				goto exit_free;
-+
-+			f->gid = make_kgid(current_user_ns(), f->val);
-+			if (!gid_valid(f->gid))
-+				goto exit_free;
-+			break;
-+		case AUDIT_PID:
- 		case AUDIT_PERS:
- 		case AUDIT_MSGTYPE:
- 		case AUDIT_PPID:
-@@ -461,8 +499,6 @@ static struct audit_entry *audit_data_to_entry(struct audit_rule_data *data,
- 		case AUDIT_ARG1:
- 		case AUDIT_ARG2:
- 		case AUDIT_ARG3:
--		case AUDIT_OBJ_UID:
--		case AUDIT_OBJ_GID:
- 			break;
- 		case AUDIT_ARCH:
- 			entry->rule.arch_f = f;
-@@ -707,6 +743,23 @@ static int audit_compare_rule(struct audit_krule *a, struct audit_krule *b)
- 			if (strcmp(a->filterkey, b->filterkey))
- 				return 1;
- 			break;
-+		case AUDIT_UID:
-+		case AUDIT_EUID:
-+		case AUDIT_SUID:
-+		case AUDIT_FSUID:
-+		case AUDIT_LOGINUID:
-+		case AUDIT_OBJ_UID:
-+			if (!uid_eq(a->fields[i].uid, b->fields[i].uid))
-+				return 1;
-+			break;
-+		case AUDIT_GID:
-+		case AUDIT_EGID:
-+		case AUDIT_SGID:
-+		case AUDIT_FSGID:
-+		case AUDIT_OBJ_GID:
-+			if (!gid_eq(a->fields[i].gid, b->fields[i].gid))
-+				return 1;
-+			break;
- 		default:
- 			if (a->fields[i].val != b->fields[i].val)
- 				return 1;
-@@ -1198,6 +1251,52 @@ int audit_comparator(u32 left, u32 op, u32 right)
- 	}
- }
- 
-+int audit_uid_comparator(kuid_t left, u32 op, kuid_t right)
++/**
++ *	qid_eq - Test to see if to kquid values are the same
++ *	@left: A qid value
++ *	@right: Another quid value
++ *
++ *	Return true if the two qid values are equal and false otherwise.
++ */
++bool qid_eq(struct kqid left, struct kqid right)
 +{
-+	switch (op) {
-+	case Audit_equal:
-+		return uid_eq(left, right);
-+	case Audit_not_equal:
-+		return !uid_eq(left, right);
-+	case Audit_lt:
-+		return uid_lt(left, right);
-+	case Audit_le:
-+		return uid_lte(left, right);
-+	case Audit_gt:
-+		return uid_gt(left, right);
-+	case Audit_ge:
-+		return uid_gte(left, right);
-+	case Audit_bitmask:
-+	case Audit_bittest:
++	if (left.type != right.type)
++		return false;
++	switch(left.type) {
++	case USRQUOTA:
++		return uid_eq(left.uid, right.uid);
++	case GRPQUOTA:
++		return gid_eq(left.gid, right.gid);
++	case PRJQUOTA:
++		return projid_eq(left.projid, right.projid);
 +	default:
 +		BUG();
-+		return 0;
 +	}
 +}
++EXPORT_SYMBOL(qid_eq);
 +
-+int audit_gid_comparator(kgid_t left, u32 op, kgid_t right)
++/**
++ *	qid_lt - Test to see if one qid value is less than another
++ *	@left: The possibly lesser qid value
++ *	@right: The possibly greater qid value
++ *
++ *	Return true if left is less than right and false otherwise.
++ */
++bool qid_lt(struct kqid left, struct kqid right)
 +{
-+	switch (op) {
-+	case Audit_equal:
-+		return gid_eq(left, right);
-+	case Audit_not_equal:
-+		return !gid_eq(left, right);
-+	case Audit_lt:
-+		return gid_lt(left, right);
-+	case Audit_le:
-+		return gid_lte(left, right);
-+	case Audit_gt:
-+		return gid_gt(left, right);
-+	case Audit_ge:
-+		return gid_gte(left, right);
-+	case Audit_bitmask:
-+	case Audit_bittest:
++	if (left.type < right.type)
++		return true;
++	if (left.type > right.type)
++		return false;
++	switch (left.type) {
++	case USRQUOTA:
++		return uid_lt(left.uid, right.uid);
++	case GRPQUOTA:
++		return gid_lt(left.gid, right.gid);
++	case PRJQUOTA:
++		return projid_lt(left.projid, right.projid);
 +	default:
 +		BUG();
-+		return 0;
 +	}
++}
++EXPORT_SYMBOL(qid_lt);
++
++/**
++ *	from_kqid - Create a qid from a kqid user-namespace pair.
++ *	@targ: The user namespace we want a qid in.
++ *	@kuid: The kernel internal quota identifier to start with.
++ *
++ *	Map @kqid into the user-namespace specified by @targ and
++ *	return the resulting qid.
++ *
++ *	There is always a mapping into the initial user_namespace.
++ *
++ *	If @kqid has no mapping in @targ (qid_t)-1 is returned.
++ */
++qid_t from_kqid(struct user_namespace *targ, struct kqid kqid)
++{
++	switch (kqid.type) {
++	case USRQUOTA:
++		return from_kuid(targ, kqid.uid);
++	case GRPQUOTA:
++		return from_kgid(targ, kqid.gid);
++	case PRJQUOTA:
++		return from_kprojid(targ, kqid.projid);
++	default:
++		BUG();
++	}
++}
++EXPORT_SYMBOL(from_kqid);
++
++/**
++ *	from_kqid_munged - Create a qid from a kqid user-namespace pair.
++ *	@targ: The user namespace we want a qid in.
++ *	@kqid: The kernel internal quota identifier to start with.
++ *
++ *	Map @kqid into the user-namespace specified by @targ and
++ *	return the resulting qid.
++ *
++ *	There is always a mapping into the initial user_namespace.
++ *
++ *	Unlike from_kqid from_kqid_munged never fails and always
++ *	returns a valid projid.  This makes from_kqid_munged
++ *	appropriate for use in places where failing to provide
++ *	a qid_t is not a good option.
++ *
++ *	If @kqid has no mapping in @targ the kqid.type specific
++ *	overflow identifier is returned.
++ */
++qid_t from_kqid_munged(struct user_namespace *targ, struct kqid kqid)
++{
++	switch (kqid.type) {
++	case USRQUOTA:
++		return from_kuid_munged(targ, kqid.uid);
++	case GRPQUOTA:
++		return from_kgid_munged(targ, kqid.gid);
++	case PRJQUOTA:
++		return from_kprojid_munged(targ, kqid.projid);
++	default:
++		BUG();
++	}
++}
++EXPORT_SYMBOL(from_kqid_munged);
++
++/**
++ *	qid_valid - Report if a valid value is stored in a kqid.
++ *	@qid: The kernel internal quota identifier to test.
++ */
++bool qid_valid(struct kqid qid)
++{
++	switch (qid.type) {
++	case USRQUOTA:
++		return uid_valid(qid.uid);
++	case GRPQUOTA:
++		return gid_valid(qid.gid);
++	case PRJQUOTA:
++		return projid_valid(qid.projid);
++	default:
++		BUG();
++	}
++}
++EXPORT_SYMBOL(qid_valid);
+diff --git a/include/linux/quota.h b/include/linux/quota.h
+index 524ede8..00ac8d8 100644
+--- a/include/linux/quota.h
++++ b/include/linux/quota.h
+@@ -181,10 +181,135 @@ enum {
+ #include <linux/dqblk_v2.h>
+ 
+ #include <linux/atomic.h>
++#include <linux/uidgid.h>
++#include <linux/projid.h>
++
++#undef USRQUOTA
++#undef GRPQUOTA
++enum quota_type {
++	USRQUOTA = 0,		/* element used for user quotas */
++	GRPQUOTA = 1,		/* element used for group quotas */
++	PRJQUOTA = 2,		/* element used for project quotas */
++};
+ 
+ typedef __kernel_uid32_t qid_t; /* Type in which we store ids in memory */
+ typedef long long qsize_t;	/* Type in which we store sizes */
+ 
++struct kqid {			/* Type in which we store the quota identifier */
++	union {
++		kuid_t uid;
++		kgid_t gid;
++		kprojid_t projid;
++	};
++	enum quota_type type;  /* USRQUOTA (uid) or GRPQUOTA (gid) or PRJQUOTA (projid) */
++};
++
++extern bool qid_eq(struct kqid left, struct kqid right);
++extern bool qid_lt(struct kqid left, struct kqid right);
++extern qid_t from_kqid(struct user_namespace *to, struct kqid qid);
++extern qid_t from_kqid_munged(struct user_namespace *to, struct kqid qid);
++extern bool qid_valid(struct kqid qid);
++
++/**
++ *	make_kqid - Map a user-namespace, type, qid tuple into a kqid.
++ *	@from: User namespace that the qid is in
++ *	@type: The type of quota
++ *	@qid: Quota identifier
++ *
++ *	Maps a user-namespace, type qid tuple into a kernel internal
++ *	kqid, and returns that kqid.
++ *
++ *	When there is no mapping defined for the user-namespace, type,
++ *	qid tuple an invalid kqid is returned.  Callers are expected to
++ *	test for and handle handle invalid kqids being returned.
++ *	Invalid kqids may be tested for using qid_valid().
++ */
++static inline struct kqid make_kqid(struct user_namespace *from,
++				    enum quota_type type, qid_t qid)
++{
++	struct kqid kqid;
++
++	kqid.type = type;
++	switch (type) {
++	case USRQUOTA:
++		kqid.uid = make_kuid(from, qid);
++		break;
++	case GRPQUOTA:
++		kqid.gid = make_kgid(from, qid);
++		break;
++	case PRJQUOTA:
++		kqid.projid = make_kprojid(from, qid);
++		break;
++	default:
++		BUG();
++	}
++	return kqid;
 +}
 +
- /* Compare given dentry name with last component in given path,
-  * return of 0 indicates a match. */
- int audit_compare_dname_path(const char *dname, const char *path,
-@@ -1251,14 +1350,14 @@ static int audit_filter_user_rules(struct audit_krule *rule,
- 			result = audit_comparator(task_pid_vnr(current), f->op, f->val);
- 			break;
- 		case AUDIT_UID:
--			result = audit_comparator(current_uid(), f->op, f->val);
-+			result = audit_uid_comparator(current_uid(), f->op, f->uid);
- 			break;
- 		case AUDIT_GID:
--			result = audit_comparator(current_gid(), f->op, f->val);
-+			result = audit_gid_comparator(current_gid(), f->op, f->gid);
- 			break;
- 		case AUDIT_LOGINUID:
--			result = audit_comparator(audit_get_loginuid(current),
--						  f->op, f->val);
-+			result = audit_uid_comparator(audit_get_loginuid(current),
-+						  f->op, f->uid);
- 			break;
- 		case AUDIT_SUBJ_USER:
- 		case AUDIT_SUBJ_ROLE:
-diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-index 4b96415..0b5b8a2 100644
---- a/kernel/auditsc.c
-+++ b/kernel/auditsc.c
-@@ -113,8 +113,8 @@ struct audit_names {
- 	unsigned long	ino;
- 	dev_t		dev;
- 	umode_t		mode;
--	uid_t		uid;
--	gid_t		gid;
-+	kuid_t		uid;
-+	kgid_t		gid;
- 	dev_t		rdev;
- 	u32		osid;
- 	struct audit_cap_data fcap;
-@@ -464,37 +464,47 @@ static int match_tree_refs(struct audit_context *ctx, struct audit_tree *tree)
- 	return 0;
- }
- 
--static int audit_compare_id(uid_t uid1,
--			    struct audit_names *name,
--			    unsigned long name_offset,
--			    struct audit_field *f,
--			    struct audit_context *ctx)
-+static int audit_compare_uid(kuid_t uid,
-+			     struct audit_names *name,
-+			     struct audit_field *f,
-+			     struct audit_context *ctx)
- {
- 	struct audit_names *n;
--	unsigned long addr;
--	uid_t uid2;
- 	int rc;
--
--	BUILD_BUG_ON(sizeof(uid_t) != sizeof(gid_t));
--
-+ 
- 	if (name) {
--		addr = (unsigned long)name;
--		addr += name_offset;
--
--		uid2 = *(uid_t *)addr;
--		rc = audit_comparator(uid1, f->op, uid2);
-+		rc = audit_uid_comparator(uid, f->op, name->uid);
- 		if (rc)
- 			return rc;
- 	}
--
-+ 
- 	if (ctx) {
- 		list_for_each_entry(n, &ctx->names_list, list) {
--			addr = (unsigned long)n;
--			addr += name_offset;
--
--			uid2 = *(uid_t *)addr;
-+			rc = audit_uid_comparator(uid, f->op, n->uid);
-+			if (rc)
-+				return rc;
-+		}
-+	}
-+	return 0;
-+}
- 
--			rc = audit_comparator(uid1, f->op, uid2);
-+static int audit_compare_gid(kgid_t gid,
-+			     struct audit_names *name,
-+			     struct audit_field *f,
-+			     struct audit_context *ctx)
++/**
++ *	make_kqid_invalid - Explicitly make an invalid kqid
++ *	@type: The type of quota identifier
++ *
++ *	Returns an invalid kqid with the specified type.
++ */
++static inline struct kqid make_kqid_invalid(enum quota_type type)
 +{
-+	struct audit_names *n;
-+	int rc;
-+ 
-+	if (name) {
-+		rc = audit_gid_comparator(gid, f->op, name->gid);
-+		if (rc)
-+			return rc;
++	struct kqid kqid;
++
++	kqid.type = type;
++	switch (type) {
++	case USRQUOTA:
++		kqid.uid = INVALID_UID;
++		break;
++	case GRPQUOTA:
++		kqid.gid = INVALID_GID;
++		break;
++	case PRJQUOTA:
++		kqid.projid = INVALID_PROJID;
++		break;
++	default:
++		BUG();
 +	}
-+ 
-+	if (ctx) {
-+		list_for_each_entry(n, &ctx->names_list, list) {
-+			rc = audit_gid_comparator(gid, f->op, n->gid);
- 			if (rc)
- 				return rc;
- 		}
-@@ -511,80 +521,62 @@ static int audit_field_compare(struct task_struct *tsk,
- 	switch (f->val) {
- 	/* process to file object comparisons */
- 	case AUDIT_COMPARE_UID_TO_OBJ_UID:
--		return audit_compare_id(cred->uid,
--					name, offsetof(struct audit_names, uid),
--					f, ctx);
-+		return audit_compare_uid(cred->uid, name, f, ctx);
- 	case AUDIT_COMPARE_GID_TO_OBJ_GID:
--		return audit_compare_id(cred->gid,
--					name, offsetof(struct audit_names, gid),
--					f, ctx);
-+		return audit_compare_gid(cred->gid, name, f, ctx);
- 	case AUDIT_COMPARE_EUID_TO_OBJ_UID:
--		return audit_compare_id(cred->euid,
--					name, offsetof(struct audit_names, uid),
--					f, ctx);
-+		return audit_compare_uid(cred->euid, name, f, ctx);
- 	case AUDIT_COMPARE_EGID_TO_OBJ_GID:
--		return audit_compare_id(cred->egid,
--					name, offsetof(struct audit_names, gid),
--					f, ctx);
-+		return audit_compare_gid(cred->egid, name, f, ctx);
- 	case AUDIT_COMPARE_AUID_TO_OBJ_UID:
--		return audit_compare_id(tsk->loginuid,
--					name, offsetof(struct audit_names, uid),
--					f, ctx);
-+		return audit_compare_uid(tsk->loginuid, name, f, ctx);
- 	case AUDIT_COMPARE_SUID_TO_OBJ_UID:
--		return audit_compare_id(cred->suid,
--					name, offsetof(struct audit_names, uid),
--					f, ctx);
-+		return audit_compare_uid(cred->suid, name, f, ctx);
- 	case AUDIT_COMPARE_SGID_TO_OBJ_GID:
--		return audit_compare_id(cred->sgid,
--					name, offsetof(struct audit_names, gid),
--					f, ctx);
-+		return audit_compare_gid(cred->sgid, name, f, ctx);
- 	case AUDIT_COMPARE_FSUID_TO_OBJ_UID:
--		return audit_compare_id(cred->fsuid,
--					name, offsetof(struct audit_names, uid),
--					f, ctx);
-+		return audit_compare_uid(cred->fsuid, name, f, ctx);
- 	case AUDIT_COMPARE_FSGID_TO_OBJ_GID:
--		return audit_compare_id(cred->fsgid,
--					name, offsetof(struct audit_names, gid),
--					f, ctx);
-+		return audit_compare_gid(cred->fsgid, name, f, ctx);
- 	/* uid comparisons */
- 	case AUDIT_COMPARE_UID_TO_AUID:
--		return audit_comparator(cred->uid, f->op, tsk->loginuid);
-+		return audit_uid_comparator(cred->uid, f->op, tsk->loginuid);
- 	case AUDIT_COMPARE_UID_TO_EUID:
--		return audit_comparator(cred->uid, f->op, cred->euid);
-+		return audit_uid_comparator(cred->uid, f->op, cred->euid);
- 	case AUDIT_COMPARE_UID_TO_SUID:
--		return audit_comparator(cred->uid, f->op, cred->suid);
-+		return audit_uid_comparator(cred->uid, f->op, cred->suid);
- 	case AUDIT_COMPARE_UID_TO_FSUID:
--		return audit_comparator(cred->uid, f->op, cred->fsuid);
-+		return audit_uid_comparator(cred->uid, f->op, cred->fsuid);
- 	/* auid comparisons */
- 	case AUDIT_COMPARE_AUID_TO_EUID:
--		return audit_comparator(tsk->loginuid, f->op, cred->euid);
-+		return audit_uid_comparator(tsk->loginuid, f->op, cred->euid);
- 	case AUDIT_COMPARE_AUID_TO_SUID:
--		return audit_comparator(tsk->loginuid, f->op, cred->suid);
-+		return audit_uid_comparator(tsk->loginuid, f->op, cred->suid);
- 	case AUDIT_COMPARE_AUID_TO_FSUID:
--		return audit_comparator(tsk->loginuid, f->op, cred->fsuid);
-+		return audit_uid_comparator(tsk->loginuid, f->op, cred->fsuid);
- 	/* euid comparisons */
- 	case AUDIT_COMPARE_EUID_TO_SUID:
--		return audit_comparator(cred->euid, f->op, cred->suid);
-+		return audit_uid_comparator(cred->euid, f->op, cred->suid);
- 	case AUDIT_COMPARE_EUID_TO_FSUID:
--		return audit_comparator(cred->euid, f->op, cred->fsuid);
-+		return audit_uid_comparator(cred->euid, f->op, cred->fsuid);
- 	/* suid comparisons */
- 	case AUDIT_COMPARE_SUID_TO_FSUID:
--		return audit_comparator(cred->suid, f->op, cred->fsuid);
-+		return audit_uid_comparator(cred->suid, f->op, cred->fsuid);
- 	/* gid comparisons */
- 	case AUDIT_COMPARE_GID_TO_EGID:
--		return audit_comparator(cred->gid, f->op, cred->egid);
-+		return audit_gid_comparator(cred->gid, f->op, cred->egid);
- 	case AUDIT_COMPARE_GID_TO_SGID:
--		return audit_comparator(cred->gid, f->op, cred->sgid);
-+		return audit_gid_comparator(cred->gid, f->op, cred->sgid);
- 	case AUDIT_COMPARE_GID_TO_FSGID:
--		return audit_comparator(cred->gid, f->op, cred->fsgid);
-+		return audit_gid_comparator(cred->gid, f->op, cred->fsgid);
- 	/* egid comparisons */
- 	case AUDIT_COMPARE_EGID_TO_SGID:
--		return audit_comparator(cred->egid, f->op, cred->sgid);
-+		return audit_gid_comparator(cred->egid, f->op, cred->sgid);
- 	case AUDIT_COMPARE_EGID_TO_FSGID:
--		return audit_comparator(cred->egid, f->op, cred->fsgid);
-+		return audit_gid_comparator(cred->egid, f->op, cred->fsgid);
- 	/* sgid comparison */
- 	case AUDIT_COMPARE_SGID_TO_FSGID:
--		return audit_comparator(cred->sgid, f->op, cred->fsgid);
-+		return audit_gid_comparator(cred->sgid, f->op, cred->fsgid);
- 	default:
- 		WARN(1, "Missing AUDIT_COMPARE define.  Report as a bug\n");
- 		return 0;
-@@ -630,28 +622,28 @@ static int audit_filter_rules(struct task_struct *tsk,
- 			}
- 			break;
- 		case AUDIT_UID:
--			result = audit_comparator(cred->uid, f->op, f->val);
-+			result = audit_uid_comparator(cred->uid, f->op, f->uid);
- 			break;
- 		case AUDIT_EUID:
--			result = audit_comparator(cred->euid, f->op, f->val);
-+			result = audit_uid_comparator(cred->euid, f->op, f->uid);
- 			break;
- 		case AUDIT_SUID:
--			result = audit_comparator(cred->suid, f->op, f->val);
-+			result = audit_uid_comparator(cred->suid, f->op, f->uid);
- 			break;
- 		case AUDIT_FSUID:
--			result = audit_comparator(cred->fsuid, f->op, f->val);
-+			result = audit_uid_comparator(cred->fsuid, f->op, f->uid);
- 			break;
- 		case AUDIT_GID:
--			result = audit_comparator(cred->gid, f->op, f->val);
-+			result = audit_gid_comparator(cred->gid, f->op, f->gid);
- 			break;
- 		case AUDIT_EGID:
--			result = audit_comparator(cred->egid, f->op, f->val);
-+			result = audit_gid_comparator(cred->egid, f->op, f->gid);
- 			break;
- 		case AUDIT_SGID:
--			result = audit_comparator(cred->sgid, f->op, f->val);
-+			result = audit_gid_comparator(cred->sgid, f->op, f->gid);
- 			break;
- 		case AUDIT_FSGID:
--			result = audit_comparator(cred->fsgid, f->op, f->val);
-+			result = audit_gid_comparator(cred->fsgid, f->op, f->gid);
- 			break;
- 		case AUDIT_PERS:
- 			result = audit_comparator(tsk->personality, f->op, f->val);
-@@ -717,10 +709,10 @@ static int audit_filter_rules(struct task_struct *tsk,
- 			break;
- 		case AUDIT_OBJ_UID:
- 			if (name) {
--				result = audit_comparator(name->uid, f->op, f->val);
-+				result = audit_uid_comparator(name->uid, f->op, f->uid);
- 			} else if (ctx) {
- 				list_for_each_entry(n, &ctx->names_list, list) {
--					if (audit_comparator(n->uid, f->op, f->val)) {
-+					if (audit_uid_comparator(n->uid, f->op, f->uid)) {
- 						++result;
- 						break;
- 					}
-@@ -729,10 +721,10 @@ static int audit_filter_rules(struct task_struct *tsk,
- 			break;
- 		case AUDIT_OBJ_GID:
- 			if (name) {
--				result = audit_comparator(name->gid, f->op, f->val);
-+				result = audit_gid_comparator(name->gid, f->op, f->gid);
- 			} else if (ctx) {
- 				list_for_each_entry(n, &ctx->names_list, list) {
--					if (audit_comparator(n->gid, f->op, f->val)) {
-+					if (audit_gid_comparator(n->gid, f->op, f->gid)) {
- 						++result;
- 						break;
- 					}
-@@ -750,7 +742,7 @@ static int audit_filter_rules(struct task_struct *tsk,
- 		case AUDIT_LOGINUID:
- 			result = 0;
- 			if (ctx)
--				result = audit_comparator(tsk->loginuid, f->op, f->val);
-+				result = audit_uid_comparator(tsk->loginuid, f->op, f->uid);
- 			break;
- 		case AUDIT_SUBJ_USER:
- 		case AUDIT_SUBJ_ROLE:
++	return kqid;
++}
++
++/**
++ *	make_kqid_uid - Make a kqid from a kuid
++ *	@uid: The kuid to make the quota identifier from
++ */
++static inline struct kqid make_kqid_uid(kuid_t uid)
++{
++	struct kqid kqid;
++	kqid.type = USRQUOTA;
++	kqid.uid = uid;
++	return kqid;
++}
++
++/**
++ *	make_kqid_gid - Make a kqid from a kgid
++ *	@gid: The kgid to make the quota identifier from
++ */
++static inline struct kqid make_kqid_gid(kgid_t gid)
++{
++	struct kqid kqid;
++	kqid.type = GRPQUOTA;
++	kqid.gid = gid;
++	return kqid;
++}
++
++/**
++ *	make_kqid_projid - Make a kqid from a projid
++ *	@projid: The kprojid to make the quota identifier from
++ */
++static inline struct kqid make_kqid_projid(kprojid_t projid)
++{
++	struct kqid kqid;
++	kqid.type = PRJQUOTA;
++	kqid.projid = projid;
++	return kqid;
++}
++
++
+ extern spinlock_t dq_data_lock;
+ 
+ /* Maximal numbers of writes for quota operation (insert/delete/update)
 -- 
 1.7.5.4
