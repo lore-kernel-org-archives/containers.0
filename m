@@ -1,17 +1,17 @@
 From: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>
-Subject: Re: [PATCH 02/25] userns: Convert gadgetfs to use kuid and kgid
+Subject: Re: [PATCH 03/25] userns: Convert usb functionfs to use kuid/kgid
 	where appropriate
-Date: Thu, 20 Sep 2012 12:58:34 +0100
-Message-ID: <20120920115834.GA3523@kroah.com>
+Date: Thu, 20 Sep 2012 12:58:44 +0100
+Message-ID: <20120920115844.GB3523@kroah.com>
 References: <877grox6ql.fsf@xmission.com>
 	<1348141326-23355-1-git-send-email-ebiederm@xmission.com>
-	<1348141326-23355-2-git-send-email-ebiederm@xmission.com>
+	<1348141326-23355-3-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1348141326-23355-2-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <1348141326-23355-3-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,7 +25,7 @@ To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Felipe Balbi <balbi-l0cyMroinI0@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Sep 20, 2012 at 04:41:43AM -0700, Eric W. Biederman wrote:
+On Thu, Sep 20, 2012 at 04:41:44AM -0700, Eric W. Biederman wrote:
 > From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 > 
 > Cc: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>
