@@ -1,17 +1,15 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 01/25] userns: Convert fat to use kuid/kgid where
+From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Subject: [PATCH 13/25] userns: Convert hfs to use kuid and kgid where
 	appropriate
-Date: Thu, 20 Sep 2012 05:04:02 -0700
-Message-ID: <87vcf8vr2l.fsf@xmission.com>
+Date: Thu, 20 Sep 2012 04:41:54 -0700
+Message-ID: <1348141326-23355-13-git-send-email-ebiederm@xmission.com>
 References: <877grox6ql.fsf@xmission.com>
 	<1348141326-23355-1-git-send-email-ebiederm@xmission.com>
-	<87pq5gx60i.fsf@devron.myhome.or.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87pq5gx60i.fsf-x/W9pkDDSe1TgC2z9Sl/nXf5DAMn2ifp@public.gmane.org> (OGAWA Hirofumi's message of
-	"Thu, 20 Sep 2012 20:55:57 +0900")
+In-Reply-To: <1348141326-23355-1-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,121 +19,103 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: OGAWA Hirofumi <hirofumi-UIVanBePwB70ZhReMnHkpc8NsWr+9BEh@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-OGAWA Hirofumi <hirofumi-UIVanBePwB70ZhReMnHkpc8NsWr+9BEh@public.gmane.org> writes:
+From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-> "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> writes:
->
->>  struct fat_mount_options {
->> -	uid_t fs_uid;
->> -	gid_t fs_gid;
->> +	kuid_t fs_uid;
->> +	kgid_t fs_gid;
->>  	unsigned short fs_fmask;
->>  	unsigned short fs_dmask;
->>  	unsigned short codepage;  /* Codepage for shortname conversions */
->
-> I'm not reading this thread, so I may be wrong though. Doesn't this need
-> to initialize opts->fs_uid/fs_gid by GLOBAL_ROOT_UID/GID?
+Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ fs/hfs/hfs_fs.h |    4 ++--
+ fs/hfs/inode.c  |    4 ++--
+ fs/hfs/super.c  |   16 +++++++++++++---
+ init/Kconfig    |    1 -
+ 4 files changed, 17 insertions(+), 8 deletions(-)
 
-Good question.
-
-At the start of parse_options there is:
-
-static int parse_options(struct super_block *sb, char *options, int is_vfat,
-			 int silent, int *debug, struct fat_mount_options *opts)
-{
-	char *p;
-	substring_t args[MAX_OPT_ARGS];
-	int option;
-	char *iocharset;
-
-	opts->isvfat = is_vfat;
-
-	opts->fs_uid = current_uid();
-	opts->fs_gid = current_gid();
-
-So there should be no problems with initialization.
-
-Eric
-
->> diff --git a/fs/fat/file.c b/fs/fat/file.c
->> index e007b8b..a62e0ec 100644
->> --- a/fs/fat/file.c
->> +++ b/fs/fat/file.c
->> @@ -352,7 +352,7 @@ static int fat_allow_set_time(struct msdos_sb_info *sbi, struct inode *inode)
->>  {
->>  	umode_t allow_utime = sbi->options.allow_utime;
->>  
->> -	if (current_fsuid() != inode->i_uid) {
->> +	if (!uid_eq(current_fsuid(), inode->i_uid)) {
->>  		if (in_group_p(inode->i_gid))
->>  			allow_utime >>= 3;
->>  		if (allow_utime & MAY_WRITE)
->> @@ -407,9 +407,9 @@ int fat_setattr(struct dentry *dentry, struct iattr *attr)
->>  	}
->>  
->>  	if (((attr->ia_valid & ATTR_UID) &&
->> -	     (attr->ia_uid != sbi->options.fs_uid)) ||
->> +	     (!uid_eq(attr->ia_uid, sbi->options.fs_uid))) ||
->>  	    ((attr->ia_valid & ATTR_GID) &&
->> -	     (attr->ia_gid != sbi->options.fs_gid)) ||
->> +	     (!gid_eq(attr->ia_gid, sbi->options.fs_gid))) ||
->>  	    ((attr->ia_valid & ATTR_MODE) &&
->>  	     (attr->ia_mode & ~FAT_VALID_MODE)))
->>  		error = -EPERM;
->> diff --git a/fs/fat/inode.c b/fs/fat/inode.c
->> index 05e897f..47d9eb0 100644
->> --- a/fs/fat/inode.c
->> +++ b/fs/fat/inode.c
->> @@ -791,10 +791,12 @@ static int fat_show_options(struct seq_file *m, struct dentry *root)
->>  	struct fat_mount_options *opts = &sbi->options;
->>  	int isvfat = opts->isvfat;
->>  
->> -	if (opts->fs_uid != 0)
->> -		seq_printf(m, ",uid=%u", opts->fs_uid);
->> -	if (opts->fs_gid != 0)
->> -		seq_printf(m, ",gid=%u", opts->fs_gid);
->> +	if (!uid_eq(opts->fs_uid, GLOBAL_ROOT_UID))
->> +		seq_printf(m, ",uid=%u",
->> +				from_kuid_munged(&init_user_ns, opts->fs_uid));
->> +	if (!gid_eq(opts->fs_gid, GLOBAL_ROOT_GID))
->> +		seq_printf(m, ",gid=%u",
->> +				from_kgid_munged(&init_user_ns, opts->fs_gid));
->>  	seq_printf(m, ",fmask=%04o", opts->fs_fmask);
->>  	seq_printf(m, ",dmask=%04o", opts->fs_dmask);
->>  	if (opts->allow_utime)
->> @@ -1037,12 +1039,16 @@ static int parse_options(struct super_block *sb, char *options, int is_vfat,
->>  		case Opt_uid:
->>  			if (match_int(&args[0], &option))
->>  				return 0;
->> -			opts->fs_uid = option;
->> +			opts->fs_uid = make_kuid(current_user_ns(), option);
->> +			if (!uid_valid(opts->fs_uid))
->> +				return 0;
->>  			break;
->>  		case Opt_gid:
->>  			if (match_int(&args[0], &option))
->>  				return 0;
->> -			opts->fs_gid = option;
->> +			opts->fs_gid = make_kgid(current_user_ns(), option);
->> +			if (!gid_valid(opts->fs_gid))
->> +				return 0;
->>  			break;
->>  		case Opt_umask:
->>  			if (match_octal(&args[0], &option))
->> diff --git a/init/Kconfig b/init/Kconfig
->> index 296d48b..60bdff2 100644
->> --- a/init/Kconfig
->> +++ b/init/Kconfig
->> @@ -952,7 +952,6 @@ config UIDGID_CONVERTED
->>  	depends on ECRYPT_FS = n
->>  	depends on EFS_FS = n
->>  	depends on EXOFS_FS = n
->> -	depends on FAT_FS = n
->>  	depends on FUSE_FS = n
->>  	depends on GFS2_FS = n
->>  	depends on HFS_FS = n
+diff --git a/fs/hfs/hfs_fs.h b/fs/hfs/hfs_fs.h
+index 8275175..693df9f 100644
+--- a/fs/hfs/hfs_fs.h
++++ b/fs/hfs/hfs_fs.h
+@@ -134,8 +134,8 @@ struct hfs_sb_info {
+ 						   permissions on all files */
+ 	umode_t s_dir_umask;			/* The umask applied to the
+ 						   permissions on all dirs */
+-	uid_t s_uid;				/* The uid of all files */
+-	gid_t s_gid;				/* The gid of all files */
++	kuid_t s_uid;				/* The uid of all files */
++	kgid_t s_gid;				/* The gid of all files */
+ 
+ 	int session, part;
+ 	struct nls_table *nls_io, *nls_disk;
+diff --git a/fs/hfs/inode.c b/fs/hfs/inode.c
+index ee1bc55..5d5c22d 100644
+--- a/fs/hfs/inode.c
++++ b/fs/hfs/inode.c
+@@ -594,9 +594,9 @@ int hfs_inode_setattr(struct dentry *dentry, struct iattr * attr)
+ 
+ 	/* no uig/gid changes and limit which mode bits can be set */
+ 	if (((attr->ia_valid & ATTR_UID) &&
+-	     (attr->ia_uid != hsb->s_uid)) ||
++	     (!uid_eq(attr->ia_uid, hsb->s_uid))) ||
+ 	    ((attr->ia_valid & ATTR_GID) &&
+-	     (attr->ia_gid != hsb->s_gid)) ||
++	     (!gid_eq(attr->ia_gid, hsb->s_gid))) ||
+ 	    ((attr->ia_valid & ATTR_MODE) &&
+ 	     ((S_ISDIR(inode->i_mode) &&
+ 	       (attr->ia_mode != inode->i_mode)) ||
+diff --git a/fs/hfs/super.c b/fs/hfs/super.c
+index 4eb873e..0b63d13 100644
+--- a/fs/hfs/super.c
++++ b/fs/hfs/super.c
+@@ -138,7 +138,9 @@ static int hfs_show_options(struct seq_file *seq, struct dentry *root)
+ 		seq_printf(seq, ",creator=%.4s", (char *)&sbi->s_creator);
+ 	if (sbi->s_type != cpu_to_be32(0x3f3f3f3f))
+ 		seq_printf(seq, ",type=%.4s", (char *)&sbi->s_type);
+-	seq_printf(seq, ",uid=%u,gid=%u", sbi->s_uid, sbi->s_gid);
++	seq_printf(seq, ",uid=%u,gid=%u",
++			from_kuid_munged(&init_user_ns, sbi->s_uid),
++			from_kgid_munged(&init_user_ns, sbi->s_gid));
+ 	if (sbi->s_file_umask != 0133)
+ 		seq_printf(seq, ",file_umask=%o", sbi->s_file_umask);
+ 	if (sbi->s_dir_umask != 0022)
+@@ -254,14 +256,22 @@ static int parse_options(char *options, struct hfs_sb_info *hsb)
+ 				printk(KERN_ERR "hfs: uid requires an argument\n");
+ 				return 0;
+ 			}
+-			hsb->s_uid = (uid_t)tmp;
++			hsb->s_uid = make_kuid(current_user_ns(), (uid_t)tmp);
++			if (!uid_valid(hsb->s_uid)) {
++				printk(KERN_ERR "hfs: invalid uid %d\n", tmp);
++				return 0;
++			}
+ 			break;
+ 		case opt_gid:
+ 			if (match_int(&args[0], &tmp)) {
+ 				printk(KERN_ERR "hfs: gid requires an argument\n");
+ 				return 0;
+ 			}
+-			hsb->s_gid = (gid_t)tmp;
++			hsb->s_gid = make_kgid(current_user_ns(), (gid_t)tmp);
++			if (!gid_valid(hsb->s_gid)) {
++				printk(KERN_ERR "hfs: invalid gid %d\n", tmp);
++				return 0;
++			}
+ 			break;
+ 		case opt_umask:
+ 			if (match_octal(&args[0], &tmp)) {
+diff --git a/init/Kconfig b/init/Kconfig
+index 39e55d6..6038d64 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -943,7 +943,6 @@ config UIDGID_CONVERTED
+ 	depends on CODA_FS = n
+ 	depends on FUSE_FS = n
+ 	depends on GFS2_FS = n
+-	depends on HFS_FS = n
+ 	depends on HFSPLUS_FS = n
+ 	depends on HPFS_FS = n
+ 	depends on ISO9660_FS = n
+-- 
+1.7.5.4
