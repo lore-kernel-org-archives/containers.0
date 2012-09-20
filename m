@@ -1,14 +1,18 @@
-From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: [Announce] Checkpoint-restore tool v0.2
-Date: Thu, 20 Sep 2012 08:05:51 -0500
-Message-ID: <20120920130551.GB4605__19988.6453840465$1348146371$gmane$org@sergelap>
-References: <500D09C9.7060903@parallels.com> <505AECF0.6070607@parallels.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 20/25] userns: Convert omfs to use kuid and kgid where
+	appropriate
+Date: Thu, 20 Sep 2012 06:13:52 -0700
+Message-ID: <87obl0vnu7.fsf@xmission.com>
+References: <877grox6ql.fsf@xmission.com>
+	<1348141326-23355-1-git-send-email-ebiederm@xmission.com>
+	<1348141326-23355-20-git-send-email-ebiederm@xmission.com>
+	<20120920125020.GD19648@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <505AECF0.6070607-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <20120920125020.GD19648@localhost> (Bob Copeland's message of
+	"Thu, 20 Sep 2012 08:50:20 -0400")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,40 +22,21 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: users-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org" <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, lwn-T1hC0tSOHrs@public.gmane.org, cgroups mailinglist <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Bob Copeland <me-aXfl/3sk2vNUbtYUoyoikg@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Congratulations, Pavel and criu team, that's awesome!
+Bob Copeland <me-aXfl/3sk2vNUbtYUoyoikg@public.gmane.org> writes:
 
-Quoting Pavel Emelyanov (xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
-> Hi!
-> 
-> I'm happy to announce that the next big step is done by the CRIU project.
-> 
-> The major achievement so far -- the tool can now dump and restore a simple LXC
-> container. Another notable feature is the initial support for PTYs which is enough
-> to play with c/r of a container with active ssh sessions from outside, or with
-> a screen app with some simple stuff running inside.
-> 
-> A HOWTO describing an LXC container dump and restore is at http://criu.org/LXC
-> 
-> 
-> The v0.2 can be downloaded from
-> 
-> 	http://download.openvz.org/criu/crtools-0.2.tar.bz2
-> 
-> 
-> Other project resources are
-> 
->   documentation and news:             http://criu.org
->   mainling list:                      https://openvz.org/mailman/listinfo/criu
->   git repo:                           http://git.criu.org/?p=crtools.git
->   kernel with not-yet-merged patches: https://github.com/cyrillos/linux-2.6.git
-> 
-> Thanks,
-> Pavel
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+> On Thu, Sep 20, 2012 at 04:42:01AM -0700, Eric W. Biederman wrote:
+>> From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>> 
+>> Cc: Bob Copeland <me-aXfl/3sk2vNUbtYUoyoikg@public.gmane.org>
+>> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+>> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>
+> Thanks, looks good to me.
+
+Then I will take that as an Acked-by. ;)
+
+Eric
