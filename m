@@ -1,17 +1,14 @@
-From: Anders Larsen <al-V9/YLgxv/GvR7s880joybQ@public.gmane.org>
-Subject: Re: [PATCH 21/25] userns: Convert the qnx4 filesystem to use
-	kuid/kgid where appropriate
-Date: Thu, 20 Sep 2012 14:34:24 +0200
-Message-ID: <1348144464l.30734l.1l@i-dmzi_al.realan.de>
-References: <1348141326-23355-1-git-send-email-ebiederm@xmission.com>
-	<1348141326-23355-21-git-send-email-ebiederm@xmission.com>
+From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Subject: Re: [Announce] Checkpoint-restore tool v0.2
+Date: Thu, 20 Sep 2012 08:05:51 -0500
+Message-ID: <20120920130551.GB4605__19988.6453840465$1348146371$gmane$org@sergelap>
+References: <500D09C9.7060903@parallels.com> <505AECF0.6070607@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1348141326-23355-21-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-	(from ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org on Thu Sep 20 13:42:02 2012)
 Content-Disposition: inline
+In-Reply-To: <505AECF0.6070607-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,49 +18,40 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: users-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org" <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, lwn-T1hC0tSOHrs@public.gmane.org, cgroups mailinglist <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 2012-09-20 13:42:02, Eric W. Biederman wrote:
-> From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> 
-> Cc: Anders Larsen <al-V9/YLgxv/GvR7s880joybQ@public.gmane.org>
-> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Congratulations, Pavel and criu team, that's awesome!
 
-Acked-by: Anders Larsen <al-V9/YLgxv/GvR7s880joybQ@public.gmane.org>
-
-> ---
->  fs/qnx4/inode.c |    4 ++--
->  init/Kconfig    |    1 -
->  2 files changed, 2 insertions(+), 3 deletions(-)
+Quoting Pavel Emelyanov (xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
+> Hi!
 > 
-> diff --git a/fs/qnx4/inode.c b/fs/qnx4/inode.c
-> index 552e994..5c3c7b0 100644
-> --- a/fs/qnx4/inode.c
-> +++ b/fs/qnx4/inode.c
-> @@ -312,8 +312,8 @@ struct inode *qnx4_iget(struct super_block *sb, unsigned long ino)
->  	    (ino % QNX4_INODES_PER_BLOCK);
->  
->  	inode->i_mode    = le16_to_cpu(raw_inode->di_mode);
-> -	inode->i_uid     = (uid_t)le16_to_cpu(raw_inode->di_uid);
-> -	inode->i_gid     = (gid_t)le16_to_cpu(raw_inode->di_gid);
-> +	i_uid_write(inode, (uid_t)le16_to_cpu(raw_inode->di_uid));
-> +	i_gid_write(inode, (gid_t)le16_to_cpu(raw_inode->di_gid));
->  	set_nlink(inode, le16_to_cpu(raw_inode->di_nlink));
->  	inode->i_size    = le32_to_cpu(raw_inode->di_size);
->  	inode->i_mtime.tv_sec   = le32_to_cpu(raw_inode->di_mtime);
-> diff --git a/init/Kconfig b/init/Kconfig
-> index 390e629..b9d6be5 100644
-> --- a/init/Kconfig
-> +++ b/init/Kconfig
-> @@ -950,7 +950,6 @@ config UIDGID_CONVERTED
->  	depends on NFSD = n
->  	depends on NFS_FS = n
->  	depends on OCFS2_FS = n
-> -	depends on QNX4FS_FS = n
->  	depends on QNX6FS_FS = n
->  	depends on REISERFS_FS = n
->  	depends on SQUASHFS = n
-> -- 
-> 1.7.5.4
+> I'm happy to announce that the next big step is done by the CRIU project.
+> 
+> The major achievement so far -- the tool can now dump and restore a simple LXC
+> container. Another notable feature is the initial support for PTYs which is enough
+> to play with c/r of a container with active ssh sessions from outside, or with
+> a screen app with some simple stuff running inside.
+> 
+> A HOWTO describing an LXC container dump and restore is at http://criu.org/LXC
+> 
+> 
+> The v0.2 can be downloaded from
+> 
+> 	http://download.openvz.org/criu/crtools-0.2.tar.bz2
+> 
+> 
+> Other project resources are
+> 
+>   documentation and news:             http://criu.org
+>   mainling list:                      https://openvz.org/mailman/listinfo/criu
+>   git repo:                           http://git.criu.org/?p=crtools.git
+>   kernel with not-yet-merged patches: https://github.com/cyrillos/linux-2.6.git
+> 
+> Thanks,
+> Pavel
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linuxfoundation.org/mailman/listinfo/containers
