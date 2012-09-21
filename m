@@ -1,8 +1,7 @@
-From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 12/14] userns: On ppc convert current_uid from a kuid before
-	printing.
-Date: Thu, 20 Sep 2012 17:28:48 -0700
-Message-ID: <1348187330-6616-12-git-send-email-ebiederm@xmission.com>
+From: Jens Axboe <jaxboe-5c4llco8/ftWk0Htik3J/w@public.gmane.org>
+Subject: Re: [PATCH 01/14] userns: Convert loop to use kuid_t instead of uid_t
+Date: Fri, 21 Sep 2012 08:07:52 +0200
+Message-ID: <505C0438.9060907__38248.9952412017$1348207692$gmane$org@fusionio.com>
 References: <87k3vote43.fsf@xmission.com>
 	<1348187330-6616-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -19,31 +18,23 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Benjamin Herrenschmidt <benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paul Mackerras <paulus-eUNUBHrolfbYtjvyW6yDsg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+On 2012-09-21 02:28, Eric W. Biederman wrote:
+> From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> 
+> Cc: Signed-off-by: Jens Axboe <jaxboe-5c4llco8/ftWk0Htik3J/w@public.gmane.org>
+> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> ---
+>  drivers/block/loop.c |    4 ++--
+>  include/linux/loop.h |    2 +-
+>  init/Kconfig         |    1 -
+>  3 files changed, 3 insertions(+), 4 deletions(-)
 
-Cc: Benjamin Herrenschmidt <benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org>
-Cc: Paul Mackerras <paulus-eUNUBHrolfbYtjvyW6yDsg@public.gmane.org>
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- arch/powerpc/mm/fault.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Thanks Eric, queued for 3.7.
 
-diff --git a/arch/powerpc/mm/fault.c b/arch/powerpc/mm/fault.c
-index 08ffcf5..e5f028b 100644
---- a/arch/powerpc/mm/fault.c
-+++ b/arch/powerpc/mm/fault.c
-@@ -470,7 +470,7 @@ bad_area_nosemaphore:
- 	if (is_exec && (error_code & DSISR_PROTFAULT))
- 		printk_ratelimited(KERN_CRIT "kernel tried to execute NX-protected"
- 				   " page (%lx) - exploit attempt? (uid: %d)\n",
--				   address, current_uid());
-+				   address, from_kuid(&init_user_ns, current_uid()));
- 
- 	return SIGSEGV;
- 
 -- 
-1.7.5.4
+Jens Axboe
