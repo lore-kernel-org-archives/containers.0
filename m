@@ -1,12 +1,13 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 09/14] userns: Convert binder ipc to use kuids
-Date: Thu, 20 Sep 2012 17:28:45 -0700
-Message-ID: <1348187330-6616-9-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 10/14] userns: Convert s390 hypfs to use kuid and kgid where
+	appropriate
+Date: Thu, 20 Sep 2012 17:28:46 -0700
+Message-ID: <1348187330-6616-10-git-send-email-ebiederm@xmission.com>
 References: <87k3vote43.fsf@xmission.com>
 	<1348187330-6616-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <1348187330-6616-1-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
@@ -19,54 +20,73 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, =?UTF-8?q?Arve=20Hj=C3=B8nnev=C3=A5g?= <arve-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Heiko Carstens <heiko.carstens-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Martin Schwidefsky <schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-RnJvbTogIkVyaWMgVy4gQmllZGVybWFuIiA8ZWJpZWRlcm1AeG1pc3Npb24uY29tPgoKQ2M6IEFy
-dmUgSGrDuG5uZXbDpWcgPGFydmVAYW5kcm9pZC5jb20+CkNjOiBHcmVnIEtyb2FoLUhhcnRtYW4g
-PGdyZWdraEBsaW51eGZvdW5kYXRpb24ub3JnPgpBY2tlZC1ieTogU2VyZ2UgSGFsbHluIDxzZXJn
-ZS5oYWxseW5AY2Fub25pY2FsLmNvbT4KU2lnbmVkLW9mZi1ieTogRXJpYyBXLiBCaWVkZXJtYW4g
-PGViaWVkZXJtQHhtaXNzaW9uLmNvbT4KLS0tCiBkcml2ZXJzL3N0YWdpbmcvYW5kcm9pZC9iaW5k
-ZXIuYyB8ICAgMTQgKysrKysrKy0tLS0tLS0KIGluaXQvS2NvbmZpZyAgICAgICAgICAgICAgICAg
-ICAgIHwgICAgMyAtLS0KIDIgZmlsZXMgY2hhbmdlZCwgNyBpbnNlcnRpb25zKCspLCAxMCBkZWxl
-dGlvbnMoLSkKCmRpZmYgLS1naXQgYS9kcml2ZXJzL3N0YWdpbmcvYW5kcm9pZC9iaW5kZXIuYyBi
-L2RyaXZlcnMvc3RhZ2luZy9hbmRyb2lkL2JpbmRlci5jCmluZGV4IDU3NGU5OTIuLjhlMzVkNGIg
-MTAwNjQ0Ci0tLSBhL2RyaXZlcnMvc3RhZ2luZy9hbmRyb2lkL2JpbmRlci5jCisrKyBiL2RyaXZl
-cnMvc3RhZ2luZy9hbmRyb2lkL2JpbmRlci5jCkBAIC00Nyw3ICs0Nyw3IEBAIHN0YXRpYyBITElT
-VF9IRUFEKGJpbmRlcl9kZWFkX25vZGVzKTsKIHN0YXRpYyBzdHJ1Y3QgZGVudHJ5ICpiaW5kZXJf
-ZGVidWdmc19kaXJfZW50cnlfcm9vdDsKIHN0YXRpYyBzdHJ1Y3QgZGVudHJ5ICpiaW5kZXJfZGVi
-dWdmc19kaXJfZW50cnlfcHJvYzsKIHN0YXRpYyBzdHJ1Y3QgYmluZGVyX25vZGUgKmJpbmRlcl9j
-b250ZXh0X21ncl9ub2RlOwotc3RhdGljIHVpZF90IGJpbmRlcl9jb250ZXh0X21ncl91aWQgPSAt
-MTsKK3N0YXRpYyBrdWlkX3QgYmluZGVyX2NvbnRleHRfbWdyX3VpZCA9IElOVkFMSURfVUlEOwog
-c3RhdGljIGludCBiaW5kZXJfbGFzdF9pZDsKIHN0YXRpYyBzdHJ1Y3Qgd29ya3F1ZXVlX3N0cnVj
-dCAqYmluZGVyX2RlZmVycmVkX3dvcmtxdWV1ZTsKIApAQCAtMzU2LDcgKzM1Niw3IEBAIHN0cnVj
-dCBiaW5kZXJfdHJhbnNhY3Rpb24gewogCXVuc2lnbmVkIGludAlmbGFnczsKIAlsb25nCXByaW9y
-aXR5OwogCWxvbmcJc2F2ZWRfcHJpb3JpdHk7Ci0JdWlkX3QJc2VuZGVyX2V1aWQ7CisJa3VpZF90
-CXNlbmRlcl9ldWlkOwogfTsKIAogc3RhdGljIHZvaWQKQEAgLTI0MjcsNyArMjQyNyw3IEBAIHJl
-dHJ5OgogCQl9CiAJCXRyLmNvZGUgPSB0LT5jb2RlOwogCQl0ci5mbGFncyA9IHQtPmZsYWdzOwot
-CQl0ci5zZW5kZXJfZXVpZCA9IHQtPnNlbmRlcl9ldWlkOworCQl0ci5zZW5kZXJfZXVpZCA9IGZy
-b21fa3VpZChjdXJyZW50X3VzZXJfbnMoKSwgdC0+c2VuZGVyX2V1aWQpOwogCiAJCWlmICh0LT5m
-cm9tKSB7CiAJCQlzdHJ1Y3QgdGFza19zdHJ1Y3QgKnNlbmRlciA9IHQtPmZyb20tPnByb2MtPnRz
-azsKQEAgLTI3MDUsMTIgKzI3MDUsMTIgQEAgc3RhdGljIGxvbmcgYmluZGVyX2lvY3RsKHN0cnVj
-dCBmaWxlICpmaWxwLCB1bnNpZ25lZCBpbnQgY21kLCB1bnNpZ25lZCBsb25nIGFyZykKIAkJCXJl
-dCA9IC1FQlVTWTsKIAkJCWdvdG8gZXJyOwogCQl9Ci0JCWlmIChiaW5kZXJfY29udGV4dF9tZ3Jf
-dWlkICE9IC0xKSB7Ci0JCQlpZiAoYmluZGVyX2NvbnRleHRfbWdyX3VpZCAhPSBjdXJyZW50LT5j
-cmVkLT5ldWlkKSB7CisJCWlmICh1aWRfdmFsaWQoYmluZGVyX2NvbnRleHRfbWdyX3VpZCkpIHsK
-KwkJCWlmICghdWlkX2VxKGJpbmRlcl9jb250ZXh0X21ncl91aWQsIGN1cnJlbnQtPmNyZWQtPmV1
-aWQpKSB7CiAJCQkJcHJfZXJyKCJiaW5kZXI6IEJJTkRFUl9TRVRfIgogCQkJCSAgICAgICAiQ09O
-VEVYVF9NR1IgYmFkIHVpZCAlZCAhPSAlZFxuIiwKLQkJCQkgICAgICAgY3VycmVudC0+Y3JlZC0+
-ZXVpZCwKLQkJCQkgICAgICAgYmluZGVyX2NvbnRleHRfbWdyX3VpZCk7CisJCQkJICAgICAgIGZy
-b21fa3VpZCgmaW5pdF91c2VyX25zLCBjdXJyZW50LT5jcmVkLT5ldWlkKSwKKwkJCQkgICAgICAg
-ZnJvbV9rdWlkKCZpbml0X3VzZXJfbnMsIGJpbmRlcl9jb250ZXh0X21ncl91aWQpKTsKIAkJCQly
-ZXQgPSAtRVBFUk07CiAJCQkJZ290byBlcnI7CiAJCQl9CmRpZmYgLS1naXQgYS9pbml0L0tjb25m
-aWcgYi9pbml0L0tjb25maWcKaW5kZXggNTcwY2QzMy4uODY5MTA5OCAxMDA2NDQKLS0tIGEvaW5p
-dC9LY29uZmlnCisrKyBiL2luaXQvS2NvbmZpZwpAQCAtOTUyLDkgKzk1Miw2IEBAIGNvbmZpZyBV
-SURHSURfQ09OVkVSVEVECiAJZGVwZW5kcyBvbiBVRlNfRlMgPSBuCiAJZGVwZW5kcyBvbiBYRlNf
-RlMgPSBuCiAKLQkjIFRoZSByYXJlIGRyaXZlcnMgdGhhdCB3b24ndCBidWlsZAotCWRlcGVuZHMg
-b24gQU5EUk9JRF9CSU5ERVJfSVBDID0gbgotCiBjb25maWcgVUlER0lEX1NUUklDVF9UWVBFX0NI
-RUNLUwogCWJvb2wgIlJlcXVpcmUgY29udmVyc2lvbnMgYmV0d2VlbiB1aWQvZ2lkcyBhbmQgdGhl
-aXIgaW50ZXJuYWwgcmVwcmVzZW50YXRpb24iCiAJZGVwZW5kcyBvbiBVSURHSURfQ09OVkVSVEVE
-Ci0tIAoxLjcuNS40CgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5k
-YXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3Rp
-bmZvL2NvbnRhaW5lcnM=
+From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+
+Cc: Martin Schwidefsky <schwidefsky-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>
+Cc: Heiko Carstens <heiko.carstens-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ arch/s390/hypfs/inode.c |   20 ++++++++++++++------
+ 1 files changed, 14 insertions(+), 6 deletions(-)
+
+diff --git a/arch/s390/hypfs/inode.c b/arch/s390/hypfs/inode.c
+index 6767b43..124ec1a 100644
+--- a/arch/s390/hypfs/inode.c
++++ b/arch/s390/hypfs/inode.c
+@@ -31,8 +31,8 @@ static struct dentry *hypfs_create_update_file(struct super_block *sb,
+ 					       struct dentry *dir);
+ 
+ struct hypfs_sb_info {
+-	uid_t uid;			/* uid used for files and dirs */
+-	gid_t gid;			/* gid used for files and dirs */
++	kuid_t uid;			/* uid used for files and dirs */
++	kgid_t gid;			/* gid used for files and dirs */
+ 	struct dentry *update_file;	/* file to trigger update */
+ 	time_t last_update;		/* last update time in secs since 1970 */
+ 	struct mutex lock;		/* lock to protect update process */
+@@ -229,6 +229,8 @@ static int hypfs_parse_options(char *options, struct super_block *sb)
+ {
+ 	char *str;
+ 	substring_t args[MAX_OPT_ARGS];
++	kuid_t uid;
++	kgid_t gid;
+ 
+ 	if (!options)
+ 		return 0;
+@@ -243,12 +245,18 @@ static int hypfs_parse_options(char *options, struct super_block *sb)
+ 		case opt_uid:
+ 			if (match_int(&args[0], &option))
+ 				return -EINVAL;
+-			hypfs_info->uid = option;
++			uid = make_kuid(current_user_ns(), option);
++			if (!uid_valid(uid))
++				return -EINVAL;
++			hypfs_info->uid = uid;
+ 			break;
+ 		case opt_gid:
+ 			if (match_int(&args[0], &option))
+ 				return -EINVAL;
+-			hypfs_info->gid = option;
++			gid = make_kgid(current_user_ns(), option);
++			if (!gid_valid(gid))
++				return -EINVAL;
++			hypfs_info->gid = gid;
+ 			break;
+ 		case opt_err:
+ 		default:
+@@ -263,8 +271,8 @@ static int hypfs_show_options(struct seq_file *s, struct dentry *root)
+ {
+ 	struct hypfs_sb_info *hypfs_info = root->d_sb->s_fs_info;
+ 
+-	seq_printf(s, ",uid=%u", hypfs_info->uid);
+-	seq_printf(s, ",gid=%u", hypfs_info->gid);
++	seq_printf(s, ",uid=%u", from_kuid_munged(&init_user_ns, hypfs_info->uid));
++	seq_printf(s, ",gid=%u", from_kgid_munged(&init_user_ns, hypfs_info->gid));
+ 	return 0;
+ }
+ 
+-- 
+1.7.5.4
