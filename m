@@ -1,8 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 05/11] userns: Convert jffs2 to use kuid and kgid where
+Subject: [PATCH 04/11] userns: Convert hpfs to use kuid and kgid where
 	appropriate
-Date: Fri, 21 Sep 2012 18:35:06 -0700
-Message-ID: <1348277712-30055-5-git-send-email-ebiederm@xmission.com>
+Date: Fri, 21 Sep 2012 18:35:05 -0700
+Message-ID: <1348277712-30055-4-git-send-email-ebiederm@xmission.com>
 References: <877grmj115.fsf@xmission.com>
 	<1348277712-30055-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -20,201 +20,189 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, David Woodhouse <dwmw2-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mikulas Patocka <mikulas-TTVWCEgN8Z9G4ohzP4jBZS1Fcj925eT/@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-- General routine uid/gid conversion work
-- When storing posix acls treat ACL_USER and ACL_GROUP separately
-  so I can call from_kuid or from_kgid as appropriate.
-- When reading posix acls treat ACL_USER and ACL_GROUP separately
-  so I can call make_kuid or make_kgid as appropriate.
-
-Cc: David Woodhouse <dwmw2-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Cc: Mikulas Patocka <mikulas-TTVWCEgN8Z9G4ohzP4jBZS1Fcj925eT/@public.gmane.org>
+Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/jffs2/acl.c      |   26 ++++++++++++++++++++------
- fs/jffs2/file.c     |    8 ++++----
- fs/jffs2/fs.c       |   24 +++++++++++++-----------
- fs/jffs2/os-linux.h |    4 ++--
- init/Kconfig        |    1 -
- 5 files changed, 39 insertions(+), 24 deletions(-)
+ fs/hpfs/hpfs_fn.h |    4 ++--
+ fs/hpfs/inode.c   |   19 +++++++++++--------
+ fs/hpfs/namei.c   |    8 ++++----
+ fs/hpfs/super.c   |   18 +++++++++++-------
+ init/Kconfig      |    1 -
+ 5 files changed, 28 insertions(+), 22 deletions(-)
 
-diff --git a/fs/jffs2/acl.c b/fs/jffs2/acl.c
-index 42e4edc..223283c 100644
---- a/fs/jffs2/acl.c
-+++ b/fs/jffs2/acl.c
-@@ -94,15 +94,23 @@ static struct posix_acl *jffs2_acl_from_medium(void *value, size_t size)
- 			case ACL_MASK:
- 			case ACL_OTHER:
- 				value += sizeof(struct jffs2_acl_entry_short);
--				acl->a_entries[i].e_id = ACL_UNDEFINED_ID;
- 				break;
+diff --git a/fs/hpfs/hpfs_fn.h b/fs/hpfs/hpfs_fn.h
+index ac1ead1..7102aae 100644
+--- a/fs/hpfs/hpfs_fn.h
++++ b/fs/hpfs/hpfs_fn.h
+@@ -63,8 +63,8 @@ struct hpfs_sb_info {
+ 	unsigned sb_dmap;		/* sector number of dnode bit map */
+ 	unsigned sb_n_free;		/* free blocks for statfs, or -1 */
+ 	unsigned sb_n_free_dnodes;	/* free dnodes for statfs, or -1 */
+-	uid_t sb_uid;			/* uid from mount options */
+-	gid_t sb_gid;			/* gid from mount options */
++	kuid_t sb_uid;			/* uid from mount options */
++	kgid_t sb_gid;			/* gid from mount options */
+ 	umode_t sb_mode;		/* mode from mount options */
+ 	unsigned sb_eas : 2;		/* eas: 0-ignore, 1-ro, 2-rw */
+ 	unsigned sb_err : 2;		/* on errs: 0-cont, 1-ro, 2-panic */
+diff --git a/fs/hpfs/inode.c b/fs/hpfs/inode.c
+index ed671e0..804a9a8 100644
+--- a/fs/hpfs/inode.c
++++ b/fs/hpfs/inode.c
+@@ -7,6 +7,7 @@
+  */
  
- 			case ACL_USER:
-+				value += sizeof(struct jffs2_acl_entry);
-+				if (value > end)
-+					goto fail;
-+				acl->a_entries[i].e_uid =
-+					make_kuid(&init_user_ns,
-+						  je32_to_cpu(entry->e_id));
-+				break;
- 			case ACL_GROUP:
- 				value += sizeof(struct jffs2_acl_entry);
- 				if (value > end)
- 					goto fail;
--				acl->a_entries[i].e_id = je32_to_cpu(entry->e_id);
-+				acl->a_entries[i].e_gid =
-+					make_kgid(&init_user_ns,
-+						  je32_to_cpu(entry->e_id));
- 				break;
+ #include <linux/slab.h>
++#include <linux/user_namespace.h>
+ #include "hpfs_fn.h"
  
- 			default:
-@@ -131,13 +139,19 @@ static void *jffs2_acl_to_medium(const struct posix_acl *acl, size_t *size)
- 	header->a_version = cpu_to_je32(JFFS2_ACL_VERSION);
- 	e = header + 1;
- 	for (i=0; i < acl->a_count; i++) {
-+		const struct posix_acl_entry *acl_e = &acl->a_entries[i];
- 		entry = e;
--		entry->e_tag = cpu_to_je16(acl->a_entries[i].e_tag);
--		entry->e_perm = cpu_to_je16(acl->a_entries[i].e_perm);
--		switch(acl->a_entries[i].e_tag) {
-+		entry->e_tag = cpu_to_je16(acl_e->e_tag);
-+		entry->e_perm = cpu_to_je16(acl_e->e_perm);
-+		switch(acl_e->e_tag) {
- 			case ACL_USER:
-+				entry->e_id = cpu_to_je32(
-+					from_kuid(&init_user_ns, acl_e->e_uid));
-+				e += sizeof(struct jffs2_acl_entry);
-+				break;
- 			case ACL_GROUP:
--				entry->e_id = cpu_to_je32(acl->a_entries[i].e_id);
-+				entry->e_id = cpu_to_je32(
-+					from_kgid(&init_user_ns, acl_e->e_gid));
- 				e += sizeof(struct jffs2_acl_entry);
- 				break;
+ void hpfs_init_inode(struct inode *i)
+@@ -60,14 +61,14 @@ void hpfs_read_inode(struct inode *i)
+ 	if (hpfs_sb(i->i_sb)->sb_eas) {
+ 		if ((ea = hpfs_get_ea(i->i_sb, fnode, "UID", &ea_size))) {
+ 			if (ea_size == 2) {
+-				i->i_uid = le16_to_cpu(*(__le16*)ea);
++				i_uid_write(i, le16_to_cpu(*(__le16*)ea));
+ 				hpfs_inode->i_ea_uid = 1;
+ 			}
+ 			kfree(ea);
+ 		}
+ 		if ((ea = hpfs_get_ea(i->i_sb, fnode, "GID", &ea_size))) {
+ 			if (ea_size == 2) {
+-				i->i_gid = le16_to_cpu(*(__le16*)ea);
++				i_gid_write(i, le16_to_cpu(*(__le16*)ea));
+ 				hpfs_inode->i_ea_gid = 1;
+ 			}
+ 			kfree(ea);
+@@ -149,13 +150,13 @@ static void hpfs_write_inode_ea(struct inode *i, struct fnode *fnode)
+ 		hpfs_error(i->i_sb, "fnode %08x has some unknown HPFS386 stuctures", i->i_ino);
+ 	} else*/ if (hpfs_sb(i->i_sb)->sb_eas >= 2) {
+ 		__le32 ea;
+-		if ((i->i_uid != hpfs_sb(i->i_sb)->sb_uid) || hpfs_inode->i_ea_uid) {
+-			ea = cpu_to_le32(i->i_uid);
++		if (!uid_eq(i->i_uid, hpfs_sb(i->i_sb)->sb_uid) || hpfs_inode->i_ea_uid) {
++			ea = cpu_to_le32(i_uid_read(i));
+ 			hpfs_set_ea(i, fnode, "UID", (char*)&ea, 2);
+ 			hpfs_inode->i_ea_uid = 1;
+ 		}
+-		if ((i->i_gid != hpfs_sb(i->i_sb)->sb_gid) || hpfs_inode->i_ea_gid) {
+-			ea = cpu_to_le32(i->i_gid);
++		if (!gid_eq(i->i_gid, hpfs_sb(i->i_sb)->sb_gid) || hpfs_inode->i_ea_gid) {
++			ea = cpu_to_le32(i_gid_read(i));
+ 			hpfs_set_ea(i, fnode, "GID", (char *)&ea, 2);
+ 			hpfs_inode->i_ea_gid = 1;
+ 		}
+@@ -261,9 +262,11 @@ int hpfs_setattr(struct dentry *dentry, struct iattr *attr)
+ 	hpfs_lock(inode->i_sb);
+ 	if (inode->i_ino == hpfs_sb(inode->i_sb)->sb_root)
+ 		goto out_unlock;
+-	if ((attr->ia_valid & ATTR_UID) && attr->ia_uid >= 0x10000)
++	if ((attr->ia_valid & ATTR_UID) &&
++	    from_kuid(&init_user_ns, attr->ia_uid) >= 0x10000)
+ 		goto out_unlock;
+-	if ((attr->ia_valid & ATTR_GID) && attr->ia_gid >= 0x10000)
++	if ((attr->ia_valid & ATTR_GID) &&
++	    from_kgid(&init_user_ns, attr->ia_gid) >= 0x10000)
+ 		goto out_unlock;
+ 	if ((attr->ia_valid & ATTR_SIZE) && attr->ia_size > inode->i_size)
+ 		goto out_unlock;
+diff --git a/fs/hpfs/namei.c b/fs/hpfs/namei.c
+index bc90824..345713d 100644
+--- a/fs/hpfs/namei.c
++++ b/fs/hpfs/namei.c
+@@ -91,8 +91,8 @@ static int hpfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
+ 	inc_nlink(dir);
+ 	insert_inode_hash(result);
  
-diff --git a/fs/jffs2/file.c b/fs/jffs2/file.c
-index db3889b..60ef3fb 100644
---- a/fs/jffs2/file.c
-+++ b/fs/jffs2/file.c
-@@ -175,8 +175,8 @@ static int jffs2_write_begin(struct file *filp, struct address_space *mapping,
- 		ri.ino = cpu_to_je32(f->inocache->ino);
- 		ri.version = cpu_to_je32(++f->highest_version);
- 		ri.mode = cpu_to_jemode(inode->i_mode);
--		ri.uid = cpu_to_je16(inode->i_uid);
--		ri.gid = cpu_to_je16(inode->i_gid);
-+		ri.uid = cpu_to_je16(i_uid_read(inode));
-+		ri.gid = cpu_to_je16(i_gid_read(inode));
- 		ri.isize = cpu_to_je32(max((uint32_t)inode->i_size, pageofs));
- 		ri.atime = ri.ctime = ri.mtime = cpu_to_je32(get_seconds());
- 		ri.offset = cpu_to_je32(inode->i_size);
-@@ -283,8 +283,8 @@ static int jffs2_write_end(struct file *filp, struct address_space *mapping,
- 	/* Set the fields that the generic jffs2_write_inode_range() code can't find */
- 	ri->ino = cpu_to_je32(inode->i_ino);
- 	ri->mode = cpu_to_jemode(inode->i_mode);
--	ri->uid = cpu_to_je16(inode->i_uid);
--	ri->gid = cpu_to_je16(inode->i_gid);
-+	ri->uid = cpu_to_je16(i_uid_read(inode));
-+	ri->gid = cpu_to_je16(i_gid_read(inode));
- 	ri->isize = cpu_to_je32((uint32_t)inode->i_size);
- 	ri->atime = ri->ctime = ri->mtime = cpu_to_je32(get_seconds());
+-	if (result->i_uid != current_fsuid() ||
+-	    result->i_gid != current_fsgid() ||
++	if (!uid_eq(result->i_uid, current_fsuid()) ||
++	    !gid_eq(result->i_gid, current_fsgid()) ||
+ 	    result->i_mode != (mode | S_IFDIR)) {
+ 		result->i_uid = current_fsuid();
+ 		result->i_gid = current_fsgid();
+@@ -179,8 +179,8 @@ static int hpfs_create(struct inode *dir, struct dentry *dentry, umode_t mode, b
  
-diff --git a/fs/jffs2/fs.c b/fs/jffs2/fs.c
-index 3d3092e..fe3c052 100644
---- a/fs/jffs2/fs.c
-+++ b/fs/jffs2/fs.c
-@@ -99,8 +99,10 @@ int jffs2_do_setattr (struct inode *inode, struct iattr *iattr)
- 	ri->ino = cpu_to_je32(inode->i_ino);
- 	ri->version = cpu_to_je32(++f->highest_version);
+ 	insert_inode_hash(result);
  
--	ri->uid = cpu_to_je16((ivalid & ATTR_UID)?iattr->ia_uid:inode->i_uid);
--	ri->gid = cpu_to_je16((ivalid & ATTR_GID)?iattr->ia_gid:inode->i_gid);
-+	ri->uid = cpu_to_je16((ivalid & ATTR_UID)?
-+		from_kuid(&init_user_ns, iattr->ia_uid):i_uid_read(inode));
-+	ri->gid = cpu_to_je16((ivalid & ATTR_GID)?
-+		from_kgid(&init_user_ns, iattr->ia_gid):i_gid_read(inode));
+-	if (result->i_uid != current_fsuid() ||
+-	    result->i_gid != current_fsgid() ||
++	if (!uid_eq(result->i_uid, current_fsuid()) ||
++	    !gid_eq(result->i_gid, current_fsgid()) ||
+ 	    result->i_mode != (mode | S_IFREG)) {
+ 		result->i_uid = current_fsuid();
+ 		result->i_gid = current_fsgid();
+diff --git a/fs/hpfs/super.c b/fs/hpfs/super.c
+index 706a12c..a152783 100644
+--- a/fs/hpfs/super.c
++++ b/fs/hpfs/super.c
+@@ -251,7 +251,7 @@ static const match_table_t tokens = {
+ 	{Opt_err, NULL},
+ };
  
- 	if (ivalid & ATTR_MODE)
- 		ri->mode = cpu_to_jemode(iattr->ia_mode);
-@@ -147,8 +149,8 @@ int jffs2_do_setattr (struct inode *inode, struct iattr *iattr)
- 	inode->i_ctime = ITIME(je32_to_cpu(ri->ctime));
- 	inode->i_mtime = ITIME(je32_to_cpu(ri->mtime));
- 	inode->i_mode = jemode_to_cpu(ri->mode);
--	inode->i_uid = je16_to_cpu(ri->uid);
--	inode->i_gid = je16_to_cpu(ri->gid);
-+	i_uid_write(inode, je16_to_cpu(ri->uid));
-+	i_gid_write(inode, je16_to_cpu(ri->gid));
+-static int parse_opts(char *opts, uid_t *uid, gid_t *gid, umode_t *umask,
++static int parse_opts(char *opts, kuid_t *uid, kgid_t *gid, umode_t *umask,
+ 		      int *lowercase, int *eas, int *chk, int *errs,
+ 		      int *chkdsk, int *timeshift)
+ {
+@@ -276,12 +276,16 @@ static int parse_opts(char *opts, uid_t *uid, gid_t *gid, umode_t *umask,
+ 		case Opt_uid:
+ 			if (match_int(args, &option))
+ 				return 0;
+-			*uid = option;
++			*uid = make_kuid(current_user_ns(), option);
++			if (!uid_valid(*uid))
++				return 0;
+ 			break;
+ 		case Opt_gid:
+ 			if (match_int(args, &option))
+ 				return 0;
+-			*gid = option;
++			*gid = make_kgid(current_user_ns(), option);
++			if (!gid_valid(*gid))
++				return 0;
+ 			break;
+ 		case Opt_umask:
+ 			if (match_octal(args, &option))
+@@ -378,8 +382,8 @@ HPFS filesystem options:\n\
  
+ static int hpfs_remount_fs(struct super_block *s, int *flags, char *data)
+ {
+-	uid_t uid;
+-	gid_t gid;
++	kuid_t uid;
++	kgid_t gid;
+ 	umode_t umask;
+ 	int lowercase, eas, chk, errs, chkdsk, timeshift;
+ 	int o;
+@@ -455,8 +459,8 @@ static int hpfs_fill_super(struct super_block *s, void *options, int silent)
+ 	struct hpfs_sb_info *sbi;
+ 	struct inode *root;
  
- 	old_metadata = f->metadata;
-@@ -276,8 +278,8 @@ struct inode *jffs2_iget(struct super_block *sb, unsigned long ino)
- 		return ERR_PTR(ret);
- 	}
- 	inode->i_mode = jemode_to_cpu(latest_node.mode);
--	inode->i_uid = je16_to_cpu(latest_node.uid);
--	inode->i_gid = je16_to_cpu(latest_node.gid);
-+	i_uid_write(inode, je16_to_cpu(latest_node.uid));
-+	i_gid_write(inode, je16_to_cpu(latest_node.gid));
- 	inode->i_size = je32_to_cpu(latest_node.isize);
- 	inode->i_atime = ITIME(je32_to_cpu(latest_node.atime));
- 	inode->i_mtime = ITIME(je32_to_cpu(latest_node.mtime));
-@@ -440,14 +442,14 @@ struct inode *jffs2_new_inode (struct inode *dir_i, umode_t mode, struct jffs2_r
+-	uid_t uid;
+-	gid_t gid;
++	kuid_t uid;
++	kgid_t gid;
+ 	umode_t umask;
+ 	int lowercase, eas, chk, errs, chkdsk, timeshift;
  
- 	memset(ri, 0, sizeof(*ri));
- 	/* Set OS-specific defaults for new inodes */
--	ri->uid = cpu_to_je16(current_fsuid());
-+	ri->uid = cpu_to_je16(from_kuid(&init_user_ns, current_fsuid()));
- 
- 	if (dir_i->i_mode & S_ISGID) {
--		ri->gid = cpu_to_je16(dir_i->i_gid);
-+		ri->gid = cpu_to_je16(i_gid_read(dir_i));
- 		if (S_ISDIR(mode))
- 			mode |= S_ISGID;
- 	} else {
--		ri->gid = cpu_to_je16(current_fsgid());
-+		ri->gid = cpu_to_je16(from_kgid(&init_user_ns, current_fsgid()));
- 	}
- 
- 	/* POSIX ACLs have to be processed now, at least partly.
-@@ -467,8 +469,8 @@ struct inode *jffs2_new_inode (struct inode *dir_i, umode_t mode, struct jffs2_r
- 	set_nlink(inode, 1);
- 	inode->i_ino = je32_to_cpu(ri->ino);
- 	inode->i_mode = jemode_to_cpu(ri->mode);
--	inode->i_gid = je16_to_cpu(ri->gid);
--	inode->i_uid = je16_to_cpu(ri->uid);
-+	i_gid_write(inode, je16_to_cpu(ri->gid));
-+	i_uid_write(inode, je16_to_cpu(ri->uid));
- 	inode->i_atime = inode->i_ctime = inode->i_mtime = CURRENT_TIME_SEC;
- 	ri->atime = ri->mtime = ri->ctime = cpu_to_je32(I_SEC(inode->i_mtime));
- 
-diff --git a/fs/jffs2/os-linux.h b/fs/jffs2/os-linux.h
-index bcd983d..d200a9b 100644
---- a/fs/jffs2/os-linux.h
-+++ b/fs/jffs2/os-linux.h
-@@ -27,8 +27,8 @@ struct kvec;
- 
- #define JFFS2_F_I_SIZE(f) (OFNI_EDONI_2SFFJ(f)->i_size)
- #define JFFS2_F_I_MODE(f) (OFNI_EDONI_2SFFJ(f)->i_mode)
--#define JFFS2_F_I_UID(f) (OFNI_EDONI_2SFFJ(f)->i_uid)
--#define JFFS2_F_I_GID(f) (OFNI_EDONI_2SFFJ(f)->i_gid)
-+#define JFFS2_F_I_UID(f) (i_uid_read(OFNI_EDONI_2SFFJ(f)))
-+#define JFFS2_F_I_GID(f) (i_gid_read(OFNI_EDONI_2SFFJ(f)))
- #define JFFS2_F_I_RDEV(f) (OFNI_EDONI_2SFFJ(f)->i_rdev)
- 
- #define ITIME(sec) ((struct timespec){sec, 0})
 diff --git a/init/Kconfig b/init/Kconfig
-index 1db1b0f..cf2d50b 100644
+index 44f580f..1db1b0f 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
 @@ -935,7 +935,6 @@ config UIDGID_CONVERTED
  	depends on CODA_FS = n
  	depends on FUSE_FS = n
  	depends on GFS2_FS = n
--	depends on JFFS2_FS = n
+-	depends on HPFS_FS = n
+ 	depends on JFFS2_FS = n
  	depends on JFS_FS = n
  	depends on NCP_FS = n
- 	depends on NFSD = n
 -- 
 1.7.5.4
