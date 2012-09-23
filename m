@@ -1,7 +1,8 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 1/4] devpts: Remove CONFIG_DEVPTS_MULTIPLE_INSTANCES
-Date: Sat, 22 Sep 2012 20:48:44 -0700
-Message-ID: <87obkx761v.fsf_-_@xmission.com>
+Subject: [PATCH 2/4] devpts: Set the default permissions of /dev/pts/ptmx and
+	/dev/ptmx to 0666
+Date: Sat, 22 Sep 2012 20:49:37 -0700
+Message-ID: <87ipb5760e.fsf_-_@xmission.com>
 References: <20120124000517.GA28878@sergelap>
 	<CA+55aFz9ofF+Ey8VCDS8UEf2XSw36kj2RhkHfFScuzLXMeNrkA@mail.gmail.com>
 	<20120124002555.GA29534@sergelap>
@@ -32,193 +33,88 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay
 List-Id: containers.vger.kernel.org
 
 
-This compile option just makes the code more complicated and makes
-it more difficult to transition to a time when we take advantage
-of the new features that DEVPTS_MULTIPLE_INSTANCES allows.
+These are difference instances of the same device not so it only
+makes sense that they would have the same default permissions.
+
+Move the definitions of DEVPTS_DEEFAULT_PTMX_MODE and PTM_MINOR
+into devpts_fs.h so we can use the same definitions throughout.
 
 Acked-by: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- Documentation/filesystems/devpts.txt |   36 ++++++++++++---------------------
- drivers/tty/Kconfig                  |   11 ----------
- fs/devpts/inode.c                    |   28 --------------------------
- 3 files changed, 13 insertions(+), 62 deletions(-)
+ drivers/tty/pty.c         |    6 +++---
+ drivers/tty/tty_io.c      |    5 +++--
+ fs/devpts/inode.c         |    8 --------
+ include/linux/devpts_fs.h |    3 +++
+ 4 files changed, 9 insertions(+), 13 deletions(-)
 
-diff --git a/Documentation/filesystems/devpts.txt b/Documentation/filesystems/devpts.txt
-index 68dffd8..260cf6d 100644
---- a/Documentation/filesystems/devpts.txt
-+++ b/Documentation/filesystems/devpts.txt
-@@ -6,33 +6,23 @@ allocated in other instances of devpts.
- To preserve backward compatibility, this support for multiple instances is
- enabled only if:
+diff --git a/drivers/tty/pty.c b/drivers/tty/pty.c
+index 5505ffc..6beb7e1 100644
+--- a/drivers/tty/pty.c
++++ b/drivers/tty/pty.c
+@@ -722,10 +722,10 @@ static void __init unix98_pty_init(void)
+ 	ptmx_fops.open = ptmx_open;
  
--	- CONFIG_DEVPTS_MULTIPLE_INSTANCES=y, and
- 	- '-o newinstance' mount option is specified while mounting devpts
+ 	cdev_init(&ptmx_cdev, &ptmx_fops);
+-	if (cdev_add(&ptmx_cdev, MKDEV(TTYAUX_MAJOR, 2), 1) ||
+-	    register_chrdev_region(MKDEV(TTYAUX_MAJOR, 2), 1, "/dev/ptmx") < 0)
++	if (cdev_add(&ptmx_cdev, MKDEV(TTYAUX_MAJOR, PTMX_MINOR), 1) ||
++	    register_chrdev_region(MKDEV(TTYAUX_MAJOR, PTMX_MINOR), 1, "/dev/ptmx") < 0)
+ 		panic("Couldn't register /dev/ptmx driver\n");
+-	device_create(tty_class, NULL, MKDEV(TTYAUX_MAJOR, 2), NULL, "ptmx");
++	device_create(tty_class, NULL, MKDEV(TTYAUX_MAJOR, PTMX_MINOR), NULL, "ptmx");
+ }
  
- IOW, devpts now supports both single-instance and multi-instance semantics.
+ #else
+diff --git a/drivers/tty/tty_io.c b/drivers/tty/tty_io.c
+index b425c79..6c3a7c2 100644
+--- a/drivers/tty/tty_io.c
++++ b/drivers/tty/tty_io.c
+@@ -3314,9 +3314,10 @@ static char *tty_devnode(struct device *dev, umode_t *mode)
+ {
+ 	if (!mode)
+ 		return NULL;
+-	if (dev->devt == MKDEV(TTYAUX_MAJOR, 0) ||
+-	    dev->devt == MKDEV(TTYAUX_MAJOR, 2))
++	if (dev->devt == MKDEV(TTYAUX_MAJOR, 0))
+ 		*mode = 0666;
++	if (dev->devt == MKDEV(TTYAUX_MAJOR, PTMX_MINOR))
++		*mode = DEVPTS_DEFAULT_PTMX_MODE;
+ 	return NULL;
+ }
  
--If CONFIG_DEVPTS_MULTIPLE_INSTANCES=n, there is no change in behavior and
--this referred to as the "legacy" mode. In this mode, the new mount options
--(-o newinstance and -o ptmxmode) will be ignored with a 'bogus option' message
--on console.
--
--If CONFIG_DEVPTS_MULTIPLE_INSTANCES=y and devpts is mounted without the
--'newinstance' option (as in current start-up scripts) the new mount binds
--to the initial kernel mount of devpts. This mode is referred to as the
--'single-instance' mode and the current, single-instance semantics are
--preserved, i.e PTYs are common across the system.
--
--The only difference between this single-instance mode and the legacy mode
--is the presence of new, '/dev/pts/ptmx' node with permissions 0000, which
--can safely be ignored.
--
--If CONFIG_DEVPTS_MULTIPLE_INSTANCES=y and 'newinstance' option is specified,
--the mount is considered to be in the multi-instance mode and a new instance
--of the devpts fs is created. Any ptys created in this instance are independent
--of ptys in other instances of devpts. Like in the single-instance mode, the
--/dev/pts/ptmx node is present. To effectively use the multi-instance mode,
--open of /dev/ptmx must be a redirected to '/dev/pts/ptmx' using a symlink or
--bind-mount.
-+If devpts is mounted without the 'newinstance' option (as in current
-+start-up scripts) the new mount binds to the initial kernel mount of
-+devpts. This mode is referred to as the 'single-instance' mode and the
-+current, single-instance semantics are preserved, i.e PTYs are common
-+across the system.
-+
-+If 'newinstance' option is specified, the mount is considered to be in
-+the multi-instance mode and a new instance of the devpts fs is
-+created. Any ptys created in this instance are independent of ptys in
-+other instances of devpts. Like in the single-instance mode, the
-+/dev/pts/ptmx node is present. To effectively use the multi-instance
-+mode, open of /dev/ptmx must be a redirected to '/dev/pts/ptmx' using
-+a symlink or bind-mount.
- 
- Eg: A container startup script could do the following:
- 
-diff --git a/drivers/tty/Kconfig b/drivers/tty/Kconfig
-index 830cd62..5e5cd3e 100644
---- a/drivers/tty/Kconfig
-+++ b/drivers/tty/Kconfig
-@@ -109,17 +109,6 @@ config UNIX98_PTYS
- 	  All modern Linux systems use the Unix98 ptys.  Say Y unless
- 	  you're on an embedded system and want to conserve memory.
- 
--config DEVPTS_MULTIPLE_INSTANCES
--	bool "Support multiple instances of devpts"
--	depends on UNIX98_PTYS
--	default n
--	---help---
--	  Enable support for multiple instances of devpts filesystem.
--	  If you want to have isolated PTY namespaces (eg: in containers),
--	  say Y here.  Otherwise, say N. If enabled, each mount of devpts
--	  filesystem with the '-o newinstance' option will create an
--	  independent PTY namespace.
--
- config LEGACY_PTYS
- 	bool "Legacy (BSD) PTY support"
- 	default y
 diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
-index 14afbab..5f0d64e 100644
+index 5f0d64e..61b54aa 100644
 --- a/fs/devpts/inode.c
 +++ b/fs/devpts/inode.c
-@@ -115,11 +115,9 @@ static const match_table_t tokens = {
- 	{Opt_uid, "uid=%u"},
- 	{Opt_gid, "gid=%u"},
- 	{Opt_mode, "mode=%o"},
--#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
- 	{Opt_ptmxmode, "ptmxmode=%o"},
- 	{Opt_newinstance, "newinstance"},
- 	{Opt_max, "max=%d"},
--#endif
- 	{Opt_err, NULL}
- };
+@@ -27,14 +27,6 @@
+ #include <linux/seq_file.h>
  
-@@ -136,10 +134,8 @@ static inline struct pts_fs_info *DEVPTS_SB(struct super_block *sb)
- 
- static inline struct super_block *pts_sb_from_inode(struct inode *inode)
- {
--#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
- 	if (inode->i_sb->s_magic == DEVPTS_SUPER_MAGIC)
- 		return inode->i_sb;
--#endif
- 	return devpts_mnt->mnt_sb;
- }
- 
-@@ -206,7 +202,6 @@ static int parse_mount_options(char *data, int op, struct pts_mount_opts *opts)
- 				return -EINVAL;
- 			opts->mode = option & S_IALLUGO;
- 			break;
--#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
- 		case Opt_ptmxmode:
- 			if (match_octal(&args[0], &option))
- 				return -EINVAL;
-@@ -223,7 +218,6 @@ static int parse_mount_options(char *data, int op, struct pts_mount_opts *opts)
- 				return -EINVAL;
- 			opts->max = option;
- 			break;
--#endif
- 		default:
- 			printk(KERN_ERR "devpts: called with bogus options\n");
- 			return -EINVAL;
-@@ -233,7 +227,6 @@ static int parse_mount_options(char *data, int op, struct pts_mount_opts *opts)
- 	return 0;
- }
- 
--#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
- static int mknod_ptmx(struct super_block *sb)
- {
- 	int mode;
-@@ -291,12 +284,6 @@ static void update_ptmx_mode(struct pts_fs_info *fsi)
- 		inode->i_mode = S_IFCHR|fsi->mount_opts.ptmxmode;
- 	}
- }
--#else
--static inline void update_ptmx_mode(struct pts_fs_info *fsi)
--{
--       return;
--}
--#endif
- 
- static int devpts_remount(struct super_block *sb, int *flags, char *data)
- {
-@@ -327,11 +314,9 @@ static int devpts_show_options(struct seq_file *seq, struct dentry *root)
- 	if (opts->setgid)
- 		seq_printf(seq, ",gid=%u", from_kgid_munged(&init_user_ns, opts->gid));
- 	seq_printf(seq, ",mode=%03o", opts->mode);
--#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
- 	seq_printf(seq, ",ptmxmode=%03o", opts->ptmxmode);
- 	if (opts->max < NR_UNIX98_PTY_MAX)
- 		seq_printf(seq, ",max=%d", opts->max);
--#endif
- 
- 	return 0;
- }
-@@ -392,7 +377,6 @@ fail:
- 	return -ENOMEM;
- }
- 
--#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
- static int compare_init_pts_sb(struct super_block *s, void *p)
- {
- 	if (devpts_mnt)
-@@ -467,18 +451,6 @@ out_undo_sget:
- 	return ERR_PTR(error);
- }
- 
--#else
+ #define DEVPTS_DEFAULT_MODE 0600
 -/*
-- * This supports only the legacy single-instance semantics (no
-- * multiple-instance semantics)
+- * ptmx is a new node in /dev/pts and will be unused in legacy (single-
+- * instance) mode. To prevent surprises in user space, set permissions of
+- * ptmx to 0. Use 'chmod' or remount with '-o ptmxmode' to set meaningful
+- * permissions.
 - */
--static struct dentry *devpts_mount(struct file_system_type *fs_type, int flags,
--		const char *dev_name, void *data)
--{
--	return mount_single(fs_type, flags, data, devpts_fill_super);
--}
--#endif
--
- static void devpts_kill_sb(struct super_block *sb)
- {
- 	struct pts_fs_info *fsi = DEVPTS_SB(sb);
+-#define DEVPTS_DEFAULT_PTMX_MODE 0000
+-#define PTMX_MINOR	2
+ 
+ /*
+  * sysctl support for setting limits on the number of Unix98 ptys allocated.
+diff --git a/include/linux/devpts_fs.h b/include/linux/devpts_fs.h
+index 5ce0e5f..2d539ae 100644
+--- a/include/linux/devpts_fs.h
++++ b/include/linux/devpts_fs.h
+@@ -15,6 +15,9 @@
+ 
+ #include <linux/errno.h>
+ 
++#define DEVPTS_DEFAULT_PTMX_MODE 0666
++#define PTMX_MINOR	2
++
+ #ifdef CONFIG_UNIX98_PTYS
+ 
+ int devpts_new_index(struct inode *ptmx_inode);
 -- 
 1.7.5.4
