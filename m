@@ -1,8 +1,7 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 2/4] devpts: Set the default permissions of /dev/pts/ptmx and
-	/dev/ptmx to 0666
-Date: Sat, 22 Sep 2012 20:49:37 -0700
-Message-ID: <87ipb5760e.fsf_-_@xmission.com>
+Subject: [PATCH 3/4] devpts: Make the newinstance option historical
+Date: Sat, 22 Sep 2012 20:50:44 -0700
+Message-ID: <87d31d75yj.fsf_-_@xmission.com>
 References: <20120124000517.GA28878@sergelap>
 	<CA+55aFz9ofF+Ey8VCDS8UEf2XSw36kj2RhkHfFScuzLXMeNrkA@mail.gmail.com>
 	<20120124002555.GA29534@sergelap>
@@ -33,88 +32,363 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay
 List-Id: containers.vger.kernel.org
 
 
-These are difference instances of the same device not so it only
-makes sense that they would have the same default permissions.
+- Modify opening /dev/ptmx so that it opens /dev/pts/ptmx
+  As it appares nearly impossible to get udev to create a symlink
+  do this with a little sprinkle of in kernel magic.
+- Cleanup the devpts mount code and only leave the code for
+  new instance.
 
-Move the definitions of DEVPTS_DEEFAULT_PTMX_MODE and PTM_MINOR
-into devpts_fs.h so we can use the same definitions throughout.
+Tested on debian and ubuntu without any problems.
 
 Acked-by: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- drivers/tty/pty.c         |    6 +++---
- drivers/tty/tty_io.c      |    5 +++--
- fs/devpts/inode.c         |    8 --------
- include/linux/devpts_fs.h |    3 +++
- 4 files changed, 9 insertions(+), 13 deletions(-)
+ drivers/tty/pty.c         |    4 +
+ fs/devpts/inode.c         |  180 +++++++++++++++++----------------------------
+ include/linux/devpts_fs.h |    5 +
+ 3 files changed, 77 insertions(+), 112 deletions(-)
 
 diff --git a/drivers/tty/pty.c b/drivers/tty/pty.c
-index 5505ffc..6beb7e1 100644
+index 6beb7e1..a605074 100644
 --- a/drivers/tty/pty.c
 +++ b/drivers/tty/pty.c
-@@ -722,10 +722,10 @@ static void __init unix98_pty_init(void)
- 	ptmx_fops.open = ptmx_open;
+@@ -615,6 +615,10 @@ static int ptmx_open(struct inode *inode, struct file *filp)
+ 	int retval;
+ 	int index;
  
- 	cdev_init(&ptmx_cdev, &ptmx_fops);
--	if (cdev_add(&ptmx_cdev, MKDEV(TTYAUX_MAJOR, 2), 1) ||
--	    register_chrdev_region(MKDEV(TTYAUX_MAJOR, 2), 1, "/dev/ptmx") < 0)
-+	if (cdev_add(&ptmx_cdev, MKDEV(TTYAUX_MAJOR, PTMX_MINOR), 1) ||
-+	    register_chrdev_region(MKDEV(TTYAUX_MAJOR, PTMX_MINOR), 1, "/dev/ptmx") < 0)
- 		panic("Couldn't register /dev/ptmx driver\n");
--	device_create(tty_class, NULL, MKDEV(TTYAUX_MAJOR, 2), NULL, "ptmx");
-+	device_create(tty_class, NULL, MKDEV(TTYAUX_MAJOR, PTMX_MINOR), NULL, "ptmx");
- }
++	inode = devpts_redirect(filp);
++	if (IS_ERR(inode))
++		return PTR_ERR(inode);
++
+ 	nonseekable_open(inode, filp);
  
- #else
-diff --git a/drivers/tty/tty_io.c b/drivers/tty/tty_io.c
-index b425c79..6c3a7c2 100644
---- a/drivers/tty/tty_io.c
-+++ b/drivers/tty/tty_io.c
-@@ -3314,9 +3314,10 @@ static char *tty_devnode(struct device *dev, umode_t *mode)
- {
- 	if (!mode)
- 		return NULL;
--	if (dev->devt == MKDEV(TTYAUX_MAJOR, 0) ||
--	    dev->devt == MKDEV(TTYAUX_MAJOR, 2))
-+	if (dev->devt == MKDEV(TTYAUX_MAJOR, 0))
- 		*mode = 0666;
-+	if (dev->devt == MKDEV(TTYAUX_MAJOR, PTMX_MINOR))
-+		*mode = DEVPTS_DEFAULT_PTMX_MODE;
- 	return NULL;
- }
- 
+ 	retval = tty_alloc_file(filp);
 diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
-index 5f0d64e..61b54aa 100644
+index 61b54aa..38136ae 100644
 --- a/fs/devpts/inode.c
 +++ b/fs/devpts/inode.c
-@@ -27,14 +27,6 @@
+@@ -25,6 +25,7 @@
+ #include <linux/parser.h>
+ #include <linux/fsnotify.h>
  #include <linux/seq_file.h>
++#include <linux/file.h>
  
  #define DEVPTS_DEFAULT_MODE 0600
--/*
-- * ptmx is a new node in /dev/pts and will be unused in legacy (single-
-- * instance) mode. To prevent surprises in user space, set permissions of
-- * ptmx to 0. Use 'chmod' or remount with '-o ptmxmode' to set meaningful
-- * permissions.
-- */
--#define DEVPTS_DEFAULT_PTMX_MODE 0000
--#define PTMX_MINOR	2
+ 
+@@ -94,7 +95,6 @@ struct pts_mount_opts {
+ 	kgid_t   gid;
+ 	umode_t mode;
+ 	umode_t ptmxmode;
+-	int newinstance;
+ 	int max;
+ };
+ 
+@@ -116,7 +116,6 @@ static const match_table_t tokens = {
+ struct pts_fs_info {
+ 	struct ida allocated_ptys;
+ 	struct pts_mount_opts mount_opts;
+-	struct dentry *ptmx_dentry;
+ };
+ 
+ static inline struct pts_fs_info *DEVPTS_SB(struct super_block *sb)
+@@ -157,10 +156,6 @@ static int parse_mount_options(char *data, int op, struct pts_mount_opts *opts)
+ 	opts->ptmxmode = DEVPTS_DEFAULT_PTMX_MODE;
+ 	opts->max     = NR_UNIX98_PTY_MAX;
+ 
+-	/* newinstance makes sense only on initial mount */
+-	if (op == PARSE_MOUNT)
+-		opts->newinstance = 0;
+-
+ 	while ((p = strsep(&data, ",")) != NULL) {
+ 		substring_t args[MAX_OPT_ARGS];
+ 		int token;
+@@ -200,9 +195,7 @@ static int parse_mount_options(char *data, int op, struct pts_mount_opts *opts)
+ 			opts->ptmxmode = option & S_IALLUGO;
+ 			break;
+ 		case Opt_newinstance:
+-			/* newinstance makes sense only on initial mount */
+-			if (op == PARSE_MOUNT)
+-				opts->newinstance = 1;
++			/* Historical */
+ 			break;
+ 		case Opt_max:
+ 			if (match_int(&args[0], &option) ||
+@@ -229,14 +222,6 @@ static int mknod_ptmx(struct super_block *sb)
+ 	struct pts_fs_info *fsi = DEVPTS_SB(sb);
+ 	struct pts_mount_opts *opts = &fsi->mount_opts;
+ 
+-	mutex_lock(&root->d_inode->i_mutex);
+-
+-	/* If we have already created ptmx node, return */
+-	if (fsi->ptmx_dentry) {
+-		rc = 0;
+-		goto out;
+-	}
+-
+ 	dentry = d_alloc_name(root, "ptmx");
+ 	if (!dentry) {
+ 		printk(KERN_NOTICE "Unable to alloc dentry for ptmx node\n");
+@@ -261,39 +246,17 @@ static int mknod_ptmx(struct super_block *sb)
+ 
+ 	d_add(dentry, inode);
+ 
+-	fsi->ptmx_dentry = dentry;
+ 	rc = 0;
+ out:
+-	mutex_unlock(&root->d_inode->i_mutex);
+ 	return rc;
+ }
+ 
+-static void update_ptmx_mode(struct pts_fs_info *fsi)
+-{
+-	struct inode *inode;
+-	if (fsi->ptmx_dentry) {
+-		inode = fsi->ptmx_dentry->d_inode;
+-		inode->i_mode = S_IFCHR|fsi->mount_opts.ptmxmode;
+-	}
+-}
+-
+ static int devpts_remount(struct super_block *sb, int *flags, char *data)
+ {
+-	int err;
+ 	struct pts_fs_info *fsi = DEVPTS_SB(sb);
+ 	struct pts_mount_opts *opts = &fsi->mount_opts;
+ 
+-	err = parse_mount_options(data, PARSE_REMOUNT, opts);
+-
+-	/*
+-	 * parse_mount_options() restores options to default values
+-	 * before parsing and may have changed ptmxmode. So, update the
+-	 * mode in the inode too. Bogus options don't fail the remount,
+-	 * so do this even on error return.
+-	 */
+-	update_ptmx_mode(fsi);
+-
+-	return err;
++	return  parse_mount_options(data, PARSE_REMOUNT, opts);
+ }
+ 
+ static int devpts_show_options(struct seq_file *seq, struct dentry *root)
+@@ -319,7 +282,7 @@ static const struct super_operations devpts_sops = {
+ 	.show_options	= devpts_show_options,
+ };
+ 
+-static void *new_pts_fs_info(void)
++static struct pts_fs_info *new_pts_fs_info(void)
+ {
+ 	struct pts_fs_info *fsi;
+ 
+@@ -338,6 +301,8 @@ static int
+ devpts_fill_super(struct super_block *s, void *data, int silent)
+ {
+ 	struct inode *inode;
++	struct pts_fs_info *fsi;
++	int error = -ENOMEM;
+ 
+ 	s->s_blocksize = 1024;
+ 	s->s_blocksize_bits = 10;
+@@ -345,13 +310,18 @@ devpts_fill_super(struct super_block *s, void *data, int silent)
+ 	s->s_op = &devpts_sops;
+ 	s->s_time_gran = 1;
+ 
+-	s->s_fs_info = new_pts_fs_info();
+-	if (!s->s_fs_info)
++	fsi = new_pts_fs_info();
++	s->s_fs_info = fsi;
++	if (!fsi)
+ 		goto fail;
+ 
++	error = parse_mount_options(data, PARSE_MOUNT, &fsi->mount_opts);
++	if (error)
++		goto fail_kfree;
++
+ 	inode = new_inode(s);
+ 	if (!inode)
+-		goto fail;
++		goto fail_kfree;
+ 	inode->i_ino = 1;
+ 	inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
+ 	inode->i_mode = S_IFDIR | S_IRUGO | S_IXUGO | S_IWUSR;
+@@ -360,87 +330,40 @@ devpts_fill_super(struct super_block *s, void *data, int silent)
+ 	set_nlink(inode, 2);
+ 
+ 	s->s_root = d_make_root(inode);
+-	if (s->s_root)
+-		return 0;
++	if (!s->s_root) {
++		printk(KERN_ERR "devpts: get root dentry failed\n");
++		goto fail_iput;
++	}
+ 
+-	printk(KERN_ERR "devpts: get root dentry failed\n");
++	error = mknod_ptmx(s);
++	if (error)
++		goto fail_put_root;
++
++	return 0;
+ 
++fail_put_root:
++	dput(s->s_root);
++	s->s_root = NULL;
++fail_iput:
++	iput(inode);
++fail_kfree:
++	kfree(fsi);
+ fail:
+ 	return -ENOMEM;
+ }
+ 
+-static int compare_init_pts_sb(struct super_block *s, void *p)
+-{
+-	if (devpts_mnt)
+-		return devpts_mnt->mnt_sb == s;
+-	return 0;
+-}
  
  /*
-  * sysctl support for setting limits on the number of Unix98 ptys allocated.
+  * devpts_mount()
+  *
+- *     If the '-o newinstance' mount option was specified, mount a new
+- *     (private) instance of devpts.  PTYs created in this instance are
+- *     independent of the PTYs in other devpts instances.
+- *
+- *     If the '-o newinstance' option was not specified, mount/remount the
+- *     initial kernel mount of devpts.  This type of mount gives the
+- *     legacy, single-instance semantics.
+- *
+- *     The 'newinstance' option is needed to support multiple namespace
+- *     semantics in devpts while preserving backward compatibility of the
+- *     current 'single-namespace' semantics. i.e all mounts of devpts
+- *     without the 'newinstance' mount option should bind to the initial
+- *     kernel mount, like mount_single().
+- *
+- *     Mounts with 'newinstance' option create a new, private namespace.
++ *     Mount a new (private) instance of devpts.  PTYs created in this
++ *     instance are independent of the PTYs in other devpts instances.
+  *
+- *     NOTE:
+- *
+- *     For single-mount semantics, devpts cannot use mount_single(),
+- *     because mount_single()/sget() find and use the super-block from
+- *     the most recent mount of devpts. But that recent mount may be a
+- *     'newinstance' mount and mount_single() would pick the newinstance
+- *     super-block instead of the initial super-block.
+  */
+ static struct dentry *devpts_mount(struct file_system_type *fs_type,
+ 	int flags, const char *dev_name, void *data)
+ {
+-	int error;
+-	struct pts_mount_opts opts;
+-	struct super_block *s;
+-
+-	error = parse_mount_options(data, PARSE_MOUNT, &opts);
+-	if (error)
+-		return ERR_PTR(error);
+-
+-	if (opts.newinstance)
+-		s = sget(fs_type, NULL, set_anon_super, flags, NULL);
+-	else
+-		s = sget(fs_type, compare_init_pts_sb, set_anon_super, flags,
+-			 NULL);
+-
+-	if (IS_ERR(s))
+-		return ERR_CAST(s);
+-
+-	if (!s->s_root) {
+-		error = devpts_fill_super(s, data, flags & MS_SILENT ? 1 : 0);
+-		if (error)
+-			goto out_undo_sget;
+-		s->s_flags |= MS_ACTIVE;
+-	}
+-
+-	memcpy(&(DEVPTS_SB(s))->mount_opts, &opts, sizeof(opts));
+-
+-	error = mknod_ptmx(s);
+-	if (error)
+-		goto out_undo_sget;
+-
+-	return dget(s->s_root);
+-
+-out_undo_sget:
+-	deactivate_locked_super(s);
+-	return ERR_PTR(error);
++	return mount_nodev(fs_type, flags, data, devpts_fill_super);
+ }
+ 
+ static void devpts_kill_sb(struct super_block *sb)
+@@ -457,6 +380,40 @@ static struct file_system_type devpts_fs_type = {
+ 	.kill_sb	= devpts_kill_sb,
+ };
+ 
++struct inode *devpts_redirect(struct file *filp)
++{
++	struct inode *inode;
++	struct file *filp2;
++
++	/* Is the inode already a devpts inode? */
++	inode = filp->f_dentry->d_inode;
++	if (filp->f_dentry->d_sb->s_magic == DEVPTS_SUPER_MAGIC)
++		goto out;
++
++	/* Is f_dentry->d_parent usable? */
++	inode = ERR_PTR(-ENODEV);
++	if (filp->f_vfsmnt->mnt_root == filp->f_dentry)
++		goto out;
++
++	/* Is there a devpts inode we can use instead? */
++	
++	filp2 = file_open_root(filp->f_dentry->d_parent, filp->f_vfsmnt,
++			       "pts/ptmx", O_PATH);
++	if (!IS_ERR(filp2)) {
++		if (filp2->f_dentry->d_sb->s_magic == DEVPTS_SUPER_MAGIC) {
++			struct path old;
++			old = filp->f_path;
++			filp->f_path = filp2->f_path;
++			inode = filp->f_dentry->d_inode;
++			path_get(&filp->f_path);
++			path_put(&old);
++		}
++		fput(filp2);
++	}
++out:
++	return inode;
++}
++
+ /*
+  * The normal naming convention is simply /dev/pts/<number>; this conforms
+  * to the System V naming convention
+@@ -474,8 +431,7 @@ retry:
+ 		return -ENOMEM;
+ 
+ 	mutex_lock(&allocated_ptys_lock);
+-	if (pty_count >= pty_limit -
+-			(fsi->mount_opts.newinstance ? pty_reserve : 0)) {
++	if (pty_count >= pty_limit - pty_reserve) {
+ 		mutex_unlock(&allocated_ptys_lock);
+ 		return -ENOSPC;
+ 	}
 diff --git a/include/linux/devpts_fs.h b/include/linux/devpts_fs.h
-index 5ce0e5f..2d539ae 100644
+index 2d539ae..fe2b41f 100644
 --- a/include/linux/devpts_fs.h
 +++ b/include/linux/devpts_fs.h
-@@ -15,6 +15,9 @@
+@@ -20,6 +20,7 @@
  
- #include <linux/errno.h>
- 
-+#define DEVPTS_DEFAULT_PTMX_MODE 0666
-+#define PTMX_MINOR	2
-+
  #ifdef CONFIG_UNIX98_PTYS
  
++struct inode *devpts_redirect(struct file *filp);
  int devpts_new_index(struct inode *ptmx_inode);
+ void devpts_kill_index(struct inode *ptmx_inode, int idx);
+ /* mknod in devpts */
+@@ -32,6 +33,10 @@ void devpts_pty_kill(struct tty_struct *tty);
+ #else
+ 
+ /* Dummy stubs in the no-pty case */
++static inline struct inode *devpts_redirect(struct file *filp)
++{
++	return ERR_PTR(-ENODEV);
++}
+ static inline int devpts_new_index(struct inode *ptmx_inode) { return -EINVAL; }
+ static inline void devpts_kill_index(struct inode *ptmx_inode, int idx) { }
+ static inline int devpts_pty_new(struct inode *ptmx_inode,
 -- 
 1.7.5.4
