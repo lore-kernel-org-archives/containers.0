@@ -1,15 +1,18 @@
-From: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [PATCH 05/14] userns: Convert hostfs to use kuid and kgid where
 	appropriate
-Date: Sun, 23 Sep 2012 23:59:40 +0200
-Message-ID: <505F864C.2000103__29216.5551604286$1348438011$gmane$org@nod.at>
+Date: Sun, 23 Sep 2012 19:39:02 -0700
+Message-ID: <87obkwxhyx.fsf__25305.1300686368$1348454370$gmane$org@xmission.com>
 References: <87k3vote43.fsf@xmission.com>
 	<1348187330-6616-1-git-send-email-ebiederm@xmission.com>
 	<1348187330-6616-5-git-send-email-ebiederm@xmission.com>
+	<505F864C.2000103@nod.at>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============4820958477022345105=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1348187330-6616-5-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <505F864C.2000103-/L3Ra7n9ekc@public.gmane.org> (Richard Weinberger's message of "Sun,
+	23 Sep 2012 23:59:40 +0200")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,69 +22,85 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
 Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jeff Dike <jdike-OPE4K8JWMJJBDgjK7y7TUQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
---===============4820958477022345105==
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="------------enig670CD0EC8234AD49ECC064C4"
+Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org> writes:
 
-This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
---------------enig670CD0EC8234AD49ECC064C4
-Content-Type: text/plain; charset=ISO-8859-15
-Content-Transfer-Encoding: quoted-printable
+> Am 21.09.2012 02:28, schrieb Eric W. Biederman:
+>> From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>> 
+>> Cc: Jeff Dike <jdike-OPE4K8JWMJJBDgjK7y7TUQ@public.gmane.org>
+>> Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
+>> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+>> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>> ---
+>
+> Looks sane to me.
+>
+> Acked-by: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
+>
+> BTW: How you do test your user namespace patches?
+> Is there a generic way to compare/verify uids within a namespace
+> vs. the initial namespace?
 
-Am 21.09.2012 02:28, schrieb Eric W. Biederman:
-> From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
->=20
-> Cc: Jeff Dike <jdike-OPE4K8JWMJJBDgjK7y7TUQ@public.gmane.org>
-> Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
-> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> ---
+I start with a well tested set of primites, and a simple design.
 
-Looks sane to me.
+Ultimately the goal is to get the conversion functions make_kuid and
+from_kuid inserted into the proper locations.
 
-Acked-by: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
+When user namespaces are enabled kuid_t and uid_t are not assignment
+compatible so in most places where something needs to be done I get
+a compile error.
 
-BTW: How you do test your user namespace patches?
-Is there a generic way to compare/verify uids within a namespace vs. the =
-initial namespace?
+If the other value is an internal kernel value I change it's type.
+If the other value is a userspace or on disk value I insert a conversion
+function.
 
-Thanks,
-//richard
+So as a first approximation I can test just by enabling usernamespace
+support and compiling the code.
 
+My second line of defense is to keep my patches simple and easily
+reviewable.
 
---------------enig670CD0EC8234AD49ECC064C4
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+I impose upon myself the discipline of letting my patches set for a
+while so that I review them with a fresh mind before sending them
+out to the list.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.18 (GNU/Linux)
+I am careful when making my patches to actually read the code and
+understand what is going on, so hopefully I catch the tricky cases.
 
-iQEcBAEBAgAGBQJQX4ZRAAoJEN9758yqZn9eZkMH/3PMootkUYID2/hTZXChfFpL
-T7/YE7JSuJh9Eg3xRPVxkgOOmNA/T5lziEkjsclRhcAEWD3HBs+g1AEQyRWVtJIa
-kjbY/b1dnK9QM2/c8gAEaX5YWGsP1aPsHS5TIeP/dIn175MH59aA2tN/YfLPkYAm
-kKKDEE31YAwb3jKyDN/dxS2XRleNeYIoUNebF76vAqFdVXjDyfi6ST/0VltVekRX
-FHEo+m4xVORD0J6r5jGunTopVVPxhSSGFy5ZlcxV5gPLr4L4LC+5QEdbpLyQd87g
-iVPZIPp+hw4yCMEACfbjlGNVnUZTIwvtR2DTUxiiqZKBbgFc5xNF/RiJ7j8z6Xk=
-=trgK
------END PGP SIGNATURE-----
+With the user namespace support disabled the code performs the same with
+except for the conversion functions so things like my conversion of the
+core kernel in 3.5 continue to be tested for correctness in general.
 
---------------enig670CD0EC8234AD49ECC064C4--
+Right now for filesystems I am converting them so they will work when
+all of the user space interfaces have values coming to the filesystem in
+kuid_t and kgid_t, but the values in the filesystem are stored in
+the initial user namespace.  So it is trivial to know that I have
+useful the correct conversions.
 
---===============4820958477022345105==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+Since my big question is do I have the conversions in all of the
+locations needed, compile errors and the discipline of pushing kuid_t
+and kgid_t as deep as possible into the kernel data structures as
+possible are my primary means of where conversions need to go.
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============4820958477022345105==--
+Beyond that I actually run a kernel with all of my patches applied and I
+do some spot testing, and I have had my development tree with everything
+patched out for a while so that other people can play with it as well.
+
+I also compile test each patch with allyesconfig and with as much
+enabled as I can and still leave the usernamespace support enabled,
+ensuring each patch is good and safe on it's own (at least compilewise).
+
+So that is how I test.
+
+As to a generic way to compare/verify uids within a namespace vs the
+initial namespace hmm.  I don't know that there is a generic tool.  The
+mappings are available in /proc/<pid>/uid_maps, and /proc/<pid>/gid_maps
+so it isn't hard to look to see if the expected conversion is happening
+by looking from outside the namespace. But there isn't a generic tool
+that I know of at this point.
+
+Eric
