@@ -1,16 +1,16 @@
 From: Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 13/14] userns: On ia64 deal with current_uid and
-	current_gid being kuid and kgid
-Date: Tue, 25 Sep 2012 17:15:28 +0800
-Message-ID: <50617630.1050709@gmail.com>
-References: <87k3vote43.fsf@xmission.com>
-	<1348187330-6616-1-git-send-email-ebiederm@xmission.com>
-	<1348187330-6616-13-git-send-email-ebiederm@xmission.com>
+Subject: Re: [PATCH 17/25] userns: Convert minix to use kuid/kgid where
+	appropriate
+Date: Tue, 25 Sep 2012 17:17:41 +0800
+Message-ID: <506176B5.9020104@gmail.com>
+References: <877grox6ql.fsf@xmission.com>
+	<1348141326-23355-1-git-send-email-ebiederm@xmission.com>
+	<1348141326-23355-17-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1348187330-6616-13-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <1348141326-23355-17-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,109 +24,80 @@ To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 2012-9-21 8:28, Eric W. Biederman wrote:
+On 2012-9-20 19:41, Eric W. Biederman wrote:
 > From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 > 
-> These ia64 uses of current_uid and current_gid slipped through the
-> cracks when I was converting everything to kuids and kgids convert
-> them now.
-> 
-> Cc: Tony Luck <tony.luck-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-> Cc: Fenghua Yu <fenghua.yu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 > ---
->  arch/ia64/kernel/mca_drv.c |    3 ++-
->  arch/ia64/kernel/perfmon.c |   32 ++++++++++++++++----------------
->  arch/ia64/kernel/signal.c  |    4 ++--
->  3 files changed, 20 insertions(+), 19 deletions(-)
+>  fs/minix/inode.c |   16 ++++++++--------
+>  init/Kconfig     |    1 -
+>  2 files changed, 8 insertions(+), 9 deletions(-)
 > 
-> diff --git a/arch/ia64/kernel/mca_drv.c b/arch/ia64/kernel/mca_drv.c
-> index 1c2e894..9392e02 100644
-> --- a/arch/ia64/kernel/mca_drv.c
-> +++ b/arch/ia64/kernel/mca_drv.c
-> @@ -158,7 +158,8 @@ mca_handler_bh(unsigned long paddr, void *iip, unsigned long ipsr)
->  	ia64_mlogbuf_dump();
->  	printk(KERN_ERR "OS_MCA: process [cpu %d, pid: %d, uid: %d, "
->  		"iip: %p, psr: 0x%lx,paddr: 0x%lx](%s) encounters MCA.\n",
-> -	       raw_smp_processor_id(), current->pid, current_uid(),
-> +	       raw_smp_processor_id(), current->pid,
-> +		from_kuid(&init_user_ns, current_uid()),
->  		iip, ipsr, paddr, current->comm);
->  
->  	spin_lock(&mca_bh_lock);
-> diff --git a/arch/ia64/kernel/perfmon.c b/arch/ia64/kernel/perfmon.c
-> index 3fa4bc5..5a5c222 100644
-> --- a/arch/ia64/kernel/perfmon.c
-> +++ b/arch/ia64/kernel/perfmon.c
-> @@ -2380,8 +2380,8 @@ static int
->  pfm_bad_permissions(struct task_struct *task)
->  {
->  	const struct cred *tcred;
-> -	uid_t uid = current_uid();
-> -	gid_t gid = current_gid();
-> +	kuid_t uid = current_uid();
-> +	kgid_t gid = current_gid();
->  	int ret;
->  
->  	rcu_read_lock();
-> @@ -2389,20 +2389,20 @@ pfm_bad_permissions(struct task_struct *task)
->  
->  	/* inspired by ptrace_attach() */
->  	DPRINT(("cur: uid=%d gid=%d task: euid=%d suid=%d uid=%d egid=%d sgid=%d\n",
-> -		uid,
-> -		gid,
-> -		tcred->euid,
-> -		tcred->suid,
-> -		tcred->uid,
-> -		tcred->egid,
-> -		tcred->sgid));
-> -
-> -	ret = ((uid != tcred->euid)
-> -	       || (uid != tcred->suid)
-> -	       || (uid != tcred->uid)
-> -	       || (gid != tcred->egid)
-> -	       || (gid != tcred->sgid)
-> -	       || (gid != tcred->gid)) && !capable(CAP_SYS_PTRACE);
-> +		from_kuid(&init_user_ns, uid),
-> +		from_kgid(&init_user_ns, gid),
-> +		from_kuid(&init_user_ns, tcred->euid),
-> +		from_kuid(&init_user_ns, tcred->suid),
-> +		from_kuid(&init_user_ns, tcred->uid),
-> +		from_kgid(&init_user_ns, tcred->egid),
-> +		from_kgid(&init_user_ns, tcred->sgid)));
-> +
-> +	ret = ((!uid_eq(uid, tcred->euid))
-> +	       || (!uid_eq(uid, tcred->suid))
-> +	       || (!uid_eq(uid, tcred->uid))
-> +	       || (!gid_eq(gid, tcred->egid))
-> +	       || (!gid_eq(gid, tcred->sgid))
-> +	       || (!gid_eq(gid, tcred->gid))) && !capable(CAP_SYS_PTRACE);
->  
->  	rcu_read_unlock();
->  	return ret;
-> diff --git a/arch/ia64/kernel/signal.c b/arch/ia64/kernel/signal.c
-> index a199be1..37dd795 100644
-> --- a/arch/ia64/kernel/signal.c
-> +++ b/arch/ia64/kernel/signal.c
-> @@ -220,7 +220,7 @@ ia64_rt_sigreturn (struct sigscratch *scr)
->  	si.si_errno = 0;
->  	si.si_code = SI_KERNEL;
->  	si.si_pid = task_pid_vnr(current);
-> -	si.si_uid = current_uid();
-> +	si.si_uid = from_kuid_munged(current_user_ns(), current_uid());
-Question: why use current_user_ns not the init_user_ns here?
-THANKS.
-Zhao Hongjiang.
->  	si.si_addr = sc;
->  	force_sig_info(SIGSEGV, &si, current);
->  	return retval;
-> @@ -317,7 +317,7 @@ force_sigsegv_info (int sig, void __user *addr)
->  	si.si_errno = 0;
->  	si.si_code = SI_KERNEL;
->  	si.si_pid = task_pid_vnr(current);
-> -	si.si_uid = current_uid();
-> +	si.si_uid = from_kuid_munged(current_user_ns(), current_uid());
->  	si.si_addr = addr;
->  	force_sig_info(SIGSEGV, &si, current);
->  	return 0;
+> diff --git a/fs/minix/inode.c b/fs/minix/inode.c
+> index 2a503ad..d0e42c6 100644
+> --- a/fs/minix/inode.c
+> +++ b/fs/minix/inode.c
+> @@ -460,8 +460,8 @@ static struct inode *V1_minix_iget(struct inode *inode)
+>  		return ERR_PTR(-EIO);
+>  	}
+>  	inode->i_mode = raw_inode->i_mode;
+> -	inode->i_uid = (uid_t)raw_inode->i_uid;
+> -	inode->i_gid = (gid_t)raw_inode->i_gid;
+> +	i_uid_write(inode, raw_inode->i_uid);
+> +	i_gid_write(inode, raw_inode->i_gid);
+
+
+	i_uid_write(inode, (uid_t)raw_inode->i_uid);
+	i_gid_write(inode, (gid_t)raw_inode->i_gid);
+
+is more better?
+>  	set_nlink(inode, raw_inode->i_nlinks);
+>  	inode->i_size = raw_inode->i_size;
+>  	inode->i_mtime.tv_sec = inode->i_atime.tv_sec = inode->i_ctime.tv_sec = raw_inode->i_time;
+> @@ -493,8 +493,8 @@ static struct inode *V2_minix_iget(struct inode *inode)
+>  		return ERR_PTR(-EIO);
+>  	}
+>  	inode->i_mode = raw_inode->i_mode;
+> -	inode->i_uid = (uid_t)raw_inode->i_uid;
+> -	inode->i_gid = (gid_t)raw_inode->i_gid;
+> +	i_uid_write(inode, raw_inode->i_uid);
+> +	i_gid_write(inode, raw_inode->i_gid);
+>  	set_nlink(inode, raw_inode->i_nlinks);
+>  	inode->i_size = raw_inode->i_size;
+>  	inode->i_mtime.tv_sec = raw_inode->i_mtime;
+> @@ -545,8 +545,8 @@ static struct buffer_head * V1_minix_update_inode(struct inode * inode)
+>  	if (!raw_inode)
+>  		return NULL;
+>  	raw_inode->i_mode = inode->i_mode;
+> -	raw_inode->i_uid = fs_high2lowuid(inode->i_uid);
+> -	raw_inode->i_gid = fs_high2lowgid(inode->i_gid);
+> +	raw_inode->i_uid = fs_high2lowuid(i_uid_read(inode));
+> +	raw_inode->i_gid = fs_high2lowgid(i_gid_read(inode));
+>  	raw_inode->i_nlinks = inode->i_nlink;
+>  	raw_inode->i_size = inode->i_size;
+>  	raw_inode->i_time = inode->i_mtime.tv_sec;
+> @@ -572,8 +572,8 @@ static struct buffer_head * V2_minix_update_inode(struct inode * inode)
+>  	if (!raw_inode)
+>  		return NULL;
+>  	raw_inode->i_mode = inode->i_mode;
+> -	raw_inode->i_uid = fs_high2lowuid(inode->i_uid);
+> -	raw_inode->i_gid = fs_high2lowgid(inode->i_gid);
+> +	raw_inode->i_uid = fs_high2lowuid(i_uid_read(inode));
+> +	raw_inode->i_gid = fs_high2lowgid(i_gid_read(inode));
+>  	raw_inode->i_nlinks = inode->i_nlink;
+>  	raw_inode->i_size = inode->i_size;
+>  	raw_inode->i_mtime = inode->i_mtime.tv_sec;
+> diff --git a/init/Kconfig b/init/Kconfig
+> index 80edba8..c69e085 100644
+> --- a/init/Kconfig
+> +++ b/init/Kconfig
+> @@ -946,7 +946,6 @@ config UIDGID_CONVERTED
+>  	depends on HPFS_FS = n
+>  	depends on JFFS2_FS = n
+>  	depends on JFS_FS = n
+> -	depends on MINIX_FS = n
+>  	depends on NCP_FS = n
+>  	depends on NFSD = n
+>  	depends on NFS_FS = n
 > 
