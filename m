@@ -1,17 +1,15 @@
 From: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: [PATCH 16/27] userns: Convert vfs posix_acl support to use
-	kuids and kgids
-Date: Tue, 9 Oct 2012 22:44:33 +0200
-Message-ID: <20121009204433.GB24622@quack.suse.cz>
-References: <871uhx1n71.fsf@xmission.com>
-	<1348105949-25454-1-git-send-email-ebiederm@xmission.com>
-	<1348105949-25454-16-git-send-email-ebiederm@xmission.com>
+Subject: Re: [PATCH] ext2: fix return values on parse_options() failure
+Date: Tue, 9 Oct 2012 23:22:27 +0200
+Message-ID: <20121009212227.GA27882__1211.82450461692$1349817765$gmane$org@quack.suse.cz>
+References: <5073B9C4.9070009@gmail.com>
+	<alpine.LFD.2.00.1210090819590.11244@dhcp-1-104.brq.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1348105949-25454-16-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <alpine.LFD.2.00.1210090819590.11244-462rkM2+8ahgDJpvDrVWWBcY2uh10dtjAL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,148 +19,44 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andreas Dilger <adilger.kernel-m1MBpc4rdrD3fQ9qLvQP4Q@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+To: =?utf-8?B?THVrw6HFoQ==?= Czerner <lczerner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: jack-AlSwsSmVLrQ@public.gmane.org, Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-ext4-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed 19-09-12 18:52:18, Eric W. Biederman wrote:
-> From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> 
-> - In setxattr if we are setting a posix acl convert uids and gids from
->   the current user namespace into the initial user namespace, before
->   the xattrs are passed to the underlying filesystem.
-> 
->   Untranslatable uids and gids are represented as -1 which
->   posix_acl_from_xattr will represent as INVALID_UID or INVALID_GID.
->   posix_acl_valid will fail if an acl from userspace has any
->   INVALID_UID or INVALID_GID values.  In net this guarantees that
->   untranslatable posix acls will not be stored by filesystems.
-> 
-> - In getxattr if we are reading a posix acl convert uids and gids from
->   the initial user namespace into the current user namespace.
-> 
->   Uids and gids that can not be tranlsated into the current user namespace
->   will be represented as -1.
-> 
-> - Replace e_id in struct posix_acl_entry with an anymouns union of
->   e_uid and e_gid.  For the short term retain the e_id field
->   until all of the users are converted.
-> 
-> - Don't set struct posix_acl.e_id in the cases where the acl type
->   does not use e_id.  Greatly reducing the use of ACL_UNDEFINED_ID.
-> 
-> - Rework the ordering checks in posix_acl_valid so that I use kuid_t
->   and kgid_t types throughout the code, and so that I don't need
->   arithmetic on uid and gid types.
-> 
-> Cc: Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>
-> Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-> Cc: Andreas Dilger <adilger.kernel-m1MBpc4rdrD3fQ9qLvQP4Q@public.gmane.org>
-> Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
-> Cc: Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> ---
-  I know this got merged but I got to seriously looking into it only now
-and frankly I think the push was a hurried one...
-
-> diff --git a/fs/xattr.c b/fs/xattr.c
-> index 4d45b71..c111745 100644
-> --- a/fs/xattr.c
-> +++ b/fs/xattr.c
-> @@ -20,6 +20,7 @@
->  #include <linux/fsnotify.h>
->  #include <linux/audit.h>
->  #include <linux/vmalloc.h>
-> +#include <linux/posix_acl_xattr.h>
->  
->  #include <asm/uaccess.h>
->  
-> @@ -347,6 +348,9 @@ setxattr(struct dentry *d, const char __user *name, const void __user *value,
->  			error = -EFAULT;
->  			goto out;
->  		}
-> +		if ((strcmp(kname, XATTR_NAME_POSIX_ACL_ACCESS) == 0) ||
-> +		    (strcmp(kname, XATTR_NAME_POSIX_ACL_DEFAULT) == 0))
-> +			posix_acl_fix_xattr_from_user(kvalue, size);
->  	}
->  
->  	error = vfs_setxattr(d, kname, kvalue, size, flags);
-> @@ -450,6 +454,9 @@ getxattr(struct dentry *d, const char __user *name, void __user *value,
->  
->  	error = vfs_getxattr(d, kname, kvalue, size);
->  	if (error > 0) {
-> +		if ((strcmp(kname, XATTR_NAME_POSIX_ACL_ACCESS) == 0) ||
-> +		    (strcmp(kname, XATTR_NAME_POSIX_ACL_DEFAULT) == 0))
-> +			posix_acl_fix_xattr_to_user(kvalue, size);
->  		if (size && copy_to_user(value, kvalue, error))
->  			error = -EFAULT;
->  	} else if (error == -ERANGE && size >= XATTR_SIZE_MAX) {
-> diff --git a/fs/xattr_acl.c b/fs/xattr_acl.c
-> index 69d06b0..bf472ca 100644
-> --- a/fs/xattr_acl.c
-> +++ b/fs/xattr_acl.c
-> @@ -9,7 +9,65 @@
->  #include <linux/fs.h>
->  #include <linux/posix_acl_xattr.h>
->  #include <linux/gfp.h>
-> +#include <linux/user_namespace.h>
->  
-> +/*
-> + * Fix up the uids and gids in posix acl extended attributes in place.
-> + */
-> +static void posix_acl_fix_xattr_userns(
-> +	struct user_namespace *to, struct user_namespace *from,
-> +	void *value, size_t size)
-> +{
-> +	posix_acl_xattr_header *header = (posix_acl_xattr_header *)value;
-> +	posix_acl_xattr_entry *entry = (posix_acl_xattr_entry *)(header+1), *end;
-> +	int count;
-> +	kuid_t uid;
-> +	kgid_t gid;
-> +
-> +	if (!value)
-> +		return;
-> +	if (size < sizeof(posix_acl_xattr_header))
-> +		return;
-> +	if (header->a_version != cpu_to_le32(POSIX_ACL_XATTR_VERSION))
-> +		return;
-> +
-> +	count = posix_acl_xattr_count(size);
-> +	if (count < 0)
-> +		return;
-> +	if (count == 0)
-> +		return;
-> +
-> +	for (end = entry + count; entry != end; entry++) {
-> +		switch(le16_to_cpu(entry->e_tag)) {
-> +		case ACL_USER:
-> +			uid = make_kuid(from, le32_to_cpu(entry->e_id));
-  This should have some error checking I guess... The initial checks done
-in posix_acl_from_xattr() are for init_user_ns (why?) and only duplicated
-in posix_acl_valid().
-
-> +			entry->e_id = cpu_to_le32(from_kuid(to, uid));
-> +			break;
-> +		case ACL_GROUP:
-> +			gid = make_kgid(from, le32_to_cpu(entry->e_id));
-> +			entry->e_id = cpu_to_le32(from_kuid(to, uid));
-                                             here should be gid ^^^
-
-> +			break;
-> +		default:
-> +			break;
-> +		}
-> +	}
-> +}
-Also what about the following scenario:
-
-We have namespace A with user U1 and namespace B which does not have a
-valid representation for U1. There is a file F which can be seen from both
-namespaces. In namespace A we create acl for user U1 attached to F. Now in
-namespace B we modify the acl via setfacl(1) command. What it does is
-getxattr(2) - returns mangled acl because U1 has no representation in B. We
-add something to xattr and call setxattr(2) - results in removing the
-original acl for U1 and instead adding acl for uid -1. That is a security
-bug I'd say.
-
-								Honza
+T24gVHVlIDA5LTEwLTEyIDA4OjI5OjUwLCBMdWvDocWhIEN6ZXJuZXIgd3JvdGU6Cj4gT24gVHVl
+LCA5IE9jdCAyMDEyLCBaaGFvIEhvbmdqaWFuZyB3cm90ZToKPiAKPiA+IERhdGU6IFR1ZSwgMDkg
+T2N0IDIwMTIgMTM6NDQ6MzYgKzA4MDAKPiA+IEZyb206IFpoYW8gSG9uZ2ppYW5nIDx6aGFvaG9u
+Z2ppYW5nMzdAZ21haWwuY29tPgo+ID4gVG86IGphY2tAc3VzZS5jego+ID4gQ2M6IGxpbnV4LWV4
+dDRAdmdlci5rZXJuZWwub3JnLCBsaW51eC1rZXJuZWxAdmdlci5rZXJuZWwub3JnLAo+ID4gICAg
+IEVyaWMgVy4gQmllZGVybWFuIDxlYmllZGVybUB4bWlzc2lvbi5jb20+LCBzZXJnZS5oYWxseW5A
+Y2Fub25pY2FsLmNvbSwKPiA+ICAgICBjb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24u
+b3JnCj4gPiBTdWJqZWN0OiBbUEFUQ0hdIGV4dDI6IGZpeCByZXR1cm4gdmFsdWVzIG9uIHBhcnNl
+X29wdGlvbnMoKSBmYWlsdXJlCj4gPiAKPiA+IEZyb206IFpoYW8gSG9uZ2ppYW5nIDx6aGFvaG9u
+Z2ppYW5nQGh1YXdlaS5jb20+Cj4gPiAKPiA+IHBhcnNlX29wdGlvbnMoKSBpbiBleHQyIHNob3Vs
+ZCByZXR1cm4gMCB3aGVuIHBhcnNlIHRoZSBtb3VudCBvcHRpb25zIGZhaWxzLgo+ID4gCj4gPiBT
+aWduZWQtb2ZmLWJ5OiBaaGFvIEhvbmdqaWFuZyA8emhhb2hvbmdqaWFuZ0BodWF3ZWkuY29tPgo+
+IAo+IFJldmlld2VkLWJ5OiBMdWthcyBDemVybmVyIDxsY3plcm5lckByZWRoYXQuY29tPgogIFRo
+YW5rcywgYWRkZWQgdG8gbXkgdHJlZS4KCgkJCQkJCQkJCUhvbnphCgo+ID4gLS0tCj4gPiAgZnMv
+ZXh0Mi9zdXBlci5jIHwgICAgNCArKy0tCj4gPiAgMSBmaWxlcyBjaGFuZ2VkLCAyIGluc2VydGlv
+bnMoKyksIDIgZGVsZXRpb25zKC0pCj4gPiAKPiA+IGRpZmYgLS1naXQgYS9mcy9leHQyL3N1cGVy
+LmMgYi9mcy9leHQyL3N1cGVyLmMKPiA+IGluZGV4IDZjMjA1ZDAuLmZhMDRkMDIgMTAwNjQ0Cj4g
+PiAtLS0gYS9mcy9leHQyL3N1cGVyLmMKPiA+ICsrKyBiL2ZzL2V4dDIvc3VwZXIuYwo+ID4gQEAg
+LTQ2OSw3ICs0NjksNyBAQCBzdGF0aWMgaW50IHBhcnNlX29wdGlvbnMoY2hhciAqb3B0aW9ucywg
+c3RydWN0IHN1cGVyX2Jsb2NrICpzYikKPiA+ICAJCQl1aWQgPSBtYWtlX2t1aWQoY3VycmVudF91
+c2VyX25zKCksIG9wdGlvbik7Cj4gPiAgCQkJaWYgKCF1aWRfdmFsaWQodWlkKSkgewo+ID4gIAkJ
+CQlleHQyX21zZyhzYiwgS0VSTl9FUlIsICJJbnZhbGlkIHVpZCB2YWx1ZSAlZCIsIG9wdGlvbik7
+Cj4gPiAtCQkJCXJldHVybiAtMTsKPiA+ICsJCQkJcmV0dXJuIDA7Cj4gPiAKPiA+ICAJCQl9Cj4g
+PiAgCQkJc2JpLT5zX3Jlc3VpZCA9IHVpZDsKPiA+IEBAIC00ODAsNyArNDgwLDcgQEAgc3RhdGlj
+IGludCBwYXJzZV9vcHRpb25zKGNoYXIgKm9wdGlvbnMsIHN0cnVjdCBzdXBlcl9ibG9jayAqc2Ip
+Cj4gPiAgCQkJZ2lkID0gbWFrZV9rZ2lkKGN1cnJlbnRfdXNlcl9ucygpLCBvcHRpb24pOwo+ID4g
+IAkJCWlmICghZ2lkX3ZhbGlkKGdpZCkpIHsKPiA+ICAJCQkJZXh0Ml9tc2coc2IsIEtFUk5fRVJS
+LCAiSW52YWxpZCBnaWQgdmFsdWUgJWQiLCBvcHRpb24pOwo+ID4gLQkJCQlyZXR1cm4gLTE7Cj4g
+PiArCQkJCXJldHVybiAwOwo+ID4gIAkJCX0KPiA+ICAJCQlzYmktPnNfcmVzZ2lkID0gZ2lkOwo+
+ID4gIAkJCWJyZWFrOwo+ID4gLS0gMS43LjEKPiA+IC0tCj4gPiBUbyB1bnN1YnNjcmliZSBmcm9t
+IHRoaXMgbGlzdDogc2VuZCB0aGUgbGluZSAidW5zdWJzY3JpYmUgbGludXgtZXh0NCIgaW4KPiA+
+IHRoZSBib2R5IG9mIGEgbWVzc2FnZSB0byBtYWpvcmRvbW9Admdlci5rZXJuZWwub3JnCj4gPiBN
+b3JlIG1ham9yZG9tbyBpbmZvIGF0ICBodHRwOi8vdmdlci5rZXJuZWwub3JnL21ham9yZG9tby1p
+bmZvLmh0bWwKPiA+IApfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5k
+YXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3Rp
+bmZvL2NvbnRhaW5lcnM=
