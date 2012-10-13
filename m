@@ -1,18 +1,12 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: uevent when moving nic between network namespaces?
-Date: Fri, 12 Oct 2012 22:27:16 -0700
-Message-ID: <877gqvkkln.fsf@xmission.com>
-References: <20121012031328.GA5472@sergelap> <871uh4pdzd.fsf@xmission.com>
-	<20121012191828.GA12200@sergelap> <87sj9jmqew.fsf@xmission.com>
-	<20121012215650.GA22665@sergelap> <87bog7mjhm.fsf@xmission.com>
-	<20121012221711.GA23227@sergelap> <87626fmihz.fsf@xmission.com>
-	<20121013051722.GA13589@sergelap>
+From: Ms. Felicia Drake <Post-pCGr9Sw2R8Y@public.gmane.org>
+Subject: Re: Notification
+Date: Sat, 13 Oct 2012 21:19:38 +0200 (CEST)
+Message-ID: <20121013191938.6468E2518767@slgg894.piensasolutions.com>
+Reply-To: jiogpawep-j+4cLNCRU+OzR313v1King@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20121013051722.GA13589@sergelap> (Serge Hallyn's message of
-	"Sat, 13 Oct 2012 00:17:22 -0500")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,52 +16,22 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Cc: Daniel Lezcano <dlezcano-GANU6spQydw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Stefan Bader <stefan.bader-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, =?utf-8?Q?St=C3=A9phane?= Graber <stephane.graber-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Dan Kegel <dank-XdDNpL9cdsoAvxtiuMwx3w@public.gmane.org>, lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-U2VyZ2UgSGFsbHluIDxzZXJnZS5oYWxseW5AY2Fub25pY2FsLmNvbT4gd3JpdGVzOgoKW3NuaXAg
-b2xkIGNvbW1lbnRzXQoKPiBZdXAgYWxsIHN0aWxsIGxvb2tzIGdvb2Qgd2l0aCB0aGUgZm9sbG93
-aW5nIHRyaXZpYWwgcGF0Y2guICBBbmQgbm93IHdoZW4KPiBJIHBhc3MgYSBuZXRkZXYgaW50byBh
-IHJ1bm5pbmcgY29udGFpbmVyLCBpdCBnZXRzIGEgbmV0d29yay1pbnRlcmZhY2UKPiB1cHN0YXJ0
-IGpvYiBqdXN0IGFzIGl0IGRvZXMgb24gYSByZWFsIGhvc3QuCj4KPiBBbmQgbm8gbmV0d29yay1p
-bnRlcmZhY2Ugam9icyBzdGljayBhcm91bmQgYWZ0ZXIgdGhlIGNvbnRhaW5lciBzaHV0cwo+IGRv
-d24sIG1lYW5pbmcgdGhpcyBzb2x2ZXMgdGhlIGtlcm5lbCBwYXJ0IG9mIGJ1ZyAxMDY1NTg5Cj4g
-KGh0dHBzOi8vYnVncy5sYXVuY2hwYWQubmV0L3VidW50dS8rc291cmNlL2x4Yy8rYnVnLzEwNjU1
-ODkpLgo+Cj4gKFByZS1leGlzdGluZyBuaWNzIGRvbid0IGdldCBhIG5ldHdvcmstaW50ZXJmYWNl
-IGpvYiAtIHRoZSBmYWN0IHRoYXQgbHhjCj4gZmlyc3QgcGFzc2VzIGluIHRoZSBuZXRkZXZzIGFu
-ZCB0aGVuIGV4ZWNzIGluaXQgdGhlcmVmb3JlIHN0aWxsIGNhdXNlcwo+IHNvbWUgYXN5bW1ldHJ5
-IHdydCBhIHJlYWwgaG9zdCwgd2hlcmUgbmV0ZGV2cyBhbHdheXMgY29tZSB1cCBhZnRlciBpbml0
-Cj4gc3RhcnRzLiAgQUZBSUsgd2UgZG9uJ3QgY2FyZSwgYnV0IFN0w6lwaGFuZSBtaWdodCBrbm93
-IG9mIGEgcmVhc29uIHdoeSB3ZQo+IGRvICAtIGluIGVpdGhlciBjYXNlIGl0J3Mgbm90IHRoZSBr
-ZXJuZWwncyBwcm9ibGVtKQo+Cj4gRnJvbSAwMWRjMDgyNzNmYTYzYTUwZjZkYmI3Mzc3Mzk3ZWM1
-MmE3YTMzN2Y4IE1vbiBTZXAgMTcgMDA6MDA6MDAgMjAwMQo+IEZyb206IFNlcmdlIEhhbGx5biA8
-c2VyZ2UuaGFsbHluQGNhbm9uaWNhbC5jb20+Cj4gRGF0ZTogRnJpLCAxMiBPY3QgMjAxMiAyMTo0
-MjowNSArMDEwMAo+IFN1YmplY3Q6IFtQQVRDSCAxLzFdIGRldl9jaGFuZ2VfbmV0X25hbWVzcGFj
-ZTogc2VuZCBhIEtPQkpfUkVNT1ZFRCB0bwo+ICBvcmlnaW5hbCBuZXRucwo+Cj4gdjI6IGFsc28g
-c2VuZCBLT0JKX0FERCB0byBuZXcgbmV0bnMuICBUaGVyZSB3aWxsIHRoZW4gYmUgYQo+IF9NT1ZF
-IGV2ZW50IGZyb20gdGhlIGRldmljZV9yZW5hbWUoKSBjYWxsLCBidXQgdGhhdCBzaG91bGQKPiBi
-ZSBpbm5vY3VvdXMuCgpUaGlzIHBhdGNoIGxvb2tzIHJlYXNvbmFibGUgdG8gbWUuIEkgd291bGQg
-YWRkIHRvIHRoZSBjaGFuZ2Vsb2cgdGhlCm1vdGl2YXRpb24uICBTb21ldGhpbmcgbGlrZSB5b3Vy
-IGNvbW1lbnRzIGp1c3QgYWJvdmUgdGhpcyBwYXRjaC4KCkFja2VkLWJ5OiAiRXJpYyBXLiBCaWVk
-ZXJtYW4iIDxlYmllZGVybUB4bWlzc2lvbi5jb20+Cgo+IFNpZ25lZC1vZmYtYnk6IFNlcmdlIEhh
-bGx5biA8c2VyZ2UuaGFsbHluQGNhbm9uaWNhbC5jb20+Cj4gLS0tCj4gIG5ldC9jb3JlL2Rldi5j
-IHwgICAgNiArKysrKysKPiAgMSBmaWxlIGNoYW5nZWQsIDYgaW5zZXJ0aW9ucygrKQo+Cj4gZGlm
-ZiAtLWdpdCBhL25ldC9jb3JlL2Rldi5jIGIvbmV0L2NvcmUvZGV2LmMKPiBpbmRleCBlMjIxNWVl
-Li4yYzQzYWFmIDEwMDY0NAo+IC0tLSBhL25ldC9jb3JlL2Rldi5jCj4gKysrIGIvbmV0L2NvcmUv
-ZGV2LmMKPiBAQCAtNjE3Miw2ICs2MTcyLDkgQEAgaW50IGRldl9jaGFuZ2VfbmV0X25hbWVzcGFj
-ZShzdHJ1Y3QgbmV0X2RldmljZSAqZGV2LCBzdHJ1Y3QgbmV0ICpuZXQsIGNvbnN0IGNoYXIKPiAg
-CWRldl91Y19mbHVzaChkZXYpOwo+ICAJZGV2X21jX2ZsdXNoKGRldik7Cj4gIAo+ICsJLyogU2Vu
-ZCBhIG5ldGRldi1yZW1vdmVkIHVldmVudCB0byB0aGUgb2xkIG5hbWVzcGFjZSAqLwo+ICsJa29i
-amVjdF91ZXZlbnQoJmRldi0+ZGV2LmtvYmosIEtPQkpfUkVNT1ZFKTsKPiArCj4gIAkvKiBBY3R1
-YWxseSBzd2l0Y2ggdGhlIG5ldHdvcmsgbmFtZXNwYWNlICovCj4gIAlkZXZfbmV0X3NldChkZXYs
-IG5ldCk7Cj4gIAo+IEBAIC02MTgzLDYgKzYxODYsOSBAQCBpbnQgZGV2X2NoYW5nZV9uZXRfbmFt
-ZXNwYWNlKHN0cnVjdCBuZXRfZGV2aWNlICpkZXYsIHN0cnVjdCBuZXQgKm5ldCwgY29uc3QgY2hh
-cgo+ICAJCQlkZXYtPmlmbGluayA9IGRldi0+aWZpbmRleDsKPiAgCX0KPiAgCj4gKwkvKiBTZW5k
-IGEgbmV0ZGV2LWFkZCB1ZXZlbnQgdG8gdGhlIG5ldyBuYW1lc3BhY2UgKi8KPiArCWtvYmplY3Rf
-dWV2ZW50KCZkZXYtPmRldi5rb2JqLCBLT0JKX0FERCk7Cj4gKwo+ICAJLyogRml4dXAga29iamVj
-dHMgKi8KPiAgCWVyciA9IGRldmljZV9yZW5hbWUoJmRldi0+ZGV2LCBkZXYtPm5hbWUpOwo+ICAJ
-V0FSTl9PTihlcnIpOwpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5k
-YXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3Rp
-bmZvL2NvbnRhaW5lcnM=
+
+Sir/Madam,
+
+You e-mail address is entitled to US$3.5million in the Japan/India Oil & Gas Poverty Alleviation World Wide E-mail Program. To apply for your payment, E-mail Mr. Greg Lieu jiogpawep-j+4cLNCRU+OzR313v1King@public.gmane.org your information as below:
+
+1. Full Names
+2. Complete Address
+3  Phone Number
+4. Mobile Phone
+5. Occupation
+6. Age
+
+Truly,
+
+Ms. Felicia Drake
+(Announcer)
