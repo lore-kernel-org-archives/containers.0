@@ -1,17 +1,18 @@
-From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: uevent when moving nic between network namespaces?
-Date: Sat, 13 Oct 2012 00:17:22 -0500
-Message-ID: <20121013051722.GA13589@sergelap>
+Date: Fri, 12 Oct 2012 22:27:16 -0700
+Message-ID: <877gqvkkln.fsf@xmission.com>
 References: <20121012031328.GA5472@sergelap> <871uh4pdzd.fsf@xmission.com>
 	<20121012191828.GA12200@sergelap> <87sj9jmqew.fsf@xmission.com>
 	<20121012215650.GA22665@sergelap> <87bog7mjhm.fsf@xmission.com>
 	<20121012221711.GA23227@sergelap> <87626fmihz.fsf@xmission.com>
+	<20121013051722.GA13589@sergelap>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87626fmihz.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <20121013051722.GA13589@sergelap> (Serge Hallyn's message of
+	"Sat, 13 Oct 2012 00:17:22 -0500")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,124 +22,52 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Daniel Lezcano <dlezcano-GANU6spQydw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Stefan Bader <stefan.bader-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, =?iso-8859-1?Q?St=E9phane?= Graber <stephane.graber-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Dan Kegel <dank-XdDNpL9cdsoAvxtiuMwx3w@public.gmane.org>, lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Cc: Daniel Lezcano <dlezcano-GANU6spQydw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Stefan Bader <stefan.bader-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, =?utf-8?Q?St=C3=A9phane?= Graber <stephane.graber-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Dan Kegel <dank-XdDNpL9cdsoAvxtiuMwx3w@public.gmane.org>, lxc-users-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org> writes:
-> =
-
-> > Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> >> Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org> writes:
-> >> =
-
-> >> > Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> >> >> I am not currently working on a patch for this, but I will be happy=
- to
-> >> >> review one. At a quick glance it looks like this could just be as
-> >> >> simple as calling kobject_uevent at the proper time, but testing and
-> >> >> reading through the relevant code paths is probably a good idea as =
-there
-> >> >> always seems to be gotchas in that code.
-> >> >> =
-
-> >> >> Eric
-> >> >
-> >> > This (the simple fix) works for me, actually.
-> >> >
-> >> > I do notice the ifdef shouldn't be needed, all the better.
-> >> =
-
-> >> Should we have a KOBJ_ADD in the new network namespace or is the
-> >> KOBJ_MOVE sufficient?
-> >
-> > I was wondering about that...  the KOBJ_ADD is technically not sufficie=
-nt
-> > imo, since a MOVE (for a device which udev/upstart has never seen befor=
-e)
-> > doesn't necessarily mean "configure this."  So when I pass one end of a
-> > veth into a running ubuntu container, there is no network-interface or
-> > network-interface-security upstart job for it, whereas if I do a
-> > ip link add type veth inside the container, those do get the jobs.
-> >
-> > Now, ISTM passing an endpoing into a container is mainly done at
-> > startup, and upstart will end up configuring it anyway.  Nothing is
-> > really breaking in any of the container usages I've seen because of thi=
-s.
-> > But it would definately be cleaner to pass a KOBJ_ADD before the KOBJ_M=
-OVE.
-> > Otherwise, udev has to guess what the MOVE meant.
-> >
-> > If there's no objection, I'll add that (and test it) and send to netdev
-> > on monday.
-> =
-
-> Sounds good.  Right now I have the suspicion we might want our own
-> variant on sysfs_move that sends these instead of the move...
-> =
-
-> But let's confirm things work better with add/remove before we go crazy
-> on the best way to generate maintainable code.
-
-Yup all still looks good with the following trivial patch.  And now when
-I pass a netdev into a running container, it gets a network-interface
-upstart job just as it does on a real host.
-
-And no network-interface jobs stick around after the container shuts
-down, meaning this solves the kernel part of bug 1065589
-(https://bugs.launchpad.net/ubuntu/+source/lxc/+bug/1065589).
-
-(Pre-existing nics don't get a network-interface job - the fact that lxc
-first passes in the netdevs and then execs init therefore still causes
-some asymmetry wrt a real host, where netdevs always come up after init
-starts.  AFAIK we don't care, but St=E9phane might know of a reason why we
-do  - in either case it's not the kernel's problem)
-
-From 01dc08273fa63a50f6dbb7377397ec52a7a337f8 Mon Sep 17 00:00:00 2001
-From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Date: Fri, 12 Oct 2012 21:42:05 +0100
-Subject: [PATCH 1/1] dev_change_net_namespace: send a KOBJ_REMOVED to
- original netns
-
-v2: also send KOBJ_ADD to new netns.  There will then be a
-_MOVE event from the device_rename() call, but that should
-be innocuous.
-
-Signed-off-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
----
- net/core/dev.c |    6 ++++++
- 1 file changed, 6 insertions(+)
-
-diff --git a/net/core/dev.c b/net/core/dev.c
-index e2215ee..2c43aaf 100644
---- a/net/core/dev.c
-+++ b/net/core/dev.c
-@@ -6172,6 +6172,9 @@ int dev_change_net_namespace(struct net_device *dev, =
-struct net *net, const char
- 	dev_uc_flush(dev);
- 	dev_mc_flush(dev);
- =
-
-+	/* Send a netdev-removed uevent to the old namespace */
-+	kobject_uevent(&dev->dev.kobj, KOBJ_REMOVE);
-+
- 	/* Actually switch the network namespace */
- 	dev_net_set(dev, net);
- =
-
-@@ -6183,6 +6186,9 @@ int dev_change_net_namespace(struct net_device *dev, =
-struct net *net, const char
- 			dev->iflink =3D dev->ifindex;
- 	}
- =
-
-+	/* Send a netdev-add uevent to the new namespace */
-+	kobject_uevent(&dev->dev.kobj, KOBJ_ADD);
-+
- 	/* Fixup kobjects */
- 	err =3D device_rename(&dev->dev, dev->name);
- 	WARN_ON(err);
--- =
-
-1.7.10.4
+U2VyZ2UgSGFsbHluIDxzZXJnZS5oYWxseW5AY2Fub25pY2FsLmNvbT4gd3JpdGVzOgoKW3NuaXAg
+b2xkIGNvbW1lbnRzXQoKPiBZdXAgYWxsIHN0aWxsIGxvb2tzIGdvb2Qgd2l0aCB0aGUgZm9sbG93
+aW5nIHRyaXZpYWwgcGF0Y2guICBBbmQgbm93IHdoZW4KPiBJIHBhc3MgYSBuZXRkZXYgaW50byBh
+IHJ1bm5pbmcgY29udGFpbmVyLCBpdCBnZXRzIGEgbmV0d29yay1pbnRlcmZhY2UKPiB1cHN0YXJ0
+IGpvYiBqdXN0IGFzIGl0IGRvZXMgb24gYSByZWFsIGhvc3QuCj4KPiBBbmQgbm8gbmV0d29yay1p
+bnRlcmZhY2Ugam9icyBzdGljayBhcm91bmQgYWZ0ZXIgdGhlIGNvbnRhaW5lciBzaHV0cwo+IGRv
+d24sIG1lYW5pbmcgdGhpcyBzb2x2ZXMgdGhlIGtlcm5lbCBwYXJ0IG9mIGJ1ZyAxMDY1NTg5Cj4g
+KGh0dHBzOi8vYnVncy5sYXVuY2hwYWQubmV0L3VidW50dS8rc291cmNlL2x4Yy8rYnVnLzEwNjU1
+ODkpLgo+Cj4gKFByZS1leGlzdGluZyBuaWNzIGRvbid0IGdldCBhIG5ldHdvcmstaW50ZXJmYWNl
+IGpvYiAtIHRoZSBmYWN0IHRoYXQgbHhjCj4gZmlyc3QgcGFzc2VzIGluIHRoZSBuZXRkZXZzIGFu
+ZCB0aGVuIGV4ZWNzIGluaXQgdGhlcmVmb3JlIHN0aWxsIGNhdXNlcwo+IHNvbWUgYXN5bW1ldHJ5
+IHdydCBhIHJlYWwgaG9zdCwgd2hlcmUgbmV0ZGV2cyBhbHdheXMgY29tZSB1cCBhZnRlciBpbml0
+Cj4gc3RhcnRzLiAgQUZBSUsgd2UgZG9uJ3QgY2FyZSwgYnV0IFN0w6lwaGFuZSBtaWdodCBrbm93
+IG9mIGEgcmVhc29uIHdoeSB3ZQo+IGRvICAtIGluIGVpdGhlciBjYXNlIGl0J3Mgbm90IHRoZSBr
+ZXJuZWwncyBwcm9ibGVtKQo+Cj4gRnJvbSAwMWRjMDgyNzNmYTYzYTUwZjZkYmI3Mzc3Mzk3ZWM1
+MmE3YTMzN2Y4IE1vbiBTZXAgMTcgMDA6MDA6MDAgMjAwMQo+IEZyb206IFNlcmdlIEhhbGx5biA8
+c2VyZ2UuaGFsbHluQGNhbm9uaWNhbC5jb20+Cj4gRGF0ZTogRnJpLCAxMiBPY3QgMjAxMiAyMTo0
+MjowNSArMDEwMAo+IFN1YmplY3Q6IFtQQVRDSCAxLzFdIGRldl9jaGFuZ2VfbmV0X25hbWVzcGFj
+ZTogc2VuZCBhIEtPQkpfUkVNT1ZFRCB0bwo+ICBvcmlnaW5hbCBuZXRucwo+Cj4gdjI6IGFsc28g
+c2VuZCBLT0JKX0FERCB0byBuZXcgbmV0bnMuICBUaGVyZSB3aWxsIHRoZW4gYmUgYQo+IF9NT1ZF
+IGV2ZW50IGZyb20gdGhlIGRldmljZV9yZW5hbWUoKSBjYWxsLCBidXQgdGhhdCBzaG91bGQKPiBi
+ZSBpbm5vY3VvdXMuCgpUaGlzIHBhdGNoIGxvb2tzIHJlYXNvbmFibGUgdG8gbWUuIEkgd291bGQg
+YWRkIHRvIHRoZSBjaGFuZ2Vsb2cgdGhlCm1vdGl2YXRpb24uICBTb21ldGhpbmcgbGlrZSB5b3Vy
+IGNvbW1lbnRzIGp1c3QgYWJvdmUgdGhpcyBwYXRjaC4KCkFja2VkLWJ5OiAiRXJpYyBXLiBCaWVk
+ZXJtYW4iIDxlYmllZGVybUB4bWlzc2lvbi5jb20+Cgo+IFNpZ25lZC1vZmYtYnk6IFNlcmdlIEhh
+bGx5biA8c2VyZ2UuaGFsbHluQGNhbm9uaWNhbC5jb20+Cj4gLS0tCj4gIG5ldC9jb3JlL2Rldi5j
+IHwgICAgNiArKysrKysKPiAgMSBmaWxlIGNoYW5nZWQsIDYgaW5zZXJ0aW9ucygrKQo+Cj4gZGlm
+ZiAtLWdpdCBhL25ldC9jb3JlL2Rldi5jIGIvbmV0L2NvcmUvZGV2LmMKPiBpbmRleCBlMjIxNWVl
+Li4yYzQzYWFmIDEwMDY0NAo+IC0tLSBhL25ldC9jb3JlL2Rldi5jCj4gKysrIGIvbmV0L2NvcmUv
+ZGV2LmMKPiBAQCAtNjE3Miw2ICs2MTcyLDkgQEAgaW50IGRldl9jaGFuZ2VfbmV0X25hbWVzcGFj
+ZShzdHJ1Y3QgbmV0X2RldmljZSAqZGV2LCBzdHJ1Y3QgbmV0ICpuZXQsIGNvbnN0IGNoYXIKPiAg
+CWRldl91Y19mbHVzaChkZXYpOwo+ICAJZGV2X21jX2ZsdXNoKGRldik7Cj4gIAo+ICsJLyogU2Vu
+ZCBhIG5ldGRldi1yZW1vdmVkIHVldmVudCB0byB0aGUgb2xkIG5hbWVzcGFjZSAqLwo+ICsJa29i
+amVjdF91ZXZlbnQoJmRldi0+ZGV2LmtvYmosIEtPQkpfUkVNT1ZFKTsKPiArCj4gIAkvKiBBY3R1
+YWxseSBzd2l0Y2ggdGhlIG5ldHdvcmsgbmFtZXNwYWNlICovCj4gIAlkZXZfbmV0X3NldChkZXYs
+IG5ldCk7Cj4gIAo+IEBAIC02MTgzLDYgKzYxODYsOSBAQCBpbnQgZGV2X2NoYW5nZV9uZXRfbmFt
+ZXNwYWNlKHN0cnVjdCBuZXRfZGV2aWNlICpkZXYsIHN0cnVjdCBuZXQgKm5ldCwgY29uc3QgY2hh
+cgo+ICAJCQlkZXYtPmlmbGluayA9IGRldi0+aWZpbmRleDsKPiAgCX0KPiAgCj4gKwkvKiBTZW5k
+IGEgbmV0ZGV2LWFkZCB1ZXZlbnQgdG8gdGhlIG5ldyBuYW1lc3BhY2UgKi8KPiArCWtvYmplY3Rf
+dWV2ZW50KCZkZXYtPmRldi5rb2JqLCBLT0JKX0FERCk7Cj4gKwo+ICAJLyogRml4dXAga29iamVj
+dHMgKi8KPiAgCWVyciA9IGRldmljZV9yZW5hbWUoJmRldi0+ZGV2LCBkZXYtPm5hbWUpOwo+ICAJ
+V0FSTl9PTihlcnIpOwpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5k
+YXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3Rp
+bmZvL2NvbnRhaW5lcnM=
