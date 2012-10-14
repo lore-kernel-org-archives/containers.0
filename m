@@ -1,12 +1,12 @@
-From: Ms. Felicia Drake <Post-pCGr9Sw2R8Y@public.gmane.org>
-Subject: Re: Notification
-Date: Sat, 13 Oct 2012 21:19:38 +0200 (CEST)
-Message-ID: <20121013191938.6468E2518767@slgg894.piensasolutions.com>
-Reply-To: jiogpawep-j+4cLNCRU+OzR313v1King@public.gmane.org
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: (unknown)
+Date: Sun, 14 Oct 2012 12:52:44 +0300
+Message-ID: <CACVxJT9GCkPs38bXF7GU8OkxKKnB-gi1kX1f4JroN+4s2=O8RA@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: 
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,22 +16,7 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: agrover-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbi-l0cyMroinI0@public.gmane.org, biker-dEHkz5HzdImwj2Cf/lVNoA@public.gmane.org, cl-vYTEC60ixJUAvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
-Sir/Madam,
-
-You e-mail address is entitled to US$3.5million in the Japan/India Oil & Gas Poverty Alleviation World Wide E-mail Program. To apply for your payment, E-mail Mr. Greg Lieu jiogpawep-j+4cLNCRU+OzR313v1King@public.gmane.org your information as below:
-
-1. Full Names
-2. Complete Address
-3  Phone Number
-4. Mobile Phone
-5. Occupation
-6. Age
-
-Truly,
-
-Ms. Felicia Drake
-(Announcer)
+  http://www.aromacoffeebars.com/brandmanual/wp-content/plugins/zujbkpbyrnw/work.html
