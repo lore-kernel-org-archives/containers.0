@@ -1,14 +1,12 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Subject: necessary to limit container's network bandwidth when use physical
 	nic in container?
-Date: Mon, 15 Oct 2012 16:35:15 +0800
-Message-ID: <507BCAC3.4020609@cn.fujitsu.com>
-References: <507BC3E0.6070304@cn.fujitsu.com>
+Date: Mon, 15 Oct 2012 16:05:52 +0800
+Message-ID: <507BC3E0.6070304@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <507BC3E0.6070304-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
