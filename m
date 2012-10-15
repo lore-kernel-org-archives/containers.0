@@ -1,12 +1,14 @@
-From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: (unknown)
-Date: Sun, 14 Oct 2012 12:52:44 +0300
-Message-ID: <CACVxJT9GCkPs38bXF7GU8OkxKKnB-gi1kX1f4JroN+4s2=O8RA@mail.gmail.com>
+From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: necessary to limit container's network bandwidth when use physical
+	nic in container?
+Date: Mon, 15 Oct 2012 16:35:15 +0800
+Message-ID: <507BCAC3.4020609@cn.fujitsu.com>
+References: <507BC3E0.6070304@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: 
+In-Reply-To: <507BC3E0.6070304-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,7 +18,16 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: agrover-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, balbi-l0cyMroinI0@public.gmane.org, biker-dEHkz5HzdImwj2Cf/lVNoA@public.gmane.org, cl-vYTEC60ixJUAvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-  http://www.aromacoffeebars.com/brandmanual/wp-content/plugins/zujbkpbyrnw/work.html
+we can use tc to limit container's network bandwidth when the container uses veth device.
+because one of the veth devices will be seen in the host.so we can set tc rules on this
+device on the host.
+
+I want to know if it's necessary to limit container's network bandwidth when the container
+uses a physical nic device. because this nic device is only used by this container.
+
+And if this is necessary,Be there any good idea?
+
+Thanks!
