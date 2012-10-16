@@ -1,17 +1,11 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [libvirt] necessary to limit container's network bandwidth when
-	use physical nic in container?
-Date: Mon, 15 Oct 2012 19:33:33 -0700
-Message-ID: <87vcebb0xu.fsf@xmission.com>
-References: <507BC3E0.6070304@cn.fujitsu.com>
-	<507BCAC3.4020609@cn.fujitsu.com> <507BCED9.1080003@redhat.com>
-	<507CC3C3.7030306@cn.fujitsu.com>
+From: Android Computing <andr.computing-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: LXC hardware resource sharing
+Date: Tue, 16 Oct 2012 13:38:13 -0400
+Message-ID: <CALuK+K=AcH6O8GJuQTOTbrgb12bbyx_kr1J_+H5XXNbVEY11=w@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <507CC3C3.7030306-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> (Gao feng's message of "Tue, 16
-	Oct 2012 10:17:39 +0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,35 +15,14 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Michal Privoznik <mprivozn-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-R2FvIGZlbmcgPGdhb2ZlbmdAY24uZnVqaXRzdS5jb20+IHdyaXRlczoKCj4g5LqOIDIwMTLlubQx
-MOaciDE15pelIDE2OjUyLCBNaWNoYWwgUHJpdm96bmlrIOWGmemBkzoKPj4gT24gMTUuMTAuMjAx
-MiAxMDozNSwgR2FvIGZlbmcgd3JvdGU6Cj4+PiB3ZSBjYW4gdXNlIHRjIHRvIGxpbWl0IGNvbnRh
-aW5lcidzIG5ldHdvcmsgYmFuZHdpZHRoIHdoZW4gdGhlIGNvbnRhaW5lciB1c2VzIHZldGggZGV2
-aWNlLgo+Pj4gYmVjYXVzZSBvbmUgb2YgdGhlIHZldGggZGV2aWNlcyB3aWxsIGJlIHNlZW4gaW4g
-dGhlIGhvc3Quc28gd2UgY2FuIHNldCB0YyBydWxlcyBvbiB0aGlzCj4+PiBkZXZpY2Ugb24gdGhl
-IGhvc3QuCj4+Pgo+Pj4gSSB3YW50IHRvIGtub3cgaWYgaXQncyBuZWNlc3NhcnkgdG8gbGltaXQg
-Y29udGFpbmVyJ3MgbmV0d29yayBiYW5kd2lkdGggd2hlbiB0aGUgY29udGFpbmVyCj4+PiB1c2Vz
-IGEgcGh5c2ljYWwgbmljIGRldmljZS4gYmVjYXVzZSB0aGlzIG5pYyBkZXZpY2UgaXMgb25seSB1
-c2VkIGJ5IHRoaXMgY29udGFpbmVyLgo+Pj4KPj4+IEFuZCBpZiB0aGlzIGlzIG5lY2Vzc2FyeSxC
-ZSB0aGVyZSBhbnkgZ29vZCBpZGVhPwo+Pj4KPj4+IFRoYW5rcyEKPj4+Cj4+IAo+PiBXZWxsLCB0
-aGF0IGRlcGVuZHMuIElmIHlvdSBleHBlY3QgeW91IGd1ZXN0IHRvIGNvbnN1bWUgYWxsIGJhbmR3
-aWR0aAo+PiB0aGVuIHlvdSBuZWVkIHRvIHNldCBhIGZsb29yIG9uIHJvb3QgZXRoLiBHdWVzdCBp
-cyB0aGVuIHN0aWxsIGFibGUgdG8KPj4gdXNlIHRoZSBmdWxsIGJhbmR3aWR0aCwgaG93ZXZlciBp
-ZiB0aGVyZSBhcmUgc29tZSBwYWNrZXRzIGZvciB0aGUgaG9zdAo+PiB0aG9zZSBnZXQgcHJpb3Jp
-dGl6ZWQuIEluIGdlbmVyYWwsIGl0J3MgYSBnb29kIGlkZWEsIGJ1dCB0byB0ZWxsIGZvcgo+PiBz
-dXJlIG9uZSBzaG91bGQgbGVhcm4gbW9yZSBhYm91dCB5b3VyIHVzYWdlIHNjZW5hcmlvLgo+PiAK
-Pgo+IEJ1dCB3ZSBjYW4ndCBzZWUgY29udGFpbmVyJ3MgbmljIGRldmljZSBpbiBob3N0LGhvdyBj
-YW4gd2Ugc2V0IGEgZmxvb3Igb24KPiBjb250YWluZXIncyByb290IGV0aD8KCkkgY2FuJ3Qgc2Vl
-IGhvdyBhbnkgcW9zIHNoYXBpbmcgb2YgYSBwaHlzaWNhbCBuaWMgZGlyZWN0bHkgYXNzaWduZWQg
-dG8gYQpjb250YWluZXIgaXMgdXNlZnVsLiAgWW91IG1heSB3YW50IHRvIGxpbWl0IHRoZSB0b3Rh
-bCBjcHUgdGltZSBhc3NpZ25lZAp0byBhIGNvbnRhaW5lciB3aGljaCBzaG91bGQgdGhyb3R0bGUg
-eW91ciBuZXR3b3JrIGNvbm5lY3Rpb25zLiAgQnV0IEkKZG9uJ3Qgc2VlIHdoYXQgbGltaXRpbmcg
-dGhlIG51bWJlciBvZiBwYWNrZXRzIHRoYXQgZ28gb3V0IGFuIGludGVyZmFjZQp3aWxsIGFjaGll
-dmUuCgpFcmljCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-XwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRp
-b24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZv
-L2NvbnRhaW5lcnM=
+Hello All,
+I had a question about LXC- hardware sharing. I have 2 containers, both
+wanting access to hardware like GPU, FB, alarm, pmem, etc. I was wondering
+if anyone could guide me on how to create a device namespace, where I could
+share the resources between the 2 containers and switch back and forth
+between the 2 containers.
+Please help me here.
+Thank you for your time
