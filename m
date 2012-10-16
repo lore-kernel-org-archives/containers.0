@@ -1,15 +1,15 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Subject: Re: Is not locking task_lock in cgroup_fork() safe?
-Date: Tue, 16 Oct 2012 12:33:41 -0700
-Message-ID: <20121016193341.GD16166@google.com>
-References: <20121008020000.GB2575@localhost>
-	<CAFTL4hzXWtzp7megsCAEuak5=_2SWmp9age-+wrpyQAU4BRZ0w@mail.gmail.com>
+Date: Tue, 16 Oct 2012 12:34:28 -0700
+Message-ID: <20121016193428.GE16166@google.com>
+References: <20121008020000.GB2575@localhost> <20121008020138.GA4188@localhost>
+	<507268AA.8050509@huawei.com> <20121008065752.GA5931@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <CAFTL4hzXWtzp7megsCAEuak5=_2SWmp9age-+wrpyQAU4BRZ0w-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20121008065752.GA5931@localhost>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,65 +19,31 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hey, Frederic.
-
-On Mon, Oct 08, 2012 at 02:48:58PM +0200, Frederic Weisbecker wrote:
-> Yeah I missed this one.
-> Now the whole cgroup_attach_task() is clusteracy without the
-
-Clusteracy?
-
-> threadgroup lock anyway:
+On Mon, Oct 08, 2012 at 03:57:52PM +0900, Tejun Heo wrote:
+> Hello, Li, Frederic.
 > 
-> * The PF_EXITING check is racy (we are neither holding tsk->flags nor
-> threagroup lock).
-
-PF_EXITING is *always* protected by threadgroup_change_begin/end().
-
-> * The cgrp == oldcgrp is racy (exit() can change the oldcgrp anytime.
-
-So, as long as this happens after PF_EXITING check, it should be safe.
-
-> * can_attach / attach / cancel_attach can race against fork/exit (and
-> post_fork if you consider those interested in cgroup task link like
-> the freezer. But that is racy in any case already even with
-> threadgroup lock)
-
-Against exit, no.  Against forking a new process, can they?  If so, we
-need to fix it.
-
-> It has been designed to be called under that lock. So I suspect the
-
-Ummm.... threadgroup_lock is a recent addition so things couldn't have
-been designed to be called under that lock.  threadgroup_lock protects
-the *threadgroup* - creating a new task in the same process or a task
-of the process exiting.  It doesn't do anything about other processes.
-In fact, the lock itself is per-process.
-
-> best, at least for now, is to threadgroup lock from
-> cgroup_attach_task_all(). And also make cgroup_attach_task() static to
-> avoid future unsafe callers.
-
-Oh, from that call path, sure.  Can someone teach me why we need that
-one at all?  I think we're confusing each other here.  I was talking
-about the usual migration path not protected against forking a new
-process.
-
-> There is no harm yet because the only user of it calls that with
-> current as the "task" parameter, in a place that is
-> not in the middle of a fork. So no need to worry about some stable backport.
+> On Mon, Oct 08, 2012 at 01:46:18PM +0800, Li Zefan wrote:
+> > You're right. threadgroup lock is held unconditionally in attach_task_py_pid(),
+> > but it's held only for CLONE_THREAD in fork path, which I guess I overlooked
+> > when reviewing the patch.
+> > 
+> > > Also, please note that task_lock is likely to be hot on local CPU at
+> > > that point and avoiding it there might not really buy much.
+> > 
+> > Reverting that commit should be fine.
 > 
-> Also, looking at cgroup_attach_task_all(), what guarantee do we have
-> that "from" is not concurrently exiting and removing its cgrp. Which
-> is a separate problem. But we probably need to do some css_set_get()
-> before playing with it.
+> There are other commits which perform similar optimization
+> 
+>  7e3aa30ac8 ("cgroup: Remove task_lock() from cgroup_post_fork()")
+>  c84cdf75cc ("cgroup: Remove unnecessary task_lock before fetching css_set on migration")
+> 
+> Are they wrong too?
 
-I really don't know.  Why isn't it locking the threadgroup to begin
-with?
+Frederic, Li, Ping?
 
 Thanks.
 
