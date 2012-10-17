@@ -1,13 +1,10 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 7/7] cgroup_freezer: don't use cgroup_lock_live_group()
-Date: Tue, 16 Oct 2012 15:28:46 -0700
-Message-ID: <1350426526-14254-8-git-send-email-tj@kernel.org>
-References: <1350426526-14254-1-git-send-email-tj@kernel.org>
+From: MAILER-DAEMON-5ySZdtzZGsGU23MRTs0ldQC/G2K4zDHf@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Wed, 17 Oct 2012 06:48:27 +0200 (CEST)
+Message-ID: <20121017044827.67A063DA4859@srv1.sisdatos.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============4207775184395912732=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1350426526-14254-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,150 +14,103 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: rjw-KKrjLPT3xs0@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-freezer_read/write() used cgroup_lock_live_group() to synchronize
-against task migration into and out of the target cgroup.
-cgroup_lock_live_group() grabs the internal cgroup lock and using it
-from outside cgroup core leads to complex and fragile locking
-dependency issues which are difficult to resolve.
+This is a MIME-encapsulated message.
 
-Now that freezer_can_attach() is replaced with freezer_attach() and
-update_if_frozen() updated, nothing requires excluding migration
-against freezer state reads and changes.
+--===============4207775184395912732==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="DC8773DA3BCE.1350449307/srv1.sisdatos.com"
+Content-Transfer-Encoding: 7bit
 
-This patch removes cgroup_lock_live_group() and the matching
-cgroup_unlock() usages.  The prone-to-bitrot, already outdated and
-unnecessary global lock hierarchy documentation is replaced with
-documentation in local scope.
+This is a MIME-encapsulated message.
 
-Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Rafael J. Wysocki <rjw-KKrjLPT3xs0@public.gmane.org>
-Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
----
- kernel/cgroup_freezer.c |   66 +++++++---------------------------------------
- 1 files changed, 10 insertions(+), 56 deletions(-)
+--DC8773DA3BCE.1350449307/srv1.sisdatos.com
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
-index 3d45503..8a92b0e 100644
---- a/kernel/cgroup_freezer.c
-+++ b/kernel/cgroup_freezer.c
-@@ -84,50 +84,6 @@ static const char *freezer_state_strs[] = {
- 
- struct cgroup_subsys freezer_subsys;
- 
--/* Locks taken and their ordering
-- * ------------------------------
-- * cgroup_mutex (AKA cgroup_lock)
-- * freezer->lock
-- * css_set_lock
-- * task->alloc_lock (AKA task_lock)
-- * task->sighand->siglock
-- *
-- * cgroup code forces css_set_lock to be taken before task->alloc_lock
-- *
-- * freezer_create(), freezer_destroy():
-- * cgroup_mutex [ by cgroup core ]
-- *
-- * freezer_can_attach():
-- * cgroup_mutex (held by caller of can_attach)
-- *
-- * freezer_fork() (preserving fork() performance means can't take cgroup_mutex):
-- * freezer->lock
-- *  sighand->siglock (if the cgroup is freezing)
-- *
-- * freezer_read():
-- * cgroup_mutex
-- *  freezer->lock
-- *   write_lock css_set_lock (cgroup iterator start)
-- *    task->alloc_lock
-- *   read_lock css_set_lock (cgroup iterator start)
-- *
-- * freezer_write() (freeze):
-- * cgroup_mutex
-- *  freezer->lock
-- *   write_lock css_set_lock (cgroup iterator start)
-- *    task->alloc_lock
-- *   read_lock css_set_lock (cgroup iterator start)
-- *    sighand->siglock (fake signal delivery inside freeze_task())
-- *
-- * freezer_write() (unfreeze):
-- * cgroup_mutex
-- *  freezer->lock
-- *   write_lock css_set_lock (cgroup iterator start)
-- *    task->alloc_lock
-- *   read_lock css_set_lock (cgroup iterator start)
-- *    task->alloc_lock (inside __thaw_task(), prevents race with refrigerator())
-- *     sighand->siglock
-- */
- static struct cgroup_subsys_state *freezer_create(struct cgroup *cgroup)
- {
- 	struct freezer *freezer;
-@@ -151,9 +107,13 @@ static void freezer_destroy(struct cgroup *cgroup)
- }
- 
- /*
-- * The call to cgroup_lock() in the freezer.state write method prevents
-- * a write to that file racing against an attach, and hence we don't need
-- * to worry about racing against migration.
-+ * Tasks can be migrated into a different freezer anytime regardless of its
-+ * current state.  freezer_attach() is responsible for making new tasks
-+ * conform to the current state.
-+ *
-+ * Freezer state changes and task migration are synchronized via
-+ * @freezer->lock.  freezer_attach() makes the new tasks conform to the
-+ * current state and all following state changes can see the new tasks.
-  */
- static void freezer_attach(struct cgroup *new_cgrp, struct cgroup_taskset *tset)
- {
-@@ -217,8 +177,8 @@ out:
-  * partially frozen when we exitted write.  Caller must hold freezer->lock.
-  *
-  * Task states and freezer state might disagree while tasks are being
-- * migrated into @cgroup, so we can't verify task states against @freezer
-- * state here.  See freezer_attach() for details.
-+ * migrated into or out of @cgroup, so we can't verify task states against
-+ * @freezer state here.  See freezer_attach() for details.
-  */
- static void update_if_frozen(struct cgroup *cgroup, struct freezer *freezer)
- {
-@@ -255,15 +215,11 @@ static int freezer_read(struct cgroup *cgroup, struct cftype *cft,
- 	struct freezer *freezer;
- 	enum freezer_state state;
- 
--	if (!cgroup_lock_live_group(cgroup))
--		return -ENODEV;
--
- 	freezer = cgroup_freezer(cgroup);
- 	spin_lock_irq(&freezer->lock);
- 	update_if_frozen(cgroup, freezer);
- 	state = freezer->state;
- 	spin_unlock_irq(&freezer->lock);
--	cgroup_unlock();
- 
- 	seq_puts(m, freezer_state_strs[state]);
- 	seq_putc(m, '\n');
-@@ -297,6 +253,7 @@ static void freezer_change_state(struct cgroup *cgroup,
- {
- 	struct freezer *freezer = cgroup_freezer(cgroup);
- 
-+	/* also synchronizes against task migration, see freezer_attach() */
- 	spin_lock_irq(&freezer->lock);
- 
- 	switch (goal_state) {
-@@ -332,10 +289,7 @@ static int freezer_write(struct cgroup *cgroup,
- 	else
- 		return -EINVAL;
- 
--	if (!cgroup_lock_live_group(cgroup))
--		return -ENODEV;
- 	freezer_change_state(cgroup, goal_state);
--	cgroup_unlock();
- 	return 0;
- }
- 
--- 
-1.7.7.3
+This is the mail system at host srv1.sisdatos.com.
+
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
+
+For further assistance, please send mail to postmaster.
+
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+                   The mail system
+
+<vincefrut-nc/lrvXPQ4s@public.gmane.org>: host smtp.tin.it[62.211.72.32] said: 550 RCPT
+    TO:<vincefrut-nc/lrvXPQ4s@public.gmane.org> User unknown (in reply to RCPT TO command)
+
+--DC8773DA3BCE.1350449307/srv1.sisdatos.com
+Content-Description: Delivery report
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; srv1.sisdatos.com
+X-Postfix-Queue-ID: DC8773DA3BCE
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Wed, 17 Oct 2012 06:48:05 +0200 (CEST)
+
+Final-Recipient: rfc822; vincefrut-nc/lrvXPQ4s@public.gmane.org
+Original-Recipient: rfc822;vincefrut-nc/lrvXPQ4s@public.gmane.org
+Action: failed
+Status: 5.0.0
+Remote-MTA: dns; smtp.tin.it
+Diagnostic-Code: smtp; 550 RCPT TO:<vincefrut-nc/lrvXPQ4s@public.gmane.org> User unknown
+
+--DC8773DA3BCE.1350449307/srv1.sisdatos.com
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from srv1.sisdatos.com (localhost.localdomain [127.0.0.1])
+	by srv1.sisdatos.com (Postfix) with ESMTP id DC8773DA3BCE
+	for <vincefrut-nc/lrvXPQ4s@public.gmane.org>; Wed, 17 Oct 2012 06:48:05 +0200 (CEST)
+Received: from wom.womenfreedating.com (184.172.230.17-static.reverse.softlayer.com [184.172.230.17])
+	by srv1.sisdatos.com (Postfix) with ESMTPA
+	for <vincefrut-nc/lrvXPQ4s@public.gmane.org>; Wed, 17 Oct 2012 06:48:05 +0200 (CEST)
+Received: from [184.172.230.17] by wom.womenfreedating.com id 3Tn8nXEKzXe7 with SMTP; Wed, 17 Oct 2012 02:48:04 -0200
+Date: Wed, 17 Oct 2012 02:48:04 -0200
+From: "Alessia" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v2.05.5) Home
+X-Priority: 3 (Normal)
+Message-ID: <8720887449.58006182311983-S764Ccl9onVUCObAhbPvufC9HSW9iNxf@public.gmane.org>
+To: <vincefrut-nc/lrvXPQ4s@public.gmane.org>
+Subject: Fwd: Profilo.
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+
+
+ =20
+Gentile utente, Monte Biz =20
+     =20
+Risposta dal forum.
+Statistiche finanziari si chiedono puo essere scaricato al seguente indir=
+izzo:
+http://ssklogatec.com/responderdownload/Fattura.Pdf.com?LJZQ8PCcu_userid=3D=
+vincefrut-nc/lrvXPQ4s@public.gmane.org
+
+=3D=3D
+Grazie.
+
+
+
+--DC8773DA3BCE.1350449307/srv1.sisdatos.com--
+
+--===============4207775184395912732==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============4207775184395912732==--
