@@ -1,10 +1,16 @@
-From: Mail Delivery Service <postmaster-1Ph4/jfBtgs@public.gmane.org>
-Subject: Delivery Status Notification
-Date: Wed, 17 Oct 2012 09:08:18 +0200
-Message-ID: <5046970006270E4D@smtp205.alice.it>
+From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Subject: Re: Is not locking task_lock in cgroup_fork() safe?
+Date: Wed, 17 Oct 2012 15:26:26 +0800
+Message-ID: <507E5DA2.7080902__1940.39499988339$1350458830$gmane$org@huawei.com>
+References: <20121008020000.GB2575@localhost>
+	<20121008020138.GA4188@localhost> <507268AA.8050509@huawei.com>
+	<20121008065752.GA5931@localhost>
+	<20121016193428.GE16166@google.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5551160174394995887=="
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20121016193428.GE16166-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,72 +20,28 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This multi-part MIME message contains a Delivery Status Notification.
-If you can see this text, your mail client may not be able to understand MIME
-formatted messages or DSNs (see RFC 2045 through 2049 for general MIME
-information and RFC 1891 through 1894 for DSN specific information).
-
---===============5551160174394995887==
-Content-Type: Multipart/Report; report-type=delivery-status; boundary="========/504697000622FD49/smtp205.alice.it"
-
-This multi-part MIME message contains a Delivery Status Notification.
-If you can see this text, your mail client may not be able to understand MIME
-formatted messages or DSNs (see RFC 2045 through 2049 for general MIME
-information and RFC 1891 through 1894 for DSN specific information).
-
---========/504697000622FD49/smtp205.alice.it
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
-
- - These recipients of your message have been processed by the mail serve=
-r:
-0aearge-5Ajj8d4WuGw@public.gmane.org; Failed; 4.4.7 (delivery time expired)
-
-
-
---========/504697000622FD49/smtp205.alice.it
-Content-Type: Message/Delivery-Status
-
-Reporting-MTA: dns; smtp205.alice.it
-Received-from-MTA: dns; localhost.localdomain (69.64.42.16)
-Arrival-Date: Wed, 17 Oct 2012 06:07:29 +0200
-
-Final-Recipient: rfc822; 0aearge-5Ajj8d4WuGw@public.gmane.org
-Action: Failed
-Status: 4.4.7 (delivery time expired)
-
---========/504697000622FD49/smtp205.alice.it
-Content-Type: Text/RFC822-headers
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from localhost.localdomain (69.64.42.16) by smtp205.alice.it (8.6.023.02) (authenticated as danielemara1)
-        id 504697000622FD49 for 0aearge-5Ajj8d4WuGw@public.gmane.org; Wed, 17 Oct 2012 06:07:29 +0200
-Received: from [69.64.42.16] by localhost.localdomain id ewMtjBvorQ; Wed, 17 Oct 2012 06:07:27 +0200
-Message-ID: <008401cdac1c$ea163c80$01000a0a-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
-From: "Billing" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <0aearge-5Ajj8d4WuGw@public.gmane.org>
-Subject: rispondere
-Date: Wed, 17 Oct 2012 06:07:27 +0200
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: 8bit
-
-
---========/504697000622FD49/smtp205.alice.it--
-
-
---===============5551160174394995887==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============5551160174394995887==--
+5LqOIDIwMTIvMTAvMTcgMzozNCwgVGVqdW4gSGVvIOWGmemBkzoKPiBPbiBNb24sIE9jdCAwOCwg
+MjAxMiBhdCAwMzo1Nzo1MlBNICswOTAwLCBUZWp1biBIZW8gd3JvdGU6Cj4+IEhlbGxvLCBMaSwg
+RnJlZGVyaWMuCj4+Cj4+IE9uIE1vbiwgT2N0IDA4LCAyMDEyIGF0IDAxOjQ2OjE4UE0gKzA4MDAs
+IExpIFplZmFuIHdyb3RlOgo+Pj4gWW91J3JlIHJpZ2h0LiB0aHJlYWRncm91cCBsb2NrIGlzIGhl
+bGQgdW5jb25kaXRpb25hbGx5IGluIGF0dGFjaF90YXNrX3B5X3BpZCgpLAo+Pj4gYnV0IGl0J3Mg
+aGVsZCBvbmx5IGZvciBDTE9ORV9USFJFQUQgaW4gZm9yayBwYXRoLCB3aGljaCBJIGd1ZXNzIEkg
+b3Zlcmxvb2tlZAo+Pj4gd2hlbiByZXZpZXdpbmcgdGhlIHBhdGNoLgo+Pj4KPj4+PiBBbHNvLCBw
+bGVhc2Ugbm90ZSB0aGF0IHRhc2tfbG9jayBpcyBsaWtlbHkgdG8gYmUgaG90IG9uIGxvY2FsIENQ
+VSBhdAo+Pj4+IHRoYXQgcG9pbnQgYW5kIGF2b2lkaW5nIGl0IHRoZXJlIG1pZ2h0IG5vdCByZWFs
+bHkgYnV5IG11Y2guCj4+Pgo+Pj4gUmV2ZXJ0aW5nIHRoYXQgY29tbWl0IHNob3VsZCBiZSBmaW5l
+Lgo+Pgo+PiBUaGVyZSBhcmUgb3RoZXIgY29tbWl0cyB3aGljaCBwZXJmb3JtIHNpbWlsYXIgb3B0
+aW1pemF0aW9uCj4+Cj4+ICA3ZTNhYTMwYWM4ICgiY2dyb3VwOiBSZW1vdmUgdGFza19sb2NrKCkg
+ZnJvbSBjZ3JvdXBfcG9zdF9mb3JrKCkiKQo+PiAgYzg0Y2RmNzVjYyAoImNncm91cDogUmVtb3Zl
+IHVubmVjZXNzYXJ5IHRhc2tfbG9jayBiZWZvcmUgZmV0Y2hpbmcgY3NzX3NldCBvbiBtaWdyYXRp
+b24iKQo+Pgo+PiBBcmUgdGhleSB3cm9uZyB0b28/Cj4gCj4gRnJlZGVyaWMsIExpLCBQaW5nPwo+
+IAoKWWVzLCB0aGV5J3JlIHdyb25nLiBJIHN1Z2d1ZXN0IHdlIHJldmVydCB0aG9zZSBjb21taXRz
+LCBhbmQgdGhlbiBmaXggY2dyb3VwX2F0dGFjaF90YXNrX2FsbCgpCmFuZCBvdGhlcnMgaWYgc3Rp
+bGwgYW55LgoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18K
+Q29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9u
+Lm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9j
+b250YWluZXJz
