@@ -1,9 +1,9 @@
-From: MAILER-DAEMON-oqcrvm9u2JjZEV6kSiNQjaicDR3qMxSs@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Wed, 17 Oct 2012 21:55:53 +0200 (CEST)
-Message-ID: <20121017195553.CFE0B454CA2@mailsrv.webmail.it>
+From: Mail Delivery Subsystem <MAILER-DAEMON-SUKvHJasRUIrBe9n/wnfn6icDR3qMxSs@public.gmane.org>
+Subject: Returned mail: see transcript for details
+Date: Thu, 18 Oct 2012 01:17:19 +0200 (CEST)
+Message-ID: <201210172317.q9HNHJEp064230@smtpout2.mclink.it>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============4860627835681337765=="
+Content-Type: multipart/mixed; boundary="===============2107284053459569018=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,98 +17,73 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+This is a MIME-encapsulated message
 
---===============4860627835681337765==
+--===============2107284053459569018==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="CAFBA454C1C.1350503753/mailsrv.webmail.it"
-Content-Transfer-Encoding: 7bit
+	boundary="q9HNHJEp064230.1350515839/smtpout2.mclink.it"
 
-This is a MIME-encapsulated message.
+This is a MIME-encapsulated message
 
---CAFBA454C1C.1350503753/mailsrv.webmail.it
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+--q9HNHJEp064230.1350515839/smtpout2.mclink.it
 
-This is the mail system at host mailsrv.webmail.it.
+The original message was received at Thu, 18 Oct 2012 01:17:19 +0200 (CEST)
+from smtpoutgw1.mclink.it [77.43.30.41]
 
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
+   ----- The following addresses had permanent fatal errors -----
+<ce5ff-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org>
+    (reason: 550 RCPT TO:<ce5ff-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org> User unknown)
 
-For further assistance, please send mail to <postmaster>
+   ----- Transcript of session follows -----
+... while talking to mx1.fastwebnet.it.:
+>>> DATA
+<<< 550 RCPT TO:<ce5ff-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org> User unknown
+550 5.1.1 <ce5ff-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org>... User unknown
+<<< 554 DATA Transaction failed, no recipients given
 
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<fridak-JkiU6t5Z5Ko1GQ1Ptb7lUw@public.gmane.org>: user unknown
-
---CAFBA454C1C.1350503753/mailsrv.webmail.it
-Content-Description: Delivery report
+--q9HNHJEp064230.1350515839/smtpout2.mclink.it
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; mailsrv.webmail.it
-X-Postfix-Queue-ID: CAFBA454C1C
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Wed, 17 Oct 2012 21:55:53 +0200 (CEST)
+Reporting-MTA: dns; smtpout2.mclink.it
+Received-From-MTA: DNS; smtpoutgw1.mclink.it
+Arrival-Date: Thu, 18 Oct 2012 01:17:19 +0200 (CEST)
 
-Final-Recipient: rfc822; fridak-JkiU6t5Z5Ko1GQ1Ptb7lUw@public.gmane.org
-Original-Recipient: rfc822;fridak-JkiU6t5Z5Ko1GQ1Ptb7lUw@public.gmane.org
+Final-Recipient: RFC822; ce5ff-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org
 Action: failed
 Status: 5.1.1
-Diagnostic-Code: x-unix; user unknown
+Remote-MTA: DNS; mx1.fastwebnet.it
+Diagnostic-Code: SMTP; 550 RCPT TO:<ce5ff-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org> User unknown
+Last-Attempt-Date: Thu, 18 Oct 2012 01:17:19 +0200 (CEST)
 
---CAFBA454C1C.1350503753/mailsrv.webmail.it
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
+--q9HNHJEp064230.1350515839/smtpout2.mclink.it
+Content-Type: text/rfc822-headers
 
-Received: from smtp2-in.panservice.it (smtp2-in.panservice.it [212.66.96.25])
-	by mailsrv.webmail.it (Postfix) with ESMTP id CAFBA454C1C
-	for <fridak-JkiU6t5Z5Ko1GQ1Ptb7lUw@public.gmane.org>; Wed, 17 Oct 2012 21:55:53 +0200 (CEST)
-Received: from localhost (localhost.localdomain [127.0.0.1])
-	by smtp2-in.panservice.it (Postfix) with ESMTP id C7633251335
-	for <fridak-JkiU6t5Z5Ko1GQ1Ptb7lUw@public.gmane.org>; Wed, 17 Oct 2012 21:55:53 +0200 (CEST)
-X-Virus-Scanned: by Panservice AntiVirus & AntiSpam System
-X-Spam-Flag: YES
-X-Spam-Score: 7.003
-X-Spam-Level: *******
-X-Spam-Status: Yes, score=7.003 tagged_above=2 required=5
-	tests=[BAYES_20=-0.74, RATWARE_MS_HASH=1.398,
-	RATWARE_OUTLOOK_NONAME=2.171, TVD_SPACE_RATIO=2.219,
-	URIBL_BLACK=1.955]
-Received: from smtp2-in.panservice.it ([127.0.0.1])
-	by localhost (smtp2-in.panservice.it [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id hSM-3dcJcuYl for <fridak-JkiU6t5Z5Ko1GQ1Ptb7lUw@public.gmane.org>;
-	Wed, 17 Oct 2012 21:55:53 +0200 (CEST)
-Received: from wom.womenfreedating.com (184.172.230.17-static.reverse.softlayer.com [184.172.230.17])
-	by smtp2-in.panservice.it (Postfix) with ESMTP id BC0F8251334
-	for <fridak-JkiU6t5Z5Ko1GQ1Ptb7lUw@public.gmane.org>; Wed, 17 Oct 2012 21:55:52 +0200 (CEST)
-Received: from [184.172.230.17] by wom.womenfreedating.com id SxHlAVnCFssoT; Wed, 17 Oct 2012 17:55:52 -0200
-Message-ID: <005301cdaca1$67839080$0500a8c0-S764Ccl9onVUCObAhbPvufC9HSW9iNxf@public.gmane.org>
-From: "Giovana" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <fridak-JkiU6t5Z5Ko1GQ1Ptb7lUw@public.gmane.org>
-Subject: [SPAMTAGGED]Re: Profilo.
-Date: Wed, 17 Oct 2012 17:55:52 -0200
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from smtpoutgw1.mclink.it (smtpoutgw1.mclink.it [77.43.30.41])
+	by smtpout2.mclink.it (8.13.6/8.13.6) with ESMTP id q9HNHJEp064228
+	for <ce5ff-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org>; Thu, 18 Oct 2012 01:17:19 +0200 (CEST)
+	(envelope-from containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org)
+X-IronPort-Anti-Spam-Filtered: true
+X-IronPort-Anti-Spam-Result: AjvrAII7f1BFQCoQ/2dsb2JhbABFgzWBJXGDd6YwiSyGDwICggyCGz4BJTYnNE4TEYdzC5pCkwyOUIwNgQyBXoMjA44BiH+ETYNBgXWFHIJx
+Received: from colossus156.startdedicated.com (HELO localhost.localdomain) ([69.64.42.16])
+  by smtpoutgw1.mclink.it with ESMTP; 18 Oct 2012 01:17:12 +0200
+Received: from [69.64.42.16] by localhost.localdomain id MiItB9UfK6uJ with SMTP; Thu, 18 Oct 2012 01:17:18 +0200
+Date: Thu, 18 Oct 2012 01:17:18 +0200
+From: "Zaira" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.4.94.7) Home
+X-Priority: 3 (Normal)
+Message-ID: <8223340439.63492607348276-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
+To: <ce5ff-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org>
+Subject: Rispondere.
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
+
+--q9HNHJEp064230.1350515839/smtpout2.mclink.it--
 
 
-
-
-Hai inviato una risposta al forum.
-Siete interessati a statistiche sugli atti puo essere scaricato qui:
-http://liebmanassociates.com/responderdownload/Statistica.Pdf_php_stat.pd=
-f_adobe.download.exe?account_id=3Dfridak-JkiU6t5Z5Ko1GQ1Ptb7lUw@public.gmane.org
-
-
-
---CAFBA454C1C.1350503753/mailsrv.webmail.it--
-
---===============4860627835681337765==
+--===============2107284053459569018==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -118,4 +93,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============4860627835681337765==--
+--===============2107284053459569018==--
