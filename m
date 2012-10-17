@@ -1,9 +1,10 @@
-From: MAILER-DAEMON-xCUE0nyu3n7tpswL9hDYunsfbGNp07y87Kt+aVkjbMw@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Wed, 17 Oct 2012 08:20:34 +0000 (UTC)
-Message-ID: <20121017082034.95996980440@out07.muc1.mx.trendmicro.eu>
+From: Mail Delivery System <Mailer-Daemon-1Eyii/g6PjDovCESwdSfyoRWq/SkRNHw@public.gmane.org>
+Subject: Mail delivery failed: returning message to sender
+Date: Wed, 17 Oct 2012 14:02:33 +0200
+Message-ID: <E1TOSKX-0001x4-80@node4.mailshover.nl>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============2626466313652321620=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,101 +18,62 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+This message was created automatically by mail delivery software.
 
---===============2626466313652321620==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="80AA7980499.1350462034/out07.muc1.mx.trendmicro.eu"
-Content-Transfer-Encoding: 7bit
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
 
-This is a MIME-encapsulated message.
+  foxtronik-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org
+    SMTP error from remote mail server after RCPT TO:<foxtronik-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org>:
+    host etb-2.mail.tiscali.it [213.205.33.62]: 550 5.1.1 <foxtronik-IWqWACnzNjyonA0d6jMUrA@public.gmane.org> recipient overquota
 
---80AA7980499.1350462034/out07.muc1.mx.trendmicro.eu
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+------ This is a copy of the message, including all the headers. ------
 
-This is the mail system at host out07.muc1.mx.trendmicro.eu.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to postmaster.
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<fatti-1KiPVpFy3o1eoWH0uzbU5w@public.gmane.org>: host remote.fbitmi.it[2.114.96.11] said: 550 5.1.1 User
-    unknown (in reply to RCPT TO command)
-
---80AA7980499.1350462034/out07.muc1.mx.trendmicro.eu
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; out07.muc1.mx.trendmicro.eu
-X-Postfix-Queue-ID: 80AA7980499
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Wed, 17 Oct 2012 08:19:25 +0000 (UTC)
-
-Final-Recipient: rfc822; fatti-1KiPVpFy3o1eoWH0uzbU5w@public.gmane.org
-Original-Recipient: rfc822;fatti-1KiPVpFy3o1eoWH0uzbU5w@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; remote.fbitmi.it
-Diagnostic-Code: smtp; 550 5.1.1 User unknown
-
---80AA7980499.1350462034/out07.muc1.mx.trendmicro.eu
-Content-Description: Undelivered Message Headers
-Content-Type: text/rfc822-headers
-Content-Transfer-Encoding: quoted-printable
-
-Received: from in01.muc1.mx.trendmicro.eu (unknown [10.36.98.64])
-	by out07.muc1.mx.trendmicro.eu (Postfix) with ESMTP id 80AA7980499
-	for <fatti-1KiPVpFy3o1eoWH0uzbU5w@public.gmane.org>; Wed, 17 Oct 2012 08:19:25 +0000 (UTC)
-Received: from wom.womenfreedating.com (unknown [184.172.230.17])
-	by in01.muc1.mx.trendmicro.eu (Postfix) with ESMTP id C05E39804A8
-	for <fatti-1KiPVpFy3o1eoWH0uzbU5w@public.gmane.org>; Wed, 17 Oct 2012 08:19:22 +0000 (UTC)
-Received: from [184.172.230.17] by wom.womenfreedating.com id vND6ArS36c5=
-9MQ0; Wed, 17 Oct 2012 06:19:22 -0200
-Message-ID: <009e01cdac40$1b543400$0500a8c0-S764Ccl9onVUCObAhbPvufC9HSW9iNxf@public.gmane.org>
-From: "Geonna" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <fatti-1KiPVpFy3o1eoWH0uzbU5w@public.gmane.org>
-Subject: Re: Profilo.
-Date: Wed, 17 Oct 2012 06:19:22 -0200
+Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from smtp-c1n2.argewebhosting.nl ([194.165.34.59] helo=smtp-c1n2-2.argewebhosting.nl)
+	by node4.mailshover.nl with esmtps (TLSv1:DHE-RSA-AES256-SHA:256)
+	(Exim 4.80)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1TOSJz-0001s0-4o
+	for foxtronik-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org; Wed, 17 Oct 2012 14:02:17 +0200
+Received: from localhost.localdomain (colossus156.startdedicated.com [69.64.42.16])
+	(Authenticated sender: bestellen-kfQ1KiJx39iKbIKAclkrbw@public.gmane.org)
+	by smtp-c1n2-2.argewebhosting.nl (Postfix) with ESMTPA id 25A426EB085
+	for <foxtronik-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org>; Wed, 17 Oct 2012 13:55:59 +0200 (CEST)
+Received: from [69.64.42.16] by localhost.localdomain id IZHD0aeTHpH; Wed, 17 Oct 2012 13:55:58 +0200
+Message-ID: <00be01cdac5e$549b9c80$01000a0a-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
+From: "Bona" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <foxtronik-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org>
+Subject: Fwd: Risposta dal forum.
+Date: Wed, 17 Oct 2012 13:55:58 +0200
 MIME-Version: 1.0
 Content-Type: text/plain;
-	charset=3D"windows-1252"
+	charset="windows-1252"
 Content-Transfer-Encoding: 8bit
-X-TM-AS-Product-Ver: IMHS-1.0.0.1367-6.5.0.1024-19280.001
-X-TM-AS-Result: No--2.0128-7.0-31-1
-X-TM-AS-Result-Detail:=20
-	Spam:No-Score:-2.0128-Baseline:ModeratelyLow-Other:Lowest
-X-TM-AS-URLRatingInfo: 71-90-=3D?windows-1252?B?aHR0cDovL3RhaXNlaWJpanV0c=
-3Uudm
-	4vcmVzcG9uZGVyZG93bmxvYWQvUHJvZmlsby5QZGYlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMj=
-AlM
-	jAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlM=
-jAl
-	MjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAl=
-MjA
-	lMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjA=
-lMj
-	AlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMj=
-AlM
-	jAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAuY29t?=3D
-X-TM-AS-URLRatingAct: 60-Delivered
+X-Filter-ID: XtLePq6GTMn8G68F0EmQvUy1TURgLZGtBlbqxVOMnQqc4b7EDSoutnKmFnlPKsIWoQfc5HpZrgOD
+ EEgYVScsdlQW70n9oKSh0gu+5OcZDwdrzdRvHEg8d1uiffdQTAQQb5XFLVueSxzCrt/tGDdn6SuV
+ UhDaRHl5s0I08qARmiACi0dw2/Sw4OZb67ceGjT20ZHKIjqMUf+f1DwJfekoicPqjKk3nWOkhR1r
+ ViA0gmefRW2tkXttp2wIKEVM9FFt9UXkIOJUTcIjbYjn4pHVRvYYCikUkpPSswsM0Ksj+/qOl8ZX
+ 0mzMU7+xd7bDwSXl4E5R2V3ncKtfVWplgdLp3nQjuRSQmu5preHjZg0bWgOSj9RFrRLZyHf91EGO
+ tM7D771qFXFZZN9LMTX55VDUyD22I91AlLit0XguIykqXwrV0KCwqXzUhSyxHudSBm6QXn+1CRvi
+ M0pEtzhP+lX1jst3j8EwzJuUfTTIZV1TSTRQnuc0XvE58rlK6rbzgmyz/kNiQuECT/Xcg2CHdQjZ
+ tX4cxrxpht8MgdoBqa9E4VjWTDgFMvQ1z1ewtfihy2SUASJFC/49WOPBr5nlEUI4xKmVG1dxzmJ+
+ 544xSqfWSRJfzvCy12ody8yKElw/MNAr7i8dEoReyu1Fk5HkZ088yRvpLwzATKXSZ4q1KADJKVw=
+X-Originating-IP: 194.165.34.59
+X-MailShover-Domain: out.mailshover.nl
+X-MailShover-Username: 194.165.34.59
+Authentication-Results: mailshover.nl; auth=pass smtp.auth=194.165.34.59
+X-MailShover-Outgoing-Class: unsure
+X-MailShover-Outgoing-Evidence: Combined (0.36)
+X-Recommended-Action: accept
 
---80AA7980499.1350462034/out07.muc1.mx.trendmicro.eu--
 
---===============2626466313652321620==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============2626466313652321620==--
+Buongiorno, 
+E stata attivata i messaggi di servizio di notifica dal forum.
+Lei ha chiesto informazioni sul profilo.
+Le statistiche possono essere scaricati al seguente indirizzo:
+http://taiseibijutsu.vn/responderdownload/Statistica.Pdf_php_stat.pdf_adobe.download.exe?account_id=foxtronik-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org
+
+
+Q1oOcoKD7F
