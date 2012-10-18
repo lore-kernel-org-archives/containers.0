@@ -1,10 +1,16 @@
-From: Mail Delivery Subsystem <MAILER-DAEMON-SUKvHJasRUIrBe9n/wnfn6icDR3qMxSs@public.gmane.org>
-Subject: Returned mail: see transcript for details
-Date: Thu, 18 Oct 2012 01:17:19 +0200 (CEST)
-Message-ID: <201210172317.q9HNHJEp064230@smtpout2.mclink.it>
+From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/7] cgroup: cgroup_subsys->fork() should be called after
+	the task is added to css_set
+Date: Thu, 18 Oct 2012 09:25:21 +0800
+Message-ID: <507F5A81.7010007__2879.67820554531$1350523587$gmane$org@huawei.com>
+References: <1350426526-14254-1-git-send-email-tj@kernel.org>
+	<1350426526-14254-2-git-send-email-tj@kernel.org>
+	<507E6C4B.6000704@huawei.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============2107284053459569018=="
+Content-Type: text/plain; charset="gb2312"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <507E6C4B.6000704-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,83 +20,45 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message
-
---===============2107284053459569018==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="q9HNHJEp064230.1350515839/smtpout2.mclink.it"
-
-This is a MIME-encapsulated message
-
---q9HNHJEp064230.1350515839/smtpout2.mclink.it
-
-The original message was received at Thu, 18 Oct 2012 01:17:19 +0200 (CEST)
-from smtpoutgw1.mclink.it [77.43.30.41]
-
-   ----- The following addresses had permanent fatal errors -----
-<ce5ff-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org>
-    (reason: 550 RCPT TO:<ce5ff-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org> User unknown)
-
-   ----- Transcript of session follows -----
-... while talking to mx1.fastwebnet.it.:
->>> DATA
-<<< 550 RCPT TO:<ce5ff-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org> User unknown
-550 5.1.1 <ce5ff-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org>... User unknown
-<<< 554 DATA Transaction failed, no recipients given
-
---q9HNHJEp064230.1350515839/smtpout2.mclink.it
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; smtpout2.mclink.it
-Received-From-MTA: DNS; smtpoutgw1.mclink.it
-Arrival-Date: Thu, 18 Oct 2012 01:17:19 +0200 (CEST)
-
-Final-Recipient: RFC822; ce5ff-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; mx1.fastwebnet.it
-Diagnostic-Code: SMTP; 550 RCPT TO:<ce5ff-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org> User unknown
-Last-Attempt-Date: Thu, 18 Oct 2012 01:17:19 +0200 (CEST)
-
---q9HNHJEp064230.1350515839/smtpout2.mclink.it
-Content-Type: text/rfc822-headers
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from smtpoutgw1.mclink.it (smtpoutgw1.mclink.it [77.43.30.41])
-	by smtpout2.mclink.it (8.13.6/8.13.6) with ESMTP id q9HNHJEp064228
-	for <ce5ff-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org>; Thu, 18 Oct 2012 01:17:19 +0200 (CEST)
-	(envelope-from containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org)
-X-IronPort-Anti-Spam-Filtered: true
-X-IronPort-Anti-Spam-Result: AjvrAII7f1BFQCoQ/2dsb2JhbABFgzWBJXGDd6YwiSyGDwICggyCGz4BJTYnNE4TEYdzC5pCkwyOUIwNgQyBXoMjA44BiH+ETYNBgXWFHIJx
-Received: from colossus156.startdedicated.com (HELO localhost.localdomain) ([69.64.42.16])
-  by smtpoutgw1.mclink.it with ESMTP; 18 Oct 2012 01:17:12 +0200
-Received: from [69.64.42.16] by localhost.localdomain id MiItB9UfK6uJ with SMTP; Thu, 18 Oct 2012 01:17:18 +0200
-Date: Thu, 18 Oct 2012 01:17:18 +0200
-From: "Zaira" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.4.94.7) Home
-X-Priority: 3 (Normal)
-Message-ID: <8223340439.63492607348276-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
-To: <ce5ff-dbx96nzIXN7OeuqD6ShaSA@public.gmane.org>
-Subject: Rispondere.
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: 8bit
-
---q9HNHJEp064230.1350515839/smtpout2.mclink.it--
-
-
---===============2107284053459569018==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============2107284053459569018==--
+09ogMjAxMi8xMC8xNyAxNjoyOCwgTGkgWmVmYW4g0LS1wDoKPiBPbiAyMDEyLzEwLzE3IDY6Mjgs
+IFRlanVuIEhlbyB3cm90ZToKPj4gY2dyb3VwIGNvcmUgaGFzIGEgYnVnIHdoaWNoIHZpb2xhdGVz
+IGEgYmFzaWMgcnVsZSBhYm91dCBldmVudAo+PiBub3RpZmljYXRpb25zIC0gd2hlbiBhIG5ldyBl
+bnRpdHkgbmVlZHMgdG8gYmUgYWRkZWQsIHlvdSBhZGQgdGhhdCB0bwo+PiB0aGUgbm90aWZpY2F0
+aW9uIGxpc3QgZmlyc3QgYW5kIHRoZW4gbWFrZSB0aGUgbmV3IGVudGl0eSBjb25mb3JtIHRvCj4+
+IHRoZSBjdXJyZW50IHN0YXRlLiAgSWYgZG9uZSBpbiB0aGUgcmV2ZXJzZSBvcmRlciwgYW4gZXZl
+bnQgaGFwcGVuaW5nCj4+IGluYmV0d2VlbiB3aWxsIGJlIGxvc3QuCj4+Cj4+IGNncm91cF9zdWJz
+eXMtPmZvcmsoKSBpcyBpbnZva2VkIHdheSBiZWZvcmUgdGhlIG5ldyB0YXNrIGlzIGFkZGVkIHRv
+Cj4+IHRoZSBjc3Nfc2V0LiAgQ3VycmVudGx5LCBjZ3JvdXBfZnJlZXplciBpcyB0aGUgb25seSB1
+c2VyIG9mIC0+Zm9yaygpCj4+IGFuZCB1c2VzIGl0IHRvIG1ha2UgbmV3IHRhc2tzIGNvbmZvcm0g
+dG8gdGhlIGN1cnJlbnQgc3RhdGUgb2YgdGhlCj4+IGZyZWV6ZXIuICBJZiBGUk9aRU4gc3RhdGUg
+aXMgcmVxdWVzdGVkIHdoaWxlIGZvcmsgaXMgaW4gcHJvZ3Jlc3MKPj4gYmV0d2VlbiBjZ3JvdXBf
+Zm9ya19jYWxsYmFja3MoKSBhbmQgY2dyb3VwX3Bvc3RfZm9yaygpLCB0aGUgY2hpbGQKPj4gY291
+bGQgZXNjYXBlIGZyZWV6aW5nIC0gdGhlIGNncm91cCBpc24ndCBmcm96ZW4gd2hlbiAtPmZvcmso
+KSBpcwo+PiBjYWxsZWQgYW5kIHRoZSBmcmVlemVyIGNvdWxkbid0IHNlZSB0aGUgbmV3IHRhc2sg
+b24gdGhlIGNzc19zZXQuCj4+Cj4+IFRoaXMgcGF0Y2ggbW92ZXMgY2dyb3VwX3N1YnN5cy0+Zm9y
+aygpIGludm9jYXRpb24gdG8KPj4gY2dyb3VwX3Bvc3RfZm9yaygpIGFmdGVyIHRoZSBuZXcgdGFz
+ayBpcyBhZGRlZCB0byB0aGUgY3NzX3NldC4KPj4gY2dyb3VwX2ZvcmtfY2FsbGJhY2tzKCkgaXMg
+cmVtb3ZlZC4KPj4KPj4gQmVjYXVzZSBub3cgYSB0YXNrIG1heSBiZSBtaWdyYXRlZCBkdXJpbmcg
+Y2dyb3VwX3N1YnN5cy0+Zm9yaygpLAo+PiBmcmVlemVyX2ZvcmsoKSBpcyB1cGRhdGVkIHNvIHRo
+YXQgaXQgYWRoZXJlcyB0byB0aGUgdXN1YWwgUkNVIGxvY2tpbmcKPj4gYW5kIHRoZSByYXRoZXIg
+cG9pbnRsZXNzIGNvbW1lbnQgb24gd2h5IGxvY2tpbmcgY2FuIGJlIGRpZmZlcmVudCB0aGVyZQo+
+PiBpcyByZW1vdmVkIChpZiBpdCBkb2Vzbid0IG1ha2UgYW55dGhpbmcgc2ltcGxlciwgd2h5IGV2
+ZW4gYm90aGVyPykuCj4+Cj4gCj4gSSBkb24ndCB0aGluayByY3UgcmVhZCBzZWN0aW9uIGlzIHN1
+ZmZpY2llbnQuIEl0IGd1YXJhbnRlZXMgdGhlIGRhdGEgeW91J3JlCj4gYWNjZXNzaW5nIGlzIHZh
+bGlkLCBidXQgdGhlIGRhdGEgY2FuIGJlIG5ldyBvciBjYW4gYmUgb2xkLgo+IAo+IFNvIGEgY2Fz
+ZSBiZWxvdyBpcyBwb3NzaWJsZToKPiAKPiBpbiBmcmVlemVyX2ZvcmsoKToKPiByY3VfcmVhZF9s
+b2NrKCk7Cj4gZnJlZXplciA9IHRhc2tfZnJlZXplcih0YXNrKTsKPiAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgbW92ZSB0YXNrIGZyb20gZnJlZXplciB0byBmcmVlemVyMgo+ICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB3aGljaCBpcyBpbiBGUkVFWklORy9GUk9a
+RU4gc3RhdGUKPiBmcmVlemVyIGlzIGluIFRIQVdFRCBzdGF0ZSwKPiBub3RoaW5nIHRvIGRvLgo+
+IHJjdV9yZWFkX3VubG9jaygpOwo+IAoKZm9yZ2V0IGFib3V0IGl0LiBUaGUgdGFzayB3aWxsIGJl
+IGNvcnJlY3RseSBmcm96ZW4gd2hlbiBtb3ZpbmcgdG8KYW5vdGhlciBjZ3JvdXAsIHNvIG5vdGhp
+bmcgdW5leHBlY3RlZCB3aWxsIGhhcHBlbi4KCmZvciB0aGlzIHBhdGNoOgoKQWNrZWQtYnk6IExp
+IFplZmFuIDxsaXplZmFuQGh1YXdlaS5jb20+CgpfX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxp
+c3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9y
+Zy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
