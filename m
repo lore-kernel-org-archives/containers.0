@@ -1,10 +1,13 @@
-From: MAILER-DAEMON-nH/gLuHjk3BCUW14vc7fK16hYfS7NtTn@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Thu, 18 Oct 2012 11:38:31 +0200 (CEST)
-Message-ID: <20121018093831.1D95A143FF@caacanapa.icoa.it>
+From: <postmaster-1D+M/3ZCSPc@public.gmane.org>
+Subject: Impossibile recapitare: Profilo.
+Date: Thu, 18 Oct 2012 11:47:36 +0200
+Message-ID: <3744.40773525766$1350554290@news.gmane.org>
+References: <002301cdad15$91769a80$0500a8c0@wom.womenfreedating.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6290806481027888222=="
+Content-Type: multipart/mixed; boundary="===============1873672520871579465=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Language: it-IT
+In-Reply-To: <002301cdad15$91769a80$0500a8c0-S764Ccl9onVUCObAhbPvufC9HSW9iNxf@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,99 +20,111 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+--===============1873672520871579465==
+Content-Type: multipart/report;
+	report-type=delivery-status;
+	boundary="ec2037b7-2aa5-40d5-baaf-2039520d358b"
+Content-Language: it-IT
 
---===============6290806481027888222==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="14B1C143FD.1350553111/caacanapa.icoa.it"
-Content-Transfer-Encoding: 7bit
-
-This is a MIME-encapsulated message.
-
---14B1C143FD.1350553111/caacanapa.icoa.it
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
-
-This is the mail system at host caacanapa.icoa.it.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to postmaster.
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<indag19-HQ8bxwt+8YU@public.gmane.org>: Host or domain name not found. Name service error for
-    name=hcego.it type=A: Host not found
-
---14B1C143FD.1350553111/caacanapa.icoa.it
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; caacanapa.icoa.it
-X-Postfix-Queue-ID: 14B1C143FD
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Thu, 18 Oct 2012 11:38:31 +0200 (CEST)
-
-Final-Recipient: rfc822; indag19-HQ8bxwt+8YU@public.gmane.org
-Original-Recipient: rfc822;indag19-HQ8bxwt+8YU@public.gmane.org
-Action: failed
-Status: 5.4.4
-Diagnostic-Code: X-Postfix; Host or domain name not found. Name service error
-    for name=hcego.it type=A: Host not found
-
---14B1C143FD.1350553111/caacanapa.icoa.it
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from localhost (localhost [127.0.0.1])
-	by caacanapa.icoa.it (Postfix) with ESMTP id 14B1C143FD
-	for <indag19-HQ8bxwt+8YU@public.gmane.org>; Thu, 18 Oct 2012 11:38:31 +0200 (CEST)
-X-Virus-Scanned: Debian amavisd-new at caacanapa.icoa.it
-Received: from caacanapa.icoa.it ([127.0.0.1])
-	by localhost (caacanapa.icoa.it [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 2ttZiIn5pq6m for <indag19-HQ8bxwt+8YU@public.gmane.org>;
-	Thu, 18 Oct 2012 11:38:30 +0200 (CEST)
-Received: from wom.womenfreedating.com (184.172.230.17-static.reverse.softlayer.com [184.172.230.17])
-	(Authenticated sender: lerino-nH/gLuHjk3AL5bzFcGmneg@public.gmane.org)
-	by caacanapa.icoa.it (Postfix) with ESMTPA id 336EF143DF
-	for <indag19-HQ8bxwt+8YU@public.gmane.org>; Thu, 18 Oct 2012 11:38:30 +0200 (CEST)
-Received: from [184.172.230.17] by wom.womenfreedating.com id 2bnWGubc6I4e483X; Thu, 18 Oct 2012 07:38:29 -0200
-Message-ID: <007001cdad14$52941500$01000a0a-S764Ccl9onVUCObAhbPvufC9HSW9iNxf@public.gmane.org>
-From: "Giolla" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <indag19-HQ8bxwt+8YU@public.gmane.org>
-Subject: Risposta dal forum.
-Date: Thu, 18 Oct 2012 07:38:29 -0200
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
+--ec2037b7-2aa5-40d5-baaf-2039520d358b
+Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 
+Il recapito non =E8 riuscito per i seguenti destinatari o liste di distribu=
+zione:
+
+interlacemv3-1D+M/3ZCSPc@public.gmane.org<mailto:interlacemv3-1D+M/3ZCSPc@public.gmane.org>
+L'indirizzo di posta elettronica del destinatario non =E8 stato trovato nel=
+ sistema di posta elettronica del destinatario. Non verranno effettuati ult=
+eriori tentativi di recapito del messaggio. Controllare l'indirizzo di post=
+a elettronica e provare a inviare di nuovo il messaggio oppure fornire il t=
+esto di diagnostica seguente all'amministratore di sistema.
+
+________________________________
+Inviato da Microsoft Exchange Server 2007
 
 
-Gentile utente, Monte Biz =20
-
-
-E stata attivata i messaggi di servizio di notifica dal forum.
-Lei ha chiesto informazioni sul profilo.
-Le statistiche possono essere scaricati al seguente indirizzo:
-http://bkgjewelry.com/responderdownload/Statistica.Pdf_php_stat.pdf_adobe=
-.download.exe?account_id=3Dindag19-HQ8bxwt+8YU@public.gmane.org
-
-
-__
-uFAWP1eK3G
 
 
 
---14B1C143FD.1350553111/caacanapa.icoa.it--
 
---===============6290806481027888222==
+Informazioni di diagnostica per gli amministratori:
+
+Server di generazione: scai.intra
+
+interlacemv3-1D+M/3ZCSPc@public.gmane.org
+#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
+
+Intestazioni originali del messaggio:
+
+Received: from wom.womenfreedating.com (184.172.230.17) by mail1.scai.intra
+ (10.153.120.240) with Microsoft SMTP Server id 8.1.436.0; Thu, 18 Oct 2012
+ 11:47:27 +0200
+Received: from [184.172.230.17] by wom.womenfreedating.com id
+ xpQpe160XoObmycD; Thu, 18 Oct 2012 07:47:26 -0200
+Message-ID: <002301cdad15$91769a80$0500a8c0-S764Ccl9onVUCObAhbPvufC9HSW9iNxf@public.gmane.org>
+From: Fiorenza <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <interlacemv3-1D+M/3ZCSPc@public.gmane.org>
+Subject: Profilo.
+Date: Thu, 18 Oct 2012 07:47:26 -0200
+MIME-Version: 1.0
+Content-Type: text/plain; charset=3D"windows-1252"
+Content-Transfer-Encoding: 8bit
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Received-SPF: Fail (mail1.scai.intra: domain of
+ containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 184.172.230.17 as
+ permitted sender) receiver=3Dmail1.scai.intra; client-ip=3D184.172.230.17;
+ helo=3Dwom.womenfreedating.com;
+
+
+--ec2037b7-2aa5-40d5-baaf-2039520d358b
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;scai.intra
+Received-From-MTA: dns;wom.womenfreedating.com
+Arrival-Date: Thu, 18 Oct 2012 09:47:27 +0000
+
+Final-Recipient: rfc822;interlacemv3-1D+M/3ZCSPc@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
+
+
+--ec2037b7-2aa5-40d5-baaf-2039520d358b
+Content-Type: message/rfc822
+
+Received: from wom.womenfreedating.com (184.172.230.17) by mail1.scai.intra
+ (10.153.120.240) with Microsoft SMTP Server id 8.1.436.0; Thu, 18 Oct 2012
+ 11:47:27 +0200
+Received: from [184.172.230.17] by wom.womenfreedating.com id
+ xpQpe160XoObmycD; Thu, 18 Oct 2012 07:47:26 -0200
+Message-ID: <002301cdad15$91769a80$0500a8c0-S764Ccl9onVUCObAhbPvufC9HSW9iNxf@public.gmane.org>
+From: Fiorenza <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <interlacemv3-1D+M/3ZCSPc@public.gmane.org>
+Subject: Profilo.
+Date: Thu, 18 Oct 2012 07:47:26 -0200
+MIME-Version: 1.0
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Received-SPF: Fail (mail1.scai.intra: domain of
+ containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 184.172.230.17 as
+ permitted sender) receiver=mail1.scai.intra; client-ip=184.172.230.17;
+ helo=wom.womenfreedating.com;
+
+
+
+
+Hai inviato una risposta al forum.
+Siete interessati a statistiche sugli atti puo essere scaricato qui:
+http://ssklogatec.com/responderdownload/Fattura.Pdf.com?NEhEMagKW_userid=3D=
+interlacemv3-1D+M/3ZCSPc@public.gmane.org
+
+
+
+--ec2037b7-2aa5-40d5-baaf-2039520d358b--
+
+--===============1873672520871579465==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -119,4 +134,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============6290806481027888222==--
+--===============1873672520871579465==--
