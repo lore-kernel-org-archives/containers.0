@@ -1,13 +1,15 @@
-From: <postmaster-1D+M/3ZCSPc@public.gmane.org>
-Subject: Impossibile recapitare: Profilo.
-Date: Thu, 18 Oct 2012 11:47:36 +0200
-Message-ID: <3744.40773525766$1350554290@news.gmane.org>
-References: <002301cdad15$91769a80$0500a8c0@wom.womenfreedating.com>
+From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: Is not locking task_lock in cgroup_fork() safe?
+Date: Thu, 18 Oct 2012 16:50:59 +0200
+Message-ID: <CAFTL4hzo_w7HTgC9ApTk113X8WdZSpV+D+VSEe=604YEJFmKsg__43186.1780155033$1350571872$gmane$org@mail.gmail.com>
+References: <20121008020000.GB2575@localhost>
+	<CAFTL4hzXWtzp7megsCAEuak5=_2SWmp9age-+wrpyQAU4BRZ0w@mail.gmail.com>
+	<20121016193341.GD16166@google.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1873672520871579465=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: it-IT
-In-Reply-To: <002301cdad15$91769a80$0500a8c0-S764Ccl9onVUCObAhbPvufC9HSW9iNxf@public.gmane.org>
+In-Reply-To: <20121016193341.GD16166-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,121 +19,78 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
---===============1873672520871579465==
-Content-Type: multipart/report;
-	report-type=delivery-status;
-	boundary="ec2037b7-2aa5-40d5-baaf-2039520d358b"
-Content-Language: it-IT
+2012/10/16 Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>:
+> Hey, Frederic.
+>
+> On Mon, Oct 08, 2012 at 02:48:58PM +0200, Frederic Weisbecker wrote:
+>> Yeah I missed this one.
+>> Now the whole cgroup_attach_task() is clusteracy without the
+>
+> Clusteracy?
+>
+>> threadgroup lock anyway:
+>>
+>> * The PF_EXITING check is racy (we are neither holding tsk->flags nor
+>> threagroup lock).
+>
+> PF_EXITING is *always* protected by threadgroup_change_begin/end().
+>
+>> * The cgrp == oldcgrp is racy (exit() can change the oldcgrp anytime.
+>
+> So, as long as this happens after PF_EXITING check, it should be safe.
+>
+>> * can_attach / attach / cancel_attach can race against fork/exit (and
+>> post_fork if you consider those interested in cgroup task link like
+>> the freezer. But that is racy in any case already even with
+>> threadgroup lock)
+>
+> Against exit, no.  Against forking a new process, can they?  If so, we
+> need to fix it.
+>
+>> It has been designed to be called under that lock. So I suspect the
+>
+> Ummm.... threadgroup_lock is a recent addition so things couldn't have
+> been designed to be called under that lock.  threadgroup_lock protects
+> the *threadgroup* - creating a new task in the same process or a task
+> of the process exiting.  It doesn't do anything about other processes.
+> In fact, the lock itself is per-process.
+>
+>> best, at least for now, is to threadgroup lock from
+>> cgroup_attach_task_all(). And also make cgroup_attach_task() static to
+>> avoid future unsafe callers.
+>
+> Oh, from that call path, sure.  Can someone teach me why we need that
+> one at all?  I think we're confusing each other here.  I was talking
+> about the usual migration path not protected against forking a new
+> process.
 
---ec2037b7-2aa5-40d5-baaf-2039520d358b
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Ah right I was confused. Hmm, indeed we have a race here on
+cgroup_fork(). How about using css_try_get() in cgroup_fork() and
+refetch the parent's css until we succeed? This requires rcu_read_lock
+though, and freeing the css_set under RCU.
 
-Il recapito non =E8 riuscito per i seguenti destinatari o liste di distribu=
-zione:
+Don't know which is better.
 
-interlacemv3-1D+M/3ZCSPc@public.gmane.org<mailto:interlacemv3-1D+M/3ZCSPc@public.gmane.org>
-L'indirizzo di posta elettronica del destinatario non =E8 stato trovato nel=
- sistema di posta elettronica del destinatario. Non verranno effettuati ult=
-eriori tentativi di recapito del messaggio. Controllare l'indirizzo di post=
-a elettronica e provare a inviare di nuovo il messaggio oppure fornire il t=
-esto di diagnostica seguente all'amministratore di sistema.
+Different problem but I really would like we sanitize the cgroup hooks
+in fork. There is cgroup_fork(), cgroup_post_fork() which takes that
+big css_set_lock, plus the big threadgroup lock... I hope we can
+simplify the mess there.
 
-________________________________
-Inviato da Microsoft Exchange Server 2007
+>
+>> There is no harm yet because the only user of it calls that with
+>> current as the "task" parameter, in a place that is
+>> not in the middle of a fork. So no need to worry about some stable backport.
+>>
+>> Also, looking at cgroup_attach_task_all(), what guarantee do we have
+>> that "from" is not concurrently exiting and removing its cgrp. Which
+>> is a separate problem. But we probably need to do some css_set_get()
+>> before playing with it.
+>
+> I really don't know.  Why isn't it locking the threadgroup to begin
+> with?
 
-
-
-
-
-
-Informazioni di diagnostica per gli amministratori:
-
-Server di generazione: scai.intra
-
-interlacemv3-1D+M/3ZCSPc@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
-
-Intestazioni originali del messaggio:
-
-Received: from wom.womenfreedating.com (184.172.230.17) by mail1.scai.intra
- (10.153.120.240) with Microsoft SMTP Server id 8.1.436.0; Thu, 18 Oct 2012
- 11:47:27 +0200
-Received: from [184.172.230.17] by wom.womenfreedating.com id
- xpQpe160XoObmycD; Thu, 18 Oct 2012 07:47:26 -0200
-Message-ID: <002301cdad15$91769a80$0500a8c0-S764Ccl9onVUCObAhbPvufC9HSW9iNxf@public.gmane.org>
-From: Fiorenza <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <interlacemv3-1D+M/3ZCSPc@public.gmane.org>
-Subject: Profilo.
-Date: Thu, 18 Oct 2012 07:47:26 -0200
-MIME-Version: 1.0
-Content-Type: text/plain; charset=3D"windows-1252"
-Content-Transfer-Encoding: 8bit
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Received-SPF: Fail (mail1.scai.intra: domain of
- containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 184.172.230.17 as
- permitted sender) receiver=3Dmail1.scai.intra; client-ip=3D184.172.230.17;
- helo=3Dwom.womenfreedating.com;
-
-
---ec2037b7-2aa5-40d5-baaf-2039520d358b
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns;scai.intra
-Received-From-MTA: dns;wom.womenfreedating.com
-Arrival-Date: Thu, 18 Oct 2012 09:47:27 +0000
-
-Final-Recipient: rfc822;interlacemv3-1D+M/3ZCSPc@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-
---ec2037b7-2aa5-40d5-baaf-2039520d358b
-Content-Type: message/rfc822
-
-Received: from wom.womenfreedating.com (184.172.230.17) by mail1.scai.intra
- (10.153.120.240) with Microsoft SMTP Server id 8.1.436.0; Thu, 18 Oct 2012
- 11:47:27 +0200
-Received: from [184.172.230.17] by wom.womenfreedating.com id
- xpQpe160XoObmycD; Thu, 18 Oct 2012 07:47:26 -0200
-Message-ID: <002301cdad15$91769a80$0500a8c0-S764Ccl9onVUCObAhbPvufC9HSW9iNxf@public.gmane.org>
-From: Fiorenza <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <interlacemv3-1D+M/3ZCSPc@public.gmane.org>
-Subject: Profilo.
-Date: Thu, 18 Oct 2012 07:47:26 -0200
-MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Received-SPF: Fail (mail1.scai.intra: domain of
- containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 184.172.230.17 as
- permitted sender) receiver=mail1.scai.intra; client-ip=184.172.230.17;
- helo=wom.womenfreedating.com;
-
-
-
-
-Hai inviato una risposta al forum.
-Siete interessati a statistiche sugli atti puo essere scaricato qui:
-http://ssklogatec.com/responderdownload/Fattura.Pdf.com?NEhEMagKW_userid=3D=
-interlacemv3-1D+M/3ZCSPc@public.gmane.org
-
-
-
---ec2037b7-2aa5-40d5-baaf-2039520d358b--
-
---===============1873672520871579465==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1873672520871579465==--
+No idea, sounds like something to fix.
