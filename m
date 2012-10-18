@@ -1,16 +1,11 @@
-From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/7] cgroup: cgroup_subsys->fork() should be called after
-	the task is added to css_set
-Date: Thu, 18 Oct 2012 09:25:21 +0800
-Message-ID: <507F5A81.7010007__2879.67820554531$1350523587$gmane$org@huawei.com>
-References: <1350426526-14254-1-git-send-email-tj@kernel.org>
-	<1350426526-14254-2-git-send-email-tj@kernel.org>
-	<507E6C4B.6000704@huawei.com>
+From: MAILER-DAEMON-5FH3pS0S4hs8yWZI9xAYjNHuzzzSOjJt@public.gmane.org
+Subject: failure notice
+Date: 18 Oct 2012 03:31:33 +0200
+Message-ID: <20121018013817.5376A9F8@mail.linuxfoundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="gb2312"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <507E6C4B.6000704-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,45 +15,49 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-09ogMjAxMi8xMC8xNyAxNjoyOCwgTGkgWmVmYW4g0LS1wDoKPiBPbiAyMDEyLzEwLzE3IDY6Mjgs
-IFRlanVuIEhlbyB3cm90ZToKPj4gY2dyb3VwIGNvcmUgaGFzIGEgYnVnIHdoaWNoIHZpb2xhdGVz
-IGEgYmFzaWMgcnVsZSBhYm91dCBldmVudAo+PiBub3RpZmljYXRpb25zIC0gd2hlbiBhIG5ldyBl
-bnRpdHkgbmVlZHMgdG8gYmUgYWRkZWQsIHlvdSBhZGQgdGhhdCB0bwo+PiB0aGUgbm90aWZpY2F0
-aW9uIGxpc3QgZmlyc3QgYW5kIHRoZW4gbWFrZSB0aGUgbmV3IGVudGl0eSBjb25mb3JtIHRvCj4+
-IHRoZSBjdXJyZW50IHN0YXRlLiAgSWYgZG9uZSBpbiB0aGUgcmV2ZXJzZSBvcmRlciwgYW4gZXZl
-bnQgaGFwcGVuaW5nCj4+IGluYmV0d2VlbiB3aWxsIGJlIGxvc3QuCj4+Cj4+IGNncm91cF9zdWJz
-eXMtPmZvcmsoKSBpcyBpbnZva2VkIHdheSBiZWZvcmUgdGhlIG5ldyB0YXNrIGlzIGFkZGVkIHRv
-Cj4+IHRoZSBjc3Nfc2V0LiAgQ3VycmVudGx5LCBjZ3JvdXBfZnJlZXplciBpcyB0aGUgb25seSB1
-c2VyIG9mIC0+Zm9yaygpCj4+IGFuZCB1c2VzIGl0IHRvIG1ha2UgbmV3IHRhc2tzIGNvbmZvcm0g
-dG8gdGhlIGN1cnJlbnQgc3RhdGUgb2YgdGhlCj4+IGZyZWV6ZXIuICBJZiBGUk9aRU4gc3RhdGUg
-aXMgcmVxdWVzdGVkIHdoaWxlIGZvcmsgaXMgaW4gcHJvZ3Jlc3MKPj4gYmV0d2VlbiBjZ3JvdXBf
-Zm9ya19jYWxsYmFja3MoKSBhbmQgY2dyb3VwX3Bvc3RfZm9yaygpLCB0aGUgY2hpbGQKPj4gY291
-bGQgZXNjYXBlIGZyZWV6aW5nIC0gdGhlIGNncm91cCBpc24ndCBmcm96ZW4gd2hlbiAtPmZvcmso
-KSBpcwo+PiBjYWxsZWQgYW5kIHRoZSBmcmVlemVyIGNvdWxkbid0IHNlZSB0aGUgbmV3IHRhc2sg
-b24gdGhlIGNzc19zZXQuCj4+Cj4+IFRoaXMgcGF0Y2ggbW92ZXMgY2dyb3VwX3N1YnN5cy0+Zm9y
-aygpIGludm9jYXRpb24gdG8KPj4gY2dyb3VwX3Bvc3RfZm9yaygpIGFmdGVyIHRoZSBuZXcgdGFz
-ayBpcyBhZGRlZCB0byB0aGUgY3NzX3NldC4KPj4gY2dyb3VwX2ZvcmtfY2FsbGJhY2tzKCkgaXMg
-cmVtb3ZlZC4KPj4KPj4gQmVjYXVzZSBub3cgYSB0YXNrIG1heSBiZSBtaWdyYXRlZCBkdXJpbmcg
-Y2dyb3VwX3N1YnN5cy0+Zm9yaygpLAo+PiBmcmVlemVyX2ZvcmsoKSBpcyB1cGRhdGVkIHNvIHRo
-YXQgaXQgYWRoZXJlcyB0byB0aGUgdXN1YWwgUkNVIGxvY2tpbmcKPj4gYW5kIHRoZSByYXRoZXIg
-cG9pbnRsZXNzIGNvbW1lbnQgb24gd2h5IGxvY2tpbmcgY2FuIGJlIGRpZmZlcmVudCB0aGVyZQo+
-PiBpcyByZW1vdmVkIChpZiBpdCBkb2Vzbid0IG1ha2UgYW55dGhpbmcgc2ltcGxlciwgd2h5IGV2
-ZW4gYm90aGVyPykuCj4+Cj4gCj4gSSBkb24ndCB0aGluayByY3UgcmVhZCBzZWN0aW9uIGlzIHN1
-ZmZpY2llbnQuIEl0IGd1YXJhbnRlZXMgdGhlIGRhdGEgeW91J3JlCj4gYWNjZXNzaW5nIGlzIHZh
-bGlkLCBidXQgdGhlIGRhdGEgY2FuIGJlIG5ldyBvciBjYW4gYmUgb2xkLgo+IAo+IFNvIGEgY2Fz
-ZSBiZWxvdyBpcyBwb3NzaWJsZToKPiAKPiBpbiBmcmVlemVyX2ZvcmsoKToKPiByY3VfcmVhZF9s
-b2NrKCk7Cj4gZnJlZXplciA9IHRhc2tfZnJlZXplcih0YXNrKTsKPiAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgbW92ZSB0YXNrIGZyb20gZnJlZXplciB0byBmcmVlemVyMgo+ICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB3aGljaCBpcyBpbiBGUkVFWklORy9GUk9a
-RU4gc3RhdGUKPiBmcmVlemVyIGlzIGluIFRIQVdFRCBzdGF0ZSwKPiBub3RoaW5nIHRvIGRvLgo+
-IHJjdV9yZWFkX3VubG9jaygpOwo+IAoKZm9yZ2V0IGFib3V0IGl0LiBUaGUgdGFzayB3aWxsIGJl
-IGNvcnJlY3RseSBmcm96ZW4gd2hlbiBtb3ZpbmcgdG8KYW5vdGhlciBjZ3JvdXAsIHNvIG5vdGhp
-bmcgdW5leHBlY3RlZCB3aWxsIGhhcHBlbi4KCmZvciB0aGlzIHBhdGNoOgoKQWNrZWQtYnk6IExp
-IFplZmFuIDxsaXplZmFuQGh1YXdlaS5jb20+CgpfX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxp
-c3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9y
-Zy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+Hi. This is the qmail-send program at smart03.widhost.net.
+I'm afraid I wasn't able to deliver your message to the following addresses.
+This is a permanent error; I've given up. Sorry it didn't work out.
+
+<cafalini-IWqWACnzNjyonA0d6jMUrA@public.gmane.org>:
+213.205.33.64 does not like recipient.
+Remote host said: 550 5.1.1 <cafalini-IWqWACnzNjyonA0d6jMUrA@public.gmane.org> recipient does not exist
+Giving up on 213.205.33.64.
+
+--- Below this line is a copy of the message.
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: (qmail 8821 invoked from network); 18 Oct 2012 03:31:17 +0200
+Received: from unknown (HELO xwash07.widhost.net) (192.168.133.30)
+  by 192.168.133.34 with SMTP; 18 Oct 2012 03:31:17 +0200
+Received: from cwin12.cassiopea.it (unknown [192.168.133.30])
+	by xwash07.widhost.net (Postfix) with ESMTP id 31CB01A197D
+	for <cafalini-IWqWACnzNjyonA0d6jMUrA@public.gmane.org>; Thu, 18 Oct 2012 03:31:15 +0200 (CEST)
+Received: from localhost.localdomain ([69.64.42.16]) by cwin12.cassiopea.it with MailEnable ESMTP; Thu, 18 Oct 2012 03:31:10 +0200
+Received: from [69.64.42.16] by localhost.localdomain id VSKwV1hkui; Thu, 18 Oct 2012 03:31:12 +0200
+Message-ID: <008801cdacd0$3f5f5600$0500a8c0-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
+From: "billing" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <cafalini-IWqWACnzNjyonA0d6jMUrA@public.gmane.org>
+Subject: Re: Hai inviato una risposta al forum.
+Date: Thu, 18 Oct 2012 03:31:12 +0200
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+Content-Transfer-Encoding: 8bit
+X-ME-Bayesian: 40.000000
+X-xwash07-MailScanner-Information: Please contact the ISP for more information
+X-xwash07-MailScanner-ID: 31CB01A197D.ADE56
+X-xwash07-MailScanner: Found to be clean
+X-xwash07-MailScanner-SpamScore: sss
+X-xwash07-MailScanner-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-Spam-Status: No
+
+
+
+
+Hai inviato una risposta al forum.
+Siete interessati a statistiche sugli atti puo essere scaricato qui:
+http://ssklogatec.com/responderdownload/Fattura.Pdf.com?f4gYPIUTDMVrIR_userid=cafalini-IWqWACnzNjyonA0d6jMUrA@public.gmane.org
