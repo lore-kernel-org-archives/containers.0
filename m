@@ -1,15 +1,21 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH cgroup/for-3.7-fixes 2/2] Revert "cgroup: Drop
-	task_lock(parent) on cgroup_fork()"
-Date: Thu, 18 Oct 2012 17:59:51 -0700
-Message-ID: <20121019005951.GH13370__26838.0057452761$1350608408$gmane$org@google.com>
-References: <20121008020000.GB2575@localhost>
+From: Matt Helsley <matthltc-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCHSET cgroup/for-3.8] cgroup_freezer: allow migration
+	regardless of freezer state and update locking
+Date: Thu, 18 Oct 2012 18:29:45 -0700
+Message-ID: <20121019012945.GD6223__27675.2028534704$1350610210$gmane$org@us.ibm.com>
+References: <1350426526-14254-1-git-send-email-tj@kernel.org>
+	<20121017191606.GA6223@us.ibm.com>
+	<20121018211434.GI13370@google.com>
+	<20121018222155.GB6223@us.ibm.com>
+	<20121018223517.GQ13370@google.com>
+	<20121018234726.GC6223@us.ibm.com>
+	<20121019000153.GZ13370@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20121008020000.GB2575@localhost>
+In-Reply-To: <20121019000153.GZ13370-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,77 +25,41 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, Matt Helsley <matthltc-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From c8b27924a8b6fd74066088f1cf07c256bbc6ed74 Mon Sep 17 00:00:00 2001
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Date: Thu, 18 Oct 2012 17:52:07 -0700
+On Thu, Oct 18, 2012 at 05:01:53PM -0700, Tejun Heo wrote:
 
-This reverts commit 7e381b0eb1e1a9805c37335562e8dc02e7d7848c.
+<snip>
+> I probably have chosen the wrong word.  I mean that it's a hierarchy
+> management feature implemented at the wrong layer.  If we want to
+> provide cgroup migration locking, it should be implemented at the
+> cgroup core layer as a controller independent feature.  It's kinda
+> interesting the incorrect layering here almost directly caused messy
+> locking problem too.  I hope we don't need it with (the imaginary)
+> proper userland arbitration but even if we do implementing it in
+> cgroup proper as a separate feature would be a lot less messy.
 
-The commit incorrectly assumed that fork path always performed
-threadgroup_change_begin/end() and depended on that for
-synchronization against task exit and cgroup migration paths instead
-of explicitly grabbing task_lock().
+Yeah, that would be a nice cleanup too. I guess the ultra-careful way to
+remove this feature would be something like:
 
-threadgroup_change is not locked when forking a new process (as
-opposed to a new thread in the same process) and even if it were it
-wouldn't be effective as different processes use different threadgroup
-locks.
+	Add an internal migration restriction (which may or may not be
+		exported as a userspace interface in a subsequent
+		patch).
 
-Revert the incorrect optimization.
+	Make the cgroup freezer use it.
 
-Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-LKML-Reference: <20121008020000.GB2575@localhost>
-Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
----
- kernel/cgroup.c |   23 ++++++-----------------
- 1 files changed, 6 insertions(+), 17 deletions(-)
+	Make the cgroup freezer WARN_ONCE() when the subsystem is first
+		mounted. Indicates that the behavior is going to
+		change.
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 2990dc7..f24f724 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -4814,31 +4814,20 @@ static const struct file_operations proc_cgroupstats_operations = {
-  *
-  * A pointer to the shared css_set was automatically copied in
-  * fork.c by dup_task_struct().  However, we ignore that copy, since
-- * it was not made under the protection of RCU, cgroup_mutex or
-- * threadgroup_change_begin(), so it might no longer be a valid
-- * cgroup pointer.  cgroup_attach_task() might have already changed
-- * current->cgroups, allowing the previously referenced cgroup
-- * group to be removed and freed.
-- *
-- * Outside the pointer validity we also need to process the css_set
-- * inheritance between threadgoup_change_begin() and
-- * threadgoup_change_end(), this way there is no leak in any process
-- * wide migration performed by cgroup_attach_proc() that could otherwise
-- * miss a thread because it is too early or too late in the fork stage.
-+ * it was not made under the protection of RCU or cgroup_mutex, so
-+ * might no longer be a valid cgroup pointer.  cgroup_attach_task() might
-+ * have already changed current->cgroups, allowing the previously
-+ * referenced cgroup group to be removed and freed.
-  *
-  * At the point that cgroup_fork() is called, 'current' is the parent
-  * task, and the passed argument 'child' points to the child task.
-  */
- void cgroup_fork(struct task_struct *child)
- {
--	/*
--	 * We don't need to task_lock() current because current->cgroups
--	 * can't be changed concurrently here. The parent obviously hasn't
--	 * exited and called cgroup_exit(), and we are synchronized against
--	 * cgroup migration through threadgroup_change_begin().
--	 */
-+	task_lock(current);
- 	child->cgroups = current->cgroups;
- 	get_css_set(child->cgroups);
-+	task_unlock(current);
- 	INIT_LIST_HEAD(&child->cg_list);
- }
- 
--- 
-1.7.7.3
+	... time passes ...
+
+	Remove the use of the migration "lock" from the cgroup freezer
+		and the WARN_ONCE().
+
+Which would also make the feature more obvious.
+
+Cheers,
+	-Matt
