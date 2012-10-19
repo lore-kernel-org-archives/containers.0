@@ -1,15 +1,15 @@
 From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH cgroup/for-3.7-fixes 1/2] Revert "cgroup: Remove
-	task_lock() from cgroup_post_fork()"
-Date: Fri, 19 Oct 2012 09:35:26 -0400
-Message-ID: <CAFTL4hz82==b3ioSMhbKzh0CN1ivR7RQMKKMFFWu5PHPjg=Bfg__30792.6129237332$1350653745$gmane$org@mail.gmail.com>
+Subject: Re: [PATCH cgroup/for-3.7-fixes 2/2] Revert "cgroup: Drop
+	task_lock(parent) on cgroup_fork()"
+Date: Fri, 19 Oct 2012 09:45:15 -0400
+Message-ID: <CAFTL4hzH6mj-UqGx1CaOyJTtwWPEQU97537+-ooivzr+8vXVGQ__44149.6457592168$1350654330$gmane$org@mail.gmail.com>
 References: <20121008020000.GB2575@localhost>
-	<20121019005922.GG13370@google.com>
+	<20121019005951.GH13370@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20121019005922.GG13370-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20121019005951.GH13370-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,11 +24,11 @@ Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFL
 List-Id: containers.vger.kernel.org
 
 2012/10/18 Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>:
-> From d935a5d6832a264ce52f4257e176f4f96cbaf048 Mon Sep 17 00:00:00 2001
+> From c8b27924a8b6fd74066088f1cf07c256bbc6ed74 Mon Sep 17 00:00:00 2001
 > From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Date: Thu, 18 Oct 2012 17:40:30 -0700
+> Date: Thu, 18 Oct 2012 17:52:07 -0700
 >
-> This reverts commit 7e3aa30ac8c904a706518b725c451bb486daaae9.
+> This reverts commit 7e381b0eb1e1a9805c37335562e8dc02e7d7848c.
 >
 > The commit incorrectly assumed that fork path always performed
 > threadgroup_change_begin/end() and depended on that for
@@ -41,48 +41,61 @@ List-Id: containers.vger.kernel.org
 > locks.
 >
 > Revert the incorrect optimization.
-
-Ok but there is still no good reason to task_lock() there. But the
-comment is indeed wrong,  how about fixing it instead? I can send you
-a patch for that.
-
 >
 > Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 > LKML-Reference: <20121008020000.GB2575@localhost>
-> Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+
+(bitterly) Acked-by: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> :-)
+
+
 > Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 > Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 > ---
->  kernel/cgroup.c |   15 +++------------
->  1 files changed, 3 insertions(+), 12 deletions(-)
+>  kernel/cgroup.c |   23 ++++++-----------------
+>  1 files changed, 6 insertions(+), 17 deletions(-)
 >
 > diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index d1739fc..2990dc7 100644
+> index 2990dc7..f24f724 100644
 > --- a/kernel/cgroup.c
 > +++ b/kernel/cgroup.c
-> @@ -4894,19 +4894,10 @@ void cgroup_post_fork(struct task_struct *child)
->          */
->         if (use_task_css_set_links) {
->                 write_lock(&css_set_lock);
-> -               if (list_empty(&child->cg_list)) {
-> -                       /*
-> -                        * It's safe to use child->cgroups without task_lock()
-> -                        * here because we are protected through
-> -                        * threadgroup_change_begin() against concurrent
-> -                        * css_set change in cgroup_task_migrate(). Also
-> -                        * the task can't exit at that point until
-> -                        * wake_up_new_task() is called, so we are protected
-> -                        * against cgroup_exit() setting child->cgroup to
-> -                        * init_css_set.
-> -                        */
-> +               task_lock(child);
-> +               if (list_empty(&child->cg_list))
->                         list_add(&child->cg_list, &child->cgroups->tasks);
-> -               }
-> +               task_unlock(child);
->                 write_unlock(&css_set_lock);
->         }
+> @@ -4814,31 +4814,20 @@ static const struct file_operations proc_cgroupstats_operations = {
+>   *
+>   * A pointer to the shared css_set was automatically copied in
+>   * fork.c by dup_task_struct().  However, we ignore that copy, since
+> - * it was not made under the protection of RCU, cgroup_mutex or
+> - * threadgroup_change_begin(), so it might no longer be a valid
+> - * cgroup pointer.  cgroup_attach_task() might have already changed
+> - * current->cgroups, allowing the previously referenced cgroup
+> - * group to be removed and freed.
+> - *
+> - * Outside the pointer validity we also need to process the css_set
+> - * inheritance between threadgoup_change_begin() and
+> - * threadgoup_change_end(), this way there is no leak in any process
+> - * wide migration performed by cgroup_attach_proc() that could otherwise
+> - * miss a thread because it is too early or too late in the fork stage.
+> + * it was not made under the protection of RCU or cgroup_mutex, so
+> + * might no longer be a valid cgroup pointer.  cgroup_attach_task() might
+> + * have already changed current->cgroups, allowing the previously
+> + * referenced cgroup group to be removed and freed.
+>   *
+>   * At the point that cgroup_fork() is called, 'current' is the parent
+>   * task, and the passed argument 'child' points to the child task.
+>   */
+>  void cgroup_fork(struct task_struct *child)
+>  {
+> -       /*
+> -        * We don't need to task_lock() current because current->cgroups
+> -        * can't be changed concurrently here. The parent obviously hasn't
+> -        * exited and called cgroup_exit(), and we are synchronized against
+> -        * cgroup migration through threadgroup_change_begin().
+> -        */
+> +       task_lock(current);
+>         child->cgroups = current->cgroups;
+>         get_css_set(child->cgroups);
+> +       task_unlock(current);
+>         INIT_LIST_HEAD(&child->cg_list);
 >  }
+>
 > --
 > 1.7.7.3
 >
