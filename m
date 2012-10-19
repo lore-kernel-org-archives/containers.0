@@ -1,20 +1,15 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: Is not locking task_lock in cgroup_fork() safe?
-Date: Thu, 18 Oct 2012 17:58:01 -0700
-Message-ID: <20121019005801.GF13370@google.com>
+Subject: [PATCH cgroup/for-3.7-fixes 1/2] Revert "cgroup: Remove
+	task_lock() from cgroup_post_fork()"
+Date: Thu, 18 Oct 2012 17:59:22 -0700
+Message-ID: <20121019005922.GG13370__20009.3727944934$1350608386$gmane$org@google.com>
 References: <20121008020000.GB2575@localhost>
-	<CAFTL4hzXWtzp7megsCAEuak5=_2SWmp9age-+wrpyQAU4BRZ0w@mail.gmail.com>
-	<20121016193341.GD16166@google.com>
-	<CAFTL4hzo_w7HTgC9ApTk113X8WdZSpV+D+VSEe=604YEJFmKsg@mail.gmail.com>
-	<20121018200705.GG13370@google.com>
-	<CAFTL4hy7g4e11OUOyoihrEU8hiVgZoV1=141UtUpj9a72SNs_Q@mail.gmail.com>
-	<20121019003835.GE13370@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20121019003835.GE13370-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20121008020000.GB2575@localhost>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,30 +19,62 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, again.
+From d935a5d6832a264ce52f4257e176f4f96cbaf048 Mon Sep 17 00:00:00 2001
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Date: Thu, 18 Oct 2012 17:40:30 -0700
 
-On Thu, Oct 18, 2012 at 05:38:35PM -0700, Tejun Heo wrote:
-> Even if there isn't an actual race, the comment is dead wrong.  I'm
-> reverting the following three patches.  Let's try again later.
-> 
->   7e381b0eb1 ("cgroup: Drop task_lock(parent) on cgroup_fork()")
->   7e3aa30ac8 ("cgroup: Remove task_lock() from cgroup_post_fork()")
+This reverts commit 7e3aa30ac8c904a706518b725c451bb486daaae9.
 
-So, after some more looking, I think the following is correct and
-doesn't need to be reverted.  It's depending on threadgroup locking
-from migration path to synchronize against exit path which is always
-performed.
+The commit incorrectly assumed that fork path always performed
+threadgroup_change_begin/end() and depended on that for
+synchronization against task exit and cgroup migration paths instead
+of explicitly grabbing task_lock().
 
->   c84cdf75cc ("cgroup: Remove unnecessary task_lock before fetching css_set on migration")
+threadgroup_change is not locked when forking a new process (as
+opposed to a new thread in the same process) and even if it were it
+wouldn't be effective as different processes use different threadgroup
+locks.
 
-Frederic, were you trying to say that the above commit is correct?
-Li, do you agree?
+Revert the incorrect optimization.
 
-Thanks.
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+LKML-Reference: <20121008020000.GB2575@localhost>
+Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+---
+ kernel/cgroup.c |   15 +++------------
+ 1 files changed, 3 insertions(+), 12 deletions(-)
 
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index d1739fc..2990dc7 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -4894,19 +4894,10 @@ void cgroup_post_fork(struct task_struct *child)
+ 	 */
+ 	if (use_task_css_set_links) {
+ 		write_lock(&css_set_lock);
+-		if (list_empty(&child->cg_list)) {
+-			/*
+-			 * It's safe to use child->cgroups without task_lock()
+-			 * here because we are protected through
+-			 * threadgroup_change_begin() against concurrent
+-			 * css_set change in cgroup_task_migrate(). Also
+-			 * the task can't exit at that point until
+-			 * wake_up_new_task() is called, so we are protected
+-			 * against cgroup_exit() setting child->cgroup to
+-			 * init_css_set.
+-			 */
++		task_lock(child);
++		if (list_empty(&child->cg_list))
+ 			list_add(&child->cg_list, &child->cgroups->tasks);
+-		}
++		task_unlock(child);
+ 		write_unlock(&css_set_lock);
+ 	}
+ }
 -- 
-tejun
+1.7.7.3
