@@ -1,15 +1,14 @@
-From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH cgroup/for-3.7-fixes 2/2] Revert "cgroup: Drop
-	task_lock(parent) on cgroup_fork()"
-Date: Fri, 19 Oct 2012 09:45:15 -0400
-Message-ID: <CAFTL4hzH6mj-UqGx1CaOyJTtwWPEQU97537+-ooivzr+8vXVGQ__44149.6457592168$1350654330$gmane$org@mail.gmail.com>
-References: <20121008020000.GB2575@localhost>
-	<20121019005951.GH13370@google.com>
+From: "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>
+Subject: Re: [PATCHSET cgroup/for-3.8] cgroup_freezer: allow migration
+	regardless of freezer state and update locking
+Date: Fri, 19 Oct 2012 18:54:42 +0200
+Message-ID: <2424755.Pg0O5tTD3k__13759.9094807685$1350665469$gmane$org@vostro.rjw.lan>
+References: <1350426526-14254-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20121019005951.GH13370-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1350426526-14254-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,82 +19,63 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-2012/10/18 Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>:
-> From c8b27924a8b6fd74066088f1cf07c256bbc6ed74 Mon Sep 17 00:00:00 2001
-> From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Date: Thu, 18 Oct 2012 17:52:07 -0700
->
-> This reverts commit 7e381b0eb1e1a9805c37335562e8dc02e7d7848c.
->
-> The commit incorrectly assumed that fork path always performed
-> threadgroup_change_begin/end() and depended on that for
-> synchronization against task exit and cgroup migration paths instead
-> of explicitly grabbing task_lock().
->
-> threadgroup_change is not locked when forking a new process (as
-> opposed to a new thread in the same process) and even if it were it
-> wouldn't be effective as different processes use different threadgroup
-> locks.
->
-> Revert the incorrect optimization.
->
-> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> LKML-Reference: <20121008020000.GB2575@localhost>
+On Tuesday 16 of October 2012 15:28:39 Tejun Heo wrote:
+> Hello,
+> 
+> This patchset updates cgroup_freezer so that
+> 
+> * Unfreezable kernel tasks don't prevent a cgroup from transitioning
+>   into FROZEN from FREEZING.  There's nothing userland can do with or
+>   about such tasks.
+> 
+> * Tasks can be moved in and out of a frozen cgroup.  Tasks are made to
+>   conform to the state of the new cgroup during migration.  This
+>   behavior makes a lot more sense and removes the use of
+>   ->can_attach() which makes co-mounting difficult.
+> 
+> * Remove use of cgroup_lock_live_group().  Grabbing cgroup_lock from
+>   outside cgroup proper creates a painful locking dependency and is
+>   being phased out.  With the above behavior change, removing
+>   dependency on cgroup_lock is pretty easy.  IMHO, it was simply the
+>   wrong behavior to implement which forced the wrong implementation.
+> 
+> This patchset contains the following seven patches.
+> 
+>  0001-cgroup-cgroup_subsys-fork-should-be-called-after-the.patch
+>  0002-freezer-add-missing-mb-s-to-freezer_count-and-freeze.patch
+>  0003-cgroup_freezer-make-it-official-that-writes-to-freez.patch
+>  0004-cgroup_freezer-don-t-stall-transition-to-FROZEN-for-.patch
+>  0005-cgroup_freezer-allow-moving-tasks-in-and-out-of-a-fr.patch
+>  0006-cgroup_freezer-prepare-update_if_frozen-for-locking-.patch
+>  0007-cgroup_freezer-don-t-use-cgroup_lock_live_group.patch
+> 
+> 0001 is a fix for a rather embarrassing bug in cgroup core.  It does
+> things in the wrong order leaving a window for racing during fork.
+> 
+> 0002 adds a missing mb() around freezing condition updates / checks.
+> 
+> 0003-0004 make cgroup_freezer ignore unfreezable kernel tasks and
+> handle PF_FREEZER_SKIP correctly.
+> 
+> 0005 allows migrating tasks in and out of a frozen cgroup.
+> 
+> 0006-0007 remove the use of cgroup_lock_live_group().
+> 
+> This patchset is on top of v3.7-rc1 and available in the following git
+> branch.
+> 
+>  git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-cgroup_freezer-locking
 
-(bitterly) Acked-by: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> :-)
+It seems that no one has any comments. :-)
+
+Are you going to prepare a branch for me to pull from?
+
+Rafael
 
 
-> Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-> Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> ---
->  kernel/cgroup.c |   23 ++++++-----------------
->  1 files changed, 6 insertions(+), 17 deletions(-)
->
-> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index 2990dc7..f24f724 100644
-> --- a/kernel/cgroup.c
-> +++ b/kernel/cgroup.c
-> @@ -4814,31 +4814,20 @@ static const struct file_operations proc_cgroupstats_operations = {
->   *
->   * A pointer to the shared css_set was automatically copied in
->   * fork.c by dup_task_struct().  However, we ignore that copy, since
-> - * it was not made under the protection of RCU, cgroup_mutex or
-> - * threadgroup_change_begin(), so it might no longer be a valid
-> - * cgroup pointer.  cgroup_attach_task() might have already changed
-> - * current->cgroups, allowing the previously referenced cgroup
-> - * group to be removed and freed.
-> - *
-> - * Outside the pointer validity we also need to process the css_set
-> - * inheritance between threadgoup_change_begin() and
-> - * threadgoup_change_end(), this way there is no leak in any process
-> - * wide migration performed by cgroup_attach_proc() that could otherwise
-> - * miss a thread because it is too early or too late in the fork stage.
-> + * it was not made under the protection of RCU or cgroup_mutex, so
-> + * might no longer be a valid cgroup pointer.  cgroup_attach_task() might
-> + * have already changed current->cgroups, allowing the previously
-> + * referenced cgroup group to be removed and freed.
->   *
->   * At the point that cgroup_fork() is called, 'current' is the parent
->   * task, and the passed argument 'child' points to the child task.
->   */
->  void cgroup_fork(struct task_struct *child)
->  {
-> -       /*
-> -        * We don't need to task_lock() current because current->cgroups
-> -        * can't be changed concurrently here. The parent obviously hasn't
-> -        * exited and called cgroup_exit(), and we are synchronized against
-> -        * cgroup migration through threadgroup_change_begin().
-> -        */
-> +       task_lock(current);
->         child->cgroups = current->cgroups;
->         get_css_set(child->cgroups);
-> +       task_unlock(current);
->         INIT_LIST_HEAD(&child->cg_list);
->  }
->
-> --
-> 1.7.7.3
->
+-- 
+I speak only for myself.
+Rafael J. Wysocki, Intel Open Source Technology Center.
