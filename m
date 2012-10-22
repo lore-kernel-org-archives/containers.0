@@ -1,13 +1,10 @@
-From: <postmaster-v6irEOkJznmE+EvaaNYduQ@public.gmane.org>
-Subject: Impossibile recapitare: Re: document 60506
-Date: Tue, 23 Oct 2012 00:37:38 +0200
-Message-ID: <7d433485-6a84-477e-a07a-b41338a0ff91@cisano.local>
-References: <xNOhTBfoIE3AaAjrKKpOk2cFFI@{#LAST_DNS}>
+From: MAILER-DAEMON-uLlKHfNbD8XaOaz2Di3aWEEOCMrvLtNR@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Tue, 23 Oct 2012 01:00:23 +0200 (CEST)
+Message-ID: <20121022230023.EB49B2124D9C@hl83.dinaserver.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============3915856671150884709=="
+Content-Type: multipart/mixed; boundary="===============3001735405572741489=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: it-IT
-In-Reply-To: <xNOhTBfoIE3AaAjrKKpOk2cFFI@{#LAST_DNS}>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,127 +17,139 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============3915856671150884709==
+This is a MIME-encapsulated message.
+
+--===============3001735405572741489==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="232dcf0c-c023-46b0-99bc-4c1887d4efe2"
-Content-Language: it-IT
+	boundary="E69AF2124E3A.1350946823/hl83.dinaserver.com"
+Content-Transfer-Encoding: 7bit
 
---232dcf0c-c023-46b0-99bc-4c1887d4efe2
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+This is a MIME-encapsulated message.
 
-Il recapito non =E8 riuscito per i seguenti destinatari o gruppi:
+--E69AF2124E3A.1350946823/hl83.dinaserver.com
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-lombardi-6WA2pQzGUPKonA0d6jMUrA@public.gmane.org<mailto:lombardi-6WA2pQzGUPKonA0d6jMUrA@public.gmane.org>
-Impossibile trovare l'indirizzo di posta elettronica immesso. Verificare l'=
-indirizzo e provare a inviare nuovamente il messaggio. Se il problema persi=
-ste, contattare il supporto tecnico dell'organizzazione.
+This is the mail system at host hl83.dinaserver.com.
 
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
 
+For further assistance, please send mail to postmaster.
 
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
 
+                   The mail system
 
+<davidam-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org>: host etb-2.mail.tiscali.it[213.205.33.62] said: 550
+    5.1.1 <davidam-IWqWACnzNjyonA0d6jMUrA@public.gmane.org> recipient overquota (in reply to RCPT TO
+    command)
 
+<davidanza-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org>: host etb-2.mail.tiscali.it[213.205.33.62] said: 550
+    5.1.1 <davidanza-IWqWACnzNjyonA0d6jMUrA@public.gmane.org> recipient overquota (in reply to RCPT TO
+    command)
 
+<davidaus-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org>: host etb-2.mail.tiscali.it[213.205.33.62] said: 550
+    5.1.1 <davidaus-IWqWACnzNjyonA0d6jMUrA@public.gmane.org> recipient does not exist (in reply to RCPT TO
+    command)
 
-Informazioni di diagnostica per gli amministratori:
-
-Server di generazione: cisano.local
-
-lombardi-6WA2pQzGUPKonA0d6jMUrA@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
-
-Intestazioni originali del messaggio:
-
-Received: from ns236866.ovh.net (37.59.19.142) by owa.bonfanti.it
- (192.4.7.160) with Microsoft SMTP Server id 14.0.722.0; Tue, 23 Oct 2012
- 00:37:37 +0200
-Received: from [37.59.19.142] ([37.59.19.142:16575])    by {#LAST_DNS}
- (envelope-from <update+zSWNPbRskLj6nxK7ZF@{#LAST_DNS}>)        (ecelerity =
-2.2.2.45
- r(34222M)) with ECSTREAM       id 0E/{DIGITS>2<2#MARK-{DIGITS>4<4#MARK-315=
-2B5904;
- Tue, 02 Oct 2012 16:05:10 -0700
-Date: Tue, 2 Oct 2012 16:05:10 -0700
-To: <lombardi-6WA2pQzGUPKonA0d6jMUrA@public.gmane.org>
-From: devnull <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: Re: document 60506
-Message-ID: <xNOhTBfoIE3AaAjrKKpOk2cFFI@{#LAST_DNS}>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=3D"UTF-8"
-Content-Transfer-Encoding: 8bit
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-
-
---232dcf0c-c023-46b0-99bc-4c1887d4efe2
+--E69AF2124E3A.1350946823/hl83.dinaserver.com
+Content-Description: Delivery report
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns;cisano.local
-Received-From-MTA: dns;ns236866.ovh.net
-Arrival-Date: Mon, 22 Oct 2012 22:37:37 +0000
+Reporting-MTA: dns; hl83.dinaserver.com
+X-Postfix-Queue-ID: E69AF2124E3A
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Tue, 23 Oct 2012 00:59:30 +0200 (CEST)
 
-Final-Recipient: rfc822;lombardi-6WA2pQzGUPKonA0d6jMUrA@public.gmane.org
+Final-Recipient: rfc822; davidam-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org
+Original-Recipient: rfc822;davidam-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org
 Action: failed
 Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
+Remote-MTA: dns; etb-2.mail.tiscali.it
+Diagnostic-Code: smtp; 550 5.1.1 <davidam-IWqWACnzNjyonA0d6jMUrA@public.gmane.org> recipient overquota
 
+Final-Recipient: rfc822; davidanza-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org
+Original-Recipient: rfc822;davidanza-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org
+Action: failed
+Status: 5.1.1
+Remote-MTA: dns; etb-2.mail.tiscali.it
+Diagnostic-Code: smtp; 550 5.1.1 <davidanza-IWqWACnzNjyonA0d6jMUrA@public.gmane.org> recipient overquota
 
---232dcf0c-c023-46b0-99bc-4c1887d4efe2
+Final-Recipient: rfc822; davidaus-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org
+Original-Recipient: rfc822;davidaus-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org
+Action: failed
+Status: 5.1.1
+Remote-MTA: dns; etb-2.mail.tiscali.it
+Diagnostic-Code: smtp; 550 5.1.1 <davidaus-IWqWACnzNjyonA0d6jMUrA@public.gmane.org> recipient does not exist
+
+--E69AF2124E3A.1350946823/hl83.dinaserver.com
+Content-Description: Undelivered Message
 Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
 
-Received: from ns236866.ovh.net (37.59.19.142) by owa.bonfanti.it
- (192.4.7.160) with Microsoft SMTP Server id 14.0.722.0; Tue, 23 Oct 2012
- 00:37:37 +0200
-Received: from [37.59.19.142] ([37.59.19.142:16575])	by {#LAST_DNS}
- (envelope-from <update+zSWNPbRskLj6nxK7ZF@{#LAST_DNS}>)	(ecelerity 2.2.2.45
- r(34222M)) with ECSTREAM	id 0E/{DIGITS>2<2#MARK-{DIGITS>4<4#MARK-3152B5904;
- Tue, 02 Oct 2012 16:05:10 -0700
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from 441274-db1.indyarocks.com (unknown [180.150.153.17])
+	by hl83.dinaserver.com (Postfix) with ESMTPA id CC8582124ECE;
+	Tue, 23 Oct 2012 00:59:30 +0200 (CEST)
+Received: from [192.168.100.17] ([192.168.100.17:19801])
+	by {#LAST_DNS} (envelope-from <update+64NtwLabxcfWLWsTTm6A@{#LAST_DNS}>)
+	(ecelerity 2.2.2.45 r(34222M)) with ECSTREAM
+	id 0E/{DIGITS>2<2#MARK-{DIGITS>4<4#MARK-3278B4116; Tue, 02 Oct 2012 16:05:10 -0700
 Date: Tue, 2 Oct 2012 16:05:10 -0700
-To: <lombardi-6WA2pQzGUPKonA0d6jMUrA@public.gmane.org>
-From: devnull <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: Re: document 60506
-Message-ID: <xNOhTBfoIE3AaAjrKKpOk2cFFI@{#LAST_DNS}>
+To: <davidam-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org>
+From: "PAY" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: Fattura N 1727323976.
+Message-ID: <b8zOE9AcPxSeQZl75zty6bDnwQ7v9nS@{#LAST_DNS}>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain;
+ charset="UTF-8"
+X-DinaScanner-Information: DinaScanner. Filtro anti-Spam y anti-Virus
+X-MailScanner-ID: CC8582124ECE.BD72B
+X-DinaScanner: Libre de Virus
+X-DinaScanner-SpamCheck: no es spam, SpamAssassin (not cached, puntaje=4.127,
+	requerido 6, ALL_TRUSTED -1.80, BAYES_00 -2.60,
+	DATE_IN_PAST_96_XX 1.69, RAZOR2_CF_RANGE_51_100 0.50,
+	RAZOR2_CF_RANGE_E8_51_100 1.50, RAZOR2_CHECK 0.50, RCVD_BAD_ID 2.84,
+	URIBL_SBL 1.50)
+X-DinaScanner-SpamScore: 4.13
+X-DinaScanner-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-Spam-Status: No
 Content-Transfer-Encoding: quoted-printable
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 
 
-
-   =20
 Buongiorno,=20
+         =20
 
 
-The answer to your request about profile consultation on ours the Web to pa=
-ge of 09.08.2011.
+Grazie per aver ordinate da Zmobile Inc.
+     =20
+Il questo messagio e solo da informarvi che il =20
+vostro ordine ero stato ricevuto ed attualmente=20
+e nel fase di elaborazione. =20
+  =20
+Il vostro riferimento di ordine e  6380.=20
+Avrete bisogno di questo in corrispondenza.=20
+Tale ricevuta non e prova di acquisto.=20
+Riceverete la fattura stampata via posta a indirizzo di fatturazione.=20
+   =20
+Avete schelto la paga con la carta di credito.=20
+   =20
+La carta verra addebitata a somma di 733.00 USD=20
+e "Zmobile Inc." apparira'  accanto alla tassa di vostra dichiarazione.=20
+       =20
+L'informazione=20
+http://alamsindo.com/Ordine.zip
 
-Statistics is enclosed in archive, we will be glad to cooperate in the futu=
-re.
-http://69.195.95.169/Ordine.zip
 
-Thanks,
-=20
-Tony Caruso
-Consult Adviser
-Union Consult Group
-(C) 205 583-2074
-(F) 205 557-6958
-
-Web site; unionconsult org
-
-Home address; 16 Morningside Rd, Easton CT 31925
-
---=20
-Ray Paltauf
-Connecticut Outdoor Living
-205 206 521-4423
-                     =20
+    =20
 
 
 
---232dcf0c-c023-46b0-99bc-4c1887d4efe2--
+--E69AF2124E3A.1350946823/hl83.dinaserver.com--
 
---===============3915856671150884709==
+--===============3001735405572741489==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -150,4 +159,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============3915856671150884709==--
+--===============3001735405572741489==--
