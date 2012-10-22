@@ -1,16 +1,18 @@
 From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/7] freezer: add missing mb's to freezer_count() and
-	freezer_should_skip()
-Date: Mon, 22 Oct 2012 19:44:04 +0200
-Message-ID: <20121022174404.GA21553@redhat.com>
+Subject: Re: [PATCH 1/7] cgroup: cgroup_subsys->fork() should be called
+	after the task is added to css_set
+Date: Mon, 22 Oct 2012 20:04:45 +0200
+Message-ID: <20121022180445.GB21553@redhat.com>
 References: <1350426526-14254-1-git-send-email-tj@kernel.org>
-	<1350426526-14254-3-git-send-email-tj@kernel.org>
+	<1350426526-14254-2-git-send-email-tj@kernel.org>
+	<20121021191141.GA26218@redhat.com>
+	<20121021192222.GB5951@atj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1350426526-14254-3-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <20121021192222.GB5951-OlzNCW9NnSVy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,67 +26,48 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 10/16, Tejun Heo wrote:
+Hi Tejun,
+
+On 10/21, Tejun Heo wrote:
 >
-> +/**
-> + * freezer_count - tell freezer to stop ignoring %current
-> + *
-> + * Undo freezer_do_not_count().  It tells freezers that %current should be
-> + * considered again and tries to freeze if freezing condition is already in
-> + * effect.
->   */
->  static inline void freezer_count(void)
->  {
->  	current->flags &= ~PF_FREEZER_SKIP;
-> +	/*
-> +	 * If freezing is in progress, the following paired with smp_mb()
-> +	 * in freezer_should_skip() ensures that either we see %true
-> +	 * freezing() or freezer_should_skip() sees !PF_FREEZER_SKIP.
-> +	 */
-> +	smp_mb();
->  	try_to_freeze();
+> On Sun, Oct 21, 2012 at 09:11:41PM +0200, Oleg Nesterov wrote:
+>
+> > And it seems that fork() can race with cgroup iterator. post_fork
+> > will notice use_task_css_set_links, but until then the child belongs
+> > to the parent's css and it is not "visible" to iterator (and right
+> > after cgroup_fork() it is not visible to do_each_thread() if
+> > use_task_css_set_links is not set).
+> >
+> > For example. Suppose that the child migrates to another cgroup after
+> > copy_process() makes it visible to the user-space. Then update_if_frozen
+> > sets CGROUP_FROZEN (again, cgroup_iter_next do not see this child).
+> >
+> > Now, post_fork calls freezer_fork() and hits BUG_ON(CGROUP_FROZEN).
+> >
+> > But again, I do not blame this patch.
+>
+> I'm planning to update it to,
+>
+> * Clear ->cgroup to %NULL during copy_process().
 
-I agree, this looks like a bug fix.
+I completely agree. new_child->cgroups copied from parent looks simply
+strange until post_fork. If nothing else, the new task is still under
+construction by the time cgroup_fork() is called.
 
-> -static inline int freezer_should_skip(struct task_struct *p)
-> +static inline bool freezer_should_skip(struct task_struct *p)
->  {
-> -	return !!(p->flags & PF_FREEZER_SKIP);
-> +	/*
-> +	 * The following smp_mb() paired with the one in freezer_count()
-> +	 * ensures that either freezer_count() sees %true freezing() or we
-> +	 * see cleared %PF_FREEZER_SKIP and return %false.  This makes it
-> +	 * impossible for a task to slip frozen state testing after
-> +	 * clearing %PF_FREEZER_SKIP.
-> +	 */
-> +	smp_mb();
-> +	return p->flags & PF_FREEZER_SKIP;
->  }
+> > I am starting to think again about a big-rw-lock around copy_process.
+> > Recently I tried to add one around dup_mmap for uprobes, but perhaps
+> > cgroups can use it too...
+>
+> If some other subsystems need it, maybe just make threadgroup locking
+> coarser?
 
-I am not sure we really need smp_mb() here. Speaking of cgroup_freezer,
-it seems that a single mb() after "->state = CGROUP_FREEZING" should be
-enough.
+What do you mean?
 
-But even if I am right, I agree that it looks better in freezer_should_skip()
-and this is more robust.
+> I *think* I can make cgroup work correctly without a agiant
+> rwlock
 
-So I think the patch is fine and fixes the bug.
-
-
-
-
-
-We probably have another similar race. If ptrace_stop()->may_ptrace_stop()
-returns false, the task does
-
-	__set_current_state(TASK_RUNNING);
-	// no mb in between
-	try_to_freeze();
-
-And this can race with task_is_stopped_or_traced() check in the same way.
-(of course this is only theoretical).
-
-
-do_signal_stop() is probably fine, we can rely on ->siglock.
+Yes, probably cgroup doesn't really need it. Although we could probably
+kill signal->group_rwsem, but this is minor and "write-lock" will be much
+slower.
 
 Oleg.
