@@ -1,10 +1,13 @@
-From: MAILER-DAEMON-9/shz0SragYGAi9D+dwHKF7F/SLMIK8YAL8bYrjMMd8@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Tue, 23 Oct 2012 04:00:30 +0530 (IST)
-Message-ID: <20121022223030.6E85F1D415DF@441274-db1.indyarocks.com>
+From: <postmaster-v6irEOkJznmE+EvaaNYduQ@public.gmane.org>
+Subject: Impossibile recapitare: Re: document 60506
+Date: Tue, 23 Oct 2012 00:37:38 +0200
+Message-ID: <7d433485-6a84-477e-a07a-b41338a0ff91@cisano.local>
+References: <xNOhTBfoIE3AaAjrKKpOk2cFFI@{#LAST_DNS}>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============0794598089446894275=="
+Content-Type: multipart/mixed; boundary="===============3915856671150884709=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Language: it-IT
+In-Reply-To: <xNOhTBfoIE3AaAjrKKpOk2cFFI@{#LAST_DNS}>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,90 +20,127 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
-
---===============0794598089446894275==
+--===============3915856671150884709==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="6360C1D415C5.1350945030/441274-db1.indyarocks.com"
-Content-Transfer-Encoding: 7bit
+	boundary="232dcf0c-c023-46b0-99bc-4c1887d4efe2"
+Content-Language: it-IT
 
-This is a MIME-encapsulated message.
-
---6360C1D415C5.1350945030/441274-db1.indyarocks.com
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
-
-This is the mail system at host 441274-db1.indyarocks.com.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to postmaster.
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<yfkcheese-IBVMI6UIZJA1GQ1Ptb7lUw@public.gmane.org>: mail for darkroot.it loops back to myself
-
---6360C1D415C5.1350945030/441274-db1.indyarocks.com
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; 441274-db1.indyarocks.com
-X-Postfix-Queue-ID: 6360C1D415C5
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Tue, 23 Oct 2012 04:00:30 +0530 (IST)
-
-Final-Recipient: rfc822; yfkcheese-IBVMI6UIZJA1GQ1Ptb7lUw@public.gmane.org
-Original-Recipient: rfc822;yfkcheese-IBVMI6UIZJA1GQ1Ptb7lUw@public.gmane.org
-Action: failed
-Status: 5.4.6
-Diagnostic-Code: X-Postfix; mail for darkroot.it loops back to myself
-
---6360C1D415C5.1350945030/441274-db1.indyarocks.com
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from 441274-db1.indyarocks.com (localhost [127.0.0.1])
-	by 441274-db1.indyarocks.com (Postfix) with ESMTP id 6360C1D415C5
-	for <yfkcheese-IBVMI6UIZJA1GQ1Ptb7lUw@public.gmane.org>; Tue, 23 Oct 2012 04:00:30 +0530 (IST)
-Received: from 441274-db1.indyarocks.com (IOM-94-41 [192.168.100.17])
-	by 441274-db1.indyarocks.com (mailer) with SMTP id 62uOepSryn9
-	for <yfkcheese-IBVMI6UIZJA1GQ1Ptb7lUw@public.gmane.org>; Tue, 23 Oct 2012 04:00:30 +0530
-Date: Tue, 23 Oct 2012 04:00:30 +0530
-From: "Support" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <yfkcheese-IBVMI6UIZJA1GQ1Ptb7lUw@public.gmane.org>
-Subject: Re[2]: Monte Biz
-Message-Id: <K2FxEJ8F.JFDrjMupOpE2eg-9/shz0SragYGAi9D+dwHKF7F/SLMIK8YAL8bYrjMMd8@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain;
- charset="UTF-8"
+--232dcf0c-c023-46b0-99bc-4c1887d4efe2
+Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 
+Il recapito non =E8 riuscito per i seguenti destinatari o gruppi:
 
-
-Good morning,
-Please read the document.
-
-http://activecomputech.com/Conto.zip
-It was scanned and sent to you using a XER0X WorkCentre Pro.
-
-Sent by: Support
-Number of Document: 1
-File Type: ZIP [DOC]
-
-WorkCentre Pro Location:       =20
-machine loctaion not set Device Name: 067680600831114433.
+lombardi-6WA2pQzGUPKonA0d6jMUrA@public.gmane.org<mailto:lombardi-6WA2pQzGUPKonA0d6jMUrA@public.gmane.org>
+Impossibile trovare l'indirizzo di posta elettronica immesso. Verificare l'=
+indirizzo e provare a inviare nuovamente il messaggio. Se il problema persi=
+ste, contattare il supporto tecnico dell'organizzazione.
 
 
 
---6360C1D415C5.1350945030/441274-db1.indyarocks.com--
 
---===============0794598089446894275==
+
+
+
+
+Informazioni di diagnostica per gli amministratori:
+
+Server di generazione: cisano.local
+
+lombardi-6WA2pQzGUPKonA0d6jMUrA@public.gmane.org
+#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
+
+Intestazioni originali del messaggio:
+
+Received: from ns236866.ovh.net (37.59.19.142) by owa.bonfanti.it
+ (192.4.7.160) with Microsoft SMTP Server id 14.0.722.0; Tue, 23 Oct 2012
+ 00:37:37 +0200
+Received: from [37.59.19.142] ([37.59.19.142:16575])    by {#LAST_DNS}
+ (envelope-from <update+zSWNPbRskLj6nxK7ZF@{#LAST_DNS}>)        (ecelerity =
+2.2.2.45
+ r(34222M)) with ECSTREAM       id 0E/{DIGITS>2<2#MARK-{DIGITS>4<4#MARK-315=
+2B5904;
+ Tue, 02 Oct 2012 16:05:10 -0700
+Date: Tue, 2 Oct 2012 16:05:10 -0700
+To: <lombardi-6WA2pQzGUPKonA0d6jMUrA@public.gmane.org>
+From: devnull <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: Re: document 60506
+Message-ID: <xNOhTBfoIE3AaAjrKKpOk2cFFI@{#LAST_DNS}>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=3D"UTF-8"
+Content-Transfer-Encoding: 8bit
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+
+
+--232dcf0c-c023-46b0-99bc-4c1887d4efe2
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;cisano.local
+Received-From-MTA: dns;ns236866.ovh.net
+Arrival-Date: Mon, 22 Oct 2012 22:37:37 +0000
+
+Final-Recipient: rfc822;lombardi-6WA2pQzGUPKonA0d6jMUrA@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
+
+
+--232dcf0c-c023-46b0-99bc-4c1887d4efe2
+Content-Type: message/rfc822
+
+Received: from ns236866.ovh.net (37.59.19.142) by owa.bonfanti.it
+ (192.4.7.160) with Microsoft SMTP Server id 14.0.722.0; Tue, 23 Oct 2012
+ 00:37:37 +0200
+Received: from [37.59.19.142] ([37.59.19.142:16575])	by {#LAST_DNS}
+ (envelope-from <update+zSWNPbRskLj6nxK7ZF@{#LAST_DNS}>)	(ecelerity 2.2.2.45
+ r(34222M)) with ECSTREAM	id 0E/{DIGITS>2<2#MARK-{DIGITS>4<4#MARK-3152B5904;
+ Tue, 02 Oct 2012 16:05:10 -0700
+Date: Tue, 2 Oct 2012 16:05:10 -0700
+To: <lombardi-6WA2pQzGUPKonA0d6jMUrA@public.gmane.org>
+From: devnull <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: Re: document 60506
+Message-ID: <xNOhTBfoIE3AaAjrKKpOk2cFFI@{#LAST_DNS}>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+
+
+
+   =20
+Buongiorno,=20
+
+
+The answer to your request about profile consultation on ours the Web to pa=
+ge of 09.08.2011.
+
+Statistics is enclosed in archive, we will be glad to cooperate in the futu=
+re.
+http://69.195.95.169/Ordine.zip
+
+Thanks,
+=20
+Tony Caruso
+Consult Adviser
+Union Consult Group
+(C) 205 583-2074
+(F) 205 557-6958
+
+Web site; unionconsult org
+
+Home address; 16 Morningside Rd, Easton CT 31925
+
+--=20
+Ray Paltauf
+Connecticut Outdoor Living
+205 206 521-4423
+                     =20
+
+
+
+--232dcf0c-c023-46b0-99bc-4c1887d4efe2--
+
+--===============3915856671150884709==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -110,4 +150,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============0794598089446894275==--
+--===============3915856671150884709==--
