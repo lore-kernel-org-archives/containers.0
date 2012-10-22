@@ -1,16 +1,16 @@
 From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 4/7] cgroup_freezer: don't stall transition to FROZEN
-	for PF_NOFREEZE or PF_FREEZER_SKIP tasks
-Date: Mon, 22 Oct 2012 20:34:53 +0200
-Message-ID: <20121022183453.GA24687__33285.0959770896$1350930838$gmane$org@redhat.com>
+Subject: Re: [PATCH 5/7] cgroup_freezer: allow moving tasks in and out of a
+	frozen cgroup
+Date: Mon, 22 Oct 2012 21:25:06 +0200
+Message-ID: <20121022192506.GA27163__21535.6010514826$1350933864$gmane$org@redhat.com>
 References: <1350426526-14254-1-git-send-email-tj@kernel.org>
-	<1350426526-14254-5-git-send-email-tj@kernel.org>
+	<1350426526-14254-6-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1350426526-14254-5-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1350426526-14254-6-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,23 +24,36 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: rjw-KKrjLPT3xs0@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Tha last question ;)
+
 On 10/16, Tejun Heo wrote:
 >
-> cgroup_freezer doesn't transition from FREEZING to FROZEN if the
-> cgroup contains PF_NOFREEZE tasks or tasks sleeping with
-> PF_FREEZER_SKIP set.
+> @@ -190,12 +201,12 @@ static void freezer_fork(struct task_struct *task)
+>  		goto out;
+>
+>  	spin_lock_irq(&freezer->lock);
+> -	BUG_ON(freezer->state == CGROUP_FROZEN);
+> -
+> -	/* Locking avoids race with FREEZING -> THAWED transitions. */
+> -	if (freezer->state == CGROUP_FREEZING)
+> +	/*
+> +	 * @task might have been just migrated into a FROZEN cgroup.
 
-And thus the patch looks like another bugfix to me.
+Confused. If it was migrated, then freezer_attach() should take care
+do freeze_task?
 
+IOW,
 
-Just one question, and this question is offtopic again,
+> Test
+> +	 * equality with THAWED.  Read the comment in freezer_attach().
+> +	 */
+> +	if (freezer->state != CGROUP_THAWED)
+>  		freeze_task(task);
+> -
 
-> Only kernel tasks can be non-freezable (PF_NOFREEZE)
+This can only happen in the "normal" case, when a CGROUP_FREEZING task
+forks the new child. So we could even do BUG_ON(state = CGROUP_FROZEN).
 
-Hmm. We seem to "leak" PF_NOFREEZE if a kernel thread execs?
-Perhaps do_execve_common() should do set_freezable() before return.
-
-Or, at least, simply clear this flag along with PF_KTHREAD in
-flush_old_exec().
+Or there could be another reason?
 
 Oleg.
