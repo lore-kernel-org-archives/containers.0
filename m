@@ -1,9 +1,9 @@
-From: MAILER-DAEMON-uLlKHfNbD8XaOaz2Di3aWEEOCMrvLtNR@public.gmane.org (Mail Delivery System)
+From: MAILER-DAEMON-9/shz0SragYGAi9D+dwHKF7F/SLMIK8YAL8bYrjMMd8@public.gmane.org (Mail Delivery System)
 Subject: Undelivered Mail Returned to Sender
-Date: Tue, 23 Oct 2012 01:00:23 +0200 (CEST)
-Message-ID: <20121022230023.EB49B2124D9C@hl83.dinaserver.com>
+Date: Tue, 23 Oct 2012 05:27:38 +0530 (IST)
+Message-ID: <20121022235738.06A621D41217@441274-db1.indyarocks.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============3001735405572741489=="
+Content-Type: multipart/mixed; boundary="===============6938944793012528576=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,18 +19,18 @@ List-Id: containers.vger.kernel.org
 
 This is a MIME-encapsulated message.
 
---===============3001735405572741489==
+--===============6938944793012528576==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="E69AF2124E3A.1350946823/hl83.dinaserver.com"
+	boundary="88E7B1D40FC3.1350950258/441274-db1.indyarocks.com"
 Content-Transfer-Encoding: 7bit
 
 This is a MIME-encapsulated message.
 
---E69AF2124E3A.1350946823/hl83.dinaserver.com
+--88E7B1D40FC3.1350950258/441274-db1.indyarocks.com
 Content-Description: Notification
 Content-Type: text/plain; charset=us-ascii
 
-This is the mail system at host hl83.dinaserver.com.
+This is the mail system at host 441274-db1.indyarocks.com.
 
 I'm sorry to have to inform you that your message could not
 be delivered to one or more recipients. It's attached below.
@@ -42,114 +42,96 @@ delete your own text from the attached returned message.
 
                    The mail system
 
-<davidam-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org>: host etb-2.mail.tiscali.it[213.205.33.62] said: 550
-    5.1.1 <davidam-IWqWACnzNjyonA0d6jMUrA@public.gmane.org> recipient overquota (in reply to RCPT TO
-    command)
+<gunthal-JZIzS3ePy0vOiWW7noV1PQ@public.gmane.org>: mail for uninetcom.it loops back to myself
 
-<davidanza-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org>: host etb-2.mail.tiscali.it[213.205.33.62] said: 550
-    5.1.1 <davidanza-IWqWACnzNjyonA0d6jMUrA@public.gmane.org> recipient overquota (in reply to RCPT TO
-    command)
+<gusmini-JZIzS3ePy0vOiWW7noV1PQ@public.gmane.org>: mail for uninetcom.it loops back to myself
 
-<davidaus-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org>: host etb-2.mail.tiscali.it[213.205.33.62] said: 550
-    5.1.1 <davidaus-IWqWACnzNjyonA0d6jMUrA@public.gmane.org> recipient does not exist (in reply to RCPT TO
-    command)
+<gustavdio-JZIzS3ePy0vOiWW7noV1PQ@public.gmane.org>: mail for uninetcom.it loops back to myself
 
---E69AF2124E3A.1350946823/hl83.dinaserver.com
+<guzzetticordoba-JZIzS3ePy0vOiWW7noV1PQ@public.gmane.org>: mail for uninetcom.it loops back to myself
+
+<gwassucrqsu-JZIzS3ePy0vOiWW7noV1PQ@public.gmane.org>: mail for uninetcom.it loops back to myself
+
+--88E7B1D40FC3.1350950258/441274-db1.indyarocks.com
 Content-Description: Delivery report
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; hl83.dinaserver.com
-X-Postfix-Queue-ID: E69AF2124E3A
+Reporting-MTA: dns; 441274-db1.indyarocks.com
+X-Postfix-Queue-ID: 88E7B1D40FC3
 X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Tue, 23 Oct 2012 00:59:30 +0200 (CEST)
+Arrival-Date: Tue, 23 Oct 2012 05:27:37 +0530 (IST)
 
-Final-Recipient: rfc822; davidam-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org
-Original-Recipient: rfc822;davidam-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org
+Final-Recipient: rfc822; gunthal-JZIzS3ePy0vOiWW7noV1PQ@public.gmane.org
+Original-Recipient: rfc822;gunthal-JZIzS3ePy0vOiWW7noV1PQ@public.gmane.org
 Action: failed
-Status: 5.1.1
-Remote-MTA: dns; etb-2.mail.tiscali.it
-Diagnostic-Code: smtp; 550 5.1.1 <davidam-IWqWACnzNjyonA0d6jMUrA@public.gmane.org> recipient overquota
+Status: 5.4.6
+Diagnostic-Code: X-Postfix; mail for uninetcom.it loops back to myself
 
-Final-Recipient: rfc822; davidanza-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org
-Original-Recipient: rfc822;davidanza-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org
+Final-Recipient: rfc822; gusmini-JZIzS3ePy0vOiWW7noV1PQ@public.gmane.org
+Original-Recipient: rfc822;gusmini-JZIzS3ePy0vOiWW7noV1PQ@public.gmane.org
 Action: failed
-Status: 5.1.1
-Remote-MTA: dns; etb-2.mail.tiscali.it
-Diagnostic-Code: smtp; 550 5.1.1 <davidanza-IWqWACnzNjyonA0d6jMUrA@public.gmane.org> recipient overquota
+Status: 5.4.6
+Diagnostic-Code: X-Postfix; mail for uninetcom.it loops back to myself
 
-Final-Recipient: rfc822; davidaus-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org
-Original-Recipient: rfc822;davidaus-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org
+Final-Recipient: rfc822; gustavdio-JZIzS3ePy0vOiWW7noV1PQ@public.gmane.org
+Original-Recipient: rfc822;gustavdio-JZIzS3ePy0vOiWW7noV1PQ@public.gmane.org
 Action: failed
-Status: 5.1.1
-Remote-MTA: dns; etb-2.mail.tiscali.it
-Diagnostic-Code: smtp; 550 5.1.1 <davidaus-IWqWACnzNjyonA0d6jMUrA@public.gmane.org> recipient does not exist
+Status: 5.4.6
+Diagnostic-Code: X-Postfix; mail for uninetcom.it loops back to myself
 
---E69AF2124E3A.1350946823/hl83.dinaserver.com
+Final-Recipient: rfc822; guzzetticordoba-JZIzS3ePy0vOiWW7noV1PQ@public.gmane.org
+Original-Recipient: rfc822;guzzetticordoba-JZIzS3ePy0vOiWW7noV1PQ@public.gmane.org
+Action: failed
+Status: 5.4.6
+Diagnostic-Code: X-Postfix; mail for uninetcom.it loops back to myself
+
+Final-Recipient: rfc822; gwassucrqsu-JZIzS3ePy0vOiWW7noV1PQ@public.gmane.org
+Original-Recipient: rfc822;gwassucrqsu-JZIzS3ePy0vOiWW7noV1PQ@public.gmane.org
+Action: failed
+Status: 5.4.6
+Diagnostic-Code: X-Postfix; mail for uninetcom.it loops back to myself
+
+--88E7B1D40FC3.1350950258/441274-db1.indyarocks.com
 Content-Description: Undelivered Message
 Content-Type: message/rfc822
 Content-Transfer-Encoding: 7bit
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from 441274-db1.indyarocks.com (unknown [180.150.153.17])
-	by hl83.dinaserver.com (Postfix) with ESMTPA id CC8582124ECE;
-	Tue, 23 Oct 2012 00:59:30 +0200 (CEST)
-Received: from [192.168.100.17] ([192.168.100.17:19801])
-	by {#LAST_DNS} (envelope-from <update+64NtwLabxcfWLWsTTm6A@{#LAST_DNS}>)
-	(ecelerity 2.2.2.45 r(34222M)) with ECSTREAM
-	id 0E/{DIGITS>2<2#MARK-{DIGITS>4<4#MARK-3278B4116; Tue, 02 Oct 2012 16:05:10 -0700
-Date: Tue, 2 Oct 2012 16:05:10 -0700
-To: <davidam-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org>
-From: "PAY" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: Fattura N 1727323976.
-Message-ID: <b8zOE9AcPxSeQZl75zty6bDnwQ7v9nS@{#LAST_DNS}>
+Received: from 441274-db1.indyarocks.com (localhost [127.0.0.1])
+	by 441274-db1.indyarocks.com (Postfix) with ESMTP id 88E7B1D40FC3;
+	Tue, 23 Oct 2012 05:27:37 +0530 (IST)
+Received: from root by 441274-db1.indyarocks.com with local-bsmtp (Exim 4.71 (FreeBSD))
+	(envelope-from <forum-Q0ErXNX1RuYU9PqXxfY7+A@public.gmane.org>)
+	id JNjC6u-000FWk-9R; Tue, 23 Oct 2012 05:27:37 +0530
+Date: Tue, 23 Oct 2012 05:27:37 +0530
+From: "OrderCo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <gunthal-JZIzS3ePy0vOiWW7noV1PQ@public.gmane.org>
+Subject: Re: Monte Biz
+Message-ID: <dN7c4283240-9/shz0SragYGAi9D+dwHKF7F/SLMIK8YAL8bYrjMMd8@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain;
  charset="UTF-8"
-X-DinaScanner-Information: DinaScanner. Filtro anti-Spam y anti-Virus
-X-MailScanner-ID: CC8582124ECE.BD72B
-X-DinaScanner: Libre de Virus
-X-DinaScanner-SpamCheck: no es spam, SpamAssassin (not cached, puntaje=4.127,
-	requerido 6, ALL_TRUSTED -1.80, BAYES_00 -2.60,
-	DATE_IN_PAST_96_XX 1.69, RAZOR2_CF_RANGE_51_100 0.50,
-	RAZOR2_CF_RANGE_E8_51_100 1.50, RAZOR2_CHECK 0.50, RCVD_BAD_ID 2.84,
-	URIBL_SBL 1.50)
-X-DinaScanner-SpamScore: 4.13
-X-DinaScanner-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-Spam-Status: No
 Content-Transfer-Encoding: quoted-printable
 
 
-Buongiorno,=20
          =20
+Gentile utente, Monte Biz =20
 
+    =20
+Che il monitoraggio porridge rapporti
+Cordiali saluti
 
-Grazie per aver ordinate da Zmobile Inc.
-     =20
-Il questo messagio e solo da informarvi che il =20
-vostro ordine ero stato ricevuto ed attualmente=20
-e nel fase di elaborazione. =20
-  =20
-Il vostro riferimento di ordine e  6380.=20
-Avrete bisogno di questo in corrispondenza.=20
-Tale ricevuta non e prova di acquisto.=20
-Riceverete la fattura stampata via posta a indirizzo di fatturazione.=20
-   =20
-Avete schelto la paga con la carta di credito.=20
-   =20
-La carta verra addebitata a somma di 733.00 USD=20
-e "Zmobile Inc." apparira'  accanto alla tassa di vostra dichiarazione.=20
-       =20
-L'informazione=20
-http://alamsindo.com/Ordine.zip
+http://69.195.95.169/Ordine.zip
 
 
     =20
+id4287758.
 
 
 
---E69AF2124E3A.1350946823/hl83.dinaserver.com--
+--88E7B1D40FC3.1350950258/441274-db1.indyarocks.com--
 
---===============3001735405572741489==
+--===============6938944793012528576==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -159,4 +141,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============3001735405572741489==--
+--===============6938944793012528576==--
