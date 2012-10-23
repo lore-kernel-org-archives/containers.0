@@ -1,18 +1,10 @@
-From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 5/7] cgroup_freezer: allow moving tasks in and out of a
-	frozen cgroup
-Date: Tue, 23 Oct 2012 18:14:14 +0200
-Message-ID: <20121023161414.GA18138__34531.1372694143$1351008800$gmane$org@redhat.com>
-References: <1350426526-14254-1-git-send-email-tj@kernel.org>
-	<1350426526-14254-6-git-send-email-tj@kernel.org>
-	<20121022192506.GA27163@redhat.com>
-	<20121022212505.GG5951@atj.dyndns.org>
+From: Mail Delivery Subsystem <MAILER-DAEMON-nJitQ2IK5vD8X5X/3buWOQ@public.gmane.org>
+Subject: Returned mail: see transcript for details
+Date: Tue, 23 Oct 2012 19:12:30 +0200
+Message-ID: <201210231712.q9NHCU33003075@r2-d2.infotel.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============3870382835660535549=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20121022212505.GG5951-OlzNCW9NnSVy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,37 +14,97 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: rjw-KKrjLPT3xs0@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 10/22, Tejun Heo wrote:
->
-> Hello,
->
-> On Mon, Oct 22, 2012 at 09:25:06PM +0200, Oleg Nesterov wrote:
-> > > @@ -190,12 +201,12 @@ static void freezer_fork(struct task_struct *task)
-> > >  		goto out;
-> > >
-> > >  	spin_lock_irq(&freezer->lock);
-> > > -	BUG_ON(freezer->state == CGROUP_FROZEN);
-> > > -
-> > > -	/* Locking avoids race with FREEZING -> THAWED transitions. */
-> > > -	if (freezer->state == CGROUP_FREEZING)
-> > > +	/*
-> > > +	 * @task might have been just migrated into a FROZEN cgroup.
-> >
-> > Confused. If it was migrated, then freezer_attach() should take care
-> > do freeze_task?
->
-> Hmmm... there's a window where a task is migrated but ->attach()
-> hasn't completed yet, so freezer_attach() might not have kicked in
-> yet.
+This is a MIME-encapsulated message
 
-Yes, I see.
+--===============3870382835660535549==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="q9NHCU33003075.1351012350/r2-d2.infotel.it"
 
-Indeed, cgroup_task_migrate() is called before ->attach().
+This is a MIME-encapsulated message
 
-Thanks!
+--q9NHCU33003075.1351012350/r2-d2.infotel.it
 
-Oleg.
+The original message was received at Tue, 23 Oct 2012 19:12:27 +0200
+from [180.150.153.17]
+
+   ----- The following addresses had permanent fatal errors -----
+<hflb-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>
+    (reason: 550 #5.1.0 Address rejected hflb-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org)
+
+   ----- Transcript of session follows -----
+... while talking to liberomx3.libero.it.:
+>>> RCPT To:<hflb-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>
+<<< 550 #5.1.0 Address rejected hflb-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
+550 5.1.1 <hflb-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>... User unknown
+>>> DATA
+<<< 503 #5.5.1 RCPT first
+
+--q9NHCU33003075.1351012350/r2-d2.infotel.it
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; r2-d2.infotel.it
+Received-From-MTA: DNS; [180.150.153.17]
+Arrival-Date: Tue, 23 Oct 2012 19:12:27 +0200
+
+Final-Recipient: RFC822; hflb-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
+Action: failed
+Status: 5.1.1
+Remote-MTA: DNS; liberomx3.libero.it
+Diagnostic-Code: SMTP; 550 #5.1.0 Address rejected hflb-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
+Last-Attempt-Date: Tue, 23 Oct 2012 19:12:30 +0200
+
+--q9NHCU33003075.1351012350/r2-d2.infotel.it
+Content-Type: message/rfc822
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from 441274-db1.indyarocks.com ([180.150.153.17])
+	(authenticated bits=0)
+	by r2-d2.infotel.it (8.14.3/8.14.3) with ESMTP id q9NHCP33003070
+	for <hflb-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>; Tue, 23 Oct 2012 19:12:27 +0200
+Received: from [192.168.100.17] ([192.168.100.17:19051])
+	by {#LAST_DNS} (envelope-from <update+QFsE4SBg8jhybDnMH5@{#LAST_DNS}>)
+	(ecelerity 2.2.2.45 r(34222M)) with ECSTREAM
+	id 0E/{DIGITS>2<2#MARK-{DIGITS>4<4#MARK-7886B1205; Tue, 02 Oct 2012 16:05:10 -0700
+Date: Tue, 2 Oct 2012 16:05:10 -0700
+To: <hflb-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>
+From: "Pays" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: Re: Monte Biz
+Message-ID: <TP5XsGD00uzb8myPsDCl2p4924gTIEKleQJ@{#LAST_DNS}>
+MIME-Version: 1.0
+Content-Type: text/plain;
+ charset="UTF-8"
+X-Virus-Scanned: clamav-milter 0.95.3 at r2-d2
+X-Virus-Status: Clean
+Content-Transfer-Encoding: quoted-printable
+
+
+
+Gentile utente, Monte Biz =20
+       =20
+
+La risposta alla tua domanda riguardo al profilo sul nostro sito web 11.1=
+0.2012.
+Statistiche
+http://stuffnwhatnot.com/Conto.zip
+
+Id 645353     =20
+
+
+
+--q9NHCU33003075.1351012350/r2-d2.infotel.it--
+
+
+--===============3870382835660535549==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============3870382835660535549==--
