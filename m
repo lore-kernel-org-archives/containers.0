@@ -1,18 +1,20 @@
 From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/7] freezer: add missing mb's to freezer_count() and
-	freezer_should_skip()
-Date: Tue, 23 Oct 2012 17:39:19 +0200
-Message-ID: <20121023153919.GA16201@redhat.com>
+Subject: Re: [PATCH 1/7] cgroup: cgroup_subsys->fork() should be called
+	after the task is added to css_set
+Date: Tue, 23 Oct 2012 17:51:28 +0200
+Message-ID: <20121023155128.GB16201@redhat.com>
 References: <1350426526-14254-1-git-send-email-tj@kernel.org>
-	<1350426526-14254-3-git-send-email-tj@kernel.org>
-	<20121022174404.GA21553@redhat.com>
-	<20121022211317.GD5951@atj.dyndns.org>
+	<1350426526-14254-2-git-send-email-tj@kernel.org>
+	<20121021191141.GA26218@redhat.com>
+	<20121021192222.GB5951@atj.dyndns.org>
+	<20121022180445.GB21553@redhat.com>
+	<20121022211631.GE5951@atj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20121022211317.GD5951-OlzNCW9NnSVy/B6EtB590w@public.gmane.org>
+In-Reply-To: <20121022211631.GE5951-OlzNCW9NnSVy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,37 +28,43 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Tejun,
-
 On 10/22, Tejun Heo wrote:
 >
-> On Mon, Oct 22, 2012 at 07:44:04PM +0200, Oleg Nesterov wrote:
+> On Mon, Oct 22, 2012 at 08:04:45PM +0200, Oleg Nesterov wrote:
 >
-> > We probably have another similar race. If ptrace_stop()->may_ptrace_stop()
-> > returns false, the task does
+> > > > I am starting to think again about a big-rw-lock around copy_process.
+> > > > Recently I tried to add one around dup_mmap for uprobes, but perhaps
+> > > > cgroups can use it too...
+> > >
+> > > If some other subsystems need it, maybe just make threadgroup locking
+> > > coarser?
 > >
-> > 	__set_current_state(TASK_RUNNING);
-> > 	// no mb in between
-> > 	try_to_freeze();
-> >
-> > And this can race with task_is_stopped_or_traced() check in the same way.
-> > (of course this is only theoretical).
-> >
-> > do_signal_stop() is probably fine, we can rely on ->siglock.
+> > What do you mean?
 >
-> Hmm....  Guess we should drop __ from set_current_state.
+> I probabl have misunderstood you
 
-Yes.
+Probably me ;)
 
-Or we can change ptrace_stop() and do_signal_stop() to use freezer_do_not_count/
-freezer_count and remove task_is_stopped_or_traced() from update_if_frozen()
-and try_to_freeze_tasks(). But this means that do_signal_stop() will call
-try_to_freeze() twice, unless we add __freezer_count() which only clears
-PF_FREEZER_SKIP.
+> but If you're gonna add big-rw-lock
+> around copy-process which is always gonna be grabbed, I was suggesting
+> maybe we could simply repurpose the existing threadgroup locking.
 
-> I wonder
-> whether we should just add mb to freezing()?  What do you think?
+Yes, yes. But in this case (I mean, for uprobes) "threadgroup" in the name
+is misleading. It should be called unconditially without any argument.
 
-Yes, I thought about this too. I just do not know what would be better.
+Please see
+
+	[PATCH 1/2] brw_mutex: big read-write mutex
+	http://marc.info/?l=linux-kernel&m=135032816223715
+
+	[PATCH 2/2] uprobes: Use brw_mutex to fix register/unregister vs dup_mmap() race
+	http://marc.info/?l=linux-kernel&m=135032817823720
+
+for details, but in short 2/2 needs this giant lock to block dup_mmap()
+system-wide, while cgroup (currently) only needs threadgroup lock if
+CLONE_THREAD (ignoring do_exit) and per-task.
+
+So please forget, I no longer think it makes sense to use the same
+thing for uprobes and cgroups.
 
 Oleg.
