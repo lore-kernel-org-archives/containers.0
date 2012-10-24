@@ -1,21 +1,19 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 1/7] cgroup: cgroup_subsys->fork() should be called after
-	the task is added to css_set
-Date: Wed, 24 Oct 2012 15:04:58 -0400
-Message-ID: <20121024190458.GB12182@atj.dyndns.org>
+Subject: Re: [PATCH 4/7] cgroup_freezer: don't stall transition to FROZEN for
+	PF_NOFREEZE or PF_FREEZER_SKIP tasks
+Date: Wed, 24 Oct 2012 15:06:51 -0400
+Message-ID: <20121024190651.GC12182@atj.dyndns.org>
 References: <1350426526-14254-1-git-send-email-tj@kernel.org>
-	<1350426526-14254-2-git-send-email-tj@kernel.org>
-	<20121021191141.GA26218@redhat.com>
-	<20121021192222.GB5951@atj.dyndns.org>
-	<20121022180445.GB21553@redhat.com>
-	<20121022211631.GE5951@atj.dyndns.org>
-	<20121023155128.GB16201@redhat.com>
+	<1350426526-14254-5-git-send-email-tj@kernel.org>
+	<20121022183453.GA24687@redhat.com>
+	<20121022211822.GF5951@atj.dyndns.org>
+	<20121023155533.GC16201@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20121023155128.GB16201-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20121023155533.GC16201-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,35 +24,23 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: rjw-KKrjLPT3xs0@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello,
+Hello, Oleg.
 
-On Tue, Oct 23, 2012 at 05:51:28PM +0200, Oleg Nesterov wrote:
-> Yes, yes. But in this case (I mean, for uprobes) "threadgroup" in the name
-> is misleading. It should be called unconditially without any argument.
+On Tue, Oct 23, 2012 at 05:55:33PM +0200, Oleg Nesterov wrote:
+> > Ooh, ouch, definitely.  We should clear that.  Can you please make a
+> > patch?
 > 
-> Please see
+> Sure... but what do you think is better?
 > 
-> 	[PATCH 1/2] brw_mutex: big read-write mutex
-> 	http://marc.info/?l=linux-kernel&m=135032816223715
+> I'd prefer to simply clear PF_NOFREEZE (without set_freezable), but
+> obviously this doesn't look exactly right from cgroup_freezer pov.
 
-Ooh... that's something completely different.
-
-> 	[PATCH 2/2] uprobes: Use brw_mutex to fix register/unregister vs dup_mmap() race
-> 	http://marc.info/?l=linux-kernel&m=135032817823720
-> 
-> for details, but in short 2/2 needs this giant lock to block dup_mmap()
-> system-wide, while cgroup (currently) only needs threadgroup lock if
-> CLONE_THREAD (ignoring do_exit) and per-task.
-> 
-> So please forget, I no longer think it makes sense to use the same
-> thing for uprobes and cgroups.
-
-It is quite tempting to reduce hot path overhead and penalize cgroup
-migration ops more tho.  Write-locking brw_mutex on migration might
-not be too bad.  Why did you change your mind?
+I don't think it matters all that much.  It's a pretty special case.
+Maybe define PF_CLEAR_ON_EXEC_MASK or something and just include
+PF_NOFREEZE in it?
 
 Thanks.
 
