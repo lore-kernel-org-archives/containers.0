@@ -1,19 +1,21 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 2/7] freezer: add missing mb's to freezer_count() and
-	freezer_should_skip()
-Date: Wed, 24 Oct 2012 14:57:10 -0400
-Message-ID: <20121024185710.GA12182__8433.12977017394$1351105050$gmane$org@atj.dyndns.org>
+Subject: Re: [PATCH 1/7] cgroup: cgroup_subsys->fork() should be called after
+	the task is added to css_set
+Date: Wed, 24 Oct 2012 15:04:58 -0400
+Message-ID: <20121024190458.GB12182@atj.dyndns.org>
 References: <1350426526-14254-1-git-send-email-tj@kernel.org>
-	<1350426526-14254-3-git-send-email-tj@kernel.org>
-	<20121022174404.GA21553@redhat.com>
-	<20121022211317.GD5951@atj.dyndns.org>
-	<20121023153919.GA16201@redhat.com>
+	<1350426526-14254-2-git-send-email-tj@kernel.org>
+	<20121021191141.GA26218@redhat.com>
+	<20121021192222.GB5951@atj.dyndns.org>
+	<20121022180445.GB21553@redhat.com>
+	<20121022211631.GE5951@atj.dyndns.org>
+	<20121023155128.GB16201@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20121023153919.GA16201-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20121023155128.GB16201-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,24 +29,32 @@ To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, Oleg.
+Hello,
 
-On Tue, Oct 23, 2012 at 05:39:19PM +0200, Oleg Nesterov wrote:
-> > Hmm....  Guess we should drop __ from set_current_state.
+On Tue, Oct 23, 2012 at 05:51:28PM +0200, Oleg Nesterov wrote:
+> Yes, yes. But in this case (I mean, for uprobes) "threadgroup" in the name
+> is misleading. It should be called unconditially without any argument.
 > 
-> Yes.
+> Please see
 > 
-> Or we can change ptrace_stop() and do_signal_stop() to use freezer_do_not_count/
-> freezer_count and remove task_is_stopped_or_traced() from update_if_frozen()
-> and try_to_freeze_tasks(). But this means that do_signal_stop() will call
-> try_to_freeze() twice, unless we add __freezer_count() which only clears
-> PF_FREEZER_SKIP.
+> 	[PATCH 1/2] brw_mutex: big read-write mutex
+> 	http://marc.info/?l=linux-kernel&m=135032816223715
 
-Ooh, I like this idea.  If we have a mechanism to mark a task "frozen
-enough", it makes sense to use it universally.  As long as
-try_to_freeze() invocation stays outside fast path, I don't think
-invoking it twice really matters.  Can you please cook up a patch for
-it?
+Ooh... that's something completely different.
+
+> 	[PATCH 2/2] uprobes: Use brw_mutex to fix register/unregister vs dup_mmap() race
+> 	http://marc.info/?l=linux-kernel&m=135032817823720
+> 
+> for details, but in short 2/2 needs this giant lock to block dup_mmap()
+> system-wide, while cgroup (currently) only needs threadgroup lock if
+> CLONE_THREAD (ignoring do_exit) and per-task.
+> 
+> So please forget, I no longer think it makes sense to use the same
+> thing for uprobes and cgroups.
+
+It is quite tempting to reduce hot path overhead and penalize cgroup
+migration ops more tho.  Write-locking brw_mutex on migration might
+not be too bad.  Why did you change your mind?
 
 Thanks.
 
