@@ -1,16 +1,14 @@
-From: "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>
-Subject: Re: [PATCH v2 1/1] freezer: change ptrace_stop/do_signal_stop to use
-	freezable_schedule()
-Date: Sun, 28 Oct 2012 02:16:15 +0200
-Message-ID: <3398462.AB3BSRdprj__38090.8263301992$1351383156$gmane$org@vostro.rjw.lan>
-References: <20121023153919.GA16201@redhat.com>
-	<2718983.vORnrfWdbE@vostro.rjw.lan>
-	<20121026212909.GW11442@htj.dyndns.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: Sending data between two nics on one machine
+Date: Sat, 27 Oct 2012 21:58:43 -0700
+Message-ID: <87mwz78a64.fsf@xmission.com>
+References: <CAHvNds2pUmqisQOtMn0-T-SAKrNs40THY80+Pwi-MNgPwDZNcQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20121026212909.GW11442-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
+In-Reply-To: <CAHvNds2pUmqisQOtMn0-T-SAKrNs40THY80+Pwi-MNgPwDZNcQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Jereme Lamps's message of "Wed, 24 Oct 2012 22:45:39 -0500")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,33 +18,23 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Jereme Lamps <lamps1-nzINlOoChub2fBVCVOL8/A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Friday, October 26, 2012 02:29:09 PM Tejun Heo wrote:
-> Hello,
-> 
-> On Fri, Oct 26, 2012 at 11:29:56PM +0200, Rafael J. Wysocki wrote:
-> > Actually, what tree is it supposed to apply to?
-> > 
-> > The change in kernel/cgroup_freezer.c doesn't look like anything in
-> > the current Linus' tree to me.
-> 
-> Ooh, right.  This depends on the earlier cgroup_freezer changes.
-> Sorry about the confusion.  I'll apply it to the following branch (the
-> same one used for the previous cgroup_freezer updates).
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git cgroup-freezer
+Jereme Lamps <lamps1-nzINlOoChub2fBVCVOL8/A@public.gmane.org> writes:
 
-OK
+> I have a machine (ubuntu 12.04) with 2 nics and I am trying to send data
+> between the two. However, when I iperf from one to the other, the OS is
+> optimizing it and the data is never actually being sent out on the network
+> (I want it to go through the switch).
+> Is there any way I can move one of the physical interfaces into a network
+> namespace and then try to iperf from there?
+>
+> Any help would be greatly appreciated!
 
-I haven't merged it yet, so I'll get this fix along with the rest.
+ip netns add ...
+ip link set ...
+ip netns exec ...
 
-Thanks,
-Rafael
-
-
--- 
-I speak only for myself.
-Rafael J. Wysocki, Intel Open Source Technology Center.
+Eric
