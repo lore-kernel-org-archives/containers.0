@@ -1,9 +1,10 @@
-From: info-gfMCr4HGoYlOcCHRIPfMlg@public.gmane.org
-Subject: Re: Fwd: Rimesse
-Date: 29 Oct 2012 03:00:32 -0000
-Message-ID: <14100.3600474962$1351480071@news.gmane.org>
+From: Postmaster-b+b3BlT25p6onA0d6jMUrA@public.gmane.org
+Subject: DELIVERY FAILURE: User saidinn (saidinn-b+b3BlT25p6onA0d6jMUrA@public.gmane.org) not listed in
+	Domino Directory
+Date: Mon, 29 Oct 2012 03:55:15 +0100
+Message-ID: <dwj876Lg.IMaj4poZ8kV8Hh@h2075222.stratoserver.net>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============4036745519684598696=="
+Content-Type: multipart/mixed; boundary="===============6776895692612920710=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -14,62 +15,73 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Support <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
---===============4036745519684598696==
-Content-Type: text/plain
+--===============6776895692612920710==
+Content-Type: multipart/report; report-type=delivery-status; boundary="==IFJRGLKFGIR54602UHRUHIHD"
 
-From: info-gfMCr4HGoYlOcCHRIPfMlg@public.gmane.org
-Subject: Automatic Reply
+--==IFJRGLKFGIR54602UHRUHIHD
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: base64
 
-Gentile cliente,
-la ringraziamo per aver contattato lo Studio PARMA.
+WW91ciBtZXNzYWdlDQoNCiAgU3ViamVjdDogUmltZXNzZSBEb2MuDQoNCndhcyBub3QgZGVsaXZl
+cmVkIHRvOg0KDQogIHNhaWRpbm5Ac29yYXdlYi5pdA0KDQpiZWNhdXNlOg0KDQogIFVzZXIgc2Fp
+ZGlubiAoc2FpZGlubkBzb3Jhd2ViLml0KSBub3QgbGlzdGVkIGluIERvbWlubyBEaXJlY3RvcnkN
+Cg0K
 
-Abbiamo ricevuto la sua richiesta via e-mail sarà nostra premura provvedere alla risposta con priorità assoluta. 
-Distinti saluti.
-Parma Services S.r.l.
+--==IFJRGLKFGIR54602UHRUHIHD
+Content-Type: message/delivery-status
 
-Ricordiamo che lo Studio effettua il seguente orario settimanale:
+Reporting-MTA: dns;srvciodom.ciociariaweb.it
 
-Lunedì       	Mattino:       dalle 9:00 alle 12:30 	Pomeriggio: dalle 14:00	alle 17:00
-Martedì      	Mattino:       dalle 9:00 alle 12:30 	Pomeriggio: dalle 14:00	alle 17:00
-Mercoledì   	Mattino:       Chiusura al pubblico      	Pomeriggio: dalle 14:00	alle 17:00
-Giovedì              Mattino:       dalle 9:00 alle 12:30             Pomeriggio: dalle 14:00	alle 17:00
-Venerdì      	Mattino:       dalle 9:00 alle 12:30            Pomeriggio: dalle 14:00	alle 17:00
+Final-Recipient: rfc822;saidinn-b+b3BlT25p6onA0d6jMUrA@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: X-Notes; User saidinn (saidinn-b+b3BlT25p6onA0d6jMUrA@public.gmane.org) not listed
+ in Domino Directory
 
-Per favore, ci  scriva attraverso le @mail in calce e' il modo più semplice per ottenere una rapida risposta dai nostri operatori. 
-Grazie della collaborazione.
+--==IFJRGLKFGIR54602UHRUHIHD
+Content-Type: message/rfc822
 
-Assistenza paghe: 	daniela-gfMCr4HGoYlOcCHRIPfMlg@public.gmane.org 
-                  		monica-gfMCr4HGoYlOcCHRIPfMlg@public.gmane.org
-     		ilenia-gfMCr4HGoYlOcCHRIPfMlg@public.gmane.org	
-Amministrazione:	maddi.parma-gfMCr4HGoYlOcCHRIPfMlg@public.gmane.org
-Consulenza:	natale.parma-gfMCr4HGoYlOcCHRIPfMlg@public.gmane.org
-                   		marco.parma-gfMCr4HGoYlOcCHRIPfMlg@public.gmane.org
-
--------- Original Message --------
-
-> 
->           
-> 
-> Si prega di confermare il 20% tt pagamento anticipato.
-> 
-> nei confronti della fattura proforma PO00658/2012
-> http://csipordenone.it/Operazione.zip
-> 
-> Aspetto la tua risposta
-> 
-> Cordiali saluti
-> 
-> 
-> 
-> 
-> 
+Received: from h2075222.stratoserver.net ([81.169.154.59])
+          by srvciodom.ciociariaweb.it (Lotus Domino Release 6.5.1)
+          with ESMTP id 2012102903551195-11422 ;
+          Mon, 29 Oct 2012 03:55:11 +0100
+Received: from h2075222.stratoserver.net (IOM-69-72 [81.169.154.59])
+	by h2075222.stratoserver.net (mailer) with SMTP id UIvwzWBayKe
+	for <saidinn-b+b3BlT25p6onA0d6jMUrA@public.gmane.org>; Mon, 29 Oct 2012 03:55:15 +0100
+Date: Mon, 29 Oct 2012 03:55:15 +0100
+From: "Support" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <saidinn-b+b3BlT25p6onA0d6jMUrA@public.gmane.org>
+Subject: Rimesse Doc.
+Message-Id: <dwj876Lg.IMaj4poZ8kV8Hh-+jGet6cJqQB+w56GKog6J/yEcJOA7RD7XqFh9Ls21Oc@public.gmane.org>
+MIME-Version: 1.0
+X-MIMETrack: Itemize by SMTP Server on srvciodom/Ciociariaweb/it(Release 6.5.1|January
+ 21, 2004) at 29/10/2012 03.55.12,
+	Serialize by Router on srvciodom/Ciociariaweb/it(Release 6.5.1|January 21, 2004) at
+ 29/10/2012 04.27.13
+Content-Type: text/plain;
+ charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
 
 
---===============4036745519684598696==
+Si prega di confermare il 20% tt pagamento anticipato.
+nei confronti della fattura proforma PO20322/2012
+http://www.rugginoseday.it/Operazione.zip
+
+Aspetto la tua risposta
+
+Cordiali saluti
+
+
+
+
+
+--==IFJRGLKFGIR54602UHRUHIHD--
+
+--===============6776895692612920710==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -79,4 +91,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============4036745519684598696==--
+--===============6776895692612920710==--
