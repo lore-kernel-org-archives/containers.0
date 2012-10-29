@@ -1,13 +1,13 @@
-From: <postmaster-wDoKh33E0dhWk0Htik3J/w@public.gmane.org>
-Subject: Undeliverable: Fwd: Rimesse.
-Date: Mon, 29 Oct 2012 11:57:48 +0100
-Message-ID: <7ced2d07-d349-432e-a104-df54315800b7@tecnogaz.com>
-References: <vzZIyUeK.wFiMhhr4wxZzNZ@stable.skadate.com>
+From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [V5 PATCH 08/26] memcontrol: use N_MEMORY instead N_HIGH_MEMORY
+Date: Mon, 29 Oct 2012 23:20:58 +0800
+Message-ID: <1351524078-20363-7-git-send-email-laijs@cn.fujitsu.com>
+References: <1351523301-20048-1-git-send-email-laijs@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6010954854369487413=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-US
-In-Reply-To: <vzZIyUeK.wFiMhhr4wxZzNZ-zG8VedLtfVgFkAtD/aG2mdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <1351523301-20048-1-git-send-email-laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,144 +17,113 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Mel Gorman <mgorman-l3A5Bk7waGM@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, x86 maintainers <x86-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Jiang Liu <jiang.liu-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>, Rusty Russell <rusty-8n+1lVoiYb80n/F98K4Iww@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Yasuaki ISIMATU <isimatu.yasuaki-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Yinghai Lu <yinghai-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============6010954854369487413==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="52ca6dae-2d85-4bde-b2a8-2e8ba9683566"
-Content-Language: en-US
+N_HIGH_MEMORY stands for the nodes that has normal or high memory.
+N_MEMORY stands for the nodes that has any memory.
 
---52ca6dae-2d85-4bde-b2a8-2e8ba9683566
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+The code here need to handle with the nodes which have memory, we should
+use N_MEMORY instead.
 
-Delivery has failed to these recipients or groups:
+Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
+ mm/memcontrol.c  |   18 +++++++++---------
+ mm/page_cgroup.c |    2 +-
+ 2 files changed, 10 insertions(+), 10 deletions(-)
 
-bucci-wDoKh33E0dhWk0Htik3J/w@public.gmane.org<mailto:bucci-wDoKh33E0dhWk0Htik3J/w@public.gmane.org>
-The e-mail address you entered couldn't be found. Please check the recipien=
-t's e-mail address and try to resend the message. If the problem continues,=
- please contact your helpdesk.
-
-
-
-
-
-
-
-Diagnostic information for administrators:
-
-Generating server: tecnogaz.com
-
-bucci-wDoKh33E0dhWk0Htik3J/w@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
-
-Original message headers:
-
-Received: from mail.tecnogaz.com (10.0.0.3) by TG-EXCHANGE.tecno-gaz.lan
- (192.168.1.6) with Microsoft SMTP Server id 14.2.318.1; Mon, 29 Oct 2012
- 11:57:47 +0100
-Received: from pps.filterd (mail [127.0.0.1])   by mail.tecnogaz.com
- (8.14.5/8.14.5) with SMTP id q9TAv3D0027091    for <bucci-wDoKh33E0dhWk0Htik3J/w@public.gmane.org>; M=
-on, 29
- Oct 2012 11:57:47 +0100
-Received: from stable.skadate.com (204-232-203-173.static.cloud-ips.com
- [204.232.203.173])     by mail.tecnogaz.com with ESMTP id 175xcp6q11-1 for
- <bucci-wDoKh33E0dhWk0Htik3J/w@public.gmane.org>; Mon, 29 Oct 2012 11:57:47 +0100
-Received: from stable.skadate.com (IOM-99-49 [204.232.203.173]) by
- stable.skadate.com (mailer) with SMTP id NF5U2Q0Sz8y   for
- <bucci-wDoKh33E0dhWk0Htik3J/w@public.gmane.org>; Mon, 29 Oct 2012 06:57:45 -0400
-Date: Mon, 29 Oct 2012 06:57:45 -0400
-From: billing <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <bucci-wDoKh33E0dhWk0Htik3J/w@public.gmane.org>
-Subject: Fwd: Rimesse.
-Message-ID: <vzZIyUeK.wFiMhhr4wxZzNZ-zG8VedLtfVgFkAtD/aG2mdBPR1lH4CV8@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=3D"UTF-8"
-Content-Transfer-Encoding: 8bit
-X-Proofpoint-Virus-Version: vendor=3Dfsecure engine=3D2.50.10432:5.7.7855,1=
-.0.431,0.0.0000
- definitions=3D2012-10-29_01:2012-10-26,2012-10-29,1970-01-01 signatures=3D=
-0
-X-Proofpoint-Spam-Details: rule=3Dnotspam policy=3Ddefault score=3D0 spamsc=
-ore=3D0 suspectscore=3D14
- phishscore=3D0 bulkscore=3D0 adultscore=3D0 classifier=3Dspam adjust=3D0 r=
-eason=3Dmlx
- scancount=3D1 engine=3D7.0.1-1207200000 definitions=3Dmain-1210290065
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-
-
---52ca6dae-2d85-4bde-b2a8-2e8ba9683566
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns;tecnogaz.com
-Received-From-MTA: dns;mail.tecnogaz.com
-Arrival-Date: Mon, 29 Oct 2012 10:57:47 +0000
-
-Final-Recipient: rfc822;bucci-wDoKh33E0dhWk0Htik3J/w@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-
---52ca6dae-2d85-4bde-b2a8-2e8ba9683566
-Content-Type: message/rfc822
-
-Received: from mail.tecnogaz.com (10.0.0.3) by TG-EXCHANGE.tecno-gaz.lan
- (192.168.1.6) with Microsoft SMTP Server id 14.2.318.1; Mon, 29 Oct 2012
- 11:57:47 +0100
-Received: from pps.filterd (mail [127.0.0.1])	by mail.tecnogaz.com
- (8.14.5/8.14.5) with SMTP id q9TAv3D0027091	for <bucci-wDoKh33E0dhWk0Htik3J/w@public.gmane.org>; Mon, 29
- Oct 2012 11:57:47 +0100
-Received: from stable.skadate.com (204-232-203-173.static.cloud-ips.com
- [204.232.203.173])	by mail.tecnogaz.com with ESMTP id 175xcp6q11-1	for
- <bucci-wDoKh33E0dhWk0Htik3J/w@public.gmane.org>; Mon, 29 Oct 2012 11:57:47 +0100
-Received: from stable.skadate.com (IOM-99-49 [204.232.203.173])	by
- stable.skadate.com (mailer) with SMTP id NF5U2Q0Sz8y	for
- <bucci-wDoKh33E0dhWk0Htik3J/w@public.gmane.org>; Mon, 29 Oct 2012 06:57:45 -0400
-Date: Mon, 29 Oct 2012 06:57:45 -0400
-From: billing <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <bucci-wDoKh33E0dhWk0Htik3J/w@public.gmane.org>
-Subject: Fwd: Rimesse.
-Message-ID: <vzZIyUeK.wFiMhhr4wxZzNZ-zG8VedLtfVgFkAtD/aG2mdBPR1lH4CV8@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10432:5.7.7855,1.0.431,0.0.0000
- definitions=2012-10-29_01:2012-10-26,2012-10-29,1970-01-01 signatures=0
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 suspectscore=14
- phishscore=0 bulkscore=0 adultscore=0 classifier=spam adjust=0 reason=mlx
- scancount=1 engine=7.0.1-1207200000 definitions=main-1210290065
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-
-
-
-Buongiorno,=20
-
-
-Si prega di confermare il 20% tt pagamento anticipato.
-nei confronti della fattura proforma PO74096/2012
-http://www.hygienebedarf.at/Pagamento.zip
-
-Aspetto la tua risposta
-
-Cordiali saluti.
-
-
-
-
-
-
---52ca6dae-2d85-4bde-b2a8-2e8ba9683566--
-
---===============6010954854369487413==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============6010954854369487413==--
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index 7acf43b..1b69665 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -800,7 +800,7 @@ static unsigned long mem_cgroup_nr_lru_pages(struct mem_cgroup *memcg,
+ 	int nid;
+ 	u64 total = 0;
+ 
+-	for_each_node_state(nid, N_HIGH_MEMORY)
++	for_each_node_state(nid, N_MEMORY)
+ 		total += mem_cgroup_node_nr_lru_pages(memcg, nid, lru_mask);
+ 	return total;
+ }
+@@ -1611,9 +1611,9 @@ static void mem_cgroup_may_update_nodemask(struct mem_cgroup *memcg)
+ 		return;
+ 
+ 	/* make a nodemask where this memcg uses memory from */
+-	memcg->scan_nodes = node_states[N_HIGH_MEMORY];
++	memcg->scan_nodes = node_states[N_MEMORY];
+ 
+-	for_each_node_mask(nid, node_states[N_HIGH_MEMORY]) {
++	for_each_node_mask(nid, node_states[N_MEMORY]) {
+ 
+ 		if (!test_mem_cgroup_node_reclaimable(memcg, nid, false))
+ 			node_clear(nid, memcg->scan_nodes);
+@@ -1684,7 +1684,7 @@ static bool mem_cgroup_reclaimable(struct mem_cgroup *memcg, bool noswap)
+ 	/*
+ 	 * Check rest of nodes.
+ 	 */
+-	for_each_node_state(nid, N_HIGH_MEMORY) {
++	for_each_node_state(nid, N_MEMORY) {
+ 		if (node_isset(nid, memcg->scan_nodes))
+ 			continue;
+ 		if (test_mem_cgroup_node_reclaimable(memcg, nid, noswap))
+@@ -3759,7 +3759,7 @@ move_account:
+ 		drain_all_stock_sync(memcg);
+ 		ret = 0;
+ 		mem_cgroup_start_move(memcg);
+-		for_each_node_state(node, N_HIGH_MEMORY) {
++		for_each_node_state(node, N_MEMORY) {
+ 			for (zid = 0; !ret && zid < MAX_NR_ZONES; zid++) {
+ 				enum lru_list lru;
+ 				for_each_lru(lru) {
+@@ -4087,7 +4087,7 @@ static int memcg_numa_stat_show(struct cgroup *cont, struct cftype *cft,
+ 
+ 	total_nr = mem_cgroup_nr_lru_pages(memcg, LRU_ALL);
+ 	seq_printf(m, "total=%lu", total_nr);
+-	for_each_node_state(nid, N_HIGH_MEMORY) {
++	for_each_node_state(nid, N_MEMORY) {
+ 		node_nr = mem_cgroup_node_nr_lru_pages(memcg, nid, LRU_ALL);
+ 		seq_printf(m, " N%d=%lu", nid, node_nr);
+ 	}
+@@ -4095,7 +4095,7 @@ static int memcg_numa_stat_show(struct cgroup *cont, struct cftype *cft,
+ 
+ 	file_nr = mem_cgroup_nr_lru_pages(memcg, LRU_ALL_FILE);
+ 	seq_printf(m, "file=%lu", file_nr);
+-	for_each_node_state(nid, N_HIGH_MEMORY) {
++	for_each_node_state(nid, N_MEMORY) {
+ 		node_nr = mem_cgroup_node_nr_lru_pages(memcg, nid,
+ 				LRU_ALL_FILE);
+ 		seq_printf(m, " N%d=%lu", nid, node_nr);
+@@ -4104,7 +4104,7 @@ static int memcg_numa_stat_show(struct cgroup *cont, struct cftype *cft,
+ 
+ 	anon_nr = mem_cgroup_nr_lru_pages(memcg, LRU_ALL_ANON);
+ 	seq_printf(m, "anon=%lu", anon_nr);
+-	for_each_node_state(nid, N_HIGH_MEMORY) {
++	for_each_node_state(nid, N_MEMORY) {
+ 		node_nr = mem_cgroup_node_nr_lru_pages(memcg, nid,
+ 				LRU_ALL_ANON);
+ 		seq_printf(m, " N%d=%lu", nid, node_nr);
+@@ -4113,7 +4113,7 @@ static int memcg_numa_stat_show(struct cgroup *cont, struct cftype *cft,
+ 
+ 	unevictable_nr = mem_cgroup_nr_lru_pages(memcg, BIT(LRU_UNEVICTABLE));
+ 	seq_printf(m, "unevictable=%lu", unevictable_nr);
+-	for_each_node_state(nid, N_HIGH_MEMORY) {
++	for_each_node_state(nid, N_MEMORY) {
+ 		node_nr = mem_cgroup_node_nr_lru_pages(memcg, nid,
+ 				BIT(LRU_UNEVICTABLE));
+ 		seq_printf(m, " N%d=%lu", nid, node_nr);
+diff --git a/mm/page_cgroup.c b/mm/page_cgroup.c
+index 5ddad0c..c1054ad 100644
+--- a/mm/page_cgroup.c
++++ b/mm/page_cgroup.c
+@@ -271,7 +271,7 @@ void __init page_cgroup_init(void)
+ 	if (mem_cgroup_disabled())
+ 		return;
+ 
+-	for_each_node_state(nid, N_HIGH_MEMORY) {
++	for_each_node_state(nid, N_MEMORY) {
+ 		unsigned long start_pfn, end_pfn;
+ 
+ 		start_pfn = node_start_pfn(nid);
+-- 
+1.7.4.4
