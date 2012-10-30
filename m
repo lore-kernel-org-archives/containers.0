@@ -1,7 +1,7 @@
-From: MAILER-DAEMON-PETktZLjMbJcQSlrj/ZXAZEiL7xb53d6@public.gmane.org
-Subject: failure notice
-Date: 30 Oct 2012 08:34:50 -0000
-Message-ID: <20121030090737.EFD917D7@mail.linuxfoundation.org>
+From: Mail Delivery System <Mailer-Daemon-BAX2BW+KAqME+Qrv03qHQVnLv3znJ7lA@public.gmane.org>
+Subject: Mail delivery failed: returning message to sender
+Date: Tue, 30 Oct 2012 10:13:56 +0100
+Message-ID: <E1TT7tU-0006p7-54@medifad.mediaengdns.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,30 +18,31 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi. This is the qmail-send program at authsmtp.register.it.
-I'm afraid I wasn't able to deliver your message to the following addresses.
-This is a permanent error; I've given up. Sorry it didn't work out.
+This message was created automatically by mail delivery software.
 
-<atzoriatzoriv-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>:
-212.52.84.222 does not like recipient.
-Remote host said: 550 #5.1.0 Address rejected atzoriatzoriv-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
-Giving up on 212.52.84.222.
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
 
---- Below this line is a copy of the message.
+  thomas.amicucci-Syd3ARw+vPY@public.gmane.org
+    SMTP error from remote mail server after MAIL FROM:<containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> SIZE=2012:
+    host relay-avs.poste.it [62.241.4.132]: 550 SPF MAIL FROM check failed (Fail)
 
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 28586 invoked from network); 30 Oct 2012 08:03:40 -0000
-Received: from unknown (HELO ns236866.ovh.net) (poligono-rmJxmIexzhyB+jHODAdFcQ@public.gmane.org@37.59.19.142)
-  by authsmtp.register.it with ESMTPA; 30 Oct 2012 08:03:40 -0000
-Received: from [37.59.19.142] ([37.59.19.142:49617])
-	by {#LAST_DNS} (envelope-from <update+ojGdoHiZdi21dSTbon22F9@{#LAST_DNS}>)
-	(ecelerity 2.2.2.45 r(34222M)) with ECSTREAM
-	id 0E/{DIGITS>2<2#MARK-{DIGITS>4<4#MARK-6666B5593; Tue, 02 Oct 2012 16:05:10 -0700
-Date: Tue, 2 Oct 2012 16:05:10 -0700
-To: <atzoriatzoriv-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>
-From: "robo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+------ This is a copy of the message, including all the headers. ------
+
+Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from ns236866.ovh.net ([37.59.19.142]:38819)
+	by medifad.mediaengdns.com with esmtpa (Exim 4.80)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1TT7tT-0006ov-Pn
+	for thomas.amicucci-Syd3ARw+vPY@public.gmane.org; Tue, 30 Oct 2012 10:13:55 +0100
+Received: from ns236866.ovh.net (IOM-62-78 [37.59.19.142])
+	by ns236866.ovh.net (mailer) with SMTP id tBQUhU8bQx4
+	for <thomas.amicucci-Syd3ARw+vPY@public.gmane.org>; Tue, 30 Oct 2012 10:14:07 +0100
+Date: Tue, 30 Oct 2012 10:14:07 +0100
+From: "Consult Group" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <thomas.amicucci-Syd3ARw+vPY@public.gmane.org>
 Subject: Fwd: Rimesse Doc.
-Message-ID: <Vjg8Sj95Bdh0Qj3gtqKVW0c4ZZS@{#LAST_DNS}>
+Message-Id: <sDORNHvO.C13iksNe3o8kJG-iWx1jzsIEGxnXn40ka+A6Q@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain;
  charset="UTF-8"
@@ -49,11 +50,13 @@ Content-Transfer-Encoding: 8bit
 
 
 
-Ciao, 
-         
-Si prega di confermare il 20% tt pagamento anticipato
-nei confronti della fattura proforma PO93264/2012
-http://iklancilik.web.id/Invio.zip
+
+Buongiorno, 
+        
+Si prega di confermare il 20% tt pagamento anticipato.
+nei confronti della fattura proforma PO47492/2012
+http://kobymandell.site.aplus.net/Spedizione.zip
+
 Aspetto la tua risposta
 
 Cordiali saluti
