@@ -1,7 +1,7 @@
-From: Mail Delivery System <Mailer-Daemon-BAX2BW+KAqME+Qrv03qHQVnLv3znJ7lA@public.gmane.org>
-Subject: Mail delivery failed: returning message to sender
-Date: Tue, 30 Oct 2012 10:13:56 +0100
-Message-ID: <E1TT7tU-0006p7-54@medifad.mediaengdns.com>
+From: Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH] user_ns: get rid of duplicate code in net_ctl_permissions
+Date: Tue, 30 Oct 2012 19:18:40 +0800
+Message-ID: <508FB790.7080901@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,48 +15,34 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This message was created automatically by mail delivery software.
+From: Zhao Hongjiang <zhaohongjiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 
-A message that you sent could not be delivered to one or more of its
-recipients. This is a permanent error. The following address(es) failed:
+Get rid of duplicate code in net_ctl_permissions and fix the comment.
 
-  thomas.amicucci-Syd3ARw+vPY@public.gmane.org
-    SMTP error from remote mail server after MAIL FROM:<containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> SIZE=2012:
-    host relay-avs.poste.it [62.241.4.132]: 550 SPF MAIL FROM check failed (Fail)
+Signed-off-by: Zhao Hongjiang <zhaohongjiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+---
+ net/sysctl_net.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
------- This is a copy of the message, including all the headers. ------
-
-Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from ns236866.ovh.net ([37.59.19.142]:38819)
-	by medifad.mediaengdns.com with esmtpa (Exim 4.80)
-	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1TT7tT-0006ov-Pn
-	for thomas.amicucci-Syd3ARw+vPY@public.gmane.org; Tue, 30 Oct 2012 10:13:55 +0100
-Received: from ns236866.ovh.net (IOM-62-78 [37.59.19.142])
-	by ns236866.ovh.net (mailer) with SMTP id tBQUhU8bQx4
-	for <thomas.amicucci-Syd3ARw+vPY@public.gmane.org>; Tue, 30 Oct 2012 10:14:07 +0100
-Date: Tue, 30 Oct 2012 10:14:07 +0100
-From: "Consult Group" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <thomas.amicucci-Syd3ARw+vPY@public.gmane.org>
-Subject: Fwd: Rimesse Doc.
-Message-Id: <sDORNHvO.C13iksNe3o8kJG-iWx1jzsIEGxnXn40ka+A6Q@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain;
- charset="UTF-8"
-Content-Transfer-Encoding: 8bit
-
-
-
-
-Buongiorno, 
-        
-Si prega di confermare il 20% tt pagamento anticipato.
-nei confronti della fattura proforma PO47492/2012
-http://kobymandell.site.aplus.net/Spedizione.zip
-
-Aspetto la tua risposta
-
-Cordiali saluti
+diff --git a/net/sysctl_net.c b/net/sysctl_net.c
+index 6410436..9bc6db0 100644
+--- a/net/sysctl_net.c
++++ b/net/sysctl_net.c
+@@ -51,10 +51,10 @@ static int net_ctl_permissions(struct ctl_table_header *head,
+ 		int mode = (table->mode >> 6) & 7;
+ 		return (mode << 6) | (mode << 3) | mode;
+ 	}
+-	/* Allow netns root group to have the same assess as the root group */
++	/* Allow netns root group to have the same access as the root group */
+ 	if (gid_eq(root_gid, current_gid())) {
+ 		int mode = (table->mode >> 3) & 7;
+-		return (mode << 3) | (mode << 3) | mode;
++		return (mode << 3) | mode;
+ 	}
+ 	return table->mode;
+ }
+-- 1.7.1
