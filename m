@@ -1,16 +1,15 @@
 From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: [PATCH 1/8] cgroup: kill
-	cgroup_subsys->__DEPRECATED_clear_css_refs
-Date: Wed, 31 Oct 2012 15:37:51 +0100
-Message-ID: <20121031143751.GA22809__9336.76098143241$1351694294$gmane$org@dhcp22.suse.cz>
+Subject: Re: [PATCH 2/8] cgroup: kill CSS_REMOVED
+Date: Wed, 31 Oct 2012 16:39:26 +0100
+Message-ID: <20121031153926.GC22809__45329.633417032$1351697989$gmane$org@dhcp22.suse.cz>
 References: <1351657365-25055-1-git-send-email-tj@kernel.org>
-	<1351657365-25055-2-git-send-email-tj@kernel.org>
+	<1351657365-25055-3-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1351657365-25055-2-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1351657365-25055-3-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,65 +23,112 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue 30-10-12 21:22:38, Tejun Heo wrote:
-> 2ef37d3fe4 ("memcg: Simplify mem_cgroup_force_empty_list error
-> handling") removed the last user of __DEPRECATED_clear_css_refs.  This
-> patch removes __DEPRECATED_clear_css_refs and mechanisms to support
-> it.
+On Tue 30-10-12 21:22:39, Tejun Heo wrote:
+> CSS_REMOVED is one of the several contortions which were necessary to
+> support css reference draining on cgroup removal.  All css->refcnts
+> which need draining should be deactivated and verified to equal zero
+> atomically w.r.t. css_tryget().  If any one isn't zero, all refcnts
+> needed to be re-activated and css_tryget() shouldn't fail in the
+> process.
 > 
-> * Conditionals dependent on __DEPRECATED_clear_css_refs removed.
+> This was achieved by letting css_tryget() busy-loop until either the
+> refcnt is reactivated (failed removal attempt) or CSS_REMOVED is set
+> (committing to removal).
 > 
-> * ->pre_destroy() now can only fail if a new task is attached or child
->   cgroup is created while ->pre_destroy()s are being called.  As the
->   condition is checked again after re-acquiring cgroup_mutex
->   afterwards, we don't need to take any immediate action on
->   ->pre_destroy() failures.  This reduces cgroup_call_pre_destroy() to
->   a simple loop surrounding ->pre_destory().  Remove
->   cgroup_call_pre_destroy() and open-code the loop into
->   cgroup_rmdir().
+> Now that css refcnt draining is no longer used, there's no need for
+> atomic rollback mechanism.  css_tryget() simply can look at the
+> reference count and fail if the it's deactivated - it's never getting
+> re-activated.
 > 
-> * cgroup_clear_css_refs() can no longer fail.  All that needs to be
->   done are deactivating refcnts, setting CSS_REMOVED and putting the
->   base reference on each css.  Remove cgroup_clear_css_refs() and the
->   failure path, and open-code the loops into cgroup_rmdir().
+> This patch removes CSS_REMOVED and updates __css_tryget() to fail if
+> the refcnt is deactivated.
 > 
-> Note that cgroup_rmdir() will see more cleanup soon.
+> Note that this removes css_is_removed() whose only user is VM_BUG_ON()
+> in memcontrol.c.  We can replace it with a check on the refcnt but
+> given that the only use case is a debug assert, I think it's better to
+> simply unexport it.
 > 
 > Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
+> Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+> Cc: Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 
-Looks good to me and the diffstat is really encouraging
+Few questions/suggestions below but it looks good in general to me.
 Reviewed-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
 
-with a minor note bellow
 > ---
->  include/linux/cgroup.h |  12 ----
->  kernel/cgroup.c        | 159 ++++++++++++-------------------------------------
->  2 files changed, 38 insertions(+), 133 deletions(-)
+>  include/linux/cgroup.h |  6 ------
+>  kernel/cgroup.c        | 31 ++++++++++++-------------------
+>  mm/memcontrol.c        |  7 +++----
+>  3 files changed, 15 insertions(+), 29 deletions(-)
+> 
 [...]
 > diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index 7981850..033bf4b 100644
+> index 033bf4b..a49cdbc 100644
 > --- a/kernel/cgroup.c
 > +++ b/kernel/cgroup.c
-[...]
-> @@ -4168,11 +4075,9 @@ again:
->  	 * Call pre_destroy handlers of subsys. Notify subsystems
->  	 * that rmdir() request comes.
+> @@ -170,8 +170,8 @@ struct css_id {
+>  	 * The css to which this ID points. This pointer is set to valid value
+>  	 * after cgroup is populated. If cgroup is removed, this will be NULL.
+>  	 * This pointer is expected to be RCU-safe because destroy()
+> -	 * is called after synchronize_rcu(). But for safe use, css_is_removed()
+> -	 * css_tryget() should be used for avoiding race.
+> +	 * is called after synchronize_rcu(). But for safe use, css_tryget()
+> +	 * should be used for avoiding race.
 >  	 */
-> -	ret = cgroup_call_pre_destroy(cgrp);
-> -	if (ret) {
-> -		clear_bit(CGRP_WAIT_ON_RMDIR, &cgrp->flags);
-> -		return ret;
-> -	}
-> +	for_each_subsys(cgrp->root, ss)
-> +		if (ss->pre_destroy)
-> +			WARN_ON_ONCE(ss->pre_destroy(cgrp));
+>  	struct cgroup_subsys_state __rcu *css;
+>  	/*
+> @@ -4088,8 +4088,6 @@ static int cgroup_rmdir(struct inode *unused_dir, struct dentry *dentry)
+>  	}
+>  	prepare_to_wait(&cgroup_rmdir_waitq, &wait, TASK_INTERRUPTIBLE);
+>  
+> -	local_irq_disable();
+> -
 
-Hmm, I am not sure I like this WARN_ON_ONCE. First it can happen for
-more than one controller and second we can just clear CGRP_WAIT_ON_RMDIR
-and return with EBUSY. The only possible failure at the moment is when a
-new task or a child group appear.
-I know it is not a big deal because it will disappear later in the
-series but it would be more readable IMO.
+OK, so the new charges shouldn't come from the IRQ context so we cannot
+race with css_tryget but why did we need this in the first place?
+A separate patch which removes this with an explanation would be nice.
+
+>  	/* block new css_tryget() by deactivating refcnt */
+>  	for_each_subsys(cgrp->root, ss) {
+>  		struct cgroup_subsys_state *css = cgrp->subsys[ss->subsys_id];
+[...]
+> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+> index 5a1d584..6f8bd9d 100644
+> --- a/mm/memcontrol.c
+> +++ b/mm/memcontrol.c
+> @@ -2343,7 +2343,6 @@ static int __mem_cgroup_try_charge(struct mm_struct *mm,
+>  again:
+>  	if (*ptr) { /* css should be a valid one */
+>  		memcg = *ptr;
+> -		VM_BUG_ON(css_is_removed(&memcg->css));
+
+All the callers seem to be fine but this was a safety net that something
+didn't leak out. Can we keep it and test that the reference counter has
+been disabled already (css_refcnt(&memcg->css) < 0 - I do not care
+whether open coded or wrapped innsude css_is_removed albeit helper
+sounds nicer)?
+
+>  		if (mem_cgroup_is_root(memcg))
+>  			goto done;
+>  		if (nr_pages == 1 && consume_stock(memcg))
+> @@ -2483,9 +2482,9 @@ static void __mem_cgroup_cancel_local_charge(struct mem_cgroup *memcg,
+>  
+>  /*
+>   * A helper function to get mem_cgroup from ID. must be called under
+> - * rcu_read_lock(). The caller must check css_is_removed() or some if
+> - * it's concern. (dropping refcnt from swap can be called against removed
+> - * memcg.)
+> + * rcu_read_lock(). The caller is responsible for verifying the returned
+> + * memcg is still alive if necessary. (dropping refcnt from swap can be
+> + * called against removed memcg.)
+
+I think that something like the following would be more instructive:
+
++ * rcu_read_lock(). The caller is responsible for calling css_tryget
++ * if the mem_cgroup is used for charging. (dropping refcnt from swap can be
++ * called against removed memcg.)
 
 Thanks!
 -- 
