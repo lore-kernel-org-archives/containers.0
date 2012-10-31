@@ -1,7 +1,7 @@
-From: MAILER-DAEMON-6NFzdo4tKfzQBovhCxP/CQ@public.gmane.org
-Subject: failure notice
-Date: 31 Oct 2012 02:09:34 -0000
-Message-ID: <20121031020943.978CF9F4@mail.linuxfoundation.org>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCHSET] cgroup: simplify cgroup removal path
+Date: Tue, 30 Oct 2012 21:22:37 -0700
+Message-ID: <1351657365-25055-1-git-send-email-tj__27916.2610452206$1351657386$gmane$org@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,53 +15,83 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi. This is the qmail-send program at mxavas8.aruba.it.
-I'm afraid I wasn't able to deliver your message to the following addresses.
-This is a permanent error; I've given up. Sorry it didn't work out.
+Hello, guys.
 
-<agiljomo1965-Qbg6FJN2MnLxXNnrLDpRnw@public.gmane.org>:
-user does not exist, but will deliver to /home/vpopmail/domains/encl4/9/5/minodesign.it/info/
-can not open new email file errno=2 file=/home/vpopmail/domains/encl4/9/5/minodesign.it/info/Maildir/tmp/1351649374.17039.mxavas8.ad.aruba.it,S=1195
-system error
-I'm not going to try again; this message has been in the queue too long.
+cgroup removal path is quite ugly.  A lot of the ugliness comes from
+the weird design which allows ->pre_destroy() to fail and the feature
+to drain existing CSS reference counts before committing to removal.
+Both mean that it should be possible to roll-back cgroup destruction
+after some or all ->pre_destroy() invocations.
 
---- Below this line is a copy of the message.
+This weird design has never really worked.  To list a couple examples.
 
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 4474 invoked by uid 89); 30 Oct 2012 02:47:54 -0000
-Received: from unknown (HELO mxcmd03.ad.aruba.it) (10.10.10.67)
-  by mxavas8.ad.aruba.it with SMTP; 30 Oct 2012 02:47:54 -0000
-Received: from h2075222.stratoserver.net ([81.169.154.59])
-	by mxcmd03.ad.aruba.it with bizsmtp
-	id HEns1k02A1H9bTD01EntdX; Tue, 30 Oct 2012 03:47:54 +0100
-Received: from root by h2075222.stratoserver.net with local-bsmtp (Exim 4.71 (FreeBSD))
-	(envelope-from <forum-7GF2oT6NoCBZtW/88u3lVw@public.gmane.org>)
-	id 3OO4cW-000osR-hz; Tue, 30 Oct 2012 03:47:53 +0100
-Date: Tue, 30 Oct 2012 03:47:53 +0100
-From: "Pays" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <agiljom1975-Qbg6FJN2MnLxXNnrLDpRnw@public.gmane.org>
-Subject: Fwd: Rimesse!
-Message-ID: <LjqP6274066-+jGet6cJqQB+w56GKog6J/yEcJOA7RD7XqFh9Ls21Oc@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/plain;
- charset="UTF-8"
-Content-Transfer-Encoding: 8bit
-X-Spam-Rating: mxavas8.ad.aruba.it 1.6.2 0/1000/N
+ * Some ->pre_destroy() implementations aren't side-effect free.
+   Roll-back happens after a lot of state is already lost.
 
+ * Some ->pre_destroy() implementations (naturally) assume that the
+   cgroup being destroyed would stay quiescent between successful
+   ->pre_destroy() and its destruction.  Unfortunately, any operation
+   can happen inbetween and the cgroup could be in a very different
+   state by the time it actually gets destroyed.
 
+It's just such an unusual design which unnecessarily contains weird
+code path combinations which are tricky to hit, reproduce and expect.
+Moreover, the design's deficiencies attracts kludges on top as
+workarounds and we end up with stuff like cgroup_exclude_rmdir() and
+cgroup_release_and_wakeup_rmdir() which really make me want to cry.
 
+Now that memcg has moved away from failable ->pre_destroy(), we can do
+away with all these.  I tested some basic operations and some corner
+cases but am still a bit scared.  Would love to get acks from Li and
+memcg people.
 
-        
-Gentile utente, 
+This patchset contains the following eight patches.
 
-Si prega di confermare il 20% tt pagamento anticipato.
+ 0001-cgroup-kill-cgroup_subsys-__DEPRECATED_clear_css_ref.patch
+ 0002-cgroup-kill-CSS_REMOVED.patch
+ 0003-cgroup-use-cgroup_lock_live_group-parent-in-cgroup_c.patch
+ 0004-cgroup-deactivate-CSS-s-and-mark-cgroup-dead-before-.patch
+ 0005-cgroup-remove-CGRP_WAIT_ON_RMDIR-cgroup_exclude_rmdi.patch
+ 0006-memcg-make-mem_cgroup_reparent_charges-non-failing.patch
+ 0007-hugetlb-do-not-fail-in-hugetlb_cgroup_pre_destroy.patch
+ 0008-cgroup-make-pre_destroy-return-void.patch
 
-nei confronti della fattura proforma PO16871/2012
-http://lotarija.com.mk/Spedizione.zip
+0001-0002 remove now unused ->pre_destroy() failure handling and do
+follow-up simplification.
 
-Aspetto la tua risposta...
+0003-0004 update removal path such that each ->pre_destroy() is
+guaranteed to be invoked once per removal and the cgroup being
+destroyed stays quiescent until destruction is complete.
 
-Cordiali saluti.
+0005 removes the scary CGRP_WAIT_ON_RMDIR mechanism.
+
+0006-0008 are follow-up clean-ups.  0006 and 0007 are from Michal's
+patchset[1].
+
+This patchset is on top of
+
+  v3.6 (a0d271cbfe)
++ [1] the first three patches of
+      "memcg/cgroup: do not fail fail on pre_destroy callbacks" patchset
+
+and available in the following git branch.
+
+ git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-cgroup-rmdir-updates
+
+Thanks.
+
+ block/blk-cgroup.c     |    3 
+ include/linux/cgroup.h |   41 -------
+ kernel/cgroup.c        |  256 +++++++++++--------------------------------------
+ mm/hugetlb_cgroup.c    |   11 --
+ mm/memcontrol.c        |   51 +--------
+ 5 files changed, 75 insertions(+), 287 deletions(-)
+
+--
+tejun
+
+[1] http://thread.gmane.org/gmane.linux.kernel.cgroups/4757
