@@ -1,7 +1,7 @@
-From: MAILER-DAEMON-DZ7XbXBr1NnQBovhCxP/CQ@public.gmane.org
+From: MAILER-DAEMON-6NFzdo4tKfzQBovhCxP/CQ@public.gmane.org
 Subject: failure notice
 Date: 31 Oct 2012 02:09:34 -0000
-Message-ID: <20121031020943.534059C9@mail.linuxfoundation.org>
+Message-ID: <20121031020943.978CF9F4@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,22 +18,22 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi. This is the qmail-send program at mxavas7.aruba.it.
+Hi. This is the qmail-send program at mxavas8.aruba.it.
 I'm afraid I wasn't able to deliver your message to the following addresses.
 This is a permanent error; I've given up. Sorry it didn't work out.
 
-<agiljom1975-Qbg6FJN2MnLxXNnrLDpRnw@public.gmane.org>:
+<agiljomo1965-Qbg6FJN2MnLxXNnrLDpRnw@public.gmane.org>:
 user does not exist, but will deliver to /home/vpopmail/domains/encl4/9/5/minodesign.it/info/
-can not open new email file errno=2 file=/home/vpopmail/domains/encl4/9/5/minodesign.it/info/Maildir/tmp/1351649374.31879.mxavas7.ad.aruba.it,S=1194
+can not open new email file errno=2 file=/home/vpopmail/domains/encl4/9/5/minodesign.it/info/Maildir/tmp/1351649374.17039.mxavas8.ad.aruba.it,S=1195
 system error
 I'm not going to try again; this message has been in the queue too long.
 
 --- Below this line is a copy of the message.
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 3040 invoked by uid 89); 30 Oct 2012 02:47:54 -0000
+Received: (qmail 4474 invoked by uid 89); 30 Oct 2012 02:47:54 -0000
 Received: from unknown (HELO mxcmd03.ad.aruba.it) (10.10.10.67)
-  by mxavas7.ad.aruba.it with SMTP; 30 Oct 2012 02:47:54 -0000
+  by mxavas8.ad.aruba.it with SMTP; 30 Oct 2012 02:47:54 -0000
 Received: from h2075222.stratoserver.net ([81.169.154.59])
 	by mxcmd03.ad.aruba.it with bizsmtp
 	id HEns1k02A1H9bTD01EntdX; Tue, 30 Oct 2012 03:47:54 +0100
@@ -49,7 +49,7 @@ MIME-Version: 1.0
 Content-Type: text/plain;
  charset="UTF-8"
 Content-Transfer-Encoding: 8bit
-X-Spam-Rating: mxavas7.ad.aruba.it 1.6.2 0/1000/N
+X-Spam-Rating: mxavas8.ad.aruba.it 1.6.2 0/1000/N
 
 
 
