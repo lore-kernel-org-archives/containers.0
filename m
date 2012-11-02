@@ -1,12 +1,16 @@
-From: Ollie Bonds <olliezeh524-DaQTI0RpDDMAvxtiuMwx3w@public.gmane.org>
-Subject: What's up! I happen to be on the lookout for date!
-Date: Fri, 2 Nov 2012 01:03:56 -0700 (PDT)
-Message-ID: <1351843436.79409.YahooMailNeo@web125606.mail.ne1.yahoo.com>
-Reply-To: Ollie Bonds <Beaufort-Y8qEzhMunLwZQ9iXQcw1wQ@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH] namespace:unmount pid_namespace's proc_mnt when
+	copy_net_ns failed
+Date: Fri, 02 Nov 2012 01:54:14 -0700
+Message-ID: <87wqy4fkqx.fsf@xmission.com>
+References: <1351816703-8805-1-git-send-email-gaofeng@cn.fujitsu.com>
+	<87ehkcij1a.fsf@xmission.com> <5093773B.5010706@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <5093773B.5010706-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> (Gao feng's message of "Fri, 02
+	Nov 2012 15:33:15 +0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,7 +20,30 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-i like actually living life withought all the headaches of having to have someone else dictating it for me. i love fishing, snowboarding, surfing , and pretty much anything outdoors.so if this sounds like u, let me know
+R2FvIGZlbmcgPGdhb2ZlbmdAY24uZnVqaXRzdS5jb20+IHdyaXRlczoKCj4g5LqOIDIwMTLlubQx
+MeaciDAy5pelIDE1OjAyLCBFcmljIFcuIEJpZWRlcm1hbiDlhpnpgZM6Cj4+IEdhbyBmZW5nIDxn
+YW9mZW5nQGNuLmZ1aml0c3UuY29tPiB3cml0ZXM6Cj4+IAo+Pj4gd2Ugc2hvdWxkIGNhbGwgcGlk
+X25zX3JlbGVhc2VfcHJvYyB0byB1bm1vdW50IHBpZF9uYW1lc3BhY2Uncwo+Pj4gcHJvY19tbnQg
+d2hlbiBjb3B5X25ldF9ucyBmYWlsZWQgaW4gZnVuY3Rpb24gY3JlYXRlX25ld19uYW1lc3BhY2Vz
+Lgo+Pj4KPj4+IG90aGVyd2lzZSx0aGUgcHJvY19tbnQgd2lsbCBub3QgYmUgZnJlZWQgYW5kIGJl
+Y2F1c2UgdGhlIHN1cGVyX2Jsb2NrCj4+PiBvZiBwcm9jX21udCBhbHNvIGFkZCB0aGUgcmVmZXJl
+bmNlIG9mIHRoZSBwaWRfbmFtZXNwYWNlLHNvIHRoaXMKPj4+IHBpZF9uYW1lc3BhY2Ugd2lsbCBu
+ZXZlciBiZSByZWxlYXNlZCB0b28uCj4+IAo+PiBPdWNoIQo+PiAKPj4gSGF2ZSB5b3UgZW5jb3Vu
+dGVyZWQgdGhpcyBmYWlsdXJlIGluIHByYWN0aWNlIG9yIGlzIHRoaXMganVzdCBmcm9tCj4+IHJl
+dmlldz8KPgo+IEkgYWRkIHNvbWUgcHJpbnRrIGluIHBpZF9uc19yZWxlYXNlX3Byb2MsaXQncyBu
+b3QgY2FsbGVkIGluIGFib3ZlIGNhc2UuCj4gd2hlbiBjb3B5X25ldF9ucyBmYWlsZWQsdGhpcyBw
+aWRfbmFtZXNwYWNlIGlzIG5vdCB1c2VkIGJ5IGFueSB0YXNrLAo+IHNvIHByb2NfZmx1c2hfdGFz
+ayBjYW4ndCBjYWxsIHBpZF9uc19yZWxlYXNlX3Byb2MgdG8gdW1vdW50IHRoaXMgcGlkbnMtPnBy
+b2NfbW50Lgo+IGl0J3MgdGhlIG9ubHkgY2hhbmNlIHdlIGNhbiB1bm1vdW50IHRoaXMgcGluZG5z
+LT5wcm9jX21udC4KPgo+IFdpdGggdGhpcyBwYXRjaCxldmVyeXRoaW5nIHJ1bnMgd2VsbC4KCkkg
+aGF2ZSByZXZpZXdlZCB0aGUgY29kZSBhbmQgSSBkb24ndCBkb3VidCB0aGF0IHRoaXMgaXMgbmVj
+ZXNzYXJ5LgoKV2hhdCBjYXVzZWQgeW91IHRvIGxvb2sgaW50byB0aGlzIGZhaWx1cmU/ICBJcyB0
+aGVyZSBzb21lIHNlbWktcHJhY3RpY2FsCnJlYWwgd29ybGQgY2FzZSB0aGF0IHNvbWVvbmUgaXMg
+aGl0dGluZz8KCkVyaWMKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3Vu
+ZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0
+aW5mby9jb250YWluZXJz
