@@ -1,14 +1,15 @@
 From: Kamezawa Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 2/8] cgroup: kill CSS_REMOVED
-Date: Fri, 02 Nov 2012 18:30:26 +0900
-Message-ID: <509392B2.5030300@jp.fujitsu.com>
+Subject: Re: [PATCH 3/8] cgroup: use cgroup_lock_live_group(parent) in
+	cgroup_create()
+Date: Fri, 02 Nov 2012 18:37:34 +0900
+Message-ID: <5093945E.3050504@jp.fujitsu.com>
 References: <1351657365-25055-1-git-send-email-tj@kernel.org>
-	<1351657365-25055-3-git-send-email-tj@kernel.org>
+	<1351657365-25055-4-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1351657365-25055-3-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1351657365-25055-4-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,34 +24,69 @@ Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@pub
 List-Id: containers.vger.kernel.org
 
 (2012/10/31 13:22), Tejun Heo wrote:
-> CSS_REMOVED is one of the several contortions which were necessary to
-> support css reference draining on cgroup removal.  All css->refcnts
-> which need draining should be deactivated and verified to equal zero
-> atomically w.r.t. css_tryget().  If any one isn't zero, all refcnts
-> needed to be re-activated and css_tryget() shouldn't fail in the
-> process.
+> This patch makes cgroup_create() fail if @parent is marked removed.
+> This is to prepare for further updates to cgroup_rmdir() path.
 > 
-> This was achieved by letting css_tryget() busy-loop until either the
-> refcnt is reactivated (failed removal attempt) or CSS_REMOVED is set
-> (committing to removal).
+> Note that this change isn't strictly necessary.  cgroup can only be
+> created via mkdir and the removed marking and dentry removal happen
+> without releasing cgroup_mutex, so cgroup_create() can never race with
+> cgroup_rmdir().  Even after the scheduled updates to cgroup_rmdir(),
+> cgroup_mkdir() and cgroup_rmdir() are synchronized by i_mutex
+> rendering the added liveliness check unnecessary.
 > 
-> Now that css refcnt draining is no longer used, there's no need for
-> atomic rollback mechanism.  css_tryget() simply can look at the
-> reference count and fail if the it's deactivated - it's never getting
-> re-activated.
-> 
-> This patch removes CSS_REMOVED and updates __css_tryget() to fail if
-> the refcnt is deactivated.
-> 
-> Note that this removes css_is_removed() whose only user is VM_BUG_ON()
-> in memcontrol.c.  We can replace it with a check on the refcnt but
-> given that the only use case is a debug assert, I think it's better to
-> simply unexport it.
+> Do it anyway such that locking is contained inside cgroup proper and
+> we don't get nasty surprises if we ever grow another caller of
+> cgroup_create().
 > 
 > Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
-> Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-> Cc: Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+
+I welcome this change.
 
 Reviewed-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+
+> ---
+>   kernel/cgroup.c | 16 +++++++++++++---
+>   1 file changed, 13 insertions(+), 3 deletions(-)
+> 
+> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+> index a49cdbc..b3010ae 100644
+> --- a/kernel/cgroup.c
+> +++ b/kernel/cgroup.c
+> @@ -3906,6 +3906,18 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+>   	if (!cgrp)
+>   		return -ENOMEM;
+>   
+> +	/*
+> +	 * Only live parents can have children.  Note that the liveliness
+> +	 * check isn't strictly necessary because cgroup_mkdir() and
+> +	 * cgroup_rmdir() are fully synchronized by i_mutex; however, do it
+> +	 * anyway so that locking is contained inside cgroup proper and we
+> +	 * don't get nasty surprises if we ever grow another caller.
+> +	 */
+> +	if (!cgroup_lock_live_group(parent)) {
+> +		err = -ENODEV;
+> +		goto err_free;
+> +	}
+> +
+>   	/* Grab a reference on the superblock so the hierarchy doesn't
+>   	 * get deleted on unmount if there are child cgroups.  This
+>   	 * can be done outside cgroup_mutex, since the sb can't
+> @@ -3913,8 +3925,6 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+>   	 * fs */
+>   	atomic_inc(&sb->s_active);
+>   
+> -	mutex_lock(&cgroup_mutex);
+> -
+>   	init_cgroup_housekeeping(cgrp);
+>   
+>   	cgrp->parent = parent;
+> @@ -3985,7 +3995,7 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+>   
+>   	/* Release the reference count that we took on the superblock */
+>   	deactivate_super(sb);
+> -
+> +err_free:
+>   	kfree(cgrp);
+>   	return err;
+>   }
+> 
