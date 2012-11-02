@@ -1,17 +1,14 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH] namespace:unmount pid_namespace's proc_mnt when
-	copy_net_ns failed
-Date: Fri, 02 Nov 2012 02:10:34 -0700
-Message-ID: <87mwz0fjzp.fsf@xmission.com>
-References: <1351816703-8805-1-git-send-email-gaofeng@cn.fujitsu.com>
-	<87ehkcij1a.fsf@xmission.com> <5093773B.5010706@cn.fujitsu.com>
-	<87wqy4fkqx.fsf@xmission.com> <50938C2D.90908@cn.fujitsu.com>
+From: Kamezawa Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 2/8] cgroup: kill CSS_REMOVED
+Date: Fri, 02 Nov 2012 18:30:26 +0900
+Message-ID: <509392B2.5030300@jp.fujitsu.com>
+References: <1351657365-25055-1-git-send-email-tj@kernel.org>
+	<1351657365-25055-3-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <50938C2D.90908-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> (Gao feng's message of "Fri, 02
-	Nov 2012 17:02:37 +0800")
+In-Reply-To: <1351657365-25055-3-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,39 +18,39 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-R2FvIGZlbmcgPGdhb2ZlbmdAY24uZnVqaXRzdS5jb20+IHdyaXRlczoKCj4g5LqOIDIwMTLlubQx
-MeaciDAy5pelIDE2OjU0LCBFcmljIFcuIEJpZWRlcm1hbiDlhpnpgZM6Cj4+IEdhbyBmZW5nIDxn
-YW9mZW5nQGNuLmZ1aml0c3UuY29tPiB3cml0ZXM6Cj4+IAo+Pj4g5LqOIDIwMTLlubQxMeaciDAy
-5pelIDE1OjAyLCBFcmljIFcuIEJpZWRlcm1hbiDlhpnpgZM6Cj4+Pj4gR2FvIGZlbmcgPGdhb2Zl
-bmdAY24uZnVqaXRzdS5jb20+IHdyaXRlczoKPj4+Pgo+Pj4+PiB3ZSBzaG91bGQgY2FsbCBwaWRf
-bnNfcmVsZWFzZV9wcm9jIHRvIHVubW91bnQgcGlkX25hbWVzcGFjZSdzCj4+Pj4+IHByb2NfbW50
-IHdoZW4gY29weV9uZXRfbnMgZmFpbGVkIGluIGZ1bmN0aW9uIGNyZWF0ZV9uZXdfbmFtZXNwYWNl
-cy4KPj4+Pj4KPj4+Pj4gb3RoZXJ3aXNlLHRoZSBwcm9jX21udCB3aWxsIG5vdCBiZSBmcmVlZCBh
-bmQgYmVjYXVzZSB0aGUgc3VwZXJfYmxvY2sKPj4+Pj4gb2YgcHJvY19tbnQgYWxzbyBhZGQgdGhl
-IHJlZmVyZW5jZSBvZiB0aGUgcGlkX25hbWVzcGFjZSxzbyB0aGlzCj4+Pj4+IHBpZF9uYW1lc3Bh
-Y2Ugd2lsbCBuZXZlciBiZSByZWxlYXNlZCB0b28uCj4+Pj4KPj4+PiBPdWNoIQo+Pj4+Cj4+Pj4g
-SGF2ZSB5b3UgZW5jb3VudGVyZWQgdGhpcyBmYWlsdXJlIGluIHByYWN0aWNlIG9yIGlzIHRoaXMg
-anVzdCBmcm9tCj4+Pj4gcmV2aWV3Pwo+Pj4KPj4+IEkgYWRkIHNvbWUgcHJpbnRrIGluIHBpZF9u
-c19yZWxlYXNlX3Byb2MsaXQncyBub3QgY2FsbGVkIGluIGFib3ZlIGNhc2UuCj4+PiB3aGVuIGNv
-cHlfbmV0X25zIGZhaWxlZCx0aGlzIHBpZF9uYW1lc3BhY2UgaXMgbm90IHVzZWQgYnkgYW55IHRh
-c2ssCj4+PiBzbyBwcm9jX2ZsdXNoX3Rhc2sgY2FuJ3QgY2FsbCBwaWRfbnNfcmVsZWFzZV9wcm9j
-IHRvIHVtb3VudCB0aGlzIHBpZG5zLT5wcm9jX21udC4KPj4+IGl0J3MgdGhlIG9ubHkgY2hhbmNl
-IHdlIGNhbiB1bm1vdW50IHRoaXMgcGluZG5zLT5wcm9jX21udC4KPj4+Cj4+PiBXaXRoIHRoaXMg
-cGF0Y2gsZXZlcnl0aGluZyBydW5zIHdlbGwuCj4+IAo+PiBJIGhhdmUgcmV2aWV3ZWQgdGhlIGNv
-ZGUgYW5kIEkgZG9uJ3QgZG91YnQgdGhhdCB0aGlzIGlzIG5lY2Vzc2FyeS4KPj4gCj4+IFdoYXQg
-Y2F1c2VkIHlvdSB0byBsb29rIGludG8gdGhpcyBmYWlsdXJlPyAgSXMgdGhlcmUgc29tZSBzZW1p
-LXByYWN0aWNhbAo+PiByZWFsIHdvcmxkIGNhc2UgdGhhdCBzb21lb25lIGlzIGhpdHRpbmc/Cj4+
-IAo+Cj4gU28gZmFyLHRoZXJlIGlzIG5vIGNhc2UgaGl0dGluZyB0aGlzIHByb2JsZW0uCgpJIHRo
-aW5rIHdoYXQgSSB3YW50IHRvIGRvIGlzIHRvIHB1c2ggdGhlIGNoYW5nZXMgaW4gbXkgdXNlcm5z
-CmRldmVsb3BtZW50IHRyZWUgaW5zdGVhZCBvZiBzb2x2aW5nIGl0IHRoZSB3YXkgeW91IGhhdmUg
-c29sdmVkIGl0LgoKVGhlIHdheSB0aGluZ3MgYXJlIGN1cnJlbnRseSBzdHJ1Y3R1cmVkIEkgZG9u
-J3QgdGhpbmsgd2UgY2FuIGJlIGNlcnRhaW4Kb2YgZmluZGluZyBhbGwgb2YgdGhlIGNvcm5lciBj
-YXNlcy4KCldvdWxkIHlvdSBiZSBpbnRlcmVzdGluZyBpbiBjb25maXJtaW5nIHRoYXQgcHJvYmxl
-bSBkb2VzIG5vdCBleGlzdCBpbiBteQp1c2VybnMgZGV2ZWxvcG1lbnQgYnJhbmNoPwoKRXJpYwpf
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJz
-IG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBz
-Oi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+(2012/10/31 13:22), Tejun Heo wrote:
+> CSS_REMOVED is one of the several contortions which were necessary to
+> support css reference draining on cgroup removal.  All css->refcnts
+> which need draining should be deactivated and verified to equal zero
+> atomically w.r.t. css_tryget().  If any one isn't zero, all refcnts
+> needed to be re-activated and css_tryget() shouldn't fail in the
+> process.
+> 
+> This was achieved by letting css_tryget() busy-loop until either the
+> refcnt is reactivated (failed removal attempt) or CSS_REMOVED is set
+> (committing to removal).
+> 
+> Now that css refcnt draining is no longer used, there's no need for
+> atomic rollback mechanism.  css_tryget() simply can look at the
+> reference count and fail if the it's deactivated - it's never getting
+> re-activated.
+> 
+> This patch removes CSS_REMOVED and updates __css_tryget() to fail if
+> the refcnt is deactivated.
+> 
+> Note that this removes css_is_removed() whose only user is VM_BUG_ON()
+> in memcontrol.c.  We can replace it with a check on the refcnt but
+> given that the only use case is a debug assert, I think it's better to
+> simply unexport it.
+> 
+> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
+> Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+> Cc: Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+
+Reviewed-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
