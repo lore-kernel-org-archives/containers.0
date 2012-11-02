@@ -1,15 +1,12 @@
-From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH] namespace:unmount pid_namespace's proc_mnt when
-	copy_net_ns failed
-Date: Fri, 02 Nov 2012 15:33:15 +0800
-Message-ID: <5093773B.5010706@cn.fujitsu.com>
-References: <1351816703-8805-1-git-send-email-gaofeng@cn.fujitsu.com>
-	<87ehkcij1a.fsf@xmission.com>
+From: Ollie Bonds <olliezeh524-DaQTI0RpDDMAvxtiuMwx3w@public.gmane.org>
+Subject: What's up! I happen to be on the lookout for date!
+Date: Fri, 2 Nov 2012 01:03:56 -0700 (PDT)
+Message-ID: <1351843436.79409.YahooMailNeo@web125606.mail.ne1.yahoo.com>
+Reply-To: Ollie Bonds <Beaufort-Y8qEzhMunLwZQ9iXQcw1wQ@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87ehkcij1a.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,43 +16,7 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-5LqOIDIwMTLlubQxMeaciDAy5pelIDE1OjAyLCBFcmljIFcuIEJpZWRlcm1hbiDlhpnpgZM6Cj4g
-R2FvIGZlbmcgPGdhb2ZlbmdAY24uZnVqaXRzdS5jb20+IHdyaXRlczoKPiAKPj4gd2Ugc2hvdWxk
-IGNhbGwgcGlkX25zX3JlbGVhc2VfcHJvYyB0byB1bm1vdW50IHBpZF9uYW1lc3BhY2Uncwo+PiBw
-cm9jX21udCB3aGVuIGNvcHlfbmV0X25zIGZhaWxlZCBpbiBmdW5jdGlvbiBjcmVhdGVfbmV3X25h
-bWVzcGFjZXMuCj4+Cj4+IG90aGVyd2lzZSx0aGUgcHJvY19tbnQgd2lsbCBub3QgYmUgZnJlZWQg
-YW5kIGJlY2F1c2UgdGhlIHN1cGVyX2Jsb2NrCj4+IG9mIHByb2NfbW50IGFsc28gYWRkIHRoZSBy
-ZWZlcmVuY2Ugb2YgdGhlIHBpZF9uYW1lc3BhY2Usc28gdGhpcwo+PiBwaWRfbmFtZXNwYWNlIHdp
-bGwgbmV2ZXIgYmUgcmVsZWFzZWQgdG9vLgo+IAo+IE91Y2ghCj4gCj4gSGF2ZSB5b3UgZW5jb3Vu
-dGVyZWQgdGhpcyBmYWlsdXJlIGluIHByYWN0aWNlIG9yIGlzIHRoaXMganVzdCBmcm9tCj4gcmV2
-aWV3PwoKSSBhZGQgc29tZSBwcmludGsgaW4gcGlkX25zX3JlbGVhc2VfcHJvYyxpdCdzIG5vdCBj
-YWxsZWQgaW4gYWJvdmUgY2FzZS4Kd2hlbiBjb3B5X25ldF9ucyBmYWlsZWQsdGhpcyBwaWRfbmFt
-ZXNwYWNlIGlzIG5vdCB1c2VkIGJ5IGFueSB0YXNrLApzbyBwcm9jX2ZsdXNoX3Rhc2sgY2FuJ3Qg
-Y2FsbCBwaWRfbnNfcmVsZWFzZV9wcm9jIHRvIHVtb3VudCB0aGlzIHBpZG5zLT5wcm9jX21udC4K
-aXQncyB0aGUgb25seSBjaGFuY2Ugd2UgY2FuIHVubW91bnQgdGhpcyBwaW5kbnMtPnByb2NfbW50
-LgoKV2l0aCB0aGlzIHBhdGNoLGV2ZXJ5dGhpbmcgcnVucyB3ZWxsLgoKVGhhbmtzCkdhbwoKPiAK
-PiBJJ20gdHJ5aW5nIHRvIGdhdWdlIHRoZSBzZXZlcml0eSBvZiB0aGlzIGxlYWsuCj4gCj4gRXJp
-Ywo+IAo+IAo+PiBTaWduZWQtb2ZmLWJ5OiBHYW8gZmVuZyA8Z2FvZmVuZ0Bjbi5mdWppdHN1LmNv
-bT4KPj4gLS0tCj4+ICBrZXJuZWwvbnNwcm94eS5jIHwgICAgNSArKysrLQo+PiAgMSBmaWxlcyBj
-aGFuZ2VkLCA0IGluc2VydGlvbnMoKyksIDEgZGVsZXRpb25zKC0pCj4+Cj4+IGRpZmYgLS1naXQg
-YS9rZXJuZWwvbnNwcm94eS5jIGIva2VybmVsL25zcHJveHkuYwo+PiBpbmRleCBiNTc2ZjdmLi5k
-NTM2NDgwIDEwMDY0NAo+PiAtLS0gYS9rZXJuZWwvbnNwcm94eS5jCj4+ICsrKyBiL2tlcm5lbC9u
-c3Byb3h5LmMKPj4gQEAgLTk5LDggKzk5LDExIEBAIHN0YXRpYyBzdHJ1Y3QgbnNwcm94eSAqY3Jl
-YXRlX25ld19uYW1lc3BhY2VzKHVuc2lnbmVkIGxvbmcgZmxhZ3MsCj4+ICAJcmV0dXJuIG5ld19u
-c3A7Cj4+ICAKPj4gIG91dF9uZXQ6Cj4+IC0JaWYgKG5ld19uc3AtPnBpZF9ucykKPj4gKwlpZiAo
-bmV3X25zcC0+cGlkX25zKSB7Cj4+ICsJCWlmIChmbGFncyAmIENMT05FX05FV1BJRCkKPj4gKwkJ
-CXBpZF9uc19yZWxlYXNlX3Byb2MobmV3X25zcC0+cGlkX25zKTsKPj4gIAkJcHV0X3BpZF9ucyhu
-ZXdfbnNwLT5waWRfbnMpOwo+PiArCX0KPj4gIG91dF9waWQ6Cj4+ICAJaWYgKG5ld19uc3AtPmlw
-Y19ucykKPj4gIAkJcHV0X2lwY19ucyhuZXdfbnNwLT5pcGNfbnMpOwo+IC0tCj4gVG8gdW5zdWJz
-Y3JpYmUgZnJvbSB0aGlzIGxpc3Q6IHNlbmQgdGhlIGxpbmUgInVuc3Vic2NyaWJlIGxpbnV4LWtl
-cm5lbCIgaW4KPiB0aGUgYm9keSBvZiBhIG1lc3NhZ2UgdG8gbWFqb3Jkb21vQHZnZXIua2VybmVs
-Lm9yZwo+IE1vcmUgbWFqb3Jkb21vIGluZm8gYXQgIGh0dHA6Ly92Z2VyLmtlcm5lbC5vcmcvbWFq
-b3Jkb21vLWluZm8uaHRtbAo+IFBsZWFzZSByZWFkIHRoZSBGQVEgYXQgIGh0dHA6Ly93d3cudHV4
-Lm9yZy9sa21sLwo+IAoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3Vu
-ZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0
-aW5mby9jb250YWluZXJz
+i like actually living life withought all the headaches of having to have someone else dictating it for me. i love fishing, snowboarding, surfing , and pretty much anything outdoors.so if this sounds like u, let me know
