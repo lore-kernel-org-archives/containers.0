@@ -1,7 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 4/9] cgroup_freezer: trivial cleanups
-Date: Sat,  3 Nov 2012 01:38:30 -0700
-Message-ID: <1351931915-1701-5-git-send-email-tj@kernel.org>
+Subject: [PATCH 5/9] cgroup_freezer: prepare freezer_change_state() for full
+	hierarchy support
+Date: Sat,  3 Nov 2012 01:38:31 -0700
+Message-ID: <1351931915-1701-6-git-send-email-tj@kernel.org>
 References: <1351931915-1701-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,138 +22,97 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.g
 Cc: linux-pm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-* Clean-up indentation and line-breaks.  Drop the invalid comment
-  about freezer->lock.
+* Make freezer_change_state() take bool @freeze instead of enum
+  freezer_state.
 
-* Make all internal functions take @freezer instead of both @cgroup
-  and @freezer.
+* Separate out freezer_apply_state() out of freezer_change_state().
+  This makes freezer_change_state() a rather silly thin wrapper.  It
+  will be filled with hierarchy handling later on.
+
+This patch doesn't introduce any behavior change.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup_freezer.c | 41 +++++++++++++++++++----------------------
- 1 file changed, 19 insertions(+), 22 deletions(-)
+ kernel/cgroup_freezer.c | 48 ++++++++++++++++++++++++++++++------------------
+ 1 file changed, 30 insertions(+), 18 deletions(-)
 
 diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
-index bedefd9..975b3d8 100644
+index 975b3d8..2690830 100644
 --- a/kernel/cgroup_freezer.c
 +++ b/kernel/cgroup_freezer.c
-@@ -29,17 +29,15 @@ enum freezer_state {
- };
- 
- struct freezer {
--	struct cgroup_subsys_state css;
--	enum freezer_state state;
--	spinlock_t lock; /* protects _writes_ to state */
-+	struct cgroup_subsys_state	css;
-+	enum freezer_state		state;
-+	spinlock_t			lock;
- };
- 
--static inline struct freezer *cgroup_freezer(
--		struct cgroup *cgroup)
-+static inline struct freezer *cgroup_freezer(struct cgroup *cgroup)
- {
--	return container_of(
--		cgroup_subsys_state(cgroup, freezer_subsys_id),
--		struct freezer, css);
-+	return container_of(cgroup_subsys_state(cgroup, freezer_subsys_id),
-+			    struct freezer, css);
- }
- 
- static inline struct freezer *task_freezer(struct task_struct *task)
-@@ -180,8 +178,9 @@ out:
-  * migrated into or out of @cgroup, so we can't verify task states against
-  * @freezer state here.  See freezer_attach() for details.
-  */
--static void update_if_frozen(struct cgroup *cgroup, struct freezer *freezer)
-+static void update_if_frozen(struct freezer *freezer)
- {
-+	struct cgroup *cgroup = freezer->css.cgroup;
- 	struct cgroup_iter it;
- 	struct task_struct *task;
- 
-@@ -211,12 +210,11 @@ notyet:
- static int freezer_read(struct cgroup *cgroup, struct cftype *cft,
- 			struct seq_file *m)
- {
--	struct freezer *freezer;
-+	struct freezer *freezer = cgroup_freezer(cgroup);
- 	enum freezer_state state;
- 
--	freezer = cgroup_freezer(cgroup);
- 	spin_lock_irq(&freezer->lock);
--	update_if_frozen(cgroup, freezer);
-+	update_if_frozen(freezer);
- 	state = freezer->state;
- 	spin_unlock_irq(&freezer->lock);
- 
-@@ -225,8 +223,9 @@ static int freezer_read(struct cgroup *cgroup, struct cftype *cft,
- 	return 0;
- }
- 
--static void freeze_cgroup(struct cgroup *cgroup, struct freezer *freezer)
-+static void freeze_cgroup(struct freezer *freezer)
- {
-+	struct cgroup *cgroup = freezer->css.cgroup;
- 	struct cgroup_iter it;
- 	struct task_struct *task;
- 
-@@ -236,8 +235,9 @@ static void freeze_cgroup(struct cgroup *cgroup, struct freezer *freezer)
+@@ -247,45 +247,57 @@ static void unfreeze_cgroup(struct freezer *freezer)
  	cgroup_iter_end(cgroup, &it);
  }
  
--static void unfreeze_cgroup(struct cgroup *cgroup, struct freezer *freezer)
-+static void unfreeze_cgroup(struct freezer *freezer)
+-static void freezer_change_state(struct freezer *freezer,
+-				 enum freezer_state goal_state)
++/**
++ * freezer_apply_state - apply state change to a single cgroup_freezer
++ * @freezer: freezer to apply state change to
++ * @freeze: whether to freeze or unfreeze
++ */
++static void freezer_apply_state(struct freezer *freezer, bool freeze)
  {
-+	struct cgroup *cgroup = freezer->css.cgroup;
- 	struct cgroup_iter it;
- 	struct task_struct *task;
- 
-@@ -247,11 +247,9 @@ static void unfreeze_cgroup(struct cgroup *cgroup, struct freezer *freezer)
- 	cgroup_iter_end(cgroup, &it);
- }
- 
--static void freezer_change_state(struct cgroup *cgroup,
-+static void freezer_change_state(struct freezer *freezer,
- 				 enum freezer_state goal_state)
- {
--	struct freezer *freezer = cgroup_freezer(cgroup);
--
  	/* also synchronizes against task migration, see freezer_attach() */
- 	spin_lock_irq(&freezer->lock);
+-	spin_lock_irq(&freezer->lock);
++	lockdep_assert_held(&freezer->lock);
  
-@@ -260,13 +258,13 @@ static void freezer_change_state(struct cgroup *cgroup,
- 		if (freezer->state != CGROUP_THAWED)
- 			atomic_dec(&system_freezing_cnt);
- 		freezer->state = CGROUP_THAWED;
--		unfreeze_cgroup(cgroup, freezer);
-+		unfreeze_cgroup(freezer);
- 		break;
- 	case CGROUP_FROZEN:
+-	switch (goal_state) {
+-	case CGROUP_THAWED:
+-		if (freezer->state != CGROUP_THAWED)
+-			atomic_dec(&system_freezing_cnt);
+-		freezer->state = CGROUP_THAWED;
+-		unfreeze_cgroup(freezer);
+-		break;
+-	case CGROUP_FROZEN:
++	if (freeze) {
  		if (freezer->state == CGROUP_THAWED)
  			atomic_inc(&system_freezing_cnt);
  		freezer->state = CGROUP_FREEZING;
--		freeze_cgroup(cgroup, freezer);
-+		freeze_cgroup(freezer);
- 		break;
- 	default:
- 		BUG();
-@@ -275,8 +273,7 @@ static void freezer_change_state(struct cgroup *cgroup,
+ 		freeze_cgroup(freezer);
+-		break;
+-	default:
+-		BUG();
++	} else {
++		if (freezer->state != CGROUP_THAWED)
++			atomic_dec(&system_freezing_cnt);
++		freezer->state = CGROUP_THAWED;
++		unfreeze_cgroup(freezer);
+ 	}
++}
+ 
++/**
++ * freezer_change_state - change the freezing state of a cgroup_freezer
++ * @freezer: freezer of interest
++ * @freeze: whether to freeze or thaw
++ *
++ * Freeze or thaw @cgroup according to @freeze.
++ */
++static void freezer_change_state(struct freezer *freezer, bool freeze)
++{
++	/* update @freezer */
++	spin_lock_irq(&freezer->lock);
++	freezer_apply_state(freezer, freeze);
  	spin_unlock_irq(&freezer->lock);
  }
  
--static int freezer_write(struct cgroup *cgroup,
--			 struct cftype *cft,
-+static int freezer_write(struct cgroup *cgroup, struct cftype *cft,
+ static int freezer_write(struct cgroup *cgroup, struct cftype *cft,
  			 const char *buffer)
  {
- 	enum freezer_state goal_state;
-@@ -288,7 +285,7 @@ static int freezer_write(struct cgroup *cgroup,
+-	enum freezer_state goal_state;
++	bool freeze;
+ 
+ 	if (strcmp(buffer, freezer_state_strs[CGROUP_THAWED]) == 0)
+-		goal_state = CGROUP_THAWED;
++		freeze = false;
+ 	else if (strcmp(buffer, freezer_state_strs[CGROUP_FROZEN]) == 0)
+-		goal_state = CGROUP_FROZEN;
++		freeze = true;
  	else
  		return -EINVAL;
  
--	freezer_change_state(cgroup, goal_state);
-+	freezer_change_state(cgroup_freezer(cgroup), goal_state);
+-	freezer_change_state(cgroup_freezer(cgroup), goal_state);
++	freezer_change_state(cgroup_freezer(cgroup), freeze);
  	return 0;
  }
  
