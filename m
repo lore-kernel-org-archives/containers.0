@@ -1,14 +1,15 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/8] cgroup: kill CSS_REMOVED
-Date: Mon, 5 Nov 2012 13:33:44 +0800
-Message-ID: <50974FB8.9010808__37616.8815106668$1352093699$gmane$org@huawei.com>
+Subject: Re: [PATCH 1/8] cgroup: kill
+	cgroup_subsys->__DEPRECATED_clear_css_refs
+Date: Mon, 5 Nov 2012 13:34:27 +0800
+Message-ID: <50974FE3.60102__32236.7718130865$1352093773$gmane$org@huawei.com>
 References: <1351712650-23709-1-git-send-email-tj@kernel.org>
-	<1351712650-23709-3-git-send-email-tj@kernel.org>
+	<1351712650-23709-2-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1351712650-23709-3-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1351712650-23709-2-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,40 +24,34 @@ Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@pub
 List-Id: containers.vger.kernel.org
 
 On 2012/11/1 3:44, Tejun Heo wrote:
-> CSS_REMOVED is one of the several contortions which were necessary to
-> support css reference draining on cgroup removal.  All css->refcnts
-> which need draining should be deactivated and verified to equal zero
-> atomically w.r.t. css_tryget().  If any one isn't zero, all refcnts
-> needed to be re-activated and css_tryget() shouldn't fail in the
-> process.
+> 2ef37d3fe4 ("memcg: Simplify mem_cgroup_force_empty_list error
+> handling") removed the last user of __DEPRECATED_clear_css_refs.  This
+> patch removes __DEPRECATED_clear_css_refs and mechanisms to support
+> it.
 > 
-> This was achieved by letting css_tryget() busy-loop until either the
-> refcnt is reactivated (failed removal attempt) or CSS_REMOVED is set
-> (committing to removal).
+> * Conditionals dependent on __DEPRECATED_clear_css_refs removed.
 > 
-> Now that css refcnt draining is no longer used, there's no need for
-> atomic rollback mechanism.  css_tryget() simply can look at the
-> reference count and fail if it's deactivated - it's never getting
-> re-activated.
+> * cgroup_clear_css_refs() can no longer fail.  All that needs to be
+>   done are deactivating refcnts, setting CSS_REMOVED and putting the
+>   base reference on each css.  Remove cgroup_clear_css_refs() and the
+>   failure path, and open-code the loops into cgroup_rmdir().
 > 
-> This patch removes CSS_REMOVED and updates __css_tryget() to fail if
-> the refcnt is deactivated.  As deactivation and removal are a single
-> step now, they no longer need to be protected against css_tryget()
-> happening from irq context.  Remove local_irq_disable/enable() from
-> cgroup_rmdir().
+> This patch keeps the two for_each_subsys() loops separate while open
+> coding them.  They can be merged now but there are scheduled changes
+> which need them to be separate, so keep them separate to reduce the
+> amount of churn.
 > 
-> Note that this removes css_is_removed() whose only user is VM_BUG_ON()
-> in memcontrol.c.  We can replace it with a check on the refcnt but
-> given that the only use case is a debug assert, I think it's better to
-> simply unexport it.
+> local_irq_save/restore() from cgroup_clear_css_refs() are replaced
+> with local_irq_disable/enable() for simplicity.  This is safe as
+> cgroup_rmdir() is always called with IRQ enabled.  Note that this IRQ
+> switching is necessary to make CSS deactivation and CSS_REMOVED
+> assertion atomic against css_tryget() and will be removed by future
+> changes.
 > 
-> v2: Comment updated and explanation on local_irq_disable/enable()
->     added per Michal Hocko.
+> v2: cgroup_call_pre_destroy() removal dropped per Michal.  Commit
+>     message updated to explain local_irq_disable/enable() conversion.
 > 
 > Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 > Reviewed-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-> Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
-> Cc: Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 
 Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
