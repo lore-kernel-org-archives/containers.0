@@ -1,15 +1,17 @@
-From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: [PATCHSET RESEND v2] cgroup: simplify cgroup removal path
-Date: Mon, 5 Nov 2012 19:39:47 +0100
-Message-ID: <20121105183947.GA14087@dhcp22.suse.cz>
-References: <1351712650-23709-1-git-send-email-tj@kernel.org>
-	<20121105173024.GA19354@mtj.dyndns.org>
+From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Subject: Re: [RFC] cgroup: deprecate clone_children
+Date: Mon, 5 Nov 2012 13:17:14 -0600
+Message-ID: <20121105191714.GA24560@sergelap>
+References: <1351931915-1701-1-git-send-email-tj@kernel.org>
+	<1351931915-1701-2-git-send-email-tj@kernel.org>
+	<5097C23B.3040808@parallels.com>
+	<20121105180213.GB19354@mtj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20121105173024.GA19354-9pTldWuhBndy/B6EtB590w@public.gmane.org>
+In-Reply-To: <20121105180213.GB19354-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,16 +22,90 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: mhocko-AlSwsSmVLrQ@public.gmane.org, linux-pm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon 05-11-12 09:30:24, Tejun Heo wrote:
-> Applied to cgroup/cgroup-rmdir-updates and then pulled into
-> cgroup/for-3.8 w/ Li's acks added.
+Quoting Tejun Heo (tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org):
+> clone_children makes cgroup invoke ->post_clone() callback if it
+> exists and sets CGRP_CLONE_CHILDREN.  ->post_clone(), while being
+> named generically, is only supposed to copy configuration from its
+> parent.
+> 
+> This is an entirely convenience feature which is only used by cpuset
+> to alter its configuration propagation.  As the mount option and
+> cgroupfs knobs are cgroup-wide and different controllers differ in
+> their configuration propagations, it's awkward to use for multiple
+> controllers especially if they're co-mounted.  At this point, we can't
+> use this flag for any other controller anyway as it would implicitly
+> change the behavior.
+> 
+> As this is unnecessary feature with very limited use and awkward in
 
-OK, I have merged it into -mm git tree.
+clone_children is currently required by lxc.  Of course lxc could
+manually set the .cpus and .mems in the newly created child, but if
+those interfaces or others like it ever change (i.e. any new ones which
+must be set before a task can join a cgroup) we'll get into yet more of
+a rats nets of code to support different kernel versions.
 
-Thanks
--- 
-Michal Hocko
-SUSE Labs
+(Just as an idea, if there was a way to generically tell from the list
+of files in my cgroups dir which files need to be initialized before a
+task can join, I think that would suffice.  Maybe a cgroups.needssetup
+file which right now contains 'cpuset.mems\ncpuset.cpus'. Then if we
+find a file we don't recognize in there we can throw an intelligent
+error, or guess at duplicating the parent value.)
+
+> co-mounted use cases, let's try to deprecate it.  Whine on the mount
+> option and accesses to cgroupfs knobs.
+> 
+> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> Cc: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+> Cc: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+> ---
+> Glauber, I think this is more befitting change for .post_clone().  If
+
+What do you mean by that?  That he is working on a patch-set which will
+remove post_clone and this belongs there, or that there is a proposed
+alternative?
+
+> people aren't depending on this, I'd much prefer to just remove it.
+> 
+> Thanks.
+> 
+>  kernel/cgroup.c |    8 ++++++++
+>  1 file changed, 8 insertions(+)
+> 
+> --- a/kernel/cgroup.c
+> +++ b/kernel/cgroup.c
+> @@ -1162,6 +1162,8 @@ static int parse_cgroupfs_options(char *
+>  			continue;
+>  		}
+>  		if (!strcmp(token, "clone_children")) {
+> +			pr_warning("cgroup: mount option clone_children is deprecated (pid=%d comm=%s)\n",
+> +				   task_tgid_nr(current), current->comm);
+>  			opts->clone_children = true;
+>  			continue;
+>  		}
+> @@ -3837,6 +3839,9 @@ fail:
+>  static u64 cgroup_clone_children_read(struct cgroup *cgrp,
+>  				    struct cftype *cft)
+>  {
+> +	printk_ratelimited(KERN_WARNING "cgroup: clone_children is deprecated (pid=%d comm=%s)\n",
+> +			   task_tgid_nr(current), current->comm);
+> +
+>  	return clone_children(cgrp);
+>  }
+>  
+> @@ -3844,6 +3849,9 @@ static int cgroup_clone_children_write(s
+>  				     struct cftype *cft,
+>  				     u64 val)
+>  {
+> +	printk_ratelimited(KERN_WARNING "cgroup: clone_children is deprecated (pid=%d comm=%s)\n",
+> +			   task_tgid_nr(current), current->comm);
+> +
+>  	if (val)
+>  		set_bit(CGRP_CLONE_CHILDREN, &cgrp->flags);
+>  	else
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linuxfoundation.org/mailman/listinfo/containers
