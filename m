@@ -1,14 +1,14 @@
-From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 8/8] cgroup: make ->pre_destroy() return void
-Date: Mon, 5 Nov 2012 13:41:19 +0800
-Message-ID: <5097517F.2040307@huawei.com>
-References: <1351712650-23709-1-git-send-email-tj@kernel.org>
-	<1351712650-23709-9-git-send-email-tj@kernel.org>
+From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: [PATCH 1/9] cgroup: add cgroup_subsys->post_create()
+Date: Mon, 5 Nov 2012 14:42:19 +0100
+Message-ID: <5097C23B.3040808@parallels.com>
+References: <1351931915-1701-1-git-send-email-tj@kernel.org>
+	<1351931915-1701-2-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1351712650-23709-9-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1351931915-1701-2-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,17 +19,34 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: rjw-KKrjLPT3xs0@public.gmane.org, linux-pm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 2012/11/1 3:44, Tejun Heo wrote:
-> All ->pre_destory() implementations return 0 now, which is the only
-> allowed return value.  Make it return void.
+On 11/03/2012 09:38 AM, Tejun Heo wrote:
+> Currently, there's no way for a controller to find out whether a new
+> cgroup finished all ->create() allocatinos successfully and is
+> considered "live" by cgroup.
+> 
+> This becomes a problem later when we add generic descendants walking
+> to cgroup which can be used by controllers as controllers don't have a
+> synchronization point where it can synchronize against new cgroups
+> appearing in such walks.
+> 
+> This patch adds ->post_create().  It's called after all ->create()
+> succeeded and the cgroup is linked into the generic cgroup hierarchy.
+> This plays the counterpart of ->pre_destroy().
 > 
 > Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-> Cc: Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-> Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Cc: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 
-Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Tejun, If we do it this way, we end up with two callbacks that are
+called after create: post_clone and post_create. I myself prefer the
+approach I took, that convert post_clone into post_create, and would
+prefer if you would pick that up.
+
+For me, post_clone is totally a glitch that should not exist. Merging
+this with post_create gives the following semantics:
+
+* A while after cgroup creation, you will get a callback. In that
+callback, you do whatever initialization you may need that you could not
+in create. Why is reacting to a flag being set any different?
