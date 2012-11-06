@@ -1,12 +1,14 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 1/2] device_cgroup: add lockdep asserts
-Date: Tue, 6 Nov 2012 09:16:12 -0800
-Message-ID: <20121106171612.GH30069@mtj.dyndns.org>
+Subject: [PATCH 2/2] device_cgroup: add lockdep asserts
+Date: Tue, 6 Nov 2012 09:16:53 -0800
+Message-ID: <20121106171653.GI30069__48626.4975778342$1352222234$gmane$org@mtj.dyndns.org>
+References: <20121106171612.GH30069@mtj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20121106171612.GH30069-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,13 +28,13 @@ Add lockdep asserts to utility functions so that future errors can be
 easily detected.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 Cc: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 ---
-If this looks good, I'll route it with Aristeu's earlier patch through
-cgroup/for-3.7-fixes.  Thanks.
+And this one through cgroup/for-3.8.
+
+Thanks.
 
  security/device_cgroup.c |   12 ++++++++++++
  1 file changed, 12 insertions(+)
