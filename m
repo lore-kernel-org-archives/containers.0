@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 2/2] device_cgroup: add lockdep asserts
-Date: Tue, 6 Nov 2012 09:16:53 -0800
-Message-ID: <20121106171653.GI30069__48626.4975778342$1352222234$gmane$org@mtj.dyndns.org>
+Subject: [PATCH 1/2] device_cgroup: fix RCU usage
+Date: Tue, 6 Nov 2012 09:17:37 -0800
+Message-ID: <20121106171737.GJ30069__3614.65908722511$1352222283$gmane$org@mtj.dyndns.org>
 References: <20121106171612.GH30069@mtj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,69 +22,49 @@ To: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Li Zefan <l
 Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-device_cgroup uses RCU safe ->exceptions list which is write-protected
-by devcgroup_mutex and has had some issues using locking correctly.
-Add lockdep asserts to utility functions so that future errors can be
-easily detected.
+dev_cgroup->exceptions is protected with devcgroup_mutex for writes
+and RCU for reads; however, RCU usage isn't correct.
+
+* dev_exception_clean() doesn't use RCU variant of list_del() and
+  kfree().  The function can race with may_access() and may_access()
+  may end up dereferencing already freed memory.  Use list_del_rcu()
+  and kfree_rcu() instead.
+
+* may_access() may be called only with RCU read locked but doesn't use
+  RCU safe traversal over ->exceptions.  Use list_for_each_entry_rcu().
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 Cc: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 ---
-And this one through cgroup/for-3.8.
+Oops, wrong patch.  This is the correct one.
 
 Thanks.
 
- security/device_cgroup.c |   12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ security/device_cgroup.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
 --- a/security/device_cgroup.c
 +++ b/security/device_cgroup.c
-@@ -82,6 +82,8 @@ static int dev_exceptions_copy(struct li
- {
- 	struct dev_exception_item *ex, *tmp, *new;
- 
-+	lockdep_assert_held(&devcgroup_mutex);
-+
- 	list_for_each_entry(ex, orig, list) {
- 		new = kmemdup(ex, sizeof(*ex), GFP_KERNEL);
- 		if (!new)
-@@ -107,6 +109,8 @@ static int dev_exception_add(struct dev_
- {
- 	struct dev_exception_item *excopy, *walk;
- 
-+	lockdep_assert_held(&devcgroup_mutex);
-+
- 	excopy = kmemdup(ex, sizeof(*ex), GFP_KERNEL);
- 	if (!excopy)
- 		return -ENOMEM;
-@@ -137,6 +141,8 @@ static void dev_exception_rm(struct dev_
- {
- 	struct dev_exception_item *walk, *tmp;
- 
-+	lockdep_assert_held(&devcgroup_mutex);
-+
- 	list_for_each_entry_safe(walk, tmp, &dev_cgroup->exceptions, list) {
- 		if (walk->type != ex->type)
- 			continue;
-@@ -163,6 +169,8 @@ static void dev_exception_clean(struct d
- {
+@@ -164,8 +164,8 @@ static void dev_exception_clean(struct d
  	struct dev_exception_item *ex, *tmp;
  
-+	lockdep_assert_held(&devcgroup_mutex);
-+
  	list_for_each_entry_safe(ex, tmp, &dev_cgroup->exceptions, list) {
- 		list_del_rcu(&ex->list);
- 		kfree_rcu(ex, rcu);
-@@ -298,6 +306,10 @@ static int may_access(struct dev_cgroup
+-		list_del(&ex->list);
+-		kfree(ex);
++		list_del_rcu(&ex->list);
++		kfree_rcu(ex, rcu);
+ 	}
+ }
+ 
+@@ -298,7 +298,7 @@ static int may_access(struct dev_cgroup
  	struct dev_exception_item *ex;
  	bool match = false;
  
-+	rcu_lockdep_assert(rcu_read_lock_held() ||
-+			   lockdep_is_held(&devcgroup_mutex),
-+			   "device_cgroup::may_access() called without proper synchronization");
-+
- 	list_for_each_entry_rcu(ex, &dev_cgroup->exceptions, list) {
+-	list_for_each_entry(ex, &dev_cgroup->exceptions, list) {
++	list_for_each_entry_rcu(ex, &dev_cgroup->exceptions, list) {
  		if ((refex->type & DEV_BLOCK) && !(ex->type & DEV_BLOCK))
  			continue;
+ 		if ((refex->type & DEV_CHAR) && !(ex->type & DEV_CHAR))
