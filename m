@@ -1,7 +1,7 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Subject: Re: Why does devices cgroup check for CAP_SYS_ADMIN explicitly?
-Date: Tue, 6 Nov 2012 07:43:20 -0800
-Message-ID: <20121106154320.GE30069@mtj.dyndns.org>
+Date: Tue, 6 Nov 2012 09:45:34 -0600
+Message-ID: <20121106154534.GA20237__30137.0939276696$1352216772$gmane$org@sergelap>
 References: <20121106023845.GI19354@mtj.dyndns.org>
 	<877gpzrlir.fsf@xmission.com> <20121106150131.GA14640@sergelap>
 	<20121106150639.GB30069@mtj.dyndns.org>
@@ -22,12 +22,29 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hey, Eric.
-
-On Tue, Nov 06, 2012 at 07:34:07AM -0800, Eric W. Biederman wrote:
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> writes:
+> 
+> > Hello, Serge.
+> >
+> > On Tue, Nov 06, 2012 at 09:01:32AM -0600, Serge Hallyn wrote:
+> >> More practically, lacking user namespaces you can create a full (i.e.
+> >> ubuntu) container that doesn't have CAP_SYS_ADMIN, but not one without
+> >> root.  So this allows you to prevent containers from bypassing devices
+> >> cgroup restrictions set by the parent.  (In reality we are not using
+> >> that in ubuntu - we grant CAP_SYS_ADMIN and use apparmor to restrict -
+> >> but other distros do.)
+> >
+> > Do you even mount cgroupfs in containers?  If you just bind-mount
+> > cgroupfs verbatim in containers, I don't think that's gonna work very
+> > well.  If not, all this doesn't make any difference for containers.
+> >
+> > So, you don't really have any actual use case for the explicit CAP_*
+> > checks, right?
+> 
 > Having thought about this a little more I can give a definitive answer.
 > 
 > Adding a process to the device control group is equivalent to calling
@@ -38,10 +55,31 @@ On Tue, Nov 06, 2012 at 07:34:07AM -0800, Eric W. Biederman wrote:
 > Without a capability check it would be possible to remove access to
 > /dev/console for a suid root application keeping it from reporting
 > attempts to hack it for example.
-
-You understand that the whole thing is gated by VFS permission check,
-right?  I'm kinda lost what you're talking about.
-
+> 
+> update_access can allow access to previously unaccessible devices
+> and so is equivalent to mknod and as such requires a capability call.
+> 
+> static int devcgroup_update_access(struct dev_cgroup *devcgroup,
+> 				   int filetype, const char *buffer)
+> {
+> ....
+> 	if (!capable(CAP_SYS_ADMIN))
+> 		return -EPERM;
+> 
+> 
+> Likewise move to a different cgroup can give you a completely different
+> set of devices you can use.  And is roughly equivalent to mknod, and
+> needs a capability call. 
+> 
+> static int devcgroup_can_attach(struct cgroup *new_cgrp,
+> 				struct cgroup_taskset *set)
+> {
+> 	struct task_struct *task = cgroup_taskset_first(set);
+> 
+> 	if (current != task && !capable(CAP_SYS_ADMIN))
+> 		return -EPERM;
+> 
+> 
 > The generic cgroup check in attach_task_by_pid to see if you can move
 > another process into a cgroup needs to be a capability call and not a
 > test for uid == 0.
@@ -63,11 +101,16 @@ right?  I'm kinda lost what you're talking about.
 > 			rcu_read_unlock();
 > 			ret = -EACCES;
 > 			goto out_unlock_cgroup;
+> 
+> Eric
 
-This one isn't gated by VFS so we need to add CAP check to this
-function.  No?
+(full context kept, though long, bc it's all important)
 
-Thanks.
+Note that part of the problem is simply that the devices cgroup is serving
+as a stand-in for the lack of both user and device namespaces.  If those
+both existed, we could get rid of the devices cgroup.  Likewise, the
+presence of the devices cgroup makes a device namespace far less
+compelling :)  We can play games with bind mounts into /dev and devcgroup
+to do most of what we want a devicens for.
 
--- 
-tejun
+-serge
