@@ -1,16 +1,18 @@
 From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: [PATCH 1/9 v2] cgroup: add cgroup_subsys->post_create()
-Date: Wed, 7 Nov 2012 18:40:35 +0100
-Message-ID: <20121107174035.GA24475__17052.5563568392$1352310057$gmane$org@dhcp22.suse.cz>
+Subject: Re: [PATCH 3/9] cgroup: implement generic child / descendant walk
+	macros
+Date: Wed, 7 Nov 2012 18:49:58 +0100
+Message-ID: <20121107174958.GB24475__27122.1961280846$1352310622$gmane$org@dhcp22.suse.cz>
 References: <1351931915-1701-1-git-send-email-tj@kernel.org>
-	<1351931915-1701-2-git-send-email-tj@kernel.org>
-	<20121107171508.GF2660@mtj.dyndns.org>
+	<1351931915-1701-4-git-send-email-tj@kernel.org>
+	<20121107165457.GD4131@dhcp22.suse.cz>
+	<20121107170118.GD2660@mtj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20121107171508.GF2660-9pTldWuhBndy/B6EtB590w@public.gmane.org>
+In-Reply-To: <20121107170118.GD2660-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,17 +26,44 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: linux-pm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed 07-11-12 09:15:08, Tejun Heo wrote:
-[...]
-> This patch adds ->post_create().  It's called after all ->create()
-> succeeded and the cgroup is linked into the generic cgroup hierarchy.
-> This plays the counterpart of ->pre_destroy().
+On Wed 07-11-12 09:01:18, Tejun Heo wrote:
+> Hello, Michal.
 > 
-> When used in combination with the to-be-added generic descendant
-> iterators, ->post_create() can be used to implement reliable state
-> inheritance.  It will be explained with the descendant iterators.
+> On Wed, Nov 07, 2012 at 05:54:57PM +0100, Michal Hocko wrote:
+> > > +struct cgroup *cgroup_next_descendant_pre(struct cgroup *pos,
+> > > +					  struct cgroup *cgroup)
+> > > +{
+> > > +	struct cgroup *next;
+> > > +
+> > > +	WARN_ON_ONCE(!rcu_read_lock_held());
+> > > +
+> > > +	/* if first iteration, pretend we just visited @cgroup */
+> > > +	if (!pos) {
+> > > +		if (list_empty(&cgroup->children))
+> > > +			return NULL;
+> > > +		pos = cgroup;
+> > > +	}
+> > 
+> > Is there any specific reason why the root of the tree is excluded?
+> > This is bit impractical because you have to special case the root
+> > in the code.
+> 
+> Yeah, thought about including it but decided against it for two
+> reasons.
+> 
+> * To be consistent with cgroup_for_each_children() - it's a bit weird
+>   for descendants to include self when children don't.
+> 
+> * Iteration root is likely to require different treatment anyway.
+>   e.g. for cgroup_freezer, the root is updated to the specified config
+>   while all the descendants inherit config from its immediate parent.
+>   They are different.
 
-Thanks
+OK if there is a code which handles root differently then let's not
+overcomplicate this. The naming should be clear that root needs a
+special treatment.
+
+I will continue with the review tomorrow.
 -- 
 Michal Hocko
 SUSE Labs
