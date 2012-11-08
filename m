@@ -1,20 +1,17 @@
-From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: [PATCH 9/9 v2] cgroup_freezer: implement proper hierarchy support
-Date: Thu, 8 Nov 2012 16:57:48 +0100
-Message-ID: <20121108155748.GO31821__10167.4079466195$1352390288$gmane$org@dhcp22.suse.cz>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 3/9] cgroup: implement generic child / descendant walk
+	macros
+Date: Thu, 8 Nov 2012 09:15:32 -0800
+Message-ID: <20121108171532.GI12973__14687.5054263093$1352394955$gmane$org@htj.dyndns.org>
 References: <1351931915-1701-1-git-send-email-tj@kernel.org>
-	<1351931915-1701-10-git-send-email-tj@kernel.org>
-	<20121107163919.GC2660@mtj.dyndns.org>
-	<20121108140852.GI31821@dhcp22.suse.cz>
-	<20121108141848.GA12973@htj.dyndns.org>
-	<20121108152039.GL31821@dhcp22.suse.cz>
-	<20121108152923.GG12973@htj.dyndns.org>
+	<1351931915-1701-4-git-send-email-tj@kernel.org>
+	<20121108095013.GA31821@dhcp22.suse.cz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20121108152923.GG12973-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
+In-Reply-To: <20121108095013.GA31821-2MMpYkNvuYDjFM9bn6wA6Q@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,60 +21,48 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
 Cc: linux-pm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu 08-11-12 07:29:23, Tejun Heo wrote:
-> Hey, Michal.
-> 
-> On Thu, Nov 08, 2012 at 04:20:39PM +0100, Michal Hocko wrote:
-> > > So, in the above example in CPU2, (B->state & FREEZING) test and
-> > > freezer_apply_state(C, false) can't be interleaved with the same
-> > > inheritance operation from CPU1.  They either happen before or after.
+Hey, Michal.
+
+On Thu, Nov 08, 2012 at 10:50:13AM +0100, Michal Hocko wrote:
+> On Sat 03-11-12 01:38:29, Tejun Heo wrote:
+> > Currently, cgroup doesn't provide any generic helper for walking a
+> > given cgroup's children or descendants.  This patch adds the following
+> > three macros.
 > > 
-> > I am not sure I understand what you mean by inheritance operation but
+> > * cgroup_for_each_child() - walk immediate children of a cgroup.
+> > 
+> > * cgroup_for_each_descendant_pre() - visit all descendants of a cgroup
+> >   in pre-order tree traversal.
+> > 
+> > * cgroup_for_each_descendant_post() - visit all descendants of a
+> >   cgroup in post-order tree traversal.
+> > 
+> > All three only require the user to hold RCU read lock during
+> > traversal.  Verifying that each iterated cgroup is online is the
+> > responsibility of the user.  When used with proper synchronization,
+> > cgroup_for_each_descendant_pre() can be used to propagate config
+> > updates to descendants in reliable way.  See comments for details.
+> > 
+> > Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 > 
-> The operation of looking at one's parent and inherting the state.
-> Here, checking parent->state and calling apply_state accordingly.
+> I will convert mem_cgroup_iter to use this rather than css_get_next
+> after this gets into the next tree so that it can fly via Andrew.
 > 
-> > you are right that the race is not possible because spin_lock makes
-> > sure that Foo->state is done after the lock(Foo->child) and spin_unlock
-> > then serves as a leave barrier so the other CPUs will see the correctly
-> > updated value. The rest is handled by the fixed ordered tree walk. So
-> > there is really no interleaving going on here.
+> Reviewed-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
 > 
-> I'm worried that this is a bit too subtle.
+> Just a minor knit. You are talking about a config propagation while I
+> would consider state propagation more clear and less confusing. Config
+> is usually stable enough so that post_create is not necessary for
+> syncing (e.g. memcg.swappiness). It is a state which must be consistent
+> throughout the hierarchy which matters here.
 
-Dunno, it looks obvious now, I just missed the entry&leave implicit
-barriers by spinlocks and again sorry about the confusion.
+Did s/config/state/g
 
-> This will work fine with a single hierarchy mutex protecting hierarchy
-> updates and state propagations through it and that should work for
-> most controllers too.
+Thanks.
 
-But single mutex is just ugly.
-
-> I want to have at least one example of finer grained locking for
-> future reference and cgroup_freezer happened to be the one I started
-> working on.
-
-I think this is a good example because it shows how to share the state
-without too many implementation details.
-
-> So, it is more complicated (not necessarily in written code but the
-> sync rules) than necessary.  I'm still not sure whether to keep it or
-> not.
-
-I think the locking is fine and I would keep it this way rather than a
-big lock.
-
-> I'll add more documentation about synchronization in
-> cgroup_for_each_descendant_pre() either way.
-
-more doc cannot hurt ;)
-
-Thanks
 -- 
-Michal Hocko
-SUSE Labs
+tejun
