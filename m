@@ -1,18 +1,15 @@
-From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: [PATCH 3/9] cgroup: implement generic child / descendant walk
-	macros
-Date: Wed, 7 Nov 2012 18:49:58 +0100
-Message-ID: <20121107174958.GB24475__27122.1961280846$1352310622$gmane$org@dhcp22.suse.cz>
+From: Kamezawa Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 1/9 v2] cgroup: add cgroup_subsys->post_create()
+Date: Thu, 08 Nov 2012 11:59:41 +0900
+Message-ID: <509B201D.3060909__3855.03222137249$1352343626$gmane$org@jp.fujitsu.com>
 References: <1351931915-1701-1-git-send-email-tj@kernel.org>
-	<1351931915-1701-4-git-send-email-tj@kernel.org>
-	<20121107165457.GD4131@dhcp22.suse.cz>
-	<20121107170118.GD2660@mtj.dyndns.org>
+	<1351931915-1701-2-git-send-email-tj@kernel.org>
+	<20121107171508.GF2660@mtj.dyndns.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20121107170118.GD2660-9pTldWuhBndy/B6EtB590w@public.gmane.org>
+In-Reply-To: <20121107171508.GF2660-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,47 +20,33 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: linux-pm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: rjw-KKrjLPT3xs0@public.gmane.org, linux-pm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed 07-11-12 09:01:18, Tejun Heo wrote:
-> Hello, Michal.
-> 
-> On Wed, Nov 07, 2012 at 05:54:57PM +0100, Michal Hocko wrote:
-> > > +struct cgroup *cgroup_next_descendant_pre(struct cgroup *pos,
-> > > +					  struct cgroup *cgroup)
-> > > +{
-> > > +	struct cgroup *next;
-> > > +
-> > > +	WARN_ON_ONCE(!rcu_read_lock_held());
-> > > +
-> > > +	/* if first iteration, pretend we just visited @cgroup */
-> > > +	if (!pos) {
-> > > +		if (list_empty(&cgroup->children))
-> > > +			return NULL;
-> > > +		pos = cgroup;
-> > > +	}
-> > 
-> > Is there any specific reason why the root of the tree is excluded?
-> > This is bit impractical because you have to special case the root
-> > in the code.
-> 
-> Yeah, thought about including it but decided against it for two
-> reasons.
-> 
-> * To be consistent with cgroup_for_each_children() - it's a bit weird
->   for descendants to include self when children don't.
-> 
-> * Iteration root is likely to require different treatment anyway.
->   e.g. for cgroup_freezer, the root is updated to the specified config
->   while all the descendants inherit config from its immediate parent.
->   They are different.
+(2012/11/08 2:15), Tejun Heo wrote:
+> Currently, there's no way for a controller to find out whether a new
+> cgroup finished all ->create() allocatinos successfully and is
+> considered "live" by cgroup.
+>
+> This becomes a problem later when we add generic descendants walking
+> to cgroup which can be used by controllers as controllers don't have a
+> synchronization point where it can synchronize against new cgroups
+> appearing in such walks.
+>
+> This patch adds ->post_create().  It's called after all ->create()
+> succeeded and the cgroup is linked into the generic cgroup hierarchy.
+> This plays the counterpart of ->pre_destroy().
+>
+> When used in combination with the to-be-added generic descendant
+> iterators, ->post_create() can be used to implement reliable state
+> inheritance.  It will be explained with the descendant iterators.
+>
+> v2: Added a paragraph about its future use w/ descendant iterators per
+>      Michal.
+>
+> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> Acked-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+> Cc: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 
-OK if there is a code which handles root differently then let's not
-overcomplicate this. The naming should be clear that root needs a
-special treatment.
 
-I will continue with the review tomorrow.
--- 
-Michal Hocko
-SUSE Labs
+Reviewed-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
