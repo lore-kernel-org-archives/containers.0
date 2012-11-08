@@ -1,14 +1,15 @@
 From: Kamezawa Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 2/9] cgroup: Use rculist ops for cgroup->children
-Date: Thu, 08 Nov 2012 12:01:22 +0900
-Message-ID: <509B2082.1090402__20901.9171809361$1352343720$gmane$org@jp.fujitsu.com>
+Subject: Re: [PATCH 3/9] cgroup: implement generic child / descendant walk
+	macros
+Date: Thu, 08 Nov 2012 12:21:40 +0900
+Message-ID: <509B2544.10409@jp.fujitsu.com>
 References: <1351931915-1701-1-git-send-email-tj@kernel.org>
-	<1351931915-1701-3-git-send-email-tj@kernel.org>
+	<1351931915-1701-4-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1351931915-1701-3-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1351931915-1701-4-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,14 +24,26 @@ Cc: rjw-KKrjLPT3xs0@public.gmane.org, linux-pm-u79uwXL29TY76Z2rM5mHXA@public.gma
 List-Id: containers.vger.kernel.org
 
 (2012/11/03 17:38), Tejun Heo wrote:
-> Use RCU safe list operations for cgroup->children.  This will be used
-> to implement cgroup children / descendant walking which can be used by
-> controllers.
->
-> Note that cgroup_create() now puts a new cgroup at the end of the
-> ->children list instead of head.  This isn't strictly necessary but is
-> done so that the iteration order is more conventional.
->
+> Currently, cgroup doesn't provide any generic helper for walking a
+> given cgroup's children or descendants.  This patch adds the following
+> three macros.
+> 
+> * cgroup_for_each_child() - walk immediate children of a cgroup.
+> 
+> * cgroup_for_each_descendant_pre() - visit all descendants of a cgroup
+>    in pre-order tree traversal.
+> 
+> * cgroup_for_each_descendant_post() - visit all descendants of a
+>    cgroup in post-order tree traversal.
+> 
+> All three only require the user to hold RCU read lock during
+> traversal.  Verifying that each iterated cgroup is online is the
+> responsibility of the user.  When used with proper synchronization,
+> cgroup_for_each_descendant_pre() can be used to propagate config
+> updates to descendants in reliable way.  See comments for details.
+> 
 > Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 
-Reviewed-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+maybe better than using css->id in some(many) case.
+
+Reviewed-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-c2VE3kR2zFovtab9mdV7tw@public.gmane.org>
