@@ -1,16 +1,16 @@
 From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: [PATCH 7/9] cgroup_freezer: introduce
-	CGROUP_FREEZING_[SELF|PARENT]
-Date: Thu, 8 Nov 2012 13:47:55 +0100
-Message-ID: <20121108124755.GG31821__11934.3730774292$1352378895$gmane$org@dhcp22.suse.cz>
+Subject: Re: [PATCH 8/9] cgroup_freezer: add ->post_create() and
+	->pre_destroy() and track online state
+Date: Thu, 8 Nov 2012 14:23:06 +0100
+Message-ID: <20121108132306.GH31821__6529.40477380088$1352381012$gmane$org@dhcp22.suse.cz>
 References: <1351931915-1701-1-git-send-email-tj@kernel.org>
-	<1351931915-1701-8-git-send-email-tj@kernel.org>
+	<1351931915-1701-9-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1351931915-1701-8-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1351931915-1701-9-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,138 +24,116 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: linux-pm-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sat 03-11-12 01:38:33, Tejun Heo wrote:
-> Introduce FREEZING_SELF and FREEZING_PARENT and make FREEZING OR of
-> the two flags.  This is to prepare for full hierarchy support.
+On Sat 03-11-12 01:38:34, Tejun Heo wrote:
+> A cgroup is online and visible to iteration between ->post_create()
+> and ->pre_destroy().  This patch introduces CGROUP_FREEZER_ONLINE and
+> toggles it from the newly added freezer_post_create() and
+> freezer_pre_destroy() while holding freezer->lock such that a
+> cgroup_freezer can be reilably distinguished to be online.  This will
+> be used by full hierarchy support.
+
+I am thinking whether freezer_pre_destroy is really needed. Once we
+reach pre_destroy then there are no tasks nor any children in the group
+so there is nobody to wake up if the group was frozen and the destroy
+callback is called after synchronize_rcu so the traversing should be
+safe.
+
+> ONLINE test is added to freezer_apply_state() but it currently doesn't
+> make any difference as freezer_write() can only be called for an
+> online cgroup.
 > 
-> freezer_apply_date() is updated such that it can handle setting and
-> clearing of both flags.  The two flags are also exposed to userland
-> via read-only files self_freezing and parent_freezing.
+> Adjusting system_freezing_cnt on destruction is moved from
+> freezer_destroy() to the new freezer_pre_destroy() for consistency.
 > 
-> Other than the added cgroupfs files, this patch doesn't introduce any
-> behavior change.
-
-OK, I can imagine that this might be useful to find the first parent
-group that needs to be thawed to unfreeze the group I am interested
-in. Could you also update Documentation/cgroups/freezer-subsystem.txt to
-clarify the intended usage?
-
-Minor nit. Same as mentioned in the previous patch freezer_apply_state
-should get enum freezer_state_flags state parameter.
-
+> This patch doesn't introduce any noticeable behavior change.
+> 
 > Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 
 Reviewed-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
 
 > ---
->  kernel/cgroup_freezer.c | 55 ++++++++++++++++++++++++++++++++++++++++++-------
->  1 file changed, 47 insertions(+), 8 deletions(-)
+>  kernel/cgroup_freezer.c | 42 ++++++++++++++++++++++++++++++++++++++++--
+>  1 file changed, 40 insertions(+), 2 deletions(-)
 > 
 > diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
-> index e76aa9f..b8ad93c 100644
+> index b8ad93c..4f12d31 100644
 > --- a/kernel/cgroup_freezer.c
 > +++ b/kernel/cgroup_freezer.c
-> @@ -23,8 +23,12 @@
+> @@ -23,6 +23,7 @@
 >  #include <linux/seq_file.h>
 >  
 >  enum freezer_state_flags {
-> -	CGROUP_FREEZING		= (1 << 1), /* this freezer is freezing */
-> +	CGROUP_FREEZING_SELF	= (1 << 1), /* this freezer is freezing */
-> +	CGROUP_FREEZING_PARENT	= (1 << 2), /* the parent freezer is freezing */
+> +	CGROUP_FREEZER_ONLINE	= (1 << 0), /* freezer is fully online */
+>  	CGROUP_FREEZING_SELF	= (1 << 1), /* this freezer is freezing */
+>  	CGROUP_FREEZING_PARENT	= (1 << 2), /* the parent freezer is freezing */
 >  	CGROUP_FROZEN		= (1 << 3), /* this and its descendants frozen */
-> +
-> +	/* mask for all FREEZING flags */
-> +	CGROUP_FREEZING		= CGROUP_FREEZING_SELF | CGROUP_FREEZING_PARENT,
->  };
+> @@ -98,13 +99,45 @@ static struct cgroup_subsys_state *freezer_create(struct cgroup *cgroup)
+>  	return &freezer->css;
+>  }
 >  
->  struct freezer {
-> @@ -245,8 +249,13 @@ static void unfreeze_cgroup(struct freezer *freezer)
->   * freezer_apply_state - apply state change to a single cgroup_freezer
->   * @freezer: freezer to apply state change to
->   * @freeze: whether to freeze or unfreeze
-> + * @state: CGROUP_FREEZING_* flag to set or clear
+> -static void freezer_destroy(struct cgroup *cgroup)
+> +/**
+> + * freezer_post_create - commit creation of a freezer cgroup
+> + * @cgroup: cgroup being created
 > + *
-> + * Set or clear @state on @cgroup according to @freeze, and perform
-> + * freezing or thawing as necessary.
->   */
-> -static void freezer_apply_state(struct freezer *freezer, bool freeze)
-> +static void freezer_apply_state(struct freezer *freezer, bool freeze,
-> +				unsigned int state)
+> + * We're committing to creation of @cgroup.  Mark it online.
+> + */
+> +static void freezer_post_create(struct cgroup *cgroup)
 >  {
+>  	struct freezer *freezer = cgroup_freezer(cgroup);
+>  
+> +	spin_lock_irq(&freezer->lock);
+> +	freezer->state |= CGROUP_FREEZER_ONLINE;
+> +	spin_unlock_irq(&freezer->lock);
+> +}
+> +
+> +/**
+> + * freezer_pre_destroy - initiate destruction of @cgroup
+> + * @cgroup: cgroup being destroyed
+> + *
+> + * @cgroup is going away.  Mark it dead and decrement system_freezing_count
+> + * if it was holding one.
+> + */
+> +static void freezer_pre_destroy(struct cgroup *cgroup)
+> +{
+> +	struct freezer *freezer = cgroup_freezer(cgroup);
+> +
+> +	spin_lock_irq(&freezer->lock);
+> +
+>  	if (freezer->state & CGROUP_FREEZING)
+>  		atomic_dec(&system_freezing_cnt);
+> -	kfree(freezer);
+> +
+> +	freezer->state = 0;
+> +
+> +	spin_unlock_irq(&freezer->lock);
+> +}
+> +
+> +static void freezer_destroy(struct cgroup *cgroup)
+> +{
+> +	kfree(cgroup_freezer(cgroup));
+>  }
+>  
+>  /*
+> @@ -260,6 +293,9 @@ static void freezer_apply_state(struct freezer *freezer, bool freeze,
 >  	/* also synchronizes against task migration, see freezer_attach() */
 >  	lockdep_assert_held(&freezer->lock);
-> @@ -254,13 +263,19 @@ static void freezer_apply_state(struct freezer *freezer, bool freeze)
+>  
+> +	if (!(freezer->state & CGROUP_FREEZER_ONLINE))
+> +		return;
+> +
 >  	if (freeze) {
 >  		if (!(freezer->state & CGROUP_FREEZING))
 >  			atomic_inc(&system_freezing_cnt);
-> -		freezer->state |= CGROUP_FREEZING;
-> +		freezer->state |= state;
->  		freeze_cgroup(freezer);
->  	} else {
-> -		if (freezer->state & CGROUP_FREEZING)
-> -			atomic_dec(&system_freezing_cnt);
-> -		freezer->state &= ~(CGROUP_FREEZING | CGROUP_FROZEN);
-> -		unfreeze_cgroup(freezer);
-> +		bool was_freezing = freezer->state & CGROUP_FREEZING;
-> +
-> +		freezer->state &= ~state;
-> +
-> +		if (!(freezer->state & CGROUP_FREEZING)) {
-> +			if (was_freezing)
-> +				atomic_dec(&system_freezing_cnt);
-> +			freezer->state &= ~CGROUP_FROZEN;
-> +			unfreeze_cgroup(freezer);
-> +		}
->  	}
->  }
->  
-> @@ -275,7 +290,7 @@ static void freezer_change_state(struct freezer *freezer, bool freeze)
->  {
->  	/* update @freezer */
->  	spin_lock_irq(&freezer->lock);
-> -	freezer_apply_state(freezer, freeze);
-> +	freezer_apply_state(freezer, freeze, CGROUP_FREEZING_SELF);
->  	spin_unlock_irq(&freezer->lock);
->  }
->  
-> @@ -295,6 +310,20 @@ static int freezer_write(struct cgroup *cgroup, struct cftype *cft,
->  	return 0;
->  }
->  
-> +static u64 freezer_self_freezing_read(struct cgroup *cgroup, struct cftype *cft)
-> +{
-> +	struct freezer *freezer = cgroup_freezer(cgroup);
-> +
-> +	return (bool)(freezer->state & CGROUP_FREEZING_SELF);
-> +}
-> +
-> +static u64 freezer_parent_freezing_read(struct cgroup *cgroup, struct cftype *cft)
-> +{
-> +	struct freezer *freezer = cgroup_freezer(cgroup);
-> +
-> +	return (bool)(freezer->state & CGROUP_FREEZING_PARENT);
-> +}
-> +
->  static struct cftype files[] = {
->  	{
->  		.name = "state",
-> @@ -302,6 +331,16 @@ static struct cftype files[] = {
->  		.read_seq_string = freezer_read,
->  		.write_string = freezer_write,
->  	},
-> +	{
-> +		.name = "self_freezing",
-> +		.flags = CFTYPE_NOT_ON_ROOT,
-> +		.read_u64 = freezer_self_freezing_read,
-> +	},
-> +	{
-> +		.name = "parent_freezing",
-> +		.flags = CFTYPE_NOT_ON_ROOT,
-> +		.read_u64 = freezer_parent_freezing_read,
-> +	},
->  	{ }	/* terminate */
->  };
->  
+> @@ -347,6 +383,8 @@ static struct cftype files[] = {
+>  struct cgroup_subsys freezer_subsys = {
+>  	.name		= "freezer",
+>  	.create		= freezer_create,
+> +	.post_create	= freezer_post_create,
+> +	.pre_destroy	= freezer_pre_destroy,
+>  	.destroy	= freezer_destroy,
+>  	.subsys_id	= freezer_subsys_id,
+>  	.attach		= freezer_attach,
 > -- 
 > 1.7.11.7
 > 
