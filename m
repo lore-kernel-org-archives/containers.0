@@ -1,7 +1,7 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 1/9 v3] cgroup: add cgroup_subsys->post_create()
-Date: Fri, 9 Nov 2012 17:09:41 +0800
-Message-ID: <509CC855.4070203__18048.3376178474$1352452227$gmane$org@huawei.com>
+Date: Fri, 9 Nov 2012 17:09:51 +0800
+Message-ID: <509CC85F.8030607__38747.1124915921$1352452242$gmane$org@huawei.com>
 References: <1351931915-1701-1-git-send-email-tj@kernel.org>
 	<1351931915-1701-2-git-send-email-tj@kernel.org>
 	<20121108190715.GD9672@htj.dyndns.org>
@@ -54,4 +54,4 @@ On 2012/11/9 3:07, Tejun Heo wrote:
 > Reviewed-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 > Cc: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 
-Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
+Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
