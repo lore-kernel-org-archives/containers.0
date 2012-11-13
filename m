@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 15/17] cgroup: update cgroup_create() failure path
-Date: Mon, 12 Nov 2012 19:01:42 -0800
-Message-ID: <1352775704-9023-16-git-send-email-tj@kernel.org>
+Subject: [PATCH 16/17] cgroup: allow ->post_create() to fail
+Date: Mon, 12 Nov 2012 19:01:43 -0800
+Message-ID: <1352775704-9023-17-git-send-email-tj__38370.2122526758$1352775830$gmane$org@kernel.org>
 References: <1352775704-9023-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,90 +21,120 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFL
 Cc: mhocko-AlSwsSmVLrQ@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-cgroup_create() was ignoring failure of cgroupfs files.  Update it
-such that, if file creation fails, it rolls back by calling
-cgroup_destroy_locked() and returns failure.
-
-Note that error out goto labels are renamed.  The labels are a bit
-confusing but will become better w/ later cgroup operation renames.
+There could be cases where controllers want to do initialization
+operations which may fail from ->post_create().  This patch makes
+->post_create() return -errno to indicate failure and online_css()
+relay such failures.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 ---
- kernel/cgroup.c | 21 ++++++++++++++-------
- 1 file changed, 14 insertions(+), 7 deletions(-)
+ include/linux/cgroup.h  |  2 +-
+ kernel/cgroup.c         | 29 +++++++++++++++++++----------
+ kernel/cgroup_freezer.c |  4 +++-
+ 3 files changed, 23 insertions(+), 12 deletions(-)
 
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index c487315..fb79d7a 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -437,7 +437,7 @@ int cgroup_taskset_size(struct cgroup_taskset *tset);
+ 
+ struct cgroup_subsys {
+ 	struct cgroup_subsys_state *(*create)(struct cgroup *cgrp);
+-	void (*post_create)(struct cgroup *cgrp);
++	int (*post_create)(struct cgroup *cgrp);
+ 	void (*pre_destroy)(struct cgroup *cgrp);
+ 	void (*destroy)(struct cgroup *cgrp);
+ 	int (*can_attach)(struct cgroup *cgrp, struct cgroup_taskset *tset);
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 8ad5e76..63d83d0 100644
+index 63d83d0..de97cf2 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -4107,7 +4107,7 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
- 	 */
- 	if (!cgroup_lock_live_group(parent)) {
- 		err = -ENODEV;
--		goto err_free;
-+		goto err_free_cgrp;
- 	}
+@@ -4041,14 +4041,18 @@ static void init_cgroup_css(struct cgroup_subsys_state *css,
+ 	INIT_WORK(&css->dput_work, css_dput_fn);
+ }
  
- 	/* Grab a reference on the superblock so the hierarchy doesn't
-@@ -4135,13 +4135,13 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
- 		css = ss->create(cgrp);
- 		if (IS_ERR(css)) {
- 			err = PTR_ERR(css);
--			goto err_destroy;
-+			goto err_free_all;
- 		}
- 		init_cgroup_css(css, ss, cgrp);
- 		if (ss->use_id) {
- 			err = alloc_css_id(ss, parent, cgrp);
- 			if (err)
--				goto err_destroy;
-+				goto err_free_all;
- 		}
- 		/* At error, ->destroy() callback has to free assigned ID. */
- 		if (clone_children(parent) && ss->post_clone)
-@@ -4164,7 +4164,7 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
- 	 */
- 	err = cgroup_create_file(dentry, S_IFDIR | mode, sb);
- 	if (err < 0)
--		goto err_destroy;
-+		goto err_free_all;
- 	lockdep_assert_held(&dentry->d_inode->i_mutex);
+-/* invoke ->post_create() on a new CSS and mark it online */
+-static void online_css(struct cgroup_subsys *ss, struct cgroup *cgrp)
++/* invoke ->post_create() on a new CSS and mark it online if successful */
++static int online_css(struct cgroup_subsys *ss, struct cgroup *cgrp)
+ {
++	int ret = 0;
++
+ 	lockdep_assert_held(&cgroup_mutex);
  
- 	/* allocation complete, commit to creation */
-@@ -4183,14 +4183,15 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+ 	if (ss->post_create)
+-		ss->post_create(cgrp);
+-	cgrp->subsys[ss->subsys_id]->flags |= CSS_ONLINE;
++		ret = ss->post_create(cgrp);
++	if (!ret)
++		cgrp->subsys[ss->subsys_id]->flags |= CSS_ONLINE;
++	return ret;
+ }
+ 
+ /* if the CSS is online, invoke ->pre_destory() on it and mark it offline */
+@@ -4174,12 +4178,15 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+ 	list_add_tail_rcu(&cgrp->sibling, &cgrp->parent->children);
+ 	root->number_of_cgroups++;
+ 
+-	for_each_subsys(root, ss) {
+-		/* each css holds a ref to the cgroup's dentry */
++	/* each css holds a ref to the cgroup's dentry */
++	for_each_subsys(root, ss)
+ 		dget(dentry);
+ 
+-		/* creation succeeded, notify subsystems */
+-		online_css(ss, cgrp);
++	/* creation succeeded, notify subsystems */
++	for_each_subsys(root, ss) {
++		err = online_css(ss, cgrp);
++		if (err)
++			goto err_destroy;
  	}
  
  	err = cgroup_populate_dir(cgrp, true, root->subsys_mask);
--	/* If err < 0, we have a half-filled directory - oh well ;) */
-+	if (err)
-+		goto err_destroy;
+@@ -4393,7 +4400,7 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
+ 	BUG_ON(!list_empty(&init_task.tasks));
+ 
+ 	ss->active = 1;
+-	online_css(ss, dummytop);
++	BUG_ON(online_css(ss, dummytop));
  
  	mutex_unlock(&cgroup_mutex);
- 	mutex_unlock(&cgrp->dentry->d_inode->i_mutex);
  
- 	return 0;
+@@ -4500,7 +4507,9 @@ int __init_or_module cgroup_load_subsys(struct cgroup_subsys *ss)
+ 	write_unlock(&css_set_lock);
  
--err_destroy:
-+err_free_all:
- 	for_each_subsys(root, ss) {
- 		if (cgrp->subsys[ss->subsys_id])
- 			ss->destroy(cgrp);
-@@ -4198,9 +4199,15 @@ err_destroy:
+ 	ss->active = 1;
+-	online_css(ss, dummytop);
++	ret = online_css(ss, dummytop);
++	if (ret)
++		goto err_unload;
+ 
+ 	/* success! */
  	mutex_unlock(&cgroup_mutex);
- 	/* Release the reference count that we took on the superblock */
- 	deactivate_super(sb);
--err_free:
-+err_free_cgrp:
- 	kfree(cgrp);
- 	return err;
+diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
+index 670a4af..ee8bb67 100644
+--- a/kernel/cgroup_freezer.c
++++ b/kernel/cgroup_freezer.c
+@@ -112,7 +112,7 @@ static struct cgroup_subsys_state *freezer_create(struct cgroup *cgroup)
+  * parent's freezing state while holding both parent's and our
+  * freezer->lock.
+  */
+-static void freezer_post_create(struct cgroup *cgroup)
++static int freezer_post_create(struct cgroup *cgroup)
+ {
+ 	struct freezer *freezer = cgroup_freezer(cgroup);
+ 	struct freezer *parent = parent_freezer(freezer);
+@@ -136,6 +136,8 @@ static void freezer_post_create(struct cgroup *cgroup)
+ 	spin_unlock(&freezer->lock);
+ 	if (parent)
+ 		spin_unlock_irq(&parent->lock);
 +
-+err_destroy:
-+	cgroup_destroy_locked(cgrp);
-+	mutex_unlock(&cgroup_mutex);
-+	mutex_unlock(&dentry->d_inode->i_mutex);
-+	return err;
++	return 0;
  }
  
- static int cgroup_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
+ /**
 -- 
 1.7.11.7
