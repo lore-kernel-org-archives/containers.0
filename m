@@ -1,8 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 14/17] cgroup: use mutex_trylock() when grabbing i_mutex of a
-	new cgroup directory
-Date: Mon, 12 Nov 2012 19:01:41 -0800
-Message-ID: <1352775704-9023-15-git-send-email-tj__47719.6145490327$1352775818$gmane$org@kernel.org>
+Subject: [PATCH 15/17] cgroup: update cgroup_create() failure path
+Date: Mon, 12 Nov 2012 19:01:42 -0800
+Message-ID: <1352775704-9023-16-git-send-email-tj@kernel.org>
 References: <1352775704-9023-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,56 +21,90 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFL
 Cc: mhocko-AlSwsSmVLrQ@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-All cgroup directory i_mutexes nest outside cgroup_mutex; however, new
-directory creation is a special case.  A new cgroup directory is
-created while holding cgroup_mutex.  Populating the new directory
-requires both the new directory's i_mutex and cgroup_mutex.  Because
-all directory i_mutexes nest outside cgroup_mutex, grabbing both
-requires releasing cgroup_mutex first, which isn't a good idea as the
-new cgroup isn't yet ready to be manipulated by other cgroup
-opreations.
+cgroup_create() was ignoring failure of cgroupfs files.  Update it
+such that, if file creation fails, it rolls back by calling
+cgroup_destroy_locked() and returns failure.
 
-This is worked around by grabbing the new directory's i_mutex while
-holding cgroup_mutex before making it visible.  As there's no other
-user at that point, grabbing the i_mutex under cgroup_mutex can't lead
-to deadlock.
-
-cgroup_create_file() was using I_MUTEX_CHILD to tell lockdep not to
-worry about the reverse locking order; however, this creates pseudo
-locking dependency cgroup_mutex -> I_MUTEX_CHILD, which isn't true -
-all directory i_mutexes are still nested outside cgroup_mutex.  This
-pseudo locking dependency can lead to spurious lockdep warnings.
-
-Use mutex_trylock() instead.  This will always succeed and lockdep
-doesn't create any locking dependency for it.
+Note that error out goto labels are renamed.  The labels are a bit
+confusing but will become better w/ later cgroup operation renames.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 12 +++++++++---
- 1 file changed, 9 insertions(+), 3 deletions(-)
+ kernel/cgroup.c | 21 ++++++++++++++-------
+ 1 file changed, 14 insertions(+), 7 deletions(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index b42f63f..8ad5e76 100644
+index 8ad5e76..63d83d0 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -2657,9 +2657,15 @@ static int cgroup_create_file(struct dentry *dentry, umode_t mode,
- 		inc_nlink(inode);
- 		inc_nlink(dentry->d_parent->d_inode);
+@@ -4107,7 +4107,7 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+ 	 */
+ 	if (!cgroup_lock_live_group(parent)) {
+ 		err = -ENODEV;
+-		goto err_free;
++		goto err_free_cgrp;
+ 	}
  
--		/* start with the directory inode held, so that we can
--		 * populate it without racing with another mkdir */
--		mutex_lock_nested(&inode->i_mutex, I_MUTEX_CHILD);
-+		/*
-+		 * Control reaches here with cgroup_mutex held.
-+		 * @inode->i_mutex should nest outside cgroup_mutex but we
-+		 * want to populate it immediately without releasing
-+		 * cgroup_mutex.  As @inode isn't visible to anyone else
-+		 * yet, trylock will always succeed without affecting
-+		 * lockdep checks.
-+		 */
-+		WARN_ON_ONCE(!mutex_trylock(&inode->i_mutex));
- 	} else if (S_ISREG(mode)) {
- 		inode->i_size = 0;
- 		inode->i_fop = &cgroup_file_operations;
+ 	/* Grab a reference on the superblock so the hierarchy doesn't
+@@ -4135,13 +4135,13 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+ 		css = ss->create(cgrp);
+ 		if (IS_ERR(css)) {
+ 			err = PTR_ERR(css);
+-			goto err_destroy;
++			goto err_free_all;
+ 		}
+ 		init_cgroup_css(css, ss, cgrp);
+ 		if (ss->use_id) {
+ 			err = alloc_css_id(ss, parent, cgrp);
+ 			if (err)
+-				goto err_destroy;
++				goto err_free_all;
+ 		}
+ 		/* At error, ->destroy() callback has to free assigned ID. */
+ 		if (clone_children(parent) && ss->post_clone)
+@@ -4164,7 +4164,7 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+ 	 */
+ 	err = cgroup_create_file(dentry, S_IFDIR | mode, sb);
+ 	if (err < 0)
+-		goto err_destroy;
++		goto err_free_all;
+ 	lockdep_assert_held(&dentry->d_inode->i_mutex);
+ 
+ 	/* allocation complete, commit to creation */
+@@ -4183,14 +4183,15 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+ 	}
+ 
+ 	err = cgroup_populate_dir(cgrp, true, root->subsys_mask);
+-	/* If err < 0, we have a half-filled directory - oh well ;) */
++	if (err)
++		goto err_destroy;
+ 
+ 	mutex_unlock(&cgroup_mutex);
+ 	mutex_unlock(&cgrp->dentry->d_inode->i_mutex);
+ 
+ 	return 0;
+ 
+-err_destroy:
++err_free_all:
+ 	for_each_subsys(root, ss) {
+ 		if (cgrp->subsys[ss->subsys_id])
+ 			ss->destroy(cgrp);
+@@ -4198,9 +4199,15 @@ err_destroy:
+ 	mutex_unlock(&cgroup_mutex);
+ 	/* Release the reference count that we took on the superblock */
+ 	deactivate_super(sb);
+-err_free:
++err_free_cgrp:
+ 	kfree(cgrp);
+ 	return err;
++
++err_destroy:
++	cgroup_destroy_locked(cgrp);
++	mutex_unlock(&cgroup_mutex);
++	mutex_unlock(&dentry->d_inode->i_mutex);
++	return err;
+ }
+ 
+ static int cgroup_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
 -- 
 1.7.11.7
