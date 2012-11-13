@@ -1,8 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 12/17] cgroup: introduce CSS_ONLINE flag and on/offline_css()
-	helpers
-Date: Mon, 12 Nov 2012 19:01:39 -0800
-Message-ID: <1352775704-9023-13-git-send-email-tj__11299.1538168446$1352775806$gmane$org@kernel.org>
+Subject: [PATCH 13/17] cgroup: simplify cgroup_load_subsys() failure path
+Date: Mon, 12 Nov 2012 19:01:40 -0800
+Message-ID: <1352775704-9023-14-git-send-email-tj__5794.2038555213$1352775813$gmane$org@kernel.org>
 References: <1352775704-9023-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,147 +21,75 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFL
 Cc: mhocko-AlSwsSmVLrQ@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-New helpers on/offline_css() respectively wrap ->post_create() and
-->pre_destroy() invocations.  online_css() sets CSS_ONLINE after
-->post_create() is complete and offline_css() invokes ->pre_destroy()
-iff CSS_ONLINE is set and clears it while also handling the temporary
-dropping of cgroup_mutex.
+Now that cgroup_unload_subsys() can tell whether the root css is
+online or not, we can safely call cgroup_unload_subsys() after idr
+init failure in cgroup_load_subsys().
 
-This patch doesn't introduce any behavior change at the moment but
-will be used to improve cgroup_create() failure path and allow
-->post_create() to fail.
+Replace the manual unrolling and invoke cgroup_unload_subsys() on
+failure.  This drops cgroup_mutex inbetween but should be safe as the
+subsystem will fail try_module_get() and thus can't be mounted
+inbetween.  As this means that cgroup_unload_subsys() can be called
+before css_sets are rehashed, remove BUG_ON() on %NULL
+css_set->subsys[] from cgroup_unload_subsys().
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- include/linux/cgroup.h |  1 +
- kernel/cgroup.c        | 65 ++++++++++++++++++++++++++++++++------------------
- 2 files changed, 43 insertions(+), 23 deletions(-)
+ kernel/cgroup.c | 21 ++++++++++-----------
+ 1 file changed, 10 insertions(+), 11 deletions(-)
 
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index e9f07ef..c487315 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -82,6 +82,7 @@ struct cgroup_subsys_state {
- /* bits in struct cgroup_subsys_state flags field */
- enum {
- 	CSS_ROOT	= (1 << 0), /* this CSS is the root of the subsystem */
-+	CSS_ONLINE	= (1 << 1), /* between ->post_create() and ->pre_destroy() */
- };
- 
- /* Caller must verify that the css is not for root cgroup */
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index afc47d6..c3087f5 100644
+index c3087f5..b42f63f 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -4035,6 +4035,42 @@ static void init_cgroup_css(struct cgroup_subsys_state *css,
- 	INIT_WORK(&css->dput_work, css_dput_fn);
- }
+@@ -4400,8 +4400,8 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
+  */
+ int __init_or_module cgroup_load_subsys(struct cgroup_subsys *ss)
+ {
+-	int i;
+ 	struct cgroup_subsys_state *css;
++	int i, ret;
  
-+/* invoke ->post_create() on a new CSS and mark it online */
-+static void online_css(struct cgroup_subsys *ss, struct cgroup *cgrp)
-+{
-+	lockdep_assert_held(&cgroup_mutex);
-+
-+	if (ss->post_create)
-+		ss->post_create(cgrp);
-+	cgrp->subsys[ss->subsys_id]->flags |= CSS_ONLINE;
-+}
-+
-+/* if the CSS is online, invoke ->pre_destory() on it and mark it offline */
-+static void offline_css(struct cgroup_subsys *ss, struct cgroup *cgrp)
-+	__releases(&cgroup_mutex) __acquires(&cgroup_mutex)
-+{
-+	struct cgroup_subsys_state *css = cgrp->subsys[ss->subsys_id];
-+
-+	lockdep_assert_held(&cgroup_mutex);
-+
-+	if (!(css->flags & CSS_ONLINE))
-+		return;
-+
-+	/*
-+	 * pre_destroy() should be called with cgroup_mutex unlocked.  See
-+	 * 3fa59dfbc3 ("cgroup: fix potential deadlock in pre_destroy") for
-+	 * details.  This temporary unlocking should go away once
-+	 * cgroup_mutex is unexported from controllers.
-+	 */
-+	if (ss->pre_destroy) {
-+		mutex_unlock(&cgroup_mutex);
-+		ss->pre_destroy(cgrp);
-+		mutex_lock(&cgroup_mutex);
-+	}
-+
-+	cgrp->subsys[ss->subsys_id]->flags &= ~CSS_ONLINE;
-+}
-+
- /*
-  * cgroup_create - create a cgroup
-  * @parent: cgroup that will be parent of the new cgroup
-@@ -4137,8 +4173,7 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
- 		dget(dentry);
- 
- 		/* creation succeeded, notify subsystems */
--		if (ss->post_create)
--			ss->post_create(cgrp);
-+		online_css(ss, cgrp);
+ 	/* check name and function validity */
+ 	if (ss->name == NULL || strlen(ss->name) > MAX_CGROUP_TYPE_NAMELEN ||
+@@ -4452,15 +4452,9 @@ int __init_or_module cgroup_load_subsys(struct cgroup_subsys *ss)
+ 	init_cgroup_css(css, ss, dummytop);
+ 	/* init_idr must be after init_cgroup_css because it sets css->id. */
+ 	if (ss->use_id) {
+-		int ret = cgroup_init_idr(ss, css);
+-		if (ret) {
+-			ss->destroy(dummytop);
+-			dummytop->subsys[ss->subsys_id] = NULL;
+-			subsys[ss->subsys_id] = NULL;
+-			list_del_init(&ss->sibling);
+-			mutex_unlock(&cgroup_mutex);
+-			return ret;
+-		}
++		ret = cgroup_init_idr(ss, css);
++		if (ret)
++			goto err_unload;
  	}
- 
- 	err = cgroup_populate_dir(cgrp, true, root->subsys_mask);
-@@ -4240,18 +4275,9 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
- 	}
- 	set_bit(CGRP_REMOVED, &cgrp->flags);
- 
--	/*
--	 * Tell subsystems to initate destruction.  pre_destroy() should be
--	 * called with cgroup_mutex unlocked.  See 3fa59dfbc3 ("cgroup: fix
--	 * potential deadlock in pre_destroy") for details.  This temporary
--	 * unlocking should go away once cgroup_mutex is unexported from
--	 * controllers.
--	 */
--	mutex_unlock(&cgroup_mutex);
-+	/* tell subsystems to initate destruction */
- 	for_each_subsys(cgrp->root, ss)
--		if (ss->pre_destroy)
--			ss->pre_destroy(cgrp);
--	mutex_lock(&cgroup_mutex);
-+		offline_css(ss, cgrp);
  
  	/*
- 	 * Put all the base refs.  Each css holds an extra reference to the
-@@ -4354,9 +4380,7 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
- 	BUG_ON(!list_empty(&init_task.tasks));
- 
- 	ss->active = 1;
--
--	if (ss->post_create)
--		ss->post_create(dummytop);
-+	online_css(ss, dummytop);
- 
- 	mutex_unlock(&cgroup_mutex);
- 
-@@ -4469,9 +4493,7 @@ int __init_or_module cgroup_load_subsys(struct cgroup_subsys *ss)
- 	write_unlock(&css_set_lock);
- 
- 	ss->active = 1;
--
--	if (ss->post_create)
--		ss->post_create(dummytop);
-+	online_css(ss, dummytop);
- 
+@@ -4498,6 +4492,12 @@ int __init_or_module cgroup_load_subsys(struct cgroup_subsys *ss)
  	/* success! */
  	mutex_unlock(&cgroup_mutex);
-@@ -4501,12 +4523,9 @@ void cgroup_unload_subsys(struct cgroup_subsys *ss)
- 	 */
- 	BUG_ON(ss->root != &rootnode);
+ 	return 0;
++
++err_unload:
++	mutex_unlock(&cgroup_mutex);
++	/* @ss can't be mounted here as try_module_get() would fail */
++	cgroup_unload_subsys(ss);
++	return ret;
+ }
+ EXPORT_SYMBOL_GPL(cgroup_load_subsys);
  
--	/* ->pre_destroy() should be called outside cgroup_mutex for now */
--	if (ss->pre_destroy)
--		ss->pre_destroy(dummytop);
--
- 	mutex_lock(&cgroup_mutex);
+@@ -4548,7 +4548,6 @@ void cgroup_unload_subsys(struct cgroup_subsys *ss)
+ 		struct css_set *cg = link->cg;
  
-+	offline_css(ss, dummytop);
- 	ss->active = 0;
- 
- 	if (ss->use_id) {
+ 		hlist_del(&cg->hlist);
+-		BUG_ON(!cg->subsys[ss->subsys_id]);
+ 		cg->subsys[ss->subsys_id] = NULL;
+ 		hhead = css_set_hash(cg->subsys);
+ 		hlist_add_head(&cg->hlist, hhead);
 -- 
 1.7.11.7
