@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 05/17] cgroup: cgroup->dentry isn't a RCU pointer
-Date: Mon, 12 Nov 2012 19:01:32 -0800
-Message-ID: <1352775704-9023-6-git-send-email-tj@kernel.org>
+Subject: [PATCH 06/17] cgroup: remove duplicate RCU free on struct cgroup
+Date: Mon, 12 Nov 2012 19:01:33 -0800
+Message-ID: <1352775704-9023-7-git-send-email-tj@kernel.org>
 References: <1352775704-9023-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,80 +21,43 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFL
 Cc: mhocko-AlSwsSmVLrQ@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-cgroup->dentry is marked and used as a RCU pointer; however, it isn't
-one - the final dentry put doesn't go through call_rcu().  cgroup and
-dentry share the same RCU freeing rule via synchronize_rcu() in
-cgroup_diput() (kfree_rcu() used on cgrp is unnecessary).  If cgrp is
-accessible under RCU read lock, so is its dentry and dereferencing
-cgrp->dentry doesn't need any further RCU protection or annotation.
-
-While not being accurate, before the previous patch, the RCU accessors
-served a purpose as memory barriers - cgroup->dentry used to be
-assigned after the cgroup was made visible to cgroup_path(), so the
-assignment and dereferencing in cgroup_path() needed the memory
-barrier pair.  Now that list_add_tail_rcu() happens after
-cgroup->dentry is assigned, this no longer is necessary.
-
-Remove the now unnecessary and misleading RCU annotations from
-cgroup->dentry.  To make up for the removal of rcu_dereference_check()
-in cgroup_path(), add an explicit rcu_lockdep_assert(), which asserts
-the dereference rule of @cgrp, not cgrp->dentry.
+struct cgroup is made RCU-safe by synchronize_rcu() in cgroup_diput().
+There is no reason to use RCU safe kfree on it after it.  Remove
+cgroup->rcu_head and use kfree() instead of kfree_rcu() in
+cgroup_diput().
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- include/linux/cgroup.h |  2 +-
- kernel/cgroup.c        | 11 ++++++-----
- 2 files changed, 7 insertions(+), 6 deletions(-)
+ include/linux/cgroup.h | 3 ---
+ kernel/cgroup.c        | 2 +-
+ 2 files changed, 1 insertion(+), 4 deletions(-)
 
 diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 8f64b45..d605857 100644
+index d605857..9dcbfa1 100644
 --- a/include/linux/cgroup.h
 +++ b/include/linux/cgroup.h
-@@ -165,7 +165,7 @@ struct cgroup {
- 	struct list_head files;		/* my files */
+@@ -196,9 +196,6 @@ struct cgroup {
+ 	struct list_head pidlists;
+ 	struct mutex pidlist_mutex;
  
- 	struct cgroup *parent;		/* my parent */
--	struct dentry __rcu *dentry;	/* cgroup fs entry, RCU protected */
-+	struct dentry *dentry;		/* cgroup fs entry, RCU protected */
- 
- 	/* Private pointers for each registered subsystem */
- 	struct cgroup_subsys_state *subsys[CGROUP_SUBSYS_COUNT];
+-	/* For RCU-protected deletion */
+-	struct rcu_head rcu_head;
+-
+ 	/* List of events which userspace want to receive */
+ 	struct list_head event_list;
+ 	spinlock_t event_list_lock;
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 40707cd..278752e 100644
+index 278752e..a91e7ad 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -1756,9 +1756,11 @@ static struct kobject *cgroup_kobj;
-  */
- int cgroup_path(const struct cgroup *cgrp, char *buf, int buflen)
- {
-+	struct dentry *dentry = cgrp->dentry;
- 	char *start;
--	struct dentry *dentry = rcu_dereference_check(cgrp->dentry,
--						      cgroup_lock_is_held());
-+
-+	rcu_lockdep_assert(rcu_read_lock_held() || cgroup_lock_is_held(),
-+			   "cgroup_path() called without proper locking");
+@@ -893,7 +893,7 @@ static void cgroup_diput(struct dentry *dentry, struct inode *inode)
  
- 	if (cgrp == dummytop) {
- 		/*
-@@ -1782,8 +1784,7 @@ int cgroup_path(const struct cgroup *cgrp, char *buf, int buflen)
- 		if (!cgrp)
- 			break;
+ 		simple_xattrs_free(&cgrp->xattrs);
  
--		dentry = rcu_dereference_check(cgrp->dentry,
--					       cgroup_lock_is_held());
-+		dentry = cgrp->dentry;
- 		if (!cgrp->parent)
- 			continue;
- 		if (--start < buf)
-@@ -4124,7 +4125,7 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
- 
- 	/* allocation complete, commit to creation */
- 	dentry->d_fsdata = cgrp;
--	rcu_assign_pointer(cgrp->dentry, dentry);
-+	cgrp->dentry = dentry;
- 	list_add_tail(&cgrp->allcg_node, &root->allcg_list);
- 	list_add_tail_rcu(&cgrp->sibling, &cgrp->parent->children);
- 	root->number_of_cgroups++;
+-		kfree_rcu(cgrp, rcu_head);
++		kfree(cgrp);
+ 	} else {
+ 		struct cfent *cfe = __d_cfe(dentry);
+ 		struct cgroup *cgrp = dentry->d_parent->d_fsdata;
 -- 
 1.7.11.7
