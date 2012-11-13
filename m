@@ -1,7 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 09/17] cgroup: lock cgroup_mutex in cgroup_init_subsys()
-Date: Mon, 12 Nov 2012 19:01:36 -0800
-Message-ID: <1352775704-9023-10-git-send-email-tj@kernel.org>
+Subject: [PATCH 10/17] cgroup: fix harmless bugs in cgroup_load_subsys() fail
+	path and cgroup_unload_subsys()
+Date: Mon, 12 Nov 2012 19:01:37 -0800
+Message-ID: <1352775704-9023-11-git-send-email-tj@kernel.org>
 References: <1352775704-9023-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,38 +22,56 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFL
 Cc: mhocko-AlSwsSmVLrQ@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Make cgroup_init_subsys() grab cgroup_mutex while initializing a
-subsystem so that all helpers and callbacks are called under the
-context they expect.  This isn't strictly necessary as
-cgroup_init_subsys() doesn't race with anybody but will allow adding
-lockdep assertions.
+* If idr init fails, cgroup_load_subsys() cleared dummytop->subsys[]
+  before calilng ->destroy() making CSS inaccessible to the callback,
+  and didn't unlink ss->sibling.  As no modular controller uses
+  ->use_id, this doesn't cause any actual problems.
+
+* cgroup_unload_subsys() was forgetting to free idr, call
+  ->pre_destroy() and clear ->active.  As there currently is no
+  modular controller which uses ->use_id, ->pre_destroy() or ->active,
+  this doesn't cause any actual problems.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ kernel/cgroup.c | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 6df17cb..76f1a01 100644
+index 76f1a01..c5368c0 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -4317,6 +4317,8 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
+@@ -4420,9 +4420,10 @@ int __init_or_module cgroup_load_subsys(struct cgroup_subsys *ss)
+ 	if (ss->use_id) {
+ 		int ret = cgroup_init_idr(ss, css);
+ 		if (ret) {
+-			dummytop->subsys[ss->subsys_id] = NULL;
+ 			ss->destroy(dummytop);
++			dummytop->subsys[ss->subsys_id] = NULL;
+ 			subsys[ss->subsys_id] = NULL;
++			list_del_init(&ss->sibling);
+ 			mutex_unlock(&cgroup_mutex);
+ 			return ret;
+ 		}
+@@ -4490,7 +4491,19 @@ void cgroup_unload_subsys(struct cgroup_subsys *ss)
+ 	 */
+ 	BUG_ON(ss->root != &rootnode);
  
- 	printk(KERN_INFO "Initializing cgroup subsys %s\n", ss->name);
- 
-+	mutex_lock(&cgroup_mutex);
++	/* ->pre_destroy() should be called outside cgroup_mutex for now */
++	if (ss->pre_destroy)
++		ss->pre_destroy(dummytop);
 +
- 	/* init base cftset */
- 	cgroup_init_cftsets(ss);
- 
-@@ -4346,6 +4348,8 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
- 	if (ss->post_create)
- 		ss->post_create(dummytop);
- 
-+	mutex_unlock(&cgroup_mutex);
+ 	mutex_lock(&cgroup_mutex);
 +
- 	/* this function shouldn't be used with modular subsystems, since they
- 	 * need to register a subsys_id, among other things */
- 	BUG_ON(ss->module);
++	ss->active = 0;
++
++	if (ss->use_id) {
++		idr_remove_all(&ss->idr);
++		idr_destroy(&ss->idr);
++	}
++
+ 	/* deassign the subsys_id */
+ 	subsys[ss->subsys_id] = NULL;
+ 
 -- 
 1.7.11.7
