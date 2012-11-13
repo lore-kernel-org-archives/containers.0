@@ -1,7 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 03/17] cgroup: open-code cgroup_create_dir()
-Date: Mon, 12 Nov 2012 19:01:30 -0800
-Message-ID: <1352775704-9023-4-git-send-email-tj@kernel.org>
+Subject: [PATCH 04/17] cgroup: create directory before linking while creating
+	a new cgroup
+Date: Mon, 12 Nov 2012 19:01:31 -0800
+Message-ID: <1352775704-9023-5-git-send-email-tj@kernel.org>
 References: <1352775704-9023-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,75 +22,107 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFL
 Cc: mhocko-AlSwsSmVLrQ@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The operation order of cgroup creation is about to change and
-cgroup_create_dir() is more of a hindrance than a proper abstraction.
-Open-code it by moving the parent nlink adjustment next to self nlink
-adjustment in cgroup_create_file() and the rest to cgroup_create().
+While creating a new cgroup, cgroup_create() links the newly allocated
+cgroup into various places before trying to create its directory.
+Because cgroup life-cycle is tied to the vfs objects, this makes it
+impossible to use cgroup_rmdir() for rolling back creation - the
+removal logic depends on having full vfs objects.
 
-This patch doesn't introduce any behavior change.
+This patch moves directory creation above linking and collect linking
+operations to one place.  This allows directory creation failure to
+share error exit path with css allocation failures and any failure
+sites afterwards (to be added later) can use cgroup_rmdir() logic to
+undo creation.
+
+It also removes the need to check whether cgroup->dentry is %NULL in
+cgroup_path.  If a cgroup is visible, its dentry is guaranteed to be
+visible too.
+
+Note that this also makes the memory barriers around cgroup->dentry,
+which currently is misleadingly using RCU operations, unnecessary.
+This will be handled in the next patch.
+
+While at it, locking BUG_ON() on i_mutex is converted to
+lockdep_assert_held().
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 30 +++++-------------------------
- 1 file changed, 5 insertions(+), 25 deletions(-)
+ kernel/cgroup.c | 32 +++++++++++++-------------------
+ 1 file changed, 13 insertions(+), 19 deletions(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index ed0e177..b042673 100644
+index b042673..40707cd 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -2652,6 +2652,7 @@ static int cgroup_create_file(struct dentry *dentry, umode_t mode,
+@@ -1760,7 +1760,7 @@ int cgroup_path(const struct cgroup *cgrp, char *buf, int buflen)
+ 	struct dentry *dentry = rcu_dereference_check(cgrp->dentry,
+ 						      cgroup_lock_is_held());
  
- 		/* start off with i_nlink == 2 (for "." entry) */
- 		inc_nlink(inode);
-+		inc_nlink(dentry->d_parent->d_inode);
+-	if (!dentry || cgrp == dummytop) {
++	if (cgrp == dummytop) {
+ 		/*
+ 		 * Inactive subsystems have no dentry for their root
+ 		 * cgroup
+@@ -4112,15 +4112,22 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+ 		}
+ 	}
  
- 		/* start with the directory inode held, so that we can
- 		 * populate it without racing with another mkdir */
-@@ -2666,30 +2667,6 @@ static int cgroup_create_file(struct dentry *dentry, umode_t mode,
- 	return 0;
- }
- 
--/*
-- * cgroup_create_dir - create a directory for an object.
-- * @cgrp: the cgroup we create the directory for. It must have a valid
-- *        ->parent field. And we are going to fill its ->dentry field.
-- * @dentry: dentry of the new cgroup
-- * @mode: mode to set on new directory.
-- */
--static int cgroup_create_dir(struct cgroup *cgrp, struct dentry *dentry,
--				umode_t mode)
--{
--	struct dentry *parent;
--	int error = 0;
+-	list_add_tail_rcu(&cgrp->sibling, &cgrp->parent->children);
+-	root->number_of_cgroups++;
 -
--	parent = cgrp->parent->dentry;
--	error = cgroup_create_file(dentry, S_IFDIR | mode, cgrp->root->sb);
--	if (!error) {
--		dentry->d_fsdata = cgrp;
--		inc_nlink(parent->d_inode);
--		rcu_assign_pointer(cgrp->dentry, dentry);
--	}
--
--	return error;
--}
--
- /**
-  * cgroup_file_mode - deduce file mode of a control file
-  * @cft: the control file in question
-@@ -4138,10 +4115,13 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
- 	list_add_tail_rcu(&cgrp->sibling, &cgrp->parent->children);
- 	root->number_of_cgroups++;
- 
--	err = cgroup_create_dir(cgrp, dentry, mode);
-+	err = cgroup_create_file(dentry, S_IFDIR | mode, sb);
++	/*
++	 * Create directory.  cgroup_create_file() returns with the new
++	 * directory locked on success so that it can be populated without
++	 * dropping cgroup_mutex.
++	 */
+ 	err = cgroup_create_file(dentry, S_IFDIR | mode, sb);
  	if (err < 0)
- 		goto err_remove;
+-		goto err_remove;
++		goto err_destroy;
++	lockdep_assert_held(&dentry->d_inode->i_mutex);
  
-+	dentry->d_fsdata = cgrp;
-+	rcu_assign_pointer(cgrp->dentry, dentry);
-+
++	/* allocation complete, commit to creation */
+ 	dentry->d_fsdata = cgrp;
+ 	rcu_assign_pointer(cgrp->dentry, dentry);
++	list_add_tail(&cgrp->allcg_node, &root->allcg_list);
++	list_add_tail_rcu(&cgrp->sibling, &cgrp->parent->children);
++	root->number_of_cgroups++;
+ 
  	for_each_subsys(root, ss) {
  		/* each css holds a ref to the cgroup's dentry */
- 		dget(dentry);
+@@ -4131,11 +4138,6 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+ 			ss->post_create(cgrp);
+ 	}
+ 
+-	/* The cgroup directory was pre-locked for us */
+-	BUG_ON(!mutex_is_locked(&cgrp->dentry->d_inode->i_mutex));
+-
+-	list_add_tail(&cgrp->allcg_node, &root->allcg_list);
+-
+ 	err = cgroup_populate_dir(cgrp, true, root->subsys_mask);
+ 	/* If err < 0, we have a half-filled directory - oh well ;) */
+ 
+@@ -4144,20 +4146,12 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+ 
+ 	return 0;
+ 
+- err_remove:
+-
+-	list_del_rcu(&cgrp->sibling);
+-	root->number_of_cgroups--;
+-
+- err_destroy:
+-
++err_destroy:
+ 	for_each_subsys(root, ss) {
+ 		if (cgrp->subsys[ss->subsys_id])
+ 			ss->destroy(cgrp);
+ 	}
+-
+ 	mutex_unlock(&cgroup_mutex);
+-
+ 	/* Release the reference count that we took on the superblock */
+ 	deactivate_super(sb);
+ err_free:
 -- 
 1.7.11.7
