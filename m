@@ -1,11 +1,13 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCHSET cgroup/for-3.8] netprio_cgroup: implement hierarchy support
-Date: Fri, 16 Nov 2012 11:20:16 -0800
-Message-ID: <1353093624-22608-1-git-send-email-tj__6939.1967998401$1353093649$gmane$org@kernel.org>
+Subject: [PATCH 1/8] cgroup: add cgroup->id
+Date: Fri, 16 Nov 2012 11:20:17 -0800
+Message-ID: <1353093624-22608-2-git-send-email-tj@kernel.org>
+References: <1353093624-22608-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1353093624-22608-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,78 +18,108 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org, srivatsa.bhat-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, john.r.fastabend-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, guys.
+With the introduction of generic cgroup hierarchy iterators, css_id is
+being phased out.  It was unnecessarily complex, id'ing the wrong
+thing (cgroups need IDs, not CSSes) and has other oddities like not
+being available at ->css_alloc().
 
-This patchset implements hierarchy support for netprio_cgroup.
-netprio_cgroup along with netcls_cgroup is a rather weird in that it
-really isn't about resource control.  It just hitches on cgroup as a
-convenient mechanism to do stuff to groups of tasks.  The hierarchy
-support reflects such nature.  There's no limit being imposed from
-ancestors.  It simply propagates configuration downwards until there's
-a node with its own config.  IOW, any given cgroup inherits priorities
-from its parent for all netdevs which it doesn't have its own config
-for.
+This patch adds cgroup->id, which is a simple per-hierarchy
+ida-allocated ID which is assigned before ->css_alloc() and released
+after ->css_free().
 
-As a parent isn't affected by child inheriting its config, the
-hierarchy implementation is pretty simple.  It's enough to inherit
-config from ->css_online() and propagate new config downwards from
-write_priomap().  As each node needs to know which config is its local
-one and which is inherited, an extra config array is added -
-netprio_map->aux[].  It's a separate array to avoid disturbing spatial
-locality of ->priomap[].  While it currently contains single one-bit
-flag, I still made it a struct so that adding more configuration
-(e.g. max_prio) is easy.
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+---
+ include/linux/cgroup.h |  2 ++
+ kernel/cgroup.c        | 15 ++++++++++++++-
+ 2 files changed, 16 insertions(+), 1 deletion(-)
 
-Note that this does change userland-visible behavior.  Now, nesting is
-allowed and cgroups at the first level inherit priorities from the
-root cgroup.  I can't think of any better way than just biting the
-bullet here.  :(
-
- 0001-cgroup-add-cgroup-id.patch
- 0002-netprio-simplify-write_priomap.patch
- 0003-netprio_cgroup-shorten-variable-names-in-extend_netd.patch
- 0004-netprio_cgroup-reimplement-priomap-expansion.patch
- 0005-netprio_cgroup-use-cgroup-id-instead-of-cgroup_netpr.patch
- 0006-netprio_cgroup-implement-netprio-_set-_prio-helpers.patch
- 0007-netprio_cgroup-keep-track-of-whether-prio-is-set-or-.patch
- 0008-netprio_cgroup-implement-hierarchy-support.patch
-
-0001 adds cgroup->id.  This will eventually replace css_id.
-
-0002-0006 are prep patches.
-
-0007 implements is_local flag which tracks whether a cgroup has its
-own config or should inherit from its parent.
-
-0008 implements hierarchy support.
-
-This patchset is on top of
-
-cgroup/for-3.8 ef9fe980c6 ("cgroup_freezer: implement proper hierarchy support")
-+ [1] "[PATCHSET cgroup/for-3.8] cgroup: allow ->post_create() to fail"
-+ [2] "[PATCH 1/2] cgroup: s/CGRP_CLONE_CHILDREN/CGRP_CPUSET_CLONE_CHILDREN/"
-      "[PATCH 2/2] cgroup, cpuset: remove cgroup_subsys->post_clone()"
-
-and available in the following git branch.
-
- git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-netprio_cgroup-hierarchy
-
-diffstat follows.
-
- Documentation/cgroups/net_prio.txt |   21 +-
- include/linux/cgroup.h             |    2
- include/net/netprio_cgroup.h       |   21 +-
- kernel/cgroup.c                    |   15 +
- net/core/netprio_cgroup.c          |  376 +++++++++++++++++++++++--------------
- 5 files changed, 284 insertions(+), 151 deletions(-)
-
-Thanks.
-
---
-tejun
-
-[1] http://thread.gmane.org/gmane.linux.kernel.cgroups/5047
-[2] http://thread.gmane.org/gmane.linux.kernel/1393151
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index d5fc8a7..b512469 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -159,6 +159,8 @@ struct cgroup {
+ 	 */
+ 	atomic_t count;
+ 
++	int id;				/* ida allocated in-hierarchy ID */
++
+ 	/*
+ 	 * We link our 'sibling' struct into our parent's 'children'.
+ 	 * Our children link their 'sibling' into our 'children'.
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 99d5e69..0b25dcb 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -138,6 +138,9 @@ struct cgroupfs_root {
+ 	/* Hierarchy-specific flags */
+ 	unsigned long flags;
+ 
++	/* IDs for cgroups in this hierarchy */
++	struct ida cgroup_ida;
++
+ 	/* The path to use for release notifications. */
+ 	char release_agent_path[PATH_MAX];
+ 
+@@ -890,6 +893,7 @@ static void cgroup_diput(struct dentry *dentry, struct inode *inode)
+ 
+ 		simple_xattrs_free(&cgrp->xattrs);
+ 
++		ida_simple_remove(&cgrp->root->cgroup_ida, cgrp->id);
+ 		kfree(cgrp);
+ 	} else {
+ 		struct cfent *cfe = __d_cfe(dentry);
+@@ -1465,6 +1469,7 @@ static struct cgroupfs_root *cgroup_root_from_opts(struct cgroup_sb_opts *opts)
+ 
+ 	root->subsys_mask = opts->subsys_mask;
+ 	root->flags = opts->flags;
++	ida_init(&root->cgroup_ida);
+ 	if (opts->release_agent)
+ 		strcpy(root->release_agent_path, opts->release_agent);
+ 	if (opts->name)
+@@ -1483,6 +1488,7 @@ static void cgroup_drop_root(struct cgroupfs_root *root)
+ 	spin_lock(&hierarchy_id_lock);
+ 	ida_remove(&hierarchy_ida, root->hierarchy_id);
+ 	spin_unlock(&hierarchy_id_lock);
++	ida_destroy(&root->cgroup_ida);
+ 	kfree(root);
+ }
+ 
+@@ -4093,10 +4099,15 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+ 	struct cgroup_subsys *ss;
+ 	struct super_block *sb = root->sb;
+ 
++	/* allocate the cgroup and its ID, 0 is reserved for the root */
+ 	cgrp = kzalloc(sizeof(*cgrp), GFP_KERNEL);
+ 	if (!cgrp)
+ 		return -ENOMEM;
+ 
++	cgrp->id = ida_simple_get(&root->cgroup_ida, 1, 0, GFP_KERNEL);
++	if (cgrp->id < 0)
++		goto err_free_cgrp;
++
+ 	/*
+ 	 * Only live parents can have children.  Note that the liveliness
+ 	 * check isn't strictly necessary because cgroup_mkdir() and
+@@ -4106,7 +4117,7 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+ 	 */
+ 	if (!cgroup_lock_live_group(parent)) {
+ 		err = -ENODEV;
+-		goto err_free_cgrp;
++		goto err_free_id;
+ 	}
+ 
+ 	/* Grab a reference on the superblock so the hierarchy doesn't
+@@ -4198,6 +4209,8 @@ err_free_all:
+ 	mutex_unlock(&cgroup_mutex);
+ 	/* Release the reference count that we took on the superblock */
+ 	deactivate_super(sb);
++err_free_id:
++	ida_simple_remove(&root->cgroup_ida, cgrp->id);
+ err_free_cgrp:
+ 	kfree(cgrp);
+ 	return err;
+-- 
+1.7.11.7
