@@ -1,7 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 09/11] pidns: Add setns support
-Date: Fri, 16 Nov 2012 08:35:48 -0800
-Message-ID: <1353083750-3621-9-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH 10/11] pidns: Consolidate initialzation of special init task
+	state
+Date: Fri, 16 Nov 2012 08:35:49 -0800
+Message-ID: <1353083750-3621-10-git-send-email-ebiederm@xmission.com>
 References: <8739097bkk.fsf@xmission.com>
 	<1353083750-3621-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -24,110 +25,59 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-- Pid namespaces are designed to be inescapable so verify that the
-  passed in pid namespace is a child of the currently active
-  pid namespace or the currently active pid namespace itself.
+Instead of setting child_reaper and SIGNAL_UNKILLABLE one way
+for the system init process, and another way for pid namespace
+init processes test pid->nr == 1 and use the same code for both.
 
-  Allowing the currently active pid namespace is important so
-  the effects of an earlier setns can be cancelled.
+For the global init this results in SIGNAL_UNKILLABLE being set
+much earlier in the initialization process.
+
+This is a small cleanup and it paves the way for allowing unshare and
+enter of the pid namespace as that path like our global init also will
+not set CLONE_NEWPID.
 
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/proc/namespaces.c    |    3 ++
- include/linux/proc_fs.h |    1 +
- kernel/pid_namespace.c  |   54 +++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 58 insertions(+), 0 deletions(-)
+ init/main.c   |    1 -
+ kernel/fork.c |    6 +++---
+ 2 files changed, 3 insertions(+), 4 deletions(-)
 
-diff --git a/fs/proc/namespaces.c b/fs/proc/namespaces.c
-index b178ed7..85ca047 100644
---- a/fs/proc/namespaces.c
-+++ b/fs/proc/namespaces.c
-@@ -24,6 +24,9 @@ static const struct proc_ns_operations *ns_entries[] = {
- #ifdef CONFIG_IPC_NS
- 	&ipcns_operations,
- #endif
-+#ifdef CONFIG_PID_NS
-+	&pidns_operations,
-+#endif
- };
+diff --git a/init/main.c b/init/main.c
+index 9cf77ab..317750a 100644
+--- a/init/main.c
++++ b/init/main.c
+@@ -810,7 +810,6 @@ static int __ref kernel_init(void *unused)
+ 	system_state = SYSTEM_RUNNING;
+ 	numa_default_policy();
  
- static const struct file_operations ns_file_operations = {
-diff --git a/include/linux/proc_fs.h b/include/linux/proc_fs.h
-index 3fd2e87..acaafcd 100644
---- a/include/linux/proc_fs.h
-+++ b/include/linux/proc_fs.h
-@@ -251,6 +251,7 @@ struct proc_ns_operations {
- extern const struct proc_ns_operations netns_operations;
- extern const struct proc_ns_operations utsns_operations;
- extern const struct proc_ns_operations ipcns_operations;
-+extern const struct proc_ns_operations pidns_operations;
+-	current->signal->flags |= SIGNAL_UNKILLABLE;
+ 	flush_delayed_fput();
  
- union proc_op {
- 	int (*proc_get_link)(struct dentry *, struct path *);
-diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
-index 066c058..c6514f5 100644
---- a/kernel/pid_namespace.c
-+++ b/kernel/pid_namespace.c
-@@ -300,6 +300,60 @@ int reboot_pid_ns(struct pid_namespace *pid_ns, int cmd)
- 	return 0;
- }
+ 	if (ramdisk_execute_command) {
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 666dc8b..0f2bbce 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -1039,8 +1039,6 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
+ 	atomic_set(&sig->live, 1);
+ 	atomic_set(&sig->sigcnt, 1);
+ 	init_waitqueue_head(&sig->wait_chldexit);
+-	if (clone_flags & CLONE_NEWPID)
+-		sig->flags |= SIGNAL_UNKILLABLE;
+ 	sig->curr_target = tsk;
+ 	init_sigpending(&sig->shared_pending);
+ 	INIT_LIST_HEAD(&sig->posix_timers);
+@@ -1441,8 +1439,10 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 		ptrace_init_task(p, (clone_flags & CLONE_PTRACE) || trace);
  
-+static void *pidns_get(struct task_struct *task)
-+{
-+	struct pid_namespace *ns;
-+
-+	rcu_read_lock();
-+	ns = get_pid_ns(task_active_pid_ns(task));
-+	rcu_read_unlock();
-+
-+	return ns;
-+}
-+
-+static void pidns_put(void *ns)
-+{
-+	put_pid_ns(ns);
-+}
-+
-+static int pidns_install(struct nsproxy *nsproxy, void *ns)
-+{
-+	struct pid_namespace *active = task_active_pid_ns(current);
-+	struct pid_namespace *ancestor, *new = ns;
-+
-+	if (!ns_capable(new->user_ns, CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	/*
-+	 * Only allow entering the current active pid namespace
-+	 * or a child of the current active pid namespace.
-+	 *
-+	 * This is required for fork to return a usable pid value and
-+	 * this maintains the property that processes and their
-+	 * children can not escape their current pid namespace.
-+	 */
-+	if (new->level < active->level)
-+		return -EINVAL;
-+
-+	ancestor = new;
-+	while (ancestor->level > active->level)
-+		ancestor = ancestor->parent;
-+	if (ancestor != active)
-+		return -EINVAL;
-+
-+	put_pid_ns(nsproxy->pid_ns);
-+	nsproxy->pid_ns = get_pid_ns(new);
-+	return 0;
-+}
-+
-+const struct proc_ns_operations pidns_operations = {
-+	.name		= "pid",
-+	.type		= CLONE_NEWPID,
-+	.get		= pidns_get,
-+	.put		= pidns_put,
-+	.install	= pidns_install,
-+};
-+
- static __init int pid_namespaces_init(void)
- {
- 	pid_ns_cachep = KMEM_CACHE(pid_namespace, SLAB_PANIC);
+ 		if (thread_group_leader(p)) {
+-			if (is_child_reaper(pid))
++			if (is_child_reaper(pid)) {
+ 				ns_of_pid(pid)->child_reaper = p;
++				p->signal->flags |= SIGNAL_UNKILLABLE;
++			}
+ 
+ 			p->signal->leader_pid = pid;
+ 			p->signal->tty = tty_kref_get(current->signal->tty);
 -- 
 1.7.5.4
