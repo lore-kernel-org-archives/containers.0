@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 1/8] cgroup: add cgroup->id
-Date: Fri, 16 Nov 2012 11:20:17 -0800
-Message-ID: <1353093624-22608-2-git-send-email-tj@kernel.org>
+Subject: [PATCH 2/8] netprio: simplify write_priomap()
+Date: Fri, 16 Nov 2012 11:20:18 -0800
+Message-ID: <1353093624-22608-3-git-send-email-tj@kernel.org>
 References: <1353093624-22608-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,105 +21,94 @@ To: daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org, srivatsa.bhat-23VcF4H
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-With the introduction of generic cgroup hierarchy iterators, css_id is
-being phased out.  It was unnecessarily complex, id'ing the wrong
-thing (cgroups need IDs, not CSSes) and has other oddities like not
-being available at ->css_alloc().
-
-This patch adds cgroup->id, which is a simple per-hierarchy
-ida-allocated ID which is assigned before ->css_alloc() and released
-after ->css_free().
+sscanf() doesn't bite.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- include/linux/cgroup.h |  2 ++
- kernel/cgroup.c        | 15 ++++++++++++++-
- 2 files changed, 16 insertions(+), 1 deletion(-)
+ net/core/netprio_cgroup.c | 56 ++++++++++-------------------------------------
+ 1 file changed, 11 insertions(+), 45 deletions(-)
 
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index d5fc8a7..b512469 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -159,6 +159,8 @@ struct cgroup {
- 	 */
- 	atomic_t count;
+diff --git a/net/core/netprio_cgroup.c b/net/core/netprio_cgroup.c
+index f0b6b0d..66d98da 100644
+--- a/net/core/netprio_cgroup.c
++++ b/net/core/netprio_cgroup.c
+@@ -176,66 +176,32 @@ static int read_priomap(struct cgroup *cont, struct cftype *cft,
+ static int write_priomap(struct cgroup *cgrp, struct cftype *cft,
+ 			 const char *buffer)
+ {
+-	char *devname = kstrdup(buffer, GFP_KERNEL);
+-	int ret = -EINVAL;
+ 	u32 prioidx = cgrp_netprio_state(cgrp)->prioidx;
+-	unsigned long priority;
+-	char *priostr;
++	char devname[IFNAMSIZ + 1];
+ 	struct net_device *dev;
+ 	struct netprio_map *map;
++	u32 prio;
++	int ret;
  
-+	int id;				/* ida allocated in-hierarchy ID */
+-	if (!devname)
+-		return -ENOMEM;
+-
+-	/*
+-	 * Minimally sized valid priomap string
+-	 */
+-	if (strlen(devname) < 3)
+-		goto out_free_devname;
+-
+-	priostr = strstr(devname, " ");
+-	if (!priostr)
+-		goto out_free_devname;
+-
+-	/*
+-	 *Separate the devname from the associated priority
+-	 *and advance the priostr pointer to the priority value
+-	 */
+-	*priostr = '\0';
+-	priostr++;
+-
+-	/*
+-	 * If the priostr points to NULL, we're at the end of the passed
+-	 * in string, and its not a valid write
+-	 */
+-	if (*priostr == '\0')
+-		goto out_free_devname;
+-
+-	ret = kstrtoul(priostr, 10, &priority);
+-	if (ret < 0)
+-		goto out_free_devname;
+-
+-	ret = -ENODEV;
++	if (sscanf(buffer, "%"__stringify(IFNAMSIZ)"s %u", devname, &prio) != 2)
++		return -EINVAL;
+ 
+ 	dev = dev_get_by_name(&init_net, devname);
+ 	if (!dev)
+-		goto out_free_devname;
++		return -ENODEV;
+ 
+ 	rtnl_lock();
 +
- 	/*
- 	 * We link our 'sibling' struct into our parent's 'children'.
- 	 * Our children link their 'sibling' into our 'children'.
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 99d5e69..0b25dcb 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -138,6 +138,9 @@ struct cgroupfs_root {
- 	/* Hierarchy-specific flags */
- 	unsigned long flags;
+ 	ret = write_update_netdev_table(dev);
+-	if (ret < 0)
+-		goto out_put_dev;
++	if (ret)
++		goto out_unlock;
  
-+	/* IDs for cgroups in this hierarchy */
-+	struct ida cgroup_ida;
-+
- 	/* The path to use for release notifications. */
- 	char release_agent_path[PATH_MAX];
- 
-@@ -890,6 +893,7 @@ static void cgroup_diput(struct dentry *dentry, struct inode *inode)
- 
- 		simple_xattrs_free(&cgrp->xattrs);
- 
-+		ida_simple_remove(&cgrp->root->cgroup_ida, cgrp->id);
- 		kfree(cgrp);
- 	} else {
- 		struct cfent *cfe = __d_cfe(dentry);
-@@ -1465,6 +1469,7 @@ static struct cgroupfs_root *cgroup_root_from_opts(struct cgroup_sb_opts *opts)
- 
- 	root->subsys_mask = opts->subsys_mask;
- 	root->flags = opts->flags;
-+	ida_init(&root->cgroup_ida);
- 	if (opts->release_agent)
- 		strcpy(root->release_agent_path, opts->release_agent);
- 	if (opts->name)
-@@ -1483,6 +1488,7 @@ static void cgroup_drop_root(struct cgroupfs_root *root)
- 	spin_lock(&hierarchy_id_lock);
- 	ida_remove(&hierarchy_ida, root->hierarchy_id);
- 	spin_unlock(&hierarchy_id_lock);
-+	ida_destroy(&root->cgroup_ida);
- 	kfree(root);
+ 	map = rtnl_dereference(dev->priomap);
+ 	if (map)
+-		map->priomap[prioidx] = priority;
+-
+-out_put_dev:
++		map->priomap[prioidx] = prio;
++out_unlock:
+ 	rtnl_unlock();
+ 	dev_put(dev);
+-
+-out_free_devname:
+-	kfree(devname);
+ 	return ret;
  }
  
-@@ -4093,10 +4099,15 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
- 	struct cgroup_subsys *ss;
- 	struct super_block *sb = root->sb;
- 
-+	/* allocate the cgroup and its ID, 0 is reserved for the root */
- 	cgrp = kzalloc(sizeof(*cgrp), GFP_KERNEL);
- 	if (!cgrp)
- 		return -ENOMEM;
- 
-+	cgrp->id = ida_simple_get(&root->cgroup_ida, 1, 0, GFP_KERNEL);
-+	if (cgrp->id < 0)
-+		goto err_free_cgrp;
-+
- 	/*
- 	 * Only live parents can have children.  Note that the liveliness
- 	 * check isn't strictly necessary because cgroup_mkdir() and
-@@ -4106,7 +4117,7 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
- 	 */
- 	if (!cgroup_lock_live_group(parent)) {
- 		err = -ENODEV;
--		goto err_free_cgrp;
-+		goto err_free_id;
- 	}
- 
- 	/* Grab a reference on the superblock so the hierarchy doesn't
-@@ -4198,6 +4209,8 @@ err_free_all:
- 	mutex_unlock(&cgroup_mutex);
- 	/* Release the reference count that we took on the superblock */
- 	deactivate_super(sb);
-+err_free_id:
-+	ida_simple_remove(&root->cgroup_ida, cgrp->id);
- err_free_cgrp:
- 	kfree(cgrp);
- 	return err;
 -- 
 1.7.11.7
