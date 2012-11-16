@@ -1,8 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH net-next 12/17] net: Allow userns root to control llc,
-	netfilter, netlink, packet, and xfrm
-Date: Fri, 16 Nov 2012 05:03:07 -0800
-Message-ID: <1353070992-5552-12-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH net-next 16/17] net: Enable a userns root rtnl calls that are
+	safe for unprivilged users
+Date: Fri, 16 Nov 2012 05:03:11 -0800
+Message-ID: <1353070992-5552-16-git-send-email-ebiederm@xmission.com>
 References: <87d2zd8zwn.fsf@xmission.com>
 	<1353070992-5552-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -25,151 +25,257 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Allow an unpriviled user who has created a user namespace, and then
-created a network namespace to effectively use the new network
-namespace, by reducing capable(CAP_NET_ADMIN) and
-capable(CAP_NET_RAW) calls to be ns_capable(net->user_ns,
-CAP_NET_ADMIN), or capable(net->user_ns, CAP_NET_RAW) calls.
+- Only allow moving network devices to network namespaces you have
+  CAP_NET_ADMIN privileges over.
 
-Allow creation of af_key sockets.
-Allow creation of llc sockets.
-Allow creation of af_packet sockets.
-
-Allow sending xfrm netlink control messages.
-
-Allow binding to netlink multicast groups.
-Allow sending to netlink multicast groups.
-Allow adding and dropping netlink multicast groups.
-Allow sending to all netlink multicast groups and port ids.
-
-Allow reading the netfilter SO_IP_SET socket option.
-Allow sending netfilter netlink messages.
-Allow setting and getting ip_vs netfilter socket options.
+- Enable creating/deleting/modifying interfaces
+- Enable adding/deleting addresses
+- Enable adding/setting/deleting neighbour entries
+- Enable adding/removing routes
+- Enable adding/removing fib rules
+- Enable setting the forwarding state
+- Enable adding/removing ipv6 address labels
+- Enable setting bridge parameter
 
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- net/key/af_key.c                  |    2 +-
- net/llc/af_llc.c                  |    2 +-
- net/netfilter/ipset/ip_set_core.c |    2 +-
- net/netfilter/ipvs/ip_vs_ctl.c    |    4 ++--
- net/netfilter/nfnetlink.c         |    2 +-
- net/netlink/af_netlink.c          |    2 +-
- net/packet/af_packet.c            |    2 +-
- net/xfrm/xfrm_user.c              |    2 +-
- 8 files changed, 9 insertions(+), 9 deletions(-)
+ net/bridge/br_netlink.c |    3 ---
+ net/core/fib_rules.c    |    6 ------
+ net/core/neighbour.c    |    9 ---------
+ net/core/rtnetlink.c    |   13 ++++---------
+ net/ipv4/devinet.c      |    6 ------
+ net/ipv4/fib_frontend.c |    6 ------
+ net/ipv6/addrconf.c     |    6 ------
+ net/ipv6/addrlabel.c    |    3 ---
+ net/ipv6/route.c        |    6 ------
+ 9 files changed, 4 insertions(+), 54 deletions(-)
 
-diff --git a/net/key/af_key.c b/net/key/af_key.c
-index 08897a3..5b426a6 100644
---- a/net/key/af_key.c
-+++ b/net/key/af_key.c
-@@ -141,7 +141,7 @@ static int pfkey_create(struct net *net, struct socket *sock, int protocol,
- 	struct sock *sk;
+diff --git a/net/bridge/br_netlink.c b/net/bridge/br_netlink.c
+index 251d558..093f527 100644
+--- a/net/bridge/br_netlink.c
++++ b/net/bridge/br_netlink.c
+@@ -153,9 +153,6 @@ static int br_rtm_setlink(struct sk_buff *skb,  struct nlmsghdr *nlh, void *arg)
+ 	struct net_bridge_port *p;
+ 	u8 new_state;
+ 
+-	if (!capable(CAP_NET_ADMIN))
+-		return -EPERM;
+-
+ 	if (nlmsg_len(nlh) < sizeof(*ifm))
+ 		return -EINVAL;
+ 
+diff --git a/net/core/fib_rules.c b/net/core/fib_rules.c
+index bf5b5b8..58a4ba2 100644
+--- a/net/core/fib_rules.c
++++ b/net/core/fib_rules.c
+@@ -275,9 +275,6 @@ static int fib_nl_newrule(struct sk_buff *skb, struct nlmsghdr* nlh, void *arg)
+ 	struct nlattr *tb[FRA_MAX+1];
+ 	int err = -EINVAL, unresolved = 0;
+ 
+-	if (!capable(CAP_NET_ADMIN))
+-		return -EPERM;
+-
+ 	if (nlh->nlmsg_len < nlmsg_msg_size(sizeof(*frh)))
+ 		goto errout;
+ 
+@@ -427,9 +424,6 @@ static int fib_nl_delrule(struct sk_buff *skb, struct nlmsghdr* nlh, void *arg)
+ 	struct nlattr *tb[FRA_MAX+1];
+ 	int err = -EINVAL;
+ 
+-	if (!capable(CAP_NET_ADMIN))
+-		return -EPERM;
+-
+ 	if (nlh->nlmsg_len < nlmsg_msg_size(sizeof(*frh)))
+ 		goto errout;
+ 
+diff --git a/net/core/neighbour.c b/net/core/neighbour.c
+index 7adcdaf..f1c0c2e 100644
+--- a/net/core/neighbour.c
++++ b/net/core/neighbour.c
+@@ -1620,9 +1620,6 @@ static int neigh_delete(struct sk_buff *skb, struct nlmsghdr *nlh, void *arg)
+ 	struct net_device *dev = NULL;
+ 	int err = -EINVAL;
+ 
+-	if (!capable(CAP_NET_ADMIN))
+-		return -EPERM;
+-
+ 	ASSERT_RTNL();
+ 	if (nlmsg_len(nlh) < sizeof(*ndm))
+ 		goto out;
+@@ -1687,9 +1684,6 @@ static int neigh_add(struct sk_buff *skb, struct nlmsghdr *nlh, void *arg)
+ 	struct net_device *dev = NULL;
  	int err;
  
 -	if (!capable(CAP_NET_ADMIN))
-+	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
- 		return -EPERM;
- 	if (sock->type != SOCK_RAW)
- 		return -ESOCKTNOSUPPORT;
-diff --git a/net/llc/af_llc.c b/net/llc/af_llc.c
-index c219000..8870988 100644
---- a/net/llc/af_llc.c
-+++ b/net/llc/af_llc.c
-@@ -160,7 +160,7 @@ static int llc_ui_create(struct net *net, struct socket *sock, int protocol,
- 	struct sock *sk;
- 	int rc = -ESOCKTNOSUPPORT;
- 
--	if (!capable(CAP_NET_RAW))
-+	if (!ns_capable(net->user_ns, CAP_NET_RAW))
- 		return -EPERM;
- 
- 	if (!net_eq(net, &init_net))
-diff --git a/net/netfilter/ipset/ip_set_core.c b/net/netfilter/ipset/ip_set_core.c
-index 778465f..fed899f 100644
---- a/net/netfilter/ipset/ip_set_core.c
-+++ b/net/netfilter/ipset/ip_set_core.c
-@@ -1643,7 +1643,7 @@ ip_set_sockfn_get(struct sock *sk, int optval, void __user *user, int *len)
- 	void *data;
- 	int copylen = *len, ret = 0;
- 
--	if (!capable(CAP_NET_ADMIN))
-+	if (!ns_capable(sock_net(sk)->user_ns, CAP_NET_ADMIN))
- 		return -EPERM;
- 	if (optval != SO_IP_SET)
- 		return -EBADF;
-diff --git a/net/netfilter/ipvs/ip_vs_ctl.c b/net/netfilter/ipvs/ip_vs_ctl.c
-index c6cebd5..ec664cb 100644
---- a/net/netfilter/ipvs/ip_vs_ctl.c
-+++ b/net/netfilter/ipvs/ip_vs_ctl.c
-@@ -2339,7 +2339,7 @@ do_ip_vs_set_ctl(struct sock *sk, int cmd, void __user *user, unsigned int len)
- 	struct ip_vs_dest_user_kern udest;
- 	struct netns_ipvs *ipvs = net_ipvs(net);
- 
--	if (!capable(CAP_NET_ADMIN))
-+	if (!ns_capable(sock_net(sk)->user_ns, CAP_NET_ADMIN))
- 		return -EPERM;
- 
- 	if (cmd < IP_VS_BASE_CTL || cmd > IP_VS_SO_SET_MAX)
-@@ -2632,7 +2632,7 @@ do_ip_vs_get_ctl(struct sock *sk, int cmd, void __user *user, int *len)
- 	struct netns_ipvs *ipvs = net_ipvs(net);
- 
- 	BUG_ON(!net);
--	if (!capable(CAP_NET_ADMIN))
-+	if (!ns_capable(sock_net(sk)->user_ns, CAP_NET_ADMIN))
- 		return -EPERM;
- 
- 	if (cmd < IP_VS_BASE_CTL || cmd > IP_VS_SO_GET_MAX)
-diff --git a/net/netfilter/nfnetlink.c b/net/netfilter/nfnetlink.c
-index ffb92c0..58a09b7 100644
---- a/net/netfilter/nfnetlink.c
-+++ b/net/netfilter/nfnetlink.c
-@@ -138,7 +138,7 @@ static int nfnetlink_rcv_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
- 	const struct nfnetlink_subsystem *ss;
- 	int type, err;
- 
--	if (!capable(CAP_NET_ADMIN))
-+	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
- 		return -EPERM;
- 
- 	/* All the messages must at least contain nfgenmsg */
-diff --git a/net/netlink/af_netlink.c b/net/netlink/af_netlink.c
-index 4da797f..c8a1eb6 100644
---- a/net/netlink/af_netlink.c
-+++ b/net/netlink/af_netlink.c
-@@ -612,7 +612,7 @@ retry:
- static inline int netlink_capable(const struct socket *sock, unsigned int flag)
- {
- 	return (nl_table[sock->sk->sk_protocol].flags & flag) ||
--	       capable(CAP_NET_ADMIN);
-+		ns_capable(sock_net(sock->sk)->user_ns, CAP_NET_ADMIN);
- }
- 
- static void
-diff --git a/net/packet/af_packet.c b/net/packet/af_packet.c
-index 94060ed..6d95278 100644
---- a/net/packet/af_packet.c
-+++ b/net/packet/af_packet.c
-@@ -2478,7 +2478,7 @@ static int packet_create(struct net *net, struct socket *sock, int protocol,
- 	__be16 proto = (__force __be16)protocol; /* weird, but documented */
+-		return -EPERM;
+-
+ 	ASSERT_RTNL();
+ 	err = nlmsg_parse(nlh, sizeof(*ndm), tb, NDA_MAX, NULL);
+ 	if (err < 0)
+@@ -1968,9 +1962,6 @@ static int neightbl_set(struct sk_buff *skb, struct nlmsghdr *nlh, void *arg)
+ 	struct nlattr *tb[NDTA_MAX+1];
  	int err;
  
--	if (!capable(CAP_NET_RAW))
-+	if (!ns_capable(net->user_ns, CAP_NET_RAW))
- 		return -EPERM;
- 	if (sock->type != SOCK_DGRAM && sock->type != SOCK_RAW &&
- 	    sock->type != SOCK_PACKET)
-diff --git a/net/xfrm/xfrm_user.c b/net/xfrm/xfrm_user.c
-index 421f984..eb872b2 100644
---- a/net/xfrm/xfrm_user.c
-+++ b/net/xfrm/xfrm_user.c
-@@ -2349,7 +2349,7 @@ static int xfrm_user_rcv_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
- 	link = &xfrm_dispatch[type];
- 
- 	/* All operations require privileges, even GET */
 -	if (!capable(CAP_NET_ADMIN))
-+	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
- 		return -EPERM;
+-		return -EPERM;
+-
+ 	err = nlmsg_parse(nlh, sizeof(*ndtmsg), tb, NDTA_MAX,
+ 			  nl_neightbl_policy);
+ 	if (err < 0)
+diff --git a/net/core/rtnetlink.c b/net/core/rtnetlink.c
+index 5d55c30..06dcf44 100644
+--- a/net/core/rtnetlink.c
++++ b/net/core/rtnetlink.c
+@@ -1316,6 +1316,10 @@ static int do_setlink(struct net_device *dev, struct ifinfomsg *ifm,
+ 			err = PTR_ERR(net);
+ 			goto errout;
+ 		}
++		if (!ns_capable(net->user_ns, CAP_NET_ADMIN)) {
++			err = -EPERM;
++			goto errout;
++		}
+ 		err = dev_change_net_namespace(dev, net, ifname);
+ 		put_net(net);
+ 		if (err)
+@@ -1547,9 +1551,6 @@ static int rtnl_setlink(struct sk_buff *skb, struct nlmsghdr *nlh, void *arg)
+ 	struct nlattr *tb[IFLA_MAX+1];
+ 	char ifname[IFNAMSIZ];
  
- 	if ((type == (XFRM_MSG_GETSA - XFRM_MSG_BASE) ||
+-	if (!capable(CAP_NET_ADMIN))
+-		return -EPERM;
+-
+ 	err = nlmsg_parse(nlh, sizeof(*ifm), tb, IFLA_MAX, ifla_policy);
+ 	if (err < 0)
+ 		goto errout;
+@@ -1593,9 +1594,6 @@ static int rtnl_dellink(struct sk_buff *skb, struct nlmsghdr *nlh, void *arg)
+ 	int err;
+ 	LIST_HEAD(list_kill);
+ 
+-	if (!capable(CAP_NET_ADMIN))
+-		return -EPERM;
+-
+ 	err = nlmsg_parse(nlh, sizeof(*ifm), tb, IFLA_MAX, ifla_policy);
+ 	if (err < 0)
+ 		return err;
+@@ -1726,9 +1724,6 @@ static int rtnl_newlink(struct sk_buff *skb, struct nlmsghdr *nlh, void *arg)
+ 	struct nlattr *linkinfo[IFLA_INFO_MAX+1];
+ 	int err;
+ 
+-	if (!capable(CAP_NET_ADMIN))
+-		return -EPERM;
+-
+ #ifdef CONFIG_MODULES
+ replay:
+ #endif
+diff --git a/net/ipv4/devinet.c b/net/ipv4/devinet.c
+index 446b1b9..7059d6f 100644
+--- a/net/ipv4/devinet.c
++++ b/net/ipv4/devinet.c
+@@ -538,9 +538,6 @@ static int inet_rtm_deladdr(struct sk_buff *skb, struct nlmsghdr *nlh, void *arg
+ 
+ 	ASSERT_RTNL();
+ 
+-	if (!capable(CAP_NET_ADMIN))
+-		return -EPERM;
+-
+ 	err = nlmsg_parse(nlh, sizeof(*ifm), tb, IFA_MAX, ifa_ipv4_policy);
+ 	if (err < 0)
+ 		goto errout;
+@@ -648,9 +645,6 @@ static int inet_rtm_newaddr(struct sk_buff *skb, struct nlmsghdr *nlh, void *arg
+ 
+ 	ASSERT_RTNL();
+ 
+-	if (!capable(CAP_NET_ADMIN))
+-		return -EPERM;
+-
+ 	ifa = rtm_to_ifaddr(net, nlh);
+ 	if (IS_ERR(ifa))
+ 		return PTR_ERR(ifa);
+diff --git a/net/ipv4/fib_frontend.c b/net/ipv4/fib_frontend.c
+index 784716a..5cd75e2 100644
+--- a/net/ipv4/fib_frontend.c
++++ b/net/ipv4/fib_frontend.c
+@@ -613,9 +613,6 @@ static int inet_rtm_delroute(struct sk_buff *skb, struct nlmsghdr *nlh, void *ar
+ 	struct fib_table *tb;
+ 	int err;
+ 
+-	if (!capable(CAP_NET_ADMIN))
+-		return -EPERM;
+-
+ 	err = rtm_to_fib_config(net, skb, nlh, &cfg);
+ 	if (err < 0)
+ 		goto errout;
+@@ -638,9 +635,6 @@ static int inet_rtm_newroute(struct sk_buff *skb, struct nlmsghdr *nlh, void *ar
+ 	struct fib_table *tb;
+ 	int err;
+ 
+-	if (!capable(CAP_NET_ADMIN))
+-		return -EPERM;
+-
+ 	err = rtm_to_fib_config(net, skb, nlh, &cfg);
+ 	if (err < 0)
+ 		goto errout;
+diff --git a/net/ipv6/addrconf.c b/net/ipv6/addrconf.c
+index 5f1967b..27b1e8f 100644
+--- a/net/ipv6/addrconf.c
++++ b/net/ipv6/addrconf.c
+@@ -3369,9 +3369,6 @@ inet6_rtm_deladdr(struct sk_buff *skb, struct nlmsghdr *nlh, void *arg)
+ 	struct in6_addr *pfx;
+ 	int err;
+ 
+-	if (!capable(CAP_NET_ADMIN))
+-		return -EPERM;
+-
+ 	err = nlmsg_parse(nlh, sizeof(*ifm), tb, IFA_MAX, ifa_ipv6_policy);
+ 	if (err < 0)
+ 		return err;
+@@ -3442,9 +3439,6 @@ inet6_rtm_newaddr(struct sk_buff *skb, struct nlmsghdr *nlh, void *arg)
+ 	u8 ifa_flags;
+ 	int err;
+ 
+-	if (!capable(CAP_NET_ADMIN))
+-		return -EPERM;
+-
+ 	err = nlmsg_parse(nlh, sizeof(*ifm), tb, IFA_MAX, ifa_ipv6_policy);
+ 	if (err < 0)
+ 		return err;
+diff --git a/net/ipv6/addrlabel.c b/net/ipv6/addrlabel.c
+index b106f80..ff76eec 100644
+--- a/net/ipv6/addrlabel.c
++++ b/net/ipv6/addrlabel.c
+@@ -425,9 +425,6 @@ static int ip6addrlbl_newdel(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 	u32 label;
+ 	int err = 0;
+ 
+-	if (!capable(CAP_NET_ADMIN))
+-		return -EPERM;
+-
+ 	err = nlmsg_parse(nlh, sizeof(*ifal), tb, IFAL_MAX, ifal_policy);
+ 	if (err < 0)
+ 		return err;
+diff --git a/net/ipv6/route.c b/net/ipv6/route.c
+index be2c173..c7f7fda 100644
+--- a/net/ipv6/route.c
++++ b/net/ipv6/route.c
+@@ -2336,9 +2336,6 @@ static int inet6_rtm_delroute(struct sk_buff *skb, struct nlmsghdr* nlh, void *a
+ 	struct fib6_config cfg;
+ 	int err;
+ 
+-	if (!capable(CAP_NET_ADMIN))
+-		return -EPERM;
+-
+ 	err = rtm_to_fib6_config(skb, nlh, &cfg);
+ 	if (err < 0)
+ 		return err;
+@@ -2351,9 +2348,6 @@ static int inet6_rtm_newroute(struct sk_buff *skb, struct nlmsghdr* nlh, void *a
+ 	struct fib6_config cfg;
+ 	int err;
+ 
+-	if (!capable(CAP_NET_ADMIN))
+-		return -EPERM;
+-
+ 	err = rtm_to_fib6_config(skb, nlh, &cfg);
+ 	if (err < 0)
+ 		return err;
 -- 
 1.7.5.4
