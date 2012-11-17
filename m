@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 1/3] netcls_cgroup: introduce netcls_mutex
-Date: Fri, 16 Nov 2012 19:31:00 -0800
-Message-ID: <1353123062-23193-2-git-send-email-tj@kernel.org>
+Subject: [PATCH 2/3] netcls_cgroup: introduce cgroup_cls_state->is_local
+Date: Fri, 16 Nov 2012 19:31:01 -0800
+Message-ID: <1353123062-23193-3-git-send-email-tj@kernel.org>
 References: <1353123062-23193-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,80 +21,78 @@ To: daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org, serge.hallyn-Z7WLFzj8
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Introduce netcls_mutex to synchronize modifications to
-cgroup_cls_state.  New cgrp now inherits classid from ->css_online()
-and write_classid() updates classid while holdin netcls_mutex.
+cs->is_local will be used to indicate whether the cgroup has its own
+configuration or inherited from the parent.  It's set when classid is
+configured by writing a positive value to cgroup file
+"net_cls.classid" and cleared when a negative value is written.
 
-As write_classid() doesn't propagate new configuration downwards, this
-currently doesn't make any userland-visible difference, but will help
-implementing proper hierarchy support.
+is_local is visible to userland via cgroup file "net_cls.is_local" so
+that userland can know whether a cgroup has its config or not.
+
+This patch doesn't yet change hierarchy behavior.  The next patch will
+use is_local to implement proper hierarchy.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- net/sched/cls_cgroup.c | 21 ++++++++++++++++++---
- 1 file changed, 18 insertions(+), 3 deletions(-)
+ include/net/cls_cgroup.h |  1 +
+ net/sched/cls_cgroup.c   | 23 ++++++++++++++++++++---
+ 2 files changed, 21 insertions(+), 3 deletions(-)
 
+diff --git a/include/net/cls_cgroup.h b/include/net/cls_cgroup.h
+index b6a6eeb..5759d98 100644
+--- a/include/net/cls_cgroup.h
++++ b/include/net/cls_cgroup.h
+@@ -22,6 +22,7 @@ struct cgroup_cls_state
+ {
+ 	struct cgroup_subsys_state css;
+ 	u32 classid;
++	bool is_local;	/* class id is explicitly configured for this cgroup */
+ };
+ 
+ extern void sock_update_classid(struct sock *sk);
 diff --git a/net/sched/cls_cgroup.c b/net/sched/cls_cgroup.c
-index 8cdc18e..80a80c4 100644
+index 80a80c4..6e3ef64 100644
 --- a/net/sched/cls_cgroup.c
 +++ b/net/sched/cls_cgroup.c
-@@ -17,11 +17,14 @@
- #include <linux/skbuff.h>
- #include <linux/cgroup.h>
- #include <linux/rcupdate.h>
-+#include <linux/mutex.h>
- #include <net/rtnetlink.h>
- #include <net/pkt_cls.h>
- #include <net/sock.h>
- #include <net/cls_cgroup.h>
- 
-+static DEFINE_MUTEX(netcls_mutex);
-+
- static inline struct cgroup_cls_state *cgrp_cls_state(struct cgroup *cgrp)
- {
- 	return container_of(cgroup_subsys_state(cgrp, net_cls_subsys_id),
-@@ -42,12 +45,21 @@ static struct cgroup_subsys_state *cgrp_css_alloc(struct cgroup *cgrp)
- 	if (!cs)
- 		return ERR_PTR(-ENOMEM);
- 
--	if (cgrp->parent)
--		cs->classid = cgrp_cls_state(cgrp->parent)->classid;
--
- 	return &cs->css;
+@@ -70,19 +70,36 @@ static u64 read_classid(struct cgroup *cgrp, struct cftype *cft)
+ 	return cgrp_cls_state(cgrp)->classid;
  }
  
-+/* @cgrp coming online, inherit the parent's classid */
-+static int cgrp_css_online(struct cgroup *cgrp)
-+{
-+	if (!cgrp->parent)
-+		return 0;
-+
-+	mutex_lock(&netcls_mutex);
-+	cgrp_cls_state(cgrp)->classid = cgrp_cls_state(cgrp->parent)->classid;
-+	mutex_unlock(&netcls_mutex);
-+	return 0;
-+}
-+
- static void cgrp_css_free(struct cgroup *cgrp)
+-static int write_classid(struct cgroup *cgrp, struct cftype *cft, u64 value)
++static int write_classid(struct cgroup *cgrp, struct cftype *cft,
++			 const char *buf)
  {
- 	kfree(cgrp_cls_state(cgrp));
-@@ -60,7 +72,9 @@ static u64 read_classid(struct cgroup *cgrp, struct cftype *cft)
- 
- static int write_classid(struct cgroup *cgrp, struct cftype *cft, u64 value)
- {
-+	mutex_lock(&netcls_mutex);
- 	cgrp_cls_state(cgrp)->classid = (u32) value;
-+	mutex_unlock(&netcls_mutex);
++	struct cgroup_cls_state *cs = cgrp_cls_state(cgrp);
++	s64 v;
++
++	if (sscanf(buf, "%lld", &v) != 1)
++		return -EINVAL;
++
+ 	mutex_lock(&netcls_mutex);
+-	cgrp_cls_state(cgrp)->classid = (u32) value;
++	cs->classid = clamp_val(v, 0, UINT_MAX);
++	cs->is_local = v >= 0;
+ 	mutex_unlock(&netcls_mutex);
  	return 0;
  }
  
-@@ -76,6 +90,7 @@ static struct cftype ss_files[] = {
- struct cgroup_subsys net_cls_subsys = {
- 	.name		= "net_cls",
- 	.css_alloc	= cgrp_css_alloc,
-+	.css_online	= cgrp_css_online,
- 	.css_free	= cgrp_css_free,
- 	.subsys_id	= net_cls_subsys_id,
- 	.base_cftypes	= ss_files,
++static u64 read_is_local(struct cgroup *cgrp, struct cftype *cft)
++{
++	return cgrp_cls_state(cgrp)->is_local;
++}
++
+ static struct cftype ss_files[] = {
+ 	{
+ 		.name = "classid",
+ 		.read_u64 = read_classid,
+-		.write_u64 = write_classid,
++		.write_string = write_classid,
++	},
++	{
++		.name = "is_local",
++		.read_u64 = read_is_local,
+ 	},
+ 	{ }	/* terminate */
+ };
 -- 
 1.7.11.7
