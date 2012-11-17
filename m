@@ -1,14 +1,11 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH RFC] syslog ns proof of concept
-Date: Fri, 16 Nov 2012 19:14:38 -0800
-Message-ID: <87haoo3opt.fsf@xmission.com>
-References: <20121117002519.GA26782@sergelap>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCHSET cgroup/for-3.8] netcls_cgroup: implement hierarchy support
+Date: Fri, 16 Nov 2012 19:30:59 -0800
+Message-ID: <1353123062-23193-1-git-send-email-tj__4526.42137320272$1353123088$gmane$org@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20121117002519.GA26782@sergelap> (Serge Hallyn's message of
-	"Fri, 16 Nov 2012 18:25:19 -0600")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,55 +15,45 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daniel Lezcano <dlezcano-GANU6spQydw@public.gmane.org>, =?utf-8?Q?St=C3=A9phane?= Graber <stephane.graber-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+To: daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org, serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org, tgraf-G/eBtMaohhA@public.gmane.org
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org> writes:
+Hello, guys.
 
-> Introduce a system log namespace.  The syslog ns is tied to a user
-> namespace.  You must create a new user namespace before you can create a
-> new sylog ns.  The syslog ns is created through a new command (11) to
-> the __NR_syslog system call.
->
-> Once a task enters a new syslog ns, it's "dmesg", "dmesg -c" and
-> /dev/kmsg actions affect only itself, so that user-created syslog
-> messages no longer are confusingly combined in the host's syslog.
-> "printk" itself always goes to the initial syslog_ns, and consoles
-> belong only to the initial syslog_ns.  However printks relating to a
-> specific network namespace, for instance, can now be targeted to the
-> syslog ns for the user ns which owns the network ns, aiding in debugging
-> in a container.
->
-> This patch is on top of the user namespace enhanced kernel at
-> git://kernel.ubuntu.com/serge/quantal-userns.  It is good enough to
-> compile with stock ubuntu kernel options, boot, launch other syslog
-> namespaces and exercise them.  It will need help before it will compile
-> with funky options like CONFIG_PRINTK=n.  This is only being sent out to
-> get feedback on the general idea.
->
-> Comments greatly appreciated.
->
-> (See https://wiki.ubuntu.com/LxcSyslogNs for background).
+This patchset implements proper hierarchy support for netcls_cgroup.
+Pretty simliar to the netprio one[3].  Simpler as each cgroup has
+single config value instead of array of them.
 
-Overall I would say the goal sounds well thought out.
+This patchset contains the following three patches.
 
-I am not a fan of how this ties into the user namespace.  I would prefer
-closer or looser ties.  The recursive reference count loop where a
-userns refers to a syslogns and that syslogns refers to the same userns
-is unpleasant.
+ 0001-netcls_cgroup-introduce-netcls_mutex.patch
+ 0002-netcls_cgroup-introduce-cgroup_cls_state-is_local.patch
+ 0003-netcls_cgroup-implement-proper-hierarchy-support.patch
 
-The important case as I understand it is to handle injection of messages
-into dmesg by userspace?
+This patchset is on top of
 
-I would really like to see how messages from networking devices and
-netfilter would be handled.  Right now one of the ugliest bits of
-lowering the permissions in the network namespace is what do about the
-commands that set the message loglevel.
+cgroup/for-3.8 ef9fe980c6 ("cgroup_freezer: implement proper hierarchy support")
++ [1] "[PATCHSET cgroup/for-3.8] cgroup: allow ->post_create() to fail"
++ [2] "[PATCH 1/2] cgroup: s/CGRP_CLONE_CHILDREN/CGRP_CPUSET_CLONE_CHILDREN/"
+      "[PATCH 2/2] cgroup, cpuset: remove cgroup_subsys->post_clone()"
++ [3] "[PATCHSET cgroup/for-3.8] netprio_cgroup: implement hierarchy support"
 
-In general unless we can safely and sanely direct kernel messages into
-this new dmesg I don't actually see the point of having another ring
-buffer in the kernel.  If the only success is userspace having the
-syslog facility simply be unavailable seems more palatable.
+and available in the following git branch.
 
-Eric
+ git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-netcls_cgroup-hierarchy
+
+diffstat follows.
+
+ include/net/cls_cgroup.h |    1
+ net/sched/cls_cgroup.c   |  102 ++++++++++++++++++++++++++++++++++++++++-------
+ 2 files changed, 88 insertions(+), 15 deletions(-)
+
+Thanks.
+
+--
+tejun
+
+[1] http://thread.gmane.org/gmane.linux.kernel.cgroups/5047
+[2] http://thread.gmane.org/gmane.linux.kernel/1393151
+[3] https://lkml.org/lkml/2012/11/16/514
