@@ -1,19 +1,14 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH net-next 09/17] net: Allow userns root control of the core
-	of the network stack.
-Date: Fri, 16 Nov 2012 18:46:11 -0800
-Message-ID: <87lie13q18.fsf@xmission.com>
-References: <87d2zd8zwn.fsf@xmission.com>
-	<1353070992-5552-1-git-send-email-ebiederm@xmission.com>
-	<1353070992-5552-9-git-send-email-ebiederm@xmission.com>
-	<50A645C2.1000604@parallels.com> <871uft8vpm.fsf@xmission.com>
-	<1353112116.2743.79.camel@bwh-desktop.uk.solarflarecom.com>
+Subject: Re: [PATCH RFC] syslog ns proof of concept
+Date: Fri, 16 Nov 2012 19:14:38 -0800
+Message-ID: <87haoo3opt.fsf@xmission.com>
+References: <20121117002519.GA26782@sergelap>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1353112116.2743.79.camel-/LGg1Z1CJKReKY3V0RtoKmatzQS1i7+A3tAM5lWOD0I@public.gmane.org> (Ben
-	Hutchings's message of "Sat, 17 Nov 2012 00:28:36 +0000")
+In-Reply-To: <20121117002519.GA26782@sergelap> (Serge Hallyn's message of
+	"Fri, 16 Nov 2012 18:25:19 -0600")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,73 +18,55 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ben Hutchings <bhutchings-s/n/eUQHGBpZroRs9YW3xA@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+To: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daniel Lezcano <dlezcano-GANU6spQydw@public.gmane.org>, =?utf-8?Q?St=C3=A9phane?= Graber <stephane.graber-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Ben Hutchings <bhutchings-s/n/eUQHGBpZroRs9YW3xA@public.gmane.org> writes:
+Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org> writes:
 
-> On Fri, 2012-11-16 at 06:32 -0800, Eric W. Biederman wrote:
->> Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> writes:
->> 
->> > On 11/16/2012 05:03 PM, Eric W. Biederman wrote:
->> >> +	if (!capable(CAP_NET_ADMIN))
->> >> +		return -EPERM;
->> >> +
->> >>  	return netdev_store(dev, attr, buf, len, change_tx_queue_len);
->> >
->> > You mean ns_capable here?
->> 
->> No.  There I meant capable.
->> 
->> I deliberately call capable here because I don't understand what
->> the tx_queue_len well enough to be certain it is safe to relax
->> that check to be just ns_capable.
->> 
->> My get feel is that allowing an unprivileged user to be able to
->> arbitrarily change the tx_queue_len on a networking device would be a
->> nice way to allow queuing as many network packets as you would like with
->> kernel memory and DOSing the machine.
->> 
->> So since with a quick read of the code I could not convince myself it
->> was safe to allow unprivilged users to change tx_queue_len I left it
->> protected by capable.  While at the same time I relaxed the check in
->> netdev_store to be ns_capable.
+> Introduce a system log namespace.  The syslog ns is tied to a user
+> namespace.  You must create a new user namespace before you can create a
+> new sylog ns.  The syslog ns is created through a new command (11) to
+> the __NR_syslog system call.
 >
-> Tor the same reason you had better be very selective about which ethtool
-> commands are allowed based on per-user_ns CAP_NET_ADMIN.  Consider for a
-> start:
+> Once a task enters a new syslog ns, it's "dmesg", "dmesg -c" and
+> /dev/kmsg actions affect only itself, so that user-created syslog
+> messages no longer are confusingly combined in the host's syslog.
+> "printk" itself always goes to the initial syslog_ns, and consoles
+> belong only to the initial syslog_ns.  However printks relating to a
+> specific network namespace, for instance, can now be targeted to the
+> syslog ns for the user ns which owns the network ns, aiding in debugging
+> in a container.
 >
-> ETHTOOL_SEEPROM => brick the NIC
-> ETHTOOL_FLASHDEV => brick the NIC; own the system if it's not using an IOMMU
+> This patch is on top of the user namespace enhanced kernel at
+> git://kernel.ubuntu.com/serge/quantal-userns.  It is good enough to
+> compile with stock ubuntu kernel options, boot, launch other syslog
+> namespaces and exercise them.  It will need help before it will compile
+> with funky options like CONFIG_PRINTK=n.  This is only being sent out to
+> get feedback on the general idea.
+>
+> Comments greatly appreciated.
+>
+> (See https://wiki.ubuntu.com/LxcSyslogNs for background).
 
-These are prevented by not having access to real hardware by default. A
-physical network interface must be moved into a network namespace for
-you to have access to it.
+Overall I would say the goal sounds well thought out.
 
-There are a handful of software network devices that are generally safe
-macvlan, veth, tun, ipip tunnels, etc.  Using those network devices is
-very interesting and about as performant as you can get while still
-being safe.
+I am not a fan of how this ties into the user namespace.  I would prefer
+closer or looser ties.  The recursive reference count loop where a
+userns refers to a syslogns and that syslogns refers to the same userns
+is unpleasant.
 
-A buffer overflow in an ethtool command looks as likely to me as being
-able to own the system by reflashing the NIC.
+The important case as I understand it is to handle injection of messages
+into dmesg by userspace?
 
-Access to a real physical NIC is an act of trust.  Given the general
-linux policy that drivers are merged when they mostly work I don't
-currently know of any trust models between "I trust you with full access
-to this device" and "I don't trust you with direct access to this
-device" that I would feel confident giving to an untrusted user.
+I would really like to see how messages from networking devices and
+netfilter would be handled.  Right now one of the ugliest bits of
+lowering the permissions in the network namespace is what do about the
+commands that set the message loglevel.
 
-Which is a convoluted way of saying "ip link set eth0 netns bob" is the
-moral equivalent of "chown bob.bob /dev/eth0; chmod u+rwx /dev/eth0"
-
-> ETHTOOL_SMSGLVL => fill up the system log
-
-That one might be worth doing something about, as there is non-local
-effect.  Still I don't believe for any of the software based "safe"
-networking devices ETHTOOL_SMSGLVL has any effect, and being able to
-tweak the debug level could be important for debugging if you do have
-direct access to the NIC.
+In general unless we can safely and sanely direct kernel messages into
+this new dmesg I don't actually see the point of having another ring
+buffer in the kernel.  If the only success is userspace having the
+syslog facility simply be unavailable seems more palatable.
 
 Eric
