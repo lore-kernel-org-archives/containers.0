@@ -1,8 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 07/16] userns: Make create_new_namespaces take a
-	user_ns parameter
-Date: Mon, 19 Nov 2012 07:12:32 -0800
-Message-ID: <1353337961-12962-7-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH review 09/16] userns: Implent proc namespace operations
+Date: Mon, 19 Nov 2012 07:12:34 -0800
+Message-ID: <1353337961-12962-9-git-send-email-ebiederm@xmission.com>
 References: <87lidx8wbo.fsf@xmission.com>
 	<1353337961-12962-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -25,245 +24,180 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Modify create_new_namespaces to explicitly take a user namespace
-parameter, instead of implicitly through the task_struct.
+This allows entering a user namespace, and the ability
+to store a reference to a user namespace with a bind
+mount.
 
-This allows an implementation of unshare(CLONE_NEWUSER) where
-the new user namespace is not stored onto the current task_struct
-until after all of the namespaces are created.
+Addition of missing userns_ns_put in userns_install
+from Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- include/linux/ipc_namespace.h |    7 ++++---
- include/linux/utsname.h       |    6 +++---
- ipc/namespace.c               |   10 ++++------
- kernel/nsproxy.c              |   22 +++++++++++++---------
- kernel/utsname.c              |    9 ++++-----
- 5 files changed, 28 insertions(+), 26 deletions(-)
+ fs/proc/namespaces.c    |    4 ++
+ include/linux/proc_fs.h |    1 +
+ kernel/user_namespace.c |   90 ++++++++++++++++++++++++++++++++++++++---------
+ 3 files changed, 78 insertions(+), 17 deletions(-)
 
-diff --git a/include/linux/ipc_namespace.h b/include/linux/ipc_namespace.h
-index 5499c92..f03af70 100644
---- a/include/linux/ipc_namespace.h
-+++ b/include/linux/ipc_namespace.h
-@@ -133,7 +133,8 @@ static inline int mq_init_ns(struct ipc_namespace *ns) { return 0; }
+diff --git a/fs/proc/namespaces.c b/fs/proc/namespaces.c
+index 2a17fd9..030250c 100644
+--- a/fs/proc/namespaces.c
++++ b/fs/proc/namespaces.c
+@@ -11,6 +11,7 @@
+ #include <net/net_namespace.h>
+ #include <linux/ipc_namespace.h>
+ #include <linux/pid_namespace.h>
++#include <linux/user_namespace.h>
+ #include "internal.h"
  
- #if defined(CONFIG_IPC_NS)
- extern struct ipc_namespace *copy_ipcs(unsigned long flags,
--				       struct task_struct *tsk);
-+	struct user_namespace *user_ns, struct ipc_namespace *ns);
-+
- static inline struct ipc_namespace *get_ipc_ns(struct ipc_namespace *ns)
- {
- 	if (ns)
-@@ -144,12 +145,12 @@ static inline struct ipc_namespace *get_ipc_ns(struct ipc_namespace *ns)
- extern void put_ipc_ns(struct ipc_namespace *ns);
- #else
- static inline struct ipc_namespace *copy_ipcs(unsigned long flags,
--					      struct task_struct *tsk)
-+	struct user_namespace *user_ns, struct ipc_namespace *ns)
- {
- 	if (flags & CLONE_NEWIPC)
- 		return ERR_PTR(-EINVAL);
  
--	return tsk->nsproxy->ipc_ns;
-+	return ns;
- }
- 
- static inline struct ipc_namespace *get_ipc_ns(struct ipc_namespace *ns)
-diff --git a/include/linux/utsname.h b/include/linux/utsname.h
-index 2b34520..221f4a0 100644
---- a/include/linux/utsname.h
-+++ b/include/linux/utsname.h
-@@ -33,7 +33,7 @@ static inline void get_uts_ns(struct uts_namespace *ns)
- }
- 
- extern struct uts_namespace *copy_utsname(unsigned long flags,
--					  struct task_struct *tsk);
-+	struct user_namespace *user_ns, struct uts_namespace *old_ns);
- extern void free_uts_ns(struct kref *kref);
- 
- static inline void put_uts_ns(struct uts_namespace *ns)
-@@ -50,12 +50,12 @@ static inline void put_uts_ns(struct uts_namespace *ns)
- }
- 
- static inline struct uts_namespace *copy_utsname(unsigned long flags,
--						 struct task_struct *tsk)
-+	struct user_namespace *user_ns, struct uts_namespace *old_ns)
- {
- 	if (flags & CLONE_NEWUTS)
- 		return ERR_PTR(-EINVAL);
- 
--	return tsk->nsproxy->uts_ns;
-+	return old_ns;
- }
+@@ -27,6 +28,9 @@ static const struct proc_ns_operations *ns_entries[] = {
+ #ifdef CONFIG_PID_NS
+ 	&pidns_operations,
  #endif
++#ifdef CONFIG_USER_NS
++	&userns_operations,
++#endif
+ 	&mntns_operations,
+ };
  
-diff --git a/ipc/namespace.c b/ipc/namespace.c
-index 6ed33c0..72c8682 100644
---- a/ipc/namespace.c
-+++ b/ipc/namespace.c
-@@ -16,7 +16,7 @@
+diff --git a/include/linux/proc_fs.h b/include/linux/proc_fs.h
+index 9014c04..3144781 100644
+--- a/include/linux/proc_fs.h
++++ b/include/linux/proc_fs.h
+@@ -258,6 +258,7 @@ extern const struct proc_ns_operations netns_operations;
+ extern const struct proc_ns_operations utsns_operations;
+ extern const struct proc_ns_operations ipcns_operations;
+ extern const struct proc_ns_operations pidns_operations;
++extern const struct proc_ns_operations userns_operations;
+ extern const struct proc_ns_operations mntns_operations;
  
- #include "util.h"
+ union proc_op {
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 49096d5..a946077 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -9,6 +9,7 @@
+ #include <linux/nsproxy.h>
+ #include <linux/slab.h>
+ #include <linux/user_namespace.h>
++#include <linux/proc_fs.h>
+ #include <linux/highuid.h>
+ #include <linux/cred.h>
+ #include <linux/securebits.h>
+@@ -26,6 +27,24 @@ static struct kmem_cache *user_ns_cachep __read_mostly;
+ static bool new_idmap_permitted(struct user_namespace *ns, int cap_setid,
+ 				struct uid_gid_map *map);
  
--static struct ipc_namespace *create_ipc_ns(struct task_struct *tsk,
-+static struct ipc_namespace *create_ipc_ns(struct user_namespace *user_ns,
- 					   struct ipc_namespace *old_ns)
- {
- 	struct ipc_namespace *ns;
-@@ -46,19 +46,17 @@ static struct ipc_namespace *create_ipc_ns(struct task_struct *tsk,
- 	ipcns_notify(IPCNS_CREATED);
- 	register_ipcns_notifier(ns);
- 
--	ns->user_ns = get_user_ns(task_cred_xxx(tsk, user_ns));
-+	ns->user_ns = get_user_ns(user_ns);
- 
- 	return ns;
- }
- 
- struct ipc_namespace *copy_ipcs(unsigned long flags,
--				struct task_struct *tsk)
-+	struct user_namespace *user_ns, struct ipc_namespace *ns)
- {
--	struct ipc_namespace *ns = tsk->nsproxy->ipc_ns;
--
- 	if (!(flags & CLONE_NEWIPC))
- 		return get_ipc_ns(ns);
--	return create_ipc_ns(tsk, ns);
-+	return create_ipc_ns(user_ns, ns);
- }
- 
++static void set_cred_user_ns(struct cred *cred, struct user_namespace *user_ns)
++{
++	/* Start with the same capabilities as init but useless for doing
++	 * anything as the capabilities are bound to the new user namespace.
++	 */
++	cred->securebits = SECUREBITS_DEFAULT;
++	cred->cap_inheritable = CAP_EMPTY_SET;
++	cred->cap_permitted = CAP_FULL_SET;
++	cred->cap_effective = CAP_FULL_SET;
++	cred->cap_bset = CAP_FULL_SET;
++#ifdef CONFIG_KEYS
++	key_put(cred->request_key_auth);
++	cred->request_key_auth = NULL;
++#endif
++	/* tgcred will be cleared in our caller bc CLONE_THREAD won't be set */
++	cred->user_ns = user_ns;
++}
++
  /*
-diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-index 4357a0a..2ddd816 100644
---- a/kernel/nsproxy.c
-+++ b/kernel/nsproxy.c
-@@ -57,7 +57,8 @@ static inline struct nsproxy *create_nsproxy(void)
-  * leave it to the caller to do proper locking and attach it to task.
-  */
- static struct nsproxy *create_new_namespaces(unsigned long flags,
--			struct task_struct *tsk, struct fs_struct *new_fs)
-+	struct task_struct *tsk, struct user_namespace *user_ns,
-+	struct fs_struct *new_fs)
- {
- 	struct nsproxy *new_nsp;
- 	int err;
-@@ -66,31 +67,31 @@ static struct nsproxy *create_new_namespaces(unsigned long flags,
- 	if (!new_nsp)
- 		return ERR_PTR(-ENOMEM);
+  * Create a new user namespace, deriving the creator from the user in the
+  * passed credentials, and replacing that user with the new root user for the
+@@ -53,27 +72,12 @@ int create_user_ns(struct cred *new)
+ 		return -ENOMEM;
  
--	new_nsp->mnt_ns = copy_mnt_ns(flags, tsk->nsproxy->mnt_ns, task_cred_xxx(tsk, user_ns), new_fs);
-+	new_nsp->mnt_ns = copy_mnt_ns(flags, tsk->nsproxy->mnt_ns, user_ns, new_fs);
- 	if (IS_ERR(new_nsp->mnt_ns)) {
- 		err = PTR_ERR(new_nsp->mnt_ns);
- 		goto out_ns;
- 	}
+ 	kref_init(&ns->kref);
++	/* Leave the new->user_ns reference with the new user namespace. */
+ 	ns->parent = parent_ns;
+ 	ns->owner = owner;
+ 	ns->group = group;
  
--	new_nsp->uts_ns = copy_utsname(flags, tsk);
-+	new_nsp->uts_ns = copy_utsname(flags, user_ns, tsk->nsproxy->uts_ns);
- 	if (IS_ERR(new_nsp->uts_ns)) {
- 		err = PTR_ERR(new_nsp->uts_ns);
- 		goto out_uts;
- 	}
+-	/* Start with the same capabilities as init but useless for doing
+-	 * anything as the capabilities are bound to the new user namespace.
+-	 */
+-	new->securebits = SECUREBITS_DEFAULT;
+-	new->cap_inheritable = CAP_EMPTY_SET;
+-	new->cap_permitted = CAP_FULL_SET;
+-	new->cap_effective = CAP_FULL_SET;
+-	new->cap_bset = CAP_FULL_SET;
+-#ifdef CONFIG_KEYS
+-	key_put(new->request_key_auth);
+-	new->request_key_auth = NULL;
+-#endif
+-	/* tgcred will be cleared in our caller bc CLONE_THREAD won't be set */
+-
+-	/* Leave the new->user_ns reference with the new user namespace. */
+-	/* Leave the reference to our user_ns with the new cred. */
+-	new->user_ns = ns;
++	set_cred_user_ns(new, ns);
  
--	new_nsp->ipc_ns = copy_ipcs(flags, tsk);
-+	new_nsp->ipc_ns = copy_ipcs(flags, user_ns, tsk->nsproxy->ipc_ns);
- 	if (IS_ERR(new_nsp->ipc_ns)) {
- 		err = PTR_ERR(new_nsp->ipc_ns);
- 		goto out_ipc;
- 	}
- 
--	new_nsp->pid_ns = copy_pid_ns(flags, task_cred_xxx(tsk, user_ns), tsk->nsproxy->pid_ns);
-+	new_nsp->pid_ns = copy_pid_ns(flags, user_ns, tsk->nsproxy->pid_ns);
- 	if (IS_ERR(new_nsp->pid_ns)) {
- 		err = PTR_ERR(new_nsp->pid_ns);
- 		goto out_pid;
- 	}
- 
--	new_nsp->net_ns = copy_net_ns(flags, task_cred_xxx(tsk, user_ns), tsk->nsproxy->net_ns);
-+	new_nsp->net_ns = copy_net_ns(flags, user_ns, tsk->nsproxy->net_ns);
- 	if (IS_ERR(new_nsp->net_ns)) {
- 		err = PTR_ERR(new_nsp->net_ns);
- 		goto out_net;
-@@ -152,7 +153,8 @@ int copy_namespaces(unsigned long flags, struct task_struct *tsk)
- 		goto out;
- 	}
- 
--	new_ns = create_new_namespaces(flags, tsk, tsk->fs);
-+	new_ns = create_new_namespaces(flags, tsk,
-+				       task_cred_xxx(tsk, user_ns), tsk->fs);
- 	if (IS_ERR(new_ns)) {
- 		err = PTR_ERR(new_ns);
- 		goto out;
-@@ -186,6 +188,7 @@ void free_nsproxy(struct nsproxy *ns)
- int unshare_nsproxy_namespaces(unsigned long unshare_flags,
- 		struct nsproxy **new_nsp, struct fs_struct *new_fs)
- {
-+	struct user_namespace *user_ns;
- 	int err = 0;
- 
- 	if (!(unshare_flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
-@@ -195,7 +198,8 @@ int unshare_nsproxy_namespaces(unsigned long unshare_flags,
- 	if (!nsown_capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
--	*new_nsp = create_new_namespaces(unshare_flags, current,
-+	user_ns = current_user_ns();
-+	*new_nsp = create_new_namespaces(unshare_flags, current, user_ns,
- 				new_fs ? new_fs : current->fs);
- 	if (IS_ERR(*new_nsp)) {
- 		err = PTR_ERR(*new_nsp);
-@@ -252,7 +256,7 @@ SYSCALL_DEFINE2(setns, int, fd, int, nstype)
- 	if (nstype && (ops->type != nstype))
- 		goto out;
- 
--	new_nsproxy = create_new_namespaces(0, tsk, tsk->fs);
-+	new_nsproxy = create_new_namespaces(0, tsk, current_user_ns(), tsk->fs);
- 	if (IS_ERR(new_nsproxy)) {
- 		err = PTR_ERR(new_nsproxy);
- 		goto out;
-diff --git a/kernel/utsname.c b/kernel/utsname.c
-index 4a9362f..fdc619e 100644
---- a/kernel/utsname.c
-+++ b/kernel/utsname.c
-@@ -32,7 +32,7 @@ static struct uts_namespace *create_uts_ns(void)
-  * @old_ns: namespace to clone
-  * Return NULL on error (failure to kmalloc), new ns otherwise
-  */
--static struct uts_namespace *clone_uts_ns(struct task_struct *tsk,
-+static struct uts_namespace *clone_uts_ns(struct user_namespace *user_ns,
- 					  struct uts_namespace *old_ns)
- {
- 	struct uts_namespace *ns;
-@@ -43,7 +43,7 @@ static struct uts_namespace *clone_uts_ns(struct task_struct *tsk,
- 
- 	down_read(&uts_sem);
- 	memcpy(&ns->name, &old_ns->name, sizeof(ns->name));
--	ns->user_ns = get_user_ns(task_cred_xxx(tsk, user_ns));
-+	ns->user_ns = get_user_ns(user_ns);
- 	up_read(&uts_sem);
- 	return ns;
+ 	return 0;
  }
-@@ -55,9 +55,8 @@ static struct uts_namespace *clone_uts_ns(struct task_struct *tsk,
-  * versa.
-  */
- struct uts_namespace *copy_utsname(unsigned long flags,
--				   struct task_struct *tsk)
-+	struct user_namespace *user_ns, struct uts_namespace *old_ns)
+@@ -737,6 +741,58 @@ static bool new_idmap_permitted(struct user_namespace *ns, int cap_setid,
+ 	return false;
+ }
+ 
++static void *userns_get(struct task_struct *task)
++{
++	struct user_namespace *user_ns;
++
++	rcu_read_lock();
++	user_ns = get_user_ns(__task_cred(task)->user_ns);
++	rcu_read_unlock();
++
++	return user_ns;
++}
++
++static void userns_put(void *ns)
++{
++	put_user_ns(ns);
++}
++
++static int userns_install(struct nsproxy *nsproxy, void *ns)
++{
++	struct user_namespace *user_ns = ns;
++	struct cred *cred;
++
++	/* Don't allow gaining capabilities by reentering
++	 * the same user namespace.
++	 */
++	if (user_ns == current_user_ns())
++		return -EINVAL;
++
++	/* Threaded many not enter a different user namespace */
++	if (atomic_read(&current->mm->mm_users) > 1)
++		return -EINVAL;
++
++	if (!ns_capable(user_ns, CAP_SYS_ADMIN))
++		return -EPERM;
++
++	cred = prepare_creds();
++	if (!cred)
++		return -ENOMEM;
++
++	put_user_ns(cred->user_ns);
++	set_cred_user_ns(cred, get_user_ns(user_ns));
++
++	return commit_creds(cred);
++}
++
++const struct proc_ns_operations userns_operations = {
++	.name		= "user",
++	.type		= CLONE_NEWUSER,
++	.get		= userns_get,
++	.put		= userns_put,
++	.install	= userns_install,
++};
++
+ static __init int user_namespaces_init(void)
  {
--	struct uts_namespace *old_ns = tsk->nsproxy->uts_ns;
- 	struct uts_namespace *new_ns;
- 
- 	BUG_ON(!old_ns);
-@@ -66,7 +65,7 @@ struct uts_namespace *copy_utsname(unsigned long flags,
- 	if (!(flags & CLONE_NEWUTS))
- 		return old_ns;
- 
--	new_ns = clone_uts_ns(tsk, old_ns);
-+	new_ns = clone_uts_ns(user_ns, old_ns);
- 
- 	put_uts_ns(old_ns);
- 	return new_ns;
+ 	user_ns_cachep = KMEM_CACHE(user_namespace, SLAB_PANIC);
 -- 
 1.7.5.4
