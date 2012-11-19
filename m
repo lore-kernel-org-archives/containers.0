@@ -1,14 +1,14 @@
-From: Daniel Wagner <daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org>
-Subject: Re: [PATCHSET cgroup/for-3.8] netcls_cgroup: implement hierarchy
-	support
-Date: Mon, 19 Nov 2012 14:59:58 +0100
-Message-ID: <50AA3B5E.3080701@bmw-carit.de>
-References: <1353123062-23193-1-git-send-email-tj@kernel.org>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] pidns: remove the useless function is_container_init
+Date: Mon, 19 Nov 2012 14:12:24 +0000
+Message-ID: <20121119141224.GA4321@mail.hallyn.com>
+References: <1353321882-30491-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1353123062-23193-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1353321882-30491-1-git-send-email-gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,55 +18,67 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, tgraf-G/eBtMaohhA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
+To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Tejun,
+Quoting Gao feng (gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
+> since commit 1cdcbec1a3372c0c49c59d292e708fd07b509f18,
+> is_container_init has no used for a long time.
+> 
+> just remove it.
 
-On 17.11.2012 04:30, Tejun Heo wrote:
-> Hello, guys.
-> 
-> This patchset implements proper hierarchy support for netcls_cgroup.
-> Pretty simliar to the netprio one[3].  Simpler as each cgroup has
-> single config value instead of array of them.
-> 
-> This patchset contains the following three patches.
-> 
->   0001-netcls_cgroup-introduce-netcls_mutex.patch
->   0002-netcls_cgroup-introduce-cgroup_cls_state-is_local.patch
->   0003-netcls_cgroup-implement-proper-hierarchy-support.patch
-> 
-> This patchset is on top of
-> 
-> cgroup/for-3.8 ef9fe980c6 ("cgroup_freezer: implement proper hierarchy support")
-> + [1] "[PATCHSET cgroup/for-3.8] cgroup: allow ->post_create() to fail"
-> + [2] "[PATCH 1/2] cgroup: s/CGRP_CLONE_CHILDREN/CGRP_CPUSET_CLONE_CHILDREN/"
->        "[PATCH 2/2] cgroup, cpuset: remove cgroup_subsys->post_clone()"
-> + [3] "[PATCHSET cgroup/for-3.8] netprio_cgroup: implement hierarchy support"
-> 
-> and available in the following git branch.
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-netcls_cgroup-hierarchy
-> 
-> diffstat follows.
-> 
->   include/net/cls_cgroup.h |    1
->   net/sched/cls_cgroup.c   |  102 ++++++++++++++++++++++++++++++++++++++++-------
->   2 files changed, 88 insertions(+), 15 deletions(-)
-> 
-> Thanks.
+Only thing is it's being exported, so I think it needs to go through
+deprecation.
 
-I played a bit around with this series, e.g. creating a hierarchy and and changing 
-the root classid and seeing the change propagating through the hierarchy. Everything
-worked as described in the documentation.
-
-Sorry to bring this up again: how should to root cgroup behave? If the ultimate
-goal to have only one single hierarchy then I would assume it is important that
-the semantic for all controllers are the same. As you pointed out the networking
-controllers are kind of a strange beast in the zoo of the cgroup controllers. 
-But still I would assume that all root controllers behave the same. memcg or cpu*
-are not expected to do any work in the root cgroup.
-
-cheers,
-daniel
+> Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> ---
+>  include/linux/sched.h |    6 ------
+>  kernel/pid.c          |   15 ---------------
+>  2 files changed, 0 insertions(+), 21 deletions(-)
+> 
+> diff --git a/include/linux/sched.h b/include/linux/sched.h
+> index 0dd42a0..3fadd26 100644
+> --- a/include/linux/sched.h
+> +++ b/include/linux/sched.h
+> @@ -1710,12 +1710,6 @@ static inline int is_global_init(struct task_struct *tsk)
+>  	return tsk->pid == 1;
+>  }
+>  
+> -/*
+> - * is_container_init:
+> - * check whether in the task is init in its own pid namespace.
+> - */
+> -extern int is_container_init(struct task_struct *tsk);
+> -
+>  extern struct pid *cad_pid;
+>  
+>  extern void free_task(struct task_struct *tsk);
+> diff --git a/kernel/pid.c b/kernel/pid.c
+> index aebd4f5..8ccdf0e 100644
+> --- a/kernel/pid.c
+> +++ b/kernel/pid.c
+> @@ -81,21 +81,6 @@ struct pid_namespace init_pid_ns = {
+>  };
+>  EXPORT_SYMBOL_GPL(init_pid_ns);
+>  
+> -int is_container_init(struct task_struct *tsk)
+> -{
+> -	int ret = 0;
+> -	struct pid *pid;
+> -
+> -	rcu_read_lock();
+> -	pid = task_pid(tsk);
+> -	if (pid != NULL && pid->numbers[pid->level].nr == 1)
+> -		ret = 1;
+> -	rcu_read_unlock();
+> -
+> -	return ret;
+> -}
+> -EXPORT_SYMBOL(is_container_init);
+> -
+>  /*
+>   * Note: disable interrupts while the pidmap_lock is held as an
+>   * interrupt might come in and do read_lock(&tasklist_lock).
+> -- 
+> 1.7.7.6
