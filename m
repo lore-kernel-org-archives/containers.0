@@ -1,15 +1,14 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 03/11] pidns: Capture the user namespace and filter
-	ns_last_pid
-Date: Mon, 19 Nov 2012 04:41:39 -0800
-Message-ID: <87y5hxahoc.fsf@xmission.com>
-References: <50AA259A.5030007@gmail.com>
+From: Daniel Wagner <wagi-kQCPcA+X3s7YtjvyW6yDsg@public.gmane.org>
+Subject: Re: [PATCH 2/3] netcls_cgroup: introduce cgroup_cls_state->is_local
+Date: Mon, 19 Nov 2012 13:54:26 +0100
+Message-ID: <50AA2C02.1000702__11682.0013536655$1353329690$gmane$org@monom.org>
+References: <1353123062-23193-1-git-send-email-tj@kernel.org>
+	<1353123062-23193-3-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <50AA259A.5030007-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> (Zhao Hongjiang's message of "Mon,
-	19 Nov 2012 20:27:06 +0800")
+In-Reply-To: <1353123062-23193-3-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,20 +18,40 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, tgraf-G/eBtMaohhA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
+Hi Tejun,
 
-> Hi Eric,
->
-> I noticed that, the increment refcount of user_ns has never released when the pid_ns's refcount is
-> down to zero. And i have sent out a patch to solve this on Nov 2th.
->
-> Am i misunderstand something?
+On 17.11.2012 04:31, Tejun Heo wrote:
+> -static int write_classid(struct cgroup *cgrp, struct cftype *cft, u64 value)
+> +static int write_classid(struct cgroup *cgrp, struct cftype *cft,
+> +			 const char *buf)
+>   {
+> +	struct cgroup_cls_state *cs = cgrp_cls_state(cgrp);
+> +	s64 v;
+> +
+> +	if (sscanf(buf, "%lld", &v) != 1)
+> +		return -EINVAL;
+> +
 
-No I am.  I have now added your patch to my tree and I hope to post and
-updated patchset shortly.  Oops.
+This changes the user API slightly. cgroup_write_u64() uses 
+simple_stroull() to parse the string. simple_stroull() allows to use 
+either 0x1234 or 1234 as input. sscanf() will only handle the later type 
+of input.
 
-Eric
+I noticed this because my test script stopped working:
+
+    mkdir /sys/fs/cgroup/net_cls/a
+    echo 0x100002 > /sys/fs/cgroup/net_cls/a/net_cls.classid # 10:2
+
+    tc qdisc add dev $DEV root handle 10: htb
+    tc class add dev $DEV parent 10: classid 10:2 htb rate 1mbit
+    tc qdisc add dev $DEV parent 10:2 handle 20: sfq perturb 10
+
+I am not completely sure if my setup is 100% correct, but at least
+it seems to make something :)
+
+cheers,
+daniel
