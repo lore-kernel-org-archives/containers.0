@@ -1,7 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 03/16] userns: Allow chown and setgid preservation
-Date: Mon, 19 Nov 2012 07:12:28 -0800
-Message-ID: <1353337961-12962-3-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH review 04/16] userns: Allow setting a userns mapping to your
+	current uid.
+Date: Mon, 19 Nov 2012 07:12:29 -0800
+Message-ID: <1353337961-12962-4-git-send-email-ebiederm@xmission.com>
 References: <87lidx8wbo.fsf@xmission.com>
 	<1353337961-12962-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -24,60 +25,37 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-- Allow chown if CAP_CHOWN is present in the current user namespace
-  and the uid of the inode maps into the current user namespace, and
-  the destination uid or gid maps into the current user namespace.
-
-- Allow perserving setgid when changing an inode if CAP_FSETID is
-  present in the current user namespace and the owner of the file has
-  a mapping into the current user namespace.
-
+Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/attr.c |   11 +++++++----
- 1 files changed, 7 insertions(+), 4 deletions(-)
+ kernel/user_namespace.c |   15 +++++++++++++++
+ 1 files changed, 15 insertions(+), 0 deletions(-)
 
-diff --git a/fs/attr.c b/fs/attr.c
-index cce7df5..1449adb 100644
---- a/fs/attr.c
-+++ b/fs/attr.c
-@@ -49,14 +49,15 @@ int inode_change_ok(const struct inode *inode, struct iattr *attr)
- 	/* Make sure a caller can chown. */
- 	if ((ia_valid & ATTR_UID) &&
- 	    (!uid_eq(current_fsuid(), inode->i_uid) ||
--	     !uid_eq(attr->ia_uid, inode->i_uid)) && !capable(CAP_CHOWN))
-+	     !uid_eq(attr->ia_uid, inode->i_uid)) &&
-+	    !inode_capable(inode, CAP_CHOWN))
- 		return -EPERM;
- 
- 	/* Make sure caller can chgrp. */
- 	if ((ia_valid & ATTR_GID) &&
- 	    (!uid_eq(current_fsuid(), inode->i_uid) ||
- 	    (!in_group_p(attr->ia_gid) && !gid_eq(attr->ia_gid, inode->i_gid))) &&
--	    !capable(CAP_CHOWN))
-+	    !inode_capable(inode, CAP_CHOWN))
- 		return -EPERM;
- 
- 	/* Make sure a caller can chmod. */
-@@ -65,7 +66,8 @@ int inode_change_ok(const struct inode *inode, struct iattr *attr)
- 			return -EPERM;
- 		/* Also check the setgid bit! */
- 		if (!in_group_p((ia_valid & ATTR_GID) ? attr->ia_gid :
--				inode->i_gid) && !capable(CAP_FSETID))
-+				inode->i_gid) &&
-+		    !inode_capable(inode, CAP_FSETID))
- 			attr->ia_mode &= ~S_ISGID;
- 	}
- 
-@@ -157,7 +159,8 @@ void setattr_copy(struct inode *inode, const struct iattr *attr)
- 	if (ia_valid & ATTR_MODE) {
- 		umode_t mode = attr->ia_mode;
- 
--		if (!in_group_p(inode->i_gid) && !capable(CAP_FSETID))
-+		if (!in_group_p(inode->i_gid) &&
-+		    !inode_capable(inode, CAP_FSETID))
- 			mode &= ~S_ISGID;
- 		inode->i_mode = mode;
- 	}
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 456a6b9..49096d5 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -709,6 +709,21 @@ ssize_t proc_projid_map_write(struct file *file, const char __user *buf, size_t
+ static bool new_idmap_permitted(struct user_namespace *ns, int cap_setid,
+ 				struct uid_gid_map *new_map)
+ {
++	/* Allow mapping to your own filesystem ids */
++	if ((new_map->nr_extents == 1) && (new_map->extent[0].count == 1)) {
++		u32 id = new_map->extent[0].lower_first;
++		if (cap_setid == CAP_SETUID) {
++			kuid_t uid = make_kuid(ns->parent, id);
++			if (uid_eq(uid, current_fsuid()))
++				return true;
++		}
++		else if (cap_setid == CAP_SETGID) {
++			kgid_t gid = make_kgid(ns->parent, id);
++			if (gid_eq(gid, current_fsgid()))
++				return true;
++		}
++	}
++
+ 	/* Allow anyone to set a mapping that doesn't require privilege */
+ 	if (!cap_valid(cap_setid))
+ 		return true;
 -- 
 1.7.5.4
