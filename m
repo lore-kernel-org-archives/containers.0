@@ -1,7 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 14/16] proc: Generalize proc inode allocation
-Date: Mon, 19 Nov 2012 07:12:39 -0800
-Message-ID: <1353337961-12962-14-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH review 12/16] userns: For /proc/self/{uid,
+	gid}_map derive the lower userns from the struct file
+Date: Mon, 19 Nov 2012 07:12:37 -0800
+Message-ID: <1353337961-12962-12-git-send-email-ebiederm@xmission.com>
 References: <87lidx8wbo.fsf@xmission.com>
 	<1353337961-12962-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -24,119 +25,72 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Generalize the proc inode allocation so that it can be
-used without having to having to create a proc_dir_entry.
+To keep things sane in the context of file descriptor passing derive the
+user namespace that uids are mapped into from the opener of the file
+instead of from current.
 
-This will allow namespace file descriptors to remain light
-weight entitities but still have the same inode number
-when the backing namespace is the same.
+When writing to the maps file the lower user namespace must always
+be the parent user namespace, or setting the mapping simply does
+not make sense.  Enforce that the opener of the file was in
+the parent user namespace or the user namespace whose mapping
+is being set.
 
-Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/proc/generic.c       |   26 +++++++++++++-------------
- include/linux/proc_fs.h |   10 ++++++++++
- 2 files changed, 23 insertions(+), 13 deletions(-)
+ kernel/user_namespace.c |   12 ++++++++++--
+ 1 files changed, 10 insertions(+), 2 deletions(-)
 
-diff --git a/fs/proc/generic.c b/fs/proc/generic.c
-index 0d80cef..7b3ae3c 100644
---- a/fs/proc/generic.c
-+++ b/fs/proc/generic.c
-@@ -350,14 +350,14 @@ static DEFINE_SPINLOCK(proc_inum_lock); /* protects the above */
-  * Return an inode number between PROC_DYNAMIC_FIRST and
-  * 0xffffffff, or zero on failure.
-  */
--static unsigned int get_inode_number(void)
-+int proc_alloc_inum(unsigned int *inum)
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index ce92f7e..89f6eae 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -391,7 +391,7 @@ static int uid_m_show(struct seq_file *seq, void *v)
+ 	struct user_namespace *lower_ns;
+ 	uid_t lower;
+ 
+-	lower_ns = current_user_ns();
++	lower_ns = seq_user_ns(seq);
+ 	if ((lower_ns == ns) && lower_ns->parent)
+ 		lower_ns = lower_ns->parent;
+ 
+@@ -412,7 +412,7 @@ static int gid_m_show(struct seq_file *seq, void *v)
+ 	struct user_namespace *lower_ns;
+ 	gid_t lower;
+ 
+-	lower_ns = current_user_ns();
++	lower_ns = seq_user_ns(seq);
+ 	if ((lower_ns == ns) && lower_ns->parent)
+ 		lower_ns = lower_ns->parent;
+ 
+@@ -688,10 +688,14 @@ ssize_t proc_uid_map_write(struct file *file, const char __user *buf, size_t siz
  {
- 	unsigned int i;
- 	int error;
+ 	struct seq_file *seq = file->private_data;
+ 	struct user_namespace *ns = seq->private;
++	struct user_namespace *seq_ns = seq_user_ns(seq);
  
- retry:
--	if (ida_pre_get(&proc_inum_ida, GFP_KERNEL) == 0)
--		return 0;
-+	if (!ida_pre_get(&proc_inum_ida, GFP_KERNEL))
-+		return -ENOMEM;
+ 	if (!ns->parent)
+ 		return -EPERM;
  
- 	spin_lock(&proc_inum_lock);
- 	error = ida_get_new(&proc_inum_ida, &i);
-@@ -365,18 +365,19 @@ retry:
- 	if (error == -EAGAIN)
- 		goto retry;
- 	else if (error)
--		return 0;
-+		return error;
- 
- 	if (i > UINT_MAX - PROC_DYNAMIC_FIRST) {
- 		spin_lock(&proc_inum_lock);
- 		ida_remove(&proc_inum_ida, i);
- 		spin_unlock(&proc_inum_lock);
--		return 0;
-+		return -ENOSPC;
- 	}
--	return PROC_DYNAMIC_FIRST + i;
-+	*inum = PROC_DYNAMIC_FIRST + i;
-+	return 0;
++	if ((seq_ns != ns) && (seq_ns != ns->parent))
++		return -EPERM;
++
+ 	return map_write(file, buf, size, ppos, CAP_SETUID,
+ 			 &ns->uid_map, &ns->parent->uid_map);
  }
- 
--static void release_inode_number(unsigned int inum)
-+void proc_free_inum(unsigned int inum)
+@@ -700,10 +704,14 @@ ssize_t proc_gid_map_write(struct file *file, const char __user *buf, size_t siz
  {
- 	spin_lock(&proc_inum_lock);
- 	ida_remove(&proc_inum_ida, inum - PROC_DYNAMIC_FIRST);
-@@ -554,13 +555,12 @@ static const struct inode_operations proc_dir_inode_operations = {
+ 	struct seq_file *seq = file->private_data;
+ 	struct user_namespace *ns = seq->private;
++	struct user_namespace *seq_ns = seq_user_ns(seq);
  
- static int proc_register(struct proc_dir_entry * dir, struct proc_dir_entry * dp)
- {
--	unsigned int i;
- 	struct proc_dir_entry *tmp;
-+	int ret;
- 	
--	i = get_inode_number();
--	if (i == 0)
--		return -EAGAIN;
--	dp->low_ino = i;
-+	ret = proc_alloc_inum(&dp->low_ino);
-+	if (ret)
-+		return ret;
+ 	if (!ns->parent)
+ 		return -EPERM;
  
- 	if (S_ISDIR(dp->mode)) {
- 		if (dp->proc_iops == NULL) {
-@@ -764,7 +764,7 @@ EXPORT_SYMBOL(proc_create_data);
- 
- static void free_proc_entry(struct proc_dir_entry *de)
- {
--	release_inode_number(de->low_ino);
-+	proc_free_inum(de->low_ino);
- 
- 	if (S_ISLNK(de->mode))
- 		kfree(de->data);
-diff --git a/include/linux/proc_fs.h b/include/linux/proc_fs.h
-index 3144781..bf1d000 100644
---- a/include/linux/proc_fs.h
-+++ b/include/linux/proc_fs.h
-@@ -176,6 +176,8 @@ extern struct proc_dir_entry *proc_net_mkdir(struct net *net, const char *name,
- extern struct file *proc_ns_fget(int fd);
- extern bool proc_ns_inode(struct inode *inode);
- 
-+extern int proc_alloc_inum(unsigned int *pino);
-+extern void proc_free_inum(unsigned int inum);
- #else
- 
- #define proc_net_fops_create(net, name, mode, fops)  ({ (void)(mode), NULL; })
-@@ -235,6 +237,14 @@ static inline bool proc_ns_inode(struct inode *inode)
- 	return false;
++	if ((seq_ns != ns) && (seq_ns != ns->parent))
++		return -EPERM;
++
+ 	return map_write(file, buf, size, ppos, CAP_SETGID,
+ 			 &ns->gid_map, &ns->parent->gid_map);
  }
- 
-+static inline int proc_alloc_inum(unsigned int *inum)
-+{
-+	*inum = 1;
-+	return 0;
-+}
-+static inline void proc_free_inum(unsigned int inum)
-+{
-+}
- #endif /* CONFIG_PROC_FS */
- 
- #if !defined(CONFIG_PROC_KCORE)
 -- 
 1.7.5.4
