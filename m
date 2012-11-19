@@ -1,14 +1,14 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/2] cgroup:
-	s/CGRP_CLONE_CHILDREN/CGRP_CPUSET_CLONE_CHILDREN/
-Date: Mon, 19 Nov 2012 13:39:49 +0800
-Message-ID: <50A9C625.6020307@huawei.com>
+Subject: Re: [PATCH 2/2] cgroup, cpuset: remove cgroup_subsys->post_clone()
+Date: Mon, 19 Nov 2012 13:40:25 +0800
+Message-ID: <50A9C649.9080602@huawei.com>
 References: <20121113202714.GA21185@mtj.dyndns.org>
+	<20121113202745.GB21185@mtj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20121113202714.GA21185-9pTldWuhBndy/B6EtB590w@public.gmane.org>
+In-Reply-To: <20121113202745.GB21185-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,16 +23,25 @@ Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFL
 List-Id: containers.vger.kernel.org
 
 On 2012/11/14 4:27, Tejun Heo wrote:
->>From 6e405c1ae4018d813e8ed9e0bd463d6976aebfa8 Mon Sep 17 00:00:00 2001
+>>From bbf2566f9f4fc79ff3320e83cafb69533efc9ea0 Mon Sep 17 00:00:00 2001
 > From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 > Date: Tue, 13 Nov 2012 12:21:50 -0800
 > 
-> clone_children is only meaningful for cpuset and will stay that way.
-> Rename the flag to reflect that and update documentation.  Also, drop
-> clone_children() wrapper in cgroup.c.  The thin wrapper is used only a
-> few times and one of them will go away soon.
+> Currently CGRP_CPUSET_CLONE_CHILDREN triggers ->post_clone().  Now
+> that clone_children is cpuset specific, there's no reason to have this
+> rather odd option activation mechanism in cgroup core.  cpuset can
+> check the flag from its ->css_allocate() and take the necessary
+> action.
+> 
+> Move cpuset_post_clone() logic to the end of cpuset_css_alloc() and
+> remove cgroup_subsys->post_clone().
+> 
+> Loosely based on Glauber's "generalize post_clone into post_create"
+> patch.
 > 
 > Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> Original-patch-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+> Original-patch: <1351686554-22592-2-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 > Cc: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 
 Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
