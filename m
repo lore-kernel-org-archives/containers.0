@@ -1,8 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 02/16] userns: Allow unprivileged users to create user
-	namespaces.
-Date: Mon, 19 Nov 2012 07:12:27 -0800
-Message-ID: <1353337961-12962-2-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH review 03/16] userns: Allow chown and setgid preservation
+Date: Mon, 19 Nov 2012 07:12:28 -0800
+Message-ID: <1353337961-12962-3-git-send-email-ebiederm@xmission.com>
 References: <87lidx8wbo.fsf@xmission.com>
 	<1353337961-12962-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -25,50 +24,60 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Now that we have been through every permission check in the kernel
-having uid == 0 and gid == 0 in your local user namespace no
-longer adds any special privileges.  Even having a full set
-of caps in your local user namespace is safe because capabilies
-are relative to your local user namespace, and do not confer
-unexpected privileges.
+- Allow chown if CAP_CHOWN is present in the current user namespace
+  and the uid of the inode maps into the current user namespace, and
+  the destination uid or gid maps into the current user namespace.
 
-Over the long term this should allow much more of the kernels
-functionality to be safely used by non-root users.  Functionality
-like unsharing the mount namespace that is only unsafe because
-it can fool applications whose privileges are raised when they
-are executed.  Since those applications have no privileges in
-a user namespaces it becomes safe to spoof and confuse those
-applications all you want.
+- Allow perserving setgid when changing an inode if CAP_FSETID is
+  present in the current user namespace and the owner of the file has
+  a mapping into the current user namespace.
 
-Those capabilities will still need to be enabled carefully because
-we may still need things like rlimits on the number of unprivileged
-mounts but that is to avoid DOS attacks not to avoid fooling root
-owned processes.
-
-Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- kernel/fork.c |    8 --------
- 1 files changed, 0 insertions(+), 8 deletions(-)
+ fs/attr.c |   11 +++++++----
+ 1 files changed, 7 insertions(+), 4 deletions(-)
 
-diff --git a/kernel/fork.c b/kernel/fork.c
-index 811ffba..8c29abb 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1569,14 +1569,6 @@ long do_fork(unsigned long clone_flags,
- 		if (clone_flags & (CLONE_THREAD|CLONE_PARENT))
- 			return -EINVAL;
- 	}
--	if (clone_flags & CLONE_NEWUSER) {
--		/* hopefully this check will go away when userns support is
--		 * complete
--		 */
--		if (!capable(CAP_SYS_ADMIN) || !capable(CAP_SETUID) ||
--				!capable(CAP_SETGID))
--			return -EPERM;
--	}
+diff --git a/fs/attr.c b/fs/attr.c
+index cce7df5..1449adb 100644
+--- a/fs/attr.c
++++ b/fs/attr.c
+@@ -49,14 +49,15 @@ int inode_change_ok(const struct inode *inode, struct iattr *attr)
+ 	/* Make sure a caller can chown. */
+ 	if ((ia_valid & ATTR_UID) &&
+ 	    (!uid_eq(current_fsuid(), inode->i_uid) ||
+-	     !uid_eq(attr->ia_uid, inode->i_uid)) && !capable(CAP_CHOWN))
++	     !uid_eq(attr->ia_uid, inode->i_uid)) &&
++	    !inode_capable(inode, CAP_CHOWN))
+ 		return -EPERM;
  
- 	/*
- 	 * Determine whether and which event to report to ptracer.  When
+ 	/* Make sure caller can chgrp. */
+ 	if ((ia_valid & ATTR_GID) &&
+ 	    (!uid_eq(current_fsuid(), inode->i_uid) ||
+ 	    (!in_group_p(attr->ia_gid) && !gid_eq(attr->ia_gid, inode->i_gid))) &&
+-	    !capable(CAP_CHOWN))
++	    !inode_capable(inode, CAP_CHOWN))
+ 		return -EPERM;
+ 
+ 	/* Make sure a caller can chmod. */
+@@ -65,7 +66,8 @@ int inode_change_ok(const struct inode *inode, struct iattr *attr)
+ 			return -EPERM;
+ 		/* Also check the setgid bit! */
+ 		if (!in_group_p((ia_valid & ATTR_GID) ? attr->ia_gid :
+-				inode->i_gid) && !capable(CAP_FSETID))
++				inode->i_gid) &&
++		    !inode_capable(inode, CAP_FSETID))
+ 			attr->ia_mode &= ~S_ISGID;
+ 	}
+ 
+@@ -157,7 +159,8 @@ void setattr_copy(struct inode *inode, const struct iattr *attr)
+ 	if (ia_valid & ATTR_MODE) {
+ 		umode_t mode = attr->ia_mode;
+ 
+-		if (!in_group_p(inode->i_gid) && !capable(CAP_FSETID))
++		if (!in_group_p(inode->i_gid) &&
++		    !inode_capable(inode, CAP_FSETID))
+ 			mode &= ~S_ISGID;
+ 		inode->i_mode = mode;
+ 	}
 -- 
 1.7.5.4
