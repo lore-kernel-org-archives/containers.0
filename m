@@ -1,16 +1,12 @@
-From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 05/11] pidns: Make the pidns proc mount/umount logic
-	obvious.
-Date: Mon, 19 Nov 2012 19:02:23 +0800
-Message-ID: <50AA11BF.1090201@cn.fujitsu.com>
-References: <8739097bkk.fsf@xmission.com>
-	<1353083750-3621-1-git-send-email-ebiederm@xmission.com>
-	<1353083750-3621-5-git-send-email-ebiederm@xmission.com>
+From: Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 03/11] pidns: Capture the user namespace and filter
+	ns_last_pid
+Date: Mon, 19 Nov 2012 20:27:06 +0800
+Message-ID: <50AA259A.5030007@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1353083750-3621-5-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,33 +17,171 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-5LqOIDIwMTLlubQxMeaciDE35pelIDAwOjM1LCBFcmljIFcuIEJpZWRlcm1hbiDlhpnpgZM6Cj4g
-RnJvbTogIkVyaWMgVy4gQmllZGVybWFuIiA8ZWJpZWRlcm1AeG1pc3Npb24uY29tPgo+IAo+IFRy
-YWNrIHRoZSBudW1iZXIgb2YgcGlkcyBpbiB0aGUgcHJvYyBoYXNoIHRhYmxlLiAgV2hlbiB0aGUg
-bnVtYmVyIG9mCj4gcGlkcyBnb2VzIHRvIDAgc2NoZWR1bGUgd29yayB0byB1bm1vdW50IHRoZSBr
-ZXJuZWwgbW91bnQgb2YgcHJvYy4KPiAKPiBNb3ZlIHRoZSBtb3VudCBvZiBwcm9jIGludG8gYWxs
-b2NfcGlkIHdoZW4gd2UgYWxsb2NhdGUgdGhlIHBpZCBmb3IKPiBpbml0Lgo+IAo+IFJlbW92ZSB0
-aGUgc3VycHJpc2luZyBjYWxscyBvZiBwaWRfbnNfcmVsZWFzZSBwcm9jIGluIGZvcmsgYW5kCj4g
-cHJvY19mbHVzaF90YXNrLiAgVGhvc2UgY29kZSBwYXRocyByZWFsbHkgc2hvdWxkbid0IGtub3cg
-YWJvdXQgcHJvYwo+IG5hbWVzcGFjZSBpbXBsZW1lbnRhdGlvbiBkZXRhaWxzIGFuZCBwZW9wbGUg
-aGF2ZSBkZW1vbnN0cmF0ZWQgc2V2ZXJhbAo+IHRpbWVzIHRoYXQgZmluZGluZyBhbmQgdW5kZXJz
-dGFuZGluZyB0aG9zZSBjb2RlIHBhdGhzIGlzIGRpZmZpY3VsdCBhbmQKPiBub24tb2J2aW91cy4K
-PiAKPiBCZWNhdXNlIG9mIHRoZSBjYWxsIHBhdGggZGV0YWNoIHBpZCBpcyBhbHdhc3kgY2FsbGVk
-IHdpdGggdGhlCj4gcnRubF9sb2NrIGhlbGQgZnJlZV9waWQgaXMgbm90IGFsbG93ZWQgdG8gc2xl
-ZXAsIHNvIHRoZSB3b3JrIHRvCj4gdW5tb3VudGluZyBwcm9jIGlzIG1vdmVkIHRvIGEgd29yayBx
-dWV1ZS4gIFRoaXMgaGFzIHRoZSBzaWRlIGJlbmVmaXQKPiBvZiBub3QgYmxvY2tpbmcgdGhlIGVu
-dGlyZSB3b3JsZCB3YWl0aW5nIGZvciB0aGUgdW5uZWNlc3NhcnkKPiByY3VfYmFycmllciBpbiBk
-ZWFjdGl2YXRlX2xvY2tlZF9zdXBlci4KPiAKPiBJbiB0aGUgcHJvY2VzcyBvZiBtYWtpbmcgdGhl
-IGNvZGUgY2xlYXIgYW5kIG9idmlvdXMgdGhpcyBmaXhlcyBhIGJ1Zwo+IHJlcG9ydGVkIGJ5IEdh
-byBmZW5nIDxnYW9mZW5nQGNuLmZ1aml0c3UuY29tPiB3aGVyZSB3ZSB3b3VsZCBsZWFrIGEKPiBt
-b3VudCBvZiBwcm9jIGR1cmluZyBjbG9uZShDTE9ORV9ORVdQSUR8Q0xPTkVfTkVXTkVUKSBpZiBj
-b3B5X3BpZF9ucwo+IHN1Y2NlZWRlZCBhbmQgY29weV9uZXRfbnMgZmFpbGVkLgo+IAo+IEFja2Vk
-LWJ5OiAiU2VyZ2UgRS4gSGFsbHluIiA8c2VyZ2VAaGFsbHluLmNvbT4KPiBTaWduZWQtb2ZmLWJ5
-OiAiRXJpYyBXLiBCaWVkZXJtYW4iIDxlYmllZGVybUB4bWlzc2lvbi5jb20+Cj4gLS0tCgpBY2tl
-ZC1ieTogR2FvIGZlbmcgPGdhb2ZlbmdAY24uZnVqaXRzdS5jb20+Cl9fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNv
-bnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZv
-dW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On 2012/11/17 0:35, Eric W. Biederman wrote:
+> From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>
+> - Capture the the user namespace that creates the pid namespace
+> - Use that user namespace to test if it is ok to write to
+>   /proc/sys/kernel/ns_last_pid.
+>
+> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> ---
+>  include/linux/pid_namespace.h |    8 +++++---
+>  kernel/nsproxy.c              |    2 +-
+>  kernel/pid.c                  |    1 +
+>  kernel/pid_namespace.c        |   16 +++++++++++-----
+>  4 files changed, 18 insertions(+), 9 deletions(-)
+>
+> diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
+> index 65e3e87..c89c9cf 100644
+> --- a/include/linux/pid_namespace.h
+> +++ b/include/linux/pid_namespace.h
+> @@ -31,6 +31,7 @@ struct pid_namespace {
+>  #ifdef CONFIG_BSD_PROCESS_ACCT
+>  	struct bsd_acct_struct *bacct;
+>  #endif
+> +	struct user_namespace *user_ns;
+>  	kgid_t pid_gid;
+>  	int hide_pid;
+>  	int reboot;	/* group exit code if this pidns was rebooted */
+> @@ -46,7 +47,8 @@ static inline struct pid_namespace *get_pid_ns(struct pid_namespace *ns)
+>  	return ns;
+>  }
+>
+> -extern struct pid_namespace *copy_pid_ns(unsigned long flags, struct pid_namespace *ns);
+> +extern struct pid_namespace *copy_pid_ns(unsigned long flags,
+> +	struct user_namespace *user_ns, struct pid_namespace *ns);
+>  extern void zap_pid_ns_processes(struct pid_namespace *pid_ns);
+>  extern int reboot_pid_ns(struct pid_namespace *pid_ns, int cmd);
+>  extern void put_pid_ns(struct pid_namespace *ns);
+> @@ -59,8 +61,8 @@ static inline struct pid_namespace *get_pid_ns(struct pid_namespace *ns)
+>  	return ns;
+>  }
+>
+> -static inline struct pid_namespace *
+> -copy_pid_ns(unsigned long flags, struct pid_namespace *ns)
+> +static inline struct pid_namespace *copy_pid_ns(unsigned long flags,
+> +	struct user_namespace *user_ns, struct pid_namespace *ns)
+>  {
+>  	if (flags & CLONE_NEWPID)
+>  		ns = ERR_PTR(-EINVAL);
+> diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+> index b576f7f..5fe88e1 100644
+> --- a/kernel/nsproxy.c
+> +++ b/kernel/nsproxy.c
+> @@ -84,7 +84,7 @@ static struct nsproxy *create_new_namespaces(unsigned long flags,
+>  		goto out_ipc;
+>  	}
+>
+> -	new_nsp->pid_ns = copy_pid_ns(flags, task_active_pid_ns(tsk));
+> +	new_nsp->pid_ns = copy_pid_ns(flags, task_cred_xxx(tsk, user_ns), task_active_pid_ns(tsk));
+>  	if (IS_ERR(new_nsp->pid_ns)) {
+>  		err = PTR_ERR(new_nsp->pid_ns);
+>  		goto out_pid;
+> diff --git a/kernel/pid.c b/kernel/pid.c
+> index aebd4f5..2a624f1 100644
+> --- a/kernel/pid.c
+> +++ b/kernel/pid.c
+> @@ -78,6 +78,7 @@ struct pid_namespace init_pid_ns = {
+>  	.last_pid = 0,
+>  	.level = 0,
+>  	.child_reaper = &init_task,
+> +	.user_ns = &init_user_ns,
+>  };
+>  EXPORT_SYMBOL_GPL(init_pid_ns);
+>
+> diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
+> index 7b07cc0..7580aa0 100644
+> --- a/kernel/pid_namespace.c
+> +++ b/kernel/pid_namespace.c
+> @@ -10,6 +10,7 @@
+>
+>  #include <linux/pid.h>
+>  #include <linux/pid_namespace.h>
+> +#include <linux/user_namespace.h>
+>  #include <linux/syscalls.h>
+>  #include <linux/err.h>
+>  #include <linux/acct.h>
+> @@ -74,7 +75,8 @@ err_alloc:
+>  /* MAX_PID_NS_LEVEL is needed for limiting size of 'struct pid' */
+>  #define MAX_PID_NS_LEVEL 32
+>
+> -static struct pid_namespace *create_pid_namespace(struct pid_namespace *parent_pid_ns)
+> +static struct pid_namespace *create_pid_namespace(struct user_namespace *user_ns,
+> +	struct pid_namespace *parent_pid_ns)
+>  {
+>  	struct pid_namespace *ns;
+>  	unsigned int level = parent_pid_ns->level + 1;
+> @@ -102,6 +104,7 @@ static struct pid_namespace *create_pid_namespace(struct pid_namespace *parent_p
+>  	kref_init(&ns->kref);
+>  	ns->level = level;
+>  	ns->parent = get_pid_ns(parent_pid_ns);
+> +	ns->user_ns = get_user_ns(user_ns);
+
+Hi Eric,
+
+I noticed that, the increment refcount of user_ns has never released when the pid_ns's refcount is
+down to zero. And i have sent out a patch to solve this on Nov 2th.
+
+Am i misunderstand something?
+
+Hongjiang
+
+>
+>  	set_bit(0, ns->pidmap[0].page);
+>  	atomic_set(&ns->pidmap[0].nr_free, BITS_PER_PAGE - 1);
+> @@ -117,6 +120,7 @@ static struct pid_namespace *create_pid_namespace(struct pid_namespace *parent_p
+>
+>  out_put_parent_pid_ns:
+>  	put_pid_ns(parent_pid_ns);
+> +	put_user_ns(user_ns);
+>  out_free_map:
+>  	kfree(ns->pidmap[0].page);
+>  out_free:
+> @@ -134,13 +138,14 @@ static void destroy_pid_namespace(struct pid_namespace *ns)
+>  	kmem_cache_free(pid_ns_cachep, ns);
+>  }
+>
+> -struct pid_namespace *copy_pid_ns(unsigned long flags, struct pid_namespace *old_ns)
+> +struct pid_namespace *copy_pid_ns(unsigned long flags,
+> +	struct user_namespace *user_ns, struct pid_namespace *old_ns)
+>  {
+>  	if (!(flags & CLONE_NEWPID))
+>  		return get_pid_ns(old_ns);
+>  	if (flags & (CLONE_THREAD|CLONE_PARENT))
+>  		return ERR_PTR(-EINVAL);
+> -	return create_pid_namespace(old_ns);
+> +	return create_pid_namespace(user_ns, old_ns);
+>  }
+>
+>  static void free_pid_ns(struct kref *kref)
+> @@ -239,9 +244,10 @@ void zap_pid_ns_processes(struct pid_namespace *pid_ns)
+>  static int pid_ns_ctl_handler(struct ctl_table *table, int write,
+>  		void __user *buffer, size_t *lenp, loff_t *ppos)
+>  {
+> +	struct pid_namespace *pid_ns = task_active_pid_ns(current);
+>  	struct ctl_table tmp = *table;
+>
+> -	if (write && !capable(CAP_SYS_ADMIN))
+> +	if (write && !ns_capable(pid_ns->user_ns, CAP_SYS_ADMIN))
+>  		return -EPERM;
+>
+>  	/*
+> @@ -250,7 +256,7 @@ static int pid_ns_ctl_handler(struct ctl_table *table, int write,
+>  	 * it should synchronize its usage with external means.
+>  	 */
+>
+> -	tmp.data = &current->nsproxy->pid_ns->last_pid;
+> +	tmp.data = &pid_ns->last_pid;
+>  	return proc_dointvec_minmax(&tmp, write, buffer, lenp, ppos);
+>  }
+>
+>
+
+
+
+.
