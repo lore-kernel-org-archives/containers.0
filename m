@@ -1,7 +1,7 @@
-From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH] pidns: remove the useless function is_container_init
-Date: Mon, 19 Nov 2012 18:44:42 +0800
-Message-ID: <1353321882-30491-1-git-send-email-gaofeng@cn.fujitsu.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: [PATCH review 0/6] mount namespace container enhancements
+Date: Mon, 19 Nov 2012 02:48:40 -0800
+Message-ID: <87k3thc1h3.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,63 +15,46 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-since commit 1cdcbec1a3372c0c49c59d292e708fd07b509f18,
-is_container_init has no used for a long time.
 
-just remove it.
+This patchset adds the ability for the root user in a user namespace to
+call choort, to create new mount namespaces, and to manipulate mount
+namespaces (mount/umount) that the userns root has created.
 
-Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- include/linux/sched.h |    6 ------
- kernel/pid.c          |   15 ---------------
- 2 files changed, 0 insertions(+), 21 deletions(-)
+Additionally support is added namespace file descriptors and for setns
+on the namespace file descriptors.
 
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 0dd42a0..3fadd26 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -1710,12 +1710,6 @@ static inline int is_global_init(struct task_struct *tsk)
- 	return tsk->pid == 1;
- }
- 
--/*
-- * is_container_init:
-- * check whether in the task is init in its own pid namespace.
-- */
--extern int is_container_init(struct task_struct *tsk);
--
- extern struct pid *cad_pid;
- 
- extern void free_task(struct task_struct *tsk);
-diff --git a/kernel/pid.c b/kernel/pid.c
-index aebd4f5..8ccdf0e 100644
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -81,21 +81,6 @@ struct pid_namespace init_pid_ns = {
- };
- EXPORT_SYMBOL_GPL(init_pid_ns);
- 
--int is_container_init(struct task_struct *tsk)
--{
--	int ret = 0;
--	struct pid *pid;
--
--	rcu_read_lock();
--	pid = task_pid(tsk);
--	if (pid != NULL && pid->numbers[pid->level].nr == 1)
--		ret = 1;
--	rcu_read_unlock();
--
--	return ret;
--}
--EXPORT_SYMBOL(is_container_init);
--
- /*
-  * Note: disable interrupts while the pidmap_lock is held as an
-  * interrupt might come in and do read_lock(&tasklist_lock).
--- 
-1.7.7.6
+To keep total chaos from breaking out mount namespace file descriptors
+are not allowed to be mounted into a child mount namespace, and shared
+subtrees become slave subtrees when creating a new mount namespace in a
+different user namespace than it's parent.
+
+This series of changes is available in git from:
+git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git mntns-v53
+
+Baring problems I plan to merge these changes through my user namespace
+tree for 3.8
+
+Eric W. Biederman (5):
+      vfs: Allow chroot if you have CAP_SYS_CHROOT in your user namespace
+      vfs: Add setns support for the mount namespace
+      vfs: Add a user namespace reference from struct mnt_namespace
+      vfs: Only support slave subtrees across different user namespaces
+      vfs: Allow unprivileged manipulation of the mount namespace.
+
+Zhao Hongjiang (1):
+      userns: fix return value on mntns_install() failure
+
+ fs/mount.h                    |    2 +
+ fs/namespace.c                |  197 +++++++++++++++++++++++++++++++++--------
+ fs/open.c                     |    2 +-
+ fs/pnode.h                    |    1 +
+ fs/proc/namespaces.c          |    5 +
+ include/linux/fs.h            |    2 +
+ include/linux/mnt_namespace.h |    3 +-
+ include/linux/proc_fs.h       |    7 ++
+ kernel/nsproxy.c              |    2 +-
+ 9 files changed, 182 insertions(+), 39 deletions(-)
