@@ -1,8 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 12/16] userns: For /proc/self/{uid,
-	gid}_map derive the lower userns from the struct file
-Date: Mon, 19 Nov 2012 07:12:37 -0800
-Message-ID: <1353337961-12962-12-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH review 13/16] userns: Allow unprivilged mounts of proc and
+	sysfs
+Date: Mon, 19 Nov 2012 07:12:38 -0800
+Message-ID: <1353337961-12962-13-git-send-email-ebiederm@xmission.com>
 References: <87lidx8wbo.fsf@xmission.com>
 	<1353337961-12962-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -25,72 +25,40 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-To keep things sane in the context of file descriptor passing derive the
-user namespace that uids are mapped into from the opener of the file
-instead of from current.
+- The context in which proc and sysfs are mounted have no
+  effect on the the uid/gid of their files so no conversion is
+  needed except allowing the mount.
 
-When writing to the maps file the lower user namespace must always
-be the parent user namespace, or setting the mapping simply does
-not make sense.  Enforce that the opener of the file was in
-the parent user namespace or the user namespace whose mapping
-is being set.
-
+Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- kernel/user_namespace.c |   12 ++++++++++--
- 1 files changed, 10 insertions(+), 2 deletions(-)
+ fs/proc/root.c   |    1 +
+ fs/sysfs/mount.c |    1 +
+ 2 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index ce92f7e..89f6eae 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -391,7 +391,7 @@ static int uid_m_show(struct seq_file *seq, void *v)
- 	struct user_namespace *lower_ns;
- 	uid_t lower;
+diff --git a/fs/proc/root.c b/fs/proc/root.c
+index f2f2511..c6e9fac 100644
+--- a/fs/proc/root.c
++++ b/fs/proc/root.c
+@@ -145,6 +145,7 @@ static struct file_system_type proc_fs_type = {
+ 	.name		= "proc",
+ 	.mount		= proc_mount,
+ 	.kill_sb	= proc_kill_sb,
++	.fs_flags	= FS_USERNS_MOUNT,
+ };
  
--	lower_ns = current_user_ns();
-+	lower_ns = seq_user_ns(seq);
- 	if ((lower_ns == ns) && lower_ns->parent)
- 		lower_ns = lower_ns->parent;
+ void __init proc_root_init(void)
+diff --git a/fs/sysfs/mount.c b/fs/sysfs/mount.c
+index 71eb7e2..db940a9 100644
+--- a/fs/sysfs/mount.c
++++ b/fs/sysfs/mount.c
+@@ -149,6 +149,7 @@ static struct file_system_type sysfs_fs_type = {
+ 	.name		= "sysfs",
+ 	.mount		= sysfs_mount,
+ 	.kill_sb	= sysfs_kill_sb,
++	.fs_flags	= FS_USERNS_MOUNT,
+ };
  
-@@ -412,7 +412,7 @@ static int gid_m_show(struct seq_file *seq, void *v)
- 	struct user_namespace *lower_ns;
- 	gid_t lower;
- 
--	lower_ns = current_user_ns();
-+	lower_ns = seq_user_ns(seq);
- 	if ((lower_ns == ns) && lower_ns->parent)
- 		lower_ns = lower_ns->parent;
- 
-@@ -688,10 +688,14 @@ ssize_t proc_uid_map_write(struct file *file, const char __user *buf, size_t siz
- {
- 	struct seq_file *seq = file->private_data;
- 	struct user_namespace *ns = seq->private;
-+	struct user_namespace *seq_ns = seq_user_ns(seq);
- 
- 	if (!ns->parent)
- 		return -EPERM;
- 
-+	if ((seq_ns != ns) && (seq_ns != ns->parent))
-+		return -EPERM;
-+
- 	return map_write(file, buf, size, ppos, CAP_SETUID,
- 			 &ns->uid_map, &ns->parent->uid_map);
- }
-@@ -700,10 +704,14 @@ ssize_t proc_gid_map_write(struct file *file, const char __user *buf, size_t siz
- {
- 	struct seq_file *seq = file->private_data;
- 	struct user_namespace *ns = seq->private;
-+	struct user_namespace *seq_ns = seq_user_ns(seq);
- 
- 	if (!ns->parent)
- 		return -EPERM;
- 
-+	if ((seq_ns != ns) && (seq_ns != ns->parent))
-+		return -EPERM;
-+
- 	return map_write(file, buf, size, ppos, CAP_SETGID,
- 			 &ns->gid_map, &ns->parent->gid_map);
- }
+ int __init sysfs_init(void)
 -- 
 1.7.5.4
