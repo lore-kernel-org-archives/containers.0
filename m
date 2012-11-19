@@ -1,14 +1,16 @@
-From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 6/6] userns: fix return value on mntns_install() failure
-Date: Mon, 19 Nov 2012 02:50:22 -0800
-Message-ID: <1353322222-27060-6-git-send-email-ebiederm@xmission.com>
-References: <87k3thc1h3.fsf@xmission.com>
-	<1353322222-27060-1-git-send-email-ebiederm@xmission.com>
+From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 05/11] pidns: Make the pidns proc mount/umount logic
+	obvious.
+Date: Mon, 19 Nov 2012 19:02:23 +0800
+Message-ID: <50AA11BF.1090201@cn.fujitsu.com>
+References: <8739097bkk.fsf@xmission.com>
+	<1353083750-3621-1-git-send-email-ebiederm@xmission.com>
+	<1353083750-3621-5-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1353322222-27060-1-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <1353083750-3621-5-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,32 +20,34 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Zhao Hongjiang <zhaohongjiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-
-Change return value from -EINVAL to -EPERM when the permission check fails.
-
-Signed-off-by: Zhao Hongjiang <zhaohongjiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- fs/namespace.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-diff --git a/fs/namespace.c b/fs/namespace.c
-index 9ddc86f..cab78a7 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -2775,7 +2775,7 @@ static int mntns_install(struct nsproxy *nsproxy, void *ns)
- 
- 	if (!ns_capable(mnt_ns->user_ns, CAP_SYS_ADMIN) ||
- 	    !nsown_capable(CAP_SYS_CHROOT))
--		return -EINVAL;
-+		return -EPERM;
- 
- 	if (fs->users != 1)
- 		return -EINVAL;
--- 
-1.7.5.4
+5LqOIDIwMTLlubQxMeaciDE35pelIDAwOjM1LCBFcmljIFcuIEJpZWRlcm1hbiDlhpnpgZM6Cj4g
+RnJvbTogIkVyaWMgVy4gQmllZGVybWFuIiA8ZWJpZWRlcm1AeG1pc3Npb24uY29tPgo+IAo+IFRy
+YWNrIHRoZSBudW1iZXIgb2YgcGlkcyBpbiB0aGUgcHJvYyBoYXNoIHRhYmxlLiAgV2hlbiB0aGUg
+bnVtYmVyIG9mCj4gcGlkcyBnb2VzIHRvIDAgc2NoZWR1bGUgd29yayB0byB1bm1vdW50IHRoZSBr
+ZXJuZWwgbW91bnQgb2YgcHJvYy4KPiAKPiBNb3ZlIHRoZSBtb3VudCBvZiBwcm9jIGludG8gYWxs
+b2NfcGlkIHdoZW4gd2UgYWxsb2NhdGUgdGhlIHBpZCBmb3IKPiBpbml0Lgo+IAo+IFJlbW92ZSB0
+aGUgc3VycHJpc2luZyBjYWxscyBvZiBwaWRfbnNfcmVsZWFzZSBwcm9jIGluIGZvcmsgYW5kCj4g
+cHJvY19mbHVzaF90YXNrLiAgVGhvc2UgY29kZSBwYXRocyByZWFsbHkgc2hvdWxkbid0IGtub3cg
+YWJvdXQgcHJvYwo+IG5hbWVzcGFjZSBpbXBsZW1lbnRhdGlvbiBkZXRhaWxzIGFuZCBwZW9wbGUg
+aGF2ZSBkZW1vbnN0cmF0ZWQgc2V2ZXJhbAo+IHRpbWVzIHRoYXQgZmluZGluZyBhbmQgdW5kZXJz
+dGFuZGluZyB0aG9zZSBjb2RlIHBhdGhzIGlzIGRpZmZpY3VsdCBhbmQKPiBub24tb2J2aW91cy4K
+PiAKPiBCZWNhdXNlIG9mIHRoZSBjYWxsIHBhdGggZGV0YWNoIHBpZCBpcyBhbHdhc3kgY2FsbGVk
+IHdpdGggdGhlCj4gcnRubF9sb2NrIGhlbGQgZnJlZV9waWQgaXMgbm90IGFsbG93ZWQgdG8gc2xl
+ZXAsIHNvIHRoZSB3b3JrIHRvCj4gdW5tb3VudGluZyBwcm9jIGlzIG1vdmVkIHRvIGEgd29yayBx
+dWV1ZS4gIFRoaXMgaGFzIHRoZSBzaWRlIGJlbmVmaXQKPiBvZiBub3QgYmxvY2tpbmcgdGhlIGVu
+dGlyZSB3b3JsZCB3YWl0aW5nIGZvciB0aGUgdW5uZWNlc3NhcnkKPiByY3VfYmFycmllciBpbiBk
+ZWFjdGl2YXRlX2xvY2tlZF9zdXBlci4KPiAKPiBJbiB0aGUgcHJvY2VzcyBvZiBtYWtpbmcgdGhl
+IGNvZGUgY2xlYXIgYW5kIG9idmlvdXMgdGhpcyBmaXhlcyBhIGJ1Zwo+IHJlcG9ydGVkIGJ5IEdh
+byBmZW5nIDxnYW9mZW5nQGNuLmZ1aml0c3UuY29tPiB3aGVyZSB3ZSB3b3VsZCBsZWFrIGEKPiBt
+b3VudCBvZiBwcm9jIGR1cmluZyBjbG9uZShDTE9ORV9ORVdQSUR8Q0xPTkVfTkVXTkVUKSBpZiBj
+b3B5X3BpZF9ucwo+IHN1Y2NlZWRlZCBhbmQgY29weV9uZXRfbnMgZmFpbGVkLgo+IAo+IEFja2Vk
+LWJ5OiAiU2VyZ2UgRS4gSGFsbHluIiA8c2VyZ2VAaGFsbHluLmNvbT4KPiBTaWduZWQtb2ZmLWJ5
+OiAiRXJpYyBXLiBCaWVkZXJtYW4iIDxlYmllZGVybUB4bWlzc2lvbi5jb20+Cj4gLS0tCgpBY2tl
+ZC1ieTogR2FvIGZlbmcgPGdhb2ZlbmdAY24uZnVqaXRzdS5jb20+Cl9fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNv
+bnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZv
+dW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
