@@ -1,8 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 05/16] userns: Allow unprivileged users to create new
-	namespaces
-Date: Mon, 19 Nov 2012 07:12:30 -0800
-Message-ID: <1353337961-12962-5-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH review 06/16] userns: Allow unprivileged use of setns.
+Date: Mon, 19 Nov 2012 07:12:31 -0800
+Message-ID: <1353337961-12962-6-git-send-email-ebiederm@xmission.com>
 References: <87lidx8wbo.fsf@xmission.com>
 	<1353337961-12962-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -25,44 +24,89 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-If an unprivileged user has the appropriate capabilities in their
-current user namespace allow the creation of new namespaces.
+- Push the permission check from the core setns syscall into
+  the setns install methods where the user namespace of the
+  target namespace can be determined, and used in a ns_capable
+  call.
 
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- kernel/nsproxy.c |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
+ ipc/namespace.c          |    6 +++++-
+ kernel/nsproxy.c         |    3 ---
+ kernel/utsname.c         |    7 ++++++-
+ net/core/net_namespace.c |    7 ++++++-
+ 4 files changed, 17 insertions(+), 6 deletions(-)
 
+diff --git a/ipc/namespace.c b/ipc/namespace.c
+index f362298c..6ed33c0 100644
+--- a/ipc/namespace.c
++++ b/ipc/namespace.c
+@@ -161,8 +161,12 @@ static void ipcns_put(void *ns)
+ 	return put_ipc_ns(ns);
+ }
+ 
+-static int ipcns_install(struct nsproxy *nsproxy, void *ns)
++static int ipcns_install(struct nsproxy *nsproxy, void *new)
+ {
++	struct ipc_namespace *ns = new;
++	if (!ns_capable(ns->user_ns, CAP_SYS_ADMIN))
++		return -EPERM;
++
+ 	/* Ditch state from the old ipc namespace */
+ 	exit_sem(current);
+ 	put_ipc_ns(nsproxy->ipc_ns);
 diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-index 7f8b051..a214e0e 100644
+index a214e0e..4357a0a 100644
 --- a/kernel/nsproxy.c
 +++ b/kernel/nsproxy.c
-@@ -122,6 +122,7 @@ out_ns:
- int copy_namespaces(unsigned long flags, struct task_struct *tsk)
- {
- 	struct nsproxy *old_ns = tsk->nsproxy;
-+	struct user_namespace *user_ns = task_cred_xxx(tsk, user_ns);
- 	struct nsproxy *new_ns;
- 	int err = 0;
- 
-@@ -134,7 +135,7 @@ int copy_namespaces(unsigned long flags, struct task_struct *tsk)
- 				CLONE_NEWPID | CLONE_NEWNET)))
- 		return 0;
- 
--	if (!capable(CAP_SYS_ADMIN)) {
-+	if (!ns_capable(user_ns, CAP_SYS_ADMIN)) {
- 		err = -EPERM;
- 		goto out;
- 	}
-@@ -191,7 +192,7 @@ int unshare_nsproxy_namespaces(unsigned long unshare_flags,
- 			       CLONE_NEWNET | CLONE_NEWPID)))
- 		return 0;
+@@ -242,9 +242,6 @@ SYSCALL_DEFINE2(setns, int, fd, int, nstype)
+ 	struct file *file;
+ 	int err;
  
 -	if (!capable(CAP_SYS_ADMIN))
-+	if (!nsown_capable(CAP_SYS_ADMIN))
- 		return -EPERM;
+-		return -EPERM;
+-
+ 	file = proc_ns_fget(fd);
+ 	if (IS_ERR(file))
+ 		return PTR_ERR(file);
+diff --git a/kernel/utsname.c b/kernel/utsname.c
+index 679d97a..4a9362f 100644
+--- a/kernel/utsname.c
++++ b/kernel/utsname.c
+@@ -102,8 +102,13 @@ static void utsns_put(void *ns)
+ 	put_uts_ns(ns);
+ }
  
- 	*new_nsp = create_new_namespaces(unshare_flags, current,
+-static int utsns_install(struct nsproxy *nsproxy, void *ns)
++static int utsns_install(struct nsproxy *nsproxy, void *new)
+ {
++	struct uts_namespace *ns = new;
++
++	if (!ns_capable(ns->user_ns, CAP_SYS_ADMIN))
++		return -EPERM;
++
+ 	get_uts_ns(ns);
+ 	put_uts_ns(nsproxy->uts_ns);
+ 	nsproxy->uts_ns = ns;
+diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
+index 6456439..ec2870b 100644
+--- a/net/core/net_namespace.c
++++ b/net/core/net_namespace.c
+@@ -630,8 +630,13 @@ static void netns_put(void *ns)
+ 
+ static int netns_install(struct nsproxy *nsproxy, void *ns)
+ {
++	struct net *net = ns;
++
++	if (!ns_capable(net->user_ns, CAP_SYS_ADMIN))
++		return -EPERM;
++
+ 	put_net(nsproxy->net_ns);
+-	nsproxy->net_ns = get_net(ns);
++	nsproxy->net_ns = get_net(net);
+ 	return 0;
+ }
+ 
 -- 
 1.7.5.4
