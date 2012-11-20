@@ -1,8 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 5/7] netprio_cgroup: use cgroup->id instead of
-	cgroup_netprio_state->prioidx
-Date: Mon, 19 Nov 2012 23:06:28 -0800
-Message-ID: <1353395190-4530-6-git-send-email-tj@kernel.org>
+Subject: [PATCH 7/7] netprio_cgroup: allow nesting and inherit config on
+	cgroup creation
+Date: Mon, 19 Nov 2012 23:06:30 -0800
+Message-ID: <1353395190-4530-8-git-send-email-tj@kernel.org>
 References: <1353395190-4530-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,204 +22,108 @@ To: daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org, serge.hallyn-Z7WLFzj8
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-With priomap expansion no longer depending on knowing max id
-allocated, netprio_cgroup can use cgroup->id insted of cs->prioidx.
-Drop prioidx alloc/free logic and convert all uses to cgroup->id.
+Inherit netprio configuration from ->css_online(), allow nesting and
+remove .broken_hierarchy marking.  This makes netprio_cgroup's
+behavior match netcls_cgroup's.
 
-* In cgrp_css_alloc(), parent->id test is moved above @cs allocation
-  to simplify error path.
-
-* In cgrp_css_free(), @cs assignment is made initialization.
+Note that this patch changes userland-visible behavior.  Nesting is
+allowed and the first level cgroups below the root cgroup behave
+differently - they inherit priorities from the root cgroup on creation
+instead of starting with 0.  This is unfortunate but not doing so is
+much crazier.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Acked-by: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>
 ---
- include/net/netprio_cgroup.h | 11 +++-----
- net/core/netprio_cgroup.c    | 65 ++++++++------------------------------------
- 2 files changed, 15 insertions(+), 61 deletions(-)
+ Documentation/cgroups/net_prio.txt |  2 ++
+ net/core/netprio_cgroup.c          | 42 ++++++++++++++++++++++----------------
+ 2 files changed, 26 insertions(+), 18 deletions(-)
 
-diff --git a/include/net/netprio_cgroup.h b/include/net/netprio_cgroup.h
-index 2760f4f..1d04b6f 100644
---- a/include/net/netprio_cgroup.h
-+++ b/include/net/netprio_cgroup.h
-@@ -27,7 +27,6 @@ struct netprio_map {
- 
- struct cgroup_netprio_state {
- 	struct cgroup_subsys_state css;
--	u32 prioidx;
- };
- 
- extern void sock_update_netprioidx(struct sock *sk, struct task_struct *task);
-@@ -36,13 +35,12 @@ extern void sock_update_netprioidx(struct sock *sk, struct task_struct *task);
- 
- static inline u32 task_netprioidx(struct task_struct *p)
- {
--	struct cgroup_netprio_state *state;
-+	struct cgroup_subsys_state *css;
- 	u32 idx;
- 
- 	rcu_read_lock();
--	state = container_of(task_subsys_state(p, net_prio_subsys_id),
--			     struct cgroup_netprio_state, css);
--	idx = state->prioidx;
-+	css = task_subsys_state(p, net_prio_subsys_id);
-+	idx = css->cgroup->id;
- 	rcu_read_unlock();
- 	return idx;
- }
-@@ -57,8 +55,7 @@ static inline u32 task_netprioidx(struct task_struct *p)
- 	rcu_read_lock();
- 	css = task_subsys_state(p, net_prio_subsys_id);
- 	if (css)
--		idx = container_of(css,
--				   struct cgroup_netprio_state, css)->prioidx;
-+		idx = css->cgroup->id;
- 	rcu_read_unlock();
- 	return idx;
- }
+diff --git a/Documentation/cgroups/net_prio.txt b/Documentation/cgroups/net_prio.txt
+index 01b3226..a82cbd2 100644
+--- a/Documentation/cgroups/net_prio.txt
++++ b/Documentation/cgroups/net_prio.txt
+@@ -51,3 +51,5 @@ One usage for the net_prio cgroup is with mqprio qdisc allowing application
+ traffic to be steered to hardware/driver based traffic classes. These mappings
+ can then be managed by administrators or other networking protocols such as
+ DCBX.
++
++A new net_prio cgroup inherits the parent's configuration.
 diff --git a/net/core/netprio_cgroup.c b/net/core/netprio_cgroup.c
-index 569d83d..9409cdf 100644
+index b2af0d0..bde53da 100644
 --- a/net/core/netprio_cgroup.c
 +++ b/net/core/netprio_cgroup.c
-@@ -28,10 +28,6 @@
- #include <linux/fdtable.h>
- 
- #define PRIOMAP_MIN_SZ		128
--#define PRIOIDX_SZ 128
--
--static unsigned long prioidx_map[PRIOIDX_SZ];
--static DEFINE_SPINLOCK(prioidx_map_lock);
- 
- static inline struct cgroup_netprio_state *cgrp_netprio_state(struct cgroup *cgrp)
- {
-@@ -39,32 +35,6 @@ static inline struct cgroup_netprio_state *cgrp_netprio_state(struct cgroup *cgr
- 			    struct cgroup_netprio_state, css);
- }
- 
--static int get_prioidx(u32 *prio)
--{
--	unsigned long flags;
--	u32 prioidx;
--
--	spin_lock_irqsave(&prioidx_map_lock, flags);
--	prioidx = find_first_zero_bit(prioidx_map, sizeof(unsigned long) * PRIOIDX_SZ);
--	if (prioidx == sizeof(unsigned long) * PRIOIDX_SZ) {
--		spin_unlock_irqrestore(&prioidx_map_lock, flags);
--		return -ENOSPC;
--	}
--	set_bit(prioidx, prioidx_map);
--	spin_unlock_irqrestore(&prioidx_map_lock, flags);
--	*prio = prioidx;
--	return 0;
--}
--
--static void put_prioidx(u32 idx)
--{
--	unsigned long flags;
--
--	spin_lock_irqsave(&prioidx_map_lock, flags);
--	clear_bit(idx, prioidx_map);
--	spin_unlock_irqrestore(&prioidx_map_lock, flags);
--}
--
- /*
-  * Extend @dev->priomap so that it's large enough to accomodate
-  * @target_idx.  @dev->priomap.priomap_len > @target_idx after successful
-@@ -120,62 +90,50 @@ static int extend_netdev_table(struct net_device *dev, u32 target_idx)
- static struct cgroup_subsys_state *cgrp_css_alloc(struct cgroup *cgrp)
+@@ -136,9 +136,6 @@ static struct cgroup_subsys_state *cgrp_css_alloc(struct cgroup *cgrp)
  {
  	struct cgroup_netprio_state *cs;
--	int ret = -EINVAL;
-+
-+	if (cgrp->parent && cgrp->parent->id)
-+		return ERR_PTR(-EINVAL);
  
+-	if (cgrp->parent && cgrp->parent->id)
+-		return ERR_PTR(-EINVAL);
+-
  	cs = kzalloc(sizeof(*cs), GFP_KERNEL);
  	if (!cs)
  		return ERR_PTR(-ENOMEM);
- 
--	if (cgrp->parent && cgrp_netprio_state(cgrp->parent)->prioidx)
--		goto out;
--
--	ret = get_prioidx(&cs->prioidx);
--	if (ret < 0) {
--		pr_warn("No space in priority index array\n");
--		goto out;
--	}
--
+@@ -146,16 +143,34 @@ static struct cgroup_subsys_state *cgrp_css_alloc(struct cgroup *cgrp)
  	return &cs->css;
--out:
--	kfree(cs);
--	return ERR_PTR(ret);
  }
  
- static void cgrp_css_free(struct cgroup *cgrp)
+-static void cgrp_css_free(struct cgroup *cgrp)
++static int cgrp_css_online(struct cgroup *cgrp)
  {
--	struct cgroup_netprio_state *cs;
-+	struct cgroup_netprio_state *cs = cgrp_netprio_state(cgrp);
+-	struct cgroup_netprio_state *cs = cgrp_netprio_state(cgrp);
++	struct cgroup *parent = cgrp->parent;
  	struct net_device *dev;
- 	struct netprio_map *map;
++	int ret = 0;
++
++	if (!parent)
++		return 0;
  
--	cs = cgrp_netprio_state(cgrp);
  	rtnl_lock();
- 	for_each_netdev(&init_net, dev) {
- 		map = rtnl_dereference(dev->priomap);
--		if (map && cs->prioidx < map->priomap_len)
--			map->priomap[cs->prioidx] = 0;
-+		if (map && cgrp->id < map->priomap_len)
-+			map->priomap[cgrp->id] = 0;
- 	}
+-	for_each_netdev(&init_net, dev)
+-		WARN_ON_ONCE(netprio_set_prio(cgrp, dev, 0));
++	/*
++	 * Inherit prios from the parent.  As all prios are set during
++	 * onlining, there is no need to clear them on offline.
++	 */
++	for_each_netdev(&init_net, dev) {
++		u32 prio = netprio_prio(parent, dev);
++
++		ret = netprio_set_prio(cgrp, dev, prio);
++		if (ret)
++			break;
++	}
  	rtnl_unlock();
--	put_prioidx(cs->prioidx);
- 	kfree(cs);
+-	kfree(cs);
++	return ret;
++}
++
++static void cgrp_css_free(struct cgroup *cgrp)
++{
++	kfree(cgrp_netprio_state(cgrp));
  }
  
  static u64 read_prioidx(struct cgroup *cgrp, struct cftype *cft)
- {
--	return (u64)cgrp_netprio_state(cgrp)->prioidx;
-+	return cgrp->id;
- }
+@@ -237,21 +252,12 @@ static struct cftype ss_files[] = {
+ struct cgroup_subsys net_prio_subsys = {
+ 	.name		= "net_prio",
+ 	.css_alloc	= cgrp_css_alloc,
++	.css_online	= cgrp_css_online,
+ 	.css_free	= cgrp_css_free,
+ 	.attach		= net_prio_attach,
+ 	.subsys_id	= net_prio_subsys_id,
+ 	.base_cftypes	= ss_files,
+ 	.module		= THIS_MODULE,
+-
+-	/*
+-	 * net_prio has artificial limit on the number of cgroups and
+-	 * disallows nesting making it impossible to co-mount it with other
+-	 * hierarchical subsystems.  Remove the artificially low PRIOIDX_SZ
+-	 * limit and properly nest configuration such that children follow
+-	 * their parents' configurations by default and are allowed to
+-	 * override and remove the following.
+-	 */
+-	.broken_hierarchy = true,
+ };
  
- static int read_priomap(struct cgroup *cont, struct cftype *cft,
- 			struct cgroup_map_cb *cb)
- {
- 	struct net_device *dev;
--	u32 prioidx = cgrp_netprio_state(cont)->prioidx;
-+	u32 id = cont->id;
- 	u32 priority;
- 	struct netprio_map *map;
- 
- 	rcu_read_lock();
- 	for_each_netdev_rcu(&init_net, dev) {
- 		map = rcu_dereference(dev->priomap);
--		priority = (map && prioidx < map->priomap_len) ? map->priomap[prioidx] : 0;
-+		priority = (map && id < map->priomap_len) ? map->priomap[id] : 0;
- 		cb->fill(cb, dev->name, priority);
- 	}
- 	rcu_read_unlock();
-@@ -185,7 +143,6 @@ static int read_priomap(struct cgroup *cont, struct cftype *cft,
- static int write_priomap(struct cgroup *cgrp, struct cftype *cft,
- 			 const char *buffer)
- {
--	u32 prioidx = cgrp_netprio_state(cgrp)->prioidx;
- 	char devname[IFNAMSIZ + 1];
- 	struct net_device *dev;
- 	struct netprio_map *map;
-@@ -201,13 +158,13 @@ static int write_priomap(struct cgroup *cgrp, struct cftype *cft,
- 
- 	rtnl_lock();
- 
--	ret = extend_netdev_table(dev, prioidx);
-+	ret = extend_netdev_table(dev, cgrp->id);
- 	if (ret)
- 		goto out_unlock;
- 
- 	map = rtnl_dereference(dev->priomap);
- 	if (map)
--		map->priomap[prioidx] = prio;
-+		map->priomap[cgrp->id] = prio;
- out_unlock:
- 	rtnl_unlock();
- 	dev_put(dev);
+ static int netprio_device_event(struct notifier_block *unused,
 -- 
 1.7.11.7
