@@ -1,16 +1,15 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 03/11] pidns: Capture the user namespace and filter
-	ns_last_pid
-Date: Wed, 21 Nov 2012 09:26:03 +0800
-Message-ID: <50AC2DAB.8010609@cn.fujitsu.com>
+Subject: Re: [PATCH 04/11] pidns: Use task_active_pid_ns where appropriate
+Date: Wed, 21 Nov 2012 10:02:19 +0800
+Message-ID: <50AC362B.9040606@cn.fujitsu.com>
 References: <8739097bkk.fsf@xmission.com>
 	<1353083750-3621-1-git-send-email-ebiederm@xmission.com>
-	<1353083750-3621-3-git-send-email-ebiederm@xmission.com>
+	<1353083750-3621-4-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1353083750-3621-3-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <1353083750-3621-4-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,12 +26,20 @@ List-Id: containers.vger.kernel.org
 on 2012/11/17 00:35, Eric W. Biederman wrote:
 > From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 > 
-> - Capture the the user namespace that creates the pid namespace
-> - Use that user namespace to test if it is ok to write to
->   /proc/sys/kernel/ns_last_pid.
+> The expressions tsk->nsproxy->pid_ns and task_active_pid_ns
+> aka ns_of_pid(task_pid(tsk)) should have the same number of
+> cache line misses with the practical difference that
+> ns_of_pid(task_pid(tsk)) is released later in a processes life.
 > 
-> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> Furthermore by using task_active_pid_ns it becomes trivial
+> to write an unshare implementation for the the pid namespace.
+> 
+> So I have used task_active_pid_ns everywhere I can.
+> 
+> In fork since the pid has not yet been attached to the
+> process I use ns_of_pid, to achieve the same effect.
+> 
+> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 > ---
 
 Acked-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
