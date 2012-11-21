@@ -1,14 +1,15 @@
 From: Rui Xiang <leo.ruixiang-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH RFC 0/5] Containerize syslog
-Date: Wed, 21 Nov 2012 17:35:27 +0800
-Message-ID: <50ACA05F.7080005@gmail.com>
-References: <50A9EAD8.9090501@gmail.com>
-	<20121119143702.GB4620@mail.hallyn.com>
+Subject: Re: [PATCH RFC 3/5] printk: modify printk interface for
+	syslog_namespace
+Date: Wed, 21 Nov 2012 17:41:58 +0800
+Message-ID: <50ACA1E6.2040404@gmail.com>
+References: <50A9EAF0.4000902@gmail.com>
+	<20121119142926.GB4453@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20121119143702.GB4620-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+In-Reply-To: <20121119142926.GB4453-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,37 +23,60 @@ To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 2012-11-19 22:37, Serge E. Hallyn wrote:
-> Quoting Rui Xiang (leo.ruixiang-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
->> From: Xiang Rui <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+From: Libo Chen <clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+
+On 2012-11-19 22:29, Serge E. Hallyn wrote:> Quoting Rui Xiang (leo.ruixiang-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+>> From: Libo Chen <clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 >>
->> In Serge's patch (http://lwn.net/Articles/525629/), syslog_namespace was tied to a user
->> namespace. We add syslog_ns tied to nsproxy instead, and implement ns_printk in
->> ip_table context.
-> 
-> Since you say 'we', I'm just wondering, which project is this a part of?
-> 
+>> We re-implement printk by additional syslog_ns.
+>>
+>> The function include printk, /dev/kmsg, do_syslog and kmsg_dump should be modifyed
+>> for syslog_ns. Previous identifier *** such as log_first_seq should be replaced
+>> by syslog_ns->***.
+>>
+>> Signed-off-by: Libo Chen <clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+>> Signed-off-by: Xiang Rui <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+>> ---
 
-Hi,Serge
+.......
 
-Thank you for your attention.
+>>  	lockdep_on();
+>> @@ -1624,7 +1618,8 @@ EXPORT_SYMBOL(vprintk_emit);
+>>
+>>  asmlinkage int vprintk(const char *fmt, va_list args)
+>>  {
+>> -	return vprintk_emit(0, -1, NULL, 0, fmt, args);
+>> +	return vprintk_emit(0, -1, NULL, 0, fmt, args,
+>> +				current_syslog_ns());
+>>  }
+>>  EXPORT_SYMBOL(vprintk);
+>>
+>> @@ -1636,7 +1631,8 @@ asmlinkage int printk_emit(int facility, int level,
+>>  	int r;
+>>
+>>  	va_start(args, fmt);
+>> -	r = vprintk_emit(facility, level, dict, dictlen, fmt, args);
+>> +	r = vprintk_emit(facility, level, dict, dictlen, fmt, args,
+>> +						current_syslog_ns());
+>>  	va_end(args);
+>>
+>>  	return r;
+>> @@ -1678,7 +1674,7 @@ asmlinkage int printk(const char *fmt, ...)
+>>  	}
+>>  #endif
+>>  	va_start(args, fmt);
+>> -	r = vprintk_emit(0, -1, NULL, 0, fmt, args);
+>> +	r = vprintk_emit(0, -1, NULL, 0, fmt, args, current_syslog_ns());
+>
+> Current is meaningless here.  The default should be using init_syslog_ns.
 
-We may use container in our company, and one of the missing part we found is syslog
-isolation (though we require this feature or not is not sure at this moment), so we
-made this patchset.
+Thank for your attention.
 
->> We add syslog_namespace as a part of nsproxy, and a new flag CLONE_SYSLOG to unshare
->> syslog area.
-> 
-> Thanks, looks like you save me the time of having to add some users of
-> nsprintk :)
-> 
-> I understand that user namespaces aren't 100% usable yet, but looking
-> long term, is there a reason to have the syslog namespace separate
-> from user namespace?
+I understand what you mean.
+printk -> init_syslog_log
+nsprintk(ns) -> container syslog
 
-Actually we don't have strong preference. We'll think more about it. Hope we can make
-consensus with Eric.
+I think it makes sense.
 
-Thanks,
-Rui Xiang
+thanks
+Libo Chen
