@@ -1,15 +1,16 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 02/11] procfs: Don't cache a pid in the root inode.
-Date: Wed, 21 Nov 2012 09:07:41 +0800
-Message-ID: <50AC295D.9040101@cn.fujitsu.com>
+Subject: Re: [PATCH 03/11] pidns: Capture the user namespace and filter
+	ns_last_pid
+Date: Wed, 21 Nov 2012 09:26:03 +0800
+Message-ID: <50AC2DAB.8010609@cn.fujitsu.com>
 References: <8739097bkk.fsf@xmission.com>
 	<1353083750-3621-1-git-send-email-ebiederm@xmission.com>
-	<1353083750-3621-2-git-send-email-ebiederm@xmission.com>
+	<1353083750-3621-3-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1353083750-3621-2-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <1353083750-3621-3-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,17 +24,15 @@ To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 2012/11/17 00:35, Eric W. Biederman wrote:
+on 2012/11/17 00:35, Eric W. Biederman wrote:
 > From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 > 
-> Now that we have s_fs_info pointing to our pid namespace
-> the original reason for the proc root inode having a struct
-> pid is gone.
+> - Capture the the user namespace that creates the pid namespace
+> - Use that user namespace to test if it is ok to write to
+>   /proc/sys/kernel/ns_last_pid.
 > 
-> Caching a pid in the root inode has led to some complicated
-> code.  Now that we don't need the struct pid, just remove it.
-> 
-> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 > ---
 
 Acked-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
