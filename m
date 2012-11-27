@@ -1,15 +1,13 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 4/4] setns.2: Document the pid, user,
-	and mount namespace support.
-Date: Mon, 26 Nov 2012 18:48:45 -0600
-Message-ID: <87k3t7q39u.fsf__40841.4980200634$1353977348$gmane$org@xmission.com>
-References: <87a9u4rmz0.fsf@xmission.com>
+From: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Mapping between host & container PIDs ?
+Date: Tue, 27 Nov 2012 10:15:55 +0000
+Message-ID: <20121127101555.GE24370@redhat.com>
+Reply-To: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87a9u4rmz0.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (Eric W. Biederman's message of
-	"Mon, 26 Nov 2012 16:57:55 -0600")
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,88 +17,29 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+I'm trying to find out if there is a way to map between host and container
+PIDs, at minimum in the host -> container direction. My use case is to be
+able to kill processes associated with a container, based on the host PID,
+in a race free manner.
 
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- man2/setns.2 |   41 +++++++++++++++++++++++++++++++++--------
- 1 files changed, 33 insertions(+), 8 deletions(-)
+Given a host PID, I can read the 'tasks' file for the container's cgroup
+to verify that the PID is associated with the container in question. Then
+I can kill the PID with a signal. There is a small race condition in there,
+where the PID could die & a new process could be born using the original
+PID. Now this might not be very likely but I was thinking that if it is
+possible to map from a host PID to a container PID, you can do it more
+safely. eg Lookup the container PID associted with the host PID, then
+setns() into the container and kill the container PID. Now although there
+is still a race condition, you are guaranteed that if the race hits you'll
+only kill a process within the same container, not the host at large,
+which is good when the user invoking the API is unprivileged.
 
-diff --git a/man2/setns.2 b/man2/setns.2
-index 6aa01e1..63b04dc 100644
---- a/man2/setns.2
-+++ b/man2/setns.2
-@@ -48,6 +48,18 @@ must refer to a network namespace.
- .BR CLONE_NEWUTS
- .I fd
- must refer to a UTS namespace.
-+.TP
-+.BR CLONE_NEWPID
-+.I fd
-+must refer to a PID namespace.
-+.TP
-+.BR CLONE_NEWUSER
-+.I fd
-+must refer to a user namespace.
-+.TP
-+.BR CLONE_NEWNS
-+.I fd
-+must refer to a mount namespace.
- .PP
- Specifying
- .I nstype
-@@ -63,6 +75,25 @@ and wants to ensure that the namespace is of a particular type.
- .IR fd
- if the file descriptor was opened by another process and, for example,
- passed to the caller via a UNIX domain socket.)
-+
-+The pid namespace is a little different.  Reassociating the calling
-+thread with a pid namespace only changes the pid namespace that the
-+child processes will be created in.
-+
-+Changing the pid namespace for child processes is only allowed if the
-+pid namespace specified by
-+.IR fd
-+is a child pid namespace of the pid namespace of the current thread.
-+
-+A multi-threaded process may not change user namespace with setns.  A
-+process may not reassociate the thread with the current user
-+namespace.  The process reassociating itself with a user namespace
-+must have CAP_SYS_ADMIN privileges in the target user namespace.
-+
-+A process may not be reassociated with a new mount namespace if it is
-+multi-threaded or it does not possess both CAP_SYS_CHROOT privileges
-+and CAP_SYS_ADMIN rights over the target mount namespace.
-+
- .SH RETURN VALUE
- On success,
- .IR setns ()
-@@ -94,7 +125,8 @@ for this operation.
- The
- .BR setns ()
- system call first appeared in Linux in kernel 3.0;
--library support was added to glibc in version 2.14.
-+library support was added to glibc in version 2.14;
-+Support for PID, user and mount namespaces first appeard in Linux in kernel 3.8.
- .SH CONFORMING TO
- The
- .BR setns ()
-@@ -106,13 +138,6 @@ a new thread is created using
- can be changed using
- .BR setns ().
- .SH BUGS
--The PID namespace and the mount namespace are not currently supported.
--(See the descriptions of
--.BR CLONE_NEWPID
--and
--.BR CLONE_NEWNS
--in
--.BR clone (2).)
- .SH SEE ALSO
- .BR clone (2),
- .BR fork (2),
+Daniel
 -- 
-1.7.5.4
+|: http://berrange.com      -o-    http://www.flickr.com/photos/dberrange/ :|
+|: http://libvirt.org              -o-             http://virt-manager.org :|
+|: http://autobuild.org       -o-         http://search.cpan.org/~danberr/ :|
+|: http://entangle-photo.org       -o-       http://live.gnome.org/gtk-vnc :|
