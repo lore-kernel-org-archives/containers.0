@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 06/13] cpuset: cleanup cpuset[_can]_attach()
-Date: Wed, 28 Nov 2012 13:34:13 -0800
-Message-ID: <1354138460-19286-7-git-send-email-tj__15563.6465097361$1354138534$gmane$org@kernel.org>
+Subject: [PATCH 07/13] cpuset: drop async_rebuild_sched_domains()
+Date: Wed, 28 Nov 2012 13:34:14 -0800
+Message-ID: <1354138460-19286-8-git-send-email-tj__15374.8211138465$1354138539$gmane$org@kernel.org>
 References: <1354138460-19286-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,97 +21,182 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-cpuset_can_attach() prepare global variables cpus_attach and
-cpuset_attach_nodemask_{to|from} which are used by cpuset_attach().
-There is no reason to prepare in cpuset_can_attach().  The same
-information can be accessed from cpuset_attach().
+get_online_cpus() is already nested inside cgroup_mutex from memcg
+when it's registering cpu notifiers.  Also, in generall, we want to
+make cgroup_mutex one of the outermost locks and be able to use
+get_online_cpus() and friends from cgroup methods.
 
-Move the prepartion logic from cpuset_can_attach() to cpuset_attach()
-and make the global variables static ones inside cpuset_attach().
+Currently, cpuset avoids nesting get_online_cpus() inside cgroup_mutex
+by bouncing sched_domain rebuilding to a work item.  As such nesting
+is gonna be allowed, remove the workqueue bouncing code and always
+rebuild sched_domains synchronously.  This also nests
+sched_domains_mutex inside cgroup_mutex, which should be okay.
 
-While at it, convert cpus_attach to cpumask_t from cpumask_var_t.
-There's no reason to mess with dynamic allocation on a static buffer.
+Note that the CPU / memory hotplug path still grabs the two locks in
+the reverse order and thus this is a deadlock hazard; however, the two
+locks are already deadlock-prone and the hotplug path will be updated
+by further patches.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cpuset.c | 34 +++++++++++++---------------------
- 1 file changed, 13 insertions(+), 21 deletions(-)
+ kernel/cpuset.c | 76 ++++++++++++---------------------------------------------
+ 1 file changed, 16 insertions(+), 60 deletions(-)
 
 diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index 5a52ed6..8bdd983 100644
+index 8bdd983..2049504 100644
 --- a/kernel/cpuset.c
 +++ b/kernel/cpuset.c
-@@ -1395,15 +1395,6 @@ static int fmeter_getrate(struct fmeter *fmp)
- 	return val;
+@@ -61,14 +61,6 @@
+ #include <linux/cgroup.h>
+ 
+ /*
+- * Workqueue for cpuset related tasks.
+- *
+- * Using kevent workqueue may cause deadlock when memory_migrate
+- * is set. So we create a separate workqueue thread for cpuset.
+- */
+-static struct workqueue_struct *cpuset_wq;
+-
+-/*
+  * Tracks how many cpusets are currently defined in system.
+  * When there is only one cpuset (the root cpuset) we can
+  * short circuit some hooks.
+@@ -752,25 +744,25 @@ done:
+ /*
+  * Rebuild scheduler domains.
+  *
+- * Call with neither cgroup_mutex held nor within get_online_cpus().
+- * Takes both cgroup_mutex and get_online_cpus().
++ * If the flag 'sched_load_balance' of any cpuset with non-empty
++ * 'cpus' changes, or if the 'cpus' allowed changes in any cpuset
++ * which has that flag enabled, or if any cpuset with a non-empty
++ * 'cpus' is removed, then call this routine to rebuild the
++ * scheduler's dynamic sched domains.
+  *
+- * Cannot be directly called from cpuset code handling changes
+- * to the cpuset pseudo-filesystem, because it cannot be called
+- * from code that already holds cgroup_mutex.
++ * Call with cgroup_mutex held.  Takes get_online_cpus().
+  */
+-static void do_rebuild_sched_domains(struct work_struct *unused)
++static void rebuild_sched_domains_locked(void)
+ {
+ 	struct sched_domain_attr *attr;
+ 	cpumask_var_t *doms;
+ 	int ndoms;
+ 
++	WARN_ON_ONCE(!cgroup_lock_is_held());
+ 	get_online_cpus();
+ 
+ 	/* Generate domain masks and attrs */
+-	cgroup_lock();
+ 	ndoms = generate_sched_domains(&doms, &attr);
+-	cgroup_unlock();
+ 
+ 	/* Have scheduler rebuild the domains */
+ 	partition_sched_domains(ndoms, doms, attr);
+@@ -778,7 +770,7 @@ static void do_rebuild_sched_domains(struct work_struct *unused)
+ 	put_online_cpus();
+ }
+ #else /* !CONFIG_SMP */
+-static void do_rebuild_sched_domains(struct work_struct *unused)
++static void rebuild_sched_domains_locked(void)
+ {
  }
  
--/*
-- * Protected by cgroup_lock. The nodemasks must be stored globally because
-- * dynamically allocating them is not allowed in can_attach, and they must
-- * persist until attach.
-- */
--static cpumask_var_t cpus_attach;
--static nodemask_t cpuset_attach_nodemask_from;
--static nodemask_t cpuset_attach_nodemask_to;
+@@ -790,44 +782,11 @@ static int generate_sched_domains(cpumask_var_t **domains,
+ }
+ #endif /* CONFIG_SMP */
+ 
+-static DECLARE_WORK(rebuild_sched_domains_work, do_rebuild_sched_domains);
 -
- /* Called by cgroups to determine if a cpuset is usable; cgroup_mutex held */
- static int cpuset_can_attach(struct cgroup *cgrp, struct cgroup_taskset *tset)
+-/*
+- * Rebuild scheduler domains, asynchronously via workqueue.
+- *
+- * If the flag 'sched_load_balance' of any cpuset with non-empty
+- * 'cpus' changes, or if the 'cpus' allowed changes in any cpuset
+- * which has that flag enabled, or if any cpuset with a non-empty
+- * 'cpus' is removed, then call this routine to rebuild the
+- * scheduler's dynamic sched domains.
+- *
+- * The rebuild_sched_domains() and partition_sched_domains()
+- * routines must nest cgroup_lock() inside get_online_cpus(),
+- * but such cpuset changes as these must nest that locking the
+- * other way, holding cgroup_lock() for much of the code.
+- *
+- * So in order to avoid an ABBA deadlock, the cpuset code handling
+- * these user changes delegates the actual sched domain rebuilding
+- * to a separate workqueue thread, which ends up processing the
+- * above do_rebuild_sched_domains() function.
+- */
+-static void async_rebuild_sched_domains(void)
+-{
+-	queue_work(cpuset_wq, &rebuild_sched_domains_work);
+-}
+-
+-/*
+- * Accomplishes the same scheduler domain rebuild as the above
+- * async_rebuild_sched_domains(), however it directly calls the
+- * rebuild routine synchronously rather than calling it via an
+- * asynchronous work thread.
+- *
+- * This can only be called from code that is not holding
+- * cgroup_mutex (not nested in a cgroup_lock() call.)
+- */
+ void rebuild_sched_domains(void)
  {
-@@ -1430,19 +1421,15 @@ static int cpuset_can_attach(struct cgroup *cgrp, struct cgroup_taskset *tset)
- 			return ret;
+-	do_rebuild_sched_domains(NULL);
++	cgroup_lock();
++	rebuild_sched_domains_locked();
++	cgroup_unlock();
+ }
+ 
+ /**
+@@ -947,7 +906,7 @@ static int update_cpumask(struct cpuset *cs, struct cpuset *trialcs,
+ 	heap_free(&heap);
+ 
+ 	if (is_load_balanced)
+-		async_rebuild_sched_domains();
++		rebuild_sched_domains_locked();
+ 	return 0;
+ }
+ 
+@@ -1195,7 +1154,7 @@ static int update_relax_domain_level(struct cpuset *cs, s64 val)
+ 		cs->relax_domain_level = val;
+ 		if (!cpumask_empty(cs->cpus_allowed) &&
+ 		    is_sched_load_balance(cs))
+-			async_rebuild_sched_domains();
++			rebuild_sched_domains_locked();
  	}
  
--	/* prepare for attach */
--	if (cs == &top_cpuset)
--		cpumask_copy(cpus_attach, cpu_possible_mask);
--	else
--		guarantee_online_cpus(cs, cpus_attach);
--
--	guarantee_online_mems(cs, &cpuset_attach_nodemask_to);
--
  	return 0;
+@@ -1287,7 +1246,7 @@ static int update_flag(cpuset_flagbits_t bit, struct cpuset *cs,
+ 	mutex_unlock(&callback_mutex);
+ 
+ 	if (!cpumask_empty(trialcs->cpus_allowed) && balance_flag_changed)
+-		async_rebuild_sched_domains();
++		rebuild_sched_domains_locked();
+ 
+ 	if (spread_flag_changed)
+ 		update_tasks_flags(cs, &heap);
+@@ -1905,7 +1864,7 @@ static void cpuset_css_offline(struct cgroup *cgrp)
+ /*
+  * If the cpuset being removed has its flag 'sched_load_balance'
+  * enabled, then simulate turning sched_load_balance off, which
+- * will call async_rebuild_sched_domains().
++ * will call rebuild_sched_domains_locked().
+  */
+ 
+ static void cpuset_css_free(struct cgroup *cont)
+@@ -2210,9 +2169,6 @@ void __init cpuset_init_smp(void)
+ 	top_cpuset.mems_allowed = node_states[N_HIGH_MEMORY];
+ 
+ 	hotplug_memory_notifier(cpuset_track_online_nodes, 10);
+-
+-	cpuset_wq = create_singlethread_workqueue("cpuset");
+-	BUG_ON(!cpuset_wq);
  }
  
- static void cpuset_attach(struct cgroup *cgrp, struct cgroup_taskset *tset)
- {
-+	/* static bufs protected by cgroup_mutex */
-+	static cpumask_t cpus_attach;
-+	static nodemask_t cpuset_attach_nodemask_from;
-+	static nodemask_t cpuset_attach_nodemask_to;
- 	struct mm_struct *mm;
- 	struct task_struct *task;
- 	struct task_struct *leader = cgroup_taskset_first(tset);
-@@ -1450,12 +1437,20 @@ static void cpuset_attach(struct cgroup *cgrp, struct cgroup_taskset *tset)
- 	struct cpuset *cs = cgroup_cs(cgrp);
- 	struct cpuset *oldcs = cgroup_cs(oldcgrp);
- 
-+	/* prepare for attach */
-+	if (cs == &top_cpuset)
-+		cpumask_copy(&cpus_attach, cpu_possible_mask);
-+	else
-+		guarantee_online_cpus(cs, &cpus_attach);
-+
-+	guarantee_online_mems(cs, &cpuset_attach_nodemask_to);
-+
- 	cgroup_taskset_for_each(task, cgrp, tset) {
- 		/*
- 		 * can_attach beforehand should guarantee that this doesn't
- 		 * fail.  TODO: have a better way to handle failure here
- 		 */
--		WARN_ON_ONCE(set_cpus_allowed_ptr(task, cpus_attach));
-+		WARN_ON_ONCE(set_cpus_allowed_ptr(task, &cpus_attach));
- 
- 		cpuset_change_task_nodemask(task, &cpuset_attach_nodemask_to);
- 		cpuset_update_task_spread_flag(cs, task);
-@@ -1958,9 +1953,6 @@ int __init cpuset_init(void)
- 	if (err < 0)
- 		return err;
- 
--	if (!alloc_cpumask_var(&cpus_attach, GFP_KERNEL))
--		BUG();
--
- 	number_of_cpusets = 1;
- 	return 0;
- }
+ /**
 -- 
 1.7.11.7
