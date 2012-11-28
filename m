@@ -1,15 +1,12 @@
-From: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] cgroup: fix lockdep warning for event_control
-Date: Wed, 28 Nov 2012 13:33:11 -0800
-Message-ID: <xr93hao9ifag.fsf__18274.9164909639$1354138413$gmane$org@gthelen.mtv.corp.google.com>
-References: <1354133742-22175-1-git-send-email-gthelen@google.com>
-	<20121128210719.GB24683@htj.dyndns.org>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCHSET cgroup/for-3.8] cpuset: decouple cpuset locking from cgroup
+	core
+Date: Wed, 28 Nov 2012 13:34:07 -0800
+Message-ID: <1354138460-19286-1-git-send-email-tj__40353.7604296163$1354138487$gmane$org@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20121128210719.GB24683-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org> (Tejun Heo's message of
-	"Wed, 28 Nov 2012 13:07:19 -0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,62 +16,81 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Aaron Durbin <adurbin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Nov 28 2012, Tejun Heo wrote:
+Hello, guys.
 
-> Hello, Greg.
->
-> On Wed, Nov 28, 2012 at 12:15:42PM -0800, Greg Thelen wrote:
->> @@ -4276,6 +4276,7 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
->>  	DEFINE_WAIT(wait);
->>  	struct cgroup_event *event, *tmp;
->>  	struct cgroup_subsys *ss;
->> +	struct list_head tmp_list;
->
-> LIST_HEAD(tmp_list);
->
->>  
->>  	lockdep_assert_held(&d->d_inode->i_mutex);
->>  	lockdep_assert_held(&cgroup_mutex);
->> @@ -4330,16 +4331,20 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
->>  	/*
->>  	 * Unregister events and notify userspace.
->>  	 * Notify userspace about cgroup removing only after rmdir of cgroup
->> -	 * directory to avoid race between userspace and kernelspace
->> +	 * directory to avoid race between userspace and kernelspace. Use
->> +	 * a temporary list to avoid a deadlock with cgroup_event_wake(). Since
->> +	 * cgroup_event_wake() is called with the wait queue head locked,
->> +	 * remove_wait_queue() cannot be called while holding event_list_lock.
->>  	 */
->>  	spin_lock(&cgrp->event_list_lock);
->> -	list_for_each_entry_safe(event, tmp, &cgrp->event_list, list) {
->> +	list_replace_init(&cgrp->event_list, &tmp_list);
->
-> list_splice_init();
->
-> would be more conventional, I think.
+Depending on cgroup core locking - cgroup_mutex - is messy and makes
+cgroup prone to locking dependency problems.  The current code already
+has lock dependency loop - memcg nests get_online_cpus() inside
+cgroup_mutex.  cpuset the other way around.
 
-I used list_replace_init() because it avoided unnecessary init of
-tmp_list.  But I have no objection to list_splice_init().  I'll repost
-with list_splice_init().
+Regardless of the locking details, whatever is protecting cgroup has
+inherently to be something outer to most other locking constructs.
+cgroup calls into a lot of major subsystems which in turn have to
+perform subsystem-specific locking.  Trying to nest cgroup
+synchronization inside other locks isn't something which can work
+well.
 
->> +	spin_unlock(&cgrp->event_list_lock);
->> +	list_for_each_entry_safe(event, tmp, &tmp_list, list) {
->>  		list_del(&event->list);
->
-> Maybe convert this to list_del_init() while at it?
+cgroup now has enough API to allow subsystems to implement their own
+locking and cgroup_mutex is scheduled to be made private to cgroup
+core.  This patchset makes cpuset implement its own locking instead of
+relying on cgroup_mutex.
 
-I assume this isn't technically required, but defensive.  Seems like we
-should also convert the list_del(&event->list) in cgroup_event_wake()
-for consistency.  I'll send these in separate patch.
+cpuset is rather nasty in this respect.  Some of it seems to have come
+from the implementation history - cgroup core grew out of cpuset - but
+big part stems from cpuset's need to migrate tasks to an ancestor
+cgroup when an hotunplug event makes a cpuset empty (w/o any cpu or
+memory).
 
->>  		remove_wait_queue(event->wqh, &event->wait);
->>  		eventfd_signal(event->eventfd, 1);
->>  		schedule_work(&event->remove);
->>  	}
->> -	spin_unlock(&cgrp->event_list_lock);
->
-> Thanks.
+This patchset decouples cpuset locking from cgroup_mutex.  After the
+patchset, cpuset uses cpuset-specific cpuset_mutex instead of
+cgroup_mutex.  This also removes the lockdep warning triggered during
+cpu offlining (see 0009).
+
+Note that this leaves memcg as the only external user of cgroup_mutex.
+Michal, Kame, can you guys please convert memcg to use its own locking
+too?
+
+This patchset contains the following thirteen patches.
+
+ 0001-cpuset-remove-unused-cpuset_unlock.patch
+ 0002-cpuset-remove-fast-exit-path-from-remove_tasks_in_em.patch
+ 0003-cpuset-introduce-css_on-offline.patch
+ 0004-cpuset-introduce-CS_ONLINE.patch
+ 0005-cpuset-introduce-cpuset_for_each_child.patch
+ 0006-cpuset-cleanup-cpuset-_can-_attach.patch
+ 0007-cpuset-drop-async_rebuild_sched_domains.patch
+ 0008-cpuset-reorganize-CPU-memory-hotplug-handling.patch
+ 0009-cpuset-don-t-nest-cgroup_mutex-inside-get_online_cpu.patch
+ 0010-cpuset-make-CPU-memory-hotplug-propagation-asynchron.patch
+ 0011-cpuset-pin-down-cpus-and-mems-while-a-task-is-being-.patch
+ 0012-cpuset-schedule-hotplug-propagation-from-cpuset_atta.patch
+ 0013-cpuset-replace-cgroup_mutex-locking-with-cpuset-inte.patch
+
+0001-0006 are prep patches.
+
+0007-0009 make cpuset nest get_online_cpus() inside cgroup_mutex, not
+the other way around.
+
+0010-0012 plug holes which would be exposed by switching to
+cpuset-specific locking.
+
+0013 replaces cgroup_mutex with cpuset_mutex.
+
+This patchset is on top of cgroup/for-3.8 (fddfb02ad0) and also
+available in the following git branch.
+
+ git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-cpuset-locking
+
+diffstat follows.
+
+ kernel/cpuset.c |  750 +++++++++++++++++++++++++++++++-------------------------
+ 1 file changed, 423 insertions(+), 327 deletions(-)
+
+Thanks.
+
+--
+tejun
