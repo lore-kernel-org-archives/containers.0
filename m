@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 03/13] cpuset: introduce ->css_on/offline()
-Date: Wed, 28 Nov 2012 13:34:10 -0800
-Message-ID: <1354138460-19286-4-git-send-email-tj__45042.7399286584$1354138514$gmane$org@kernel.org>
+Subject: [PATCH 05/13] cpuset: introduce cpuset_for_each_child()
+Date: Wed, 28 Nov 2012 13:34:12 -0800
+Message-ID: <1354138460-19286-6-git-send-email-tj__24739.587683189$1354138526$gmane$org@kernel.org>
 References: <1354138460-19286-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,149 +21,188 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, paul-inf54ven1CmVyaH7bEyXVA
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add cpuset_css_on/offline() and rearrange css init/exit such that,
+Instead of iterating cgroup->children directly, introduce and use
+cpuset_for_each_child() which wraps cgroup_for_each_child() and
+performs online check.  As it uses the generic iterator, it requires
+RCU read locking too.
 
-* Allocation and clearing to the default values happen in css_alloc().
-  Allocation now uses kzalloc().
-
-* Config inheritance and registration happen in css_online().
-
-* css_offline() undoes what css_online() did.
-
-* css_free() frees.
-
-This doesn't introduce any visible behavior changes.  This will help
-cleaning up locking.
+As cpuset is currently protected by cgroup_mutex, non-online cpusets
+aren't visible to all the iterations and this patch currently doesn't
+make any functional difference.  This will be used to de-couple cpuset
+locking from cgroup core.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cpuset.c | 66 ++++++++++++++++++++++++++++++++++++++-------------------
- 1 file changed, 44 insertions(+), 22 deletions(-)
+ kernel/cpuset.c | 85 ++++++++++++++++++++++++++++++++++++---------------------
+ 1 file changed, 54 insertions(+), 31 deletions(-)
 
 diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index 54b2b73..70197ba 100644
+index 22b521d..5a52ed6 100644
 --- a/kernel/cpuset.c
 +++ b/kernel/cpuset.c
-@@ -1790,15 +1790,12 @@ static struct cftype files[] = {
+@@ -200,6 +200,19 @@ static struct cpuset top_cpuset = {
+ 		  (1 << CS_MEM_EXCLUSIVE)),
+ };
  
- static struct cgroup_subsys_state *cpuset_css_alloc(struct cgroup *cont)
++/**
++ * cpuset_for_each_child - traverse online children of a cpuset
++ * @child_cs: loop cursor pointing to the current child
++ * @pos_cgrp: used for iteration
++ * @parent_cs: target cpuset to walk children of
++ *
++ * Walk @child_cs through the online children of @parent_cs.  Must be used
++ * with RCU read locked.
++ */
++#define cpuset_for_each_child(child_cs, pos_cgrp, parent_cs)		\
++	cgroup_for_each_child((pos_cgrp), (parent_cs)->css.cgroup)	\
++		if (is_cpuset_online(((child_cs) = cgroup_cs((pos_cgrp)))))
++
+ /*
+  * There are two global mutexes guarding cpuset structures.  The first
+  * is the main control groups cgroup_mutex, accessed via
+@@ -419,48 +432,55 @@ static int validate_change(const struct cpuset *cur, const struct cpuset *trial)
  {
--	struct cgroup *parent_cg = cont->parent;
--	struct cgroup *tmp_cg;
--	struct cpuset *parent, *cs;
-+	struct cpuset *cs;
- 
--	if (!parent_cg)
-+	if (!cont->parent)
- 		return &top_cpuset.css;
--	parent = cgroup_cs(parent_cg);
- 
--	cs = kmalloc(sizeof(*cs), GFP_KERNEL);
-+	cs = kzalloc(sizeof(*cs), GFP_KERNEL);
- 	if (!cs)
- 		return ERR_PTR(-ENOMEM);
- 	if (!alloc_cpumask_var(&cs->cpus_allowed, GFP_KERNEL)) {
-@@ -1806,22 +1803,34 @@ static struct cgroup_subsys_state *cpuset_css_alloc(struct cgroup *cont)
- 		return ERR_PTR(-ENOMEM);
- 	}
- 
--	cs->flags = 0;
--	if (is_spread_page(parent))
--		set_bit(CS_SPREAD_PAGE, &cs->flags);
--	if (is_spread_slab(parent))
--		set_bit(CS_SPREAD_SLAB, &cs->flags);
- 	set_bit(CS_SCHED_LOAD_BALANCE, &cs->flags);
- 	cpumask_clear(cs->cpus_allowed);
- 	nodes_clear(cs->mems_allowed);
- 	fmeter_init(&cs->fmeter);
- 	cs->relax_domain_level = -1;
-+	cs->parent = cgroup_cs(cont->parent);
+ 	struct cgroup *cont;
+ 	struct cpuset *c, *par;
++	int ret;
 +
-+	return &cs->css;
-+}
-+
-+static int cpuset_css_online(struct cgroup *cgrp)
-+{
-+	struct cpuset *cs = cgroup_cs(cgrp);
-+	struct cpuset *parent = cs->parent;
-+	struct cgroup *tmp_cg;
-+
-+	if (!parent)
-+		return 0;
-+
-+	if (is_spread_page(parent))
-+		set_bit(CS_SPREAD_PAGE, &cs->flags);
-+	if (is_spread_slab(parent))
-+		set_bit(CS_SPREAD_SLAB, &cs->flags);
++	rcu_read_lock();
  
--	cs->parent = parent;
- 	number_of_cpusets++;
+ 	/* Each of our child cpusets must be a subset of us */
+-	list_for_each_entry(cont, &cur->css.cgroup->children, sibling) {
+-		if (!is_cpuset_subset(cgroup_cs(cont), trial))
+-			return -EBUSY;
+-	}
++	ret = -EBUSY;
++	cpuset_for_each_child(c, cont, cur)
++		if (!is_cpuset_subset(c, trial))
++			goto out;
  
--	if (!test_bit(CGRP_CPUSET_CLONE_CHILDREN, &cont->flags))
--		goto skip_clone;
-+	if (!test_bit(CGRP_CPUSET_CLONE_CHILDREN, &cgrp->flags))
-+		return 0;
+ 	/* Remaining checks don't apply to root cpuset */
++	ret = 0;
+ 	if (cur == &top_cpuset)
+-		return 0;
++		goto out;
+ 
+ 	par = cur->parent;
+ 
+ 	/* We must be a subset of our parent cpuset */
++	ret = -EACCES;
+ 	if (!is_cpuset_subset(trial, par))
+-		return -EACCES;
++		goto out;
  
  	/*
- 	 * Clone @parent's configuration if CGRP_CPUSET_CLONE_CHILDREN is
-@@ -1836,19 +1845,34 @@ static struct cgroup_subsys_state *cpuset_css_alloc(struct cgroup *cont)
+ 	 * If either I or some sibling (!= me) is exclusive, we can't
+ 	 * overlap
+ 	 */
+-	list_for_each_entry(cont, &par->css.cgroup->children, sibling) {
+-		c = cgroup_cs(cont);
++	ret = -EINVAL;
++	cpuset_for_each_child(c, cont, par) {
+ 		if ((is_cpu_exclusive(trial) || is_cpu_exclusive(c)) &&
+ 		    c != cur &&
+ 		    cpumask_intersects(trial->cpus_allowed, c->cpus_allowed))
+-			return -EINVAL;
++			goto out;
+ 		if ((is_mem_exclusive(trial) || is_mem_exclusive(c)) &&
+ 		    c != cur &&
+ 		    nodes_intersects(trial->mems_allowed, c->mems_allowed))
+-			return -EINVAL;
++			goto out;
+ 	}
+ 
+ 	/* Cpusets with tasks can't have empty cpus_allowed or mems_allowed */
+-	if (cgroup_task_count(cur->css.cgroup)) {
+-		if (cpumask_empty(trial->cpus_allowed) ||
+-		    nodes_empty(trial->mems_allowed)) {
+-			return -ENOSPC;
+-		}
+-	}
++	ret = -ENOSPC;
++	if (cgroup_task_count(cur->css.cgroup) &&
++	    (cpumask_empty(trial->cpus_allowed) ||
++	     nodes_empty(trial->mems_allowed)))
++		goto out;
+ 
+-	return 0;
++	ret = 0;
++out:
++	rcu_read_unlock();
++	return ret;
+ }
+ 
+ #ifdef CONFIG_SMP
+@@ -501,10 +521,10 @@ update_domain_attr_tree(struct sched_domain_attr *dattr, struct cpuset *c)
+ 		if (is_sched_load_balance(cp))
+ 			update_domain_attr(dattr, cp);
+ 
+-		list_for_each_entry(cont, &cp->css.cgroup->children, sibling) {
+-			child = cgroup_cs(cont);
++		rcu_read_lock();
++		cpuset_for_each_child(child, cont, cp)
+ 			list_add_tail(&child->stack_list, &q);
+-		}
++		rcu_read_unlock();
+ 	}
+ }
+ 
+@@ -623,10 +643,10 @@ static int generate_sched_domains(cpumask_var_t **domains,
+ 			continue;
+ 		}
+ 
+-		list_for_each_entry(cont, &cp->css.cgroup->children, sibling) {
+-			child = cgroup_cs(cont);
++		rcu_read_lock();
++		cpuset_for_each_child(child, cont, cp)
+ 			list_add_tail(&child->stack_list, &q);
+-		}
++		rcu_read_unlock();
+   	}
+ 
+ 	for (i = 0; i < csn; i++)
+@@ -1824,7 +1844,8 @@ static int cpuset_css_online(struct cgroup *cgrp)
+ {
+ 	struct cpuset *cs = cgroup_cs(cgrp);
+ 	struct cpuset *parent = cs->parent;
+-	struct cgroup *tmp_cg;
++	struct cpuset *tmp_cs;
++	struct cgroup *pos_cg;
+ 
+ 	if (!parent)
+ 		return 0;
+@@ -1853,12 +1874,14 @@ static int cpuset_css_online(struct cgroup *cgrp)
  	 * changed to grant parent->cpus_allowed-sibling_cpus_exclusive
  	 * (and likewise for mems) to the new cgroup.
  	 */
--	list_for_each_entry(tmp_cg, &parent_cg->children, sibling) {
-+	list_for_each_entry(tmp_cg, &cgrp->parent->children, sibling) {
- 		struct cpuset *tmp_cs = cgroup_cs(tmp_cg);
- 
- 		if (is_mem_exclusive(tmp_cs) || is_cpu_exclusive(tmp_cs))
--			goto skip_clone;
-+			return 0;
+-	list_for_each_entry(tmp_cg, &cgrp->parent->children, sibling) {
+-		struct cpuset *tmp_cs = cgroup_cs(tmp_cg);
+-
+-		if (is_mem_exclusive(tmp_cs) || is_cpu_exclusive(tmp_cs))
++	rcu_read_lock();
++	cpuset_for_each_child(tmp_cs, pos_cg, parent) {
++		if (is_mem_exclusive(tmp_cs) || is_cpu_exclusive(tmp_cs)) {
++			rcu_read_unlock();
+ 			return 0;
++		}
  	}
++	rcu_read_unlock();
  
  	mutex_lock(&callback_mutex);
  	cs->mems_allowed = parent->mems_allowed;
- 	cpumask_copy(cs->cpus_allowed, parent->cpus_allowed);
- 	mutex_unlock(&callback_mutex);
--skip_clone:
--	return &cs->css;
-+
-+	return 0;
-+}
-+
-+static void cpuset_css_offline(struct cgroup *cgrp)
-+{
-+	struct cpuset *cs = cgroup_cs(cgrp);
-+
-+	/* css_offline is called w/o cgroup_mutex, grab it */
-+	cgroup_lock();
-+
-+	if (is_sched_load_balance(cs))
-+		update_flag(CS_SCHED_LOAD_BALANCE, cs, 0);
-+
-+	number_of_cpusets--;
-+
-+	cgroup_unlock();
- }
+@@ -2027,10 +2050,10 @@ static struct cpuset *cpuset_next(struct list_head *queue)
  
- /*
-@@ -1861,10 +1885,6 @@ static void cpuset_css_free(struct cgroup *cont)
- {
- 	struct cpuset *cs = cgroup_cs(cont);
+ 	cp = list_first_entry(queue, struct cpuset, stack_list);
+ 	list_del(queue->next);
+-	list_for_each_entry(cont, &cp->css.cgroup->children, sibling) {
+-		child = cgroup_cs(cont);
++	rcu_read_lock();
++	cpuset_for_each_child(child, cont, cp)
+ 		list_add_tail(&child->stack_list, queue);
+-	}
++	rcu_read_unlock();
  
--	if (is_sched_load_balance(cs))
--		update_flag(CS_SCHED_LOAD_BALANCE, cs, 0);
--
--	number_of_cpusets--;
- 	free_cpumask_var(cs->cpus_allowed);
- 	kfree(cs);
+ 	return cp;
  }
-@@ -1872,6 +1892,8 @@ static void cpuset_css_free(struct cgroup *cont)
- struct cgroup_subsys cpuset_subsys = {
- 	.name = "cpuset",
- 	.css_alloc = cpuset_css_alloc,
-+	.css_online = cpuset_css_online,
-+	.css_offline = cpuset_css_offline,
- 	.css_free = cpuset_css_free,
- 	.can_attach = cpuset_can_attach,
- 	.attach = cpuset_attach,
 -- 
 1.7.11.7
