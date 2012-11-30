@@ -1,14 +1,20 @@
-From: Kamezawa Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Subject: Re: [PATCHSET cgroup/for-3.8] cpuset: decouple cpuset locking from
 	cgroup core
-Date: Fri, 30 Nov 2012 12:21:32 +0900
-Message-ID: <50B8263C.7060908@jp.fujitsu.com>
+Date: Fri, 30 Nov 2012 06:59:24 -0800
+Message-ID: <20121130145924.GA3873__29234.6825860024$1354287616$gmane$org@htj.dyndns.org>
 References: <1354138460-19286-1-git-send-email-tj@kernel.org>
+	<50B8263C.7060908@jp.fujitsu.com> <50B875B4.2020507@parallels.com>
+	<20121130092435.GD29317@dhcp22.suse.cz>
+	<50B87F84.7040206@parallels.com>
+	<20121130094959.GE29317@dhcp22.suse.cz>
+	<50B883B5.8020705@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1354138460-19286-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <50B883B5.8020705-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,115 +24,37 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-(2012/11/29 6:34), Tejun Heo wrote:
-> Hello, guys.
-> 
-> Depending on cgroup core locking - cgroup_mutex - is messy and makes
-> cgroup prone to locking dependency problems.  The current code already
-> has lock dependency loop - memcg nests get_online_cpus() inside
-> cgroup_mutex.  cpuset the other way around.
-> 
-> Regardless of the locking details, whatever is protecting cgroup has
-> inherently to be something outer to most other locking constructs.
-> cgroup calls into a lot of major subsystems which in turn have to
-> perform subsystem-specific locking.  Trying to nest cgroup
-> synchronization inside other locks isn't something which can work
-> well.
-> 
-> cgroup now has enough API to allow subsystems to implement their own
-> locking and cgroup_mutex is scheduled to be made private to cgroup
-> core.  This patchset makes cpuset implement its own locking instead of
-> relying on cgroup_mutex.
-> 
-> cpuset is rather nasty in this respect.  Some of it seems to have come
-> from the implementation history - cgroup core grew out of cpuset - but
-> big part stems from cpuset's need to migrate tasks to an ancestor
-> cgroup when an hotunplug event makes a cpuset empty (w/o any cpu or
-> memory).
-> 
-> This patchset decouples cpuset locking from cgroup_mutex.  After the
-> patchset, cpuset uses cpuset-specific cpuset_mutex instead of
-> cgroup_mutex.  This also removes the lockdep warning triggered during
-> cpu offlining (see 0009).
-> 
-> Note that this leaves memcg as the only external user of cgroup_mutex.
-> Michal, Kame, can you guys please convert memcg to use its own locking
-> too?
-> 
+Hello,
 
-Hmm. let me see....at quick glance cgroup_lock() is used at
-  hierarchy policy change
-  kmem_limit
-  migration policy change
-  swapiness change
-  oom control
+On Fri, Nov 30, 2012 at 02:00:21PM +0400, Glauber Costa wrote:
+> Now, what I am actually seeing with cgroup creation, is that the
+> children will copy a lot of the values from the parent, like swappiness,
+> hierarchy, etc. Once the child copies it, we should no longer be able to
+> change those values in the parent: otherwise we'll get funny things like
+> parent.use_hierarchy = 1, child.use_hierarchy = 0.
 
-Because all aboves takes care of changes in hierarchy,
-Having a new memcg's mutex in ->create() may be a way.
+So, the best way to do this is from ->css_online().  If memcg
+synchronizes and inherits from ->css_online(), it can guarantee that
+the new cgroup will be visible in any following iterations.  Just have
+an online flag which is turned on and off from ->css_on/offline() and
+ignore any cgroups w/o online set.
 
-Ah, hm, Costa is mentioning task-attach. is the task-attach problem in memcg ?
+> One option is to take a global lock in memcg_alloc_css(), and keep it
+> locked until we did all the cgroup bookkeeping, and then unlock it in
+> css_online. But I am guessing Tejun won't like it very much.
 
-Thanks,
--Kame
+No, please *NEVER* *EVER* do that.  You'll be creating a bunch of
+locking dependencies as cgroup walks through different controllers.
 
+memcg should be able to synchornize fully both css on/offlining and
+task attachments in memcg proper.  Let's please be boring about
+locking.
 
+Thanks.
 
-
-
-
-
-
-
-
-
-> This patchset contains the following thirteen patches.
-> 
->   0001-cpuset-remove-unused-cpuset_unlock.patch
->   0002-cpuset-remove-fast-exit-path-from-remove_tasks_in_em.patch
->   0003-cpuset-introduce-css_on-offline.patch
->   0004-cpuset-introduce-CS_ONLINE.patch
->   0005-cpuset-introduce-cpuset_for_each_child.patch
->   0006-cpuset-cleanup-cpuset-_can-_attach.patch
->   0007-cpuset-drop-async_rebuild_sched_domains.patch
->   0008-cpuset-reorganize-CPU-memory-hotplug-handling.patch
->   0009-cpuset-don-t-nest-cgroup_mutex-inside-get_online_cpu.patch
->   0010-cpuset-make-CPU-memory-hotplug-propagation-asynchron.patch
->   0011-cpuset-pin-down-cpus-and-mems-while-a-task-is-being-.patch
->   0012-cpuset-schedule-hotplug-propagation-from-cpuset_atta.patch
->   0013-cpuset-replace-cgroup_mutex-locking-with-cpuset-inte.patch
-> 
-> 0001-0006 are prep patches.
-> 
-> 0007-0009 make cpuset nest get_online_cpus() inside cgroup_mutex, not
-> the other way around.
-> 
-> 0010-0012 plug holes which would be exposed by switching to
-> cpuset-specific locking.
-> 
-> 0013 replaces cgroup_mutex with cpuset_mutex.
-> 
-> This patchset is on top of cgroup/for-3.8 (fddfb02ad0) and also
-> available in the following git branch.
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-cpuset-locking
-> 
-> diffstat follows.
-> 
->   kernel/cpuset.c |  750 +++++++++++++++++++++++++++++++-------------------------
->   1 file changed, 423 insertions(+), 327 deletions(-)
-> 
-> Thanks.
-> 
-> --
-> tejun
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
-> 
+-- 
+tejun
