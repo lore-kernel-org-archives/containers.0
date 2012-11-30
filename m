@@ -1,20 +1,11 @@
-From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCHSET cgroup/for-3.8] cpuset: decouple cpuset locking from
-	cgroup core
-Date: Fri, 30 Nov 2012 19:09:49 +0400
-Message-ID: <50B8CC3D.3040901__44520.5364645973$1354288235$gmane$org@parallels.com>
-References: <1354138460-19286-1-git-send-email-tj@kernel.org>
-	<50B8263C.7060908@jp.fujitsu.com> <50B875B4.2020507@parallels.com>
-	<20121130092435.GD29317@dhcp22.suse.cz>
-	<50B87F84.7040206@parallels.com>
-	<20121130094959.GE29317@dhcp22.suse.cz>
-	<50B883B5.8020705@parallels.com>
-	<20121130145924.GA3873@htj.dyndns.org>
+From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH 1/2] cgroup: use cgroup_addrm_files in cgroup_clear_directory
+Date: Sat, 1 Dec 2012 00:21:28 +0800
+Message-ID: <1354292489-18434-1-git-send-email-gaofeng__44138.7067585767$1354297838$gmane$org@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20121130145924.GA3873-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,41 +15,41 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 11/30/2012 06:59 PM, Tejun Heo wrote:
-> Hello,
-> 
-> On Fri, Nov 30, 2012 at 02:00:21PM +0400, Glauber Costa wrote:
->> Now, what I am actually seeing with cgroup creation, is that the
->> children will copy a lot of the values from the parent, like swappiness,
->> hierarchy, etc. Once the child copies it, we should no longer be able to
->> change those values in the parent: otherwise we'll get funny things like
->> parent.use_hierarchy = 1, child.use_hierarchy = 0.
-> 
-> So, the best way to do this is from ->css_online().  If memcg
-> synchronizes and inherits from ->css_online(), it can guarantee that
-> the new cgroup will be visible in any following iterations.  Just have
-> an online flag which is turned on and off from ->css_on/offline() and
-> ignore any cgroups w/o online set.
-> 
->> One option is to take a global lock in memcg_alloc_css(), and keep it
->> locked until we did all the cgroup bookkeeping, and then unlock it in
->> css_online. But I am guessing Tejun won't like it very much.
-> 
-> No, please *NEVER* *EVER* do that.  You'll be creating a bunch of
-> locking dependencies as cgroup walks through different controllers.
-> 
-> memcg should be able to synchornize fully both css on/offlining and
-> task attachments in memcg proper.  Let's please be boring about
-> locking.
-> 
+cgroup_rm_file only remove the first file. after remount,
+the cgroup subsystem will be unloaded with it's files left.
 
-Of course, there was a purely rhetorical statement, as indicated by
-"Tejun won't like it very much" =p
+use cgroup_addrm_files to remove all files of subsystem.
 
-Take a look at the final result, I just posted a couple of hours ago.
-Let me know if there is still something extremely funny, and I'll look
-into fixing it.
+Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
+ kernel/cgroup.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index f24f724..e5233b7 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -970,6 +970,8 @@ static int cgroup_rm_file(struct cgroup *cgrp, const struct cftype *cft)
+ 	return -ENOENT;
+ }
+ 
++static int cgroup_addrm_files(struct cgroup *cgrp, struct cgroup_subsys *subsys,
++			      struct cftype cfts[], bool is_add);
+ /**
+  * cgroup_clear_directory - selective removal of base and subsystem files
+  * @dir: directory containing the files
+@@ -987,7 +989,7 @@ static void cgroup_clear_directory(struct dentry *dir, bool base_files,
+ 		if (!test_bit(ss->subsys_id, &subsys_mask))
+ 			continue;
+ 		list_for_each_entry(set, &ss->cftsets, node)
+-			cgroup_rm_file(cgrp, set->cfts);
++			cgroup_addrm_files(cgrp, NULL, set->cfts, false);
+ 	}
+ 	if (base_files) {
+ 		while (!list_empty(&cgrp->files))
+-- 
+1.7.7.6
