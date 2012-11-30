@@ -1,15 +1,14 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 2/2] cgroup: remove subsystem files when remounting cgroup
-Date: Fri, 30 Nov 2012 11:27:35 -0800
-Message-ID: <20121130192735.GF3873@htj.dyndns.org>
+Subject: [PATCH] cgroup: use cgroup_addrm_files() in cgroup_clear_directory()
+Date: Fri, 30 Nov 2012 11:47:20 -0800
+Message-ID: <20121130194720.GG3873__12182.7236413539$1354304883$gmane$org@htj.dyndns.org>
 References: <1354292489-18434-1-git-send-email-gaofeng@cn.fujitsu.com>
-	<1354292489-18434-2-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1354292489-18434-2-git-send-email-gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <1354292489-18434-1-git-send-email-gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,92 +22,49 @@ To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, Gao.
+From 879a3d9dbbde823ac77d39131e7a287f31b8296f Mon Sep 17 00:00:00 2001
+From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Date: Sat, 1 Dec 2012 00:21:28 +0800
 
-On Sat, Dec 01, 2012 at 12:21:29AM +0800, Gao feng wrote:
-> cgroup_clear_directroy is called by cgroup_d_remove_dir
-> and cgroup_remount.
-> 
-> when we call cgroup_remount to remount the cgroup,the subsystem
-> may be unlinked from cgroupfs_root->subsys_list in rebind_subsystem,this
-> subsystem's files will not be removed in cgroup_clear_directroy.
-> And the system will panic when we try to access these files.
-> 
-> this patch fix it.
+cgroup_clear_directory() incorrectly invokes cgroup_rm_file() on each
+cftset of the target subsystems, which only removes the first file of
+each set.  This leaves dangling files after subsystems are removed
+from a cgroup root via remount.
 
-I'd really appreciated if you explain how it's fixed.
+Use cgroup_addrm_files() to remove all files of target subsystems.
 
-> Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> ---
->  kernel/cgroup.c |   86 ++++++++++++++++++++++++++++++++++--------------------
->  1 files changed, 54 insertions(+), 32 deletions(-)
-> 
-> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index e5233b7..90429d5 100644
-> --- a/kernel/cgroup.c
-> +++ b/kernel/cgroup.c
-> @@ -982,10 +982,14 @@ static void cgroup_clear_directory(struct dentry *dir, bool base_files,
->  				   unsigned long subsys_mask)
->  {
->  	struct cgroup *cgrp = __d_cgrp(dir);
-> -	struct cgroup_subsys *ss;
-> +	int i;
->  
-> -	for_each_subsys(cgrp->root, ss) {
-> +	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
->  		struct cftype_set *set;
-> +		struct cgroup_subsys *ss = subsys[i];
-> +
-> +		if (ss == NULL)
-> +			continue;
+tj: Move cgroup_addrm_files() prototype decl upwards next to other
+    global declarations.  Commit message updated.
 
-Ummm... I can't say I like it.  It tries to work around the problem
-that the backing subsys may go away earlier by changing how the
-subsystems are iterated so that the "gone" subsystems can be iterated,
-which really doesn't seem like a good diea.  I mean, what if somebody
-tries to access the files inbetween?  root_cgrp->subsys[] would be
-%NULL and segfault all the same.
+Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+---
+Applied to cgroup/for-3.8 with minor updates.  Thanks!
 
->  static void drop_parsed_module_refcounts(unsigned long subsys_mask)
-> @@ -1392,23 +1403,34 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
->  	removed_mask = root->subsys_mask & ~opts.subsys_mask;
->  
->  	/* Don't allow flags or name to change at remount */
-> +	ret = -EINVAL;
->  	if (opts.flags != root->flags ||
->  	    (opts.name && strcmp(opts.name, root->name))) {
-> -		ret = -EINVAL;
->  		drop_parsed_module_refcounts(opts.subsys_mask);
->  		goto out_unlock;
->  	}
->  
-> -	ret = rebind_subsystems(root, opts.subsys_mask);
-> +	/*
-> +	 * Add the reference of these removed subsystem,we
-> +	 * need use subsystems to remove their cgroup files.
-> +	 */
-> +	ret = cgroup_get_module_refcounts(removed_mask);
->  	if (ret) {
->  		drop_parsed_module_refcounts(opts.subsys_mask);
->  		goto out_unlock;
->  	}
->  
-> +	ret = rebind_subsystems(root, opts.subsys_mask);
-> +	if (ret) {
-> +		drop_parsed_module_refcounts(opts.subsys_mask | removed_mask);
-> +		goto out_unlock;
-> +	}
-> +
->  	/* clear out any existing files and repopulate subsystem files */
->  	cgroup_clear_directory(cgrp->dentry, false, removed_mask);
->  	/* re-populate subsystem files */
->  	cgroup_populate_dir(cgrp, false, added_mask);
-> +	drop_parsed_module_refcounts(removed_mask);
+ kernel/cgroup.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-So, how about performing cgroup_clear_directory() *before*
-rebind_subsystems() and then restore it afterwards?
-
-Thanks.
-
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index b186a7e..e1293a9 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -246,6 +246,8 @@ static DEFINE_SPINLOCK(hierarchy_id_lock);
+ static int need_forkexit_callback __read_mostly;
+ 
+ static int cgroup_destroy_locked(struct cgroup *cgrp);
++static int cgroup_addrm_files(struct cgroup *cgrp, struct cgroup_subsys *subsys,
++			      struct cftype cfts[], bool is_add);
+ 
+ #ifdef CONFIG_PROVE_LOCKING
+ int cgroup_lock_is_held(void)
+@@ -964,7 +966,7 @@ static void cgroup_clear_directory(struct dentry *dir, bool base_files,
+ 		if (!test_bit(ss->subsys_id, &subsys_mask))
+ 			continue;
+ 		list_for_each_entry(set, &ss->cftsets, node)
+-			cgroup_rm_file(cgrp, set->cfts);
++			cgroup_addrm_files(cgrp, NULL, set->cfts, false);
+ 	}
+ 	if (base_files) {
+ 		while (!list_empty(&cgrp->files))
 -- 
-tejun
+1.7.11.7
