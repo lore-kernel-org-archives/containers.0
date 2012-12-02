@@ -1,14 +1,15 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH] cgroup: use cgroup_addrm_files() in cgroup_clear_directory()
-Date: Fri, 30 Nov 2012 11:47:20 -0800
-Message-ID: <20121130194720.GG3873__12182.7236413539$1354304883$gmane$org@htj.dyndns.org>
-References: <1354292489-18434-1-git-send-email-gaofeng@cn.fujitsu.com>
+Subject: Re: Why is cpuset_cpus_allowed_fallback() necessary?
+Date: Sun, 2 Dec 2012 06:15:50 -0800
+Message-ID: <20121202141550.GQ15930__26763.1428469487$1354457778$gmane$org@mtj.dyndns.org>
+References: <20121126223249.GB15930@mtj.dyndns.org>
+	<20121127184117.GA8937@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1354292489-18434-1-git-send-email-gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20121127184117.GA8937-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,53 +19,44 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From 879a3d9dbbde823ac77d39131e7a287f31b8296f Mon Sep 17 00:00:00 2001
-From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Date: Sat, 1 Dec 2012 00:21:28 +0800
+Hey, Oleg.
 
-cgroup_clear_directory() incorrectly invokes cgroup_rm_file() on each
-cftset of the target subsystems, which only removes the first file of
-each set.  This leaves dangling files after subsystems are removed
-from a cgroup root via remount.
+On Tue, Nov 27, 2012 at 07:41:17PM +0100, Oleg Nesterov wrote:
+> > Oleg, do you remember?  Why do we need
+> > this?
+> 
+> No, I forgot. And this code was changed after that, the fat comment in
+> cpuset_cpus_allowed_fallback() tried to explain the code below which
+> was removed.
+> 
+> I am starting to recall what this patch tried to do after I looked into
+> git history. This patch was the last (probably) change in series.
+> 
+> Please look at
+> 	897f0b3c3ff40b443c84e271bef19bd6ae885195
+> 	sched: Kill the broken and deadlockable cpuset_lock/cpuset_cpus_allowed_locked code
+> 
+> In particular it removes cpuset_cpus_allowed_locked() from
+> select_fallback_rq() because this was very wrong. IOW, this patch
+> simply removes the code which didn't really work
+> 
+> And after some other changes, this comment tried to add the supposed
+> behaviour back: we shouldn't simply use cpu_possible_mask, we should
+> consult cpuset.
 
-Use cgroup_addrm_files() to remove all files of target subsystems.
+Ah, okay.  If the task's affinity, which is subset of cpuset's, become
+empty while the cpuset's doesn't, we still better confine the task to
+the cpuset.  The code seems broken tho - it looks at CPUs which are on
+the same node first before consulting cpuset, which may lead to the
+task escaping cpuset.  Prolly the function need to be restructured
+that it first runs as if cpuset->cpus_allowed is cpu_possible_mask and
+then if that fails with the actual cpu_possible_mask.
 
-tj: Move cgroup_addrm_files() prototype decl upwards next to other
-    global declarations.  Commit message updated.
+Thanks!
 
-Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
----
-Applied to cgroup/for-3.8 with minor updates.  Thanks!
-
- kernel/cgroup.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
-
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index b186a7e..e1293a9 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -246,6 +246,8 @@ static DEFINE_SPINLOCK(hierarchy_id_lock);
- static int need_forkexit_callback __read_mostly;
- 
- static int cgroup_destroy_locked(struct cgroup *cgrp);
-+static int cgroup_addrm_files(struct cgroup *cgrp, struct cgroup_subsys *subsys,
-+			      struct cftype cfts[], bool is_add);
- 
- #ifdef CONFIG_PROVE_LOCKING
- int cgroup_lock_is_held(void)
-@@ -964,7 +966,7 @@ static void cgroup_clear_directory(struct dentry *dir, bool base_files,
- 		if (!test_bit(ss->subsys_id, &subsys_mask))
- 			continue;
- 		list_for_each_entry(set, &ss->cftsets, node)
--			cgroup_rm_file(cgrp, set->cfts);
-+			cgroup_addrm_files(cgrp, NULL, set->cfts, false);
- 	}
- 	if (base_files) {
- 		while (!list_empty(&cgrp->files))
 -- 
-1.7.11.7
+tejun
