@@ -1,16 +1,13 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCHSET cgroup/for-3.8] cpuset: decouple cpuset locking from
-	cgroup core
-Date: Mon, 3 Dec 2012 08:53:38 -0800
-Message-ID: <20121203165338.GF19802__26298.2495631606$1354553645$gmane$org@htj.dyndns.org>
-References: <1354138460-19286-1-git-send-email-tj@kernel.org>
-	<20121203152205.GB17093@dhcp22.suse.cz>
+From: =?UTF-8?B?55m+5bqm5ri45oiP?= <game-invite-h1bp6feCCZcAvxtiuMwx3w@public.gmane.org>
+Subject: =?UTF-8?B?5ZCM5Z+O5LiA5aSc5oOF5Lqk5Y+L6YKA6K+35L2g?=
+	=?UTF-8?B?5Yqg5YWl55m+5bqm5ri45oiP77yIeW91eA==?=
+	=?UTF-8?B?aS5iYWlkdS5jb20p77yM5bm25oiQ5Li6VEHnmoTlpb3lj4s=?=
+Date: Mon, 3 Dec 2012 10:32:16 +0800 (CST)
+Message-ID: <2051224400.79843.1354501936356.JavaMail.work@tc-game-iapp00.tc.baidu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed;
+	boundary="----=_Part_79842_1454051538.1354501936343"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20121203152205.GB17093-2MMpYkNvuYDjFM9bn6wA6Q@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,22 +17,22 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Cc: paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, Michal.
+------=_Part_79842_1454051538.1354501936343
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
 
-On Mon, Dec 03, 2012 at 04:22:05PM +0100, Michal Hocko wrote:
-> I have glanced through the series and spotten nothing obviously wrong. I
-> do not feel I could give my r-b because I am not familiar with cpusets
-> internals enough and some patches looks quite scary (like #8).
-> Anyway the resulting outcome seems nice.
 
-Thanks a lot for looking at it and, yeah, it's a bit scary.  Li, Paul,
-can you guys please review the series?
+------=_Part_79842_1454051538.1354501936343
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-Thanks!
-
--- 
-tejun
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+------=_Part_79842_1454051538.1354501936343--
