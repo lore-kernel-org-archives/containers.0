@@ -1,13 +1,14 @@
-From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [PATCH] cgroup_rm_file: don't delete the uncreated files
-Date: Thu, 6 Dec 2012 14:02:45 +0800
-Message-ID: <50C03505.3070801__48133.4271877587$1354773848$gmane$org@huawei.com>
+Date: Thu, 06 Dec 2012 14:12:31 +0800
+Message-ID: <50C0374F.508__20419.424333568$1354774380$gmane$org@cn.fujitsu.com>
 References: <1354763350-3139-1-git-send-email-gaofeng@cn.fujitsu.com>
+	<50C03505.3070801@huawei.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1354763350-3139-1-git-send-email-gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <50C03505.3070801-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,41 +18,32 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 Cc: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 2012/12/6 11:09, Gao feng wrote:
-> in cgroup_add_file,when creating files for cgroup,
-> some of creation may be skipped. So we need to avoid
-> deleting these uncreated files in cgroup_rm_file,
-> otherwise the warning msg will be triggered.
-> 
-> "cgroup_addrm_files: failed to remove memory_pressure_enabled, err=-2"
-> 
-> Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> ---
->  kernel/cgroup.c |    6 ++++++
->  1 files changed, 6 insertions(+), 0 deletions(-)
-> 
-> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index 5cc3724..6928b3e 100644
-> --- a/kernel/cgroup.c
-> +++ b/kernel/cgroup.c
-> @@ -932,6 +932,12 @@ static int cgroup_rm_file(struct cgroup *cgrp, const struct cftype *cft)
->  	lockdep_assert_held(&cgrp->dentry->d_inode->i_mutex);
->  	lockdep_assert_held(&cgroup_mutex);
->  
-> +	/* does @cft->flags tell us this file isn't created on @cgrp? */
-> +	if ((cft->flags & CFTYPE_NOT_ON_ROOT) && !cgrp->parent)
-> +		return 0;
-> +	if ((cft->flags & CFTYPE_ONLY_ON_ROOT) && cgrp->parent)
-> +		return 0;
-> +
-
-We should move those checks to cgroup_addrm_files() to avoid code duplication.
-
->  	list_for_each_entry(cfe, &cgrp->files, node) {
->  		struct dentry *d = cfe->dentry;
->  
-> 
+5LqOIDIwMTLlubQxMuaciDA25pelIDE0OjAyLCBMaSBaZWZhbiDlhpnpgZM6Cj4gT24gMjAxMi8x
+Mi82IDExOjA5LCBHYW8gZmVuZyB3cm90ZToKPj4gaW4gY2dyb3VwX2FkZF9maWxlLHdoZW4gY3Jl
+YXRpbmcgZmlsZXMgZm9yIGNncm91cCwKPj4gc29tZSBvZiBjcmVhdGlvbiBtYXkgYmUgc2tpcHBl
+ZC4gU28gd2UgbmVlZCB0byBhdm9pZAo+PiBkZWxldGluZyB0aGVzZSB1bmNyZWF0ZWQgZmlsZXMg
+aW4gY2dyb3VwX3JtX2ZpbGUsCj4+IG90aGVyd2lzZSB0aGUgd2FybmluZyBtc2cgd2lsbCBiZSB0
+cmlnZ2VyZWQuCj4+Cj4+ICJjZ3JvdXBfYWRkcm1fZmlsZXM6IGZhaWxlZCB0byByZW1vdmUgbWVt
+b3J5X3ByZXNzdXJlX2VuYWJsZWQsIGVycj0tMiIKPj4KPj4gU2lnbmVkLW9mZi1ieTogR2FvIGZl
+bmcgPGdhb2ZlbmdAY24uZnVqaXRzdS5jb20+Cj4+IC0tLQo+PiAga2VybmVsL2Nncm91cC5jIHwg
+ICAgNiArKysrKysKPj4gIDEgZmlsZXMgY2hhbmdlZCwgNiBpbnNlcnRpb25zKCspLCAwIGRlbGV0
+aW9ucygtKQo+Pgo+PiBkaWZmIC0tZ2l0IGEva2VybmVsL2Nncm91cC5jIGIva2VybmVsL2Nncm91
+cC5jCj4+IGluZGV4IDVjYzM3MjQuLjY5MjhiM2UgMTAwNjQ0Cj4+IC0tLSBhL2tlcm5lbC9jZ3Jv
+dXAuYwo+PiArKysgYi9rZXJuZWwvY2dyb3VwLmMKPj4gQEAgLTkzMiw2ICs5MzIsMTIgQEAgc3Rh
+dGljIGludCBjZ3JvdXBfcm1fZmlsZShzdHJ1Y3QgY2dyb3VwICpjZ3JwLCBjb25zdCBzdHJ1Y3Qg
+Y2Z0eXBlICpjZnQpCj4+ICAJbG9ja2RlcF9hc3NlcnRfaGVsZCgmY2dycC0+ZGVudHJ5LT5kX2lu
+b2RlLT5pX211dGV4KTsKPj4gIAlsb2NrZGVwX2Fzc2VydF9oZWxkKCZjZ3JvdXBfbXV0ZXgpOwo+
+PiAgCj4+ICsJLyogZG9lcyBAY2Z0LT5mbGFncyB0ZWxsIHVzIHRoaXMgZmlsZSBpc24ndCBjcmVh
+dGVkIG9uIEBjZ3JwPyAqLwo+PiArCWlmICgoY2Z0LT5mbGFncyAmIENGVFlQRV9OT1RfT05fUk9P
+VCkgJiYgIWNncnAtPnBhcmVudCkKPj4gKwkJcmV0dXJuIDA7Cj4+ICsJaWYgKChjZnQtPmZsYWdz
+ICYgQ0ZUWVBFX09OTFlfT05fUk9PVCkgJiYgY2dycC0+cGFyZW50KQo+PiArCQlyZXR1cm4gMDsK
+Pj4gKwo+IAo+IFdlIHNob3VsZCBtb3ZlIHRob3NlIGNoZWNrcyB0byBjZ3JvdXBfYWRkcm1fZmls
+ZXMoKSB0byBhdm9pZCBjb2RlIGR1cGxpY2F0aW9uLgo+IAoKR2V0IGl0LGFuZCB0aGUgbnVsbCBj
+aGVjayBvZiBjZnQgaW4gY2dyb3VwX3JtX2ZpbGUgaXMgbm8gbmVlZCB0b28uClRoYW5rcyEKCl9f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMg
+bWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6
+Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
