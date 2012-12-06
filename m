@@ -1,14 +1,16 @@
-From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH] cgroup_rm_file: don't delete the uncreated files
-Date: Thu, 06 Dec 2012 14:12:31 +0800
-Message-ID: <50C0374F.508__20419.424333568$1354774380$gmane$org@cn.fujitsu.com>
-References: <1354763350-3139-1-git-send-email-gaofeng@cn.fujitsu.com>
-	<50C03505.3070801@huawei.com>
+From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCHSET cgroup/for-3.8] cpuset: decouple cpuset locking from
+	cgroup core
+Date: Thu, 6 Dec 2012 14:25:03 +0800
+Message-ID: <50C03A3F.7070605@huawei.com>
+References: <1354138460-19286-1-git-send-email-tj@kernel.org>
+	<20121203152205.GB17093@dhcp22.suse.cz>
+	<20121203165338.GF19802@htj.dyndns.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <50C03505.3070801-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20121203165338.GF19802-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,32 +20,25 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-5LqOIDIwMTLlubQxMuaciDA25pelIDE0OjAyLCBMaSBaZWZhbiDlhpnpgZM6Cj4gT24gMjAxMi8x
-Mi82IDExOjA5LCBHYW8gZmVuZyB3cm90ZToKPj4gaW4gY2dyb3VwX2FkZF9maWxlLHdoZW4gY3Jl
-YXRpbmcgZmlsZXMgZm9yIGNncm91cCwKPj4gc29tZSBvZiBjcmVhdGlvbiBtYXkgYmUgc2tpcHBl
-ZC4gU28gd2UgbmVlZCB0byBhdm9pZAo+PiBkZWxldGluZyB0aGVzZSB1bmNyZWF0ZWQgZmlsZXMg
-aW4gY2dyb3VwX3JtX2ZpbGUsCj4+IG90aGVyd2lzZSB0aGUgd2FybmluZyBtc2cgd2lsbCBiZSB0
-cmlnZ2VyZWQuCj4+Cj4+ICJjZ3JvdXBfYWRkcm1fZmlsZXM6IGZhaWxlZCB0byByZW1vdmUgbWVt
-b3J5X3ByZXNzdXJlX2VuYWJsZWQsIGVycj0tMiIKPj4KPj4gU2lnbmVkLW9mZi1ieTogR2FvIGZl
-bmcgPGdhb2ZlbmdAY24uZnVqaXRzdS5jb20+Cj4+IC0tLQo+PiAga2VybmVsL2Nncm91cC5jIHwg
-ICAgNiArKysrKysKPj4gIDEgZmlsZXMgY2hhbmdlZCwgNiBpbnNlcnRpb25zKCspLCAwIGRlbGV0
-aW9ucygtKQo+Pgo+PiBkaWZmIC0tZ2l0IGEva2VybmVsL2Nncm91cC5jIGIva2VybmVsL2Nncm91
-cC5jCj4+IGluZGV4IDVjYzM3MjQuLjY5MjhiM2UgMTAwNjQ0Cj4+IC0tLSBhL2tlcm5lbC9jZ3Jv
-dXAuYwo+PiArKysgYi9rZXJuZWwvY2dyb3VwLmMKPj4gQEAgLTkzMiw2ICs5MzIsMTIgQEAgc3Rh
-dGljIGludCBjZ3JvdXBfcm1fZmlsZShzdHJ1Y3QgY2dyb3VwICpjZ3JwLCBjb25zdCBzdHJ1Y3Qg
-Y2Z0eXBlICpjZnQpCj4+ICAJbG9ja2RlcF9hc3NlcnRfaGVsZCgmY2dycC0+ZGVudHJ5LT5kX2lu
-b2RlLT5pX211dGV4KTsKPj4gIAlsb2NrZGVwX2Fzc2VydF9oZWxkKCZjZ3JvdXBfbXV0ZXgpOwo+
-PiAgCj4+ICsJLyogZG9lcyBAY2Z0LT5mbGFncyB0ZWxsIHVzIHRoaXMgZmlsZSBpc24ndCBjcmVh
-dGVkIG9uIEBjZ3JwPyAqLwo+PiArCWlmICgoY2Z0LT5mbGFncyAmIENGVFlQRV9OT1RfT05fUk9P
-VCkgJiYgIWNncnAtPnBhcmVudCkKPj4gKwkJcmV0dXJuIDA7Cj4+ICsJaWYgKChjZnQtPmZsYWdz
-ICYgQ0ZUWVBFX09OTFlfT05fUk9PVCkgJiYgY2dycC0+cGFyZW50KQo+PiArCQlyZXR1cm4gMDsK
-Pj4gKwo+IAo+IFdlIHNob3VsZCBtb3ZlIHRob3NlIGNoZWNrcyB0byBjZ3JvdXBfYWRkcm1fZmls
-ZXMoKSB0byBhdm9pZCBjb2RlIGR1cGxpY2F0aW9uLgo+IAoKR2V0IGl0LGFuZCB0aGUgbnVsbCBj
-aGVjayBvZiBjZnQgaW4gY2dyb3VwX3JtX2ZpbGUgaXMgbm8gbmVlZCB0b28uClRoYW5rcyEKCl9f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMg
-bWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6
-Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On 2012/12/4 0:53, Tejun Heo wrote:
+> Hello, Michal.
+> 
+> On Mon, Dec 03, 2012 at 04:22:05PM +0100, Michal Hocko wrote:
+>> I have glanced through the series and spotten nothing obviously wrong. I
+>> do not feel I could give my r-b because I am not familiar with cpusets
+>> internals enough and some patches looks quite scary (like #8).
+>> Anyway the resulting outcome seems nice.
+> 
+> Thanks a lot for looking at it and, yeah, it's a bit scary.  Li, Paul,
+> can you guys please review the series?
+> 
+
+We shoudn't haste to target this for 3.8, given that we're in late -rc and
+Michal felt some patches scary and they hasn't got enough review.
+
+I'll squeeze time to review them, but currently I've been backlogged with
+internal work.
