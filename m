@@ -1,8 +1,7 @@
-From: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>
-Subject: [PATCH] core_pattern: set core helpers root and namespace to crashing
-	process
-Date: Tue, 11 Dec 2012 14:59:56 -0500
-Message-ID: <1355255996-25953-1-git-send-email-nhorman__11556.1254126535$1355256065$gmane$org@tuxdriver.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: [GIT PULL] user namespace and namespace infrastructure changes for 3.8
+Date: Tue, 11 Dec 2012 13:17:12 -0800
+Message-ID: <87ip88uw4n.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,123 +15,168 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-As its currently implemented, redirection of core dumps to a pipe reader should
-be executed such that the reader runs in the namespace of the crashing process,
-and it currently does not. This is the only sane way to deal with namespaces
-properly it seems to me, and this patch implements that functionality.
 
-Theres one problem I currently see with it, and that is that I'm not sure we can
-change the current behavior of how the root fs is set for the pipe reader, lest
-we break some user space expectations. As such, I've added a sysctl in this
-patch to allow administrators to globally select if a core reader specified via
-/proc/sys/kernel/core_pattern should use the global rootfs, or the (possibly)
-chrooted fs of the crashing process.
+Linus,
 
-I've tested this using both settings for the new sysctl, and it works well.
+Please pull the for-linus git tree from:
 
-For the sake of history, this was discussed before:
-http://www.spinics.net/lists/linux-containers/msg21531.html
+   git://git.kernel.org:/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
 
-It seems there was some modicum of consensus as to how this should work, but
-there was no action taken on it.
+   HEAD: 98f842e675f96ffac96e6c50315790912b2812be proc: Usable inode numbers for the namespace file descriptors.
 
-Signed-off-by: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>
-Reported-by: Daniel Berrange <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-CC: Daniel Berrange <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-CC: Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-CC: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-CC: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-CC: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
----
- fs/coredump.c           | 11 +++++++++++
- include/linux/binfmts.h |  1 +
- kernel/sysctl.c         |  8 ++++++++
- 3 files changed, 20 insertions(+)
+   This tree is against v3.7-rc3
 
-diff --git a/fs/coredump.c b/fs/coredump.c
-index ce47379..e7d8ca2 100644
---- a/fs/coredump.c
-+++ b/fs/coredump.c
-@@ -47,6 +47,7 @@
- int core_uses_pid;
- char core_pattern[CORENAME_MAX_SIZE] = "core";
- unsigned int core_pipe_limit;
-+unsigned int core_pipe_global_root;
- 
- struct core_name {
- 	char *corename;
-@@ -443,6 +444,7 @@ static void wait_for_dump_helpers(struct file *file)
- static int umh_pipe_setup(struct subprocess_info *info, struct cred *new)
- {
- 	struct file *files[2];
-+	struct path root;
- 	struct coredump_params *cp = (struct coredump_params *)info->data;
- 	int err = create_pipe_files(files, 0);
- 	if (err)
-@@ -455,6 +457,14 @@ static int umh_pipe_setup(struct subprocess_info *info, struct cred *new)
- 	/* and disallow core files too */
- 	current->signal->rlim[RLIMIT_CORE] = (struct rlimit){1, 1};
- 
-+
-+	if (!core_pipe_global_root) {
-+		get_fs_root(cp->cprocess->fs, &root);
-+		set_fs_root(current->fs, &root);
-+	}
-+
-+	switch_task_namespaces(current, cp->cprocess->nsproxy);
-+
- 	return err;
- }
- 
-@@ -476,6 +486,7 @@ void do_coredump(siginfo_t *siginfo, struct pt_regs *regs)
- 		.siginfo = siginfo,
- 		.regs = regs,
- 		.limit = rlimit(RLIMIT_CORE),
-+		.cprocess = current,
- 		/*
- 		 * We must use the same mm->flags while dumping core to avoid
- 		 * inconsistency of bit flags, since this flag is not protected
-diff --git a/include/linux/binfmts.h b/include/linux/binfmts.h
-index cfcc6bf..08e7bcb 100644
---- a/include/linux/binfmts.h
-+++ b/include/linux/binfmts.h
-@@ -61,6 +61,7 @@ struct coredump_params {
- 	siginfo_t *siginfo;
- 	struct pt_regs *regs;
- 	struct file *file;
-+	struct task_struct *cprocess;
- 	unsigned long limit;
- 	unsigned long mm_flags;
- };
-diff --git a/kernel/sysctl.c b/kernel/sysctl.c
-index 26f65ea..be7b69d 100644
---- a/kernel/sysctl.c
-+++ b/kernel/sysctl.c
-@@ -102,6 +102,7 @@ extern int suid_dumpable;
- extern int core_uses_pid;
- extern char core_pattern[];
- extern unsigned int core_pipe_limit;
-+extern unsigned int core_pipe_global_root;
- #endif
- extern int pid_max;
- extern int min_free_kbytes;
-@@ -430,6 +431,13 @@ static struct ctl_table kern_table[] = {
- 		.mode		= 0644,
- 		.proc_handler	= proc_dointvec,
- 	},
-+	{
-+		.procname	= "core_pipe_global_root",
-+		.data		= &core_pipe_global_root,
-+		.maxlen		= sizeof(unsigned int),
-+		.mode		= 0644,
-+		.proc_handler	= proc_dointvec,
-+	},
- #endif
- #ifdef CONFIG_PROC_SYSCTL
- 	{
--- 
-1.7.11.7
+While small this set of changes is very significant with respect to
+containers in general and user namespaces in particular.  The user space
+interface is now complete.
+
+This set of changes adds support for unprivileged users to create user
+namespaces and as a user namespace root to create other namespaces.  The
+tyrrany of supporting suid root preventing unprivileged users from using
+cool new kernel features is broken.
+
+This set of changes completes the work on setns, adding support for
+the pid, user, mount namespaces.
+
+This set of changes includes a bunch of basic pid namespace
+cleanups/simplifications.  Of particular significance is the rework of
+the pid namespace cleanup so it no longer requires sending out tendrils
+into all kinds of unexpected cleanup paths for operation.  At least one
+case of broken error handling is fixed by this cleanup.
+
+The files under /proc/<pid>/ns/ have been converted from regular files
+to magic symlinks which prevents incorrect caching by the VFS, ensuring
+the files always refer to the namespace the process is currently using
+and ensuring that the ptrace_mayaccess permission checks are always
+applied.
+
+The files under /proc/<pid>/ns/ have been given stable inode numbers so
+it is now possible to see if different processes share the same
+namespaces.
+
+Through the David Miller's net tree are changes to relax many of the
+permission checks in the networking stack to allowing the user namespace
+root to usefully use the networking stack.  Similar changes for the
+mount namespace and the pid namespace are coming through my tree.
+
+Two small nework namespace changes were double committed here and in
+David Millers -net tree so that I could complete the work on the
+/proc/<pid>/ns/ files in this tree.
+
+The user namespace work that remains is converting, 9p, afs, ceph, cifs,
+coda, gfs2, ncpfs, nfs, nfsd, ocfs2, and xfs so they are safe to enable
+when user namespaces are enabled, and implementing unprivileged mounts
+of more than just /proc and /sys.
+
+I had hoped to get through more of those changes this cycle but
+I turned into a cold magnet this season and the UAPI changes caused
+a lot of churn late into the 3.7 -rc cycle that made a stable starting
+place hard to work from hard to find.
+
+Eric W. Biederman (37):
+      userns: Support autofs4 interacing with multiple user namespaces
+      userns: Support fuse interacting with multiple user namespaces
+      netns: Deduplicate and fix copy_net_ns when !CONFIG_NET_NS
+      userns: make each net (net_ns) belong to a user_ns
+      userns: On mips modify check_same_owner to use uid_eq
+      procfs: Use the proc generic infrastructure for proc/self.
+      procfs: Don't cache a pid in the root inode.
+      pidns: Capture the user namespace and filter ns_last_pid
+      pidns: Use task_active_pid_ns where appropriate
+      pidns: Make the pidns proc mount/umount logic obvious.
+      pidns: Don't allow new processes in a dead pid namespace.
+      pidns: Wait in zap_pid_ns_processes until pid_ns->nr_hashed == 1
+      pidns: Deny strange cases when creating pid namespaces.
+      pidns: Add setns support
+      pidns: Consolidate initialzation of special init task state
+      pidns: Support unsharing the pid namespace.
+      vfs: Allow chroot if you have CAP_SYS_CHROOT in your user namespace
+      vfs: Add setns support for the mount namespace
+      vfs: Add a user namespace reference from struct mnt_namespace
+      vfs: Only support slave subtrees across different user namespaces
+      vfs: Allow unprivileged manipulation of the mount namespace.
+      userns: Ignore suid and sgid on binaries if the uid or gid can not be mapped
+      userns: Allow unprivileged users to create user namespaces.
+      userns: Allow chown and setgid preservation
+      userns: Allow setting a userns mapping to your current uid.
+      userns: Allow unprivileged users to create new namespaces
+      userns: Allow unprivileged use of setns.
+      userns: Make create_new_namespaces take a user_ns parameter
+      userns: Kill task_user_ns
+      userns: Implent proc namespace operations
+      userns: Implement unshare of the user namespace
+      procfs: Print task uids and gids in the userns that opened the proc file
+      userns: For /proc/self/{uid,gid}_map derive the lower userns from the struct file
+      userns: Allow unprivilged mounts of proc and sysfs
+      proc: Generalize proc inode allocation
+      proc: Fix the namespace inode permission checks.
+      proc: Usable inode numbers for the namespace file descriptors.
+
+Zhao Hongjiang (1):
+      userns: fix return value on mntns_install() failure
+
+ arch/mips/kernel/mips-mt-fpaff.c          |    4 +-
+ arch/powerpc/platforms/cell/spufs/sched.c |    2 +-
+ arch/um/drivers/mconsole_kern.c           |    2 +-
+ drivers/staging/android/binder.c          |    3 +-
+ fs/attr.c                                 |   11 +-
+ fs/autofs4/autofs_i.h                     |    8 +-
+ fs/autofs4/dev-ioctl.c                    |    4 +-
+ fs/autofs4/inode.c                        |   24 ++--
+ fs/autofs4/waitq.c                        |    5 +-
+ fs/exec.c                                 |    9 +-
+ fs/fuse/dev.c                             |    4 +-
+ fs/fuse/dir.c                             |   20 ++--
+ fs/fuse/fuse_i.h                          |    4 +-
+ fs/fuse/inode.c                           |   23 ++--
+ fs/hppfs/hppfs.c                          |    2 +-
+ fs/mount.h                                |    3 +
+ fs/namespace.c                            |  211 ++++++++++++++++++++++++-----
+ fs/open.c                                 |    2 +-
+ fs/pnode.h                                |    1 +
+ fs/proc/Makefile                          |    1 +
+ fs/proc/array.c                           |    2 +-
+ fs/proc/base.c                            |  169 +-----------------------
+ fs/proc/generic.c                         |   26 ++--
+ fs/proc/inode.c                           |    6 +-
+ fs/proc/internal.h                        |    1 +
+ fs/proc/namespaces.c                      |  185 ++++++++++++++++++++++---
+ fs/proc/root.c                            |   17 +--
+ fs/proc/self.c                            |   59 ++++++++
+ fs/sysfs/mount.c                          |    1 +
+ include/linux/cred.h                      |    2 -
+ include/linux/fs.h                        |    2 +
+ include/linux/ipc_namespace.h             |    9 +-
+ include/linux/mnt_namespace.h             |    3 +-
+ include/linux/nsproxy.h                   |    2 +-
+ include/linux/pid_namespace.h             |   11 +-
+ include/linux/proc_fs.h                   |   26 ++++-
+ include/linux/user_namespace.h            |   10 ++
+ include/linux/utsname.h                   |    7 +-
+ include/net/net_namespace.h               |   26 +++-
+ init/Kconfig                              |    2 -
+ init/main.c                               |    1 -
+ init/version.c                            |    2 +
+ ipc/msgutil.c                             |    2 +
+ ipc/namespace.c                           |   32 ++++-
+ kernel/cgroup.c                           |    2 +-
+ kernel/events/core.c                      |    2 +-
+ kernel/exit.c                             |   12 --
+ kernel/fork.c                             |   69 +++++++---
+ kernel/nsproxy.c                          |   36 +++---
+ kernel/pid.c                              |   47 ++++++-
+ kernel/pid_namespace.c                    |  112 ++++++++++++---
+ kernel/ptrace.c                           |   10 +-
+ kernel/sched/core.c                       |   10 +-
+ kernel/signal.c                           |    2 +-
+ kernel/sysctl_binary.c                    |    2 +-
+ kernel/user.c                             |    2 +
+ kernel/user_namespace.c                   |  147 +++++++++++++++++---
+ kernel/utsname.c                          |   33 ++++-
+ net/core/net_namespace.c                  |   54 ++++++--
+ security/yama/yama_lsm.c                  |   12 ++-
+ 60 files changed, 1026 insertions(+), 472 deletions(-)
