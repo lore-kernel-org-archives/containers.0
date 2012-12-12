@@ -1,17 +1,14 @@
-From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCH RFC 0/5] Containerize syslog
-Date: Wed, 12 Dec 2012 12:56:39 +0400
-Message-ID: <50C846C7.5050904__19338.567267596$1355302624$gmane$org@parallels.com>
-References: <50A9EAD8.9090501@gmail.com> <874nklkjjm.fsf@xmission.com>
-	<20121207010355.c809b3f7.akpm@linux-foundation.org>
-	<20121207142331.GC4004@sergelap>
-	<50C1FD9D.5020703@parallels.com> <87r4n1buuw.fsf@xmission.com>
-	<50C6EDF0.5060108@parallels.com> <87txrs30ur.fsf@xmission.com>
+From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Subject: Re: [PATCH] mm/hugetlb: create hugetlb cgroup file in hugetlb_init
+Date: Wed, 12 Dec 2012 11:19:17 +0100
+Message-ID: <20121212101917.GD32081__3579.11336836896$1355307586$gmane$org@dhcp22.suse.cz>
+References: <50C83F97.3040009@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87txrs30ur.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <50C83F97.3040009-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,92 +18,143 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Rui Xiang <leo.ruixiang-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Jianguo Wu <wujianguo-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: Liujiang <jiang.liu-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, dhillf-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, aneesh.kumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Hanjun Guo <guohanjun-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, qiuxishi <qiuxishi-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Jiang Liu <liuj97-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 12/11/2012 10:22 PM, Eric W. Biederman wrote:
-> Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> writes:
+On Wed 12-12-12 16:25:59, Jianguo Wu wrote:
+> Build kernel with CONFIG_HUGETLBFS=y,CONFIG_HUGETLB_PAGE=y
+> and CONFIG_CGROUP_HUGETLB=y, then specify hugepagesz=xx boot option,
+> system will boot fail.
 > 
->> On 12/07/2012 10:05 PM, Eric W. Biederman wrote:
->>> Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> writes:
->>>
->>>> I keep asking myself if it isn't the case of forwarding to a container
->>>> all messages printed in process context. That will obviously exclude all
->>>> messages resulting from kthreads - that will always be in the initial
->>>> namespace anyway, interrupts, etc. There is no harm, for instance, in
->>>> delivering the same message twice: one to the container, and the other
->>>> to the host system.
->>>
->>> Except that there is harm in double printing.  One of the better
->>> justifications for doing something with the kernel log is that it is
->>> possible to overflow the kernel log with operations performed
->>> exclusively in a container.
->>>
->> I don't agree with you here.
->>
->> If we are double printing, we are using up more memory, but we also have
->> an extra buffer anyway. The messages are print on behalf of the user,
->> but still, by the kernel.
->>
->> So one of the following will necessarily hold:
->>
->> 1) There is no way that the process can overflow the main log, and as a
->> consequence, the container log, that has less messages than it.
->>
->> 2) The process will overflow the main log. But since we are not printing
->> anything extra to the main log compared to the scenario in which the
->> process lives in the main namespace, this would already be a problem
->> independent of namespaces. And needs to be fixed.
+> This failure is caused by following code path:
+> setup_hugepagesz
+> 	hugetlb_add_hstate
+> 		hugetlb_cgroup_file_init
+> 			cgroup_add_cftypes
+> 				kzalloc <--slab is *not available* yet
 > 
-> Well mounts, brining network interfaces up and down, running packets
-> through our own choice of firewall rules, possibly enabling debug
-> messages on network interfaces has the potential to create messages we
-> aren't seeing today.
+> For this path, slab is not available yet, so memory allocated will be
+> failed, and cause WARN_ON() in hugetlb_cgroup_file_init().
+> 
+> So I move hugetlb_cgroup_file_init() into hugetlb_init().
+
+I do not think this is a good idea. hugetlb_init is in __init section as
+well so what guarantees that the slab is initialized by then? Isn't this
+just a good ordering that makes this working?
+Shouldn't this be rather placed in hugetlb_cgroup_create?
+
+> Signed-off-by: Jianguo Wu <wujianguo-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Jiang Liu <jiang.liu-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+> ---
+>  include/linux/hugetlb_cgroup.h |    7 ++-----
+>  mm/hugetlb.c                   |   11 +----------
+>  mm/hugetlb_cgroup.c            |   23 +++++++++++++++++++++--
+>  3 files changed, 24 insertions(+), 17 deletions(-)
+> 
+> diff --git a/include/linux/hugetlb_cgroup.h b/include/linux/hugetlb_cgroup.h
+> index d73878c..5bb9c28 100644
+> --- a/include/linux/hugetlb_cgroup.h
+> +++ b/include/linux/hugetlb_cgroup.h
+> @@ -62,7 +62,7 @@ extern void hugetlb_cgroup_uncharge_page(int idx, unsigned long nr_pages,
+>  					 struct page *page);
+>  extern void hugetlb_cgroup_uncharge_cgroup(int idx, unsigned long nr_pages,
+>  					   struct hugetlb_cgroup *h_cg);
+> -extern int hugetlb_cgroup_file_init(int idx) __init;
+> +extern void hugetlb_cgroup_file_init(void) __init;
+>  extern void hugetlb_cgroup_migrate(struct page *oldhpage,
+>  				   struct page *newhpage);
+>  
+> @@ -111,10 +111,7 @@ hugetlb_cgroup_uncharge_cgroup(int idx, unsigned long nr_pages,
+>  	return;
+>  }
+>  
+> -static inline int __init hugetlb_cgroup_file_init(int idx)
+> -{
+> -	return 0;
+> -}
+> +static inline void __init hugetlb_cgroup_file_init() {}
+>  
+>  static inline void hugetlb_cgroup_migrate(struct page *oldhpage,
+>  					  struct page *newhpage)
+> diff --git a/mm/hugetlb.c b/mm/hugetlb.c
+> index 1ef2cd4..a30da48 100644
+> --- a/mm/hugetlb.c
+> +++ b/mm/hugetlb.c
+> @@ -1906,14 +1906,12 @@ static int __init hugetlb_init(void)
+>  		default_hstate.max_huge_pages = default_hstate_max_huge_pages;
+>  
+>  	hugetlb_init_hstates();
+> -
+>  	gather_bootmem_prealloc();
+> -
+>  	report_hugepages();
+>  
+>  	hugetlb_sysfs_init();
+> -
+>  	hugetlb_register_all_nodes();
+> +	hugetlb_cgroup_file_init();
+>  
+>  	return 0;
+>  }
+> @@ -1943,13 +1941,6 @@ void __init hugetlb_add_hstate(unsigned order)
+>  	h->next_nid_to_free = first_node(node_states[N_HIGH_MEMORY]);
+>  	snprintf(h->name, HSTATE_NAME_LEN, "hugepages-%lukB",
+>  					huge_page_size(h)/1024);
+> -	/*
+> -	 * Add cgroup control files only if the huge page consists
+> -	 * of more than two normal pages. This is because we use
+> -	 * page[2].lru.next for storing cgoup details.
+> -	 */
+> -	if (order >= HUGETLB_CGROUP_MIN_ORDER)
+> -		hugetlb_cgroup_file_init(hugetlb_max_hstate - 1);
+>  
+>  	parsed_hstate = h;
+>  }
+> diff --git a/mm/hugetlb_cgroup.c b/mm/hugetlb_cgroup.c
+> index a3f358f..284cb68 100644
+> --- a/mm/hugetlb_cgroup.c
+> +++ b/mm/hugetlb_cgroup.c
+> @@ -340,7 +340,7 @@ static char *mem_fmt(char *buf, int size, unsigned long hsize)
+>  	return buf;
+>  }
+>  
+> -int __init hugetlb_cgroup_file_init(int idx)
+> +static void __init __hugetlb_cgroup_file_init(int idx)
+>  {
+>  	char buf[32];
+>  	struct cftype *cft;
+> @@ -382,7 +382,26 @@ int __init hugetlb_cgroup_file_init(int idx)
+>  
+>  	WARN_ON(cgroup_add_cftypes(&hugetlb_subsys, h->cgroup_files));
+>  
+> -	return 0;
+> +	return;
+> +}
+> +
+> +void __init hugetlb_cgroup_file_init()
+> +{
+> +	struct hstate *h;
+> +	int idx;
+> +
+> +	idx = 0;
+> +	for_each_hstate(h) {
+> +		/*
+> +		 * Add cgroup control files only if the huge page consists
+> +		 * of more than two normal pages. This is because we use
+> +		 * page[2].lru.next for storing cgoup details.
+> +		 */
+> +		if (h->order >= HUGETLB_CGROUP_MIN_ORDER)
+> +			__hugetlb_cgroup_file_init(idx);
+> +
+> +		idx++;
+> +	}
+>  }
+>  
+>  /*
+> -- 1.7.1
 > 
 
-There are two kinds of messages: the ones that would be print anyway if
-you were not running in an ns, which we have no reason to fear, and the
-ones that only exist because we wrote the code for them, due to ns
-support. They are no different from writing a new fs support, driver,
-etc. Any new functionality can print new messages, and we have to be
-sure they won't fill the log. We write that code, so it is on us to make
-sure the messages are being print in a reasonable rate.
-
-This should be true for all messages running in process context. It is
-either that, or we have a bug and we relying on a specific clone flag to
-protect us against the buffer overrun.
-
-
->> IOW, double printing should not print anything *extra* to the main log.
->> It just prints to the container log, and leaves a copy to the box admin
->> to see. I think it is very reasonable to imagine that the main admin
->> would like to see anything the kernel has to tell him about the box.
-> 
-> The only reason that I have seen for doing anything with printks is
-> because we are generating messages that would not be generated in a
-> non-container environment.  At which point double printing is scary
-> because it allows a container user to flood the kernel log ring buffer
-> and suppress interesting messages.
-> 
->>> I do think the idea of process context printks going to the current
->>> container one worth playing with.
->>>
->>
->> It still leaves the problem of prinkts outside process context that
->> should go to a namespace open. But it is easy to extend this idea to do
->> both.
-> 
-> Hmm.  For printks from process context I think I can see a point where
-> double printing makes sense, because that is a rather indiscriminate grab
-> of printk messages.
-> 
-exactly. What I have in mind this whole time, is that if you are
-printing a message of interest of the container admin, it is *very
-likely* also of interest of the box admin, specially if it indicates
-something going wrong. Maybe what goes and does not go to the main
-buffer can be determined by the log level of each buffer. But still, I
-think that just hiding them from the box admin may not exactly be what
-we want.
-
-Cheers
+-- 
+Michal Hocko
+SUSE Labs
