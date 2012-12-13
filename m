@@ -1,16 +1,16 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [PATCH] core_pattern: set core helpers root and namespace to
-	crashing process
-Date: Thu, 13 Dec 2012 14:25:34 -0800
-Message-ID: <20121213142534.ea07a3c8.akpm@linux-foundation.org>
-References: <1355255996-25953-1-git-send-email-nhorman@tuxdriver.com>
-	<20121213122048.GF5246@sergelap>
-	<20121213181220.GB14796@hmsreliant.think-freely.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: [RFC][PATCH] Fix cap_capable to only allow owners in the parent user
+	namespace to have caps.
+Date: Thu, 13 Dec 2012 14:39:20 -0800
+Message-ID: <87zk1hshk7.fsf_-___13040.3466093869$1355438389$gmane$org@xmission.com>
+References: <87ip88uw4n.fsf@xmission.com> <50CA2B55.5070402@amacapital.net>
+	<87mwxhtxve.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20121213181220.GB14796-B26myB8xz7F8NnZeBjwnZQMhkBWG/bsMQH7oEaQurus@public.gmane.org>
+In-Reply-To: <87mwxhtxve.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (Eric W. Biederman's message of
+	"Thu, 13 Dec 2012 14:01:41 -0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,44 +20,80 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 13 Dec 2012 13:12:20 -0500
-Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org> wrote:
 
-> On Thu, Dec 13, 2012 at 06:20:48AM -0600, Serge Hallyn wrote:
-> > Quoting Neil Horman (nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org):
-> > > Theres one problem I currently see with it, and that is that I'm not sure we can
-> > > change the current behavior of how the root fs is set for the pipe reader, lest
-> > > we break some user space expectations. As such, I've added a sysctl in this
-> > > patch to allow administrators to globally select if a core reader specified via
-> > > /proc/sys/kernel/core_pattern should use the global rootfs, or the (possibly)
-> > > chrooted fs of the crashing process.
-> > 
-> > Practical question:  How is the admin to make an educated decision on
-> > how to set the sysctl?
+Andy Lutomirski pointed out that the current behavior of allowing the
+owner of a user namespace to have all caps when that owner is not in a
+parent user namespace is wrong.
 
-By reading the documentation which Neil didn't include?
+This is a bug introduced by the kuid conversion which made it possible
+for the owner of a user namespace to live in a child user namespace.  I
+goofed and totally missed this implication.
 
-> My thought was that the admin typically wouldn't touch this at all.  I really
-> added it as a backwards compatibility option only.  Setting the user space
-> helper task to the root of the crashing parent has the possibility of breaking
-> existing installs because the core_pattern helper might be expecting global file
-> system access.  Moving forward, my expectation would be that core_pattern
-> helpers would be written with the default setting in mind, and we could
-> eventually deprecate the control entirely.
-> 
-> If you have a better mechanism in mind however (or if you think that removing
-> the control is a resaonable approach), I'm certainly open to that.
+Serge and can you please take a look and see if my corrected cap_capable
+reads correctly to you.
 
-Yeah, this is a tiresome patch but I can't think of a better way.
+Andy or anyone else that wants to give me a second eyeball and double
+check me on this I would appreciate it.
 
-Except, perhaps, adding a new token to the core_pattern which says
-"switch namespaces"?
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Is there any propect that the core_pattern itself will later become a
-per-namespace containerised thing?  I guess that if the per-container
-core_pattern has been configured, we can implicitly do the namespace
-switch as well.
+---
+
+diff --git a/security/commoncap.c b/security/commoncap.c
+index 6dbae46..4639f44 100644
+--- a/security/commoncap.c
++++ b/security/commoncap.c
+@@ -70,37 +70,44 @@ int cap_netlink_send(struct sock *sk, struct sk_buff *skb)
+  *
+  * NOTE WELL: cap_has_capability() cannot be used like the kernel's capable()
+  * and has_capability() functions.  That is, it has the reverse semantics:
+  * cap_has_capability() returns 0 when a task has a capability, but the
+  * kernel's capable() and has_capability() returns 1 for this case.
+  */
+ int cap_capable(const struct cred *cred, struct user_namespace *targ_ns,
+ 		int cap, int audit)
+ {
+ 	for (;;) {
+-		/* The owner of the user namespace has all caps. */
+-		if (targ_ns != &init_user_ns && uid_eq(targ_ns->owner, cred->euid))
+-			return 0;
++		struct user_namespace *parent_ns;
+ 
+ 		/* Do we have the necessary capabilities? */
+ 		if (targ_ns == cred->user_ns)
+ 			return cap_raised(cred->cap_effective, cap) ? 0 : -EPERM;
+ 
+ 		/* Have we tried all of the parent namespaces? */
+ 		if (targ_ns == &init_user_ns)
+ 			return -EPERM;
+ 
++		parent_ns = targ_ns->parent;
++
++		/* 
++		 * The owner of the user namespace in the parent user
++		 * namespace has all caps.
++		 */
++		if ((parent_ns == cred->user_ns) && uid_eq(targ_ns->owner, cred->euid))
++			return 0;
++
+ 		/*
+-		 *If you have a capability in a parent user ns, then you have
++		 * If you have a capability in a parent user ns, then you have
+ 		 * it over all children user namespaces as well.
+ 		 */
+-		targ_ns = targ_ns->parent;
++		targ_ns = parent_ns;
+ 	}
+ 
+ 	/* We never get here */
+ }
+ 
+ /**
+  * cap_settime - Determine whether the current process may set the system clock
+  * @ts: The time to set
+  * @tz: The timezone to set
+  *
