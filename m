@@ -1,8 +1,7 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 1/4] Fix cap_capable to only allow owners in the parent user
-	namespace to have caps.
-Date: Fri, 14 Dec 2012 14:03:05 -0800
-Message-ID: <87obhwxpeu.fsf__25506.5144425773$1355522617$gmane$org@xmission.com>
+Subject: [PATCH 2/4] userns: Require CAP_SYS_ADMIN for most uses of setns.
+Date: Fri, 14 Dec 2012 14:03:54 -0800
+Message-ID: <87hanoxpdh.fsf__31390.0543530055$1355522666$gmane$org@xmission.com>
 References: <87txroxpgq.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,89 +23,108 @@ Cc: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-secu
 List-Id: containers.vger.kernel.org
 
 
-Andy Lutomirski pointed out that the current behavior of allowing the
-owner of a user namespace to have all caps when that owner is not in a
-parent user namespace is wrong.  Add a test to ensure the owner of a user
-namespace is in the parent of the user namespace to fix this bug.
+Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> found a nasty little bug in
+the permissions of setns.  With unprivileged user namespaces it
+became possible to create new namespaces without privilege.
 
-Thankfully this bug did not apply to the initial user namespace, keeping
-the mischief that can be caused by this bug quite small.
+However the setns calls were relaxed to only require CAP_SYS_ADMIN in
+the user nameapce of the targed namespace.
 
-This is bug was introduced in v3.5 by commit 783291e6900
-"Simplify the user_namespace by making userns->creator a kuid."
-But did not matter until the permisions required to create
-a user namespace were relaxed allowing a user namespace to be created
-inside of a user namespace.
+Which made the following nasty sequence possible.
 
-The bug made it possible for the owner of a user namespace to be
-present in a child user namespace.  Since the owner of a user nameapce
-is granted all capabilities it became possible for users in a
-grandchild user namespace to have all privilges over their parent user
-namspace.
+pid = clone(CLONE_NEWUSER | CLONE_NEWNS);
+if (pid == 0) { /* child */
+	system("mount --bind /home/me/passwd /etc/passwd");
+}
+else if (pid != 0) { /* parent */
+	char path[PATH_MAX];
+	snprintf(path, sizeof(path), "/proc/%u/ns/mnt");
+	fd = open(path, O_RDONLY);
+	setns(fd, 0);
+	system("su -");
+}
 
-Reorder the checks in cap_capable.  This should make the common case
-faster and make it clear that nothing magic happens in the initial
-user namespace.  The reordering is safe because cred->user_ns
-can only be in targ_ns or targ_ns->parent but not both.
+Prevent this possibility by requiring CAP_SYS_ADMIN
+in the current user namespace when joing all but the user namespace.
 
-Add a comment a the top of the loop to make the logic of
-the code clear.
-
-Add a distinct variable ns that changes as we walk up
-the user namespace hierarchy to make it clear which variable
-is changing.
-
-Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- security/commoncap.c |   25 +++++++++++++++++--------
- 1 files changed, 17 insertions(+), 8 deletions(-)
+ fs/namespace.c           |    3 ++-
+ ipc/namespace.c          |    3 ++-
+ kernel/pid_namespace.c   |    3 ++-
+ kernel/utsname.c         |    3 ++-
+ net/core/net_namespace.c |    3 ++-
+ 5 files changed, 10 insertions(+), 5 deletions(-)
 
-diff --git a/security/commoncap.c b/security/commoncap.c
-index 6dbae46..7ee08c7 100644
---- a/security/commoncap.c
-+++ b/security/commoncap.c
-@@ -76,24 +76,33 @@ int cap_netlink_send(struct sock *sk, struct sk_buff *skb)
- int cap_capable(const struct cred *cred, struct user_namespace *targ_ns,
- 		int cap, int audit)
+diff --git a/fs/namespace.c b/fs/namespace.c
+index c1bbe86..398a50f 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -2781,7 +2781,8 @@ static int mntns_install(struct nsproxy *nsproxy, void *ns)
+ 	struct path root;
+ 
+ 	if (!ns_capable(mnt_ns->user_ns, CAP_SYS_ADMIN) ||
+-	    !nsown_capable(CAP_SYS_CHROOT))
++	    !nsown_capable(CAP_SYS_CHROOT) ||
++	    !nsown_capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
+ 	if (fs->users != 1)
+diff --git a/ipc/namespace.c b/ipc/namespace.c
+index cf3386a..7c1fa45 100644
+--- a/ipc/namespace.c
++++ b/ipc/namespace.c
+@@ -170,7 +170,8 @@ static void ipcns_put(void *ns)
+ static int ipcns_install(struct nsproxy *nsproxy, void *new)
  {
--	for (;;) {
--		/* The owner of the user namespace has all caps. */
--		if (targ_ns != &init_user_ns && uid_eq(targ_ns->owner, cred->euid))
--			return 0;
-+	struct user_namespace *ns = targ_ns;
+ 	struct ipc_namespace *ns = new;
+-	if (!ns_capable(ns->user_ns, CAP_SYS_ADMIN))
++	if (!ns_capable(ns->user_ns, CAP_SYS_ADMIN) ||
++	    !nsown_capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
  
-+	/* See if cred has the capability in the target user namespace
-+	 * by examining the target user namespace and all of the target
-+	 * user namespace's parents.
-+	 */
-+	for (;;) {
- 		/* Do we have the necessary capabilities? */
--		if (targ_ns == cred->user_ns)
-+		if (ns == cred->user_ns)
- 			return cap_raised(cred->cap_effective, cap) ? 0 : -EPERM;
+ 	/* Ditch state from the old ipc namespace */
+diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
+index 560da0d..fdbd0cd 100644
+--- a/kernel/pid_namespace.c
++++ b/kernel/pid_namespace.c
+@@ -325,7 +325,8 @@ static int pidns_install(struct nsproxy *nsproxy, void *ns)
+ 	struct pid_namespace *active = task_active_pid_ns(current);
+ 	struct pid_namespace *ancestor, *new = ns;
  
- 		/* Have we tried all of the parent namespaces? */
--		if (targ_ns == &init_user_ns)
-+		if (ns == &init_user_ns)
- 			return -EPERM;
+-	if (!ns_capable(new->user_ns, CAP_SYS_ADMIN))
++	if (!ns_capable(new->user_ns, CAP_SYS_ADMIN) ||
++	    !nsown_capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
  
-+		/* 
-+		 * The owner of the user namespace in the parent of the
-+		 * user namespace has all caps.
-+		 */
-+		if ((ns->parent == cred->user_ns) && uid_eq(ns->owner, cred->euid))
-+			return 0;
-+
- 		/*
--		 *If you have a capability in a parent user ns, then you have
-+		 * If you have a capability in a parent user ns, then you have
- 		 * it over all children user namespaces as well.
- 		 */
--		targ_ns = targ_ns->parent;
-+		ns = ns->parent;
- 	}
+ 	/*
+diff --git a/kernel/utsname.c b/kernel/utsname.c
+index f6336d5..08b197e 100644
+--- a/kernel/utsname.c
++++ b/kernel/utsname.c
+@@ -113,7 +113,8 @@ static int utsns_install(struct nsproxy *nsproxy, void *new)
+ {
+ 	struct uts_namespace *ns = new;
  
- 	/* We never get here */
+-	if (!ns_capable(ns->user_ns, CAP_SYS_ADMIN))
++	if (!ns_capable(ns->user_ns, CAP_SYS_ADMIN) ||
++	    !nsown_capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
+ 	get_uts_ns(ns);
+diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
+index 2e9a313..8acce01 100644
+--- a/net/core/net_namespace.c
++++ b/net/core/net_namespace.c
+@@ -649,7 +649,8 @@ static int netns_install(struct nsproxy *nsproxy, void *ns)
+ {
+ 	struct net *net = ns;
+ 
+-	if (!ns_capable(net->user_ns, CAP_SYS_ADMIN))
++	if (!ns_capable(net->user_ns, CAP_SYS_ADMIN) ||
++	    !nsown_capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
+ 	put_net(nsproxy->net_ns);
 -- 
 1.7.5.4
