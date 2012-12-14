@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 04/12] blkcg: make blkcg_gq's hierarchical
-Date: Fri, 14 Dec 2012 14:41:17 -0800
-Message-ID: <1355524885-22719-5-git-send-email-tj@kernel.org>
+Subject: [PATCH 05/12] cfq-iosched: add leaf_weight
+Date: Fri, 14 Dec 2012 14:41:18 -0800
+Message-ID: <1355524885-22719-6-git-send-email-tj@kernel.org>
 References: <1355524885-22719-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,146 +21,286 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwi
 Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Currently a child blkg (blkcg_gq) can be created even if its parent
-doesn't exist.  ie. Given a blkg, it's not guaranteed that its
-ancestors will exist.  This makes it difficult to implement proper
-hierarchy support for blkcg policies.
+cfq blkcg is about to grow proper hierarchy handling, where a child
+blkg's weight would nest inside the parent's.  This makes tasks in a
+blkg to compete against both tasks in the sibling blkgs and the tasks
+of child blkgs.
 
-Always create blkgs recursively and make a child blkg hold a reference
-to its parent.  blkg->parent is added so that finding the parent is
-easy.  blkcg_parent() is also added in the process.
+We're gonna use the existing weight as the group weight which decides
+the blkg's weight against its siblings.  This patch introduces a new
+weight - leaf_weight - which decides the weight of a blkg against the
+child blkgs.
 
-This change can be visible to userland.  e.g. while issuing IO in a
-nested cgroup didn't affect the ancestors at all, now it will
-initialize all ancestor blkgs and zero stats for the request_queue
-will always appear on them.  While this is userland visible, this
-shouldn't cause any functional difference.
+It's named leaf_weight because another way to look at it is that each
+internal blkg nodes have a hidden child leaf node which contains all
+its tasks and leaf_weight is the weight of the leaf node and handled
+the same as the weight of the child blkgs.
+
+This patch only adds leaf_weight fields and exposes it to userland.
+The new weight isn't actually used anywhere yet.  Note that
+cfq-iosched currently offcially supports only single level hierarchy
+and root blkgs compete with the first level blkgs - ie. root weight is
+basically being used as leaf_weight.  For root blkgs, the two weights
+are kept in sync for backward compatibility.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- block/blk-cgroup.c | 42 +++++++++++++++++++++++++++++++++++++-----
- block/blk-cgroup.h | 18 ++++++++++++++++++
- 2 files changed, 55 insertions(+), 5 deletions(-)
+ block/blk-cgroup.c  |   4 +-
+ block/blk-cgroup.h  |   1 +
+ block/cfq-iosched.c | 133 ++++++++++++++++++++++++++++++++++++++++++++++++----
+ 3 files changed, 129 insertions(+), 9 deletions(-)
 
 diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
-index fde2286..c858628 100644
+index c858628..16ea5a1 100644
 --- a/block/blk-cgroup.c
 +++ b/block/blk-cgroup.c
-@@ -201,7 +201,16 @@ static struct blkcg_gq *blkg_create(struct blkcg *blkcg,
- 	}
- 	blkg = new_blkg;
+@@ -26,7 +26,8 @@
  
--	/* insert */
-+	/* link parent and insert */
-+	if (blkcg_parent(blkcg)) {
-+		blkg->parent = __blkg_lookup(blkcg_parent(blkcg), q, false);
-+		if (WARN_ON_ONCE(!blkg->parent)) {
-+			blkg = ERR_PTR(-EINVAL);
-+			goto err_put_css;
-+		}
-+		blkg_get(blkg->parent);
-+	}
-+
- 	spin_lock(&blkcg->lock);
- 	ret = radix_tree_insert(&blkcg->blkg_tree, q->id, blkg);
- 	if (likely(!ret)) {
-@@ -213,6 +222,10 @@ static struct blkcg_gq *blkg_create(struct blkcg *blkcg,
- 	if (!ret)
- 		return blkg;
+ static DEFINE_MUTEX(blkcg_pol_mutex);
  
-+	/* @blkg failed fully initialized, use the usual release path */
-+	blkg_put(blkg);
-+	return ERR_PTR(ret);
-+
- err_put_css:
- 	css_put(&blkcg->css);
- err_free_blkg:
-@@ -226,8 +239,9 @@ err_free_blkg:
-  * @q: request_queue of interest
-  *
-  * Lookup blkg for the @blkcg - @q pair.  If it doesn't exist, try to
-- * create one.  This function should be called under RCU read lock and
-- * @q->queue_lock.
-+ * create one.  blkg creation is performed recursively from blkcg_root such
-+ * that all non-root blkg's have access to the parent blkg.  This function
-+ * should be called under RCU read lock and @q->queue_lock.
-  *
-  * Returns pointer to the looked up or created blkg on success, ERR_PTR()
-  * value on error.  If @q is dead, returns ERR_PTR(-EINVAL).  If @q is not
-@@ -252,7 +266,23 @@ struct blkcg_gq *blkg_lookup_create(struct blkcg *blkcg,
- 	if (blkg)
- 		return blkg;
+-struct blkcg blkcg_root = { .cfq_weight = 2 * CFQ_WEIGHT_DEFAULT };
++struct blkcg blkcg_root = { .cfq_weight = 2 * CFQ_WEIGHT_DEFAULT,
++			    .cfq_leaf_weight = 2 * CFQ_WEIGHT_DEFAULT, };
+ EXPORT_SYMBOL_GPL(blkcg_root);
  
--	return blkg_create(blkcg, q, NULL);
-+	/*
-+	 * Create blkgs walking down from blkcg_root to @blkcg, so that all
-+	 * non-root blkgs have access to their parents.
-+	 */
-+	while (true) {
-+		struct blkcg *pos = blkcg;
-+		struct blkcg *parent = blkcg_parent(blkcg);
-+
-+		while (parent && !__blkg_lookup(parent, q, false)) {
-+			pos = parent;
-+			parent = blkcg_parent(parent);
-+		}
-+
-+		blkg = blkg_create(pos, q, NULL);
-+		if (pos == blkcg || IS_ERR(blkg))
-+			return blkg;
-+	}
- }
- EXPORT_SYMBOL_GPL(blkg_lookup_create);
+ static struct blkcg_policy *blkcg_policy[BLKCG_MAX_POLS];
+@@ -710,6 +711,7 @@ static struct cgroup_subsys_state *blkcg_css_alloc(struct cgroup *cgroup)
+ 		return ERR_PTR(-ENOMEM);
  
-@@ -321,8 +351,10 @@ static void blkg_rcu_free(struct rcu_head *rcu_head)
- 
- void __blkg_release(struct blkcg_gq *blkg)
- {
--	/* release the extra blkcg reference this blkg has been holding */
-+	/* release the blkcg and parent blkg refs this blkg has been holding */
- 	css_put(&blkg->blkcg->css);
-+	if (blkg->parent)
-+		blkg_put(blkg->parent);
- 
- 	/*
- 	 * A group is freed in rcu manner. But having an rcu lock does not
+ 	blkcg->cfq_weight = CFQ_WEIGHT_DEFAULT;
++	blkcg->cfq_leaf_weight = CFQ_WEIGHT_DEFAULT;
+ 	blkcg->id = atomic64_inc_return(&id_seq); /* root is 0, start from 1 */
+ done:
+ 	spin_lock_init(&blkcg->lock);
 diff --git a/block/blk-cgroup.h b/block/blk-cgroup.h
-index 2459730..b26ed58 100644
+index b26ed58..2446225 100644
 --- a/block/blk-cgroup.h
 +++ b/block/blk-cgroup.h
-@@ -94,8 +94,13 @@ struct blkcg_gq {
- 	struct list_head		q_node;
- 	struct hlist_node		blkcg_node;
- 	struct blkcg			*blkcg;
-+
-+	/* all non-root blkcg_gq's are guaranteed to have access to parent */
-+	struct blkcg_gq			*parent;
-+
- 	/* request allocation list for this blkcg-q pair */
- 	struct request_list		rl;
-+
- 	/* reference count */
- 	int				refcnt;
+@@ -54,6 +54,7 @@ struct blkcg {
  
-@@ -181,6 +186,19 @@ static inline struct blkcg *bio_blkcg(struct bio *bio)
+ 	/* TODO: per-policy storage in blkcg */
+ 	unsigned int			cfq_weight;	/* belongs to cfq */
++	unsigned int			cfq_leaf_weight;
+ };
+ 
+ struct blkg_stat {
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index 2f2b215..5f23763 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -223,10 +223,21 @@ struct cfq_group {
+ 
+ 	/* group service_tree key */
+ 	u64 vdisktime;
++
++	/*
++	 * There are two weights - (internal) weight is the weight of this
++	 * cfqg against the sibling cfqgs.  leaf_weight is the wight of
++	 * this cfqg against the child cfqgs.  For the root cfqg, both
++	 * weights are kept in sync for backward compatibility.
++	 */
+ 	unsigned int weight;
+ 	unsigned int new_weight;
+ 	unsigned int dev_weight;
+ 
++	unsigned int leaf_weight;
++	unsigned int new_leaf_weight;
++	unsigned int dev_leaf_weight;
++
+ 	/* number of cfqq currently on this group */
+ 	int nr_cfqq;
+ 
+@@ -1182,10 +1193,16 @@ static void
+ cfq_update_group_weight(struct cfq_group *cfqg)
+ {
+ 	BUG_ON(!RB_EMPTY_NODE(&cfqg->rb_node));
++
+ 	if (cfqg->new_weight) {
+ 		cfqg->weight = cfqg->new_weight;
+ 		cfqg->new_weight = 0;
+ 	}
++
++	if (cfqg->new_leaf_weight) {
++		cfqg->leaf_weight = cfqg->new_leaf_weight;
++		cfqg->new_leaf_weight = 0;
++	}
  }
  
- /**
-+ * blkcg_parent - get the parent of a blkcg
-+ * @blkcg: blkcg of interest
-+ *
-+ * Return the parent blkcg of @blkcg.  Can be called anytime.
-+ */
-+static inline struct blkcg *blkcg_parent(struct blkcg *blkcg)
+ static void
+@@ -1348,6 +1365,7 @@ static void cfq_pd_init(struct blkcg_gq *blkg)
+ 
+ 	cfq_init_cfqg_base(cfqg);
+ 	cfqg->weight = blkg->blkcg->cfq_weight;
++	cfqg->leaf_weight = blkg->blkcg->cfq_leaf_weight;
+ }
+ 
+ /*
+@@ -1404,6 +1422,26 @@ static int cfqg_print_weight_device(struct cgroup *cgrp, struct cftype *cft,
+ 	return 0;
+ }
+ 
++static u64 cfqg_prfill_leaf_weight_device(struct seq_file *sf,
++					  struct blkg_policy_data *pd, int off)
 +{
-+	struct cgroup *pcg = blkcg->css.cgroup->parent;
++	struct cfq_group *cfqg = pd_to_cfqg(pd);
 +
-+	return pcg ? cgroup_to_blkcg(pcg) : NULL;
++	if (!cfqg->dev_leaf_weight)
++		return 0;
++	return __blkg_prfill_u64(sf, pd, cfqg->dev_leaf_weight);
 +}
 +
-+/**
-  * blkg_to_pdata - get policy private data
-  * @blkg: blkg of interest
-  * @pol: policy of interest
++static int cfqg_print_leaf_weight_device(struct cgroup *cgrp,
++					 struct cftype *cft,
++					 struct seq_file *sf)
++{
++	blkcg_print_blkgs(sf, cgroup_to_blkcg(cgrp),
++			  cfqg_prfill_leaf_weight_device, &blkcg_policy_cfq, 0,
++			  false);
++	return 0;
++}
++
+ static int cfq_print_weight(struct cgroup *cgrp, struct cftype *cft,
+ 			    struct seq_file *sf)
+ {
+@@ -1411,8 +1449,16 @@ static int cfq_print_weight(struct cgroup *cgrp, struct cftype *cft,
+ 	return 0;
+ }
+ 
+-static int cfqg_set_weight_device(struct cgroup *cgrp, struct cftype *cft,
+-				  const char *buf)
++static int cfq_print_leaf_weight(struct cgroup *cgrp, struct cftype *cft,
++				 struct seq_file *sf)
++{
++	seq_printf(sf, "%u\n",
++		   cgroup_to_blkcg(cgrp)->cfq_leaf_weight);
++	return 0;
++}
++
++static int __cfqg_set_weight_device(struct cgroup *cgrp, struct cftype *cft,
++				    const char *buf, bool is_leaf_weight)
+ {
+ 	struct blkcg *blkcg = cgroup_to_blkcg(cgrp);
+ 	struct blkg_conf_ctx ctx;
+@@ -1426,8 +1472,13 @@ static int cfqg_set_weight_device(struct cgroup *cgrp, struct cftype *cft,
+ 	ret = -EINVAL;
+ 	cfqg = blkg_to_cfqg(ctx.blkg);
+ 	if (!ctx.v || (ctx.v >= CFQ_WEIGHT_MIN && ctx.v <= CFQ_WEIGHT_MAX)) {
+-		cfqg->dev_weight = ctx.v;
+-		cfqg->new_weight = cfqg->dev_weight ?: blkcg->cfq_weight;
++		if (!is_leaf_weight) {
++			cfqg->dev_weight = ctx.v;
++			cfqg->new_weight = ctx.v ?: blkcg->cfq_weight;
++		} else {
++			cfqg->dev_leaf_weight = ctx.v;
++			cfqg->new_leaf_weight = ctx.v ?: blkcg->cfq_leaf_weight;
++		}
+ 		ret = 0;
+ 	}
+ 
+@@ -1435,7 +1486,20 @@ static int cfqg_set_weight_device(struct cgroup *cgrp, struct cftype *cft,
+ 	return ret;
+ }
+ 
+-static int cfq_set_weight(struct cgroup *cgrp, struct cftype *cft, u64 val)
++static int cfqg_set_weight_device(struct cgroup *cgrp, struct cftype *cft,
++				  const char *buf)
++{
++	return __cfqg_set_weight_device(cgrp, cft, buf, false);
++}
++
++static int cfqg_set_leaf_weight_device(struct cgroup *cgrp, struct cftype *cft,
++				       const char *buf)
++{
++	return __cfqg_set_weight_device(cgrp, cft, buf, true);
++}
++
++static int __cfq_set_weight(struct cgroup *cgrp, struct cftype *cft, u64 val,
++			    bool is_leaf_weight)
+ {
+ 	struct blkcg *blkcg = cgroup_to_blkcg(cgrp);
+ 	struct blkcg_gq *blkg;
+@@ -1445,19 +1509,41 @@ static int cfq_set_weight(struct cgroup *cgrp, struct cftype *cft, u64 val)
+ 		return -EINVAL;
+ 
+ 	spin_lock_irq(&blkcg->lock);
+-	blkcg->cfq_weight = (unsigned int)val;
++
++	if (!is_leaf_weight)
++		blkcg->cfq_weight = val;
++	else
++		blkcg->cfq_leaf_weight = val;
+ 
+ 	hlist_for_each_entry(blkg, n, &blkcg->blkg_list, blkcg_node) {
+ 		struct cfq_group *cfqg = blkg_to_cfqg(blkg);
+ 
+-		if (cfqg && !cfqg->dev_weight)
+-			cfqg->new_weight = blkcg->cfq_weight;
++		if (!cfqg)
++			continue;
++
++		if (!is_leaf_weight) {
++			if (!cfqg->dev_weight)
++				cfqg->new_weight = blkcg->cfq_weight;
++		} else {
++			if (!cfqg->dev_leaf_weight)
++				cfqg->new_leaf_weight = blkcg->cfq_leaf_weight;
++		}
+ 	}
+ 
+ 	spin_unlock_irq(&blkcg->lock);
+ 	return 0;
+ }
+ 
++static int cfq_set_weight(struct cgroup *cgrp, struct cftype *cft, u64 val)
++{
++	return __cfq_set_weight(cgrp, cft, val, false);
++}
++
++static int cfq_set_leaf_weight(struct cgroup *cgrp, struct cftype *cft, u64 val)
++{
++	return __cfq_set_weight(cgrp, cft, val, true);
++}
++
+ static int cfqg_print_stat(struct cgroup *cgrp, struct cftype *cft,
+ 			   struct seq_file *sf)
+ {
+@@ -1518,6 +1604,37 @@ static struct cftype cfq_blkcg_files[] = {
+ 		.read_seq_string = cfq_print_weight,
+ 		.write_u64 = cfq_set_weight,
+ 	},
++
++	/* on root, leaf_weight is mapped to weight */
++	{
++		.name = "leaf_weight_device",
++		.flags = CFTYPE_ONLY_ON_ROOT,
++		.read_seq_string = cfqg_print_weight_device,
++		.write_string = cfqg_set_weight_device,
++		.max_write_len = 256,
++	},
++	{
++		.name = "leaf_weight",
++		.flags = CFTYPE_ONLY_ON_ROOT,
++		.read_seq_string = cfq_print_weight,
++		.write_u64 = cfq_set_weight,
++	},
++
++	/* no such mapping necessary for !roots */
++	{
++		.name = "leaf_weight_device",
++		.flags = CFTYPE_NOT_ON_ROOT,
++		.read_seq_string = cfqg_print_leaf_weight_device,
++		.write_string = cfqg_set_leaf_weight_device,
++		.max_write_len = 256,
++	},
++	{
++		.name = "leaf_weight",
++		.flags = CFTYPE_NOT_ON_ROOT,
++		.read_seq_string = cfq_print_leaf_weight,
++		.write_u64 = cfq_set_leaf_weight,
++	},
++
+ 	{
+ 		.name = "time",
+ 		.private = offsetof(struct cfq_group, stats.time),
 -- 
 1.7.11.7
