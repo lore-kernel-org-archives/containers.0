@@ -1,18 +1,19 @@
-From: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>
-Subject: Re: [PATCH] core_pattern: set core helpers root and namespace to
-	crashing process
-Date: Thu, 13 Dec 2012 21:49:39 -0500
-Message-ID: <20121214024938.GA6591@neilslaptop.think-freely.org>
-References: <1355255996-25953-1-git-send-email-nhorman@tuxdriver.com>
-	<20121213122048.GF5246@sergelap>
-	<20121213181220.GB14796@hmsreliant.think-freely.org>
-	<20121213142534.ea07a3c8.akpm@linux-foundation.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: [PATCH] Fix cap_capable to only allow owners in the parent user
+	namespace to have caps.
+Date: Thu, 13 Dec 2012 19:20:13 -0800
+Message-ID: <87sj79iaky.fsf_-___18256.6726151437$1355455250$gmane$org@xmission.com>
+References: <87ip88uw4n.fsf@xmission.com> <50CA2B55.5070402@amacapital.net>
+	<87mwxhtxve.fsf@xmission.com> <87zk1hshk7.fsf_-_@xmission.com>
+	<CALCETrXLLcUu8Rajjx7+3N_6j5E0T0CR1h=hD+gcc5_r4Umyqw@mail.gmail.com>
+	<876245jrbc.fsf@xmission.com>
+	<CALCETrXRYOh2tkwB+U9ZjA5BNZwscWsq1WGzjP3wUiOXQUXOQg@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20121213142534.ea07a3c8.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+In-Reply-To: <CALCETrXRYOh2tkwB+U9ZjA5BNZwscWsq1WGzjP3wUiOXQUXOQg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Andy Lutomirski's message of "Thu, 13 Dec 2012 18:36:02 -0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,62 +23,80 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Dec 13, 2012 at 02:25:34PM -0800, Andrew Morton wrote:
-> On Thu, 13 Dec 2012 13:12:20 -0500
-> Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org> wrote:
-> 
-> > On Thu, Dec 13, 2012 at 06:20:48AM -0600, Serge Hallyn wrote:
-> > > Quoting Neil Horman (nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org):
-> > > > Theres one problem I currently see with it, and that is that I'm not sure we can
-> > > > change the current behavior of how the root fs is set for the pipe reader, lest
-> > > > we break some user space expectations. As such, I've added a sysctl in this
-> > > > patch to allow administrators to globally select if a core reader specified via
-> > > > /proc/sys/kernel/core_pattern should use the global rootfs, or the (possibly)
-> > > > chrooted fs of the crashing process.
-> > > 
-> > > Practical question:  How is the admin to make an educated decision on
-> > > how to set the sysctl?
-> 
-> By reading the documentation which Neil didn't include?
-> 
-Yeah, that was stupid of me, I'll respin this with docs.
 
-> > My thought was that the admin typically wouldn't touch this at all.  I really
-> > added it as a backwards compatibility option only.  Setting the user space
-> > helper task to the root of the crashing parent has the possibility of breaking
-> > existing installs because the core_pattern helper might be expecting global file
-> > system access.  Moving forward, my expectation would be that core_pattern
-> > helpers would be written with the default setting in mind, and we could
-> > eventually deprecate the control entirely.
-> > 
-> > If you have a better mechanism in mind however (or if you think that removing
-> > the control is a resaonable approach), I'm certainly open to that.
-> 
-> Yeah, this is a tiresome patch but I can't think of a better way.
-> 
-> Except, perhaps, adding a new token to the core_pattern which says
-> "switch namespaces"?
->
-I like that idea, perhaps '||' instead of '|' as the leading token can indicate
-"use the namespace root" vs. "use the global root".  Thoughts?
+Andy Lutomirski pointed out that the current behavior of allowing the
+owner of a user namespace to have all caps when that owner is not in a
+parent user namespace is wrong.  Add a test to ensure the owner of a user
+namespace is in the parent of the user namespace to fix this bug.
 
-> Is there any propect that the core_pattern itself will later become a
-> per-namespace containerised thing?  I guess that if the per-container
-> core_pattern has been configured, we can implicitly do the namespace
-> switch as well.
-Yes, that makes sense.  Unfortunately, I don't see proc containerization
-happening any time soon.  I suppose if we do the above tokenization, that can be
-used despite any future containerization that takes place.
+Thankfully this bug did not apply to the initial user namespace, keeping
+the mischief that can be caused by this bug quite small.
 
-I'll respin the patch with documentation, and replace the extra sysctl with the
-above tokenization in the AM.
+This is bug was introduced in v3.5 by commit 783291e6900
+"Simplify the user_namespace by making userns->creator a kuid."
 
-Best
-Neil
+The bug made it possible for the owner of a user namespace to be
+present in a child user namespace.  Since the owner of a user nameapce
+is granted all capabilities it became possible for users in a
+grandchild user namespace to have all privilges over their parent user
+namspace.
+
+Reorder the checks in cap_capable.  This should make the common case
+faster and make it clear that nothing magic happens in the initial
+user namespace.  The reordering is safe because cred->user_ns
+can only be in targ_ns or targ_ns->parent but not both.
+
+Add a comment a the top of the loop to make the logic of
+the code clear.
+
+Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ security/commoncap.c |   19 ++++++++++++++-----
+ 1 files changed, 14 insertions(+), 5 deletions(-)
+
+diff --git a/security/commoncap.c b/security/commoncap.c
+index 6dbae46..ded41a0 100644
+--- a/security/commoncap.c
++++ b/security/commoncap.c
+@@ -76,11 +76,12 @@ int cap_netlink_send(struct sock *sk, struct sk_buff *skb)
+ int cap_capable(const struct cred *cred, struct user_namespace *targ_ns,
+ 		int cap, int audit)
+ {
+-	for (;;) {
+-		/* The owner of the user namespace has all caps. */
+-		if (targ_ns != &init_user_ns && uid_eq(targ_ns->owner, cred->euid))
+-			return 0;
  
-> 
-> 
++	/* See if cred has the capability in the target user namespace
++	 * by examining the target user namespace and all of the target
++	 * user namespace's parents.
++	 */
++	for (;;) {
+ 		/* Do we have the necessary capabilities? */
+ 		if (targ_ns == cred->user_ns)
+ 			return cap_raised(cred->cap_effective, cap) ? 0 : -EPERM;
+@@ -89,8 +90,16 @@ int cap_capable(const struct cred *cred, struct user_namespace *targ_ns,
+ 		if (targ_ns == &init_user_ns)
+ 			return -EPERM;
+ 
++		/* 
++		 * The owner of the user namespace in the parent of the
++		 * user namespace has all caps.
++		 */
++		if ((targ_ns->parent == cred->user_ns) &&
++		     uid_eq(targ_ns->owner, cred->euid))
++			return 0;
++
+ 		/*
+-		 *If you have a capability in a parent user ns, then you have
++		 * If you have a capability in a parent user ns, then you have
+ 		 * it over all children user namespaces as well.
+ 		 */
+ 		targ_ns = targ_ns->parent;
+-- 
+1.7.5.4
