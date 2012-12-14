@@ -1,7 +1,8 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 2/4] userns: Require CAP_SYS_ADMIN for most uses of setns.
-Date: Fri, 14 Dec 2012 14:03:54 -0800
-Message-ID: <87hanoxpdh.fsf__31390.0543530055$1355522666$gmane$org@xmission.com>
+Subject: [PATCH 3/4] userns: Add a more complete capability subset test to
+	commit_creds
+Date: Fri, 14 Dec 2012 14:04:31 -0800
+Message-ID: <87bodwxpcg.fsf__27760.9139717699$1355522703$gmane$org@xmission.com>
 References: <87txroxpgq.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,108 +24,66 @@ Cc: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-secu
 List-Id: containers.vger.kernel.org
 
 
-Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> found a nasty little bug in
-the permissions of setns.  With unprivileged user namespaces it
-became possible to create new namespaces without privilege.
+When unsharing a user namespace we reduce our credentials to just what
+can be done in that user namespace.  This is a subset of the credentials
+we previously had.  Teach commit_creds to recognize this is a subset
+of the credentials we have had before and don't clear the dumpability flag.
 
-However the setns calls were relaxed to only require CAP_SYS_ADMIN in
-the user nameapce of the targed namespace.
+This allows an unprivileged  program to do:
+unshare(CLONE_NEWUSER);
+fd = open("/proc/self/uid_map", O_RDWR);
 
-Which made the following nasty sequence possible.
-
-pid = clone(CLONE_NEWUSER | CLONE_NEWNS);
-if (pid == 0) { /* child */
-	system("mount --bind /home/me/passwd /etc/passwd");
-}
-else if (pid != 0) { /* parent */
-	char path[PATH_MAX];
-	snprintf(path, sizeof(path), "/proc/%u/ns/mnt");
-	fd = open(path, O_RDONLY);
-	setns(fd, 0);
-	system("su -");
-}
-
-Prevent this possibility by requiring CAP_SYS_ADMIN
-in the current user namespace when joing all but the user namespace.
+Where previously opening the uid_map writable would fail because
+the the task had been made non-dumpable.
 
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/namespace.c           |    3 ++-
- ipc/namespace.c          |    3 ++-
- kernel/pid_namespace.c   |    3 ++-
- kernel/utsname.c         |    3 ++-
- net/core/net_namespace.c |    3 ++-
- 5 files changed, 10 insertions(+), 5 deletions(-)
+ kernel/cred.c |   26 +++++++++++++++++++++++++-
+ 1 files changed, 25 insertions(+), 1 deletions(-)
 
-diff --git a/fs/namespace.c b/fs/namespace.c
-index c1bbe86..398a50f 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -2781,7 +2781,8 @@ static int mntns_install(struct nsproxy *nsproxy, void *ns)
- 	struct path root;
+diff --git a/kernel/cred.c b/kernel/cred.c
+index 48cea3d..993a7ea41 100644
+--- a/kernel/cred.c
++++ b/kernel/cred.c
+@@ -455,6 +455,30 @@ error_put:
+ 	return ret;
+ }
  
- 	if (!ns_capable(mnt_ns->user_ns, CAP_SYS_ADMIN) ||
--	    !nsown_capable(CAP_SYS_CHROOT))
-+	    !nsown_capable(CAP_SYS_CHROOT) ||
-+	    !nsown_capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
- 	if (fs->users != 1)
-diff --git a/ipc/namespace.c b/ipc/namespace.c
-index cf3386a..7c1fa45 100644
---- a/ipc/namespace.c
-+++ b/ipc/namespace.c
-@@ -170,7 +170,8 @@ static void ipcns_put(void *ns)
- static int ipcns_install(struct nsproxy *nsproxy, void *new)
- {
- 	struct ipc_namespace *ns = new;
--	if (!ns_capable(ns->user_ns, CAP_SYS_ADMIN))
-+	if (!ns_capable(ns->user_ns, CAP_SYS_ADMIN) ||
-+	    !nsown_capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
- 	/* Ditch state from the old ipc namespace */
-diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
-index 560da0d..fdbd0cd 100644
---- a/kernel/pid_namespace.c
-+++ b/kernel/pid_namespace.c
-@@ -325,7 +325,8 @@ static int pidns_install(struct nsproxy *nsproxy, void *ns)
- 	struct pid_namespace *active = task_active_pid_ns(current);
- 	struct pid_namespace *ancestor, *new = ns;
- 
--	if (!ns_capable(new->user_ns, CAP_SYS_ADMIN))
-+	if (!ns_capable(new->user_ns, CAP_SYS_ADMIN) ||
-+	    !nsown_capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
- 	/*
-diff --git a/kernel/utsname.c b/kernel/utsname.c
-index f6336d5..08b197e 100644
---- a/kernel/utsname.c
-+++ b/kernel/utsname.c
-@@ -113,7 +113,8 @@ static int utsns_install(struct nsproxy *nsproxy, void *new)
- {
- 	struct uts_namespace *ns = new;
- 
--	if (!ns_capable(ns->user_ns, CAP_SYS_ADMIN))
-+	if (!ns_capable(ns->user_ns, CAP_SYS_ADMIN) ||
-+	    !nsown_capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
- 	get_uts_ns(ns);
-diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
-index 2e9a313..8acce01 100644
---- a/net/core/net_namespace.c
-+++ b/net/core/net_namespace.c
-@@ -649,7 +649,8 @@ static int netns_install(struct nsproxy *nsproxy, void *ns)
- {
- 	struct net *net = ns;
- 
--	if (!ns_capable(net->user_ns, CAP_SYS_ADMIN))
-+	if (!ns_capable(net->user_ns, CAP_SYS_ADMIN) ||
-+	    !nsown_capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
- 	put_net(nsproxy->net_ns);
++static bool cred_cap_issubset(const struct cred *set, const struct cred *subset)
++{
++	const struct user_namespace *set_ns = set->user_ns;
++	const struct user_namespace *subset_ns = subset->user_ns;
++
++	/* If the two credentials are in the same user namespace see if
++	 * the capabilities of subset are a subset of set.
++	 */
++	if (set_ns == subset_ns)
++		return cap_issubset(subset->cap_permitted, set->cap_permitted);
++
++	/* The credentials are in a different user namespaces
++	 * therefore one is a subset of the other only if a set is an
++	 * ancestor of subset.
++	 */
++	while (subset_ns != &init_user_ns) {
++		if (set_ns == subset_ns->parent)
++			return true;
++		subset_ns = subset_ns->parent;
++	}
++
++	return false;
++}
++
+ /**
+  * commit_creds - Install new credentials upon the current task
+  * @new: The credentials to be assigned
+@@ -493,7 +517,7 @@ int commit_creds(struct cred *new)
+ 	    !gid_eq(old->egid, new->egid) ||
+ 	    !uid_eq(old->fsuid, new->fsuid) ||
+ 	    !gid_eq(old->fsgid, new->fsgid) ||
+-	    !cap_issubset(new->cap_permitted, old->cap_permitted)) {
++	    !cred_cap_issubset(old, new)) {
+ 		if (task->mm)
+ 			set_dumpable(task->mm, suid_dumpable);
+ 		task->pdeath_signal = 0;
 -- 
 1.7.5.4
