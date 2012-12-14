@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 09/12] cfq-iosched: enable full blkcg hierarchy support
-Date: Fri, 14 Dec 2012 14:41:22 -0800
-Message-ID: <1355524885-22719-10-git-send-email-tj@kernel.org>
+Subject: [PATCH 10/12] blkcg: add blkg_policy_data->plid
+Date: Fri, 14 Dec 2012 14:41:23 -0800
+Message-ID: <1355524885-22719-11-git-send-email-tj@kernel.org>
 References: <1355524885-22719-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,89 +21,49 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwi
 Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-With the previous two patches, all cfqg scheduling decisions are based
-on vfraction and ready for hierarchy support.  The only thing which
-keeps the behavior flat is cfqg_flat_parent() which makes vfraction
-calculation consider all non-root cfqgs children of the root cfqg.
-
-Replace it with cfqg_parent() which returns the real parent.  This
-enables full blkcg hierarchy support for cfq-iosched.  For example,
-consider the following hierarchy.
-
-        root
-      /      \
-   A:500      B:250
-  /     \
- AA:500  AB:1000
-
-For simplicity, let's say all the leaf nodes have active tasks and are
-on service tree.  For each leaf node, vfraction would be
-
- AA: (500  / 1500) * (500 / 750) =~ 0.2222
- AB: (1000 / 1500) * (500 / 750) =~ 0.4444
-  B:                 (250 / 750) =~ 0.3333
-
-and vdisktime will be distributed accordingly.
+Add pd->plid so that the policy a pd belongs to can be identified
+easily.  This will be used to implement hierarchical blkg_[rw]stats.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- block/cfq-iosched.c | 21 ++++++---------------
- 1 file changed, 6 insertions(+), 15 deletions(-)
+ block/blk-cgroup.c | 2 ++
+ block/blk-cgroup.h | 3 ++-
+ 2 files changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
-index fd2f4b4..ceade6e 100644
---- a/block/cfq-iosched.c
-+++ b/block/cfq-iosched.c
-@@ -603,20 +603,11 @@ static inline struct cfq_group *blkg_to_cfqg(struct blkcg_gq *blkg)
- 	return pd_to_cfqg(blkg_to_pd(blkg, &blkcg_policy_cfq));
- }
+diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
+index 16ea5a1..fbf96ce 100644
+--- a/block/blk-cgroup.c
++++ b/block/blk-cgroup.c
+@@ -113,6 +113,7 @@ static struct blkcg_gq *blkg_alloc(struct blkcg *blkcg, struct request_queue *q,
  
--/*
-- * Determine the parent cfqg for weight calculation.  Currently, cfqg
-- * scheduling is flat and the root is the parent of everyone else.
-- */
--static inline struct cfq_group *cfqg_flat_parent(struct cfq_group *cfqg)
-+static inline struct cfq_group *cfqg_parent(struct cfq_group *cfqg)
- {
--	struct blkcg_gq *blkg = cfqg_to_blkg(cfqg);
--	struct cfq_group *root;
--
--	while (blkg->parent)
--		blkg = blkg->parent;
--	root = blkg_to_cfqg(blkg);
-+	struct blkcg_gq *pblkg = cfqg_to_blkg(cfqg)->parent;
+ 		blkg->pd[i] = pd;
+ 		pd->blkg = blkg;
++		pd->plid = i;
  
--	return root != cfqg ? root : NULL;
-+	return pblkg ? blkg_to_cfqg(pblkg) : NULL;
- }
+ 		/* invoke per-policy init */
+ 		if (pol->pd_init_fn)
+@@ -908,6 +909,7 @@ int blkcg_activate_policy(struct request_queue *q,
  
- static inline void cfqg_get(struct cfq_group *cfqg)
-@@ -719,7 +710,7 @@ static void cfq_pd_reset_stats(struct blkcg_gq *blkg)
+ 		blkg->pd[pol->plid] = pd;
+ 		pd->blkg = blkg;
++		pd->plid = pol->plid;
+ 		pol->pd_init_fn(blkg);
  
- #else	/* CONFIG_CFQ_GROUP_IOSCHED */
+ 		spin_unlock(&blkg->blkcg->lock);
+diff --git a/block/blk-cgroup.h b/block/blk-cgroup.h
+index 2446225..40f5b97 100644
+--- a/block/blk-cgroup.h
++++ b/block/blk-cgroup.h
+@@ -81,8 +81,9 @@ struct blkg_rwstat {
+  * beginning and pd_size can't be smaller than pd.
+  */
+ struct blkg_policy_data {
+-	/* the blkg this per-policy data belongs to */
++	/* the blkg and policy id this per-policy data belongs to */
+ 	struct blkcg_gq			*blkg;
++	int				plid;
  
--static inline struct cfq_group *cfqg_flat_parent(struct cfq_group *cfqg) { return NULL; }
-+static inline struct cfq_group *cfqg_parent(struct cfq_group *cfqg) { return NULL; }
- static inline void cfqg_get(struct cfq_group *cfqg) { }
- static inline void cfqg_put(struct cfq_group *cfqg) { }
- 
-@@ -1286,7 +1277,7 @@ cfq_group_service_tree_add(struct cfq_rb_root *st, struct cfq_group *cfqg)
- 	 * activated node is met.  vfraction calculation should always
- 	 * continue to the root.
- 	 */
--	while ((parent = cfqg_flat_parent(pos))) {
-+	while ((parent = cfqg_parent(pos))) {
- 		if (propagate) {
- 			propagate = !parent->nr_active++;
- 			parent->level_weight += pos->weight;
-@@ -1337,7 +1328,7 @@ cfq_group_service_tree_del(struct cfq_rb_root *st, struct cfq_group *cfqg)
- 	pos->level_weight -= pos->leaf_weight;
- 
- 	while (propagate) {
--		struct cfq_group *parent = cfqg_flat_parent(pos);
-+		struct cfq_group *parent = cfqg_parent(pos);
- 
- 		/* @pos has 0 nr_active at this point */
- 		WARN_ON_ONCE(pos->level_weight);
+ 	/* used during policy activation */
+ 	struct list_head		alloc_node;
 -- 
 1.7.11.7
