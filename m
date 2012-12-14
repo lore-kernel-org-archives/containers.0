@@ -1,7 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 05/12] cfq-iosched: add leaf_weight
-Date: Fri, 14 Dec 2012 14:41:18 -0800
-Message-ID: <1355524885-22719-6-git-send-email-tj@kernel.org>
+Subject: [PATCH 07/12] cfq-iosched: implement hierarchy-ready cfq_group charge
+	scaling
+Date: Fri, 14 Dec 2012 14:41:20 -0800
+Message-ID: <1355524885-22719-8-git-send-email-tj@kernel.org>
 References: <1355524885-22719-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,286 +22,259 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwi
 Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-cfq blkcg is about to grow proper hierarchy handling, where a child
-blkg's weight would nest inside the parent's.  This makes tasks in a
-blkg to compete against both tasks in the sibling blkgs and the tasks
-of child blkgs.
+Currently, cfqg charges are scaled directly according to cfqg->weight.
+Regardless of the number of active cfqgs or the amount of active
+weights, a given weight value always scales charge the same way.  This
+works fine as long as all cfqgs are treated equally regardless of
+their positions in the hierarchy, which is what cfq currently
+implements.  It can't work in hierarchical settings because the
+interpretation of a given weight value depends on where the weight is
+located in the hierarchy.
 
-We're gonna use the existing weight as the group weight which decides
-the blkg's weight against its siblings.  This patch introduces a new
-weight - leaf_weight - which decides the weight of a blkg against the
-child blkgs.
+This patch reimplements cfqg charge scaling so that it can be used to
+support hierarchy properly.  The scheme is fairly simple and
+light-weight.
 
-It's named leaf_weight because another way to look at it is that each
-internal blkg nodes have a hidden child leaf node which contains all
-its tasks and leaf_weight is the weight of the leaf node and handled
-the same as the weight of the child blkgs.
+* When a cfqg is added to the service tree, v(disktime)weight is
+  calculated.  It walks up the tree to root calculating the fraction
+  it has in the hierarchy.  At each level, the fraction can be
+  calculated as
 
-This patch only adds leaf_weight fields and exposes it to userland.
-The new weight isn't actually used anywhere yet.  Note that
-cfq-iosched currently offcially supports only single level hierarchy
-and root blkgs compete with the first level blkgs - ie. root weight is
-basically being used as leaf_weight.  For root blkgs, the two weights
-are kept in sync for backward compatibility.
+    cfqg->weight / parent->level_weight
+
+  By compounding these, the global fraction of vdisktime the cfqg has
+  claim to - vfraction - can be determined.
+
+* When the cfqg needs to be charged, the charge is scaled inversely
+  proportionally to the vfraction.
+
+The new scaling scheme uses the same CFQ_SERVICE_SHIFT for fixed point
+representation as before; however, the smallest scaling factor is now
+1 (ie. 1 << CFQ_SERVICE_SHIFT).  This is different from before where 1
+was for CFQ_WEIGHT_DEFAULT and higher weight would result in smaller
+scaling factor.
+
+While this shifts the global scale of vdisktime a bit, it doesn't
+change the relative relationships among cfqgs and the scheduling
+result isn't different.
+
+cfq_group_notify_queue_add uses fixed CFQ_IDLE_DELAY when appending
+new cfqg to the service tree.  The specific value of CFQ_IDLE_DELAY
+didn't have any relevance to vdisktime before and is unlikely to cause
+any visible behavior difference now especially as the scale shift
+isn't that large.
+
+As the new scheme now makes proper distinction between cfqg->weight
+and ->leaf_weight, reverse the weight aliasing for root cfqgs.  For
+root, both weights are now mapped to ->leaf_weight instead of the
+other way around.
+
+Because we're still using cfqg_flat_parent(), this patch shouldn't
+change the scheduling behavior in any noticeable way.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- block/blk-cgroup.c  |   4 +-
- block/blk-cgroup.h  |   1 +
- block/cfq-iosched.c | 133 ++++++++++++++++++++++++++++++++++++++++++++++++----
- 3 files changed, 129 insertions(+), 9 deletions(-)
+ block/cfq-iosched.c | 103 +++++++++++++++++++++++++++++++++++++---------------
+ 1 file changed, 73 insertions(+), 30 deletions(-)
 
-diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
-index c858628..16ea5a1 100644
---- a/block/blk-cgroup.c
-+++ b/block/blk-cgroup.c
-@@ -26,7 +26,8 @@
- 
- static DEFINE_MUTEX(blkcg_pol_mutex);
- 
--struct blkcg blkcg_root = { .cfq_weight = 2 * CFQ_WEIGHT_DEFAULT };
-+struct blkcg blkcg_root = { .cfq_weight = 2 * CFQ_WEIGHT_DEFAULT,
-+			    .cfq_leaf_weight = 2 * CFQ_WEIGHT_DEFAULT, };
- EXPORT_SYMBOL_GPL(blkcg_root);
- 
- static struct blkcg_policy *blkcg_policy[BLKCG_MAX_POLS];
-@@ -710,6 +711,7 @@ static struct cgroup_subsys_state *blkcg_css_alloc(struct cgroup *cgroup)
- 		return ERR_PTR(-ENOMEM);
- 
- 	blkcg->cfq_weight = CFQ_WEIGHT_DEFAULT;
-+	blkcg->cfq_leaf_weight = CFQ_WEIGHT_DEFAULT;
- 	blkcg->id = atomic64_inc_return(&id_seq); /* root is 0, start from 1 */
- done:
- 	spin_lock_init(&blkcg->lock);
-diff --git a/block/blk-cgroup.h b/block/blk-cgroup.h
-index b26ed58..2446225 100644
---- a/block/blk-cgroup.h
-+++ b/block/blk-cgroup.h
-@@ -54,6 +54,7 @@ struct blkcg {
- 
- 	/* TODO: per-policy storage in blkcg */
- 	unsigned int			cfq_weight;	/* belongs to cfq */
-+	unsigned int			cfq_leaf_weight;
- };
- 
- struct blkg_stat {
 diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
-index 2f2b215..5f23763 100644
+index eb290a0..663a0f0 100644
 --- a/block/cfq-iosched.c
 +++ b/block/cfq-iosched.c
-@@ -223,10 +223,21 @@ struct cfq_group {
+@@ -237,6 +237,15 @@ struct cfq_group {
+ 	unsigned int level_weight;
  
- 	/* group service_tree key */
- 	u64 vdisktime;
+ 	/*
++	 * vfraction is the fraction of vdisktime that a cfqg is entitled
++	 * to.  It is in fixed point w/ CFQ_SERVICE_SHIFT and the sum of
++	 * all vfractions on a service tree is approximately 1.  The sum
++	 * may deviate a bit due to rounding errors and fluctuations caused
++	 * by cfqgs entering and leaving the service tree.
++	 */
++	unsigned int vfraction;
 +
 +	/*
-+	 * There are two weights - (internal) weight is the weight of this
-+	 * cfqg against the sibling cfqgs.  leaf_weight is the wight of
-+	 * this cfqg against the child cfqgs.  For the root cfqg, both
-+	 * weights are kept in sync for backward compatibility.
-+	 */
- 	unsigned int weight;
- 	unsigned int new_weight;
- 	unsigned int dev_weight;
+ 	 * There are two weights - (internal) weight is the weight of this
+ 	 * cfqg against the sibling cfqgs.  leaf_weight is the wight of
+ 	 * this cfqg against the child cfqgs.  For the root cfqg, both
+@@ -891,13 +900,27 @@ cfq_prio_to_slice(struct cfq_data *cfqd, struct cfq_queue *cfqq)
+ 	return cfq_prio_slice(cfqd, cfq_cfqq_sync(cfqq), cfqq->ioprio);
+ }
  
-+	unsigned int leaf_weight;
-+	unsigned int new_leaf_weight;
-+	unsigned int dev_leaf_weight;
-+
- 	/* number of cfqq currently on this group */
- 	int nr_cfqq;
- 
-@@ -1182,10 +1193,16 @@ static void
- cfq_update_group_weight(struct cfq_group *cfqg)
+-static inline u64 cfq_scale_slice(unsigned long delta, struct cfq_group *cfqg)
++/**
++ * cfqg_scale_charge - scale disk time charge according to cfqg weight
++ * @charge: disk time being charged
++ * @vfraction: vfraction of the cfqg, fixed point w/ CFQ_SERVICE_SHIFT
++ *
++ * Scale @charge according to @vfraction, which is in range (0, 1].  The
++ * scaling is inversely proportional.
++ *
++ * scaled = charge / vfraction
++ *
++ * The result is also in fixed point w/ CFQ_SERVICE_SHIFT.
++ */
++static inline u64 cfqg_scale_charge(unsigned long charge,
++				    unsigned int vfraction)
  {
- 	BUG_ON(!RB_EMPTY_NODE(&cfqg->rb_node));
-+
- 	if (cfqg->new_weight) {
- 		cfqg->weight = cfqg->new_weight;
- 		cfqg->new_weight = 0;
+-	u64 d = delta << CFQ_SERVICE_SHIFT;
++	u64 c = charge << CFQ_SERVICE_SHIFT;	/* make it fixed point */
+ 
+-	d = d * CFQ_WEIGHT_DEFAULT;
+-	do_div(d, cfqg->weight);
+-	return d;
++	/* charge / vfraction */
++	c <<= CFQ_SERVICE_SHIFT;
++	do_div(c, vfraction);
++	return c;
+ }
+ 
+ static inline u64 max_vdisktime(u64 min_vdisktime, u64 vdisktime)
+@@ -1237,7 +1260,9 @@ cfq_update_group_weight(struct cfq_group *cfqg)
+ static void
+ cfq_group_service_tree_add(struct cfq_rb_root *st, struct cfq_group *cfqg)
+ {
++	unsigned int vfr = 1 << CFQ_SERVICE_SHIFT;	/* start with 1 */
+ 	struct cfq_group *pos = cfqg;
++	struct cfq_group *parent;
+ 	bool propagate;
+ 
+ 	/* add to the service tree */
+@@ -1248,22 +1273,33 @@ cfq_group_service_tree_add(struct cfq_rb_root *st, struct cfq_group *cfqg)
+ 	st->total_weight += cfqg->weight;
+ 
+ 	/*
+-	 * Activate @cfqg and propagate activation upwards until we meet an
+-	 * already activated node or reach root.
++	 * Activate @cfqg and calculate the portion of vfraction @cfqg is
++	 * entitled to.  vfraction is calculated by walking the tree
++	 * towards the root calculating the fraction it has at each level.
++	 * The compounded ratio is how much vfraction @cfqg owns.
++	 *
++	 * Start with activating and calculating vfraction for @cfqg.
+ 	 */
+ 	propagate = !pos->nr_active++;
+ 	pos->level_weight += pos->leaf_weight;
++	vfr = vfr * pos->leaf_weight / pos->level_weight;
+ 
+-	while (propagate) {
+-		struct cfq_group *parent = cfqg_flat_parent(pos);
+-
+-		if (!parent)
+-			break;
+-
+-		propagate = !parent->nr_active++;
+-		parent->level_weight += pos->weight;
++	/*
++	 * Walk up the tree.  Both activation and vfraction calculation are
++	 * done in the same loop.  Propagation stops once an already
++	 * activated node is met.  vfraction calculation should always
++	 * continue to the root.
++	 */
++	while ((parent = cfqg_flat_parent(pos))) {
++		if (propagate) {
++			propagate = !parent->nr_active++;
++			parent->level_weight += pos->weight;
++		}
++		vfr = vfr * pos->weight / parent->level_weight;
+ 		pos = parent;
  	}
 +
-+	if (cfqg->new_leaf_weight) {
-+		cfqg->leaf_weight = cfqg->new_leaf_weight;
-+		cfqg->new_leaf_weight = 0;
-+	}
++	cfqg->vfraction = max_t(unsigned, vfr, 1);
  }
  
  static void
-@@ -1348,6 +1365,7 @@ static void cfq_pd_init(struct blkcg_gq *blkg)
+@@ -1309,6 +1345,7 @@ cfq_group_service_tree_del(struct cfq_rb_root *st, struct cfq_group *cfqg)
  
- 	cfq_init_cfqg_base(cfqg);
- 	cfqg->weight = blkg->blkcg->cfq_weight;
-+	cfqg->leaf_weight = blkg->blkcg->cfq_leaf_weight;
- }
+ 		/* @pos has 0 nr_active at this point */
+ 		WARN_ON_ONCE(pos->level_weight);
++		pos->vfraction = 0;
  
- /*
-@@ -1404,6 +1422,26 @@ static int cfqg_print_weight_device(struct cgroup *cgrp, struct cftype *cft,
- 	return 0;
- }
+ 		if (!parent)
+ 			break;
+@@ -1381,6 +1418,7 @@ static void cfq_group_served(struct cfq_data *cfqd, struct cfq_group *cfqg,
+ 	unsigned int used_sl, charge, unaccounted_sl = 0;
+ 	int nr_sync = cfqg->nr_cfqq - cfqg_busy_async_queues(cfqd, cfqg)
+ 			- cfqg->service_tree_idle.count;
++	unsigned int vfr;
  
-+static u64 cfqg_prfill_leaf_weight_device(struct seq_file *sf,
-+					  struct blkg_policy_data *pd, int off)
-+{
-+	struct cfq_group *cfqg = pd_to_cfqg(pd);
-+
-+	if (!cfqg->dev_leaf_weight)
-+		return 0;
-+	return __blkg_prfill_u64(sf, pd, cfqg->dev_leaf_weight);
-+}
-+
-+static int cfqg_print_leaf_weight_device(struct cgroup *cgrp,
-+					 struct cftype *cft,
-+					 struct seq_file *sf)
-+{
-+	blkcg_print_blkgs(sf, cgroup_to_blkcg(cgrp),
-+			  cfqg_prfill_leaf_weight_device, &blkcg_policy_cfq, 0,
-+			  false);
-+	return 0;
-+}
-+
- static int cfq_print_weight(struct cgroup *cgrp, struct cftype *cft,
- 			    struct seq_file *sf)
- {
-@@ -1411,8 +1449,16 @@ static int cfq_print_weight(struct cgroup *cgrp, struct cftype *cft,
- 	return 0;
- }
+ 	BUG_ON(nr_sync < 0);
+ 	used_sl = charge = cfq_cfqq_slice_usage(cfqq, &unaccounted_sl);
+@@ -1390,10 +1428,15 @@ static void cfq_group_served(struct cfq_data *cfqd, struct cfq_group *cfqg,
+ 	else if (!cfq_cfqq_sync(cfqq) && !nr_sync)
+ 		charge = cfqq->allocated_slice;
  
--static int cfqg_set_weight_device(struct cgroup *cgrp, struct cftype *cft,
--				  const char *buf)
-+static int cfq_print_leaf_weight(struct cgroup *cgrp, struct cftype *cft,
-+				 struct seq_file *sf)
-+{
-+	seq_printf(sf, "%u\n",
-+		   cgroup_to_blkcg(cgrp)->cfq_leaf_weight);
-+	return 0;
-+}
-+
-+static int __cfqg_set_weight_device(struct cgroup *cgrp, struct cftype *cft,
-+				    const char *buf, bool is_leaf_weight)
- {
- 	struct blkcg *blkcg = cgroup_to_blkcg(cgrp);
- 	struct blkg_conf_ctx ctx;
-@@ -1426,8 +1472,13 @@ static int cfqg_set_weight_device(struct cgroup *cgrp, struct cftype *cft,
- 	ret = -EINVAL;
- 	cfqg = blkg_to_cfqg(ctx.blkg);
- 	if (!ctx.v || (ctx.v >= CFQ_WEIGHT_MIN && ctx.v <= CFQ_WEIGHT_MAX)) {
--		cfqg->dev_weight = ctx.v;
--		cfqg->new_weight = cfqg->dev_weight ?: blkcg->cfq_weight;
-+		if (!is_leaf_weight) {
-+			cfqg->dev_weight = ctx.v;
-+			cfqg->new_weight = ctx.v ?: blkcg->cfq_weight;
-+		} else {
-+			cfqg->dev_leaf_weight = ctx.v;
-+			cfqg->new_leaf_weight = ctx.v ?: blkcg->cfq_leaf_weight;
-+		}
- 		ret = 0;
- 	}
+-	/* Can't update vdisktime while group is on service tree */
++	/*
++	 * Can't update vdisktime while on service tree and cfqg->vfraction
++	 * is valid only while on it.  Cache vfr, leave the service tree,
++	 * update vdisktime and go back on.  The re-addition to the tree
++	 * will also update the weights as necessary.
++	 */
++	vfr = cfqg->vfraction;
+ 	cfq_group_service_tree_del(st, cfqg);
+-	cfqg->vdisktime += cfq_scale_slice(charge, cfqg);
+-	/* If a new weight was requested, update now, off tree */
++	cfqg->vdisktime += cfqg_scale_charge(charge, vfr);
+ 	cfq_group_service_tree_add(st, cfqg);
  
-@@ -1435,7 +1486,20 @@ static int cfqg_set_weight_device(struct cgroup *cgrp, struct cftype *cft,
- 	return ret;
- }
+ 	/* This group is being expired. Save the context */
+@@ -1669,44 +1712,44 @@ static int cfqg_print_avg_queue_size(struct cgroup *cgrp, struct cftype *cft,
+ #endif	/* CONFIG_DEBUG_BLK_CGROUP */
  
--static int cfq_set_weight(struct cgroup *cgrp, struct cftype *cft, u64 val)
-+static int cfqg_set_weight_device(struct cgroup *cgrp, struct cftype *cft,
-+				  const char *buf)
-+{
-+	return __cfqg_set_weight_device(cgrp, cft, buf, false);
-+}
-+
-+static int cfqg_set_leaf_weight_device(struct cgroup *cgrp, struct cftype *cft,
-+				       const char *buf)
-+{
-+	return __cfqg_set_weight_device(cgrp, cft, buf, true);
-+}
-+
-+static int __cfq_set_weight(struct cgroup *cgrp, struct cftype *cft, u64 val,
-+			    bool is_leaf_weight)
- {
- 	struct blkcg *blkcg = cgroup_to_blkcg(cgrp);
- 	struct blkcg_gq *blkg;
-@@ -1445,19 +1509,41 @@ static int cfq_set_weight(struct cgroup *cgrp, struct cftype *cft, u64 val)
- 		return -EINVAL;
+ static struct cftype cfq_blkcg_files[] = {
++	/* on root, weight is mapped to leaf_weight */
+ 	{
+ 		.name = "weight_device",
+-		.read_seq_string = cfqg_print_weight_device,
+-		.write_string = cfqg_set_weight_device,
++		.flags = CFTYPE_ONLY_ON_ROOT,
++		.read_seq_string = cfqg_print_leaf_weight_device,
++		.write_string = cfqg_set_leaf_weight_device,
+ 		.max_write_len = 256,
+ 	},
+ 	{
+ 		.name = "weight",
+-		.read_seq_string = cfq_print_weight,
+-		.write_u64 = cfq_set_weight,
++		.flags = CFTYPE_ONLY_ON_ROOT,
++		.read_seq_string = cfq_print_leaf_weight,
++		.write_u64 = cfq_set_leaf_weight,
+ 	},
  
- 	spin_lock_irq(&blkcg->lock);
--	blkcg->cfq_weight = (unsigned int)val;
-+
-+	if (!is_leaf_weight)
-+		blkcg->cfq_weight = val;
-+	else
-+		blkcg->cfq_leaf_weight = val;
- 
- 	hlist_for_each_entry(blkg, n, &blkcg->blkg_list, blkcg_node) {
- 		struct cfq_group *cfqg = blkg_to_cfqg(blkg);
- 
--		if (cfqg && !cfqg->dev_weight)
--			cfqg->new_weight = blkcg->cfq_weight;
-+		if (!cfqg)
-+			continue;
-+
-+		if (!is_leaf_weight) {
-+			if (!cfqg->dev_weight)
-+				cfqg->new_weight = blkcg->cfq_weight;
-+		} else {
-+			if (!cfqg->dev_leaf_weight)
-+				cfqg->new_leaf_weight = blkcg->cfq_leaf_weight;
-+		}
- 	}
- 
- 	spin_unlock_irq(&blkcg->lock);
- 	return 0;
- }
- 
-+static int cfq_set_weight(struct cgroup *cgrp, struct cftype *cft, u64 val)
-+{
-+	return __cfq_set_weight(cgrp, cft, val, false);
-+}
-+
-+static int cfq_set_leaf_weight(struct cgroup *cgrp, struct cftype *cft, u64 val)
-+{
-+	return __cfq_set_weight(cgrp, cft, val, true);
-+}
-+
- static int cfqg_print_stat(struct cgroup *cgrp, struct cftype *cft,
- 			   struct seq_file *sf)
- {
-@@ -1518,6 +1604,37 @@ static struct cftype cfq_blkcg_files[] = {
+-	/* on root, leaf_weight is mapped to weight */
++	/* no such mapping necessary for !roots */
+ 	{
+-		.name = "leaf_weight_device",
+-		.flags = CFTYPE_ONLY_ON_ROOT,
++		.name = "weight_device",
++		.flags = CFTYPE_NOT_ON_ROOT,
+ 		.read_seq_string = cfqg_print_weight_device,
+ 		.write_string = cfqg_set_weight_device,
+ 		.max_write_len = 256,
+ 	},
+ 	{
+-		.name = "leaf_weight",
+-		.flags = CFTYPE_ONLY_ON_ROOT,
++		.name = "weight",
++		.flags = CFTYPE_NOT_ON_ROOT,
  		.read_seq_string = cfq_print_weight,
  		.write_u64 = cfq_set_weight,
  	},
-+
-+	/* on root, leaf_weight is mapped to weight */
-+	{
-+		.name = "leaf_weight_device",
-+		.flags = CFTYPE_ONLY_ON_ROOT,
-+		.read_seq_string = cfqg_print_weight_device,
-+		.write_string = cfqg_set_weight_device,
-+		.max_write_len = 256,
-+	},
-+	{
-+		.name = "leaf_weight",
-+		.flags = CFTYPE_ONLY_ON_ROOT,
-+		.read_seq_string = cfq_print_weight,
-+		.write_u64 = cfq_set_weight,
-+	},
-+
-+	/* no such mapping necessary for !roots */
-+	{
-+		.name = "leaf_weight_device",
-+		.flags = CFTYPE_NOT_ON_ROOT,
-+		.read_seq_string = cfqg_print_leaf_weight_device,
-+		.write_string = cfqg_set_leaf_weight_device,
-+		.max_write_len = 256,
-+	},
-+	{
-+		.name = "leaf_weight",
-+		.flags = CFTYPE_NOT_ON_ROOT,
-+		.read_seq_string = cfq_print_leaf_weight,
-+		.write_u64 = cfq_set_leaf_weight,
-+	},
-+
+ 
+-	/* no such mapping necessary for !roots */
  	{
- 		.name = "time",
- 		.private = offsetof(struct cfq_group, stats.time),
+ 		.name = "leaf_weight_device",
+-		.flags = CFTYPE_NOT_ON_ROOT,
+ 		.read_seq_string = cfqg_print_leaf_weight_device,
+ 		.write_string = cfqg_set_leaf_weight_device,
+ 		.max_write_len = 256,
+ 	},
+ 	{
+ 		.name = "leaf_weight",
+-		.flags = CFTYPE_NOT_ON_ROOT,
+ 		.read_seq_string = cfq_print_leaf_weight,
+ 		.write_u64 = cfq_set_leaf_weight,
+ 	},
 -- 
 1.7.11.7
