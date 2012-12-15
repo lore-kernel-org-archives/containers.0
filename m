@@ -1,17 +1,17 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 3/4] userns: Add a more complete capability subset test to
-	commit_creds
-Date: Fri, 14 Dec 2012 16:48:34 -0800
-Message-ID: <87lid0rvh9.fsf@xmission.com>
-References: <87txroxpgq.fsf@xmission.com> <87bodwxpcg.fsf@xmission.com>
-	<20121215000338.GC13659@mail.hallyn.com> <87r4msrx6t.fsf@xmission.com>
-	<20121215004735.GA14295@mail.hallyn.com>
+From: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>
+Subject: Re: [PATCH v2] core_pattern: set core helpers root and namespace to
+	crashing process
+Date: Fri, 14 Dec 2012 19:50:44 -0500
+Message-ID: <20121215005044.GB10508@neilslaptop.think-freely.org>
+References: <1355255996-25953-1-git-send-email-nhorman@tuxdriver.com>
+	<1355519048-28473-1-git-send-email-nhorman@tuxdriver.com>
+	<87d2ycut5l.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20121215004735.GA14295-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
-	message of "Sat, 15 Dec 2012 00:47:35 +0000")
+Content-Disposition: inline
+In-Reply-To: <87d2ycut5l.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,72 +21,47 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On Fri, Dec 14, 2012 at 03:10:30PM -0800, Eric W. Biederman wrote:
+> Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org> writes:
+> 
+> > As its currently implemented, redirection of core dumps to a pipe reader should
+> > be executed such that the reader runs in the namespace of the crashing process,
+> > and it currently does not. This is the only sane way to deal with namespaces
+> > properly it seems to me, and this patch implements that functionality.
+> 
+> I actually rather strongly disagree.
+> 
+> While we have a global core dump pattern core dumps to a a pipe reader
+> should be executed such that the reader runs in the namespace of the
+> process that set the pattern.  We can easily restrict that to the
+> initial namespaces to make the implementation simpler.
+> 
+> If you want to play namespace games you can implement all of those in
+> user space once my tree merges for v3.8.
+> 
+> I am really not a fan of the trigger process being able to control the
+> environment of a privileged process.  It makes writing the privileged
+> process much trickier.
+> 
+Why?  What specific problem do you see with allowing a privlidged process to
+execute within a specific namespace, that doesn't also exist with having the
+pipe reader execute in the init namespace?  Note I'm not saying that a poorly
+constructed pipe reader application doesn't have security problems if it doesn't
+validate the environment that its running in, but thats something that the pipe
+reader needs to be sure about.
 
-When unsharing a user namespace we reduce our credentials to just what
-can be done in that user namespace.  This is a subset of the credentials
-we previously had.  Teach commit_creds to recognize this is a subset
-of the credentials we have had before and don't clear the dumpability flag.
+Note also, that if the token in core_pattern is set such that the core_pattern
+is namespace/root relative, that container needs to install the application
+relative its root as well (e.g. positive action still needs to be taken on the
+part of the container admin to make this work).  For example, if you set
+core_pattern="||/usr/bin/foo"
+Then a process running in a chroot based at /sub/root/ still needs to install a
+file /sub/root/usr/bin/foo, or the core dump will fail.  So its not like a
+container can just have a core reader execute without first making an
+administrative decision to do so.
 
-This allows an unprivileged  program to do:
-unshare(CLONE_NEWUSER);
-fd = open("/proc/self/uid_map", O_RDWR);
-
-Where previously opening the uid_map writable would fail because
-the the task had been made non-dumpable.
-
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- kernel/cred.c |   27 ++++++++++++++++++++++++++-
- 1 files changed, 26 insertions(+), 1 deletions(-)
-
-diff --git a/kernel/cred.c b/kernel/cred.c
-index 48cea3d..709d521 100644
---- a/kernel/cred.c
-+++ b/kernel/cred.c
-@@ -455,6 +455,31 @@ error_put:
- 	return ret;
- }
- 
-+static bool cred_cap_issubset(const struct cred *set, const struct cred *subset)
-+{
-+	const struct user_namespace *set_ns = set->user_ns;
-+	const struct user_namespace *subset_ns = subset->user_ns;
-+
-+	/* If the two credentials are in the same user namespace see if
-+	 * the capabilities of subset are a subset of set.
-+	 */
-+	if (set_ns == subset_ns)
-+		return cap_issubset(subset->cap_permitted, set->cap_permitted);
-+
-+	/* The credentials are in a different user namespaces
-+	 * therefore one is a subset of the other only if a set is an
-+	 * ancestor of subset and set->euid is owner of subset or one
-+	 * of subsets ancestors.
-+	 */
-+	for (;subset_ns != &init_user_ns; subset_ns = subset_ns->parent) {
-+		if ((set_ns == subset_ns->parent)  &&
-+		    uid_eq(subset_ns->owner, set->euid))
-+			return true;
-+	}
-+
-+	return false;
-+}
-+
- /**
-  * commit_creds - Install new credentials upon the current task
-  * @new: The credentials to be assigned
-@@ -493,7 +518,7 @@ int commit_creds(struct cred *new)
- 	    !gid_eq(old->egid, new->egid) ||
- 	    !uid_eq(old->fsuid, new->fsuid) ||
- 	    !gid_eq(old->fsgid, new->fsgid) ||
--	    !cap_issubset(new->cap_permitted, old->cap_permitted)) {
-+	    !cred_cap_issubset(old, new)) {
- 		if (task->mm)
- 			set_dumpable(task->mm, suid_dumpable);
- 		task->pdeath_signal = 0;
--- 
-1.7.5.4
+Neil
