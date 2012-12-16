@@ -1,19 +1,15 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/4] userns: Add a more complete capability subset test
-	to commit_creds
-Date: Sat, 15 Dec 2012 02:06:36 +0000
-Message-ID: <20121215020636.GA14713__9323.78068469024$1355536906$gmane$org@mail.hallyn.com>
-References: <87txroxpgq.fsf@xmission.com> <87bodwxpcg.fsf@xmission.com>
-	<20121215000338.GC13659@mail.hallyn.com>
-	<87r4msrx6t.fsf@xmission.com>
-	<20121215004735.GA14295@mail.hallyn.com>
-	<87lid0rvh9.fsf@xmission.com>
+From: Zhu Yanhai <zhu.yanhai-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: performance drop after using blkcg
+Date: Sun, 16 Dec 2012 12:38:15 +0800
+Message-ID: <CAC8teKVi3Pwp2as6Q8y+35QAtRWGLywLZfWM-g2SoG8GzaPZxw__7648.71500800854$1355632744$gmane$org@mail.gmail.com>
+References: <CAFVn34SxqAJe_4P-WT8MOiG-kmKKD7ge96zoHXQuGqHWPgAt+A@mail.gmail.com>
+	<20121211142518.GA5580@redhat.com>
+	<CAFVn34TqCk71PDgdTAhBo9qTmhD3OwO9RxuyNRXwtkJoYqtOZg@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87lid0rvh9.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <CAFVn34TqCk71PDgdTAhBo9qTmhD3OwO9RxuyNRXwtkJoYqtOZg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,76 +19,64 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Zhao Shuai <zhaoshuai-h+KGxgPPiopAfugRpC6u6w@public.gmane.org>
+Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> 
-> When unsharing a user namespace we reduce our credentials to just what
-> can be done in that user namespace.  This is a subset of the credentials
-> we previously had.  Teach commit_creds to recognize this is a subset
-> of the credentials we have had before and don't clear the dumpability flag.
-> 
-> This allows an unprivileged  program to do:
-> unshare(CLONE_NEWUSER);
-> fd = open("/proc/self/uid_map", O_RDWR);
-> 
-> Where previously opening the uid_map writable would fail because
-> the the task had been made non-dumpable.
-> 
-> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+2012/12/12 Zhao Shuai <zhaoshuai-h+KGxgPPiopAfugRpC6u6w@public.gmane.org>
+>
+> 2012/12/11 Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>:
+> > These results are with slice_idle=0?
+>
+> Yes, slice_idle is disabled.
+>
+> > What's the storage you are using. Looking at the speed of IO I would
+> > guess it is not one of those rotational disks.
+>
+> I have done the same test on 3 different type of boxes,and all of them
+> show a performance drop(30%-40%) after using blkcg. Though they
+> have different type of disk, all the storage they use are traditional
+> rotational
+> devices(e.g."HP EG0146FAWHU", "IBM-ESXS").
 
-Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Or you may want to try IO-throttle (i.e
+blkio.throttle.read_iops_device and blkio.throttle.write_iops_device)
+instead of blkcg. We use it as a compromised solution between
+performance and bandwidth allocation fairness on some clusters whose
+storage backend is ioDrive from FusionIO, which is also a really fast
+device.
+CFS/blkcg is based on time-sharing against the storage devices
+(allocation based on IOPS mode is just convert IOPS to virtual time,
+it's still time-sharing in fact), so the device only services single
+one group at one slice. Since many modern device requires enough
+degree of parallelism to get its full capability, the device can't run
+at full speed if every single group can't give it enough pressure,
+although they do so if you add them up, that's why you can get good
+score if you run them under the deadline scheduler.
 
-> ---
->  kernel/cred.c |   27 ++++++++++++++++++++++++++-
->  1 files changed, 26 insertions(+), 1 deletions(-)
-> 
-> diff --git a/kernel/cred.c b/kernel/cred.c
-> index 48cea3d..709d521 100644
-> --- a/kernel/cred.c
-> +++ b/kernel/cred.c
-> @@ -455,6 +455,31 @@ error_put:
->  	return ret;
+--
+Regards,
+Zhu Yanhai
+
+>
+> > So if somebody wants to experiment, just tweak the code a bit to allow
+> > preemption when a queue which lost share gets backlogged and you
+> > practially have a prototype of iops based group scheduling.
+>
+> Could you please explain more on this? How to adjust the code? I have test
+> the following code piece, the result is we lost group differentiation.
+>
+> cfq_group_served() {
+>          if (iops_mode(cfqd))
+>                  charge = cfqq->slice_dispatch;
+>          cfqg->vdisktime += cfq_scale_slice(charge, cfqg);
 >  }
->  
-> +static bool cred_cap_issubset(const struct cred *set, const struct cred *subset)
-> +{
-> +	const struct user_namespace *set_ns = set->user_ns;
-> +	const struct user_namespace *subset_ns = subset->user_ns;
-> +
-> +	/* If the two credentials are in the same user namespace see if
-> +	 * the capabilities of subset are a subset of set.
-> +	 */
-> +	if (set_ns == subset_ns)
-> +		return cap_issubset(subset->cap_permitted, set->cap_permitted);
-> +
-> +	/* The credentials are in a different user namespaces
-> +	 * therefore one is a subset of the other only if a set is an
-> +	 * ancestor of subset and set->euid is owner of subset or one
-> +	 * of subsets ancestors.
-> +	 */
-> +	for (;subset_ns != &init_user_ns; subset_ns = subset_ns->parent) {
-> +		if ((set_ns == subset_ns->parent)  &&
-> +		    uid_eq(subset_ns->owner, set->euid))
-> +			return true;
-> +	}
-> +
-> +	return false;
-> +}
-> +
->  /**
->   * commit_creds - Install new credentials upon the current task
->   * @new: The credentials to be assigned
-> @@ -493,7 +518,7 @@ int commit_creds(struct cred *new)
->  	    !gid_eq(old->egid, new->egid) ||
->  	    !uid_eq(old->fsuid, new->fsuid) ||
->  	    !gid_eq(old->fsgid, new->fsgid) ||
-> -	    !cap_issubset(new->cap_permitted, old->cap_permitted)) {
-> +	    !cred_cap_issubset(old, new)) {
->  		if (task->mm)
->  			set_dumpable(task->mm, suid_dumpable);
->  		task->pdeath_signal = 0;
-> -- 
-> 1.7.5.4
+>
+>
+> --
+> Regards,
+> Zhao Shuai
+> --
+> To unsubscribe from this list: send the line "unsubscribe cgroups" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
