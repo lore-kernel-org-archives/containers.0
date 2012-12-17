@@ -1,7 +1,7 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [RFC PATCH 4/9] introduce helper function cgroup_in_root
-Date: Mon, 17 Dec 2012 14:43:30 +0800
-Message-ID: <1355726615-15224-5-git-send-email-gaofeng__18562.8534797162$1355726670$gmane$org@cn.fujitsu.com>
+Subject: [RFC PATCH 7/9] cgroup: attach container's tasks to proper cgroup
+Date: Mon, 17 Dec 2012 14:43:33 +0800
+Message-ID: <1355726615-15224-8-git-send-email-gaofeng__14805.3707358942$1355726674$gmane$org@cn.fujitsu.com>
 References: <1355726615-15224-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,65 +21,92 @@ To: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFL
 Cc: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-After adding container support for cgroup,there will be
-many roots.
+If cgroup is mounted in container,move container's
+tasks to the top cgroup of container.
 
-Add a helper function cgroup_in_root,only operate the
-cgroup when it's in the root.
+If cgroup is unmounted in container,move container's
+tasks back to the host's cgroup.
 
 Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- kernel/cgroup.c |   17 +++++++++++++++--
- 1 files changed, 15 insertions(+), 2 deletions(-)
+ kernel/cgroup.c |   48 ++++++++++++++++++++++++++++++++++++++++++------
+ 1 files changed, 42 insertions(+), 6 deletions(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 2e14c8f..0195db1 100644
+index ac61027..e077660 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -850,6 +850,14 @@ static struct backing_dev_info cgroup_backing_dev_info = {
- static int alloc_css_id(struct cgroup_subsys *ss,
- 			struct cgroup *parent, struct cgroup *child);
+@@ -1110,6 +1110,7 @@ static int __rebind_subsystems_ns(struct cgroupfs_root *root,
+ 	struct cgroup *parent = NULL;
+ 	struct cgroupfs_root *top_root = NULL;
+ 	unsigned long bit;
++	struct tgid_iter iter;
+ 	int i;
  
-+static inline bool cgroup_in_root(struct cgroup *cgrp,
-+				  struct cgroupfs_root *root)
-+{
-+	if (root == cgrp->root)
-+		return true;
-+	return false;
-+}
+ 	removed_mask = root->actual_subsys_mask & ~final_subsys_mask;
+@@ -1126,6 +1127,25 @@ static int __rebind_subsystems_ns(struct cgroupfs_root *root,
+ 		BUG_ON(parent == NULL);
+ 	}
+ 
++	/*
++	 * Attach container's tasks to host's cgroup,since this
++	 * top cgroup may be destroyed or changed. If task attaching
++	 * failed, return error immediately.
++	 */
++	if (cgrp->parent) {
++		int error;
++		iter.task = NULL;
++		iter.tgid = 1;
++		for (iter = next_tgid(root->pid_ns, iter); iter.task;
++		     iter.tgid += 1, iter = next_tgid(root->pid_ns, iter)) {
++			error = cgroup_attach_task(cgrp->parent, iter.task);
++			if (error && error != -ESRCH) {
++				put_task_struct(iter.task);
++				return error;
++			}
++		}
++	}
 +
- /*
-  * Find out the top root by subsys_mask.
-  */
-@@ -2047,7 +2055,8 @@ int cgroup_attach_task_all(struct task_struct *from, struct task_struct *tsk)
- 	cgroup_lock();
- 	for_each_active_root(root) {
- 		struct cgroup *from_cg = task_cgroup_from_root(from, root);
+ 	/* Process each subsystem */
+ 	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
+ 		struct cgroup_subsys *ss = subsys[i];
+@@ -1158,15 +1178,31 @@ static int __rebind_subsystems_ns(struct cgroupfs_root *root,
+ 		}
+ 	}
+ 
+-	root->top_root = top_root;
+-	cgrp->parent = parent;
 -
-+		if (!cgroup_in_root(from_cg, root))
-+			continue;
- 		retval = cgroup_attach_task(from_cg, tsk);
- 		if (retval)
- 			break;
-@@ -4786,6 +4795,10 @@ static int proc_cgroup_show(struct seq_file *m, void *v)
- 		struct cgroup *cgrp;
- 		int count = 0;
- 
-+		cgrp = task_cgroup_from_root(tsk, root);
-+		if (!cgroup_in_root(cgrp, root))
-+			continue;
-+
- 		seq_printf(m, "%d:", root->hierarchy_id);
- 		for_each_subsys(root, ss)
- 			seq_printf(m, "%s%s", count++ ? "," : "", ss->name);
-@@ -4793,7 +4806,7 @@ static int proc_cgroup_show(struct seq_file *m, void *v)
- 			seq_printf(m, "%sname=%s", count ? "," : "",
- 				   root->name);
- 		seq_putc(m, ':');
--		cgrp = task_cgroup_from_root(tsk, root);
-+
- 		retval = cgroup_path(cgrp, buf, PAGE_SIZE);
- 		if (retval < 0)
- 			goto out_unlock;
+ 	/* Link to new top_root or unlink when umounting */
+-	if (top_root)
++	if (top_root) {
++		root->top_root = top_root;
++		cgrp->parent = parent;
++		/*
++		 * Attach container's tasks to the new top cgroup.
++		 * We don't care whether some tasks are not attached
++		 * to this cgroup successfully, it totally does no harm.
++		 */
++		iter.task = NULL;
++		iter.tgid = 1;
++		for (iter = next_tgid(root->pid_ns, iter); iter.task;
++		     iter.tgid += 1, iter = next_tgid(root->pid_ns, iter)) {
++			cgroup_attach_task(cgrp, iter.task);
++		}
++		atomic_inc(&top_root->sb->s_active);
++		top_root->number_of_cgroups++;
+ 		list_move_tail(&cgrp->allcg_node, &top_root->allcg_list);
+-	else
++	} else {
++		root->top_root->number_of_cgroups--;
++		atomic_dec(&root->top_root->sb->s_active);
++		root->top_root = NULL;
++		cgrp->parent = NULL;
+ 		list_del_init(&cgrp->allcg_node);
+-
++	}
+ 	return 0;
+ out:
+ 	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
 -- 
 1.7.7.6
