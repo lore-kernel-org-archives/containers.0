@@ -1,15 +1,17 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 0/4] user namespace fixes
-Date: Mon, 17 Dec 2012 13:01:59 -0800
-Message-ID: <87zk1cjsu0.fsf__11439.4541284584$1355778150$gmane$org@xmission.com>
-References: <87txroxpgq.fsf@xmission.com>
-	<CALCETrX2Fa-DuM+wkgsij7oiJXzCD8W6Phkv-MjgCDg_Ma6CTg@mail.gmail.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 06/12] cfq-iosched: implement cfq_group->nr_active and
+	->level_weight
+Date: Mon, 17 Dec 2012 13:15:17 -0800
+Message-ID: <20121217211517.GC1844__49414.0222239823$1355778945$gmane$org@htj.dyndns.org>
+References: <1355524885-22719-1-git-send-email-tj@kernel.org>
+	<1355524885-22719-7-git-send-email-tj@kernel.org>
+	<20121217204609.GH7235@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CALCETrX2Fa-DuM+wkgsij7oiJXzCD8W6Phkv-MjgCDg_Ma6CTg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Andy Lutomirski's message of "Mon, 17 Dec 2012 11:03:10 -0800")
+Content-Disposition: inline
+In-Reply-To: <20121217204609.GH7235-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,45 +21,34 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Cc: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> writes:
+Hello, Vivek.
 
-> On Fri, Dec 14, 2012 at 2:01 PM, Eric W. Biederman
-> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->>
->> These are fixes from Andys review of my user namespace tree.
->>
->> The first two patches are critical must fix fixes.
->>
->> The third patch fixing commit_creds is a nice to have but fixing it
->> would be good.
->>
->> Andy, Serge  if you could give these patches a once over to make certain
->> I am not doing something stupid.
->>
->> Thank you,
->> Eric
->>
->> ---
->>
->> Eric W. Biederman (4):
->>       Fix cap_capable to only allow owners in the parent user namespace to have caps.
->
-> For whatever reason, I didn't get the actual email. 
+On Mon, Dec 17, 2012 at 03:46:09PM -0500, Vivek Goyal wrote:
+> On Fri, Dec 14, 2012 at 02:41:19PM -0800, Tejun Heo wrote:
+> > To prepare for blkcg hierarchy support, add cfqg->nr_active and
+> > ->level_weight.  cfqg->nr_active counts the number of active cfqgs at
+> > the cfqg's level and ->level_weight is sum of weights of those cfqgs.
+> > The level covers itself (cfqg->leaf_weight) and immediate children.
+> 
+> This notion of level is really confusing. If one says "at cfqg's level"
+> I immediately associate with cfqg's siblings and not with cfqg's children.
 
-How weird.
+We can explicitly say at children's level but I think it should be
+enough to explain it clearly in the comment where the field is
+defined.
 
-> Assuming this is
-> 5e4a08476b50fa39210fca82e03325cc46b9c235:
+> I think confusion happens because we are overloading the definition of
+> cfqg. It is competing with its siblings at the same time it is competing
+> against its child groups (on behalf of its children tasks).
 
-It is the parent of that 5e4a08476b50fa39210fca82e03325cc46b9c235
-520d9eabce18edfef76a60b7b839d54facafe1f9
+While I agree that part is a bit tricky, I can't think of a much
+better way to describe it.  Any better ideas?
 
-But that should be close enough.
+Thanks.
 
-> Acked-by: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-
-Eric
+-- 
+tejun
