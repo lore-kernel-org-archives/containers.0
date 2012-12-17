@@ -1,7 +1,7 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [RFC PATCH 3/9] cgroup: use root->top_root instead of root
-Date: Mon, 17 Dec 2012 14:43:29 +0800
-Message-ID: <1355726615-15224-4-git-send-email-gaofeng__24455.0574956977$1355726651$gmane$org@cn.fujitsu.com>
+Subject: [RFC PATCH 2/9] cgroup: introduce the top root
+Date: Mon, 17 Dec 2012 14:43:28 +0800
+Message-ID: <1355726615-15224-3-git-send-email-gaofeng__37411.6002153189$1355726660$gmane$org@cn.fujitsu.com>
 References: <1355726615-15224-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,87 +21,110 @@ To: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFL
 Cc: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-After adding container support for cgroup,the subsystems
-can bind to many hierarchies.the root of cgroups will be
-different even these roots have same subsys_mask.
+We will allow container to allocate new hierarchy,
+and because the cgroup subsystems only can be linked
+with one cgroupfs_root. so it's need to add a new field
+top_root for cgroupfs_root to point out which subsystems
+binds to this hierarchy.
 
-Because these roots' top_root will always be same.use
-top_root instead of root.
+Add a helper function find_top_root to help find out the
+top_root.
 
-Also link cgroup's allcg_node to top_root's allcg_list.
+also rename root_count to top_root_count.
 
 Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- kernel/cgroup.c |   15 ++++++++-------
- 1 files changed, 8 insertions(+), 7 deletions(-)
+ kernel/cgroup.c |   29 ++++++++++++++++++++++++-----
+ 1 files changed, 24 insertions(+), 5 deletions(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 27ebeaf..2e14c8f 100644
+index 7d095b7..27ebeaf 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -315,7 +315,7 @@ static int notify_on_release(const struct cgroup *cgrp)
-  * an active hierarchy
-  */
- #define for_each_subsys(_root, _ss) \
--list_for_each_entry(_ss, &_root->subsys_list, sibling)
-+list_for_each_entry(_ss, &_root->top_root->subsys_list, sibling)
+@@ -132,6 +132,9 @@ struct cgroupfs_root {
+ 	/* The pid namespace this hierarchy belongs to */
+ 	struct pid_namespace *pid_ns;
  
- /* for_each_active_root() allows you to iterate across the active hierarchies */
- #define for_each_active_root(_root) \
-@@ -519,7 +519,7 @@ static bool compare_css_sets(struct css_set *cg,
- 		cg1 = cgl1->cgrp;
- 		cg2 = cgl2->cgrp;
- 		/* Hierarchies should be linked in the same order. */
--		BUG_ON(cg1->root != cg2->root);
-+		BUG_ON(cg1->root->top_root != cg2->root->top_root);
++	/* The top root,subsystem only links with top root */
++	struct cgroupfs_root *top_root;
++
+ 	/* A list running through the active hierarchies */
+ 	struct list_head root_list;
  
- 		/*
- 		 * If this hierarchy is the hierarchy of the cgroup
-@@ -528,7 +528,7 @@ static bool compare_css_sets(struct css_set *cg,
- 		 * hierarchy, then this css_set should point to the
- 		 * same cgroup as the old css_set.
- 		 */
--		if (cg1->root == new_cgrp->root) {
-+		if (cg1->root->top_root == new_cgrp->root->top_root) {
- 			if (cg1 != new_cgrp)
- 				return false;
- 		} else {
-@@ -703,7 +703,7 @@ static struct css_set *find_css_set(
- 	/* Add reference counts and links from the new css_set. */
- 	list_for_each_entry(link, &oldcg->cg_links, cg_link_list) {
- 		struct cgroup *c = link->cgrp;
--		if (c->root == cgrp->root)
-+		if (c->root->top_root == cgrp->root->top_root)
- 			c = cgrp;
- 		link_css_set(&tmp_cg_links, res, c);
+@@ -234,7 +237,7 @@ struct cgroup_event {
+ /* The list of hierarchy roots */
+ 
+ static LIST_HEAD(roots);
+-static int root_count;
++static int top_root_count;
+ 
+ static DEFINE_IDA(hierarchy_ida);
+ static int next_hierarchy_id;
+@@ -682,7 +685,7 @@ static struct css_set *find_css_set(
+ 		return NULL;
+ 
+ 	/* Allocate all the cg_cgroup_link objects that we'll need */
+-	if (allocate_cg_links(root_count, &tmp_cg_links) < 0) {
++	if (allocate_cg_links(top_root_count, &tmp_cg_links) < 0) {
+ 		kfree(res);
+ 		return NULL;
  	}
-@@ -745,7 +745,7 @@ static struct cgroup *task_cgroup_from_root(struct task_struct *task,
- 		struct cg_cgroup_link *link;
- 		list_for_each_entry(link, &css->cg_links, cg_link_list) {
- 			struct cgroup *c = link->cgrp;
--			if (c->root == root) {
-+			if (c->root->top_root == root->top_root) {
- 				res = c;
- 				break;
- 			}
-@@ -2840,7 +2840,8 @@ static void cgroup_cfts_commit(struct cgroup_subsys *ss,
+@@ -847,6 +850,20 @@ static struct backing_dev_info cgroup_backing_dev_info = {
+ static int alloc_css_id(struct cgroup_subsys *ss,
+ 			struct cgroup *parent, struct cgroup *child);
  
- 	/* %NULL @cfts indicates abort and don't bother if @ss isn't attached */
- 	if (cfts && ss->root != &rootnode) {
--		list_for_each_entry(cgrp, &ss->root->allcg_list, allcg_node) {
-+		list_for_each_entry(cgrp, &ss->root->top_root->allcg_list,
-+				    allcg_node) {
- 			dget(cgrp->dentry);
- 			list_add_tail(&cgrp->cft_q_node, &pending);
- 		}
-@@ -4207,7 +4208,7 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
- 	/* allocation complete, commit to creation */
- 	dentry->d_fsdata = cgrp;
- 	cgrp->dentry = dentry;
--	list_add_tail(&cgrp->allcg_node, &root->allcg_list);
-+	list_add_tail(&cgrp->allcg_node, &root->top_root->allcg_list);
- 	list_add_tail_rcu(&cgrp->sibling, &cgrp->parent->children);
- 	root->number_of_cgroups++;
++/*
++ * Find out the top root by subsys_mask.
++ */
++static struct cgroupfs_root *find_top_root(unsigned long subsys_mask)
++{
++	struct cgroupfs_root *existing_root;
++	for_each_active_root(existing_root) {
++		if (!test_bit(ROOT_NAMESPACE, &existing_root->flags) &&
++		    existing_root->subsys_mask == subsys_mask)
++			return existing_root;
++	}
++	return NULL;
++}
++
+ static struct inode *cgroup_new_inode(umode_t mode, struct super_block *sb)
+ {
+ 	struct inode *inode = new_inode(sb);
+@@ -1416,6 +1433,7 @@ static void init_cgroup_root(struct cgroupfs_root *root)
+ 	INIT_LIST_HEAD(&root->root_list);
+ 	INIT_LIST_HEAD(&root->allcg_list);
+ 	root->number_of_cgroups = 1;
++	root->top_root = root;
+ 	cgrp->root = root;
+ 	cgrp->top_cgroup = cgrp;
+ 	init_cgroup_housekeeping(cgrp);
+@@ -1656,7 +1674,7 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
+ 		BUG_ON(ret);
  
+ 		list_add(&root->root_list, &roots);
+-		root_count++;
++		top_root_count++;
+ 
+ 		sb->s_root->d_fsdata = root_cgrp;
+ 		root->top_cgroup.dentry = sb->s_root;
+@@ -1749,7 +1767,8 @@ static void cgroup_kill_sb(struct super_block *sb) {
+ 
+ 	if (!list_empty(&root->root_list)) {
+ 		list_del(&root->root_list);
+-		root_count--;
++		if (!test_bit(ROOT_NAMESPACE, &root->flags))
++			top_root_count--;
+ 	}
+ 
+ 	mutex_unlock(&cgroup_root_mutex);
+@@ -4635,7 +4654,7 @@ int __init cgroup_init_early(void)
+ 	INIT_HLIST_NODE(&init_css_set.hlist);
+ 	css_set_count = 1;
+ 	init_cgroup_root(&rootnode);
+-	root_count = 1;
++	top_root_count = 1;
+ 	init_task.cgroups = &init_css_set;
+ 
+ 	init_css_set_link.cg = &init_css_set;
 -- 
 1.7.7.6
