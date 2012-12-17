@@ -1,13 +1,13 @@
 From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: [PATCH 0/4] user namespace fixes
-Date: Mon, 17 Dec 2012 11:03:10 -0800
-Message-ID: <CALCETrX2Fa-DuM+wkgsij7oiJXzCD8W6Phkv-MjgCDg_Ma6CTg@mail.gmail.com>
-References: <87txroxpgq.fsf@xmission.com>
+Subject: Re: [PATCH 2/4] userns: Require CAP_SYS_ADMIN for most uses of setns.
+Date: Mon, 17 Dec 2012 11:03:56 -0800
+Message-ID: <CALCETrVaj0yzhGau0M+9Dd2AX+wu4anFWCfAG=Y6NnG1g-3LBg__29231.885521631$1355771078$gmane$org@mail.gmail.com>
+References: <87txroxpgq.fsf@xmission.com> <87hanoxpdh.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87txroxpgq.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <87hanoxpdh.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,43 +21,40 @@ To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Dec 14, 2012 at 2:01 PM, Eric W. Biederman
+On Fri, Dec 14, 2012 at 2:03 PM, Eric W. Biederman
 <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
 >
-> These are fixes from Andys review of my user namespace tree.
+> Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> found a nasty little bug in
+> the permissions of setns.  With unprivileged user namespaces it
+> became possible to create new namespaces without privilege.
 >
-> The first two patches are critical must fix fixes.
+> However the setns calls were relaxed to only require CAP_SYS_ADMIN in
+> the user nameapce of the targed namespace.
 >
-> The third patch fixing commit_creds is a nice to have but fixing it
-> would be good.
+> Which made the following nasty sequence possible.
 >
-> Andy, Serge  if you could give these patches a once over to make certain
-> I am not doing something stupid.
+> pid = clone(CLONE_NEWUSER | CLONE_NEWNS);
+> if (pid == 0) { /* child */
+>         system("mount --bind /home/me/passwd /etc/passwd");
+> }
+> else if (pid != 0) { /* parent */
+>         char path[PATH_MAX];
+>         snprintf(path, sizeof(path), "/proc/%u/ns/mnt");
+>         fd = open(path, O_RDONLY);
+>         setns(fd, 0);
+>         system("su -");
+> }
 >
-> Thank you,
-> Eric
+> Prevent this possibility by requiring CAP_SYS_ADMIN
+> in the current user namespace when joing all but the user namespace.
 >
+> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 > ---
->
-> Eric W. Biederman (4):
->       Fix cap_capable to only allow owners in the parent user namespace to have caps.
-
-For whatever reason, I didn't get the actual email.  Assuming this is
-5e4a08476b50fa39210fca82e03325cc46b9c235:
+>  fs/namespace.c           |    3 ++-
+>  ipc/namespace.c          |    3 ++-
+>  kernel/pid_namespace.c   |    3 ++-
+>  kernel/utsname.c         |    3 ++-
+>  net/core/net_namespace.c |    3 ++-
+>  5 files changed, 10 insertions(+), 5 deletions(-)
 
 Acked-by: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-
-However, this comment:
-                /*
-                 * The owner of the user namespace in the parent of the
-                 * user namespace has all caps.
-                 */
-could use work.  I agree with the code, but I gave up on understanding
-the comment.
-
->       userns:  Require CAP_SYS_ADMIN for most uses of setns.
->       userns: Add a more complete capability subset test to commit_creds
->       userns: Fix typo in description of the limitation of userns_install
->
-
---Andy
