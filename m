@@ -1,7 +1,7 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [RFC PATCH 2/9] cgroup: introduce the top root
-Date: Mon, 17 Dec 2012 14:43:28 +0800
-Message-ID: <1355726615-15224-3-git-send-email-gaofeng__37411.6002153189$1355726660$gmane$org@cn.fujitsu.com>
+Subject: [RFC PATCH 1/9] cgroup: introduce cgroupfs_root flag ROOT_NAMESPACE
+Date: Mon, 17 Dec 2012 14:43:27 +0800
+Message-ID: <1355726615-15224-2-git-send-email-gaofeng__33079.8629358926$1355726661$gmane$org@cn.fujitsu.com>
 References: <1355726615-15224-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,110 +21,87 @@ To: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFL
 Cc: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-We will allow container to allocate new hierarchy,
-and because the cgroup subsystems only can be linked
-with one cgroupfs_root. so it's need to add a new field
-top_root for cgroupfs_root to point out which subsystems
-binds to this hierarchy.
+1. add a new flag bit ROOT_NAMESPACE for cgroupfs_root,
+   this bit is used for identifying whether this hierarchy
+   is mounted in container(pid namespace).
 
-Add a helper function find_top_root to help find out the
-top_root.
-
-also rename root_count to top_root_count.
+2. add a field pid_ns in cgroupfs_root,points to which
+   pidns this hierarchy belongs to.
 
 Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- kernel/cgroup.c |   29 ++++++++++++++++++++++++-----
- 1 files changed, 24 insertions(+), 5 deletions(-)
+ kernel/cgroup.c |   17 +++++++++++++++--
+ 1 files changed, 15 insertions(+), 2 deletions(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 7d095b7..27ebeaf 100644
+index f34c41b..7d095b7 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -132,6 +132,9 @@ struct cgroupfs_root {
- 	/* The pid namespace this hierarchy belongs to */
- 	struct pid_namespace *pid_ns;
+@@ -129,6 +129,9 @@ struct cgroupfs_root {
+ 	/* Tracks how many cgroups are currently defined in hierarchy.*/
+ 	int number_of_cgroups;
  
-+	/* The top root,subsystem only links with top root */
-+	struct cgroupfs_root *top_root;
++	/* The pid namespace this hierarchy belongs to */
++	struct pid_namespace *pid_ns;
 +
  	/* A list running through the active hierarchies */
  	struct list_head root_list;
  
-@@ -234,7 +237,7 @@ struct cgroup_event {
- /* The list of hierarchy roots */
+@@ -153,7 +156,9 @@ struct cgroupfs_root {
+  * subsystems that are otherwise unattached - it never has more than a
+  * single cgroup, and all tasks are part of that cgroup.
+  */
+-static struct cgroupfs_root rootnode;
++static struct cgroupfs_root rootnode = {
++	.pid_ns = &init_pid_ns,
++};
  
- static LIST_HEAD(roots);
--static int root_count;
-+static int top_root_count;
+ /*
+  * cgroupfs file entry, pointed to from leaf dentry->d_fsdata.
+@@ -286,6 +291,7 @@ inline int cgroup_is_removed(const struct cgroup *cgrp)
+ enum {
+ 	ROOT_NOPREFIX,	/* mounted subsystems have no named prefix */
+ 	ROOT_XATTR,	/* supports extended attributes */
++	ROOT_NAMESPACE,	/* mounted in container */
+ };
  
- static DEFINE_IDA(hierarchy_ida);
- static int next_hierarchy_id;
-@@ -682,7 +685,7 @@ static struct css_set *find_css_set(
- 		return NULL;
+ static int cgroup_is_releasable(const struct cgroup *cgrp)
+@@ -1100,6 +1106,8 @@ static int cgroup_show_options(struct seq_file *seq, struct dentry *dentry)
+ 		seq_puts(seq, ",noprefix");
+ 	if (test_bit(ROOT_XATTR, &root->flags))
+ 		seq_puts(seq, ",xattr");
++	if (test_bit(ROOT_NAMESPACE, &root->flags))
++		seq_puts(seq, ",namespace");
+ 	if (strlen(root->release_agent_path))
+ 		seq_printf(seq, ",release_agent=%s", root->release_agent_path);
+ 	if (test_bit(CGRP_CPUSET_CLONE_CHILDREN, &root->top_cgroup.flags))
+@@ -1342,7 +1350,7 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
+ 	removed_mask = root->subsys_mask & ~opts.subsys_mask;
  
- 	/* Allocate all the cg_cgroup_link objects that we'll need */
--	if (allocate_cg_links(root_count, &tmp_cg_links) < 0) {
-+	if (allocate_cg_links(top_root_count, &tmp_cg_links) < 0) {
- 		kfree(res);
- 		return NULL;
- 	}
-@@ -847,6 +850,20 @@ static struct backing_dev_info cgroup_backing_dev_info = {
- static int alloc_css_id(struct cgroup_subsys *ss,
- 			struct cgroup *parent, struct cgroup *child);
- 
-+/*
-+ * Find out the top root by subsys_mask.
-+ */
-+static struct cgroupfs_root *find_top_root(unsigned long subsys_mask)
-+{
-+	struct cgroupfs_root *existing_root;
-+	for_each_active_root(existing_root) {
-+		if (!test_bit(ROOT_NAMESPACE, &existing_root->flags) &&
-+		    existing_root->subsys_mask == subsys_mask)
-+			return existing_root;
-+	}
-+	return NULL;
-+}
+ 	/* Don't allow flags or name to change at remount */
+-	if (opts.flags != root->flags ||
++	if (opts.flags != (root->flags & ~(1UL << ROOT_NAMESPACE)) ||
+ 	    (opts.name && strcmp(opts.name, root->name))) {
+ 		ret = -EINVAL;
+ 		drop_parsed_module_refcounts(opts.subsys_mask);
+@@ -1479,6 +1487,10 @@ static struct cgroupfs_root *cgroup_root_from_opts(struct cgroup_sb_opts *opts)
+ 	root->subsys_mask = opts->subsys_mask;
+ 	root->flags = opts->flags;
+ 	ida_init(&root->cgroup_ida);
++	root->pid_ns = get_pid_ns(task_active_pid_ns(current));
++	if (root->pid_ns != &init_pid_ns)
++		set_bit(ROOT_NAMESPACE, &root->flags);
 +
- static struct inode *cgroup_new_inode(umode_t mode, struct super_block *sb)
- {
- 	struct inode *inode = new_inode(sb);
-@@ -1416,6 +1433,7 @@ static void init_cgroup_root(struct cgroupfs_root *root)
- 	INIT_LIST_HEAD(&root->root_list);
- 	INIT_LIST_HEAD(&root->allcg_list);
- 	root->number_of_cgroups = 1;
-+	root->top_root = root;
- 	cgrp->root = root;
- 	cgrp->top_cgroup = cgrp;
- 	init_cgroup_housekeeping(cgrp);
-@@ -1656,7 +1674,7 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
- 		BUG_ON(ret);
+ 	if (opts->release_agent)
+ 		strcpy(root->release_agent_path, opts->release_agent);
+ 	if (opts->name)
+@@ -1498,6 +1510,7 @@ static void cgroup_drop_root(struct cgroupfs_root *root)
+ 	ida_remove(&hierarchy_ida, root->hierarchy_id);
+ 	spin_unlock(&hierarchy_id_lock);
+ 	ida_destroy(&root->cgroup_ida);
++	put_pid_ns(root->pid_ns);
+ 	kfree(root);
+ }
  
- 		list_add(&root->root_list, &roots);
--		root_count++;
-+		top_root_count++;
- 
- 		sb->s_root->d_fsdata = root_cgrp;
- 		root->top_cgroup.dentry = sb->s_root;
-@@ -1749,7 +1767,8 @@ static void cgroup_kill_sb(struct super_block *sb) {
- 
- 	if (!list_empty(&root->root_list)) {
- 		list_del(&root->root_list);
--		root_count--;
-+		if (!test_bit(ROOT_NAMESPACE, &root->flags))
-+			top_root_count--;
- 	}
- 
- 	mutex_unlock(&cgroup_root_mutex);
-@@ -4635,7 +4654,7 @@ int __init cgroup_init_early(void)
- 	INIT_HLIST_NODE(&init_css_set.hlist);
- 	css_set_count = 1;
- 	init_cgroup_root(&rootnode);
--	root_count = 1;
-+	top_root_count = 1;
- 	init_task.cgroups = &init_css_set;
- 
- 	init_css_set_link.cg = &init_css_set;
 -- 
 1.7.7.6
