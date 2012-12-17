@@ -1,15 +1,16 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 04/12] blkcg: make blkcg_gq's hierarchical
-Date: Mon, 17 Dec 2012 15:04:23 -0500
-Message-ID: <20121217200423.GG7235@redhat.com>
+Subject: Re: [PATCH 06/12] cfq-iosched: implement cfq_group->nr_active and
+	->level_weight
+Date: Mon, 17 Dec 2012 15:46:09 -0500
+Message-ID: <20121217204609.GH7235__15069.0851537094$1355777199$gmane$org@redhat.com>
 References: <1355524885-22719-1-git-send-email-tj@kernel.org>
-	<1355524885-22719-5-git-send-email-tj@kernel.org>
+	<1355524885-22719-7-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1355524885-22719-5-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1355524885-22719-7-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,154 +24,160 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Dec 14, 2012 at 02:41:17PM -0800, Tejun Heo wrote:
-> Currently a child blkg (blkcg_gq) can be created even if its parent
-> doesn't exist.  ie. Given a blkg, it's not guaranteed that its
-> ancestors will exist.  This makes it difficult to implement proper
-> hierarchy support for blkcg policies.
-> 
-> Always create blkgs recursively and make a child blkg hold a reference
-> to its parent.  blkg->parent is added so that finding the parent is
-> easy.  blkcg_parent() is also added in the process.
-> 
-> This change can be visible to userland.  e.g. while issuing IO in a
-> nested cgroup didn't affect the ancestors at all, now it will
-> initialize all ancestor blkgs and zero stats for the request_queue
-> will always appear on them.  While this is userland visible, this
-> shouldn't cause any functional difference.
-> 
-> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+On Fri, Dec 14, 2012 at 02:41:19PM -0800, Tejun Heo wrote:
+> To prepare for blkcg hierarchy support, add cfqg->nr_active and
+> ->level_weight.  cfqg->nr_active counts the number of active cfqgs at
+> the cfqg's level and ->level_weight is sum of weights of those cfqgs.
+> The level covers itself (cfqg->leaf_weight) and immediate children.
 
-Looks good to me.
+This notion of level is really confusing. If one says "at cfqg's level"
+I immediately associate with cfqg's siblings and not with cfqg's children.
 
-Acked-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+I think confusion happens because we are overloading the definition of
+cfqg. It is competing with its siblings at the same time it is competing
+against its child groups (on behalf of its children tasks).
 
+Thanks
 Vivek
 
-> ---
->  block/blk-cgroup.c | 42 +++++++++++++++++++++++++++++++++++++-----
->  block/blk-cgroup.h | 18 ++++++++++++++++++
->  2 files changed, 55 insertions(+), 5 deletions(-)
 > 
-> diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
-> index fde2286..c858628 100644
-> --- a/block/blk-cgroup.c
-> +++ b/block/blk-cgroup.c
-> @@ -201,7 +201,16 @@ static struct blkcg_gq *blkg_create(struct blkcg *blkcg,
->  	}
->  	blkg = new_blkg;
->  
-> -	/* insert */
-> +	/* link parent and insert */
-> +	if (blkcg_parent(blkcg)) {
-> +		blkg->parent = __blkg_lookup(blkcg_parent(blkcg), q, false);
-> +		if (WARN_ON_ONCE(!blkg->parent)) {
-> +			blkg = ERR_PTR(-EINVAL);
-> +			goto err_put_css;
-> +		}
-> +		blkg_get(blkg->parent);
-> +	}
-> +
->  	spin_lock(&blkcg->lock);
->  	ret = radix_tree_insert(&blkcg->blkg_tree, q->id, blkg);
->  	if (likely(!ret)) {
-> @@ -213,6 +222,10 @@ static struct blkcg_gq *blkg_create(struct blkcg *blkcg,
->  	if (!ret)
->  		return blkg;
->  
-> +	/* @blkg failed fully initialized, use the usual release path */
-> +	blkg_put(blkg);
-> +	return ERR_PTR(ret);
-> +
->  err_put_css:
->  	css_put(&blkcg->css);
->  err_free_blkg:
-> @@ -226,8 +239,9 @@ err_free_blkg:
->   * @q: request_queue of interest
->   *
->   * Lookup blkg for the @blkcg - @q pair.  If it doesn't exist, try to
-> - * create one.  This function should be called under RCU read lock and
-> - * @q->queue_lock.
-> + * create one.  blkg creation is performed recursively from blkcg_root such
-> + * that all non-root blkg's have access to the parent blkg.  This function
-> + * should be called under RCU read lock and @q->queue_lock.
->   *
->   * Returns pointer to the looked up or created blkg on success, ERR_PTR()
->   * value on error.  If @q is dead, returns ERR_PTR(-EINVAL).  If @q is not
-> @@ -252,7 +266,23 @@ struct blkcg_gq *blkg_lookup_create(struct blkcg *blkcg,
->  	if (blkg)
->  		return blkg;
->  
-> -	return blkg_create(blkcg, q, NULL);
-> +	/*
-> +	 * Create blkgs walking down from blkcg_root to @blkcg, so that all
-> +	 * non-root blkgs have access to their parents.
-> +	 */
-> +	while (true) {
-> +		struct blkcg *pos = blkcg;
-> +		struct blkcg *parent = blkcg_parent(blkcg);
-> +
-> +		while (parent && !__blkg_lookup(parent, q, false)) {
-> +			pos = parent;
-> +			parent = blkcg_parent(parent);
-> +		}
-> +
-> +		blkg = blkg_create(pos, q, NULL);
-> +		if (pos == blkcg || IS_ERR(blkg))
-> +			return blkg;
-> +	}
->  }
->  EXPORT_SYMBOL_GPL(blkg_lookup_create);
->  
-> @@ -321,8 +351,10 @@ static void blkg_rcu_free(struct rcu_head *rcu_head)
->  
->  void __blkg_release(struct blkcg_gq *blkg)
->  {
-> -	/* release the extra blkcg reference this blkg has been holding */
-> +	/* release the blkcg and parent blkg refs this blkg has been holding */
->  	css_put(&blkg->blkcg->css);
-> +	if (blkg->parent)
-> +		blkg_put(blkg->parent);
+> The two values are updated when a cfqg enters and leaves the group
+> service tree.  Unless the hierarchy is very deep, the added overhead
+> should be negligible.
+> 
+> Currently, the parent is determined using cfqg_flat_parent() which
+> makes the root cfqg the parent of all other cfqgs.  This is to make
+> the transition to hierarchy-aware scheduling gradual.  Scheduling
+> logic will be converted to use cfqg->level_weight without actually
+> changing the behavior.  When everything is ready,
+> blkcg_weight_parent() will be replaced with proper parent function.
+> 
+> This patch doesn't introduce any behavior chagne.
+> 
+> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> ---
+>  block/cfq-iosched.c | 76 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 76 insertions(+)
+> 
+> diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+> index 5f23763..eb290a0 100644
+> --- a/block/cfq-iosched.c
+> +++ b/block/cfq-iosched.c
+> @@ -225,6 +225,18 @@ struct cfq_group {
+>  	u64 vdisktime;
 >  
 >  	/*
->  	 * A group is freed in rcu manner. But having an rcu lock does not
-> diff --git a/block/blk-cgroup.h b/block/blk-cgroup.h
-> index 2459730..b26ed58 100644
-> --- a/block/blk-cgroup.h
-> +++ b/block/blk-cgroup.h
-> @@ -94,8 +94,13 @@ struct blkcg_gq {
->  	struct list_head		q_node;
->  	struct hlist_node		blkcg_node;
->  	struct blkcg			*blkcg;
+> +	 * The number of active cfqgs and sum of their weights under this
+> +	 * cfqg.  This covers this cfqg's leaf_weight and all children's
+> +	 * weights, but does not cover weights of further descendants.
+> +	 *
+> +	 * If a cfqg is on the service tree, it's active.  An active cfqg
+> +	 * also activates its parent and contributes to the level_weight of
+> +	 * the parent.
+> +	 */
+> +	int nr_active;
+> +	unsigned int level_weight;
 > +
-> +	/* all non-root blkcg_gq's are guaranteed to have access to parent */
-> +	struct blkcg_gq			*parent;
-> +
->  	/* request allocation list for this blkcg-q pair */
->  	struct request_list		rl;
-> +
->  	/* reference count */
->  	int				refcnt;
->  
-> @@ -181,6 +186,19 @@ static inline struct blkcg *bio_blkcg(struct bio *bio)
+> +	/*
+>  	 * There are two weights - (internal) weight is the weight of this
+>  	 * cfqg against the sibling cfqgs.  leaf_weight is the wight of
+>  	 * this cfqg against the child cfqgs.  For the root cfqg, both
+> @@ -583,6 +595,22 @@ static inline struct cfq_group *blkg_to_cfqg(struct blkcg_gq *blkg)
+>  	return pd_to_cfqg(blkg_to_pd(blkg, &blkcg_policy_cfq));
 >  }
 >  
->  /**
-> + * blkcg_parent - get the parent of a blkcg
-> + * @blkcg: blkcg of interest
-> + *
-> + * Return the parent blkcg of @blkcg.  Can be called anytime.
+> +/*
+> + * Determine the parent cfqg for weight calculation.  Currently, cfqg
+> + * scheduling is flat and the root is the parent of everyone else.
 > + */
-> +static inline struct blkcg *blkcg_parent(struct blkcg *blkcg)
+> +static inline struct cfq_group *cfqg_flat_parent(struct cfq_group *cfqg)
 > +{
-> +	struct cgroup *pcg = blkcg->css.cgroup->parent;
+> +	struct blkcg_gq *blkg = cfqg_to_blkg(cfqg);
+> +	struct cfq_group *root;
 > +
-> +	return pcg ? cgroup_to_blkcg(pcg) : NULL;
+> +	while (blkg->parent)
+> +		blkg = blkg->parent;
+> +	root = blkg_to_cfqg(blkg);
+> +
+> +	return root != cfqg ? root : NULL;
 > +}
 > +
-> +/**
->   * blkg_to_pdata - get policy private data
->   * @blkg: blkg of interest
->   * @pol: policy of interest
+>  static inline void cfqg_get(struct cfq_group *cfqg)
+>  {
+>  	return blkg_get(cfqg_to_blkg(cfqg));
+> @@ -683,6 +711,7 @@ static void cfq_pd_reset_stats(struct blkcg_gq *blkg)
+>  
+>  #else	/* CONFIG_CFQ_GROUP_IOSCHED */
+>  
+> +static inline struct cfq_group *cfqg_flat_parent(struct cfq_group *cfqg) { return NULL; }
+>  static inline void cfqg_get(struct cfq_group *cfqg) { }
+>  static inline void cfqg_put(struct cfq_group *cfqg) { }
+>  
+> @@ -1208,11 +1237,33 @@ cfq_update_group_weight(struct cfq_group *cfqg)
+>  static void
+>  cfq_group_service_tree_add(struct cfq_rb_root *st, struct cfq_group *cfqg)
+>  {
+> +	struct cfq_group *pos = cfqg;
+> +	bool propagate;
+> +
+> +	/* add to the service tree */
+>  	BUG_ON(!RB_EMPTY_NODE(&cfqg->rb_node));
+>  
+>  	cfq_update_group_weight(cfqg);
+>  	__cfq_group_service_tree_add(st, cfqg);
+>  	st->total_weight += cfqg->weight;
+> +
+> +	/*
+> +	 * Activate @cfqg and propagate activation upwards until we meet an
+> +	 * already activated node or reach root.
+> +	 */
+> +	propagate = !pos->nr_active++;
+> +	pos->level_weight += pos->leaf_weight;
+> +
+> +	while (propagate) {
+> +		struct cfq_group *parent = cfqg_flat_parent(pos);
+> +
+> +		if (!parent)
+> +			break;
+> +
+> +		propagate = !parent->nr_active++;
+> +		parent->level_weight += pos->weight;
+> +		pos = parent;
+> +	}
+>  }
+>  
+>  static void
+> @@ -1243,6 +1294,31 @@ cfq_group_notify_queue_add(struct cfq_data *cfqd, struct cfq_group *cfqg)
+>  static void
+>  cfq_group_service_tree_del(struct cfq_rb_root *st, struct cfq_group *cfqg)
+>  {
+> +	struct cfq_group *pos = cfqg;
+> +	bool propagate;
+> +
+> +	/*
+> +	 * Undo activation from cfq_group_service_tree_add().  Deactivate
+> +	 * @cfqg and propagate deactivation upwards.
+> +	 */
+> +	propagate = !--pos->nr_active;
+> +	pos->level_weight -= pos->leaf_weight;
+> +
+> +	while (propagate) {
+> +		struct cfq_group *parent = cfqg_flat_parent(pos);
+> +
+> +		/* @pos has 0 nr_active at this point */
+> +		WARN_ON_ONCE(pos->level_weight);
+> +
+> +		if (!parent)
+> +			break;
+> +
+> +		propagate = !--parent->nr_active;
+> +		parent->level_weight -= pos->weight;
+> +		pos = parent;
+> +	}
+> +
+> +	/* remove from the service tree */
+>  	st->total_weight -= cfqg->weight;
+>  	if (!RB_EMPTY_NODE(&cfqg->rb_node))
+>  		cfq_rb_erase(&cfqg->rb_node, st);
 > -- 
 > 1.7.11.7
