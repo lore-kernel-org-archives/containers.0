@@ -1,16 +1,15 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 07/12] cfq-iosched: implement hierarchy-ready cfq_group
-	charge scaling
-Date: Mon, 17 Dec 2012 15:53:18 -0500
-Message-ID: <20121217205317.GI7235@redhat.com>
-References: <1355524885-22719-1-git-send-email-tj@kernel.org>
-	<1355524885-22719-8-git-send-email-tj@kernel.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 0/4] user namespace fixes
+Date: Mon, 17 Dec 2012 13:01:59 -0800
+Message-ID: <87zk1cjsu0.fsf__11439.4541284584$1355778150$gmane$org@xmission.com>
+References: <87txroxpgq.fsf@xmission.com>
+	<CALCETrX2Fa-DuM+wkgsij7oiJXzCD8W6Phkv-MjgCDg_Ma6CTg@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1355524885-22719-8-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <CALCETrX2Fa-DuM+wkgsij7oiJXzCD8W6Phkv-MjgCDg_Ma6CTg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Andy Lutomirski's message of "Mon, 17 Dec 2012 11:03:10 -0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,37 +19,45 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Cc: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Dec 14, 2012 at 02:41:20PM -0800, Tejun Heo wrote:
-> Currently, cfqg charges are scaled directly according to cfqg->weight.
-> Regardless of the number of active cfqgs or the amount of active
-> weights, a given weight value always scales charge the same way.  This
-> works fine as long as all cfqgs are treated equally regardless of
-> their positions in the hierarchy, which is what cfq currently
-> implements.  It can't work in hierarchical settings because the
-> interpretation of a given weight value depends on where the weight is
-> located in the hierarchy.
+Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> writes:
 
-I did not understand this. Why the current scheme will not work with
-hierarchy?
+> On Fri, Dec 14, 2012 at 2:01 PM, Eric W. Biederman
+> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+>>
+>> These are fixes from Andys review of my user namespace tree.
+>>
+>> The first two patches are critical must fix fixes.
+>>
+>> The third patch fixing commit_creds is a nice to have but fixing it
+>> would be good.
+>>
+>> Andy, Serge  if you could give these patches a once over to make certain
+>> I am not doing something stupid.
+>>
+>> Thank you,
+>> Eric
+>>
+>> ---
+>>
+>> Eric W. Biederman (4):
+>>       Fix cap_capable to only allow owners in the parent user namespace to have caps.
+>
+> For whatever reason, I didn't get the actual email. 
 
-While we calculate the vdisktime, this is calculated with the help
-of CFQ_DEFAULT_WEIGHT and cfqg->weight. So we scale used time slice
-in proportion to CFQ_DEFAULT_WEIGTH/cfqg->weight. So higher the weight
-lesser the charge and cfqg gets scheduled again faster and lower the
-weight, higher the vdisktime and cfqg gets scheduled less  frequently.
+How weird.
 
-As every cfqg does the same thing on service tree, they automatically
-get fair share w.r.t their weight.
+> Assuming this is
+> 5e4a08476b50fa39210fca82e03325cc46b9c235:
 
-And this mechanism should not be impacted by the hierarchy because we
-have a separate service tree at separate level. This will not work
-only if you come up with one compressed tree and then weights will
-have to be adjusted. If we have a separate service tree in each group
-then it should work just fine.
+It is the parent of that 5e4a08476b50fa39210fca82e03325cc46b9c235
+520d9eabce18edfef76a60b7b839d54facafe1f9
 
-Thanks
-Vivek
+But that should be close enough.
+
+> Acked-by: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+
+Eric
