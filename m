@@ -1,8 +1,7 @@
-From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [RFC PATCH 8/9] cgroup: disallow container to change top cgroup's
-	subsys files
-Date: Mon, 17 Dec 2012 14:43:34 +0800
-Message-ID: <1355726615-15224-9-git-send-email-gaofeng__4205.73725500635$1355726701$gmane$org@cn.fujitsu.com>
+From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: [RFC PATCH 0/9] Add container support for cgroup
+Date: Mon, 17 Dec 2012 12:08:29 +0400
+Message-ID: <50CED2FD.1040509__10221.1304744289$1355731741$gmane$org@parallels.com>
 References: <1355726615-15224-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,36 +17,54 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-this patch disallows container to change top cgroup's
-subsystem files,since these files are shared with host.
+On 12/17/2012 10:43 AM, Gao feng wrote:
+> Right now,if we mount cgroup in the container,we will get
+> host's cgroup informations and even we can change host's
+> cgroup in container.
+> 
+> So the resource controller of the container will lose
+> effectiveness.
+> 
+> This patchset try to add contianer support for cgroup.
+> the main idea is allocateing cgroup super-block for each
+> cgroup mounted in different pid namespace.
+> 
+> The top cgroup of container will share css with host.
+> When the cgroup being mounted in contianer,the tasks in
+> this container will be attached to this new mounted
+> hierarchy's top cgroup, And when unmounting cgroup in
+> container,these tasks will be attached back to host's cgroup.
+> 
+> Since the container can change the shared css through it's
+> cgroup subsystem files. patch 7/8 disable the write permission
+> of container's top cgroup files. In my TODO list, container
+> will have it's own css, this problem will disappear.
+> 
+> 
+> This patchset is sent as RFC,any comments are welcome.
+> Maybe this isn't the best solution, if you have better
+> solution,Please let me know.
 
-Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- kernel/cgroup.c |    8 ++++++++
- 1 files changed, 8 insertions(+), 0 deletions(-)
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index e077660..b0caa1d 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -2928,6 +2928,14 @@ static int cgroup_add_file(struct cgroup *cgrp, struct cgroup_subsys *subsys,
- 	}
- 
- 	mode = cgroup_file_mode(cft);
-+	/*
-+	 * Disallow container to change it's top cgroup's subsys files,
-+	 * since these files are shared with host.
-+	 */
-+	if (test_bit(ROOT_NAMESPACE, &cgrp->root->flags) &&
-+	    cgrp == cgrp->top_cgroup)
-+		mode &= ~S_IWUSR;
-+
- 	error = cgroup_create_file(dentry, mode | S_IFREG, cgrp->root->sb);
- 	if (!error) {
- 		cfe->type = (void *)cft;
--- 
-1.7.7.6
+Question 1:
+
+Any particular reason to have picked the pid namespace?
+
+Maybe it is the right thing, since we are basically dealing with
+grouping of tasks. OTOH, what you are doing sounds very much like
+a private mount, indicating that the mount namespace should be used.
+This needs to be well justified.
+
+Also, "container support" can really mean a lot of things. I am still
+trying, while reading your patches, to figure out what exactly do you
+want to achieve. What it seems so far is that you want an unprivileged
+process living inside a namespace to manipulate the cgroup hierarchy and
+have its own copy of the cgroup tree, laid as it pleases. You also want
+to be able to write PIDs as seen by the containing namespace, and to
+have it somehow translated. Am I right?
+
+For future submissions, could you make this clearer?
