@@ -1,21 +1,15 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 07/11] pidns: Wait in zap_pid_ns_processes until
-	pid_ns->nr_hashed == 1
-Date: Fri, 21 Dec 2012 10:42:57 -0800
-Message-ID: <8738yzl00e.fsf@xmission.com>
-References: <8739097bkk.fsf@xmission.com>
-	<1353083750-3621-1-git-send-email-ebiederm@xmission.com>
-	<1353083750-3621-7-git-send-email-ebiederm@xmission.com>
-	<20121219184757.GB22991@redhat.com> <87bodourqt.fsf@xmission.com>
-	<20121221141133.GA13805@redhat.com>
-	<20121221150238.GA16003@redhat.com>
-	<20121221153152.GA17250@redhat.com>
+From: Rob Landley <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org>
+Subject: Re: [PATCH 11/11] pidns: Support unsharing the pid namespace.
+Date: Fri, 21 Dec 2012 13:24:14 -0600
+Message-ID: <1356117854.21178.2@driftwood>
+References: <87fw2zmgzc.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; Format="Flowed"; DelSp="Yes"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20121221153152.GA17250-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> (Oleg Nesterov's message of
-	"Fri, 21 Dec 2012 16:31:52 +0100")
+In-Reply-To: <87fw2zmgzc.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (from ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org on
+	Fri Dec 21 11:51:03 2012)
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,46 +19,55 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+On 12/21/2012 11:51:03 AM, Eric W. Biederman wrote:
+> Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+> 
+> > Eric. I understand that it is too late to discuss this. And yes, I  
+> simply
+> > do not understand the problem space, I never used containers.
+> >
+> > But, stupid question. Let's ignore the pid_ns-specific oddities.
+> >
+> > 1. Ignoring setns(), why do we need /proc/pid/ns/ ?
+> >
+> > 2. Why setns() requires /proc/pid/ns/ ? IOW, why it can't be
+> >
+> > 	sys_setns(pid_t pid, int clone_flags)
+> > 	{
+> > 		truct task_struct *tsk = find_task_by_vpid(pid);
+> > 		struct nsproxy *target = get_nsproxy(tsk->nsproxy);
+> >
+> > 		new_nsproxy = create_new_namespaces(...);
+> >
+> > 		if (clone_flags & CLONE_NEWNS)
+> > 			mntns_install(...);
+> > 		if (clone_flags & CLONE_NEWIPC)
+> > 			ipcns_install(...);
+> > 		...
+> > 	}
+> >
+> > I feel I missed something trivial, but what?
+> 
+> It is a question of naming.
+> 
+> The problem I set out to solve when all of this was introduced was how
+> to name namespaces without introducing yet another namespace.
+> 
+> The solution to the naming problem that I finally found was to  
+> introduce
+> something I could mount.
 
-> On 12/21, Oleg Nesterov wrote:
->>
->> Once again, the parent namespace injects the task T after ns->reaper
->> sees nr_hashed == 1 and returns. Suppose that reaper's parent does
->> do_wait() and free_pidmap() clears the bit == 1.
->>
->> Now, what if T doesn't exit but forks? We must not re-create the
->> task with pid_nr == 1 in the dead namespace. Normally this can't
->> happen, RESERVED_PIDS logic in alloc_pidmap() saves us. But it
->> seems that we need
->>
->> 	- .extra1 = &zero,
->> 	+ .extra1 = &one,
->>
->> in pid_ns_ctl_table.
->
-> Oh, and another problem, or I am totally confused.
->
-> T forks and creates the child C1. C1 creates C2. What if C1 exits?
-> It will try to reparent C2 to the dead/freed ns->child_reaper.
->
-> In short. We shouldn't allow alloc_pid() if ns->child_reaper is dying,
-> I think. nr_hashed == -1 doesn't really work.
+Where might I find documentation on this? I'm aware of  
+Documentation/namespaces but it's only got one file in it (about  
+conflicts between namespace types). I'm aware of  
+http://lxc.sourceforge.net/index.php/about/kernel-namespaces/ and  
+http://lxc.sourceforge.net/man/ but that's mixed in with the  
+implementation details of a particular userspace tool, and tends to lag  
+the kernel significantly. (Those man pages were last updated in 2010,  
+which if I recall was the last time I poked them about it.)
 
-Certainly nr_hashed == -1 is insufficient.
-
-Injecting a processes when nr_hashed == 1 seems to be the magic poison.
-
-I wonder if we could just say.
-	if (ns->nr_hashed == -1)
-        	goto out_unlock;
-	if ((ns->nr_hashed >= 1) && (ns->child_reaper->flags & PF_EXITING))
-		goto out_unlock;
-
-I don't know if the locking is sufficient at that point.
-
-Eric
+Rob
