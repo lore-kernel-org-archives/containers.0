@@ -1,15 +1,14 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH review 3/3] proc: Allow proc_free_inum to be called from any
-	context
-Date: Fri, 21 Dec 2012 20:58:43 -0800
-Message-ID: <87sj6yd6nw.fsf@xmission.com>
-References: <87d2y2elbi.fsf@xmission.com>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH review 2/3] pidns: Stop pid allocation when init dies
+Date: Sat, 22 Dec 2012 17:54:38 +0100
+Message-ID: <20121222165438.GA19680@redhat.com>
+References: <87d2y2elbi.fsf@xmission.com> <871ueiel9d.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87d2y2elbi.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (Eric W. Biederman's message of
-	"Fri, 21 Dec 2012 20:56:49 -0800")
+Content-Disposition: inline
+In-Reply-To: <871ueiel9d.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,90 +18,76 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+On 12/21, Eric W. Biederman wrote:
+>
+> --- a/include/linux/pid_namespace.h
+> +++ b/include/linux/pid_namespace.h
+> @@ -21,7 +21,7 @@ struct pid_namespace {
+>  	struct kref kref;
+>  	struct pidmap pidmap[PIDMAP_ENTRIES];
+>  	int last_pid;
+> -	int nr_hashed;
+> +	unsigned int nr_hashed;
+>  	struct task_struct *child_reaper;
+>  	struct kmem_cache *pid_cachep;
+>  	unsigned int level;
+> @@ -42,6 +42,8 @@ struct pid_namespace {
+>
+>  extern struct pid_namespace init_pid_ns;
+>
+> +#define PIDNS_HASH_ADDING (1U << 31)
 
-While testing the pid namespace code I hit this nasty warning.
+Yes, agreed. We can't rely on PF_EXITING/whatever, we need the explicit
+flag.
 
-[  176.262617] ------------[ cut here ]------------
-[  176.263388] WARNING: at /home/eric/projects/linux/linux-userns-devel/kernel/softirq.c:160 local_bh_enable_ip+0x7a/0xa0()
-[  176.265145] Hardware name: Bochs
-[  176.265677] Modules linked in:
-[  176.266341] Pid: 742, comm: bash Not tainted 3.7.0userns+ #18
-[  176.266564] Call Trace:
-[  176.266564]  [<ffffffff810a539f>] warn_slowpath_common+0x7f/0xc0
-[  176.266564]  [<ffffffff810a53fa>] warn_slowpath_null+0x1a/0x20
-[  176.266564]  [<ffffffff810ad9ea>] local_bh_enable_ip+0x7a/0xa0
-[  176.266564]  [<ffffffff819308c9>] _raw_spin_unlock_bh+0x19/0x20
-[  176.266564]  [<ffffffff8123dbda>] proc_free_inum+0x3a/0x50
-[  176.266564]  [<ffffffff8111d0dc>] free_pid_ns+0x1c/0x80
-[  176.266564]  [<ffffffff8111d195>] put_pid_ns+0x35/0x50
-[  176.266564]  [<ffffffff810c608a>] put_pid+0x4a/0x60
-[  176.266564]  [<ffffffff8146b177>] tty_ioctl+0x717/0xc10
-[  176.266564]  [<ffffffff810aa4d5>] ? wait_consider_task+0x855/0xb90
-[  176.266564]  [<ffffffff81086bf9>] ? default_spin_lock_flags+0x9/0x10
-[  176.266564]  [<ffffffff810cab0a>] ? remove_wait_queue+0x5a/0x70
-[  176.266564]  [<ffffffff811e37e8>] do_vfs_ioctl+0x98/0x550
-[  176.266564]  [<ffffffff810b8a0f>] ? recalc_sigpending+0x1f/0x60
-[  176.266564]  [<ffffffff810b9127>] ? __set_task_blocked+0x37/0x80
-[  176.266564]  [<ffffffff810ab95b>] ? sys_wait4+0xab/0xf0
-[  176.266564]  [<ffffffff811e3d31>] sys_ioctl+0x91/0xb0
-[  176.266564]  [<ffffffff810a95f0>] ? task_stopped_code+0x50/0x50
-[  176.266564]  [<ffffffff81939199>] system_call_fastpath+0x16/0x1b
-[  176.266564] ---[ end trace 387af88219ad6143 ]---
+1/2 looks fine too. Only one nit about init_pid_ns below...
 
-It turns out that spin_unlock_bh(proc_inum_lock) is not safe when
-put_pid is called with another spinlock held and irqs disabled.
 
-For now take the easy path and use spin_lock_irqsave(proc_inum_lock)
-in proc_free_inum and spin_loc_irq in proc_alloc_inum(proc_inum_lock).
+> @@ -319,7 +318,7 @@ struct pid *alloc_pid(struct pid_namespace *ns)
+>
+>  	upid = pid->numbers + ns->level;
+>  	spin_lock_irq(&pidmap_lock);
+> -	if (ns->nr_hashed < 0)
+> +	if (ns->nr_hashed < PIDNS_HASH_ADDING)
 
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- fs/proc/generic.c |   13 +++++++------
- 1 files changed, 7 insertions(+), 6 deletions(-)
+I won't insist, but perhaps if "(!(nr_hashed & PIDNS_HASH_ADDING))"
+looks more understandable.
 
-diff --git a/fs/proc/generic.c b/fs/proc/generic.c
-index e064f56..76ddae8 100644
---- a/fs/proc/generic.c
-+++ b/fs/proc/generic.c
-@@ -352,18 +352,18 @@ retry:
- 	if (!ida_pre_get(&proc_inum_ida, GFP_KERNEL))
- 		return -ENOMEM;
- 
--	spin_lock_bh(&proc_inum_lock);
-+	spin_lock_irq(&proc_inum_lock);
- 	error = ida_get_new(&proc_inum_ida, &i);
--	spin_unlock_bh(&proc_inum_lock);
-+	spin_unlock_irq(&proc_inum_lock);
- 	if (error == -EAGAIN)
- 		goto retry;
- 	else if (error)
- 		return error;
- 
- 	if (i > UINT_MAX - PROC_DYNAMIC_FIRST) {
--		spin_lock_bh(&proc_inum_lock);
-+		spin_lock_irq(&proc_inum_lock);
- 		ida_remove(&proc_inum_ida, i);
--		spin_unlock_bh(&proc_inum_lock);
-+		spin_unlock_irq(&proc_inum_lock);
- 		return -ENOSPC;
- 	}
- 	*inum = PROC_DYNAMIC_FIRST + i;
-@@ -372,9 +372,10 @@ retry:
- 
- void proc_free_inum(unsigned int inum)
- {
--	spin_lock_bh(&proc_inum_lock);
-+	unsigned long flags;
-+	spin_lock_irqsave(&proc_inum_lock, flags);
- 	ida_remove(&proc_inum_ida, inum - PROC_DYNAMIC_FIRST);
--	spin_unlock_bh(&proc_inum_lock);
-+	spin_unlock_irqrestore(&proc_inum_lock, flags);
- }
- 
- static void *proc_follow_link(struct dentry *dentry, struct nameidata *nd)
--- 
-1.7.5.4
+> +void disable_pid_allocation(struct pid_namespace *ns)
+> +{
+> +	spin_lock_irq(&pidmap_lock);
+> +	if (ns->nr_hashed >= PIDNS_HASH_ADDING)
+
+Do we really need this check? It seems that PIDNS_HASH_ADDING
+bit must be always set when disable_pid_allocation() is called.
+
+> +		ns->nr_hashed -= PIDNS_HASH_ADDING;
+
+Anyway, nr_hashed &= ~PIDNS_HASH_ADDING looks simpler and doesn't
+need a check.
+
+But again, I won't insist this is minor and subjective.
+
+>  struct pid *find_pid_ns(int nr, struct pid_namespace *ns)
+>  {
+>  	struct hlist_node *elem;
+> @@ -584,7 +591,7 @@ void __init pidmap_init(void)
+>  	/* Reserve PID 0. We never call free_pidmap(0) */
+>  	set_bit(0, init_pid_ns.pidmap[0].page);
+>  	atomic_dec(&init_pid_ns.pidmap[0].nr_free);
+> -	init_pid_ns.nr_hashed = 1;
+> +	init_pid_ns.nr_hashed = 1 + PIDNS_HASH_ADDING;
+
+The obly chunk which doesn't look exactly correct to me, although this
+doesn't really matter. Hmm, actually the code was already wrong before
+this patch.
+
+I think init_pid_ns.nr_hashed should be PIDNS_HASH_ADDING, we should not
+add 1 to account the unused zero pid, and kernel_thread(kernel_init) was
+not called yet.
+
+Oleg.
