@@ -1,7 +1,8 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH review 2/3] pidns: Stop pid allocation when init dies
-Date: Fri, 21 Dec 2012 20:58:06 -0800
-Message-ID: <871ueiel9d.fsf@xmission.com>
+Subject: [PATCH review 3/3] proc: Allow proc_free_inum to be called from any
+	context
+Date: Fri, 21 Dec 2012 20:58:43 -0800
+Message-ID: <87sj6yd6nw.fsf@xmission.com>
 References: <87d2y2elbi.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,131 +24,85 @@ Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 List-Id: containers.vger.kernel.org
 
 
-Oleg pointed out that in a pid namespace the sequence.
-- pid 1 becomes a zombie
-- setns(thepidns), fork,...
-- reaping pid 1.
-- The injected processes exiting.
+While testing the pid namespace code I hit this nasty warning.
 
-Can lead to processes attempting access their child reaper and
-instead following a stale pointer.
+[  176.262617] ------------[ cut here ]------------
+[  176.263388] WARNING: at /home/eric/projects/linux/linux-userns-devel/kernel/softirq.c:160 local_bh_enable_ip+0x7a/0xa0()
+[  176.265145] Hardware name: Bochs
+[  176.265677] Modules linked in:
+[  176.266341] Pid: 742, comm: bash Not tainted 3.7.0userns+ #18
+[  176.266564] Call Trace:
+[  176.266564]  [<ffffffff810a539f>] warn_slowpath_common+0x7f/0xc0
+[  176.266564]  [<ffffffff810a53fa>] warn_slowpath_null+0x1a/0x20
+[  176.266564]  [<ffffffff810ad9ea>] local_bh_enable_ip+0x7a/0xa0
+[  176.266564]  [<ffffffff819308c9>] _raw_spin_unlock_bh+0x19/0x20
+[  176.266564]  [<ffffffff8123dbda>] proc_free_inum+0x3a/0x50
+[  176.266564]  [<ffffffff8111d0dc>] free_pid_ns+0x1c/0x80
+[  176.266564]  [<ffffffff8111d195>] put_pid_ns+0x35/0x50
+[  176.266564]  [<ffffffff810c608a>] put_pid+0x4a/0x60
+[  176.266564]  [<ffffffff8146b177>] tty_ioctl+0x717/0xc10
+[  176.266564]  [<ffffffff810aa4d5>] ? wait_consider_task+0x855/0xb90
+[  176.266564]  [<ffffffff81086bf9>] ? default_spin_lock_flags+0x9/0x10
+[  176.266564]  [<ffffffff810cab0a>] ? remove_wait_queue+0x5a/0x70
+[  176.266564]  [<ffffffff811e37e8>] do_vfs_ioctl+0x98/0x550
+[  176.266564]  [<ffffffff810b8a0f>] ? recalc_sigpending+0x1f/0x60
+[  176.266564]  [<ffffffff810b9127>] ? __set_task_blocked+0x37/0x80
+[  176.266564]  [<ffffffff810ab95b>] ? sys_wait4+0xab/0xf0
+[  176.266564]  [<ffffffff811e3d31>] sys_ioctl+0x91/0xb0
+[  176.266564]  [<ffffffff810a95f0>] ? task_stopped_code+0x50/0x50
+[  176.266564]  [<ffffffff81939199>] system_call_fastpath+0x16/0x1b
+[  176.266564] ---[ end trace 387af88219ad6143 ]---
 
-That waitpid for init can return before all of the processes in
-the pid namespace have exited is also unfortunate.
+It turns out that spin_unlock_bh(proc_inum_lock) is not safe when
+put_pid is called with another spinlock held and irqs disabled.
 
-Avoid these problems by disabling the allocation of new pids in a pid
-namespace when init dies, instead of when the last process in a pid
-namespace is reaped.
+For now take the easy path and use spin_lock_irqsave(proc_inum_lock)
+in proc_free_inum and spin_loc_irq in proc_alloc_inum(proc_inum_lock).
 
-Pointed-out-by:  Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- include/linux/pid.h           |    1 +
- include/linux/pid_namespace.h |    4 +++-
- kernel/pid.c                  |   13 ++++++++++---
- kernel/pid_namespace.c        |    4 ++++
- 4 files changed, 18 insertions(+), 4 deletions(-)
+ fs/proc/generic.c |   13 +++++++------
+ 1 files changed, 7 insertions(+), 6 deletions(-)
 
-diff --git a/include/linux/pid.h b/include/linux/pid.h
-index b152d44..2381c97 100644
---- a/include/linux/pid.h
-+++ b/include/linux/pid.h
-@@ -121,6 +121,7 @@ int next_pidmap(struct pid_namespace *pid_ns, unsigned int last);
+diff --git a/fs/proc/generic.c b/fs/proc/generic.c
+index e064f56..76ddae8 100644
+--- a/fs/proc/generic.c
++++ b/fs/proc/generic.c
+@@ -352,18 +352,18 @@ retry:
+ 	if (!ida_pre_get(&proc_inum_ida, GFP_KERNEL))
+ 		return -ENOMEM;
  
- extern struct pid *alloc_pid(struct pid_namespace *ns);
- extern void free_pid(struct pid *pid);
-+extern void disable_pid_allocation(struct pid_namespace *ns);
+-	spin_lock_bh(&proc_inum_lock);
++	spin_lock_irq(&proc_inum_lock);
+ 	error = ida_get_new(&proc_inum_ida, &i);
+-	spin_unlock_bh(&proc_inum_lock);
++	spin_unlock_irq(&proc_inum_lock);
+ 	if (error == -EAGAIN)
+ 		goto retry;
+ 	else if (error)
+ 		return error;
  
- /*
-  * ns_of_pid() returns the pid namespace in which the specified pid was
-diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
-index bf28599..215e5e3 100644
---- a/include/linux/pid_namespace.h
-+++ b/include/linux/pid_namespace.h
-@@ -21,7 +21,7 @@ struct pid_namespace {
- 	struct kref kref;
- 	struct pidmap pidmap[PIDMAP_ENTRIES];
- 	int last_pid;
--	int nr_hashed;
-+	unsigned int nr_hashed;
- 	struct task_struct *child_reaper;
- 	struct kmem_cache *pid_cachep;
- 	unsigned int level;
-@@ -42,6 +42,8 @@ struct pid_namespace {
+ 	if (i > UINT_MAX - PROC_DYNAMIC_FIRST) {
+-		spin_lock_bh(&proc_inum_lock);
++		spin_lock_irq(&proc_inum_lock);
+ 		ida_remove(&proc_inum_ida, i);
+-		spin_unlock_bh(&proc_inum_lock);
++		spin_unlock_irq(&proc_inum_lock);
+ 		return -ENOSPC;
+ 	}
+ 	*inum = PROC_DYNAMIC_FIRST + i;
+@@ -372,9 +372,10 @@ retry:
  
- extern struct pid_namespace init_pid_ns;
- 
-+#define PIDNS_HASH_ADDING (1U << 31)
-+
- #ifdef CONFIG_PID_NS
- static inline struct pid_namespace *get_pid_ns(struct pid_namespace *ns)
+ void proc_free_inum(unsigned int inum)
  {
-diff --git a/kernel/pid.c b/kernel/pid.c
-index 36aa02f..3a5c872 100644
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -270,7 +270,6 @@ void free_pid(struct pid *pid)
- 			wake_up_process(ns->child_reaper);
- 			break;
- 		case 0:
--			ns->nr_hashed = -1;
- 			schedule_work(&ns->proc_work);
- 			break;
- 		}
-@@ -319,7 +318,7 @@ struct pid *alloc_pid(struct pid_namespace *ns)
- 
- 	upid = pid->numbers + ns->level;
- 	spin_lock_irq(&pidmap_lock);
--	if (ns->nr_hashed < 0)
-+	if (ns->nr_hashed < PIDNS_HASH_ADDING)
- 		goto out_unlock;
- 	for ( ; upid >= pid->numbers; --upid) {
- 		hlist_add_head_rcu(&upid->pid_chain,
-@@ -342,6 +341,14 @@ out_free:
- 	goto out;
+-	spin_lock_bh(&proc_inum_lock);
++	unsigned long flags;
++	spin_lock_irqsave(&proc_inum_lock, flags);
+ 	ida_remove(&proc_inum_ida, inum - PROC_DYNAMIC_FIRST);
+-	spin_unlock_bh(&proc_inum_lock);
++	spin_unlock_irqrestore(&proc_inum_lock, flags);
  }
  
-+void disable_pid_allocation(struct pid_namespace *ns)
-+{
-+	spin_lock_irq(&pidmap_lock);
-+	if (ns->nr_hashed >= PIDNS_HASH_ADDING)
-+		ns->nr_hashed -= PIDNS_HASH_ADDING;
-+	spin_unlock_irq(&pidmap_lock);
-+}
-+
- struct pid *find_pid_ns(int nr, struct pid_namespace *ns)
- {
- 	struct hlist_node *elem;
-@@ -584,7 +591,7 @@ void __init pidmap_init(void)
- 	/* Reserve PID 0. We never call free_pidmap(0) */
- 	set_bit(0, init_pid_ns.pidmap[0].page);
- 	atomic_dec(&init_pid_ns.pidmap[0].nr_free);
--	init_pid_ns.nr_hashed = 1;
-+	init_pid_ns.nr_hashed = 1 + PIDNS_HASH_ADDING;
- 
- 	init_pid_ns.pid_cachep = KMEM_CACHE(pid,
- 			SLAB_HWCACHE_ALIGN | SLAB_PANIC);
-diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
-index fdbd0cd..c1c3dc1 100644
---- a/kernel/pid_namespace.c
-+++ b/kernel/pid_namespace.c
-@@ -115,6 +115,7 @@ static struct pid_namespace *create_pid_namespace(struct user_namespace *user_ns
- 	ns->level = level;
- 	ns->parent = get_pid_ns(parent_pid_ns);
- 	ns->user_ns = get_user_ns(user_ns);
-+	ns->nr_hashed = PIDNS_HASH_ADDING;
- 	INIT_WORK(&ns->proc_work, proc_cleanup_work);
- 
- 	set_bit(0, ns->pidmap[0].page);
-@@ -181,6 +182,9 @@ void zap_pid_ns_processes(struct pid_namespace *pid_ns)
- 	int rc;
- 	struct task_struct *task, *me = current;
- 
-+	/* Don't allow any more processes into the pid namespace */
-+	disable_pid_allocation(pid_ns);
-+
- 	/* Ignore SIGCHLD causing any terminated children to autoreap */
- 	spin_lock_irq(&me->sighand->siglock);
- 	me->sighand->action[SIGCHLD - 1].sa.sa_handler = SIG_IGN;
+ static void *proc_follow_link(struct dentry *dentry, struct nameidata *nd)
 -- 
 1.7.5.4
