@@ -1,11 +1,14 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCHSET] block: implement blkcg hierarchy support in cfq, take#2
-Date: Fri, 28 Dec 2012 12:35:22 -0800
-Message-ID: <1356726946-26037-1-git-send-email-tj__282.00907768241$1356726977$gmane$org@kernel.org>
+Subject: [PATCH 02/24] cfq-iosched: More renaming to better represent wl_class
+	and wl_type
+Date: Fri, 28 Dec 2012 12:35:24 -0800
+Message-ID: <1356726946-26037-3-git-send-email-tj@kernel.org>
+References: <1356726946-26037-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1356726946-26037-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,142 +19,205 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello,
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-This is the second iteration to implement blkcg hierarchy support in
-cfq-iosched.  Changes from the first task[L] are
+Some more renaming. Again making the code uniform w.r.t use of
+wl_class/class to represent IO class (RT, BE, IDLE) and using
+wl_type/type to represent subclass (SYNC, SYNC-IDLE, ASYNC).
 
-* Vivek's cfq cleanup patches are included in the series for
-  convenience.
+At places this patch shortens the string "workload" to "wl".
+Renamed "saved_workload" to "saved_wl_type". Renamed
+"saved_serving_class" to "saved_wl_class".
 
-* Divide by zero bug when !CONFIG_CFQ_GROUP_IOSCHED reported by
-  Fengguang fixed.
+For uniformity with "saved_wl_*" variables, renamed "serving_class"
+to "serving_wl_class" and renamed "serving_type" to "serving_wl_type".
 
-* Updated to reflect Vivek's reviews - renames & documentation.
+Again, just trying to improve upon code uniformity and improve
+readability. No functional change.
 
-* Recursive stats no longer forget stats from dead descendants.  This
-  turned out to be more complex than I wished involving implementing
-  policy on/offline callbacks.
+v2:
+- Restored the usage of keyword "service" based on Jeff Moyer's feedback.
 
-cfq-iosched is currently utterly broken in how it handles cgroup
-hierarchy.  It ignores the hierarchy structure and just treats every
-blkcgs equally.  This is simply broken.  This breakage makes blkcg
-behave very differently from other properly-hierarchical controllers
-and makes it impossible to give any uniform interpretation to the
-hierarchy, which in turn makes it impossible to implement unified
-hierarchy.
+Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+---
+ block/cfq-iosched.c | 64 +++++++++++++++++++++++++++--------------------------
+ 1 file changed, 33 insertions(+), 31 deletions(-)
 
-Given the relative simplicity of cfqg scheduling, implementing proper
-hierarchy support isn't that difficult.  All that's necessary is
-determining how much fraction each cfqg on the service tree has claim
-to considering the hierarchy.  The calculation can be done by
-maintaining the sum of active weights at each level and compounding
-the ratios from the cfqg in question to root.  The overhead isn't
-significant.  Tree traversals happen only when cfqgs are added or
-removed from the service tree and they are from the cfqg being
-modified to the root.
-
-There are some design choices which are worth mentioning.
-
-* Internal (non-leaf) cfqgs w/ tasks treat the tasks as a single unit
-  competeting against the children cfqgs.  New config knobs -
-  blkio.leaf_weight[_device] - are added to configure the weight of
-  these tasks.  Another way to look at it is that each cfqg has a
-  hidden leaf child node attached to it which hosts all tasks and
-  leaf_weight controls the weight of that hidden node.
-
-  Treating cfqqs and cfqgs as equals doesn't make much sense to me and
-  is hairy - we need to establish ioprio to weight mapping and the
-  weights fluctuate as processes fork and exit.  This becomes hairier
-  when considering multiple controllers, Such mappings can't be
-  established consistently across different controllers and the
-  weights are given out differently - ie. blkcg give weights out to
-  io_contexts while cpu to tasks, which may share io_contexts.  It's
-  difficult to make sense of what's going on.
-
-  The goal is to bring cpu, currently the only other controller which
-  implements weight based resource allocation, to similar behavior.
-
-* The existing stats aren't converted to hierarchical but new
-  hierarchical ones are added.  There isn't a way to do that w/o
-  introducing nasty silent surprises to the existing flat hierarchy
-  users, so while being a bit clumsy, I can't see a better way.
-
-* I based it on top of Vivek's cleanup patchset[1] but not the cfqq,
-  cfqg scheduling unification patchset.  I don't think it's necessary
-  or beneficial to mix the two and would really like to avoid messing
-  with !blkcg scheduling logic.
-
-The hierarchical scheduling itself is fairly simple.  The cfq part is
-only ~260 lines with ~60 lines being comment, and the hierarchical
-weight scaling is really straight-forward.
-
-This patchset contains the following 24 patches.
-
- 0001-cfq-iosched-Properly-name-all-references-to-IO-class.patch
- 0002-cfq-iosched-More-renaming-to-better-represent-wl_cla.patch
- 0003-cfq-iosched-Rename-service_tree-to-st-at-some-places.patch
- 0004-cfq-iosched-Rename-few-functions-related-to-selectin.patch
- 0005-cfq-iosched-Get-rid-of-unnecessary-local-variable.patch
- 0006-cfq-iosched-Print-sync-noidle-information-in-blktrac.patch
- 0007-blkcg-fix-minor-bug-in-blkg_alloc.patch
- 0008-blkcg-reorganize-blkg_lookup_create-and-friends.patch
- 0009-blkcg-cosmetic-updates-to-blkg_create.patch
- 0010-blkcg-make-blkcg_gq-s-hierarchical.patch
- 0011-cfq-iosched-add-leaf_weight.patch
- 0012-cfq-iosched-implement-cfq_group-nr_active-and-childr.patch
- 0013-cfq-iosched-implement-hierarchy-ready-cfq_group-char.patch
- 0014-cfq-iosched-convert-cfq_group_slice-to-use-cfqg-vfra.patch
- 0015-cfq-iosched-enable-full-blkcg-hierarchy-support.patch
- 0016-blkcg-add-blkg_policy_data-plid.patch
- 0017-blkcg-implement-blkcg_policy-on-offline_pd_fn-and-bl.patch
- 0018-blkcg-s-blkg_rwstat_sum-blkg_rwstat_total.patch
- 0019-blkcg-implement-blkg_-rw-stat_recursive_sum-and-blkg.patch
- 0020-block-RCU-free-request_queue.patch
- 0021-blkcg-make-blkcg_print_blkgs-grab-q-locks-instead-of.patch
- 0022-cfq-iosched-separate-out-cfqg_stats_reset-from-cfq_p.patch
- 0023-cfq-iosched-collect-stats-from-dead-cfqgs.patch
- 0024-cfq-iosched-add-hierarchical-cfq_group-statistics.patch
-
-0001-0006 are Vivek's cfq cleanup patches.
-
-0007-0009 are prep patches.
-
-0010 makes blkcg core always allocate non-leaf blkgs so that any given
-blkg is guaranteed to have all its ancestor blkgs to the root.
-
-0011-0012 prepare for hierarchical scheduling.
-
-0013-0014 implement hierarchy-ready cfqg scheduling.
-
-0015 enbles hierarchical scheduling.
-
-0016-0022 prepare for hierarchical stats.
-
-0023-0024 implement hierarchical stats.
-
-This patchset is on top of linus#master (ecccd1248d ("mm: fix null
-pointer dereference in wait_iff_congested()")).
-
-and available in the following git branch.
-
- git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git blkcg-cfq-hierarchy
-
-Thanks.
-
- Documentation/block/cfq-iosched.txt |   58 +++
- block/blk-cgroup.c                  |  276 +++++++++++++--
- block/blk-cgroup.h                  |   68 +++
- block/blk-sysfs.c                   |    9 
- block/cfq-iosched.c                 |  627 +++++++++++++++++++++++++++++-------
- include/linux/blkdev.h              |    2 
- 6 files changed, 877 insertions(+), 163 deletions(-)
-
---
-tejun
-
-[L] http://thread.gmane.org/gmane.linux.kernel.cgroups/5440
-[1] https://lkml.org/lkml/2012/10/3/502
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index 7646dfd..8f890bf 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -248,9 +248,9 @@ struct cfq_group {
+ 	struct cfq_rb_root service_trees[2][3];
+ 	struct cfq_rb_root service_tree_idle;
+ 
+-	unsigned long saved_workload_slice;
+-	enum wl_type_t saved_workload;
+-	enum wl_class_t saved_serving_class;
++	unsigned long saved_wl_slice;
++	enum wl_type_t saved_wl_type;
++	enum wl_class_t saved_wl_class;
+ 
+ 	/* number of requests that are on the dispatch list or inside driver */
+ 	int dispatched;
+@@ -280,8 +280,8 @@ struct cfq_data {
+ 	/*
+ 	 * The priority currently being served
+ 	 */
+-	enum wl_class_t serving_class;
+-	enum wl_type_t serving_type;
++	enum wl_class_t serving_wl_class;
++	enum wl_type_t serving_wl_type;
+ 	unsigned long workload_expires;
+ 	struct cfq_group *serving_group;
+ 
+@@ -1241,7 +1241,7 @@ cfq_group_notify_queue_del(struct cfq_data *cfqd, struct cfq_group *cfqg)
+ 
+ 	cfq_log_cfqg(cfqd, cfqg, "del_from_rr group");
+ 	cfq_group_service_tree_del(st, cfqg);
+-	cfqg->saved_workload_slice = 0;
++	cfqg->saved_wl_slice = 0;
+ 	cfqg_stats_update_dequeue(cfqg);
+ }
+ 
+@@ -1301,12 +1301,12 @@ static void cfq_group_served(struct cfq_data *cfqd, struct cfq_group *cfqg,
+ 
+ 	/* This group is being expired. Save the context */
+ 	if (time_after(cfqd->workload_expires, jiffies)) {
+-		cfqg->saved_workload_slice = cfqd->workload_expires
++		cfqg->saved_wl_slice = cfqd->workload_expires
+ 						- jiffies;
+-		cfqg->saved_workload = cfqd->serving_type;
+-		cfqg->saved_serving_class = cfqd->serving_class;
++		cfqg->saved_wl_type = cfqd->serving_wl_type;
++		cfqg->saved_wl_class = cfqd->serving_wl_class;
+ 	} else
+-		cfqg->saved_workload_slice = 0;
++		cfqg->saved_wl_slice = 0;
+ 
+ 	cfq_log_cfqg(cfqd, cfqg, "served: vt=%llu min_vt=%llu", cfqg->vdisktime,
+ 					st->min_vdisktime);
+@@ -2031,7 +2031,7 @@ static void __cfq_set_active_queue(struct cfq_data *cfqd,
+ {
+ 	if (cfqq) {
+ 		cfq_log_cfqq(cfqd, cfqq, "set_active wl_class:%d wl_type:%d",
+-				cfqd->serving_class, cfqd->serving_type);
++				cfqd->serving_wl_class, cfqd->serving_wl_type);
+ 		cfqg_stats_update_avg_queue_size(cfqq->cfqg);
+ 		cfqq->slice_start = 0;
+ 		cfqq->dispatch_start = jiffies;
+@@ -2118,8 +2118,8 @@ static inline void cfq_slice_expired(struct cfq_data *cfqd, bool timed_out)
+ static struct cfq_queue *cfq_get_next_queue(struct cfq_data *cfqd)
+ {
+ 	struct cfq_rb_root *service_tree =
+-		service_tree_for(cfqd->serving_group, cfqd->serving_class,
+-					cfqd->serving_type);
++		service_tree_for(cfqd->serving_group, cfqd->serving_wl_class,
++						cfqd->serving_wl_type);
+ 
+ 	if (!cfqd->rq_queued)
+ 		return NULL;
+@@ -2523,20 +2523,20 @@ static void choose_service_tree(struct cfq_data *cfqd, struct cfq_group *cfqg)
+ 	unsigned count;
+ 	struct cfq_rb_root *st;
+ 	unsigned group_slice;
+-	enum wl_class_t original_class = cfqd->serving_class;
++	enum wl_class_t original_class = cfqd->serving_wl_class;
+ 
+ 	/* Choose next priority. RT > BE > IDLE */
+ 	if (cfq_group_busy_queues_wl(RT_WORKLOAD, cfqd, cfqg))
+-		cfqd->serving_class = RT_WORKLOAD;
++		cfqd->serving_wl_class = RT_WORKLOAD;
+ 	else if (cfq_group_busy_queues_wl(BE_WORKLOAD, cfqd, cfqg))
+-		cfqd->serving_class = BE_WORKLOAD;
++		cfqd->serving_wl_class = BE_WORKLOAD;
+ 	else {
+-		cfqd->serving_class = IDLE_WORKLOAD;
++		cfqd->serving_wl_class = IDLE_WORKLOAD;
+ 		cfqd->workload_expires = jiffies + 1;
+ 		return;
+ 	}
+ 
+-	if (original_class != cfqd->serving_class)
++	if (original_class != cfqd->serving_wl_class)
+ 		goto new_workload;
+ 
+ 	/*
+@@ -2544,7 +2544,8 @@ static void choose_service_tree(struct cfq_data *cfqd, struct cfq_group *cfqg)
+ 	 * (SYNC, SYNC_NOIDLE, ASYNC), and to compute a workload
+ 	 * expiration time
+ 	 */
+-	st = service_tree_for(cfqg, cfqd->serving_class, cfqd->serving_type);
++	st = service_tree_for(cfqg, cfqd->serving_wl_class,
++					cfqd->serving_wl_type);
+ 	count = st->count;
+ 
+ 	/*
+@@ -2555,9 +2556,10 @@ static void choose_service_tree(struct cfq_data *cfqd, struct cfq_group *cfqg)
+ 
+ new_workload:
+ 	/* otherwise select new workload type */
+-	cfqd->serving_type =
+-		cfq_choose_wl(cfqd, cfqg, cfqd->serving_class);
+-	st = service_tree_for(cfqg, cfqd->serving_class, cfqd->serving_type);
++	cfqd->serving_wl_type = cfq_choose_wl(cfqd, cfqg,
++					cfqd->serving_wl_class);
++	st = service_tree_for(cfqg, cfqd->serving_wl_class,
++					cfqd->serving_wl_type);
+ 	count = st->count;
+ 
+ 	/*
+@@ -2568,11 +2570,11 @@ new_workload:
+ 	group_slice = cfq_group_slice(cfqd, cfqg);
+ 
+ 	slice = group_slice * count /
+-		max_t(unsigned, cfqg->busy_queues_avg[cfqd->serving_class],
+-		      cfq_group_busy_queues_wl(cfqd->serving_class, cfqd,
++		max_t(unsigned, cfqg->busy_queues_avg[cfqd->serving_wl_class],
++		      cfq_group_busy_queues_wl(cfqd->serving_wl_class, cfqd,
+ 					cfqg));
+ 
+-	if (cfqd->serving_type == ASYNC_WORKLOAD) {
++	if (cfqd->serving_wl_type == ASYNC_WORKLOAD) {
+ 		unsigned int tmp;
+ 
+ 		/*
+@@ -2618,10 +2620,10 @@ static void cfq_choose_cfqg(struct cfq_data *cfqd)
+ 	cfqd->serving_group = cfqg;
+ 
+ 	/* Restore the workload type data */
+-	if (cfqg->saved_workload_slice) {
+-		cfqd->workload_expires = jiffies + cfqg->saved_workload_slice;
+-		cfqd->serving_type = cfqg->saved_workload;
+-		cfqd->serving_class = cfqg->saved_serving_class;
++	if (cfqg->saved_wl_slice) {
++		cfqd->workload_expires = jiffies + cfqg->saved_wl_slice;
++		cfqd->serving_wl_type = cfqg->saved_wl_type;
++		cfqd->serving_wl_class = cfqg->saved_wl_class;
+ 	} else
+ 		cfqd->workload_expires = jiffies - 1;
+ 
+@@ -3404,7 +3406,7 @@ cfq_should_preempt(struct cfq_data *cfqd, struct cfq_queue *new_cfqq,
+ 		return true;
+ 
+ 	/* Allow preemption only if we are idling on sync-noidle tree */
+-	if (cfqd->serving_type == SYNC_NOIDLE_WORKLOAD &&
++	if (cfqd->serving_wl_type == SYNC_NOIDLE_WORKLOAD &&
+ 	    cfqq_type(new_cfqq) == SYNC_NOIDLE_WORKLOAD &&
+ 	    new_cfqq->service_tree->count == 2 &&
+ 	    RB_EMPTY_ROOT(&cfqq->sort_list))
+@@ -3456,7 +3458,7 @@ static void cfq_preempt_queue(struct cfq_data *cfqd, struct cfq_queue *cfqq)
+ 	 * doesn't happen
+ 	 */
+ 	if (old_type != cfqq_type(cfqq))
+-		cfqq->cfqg->saved_workload_slice = 0;
++		cfqq->cfqg->saved_wl_slice = 0;
+ 
+ 	/*
+ 	 * Put the new queue at the front of the of the current list,
+-- 
+1.8.0.2
