@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 07/24] blkcg: fix minor bug in blkg_alloc()
-Date: Fri, 28 Dec 2012 12:35:29 -0800
-Message-ID: <1356726946-26037-8-git-send-email-tj@kernel.org>
+Subject: [PATCH 09/24] blkcg: cosmetic updates to blkg_create()
+Date: Fri, 28 Dec 2012 12:35:31 -0800
+Message-ID: <1356726946-26037-10-git-send-email-tj@kernel.org>
 References: <1356726946-26037-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,29 +21,58 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwi
 Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-blkg_alloc() was mistakenly checking blkcg_policy_enabled() twice.
-The latter test should have been on whether pol->pd_init_fn() exists.
-This doesn't cause actual problems because both blkcg policies
-implement pol->pd_init_fn().  Fix it.
+* Rename out_* labels to err_*.
+
+* Do ERR_PTR() conversion once in the error return path.
+
+This patch is cosmetic and to prepare for the hierarchy support.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Acked-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/blk-cgroup.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ block/blk-cgroup.c | 15 +++++++--------
+ 1 file changed, 7 insertions(+), 8 deletions(-)
 
 diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
-index b8858fb..7ef747b 100644
+index 2012754..18ae480 100644
 --- a/block/blk-cgroup.c
 +++ b/block/blk-cgroup.c
-@@ -114,7 +114,7 @@ static struct blkcg_gq *blkg_alloc(struct blkcg *blkcg, struct request_queue *q,
- 		pd->blkg = blkg;
+@@ -187,16 +187,16 @@ static struct blkcg_gq *blkg_create(struct blkcg *blkcg,
  
- 		/* invoke per-policy init */
--		if (blkcg_policy_enabled(blkg->q, pol))
-+		if (pol->pd_init_fn)
- 			pol->pd_init_fn(blkg);
+ 	/* blkg holds a reference to blkcg */
+ 	if (!css_tryget(&blkcg->css)) {
+-		blkg = ERR_PTR(-EINVAL);
+-		goto out_free;
++		ret = -EINVAL;
++		goto err_free_blkg;
  	}
  
+ 	/* allocate */
+ 	if (!new_blkg) {
+ 		new_blkg = blkg_alloc(blkcg, q, GFP_ATOMIC);
+ 		if (unlikely(!new_blkg)) {
+-			blkg = ERR_PTR(-ENOMEM);
+-			goto out_put;
++			ret = -ENOMEM;
++			goto err_put_css;
+ 		}
+ 	}
+ 	blkg = new_blkg;
+@@ -213,12 +213,11 @@ static struct blkcg_gq *blkg_create(struct blkcg *blkcg,
+ 	if (!ret)
+ 		return blkg;
+ 
+-	blkg = ERR_PTR(ret);
+-out_put:
++err_put_css:
+ 	css_put(&blkcg->css);
+-out_free:
++err_free_blkg:
+ 	blkg_free(new_blkg);
+-	return blkg;
++	return ERR_PTR(ret);
+ }
+ 
+ /**
 -- 
 1.8.0.2
