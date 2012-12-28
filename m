@@ -1,16 +1,14 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH] cgroup: remove unused dummy cgroup_fork_callbacks()
-Date: Fri, 28 Dec 2012 16:22:46 -0500
-Message-ID: <20121228212246.GC3062@mtj.dyndns.org>
-References: <1350426526-14254-1-git-send-email-tj@kernel.org>
-	<1350426526-14254-2-git-send-email-tj@kernel.org>
-	<20121220052533.GA17190@herton-Z68MA-D2H-B3>
+Subject: [PATCH 18.5/24] blkcg: export __blkg_prfill_rwstat() take#2
+Date: Fri, 28 Dec 2012 18:18:18 -0500
+Message-ID: <20121228231818.GL3062__18708.3054370762$1356736727$gmane$org@mtj.dyndns.org>
+References: <1356726946-26037-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20121220052533.GA17190@herton-Z68MA-D2H-B3>
+In-Reply-To: <1356726946-26037-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,37 +18,33 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Herton Ronaldo Krzesinski <herton.krzesinski-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From a0a4bddd2779a51b6529afa113c5671ebcc21b14 Mon Sep 17 00:00:00 2001
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Date: Fri, 28 Dec 2012 13:18:28 -0800
-
-5edee61ede ("cgroup: cgroup_subsys->fork() should be called after the
-task is added to css_set") removed cgroup_fork_callbacks() but forgot
-to remove its dummy version for !CONFIG_CGROUPS.  Remove it.
+Hierarchical stats for cfq-iosched will need __blkg_prfill_rwstat().
+Export it.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Reported-by: Herton Ronaldo Krzesinski <herton.krzesinski-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Reported-by: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
 ---
-Applied to cgroup/for-3.9.  Thanks.
+Fengguang's build test discovered that cfq now uses
+__blkg_prfill_rwstat() which isn't exported leading to build failures
+when cfq is built as a module.  Export it.  This doesn't affect
+!module builds.  Git branch updated accordingly.
 
- include/linux/cgroup.h | 1 -
- 1 file changed, 1 deletion(-)
+Thanks.
 
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 7d73905..942e687 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -706,7 +706,6 @@ struct cgroup_subsys_state *cgroup_css_from_dir(struct file *f, int id);
- static inline int cgroup_init_early(void) { return 0; }
- static inline int cgroup_init(void) { return 0; }
- static inline void cgroup_fork(struct task_struct *p) {}
--static inline void cgroup_fork_callbacks(struct task_struct *p) {}
- static inline void cgroup_post_fork(struct task_struct *p) {}
- static inline void cgroup_exit(struct task_struct *p, int callbacks) {}
+ block/blk-cgroup.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/block/blk-cgroup.c
++++ b/block/blk-cgroup.c
+@@ -552,6 +552,7 @@ u64 __blkg_prfill_rwstat(struct seq_file
+ 	seq_printf(sf, "%s Total %llu\n", dname, (unsigned long long)v);
+ 	return v;
+ }
++EXPORT_SYMBOL_GPL(__blkg_prfill_rwstat);
  
--- 
-1.8.0.2
+ /**
+  * blkg_prfill_stat - prfill callback for blkg_stat
