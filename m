@@ -1,7 +1,7 @@
 From: Vasily Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
 Subject: Re: [PATCH/RFC] user_ns: fix missing limiting of user_ns counts
-Date: Sat, 29 Dec 2012 09:22:34 +0400
-Message-ID: <20121229052234.GA4153@cachalot>
+Date: Sun, 30 Dec 2012 15:00:40 +0400
+Message-ID: <20121230110040.GA4351@cachalot>
 References: <20121228175627.GA7683@cachalot>
  <87wqw15wqb.fsf@xmission.com>
 Mime-Version: 1.0
@@ -24,36 +24,33 @@ Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 On Fri, Dec 28, 2012 at 20:05 -0800, Eric W. Biederman wrote:
-> Vasily Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org> writes:
+> > A related issue which is NOT FIXED HERE is limits for all resources
+> > available for containerized pseudo roots.  E.g. I succeeded creating
+> > thousands of veth network devices without problems by a non-root user,
+> > there seems no limit in number of network devices.  I suspect it is
+> > possible to setup routing and net_ns'es the way it will be very
+> > time-consuming for kernel to handle IP packets inside of ksoftirq, which
+> > is not counted as this user scheduler time.   I suppose the issue is not
+> > veth-specific, almost all newly available for unprivileged users code
+> > pathes are vulnerable to DoS attacks.
 > 
-> > Currently there is completely no limiting in number of user namespaces
-> > created by unprivileged users.  One can freely create thousands of
-> > user_ns'es and exhaust kernel memory without even bumping in
-> > RLIMIT_NPROC or similar.
-> 
-> First for a proper sense of scale it will take roughly 14,000 to consume
-> a megabyte.  So it will take hundreds of millions of user namespaces to
-> eat up all of kernel memory.
+> veth at least should process packets synchronously so I don't see how
+> you will get softirq action.
 
-Yes, but you can freely create *any* number of nested userns by a loop:
+What do you mean -- synchronously?  From my limited understanding of
+veth job, it is handled like every network packet in system, via:
 
-    for() {
-        unshare()
-        write to /proc/self/{u,g}id_map
-    }
+    veth_xmit() -> dev_forward_skb() -> netif_rx() -> enqueue_to_backlog()
 
-> > The code needs several checks.  First, noone should be able to create
-> > user_ns of arbitrary depth.  Besides kernel stack overflow one could
-> > create too big depth to DoS processes belonging to other users by
-> > forcing them to loop a long time in cap_capable called from some
-> > ns_capable() (e.g. in case one does smth like "ls -R /proc").
-> 
-> Where do you get a ns_capable call from "ls -R /proc" ?
+enqueue_to_backlog() adds the packet to softnet_data->input_pkt_queue. 
 
-E.g. if procfs is mounted with hidepid=2 then ls does
-ptrace_may_access() check. 
+Then inside of softirq process_backlog() moves ->input_pkt_queue to
+->process_queue and calls __netif_receive_skb(), which does all networking
+stack magic.
 
-Thanks,
+AFAICS, one could create user_ns, net_ns inside of it, and setup routing
+tables and netfilter to infinitely pass few network packets from and to
+veth, abusing ksoftirq.
 
 -- 
 Vasily Kulikov
