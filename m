@@ -1,14 +1,18 @@
-From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: [PATCH] userns: Allow unprivileged reboot
-Date: Wed, 2 Jan 2013 09:13:44 -0600
-Message-ID: <20130102151344.GA5822@sergelap>
-References: <50DBC2E0.3040908@huawei.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 06/13] cpuset: cleanup cpuset[_can]_attach()
+Date: Wed, 2 Jan 2013 10:34:39 -0500
+Message-ID: <20130102153439.GA11220@mtj.dyndns.org>
+References: <1354138460-19286-1-git-send-email-tj@kernel.org>
+	<1354138460-19286-7-git-send-email-tj@kernel.org>
+	<50DACF5B.6050705@huawei.com>
+	<20121226120415.GA18193@mtj.dyndns.org>
+	<87zk0s5h7c.fsf@rustcorp.com.au>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <50DBC2E0.3040908-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <87zk0s5h7c.fsf-8n+1lVoiYb80n/F98K4Iww@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,58 +22,33 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Rusty Russell <rusty-8n+1lVoiYb80n/F98K4Iww@public.gmane.org>
+Cc: paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Li Zefan (lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org):
-> In a container with its own pid namespace and user namespace, rebooting
-> the system won't reboot the host, but terminate all the processes in
-> it and thus have the container shutdown, so it's safe.
+Hello, Rusty.
+
+On Wed, Jan 02, 2013 at 03:12:15PM +1030, Rusty Russell wrote:
+> > Hmmm?  cpumask_t can't be used for stack but other than that I don't
+> > see how it would be deprecated completely.  Rusty, can you please
+> > chime in?
 > 
-> Signed-off-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-
-Thanks, Li.
-
-fwiw,
-Acked-by: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-
--serge
-
-> ---
->  kernel/sys.c | 5 +++--
->  1 file changed, 3 insertions(+), 2 deletions(-)
+> The long-never-quite-complete-plan was for struct cpumask to be
+> undefined when CONFIG_CPUMASK_OFFSTACK=y.  That means noone can declare
+> them, or pass them on the stack, since they'll get a compiler error.
 > 
-> diff --git a/kernel/sys.c b/kernel/sys.c
-> index 265b376..24d1ef5 100644
-> --- a/kernel/sys.c
-> +++ b/kernel/sys.c
-> @@ -433,11 +433,12 @@ static DEFINE_MUTEX(reboot_mutex);
->  SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
->  		void __user *, arg)
->  {
-> +	struct pid_namespace *pid_ns = task_active_pid_ns(current);
->  	char buffer[256];
->  	int ret = 0;
->  
->  	/* We only trust the superuser with rebooting the system. */
-> -	if (!capable(CAP_SYS_BOOT))
-> +	if (!ns_capable(pid_ns->user_ns, CAP_SYS_BOOT))
->  		return -EPERM;
->  
->  	/* For safety, we require "magic" arguments. */
-> @@ -453,7 +454,7 @@ SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
->  	 * pid_namespace, the command is handled by reboot_pid_ns() which will
->  	 * call do_exit().
->  	 */
-> -	ret = reboot_pid_ns(task_active_pid_ns(current), cmd);
-> +	ret = reboot_pid_ns(pid_ns, cmd);
->  	if (ret)
->  		return ret;
->  
-> -- 
-> 1.8.0.2
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+> Now, there are some cases where it really is a reason to use a static
+> bitmap, and 1/2 a K of wasted space be damned.  There's a
+> deliberately-ugly way of doing that: declare a bitmap and use
+> to_cpumask().  Of course, if we ever really want to remove NR_CPUS and
+> make it completely generic, we have to kill all these too, but noone is
+> serious about that.
+
+So, I guess this currently is caught in a place which isn't here or
+there.  I'm pretty skeptical whether it makes sense to bother about
+static usages tho.  Can I keep them for static ones?
+
+Thanks.
+
+-- 
+tejun
