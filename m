@@ -1,18 +1,17 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 06/13] cpuset: cleanup cpuset[_can]_attach()
-Date: Wed, 2 Jan 2013 10:34:39 -0500
-Message-ID: <20130102153439.GA11220@mtj.dyndns.org>
+Subject: Re: [PATCHSET cgroup/for-3.8] cpuset: decouple cpuset locking from
+	cgroup core
+Date: Wed, 2 Jan 2013 10:36:05 -0500
+Message-ID: <20130102153605.GB11220@mtj.dyndns.org>
 References: <1354138460-19286-1-git-send-email-tj@kernel.org>
-	<1354138460-19286-7-git-send-email-tj@kernel.org>
-	<50DACF5B.6050705@huawei.com>
-	<20121226120415.GA18193@mtj.dyndns.org>
-	<87zk0s5h7c.fsf@rustcorp.com.au>
+	<50DAD696.8050400@huawei.com>
+	<20130102085355.GA22160@dhcp22.suse.cz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <87zk0s5h7c.fsf-8n+1lVoiYb80n/F98K4Iww@public.gmane.org>
+In-Reply-To: <20130102085355.GA22160-2MMpYkNvuYDjFM9bn6wA6Q@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,31 +21,28 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Rusty Russell <rusty-8n+1lVoiYb80n/F98K4Iww@public.gmane.org>
-Cc: paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Cc: paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, Rusty.
+Hey, Michal.
 
-On Wed, Jan 02, 2013 at 03:12:15PM +1030, Rusty Russell wrote:
-> > Hmmm?  cpumask_t can't be used for stack but other than that I don't
-> > see how it would be deprecated completely.  Rusty, can you please
-> > chime in?
+On Wed, Jan 02, 2013 at 09:53:55AM +0100, Michal Hocko wrote:
+> Hi Li,
 > 
-> The long-never-quite-complete-plan was for struct cpumask to be
-> undefined when CONFIG_CPUMASK_OFFSTACK=y.  That means noone can declare
-> them, or pass them on the stack, since they'll get a compiler error.
+> On Wed 26-12-12 18:51:02, Li Zefan wrote:
+> > I reverted 38d7bee9d24adf4c95676a3dc902827c72930ebb ("cpuset: use N_MEMORY instead N_HIGH_MEMORY")
+> > and applied this patchset against 3.8-rc1.
 > 
-> Now, there are some cases where it really is a reason to use a static
-> bitmap, and 1/2 a K of wasted space be damned.  There's a
-> deliberately-ugly way of doing that: declare a bitmap and use
-> to_cpumask().  Of course, if we ever really want to remove NR_CPUS and
-> make it completely generic, we have to kill all these too, but noone is
-> serious about that.
+> I didn't find any patch in this email.
+> Anyway I am wondering how the above patch could cause the stuck you
+> mention below? The patch just renames N_HIGH_MEMORY -> N_MEMORY which
+> should map to the very same constant so there are no functional changes
+> AFAIU.
 
-So, I guess this currently is caught in a place which isn't here or
-there.  I'm pretty skeptical whether it makes sense to bother about
-static usages tho.  Can I keep them for static ones?
+Li needed to revert the said patch only to apply the patchset on top
+of 3.8-rc1.  The N_MEMORY patch doesn't have anything to do with the
+problem Li is seeing.
 
 Thanks.
 
