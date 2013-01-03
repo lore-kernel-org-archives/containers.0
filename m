@@ -1,17 +1,18 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 21/24] blkcg: make blkcg_print_blkgs() grab q locks
-	instead of blkcg lock
-Date: Wed, 2 Jan 2013 15:45:27 -0500
-Message-ID: <20130102204527.GG11220__37185.4680277922$1357159551$gmane$org@mtj.dyndns.org>
-References: <1356726946-26037-1-git-send-email-tj@kernel.org>
-	<1356726946-26037-22-git-send-email-tj@kernel.org>
-	<20130102192700.GA9552@redhat.com>
+From: Rusty Russell <rusty-8n+1lVoiYb80n/F98K4Iww@public.gmane.org>
+Subject: Re: [PATCH 06/13] cpuset: cleanup cpuset[_can]_attach()
+Date: Thu, 03 Jan 2013 11:17:11 +1030
+Message-ID: <871ue35bzk.fsf__11494.8119888597$1357175851$gmane$org@rustcorp.com.au>
+References: <1354138460-19286-1-git-send-email-tj@kernel.org>
+	<1354138460-19286-7-git-send-email-tj@kernel.org>
+	<50DACF5B.6050705@huawei.com>
+	<20121226120415.GA18193@mtj.dyndns.org>
+	<87zk0s5h7c.fsf@rustcorp.com.au>
+	<20130102153439.GA11220@mtj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20130102192700.GA9552-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20130102153439.GA11220-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,33 +22,36 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Jan 02, 2013 at 02:27:00PM -0500, Vivek Goyal wrote:
-> On Fri, Dec 28, 2012 at 12:35:43PM -0800, Tejun Heo wrote:
-> > Instead of holding blkcg->lock while walking ->blkg_list and executing
-> > prfill(), RCU walk ->blkg_list and hold the blkg's queue lock while
-> > executing prfill().  This makes prfill() implementations easier as
-> > stats are mostly protected by queue lock.
-> > 
-> > This will be used to implement hierarchical stats.
-> > 
-> 
-> Hi Tejun,
-> 
-> I think dropping blkcg->lock might be a problem. Using RCU we have made
-> sure that blkg and q are around. But what about blkg->q.backing_dev_info.dev.
-> 
-> We can follow bdi->dev pointer in blkg_dev_name(). I am not sure if we
-> ever clear it from q or not when device goes away.
+Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> writes:
+> Hello, Rusty.
+>
+> On Wed, Jan 02, 2013 at 03:12:15PM +1030, Rusty Russell wrote:
+>> > Hmmm?  cpumask_t can't be used for stack but other than that I don't
+>> > see how it would be deprecated completely.  Rusty, can you please
+>> > chime in?
+>> 
+>> The long-never-quite-complete-plan was for struct cpumask to be
+>> undefined when CONFIG_CPUMASK_OFFSTACK=y.  That means noone can declare
+>> them, or pass them on the stack, since they'll get a compiler error.
+>> 
+>> Now, there are some cases where it really is a reason to use a static
+>> bitmap, and 1/2 a K of wasted space be damned.  There's a
+>> deliberately-ugly way of doing that: declare a bitmap and use
+>> to_cpumask().  Of course, if we ever really want to remove NR_CPUS and
+>> make it completely generic, we have to kill all these too, but noone is
+>> serious about that.
+>
+> So, I guess this currently is caught in a place which isn't here or
+> there.  I'm pretty skeptical whether it makes sense to bother about
+> static usages tho.  Can I keep them for static ones?
 
-If the queue is dead, it wouldn't have policy enabled bit set which is
-tested while holding queue lock, so I don't think it's gonna be a
-problem.
+I didn't realize that cpuset_attach was a fastpath.  If it is, put a
+static there and I'll fix turn it into a bitmap when I need to.
+Otherwise, please don't change the code in the first place.
 
-Thanks.
-
--- 
-tejun
+Cheers,
+Rusty.
