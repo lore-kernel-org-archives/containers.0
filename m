@@ -1,12 +1,13 @@
-From: "containers" <rtkmds-tgdswRJuLnQqBLCLwzCqSQ@public.gmane.org>
-Subject: =?gb2312?B?xPrPsru2tcSx7bW9u/XBy6OhuM+99M/CytZ+tLq92rXEwPHO76OhKEFEKWNv?=
-	=?gb2312?B?bnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc=?=
-Date: Fri, 4 Jan 2013 18:06:46 +0800
-Message-ID: <20130104111154.253AB719@mail.linuxfoundation.org>
+From: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 2/2] cgroups: fix cgroup_event_listener error handling
+Date: Fri,  4 Jan 2013 13:05:18 -0800
+Message-ID: <1357333518-28899-2-git-send-email-gthelen__23714.5872357816$1357333567$gmane$org@google.com>
+References: <1357333518-28899-1-git-send-email-gthelen@google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1357333518-28899-1-git-send-email-gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,22 +17,31 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-   containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-
-   Qfi9xeE
-
-   H
-   lFOus5fik055rw
-
-   tNF8SM0wZURw5988HR
-
-   [1]>>>>>>>
-
-   ::
-
-References
-
-   1. http://t.cn/zjO8TRB
+SWYgdGhlIDxhYnNvbHV0ZS1wYXRoLXRvLWNvbnRyb2wtZmlsZT4gY29tbWFuZCBsaW5lIHBhcmFt
+ZXRlciBjYW5ub3QKYmUgb3BlbmVkLCB0aGVuIGNncm91cF9ldmVudF9saXN0ZW5lciBwcmludHMg
+YW4gZXJyb3IgbWVzc2FnZSBhbmQKdHJpZXMgdG8gcmV0dXJuIGFuIGVycm9yLiAgSG93ZXZlciwg
+ZHVlIHRvIGFuIHVuaW5pdGlhbGl6ZWQgdmFyaWFibGUKdGhlIHJldHVybiB2YWx1ZSB3YXMgdW5k
+ZWZpbmVkLgoKV2l0aCB0aGlzIHBhdGNoIHN1Y2ggZmFpbHVyZXMgYWx3YXlzIHJldHVybiBub24t
+emVybyBlcnJvci4KCkNvbXBpbGVyIHdhcm5pbmcgZm91bmQgdGhpczoKICAkIGdjYyAtV2FsbCAt
+TzIgY2dyb3VwX2V2ZW50X2xpc3RlbmVyLmMKICBjZ3JvdXBfZXZlbnRfbGlzdGVuZXIuYzogSW4g
+ZnVuY3Rpb24g4oCYbWFpbuKAmToKICBjZ3JvdXBfZXZlbnRfbGlzdGVuZXIuYzoxMDk6Mjogd2Fy
+bmluZzog4oCYcmV04oCZIG1heSBiZSB1c2VkIHVuaW5pdGlhbGl6ZWQgaW4gdGhpcyBmdW5jdGlv
+biBbLVd1bmluaXRpYWxpemVkXQoKU2lnbmVkLW9mZi1ieTogR3JlZyBUaGVsZW4gPGd0aGVsZW5A
+Z29vZ2xlLmNvbT4KLS0tCiB0b29scy9jZ3JvdXAvY2dyb3VwX2V2ZW50X2xpc3RlbmVyLmMgfCAg
+ICAyICstCiAxIGZpbGVzIGNoYW5nZWQsIDEgaW5zZXJ0aW9ucygrKSwgMSBkZWxldGlvbnMoLSkK
+CmRpZmYgLS1naXQgYS90b29scy9jZ3JvdXAvY2dyb3VwX2V2ZW50X2xpc3RlbmVyLmMgYi90b29s
+cy9jZ3JvdXAvY2dyb3VwX2V2ZW50X2xpc3RlbmVyLmMKaW5kZXggM2UwODJmOS4uYTcwZjAwYyAx
+MDA2NDQKLS0tIGEvdG9vbHMvY2dyb3VwL2Nncm91cF9ldmVudF9saXN0ZW5lci5jCisrKyBiL3Rv
+b2xzL2Nncm91cC9jZ3JvdXBfZXZlbnRfbGlzdGVuZXIuYwpAQCAtMzUsNyArMzUsNyBAQCBpbnQg
+bWFpbihpbnQgYXJnYywgY2hhciAqKmFyZ3YpCiAJaWYgKGNmZCA9PSAtMSkgewogCQlmcHJpbnRm
+KHN0ZGVyciwgIkNhbm5vdCBvcGVuICVzOiAlc1xuIiwgYXJndlsxXSwKIAkJCQlzdHJlcnJvcihl
+cnJubykpOwotCQlnb3RvIG91dDsKKwkJcmV0dXJuIDE7CiAJfQogCiAJcmV0ID0gc25wcmludGYo
+ZXZlbnRfY29udHJvbF9wYXRoLCBQQVRIX01BWCwgIiVzL2Nncm91cC5ldmVudF9jb250cm9sIiwK
+LS0gCjEuNy43LjMKCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRh
+dGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGlu
+Zm8vY29udGFpbmVycw==
