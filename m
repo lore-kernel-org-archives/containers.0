@@ -1,13 +1,20 @@
-From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCHSET] cpuset: drop cpuset->stack_list and ->parent, take#2
-Date: Sun, 6 Jan 2013 17:27:46 +0800
-Message-ID: <50E94392.2050509@huawei.com>
-References: <1357249446-25075-1-git-send-email-tj@kernel.org>
+From: Rusty Russell <rusty-8n+1lVoiYb80n/F98K4Iww@public.gmane.org>
+Subject: Re: [PATCH 06/13] cpuset: cleanup cpuset[_can]_attach()
+Date: Mon, 07 Jan 2013 09:58:22 +1030
+Message-ID: <87vcb951t5.fsf@rustcorp.com.au>
+References: <1354138460-19286-1-git-send-email-tj@kernel.org>
+	<1354138460-19286-7-git-send-email-tj@kernel.org>
+	<50DACF5B.6050705@huawei.com>
+	<20121226120415.GA18193@mtj.dyndns.org>
+	<87zk0s5h7c.fsf@rustcorp.com.au>
+	<20130102153439.GA11220@mtj.dyndns.org>
+	<871ue35bzk.fsf@rustcorp.com.au>
+	<20130103022911.GH11220@mtj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1357249446-25075-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <20130103022911.GH11220-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,50 +25,30 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 2013/1/4 5:44, Tejun Heo wrote:
-> Hello, guys.
-> 
-> This is the second take of "drop cpuset->stack_list and ->parent"
-> patchset.  Other than being rebased on top of v3.8-rc2 + "cpuset:
-> decouple cpuset locking from cgroup core, take#2", nothing really has
-> changed.
-> 
-> The original patchset description follows.
-> 
-> cpuset implements its own descendant iteration using
-> cpuset->stack_list and has its own ->parent pointer.  There's nothing
-> cpuset specific about descendant walking or finding the parent.  This
-> patchset makes cpuset use cgroup generic API instead.
-> 
->  0001-cpuset-implement-cgroup_rightmost_descendant.patch
->  0002-cpuset-replace-cpuset-stack_list-with-cpuset_for_eac.patch
->  0003-cpuset-remove-cpuset-parent.patch
-> 
-> 0001 implements cgroup_rightmost_descendant() which can be used to
-> skip subtree during pre-order tree walk.  Michal, maybe memcg can use
-> it too?
-> 
-> 0002 replaces cpuset->stack_list with generic
-> for_each_descendasnt_pre().
-> 
-> 0003 replaces cpuset->parent with cgroup->parent.
-> 
-> This patchset is on top of
-> 
-> v3.8-rc2 d1c3ed669a2d452cacfb48c2d171a1f364dae2ed
-> + [1] "[PATCHSET cgroup/for-3.8] cpuset: decouple cpuset locking from cgroup core, take#2"
-> 
-> and available in the following git branch.
-> 
->  git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-cpuset-iter
-> 
->  include/linux/cgroup.h |    1 
->  kernel/cgroup.c        |   26 ++++++++
->  kernel/cpuset.c        |  151 +++++++++++++++++++++----------------------------
->  3 files changed, 92 insertions(+), 86 deletions(-)
-> 
+Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> writes:
 
-Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+> Hello, Rusty.
+>
+> On Thu, Jan 03, 2013 at 11:17:11AM +1030, Rusty Russell wrote:
+>> > So, I guess this currently is caught in a place which isn't here or
+>> > there.  I'm pretty skeptical whether it makes sense to bother about
+>> > static usages tho.  Can I keep them for static ones?
+>> 
+>> I didn't realize that cpuset_attach was a fastpath.  If it is, put a
+>
+> It isn't a hot path.  It's just a bit nasty to have to allocate them
+> separately.
+>
+>> static there and I'll fix turn it into a bitmap when I need to.
+>> Otherwise, please don't change the code in the first place.
+>
+> So, the plan to drop cpumask_t is still on?  If so, I'll leave
+> cpumask_var_t.
+
+Yep!
+
+Thanks,
+Rusty.
