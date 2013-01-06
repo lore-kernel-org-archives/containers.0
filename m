@@ -1,11 +1,14 @@
-From: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/2] cgroups: move cgroup_event_listener.c to tools/cgroup
-Date: Fri,  4 Jan 2013 13:05:17 -0800
-Message-ID: <1357333518-28899-1-git-send-email-gthelen__32076.723004184$1357333571$gmane$org@google.com>
+From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCHSET] cpuset: decouple cpuset locking from cgroup core,
+	take#2
+Date: Sun, 6 Jan 2013 16:27:00 +0800
+Message-ID: <50E93554.3070102__16968.3918160901$1357460937$gmane$org@huawei.com>
+References: <1357248967-24959-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1357248967-24959-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,375 +18,99 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Move the cgroup_event_listener.c tool from Documentation into the new
-tools/cgroup directory.
+On 2013/1/4 5:35, Tejun Heo wrote:
+> Hello, guys.
+> 
+> This is the second attempt at decoupling cpuset locking from cgroup
+> core.  Changes from the last take[L] are
+> 
+> * cpuset-drop-async_rebuild_sched_domains.patch moved from 0007 to
+>   0009.  This reordering makes cpu hotplug handling async first and
+>   removes the temporary cyclic locking dependency.
+> 
+> * 0006-cpuset-cleanup-cpuset-_can-_attach.patch no longer converts
+>   cpumask_var_t to cpumask_t as per Rusty Russell.
+> 
+> * 0008-cpuset-don-t-nest-cgroup_mutex-inside-get_online_cpu.patch now
+>   synchronously rebuilds sched domains from cpu hotplug callback.
+>   This fixes various issues caused by confused scheduler puttings
+>   tasks into a dead cpu including the RCU stall problem reported by Li
+>   Zefan.
+> 
+> Original patchset description follows.
+> 
+> Depending on cgroup core locking - cgroup_mutex - is messy and makes
+> cgroup prone to locking dependency problems.  The current code already
+> has lock dependency loop - memcg nests get_online_cpus() inside
+> cgroup_mutex.  cpuset the other way around.
+> 
+> Regardless of the locking details, whatever is protecting cgroup has
+> inherently to be something outer to most other locking constructs.
+> cgroup calls into a lot of major subsystems which in turn have to
+> perform subsystem-specific locking.  Trying to nest cgroup
+> synchronization inside other locks isn't something which can work
+> well.
+> 
+> cgroup now has enough API to allow subsystems to implement their own
+> locking and cgroup_mutex is scheduled to be made private to cgroup
+> core.  This patchset makes cpuset implement its own locking instead of
+> relying on cgroup_mutex.
+> 
+> cpuset is rather nasty in this respect.  Some of it seems to have come
+> from the implementation history - cgroup core grew out of cpuset - but
+> big part stems from cpuset's need to migrate tasks to an ancestor
+> cgroup when an hotunplug event makes a cpuset empty (w/o any cpu or
+> memory).
+> 
+> This patchset decouples cpuset locking from cgroup_mutex.  After the
+> patchset, cpuset uses cpuset-specific cpuset_mutex instead of
+> cgroup_mutex.  This also removes the lockdep warning triggered during
+> cpu offlining (see 0009).
+> 
+> Note that this leaves memcg as the only external user of cgroup_mutex.
+> Michal, Kame, can you guys please convert memcg to use its own locking
+> too?
+> 
+> This patchset contains the following thirteen patches.
+> 
+>  0001-cpuset-remove-unused-cpuset_unlock.patch
+>  0002-cpuset-remove-fast-exit-path-from-remove_tasks_in_em.patch
+>  0003-cpuset-introduce-css_on-offline.patch
+>  0004-cpuset-introduce-CS_ONLINE.patch
+>  0005-cpuset-introduce-cpuset_for_each_child.patch
+>  0006-cpuset-cleanup-cpuset-_can-_attach.patch
+>  0007-cpuset-reorganize-CPU-memory-hotplug-handling.patch
+>  0008-cpuset-don-t-nest-cgroup_mutex-inside-get_online_cpu.patch
+>  0009-cpuset-drop-async_rebuild_sched_domains.patch
+>  0010-cpuset-make-CPU-memory-hotplug-propagation-asynchron.patch
+>  0011-cpuset-pin-down-cpus-and-mems-while-a-task-is-being-.patch
+>  0012-cpuset-schedule-hotplug-propagation-from-cpuset_atta.patch
+>  0013-cpuset-replace-cgroup_mutex-locking-with-cpuset-inte.patch
+> 
+> 0001-0006 are prep patches.
+> 
+> 0007-0009 make cpuset nest get_online_cpus() inside cgroup_mutex, not
+> the other way around.
+> 
+> 0010-0012 plug holes which would be exposed by switching to
+> cpuset-specific locking.
+> 
+> 0013 replaces cgroup_mutex with cpuset_mutex.
+> 
+> This patchset is on top of v3.8-rc2 (d1c3ed669a) and also available in
+> the following git branch.
+> 
+>  git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-cpuset-locking
+> 
+> diffstat follows.
+> 
+>  kernel/cpuset.c |  760 ++++++++++++++++++++++++++++++++------------------------
+>  1 file changed, 438 insertions(+), 322 deletions(-)
 
-This change involves wiring cgroup_event_listener.c into the tools/
-make system so that is can be built with:
-  $ make tools/cgroup
+I've reviewed and tested the patchset, and it looks good to me!
 
-Signed-off-by: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
----
- Documentation/cgroups/00-INDEX                |    2 -
- Documentation/cgroups/cgroup_event_listener.c |  110 -------------------------
- Documentation/cgroups/memcg_test.txt          |    3 +-
- tools/Makefile                                |   19 ++--
- tools/cgroup/.gitignore                       |    1 +
- tools/cgroup/Makefile                         |   11 +++
- tools/cgroup/cgroup_event_listener.c          |  110 +++++++++++++++++++++++++
- 7 files changed, 133 insertions(+), 123 deletions(-)
- delete mode 100644 Documentation/cgroups/cgroup_event_listener.c
- create mode 100644 tools/cgroup/.gitignore
- create mode 100644 tools/cgroup/Makefile
- create mode 100644 tools/cgroup/cgroup_event_listener.c
-
-diff --git a/Documentation/cgroups/00-INDEX b/Documentation/cgroups/00-INDEX
-index f78b90a..f5635a0 100644
---- a/Documentation/cgroups/00-INDEX
-+++ b/Documentation/cgroups/00-INDEX
-@@ -4,8 +4,6 @@ blkio-controller.txt
- 	- Description for Block IO Controller, implementation and usage details.
- cgroups.txt
- 	- Control Groups definition, implementation details, examples and API.
--cgroup_event_listener.c
--	- A user program for cgroup listener.
- cpuacct.txt
- 	- CPU Accounting Controller; account CPU usage for groups of tasks.
- cpusets.txt
-diff --git a/Documentation/cgroups/cgroup_event_listener.c b/Documentation/cgroups/cgroup_event_listener.c
-deleted file mode 100644
-index 3e082f9..0000000
---- a/Documentation/cgroups/cgroup_event_listener.c
-+++ /dev/null
-@@ -1,110 +0,0 @@
--/*
-- * cgroup_event_listener.c - Simple listener of cgroup events
-- *
-- * Copyright (C) Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-- */
--
--#include <assert.h>
--#include <errno.h>
--#include <fcntl.h>
--#include <libgen.h>
--#include <limits.h>
--#include <stdio.h>
--#include <string.h>
--#include <unistd.h>
--
--#include <sys/eventfd.h>
--
--#define USAGE_STR "Usage: cgroup_event_listener <path-to-control-file> <args>\n"
--
--int main(int argc, char **argv)
--{
--	int efd = -1;
--	int cfd = -1;
--	int event_control = -1;
--	char event_control_path[PATH_MAX];
--	char line[LINE_MAX];
--	int ret;
--
--	if (argc != 3) {
--		fputs(USAGE_STR, stderr);
--		return 1;
--	}
--
--	cfd = open(argv[1], O_RDONLY);
--	if (cfd == -1) {
--		fprintf(stderr, "Cannot open %s: %s\n", argv[1],
--				strerror(errno));
--		goto out;
--	}
--
--	ret = snprintf(event_control_path, PATH_MAX, "%s/cgroup.event_control",
--			dirname(argv[1]));
--	if (ret >= PATH_MAX) {
--		fputs("Path to cgroup.event_control is too long\n", stderr);
--		goto out;
--	}
--
--	event_control = open(event_control_path, O_WRONLY);
--	if (event_control == -1) {
--		fprintf(stderr, "Cannot open %s: %s\n", event_control_path,
--				strerror(errno));
--		goto out;
--	}
--
--	efd = eventfd(0, 0);
--	if (efd == -1) {
--		perror("eventfd() failed");
--		goto out;
--	}
--
--	ret = snprintf(line, LINE_MAX, "%d %d %s", efd, cfd, argv[2]);
--	if (ret >= LINE_MAX) {
--		fputs("Arguments string is too long\n", stderr);
--		goto out;
--	}
--
--	ret = write(event_control, line, strlen(line) + 1);
--	if (ret == -1) {
--		perror("Cannot write to cgroup.event_control");
--		goto out;
--	}
--
--	while (1) {
--		uint64_t result;
--
--		ret = read(efd, &result, sizeof(result));
--		if (ret == -1) {
--			if (errno == EINTR)
--				continue;
--			perror("Cannot read from eventfd");
--			break;
--		}
--		assert(ret == sizeof(result));
--
--		ret = access(event_control_path, W_OK);
--		if ((ret == -1) && (errno == ENOENT)) {
--				puts("The cgroup seems to have removed.");
--				ret = 0;
--				break;
--		}
--
--		if (ret == -1) {
--			perror("cgroup.event_control "
--					"is not accessible any more");
--			break;
--		}
--
--		printf("%s %s: crossed\n", argv[1], argv[2]);
--	}
--
--out:
--	if (efd >= 0)
--		close(efd);
--	if (event_control >= 0)
--		close(event_control);
--	if (cfd >= 0)
--		close(cfd);
--
--	return (ret != 0);
--}
-diff --git a/Documentation/cgroups/memcg_test.txt b/Documentation/cgroups/memcg_test.txt
-index fc8fa97..ce94a83 100644
---- a/Documentation/cgroups/memcg_test.txt
-+++ b/Documentation/cgroups/memcg_test.txt
-@@ -399,8 +399,7 @@ Under below explanation, we assume CONFIG_MEM_RES_CTRL_SWAP=y.
- 
-  9.10 Memory thresholds
- 	Memory controller implements memory thresholds using cgroups notification
--	API. You can use Documentation/cgroups/cgroup_event_listener.c to test
--	it.
-+	API. You can use tools/cgroup/cgroup_event_listener.c to test it.
- 
- 	(Shell-A) Create cgroup and run event listener
- 	# mkdir /cgroup/A
-diff --git a/tools/Makefile b/tools/Makefile
-index 1f9a529..fc57a28 100644
---- a/tools/Makefile
-+++ b/tools/Makefile
-@@ -3,6 +3,7 @@ include scripts/Makefile.include
- help:
- 	@echo 'Possible targets:'
- 	@echo ''
-+	@echo '  cgroup     - cgroup tools'
- 	@echo '  cpupower   - a tool for all things x86 CPU power'
- 	@echo '  firewire   - the userspace part of nosy, an IEEE-1394 traffic sniffer'
- 	@echo '  lguest     - a minimal 32-bit x86 hypervisor'
-@@ -33,7 +34,7 @@ help:
- cpupower: FORCE
- 	$(call descend,power/$@)
- 
--firewire lguest perf usb virtio vm: FORCE
-+cgroup firewire lguest perf usb virtio vm: FORCE
- 	$(call descend,$@)
- 
- selftests: FORCE
-@@ -45,7 +46,7 @@ turbostat x86_energy_perf_policy: FORCE
- cpupower_install:
- 	$(call descend,power/$(@:_install=),install)
- 
--firewire_install lguest_install perf_install usb_install virtio_install vm_install:
-+cgroup_install firewire_install lguest_install perf_install usb_install virtio_install vm_install:
- 	$(call descend,$(@:_install=),install)
- 
- selftests_install:
-@@ -54,14 +55,14 @@ selftests_install:
- turbostat_install x86_energy_perf_policy_install:
- 	$(call descend,power/x86/$(@:_install=),install)
- 
--install: cpupower_install firewire_install lguest_install perf_install \
--		selftests_install turbostat_install usb_install virtio_install \
--		vm_install x86_energy_perf_policy_install
-+install: cgroup_install cpupower_install firewire_install lguest_install \
-+		perf_install selftests_install turbostat_install usb_install \
-+		virtio_install vm_install x86_energy_perf_policy_install
- 
- cpupower_clean:
- 	$(call descend,power/cpupower,clean)
- 
--firewire_clean lguest_clean perf_clean usb_clean virtio_clean vm_clean:
-+cgroup_clean firewire_clean lguest_clean perf_clean usb_clean virtio_clean vm_clean:
- 	$(call descend,$(@:_clean=),clean)
- 
- selftests_clean:
-@@ -70,8 +71,8 @@ selftests_clean:
- turbostat_clean x86_energy_perf_policy_clean:
- 	$(call descend,power/x86/$(@:_clean=),clean)
- 
--clean: cpupower_clean firewire_clean lguest_clean perf_clean selftests_clean \
--		turbostat_clean usb_clean virtio_clean vm_clean \
--		x86_energy_perf_policy_clean
-+clean: cgroup_clean cpupower_clean firewire_clean lguest_clean perf_clean \
-+		selftests_clean turbostat_clean usb_clean virtio_clean \
-+		vm_clean x86_energy_perf_policy_clean
- 
- .PHONY: FORCE
-diff --git a/tools/cgroup/.gitignore b/tools/cgroup/.gitignore
-new file mode 100644
-index 0000000..633cd9b
---- /dev/null
-+++ b/tools/cgroup/.gitignore
-@@ -0,0 +1 @@
-+cgroup_event_listener
-diff --git a/tools/cgroup/Makefile b/tools/cgroup/Makefile
-new file mode 100644
-index 0000000..b428619
---- /dev/null
-+++ b/tools/cgroup/Makefile
-@@ -0,0 +1,11 @@
-+# Makefile for cgroup tools
-+
-+CC = $(CROSS_COMPILE)gcc
-+CFLAGS = -Wall -Wextra
-+
-+all: cgroup_event_listener
-+%: %.c
-+	$(CC) $(CFLAGS) -o $@ $^
-+
-+clean:
-+	$(RM) cgroup_event_listener
-diff --git a/tools/cgroup/cgroup_event_listener.c b/tools/cgroup/cgroup_event_listener.c
-new file mode 100644
-index 0000000..3e082f9
---- /dev/null
-+++ b/tools/cgroup/cgroup_event_listener.c
-@@ -0,0 +1,110 @@
-+/*
-+ * cgroup_event_listener.c - Simple listener of cgroup events
-+ *
-+ * Copyright (C) Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
-+ */
-+
-+#include <assert.h>
-+#include <errno.h>
-+#include <fcntl.h>
-+#include <libgen.h>
-+#include <limits.h>
-+#include <stdio.h>
-+#include <string.h>
-+#include <unistd.h>
-+
-+#include <sys/eventfd.h>
-+
-+#define USAGE_STR "Usage: cgroup_event_listener <path-to-control-file> <args>\n"
-+
-+int main(int argc, char **argv)
-+{
-+	int efd = -1;
-+	int cfd = -1;
-+	int event_control = -1;
-+	char event_control_path[PATH_MAX];
-+	char line[LINE_MAX];
-+	int ret;
-+
-+	if (argc != 3) {
-+		fputs(USAGE_STR, stderr);
-+		return 1;
-+	}
-+
-+	cfd = open(argv[1], O_RDONLY);
-+	if (cfd == -1) {
-+		fprintf(stderr, "Cannot open %s: %s\n", argv[1],
-+				strerror(errno));
-+		goto out;
-+	}
-+
-+	ret = snprintf(event_control_path, PATH_MAX, "%s/cgroup.event_control",
-+			dirname(argv[1]));
-+	if (ret >= PATH_MAX) {
-+		fputs("Path to cgroup.event_control is too long\n", stderr);
-+		goto out;
-+	}
-+
-+	event_control = open(event_control_path, O_WRONLY);
-+	if (event_control == -1) {
-+		fprintf(stderr, "Cannot open %s: %s\n", event_control_path,
-+				strerror(errno));
-+		goto out;
-+	}
-+
-+	efd = eventfd(0, 0);
-+	if (efd == -1) {
-+		perror("eventfd() failed");
-+		goto out;
-+	}
-+
-+	ret = snprintf(line, LINE_MAX, "%d %d %s", efd, cfd, argv[2]);
-+	if (ret >= LINE_MAX) {
-+		fputs("Arguments string is too long\n", stderr);
-+		goto out;
-+	}
-+
-+	ret = write(event_control, line, strlen(line) + 1);
-+	if (ret == -1) {
-+		perror("Cannot write to cgroup.event_control");
-+		goto out;
-+	}
-+
-+	while (1) {
-+		uint64_t result;
-+
-+		ret = read(efd, &result, sizeof(result));
-+		if (ret == -1) {
-+			if (errno == EINTR)
-+				continue;
-+			perror("Cannot read from eventfd");
-+			break;
-+		}
-+		assert(ret == sizeof(result));
-+
-+		ret = access(event_control_path, W_OK);
-+		if ((ret == -1) && (errno == ENOENT)) {
-+				puts("The cgroup seems to have removed.");
-+				ret = 0;
-+				break;
-+		}
-+
-+		if (ret == -1) {
-+			perror("cgroup.event_control "
-+					"is not accessible any more");
-+			break;
-+		}
-+
-+		printf("%s %s: crossed\n", argv[1], argv[2]);
-+	}
-+
-+out:
-+	if (efd >= 0)
-+		close(efd);
-+	if (event_control >= 0)
-+		close(event_control);
-+	if (cfd >= 0)
-+		close(cfd);
-+
-+	return (ret != 0);
-+}
--- 
-1.7.7.3
+Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
