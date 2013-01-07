@@ -1,15 +1,17 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCHSET] block: implement blkcg hierarchy support in cfq, take#2
-Date: Mon, 7 Jan 2013 08:34:37 -0800
-Message-ID: <20130107163437.GF3926__27357.065169099$1357576502$gmane$org@htj.dyndns.org>
-References: <1356726946-26037-1-git-send-email-tj@kernel.org>
-	<20130102182037.GC4306@redhat.com>
+Subject: Re: [PATCH 10/13] cpuset: make CPU / memory hotplug propagation
+	asynchronous
+Date: Mon, 7 Jan 2013 08:42:06 -0800
+Message-ID: <20130107164206.GG3926@htj.dyndns.org>
+References: <1357248967-24959-1-git-send-email-tj@kernel.org>
+	<1357248967-24959-11-git-send-email-tj@kernel.org>
+	<50E935D5.4040402@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20130102182037.GC4306-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <50E935D5.4040402-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,24 +21,26 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Jan 02, 2013 at 01:20:38PM -0500, Vivek Goyal wrote:
-> On Fri, Dec 28, 2012 at 12:35:22PM -0800, Tejun Heo wrote:
+On Sun, Jan 06, 2013 at 04:29:09PM +0800, Li Zefan wrote:
+> > +static void schedule_cpuset_propagate_hotplug(struct cpuset *cs)
+> > +{
+> > +	/*
+> > +	 * Pin @cs.  The refcnt will be released when the work item
+> > +	 * finishes executing.
+> > +	 */
+> > +	if (!css_tryget(&cs->css))
+> > +		return;
+> > +
+> > +	/*
+> > +	 * Queue @cs->empty_cpuset_work.  If already pending, lose the css
 > 
-> [..]
-> > 
-> > * Updated to reflect Vivek's reviews - renames & documentation.
-> 
-> Hi Tejun,
-> 
-> You forgot to update blkio-controller.txt.
+> cs->hotplug_work
 
-Just updated.  Does everything else look okay to you?
-
-Thanks.
+Thanks.  Patch updated.
 
 -- 
 tejun
