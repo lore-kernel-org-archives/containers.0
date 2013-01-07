@@ -1,14 +1,15 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 1/2] cgroups: move cgroup_event_listener.c to tools/cgroup
-Date: Mon, 7 Jan 2013 09:42:13 -0800
-Message-ID: <20130107174213.GL3926__42520.524634938$1357580560$gmane$org@htj.dyndns.org>
+Subject: Re: [PATCH 2/2] cgroups: fix cgroup_event_listener error handling
+Date: Mon, 7 Jan 2013 09:44:27 -0800
+Message-ID: <20130107174427.GM3926__27958.5243239582$1357580698$gmane$org@htj.dyndns.org>
 References: <1357333518-28899-1-git-send-email-gthelen@google.com>
+	<1357333518-28899-2-git-send-email-gthelen@google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1357333518-28899-1-git-send-email-gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1357333518-28899-2-git-send-email-gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,19 +23,30 @@ To: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Jan 04, 2013 at 01:05:17PM -0800, Greg Thelen wrote:
-> Move the cgroup_event_listener.c tool from Documentation into the new
-> tools/cgroup directory.
-> 
-> This change involves wiring cgroup_event_listener.c into the tools/
-> make system so that is can be built with:
->   $ make tools/cgroup
-> 
-> Signed-off-by: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-
-Applied to cgroup/for-3.9.
-
-Thanks.
-
--- 
-tejun
+T24gRnJpLCBKYW4gMDQsIDIwMTMgYXQgMDE6MDU6MThQTSAtMDgwMCwgR3JlZyBUaGVsZW4gd3Jv
+dGU6Cj4gSWYgdGhlIDxhYnNvbHV0ZS1wYXRoLXRvLWNvbnRyb2wtZmlsZT4gY29tbWFuZCBsaW5l
+IHBhcmFtZXRlciBjYW5ub3QKPiBiZSBvcGVuZWQsIHRoZW4gY2dyb3VwX2V2ZW50X2xpc3RlbmVy
+IHByaW50cyBhbiBlcnJvciBtZXNzYWdlIGFuZAo+IHRyaWVzIHRvIHJldHVybiBhbiBlcnJvci4g
+IEhvd2V2ZXIsIGR1ZSB0byBhbiB1bmluaXRpYWxpemVkIHZhcmlhYmxlCj4gdGhlIHJldHVybiB2
+YWx1ZSB3YXMgdW5kZWZpbmVkLgo+IAo+IFdpdGggdGhpcyBwYXRjaCBzdWNoIGZhaWx1cmVzIGFs
+d2F5cyByZXR1cm4gbm9uLXplcm8gZXJyb3IuCj4gCj4gQ29tcGlsZXIgd2FybmluZyBmb3VuZCB0
+aGlzOgo+ICAgJCBnY2MgLVdhbGwgLU8yIGNncm91cF9ldmVudF9saXN0ZW5lci5jCj4gICBjZ3Jv
+dXBfZXZlbnRfbGlzdGVuZXIuYzogSW4gZnVuY3Rpb24g4oCYbWFpbuKAmToKPiAgIGNncm91cF9l
+dmVudF9saXN0ZW5lci5jOjEwOToyOiB3YXJuaW5nOiDigJhyZXTigJkgbWF5IGJlIHVzZWQgdW5p
+bml0aWFsaXplZCBpbiB0aGlzIGZ1bmN0aW9uIFstV3VuaW5pdGlhbGl6ZWRdCj4gCj4gU2lnbmVk
+LW9mZi1ieTogR3JlZyBUaGVsZW4gPGd0aGVsZW5AZ29vZ2xlLmNvbT4KPiAtLS0KPiAgdG9vbHMv
+Y2dyb3VwL2Nncm91cF9ldmVudF9saXN0ZW5lci5jIHwgICAgMiArLQo+ICAxIGZpbGVzIGNoYW5n
+ZWQsIDEgaW5zZXJ0aW9ucygrKSwgMSBkZWxldGlvbnMoLSkKPiAKPiBkaWZmIC0tZ2l0IGEvdG9v
+bHMvY2dyb3VwL2Nncm91cF9ldmVudF9saXN0ZW5lci5jIGIvdG9vbHMvY2dyb3VwL2Nncm91cF9l
+dmVudF9saXN0ZW5lci5jCj4gaW5kZXggM2UwODJmOS4uYTcwZjAwYyAxMDA2NDQKPiAtLS0gYS90
+b29scy9jZ3JvdXAvY2dyb3VwX2V2ZW50X2xpc3RlbmVyLmMKPiArKysgYi90b29scy9jZ3JvdXAv
+Y2dyb3VwX2V2ZW50X2xpc3RlbmVyLmMKPiBAQCAtMzUsNyArMzUsNyBAQCBpbnQgbWFpbihpbnQg
+YXJnYywgY2hhciAqKmFyZ3YpCj4gIAlpZiAoY2ZkID09IC0xKSB7Cj4gIAkJZnByaW50ZihzdGRl
+cnIsICJDYW5ub3Qgb3BlbiAlczogJXNcbiIsIGFyZ3ZbMV0sCj4gIAkJCQlzdHJlcnJvcihlcnJu
+bykpOwo+IC0JCWdvdG8gb3V0Owo+ICsJCXJldHVybiAxOwoKSG1tLi4uIHNvLCBldmVudF9jb250
+cm9sIG9wZW4gZmFpbHVyZSBwYXRoIGlzIGJyb2tlbiB0aGUgc2FtZSB3YXkuCkNhbiB5b3UgcGxl
+YXNlIGZpeCBpdCB0b2dldGhlcj8gIFBsZWFzZSBqdXN0IHJlbW92ZSB0aGUgY2xlYW51cCBwYXRo
+LgoKVGhhbmtzLgoKLS0gCnRlanVuCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGlu
+dXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxt
+YW4vbGlzdGluZm8vY29udGFpbmVycw==
