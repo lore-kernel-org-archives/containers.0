@@ -1,15 +1,18 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 18/24] blkcg: s/blkg_rwstat_sum()/blkg_rwstat_total()/
-Date: Tue, 8 Jan 2013 11:59:39 -0500
-Message-ID: <20130108165939.GI29635__48004.2572286495$1357664409$gmane$org@redhat.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH UPDATED 15/24] cfq-iosched: enable full blkcg hierarchy
+	support
+Date: Tue, 8 Jan 2013 09:19:29 -0800
+Message-ID: <20130108171929.GX3926@htj.dyndns.org>
 References: <1356726946-26037-1-git-send-email-tj@kernel.org>
-	<1356726946-26037-19-git-send-email-tj@kernel.org>
+	<1356726946-26037-16-git-send-email-tj@kernel.org>
+	<20130107163405.GE3926@htj.dyndns.org>
+	<20130108144240.GA29635@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1356726946-26037-19-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <20130108144240.GA29635-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,67 +22,33 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Dec 28, 2012 at 12:35:40PM -0800, Tejun Heo wrote:
-> Rename blkg_rwstat_sum() to blkg_rwstat_total().  sum will be used for
-> summing up stats from multiple blkgs.
+Hey, Vivek.
+
+On Tue, Jan 08, 2013 at 09:42:40AM -0500, Vivek Goyal wrote:
+> > +A has children and further distributes its 57% among the children and
+> > +the implicit leaf node. The total active weight at this level is
+> > +AA:500 + AB:1000 + A-leaf:750 = 2250.
+> > +
+> > + A-leaf    : ( 750 / 2250) * A =~ 19%
+> > + AA(-leaf) : ( 500 / 2250) * A =~ 12%
+> > + AB(-leaf) : (1000 / 2250) * A =~ 25%
 > 
-> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-
-Acked-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-
-Vivek
-
-> ---
->  block/blk-cgroup.h  | 4 ++--
->  block/cfq-iosched.c | 4 ++--
->  2 files changed, 4 insertions(+), 4 deletions(-)
+> Hi Tejun,
 > 
-> diff --git a/block/blk-cgroup.h b/block/blk-cgroup.h
-> index 678e89e..586c0ac 100644
-> --- a/block/blk-cgroup.h
-> +++ b/block/blk-cgroup.h
-> @@ -461,14 +461,14 @@ static inline struct blkg_rwstat blkg_rwstat_read(struct blkg_rwstat *rwstat)
->  }
->  
->  /**
-> - * blkg_rwstat_sum - read the total count of a blkg_rwstat
-> + * blkg_rwstat_total - read the total count of a blkg_rwstat
->   * @rwstat: blkg_rwstat to read
->   *
->   * Return the total count of @rwstat regardless of the IO direction.  This
->   * function can be called without synchronization and takes care of u64
->   * atomicity.
->   */
-> -static inline uint64_t blkg_rwstat_sum(struct blkg_rwstat *rwstat)
-> +static inline uint64_t blkg_rwstat_total(struct blkg_rwstat *rwstat)
->  {
->  	struct blkg_rwstat tmp = blkg_rwstat_read(rwstat);
->  
-> diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
-> index e8f3106..d43145cc 100644
-> --- a/block/cfq-iosched.c
-> +++ b/block/cfq-iosched.c
-> @@ -536,7 +536,7 @@ static void cfqg_stats_set_start_empty_time(struct cfq_group *cfqg)
->  {
->  	struct cfqg_stats *stats = &cfqg->stats;
->  
-> -	if (blkg_rwstat_sum(&stats->queued))
-> +	if (blkg_rwstat_total(&stats->queued))
->  		return;
->  
->  	/*
-> @@ -580,7 +580,7 @@ static void cfqg_stats_update_avg_queue_size(struct cfq_group *cfqg)
->  	struct cfqg_stats *stats = &cfqg->stats;
->  
->  	blkg_stat_add(&stats->avg_queue_size_sum,
-> -		      blkg_rwstat_sum(&stats->queued));
-> +		      blkg_rwstat_total(&stats->queued));
->  	blkg_stat_add(&stats->avg_queue_size_samples, 1);
->  	cfqg_stats_update_group_wait_time(stats);
->  }
-> -- 
-> 1.8.0.2
+> What does (-leaf) is supposed to signify? I can understand that A-leaf
+> tells the share of A's tasks which are effectively in A-leaf group. 
+
+It's saying that the weight for AA and AA-leaf are the same.
+
+> Will just plain AA and AB be more clear?
+
+I don't know, maybe.
+
+Thanks.
+
+-- 
+tejun
