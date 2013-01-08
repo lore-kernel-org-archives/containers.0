@@ -1,15 +1,16 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 11/24] cfq-iosched: add leaf_weight
-Date: Tue, 8 Jan 2013 10:34:48 -0500
-Message-ID: <20130108153448.GB29635@redhat.com>
+Subject: Re: [PATCH 12/24] cfq-iosched: implement cfq_group->nr_active and
+	->children_weight
+Date: Tue, 8 Jan 2013 10:51:14 -0500
+Message-ID: <20130108155114.GC29635@redhat.com>
 References: <1356726946-26037-1-git-send-email-tj@kernel.org>
-	<1356726946-26037-12-git-send-email-tj@kernel.org>
+	<1356726946-26037-13-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1356726946-26037-12-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1356726946-26037-13-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,41 +21,36 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Dec 28, 2012 at 12:35:33PM -0800, Tejun Heo wrote:
+On Fri, Dec 28, 2012 at 12:35:34PM -0800, Tejun Heo wrote:
+> To prepare for blkcg hierarchy support, add cfqg->nr_active and
+> ->children_weight.  cfqg->nr_active counts the number of active cfqgs
+> at the cfqg's level and ->children_weight is sum of weights of those
+> cfqgs.  The level covers itself (cfqg->leaf_weight) and immediate
+> children.
+> 
+> The two values are updated when a cfqg enters and leaves the group
+> service tree.  Unless the hierarchy is very deep, the added overhead
+> should be negligible.
+> 
+> Currently, the parent is determined using cfqg_flat_parent() which
+> makes the root cfqg the parent of all other cfqgs.  This is to make
+> the transition to hierarchy-aware scheduling gradual.  Scheduling
+> logic will be converted to use cfqg->children_weight without actually
+> changing the behavior.  When everything is ready,
+> blkcg_weight_parent() will be replaced with proper parent function.
+> 
+> This patch doesn't introduce any behavior chagne.
+> 
+> v2: s/cfqg->level_weight/cfqg->children_weight/ as per Vivek.
+> 
+> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-[..]
-> +
-> +	/* on root, leaf_weight is mapped to weight */
-> +	{
-> +		.name = "leaf_weight_device",
-> +		.flags = CFTYPE_ONLY_ON_ROOT,
-> +		.read_seq_string = cfqg_print_weight_device,
-> +		.write_string = cfqg_set_weight_device,
-> +		.max_write_len = 256,
-> +	},
-> +	{
-> +		.name = "leaf_weight",
-> +		.flags = CFTYPE_ONLY_ON_ROOT,
-> +		.read_seq_string = cfq_print_weight,
-> +		.write_u64 = cfq_set_weight,
-> +	},
+Looks good to me.
 
-Hi Tejun,
+Acked-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-How does it help to map leaf weight to weight in root group. Old programs
-anyway don't know about leaf_weight. So nobody is going to update it. And
-if they update it, they better know what does it do.
-
-I think we just need to map "weight" to "leaf_weight" once you switch to
-making use of leaf_weight and at that point of time a user will expect
-that updating weight retains the old behavior. I think you have done
-that in later patch.
-
-But mapping leaf_weight to weight seems unnecessary atleast from backward
-compatibility point of view.
-
-Thanks
 Vivek
