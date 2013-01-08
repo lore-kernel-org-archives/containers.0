@@ -1,20 +1,16 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 4/4] setns.2: Document the pid, user,
-	and mount namespace support.
-Date: Mon, 07 Jan 2013 15:58:46 -0800
-Message-ID: <8738yc5yvd.fsf__5015.78841726786$1357603159$gmane$org@xmission.com>
-References: <87a9u4rmz0.fsf@xmission.com> <87k3t7q39u.fsf@xmission.com>
-	<CAKgNAkiaw5L_oNE8NENjmoBS8Hq_uj+iaEdhyXc1+hje4HdnNQ@mail.gmail.com>
-	<87bodftmv0.fsf@xmission.com>
-	<CAKgNAkjJR02rKOBh98n7HJwXqAwywHY=Ef35t9tW7wOuyo86NQ@mail.gmail.com>
-	<87mwwt2pj8.fsf@xmission.com>
-	<CAKgNAkggEOV0dXVzr4Zf3n_-it5SXfvjJ1ooYxiVNWaYzQgRLg@mail.gmail.com>
+From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCHSET] cpuset: decouple cpuset locking from cgroup core,
+	take#2
+Date: Tue, 8 Jan 2013 09:31:11 +0800
+Message-ID: <50EB76DF.5070508@huawei.com>
+References: <1357248967-24959-1-git-send-email-tj@kernel.org>
+	<50E93554.3070102@huawei.com>
+	<20130107164453.GH3926@htj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAKgNAkggEOV0dXVzr4Zf3n_-it5SXfvjJ1ooYxiVNWaYzQgRLg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Michael Kerrisk's message of "Mon, 7 Jan 2013 10:51:04 +0100")
+In-Reply-To: <20130107164453.GH3926-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,30 +20,22 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-"Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
+On 2013/1/8 0:44, Tejun Heo wrote:
+> Hello, Li.
+> 
+> On Sun, Jan 06, 2013 at 04:27:00PM +0800, Li Zefan wrote:
+>> I've reviewed and tested the patchset, and it looks good to me!
+>>
+>> Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+> 
+> Great.  Ummm... How should we route this?  Paul doesn't seem to be
+> looking at this.  I can route it through cgroup tree.  Any objections?
+> 
 
-> Okay. See below.
->
-> So, let's take one more pass. How does the following look:
->
->        A multi-threaded process may not  change  user  namespace  with
->        setns().   It  is  not  permitted to use setns() to reenter the
->        caller's current user namespace.  This prevents a  caller  that
->        has  dropped capabilities from regaining those capabilities via
->        a call to setns() A process reassociating itself  with  a  user
->        namespace must have CAP_SYS_ADMIN privileges in the target user
->        namespace.
->
->        A process may not be reassociated with a new mount namespace if
->        it  is  multi-threaded.   Changing the mount namespace requires
->        that the caller possess both CAP_SYS_CHROOT  and  CAP_SYS_ADMIN
->        capabilities in its own user namespace and CAP_SYS_ADMIN in the
->        target mount namespace.
-
-That wording looks correct.
-
-Eric
+I don't think Paul's still maintaining cpusets. Normally it's Andrew
+that picks up cpuset patches. It's fine you route it through cgroup
+tree.
