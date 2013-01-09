@@ -1,16 +1,14 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCHSET] block: implement blkcg hierarchy support in cfq, take#2
-Date: Tue, 8 Jan 2013 13:28:22 -0500
-Message-ID: <20130108182822.GG29933@redhat.com>
-References: <1356726946-26037-1-git-send-email-tj@kernel.org>
-	<20130102182037.GC4306@redhat.com>
-	<20130107163437.GF3926@htj.dyndns.org>
+From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: [PATCHSET] cpuset: decouple cpuset locking from cgroup core,
+	take#2
+Date: Wed, 9 Jan 2013 13:46:58 +0400
+Message-ID: <50ED3C92.1010105__15583.0892654651$1357724860$gmane$org@parallels.com>
+References: <1357248967-24959-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20130107163437.GF3926-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
+In-Reply-To: <1357248967-24959-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,23 +19,14 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, ctalbott-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rni-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Jan 07, 2013 at 08:34:37AM -0800, Tejun Heo wrote:
-> On Wed, Jan 02, 2013 at 01:20:38PM -0500, Vivek Goyal wrote:
-> > On Fri, Dec 28, 2012 at 12:35:22PM -0800, Tejun Heo wrote:
-> > 
-> > [..]
-> > > 
-> > > * Updated to reflect Vivek's reviews - renames & documentation.
-> > 
-> > Hi Tejun,
-> > 
-> > You forgot to update blkio-controller.txt.
-> 
-> Just updated.  Does everything else look okay to you?
+On 01/04/2013 01:35 AM, Tejun Heo wrote:
+> Note that this leaves memcg as the only external user of cgroup_mutex.
+> Michal, Kame, can you guys please convert memcg to use its own locking
+> too?
+I've already done this, I just have to rework it according to latest
+feedback and repost it.
 
-Yep, everything looks good to me. Thanks.
-
-Vivek
+It should be in the open soon.
