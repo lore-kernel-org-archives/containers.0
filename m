@@ -1,17 +1,11 @@
-From: Jeff Liu <jeff.liu-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] cgroup: don't show pid list on tasks/procs in ascending
-	order
-Date: Wed, 16 Jan 2013 09:50:35 +0800
-Message-ID: <50F6076B.8080704__1437.71500229395$1358301076$gmane$org@oracle.com>
-References: <50F4E902.20202@oracle.com> <20130115062507.GA21358@sergelap>
-	<50F4F76D.2050409@oracle.com> <20130115063412.GA25338@sergelap>
-	<50F4FD99.7070406@oracle.com> <20130115140811.GA4082@sergelap>
-	<20130115154332.GA2598@htj.dyndns.org>
+From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH RESEND] userns: enable tmpfs support for user namespace
+Date: Wed, 16 Jan 2013 18:25:45 +0800
+Message-ID: <1358331945-4106-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20130115154332.GA2598-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,35 +15,35 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Serge and Tejun,
-On 01/15/2013 11:43 PM, Tejun Heo wrote:
-> Hello, guys.
-> 
-> On Tue, Jan 15, 2013 at 08:08:11AM -0600, Serge Hallyn wrote:
->>> I did this for two reasons, one is for the documents, another is per
->>> Cgroup TODO list from Tejun -- https://lkml.org/lkml/2012/9/13/542
->>>
->>> . Misc issues
->>>
->>>   * Sort & unique when listing tasks.  Even the documentation says it
->>>     doesn't happen but we have a good hunk of code doing it in
->>>     cgroup.c.  I'm gonna rip it out at some point.  Again, if you
->>>     don't like it, scream.
->>
->> Yeah, I figured, and since he also wants to move to a place where
->> cgroups are always manipulated using a library, not by hand, it
->> would make sense to get rid of the overhead there.  I just don't
->> really like either one of those :)  And in the list of things to
->> clean up in cgroups, this seems like one that can wait.
-> 
-> I want it gone but last time I pinged there were some people depending
-> on it, so I don't think I can.  I think we'll have to put it on ice
-> for now at least.  :(
-Thanks both of you for the response :)  So I'll put it aside for now.
+From: gaofeng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
-Regards,
--Jeff
+Since the memory used by tmpfs is under control of
+memory cgroup. and the files under the tmpfs will not
+be leak to other tmpfs.
+
+So mounting tmpfs in user namespace does no harm to the
+host,we can allow tmpfs to be mounted in user namespace.
+
+Signed-off-by: gaofeng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
+ mm/shmem.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/mm/shmem.c b/mm/shmem.c
+index 5dd56f6..8eff60a 100644
+--- a/mm/shmem.c
++++ b/mm/shmem.c
+@@ -2766,6 +2766,7 @@ static struct file_system_type shmem_fs_type = {
+ 	.name		= "tmpfs",
+ 	.mount		= shmem_mount,
+ 	.kill_sb	= kill_litter_super,
++	.fs_flags	= FS_USERNS_MOUNT,
+ };
+ 
+ int __init shmem_init(void)
+-- 
+1.7.11.7
