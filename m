@@ -1,16 +1,15 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH] user_ns: Add support for unprivileged remount
-Date: Thu, 17 Jan 2013 02:06:00 -0800
-Message-ID: <87vcawf7jr.fsf@xmission.com>
-References: <50519CB2.7040801@gmail.com> <87fw6lfwc3.fsf@xmission.com>
-	<5052F783.3040904@gmail.com> <877grxdk48.fsf@xmission.com>
-	<50F7A59A.1080601@cn.fujitsu.com>
+Subject: Re: [PATCH RESEND] userns: enable tmpfs support for user namespace
+Date: Thu, 17 Jan 2013 02:15:22 -0800
+Message-ID: <87fw20f745.fsf@xmission.com>
+References: <1358331945-4106-1-git-send-email-gaofeng@cn.fujitsu.com>
+	<20130116143532.GA4035@sergelap> <50F74EC6.60004@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <50F7A59A.1080601-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> (Gao feng's message of "Thu, 17
-	Jan 2013 15:17:46 +0800")
+In-Reply-To: <50F74EC6.60004-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> (Gao feng's message of "Thu, 17
+	Jan 2013 09:07:18 +0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,89 +20,43 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-R2FvIGZlbmcgPGdhb2ZlbmdAY24uZnVqaXRzdS5jb20+IHdyaXRlczoKCj4gT24gMjAxMi8wOS8x
-NCAxNzozMywgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4+IFpoYW8gSG9uZ2ppYW5nIDx6aGFv
-aG9uZ2ppYW5nMzdAZ21haWwuY29tPiB3cml0ZXM6Cj4+IAo+Pj4gT24gMjAxMi05LTE0IDU6MjYs
-IEVyaWMgVy4gQmllZGVybWFuIHdyb3RlOgo+Pj4+IFpoYW8gSG9uZ2ppYW5nIDx6aGFvaG9uZ2pp
-YW5nMzdAZ21haWwuY29tPiB3cml0ZXM6Cj4+Pj4KPj4+Pj4gRnJvbTogWmhhbyBIb25namlhbmcg
-PHpoYW9ob25namlhbmdAaHVhd2VpLmNvbT4KPj4+Pj4KPj4+Pj4gUmVsYXggdGhlIHBlcm1pc3Np
-b24gY2hlY2tzIHRvIGFsbG93IHVucHJpdmlsZWdlZCB1c2VycyB0aGF0IGhhdmUKPj4+Pj4gQ0FQ
-X1NZU19BRE1JTiBwZXJtaXNzaW9ucyBpbiB0aGUgdXNlciBuYW1lc3BhY2UgcmVmZXJyZWQgdG8g
-YnkgdGhlCj4+Pj4+IGN1cnJlbnQgbW91bnQgbmFtZXNwYWNlIHRvIGJlIGFsbG93ZWQgdG8gcmVt
-b3VudCBmaWxlc3lzdGVtcy4KPj4+Pgo+Pj4+IFJlbW91bnQgaW4gZ2VuZXJhbCBtYWtlIGZpbGVz
-eXN0ZW0gY29uZmlndXJhdGlvbiBjaGFuZ2VzIG5vdCBtb3VudCBsZXZlbAo+Pj4+IGNoYW5nZXMu
-Cj4+Pj4KPj4+PiBJbiBnZW5lcmFsIHJlbW91bnQgaXMgbm90IHNhZmUgZm9yIHVucHJpdmllbGdl
-ZCB1c2Vycy4KPj4+Pgo+Pj4+IERvIHlvdSBoYXZlIGEgdXNlIGNhc2Ugd2hlcmUgeW91IG5lZWQg
-dG8gcmVtb3VudCBhIGZpbGVzeXN0ZW0/Cj4+Pgo+Pj4gQXMgd2UgY2FuIGRvIGEgdW1vdW50K21v
-dW5077yMSSBkb24ndCBzZWUgd2h5IHJlbW91bnQgb3BlcmF0aW9uIGlzIG5vdCBhbGxvd2VkLgo+
-Pj4gU2hvdWxkbid0IHdlIGFkZCBjaGVja3MgaW4gcmVtb3VudCBwYXRoIGluIHRoZSBzcGVjaWZp
-YyBmaWxlc3lzdGVtIHRvIGVuc3VyZQo+Pj4gc2FmZXR5IGluc3RlYWQgd2hlbiB3ZSBlbmFibGUg
-dW5wcml2aWxsZWdlZCBtb3VudD8KPj4gCj4+IEJ1dCB0aGUgdGhpbmcgaXMgcmVtb3VudCAhPSBt
-b3VudCt1bW91bnQuICBSZW1vdW50IGlzIGNoYW5nZSBsb3dsZXZlbAo+PiBmaWxlc3lzdGVtIG9w
-dGlvbnMuCj4+IAo+PiBUaGUgYmFzaWMgZGFuZ2VyIGlzIGlmIHNvbWVvbmUgaW4gdGhlIHByaW1h
-cnkgdXNlciBuYW1lc3BhY2UgbW91bnRlZCBhCj4+IGZpbGVzeXN0ZW0sIGFuZCB0aGVuIHdlIGNs
-b25lZCB0aGF0IGZpbGVzeXN0ZW0uCj4+IAo+PiB1bW91bnRpbmcgZmlsZXN5c3RlbXMgaXMgb2su
-ICBUaGVyZSByZWZlcmVuY2UgY291bnQgd2lsbCBkcm9wIG9yIHRoZXkKPj4gd2lsbCBqdXN0IHVu
-bW91bnQgaWYgdGhlIHJlZiBjb3VudCBnb2VzIHRvIHplcm8uCj4+IAo+PiBIb3dldmVyIG1vdW50
-IC1vIHJlbW91bnQgLXIgL2hvbWUgY291bGQgdmVyeSBlYXNpbHkgcmVtb3VudCBldmVyeW9uZSdz
-Cj4+IGhvbWUgZGlyZWN0b3J5IGluIGFsbCBtb3VudCBuYW1lc3BhY2VzIHJlYWQtb25seSBieSBt
-YWtpbmcgdGhlCj4+IGZpbGVzeXN0ZW0gaXRzZWxmIHJlYWRvbmx5Lgo+PiAKPj4gVGhhdCBkYW5n
-ZXIgYXBwbGllcyBldmVuIHRvIHNvbWUgZXh0ZW50IGV2ZW4gaWYgdGhlIG9wdGlvbnMgYXJlIHNh
-ZmUgZm9yCj4+IHVzIHRvIHBlcmZvcm0gYXQgdGhlIGZpbGVzeXN0ZW0gbGV2ZWwuCj4+IAo+PiBO
-b3cgdGhhdCBkb2Vzbid0IG1lYW4gcmVtb3VudCBpcyBhIGhvcGVsZXNzIG9wZXJhdGlvbi4gIFdo
-YXQgaXQgZG9lcwo+PiBtZWFuIGlzIHRoYXQgd2UgbmVlZCB0byBiZSB2ZXJ5IGNhcmVmdWxseSB3
-aXRoIGVuYWJsaW5nIHJlbW91bnRpbmcKPj4gb2YgYSBmaWxlc3lzdGVtLgo+PiAKPiBIaSBFcmlj
-Cj4KPiB3aGF0J3MgeW91IGlkZWEgYWJvdXQgdGhlIHBhdGNoIGJlbG93Lgo+IE1heWJlIGl0IGJl
-dHRlciB0byBhZGQgYSBuZXcgZnNfZmxhZ3MgRlNfVVNFUk5TX1JFTU9VTlQ/Cj4gSXQncyBub3Qg
-YSBnb29kIGV4cGVyaWVuY2UgdGhhdCByZW1vdW50IGlzIGRpc2FibGVkIGluIGNvbnRhaW5lci4K
-CkkgdGhpbmsgeW91IHRvdGFsbHkgZGlkIG5vdCByZWFkIGFuZCB1bmRlcnN0YW5kIHdoYXQgSSBz
-YWlkIGFib3ZlLAphbmQgeW91ciBwYXRjaCBkZXNjcmlwdGlvbiBpcyB3cm9uZy4KClJlbW91bnRp
-bmcgcHJvYyBpcyBub3Qgc2FmZSwgbWFraW5nIHRoZSBwYXRjaCBiZWxvdyBpcyBicm9rZW4uICBS
-ZWFkCnByb2MgYW5kIHJlYWQgbXkgY29tbWVudHMgYWJvdmUuCgpUaGlua2luZyB0aGF0IHRoaXMg
-bWlnaHQgYmUgYW4gaXNzdWUgdGhhdCBjYW4gYmUgZml4ZWQgd2l0aCBmc19mbGFncyBpcwp0aGlu
-a2luZyBhYm91dCB0aGlzIHdyb25nLiAgVGhpbmtpbmcgYSByZW1vdW50IGluIGFueSB3YXkgd291
-bGQgYmUKaXNvbGF0ZWQgdG8gYSBzaW5nbGUgbW91bnQgbmFtZXNwYWNlcyBpcyB3cm9uZy4gIFdo
-ZW4gaW1wbGVtZW50aW5nCnJlbW91bnQgeW91IGhhdmUgdG8gdGhpbmsgYWJvdXQgZXZlcnlvbmUg
-d2hvIGhhcyBhY2Nlc3MgdG8gdGhhdApmaWxlc3lzdGVtLCBhbmQgaXMgaXMgbGVnaXRpbWF0ZSBm
-b3IgeW91IHRvIGFmZmVjdCBhbGwgb2YgdGhlbS4KCldoYXQgYXJlIHBlb3BsZSBkb2luZyB3aXRo
-IHJlbW91bnRpbmc/ICBXaHkgZG8gd2Ugd2FudCBpdD8gIEFzIGEKcHJhY3RpY2FsIG1hdHRlciwg
-YXNzdW1lIHRoYXQgaXQgaXMgaW1wb3NzaWJsZSB0byByZXN1ZSB0aGUgY3VycmVudApmaWxlc3lz
-dGVtIGxldmVsIGltcGxlbWVudGF0aW9uIG9mIHJlbW91bnQuCgpBcyBJIHNhaWQgYWJvdmUgSSBk
-b24ndCBldmVuIHRoaW5rIG1vdW50IC1vIHJlbW91bnQgLXIgL3NvbWUvZmlsZXN5c3RlbQppcyBz
-YWZlLiAgVGhpbmsgd2hhdCB3b3VsZCBoYXBwZW4gaWYgeW91IHJ1biB0aGUgc2hlbGwgc2NyaXB0
-IGJlbG93IHdpdGgKL3RtcCBiZWluZyBhIHNlcGFyYXRlIHRtcGZzIG1vdW50IHBvaW50IGFuZCAv
-cHJvYyBiZWluZyBwcm9jZnMuCgotLS0KIyEvYmluL3NoCmV4cG9ydCBJRklGTz0vdG1wL3BpZG5z
-LXRlc3QtJCQtaW4KZXhwb3J0IE9GSUZPPS90bXAvcGlkbnMtdGVzdC0kJC1vdXQKcm0gLWYgJElG
-SUZPICRPRklGTwpta2ZpZm8gJElGSUZPCm1rZmlmbyAkT0ZJRk8KdW5zaGFyZSAtLXVzZXIgLS0g
-L2Jpbi9iYXNoIC1zIDw8J0VPRicgJgplY2hvIHdhaXRpbmctZm9yLXVpZC1hbmQtZ2lkLW1hcHMg
-PiAkT0ZJRk8KcmVhZCBMSU5FIDwgJElGSUZPCmV4ZWMgdW5zaGFyZSAtLW1vdW50IC0tIC9iaW4v
-YmFzaCAtcyA8PCdFT0YyJwoKbW91bnQgLW4gLW8gcmVtb3VudCAtcm8gL3RtcAptb3VudCAtbiAt
-byByZW1vdW50IC9wcm9jIGhpZHBpZGU9MgoKRU9GMgpFT0YKY2hpbGQ9JCEKcmVhZCBMSU5FIDwg
-JE9GSUZPCnVpZD0kKGlkIC0tdXNlcikKZ2lkPSQoaWQgLS1ncm91cCkKZWNobyAiMCAkdWlkIDEi
-ID4gL3Byb2MvJGNoaWxkL3VpZF9tYXAKZWNobyAiMCAkZ2lkIDEiID4gL3Byb2MvJGNoaWxkL2dp
-ZF9tYXAKZWNobyB1aWQtYW5kLWdpZC1tYXBzID4gJElGSUZPCndhaXQgJGNoaWxkCi0tLQoKPiBU
-aGFua3MhCj4KPiBGcm9tIDhjNWEwMWMwMDdkNzJjNzQ4MDE4NjY1ZDNiZDI3Y2QyYmRlNTJjMGYg
-TW9uIFNlcCAxNyAwMDowMDowMCAyMDAxCj4gRnJvbTogR2FvIGZlbmcgPGdhb2ZlbmdAY24uZnVq
-aXRzdS5jb20+Cj4gRGF0ZTogVGh1LCAxNyBKYW4gMjAxMyAxNDo0MTowMCArMDgwMAo+IFN1Ympl
-Y3Q6IFtQQVRDSF0gdXNlcm5zOiBhbGxvdyByZW1vdW50IGZpbGVzeXN0ZW0gaW4gdW4taW5pdCB1
-c2VybnMKPgo+IFRoZSBwcm9jIGFuZCBzeXNmcyBmaWxlc3lzdGVtIGFscmVhZHkgZW5hYmxlIHVz
-ZXJucyBzdXBwb3J0LAo+IHJlbW91bnRpbmcgdGhlc2UgZmlsZXN5c3RlbXMgaW4gdW4taW5pdCB1
-c2VybnMgZG8gbm8gaGFybQo+IHRvIHRoZSBob3N0Lgo+Cj4gU2lnbmVkLW9mZi1ieTogR2FvIGZl
-bmcgPGdhb2ZlbmdAY24uZnVqaXRzdS5jb20+Cj4gLS0tCj4gIGZzL25hbWVzcGFjZS5jIHwgNSAr
-KysrLQo+ICAxIGZpbGUgY2hhbmdlZCwgNCBpbnNlcnRpb25zKCspLCAxIGRlbGV0aW9uKC0pCj4K
-PiBkaWZmIC0tZ2l0IGEvZnMvbmFtZXNwYWNlLmMgYi9mcy9uYW1lc3BhY2UuYwo+IGluZGV4IDU1
-NjA1YzUuLmI5ZDgzZmIgMTAwNjQ0Cj4gLS0tIGEvZnMvbmFtZXNwYWNlLmMKPiArKysgYi9mcy9u
-YW1lc3BhY2UuYwo+IEBAIC0xNzQ4LDcgKzE3NDgsMTAgQEAgc3RhdGljIGludCBkb19yZW1vdW50
-KHN0cnVjdCBwYXRoICpwYXRoLCBpbnQgZmxhZ3MsIGludCBtbnRfZmxhZ3MsCj4gIAlzdHJ1Y3Qg
-c3VwZXJfYmxvY2sgKnNiID0gcGF0aC0+bW50LT5tbnRfc2I7Cj4gIAlzdHJ1Y3QgbW91bnQgKm1u
-dCA9IHJlYWxfbW91bnQocGF0aC0+bW50KTsKPiAgCj4gLQlpZiAoIWNhcGFibGUoQ0FQX1NZU19B
-RE1JTikpCj4gKwlpZiAoc2ItPnNfdHlwZS0+ZnNfZmxhZ3MgJiBGU19VU0VSTlNfTU9VTlQpIHsK
-PiArCQlpZiAoIW5zX2NhcGFibGUobW50LT5tbnRfbnMtPnVzZXJfbnMsIENBUF9TWVNfQURNSU4p
-KQo+ICsJCQlyZXR1cm4gLUVQRVJNOwo+ICsJfSBlbHNlIGlmICghY2FwYWJsZShDQVBfU1lTX0FE
-TUlOKSkKPiAgCQlyZXR1cm4gLUVQRVJNOwo+ICAKPiAgCWlmICghY2hlY2tfbW50KG1udCkpCl9f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMg
-bWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6
-Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> writes:
+
+> On 2013/01/16 22:35, Serge Hallyn wrote:
+>> Quoting Gao feng (gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
+>>> From: gaofeng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+>>>
+>>> Since the memory used by tmpfs is under control of
+>>> memory cgroup. and the files under the tmpfs will not
+>>> be leak to other tmpfs.
+>>>
+>>> So mounting tmpfs in user namespace does no harm to the
+>>> host,we can allow tmpfs to be mounted in user namespace.
+>>>
+>>> Signed-off-by: gaofeng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+>> 
+>> I've got the same patch in my kernel at
+>> http://kernel.ubuntu.com/git?p=serge/quantal-userns.git;a=summary
+>> 
+>> except note that there are two definitions of shmem_fs_type.
+>> 
+>
+> Yes, I miss the other one,Do you have plan to push this patch
+> into linus's linux-2.6 or eric's userns tree?
+
+Linus's linux-2.6.git is a symlink to Linus's linux.git  Talking about
+2.6 in this day and age is a bit confusing.
+
+> I'm trying to add userns support for libvirt,so I need tmpfs to
+> be allowed to mount in userns.
+
+At a practical level I am happy to apply a complete patch in my tree
+once if it gets posted to fs-devel and probably lkml for review,
+and I have had a chance to read the memory control group and verify
+with my own little eyes that the memory control group can in fact limit
+tmpfs.
+
+Eric
