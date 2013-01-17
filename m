@@ -1,13 +1,16 @@
-From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [PATCH] user_ns: Add support for unprivileged remount
-Date: Thu, 17 Jan 2013 15:17:46 +0800
-Message-ID: <50F7A59A.1080601@cn.fujitsu.com>
+Date: Thu, 17 Jan 2013 02:06:00 -0800
+Message-ID: <87vcawf7jr.fsf@xmission.com>
 References: <50519CB2.7040801@gmail.com> <87fw6lfwc3.fsf@xmission.com>
 	<5052F783.3040904@gmail.com> <877grxdk48.fsf@xmission.com>
+	<50F7A59A.1080601@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------060902080505070302040304"
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <877grxdk48.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <50F7A59A.1080601-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> (Gao feng's message of "Thu, 17
+	Jan 2013 15:17:46 +0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,118 +20,90 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Cc: Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
---------------060902080505070302040304
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
-
-On 2012/09/14 17:33, Eric W. Biederman wrote:
-> Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
->=20
->> On 2012-9-14 5:26, Eric W. Biederman wrote:
->>> Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
->>>
->>>> From: Zhao Hongjiang <zhaohongjiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
->>>>
->>>> Relax the permission checks to allow unprivileged users that have
->>>> CAP=5FSYS=5FADMIN permissions in the user namespace referred to by the
->>>> current mount namespace to be allowed to remount filesystems.
->>>
->>> Remount in general make filesystem configuration changes not mount level
->>> changes.
->>>
->>> In general remount is not safe for unprivielged users.
->>>
->>> Do you have a use case where you need to remount a filesystem?
->>
->> As we can do a umount+mount=EF=BC=8CI don't see why remount operation is=
- not allowed.
->> Shouldn't we add checks in remount path in the specific filesystem to en=
-sure
->> safety instead when we enable unprivilleged mount?
->=20
-> But the thing is remount !=3D mount+umount.  Remount is change lowlevel
-> filesystem options.
->=20
-> The basic danger is if someone in the primary user namespace mounted a
-> filesystem, and then we cloned that filesystem.
->=20
-> umounting filesystems is ok.  There reference count will drop or they
-> will just unmount if the ref count goes to zero.
->=20
-> However mount -o remount -r /home could very easily remount everyone's
-> home directory in all mount namespaces read-only by making the
-> filesystem itself readonly.
->=20
-> That danger applies even to some extent even if the options are safe for
-> us to perform at the filesystem level.
->=20
-> Now that doesn't mean remount is a hopeless operation.  What it does
-> mean is that we need to be very carefully with enabling remounting
-> of a filesystem.
->=20
-Hi Eric
-
-what's you idea about the patch below.
-Maybe it better to add a new fs=5Fflags FS=5FUSERNS=5FREMOUNT?
-It's not a good experience that remount is disabled in container.
-
-Thanks!
-=
-
---------------060902080505070302040304
-Content-Transfer-Encoding: 7bit
-Content-Type: text/x-patch;
- name="0001-userns-allow-remount-filesystem-in-un-init-userns.patch"
-Content-Disposition: attachment;
- filename*0="0001-userns-allow-remount-filesystem-in-un-init-userns.patch"
-
-From 8c5a01c007d72c748018665d3bd27cd2bde52c0f Mon Sep 17 00:00:00 2001
-From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Date: Thu, 17 Jan 2013 14:41:00 +0800
-Subject: [PATCH] userns: allow remount filesystem in un-init userns
-
-The proc and sysfs filesystem already enable userns support,
-remounting these filesystems in un-init userns do no harm
-to the host.
-
-Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- fs/namespace.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
-
-diff --git a/fs/namespace.c b/fs/namespace.c
-index 55605c5..b9d83fb 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -1748,7 +1748,10 @@ static int do_remount(struct path *path, int flags, int mnt_flags,
- 	struct super_block *sb = path->mnt->mnt_sb;
- 	struct mount *mnt = real_mount(path->mnt);
- 
--	if (!capable(CAP_SYS_ADMIN))
-+	if (sb->s_type->fs_flags & FS_USERNS_MOUNT) {
-+		if (!ns_capable(mnt->mnt_ns->user_ns, CAP_SYS_ADMIN))
-+			return -EPERM;
-+	} else if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
- 	if (!check_mnt(mnt))
--- 
-1.7.11.7
-
-
---------------060902080505070302040304
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---------------060902080505070302040304--
+R2FvIGZlbmcgPGdhb2ZlbmdAY24uZnVqaXRzdS5jb20+IHdyaXRlczoKCj4gT24gMjAxMi8wOS8x
+NCAxNzozMywgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4+IFpoYW8gSG9uZ2ppYW5nIDx6aGFv
+aG9uZ2ppYW5nMzdAZ21haWwuY29tPiB3cml0ZXM6Cj4+IAo+Pj4gT24gMjAxMi05LTE0IDU6MjYs
+IEVyaWMgVy4gQmllZGVybWFuIHdyb3RlOgo+Pj4+IFpoYW8gSG9uZ2ppYW5nIDx6aGFvaG9uZ2pp
+YW5nMzdAZ21haWwuY29tPiB3cml0ZXM6Cj4+Pj4KPj4+Pj4gRnJvbTogWmhhbyBIb25namlhbmcg
+PHpoYW9ob25namlhbmdAaHVhd2VpLmNvbT4KPj4+Pj4KPj4+Pj4gUmVsYXggdGhlIHBlcm1pc3Np
+b24gY2hlY2tzIHRvIGFsbG93IHVucHJpdmlsZWdlZCB1c2VycyB0aGF0IGhhdmUKPj4+Pj4gQ0FQ
+X1NZU19BRE1JTiBwZXJtaXNzaW9ucyBpbiB0aGUgdXNlciBuYW1lc3BhY2UgcmVmZXJyZWQgdG8g
+YnkgdGhlCj4+Pj4+IGN1cnJlbnQgbW91bnQgbmFtZXNwYWNlIHRvIGJlIGFsbG93ZWQgdG8gcmVt
+b3VudCBmaWxlc3lzdGVtcy4KPj4+Pgo+Pj4+IFJlbW91bnQgaW4gZ2VuZXJhbCBtYWtlIGZpbGVz
+eXN0ZW0gY29uZmlndXJhdGlvbiBjaGFuZ2VzIG5vdCBtb3VudCBsZXZlbAo+Pj4+IGNoYW5nZXMu
+Cj4+Pj4KPj4+PiBJbiBnZW5lcmFsIHJlbW91bnQgaXMgbm90IHNhZmUgZm9yIHVucHJpdmllbGdl
+ZCB1c2Vycy4KPj4+Pgo+Pj4+IERvIHlvdSBoYXZlIGEgdXNlIGNhc2Ugd2hlcmUgeW91IG5lZWQg
+dG8gcmVtb3VudCBhIGZpbGVzeXN0ZW0/Cj4+Pgo+Pj4gQXMgd2UgY2FuIGRvIGEgdW1vdW50K21v
+dW5077yMSSBkb24ndCBzZWUgd2h5IHJlbW91bnQgb3BlcmF0aW9uIGlzIG5vdCBhbGxvd2VkLgo+
+Pj4gU2hvdWxkbid0IHdlIGFkZCBjaGVja3MgaW4gcmVtb3VudCBwYXRoIGluIHRoZSBzcGVjaWZp
+YyBmaWxlc3lzdGVtIHRvIGVuc3VyZQo+Pj4gc2FmZXR5IGluc3RlYWQgd2hlbiB3ZSBlbmFibGUg
+dW5wcml2aWxsZWdlZCBtb3VudD8KPj4gCj4+IEJ1dCB0aGUgdGhpbmcgaXMgcmVtb3VudCAhPSBt
+b3VudCt1bW91bnQuICBSZW1vdW50IGlzIGNoYW5nZSBsb3dsZXZlbAo+PiBmaWxlc3lzdGVtIG9w
+dGlvbnMuCj4+IAo+PiBUaGUgYmFzaWMgZGFuZ2VyIGlzIGlmIHNvbWVvbmUgaW4gdGhlIHByaW1h
+cnkgdXNlciBuYW1lc3BhY2UgbW91bnRlZCBhCj4+IGZpbGVzeXN0ZW0sIGFuZCB0aGVuIHdlIGNs
+b25lZCB0aGF0IGZpbGVzeXN0ZW0uCj4+IAo+PiB1bW91bnRpbmcgZmlsZXN5c3RlbXMgaXMgb2su
+ICBUaGVyZSByZWZlcmVuY2UgY291bnQgd2lsbCBkcm9wIG9yIHRoZXkKPj4gd2lsbCBqdXN0IHVu
+bW91bnQgaWYgdGhlIHJlZiBjb3VudCBnb2VzIHRvIHplcm8uCj4+IAo+PiBIb3dldmVyIG1vdW50
+IC1vIHJlbW91bnQgLXIgL2hvbWUgY291bGQgdmVyeSBlYXNpbHkgcmVtb3VudCBldmVyeW9uZSdz
+Cj4+IGhvbWUgZGlyZWN0b3J5IGluIGFsbCBtb3VudCBuYW1lc3BhY2VzIHJlYWQtb25seSBieSBt
+YWtpbmcgdGhlCj4+IGZpbGVzeXN0ZW0gaXRzZWxmIHJlYWRvbmx5Lgo+PiAKPj4gVGhhdCBkYW5n
+ZXIgYXBwbGllcyBldmVuIHRvIHNvbWUgZXh0ZW50IGV2ZW4gaWYgdGhlIG9wdGlvbnMgYXJlIHNh
+ZmUgZm9yCj4+IHVzIHRvIHBlcmZvcm0gYXQgdGhlIGZpbGVzeXN0ZW0gbGV2ZWwuCj4+IAo+PiBO
+b3cgdGhhdCBkb2Vzbid0IG1lYW4gcmVtb3VudCBpcyBhIGhvcGVsZXNzIG9wZXJhdGlvbi4gIFdo
+YXQgaXQgZG9lcwo+PiBtZWFuIGlzIHRoYXQgd2UgbmVlZCB0byBiZSB2ZXJ5IGNhcmVmdWxseSB3
+aXRoIGVuYWJsaW5nIHJlbW91bnRpbmcKPj4gb2YgYSBmaWxlc3lzdGVtLgo+PiAKPiBIaSBFcmlj
+Cj4KPiB3aGF0J3MgeW91IGlkZWEgYWJvdXQgdGhlIHBhdGNoIGJlbG93Lgo+IE1heWJlIGl0IGJl
+dHRlciB0byBhZGQgYSBuZXcgZnNfZmxhZ3MgRlNfVVNFUk5TX1JFTU9VTlQ/Cj4gSXQncyBub3Qg
+YSBnb29kIGV4cGVyaWVuY2UgdGhhdCByZW1vdW50IGlzIGRpc2FibGVkIGluIGNvbnRhaW5lci4K
+CkkgdGhpbmsgeW91IHRvdGFsbHkgZGlkIG5vdCByZWFkIGFuZCB1bmRlcnN0YW5kIHdoYXQgSSBz
+YWlkIGFib3ZlLAphbmQgeW91ciBwYXRjaCBkZXNjcmlwdGlvbiBpcyB3cm9uZy4KClJlbW91bnRp
+bmcgcHJvYyBpcyBub3Qgc2FmZSwgbWFraW5nIHRoZSBwYXRjaCBiZWxvdyBpcyBicm9rZW4uICBS
+ZWFkCnByb2MgYW5kIHJlYWQgbXkgY29tbWVudHMgYWJvdmUuCgpUaGlua2luZyB0aGF0IHRoaXMg
+bWlnaHQgYmUgYW4gaXNzdWUgdGhhdCBjYW4gYmUgZml4ZWQgd2l0aCBmc19mbGFncyBpcwp0aGlu
+a2luZyBhYm91dCB0aGlzIHdyb25nLiAgVGhpbmtpbmcgYSByZW1vdW50IGluIGFueSB3YXkgd291
+bGQgYmUKaXNvbGF0ZWQgdG8gYSBzaW5nbGUgbW91bnQgbmFtZXNwYWNlcyBpcyB3cm9uZy4gIFdo
+ZW4gaW1wbGVtZW50aW5nCnJlbW91bnQgeW91IGhhdmUgdG8gdGhpbmsgYWJvdXQgZXZlcnlvbmUg
+d2hvIGhhcyBhY2Nlc3MgdG8gdGhhdApmaWxlc3lzdGVtLCBhbmQgaXMgaXMgbGVnaXRpbWF0ZSBm
+b3IgeW91IHRvIGFmZmVjdCBhbGwgb2YgdGhlbS4KCldoYXQgYXJlIHBlb3BsZSBkb2luZyB3aXRo
+IHJlbW91bnRpbmc/ICBXaHkgZG8gd2Ugd2FudCBpdD8gIEFzIGEKcHJhY3RpY2FsIG1hdHRlciwg
+YXNzdW1lIHRoYXQgaXQgaXMgaW1wb3NzaWJsZSB0byByZXN1ZSB0aGUgY3VycmVudApmaWxlc3lz
+dGVtIGxldmVsIGltcGxlbWVudGF0aW9uIG9mIHJlbW91bnQuCgpBcyBJIHNhaWQgYWJvdmUgSSBk
+b24ndCBldmVuIHRoaW5rIG1vdW50IC1vIHJlbW91bnQgLXIgL3NvbWUvZmlsZXN5c3RlbQppcyBz
+YWZlLiAgVGhpbmsgd2hhdCB3b3VsZCBoYXBwZW4gaWYgeW91IHJ1biB0aGUgc2hlbGwgc2NyaXB0
+IGJlbG93IHdpdGgKL3RtcCBiZWluZyBhIHNlcGFyYXRlIHRtcGZzIG1vdW50IHBvaW50IGFuZCAv
+cHJvYyBiZWluZyBwcm9jZnMuCgotLS0KIyEvYmluL3NoCmV4cG9ydCBJRklGTz0vdG1wL3BpZG5z
+LXRlc3QtJCQtaW4KZXhwb3J0IE9GSUZPPS90bXAvcGlkbnMtdGVzdC0kJC1vdXQKcm0gLWYgJElG
+SUZPICRPRklGTwpta2ZpZm8gJElGSUZPCm1rZmlmbyAkT0ZJRk8KdW5zaGFyZSAtLXVzZXIgLS0g
+L2Jpbi9iYXNoIC1zIDw8J0VPRicgJgplY2hvIHdhaXRpbmctZm9yLXVpZC1hbmQtZ2lkLW1hcHMg
+PiAkT0ZJRk8KcmVhZCBMSU5FIDwgJElGSUZPCmV4ZWMgdW5zaGFyZSAtLW1vdW50IC0tIC9iaW4v
+YmFzaCAtcyA8PCdFT0YyJwoKbW91bnQgLW4gLW8gcmVtb3VudCAtcm8gL3RtcAptb3VudCAtbiAt
+byByZW1vdW50IC9wcm9jIGhpZHBpZGU9MgoKRU9GMgpFT0YKY2hpbGQ9JCEKcmVhZCBMSU5FIDwg
+JE9GSUZPCnVpZD0kKGlkIC0tdXNlcikKZ2lkPSQoaWQgLS1ncm91cCkKZWNobyAiMCAkdWlkIDEi
+ID4gL3Byb2MvJGNoaWxkL3VpZF9tYXAKZWNobyAiMCAkZ2lkIDEiID4gL3Byb2MvJGNoaWxkL2dp
+ZF9tYXAKZWNobyB1aWQtYW5kLWdpZC1tYXBzID4gJElGSUZPCndhaXQgJGNoaWxkCi0tLQoKPiBU
+aGFua3MhCj4KPiBGcm9tIDhjNWEwMWMwMDdkNzJjNzQ4MDE4NjY1ZDNiZDI3Y2QyYmRlNTJjMGYg
+TW9uIFNlcCAxNyAwMDowMDowMCAyMDAxCj4gRnJvbTogR2FvIGZlbmcgPGdhb2ZlbmdAY24uZnVq
+aXRzdS5jb20+Cj4gRGF0ZTogVGh1LCAxNyBKYW4gMjAxMyAxNDo0MTowMCArMDgwMAo+IFN1Ympl
+Y3Q6IFtQQVRDSF0gdXNlcm5zOiBhbGxvdyByZW1vdW50IGZpbGVzeXN0ZW0gaW4gdW4taW5pdCB1
+c2VybnMKPgo+IFRoZSBwcm9jIGFuZCBzeXNmcyBmaWxlc3lzdGVtIGFscmVhZHkgZW5hYmxlIHVz
+ZXJucyBzdXBwb3J0LAo+IHJlbW91bnRpbmcgdGhlc2UgZmlsZXN5c3RlbXMgaW4gdW4taW5pdCB1
+c2VybnMgZG8gbm8gaGFybQo+IHRvIHRoZSBob3N0Lgo+Cj4gU2lnbmVkLW9mZi1ieTogR2FvIGZl
+bmcgPGdhb2ZlbmdAY24uZnVqaXRzdS5jb20+Cj4gLS0tCj4gIGZzL25hbWVzcGFjZS5jIHwgNSAr
+KysrLQo+ICAxIGZpbGUgY2hhbmdlZCwgNCBpbnNlcnRpb25zKCspLCAxIGRlbGV0aW9uKC0pCj4K
+PiBkaWZmIC0tZ2l0IGEvZnMvbmFtZXNwYWNlLmMgYi9mcy9uYW1lc3BhY2UuYwo+IGluZGV4IDU1
+NjA1YzUuLmI5ZDgzZmIgMTAwNjQ0Cj4gLS0tIGEvZnMvbmFtZXNwYWNlLmMKPiArKysgYi9mcy9u
+YW1lc3BhY2UuYwo+IEBAIC0xNzQ4LDcgKzE3NDgsMTAgQEAgc3RhdGljIGludCBkb19yZW1vdW50
+KHN0cnVjdCBwYXRoICpwYXRoLCBpbnQgZmxhZ3MsIGludCBtbnRfZmxhZ3MsCj4gIAlzdHJ1Y3Qg
+c3VwZXJfYmxvY2sgKnNiID0gcGF0aC0+bW50LT5tbnRfc2I7Cj4gIAlzdHJ1Y3QgbW91bnQgKm1u
+dCA9IHJlYWxfbW91bnQocGF0aC0+bW50KTsKPiAgCj4gLQlpZiAoIWNhcGFibGUoQ0FQX1NZU19B
+RE1JTikpCj4gKwlpZiAoc2ItPnNfdHlwZS0+ZnNfZmxhZ3MgJiBGU19VU0VSTlNfTU9VTlQpIHsK
+PiArCQlpZiAoIW5zX2NhcGFibGUobW50LT5tbnRfbnMtPnVzZXJfbnMsIENBUF9TWVNfQURNSU4p
+KQo+ICsJCQlyZXR1cm4gLUVQRVJNOwo+ICsJfSBlbHNlIGlmICghY2FwYWJsZShDQVBfU1lTX0FE
+TUlOKSkKPiAgCQlyZXR1cm4gLUVQRVJNOwo+ICAKPiAgCWlmICghY2hlY2tfbW50KG1udCkpCl9f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMg
+bWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6
+Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
