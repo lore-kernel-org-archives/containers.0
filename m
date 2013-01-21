@@ -1,18 +1,15 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Constraining the memory used by an unprivilged mount of tmpfs.
-Date: Sun, 20 Jan 2013 19:27:24 +0000
-Message-ID: <20130120192724.GB26200@mail.hallyn.com>
-References: <87fw1zbd03.fsf@xmission.com> <20130118042404.GA15079@sergelap>
-	<87vcavys6k.fsf@xmission.com> <50F8DEBF.1020701@parallels.com>
-	<87ip6vyqkf.fsf@xmission.com> <50F8E73B.7000903@parallels.com>
-	<87ip6vug8p.fsf_-_@xmission.com> <50F99787.3090708@parallels.com>
-	<20130118194851.GB13983@sergelap> <50F9A7FD.6030507@parallels.com>
+From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH] user_ns: Add support for unprivileged remount
+Date: Mon, 21 Jan 2013 10:09:04 +0800
+Message-ID: <50FCA340.1020404@cn.fujitsu.com>
+References: <50519CB2.7040801@gmail.com> <87fw6lfwc3.fsf@xmission.com>
+	<5052F783.3040904@gmail.com> <877grxdk48.fsf@xmission.com>
+	<50F7A59A.1080601@cn.fujitsu.com> <87vcawf7jr.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <50F9A7FD.6030507-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <87vcawf7jr.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,43 +19,106 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Glauber Costa (glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
-> On 01/18/2013 11:48 AM, Serge Hallyn wrote:
-> > Quoting Glauber Costa (glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
-> >> On 01/17/2013 11:01 PM, Eric W. Biederman wrote:
-> >>> What are the practical problems with control groups that makes them
-> >>> undesirable/hard to use with namespaces?
-> >>>
-> >>> What would it take to fix the problems with control groups?
-> >> There aren't, from my PoV.
-> >> When I run containers, for instance, I basically join all namespaces,
-> >> configure all groups, and everything I can.
-> >>
-> >> I do know, however, that not every use case is like that, and those
-> >> things tends to be very loosely coupled.
-> >>
-> >> So what I am worried about, is not a valid container usage where you
-> >> have your constraints configured. But if I login into a box as a normal
-> >> user, and that now allows me to create a userns, and maliciously fire a
-> >> big tmpfs from there, cgroups will not gonna be there for me - it's not
-> >> a container box, is just something I am trying to break.
-> > 
-> > Hm.  So basically we would, ideally, find a way to make it so that if
-> > uid 500 creates a new userns and, therein, mounts a tmpfs, then that
-> > tmpfs gets accounted and limited along with uid 500's RSS?
-> > 
-> 
-> Dunno.
-> 
-> One option would be to start establishing stronger connections between
-> cgroups and namespaces in a sane way. And then, we only allow such
-> mounts when you are actually cgroup backed.
-
-The latter is probably not horrible - I'm all for encouraging distros
-to start always setting up cgroups on login.
-
--serge
+T24gMjAxMy8wMS8xNyAxODowNiwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4gR2FvIGZlbmcg
+PGdhb2ZlbmdAY24uZnVqaXRzdS5jb20+IHdyaXRlczoKPiAKPj4gT24gMjAxMi8wOS8xNCAxNzoz
+MywgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4+PiBaaGFvIEhvbmdqaWFuZyA8emhhb2hvbmdq
+aWFuZzM3QGdtYWlsLmNvbT4gd3JpdGVzOgo+Pj4KPj4+PiBPbiAyMDEyLTktMTQgNToyNiwgRXJp
+YyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4+Pj4+IFpoYW8gSG9uZ2ppYW5nIDx6aGFvaG9uZ2ppYW5n
+MzdAZ21haWwuY29tPiB3cml0ZXM6Cj4+Pj4+Cj4+Pj4+PiBGcm9tOiBaaGFvIEhvbmdqaWFuZyA8
+emhhb2hvbmdqaWFuZ0BodWF3ZWkuY29tPgo+Pj4+Pj4KPj4+Pj4+IFJlbGF4IHRoZSBwZXJtaXNz
+aW9uIGNoZWNrcyB0byBhbGxvdyB1bnByaXZpbGVnZWQgdXNlcnMgdGhhdCBoYXZlCj4+Pj4+PiBD
+QVBfU1lTX0FETUlOIHBlcm1pc3Npb25zIGluIHRoZSB1c2VyIG5hbWVzcGFjZSByZWZlcnJlZCB0
+byBieSB0aGUKPj4+Pj4+IGN1cnJlbnQgbW91bnQgbmFtZXNwYWNlIHRvIGJlIGFsbG93ZWQgdG8g
+cmVtb3VudCBmaWxlc3lzdGVtcy4KPj4+Pj4KPj4+Pj4gUmVtb3VudCBpbiBnZW5lcmFsIG1ha2Ug
+ZmlsZXN5c3RlbSBjb25maWd1cmF0aW9uIGNoYW5nZXMgbm90IG1vdW50IGxldmVsCj4+Pj4+IGNo
+YW5nZXMuCj4+Pj4+Cj4+Pj4+IEluIGdlbmVyYWwgcmVtb3VudCBpcyBub3Qgc2FmZSBmb3IgdW5w
+cml2aWVsZ2VkIHVzZXJzLgo+Pj4+Pgo+Pj4+PiBEbyB5b3UgaGF2ZSBhIHVzZSBjYXNlIHdoZXJl
+IHlvdSBuZWVkIHRvIHJlbW91bnQgYSBmaWxlc3lzdGVtPwo+Pj4+Cj4+Pj4gQXMgd2UgY2FuIGRv
+IGEgdW1vdW50K21vdW5077yMSSBkb24ndCBzZWUgd2h5IHJlbW91bnQgb3BlcmF0aW9uIGlzIG5v
+dCBhbGxvd2VkLgo+Pj4+IFNob3VsZG4ndCB3ZSBhZGQgY2hlY2tzIGluIHJlbW91bnQgcGF0aCBp
+biB0aGUgc3BlY2lmaWMgZmlsZXN5c3RlbSB0byBlbnN1cmUKPj4+PiBzYWZldHkgaW5zdGVhZCB3
+aGVuIHdlIGVuYWJsZSB1bnByaXZpbGxlZ2VkIG1vdW50Pwo+Pj4KPj4+IEJ1dCB0aGUgdGhpbmcg
+aXMgcmVtb3VudCAhPSBtb3VudCt1bW91bnQuICBSZW1vdW50IGlzIGNoYW5nZSBsb3dsZXZlbAo+
+Pj4gZmlsZXN5c3RlbSBvcHRpb25zLgo+Pj4KPj4+IFRoZSBiYXNpYyBkYW5nZXIgaXMgaWYgc29t
+ZW9uZSBpbiB0aGUgcHJpbWFyeSB1c2VyIG5hbWVzcGFjZSBtb3VudGVkIGEKPj4+IGZpbGVzeXN0
+ZW0sIGFuZCB0aGVuIHdlIGNsb25lZCB0aGF0IGZpbGVzeXN0ZW0uCj4+Pgo+Pj4gdW1vdW50aW5n
+IGZpbGVzeXN0ZW1zIGlzIG9rLiAgVGhlcmUgcmVmZXJlbmNlIGNvdW50IHdpbGwgZHJvcCBvciB0
+aGV5Cj4+PiB3aWxsIGp1c3QgdW5tb3VudCBpZiB0aGUgcmVmIGNvdW50IGdvZXMgdG8gemVyby4K
+Pj4+Cj4+PiBIb3dldmVyIG1vdW50IC1vIHJlbW91bnQgLXIgL2hvbWUgY291bGQgdmVyeSBlYXNp
+bHkgcmVtb3VudCBldmVyeW9uZSdzCj4+PiBob21lIGRpcmVjdG9yeSBpbiBhbGwgbW91bnQgbmFt
+ZXNwYWNlcyByZWFkLW9ubHkgYnkgbWFraW5nIHRoZQo+Pj4gZmlsZXN5c3RlbSBpdHNlbGYgcmVh
+ZG9ubHkuCj4+Pgo+Pj4gVGhhdCBkYW5nZXIgYXBwbGllcyBldmVuIHRvIHNvbWUgZXh0ZW50IGV2
+ZW4gaWYgdGhlIG9wdGlvbnMgYXJlIHNhZmUgZm9yCj4+PiB1cyB0byBwZXJmb3JtIGF0IHRoZSBm
+aWxlc3lzdGVtIGxldmVsLgo+Pj4KPj4+IE5vdyB0aGF0IGRvZXNuJ3QgbWVhbiByZW1vdW50IGlz
+IGEgaG9wZWxlc3Mgb3BlcmF0aW9uLiAgV2hhdCBpdCBkb2VzCj4+PiBtZWFuIGlzIHRoYXQgd2Ug
+bmVlZCB0byBiZSB2ZXJ5IGNhcmVmdWxseSB3aXRoIGVuYWJsaW5nIHJlbW91bnRpbmcKPj4+IG9m
+IGEgZmlsZXN5c3RlbS4KPj4+Cj4+IEhpIEVyaWMKPj4KPj4gd2hhdCdzIHlvdSBpZGVhIGFib3V0
+IHRoZSBwYXRjaCBiZWxvdy4KPj4gTWF5YmUgaXQgYmV0dGVyIHRvIGFkZCBhIG5ldyBmc19mbGFn
+cyBGU19VU0VSTlNfUkVNT1VOVD8KPj4gSXQncyBub3QgYSBnb29kIGV4cGVyaWVuY2UgdGhhdCBy
+ZW1vdW50IGlzIGRpc2FibGVkIGluIGNvbnRhaW5lci4KPiAKPiBJIHRoaW5rIHlvdSB0b3RhbGx5
+IGRpZCBub3QgcmVhZCBhbmQgdW5kZXJzdGFuZCB3aGF0IEkgc2FpZCBhYm92ZSwKPiBhbmQgeW91
+ciBwYXRjaCBkZXNjcmlwdGlvbiBpcyB3cm9uZy4KPiAKPiBSZW1vdW50aW5nIHByb2MgaXMgbm90
+IHNhZmUsIG1ha2luZyB0aGUgcGF0Y2ggYmVsb3cgaXMgYnJva2VuLiAgUmVhZAo+IHByb2MgYW5k
+IHJlYWQgbXkgY29tbWVudHMgYWJvdmUuCj4gCj4gVGhpbmtpbmcgdGhhdCB0aGlzIG1pZ2h0IGJl
+IGFuIGlzc3VlIHRoYXQgY2FuIGJlIGZpeGVkIHdpdGggZnNfZmxhZ3MgaXMKPiB0aGlua2luZyBh
+Ym91dCB0aGlzIHdyb25nLiAgVGhpbmtpbmcgYSByZW1vdW50IGluIGFueSB3YXkgd291bGQgYmUK
+PiBpc29sYXRlZCB0byBhIHNpbmdsZSBtb3VudCBuYW1lc3BhY2VzIGlzIHdyb25nLiAgV2hlbiBp
+bXBsZW1lbnRpbmcKPiByZW1vdW50IHlvdSBoYXZlIHRvIHRoaW5rIGFib3V0IGV2ZXJ5b25lIHdo
+byBoYXMgYWNjZXNzIHRvIHRoYXQKPiBmaWxlc3lzdGVtLCBhbmQgaXMgaXMgbGVnaXRpbWF0ZSBm
+b3IgeW91IHRvIGFmZmVjdCBhbGwgb2YgdGhlbS4KPiAKPiBXaGF0IGFyZSBwZW9wbGUgZG9pbmcg
+d2l0aCByZW1vdW50aW5nPyAgV2h5IGRvIHdlIHdhbnQgaXQ/ICBBcyBhCj4gcHJhY3RpY2FsIG1h
+dHRlciwgYXNzdW1lIHRoYXQgaXQgaXMgaW1wb3NzaWJsZSB0byByZXN1ZSB0aGUgY3VycmVudAo+
+IGZpbGVzeXN0ZW0gbGV2ZWwgaW1wbGVtZW50YXRpb24gb2YgcmVtb3VudC4KPiAKPiBBcyBJIHNh
+aWQgYWJvdmUgSSBkb24ndCBldmVuIHRoaW5rIG1vdW50IC1vIHJlbW91bnQgLXIgL3NvbWUvZmls
+ZXN5c3RlbQo+IGlzIHNhZmUuICBUaGluayB3aGF0IHdvdWxkIGhhcHBlbiBpZiB5b3UgcnVuIHRo
+ZSBzaGVsbCBzY3JpcHQgYmVsb3cgd2l0aAo+IC90bXAgYmVpbmcgYSBzZXBhcmF0ZSB0bXBmcyBt
+b3VudCBwb2ludCBhbmQgL3Byb2MgYmVpbmcgcHJvY2ZzLgo+IAoKClRoYW5rcyBmb3IgeW91IGV4
+cGxhbmF0aW9uLFlvdSBtZWFuIHRoZSBzdXBlci1ibG9jayBtYXkgYmUgc2hhcmVkIHdpdGhpbgp0
+d28gbW50bnMsQW5kIGFsbG93aW5nIG93bmVyIG9mIHRoZSBtbnRucyB3aGljaCBtYXliZSB1bnBy
+aXZpbGVnZWQgdXNlcgp0byByZW1vdW50IHRoaXMgZmlsZXN5c3RlbSB3aWxsIGFmZmVjdCB0aGUg
+b3RoZXIgbW50bnMuCkknbSByaWdodD8KClN1Y2ggYXMgcHJvYyBmaWxlc3lzdGVtLHRoZSByb290
+IHVzZXIgb2YgbW50bnMgbWF5IHVtb3VudCBhbmQgdGhlbiBtb3VudAppdCBhZ2Fpbi5TbyB0aGUg
+c3VwZXIgYmxvY2sgd2lsbCBub3QgYmUgc2hhcmVkIHdpdGggb3RoZXIsSW4gdGhpcyBzaXR1YXRp
+b24sCndlIGNhbiBhbGxvdyB0aGlzIHJvb3QgdXNlciB0byByZW1vdW50IHRoZSBwcm9jIGZpbGVz
+eXN0ZW0uCgoKSSB0aGluayB3ZSBtYXkgbmVlZCBhIGZsYWcgc3VjaCBhcyBNU19TSEFSRURfTlMg
+dG8gcG9pbnQgb3V0IGlmIHRoaXMgc3VwZXIKYmxvY2sgaXMgc2hhcmVkIGJ5IG1heSBtbnRucy5p
+ZiB0aGUgc3VwZXIgYmxvY2sgaXMgb25seSBvd25lZCBieSBvbmUgbW50bnMsCndlIGNhbiBhbGxv
+dyB0aGUgcm9vdCB1c2VyIG9mIHRoaXMgbW50bnMgdG8gcmVtb3VudCB0aGUgZmlsZXN5c3RlbS4K
+ClRoYW5rcy4KPiAtLS0KPiAjIS9iaW4vc2gKPiBleHBvcnQgSUZJRk89L3RtcC9waWRucy10ZXN0
+LSQkLWluCj4gZXhwb3J0IE9GSUZPPS90bXAvcGlkbnMtdGVzdC0kJC1vdXQKPiBybSAtZiAkSUZJ
+Rk8gJE9GSUZPCj4gbWtmaWZvICRJRklGTwo+IG1rZmlmbyAkT0ZJRk8KPiB1bnNoYXJlIC0tdXNl
+ciAtLSAvYmluL2Jhc2ggLXMgPDwnRU9GJyAmCj4gZWNobyB3YWl0aW5nLWZvci11aWQtYW5kLWdp
+ZC1tYXBzID4gJE9GSUZPCj4gcmVhZCBMSU5FIDwgJElGSUZPCj4gZXhlYyB1bnNoYXJlIC0tbW91
+bnQgLS0gL2Jpbi9iYXNoIC1zIDw8J0VPRjInCj4gCj4gbW91bnQgLW4gLW8gcmVtb3VudCAtcm8g
+L3RtcAo+IG1vdW50IC1uIC1vIHJlbW91bnQgL3Byb2MgaGlkcGlkZT0yCj4gCj4gRU9GMgo+IEVP
+Rgo+IGNoaWxkPSQhCj4gcmVhZCBMSU5FIDwgJE9GSUZPCj4gdWlkPSQoaWQgLS11c2VyKQo+IGdp
+ZD0kKGlkIC0tZ3JvdXApCj4gZWNobyAiMCAkdWlkIDEiID4gL3Byb2MvJGNoaWxkL3VpZF9tYXAK
+PiBlY2hvICIwICRnaWQgMSIgPiAvcHJvYy8kY2hpbGQvZ2lkX21hcAo+IGVjaG8gdWlkLWFuZC1n
+aWQtbWFwcyA+ICRJRklGTwo+IHdhaXQgJGNoaWxkCj4gLS0tCj4gCj4+IFRoYW5rcyEKPj4KPj4g
+RnJvbSA4YzVhMDFjMDA3ZDcyYzc0ODAxODY2NWQzYmQyN2NkMmJkZTUyYzBmIE1vbiBTZXAgMTcg
+MDA6MDA6MDAgMjAwMQo+PiBGcm9tOiBHYW8gZmVuZyA8Z2FvZmVuZ0Bjbi5mdWppdHN1LmNvbT4K
+Pj4gRGF0ZTogVGh1LCAxNyBKYW4gMjAxMyAxNDo0MTowMCArMDgwMAo+PiBTdWJqZWN0OiBbUEFU
+Q0hdIHVzZXJuczogYWxsb3cgcmVtb3VudCBmaWxlc3lzdGVtIGluIHVuLWluaXQgdXNlcm5zCj4+
+Cj4+IFRoZSBwcm9jIGFuZCBzeXNmcyBmaWxlc3lzdGVtIGFscmVhZHkgZW5hYmxlIHVzZXJucyBz
+dXBwb3J0LAo+PiByZW1vdW50aW5nIHRoZXNlIGZpbGVzeXN0ZW1zIGluIHVuLWluaXQgdXNlcm5z
+IGRvIG5vIGhhcm0KPj4gdG8gdGhlIGhvc3QuCj4+Cj4+IFNpZ25lZC1vZmYtYnk6IEdhbyBmZW5n
+IDxnYW9mZW5nQGNuLmZ1aml0c3UuY29tPgo+PiAtLS0KPj4gIGZzL25hbWVzcGFjZS5jIHwgNSAr
+KysrLQo+PiAgMSBmaWxlIGNoYW5nZWQsIDQgaW5zZXJ0aW9ucygrKSwgMSBkZWxldGlvbigtKQo+
+Pgo+PiBkaWZmIC0tZ2l0IGEvZnMvbmFtZXNwYWNlLmMgYi9mcy9uYW1lc3BhY2UuYwo+PiBpbmRl
+eCA1NTYwNWM1Li5iOWQ4M2ZiIDEwMDY0NAo+PiAtLS0gYS9mcy9uYW1lc3BhY2UuYwo+PiArKysg
+Yi9mcy9uYW1lc3BhY2UuYwo+PiBAQCAtMTc0OCw3ICsxNzQ4LDEwIEBAIHN0YXRpYyBpbnQgZG9f
+cmVtb3VudChzdHJ1Y3QgcGF0aCAqcGF0aCwgaW50IGZsYWdzLCBpbnQgbW50X2ZsYWdzLAo+PiAg
+CXN0cnVjdCBzdXBlcl9ibG9jayAqc2IgPSBwYXRoLT5tbnQtPm1udF9zYjsKPj4gIAlzdHJ1Y3Qg
+bW91bnQgKm1udCA9IHJlYWxfbW91bnQocGF0aC0+bW50KTsKPj4gIAo+PiAtCWlmICghY2FwYWJs
+ZShDQVBfU1lTX0FETUlOKSkKPj4gKwlpZiAoc2ItPnNfdHlwZS0+ZnNfZmxhZ3MgJiBGU19VU0VS
+TlNfTU9VTlQpIHsKPj4gKwkJaWYgKCFuc19jYXBhYmxlKG1udC0+bW50X25zLT51c2VyX25zLCBD
+QVBfU1lTX0FETUlOKSkKPj4gKwkJCXJldHVybiAtRVBFUk07Cj4+ICsJfSBlbHNlIGlmICghY2Fw
+YWJsZShDQVBfU1lTX0FETUlOKSkKPj4gIAkJcmV0dXJuIC1FUEVSTTsKPj4gIAo+PiAgCWlmICgh
+Y2hlY2tfbW50KG1udCkpCj4gCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4
+LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFu
+L2xpc3RpbmZvL2NvbnRhaW5lcnM=
