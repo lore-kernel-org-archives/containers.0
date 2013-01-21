@@ -1,17 +1,17 @@
-From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCH RESEND] userns: enable tmpfs support for user namespace
-Date: Mon, 21 Jan 2013 09:08:25 +0400
-Message-ID: <50FCCD49.7000506@parallels.com>
-References: <1358331945-4106-1-git-send-email-gaofeng@cn.fujitsu.com>
-	<20130116143532.GA4035@sergelap> <50F74EC6.60004@cn.fujitsu.com>
-	<20130117171451.GA31219@sergelap> <87fw1zbd03.fsf@xmission.com>
-	<20130118042404.GA15079@sergelap> <87vcavys6k.fsf@xmission.com>
-	<50F8DEBF.1020701@parallels.com> <50FCAA62.8070804@cn.fujitsu.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH] user_ns: Add support for unprivileged remount
+Date: Sun, 20 Jan 2013 23:26:04 -0800
+Message-ID: <87obgjhu9f.fsf@xmission.com>
+References: <50519CB2.7040801@gmail.com> <87fw6lfwc3.fsf@xmission.com>
+	<5052F783.3040904@gmail.com> <877grxdk48.fsf@xmission.com>
+	<50F7A59A.1080601@cn.fujitsu.com> <87vcawf7jr.fsf@xmission.com>
+	<50FCA340.1020404@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <50FCAA62.8070804-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <50FCA340.1020404-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> (Gao feng's message of "Mon, 21
+	Jan 2013 10:09:04 +0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,59 +22,90 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Zhao Hongjiang <zhaohongjiang37-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 01/21/2013 06:39 AM, Gao feng wrote:
-> On 2013/01/18 13:33, Glauber Costa wrote:
->> On 01/17/2013 09:29 PM, Eric W. Biederman wrote:
->>> Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org> writes:
->>>
->>>> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
->>>>> Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org> writes:
->>>>>
->>>>>> I actually was waiting for Eric to do it, but I'll happily send it
->>>>>> to linux-fsdevel and lkml (in a bit).
->>>>>
->>>>> I might just.
->>>>>
->>>>> I will take a look at this in a week or so.  I want to get through the
->>>>> core userspace bits first so I can just cross those off my list of
->>>>> things that need to be done.
->>>>>
->>>>> Eric
->>>>
->>>> Ok, I'll wait on sending it then - thanks.
->>>
->>> Next up is my patch to shadow-utils and then taking a good hard stare at
->>> what is left kernel side.
->>>
->>> One of the questions I need to answer is:  Do cgroups actually work
->>> for what needs to be limited?  Or does the the focus of cgroups on
->>> processes without other ownership in objects fundamentally limit what
->>> can be expressed with cgroups in a problematic way.  In which case would
->>> some hierarchical limits based on user namespaces and rlimits be easier
->>> to implement and make more sense.
->>>
->>> I think the answer will be that cgroups are good enough but that
->>> question certainly needs looking at.
->>>
->>> Anyway.  shadow-utils, minimal tmpfs, minimal devpts, and then the rest.
->>>
->> First easy question:
->>
->> cgroups are not necessarily configured.
->>
->> IIUC, the aim of this patch is to allow unprivileged mounts of tmpfs
->> relying on the fact that cgroups will stop memory abuse (correct me if I
->> am wrong).
->>
->> But what if the user is not using cgroups?
->>
-> 
-> I think maybe we can force config MEMCG being selected when we decide to
-> enable userns.
-> 
-Which is the same as nothing.
-
-MEMCG being compile-time selection doesn't really mean anything.
+R2FvIGZlbmcgPGdhb2ZlbmdAY24uZnVqaXRzdS5jb20+IHdyaXRlczoKCj4gT24gMjAxMy8wMS8x
+NyAxODowNiwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4+IEdhbyBmZW5nIDxnYW9mZW5nQGNu
+LmZ1aml0c3UuY29tPiB3cml0ZXM6Cj4+IAo+Pj4gT24gMjAxMi8wOS8xNCAxNzozMywgRXJpYyBX
+LiBCaWVkZXJtYW4gd3JvdGU6Cj4+Pj4gWmhhbyBIb25namlhbmcgPHpoYW9ob25namlhbmczN0Bn
+bWFpbC5jb20+IHdyaXRlczoKPj4+Pgo+Pj4+PiBPbiAyMDEyLTktMTQgNToyNiwgRXJpYyBXLiBC
+aWVkZXJtYW4gd3JvdGU6Cj4+Pj4+PiBaaGFvIEhvbmdqaWFuZyA8emhhb2hvbmdqaWFuZzM3QGdt
+YWlsLmNvbT4gd3JpdGVzOgo+Pj4+Pj4KPj4+Pj4+PiBGcm9tOiBaaGFvIEhvbmdqaWFuZyA8emhh
+b2hvbmdqaWFuZ0BodWF3ZWkuY29tPgo+Pj4+Pj4+Cj4+Pj4+Pj4gUmVsYXggdGhlIHBlcm1pc3Np
+b24gY2hlY2tzIHRvIGFsbG93IHVucHJpdmlsZWdlZCB1c2VycyB0aGF0IGhhdmUKPj4+Pj4+PiBD
+QVBfU1lTX0FETUlOIHBlcm1pc3Npb25zIGluIHRoZSB1c2VyIG5hbWVzcGFjZSByZWZlcnJlZCB0
+byBieSB0aGUKPj4+Pj4+PiBjdXJyZW50IG1vdW50IG5hbWVzcGFjZSB0byBiZSBhbGxvd2VkIHRv
+IHJlbW91bnQgZmlsZXN5c3RlbXMuCj4+Pj4+Pgo+Pj4+Pj4gUmVtb3VudCBpbiBnZW5lcmFsIG1h
+a2UgZmlsZXN5c3RlbSBjb25maWd1cmF0aW9uIGNoYW5nZXMgbm90IG1vdW50IGxldmVsCj4+Pj4+
+PiBjaGFuZ2VzLgo+Pj4+Pj4KPj4+Pj4+IEluIGdlbmVyYWwgcmVtb3VudCBpcyBub3Qgc2FmZSBm
+b3IgdW5wcml2aWVsZ2VkIHVzZXJzLgo+Pj4+Pj4KPj4+Pj4+IERvIHlvdSBoYXZlIGEgdXNlIGNh
+c2Ugd2hlcmUgeW91IG5lZWQgdG8gcmVtb3VudCBhIGZpbGVzeXN0ZW0/Cj4+Pj4+Cj4+Pj4+IEFz
+IHdlIGNhbiBkbyBhIHVtb3VudCttb3VudO+8jEkgZG9uJ3Qgc2VlIHdoeSByZW1vdW50IG9wZXJh
+dGlvbiBpcyBub3QgYWxsb3dlZC4KPj4+Pj4gU2hvdWxkbid0IHdlIGFkZCBjaGVja3MgaW4gcmVt
+b3VudCBwYXRoIGluIHRoZSBzcGVjaWZpYyBmaWxlc3lzdGVtIHRvIGVuc3VyZQo+Pj4+PiBzYWZl
+dHkgaW5zdGVhZCB3aGVuIHdlIGVuYWJsZSB1bnByaXZpbGxlZ2VkIG1vdW50Pwo+Pj4+Cj4+Pj4g
+QnV0IHRoZSB0aGluZyBpcyByZW1vdW50ICE9IG1vdW50K3Vtb3VudC4gIFJlbW91bnQgaXMgY2hh
+bmdlIGxvd2xldmVsCj4+Pj4gZmlsZXN5c3RlbSBvcHRpb25zLgo+Pj4+Cj4+Pj4gVGhlIGJhc2lj
+IGRhbmdlciBpcyBpZiBzb21lb25lIGluIHRoZSBwcmltYXJ5IHVzZXIgbmFtZXNwYWNlIG1vdW50
+ZWQgYQo+Pj4+IGZpbGVzeXN0ZW0sIGFuZCB0aGVuIHdlIGNsb25lZCB0aGF0IGZpbGVzeXN0ZW0u
+Cj4+Pj4KPj4+PiB1bW91bnRpbmcgZmlsZXN5c3RlbXMgaXMgb2suICBUaGVyZSByZWZlcmVuY2Ug
+Y291bnQgd2lsbCBkcm9wIG9yIHRoZXkKPj4+PiB3aWxsIGp1c3QgdW5tb3VudCBpZiB0aGUgcmVm
+IGNvdW50IGdvZXMgdG8gemVyby4KPj4+Pgo+Pj4+IEhvd2V2ZXIgbW91bnQgLW8gcmVtb3VudCAt
+ciAvaG9tZSBjb3VsZCB2ZXJ5IGVhc2lseSByZW1vdW50IGV2ZXJ5b25lJ3MKPj4+PiBob21lIGRp
+cmVjdG9yeSBpbiBhbGwgbW91bnQgbmFtZXNwYWNlcyByZWFkLW9ubHkgYnkgbWFraW5nIHRoZQo+
+Pj4+IGZpbGVzeXN0ZW0gaXRzZWxmIHJlYWRvbmx5Lgo+Pj4+Cj4+Pj4gVGhhdCBkYW5nZXIgYXBw
+bGllcyBldmVuIHRvIHNvbWUgZXh0ZW50IGV2ZW4gaWYgdGhlIG9wdGlvbnMgYXJlIHNhZmUgZm9y
+Cj4+Pj4gdXMgdG8gcGVyZm9ybSBhdCB0aGUgZmlsZXN5c3RlbSBsZXZlbC4KPj4+Pgo+Pj4+IE5v
+dyB0aGF0IGRvZXNuJ3QgbWVhbiByZW1vdW50IGlzIGEgaG9wZWxlc3Mgb3BlcmF0aW9uLiAgV2hh
+dCBpdCBkb2VzCj4+Pj4gbWVhbiBpcyB0aGF0IHdlIG5lZWQgdG8gYmUgdmVyeSBjYXJlZnVsbHkg
+d2l0aCBlbmFibGluZyByZW1vdW50aW5nCj4+Pj4gb2YgYSBmaWxlc3lzdGVtLgo+Pj4+Cj4+PiBI
+aSBFcmljCj4+Pgo+Pj4gd2hhdCdzIHlvdSBpZGVhIGFib3V0IHRoZSBwYXRjaCBiZWxvdy4KPj4+
+IE1heWJlIGl0IGJldHRlciB0byBhZGQgYSBuZXcgZnNfZmxhZ3MgRlNfVVNFUk5TX1JFTU9VTlQ/
+Cj4+PiBJdCdzIG5vdCBhIGdvb2QgZXhwZXJpZW5jZSB0aGF0IHJlbW91bnQgaXMgZGlzYWJsZWQg
+aW4gY29udGFpbmVyLgo+PiAKPj4gSSB0aGluayB5b3UgdG90YWxseSBkaWQgbm90IHJlYWQgYW5k
+IHVuZGVyc3RhbmQgd2hhdCBJIHNhaWQgYWJvdmUsCj4+IGFuZCB5b3VyIHBhdGNoIGRlc2NyaXB0
+aW9uIGlzIHdyb25nLgo+PiAKPj4gUmVtb3VudGluZyBwcm9jIGlzIG5vdCBzYWZlLCBtYWtpbmcg
+dGhlIHBhdGNoIGJlbG93IGlzIGJyb2tlbi4gIFJlYWQKPj4gcHJvYyBhbmQgcmVhZCBteSBjb21t
+ZW50cyBhYm92ZS4KPj4gCj4+IFRoaW5raW5nIHRoYXQgdGhpcyBtaWdodCBiZSBhbiBpc3N1ZSB0
+aGF0IGNhbiBiZSBmaXhlZCB3aXRoIGZzX2ZsYWdzIGlzCj4+IHRoaW5raW5nIGFib3V0IHRoaXMg
+d3JvbmcuICBUaGlua2luZyBhIHJlbW91bnQgaW4gYW55IHdheSB3b3VsZCBiZQo+PiBpc29sYXRl
+ZCB0byBhIHNpbmdsZSBtb3VudCBuYW1lc3BhY2VzIGlzIHdyb25nLiAgV2hlbiBpbXBsZW1lbnRp
+bmcKPj4gcmVtb3VudCB5b3UgaGF2ZSB0byB0aGluayBhYm91dCBldmVyeW9uZSB3aG8gaGFzIGFj
+Y2VzcyB0byB0aGF0Cj4+IGZpbGVzeXN0ZW0sIGFuZCBpcyBpcyBsZWdpdGltYXRlIGZvciB5b3Ug
+dG8gYWZmZWN0IGFsbCBvZiB0aGVtLgo+PiAKPj4gV2hhdCBhcmUgcGVvcGxlIGRvaW5nIHdpdGgg
+cmVtb3VudGluZz8gIFdoeSBkbyB3ZSB3YW50IGl0PyAgQXMgYQo+PiBwcmFjdGljYWwgbWF0dGVy
+LCBhc3N1bWUgdGhhdCBpdCBpcyBpbXBvc3NpYmxlIHRvIHJlc3VlIHRoZSBjdXJyZW50Cj4+IGZp
+bGVzeXN0ZW0gbGV2ZWwgaW1wbGVtZW50YXRpb24gb2YgcmVtb3VudC4KPj4gCj4+IEFzIEkgc2Fp
+ZCBhYm92ZSBJIGRvbid0IGV2ZW4gdGhpbmsgbW91bnQgLW8gcmVtb3VudCAtciAvc29tZS9maWxl
+c3lzdGVtCj4+IGlzIHNhZmUuICBUaGluayB3aGF0IHdvdWxkIGhhcHBlbiBpZiB5b3UgcnVuIHRo
+ZSBzaGVsbCBzY3JpcHQgYmVsb3cgd2l0aAo+PiAvdG1wIGJlaW5nIGEgc2VwYXJhdGUgdG1wZnMg
+bW91bnQgcG9pbnQgYW5kIC9wcm9jIGJlaW5nIHByb2Nmcy4KPj4gCj4KPgo+IFRoYW5rcyBmb3Ig
+eW91IGV4cGxhbmF0aW9uLFlvdSBtZWFuIHRoZSBzdXBlci1ibG9jayBtYXkgYmUgc2hhcmVkIHdp
+dGhpbgo+IHR3byBtbnRucyxBbmQgYWxsb3dpbmcgb3duZXIgb2YgdGhlIG1udG5zIHdoaWNoIG1h
+eWJlIHVucHJpdmlsZWdlZCB1c2VyCj4gdG8gcmVtb3VudCB0aGlzIGZpbGVzeXN0ZW0gd2lsbCBh
+ZmZlY3QgdGhlIG90aGVyIG1udG5zLgo+IEknbSByaWdodD8KClllcy4KCj4gU3VjaCBhcyBwcm9j
+IGZpbGVzeXN0ZW0sdGhlIHJvb3QgdXNlciBvZiBtbnRucyBtYXkgdW1vdW50IGFuZCB0aGVuIG1v
+dW50Cj4gaXQgYWdhaW4uU28gdGhlIHN1cGVyIGJsb2NrIHdpbGwgbm90IGJlIHNoYXJlZCB3aXRo
+IG90aGVyLEluIHRoaXMgc2l0dWF0aW9uLAo+IHdlIGNhbiBhbGxvdyB0aGlzIHJvb3QgdXNlciB0
+byByZW1vdW50IHRoZSBwcm9jIGZpbGVzeXN0ZW0uCgpHaXZlbiB0aGF0IHRoZXJlIGlzIGV4YWN0
+bHkgb25lIHByb2MgbW91bnQgcGVyIHBpZCBuYW1lc3BhY2UgSSBkb24ndAp0aGluayB5b3VyIGFy
+Z3VtZW50IGV4YWN0bHkgaG9sZHMgdXAuCgo+IEkgdGhpbmsgd2UgbWF5IG5lZWQgYSBmbGFnIHN1
+Y2ggYXMgTVNfU0hBUkVEX05TIHRvIHBvaW50IG91dCBpZiB0aGlzIHN1cGVyCj4gYmxvY2sgaXMg
+c2hhcmVkIGJ5IG1heSBtbnRucy5pZiB0aGUgc3VwZXIgYmxvY2sgaXMgb25seSBvd25lZCBieSBv
+bmUgbW50bnMsCj4gd2UgY2FuIGFsbG93IHRoZSByb290IHVzZXIgb2YgdGhpcyBtbnRucyB0byBy
+ZW1vdW50IHRoZSBmaWxlc3lzdGVtLgoKbW91bnQgbmFtZXNwYWNlcyBjYW4ndCBvd24gYW55dGhp
+bmcgYW5kIHdpdGggbW91bnQgcHJvcG9nYXRpb24gYW5kIHRoZQpmYWN0IHVuc2hhcmluZyB0aGUg
+bW91bnQgbmFtZXNwYWNlIGNvcGllcyBhbGwgbW91bnRzIGl0IGlzIGhhcmQgdG8ga2VlcAphbnkg
+bW91bnQgaW4gYSBzaW5nbGUgbW91bnQgbmFtZXNwYWNlLgoKWW91IGNhbiB0aGluayBvZiB1c2Vy
+IG5hbWVzcGFjZSBvd25lcnNoaXAuICBFc3BlY2lhbGx5IHNpbmNlIHVzZXIKbmFtZXNwYWNlcyBm
+b3JtIGEgdHJlZSwgc28gZXZlbiBmaWxlc3lzdGVtcyB0aGF0IGFyZSB0aGUgbW9zdCB1c2VyCm5h
+bWVzcGFjZSBmcmllbmRseSBzaG91bGQgaGF2ZSBhIHVzZXIgbmFtZXNwYWNlIHRoYXQgY291bGQg
+YmUgY29uc2lkZXJlZAp0aGVpciBvd25lci4KCldpdGggdGhvc2UgY2F2ZWF0cyBJIGFncmVlIHRo
+YXQgd2l0aCB0aGUgYXBwcm9wcmlhdGUgcGVybWlzc2lvbnMgaW4gdGhlCnVzZXIgbmFtZXNwYWNl
+IHRoYXQgb3ducyB0aGUgdW5kZXJseWluZyBvYmplY3QgcmVtb3VudHMgc2hvdWxkIGJlIGZpbmUu
+CgpBbHNvIHJlbW91bnRzIHdpdGggTVNfQklORCBzcGVjaWZpZWQgc2hvdWxkIGJlIGFzIHNhZmUg
+YXMgbW91bnRzIGFuZAp1bm1vdW50cyBhcmUuCgpFcmljCgpfX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWlu
+ZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0
+aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
