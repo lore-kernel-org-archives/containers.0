@@ -1,7 +1,8 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 05/11] Implement find_new_sub_uids find_new_sub_gids
-Date: Tue, 22 Jan 2013 01:15:05 -0800
-Message-ID: <87fw1tr33a.fsf@xmission.com>
+Subject: [PATCH 06/11] userdel: Add support for removing subordinate user and
+	group ids.
+Date: Tue, 22 Jan 2013 01:16:51 -0800
+Message-ID: <878v7lr30c.fsf@xmission.com>
 References: <87d2wxshu0.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,237 +24,188 @@ Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 List-Id: containers.vger.kernel.org
 
 
-Functions for finding new subordinate uid and gids ranges for use
-with useradd.
-
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- lib/prototypes.h            |    9 ++++
- libmisc/Makefile.am         |    2 +
- libmisc/find_new_sub_gids.c |   87 +++++++++++++++++++++++++++++++++++++++++++
- libmisc/find_new_sub_uids.c |   87 +++++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 185 insertions(+), 0 deletions(-)
- create mode 100644 libmisc/find_new_sub_gids.c
- create mode 100644 libmisc/find_new_sub_uids.c
+ src/userdel.c |  115 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 115 insertions(+), 0 deletions(-)
 
-diff --git a/lib/prototypes.h b/lib/prototypes.h
-index 00d9e0b..487fb07 100644
---- a/lib/prototypes.h
-+++ b/lib/prototypes.h
-@@ -149,6 +149,15 @@ extern int find_new_uid (bool sys_user,
-                          uid_t *uid,
-                          /*@null@*/uid_t const *preferred_uid);
- 
-+/* find_new_sub_gids.c */
-+extern int find_new_sub_gids (const char *owner,
-+			      gid_t *range_start, unsigned long *range_count);
-+
-+/* find_new_sub_uids.c */
-+extern int find_new_sub_uids (const char *owner,
-+			      uid_t *range_start, unsigned long *range_count);
-+
-+
- /* get_gid.c */
- extern int get_gid (const char *gidstr, gid_t *gid);
- 
-diff --git a/libmisc/Makefile.am b/libmisc/Makefile.am
-index 9da2ec3..5de9193 100644
---- a/libmisc/Makefile.am
-+++ b/libmisc/Makefile.am
-@@ -25,6 +25,8 @@ libmisc_a_SOURCES = \
- 	failure.h \
- 	find_new_gid.c \
- 	find_new_uid.c \
-+	find_new_sub_gids.c \
-+	find_new_sub_uids.c \
- 	getdate.h \
- 	getdate.y \
- 	getgr_nam_gid.c \
-diff --git a/libmisc/find_new_sub_gids.c b/libmisc/find_new_sub_gids.c
-new file mode 100644
-index 0000000..68046ac
---- /dev/null
-+++ b/libmisc/find_new_sub_gids.c
-@@ -0,0 +1,87 @@
-+/*
-+ * Copyright (c) 2012 Eric Biederman
-+ *
-+ * Redistribution and use in source and binary forms, with or without
-+ * modification, are permitted provided that the following conditions
-+ * are met:
-+ * 1. Redistributions of source code must retain the above copyright
-+ *    notice, this list of conditions and the following disclaimer.
-+ * 2. Redistributions in binary form must reproduce the above copyright
-+ *    notice, this list of conditions and the following disclaimer in the
-+ *    documentation and/or other materials provided with the distribution.
-+ * 3. The name of the copyright holders or contributors may not be used to
-+ *    endorse or promote products derived from this software without
-+ *    specific prior written permission.
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-+ * PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT
-+ * HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-+ */
-+
-+#include <config.h>
-+
-+#include <assert.h>
-+#include <stdio.h>
-+#include <errno.h>
-+
-+#include "prototypes.h"
+diff --git a/src/userdel.c b/src/userdel.c
+index 4439f62..0c9b83d 100644
+--- a/src/userdel.c
++++ b/src/userdel.c
+@@ -65,6 +65,7 @@
+ #endif				/* WITH_TCB */
+ /*@-exitarg@*/
+ #include "exitcodes.h"
 +#include "subordinateio.h"
-+#include "getdef.h"
+ 
+ /*
+  * exit status values
+@@ -75,6 +76,8 @@
+ #define E_GRP_UPDATE	10	/* can't update group file */
+ #define E_HOMEDIR	12	/* can't remove home directory */
+ #define E_SE_UPDATE	14	/* can't update SELinux user mapping */
++#define E_SUB_UID_UPDATE 16	/* can't update the subordinate uid file */
++#define E_SUB_GID_UPDATE 18	/* can't update the subordinate gid file */
+ 
+ /*
+  * Global variables
+@@ -96,9 +99,13 @@ static bool is_shadow_pwd;
+ static bool is_shadow_grp;
+ static bool sgr_locked = false;
+ #endif				/* SHADOWGRP */
++static bool is_sub_uid;
++static bool is_sub_gid;
+ static bool pw_locked  = false;
+ static bool gr_locked   = false;
+ static bool spw_locked  = false;
++static bool sub_uid_locked = false;
++static bool sub_gid_locked = false;
+ 
+ /* local function prototypes */
+ static void usage (int status);
+@@ -437,6 +444,34 @@ static void close_files (void)
+ 		sgr_locked = false;
+ 	}
+ #endif				/* SHADOWGRP */
 +
-+/*
-+ * find_new_sub_gids - Find a new unused range of GIDs.
-+ *
-+ * If successful, find_new_sub_gids provides a range of unused
-+ * user IDs in the [SUB_GID_MIN:SUB_GID_MAX] range.
-+ * 
-+ * Return 0 on success, -1 if no unused GIDs are available.
-+ */
-+int find_new_sub_gids (const char *owner,
-+		       gid_t *range_start, unsigned long *range_count)
-+{
-+	unsigned long min, max;
-+	unsigned long count;
-+	gid_t start;
-+
-+	assert (range_start != NULL);
-+	assert (range_count != NULL);
-+
-+	min = getdef_ulong ("SUB_GID_MIN", 100000UL);
-+	max = getdef_ulong ("SUB_GID_MAX", 600100000UL);
-+	count = getdef_ulong ("SUB_GID_COUNT", 10000);
-+
-+	/* Is there a preferred range that works? */
-+	if ((*range_count != 0) &&
-+	    (*range_start >= min) &&
-+	    (((*range_start) + (*range_count) - 1) <= max) &&
-+	    is_sub_gid_range_free(*range_start, *range_count)) {
-+		return 0;
++	if (is_sub_uid) {
++		if (sub_uid_close () == 0) {
++			fprintf (stderr, _("%s: failure while writing changes to %s\n"), Prog, sub_uid_dbname ());
++			SYSLOG ((LOG_ERR, "failure while writing changes to %s", sub_uid_dbname ()));
++			fail_exit (E_SUB_UID_UPDATE);
++		}
++		if (sub_uid_unlock () == 0) {
++			fprintf (stderr, _("%s: failed to unlock %s\n"), Prog, sub_uid_dbname ());
++			SYSLOG ((LOG_ERR, "failed to unlock %s", sub_uid_dbname ()));
++			/* continue */
++		}
++		sub_uid_locked = false;
 +	}
 +
-+	if (max < (min + count)) {
-+		(void) fprintf (stderr,
-+				_("%s: Invalid configuration: SUB_GID_MIN (%lu), SUB_GID_MAX (%lu)\n"),
-+			Prog, min, max);
-+		return -1;
++	if (is_sub_gid) {
++		if (sub_gid_close () == 0) {
++			fprintf (stderr, _("%s: failure while writing changes to %s\n"), Prog, sub_gid_dbname ());
++			SYSLOG ((LOG_ERR, "failure while writing changes to %s", sub_gid_dbname ()));
++			fail_exit (E_SUB_GID_UPDATE);
++		}
++		if (sub_gid_unlock () == 0) {
++			fprintf (stderr, _("%s: failed to unlock %s\n"), Prog, sub_gid_dbname ());
++			SYSLOG ((LOG_ERR, "failed to unlock %s", sub_gid_dbname ()));
++			/* continue */
++		}
++		sub_gid_locked = false;
 +	}
-+	start = sub_gid_find_free_range(min, max, count);
-+	if (start == (gid_t)-1) {
+ }
+ 
+ /*
+@@ -474,6 +509,20 @@ static void fail_exit (int code)
+ 		}
+ 	}
+ #endif				/* SHADOWGRP */
++	if (sub_uid_locked) {
++		if (sub_uid_unlock () == 0) {
++			fprintf (stderr, _("%s: failed to unlock %s\n"), Prog, sub_uid_dbname ());
++			SYSLOG ((LOG_ERR, "failed to unlock %s", sub_uid_dbname ()));
++			/* continue */
++		}
++	}
++	if (sub_gid_locked) {
++		if (sub_gid_unlock () == 0) {
++			fprintf (stderr, _("%s: failed to unlock %s\n"), Prog, sub_gid_dbname ());
++			SYSLOG ((LOG_ERR, "failed to unlock %s", sub_gid_dbname ()));
++			/* continue */
++		}
++	}
+ 
+ #ifdef WITH_AUDIT
+ 	audit_logger (AUDIT_DEL_USER, Prog,
+@@ -595,6 +644,58 @@ static void open_files (void)
+ 		}
+ 	}
+ #endif				/* SHADOWGRP */
++	if (is_sub_uid) {
++		if (sub_uid_lock () == 0) {
++			fprintf (stderr,
++				_("%s: cannot lock %s; try again later.\n"),
++				Prog, sub_uid_dbname ());
++#ifdef WITH_AUDIT
++			audit_logger (AUDIT_DEL_USER, Prog,
++				"locking subordinate user file",
++				user_name, (unsigned int) user_id,
++				SHADOW_AUDIT_FAILURE);
++#endif				/* WITH_AUDIT */
++			fail_exit (E_SUB_UID_UPDATE);
++		}
++		sub_uid_locked = true;
++		if (sub_uid_open (O_RDWR) == 0) {
++			fprintf (stderr,
++				_("%s: cannot open %s\n"), Prog, sub_uid_dbname ());
++#ifdef WITH_AUDIT
++			audit_logger (AUDIT_DEL_USER, Prog,
++				"opening subordinate user file",
++				user_name, (unsigned int) user_id,
++				SHADOW_AUDIT_FAILURE);
++#endif				/* WITH_AUDIT */
++			fail_exit (E_SUB_UID_UPDATE);
++		}
++	}
++	if (is_sub_gid) {
++		if (sub_gid_lock () == 0) {
++			fprintf (stderr,
++				_("%s: cannot lock %s; try again later.\n"),
++				Prog, sub_gid_dbname ());
++#ifdef WITH_AUDIT
++			audit_logger (AUDIT_DEL_USER, Prog,
++				"locking subordinate group file",
++				user_name, (unsigned int) user_id,
++				SHADOW_AUDIT_FAILURE);
++#endif				/* WITH_AUDIT */
++			fail_exit (E_SUB_GID_UPDATE);
++		}
++		sub_gid_locked = true;
++		if (sub_gid_open (O_RDWR) == 0) {
++			fprintf (stderr,
++				_("%s: cannot open %s\n"), Prog, sub_gid_dbname ());
++#ifdef WITH_AUDIT
++			audit_logger (AUDIT_DEL_USER, Prog,
++				"opening subordinate group file",
++				user_name, (unsigned int) user_id,
++				SHADOW_AUDIT_FAILURE);
++#endif				/* WITH_AUDIT */
++			fail_exit (E_SUB_GID_UPDATE);
++		}
++	}
+ }
+ 
+ /*
+@@ -619,6 +720,18 @@ static void update_user (void)
+ 		         Prog, user_name, spw_dbname ());
+ 		fail_exit (E_PW_UPDATE);
+ 	}
++	if (is_sub_uid && sub_uid_remove(user_name, 0, ULONG_MAX) == 0) {
 +		fprintf (stderr,
-+		         _("%s: Can't get unique secondary GID range\n"),
-+		         Prog);
-+		SYSLOG ((LOG_WARN, "no more available secondary GIDs on the system"));
-+		return -1;
++			_("%s: cannot remove entry %lu from %s\n"),
++			Prog, (unsigned long)user_id, sub_uid_dbname ());
++		fail_exit (E_SUB_UID_UPDATE);
 +	}
-+	*range_start = start;
-+	*range_count = count;
-+	return 0;
-+}
-+
-diff --git a/libmisc/find_new_sub_uids.c b/libmisc/find_new_sub_uids.c
-new file mode 100644
-index 0000000..f1720f9
---- /dev/null
-+++ b/libmisc/find_new_sub_uids.c
-@@ -0,0 +1,87 @@
-+/*
-+ * Copyright (c) 2012 Eric Biederman
-+ *
-+ * Redistribution and use in source and binary forms, with or without
-+ * modification, are permitted provided that the following conditions
-+ * are met:
-+ * 1. Redistributions of source code must retain the above copyright
-+ *    notice, this list of conditions and the following disclaimer.
-+ * 2. Redistributions in binary form must reproduce the above copyright
-+ *    notice, this list of conditions and the following disclaimer in the
-+ *    documentation and/or other materials provided with the distribution.
-+ * 3. The name of the copyright holders or contributors may not be used to
-+ *    endorse or promote products derived from this software without
-+ *    specific prior written permission.
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-+ * PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT
-+ * HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-+ */
-+
-+#include <config.h>
-+
-+#include <assert.h>
-+#include <stdio.h>
-+#include <errno.h>
-+
-+#include "prototypes.h"
-+#include "subordinateio.h"
-+#include "getdef.h"
-+
-+/*
-+ * find_new_sub_uids - Find a new unused range of UIDs.
-+ *
-+ * If successful, find_new_sub_uids provides a range of unused
-+ * user IDs in the [SUB_UID_MIN:SUB_UID_MAX] range.
-+ * 
-+ * Return 0 on success, -1 if no unused UIDs are available.
-+ */
-+int find_new_sub_uids (const char *owner,
-+		       uid_t *range_start, unsigned long *range_count)
-+{
-+	unsigned long min, max;
-+	unsigned long count;
-+	uid_t start;
-+
-+	assert (range_start != NULL);
-+	assert (range_count != NULL);
-+
-+	min = getdef_ulong ("SUB_UID_MIN", 100000UL);
-+	max = getdef_ulong ("SUB_UID_MAX", 600100000UL);
-+	count = getdef_ulong ("SUB_UID_COUNT", 10000);
-+
-+	/* Is there a preferred range that works? */
-+	if ((*range_count != 0) &&
-+	    (*range_start >= min) &&
-+	    (((*range_start) + (*range_count) - 1) <= max) &&
-+	    is_sub_uid_range_free(*range_start, *range_count)) {
-+		return 0;
-+	}
-+
-+	if (max < (min + count)) {
-+		(void) fprintf (stderr,
-+				_("%s: Invalid configuration: SUB_UID_MIN (%lu), SUB_UID_MAX (%lu)\n"),
-+			Prog, min, max);
-+		return -1;
-+	}
-+	start = sub_uid_find_free_range(min, max, count);
-+	if (start == (uid_t)-1) {
++	if (is_sub_gid && sub_gid_remove(user_name, 0, ULONG_MAX) == 0) {
 +		fprintf (stderr,
-+		         _("%s: Can't get unique secondary UID range\n"),
-+		         Prog);
-+		SYSLOG ((LOG_WARN, "no more available secondary UIDs on the system"));
-+		return -1;
++			_("%s: cannot remove entry %lu from %s\n"),
++			Prog, (unsigned long)user_id, sub_gid_dbname ());
++		fail_exit (E_SUB_GID_UPDATE);
 +	}
-+	*range_start = start;
-+	*range_count = count;
-+	return 0;
-+}
-+
+ #ifdef WITH_AUDIT
+ 	audit_logger (AUDIT_DEL_USER, Prog,
+ 	              "deleting user entries",
+@@ -966,6 +1079,8 @@ int main (int argc, char **argv)
+ #ifdef SHADOWGRP
+ 	is_shadow_grp = sgr_file_present ();
+ #endif				/* SHADOWGRP */
++	is_sub_uid = sub_uid_file_present ();
++	is_sub_gid = sub_gid_file_present ();
+ 
+ 	/*
+ 	 * Start with a quick check to see if the user exists.
 -- 
 1.7.5.4
