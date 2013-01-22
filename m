@@ -1,7 +1,7 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 01/11] Documentation for /etc/subuid and /etc/subgid
-Date: Tue, 22 Jan 2013 01:12:23 -0800
-Message-ID: <877gn5shs8.fsf@xmission.com>
+Subject: [PATCH 02/11] login.defs.5: Document the new variables in login.defs
+Date: Tue, 22 Jan 2013 01:12:58 -0800
+Message-ID: <871uddshr9.fsf@xmission.com>
 References: <87d2wxshu0.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,44 +25,75 @@ List-Id: containers.vger.kernel.org
 
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- man/Makefile.am  |    4 ++
- man/subgid.5.xml |  120 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- man/subuid.5.xml |  120 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 244 insertions(+), 0 deletions(-)
- create mode 100644 man/subgid.5.xml
- create mode 100644 man/subuid.5.xml
+ man/Makefile.am                    |    2 +
+ man/login.defs.5.xml               |    8 ++++++
+ man/login.defs.d/SUB_GID_COUNT.xml |   46 ++++++++++++++++++++++++++++++++++++
+ man/login.defs.d/SUB_UID_COUNT.xml |   46 ++++++++++++++++++++++++++++++++++++
+ 4 files changed, 102 insertions(+), 0 deletions(-)
+ create mode 100644 man/login.defs.d/SUB_GID_COUNT.xml
+ create mode 100644 man/login.defs.d/SUB_UID_COUNT.xml
 
 diff --git a/man/Makefile.am b/man/Makefile.am
-index b39043e..be7f5e2 100644
+index be7f5e2..fc617e9 100644
 --- a/man/Makefile.am
 +++ b/man/Makefile.am
-@@ -43,6 +43,8 @@ man_MANS = \
- 	man5/shadow.5 \
- 	man1/su.1 \
- 	man5/suauth.5 \
-+	man5/subgid.5 \
-+	man5/subuid.5 \
- 	man8/useradd.8 \
- 	man8/userdel.8 \
- 	man8/usermod.8 \
-@@ -94,6 +96,8 @@ man_XMANS = \
- 	sg.1.xml \
- 	su.1.xml \
- 	suauth.5.xml \
-+	subgid.5.xml \
-+	subuid.5.xml \
- 	useradd.8.xml \
- 	userdel.8.xml \
- 	usermod.8.xml \
-diff --git a/man/subgid.5.xml b/man/subgid.5.xml
+@@ -163,6 +163,8 @@ login_defs_v = \
+ 	USERDEL_CMD.xml \
+ 	USERGROUPS_ENAB.xml \
+ 	USE_TCB.xml \
++	SUB_GID_COUNT.xml \
++	SUB_UID_COUNT.xml \
+ 	SYS_GID_MAX.xml \
+ 	SYS_UID_MAX.xml
+ 
+diff --git a/man/login.defs.5.xml b/man/login.defs.5.xml
+index 459b866..d5279ca 100644
+--- a/man/login.defs.5.xml
++++ b/man/login.defs.5.xml
+@@ -78,6 +78,8 @@
+ <!ENTITY SULOG_FILE            SYSTEM "login.defs.d/SULOG_FILE.xml">
+ <!ENTITY SU_NAME               SYSTEM "login.defs.d/SU_NAME.xml">
+ <!ENTITY SU_WHEEL_ONLY         SYSTEM "login.defs.d/SU_WHEEL_ONLY.xml">
++<!ENTITY SUB_GID_COUNT         SYSTEM "login.defs.d/SUB_GID_COUNT.xml">
++<!ENTITY SUB_UID_COUNT         SYSTEM "login.defs.d/SUB_UID_COUNT.xml">
+ <!ENTITY SYS_GID_MAX           SYSTEM "login.defs.d/SYS_GID_MAX.xml">
+ <!ENTITY SYSLOG_SG_ENAB        SYSTEM "login.defs.d/SYSLOG_SG_ENAB.xml">
+ <!ENTITY SYSLOG_SU_ENAB        SYSTEM "login.defs.d/SYSLOG_SU_ENAB.xml">
+@@ -216,6 +218,8 @@
+       &SULOG_FILE;
+       &SU_NAME;
+       &SU_WHEEL_ONLY;
++      &SUB_GID_COUNT; <!-- documents also SUB_GID_MIN SUB_GID_MAX -->
++      &SUB_UID_COUNT; <!-- documents also SUB_UID_MIN SUB_UID_MAX -->
+       &SYS_GID_MAX; <!-- documents also SYS_GID_MIN -->
+       &SYS_UID_MAX; <!-- documents also SYS_UID_MIN -->
+       &SYSLOG_SG_ENAB;
+@@ -393,6 +397,8 @@
+ 	    PASS_MAX_DAYS PASS_MIN_DAYS PASS_WARN_AGE
+ 	    <phrase condition="sha_crypt">SHA_CRYPT_MAX_ROUNDS
+ 	    SHA_CRYPT_MIN_ROUNDS</phrase>
++	    SUB_GID_COUNT SUB_GID_MAX SUB_GID_MIN
++	    SUB_UID_COUNT SUB_UID_MAX SUB_UID_MIN
+ 	    SYS_GID_MAX SYS_GID_MIN SYS_UID_MAX SYS_UID_MIN UID_MAX UID_MIN
+ 	    UMASK
+ 	  </para>
+@@ -470,6 +476,8 @@
+ 	    GID_MAX GID_MIN
+ 	    MAIL_DIR MAX_MEMBERS_PER_GROUP
+ 	    PASS_MAX_DAYS PASS_MIN_DAYS PASS_WARN_AGE
++	    SUB_GID_COUNT SUB_GID_MAX SUB_GID_MIN
++	    SUB_UID_COUNT SUB_UID_MAX SUB_UID_MIN
+ 	    SYS_GID_MAX SYS_GID_MIN SYS_UID_MAX SYS_UID_MIN UID_MAX UID_MIN
+ 	    UMASK
+ 	    <phrase condition="tcb">TCB_AUTH_GROUP TCB_SYMLINK USE_TCB</phrase>
+diff --git a/man/login.defs.d/SUB_GID_COUNT.xml b/man/login.defs.d/SUB_GID_COUNT.xml
 new file mode 100644
-index 0000000..3855319
+index 0000000..db1a25b
 --- /dev/null
-+++ b/man/subgid.5.xml
-@@ -0,0 +1,120 @@
-+<?xml version="1.0" encoding="UTF-8"?>
++++ b/man/login.defs.d/SUB_GID_COUNT.xml
+@@ -0,0 +1,46 @@
 +<!--
-+   Copyright (c) 2013 Eric W. Biederman
++   Copyright (c) 2013, Eric W. Biederman
 +   All rights reserved.
 +  
 +   Redistribution and use in source and binary forms, with or without
@@ -89,106 +120,32 @@ index 0000000..3855319
 +   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 +   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 +-->
-+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.5//EN"
-+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
-+<!-- SHADOW-CONFIG-HERE -->
-+]>
-+<refentry id='subgid.5'>
-+  <refmeta>
-+    <refentrytitle>subgid</refentrytitle>
-+    <manvolnum>5</manvolnum>
-+    <refmiscinfo class="sectdesc">File Formats and Conversions</refmiscinfo>
-+    <refmiscinfo class="source">shadow-utils</refmiscinfo>
-+    <refmiscinfo class="version">&SHADOW_UTILS_VERSION;</refmiscinfo>
-+  </refmeta>
-+  <refnamediv id='name'>
-+    <refname>subgid</refname>
-+    <refpurpose>the subordinate gid file</refpurpose>
-+  </refnamediv>
-+
-+  <refsect1 id='description'>
-+    <title>DESCRIPTION</title>
++<varlistentry>
++  <term><option>SUB_GID_MIN</option> (number)</term>
++  <term><option>SUB_GID_MAX</option> (number)</term>
++  <term><option>SUB_GID_COUNT</option> (number)</term>
++  <listitem>
 +    <para>
-+      Each line in <filename>/etc/subgid</filename> contains
-+      a user id and a range of suboridinate user ids that user
-+      is allowed to use.
-+
-+      This is specified with three fields delimited by colons
-+      (<quote>:</quote>).
-+      These fields are:
++      The commands <command>useradd</command> and <command>newusers</command>
++      allocate <option>SUB_GID_COUNT</option> unused group IDs from the range
++      <option>SUB_GID_MIN</option> to <option>SUB_GID_MAX</option> for each
++      new user.
 +    </para>
-+    <itemizedlist mark='bullet'>
-+      <listitem>
-+	<para>login name</para>
-+      </listitem>
-+      <listitem>
-+	<para>numerical subordinate user ID</para>
-+      </listitem>
-+      <listitem>
-+	<para>numerical subordinate user ID count</para>
-+      </listitem>
-+    </itemizedlist>
-+
 +    <para>
-+      This file specifies the group IDs to be that each user may use
-+      with the <command>newgidmap</command> command that ordinary users can use to
-+      configure gid mapping in a user namespace.
++      The default values for <option>SUB_GID_MAN</option>,
++      <option>SUB_GID_MIN</option>, <option>SUB_GID_COUNT</option>
++      are respectively 100000, 600100000 and 10000.
 +    </para>
-+
-+    <para>
-+      Multiple ranges may be specified per user ID.
-+    </para>
-+
-+  </refsect1>
-+
-+  <refsect1 id='files'>
-+    <title>FILES</title>
-+    <variablelist>
-+      <varlistentry>
-+	<term><filename>/etc/subgid</filename></term>
-+	<listitem>
-+	  <para>Per user subordinate group IDs.</para>
-+	</listitem>
-+      </varlistentry>
-+      <varlistentry>
-+	<term><filename>/etc/subgid-</filename></term>
-+	<listitem>
-+	  <para>Backup file for /etc/subgid.</para>
-+	</listitem>
-+      </varlistentry>
-+    </variablelist>
-+  </refsect1>
-+
-+  <refsect1 id='see_also'>
-+    <title>SEE ALSO</title>
-+    <para>
-+      <citerefentry>
-+	<refentrytitle>subuid</refentrytitle><manvolnum>5</manvolnum>
-+      </citerefentry>,
-+      <citerefentry>
-+	<refentrytitle>logindefs</refentrytitle><manvolnum>5</manvolnum>
-+      </citerefentry>,
-+      <citerefentry>
-+	<refentrytitle>newuidmap</refentrytitle><manvolnum>1</manvolnum>
-+      </citerefentry>,
-+      <citerefentry>
-+	<refentrytitle>newgidmap</refentrytitle><manvolnum>1</manvolnum>
-+      </citerefentry>,
-+      <citerefentry>
-+	<refentrytitle>usermod</refentrytitle><manvolnum>8</manvolnum>
-+      </citerefentry>,
-+    </para>
-+  </refsect1>
-+</refentry>
-diff --git a/man/subuid.5.xml b/man/subuid.5.xml
++  </listitem>
++</varlistentry>
+diff --git a/man/login.defs.d/SUB_UID_COUNT.xml b/man/login.defs.d/SUB_UID_COUNT.xml
 new file mode 100644
-index 0000000..60f139f
+index 0000000..bea3b6a
 --- /dev/null
-+++ b/man/subuid.5.xml
-@@ -0,0 +1,120 @@
-+<?xml version="1.0" encoding="UTF-8"?>
++++ b/man/login.defs.d/SUB_UID_COUNT.xml
+@@ -0,0 +1,46 @@
 +<!--
-+   Copyright (c) 2013 Eric W. Biederman
++   Copyright (c) 2013, Eric W. Biederman
 +   All rights reserved.
 +  
 +   Redistribution and use in source and binary forms, with or without
@@ -215,96 +172,23 @@ index 0000000..60f139f
 +   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 +   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 +-->
-+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.5//EN"
-+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
-+<!-- SHADOW-CONFIG-HERE -->
-+]>
-+<refentry id='subuid.5'>
-+  <refmeta>
-+    <refentrytitle>subuid</refentrytitle>
-+    <manvolnum>5</manvolnum>
-+    <refmiscinfo class="sectdesc">File Formats and Conversions</refmiscinfo>
-+    <refmiscinfo class="source">shadow-utils</refmiscinfo>
-+    <refmiscinfo class="version">&SHADOW_UTILS_VERSION;</refmiscinfo>
-+  </refmeta>
-+  <refnamediv id='name'>
-+    <refname>subuid</refname>
-+    <refpurpose>the subordinate uid file</refpurpose>
-+  </refnamediv>
-+
-+  <refsect1 id='description'>
-+    <title>DESCRIPTION</title>
++<varlistentry>
++  <term><option>SUB_UID_MIN</option> (number)</term>
++  <term><option>SUB_UID_MAX</option> (number)</term>
++  <term><option>SUB_UID_COUNT</option> (number)</term>
++  <listitem>
 +    <para>
-+      Each line in <filename>/etc/subuid</filename> contains
-+      a user id and a range of suboridinate user ids that user
-+      is allowed to use.
-+
-+      This is specified with three fields delimited by colons
-+      (<quote>:</quote>).
-+      These fields are:
++      The commands <command>useradd</command> and <command>newusers</command>
++      allocate <option>SUB_UID_COUNT</option> unused user IDs from the range
++      <option>SUB_UID_MIN</option> to <option>SUB_UID_MAX</option> for each
++      new user.
 +    </para>
-+    <itemizedlist mark='bullet'>
-+      <listitem>
-+	<para>login name</para>
-+      </listitem>
-+      <listitem>
-+	<para>numerical subordinate user ID</para>
-+      </listitem>
-+      <listitem>
-+	<para>numerical subordinate user ID count</para>
-+      </listitem>
-+    </itemizedlist>
-+
 +    <para>
-+      This file specifies the user IDs to be that each user may use
-+      with the <command>newuidmap</command> command that ordinary users can use to
-+      configure uid mapping in a user namespace.
++      The default values for <option>SUB_GID_MAN</option>,
++      <option>SUB_GID_MIN</option>, <option>SUB_GID_COUNT</option>
++      are respectively 100000, 600100000 and 10000.
 +    </para>
-+
-+    <para>
-+      Multiple ranges may be specified per user ID.
-+    </para>
-+
-+  </refsect1>
-+
-+  <refsect1 id='files'>
-+    <title>FILES</title>
-+    <variablelist>
-+      <varlistentry>
-+	<term><filename>/etc/subuid</filename></term>
-+	<listitem>
-+	  <para>Per user subordinate user IDs.</para>
-+	</listitem>
-+      </varlistentry>
-+      <varlistentry>
-+	<term><filename>/etc/subuid-</filename></term>
-+	<listitem>
-+	  <para>Backup file for /etc/subuid.</para>
-+	</listitem>
-+      </varlistentry>
-+    </variablelist>
-+  </refsect1>
-+
-+  <refsect1 id='see_also'>
-+    <title>SEE ALSO</title>
-+    <para>
-+      <citerefentry>
-+	<refentrytitle>subgid</refentrytitle><manvolnum>5</manvolnum>
-+      </citerefentry>,
-+      <citerefentry>
-+	<refentrytitle>logindefs</refentrytitle><manvolnum>5</manvolnum>
-+      </citerefentry>,
-+      <citerefentry>
-+	<refentrytitle>newuidmap</refentrytitle><manvolnum>1</manvolnum>
-+      </citerefentry>,
-+      <citerefentry>
-+	<refentrytitle>newgidmap</refentrytitle><manvolnum>1</manvolnum>
-+      </citerefentry>,
-+      <citerefentry>
-+	<refentrytitle>usermod</refentrytitle><manvolnum>8</manvolnum>
-+      </citerefentry>,
-+    </para>
-+  </refsect1>
-+</refentry>
++  </listitem>
++</varlistentry>
 -- 
 1.7.5.4
