@@ -1,7 +1,7 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 07/11] useradd: Add support for subordinate user identifiers
-Date: Tue, 22 Jan 2013 01:17:30 -0800
-Message-ID: <8738xtr2z9.fsf@xmission.com>
+Subject: [PATCH 08/11] Add support for detecting busy subordinate user ids
+Date: Tue, 22 Jan 2013 01:17:50 -0800
+Message-ID: <87y5flpoe9.fsf@xmission.com>
 References: <87d2wxshu0.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,235 +25,83 @@ List-Id: containers.vger.kernel.org
 
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- src/useradd.c |  141 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 files changed, 140 insertions(+), 1 deletions(-)
+ libmisc/user_busy.c |   18 +++++++++++++-----
+ 1 files changed, 13 insertions(+), 5 deletions(-)
 
-diff --git a/src/useradd.c b/src/useradd.c
-index bfddfc6..87ba98d 100644
---- a/src/useradd.c
-+++ b/src/useradd.c
-@@ -65,6 +65,7 @@
- #include "sgroupio.h"
- #endif
- #include "shadowio.h"
+diff --git a/libmisc/user_busy.c b/libmisc/user_busy.c
+index 168f9d5..04cfc31 100644
+--- a/libmisc/user_busy.c
++++ b/libmisc/user_busy.c
+@@ -38,11 +38,13 @@
+ #include <stdio.h>
+ #include <sys/types.h>
+ #include <dirent.h>
++#include <fcntl.h>
+ #include "defines.h"
+ #include "prototypes.h"
 +#include "subordinateio.h"
- #ifdef WITH_TCB
- #include "tcbfuncs.h"
- #endif
-@@ -121,12 +122,20 @@ static bool is_shadow_pwd;
- static bool is_shadow_grp;
- static bool sgr_locked = false;
- #endif
-+static bool is_sub_uid = false;
-+static bool is_sub_gid = false;
- static bool pw_locked = false;
- static bool gr_locked = false;
- static bool spw_locked = false;
-+static bool sub_uid_locked = false;
-+static bool sub_gid_locked = false;
- static char **user_groups;	/* NULL-terminated list */
- static long sys_ngroups;
- static bool do_grp_update = false;	/* group files need to be updated */
-+static uid_t sub_uid_start;	/* New subordinate uid range */
-+static unsigned long sub_uid_count;
-+static gid_t sub_gid_start;	/* New subordinate gid range */
-+static unsigned long sub_gid_count;
  
- static bool
-     bflg = false,		/* new default root of home directory */
-@@ -168,6 +177,8 @@ static bool home_added = false;
- #define E_GRP_UPDATE	10	/* can't update group file */
- #define E_HOMEDIR	12	/* can't create home directory */
- #define E_SE_UPDATE	14	/* can't update SELinux user mapping */
-+#define E_SUB_UID_UPDATE 16	/* can't update the subordinate uid file */
-+#define E_SUB_GID_UPDATE 18	/* can't update the subordinate gid file */
+ #ifdef __linux__
+-static int check_status (const char *sname, uid_t uid);
++static int check_status (const char *name, const char *sname, uid_t uid);
+ static int user_busy_processes (const char *name, uid_t uid);
+ #else				/* !__linux__ */
+ static int user_busy_utmp (const char *name);
+@@ -102,7 +104,7 @@ static int user_busy_utmp (const char *name)
+ #endif				/* !__linux__ */
  
- #define DGROUP			"GROUP="
- #define DHOME			"HOME="
-@@ -268,6 +279,32 @@ static void fail_exit (int code)
- 		}
- 	}
- #endif
-+	if (sub_uid_locked) {
-+		if (sub_uid_unlock () == 0) {
-+			fprintf (stderr, _("%s: failed to unlock %s\n"), Prog, sub_uid_dbname ());
-+			SYSLOG ((LOG_ERR, "failed to unlock %s", sub_uid_dbname ()));
-+#ifdef WITH_AUDIT
-+			audit_logger (AUDIT_ADD_USER, Prog,
-+			              "unlocking subodinate user file",
-+			              user_name, AUDIT_NO_ID,
-+			              SHADOW_AUDIT_FAILURE);
-+#endif
-+			/* continue */
-+		}
-+	}
-+	if (sub_gid_locked) {
-+		if (sub_gid_unlock () == 0) {
-+			fprintf (stderr, _("%s: failed to unlock %s\n"), Prog, sub_gid_dbname ());
-+			SYSLOG ((LOG_ERR, "failed to unlock %s", sub_gid_dbname ()));
-+#ifdef WITH_AUDIT
-+			audit_logger (AUDIT_ADD_USER, Prog,
-+			              "unlocking subodinate group file",
-+			              user_name, AUDIT_NO_ID,
-+			              SHADOW_AUDIT_FAILURE);
-+#endif
-+			/* continue */
-+		}
-+	}
+ #ifdef __linux__
+-static int check_status (const char *sname, uid_t uid)
++static int check_status (const char *name, const char *sname, uid_t uid)
+ {
+ 	/* 40: /proc/xxxxxxxxxx/task/xxxxxxxxxx/status + \0 */
+ 	char status[40];
+@@ -125,7 +127,10 @@ static int check_status (const char *sname, uid_t uid)
+ 			            &ruid, &euid, &suid) == 3) {
+ 				if (   (ruid == (unsigned long) uid)
+ 				    || (euid == (unsigned long) uid)
+-				    || (suid == (unsigned long) uid)) {
++				    || (suid == (unsigned long) uid)
++				    || have_sub_uids(name, ruid, 1)
++				    || have_sub_uids(name, euid, 1)
++				    || have_sub_uids(name, suid, 1)) {
+ 					(void) fclose (sfile);
+ 					return 1;
+ 				}
+@@ -153,6 +158,8 @@ static int user_busy_processes (const char *name, uid_t uid)
+ 	struct stat sbroot;
+ 	struct stat sbroot_process;
  
- #ifdef WITH_AUDIT
- 	audit_logger (AUDIT_ADD_USER, Prog,
-@@ -1378,6 +1415,18 @@ static void close_files (void)
- 		}
- #endif
- 	}
-+	if (is_sub_uid  && (sub_uid_close () == 0)) {
-+		fprintf (stderr,
-+		         _("%s: failure while writing changes to %s\n"), Prog, sub_uid_dbname ());
-+		SYSLOG ((LOG_ERR, "failure while writing changes to %s", sub_uid_dbname ()));
-+		fail_exit (E_SUB_UID_UPDATE);
-+	}
-+	if (is_sub_gid  && (sub_gid_close () == 0)) {
-+		fprintf (stderr,
-+		         _("%s: failure while writing changes to %s\n"), Prog, sub_gid_dbname ());
-+		SYSLOG ((LOG_ERR, "failure while writing changes to %s", sub_gid_dbname ()));
-+		fail_exit (E_SUB_GID_UPDATE);
-+	}
- 	if (is_shadow_pwd) {
- 		if (spw_unlock () == 0) {
- 			fprintf (stderr, _("%s: failed to unlock %s\n"), Prog, spw_dbname ());
-@@ -1432,6 +1481,34 @@ static void close_files (void)
- 		sgr_locked = false;
- 	}
- #endif
-+	if (is_sub_uid) {
-+		if (sub_uid_unlock () == 0) {
-+			fprintf (stderr, _("%s: failed to unlock %s\n"), Prog, sub_uid_dbname ());
-+			SYSLOG ((LOG_ERR, "failed to unlock %s", sub_uid_dbname ()));
-+#ifdef WITH_AUDIT
-+			audit_logger (AUDIT_ADD_USER, Prog,
-+				"unlocking subordinate user file",
-+				user_name, AUDIT_NO_ID,
-+				SHADOW_AUDIT_FAILURE);
-+#endif
-+			/* continue */
-+		}
-+		sub_uid_locked = false;
-+	}
-+	if (is_sub_gid) {
-+		if (sub_gid_unlock () == 0) {
-+			fprintf (stderr, _("%s: failed to unlock %s\n"), Prog, sub_gid_dbname ());
-+			SYSLOG ((LOG_ERR, "failed to unlock %s", sub_gid_dbname ()));
-+#ifdef WITH_AUDIT
-+			audit_logger (AUDIT_ADD_USER, Prog,
-+				"unlocking subordinate group file",
-+				user_name, AUDIT_NO_ID,
-+				SHADOW_AUDIT_FAILURE);
-+#endif
-+			/* continue */
-+		}
-+		sub_gid_locked = false;
-+	}
- }
- 
- /*
-@@ -1486,6 +1563,36 @@ static void open_files (void)
- 		}
- 	}
- #endif
-+	if (is_sub_uid) {
-+		if (sub_uid_lock () == 0) {
-+			fprintf (stderr,
-+			         _("%s: cannot lock %s; try again later.\n"),
-+			         Prog, sub_uid_dbname ());
-+			fail_exit (E_SUB_UID_UPDATE);
-+		}
-+		sub_uid_locked = true;
-+		if (sub_uid_open (O_RDWR) == 0) {
-+			fprintf (stderr,
-+			         _("%s: cannot open %s\n"),
-+			         Prog, sub_uid_dbname ());
-+			fail_exit (E_SUB_UID_UPDATE);
-+		}
-+	}
-+	if (is_sub_gid) {
-+		if (sub_gid_lock () == 0) {
-+			fprintf (stderr,
-+			         _("%s: cannot lock %s; try again later.\n"),
-+			         Prog, sub_gid_dbname ());
-+			fail_exit (E_SUB_GID_UPDATE);
-+		}
-+		sub_gid_locked = true;
-+		if (sub_gid_open (O_RDWR) == 0) {
-+			fprintf (stderr,
-+			         _("%s: cannot open %s\n"),
-+			         Prog, sub_gid_dbname ());
-+			fail_exit (E_SUB_GID_UPDATE);
-+		}
-+	}
- }
- 
- static void open_shadow (void)
-@@ -1732,13 +1839,27 @@ static void usr_update (void)
- #endif
- 		fail_exit (E_PW_UPDATE);
- 	}
-+	if (is_sub_uid &&
-+	    (sub_uid_add(user_name, sub_uid_start, sub_uid_count) == 0)) {
-+		fprintf (stderr,
-+		         _("%s: failed to prepare the new %s entry\n"),
-+		         Prog, sub_uid_dbname ());
-+		fail_exit (E_SUB_UID_UPDATE);
-+	}
-+	if (is_sub_gid &&
-+	    (sub_gid_add(user_name, sub_gid_start, sub_gid_count) == 0)) {
-+		fprintf (stderr,
-+		         _("%s: failed to prepare the new %s entry\n"),
-+		         Prog, sub_uid_dbname ());
-+		fail_exit (E_SUB_GID_UPDATE);
-+	}
++	sub_uid_open (O_RDONLY);
 +
- #ifdef WITH_AUDIT
- 	audit_logger (AUDIT_ADD_USER, Prog,
- 	              "adding user",
- 	              user_name, (unsigned int) user_id,
- 	              SHADOW_AUDIT_SUCCESS);
- #endif
--
- 	/*
- 	 * Do any group file updates for this user.
- 	 */
-@@ -1884,6 +2005,8 @@ int main (int argc, char **argv)
- #ifdef SHADOWGRP
- 	is_shadow_grp = sgr_file_present ();
- #endif
-+	is_sub_uid = sub_uid_file_present ();
-+	is_sub_gid = sub_gid_file_present ();
+ 	proc = opendir ("/proc");
+ 	if (proc == NULL) {
+ 		perror ("opendir /proc");
+@@ -196,7 +203,7 @@ static int user_busy_processes (const char *name, uid_t uid)
+ 			continue;
+ 		}
  
- 	get_defaults ();
- 
-@@ -2034,6 +2157,22 @@ int main (int argc, char **argv)
- 		grp_add ();
+-		if (check_status (tmp_d_name, uid) != 0) {
++		if (check_status (name, tmp_d_name, uid) != 0) {
+ 			(void) closedir (proc);
+ 			fprintf (stderr,
+ 			         _("%s: user %s is currently used by process %d\n"),
+@@ -216,7 +223,7 @@ static int user_busy_processes (const char *name, uid_t uid)
+ 				if (tid == pid) {
+ 					continue;
+ 				}
+-				if (check_status (task_path+6, uid) != 0) {
++				if (check_status (name, task_path+6, uid) != 0) {
+ 					(void) closedir (proc);
+ 					fprintf (stderr,
+ 					         _("%s: user %s is currently used by process %d\n"),
+@@ -231,6 +238,7 @@ static int user_busy_processes (const char *name, uid_t uid)
  	}
  
-+	if (is_sub_uid) {
-+		if (find_new_sub_uids(user_name, &sub_uid_start, &sub_uid_count) < 0) {
-+			fprintf (stderr,
-+				_("%s: can't find subordinate user range\n"),
-+				Prog);
-+			fail_exit(E_SUB_UID_UPDATE);
-+		}
-+	}
-+	if (is_sub_gid) {
-+		if (find_new_sub_gids(user_name, &sub_gid_start, &sub_gid_count) < 0) {
-+			fprintf (stderr,
-+				_("%s: can't find subordinate group range\n"),
-+				Prog);
-+			fail_exit(E_SUB_GID_UPDATE);
-+		}
-+	}
- 	usr_update ();
- 
- 	if (mflg) {
+ 	(void) closedir (proc);
++	sub_uid_close();
+ 	return 0;
+ }
+ #endif				/* __linux__ */
 -- 
 1.7.5.4
