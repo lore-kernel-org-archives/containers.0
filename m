@@ -1,7 +1,8 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 04/11] Add backend support for suboridnate uids and gids
-Date: Thu, 24 Jan 2013 14:59:31 -0800
-Message-ID: <87ham6xk4s.fsf@xmission.com>
+Subject: [PATCH] subordinateio: Fix subordinate_parse to have an internal
+	static buffer
+Date: Thu, 24 Jan 2013 15:13:48 -0800
+Message-ID: <87bocexjgz.fsf_-_@xmission.com>
 References: <87d2wxshu0.fsf@xmission.com> <87liblr344.fsf@xmission.com>
 	<20130123182206.GA4468@mail.hallyn.com> <87a9ryyzh2.fsf@xmission.com>
 	<20130124225008.GA3816@sergelap>
@@ -25,28 +26,32 @@ Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 	(man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Nicolas =?utf-8?Q?Fran=C3=A7ois?= <nicolas.francois-Fa7rcPG4DJn7nK0/Xc0eeg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org> writes:
 
-> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
->> In practice it doesn't matter but it looks worth fixing for the sake of
->> long term maintenance.
->
-> I figured the users must all be ok, and in practice it would work out,
-> but the fact remains subsequent function calls assigning to local stack
-> can overwrite what you've returned.  <shrug>
+subordinate_parse is supposed to return a static structure that
+represents one line in /etc/subuid or /etc/subgid.  I goofed and
+failed to make the variable rangebuf that holds the username of
+in the returned structure static.
 
-Yes.  Once I make rangebuf static then subordinate_parse is ok (at least
-interface wise).  But the bug is real and I will get out an incremental
-patch shortly.
+Add this missing static specification.
 
-The subordinate_parse really isn't ok as I claimed a minute ago I had
-overlooked I copied everything into the local variable rangebuf before
-processing.  In practice it works of course but that is luck.
+Reported-by: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ lib/subordinateio.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-> The rest of what I've looked over looked ok, thanks much!
-
-Welcome.
-
-Do you think you can start getting this into Ubuntu?
-
-Eric
+diff --git a/lib/subordinateio.c b/lib/subordinateio.c
+index 851cfa0..4cca992 100644
+--- a/lib/subordinateio.c
++++ b/lib/subordinateio.c
+@@ -48,7 +48,7 @@ static void subordinate_free (/*@out@*/ /*@only@*/void *ent)
+ static void *subordinate_parse (const char *line)
+ {
+ 	static struct subordinate_range range;
+-	char rangebuf[1024];
++	static char rangebuf[1024];
+ 	int i;
+ 	char *cp;
+ 	char *fields[NFIELDS];
+-- 
+1.7.5.4
