@@ -1,17 +1,20 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH] subordinateio: Fix subordinate_parse to have an internal
-	static buffer
-Date: Thu, 24 Jan 2013 15:13:48 -0800
-Message-ID: <87bocexjgz.fsf_-_@xmission.com>
-References: <87d2wxshu0.fsf@xmission.com> <87liblr344.fsf@xmission.com>
-	<20130123182206.GA4468@mail.hallyn.com> <87a9ryyzh2.fsf@xmission.com>
-	<20130124225008.GA3816@sergelap>
+Subject: Re: Constraining the memory used by an unprivilged mount of tmpfs.
+Date: Fri, 25 Jan 2013 00:12:16 -0800
+Message-ID: <87zjzxllzz.fsf@xmission.com>
+References: <50F74EC6.60004@cn.fujitsu.com> <20130117171451.GA31219@sergelap>
+	<87fw1zbd03.fsf@xmission.com> <20130118042404.GA15079@sergelap>
+	<87vcavys6k.fsf@xmission.com> <50F8DEBF.1020701@parallels.com>
+	<87ip6vyqkf.fsf@xmission.com> <50F8E73B.7000903@parallels.com>
+	<87ip6vug8p.fsf_-_@xmission.com> <50F99787.3090708@parallels.com>
+	<20130118194851.GB13983@sergelap> <50F9A7FD.6030507@parallels.com>
+	<87hament1w.fsf@xmission.com> <50F9CED4.2070109@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20130124225008.GA3816@sergelap> (Serge Hallyn's message of "Thu,
-	24 Jan 2013 16:50:08 -0600")
+In-Reply-To: <50F9CED4.2070109-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> (Glauber Costa's message of
+	"Fri, 18 Jan 2013 14:38:12 -0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,37 +24,88 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Pkg-shadow-devel-XbBxUvOt3X2LieD7tvxI8l/i77bcL1HB@public.gmane.org, "Michael Kerrisk
-	(man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Nicolas =?utf-8?Q?Fran=C3=A7ois?= <nicolas.francois-Fa7rcPG4DJn7nK0/Xc0eeg@public.gmane.org>
+To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> writes:
 
-subordinate_parse is supposed to return a static structure that
-represents one line in /etc/subuid or /etc/subgid.  I goofed and
-failed to make the variable rangebuf that holds the username of
-in the returned structure static.
+> On 01/18/2013 12:18 PM, Eric W. Biederman wrote:
+>> Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> writes:
+>> 
+>>> On 01/18/2013 11:48 AM, Serge Hallyn wrote:
+>>>> Quoting Glauber Costa (glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
+>>>>> On 01/17/2013 11:01 PM, Eric W. Biederman wrote:
+>>>>>> What are the practical problems with control groups that makes them
+>>>>>> undesirable/hard to use with namespaces?
+>>>>>>
+>>>>>> What would it take to fix the problems with control groups?
+>>>>> There aren't, from my PoV.
+>>>>> When I run containers, for instance, I basically join all namespaces,
+>>>>> configure all groups, and everything I can.
+>>>>>
+>>>>> I do know, however, that not every use case is like that, and those
+>>>>> things tends to be very loosely coupled.
+>>>>>
+>>>>> So what I am worried about, is not a valid container usage where you
+>>>>> have your constraints configured. But if I login into a box as a normal
+>>>>> user, and that now allows me to create a userns, and maliciously fire a
+>>>>> big tmpfs from there, cgroups will not gonna be there for me - it's not
+>>>>> a container box, is just something I am trying to break.
+>>>>
+>>>> Hm.  So basically we would, ideally, find a way to make it so that if
+>>>> uid 500 creates a new userns and, therein, mounts a tmpfs, then that
+>>>> tmpfs gets accounted and limited along with uid 500's RSS?
+>>>>
+>>>
+>>> Dunno.
+>>>
+>>> One option would be to start establishing stronger connections between
+>>> cgroups and namespaces in a sane way. And then, we only allow such
+>>> mounts when you are actually cgroup backed.
+>>>
+>>> Again, I am not concerned with sane setups in here, but much more with
+>>> normal users in normal systems taking advantage of this.
+>> 
+>> For me this translates into it would be good if we can get distros to
+>> establish some good default limits for when they enable user namespaces.
+>> 
+>> At a practical level I just looked and my current distribution does not
+>> limit the size of processes I can create or the amount of memory those
+>> processes can use.  So unless the distro I am looking at is strongly
+>> atypical any kind of memory limit is certainly worth providing but won't
+>> help much.
+>> 
+>> Are memory control groups at this point palatable to general purpose
+>> distributions?  If memory control groups are not that does seem to be an
+>> argument that we need something better.  Last I looked memory control
+>> groups had some ugly overheads and doubled the size of struct page so
+>> there are certainly reasons why memory control groups might be a problem.
+>> 
+> We are actively placing a lot of effort into reducing this overhead.
+>
+>> Serge does ubunutu enable memory control groups?
+>> 
+> I believe at least systemd uses it.
 
-Add this missing static specification.
+So I just finished my basic review of the current state of memory
+control groups.  Memory control groups do succesfully control memory
+all kinds of memory (if properly configured) and the overhead has
+been reduced to 2/7 the size of struct page on 64bit systems.
 
-Reported-by: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- lib/subordinateio.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+<tangent>
+By my rough calculations the memory control group overhead is 4MiB per
+gigabyte.  It looks like that overhead can be pretty easily cut in half
+by simply embedding the flags into the low bits of the memory_control
+group pointer.  And I still don't understand why page_cgroup is not
+a member of struct page.  But whatever memory control groups have much
+less per page overhead than they used to.
+</tangent>
 
-diff --git a/lib/subordinateio.c b/lib/subordinateio.c
-index 851cfa0..4cca992 100644
---- a/lib/subordinateio.c
-+++ b/lib/subordinateio.c
-@@ -48,7 +48,7 @@ static void subordinate_free (/*@out@*/ /*@only@*/void *ent)
- static void *subordinate_parse (const char *line)
- {
- 	static struct subordinate_range range;
--	char rangebuf[1024];
-+	static char rangebuf[1024];
- 	int i;
- 	char *cp;
- 	char *fields[NFIELDS];
--- 
-1.7.5.4
+So it looks like distros and everyone else who enable user namespaces
+and allow multiple users to be logged in at the same to to setup
+memory control groups to limit the trouble their users can get into.
+
+I think I will have to add a patch to document that recomendation.
+
+Eric
