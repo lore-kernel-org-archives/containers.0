@@ -1,16 +1,15 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH review 2/6] userns: Allow any uid or gid mappings that
-	don't overlap.
-Date: Sat, 26 Jan 2013 21:08:58 +0000
-Message-ID: <20130126210858.GB11274@mail.hallyn.com>
+Subject: Re: [PATCH review 3/6] userns: Recommend use of memory control groups.
+Date: Sat, 26 Jan 2013 21:13:12 +0000
+Message-ID: <20130126211312.GD11274@mail.hallyn.com>
 References: <87ehh8it9s.fsf@xmission.com>
- <87zjzwhegj.fsf@xmission.com>
+ <87txq4hedl.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <87zjzwhegj.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <87txq4hedl.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,100 +20,64 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
 > 
-> When I initially wrote the code for /proc/<pid>/uid_map.  I was lazy
-> and avoided duplicate mappings by the simple expedient of ensuring the
-> first number in a new extent was greater than any number in the
-> previous extent.
-> 
-> Unfortunately that precludes a number of valid mappings, and someone
-> noticed and complained.  So use a simple check to ensure that ranges
-> in the mapping extents don't overlap.
+> In the help text describing user namespaces recommend use of memory
+> control groups.  In many cases memory control groups are the only
+> mechanism there is to limit how much memory a user who can create
+> user namespaces can use.
 > 
 > Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
+nit:
+
 > ---
->  kernel/user_namespace.c |   45 +++++++++++++++++++++++++++++++++++++++------
->  1 files changed, 39 insertions(+), 6 deletions(-)
+>  Documentation/namespaces/resource-control.txt |   10 ++++++++++
+>  init/Kconfig                                  |    7 +++++++
+>  2 files changed, 17 insertions(+), 0 deletions(-)
+>  create mode 100644 Documentation/namespaces/resource-control.txt
 > 
-> diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-> index 24f8ec3..8b65083 100644
-> --- a/kernel/user_namespace.c
-> +++ b/kernel/user_namespace.c
-> @@ -520,6 +520,42 @@ struct seq_operations proc_projid_seq_operations = {
->  	.show = projid_m_show,
->  };
+> diff --git a/Documentation/namespaces/resource-control.txt b/Documentation/namespaces/resource-control.txt
+> new file mode 100644
+> index 0000000..3d8178a
+> --- /dev/null
+> +++ b/Documentation/namespaces/resource-control.txt
+> @@ -0,0 +1,10 @@
+> +There are a lot of kinds of objects in the kernel that don't have
+> +individual limits or that have limits that are ineffective when a set
+> +of processes is allowed to switch user ids.  With user namespaces
+> +enabled in a kernel for people who don't trust their users or their
+> +users programs to play nice this problems becomes more acute.
+
+users' programs
+
+> +
+> +Therefore it is recommended that memory control groups be enabled in
+> +kernels that enable user namespaces, and it is further recommended
+> +that userspace configure memory control groups to limit how much
+> +memory users they don't trust to play nice can use.
+> diff --git a/init/Kconfig b/init/Kconfig
+> index 7d30240..c8c58bd 100644
+> --- a/init/Kconfig
+> +++ b/init/Kconfig
+> @@ -1035,6 +1035,13 @@ config USER_NS
+>  	help
+>  	  This allows containers, i.e. vservers, to use user namespaces
+>  	  to provide different user info for different servers.
+> +
+> +	  When user namespaces are enabled in the kernel it is
+> +	  recommended that the MEMCG and MEMCG_KMEM options also be
+> +	  enabled and that user-space use the memory control groups to
+> +	  limit the amount of memory a memory unprivileged users can
+> +	  use.
+> +
+>  	  If unsure, say N.
 >  
-> +static bool mappings_overlap(struct uid_gid_map *new_map, struct uid_gid_extent *extent)
-> +{
-> +	u32 upper_first, lower_first, upper_last, lower_last;
-> +	unsigned idx;
-> +
-> +	upper_first = extent->first;
-> +	lower_first = extent->lower_first;
-> +	upper_last = upper_first + extent->count - 1;
-> +	lower_last = lower_first + extent->count - 1;
-> +
-> +	for (idx = 0; idx < new_map->nr_extents; idx++) {
-> +		u32 prev_upper_first, prev_lower_first;
-> +		u32 prev_upper_last, prev_lower_last;
-> +		struct uid_gid_extent *prev;
-> +
-> +		prev = &new_map->extent[idx];
-> +
-> +		prev_upper_first = prev->first;
-> +		prev_lower_first = prev->lower_first;
-> +		prev_upper_last = prev_upper_first + prev->count - 1;
-> +		prev_lower_last = prev_lower_first + prev->count - 1;
-> +
-> +		/* Does the upper range intersect a previous extent? */
-> +		if ((prev_upper_first <= upper_last) &&
-> +		    (prev_upper_last >= upper_first))
-> +			return true;
-> +
-> +		/* Does the lower range intersect a previous extent? */
-> +		if ((prev_lower_first <= lower_last) &&
-> +		    (prev_lower_last >= lower_first))
-> +			return true;
-> +	}
-> +	return false;
-> +}
-> +
-> +
->  static DEFINE_MUTEX(id_map_mutex);
->  
->  static ssize_t map_write(struct file *file, const char __user *buf,
-> @@ -532,7 +568,7 @@ static ssize_t map_write(struct file *file, const char __user *buf,
->  	struct user_namespace *ns = seq->private;
->  	struct uid_gid_map new_map;
->  	unsigned idx;
-> -	struct uid_gid_extent *extent, *last = NULL;
-> +	struct uid_gid_extent *extent = NULL;
->  	unsigned long page = 0;
->  	char *kbuf, *pos, *next_line;
->  	ssize_t ret = -EINVAL;
-> @@ -635,14 +671,11 @@ static ssize_t map_write(struct file *file, const char __user *buf,
->  		if ((extent->lower_first + extent->count) <= extent->lower_first)
->  			goto out;
->  
-> -		/* For now only accept extents that are strictly in order */
-> -		if (last &&
-> -		    (((last->first + last->count) > extent->first) ||
-> -		     ((last->lower_first + last->count) > extent->lower_first)))
-> +		/* Do the ranges in extent overlap any previous extents? */
-> +		if (mappings_overlap(&new_map, extent))
->  			goto out;
->  
->  		new_map.nr_extents++;
-> -		last = extent;
->  
->  		/* Fail if the file contains too many extents */
->  		if ((new_map.nr_extents == UID_GID_MAP_MAX_EXTENTS) &&
+>  config PID_NS
 > -- 
 > 1.7.5.4
