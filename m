@@ -1,7 +1,7 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH review 3/6] userns: Recommend use of memory control groups.
-Date: Fri, 25 Jan 2013 18:22:46 -0800
-Message-ID: <87txq4hedl.fsf@xmission.com>
+Subject: [PATCH review 4/6] userns: Allow the userns root to mount of devpts
+Date: Fri, 25 Jan 2013 18:23:12 -0800
+Message-ID: <87obgchecv.fsf@xmission.com>
 References: <87ehh8it9s.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,51 +23,71 @@ Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL2
 List-Id: containers.vger.kernel.org
 
 
-In the help text describing user namespaces recommend use of memory
-control groups.  In many cases memory control groups are the only
-mechanism there is to limit how much memory a user who can create
-user namespaces can use.
+- The context in which devpts is mounted has no effect on the creation
+  of ptys as the /dev/ptmx interface has been used by unprivileged
+  users for many years.
+
+- Only support unprivileged mounts in combination with the newinstance
+  option to ensure that mounting of /dev/pts in a user namespace will
+  not allow the options of an existing mount of devpts to be modified.
+
+- Create /dev/pts/ptmx as the root user in the user namespace that
+  mounts devpts so that it's permissions to be changed.
 
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- Documentation/namespaces/resource-control.txt |   10 ++++++++++
- init/Kconfig                                  |    7 +++++++
- 2 files changed, 17 insertions(+), 0 deletions(-)
- create mode 100644 Documentation/namespaces/resource-control.txt
+ fs/devpts/inode.c |   18 ++++++++++++++++++
+ 1 files changed, 18 insertions(+), 0 deletions(-)
 
-diff --git a/Documentation/namespaces/resource-control.txt b/Documentation/namespaces/resource-control.txt
-new file mode 100644
-index 0000000..3d8178a
---- /dev/null
-+++ b/Documentation/namespaces/resource-control.txt
-@@ -0,0 +1,10 @@
-+There are a lot of kinds of objects in the kernel that don't have
-+individual limits or that have limits that are ineffective when a set
-+of processes is allowed to switch user ids.  With user namespaces
-+enabled in a kernel for people who don't trust their users or their
-+users programs to play nice this problems becomes more acute.
+diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
+index 472e6be..073d30b 100644
+--- a/fs/devpts/inode.c
++++ b/fs/devpts/inode.c
+@@ -243,6 +243,13 @@ static int mknod_ptmx(struct super_block *sb)
+ 	struct dentry *root = sb->s_root;
+ 	struct pts_fs_info *fsi = DEVPTS_SB(sb);
+ 	struct pts_mount_opts *opts = &fsi->mount_opts;
++	kuid_t root_uid;
++	kgid_t root_gid;
 +
-+Therefore it is recommended that memory control groups be enabled in
-+kernels that enable user namespaces, and it is further recommended
-+that userspace configure memory control groups to limit how much
-+memory users they don't trust to play nice can use.
-diff --git a/init/Kconfig b/init/Kconfig
-index 7d30240..c8c58bd 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -1035,6 +1035,13 @@ config USER_NS
- 	help
- 	  This allows containers, i.e. vservers, to use user namespaces
- 	  to provide different user info for different servers.
-+
-+	  When user namespaces are enabled in the kernel it is
-+	  recommended that the MEMCG and MEMCG_KMEM options also be
-+	  enabled and that user-space use the memory control groups to
-+	  limit the amount of memory a memory unprivileged users can
-+	  use.
-+
- 	  If unsure, say N.
++	root_uid = make_kuid(current_user_ns(), 0);
++	root_gid = make_kgid(current_user_ns(), 0);
++	if (!uid_valid(root_uid) || !gid_valid(root_gid))
++		return -EINVAL;
  
- config PID_NS
+ 	mutex_lock(&root->d_inode->i_mutex);
+ 
+@@ -273,6 +280,8 @@ static int mknod_ptmx(struct super_block *sb)
+ 
+ 	mode = S_IFCHR|opts->ptmxmode;
+ 	init_special_inode(inode, mode, MKDEV(TTYAUX_MAJOR, 2));
++	inode->i_uid = root_uid;
++	inode->i_gid = root_gid;
+ 
+ 	d_add(dentry, inode);
+ 
+@@ -438,6 +447,12 @@ static struct dentry *devpts_mount(struct file_system_type *fs_type,
+ 	if (error)
+ 		return ERR_PTR(error);
+ 
++	/* Require newinstance for all user namespace mounts to ensure
++	 * the mount options are not changed.
++	 */
++	if ((current_user_ns() != &init_user_ns) && !opts.newinstance)
++		return ERR_PTR(-EINVAL);
++
+ 	if (opts.newinstance)
+ 		s = sget(fs_type, NULL, set_anon_super, flags, NULL);
+ 	else
+@@ -491,6 +506,9 @@ static struct file_system_type devpts_fs_type = {
+ 	.name		= "devpts",
+ 	.mount		= devpts_mount,
+ 	.kill_sb	= devpts_kill_sb,
++#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
++	.fs_flags	= FS_USERNS_MOUNT | FS_USERNS_DEV_MOUNT,
++#endif
+ };
+ 
+ /*
 -- 
 1.7.5.4
