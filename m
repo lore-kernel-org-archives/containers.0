@@ -1,7 +1,7 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH review 5/6] userns: Allow the userns root to mount ramfs.
-Date: Fri, 25 Jan 2013 18:26:11 -0800
-Message-ID: <87ip6khe7w.fsf@xmission.com>
+Subject: [PATCH review 6/6] userns: Allow the userns root to mount tmpfs.
+Date: Fri, 25 Jan 2013 18:26:48 -0800
+Message-ID: <87d2wshe6v.fsf@xmission.com>
 References: <87ehh8it9s.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,32 +23,40 @@ Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL2
 List-Id: containers.vger.kernel.org
 
 
-There is no backing store to ramfs and file creation
-rules are the same as for any other filesystem so
-it is semantically safe to allow unprivileged users
-to mount it.
+There is no backing store to tmpfs and file creation rules are the
+same as for any other filesystem so it is semantically safe to allow
+unprivileged users to mount it.  ramfs is safe for the same reasons so
+allow either flavor of tmpfs to be mounted by a user namespace root
+user.
 
-The memory control group successfully limits how much
-memory ramfs can consume on any system that cares about
-a user namespace root using ramfs to exhaust memory
-the memory control group can be deployed.
+The memory control group successfully limits how much memory tmpfs can
+consume on any system that cares about a user namespace root using
+tmpfs to exhaust memory the memory control group can be deployed.
 
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/ramfs/inode.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ mm/shmem.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/ramfs/inode.c b/fs/ramfs/inode.c
-index eab8c09..c24f1e1 100644
---- a/fs/ramfs/inode.c
-+++ b/fs/ramfs/inode.c
-@@ -260,6 +260,7 @@ static struct file_system_type ramfs_fs_type = {
- 	.name		= "ramfs",
- 	.mount		= ramfs_mount,
- 	.kill_sb	= ramfs_kill_sb,
+diff --git a/mm/shmem.c b/mm/shmem.c
+index 5c90d84..197ca5e 100644
+--- a/mm/shmem.c
++++ b/mm/shmem.c
+@@ -2766,6 +2766,7 @@ static struct file_system_type shmem_fs_type = {
+ 	.name		= "tmpfs",
+ 	.mount		= shmem_mount,
+ 	.kill_sb	= kill_litter_super,
 +	.fs_flags	= FS_USERNS_MOUNT,
  };
- static struct file_system_type rootfs_fs_type = {
- 	.name		= "rootfs",
+ 
+ int __init shmem_init(void)
+@@ -2823,6 +2824,7 @@ static struct file_system_type shmem_fs_type = {
+ 	.name		= "tmpfs",
+ 	.mount		= ramfs_mount,
+ 	.kill_sb	= kill_litter_super,
++	.fs_flags	= FS_USERNS_MOUNT,
+ };
+ 
+ int __init shmem_init(void)
 -- 
 1.7.5.4
