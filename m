@@ -1,15 +1,16 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH review 3/6] userns: Recommend use of memory control groups.
-Date: Sat, 26 Jan 2013 22:19:01 -0800
-Message-ID: <87zjzv408a.fsf@xmission.com>
-References: <87ehh8it9s.fsf@xmission.com> <87txq4hedl.fsf@xmission.com>
-	<20130126211312.GD11274@mail.hallyn.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH review 5/6] userns: Allow the userns root to mount ramfs.
+Date: Sun, 27 Jan 2013 18:23:21 +0000
+Message-ID: <20130127182321.GA338@mail.hallyn.com>
+References: <87ehh8it9s.fsf@xmission.com> <87ip6khe7w.fsf@xmission.com>
+	<20130126212918.GG11274@mail.hallyn.com>
+	<87bocb5f8a.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20130126211312.GD11274-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
-	message of "Sat, 26 Jan 2013 21:13:12 +0000")
+Content-Disposition: inline
+In-Reply-To: <87bocb5f8a.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,41 +20,58 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
+> 
+> > Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> >> 
+> >> There is no backing store to ramfs and file creation
+> >> rules are the same as for any other filesystem so
+> >> it is semantically safe to allow unprivileged users
+> >> to mount it.
+> >> 
+> >> The memory control group successfully limits how much
+> >> memory ramfs can consume on any system that cares about
+> >> a user namespace root using ramfs to exhaust memory
+> >> the memory control group can be deployed.
+> >
+> > But that does mean that to avoid this new type of attack, when handed a
+> > new kernel (i.e. by one's distro) one has to explicitly (know about and)
+> > configure those limits.  The "your distro should do this for you"
+> > argument doesn't seem right.  And I'd really prefer there not be
+> > barriers to user namespaces being compiled in when there don't have to
+> > be.
+> 
+> The thing is this really isn't a new type of attack.  There are a lot of
 
-> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
->> 
->> In the help text describing user namespaces recommend use of memory
->> control groups.  In many cases memory control groups are the only
->> mechanism there is to limit how much memory a user who can create
->> user namespaces can use.
->> 
->> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
->
-> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Of course.
 
->
-> nit:
->
+> existing methods to exhaust memory with the default configuration on
+> most distros.  All this is is a new method to method to implement such
+> an attack.
 
-I have fixed you nit and added the following text, so people know
-have a clue where to look to configure cgroups in userspace.
+Right.
 
-diff --git a/Documentation/namespaces/resource-control.txt b/Documentation/namespaces/resource-control.txt
-index 3d8178a..abc13c3 100644
---- a/Documentation/namespaces/resource-control.txt
-+++ b/Documentation/namespaces/resource-control.txt
-@@ -7,4 +7,8 @@ users programs to play nice this problems becomes more acute.
- Therefore it is recommended that memory control groups be enabled in
- kernels that enable user namespaces, and it is further recommended
- that userspace configure memory control groups to limit how much
--memory users they don't trust to play nice can use.
-+memory user's they don't trust to play nice can use.
-+
-+Memory control groups can be configured by installing the libcgroup
-+package present on most distros editing /etc/cgrules.conf,
-+/etc/cgconfig.conf and setting up libpam-cgroup.
+...
+
+> > What was your thought on the suggestion to only allow FS_USERNS_MOUNT
+> > mounts by users confined in a non-init memory cgroup?
+> 
+> Over design.
+
+Ok.  Fair.
+
+> So shrug.  The mechanisms that I am suggesting people use already exist,
+> and appear to have been present long enough to have made it into debian
+> stable release February of 2011.
+
+Heh - right, libcgroup does have its problems, but I don't think there
+are any problems with the pam module actually.  I'm meant to talk with
+the debian maintainer for them soon, will test.
+
+thanks,
+-serge
