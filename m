@@ -1,15 +1,13 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH] userns: Allow the unprivileged users to mount mqueue fs
-Date: Sun, 27 Jan 2013 23:14:48 -0800
-Message-ID: <877gmxye1j.fsf@xmission.com>
-References: <1359342541-383-1-git-send-email-gaofeng@cn.fujitsu.com>
-	<87bocayntu.fsf@xmission.com> <51061F2F.6040104@cn.fujitsu.com>
+From: Lord Glauber Costa of Sealand <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: [PATCH review 3/6] userns: Recommend use of memory control groups.
+Date: Mon, 28 Jan 2013 11:37:25 +0400
+Message-ID: <51062AB5.9060203__16917.851221706$1359358653$gmane$org@parallels.com>
+References: <87ehh8it9s.fsf@xmission.com> <87txq4hedl.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <51061F2F.6040104-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> (Gao feng's message of "Mon, 28
-	Jan 2013 14:48:15 +0800")
+In-Reply-To: <87txq4hedl.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,41 +17,62 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> writes:
+On 01/26/2013 06:22 AM, Eric W. Biederman wrote:
+> 
+> In the help text describing user namespaces recommend use of memory
+> control groups.  In many cases memory control groups are the only
+> mechanism there is to limit how much memory a user who can create
+> user namespaces can use.
+> 
+> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> ---
+>  Documentation/namespaces/resource-control.txt |   10 ++++++++++
+>  init/Kconfig                                  |    7 +++++++
+>  2 files changed, 17 insertions(+), 0 deletions(-)
+>  create mode 100644 Documentation/namespaces/resource-control.txt
+> 
+> diff --git a/Documentation/namespaces/resource-control.txt b/Documentation/namespaces/resource-control.txt
+> new file mode 100644
+> index 0000000..3d8178a
+> --- /dev/null
+> +++ b/Documentation/namespaces/resource-control.txt
+> @@ -0,0 +1,10 @@
+> +There are a lot of kinds of objects in the kernel that don't have
+> +individual limits or that have limits that are ineffective when a set
+> +of processes is allowed to switch user ids.  With user namespaces
+> +enabled in a kernel for people who don't trust their users or their
+> +users programs to play nice this problems becomes more acute.
+> +
+> +Therefore it is recommended that memory control groups be enabled in
+> +kernels that enable user namespaces, and it is further recommended
+> +that userspace configure memory control groups to limit how much
+> +memory users they don't trust to play nice can use.
+> diff --git a/init/Kconfig b/init/Kconfig
+> index 7d30240..c8c58bd 100644
+> --- a/init/Kconfig
+> +++ b/init/Kconfig
+> @@ -1035,6 +1035,13 @@ config USER_NS
+>  	help
+>  	  This allows containers, i.e. vservers, to use user namespaces
+>  	  to provide different user info for different servers.
+> +
+> +	  When user namespaces are enabled in the kernel it is
+> +	  recommended that the MEMCG and MEMCG_KMEM options also be
+> +	  enabled and that user-space use the memory control groups to
+> +	  limit the amount of memory a memory unprivileged users can
+> +	  use.
+> +
+>  	  If unsure, say N.
 
-> On 2013/01/28 11:43, Eric W. Biederman wrote:
->> Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> writes:
->> 
->>> This patch allow the unprivileged user to mount mqueuefs in
->>> user ns.
->>>
->>> If two userns share the same ipcns,the files in mqueue fs
->>> should be seen in both these two userns.
->>>
->>> If the userns has its own ipcns,it has its own mqueue fs too.
->>> ipcns has already done this job well.
->> 
->> I am a little dense.  When does userspace actually mount a mqueuefs?
->> My impression was that user space never needed to mount and actually
->> never could mount a mqueuefs.  MS_NO_USER isn't set so mounting a
->> mqueuefs is possible but when does it happen and why?
->> 
->
-> Actually the files which representative messgae queue in mqueuefs contains
-> some informations,such as QSIZE,NOTIFY,SIGNO,NOTIFY_PID.
->
-> My workstation is Fedora 17,mqueuefs is mounted on /dev/mqueue by default.
-> So I think at lest this patch is needed by some people.
+Since this becomes an official recommendation that people will likely
+follow, are we really that much concerned about the types of abuses the
+MEMCG_KMEM will prevent? Those are mostly metadata-based abuses users
+could do in their own local disks without mounting anything extra (and
+things that look like that)
 
-I have just confirmed that the most you can do in a mounted mqueue fs is
-to create files message queues.
-
-Given that these filesystems exist anyway I don't see a problem.
-
-Applied thanks.
-
-Eric
+Unless there is a specific concern here, shouldn't we say "... that the
+MEMCG (and possibly MEMCG_KMEM) options..." ?
