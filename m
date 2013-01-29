@@ -1,17 +1,16 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH review 3/6] userns: Recommend use of memory control groups.
-Date: Mon, 28 Jan 2013 09:18:42 -0800
-Message-ID: <874ni1ql8t.fsf__47367.2843458646$1359393564$gmane$org@xmission.com>
-References: <87ehh8it9s.fsf@xmission.com> <87txq4hedl.fsf@xmission.com>
-	<51062AB5.9060203@parallels.com> <51062DA8.1060804@parallels.com>
-	<87k3qxu3kp.fsf@xmission.com> <51063558.1010402@parallels.com>
-	<87k3qxs2ko.fsf@xmission.com> <5106A941.6060403@parallels.com>
+From: Rob Landley <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org>
+Subject: Re: [PATCH 00/11] pkg-shadow support subordinate ids with user
+	namespaces
+Date: Tue, 29 Jan 2013 12:15:37 -0600
+Message-ID: <1359483337.32505.57@driftwood>
+References: <87d2wxshu0.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; Format="Flowed"; DelSp="Yes"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <5106A941.6060403-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> (Lord Glauber Costa of Sealand's
-	message of "Mon, 28 Jan 2013 20:37:21 +0400")
+In-Reply-To: <87d2wxshu0.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (from ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org on
+	Tue Jan 22 03:11:19 2013)
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,31 +20,40 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Lord Glauber Costa of Sealand <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michael Kerrisk <mtk-T1hC0tSOHrs@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Pkg-shadow-devel-XbBxUvOt3X2LieD7tvxI8l/i77bcL1HB@public.gmane.org, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Nicolas =?iso-8859-1?q?Fran=E7ois?= <nicolas.francois-Fa7rcPG4DJn7nK0/Xc0eeg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Lord Glauber Costa of Sealand <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> writes:
+I am waaaay behind on email.
 
->> For two pieces of software that were designed to complement each other
->> I find it a bit surprising how many people (including myself) need the
->> connection made that memory control groups and user namespaces should go
->> together.
->
-> Well, I've manifested many times in here that I am less than satisfied
-> about the fact that the connection between namespaces and cgroups are so
-> loose. There are many situations, like virtualizing the proc files and
-> friends where I believe we could benefit from having the information
-> about whether or not cgroups and namespaces are used at the same time.
+On 01/22/2013 03:11:19 AM, Eric W. Biederman wrote:
+> 
+> The kernel support for user namespaces allows ordinary users to use
+> multiple uids and gids if they can get a trusted program to tell the
+> kernel the set of subordinate uids and gids they are allowed to use.
 
-Certainly there are issues where there are not good ways for
-applications to discover how much memory or how many cpus are available
-for the application to run on.  And applications resort to looking at
-how much memory or how many cpus are in the box.
+Could you give an example of this? (If this takes off I'll probably  
+want to add support to toybox, but from the man pages I don't  
+understand what it's for.)
 
-The only way I can think of to make things better is to provide good
-alternatives that people can look at and make limiting applications
-common enough that the bugs start getting fixed.  And possibly doing the
-work to fix a common library or two.
+> This is my work to make that trusted program.
+> Two new files are added /etc/subuid /etc/subgid that specify
+> ranges of uids and gids that users may uses.
 
-Eric
+They must use a contiguous range with count, not  
+"landley:4000-4999,6103,7002-7005"?
+
+> useradd, and newusers are modifed to add users to those files.
+> userdel is modeifed to remove users from those files.
+> usermod is modified to give manual control of what goes in those  
+> files.
+
+> newuidmap and newgidmap read the new files and update
+> /proc/[pid]/uid_map and /proc/[pid]/gid_map respectively
+> as requested by their command line parameters and as allowed
+> by the /etc/subuid and /etc/subgid.
+
+I'm not finding uid_map and gid_map in  
+Documentation/filesystems/proc.txt, is this a pending patch?
+
+Rob
