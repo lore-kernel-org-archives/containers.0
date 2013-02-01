@@ -1,8 +1,8 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH net-next 2/4] netns: ebtable: allow unprivileged users to
-	operate ebtables
-Date: Fri, 1 Feb 2013 10:30:58 +0800
-Message-ID: <1359685860-29636-2-git-send-email-gaofeng__22973.8836562776$1359685882$gmane$org@cn.fujitsu.com>
+Subject: [PATCH net-next 4/4] netns: bond: allow unprivileged users to control
+	bond device
+Date: Fri, 1 Feb 2013 10:31:00 +0800
+Message-ID: <1359685860-29636-4-git-send-email-gaofeng__36737.4861533337$1359685889$gmane$org@cn.fujitsu.com>
 References: <1359685860-29636-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,98 +22,40 @@ To: davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
 Cc: amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, pablo-Cap9r6Oaw4JrovVCs/uTlw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-ebt_table is a private resource of netns, operating ebtables
-in one netns will not affect other netns, we can allow the
-creator user of userns and netns to change the ebtables.
+reduce the permission check of bond device's ioctl.
+allow the userns root to control the bond device.
 
 Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- net/bridge/netfilter/ebtables.c | 24 ++++++++++++++----------
- 1 file changed, 14 insertions(+), 10 deletions(-)
+ drivers/net/bonding/bond_main.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/net/bridge/netfilter/ebtables.c b/net/bridge/netfilter/ebtables.c
-index 5fe2ff3..8d493c9 100644
---- a/net/bridge/netfilter/ebtables.c
-+++ b/net/bridge/netfilter/ebtables.c
-@@ -1472,16 +1472,17 @@ static int do_ebt_set_ctl(struct sock *sk,
- 	int cmd, void __user *user, unsigned int len)
- {
- 	int ret;
-+	struct net *net = sock_net(sk);
+diff --git a/drivers/net/bonding/bond_main.c b/drivers/net/bonding/bond_main.c
+index b38c9bf..2239937 100644
+--- a/drivers/net/bonding/bond_main.c
++++ b/drivers/net/bonding/bond_main.c
+@@ -3612,6 +3612,7 @@ static int bond_do_ioctl(struct net_device *bond_dev, struct ifreq *ifr, int cmd
+ 	struct ifslave k_sinfo;
+ 	struct ifslave __user *u_sinfo = NULL;
+ 	struct mii_ioctl_data *mii = NULL;
++	struct net *net;
+ 	int res = 0;
+ 
+ 	pr_debug("bond_ioctl: master=%s, cmd=%d\n", bond_dev->name, cmd);
+@@ -3678,10 +3679,12 @@ static int bond_do_ioctl(struct net_device *bond_dev, struct ifreq *ifr, int cmd
+ 		break;
+ 	}
  
 -	if (!capable(CAP_NET_ADMIN))
++	net = dev_net(bond_dev);
++
 +	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
  		return -EPERM;
  
- 	switch(cmd) {
- 	case EBT_SO_SET_ENTRIES:
--		ret = do_replace(sock_net(sk), user, len);
-+		ret = do_replace(net, user, len);
- 		break;
- 	case EBT_SO_SET_COUNTERS:
--		ret = update_counters(sock_net(sk), user, len);
-+		ret = update_counters(net, user, len);
- 		break;
- 	default:
- 		ret = -EINVAL;
-@@ -1494,14 +1495,15 @@ static int do_ebt_get_ctl(struct sock *sk, int cmd, void __user *user, int *len)
- 	int ret;
- 	struct ebt_replace tmp;
- 	struct ebt_table *t;
-+	struct net *net = sock_net(sk);
+-	slave_dev = dev_get_by_name(dev_net(bond_dev), ifr->ifr_slave);
++	slave_dev = dev_get_by_name(net, ifr->ifr_slave);
  
--	if (!capable(CAP_NET_ADMIN))
-+	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
- 		return -EPERM;
- 
- 	if (copy_from_user(&tmp, user, sizeof(tmp)))
- 		return -EFAULT;
- 
--	t = find_table_lock(sock_net(sk), tmp.name, &ret, &ebt_mutex);
-+	t = find_table_lock(net, tmp.name, &ret, &ebt_mutex);
- 	if (!t)
- 		return ret;
- 
-@@ -2279,16 +2281,17 @@ static int compat_do_ebt_set_ctl(struct sock *sk,
- 		int cmd, void __user *user, unsigned int len)
- {
- 	int ret;
-+	struct net *net = sock_net(sk);
- 
--	if (!capable(CAP_NET_ADMIN))
-+	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
- 		return -EPERM;
- 
- 	switch (cmd) {
- 	case EBT_SO_SET_ENTRIES:
--		ret = compat_do_replace(sock_net(sk), user, len);
-+		ret = compat_do_replace(net, user, len);
- 		break;
- 	case EBT_SO_SET_COUNTERS:
--		ret = compat_update_counters(sock_net(sk), user, len);
-+		ret = compat_update_counters(net, user, len);
- 		break;
- 	default:
- 		ret = -EINVAL;
-@@ -2302,8 +2305,9 @@ static int compat_do_ebt_get_ctl(struct sock *sk, int cmd,
- 	int ret;
- 	struct compat_ebt_replace tmp;
- 	struct ebt_table *t;
-+	struct net *net = sock_net(sk);
- 
--	if (!capable(CAP_NET_ADMIN))
-+	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
- 		return -EPERM;
- 
- 	/* try real handler in case userland supplied needed padding */
-@@ -2314,7 +2318,7 @@ static int compat_do_ebt_get_ctl(struct sock *sk, int cmd,
- 	if (copy_from_user(&tmp, user, sizeof(tmp)))
- 		return -EFAULT;
- 
--	t = find_table_lock(sock_net(sk), tmp.name, &ret, &ebt_mutex);
-+	t = find_table_lock(net, tmp.name, &ret, &ebt_mutex);
- 	if (!t)
- 		return ret;
+ 	pr_debug("slave_dev=%p:\n", slave_dev);
  
 -- 
 1.7.11.7
