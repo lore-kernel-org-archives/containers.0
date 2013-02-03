@@ -1,18 +1,13 @@
-From: Matt Helsley <matthltc-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH net-next 3/4] netns: bridge: allow unprivileged users
-	add/delete mdb entry
-Date: Thu, 31 Jan 2013 20:11:10 -0800
-Message-ID: <20130201041110.GA5829@us.ibm.com>
-References: <1359685860-29636-1-git-send-email-gaofeng@cn.fujitsu.com>
-	<1359685860-29636-3-git-send-email-gaofeng@cn.fujitsu.com>
-	<20130201034629.GE8400@us.ibm.com>
-	<510B3D87.6050908@cn.fujitsu.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCH 55/62] cgroup: convert to idr_alloc()
+Date: Sat,  2 Feb 2013 17:20:56 -0800
+Message-ID: <1359854463-2538-56-git-send-email-tj@kernel.org>
+References: <1359854463-2538-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <510B3D87.6050908-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <1359854463-2538-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,53 +17,81 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: amwang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, Matt Helsley <matthltc-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org, pablo-Cap9r6Oaw4JrovVCs/uTlw@public.gmane.org
+To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, rusty-8n+1lVoiYb80n/F98K4Iww@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Feb 01, 2013 at 11:59:03AM +0800, Gao feng wrote:
-> On 2013/02/01 11:46, Matt Helsley wrote:
-> > On Fri, Feb 01, 2013 at 10:30:59AM +0800, Gao feng wrote:
-> >> since the mdb table is belong to bridge device,and the
-> >> bridge device can only be seen in one netns.
-> >> So it's safe to allow unprivileged user which is the
-> >> creator of userns and netns to modify the mdb table.
-> >>
-> >> Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> >> ---
-> >>  net/bridge/br_mdb.c | 3 ---
-> >>  1 file changed, 3 deletions(-)
-> >>
-> >> diff --git a/net/bridge/br_mdb.c b/net/bridge/br_mdb.c
-> >> index acc9f4c..38991e0 100644
-> >> --- a/net/bridge/br_mdb.c
-> >> +++ b/net/bridge/br_mdb.c
-> >> @@ -272,9 +272,6 @@ static int br_mdb_parse(struct sk_buff *skb, struct nlmsghdr *nlh,
-> >>  	struct net_device *dev;
-> >>  	int err;
-> >>
-> >> -	if (!capable(CAP_NET_ADMIN))
-> >> -		return -EPERM;
-> >> -
-> > 
-> > I'm wondering why this doesn't follow the:
-> > 
-> > ...
-> > - if (!capable(CAP_NET_ADMIN))
-> > + if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
-> > 
-> > pattern like the rest of the changes you provided. Perhaps I'm
-> > neglecting something but it looks wrong to remove the CAP_NET_ADMIN
-> > check entirely.
-> > 
-> 
-> rtnetlink_rcv_msg has done this job,in commit dfc47ef8639facd77210e74be831943c2fdd9c74
-> Eric change capable to ns_capable in rtnetlink_rcv_msg and Push capable(CAP_NET_ADMIN)
-> into the rtnl methods.So we only need to do is remove this capable in br_mdb_parse.
-> 
-> Thanks!
+Convert to the much saner new idr interface.
 
-OK, thanks!
+Only compile tested.
 
-Cheers,
-	-Matt
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+---
+This patch depends on an earlier idr changes and I think it would be
+best to route these together through -mm.  Please holler if there's
+any objection.  Thanks.
+
+ kernel/cgroup.c | 27 ++++++++-------------------
+ 1 file changed, 8 insertions(+), 19 deletions(-)
+
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 6b18c5c..4ee1102 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -5272,7 +5272,7 @@ EXPORT_SYMBOL_GPL(free_css_id);
+ static struct css_id *get_new_cssid(struct cgroup_subsys *ss, int depth)
+ {
+ 	struct css_id *newid;
+-	int myid, error, size;
++	int ret, size;
+ 
+ 	BUG_ON(!ss->use_id);
+ 
+@@ -5280,35 +5280,24 @@ static struct css_id *get_new_cssid(struct cgroup_subsys *ss, int depth)
+ 	newid = kzalloc(size, GFP_KERNEL);
+ 	if (!newid)
+ 		return ERR_PTR(-ENOMEM);
+-	/* get id */
+-	if (unlikely(!idr_pre_get(&ss->idr, GFP_KERNEL))) {
+-		error = -ENOMEM;
+-		goto err_out;
+-	}
++
++	idr_preload(GFP_KERNEL);
+ 	spin_lock(&ss->id_lock);
+ 	/* Don't use 0. allocates an ID of 1-65535 */
+-	error = idr_get_new_above(&ss->idr, newid, 1, &myid);
++	ret = idr_alloc(&ss->idr, newid, 1, CSS_ID_MAX + 1, GFP_NOWAIT);
+ 	spin_unlock(&ss->id_lock);
++	idr_preload_end();
+ 
+ 	/* Returns error when there are no free spaces for new ID.*/
+-	if (error) {
+-		error = -ENOSPC;
++	if (ret < 0)
+ 		goto err_out;
+-	}
+-	if (myid > CSS_ID_MAX)
+-		goto remove_idr;
+ 
+-	newid->id = myid;
++	newid->id = ret;
+ 	newid->depth = depth;
+ 	return newid;
+-remove_idr:
+-	error = -ENOSPC;
+-	spin_lock(&ss->id_lock);
+-	idr_remove(&ss->idr, myid);
+-	spin_unlock(&ss->id_lock);
+ err_out:
+ 	kfree(newid);
+-	return ERR_PTR(error);
++	return ERR_PTR(ret);
+ 
+ }
+ 
+-- 
+1.8.1
