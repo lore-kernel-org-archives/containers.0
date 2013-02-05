@@ -1,16 +1,11 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 11/11] newuidmap,newgidmap: New suid helpers for using
-	subordinate uids and gids
-Date: Mon, 4 Feb 2013 18:31:29 +0000
-Message-ID: <20130204183129.GA27179@mail.hallyn.com>
-References: <87d2wxshu0.fsf@xmission.com>
- <87ehhdpoag.fsf@xmission.com>
+From: Kunal Kushwaha <kunal.kushwaha-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Regarding LXC and Libvirt integration state.
+Date: Tue, 5 Feb 2013 14:51:55 +0530
+Message-ID: <CAF0SE4czOKVjB-0D461jZr1DoGyjbcCDCeNswqem6k0t9hkinA@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87ehhdpoag.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,24 +15,34 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Pkg-shadow-devel-XbBxUvOt3X2LieD7tvxI8l/i77bcL1HB@public.gmane.org, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Nicolas =?iso-8859-1?Q?Fran=E7ois?= <nicolas.francois-Fa7rcPG4DJn7nK0/Xc0eeg@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Note you need the following bit on top of your patch to make newuidmap
-and newgidmap link against libselinux.  Otherwise selinux-enabled builds
-(default in ubuntu) fail.
+Hi Daniel,
 
-Index: shadow-4.1.5.1/src/Makefile.am
-===================================================================
---- shadow-4.1.5.1.orig/src/Makefile.am	2013-02-04 11:56:40.485335430 -0600
-+++ shadow-4.1.5.1/src/Makefile.am	2013-02-04 11:57:49.525334261 -0600
-@@ -80,6 +80,8 @@
- endif
- 
- chage_LDADD    = $(LDADD) $(LIBPAM_SUID) $(LIBAUDIT) $(LIBSELINUX)
-+newuidmap_LDADD    = $(LDADD) $(LIBSELINUX)
-+newgidmap_LDADD    = $(LDADD) $(LIBSELINUX)
- chfn_LDADD     = $(LDADD) $(LIBPAM) $(LIBSELINUX) $(LIBCRYPT_NOPAM) $(LIBSKEY) $(LIBMD)
- chgpasswd_LDADD = $(LDADD) $(LIBPAM_SUID) $(LIBSELINUX) $(LIBCRYPT)
- chsh_LDADD     = $(LDADD) $(LIBPAM) $(LIBSELINUX) $(LIBCRYPT_NOPAM) $(LIBSKEY) $(LIBMD)
+I am trying to create LXC containers on Centos 6.3. My libvirt version is
+libvirt-0.9.10-21.el6_3.8.x86_64.
+
+I used your mail from
+http://lists.linux-foundation.org/pipermail/containers/2008-September/013237.html
+for creating LXC container.
+
+I am facing following issues.
+
+1. If I use bridge network, from inside container, I am not able to access
+host network. Not even able to ping the br0 of host machine.
+2. Cannot ping the container from host machine.
+
+Also, It would be great help, if you can give some light on, how much
+libvirt supports LXC.
+- I tried to add network , Storage using virsh command, but it is not
+working.
+
+If these are not supported, what is roadmap for these features?
+
+Sorry for sounding demanding, but just want to understand the libvirt and
+LXC integration state.
+
+-- 
+Thanks & Regards,
+Kunal Kushwaha
