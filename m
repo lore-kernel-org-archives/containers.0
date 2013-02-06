@@ -1,14 +1,13 @@
-From: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: Regarding lxc-0.8.0 on Centos 6.3
-Date: Wed, 6 Feb 2013 08:30:43 -0600
-Message-ID: <20130206143043.GA4398@sergelap>
-References: <CAJXDyp4+SM7xgwR+74HZROCbK=SQ8D2j-T-ii+ovYgSGis9WHw@mail.gmail.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCH 14/77] cgroup: don't use idr_remove_all()
+Date: Wed,  6 Feb 2013 11:39:46 -0800
+Message-ID: <1360179649-22465-15-git-send-email-tj@kernel.org>
+References: <1360179649-22465-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <CAJXDyp4+SM7xgwR+74HZROCbK=SQ8D2j-T-ii+ovYgSGis9WHw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <1360179649-22465-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,18 +17,36 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Kunal Kushwaha <kunalkushwahaoss-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Kunal Kushwaha (kunalkushwahaoss-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> Hi,
-> 
-> I am trying to install lxc-0.8.0 on CentOS 6.3. When I am trying to
-> ./configure it asks for apparmor.
+idr_destroy() can destroy idr by itself and idr_remove_all() is being
+deprecated.  Drop its usage.
 
-Do you have apparmor development libraries installed?  In any case,
-say "--disable-apparmor" to turn it off.
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+---
+ kernel/cgroup.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
-(For the rest I don't know, but please look through the list archives,
-plenty of people have done it)
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 776ff75..525c508 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -4582,10 +4582,8 @@ void cgroup_unload_subsys(struct cgroup_subsys *ss)
+ 	offline_css(ss, dummytop);
+ 	ss->active = 0;
+ 
+-	if (ss->use_id) {
+-		idr_remove_all(&ss->idr);
++	if (ss->use_id)
+ 		idr_destroy(&ss->idr);
+-	}
+ 
+ 	/* deassign the subsys_id */
+ 	subsys[ss->subsys_id] = NULL;
+-- 
+1.8.1
