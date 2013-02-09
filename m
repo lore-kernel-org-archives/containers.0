@@ -1,14 +1,13 @@
-From: Pablo Neira Ayuso <pablo-Cap9r6Oaw4JrovVCs/uTlw@public.gmane.org>
-Subject: Re: [PATCH 01/10] netfilter: make /proc/net/netfilter pernet
-Date: Thu, 7 Feb 2013 19:33:18 +0100
-Message-ID: <20130207183318.GA18359__5758.24592165208$1360264042$gmane$org@localhost>
-References: <1360223390-15589-1-git-send-email-gaofeng@cn.fujitsu.com>
+From: Bruno =?UTF-8?B?UHLDqW1vbnQ=?= <bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org>
+Subject: Re: [PATCH] Move console redirect to pid namespace
+Date: Sat, 9 Feb 2013 19:14:09 +0100
+Message-ID: <20130209191409.643c3d7f@neptune.home>
+References: <1360376920-30824-1-git-send-email-minyard@acm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1360223390-15589-1-git-send-email-gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <1360376920-30824-1-git-send-email-minyard-HInyCGIudOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,101 +17,157 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, lve-ke3WRBg/xIg@public.gmane.org
+To: Corey Minyard <minyard-HInyCGIudOg@public.gmane.org>
+Cc: Corey Minyard <cminyard-Igf4POYTYCDQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Gao,
+CCing containers list
 
-Thanks again for improving netns support for netfilter. Comments
-below:
-
-On Thu, Feb 07, 2013 at 03:49:41PM +0800, Gao feng wrote:
-> Now,only init net has directroy /proc/net/netfilter,
-> this patch make this proc dentry pernet.
+On Fri, 08 February 2013 minyard-HInyCGIudOg@public.gmane.org wrote:
+> From: Corey Minyard <cminyard-Igf4POYTYCDQT0dZR+AlfA@public.gmane.org>
 > 
-> Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> The console redirect - ioctl(fd, TIOCCONS) - is not in a namespace,
+> thus a container can do a redirect and grab all the I/O on the host
+> and all container consoles.
+> 
+> This change puts the redirect in the pid namespace.
+> 
+> Signed-off-by: Corey Minyard <cminyard-Igf4POYTYCDQT0dZR+AlfA@public.gmane.org>
 > ---
->  include/net/netns/x_tables.h |  3 +++
->  net/netfilter/core.c         | 40 ++++++++++++++++++++++++++++++++++------
->  2 files changed, 37 insertions(+), 6 deletions(-)
 > 
-> diff --git a/include/net/netns/x_tables.h b/include/net/netns/x_tables.h
-> index c24060e..aa6a545 100644
-> --- a/include/net/netns/x_tables.h
-> +++ b/include/net/netns/x_tables.h
-> @@ -9,6 +9,9 @@ struct ebt_table;
->  struct netns_xt {
->  	struct list_head tables[NFPROTO_NUMPROTO];
->  	bool notrack_deprecated_warning;
-> +#if defined CONFIG_PROC_FS
-> +	struct proc_dir_entry *proc_netfilter;
-> +#endif
+> I'm pretty sure this patch is not correct, but I'm not quite sure the
+> best way to fix this.  I'm not 100% sure that the pid namespace is the
+> right place, but it seemed the most reasonable of all the choices.  The
+> other obvious choice is the mount namespace, but it didn't seem as good
+> a fit.
 
-This doesn't belong here to x_tables, it should be place in
-include/net/net_namespace.h.
+With recent changes, tying it to init user namespace might even be better.
 
->  #if defined(CONFIG_BRIDGE_NF_EBTABLES) || \
->      defined(CONFIG_BRIDGE_NF_EBTABLES_MODULE)
->  	struct ebt_table *broute_table;
-> diff --git a/net/netfilter/core.c b/net/netfilter/core.c
-> index a9c488b..2038673 100644
-> --- a/net/netfilter/core.c
-> +++ b/net/netfilter/core.c
-> @@ -281,6 +281,35 @@ struct proc_dir_entry *proc_net_netfilter;
->  EXPORT_SYMBOL(proc_net_netfilter);
->  #endif
+> The other problem is that I don't think you can call fput() from
+> destroy_pid_namespace().  That can be called from interrupt context,
+> and I don't think fput() is safe there.  I know it's not safe in 3.4
+> with the RT patch applied.  However, the only way I've come up with to
+> fix it is to add a workqueue, and that seems a bit heavy for this.
+> 
+>  drivers/tty/tty_io.c          |   29 ++++++++++++++++++-----------
+>  include/linux/pid_namespace.h |    1 +
+>  kernel/pid_namespace.c        |    3 +++
+>  3 files changed, 22 insertions(+), 11 deletions(-)
+> 
+> diff --git a/drivers/tty/tty_io.c b/drivers/tty/tty_io.c
+> index da9fde8..c93c23d 100644
+> --- a/drivers/tty/tty_io.c
+> +++ b/drivers/tty/tty_io.c
+> @@ -95,6 +95,7 @@
+>  #include <linux/seq_file.h>
+>  #include <linux/serial.h>
+>  #include <linux/ratelimit.h>
+> +#include <linux/pid_namespace.h>
 >  
-> +static int __net_init netfilter_net_init(struct net *net)
-> +{
-> +#ifdef CONFIG_PROC_FS
-> +	net->xt.proc_netfilter = proc_net_mkdir(net,
-> +						"netfilter",
-> +						net->proc_net);
-> +	if (net_eq(net, &init_net)) {
-> +		if (!net->xt.proc_netfilter)
-> +			panic("cannot create netfilter proc entry");
-> +		else
-> +			proc_net_netfilter = net->xt.proc_netfilter;
-> +	} else if (!net->xt.proc_netfilter) {
-> +		pr_err("cannot create netfilter proc entry");
-> +		return -EINVAL;
-> +	}
-> +#endif
-> +	return 0;
-> +}
-> +
-> +static void __net_exit netfilter_net_exit(struct net *net)
-> +{
-> +	remove_proc_entry("netfilter", net->proc_net);
-> +}
-> +
-> +static struct pernet_operations netfilter_net_ops = {
-> +	.init = netfilter_net_init,
-> +	.exit = netfilter_net_exit,
-> +};
-> +
->  void __init netfilter_init(void)
->  {
->  	int i, h;
-> @@ -289,12 +318,11 @@ void __init netfilter_init(void)
->  			INIT_LIST_HEAD(&nf_hooks[i][h]);
+>  #include <linux/uaccess.h>
+>  
+> @@ -503,8 +504,10 @@ static const struct file_operations hung_up_tty_fops = {
+>  	.release	= tty_release,
+>  };
+>  
+> +/*
+> + * redirect is in the pid namespace, but we use a global lock.
+> + */
+>  static DEFINE_SPINLOCK(redirect_lock);
+> -static struct file *redirect;
+>  
+>  /**
+>   *	tty_wakeup	-	request more data
+> @@ -563,15 +566,17 @@ static void __tty_hangup(struct tty_struct *tty)
+>  	int    closecount = 0, n;
+>  	unsigned long flags;
+>  	int refs = 0;
+> +	struct file *redir;
+>  
+>  	if (!tty)
+>  		return;
+>  
+>  
+>  	spin_lock(&redirect_lock);
+> -	if (redirect && file_tty(redirect) == tty) {
+> -		f = redirect;
+> -		redirect = NULL;
+> +	redir = current->nsproxy->pid_ns->redirect;
+> +	if (redir && file_tty(redir) == tty) {
+> +		f = redir;
+> +		current->nsproxy->pid_ns->redirect = NULL;
 >  	}
+>  	spin_unlock(&redirect_lock);
 >  
-> -#ifdef CONFIG_PROC_FS
-> -	proc_net_netfilter = proc_mkdir("netfilter", init_net.proc_net);
-> -	if (!proc_net_netfilter)
-> -		panic("cannot create netfilter proc entry");
-> -#endif
-> +	if (register_pernet_subsys(&netfilter_net_ops) < 0)
-> +		return;
+> @@ -1163,10 +1168,12 @@ ssize_t redirected_tty_write(struct file *file, const char __user *buf,
+>  						size_t count, loff_t *ppos)
+>  {
+>  	struct file *p = NULL;
+> +	struct file *redir;
 >  
-> -	if (netfilter_log_init() < 0)
-> +	if (netfilter_log_init() < 0) {
-> +		unregister_pernet_subsys(&netfilter_net_ops);
->  		panic("cannot initialize nf_log");
-> +	}
+>  	spin_lock(&redirect_lock);
+> -	if (redirect)
+> -		p = get_file(redirect);
+> +	redir = current->nsproxy->pid_ns->redirect;
+> +	if (redir)
+> +		p = get_file(redir);
+>  	spin_unlock(&redirect_lock);
+>  
+>  	if (p) {
+> @@ -2247,19 +2254,19 @@ static int tioccons(struct file *file)
+>  	if (file->f_op->write == redirected_tty_write) {
+>  		struct file *f;
+>  		spin_lock(&redirect_lock);
+> -		f = redirect;
+> -		redirect = NULL;
+> +		f = current->nsproxy->pid_ns->redirect;
+> +		current->nsproxy->pid_ns->redirect = NULL;
+>  		spin_unlock(&redirect_lock);
+>  		if (f)
+>  			fput(f);
+>  		return 0;
+>  	}
+>  	spin_lock(&redirect_lock);
+> -	if (redirect) {
+> +	if (current->nsproxy->pid_ns->redirect) {
+>  		spin_unlock(&redirect_lock);
+>  		return -EBUSY;
+>  	}
+> -	redirect = get_file(file);
+> +	current->nsproxy->pid_ns->redirect = get_file(file);
+>  	spin_unlock(&redirect_lock);
+>  	return 0;
 >  }
-> -- 
-> 1.7.11.7
-> 
+> diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
+> index 215e5e3..b04870f 100644
+> --- a/include/linux/pid_namespace.h
+> +++ b/include/linux/pid_namespace.h
+> @@ -38,6 +38,7 @@ struct pid_namespace {
+>  	int hide_pid;
+>  	int reboot;	/* group exit code if this pidns was rebooted */
+>  	unsigned int proc_inum;
+> +	struct file *redirect;
+>  };
+>  
+>  extern struct pid_namespace init_pid_ns;
+> diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
+> index c1c3dc1..af1bfce 100644
+> --- a/kernel/pid_namespace.c
+> +++ b/kernel/pid_namespace.c
+> @@ -18,6 +18,7 @@
+>  #include <linux/proc_fs.h>
+>  #include <linux/reboot.h>
+>  #include <linux/export.h>
+> +#include <linux/file.h>
+>  
+>  #define BITS_PER_PAGE		(PAGE_SIZE*8)
+>  
+> @@ -138,6 +139,8 @@ static void destroy_pid_namespace(struct pid_namespace *ns)
+>  {
+>  	int i;
+>  
+> +	if (ns->redirect)
+> +	    fput(ns->redirect);
+>  	proc_free_inum(ns->proc_inum);
+>  	for (i = 0; i < PIDMAP_ENTRIES; i++)
+>  		kfree(ns->pidmap[i].page);
