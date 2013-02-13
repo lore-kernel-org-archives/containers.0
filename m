@@ -1,7 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 27/85] gfs2: Remove improper checks in gfs2_set_dqblk.
-Date: Wed, 13 Feb 2013 09:51:16 -0800
-Message-ID: <1360777934-5663-27-git-send-email-ebiederm__7899.14237470857$1360778297$gmane$org@xmission.com>
+Subject: [PATCH review 32/85] gfs2: Modify qdsb_get to take a struct kqid
+Date: Wed, 13 Feb 2013 09:51:21 -0800
+Message-ID: <1360777934-5663-32-git-send-email-ebiederm__37393.1166519926$1360778302$gmane$org@xmission.com>
 References: <87621w14vs.fsf@xmission.com>
 	<1360777934-5663-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -24,52 +24,64 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-In set_dqblk it is an error to look at fdq->d_id or fdq->d_flags.
-Userspace quota applications do not set these fields when calling
-quotactl(Q_XSETQLIM,...), and the kernel does not set those fields
-when quota_setquota calls set_dqblk.
-
-gfs2 never looks at fdq->d_id or fdq->d_flags after checking
-to see if they match the id and type supplied to set_dqblk.
-
-No other linux filesystem in set_dqblk looks at either fdq->d_id
-or fdq->d_flags.
-
-Therefore remove these bogus checks from gfs2 and allow normal
-quota setting applications to work.
-
 Cc: Steven Whitehouse <swhiteho-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/gfs2/quota.c |    6 ------
- 1 files changed, 0 insertions(+), 6 deletions(-)
+ fs/gfs2/quota.c |   13 +++++++------
+ 1 files changed, 7 insertions(+), 6 deletions(-)
 
 diff --git a/fs/gfs2/quota.c b/fs/gfs2/quota.c
-index ae55e24..e4f6ccf 100644
+index 02913e9..20762ae 100644
 --- a/fs/gfs2/quota.c
 +++ b/fs/gfs2/quota.c
-@@ -1543,13 +1543,9 @@ static int gfs2_set_dqblk(struct super_block *sb, struct kqid qid,
- 	switch(qid.type) {
- 	case USRQUOTA:
- 		type = QUOTA_USER;
--		if (fdq->d_flags != FS_USER_QUOTA)
--			return -EINVAL;
- 		break;
- 	case GRPQUOTA:
- 		type = QUOTA_GROUP;
--		if (fdq->d_flags != FS_GROUP_QUOTA)
--			return -EINVAL;
- 		break;
- 	default:
- 		return -EINVAL;
-@@ -1557,8 +1553,6 @@ static int gfs2_set_dqblk(struct super_block *sb, struct kqid qid,
+@@ -464,12 +464,13 @@ static void qd_unlock(struct gfs2_quota_data *qd)
+ 	qd_put(qd);
+ }
  
- 	if (fdq->d_fieldmask & ~GFS2_FIELDMASK)
- 		return -EINVAL;
--	if (fdq->d_id != from_kqid(&init_user_ns, qid))
--		return -EINVAL;
+-static int qdsb_get(struct gfs2_sbd *sdp, int user, u32 id,
++static int qdsb_get(struct gfs2_sbd *sdp, struct kqid qid,
+ 		    struct gfs2_quota_data **qdp)
+ {
+ 	int error;
  
- 	error = qd_get(sdp, type, from_kqid(&init_user_ns, qid), &qd);
+-	error = qd_get(sdp, user, id, qdp);
++	error = qd_get(sdp, qid.type == USRQUOTA ? QUOTA_USER : QUOTA_GROUP,
++		       from_kqid(&init_user_ns, qid), qdp);
  	if (error)
+ 		return error;
+ 
+@@ -518,20 +519,20 @@ int gfs2_quota_hold(struct gfs2_inode *ip, u32 uid, u32 gid)
+ 	if (sdp->sd_args.ar_quota == GFS2_QUOTA_OFF)
+ 		return 0;
+ 
+-	error = qdsb_get(sdp, QUOTA_USER, ip->i_inode.i_uid, qd);
++	error = qdsb_get(sdp, make_kqid_uid(ip->i_inode.i_uid), qd);
+ 	if (error)
+ 		goto out;
+ 	ip->i_res->rs_qa_qd_num++;
+ 	qd++;
+ 
+-	error = qdsb_get(sdp, QUOTA_GROUP, ip->i_inode.i_gid, qd);
++	error = qdsb_get(sdp, make_kqid_gid(ip->i_inode.i_gid), qd);
+ 	if (error)
+ 		goto out;
+ 	ip->i_res->rs_qa_qd_num++;
+ 	qd++;
+ 
+ 	if (uid != NO_UID_QUOTA_CHANGE && uid != ip->i_inode.i_uid) {
+-		error = qdsb_get(sdp, QUOTA_USER, uid, qd);
++		error = qdsb_get(sdp, make_kqid_uid(uid), qd);
+ 		if (error)
+ 			goto out;
+ 		ip->i_res->rs_qa_qd_num++;
+@@ -539,7 +540,7 @@ int gfs2_quota_hold(struct gfs2_inode *ip, u32 uid, u32 gid)
+ 	}
+ 
+ 	if (gid != NO_GID_QUOTA_CHANGE && gid != ip->i_inode.i_gid) {
+-		error = qdsb_get(sdp, QUOTA_GROUP, gid, qd);
++		error = qdsb_get(sdp, make_kqid_gid(gid), qd);
+ 		if (error)
+ 			goto out;
+ 		ip->i_res->rs_qa_qd_num++;
 -- 
 1.7.5.4
