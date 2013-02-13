@@ -1,7 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 44/85] sunrpc: Use uid_eq and gid_eq where appropriate
-Date: Wed, 13 Feb 2013 09:51:33 -0800
-Message-ID: <1360777934-5663-44-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH review 43/85] sunrpc: Use kuid_t and kgid_t where appropriate
+Date: Wed, 13 Feb 2013 09:51:32 -0800
+Message-ID: <1360777934-5663-43-git-send-email-ebiederm@xmission.com>
 References: <87621w14vs.fsf@xmission.com>
 	<1360777934-5663-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -24,94 +24,160 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-When comparing uids use uid_eq instead of ==.
-When comparing gids use gid_eq instead of ==.
-
-And unfortunate cost of type safety.
+Convert variables that store uids and gids to be of type
+kuid_t and kgid_t instead of type uid_t and gid_t.
 
 Cc: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
 Cc: Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- net/sunrpc/auth_generic.c      |    8 ++++----
- net/sunrpc/auth_gss/auth_gss.c |    4 ++--
- net/sunrpc/auth_unix.c         |    2 +-
- net/sunrpc/svcauth_unix.c      |    2 +-
- 4 files changed, 8 insertions(+), 8 deletions(-)
+ include/linux/sunrpc/auth.h    |    7 ++++---
+ include/linux/sunrpc/svcauth.h |    4 ++--
+ net/sunrpc/auth_gss/auth_gss.c |    8 ++++----
+ net/sunrpc/auth_unix.c         |    4 ++--
+ net/sunrpc/svcauth_unix.c      |    8 ++++----
+ 5 files changed, 16 insertions(+), 15 deletions(-)
 
-diff --git a/net/sunrpc/auth_generic.c b/net/sunrpc/auth_generic.c
-index 9d2e0b0..bff3e47 100644
---- a/net/sunrpc/auth_generic.c
-+++ b/net/sunrpc/auth_generic.c
-@@ -129,8 +129,8 @@ machine_cred_match(struct auth_cred *acred, struct generic_cred *gcred, int flag
- {
- 	if (!gcred->acred.machine_cred ||
- 	    gcred->acred.principal != acred->principal ||
--	    gcred->acred.uid != acred->uid ||
--	    gcred->acred.gid != acred->gid)
-+	    !uid_eq(gcred->acred.uid, acred->uid) ||
-+	    !gid_eq(gcred->acred.gid, acred->gid))
- 		return 0;
- 	return 1;
- }
-@@ -147,8 +147,8 @@ generic_match(struct auth_cred *acred, struct rpc_cred *cred, int flags)
- 	if (acred->machine_cred)
- 		return machine_cred_match(acred, gcred, flags);
+diff --git a/include/linux/sunrpc/auth.h b/include/linux/sunrpc/auth.h
+index f25ba92..58fda1c 100644
+--- a/include/linux/sunrpc/auth.h
++++ b/include/linux/sunrpc/auth.h
+@@ -17,14 +17,15 @@
  
--	if (gcred->acred.uid != acred->uid ||
--	    gcred->acred.gid != acred->gid ||
-+	if (!uid_eq(gcred->acred.uid, acred->uid) ||
-+	    !gid_eq(gcred->acred.gid, acred->gid) ||
- 	    gcred->acred.machine_cred != 0)
- 		goto out_nomatch;
+ #include <linux/atomic.h>
+ #include <linux/rcupdate.h>
++#include <linux/uidgid.h>
  
+ /* size of the nodename buffer */
+ #define UNX_MAXNODENAME	32
+ 
+ /* Work around the lack of a VFS credential */
+ struct auth_cred {
+-	uid_t	uid;
+-	gid_t	gid;
++	kuid_t	uid;
++	kgid_t	gid;
+ 	struct group_info *group_info;
+ 	const char *principal;
+ 	unsigned char machine_cred : 1;
+@@ -48,7 +49,7 @@ struct rpc_cred {
+ 	unsigned long		cr_flags;	/* various flags */
+ 	atomic_t		cr_count;	/* ref count */
+ 
+-	uid_t			cr_uid;
++	kuid_t			cr_uid;
+ 
+ 	/* per-flavor data */
+ };
+diff --git a/include/linux/sunrpc/svcauth.h b/include/linux/sunrpc/svcauth.h
+index dd74084..ff374ab 100644
+--- a/include/linux/sunrpc/svcauth.h
++++ b/include/linux/sunrpc/svcauth.h
+@@ -18,8 +18,8 @@
+ #include <linux/cred.h>
+ 
+ struct svc_cred {
+-	uid_t			cr_uid;
+-	gid_t			cr_gid;
++	kuid_t			cr_uid;
++	kgid_t			cr_gid;
+ 	struct group_info	*cr_group_info;
+ 	u32			cr_flavor; /* pseudoflavor */
+ 	char			*cr_principal; /* for gss */
 diff --git a/net/sunrpc/auth_gss/auth_gss.c b/net/sunrpc/auth_gss/auth_gss.c
-index 4daab81..1b8b3e4 100644
+index 6e5c824..4daab81 100644
 --- a/net/sunrpc/auth_gss/auth_gss.c
 +++ b/net/sunrpc/auth_gss/auth_gss.c
-@@ -307,7 +307,7 @@ __gss_find_upcall(struct rpc_pipe *pipe, kuid_t uid)
+@@ -256,7 +256,7 @@ err:
+ 
+ struct gss_upcall_msg {
+ 	atomic_t count;
+-	uid_t	uid;
++	kuid_t	uid;
+ 	struct rpc_pipe_msg msg;
+ 	struct list_head list;
+ 	struct gss_auth *auth;
+@@ -303,7 +303,7 @@ gss_release_msg(struct gss_upcall_msg *gss_msg)
+ }
+ 
+ static struct gss_upcall_msg *
+-__gss_find_upcall(struct rpc_pipe *pipe, uid_t uid)
++__gss_find_upcall(struct rpc_pipe *pipe, kuid_t uid)
  {
  	struct gss_upcall_msg *pos;
  	list_for_each_entry(pos, &pipe->in_downcall, list) {
--		if (pos->uid != uid)
-+		if (!uid_eq(pos->uid, uid))
- 			continue;
- 		atomic_inc(&pos->count);
- 		dprintk("RPC:       %s found msg %p\n", __func__, pos);
-@@ -1115,7 +1115,7 @@ out:
- 	}
- 	if (gss_cred->gc_principal != NULL)
- 		return 0;
--	return rc->cr_uid == acred->uid;
-+	return uid_eq(rc->cr_uid, acred->uid);
- }
+@@ -445,7 +445,7 @@ static void gss_encode_msg(struct gss_upcall_msg *gss_msg,
  
- /*
+ static struct gss_upcall_msg *
+ gss_alloc_msg(struct gss_auth *gss_auth, struct rpc_clnt *clnt,
+-		uid_t uid, const char *service_name)
++		kuid_t uid, const char *service_name)
+ {
+ 	struct gss_upcall_msg *gss_msg;
+ 	int vers;
+@@ -475,7 +475,7 @@ gss_setup_upcall(struct rpc_clnt *clnt, struct gss_auth *gss_auth, struct rpc_cr
+ 	struct gss_cred *gss_cred = container_of(cred,
+ 			struct gss_cred, gc_base);
+ 	struct gss_upcall_msg *gss_new, *gss_msg;
+-	uid_t uid = cred->cr_uid;
++	kuid_t uid = cred->cr_uid;
+ 
+ 	gss_new = gss_alloc_msg(gss_auth, clnt, uid, gss_cred->gc_principal);
+ 	if (IS_ERR(gss_new))
 diff --git a/net/sunrpc/auth_unix.c b/net/sunrpc/auth_unix.c
-index 372d915..8365a9c 100644
+index 2f86270..372d915 100644
 --- a/net/sunrpc/auth_unix.c
 +++ b/net/sunrpc/auth_unix.c
-@@ -123,7 +123,7 @@ unx_match(struct auth_cred *acred, struct rpc_cred *rcred, int flags)
- 	unsigned int i;
+@@ -18,8 +18,8 @@
  
+ struct unx_cred {
+ 	struct rpc_cred		uc_base;
+-	gid_t			uc_gid;
+-	gid_t			uc_gids[NFS_NGROUPS];
++	kgid_t			uc_gid;
++	kgid_t			uc_gids[NFS_NGROUPS];
+ };
+ #define uc_uid			uc_base.cr_uid
  
--	if (cred->uc_uid != acred->uid || cred->uc_gid != acred->gid)
-+	if (!uid_eq(cred->uc_uid, acred->uid) || !gid_eq(cred->uc_gid, acred->gid))
- 		return 0;
- 
- 	if (acred->group_info != NULL)
 diff --git a/net/sunrpc/svcauth_unix.c b/net/sunrpc/svcauth_unix.c
-index caae662..92166b5 100644
+index c8cb5dc..caae662 100644
 --- a/net/sunrpc/svcauth_unix.c
 +++ b/net/sunrpc/svcauth_unix.c
-@@ -433,7 +433,7 @@ static int unix_gid_match(struct cache_head *corig, struct cache_head *cnew)
- {
- 	struct unix_gid *orig = container_of(corig, struct unix_gid, h);
- 	struct unix_gid *new = container_of(cnew, struct unix_gid, h);
--	return orig->uid == new->uid;
-+	return uid_eq(orig->uid, new->uid);
+@@ -415,7 +415,7 @@ svcauth_unix_info_release(struct svc_xprt *xpt)
+ 
+ struct unix_gid {
+ 	struct cache_head	h;
+-	uid_t			uid;
++	kuid_t			uid;
+ 	struct group_info	*gi;
+ };
+ 
+@@ -475,7 +475,7 @@ static int unix_gid_upcall(struct cache_detail *cd, struct cache_head *h)
+ 	return sunrpc_cache_pipe_upcall(cd, h, unix_gid_request);
  }
- static void unix_gid_init(struct cache_head *cnew, struct cache_head *citem)
+ 
+-static struct unix_gid *unix_gid_lookup(struct cache_detail *cd, uid_t uid);
++static struct unix_gid *unix_gid_lookup(struct cache_detail *cd, kuid_t uid);
+ 
+ static int unix_gid_parse(struct cache_detail *cd,
+ 			char *mesg, int mlen)
+@@ -615,7 +615,7 @@ void unix_gid_cache_destroy(struct net *net)
+ 	cache_destroy_net(cd, net);
+ }
+ 
+-static struct unix_gid *unix_gid_lookup(struct cache_detail *cd, uid_t uid)
++static struct unix_gid *unix_gid_lookup(struct cache_detail *cd, kuid_t uid)
  {
+ 	struct unix_gid ug;
+ 	struct cache_head *ch;
+@@ -628,7 +628,7 @@ static struct unix_gid *unix_gid_lookup(struct cache_detail *cd, uid_t uid)
+ 		return NULL;
+ }
+ 
+-static struct group_info *unix_gid_find(uid_t uid, struct svc_rqst *rqstp)
++static struct group_info *unix_gid_find(kuid_t uid, struct svc_rqst *rqstp)
+ {
+ 	struct unix_gid *ug;
+ 	struct group_info *gi;
 -- 
 1.7.5.4
