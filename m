@@ -1,8 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 51/85] sunrpc: Properly encode kuids and kgids in
-	RPC_AUTH_UNIX credentials
-Date: Wed, 13 Feb 2013 09:51:40 -0800
-Message-ID: <1360777934-5663-51-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH review 39/85] gfs2: Enable building with user namespaces
+	enabled
+Date: Wed, 13 Feb 2013 09:51:28 -0800
+Message-ID: <1360777934-5663-39-git-send-email-ebiederm@xmission.com>
 References: <87621w14vs.fsf@xmission.com>
 	<1360777934-5663-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -20,42 +20,33 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Steven Whitehouse <swhiteho-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-When writing kuids onto the wire first map them into the initial user
-namespace.
+Now that all of the necessary work has been done to push kuids and
+kgids throughout gfs2 and to convert between kuids and kgids when
+reading and writing the on disk structures it is safe to enable gfs2
+when multiple user namespaces are enabled.
 
-When writing kgids onto the wire first map them into the initial user
-namespace.
-
-Cc: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
-Cc: Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>
+Cc: Steven Whitehouse <swhiteho-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- net/sunrpc/auth_unix.c |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
+ init/Kconfig |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
 
-diff --git a/net/sunrpc/auth_unix.c b/net/sunrpc/auth_unix.c
-index c434fde..dc37021 100644
---- a/net/sunrpc/auth_unix.c
-+++ b/net/sunrpc/auth_unix.c
-@@ -157,11 +157,11 @@ unx_marshal(struct rpc_task *task, __be32 *p)
- 	 */
- 	p = xdr_encode_array(p, clnt->cl_nodename, clnt->cl_nodelen);
+diff --git a/init/Kconfig b/init/Kconfig
+index 9cb63c9..591fc75 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -1072,7 +1072,6 @@ config UIDGID_CONVERTED
  
--	*p++ = htonl((u32) cred->uc_uid);
--	*p++ = htonl((u32) cred->uc_gid);
-+	*p++ = htonl((u32) from_kuid(&init_user_ns, cred->uc_uid));
-+	*p++ = htonl((u32) from_kgid(&init_user_ns, cred->uc_gid));
- 	hold = p++;
- 	for (i = 0; i < 16 && gid_valid(cred->uc_gids[i]); i++)
--		*p++ = htonl((u32) cred->uc_gids[i]);
-+		*p++ = htonl((u32) from_kgid(&init_user_ns, cred->uc_gids[i]));
- 	*hold = htonl(p - hold - 1);		/* gid array length */
- 	*base = htonl((p - base - 1) << 2);	/* cred length */
- 
+ 	# Filesystems
+ 	depends on CIFS = n
+-	depends on GFS2_FS = n
+ 	depends on NCP_FS = n
+ 	depends on NFSD = n
+ 	depends on NFS_FS = n
 -- 
 1.7.5.4
