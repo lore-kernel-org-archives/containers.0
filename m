@@ -1,8 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 45/85] sunrpc: Simplify auth_unix now that everything
-	is a kgid_t
-Date: Wed, 13 Feb 2013 09:51:34 -0800
-Message-ID: <1360777934-5663-45-git-send-email-ebiederm__37209.2629354031$1360778761$gmane$org@xmission.com>
+Subject: [PATCH review 23/85] ocfs2: Convert uid and gids between in core and
+	on disk inodes
+Date: Wed, 13 Feb 2013 09:51:12 -0800
+Message-ID: <1360777934-5663-23-git-send-email-ebiederm__20556.0399954722$1360778773$gmane$org@xmission.com>
 References: <87621w14vs.fsf@xmission.com>
 	<1360777934-5663-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -20,58 +20,70 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Mark Fasheh <mfasheh-IBi9RG/b67k@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Joel Becker <jlbec-aKy9MeLSZ9dg9hUCZPvPmw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-In unx_create_cred directly assign gids from acred->group_info
-to cred->uc_gids.
-
-In unx_match directly compare uc_gids with group_info.
-
-Now that both group_info and unx_cred gids are stored as kgids
-this is valid and the extra layer of translation can be removed.
-
-Cc: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
-Cc: Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>
+Cc: Mark Fasheh <mfasheh-IBi9RG/b67k@public.gmane.org>
+Cc: Joel Becker <jlbec-aKy9MeLSZ9dg9hUCZPvPmw@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- net/sunrpc/auth_unix.c |   14 ++++----------
- 1 files changed, 4 insertions(+), 10 deletions(-)
+ fs/ocfs2/inode.c |   12 ++++++------
+ fs/ocfs2/namei.c |    4 ++--
+ 2 files changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/net/sunrpc/auth_unix.c b/net/sunrpc/auth_unix.c
-index 8365a9c..9f38857 100644
---- a/net/sunrpc/auth_unix.c
-+++ b/net/sunrpc/auth_unix.c
-@@ -79,11 +79,8 @@ unx_create_cred(struct rpc_auth *auth, struct auth_cred *acred, int flags)
- 		groups = NFS_NGROUPS;
+diff --git a/fs/ocfs2/inode.c b/fs/ocfs2/inode.c
+index d89e08a..f87f9bd 100644
+--- a/fs/ocfs2/inode.c
++++ b/fs/ocfs2/inode.c
+@@ -269,8 +269,8 @@ void ocfs2_populate_inode(struct inode *inode, struct ocfs2_dinode *fe,
+ 	inode->i_generation = le32_to_cpu(fe->i_generation);
+ 	inode->i_rdev = huge_decode_dev(le64_to_cpu(fe->id1.dev1.i_rdev));
+ 	inode->i_mode = le16_to_cpu(fe->i_mode);
+-	inode->i_uid = le32_to_cpu(fe->i_uid);
+-	inode->i_gid = le32_to_cpu(fe->i_gid);
++	i_uid_write(inode, le32_to_cpu(fe->i_uid));
++	i_gid_write(inode, le32_to_cpu(fe->i_gid));
  
- 	cred->uc_gid = acred->gid;
--	for (i = 0; i < groups; i++) {
--		gid_t gid;
--		gid = from_kgid(&init_user_ns, GROUP_AT(acred->group_info, i));
--		cred->uc_gids[i] = gid;
--	}
-+	for (i = 0; i < groups; i++)
-+		cred->uc_gids[i] = GROUP_AT(acred->group_info, i);
- 	if (i < NFS_NGROUPS)
- 		cred->uc_gids[i] = INVALID_GID;
+ 	/* Fast symlinks will have i_size but no allocated clusters. */
+ 	if (S_ISLNK(inode->i_mode) && !fe->i_clusters) {
+@@ -1259,8 +1259,8 @@ int ocfs2_mark_inode_dirty(handle_t *handle,
  
-@@ -130,12 +127,9 @@ unx_match(struct auth_cred *acred, struct rpc_cred *rcred, int flags)
- 		groups = acred->group_info->ngroups;
- 	if (groups > NFS_NGROUPS)
- 		groups = NFS_NGROUPS;
--	for (i = 0; i < groups ; i++) {
--		gid_t gid;
--		gid = from_kgid(&init_user_ns, GROUP_AT(acred->group_info, i));
--		if (cred->uc_gids[i] != gid)
-+	for (i = 0; i < groups ; i++)
-+		if (!gid_eq(cred->uc_gids[i], GROUP_AT(acred->group_info, i)))
- 			return 0;
--	}
- 	if (groups < NFS_NGROUPS &&
- 	    cred->uc_gids[groups] != INVALID_GID)
- 		return 0;
+ 	fe->i_size = cpu_to_le64(i_size_read(inode));
+ 	ocfs2_set_links_count(fe, inode->i_nlink);
+-	fe->i_uid = cpu_to_le32(inode->i_uid);
+-	fe->i_gid = cpu_to_le32(inode->i_gid);
++	fe->i_uid = cpu_to_le32(i_uid_read(inode));
++	fe->i_gid = cpu_to_le32(i_gid_read(inode));
+ 	fe->i_mode = cpu_to_le16(inode->i_mode);
+ 	fe->i_atime = cpu_to_le64(inode->i_atime.tv_sec);
+ 	fe->i_atime_nsec = cpu_to_le32(inode->i_atime.tv_nsec);
+@@ -1290,8 +1290,8 @@ void ocfs2_refresh_inode(struct inode *inode,
+ 	ocfs2_set_inode_flags(inode);
+ 	i_size_write(inode, le64_to_cpu(fe->i_size));
+ 	set_nlink(inode, ocfs2_read_links_count(fe));
+-	inode->i_uid = le32_to_cpu(fe->i_uid);
+-	inode->i_gid = le32_to_cpu(fe->i_gid);
++	i_uid_write(inode, le32_to_cpu(fe->i_uid));
++	i_gid_write(inode, le32_to_cpu(fe->i_gid));
+ 	inode->i_mode = le16_to_cpu(fe->i_mode);
+ 	if (S_ISLNK(inode->i_mode) && le32_to_cpu(fe->i_clusters) == 0)
+ 		inode->i_blocks = 0;
+diff --git a/fs/ocfs2/namei.c b/fs/ocfs2/namei.c
+index f1fd074..04ee1b5 100644
+--- a/fs/ocfs2/namei.c
++++ b/fs/ocfs2/namei.c
+@@ -512,8 +512,8 @@ static int __ocfs2_mknod_locked(struct inode *dir,
+ 	fe->i_suballoc_loc = cpu_to_le64(suballoc_loc);
+ 	fe->i_suballoc_bit = cpu_to_le16(suballoc_bit);
+ 	fe->i_suballoc_slot = cpu_to_le16(inode_ac->ac_alloc_slot);
+-	fe->i_uid = cpu_to_le32(inode->i_uid);
+-	fe->i_gid = cpu_to_le32(inode->i_gid);
++	fe->i_uid = cpu_to_le32(i_uid_read(inode));
++	fe->i_gid = cpu_to_le32(i_gid_read(inode));
+ 	fe->i_mode = cpu_to_le16(inode->i_mode);
+ 	if (S_ISCHR(inode->i_mode) || S_ISBLK(inode->i_mode))
+ 		fe->id1.dev1.i_rdev = cpu_to_le64(huge_encode_dev(dev));
 -- 
 1.7.5.4
