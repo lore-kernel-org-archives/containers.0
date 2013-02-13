@@ -1,17 +1,16 @@
-From: Jan Harkes <jaharkes-ETDLCGt7PQU3uPMLIKxrzw@public.gmane.org>
-Subject: Re: [PATCH review 18/85] coda: Restrict coda messages to the initial
-	user namespace
-Date: Wed, 13 Feb 2013 13:14:51 -0500
-Message-ID: <20130213181450.GJ30800@cs.cmu.edu>
-References: <87621w14vs.fsf@xmission.com>
-	<1360777934-5663-1-git-send-email-ebiederm@xmission.com>
-	<1360777934-5663-18-git-send-email-ebiederm@xmission.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH] Move console redirect to pid namespace
+Date: Wed, 13 Feb 2013 11:08:23 -0800
+Message-ID: <87r4kkuj4o.fsf@xmission.com>
+References: <1360376920-30824-1-git-send-email-minyard@acm.org>
+	<20130209191409.643c3d7f@neptune.home>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1360777934-5663-18-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <20130209191409.643c3d7f-hY15tx4IgV39zxVx7UNMDg@public.gmane.org> ("Bruno
+	\=\?utf-8\?Q\?Pr\?\= \=\?utf-8\?Q\?\=C3\=A9mont\=22's\?\= message
+	of "Sat, 9 Feb 2013 19:14:09 +0100")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,21 +20,42 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Bruno =?utf-8?Q?Pr=C3=A9mont?= <bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org>
+Cc: Corey Minyard <cminyard-Igf4POYTYCDQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Corey Minyard <minyard-HInyCGIudOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Feb 13, 2013 at 09:51:07AM -0800, Eric W. Biederman wrote:
-> From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> 
-> Remove the slight chance that uids and gids in coda messages will be
-> interpreted in the wrong user namespace.
-
-Awesome, I was wondering how to handle uid's from different namespaces
-cleanly in Coda's userspace daemon without resorting to exporting kuids
-to userspace.
-
-But this is a much more elegant solution, every namespace that cares
-about Coda should just run their own mountpoint and userspace daemon.
-
-Jan
+QnJ1bm8gUHLDqW1vbnQgPGJvbmJvbnNAbGludXgtdnNlcnZlci5vcmc+IHdyaXRlczoKCj4gQ0Np
+bmcgY29udGFpbmVycyBsaXN0Cj4KPiBPbiBGcmksIDA4IEZlYnJ1YXJ5IDIwMTMgbWlueWFyZEBh
+Y20ub3JnIHdyb3RlOgo+PiBGcm9tOiBDb3JleSBNaW55YXJkIDxjbWlueWFyZEBtdmlzdGEuY29t
+Pgo+PiAKPj4gVGhlIGNvbnNvbGUgcmVkaXJlY3QgLSBpb2N0bChmZCwgVElPQ0NPTlMpIC0gaXMg
+bm90IGluIGEgbmFtZXNwYWNlLAo+PiB0aHVzIGEgY29udGFpbmVyIGNhbiBkbyBhIHJlZGlyZWN0
+IGFuZCBncmFiIGFsbCB0aGUgSS9PIG9uIHRoZSBob3N0Cj4+IGFuZCBhbGwgY29udGFpbmVyIGNv
+bnNvbGVzLgo+PiAKPj4gVGhpcyBjaGFuZ2UgcHV0cyB0aGUgcmVkaXJlY3QgaW4gdGhlIHBpZCBu
+YW1lc3BhY2UuCj4+IAo+PiBTaWduZWQtb2ZmLWJ5OiBDb3JleSBNaW55YXJkIDxjbWlueWFyZEBt
+dmlzdGEuY29tPgo+PiAtLS0KPj4gCj4+IEknbSBwcmV0dHkgc3VyZSB0aGlzIHBhdGNoIGlzIG5v
+dCBjb3JyZWN0LCBidXQgSSdtIG5vdCBxdWl0ZSBzdXJlIHRoZQo+PiBiZXN0IHdheSB0byBmaXgg
+dGhpcy4gIEknbSBub3QgMTAwJSBzdXJlIHRoYXQgdGhlIHBpZCBuYW1lc3BhY2UgaXMgdGhlCj4+
+IHJpZ2h0IHBsYWNlLCBidXQgaXQgc2VlbWVkIHRoZSBtb3N0IHJlYXNvbmFibGUgb2YgYWxsIHRo
+ZSBjaG9pY2VzLiAgVGhlCj4+IG90aGVyIG9idmlvdXMgY2hvaWNlIGlzIHRoZSBtb3VudCBuYW1l
+c3BhY2UsIGJ1dCBpdCBkaWRuJ3Qgc2VlbSBhcyBnb29kCj4+IGEgZml0Lgo+Cj4gV2l0aCByZWNl
+bnQgY2hhbmdlcywgdHlpbmcgaXQgdG8gaW5pdCB1c2VyIG5hbWVzcGFjZSBtaWdodCBldmVuIGJl
+Cj4gYmV0dGVyLgoKV2l0aCByZWNlbnQgY2hhbmdlcyB0aGlzIGlzIHRpZWQgdG8gdGhlIGluaXRp
+YWwgdXNlciBuYW1lc3BhY2UuICBTbyB0aGUKc2ltcGxlIHNvbHV0aW9uIHRvIHRoaXMgYW5kIHNv
+IG1hbnkgb3RoZXIgc2ltaWxpYXIgc2VjdXJpdHkgcHJvYmxlbXMgaXMKdG8gcnVuIHlvdXIgY29u
+dGFpbmVyIGluIGEgdXNlciBuYW1lc3BhY2UuCgpUaGUgcGVybWlzc2lvbiBjaGVjayBjdXJyZW50
+bHkgaXMgY2FwYWJsZShDQVBfU1lTX0FETUlOKSB3aGljaCByZXF1aXJlcwp0aGUgY2FsbGVyIHRv
+IGhhdmUgdGhlIENBUF9TWVNfQURNSU4gaW4gdGhlIGluaXRpYWwgdXNlciBuYW1lc3BhY2UuCgpJ
+cyB0aGVyZSBhIGRlc2lyZSB0byBoYXZlIFRJT0NDT05TIG5vdCBqdXN0IGZhaWwgaW4gYSBjb250
+YWluZXIgYnV0IHRvCmhhdmUgVElPQ0NPTlMgd29yayBpbiBhIGNvbnRhaW5lciBzcGVjaWZpYyB3
+YXk/Cgo+PiBUaGUgb3RoZXIgcHJvYmxlbSBpcyB0aGF0IEkgZG9uJ3QgdGhpbmsgeW91IGNhbiBj
+YWxsIGZwdXQoKSBmcm9tCj4+IGRlc3Ryb3lfcGlkX25hbWVzcGFjZSgpLiAgVGhhdCBjYW4gYmUg
+Y2FsbGVkIGZyb20gaW50ZXJydXB0IGNvbnRleHQsCj4+IGFuZCBJIGRvbid0IHRoaW5rIGZwdXQo
+KSBpcyBzYWZlIHRoZXJlLiAgSSBrbm93IGl0J3Mgbm90IHNhZmUgaW4gMy40Cj4+IHdpdGggdGhl
+IFJUIHBhdGNoIGFwcGxpZWQuICBIb3dldmVyLCB0aGUgb25seSB3YXkgSSd2ZSBjb21lIHVwIHdp
+dGggdG8KPj4gZml4IGl0IGlzIHRvIGFkZCBhIHdvcmtxdWV1ZSwgYW5kIHRoYXQgc2VlbXMgYSBi
+aXQgaGVhdnkgZm9yIHRoaXMuCgpBY3R1YWxseSBnZXR0aW5nIGRlc3Ryb3lfcGlkX25hbWVzcGFj
+ZSBvdXQgb2YgaW50ZXJydXB0IGNvbnRleHQgd291bGRuJ3QKYmUgdGhlIHdvcnN0IHRoaW5nIGlu
+IHRoZSB3b3JsZC4KCkVyaWMKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1m
+b3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9s
+aXN0aW5mby9jb250YWluZXJz
