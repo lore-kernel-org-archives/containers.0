@@ -1,8 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 05/85] ceph: Convert kuids and kgids before printing
-	them.
-Date: Wed, 13 Feb 2013 09:50:54 -0800
-Message-ID: <1360777934-5663-5-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH review 06/85] ceph: Enable building when user namespaces are
+	enabled.
+Date: Wed, 13 Feb 2013 09:50:55 -0800
+Message-ID: <1360777934-5663-6-git-send-email-ebiederm@xmission.com>
 References: <87621w14vs.fsf@xmission.com>
 	<1360777934-5663-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -25,63 +25,29 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Before printing kuid and kgids values convert them into
-the initial user namespace.
+Now that conversions happen from kuids and kgids when generating ceph
+messages and conversion happen to kuids and kgids after receiving
+celph messages, and all intermediate data structures store uids and
+gids as type kuid_t and kgid_t it is safe to enable ceph with
+user namespace support enabled.
 
 Cc: Sage Weil <sage-4GqslpFJ+cxBDgjK7y7TUQ@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/ceph/caps.c  |    3 ++-
- fs/ceph/inode.c |    9 ++++++---
- 2 files changed, 8 insertions(+), 4 deletions(-)
+ init/Kconfig |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
 
-diff --git a/fs/ceph/caps.c b/fs/ceph/caps.c
-index 39eb466..ae2be69 100644
---- a/fs/ceph/caps.c
-+++ b/fs/ceph/caps.c
-@@ -2362,7 +2362,8 @@ static void handle_cap_grant(struct inode *inode, struct ceph_mds_caps *grant,
- 		inode->i_uid = make_kuid(&init_user_ns, le32_to_cpu(grant->uid));
- 		inode->i_gid = make_kgid(&init_user_ns, le32_to_cpu(grant->gid));
- 		dout("%p mode 0%o uid.gid %d.%d\n", inode, inode->i_mode,
--		     inode->i_uid, inode->i_gid);
-+		     from_kuid(&init_user_ns, inode->i_uid),
-+		     from_kgid(&init_user_ns, inode->i_gid));
- 	}
- 
- 	if ((issued & CEPH_CAP_LINK_EXCL) == 0)
-diff --git a/fs/ceph/inode.c b/fs/ceph/inode.c
-index 40e0787..d45895f 100644
---- a/fs/ceph/inode.c
-+++ b/fs/ceph/inode.c
-@@ -615,7 +615,8 @@ static int fill_inode(struct inode *inode,
- 		inode->i_uid = make_kuid(&init_user_ns, le32_to_cpu(info->uid));
- 		inode->i_gid = make_kgid(&init_user_ns, le32_to_cpu(info->gid));
- 		dout("%p mode 0%o uid.gid %d.%d\n", inode, inode->i_mode,
--		     inode->i_uid, inode->i_gid);
-+		     from_kuid(&init_user_ns, inode->i_uid),
-+		     from_kgid(&init_user_ns, inode->i_gid));
- 	}
- 
- 	if ((issued & CEPH_CAP_LINK_EXCL) == 0)
-@@ -1565,7 +1566,8 @@ int ceph_setattr(struct dentry *dentry, struct iattr *attr)
- 
- 	if (ia_valid & ATTR_UID) {
- 		dout("setattr %p uid %d -> %d\n", inode,
--		     inode->i_uid, attr->ia_uid);
-+		     from_kuid(&init_user_ns, inode->i_uid),
-+		     from_kuid(&init_user_ns, attr->ia_uid));
- 		if (issued & CEPH_CAP_AUTH_EXCL) {
- 			inode->i_uid = attr->ia_uid;
- 			dirtied |= CEPH_CAP_AUTH_EXCL;
-@@ -1579,7 +1581,8 @@ int ceph_setattr(struct dentry *dentry, struct iattr *attr)
- 	}
- 	if (ia_valid & ATTR_GID) {
- 		dout("setattr %p gid %d -> %d\n", inode,
--		     inode->i_gid, attr->ia_gid);
-+		     from_kgid(&init_user_ns, inode->i_gid),
-+		     from_kgid(&init_user_ns, attr->ia_gid));
- 		if (issued & CEPH_CAP_AUTH_EXCL) {
- 			inode->i_gid = attr->ia_gid;
- 			dirtied |= CEPH_CAP_AUTH_EXCL;
+diff --git a/init/Kconfig b/init/Kconfig
+index c8c58bd..7170d54 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -1076,7 +1076,6 @@ config UIDGID_CONVERTED
+ 	# Filesystems
+ 	depends on 9P_FS = n
+ 	depends on AFS_FS = n
+-	depends on CEPH_FS = n
+ 	depends on CIFS = n
+ 	depends on CODA_FS = n
+ 	depends on GFS2_FS = n
 -- 
 1.7.5.4
