@@ -1,8 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 75/85] cifs: Pass GLOBAL_ROOT_UID and GLOBAL_ROOT_GID
-	to keyring_alloc
-Date: Wed, 13 Feb 2013 09:52:04 -0800
-Message-ID: <1360777934-5663-75-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH review 80/85] cifs: Convert struct cifs_fattr to use kuid and
+	kgids
+Date: Wed, 13 Feb 2013 09:52:09 -0800
+Message-ID: <1360777934-5663-80-git-send-email-ebiederm@xmission.com>
 References: <87621w14vs.fsf@xmission.com>
 	<1360777934-5663-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -25,29 +25,60 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-keyring_alloc has been updated to take a kuid_t and kgid_t so
-pass GLOBAL_ROOT_UID instead of 0 for the uid and GLOBAL_ROOT_GID
-instead of 0 for the gid.
+In cifs_unix_to_basic_fattr only update the cifs_fattr with an id if
+it is valid after conversion.
 
 Cc: Steve French <smfrench-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/cifs/cifsacl.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+ fs/cifs/cifsglob.h |    4 ++--
+ fs/cifs/inode.c    |   14 ++++++++++----
+ 2 files changed, 12 insertions(+), 6 deletions(-)
 
-diff --git a/fs/cifs/cifsacl.c b/fs/cifs/cifsacl.c
-index 2e811f4..aaaf5ce 100644
---- a/fs/cifs/cifsacl.c
-+++ b/fs/cifs/cifsacl.c
-@@ -347,7 +347,8 @@ init_cifs_idmap(void)
- 	if (!cred)
- 		return -ENOMEM;
+diff --git a/fs/cifs/cifsglob.h b/fs/cifs/cifsglob.h
+index 7993a7a..98312fd 100644
+--- a/fs/cifs/cifsglob.h
++++ b/fs/cifs/cifsglob.h
+@@ -1245,8 +1245,8 @@ struct cifs_fattr {
+ 	u64		cf_eof;
+ 	u64		cf_bytes;
+ 	u64		cf_createtime;
+-	uid_t		cf_uid;
+-	gid_t		cf_gid;
++	kuid_t		cf_uid;
++	kgid_t		cf_gid;
+ 	umode_t		cf_mode;
+ 	dev_t		cf_rdev;
+ 	unsigned int	cf_nlink;
+diff --git a/fs/cifs/inode.c b/fs/cifs/inode.c
+index 7376439..9638233 100644
+--- a/fs/cifs/inode.c
++++ b/fs/cifs/inode.c
+@@ -247,15 +247,21 @@ cifs_unix_basic_to_fattr(struct cifs_fattr *fattr, FILE_UNIX_BASIC_INFO *info,
+ 	fattr->cf_uid = cifs_sb->mnt_uid;
+ 	if (!(cifs_sb->mnt_cifs_flags & CIFS_MOUNT_OVERR_UID)) {
+ 		u64 id = le64_to_cpu(info->Uid);
+-		if (id < ((uid_t)-1))
+-			fattr->cf_uid = id;
++		if (id < ((uid_t)-1)) {
++			kuid_t uid = make_kuid(&init_user_ns, id);
++			if (uid_valid(uid))
++				fattr->cf_uid = uid;
++		}
+ 	}
+ 	
+ 	fattr->cf_gid = cifs_sb->mnt_gid;
+ 	if (!(cifs_sb->mnt_cifs_flags & CIFS_MOUNT_OVERR_GID)) {
+ 		u64 id = le64_to_cpu(info->Gid);
+-		if (id < ((gid_t)-1))
+-			fattr->cf_gid = id;
++		if (id < ((gid_t)-1)) {
++			kgid_t gid = make_kgid(&init_user_ns, id);
++			if (gid_valid(gid))
++				fattr->cf_gid = gid;
++		}
+ 	}
  
--	keyring = keyring_alloc(".cifs_idmap", 0, 0, cred,
-+	keyring = keyring_alloc(".cifs_idmap",
-+				GLOBAL_ROOT_UID, GLOBAL_ROOT_GID, cred,
- 				(KEY_POS_ALL & ~KEY_POS_SETATTR) |
- 				KEY_USR_VIEW | KEY_USR_READ,
- 				KEY_ALLOC_NOT_IN_QUOTA, NULL);
+ 	fattr->cf_nlink = le64_to_cpu(info->Nlinks);
 -- 
 1.7.5.4
