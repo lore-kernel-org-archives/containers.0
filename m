@@ -1,7 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 66/85] nfsd: Convert nfs3xdr to use kuids and kgids
-Date: Wed, 13 Feb 2013 09:51:55 -0800
-Message-ID: <1360777934-5663-66-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH review 54/85] nfs: Pass GLOBAL_ROOT_UID and GLOBAL_ROOT_GID to
+	keyring alloc
+Date: Wed, 13 Feb 2013 09:51:43 -0800
+Message-ID: <1360777934-5663-54-git-send-email-ebiederm@xmission.com>
 References: <87621w14vs.fsf@xmission.com>
 	<1360777934-5663-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -24,52 +25,26 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-When reading uids and gids off the wire convert them to kuids and
-kgids.
-
-When putting kuids and kgids onto the wire first convert them to uids
-and gids the other side will understand.
-
 Cc: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
 Cc: Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/nfsd/nfs3xdr.c |   14 ++++++++------
- 1 files changed, 8 insertions(+), 6 deletions(-)
+ fs/nfs/idmap.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/fs/nfsd/nfs3xdr.c b/fs/nfsd/nfs3xdr.c
-index 1884a3f..925c944 100644
---- a/fs/nfsd/nfs3xdr.c
-+++ b/fs/nfsd/nfs3xdr.c
-@@ -105,12 +105,14 @@ decode_sattr3(__be32 *p, struct iattr *iap)
- 		iap->ia_mode = ntohl(*p++);
- 	}
- 	if (*p++) {
--		iap->ia_valid |= ATTR_UID;
--		iap->ia_uid = ntohl(*p++);
-+		iap->ia_uid = make_kuid(&init_user_ns, ntohl(*p++));
-+		if (uid_valid(iap->ia_uid))
-+			iap->ia_valid |= ATTR_UID;
- 	}
- 	if (*p++) {
--		iap->ia_valid |= ATTR_GID;
--		iap->ia_gid = ntohl(*p++);
-+		iap->ia_gid = make_kgid(&init_user_ns, ntohl(*p++));
-+		if (gid_valid(iap->ia_gid))
-+			iap->ia_valid |= ATTR_GID;
- 	}
- 	if (*p++) {
- 		u64	newsize;
-@@ -167,8 +169,8 @@ encode_fattr3(struct svc_rqst *rqstp, __be32 *p, struct svc_fh *fhp,
- 	*p++ = htonl(nfs3_ftypes[(stat->mode & S_IFMT) >> 12]);
- 	*p++ = htonl((u32) stat->mode);
- 	*p++ = htonl((u32) stat->nlink);
--	*p++ = htonl((u32) stat->uid);
--	*p++ = htonl((u32) stat->gid);
-+	*p++ = htonl((u32) from_kuid(&init_user_ns, stat->uid));
-+	*p++ = htonl((u32) from_kgid(&init_user_ns, stat->gid));
- 	if (S_ISLNK(stat->mode) && stat->size > NFS3_MAXPATHLEN) {
- 		p = xdr_encode_hyper(p, (u64) NFS3_MAXPATHLEN);
- 	} else {
+diff --git a/fs/nfs/idmap.c b/fs/nfs/idmap.c
+index bc3968f..f77017c 100644
+--- a/fs/nfs/idmap.c
++++ b/fs/nfs/idmap.c
+@@ -193,7 +193,8 @@ static int nfs_idmap_init_keyring(void)
+ 	if (!cred)
+ 		return -ENOMEM;
+ 
+-	keyring = keyring_alloc(".id_resolver", 0, 0, cred,
++	keyring = keyring_alloc(".id_resolver",
++				GLOBAL_ROOT_UID, GLOBAL_ROOT_GID, cred,
+ 				(KEY_POS_ALL & ~KEY_POS_SETATTR) |
+ 				KEY_USR_VIEW | KEY_USR_READ,
+ 				KEY_ALLOC_NOT_IN_QUOTA, NULL);
 -- 
 1.7.5.4
