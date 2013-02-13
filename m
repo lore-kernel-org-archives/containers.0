@@ -1,7 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 30/85] gfs2: Introduce qd2index
-Date: Wed, 13 Feb 2013 09:51:19 -0800
-Message-ID: <1360777934-5663-30-git-send-email-ebiederm__25328.8877815523$1360778730$gmane$org@xmission.com>
+Subject: [PATCH review 33/85] gfs2: Convert gfs2_quota_refresh to take a kqid
+Date: Wed, 13 Feb 2013 09:51:22 -0800
+Message-ID: <1360777934-5663-33-git-send-email-ebiederm__18864.5829017789$1360778741$gmane$org@xmission.com>
 References: <87621w14vs.fsf@xmission.com>
 	<1360777934-5663-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -24,47 +24,98 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Both qd_alloc and qd2offset perform the exact same computation
-to get an index from a gfs2_quota_data.   Make life a little
-simpler and factor out this index computation.
+- In quota_refresh_user_store convert the user supplied uid
+  into a kqid and pass it to gfs2_quota_refresh.
+
+- In quota_refresh_group_store convert the user supplied gid
+  into a kqid and pass it to gfs2_quota_refresh.
 
 Cc: Steven Whitehouse <swhiteho-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/gfs2/quota.c |   10 ++++++++--
- 1 files changed, 8 insertions(+), 2 deletions(-)
+ fs/gfs2/quota.c |    5 +++--
+ fs/gfs2/quota.h |    2 +-
+ fs/gfs2/sys.c   |   14 ++++++++++++--
+ 3 files changed, 16 insertions(+), 5 deletions(-)
 
 diff --git a/fs/gfs2/quota.c b/fs/gfs2/quota.c
-index f8279ee..0e7c982 100644
+index 20762ae..47315c0 100644
 --- a/fs/gfs2/quota.c
 +++ b/fs/gfs2/quota.c
-@@ -120,11 +120,17 @@ out:
- 	return (atomic_read(&qd_lru_count) * sysctl_vfs_cache_pressure) / 100;
+@@ -1177,13 +1177,14 @@ static int gfs2_quota_sync_timeo(struct super_block *sb, int type)
+ 	return gfs2_quota_sync(sb, type);
  }
  
-+static u64 qd2index(struct gfs2_quota_data *qd)
-+{
-+	return (2 * (u64)qd->qd_id) +
-+		test_bit(QDF_USER, &qd->qd_flags) ? 0 : 1;
-+}
-+
- static u64 qd2offset(struct gfs2_quota_data *qd)
+-int gfs2_quota_refresh(struct gfs2_sbd *sdp, int user, u32 id)
++int gfs2_quota_refresh(struct gfs2_sbd *sdp, struct kqid qid)
  {
- 	u64 offset;
+ 	struct gfs2_quota_data *qd;
+ 	struct gfs2_holder q_gh;
+ 	int error;
  
--	offset = 2 * (u64)qd->qd_id + !test_bit(QDF_USER, &qd->qd_flags);
-+	offset = qd2index(qd);
- 	offset *= sizeof(struct gfs2_quota);
- 
- 	return offset;
-@@ -147,7 +153,7 @@ static int qd_alloc(struct gfs2_sbd *sdp, int user, u32 id,
- 	qd->qd_slot = -1;
- 	INIT_LIST_HEAD(&qd->qd_reclaim);
- 
--	error = gfs2_glock_get(sdp, 2 * (u64)id + !user,
-+	error = gfs2_glock_get(sdp, qd2index(qd),
- 			      &gfs2_quota_glops, CREATE, &qd->qd_gl);
+-	error = qd_get(sdp, user, id, &qd);
++	error = qd_get(sdp, qid.type == USRQUOTA ? QUOTA_USER : QUOTA_GROUP,
++		       from_kqid(&init_user_ns, qid), &qd);
  	if (error)
- 		goto fail;
+ 		return error;
+ 
+diff --git a/fs/gfs2/quota.h b/fs/gfs2/quota.h
+index 7f67323..bef805d 100644
+--- a/fs/gfs2/quota.h
++++ b/fs/gfs2/quota.h
+@@ -28,7 +28,7 @@ extern void gfs2_quota_change(struct gfs2_inode *ip, s64 change,
+ 			      u32 uid, u32 gid);
+ 
+ extern int gfs2_quota_sync(struct super_block *sb, int type);
+-extern int gfs2_quota_refresh(struct gfs2_sbd *sdp, int user, u32 id);
++extern int gfs2_quota_refresh(struct gfs2_sbd *sdp, struct kqid qid);
+ 
+ extern int gfs2_quota_init(struct gfs2_sbd *sdp);
+ extern void gfs2_quota_cleanup(struct gfs2_sbd *sdp);
+diff --git a/fs/gfs2/sys.c b/fs/gfs2/sys.c
+index 8056b7b..e6d8d48 100644
+--- a/fs/gfs2/sys.c
++++ b/fs/gfs2/sys.c
+@@ -175,6 +175,7 @@ static ssize_t quota_sync_store(struct gfs2_sbd *sdp, const char *buf,
+ static ssize_t quota_refresh_user_store(struct gfs2_sbd *sdp, const char *buf,
+ 					size_t len)
+ {
++	struct kqid qid;
+ 	int error;
+ 	u32 id;
+ 
+@@ -183,13 +184,18 @@ static ssize_t quota_refresh_user_store(struct gfs2_sbd *sdp, const char *buf,
+ 
+ 	id = simple_strtoul(buf, NULL, 0);
+ 
+-	error = gfs2_quota_refresh(sdp, 1, id);
++	qid = make_kqid(current_user_ns(), USRQUOTA, id);
++	if (!qid_valid(qid))
++		return -EINVAL;
++
++	error = gfs2_quota_refresh(sdp, qid);
+ 	return error ? error : len;
+ }
+ 
+ static ssize_t quota_refresh_group_store(struct gfs2_sbd *sdp, const char *buf,
+ 					 size_t len)
+ {
++	struct kqid qid;
+ 	int error;
+ 	u32 id;
+ 
+@@ -198,7 +204,11 @@ static ssize_t quota_refresh_group_store(struct gfs2_sbd *sdp, const char *buf,
+ 
+ 	id = simple_strtoul(buf, NULL, 0);
+ 
+-	error = gfs2_quota_refresh(sdp, 0, id);
++	qid = make_kqid(current_user_ns(), GRPQUOTA, id);
++	if (!qid_valid(qid))
++		return -EINVAL;
++
++	error = gfs2_quota_refresh(sdp, qid);
+ 	return error ? error : len;
+ }
+ 
 -- 
 1.7.5.4
