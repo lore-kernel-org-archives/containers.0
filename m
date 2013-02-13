@@ -1,8 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 36/85] gfs2: Use kuid_t and kgid_t types where
-	appropriate.
-Date: Wed, 13 Feb 2013 09:51:25 -0800
-Message-ID: <1360777934-5663-36-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH review 35/85] gfs2: Remove the QUOTA_USER and QUOTA_GROUP
+	defines
+Date: Wed, 13 Feb 2013 09:51:24 -0800
+Message-ID: <1360777934-5663-35-git-send-email-ebiederm@xmission.com>
 References: <87621w14vs.fsf@xmission.com>
 	<1360777934-5663-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -25,91 +25,86 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
+Remove the QUOTA_USER and QUOTA_GRUP defines.  Remove
+the last vestigal users of QUOTA_USER and QUOTA_GROUP.
+
+Now that struct kqid is used throughout the gfs2 quota
+code the need there is to use QUOTA_USER and QUOTA_GROUP
+and the defines are just extraneous and confusing.
+
 Cc: Steven Whitehouse <swhiteho-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/gfs2/inode.c |    3 ++-
- fs/gfs2/quota.c |    8 ++++----
- fs/gfs2/quota.h |    8 ++++----
- 3 files changed, 10 insertions(+), 9 deletions(-)
+ fs/gfs2/quota.c |   25 +++++--------------------
+ 1 files changed, 5 insertions(+), 20 deletions(-)
 
-diff --git a/fs/gfs2/inode.c b/fs/gfs2/inode.c
-index aa10502..ce07ce4 100644
---- a/fs/gfs2/inode.c
-+++ b/fs/gfs2/inode.c
-@@ -1580,7 +1580,8 @@ static int setattr_chown(struct inode *inode, struct iattr *attr)
- {
- 	struct gfs2_inode *ip = GFS2_I(inode);
- 	struct gfs2_sbd *sdp = GFS2_SB(inode);
--	u32 ouid, ogid, nuid, ngid;
-+	kuid_t ouid, nuid;
-+	kgid_t ogid, ngid;
- 	int error;
- 
- 	ouid = inode->i_uid;
 diff --git a/fs/gfs2/quota.c b/fs/gfs2/quota.c
-index 0bbb040..87f2740 100644
+index 8cb4d10..0bbb040 100644
 --- a/fs/gfs2/quota.c
 +++ b/fs/gfs2/quota.c
-@@ -492,7 +492,7 @@ static void qdsb_put(struct gfs2_quota_data *qd)
- 	qd_put(qd);
- }
+@@ -65,9 +65,6 @@
+ #include "inode.h"
+ #include "util.h"
  
--int gfs2_quota_hold(struct gfs2_inode *ip, u32 uid, u32 gid)
-+int gfs2_quota_hold(struct gfs2_inode *ip, kuid_t uid, kgid_t gid)
- {
- 	struct gfs2_sbd *sdp = GFS2_SB(&ip->i_inode);
- 	struct gfs2_quota_data **qd;
-@@ -918,7 +918,7 @@ fail:
- 	return error;
- }
- 
--int gfs2_quota_lock(struct gfs2_inode *ip, u32 uid, u32 gid)
-+int gfs2_quota_lock(struct gfs2_inode *ip, kuid_t uid, kgid_t gid)
- {
- 	struct gfs2_sbd *sdp = GFS2_SB(&ip->i_inode);
+-#define QUOTA_USER 1
+-#define QUOTA_GROUP 0
+-
+ struct gfs2_quota_change_host {
+ 	u64 qc_change;
+ 	u32 qc_flags; /* GFS2_QCF_... */
+@@ -1476,18 +1473,14 @@ static int gfs2_get_dqblk(struct super_block *sb, struct kqid qid,
  	struct gfs2_quota_data *qd;
-@@ -1039,7 +1039,7 @@ static int print_message(struct gfs2_quota_data *qd, char *type)
- 	return 0;
- }
+ 	struct gfs2_holder q_gh;
+ 	int error;
+-	int type;
  
--int gfs2_quota_check(struct gfs2_inode *ip, u32 uid, u32 gid)
-+int gfs2_quota_check(struct gfs2_inode *ip, kuid_t uid, kgid_t gid)
- {
- 	struct gfs2_sbd *sdp = GFS2_SB(&ip->i_inode);
- 	struct gfs2_quota_data *qd;
-@@ -1088,7 +1088,7 @@ int gfs2_quota_check(struct gfs2_inode *ip, u32 uid, u32 gid)
- }
+ 	memset(fdq, 0, sizeof(struct fs_disk_quota));
  
- void gfs2_quota_change(struct gfs2_inode *ip, s64 change,
--		       u32 uid, u32 gid)
-+		       kuid_t uid, kgid_t gid)
- {
- 	struct gfs2_quota_data *qd;
- 	unsigned int x;
-diff --git a/fs/gfs2/quota.h b/fs/gfs2/quota.h
-index bef805d..4f5e6e4 100644
---- a/fs/gfs2/quota.h
-+++ b/fs/gfs2/quota.h
-@@ -17,15 +17,15 @@ struct shrink_control;
- #define NO_UID_QUOTA_CHANGE INVALID_UID
- #define NO_GID_QUOTA_CHANGE INVALID_GID
+ 	if (sdp->sd_args.ar_quota == GFS2_QUOTA_OFF)
+ 		return -ESRCH; /* Crazy XFS error code */
  
--extern int gfs2_quota_hold(struct gfs2_inode *ip, u32 uid, u32 gid);
-+extern int gfs2_quota_hold(struct gfs2_inode *ip, kuid_t uid, kgid_t gid);
- extern void gfs2_quota_unhold(struct gfs2_inode *ip);
+-	if (qid.type == USRQUOTA)
+-		type = QUOTA_USER;
+-	else if (qid.type == GRPQUOTA)
+-		type = QUOTA_GROUP;
+-	else
++	if ((qid.type != USRQUOTA) &&
++	    (qid.type != GRPQUOTA))
+ 		return -EINVAL;
  
--extern int gfs2_quota_lock(struct gfs2_inode *ip, u32 uid, u32 gid);
-+extern int gfs2_quota_lock(struct gfs2_inode *ip, kuid_t uid, kgid_t gid);
- extern void gfs2_quota_unlock(struct gfs2_inode *ip);
+ 	error = qd_get(sdp, qid, &qd);
+@@ -1499,7 +1492,7 @@ static int gfs2_get_dqblk(struct super_block *sb, struct kqid qid,
  
--extern int gfs2_quota_check(struct gfs2_inode *ip, u32 uid, u32 gid);
-+extern int gfs2_quota_check(struct gfs2_inode *ip, kuid_t uid, kgid_t gid);
- extern void gfs2_quota_change(struct gfs2_inode *ip, s64 change,
--			      u32 uid, u32 gid);
-+			      kuid_t uid, kgid_t gid);
+ 	qlvb = (struct gfs2_quota_lvb *)qd->qd_gl->gl_lksb.sb_lvbptr;
+ 	fdq->d_version = FS_DQUOT_VERSION;
+-	fdq->d_flags = (type == QUOTA_USER) ? FS_USER_QUOTA : FS_GROUP_QUOTA;
++	fdq->d_flags = (qid.type == USRQUOTA) ? FS_USER_QUOTA : FS_GROUP_QUOTA;
+ 	fdq->d_id = from_kqid_munged(current_user_ns(), qid);
+ 	fdq->d_blk_hardlimit = be64_to_cpu(qlvb->qb_limit) << sdp->sd_fsb2bb_shift;
+ 	fdq->d_blk_softlimit = be64_to_cpu(qlvb->qb_warn) << sdp->sd_fsb2bb_shift;
+@@ -1526,21 +1519,13 @@ static int gfs2_set_dqblk(struct super_block *sb, struct kqid qid,
+ 	int alloc_required;
+ 	loff_t offset;
+ 	int error;
+-	int type;
  
- extern int gfs2_quota_sync(struct super_block *sb, int type);
- extern int gfs2_quota_refresh(struct gfs2_sbd *sdp, struct kqid qid);
+ 	if (sdp->sd_args.ar_quota == GFS2_QUOTA_OFF)
+ 		return -ESRCH; /* Crazy XFS error code */
+ 
+-	switch(qid.type) {
+-	case USRQUOTA:
+-		type = QUOTA_USER;
+-		break;
+-	case GRPQUOTA:
+-		type = QUOTA_GROUP;
+-		break;
+-	default:
++	if ((qid.type != USRQUOTA) &&
++	    (qid.type != GRPQUOTA))
+ 		return -EINVAL;
+-	}
+ 
+ 	if (fdq->d_fieldmask & ~GFS2_FIELDMASK)
+ 		return -EINVAL;
 -- 
 1.7.5.4
