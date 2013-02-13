@@ -1,8 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 62/85] nfsd: Remove declaration of nonexistent
-	nfs4_acl_permisison
-Date: Wed, 13 Feb 2013 09:51:51 -0800
-Message-ID: <1360777934-5663-62-git-send-email-ebiederm__16361.3094286577$1360778995$gmane$org@xmission.com>
+Subject: [PATCH review 61/85] nfs: Enable building with user namespaces
+	enabled.
+Date: Wed, 13 Feb 2013 09:51:50 -0800
+Message-ID: <1360777934-5663-61-git-send-email-ebiederm__22356.0652266771$1360779008$gmane$org@xmission.com>
 References: <87621w14vs.fsf@xmission.com>
 	<1360777934-5663-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -25,25 +25,28 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
+Now that the kuids and kgids conversion have propogated
+through net/sunrpc/ and the fs/nfs/ it is safe to enable
+building nfs when user namespaces are enabled.
+
 Cc: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
 Cc: Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/nfsd/acl.h |    2 --
- 1 files changed, 0 insertions(+), 2 deletions(-)
+ init/Kconfig |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
 
-diff --git a/fs/nfsd/acl.h b/fs/nfsd/acl.h
-index 34e5c40..8b186a4 100644
---- a/fs/nfsd/acl.h
-+++ b/fs/nfsd/acl.h
-@@ -44,8 +44,6 @@
- struct nfs4_acl *nfs4_acl_new(int);
- int nfs4_acl_get_whotype(char *, u32);
- int nfs4_acl_write_who(int who, char *p);
--int nfs4_acl_permission(struct nfs4_acl *acl, uid_t owner, gid_t group,
--		                        uid_t who, u32 mask);
+diff --git a/init/Kconfig b/init/Kconfig
+index b526f4c..d7b926a 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -1073,7 +1073,6 @@ config UIDGID_CONVERTED
+ 	# Filesystems
+ 	depends on CIFS = n
+ 	depends on NFSD = n
+-	depends on NFS_FS = n
+ 	depends on XFS_FS = n
  
- #define NFS4_ACL_TYPE_DEFAULT	0x01
- #define NFS4_ACL_DIR		0x02
+ config UIDGID_STRICT_TYPE_CHECKS
 -- 
 1.7.5.4
