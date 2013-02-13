@@ -1,7 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 32/85] gfs2: Modify qdsb_get to take a struct kqid
-Date: Wed, 13 Feb 2013 09:51:21 -0800
-Message-ID: <1360777934-5663-32-git-send-email-ebiederm__37393.1166519926$1360778302$gmane$org@xmission.com>
+Subject: [PATCH review 42/85] sunrpc: Use userns friendly constants.
+Date: Wed, 13 Feb 2013 09:51:31 -0800
+Message-ID: <1360777934-5663-42-git-send-email-ebiederm@xmission.com>
 References: <87621w14vs.fsf@xmission.com>
 	<1360777934-5663-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -19,69 +19,102 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Steven Whitehouse <swhiteho-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Cc: Steven Whitehouse <swhiteho-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Instead of (uid_t)0 use GLOBAL_ROOT_UID.
+Instead of (gid_t)0 use GLOBAL_ROOT_GID.
+Instead of (uid_t)-1 use INVALID_UID
+Instead of (gid_t)-1 use INVALID_GID.
+Instead of NOGROUP use INVALID_GID.
+
+Cc: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
+Cc: Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/gfs2/quota.c |   13 +++++++------
- 1 files changed, 7 insertions(+), 6 deletions(-)
+ net/sunrpc/auth.c         |    4 ++--
+ net/sunrpc/auth_generic.c |    4 ++--
+ net/sunrpc/auth_unix.c    |    6 +++---
+ net/sunrpc/svcauth_unix.c |    4 ++--
+ 4 files changed, 9 insertions(+), 9 deletions(-)
 
-diff --git a/fs/gfs2/quota.c b/fs/gfs2/quota.c
-index 02913e9..20762ae 100644
---- a/fs/gfs2/quota.c
-+++ b/fs/gfs2/quota.c
-@@ -464,12 +464,13 @@ static void qd_unlock(struct gfs2_quota_data *qd)
- 	qd_put(qd);
- }
- 
--static int qdsb_get(struct gfs2_sbd *sdp, int user, u32 id,
-+static int qdsb_get(struct gfs2_sbd *sdp, struct kqid qid,
- 		    struct gfs2_quota_data **qdp)
+diff --git a/net/sunrpc/auth.c b/net/sunrpc/auth.c
+index b5c067b..4cd0ecf 100644
+--- a/net/sunrpc/auth.c
++++ b/net/sunrpc/auth.c
+@@ -519,8 +519,8 @@ rpcauth_bind_root_cred(struct rpc_task *task, int lookupflags)
  {
- 	int error;
+ 	struct rpc_auth *auth = task->tk_client->cl_auth;
+ 	struct auth_cred acred = {
+-		.uid = 0,
+-		.gid = 0,
++		.uid = GLOBAL_ROOT_UID,
++		.gid = GLOBAL_ROOT_GID,
+ 	};
  
--	error = qd_get(sdp, user, id, qdp);
-+	error = qd_get(sdp, qid.type == USRQUOTA ? QUOTA_USER : QUOTA_GROUP,
-+		       from_kqid(&init_user_ns, qid), qdp);
- 	if (error)
- 		return error;
+ 	dprintk("RPC: %5u looking up %s cred\n",
+diff --git a/net/sunrpc/auth_generic.c b/net/sunrpc/auth_generic.c
+index 6ed6f20..9d2e0b0 100644
+--- a/net/sunrpc/auth_generic.c
++++ b/net/sunrpc/auth_generic.c
+@@ -18,8 +18,8 @@
+ # define RPCDBG_FACILITY	RPCDBG_AUTH
+ #endif
  
-@@ -518,20 +519,20 @@ int gfs2_quota_hold(struct gfs2_inode *ip, u32 uid, u32 gid)
- 	if (sdp->sd_args.ar_quota == GFS2_QUOTA_OFF)
+-#define RPC_MACHINE_CRED_USERID		((uid_t)0)
+-#define RPC_MACHINE_CRED_GROUPID	((gid_t)0)
++#define RPC_MACHINE_CRED_USERID		GLOBAL_ROOT_UID
++#define RPC_MACHINE_CRED_GROUPID	GLOBAL_ROOT_GID
+ 
+ struct generic_cred {
+ 	struct rpc_cred gc_base;
+diff --git a/net/sunrpc/auth_unix.c b/net/sunrpc/auth_unix.c
+index 52c5abd..2f86270 100644
+--- a/net/sunrpc/auth_unix.c
++++ b/net/sunrpc/auth_unix.c
+@@ -85,7 +85,7 @@ unx_create_cred(struct rpc_auth *auth, struct auth_cred *acred, int flags)
+ 		cred->uc_gids[i] = gid;
+ 	}
+ 	if (i < NFS_NGROUPS)
+-		cred->uc_gids[i] = NOGROUP;
++		cred->uc_gids[i] = INVALID_GID;
+ 
+ 	return &cred->uc_base;
+ }
+@@ -137,7 +137,7 @@ unx_match(struct auth_cred *acred, struct rpc_cred *rcred, int flags)
+ 			return 0;
+ 	}
+ 	if (groups < NFS_NGROUPS &&
+-	    cred->uc_gids[groups] != NOGROUP)
++	    cred->uc_gids[groups] != INVALID_GID)
  		return 0;
- 
--	error = qdsb_get(sdp, QUOTA_USER, ip->i_inode.i_uid, qd);
-+	error = qdsb_get(sdp, make_kqid_uid(ip->i_inode.i_uid), qd);
- 	if (error)
- 		goto out;
- 	ip->i_res->rs_qa_qd_num++;
- 	qd++;
- 
--	error = qdsb_get(sdp, QUOTA_GROUP, ip->i_inode.i_gid, qd);
-+	error = qdsb_get(sdp, make_kqid_gid(ip->i_inode.i_gid), qd);
- 	if (error)
- 		goto out;
- 	ip->i_res->rs_qa_qd_num++;
- 	qd++;
- 
- 	if (uid != NO_UID_QUOTA_CHANGE && uid != ip->i_inode.i_uid) {
--		error = qdsb_get(sdp, QUOTA_USER, uid, qd);
-+		error = qdsb_get(sdp, make_kqid_uid(uid), qd);
- 		if (error)
- 			goto out;
- 		ip->i_res->rs_qa_qd_num++;
-@@ -539,7 +540,7 @@ int gfs2_quota_hold(struct gfs2_inode *ip, u32 uid, u32 gid)
+ 	return 1;
+ }
+@@ -166,7 +166,7 @@ unx_marshal(struct rpc_task *task, __be32 *p)
+ 	*p++ = htonl((u32) cred->uc_uid);
+ 	*p++ = htonl((u32) cred->uc_gid);
+ 	hold = p++;
+-	for (i = 0; i < 16 && cred->uc_gids[i] != (gid_t) NOGROUP; i++)
++	for (i = 0; i < 16 && cred->uc_gids[i] != INVALID_GID; i++)
+ 		*p++ = htonl((u32) cred->uc_gids[i]);
+ 	*hold = htonl(p - hold - 1);		/* gid array length */
+ 	*base = htonl((p - base - 1) << 2);	/* cred length */
+diff --git a/net/sunrpc/svcauth_unix.c b/net/sunrpc/svcauth_unix.c
+index 4d01292..c8cb5dc 100644
+--- a/net/sunrpc/svcauth_unix.c
++++ b/net/sunrpc/svcauth_unix.c
+@@ -750,8 +750,8 @@ svcauth_null_accept(struct svc_rqst *rqstp, __be32 *authp)
  	}
  
- 	if (gid != NO_GID_QUOTA_CHANGE && gid != ip->i_inode.i_gid) {
--		error = qdsb_get(sdp, QUOTA_GROUP, gid, qd);
-+		error = qdsb_get(sdp, make_kqid_gid(gid), qd);
- 		if (error)
- 			goto out;
- 		ip->i_res->rs_qa_qd_num++;
+ 	/* Signal that mapping to nobody uid/gid is required */
+-	cred->cr_uid = (uid_t) -1;
+-	cred->cr_gid = (gid_t) -1;
++	cred->cr_uid = INVALID_UID;
++	cred->cr_gid = INVALID_GID;
+ 	cred->cr_group_info = groups_alloc(0);
+ 	if (cred->cr_group_info == NULL)
+ 		return SVC_CLOSE; /* kmalloc failure - client must retry */
 -- 
 1.7.5.4
