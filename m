@@ -1,7 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 69/85] nfsd: Modify nfsd4_cb_sec to use kuids and kgids
-Date: Wed, 13 Feb 2013 09:51:58 -0800
-Message-ID: <1360777934-5663-69-git-send-email-ebiederm__36101.9153184772$1360778986$gmane$org@xmission.com>
+Subject: [PATCH review 62/85] nfsd: Remove declaration of nonexistent
+	nfs4_acl_permisison
+Date: Wed, 13 Feb 2013 09:51:51 -0800
+Message-ID: <1360777934-5663-62-git-send-email-ebiederm__16361.3094286577$1360778995$gmane$org@xmission.com>
 References: <87621w14vs.fsf@xmission.com>
 	<1360777934-5663-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -24,59 +25,25 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Change uid and gid in struct nfsd4_cb_sec to be of type kuid_t and
-kgid_t.
-
-In nfsd4_decode_cb_sec when reading uids and gids off the wire convert
-them to kuids and kgids, and if they don't convert to valid kuids or
-valid kuids ignore RPC_AUTH_UNIX and don't fill in any of the fields.
-
 Cc: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
 Cc: Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/nfsd/nfs4xdr.c |   13 ++++++++++---
- fs/nfsd/state.h   |    4 ++--
- 2 files changed, 12 insertions(+), 5 deletions(-)
+ fs/nfsd/acl.h |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
 
-diff --git a/fs/nfsd/nfs4xdr.c b/fs/nfsd/nfs4xdr.c
-index 3812b06..2d1d06b 100644
---- a/fs/nfsd/nfs4xdr.c
-+++ b/fs/nfsd/nfs4xdr.c
-@@ -464,9 +464,16 @@ static __be32 nfsd4_decode_cb_sec(struct nfsd4_compoundargs *argp, struct nfsd4_
- 			READ32(dummy);
- 			READ_BUF(dummy * 4);
- 			if (cbs->flavor == (u32)(-1)) {
--				cbs->uid = uid;
--				cbs->gid = gid;
--				cbs->flavor = RPC_AUTH_UNIX;
-+				kuid_t kuid = make_kuid(&init_user_ns, uid);
-+				kgid_t kgid = make_kgid(&init_user_ns, gid);
-+				if (uid_valid(kuid) && gid_valid(kgid)) {
-+					cbs->uid = kuid;
-+					cbs->gid = kgid;
-+					cbs->flavor = RPC_AUTH_UNIX;
-+				} else {
-+					dprintk("RPC_AUTH_UNIX with invalid"
-+						"uid or gid ignoring!\n");
-+				}
- 			}
- 			break;
- 		case RPC_AUTH_GSS:
-diff --git a/fs/nfsd/state.h b/fs/nfsd/state.h
-index d1c229f..1a8c739 100644
---- a/fs/nfsd/state.h
-+++ b/fs/nfsd/state.h
-@@ -152,8 +152,8 @@ struct nfsd4_channel_attrs {
+diff --git a/fs/nfsd/acl.h b/fs/nfsd/acl.h
+index 34e5c40..8b186a4 100644
+--- a/fs/nfsd/acl.h
++++ b/fs/nfsd/acl.h
+@@ -44,8 +44,6 @@
+ struct nfs4_acl *nfs4_acl_new(int);
+ int nfs4_acl_get_whotype(char *, u32);
+ int nfs4_acl_write_who(int who, char *p);
+-int nfs4_acl_permission(struct nfs4_acl *acl, uid_t owner, gid_t group,
+-		                        uid_t who, u32 mask);
  
- struct nfsd4_cb_sec {
- 	u32	flavor; /* (u32)(-1) used to mean "no valid flavor" */
--	u32	uid;
--	u32	gid;
-+	kuid_t	uid;
-+	kgid_t	gid;
- };
- 
- struct nfsd4_create_session {
+ #define NFS4_ACL_TYPE_DEFAULT	0x01
+ #define NFS4_ACL_DIR		0x02
 -- 
 1.7.5.4
