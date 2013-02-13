@@ -1,8 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 04/85] ceph: Convert struct ceph_mds_request to use
-	kuid_t and kgid_t
-Date: Wed, 13 Feb 2013 09:50:53 -0800
-Message-ID: <1360777934-5663-4-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH review 03/85] ceph: Translate inode uid and gid attributes
+	to/from kuids and kgids.
+Date: Wed, 13 Feb 2013 09:50:52 -0800
+Message-ID: <1360777934-5663-3-git-send-email-ebiederm@xmission.com>
 References: <87621w14vs.fsf@xmission.com>
 	<1360777934-5663-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -25,47 +25,57 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Hold the uid and gid for a pending ceph mds request using the types
-kuid_t and kgid_t.  When a request message is finally created convert
-the kuid_t and kgid_t values into uids and gids in the initial user
-namespace.
+- In fill_inode() transate uids and gids in the initial user namespace
+  into kuids and kgids stored in inode->i_uid and inode->i_gid.
+
+- In ceph_setattr() if they have changed convert inode->i_uid and
+  inode->i_gid into initial user namespace uids and gids for
+  transmission.
 
 Cc: Sage Weil <sage-4GqslpFJ+cxBDgjK7y7TUQ@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/ceph/mds_client.c |    4 ++--
- fs/ceph/mds_client.h |    4 ++--
- 2 files changed, 4 insertions(+), 4 deletions(-)
+ fs/ceph/inode.c |   14 ++++++++------
+ 1 files changed, 8 insertions(+), 6 deletions(-)
 
-diff --git a/fs/ceph/mds_client.c b/fs/ceph/mds_client.c
-index 9165eb8..7a3dfe0 100644
---- a/fs/ceph/mds_client.c
-+++ b/fs/ceph/mds_client.c
-@@ -1658,8 +1658,8 @@ static struct ceph_msg *create_request_message(struct ceph_mds_client *mdsc,
+diff --git a/fs/ceph/inode.c b/fs/ceph/inode.c
+index 2971eaa..40e0787 100644
+--- a/fs/ceph/inode.c
++++ b/fs/ceph/inode.c
+@@ -612,8 +612,8 @@ static int fill_inode(struct inode *inode,
  
- 	head->mdsmap_epoch = cpu_to_le32(mdsc->mdsmap->m_epoch);
- 	head->op = cpu_to_le32(req->r_op);
--	head->caller_uid = cpu_to_le32(req->r_uid);
--	head->caller_gid = cpu_to_le32(req->r_gid);
-+	head->caller_uid = cpu_to_le32(from_kuid(&init_user_ns, req->r_uid));
-+	head->caller_gid = cpu_to_le32(from_kgid(&init_user_ns, req->r_gid));
- 	head->args = req->r_args;
- 
- 	ceph_encode_filepath(&p, end, ino1, path1);
-diff --git a/fs/ceph/mds_client.h b/fs/ceph/mds_client.h
-index dd26846..ff4188b 100644
---- a/fs/ceph/mds_client.h
-+++ b/fs/ceph/mds_client.h
-@@ -184,8 +184,8 @@ struct ceph_mds_request {
- 
- 	union ceph_mds_request_args r_args;
- 	int r_fmode;        /* file mode, if expecting cap */
--	uid_t r_uid;
--	gid_t r_gid;
-+	kuid_t r_uid;
-+	kgid_t r_gid;
- 
- 	/* for choosing which mds to send this request to */
- 	int r_direct_mode;
+ 	if ((issued & CEPH_CAP_AUTH_EXCL) == 0) {
+ 		inode->i_mode = le32_to_cpu(info->mode);
+-		inode->i_uid = le32_to_cpu(info->uid);
+-		inode->i_gid = le32_to_cpu(info->gid);
++		inode->i_uid = make_kuid(&init_user_ns, le32_to_cpu(info->uid));
++		inode->i_gid = make_kgid(&init_user_ns, le32_to_cpu(info->gid));
+ 		dout("%p mode 0%o uid.gid %d.%d\n", inode, inode->i_mode,
+ 		     inode->i_uid, inode->i_gid);
+ 	}
+@@ -1570,8 +1570,9 @@ int ceph_setattr(struct dentry *dentry, struct iattr *attr)
+ 			inode->i_uid = attr->ia_uid;
+ 			dirtied |= CEPH_CAP_AUTH_EXCL;
+ 		} else if ((issued & CEPH_CAP_AUTH_SHARED) == 0 ||
+-			   attr->ia_uid != inode->i_uid) {
+-			req->r_args.setattr.uid = cpu_to_le32(attr->ia_uid);
++			   !uid_eq(attr->ia_uid, inode->i_uid)) {
++			req->r_args.setattr.uid = cpu_to_le32(
++				from_kuid(&init_user_ns, attr->ia_uid));
+ 			mask |= CEPH_SETATTR_UID;
+ 			release |= CEPH_CAP_AUTH_SHARED;
+ 		}
+@@ -1583,8 +1584,9 @@ int ceph_setattr(struct dentry *dentry, struct iattr *attr)
+ 			inode->i_gid = attr->ia_gid;
+ 			dirtied |= CEPH_CAP_AUTH_EXCL;
+ 		} else if ((issued & CEPH_CAP_AUTH_SHARED) == 0 ||
+-			   attr->ia_gid != inode->i_gid) {
+-			req->r_args.setattr.gid = cpu_to_le32(attr->ia_gid);
++			   !gid_eq(attr->ia_gid, inode->i_gid)) {
++			req->r_args.setattr.gid = cpu_to_le32(
++				from_kgid(&init_user_ns, attr->ia_gid));
+ 			mask |= CEPH_SETATTR_GID;
+ 			release |= CEPH_CAP_AUTH_SHARED;
+ 		}
 -- 
 1.7.5.4
