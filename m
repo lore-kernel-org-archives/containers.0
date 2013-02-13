@@ -1,12 +1,18 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: nfs-ganesha with Linux containers
-Date: Tue, 12 Feb 2013 23:47:47 -0800
-Message-ID: <20130213074747.GA19635@us.ibm.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH RFC 09/12] userns: Convert ocfs2 to use kuid and kgid
+	where appropriate
+Date: Wed, 13 Feb 2013 09:12:37 -0800
+Message-ID: <874nhg5e9m.fsf@xmission.com>
+References: <87pq38wimv.fsf@xmission.com>
+	<1353415420-5457-1-git-send-email-ebiederm@xmission.com>
+	<1353415420-5457-9-git-send-email-ebiederm@xmission.com>
+	<20121121195114.GM2822@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20121121195114.GM2822@localhost> (Joel Becker's message of "Wed,
+	21 Nov 2012 11:51:15 -0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,103 +22,43 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: nfs-ganesha-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Mark Fasheh <mfasheh-IBi9RG/b67k@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Joel Becker <jlbec-aKy9MeLSZ9dg9hUCZPvPmw@public.gmane.org> writes:
 
+> On Tue, Nov 20, 2012 at 04:43:37AM -0800, Eric W. Biederman wrote:
+>> --- a/fs/ocfs2/file.c
+>> +++ b/fs/ocfs2/file.c
+>> @@ -1116,7 +1116,8 @@ int ocfs2_setattr(struct dentry *dentry, struct iattr *attr)
+>>  			    (unsigned long long)OCFS2_I(inode)->ip_blkno,
+>>  			    dentry->d_name.len, dentry->d_name.name,
+>>  			    attr->ia_valid, attr->ia_mode,
+>> -			    attr->ia_uid, attr->ia_gid);
+>> +			    from_kuid(&init_user_ns, attr->ia_uid),
+>> +			    from_kgid(&init_user_ns, attr->ia_gid));
+>
+> Dear Eric,
+> 	I have a similar question about init_user_ns to Dave.  As far as
+> I can tell, using init_user_ns here means we'll never get translations
+> based on the current process namespace.  It just so happens that
+> include/linux/user_namespace.h doesn't allow new namespaces yet, but I
+> can't see why we would propagate that knowledge elsewhere.
+>
+> 	Is there some magic about when init_user_ns should be used
+> regardless?
 
-I have nfs-ganesha [1.5.1] with FSAL_VFS running on Linux 3.7.0-rc8 on
-an x86_64 RHEL6.2 system (the "host"). I can export the filesystems and
-mount from another system.
+Trace statements are fancy print statements, and the tracing
+infrastructure is not setup to deal with anyone other than the
+one-true-root using it.  Trace is like printk in that way.
 
-I am trying to use nfs-Ganesha from within a Linux container on the same
-system.
+So for print statements I always convert the value into the initial user
+namespace which every value can be converted to without loss, and is the
+same value that we have always been printing.
 
-My container setup:
+If at some point the tracing people figure out how deal with multiple
+user namespaces it won't be hard to pass the kuids and kgids into the
+trace funtions and have the readers of the data perform the conversions.
 
-	On the REHL6.2 host, I have a directory, /export/vm1-root.
-
-	The root of my linux container is bind mounted to that directory 
-	So a file '/export/vm1-root/foobar' is known to the container as
-	'/foobar' and other files/directories in '/export' are not visible
-	from the container.
-
-	[ie it is as if the processes inside the containers have run 'chroot'
-	into /export/vm1-root and can't escape out of this]. 
-
-I am now trying to export a directory, '/vm1gfs0' from within the container
-to the external world. (on the host, this directory is /export/vm1-root/vm1gfs).
-
-I have nfs-ganesha* rpms installed and /etc/ganesha/vfs.ganesha.exports.conf
-properly configured to export '/vm1gfs0' from within the container. 
-
-When I try to start the vfs-ganesha service from within the container:
-
-	$ /etc/init.d/nfs-ganesha-vfs start
-
-I get the following errors in the log file:
-
-
-------
-12/02/2013 15:01:20 epoch=1360710080 : elm3a241-vm1 : vfs.ganesha.nfsd-1015[main
-] :COMMON_InitClientContext :FSAL: FULLDEBUG: FSAL_InitClientContext returns (ER
-R_FSAL_NO_ERROR, No error, 0)
-12/02/2013 15:01:20 epoch=1360710080 : elm3a241-vm1 : vfs.ganesha.nfsd-1015[main
-] :VFSFSAL_BuildExportContext :FSAL: CRITICAL ERROR: No mount entry matches '/ex
-port/vm1gfs0' in /etc/mtab
-12/02/2013 15:01:20 epoch=1360710080 : elm3a241-vm1 : vfs.ganesha.nfsd-1015[main
-] :VFSFSAL_BuildExportContext :FSAL: DEBUG: FSAL_BuildExportContext returns (ERR
-_FSAL_NOENT, No such file or directory, 0)
-12/02/2013 15:01:20 epoch=1360710080 : elm3a241-vm1 : vfs.ganesha.nfsd-1015[main
-] :nfs_export_create_root_entry :NFS STARTUP: CRITICAL ERROR: Couldn't build exp
-ort context for /vm1gfs0
-12/02/2013 15:01:20 epoch=1360710080 : elm3a241-vm1 : vfs.ganesha.nfsd-1015[main
-] :nfs_Init :NFS STARTUP: FATAL ERROR: Error initializing Cache Inode root entri
-es
-
---------
-
-Inside the linux container, there is no entry in /etc/mtab for the
-container's root filesystem. 
-
-Is nfs-Ganesha trying to find the path all the way back to the root of the 
-filesystem (which the linux container is unable to get to) ?
-
-Faking an mtab entry with:
-
-	$ mount -o bind / /
-
-gives a slightly different error:
-
----------
-
-12/02/2013 15:42:05 epoch=1360712525 : elm3a241-vm1 : vfs.ganesha.nfsd-1113[main
-] :COMMON_GetClientContext :FSAL: FULLDEBUG: FSAL_GetClientContext returns (ERR_
-FSAL_NO_ERROR, No error, 0)
-12/02/2013 15:42:05 epoch=1360712525 : elm3a241-vm1 : vfs.ganesha.nfsd-1113[main
-] :fsal_internal_Path2Handle :FSAL: FULLDEBUG: Lookup handle for /vm1gfs0
-12/02/2013 15:42:05 epoch=1360712525 : elm3a241-vm1 : vfs.ganesha.nfsd-1113[main
-] :VFSFSAL_lookupPath :FSAL: DEBUG: FSAL_lookupPath returns (ERR_FSAL_NOENT, No
-such file or directory, 2)
-12/02/2013 15:42:05 epoch=1360712525 : elm3a241-vm1 : vfs.ganesha.nfsd-1113[main
-] :nfs_export_create_root_entry :NFS STARTUP: CRITICAL ERROR: Couldn't access th
-e root of the exported namespace, ExportId=77 Path=/vm1gfs0 FSAL_ERROR=(2
-,2)
-12/02/2013 15:42:05 epoch=1360712525 : elm3a241-vm1 : vfs.ganesha.nfsd-1113[main
-] :nfs_Init :NFS STARTUP: FATAL ERROR: Error initializing Cache Inode root entri
-es
-
----------
-
-If a physical disk is mounted inside the container, say:
-
-	$ mount /dev/sdb1 /mnt1
-
-will we be able export /mnt1 from within the container or does nfs-Ganesha
-still need to find the actual root fs ?
-
-In effect, can a process chroot into a directory and export a subdir using
-nfs-ganesha ?
-
-Sukadev
+Eric
