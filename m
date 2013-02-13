@@ -1,7 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 81/85] cifs: Convert struct cifsFileInfo to use a kuid
-Date: Wed, 13 Feb 2013 09:52:10 -0800
-Message-ID: <1360777934-5663-81-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH review 66/85] nfsd: Convert nfs3xdr to use kuids and kgids
+Date: Wed, 13 Feb 2013 09:51:55 -0800
+Message-ID: <1360777934-5663-66-git-send-email-ebiederm@xmission.com>
 References: <87621w14vs.fsf@xmission.com>
 	<1360777934-5663-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -19,52 +19,57 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Steve French <smfrench-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Cc: Steve French <smfrench-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+When reading uids and gids off the wire convert them to kuids and
+kgids.
+
+When putting kuids and kgids onto the wire first convert them to uids
+and gids the other side will understand.
+
+Cc: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
+Cc: Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/cifs/cifsglob.h |    2 +-
- fs/cifs/file.c     |    4 ++--
- 2 files changed, 3 insertions(+), 3 deletions(-)
+ fs/nfsd/nfs3xdr.c |   14 ++++++++------
+ 1 files changed, 8 insertions(+), 6 deletions(-)
 
-diff --git a/fs/cifs/cifsglob.h b/fs/cifs/cifsglob.h
-index 98312fd..04aa74e 100644
---- a/fs/cifs/cifsglob.h
-+++ b/fs/cifs/cifsglob.h
-@@ -930,7 +930,7 @@ struct cifsFileInfo {
- 	struct list_head tlist;	/* pointer to next fid owned by tcon */
- 	struct list_head flist;	/* next fid (file instance) for this inode */
- 	struct cifs_fid_locks *llist;	/* brlocks held by this fid */
--	unsigned int uid;	/* allows finding which FileInfo structure */
-+	kuid_t uid;		/* allows finding which FileInfo structure */
- 	__u32 pid;		/* process id who opened file */
- 	struct cifs_fid fid;	/* file id from remote */
- 	/* BB add lock scope info here if needed */ ;
-diff --git a/fs/cifs/file.c b/fs/cifs/file.c
-index b9baf5f..c23fbd8 100644
---- a/fs/cifs/file.c
-+++ b/fs/cifs/file.c
-@@ -1649,7 +1649,7 @@ struct cifsFileInfo *find_readable_file(struct cifsInodeInfo *cifs_inode,
- 	   are always at the end of the list but since the first entry might
- 	   have a close pending, we go through the whole list */
- 	list_for_each_entry(open_file, &cifs_inode->openFileList, flist) {
--		if (fsuid_only && open_file->uid != current_fsuid())
-+		if (fsuid_only && !uid_eq(open_file->uid, current_fsuid()))
- 			continue;
- 		if (OPEN_FMODE(open_file->f_flags) & FMODE_READ) {
- 			if (!open_file->invalidHandle) {
-@@ -1702,7 +1702,7 @@ refind_writable:
- 	list_for_each_entry(open_file, &cifs_inode->openFileList, flist) {
- 		if (!any_available && open_file->pid != current->tgid)
- 			continue;
--		if (fsuid_only && open_file->uid != current_fsuid())
-+		if (fsuid_only && !uid_eq(open_file->uid, current_fsuid()))
- 			continue;
- 		if (OPEN_FMODE(open_file->f_flags) & FMODE_WRITE) {
- 			if (!open_file->invalidHandle) {
+diff --git a/fs/nfsd/nfs3xdr.c b/fs/nfsd/nfs3xdr.c
+index 1884a3f..925c944 100644
+--- a/fs/nfsd/nfs3xdr.c
++++ b/fs/nfsd/nfs3xdr.c
+@@ -105,12 +105,14 @@ decode_sattr3(__be32 *p, struct iattr *iap)
+ 		iap->ia_mode = ntohl(*p++);
+ 	}
+ 	if (*p++) {
+-		iap->ia_valid |= ATTR_UID;
+-		iap->ia_uid = ntohl(*p++);
++		iap->ia_uid = make_kuid(&init_user_ns, ntohl(*p++));
++		if (uid_valid(iap->ia_uid))
++			iap->ia_valid |= ATTR_UID;
+ 	}
+ 	if (*p++) {
+-		iap->ia_valid |= ATTR_GID;
+-		iap->ia_gid = ntohl(*p++);
++		iap->ia_gid = make_kgid(&init_user_ns, ntohl(*p++));
++		if (gid_valid(iap->ia_gid))
++			iap->ia_valid |= ATTR_GID;
+ 	}
+ 	if (*p++) {
+ 		u64	newsize;
+@@ -167,8 +169,8 @@ encode_fattr3(struct svc_rqst *rqstp, __be32 *p, struct svc_fh *fhp,
+ 	*p++ = htonl(nfs3_ftypes[(stat->mode & S_IFMT) >> 12]);
+ 	*p++ = htonl((u32) stat->mode);
+ 	*p++ = htonl((u32) stat->nlink);
+-	*p++ = htonl((u32) stat->uid);
+-	*p++ = htonl((u32) stat->gid);
++	*p++ = htonl((u32) from_kuid(&init_user_ns, stat->uid));
++	*p++ = htonl((u32) from_kgid(&init_user_ns, stat->gid));
+ 	if (S_ISLNK(stat->mode) && stat->size > NFS3_MAXPATHLEN) {
+ 		p = xdr_encode_hyper(p, (u64) NFS3_MAXPATHLEN);
+ 	} else {
 -- 
 1.7.5.4
