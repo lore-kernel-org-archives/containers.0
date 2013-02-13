@@ -1,14 +1,18 @@
-From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 73/85] cifs: Override unmappable incoming uids and gids
-Date: Wed, 13 Feb 2013 09:52:02 -0800
-Message-ID: <1360777934-5663-73-git-send-email-ebiederm__25632.5739356273$1360779099$gmane$org@xmission.com>
-References: <87621w14vs.fsf@xmission.com>
-	<1360777934-5663-1-git-send-email-ebiederm@xmission.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH RFC 10/12] userns: Convert xfs to use kuid/kgid/kprojid
+	where appropriate
+Date: Wed, 13 Feb 2013 10:13:16 -0800
+Message-ID: <87obfoxetf.fsf@xmission.com>
+References: <87pq38wimv.fsf@xmission.com>
+	<1353415420-5457-1-git-send-email-ebiederm@xmission.com>
+	<1353415420-5457-10-git-send-email-ebiederm@xmission.com>
+	<20121120235524.GK2591@dastard> <20121121195246.GN2822@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1360777934-5663-1-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <20121121195246.GN2822@localhost> (Joel Becker's message of "Wed,
+	21 Nov 2012 11:52:47 -0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,55 +22,51 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Steve French <smfrench-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
+Cc: Alex Elder <elder-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ben Myers <bpm-sJ/iWh9BUns@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Joel Becker <jlbec-aKy9MeLSZ9dg9hUCZPvPmw@public.gmane.org> writes:
 
-The cifs protocol has a 64bit space for uids and gids, while linux
-only supports a 32bit space today.  Instead of silently truncating
-64bit cifs ids, replace cifs ids that do not fit in the 32bit linux
-id space with the default uid and gids for the cifs mount.
+> On Wed, Nov 21, 2012 at 10:55:24AM +1100, Dave Chinner wrote:
+>> > diff --git a/fs/xfs/xfs_inode.c b/fs/xfs/xfs_inode.c
+>> > index 2778258..3656b88 100644
+>> > --- a/fs/xfs/xfs_inode.c
+>> > +++ b/fs/xfs/xfs_inode.c
+>> > @@ -570,11 +570,12 @@ xfs_dinode_from_disk(
+>> >  	to->di_version = from ->di_version;
+>> >  	to->di_format = from->di_format;
+>> >  	to->di_onlink = be16_to_cpu(from->di_onlink);
+>> > -	to->di_uid = be32_to_cpu(from->di_uid);
+>> > -	to->di_gid = be32_to_cpu(from->di_gid);
+>> > +	to->di_uid = make_kuid(&init_user_ns, be32_to_cpu(from->di_uid));
+>> > +	to->di_gid = make_kgid(&init_user_ns, be32_to_cpu(from->di_gid));
+>> 
+>> You can't do this, because the incore inode structure is written
+>> directly to the log. This is effectively an on-disk format change.
+>
+> 	Yeah, I don't get this either.  Over in ocfs2, you do the
+> correct thing, translating at the boundary from ocfs2_dinode to struct
+> inode.
 
-Cc: Steve French <smfrench-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- fs/cifs/inode.c |   22 +++++++++++++---------
- 1 files changed, 13 insertions(+), 9 deletions(-)
+This is the boundary.  The crazy thing is that is that xfs appears to
+directly write their incore inode structure into their journal.  I had
+missed the journal reference the first time through and simply assumed
+since this is where the disk inode to the incore inode coversion
+happened that the weird scary comment in the xfs header file was wrong.
 
-diff --git a/fs/cifs/inode.c b/fs/cifs/inode.c
-index ed6208f..d7ea2a6 100644
---- a/fs/cifs/inode.c
-+++ b/fs/cifs/inode.c
-@@ -244,15 +244,19 @@ cifs_unix_basic_to_fattr(struct cifs_fattr *fattr, FILE_UNIX_BASIC_INFO *info,
- 		break;
- 	}
- 
--	if (cifs_sb->mnt_cifs_flags & CIFS_MOUNT_OVERR_UID)
--		fattr->cf_uid = cifs_sb->mnt_uid;
--	else
--		fattr->cf_uid = le64_to_cpu(info->Uid);
--
--	if (cifs_sb->mnt_cifs_flags & CIFS_MOUNT_OVERR_GID)
--		fattr->cf_gid = cifs_sb->mnt_gid;
--	else
--		fattr->cf_gid = le64_to_cpu(info->Gid);
-+	fattr->cf_uid = cifs_sb->mnt_uid;
-+	if (!(cifs_sb->mnt_cifs_flags & CIFS_MOUNT_OVERR_UID)) {
-+		u64 id = le64_to_cpu(info->Uid);
-+		if (id < ((uid_t)-1))
-+			fattr->cf_uid = id;
-+	}
-+	
-+	fattr->cf_gid = cifs_sb->mnt_gid;
-+	if (!(cifs_sb->mnt_cifs_flags & CIFS_MOUNT_OVERR_GID)) {
-+		u64 id = le64_to_cpu(info->Gid);
-+		if (id < ((gid_t)-1))
-+			fattr->cf_gid = id;
-+	}
- 
- 	fattr->cf_nlink = le64_to_cpu(info->Nlinks);
- }
--- 
-1.7.5.4
+I would have no problems with not converting those uids and gids except
+they are used directly in comparisons against current_fsuid so it really
+isn't ok to not convert those values.
+
+I wish that incore structure was managed more like the lvb in ocfs2.
+Even though it is cached in core it is first converted into a specific
+byte order and then shoved into a character array.  Keeping anyone from
+getting any funny ideas about using those values directly.
+
+I have sent my xfs changes back to the drawing board and am
+concentrating on getting my conversions for the rest of the filesystems
+merged.  When I get the time I will come back to xfs.  xfs is a very
+peculiar filesystem.
+
+Eric
