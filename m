@@ -1,19 +1,19 @@
-From: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
-Subject: Re: [PATCH RFC 10/12] userns: Convert xfs to use kuid/kgid/kprojid
-	where appropriate
-Date: Thu, 14 Feb 2013 13:19:08 +1100
-Message-ID: <20130214021908.GJ26694@dastard>
-References: <87pq38wimv.fsf@xmission.com>
-	<1353415420-5457-1-git-send-email-ebiederm@xmission.com>
-	<1353415420-5457-10-git-send-email-ebiederm@xmission.com>
-	<20121120235524.GK2591@dastard> <20121121195246.GN2822@localhost>
-	<87obfoxetf.fsf@xmission.com>
+From: Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: [PATCH review 52/85] sunrpc: Properly encode kuids and kgids
+	in auth.unix.gid rpc pipe upcalls.
+Date: Thu, 14 Feb 2013 11:12:16 +0400
+Message-ID: <511C8E50.8080007__25976.1144793176$1360826652$gmane$org@parallels.com>
+References: <87621w14vs.fsf@xmission.com>
+	<1360777934-5663-1-git-send-email-ebiederm@xmission.com>
+	<1360777934-5663-52-git-send-email-ebiederm@xmission.com>
+	<20130213210545.GO14195@fieldses.org> <874nhfrjgg.fsf@xmission.com>
+	<20130213215047.GR14195@fieldses.org> <8738wzq1z6.fsf@xmission.com>
+	<20130213225840.GV14195@fieldses.org> <87ip5vn6iv.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1251"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87obfoxetf.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <87ip5vn6iv.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,128 +24,149 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Alex Elder <elder-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ben Myers <bpm-sJ/iWh9BUns@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Feb 13, 2013 at 10:13:16AM -0800, Eric W. Biederman wrote:
-> Joel Becker <jlbec-aKy9MeLSZ9dg9hUCZPvPmw@public.gmane.org> writes:
-> 
-> > On Wed, Nov 21, 2012 at 10:55:24AM +1100, Dave Chinner wrote:
-> >> > diff --git a/fs/xfs/xfs_inode.c b/fs/xfs/xfs_inode.c
-> >> > index 2778258..3656b88 100644
-> >> > --- a/fs/xfs/xfs_inode.c
-> >> > +++ b/fs/xfs/xfs_inode.c
-> >> > @@ -570,11 +570,12 @@ xfs_dinode_from_disk(
-> >> >  	to->di_version = from ->di_version;
-> >> >  	to->di_format = from->di_format;
-> >> >  	to->di_onlink = be16_to_cpu(from->di_onlink);
-> >> > -	to->di_uid = be32_to_cpu(from->di_uid);
-> >> > -	to->di_gid = be32_to_cpu(from->di_gid);
-> >> > +	to->di_uid = make_kuid(&init_user_ns, be32_to_cpu(from->di_uid));
-> >> > +	to->di_gid = make_kgid(&init_user_ns, be32_to_cpu(from->di_gid));
-> >> 
-> >> You can't do this, because the incore inode structure is written
-> >> directly to the log. This is effectively an on-disk format change.
-> >
-> > 	Yeah, I don't get this either.  Over in ocfs2, you do the
-> > correct thing, translating at the boundary from ocfs2_dinode to struct
-> > inode.
-> 
-> This is the boundary.
-
-It is *a* boundary. It is the in-core disk inode to on disk inode
-boundary (i.e. struct xfs_icdinode to struct xfs_dinode).
-Namespaces don't belong at this boundary - this is internal XFS
-stuff that nothing from the VFS should be interacting with. The
-structure of XFS is roughly:
-
-	userspace
-	---------
-	   VFS
-	---------
-	 VFS/XFS	<<<<<< here is where you need to modify
-	interface
-	---------
-	core XFS
-	---------
-	XFS/disk	<<<<<< here is where you actually modified
-	interface
-	---------
-	 storage
-
-
-IOWs, the boundary you are looking for is the VFS/XFS boundary (i.e.
-struct inode to struct xfs_icdinode). i.e. namespace aware uid/gid
-is in the struct inode, flattened 32 bit values are in the struct
-xfs_icdinode. The struct inode and the struct xfs_icdinode are both
-embedded in the struct xfs_inode, so we just have to translate
-between the two internal structures are the right point in time.
-
-Hence for namespaces to work correctly, anything that is currently
-using current_fs*id() for uid/gid comparison needs to be converted
-to use the VFS inode values (i.e. VFS_I(ip)->i_*id). For values
-written to the xfs inode, the VFS uid/gid needs to be flattened to
-a 32bit value.
-
-These flattened values are needed during inode allocation (for
-initial on-disk values) and creating dquots associated with the new
-inodes. You should be able to derive them from current_fs*id(),
-right? Then when changing uid/gid via .setattr, we can flatten the
-namespace aware VFS uid/gid and into the XFS incore idinode (i.e.
-ip->i_d.di_*id) via the same method. Conversion from XFS on-disk to
-namespace aware VFS uid/gid then occurs when when initialising the
-VFS inode from the XFS inode (i.e. in xfs_setup_inode() like I
-previously suggested).
-
-This keeps namespace aware uid/gid up at the VFS layer and
-conversion at the VFS/XFS boundaries in the XFS code, and everything
-should work fine.
-
-> The crazy thing is that is that xfs appears to
-> directly write their incore inode structure into their journal. 
-
-Off topic, but it's actually a very sane thing to do. It's called
-logical object logging, as opposed to physical logging like ext3/4
-and ocfs2 use. XFS uses a combination of logical logging
-(superblock, dquots, inodes) and physical logging (via buffers).
-
-Logical logging decouples in-memory object modification from buffer
-IO and ensures the buffer is not a single point of serialisation
-when multiple objects share a single buffer. Hence we can read/write
-an inode buffer and concurrent modify inodes in memory from that
-buffer at the same time.  i.e. we only need buffers for IO, not for
-ongoing modifications.
-
-This decoupling allows XFS to use large buffers for inodes and so
-minimise IO for reading and/or writing inodes.  Further, we can also
-easily serialise logged, in-memory modifications for all objects in
-a single backing buffer with only minor interruption to ongoing
-modifications. It also allows us to use simple fire-and-forget
-writeback semantics for metadata.
-
-IOWs, the use of logical logging techniques vastly improves
-concurrency and scalability over the physical logging methods other
-filesystems use. Call it crazy if you want, but I find general most
-people say this simply because they don't understand why XFS does
-what it does....
-
-> I had
-> missed the journal reference the first time through and simply assumed
-> since this is where the disk inode to the incore inode coversion
-> happened that the weird scary comment in the xfs header file was wrong.
-
-Comments in XFS, especially weird scary ones, are rarely wrong. Some
-of them might have been there for close on 20 years, but they are
-our documentation for all the weird, scary stuff that XFS does.  I
-rely on them being correct, so it's something I always pay attention
-to during code review. IOWs, When we add, modify or remove something
-weird and scary, the comments are updated appropriately so we'll
-know why the code is doing something weird and scary in another 20
-years time. ;)
-
-Cheers,
-
-Dave.
--- 
-Dave Chinner
-david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org
+MTQuMDIuMjAxMyAwMzoyMiwgRXJpYyBXLiBCaWVkZXJtYW4g7+j45fI6Cj4gIkouIEJydWNlIEZp
+ZWxkcyIgPGJmaWVsZHNAZmllbGRzZXMub3JnPiB3cml0ZXM6Cj4KPj4gT24gV2VkLCBGZWIgMTMs
+IDIwMTMgYXQgMDI6MzI6MjlQTSAtMDgwMCwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4+PiAi
+Si4gQnJ1Y2UgRmllbGRzIiA8YmZpZWxkc0BmaWVsZHNlcy5vcmc+IHdyaXRlczoKPj4+Cj4+Pj4g
+T24gV2VkLCBGZWIgMTMsIDIwMTMgYXQgMDE6Mjk6MzVQTSAtMDgwMCwgRXJpYyBXLiBCaWVkZXJt
+YW4gd3JvdGU6Cj4+Pj4+ICJKLiBCcnVjZSBGaWVsZHMiIDxiZmllbGRzQGZpZWxkc2VzLm9yZz4g
+d3JpdGVzOgo+Pj4+Pgo+Pj4+Pj4gT24gV2VkLCBGZWIgMTMsIDIwMTMgYXQgMDk6NTE6NDFBTSAt
+MDgwMCwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4+Pj4+Pj4gRnJvbTogIkVyaWMgVy4gQmll
+ZGVybWFuIiA8ZWJpZWRlcm1AeG1pc3Npb24uY29tPgo+Pj4+Pj4+Cj4+Pj4+Pj4gV2hlbiBhIG5l
+dyBycGMgY29ubmVjdGlvbiBpcyBlc3RhYmxpc2hlZCB3aXRoIGFuIGluLWtlcm5lbCBzZXJ2ZXIs
+IHRoZQo+Pj4+Pj4+IHRyYWZmaWMgcGFzc2VzIHRocm91Z2ggc3ZjX3Byb2Nlc3NfY29tbW9uLCBh
+bmQgc3ZjX3NldF9jbGllbnQgYW5kIGRvd24KPj4+Pj4+PiBpbnRvIHN2Y2F1dGhfdW5peF9zZXRf
+Y2xpZW50IGlmIGl0IGlzIG9mIHR5cGUgUlBDX0FVVEhfTlVMTCBvcgo+Pj4+Pj4+IFJQQ19BVVRI
+X1VOSVguCj4+Pj4+Pj4KPj4+Pj4+PiBzdmNhdXRoX3VuaXhfc2V0X2NsaWVudCB0aGVuIGxvb2tz
+IGF0IHRoZSB1aWQgb2YgdGhlIGNyZWRlbnRpYWwgd2UKPj4+Pj4+PiBoYXZlIGFzc2lnbmVkIHRv
+IHRoZSBpbmNvbW1pbmcgY2xpZW50IGFuZCBpZiB3ZSBkb24ndCBoYXZlIHRoZSBncm91cHMKPj4+
+Pj4+PiBhbHJlYWR5IGNhY2hlZCBtYWtlcyBhbiB1cGNhbGwgdG8gZ2V0IGEgbGlzdCBvZiBncm91
+cHMgdGhhdCB0aGUgY2xpZW50Cj4+Pj4+Pj4gY2FuIHVzZS4KPj4+Pj4+Pgo+Pj4+Pj4+IFRoZSB1
+cGNhbGwgZW5jb2RlcyBzZW5kIGEgcnBjIG1lc3NhZ2UgdG8gdXNlciBzcGFjZSBlbmNvZGluZyB0
+aGUgdWlkCj4+Pj4+Pj4gb2YgdGhlIHVzZXIgd2hvc2UgZ3JvdXBzIHdlIHdhbnQgdG8ga25vdy4g
+IEVuY29kZSB0aGUga3VpZCBvZiB0aGUgdXNlcgo+Pj4+Pj4+IGluIHRoZSBpbml0aWFsIHVzZXIg
+bmFtZXNwYWNlIGFzIG5mcyBtb3VudHMgY2FuIG9ubHkgaGFwcGVuIHRvZGF5IGluCj4+Pj4+Pj4g
+dGhlIGluaXRpYWwgdXNlciBuYW1lc3BhY2UuCj4+Pj4+Pgo+Pj4+Pj4gT0ssIEkgZGlkbid0IGtu
+b3cgdGhhdC4KPj4+Pj4+Cj4+Pj4+PiAoVGhvdWdoIEknbSB1bmNsZWFyIGhvdyBpdCBzaG91bGQg
+bWF0dGVyIHRvIHRoZSBzZXJ2ZXIgd2hhdCB1c2VyCj4+Pj4+PiBuYW1lc3BhY2UgdGhlIGNsaWVu
+dCBpcyBpbj8pCj4+Pj4+Cj4+Pj4+IFBlcmhhcHMgSSBoYXZlIHRoZSBkZXNjcmlwdGlvbiBhIGxp
+dHRsZSBzY3JhbWJsZWQuICBUaGUgc2hvcnQgdmVyc2lvbgo+Pj4+PiBpcyB0aGF0IHRvIHN0YXJ0
+IEkgb25seSBzdXBwb3J0IHRoZSBpbml0aWFsIG5ldHdvcmsgbmFtZXNwYWNlLgo+Pj4+Pgo+Pj4+
+PiBJZiBJIGhhdmVuJ3Qgc3VjY2VlZGVkIGl0IGlzIG15IGludGVudCB0byBpbml0aWFsbHkgbGlt
+aXQgdGhlIHNlcnZlcnMKPj4+Pj4gdG8gdGhlIGluaXRpYWwgdXNlciBuYW1lc3BhY2UgYXMgd2Vs
+bC4gIEkgc2hvdWxkIHNlZSBpZiBJIGNhbiBmaWd1cmUKPj4+Pj4gdGhhdCBvdXQuCj4+Pj4+Cj4+
+Pj4+Pj4gV2hlbiBhIHJlcGx5IHRvIGFuIHVwY2FsbCBjb21lcyBpbiBjb252ZXJ0IGludGVycHJl
+dCB0aGUgdWlkIGFuZCBnaWQgdmFsdWVzCj4+Pj4+Pj4gZnJvbSB0aGUgcnBjIHBpcGUgYXMgdWlk
+cyBhbmQgZ2lkcyBpbiB0aGUgaW5pdGlhbCB1c2VyIG5hbWVzcGFjZSBhbmQgY29udmVydAo+Pj4+
+Pj4+IHRoZW0gaW50byBrdWlkcyBhbmQga2dpZHMgYmVmb3JlIHByb2Nlc3NpbmcgdGhlbSBmdXJ0
+aGVyLgo+Pj4+Pj4+Cj4+Pj4+Pj4gV2hlbiByZWFkaW5nIHByb2MgZmlsZXMgbGlzdGluZyB0aGUg
+dWlkIHRvIGdpZCBsaXN0IGNhY2hlIGNvbnZlcnQgdGhlCj4+Pj4+Pj4ga3VpZHMgYW5kIGtnaWRz
+IGZyb20gaW50byB1aWRzIGFuZCBnaWRzIHRoZSBpbml0aWFsIHVzZXIgbmFtZXNwYWNlLiAgQXMg
+d2UgYXJlCj4+Pj4+Pj4gZGlzcGxheWluZyBzZXJ2ZXIgaW50ZXJuYWwgZGV0YWlscyBpdCBtYWtl
+cyBzZW5zZSB0byBkaXNwbGF5IHRoZXNlIHZhbHVlcwo+Pj4+Pj4+IGZyb20gdGhlIHNlcnZlcnMg
+cGVyc3BlY3RpdmUuCj4+Pj4+Pgo+Pj4+Pj4gQWxsIG9mIHRoZXNlIGNhY2hlcyBhcmUgYWxyZWFk
+eSBwZXItbmV0d29yay1uYW1lc3BhY2UuICBJZGVhbGx5IHdvdWxkbid0Cj4+Pj4+PiB3ZSBhbHNv
+IGxpa2UgdG8gYXNzb2NpYXRlIGEgdXNlciBuYW1lc3BhY2Ugd2l0aCBlYWNoIGNhY2hlIHNvbWVo
+b3c/Cj4+Pj4+Cj4+Pj4+IElkZWFsbHkgeWVzLiAgSSByZWFkIHRocm91Z2ggdGhlIGNhY2hlcyBl
+bm91Z2ggdG8gZmlndXJlIG91dCB3aGVyZSB0aGVyZQo+Pj4+PiB1c2VyIHNwYWNlIGludGVyZmFj
+ZXMgd2VyZSwgYW5kIHRvIG1ha2UgY2VydGFpbiB3ZSBoYWQgY29udmVyc2lvbnMKPj4+Pj4gdG8v
+ZnJvbSBrdWlkcyBhbmQga2dpZHMuCj4+Pj4+Cj4+Pj4+IEkgaGF2ZW4ndCBsb29rZWQgYXQgd2hh
+dCB1c2VyIG5hbWVzcGFjZSBtYWtlcyBzZW5zZSBmb3IgdGhlc2UKPj4+Pj4gY2FjaGVzLiAgRm9y
+IHRoaXMgY2FjaGUgbXkgZmlyc3QgZ3Vlc3MgaXMgdGhhdCBuZXQtPnVzZXJfbnMKPj4+Pj4gaXMg
+d2hhdCB3ZSB3YW50IGFzIGl0IHdpbGwgYmUgc2hhcmVkIGJ5IGFsbCB1c2VycyBpbiBuZXR3b3Jr
+IG5hbWVzcGFjZSBJCj4+Pj4+IHByZXN1bWUuCj4+Pj4KPj4+PiBPaCwgSSBkaWRuJ3Qga25vdyBh
+Ym91dCBuZXQtPnVzZXJfbnMtLXNvIGVhY2ggbmV0d29yayBuYW1lc3BhY2UgaXMKPj4+PiBhc3Nv
+Y2lhdGVkIHdpdGggYSBzaW5nbGUgdXNlciBuYW1lc3BhY2UsIGdyZWF0LCB0aGF0IHNpbXBsaWZp
+ZXMgbGlmZS4KPj4+PiBZZXMsIHRoYXQgc291bmRzIGV4YWN0bHkgcmlnaHQuCj4+Pgo+Pj4gWWVz
+LiBuZXQtPnVzZXJfbnMgaXMgdGhlIHVzZXIgbmFtZXNwYWNlIHRoZSBuZXR3b3JrIG5hbWVzcGFj
+ZSB3YXMKPj4+IGNyZWF0ZWQgaW4uICBBbmQgaXQgaXMgdGhlIHVzZXIgbmFtZXNwYWNlIHRoYXQg
+aXMgdXNlZCBpbiB0ZXN0Cj4+PiBsaWtlIG5zX2NhcGFibGUobmV0LT51c2VyX25zLCBDQVBfTkVU
+X0FETUlOKSB0byBzZWUgaWYgeW91IGFyZSBhbGxvd2VkCj4+PiB0byBtYW5pcHVsYXRlIHRoZSBu
+ZXR3b3JrIG5hbWVzcGFjZS4gIFNvIGxvb2tzIGxpa2UgZXhhY3RseSB3aGF0IHdlCj4+PiB3YW50
+IGZvciB0aGF0IGNhY2hlLgo+Pj4KPj4+IENvdWxkIHlvdSBkb3VibGUgY2hlY2sgbXkgdW5kZXJz
+dGFuZGluZyBvZiB0aGUgY29kZT8KPj4+Cj4+PiBJIHdhbnQgdG8gYmUgY2VydGFpbiB0aGF0IEkg
+Y2FuJ3QgX3lldF8gc3RhcnQgYW4gc3VucnBjIHNlcnZlciBwcm9jZXNzCj4+PiBvdXRzaWRlIG9m
+IHRoZSBpbml0aWFsIHVzZXIgbmFtZXNwYWNlLiAgV2hpbGUgd3JpdGluZyBhbiBlYXJsaWVyIHJl
+cGx5IEkKPj4+IHJlYWxpemVkIHRoYXQgSSBoYWRuJ3QgdGhvdWdodCBhYm91dCB3aGVyZSBzdW5y
+cGMgc2VydmVyIHByb2Nlc3NlcyBjb21lCj4+PiBmcm9tLgo+Pj4KPj4+IFJlYWRpbmcgdGhyb3Vn
+aCB0aGUgY29kZSBpdCBsb29rcyBsaWtlIHdlIGNhbiBoYXZlIG5mcyBtb3VudHMgb3V0c2lkZSBv
+Zgo+Pj4gdGhlIGluaXRpYWwgbmV0d29yayBuYW1lc3BhY2UuCj4+Cj4+IFdlJ3JlIHRhbGtpbmcg
+YWJvdXQgdGhlIHNlcnZlciBzaWRlIGhlcmUsIG5vdCB0aGUgY2xpZW50LCBzbyBJJ20gbm90Cj4+
+IHN1cmUgd2hhdCB5b3UgbWVhbiBieSAibmZzIG1vdW50cyIuICBUaGUgbmZzIHNlcnZlciBkb2Vz
+IHVzZSB2YXJpb3VzCj4+IHBzZXVkb2ZpbGVzeXN0ZW1zICgicHJvYyIsICJuZnNkIiksIGFuZCB0
+aG9zZSBjYW4gYmUgbW91bnRlZCBvdXRzaWRlIHRoZQo+PiBpbml0aWFsIG5ldHdvcmsgbmFtZXNw
+YWNlLgo+Cj4gQWN0dWFsbHkgSSB3YXMgc2VlaW5nIHRoYXQgbmZzIGNsaWVudHMgd2VyZSBzdGFy
+dGluZyBsb2NrZC4gIFNvIEkgd2FzCj4ganVzdCByZWFzb25pbmcgaGVyZSB0aGF0IGFueXRoaW5n
+IHRoYXQgY2FtZSBmcm9tIGEgbmZzIGNsaWVudCB3YXMKPiB1bHRpbWF0ZWx5IGluIHRoZSB1c2Vy
+IG5hbWVzcGFjZSBvZiB0aGF0IGNsaWVudCwgd2hpY2ggaXMgdWx0aW1hdGVseQo+IGxpbWl0ZWQg
+YnkgdGhlIGNsaWVudCBvdXQuCj4KPj4gVGhlIHNlcnZlciBjYW4gcmVjZWl2ZSBycGMgcmVxdWVz
+dHMgb3ZlciBuZXR3b3JrIGludGVyZmFjZXMgb3V0c2lkZSB0aGUKPj4gaW5pdGlhbCBuZXR3b3Jr
+IG5hbWVzcGFjZSwgc3VyZS4gIFRoZSBzZXJ2ZXIgZG9lc24ndCBwZXJmb3JtIG1vdW50cyBvbgo+
+PiBiZWhhbGYgb2YgY2xpZW50cywgdGhvdWdoLCBpdCBqdXN0IGFjY2Vzc2VzIHByZXZpb3VzbHkg
+bW91bnRlZAo+PiBmaWxlc3lzdGVtcyBvbiBjbGllbnRzJyBiZWhhbGYuCj4KPiBCdXQgbmZzZF9p
+bml0X3NvY2tzIG9ubHkgY3JlYXRlcyBzb2NrZXRzIGluIGEgc2luZ2xlIG5ldHdvcmsgbmFtZXNw
+YWNlLAo+IGFuZCB0b2RheSB3ZSBwYXNzIG9ubHkgJmluaXRfbmV0Lgo+Cj4+PiBCdXQgYmVjYXVz
+ZSB0aGV5IGFyZSBtb3VudHMgdGhleSBhcmUKPj4+IHN0aWxsIGxpbWl0ZWQgdG8gdGhlIGluaXRp
+YWwgdXNlciBuYW1lc3BhY2UuCj4+Cj4+IE9LLCBzbyB0aGF0J3MganVzdCBhIGxpbWl0YXRpb24g
+b24gYW55IG1vdW50IHdoYXRzb2V2ZXIgZm9yIG5vdy4gIEknbQo+PiBjYXRjaGluZyBvbiwgc2xv
+d2x5LCB0aGFua3MhCj4KPiBJZiB5b3Ugc2V0IGluIHN0cnVjdCBmaWxlc3lzdGVtIC5mc19mbGFn
+cyA9IEZTX1VTRVJOU19NT1VOVCB5b3VyCj4gZmlsZXN5c3RlbSBjYW4gYmUgbW91bnRlZCBvdXRz
+aWRlIG9mIHRoZSBpbml0aWFsIHVzZXIgbmFtZXNwYWNlLiAgQnV0Cj4gc2luY2UgdGhhdCB0YWtl
+cyBleHRyYSB3b3JrIGFuZCBiZWNhdXNlIHVucHJpdmlsZWdlZCB1c2VycyBhcmUgYWxsb3dlZAo+
+IHRvIGNyZWF0ZSB1c2VyIG5hbWVzcGFjZXMgYW5kIHBlcmZvcm0gdGhlIG1vdW50cyBieSBkZWZh
+dWx0IGl0IGlzIG9mZi4KPgo+Pj4gTm93IGxvb2tpbmcgYXQgdGhlIG5mcyBzZXJ2ZXIsIHNlZW1z
+IHRvIGJlIGhhcmQgY29kZWQgdG8gb25seSBzdGFydAo+Pj4gaW4gdGhlIGluaXRpYWwgbmV0d29y
+ayBuYW1lc3BhY2UgZGVzcGl0ZSBhbG1vc3QgaGF2aW5nIHN1cHBvcnQgZm9yCj4+PiBzdGFydGlu
+ZyBpbiBtb3JlLgo+Pgo+PiBSaWdodCwgU3RhbmlzbGF2J3MgZ290IDQgbW9yZSBwYXRjaGVzIHRo
+YXQgc2hvdWxkIGZpbmlzaCB0aGUgam9iOyBzZWUKPj4gaHR0cDovL21pZC5nbWFuZS5vcmcvPDIw
+MTMwMjAxMTI1MjEwLjMyNTcuNDY0NTQuc3RnaXRAbG9jYWxob3N0LmxvY2FsZG9tYWluPgo+PiBh
+bmQgZm9sbG93dXBzLiAgVGhhdCBzaG91bGQgbWFrZSBpdCBmb3IgMy45LCBJIGp1c3QgbmVlZCB0
+byByZXZpZXcKPj4gdGhlbS4uLi4KPgo+IE9rIHRoYXQgaXMgaW50ZXJlc3RpbmcuCj4KPiBUaGVy
+ZSBpcyBhbiBpbnRlcmVzdGluZyBjb3JuZXIgY2FzZSBoZXJlIHdoZXJlIGFuIHVucHJpdmlsZWdl
+ZCB1c2VyCj4gY2FuIGNyZWF0ZSBhIHVzZXIgbmFtZXNwYWNlIGFuZCB0aGVuIGNhbiBjcmVhdGUg
+YSBuZXR3b3JrIG5hbWVzcGFjZS4KPiBEZXBlbmRpbmcgb24gaG93IHdlIGludGVycHJldCB0aGlu
+Z3Mgd2hlbiBTdGFuaXNsYXZlcyBwYXRjaGVzIHJlYWNoCj4gdGhlcmUgd2UgbWlnaHQgaGF2ZSB0
+byBhZGQ6Cj4KPiBpZiAobmV0LT51c2VyX25zICE9ICZpbml0X3VzZXJfbnMpCj4gCS1FSU5WQUwK
+Pgo+IFNvbWV3aGVyZSBhcHByb3ByaWF0ZS4KPgo+Pj4gRXZlbiBtb3JlIHRoZSBuZnMgc2VydmVy
+IGlzIGNvbnRyb2xsZWQgYW5kIHN0YXJ0ZWQgdGhyb3VnaCB0aGUgIm5mc2QiCj4+PiBmaWxlc3lz
+dGVtLiAgV2hpY2ggaGFzIHRvIGJlIG1vdW50ZWQgYmVmb3JlIHlvdSBjYW4gc3RhcnQgdGhlIHNl
+cnZlci4KPj4+IFNvIHlvdSBjYW4gb25seSBzdGFydCB0aGUgc2VydmVyIHRocm91Z2ggYSBtb3Vu
+dCBpbiB0aGUgaW5pdGlhbCB1c2VyCj4+PiBuYW1lc3BhY2UuCj4+Cj4+IFllcy4KPj4KPj4+IGxv
+Y2tkIGlzIHN0YXJ0ZWQgYnkgZWl0aGVyIHRoZSBuZnMgc2VydmVyIG9yIHRoZSBuZnMgY2xpZW50
+Lgo+Pj4KPj4+IFRoZXJlIGFyZSBubyBvdGhlciBzdW5ycGMgc2VydmVycyBpbiB0aGUga2VybmVs
+Lgo+Pgo+PiBUaGVyZSBhcmUgYSBjb3VwbGUgY2FsbGJhY2sgc2VydmljZXMgb24gdGhlIE5GUyBj
+bGllbnQtLXRob3NlIHNob3VsZCBiZQo+PiBhc3NvY2lhdGVkIHdpdGggbmZzIG1vdW50cyBpbiBz
+b21lIG9idmlvdXMgd2F5LiAgVGhlcmUncyBhIGNvbmZ1c2luZyBBQ0wKPj4gc2VydmljZSB0aGF0
+J3MgcmVhbGx5IGp1c3QgYW4gYXBwZW5kYWdlIG9mIE5GU3YyL3YzIHNlcnZpY2UuCj4+Cj4+IEkg
+dGhpbmsgd2UncmUgZmluZS4KPgo+IFRoYW5rcy4KPgo+Pj4gSSB0aGluayBhbGwgb2YgdGhhdCBp
+cyBlbm91Z2ggdG8gcmVhc29uYWJseSBjbGFpbSB0aGF0IHlvdSBjYW4ndCBoYXZlCj4+PiBhbnkg
+c3VucnBjIHNlcnZlciBwcm9jZXNzZXMgb3V0c2lkZSBvZiB0aGUgaW5pdGlhbCB1c2VyIG5hbWVz
+cGFjZS4gIEJ1dAo+Pj4gaWYgSSBhbSB3cm9uZyBJIHdvdWxkIHRvIGZpbmQgYW4gYXBwcm9wcmlh
+dGUgc3BvdCB0byBwdXQgaW4gYSBsaW5lCj4+PiB0aGF0IHNheXM6Cj4+PiAJIGlmIChjdXJyZW50
+X3VzZXJfbnMoKSAhPSAmaW5pdF91c2VyKQo+Pj4gICAgICAgICAgIAlyZXR1cm4gLUVTT1JSWV9D
+SEFSTEVZOwo+Pgo+PiBJIHRoaW5rIHlvdSdyZSByaWdodC4KPj4KPj4gU28gZm9yIG5vdyBpdCdz
+IHNhZmVseSBjb25maW5lZCB0byBvbmUgdXNlciBuYW1lc3BhY2UsIGFuZCBJIHRoaW5rIHdlCj4+
+IHVuZGVyc3RhbmQgYXBwcm94aW1hdGVseSB3aGF0IHRvIGRvIGlmIHdlIHdhbnQgdG8gc3VwcG9y
+dCBuZnNkJ3MgaW4gdXNlcgo+PiBuYW1lc3BhY2UgaW4gdGhlIGZ1dHVyZS4gIChNYWlubHksIG1h
+a2Ugc3VyZSBuZnNkIGFuZCBwcm9jIGNhbiBiZQo+PiBtb3VudGVkIGluIHRoZW0gYW5kIHRoZW4g
+bW9zdCB0aGluZ3Mgd2lsbCBiZSBkZXRlcm1pbmVkIGJ5IHRoZSB1c2VyX25zCj4+IG9mIHRoZSBu
+ZXR3b3JrIG5hbWVzcGFjZSBhc3NvY2lhdGVkIHdpdGggYSBnaXZlbiBycGMuKQo+Cj4gRm9yIDMu
+OSB0aGUgbGlzdCBvZiBmaWxlc3lzdGVtcyBtb3VudGFibGUgb3V0c2lkZSB0aGUgaW5pdGlhbCB1
+c2VyCj4gbmFtZXNwYWNlIGlzOiBtcXVldWVmcywgdG1wZnMsIHJhbWZzLCBkZXZwdHMsIHN5c2Zz
+LCBhbmQgcHJvYy4KPgo+IEkgYW0gYSB0b3VjaCBjb25jZXJuZWQgYWJvdXQgL3Byb2MvZnMvbmZz
+ZC9leHBvcnRzIGFmdGVyIG15IHBhdGNoZXMKPiBhbmQgU3RhbmlzbGF2cyBwYXRjaGVzIGJvdGgg
+Y29tZSBpbi4gIEFzIEkgdGhpbmsgdGhhdCB3aWxsIGFsbG93IGZvcgo+IGNhc2VzIHdoZXJlIG5l
+dC0+dXNlcl9ucyAhPSAmaW5pdF91c2VybnMuICBCdXQgd2UgY2FuIGNyb3NzIHRoYXQgYnJpZGdl
+Cj4gd2hlbiB3ZSBjb21lIHRvIGl0Lgo+CgoKSG1tbS4uLgpNYXliZSBJJ20gbWlzc2luZyB0aGUg
+cG9pbnQgb2YgdXNlciBuYW1lc3BhY2VzLCBidXQgc2luY2UgTkZTIGtlcm5lbCBzZXJ2ZXIKaXMg
+Y29udHJvbGxlZCB2aWEgTkZTZCBmaWxlIHN5c3RlbSB3cml0ZSBjYWxscywgbWF5YmUgaXQgd291
+bGQgYmUgYmV0dGVyIHRvIGFkZDoKCi5mc19mbGFncyA9IEZTX1VTRVJOU19NT1VOVAoKdG8gaXQg
+YW5kIGFkZCBjaGVjazoKCisJaWYgKG5ldC0+dXNlcl9ucyAhPSBjdXJyZW50X3VzZXJfbnMoKSkK
+KwkJcmV0dXJuIC1FSU5WQUw7CgpObz8KCgo+IEVyaWMKPgoKCi0tIApCZXN0IHJlZ2FyZHMsClN0
+YW5pc2xhdiBLaW5zYnVyc2t5Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgt
+Zm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4v
+bGlzdGluZm8vY29udGFpbmVycw==
