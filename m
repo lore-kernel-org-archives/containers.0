@@ -1,21 +1,18 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH review 52/85] sunrpc: Properly encode kuids and kgids in
-	auth.unix.gid rpc pipe upcalls.
-Date: Thu, 14 Feb 2013 00:42:20 -0800
-Message-ID: <877gmbguc3.fsf@xmission.com>
+Subject: Re: [PATCH review 23/85] ocfs2: Convert uid and gids between in core
+	and on disk inodes
+Date: Thu, 14 Feb 2013 01:10:01 -0800
+Message-ID: <877gmbdzx2.fsf__33701.7962513075$1360833038$gmane$org@xmission.com>
 References: <87621w14vs.fsf@xmission.com>
 	<1360777934-5663-1-git-send-email-ebiederm@xmission.com>
-	<1360777934-5663-52-git-send-email-ebiederm@xmission.com>
-	<20130213210545.GO14195@fieldses.org> <874nhfrjgg.fsf@xmission.com>
-	<20130213215047.GR14195@fieldses.org> <8738wzq1z6.fsf@xmission.com>
-	<20130213225840.GV14195@fieldses.org> <87ip5vn6iv.fsf@xmission.com>
-	<511C8E50.8080007@parallels.com>
+	<1360777934-5663-23-git-send-email-ebiederm@xmission.com>
+	<20130214083547.GE18408@localhost>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <511C8E50.8080007-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> (Stanislav Kinsbursky's message
-	of "Thu, 14 Feb 2013 11:12:16 +0400")
+In-Reply-To: <20130214083547.GE18408@localhost> (Joel Becker's message of
+	"Thu, 14 Feb 2013 00:35:48 -0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,60 +22,29 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Mark Fasheh <mfasheh-IBi9RG/b67k@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-U3RhbmlzbGF2IEtpbnNidXJza3kgPHNraW5zYnVyc2t5QHBhcmFsbGVscy5jb20+IHdyaXRlczoK
-Cj4gMTQuMDIuMjAxMyAwMzoyMiwgRXJpYyBXLiBCaWVkZXJtYW4g0L/QuNGI0LXRgjoKCj4gSG1t
-bS4uLgo+IE1heWJlIEknbSBtaXNzaW5nIHRoZSBwb2ludCBvZiB1c2VyIG5hbWVzcGFjZXMsIGJ1
-dCBzaW5jZSBORlMga2VybmVsIHNlcnZlcgo+IGlzIGNvbnRyb2xsZWQgdmlhIE5GU2QgZmlsZSBz
-eXN0ZW0gd3JpdGUgY2FsbHMsIG1heWJlIGl0IHdvdWxkIGJlIGJldHRlciB0byBhZGQ6Cj4KPiAu
-ZnNfZmxhZ3MgPSBGU19VU0VSTlNfTU9VTlQKPgo+IHRvIGl0IGFuZCBhZGQgY2hlY2s6Cj4KPiAr
-CWlmIChuZXQtPnVzZXJfbnMgIT0gY3VycmVudF91c2VyX25zKCkpCj4gKwkJcmV0dXJuIC1FSU5W
-QUw7Cj4KPiBObz8KCk5vdCByZWFsbHkuICBUaGUgaW1tZWRpYXRlIGdvYWwgaXMgdG8ganVzdCB1
-c2Uga3VpZF90IGFuZCBrZ2lkX3QgaW5zdGVhZApvZiB1aWRfdCBhbmQgZ2lkX3QgdGhyb3VnaG91
-dCB0aGUga2VybmVsLiAgVGhhdCBlbnN1cmVzIHNvbWVvbmUgaGFzbid0Cm1pc3NlZCBhIGNhc2Ug
-YW5kIGlzIGdldHRpbmcgYSB1aWQgaW4gb25lIG5hbWVzcGFjZSBjb25mdXNlZCB3aXRoIGEgdWlk
-CmluIGFub3RoZXIuICBBbmQgdGhhdCBpcyBuZWVkZWQgdG8gbWFrZSBpdCBzYWZlIHRvIGVuYWJs
-ZSBuZnMgYW5kIG5mc2QKc3VwcG9ydCB3aGVuIHVzZXIgbmFtZXNwYWNlIHN1cHBvcnQgaXMgZW5h
-YmxlZCBpbiB0aGUga2VybmVsLgoKU28gYXQgdGhlIGJhc2ljIGxldmVsIEkgaGF2ZSBtYWRlIHRo
-ZSBhc3N1bXB0aW9uIHRoYXQgYWxsIG5mcyBhY3Rpdml0eQpoYXBwZW5zIGluIHRoZSBpbml0aWFs
-IHVzZXIgbmFtZXNwYWNlIGFuZCBoYXZlIG1hZGUgY29udmVyc2lvbnMgdG8vZnJvbQp0aGUgaW5p
-dGlhbCB1c2VyIG5hbWVzcGFjZSB0aHJvdWdob3V0IHRoZSBuZnMgYW5kIG5mc2QgY29kZS4KCldl
-IGNhbiBhZGQgRlNfVVNFUk5TX01PVU5UIHdoZW4gd2UgYXJlIHJlYWR5IHRvIHN1cHBvcnQgcnVu
-bmluZyBpbgptdWx0aXBsZSB1c2VyIG5hbWVzcGFjZXMuICBGb3Igbm93IG5vdCBhbGxvd2luZyBt
-b3VudHMgb3V0c2lkZSBvZiB0aGUKaW5pdGlhbCB1c2VyIG5hbWVzcGFjZSBlbnN1cmVzIHRoYXQg
-dGhlIG5mcyBjbGllbnQgY29kZSBpcyBhbHdheXMKaW4gdGhlIGluaXRpYWwgdXNlciBuYW1lc3Bh
-Y2UgYW5kIHRoYXQgdGhlIG5mcyBzZXJ2ZXIgY29kZSBpcyBhbHdheXMKZGVhbGluZyB3aXRoIGlk
-cyBpbiB0aGUgaW5pdGlhbCB1c2VyIG5hbWVzcGFjZS4KClN0YW5pc2xhdiBldmVuIHdpdGggeW91
-ciBwZW5kaW5nIHBhdGNoZXMgaXQgd29uJ3QgYmUgcG9zc2libGUgdG8gbW91bnQgYQpuZnNkIHdo
-cmUgbmV0LT51c2VyX25zICE9IGluaXRfdXNlcm5zLiAgU28gbm8gYnVncyB3aWxsIHJlc3VsdCBp
-biB0aGUKY29tYmluYXRpb24gb2Ygb3VyIHBhdGNoZXMuICBUaGUgb25lIGNhc2UgSSB3YXMgd29y
-cmllZCBhYm91dCB3YXMKZnMvbmZzL2V4cG9ydHMuICBCdXQgc2luY2UgdGhhdCBpcyByZWFkLW9u
-bHkgaXQgY3JlYXRlcyBubyBwcm9ibGVtcy4KCgpUaGUgYmlnIHRoaW5ncyB1c2VyIG5hbWVzcGFj
-ZXMgYWxsb3cgKGJlc2lkZXMgdWlkIGFuZCBnaWQgbWFwcGluZykgaXMgYQpjb250ZXh0IHdoZXJl
-IHVucHJpdmlsZWdlZCB1c2VycyBjYW4gY3JlYXRlIGNvbnRhaW5lcnMuICBUaG9zZQpjb250YWlu
-ZXJzIGNhbiBtb3VudCBhbmQgdW5tb3VudCBmaWxlc3lzdGVtcyBhbmQgaGF2ZSBhIHJvb3QgdXNl
-ci4gIEJ1dAp0aGF0IHJvb3QgdXNlcnMgZG9lcyBub3QgaGF2ZSBnbG9iYWwgdWlkID09IDAsIG5v
-ciBkb2VzIHRoYXQgcm9vdCB1c2VyCmhhdmUgYW55IGdsb2JhbCBjYXBhYmlsaXRpZXMuICBUaGUg
-cm9vdCB1c2VyIG9ubHkgaGFzIGNhcGFiaWxpdGllcyBvdmVyCm9iamVjdHMgY3JlYXRlZCBpbiB0
-aGF0IHVzZXIgbmFtZXNwYWNlLiAgV2hpY2ggY2FuIGluY2x1ZGUgbmV0d29yawpuYW1lc3BhY2Vz
-IGV0Yy4KCgoKCk5vdyBhbGwgb2YgdGhhdCBzYWlkIGFuZCBkb25lIHdoZW4gd2UgZG8gc3RhcnQg
-c3VwcG9ydGluZyB1c2VyCm5hbWVzcGFjZXMgaW4gbmZzIChzb21ldGhpbmcgdGhhdCBsb29rcyBj
-b21wYXJpdGl2ZWx5IHNpbXBsZSBhZnRlciB5b3VyCnJlY2VudCB3b3JrIHRvIG1ha2UgbmZzIGFu
-ZCBuZnNkIG5ldHdvcmsgbmFtZXNwYWNlIGF3YXJlKSBJIGV4cGVjdCB0aGUKbW91bnQgZm9yIG5m
-c2QgYW5kIG5mcyB3aWxsIHdhbnQgdG8gZG86CglpZiAobmV0LT51c2VyX25zICE9IGN1cnJlbnRf
-dXNlcl9ucygpKQogICAgICAgIAlyZXR1cm4gLUVJTlZBTDsKCkkgY2FuJ3Qgc2VlIGFueSBvdGhl
-ciBjYXNlcyBhY3R1YWxseSBtYWtpbmcgc2Vuc2UuICBJZiB3ZSBhcmUgaW4gYW4KYW5jZXN0b3Ig
-dXNlciBuYW1lc3BhY2Ugb2YgbmV0LT51c2VyX25zIHdlIGFyZSBvayBwZXJtaXNzaW9uIHdpc2UK
-YnV0IHRvdGFsbHkgd2UgYXJlIGluIGEgdG90YWxseSBjb25mdXNlZCBzdGF0ZSB3aXRoIHJlc3Bl
-Y3QgdG8gd2hpY2gKcGVybWlzc2lvbiB0byB0YWxrLiAgSWYgd2UgYXJlIGluIGEgZGVzY2VuZGVu
-dCB1c2VyIG5hbWVzcGFjZSB3ZSBzaG91bGQKbm90IGhhdmUgdGhlIHBlcm1pc3Npb25zIHRvIHBv
-dGVudGlhbGx5IGRhbmdlcm91cyB0aGluZ3MuCgpXaGljaCBzaG91bGQgbWFrZSBmb3IgYSB2ZXJ5
-IHZlcnkgc2ltcGxlIGNvbnZlcnNpb24gd2hlbiB0byBnZXQgbmZzCnJ1bm5pbmcgaW4gbXVsdGlw
-bGUgdXNlciBuYW1lc3BhY2VzIGZvciAzLjEwIGFzIHdlIGNhbiBqdXN0IHJlcGxhY2UKJmluaXRf
-bmV0IHdpdGggbmV0LT51c2VyX25zIGV2ZXJ5d2hlcmUuCgpFcmljCl9fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNv
-bnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZv
-dW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+Joel Becker <jlbec-aKy9MeLSZ9dg9hUCZPvPmw@public.gmane.org> writes:
+
+> This has the same problem with two machines in different userspace
+> namespaces.  Should this be punted to the sysadmin or helped out in the
+> filesystem?  Do you define this case as unsupported?
+
+First I define two machines in the same user namespace as two machines
+with synchronized password files.
+
+As today connecting two machines without synchronizing the password
+entries is a problem, won't work, and is punted to the sysadmin to make
+keep from doing something silly.
+
+At the same time I don't want to make it easy to get confused, or cause
+breakage.
+
+With these patches ocfs2 only still only works in the initial user
+namespace.  I don't set .fs_flags = FS_USERNS_MOUNT in struct
+filesystem.  Which means that while users in other user namespaces can
+store files on ocfs2, they can't mount ocfs2.
+
+Eric
