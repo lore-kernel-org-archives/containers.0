@@ -1,14 +1,14 @@
-From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] kernel: allow reboots from user_ns
-Date: Thu, 14 Feb 2013 18:30:52 +0400
-Message-ID: <511CF51C.6050504@parallels.com>
+Date: Thu, 14 Feb 2013 08:27:45 -0600
+Message-ID: <20130214142745.GA4470__45696.600204292$1360853166$gmane$org@sergelap>
 References: <1360843000-31228-1-git-send-email-glommer@parallels.com>
-	<20130214142745.GA4470@sergelap>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20130214142745.GA4470@sergelap>
+Content-Disposition: inline
+In-Reply-To: <1360843000-31228-1-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,24 +18,63 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 02/14/2013 06:27 PM, Serge Hallyn wrote:
-> Quoting Glauber Costa (glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
->> Reboot support for pid namespaces is already implemented and it works
->> well. However, in most containers the tasks will join all namespaces,
->> including the now supported user namespace. In that situation, we will
->> fail the "capable" test and won't be able to reboot.
->>
->> The proposed solution is to allow reboots for CAP_SYS_BOOT processes
->> in the user namespace that owns the pid namespace.
->>
->> Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Quoting Glauber Costa (glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
+> Reboot support for pid namespaces is already implemented and it works
+> well. However, in most containers the tasks will join all namespaces,
+> including the now supported user namespace. In that situation, we will
+> fail the "capable" test and won't be able to reboot.
 > 
-> Note Li Zefan sent this identical patch last year.  It's in my own
-> built userns kernel, and definately required :)
+> The proposed solution is to allow reboots for CAP_SYS_BOOT processes
+> in the user namespace that owns the pid namespace.
 > 
-I didn't see that, and using Linus' master my stop container scripts
-stopped working after I started using Eric's userns...
+> Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+
+Note Li Zefan sent this identical patch last year.  It's in my own
+built userns kernel, and definately required :)
+
+In any case,
+
+Acked-by: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+
+> Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+> ---
+>  kernel/sys.c | 5 +++--
+>  1 file changed, 3 insertions(+), 2 deletions(-)
+> 
+> diff --git a/kernel/sys.c b/kernel/sys.c
+> index 265b376..3b0958e 100644
+> --- a/kernel/sys.c
+> +++ b/kernel/sys.c
+> @@ -435,9 +435,10 @@ SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
+>  {
+>  	char buffer[256];
+>  	int ret = 0;
+> +	struct pid_namespace *curr_pidns = task_active_pid_ns(current);
+>  
+>  	/* We only trust the superuser with rebooting the system. */
+> -	if (!capable(CAP_SYS_BOOT))
+> +	if (!ns_capable(curr_pidns->user_ns, CAP_SYS_BOOT))
+>  		return -EPERM;
+>  
+>  	/* For safety, we require "magic" arguments. */
+> @@ -453,7 +454,7 @@ SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
+>  	 * pid_namespace, the command is handled by reboot_pid_ns() which will
+>  	 * call do_exit().
+>  	 */
+> -	ret = reboot_pid_ns(task_active_pid_ns(current), cmd);
+> +	ret = reboot_pid_ns(curr_pidns, cmd);
+>  	if (ret)
+>  		return ret;
+>  
+> -- 
+> 1.8.1.2
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linuxfoundation.org/mailman/listinfo/containers
