@@ -1,15 +1,16 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH] kernel: allow reboots from user_ns
-Date: Thu, 14 Feb 2013 06:58:12 -0800
-Message-ID: <87wqubc58b.fsf@xmission.com>
-References: <1360843000-31228-1-git-send-email-glommer@parallels.com>
-	<20130214142745.GA4470@sergelap> <511CF51C.6050504@parallels.com>
+From: Corey Minyard <tcminyard-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH] Move console redirect to pid namespace
+Date: Thu, 14 Feb 2013 20:08:16 -0600
+Message-ID: <511D9890.1040900@acm.org>
+References: <1360376920-30824-1-git-send-email-minyard@acm.org>
+	<20130209191409.643c3d7f@neptune.home>
+	<87r4kkuj4o.fsf@xmission.com>
+Reply-To: minyard-HInyCGIudOg@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <511CF51C.6050504-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> (Glauber Costa's message of
-	"Thu, 14 Feb 2013 18:30:52 +0400")
+In-Reply-To: <87r4kkuj4o.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,71 +20,51 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Corey Minyard <cminyard-Igf4POYTYCDQT0dZR+AlfA@public.gmane.org>, =?UTF-8?B?QnJ1bm8gUHLDqW1vbnQ=?= <bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> writes:
-
-> On 02/14/2013 06:27 PM, Serge Hallyn wrote:
->> Quoting Glauber Costa (glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
->>> Reboot support for pid namespaces is already implemented and it works
->>> well. However, in most containers the tasks will join all namespaces,
->>> including the now supported user namespace. In that situation, we will
->>> fail the "capable" test and won't be able to reboot.
->>>
->>> The proposed solution is to allow reboots for CAP_SYS_BOOT processes
->>> in the user namespace that owns the pid namespace.
->>>
->>> Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
->> 
->> Note Li Zefan sent this identical patch last year.  It's in my own
->> built userns kernel, and definately required :)
->> 
-> I didn't see that, and using Linus' master my stop container scripts
-> stopped working after I started using Eric's userns...
-
-The patch has been sitting in my for-next branch for quite a while
-just waiting for the merge window.
-
-Eric
-
-commit 923c7538236564c46ee80c253a416705321f13e3
-Author: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Date:   Thu Dec 27 11:39:12 2012 +0800
-
-    userns: Allow unprivileged reboot
-    
-    In a container with its own pid namespace and user namespace, rebooting
-    the system won't reboot the host, but terminate all the processes in
-    it and thus have the container shutdown, so it's safe.
-    
-    Signed-off-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-    Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-
-diff --git a/kernel/sys.c b/kernel/sys.c
-index 265b376..24d1ef5 100644
---- a/kernel/sys.c
-+++ b/kernel/sys.c
-@@ -433,11 +433,12 @@ static DEFINE_MUTEX(reboot_mutex);
- SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
-                void __user *, arg)
- {
-+       struct pid_namespace *pid_ns = task_active_pid_ns(current);
-        char buffer[256];
-        int ret = 0;
- 
-        /* We only trust the superuser with rebooting the system. */
--       if (!capable(CAP_SYS_BOOT))
-+       if (!ns_capable(pid_ns->user_ns, CAP_SYS_BOOT))
-                return -EPERM;
- 
-        /* For safety, we require "magic" arguments. */
-@@ -453,7 +454,7 @@ SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
-         * pid_namespace, the command is handled by reboot_pid_ns() which will
-         * call do_exit().
-         */
--       ret = reboot_pid_ns(task_active_pid_ns(current), cmd);
-+       ret = reboot_pid_ns(pid_ns, cmd);
-        if (ret)
-                return ret;
+T24gMDIvMTMvMjAxMyAwMTowOCBQTSwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4gQnJ1bm8g
+UHLDqW1vbnQgPGJvbmJvbnNAbGludXgtdnNlcnZlci5vcmc+IHdyaXRlczoKPgo+PiBDQ2luZyBj
+b250YWluZXJzIGxpc3QKPj4KPj4gT24gRnJpLCAwOCBGZWJydWFyeSAyMDEzIG1pbnlhcmRAYWNt
+Lm9yZyB3cm90ZToKPj4+IEZyb206IENvcmV5IE1pbnlhcmQgPGNtaW55YXJkQG12aXN0YS5jb20+
+Cj4+Pgo+Pj4gVGhlIGNvbnNvbGUgcmVkaXJlY3QgLSBpb2N0bChmZCwgVElPQ0NPTlMpIC0gaXMg
+bm90IGluIGEgbmFtZXNwYWNlLAo+Pj4gdGh1cyBhIGNvbnRhaW5lciBjYW4gZG8gYSByZWRpcmVj
+dCBhbmQgZ3JhYiBhbGwgdGhlIEkvTyBvbiB0aGUgaG9zdAo+Pj4gYW5kIGFsbCBjb250YWluZXIg
+Y29uc29sZXMuCj4+Pgo+Pj4gVGhpcyBjaGFuZ2UgcHV0cyB0aGUgcmVkaXJlY3QgaW4gdGhlIHBp
+ZCBuYW1lc3BhY2UuCj4+Pgo+Pj4gU2lnbmVkLW9mZi1ieTogQ29yZXkgTWlueWFyZCA8Y21pbnlh
+cmRAbXZpc3RhLmNvbT4KPj4+IC0tLQo+Pj4KPj4+IEknbSBwcmV0dHkgc3VyZSB0aGlzIHBhdGNo
+IGlzIG5vdCBjb3JyZWN0LCBidXQgSSdtIG5vdCBxdWl0ZSBzdXJlIHRoZQo+Pj4gYmVzdCB3YXkg
+dG8gZml4IHRoaXMuICBJJ20gbm90IDEwMCUgc3VyZSB0aGF0IHRoZSBwaWQgbmFtZXNwYWNlIGlz
+IHRoZQo+Pj4gcmlnaHQgcGxhY2UsIGJ1dCBpdCBzZWVtZWQgdGhlIG1vc3QgcmVhc29uYWJsZSBv
+ZiBhbGwgdGhlIGNob2ljZXMuICBUaGUKPj4+IG90aGVyIG9idmlvdXMgY2hvaWNlIGlzIHRoZSBt
+b3VudCBuYW1lc3BhY2UsIGJ1dCBpdCBkaWRuJ3Qgc2VlbSBhcyBnb29kCj4+PiBhIGZpdC4KPj4g
+V2l0aCByZWNlbnQgY2hhbmdlcywgdHlpbmcgaXQgdG8gaW5pdCB1c2VyIG5hbWVzcGFjZSBtaWdo
+dCBldmVuIGJlCj4+IGJldHRlci4KPiBXaXRoIHJlY2VudCBjaGFuZ2VzIHRoaXMgaXMgdGllZCB0
+byB0aGUgaW5pdGlhbCB1c2VyIG5hbWVzcGFjZS4gIFNvIHRoZQo+IHNpbXBsZSBzb2x1dGlvbiB0
+byB0aGlzIGFuZCBzbyBtYW55IG90aGVyIHNpbWlsaWFyIHNlY3VyaXR5IHByb2JsZW1zIGlzCj4g
+dG8gcnVuIHlvdXIgY29udGFpbmVyIGluIGEgdXNlciBuYW1lc3BhY2UuCj4KPiBUaGUgcGVybWlz
+c2lvbiBjaGVjayBjdXJyZW50bHkgaXMgY2FwYWJsZShDQVBfU1lTX0FETUlOKSB3aGljaCByZXF1
+aXJlcwo+IHRoZSBjYWxsZXIgdG8gaGF2ZSB0aGUgQ0FQX1NZU19BRE1JTiBpbiB0aGUgaW5pdGlh
+bCB1c2VyIG5hbWVzcGFjZS4KCkknbSBub3Qgc3VyZSBJIGZvbGxvdy4gIEFyZSB0aGVzZSBjaGFu
+Z2VzIGluIGsub3JnLCBvciBpbiBhbm90aGVyIApyZXBvc2l0b3J5IHNvbWVwbGFjZT8KCj4KPiBJ
+cyB0aGVyZSBhIGRlc2lyZSB0byBoYXZlIFRJT0NDT05TIG5vdCBqdXN0IGZhaWwgaW4gYSBjb250
+YWluZXIgYnV0IHRvCj4gaGF2ZSBUSU9DQ09OUyB3b3JrIGluIGEgY29udGFpbmVyIHNwZWNpZmlj
+IHdheT8KCldlbGwsIG15IGRlc2lyZSBpcyBmb3IgdGhlIGhvc3QgY29uc29sZSB0byB3b3JrIHBy
+b3Blcmx5IGlmIGEgY29udGFpbmVyIAp1c2VzIFRJT0NDT05TIDotKS4gIEl0IHNlZW1zIHRvIG1l
+IHRoYXQgdGhlIG1vc3QgY29uc2lzdGVudCB3YXkgdG8gCmhhbmRsZSB0aGlzIGlzIHRvIGhhdmUg
+VElPQ0NPTlMgaW4gYSBjb250YWluZXIgcmVkaXJlY3QgdGhlIGNvbnRhaW5lcidzIApjb25zb2xl
+LgoKPgo+Pj4gVGhlIG90aGVyIHByb2JsZW0gaXMgdGhhdCBJIGRvbid0IHRoaW5rIHlvdSBjYW4g
+Y2FsbCBmcHV0KCkgZnJvbQo+Pj4gZGVzdHJveV9waWRfbmFtZXNwYWNlKCkuICBUaGF0IGNhbiBi
+ZSBjYWxsZWQgZnJvbSBpbnRlcnJ1cHQgY29udGV4dCwKPj4+IGFuZCBJIGRvbid0IHRoaW5rIGZw
+dXQoKSBpcyBzYWZlIHRoZXJlLiAgSSBrbm93IGl0J3Mgbm90IHNhZmUgaW4gMy40Cj4+PiB3aXRo
+IHRoZSBSVCBwYXRjaCBhcHBsaWVkLiAgSG93ZXZlciwgdGhlIG9ubHkgd2F5IEkndmUgY29tZSB1
+cCB3aXRoIHRvCj4+PiBmaXggaXQgaXMgdG8gYWRkIGEgd29ya3F1ZXVlLCBhbmQgdGhhdCBzZWVt
+cyBhIGJpdCBoZWF2eSBmb3IgdGhpcy4KPiBBY3R1YWxseSBnZXR0aW5nIGRlc3Ryb3lfcGlkX25h
+bWVzcGFjZSBvdXQgb2YgaW50ZXJydXB0IGNvbnRleHQgd291bGRuJ3QKPiBiZSB0aGUgd29yc3Qg
+dGhpbmcgaW4gdGhlIHdvcmxkLgoKSSB3b3VsZCBhZ3JlZSwgYnV0IGl0IHdvdWxkIHN0aWxsIHJl
+cXVpcmUgc29tZXRoaW5nIGxpa2UgYSB3b3JrcXVldWUuICAKSXMgdGhlcmUgYSBiZXR0ZXIgbWVj
+aGFuaXNtPwoKLWNvcmV5Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91
+bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlz
+dGluZm8vY29udGFpbmVycw==
