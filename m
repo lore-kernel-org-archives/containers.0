@@ -1,16 +1,15 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH] Move console redirect to pid namespace
-Date: Thu, 14 Feb 2013 20:23:31 -0800
-Message-ID: <87d2w29pdo.fsf@xmission.com>
-References: <1360376920-30824-1-git-send-email-minyard@acm.org>
-	<20130209191409.643c3d7f@neptune.home> <87r4kkuj4o.fsf@xmission.com>
-	<511D9890.1040900@acm.org>
+From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: [PATCH] kernel: allow reboots from user_ns
+Date: Fri, 15 Feb 2013 11:00:53 +0400
+Message-ID: <511DDD25.9030401@parallels.com>
+References: <1360843000-31228-1-git-send-email-glommer@parallels.com>
+	<20130214142745.GA4470@sergelap>
+	<511CF51C.6050504@parallels.com> <87wqubc58b.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <511D9890.1040900-HInyCGIudOg@public.gmane.org> (Corey Minyard's message of "Thu, 14
-	Feb 2013 20:08:16 -0600")
+In-Reply-To: <87wqubc58b.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,63 +19,15 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: minyard-HInyCGIudOg@public.gmane.org
-Cc: Corey Minyard <cminyard-Igf4POYTYCDQT0dZR+AlfA@public.gmane.org>, Bruno =?utf-8?Q?Pr=C3=A9mont?= <bonbons-ud5FBsm0p/xEiooADzr8i9i2O/JbrIOy@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Q29yZXkgTWlueWFyZCA8dGNtaW55YXJkQGdtYWlsLmNvbT4gd3JpdGVzOgoKPiBPbiAwMi8xMy8y
-MDEzIDAxOjA4IFBNLCBFcmljIFcuIEJpZWRlcm1hbiB3cm90ZToKPj4gQnJ1bm8gUHLDqW1vbnQg
-PGJvbmJvbnNAbGludXgtdnNlcnZlci5vcmc+IHdyaXRlczoKPj4KPj4+IENDaW5nIGNvbnRhaW5l
-cnMgbGlzdAo+Pj4KPj4+IE9uIEZyaSwgMDggRmVicnVhcnkgMjAxMyBtaW55YXJkQGFjbS5vcmcg
-d3JvdGU6Cj4+Pj4gRnJvbTogQ29yZXkgTWlueWFyZCA8Y21pbnlhcmRAbXZpc3RhLmNvbT4KPj4+
-Pgo+Pj4+IFRoZSBjb25zb2xlIHJlZGlyZWN0IC0gaW9jdGwoZmQsIFRJT0NDT05TKSAtIGlzIG5v
-dCBpbiBhIG5hbWVzcGFjZSwKPj4+PiB0aHVzIGEgY29udGFpbmVyIGNhbiBkbyBhIHJlZGlyZWN0
-IGFuZCBncmFiIGFsbCB0aGUgSS9PIG9uIHRoZSBob3N0Cj4+Pj4gYW5kIGFsbCBjb250YWluZXIg
-Y29uc29sZXMuCj4+Pj4KPj4+PiBUaGlzIGNoYW5nZSBwdXRzIHRoZSByZWRpcmVjdCBpbiB0aGUg
-cGlkIG5hbWVzcGFjZS4KPj4+Pgo+Pj4+IFNpZ25lZC1vZmYtYnk6IENvcmV5IE1pbnlhcmQgPGNt
-aW55YXJkQG12aXN0YS5jb20+Cj4+Pj4gLS0tCj4+Pj4KPj4+PiBJJ20gcHJldHR5IHN1cmUgdGhp
-cyBwYXRjaCBpcyBub3QgY29ycmVjdCwgYnV0IEknbSBub3QgcXVpdGUgc3VyZSB0aGUKPj4+PiBi
-ZXN0IHdheSB0byBmaXggdGhpcy4gIEknbSBub3QgMTAwJSBzdXJlIHRoYXQgdGhlIHBpZCBuYW1l
-c3BhY2UgaXMgdGhlCj4+Pj4gcmlnaHQgcGxhY2UsIGJ1dCBpdCBzZWVtZWQgdGhlIG1vc3QgcmVh
-c29uYWJsZSBvZiBhbGwgdGhlIGNob2ljZXMuICBUaGUKPj4+PiBvdGhlciBvYnZpb3VzIGNob2lj
-ZSBpcyB0aGUgbW91bnQgbmFtZXNwYWNlLCBidXQgaXQgZGlkbid0IHNlZW0gYXMgZ29vZAo+Pj4+
-IGEgZml0Lgo+Pj4gV2l0aCByZWNlbnQgY2hhbmdlcywgdHlpbmcgaXQgdG8gaW5pdCB1c2VyIG5h
-bWVzcGFjZSBtaWdodCBldmVuIGJlCj4+PiBiZXR0ZXIuCj4+IFdpdGggcmVjZW50IGNoYW5nZXMg
-dGhpcyBpcyB0aWVkIHRvIHRoZSBpbml0aWFsIHVzZXIgbmFtZXNwYWNlLiAgU28gdGhlCj4+IHNp
-bXBsZSBzb2x1dGlvbiB0byB0aGlzIGFuZCBzbyBtYW55IG90aGVyIHNpbWlsaWFyIHNlY3VyaXR5
-IHByb2JsZW1zIGlzCj4+IHRvIHJ1biB5b3VyIGNvbnRhaW5lciBpbiBhIHVzZXIgbmFtZXNwYWNl
-Lgo+Pgo+PiBUaGUgcGVybWlzc2lvbiBjaGVjayBjdXJyZW50bHkgaXMgY2FwYWJsZShDQVBfU1lT
-X0FETUlOKSB3aGljaCByZXF1aXJlcwo+PiB0aGUgY2FsbGVyIHRvIGhhdmUgdGhlIENBUF9TWVNf
-QURNSU4gaW4gdGhlIGluaXRpYWwgdXNlciBuYW1lc3BhY2UuCj4KPiBJJ20gbm90IHN1cmUgSSBm
-b2xsb3cuICBBcmUgdGhlc2UgY2hhbmdlcyBpbiBrLm9yZywgb3IgaW4gYW5vdGhlcgo+IHJlcG9z
-aXRvcnkgc29tZXBsYWNlPwoKSW4gay5vcmcuIDMuNyB3b3VsZCB3b3JrLiAzLjgtcmNYIHdvdWxk
-IHdvcmsgZXZlbiBiZXR0ZXIuCgpyb290IGluIGEgdXNlciBuYW1lc3BhY2UgZG9lcyBub3QgaGF2
-ZSBwZXJtaXNzaW9uIHRvIGNhbGwgVElPQ0NPTlMuCgo+PiBJcyB0aGVyZSBhIGRlc2lyZSB0byBo
-YXZlIFRJT0NDT05TIG5vdCBqdXN0IGZhaWwgaW4gYSBjb250YWluZXIgYnV0IHRvCj4+IGhhdmUg
-VElPQ0NPTlMgd29yayBpbiBhIGNvbnRhaW5lciBzcGVjaWZpYyB3YXk/Cj4KPiBXZWxsLCBteSBk
-ZXNpcmUgaXMgZm9yIHRoZSBob3N0IGNvbnNvbGUgdG8gd29yayBwcm9wZXJseSBpZiBhCj4gY29u
-dGFpbmVyIHVzZXMgVElPQ0NPTlMgOi0pLiAgSXQgc2VlbXMgdG8gbWUgdGhhdCB0aGUgbW9zdCBj
-b25zaXN0ZW50Cj4gd2F5IHRvIGhhbmRsZSB0aGlzIGlzIHRvIGhhdmUgVElPQ0NPTlMgaW4gYSBj
-b250YWluZXIgcmVkaXJlY3QgdGhlCj4gY29udGFpbmVyJ3MgY29uc29sZS4KCkxhc3QgSSBsb29r
-ZWQgcGVvcGxlIHdlcmUgY3JlYXRpbmcgYSByZWd1bGFyeSBwdHkgYW5kIHVzaW5nIHRoYXQgaW4K
-L2Rldi8gZm9yIHRoZWlyIGNvbnRhaW5lcnMuICBTbyB0aGUgZW1wZXJpY2FsIGV2aWRlbmNlIGlz
-IHRoYXQgVElPQ0NPTlMKaXMgbm90IG5lZWRlZC4gIFdoYXQgY2FzZSBhcmUgeW91IGxvb2tpbmcg
-YXQgdGhhdCBuZWVkcyBUSU9DQ09OUz8KCklmIHRoZXJlIGlzIGdvb2QgY2F1c2Ugd2UgY2FuIG1h
-a2UgVElPQ0NPTlMgd29yayBidXQgd2UgbmVlZCBhCmNvbXBlbGxpbmcgY2FzZSBiZXlvbmQgcm9v
-dCBpbiBhIGNvbnRhaW5lciBjYW4gZG8gYmFkIHRoaW5ncy4KCj4+Pj4gVGhlIG90aGVyIHByb2Js
-ZW0gaXMgdGhhdCBJIGRvbid0IHRoaW5rIHlvdSBjYW4gY2FsbCBmcHV0KCkgZnJvbQo+Pj4+IGRl
-c3Ryb3lfcGlkX25hbWVzcGFjZSgpLiAgVGhhdCBjYW4gYmUgY2FsbGVkIGZyb20gaW50ZXJydXB0
-IGNvbnRleHQsCj4+Pj4gYW5kIEkgZG9uJ3QgdGhpbmsgZnB1dCgpIGlzIHNhZmUgdGhlcmUuICBJ
-IGtub3cgaXQncyBub3Qgc2FmZSBpbiAzLjQKPj4+PiB3aXRoIHRoZSBSVCBwYXRjaCBhcHBsaWVk
-LiAgSG93ZXZlciwgdGhlIG9ubHkgd2F5IEkndmUgY29tZSB1cCB3aXRoIHRvCj4+Pj4gZml4IGl0
-IGlzIHRvIGFkZCBhIHdvcmtxdWV1ZSwgYW5kIHRoYXQgc2VlbXMgYSBiaXQgaGVhdnkgZm9yIHRo
-aXMuCj4+IEFjdHVhbGx5IGdldHRpbmcgZGVzdHJveV9waWRfbmFtZXNwYWNlIG91dCBvZiBpbnRl
-cnJ1cHQgY29udGV4dCB3b3VsZG4ndAo+PiBiZSB0aGUgd29yc3QgdGhpbmcgaW4gdGhlIHdvcmxk
-Lgo+Cj4gSSB3b3VsZCBhZ3JlZSwgYnV0IGl0IHdvdWxkIHN0aWxsIHJlcXVpcmUgc29tZXRoaW5n
-IGxpa2UgYSB3b3JrcXVldWUuCj4gSXMgdGhlcmUgYSBiZXR0ZXIgbWVjaGFuaXNtPwoKSXQgbWln
-aHQgYmUgYXMgc2ltcGxlIGFzIGZpbmRpbmcgYWxsIG9mIHRoZSBwdXRfcGlkcyBhbmQgbW92aW5n
-IHRoZW0gb3V0Cm9mIHNwaW5fbG9jayBjcml0aWNhbCBzZWN0aW9ucy4gIEkgZG9uJ3Qga25vdyB0
-aGF0IHdlIGRyb3AgcGlkcyBpbgphY3R1YWwgaW50ZXJydXB0IGNvbnRleHQuCgpFcmljCgpfX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1h
-aWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8v
-bGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+On 02/14/2013 06:58 PM, Eric W. Biederman wrote:
+>> I didn't see that, and using Linus' master my stop container scripts
+>> > stopped working after I started using Eric's userns...
+> The patch has been sitting in my for-next branch for quite a while
+> just waiting for the merge window.
+> 
+> Eric
+Fine by me.
