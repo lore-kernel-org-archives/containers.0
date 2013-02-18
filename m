@@ -1,8 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 14/16] xfs: Enable building with user namespaces
-	enabled.
-Date: Sun, 17 Feb 2013 17:11:07 -0800
-Message-ID: <1361149870-27732-14-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH review 16/16] userns: Remove the EXPERMINTAL kconfig tag
+Date: Sun, 17 Feb 2013 17:11:09 -0800
+Message-ID: <1361149870-27732-16-git-send-email-ebiederm__3443.78247759796$1361150013$gmane$org@xmission.com>
 References: <87txpaph4n.fsf@xmission.com>
 	<1361149870-27732-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -20,34 +19,33 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Alex Elder <elder-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ben Myers <bpm-sJ/iWh9BUns@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Not that all of the types holding uids, gids, and projectids
-have been converted it is safe to allow users in different
-user namespaces to access an xfs filesystem.
+While there is more work to be done in the form of allowing
+more to happen when you have root inside of a user namespace
+there is nothing experimental about them.
 
-Cc: Ben Myers <bpm-sJ/iWh9BUns@public.gmane.org>
-Cc: Alex Elder <elder-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- init/Kconfig |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
+ init/Kconfig |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
 
 diff --git a/init/Kconfig b/init/Kconfig
-index b2de5ed..3d99394 100644
+index c22e1b9..f2b1419 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -1071,7 +1071,6 @@ config UIDGID_CONVERTED
- 	default y
+@@ -1026,8 +1026,7 @@ config IPC_NS
+ 	  different IPC objects in different namespaces.
  
- 	# Filesystems
--	depends on XFS_FS = n
- 
- config UIDGID_STRICT_TYPE_CHECKS
- 	bool "Require conversions between uid/gids and their internal representation"
+ config USER_NS
+-	bool "User namespace (EXPERIMENTAL)"
+-	depends on EXPERIMENTAL
++	bool "User namespace"
+ 	default n
+ 	help
+ 	  This allows containers, i.e. vservers, to use user namespaces
 -- 
 1.7.5.4
