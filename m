@@ -1,7 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 06/16] xfs: Use kuids and kgids in xfs_setattr_nonsize
-Date: Sun, 17 Feb 2013 17:10:59 -0800
-Message-ID: <1361149870-27732-6-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH review 07/16] xfs: Update ioctl(XFS_IOC_FREE_EOFBLOCKS) to
+	handle callers in any userspace
+Date: Sun, 17 Feb 2013 17:11:00 -0800
+Message-ID: <1361149870-27732-7-git-send-email-ebiederm@xmission.com>
 References: <87txpaph4n.fsf@xmission.com>
 	<1361149870-27732-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -24,57 +25,131 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
+- Modify the ioctl to convert from uids, gid, and projids in the
+  current user namespace to kuids, kgids, and kprojids, and to report
+  an error if the conversion fails.
+
+- Create struct xfs_internal_eofblocks to hold the same information as
+  struct xfs_eofblocks but with uids, gids, and projids stored as
+  kuids, kgids, and kprojids preventing confusion.
+
+- Pass struct xfs_interanl_eofblocks into xfs_icache_free_eofblocks
+  and it's helpers ensuring there will not be confusing about which
+  user namespace identifiers that need to be compared are in.
+
 Cc: Ben Myers <bpm-sJ/iWh9BUns@public.gmane.org>
 Cc: Alex Elder <elder-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/xfs/xfs_iops.c |   12 ++++++------
- 1 files changed, 6 insertions(+), 6 deletions(-)
+ fs/xfs/xfs_icache.c |    8 ++++----
+ fs/xfs/xfs_icache.h |   11 ++++++++++-
+ fs/xfs/xfs_ioctl.c  |   22 +++++++++++++++++++++-
+ 3 files changed, 35 insertions(+), 6 deletions(-)
 
-diff --git a/fs/xfs/xfs_iops.c b/fs/xfs/xfs_iops.c
-index 235a48c..0edacbe 100644
---- a/fs/xfs/xfs_iops.c
-+++ b/fs/xfs/xfs_iops.c
-@@ -466,8 +466,8 @@ xfs_setattr_nonsize(
- 	int			mask = iattr->ia_valid;
- 	xfs_trans_t		*tp;
- 	int			error;
--	uid_t			uid = 0, iuid = 0;
--	gid_t			gid = 0, igid = 0;
-+	kuid_t			uid = GLOBAL_ROOT_UID, iuid = GLOBAL_ROOT_UID;
-+	kgid_t			gid = GLOBAL_ROOT_GID, igid = GLOBAL_ROOT_GID;
- 	struct xfs_dquot	*udqp = NULL, *gdqp = NULL;
- 	struct xfs_dquot	*olddquot1 = NULL, *olddquot2 = NULL;
+diff --git a/fs/xfs/xfs_icache.c b/fs/xfs/xfs_icache.c
+index 0583649..e4cdc02 100644
+--- a/fs/xfs/xfs_icache.c
++++ b/fs/xfs/xfs_icache.c
+@@ -1199,7 +1199,7 @@ xfs_reclaim_inodes_count(
+ STATIC int
+ xfs_inode_match_id(
+ 	struct xfs_inode	*ip,
+-	struct xfs_eofblocks	*eofb)
++	struct xfs_internal_eofblocks	*eofb)
+ {
+ 	if (eofb->eof_flags & XFS_EOF_FLAGS_UID &&
+ 	    !uid_eq(VFS_I(ip)->i_uid, eofb->eof_uid))
+@@ -1210,7 +1210,7 @@ xfs_inode_match_id(
+ 		return 0;
  
-@@ -549,8 +549,8 @@ xfs_setattr_nonsize(
- 		 * going to change.
- 		 */
- 		if (XFS_IS_QUOTA_RUNNING(mp) &&
--		    ((XFS_IS_UQUOTA_ON(mp) && iuid != uid) ||
--		     (XFS_IS_GQUOTA_ON(mp) && igid != gid))) {
-+		    ((XFS_IS_UQUOTA_ON(mp) && !uid_eq(iuid, uid)) ||
-+		     (XFS_IS_GQUOTA_ON(mp) && !gid_eq(igid, gid)))) {
- 			ASSERT(tp);
- 			error = xfs_qm_vop_chown_reserve(tp, ip, udqp, gdqp,
- 						capable(CAP_FOWNER) ?
-@@ -580,7 +580,7 @@ xfs_setattr_nonsize(
- 		 * Change the ownerships and register quota modifications
- 		 * in the transaction.
- 		 */
--		if (iuid != uid) {
-+		if (!uid_eq(iuid, uid)) {
- 			if (XFS_IS_QUOTA_RUNNING(mp) && XFS_IS_UQUOTA_ON(mp)) {
- 				ASSERT(mask & ATTR_UID);
- 				ASSERT(udqp);
-@@ -589,7 +589,7 @@ xfs_setattr_nonsize(
- 			}
- 			xfs_set_uid(ip, uid);
- 		}
--		if (igid != gid) {
-+		if (!gid_eq(igid, gid)) {
- 			if (XFS_IS_QUOTA_RUNNING(mp) && XFS_IS_GQUOTA_ON(mp)) {
- 				ASSERT(!XFS_IS_PQUOTA_ON(mp));
- 				ASSERT(mask & ATTR_GID);
+ 	if (eofb->eof_flags & XFS_EOF_FLAGS_PRID &&
+-	    !projid_eq(ip->i_projid, eofb->eof_prid))
++	    !projid_eq(ip->i_projid, eofb->eof_projid))
+ 		return 0;
+ 
+ 	return 1;
+@@ -1224,7 +1224,7 @@ xfs_inode_free_eofblocks(
+ 	void			*args)
+ {
+ 	int ret;
+-	struct xfs_eofblocks *eofb = args;
++	struct xfs_internal_eofblocks *eofb = args;
+ 
+ 	if (!xfs_can_free_eofblocks(ip, false)) {
+ 		/* inode could be preallocated or append-only */
+@@ -1263,7 +1263,7 @@ xfs_inode_free_eofblocks(
+ int
+ xfs_icache_free_eofblocks(
+ 	struct xfs_mount	*mp,
+-	struct xfs_eofblocks	*eofb)
++	struct xfs_internal_eofblocks	*eofb)
+ {
+ 	int flags = SYNC_TRYLOCK;
+ 
+diff --git a/fs/xfs/xfs_icache.h b/fs/xfs/xfs_icache.h
+index e0f138c..260dc27 100644
+--- a/fs/xfs/xfs_icache.h
++++ b/fs/xfs/xfs_icache.h
+@@ -35,9 +35,18 @@ void xfs_reclaim_inodes_nr(struct xfs_mount *mp, int nr_to_scan);
+ 
+ void xfs_inode_set_reclaim_tag(struct xfs_inode *ip);
+ 
++struct xfs_internal_eofblocks {
++	u32		eof_version;
++	u32		eof_flags;
++	kuid_t		eof_uid;
++	kgid_t		eof_gid;
++	kprojid_t	eof_projid;
++	u64		eof_min_file_size;
++};
++
+ void xfs_inode_set_eofblocks_tag(struct xfs_inode *ip);
+ void xfs_inode_clear_eofblocks_tag(struct xfs_inode *ip);
+-int xfs_icache_free_eofblocks(struct xfs_mount *, struct xfs_eofblocks *);
++int xfs_icache_free_eofblocks(struct xfs_mount *, struct xfs_internal_eofblocks *);
+ void xfs_eofblocks_worker(struct work_struct *);
+ 
+ int xfs_sync_inode_grab(struct xfs_inode *ip);
+diff --git a/fs/xfs/xfs_ioctl.c b/fs/xfs/xfs_ioctl.c
+index 4a55f50..1a74b56 100644
+--- a/fs/xfs/xfs_ioctl.c
++++ b/fs/xfs/xfs_ioctl.c
+@@ -1615,6 +1615,7 @@ xfs_file_ioctl(
+ 
+ 	case XFS_IOC_FREE_EOFBLOCKS: {
+ 		struct xfs_eofblocks eofb;
++		struct xfs_internal_eofblocks keofb;
+ 
+ 		if (copy_from_user(&eofb, arg, sizeof(eofb)))
+ 			return -XFS_ERROR(EFAULT);
+@@ -1629,7 +1630,26 @@ xfs_file_ioctl(
+ 		    memchr_inv(eofb.pad64, 0, sizeof(eofb.pad64)))
+ 			return -XFS_ERROR(EINVAL);
+ 
+-		error = xfs_icache_free_eofblocks(mp, &eofb);
++		keofb.eof_version = eofb.eof_version;
++		keofb.eof_flags   = eofb.eof_flags;
++		if (eofb.eof_flags & XFS_EOF_FLAGS_UID) {
++			keofb.eof_uid = make_kuid(current_user_ns(), eofb.eof_uid);
++			if (!uid_valid(keofb.eof_uid))
++				return -XFS_ERROR(EINVAL);
++		}
++		if (eofb.eof_flags & XFS_EOF_FLAGS_GID) {
++			keofb.eof_gid = make_kgid(current_user_ns(), eofb.eof_gid);
++			if (!gid_valid(keofb.eof_gid))
++				return -XFS_ERROR(EINVAL);
++		}
++		if (eofb.eof_flags & XFS_EOF_FLAGS_PRID) {
++			keofb.eof_projid = make_kprojid(current_user_ns(), eofb.eof_prid);
++			if (!projid_valid(keofb.eof_projid))
++				return -XFS_ERROR(EINVAL);
++		}
++		keofb.eof_min_file_size = eofb.eof_min_file_size;
++
++		error = xfs_icache_free_eofblocks(mp, &keofb);
+ 		return -error;
+ 	}
+ 
 -- 
 1.7.5.4
