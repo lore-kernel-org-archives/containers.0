@@ -1,8 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 07/16] xfs: Update ioctl(XFS_IOC_FREE_EOFBLOCKS) to
-	handle callers in any userspace
-Date: Sun, 17 Feb 2013 17:11:00 -0800
-Message-ID: <1361149870-27732-7-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH review 08/16] xfs: Use kprojids when allocating inodes.
+Date: Sun, 17 Feb 2013 17:11:01 -0800
+Message-ID: <1361149870-27732-8-git-send-email-ebiederm__34948.9148160957$1361149964$gmane$org@xmission.com>
 References: <87txpaph4n.fsf@xmission.com>
 	<1361149870-27732-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -25,131 +24,138 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-- Modify the ioctl to convert from uids, gid, and projids in the
-  current user namespace to kuids, kgids, and kprojids, and to report
-  an error if the conversion fails.
-
-- Create struct xfs_internal_eofblocks to hold the same information as
-  struct xfs_eofblocks but with uids, gids, and projids stored as
-  kuids, kgids, and kprojids preventing confusion.
-
-- Pass struct xfs_interanl_eofblocks into xfs_icache_free_eofblocks
-  and it's helpers ensuring there will not be confusing about which
-  user namespace identifiers that need to be compared are in.
+In xfs_create and xfs_symlink compute the desired kprojid and pass it
+down into xfs_ialloc.
 
 Cc: Ben Myers <bpm-sJ/iWh9BUns@public.gmane.org>
 Cc: Alex Elder <elder-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/xfs/xfs_icache.c |    8 ++++----
- fs/xfs/xfs_icache.h |   11 ++++++++++-
- fs/xfs/xfs_ioctl.c  |   22 +++++++++++++++++++++-
- 3 files changed, 35 insertions(+), 6 deletions(-)
+ fs/xfs/xfs_inode.c    |    5 +++--
+ fs/xfs/xfs_inode.h    |    2 +-
+ fs/xfs/xfs_qm.c       |    4 +++-
+ fs/xfs/xfs_utils.c    |    2 +-
+ fs/xfs/xfs_utils.h    |    2 +-
+ fs/xfs/xfs_vnodeops.c |    8 ++++----
+ 6 files changed, 13 insertions(+), 10 deletions(-)
 
-diff --git a/fs/xfs/xfs_icache.c b/fs/xfs/xfs_icache.c
-index 0583649..e4cdc02 100644
---- a/fs/xfs/xfs_icache.c
-+++ b/fs/xfs/xfs_icache.c
-@@ -1199,7 +1199,7 @@ xfs_reclaim_inodes_count(
- STATIC int
- xfs_inode_match_id(
- 	struct xfs_inode	*ip,
--	struct xfs_eofblocks	*eofb)
-+	struct xfs_internal_eofblocks	*eofb)
- {
- 	if (eofb->eof_flags & XFS_EOF_FLAGS_UID &&
- 	    !uid_eq(VFS_I(ip)->i_uid, eofb->eof_uid))
-@@ -1210,7 +1210,7 @@ xfs_inode_match_id(
- 		return 0;
+diff --git a/fs/xfs/xfs_inode.c b/fs/xfs/xfs_inode.c
+index af5420a..b7c9975 100644
+--- a/fs/xfs/xfs_inode.c
++++ b/fs/xfs/xfs_inode.c
+@@ -1163,7 +1163,7 @@ xfs_ialloc(
+ 	umode_t		mode,
+ 	xfs_nlink_t	nlink,
+ 	xfs_dev_t	rdev,
+-	prid_t		prid,
++	kprojid_t	prid,
+ 	int		okalloc,
+ 	xfs_buf_t	**ialloc_context,
+ 	xfs_inode_t	**ipp)
+@@ -1227,7 +1227,8 @@ xfs_ialloc(
+ 	/*
+ 	 * Project ids won't be stored on disk if we are using a version 1 inode.
+ 	 */
+-	if ((prid != 0) && (ip->i_d.di_version == 1))
++	if (!projid_eq(prid, make_kprojid(&init_user_ns, 0)) &&
++	    (ip->i_d.di_version == 1))
+ 		xfs_bump_ino_vers2(tp, ip);
  
- 	if (eofb->eof_flags & XFS_EOF_FLAGS_PRID &&
--	    !projid_eq(ip->i_projid, eofb->eof_prid))
-+	    !projid_eq(ip->i_projid, eofb->eof_projid))
- 		return 0;
+ 	if (pip && XFS_INHERIT_GID(pip)) {
+diff --git a/fs/xfs/xfs_inode.h b/fs/xfs/xfs_inode.h
+index b82160f..9232c8e 100644
+--- a/fs/xfs/xfs_inode.h
++++ b/fs/xfs/xfs_inode.h
+@@ -518,7 +518,7 @@ int		xfs_isilocked(xfs_inode_t *, uint);
+ uint		xfs_ilock_map_shared(xfs_inode_t *);
+ void		xfs_iunlock_map_shared(xfs_inode_t *, uint);
+ int		xfs_ialloc(struct xfs_trans *, xfs_inode_t *, umode_t,
+-			   xfs_nlink_t, xfs_dev_t, prid_t, int,
++			   xfs_nlink_t, xfs_dev_t, kprojid_t, int,
+ 			   struct xfs_buf **, xfs_inode_t **);
  
- 	return 1;
-@@ -1224,7 +1224,7 @@ xfs_inode_free_eofblocks(
- 	void			*args)
- {
- 	int ret;
--	struct xfs_eofblocks *eofb = args;
-+	struct xfs_internal_eofblocks *eofb = args;
- 
- 	if (!xfs_can_free_eofblocks(ip, false)) {
- 		/* inode could be preallocated or append-only */
-@@ -1263,7 +1263,7 @@ xfs_inode_free_eofblocks(
- int
- xfs_icache_free_eofblocks(
- 	struct xfs_mount	*mp,
--	struct xfs_eofblocks	*eofb)
-+	struct xfs_internal_eofblocks	*eofb)
- {
- 	int flags = SYNC_TRYLOCK;
- 
-diff --git a/fs/xfs/xfs_icache.h b/fs/xfs/xfs_icache.h
-index e0f138c..260dc27 100644
---- a/fs/xfs/xfs_icache.h
-+++ b/fs/xfs/xfs_icache.h
-@@ -35,9 +35,18 @@ void xfs_reclaim_inodes_nr(struct xfs_mount *mp, int nr_to_scan);
- 
- void xfs_inode_set_reclaim_tag(struct xfs_inode *ip);
- 
-+struct xfs_internal_eofblocks {
-+	u32		eof_version;
-+	u32		eof_flags;
-+	kuid_t		eof_uid;
-+	kgid_t		eof_gid;
-+	kprojid_t	eof_projid;
-+	u64		eof_min_file_size;
-+};
-+
- void xfs_inode_set_eofblocks_tag(struct xfs_inode *ip);
- void xfs_inode_clear_eofblocks_tag(struct xfs_inode *ip);
--int xfs_icache_free_eofblocks(struct xfs_mount *, struct xfs_eofblocks *);
-+int xfs_icache_free_eofblocks(struct xfs_mount *, struct xfs_internal_eofblocks *);
- void xfs_eofblocks_worker(struct work_struct *);
- 
- int xfs_sync_inode_grab(struct xfs_inode *ip);
-diff --git a/fs/xfs/xfs_ioctl.c b/fs/xfs/xfs_ioctl.c
-index 4a55f50..1a74b56 100644
---- a/fs/xfs/xfs_ioctl.c
-+++ b/fs/xfs/xfs_ioctl.c
-@@ -1615,6 +1615,7 @@ xfs_file_ioctl(
- 
- 	case XFS_IOC_FREE_EOFBLOCKS: {
- 		struct xfs_eofblocks eofb;
-+		struct xfs_internal_eofblocks keofb;
- 
- 		if (copy_from_user(&eofb, arg, sizeof(eofb)))
- 			return -XFS_ERROR(EFAULT);
-@@ -1629,7 +1630,26 @@ xfs_file_ioctl(
- 		    memchr_inv(eofb.pad64, 0, sizeof(eofb.pad64)))
- 			return -XFS_ERROR(EINVAL);
- 
--		error = xfs_icache_free_eofblocks(mp, &eofb);
-+		keofb.eof_version = eofb.eof_version;
-+		keofb.eof_flags   = eofb.eof_flags;
-+		if (eofb.eof_flags & XFS_EOF_FLAGS_UID) {
-+			keofb.eof_uid = make_kuid(current_user_ns(), eofb.eof_uid);
-+			if (!uid_valid(keofb.eof_uid))
-+				return -XFS_ERROR(EINVAL);
-+		}
-+		if (eofb.eof_flags & XFS_EOF_FLAGS_GID) {
-+			keofb.eof_gid = make_kgid(current_user_ns(), eofb.eof_gid);
-+			if (!gid_valid(keofb.eof_gid))
-+				return -XFS_ERROR(EINVAL);
-+		}
-+		if (eofb.eof_flags & XFS_EOF_FLAGS_PRID) {
-+			keofb.eof_projid = make_kprojid(current_user_ns(), eofb.eof_prid);
-+			if (!projid_valid(keofb.eof_projid))
-+				return -XFS_ERROR(EINVAL);
-+		}
-+		keofb.eof_min_file_size = eofb.eof_min_file_size;
-+
-+		error = xfs_icache_free_eofblocks(mp, &keofb);
- 		return -error;
+ uint		xfs_ip2xflags(struct xfs_inode *);
+diff --git a/fs/xfs/xfs_qm.c b/fs/xfs/xfs_qm.c
+index f11e10d..6fce3d3 100644
+--- a/fs/xfs/xfs_qm.c
++++ b/fs/xfs/xfs_qm.c
+@@ -777,7 +777,9 @@ xfs_qm_qino_alloc(
+ 		return error;
  	}
  
+-	error = xfs_dir_ialloc(&tp, NULL, S_IFREG, 1, 0, 0, 1, ip, &committed);
++	error = xfs_dir_ialloc(&tp, NULL, S_IFREG, 1, 0,
++			       make_kprojid(&init_user_ns, 0),
++			       1, ip, &committed);
+ 	if (error) {
+ 		xfs_trans_cancel(tp, XFS_TRANS_RELEASE_LOG_RES |
+ 				 XFS_TRANS_ABORT);
+diff --git a/fs/xfs/xfs_utils.c b/fs/xfs/xfs_utils.c
+index 0025c78..f0a9f1d 100644
+--- a/fs/xfs/xfs_utils.c
++++ b/fs/xfs/xfs_utils.c
+@@ -54,7 +54,7 @@ xfs_dir_ialloc(
+ 	umode_t		mode,
+ 	xfs_nlink_t	nlink,
+ 	xfs_dev_t	rdev,
+-	prid_t		prid,		/* project id */
++	kprojid_t	prid,		/* project id */
+ 	int		okalloc,	/* ok to allocate new space */
+ 	xfs_inode_t	**ipp,		/* pointer to inode; it will be
+ 					   locked. */
+diff --git a/fs/xfs/xfs_utils.h b/fs/xfs/xfs_utils.h
+index 5eeab46..7757f7c 100644
+--- a/fs/xfs/xfs_utils.h
++++ b/fs/xfs/xfs_utils.h
+@@ -19,7 +19,7 @@
+ #define __XFS_UTILS_H__
+ 
+ extern int xfs_dir_ialloc(xfs_trans_t **, xfs_inode_t *, umode_t, xfs_nlink_t,
+-				xfs_dev_t, prid_t, int, xfs_inode_t **, int *);
++				xfs_dev_t, kprojid_t, int, xfs_inode_t **, int *);
+ extern int xfs_droplink(xfs_trans_t *, xfs_inode_t *);
+ extern int xfs_bumplink(xfs_trans_t *, xfs_inode_t *);
+ extern void xfs_bump_ino_vers2(xfs_trans_t *, xfs_inode_t *);
+diff --git a/fs/xfs/xfs_vnodeops.c b/fs/xfs/xfs_vnodeops.c
+index e7b27c8..496460b 100644
+--- a/fs/xfs/xfs_vnodeops.c
++++ b/fs/xfs/xfs_vnodeops.c
+@@ -728,7 +728,7 @@ xfs_create(
+ 	boolean_t		unlock_dp_on_error = B_FALSE;
+ 	uint			cancel_flags;
+ 	int			committed;
+-	prid_t			prid;
++	kprojid_t		prid;
+ 	struct xfs_dquot	*udqp = NULL;
+ 	struct xfs_dquot	*gdqp = NULL;
+ 	uint			resblks;
+@@ -743,7 +743,7 @@ xfs_create(
+ 	if (dp->i_d.di_flags & XFS_DIFLAG_PROJINHERIT)
+ 		prid = dp->i_projid;
+ 	else
+-		prid = XFS_PROJID_DEFAULT;
++		prid = make_kprojid(&init_user_ns, XFS_PROJID_DEFAULT);
+ 
+ 	/*
+ 	 * Make sure that we have allocated dquot(s) on disk.
+@@ -1379,7 +1379,7 @@ xfs_symlink(
+ 	int			byte_cnt;
+ 	int			n;
+ 	xfs_buf_t		*bp;
+-	prid_t			prid;
++	kprojid_t		prid;
+ 	struct xfs_dquot	*udqp, *gdqp;
+ 	uint			resblks;
+ 
+@@ -1404,7 +1404,7 @@ xfs_symlink(
+ 	if (dp->i_d.di_flags & XFS_DIFLAG_PROJINHERIT)
+ 		prid = dp->i_projid;
+ 	else
+-		prid = XFS_PROJID_DEFAULT;
++		prid = make_kprojid(&init_user_ns, XFS_PROJID_DEFAULT);
+ 
+ 	/*
+ 	 * Make sure that we have allocated dquot(s) on disk.
 -- 
 1.7.5.4
