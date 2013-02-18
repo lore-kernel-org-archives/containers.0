@@ -1,8 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 10/16] xfs: Push struct kqid into xfs_qm_scall_qmlim
-	and xfs_qm_scall_getquota
-Date: Sun, 17 Feb 2013 17:11:03 -0800
-Message-ID: <1361149870-27732-10-git-send-email-ebiederm__20779.1489003741$1361149981$gmane$org@xmission.com>
+Subject: [PATCH review 12/16] xfs: Remember the kqid for a quota
+Date: Sun, 17 Feb 2013 17:11:05 -0800
+Message-ID: <1361149870-27732-12-git-send-email-ebiederm__11938.1512552083$1361149991$gmane$org@xmission.com>
 References: <87txpaph4n.fsf@xmission.com>
 	<1361149870-27732-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -25,229 +24,106 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-- In xfs_qm_scall_getquota map the quota id into the callers
-  user namespace in the returned struct fs_disk_quota
-
-- Add a helper is_superquota and use it in xfs_qm_scall_setqlimi
-  to see if we are setting the superusers quota limit.  Setting
-  the superuses quota limit on xfs sets the default quota limits
-  for all users.
-
-- Move xfs_quota_type into xfs_qm_syscalls.c where it is now used.
+- Add q_id to struct xfs_quota
+- Modify xfs_qm_dqread to take a struct kqid, allowing xfs_qm_dqread to
+  set q_id on fresh quota structures.
+- Modify xfs_qm_dqget and xfs_qm_init_quota_info to pass a kqid
+  to xfs_qm_dqread
 
 Cc: Ben Myers <bpm-sJ/iWh9BUns@public.gmane.org>
 Cc: Alex Elder <elder-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/xfs/xfs_dquot.h       |    6 ++++++
- fs/xfs/xfs_qm.h          |    4 ++--
- fs/xfs/xfs_qm_syscalls.c |   40 +++++++++++++++++++++++++++++-----------
- fs/xfs/xfs_quotaops.c    |   20 ++------------------
- 4 files changed, 39 insertions(+), 31 deletions(-)
+ fs/xfs/xfs_dquot.c |   12 ++++++------
+ fs/xfs/xfs_dquot.h |    3 ++-
+ fs/xfs/xfs_qm.c    |    9 +++++----
+ 3 files changed, 13 insertions(+), 11 deletions(-)
 
-diff --git a/fs/xfs/xfs_dquot.h b/fs/xfs/xfs_dquot.h
-index c694a84..2c197da 100644
---- a/fs/xfs/xfs_dquot.h
-+++ b/fs/xfs/xfs_dquot.h
-@@ -163,4 +163,10 @@ static inline struct xfs_dquot *xfs_qm_dqhold(struct xfs_dquot *dqp)
- 
- extern const struct xfs_buf_ops xfs_dquot_buf_ops;
- 
-+/* Is this root's quota in the specified user namespace? */
-+static inline bool is_superquota(struct kqid id, struct user_namespace *ns)
-+{
-+	return qid_eq(id, make_kqid(ns, id.type, 0));
-+}
-+
- #endif /* __XFS_DQUOT_H__ */
-diff --git a/fs/xfs/xfs_qm.h b/fs/xfs/xfs_qm.h
-index 44b858b..ce478dc 100644
---- a/fs/xfs/xfs_qm.h
-+++ b/fs/xfs/xfs_qm.h
-@@ -114,9 +114,9 @@ extern void		xfs_qm_dqrele_all_inodes(xfs_mount_t *, uint);
- 
- /* quota ops */
- extern int		xfs_qm_scall_trunc_qfiles(xfs_mount_t *, uint);
--extern int		xfs_qm_scall_getquota(xfs_mount_t *, xfs_dqid_t, uint,
-+extern int		xfs_qm_scall_getquota(xfs_mount_t *, struct kqid,
- 					fs_disk_quota_t *);
--extern int		xfs_qm_scall_setqlim(xfs_mount_t *, xfs_dqid_t, uint,
-+extern int		xfs_qm_scall_setqlim(xfs_mount_t *, struct kqid,
- 					fs_disk_quota_t *);
- extern int		xfs_qm_scall_getqstat(xfs_mount_t *, fs_quota_stat_t *);
- extern int		xfs_qm_scall_quotaon(xfs_mount_t *, uint);
-diff --git a/fs/xfs/xfs_qm_syscalls.c b/fs/xfs/xfs_qm_syscalls.c
-index 5f53e75..5666b1c 100644
---- a/fs/xfs/xfs_qm_syscalls.c
-+++ b/fs/xfs/xfs_qm_syscalls.c
-@@ -48,6 +48,19 @@ STATIC int	xfs_qm_log_quotaoff_end(xfs_mount_t *, xfs_qoff_logitem_t *,
- STATIC uint	xfs_qm_export_flags(uint);
- STATIC uint	xfs_qm_export_qtype_flags(uint);
- 
-+STATIC int
-+xfs_quota_type(int type)
-+{
-+	switch (type) {
-+	case USRQUOTA:
-+		return XFS_DQ_USER;
-+	case GRPQUOTA:
-+		return XFS_DQ_GROUP;
-+	default:
-+		return XFS_DQ_PROJ;
-+	}
-+}
-+
- /*
-  * Turn off quota accounting and/or enforcement for all udquots and/or
-  * gdquots. Called only at unmount time.
-@@ -473,8 +486,7 @@ xfs_qm_scall_getqstat(
+diff --git a/fs/xfs/xfs_dquot.c b/fs/xfs/xfs_dquot.c
+index 6be5a29..53c8f67 100644
+--- a/fs/xfs/xfs_dquot.c
++++ b/fs/xfs/xfs_dquot.c
+@@ -581,8 +581,7 @@ xfs_qm_dqtobp(
  int
- xfs_qm_scall_setqlim(
- 	xfs_mount_t		*mp,
--	xfs_dqid_t		id,
--	uint			type,
-+	struct kqid		id,
- 	fs_disk_quota_t		*newlim)
- {
- 	struct xfs_quotainfo	*q = mp->m_quotainfo;
-@@ -483,12 +495,16 @@ xfs_qm_scall_setqlim(
- 	xfs_trans_t		*tp;
- 	int			error;
- 	xfs_qcnt_t		hard, soft;
-+	bool			superquota;
- 
- 	if (newlim->d_fieldmask & ~XFS_DQ_MASK)
- 		return EINVAL;
- 	if ((newlim->d_fieldmask & XFS_DQ_MASK) == 0)
- 		return 0;
- 
-+	/* Is this quota id for root? */
-+	superquota = is_superquota(id, &init_user_ns);
-+
- 	tp = xfs_trans_alloc(mp, XFS_TRANS_QM_SETQLIM);
- 	if ((error = xfs_trans_reserve(tp, 0, sizeof(xfs_disk_dquot_t) + 128,
- 				      0, 0, XFS_DEFAULT_LOG_COUNT))) {
-@@ -508,7 +524,9 @@ xfs_qm_scall_setqlim(
- 	 * Get the dquot (locked), and join it to the transaction.
- 	 * Allocate the dquot if this doesn't exist.
- 	 */
--	if ((error = xfs_qm_dqget(mp, NULL, id, type, XFS_QMOPT_DQALLOC, &dqp))) {
-+	if ((error = xfs_qm_dqget(mp, NULL, from_kqid(&init_user_ns, id),
-+				  xfs_quota_type(id.type),
-+				  XFS_QMOPT_DQALLOC, &dqp))) {
- 		xfs_trans_cancel(tp, XFS_TRANS_ABORT);
- 		ASSERT(error != ENOENT);
- 		goto out_unlock;
-@@ -528,7 +546,7 @@ xfs_qm_scall_setqlim(
- 	if (hard == 0 || hard >= soft) {
- 		ddq->d_blk_hardlimit = cpu_to_be64(hard);
- 		ddq->d_blk_softlimit = cpu_to_be64(soft);
--		if (id == 0) {
-+		if (superquota) {
- 			q->qi_bhardlimit = hard;
- 			q->qi_bsoftlimit = soft;
- 		}
-@@ -544,7 +562,7 @@ xfs_qm_scall_setqlim(
- 	if (hard == 0 || hard >= soft) {
- 		ddq->d_rtb_hardlimit = cpu_to_be64(hard);
- 		ddq->d_rtb_softlimit = cpu_to_be64(soft);
--		if (id == 0) {
-+		if (superquota) {
- 			q->qi_rtbhardlimit = hard;
- 			q->qi_rtbsoftlimit = soft;
- 		}
-@@ -561,7 +579,7 @@ xfs_qm_scall_setqlim(
- 	if (hard == 0 || hard >= soft) {
- 		ddq->d_ino_hardlimit = cpu_to_be64(hard);
- 		ddq->d_ino_softlimit = cpu_to_be64(soft);
--		if (id == 0) {
-+		if (superquota) {
- 			q->qi_ihardlimit = hard;
- 			q->qi_isoftlimit = soft;
- 		}
-@@ -579,7 +597,7 @@ xfs_qm_scall_setqlim(
- 	if (newlim->d_fieldmask & FS_DQ_RTBWARNS)
- 		ddq->d_rtbwarns = cpu_to_be16(newlim->d_rtbwarns);
- 
--	if (id == 0) {
-+	if (superquota) {
- 		/*
- 		 * Timelimits for the super user set the relative time
- 		 * the other users can be over quota for this file system.
-@@ -717,8 +735,7 @@ error0:
- int
- xfs_qm_scall_getquota(
+ xfs_qm_dqread(
  	struct xfs_mount	*mp,
 -	xfs_dqid_t		id,
 -	uint			type,
 +	struct kqid		id,
- 	struct fs_disk_quota	*dst)
+ 	uint			flags,
+ 	struct xfs_dquot	**O_dqpp)
  {
- 	struct xfs_dquot	*dqp;
-@@ -729,7 +746,8 @@ xfs_qm_scall_getquota(
- 	 * we aren't passing the XFS_QMOPT_DOALLOC flag. If it doesn't
- 	 * exist, we'll get ENOENT back.
+@@ -596,8 +595,9 @@ xfs_qm_dqread(
+ 
+ 	dqp = kmem_zone_zalloc(xfs_qm_dqzone, KM_SLEEP);
+ 
+-	dqp->dq_flags = type;
+-	dqp->q_core.d_id = cpu_to_be32(id);
++	dqp->q_id = id;
++	dqp->dq_flags = xfs_quota_type(id.type);
++	dqp->q_core.d_id = cpu_to_be32(from_kqid(&init_user_ns, id));
+ 	dqp->q_mount = mp;
+ 	INIT_LIST_HEAD(&dqp->q_lru);
+ 	mutex_init(&dqp->q_qlock);
+@@ -615,7 +615,7 @@ xfs_qm_dqread(
+ 	 * Make sure group quotas have a different lock class than user
+ 	 * quotas.
  	 */
--	error = xfs_qm_dqget(mp, NULL, id, type, 0, &dqp);
-+	error = xfs_qm_dqget(mp, NULL, from_kqid(&init_user_ns, id),
-+			     xfs_quota_type(id.type), 0, &dqp);
- 	if (error)
- 		return error;
+-	if (!(type & XFS_DQ_USER))
++	if (id.type != USRQUOTA)
+ 		lockdep_set_class(&dqp->q_qlock, &xfs_dquot_other_class);
  
-@@ -745,7 +763,7 @@ xfs_qm_scall_getquota(
- 	memset(dst, 0, sizeof(*dst));
- 	dst->d_version = FS_DQUOT_VERSION;
- 	dst->d_flags = xfs_qm_export_qtype_flags(dqp->q_core.d_flags);
--	dst->d_id = be32_to_cpu(dqp->q_core.d_id);
-+	dst->d_id = from_kqid_munged(current_user_ns(), id);
- 	dst->d_blk_hardlimit =
- 		XFS_FSB_TO_BB(mp, be64_to_cpu(dqp->q_core.d_blk_hardlimit));
- 	dst->d_blk_softlimit =
-diff --git a/fs/xfs/xfs_quotaops.c b/fs/xfs/xfs_quotaops.c
-index 71926d6..4d88faa 100644
---- a/fs/xfs/xfs_quotaops.c
-+++ b/fs/xfs/xfs_quotaops.c
-@@ -27,20 +27,6 @@
- #include "xfs_qm.h"
- #include <linux/quota.h>
+ 	XFS_STATS_INC(xs_qm_dquot);
+@@ -785,7 +785,7 @@ restart:
+ 	if (ip)
+ 		xfs_iunlock(ip, XFS_ILOCK_EXCL);
  
--
--STATIC int
--xfs_quota_type(int type)
--{
--	switch (type) {
--	case USRQUOTA:
--		return XFS_DQ_USER;
--	case GRPQUOTA:
--		return XFS_DQ_GROUP;
--	default:
--		return XFS_DQ_PROJ;
--	}
--}
--
- STATIC int
- xfs_fs_get_xstate(
- 	struct super_block	*sb,
-@@ -107,8 +93,7 @@ xfs_fs_get_dqblk(
- 	if (!XFS_IS_QUOTA_ON(mp))
- 		return -ESRCH;
+-	error = xfs_qm_dqread(mp, id, type, flags, &dqp);
++	error = xfs_qm_dqread(mp, qid, flags, &dqp);
  
--	return -xfs_qm_scall_getquota(mp, from_kqid(&init_user_ns, qid),
--				      xfs_quota_type(qid.type), fdq);
-+	return -xfs_qm_scall_getquota(mp, qid, fdq);
- }
+ 	if (ip)
+ 		xfs_ilock(ip, XFS_ILOCK_EXCL);
+diff --git a/fs/xfs/xfs_dquot.h b/fs/xfs/xfs_dquot.h
+index 3566548..0b6020e 100644
+--- a/fs/xfs/xfs_dquot.h
++++ b/fs/xfs/xfs_dquot.h
+@@ -36,6 +36,7 @@ struct xfs_trans;
+  * The incore dquot structure
+  */
+ typedef struct xfs_dquot {
++	struct kqid      q_id;		/* quota identifier */
+ 	uint		 dq_flags;	/* various flags (XFS_DQ_*) */
+ 	struct list_head q_lru;		/* global free list of dquots */
+ 	struct xfs_mount*q_mount;	/* filesystem this relates to */
+@@ -138,7 +139,7 @@ static inline xfs_dquot_t *xfs_inode_dquot(struct xfs_inode *ip, int type)
+ 				 XFS_DQ_TO_QINF(dqp)->qi_uquotaip : \
+ 				 XFS_DQ_TO_QINF(dqp)->qi_gquotaip)
  
- STATIC int
-@@ -126,8 +111,7 @@ xfs_fs_set_dqblk(
- 	if (!XFS_IS_QUOTA_ON(mp))
- 		return -ESRCH;
- 
--	return -xfs_qm_scall_setqlim(mp, from_kqid(&init_user_ns, qid),
--				     xfs_quota_type(qid.type), fdq);
-+	return -xfs_qm_scall_setqlim(mp, qid, fdq);
- }
- 
- const struct quotactl_ops xfs_quotactl_operations = {
+-extern int		xfs_qm_dqread(struct xfs_mount *, xfs_dqid_t, uint,
++extern int		xfs_qm_dqread(struct xfs_mount *, struct kqid,
+ 					uint, struct xfs_dquot	**);
+ extern void		xfs_qm_dqdestroy(xfs_dquot_t *);
+ extern int		xfs_qm_dqflush(struct xfs_dquot *, struct xfs_buf **);
+diff --git a/fs/xfs/xfs_qm.c b/fs/xfs/xfs_qm.c
+index 836d40d..7e19147 100644
+--- a/fs/xfs/xfs_qm.c
++++ b/fs/xfs/xfs_qm.c
+@@ -673,10 +673,11 @@ xfs_qm_init_quotainfo(
+ 	 * Since we may not have done a quotacheck by this point, just read
+ 	 * the dquot without attaching it to any hashtables or lists.
+ 	 */
+-	error = xfs_qm_dqread(mp, 0,
+-			XFS_IS_UQUOTA_RUNNING(mp) ? XFS_DQ_USER :
+-			 (XFS_IS_GQUOTA_RUNNING(mp) ? XFS_DQ_GROUP :
+-			  XFS_DQ_PROJ),
++	error = xfs_qm_dqread(mp,
++			make_kqid(&init_user_ns,
++				  XFS_IS_UQUOTA_RUNNING(mp) ? USRQUOTA :
++				  (XFS_IS_GQUOTA_RUNNING(mp) ? GRPQUOTA :
++				   PRJQUOTA), 0),
+ 			XFS_QMOPT_DOWARN, &dqp);
+ 	if (!error) {
+ 		xfs_disk_dquot_t	*ddqp = &dqp->q_core;
 -- 
 1.7.5.4
