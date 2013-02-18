@@ -1,15 +1,19 @@
-From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 15/16] userns: Now that everything has been converted
-	remove the unnecessary infrastructure
-Date: Sun, 17 Feb 2013 17:11:08 -0800
-Message-ID: <1361149870-27732-15-git-send-email-ebiederm__42098.9147307866$1361150034$gmane$org@xmission.com>
-References: <87txpaph4n.fsf@xmission.com>
-	<1361149870-27732-1-git-send-email-ebiederm@xmission.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH RFC 10/12] userns: Convert xfs to use kuid/kgid/kprojid
+	where appropriate
+Date: Sun, 17 Feb 2013 17:25:43 -0800
+Message-ID: <87621qpg4o.fsf@xmission.com>
+References: <87pq38wimv.fsf@xmission.com>
+	<1353415420-5457-1-git-send-email-ebiederm@xmission.com>
+	<1353415420-5457-10-git-send-email-ebiederm@xmission.com>
+	<20121120235524.GK2591@dastard> <20121121195246.GN2822@localhost>
+	<87obfoxetf.fsf@xmission.com> <20130214021908.GJ26694@dastard>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1361149870-27732-1-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <20130214021908.GJ26694@dastard> (Dave Chinner's message of "Thu,
+	14 Feb 2013 13:19:08 +1100")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,151 +23,42 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
+Cc: Ben Myers <bpm-sJ/iWh9BUns@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alex Elder <elder-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org> writes:
 
-In particular kill UIDGID_CONVERTED and UIDGID_STRICT_TYPE_CHECKS
-and have the code treat them as always true.
+> On Wed, Feb 13, 2013 at 10:13:16AM -0800, Eric W. Biederman wrote:
+>
+>> The crazy thing is that is that xfs appears to
+>> directly write their incore inode structure into their journal. 
+>
+> Off topic, but it's actually a very sane thing to do. It's called
+> logical object logging, as opposed to physical logging like ext3/4
+> and ocfs2 use. XFS uses a combination of logical logging
+> (superblock, dquots, inodes) and physical logging (via buffers).
 
-Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- include/linux/posix_acl.h |    3 ---
- include/linux/projid.h    |   15 ---------------
- include/linux/uidgid.h    |   22 ----------------------
- init/Kconfig              |   23 -----------------------
- 4 files changed, 0 insertions(+), 63 deletions(-)
+Not putting your structures in disk-endian before putting them on-disk
+seems silly.  As far as I can tell if you switch endianness of the
+machine accessing your xfs filesystem and have to do a log recover
+it won't work because a lot of the log entries will appear corrupted.
 
-diff --git a/include/linux/posix_acl.h b/include/linux/posix_acl.h
-index 7931efe..f0f7746 100644
---- a/include/linux/posix_acl.h
-+++ b/include/linux/posix_acl.h
-@@ -39,9 +39,6 @@ struct posix_acl_entry {
- 	union {
- 		kuid_t		e_uid;
- 		kgid_t		e_gid;
--#ifndef CONFIG_UIDGID_STRICT_TYPE_CHECKS
--		unsigned int	e_id;
--#endif
- 	};
- };
- 
-diff --git a/include/linux/projid.h b/include/linux/projid.h
-index 36517b9..8c1f2c5 100644
---- a/include/linux/projid.h
-+++ b/include/linux/projid.h
-@@ -18,8 +18,6 @@ extern struct user_namespace init_user_ns;
- 
- typedef __kernel_uid32_t projid_t;
- 
--#ifdef CONFIG_UIDGID_STRICT_TYPE_CHECKS
--
- typedef struct {
- 	projid_t val;
- } kprojid_t;
-@@ -31,19 +29,6 @@ static inline projid_t __kprojid_val(kprojid_t projid)
- 
- #define KPROJIDT_INIT(value) (kprojid_t){ value }
- 
--#else
--
--typedef projid_t kprojid_t;
--
--static inline projid_t __kprojid_val(kprojid_t projid)
--{
--	return projid;
--}
--
--#define KPROJIDT_INIT(value) ((kprojid_t) value )
--
--#endif
--
- #define INVALID_PROJID KPROJIDT_INIT(-1)
- #define OVERFLOW_PROJID 65534
- 
-diff --git a/include/linux/uidgid.h b/include/linux/uidgid.h
-index 8e522cbc..2d1f9b6 100644
---- a/include/linux/uidgid.h
-+++ b/include/linux/uidgid.h
-@@ -17,8 +17,6 @@
- struct user_namespace;
- extern struct user_namespace init_user_ns;
- 
--#ifdef CONFIG_UIDGID_STRICT_TYPE_CHECKS
--
- typedef struct {
- 	uid_t val;
- } kuid_t;
-@@ -41,26 +39,6 @@ static inline gid_t __kgid_val(kgid_t gid)
- 	return gid.val;
- }
- 
--#else
--
--typedef uid_t kuid_t;
--typedef gid_t kgid_t;
--
--static inline uid_t __kuid_val(kuid_t uid)
--{
--	return uid;
--}
--
--static inline gid_t __kgid_val(kgid_t gid)
--{
--	return gid;
--}
--
--#define KUIDT_INIT(value) ((kuid_t) value )
--#define KGIDT_INIT(value) ((kgid_t) value )
--
--#endif
--
- #define GLOBAL_ROOT_UID KUIDT_INIT(0)
- #define GLOBAL_ROOT_GID KGIDT_INIT(0)
- 
-diff --git a/init/Kconfig b/init/Kconfig
-index 3d99394..c22e1b9 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -1028,9 +1028,6 @@ config IPC_NS
- config USER_NS
- 	bool "User namespace (EXPERIMENTAL)"
- 	depends on EXPERIMENTAL
--	depends on UIDGID_CONVERTED
--	select UIDGID_STRICT_TYPE_CHECKS
--
- 	default n
- 	help
- 	  This allows containers, i.e. vservers, to use user namespaces
-@@ -1062,26 +1059,6 @@ config NET_NS
- 
- endif # NAMESPACES
- 
--config UIDGID_CONVERTED
--	# True if all of the selected software conmponents are known
--	# to have uid_t and gid_t converted to kuid_t and kgid_t
--	# where appropriate and are otherwise safe to use with
--	# the user namespace.
--	bool
--	default y
--
--	# Filesystems
--
--config UIDGID_STRICT_TYPE_CHECKS
--	bool "Require conversions between uid/gids and their internal representation"
--	depends on UIDGID_CONVERTED
--	default n
--	help
--	 While the nececessary conversions are being added to all subsystems this option allows
--	 the code to continue to build for unconverted subsystems.
--
--	 Say Y here if you want the strict type checking enabled
--
- config SCHED_AUTOGROUP
- 	bool "Automatic process group scheduling"
- 	select EVENTFD
--- 
-1.7.5.4
+It also seems silly to require your in-memory structure to be binary
+compatibile with your log when you immediately copy that structure to
+another buffer when it comes time to queue a version of it to put into
+the log.
+
+The fact that you sometimes need to allocate memory and make a copy so
+you can stuff your data into the logvec whose only purpose is to then
+copy the data a second time seems silly and wasteful.
+
+Logical logging itself seems reasonable.  I just find the implementation
+in xfs odd.
+
+It looks like with a few little changes xfs could retain backwards
+compatibility with today, remove extra memory copies, and completely
+decouple the format of the in-core structures with the format of the
+on-disk structures.  Allowing scary comments to be removed.
+
+Eric
