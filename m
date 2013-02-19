@@ -1,17 +1,20 @@
 From: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
-Subject: Re: [PATCH review 10/16] xfs: Push struct kqid into
-	xfs_qm_scall_qmlim and xfs_qm_scall_getquota
-Date: Tue, 19 Feb 2013 13:27:07 +1100
-Message-ID: <20130219022707.GL26694@dastard>
-References: <87txpaph4n.fsf@xmission.com>
-	<1361149870-27732-1-git-send-email-ebiederm@xmission.com>
-	<1361149870-27732-10-git-send-email-ebiederm@xmission.com>
+Subject: Re: [PATCH RFC 10/12] userns: Convert xfs to use kuid/kgid/kprojid
+	where appropriate
+Date: Tue, 19 Feb 2013 14:30:21 +1100
+Message-ID: <20130219033021.GF10731@dastard>
+References: <87pq38wimv.fsf@xmission.com>
+	<1353415420-5457-1-git-send-email-ebiederm@xmission.com>
+	<1353415420-5457-10-git-send-email-ebiederm@xmission.com>
+	<20121120235524.GK2591@dastard> <20121121195246.GN2822@localhost>
+	<87obfoxetf.fsf@xmission.com> <20130214021908.GJ26694@dastard>
+	<87621qpg4o.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1361149870-27732-10-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <87621qpg4o.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,49 +25,54 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Alex Elder <elder-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ben Myers <bpm-sJ/iWh9BUns@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Ben Myers <bpm-sJ/iWh9BUns@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alex Elder <elder-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sun, Feb 17, 2013 at 05:11:03PM -0800, Eric W. Biederman wrote:
-> From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+On Sun, Feb 17, 2013 at 05:25:43PM -0800, Eric W. Biederman wrote:
+> Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org> writes:
 > 
-> - In xfs_qm_scall_getquota map the quota id into the callers
->   user namespace in the returned struct fs_disk_quota
+> > On Wed, Feb 13, 2013 at 10:13:16AM -0800, Eric W. Biederman wrote:
+> >
+> >> The crazy thing is that is that xfs appears to
+> >> directly write their incore inode structure into their journal. 
+> >
+> > Off topic, but it's actually a very sane thing to do. It's called
+> > logical object logging, as opposed to physical logging like ext3/4
+> > and ocfs2 use. XFS uses a combination of logical logging
+> > (superblock, dquots, inodes) and physical logging (via buffers).
 > 
-> - Add a helper is_superquota and use it in xfs_qm_scall_setqlimi
->   to see if we are setting the superusers quota limit.  Setting
->   the superuses quota limit on xfs sets the default quota limits
->   for all users.
+> Not putting your structures in disk-endian before putting them on-disk
+> seems silly.  As far as I can tell if you switch endianness of the
+> machine accessing your xfs filesystem and have to do a log recover
+> it won't work because a lot of the log entries will appear corrupted.
+> 
+> It also seems silly to require your in-memory structure to be binary
+> compatibile with your log when you immediately copy that structure to
+> another buffer when it comes time to queue a version of it to put into
+> the log.
+> 
+> The fact that you sometimes need to allocate memory and make a copy so
+> you can stuff your data into the logvec whose only purpose is to then
+> copy the data a second time seems silly and wasteful.
+> 
+> Logical logging itself seems reasonable.  I just find the implementation
+> in xfs odd.
+> 
+> It looks like with a few little changes xfs could retain backwards
+> compatibility with today, remove extra memory copies, and completely
+> decouple the format of the in-core structures with the format of the
+> on-disk structures.  Allowing scary comments to be removed.
 
-These seem fine.
+If you think removing the copies is that easy, go right ahead - I'd
+love to see patches that checkpoint changes directly from the
+in-memory objects to the log without deadlocking....
 
-> - Move xfs_quota_type into xfs_qm_syscalls.c where it is now used.
-
-Now that I've seen the code, I really don't see any advantage to
-driving the kqid into XFS quota subsystem. (i.e the rest of this
-patch and the subsequent follow up patches that drive it further
-inward).
-
-I did say previously:
-
->> From there, targetted patches can drive the kernel structures
->> inward from the entry points where it makes sense to do so (e.g.
->> common places that the quota entry points call that take a
->> type/id pair).  The last thing that should happen is internal
->> structures be converted from type/id pairs to the kernel types if
->> it makes sense to do so and it makes the code simpler and easier
->> to read....
-
-But seeing the result, IMO, it doesn't actually improve the code
-(it's neither simpler nor easier to read), and it doesn't actually
-add any functionality. It makes the code strange and different and
-somewhat inconsistent and litters id/namespace conversions all over
-the place, so i don't think these cahgnes are necessary.
-
-Hence I'd say just do absolute minimum needed for the
-is_superquota() checks to work and leave all the kqid ->
-xfs_dqid_t+type conversion at the boundary of the quota subsystem
-where it already is....
+Decoupling the in-memory structure from the log format could be done
+at any time. But it's just not something that is needed, and for the
+rare cases where it is needed it's better to put the format
+detection and conversion code into log recovery. i.e. take the
+conversion penalty once when needed on the slow path rather than on
+every operation through the fast path....
 
 Cheers,
 
