@@ -1,8 +1,8 @@
 From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 Subject: Re: PROBLEM: Crash cgdeleting empty memory cgroups with
 	memory.kmem.limit_in_bytes set
-Date: Thu, 21 Feb 2013 12:34:25 +0400
-Message-ID: <5125DC11.7060106@parallels.com>
+Date: Thu, 21 Feb 2013 15:22:56 +0400
+Message-ID: <51260390.8010203@parallels.com>
 References: <1361375371.7786.5.camel@michalke-online.eu>
 	<20130220230019.GJ3570@htj.dyndns.org>
 Mime-Version: 1.0
@@ -31,9 +31,13 @@ On 02/21/2013 03:00 AM, Tejun Heo wrote:
 > kmem_cache_destroy_work_func for something specific to memcg?  How
 > about something like memcg_destroy_cache_workfn?
 > 
+> Thanks.
 
-I will take a look. Thanks for the report for the reportee: I tested
-cgroup deletion quite extensively (quite important feature for me) so it
-is nice to have an uncaught case.
+Steffen,
 
-About naming, I can change, no problem.
+Is there any chance you could test that using SLAB instead of SLUB?
+I haven't manage to reproduce it yet, but I am working on some theories
+about why this is happening. If I could at least know if this is likely
+a cache problem vs a inner-memcg problem, that would help. The calltrace
+is not incredibly helpful, but it does indicate that the problem happens
+when freeing cache objects.
