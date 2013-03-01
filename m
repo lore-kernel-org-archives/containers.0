@@ -1,17 +1,16 @@
-From: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: For review: pid_namespaces(7) man page
-Date: Fri, 1 Mar 2013 09:53:35 +0100
-Message-ID: <CAKgNAkhuzSjkak__1FdQ9jUv0VcovoxLLXA=Lq1GBdcQ-aYbTw@mail.gmail.com>
+Date: Fri, 01 Mar 2013 01:10:23 -0800
+Message-ID: <877glr5vuo.fsf@xmission.com>
 References: <CAKgNAki=mUYuu_Ewhe7sjCmo+Dq2Vr+FZCixqNRaadcvAxtpFw@mail.gmail.com>
-	<20130228142440.GA6328@cachalot>
-	<CAKgNAkjXAfq4RwtX1ELier+GLv0D5e9spM3Os3-oqSCXGqRqOg@mail.gmail.com>
-	<87fw0f5xfw.fsf@xmission.com>
-Reply-To: mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+	<87txowa2cm.fsf@xmission.com>
+	<CAKgNAkjxrbcpONCU4UdD0-cjXwbHr+YwkOR0H_aXp3CGB283Uw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87fw0f5xfw.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <CAKgNAkjxrbcpONCU4UdD0-cjXwbHr+YwkOR0H_aXp3CGB283Uw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Michael Kerrisk's message of "Fri, 1 Mar 2013 09:50:16 +0100")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,64 +20,49 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Vasily Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Mar 1, 2013 at 9:36 AM, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
-> "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
->
->> [CC += Lennart]
->>
->> On Thu, Feb 28, 2013 at 3:24 PM, Vasily Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org> wrote:
->>> Hi Michael,
->>>
->>> On Thu, Feb 28, 2013 at 12:24 +0100, Michael Kerrisk (man-pages) wrote:
->>>>    The namespace init process
->>>>        The first process created in a new namespace (i.e., the process
->>>>        created using clone(2) with the CLONE_NEWPID flag, or the first
->>>>        child created by a process after a call to unshare(2) using the
->>>>        CLONE_NEWPID flag) has the PID 1, and is the "init" process for
->>>>        the namespace (see init(1)).  Children that are orphaned within
->>>>        the namespace will be reparented to this  process  rather  than
->>>>        init(1).
->>>
->>> Probably it worth noting here that this is true unless
->>> prctl() with PR_SET_CHILD_SUBREAPER option is called.
->>
->> Thanks Vasily. It probably is worth mentioning that, and I will add some words.
->>
->> One thing I am not sure of (have not tested), but maybe you (or Eric)
->> know the answer: does the effect of PR_SET_CHILD_SUBREAPER  cross a
->> PID namespace boundary?
->
-> No.
-
-Thanks for the clarification, Eric. I'll note that point in the page.
-
-Cheers,
-
-Michael
-
-
->> In other words, if it was a process in the
->> parent PID namespace that employed PR_SET_CHILD_SUBREAPER , will that
->> affect child processes in a child PID namespace, or  wiill
->> PR_SET_CHILD_SUBREAPER  only apply to child processes in the same PID
->> namespace as the caller?
->
-> With respect to reparenting it acts like an additional pid namespace
-> init is on the path.
->
-> If you want to read the code it is in kernel/exit.c:find_new_reaper().
-> called from forget_original_parent, which does the actual reparenting.
->
-> Eric
->
-
-
-
--- 
-Michael Kerrisk
-Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
-Author of "The Linux Programming Interface"; http://man7.org/tlpi/
+Ik1pY2hhZWwgS2VycmlzayAobWFuLXBhZ2VzKSIgPG10ay5tYW5wYWdlc0BnbWFpbC5jb20+IHdy
+aXRlczoKCj4gSGkgRXJpYywKPgo+IE9uIFRodSwgRmViIDI4LCAyMDEzIGF0IDQ6MjQgUE0sIEVy
+aWMgVy4gQmllZGVybWFuCj4gPGViaWVkZXJtQHhtaXNzaW9uLmNvbT4gd3JvdGU6Cj4+ICJNaWNo
+YWVsIEtlcnJpc2sgKG1hbi1wYWdlcykiIDxtdGsubWFucGFnZXNAZ21haWwuY29tPiB3cml0ZXM6
+Cj4KPiBbLi4uXQo+Cj4+PiA9PT09PT09PT09Cj4+PiBQSURfTkFNRVNQQUNFUyg3KSAgICAgIExp
+bnV4IFByb2dyYW1tZXIncyBNYW51YWwgICAgIFBJRF9OQU1FU1BBQ0VTKDcpCj4+Pgo+Pj4gTkFN
+RQo+Pj4gICAgICAgIHBpZF9uYW1lc3BhY2VzIC0gb3ZlcnZpZXcgb2YgTGludXggUElEIG5hbWVz
+cGFjZXMKPj4+Cj4+PiBERVNDUklQVElPTgo+IFsuLi5dCj4KPj4+ICAgIFRoZSBuYW1lc3BhY2Ug
+aW5pdCBwcm9jZXNzCj4+PiAgICAgICAgVGhlIGZpcnN0IHByb2Nlc3MgY3JlYXRlZCBpbiBhIG5l
+dyBuYW1lc3BhY2UgKGkuZS4sIHRoZSBwcm9jZXNzCj4+PiAgICAgICAgY3JlYXRlZCB1c2luZyBj
+bG9uZSgyKSB3aXRoIHRoZSBDTE9ORV9ORVdQSUQgZmxhZywgb3IgdGhlIGZpcnN0Cj4+PiAgICAg
+ICAgY2hpbGQgY3JlYXRlZCBieSBhIHByb2Nlc3MgYWZ0ZXIgYSBjYWxsIHRvIHVuc2hhcmUoMikg
+dXNpbmcgdGhlCj4+PiAgICAgICAgQ0xPTkVfTkVXUElEIGZsYWcpIGhhcyB0aGUgUElEIDEsIGFu
+ZCBpcyB0aGUgImluaXQiIHByb2Nlc3MgZm9yCj4+PiAgICAgICAgdGhlIG5hbWVzcGFjZSAoc2Vl
+IGluaXQoMSkpLiAgQ2hpbGRyZW4gdGhhdCBhcmUgb3JwaGFuZWQgd2l0aGluCj4+PiAgICAgICAg
+dGhlIG5hbWVzcGFjZSB3aWxsIGJlIHJlcGFyZW50ZWQgdG8gdGhpcyAgcHJvY2VzcyAgcmF0aGVy
+ICB0aGFuCj4+PiAgICAgICAgaW5pdCgxKS4KPj4+Cj4+PiAgICAgICAgSWYgdGhlICJpbml0IiBw
+cm9jZXNzIG9mIGEgUElEIG5hbWVzcGFjZSB0ZXJtaW5hdGVzLCB0aGUga2VybmVsCj4+PiAgICAg
+ICAgdGVybWluYXRlcyBhbGwgb2YgdGhlIHByb2Nlc3NlcyBpbiB0aGUgbmFtZXNwYWNlIHZpYSBh
+ICBTSUdLSUxMCj4+PiAgICAgICAgc2lnbmFsLiAgIFRoaXMgIGJlaGF2aW9yICByZWZsZWN0cyAg
+dGhlICBmYWN0ICB0aGF0ICB0aGUgImluaXQiCj4+PiAgICAgICAgcHJvY2VzcyBpcyBlc3NlbnRp
+YWwgZm9yIHRoZSBjb3JyZWN0IG9wZXJhdGlvbiBvZiBhIFBJRCAgbmFtZXPigJAKPj4+ICAgICAg
+ICBwYWNlLiAgIEluIHRoaXMgY2FzZSwgYSBzdWJzZXF1ZW50IGZvcmsoMikgaW50byB0aGlzIFBJ
+RCBuYW1lc+KAkAo+Pj4gICAgICAgIHBhY2UgKGUuZy4sIGZyb20gYSBwcm9jZXNzIHRoYXQgaGFz
+IGRvbmUgYSAgc2V0bnMoMikgIGludG8gIHRoZQo+Pj4gICAgICAgIG5hbWVzcGFjZSAgICB1c2lu
+ZyAgICBhbiAgICBvcGVuICAgIGZpbGUgICBkZXNjcmlwdG9yICAgZm9yICAgYQo+Pj4gICAgICAg
+IC9wcm9jL1twaWRdL25zL3BpZCBmaWxlIGNvcnJlc3BvbmRpbmcgdG8gYSBwcm9jZXNzIHRoYXQg
+d2FzICBpbgo+Pj4gICAgICAgIHRoZSAgbmFtZXNwYWNlKSB3aWxsIGZhaWwgd2l0aCB0aGUgZXJy
+b3IgRU5PTUVNOyBpdCBpcyBub3QgcG9z4oCQCj4+PiAgICAgICAgc2libGUgdG8gY3JlYXRlIGEg
+bmV3IHByb2Nlc3NlcyBpbiBhIFBJRCBuYW1lc3BhY2Ugd2hvc2UgImluaXQiCj4+PiAgICAgICAg
+cHJvY2VzcyBoYXMgdGVybWluYXRlZC4KPj4KPj4gSXQgbWF5IGJlIHVzZWZ1bCB0byBtZW50aW9u
+IHVuc2hhcmUgaW4gdGhlIGNhc2Ugb2YgZm9yaygyKSBmYWlsaW5nIGp1c3QKPj4gYmVjYXVzZSB0
+aGF0IGlzIHN1Y2ggYW4gZWFzeSBtaXN0YWtlIHRvIG1ha2UuCj4+Cj4+IHVuc2hhcmUoQ0xPTkVf
+TkVXUElEKTsKPj4gcGlkID0gZm9yaygpOwo+PiB3YWl0cGlkKHBpZCwuLi4pOwo+PiBmb3JrKCkg
+LT4gRU5PTUVNCj4KPiBJJ20gbG9zdC4gV2h5IGRvZXMgdGhhdCBzZXF1ZW5jZSBmYWlsPyBUaGUg
+Y2hpbGQgb2YgZm9yaygpIGJlY29tZXMgUElECj4gMSBpbiB0aGUgbmV3IFBJRCBuYW1lc3BhY2Uu
+CgpDb3JyZWN0LgpUaGVuIHdlIHdhaXQgZm9yIHRoZSBjaGlsZCBvZiB0aGUgZm9yayB0byBleGl0
+KCk7ClRoZW4gd2UgZm9yayBhZ2FpbiBpbnRvIHRoZSBuZXcgcGlkIG5hbWVzcGFjZS4KVGhlIHNl
+Y29uZCBmb3JrIGZhaWxzIGJlY2F1c2UgaW5pdCBoYXMgZXhpdGVkLgoKRXJpYwpfX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcg
+bGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMu
+bGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
