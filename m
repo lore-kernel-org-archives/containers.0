@@ -1,22 +1,15 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 2/2] fs: Limit sys_mount to only request filesystem
-	modules.
-Date: Mon, 04 Mar 2013 10:36:01 -0800
-Message-ID: <87y5e3dnce.fsf__48494.7626748637$1362422209$gmane$org@xmission.com>
-References: <CAGXu5jK7x+gFKgCN5=ZF+kSc4xSNbGtSERHCoOnCEgiJ1_wNGg@mail.gmail.com>
-	<20130303005700.GA32213@austin.hallyn.com>
-	<874ngtxgt5.fsf@xmission.com>
-	<CAGXu5j+bwUx6r++ttvYg4yJrUUHxoQ86tQ0JzEBoQQU6KAh9ww@mail.gmail.com>
-	<874ngsrvrh.fsf@xmission.com>
-	<CAGXu5jJiO=BmjVbpVJhxHbafn5T_SQbe5g-RLxRbmknNnQMyfQ@mail.gmail.com>
-	<87k3pnmwpk.fsf_-_@xmission.com> <878v63mwm3.fsf_-_@xmission.com>
-	<20130304173611.GA8500@cachalot>
+From: Rob Landley <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org>
+Subject: Re: For review: pid_namespaces(7) man page
+Date: Mon, 04 Mar 2013 13:27:47 -0600
+Message-ID: <1362425267.7276.1@driftwood>
+References: <876217olp0.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; Format="Flowed"; DelSp="Yes"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20130304173611.GA8500@cachalot> (Vasily Kulikov's message of
-	"Mon, 4 Mar 2013 21:36:11 +0400")
+In-Reply-To: <876217olp0.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (from ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org on
+	Sun Mar  3 22:03:55 2013)
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,103 +19,89 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vasily Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
-Cc: Brad Spengler <spender-JNS0hek0TMl4qEwOxq4T+Q@public.gmane.org>, kernel-hardening-ZwoEplunGu1jrUoiu81ncdBPR1lH4CV8@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, PaX Team <pageexec-Y8qEzhMunLyT9ig0jae3mg@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Kees Cook <keescook-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Vasily Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org> writes:
+On 03/03/2013 10:03:55 PM, Eric W. Biederman wrote:
+> Rob Landley <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org> writes:
+> 
+> > On 03/01/2013 03:57:40 AM, Michael Kerrisk (man-pages) wrote:
+> >> > And yet the glibc guys insist on #define
+> >> GNU_GNU_GNU_ALL_HAIL_STALLMAN in
+> >> > order to access this Linux-specific feature which has nothing
+> >> whatsoever to
+> >> > do with the FSF.
+> >>
+> >> This is a misunderstanding. _GNU_SOURCE is the standard way to  
+> expose
+> >> Linux-specific functionality from POSIX header files.
+> >
+> > What standard? The Linux kernel is not, and never was, part of the  
+> GNU
+> > project.
+> 
+> Is the argument that there should be a _LINUX_SOURCE directive in  
+> glibc
+> for this?
 
-> (cc'ed kernel-hardening)
->
-> On Sun, Mar 03, 2013 at 23:51 -0800, Eric W. Biederman wrote:
->> Modify the request_module to prefix the file system type with "fs-"
->> and add aliases to all of the filesystems that can be built as modules
->> to match.
->> 
->> A common practice is to build all of the kernel code and leave code
->> that is not commonly needed as modules, with the result that many
->> users are exposed to any bug anywhere in the kernel.
->> 
->> Looking for filesystems with a fs- prefix limits the pool of possible
->> modules that can be loaded by mount to just filesystems trivially
->> making things safer with no real cost.
->> 
->> Using aliases means user space can control the policy of which
->> filesystem modules are auto-loaded by editing /etc/modprobe.d/*.conf
->> with blacklist and alias directives.  Allowing simple, safe,
->> well understood work-arounds to known problematic software.
->> 
->> This also addresses a rare but unfortunate problem where the filesystem
->> name is not the same as it's module name and module auto-loading
->> would not work.  While writing this patch I saw a handful of such
->> cases.  The most significant being autofs that lives in the module
->> autofs4.
->> 
->> This is relevant to user namespaces because we can reach the request
->> module in get_fs_type() without having any special permissions, and
->> people get uncomfortable when a user specified string (in this case
->> the filesystem type) goes all of the way to request_module.
->> 
->> After having looked at this issue I don't think there is any
->> particular reason to perform any filtering or permission checks beyond
->> making it clear in the module request that we want a filesystem
->> module.  The common pattern in the kernel is to call request_module()
->> without regards to the users permissions.  In general all a filesystem
->> module does once loaded is call register_filesystem() and go to sleep.
->> Which means there is not much attack surface exposed by loading a
->> filesytem module unless the filesystem is mounted.  In a user
->> namespace filesystems are not mounted unless .fs_flags = FS_USERNS_MOUNT,
->> which most filesystems do not set today.
->> 
->> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
->> Acked-by: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
->> Reported-by: Kees Cook <keescook-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
->> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> ...
->> diff --git a/fs/filesystems.c b/fs/filesystems.c
->> index da165f6..92567d9 100644
->> --- a/fs/filesystems.c
->> +++ b/fs/filesystems.c
->> @@ -273,7 +273,7 @@ struct file_system_type *get_fs_type(const char *name)
->>  	int len = dot ? dot - name : strlen(name);
->>  
->>  	fs = __get_fs_type(name, len);
->> -	if (!fs && (request_module("%.*s", len, name) == 0))
->> +	if (!fs && (request_module("fs-%.*s", len, name) == 0))
->>  		fs = __get_fs_type(name, len);
->>  
->>  	if (dot && fs && !(fs->fs_flags & FS_HAS_SUBTYPE)) {
->
-> Maybe we should divide request_module() into several functions regarding
-> expected caller's privileges?
->
-> - request_module() for CAP_SYS_MODULE in init_ns
-> - request_module_relaxed() for everybody
->
-> request_module_relaxed() is used in get_fs_type(), dev_load() and all
-> places where the safety of module loading is manually checked.  All old
-> not yet checked users of request_module() will not be triggerable from user_ns.
-> That's the same scheme as with capable() and ns_capable().
+If you don't #define any feature test macros at all, you get a bunch of  
+macros (_BSD_SOURCE, _SVID_SOURCE, _POSIX_SOURCE,  
+_POSIX_C_SOURCE=200809L, and so on) defined by default in features.h.  
+If you start defining macros, several of the default ones _go_away_,  
+and you start missing things that are defined by posix-2008. Yes,  
+defining feature test macros makes definitions _vanish_ out of the  
+headers, which means feature test macros can actually reduce code  
+portability.
 
-User namespaces in this discussion are pretty much a red-herring.  You
-can already reach most request_module callers without having any
-capabilities.  And honestly that seems fine.
+The _GNU_SOURCE is glibc's way of saying "switch on everything glibc  
+offers". (Except it isn't _quite_, but that seems to be what they  
+intended.) So there are various things that test _specifically_ for  
+that macro, but the macro also switches on (from features.h):
 
-It never ever hurts to request a module.
+/* If _GNU_SOURCE was defined by the user, turn on all the other  
+features.  */
+#ifdef _GNU_SOURCE
+# undef  _ISOC95_SOURCE
+# define _ISOC95_SOURCE 1
+# undef  _ISOC99_SOURCE
+# define _ISOC99_SOURCE 1
+# undef  _POSIX_SOURCE
+# define _POSIX_SOURCE  1
+# undef  _POSIX_C_SOURCE
+# define _POSIX_C_SOURCE        200809L
+# undef  _XOPEN_SOURCE
+# define _XOPEN_SOURCE  700
+# undef  _XOPEN_SOURCE_EXTENDED
+# define _XOPEN_SOURCE_EXTENDED 1
+# undef  _LARGEFILE64_SOURCE
+# define _LARGEFILE64_SOURCE    1
+# undef  _BSD_SOURCE
+# define _BSD_SOURCE    1
+# undef  _SVID_SOURCE
+# define _SVID_SOURCE   1
+# undef  _ATFILE_SOURCE
+# define _ATFILE_SOURCE 1
+#endif
 
-It only sometimes when something else has already gone wrong hurts to
-get the module.
+This is not fine-grained control of what libc exports. This is "if you  
+want to use unshare() then everything we ever implemented gets  
+simultaneously exported into your namespace". (Which it _mostly_ is if  
+you never use any feature test macros, but not the Linux-specific  
+system calls.)
 
-It makes sense to add a prefix when sending the module request to make
-it clear what kind of module we are looking for.  That makes it easy to
-tell why we are requesting the module and makes it easy to implement
-policy controls in userspace.
+The new musl-libc.org did an _ALL_SOURCE macro that just enables every  
+feature test macro they implemented. (That's its definition, it's the  
+feature test macro that says feature test macros area bad idea.)
 
-I don't see any reason to limit request_module to people with some
-capability or other.  The filesystem module_request just happened to be
-after a capable(CAP_SYS_AMDIN) in this case which is the case people
-noticed was a little fishy.
+> Although come to think of it I can't imagine how <sched.h> is a POSIX
+> header.  Last I looked it only had linux specific bits in it.  Which
+> makes needing any kind of #define strange.
 
-But if I have overlooked something I am happy to hear it.
+My objection is that Linux system calls are not part of the GNU  
+project. Requiring that macro to get Linux system calls out of bionic,  
+uClibc, klibc, musl, olibc, dietlibc, or newlib is _silly_. It's the  
+"GNU/Linux" prefix imposed on the source level, and it's a fairly  
+recent development (I've only noticed it since 2008 or so).
 
-Eric
+Rob
