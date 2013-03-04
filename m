@@ -1,17 +1,17 @@
-From: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: For review: pid_namespaces(7) man page
-Date: Mon, 4 Mar 2013 13:50:02 +0100
-Message-ID: <CAKgNAkiH+BTOpGd5nr7JU8mrYVNJE6oxiS-+YjKQxFkdsrR-jA__13559.5616339289$1362401457$gmane$org@mail.gmail.com>
-References: <CAKgNAki=mUYuu_Ewhe7sjCmo+Dq2Vr+FZCixqNRaadcvAxtpFw@mail.gmail.com>
-	<1362110504.15531.4@driftwood>
-	<CAKgNAkgVKnhRT1Lpq4a_UdBKB+tn6XmWSDF2QJXG0aSLtNH6dg@mail.gmail.com>
-	<1362369010.29250.3@driftwood>
-Reply-To: mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
+Subject: Re: [PATCH review 49/85] sunrpc: Update svcgss xdr handle to
+	rpsec_contect cache
+Date: Mon, 4 Mar 2013 09:12:30 -0500
+Message-ID: <20130304141230.GE20389@fieldses.org>
+References: <87621w14vs.fsf@xmission.com>
+	<1360777934-5663-1-git-send-email-ebiederm@xmission.com>
+	<1360777934-5663-49-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1362369010.29250.3@driftwood>
+Content-Disposition: inline
+In-Reply-To: <1360777934-5663-49-git-send-email-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,35 +21,99 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Rob Landley <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org>
-Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Mar 4, 2013 at 4:50 AM, Rob Landley <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org> wrote:
-> On 03/01/2013 03:57:40 AM, Michael Kerrisk (man-pages) wrote:
->>
->> > And yet the glibc guys insist on #define GNU_GNU_GNU_ALL_HAIL_STALLMAN
->> > in
->> > order to access this Linux-specific feature which has nothing whatsoever
->> > to
->> > do with the FSF.
->>
->> This is a misunderstanding. _GNU_SOURCE is the standard way to expose
->> Linux-specific functionality from POSIX header files.
->
->
-> What standard? The Linux kernel is not, and never was, part of the GNU
-> project.
+On Wed, Feb 13, 2013 at 09:51:38AM -0800, Eric W. Biederman wrote:
+> From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> 
+> For each received uid call make_kuid and validate the result.
+> For each received gid call make_kgid and validate the result.
+> 
+> Cc: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
+> Cc: Trond Myklebust <Trond.Myklebust-HgOvQuBEEgTQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> ---
+>  net/sunrpc/auth_gss/svcauth_gss.c |   18 +++++++++++++-----
+>  1 files changed, 13 insertions(+), 5 deletions(-)
+> 
+> diff --git a/net/sunrpc/auth_gss/svcauth_gss.c b/net/sunrpc/auth_gss/svcauth_gss.c
+> index 73e9573..ecd1d58 100644
+> --- a/net/sunrpc/auth_gss/svcauth_gss.c
+> +++ b/net/sunrpc/auth_gss/svcauth_gss.c
+> @@ -418,6 +418,7 @@ static int rsc_parse(struct cache_detail *cd,
+>  {
+>  	/* contexthandle expiry [ uid gid N <n gids> mechname ...mechdata... ] */
+>  	char *buf = mesg;
+> +	int id;
+>  	int len, rv;
+>  	struct rsc rsci, *rscp = NULL;
+>  	time_t expiry;
+> @@ -444,7 +445,7 @@ static int rsc_parse(struct cache_detail *cd,
+>  		goto out;
+>  
+>  	/* uid, or NEGATIVE */
+> -	rv = get_int(&mesg, &rsci.cred.cr_uid);
+> +	rv = get_int(&mesg, &id);
+>  	if (rv == -EINVAL)
+>  		goto out;
+>  	if (rv == -ENOENT)
+> @@ -452,8 +453,16 @@ static int rsc_parse(struct cache_detail *cd,
+>  	else {
+>  		int N, i;
+>  
+> +		/* uid */
+> +		rsci.cred.cr_uid = make_kuid(&init_user_ns, id);
+> +		if (!uid_valid(rsci.cred.cr_uid))
+> +			goto out;
+> +
+>  		/* gid */
+> -		if (get_int(&mesg, &rsci.cred.cr_gid))
+> +		if (get_int(&mesg, &id))
+> +			goto out;
+> +		rsci.cred.cr_gid = make_kgid(&init_user_ns, id);
+> +		if (!gid_valid(rsci.cred.cr_gid))
+>  			goto out;
 
-This is "the standard way that glibc isolates Linux-specific
-functionality in POSIX header files".
+krb5 mounts started failing for me as of this patch (upstream as
+683428fae8c73d7d7da0fa2e0b6beb4d8df4e808), and I believe the problem is
+these uid/gid_valid checks: if I recall correctly, gssd uses -1 uid/gid
+values to indicate "authentication succeeded, but treat this user as
+anonymous".  We delay mapping -1 id's to the (configurable-per-export)
+anonymous id's till fs/nfsd/auth.c:nfsd_setuser():
 
-Thanks,
+        if (uid_eq(new->fsuid, INVALID_UID))
+		new->fsuid = exp->ex_anon_uid;
+	if (gid_eq(new->fsgid, INVALID_GID))
+		new->fsgid = exp->ex_anon_gid;
 
-Michael
+(We wouldn't be able to do that earlier because we don't know the export
+yet.)
 
+Confirmed that the following fixes the regression.
 
--- 
-Michael Kerrisk
-Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
-Author of "The Linux Programming Interface"; http://man7.org/tlpi/
+Eric, any objection to removing those checks?
+
+--b.
+
+diff --git a/net/sunrpc/auth_gss/svcauth_gss.c b/net/sunrpc/auth_gss/svcauth_gss.c
+index f7d34e7..59a089d 100644
+--- a/net/sunrpc/auth_gss/svcauth_gss.c
++++ b/net/sunrpc/auth_gss/svcauth_gss.c
+@@ -449,15 +449,11 @@ static int rsc_parse(struct cache_detail *cd,
+ 
+ 		/* uid */
+ 		rsci.cred.cr_uid = make_kuid(&init_user_ns, id);
+-		if (!uid_valid(rsci.cred.cr_uid))
+-			goto out;
+ 
+ 		/* gid */
+ 		if (get_int(&mesg, &id))
+ 			goto out;
+ 		rsci.cred.cr_gid = make_kgid(&init_user_ns, id);
+-		if (!gid_valid(rsci.cred.cr_gid))
+-			goto out;
+ 
+ 		/* number of additional gid's */
+ 		if (get_int(&mesg, &N))
