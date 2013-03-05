@@ -1,22 +1,15 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 2/2] fs: Limit sys_mount to only request filesystem
-	modules.
-Date: Tue, 05 Mar 2013 15:24:11 -0800
-Message-ID: <87boax8m78.fsf@xmission.com>
-References: <CAGXu5jK7x+gFKgCN5=ZF+kSc4xSNbGtSERHCoOnCEgiJ1_wNGg@mail.gmail.com>
-	<20130303005700.GA32213@austin.hallyn.com>
-	<874ngtxgt5.fsf@xmission.com>
-	<CAGXu5j+bwUx6r++ttvYg4yJrUUHxoQ86tQ0JzEBoQQU6KAh9ww@mail.gmail.com>
-	<874ngsrvrh.fsf@xmission.com>
-	<CAGXu5jJiO=BmjVbpVJhxHbafn5T_SQbe5g-RLxRbmknNnQMyfQ@mail.gmail.com>
-	<87k3pnmwpk.fsf_-_@xmission.com> <878v63mwm3.fsf_-_@xmission.com>
-	<CAPXgP11AB7=2oeXtxb0so4a8hms7-_UWJDVE=6kndU062tGycQ@mail.gmail.com>
+From: Rusty Russell <rusty-8n+1lVoiYb80n/F98K4Iww@public.gmane.org>
+Subject: Re: cgroup_release_agent() hung task warnings
+Date: Tue, 05 Mar 2013 12:28:04 +1100
+Message-ID: <87d2ved49n.fsf__40717.021856881$1362526607$gmane$org@rustcorp.com.au>
+References: <CA+ydwtrRAf5VW_iZYOjzmTv6Y0ebprXw_RfWVmR1okQOxQx=CA@mail.gmail.com>
+	<51340E2E.4070805@huawei.com>
+	<20130304173358.GB30413@htj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAPXgP11AB7=2oeXtxb0so4a8hms7-_UWJDVE=6kndU062tGycQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Kay Sievers's message of "Tue, 5 Mar 2013 20:06:45 +0100")
+In-Reply-To: <20130304173358.GB30413-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,60 +19,36 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Kay Sievers <kay-tD+1rO4QERM@public.gmane.org>
-Cc: Brad Spengler <spender-JNS0hek0TMl4qEwOxq4T+Q@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Kees Cook <keescook-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, PaX Team <pageexec-Y8qEzhMunLyT9ig0jae3mg@public.gmane.org>, Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tommi Rantala <tt.rantala-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Kay Sievers <kay-tD+1rO4QERM@public.gmane.org> writes:
-
-> On Mon, Mar 4, 2013 at 8:51 AM, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->>
->> Modify the request_module to prefix the file system type with "fs-"
->> and add aliases to all of the filesystems that can be built as modules
->> to match.
->>
->> A common practice is to build all of the kernel code and leave code
->> that is not commonly needed as modules, with the result that many
->> users are exposed to any bug anywhere in the kernel.
->>
->> Looking for filesystems with a fs- prefix limits the pool of possible
->> modules that can be loaded by mount to just filesystems trivially
->> making things safer with no real cost.
+Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> writes:
+> (cc'ing Rusty Russell)
 >
-> '-' is a commonly used part of a module name, and does not mix well
-> with ramdom user provided names.
+> On Mon, Mar 04, 2013 at 10:59:58AM +0800, Li Zefan wrote:
+>> On 2013/3/3 3:23, Tommi Rantala wrote:
+>> > Hello,
+>> > 
+>> > I'm seeing the following hung task warnings when fuzzing the kernel
+>> > with trinity (in a qemu virtual machine, as the root user), that I
+>> > have not seen before with 3.8 or earlier. The kernel is
+>> > b0af9cd9aab60ceb17d3ebabb9fdf4ff0a99cf50 (Merge tag
+>> > 'lzo-update-signature-20130226' of
+>> > git://github.com/markus-oberhumer/linux).
+>> > 
+>> 
+>> This doesn't look like a cgroup bug.
+>
+> Yes, it looks like a problem in usermodehelper.  Rusty, it looks like
+> usermodehelper can jam with OOM killer going wild.  Any ideas?  The
+> original report is at
+>
+>   https://lkml.org/lkml/2013/3/2/126
 
-The symbols '-' and '_' occur in 2382 out of 3968 modules from an
-allmodconfig build, and modprobe ignores the difference between the two.
-However only three of those modules begin with fs and none of them begin
-with fs-.
+Is it really stuck, or just v. v. slow as it thrashes?
 
-Furthermore if it actually becomes a concern to ensure we are talking
-about an alias rather than a real module name, the solution is to
-change how we call modprobe.  As long as we are in the same namespace
-something can go wrong.
+Like Tejun, I can't see how it would really get stuck...
 
-fs- seems sufficiently unique for the purpose.
-
-> We usually use ':' as the prefix separator for modaliases, when
-> user-supplied strings are prefixed with the subsystem.
-
-There are at least two different conventions in use.  For software
-subsystems like the networking stack '-' is the commonly used
-to separate the prefix.  For hardware specific subsystems ':' is
-commonly used.  What I really don't want to load here are hardware
-modules so using a hardware module style convention does not seem like
-the right way to go.
-
-> I think it would be nicer to change that, and I'm sure some creative
-> guy calls the next filesystem of the month fs-$something :)
-
-If it is a filesystem it simply does not matter.  The goal is to
-only load filesystems.
-
-If it is not a filesystem someone has choosen a confusing naming
-convention.
-
-If it turns out I am wrong it is a two line change.
-
-Eric
+Cheers,
+Rusty.
