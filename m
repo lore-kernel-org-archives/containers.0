@@ -1,11 +1,14 @@
-From: zuob65-Xb2Y1Dfb9CI@public.gmane.org
-Subject: =?utf-8?b?5oKo5aW95ruR5YWI55SfICDmgqjnmoTmnIvlj4vvvIE=?=
-Date: Wed, 06 Mar 2013 00:01:23 +0800
-Message-ID: <1362499283.61fa233aa11745e0882fe054f8ac9316.zuob65@sohu.com>
+From: Sasha Levin <sasha.levin-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+Subject: Re: 3.9-rc1 NULL pointer crash at find_pid_ns
+Date: Thu, 07 Mar 2013 12:36:01 -0500
+Message-ID: <5138D001.8000409@oracle.com>
+References: <611667212.10748821.1362649031475.JavaMail.root@redhat.com>
+	<513860E8.4080807@huawei.com> <876213wmwt.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <876213wmwt.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,49 +18,65 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, CAI Qian <caiqian-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-PHRhYmxlIHdpZHRoPSIxMDAlIiBib3JkZXI9IjAiIGNlbGxzcGFjaW5nPSIwIiBjZWxscGFkZGlu
-Zz0iMCIgYmdjb2xvcj0iI0ZGRkZGRiIgY2xhc3M9ImkiPjx0cj48dGQgYWxpZ249ImNlbnRlciI+
-PHRhYmxlIHdpZHRoPSIxMDAlIiBib3JkZXI9IjAiIGNlbGxwYWRkaW5nPSIwIiBjZWxsc3BhY2lu
-Zz0iMCIgc3R5bGU9InRhYmxlLWxheW91dDpmaXhlZCI+PHRyPjx0ZCB3aWR0aD0iNDkiIG5vd3Jh
-cCB0aXRsZT0idG9wX2xlZnQiPjxpbWcgc3JjPSJodHRwOi8vcmVzY2RuLnFxbWFpbC5jb20vemhf
-Q04vaW1hZ2VzL3N0YXRpb25lcnkvbG92ZS8xMDUvdG9wX2xlZnQuZ2lmIiB3aWR0aD0iNDkiIGhl
-aWdodD0iNTIiIC8+PC90ZD48dGQgYWxpZ249InJpZ2h0IiBiYWNrZ3JvdW5kPSJodHRwOi8vcmVz
-Y2RuLnFxbWFpbC5jb20vemhfQ04vaW1hZ2VzL3N0YXRpb25lcnkvbG92ZS8xMDUvdG9wX2JnLmdp
-ZiI+PGltZyBzcmM9Imh0dHA6Ly9yZXNjZG4ucXFtYWlsLmNvbS96aF9DTi9pbWFnZXMvc3RhdGlv
-bmVyeS9sb3ZlLzEwNS90b3BfcmlnaHQuZ2lmIiB3aWR0aD0iMTMwIiBoZWlnaHQ9IjUyIiAvPjwv
-dGQ+PHRkIHdpZHRoPSIxOSIgbm93cmFwIHRpdGxlPSJ0b3BfcmlnaHQiYmFja2dyb3VuZD0iaHR0
-cDovL3Jlc2Nkbi5xcW1haWwuY29tL3poX0NOL2ltYWdlcy9zdGF0aW9uZXJ5L2xvdmUvMTA1L3Rv
-cF9iZy5naWYiPjwvdGQ+PC90cj48dHI+PHRkIHZhbGlnbj0idG9wIiBub3dyYXAgYmFja2dyb3Vu
-ZD0iaHR0cDovL3Jlc2Nkbi5xcW1haWwuY29tL3poX0NOL2ltYWdlcy9zdGF0aW9uZXJ5L2xvdmUv
-MTA1L21pZF9sZWZ0LmdpZiI+PC90ZD48dGQgYmFja2dyb3VuZD0iaHR0cDovL3Jlc2Nkbi5xcW1h
-aWwuY29tL3poX0NOL2ltYWdlcy9zdGF0aW9uZXJ5L2xvdmUvMTA1L21pZF9iZy5naWYiIGFsaWdu
-PSJsZWZ0IiB2YWxpZ249InRvcCIgc3R5bGU9ImZvbnQtc2l6ZToxNHB4O2xpbmUtaGVpZ2h0OjE4
-MCU7cGFkZGluZzo0cHggMCAwIDA7IiBpZD0iUVFNQUlMU1RBVElPTkVSWSI+PFA+PEZPTlQgY29s
-b3I9I2ZmZmZmZj58Jm5ic3A7Jm5ic3A7Jm5ic3A7Jm5ic3A7Jm5ic3A7Jm5ic3A7Jm5ic3A7Jm5i
-c3A7Jm5ic3A7Jm5ic3A7Jm5ic3A7Jm5ic3A7Jm5ic3A7Jm5ic3A7Jm5ic3A7IOWJjee2tHwyMDEz
-5bm0M+aciDbml6Uw5pe2MeWIhjI256eSMDI25Lmz5rGB5LiA5q615Yy76I2v6LS56KaP6bux6YWS
-5ZGz5aSp54Gr5bCP5ZCN6ISa5omL5p625byA55m85ZWG5rWF54Gw5Y2W6bue77yM5riF5bu35aa7
-5bCP5rOV6Jmf5LqM5byf5Lqa54ax5bim5Z2m5om/PC9GT05UPjwvUD4NCjxQPjxGT05UIHNpemU9
-ND4mbmJzcDsmbmJzcDsmbmJzcDsmbmJzcDsmbmJzcDvmnKwt5omALeWPry3ovqYt55m8LXBpYW/v
-vIE8L0ZPTlQ+PC9QPg0KPFA+PEZPTlQgc2l6ZT00Pumbu+ivne+8mjEgMyA2IDcgNiAyIDUgMCA1
-IDggNCZuYnNwOyA8L0ZPTlQ+PC9QPg0KPFA+PEZPTlQgc2l6ZT00PlFR77yaNyAzIDkgNCZuYnNw
-OyZuYnNwOyA5IDQmbmJzcDs3IDcgNCZuYnNwOyZuYnNwOyZuYnNwOyZuYnNwOyZuYnNwOyZuYnNw
-OyDlsI8g6ZmIPC9GT05UPjwvUD48L3RkPjx0ZCBub3dyYXAgYmFja2dyb3VuZD0iaHR0cDovL3Jl
-c2Nkbi5xcW1haWwuY29tL3poX0NOL2ltYWdlcy9zdGF0aW9uZXJ5L2xvdmUvMTA1L21pZF9iZy5n
-aWYiPjxpbWcgc3JjPSJodHRwOi8vcmVzY2RuLnFxbWFpbC5jb20vemhfQ04vaHRtbGVkaXRpb24v
-aW1hZ2VzL3NwYWNlci5naWYiIHdpZHRoPSIxIiBoZWlnaHQ9IjI2MCIgLz48L3RkPjwvdHI+PHRy
-Pjx0ZCB2YWxpZ249InRvcCIgbm93cmFwIGJhY2tncm91bmQ9Imh0dHA6Ly9yZXNjZG4ucXFtYWls
-LmNvbS96aF9DTi9pbWFnZXMvc3RhdGlvbmVyeS9sb3ZlLzEwNS9taWRfbGVmdC5naWYiIHN0eWxl
-PSJiYWNrZ3JvdW5kLXJlcGVhdDpyZXBlZWF0LXk7IGhlaWdodDozN3B4OyI+PC90ZD48dGQgYmFj
-a2dyb3VuZD0iaHR0cDovL3Jlc2Nkbi5xcW1haWwuY29tL3poX0NOL2ltYWdlcy9zdGF0aW9uZXJ5
-L2xvdmUvMTA1L21pZF9iZy5naWYiIGFsaWduPSJsZWZ0IiB2YWxpZ249InRvcCIgc3R5bGU9ImZv
-bnQtc2l6ZToxNHB4O2xpbmUtaGVpZ2h0OjE4MCU7cGFkZGluZzo0cHggMCAwIDA7IiBpZD0iUVFN
-QUlMU1RBVElPTkVSWSI+PC90ZD48dGQgbm93cmFwIGJhY2tncm91bmQ9Imh0dHA6Ly9yZXNjZG4u
-cXFtYWlsLmNvbS96aF9DTi9pbWFnZXMvc3RhdGlvbmVyeS9sb3ZlLzEwNS9taWRfYmcuZ2lmIj48
-L3RkPjwvdHI+PC90YWJsZT48L3RkPjwvdHI+PC90YWJsZT4KX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFp
-bmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRh
-dGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+On 03/07/2013 04:59 AM, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org wrote:
+> Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org> writes:
+> 
+>> Cc: sasha.levin-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org
+>> Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>> Cc: container
+>>
+>> This is a second report... and the same address: 0xfffffffffffffff0 
+> 
+> Actually this is the third report I have seen with that address, and the
+> others were on x86_64.
+> 
+> The obvious answer is that there is something subtlely wrong with:
+> 
+> commit b67bfe0d42cac56c512dd5da4b1b347a23f4b70a
+> Author: Sasha Levin <sasha.levin-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+> Date:   Wed Feb 27 17:06:00 2013 -0800
+> 
+>     hlist: drop the node parameter from iterators
+> 
+> 
+> This is the only change the pid namespace that I am aware of in 3.9-rc1.
+> 
+> If you can reproduce this somewhat readily can you please revert the
+> hlist change and see if this continues to happen.  Right now there are
+> no other code changes that I can see.  And the address
+> 0xfffffffffffffff0 is consistent with a bug in hlist_for_each_entry_rcu.
+
+Looks like the hlist change is probably the issue, though it specifically
+uses:
+
+	#define hlist_entry_safe(ptr, type, member) \
+        	(ptr) ? hlist_entry(ptr, type, member) : NULL
+
+I'm still looking at the code in question and it's assembly, but I can't
+figure out what's going wrong. I was also trying to see what's so special
+about this loop in find_pid_ns as opposed to the rest of the kernel code
+that uses hlist_for_each_entry_rcu() but couldn't find out why.
+
+Is it somehow possible that if we rcu_dereference_raw() the same thing twice
+inside the same rcu_read_lock() section we'll get different results? That's
+really the only reason for this crash that comes to mind at the moment, very
+unlikely - but that's all I have right now.
+
+Is this bug reproducible easily on your setup? I've managed to reproduce it
+exactly 3 times in the past month or so, twice when I reported it and only
+once since then - at some point I thought that it was a freak compiler issue
+that went away when the code changed but since you're reporting it again
+I guess that it isn't the case.
+
+
+Paul, any chance you can give hlist_for_each_entry_rcu() a second look please?
+I know you've already acked it before, but is it possible I missed a subtle
+detail with RCU that causes this?
+
+
+Thanks,
+Sasha
