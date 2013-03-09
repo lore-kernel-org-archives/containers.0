@@ -1,22 +1,11 @@
-From: "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: 3.9-rc1 NULL pointer crash at find_pid_ns
-Date: Sat, 9 Mar 2013 07:51:46 -0800
-Message-ID: <20130309155146.GR3268@linux.vnet.ibm.com>
-References: <611667212.10748821.1362649031475.JavaMail.root@redhat.com>
-	<513860E8.4080807@huawei.com> <876213wmwt.fsf@xmission.com>
-	<5138D001.8000409@oracle.com>
-	<1362678371.15793.218.camel@edumazet-glaptop>
-	<5138D377.6040406@oracle.com> <87boavrspd.fsf@xmission.com>
-	<5138D8F2.5020900@oracle.com>
-	<20130307182934.GY3268@linux.vnet.ibm.com>
-	<513AEC65.8000008@huawei.com>
-Reply-To: paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: [GIT PULL] namespace bug fixes
+Date: Sat, 09 Mar 2013 15:44:57 -0800
+Message-ID: <87zjycp286.fsf__41006.6105345779$1362872749$gmane$org@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <513AEC65.8000008-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,107 +15,105 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: CAI Qian <caiqian-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, Sasha Levin <sasha.levin-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sat, Mar 09, 2013 at 04:01:41PM +0800, Li Zefan wrote:
 
-[ . . . ]
+Linus,
 
-> >> hlist_first_rcu() doesn't have any side-effects, it doesn't modify the list whatsoever,
-> >> so the only thing that can change is 'head'. Why is it allowed to change if the list
-> >> is protected by RCU?
-> > 
-> > RCU does not prevent the list from changing.  Instead, it prevents anything
-> > that was in the list from being freed during a given RCU read-side critical
-> > section.  Here is how it is supposed to happen:
-> > 
-> > 	head---->A
-> > 
-> > Task 1 picks up the pointer from head to A, and sees that it is non-NULL.
-> > 
-> > Task 2 removes A from the list, so that the pointer from head is now NULL:
-> > 
-> > 	head     A
-> > 	  |
-> > 	  |
-> > 	  V
-> >         NULL
-> > 
-> > Now task 1 refetches from head, and is fatally disappointed to get a
-> > NULL pointer.
-> > 
-> > Now, had task 1 avoided the refetch, it would be still working with
-> > a pointer to A.  Since A won't be freed until the end of an RCU grace
-> > period, all would have been well.  Again, one way to handle this is
-> > as follows:
-> > 
-> > #define hlist_entry_safe(ptr, type, member) \
-> > 	({ typeof(ptr) ____ptr = (ptr); \
-> > 	   ____ptr ? hlist_entry(____ptr, type, member) : NULL; \
-> > 	})
-> > 
-> > This way, "ptr" is executed exactly once, and the check and the
-> > hlist_entry() are both using the same value.
-> 
-> I just played with trinity, and triggered this bug in just a few mins,
-> and I tried Paul's proposed fix and it works.
+Please pull the for-linus git tree from:
 
-Thank you for testing this!  Please see below for the patch.
+   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
 
-Sasha, will you be pushing this or would you like me to do so?
+   HEAD: db04dc679bcc780ad6907943afe24a30de974a1b  proc: Use nd_jump_link in proc_ns_follow_link
 
-							Thanx, Paul
+This is three simple fixes against 3.9-rc1.  I have tested each of these
+fixes and verified they work correctly.
 
-------------------------------------------------------------------------
+The userns oops in key_change_session_keyring and the BUG_ON triggered
+by proc_ns_follow_link were found by Dave Jones.
 
-list: Fix double fetch of pointer in hlist_entry_safe()
+I am including the enhancement for mount to only trigger requests of
+filesystem modules here instead of delaying this for the 3.10 merge
+window because it is both trivial and the kind of change that tends to
+bit-rot if left untouched for two months.
 
-The current version of hlist_entry_safe() fetches the pointer twice,
-once to test for NULL and the other to compute the offset back to the
-enclosing structure.  This is OK for normal lock-based use because in
-that case, the pointer cannot change.  However, when the pointer is
-protected by RCU (as in "rcu_dereference(p)"), then the pointer can
-change at any time.  This use case can result in the following sequence
-of events:
+Eric W. Biederman (4):
+      userns: Stop oopsing in key_change_session_keyring
+      fs: Limit sys_mount to only request filesystem modules.
+      fs: Limit sys_mount to only request filesystem modules (Part 2).
+      proc: Use nd_jump_link in proc_ns_follow_link
 
-1.	CPU 0 invokes hlist_entry_safe(), fetches the RCU-protected
-	pointer as sees that it is non-NULL.
-
-2.	CPU 1 invokes hlist_del_rcu(), deleting the entry that CPU 0
-	just fetched a pointer to.  Because this is the last entry
-	in the list, the pointer fetched by CPU 0 is now NULL.
-
-3.	CPU 0 refetches the pointer, obtains NULL, and then gets a
-	NULL-pointer crash.
-
-This commit therefore applies gcc's "({ })" statement expression to
-create a temporary variable so that the specified pointer is fetched
-only once, avoiding the above sequence of events.  Please note that
-it is the caller's responsibility to use rcu_dereference() as needed.
-This allows RCU-protected uses to work correctly without imposing
-any additional overhead on the non-RCU case.
-
-Many thanks to Eric Dumazet for spotting root cause!
-
-Reported-by: CAI Qian <caiqian-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Reported-by: Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Signed-off-by: Paul E. McKenney <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Tested-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-
-diff --git a/include/linux/list.h b/include/linux/list.h
-index d991cc1..6a1f8df 100644
---- a/include/linux/list.h
-+++ b/include/linux/list.h
-@@ -667,7 +667,9 @@ static inline void hlist_move_list(struct hlist_head *old,
- 	     pos = n)
- 
- #define hlist_entry_safe(ptr, type, member) \
--	(ptr) ? hlist_entry(ptr, type, member) : NULL
-+	({ typeof(ptr) ____ptr = (ptr); \
-+	   ____ptr ? hlist_entry(____ptr, type, member) : NULL; \
-+	})
- 
- /**
-  * hlist_for_each_entry	- iterate over list of given type
+ arch/ia64/kernel/perfmon.c                |    1 +
+ arch/powerpc/platforms/cell/spufs/inode.c |    1 +
+ arch/s390/hypfs/inode.c                   |    1 +
+ drivers/firmware/efivars.c                |    1 +
+ drivers/infiniband/hw/ipath/ipath_fs.c    |    1 +
+ drivers/infiniband/hw/qib/qib_fs.c        |    1 +
+ drivers/misc/ibmasm/ibmasmfs.c            |    1 +
+ drivers/mtd/mtdchar.c                     |    1 +
+ drivers/oprofile/oprofilefs.c             |    1 +
+ drivers/staging/ccg/f_fs.c                |    1 +
+ drivers/usb/gadget/f_fs.c                 |    1 +
+ drivers/usb/gadget/inode.c                |    1 +
+ drivers/xen/xenfs/super.c                 |    1 +
+ fs/9p/vfs_super.c                         |    1 +
+ fs/adfs/super.c                           |    1 +
+ fs/affs/super.c                           |    1 +
+ fs/afs/super.c                            |    1 +
+ fs/autofs4/init.c                         |    1 +
+ fs/befs/linuxvfs.c                        |    1 +
+ fs/bfs/inode.c                            |    1 +
+ fs/binfmt_misc.c                          |    1 +
+ fs/btrfs/super.c                          |    1 +
+ fs/ceph/super.c                           |    1 +
+ fs/coda/inode.c                           |    1 +
+ fs/configfs/mount.c                       |    1 +
+ fs/cramfs/inode.c                         |    1 +
+ fs/debugfs/inode.c                        |    1 +
+ fs/ecryptfs/main.c                        |    1 +
+ fs/efs/super.c                            |    1 +
+ fs/exofs/super.c                          |    1 +
+ fs/ext2/super.c                           |    1 +
+ fs/ext3/super.c                           |    1 +
+ fs/ext4/super.c                           |    5 +++--
+ fs/f2fs/super.c                           |    1 +
+ fs/fat/namei_msdos.c                      |    1 +
+ fs/fat/namei_vfat.c                       |    1 +
+ fs/filesystems.c                          |    2 +-
+ fs/freevxfs/vxfs_super.c                  |    2 +-
+ fs/fuse/control.c                         |    1 +
+ fs/fuse/inode.c                           |    2 ++
+ fs/gfs2/ops_fstype.c                      |    4 +++-
+ fs/hfs/super.c                            |    1 +
+ fs/hfsplus/super.c                        |    1 +
+ fs/hppfs/hppfs.c                          |    1 +
+ fs/hugetlbfs/inode.c                      |    1 +
+ fs/isofs/inode.c                          |    3 +--
+ fs/jffs2/super.c                          |    1 +
+ fs/jfs/super.c                            |    1 +
+ fs/logfs/super.c                          |    1 +
+ fs/minix/inode.c                          |    1 +
+ fs/ncpfs/inode.c                          |    1 +
+ fs/nfs/super.c                            |    3 ++-
+ fs/nfsd/nfsctl.c                          |    1 +
+ fs/nilfs2/super.c                         |    1 +
+ fs/ntfs/super.c                           |    1 +
+ fs/ocfs2/dlmfs/dlmfs.c                    |    1 +
+ fs/ocfs2/super.c                          |    1 +
+ fs/omfs/inode.c                           |    1 +
+ fs/openpromfs/inode.c                     |    1 +
+ fs/proc/namespaces.c                      |   12 ++++++------
+ fs/qnx4/inode.c                           |    1 +
+ fs/qnx6/inode.c                           |    1 +
+ fs/reiserfs/super.c                       |    1 +
+ fs/romfs/super.c                          |    1 +
+ fs/sysv/super.c                           |    3 ++-
+ fs/ubifs/super.c                          |    1 +
+ fs/ufs/super.c                            |    1 +
+ fs/xfs/xfs_super.c                        |    1 +
+ include/linux/fs.h                        |    2 ++
+ net/sunrpc/rpc_pipe.c                     |    4 +---
+ security/keys/process_keys.c              |    2 +-
+ 71 files changed, 84 insertions(+), 19 deletions(-)
