@@ -1,7 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 12/14] xfs: Remember the kqid for a quota
-Date: Wed, 13 Mar 2013 15:23:13 -0700
-Message-ID: <1363213395-10988-12-git-send-email-ebiederm__226.441669701849$1363213866$gmane$org@xmission.com>
+Subject: [PATCH 11/14] xfs: Modify xfs_qm_dqget to take a struct kqid.
+Date: Wed, 13 Mar 2013 15:23:12 -0700
+Message-ID: <1363213395-10988-11-git-send-email-ebiederm@xmission.com>
 References: <87boan3prc.fsf@xmission.com>
 	<1363213395-10988-1-git-send-email-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -24,106 +24,290 @@ List-Id: containers.vger.kernel.org
 
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-- Add q_id to struct xfs_quota
-- Modify xfs_qm_dqread to take a struct kqid, allowing xfs_qm_dqread to
-  set q_id on fresh quota structures.
-- Modify xfs_qm_dqget and xfs_qm_init_quota_info to pass a kqid
-  to xfs_qm_dqread
+- Modify xfs_qm_dqget, xfs_qm_dqattach_one, and xfs_qm_qutoacheck_dqadjust
+  to take a struct kqid instead of an id and type pair.
+
+- Modify their callers to pass them a struct kqid.
+
+- Move xfs_qutoa_type into xfs_dquot.c where it is now used.
 
 Cc: Ben Myers <bpm-sJ/iWh9BUns@public.gmane.org>
 Cc: Alex Elder <elder-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/xfs/xfs_dquot.c |   12 ++++++------
- fs/xfs/xfs_dquot.h |    3 ++-
- fs/xfs/xfs_qm.c    |    9 +++++----
- 3 files changed, 13 insertions(+), 11 deletions(-)
+ fs/xfs/xfs_dquot.c       |   24 +++++++++++++++++++-----
+ fs/xfs/xfs_dquot.h       |    4 ++--
+ fs/xfs/xfs_qm.c          |   42 +++++++++++++++++++-----------------------
+ fs/xfs/xfs_qm_bhv.c      |    2 +-
+ fs/xfs/xfs_qm_syscalls.c |   20 ++------------------
+ 5 files changed, 43 insertions(+), 49 deletions(-)
 
 diff --git a/fs/xfs/xfs_dquot.c b/fs/xfs/xfs_dquot.c
-index 51e1c31..00d4b87 100644
+index 8025eb2..51e1c31 100644
 --- a/fs/xfs/xfs_dquot.c
 +++ b/fs/xfs/xfs_dquot.c
-@@ -581,8 +581,7 @@ xfs_qm_dqtobp(
- int
- xfs_qm_dqread(
- 	struct xfs_mount	*mp,
+@@ -63,6 +63,19 @@ static struct kmem_zone		*xfs_qm_dqzone;
+ 
+ static struct lock_class_key xfs_dquot_other_class;
+ 
++STATIC int
++xfs_quota_type(int type)
++{
++	switch (type) {
++	case USRQUOTA:
++		return XFS_DQ_USER;
++	case GRPQUOTA:
++		return XFS_DQ_GROUP;
++	default:
++		return XFS_DQ_PROJ;
++	}
++}
++
+ /*
+  * This is called to free all the memory associated with a dquot
+  */
+@@ -696,20 +709,21 @@ int
+ xfs_qm_dqget(
+ 	xfs_mount_t	*mp,
+ 	xfs_inode_t	*ip,	  /* locked inode (optional) */
+-	xfs_dqid_t	id,	  /* uid/projid/gid depending on type */
+-	uint		type,	  /* XFS_DQ_USER/XFS_DQ_PROJ/XFS_DQ_GROUP */
++	struct kqid     qid,	  /* uid/projid/gid depending on type */
+ 	uint		flags,	  /* DQALLOC, DQSUSER, DQREPAIR, DOWARN */
+ 	xfs_dquot_t	**O_dqpp) /* OUT : locked incore dquot */
+ {
+ 	struct xfs_quotainfo	*qi = mp->m_quotainfo;
++	uint			id = from_kqid(&init_user_ns, qid);
++	uint			type = xfs_quota_type(qid.type);
+ 	struct radix_tree_root *tree = XFS_DQUOT_TREE(qi, type);
+ 	struct xfs_dquot	*dqp;
+ 	int			error;
+ 
+ 	ASSERT(XFS_IS_QUOTA_RUNNING(mp));
+-	if ((! XFS_IS_UQUOTA_ON(mp) && type == XFS_DQ_USER) ||
+-	    (! XFS_IS_PQUOTA_ON(mp) && type == XFS_DQ_PROJ) ||
+-	    (! XFS_IS_GQUOTA_ON(mp) && type == XFS_DQ_GROUP)) {
++	if ((! XFS_IS_UQUOTA_ON(mp) && qid.type == USRQUOTA) ||
++	    (! XFS_IS_PQUOTA_ON(mp) && qid.type == PRJQUOTA) ||
++	    (! XFS_IS_GQUOTA_ON(mp) && qid.type == GRPQUOTA)) {
+ 		return (ESRCH);
+ 	}
+ 
+diff --git a/fs/xfs/xfs_dquot.h b/fs/xfs/xfs_dquot.h
+index 2c197da..3566548 100644
+--- a/fs/xfs/xfs_dquot.h
++++ b/fs/xfs/xfs_dquot.h
+@@ -147,8 +147,8 @@ extern void		xfs_qm_adjust_dqtimers(xfs_mount_t *,
+ 					xfs_disk_dquot_t *);
+ extern void		xfs_qm_adjust_dqlimits(xfs_mount_t *,
+ 					xfs_disk_dquot_t *);
+-extern int		xfs_qm_dqget(xfs_mount_t *, xfs_inode_t *,
+-					xfs_dqid_t, uint, uint, xfs_dquot_t **);
++extern int		xfs_qm_dqget(xfs_mount_t *, xfs_inode_t *, struct kqid,
++					uint, xfs_dquot_t **);
+ extern void		xfs_qm_dqput(xfs_dquot_t *);
+ 
+ extern void		xfs_dqlock2(struct xfs_dquot *, struct xfs_dquot *);
+diff --git a/fs/xfs/xfs_qm.c b/fs/xfs/xfs_qm.c
+index 308592e..31711ed 100644
+--- a/fs/xfs/xfs_qm.c
++++ b/fs/xfs/xfs_qm.c
+@@ -367,8 +367,7 @@ xfs_qm_unmount_quotas(
+ STATIC int
+ xfs_qm_dqattach_one(
+ 	xfs_inode_t	*ip,
+-	xfs_dqid_t	id,
+-	uint		type,
++	struct kqid	id,
+ 	uint		doalloc,
+ 	xfs_dquot_t	*udqhint, /* hint */
+ 	xfs_dquot_t	**IO_idqpp)
+@@ -397,7 +396,7 @@ xfs_qm_dqattach_one(
+ 	 * the user dquot.
+ 	 */
+ 	if (udqhint) {
+-		ASSERT(type == XFS_DQ_GROUP || type == XFS_DQ_PROJ);
++		ASSERT(id.type == GRPQUOTA || id.type == PRJQUOTA);
+ 		xfs_dqlock(udqhint);
+ 
+ 		/*
+@@ -408,7 +407,7 @@ xfs_qm_dqattach_one(
+ 		 * hold the ilock.
+ 		 */
+ 		dqp = udqhint->q_gdquot;
+-		if (dqp && be32_to_cpu(dqp->q_core.d_id) == id) {
++		if (dqp && qid_eq(make_kqid(&init_user_ns, id.type, be32_to_cpu(dqp->q_core.d_id)), id)) {
+ 			ASSERT(*IO_idqpp == NULL);
+ 
+ 			*IO_idqpp = xfs_qm_dqhold(dqp);
+@@ -432,7 +431,7 @@ xfs_qm_dqattach_one(
+ 	 * disk and we didn't ask it to allocate;
+ 	 * ESRCH if quotas got turned off suddenly.
+ 	 */
+-	error = xfs_qm_dqget(ip->i_mount, ip, id, type,
++	error = xfs_qm_dqget(ip->i_mount, ip, id,
+ 			     doalloc | XFS_QMOPT_DOWARN, &dqp);
+ 	if (error)
+ 		return error;
+@@ -516,7 +515,7 @@ xfs_qm_dqattach_locked(
+ 	ASSERT(xfs_isilocked(ip, XFS_ILOCK_EXCL));
+ 
+ 	if (XFS_IS_UQUOTA_ON(mp)) {
+-		error = xfs_qm_dqattach_one(ip, ip->i_d.di_uid, XFS_DQ_USER,
++		error = xfs_qm_dqattach_one(ip, make_kqid_uid(ip->i_d.di_uid),
+ 						flags & XFS_QMOPT_DQALLOC,
+ 						NULL, &ip->i_udquot);
+ 		if (error)
+@@ -527,10 +526,10 @@ xfs_qm_dqattach_locked(
+ 	ASSERT(xfs_isilocked(ip, XFS_ILOCK_EXCL));
+ 	if (XFS_IS_OQUOTA_ON(mp)) {
+ 		error = XFS_IS_GQUOTA_ON(mp) ?
+-			xfs_qm_dqattach_one(ip, ip->i_d.di_gid, XFS_DQ_GROUP,
++			xfs_qm_dqattach_one(ip, make_kqid_gid(ip->i_d.di_gid),
+ 						flags & XFS_QMOPT_DQALLOC,
+ 						ip->i_udquot, &ip->i_gdquot) :
+-			xfs_qm_dqattach_one(ip, ip->i_d.di_projid, XFS_DQ_PROJ,
++			xfs_qm_dqattach_one(ip, make_kqid_projid(ip->i_d.di_projid),
+ 						flags & XFS_QMOPT_DQALLOC,
+ 						ip->i_udquot, &ip->i_gdquot);
+ 		/*
+@@ -1016,8 +1015,7 @@ out:
+ STATIC int
+ xfs_qm_quotacheck_dqadjust(
+ 	struct xfs_inode	*ip,
 -	xfs_dqid_t		id,
 -	uint			type,
 +	struct kqid		id,
- 	uint			flags,
- 	struct xfs_dquot	**O_dqpp)
+ 	xfs_qcnt_t		nblks,
+ 	xfs_qcnt_t		rtblks)
  {
-@@ -596,8 +595,9 @@ xfs_qm_dqread(
+@@ -1025,7 +1023,7 @@ xfs_qm_quotacheck_dqadjust(
+ 	struct xfs_dquot	*dqp;
+ 	int			error;
  
- 	dqp = kmem_zone_zalloc(xfs_qm_dqzone, KM_SLEEP);
- 
--	dqp->dq_flags = type;
--	dqp->q_core.d_id = cpu_to_be32(id);
-+	dqp->q_id = id;
-+	dqp->dq_flags = xfs_quota_type(id.type);
-+	dqp->q_core.d_id = cpu_to_be32(from_kqid(&init_user_ns, id));
- 	dqp->q_mount = mp;
- 	INIT_LIST_HEAD(&dqp->q_lru);
- 	mutex_init(&dqp->q_qlock);
-@@ -615,7 +615,7 @@ xfs_qm_dqread(
- 	 * Make sure group quotas have a different lock class than user
- 	 * quotas.
+-	error = xfs_qm_dqget(mp, ip, id, type,
++	error = xfs_qm_dqget(mp, ip, id,
+ 			     XFS_QMOPT_DQALLOC | XFS_QMOPT_DOWARN, &dqp);
+ 	if (error) {
+ 		/*
+@@ -1160,22 +1158,22 @@ xfs_qm_dqusage_adjust(
+ 	 * and quotaoffs don't race. (Quotachecks happen at mount time only).
  	 */
--	if (!(type & XFS_DQ_USER))
-+	if (id.type != USRQUOTA)
- 		lockdep_set_class(&dqp->q_qlock, &xfs_dquot_other_class);
+ 	if (XFS_IS_UQUOTA_ON(mp)) {
+-		error = xfs_qm_quotacheck_dqadjust(ip, ip->i_d.di_uid,
+-						   XFS_DQ_USER, nblks, rtblks);
++		error = xfs_qm_quotacheck_dqadjust(ip, make_kqid_uid(ip->i_d.di_uid),
++						   nblks, rtblks);
+ 		if (error)
+ 			goto error0;
+ 	}
  
- 	XFS_STATS_INC(xs_qm_dquot);
-@@ -779,7 +779,7 @@ restart:
- 	if (ip)
- 		xfs_iunlock(ip, XFS_ILOCK_EXCL);
+ 	if (XFS_IS_GQUOTA_ON(mp)) {
+-		error = xfs_qm_quotacheck_dqadjust(ip, ip->i_d.di_gid,
+-						   XFS_DQ_GROUP, nblks, rtblks);
++		error = xfs_qm_quotacheck_dqadjust(ip, make_kqid_gid(ip->i_d.di_gid),
++						   nblks, rtblks);
+ 		if (error)
+ 			goto error0;
+ 	}
  
--	error = xfs_qm_dqread(mp, id, type, flags, &dqp);
-+	error = xfs_qm_dqread(mp, qid, flags, &dqp);
+ 	if (XFS_IS_PQUOTA_ON(mp)) {
+-		error = xfs_qm_quotacheck_dqadjust(ip, ip->i_d.di_projid,
+-						   XFS_DQ_PROJ, nblks, rtblks);
++		error = xfs_qm_quotacheck_dqadjust(ip, make_kqid_projid(ip->i_d.di_projid),
++						   nblks, rtblks);
+ 		if (error)
+ 			goto error0;
+ 	}
+@@ -1662,8 +1660,7 @@ xfs_qm_vop_dqalloc(
+ 			 * holding ilock.
+ 			 */
+ 			xfs_iunlock(ip, lockflags);
+-			if ((error = xfs_qm_dqget(mp, NULL, (xfs_dqid_t) uid,
+-						 XFS_DQ_USER,
++			if ((error = xfs_qm_dqget(mp, NULL, make_kqid_uid(uid),
+ 						 XFS_QMOPT_DQALLOC |
+ 						 XFS_QMOPT_DOWARN,
+ 						 &uq))) {
+@@ -1688,8 +1685,7 @@ xfs_qm_vop_dqalloc(
+ 	if ((flags & XFS_QMOPT_GQUOTA) && XFS_IS_GQUOTA_ON(mp)) {
+ 		if (!gid_eq(ip->i_d.di_gid, gid)) {
+ 			xfs_iunlock(ip, lockflags);
+-			if ((error = xfs_qm_dqget(mp, NULL, (xfs_dqid_t)gid,
+-						 XFS_DQ_GROUP,
++			if ((error = xfs_qm_dqget(mp, NULL, make_kqid_gid(gid),
+ 						 XFS_QMOPT_DQALLOC |
+ 						 XFS_QMOPT_DOWARN,
+ 						 &gq))) {
+@@ -1708,8 +1704,8 @@ xfs_qm_vop_dqalloc(
+ 	} else if ((flags & XFS_QMOPT_PQUOTA) && XFS_IS_PQUOTA_ON(mp)) {
+ 		if (!projid_eq(ip->i_d.di_projid, prid)) {
+ 			xfs_iunlock(ip, lockflags);
+-			if ((error = xfs_qm_dqget(mp, NULL, (xfs_dqid_t)prid,
+-						 XFS_DQ_PROJ,
++			if ((error = xfs_qm_dqget(mp, NULL,
++						 make_kqid_projid(prid),
+ 						 XFS_QMOPT_DQALLOC |
+ 						 XFS_QMOPT_DOWARN,
+ 						 &gq))) {
+diff --git a/fs/xfs/xfs_qm_bhv.c b/fs/xfs/xfs_qm_bhv.c
+index 7d44746..dda0f7a 100644
+--- a/fs/xfs/xfs_qm_bhv.c
++++ b/fs/xfs/xfs_qm_bhv.c
+@@ -79,7 +79,7 @@ xfs_qm_statvfs(
+ 	xfs_mount_t		*mp = ip->i_mount;
+ 	xfs_dquot_t		*dqp;
  
- 	if (ip)
- 		xfs_ilock(ip, XFS_ILOCK_EXCL);
-diff --git a/fs/xfs/xfs_dquot.h b/fs/xfs/xfs_dquot.h
-index 3566548..0b6020e 100644
---- a/fs/xfs/xfs_dquot.h
-+++ b/fs/xfs/xfs_dquot.h
-@@ -36,6 +36,7 @@ struct xfs_trans;
-  * The incore dquot structure
-  */
- typedef struct xfs_dquot {
-+	struct kqid      q_id;		/* quota identifier */
- 	uint		 dq_flags;	/* various flags (XFS_DQ_*) */
- 	struct list_head q_lru;		/* global free list of dquots */
- 	struct xfs_mount*q_mount;	/* filesystem this relates to */
-@@ -138,7 +139,7 @@ static inline xfs_dquot_t *xfs_inode_dquot(struct xfs_inode *ip, int type)
- 				 XFS_DQ_TO_QINF(dqp)->qi_uquotaip : \
- 				 XFS_DQ_TO_QINF(dqp)->qi_gquotaip)
+-	if (!xfs_qm_dqget(mp, NULL, ip->i_d.di_projid, XFS_DQ_PROJ, 0, &dqp)) {
++	if (!xfs_qm_dqget(mp, NULL, make_kqid_projid(ip->i_d.di_projid), 0, &dqp)) {
+ 		xfs_fill_statvfs_from_dquot(statp, dqp);
+ 		xfs_qm_dqput(dqp);
+ 	}
+diff --git a/fs/xfs/xfs_qm_syscalls.c b/fs/xfs/xfs_qm_syscalls.c
+index 8ad5488..03876dc 100644
+--- a/fs/xfs/xfs_qm_syscalls.c
++++ b/fs/xfs/xfs_qm_syscalls.c
+@@ -48,19 +48,6 @@ STATIC int	xfs_qm_log_quotaoff_end(xfs_mount_t *, xfs_qoff_logitem_t *,
+ STATIC uint	xfs_qm_export_flags(uint);
+ STATIC uint	xfs_qm_export_qtype_flags(uint);
  
--extern int		xfs_qm_dqread(struct xfs_mount *, xfs_dqid_t, uint,
-+extern int		xfs_qm_dqread(struct xfs_mount *, struct kqid,
- 					uint, struct xfs_dquot	**);
- extern void		xfs_qm_dqdestroy(xfs_dquot_t *);
- extern int		xfs_qm_dqflush(struct xfs_dquot *, struct xfs_buf **);
-diff --git a/fs/xfs/xfs_qm.c b/fs/xfs/xfs_qm.c
-index 31711ed..363a662 100644
---- a/fs/xfs/xfs_qm.c
-+++ b/fs/xfs/xfs_qm.c
-@@ -673,10 +673,11 @@ xfs_qm_init_quotainfo(
- 	 * Since we may not have done a quotacheck by this point, just read
- 	 * the dquot without attaching it to any hashtables or lists.
+-STATIC int
+-xfs_quota_type(int type)
+-{
+-	switch (type) {
+-	case USRQUOTA:
+-		return XFS_DQ_USER;
+-	case GRPQUOTA:
+-		return XFS_DQ_GROUP;
+-	default:
+-		return XFS_DQ_PROJ;
+-	}
+-}
+-
+ /*
+  * Turn off quota accounting and/or enforcement for all udquots and/or
+  * gdquots. Called only at unmount time.
+@@ -525,9 +512,7 @@ xfs_qm_scall_setqlim(
+ 	 * Get the dquot (locked), and join it to the transaction.
+ 	 * Allocate the dquot if this doesn't exist.
  	 */
--	error = xfs_qm_dqread(mp, 0,
--			XFS_IS_UQUOTA_RUNNING(mp) ? XFS_DQ_USER :
--			 (XFS_IS_GQUOTA_RUNNING(mp) ? XFS_DQ_GROUP :
--			  XFS_DQ_PROJ),
-+	error = xfs_qm_dqread(mp,
-+			make_kqid(&init_user_ns,
-+				  XFS_IS_UQUOTA_RUNNING(mp) ? USRQUOTA :
-+				  (XFS_IS_GQUOTA_RUNNING(mp) ? GRPQUOTA :
-+				   PRJQUOTA), 0),
- 			XFS_QMOPT_DOWARN, &dqp);
- 	if (!error) {
- 		xfs_disk_dquot_t	*ddqp = &dqp->q_core;
+-	if ((error = xfs_qm_dqget(mp, NULL, from_kqid(&init_user_ns, id),
+-				  xfs_quota_type(id.type),
+-				  XFS_QMOPT_DQALLOC, &dqp))) {
++	if ((error = xfs_qm_dqget(mp, NULL, id, XFS_QMOPT_DQALLOC, &dqp))) {
+ 		xfs_trans_cancel(tp, XFS_TRANS_ABORT);
+ 		ASSERT(error != ENOENT);
+ 		goto out_unlock;
+@@ -744,8 +729,7 @@ xfs_qm_scall_getquota(
+ 	 * we aren't passing the XFS_QMOPT_DOALLOC flag. If it doesn't
+ 	 * exist, we'll get ENOENT back.
+ 	 */
+-	error = xfs_qm_dqget(mp, NULL, from_kqid(&init_user_ns, id),
+-			     xfs_quota_type(id.type), 0, &dqp);
++	error = xfs_qm_dqget(mp, NULL, id, 0, &dqp);
+ 	if (error)
+ 		return error;
+ 
 -- 
 1.7.5.4
