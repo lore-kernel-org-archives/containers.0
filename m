@@ -1,21 +1,15 @@
-From: Dave Jones <davej-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: 3.9-rc1 NULL pointer crash at find_pid_ns
-Date: Thu, 14 Mar 2013 16:00:54 -0400
-Message-ID: <20130314200054.GA5924@redhat.com>
-References: <513860E8.4080807@huawei.com> <876213wmwt.fsf@xmission.com>
-	<5138D001.8000409@oracle.com>
-	<1362678371.15793.218.camel@edumazet-glaptop>
-	<5138D377.6040406@oracle.com> <87boavrspd.fsf@xmission.com>
-	<5138D8F2.5020900@oracle.com>
-	<20130307182934.GY3268@linux.vnet.ibm.com>
-	<513AEC65.8000008@huawei.com>
-	<20130309155146.GR3268@linux.vnet.ibm.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: CLONE_NEWUSER|CLONE_FS root exploit
+Date: Thu, 14 Mar 2013 13:29:10 -0700
+Message-ID: <87hakdrai1.fsf@xmission.com>
+References: <20130313175729.GH12501@outflux.net> <87r4jjkv18.fsf@xmission.com>
+	<51412C67.30908@mit.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20130309155146.GR3268-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <51412C67.30908-3s7WtUTddSA@public.gmane.org> (Andy Lutomirski's message of "Wed, 13
+	Mar 2013 18:48:23 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,28 +19,70 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: CAI Qian <caiqian-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, Sasha Levin <sasha.levin-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Sebastian Krahmer <krahmer-l3A5Bk7waGM@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sat, Mar 09, 2013 at 07:51:46AM -0800, Paul E. McKenney wrote:
- > On Sat, Mar 09, 2013 at 04:01:41PM +0800, Li Zefan wrote:
- > 
- > [ . . . ]
- > 
- > > > This way, "ptr" is executed exactly once, and the check and the
- > > > hlist_entry() are both using the same value.
- > > 
- > > I just played with trinity, and triggered this bug in just a few mins,
- > > and I tried Paul's proposed fix and it works.
- > 
- > Thank you for testing this!  Please see below for the patch.
- > 
- > Sasha, will you be pushing this or would you like me to do so?
+Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> writes:
 
-[crickets]
+> On 03/13/2013 11:35 AM, Eric W. Biederman wrote:
+>> Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw-XMD5yJDbdMReXY1tMh2IBg@public.gmane.org> writes:
+>> 
+>>> Hi,
+>>>
+>>> It seem like we should block (at least) this combination. On 3.9, this
+>>> exploit works once uidmapping is added.
+>>>
+>>> http://www.openwall.com/lists/oss-security/2013/03/13/10
+>> 
+>> Yes.  That is a bad combination.  It let's chroot confuse privileged
+>> processes.
+>> 
+>> Now to figure out if this is easier to squash by adding a user_namespace
+>> to fs_struct or by just forbidding this combination.
+>
+> It's worth making sure that setns(2) doesn't have similar issues.
 
-Given this has been hanging for the better part of another week,
-Paul why not send it Linus so hopefully rc3 doesn't have this bug ?
+setns(2) and unshare(2) are done and merged.  See commit.
 
-	Dave
+commit e66eded8309ebf679d3d3c1f5820d1f2ca332c71
+Author: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Date:   Wed Mar 13 11:51:49 2013 -0700
+
+    userns: Don't allow CLONE_NEWUSER | CLONE_FS
+
+
+> Looking through other shared-but-not-a-namespace things, there are:
+>
+> fs_struct: Buggy as noted.
+>
+> files_struct: Probably harmless -- SCM_RIGHTS can emulate it
+>
+> signal_struct: This interacts with the tty code.  Is it okay?
+
+It should be.  The tty code is heavily pid based, and CLONE_NEWPID
+requires !CLONE_VM (which implies !CLONE_SIGHAND and !CLONE_VM).
+
+> sighand_struct: Looks safe.  Famous last words.
+>
+> FWIW, I've been alarmed in the past that struct path (e.g. the root
+> directory) implies an mnt_namespace (hidden in struct mount), and it's
+> entirely possible for the root directory's mnt_namespace not to match
+> nsproxy->mnt_namespace.  I'm not sure what the implications are, but
+> this doesn't seem healthy.
+
+The calls to check_mnt prevent abuse of the files found with fs_struct
+not matching the current mount namespace.
+
+static inline int check_mnt(struct mount *mnt)
+{
+	return mnt->mnt_ns == current->nsproxy->mnt_ns;
+}
+
+Thanks for looking I know I did the same double take and wondered if I
+had missed anything else by accident when this bug showed up.
+
+So far even just looking it all over again I can't see anything.  But I
+have clearly been blind before.
+
+Eric
