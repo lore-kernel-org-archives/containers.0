@@ -1,13 +1,15 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: CLONE_NEWUSER|CLONE_FS root exploit
-Date: Wed, 13 Mar 2013 18:48:23 -0700
-Message-ID: <51412C67.30908@mit.edu>
-References: <20130313175729.GH12501@outflux.net> <87r4jjkv18.fsf@xmission.com>
+From: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
+Subject: Re: [PATCH 00/14] xfs: Support for interacting with multiple user
+	namespaces
+Date: Thu, 14 Mar 2013 17:18:39 +1100
+Message-ID: <20130314061839.GY21651@dastard>
+References: <87boan3prc.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87r4jjkv18.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <87boan3prc.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,41 +20,150 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Sebastian Krahmer <krahmer-l3A5Bk7waGM@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Alex Elder <elder-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, xfs-VZNHf3L845pBDgjK7y7TUQ@public.gmane.org, Ben Myers <bpm-sJ/iWh9BUns@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 03/13/2013 11:35 AM, Eric W. Biederman wrote:
-> Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw-XMD5yJDbdMReXY1tMh2IBg@public.gmane.org> writes:
+On Wed, Mar 13, 2013 at 03:21:11PM -0700, Eric W. Biederman wrote:
 > 
->> Hi,
->>
->> It seem like we should block (at least) this combination. On 3.9, this
->> exploit works once uidmapping is added.
->>
->> http://www.openwall.com/lists/oss-security/2013/03/13/10
+> Or replace uids, gids, and projids with kuids, kgids, and kprojids
 > 
-> Yes.  That is a bad combination.  It let's chroot confuse privileged
-> processes.
-> 
-> Now to figure out if this is easier to squash by adding a user_namespace
-> to fs_struct or by just forbidding this combination.
+> In support of user namespaces I have introduced into the kernel kuids,
+> kgids, and kprojids.  The most important characteristic of these ids is
+> that they are not assignment compatible with uids, gids, and projids
+> coming from userspace nor are they assignment compatible with uids, gids
+> or projids stored on disk.  This assignment incompatibility makes it
+> easy to ensure that conversions are introduced at the edge of userspace
+> and at the interface between on-disk and in-memory data structures.
 
-It's worth making sure that setns(2) doesn't have similar issues.
+TL;DR:
 
-Looking through other shared-but-not-a-namespace things, there are:
+Compared to the last version of this patchset I NACKed, this version
+increases the per-inode memory footprint by over 100 bytes (i.e. by
+more than 10%), introduces a double copy of the inode core data into
+the *hottest path in XFS*, breaks log recovery and fails to address
+a single NACK I gave for the previous round of the patch set.
 
-fs_struct: Buggy as noted.
+So, NACK.
 
-files_struct: Probably harmless -- SCM_RIGHTS can emulate it
+> Converting xfs is an interesting challenge because of the way xfs
+> handles it's inode data is very atypical. 
 
-signal_struct: This interacts with the tty code.  Is it okay?
+That you have to tell people that find it strange an unusual
+immediately indicates that you do not really understand the design
+and structure of the XFS code. This makes your refusal to listen to
+feedback from someone who is a subject matter expert all the more
+difficult to understand.
 
-sighand_struct: Looks safe.  Famous last words.
+I'll accept that you might forget something mentioned in a review
+when you post an update, but to ignore a second NACK for the same
+patch and posting it a third time unchanged is not the best way to
+make friends and influence people....
 
-FWIW, I've been alarmed in the past that struct path (e.g. the root
-directory) implies an mnt_namespace (hidden in struct mount), and it's
-entirely possible for the root directory's mnt_namespace not to match
-nsproxy->mnt_namespace.  I'm not sure what the implications are, but
-this doesn't seem healthy.
+And given that you didn't respond to a single review comment I made
+on the previous version of the patch, well, I have my doubts you are
+going to respond this time, either.  In previous reviews comments I
+have:
+	- outlined exactly how to provide a minimally invasive patch
+	  set that provides full namespace support as a first step
+	  in getting XFS to support namespaces.
+	- told you where the ondisk/in-memory boundaries are.
+	- told you that certain IDs are filesystem internal and not
+	  subject to namespaces.
+	- asked questions about how filesystems utilities are
+	  supposed to deal with namespaces (i.e. userspace impacts
+	  of ioctl interface changes). 
 
---Andy
+And you haven't responded to any of them.  You can't selectively
+ignore review comments you don't like and then magically expect the
+reviewers to accept an almost-identical-but-even-more-broken patch
+set the next time around.
+
+> Given the number of ioctls that xfs supports it would be irresponsible to
+> do anything except insist that kuids, kgids, and kprojids are used in all of
+> in memory data structures of xfs, as otherwise it becomes trivially easy to
+> miss a needed conversion with the advent of a new ioctl.
+
+Eric, your rhetoric looks so fine and shiny on the wall, but it is
+utterly worthless.  You're telling us that userspace interface are
+absolutely necessary, but haven't provided any analysis, description
+or justification so we can judge the impact of the changes or review
+why you think the only way such changes can be made is your way.
+
+Nor have you provided any regression tests to verify that this shiny
+new namespace support is working as the maker has intended. IOWs,
+I've got no idea what the impact of changing all the ioctls will be,
+no way to verify it is correct and you sure as hell aren't going out
+of your way to make it easy for us to understand the impact, either.
+
+Further, I'm pretty sure that you are not even aware of the scope of
+the issues that namespace awareness raise for some of these XFS
+ioctls. I've previously asked some questions about behaviours of
+them, but like most of my other review comments you have ignored
+those questions.
+
+So, before we go changing anything ioctl related, here's some
+questions you need to answer:
+
+	- if you run bulkstat, what do we do with inodes that
+	  contain a ID owned by a namespace outside the current
+	  namespace?
+
+	- Can we even check the on-disk inode IDs are valid within a
+	  specific namespace within the kernel?
+
+	- open_by_handle() would appear to allow root in any
+	  namespace to open any file in the filesystem it has a
+	  valid handle for regardless of the namespace. Is this
+	  allowable? The output of bulkstat can be fed directly to
+	  open_by_handle(), so if bulkstat can return inodes outside
+	  the namespace, open-by-handle can open them and we can do
+	  invisible IO on them.
+
+	- Further, we can extract and set attributes directly by
+	  handle and, IIRC, that includes security/trusted namespace
+	  attributes....
+
+	- On the same measure, the handles used by XFS handle
+	  interfaces are identical to NFS handles and use the same
+	  code for decoding and dentry lookup. So, what do handle
+	  restrictions mean for NFS servers?
+
+	- have you considered that fs/fhandle.c raises many of these
+	  same issues?
+
+	- and seeing xfsdump and xfs_fsr use bulkstat and handles,
+	  what do new limitations on these interfaces mean for these
+	  utilities?
+
+	- How does xfs_dump/xfs_restore work if we convert all ids
+	  based on the current namespace? e.g. dump in one
+	  namespace, restore in another.
+
+	- How does xfs_dump/xfs_restore work if we *don't* convert
+	  all ids (i.e. export the on-disk values)?
+
+	- How do we document/communicate all these constraints/
+	  behaviours to users who might be completely unaware of
+	  them?
+
+IOWs, simply converting IDs the ioctls take in or emit is only a
+small part of the larger question of how they are supposed to behave
+in namespace containers. These questions need to be answered *in
+detail* and with *regression tests* before we accept any changes to
+the ioctl interfaces.
+
+Eric, I'm not trying to be difficult here - I'm holding the bar at
+the same height as it gets held for any significant XFS change that
+impacts userspace interfaces and behaviour. You don't maintain the
+XFS code, so you can just walk away once namespaces are "done" and
+not care that you've left a mess behind.
+
+And if you leave a mess, I'm the person who will have to clean it
+up. I don't want to have to clean up your mess, so I'm going to keep
+saying no until you can introduce namespace support without making a
+mess....
+
+-Dave.
+-- 
+Dave Chinner
+david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org
