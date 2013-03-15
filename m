@@ -1,17 +1,16 @@
 From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/4] dev_cgroup: keep track of which cgroup is the root
-	cgroup
-Date: Fri, 15 Mar 2013 09:55:06 -0500
-Message-ID: <20130315145506.GB20109__23939.1713207171$1363359350$gmane$org@sergelap>
+Subject: Re: [PATCH 3/4] fs: allow mknod in user namespaces
+Date: Fri, 15 Mar 2013 10:14:15 -0500
+Message-ID: <20130315151415.GA24305__45117.2323235825$1363360497$gmane$org@sergelap>
 References: <1363338823-25292-1-git-send-email-glommer@parallels.com>
-	<1363338823-25292-2-git-send-email-glommer@parallels.com>
-	<20130315140743.GC3782@sergelap> <514333A2.5060408@parallels.com>
+	<1363338823-25292-4-git-send-email-glommer@parallels.com>
+	<20130315143741.GE3782@sergelap> <51433511.1020808@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <514333A2.5060408-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <51433511.1020808-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,29 +25,39 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ari
 List-Id: containers.vger.kernel.org
 
 Quoting Glauber Costa (glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
-> On 03/15/2013 06:07 PM, Serge Hallyn wrote:
+> On 03/15/2013 06:37 PM, Serge Hallyn wrote:
 > > Quoting Glauber Costa (glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
-> >> Most of the other subsystems already keep track of that in some way.  We
-> >> will do that internally and provide a test to determine whether or not
-> >> our task is in a device cgroup that is not the root one. We can relax
-> >> some of our checks in that case, trusting that whoever set device cgroup
-> >> rules will be responsible to control access to their devices.
+> >> Since we have strict control on who access the devices, it should be
+> >> no problem to allow the device to appear.
 > >>
 > >> Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 > >> Cc: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 > >> Cc: Eric Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 > >> Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> >> ---
+> >>  fs/namei.c | 2 +-
+> >>  1 file changed, 1 insertion(+), 1 deletion(-)
+> >>
+> >> diff --git a/fs/namei.c b/fs/namei.c
+> >> index 8a34d79..d0b4549 100644
+> >> --- a/fs/namei.c
+> >> +++ b/fs/namei.c
+> >> @@ -3126,7 +3126,7 @@ int vfs_mknod(struct inode *dir, struct dentry *dentry, umode_t mode, dev_t dev)
+> >>  	if (error)
+> >>  		return error;
+> >>  
+> >> -	if ((S_ISCHR(mode) || S_ISBLK(mode)) && !capable(CAP_MKNOD))
+> >> +	if ((S_ISCHR(mode) || S_ISBLK(mode)) && !nsown_capable(CAP_MKNOD))
 > > 
-> > Patch looks fine.  AFAIK we're still waiting on Aristeu's patchset to
-> > hit upstream.  As your patches are simpler I'd prefer, if there is
-> > churn, for yours to be refactored than his.
+> > I realize you're arguing that devicens is enough, but how about
+> > doing inode_capable(dir, CAP_MKNOD) instead?
 > > 
-> I have no problem with that. There is also a small build issue here that
-> needs to be fixed. If you allow me, with my guarantees that the patch
-> will be preserved in spirit I will keep your ack after any refactoring =)
-> 
+> I see no reason not to do it.
 
-Of course :)  Please keep my ack on it so long as you don't feel any
-substantive changes were needed :)
+Cool, with that
+
+Acked-by: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+
+thanks.
 
 -serge
