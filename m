@@ -1,11 +1,13 @@
 From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [PATCH 0/4] fix depvpts in user namespaces
-Date: Fri, 15 Mar 2013 13:13:39 +0400
-Message-ID: <1363338823-25292-1-git-send-email-glommer@parallels.com>
+Subject: [PATCH 2/4] fs: allow dev accesses in userns in controlled situations
+Date: Fri, 15 Mar 2013 13:13:41 +0400
+Message-ID: <1363338823-25292-3-git-send-email-glommer@parallels.com>
+References: <1363338823-25292-1-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1363338823-25292-1-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,52 +18,78 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
+So far, unless the filesystem explicitly marks it (and most don't),
+processes running in user namespaces won't be allowed to access any
+devices. Although this makes sense, this is a quite restrictive rule,
+since a lot of those accesses would be perfectly safe: aside from the
+simple char devices in /dev/ like null, zero, etc, it is perfectly
+possible to assign a device for usage inside a namespace if we can
+establish trust in that operation.
 
-devpts mounts in user namespaces is queued for 3.9. However, while playing
-with it I found it to be less than ideal. Although it could possibly work
-with custom software that can be made to point to /dev/pts/ptmx, a few things
-prevent it from working correctly for people that, like us, are booting full
-distributions.
+We will do that by marking the mount as MNT_NODEV_NS instead of
+MNT_NODEV. This is because if the mount operation explicitly asked for
+nodev, we ought to respect it. MNT_NODEV_NS will forbid accesses if the
+task is not on a device cgroup. If it is, we will rely on the control
+rules in devcg to intermediate the access an tell us what those tasks
+can or cannot do.
 
-In those scenarios, things like udev will kick in, maybe remount /dev undoing
-any setup we might have done, and then software like sshd or anything else
-calling openpty will search for /dev/ptmx, not /dev/pts/ptmx.
+There is precedence for that with memcg: although we don't explicitly
+test it like I am doing it here, we are allowing tmpfs mounts to happen
+in user namespaces because memcg will contain them.
 
-One of the problems that I am addressing in here is that we are disallowing
-mknod in usernamespaces. Although I understand the motivation for that, I
-believe that to be too restrictive, specially because we already control access
-to the files separately. There should be no harm in mknod'ing something per se,
-if manipulating it is forbidden.
+Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Eric Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+---
+ fs/namei.c            | 4 ++++
+ fs/namespace.c        | 2 +-
+ include/linux/mount.h | 2 ++
+ 3 files changed, 7 insertions(+), 1 deletion(-)
 
-That too, however, is too restrictive. Following the precedence that we set by
-letting memcg manage the memory for tmpfs mounts, I am doing the same here with
-the device cgroup. With the exception that instead of suggesting, here we have
-a way to actually enforce it. Unless the mount was specifically marked as
-nodev, reads and writes will be allowed to proceed if a device cgroup is
-containing the process. The device cgroup will then be the one responsible for
-setting fine grained access about which devices can and cannot be manipulated.
-
-Last, /dev/ptmx will still always be the global ptmx device. We need to somehow
-link it to our namespaces'. My proposal is to multiplex it and return the
-correct "root ptmx" depending on which userns is reading that device.
-
-Glauber Costa (4):
-  dev_cgroup: keep track of which cgroup is the root cgroup
-  fs: allow dev accesses in userns in controlled situations
-  fs: allow mknod in user namespaces
-  devpts: fix usage in user namespaces
-
- fs/devpts/inode.c        | 157 +++++++++++++++++++++++++++++++++++++++++++++--
- fs/namei.c               |   6 +-
- fs/namespace.c           |   2 +-
- include/linux/mount.h    |   2 +
- include/linux/security.h |   1 +
- security/device_cgroup.c |  15 ++++-
- 6 files changed, 173 insertions(+), 10 deletions(-)
-
+diff --git a/fs/namei.c b/fs/namei.c
+index 57ae9c8..8a34d79 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -2356,6 +2356,10 @@ static int may_open(struct path *path, int acc_mode, int flag)
+ 	case S_IFCHR:
+ 		if (path->mnt->mnt_flags & MNT_NODEV)
+ 			return -EACCES;
++
++		if ((path->mnt->mnt_flags & MNT_NODEV_NS) &&
++			!task_in_child_devcgroup(current))
++			return -EACCES;
+ 		/*FALLTHRU*/
+ 	case S_IFIFO:
+ 	case S_IFSOCK:
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 50ca17d..fe8127e 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -1935,7 +1935,7 @@ static int do_new_mount(struct path *path, const char *fstype, int flags,
+ 		 */
+ 		if (!(type->fs_flags & FS_USERNS_DEV_MOUNT)) {
+ 			flags |= MS_NODEV;
+-			mnt_flags |= MNT_NODEV;
++			mnt_flags |= MNT_NODEV_NS;
+ 		}
+ 	}
+ 
+diff --git a/include/linux/mount.h b/include/linux/mount.h
+index d7029f4..8d190e4 100644
+--- a/include/linux/mount.h
++++ b/include/linux/mount.h
+@@ -32,6 +32,8 @@ struct mnt_namespace;
+ #define MNT_SHRINKABLE	0x100
+ #define MNT_WRITE_HOLD	0x200
+ 
++#define MNT_NODEV_NS	0x400   /* userns mount, and nodev not explicit */
++
+ #define MNT_SHARED	0x1000	/* if the vfsmount is a shared mount */
+ #define MNT_UNBINDABLE	0x2000	/* if the vfsmount is a unbindable mount */
+ /*
 -- 
 1.8.1.2
