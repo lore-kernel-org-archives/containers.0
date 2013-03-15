@@ -1,15 +1,16 @@
 From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/4] fix depvpts in user namespaces
-Date: Fri, 15 Mar 2013 09:00:40 -0500
-Message-ID: <20130315140040.GB3782__39410.7676264413$1363356081$gmane$org@sergelap>
+Subject: Re: [PATCH 1/4] dev_cgroup: keep track of which cgroup is the root
+	cgroup
+Date: Fri, 15 Mar 2013 09:07:43 -0500
+Message-ID: <20130315140743.GC3782__9596.77808355099$1363356502$gmane$org@sergelap>
 References: <1363338823-25292-1-git-send-email-glommer@parallels.com>
-	<87boalt0vi.fsf@xmission.com>
+	<1363338823-25292-2-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <87boalt0vi.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <1363338823-25292-2-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,71 +20,80 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> writes:
+Quoting Glauber Costa (glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
+> Most of the other subsystems already keep track of that in some way.  We
+> will do that internally and provide a test to determine whether or not
+> our task is in a device cgroup that is not the root one. We can relax
+> some of our checks in that case, trusting that whoever set device cgroup
+> rules will be responsible to control access to their devices.
 > 
-> > Hi,
-> >
-> > devpts mounts in user namespaces is queued for 3.9. However, while playing
-> > with it I found it to be less than ideal. Although it could possibly work
-> > with custom software that can be made to point to /dev/pts/ptmx, a few things
-> > prevent it from working correctly for people that, like us, are booting full
-> > distributions.
+> Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+> Cc: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Cc: Eric Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+
+Patch looks fine.  AFAIK we're still waiting on Aristeu's patchset to
+hit upstream.  As your patches are simpler I'd prefer, if there is
+churn, for yours to be refactored than his.
+
+Acked-by: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+
+> Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+> ---
+>  include/linux/security.h |  1 +
+>  security/device_cgroup.c | 15 +++++++++++++--
+>  2 files changed, 14 insertions(+), 2 deletions(-)
 > 
-> Full distributions that have not been modified to be minimally container
-> aware.
-
-Right, in fact in this case it doesn't need to be minimally container
-aware, you just create the bind mount yourself and init just needs to
-accept that it shouldn't touch it.
-
-> > In those scenarios, things like udev will kick in, maybe remount /dev undoing
-> > any setup we might have done, and then software like sshd or anything else
-> > calling openpty will search for /dev/ptmx, not /dev/pts/ptmx.
+> diff --git a/include/linux/security.h b/include/linux/security.h
+> index eee7478..fe58f71 100644
+> --- a/include/linux/security.h
+> +++ b/include/linux/security.h
+> @@ -96,6 +96,7 @@ extern int cap_task_setscheduler(struct task_struct *p);
+>  extern int cap_task_setioprio(struct task_struct *p, int ioprio);
+>  extern int cap_task_setnice(struct task_struct *p, int nice);
+>  extern int cap_vm_enough_memory(struct mm_struct *mm, long pages);
+> +bool *task_in_child_devcgroup(struct task_struct *task);
+>  
+>  struct msghdr;
+>  struct sk_buff;
+> diff --git a/security/device_cgroup.c b/security/device_cgroup.c
+> index 1c69e38..03df5b2 100644
+> --- a/security/device_cgroup.c
+> +++ b/security/device_cgroup.c
+> @@ -63,6 +63,16 @@ static inline struct dev_cgroup *task_devcgroup(struct task_struct *task)
+>  	return css_to_devcgroup(task_subsys_state(task, devices_subsys_id));
+>  }
+>  
+> +static struct dev_cgroup *root_devcgroup;
+> +bool task_in_child_devcgroup(struct task_struct *task)
+> +{
+> +	bool ret;
+> +	rcu_read_lock();
+> +	ret = task_devcgroup(task) != root_devcgroup;
+> +	rcu_read_unlock();
+> +	return ret;
+> +}
+> +
+>  struct cgroup_subsys devices_subsys;
+>  
+>  static int devcgroup_can_attach(struct cgroup *new_cgrp,
+> @@ -197,9 +207,10 @@ static struct cgroup_subsys_state *devcgroup_css_alloc(struct cgroup *cgroup)
+>  	INIT_LIST_HEAD(&dev_cgroup->exceptions);
+>  	parent_cgroup = cgroup->parent;
+>  
+> -	if (parent_cgroup == NULL)
+> +	if (parent_cgroup == NULL) {
+>  		dev_cgroup->behavior = DEVCG_DEFAULT_ALLOW;
+> -	else {
+> +		root_devcgroup = dev_cgroup;
+> +	} else {
+>  		parent_dev_cgroup = cgroup_to_devcgroup(parent_cgroup);
+>  		mutex_lock(&devcgroup_mutex);
+>  		ret = dev_exceptions_copy(&dev_cgroup->exceptions,
+> -- 
+> 1.8.1.2
 > 
-> I believe udev stopped running in containers a year or so ago.
-
-No, udev runs fine in containers, we just don't allow udevadm trigger.
-
-> > One of the problems that I am addressing in here is that we are disallowing
-> > mknod in usernamespaces. Although I understand the motivation for that, I
-> > believe that to be too restrictive, specially because we already control access
-> > to the files separately. There should be no harm in mknod'ing something per se,
-> > if manipulating it is forbidden.
-> 
-> mknod in userspace needs to be a separate patchset.  There is no need to
-> solve mknod in userspace to solve devpts.
-> 
-> 
-> > Last, /dev/ptmx will still always be the global ptmx device. We need to somehow
-> > link it to our namespaces'. My proposal is to multiplex it and return the
-> > correct "root ptmx" depending on which userns is reading that device.
-> 
-> Doable.  I still strongly prefer my version of having /dev/ptmx act like
-> a link to /dev/pts/ptmx.  Letting the mount namespace control it.
-
-Right, Glauber have you seen this patch?  Eric did already solve this.
-(And again that's a nice safeguard, but it shouldn't be necessary)
-
-> In testing that works, and it allows a lot of devpts complexity to just
-> go away.  For older versions of udev you can even configure them with a
-> rule to make /dev/ptmx a symlink to /dev/pts/ptmx.  Newer versions of
-> udev completely gave up on creating devices and can longer be configured
-> to do anything useful in this regard.
-> 
-> So we might even be able to just get away with a bit of udev and
-> devtmpfs configuration.
-
-devtmpfs?  Until we get multiple separate mounts of devtmpfs, don't use
-it in a container :)
-
-> And treat devpts as if newinstance is always
-> specified.  Certainly that has worked in my testing so far.
-> 
-> Eric
-
--serge
