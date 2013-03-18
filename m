@@ -1,17 +1,12 @@
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/4] fix depvpts in user namespaces
-Date: Sun, 17 Mar 2013 22:20:52 -0500
-Message-ID: <20130318032052.GA5958__12870.3099130236$1363576896$gmane$org@sergelap>
-References: <1363338823-25292-1-git-send-email-glommer@parallels.com>
-	<87boalt0vi.fsf@xmission.com> <20130315140040.GB3782@sergelap>
-	<5143333E.1040100@parallels.com> <20130315152133.GB24305@sergelap>
-	<51433DBE.9020109@parallels.com> <87txoce5qy.fsf@xmission.com>
+From: =?windows-1251?B?x//s8Oj/?= <ruskova-ajelita20-HPQIj1OAFZMvJsYlp49lxw@public.gmane.org>
+Subject: =?windows-1251?B?weXr++Ug4Ovj7vDo8uz7IO7v8ujs6Ofg9ujo?=
+Date: Mon, 18 Mar 2013 11:36:27 +0400
+Message-ID: <34C3C276197546528CA33506DA4AF660@pbyosb>
+Reply-To: =?windows-1251?B?x//s8Oj/?= <yuliyapekunova25-HPQIj1OAFZMvJsYlp49lxw@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1251"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87txoce5qy.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,51 +16,13 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: atlentikes-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, tester02-1+5w3x2kJ8A@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, 0dqj-v-i3z107WHFKA@public.gmane.org, fortunahajo-PWztcFTdOMWHXe+LvDLADg@public.gmane.org, kriga-710Ujqo4hWeHXe+LvDLADg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> writes:
-...
-> > What it a /dev/ptmx already exist? will it use it? That would be bad,
-> > since that /dev/ptmx could be a host-side one. I actually believe
-> > linking to $rootfs/dev/pts/ptmx is more robust than my solution against
-> > remounts. So provided it can guarantee that the ptmx is not ever the
-> > root ptmx, I would ack that.
-> 
-> For those playing with udev, especially older udev where udev is still
-> udev and creates devices you can use the following udev rule to create
-> the pts/ptmx symlink.
-> 
-> KERNEL=="ptmx" NAME:="pts/ptmx" SYMLINK="ptmx"
-> 
-> Before we do anything clever in the kernel it is definitely worth seeing
-> how far we can take that little udev rule.
-
-Before it was decided that it was ok to modify core packages to
-accomodate containers, we had to install (non-standard) init jobs to
-detect it was in a container and if so modify some behavior - for
-instance to bind-mount a smaller /lib/init/fstab so that mountall
-wouldn't try to mount some things.  That way the rootfs had to be
-updated to run in a container, but could then still be used as a
-rootfs for non-containers.
-
-...
-
-> As much as I hate the notion I suspect for most of device management
-> what we want is to act like devtmpfs, and run all of the device node
-> creation etc outside of the container (possibly even with bind mounts).
-
-So you mean a task which is unprivileged on the host, privileged wrt the
-container, and on host fs namespace, which bind mounts the host /dev
-files into the container?
-
-> Acting like devtmpfs should be something that is possible with no kernel
-> changes.   Whereas allowing unprivileged processes to create device
-> nodes probably has issues I haven't thought of yet.
-
-Not sure what 'acting like devtmpfs' means (especially in contrast to
-acting like udev) - maybe i need to go look at the code.
-
--serge
+xOv/IPfl4+4g7+vg8ujy/CDy4Oog7O3u4+4g7eDr7uPu4j8KCjE1TyDg6/zy5fDt4PLo4u379SDy
+5fXt7uvu4+jpIO7v8ujs6Ofg9ujoIO3g6+7j7uLu4+4g4fDl7OXt6AoKaHR0cDovL2NhcnJlZXBp
+aGFyYmlvLm5ldG5lLm5ldAoKz+7k8O7h7eXlIOfk5fH8CgrCIO/u6+3u7CDx7uHr/uTl7ejoIO3u
+8Owg7fvt5SDk5enx8uLz/vnl4+4g4iDQ7vHx6Ogg5+Dq7u3u5ODy5ev88fLi4ApfX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcg
+bGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMu
+bGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
