@@ -1,19 +1,21 @@
-From: Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH RFC] audit: provide namespace information in user
 	originated records
-Date: Wed, 20 Mar 2013 21:46:03 -0400
-Message-ID: <1363830363.17962.18.camel@localhost>
-References: <1363619405-6419-1-git-send-email-arozansk@redhat.com>
-	<877gl48iaz.fsf@xmission.com> <20130319122408.GC20187@redhat.com>
+Date: Wed, 20 Mar 2013 21:21:16 -0500
+Message-ID: <20130321022116.GA14502@sergelap>
+References: <877gl48iaz.fsf@xmission.com> <20130319122408.GC20187@redhat.com>
 	<874ng7gcst.fsf@xmission.com> <20130320154503.GF20187@redhat.com>
-	<20130320183652.GA13839@sergelap> <1363804924.2333.12.camel@localhost>
-	<20130320184952.GA16488@sergelap> <1363806092.2333.19.camel@localhost>
-	<87y5dh8xl7.fsf@xmission.com>
+	<20130320183652.GA13839@sergelap>
+	<1363804924.2333.12.camel@localhost>
+	<20130320184952.GA16488@sergelap>
+	<1363806092.2333.19.camel@localhost> <87y5dh8xl7.fsf@xmission.com>
+	<1363830363.17962.18.camel@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87y5dh8xl7.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1363830363.17962.18.camel@localhost>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,101 +25,17 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, 2013-03-20 at 16:23 -0700, Eric W. Biederman wrote:
-> Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
-> 
-> > On Wed, 2013-03-20 at 13:49 -0500, Serge Hallyn wrote:
-> >> Quoting Eric Paris (eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
-> >> > On Wed, 2013-03-20 at 13:36 -0500, Serge Hallyn wrote:
-> >> > > Quoting Aristeu Rozanski (arozansk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
-> >> > > > This is a bit fuzzy to me, perhaps due I'm not fully understanding
-> >> > > > userns implementation yet, so bear with me:
-> >> > > > I thought of changing so userns would not grant CAP_AUDIT_WRITE and
-> >> > > > CAP_AUDIT_CONTROL unless the process already has it (i.e. it'd require
-> >> > > 
-> >> > > Seems like CAP_AUDIT_WRITE should be targeted against the
-> >> > > skb->netns->userns.  Then CAP_AUDIT_WRITE can be treated like any other
-> >> > > capability.  Last I knew (long time ago) you had to be in init_user_ns
-> >> > > to talk audit, but that's ok - this would just do the right thing in
-> >> > > any case.
-> >> > 
-> >> > kauditd should be considered as existing in the init user namespace.  So
-> >> > I'd think we'd want to check if the process had CAP_AUDIT_WRITE in the
-> >> > init user namespace and if so, allow it to send messages.  Who care what
-> >> > *ns the process exists in.  If it has it in the init namespace, go
-> >> > ahead.  Thus the process that created the container would need
-> >> > CAP_AUDIT_WRITE in the init namespace for this to all work, right?
-> >> 
-> >> Yes.  What I was suggesting is intended to work if that situation ever
-> >> changes.  But I have zero complaints about doing it as you say, as I
-> >> doubt it ever will/ought to change.
-> >> 
-> >> That basically means CAP_AUDIT_WRITE would be worthless in a non-init
-> >> userns.  That's fine - at least the rules would be consistent.
-> >
-> > [veering away from this particular patch]
-> >
-> > We are also talking about adding a CAP_AUDIT_READ and sending messages
-> > via multicast on the audit socket.  The problem is I don't know how the
-> > audit socket could work in the network namespace world.
-> 
-> Hmm.  I don't quite know how CAP_AUDIT_READ could work.  When delivering
-> a message to a socket you really don't know who is on the other end.
-> 
-> > Right now kauditd has:
-> >
-> > audit_sock = netlink_kernel_create(&init_net, NETLINK_AUDIT, &cfg);
-> >
-> > So there won't ever be anything on the kernel side of the audit socket
-> > in a non-init network namespace.  Lets say that is fixed somehow (I
-> > assume it's possible?  something? magic pixies?)
-> 
-> One socket for each network namespace...  It is a pain but doable.
-> 
-> > I think we'd somehow
-> > need to do the CAP_AUDIT_READ check against the user namespace
-> > associated with the network namespace in question?  But what messages
-> > should go to this userspace auditd?
-> 
-> Messages generated by processes in that user namespace?
+Quoting Eric Paris (eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
+> So the kernel socket(s) would be per network namespace, but we divide
+> messages per user namespace?  Which socket do I send them on,
+> considering the possible crazy many<->many mappings between user and
+> network namespaces.  It all makes me cry a little.
 
-So the kernel socket(s) would be per network namespace, but we divide
-messages per user namespace?  Which socket do I send them on,
-considering the possible crazy many<->many mappings between user and
-network namespaces.  It all makes me cry a little.
+not many-many - each netns is owned by exactly one userns.  The userns
+from which the netns was created.
 
-> > Going to have to have audit namespaces to.  But only CAP_AUDIT_READ
-> > would make sense in the new audit namespace...
-> 
-> Given the connection of audit and security I think if we add support for
-> a non-global auditd the user namespace seems to fit.  The user namespace
-> is certainly where all of the security connected bits go.
-> 
-> Architecturally it gets a little tricky as it seems to make sense to
-> generate audit messages that make sense to the process receiving them,
-> which would mean actually generating a different audit message for
-> different receiving contexts.
-
-Assuming as today, we only have 1 auditd and it is system wide.  We just
-attach consistent identifiable information (aka proc inode number, which
-people already use) to the audit records (this patch only does user
-messages, but attaching to all messages needs to be done).
-
-Moving to multiple auditd's starts to get really hard, and we might not
-ever pursue it  :)
-
-> I find the auditsc code odd.  We log file descriptor numbers when a file
-> is mmaped?  What is something so process relative good to anyone?
-
-When an earlier record showed that fd being opened?  I dunno....
-
-> On a slightly different tangent.  Do we want to update the AUDIT_CAPSET
-> message to report the user namespace whose caps we are changing or
-> perhaps to surpress the message outside of the initial user namespace.
-
-The extension of Aris's patch to syscall audit instead of just userspace
-audit would take care of this.
+-serge
