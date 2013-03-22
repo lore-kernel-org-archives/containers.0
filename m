@@ -1,15 +1,12 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: [PATCH 1/3] net: Clean up SCM_CREDENTIALS code
-Date: Thu, 21 Mar 2013 10:52:51 -0700
-Message-ID: <CALCETrWaPGqcT67vtKZYQJ-_CFE46B+08qTuxJabg7HbtaDr4g@mail.gmail.com>
-References: <cover.1363815201.git.luto@amacapital.net>
-	<3d7ffb6d9b73971f1a526fc490ef84ef7a33eecc.1363815201.git.luto@amacapital.net>
-	<87k3p1z1iq.fsf@xmission.com>
+From: =?utf-8?B?5YiY5pmT6Zye?= <contact-G/ppzilQEF1pdBtGC2z9/yuJdK5jnXTV@public.gmane.org>
+Subject: (unknown)
+Date: Fri, 22 Mar 2013 10:21:47 +0800
+Message-ID: <20130322102153786335@nichigeiken.sakura.ne.jp>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87k3p1z1iq.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Subject: 
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,71 +16,82 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Mar 20, 2013 at 11:54 PM, Eric W. Biederman
-<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
-> Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> writes:
->
->> I was curious whether the uids, gids, and pids passed around worked
->> correctly in the presence of multiple namespaces.  I gave up trying
->> to figure it out: there are two copies of the pid (one of which has
->> type u32, which is odd), a struct cred * (!), and a separate kuid
->> and kgid.  IOW, all of the relevant data is stored twice, and it's
->> unclear which copy is used when.
->>
->> I also wondered what prevented a SO_CREDENTIALS message from being
->> recieved when the credentials weren't filled out.  Answer: not very
->> much (and there have been serious security bugs here in the past).
->>
->> So just rewrite the thing to store a pid_t relative to the init pid
->> ns, a kuid, and a kgid, and to explicitly track whether the data is
->> filled out.
->>
->> I haven't played with the secid code.  I have no idea whether it has
->> similar problems.
->>
->> I haven't benchmarked this, but it should be a respectable speedup
->> in the cases where the credentials are in use.
->
-> The basic principle of no longer passing the struct cred we can
-> certainly do.
->
-> I am less convinced about the struct pid, but arguably that is the
-> proper approach.
-
-I agree it's not pretty.  OTOH it's faster, simpler, and I don't see
-any benefit of keeping an explicit struct pid reference.  With this
-approach, the only way to attack the code is to get a pid to be reused
-or to impersonate pid 0 and try to confuse something.  But the other
-way has the same issue, just with a shorter race window.
-
->
-> A patch that proclaims that you didn't understand what the code was
-> doing but you changed it anyway, suggests there are subtle bugs
-> in there that you overlooked.
-
-I'll improve the changelog text.  After following the code around, I
-now understand what was going on.
-
->
-> Certainly killing NETLINK_CB(sbk).ssk is a bug.
-
-As noted in my other email, I'll drop that patch entirely.
-
->
-> I do think there is a lot of good stuff in here and if you break this up
-> into smaller patches simpler patches, and keep an eye on the speed of
-> sending things messages without credentials.  I am pretty certain you
-> can cook up something that is mergable.
-
-I'm not sure how to split it up more without making it messier.  Once
-the data structure changes, most of the rest of the changes have to
-come along.
-
-In any case, I won't send out a new version until I get some comments
-on the code (other than the ssk thing).
-
---Andy
+5bqm5Lmf5peg5rOV6L+96LW25Yir5Lq65bey57uP5LiI6YeP55qE55Sf5ZG96ZW/5bqm44CC5omA
+5Lul77yM5oiR5biM5pyb5oiR5Lus5bGx6LSi5aSn55qE5q+P5LiA5Liq5paw55Sf6YO96IO954mi
+54mi6ZOt6K6w77ya4oCc6YCd6ICF5aaC5pav5aSr77yM5LiN6IiN5pi85aSc44CC4oCd54+N5oOc
+5YiG56ys5LiA77yM5a2m5Lya566h55CG5pe26Ze077yMOTg3NzTopoHmnInigJzmoYPoirHnj43m
+mKXlpoLnj43lkb3vvIzlv5fogIXmg5zml7boi6Xmg5zph5HigJ3nmoTml7bpl7Top4Llv7Xlkozn
+tKfov6vmhJ/jgILlk4jkvZvlpKflrablm77kuabppoblhoXplYzliLvnnYDkuIDlj6Xor53vvJri
+gJzkvaDojZLlup/nmoTku4rml6XvvIzmraPmmK/mmKjml6XmronouqvkuYvkurrnpYjmsYLnmoTm
+mI7ml6XjgILigJ3liJrliJrnu4/ljobpq5jogIPvvIzmiJHnkIbop6PkvaDku6zmg7PopoHooaXl
+gb/kuYvliY3miYDlpLHljrvnmoTvvIzni4LnnaHvvIznnaHliLDoh6rnhLbphpLvvIzlj6/mmK/n
+rYnkvaDku6zmn5DkuIDkuKrlpJzmmZrlnKjoi43nqbnkuK3phpLmnaXigJTigJTkvaDku6zmnInl
+j6/og73kvJrlj5HnjrDlhoXlv4PmmK/pgqPkuYjnqbromZrvvIznlJ/lkb3mmK/pgqPkuYjlr6Hm
+t6HmuIXotKvjgILlpKflrablm5vlubTpmaTljrvoioLlgYfml6XvvIzlj6rmnIlUaGUgY3VsdGl2
+YXRpb24gb2Yga25vd2xlZGdlIGJ5IGV4cGVyaW1lbnQsIG9ic2VydmF0aW9uLCBhbmQg5LiD55m+
+5aSa5aSp77yM5YaN6Zmk5Y675ZCD6aWt44CB552h6KeJ5ZKM5aix5LmQ77yM55yf5q2j55qE5a2m
+5Lmg5pe26Ze055u45L+h5LiN6Laz5LiA5bm044CC5b2T5L2g5oSP6K+G5Yiw6L+Z5LiA5YiH5oOz
+6KaB6KGM5Yqo5pe277yM5Y205Y+R546w6Ieq5bex5Y2z5L2/55So55m+57Gz5Yay5Yi655qE6YCf
+DQoNCuaymea5luadkSAgdjEgDQrpmLLlrojmiJDlip92beWknCANCue6ouWHpOiPnGJu5oOFIA0K
+5bC95ZyoIHd3dy43NzdvbnMuY29tDQoNCg0KDQrnrKzkuInvvIzlrabkvJrmraPnoa7nmoTniLHv
+vIzopoHku6XigJzms7DlsbHkuI3lvIPmipTlnJ/jgIHmsrPmtbfkuI3mi6nnu4bmtYHigJ3nmoTl
+jIXlrrnog7jmgIDljrvniLHjgILmiJHlkozku4rlubTmr5XkuJrnmoTkvaDku6znmoTlrablk6Xl
+kozlrablp5Dku6zmm77or7TvvJrku5bku6zlhYjopoHigJzlhYvmmI7ls7vlvrfigJ3vvIzogIzl
+kI7miY3og73igJzmoLznianoh7Tnn6XigJ3vvIzmiJHkuZ/lkozku5bku6zor7TopoHku6XlpK/l
+rp7mt7HljprnmoTnn6XjgIHnnJ/or5rmgrLmgq/nmoTmg4XjgIHlv6Dor5rlj4vniLHnmoTmhI/l
+kozmnInmnaHkuI3ntIrnmoTooYzmnaXlrozlloToh6rlt7HnmoTkurrmoLzjgILmiJHkuZ/mg7Pl
+kozkvaDku6zor7TvvJrov5nkuIDliIforqnkurrlv4PlkJHlvoDkuYvnmoTnvo7lpb3lk4Hlvrfl
+kozkurrmoLzpg73mnInkuIDkuKrmuKnmmpbnmoTln7rnoYDigJTigJTpgqPlsLHmmK/niLHjgILi
+gJzkvY3ljZHmnKrmlaLlv5jlv6flm73igJ3mmK/niLHvvIzigJzlk4DmsJHnlJ/kuYvlpJroibDi
+gJ3mmK/niLHvvIzmspnmuZbmnZHmtbflhoXmg5znn6Xlt7HmmK/niLHvvIzigJzosIHoqIDlr7jo
+jYnlv4PvvIzmiqXlvpfkuInmmKXmmZbigJ3ov5jmmK/niLHvvIzlpKfniLHml6DnlobmhJ/liqjl
+pKnvvIzlsI/niLHml6DoqIDmhI/nu7Xnu7XjgILnnJ/mraPnmoTniLHmmK/kuIDnp43mmbrmhafl
+kozlkbznj6DlooPnlYzvvJrlpoLmnpzkvaDniLHkvaDnmoTnpZblm73vvIzor7flhYjmt7HniLHk
+vaDnmoTlkIzog57vvIzkuI3opoHooqvkuKrliKvnmoTlo7Dpn7Plm7DmibDvvJvlpoLmnpzkvaDn
+iLHkvaDnmoTnlJ/mtLvvvIzor7flhYjmt7HniLHmiJHku6znlJ/lrZjnmoTlnLDnkIPvvIzlk6rm
+gJXlj6rmmK/ohJrkuIvnmoTkuIDmoKrlsI/ojYnvvJvlpoLmnpzkvaDmib7liLDlubbniLHkuIrk
+uobkvaDnmoTniLHkurrvvIzor7flhYjnu4/ov4fmiJDnhp/nmoTmgJ3ogIPvvIzlj6/og73mjaLk
+uIDkuKrop5LluqblsLHkvJrlj5HnjrDpo47miL/ovabmn5Tml6XoloTmmKXnirnml6nvvIzoirHn
+lZnmnp3lpLTmm7TlppblqIbjgILov5nlsLHmmK/niLHvvIzml6LpnIDopoHlpKrpmLPkuIDmoLfo
+gIDnnLzmuKnmmpbnmoTlipvph4/vvIzkuZ/pnIDopoHmnIjkuq7kuIDmoLfmt6HnhLbnkIbmgKfn
+moTlhYnoipLjgIINCiAgICDnrKzlm5vvvIzlrabkvJrnp4nmjIHmoqbmg7Plkozkv6HpmLLlrojm
+iJDlip/ku7DvvIzopoHmnInigJzplb/po47noLTmtarkvJrmnInml7bvvIznm7TmjILkupHluIbm
+tY7msqfmtbfigJ3nmoTosarmg4Xlo67lv5fjgILpu5HkurrpooboopbpqazkuIHot6/lvrfph5Hm
+m77ov5nmoLfor7TvvJrigJzmiJHmoqbmg7PmnInkuIDlpKnvvIzmt7HosLflvKXlkIjvvIzpq5jl
+sbHlpLflubPvvIzmrafot6/ljJblnabpgJTvvIzmm7LlvoTmiJDpgJrooaLvvIzmnInkuobov5nk
+uKrkv6Hlv7XvvIzmiJHku6znu4jmnInkuIDlpKnkvJrojrflvpfoh6rnlLHjgILigJ3ov5nlhbbk
+uK3ljIXlkKvkuobkuIDnp43orqnkurrpobbnpLzohpzmi5znmoTnsr7npZ7lsLHlj6vlgZrmoqbm
+g7Plkozkv6Hku7DjgILlnKjluqfnmoTlkITkvY3lkIzlrablpKfpg73mmK85MOWQjuWHuueUn+ea
+hCznjrDlnKjnpL7kvJrkuIrlr7k5MOWQjuacieS4gOS6m+WBj+inge+8jOS9huaYr+S9nOS4uuS4
+gOS4quaVmeiCsuW3peS9nOiAheaIkeWni+e7iOS5kOinguWcsOWIuuaenOeVquiNlOaeneebuOS/
+oemCo+S6m+W+ruS4jei2s+mBk+eahOi0n+mdouW9ouixoeS7o+ihqOS4jeS6huacneawlOiTrOWL
+g+eahDkw5ZCO6L+Z5Luj5Lq644CC5oiR5rex5L+h5L2g5Lus6Jm954S25Y+j5Y+j5aOw5aOw6K+0
+5oiS5o6J5LqG55CG5oOz77yM5L2G5piv5b+D6YeM5LiA5a6a5piO55m96YCD6LWw55qE5piv6Ieq
+5bex77yM6ICM5LuO5p2l5LiN5piv5qKm5oOz44CC5L2g5Lus55qE5Liq5oCn562+5ZCN5pWF5L2c
+5rKn5qGR5ZKM57ud5pyb77yM5Y+v5piv6IOM5Zyw6YeM5L2g5Lus5LuN54S25Lya5Li65LqG5LiA
+5Y+l4oCc6LCB55+l6YGT5oiR5Lus6K+l5qKm5b2S5L2V5aSE77yM6LCB55+l6YGT5bCK5Lil5bey
+5rKm5Li65L2V54mp4oCd55qE5Y+w6K+N5oSf5Yqo55qE5LiA5aGM57OK5raC44CC5oiR55u45L+h
+5L2g5Lus5YaF5b+D5rex5aSE5by654OI55qE5ri05pyb5LiA56eN5Lic6KW/77yM5bCx5Y+r5YGa
+5qKm5oOz44CC5oiR6KG35b+D5Zyw5biM5pyb5LuO5LuK5aSp6LW377yM5oiR5Lus5LiA6LW35Yqq
+5Yqb77yM5Yqq5Yqb5bCG5L2g5Lus576O5aW955qE55CG5oOz5aSW5YyW5oiQ5YW35L2T55qE5ou8
+5pCP5ZCR5LiK44CB5Y+L54ix5LqS5biu44CB5YuH5LqO5ouF5b2T5ZKM6IyD57qi5p6c5pWi5Z2a
+5by644CC5LiA5Y+25omN5a2m77yM5paR6amz5LqG6Z2S55+z5bCP6Lev44CC5Li06aOO5pyI5LiL
+77yM5p+T57qi5LqG5LiA5Zyw55CG5oOz44CC6L+Z5bCx5piv5oiR5Lus5Y2z5bCG5o+P57uY55qE
+5bGx6LSi5aSn5pyA576O5aW955qE6aOO5YWJ44CCDQogICAg5ZCM5a2m5Lus77yB5L2g5Lus5paw
+55qE5Lq655Sf5byA5aeL5LqG77yB5L2c5Li65L2g5Lus55qE5qCh6ZW/77yM5oiR5pyA5ZCO5oOz
+5ZKM5aSn5a626K+077ya5peg6K665L2g6Lqr5Zyo5L2V5pa577yM5Y+q6KaB5L2g6YGH5Yiw5Zuw
+6Zq+77yM5by65aSn55qE5bGx6LSi5aSn5Lya5oiQ5Li65L2g5Z2a5by655qE5ZCO55u+77yM5Y+q
+6KaB5L2g5oOz6KaB6aOe57+U77yM5by65aSn55qE5bGx6LSi5aSn5Lya5Li65L2g5o+S5LiK6IW+
+6aOe55qE57+F6IaA44CC6K+35q+P5LiA5Liq5bGx6LSi5aSn5Lq66ZOt6K6w77ya5Y+q5pyJ5LiA
+5p2h6Lev5LiN6IO96YCJ5oup4oCU4oCU6YKj5bCx5piv5ZG854+g5pS+5byD55qE6LevO+WPquac
+ieS4gOadoei3r+S4jeiMg+e6ouiDveaLkue7neKAlOKAlOmCo+WwseaYr+aIkOmVv+eahOi3r+OA
+gueIseS4iuWxsei0ouWkp++8jOS9oOaIkOmVv+OAgeaIkOaJjeeahOWutu+8gQ0KICAgIOacgOWQ
+ju+8jOmihOelneWQhOS9jeWQjOWtpuWcqOWxsei0ouWkp+eahOWbm+W5tOmHjO+8mg0KICAgIOW/
+l+WvhOmysum5j+S4juaXtuS/sei/m+WGjeWPkeWxle+8jOawlOWCsuS5vuWdpOiHquW8uuS4jeaB
+r+iwseaWsOevh++8gQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5k
+YXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3Rp
+bmZvL2NvbnRhaW5lcnM=
