@@ -1,9 +1,12 @@
-From: MAILER-DAEMON-guL5vXkPpePIt3ynZaurr16hYfS7NtTn@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Mon, 25 Mar 2013 14:18:28 +0100 (CET)
-Message-ID: <20130325131828.5D86537801@mailf1.aemcom.net>
+From: =?windows-1251?B?1ODw9fPy5Ojt?= <majya_ergacheva15-HPQIj1OAFZMvJsYlp49lxw@public.gmane.org>
+Subject: =?windows-1251?B?zOX14O3o5+z7IO/w6OH76/zt7ukg8ODh7vL7?=
+	=?windows-1251?B?IPEgyujy4OXs?=
+Date: Mon, 25 Mar 2013 22:08:20 +0400
+Message-ID: <A9EB98D1211440ACB5688A23F3021A29@fadx>
+Reply-To: =?windows-1251?B?1ODw9fPy5Ojt?= <nadir-arzhaev15-HPQIj1OAFZMvJsYlp49lxw@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1623491324639312753=="
+Content-Type: text/plain; charset="windows-1251"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -14,115 +17,55 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: atlentikes-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, tester02-1+5w3x2kJ8A@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, 0dqj-v-i3z107WHFKA@public.gmane.org, fortunahajo-PWztcFTdOMWHXe+LvDLADg@public.gmane.org, kriga-710Ujqo4hWeHXe+LvDLADg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
-
---===============1623491324639312753==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="59D2E377FB.1364217508/mailf1.aemcom.net"
-Content-Transfer-Encoding: 7bit
-
-This is a MIME-encapsulated message.
-
---59D2E377FB.1364217508/mailf1.aemcom.net
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
-
-This is the mail system at host mailf1.aemcom.net.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to postmaster.
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<alessandro-9XUQFGAUjsNc60lfx3bYgQ@public.gmane.org>: host mail.eurotecno.it[81.88.234.171] said: 550
-    5.1.1 User unknown (in reply to RCPT TO command)
-
---59D2E377FB.1364217508/mailf1.aemcom.net
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; mailf1.aemcom.net
-X-Postfix-Queue-ID: 59D2E377FB
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Mon, 25 Mar 2013 14:18:13 +0100 (CET)
-
-Final-Recipient: rfc822; alessandro-9XUQFGAUjsNc60lfx3bYgQ@public.gmane.org
-Original-Recipient: rfc822;alessandro-9XUQFGAUjsNc60lfx3bYgQ@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; mail.eurotecno.it
-Diagnostic-Code: smtp; 550 5.1.1 User unknown
-
---59D2E377FB.1364217508/mailf1.aemcom.net
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
-
-Received: from localhost (localhost [127.0.0.1])
-	by mailf1.aemcom.net (Postfix) with ESMTP id 59D2E377FB
-	for <alessandro-9XUQFGAUjsNc60lfx3bYgQ@public.gmane.org>; Mon, 25 Mar 2013 14:18:13 +0100 (CET)
-X-Quarantine-ID: <rz2tM0-2GtfQ>
-X-AEMcom-Scanned-by: AEMcom mail service powered by Debian GNU/Linux and
-	amavisd-new
-X-Spam-Flag: NO
-X-Spam-Score: 4.898
-X-Spam-Level: ####
-X-Spam-Status: No, score=4.898 tagged_above=-9999 required=6
-	tests=[BAYES_60=1, FORGED_MUA_THEBAT_CS=1.15, RDNS_NONE=0.1,
-	SPF_FAIL=0.693, URIBL_BLACK=1.955]
-Received: from mailf.aemcom.net ([127.0.0.1])
-	by localhost (mailf1.aemcom.srv [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id rz2tM0-2GtfQ for <alessandro-9XUQFGAUjsNc60lfx3bYgQ@public.gmane.org>;
-	Mon, 25 Mar 2013 14:18:03 +0100 (CET)
-Received: from mx5.aemcom.net (unknown [172.18.100.181])
-	by mailf1.aemcom.net (Postfix) with ESMTP id 2EDA9377E2
-	for <alessandro-9XUQFGAUjsNc60lfx3bYgQ@public.gmane.org>; Mon, 25 Mar 2013 14:18:03 +0100 (CET)
-Received: from svr1.1800approved.com.au (unknown [27.50.89.175])
-	by mx5.aemcom.net (Postfix) with ESMTP id 42CBD431CF
-	for <alessandro-9XUQFGAUjsNc60lfx3bYgQ@public.gmane.org>; Mon, 25 Mar 2013 14:41:38 +0100 (CET)
-Received: from [27.50.89.175] by svr1.1800approved.com.au id cnlzXJZmY3dp with SMTP; Mon, 25 Mar 2013 23:40:41 +1000
-Date: Mon, 25 Mar 2013 23:40:41 +1000
-From: "Consult2 " <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.5.66.6) Business
-X-Priority: 3 (Normal)
-Message-ID: <6948051257.93673209959630-yO7qbpGA2CrzHGSzgIKhZ5VmFPZ1e2FS@public.gmane.org>
-To: <alessandro-9XUQFGAUjsNc60lfx3bYgQ@public.gmane.org>
-Subject: Il vostro ordine di riferimento e 55922
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-
-
-        =20
-Gentile utente, Monte Biz  =20
-
-La nostra azienda ha riassegnato il bilancio, e ora apparso nel nostro li=
-stino prezzi aggiornato         =20
-   =20
-Potete scaricarlo qui=20
-http://srop.ngo.ug/Info/Notare.zip?mz2iMiPjwQ=3Dalessandro-9XUQFGAUjsNc60lfx3bYgQ@public.gmane.org
-
-
-
---59D2E377FB.1364217508/mailf1.aemcom.net--
-
---===============1623491324639312753==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1623491324639312753==--
+0vDg7fHv7vDy7e4t6+7j6PHy6Pfl8erg/yDq7uzv4O3o/yAi0WhpbuAgzOBya+V0INHubfDgbvMi
+KNHM0Skg7/Do4+vg+ODl8iDt4CDv8ODq8uj35fHq6Okg8eXs6O3g8AoKCiLR5erw5fL7IPPx7+X4
+7e7pIPDg4e7y+yDxIMro8uDl7Aro6+gg6uDqINHAzM7R0s7f0sXL3M3OIO3g6fLoIO3g5OXm7e7j
+7iDv7vHy4OL56OrgIgoKCs7h8/fl7ejlIPHu8fLu6PLx/yDiIOMuIMzu8eri4CwKMDUg4O/w5ev/
+IDIwMTPjLiDxIDEwLjAwIOTuIDE3LjAwCgoKCgrd8u7yIPHl7Ojt4PAg4fPk5fIg7+7r5efl7ToK
+4uvg5OXr/Pbg7CDh6Oft5fHgIOgg6O3k6OLo5PPg6/zt++wg7/Dl5O/w6O3o7ODy5ev/7DsgCuTr
+/yDi8eX1LCDq8u4g7+vg7ejw8+XyIOjs7+7w8iDo6+gg8+blIOjs7+7w8ujw8+XyIPLu4uDw+yDo
+5yDK6PLg/y4KCgrH4Orz7+Dp8uUg8u7i4PD7IOIgyujy4OUsIOru7fLw7uvo8PPp8uUg6uD35fHy
+4u4g6CDv7uvz9+Dp8uUg7ODq8ejs4Ov87fP+IO/w6OH76/wg7vIg7/Du5ODmICEhIQoKCsLx5SDu
+4fP36OL46OXx/yDx7O7j8/Ig8eDs7vHy7v/y5ev87e4sIO3lIO/w6OHl4+D/IOog7+7s7vnoIOTu
+8O7j7vHy7v/56PUg7+7x8OXk7ejq7uIg5OXr4PL8IOfg6vPv6ugsIOIgyujy4OUsIOjn4eXm4OIg
+7ODq8ejs4Ov87fv1IPDo8eru4i4gx+D35ewg7+vg8ujy/CDv7vHw5eTt6Org7CDn4CDy7iwg9/Lu
+IOL7IPHs7ubl8uUg8eTl6+Dy/CDx4OzoPyEKCgrO4fP36OL46PH8IO3gIN3q8e/w5fHxLerz8PHl
+IOL7IO3g8/fo8uXx/CDoIPPn7eDl8uU6Csrg6iDoIOPk5SDt4Ony6CDt8+bt++kg8u7i4PAg7+4g
+7Ojt6Ozg6/zt7ukg9uXt5TsgCsrg6ujlIOLo5Psg8e7y8PPk7ej35fHy4uAg8SDq6PLg6fHq6Ozo
+IOru7O/g7ej/7Ogg8fP55fHy4vP+8iAtIOL74e7wIO3g6OHu6+XlIO7v8ujs4Ov87e7j7jsgCsrg
+6iDu8uvo9+jy/CDv8O7o5+Lu5Ojy5ev/IO7yIO/l8OXq8+/56OrgOyAKyuDq7ukg4eXn7u/g8e37
+6SDx7+7x7uEg7u/r4PL7IOL74fDg8vw7IArK4Oog5+Dv8/Hy6PL8IPHi7ukg4fDl7eQ7IArK4Oro
+7CDi6OTu7CDk7vHy4OLq6CDi7vHv7uv85+7i4PL88f87IArK4Oog7uHl5+7v4PHo8vwg8eXh/yDu
+8iDs7vjl7e3o6u7iOyAKyuDqIO/w7uLl8Ojy/CDv8O7k4OL24CDt4CD36PHy7vLzOyAKyuDqIOLn
+4Ojs7uTl6fHy4u7i4PL8IPEg8uDs7ubt5ek7IArN4Ojh7uvl5SDw4PHv8O7x8vDg7eXt7fvlIPHv
+7vHu4fsg7O745e3t6Pfl8fLi4CDiIMrN0DsgCsrg6iDv8ODi6Ov87e4g8u7w4+7i4PL88f8sIPfy
+7uH7IO3lIO/u8fLw4OTg6+4g6uD35fHy4u4g8u7i4PDgOyAKyuDq6OUg5O7q8+zl7fL7IPLw5eHu
+4uDy/CDxIO/w7uTg4vbgIOgg6uDqIO7t6CDk7uvm7fsg4vvj6//k5fL8OyAKyuDqIO/w4OLo6/zt
+7iDi5fHy6CDk5evu4vP+IO/l8OXv6PHq8yDxIOro8uDp8ero7Ogg7+Dw8u3l8ODs6DsgCtLg6ubl
+IOIg8vDl7ejt4yDi6uv+9+XtIOHr7uogIs/u5efk6uAg4iDK6PLg6SIsIOjnIOru8u7w7uPuIOzu
+5u3uIPPn7eDy/CDv8O4g7vLl6+gg6CDj7vDu5OAgyujy4P8uIArD5OUg6/P3+OUg7vHy4O3u4ujy
+/PH/LCDq4Oru6SDx7vLu4u7pIPHi/+f8/iDv7uv85+7i4PL88f8g6CDs7e7j7uUg5PDz4+7lLgoK
+Csft4O3o/ywg6u7y7vD75SDi+yDv7uvz9+jy5Swg7+7n4u7r//IgwuDsIPH96u7t7uzo8vwg7eAg
+7vjo4erg9SDoIO/u8fDl5O3o6uD1IOIg5OXx//Lq6CDw4Ocg4e7r/PjlLgrT9+jy5fH8IQrP8Ojz
+7O3u5uDp8uUg8eLu6CDk5e384+ghCtDg8fjo8P/p8uUg8eLu6SDh6Oft5fEhCgoKyu7r6Pfl8fLi
+7iDs5fHyIOIg4/Dz7+/lIO7j8ODt6Pfl7e4hISEKCgoK0eXs6O3g8CDx7vHy7ujy8f8g4iDq7u30
+5fDl7fYt5+Dr5SAiwuvg5Ojs6PAiIOPu8fLo7ej37e7j7iDq7uzv6+Xq8eAgq8jn7ODp6+7i7rsg
+7+4g4OTw5fHzOgrjLiDM7vHq4uAsIMjn7ODp6+7i8eru5SD4Liwg5C43MSwg6u7w7y4gNCDDLcQg
+KKvD4Ozs4C3E5ev88uC7KQoKCgoK0/fg8fLt6Org7CDi++Tg5fLx/zog8ODn5ODy7vft++kg7ODy
+5fDo4Osg8SDq8ODy6u7pIOjt9O7w7OD26OXpLCDv8OXk8fLg4uvl7e3u6SDiIPXu5OUg8eXs6O3g
+8OAgKyDRRCDk6PHqIPEg5+Dv6PH8/iDq4PLg6+7j4CDq6PLg6fHq6PUg6u7s7+Dt6Okt4PTl8Ojx
+8u7iICjt4CAxMzUg8fLwLiEpLCDI7eru8uXw7PEgMjAxMCwg8fH76+roIO3gIO/u8PLg6/sg6ujy
+4Onx6uj1IO/w7ujn4u7k6PLl6+XpIPEg4/Dg5OD26OXpIO/uIO7y8ODx6//sLCDgIPLg6ublIOTw
+8+Pg/yDv7uvl5+3g/yDo7fTu8Ozg9uj/LgrCIPHy7ujs7vHy/CDz9+Dx8uj/IOLq6/735e0g6u70
+5SDh8OXp6iArIOru7O/r5erx7fvpIO7h5eQuCgoK0fLu6Ozu8fL8IPP34PHy6P86CjgxMDAg8PPh
+6+XpIJYg7/DoIO7v6+Dy5SDk7iAyMiDs4PDy4CDi6uv+9+jy5ev87e47Cjg2MDAg8PPh6+XpIJYg
+7/DoIO7v6+Dy5SDk7iAyOSDs4PDy4CDi6uv+9+jy5ev87e47CjkxMDAg8PPh6+XpIJYg7/DoIO7v
+6+Dy5SDk7iAwNCDg7/Dl6/8g4urr/vfo8uXr/O3uLgoKCgoz4O/o8fwg7eAg4ejn7eXxLfHl7Ojt
+4PA6CgoK8mXrLiA4LTgwMC0yMDAtNzg1MQoo5+Lu7e7qIOHl8e/r4PLt++kpCgoKY2hpbmEubWFy
+a2V0QG1haWwucnUKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0
+aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5m
+by9jb250YWluZXJz
