@@ -1,9 +1,9 @@
-From: Mail Delivery Subsystem <MAILER-DAEMON-HHChpVx5X+sK+USSNh5FnBruDNk3DuhE@public.gmane.org>
-Subject: Returned mail: see transcript for details
-Date: Tue, 26 Mar 2013 00:13:22 +0100
-Message-ID: <201303252313.r2PNDMCX016476@mail-in-3.serv.Uni-Osnabrueck.DE>
+From: MAILER-DAEMON-yViCv/G/lLC34Msakav8EA@public.gmane.org (Mail Delivery System)
+Subject: Messaggio Non Consegnato e Rispedito al Mittente
+Date: Tue, 26 Mar 2013 00:56:27 +0100 (CET)
+Message-ID: <20130325235627.D0979208D90@smtp1.sidi.istruzione.it>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6624955630063323659=="
+Content-Type: multipart/mixed; boundary="===============8907290575390440110=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,86 +17,126 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message
+This is a MIME-encapsulated message.
 
---===============6624955630063323659==
+--===============8907290575390440110==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="r2PNDMCX016476.1364253202/mail-in-3.serv.Uni-Osnabrueck.DE"
+	boundary="E4DDE208D1A.1364255787/smtp1.sidi.istruzione.it"
+Content-Transfer-Encoding: 7bit
 
-This is a MIME-encapsulated message
+This is a MIME-encapsulated message.
 
---r2PNDMCX016476.1364253202/mail-in-3.serv.Uni-Osnabrueck.DE
+--E4DDE208D1A.1364255787/smtp1.sidi.istruzione.it
+Content-Description: Notification
+Content-Type: text/plain; charset=UTF-8
 
-The original message was received at Tue, 26 Mar 2013 00:13:20 +0100
-from sau-55c56-or.sau.net.au [27.50.86.170] (may be forged)
+Messaggio automaticamente generato dal Sistema di Posta Elettronica del Ministero dell'Istruzione, Università e Ricerca.
+Si prega di non rispondere a questa email. Richieste di assistenza rivolte a questo indirizzo non potranno essere evase.
 
-   ----- The following addresses had permanent fatal errors -----
-<benutzername-tTx6QYVXfUW0RUE7fIkosrNAH6kLmebB@public.gmane.org>
-    (reason: 550 5.1.1 <benutzername-tTx6QYVXfUW0RUE7fIkosrNAH6kLmebB@public.gmane.org>... User unknown)
+Spiacenti di comunicarLe che non è stato possibile consegnare il Suo messaggio ad uno o più destinatari.
+Di seguito Le riportiamo la problematica riscontrata all'atto della consegna del messaggio.
+Per ragioni tecniche, tale descrizione può essere parzialmente o totalmente in lingua Inglese.
 
-   ----- Transcript of session follows -----
-... while talking to maildelivery.rz.uni-osnabrueck.de.:
->>> DATA
-<<< 550 5.1.1 <benutzername-tTx6QYVXfUW0RUE7fIkosrNAH6kLmebB@public.gmane.org>... User unknown
-550 5.1.1 <benutzername-tTx6QYVXfUW0RUE7fIkosrNAH6kLmebB@public.gmane.org>... User unknown
-<<< 503 5.0.0 Need RCPT (recipient)
+                   Il Sistema di Posta Elettronica @istruzione.it 
 
---r2PNDMCX016476.1364253202/mail-in-3.serv.Uni-Osnabrueck.DE
+Server : smtp1.sidi.istruzione.it
+
+
+<virginia.venturiello-Syd3ARw+vPY@public.gmane.org>: host relay-avs.poste.it[62.241.4.132] said:
+    550 SPF MAIL FROM check failed (Fail) (in reply to MAIL FROM command)
+
+--E4DDE208D1A.1364255787/smtp1.sidi.istruzione.it
+Content-Description: Delivery report
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; mail-in-3.serv.Uni-Osnabrueck.DE
-Received-From-MTA: DNS; sau-55c56-or.sau.net.au
-Arrival-Date: Tue, 26 Mar 2013 00:13:20 +0100
+Reporting-MTA: dns; smtp1.sidi.istruzione.it
+X-Mail-Service-Queue-ID: E4DDE208D1A
+X-Mail-Service-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Tue, 26 Mar 2013 00:56:26 +0100 (CET)
 
-Final-Recipient: RFC822; benutzername-tTx6QYVXfUW0RUE7fIkosrNAH6kLmebB@public.gmane.org
+Final-Recipient: rfc822; virginia.venturiello-Syd3ARw+vPY@public.gmane.org
+Original-Recipient: rfc822;virginia.venturiello-Syd3ARw+vPY@public.gmane.org
 Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; maildelivery.rz.uni-osnabrueck.de
-Diagnostic-Code: SMTP; 550 5.1.1 <benutzername-tTx6QYVXfUW0RUE7fIkosrNAH6kLmebB@public.gmane.org>... User unknown
-Last-Attempt-Date: Tue, 26 Mar 2013 00:13:21 +0100
+Status: 5.0.0
+Remote-MTA: dns; relay-avs.poste.it
+Diagnostic-Code: smtp; 550 SPF MAIL FROM check failed (Fail)
 
---r2PNDMCX016476.1364253202/mail-in-3.serv.Uni-Osnabrueck.DE
+--E4DDE208D1A.1364255787/smtp1.sidi.istruzione.it
+Content-Description: Undelivered Message
 Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
 
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from SAU-71762-OR.sau.net.au (sau-55c56-or.sau.net.au [27.50.86.170] (may be forged))
-	by mail-in-3.serv.Uni-Osnabrueck.DE (8.13.8/8.13.8) with ESMTP id r2PNDICX016473
-	for <benutzername-tTx6QYVXfUW0RUE7fIkosrNAH6kLmebB@public.gmane.org>; Tue, 26 Mar 2013 00:13:20 +0100
-Received: from [27.50.86.170] by SAU-71762-OR.sau.net.au id ggIz23cS8VJs with SMTP; Tue, 26 Mar 2013 10:13:21 +1100
-Date: Tue, 26 Mar 2013 10:13:21 +1100
-From: "robo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.05.3) Home
+Received: from localhost (unknown [127.0.0.1])
+	by smtp1.sidi.istruzione.it (Mail Service) with ESMTP id E4DDE208D1A
+	for <virginia.venturiello-Syd3ARw+vPY@public.gmane.org>; Tue, 26 Mar 2013 00:56:26 +0100 (CET)
+X-Virus-Scanned: Content Filter at istruzione.it
+Received: from istruzione.it (unknown [172.16.95.14])
+	by smtp1.sidi.istruzione.it (Mail Service) with ESMTP id C7CCA20800C
+	for <virginia.venturiello-Syd3ARw+vPY@public.gmane.org>; Tue, 26 Mar 2013 00:56:26 +0100 (CET)
+Received: from mx.sidi.istruzione.it (mx8.sidi.mpi.it [172.16.190.218])
+	by mbox4-vip.sidi.mpi.it (Mailbox Server) with ESMTP id 8CE4031C55C
+	for <virginia.venturiello-yViCv/G/lLC34Msakav8EA@public.gmane.org>; Tue, 26 Mar 2013 00:56:26 +0100 (CET)
+Received: from localhost (unknown [127.0.0.1])
+	by mx8.sidi.istruzione.it (Mail Service) with ESMTP id 781D85027C
+	for <virginia.venturiello-yViCv/G/lLC34Msakav8EA@public.gmane.org>; Tue, 26 Mar 2013 00:56:26 +0100 (CET)
+X-Virus-Scanned: Content Filter at istruzione.it
+X-Spam-Score: 1.065
+X-Spam-Level: *
+X-Spam-Status: No, score=1.065 tagged_above=0 required=5.5
+	tests=[BAYES_40=-0.185, FORGED_MUA_THEBAT_CS=1.15, RDNS_NONE=0.1]
+Received: from custompcs.net.au (unknown [27.50.89.71])
+	by mx8.sidi.istruzione.it (Mail Service) with ESMTP id 4DF5350274
+	for <virginia.venturiello-yViCv/G/lLC34Msakav8EA@public.gmane.org>; Tue, 26 Mar 2013 00:56:23 +0100 (CET)
+Received: from [27.50.89.71] by custompcs.net.au id 4vKBI64joVb0 with SMTP; Mon, 25 Mar 2013 19:56:22 -0400
+Date: Mon, 25 Mar 2013 19:56:22 -0400
+From: "INCo Group" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.01.5) Business
 X-Priority: 3 (Normal)
-Message-ID: <632_1364253201_r2PNDICX016473_9720683948.48711711352891-5X32oH+SWYHju/CiIO64j+23QSEHp/Li@public.gmane.org>
-To: <benutzername-tTx6QYVXfUW0RUE7fIkosrNAH6kLmebB@public.gmane.org>
-Subject: /SPAM!/ [71%] Re: Monte Biz
+Message-ID: <59704119.60510442753438-tZDOFUKzIplqFZ3NbRY2NA@public.gmane.org>
+To: <virginia.venturiello-yViCv/G/lLC34Msakav8EA@public.gmane.org>
+Subject: Re: document 021075
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-X-PMX-Version: 6.0.0.2142326, Antispam-Engine: 2.7.2.2107409, Antispam-Data: 2013.3.25.230318 (Univ. Osnabrueck)
-X-PMX-Spam: Gauge=XXXXXXXI, Probability=71%, Report=
- FORGED_RCVD_BREDO_URI 5, FORGED_RCVD_BREDO 1, URI_ZIP_QUERY 0.5, LEO_OBFU_SUBJ_RE 0.1, FROM_NAME_ONE_WORD 0.05, HTML_00_01 0.05, HTML_00_10 0.05, BODYTEXTP_SIZE_3000_LESS 0, BODY_SIZE_1000_LESS 0, BODY_SIZE_2000_LESS 0, BODY_SIZE_200_299 0, BODY_SIZE_5000_LESS 0, BODY_SIZE_7000_LESS 0, SMALL_BODY 0, __ANY_URI 0, __BAT_MSGID 0, __BOUNCE_CHALLENGE_SUBJ 0, __BOUNCE_NDR_SUBJ_EXEMPT 0, __CP_URI_IN_BODY 0, __CT 0, __CTE 0, __CT_TEXT_PLAIN 0, __FW_1LN_BOT_MSGID 0, __HAS_FROM 0, __HAS_MSGID 0, __HAS_X_MAILER 0, __HAS_X_PRIORITY 0, __MIME_TEXT_ONLY 0, __MIME_VERSION 0, __SANE_MSGID 0, __SUBJ_ALPHA_END 0, __THEBAT_MUA 0, __TO_MALFORMED_2 0, __TO_NO_NAME 0, __URI_NO_WWW 0
-X-PMX-Spam-Level: XXXXXXXI
 Content-Transfer-Encoding: quoted-printable
 
 
-  =20
-Buongiorno,=20
+
       =20
-    =20
-La risposta alla tua domanda        =20
-riguardo al profilo sul nostro sito web.     =20
+Gentile utente, Monte Biz =20
+   =20
 
-http://ftp.www.jrmillermartialarts.com/Info/InfoBlocco.zip?ZmqxkFln=3Dben=
-utzername-tTx6QYVXfUW0RUE7fIkosrNAH6kLmebB@public.gmane.org
+The answer to your request about profile consultation on ours the Web to =
+page.       =20
+
+Statistics is enclosed in archive, we will be glad to cooperate in the fu=
+ture.
+http://shrmstage.elt-inc.com/Descrizione/Descrizione.zip?o3eU4BdAc6QNhl=3D=
+virginia.venturiello-yViCv/G/lLC34Msakav8EA@public.gmane.org
+
+Thanks,
+=20
+Tony Caruso
+Consult Adviser
+Union Consult Group
+(C) 205 506-5626
+(F) 205 591-6497
+
+Web site; unionconsult org
+
+Home address; 16 Morningside Rd, Easton CT 87428
+
+--=20
+Ray Paltauf
+Connecticut Outdoor Living
+205 206 590-0467
+        =20
 
 
 
+--E4DDE208D1A.1364255787/smtp1.sidi.istruzione.it--
 
---r2PNDMCX016476.1364253202/mail-in-3.serv.Uni-Osnabrueck.DE--
-
-
---===============6624955630063323659==
+--===============8907290575390440110==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -106,4 +146,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============6624955630063323659==--
+--===============8907290575390440110==--
