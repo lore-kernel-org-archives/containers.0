@@ -1,10 +1,9 @@
-From: MAILER-DAEMON-q90A26sVBciO1VYi+B1h3l6hYfS7NtTn@public.gmane.org
-Subject: failure notice
-Date: 26 Mar 2013 05:53:11 +0100
-Message-ID: <20130326045959.0B01F93A@mail.linuxfoundation.org>
+From: postmaster-ERNa7u4uiwD/PTVKMIaDyQ@public.gmane.org
+Subject: Delivery Status Notification (Failure)
+Date: Wed, 27 Mar 2013 00:07:11 +0100
+Message-ID: <NPfWMuBQQ0000374a@MIHBEMP001.miur.inf>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============7277680233919996548=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,73 +17,101 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi. This is the qmail-send program at helpware.enter.it.
-I'm afraid I wasn't able to deliver your message to the following addresses.
-This is a permanent error; I've given up. Sorry it didn't work out.
+This is a MIME-formatted message.  
+Portions of this message may be unreadable without a MIME-capable mail program.
 
-<capitanialecapitani-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org>:
-213.205.33.64 does not like recipient.
-Remote host said: 550 5.1.1 <capitanialecapitani-IWqWACnzNjyonA0d6jMUrA@public.gmane.org> recipient does not exist
-Giving up on 213.205.33.64.
+--===============7277680233919996548==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="9B095B5ADSN=_01CE26383DD726970002BE75MIHBEMP001.miur."
 
-<capitani.renzo-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org>:
-213.205.33.62 does not like recipient.
-Remote host said: 550 5.1.1 <capitani.renzo-IWqWACnzNjyonA0d6jMUrA@public.gmane.org> recipient overquota
-Giving up on 213.205.33.62.
+This is a MIME-formatted message.  
+Portions of this message may be unreadable without a MIME-capable mail program.
 
-<capitani.rob-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org>:
-213.205.33.61 does not like recipient.
-Remote host said: 550 5.1.1 <capitani.rob-IWqWACnzNjyonA0d6jMUrA@public.gmane.org> recipient does not exist
-Giving up on 213.205.33.61.
+--9B095B5ADSN=_01CE26383DD726970002BE75MIHBEMP001.miur.
+Content-Type: text/plain; charset=unicode-1-1-utf-7
 
-<capitani-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org>:
-213.205.33.64 does not like recipient.
-Remote host said: 550 5.1.1 <capitani-IWqWACnzNjyonA0d6jMUrA@public.gmane.org> recipient overquota
-Giving up on 213.205.33.64.
+This is an automatically generated Delivery Status Notification.
 
---- Below this line is a copy of the message.
+Delivery to the following recipients failed.
 
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 16174 invoked from network); 26 Mar 2013 05:52:55 +0100
-Received: from unknown (HELO SAU-766C7-OR.sau.net.au) (27.50.86.154)
-  by helpware.enter.it with SMTP; 26 Mar 2013 05:52:50 +0100
-Received: from [27.50.86.154] by SAU-766C7-OR.sau.net.au id l1J2EqaVoZR6 with SMTP; Tue, 26 Mar 2013 00:52:45 -0400
-Date: Tue, 26 Mar 2013 00:52:45 -0400
-From: "Info" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.06.4) Business
+       annamaria.fiacchi-yViCv/G/lLC34Msakav8EA@public.gmane.org
+
+
+
+
+--9B095B5ADSN=_01CE26383DD726970002BE75MIHBEMP001.miur.
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;MIHBEMP001.miur.inf
+Received-From-MTA: dns;mihexmp008.miur.inf
+Arrival-Date: Wed, 27 Mar 2013 00:07:11 +0100
+
+Original-Recipient: rfc822;annamaria.fiacchi-yViCv/G/lLC34Msakav8EA@public.gmane.org
+Final-Recipient: rfc822;annamaria.fiacchi-yViCv/G/lLC34Msakav8EA@public.gmane.org
+Action: failed
+Status: 5.2.2
+X-Display-Name: Fiacchi Annamaria
+
+
+--9B095B5ADSN=_01CE26383DD726970002BE75MIHBEMP001.miur.
+Content-Type: message/rfc822
+
+Received: from mihexmp008.miur.inf ([172.16.99.12]) by MIHBEMP001.miur.inf with Microsoft SMTPSVC(6.0.3790.4675);
+	 Wed, 27 Mar 2013 00:07:11 +0100
+Received: from smtp.istruzione.it ([172.16.110.31]) by mihexmp008.miur.inf with Microsoft SMTPSVC(6.0.3790.4675);
+	 Wed, 27 Mar 2013 00:05:58 +0100
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by mailgwexch01.sidi.mpi.it (Mail Service) with ESMTP id 9537D33E62
+	for <annamaria.fiacchi-yViCv/G/lLC34Msakav8EA@public.gmane.org>; Wed, 27 Mar 2013 00:05:58 +0100 (CET)
+X-Virus-Scanned: Content Filter at istruzione.it
+Received: from mx.sidi.istruzione.it (mph17096.sidi.mpi.it [172.16.190.215])
+	by mailgwexch01.sidi.mpi.it (Mail Service) with ESMTP id 648A433E65
+	for <annamaria.fiacchi-yViCv/G/lLC34Msakav8EA@public.gmane.org>; Wed, 27 Mar 2013 00:05:58 +0100 (CET)
+Received: from localhost (unknown [127.0.0.1])
+	by mx5.sidi.istruzione.it (Mail Service) with ESMTP id 0DB5210012
+	for <annamaria.fiacchi-yViCv/G/lLC34Msakav8EA@public.gmane.org>; Wed, 27 Mar 2013 00:05:58 +0100 (CET)
+X-Virus-Scanned: Content Filter at istruzione.it
+X-Spam-Score: 4.75
+X-Spam-Level: ****
+X-Spam-Status: No, score=4.75 tagged_above=0 required=5.5 tests=[BAYES_99=3.5,
+	FORGED_MUA_THEBAT_CS=1.15, RDNS_NONE=0.1]
+Received: from custompcs.net.au (unknown [27.50.89.71])
+	by mx5.sidi.istruzione.it (Mail Service) with ESMTP id 803271000F
+	for <annamaria.fiacchi-yViCv/G/lLC34Msakav8EA@public.gmane.org>; Wed, 27 Mar 2013 00:05:55 +0100 (CET)
+Received: from [27.50.89.71] by custompcs.net.au id VDMZRisH7AHD with SMTP; Tue, 26 Mar 2013 19:05:55 -0400
+Date: Tue, 26 Mar 2013 19:05:55 -0400
+From: "I" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.2.77.5) Home
 X-Priority: 3 (Normal)
-Message-ID: <969580014.97867179934789-KP+Ti3iGYcpodQV7Efir8u23QSEHp/Li@public.gmane.org>
-To: <capitani.renzo-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org>
-Subject: Fattura 17151020
+Message-ID: <9226352787.62197566888107-tZDOFUKzIplqFZ3NbRY2NA@public.gmane.org>
+To: <annamaria.fiacchi-yViCv/G/lLC34Msakav8EA@public.gmane.org>
+Subject: Re[2]: Monte Biz
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-Content-Transfer-Encoding: 8bit
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-OriginalArrivalTime: 26 Mar 2013 23:05:58.0752 (UTC) FILETIME=[7A598E00:01CE2A76]
+Content-Transfer-Encoding: quoted-printable
+
+
+    =20
+Gentile,   =20
+Fattura         =20
+http://FIOREENATURA.COM.MX/Annullamento/Annullamento.zip
 
 
 
-       
-Gentile utente, 
-   
 
-The answer to your request about profile consultation on ours the Web to page.       
+--9B095B5ADSN=_01CE26383DD726970002BE75MIHBEMP001.miur.--
 
-Statistics is enclosed in archive, we will be glad to cooperate in the future.
-http://ftp.www.jrmillermartialarts.com/InfoBlocco/Notare.zip?n9Lbq5ja4gtZTnUMHe=capitani.renzo-KGm45+8e4WzOeuqD6ShaSA@public.gmane.org
+--===============7277680233919996548==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-Thanks,
- 
-Tony Caruso
-Consult Adviser
-Union Consult Group
-(C) 205 541-4420
-(F) 205 547-0594
-
-Web site; unionconsult org
-
-Home address; 16 Morningside Rd, Easton CT 75835
-
--- 
-Ray Paltauf
-Connecticut Outdoor Living
-205 206 521-0633
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============7277680233919996548==--
