@@ -1,14 +1,11 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: For review (v2): user_namespaces(7) man page
-Date: Thu, 28 Mar 2013 19:21:51 -0700
-Message-ID: <87ehez2beo.fsf__5174.33665595508$1364523754$gmane$org@xmission.com>
-References: <CAKgNAkjgmTJ1BiHVbqVtz-g-=yfewMiYaroDJELJpa1aRrFAvQ@mail.gmail.com>
+From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: [PATCH v2 00/28] memcg-aware slab shrinking
+Date: Fri, 29 Mar 2013 13:13:42 +0400
+Message-ID: <1364548450-28254-1-git-send-email-glommer__36478.3515492038$1364548477$gmane$org@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAKgNAkjgmTJ1BiHVbqVtz-g-=yfewMiYaroDJELJpa1aRrFAvQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Michael Kerrisk's message of "Wed, 27 Mar 2013 22:26:07 +0100")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,45 +15,157 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org, Vasily Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
+To: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
+Cc: hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Hi,
 
-Over the last little while I have been working to correct a design
-oversight in user namespaces, that probably needs to be documented
-somewhere, and the fixes for the worst of the oversight have been
-merged.
+Notes:
+======
 
-The problem was I forgot to consider what when there are shared
-resources and root uses things like chroot and mounts as access policy
-controls, and not as a mechanism to prevent the gaining of privilege.
+This is v2 of memcg-aware LRU shrinking. I've been testing it extensively
+and it behaves well, at least from the isolation point of view. However,
+I feel some more testing is needed before we commit to it. Still, this is
+doing the job fairly well. Comments welcome.
 
-This has led to the realization that the root directory is one of the
-privileged identifiers that is controlled by the user namespace.
+Base work:
+==========
 
-So now there is a restriction that user namespaces can not be created
-if you are chrooted.
+Please note that this builds upon the recent work from Dave Chinner that
+sanitizes the LRU shrinking API and make the shrinkers node aware. Node
+awareness is not *strictly* needed for my work, but I still perceive it
+as an advantage. The API unification is a major need, and I build upon it
+heavily. That allows us to manipulate the LRUs without knowledge of the
+underlying objects with ease. This time, I am including that work here as
+a baseline.
 
-Beyond that there are restrictions on what you can do in a mount
-namespace created inside a user namespace.  Read-only bind mounts
-may not be remounted to read-write.   The mqueue filesystem may only be
-mounted if you have CAP_SYS_ADMIN over it's ipc namespace.  proc and
-sysfs may only be mounted if they are already somewhere in the mount
-namespace.
+Description:
+============
 
-There is a remaining open question on what to allow in the context of
-unmounting and bind mounts.  In the normal case unmounting something is
-safe because mounts almost always happen on an empty directory.  The
-only significant case that I can think of where this is different are
-union mounts and union filesystems.  However the general principle of
-following the restrictions of the root user makes suggests that unmounts
-should not happen.
+This patchset implements targeted shrinking for memcg when kmem limits are
+present. So far, we've been accounting kernel objects but failing allocations
+when short of memory. This is because our only option would be to call the
+global shrinker, depleting objects from all caches and breaking isolation.
 
-In the grand scheme of things these are small little things but they are
-details we need to get right so that enabling user namespaces is no
-worse that adding any other feature to the kernel.  In the worst case
-just adding more attack surface for the bad guys, but not a matter of
-risk semantically.
+The main idea is to associate per-memcg lists with each of the LRUs. The main
+LRU still provides a single entry point and when adding or removing an element
+from the LRU, we use the page information to figure out which memcg it belongs
+to and relay it to the right list.
 
-Eric
+Patches:
+========
+1 and 2: improve handling of small number of shrinkable objects.
+	 This is a scenario that is way more likely to appear under memcg,
+         although it is not memcg-specific. Already sent separately, but not
+         yet merged.
+
+3 to 20: Dave's work to unify the LRU API and make it per-node. I had to make
+         minor changes to the patches to reflect new code in the tree and due to
+         build problems. I tried to keep them as unchanged as possible.
+
+21 to 28: memcg targeted shrinking.
+
+Main changes from *v1:
+* merged comments from the mailing list
+* reworked lru-memcg API
+* effective proportional shrinking
+* sanitized locking on the memcg side
+* bill user memory first when kmem == umem
+* various bugfixes
+
+TODO:
+* shrink dead memcgs when global pressure kicks in. (minor)
+
+Dave Chinner (17):
+  dcache: convert dentry_stat.nr_unused to per-cpu counters
+  dentry: move to per-sb LRU locks
+  dcache: remove dentries from LRU before putting on dispose list
+  mm: new shrinker API
+  shrinker: convert superblock shrinkers to new API
+  list: add a new LRU list type
+  inode: convert inode lru list to generic lru list code.
+  dcache: convert to use new lru list infrastructure
+  list_lru: per-node list infrastructure
+  shrinker: add node awareness
+  fs: convert inode and dentry shrinking to be node aware
+  xfs: convert buftarg LRU to generic code
+  xfs: convert dquot cache lru to list_lru
+  fs: convert fs shrinkers to new scan/count API
+  drivers: convert shrinkers to new count/scan API
+  shrinker: convert remaining shrinkers to count/scan API
+  shrinker: Kill old ->shrink API.
+
+Glauber Costa (11):
+  super: fix calculation of shrinkable objects for small numbers
+  vmscan: take at least one pass with shrinkers
+  hugepage: convert huge zero page shrinker to new shrinker API
+  vmscan: also shrink slab in memcg pressure
+  memcg,list_lru: duplicate LRUs upon kmemcg creation
+  lru: add an element to a memcg list
+  list_lru: also include memcg lists in counts and scans
+  list_lru: per-memcg walks
+  memcg: per-memcg kmem shrinking
+  list_lru: reclaim proportionaly between memcgs and nodes
+  super: targeted memcg reclaim
+
+ arch/x86/kvm/mmu.c                         |  35 ++-
+ drivers/gpu/drm/i915/i915_dma.c            |   4 +-
+ drivers/gpu/drm/i915/i915_drv.h            |   2 +-
+ drivers/gpu/drm/i915/i915_gem.c            |  69 +++--
+ drivers/gpu/drm/i915/i915_gem_evict.c      |  10 +-
+ drivers/gpu/drm/i915/i915_gem_execbuffer.c |   2 +-
+ drivers/gpu/drm/ttm/ttm_page_alloc.c       |  48 ++-
+ drivers/gpu/drm/ttm/ttm_page_alloc_dma.c   |  55 ++--
+ drivers/md/dm-bufio.c                      |  65 ++--
+ drivers/staging/android/ashmem.c           |  44 ++-
+ drivers/staging/android/lowmemorykiller.c  |  40 ++-
+ drivers/staging/zcache/zcache-main.c       |  29 +-
+ fs/dcache.c                                | 215 +++++++------
+ fs/drop_caches.c                           |   1 +
+ fs/ext4/extents_status.c                   |  30 +-
+ fs/gfs2/glock.c                            |  30 +-
+ fs/gfs2/main.c                             |   3 +-
+ fs/gfs2/quota.c                            |  14 +-
+ fs/gfs2/quota.h                            |   4 +-
+ fs/inode.c                                 | 174 +++++------
+ fs/internal.h                              |   5 +
+ fs/mbcache.c                               |  53 ++--
+ fs/nfs/dir.c                               |  20 +-
+ fs/nfs/internal.h                          |   4 +-
+ fs/nfs/super.c                             |   3 +-
+ fs/nfsd/nfscache.c                         |  31 +-
+ fs/quota/dquot.c                           |  39 ++-
+ fs/super.c                                 | 107 ++++---
+ fs/ubifs/shrinker.c                        |  20 +-
+ fs/ubifs/super.c                           |   3 +-
+ fs/ubifs/ubifs.h                           |   3 +-
+ fs/xfs/xfs_buf.c                           | 167 +++++-----
+ fs/xfs/xfs_buf.h                           |   5 +-
+ fs/xfs/xfs_dquot.c                         |   7 +-
+ fs/xfs/xfs_icache.c                        |   4 +-
+ fs/xfs/xfs_icache.h                        |   2 +-
+ fs/xfs/xfs_qm.c                            | 274 +++++++++--------
+ fs/xfs/xfs_qm.h                            |   4 +-
+ fs/xfs/xfs_super.c                         |  12 +-
+ include/linux/dcache.h                     |   4 +
+ include/linux/fs.h                         |  25 +-
+ include/linux/list_lru.h                   | 112 +++++++
+ include/linux/memcontrol.h                 |  41 +++
+ include/linux/shrinker.h                   |  45 ++-
+ include/linux/swap.h                       |   2 +
+ include/trace/events/vmscan.h              |   4 +-
+ lib/Makefile                               |   2 +-
+ lib/list_lru.c                             | 474 +++++++++++++++++++++++++++++
+ mm/huge_memory.c                           |  18 +-
+ mm/memcontrol.c                            | 373 ++++++++++++++++++++---
+ mm/memory-failure.c                        |   2 +
+ mm/slab_common.c                           |   1 -
+ mm/vmscan.c                                | 142 ++++++---
+ net/sunrpc/auth.c                          |  45 ++-
+ 54 files changed, 2091 insertions(+), 836 deletions(-)
+ create mode 100644 include/linux/list_lru.h
+ create mode 100644 lib/list_lru.c
+
+-- 
+1.8.1.4
