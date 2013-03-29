@@ -1,7 +1,8 @@
 From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [PATCH v2 08/28] list: add a new LRU list type
-Date: Fri, 29 Mar 2013 13:13:50 +0400
-Message-ID: <1364548450-28254-9-git-send-email-glommer__40955.3702957512$1364548517$gmane$org@parallels.com>
+Subject: [PATCH v2 03/28] dcache: convert dentry_stat.nr_unused to per-cpu
+	counters
+Date: Fri, 29 Mar 2013 13:13:45 +0400
+Message-ID: <1364548450-28254-4-git-send-email-glommer__43038.9637164355$1364548522$gmane$org@parallels.com>
 References: <1364548450-28254-1-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,200 +24,75 @@ List-Id: containers.vger.kernel.org
 
 From: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Several subsystems use the same construct for LRU lists - a list
-head, a spin lock and and item count. They also use exactly the same
-code for adding and removing items from the LRU. Create a generic
-type for these LRU lists.
-
-This is the beginning of generic, node aware LRUs for shrinkers to
-work with.
+Before we split up the dcache_lru_lock, the unused dentry counter
+needs to be made independent of the global dcache_lru_lock. Convert
+it to per-cpu counters to do this.
 
 Signed-off-by: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Reviewed-by: Christoph Hellwig <hch-jcswGhMUV9g@public.gmane.org>
 ---
- include/linux/list_lru.h |  36 +++++++++++++++
- lib/Makefile             |   2 +-
- lib/list_lru.c           | 117 +++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 154 insertions(+), 1 deletion(-)
- create mode 100644 include/linux/list_lru.h
- create mode 100644 lib/list_lru.c
+ fs/dcache.c | 17 ++++++++++++++---
+ 1 file changed, 14 insertions(+), 3 deletions(-)
 
-diff --git a/include/linux/list_lru.h b/include/linux/list_lru.h
-new file mode 100644
-index 0000000..3423949
---- /dev/null
-+++ b/include/linux/list_lru.h
-@@ -0,0 +1,36 @@
-+/*
-+ * Copyright (c) 2010-2012 Red Hat, Inc. All rights reserved.
-+ * Author: David Chinner
-+ *
-+ * Generic LRU infrastructure
-+ */
-+#ifndef _LRU_LIST_H
-+#define _LRU_LIST_H 0
-+
-+#include <linux/list.h>
-+
-+struct list_lru {
-+	spinlock_t		lock;
-+	struct list_head	list;
-+	long			nr_items;
-+};
-+
-+int list_lru_init(struct list_lru *lru);
-+int list_lru_add(struct list_lru *lru, struct list_head *item);
-+int list_lru_del(struct list_lru *lru, struct list_head *item);
-+
-+static inline long list_lru_count(struct list_lru *lru)
-+{
-+	return lru->nr_items;
-+}
-+
-+typedef int (*list_lru_walk_cb)(struct list_head *item, spinlock_t *lock,
-+				void *cb_arg);
-+typedef void (*list_lru_dispose_cb)(struct list_head *dispose_list);
-+
-+long list_lru_walk(struct list_lru *lru, list_lru_walk_cb isolate,
-+		   void *cb_arg, long nr_to_walk);
-+
-+long list_lru_dispose_all(struct list_lru *lru, list_lru_dispose_cb dispose);
-+
-+#endif /* _LRU_LIST_H */
-diff --git a/lib/Makefile b/lib/Makefile
-index d7946ff..f14abd9 100644
---- a/lib/Makefile
-+++ b/lib/Makefile
-@@ -13,7 +13,7 @@ lib-y := ctype.o string.o vsprintf.o cmdline.o \
- 	 sha1.o md5.o irq_regs.o reciprocal_div.o argv_split.o \
- 	 proportions.o flex_proportions.o prio_heap.o ratelimit.o show_mem.o \
- 	 is_single_threaded.o plist.o decompress.o kobject_uevent.o \
--	 earlycpio.o
-+	 earlycpio.o list_lru.o
+diff --git a/fs/dcache.c b/fs/dcache.c
+index fbfae008..f1196f2 100644
+--- a/fs/dcache.c
++++ b/fs/dcache.c
+@@ -118,6 +118,7 @@ struct dentry_stat_t dentry_stat = {
+ };
  
- lib-$(CONFIG_MMU) += ioremap.o
- lib-$(CONFIG_SMP) += cpumask.o
-diff --git a/lib/list_lru.c b/lib/list_lru.c
-new file mode 100644
-index 0000000..475d0e9
---- /dev/null
-+++ b/lib/list_lru.c
-@@ -0,0 +1,117 @@
-+/*
-+ * Copyright (c) 2010-2012 Red Hat, Inc. All rights reserved.
-+ * Author: David Chinner
-+ *
-+ * Generic LRU infrastructure
-+ */
-+#include <linux/kernel.h>
-+#include <linux/module.h>
-+#include <linux/list_lru.h>
-+
-+int
-+list_lru_add(
-+	struct list_lru	*lru,
-+	struct list_head *item)
+ static DEFINE_PER_CPU(unsigned int, nr_dentry);
++static DEFINE_PER_CPU(unsigned int, nr_dentry_unused);
+ 
+ #if defined(CONFIG_SYSCTL) && defined(CONFIG_PROC_FS)
+ static int get_nr_dentry(void)
+@@ -129,10 +130,20 @@ static int get_nr_dentry(void)
+ 	return sum < 0 ? 0 : sum;
+ }
+ 
++static int get_nr_dentry_unused(void)
 +{
-+	spin_lock(&lru->lock);
-+	if (list_empty(item)) {
-+		list_add_tail(item, &lru->list);
-+		lru->nr_items++;
-+		spin_unlock(&lru->lock);
-+		return 1;
-+	}
-+	spin_unlock(&lru->lock);
-+	return 0;
-+}
-+EXPORT_SYMBOL_GPL(list_lru_add);
-+
-+int
-+list_lru_del(
-+	struct list_lru	*lru,
-+	struct list_head *item)
-+{
-+	spin_lock(&lru->lock);
-+	if (!list_empty(item)) {
-+		list_del_init(item);
-+		lru->nr_items--;
-+		spin_unlock(&lru->lock);
-+		return 1;
-+	}
-+	spin_unlock(&lru->lock);
-+	return 0;
-+}
-+EXPORT_SYMBOL_GPL(list_lru_del);
-+
-+long
-+list_lru_walk(
-+	struct list_lru *lru,
-+	list_lru_walk_cb isolate,
-+	void		*cb_arg,
-+	long		nr_to_walk)
-+{
-+	struct list_head *item, *n;
-+	long removed = 0;
-+restart:
-+	spin_lock(&lru->lock);
-+	list_for_each_safe(item, n, &lru->list) {
-+		int ret;
-+
-+		if (nr_to_walk-- < 0)
-+			break;
-+
-+		ret = isolate(item, &lru->lock, cb_arg);
-+		switch (ret) {
-+		case 0:	/* item removed from list */
-+			lru->nr_items--;
-+			removed++;
-+			break;
-+		case 1: /* item referenced, give another pass */
-+			list_move_tail(item, &lru->list);
-+			break;
-+		case 2: /* item cannot be locked, skip */
-+			break;
-+		case 3: /* item not freeable, lock dropped */
-+			goto restart;
-+		default:
-+			BUG();
-+		}
-+	}
-+	spin_unlock(&lru->lock);
-+	return removed;
-+}
-+EXPORT_SYMBOL_GPL(list_lru_walk);
-+
-+long
-+list_lru_dispose_all(
-+	struct list_lru *lru,
-+	list_lru_dispose_cb dispose)
-+{
-+	long disposed = 0;
-+	LIST_HEAD(dispose_list);
-+
-+	spin_lock(&lru->lock);
-+	while (!list_empty(&lru->list)) {
-+		list_splice_init(&lru->list, &dispose_list);
-+		disposed += lru->nr_items;
-+		lru->nr_items = 0;
-+		spin_unlock(&lru->lock);
-+
-+		dispose(&dispose_list);
-+
-+		spin_lock(&lru->lock);
-+	}
-+	spin_unlock(&lru->lock);
-+	return disposed;
++	int i;
++	int sum = 0;
++	for_each_possible_cpu(i)
++		sum += per_cpu(nr_dentry_unused, i);
++	return sum < 0 ? 0 : sum;
 +}
 +
-+int
-+list_lru_init(
-+	struct list_lru	*lru)
-+{
-+	spin_lock_init(&lru->lock);
-+	INIT_LIST_HEAD(&lru->list);
-+	lru->nr_items = 0;
-+
-+	return 0;
-+}
-+EXPORT_SYMBOL_GPL(list_lru_init);
+ int proc_nr_dentry(ctl_table *table, int write, void __user *buffer,
+ 		   size_t *lenp, loff_t *ppos)
+ {
+ 	dentry_stat.nr_dentry = get_nr_dentry();
++	dentry_stat.nr_unused = get_nr_dentry_unused();
+ 	return proc_dointvec(table, write, buffer, lenp, ppos);
+ }
+ #endif
+@@ -312,7 +323,7 @@ static void dentry_lru_add(struct dentry *dentry)
+ 		spin_lock(&dcache_lru_lock);
+ 		list_add(&dentry->d_lru, &dentry->d_sb->s_dentry_lru);
+ 		dentry->d_sb->s_nr_dentry_unused++;
+-		dentry_stat.nr_unused++;
++		this_cpu_inc(nr_dentry_unused);
+ 		spin_unlock(&dcache_lru_lock);
+ 	}
+ }
+@@ -322,7 +333,7 @@ static void __dentry_lru_del(struct dentry *dentry)
+ 	list_del_init(&dentry->d_lru);
+ 	dentry->d_flags &= ~DCACHE_SHRINK_LIST;
+ 	dentry->d_sb->s_nr_dentry_unused--;
+-	dentry_stat.nr_unused--;
++	this_cpu_dec(nr_dentry_unused);
+ }
+ 
+ /*
+@@ -360,7 +371,7 @@ static void dentry_lru_move_list(struct dentry *dentry, struct list_head *list)
+ 	if (list_empty(&dentry->d_lru)) {
+ 		list_add_tail(&dentry->d_lru, list);
+ 		dentry->d_sb->s_nr_dentry_unused++;
+-		dentry_stat.nr_unused++;
++		this_cpu_inc(nr_dentry_unused);
+ 	} else {
+ 		list_move_tail(&dentry->d_lru, list);
+ 	}
 -- 
 1.8.1.4
