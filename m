@@ -1,9 +1,10 @@
-From: MAILER-DAEMON-vuKIMS1Fg3wDCDn4etXQOSF8V9yv6KhmXqFh9Ls21Oc@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Sat, 30 Mar 2013 05:13:54 +0100 (CET)
-Message-ID: <20130330041354.0EA403180E4@plesk.telematicservice.it>
+From: "=?utf-8?b?N+iElg==?=" <zhanzuok04-Xb2Y1Dfb9CI@public.gmane.org>
+Subject: =?utf-8?b?6Kyd6Kyd5ZWm5q235aWz5aOr77yB?=
+Date: Mon, 01 Apr 2013 06:32:59 +0800
+Message-ID: <1364769179.d506127faf9c43e6b0c85569e828b3cf.zhanzuok04@sohu.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5510323868836724496=="
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -14,103 +15,31 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
-
---===============5510323868836724496==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="15F2F3181BD.1364616834/plesk.telematicservice.it"
-Content-Transfer-Encoding: 7bit
-
-This is a MIME-encapsulated message.
-
---15F2F3181BD.1364616834/plesk.telematicservice.it
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
-
-This is the mail system at host plesk.telematicservice.it.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to postmaster.
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<Carta-ZAvt1d6w1IKonA0d6jMUrA@public.gmane.org>: connect to myposte.it[216.8.179.25]:25: Connection timed
-    out
-
---15F2F3181BD.1364616834/plesk.telematicservice.it
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; plesk.telematicservice.it
-X-Postfix-Queue-ID: 15F2F3181BD
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Mon, 25 Mar 2013 04:57:59 +0100 (CET)
-
-Final-Recipient: rfc822; Carta-ZAvt1d6w1IKonA0d6jMUrA@public.gmane.org
-Original-Recipient: rfc822;Carta-ZAvt1d6w1IKonA0d6jMUrA@public.gmane.org
-Action: failed
-Status: 4.4.1
-Diagnostic-Code: X-Postfix; connect to myposte.it[216.8.179.25]:25: Connection
-    timed out
-
---15F2F3181BD.1364616834/plesk.telematicservice.it
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from plesk.telematicservice.it (localhost [127.0.0.1])
-	by plesk.telematicservice.it (Postfix) with ESMTP id 15F2F3181BD
-	for <Carta-ZAvt1d6w1IKonA0d6jMUrA@public.gmane.org>; Mon, 25 Mar 2013 04:57:59 +0100 (CET)
-Received: from SAU-766C7-OR.sau.net.au (unknown [27.50.86.154])
-	by plesk.telematicservice.it (Postfix) with ESMTPA
-	for <Carta-ZAvt1d6w1IKonA0d6jMUrA@public.gmane.org>; Mon, 25 Mar 2013 04:57:58 +0100 (CET)
-Received: from [27.50.86.154] by SAU-766C7-OR.sau.net.au id kVGxS5WSwEr0 with SMTP; Sun, 24 Mar 2013 23:57:53 -0400
-Date: Sun, 24 Mar 2013 23:57:53 -0400
-From: "Pay" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.6.25.9) Educational
-X-Priority: 3 (Normal)
-Message-ID: <11923516.07372576621640-KP+Ti3iGYcpodQV7Efir8u23QSEHp/Li@public.gmane.org>
-To: <Carta-ZAvt1d6w1IKonA0d6jMUrA@public.gmane.org>
-Subject: Re[2]: variazioni nel conto
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-
-
-        =20
-Buongiorno,     =20
-La tua richiesta e stata completata.     =20
-Scusa per il report in ritardo.     =20
-    =20
-
-Dettagli possono essere trovati in un documento qui
-http://173.201.24.204/InfoBlocco/Info.zip?WYwu54Vv4EEoSoW8TlI=3DCarta@myp=
-oste.it
- =20
-   =20
-
-
-
---15F2F3181BD.1364616834/plesk.telematicservice.it--
-
---===============5510323868836724496==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============5510323868836724496==--
+PFAgYWxpZ249bGVmdD48Rk9OVCBzdHlsZT0iQkFDS0dST1VORC1DT0xPUjogIzAwZmYwMCIgY29s
+b3I9I2ZmZmZmZj48Rk9OVCBzaXplPTQ+PEZPTlQgc2l6ZT01PjxJTlBVVCBzdHlsZT0iV0lEVEg6
+IDMwMHB4OyBIRUlHSFQ6IDI4cHgiIHNpemU9MzQgdmFsdWU9IueZvCA9PSAgUGlhbyAgID095Yqe
+ID09IOeQhu+8gSI+PC9GT05UPjwvUD4NCjxQIGFsaWduPWxlZnQ+PEZPTlQgc3R5bGU9IkJBQ0tH
+Uk9VTkQtQ09MT1I6ICMwMGZmMDAiIGNvbG9yPSNmZmZmZmY+PEZPTlQgc2l6ZT01PjxJTlBVVCBz
+dHlsZT0iV0lEVEg6IDEwN3B4OyBIRUlHSFQ6IDI3cHgiIHNpemU9OSB2YWx1ZT3nlLXoqbHvvJox
+Mz48SU5QVVQgc3R5bGU9IldJRFRIOiA3NHB4OyBIRUlHSFQ6IDI3cHgiIHNpemU9OCB2YWx1ZT02
+NzYyPjxJTlBVVCBzdHlsZT0iV0lEVEg6IDk4cHg7IEhFSUdIVDogMjdweCIgc2l6ZT05IHZhbHVl
+PTUwNTg0PjwvRk9OVD48L1A+DQo8UCBhbGlnbj1sZWZ0PjxGT05UIHN0eWxlPSJCQUNLR1JPVU5E
+LUNPTE9SOiAjMDBmZjAwIiBjb2xvcj0jZmZmZmZmPjxJTlBVVCBzdHlsZT0iV0lEVEg6IDUxcHg7
+IEhFSUdIVDogMjZweCIgc2l6ZT01IHZhbHVlPVFR77yaPjxJTlBVVCBzdHlsZT0iV0lEVEg6IDQ1
+cHg7IEhFSUdIVDogMjZweCIgc2l6ZT01IHZhbHVlPTczPjxJTlBVVCBzdHlsZT0iV0lEVEg6IDE0
+M3B4OyBIRUlHSFQ6IDI3cHgiIHNpemU9MTYgdmFsdWU9OTQ5NDc3ND48L0ZPTlQ+PC9QPg0KPFAg
+YWxpZ249bGVmdD48SU5QVVQgc3R5bGU9IldJRFRIOiAxMTdweDsgSEVJR0hUOiAyNnB4IiBzaXpl
+PTEzIHZhbHVlPeWwj++9kOmZiD48L1A+PC9GT05UPjwvRk9OVD48L0ZPTlQ+DQo8UCBhbGlnbj1s
+ZWZ0PjxGT05UIHN0eWxlPSJCQUNLR1JPVU5ELUNPTE9SOiAjZmZhOGZmIiBjb2xvcj0jMDBmZjAw
+IHNpemU9ND48L0ZPTlQ+Jm5ic3A7PC9QPg0KPFAgYWxpZ249bGVmdD48Rk9OVCBzdHlsZT0iQkFD
+S0dST1VORC1DT0xPUjogI2ZmZmZmZiIgY29sb3I9IzAwMDAwMCBzaXplPTM+PC9GT05UPiZuYnNw
+OzwvUD4NCjxQIGFsaWduPWxlZnQ+PEZPTlQgc3R5bGU9IkJBQ0tHUk9VTkQtQ09MT1I6ICNmZmE4
+ZmYiIGNvbG9yPSMwMGZmMDAgc2l6ZT00PjwvRk9OVD4mbmJzcDs8L1A+DQo8UCBhbGlnbj1sZWZ0
+PjIwMTPlubQ05pyIMeaXpTbmmYIzM+WIhjLnp5I2MmNvbnRhaW5lcnPkv7rmoLjphJnogZ7niLbn
+uq/lorPnp6TotorohLFXWlhLbmRmNDczNDg2NVRIMzVaPC9QPgpfX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250
+YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3Vu
+ZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
