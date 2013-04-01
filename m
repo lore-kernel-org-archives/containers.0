@@ -1,15 +1,13 @@
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v2 00/28] memcg-aware slab shrinking
-Date: Mon, 1 Apr 2013 09:12:17 -0500
-Message-ID: <20130401141217.GA9336@sergelap>
-References: <1364548450-28254-1-git-send-email-glommer@parallels.com>
-	<20130401123843.GC5217@sergelap> <51598168.4050404@parallels.com>
+From: Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 00/10] cgroups: Task counter subsystem v8
+Date: Mon, 1 Apr 2013 11:43:03 -0700
+Message-ID: <CAAAKZwv9=NFmt6xj1KF2va1i6=UCvka0YkmdOY9JNUMHDOWpGw__36287.8614840612$1364841837$gmane$org@mail.gmail.com>
+References: <1328067470-5980-1-git-send-email-fweisbec@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <51598168.4050404-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <1328067470-5980-1-git-send-email-fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,37 +17,80 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>, Glauber Costa <glommer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>, Daniel J Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Glauber Costa (glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
-> On 04/01/2013 04:38 PM, Serge Hallyn wrote:
-> > Quoting Glauber Costa (glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
-> >> Hi,
-> >>
-> >> Notes:
-> >> ======
-> >>
-> >> This is v2 of memcg-aware LRU shrinking. I've been testing it extensively
-> >> and it behaves well, at least from the isolation point of view. However,
-> >> I feel some more testing is needed before we commit to it. Still, this is
-> >> doing the job fairly well. Comments welcome.
-> > 
-> > Do you have any performance tests (preferably with enough runs with and
-> > without this patchset to show 95% confidence interval) to show the
-> > impact this has?  Certainly the feature sounds worthwhile, but I'm
-> > curious about the cost of maintaining this extra state.
-> > 
-> > -serge
-> > 
-> Not yet. I intend to include them in my next run. I haven't yet decided
-> on a set of tests to run (maybe just a memcg-contained kernel compile?)
-> 
-> So if you have suggestions of what I could run to show this, feel free
-> to lay them down here.
+A year later - what ever happened with this?  I want it more than ever
+for Google's use.
 
-Perhaps mount a 4G tmpfs, copy kernel tree there, and build kernel on
-that tmpfs?
-
--serge
+On Tue, Jan 31, 2012 at 7:37 PM, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+> Hi,
+>
+> Changes In this version:
+>
+> - Split 32/64 bits version of res_counter_write_u64() [1/10]
+>   Courtesy of Kirill A. Shutemov
+>
+> - Added Kirill's ack [8/10]
+>
+> - Added selftests [9/10], [10/10]
+>
+> Please consider for merging. At least two users want this feature:
+> https://lkml.org/lkml/2011/12/13/309
+> https://lkml.org/lkml/2011/12/13/364
+>
+> More general details provided in the last version posting:
+> https://lkml.org/lkml/2012/1/13/230
+>
+> Thanks!
+>
+>
+> Frederic Weisbecker (9):
+>   cgroups: add res_counter_write_u64() API
+>   cgroups: new resource counter inheritance API
+>   cgroups: ability to stop res charge propagation on bounded ancestor
+>   res_counter: allow charge failure pointer to be null
+>   cgroups: pull up res counter charge failure interpretation to caller
+>   cgroups: allow subsystems to cancel a fork
+>   cgroups: Add a task counter subsystem
+>   selftests: Enter each directories before executing selftests
+>   selftests: Add a new task counter selftest
+>
+> Kirill A. Shutemov (1):
+>   cgroups: add res counter common ancestor searching
+>
+>  Documentation/cgroups/resource_counter.txt         |   20 ++-
+>  Documentation/cgroups/task_counter.txt             |  153 +++++++++++
+>  include/linux/cgroup.h                             |   20 +-
+>  include/linux/cgroup_subsys.h                      |    5 +
+>  include/linux/res_counter.h                        |   27 ++-
+>  init/Kconfig                                       |    9 +
+>  kernel/Makefile                                    |    1 +
+>  kernel/cgroup.c                                    |   23 ++-
+>  kernel/cgroup_freezer.c                            |    6 +-
+>  kernel/cgroup_task_counter.c                       |  272 ++++++++++++++++++++
+>  kernel/exit.c                                      |    2 +-
+>  kernel/fork.c                                      |    7 +-
+>  kernel/res_counter.c                               |  103 +++++++-
+>  tools/testing/selftests/Makefile                   |    2 +-
+>  tools/testing/selftests/run_tests                  |    6 +-
+>  tools/testing/selftests/task_counter/Makefile      |    8 +
+>  tools/testing/selftests/task_counter/fork.c        |   40 +++
+>  tools/testing/selftests/task_counter/forkbomb.c    |   40 +++
+>  tools/testing/selftests/task_counter/multithread.c |   68 +++++
+>  tools/testing/selftests/task_counter/run_test      |  198 ++++++++++++++
+>  .../selftests/task_counter/spread_thread_group.c   |   82 ++++++
+>  21 files changed, 1056 insertions(+), 36 deletions(-)
+>  create mode 100644 Documentation/cgroups/task_counter.txt
+>  create mode 100644 kernel/cgroup_task_counter.c
+>  create mode 100644 tools/testing/selftests/task_counter/Makefile
+>  create mode 100644 tools/testing/selftests/task_counter/fork.c
+>  create mode 100644 tools/testing/selftests/task_counter/forkbomb.c
+>  create mode 100644 tools/testing/selftests/task_counter/multithread.c
+>  create mode 100755 tools/testing/selftests/task_counter/run_test
+>  create mode 100644 tools/testing/selftests/task_counter/spread_thread_group.c
+>
+> --
+> 1.7.5.4
+>
