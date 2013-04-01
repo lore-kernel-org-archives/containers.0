@@ -1,14 +1,14 @@
 From: Kamezawa Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH v2 02/28] vmscan: take at least one pass with shrinkers
-Date: Mon, 01 Apr 2013 16:26:45 +0900
-Message-ID: <515936B5.8070501__14227.709596935$1364801271$gmane$org@jp.fujitsu.com>
+Subject: Re: [PATCH v2 21/28] vmscan: also shrink slab in memcg pressure
+Date: Mon, 01 Apr 2013 16:46:56 +0900
+Message-ID: <51593B70.6080003__25809.7827238545$1364802490$gmane$org@jp.fujitsu.com>
 References: <1364548450-28254-1-git-send-email-glommer@parallels.com>
-	<1364548450-28254-3-git-send-email-glommer@parallels.com>
+	<1364548450-28254-22-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1364548450-28254-3-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <1364548450-28254-22-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,70 +19,177 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Mel Gorman <mgorman-l3A5Bk7waGM@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-(2013/03/29 18:13), Glauber Costa wrote:
-> In very low free kernel memory situations, it may be the case that we
-> have less objects to free than our initial batch size. If this is the
-> case, it is better to shrink those, and open space for the new workload
-> then to keep them and fail the new allocations.
+(2013/03/29 18:14), Glauber Costa wrote:
+> Without the surrounding infrastructure, this patch is a bit of a hammer:
+> it will basically shrink objects from all memcgs under memcg pressure.
+> At least, however, we will keep the scan limited to the shrinkers marked
+> as per-memcg.
 > 
-> More specifically, this happens because we encode this in a loop with
-> the condition: "while (total_scan >= batch_size)". So if we are in such
-> a case, we'll not even enter the loop.
-> 
-> This patch modifies turns it into a do () while {} loop, that will
-> guarantee that we scan it at least once, while keeping the behaviour
-> exactly the same for the cases in which total_scan > batch_size.
+> Future patches will implement the in-shrinker logic to filter objects
+> based on its memcg association.
 > 
 > Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-> Reviewed-by: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
-> Reviewed-by: Carlos Maiolino <cmaiolino-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> CC: "Theodore Ts'o" <tytso-3s7WtUTddSA@public.gmane.org>
-> CC: Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+> Cc: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Cc: Mel Gorman <mgorman-l3A5Bk7waGM@public.gmane.org>
+> Cc: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
+> Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+> Cc: Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> Cc: Kamezawa Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+> Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 > ---
->   mm/vmscan.c | 4 ++--
->   1 file changed, 2 insertions(+), 2 deletions(-)
+>   include/linux/memcontrol.h | 17 +++++++++++++++++
+>   include/linux/shrinker.h   |  4 ++++
+>   mm/memcontrol.c            | 16 +++++++++++++++-
+>   mm/vmscan.c                | 46 +++++++++++++++++++++++++++++++++++++++++++---
+>   4 files changed, 79 insertions(+), 4 deletions(-)
 > 
+> diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
+> index d6183f0..4c24249 100644
+> --- a/include/linux/memcontrol.h
+> +++ b/include/linux/memcontrol.h
+> @@ -199,6 +199,9 @@ void mem_cgroup_split_huge_fixup(struct page *head);
+>   bool mem_cgroup_bad_page_check(struct page *page);
+>   void mem_cgroup_print_bad_page(struct page *page);
+>   #endif
+> +
+> +unsigned long
+> +memcg_zone_reclaimable_pages(struct mem_cgroup *memcg, struct zone *zone);
+>   #else /* CONFIG_MEMCG */
+>   struct mem_cgroup;
+>   
+> @@ -377,6 +380,12 @@ static inline void mem_cgroup_replace_page_cache(struct page *oldpage,
+>   				struct page *newpage)
+>   {
+>   }
+> +
+> +static inline unsigned long
+> +memcg_zone_reclaimable_pages(struct mem_cgroup *memcg, struct zone *zone)
+> +{
+> +	return 0;
+> +}
+>   #endif /* CONFIG_MEMCG */
+>   
+>   #if !defined(CONFIG_MEMCG) || !defined(CONFIG_DEBUG_VM)
+> @@ -429,6 +438,8 @@ static inline bool memcg_kmem_enabled(void)
+>   	return static_key_false(&memcg_kmem_enabled_key);
+>   }
+>   
+> +bool memcg_kmem_is_active(struct mem_cgroup *memcg);
+> +
+>   /*
+>    * In general, we'll do everything in our power to not incur in any overhead
+>    * for non-memcg users for the kmem functions. Not even a function call, if we
+> @@ -562,6 +573,12 @@ memcg_kmem_get_cache(struct kmem_cache *cachep, gfp_t gfp)
+>   	return __memcg_kmem_get_cache(cachep, gfp);
+>   }
+>   #else
+> +
+> +static inline bool memcg_kmem_is_active(struct mem_cgroup *memcg)
+> +{
+> +	return false;
+> +}
+> +
+>   #define for_each_memcg_cache_index(_idx)	\
+>   	for (; NULL; )
+>   
+> diff --git a/include/linux/shrinker.h b/include/linux/shrinker.h
+> index d4636a0..4e9e53b 100644
+> --- a/include/linux/shrinker.h
+> +++ b/include/linux/shrinker.h
+> @@ -20,6 +20,9 @@ struct shrink_control {
+>   
+>   	/* shrink from these nodes */
+>   	nodemask_t nodes_to_scan;
+> +
+> +	/* reclaim from this memcg only (if not NULL) */
+> +	struct mem_cgroup *target_mem_cgroup;
+>   };
 
-Doesn't this break
+Does this works only with kmem ? If so, please rename to some explicit
+name for now.
 
-==
-                /*
-                 * copy the current shrinker scan count into a local variable
-                 * and zero it so that other concurrent shrinker invocations
-                 * don't also do this scanning work.
-                 */
-                nr = atomic_long_xchg(&shrinker->nr_in_batch, 0);
-==
-
-This xchg magic ?
-
-Thnks,
--Kame
+  shrink_slab_memcg_target or some ?
 
 
+>   
+>   /*
+> @@ -45,6 +48,7 @@ struct shrinker {
+>   
+>   	int seeks;	/* seeks to recreate an obj */
+>   	long batch;	/* reclaim batch size, 0 = default */
+> +	bool memcg_shrinker; /* memcg-aware shrinker */
+>   
+>   	/* These are for internal use */
+>   	struct list_head list;
+> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+> index 2b55222..ecdae39 100644
+> --- a/mm/memcontrol.c
+> +++ b/mm/memcontrol.c
+> @@ -386,7 +386,7 @@ static inline void memcg_kmem_set_active(struct mem_cgroup *memcg)
+>   	set_bit(KMEM_ACCOUNTED_ACTIVE, &memcg->kmem_account_flags);
+>   }
+>   
+> -static bool memcg_kmem_is_active(struct mem_cgroup *memcg)
+> +bool memcg_kmem_is_active(struct mem_cgroup *memcg)
+>   {
+>   	return test_bit(KMEM_ACCOUNTED_ACTIVE, &memcg->kmem_account_flags);
+>   }
+> @@ -942,6 +942,20 @@ mem_cgroup_zone_nr_lru_pages(struct mem_cgroup *memcg, int nid, int zid,
+>   	return ret;
+>   }
+>   
+> +unsigned long
+> +memcg_zone_reclaimable_pages(struct mem_cgroup *memcg, struct zone *zone)
+> +{
+> +	int nid = zone_to_nid(zone);
+> +	int zid = zone_idx(zone);
+> +	unsigned long val;
+> +
+> +	val = mem_cgroup_zone_nr_lru_pages(memcg, nid, zid, LRU_ALL_FILE);
+> +	if (do_swap_account)
+> +		val += mem_cgroup_zone_nr_lru_pages(memcg, nid, zid,
+> +						    LRU_ALL_ANON);
+> +	return val;
+> +}
+> +
+>   static unsigned long
+>   mem_cgroup_node_nr_lru_pages(struct mem_cgroup *memcg,
+>   			int nid, unsigned int lru_mask)
 > diff --git a/mm/vmscan.c b/mm/vmscan.c
-> index 88c5fed..fc6d45a 100644
+> index 232dfcb..43928fd 100644
 > --- a/mm/vmscan.c
 > +++ b/mm/vmscan.c
-> @@ -280,7 +280,7 @@ unsigned long shrink_slab(struct shrink_control *shrink,
->   					nr_pages_scanned, lru_pages,
->   					max_pass, delta, total_scan);
->   
-> -		while (total_scan >= batch_size) {
-> +		do {
->   			int nr_before;
->   
->   			nr_before = do_shrinker_shrink(shrinker, shrink, 0);
-> @@ -294,7 +294,7 @@ unsigned long shrink_slab(struct shrink_control *shrink,
->   			total_scan -= batch_size;
->   
->   			cond_resched();
-> -		}
-> +		} while (total_scan >= batch_size);
->   
->   		/*
->   		 * move the unused scan count back into the shrinker in a
-> 
+> @@ -138,11 +138,42 @@ static bool global_reclaim(struct scan_control *sc)
+>   {
+>   	return !sc->target_mem_cgroup;
+>   }
+> +
+> +/*
+> + * kmem reclaim should usually not be triggered when we are doing targetted
+> + * reclaim. It is only valid when global reclaim is triggered, or when the
+> + * underlying memcg has kmem objects.
+> + */
+> +static bool has_kmem_reclaim(struct scan_control *sc)
+> +{
+> +	return !sc->target_mem_cgroup ||
+> +		memcg_kmem_is_active(sc->target_mem_cgroup);
+> +}
+
+Is this test hierarchy aware ?
+
+For example, in following case,
+
+  A      no kmem limit
+   \
+    B    kmem limit=XXX
+     \
+      C  kmem limit=XXX
+
+what happens when A is the target.
+
+Thanks
+-Kame
