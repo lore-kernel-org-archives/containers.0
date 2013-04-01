@@ -1,15 +1,14 @@
 From: Kamezawa Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH v2 01/28] super: fix calculation of shrinkable objects
-	for small numbers
-Date: Mon, 01 Apr 2013 16:16:59 +0900
-Message-ID: <5159346B.1000000@jp.fujitsu.com>
+Subject: Re: [PATCH v2 02/28] vmscan: take at least one pass with shrinkers
+Date: Mon, 01 Apr 2013 16:26:45 +0900
+Message-ID: <515936B5.8070501__14227.709596935$1364801271$gmane$org@jp.fujitsu.com>
 References: <1364548450-28254-1-git-send-email-glommer@parallels.com>
-	<1364548450-28254-2-git-send-email-glommer@parallels.com>
+	<1364548450-28254-3-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1364548450-28254-2-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <1364548450-28254-3-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,27 +23,66 @@ Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, hughd-hpIqsD4AKlfQT0dZR+
 List-Id: containers.vger.kernel.org
 
 (2013/03/29 18:13), Glauber Costa wrote:
-> The sysctl knob sysctl_vfs_cache_pressure is used to determine which
-> percentage of the shrinkable objects in our cache we should actively try
-> to shrink.
+> In very low free kernel memory situations, it may be the case that we
+> have less objects to free than our initial batch size. If this is the
+> case, it is better to shrink those, and open space for the new workload
+> then to keep them and fail the new allocations.
 > 
-> It works great in situations in which we have many objects (at least
-> more than 100), because the aproximation errors will be negligible. But
-> if this is not the case, specially when total_objects < 100, we may end
-> up concluding that we have no objects at all (total / 100 = 0,  if total
-> < 100).
+> More specifically, this happens because we encode this in a loop with
+> the condition: "while (total_scan >= batch_size)". So if we are in such
+> a case, we'll not even enter the loop.
 > 
-> This is certainly not the biggest killer in the world, but may matter in
-> very low kernel memory situations.
-> 
-> [ v2: fix it for all occurrences of sysctl_vfs_cache_pressure ]
+> This patch modifies turns it into a do () while {} loop, that will
+> guarantee that we scan it at least once, while keeping the behaviour
+> exactly the same for the cases in which total_scan > batch_size.
 > 
 > Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+> Reviewed-by: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
 > Reviewed-by: Carlos Maiolino <cmaiolino-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> CC: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
 > CC: "Theodore Ts'o" <tytso-3s7WtUTddSA@public.gmane.org>
 > CC: Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+> ---
+>   mm/vmscan.c | 4 ++--
+>   1 file changed, 2 insertions(+), 2 deletions(-)
+> 
 
-I think reasonable.
+Doesn't this break
 
-Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+==
+                /*
+                 * copy the current shrinker scan count into a local variable
+                 * and zero it so that other concurrent shrinker invocations
+                 * don't also do this scanning work.
+                 */
+                nr = atomic_long_xchg(&shrinker->nr_in_batch, 0);
+==
+
+This xchg magic ?
+
+Thnks,
+-Kame
+
+
+> diff --git a/mm/vmscan.c b/mm/vmscan.c
+> index 88c5fed..fc6d45a 100644
+> --- a/mm/vmscan.c
+> +++ b/mm/vmscan.c
+> @@ -280,7 +280,7 @@ unsigned long shrink_slab(struct shrink_control *shrink,
+>   					nr_pages_scanned, lru_pages,
+>   					max_pass, delta, total_scan);
+>   
+> -		while (total_scan >= batch_size) {
+> +		do {
+>   			int nr_before;
+>   
+>   			nr_before = do_shrinker_shrink(shrinker, shrink, 0);
+> @@ -294,7 +294,7 @@ unsigned long shrink_slab(struct shrink_control *shrink,
+>   			total_scan -= batch_size;
+>   
+>   			cond_resched();
+> -		}
+> +		} while (total_scan >= batch_size);
+>   
+>   		/*
+>   		 * move the unused scan count back into the shrinker in a
+> 
