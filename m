@@ -1,8 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 3/5] cgroup: unexport locking interface and
-	cgroup_attach_task()
-Date: Thu,  4 Apr 2013 16:36:27 -0700
-Message-ID: <1365118589-10619-4-git-send-email-tj__29012.2193903246$1365118667$gmane$org@kernel.org>
+Subject: [PATCH 4/5] cgroup: kill cgroup_[un]lock()
+Date: Thu,  4 Apr 2013 16:36:28 -0700
+Message-ID: <1365118589-10619-5-git-send-email-tj@kernel.org>
 References: <1365118589-10619-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,89 +21,123 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Now that all external cgroup_lock() users are gone, we can finally
-unexport the locking interface and prevent future abuse of
-cgroup_mutex.
-
-Make cgroup_[un]lock() and cgroup_lock_live_group() static.  Also,
-cgroup_attach_task() doesn't have any user left and can't be used
-without locking interface anyway.  Make it static too.
+Now that locking interface is unexported, there's no reason to keep
+around these thin wrappers.  Kill them and use mutex operations
+directly.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- include/linux/cgroup.h | 5 -----
- kernel/cgroup.c        | 9 +++------
- 2 files changed, 3 insertions(+), 11 deletions(-)
+ kernel/cgroup.c | 41 +++++++++++------------------------------
+ 1 file changed, 11 insertions(+), 30 deletions(-)
 
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index f8eb01d..63deb70 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -30,10 +30,7 @@ struct css_id;
- 
- extern int cgroup_init_early(void);
- extern int cgroup_init(void);
--extern void cgroup_lock(void);
- extern int cgroup_lock_is_held(void);
--extern bool cgroup_lock_live_group(struct cgroup *cgrp);
--extern void cgroup_unlock(void);
- extern void cgroup_fork(struct task_struct *p);
- extern void cgroup_post_fork(struct task_struct *p);
- extern void cgroup_exit(struct task_struct *p, int run_callbacks);
-@@ -693,8 +690,6 @@ struct task_struct *cgroup_iter_next(struct cgroup *cgrp,
- 					struct cgroup_iter *it);
- void cgroup_iter_end(struct cgroup *cgrp, struct cgroup_iter *it);
- int cgroup_scan_tasks(struct cgroup_scanner *scan);
--int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk,
--		       bool threadgroup);
- int cgroup_attach_task_all(struct task_struct *from, struct task_struct *);
- int cgroup_transfer_tasks(struct cgroup *to, struct cgroup *from);
- 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index ae76170..32ca030 100644
+index 32ca030..1a65958 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -336,7 +336,7 @@ static inline struct cftype *__d_cft(struct dentry *dentry)
-  * On success, returns true; the lock should be later released with
-  * cgroup_unlock(). On failure returns false with no lock held.
-  */
--bool cgroup_lock_live_group(struct cgroup *cgrp)
-+static bool cgroup_lock_live_group(struct cgroup *cgrp)
- {
- 	mutex_lock(&cgroup_mutex);
- 	if (cgroup_is_removed(cgrp)) {
-@@ -345,7 +345,6 @@ bool cgroup_lock_live_group(struct cgroup *cgrp)
- 	}
- 	return true;
- }
--EXPORT_SYMBOL_GPL(cgroup_lock_live_group);
- 
- /* the list of cgroups eligible for automatic release. Protected by
-  * release_list_lock */
-@@ -824,22 +823,20 @@ static struct cgroup *task_cgroup_from_root(struct task_struct *task,
-  * cgroup_lock - lock out any changes to cgroup structures
+@@ -333,8 +333,8 @@ static inline struct cftype *__d_cft(struct dentry *dentry)
+  * cgroup_lock_live_group - take cgroup_mutex and check that cgrp is alive.
+  * @cgrp: the cgroup to be checked for liveness
   *
+- * On success, returns true; the lock should be later released with
+- * cgroup_unlock(). On failure returns false with no lock held.
++ * On success, returns true; the mutex should be later unlocked.  On
++ * failure returns false with no lock held.
   */
--void cgroup_lock(void)
-+static void cgroup_lock(void)
+ static bool cgroup_lock_live_group(struct cgroup *cgrp)
  {
- 	mutex_lock(&cgroup_mutex);
- }
--EXPORT_SYMBOL_GPL(cgroup_lock);
- 
- /**
-  * cgroup_unlock - release lock on cgroup changes
-  *
-  * Undo the lock taken in a previous cgroup_lock() call.
+@@ -819,25 +819,6 @@ static struct cgroup *task_cgroup_from_root(struct task_struct *task,
+  * update of a tasks cgroup pointer by cgroup_attach_task()
   */
--void cgroup_unlock(void)
-+static void cgroup_unlock(void)
- {
- 	mutex_unlock(&cgroup_mutex);
- }
--EXPORT_SYMBOL_GPL(cgroup_unlock);
  
+-/**
+- * cgroup_lock - lock out any changes to cgroup structures
+- *
+- */
+-static void cgroup_lock(void)
+-{
+-	mutex_lock(&cgroup_mutex);
+-}
+-
+-/**
+- * cgroup_unlock - release lock on cgroup changes
+- *
+- * Undo the lock taken in a previous cgroup_lock() call.
+- */
+-static void cgroup_unlock(void)
+-{
+-	mutex_unlock(&cgroup_mutex);
+-}
+-
  /*
   * A couple of forward declarations required, due to cyclic reference loop:
+  * cgroup_mkdir -> cgroup_create -> cgroup_populate_dir ->
+@@ -1967,8 +1948,8 @@ static void cgroup_task_migrate(struct cgroup *oldcgrp,
+  * Call holding cgroup_mutex and the group_rwsem of the leader. Will take
+  * task_lock of @tsk or each thread in the threadgroup individually in turn.
+  */
+-int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk,
+-		       bool threadgroup)
++static int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk,
++			      bool threadgroup)
+ {
+ 	int retval, i, group_size;
+ 	struct cgroup_subsys *ss, *failed_ss = NULL;
+@@ -2191,7 +2172,7 @@ retry_find_task:
+ 
+ 	put_task_struct(tsk);
+ out_unlock_cgroup:
+-	cgroup_unlock();
++	mutex_unlock(&cgroup_mutex);
+ 	return ret;
+ }
+ 
+@@ -2205,7 +2186,7 @@ int cgroup_attach_task_all(struct task_struct *from, struct task_struct *tsk)
+ 	struct cgroupfs_root *root;
+ 	int retval = 0;
+ 
+-	cgroup_lock();
++	mutex_lock(&cgroup_mutex);
+ 	for_each_active_root(root) {
+ 		struct cgroup *from_cg = task_cgroup_from_root(from, root);
+ 
+@@ -2213,7 +2194,7 @@ int cgroup_attach_task_all(struct task_struct *from, struct task_struct *tsk)
+ 		if (retval)
+ 			break;
+ 	}
+-	cgroup_unlock();
++	mutex_unlock(&cgroup_mutex);
+ 
+ 	return retval;
+ }
+@@ -2240,7 +2221,7 @@ static int cgroup_release_agent_write(struct cgroup *cgrp, struct cftype *cft,
+ 	mutex_lock(&cgroup_root_mutex);
+ 	strcpy(cgrp->root->release_agent_path, buffer);
+ 	mutex_unlock(&cgroup_root_mutex);
+-	cgroup_unlock();
++	mutex_unlock(&cgroup_mutex);
+ 	return 0;
+ }
+ 
+@@ -2251,7 +2232,7 @@ static int cgroup_release_agent_show(struct cgroup *cgrp, struct cftype *cft,
+ 		return -ENODEV;
+ 	seq_puts(seq, cgrp->root->release_agent_path);
+ 	seq_putc(seq, '\n');
+-	cgroup_unlock();
++	mutex_unlock(&cgroup_mutex);
+ 	return 0;
+ }
+ 
+@@ -3271,9 +3252,9 @@ static void cgroup_transfer_one_task(struct task_struct *task,
+ {
+ 	struct cgroup *new_cgroup = scan->data;
+ 
+-	cgroup_lock();
++	mutex_lock(&cgroup_mutex);
+ 	cgroup_attach_task(new_cgroup, task, false);
+-	cgroup_unlock();
++	mutex_unlock(&cgroup_mutex);
+ }
+ 
+ /**
 -- 
 1.8.1.4
