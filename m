@@ -1,17 +1,16 @@
-From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCH v2 05/28] dcache: remove dentries from LRU before putting
-	on dispose list
-Date: Thu, 4 Apr 2013 10:56:13 +0400
-Message-ID: <515D240D.7040901__36882.6837897815$1365058575$gmane$org@parallels.com>
+From: Sha Zhengju <handai.szj-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH v2 21/28] vmscan: also shrink slab in memcg pressure
+Date: Thu, 4 Apr 2013 17:35:35 +0800
+Message-ID: <CAFj3OHWEirUH-xWX4O1NVDXCc6EYtceYy9suUgphEQ3C-35oxQ__46139.2839126804$1365068170$gmane$org@mail.gmail.com>
 References: <1364548450-28254-1-git-send-email-glommer@parallels.com>
-	<1364548450-28254-6-git-send-email-glommer@parallels.com>
-	<CAFj3OHU_o5o_n_kcci1U_=M0tCpYEwy8abRvHKBdp-GoJ-cs3w@mail.gmail.com>
-	<20130404061938.GD12011@dastard>
+	<1364548450-28254-22-git-send-email-glommer@parallels.com>
+	<CAFj3OHXp5K6TSCJq4gmi7Y_RpkmbLzDU3GP8vRMmChexULZjyQ@mail.gmail.com>
+	<515C07E9.8080307@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20130404061938.GD12011@dastard>
+In-Reply-To: <515C07E9.8080307-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,44 +20,32 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Mel Gorman <mgorman-l3A5Bk7waGM@public.gmane.org>, Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 04/04/2013 10:19 AM, Dave Chinner wrote:
-> On Wed, Apr 03, 2013 at 02:51:43PM +0800, Sha Zhengju wrote:
->> On Fri, Mar 29, 2013 at 5:13 PM, Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>wrote:
->>> From: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
->>> @@ -884,6 +907,28 @@ relock:
->>>         shrink_dentry_list(&tmp);
->>>  }
->>>
->>> +/*
->>> + * Mark all the dentries as on being the dispose list so we don't think
->>> they are
->>> + * still on the LRU if we try to kill them from ascending the parent
->>> chain in
->>> + * try_prune_one_dentry() rather than directly from the dispose list.
->>> + */
->>> +static void
->>> +shrink_dcache_list(
->>> +       struct list_head *dispose)
->>> +{
->>> +       struct dentry *dentry;
->>> +
->>> +       rcu_read_lock();
->>> +       list_for_each_entry_rcu(dentry, dispose, d_lru) {
->>> +               spin_lock(&dentry->d_lock);
->>> +               dentry->d_flags |= DCACHE_SHRINK_LIST;
->>> +               this_cpu_dec(nr_dentry_unused);
->>>
+On Wed, Apr 3, 2013 at 6:43 PM, Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> wrote:
+> On 04/03/2013 02:11 PM, Sha Zhengju wrote:
+>>> > +unsigned long
+>>> > +memcg_zone_reclaimable_pages(struct mem_cgroup *memcg, struct zone *zone)
+>>> > +{
+>>> > +       int nid = zone_to_nid(zone);
+>>> > +       int zid = zone_idx(zone);
+>>> > +       unsigned long val;
+>>> > +
+>>> > +       val = mem_cgroup_zone_nr_lru_pages(memcg, nid, zid, LRU_ALL_FILE);
+>>> > +       if (do_swap_account)
+>> IMHO May get_nr_swap_pages() be more appropriate here?
 >>
->> Why here dec nr_dentry_unused again? Has it been decreased in the following
->> shrink_dcache_sb()?
-> 
-> You are right, that's a bugi as we've already accounted for the
-> dentry being pulled off the LRU list. Good catch.
-> 
+>
+> This is a per-memcg number, how would get_nr_swap_pages() help us here?
+>
 
-Ok, I folded it in the original patch with the due credits for better
-bisection.
+I meant to add get_nr_swap_pages() as the if-judgement, that is:
+   if (do_swap_account && get_nr_swap_pages())
+       ....
+since anon pages becomes unreclaimable if swap space is used up.
+
+
+Thanks,
+Sha
