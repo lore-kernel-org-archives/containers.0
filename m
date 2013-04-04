@@ -1,16 +1,12 @@
-From: Sha Zhengju <handai.szj-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH v2 21/28] vmscan: also shrink slab in memcg pressure
-Date: Thu, 4 Apr 2013 17:35:35 +0800
-Message-ID: <CAFj3OHWEirUH-xWX4O1NVDXCc6EYtceYy9suUgphEQ3C-35oxQ__46139.2839126804$1365068170$gmane$org@mail.gmail.com>
-References: <1364548450-28254-1-git-send-email-glommer@parallels.com>
-	<1364548450-28254-22-git-send-email-glommer@parallels.com>
-	<CAFj3OHXp5K6TSCJq4gmi7Y_RpkmbLzDU3GP8vRMmChexULZjyQ@mail.gmail.com>
-	<515C07E9.8080307@parallels.com>
+From: "Bohdan" <bohdan_baida-IQAdlSoDeWtSwrhanM7KvQ@public.gmane.org>
+Subject: Social network for 2D and 3D artists.
+Date: Thu, 4 Apr 2013 12:02:56 -0400
+Message-ID: <20130404161040.B6412935@mail.linuxfoundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <515C07E9.8080307-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,32 +16,25 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Mel Gorman <mgorman-l3A5Bk7waGM@public.gmane.org>, Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Apr 3, 2013 at 6:43 PM, Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> wrote:
-> On 04/03/2013 02:11 PM, Sha Zhengju wrote:
->>> > +unsigned long
->>> > +memcg_zone_reclaimable_pages(struct mem_cgroup *memcg, struct zone *zone)
->>> > +{
->>> > +       int nid = zone_to_nid(zone);
->>> > +       int zid = zone_idx(zone);
->>> > +       unsigned long val;
->>> > +
->>> > +       val = mem_cgroup_zone_nr_lru_pages(memcg, nid, zid, LRU_ALL_FILE);
->>> > +       if (do_swap_account)
->> IMHO May get_nr_swap_pages() be more appropriate here?
->>
->
-> This is a per-memcg number, how would get_nr_swap_pages() help us here?
->
-
-I meant to add get_nr_swap_pages() as the if-judgement, that is:
-   if (do_swap_account && get_nr_swap_pages())
-       ....
-since anon pages becomes unreclaimable if swap space is used up.
-
-
-Thanks,
-Sha
+77u/SGVsbG8uCk15IG5hbWUgaXMgQm9oZGFuLgogCkkgYW0gY3JlYXRvciBvZiBuZXcgbmV0d29y
+ayBmb3IgYWxsIGNyZWF0aXZlIGFuZCB0YWxlbnRlZCBwZW9wbGUuIDJEIEFydGlzdHMsIDNEIEFy
+dGlzdHMsIFByb2dyYW1tZXJzLCBXcml0ZXJzLCBEZXNpZ25lcnMgUGhvdG9ncmFwaGVycyBhbmQg
+YSBsb3QgbW9yZeKApiAgSSB3b3VsZCBsaWtlIHRvIGludml0ZSB5b3UgdG8gdmlzaXQgbXkgd2Vi
+IHNpdGUsIHRoaXMgaXMgdmVyeSBnb29kIGFuZCB1c2VmdWwgc29jaWFsIG5ldHdvcmsuIE5ldHdv
+cmsgd2l0aCB0dXRvcmlhbHMgd2hlcmUgeW91IGNhbiBzZWxsIG9yIGJ1eSB0dXRvcmlhbC4gQWxz
+byB0aGlzIGlzIGZyZWVsYW5jZXJzIG5ldHdvcmsgdG9vLiBBbmQgbWFya2V0IHBsYWNlIHdoZXJl
+IHlvdSBjYW4gc2VsbCB5b3VyIDNkIE1vZGVscyBhbmQgSW1hZ2VzLgpUaGlzIGlzIHZlcnkgZ29v
+ZCBuZXR3b3JrIGJ1dCB2ZXJ5IG5ldywgbXkgd2ViIHNpdGUgaXMgb25seSAyIG1vbnRoIG9sZCBh
+bmQgd2UgZG9u4oCZdCBoYXZlIHRvbyBtdWNoIGNvbnRlbnQgb24gaXQuIElmIHlvdSBhcmUgaW50
+ZXJlc3RpbmcgYmUgcGFydCBvZiBuZXcgY3JlYXRpdmUgbmV0d29yaywgYmUgbXkgZ3Vlc3QuIEoK
+UGxlYXNlIHJlZ2lzdGVyIGFuZCBoZWxwIHVzIHRvIGdyb3cgbmV3IGFuZCB1c2VmdWwgc29jaWFs
+IG5ldHdvcmsgZm9yIGNyZWF0aXZlIHBlb3BsZS4KICAgICAgICAgICAgICAgICAgICAgIApJZiB5
+b3UgaGF2ZSBhbnkgcXVlc3Rpb25zIG9yIHlvdSBuZWVkIGFueSBoZWxwIHBsZWFzZSBmZWVsIGZy
+ZWUgdG8gZW1haWwgbWUuCiAKTXkgd2Vic2l0ZSB3d3cuY3JlYXRpdmlrcy5jb20gCiAKSSBob3Bl
+IHRvIHNlZSB5b3UgdGhlcmUuClRoYW5rIHlvdS4KIAoKX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVy
+c0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlv
+bi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
