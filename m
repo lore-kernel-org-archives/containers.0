@@ -1,13 +1,14 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 5/5] cgroup: remove cgroup_lock_is_held()
-Date: Thu,  4 Apr 2013 16:36:29 -0700
-Message-ID: <1365118589-10619-6-git-send-email-tj@kernel.org>
-References: <1365118589-10619-1-git-send-email-tj@kernel.org>
+From: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH v2 03/28] dcache: convert dentry_stat.nr_unused to per-cpu
+	counters
+Date: Thu, 04 Apr 2013 18:09:31 -0700
+Message-ID: <xr93r4ipkcl0.fsf@gthelen.mtv.corp.google.com>
+References: <1364548450-28254-1-git-send-email-glommer@parallels.com>
+	<1364548450-28254-4-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1365118589-10619-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,101 +18,52 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
-Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-We don't want controllers to assume that the information is officially
-available and do funky things with it.
+On Fri, Mar 29 2013, Glauber Costa wrote:
 
-The only user is task_subsys_state_check() which uses it to verify RCU
-access context.  We can move cgroup_lock_is_held() inside
-CONFIG_PROVE_RCU but that doesn't add meaningful protection compared
-to conditionally exposing cgroup_mutex.
+> From: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+>
+> Before we split up the dcache_lru_lock, the unused dentry counter
+> needs to be made independent of the global dcache_lru_lock. Convert
+> it to per-cpu counters to do this.
+>
+> Signed-off-by: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Reviewed-by: Christoph Hellwig <hch-jcswGhMUV9g@public.gmane.org>
+> ---
+>  fs/dcache.c | 17 ++++++++++++++---
+>  1 file changed, 14 insertions(+), 3 deletions(-)
+>
+> diff --git a/fs/dcache.c b/fs/dcache.c
+> index fbfae008..f1196f2 100644
+> --- a/fs/dcache.c
+> +++ b/fs/dcache.c
+> @@ -118,6 +118,7 @@ struct dentry_stat_t dentry_stat = {
+>  };
+>  
+>  static DEFINE_PER_CPU(unsigned int, nr_dentry);
+> +static DEFINE_PER_CPU(unsigned int, nr_dentry_unused);
+>  
+>  #if defined(CONFIG_SYSCTL) && defined(CONFIG_PROC_FS)
+>  static int get_nr_dentry(void)
+> @@ -129,10 +130,20 @@ static int get_nr_dentry(void)
+>  	return sum < 0 ? 0 : sum;
+>  }
+>  
+> +static int get_nr_dentry_unused(void)
+> +{
+> +	int i;
+> +	int sum = 0;
+> +	for_each_possible_cpu(i)
+> +		sum += per_cpu(nr_dentry_unused, i);
+> +	return sum < 0 ? 0 : sum;
+> +}
 
-Remove cgroup_lock_is_held(), export cgroup_mutex iff CONFIG_PROVE_RCU
-and use lockdep_is_held() directly on the mutex in
-task_subsys_state_check().
+Just checking...  If cpu x is removed, then its per cpu nr_dentry_unused
+count survives so we don't leak nr_dentry_unused.  Right?  I see code in
+percpu_counter_sum_positive() to explicitly handle this case and I want
+to make sure we don't need it here.
 
-While at it, add parentheses around macro arguments in
-task_subsys_state_check().
-
-Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
----
- include/linux/cgroup.h | 13 +++++++++----
- kernel/cgroup.c        | 20 ++++++--------------
- 2 files changed, 15 insertions(+), 18 deletions(-)
-
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 63deb70..515927e 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -30,7 +30,6 @@ struct css_id;
- 
- extern int cgroup_init_early(void);
- extern int cgroup_init(void);
--extern int cgroup_lock_is_held(void);
- extern void cgroup_fork(struct task_struct *p);
- extern void cgroup_post_fork(struct task_struct *p);
- extern void cgroup_exit(struct task_struct *p, int run_callbacks);
-@@ -552,10 +551,16 @@ static inline struct cgroup_subsys_state *cgroup_subsys_state(
-  * rcu_dereference_check() conditions, such as locks used during the
-  * cgroup_subsys::attach() methods.
-  */
-+#ifdef CONFIG_PROVE_RCU
-+extern struct mutex cgroup_mutex;
- #define task_subsys_state_check(task, subsys_id, __c)			\
--	rcu_dereference_check(task->cgroups->subsys[subsys_id],		\
--			      lockdep_is_held(&task->alloc_lock) ||	\
--			      cgroup_lock_is_held() || (__c))
-+	rcu_dereference_check((task)->cgroups->subsys[(subsys_id)],	\
-+			      lockdep_is_held(&(task)->alloc_lock) ||	\
-+			      lockdep_is_held(&cgroup_mutex) || (__c))
-+#else
-+#define task_subsys_state_check(task, subsys_id, __c)			\
-+	rcu_dereference((task)->cgroups->subsys[(subsys_id)])
-+#endif
- 
- static inline struct cgroup_subsys_state *
- task_subsys_state(struct task_struct *task, int subsys_id)
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 1a65958..ba3e24a 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -83,7 +83,13 @@
-  * B happens only through cgroup_show_options() and using cgroup_root_mutex
-  * breaks it.
-  */
-+#ifdef CONFIG_PROVE_RCU
-+DEFINE_MUTEX(cgroup_mutex);
-+EXPORT_SYMBOL_GPL(cgroup_mutex);	/* only for task_subsys_state_check() */
-+#else
- static DEFINE_MUTEX(cgroup_mutex);
-+#endif
-+
- static DEFINE_MUTEX(cgroup_root_mutex);
- 
- /*
-@@ -251,20 +257,6 @@ static int cgroup_destroy_locked(struct cgroup *cgrp);
- static int cgroup_addrm_files(struct cgroup *cgrp, struct cgroup_subsys *subsys,
- 			      struct cftype cfts[], bool is_add);
- 
--#ifdef CONFIG_PROVE_LOCKING
--int cgroup_lock_is_held(void)
--{
--	return lockdep_is_held(&cgroup_mutex);
--}
--#else /* #ifdef CONFIG_PROVE_LOCKING */
--int cgroup_lock_is_held(void)
--{
--	return mutex_is_locked(&cgroup_mutex);
--}
--#endif /* #else #ifdef CONFIG_PROVE_LOCKING */
--
--EXPORT_SYMBOL_GPL(cgroup_lock_is_held);
--
- static int css_unbias_refcnt(int refcnt)
- {
- 	return refcnt >= 0 ? refcnt : refcnt - CSS_DEACT_BIAS;
--- 
-1.8.1.4
+[snip]
