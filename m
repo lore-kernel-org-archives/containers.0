@@ -1,13 +1,17 @@
-From: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v2 08/28] list: add a new LRU list type
-Date: Thu, 04 Apr 2013 14:53:49 -0700
-Message-ID: <xr93ehepkcje.fsf__31287.8710603856$1365124267$gmane$org@gthelen.mtv.corp.google.com>
+From: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
+Subject: Re: [PATCH v2 03/28] dcache: convert dentry_stat.nr_unused to
+	per-cpu counters
+Date: Fri, 5 Apr 2013 12:15:06 +1100
+Message-ID: <20130405011506.GG12011@dastard>
 References: <1364548450-28254-1-git-send-email-glommer@parallels.com>
-	<1364548450-28254-9-git-send-email-glommer@parallels.com>
+	<1364548450-28254-4-git-send-email-glommer@parallels.com>
+	<xr93r4ipkcl0.fsf@gthelen.mtv.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <xr93r4ipkcl0.fsf-aSPv4SP+Du0KgorLzL7FmE7CuiCeIGUxQQ4Iyu8u01E@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,219 +21,64 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Mar 29 2013, Glauber Costa wrote:
+On Thu, Apr 04, 2013 at 06:09:31PM -0700, Greg Thelen wrote:
+> On Fri, Mar 29 2013, Glauber Costa wrote:
+> 
+> > From: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> >
+> > Before we split up the dcache_lru_lock, the unused dentry counter
+> > needs to be made independent of the global dcache_lru_lock. Convert
+> > it to per-cpu counters to do this.
+> >
+> > Signed-off-by: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> > Reviewed-by: Christoph Hellwig <hch-jcswGhMUV9g@public.gmane.org>
+> > ---
+> >  fs/dcache.c | 17 ++++++++++++++---
+> >  1 file changed, 14 insertions(+), 3 deletions(-)
+> >
+> > diff --git a/fs/dcache.c b/fs/dcache.c
+> > index fbfae008..f1196f2 100644
+> > --- a/fs/dcache.c
+> > +++ b/fs/dcache.c
+> > @@ -118,6 +118,7 @@ struct dentry_stat_t dentry_stat = {
+> >  };
+> >  
+> >  static DEFINE_PER_CPU(unsigned int, nr_dentry);
+> > +static DEFINE_PER_CPU(unsigned int, nr_dentry_unused);
+> >  
+> >  #if defined(CONFIG_SYSCTL) && defined(CONFIG_PROC_FS)
+> >  static int get_nr_dentry(void)
+> > @@ -129,10 +130,20 @@ static int get_nr_dentry(void)
+> >  	return sum < 0 ? 0 : sum;
+> >  }
+> >  
+> > +static int get_nr_dentry_unused(void)
+> > +{
+> > +	int i;
+> > +	int sum = 0;
+> > +	for_each_possible_cpu(i)
+> > +		sum += per_cpu(nr_dentry_unused, i);
+> > +	return sum < 0 ? 0 : sum;
+> > +}
+> 
+> Just checking...  If cpu x is removed, then its per cpu nr_dentry_unused
+> count survives so we don't leak nr_dentry_unused.  Right?  I see code in
+> percpu_counter_sum_positive() to explicitly handle this case and I want
+> to make sure we don't need it here.
 
-> From: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
->
-> Several subsystems use the same construct for LRU lists - a list
-> head, a spin lock and and item count. They also use exactly the same
-> code for adding and removing items from the LRU. Create a generic
-> type for these LRU lists.
->
-> This is the beginning of generic, node aware LRUs for shrinkers to
-> work with.
->
-> Signed-off-by: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> ---
->  include/linux/list_lru.h |  36 +++++++++++++++
->  lib/Makefile             |   2 +-
->  lib/list_lru.c           | 117 +++++++++++++++++++++++++++++++++++++++++++++++
->  3 files changed, 154 insertions(+), 1 deletion(-)
->  create mode 100644 include/linux/list_lru.h
->  create mode 100644 lib/list_lru.c
->
-> diff --git a/include/linux/list_lru.h b/include/linux/list_lru.h
-> new file mode 100644
-> index 0000000..3423949
-> --- /dev/null
-> +++ b/include/linux/list_lru.h
-> @@ -0,0 +1,36 @@
-> +/*
-> + * Copyright (c) 2010-2012 Red Hat, Inc. All rights reserved.
-> + * Author: David Chinner
-> + *
-> + * Generic LRU infrastructure
-> + */
-> +#ifndef _LRU_LIST_H
-> +#define _LRU_LIST_H 0
+DEFINE_PER_CPU() gives a variable per possible CPU, and we sum for
+all possible CPUs. Therefore online/offline CPUs just don't matter.
 
-Utter nitpicking, but all other .h files in this directory use the form:
+The percpu_counter code uses for_each_online_cpu(), and so it has to
+be aware of hotplug operations so taht it doesn't leak counts.
 
-  #define _LRU_LIST_H
+Cheers,
 
-not the removed trailing 0.
-
-> +
-> +#include <linux/list.h>
-> +
-> +struct list_lru {
-> +	spinlock_t		lock;
-> +	struct list_head	list;
-> +	long			nr_items;
-> +};
-> +
-> +int list_lru_init(struct list_lru *lru);
-> +int list_lru_add(struct list_lru *lru, struct list_head *item);
-> +int list_lru_del(struct list_lru *lru, struct list_head *item);
-> +
-> +static inline long list_lru_count(struct list_lru *lru)
-> +{
-> +	return lru->nr_items;
-> +}
-> +
-> +typedef int (*list_lru_walk_cb)(struct list_head *item, spinlock_t *lock,
-> +				void *cb_arg);
-> +typedef void (*list_lru_dispose_cb)(struct list_head *dispose_list);
-> +
-> +long list_lru_walk(struct list_lru *lru, list_lru_walk_cb isolate,
-> +		   void *cb_arg, long nr_to_walk);
-> +
-> +long list_lru_dispose_all(struct list_lru *lru, list_lru_dispose_cb dispose);
-> +
-> +#endif /* _LRU_LIST_H */
-> diff --git a/lib/Makefile b/lib/Makefile
-> index d7946ff..f14abd9 100644
-> --- a/lib/Makefile
-> +++ b/lib/Makefile
-> @@ -13,7 +13,7 @@ lib-y := ctype.o string.o vsprintf.o cmdline.o \
->  	 sha1.o md5.o irq_regs.o reciprocal_div.o argv_split.o \
->  	 proportions.o flex_proportions.o prio_heap.o ratelimit.o show_mem.o \
->  	 is_single_threaded.o plist.o decompress.o kobject_uevent.o \
-> -	 earlycpio.o
-> +	 earlycpio.o list_lru.o
->  
->  lib-$(CONFIG_MMU) += ioremap.o
->  lib-$(CONFIG_SMP) += cpumask.o
-> diff --git a/lib/list_lru.c b/lib/list_lru.c
-> new file mode 100644
-> index 0000000..475d0e9
-> --- /dev/null
-> +++ b/lib/list_lru.c
-> @@ -0,0 +1,117 @@
-> +/*
-> + * Copyright (c) 2010-2012 Red Hat, Inc. All rights reserved.
-> + * Author: David Chinner
-> + *
-> + * Generic LRU infrastructure
-> + */
-> +#include <linux/kernel.h>
-> +#include <linux/module.h>
-> +#include <linux/list_lru.h>
-> +
-> +int
-> +list_lru_add(
-> +	struct list_lru	*lru,
-> +	struct list_head *item)
-> +{
-> +	spin_lock(&lru->lock);
-> +	if (list_empty(item)) {
-> +		list_add_tail(item, &lru->list);
-> +		lru->nr_items++;
-> +		spin_unlock(&lru->lock);
-> +		return 1;
-> +	}
-> +	spin_unlock(&lru->lock);
-> +	return 0;
-> +}
-> +EXPORT_SYMBOL_GPL(list_lru_add);
-> +
-> +int
-> +list_lru_del(
-> +	struct list_lru	*lru,
-> +	struct list_head *item)
-> +{
-> +	spin_lock(&lru->lock);
-> +	if (!list_empty(item)) {
-> +		list_del_init(item);
-> +		lru->nr_items--;
-> +		spin_unlock(&lru->lock);
-> +		return 1;
-> +	}
-> +	spin_unlock(&lru->lock);
-> +	return 0;
-> +}
-> +EXPORT_SYMBOL_GPL(list_lru_del);
-> +
-> +long
-> +list_lru_walk(
-> +	struct list_lru *lru,
-> +	list_lru_walk_cb isolate,
-> +	void		*cb_arg,
-> +	long		nr_to_walk)
-> +{
-> +	struct list_head *item, *n;
-> +	long removed = 0;
-> +restart:
-> +	spin_lock(&lru->lock);
-> +	list_for_each_safe(item, n, &lru->list) {
-> +		int ret;
-> +
-> +		if (nr_to_walk-- < 0)
-> +			break;
-> +
-> +		ret = isolate(item, &lru->lock, cb_arg);
-> +		switch (ret) {
-> +		case 0:	/* item removed from list */
-> +			lru->nr_items--;
-> +			removed++;
-> +			break;
-> +		case 1: /* item referenced, give another pass */
-> +			list_move_tail(item, &lru->list);
-> +			break;
-> +		case 2: /* item cannot be locked, skip */
-> +			break;
-> +		case 3: /* item not freeable, lock dropped */
-> +			goto restart;
-
-These four magic return values might benefit from an enum (or #define)
-for clarity.
-
-Maybe the names would be LRU_OK, LRU_REMOVED, LRU_ROTATE, LRU_RETRY.
-
-> +		default:
-> +			BUG();
-> +		}
-> +	}
-> +	spin_unlock(&lru->lock);
-> +	return removed;
-> +}
-> +EXPORT_SYMBOL_GPL(list_lru_walk);
-> +
-> +long
-> +list_lru_dispose_all(
-> +	struct list_lru *lru,
-> +	list_lru_dispose_cb dispose)
-> +{
-> +	long disposed = 0;
-> +	LIST_HEAD(dispose_list);
-> +
-> +	spin_lock(&lru->lock);
-> +	while (!list_empty(&lru->list)) {
-> +		list_splice_init(&lru->list, &dispose_list);
-> +		disposed += lru->nr_items;
-> +		lru->nr_items = 0;
-> +		spin_unlock(&lru->lock);
-> +
-> +		dispose(&dispose_list);
-> +
-> +		spin_lock(&lru->lock);
-> +	}
-> +	spin_unlock(&lru->lock);
-> +	return disposed;
-> +}
-> +
-> +int
-> +list_lru_init(
-> +	struct list_lru	*lru)
-> +{
-> +	spin_lock_init(&lru->lock);
-> +	INIT_LIST_HEAD(&lru->list);
-> +	lru->nr_items = 0;
-> +
-> +	return 0;
-> +}
-> +EXPORT_SYMBOL_GPL(list_lru_init);
+Dave.
+-- 
+Dave Chinner
+david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org
