@@ -1,13 +1,14 @@
 From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [PATCH v3 12/32] shrinker: add node awareness
-Date: Mon,  8 Apr 2013 18:00:39 +0400
-Message-ID: <1365429659-22108-13-git-send-email-glommer__21989.3566835255$1365438718$gmane$org@parallels.com>
-References: <1365429659-22108-1-git-send-email-glommer@parallels.com>
+Subject: Re: [PATCH v2 10/28] dcache: convert to use new lru list
+	infrastructure
+Date: Mon, 8 Apr 2013 17:14:44 +0400
+Message-ID: <5162C2C4.7010807__40306.9557891742$1365439836$gmane$org@parallels.com>
+References: <1364548450-28254-1-git-send-email-glommer@parallels.com>
+	<1364548450-28254-11-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="------------090304080507060707090207"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1365429659-22108-1-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <1364548450-28254-11-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,112 +19,75 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
-Cc: hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+--------------090304080507060707090207
+Content-Type: text/plain; charset="ISO-8859-1"
+Content-Transfer-Encoding: 7bit
 
-Pass the node of the current zone being reclaimed to shrink_slab(),
-allowing the shrinker control nodemask to be set appropriately for
-node aware shrinkers.
+On 03/29/2013 01:13 PM, Glauber Costa wrote:
+> +	if (dentry->d_flags & DCACHE_REFERENCED) {
+> +		dentry->d_flags &= ~DCACHE_REFERENCED;
+> +		spin_unlock(&dentry->d_lock);
+> +
+> +		/*
+> +		 * XXX: this list move should be be done under d_lock. Need to
+> +		 * determine if it is safe just to do it under the lru lock.
+> +		 */
+> +		return 1;
+> +	}
 
-Signed-off-by: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- fs/drop_caches.c         |  1 +
- include/linux/shrinker.h |  3 +++
- mm/memory-failure.c      |  2 ++
- mm/vmscan.c              | 12 +++++++++---
- 4 files changed, 15 insertions(+), 3 deletions(-)
+I've carefully audited the list manipulations in dcache and determined
+this is safe. I've replaced the fixme string for the following text. Let
+me know if you believe this is not right.
 
-diff --git a/fs/drop_caches.c b/fs/drop_caches.c
-index c00e055..9fd702f 100644
---- a/fs/drop_caches.c
-+++ b/fs/drop_caches.c
-@@ -44,6 +44,7 @@ static void drop_slab(void)
- 		.gfp_mask = GFP_KERNEL,
- 	};
+
+
+--------------090304080507060707090207
+Content-Type: text/plain; charset="UTF-8"; name="comment"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="comment"
+
+diff --git a/fs/dcache.c b/fs/dcache.c
+index a2fc76e..8e166a4 100644
+--- a/fs/dcache.c
++++ b/fs/dcache.c
+@@ -855,8 +855,23 @@ dentry_lru_isolate(struct list_head *item, spinlock_t *lru_lock, void *arg)
+ 		spin_unlock(&dentry->d_lock);
  
-+	nodes_setall(shrink.nodes_to_scan);
- 	do {
- 		nr_objects = shrink_slab(&shrink, 1000, 1000);
- 	} while (nr_objects > 10);
-diff --git a/include/linux/shrinker.h b/include/linux/shrinker.h
-index 4f59615..e71286f 100644
---- a/include/linux/shrinker.h
-+++ b/include/linux/shrinker.h
-@@ -16,6 +16,9 @@ struct shrink_control {
- 
- 	/* How many slab objects shrinker() should scan and try to reclaim */
- 	long nr_to_scan;
-+
-+	/* shrink from these nodes */
-+	nodemask_t nodes_to_scan;
- };
- 
- /*
-diff --git a/mm/memory-failure.c b/mm/memory-failure.c
-index df0694c..857377e 100644
---- a/mm/memory-failure.c
-+++ b/mm/memory-failure.c
-@@ -248,10 +248,12 @@ void shake_page(struct page *p, int access)
- 	 */
- 	if (access) {
- 		int nr;
-+		int nid = page_to_nid(p);
- 		do {
- 			struct shrink_control shrink = {
- 				.gfp_mask = GFP_KERNEL,
- 			};
-+			node_set(nid, shrink.nodes_to_scan);
- 
- 			nr = shrink_slab(&shrink, 1000, 1000);
- 			if (page_count(p) == 1)
-diff --git a/mm/vmscan.c b/mm/vmscan.c
-index 64b0157..6926e09 100644
---- a/mm/vmscan.c
-+++ b/mm/vmscan.c
-@@ -2191,15 +2191,20 @@ static unsigned long do_try_to_free_pages(struct zonelist *zonelist,
+ 		/*
+-		 * XXX: this list move should be be done under d_lock. Need to
+-		 * determine if it is safe just to do it under the lru lock.
++		 * The list move itself will be made by the common LRU code. At
++		 * this point, we've dropped the dentry->d_lock but keep the
++		 * lru lock. This is safe to do, since every list movement is
++		 * protected by the lru lock even if both locks are held.
++		 *
++		 * This is guaranteed by the fact that all LRU management
++		 * functions are intermediated by the LRU API calls like
++		 * list_lru_add and list_lru_del. List movement in this file
++		 * only ever occur through this functions or through callbacks
++		 * like this one, that are called from the LRU API.
++		 *
++		 * The only exceptions to this are functions like
++		 * shrink_dentry_list, and code that first checks for the
++		 * DCACHE_SHRINK_LIST flag.  Those are guaranteed to be
++		 * operating only with stack provided lists after they are
++		 * properly isolated from the main list.  It is thus, always a
++		 * local access.
  		 */
- 		if (global_reclaim(sc)) {
- 			unsigned long lru_pages = 0;
-+
-+			nodes_clear(shrink->nodes_to_scan);
- 			for_each_zone_zonelist(zone, z, zonelist,
- 					gfp_zone(sc->gfp_mask)) {
- 				if (!cpuset_zone_allowed_hardwall(zone, GFP_KERNEL))
- 					continue;
- 
- 				lru_pages += zone_reclaimable_pages(zone);
-+				node_set(zone_to_nid(zone),
-+					 shrink->nodes_to_scan);
- 			}
- 
- 			shrink_slab(shrink, sc->nr_scanned, lru_pages);
-+
- 			if (reclaim_state) {
- 				sc->nr_reclaimed += reclaim_state->reclaimed_slab;
- 				reclaim_state->reclaimed_slab = 0;
-@@ -2778,6 +2783,8 @@ loop_again:
- 				shrink_zone(zone, &sc);
- 
- 				reclaim_state->reclaimed_slab = 0;
-+				nodes_clear(shrink.nodes_to_scan);
-+				node_set(zone_to_nid(zone), shrink.nodes_to_scan);
- 				nr_slab = shrink_slab(&shrink, sc.nr_scanned, lru_pages);
- 				sc.nr_reclaimed += reclaim_state->reclaimed_slab;
- 				total_scanned += sc.nr_scanned;
-@@ -3364,10 +3371,9 @@ static int __zone_reclaim(struct zone *zone, gfp_t gfp_mask, unsigned int order)
- 		 * number of slab pages and shake the slab until it is reduced
- 		 * by the same nr_pages that we used for reclaiming unmapped
- 		 * pages.
--		 *
--		 * Note that shrink_slab will free memory on all zones and may
--		 * take a long time.
- 		 */
-+		nodes_clear(shrink.nodes_to_scan);
-+		node_set(zone_to_nid(zone), shrink.nodes_to_scan);
- 		for (;;) {
- 			unsigned long lru_pages = zone_reclaimable_pages(zone);
- 
--- 
-1.8.1.4
+ 		return LRU_ROTATE;
+ 	}
+
+--------------090304080507060707090207
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--------------090304080507060707090207--
