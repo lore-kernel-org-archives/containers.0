@@ -1,15 +1,16 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: cgroup: status-quo and userland efforts
-Date: Mon, 8 Apr 2013 11:26:49 -0700
-Message-ID: <20130408182649.GJ3021@htj.dyndns.org>
+Subject: Re: [Workman-devel] cgroup: status-quo and userland efforts
+Date: Mon, 8 Apr 2013 11:49:51 -0700
+Message-ID: <20130408184951.GK3021@htj.dyndns.org>
 References: <20130406012159.GA17159@mtj.dyndns.org>
-	<5162CA21.4060108@parallels.com>
+	<20130408175925.GE28292@redhat.com>
+	<20130408181607.GI3021@htj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <5162CA21.4060108-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <20130408181607.GI3021-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,47 +20,30 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jpoimboe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hey, Glauber.
-
-On Mon, Apr 08, 2013 at 05:46:09PM +0400, Glauber Costa wrote:
-> On 04/06/2013 05:21 AM, Tejun Heo wrote:
-> > Hello, guys.
->
-> Hello Tejun, how are you?
-
-I'm doing okay.  :)
-
-> >  Status-quo
-> >  ==========
-> > 
-> tl;did read;
+On Mon, Apr 08, 2013 at 11:16:07AM -0700, Tejun Heo wrote:
+> > Given the fact that library has view of full system resoruces (both
+> > persistent view and active view), shouldn't we just be able to extend
+> > the API to meet additional configuration or resource needs.
 > 
-> This is mostly sensible. There is still one problem that we hadn't yet
-> had the bandwidth to tackle that should be added to your official TODO list.
-> 
-> The cpu cgroup needs a real-time timeslice to accept real time tasks. It
-> defaults to 0, meaning that a newly created cpu cgroup cannot accept
-> tasks (rt tasks) without the user having to manually configure it.
-> As far as I know, this problem hasn't yet been fixed.
-> 
-> The fix of course, is as trivial as setting a new value instead of 0 as
-> a default. The complication lies in determining which value should that be.
-> 
-> There are many things that we should ask from a controller to implement
-> in order to be able to handle fully joint hierarchies. One of them,
-> IMHO, is that if you drop a task into a newly created cgroup it should
-> run without the user having to do anything for it.
+> Maybe, I don't know.  It just looks like a weird approach to me.
+> Wouldn't it make more sense to implement it as a dbus service that
+> everyone talks to?  That's how our base system is structured these
+> days.  Why should this be any different?
 
-Yeap, definitely.  cpuset has similar problems (Li, help us!).  For
-the controllers which are showing behaviors which don't allow sharing
-a single hierarchy, I think the solution is to implement an alternate
-behavior which can be flipped on mount time and force the switch
-flipped when mounting unified hierarchy, so that we don't disturb the
-existing users while pushing for more consistent behavior.
+To expand a bit, the base system being composed that way makes a lot
+of sense.  It becomes clear who's responsible for what and there's a
+reliable way to recover when things go awry on the clients' sides.
+Also, it pretty much *forces* you to design an interface which fits
+the problem domain properly rather than exposing all the control knobs
+there are without thinking how they'd be actually useful.  The
+language binding issue is much easier too - it's already solved.
+
+It seems like the only logical thing to do, well, at least to me.
+Am I missing something?
 
 Thanks.
 
