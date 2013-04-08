@@ -1,8 +1,8 @@
 From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [PATCH v3 30/32] memcg: shrink dead memcgs upon global memory
-	pressure.
-Date: Mon,  8 Apr 2013 18:00:57 +0400
-Message-ID: <1365429659-22108-31-git-send-email-glommer@parallels.com>
+Subject: [PATCH v3 24/32] list_lru: also include memcg lists in counts and
+	scans
+Date: Mon,  8 Apr 2013 18:00:51 +0400
+Message-ID: <1365429659-22108-25-git-send-email-glommer@parallels.com>
 References: <1365429659-22108-1-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,27 +22,22 @@ To: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
 Cc: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Mel Gorman <mgorman-l3A5Bk7waGM@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-When a kmem enable memcg dies, it can still be walking dead around
-because some caches hold a reference to it (it can happen due to swap as
-well).
+As elements are added to per-memcg lists, they will be invisible to
+global reclaimers. This patch mainly modifies list_lru walk and count
+functions to take that into account.
 
-Past efforts to actively insist on shrinking them upon memcg destruction
-led to extra complication, so the goal has been since them to do it from
-global reclaim.
+Counting is very simple: since we already have total figures for the
+node, which we use to figure out when to set or clear the node in the
+bitmap, we can just use that.
 
-Now that the case of kmemcg shrinker is more clear, we can also include
-a shrink_slab-time reaper that will try to get rid of the dangling
-caches.
+For walking, we need to walk the memcg lists as well as the global list.
+To achieve that, this patch introduces the helper macro
+for_each_memcg_lru_index. Locking semantics are simple, since
+introducing a new LRU in the list does not influence the memcg walkers.
 
-There are two reasons why I am not using a normal shrinker interface:
-First, it is hard and expensive for us to determine how many objects we
-have. We also don't need to save any of those objects since they are not
-expecting to be caching anything: we want here to free as many memory as
-we can.
-Second, the caches are pinned down by cache objects which will, in turn,
-be shrunk by shrink_slab. We would like that to be the last step. So to
-avoid complicating the shrinker registration, we can just manually
-insert this step
+The only operation we race against is memcg creation and teardown.  For
+those, barriers should be enough to guarantee that we are seeing
+up-to-date information and not accessing invalid pointers.
 
 Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 Cc: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
@@ -53,165 +48,163 @@ Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
 Cc: Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Cc: Kamezawa Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-
 ---
-Andrew: This will conflict with a -mm-only debug patch you have since I
-am reusing its dead-list infrastructure. You will have to dump that, and
-apply a new version that only adds the debugging interface.
----
- include/linux/memcontrol.h |  6 ++++
- mm/memcontrol.c            | 75 ++++++++++++++++++++++++++++++++++++++++++++--
- mm/vmscan.c                |  1 +
- 3 files changed, 80 insertions(+), 2 deletions(-)
+ include/linux/memcontrol.h |  2 ++
+ lib/list_lru.c             | 90 ++++++++++++++++++++++++++++++++++------------
+ 2 files changed, 69 insertions(+), 23 deletions(-)
 
 diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
-index 782dcbf..fec50ef 100644
+index 1e74610..6dc1d7a 100644
 --- a/include/linux/memcontrol.h
 +++ b/include/linux/memcontrol.h
-@@ -482,6 +482,7 @@ int memcg_kmem_update_lru_size(struct list_lru *lru, int num_groups,
+@@ -592,6 +592,8 @@ static inline bool memcg_kmem_is_active(struct mem_cgroup *memcg)
+ #define for_each_memcg_cache_index(_idx)	\
+ 	for (; NULL; )
  
- void mem_cgroup_destroy_cache(struct kmem_cache *cachep);
- void kmem_cache_destroy_memcg_children(struct kmem_cache *s);
-+void reap_dead_memcgs(void);
- 
- /**
-  * memcg_kmem_newpage_charge: verify if a new kmem allocation is allowed.
-@@ -660,6 +661,11 @@ static inline struct mem_cgroup *mem_cgroup_from_kmem_page(struct page *page)
++#define memcg_limited_groups_array_size 0
++
+ static inline bool memcg_kmem_enabled(void)
  {
- 	return NULL;
- }
-+
-+static inline void reap_dead_memcgs(void)
-+{
-+}
-+
- #endif /* CONFIG_MEMCG_KMEM */
- #endif /* _LINUX_MEMCONTROL_H */
- 
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 1f1ded3..cafb3c5 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -310,8 +310,16 @@ struct mem_cgroup {
- 	/* thresholds for mem+swap usage. RCU-protected */
- 	struct mem_cgroup_thresholds memsw_thresholds;
- 
--	/* For oom notifier event fd */
--	struct list_head oom_notify;
-+	union {
-+		/* For oom notifier event fd */
-+		struct list_head oom_notify;
-+		/*
-+		 * we can only trigger an oom event if the memcg is alive.
-+		 * so we will reuse this field to hook the memcg in the list
-+		 * of dead memcgs.
-+		 */
-+		struct list_head dead;
-+	};
- 
- 	/*
- 	 * Should we move charges of a task when a task is moved into this
-@@ -373,6 +381,24 @@ static size_t memcg_size(void)
- 
- static DEFINE_MUTEX(set_limit_mutex);
- 
-+static LIST_HEAD(dangling_memcgs);
-+static DEFINE_MUTEX(dangling_memcgs_mutex);
-+
-+static inline void memcg_dangling_free(struct mem_cgroup *memcg)
-+{
-+	mutex_lock(&dangling_memcgs_mutex);
-+	list_del(&memcg->dead);
-+	mutex_unlock(&dangling_memcgs_mutex);
-+}
-+
-+static inline void memcg_dangling_add(struct mem_cgroup *memcg)
-+{
-+	INIT_LIST_HEAD(&memcg->dead);
-+	mutex_lock(&dangling_memcgs_mutex);
-+	list_add(&memcg->dead, &dangling_memcgs);
-+	mutex_unlock(&dangling_memcgs_mutex);
-+}
-+
- /* internal only representation about the status of kmem accounting. */
- enum {
- 	KMEM_ACCOUNTED_ACTIVE = 0, /* accounted by this cgroup itself */
-@@ -6023,6 +6049,48 @@ static int mem_cgroup_oom_control_write(struct cgroup *cgrp,
+ 	return false;
+diff --git a/lib/list_lru.c b/lib/list_lru.c
+index 676ade7..dfc2c4a 100644
+--- a/lib/list_lru.c
++++ b/lib/list_lru.c
+@@ -69,6 +69,23 @@ memcg_kmem_lru_of_page(struct list_lru *lru, struct page *page)
+ 	return lru_node_of_index(lru, memcg_id, nid);
  }
  
- #ifdef CONFIG_MEMCG_KMEM
-+static void memcg_shrink_dead_fn(struct work_struct *w)
-+{
-+	struct memcg_cache_params *params, *tmp;
-+	struct kmem_cache *cachep;
-+	struct mem_cgroup *memcg;
-+
-+	mutex_lock(&dangling_memcgs_mutex);
-+	list_for_each_entry(memcg, &dangling_memcgs, dead) {
-+		mem_cgroup_get(memcg);
-+		mutex_lock(&memcg->slab_caches_mutex);
-+		/* The element may go away as an indirect result of shrink */
-+		list_for_each_entry_safe(params, tmp,
-+					 &memcg->memcg_slab_caches, list) {
-+			cachep = memcg_params_to_cache(params);
-+			/*
-+			 * the cpu_hotplug lock is taken in kmem_cache_create
-+			 * outside the slab_caches_mutex manipulation. It will
-+			 * be taken by kmem_cache_shrink to flush the cache.
-+			 * So we need to drop the lock. It is all right because
-+			 * the lock only protects elements moving in and out the
-+			 * list.
-+			 */
-+			mutex_unlock(&memcg->slab_caches_mutex);
-+			kmem_cache_shrink(cachep);
-+			mutex_lock(&memcg->slab_caches_mutex);
-+		}
-+		mutex_unlock(&memcg->slab_caches_mutex);
-+		mem_cgroup_put(memcg);
-+	}
-+	mutex_unlock(&dangling_memcgs_mutex);
-+}
-+static DECLARE_WORK(kmemcg_dangling_work, memcg_shrink_dead_fn);
-+
 +/*
-+ * We can't take any of our locks in reclaim context, because we've taken them
-+ * in other contexts before, so we could deadlock.
++ * This helper will loop through all node-data in the LRU, either global or
++ * per-memcg.  If memcg is either not present or not used,
++ * memcg_limited_groups_array_size will be 0. _idx starts at -1, and it will
++ * still be allowed to execute once.
++ *
++ * We convention that for _idx = -1, the global node info should be used.
++ * After that, we will go through each of the memcgs, starting at 0.
++ *
++ * We don't need any kind of locking for the loop because
++ * memcg_limited_groups_array_size can only grow, gaining new fields at the
++ * end. The old ones are just copied, and any interesting manipulation happen
++ * in the node list itself, and we already lock the list.
 + */
-+void reap_dead_memcgs(void)
-+{
-+	schedule_work(&kmemcg_dangling_work);
-+}
++#define for_each_memcg_lru_index(_idx)	\
++	for ((_idx) = -1; ((_idx) < memcg_limited_groups_array_size); (_idx)++)
 +
- static int memcg_init_kmem(struct mem_cgroup *memcg, struct cgroup_subsys *ss)
+ int
+ list_lru_add(
+ 	struct list_lru	*lru,
+@@ -136,12 +153,12 @@ list_lru_count_nodemask(
+ 	int nid;
+ 
+ 	for_each_node_mask(nid, *nodes_to_count) {
+-		struct list_lru_node *nlru = &lru->node[nid];
+-
+-		spin_lock(&nlru->lock);
+-		BUG_ON(nlru->nr_items < 0);
+-		count += nlru->nr_items;
+-		spin_unlock(&nlru->lock);
++		/*
++		 * We don't need to loop through all memcgs here, because we
++		 * have the node_totals information for the node. If we hadn't,
++		 * this would still be achieavable by a loop-over-all-groups
++		 */
++		count += atomic_long_read(&lru->node_totals[nid]);
+ 	}
+ 
+ 	return count;
+@@ -151,12 +168,12 @@ EXPORT_SYMBOL_GPL(list_lru_count_nodemask);
+ static long
+ list_lru_walk_node(
+ 	struct list_lru		*lru,
++	struct list_lru_node	*nlru,
+ 	int			nid,
+ 	list_lru_walk_cb	isolate,
+ 	void			*cb_arg,
+ 	long			*nr_to_walk)
  {
- 	int ret;
-@@ -6317,6 +6385,8 @@ static void free_work(struct work_struct *work)
- 	struct mem_cgroup *memcg;
+-	struct list_lru_node	*nlru = &lru->node[nid];
+ 	struct list_head *item, *n;
+ 	long isolated = 0;
+ restart:
+@@ -200,12 +217,28 @@ list_lru_walk_nodemask(
+ {
+ 	long isolated = 0;
+ 	int nid;
++	nodemask_t nodes;
++	int idx;
++	struct list_lru_node *nlru;
  
- 	memcg = container_of(work, struct mem_cgroup, work_freeing);
+-	for_each_node_mask(nid, *nodes_to_walk) {
+-		isolated += list_lru_walk_node(lru, nid, isolate,
+-					       cb_arg, &nr_to_walk);
+-		if (nr_to_walk <= 0)
+-			break;
++	/*
++	 * Conservative code can call this setting nodes with node_setall.
++	 * This will generate an out of bound access for memcg.
++	 */
++	nodes_and(nodes, *nodes_to_walk, node_online_map);
 +
-+	memcg_dangling_free(memcg);
- 	__mem_cgroup_free(memcg);
++	for_each_node_mask(nid, nodes) {
++		for_each_memcg_lru_index(idx) {
++
++			nlru = lru_node_of_index(lru, idx, nid);
++			if (!nlru)
++				continue;
++
++			isolated += list_lru_walk_node(lru, nlru, nid, isolate,
++						       cb_arg, &nr_to_walk);
++			if (nr_to_walk <= 0)
++				break;
++		}
+ 	}
+ 	return isolated;
  }
+@@ -217,23 +250,34 @@ list_lru_dispose_all_node(
+ 	int			nid,
+ 	list_lru_dispose_cb	dispose)
+ {
+-	struct list_lru_node	*nlru = &lru->node[nid];
++	struct list_lru_node *nlru;
+ 	LIST_HEAD(dispose_list);
+ 	long disposed = 0;
++	int idx;
  
-@@ -6491,6 +6561,7 @@ static void mem_cgroup_css_free(struct cgroup *cont)
+-	spin_lock(&nlru->lock);
+-	while (!list_empty(&nlru->list)) {
+-		list_splice_init(&nlru->list, &dispose_list);
+-		disposed += nlru->nr_items;
+-		nlru->nr_items = 0;
+-		node_clear(nid, lru->active_nodes);
+-		spin_unlock(&nlru->lock);
+-
+-		dispose(&dispose_list);
++	for_each_memcg_lru_index(idx) {
++		nlru = lru_node_of_index(lru, idx, nid);
++		if (!nlru)
++			continue;
  
- 	kmem_cgroup_destroy(memcg);
- 
-+	memcg_dangling_add(memcg);
- 	mem_cgroup_put(memcg);
- }
- 
-diff --git a/mm/vmscan.c b/mm/vmscan.c
-index 752e9c7..c72e7dd 100644
---- a/mm/vmscan.c
-+++ b/mm/vmscan.c
-@@ -378,6 +378,7 @@ unsigned long shrink_slab(struct shrink_control *sc,
- 	up_read(&shrinker_rwsem);
- out:
- 	cond_resched();
-+	reap_dead_memcgs();
- 	return freed;
+ 		spin_lock(&nlru->lock);
++		while (!list_empty(&nlru->list)) {
++			list_splice_init(&nlru->list, &dispose_list);
++
++			if (atomic_long_sub_and_test(nlru->nr_items,
++							&lru->node_totals[nid]))
++				node_clear(nid, lru->active_nodes);
++			disposed += nlru->nr_items;
++			nlru->nr_items = 0;
++			spin_unlock(&nlru->lock);
++
++			dispose(&dispose_list);
++
++			spin_lock(&nlru->lock);
++		}
++		spin_unlock(&nlru->lock);
+ 	}
+-	spin_unlock(&nlru->lock);
++
+ 	return disposed;
  }
  
 -- 
