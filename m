@@ -1,11 +1,13 @@
 From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [PATCH v3 00/32] memcg-aware slab shrinking with lasers and numbers
-Date: Mon,  8 Apr 2013 18:00:27 +0400
-Message-ID: <1365429659-22108-1-git-send-email-glommer@parallels.com>
+Subject: [PATCH v3 15/32] xfs: convert dquot cache lru to list_lru
+Date: Mon,  8 Apr 2013 18:00:42 +0400
+Message-ID: <1365429659-22108-16-git-send-email-glommer@parallels.com>
+References: <1365429659-22108-1-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1365429659-22108-1-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,225 +18,380 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
-Cc: hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
+From: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-This patchset implements targeted shrinking for memcg when kmem limits are
-present. So far, we've been accounting kernel objects but failing allocations
-when short of memory. This is because our only option would be to call the
-global shrinker, depleting objects from all caches and breaking isolation.
+Convert the XFS dquot lru to use the list_lru construct and convert
+the shrinker to being node aware.
 
-The main idea is to associate per-memcg lists with each of the LRUs. The main
-LRU still provides a single entry point and when adding or removing an element
-from the LRU, we use the page information to figure out which memcg it belongs
-to and relay it to the right list.
+[ glommer: edited for conflicts + warning fixes ]
+Signed-off-by: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+---
+ fs/xfs/xfs_dquot.c |   7 +-
+ fs/xfs/xfs_qm.c    | 275 +++++++++++++++++++++++++++--------------------------
+ fs/xfs/xfs_qm.h    |   4 +-
+ 3 files changed, 142 insertions(+), 144 deletions(-)
 
-Base work:
-==========
-
-Please note that this builds upon the recent work from Dave Chinner that
-sanitizes the LRU shrinking API and make the shrinkers node aware. Node
-awareness is not *strictly* needed for my work, but I still perceive it
-as an advantage. The API unification is a major need, and I build upon it
-heavily. That allows us to manipulate the LRUs without knowledge of the
-underlying objects with ease. This time, I am including that work here as
-a baseline.
-
-Main changes from *v2:
-* shrink dead memcgs when global pressure kicks in. Uses the new lru API.
-* bugfixes and comments from the mailing list.
-* proper hierarchy-aware walk in shrink_slab.
-
-Main changes from *v1:
-* merged comments from the mailing list
-* reworked lru-memcg API
-* effective proportional shrinking
-* sanitized locking on the memcg side
-* bill user memory first when kmem == umem
-* various bugfixes
-
-Numbers:
-========
-
-I've run kernbench with 2Gb setups and 3 different kernels. All of them are
-capable of cgroup kmem accounting,  but the first two ones won't be able to
-shrink it.
-
-Kernels
--------
-base: the current -mm
-davelru: that + dave's patches applied
-fulllru: that + my patches applied.
-
-I've ran all of them in a 1st level cgroup. Please note that the first
-two kernels are not capable of shrinking metadata, so I had to select a
-size that is enough to be in relatively constant pressure, but at the
-same time not having that pressure to be exclusively from kernel memory.
-2Gb did the job. This is a 2-node 24-way machine.
-
-Results:
---------
-
-Base:
-Average Optimal load -j 24 Run (std deviation):
-Elapsed Time 415.988 (8.37909)
-User Time 4142 (759.964)
-System Time 418.483 (62.0377)
-Percent CPU 1030.7 (267.462)
-Context Switches 391509 (268361)
-Sleeps 738483 (149934)
-
-Dave:
-Average Optimal load -j 24 Run (std deviation):
-Elapsed Time 424.486 (16.7365) ( + 2 % vs base)
-User Time 4146.8 (764.012) ( + 0.84 % vs base)
-System Time 419.24 (62.4507) (+ 0.18 % vs base)
-Percent CPU 1012.1 (264.558) (-1.8 % vs base)
-Context Switches 393363 (268899) (+ 0.47 % vs base)
-Sleeps 739905 (147344) (+ 0.19 % vs base)
-
-
-Full:
-Average Optimal load -j 24 Run (std deviation):
-Elapsed Time 456.644 (15.3567) ( + 9.7 % vs base)
-User Time 4036.3 (645.261) ( - 2.5 % vs base)
-System Time 438.134 (82.251) ( + 4.7 % vs base)
-Percent CPU 973 (168.581) ( - 5.6 % vs base)
-Context Switches 350796 (229700) ( - 10 % vs base)
-Sleeps 728156 (138808) ( - 1.4 % vs base )
-
-Discussion
------------
-
-First-level analysis: All figures fall within the std dev, except for
-Full LRU wall time. It does fall within 2 std devs, though.
-On the other hand, Full LRU kernel leads to better cpu utilization and
-greater efficiency.
-
-Details: The reclaim patterns in the three kernels are expected to be
-different. User memory will always be the main driver, but in case of
-pressure the first two kernels will shrink it while keeping the metadata
-intact. This should lead to smaller system times figure at expense of
-bigger user time figures, since user pages will be evicted more often.
-This is consistent with the figures I've found.
-
-Full LRU kernels have a 2.5 % better user time utilization, with 5.6 %
-less CPU consumed and 10 % less context switches.
-
-This comes at the expense of a 4.7 % loss of system time. Because we
-will have to bring more dentry and inode objects back from caches, we
-will stress more the slab code.
-
-Because this is a benchmark that stresses a lot of metadata, it is
-expected that this increase affects the end wall result proportionally.
-We notice that the mere introduction of LRU code (Dave's Kernel) does
-not affect the end wall time result outside the standard deviation.
-Shrinking those objects, however, will lead to bigger wall times. This
-is within the expected. No one would ever argue that the right kernel
-behavior for all cases should keep the metadata in memory at expense of
-user memory (and even if we should, we should do it the same way for the
-cgroups).
-
-My final conclusions is that performance wise the work is sound and
-operates within expectations.
-
-Dave Chinner (17):
-  dcache: convert dentry_stat.nr_unused to per-cpu counters
-  dentry: move to per-sb LRU locks
-  dcache: remove dentries from LRU before putting on dispose list
-  mm: new shrinker API
-  shrinker: convert superblock shrinkers to new API
-  list: add a new LRU list type
-  inode: convert inode lru list to generic lru list code.
-  dcache: convert to use new lru list infrastructure
-  list_lru: per-node list infrastructure
-  shrinker: add node awareness
-  fs: convert inode and dentry shrinking to be node aware
-  xfs: convert buftarg LRU to generic code
-  xfs: convert dquot cache lru to list_lru
-  fs: convert fs shrinkers to new scan/count API
-  drivers: convert shrinkers to new count/scan API
-  shrinker: convert remaining shrinkers to count/scan API
-  shrinker: Kill old ->shrink API.
-
-Glauber Costa (15):
-  super: fix calculation of shrinkable objects for small numbers
-  vmscan: take at least one pass with shrinkers
-  hugepage: convert huge zero page shrinker to new shrinker API
-  vmscan: also shrink slab in memcg pressure
-  memcg,list_lru: duplicate LRUs upon kmemcg creation
-  lru: add an element to a memcg list
-  list_lru: also include memcg lists in counts and scans
-  list_lru: per-memcg walks
-  memcg: per-memcg kmem shrinking
-  list_lru: reclaim proportionaly between memcgs and nodes
-  memcg: scan cache objects hierarchically
-  memcg: move initialization to memcg creation
-  memcg: shrink dead memcgs upon global memory pressure.
-  super: targeted memcg reclaim
-  memcg: debugging facility to access dangling memcgs
-
- Documentation/cgroups/memory.txt           |  16 +
- arch/x86/kvm/mmu.c                         |  35 +-
- drivers/gpu/drm/i915/i915_dma.c            |   4 +-
- drivers/gpu/drm/i915/i915_drv.h            |   2 +-
- drivers/gpu/drm/i915/i915_gem.c            |  69 +++-
- drivers/gpu/drm/i915/i915_gem_evict.c      |  10 +-
- drivers/gpu/drm/i915/i915_gem_execbuffer.c |   2 +-
- drivers/gpu/drm/ttm/ttm_page_alloc.c       |  48 ++-
- drivers/gpu/drm/ttm/ttm_page_alloc_dma.c   |  55 ++-
- drivers/md/dm-bufio.c                      |  65 +--
- drivers/staging/android/ashmem.c           |  44 ++-
- drivers/staging/android/lowmemorykiller.c  |  40 +-
- drivers/staging/zcache/zcache-main.c       |  29 +-
- fs/dcache.c                                | 240 ++++++-----
- fs/drop_caches.c                           |   1 +
- fs/ext4/extents_status.c                   |  30 +-
- fs/gfs2/glock.c                            |  30 +-
- fs/gfs2/main.c                             |   3 +-
- fs/gfs2/quota.c                            |  14 +-
- fs/gfs2/quota.h                            |   4 +-
- fs/inode.c                                 | 174 ++++----
- fs/internal.h                              |   5 +
- fs/mbcache.c                               |  53 +--
- fs/nfs/dir.c                               |  20 +-
- fs/nfs/internal.h                          |   4 +-
- fs/nfs/super.c                             |   3 +-
- fs/nfsd/nfscache.c                         |  31 +-
- fs/quota/dquot.c                           |  39 +-
- fs/super.c                                 | 107 +++--
- fs/ubifs/shrinker.c                        |  20 +-
- fs/ubifs/super.c                           |   3 +-
- fs/ubifs/ubifs.h                           |   3 +-
- fs/xfs/xfs_buf.c                           | 167 ++++----
- fs/xfs/xfs_buf.h                           |   5 +-
- fs/xfs/xfs_dquot.c                         |   7 +-
- fs/xfs/xfs_icache.c                        |   4 +-
- fs/xfs/xfs_icache.h                        |   2 +-
- fs/xfs/xfs_qm.c                            | 275 ++++++-------
- fs/xfs/xfs_qm.h                            |   4 +-
- fs/xfs/xfs_super.c                         |  12 +-
- include/linux/dcache.h                     |   4 +
- include/linux/fs.h                         |  25 +-
- include/linux/list_lru.h                   | 121 ++++++
- include/linux/memcontrol.h                 |  51 +++
- include/linux/shrinker.h                   |  45 ++-
- include/linux/swap.h                       |   2 +
- include/trace/events/vmscan.h              |   4 +-
- init/Kconfig                               |  17 +
- lib/Makefile                               |   2 +-
- lib/list_lru.c                             | 498 +++++++++++++++++++++++
- mm/huge_memory.c                           |  18 +-
- mm/memcontrol.c                            | 612 ++++++++++++++++++++++++++---
- mm/memory-failure.c                        |   2 +
- mm/slab_common.c                           |   1 -
- mm/vmscan.c                                | 322 ++++++++++-----
- net/sunrpc/auth.c                          |  45 ++-
- 56 files changed, 2529 insertions(+), 919 deletions(-)
- create mode 100644 include/linux/list_lru.h
- create mode 100644 lib/list_lru.c
-
+diff --git a/fs/xfs/xfs_dquot.c b/fs/xfs/xfs_dquot.c
+index 8025eb2..c15e7f9 100644
+--- a/fs/xfs/xfs_dquot.c
++++ b/fs/xfs/xfs_dquot.c
+@@ -837,13 +837,8 @@ xfs_qm_dqput_final(
+ 
+ 	trace_xfs_dqput_free(dqp);
+ 
+-	mutex_lock(&qi->qi_lru_lock);
+-	if (list_empty(&dqp->q_lru)) {
+-		list_add_tail(&dqp->q_lru, &qi->qi_lru_list);
+-		qi->qi_lru_count++;
++	if (list_lru_add(&qi->qi_lru, &dqp->q_lru))
+ 		XFS_STATS_INC(xs_qm_dquot_unused);
+-	}
+-	mutex_unlock(&qi->qi_lru_lock);
+ 
+ 	/*
+ 	 * If we just added a udquot to the freelist, then we want to release
+diff --git a/fs/xfs/xfs_qm.c b/fs/xfs/xfs_qm.c
+index 305f4e5..f7d2848 100644
+--- a/fs/xfs/xfs_qm.c
++++ b/fs/xfs/xfs_qm.c
+@@ -50,8 +50,9 @@
+  */
+ STATIC int	xfs_qm_init_quotainos(xfs_mount_t *);
+ STATIC int	xfs_qm_init_quotainfo(xfs_mount_t *);
+-STATIC int	xfs_qm_shake(struct shrinker *, struct shrink_control *);
+ 
++
++STATIC void	xfs_qm_dqfree_one(struct xfs_dquot *dqp);
+ /*
+  * We use the batch lookup interface to iterate over the dquots as it
+  * currently is the only interface into the radix tree code that allows
+@@ -196,12 +197,9 @@ xfs_qm_dqpurge(
+ 	 * We move dquots to the freelist as soon as their reference count
+ 	 * hits zero, so it really should be on the freelist here.
+ 	 */
+-	mutex_lock(&qi->qi_lru_lock);
+ 	ASSERT(!list_empty(&dqp->q_lru));
+-	list_del_init(&dqp->q_lru);
+-	qi->qi_lru_count--;
++	list_lru_del(&qi->qi_lru, &dqp->q_lru);
+ 	XFS_STATS_DEC(xs_qm_dquot_unused);
+-	mutex_unlock(&qi->qi_lru_lock);
+ 
+ 	xfs_qm_dqdestroy(dqp);
+ 
+@@ -617,6 +615,140 @@ xfs_qm_dqdetach(
+ 	}
+ }
+ 
++struct xfs_qm_isolate {
++	struct list_head	buffers;
++	struct list_head	dispose;
++};
++
++static int
++xfs_qm_dquot_isolate(
++	struct list_head	*item,
++	spinlock_t		*lru_lock,
++	void			*arg)
++{
++	struct xfs_dquot	*dqp = container_of(item,
++						struct xfs_dquot, q_lru);
++	struct xfs_qm_isolate	*isol = arg;
++
++	if (!xfs_dqlock_nowait(dqp))
++		goto out_miss_busy;
++
++	/*
++	 * This dquot has acquired a reference in the meantime remove it from
++	 * the freelist and try again.
++	 */
++	if (dqp->q_nrefs) {
++		xfs_dqunlock(dqp);
++		XFS_STATS_INC(xs_qm_dqwants);
++
++		trace_xfs_dqreclaim_want(dqp);
++		list_del_init(&dqp->q_lru);
++		XFS_STATS_DEC(xs_qm_dquot_unused);
++		return 0;
++	}
++
++	/*
++	 * If the dquot is dirty, flush it. If it's already being flushed, just
++	 * skip it so there is time for the IO to complete before we try to
++	 * reclaim it again on the next LRU pass.
++	 */
++	if (!xfs_dqflock_nowait(dqp)) {
++		xfs_dqunlock(dqp);
++		goto out_miss_busy;
++	}
++
++	if (XFS_DQ_IS_DIRTY(dqp)) {
++		struct xfs_buf	*bp = NULL;
++		int		error;
++
++		trace_xfs_dqreclaim_dirty(dqp);
++
++		/* we have to drop the LRU lock to flush the dquot */
++		spin_unlock(lru_lock);
++
++		error = xfs_qm_dqflush(dqp, &bp);
++		if (error) {
++			xfs_warn(dqp->q_mount, "%s: dquot %p flush failed",
++				 __func__, dqp);
++			goto out_unlock_dirty;
++		}
++
++		xfs_buf_delwri_queue(bp, &isol->buffers);
++		xfs_buf_relse(bp);
++		goto out_unlock_dirty;
++	}
++	xfs_dqfunlock(dqp);
++
++	/*
++	 * Prevent lookups now that we are past the point of no return.
++	 */
++	dqp->dq_flags |= XFS_DQ_FREEING;
++	xfs_dqunlock(dqp);
++
++	ASSERT(dqp->q_nrefs == 0);
++	list_move_tail(&dqp->q_lru, &isol->dispose);
++	XFS_STATS_DEC(xs_qm_dquot_unused);
++	trace_xfs_dqreclaim_done(dqp);
++	XFS_STATS_INC(xs_qm_dqreclaims);
++	return 0;
++
++out_miss_busy:
++	trace_xfs_dqreclaim_busy(dqp);
++	XFS_STATS_INC(xs_qm_dqreclaim_misses);
++	return 2;
++
++out_unlock_dirty:
++	trace_xfs_dqreclaim_busy(dqp);
++	XFS_STATS_INC(xs_qm_dqreclaim_misses);
++	return 3;
++}
++
++static long
++xfs_qm_shrink_scan(
++	struct shrinker		*shrink,
++	struct shrink_control	*sc)
++{
++	struct xfs_quotainfo	*qi = container_of(shrink,
++					struct xfs_quotainfo, qi_shrinker);
++	struct xfs_qm_isolate	isol;
++	long			freed;
++	int			error;
++
++	if ((sc->gfp_mask & (__GFP_FS|__GFP_WAIT)) != (__GFP_FS|__GFP_WAIT))
++		return 0;
++
++	INIT_LIST_HEAD(&isol.buffers);
++	INIT_LIST_HEAD(&isol.dispose);
++
++	freed = list_lru_walk_nodemask(&qi->qi_lru, xfs_qm_dquot_isolate, &isol,
++					sc->nr_to_scan, &sc->nodes_to_scan);
++
++	error = xfs_buf_delwri_submit(&isol.buffers);
++	if (error)
++		xfs_warn(NULL, "%s: dquot reclaim failed", __func__);
++
++	while (!list_empty(&isol.dispose)) {
++		struct xfs_dquot	*dqp;
++
++		dqp = list_first_entry(&isol.dispose, struct xfs_dquot, q_lru);
++		list_del_init(&dqp->q_lru);
++		xfs_qm_dqfree_one(dqp);
++	}
++
++	return freed;
++}
++
++static long
++xfs_qm_shrink_count(
++	struct shrinker		*shrink,
++	struct shrink_control	*sc)
++{
++	struct xfs_quotainfo	*qi = container_of(shrink,
++					struct xfs_quotainfo, qi_shrinker);
++
++	return list_lru_count_nodemask(&qi->qi_lru, &sc->nodes_to_scan);
++}
++
+ /*
+  * This initializes all the quota information that's kept in the
+  * mount structure
+@@ -647,9 +779,7 @@ xfs_qm_init_quotainfo(
+ 	INIT_RADIX_TREE(&qinf->qi_gquota_tree, GFP_NOFS);
+ 	mutex_init(&qinf->qi_tree_lock);
+ 
+-	INIT_LIST_HEAD(&qinf->qi_lru_list);
+-	qinf->qi_lru_count = 0;
+-	mutex_init(&qinf->qi_lru_lock);
++	list_lru_init(&qinf->qi_lru);
+ 
+ 	/* mutex used to serialize quotaoffs */
+ 	mutex_init(&qinf->qi_quotaofflock);
+@@ -716,7 +846,8 @@ xfs_qm_init_quotainfo(
+ 		qinf->qi_rtbwarnlimit = XFS_QM_RTBWARNLIMIT;
+ 	}
+ 
+-	qinf->qi_shrinker.shrink = xfs_qm_shake;
++	qinf->qi_shrinker.count_objects = xfs_qm_shrink_count;
++	qinf->qi_shrinker.scan_objects = xfs_qm_shrink_scan;
+ 	qinf->qi_shrinker.seeks = DEFAULT_SEEKS;
+ 	register_shrinker(&qinf->qi_shrinker);
+ 	return 0;
+@@ -1445,132 +1576,6 @@ xfs_qm_dqfree_one(
+ 	xfs_qm_dqdestroy(dqp);
+ }
+ 
+-STATIC void
+-xfs_qm_dqreclaim_one(
+-	struct xfs_dquot	*dqp,
+-	struct list_head	*buffer_list,
+-	struct list_head	*dispose_list)
+-{
+-	struct xfs_mount	*mp = dqp->q_mount;
+-	struct xfs_quotainfo	*qi = mp->m_quotainfo;
+-	int			error;
+-
+-	if (!xfs_dqlock_nowait(dqp))
+-		goto out_move_tail;
+-
+-	/*
+-	 * This dquot has acquired a reference in the meantime remove it from
+-	 * the freelist and try again.
+-	 */
+-	if (dqp->q_nrefs) {
+-		xfs_dqunlock(dqp);
+-
+-		trace_xfs_dqreclaim_want(dqp);
+-		XFS_STATS_INC(xs_qm_dqwants);
+-
+-		list_del_init(&dqp->q_lru);
+-		qi->qi_lru_count--;
+-		XFS_STATS_DEC(xs_qm_dquot_unused);
+-		return;
+-	}
+-
+-	/*
+-	 * Try to grab the flush lock. If this dquot is in the process of
+-	 * getting flushed to disk, we don't want to reclaim it.
+-	 */
+-	if (!xfs_dqflock_nowait(dqp))
+-		goto out_unlock_move_tail;
+-
+-	if (XFS_DQ_IS_DIRTY(dqp)) {
+-		struct xfs_buf	*bp = NULL;
+-
+-		trace_xfs_dqreclaim_dirty(dqp);
+-
+-		error = xfs_qm_dqflush(dqp, &bp);
+-		if (error) {
+-			xfs_warn(mp, "%s: dquot %p flush failed",
+-				 __func__, dqp);
+-			goto out_unlock_move_tail;
+-		}
+-
+-		xfs_buf_delwri_queue(bp, buffer_list);
+-		xfs_buf_relse(bp);
+-		/*
+-		 * Give the dquot another try on the freelist, as the
+-		 * flushing will take some time.
+-		 */
+-		goto out_unlock_move_tail;
+-	}
+-	xfs_dqfunlock(dqp);
+-
+-	/*
+-	 * Prevent lookups now that we are past the point of no return.
+-	 */
+-	dqp->dq_flags |= XFS_DQ_FREEING;
+-	xfs_dqunlock(dqp);
+-
+-	ASSERT(dqp->q_nrefs == 0);
+-	list_move_tail(&dqp->q_lru, dispose_list);
+-	qi->qi_lru_count--;
+-	XFS_STATS_DEC(xs_qm_dquot_unused);
+-
+-	trace_xfs_dqreclaim_done(dqp);
+-	XFS_STATS_INC(xs_qm_dqreclaims);
+-	return;
+-
+-	/*
+-	 * Move the dquot to the tail of the list so that we don't spin on it.
+-	 */
+-out_unlock_move_tail:
+-	xfs_dqunlock(dqp);
+-out_move_tail:
+-	list_move_tail(&dqp->q_lru, &qi->qi_lru_list);
+-	trace_xfs_dqreclaim_busy(dqp);
+-	XFS_STATS_INC(xs_qm_dqreclaim_misses);
+-}
+-
+-STATIC int
+-xfs_qm_shake(
+-	struct shrinker		*shrink,
+-	struct shrink_control	*sc)
+-{
+-	struct xfs_quotainfo	*qi =
+-		container_of(shrink, struct xfs_quotainfo, qi_shrinker);
+-	int			nr_to_scan = sc->nr_to_scan;
+-	LIST_HEAD		(buffer_list);
+-	LIST_HEAD		(dispose_list);
+-	struct xfs_dquot	*dqp;
+-	int			error;
+-
+-	if ((sc->gfp_mask & (__GFP_FS|__GFP_WAIT)) != (__GFP_FS|__GFP_WAIT))
+-		return 0;
+-	if (!nr_to_scan)
+-		goto out;
+-
+-	mutex_lock(&qi->qi_lru_lock);
+-	while (!list_empty(&qi->qi_lru_list)) {
+-		if (nr_to_scan-- <= 0)
+-			break;
+-		dqp = list_first_entry(&qi->qi_lru_list, struct xfs_dquot,
+-				       q_lru);
+-		xfs_qm_dqreclaim_one(dqp, &buffer_list, &dispose_list);
+-	}
+-	mutex_unlock(&qi->qi_lru_lock);
+-
+-	error = xfs_buf_delwri_submit(&buffer_list);
+-	if (error)
+-		xfs_warn(NULL, "%s: dquot reclaim failed", __func__);
+-
+-	while (!list_empty(&dispose_list)) {
+-		dqp = list_first_entry(&dispose_list, struct xfs_dquot, q_lru);
+-		list_del_init(&dqp->q_lru);
+-		xfs_qm_dqfree_one(dqp);
+-	}
+-
+-out:
+-	return vfs_pressure_ratio(qi->qi_lru_count);
+-}
+-
+ /*
+  * Start a transaction and write the incore superblock changes to
+  * disk. flags parameter indicates which fields have changed.
+diff --git a/fs/xfs/xfs_qm.h b/fs/xfs/xfs_qm.h
+index 44b858b..d08b72d 100644
+--- a/fs/xfs/xfs_qm.h
++++ b/fs/xfs/xfs_qm.h
+@@ -47,9 +47,7 @@ typedef struct xfs_quotainfo {
+ 	struct mutex qi_tree_lock;
+ 	xfs_inode_t	*qi_uquotaip;	 /* user quota inode */
+ 	xfs_inode_t	*qi_gquotaip;	 /* group quota inode */
+-	struct list_head qi_lru_list;
+-	struct mutex	 qi_lru_lock;
+-	int		 qi_lru_count;
++	struct list_lru	 qi_lru;
+ 	int		 qi_dquots;
+ 	time_t		 qi_btimelimit;	 /* limit for blks timer */
+ 	time_t		 qi_itimelimit;	 /* limit for inodes timer */
 -- 
 1.8.1.4
