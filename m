@@ -1,19 +1,14 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [Workman-devel] cgroup: status-quo and userland efforts
-Date: Mon, 8 Apr 2013 13:02:32 -0700
-Message-ID: <20130408200232.GM3021__35584.9010557451$1365451369$gmane$org@htj.dyndns.org>
-References: <20130406012159.GA17159@mtj.dyndns.org>
-	<20130408175925.GE28292@redhat.com>
-	<20130408181607.GI3021@htj.dyndns.org>
-	<20130408191105.GG28292@redhat.com>
-	<20130408192024.GL3021@htj.dyndns.org>
-	<20130408194630.GH28292@redhat.com>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: [PATCH v3 00/32] memcg-aware slab shrinking with lasers and
+	numbers
+Date: Mon, 8 Apr 2013 13:51:28 -0700
+Message-ID: <20130408135128.a5a8b0e5b041f58f9e976bf7@linux-foundation.org>
+References: <1365429659-22108-1-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20130408194630.GH28292-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1365429659-22108-1-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,26 +18,24 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Apr 08, 2013 at 03:46:31PM -0400, Vivek Goyal wrote:
-> It would be good to think more about it. How a user can ensure minimum
-> resources to a partition/service. Because in that case at every level
-> somebody needs to keep track how much of resources have been committed
-> as minimum requirements and more consumers can't be allowed at same level.
-> (This sounds like cpu RT time division among various cgroups).
+On Mon,  8 Apr 2013 18:00:27 +0400 Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> wrote:
 
-Yes, please take a step back from what we have right now because it
-isn't very good.  It's a general policy decision / enforcement problem
-and even the policies may change dynamically.  Having a central
-authority doesn't automatically solve any of that and it'd be most
-likely as limited as existing solutions at the beginning but it allows
-for future improvements unlike scattering the solution all over the
-place which just digs the hole deeper.
+> Cc: Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
 
-Thanks.
+I keep on receiving emails from people who claim they can fix this.
 
--- 
-tejun
+> This patchset implements targeted shrinking for memcg when kmem limits are
+> present. So far, we've been accounting kernel objects but failing allocations
+> when short of memory. This is because our only option would be to call the
+> global shrinker, depleting objects from all caches and breaking isolation.
+
+This is a fine-looking patchset and it even has some acks and reviews. 
+But it's huuuuge and we're at -rc6 and I've been offline for a week and
+have 975 emails in my to-apply folder.
+
+So, err, I think I'll bestow upon everyone some additional time to
+review the code ;)  Please resend for -rc1?
