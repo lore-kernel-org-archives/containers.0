@@ -1,13 +1,14 @@
-From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [PATCH v3 04/32] dentry: move to per-sb LRU locks
-Date: Mon,  8 Apr 2013 18:00:31 +0400
-Message-ID: <1365429659-22108-5-git-send-email-glommer__16049.6698845693$1365442839$gmane$org@parallels.com>
-References: <1365429659-22108-1-git-send-email-glommer@parallels.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Workman-devel] cgroup: status-quo and userland efforts
+Date: Mon, 8 Apr 2013 13:59:26 -0400
+Message-ID: <20130408175925.GE28292@redhat.com>
+References: <20130406012159.GA17159@mtj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1365429659-22108-1-git-send-email-glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20130406012159.GA17159-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,185 +18,206 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
-Cc: hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+On Fri, Apr 05, 2013 at 06:21:59PM -0700, Tejun Heo wrote:
 
-With the dentry LRUs being per-sb structures, there is no real need
-for a global dentry_lru_lock. The locking can be made more
-fine-grained by moving to a per-sb LRU lock, isolating the LRU
-operations of different filesytsems completely from each other.
+[..]
+>  Userland efforts
+>  ================
+> 
+> There are currently a few userland efforts trying to make interfacing
+> with cgroup less painful.
+> 
+> * libcg: Make cgroup interface accessible from programming languages
+>   with support for configuration persistency, which also brings its
+>   own config files to remember what to do on the next boot.  Sans the
+>   persistence part, it just seems to directly translate the filesystem
+>   interface to function interface.
+> 
+>   http://libcg.sourceforge.net/
+> 
+> * Workman: It's a rather young project but as its name (workload
+>   management) implies, its aims are higher level than that of libcg.
+>   It aims to provide high-level resource allocation and management and
+>   introduces new concepts like resource partitions to represent its
+>   view of resource hierarchy.  Like libcg, this one is implemented as
+>   a library but provides bindings for more languages.
+> 
+>   https://gitorious.org/workman/pages/Home
+> 
+> * Pax Controla Groupiana: A document on how not to step on other's
+>   toes while using cgroup.  It's not a software project but tries to
+>   define precautions that a software or user can take to avoid
+>   breaking or confusing other users of the cgroup filesystem.
+> 
+>   http://www.freedesktop.org/wiki/Software/systemd/PaxControlGroups
+> 
+> All try to play nice with other possible users of the cgroup
+> filesystem - be it libvirt cgroup, applications doing their own cgroup
+> tricks, or hand-crafted custom scripts.  While the approach is
+> understandable given that those usages already exist, I don't think
+> it's a workable solution in the long term.  There are several reasons
+> for that.
+> 
+> * The configurations aren't independent.  e.g. for weight-based
+>   controllers, your weight is only meaningful in relation to other
+>   weights at that level.  Distributing configuration to whatever
+>   entities which may write to cgroupfs simply cannot work.  It's
+>   fundamentally flawed.
 
-Signed-off-by: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Reviewed-by: Christoph Hellwig <hch-jcswGhMUV9g@public.gmane.org>
----
- fs/dcache.c        | 37 ++++++++++++++++++-------------------
- fs/super.c         |  1 +
- include/linux/fs.h |  4 +++-
- 3 files changed, 22 insertions(+), 20 deletions(-)
+Hi Tejun,
 
-diff --git a/fs/dcache.c b/fs/dcache.c
-index ffdd461..de09780 100644
---- a/fs/dcache.c
-+++ b/fs/dcache.c
-@@ -48,7 +48,7 @@
-  *   - the dcache hash table
-  * s_anon bl list spinlock protects:
-  *   - the s_anon list (see __d_drop)
-- * dcache_lru_lock protects:
-+ * dentry->d_sb->s_dentry_lru_lock protects:
-  *   - the dcache lru lists and counters
-  * d_lock protects:
-  *   - d_flags
-@@ -63,7 +63,7 @@
-  * Ordering:
-  * dentry->d_inode->i_lock
-  *   dentry->d_lock
-- *     dcache_lru_lock
-+ *     dentry->d_sb->s_dentry_lru_lock
-  *     dcache_hash_bucket lock
-  *     s_anon lock
-  *
-@@ -81,7 +81,6 @@
- int sysctl_vfs_cache_pressure __read_mostly = 100;
- EXPORT_SYMBOL_GPL(sysctl_vfs_cache_pressure);
- 
--static __cacheline_aligned_in_smp DEFINE_SPINLOCK(dcache_lru_lock);
- __cacheline_aligned_in_smp DEFINE_SEQLOCK(rename_lock);
- 
- EXPORT_SYMBOL(rename_lock);
-@@ -327,11 +326,11 @@ static void dentry_unlink_inode(struct dentry * dentry)
- static void dentry_lru_add(struct dentry *dentry)
- {
- 	if (list_empty(&dentry->d_lru)) {
--		spin_lock(&dcache_lru_lock);
-+		spin_lock(&dentry->d_sb->s_dentry_lru_lock);
- 		list_add(&dentry->d_lru, &dentry->d_sb->s_dentry_lru);
- 		dentry->d_sb->s_nr_dentry_unused++;
- 		this_cpu_inc(nr_dentry_unused);
--		spin_unlock(&dcache_lru_lock);
-+		spin_unlock(&dentry->d_sb->s_dentry_lru_lock);
- 	}
- }
- 
-@@ -349,9 +348,9 @@ static void __dentry_lru_del(struct dentry *dentry)
- static void dentry_lru_del(struct dentry *dentry)
- {
- 	if (!list_empty(&dentry->d_lru)) {
--		spin_lock(&dcache_lru_lock);
-+		spin_lock(&dentry->d_sb->s_dentry_lru_lock);
- 		__dentry_lru_del(dentry);
--		spin_unlock(&dcache_lru_lock);
-+		spin_unlock(&dentry->d_sb->s_dentry_lru_lock);
- 	}
- }
- 
-@@ -366,15 +365,15 @@ static void dentry_lru_prune(struct dentry *dentry)
- 		if (dentry->d_flags & DCACHE_OP_PRUNE)
- 			dentry->d_op->d_prune(dentry);
- 
--		spin_lock(&dcache_lru_lock);
-+		spin_lock(&dentry->d_sb->s_dentry_lru_lock);
- 		__dentry_lru_del(dentry);
--		spin_unlock(&dcache_lru_lock);
-+		spin_unlock(&dentry->d_sb->s_dentry_lru_lock);
- 	}
- }
- 
- static void dentry_lru_move_list(struct dentry *dentry, struct list_head *list)
- {
--	spin_lock(&dcache_lru_lock);
-+	spin_lock(&dentry->d_sb->s_dentry_lru_lock);
- 	if (list_empty(&dentry->d_lru)) {
- 		list_add_tail(&dentry->d_lru, list);
- 		dentry->d_sb->s_nr_dentry_unused++;
-@@ -382,7 +381,7 @@ static void dentry_lru_move_list(struct dentry *dentry, struct list_head *list)
- 	} else {
- 		list_move_tail(&dentry->d_lru, list);
- 	}
--	spin_unlock(&dcache_lru_lock);
-+	spin_unlock(&dentry->d_sb->s_dentry_lru_lock);
- }
- 
- /**
-@@ -860,14 +859,14 @@ void prune_dcache_sb(struct super_block *sb, int count)
- 	LIST_HEAD(tmp);
- 
- relock:
--	spin_lock(&dcache_lru_lock);
-+	spin_lock(&sb->s_dentry_lru_lock);
- 	while (!list_empty(&sb->s_dentry_lru)) {
- 		dentry = list_entry(sb->s_dentry_lru.prev,
- 				struct dentry, d_lru);
- 		BUG_ON(dentry->d_sb != sb);
- 
- 		if (!spin_trylock(&dentry->d_lock)) {
--			spin_unlock(&dcache_lru_lock);
-+			spin_unlock(&sb->s_dentry_lru_lock);
- 			cpu_relax();
- 			goto relock;
- 		}
-@@ -883,11 +882,11 @@ relock:
- 			if (!--count)
- 				break;
- 		}
--		cond_resched_lock(&dcache_lru_lock);
-+		cond_resched_lock(&sb->s_dentry_lru_lock);
- 	}
- 	if (!list_empty(&referenced))
- 		list_splice(&referenced, &sb->s_dentry_lru);
--	spin_unlock(&dcache_lru_lock);
-+	spin_unlock(&sb->s_dentry_lru_lock);
- 
- 	shrink_dentry_list(&tmp);
- }
-@@ -903,14 +902,14 @@ void shrink_dcache_sb(struct super_block *sb)
- {
- 	LIST_HEAD(tmp);
- 
--	spin_lock(&dcache_lru_lock);
-+	spin_lock(&sb->s_dentry_lru_lock);
- 	while (!list_empty(&sb->s_dentry_lru)) {
- 		list_splice_init(&sb->s_dentry_lru, &tmp);
--		spin_unlock(&dcache_lru_lock);
-+		spin_unlock(&sb->s_dentry_lru_lock);
- 		shrink_dentry_list(&tmp);
--		spin_lock(&dcache_lru_lock);
-+		spin_lock(&sb->s_dentry_lru_lock);
- 	}
--	spin_unlock(&dcache_lru_lock);
-+	spin_unlock(&sb->s_dentry_lru_lock);
- }
- EXPORT_SYMBOL(shrink_dcache_sb);
- 
-diff --git a/fs/super.c b/fs/super.c
-index 2a37fd6..0be75fb 100644
---- a/fs/super.c
-+++ b/fs/super.c
-@@ -182,6 +182,7 @@ static struct super_block *alloc_super(struct file_system_type *type, int flags)
- 		INIT_HLIST_BL_HEAD(&s->s_anon);
- 		INIT_LIST_HEAD(&s->s_inodes);
- 		INIT_LIST_HEAD(&s->s_dentry_lru);
-+		spin_lock_init(&s->s_dentry_lru_lock);
- 		INIT_LIST_HEAD(&s->s_inode_lru);
- 		spin_lock_init(&s->s_inode_lru_lock);
- 		INIT_LIST_HEAD(&s->s_mounts);
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 2c28271..02934f5 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1261,7 +1261,9 @@ struct super_block {
- 	struct list_head	s_files;
- #endif
- 	struct list_head	s_mounts;	/* list of mounts; _not_ for fs use */
--	/* s_dentry_lru, s_nr_dentry_unused protected by dcache.c lru locks */
-+
-+	/* s_dentry_lru_lock protects s_dentry_lru and s_nr_dentry_unused */
-+	spinlock_t		s_dentry_lru_lock ____cacheline_aligned_in_smp;
- 	struct list_head	s_dentry_lru;	/* unused dentry lru */
- 	int			s_nr_dentry_unused;	/* # of dentry on lru */
- 
--- 
-1.8.1.4
+I thought in workman, "partition" configuration was still centralized
+while individual "consumer" configuration was with consumer manger 
+(systemd, libvirt, .. etc). IOW, library can tell consumer manger to
+which partition to associate consumer with at startup time. (consumer
+manager can assume their own defaults if nothing has been told).
+
+Agreed, that weight is meaningful only if one as full hierarchy view
+and then one should be able to calculate effective % share of resoures
+of a group.
+
+But using the library admin application should be able to query the
+full "paritition" hierarchy and their weigths and calculate % system
+resources. I think one problem there is cpu controller where % resoruce
+of a cgroup depends on tasks entities which are peer to group. But that's
+a kernel issue and not user space thing.
+
+So I am not sure what are potential problems with proposed model of
+configuration in workman. All the consumer managers still follow what
+libarary has told them to do.
+
+> 
+> * It's fragile like hell.  There's no accountability.  Nobody really
+>   knows what's going on.  Is this subdirectory still there due to a
+>   bug in this program, or something or someone else created it and
+>   crashed / forgot to remove it, or what?
+
+I thought any directory under a consumer manger is managed by that
+manager and nobody is supposed to dynamically create resource
+partition/cgroup there. So that takes away a bit of confusion.
+
+>  Oh, the cgroup I wanted to
+>   create already exists.  Maybe the previous instance created it and
+>   then crashed
+
+This should be the case as long as we stick to the notion of a manger
+managing its own sub-hierarchy.
+
+>  or maybe some other program just happened to choose the
+>   same name.
+
+Two programs ideally would have their own sub hiearchy. And if not one
+of the programs should get the conflict when trying to create cgroup and
+should back-off or fail or give warning...
+
+> Who owns config knobs in that directory?
+
+IIUC, workman was looking at two types of cgroups. Once called
+"partitions" which will be created by library at startup time and
+library manages the configuration (something like cgconfig.conf).
+
+And individual managers create their own children groups for various
+services under that partition and control the config knobs for those
+services.
+
+			user-defined-partition
+			     /    |    \
+                           virt1  virt2 virt3  
+
+So user should be able to define a partition and control the configuration
+using workman lib. And if multiple virtual machines are being run in
+the partition, then they create their own cgroups and libvirt controls
+the properties of virt1, virt2, virt3 cgroups. I thought that was the
+the understanding when we dicussed ownership of config knobs las time.
+But things might have changed since last time. Workman folks should
+be able to shed light on this.
+
+>  This way lies
+>   madness.  I understand why the Pax doc exists but I'm not sure its
+>   long-term effect would be positive - best practices which ultimately
+>   lead to utter confusion and fragility.
+> 
+> * In many cases, resource distribution is system-wide policy decisions
+>   and determining what to do often requires system-wide knowledge.
+>   You can't provision memory limits without knowing what's available
+>   in the system and what else is going on in the system, and you want
+>   to be able to adjust them as situation and configuration changes.
+>   Without anybody having full picture of how resources are
+>   provisioned, how would any of that be possible?
+
+I thought workman library will provide interfaces so that one can query
+and be able to construct the full system view.
+
+Their doc says.
+
+GList *workmanager_partition_get_children(WorkmanPartition *partition,
+                                            GError **error);
+
+
+So I am assuming this can be used to construct the full partition
+hierarchy and associated resource allocation.
+
+> 
+> I think this anything-goes approach is prevalent largely because the
+> cgroup filesystem interface encourages such usage.  From the looks of
+> it, the filesystem permissions combined with hierarchy should be able
+> to handle delegation perfectly.  Well, as it currently stands, it's
+> anything but and the interface is just misleading.  Hierarchy support
+> was an utter mess, configuration schemes aren't uniform across
+> controllers, and, more fundamentally, hierarchy itself is expensive -
+> we can't delegate hierarchy creation to unpriviledged users or
+> programs safely.
+> 
+> It is in the realm of possibility to make all cgroup operations and
+> controllers to do all that; however, it's a very tall order.  Just
+> think about how much effort it has been to achieve and maintain proper
+> delegation in the core elements of the kernel - processes and
+> filesystems, and there will be security implications with cgroup
+> likely involving a lot of gotchas and extensions of security
+> infrastructures, and, even then, I'm pretty sure it's gonna require
+> helps from userland to effect proper policy decisions and config
+> changes.  We have things like polkit for a reason and are likely to
+> need finer-grained, domain-aware access control than is possible with
+> tweaking directory permissions.
+> 
+> Given the above and how relatively marginal cgroup is, I'm extremely
+> skeptical that implementing full delegation in kernel is the right
+> course of action and likely to scream like a banshee at any attempt
+> driving things that way.
+> 
+
+[..]
+> I think the only logical thing to do is creating a centralized
+> userland authority which takes full ownership of the cgroup filesystem
+> interface, gives it a sane structure,
+
+Right now systemd seems to be giving initial structure. I guess we will
+require some changes where systemd itself runs in a cgroup and that
+allows one to create peer groups. Something like.
+				
+				root
+				/  \
+			   systemd other-groups
+	
+So currently no central authority is enforcing it. It seems to be just
+a matter of right defaults in systemd.
+	
+> represents available resources
+> in a sane form, and makes policy decisions based on configuration and
+> requests.
+
+Given the fact that library has view of full system resoruces (both
+persistent view and active view), shouldn't we just be able to extend
+the API to meet additional configuration or resource needs.
+
+>  I don't have a concerete idea what that authority should be
+> like, but I think there already are pretty similar facilities in our
+> userland, and don't see why this should be much different.
+
+
+Thanks
+Vivek
