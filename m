@@ -1,7 +1,7 @@
 From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [PATCH v3 25/32] list_lru: per-memcg walks
-Date: Mon,  8 Apr 2013 18:00:52 +0400
-Message-ID: <1365429659-22108-26-git-send-email-glommer__28819.0262312584$1365441039$gmane$org@parallels.com>
+Subject: [PATCH v3 31/32] super: targeted memcg reclaim
+Date: Mon,  8 Apr 2013 18:00:58 +0400
+Message-ID: <1365429659-22108-32-git-send-email-glommer__26894.2046481699$1365441039$gmane$org@parallels.com>
 References: <1365429659-22108-1-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,17 +21,18 @@ To: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
 Cc: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Mel Gorman <mgorman-l3A5Bk7waGM@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch extend the list_lru interfaces to allow for a memcg
-parameter. Because most of its users won't need it, instead of
-modifying the function signatures we create a new set of _memcg()
-functions and write the old API ontop of that.
+We now have all our dentries and inodes placed in memcg-specific LRU
+lists. All we have to do is restrict the reclaim to the said lists in
+case of memcg pressure.
 
-At this point, the infrastructure is mostly in place. We already walk
-the nodes using all memcg indexes, so we just need to make sure we skip
-all but the one we're interested in. We could just go directly to the
-memcg of interest, but I am assuming that given the gained simplicity,
-spending a few cycles here won't hurt *that* much (but that can be
-improved if needed, of course).
+That can't be done so easily for the fs_objects part of the equation,
+since this is heavily fs-specific. What we do is pass on the context,
+and let the filesystems decide if they ever chose or want to. At this
+time, we just don't shrink them in memcg pressure (none is supported),
+leaving that for global pressure only.
+
+Marking the superblock shrinker and its LRUs as memcg-aware will
+guarantee that the shrinkers will get invoked during targetted reclaim.
 
 Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 Cc: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
@@ -43,185 +44,190 @@ Cc: Hugh Dickins <hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Cc: Kamezawa Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 ---
- include/linux/list_lru.h | 25 ++++++++++++++++-----
- lib/list_lru.c           | 56 ++++++++++++++++++++++++++++++++++++------------
- 2 files changed, 62 insertions(+), 19 deletions(-)
+ fs/dcache.c   |  6 +++---
+ fs/inode.c    |  6 +++---
+ fs/internal.h |  5 +++--
+ fs/super.c    | 39 +++++++++++++++++++++++++++------------
+ 4 files changed, 36 insertions(+), 20 deletions(-)
 
-diff --git a/include/linux/list_lru.h b/include/linux/list_lru.h
-index ea1ab4d..6f9e745 100644
---- a/include/linux/list_lru.h
-+++ b/include/linux/list_lru.h
-@@ -78,21 +78,36 @@ static inline int list_lru_init_memcg(struct list_lru *lru)
- 
- int list_lru_add(struct list_lru *lru, struct list_head *item);
- int list_lru_del(struct list_lru *lru, struct list_head *item);
--long list_lru_count_nodemask(struct list_lru *lru, nodemask_t *nodes_to_count);
-+
-+long list_lru_count_nodemask_memcg(struct list_lru *lru,
-+			nodemask_t *nodes_to_count, struct mem_cgroup *memcg);
-+
-+static inline long
-+list_lru_count_nodemask(struct list_lru *lru, nodemask_t *nodes_to_count)
-+{
-+	return list_lru_count_nodemask_memcg(lru, nodes_to_count, NULL);
-+}
- 
- static inline long list_lru_count(struct list_lru *lru)
- {
- 	return list_lru_count_nodemask(lru, &lru->active_nodes);
- }
- 
--
- typedef enum lru_status
- (*list_lru_walk_cb)(struct list_head *item, spinlock_t *lock, void *cb_arg);
--
- typedef void (*list_lru_dispose_cb)(struct list_head *dispose_list);
- 
--long list_lru_walk_nodemask(struct list_lru *lru, list_lru_walk_cb isolate,
--		   void *cb_arg, long nr_to_walk, nodemask_t *nodes_to_walk);
-+long list_lru_walk_nodemask_memcg(struct list_lru *lru,
-+	list_lru_walk_cb isolate, void *cb_arg, long nr_to_walk,
-+	nodemask_t *nodes_to_walk, struct mem_cgroup *memcg);
-+
-+static inline long list_lru_walk_nodemask(struct list_lru *lru,
-+	list_lru_walk_cb isolate, void *cb_arg, long nr_to_walk,
-+	nodemask_t *nodes_to_walk)
-+{
-+	return list_lru_walk_nodemask_memcg(lru, isolate, cb_arg, nr_to_walk,
-+					    &lru->active_nodes, NULL);
-+}
- 
- static inline long list_lru_walk(struct list_lru *lru, list_lru_walk_cb isolate,
- 				 void *cb_arg, long nr_to_walk)
-diff --git a/lib/list_lru.c b/lib/list_lru.c
-index dfc2c4a..3093f98 100644
---- a/lib/list_lru.c
-+++ b/lib/list_lru.c
-@@ -75,6 +75,11 @@ memcg_kmem_lru_of_page(struct list_lru *lru, struct page *page)
-  * memcg_limited_groups_array_size will be 0. _idx starts at -1, and it will
-  * still be allowed to execute once.
-  *
-+ * If a memcg is specified at memcg_id, we will make sure that the loop only
-+ * have one iteration, corresponding to that memcg. This makes sure that the
-+ * interface is kept for both cases and there is no need for separate code to
-+ * handle that case, at the price of complicating the macro a bit.
-+ *
-  * We convention that for _idx = -1, the global node info should be used.
-  * After that, we will go through each of the memcgs, starting at 0.
-  *
-@@ -83,8 +88,11 @@ memcg_kmem_lru_of_page(struct list_lru *lru, struct page *page)
-  * end. The old ones are just copied, and any interesting manipulation happen
-  * in the node list itself, and we already lock the list.
+diff --git a/fs/dcache.c b/fs/dcache.c
+index b276bb2..c7cd9ee 100644
+--- a/fs/dcache.c
++++ b/fs/dcache.c
+@@ -905,13 +905,13 @@ dentry_lru_isolate(struct list_head *item, spinlock_t *lru_lock, void *arg)
+  * use.
   */
--#define for_each_memcg_lru_index(_idx)	\
--	for ((_idx) = -1; ((_idx) < memcg_limited_groups_array_size); (_idx)++)
-+#define for_each_memcg_lru_index(_idx, memcg_id)		\
-+	for ((_idx) = ((memcg_id) >= 0) ? memcg_id : -1;	\
-+	     ((memcg_id < 0) || ((_idx) <= (memcg_id))) &&	\
-+	     ((_idx) < memcg_limited_groups_array_size);	\
-+	     (_idx)++)
- 
- int
- list_lru_add(
-@@ -145,25 +153,44 @@ list_lru_del(
- EXPORT_SYMBOL_GPL(list_lru_del);
- 
- long
--list_lru_count_nodemask(
-+list_lru_count_nodemask_memcg(
- 	struct list_lru *lru,
--	nodemask_t	*nodes_to_count)
-+	nodemask_t	*nodes_to_count,
-+	struct mem_cgroup *memcg)
+ long prune_dcache_sb(struct super_block *sb, long nr_to_scan,
+-		     nodemask_t *nodes_to_walk)
++		     nodemask_t *nodes_to_walk, struct mem_cgroup *memcg)
  {
- 	long count = 0;
- 	int nid;
-+	nodemask_t nodes;
-+	struct list_lru_node *nlru;
-+	int memcg_id = memcg_cache_id(memcg);
-+
+ 	LIST_HEAD(dispose);
+ 	long freed;
+ 
+-	freed = list_lru_walk_nodemask(&sb->s_dentry_lru, dentry_lru_isolate,
+-				       &dispose, nr_to_scan, nodes_to_walk);
++	freed = list_lru_walk_nodemask_memcg(&sb->s_dentry_lru,
++		dentry_lru_isolate, &dispose, nr_to_scan, nodes_to_walk, memcg);
+ 	shrink_dentry_list(&dispose);
+ 	return freed;
+ }
+diff --git a/fs/inode.c b/fs/inode.c
+index 1b7a87a..5536ba0 100644
+--- a/fs/inode.c
++++ b/fs/inode.c
+@@ -746,13 +746,13 @@ inode_lru_isolate(struct list_head *item, spinlock_t *lru_lock, void *arg)
+  * then are freed outside inode_lock by dispose_list().
+  */
+ long prune_icache_sb(struct super_block *sb, long nr_to_scan,
+-		     nodemask_t *nodes_to_walk)
++			nodemask_t *nodes_to_walk, struct mem_cgroup *memcg)
+ {
+ 	LIST_HEAD(freeable);
+ 	long freed;
+ 
+-	freed = list_lru_walk_nodemask(&sb->s_inode_lru, inode_lru_isolate,
+-				       &freeable, nr_to_scan, nodes_to_walk);
++	freed = list_lru_walk_nodemask_memcg(&sb->s_inode_lru,
++		inode_lru_isolate, &freeable, nr_to_scan, nodes_to_walk, memcg);
+ 	dispose_list(&freeable);
+ 	return freed;
+ }
+diff --git a/fs/internal.h b/fs/internal.h
+index ed6944e..88b292e 100644
+--- a/fs/internal.h
++++ b/fs/internal.h
+@@ -16,6 +16,7 @@ struct file_system_type;
+ struct linux_binprm;
+ struct path;
+ struct mount;
++struct mem_cgroup;
+ 
+ /*
+  * block_dev.c
+@@ -111,7 +112,7 @@ extern int open_check_o_direct(struct file *f);
+  */
+ extern spinlock_t inode_sb_list_lock;
+ extern long prune_icache_sb(struct super_block *sb, long nr_to_scan,
+-			    nodemask_t *nodes_to_scan);
++		    nodemask_t *nodes_to_scan, struct mem_cgroup *memcg);
+ extern void inode_add_lru(struct inode *inode);
+ 
+ /*
+@@ -128,4 +129,4 @@ extern int invalidate_inodes(struct super_block *, bool);
+  */
+ extern struct dentry *__d_alloc(struct super_block *, const struct qstr *);
+ extern long prune_dcache_sb(struct super_block *sb, long nr_to_scan,
+-			    nodemask_t *nodes_to_scan);
++		    nodemask_t *nodes_to_scan, struct mem_cgroup *memcg);
+diff --git a/fs/super.c b/fs/super.c
+index 5c7b879..e92ebcb 100644
+--- a/fs/super.c
++++ b/fs/super.c
+@@ -34,6 +34,7 @@
+ #include <linux/cleancache.h>
+ #include <linux/fsnotify.h>
+ #include <linux/lockdep.h>
++#include <linux/memcontrol.h>
+ #include "internal.h"
+ 
+ 
+@@ -56,6 +57,7 @@ static char *sb_writers_name[SB_FREEZE_LEVELS] = {
+ static long super_cache_scan(struct shrinker *shrink, struct shrink_control *sc)
+ {
+ 	struct super_block *sb;
++	struct mem_cgroup *memcg = sc->target_mem_cgroup;
+ 	long	fs_objects = 0;
+ 	long	total_objects;
+ 	long	freed = 0;
+@@ -74,11 +76,13 @@ static long super_cache_scan(struct shrinker *shrink, struct shrink_control *sc)
+ 	if (!grab_super_passive(sb))
+ 		return -1;
+ 
+-	if (sb->s_op && sb->s_op->nr_cached_objects)
++	if (sb->s_op && sb->s_op->nr_cached_objects && !memcg)
+ 		fs_objects = sb->s_op->nr_cached_objects(sb, &sc->nodes_to_scan);
+ 
+-	inodes = list_lru_count_nodemask(&sb->s_inode_lru, &sc->nodes_to_scan);
+-	dentries = list_lru_count_nodemask(&sb->s_dentry_lru, &sc->nodes_to_scan);
++	inodes = list_lru_count_nodemask_memcg(&sb->s_inode_lru,
++					 &sc->nodes_to_scan, memcg);
++	dentries = list_lru_count_nodemask_memcg(&sb->s_dentry_lru,
++					   &sc->nodes_to_scan, memcg);
+ 	total_objects = dentries + inodes + fs_objects + 1;
+ 
+ 	/* proportion the scan between the caches */
+@@ -89,8 +93,8 @@ static long super_cache_scan(struct shrinker *shrink, struct shrink_control *sc)
+ 	 * prune the dcache first as the icache is pinned by it, then
+ 	 * prune the icache, followed by the filesystem specific caches
+ 	 */
+-	freed = prune_dcache_sb(sb, dentries, &sc->nodes_to_scan);
+-	freed += prune_icache_sb(sb, inodes, &sc->nodes_to_scan);
++	freed = prune_dcache_sb(sb, dentries, &sc->nodes_to_scan, memcg);
++	freed += prune_icache_sb(sb, inodes, &sc->nodes_to_scan, memcg);
+ 
+ 	if (fs_objects) {
+ 		fs_objects = mult_frac(sc->nr_to_scan, fs_objects,
+@@ -107,20 +111,26 @@ static long super_cache_count(struct shrinker *shrink, struct shrink_control *sc
+ {
+ 	struct super_block *sb;
+ 	long	total_objects = 0;
++	struct mem_cgroup *memcg = sc->target_mem_cgroup;
+ 
+ 	sb = container_of(shrink, struct super_block, s_shrink);
+ 
+ 	if (!grab_super_passive(sb))
+ 		return -1;
+ 
+-	if (sb->s_op && sb->s_op->nr_cached_objects)
 +	/*
-+	 * Conservative code can call this setting nodes with node_setall.
-+	 * This will generate an out of bound access for memcg.
++	 * Ideally we would pass memcg to nr_cached_objects, and
++	 * let the underlying filesystem decide. Most likely the
++	 * path will be if (!memcg) return;, but even then.
 +	 */
-+	nodes_and(nodes, *nodes_to_count, node_online_map);
++	if (sb->s_op && sb->s_op->nr_cached_objects && !memcg)
+ 		total_objects = sb->s_op->nr_cached_objects(sb,
+ 						 &sc->nodes_to_scan);
  
--	for_each_node_mask(nid, *nodes_to_count) {
-+	for_each_node_mask(nid, nodes) {
- 		/*
- 		 * We don't need to loop through all memcgs here, because we
- 		 * have the node_totals information for the node. If we hadn't,
- 		 * this would still be achieavable by a loop-over-all-groups
- 		 */
--		count += atomic_long_read(&lru->node_totals[nid]);
--	}
-+		if (!memcg)
-+			count += atomic_long_read(&lru->node_totals[nid]);
-+		else {
-+			nlru = lru_node_of_index(lru, memcg_id, nid);
-+			WARN_ON(!nlru);
+-	total_objects += list_lru_count_nodemask(&sb->s_dentry_lru,
+-						 &sc->nodes_to_scan);
+-	total_objects += list_lru_count_nodemask(&sb->s_inode_lru,
+-						 &sc->nodes_to_scan);
++	total_objects += list_lru_count_nodemask_memcg(&sb->s_dentry_lru,
++					 &sc->nodes_to_scan, memcg);
++	total_objects += list_lru_count_nodemask_memcg(&sb->s_inode_lru,
++					 &sc->nodes_to_scan, memcg);
  
-+			spin_lock(&nlru->lock);
-+			BUG_ON(nlru->nr_items < 0);
-+			count += nlru->nr_items;
-+			spin_unlock(&nlru->lock);
-+		}
-+	}
- 	return count;
- }
--EXPORT_SYMBOL_GPL(list_lru_count_nodemask);
-+EXPORT_SYMBOL_GPL(list_lru_count_nodemask_memcg);
- 
- static long
- list_lru_walk_node(
-@@ -208,16 +235,18 @@ restart:
- }
- 
- long
--list_lru_walk_nodemask(
-+list_lru_walk_nodemask_memcg(
- 	struct list_lru	*lru,
- 	list_lru_walk_cb isolate,
- 	void		*cb_arg,
- 	long		nr_to_walk,
--	nodemask_t	*nodes_to_walk)
-+	nodemask_t	*nodes_to_walk,
-+	struct mem_cgroup *memcg)
- {
- 	long isolated = 0;
- 	int nid;
- 	nodemask_t nodes;
-+	int memcg_id = memcg_cache_id(memcg);
- 	int idx;
- 	struct list_lru_node *nlru;
- 
-@@ -228,8 +257,7 @@ list_lru_walk_nodemask(
- 	nodes_and(nodes, *nodes_to_walk, node_online_map);
- 
- 	for_each_node_mask(nid, nodes) {
--		for_each_memcg_lru_index(idx) {
--
-+		for_each_memcg_lru_index(idx, memcg_id) {
- 			nlru = lru_node_of_index(lru, idx, nid);
- 			if (!nlru)
- 				continue;
-@@ -242,7 +270,7 @@ list_lru_walk_nodemask(
+ 	total_objects = vfs_pressure_ratio(total_objects);
+ 	drop_super(sb);
+@@ -199,8 +209,10 @@ static struct super_block *alloc_super(struct file_system_type *type, int flags)
+ 		INIT_HLIST_NODE(&s->s_instances);
+ 		INIT_HLIST_BL_HEAD(&s->s_anon);
+ 		INIT_LIST_HEAD(&s->s_inodes);
+-		list_lru_init(&s->s_dentry_lru);
+-		list_lru_init(&s->s_inode_lru);
++
++		list_lru_init_memcg(&s->s_dentry_lru);
++		list_lru_init_memcg(&s->s_inode_lru);
++
+ 		INIT_LIST_HEAD(&s->s_mounts);
+ 		init_rwsem(&s->s_umount);
+ 		lockdep_set_class(&s->s_umount, &type->s_umount_key);
+@@ -236,6 +248,7 @@ static struct super_block *alloc_super(struct file_system_type *type, int flags)
+ 		s->s_shrink.scan_objects = super_cache_scan;
+ 		s->s_shrink.count_objects = super_cache_count;
+ 		s->s_shrink.batch = 1024;
++		s->s_shrink.memcg_shrinker = true;
  	}
- 	return isolated;
- }
--EXPORT_SYMBOL_GPL(list_lru_walk_nodemask);
-+EXPORT_SYMBOL_GPL(list_lru_walk_nodemask_memcg);
+ out:
+ 	return s;
+@@ -318,6 +331,8 @@ void deactivate_locked_super(struct super_block *s)
  
- static long
- list_lru_dispose_all_node(
-@@ -255,7 +283,7 @@ list_lru_dispose_all_node(
- 	long disposed = 0;
- 	int idx;
- 
--	for_each_memcg_lru_index(idx) {
-+	for_each_memcg_lru_index(idx, -1) {
- 		nlru = lru_node_of_index(lru, idx, nid);
- 		if (!nlru)
- 			continue;
+ 		/* caches are now gone, we can safely kill the shrinker now */
+ 		unregister_shrinker(&s->s_shrink);
++		list_lru_destroy(&s->s_dentry_lru);
++		list_lru_destroy(&s->s_inode_lru);
+ 		put_filesystem(fs);
+ 		put_super(s);
+ 	} else {
 -- 
 1.8.1.4
