@@ -1,7 +1,7 @@
 From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [PATCH v3 02/32] vmscan: take at least one pass with shrinkers
-Date: Mon,  8 Apr 2013 18:00:29 +0400
-Message-ID: <1365429659-22108-3-git-send-email-glommer@parallels.com>
+Subject: [PATCH v3 08/32] list: add a new LRU list type
+Date: Mon,  8 Apr 2013 18:00:35 +0400
+Message-ID: <1365429659-22108-9-git-send-email-glommer__23785.3433508009$1365438650$gmane$org@parallels.com>
 References: <1365429659-22108-1-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,52 +18,215 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
-Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-In very low free kernel memory situations, it may be the case that we
-have less objects to free than our initial batch size. If this is the
-case, it is better to shrink those, and open space for the new workload
-then to keep them and fail the new allocations.
+From: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-More specifically, this happens because we encode this in a loop with
-the condition: "while (total_scan >= batch_size)". So if we are in such
-a case, we'll not even enter the loop.
+Several subsystems use the same construct for LRU lists - a list
+head, a spin lock and and item count. They also use exactly the same
+code for adding and removing items from the LRU. Create a generic
+type for these LRU lists.
 
-This patch modifies turns it into a do () while {} loop, that will
-guarantee that we scan it at least once, while keeping the behaviour
-exactly the same for the cases in which total_scan > batch_size.
+This is the beginning of generic, node aware LRUs for shrinkers to
+work with.
 
+[ glommer: enum defined constants for lru. Suggested by gthelen ]
+Signed-off-by: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Reviewed-by: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
-Reviewed-by: Carlos Maiolino <cmaiolino-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-CC: "Theodore Ts'o" <tytso-3s7WtUTddSA@public.gmane.org>
-CC: Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 ---
- mm/vmscan.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ include/linux/list_lru.h |  44 ++++++++++++++++++
+ lib/Makefile             |   2 +-
+ lib/list_lru.c           | 117 +++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 162 insertions(+), 1 deletion(-)
+ create mode 100644 include/linux/list_lru.h
+ create mode 100644 lib/list_lru.c
 
-diff --git a/mm/vmscan.c b/mm/vmscan.c
-index 88c5fed..fc6d45a 100644
---- a/mm/vmscan.c
-+++ b/mm/vmscan.c
-@@ -280,7 +280,7 @@ unsigned long shrink_slab(struct shrink_control *shrink,
- 					nr_pages_scanned, lru_pages,
- 					max_pass, delta, total_scan);
+diff --git a/include/linux/list_lru.h b/include/linux/list_lru.h
+new file mode 100644
+index 0000000..394c28c
+--- /dev/null
++++ b/include/linux/list_lru.h
+@@ -0,0 +1,44 @@
++/*
++ * Copyright (c) 2010-2012 Red Hat, Inc. All rights reserved.
++ * Author: David Chinner
++ *
++ * Generic LRU infrastructure
++ */
++#ifndef _LRU_LIST_H
++#define _LRU_LIST_H
++
++#include <linux/list.h>
++
++enum lru_status {
++	LRU_REMOVED,		/* item removed from list */
++	LRU_ROTATE,		/* item referenced, give another pass */
++	LRU_SKIP,		/* item cannot be locked, skip */
++	LRU_RETRY,		/* item not freeable, lock dropped */
++};
++
++struct list_lru {
++	spinlock_t		lock;
++	struct list_head	list;
++	long			nr_items;
++};
++
++int list_lru_init(struct list_lru *lru);
++int list_lru_add(struct list_lru *lru, struct list_head *item);
++int list_lru_del(struct list_lru *lru, struct list_head *item);
++
++static inline long list_lru_count(struct list_lru *lru)
++{
++	return lru->nr_items;
++}
++
++typedef enum lru_status
++(*list_lru_walk_cb)(struct list_head *item, spinlock_t *lock, void *cb_arg);
++
++typedef void (*list_lru_dispose_cb)(struct list_head *dispose_list);
++
++long list_lru_walk(struct list_lru *lru, list_lru_walk_cb isolate,
++		   void *cb_arg, long nr_to_walk);
++
++long list_lru_dispose_all(struct list_lru *lru, list_lru_dispose_cb dispose);
++
++#endif /* _LRU_LIST_H */
+diff --git a/lib/Makefile b/lib/Makefile
+index d7946ff..f14abd9 100644
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -13,7 +13,7 @@ lib-y := ctype.o string.o vsprintf.o cmdline.o \
+ 	 sha1.o md5.o irq_regs.o reciprocal_div.o argv_split.o \
+ 	 proportions.o flex_proportions.o prio_heap.o ratelimit.o show_mem.o \
+ 	 is_single_threaded.o plist.o decompress.o kobject_uevent.o \
+-	 earlycpio.o
++	 earlycpio.o list_lru.o
  
--		while (total_scan >= batch_size) {
-+		do {
- 			int nr_before;
- 
- 			nr_before = do_shrinker_shrink(shrinker, shrink, 0);
-@@ -294,7 +294,7 @@ unsigned long shrink_slab(struct shrink_control *shrink,
- 			total_scan -= batch_size;
- 
- 			cond_resched();
--		}
-+		} while (total_scan >= batch_size);
- 
- 		/*
- 		 * move the unused scan count back into the shrinker in a
+ lib-$(CONFIG_MMU) += ioremap.o
+ lib-$(CONFIG_SMP) += cpumask.o
+diff --git a/lib/list_lru.c b/lib/list_lru.c
+new file mode 100644
+index 0000000..03bd984
+--- /dev/null
++++ b/lib/list_lru.c
+@@ -0,0 +1,117 @@
++/*
++ * Copyright (c) 2010-2012 Red Hat, Inc. All rights reserved.
++ * Author: David Chinner
++ *
++ * Generic LRU infrastructure
++ */
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/list_lru.h>
++
++int
++list_lru_add(
++	struct list_lru	*lru,
++	struct list_head *item)
++{
++	spin_lock(&lru->lock);
++	if (list_empty(item)) {
++		list_add_tail(item, &lru->list);
++		lru->nr_items++;
++		spin_unlock(&lru->lock);
++		return 1;
++	}
++	spin_unlock(&lru->lock);
++	return 0;
++}
++EXPORT_SYMBOL_GPL(list_lru_add);
++
++int
++list_lru_del(
++	struct list_lru	*lru,
++	struct list_head *item)
++{
++	spin_lock(&lru->lock);
++	if (!list_empty(item)) {
++		list_del_init(item);
++		lru->nr_items--;
++		spin_unlock(&lru->lock);
++		return 1;
++	}
++	spin_unlock(&lru->lock);
++	return 0;
++}
++EXPORT_SYMBOL_GPL(list_lru_del);
++
++long
++list_lru_walk(
++	struct list_lru *lru,
++	list_lru_walk_cb isolate,
++	void		*cb_arg,
++	long		nr_to_walk)
++{
++	struct list_head *item, *n;
++	long removed = 0;
++restart:
++	spin_lock(&lru->lock);
++	list_for_each_safe(item, n, &lru->list) {
++		int ret;
++
++		if (nr_to_walk-- < 0)
++			break;
++
++		ret = isolate(item, &lru->lock, cb_arg);
++		switch (ret) {
++		case LRU_REMOVED:
++			lru->nr_items--;
++			removed++;
++			break;
++		case LRU_ROTATE:
++			list_move_tail(item, &lru->list);
++			break;
++		case LRU_SKIP:
++			break;
++		case LRU_RETRY:
++			goto restart;
++		default:
++			BUG();
++		}
++	}
++	spin_unlock(&lru->lock);
++	return removed;
++}
++EXPORT_SYMBOL_GPL(list_lru_walk);
++
++long
++list_lru_dispose_all(
++	struct list_lru *lru,
++	list_lru_dispose_cb dispose)
++{
++	long disposed = 0;
++	LIST_HEAD(dispose_list);
++
++	spin_lock(&lru->lock);
++	while (!list_empty(&lru->list)) {
++		list_splice_init(&lru->list, &dispose_list);
++		disposed += lru->nr_items;
++		lru->nr_items = 0;
++		spin_unlock(&lru->lock);
++
++		dispose(&dispose_list);
++
++		spin_lock(&lru->lock);
++	}
++	spin_unlock(&lru->lock);
++	return disposed;
++}
++
++int
++list_lru_init(
++	struct list_lru	*lru)
++{
++	spin_lock_init(&lru->lock);
++	INIT_LIST_HEAD(&lru->list);
++	lru->nr_items = 0;
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(list_lru_init);
 -- 
 1.8.1.4
