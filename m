@@ -1,16 +1,13 @@
-From: Joonsoo Kim <iamjoonsoo.kim-Hm3cg6mZ9cc@public.gmane.org>
-Subject: Re: [PATCH v2 02/28] vmscan: take at least one pass with shrinkers
-Date: Mon, 8 Apr 2013 18:01:31 +0900
-Message-ID: <20130408090131.GB21654__38662.6652129509$1365437449$gmane$org@lge.com>
-References: <1364548450-28254-1-git-send-email-glommer@parallels.com>
-	<1364548450-28254-3-git-send-email-glommer@parallels.com>
-	<20130408084202.GA21654@lge.com> <51628412.6050803@parallels.com>
+From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: cgroup: status-quo and userland efforts
+Date: Mon, 8 Apr 2013 17:46:09 +0400
+Message-ID: <5162CA21.4060108@parallels.com>
+References: <20130406012159.GA17159@mtj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <51628412.6050803-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <20130406012159.GA17159-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,66 +17,32 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jpoimboe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Apr 08, 2013 at 12:47:14PM +0400, Glauber Costa wrote:
-> On 04/08/2013 12:42 PM, Joonsoo Kim wrote:
-> > Hello, Glauber.
-> > 
-> > On Fri, Mar 29, 2013 at 01:13:44PM +0400, Glauber Costa wrote:
-> >> In very low free kernel memory situations, it may be the case that we
-> >> have less objects to free than our initial batch size. If this is the
-> >> case, it is better to shrink those, and open space for the new workload
-> >> then to keep them and fail the new allocations.
-> >>
-> >> More specifically, this happens because we encode this in a loop with
-> >> the condition: "while (total_scan >= batch_size)". So if we are in such
-> >> a case, we'll not even enter the loop.
-> >>
-> >> This patch modifies turns it into a do () while {} loop, that will
-> >> guarantee that we scan it at least once, while keeping the behaviour
-> >> exactly the same for the cases in which total_scan > batch_size.
-> > 
-> > Current user of shrinker not only use their own condition, but also
-> > use batch_size and seeks to throttle their behavior. So IMHO,
-> > this behavior change is very dangerous to some users.
-> > 
-> > For example, think lowmemorykiller.
-> > With this patch, he always kill some process whenever shrink_slab() is
-> > called and their low memory condition is satisfied.
-> > Before this, total_scan also prevent us to go into lowmemorykiller, so
-> > killing innocent process is limited as much as possible.
-> > 
-> shrinking is part of the normal operation of the Linux kernel and
-> happens all the time. Not only the call to shrink_slab, but actual
-> shrinking of unused objects.
+On 04/06/2013 05:21 AM, Tejun Heo wrote:
+> Hello, guys.
 > 
-> I don't know therefore about any code that would kill process only
-> because they have reached shrink_slab.
+Hello Tejun, how are you?
+
+>  Status-quo
+>  ==========
 > 
-> In normal systems, this loop will be executed many, many times. So we're
-> not shrinking *more*, we're just guaranteeing that at least one pass
-> will be made.
+tl;did read;
 
-This one pass guarantee is a problem for lowmemory killer.
+This is mostly sensible. There is still one problem that we hadn't yet
+had the bandwidth to tackle that should be added to your official TODO list.
 
-> Also, anyone looking at this to see if we should kill processes, is a
-> lot more likely to kill something if we tried to shrink but didn't, than
-> if we successfully shrunk something.
+The cpu cgroup needs a real-time timeslice to accept real time tasks. It
+defaults to 0, meaning that a newly created cpu cgroup cannot accept
+tasks (rt tasks) without the user having to manually configure it.
+As far as I know, this problem hasn't yet been fixed.
 
-lowmemory killer is hacky user of shrink_slab interface. It kill a process
-if system memory goes under some level. It check that condition every time
-it is called. Without this patch, it cannot check that condition
-if total_scan < batch_size. But with this patch, it check that condition
-more frequently, so there will be side-effect.
+The fix of course, is as trivial as setting a new value instead of 0 as
+a default. The complication lies in determining which value should that be.
 
-Thanks.
-
-> 
-> --
-> To unsubscribe, send a message with 'unsubscribe linux-mm' in
-> the body to majordomo-Bw31MaZKKs0EbZ0PF+XxCw@public.gmane.org  For more info on Linux MM,
-> see: http://www.linux-mm.org/ .
-> Don't email: <a href=mailto:"dont-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org"> email-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org </a>
+There are many things that we should ask from a controller to implement
+in order to be able to handle fully joint hierarchies. One of them,
+IMHO, is that if you drop a task into a newly created cgroup it should
+run without the user having to do anything for it.
