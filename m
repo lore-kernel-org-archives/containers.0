@@ -1,8 +1,8 @@
 From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [PATCH v3 18/32] shrinker: convert remaining shrinkers to count/scan
-	API
-Date: Mon,  8 Apr 2013 18:00:45 +0400
-Message-ID: <1365429659-22108-19-git-send-email-glommer__36759.4429910698$1365438712$gmane$org@parallels.com>
+Subject: [PATCH v3 13/32] fs: convert inode and dentry shrinking to be node
+	aware
+Date: Mon,  8 Apr 2013 18:00:40 +0400
+Message-ID: <1365429659-22108-14-git-send-email-glommer__44319.1498904072$1365438715$gmane$org@parallels.com>
 References: <1365429659-22108-1-git-send-email-glommer@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,192 +24,286 @@ List-Id: containers.vger.kernel.org
 
 From: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Convert the remaining couple of random shrinkers in the tree to the
-new API.
+Now that the shrinker is passing a nodemask in the scan control
+structure, we can pass this to the the generic LRU list code to
+isolate reclaim to the lists on matching nodes.
+
+This requires a small amount of refactoring of the LRU list API,
+which might be best split out into a separate patch.
 
 Signed-off-by: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- arch/x86/kvm/mmu.c | 35 +++++++++++++++++++++++++----------
- net/sunrpc/auth.c  | 45 +++++++++++++++++++++++++++++++--------------
- 2 files changed, 56 insertions(+), 24 deletions(-)
+ fs/dcache.c              |  8 +++++---
+ fs/inode.c               |  7 ++++---
+ fs/internal.h            |  6 ++++--
+ fs/super.c               | 22 +++++++++++++---------
+ fs/xfs/xfs_super.c       |  6 ++++--
+ include/linux/fs.h       |  4 ++--
+ include/linux/list_lru.h | 19 ++++++++++++++++---
+ lib/list_lru.c           | 18 ++++++++++--------
+ 8 files changed, 58 insertions(+), 32 deletions(-)
 
-diff --git a/arch/x86/kvm/mmu.c b/arch/x86/kvm/mmu.c
-index 956ca35..bebb8b6 100644
---- a/arch/x86/kvm/mmu.c
-+++ b/arch/x86/kvm/mmu.c
-@@ -4185,26 +4185,28 @@ restart:
- 	spin_unlock(&kvm->mmu_lock);
- }
- 
--static void kvm_mmu_remove_some_alloc_mmu_pages(struct kvm *kvm,
-+static long kvm_mmu_remove_some_alloc_mmu_pages(struct kvm *kvm,
- 						struct list_head *invalid_list)
+diff --git a/fs/dcache.c b/fs/dcache.c
+index baef78c..b276bb2 100644
+--- a/fs/dcache.c
++++ b/fs/dcache.c
+@@ -895,6 +895,7 @@ dentry_lru_isolate(struct list_head *item, spinlock_t *lru_lock, void *arg)
+  * prune_dcache_sb - shrink the dcache
+  * @sb: superblock
+  * @nr_to_scan : number of entries to try to free
++ * @nodes_to_walk: which nodes to scan for freeable entities
+  *
+  * Attempt to shrink the superblock dcache LRU by @nr_to_scan entries. This is
+  * done when we need more memory an called from the superblock shrinker
+@@ -903,13 +904,14 @@ dentry_lru_isolate(struct list_head *item, spinlock_t *lru_lock, void *arg)
+  * This function may fail to free any resources if all the dentries are in
+  * use.
+  */
+-long prune_dcache_sb(struct super_block *sb, long nr_to_scan)
++long prune_dcache_sb(struct super_block *sb, long nr_to_scan,
++		     nodemask_t *nodes_to_walk)
  {
- 	struct kvm_mmu_page *page;
+ 	LIST_HEAD(dispose);
+ 	long freed;
  
- 	if (list_empty(&kvm->arch.active_mmu_pages))
--		return;
-+		return 0;
- 
- 	page = container_of(kvm->arch.active_mmu_pages.prev,
- 			    struct kvm_mmu_page, link);
--	kvm_mmu_prepare_zap_page(kvm, page, invalid_list);
-+	return kvm_mmu_prepare_zap_page(kvm, page, invalid_list);
+-	freed = list_lru_walk(&sb->s_dentry_lru, dentry_lru_isolate,
+-			      &dispose, nr_to_scan);
++	freed = list_lru_walk_nodemask(&sb->s_dentry_lru, dentry_lru_isolate,
++				       &dispose, nr_to_scan, nodes_to_walk);
+ 	shrink_dentry_list(&dispose);
+ 	return freed;
  }
- 
--static int mmu_shrink(struct shrinker *shrink, struct shrink_control *sc)
-+
-+static long
-+mmu_shrink_scan(
-+	struct shrinker		*shrink,
-+	struct shrink_control	*sc)
+diff --git a/fs/inode.c b/fs/inode.c
+index 61980f1..1b7a87a 100644
+--- a/fs/inode.c
++++ b/fs/inode.c
+@@ -745,13 +745,14 @@ inode_lru_isolate(struct list_head *item, spinlock_t *lru_lock, void *arg)
+  * to trim from the LRU. Inodes to be freed are moved to a temporary list and
+  * then are freed outside inode_lock by dispose_list().
+  */
+-long prune_icache_sb(struct super_block *sb, long nr_to_scan)
++long prune_icache_sb(struct super_block *sb, long nr_to_scan,
++		     nodemask_t *nodes_to_walk)
  {
- 	struct kvm *kvm;
- 	int nr_to_scan = sc->nr_to_scan;
--
--	if (nr_to_scan == 0)
--		goto out;
-+	long freed = 0;
+ 	LIST_HEAD(freeable);
+ 	long freed;
  
- 	raw_spin_lock(&kvm_lock);
+-	freed = list_lru_walk(&sb->s_inode_lru, inode_lru_isolate,
+-						&freeable, nr_to_scan);
++	freed = list_lru_walk_nodemask(&sb->s_inode_lru, inode_lru_isolate,
++				       &freeable, nr_to_scan, nodes_to_walk);
+ 	dispose_list(&freeable);
+ 	return freed;
+ }
+diff --git a/fs/internal.h b/fs/internal.h
+index 5099f87..ed6944e 100644
+--- a/fs/internal.h
++++ b/fs/internal.h
+@@ -110,7 +110,8 @@ extern int open_check_o_direct(struct file *f);
+  * inode.c
+  */
+ extern spinlock_t inode_sb_list_lock;
+-extern long prune_icache_sb(struct super_block *sb, long nr_to_scan);
++extern long prune_icache_sb(struct super_block *sb, long nr_to_scan,
++			    nodemask_t *nodes_to_scan);
+ extern void inode_add_lru(struct inode *inode);
  
-@@ -4232,24 +4234,37 @@ static int mmu_shrink(struct shrinker *shrink, struct shrink_control *sc)
- 		idx = srcu_read_lock(&kvm->srcu);
- 		spin_lock(&kvm->mmu_lock);
+ /*
+@@ -126,4 +127,5 @@ extern int invalidate_inodes(struct super_block *, bool);
+  * dcache.c
+  */
+ extern struct dentry *__d_alloc(struct super_block *, const struct qstr *);
+-extern long prune_dcache_sb(struct super_block *sb, long nr_to_scan);
++extern long prune_dcache_sb(struct super_block *sb, long nr_to_scan,
++			    nodemask_t *nodes_to_scan);
+diff --git a/fs/super.c b/fs/super.c
+index 66f5cde..5c7b879 100644
+--- a/fs/super.c
++++ b/fs/super.c
+@@ -75,10 +75,10 @@ static long super_cache_scan(struct shrinker *shrink, struct shrink_control *sc)
+ 		return -1;
  
--		kvm_mmu_remove_some_alloc_mmu_pages(kvm, &invalid_list);
-+		freed += kvm_mmu_remove_some_alloc_mmu_pages(kvm, &invalid_list);
- 		kvm_mmu_commit_zap_page(kvm, &invalid_list);
+ 	if (sb->s_op && sb->s_op->nr_cached_objects)
+-		fs_objects = sb->s_op->nr_cached_objects(sb);
++		fs_objects = sb->s_op->nr_cached_objects(sb, &sc->nodes_to_scan);
  
- 		spin_unlock(&kvm->mmu_lock);
- 		srcu_read_unlock(&kvm->srcu, idx);
+-	inodes = list_lru_count(&sb->s_inode_lru);
+-	dentries = list_lru_count(&sb->s_dentry_lru);
++	inodes = list_lru_count_nodemask(&sb->s_inode_lru, &sc->nodes_to_scan);
++	dentries = list_lru_count_nodemask(&sb->s_dentry_lru, &sc->nodes_to_scan);
+ 	total_objects = dentries + inodes + fs_objects + 1;
  
-+		/*
-+		 * unfair on small ones
-+		 * per-vm shrinkers cry out
-+		 * sadness comes quickly
-+		 */
- 		list_move_tail(&kvm->vm_list, &vm_list);
- 		break;
+ 	/* proportion the scan between the caches */
+@@ -89,13 +89,14 @@ static long super_cache_scan(struct shrinker *shrink, struct shrink_control *sc)
+ 	 * prune the dcache first as the icache is pinned by it, then
+ 	 * prune the icache, followed by the filesystem specific caches
+ 	 */
+-	freed = prune_dcache_sb(sb, dentries);
+-	freed += prune_icache_sb(sb, inodes);
++	freed = prune_dcache_sb(sb, dentries, &sc->nodes_to_scan);
++	freed += prune_icache_sb(sb, inodes, &sc->nodes_to_scan);
+ 
+ 	if (fs_objects) {
+ 		fs_objects = mult_frac(sc->nr_to_scan, fs_objects,
+ 								total_objects);
+-		freed += sb->s_op->free_cached_objects(sb, fs_objects);
++		freed += sb->s_op->free_cached_objects(sb, fs_objects,
++						       &sc->nodes_to_scan);
  	}
  
- 	raw_spin_unlock(&kvm_lock);
-+	return freed;
+ 	drop_super(sb);
+@@ -113,10 +114,13 @@ static long super_cache_count(struct shrinker *shrink, struct shrink_control *sc
+ 		return -1;
  
--out:
-+}
-+
-+static long
-+mmu_shrink_count(
-+	struct shrinker		*shrink,
-+	struct shrink_control	*sc)
-+{
- 	return percpu_counter_read_positive(&kvm_total_used_mmu_pages);
+ 	if (sb->s_op && sb->s_op->nr_cached_objects)
+-		total_objects = sb->s_op->nr_cached_objects(sb);
++		total_objects = sb->s_op->nr_cached_objects(sb,
++						 &sc->nodes_to_scan);
+ 
+-	total_objects += list_lru_count(&sb->s_dentry_lru);
+-	total_objects += list_lru_count(&sb->s_inode_lru);
++	total_objects += list_lru_count_nodemask(&sb->s_dentry_lru,
++						 &sc->nodes_to_scan);
++	total_objects += list_lru_count_nodemask(&sb->s_inode_lru,
++						 &sc->nodes_to_scan);
+ 
+ 	total_objects = vfs_pressure_ratio(total_objects);
+ 	drop_super(sb);
+diff --git a/fs/xfs/xfs_super.c b/fs/xfs/xfs_super.c
+index 1ff991b..7fa6021 100644
+--- a/fs/xfs/xfs_super.c
++++ b/fs/xfs/xfs_super.c
+@@ -1525,7 +1525,8 @@ xfs_fs_mount(
+ 
+ static long
+ xfs_fs_nr_cached_objects(
+-	struct super_block	*sb)
++	struct super_block	*sb,
++	nodemask_t		*nodes_to_count)
+ {
+ 	return xfs_reclaim_inodes_count(XFS_M(sb));
  }
- 
- static struct shrinker mmu_shrinker = {
--	.shrink = mmu_shrink,
-+	.count_objects = mmu_shrink_count,
-+	.scan_objects = mmu_shrink_scan,
- 	.seeks = DEFAULT_SEEKS * 10,
+@@ -1533,7 +1534,8 @@ xfs_fs_nr_cached_objects(
+ static long
+ xfs_fs_free_cached_objects(
+ 	struct super_block	*sb,
+-	long			nr_to_scan)
++	long			nr_to_scan,
++	nodemask_t		*nodes_to_scan)
+ {
+ 	return xfs_reclaim_inodes_nr(XFS_M(sb), nr_to_scan);
+ }
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 8b25de0..306c83e 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1607,8 +1607,8 @@ struct super_operations {
+ 	ssize_t (*quota_write)(struct super_block *, int, const char *, size_t, loff_t);
+ #endif
+ 	int (*bdev_try_to_free_page)(struct super_block*, struct page*, gfp_t);
+-	long (*nr_cached_objects)(struct super_block *);
+-	long (*free_cached_objects)(struct super_block *, long);
++	long (*nr_cached_objects)(struct super_block *, nodemask_t *);
++	long (*free_cached_objects)(struct super_block *, long, nodemask_t *);
  };
  
-diff --git a/net/sunrpc/auth.c b/net/sunrpc/auth.c
-index f529404..f340090 100644
---- a/net/sunrpc/auth.c
-+++ b/net/sunrpc/auth.c
-@@ -340,12 +340,13 @@ EXPORT_SYMBOL_GPL(rpcauth_destroy_credcache);
  /*
-  * Remove stale credentials. Avoid sleeping inside the loop.
-  */
--static int
-+static long
- rpcauth_prune_expired(struct list_head *free, int nr_to_scan)
+diff --git a/include/linux/list_lru.h b/include/linux/list_lru.h
+index 9073f97..8f4db8e 100644
+--- a/include/linux/list_lru.h
++++ b/include/linux/list_lru.h
+@@ -31,15 +31,28 @@ struct list_lru {
+ int list_lru_init(struct list_lru *lru);
+ int list_lru_add(struct list_lru *lru, struct list_head *item);
+ int list_lru_del(struct list_lru *lru, struct list_head *item);
+-long list_lru_count(struct list_lru *lru);
++long list_lru_count_nodemask(struct list_lru *lru, nodemask_t *nodes_to_count);
++
++static inline long list_lru_count(struct list_lru *lru)
++{
++	return list_lru_count_nodemask(lru, &lru->active_nodes);
++}
++
+ 
+ typedef enum lru_status
+ (*list_lru_walk_cb)(struct list_head *item, spinlock_t *lock, void *cb_arg);
+ 
+ typedef void (*list_lru_dispose_cb)(struct list_head *dispose_list);
+ 
+-long list_lru_walk(struct list_lru *lru, list_lru_walk_cb isolate,
+-		   void *cb_arg, long nr_to_walk);
++long list_lru_walk_nodemask(struct list_lru *lru, list_lru_walk_cb isolate,
++		   void *cb_arg, long nr_to_walk, nodemask_t *nodes_to_walk);
++
++static inline long list_lru_walk(struct list_lru *lru, list_lru_walk_cb isolate,
++				 void *cb_arg, long nr_to_walk)
++{
++	return list_lru_walk_nodemask(lru, isolate, cb_arg, nr_to_walk,
++				      &lru->active_nodes);
++}
+ 
+ long list_lru_dispose_all(struct list_lru *lru, list_lru_dispose_cb dispose);
+ 
+diff --git a/lib/list_lru.c b/lib/list_lru.c
+index 0119af8..6c88dc5 100644
+--- a/lib/list_lru.c
++++ b/lib/list_lru.c
+@@ -54,13 +54,14 @@ list_lru_del(
+ EXPORT_SYMBOL_GPL(list_lru_del);
+ 
+ long
+-list_lru_count(
+-	struct list_lru *lru)
++list_lru_count_nodemask(
++	struct list_lru *lru,
++	nodemask_t	*nodes_to_count)
  {
- 	spinlock_t *cache_lock;
- 	struct rpc_cred *cred, *next;
- 	unsigned long expired = jiffies - RPC_AUTH_EXPIRY_MORATORIUM;
-+	long freed = 0;
+ 	long count = 0;
+ 	int nid;
  
- 	list_for_each_entry_safe(cred, next, &cred_unused, cr_lru) {
+-	for_each_node_mask(nid, lru->active_nodes) {
++	for_each_node_mask(nid, *nodes_to_count) {
+ 		struct list_lru_node *nlru = &lru->node[nid];
  
-@@ -357,10 +358,11 @@ rpcauth_prune_expired(struct list_head *free, int nr_to_scan)
- 		 */
- 		if (time_in_range(cred->cr_expire, expired, jiffies) &&
- 		    test_bit(RPCAUTH_CRED_HASHED, &cred->cr_flags) != 0)
--			return 0;
-+			break;
+ 		spin_lock(&nlru->lock);
+@@ -71,7 +72,7 @@ list_lru_count(
  
- 		list_del_init(&cred->cr_lru);
- 		number_cred_unused--;
-+		freed++;
- 		if (atomic_read(&cred->cr_count) != 0)
- 			continue;
+ 	return count;
+ }
+-EXPORT_SYMBOL_GPL(list_lru_count);
++EXPORT_SYMBOL_GPL(list_lru_count_nodemask);
  
-@@ -373,29 +375,43 @@ rpcauth_prune_expired(struct list_head *free, int nr_to_scan)
- 		}
- 		spin_unlock(cache_lock);
+ static long
+ list_lru_walk_node(
+@@ -116,16 +117,17 @@ restart:
+ }
+ 
+ long
+-list_lru_walk(
++list_lru_walk_nodemask(
+ 	struct list_lru	*lru,
+ 	list_lru_walk_cb isolate,
+ 	void		*cb_arg,
+-	long		nr_to_walk)
++	long		nr_to_walk,
++	nodemask_t	*nodes_to_walk)
+ {
+ 	long isolated = 0;
+ 	int nid;
+ 
+-	for_each_node_mask(nid, lru->active_nodes) {
++	for_each_node_mask(nid, *nodes_to_walk) {
+ 		isolated += list_lru_walk_node(lru, nid, isolate,
+ 					       cb_arg, &nr_to_walk);
+ 		if (nr_to_walk <= 0)
+@@ -133,7 +135,7 @@ list_lru_walk(
  	}
--	return (number_cred_unused / 100) * sysctl_vfs_cache_pressure;
-+	return freed;
+ 	return isolated;
  }
+-EXPORT_SYMBOL_GPL(list_lru_walk);
++EXPORT_SYMBOL_GPL(list_lru_walk_nodemask);
  
- /*
-  * Run memory cache shrinker.
-  */
--static int
--rpcauth_cache_shrinker(struct shrinker *shrink, struct shrink_control *sc)
-+static long
-+rpcauth_cache_shrink_scan(
-+	struct shrinker		*shrink,
-+	struct shrink_control	*sc)
-+
- {
- 	LIST_HEAD(free);
--	int res;
--	int nr_to_scan = sc->nr_to_scan;
--	gfp_t gfp_mask = sc->gfp_mask;
-+	long freed;
-+
-+	if ((sc->gfp_mask & GFP_KERNEL) != GFP_KERNEL)
-+		return -1;
- 
--	if ((gfp_mask & GFP_KERNEL) != GFP_KERNEL)
--		return (nr_to_scan == 0) ? 0 : -1;
-+	/* nothing left, don't come back */
- 	if (list_empty(&cred_unused))
--		return 0;
-+		return -1;
-+
- 	spin_lock(&rpc_credcache_lock);
--	res = rpcauth_prune_expired(&free, nr_to_scan);
-+	freed = rpcauth_prune_expired(&free, sc->nr_to_scan);
- 	spin_unlock(&rpc_credcache_lock);
- 	rpcauth_destroy_credlist(&free);
--	return res;
-+
-+	return freed;
-+}
-+
-+static long
-+rpcauth_cache_shrink_count(
-+	struct shrinker		*shrink,
-+	struct shrink_control	*sc)
-+
-+{
-+	return (number_cred_unused / 100) * sysctl_vfs_cache_pressure;
- }
- 
- /*
-@@ -711,7 +727,8 @@ rpcauth_uptodatecred(struct rpc_task *task)
- }
- 
- static struct shrinker rpc_cred_shrinker = {
--	.shrink = rpcauth_cache_shrinker,
-+	.count_objects = rpcauth_cache_shrink_count,
-+	.scan_objects = rpcauth_cache_shrink_scan,
- 	.seeks = DEFAULT_SEEKS,
- };
- 
+ static long
+ list_lru_dispose_all_node(
 -- 
 1.8.1.4
