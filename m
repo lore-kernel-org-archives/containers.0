@@ -1,19 +1,15 @@
-From: Joonsoo Kim <iamjoonsoo.kim-Hm3cg6mZ9cc@public.gmane.org>
-Subject: Re: [PATCH v2 02/28] vmscan: take at least one pass with shrinkers
-Date: Tue, 9 Apr 2013 18:08:12 +0900
-Message-ID: <20130409090812.GA4970@lge.com>
-References: <1364548450-28254-1-git-send-email-glommer@parallels.com>
-	<1364548450-28254-3-git-send-email-glommer@parallels.com>
-	<20130408084202.GA21654@lge.com> <51628412.6050803@parallels.com>
-	<20130408090131.GB21654@lge.com> <51628877.5000701@parallels.com>
-	<20130409005547.GC21654@lge.com> <20130409012931.GE17758@dastard>
-	<20130409020505.GA4218@lge.com> <5163C6A5.5050307@parallels.com>
+From: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: cgroup: status-quo and userland efforts
+Date: Tue, 9 Apr 2013 10:50:25 +0100
+Message-ID: <20130409095024.GI25576@redhat.com>
+References: <20130406012159.GA17159@mtj.dyndns.org>
+Reply-To: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <5163C6A5.5050307-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <20130406012159.GA17159-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,79 +19,190 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: jpoimboe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, Glauber.
+On Fri, Apr 05, 2013 at 06:21:59PM -0700, Tejun Heo wrote:
+>  Userland efforts
+>  ================
+> 
+> There are currently a few userland efforts trying to make interfacing
+> with cgroup less painful.
+> 
+> * libcg: Make cgroup interface accessible from programming languages
+>   with support for configuration persistency, which also brings its
+>   own config files to remember what to do on the next boot.  Sans the
+>   persistence part, it just seems to directly translate the filesystem
+>   interface to function interface.
+> 
+>   http://libcg.sourceforge.net/
+> 
+> * Workman: It's a rather young project but as its name (workload
+>   management) implies, its aims are higher level than that of libcg.
+>   It aims to provide high-level resource allocation and management and
+>   introduces new concepts like resource partitions to represent its
+>   view of resource hierarchy.  Like libcg, this one is implemented as
+>   a library but provides bindings for more languages.
+> 
+>   https://gitorious.org/workman/pages/Home
+> 
+> * Pax Controla Groupiana: A document on how not to step on other's
+>   toes while using cgroup.  It's not a software project but tries to
+>   define precautions that a software or user can take to avoid
+>   breaking or confusing other users of the cgroup filesystem.
+> 
+>   http://www.freedesktop.org/wiki/Software/systemd/PaxControlGroups
+> 
+> All try to play nice with other possible users of the cgroup
+> filesystem - be it libvirt cgroup, applications doing their own cgroup
+> tricks, or hand-crafted custom scripts.  While the approach is
+> understandable given that those usages already exist, I don't think
+> it's a workable solution in the long term.  There are several reasons
+> for that.
 
-On Tue, Apr 09, 2013 at 11:43:33AM +0400, Glauber Costa wrote:
-> On 04/09/2013 06:05 AM, Joonsoo Kim wrote:
-> > I don't think so.
-> > Yes, lowmem_shrink() return number of (in)active lru pages
-> > when nr_to_scan is 0. And in shrink_slab(), we divide it by lru_pages.
-> > lru_pages can vary where shrink_slab() is called, anyway, perhaps this
-> > logic makes total_scan below 128.
-> > 
-> You may benefit from looking at the lowmemory patches in this patchset
-> itself. We modified the shrinker API to separate the count and scan
-> phases. With this, the whole nr_to_scan == 0 disappears and the code
-> gets easier to follow.
-> 
-> >> > 
-> >> > And, interestingly enough, when the file cache has been pruned down
-> >> > to it's smallest possible size, that's when the shrinker *won't run*
-> >> > because the that's when the total_scan will be smaller than the
-> >> > batch size and hence shrinker won't get called.
-> >> > 
-> >> > The shrinker is hacky, abuses the shrinker API, and doesn't appear
-> >> > to do what it is intended to do.  You need to fix the shrinker, not
-> >> > use it's brokenness as an excuse to hold up a long overdue shrinker
-> >> > rework.
-> > Agreed. I also think shrinker rework is valuable and I don't want
-> > to become a stopper for this change. But, IMHO, at least, we should
-> > notify users of shrinker API to know how shrinker API behavior changed,
-> 
-> Except that the behavior didn't change.
-> 
-> > because this is unexpected behavior change when they used this API.
-> > When they used this API, they can assume that it is possible to control
-> > logic with seeks and return value(when nr_to_scan=0), but with this patch,
-> > this assumption is broken.
-> > 
-> 
-> Jonsoo, you are still missing the point. nr_to_scan=0 has nothing to do
-> with this, or with this patch. nr_to_scan will reach 0 ANYWAY if you
-> shrink all objects you have to shrink, which is a *very* common thing to
-> happen.
-> 
-> The only case changed here is where this happen when attempting to
-> shrink a small number of objects that is smaller than the batch size.
-> 
-> Also, again, the nr_to_scan=0 checks in the shrinker calls have nothing
-> to do with that. They reflect the situation *BEFORE* the shrinker was
-> called. So how many objects we shrunk afterwards have zero to do with
-> it. This is just the shrinker API using the magic value of 0 to mean :
-> "don't shrink, just tell me how much do you have", vs a positive number
-> meaning "try to shrink as much as nr_to_scan objects".
+Actually libcg doesn't really try to play nice with anything - being
+just a direct representation of the cgroups filesystem, it allows for
+absolutely anything to be done with no regard for best practice or
+co-operation.
 
-Yes, I know that :)
-It seems that I mislead you and you misunderstand what I want to say.
-Sorry for my poor English.
+The PaxControlGroups document is the key piece to making distributed
+management work. This document does need updating, since some of what
+it describes doesn't really work, but its goal is sound IMHO.
 
-I mean to say, changing when we attempt to shrink a small number of
-objects(below batch size) can affect some users of API and their system.
-Maybe they assume that if they have a little objects, shrinker will not
-call do_shrinker_shrink(). But, with this patch, although they have a
-little objects, shrinker call do_shrinker_shrink() at least once.
+The Workman library is presuming that apps will follow the PaxControlGroups
+guidelines for use of cgroups, and from there aims to provide system
+administrators with a "single world view" and tools to then configure
+this. It does not, however, attempt to force itself underneath the
+apps like systemd / libvirt, since there is no need todo that. It
+just aggregates information from system/libvirt/etc so that admin has
+the complete picture of what the cgroups are being used for.
 
-Thanks.
+> * The configurations aren't independent.  e.g. for weight-based
+>   controllers, your weight is only meaningful in relation to other
+>   weights at that level.  Distributing configuration to whatever
+>   entities which may write to cgroupfs simply cannot work.  It's
+>   fundamentally flawed.
 
+I agree that whatever is setting weight values needs to be aware of
+what other weight values are set at the same point in the hiearchy.
+This doesn't imply we have to have a single authority setting these
+values though, just that anything that wants to set them, needs to
+be aware of the bigger picture.
+
+> * It's fragile like hell.  There's no accountability.  Nobody really
+>   knows what's going on.  Is this subdirectory still there due to a
+>   bug in this program, or something or someone else created it and
+>   crashed / forgot to remove it, or what?  Oh, the cgroup I wanted to
+>   create already exists.  Maybe the previous instance created it and
+>   then crashed or maybe some other program just happened to choose the
+>   same name.  Who owns config knobs in that directory?  This way lies
+>   madness.  I understand why the Pax doc exists but I'm not sure its
+>   long-term effect would be positive - best practices which ultimately
+>   lead to utter confusion and fragility.
+
+I don't see that creating a "single authority" magically solves any
+of the problems you describe. For example, such an authority can't
+know whether it should delete a cgroup just because an application
+exits. It is quite possible an application would want the cgroup to
+continue to exist, so that it is still there when it restarts.
+
+> * In many cases, resource distribution is system-wide policy decisions
+>   and determining what to do often requires system-wide knowledge.
+>   You can't provision memory limits without knowing what's available
+>   in the system and what else is going on in the system, and you want
+>   to be able to adjust them as situation and configuration changes.
+>   Without anybody having full picture of how resources are
+>   provisioned, how would any of that be possible?
+
+Ultimately it is the end admin or top level management tool that has
+the whole picture. The Workman library / cli is aiming to provide
+admins / apps with the complete picture of everything that is using
+resources on the system, so they can adjust policies dynamically.
+
+> I think this anything-goes approach is prevalent largely because the
+> cgroup filesystem interface encourages such usage.  From the looks of
+> it, the filesystem permissions combined with hierarchy should be able
+> to handle delegation perfectly.  Well, as it currently stands, it's
+> anything but and the interface is just misleading.  Hierarchy support
+> was an utter mess, configuration schemes aren't uniform across
+> controllers, and, more fundamentally, hierarchy itself is expensive -
+> we can't delegate hierarchy creation to unpriviledged users or
+> programs safely.
+
+You seem to be implying that 'distributed == anything goes', which is
+certainly not what I consider to be the case. Indeed the main point
+of having the PaxControlGroups guidelines is explicitly because we do
+*not* want an "anything goes" approach.
+
+We ultimately do need the ability to delegate hierarchy creation to
+unprivileged users / programs, in order to allow containerized OS to
+have the ability to use cgroups. Requiring any applications inside a
+container to talk to a cgroups "authority" existing on the host OS is
+not a satisfactory architecture. We need to allow for a container to
+be self-contained in its usage of cgroups.
+
+At the same time, we don't need/want to give them unrestricted ability
+to create arbitarily complex hiearchies - we need some limits on it
+to avoid them exposing pathelogically bad kernel behaviour.
+
+This could be as simple as saying that each cgroup controller directory
+has a tunable "cgroups.max_children" and/or "cgroups.max_depth" which
+allow limits to be placed when delegating administration of part of a
+cgroups tree to an unprivileged user.
+
+> I think the only logical thing to do is creating a centralized
+> userland authority which takes full ownership of the cgroup filesystem
+> interface, gives it a sane structure, represents available resources
+> in a sane form, and makes policy decisions based on configuration and
+> requests.  I don't have a concerete idea what that authority should be
+> like, but I think there already are pretty similar facilities in our
+> userland, and don't see why this should be much different.
+
+I don't think that requiring a single userspace authority is
+satisfactory. We need to be able to delegate this to containers,
+without them needing to talk to some authority back in the
+host OS, so that they remain 100% isolated from processes in
+the host OS.
+
+> Another reason why this could be helpful is that we're gonna be
+> morphing towards unified hierarchy and it'd very nice to have
+> something which can match impedance between the old and new ways and
+> not require each individual consumer of cgroup to handle such changes.
+> As for the unified hierarchy, we just have to.  It's currently
+> fundamentally broken in that it's impossible to tell which cgroup a
+> resource belongs to independent of which task is looking at it.  It's
+> like this damn thing is designed to honor Hisenberg and Einstein.  No
+> disrespect for the great minds, but it just doens't look like the
+> proper place.
+
+I've no disagreement that we need a unified hiearchy. The workman
+app explicitly does /not/ expose the concept of differing hiearchies
+per controller. Likewise libvirt will not allow the user to configure
+non-unified hiearchies. 
+
+> So, umm, that's what I want.  When I first heard of WorkMan, I was
+> excited thinking maybe the universe is being really nice and making
+> things happen to my wishes without me actually doing anything. :) Oh
+> well, one can dream, but everything is still early, so hopefully we
+> have enough time to figure things out.
 > 
-> 
-> 
-> --
-> To unsubscribe, send a message with 'unsubscribe linux-mm' in
-> the body to majordomo-Bw31MaZKKs0EbZ0PF+XxCw@public.gmane.org  For more info on Linux MM,
-> see: http://www.linux-mm.org/ .
-> Don't email: <a href=mailto:"dont-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org"> email-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org </a>
+> What do you guys think?
+
+We need to make the distribute approach work in order to support
+containers, which requiring them to have a back-channel open to
+the host userspace. If we can do that, then we've solved the problem
+of delegated to unprivileged users in non-container environments too.
+IMHO with a sufficiently specified PaxControlGroups the distributed
+approach is just fine. If applications are badly behaved and don't
+follow the rules, then so be it, file bugs against those apps. Both
+libvirt & systemd are committed to following rules for co-operating
+in usage of cgroups & Workman can provide a "single unified view"
+for the administrator without requiring a single authority too.
+
+Daniel
+-- 
+|: http://berrange.com      -o-    http://www.flickr.com/photos/dberrange/ :|
+|: http://libvirt.org              -o-             http://virt-manager.org :|
+|: http://autobuild.org       -o-         http://search.cpan.org/~danberr/ :|
+|: http://entangle-photo.org       -o-       http://live.gnome.org/gtk-vnc :|
