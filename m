@@ -1,14 +1,17 @@
-From: Lennart Poettering <lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: cgroup: status-quo and userland efforts
-Date: Tue, 09 Apr 2013 01:32:01 +0200
-Message-ID: <51635371.7070104__12853.1111324721$1365463945$gmane$org@redhat.com>
-References: <20130406012159.GA17159@mtj.dyndns.org>
-	<5162CA21.4060108@parallels.com>
+From: Joonsoo Kim <iamjoonsoo.kim-Hm3cg6mZ9cc@public.gmane.org>
+Subject: Re: [PATCH v2 02/28] vmscan: take at least one pass with shrinkers
+Date: Tue, 9 Apr 2013 09:55:47 +0900
+Message-ID: <20130409005547.GC21654__20707.1576769978$1365468926$gmane$org@lge.com>
+References: <1364548450-28254-1-git-send-email-glommer@parallels.com>
+	<1364548450-28254-3-git-send-email-glommer@parallels.com>
+	<20130408084202.GA21654@lge.com> <51628412.6050803@parallels.com>
+	<20130408090131.GB21654@lge.com> <51628877.5000701@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <5162CA21.4060108-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <51628877.5000701-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,44 +22,103 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jpoimboe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Heya,
+Hello, Glauber.
 
-On 08.04.2013 15:46, Glauber Costa wrote:
-> On 04/06/2013 05:21 AM, Tejun Heo wrote:
->> Hello, guys.
->>
-> Hello Tejun, how are you?
->
->>   Status-quo
->>   ==========
->>
-> tl;did read;
->
-> This is mostly sensible. There is still one problem that we hadn't yet
-> had the bandwidth to tackle that should be added to your official TODO list.
->
-> The cpu cgroup needs a real-time timeslice to accept real time tasks. It
-> defaults to 0, meaning that a newly created cpu cgroup cannot accept
-> tasks (rt tasks) without the user having to manually configure it.
-> As far as I know, this problem hasn't yet been fixed.
->
-> The fix of course, is as trivial as setting a new value instead of 0 as
-> a default. The complication lies in determining which value should that be.
->
-> There are many things that we should ask from a controller to implement
-> in order to be able to handle fully joint hierarchies. One of them,
-> IMHO, is that if you drop a task into a newly created cgroup it should
-> run without the user having to do anything for it.
+On Mon, Apr 08, 2013 at 01:05:59PM +0400, Glauber Costa wrote:
+> On 04/08/2013 01:01 PM, Joonsoo Kim wrote:
+> > On Mon, Apr 08, 2013 at 12:47:14PM +0400, Glauber Costa wrote:
+> >> On 04/08/2013 12:42 PM, Joonsoo Kim wrote:
+> >>> Hello, Glauber.
+> >>>
+> >>> On Fri, Mar 29, 2013 at 01:13:44PM +0400, Glauber Costa wrote:
+> >>>> In very low free kernel memory situations, it may be the case that we
+> >>>> have less objects to free than our initial batch size. If this is the
+> >>>> case, it is better to shrink those, and open space for the new workload
+> >>>> then to keep them and fail the new allocations.
+> >>>>
+> >>>> More specifically, this happens because we encode this in a loop with
+> >>>> the condition: "while (total_scan >= batch_size)". So if we are in such
+> >>>> a case, we'll not even enter the loop.
+> >>>>
+> >>>> This patch modifies turns it into a do () while {} loop, that will
+> >>>> guarantee that we scan it at least once, while keeping the behaviour
+> >>>> exactly the same for the cases in which total_scan > batch_size.
+> >>>
+> >>> Current user of shrinker not only use their own condition, but also
+> >>> use batch_size and seeks to throttle their behavior. So IMHO,
+> >>> this behavior change is very dangerous to some users.
+> >>>
+> >>> For example, think lowmemorykiller.
+> >>> With this patch, he always kill some process whenever shrink_slab() is
+> >>> called and their low memory condition is satisfied.
+> >>> Before this, total_scan also prevent us to go into lowmemorykiller, so
+> >>> killing innocent process is limited as much as possible.
+> >>>
+> >> shrinking is part of the normal operation of the Linux kernel and
+> >> happens all the time. Not only the call to shrink_slab, but actual
+> >> shrinking of unused objects.
+> >>
+> >> I don't know therefore about any code that would kill process only
+> >> because they have reached shrink_slab.
+> >>
+> >> In normal systems, this loop will be executed many, many times. So we're
+> >> not shrinking *more*, we're just guaranteeing that at least one pass
+> >> will be made.
+> > 
+> > This one pass guarantee is a problem for lowmemory killer.
+> > 
+> >> Also, anyone looking at this to see if we should kill processes, is a
+> >> lot more likely to kill something if we tried to shrink but didn't, than
+> >> if we successfully shrunk something.
+> > 
+> > lowmemory killer is hacky user of shrink_slab interface.
+> 
+> Well, it says it all =)
+> 
+> In special, I really can't see how, hacky or not, it makes sense to kill
+> a process if we *actually* shrunk memory.
+> 
+> Moreover, I don't see the code in drivers/staging/android/lowmemory.c
+> doing anything even remotely close to that. Could you point me to some
+> code that does it ?
 
-The other big thing we want from the systemd side is saner notifications 
-when cgroups run empty. i.e. currently we don't get these at all in 
-containers (since the agent can be only installed once, for the host). 
-And the way we get this is awful, via kernel-spawned processes. I am 
-looking for a way how I can establish a watch on a certain subtree (not 
-just one directory) and get simple notifications in a race-free whenever 
-a cgroup runs empty.
+Sorry for late. :)
 
-Lennart
+lowmemkiller makes spare memory via killing a task.
+
+Below is code from lowmem_shrink() in lowmemorykiller.c
+
+        for (i = 0; i < array_size; i++) {
+                if (other_free < lowmem_minfree[i] &&
+                    other_file < lowmem_minfree[i]) {
+                        min_score_adj = lowmem_adj[i];
+                        break;
+                }   
+        } 
+
+lowmemkiller kill a process if min_score_adj is assigned.
+And then, it goes to for_each_process() loop and select target task.
+And then, execute below code.
+
+        if (selected) {
+		...
+                send_sig(SIGKILL, selected, 0);
+                set_tsk_thread_flag(selected, TIF_MEMDIE);
+		...
+        }
+
+lowmemkiller just check sc->nr_to_scan whether it is 0 or not. And it don't
+check it anymore. So if we run do_shrinker_shrink() atleast once
+without checking batch_size, there will be side-effect.
+
+Thanks.
+
+> 
+> --
+> To unsubscribe, send a message with 'unsubscribe linux-mm' in
+> the body to majordomo-Bw31MaZKKs0EbZ0PF+XxCw@public.gmane.org  For more info on Linux MM,
+> see: http://www.linux-mm.org/ .
+> Don't email: <a href=mailto:"dont-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org"> email-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org </a>
