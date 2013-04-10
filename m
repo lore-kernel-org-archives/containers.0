@@ -1,14 +1,18 @@
-From: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
-Subject: Re: [PATCHSET] perf, cgroup: implement hierarchy support for
-	perf_event controller
-Date: Wed, 10 Apr 2013 09:32:26 +0200
-Message-ID: <1365579146.30071.24.camel__10397.2932826311$1365581015$gmane$org@laptop>
-References: <1365474213-13354-1-git-send-email-tj@kernel.org>
+From: Joonsoo Kim <iamjoonsoo.kim-Hm3cg6mZ9cc@public.gmane.org>
+Subject: Re: [PATCH v2 02/28] vmscan: take at least one pass with shrinkers
+Date: Wed, 10 Apr 2013 17:19:15 +0900
+Message-ID: <20130410081915.GG5872@lge.com>
+References: <20130408084202.GA21654@lge.com> <51628412.6050803@parallels.com>
+	<20130408090131.GB21654@lge.com> <51628877.5000701@parallels.com>
+	<20130409005547.GC21654@lge.com> <20130409012931.GE17758@dastard>
+	<20130409020505.GA4218@lge.com> <20130409123008.GM17758@dastard>
+	<20130410025115.GA5872@lge.com> <51651518.4010007@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1365474213-13354-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <51651518.4010007-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,30 +22,40 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: namhyung.kim-Hm3cg6mZ9cc@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eranian-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, paulus-eUNUBHrolfbYtjvyW6yDsg@public.gmane.org, acme-f8uhVLnGfZaxAyOMLChx1axOck334EZe@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mingo-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org
+To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 2013-04-08 at 19:23 -0700, Tejun Heo wrote:
-> perf_event cgroup controller is one of the remaining few with broken
-> hierarchy support.  It turns out it's pretty easy to implement - the
-> only thing necessary is making perf_cgroup_match() return %true also
-> when the cgroup of the current task is a descendant of the event's
-> cgroup.  This patchset implements cgroup_is_descendant() and uses it
-> to implement hierarchy support in perf_event controller.
+On Wed, Apr 10, 2013 at 11:30:32AM +0400, Glauber Costa wrote:
+> On 04/10/2013 06:51 AM, Joonsoo Kim wrote:
+> > As you can see, before this patch, do_shrinker_shrink() for
+> > "huge_zero_page_shrinker" is not called until we call shrink_slab() more
+> > than 13 times. *Frequency* we call do_shrinker_shrink() actually is
+> > largely different with before. With this patch, we actually call
+> > do_shrinker_shrink() for "huge_zero_page_shrinker" 12 times more
+> > than before. Can we be convinced that there will be no problem?
+> > 
+> > This is why I worry about this change.
+> > Am I worried too much? :)
 > 
-> This patchset contains the following three patches.
+> Yes, you are. The amount of times shrink_slab is called is completely
+> unpredictable. Changing the size of cached data structures is a lot more
+> likely to change this than this shrinker change, for instance.
 > 
->  0001-cgroup-make-sure-parent-won-t-be-destroyed-before-it.patch
->  0002-cgroup-implement-cgroup_is_descendant.patch
->  0003-perf-make-perf_event-cgroup-hierarchical.patch
+> Not to mention, the amount of times shrink_slab() is called is not
+> changed directly here. But rather, the amount of times an individual
+> shrinker actually does work.
 
-Thanks, looks simple and straight fwd. 
+Yes, I worried about the amount of times an individual shrinker triggered.
+As you mentioned, it can be unpredictable. My concern without data may
+be useless and invalid to you. So, from now on, I will stop to worry about this.
 
-> Ingo, how should these be routed?
+Thanks.
+
 > 
->  git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git perf_event-hierarchy-support
-
-Ingo typically likes multi-maintainer sets to be pulled from a common
-tree into all relevant maintainer trees so that git merges afterwards
-just-work (tm). But I'll let him expand.
+> 
+> --
+> To unsubscribe, send a message with 'unsubscribe linux-mm' in
+> the body to majordomo-Bw31MaZKKs0EbZ0PF+XxCw@public.gmane.org  For more info on Linux MM,
+> see: http://www.linux-mm.org/ .
+> Don't email: <a href=mailto:"dont-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org"> email-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org </a>
