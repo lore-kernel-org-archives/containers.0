@@ -1,17 +1,16 @@
-From: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
-Subject: Re: [PATCH v2 02/28] vmscan: take at least one pass with shrinkers
-Date: Wed, 10 Apr 2013 19:19:51 +1000
-Message-ID: <20130410091951.GA10459__44709.0291920633$1365585605$gmane$org@dastard>
-References: <1364548450-28254-1-git-send-email-glommer@parallels.com>
-	<1364548450-28254-3-git-send-email-glommer@parallels.com>
-	<515936B5.8070501@jp.fujitsu.com> <515940E4.8050704@parallels.com>
-	<5164F416.8040903@gmail.com>
+From: Ingo Molnar <mingo-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCHSET] perf, cgroup: implement hierarchy support for
+	perf_event controller
+Date: Wed, 10 Apr 2013 11:37:55 +0200
+Message-ID: <20130410093755.GC24443@gmail.com>
+References: <1365474213-13354-1-git-send-email-tj@kernel.org>
+	<1365579146.30071.24.camel@laptop>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <5164F416.8040903-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1365579146.30071.24.camel@laptop>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,51 +20,45 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ric Mason <ric.masonn-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
+Cc: namhyung.kim-Hm3cg6mZ9cc@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eranian-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, paulus-eUNUBHrolfbYtjvyW6yDsg@public.gmane.org, acme-f8uhVLnGfZaxAyOMLChx1axOck334EZe@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Apr 10, 2013 at 01:09:42PM +0800, Ric Mason wrote:
-> Hi Glauber,
-> On 04/01/2013 04:10 PM, Glauber Costa wrote:
-> > Hi Kame,
-> >
-> >> Doesn't this break
-> >>
-> >> ==
-> >>                 /*
-> >>                  * copy the current shrinker scan count into a local variable
-> >>                  * and zero it so that other concurrent shrinker invocations
-> >>                  * don't also do this scanning work.
-> >>                  */
-> >>                 nr = atomic_long_xchg(&shrinker->nr_in_batch, 0);
-> >> ==
-> >>
-> >> This xchg magic ?
-> >>
-> >> Thnks,
-> >> -Kame
-> > This is done before the actual reclaim attempt, and all it does is to
-> > indicate to other concurrent shrinkers that "I've got it", and others
-> > should not attempt to shrink.
-> >
-> > Even before I touch this, this quantity represents the number of
-> > entities we will try to shrink. Not necessarily we will succeed. What my
-> > patch does, is to try at least once if the number is too small.
-> >
-> > Before it, we will try to shrink 512 objects and succeed at 0 (because
-> > batch is 1024). After this, we will try to free 512 objects and succeed
-> > at an undefined quantity between 0 and 512.
+
+* Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org> wrote:
+
+> On Mon, 2013-04-08 at 19:23 -0700, Tejun Heo wrote:
+> > perf_event cgroup controller is one of the remaining few with broken
+> > hierarchy support.  It turns out it's pretty easy to implement - the
+> > only thing necessary is making perf_cgroup_match() return %true also
+> > when the cgroup of the current task is a descendant of the event's
+> > cgroup.  This patchset implements cgroup_is_descendant() and uses it
+> > to implement hierarchy support in perf_event controller.
+> > 
+> > This patchset contains the following three patches.
+> > 
+> >  0001-cgroup-make-sure-parent-won-t-be-destroyed-before-it.patch
+> >  0002-cgroup-implement-cgroup_is_descendant.patch
+> >  0003-perf-make-perf_event-cgroup-hierarchical.patch
 > 
-> Where you get the magic number 512 and 1024? The value of SHRINK_BATCH
-> is 128.
+> Thanks, looks simple and straight fwd. 
+> 
+> > Ingo, how should these be routed?
+> > 
+> >  git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git perf_event-hierarchy-support
+> 
+> Ingo typically likes multi-maintainer sets to be pulled from a common
+> tree into all relevant maintainer trees so that git merges afterwards
+> just-work (tm). But I'll let him expand.
 
-The default is SHRINK_BATCH, but batch size has been customisable
-for some time now...
+Yeah - at least for larger changes that's a good workflow.
 
-Cheers,
+For smaller changes we can pick one or the other tree. Tejun, do these changes 
+create any conflicts with the current tip:master tree? If not then you could carry 
+these changes in your tree. If there's significant conflicts then it might be 
+better to rebase this on top of perf/core and pull them into perf/core. (assuming 
+there's no other cgroups prereq patches beyond the ones in this series.)
 
-Dave.
--- 
-Dave Chinner
-david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org
+Thanks,
+
+	Ingo
