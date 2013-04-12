@@ -1,8 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 1/4] cgroup: convert cgroupfs_root flag bits to masks and add
-	CGRP_ prefix
-Date: Fri, 12 Apr 2013 16:10:56 -0700
-Message-ID: <1365808259-31073-2-git-send-email-tj@kernel.org>
+Subject: [PATCH 2/4] move cgroupfs_root to include/linux/cgroup.h
+Date: Fri, 12 Apr 2013 16:10:57 -0700
+Message-ID: <1365808259-31073-3-git-send-email-tj__23701.4635270045$1365808289$gmane$org@kernel.org>
 References: <1365808259-31073-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,94 +21,177 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-There's no reason to be using bitops, which tends to be more
-cumbersome, to handle root flags.  Convert them to masks.  Also, as
-they'll be moved to include/linux/cgroup.h and it's generally a good
-idea, add CGRP_ prefix.
+While controllers shouldn't be accessing cgroupfs_root directly, it
+being hidden inside kern/cgroup.c makes somethings pretty silly.  This
+makes routing hierarchy-wide settings which need to be visible to
+controllers cumbersome.
 
-Note that flags are assigned from (1 << 1).  The first bit will be
-used by a flag which will be added soon.
+We're gonna add another hierarchy-wide setting which needs to be
+accessed from controllers.  Move cgroupfs_root and its flags to the
+header file so that we can access root settings with inline helpers.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 21 ++++++++++-----------
- 1 file changed, 10 insertions(+), 11 deletions(-)
+ include/linux/cgroup.h | 57 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ kernel/cgroup.c        | 57 --------------------------------------------------
+ 2 files changed, 57 insertions(+), 57 deletions(-)
 
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 45aee0f..b21881e 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -19,6 +19,7 @@
+ #include <linux/idr.h>
+ #include <linux/workqueue.h>
+ #include <linux/xattr.h>
++#include <linux/fs.h>
+ 
+ #ifdef CONFIG_CGROUPS
+ 
+@@ -238,6 +239,62 @@ struct cgroup {
+ 	struct simple_xattrs xattrs;
+ };
+ 
++#define MAX_CGROUP_ROOT_NAMELEN 64
++
++/* cgroupfs_root->flags */
++enum {
++	CGRP_ROOT_NOPREFIX	= (1 << 1), /* mounted subsystems have no named prefix */
++	CGRP_ROOT_XATTR		= (1 << 2), /* supports extended attributes */
++};
++
++/*
++ * A cgroupfs_root represents the root of a cgroup hierarchy, and may be
++ * associated with a superblock to form an active hierarchy.  This is
++ * internal to cgroup core.  Don't access directly from controllers.
++ */
++struct cgroupfs_root {
++	struct super_block *sb;
++
++	/*
++	 * The bitmask of subsystems intended to be attached to this
++	 * hierarchy
++	 */
++	unsigned long subsys_mask;
++
++	/* Unique id for this hierarchy. */
++	int hierarchy_id;
++
++	/* The bitmask of subsystems currently attached to this hierarchy */
++	unsigned long actual_subsys_mask;
++
++	/* A list running through the attached subsystems */
++	struct list_head subsys_list;
++
++	/* The root cgroup for this hierarchy */
++	struct cgroup top_cgroup;
++
++	/* Tracks how many cgroups are currently defined in hierarchy.*/
++	int number_of_cgroups;
++
++	/* A list running through the active hierarchies */
++	struct list_head root_list;
++
++	/* All cgroups on this root, cgroup_mutex protected */
++	struct list_head allcg_list;
++
++	/* Hierarchy-specific flags */
++	unsigned long flags;
++
++	/* IDs for cgroups in this hierarchy */
++	struct ida cgroup_ida;
++
++	/* The path to use for release notifications. */
++	char release_agent_path[PATH_MAX];
++
++	/* The name for this hierarchy - may be empty */
++	char name[MAX_CGROUP_ROOT_NAMELEN];
++};
++
+ /*
+  * A css_set is a structure holding pointers to a set of
+  * cgroup_subsys_state objects. This saves space in the task struct
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 678a22c..a372eaa 100644
+index a372eaa..8848070 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -296,10 +296,10 @@ bool cgroup_is_descendant(struct cgroup *cgrp, struct cgroup *ancestor)
+@@ -30,7 +30,6 @@
+ #include <linux/cred.h>
+ #include <linux/ctype.h>
+ #include <linux/errno.h>
+-#include <linux/fs.h>
+ #include <linux/init_task.h>
+ #include <linux/kernel.h>
+ #include <linux/list.h>
+@@ -104,56 +103,6 @@ static struct cgroup_subsys *subsys[CGROUP_SUBSYS_COUNT] = {
+ #include <linux/cgroup_subsys.h>
+ };
+ 
+-#define MAX_CGROUP_ROOT_NAMELEN 64
+-
+-/*
+- * A cgroupfs_root represents the root of a cgroup hierarchy,
+- * and may be associated with a superblock to form an active
+- * hierarchy
+- */
+-struct cgroupfs_root {
+-	struct super_block *sb;
+-
+-	/*
+-	 * The bitmask of subsystems intended to be attached to this
+-	 * hierarchy
+-	 */
+-	unsigned long subsys_mask;
+-
+-	/* Unique id for this hierarchy. */
+-	int hierarchy_id;
+-
+-	/* The bitmask of subsystems currently attached to this hierarchy */
+-	unsigned long actual_subsys_mask;
+-
+-	/* A list running through the attached subsystems */
+-	struct list_head subsys_list;
+-
+-	/* The root cgroup for this hierarchy */
+-	struct cgroup top_cgroup;
+-
+-	/* Tracks how many cgroups are currently defined in hierarchy.*/
+-	int number_of_cgroups;
+-
+-	/* A list running through the active hierarchies */
+-	struct list_head root_list;
+-
+-	/* All cgroups on this root, cgroup_mutex protected */
+-	struct list_head allcg_list;
+-
+-	/* Hierarchy-specific flags */
+-	unsigned long flags;
+-
+-	/* IDs for cgroups in this hierarchy */
+-	struct ida cgroup_ida;
+-
+-	/* The path to use for release notifications. */
+-	char release_agent_path[PATH_MAX];
+-
+-	/* The name for this hierarchy - may be empty */
+-	char name[MAX_CGROUP_ROOT_NAMELEN];
+-};
+-
+ /*
+  * The "rootnode" hierarchy is the "dummy hierarchy", reserved for the
+  * subsystems that are otherwise unattached - it never has more than a
+@@ -296,12 +245,6 @@ bool cgroup_is_descendant(struct cgroup *cgrp, struct cgroup *ancestor)
  }
  EXPORT_SYMBOL_GPL(cgroup_is_descendant);
  
--/* bits in struct cgroupfs_root flags field */
-+/* cgroupfs_root->flags */
- enum {
--	ROOT_NOPREFIX,	/* mounted subsystems have no named prefix */
--	ROOT_XATTR,	/* supports extended attributes */
-+	CGRP_ROOT_NOPREFIX	= (1 << 1), /* mounted subsystems have no named prefix */
-+	CGRP_ROOT_XATTR		= (1 << 2), /* supports extended attributes */
- };
- 
+-/* cgroupfs_root->flags */
+-enum {
+-	CGRP_ROOT_NOPREFIX	= (1 << 1), /* mounted subsystems have no named prefix */
+-	CGRP_ROOT_XATTR		= (1 << 2), /* supports extended attributes */
+-};
+-
  static int cgroup_is_releasable(const struct cgroup *cgrp)
-@@ -1137,9 +1137,9 @@ static int cgroup_show_options(struct seq_file *seq, struct dentry *dentry)
- 	mutex_lock(&cgroup_root_mutex);
- 	for_each_subsys(root, ss)
- 		seq_printf(seq, ",%s", ss->name);
--	if (test_bit(ROOT_NOPREFIX, &root->flags))
-+	if (root->flags & CGRP_ROOT_NOPREFIX)
- 		seq_puts(seq, ",noprefix");
--	if (test_bit(ROOT_XATTR, &root->flags))
-+	if (root->flags & CGRP_ROOT_XATTR)
- 		seq_puts(seq, ",xattr");
- 	if (strlen(root->release_agent_path))
- 		seq_printf(seq, ",release_agent=%s", root->release_agent_path);
-@@ -1202,7 +1202,7 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
- 			continue;
- 		}
- 		if (!strcmp(token, "noprefix")) {
--			set_bit(ROOT_NOPREFIX, &opts->flags);
-+			opts->flags |= CGRP_ROOT_NOPREFIX;
- 			continue;
- 		}
- 		if (!strcmp(token, "clone_children")) {
-@@ -1210,7 +1210,7 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
- 			continue;
- 		}
- 		if (!strcmp(token, "xattr")) {
--			set_bit(ROOT_XATTR, &opts->flags);
-+			opts->flags |= CGRP_ROOT_XATTR;
- 			continue;
- 		}
- 		if (!strncmp(token, "release_agent=", 14)) {
-@@ -1293,8 +1293,7 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
- 	 * with the old cpuset, so we allow noprefix only if mounting just
- 	 * the cpuset subsystem.
- 	 */
--	if (test_bit(ROOT_NOPREFIX, &opts->flags) &&
--	    (opts->subsys_mask & mask))
-+	if ((opts->flags & CGRP_ROOT_NOPREFIX) && (opts->subsys_mask & mask))
- 		return -EINVAL;
- 
- 
-@@ -2523,7 +2522,7 @@ static struct simple_xattrs *__d_xattrs(struct dentry *dentry)
- static inline int xattr_enabled(struct dentry *dentry)
  {
- 	struct cgroupfs_root *root = dentry->d_sb->s_fs_info;
--	return test_bit(ROOT_XATTR, &root->flags);
-+	return root->flags & CGRP_ROOT_XATTR;
- }
- 
- static bool is_valid_xattr(const char *name)
-@@ -2695,7 +2694,7 @@ static int cgroup_add_file(struct cgroup *cgrp, struct cgroup_subsys *subsys,
- 
- 	simple_xattrs_init(&cft->xattrs);
- 
--	if (subsys && !test_bit(ROOT_NOPREFIX, &cgrp->root->flags)) {
-+	if (subsys && !(cgrp->root->flags & CGRP_ROOT_NOPREFIX)) {
- 		strcpy(name, subsys->name);
- 		strcat(name, ".");
- 	}
+ 	const int bits =
 -- 
 1.8.1.4
