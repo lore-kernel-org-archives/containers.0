@@ -1,20 +1,11 @@
-From: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
-Subject: Re: [PATCH v2 02/28] vmscan: take at least one pass with shrinkers
-Date: Thu, 11 Apr 2013 19:25:24 +1000
-Message-ID: <20130411092524.GK10481__17181.0199543417$1365672337$gmane$org@dastard>
-References: <51628877.5000701@parallels.com> <20130409005547.GC21654@lge.com>
-	<20130409012931.GE17758@dastard> <20130409020505.GA4218@lge.com>
-	<20130409123008.GM17758@dastard> <20130410025115.GA5872@lge.com>
-	<20130410100752.GA10481@dastard>
-	<CAAmzW4OMyZ=nVbHK_AiifPK5LVxvhOQUXmsD5NGfo33CBjf=eA@mail.gmail.com>
-	<20130411004114.GC10481@dastard>
-	<20130411072729.GA3605@hacker.(null)>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCHSET] cgroup, memcg: introduce sane_behavior mount option
+Date: Fri, 12 Apr 2013 16:10:55 -0700
+Message-ID: <1365808259-31073-1-git-send-email-tj__22687.5598229983$1365808272$gmane$org@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20130411072729.GA3605@hacker.(null)>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,62 +15,77 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Wanpeng Li <liwanp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, JoonSoo Kim <js1304-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Linux Memory Management List <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Apr 11, 2013 at 03:27:30PM +0800, Wanpeng Li wrote:
-> On Thu, Apr 11, 2013 at 10:41:14AM +1000, Dave Chinner wrote:
-> >On Wed, Apr 10, 2013 at 11:03:39PM +0900, JoonSoo Kim wrote:
-> >> Another one what I found is that they don't account "nr_reclaimed" precisely.
-> >> There is no code which check whether "current->reclaim_state" exist or not,
-> >> except prune_inode().
-> >
-> >That's because prune_inode() can free page cache pages when the
-> >inode mapping is invalidated. Hence it accounts this in addition
-> >to the slab objects being freed.
-> >
-> >IOWs, if you have a shrinker that frees pages from the page cache,
-> >you need to do this. Last time I checked, only inode cache reclaim
-> >caused extra page cache reclaim to occur, so most (all?) other
-> >shrinkers do not need to do this.
-> >
-> 
-> If we should account "nr_reclaimed" against huge zero page? There are 
-> large number(512) of pages reclaimed which can throttle direct or 
-> kswapd relcaim to avoid reclaim excess pages. I can do this work if 
-> you think the idea is needed.
+It's a sad fact that at this point various cgroup controllers are
+carrying so many idiosyncrasies and pure insanities that it simply
+isn't possible to reach any sort of sane consistent behavior while
+staying compatible with what already has been exposed to userland.
 
-I'm not sure. the zero hugepage is allocated through:
+To make progress, those behaviors need to go but we can't simply drop
+or change the crazies as those are directly visible to userland.  This
+patchset implements a mount option - sane_behavior - which turns on
+new saner behaviors, so that we can keep providing the old behaviors
+while and after transitioning to saner ones.
 
-	zero_page = alloc_pages((GFP_TRANSHUGE | __GFP_ZERO) & ~__GFP_MOVABLE,   
-				HPAGE_PMD_ORDER);
+As the behaviors which should be changed are still being determined
+and then implemented, __DEVEL__ prefix is added to the mount option
+and it triggers a warning message when used.
 
-which means the pages reclaimed by the shrinker aren't file/anon LRU
-pages.  Hence I'm not sure what extra accounting might be useful
-here, but accounting them as LRU pages being reclaimed seems wrong.
+The mount option changes the following behaviors after this patchset.
 
-FWIW, the reclaim of a single global object by a shrinker is not
-really a use case the shrinkers were designed for, so I suspect that
-anything we try to do right now within the current framework will
-just be a hack.
+* Mount options "noprefix" and "clone_children" are disallowed.  Also,
+  cgroupfs file cgroup.clone_children is not created.
 
-I suspect that what we need to do is add the current zone reclaim
-priority to the shrinker control structure (like has been done with
-the nodemask) so that objects like this can be considered for
-removal at a specific reclaim priority level rather than trying to
-use scan/count trickery to get where we want to be.
+* When mounting an existing superblock, mount options should match.
+  This is currently pretty crazy.  If one mounts a cgroup, creates a
+  subdirectory, unmounts it and then mount it again with different
+  option, it looks like the new options are applied but they aren't.
 
-Perhaps we need a shrinker->shrink_priority method that is called just
-once when the reclaim priority is high enough to trigger it. i.e.
-all these "do something special when memory reclaim is struggling to
-make progress" operations set the priority at which they get called
-and every time shrink_slab() is then called with that priority (or
-higher) the shrinker->shrink_priority method is called just once?
+* Remount is disallowed.
 
-Cheers,
+* memcg: .use_hierarchy is forced on and the cgroupfs file is not
+  created.
 
-Dave.
--- 
-Dave Chinner
-david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org
+and there are a lot more to come.  Basically, when turned on, all
+controllers should be ready to be mounted in the same hierarchy and
+not get in the way unless specifically configured - making blk-throtl
+hierarchical would need this to flip the meaning of limits, cpuset to
+allow tasks to run by default in new cgroups and handle empty cpusets
+in a way friendly to being co-mounted, and so on.
+
+This patchset contains the following four patches.
+
+ 0001-cgroup-convert-cgroupfs_root-flag-bits-to-masks-and-.patch
+ 0002-move-cgroupfs_root-to-include-linux-cgroup.h.patch
+ 0003-cgroup-introduce-sane_behavior-mount-option.patch
+ 0004-memcg-force-use_hierarchy-if-sane_behavior.patch
+
+0001-0002 are prep patches.  It exposes cgroupfs_root in cgroup.h so
+that flags can be tested with inline helpers.
+
+0003 introduces sane_behavior mount option and implements behavior
+changes in cgroup core proper.
+
+0004 makes memcg .use_hierarchy changes.
+
+The memcg patch doesn't conflict with memcg changes in -next, so it
+can be routed through the cgroup tree.  Michal, how do you wanna route
+it?
+
+This patchset is based on top of cgroup/for-3.10 and also available in
+the following git branch.
+
+ git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-cgroup-sane_behavior
+
+Thanks.
+
+ include/linux/cgroup.h |  103 +++++++++++++++++++++++++++++++++++++++++
+ kernel/cgroup.c        |  121 ++++++++++++++++++++++---------------------------
+ mm/memcontrol.c        |   13 +++++
+ 3 files changed, 172 insertions(+), 65 deletions(-)
+
+--
+tejun
