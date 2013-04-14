@@ -1,15 +1,11 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH UPDATED cgroup/for-3.10] cgroup: make cgroup_path() not print
-	double slashes
-Date: Sun, 14 Apr 2013 10:48:46 -0700
-Message-ID: <20130414174846.GC3050@htj.dyndns.org>
-References: <20130414173704.GB3050@htj.dyndns.org>
+Subject: [PATCHSET] cgroup: implement task_cgroup_path_from_hierarchy()
+Date: Sun, 14 Apr 2013 11:36:55 -0700
+Message-ID: <1365964619-14762-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20130414173704.GB3050-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,75 +15,41 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
+Cc: greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kay-tD+1rO4QERM@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, daniel-cYrQPVfZoowdnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From da1f296fd2bfd5ad3c53d72a1ece593e821cf374 Mon Sep 17 00:00:00 2001
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Date: Sun, 14 Apr 2013 10:32:19 -0700
+kdbus folks want a sane way to determine the cgroup path that a given
+task belongs to on a given hierarchy, which is a reasonble thing to
+expect from cgroup core.
 
-While reimplementing cgroup_path(), 65dff759d2 ("cgroup: fix
-cgroup_path() vs rename() race") introduced a bug where the path of a
-non-root cgroup would have two slahses at the beginning, which is
-caused by treating the root cgroup which has the name '/' like
-non-root cgroups.
+This patchset make hierarchy_id allocation use idr instead of ida and
+implement task_cgroup_path_from_hierarchy().  In the process, the
+yucky ida cyclic allocation is replaced with idr_alloc_cyclic().
 
- $ grep systemd /proc/self/cgroup
- 1:name=systemd://user/root/1
+ 0001-cgroup-refactor-hierarchy_id-handling.patch
+ 0002-cgroup-drop-hierarchy_id_lock.patch
+ 0003-cgroup-make-hierarchy_id-use-cyclic-idr.patch
+ 0004-cgroup-implement-task_cgroup_path_from_hierarchy.patch
 
-Fix it by special casing root cgroup case and not looping over it in
-the normal path.
+0001-0002 prepare for conversion to idr, which 0003 does.
 
-Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
----
-The description was wrong.  Updated.
+0004 implements the new function.
 
-Thanks.
+This patchset is on top of next-20130412 as idr_alloc_cyclic() patch
+is currently in -mm.  Given that this isn't an urgent thing and the
+merge window is just around the corner, it'd be probably best to route
+these through cgroup/for-3.11 once v3.10-rc1 drops.
 
- kernel/cgroup.c | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+These patches are also available in the following git branch.
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 678a22c..faf55f5 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -1811,11 +1811,17 @@ int cgroup_path(const struct cgroup *cgrp, char *buf, int buflen)
- 	int ret = -ENAMETOOLONG;
- 	char *start;
- 
-+	if (!cgrp->parent) {
-+		if (strlcpy(buf, "/", buflen) >= buflen)
-+			return -ENAMETOOLONG;
-+		return 0;
-+	}
-+
- 	start = buf + buflen - 1;
- 	*start = '\0';
- 
- 	rcu_read_lock();
--	while (cgrp) {
-+	do {
- 		const char *name = cgroup_name(cgrp);
- 		int len;
- 
-@@ -1824,15 +1830,12 @@ int cgroup_path(const struct cgroup *cgrp, char *buf, int buflen)
- 			goto out;
- 		memcpy(start, name, len);
- 
--		if (!cgrp->parent)
--			break;
--
- 		if (--start < buf)
- 			goto out;
- 		*start = '/';
- 
- 		cgrp = cgrp->parent;
--	}
-+	} while (cgrp->parent);
- 	ret = 0;
- 	memmove(buf, start, buf + buflen - start);
- out:
--- 
-1.8.1.4
+ git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-task_cgroup_path_from_hierarchy
+
+And it actually reduces LOC.  Woot Woot.
+
+ include/linux/cgroup.h |    2
+ kernel/cgroup.c        |  128 +++++++++++++++++++++++++++++++++----------------
+ 2 files changed, 89 insertions(+), 41 deletions(-)
+
+--
+tejun
