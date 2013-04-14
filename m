@@ -1,13 +1,15 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH cgroup/for-3.10] cgroup: make cgroup_path() not print double
-	slashes
-Date: Sun, 14 Apr 2013 10:37:04 -0700
-Message-ID: <20130414173704.GB3050__23970.9177556962$1365961040$gmane$org@htj.dyndns.org>
+Subject: [PATCH UPDATED cgroup/for-3.10] cgroup: make cgroup_path() not print
+	double slashes
+Date: Sun, 14 Apr 2013 10:48:46 -0700
+Message-ID: <20130414174846.GC3050@htj.dyndns.org>
+References: <20130414173704.GB3050@htj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20130414173704.GB3050-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,25 +23,26 @@ To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From 277f3d4be79aefe2071d9053a9c7c89c4e5dad30 Mon Sep 17 00:00:00 2001
+From da1f296fd2bfd5ad3c53d72a1ece593e821cf374 Mon Sep 17 00:00:00 2001
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Date: Sun, 14 Apr 2013 10:32:19 -0700
 
 While reimplementing cgroup_path(), 65dff759d2 ("cgroup: fix
 cgroup_path() vs rename() race") introduced a bug where the path of a
 non-root cgroup would have two slahses at the beginning, which is
-caused by adding '/' before the name of the root cgroup which is an
-empty string.
+caused by treating the root cgroup which has the name '/' like
+non-root cgroups.
 
  $ grep systemd /proc/self/cgroup
  1:name=systemd://user/root/1
 
-Fix it by special casing root cgroup.
+Fix it by special casing root cgroup case and not looping over it in
+the normal path.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 ---
-Applying to cgroup/for-3.10.
+The description was wrong.  Updated.
 
 Thanks.
 
