@@ -1,14 +1,16 @@
-From: Kamezawa Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 4/4] memcg: force use_hierarchy if sane_behavior
-Date: Tue, 16 Apr 2013 00:29:14 +0900
-Message-ID: <516C1CCA.80901@jp.fujitsu.com>
-References: <1365808259-31073-1-git-send-email-tj@kernel.org>
-	<1365808259-31073-5-git-send-email-tj@kernel.org>
+From: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH v3 08/32] list: add a new LRU list type
+Date: Mon, 15 Apr 2013 10:56:57 -0700
+Message-ID: <xr93mwsz4qza.fsf__41561.9704210714$1366048626$gmane$org@gthelen.mtv.corp.google.com>
+References: <1365429659-22108-1-git-send-email-glommer@parallels.com>
+	<1365429659-22108-9-git-send-email-glommer@parallels.com>
+	<xr93r4ic8ify.fsf@gthelen.mtv.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1365808259-31073-5-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <xr93r4ic8ify.fsf-aSPv4SP+Du0KgorLzL7FmE7CuiCeIGUxQQ4Iyu8u01E@public.gmane.org> (Greg Thelen's
+	message of "Sun, 14 Apr 2013 22:35:29 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,27 +20,204 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-(2013/04/13 8:10), Tejun Heo wrote:
-> Turn on use_hierarchy by default if sane_behavior is specified and
-> don't create .use_hierarchy file.
-> 
-> It is debatable whether to remove .use_hierarchy file or make it ro as
-> the former could make transition easier in certain cases; however, the
-> behavior changes which will be gated by sane_behavior are intensive
-> including changing basic meaning of certain control knobs in a few
-> controllers and I don't really think keeping this piece would make
-> things easier in any noticeable way, so let's remove it.
-> 
-> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-> Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+On Sun, Apr 14 2013, Greg Thelen wrote:
 
-I'd like to say this behaivor as v2 rather than sane_behavior....
+> On Mon, Apr 08 2013, Glauber Costa wrote:
+>
+>> From: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+>>
+>> Several subsystems use the same construct for LRU lists - a list
+>> head, a spin lock and and item count. They also use exactly the same
+>> code for adding and removing items from the LRU. Create a generic
+>> type for these LRU lists.
+>>
+>> This is the beginning of generic, node aware LRUs for shrinkers to
+>> work with.
+>>
+>> [ glommer: enum defined constants for lru. Suggested by gthelen ]
+>> Signed-off-by: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+>> Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+>
+> Optional nit pick below:
+>
+> Reviewed-by: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+>
+>
+>> ---
+>>  include/linux/list_lru.h |  44 ++++++++++++++++++
+>>  lib/Makefile             |   2 +-
+>>  lib/list_lru.c           | 117 +++++++++++++++++++++++++++++++++++++++++++++++
+>>  3 files changed, 162 insertions(+), 1 deletion(-)
+>>  create mode 100644 include/linux/list_lru.h
+>>  create mode 100644 lib/list_lru.c
+>>
+>> diff --git a/include/linux/list_lru.h b/include/linux/list_lru.h
+>> new file mode 100644
+>> index 0000000..394c28c
+>> --- /dev/null
+>> +++ b/include/linux/list_lru.h
+>> @@ -0,0 +1,44 @@
+>> +/*
+>> + * Copyright (c) 2010-2012 Red Hat, Inc. All rights reserved.
+>> + * Author: David Chinner
+>> + *
+>> + * Generic LRU infrastructure
+>> + */
+>> +#ifndef _LRU_LIST_H
+>> +#define _LRU_LIST_H
+>> +
+>> +#include <linux/list.h>
+>> +
+>> +enum lru_status {
+>> +	LRU_REMOVED,		/* item removed from list */
+>> +	LRU_ROTATE,		/* item referenced, give another pass */
+>> +	LRU_SKIP,		/* item cannot be locked, skip */
+>> +	LRU_RETRY,		/* item not freeable, lock dropped */
+>> +};
+>> +
+>> +struct list_lru {
+>> +	spinlock_t		lock;
+>> +	struct list_head	list;
+>> +	long			nr_items;
+>> +};
+>> +
+>> +int list_lru_init(struct list_lru *lru);
+>> +int list_lru_add(struct list_lru *lru, struct list_head *item);
+>> +int list_lru_del(struct list_lru *lru, struct list_head *item);
+>> +
+>> +static inline long list_lru_count(struct list_lru *lru)
+>> +{
+>> +	return lru->nr_items;
+>> +}
+>> +
+>> +typedef enum lru_status
+>> +(*list_lru_walk_cb)(struct list_head *item, spinlock_t *lock, void *cb_arg);
+>> +
+>> +typedef void (*list_lru_dispose_cb)(struct list_head *dispose_list);
+>> +
+>> +long list_lru_walk(struct list_lru *lru, list_lru_walk_cb isolate,
+>> +		   void *cb_arg, long nr_to_walk);
+>> +
+>> +long list_lru_dispose_all(struct list_lru *lru, list_lru_dispose_cb dispose);
+>> +
+>> +#endif /* _LRU_LIST_H */
+>> diff --git a/lib/Makefile b/lib/Makefile
+>> index d7946ff..f14abd9 100644
+>> --- a/lib/Makefile
+>> +++ b/lib/Makefile
+>> @@ -13,7 +13,7 @@ lib-y := ctype.o string.o vsprintf.o cmdline.o \
+>>  	 sha1.o md5.o irq_regs.o reciprocal_div.o argv_split.o \
+>>  	 proportions.o flex_proportions.o prio_heap.o ratelimit.o show_mem.o \
+>>  	 is_single_threaded.o plist.o decompress.o kobject_uevent.o \
+>> -	 earlycpio.o
+>> +	 earlycpio.o list_lru.o
+>>  
+>>  lib-$(CONFIG_MMU) += ioremap.o
+>>  lib-$(CONFIG_SMP) += cpumask.o
+>> diff --git a/lib/list_lru.c b/lib/list_lru.c
+>> new file mode 100644
+>> index 0000000..03bd984
+>> --- /dev/null
+>> +++ b/lib/list_lru.c
+>> @@ -0,0 +1,117 @@
+>> +/*
+>> + * Copyright (c) 2010-2012 Red Hat, Inc. All rights reserved.
+>> + * Author: David Chinner
+>> + *
+>> + * Generic LRU infrastructure
+>> + */
+>> +#include <linux/kernel.h>
+>> +#include <linux/module.h>
+>> +#include <linux/list_lru.h>
+>> +
+>> +int
+>> +list_lru_add(
+>> +	struct list_lru	*lru,
+>> +	struct list_head *item)
+>> +{
+>> +	spin_lock(&lru->lock);
+>> +	if (list_empty(item)) {
+>> +		list_add_tail(item, &lru->list);
+>> +		lru->nr_items++;
+>> +		spin_unlock(&lru->lock);
+>> +		return 1;
+>> +	}
+>> +	spin_unlock(&lru->lock);
+>> +	return 0;
+>> +}
+>> +EXPORT_SYMBOL_GPL(list_lru_add);
+>> +
+>> +int
+>> +list_lru_del(
+>> +	struct list_lru	*lru,
+>> +	struct list_head *item)
+>> +{
+>> +	spin_lock(&lru->lock);
+>> +	if (!list_empty(item)) {
+>> +		list_del_init(item);
+>> +		lru->nr_items--;
+>> +		spin_unlock(&lru->lock);
+>> +		return 1;
+>> +	}
+>> +	spin_unlock(&lru->lock);
+>> +	return 0;
+>> +}
+>> +EXPORT_SYMBOL_GPL(list_lru_del);
+>> +
+>> +long
+>> +list_lru_walk(
+>> +	struct list_lru *lru,
+>> +	list_lru_walk_cb isolate,
+>> +	void		*cb_arg,
+>> +	long		nr_to_walk)
+>> +{
+>> +	struct list_head *item, *n;
+>> +	long removed = 0;
+>> +restart:
+>> +	spin_lock(&lru->lock);
 
-Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Sometimes isolate() drops the lru locks (when it returns LRU_RETRY) and
+sparse complains thus complains here:
 
-Hmm.. we need to check performance.
+  lib/list_lru.c:55:18: warning: context imbalance in 'list_lru_walk' - different lock contexts for basic block
+
+It looks like other dcache code suffers similar sparse warnings.  Is
+there any way to annotate this warning away?  Or is this just something
+we live with?
+
+>> +	list_for_each_safe(item, n, &lru->list) {
+>> +		int ret;
+>
+> enum lru_status ret;
+>
+>> +
+>> +		if (nr_to_walk-- < 0)
+>> +			break;
+>> +
+>> +		ret = isolate(item, &lru->lock, cb_arg);
+>> +		switch (ret) {
+>> +		case LRU_REMOVED:
+>> +			lru->nr_items--;
+>> +			removed++;
+>> +			break;
+>> +		case LRU_ROTATE:
+>> +			list_move_tail(item, &lru->list);
+>> +			break;
+>> +		case LRU_SKIP:
+>> +			break;
+>> +		case LRU_RETRY:
+>> +			goto restart;
+>> +		default:
+>> +			BUG();
+>> +		}
+>> +	}
+>> +	spin_unlock(&lru->lock);
+>> +	return removed;
+>> +}
+>> +EXPORT_SYMBOL_GPL(list_lru_walk);
+>
+> [snip]
