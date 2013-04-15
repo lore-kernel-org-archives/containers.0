@@ -1,7 +1,7 @@
 From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 4/4] memcg: force use_hierarchy if sane_behavior
-Date: Sun, 14 Apr 2013 20:06:47 -0500
-Message-ID: <20130415010647.GE8408@sergelap>
+Date: Sun, 14 Apr 2013 20:13:36 -0500
+Message-ID: <20130415011336.GF8408@sergelap>
 References: <1365808259-31073-1-git-send-email-tj@kernel.org>
 	<1365808259-31073-5-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
@@ -33,74 +33,35 @@ Quoting Tejun Heo (tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org):
 > including changing basic meaning of certain control knobs in a few
 > controllers and I don't really think keeping this piece would make
 > things easier in any noticeable way, so let's remove it.
-> 
-> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 
-Acked-by: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Hi Tejun,
 
-> Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-> Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-> ---
->  include/linux/cgroup.h |  3 +++
->  mm/memcontrol.c        | 13 +++++++++++++
->  2 files changed, 16 insertions(+)
-> 
-> diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-> index 9c300ad..c562e33 100644
-> --- a/include/linux/cgroup.h
-> +++ b/include/linux/cgroup.h
-> @@ -269,6 +269,9 @@ enum {
->  	 *
->  	 * - Remount is disallowed.
->  	 *
-> +	 * - memcg: use_hierarchy is on by default and the cgroup file for
-> +	 *   the flag is not created.
-> +	 *
->  	 * The followings are planned changes.
->  	 *
->  	 * - release_agent will be disallowed once replacement notification
-> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-> index 9715c0c..a651131 100644
-> --- a/mm/memcontrol.c
-> +++ b/mm/memcontrol.c
-> @@ -5814,6 +5814,7 @@ static struct cftype mem_cgroup_files[] = {
->  	},
->  	{
->  		.name = "use_hierarchy",
-> +		.flags = CFTYPE_INSANE,
->  		.write_u64 = mem_cgroup_hierarchy_write,
->  		.read_u64 = mem_cgroup_hierarchy_read,
->  	},
-> @@ -6784,6 +6785,17 @@ static void mem_cgroup_move_task(struct cgroup *cont,
->  }
->  #endif
->  
-> +/*
-> + * Cgroup retains root cgroups across [un]mount cycles making it necessary
-> + * to verify sane_behavior flag on each mount attempt.
-> + */
-> +static void mem_cgroup_bind(struct cgroup *root)
-> +{
-> +	/* use_hierarchy is forced with sane_behavior */
-> +	if (cgroup_sane_behavior(root))
-> +		mem_cgroup_from_cont(root)->use_hierarchy = true;
-> +}
-> +
->  struct cgroup_subsys mem_cgroup_subsys = {
->  	.name = "memory",
->  	.subsys_id = mem_cgroup_subsys_id,
-> @@ -6794,6 +6806,7 @@ struct cgroup_subsys mem_cgroup_subsys = {
->  	.can_attach = mem_cgroup_can_attach,
->  	.cancel_attach = mem_cgroup_cancel_attach,
->  	.attach = mem_cgroup_move_task,
-> +	.bind = mem_cgroup_bind,
->  	.base_cftypes = mem_cgroup_files,
->  	.early_init = 0,
->  	.use_id = 1,
-> -- 
-> 1.8.1.4
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+this actually reminds me of something that's been on my todo list to
+report for some time, but I haven't had time to find the source of the
+bug...  And maybe it's already been reported...  but
+
+If I do
+
+	cd /sys/fs/cgroup/memory
+	mkdir b
+	cd b
+	echo 1 > memory.use_hierarchy
+	echo 5000 > memory.limit_in_bytes
+	cat memory.limit_in_bytes
+8192
+	mkdir c
+	cd c
+	cat memory.use_hierarchy
+1
+	cat memory.limit_in_bytes
+9223372036854775807
+	echo $$ > tasks
+	bash
+<killed>
+
+So it seems the hierarchy is being enforced, but not reported in
+child limit_in_bytes files.
+
+(Last tested tonight on 3.8.0-17-generic #27-Ubuntu fwiw)
+
+-serge
