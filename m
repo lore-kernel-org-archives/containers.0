@@ -1,16 +1,15 @@
-From: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v3 08/32] list: add a new LRU list type
-Date: Mon, 15 Apr 2013 10:56:57 -0700
-Message-ID: <xr93mwsz4qza.fsf__41561.9704210714$1366048626$gmane$org@gthelen.mtv.corp.google.com>
-References: <1365429659-22108-1-git-send-email-glommer@parallels.com>
-	<1365429659-22108-9-git-send-email-glommer@parallels.com>
-	<xr93r4ic8ify.fsf@gthelen.mtv.corp.google.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCH v2 4/4] memcg: force use_hierarchy if sane_behavior
+Date: Mon, 15 Apr 2013 13:40:16 -0700
+Message-ID: <20130415204016.GA19531__4411.12269550121$1366058428$gmane$org@mtj.dyndns.org>
+References: <1365808259-31073-1-git-send-email-tj@kernel.org>
+	<1365808259-31073-5-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <xr93r4ic8ify.fsf-aSPv4SP+Du0KgorLzL7FmE7CuiCeIGUxQQ4Iyu8u01E@public.gmane.org> (Greg Thelen's
-	message of "Sun, 14 Apr 2013 22:35:29 -0700")
+Content-Disposition: inline
+In-Reply-To: <1365808259-31073-5-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,204 +19,86 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sun, Apr 14 2013, Greg Thelen wrote:
+Turn on use_hierarchy by default if sane_behavior is specified and
+don't create .use_hierarchy file.
 
-> On Mon, Apr 08 2013, Glauber Costa wrote:
->
->> From: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
->>
->> Several subsystems use the same construct for LRU lists - a list
->> head, a spin lock and and item count. They also use exactly the same
->> code for adding and removing items from the LRU. Create a generic
->> type for these LRU lists.
->>
->> This is the beginning of generic, node aware LRUs for shrinkers to
->> work with.
->>
->> [ glommer: enum defined constants for lru. Suggested by gthelen ]
->> Signed-off-by: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
->> Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
->
-> Optional nit pick below:
->
-> Reviewed-by: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
->
->
->> ---
->>  include/linux/list_lru.h |  44 ++++++++++++++++++
->>  lib/Makefile             |   2 +-
->>  lib/list_lru.c           | 117 +++++++++++++++++++++++++++++++++++++++++++++++
->>  3 files changed, 162 insertions(+), 1 deletion(-)
->>  create mode 100644 include/linux/list_lru.h
->>  create mode 100644 lib/list_lru.c
->>
->> diff --git a/include/linux/list_lru.h b/include/linux/list_lru.h
->> new file mode 100644
->> index 0000000..394c28c
->> --- /dev/null
->> +++ b/include/linux/list_lru.h
->> @@ -0,0 +1,44 @@
->> +/*
->> + * Copyright (c) 2010-2012 Red Hat, Inc. All rights reserved.
->> + * Author: David Chinner
->> + *
->> + * Generic LRU infrastructure
->> + */
->> +#ifndef _LRU_LIST_H
->> +#define _LRU_LIST_H
->> +
->> +#include <linux/list.h>
->> +
->> +enum lru_status {
->> +	LRU_REMOVED,		/* item removed from list */
->> +	LRU_ROTATE,		/* item referenced, give another pass */
->> +	LRU_SKIP,		/* item cannot be locked, skip */
->> +	LRU_RETRY,		/* item not freeable, lock dropped */
->> +};
->> +
->> +struct list_lru {
->> +	spinlock_t		lock;
->> +	struct list_head	list;
->> +	long			nr_items;
->> +};
->> +
->> +int list_lru_init(struct list_lru *lru);
->> +int list_lru_add(struct list_lru *lru, struct list_head *item);
->> +int list_lru_del(struct list_lru *lru, struct list_head *item);
->> +
->> +static inline long list_lru_count(struct list_lru *lru)
->> +{
->> +	return lru->nr_items;
->> +}
->> +
->> +typedef enum lru_status
->> +(*list_lru_walk_cb)(struct list_head *item, spinlock_t *lock, void *cb_arg);
->> +
->> +typedef void (*list_lru_dispose_cb)(struct list_head *dispose_list);
->> +
->> +long list_lru_walk(struct list_lru *lru, list_lru_walk_cb isolate,
->> +		   void *cb_arg, long nr_to_walk);
->> +
->> +long list_lru_dispose_all(struct list_lru *lru, list_lru_dispose_cb dispose);
->> +
->> +#endif /* _LRU_LIST_H */
->> diff --git a/lib/Makefile b/lib/Makefile
->> index d7946ff..f14abd9 100644
->> --- a/lib/Makefile
->> +++ b/lib/Makefile
->> @@ -13,7 +13,7 @@ lib-y := ctype.o string.o vsprintf.o cmdline.o \
->>  	 sha1.o md5.o irq_regs.o reciprocal_div.o argv_split.o \
->>  	 proportions.o flex_proportions.o prio_heap.o ratelimit.o show_mem.o \
->>  	 is_single_threaded.o plist.o decompress.o kobject_uevent.o \
->> -	 earlycpio.o
->> +	 earlycpio.o list_lru.o
->>  
->>  lib-$(CONFIG_MMU) += ioremap.o
->>  lib-$(CONFIG_SMP) += cpumask.o
->> diff --git a/lib/list_lru.c b/lib/list_lru.c
->> new file mode 100644
->> index 0000000..03bd984
->> --- /dev/null
->> +++ b/lib/list_lru.c
->> @@ -0,0 +1,117 @@
->> +/*
->> + * Copyright (c) 2010-2012 Red Hat, Inc. All rights reserved.
->> + * Author: David Chinner
->> + *
->> + * Generic LRU infrastructure
->> + */
->> +#include <linux/kernel.h>
->> +#include <linux/module.h>
->> +#include <linux/list_lru.h>
->> +
->> +int
->> +list_lru_add(
->> +	struct list_lru	*lru,
->> +	struct list_head *item)
->> +{
->> +	spin_lock(&lru->lock);
->> +	if (list_empty(item)) {
->> +		list_add_tail(item, &lru->list);
->> +		lru->nr_items++;
->> +		spin_unlock(&lru->lock);
->> +		return 1;
->> +	}
->> +	spin_unlock(&lru->lock);
->> +	return 0;
->> +}
->> +EXPORT_SYMBOL_GPL(list_lru_add);
->> +
->> +int
->> +list_lru_del(
->> +	struct list_lru	*lru,
->> +	struct list_head *item)
->> +{
->> +	spin_lock(&lru->lock);
->> +	if (!list_empty(item)) {
->> +		list_del_init(item);
->> +		lru->nr_items--;
->> +		spin_unlock(&lru->lock);
->> +		return 1;
->> +	}
->> +	spin_unlock(&lru->lock);
->> +	return 0;
->> +}
->> +EXPORT_SYMBOL_GPL(list_lru_del);
->> +
->> +long
->> +list_lru_walk(
->> +	struct list_lru *lru,
->> +	list_lru_walk_cb isolate,
->> +	void		*cb_arg,
->> +	long		nr_to_walk)
->> +{
->> +	struct list_head *item, *n;
->> +	long removed = 0;
->> +restart:
->> +	spin_lock(&lru->lock);
+It is debatable whether to remove .use_hierarchy file or make it ro as
+the former could make transition easier in certain cases; however, the
+behavior changes which will be gated by sane_behavior are intensive
+including changing basic meaning of certain control knobs in a few
+controllers and I don't really think keeping this piece would make
+things easier in any noticeable way, so let's remove it.
 
-Sometimes isolate() drops the lru locks (when it returns LRU_RETRY) and
-sparse complains thus complains here:
+v2: Explain that mem_cgroup_bind() doesn't have to worry about
+    children as suggested by Michal Hocko.
 
-  lib/list_lru.c:55:18: warning: context imbalance in 'list_lru_walk' - different lock contexts for basic block
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Acked-by: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Acked-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+---
+Applying to cgroup/for-3.10.
 
-It looks like other dcache code suffers similar sparse warnings.  Is
-there any way to annotate this warning away?  Or is this just something
-we live with?
+Thanks!
 
->> +	list_for_each_safe(item, n, &lru->list) {
->> +		int ret;
->
-> enum lru_status ret;
->
->> +
->> +		if (nr_to_walk-- < 0)
->> +			break;
->> +
->> +		ret = isolate(item, &lru->lock, cb_arg);
->> +		switch (ret) {
->> +		case LRU_REMOVED:
->> +			lru->nr_items--;
->> +			removed++;
->> +			break;
->> +		case LRU_ROTATE:
->> +			list_move_tail(item, &lru->list);
->> +			break;
->> +		case LRU_SKIP:
->> +			break;
->> +		case LRU_RETRY:
->> +			goto restart;
->> +		default:
->> +			BUG();
->> +		}
->> +	}
->> +	spin_unlock(&lru->lock);
->> +	return removed;
->> +}
->> +EXPORT_SYMBOL_GPL(list_lru_walk);
->
-> [snip]
+ include/linux/cgroup.h |    3 +++
+ mm/memcontrol.c        |   17 +++++++++++++++++
+ 2 files changed, 20 insertions(+)
+
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -269,6 +269,9 @@ enum {
+ 	 *
+ 	 * - Remount is disallowed.
+ 	 *
++	 * - memcg: use_hierarchy is on by default and the cgroup file for
++	 *   the flag is not created.
++	 *
+ 	 * The followings are planned changes.
+ 	 *
+ 	 * - release_agent will be disallowed once replacement notification
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -5814,6 +5814,7 @@ static struct cftype mem_cgroup_files[]
+ 	},
+ 	{
+ 		.name = "use_hierarchy",
++		.flags = CFTYPE_INSANE,
+ 		.write_u64 = mem_cgroup_hierarchy_write,
+ 		.read_u64 = mem_cgroup_hierarchy_read,
+ 	},
+@@ -6784,6 +6785,21 @@ static void mem_cgroup_move_task(struct
+ }
+ #endif
+ 
++/*
++ * Cgroup retains root cgroups across [un]mount cycles making it necessary
++ * to verify sane_behavior flag on each mount attempt.
++ */
++static void mem_cgroup_bind(struct cgroup *root)
++{
++	/*
++	 * use_hierarchy is forced with sane_behavior.  cgroup core
++	 * guarantees that @root doesn't have any children, so turning it
++	 * on for the root memcg is enough.
++	 */
++	if (cgroup_sane_behavior(root))
++		mem_cgroup_from_cont(root)->use_hierarchy = true;
++}
++
+ struct cgroup_subsys mem_cgroup_subsys = {
+ 	.name = "memory",
+ 	.subsys_id = mem_cgroup_subsys_id,
+@@ -6794,6 +6810,7 @@ struct cgroup_subsys mem_cgroup_subsys =
+ 	.can_attach = mem_cgroup_can_attach,
+ 	.cancel_attach = mem_cgroup_cancel_attach,
+ 	.attach = mem_cgroup_move_task,
++	.bind = mem_cgroup_bind,
+ 	.base_cftypes = mem_cgroup_files,
+ 	.early_init = 0,
+ 	.use_id = 1,
