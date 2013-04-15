@@ -1,15 +1,15 @@
-From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCH v3 14/32] xfs: convert buftarg LRU to generic code
-Date: Mon, 15 Apr 2013 06:14:44 -0400
-Message-ID: <516BD314.9000302__37351.7004460611$1366020904$gmane$org@parallels.com>
-References: <1365429659-22108-1-git-send-email-glommer@parallels.com>
-	<1365429659-22108-15-git-send-email-glommer@parallels.com>
-	<xr9361zo8iav.fsf@gthelen.mtv.corp.google.com>
+From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Subject: Re: [PATCH 4/4] memcg: force use_hierarchy if sane_behavior
+Date: Mon, 15 Apr 2013 07:42:51 -0700
+Message-ID: <20130415144251.GC13662__11618.1715661243$1366036985$gmane$org@dhcp22.suse.cz>
+References: <1365808259-31073-1-git-send-email-tj@kernel.org>
+	<1365808259-31073-5-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <xr9361zo8iav.fsf-aSPv4SP+Du0KgorLzL7FmE7CuiCeIGUxQQ4Iyu8u01E@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1365808259-31073-5-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,120 +19,102 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Greg Thelen <gthelen-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: hughd-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dave Shrinnker <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 04/15/2013 01:38 AM, Greg Thelen wrote:
-> On Mon, Apr 08 2013, Glauber Costa wrote:
->
->> From: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
->>
->> Convert the buftarg LRU to use the new generic LRU list and take
->> advantage of the functionality it supplies to make the buffer cache
->> shrinker node aware.
->>
->> Signed-off-by: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
->> Signed-off-by: Dave Chinner <dchinner-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
->>
->> Conflicts with 3b19034d4f:
->> 	fs/xfs/xfs_buf.c
->> ---
->>   fs/xfs/xfs_buf.c | 167 +++++++++++++++++++++++++------------------------------
->>   fs/xfs/xfs_buf.h |   5 +-
->>   2 files changed, 79 insertions(+), 93 deletions(-)
->>
->> diff --git a/fs/xfs/xfs_buf.c b/fs/xfs/xfs_buf.c
->> index 8459b5d..4cc6632 100644
->> --- a/fs/xfs/xfs_buf.c
->> +++ b/fs/xfs/xfs_buf.c
->> @@ -85,20 +85,14 @@ xfs_buf_vmap_len(
->>    * The LRU takes a new reference to the buffer so that it will only be freed
->>    * once the shrinker takes the buffer off the LRU.
->>    */
->> -STATIC void
->> +static void
->>   xfs_buf_lru_add(
->>   	struct xfs_buf	*bp)
->>   {
->> -	struct xfs_buftarg *btp = bp->b_target;
->> -
->> -	spin_lock(&btp->bt_lru_lock);
->> -	if (list_empty(&bp->b_lru)) {
->> -		atomic_inc(&bp->b_hold);
->> -		list_add_tail(&bp->b_lru, &btp->bt_lru);
->> -		btp->bt_lru_nr++;
->> +	if (list_lru_add(&bp->b_target->bt_lru, &bp->b_lru)) {
->>   		bp->b_lru_flags &= ~_XBF_LRU_DISPOSE;
->> +		atomic_inc(&bp->b_hold);
->>   	}
->> -	spin_unlock(&btp->bt_lru_lock);
->>   }
->>
->>   /*
->> @@ -107,24 +101,13 @@ xfs_buf_lru_add(
->>    * The unlocked check is safe here because it only occurs when there are not
->>    * b_lru_ref counts left on the inode under the pag->pag_buf_lock. it is there
->>    * to optimise the shrinker removing the buffer from the LRU and calling
->> - * xfs_buf_free(). i.e. it removes an unnecessary round trip on the
->> - * bt_lru_lock.
->> + * xfs_buf_free().
->>    */
->> -STATIC void
->> +static void
->>   xfs_buf_lru_del(
->>   	struct xfs_buf	*bp)
->>   {
->> -	struct xfs_buftarg *btp = bp->b_target;
->> -
->> -	if (list_empty(&bp->b_lru))
->> -		return;
->> -
->> -	spin_lock(&btp->bt_lru_lock);
->> -	if (!list_empty(&bp->b_lru)) {
->> -		list_del_init(&bp->b_lru);
->> -		btp->bt_lru_nr--;
->> -	}
->> -	spin_unlock(&btp->bt_lru_lock);
->> +	list_lru_del(&bp->b_target->bt_lru, &bp->b_lru);
->>   }
->>
->>   /*
->> @@ -151,18 +134,10 @@ xfs_buf_stale(
->>   	bp->b_flags &= ~_XBF_DELWRI_Q;
->>
->>   	atomic_set(&(bp)->b_lru_ref, 0);
->> -	if (!list_empty(&bp->b_lru)) {
->> -		struct xfs_buftarg *btp = bp->b_target;
->> -
->> -		spin_lock(&btp->bt_lru_lock);
->> -		if (!list_empty(&bp->b_lru) &&
->> -		    !(bp->b_lru_flags & _XBF_LRU_DISPOSE)) {
->> -			list_del_init(&bp->b_lru);
->> -			btp->bt_lru_nr--;
->> -			atomic_dec(&bp->b_hold);
->> -		}
->> -		spin_unlock(&btp->bt_lru_lock);
->> -	}
->> +	if (!(bp->b_lru_flags & _XBF_LRU_DISPOSE) &&
->> +	    (list_lru_del(&bp->b_target->bt_lru, &bp->b_lru)))
->> +		atomic_dec(&bp->b_hold);
->> +
->>   	ASSERT(atomic_read(&bp->b_hold) >= 1);
->>   }
->>
->> @@ -1498,83 +1473,95 @@ xfs_buf_iomove(
->>    * returned. These buffers will have an elevated hold count, so wait on those
->>    * while freeing all the buffers only held by the LRU.
->>    */
->> -void
->> -xfs_wait_buftarg(
->> -	struct xfs_buftarg	*btp)
->> +static int
->
-> static enum lru_status
->
+On Fri 12-04-13 16:10:59, Tejun Heo wrote:
+> Turn on use_hierarchy by default if sane_behavior is specified and
+> don't create .use_hierarchy file.
+> 
+> It is debatable whether to remove .use_hierarchy file or make it ro as
+> the former could make transition easier in certain cases; however, the
+> behavior changes which will be gated by sane_behavior are intensive
+> including changing basic meaning of certain control knobs in a few
+> controllers and I don't really think keeping this piece would make
+> things easier in any noticeable way, so let's remove it.
 
-Uggh, I converted the inode and dcache and forgot to convert xfs. Thanks 
-for spotting, Greg!
->
+OK, as the feature has to be enabled explicitly I do not mind not
+exporting the file.
+I have one nit though. Can we extend the comment for mem_cgroup_bind
+that it doesn't have to care about children because there are none
+because rebind_subsystems wouldn't allow remounting otherwise?
+It wasn't obvious, at least from me.
+
+Other than that.
+Acked-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+
+Thanks!
+
+> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+> Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+> ---
+>  include/linux/cgroup.h |  3 +++
+>  mm/memcontrol.c        | 13 +++++++++++++
+>  2 files changed, 16 insertions(+)
+> 
+> diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+> index 9c300ad..c562e33 100644
+> --- a/include/linux/cgroup.h
+> +++ b/include/linux/cgroup.h
+> @@ -269,6 +269,9 @@ enum {
+>  	 *
+>  	 * - Remount is disallowed.
+>  	 *
+> +	 * - memcg: use_hierarchy is on by default and the cgroup file for
+> +	 *   the flag is not created.
+> +	 *
+>  	 * The followings are planned changes.
+>  	 *
+>  	 * - release_agent will be disallowed once replacement notification
+> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+> index 9715c0c..a651131 100644
+> --- a/mm/memcontrol.c
+> +++ b/mm/memcontrol.c
+> @@ -5814,6 +5814,7 @@ static struct cftype mem_cgroup_files[] = {
+>  	},
+>  	{
+>  		.name = "use_hierarchy",
+> +		.flags = CFTYPE_INSANE,
+>  		.write_u64 = mem_cgroup_hierarchy_write,
+>  		.read_u64 = mem_cgroup_hierarchy_read,
+>  	},
+> @@ -6784,6 +6785,17 @@ static void mem_cgroup_move_task(struct cgroup *cont,
+>  }
+>  #endif
+>  
+> +/*
+> + * Cgroup retains root cgroups across [un]mount cycles making it necessary
+> + * to verify sane_behavior flag on each mount attempt.
+> + */
+> +static void mem_cgroup_bind(struct cgroup *root)
+> +{
+> +	/* use_hierarchy is forced with sane_behavior */
+> +	if (cgroup_sane_behavior(root))
+> +		mem_cgroup_from_cont(root)->use_hierarchy = true;
+> +}
+> +
+>  struct cgroup_subsys mem_cgroup_subsys = {
+>  	.name = "memory",
+>  	.subsys_id = mem_cgroup_subsys_id,
+> @@ -6794,6 +6806,7 @@ struct cgroup_subsys mem_cgroup_subsys = {
+>  	.can_attach = mem_cgroup_can_attach,
+>  	.cancel_attach = mem_cgroup_cancel_attach,
+>  	.attach = mem_cgroup_move_task,
+> +	.bind = mem_cgroup_bind,
+>  	.base_cftypes = mem_cgroup_files,
+>  	.early_init = 0,
+>  	.use_id = 1,
+> -- 
+> 1.8.1.4
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
+
+-- 
+Michal Hocko
+SUSE Labs
