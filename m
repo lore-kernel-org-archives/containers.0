@@ -1,16 +1,13 @@
-From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: [PATCH v2 4/4] memcg: force use_hierarchy if sane_behavior
-Date: Mon, 15 Apr 2013 13:57:43 -0700
-Message-ID: <20130415205743.GA22883__44915.9921183766$1366059477$gmane$org@dhcp22.suse.cz>
-References: <1365808259-31073-1-git-send-email-tj@kernel.org>
-	<1365808259-31073-5-git-send-email-tj@kernel.org>
-	<20130415204016.GA19531@mtj.dyndns.org>
+From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Subject: Re: cgroup: status-quo and userland efforts
+Date: Tue, 16 Apr 2013 19:17:17 +0800
+Message-ID: <516D333D.4040703__7614.45495668358$1366111172$gmane$org@huawei.com>
+References: <20130406012159.GA17159@mtj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20130415204016.GA19531-9pTldWuhBndy/B6EtB590w@public.gmane.org>
+In-Reply-To: <20130406012159.GA17159-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,93 +18,32 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jpoimboe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon 15-04-13 13:40:16, Tejun Heo wrote:
-> Turn on use_hierarchy by default if sane_behavior is specified and
-> don't create .use_hierarchy file.
+On 2013/4/6 9:21, Tejun Heo wrote:
+> Hello, guys.
 > 
-> It is debatable whether to remove .use_hierarchy file or make it ro as
-> the former could make transition easier in certain cases; however, the
-> behavior changes which will be gated by sane_behavior are intensive
-> including changing basic meaning of certain control knobs in a few
-> controllers and I don't really think keeping this piece would make
-> things easier in any noticeable way, so let's remove it.
+>  Status-quo
+>  ==========
 > 
-> v2: Explain that mem_cgroup_bind() doesn't have to worry about
->     children as suggested by Michal Hocko.
+> It's been about a year since I wrote up a summary on cgroup status quo
+> and future plans.  We're not there yet but much closer than we were
+> before.  At least the locking and object life-time management aren't
+> crazy anymore and most controllers now support proper hierarchy
+> although not all of them agree on how to treat inheritance.
+> 
+> IIRC, the yet-to-be-converted ones are blk-throttle and perf.  cpu
+> needs to be updated so that it at least supports a similar mechanism
+> as cfq-iosched for configuring ratio between tasks on an internal
+> cgroup and its children.  Also, we really should update how cpuset
+> handles a cgroup becoming empty (no cpus or memory node left due to
+> hot-unplug).  It currently transfers all its tasks to the nearest
+> ancestor with executing resources, which is an irreversible process
+> which would affect all other co-mounted controllers.  We probably want
+> it to just take on the masks of the ancestor until its own executing
+> resources become online again, and the new behavior should be gated
+> behind a switch (Li, can you please look into this?).
+> 
 
-Thanks a lot Tejun!
-
-> 
-> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Acked-by: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-> Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-> Acked-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-> Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-> ---
-> Applying to cgroup/for-3.10.
-> 
-> Thanks!
-> 
->  include/linux/cgroup.h |    3 +++
->  mm/memcontrol.c        |   17 +++++++++++++++++
->  2 files changed, 20 insertions(+)
-> 
-> --- a/include/linux/cgroup.h
-> +++ b/include/linux/cgroup.h
-> @@ -269,6 +269,9 @@ enum {
->  	 *
->  	 * - Remount is disallowed.
->  	 *
-> +	 * - memcg: use_hierarchy is on by default and the cgroup file for
-> +	 *   the flag is not created.
-> +	 *
->  	 * The followings are planned changes.
->  	 *
->  	 * - release_agent will be disallowed once replacement notification
-> --- a/mm/memcontrol.c
-> +++ b/mm/memcontrol.c
-> @@ -5814,6 +5814,7 @@ static struct cftype mem_cgroup_files[]
->  	},
->  	{
->  		.name = "use_hierarchy",
-> +		.flags = CFTYPE_INSANE,
->  		.write_u64 = mem_cgroup_hierarchy_write,
->  		.read_u64 = mem_cgroup_hierarchy_read,
->  	},
-> @@ -6784,6 +6785,21 @@ static void mem_cgroup_move_task(struct
->  }
->  #endif
->  
-> +/*
-> + * Cgroup retains root cgroups across [un]mount cycles making it necessary
-> + * to verify sane_behavior flag on each mount attempt.
-> + */
-> +static void mem_cgroup_bind(struct cgroup *root)
-> +{
-> +	/*
-> +	 * use_hierarchy is forced with sane_behavior.  cgroup core
-> +	 * guarantees that @root doesn't have any children, so turning it
-> +	 * on for the root memcg is enough.
-> +	 */
-> +	if (cgroup_sane_behavior(root))
-> +		mem_cgroup_from_cont(root)->use_hierarchy = true;
-> +}
-> +
->  struct cgroup_subsys mem_cgroup_subsys = {
->  	.name = "memory",
->  	.subsys_id = mem_cgroup_subsys_id,
-> @@ -6794,6 +6810,7 @@ struct cgroup_subsys mem_cgroup_subsys =
->  	.can_attach = mem_cgroup_can_attach,
->  	.cancel_attach = mem_cgroup_cancel_attach,
->  	.attach = mem_cgroup_move_task,
-> +	.bind = mem_cgroup_bind,
->  	.base_cftypes = mem_cgroup_files,
->  	.early_init = 0,
->  	.use_id = 1,
-
--- 
-Michal Hocko
-SUSE Labs
+Sure, I'll be working on sane hierarchy behavior for cpuset.
