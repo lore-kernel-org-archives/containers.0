@@ -1,8 +1,7 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 01/10] cpuset: remove redundant check in
-	cpuset_cpus_allowed_fallback()
-Date: Fri, 19 Apr 2013 20:25:33 +0800
-Message-ID: <517137BD.4060203__36780.6120696061$1366374350$gmane$org@huawei.com>
+Subject: [PATCH 03/10] cpuset: remove unnecessary variable in cpuset_attach()
+Date: Fri, 19 Apr 2013 20:26:04 +0800
+Message-ID: <517137DC.8060401__22789.4528456547$1366374381$gmane$org@huawei.com>
 References: <517137A7.4020605@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,26 +21,41 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-task_cs() will never return NULL.
+We can just use oldcs->mems_allowed.
 
 Signed-off-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 ---
- kernel/cpuset.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ kernel/cpuset.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
 diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index 866d78e..4a62dcc 100644
+index 6f9d5e0..66302a9 100644
 --- a/kernel/cpuset.c
 +++ b/kernel/cpuset.c
-@@ -2259,8 +2259,7 @@ void cpuset_cpus_allowed_fallback(struct task_struct *tsk)
+@@ -1406,8 +1406,7 @@ static cpumask_var_t cpus_attach;
  
- 	rcu_read_lock();
- 	cs = task_cs(tsk);
--	if (cs)
--		do_set_cpus_allowed(tsk, cs->cpus_allowed);
-+	do_set_cpus_allowed(tsk, cs->cpus_allowed);
- 	rcu_read_unlock();
- 
- 	/*
+ static void cpuset_attach(struct cgroup *cgrp, struct cgroup_taskset *tset)
+ {
+-	/* static bufs protected by cpuset_mutex */
+-	static nodemask_t cpuset_attach_nodemask_from;
++	/* static buf protected by cpuset_mutex */
+ 	static nodemask_t cpuset_attach_nodemask_to;
+ 	struct mm_struct *mm;
+ 	struct task_struct *task;
+@@ -1441,13 +1440,12 @@ static void cpuset_attach(struct cgroup *cgrp, struct cgroup_taskset *tset)
+ 	 * Change mm, possibly for multiple threads in a threadgroup. This is
+ 	 * expensive and may sleep.
+ 	 */
+-	cpuset_attach_nodemask_from = oldcs->mems_allowed;
+ 	cpuset_attach_nodemask_to = cs->mems_allowed;
+ 	mm = get_task_mm(leader);
+ 	if (mm) {
+ 		mpol_rebind_mm(mm, &cpuset_attach_nodemask_to);
+ 		if (is_memory_migrate(cs))
+-			cpuset_migrate_mm(mm, &cpuset_attach_nodemask_from,
++			cpuset_migrate_mm(mm, &oldcs->mems_allowed,
+ 					  &cpuset_attach_nodemask_to);
+ 		mmput(mm);
+ 	}
 -- 
 1.8.0.2
