@@ -1,8 +1,7 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 05/10] cpuset: don't update tasks' cpumask and nodemask in
-	an empty cpuset
-Date: Fri, 19 Apr 2013 20:27:05 +0800
-Message-ID: <51713819.8050708__31674.4247953922$1366374446$gmane$org@huawei.com>
+Subject: [PATCH 06/10] cpuset: re-structure update_cpumask() a bit
+Date: Fri, 19 Apr 2013 20:27:27 +0800
+Message-ID: <5171382F.709__15362.1139390909$1366374468$gmane$org@huawei.com>
 References: <517137A7.4020605@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,42 +21,43 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-I think this was introduced unintentionally when cpuset hotplug was
-made asynchronous. Fortunately it does no harm, as updating tasks'
-cpumask will just return failure and there's a guarantee_online_mems()
-when updating nodemask, and then the tasks will be moved to an ancestor
-cpuset.
+Check if cpus_allowed is to be changed before calling validate_change().
+
+This won't change any behavior, but later it will allow us to do this:
+
+ # mkdir /cpuset/child
+ # echo $$ > /cpuset/child/tasks	/* empty cpuset */
+ # echo > /cpuset/child/cpuset.cpus	/* do nothing, won't fail */
+
+Without this patch, the last operation will fail.
 
 Signed-off-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 ---
- kernel/cpuset.c | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
+ kernel/cpuset.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
 diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index 8b0e433..2e4c5af 100644
+index 2e4c5af..63a5343 100644
 --- a/kernel/cpuset.c
 +++ b/kernel/cpuset.c
-@@ -2013,7 +2013,9 @@ static void cpuset_propagate_hotplug_workfn(struct work_struct *work)
- 		mutex_lock(&callback_mutex);
- 		cpumask_andnot(cs->cpus_allowed, cs->cpus_allowed, &off_cpus);
- 		mutex_unlock(&callback_mutex);
--		update_tasks_cpumask(cs, NULL);
-+
-+		if (!cpumask_empty(cs->cpus_allowed))
-+			update_tasks_cpumask(cs, NULL);
+@@ -855,14 +855,15 @@ static int update_cpumask(struct cpuset *cs, struct cpuset *trialcs,
+ 		if (!cpumask_subset(trialcs->cpus_allowed, cpu_active_mask))
+ 			return -EINVAL;
  	}
+-	retval = validate_change(cs, trialcs);
+-	if (retval < 0)
+-		return retval;
  
- 	/* remove offline mems from @cs */
-@@ -2022,7 +2024,9 @@ static void cpuset_propagate_hotplug_workfn(struct work_struct *work)
- 		mutex_lock(&callback_mutex);
- 		nodes_andnot(cs->mems_allowed, cs->mems_allowed, off_mems);
- 		mutex_unlock(&callback_mutex);
--		update_tasks_nodemask(cs, &tmp_mems, NULL);
+ 	/* Nothing to do if the cpus didn't change */
+ 	if (cpumask_equal(cs->cpus_allowed, trialcs->cpus_allowed))
+ 		return 0;
+ 
++	retval = validate_change(cs, trialcs);
++	if (retval < 0)
++		return retval;
 +
-+		if (!nodes_empty(cs->mems_allowed))
-+			update_tasks_nodemask(cs, &tmp_mems, NULL);
- 	}
- 
- 	is_empty = cpumask_empty(cs->cpus_allowed) ||
+ 	retval = heap_init(&heap, PAGE_SIZE, GFP_KERNEL, NULL);
+ 	if (retval)
+ 		return retval;
 -- 
 1.8.0.2
