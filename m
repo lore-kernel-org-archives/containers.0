@@ -1,7 +1,7 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 02/10] cpuset: cleanup guarantee_online_{cpus|mems}()
-Date: Fri, 19 Apr 2013 20:25:46 +0800
-Message-ID: <517137CA.9080403@huawei.com>
+Subject: [PATCH 04/10] cpuset: remove cpuset_test_cpumask()
+Date: Fri, 19 Apr 2013 20:26:15 +0800
+Message-ID: <517137E7.20505@huawei.com>
 References: <517137A7.4020605@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,78 +21,49 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-- We never pass a NULL @cs to these functions.
-- The top cpuset always has some online cpus/mems.
+The test is done in set_cpus_allowed_ptr(), so it's redundant.
 
 Signed-off-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 ---
- kernel/cpuset.c | 29 +++++++----------------------
- 1 file changed, 7 insertions(+), 22 deletions(-)
+ kernel/cpuset.c | 19 +------------------
+ 1 file changed, 1 insertion(+), 18 deletions(-)
 
 diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index 4a62dcc..6f9d5e0 100644
+index 66302a9..8b0e433 100644
 --- a/kernel/cpuset.c
 +++ b/kernel/cpuset.c
-@@ -304,53 +304,38 @@ static struct file_system_type cpuset_fs_type = {
- /*
-  * Return in pmask the portion of a cpusets's cpus_allowed that
-  * are online.  If none are online, walk up the cpuset hierarchy
-- * until we find one that does have some online cpus.  If we get
-- * all the way to the top and still haven't found any online cpus,
-- * return cpu_online_mask.  Or if passed a NULL cs from an exit'ing
-- * task, return cpu_online_mask.
-+ * until we find one that does have some online cpus.  The top
-+ * cpuset always has some cpus online.
-  *
-  * One way or another, we guarantee to return some non-empty subset
-  * of cpu_online_mask.
-  *
-  * Call with callback_mutex held.
-  */
--
- static void guarantee_online_cpus(const struct cpuset *cs,
- 				  struct cpumask *pmask)
- {
--	while (cs && !cpumask_intersects(cs->cpus_allowed, cpu_online_mask))
-+	while (!cpumask_intersects(cs->cpus_allowed, cpu_online_mask))
- 		cs = parent_cs(cs);
--	if (cs)
--		cpumask_and(pmask, cs->cpus_allowed, cpu_online_mask);
--	else
--		cpumask_copy(pmask, cpu_online_mask);
--	BUG_ON(!cpumask_intersects(pmask, cpu_online_mask));
-+	cpumask_and(pmask, cs->cpus_allowed, cpu_online_mask);
+@@ -783,23 +783,6 @@ void rebuild_sched_domains(void)
  }
  
- /*
-  * Return in *pmask the portion of a cpusets's mems_allowed that
-  * are online, with memory.  If none are online with memory, walk
-  * up the cpuset hierarchy until we find one that does have some
-- * online mems.  If we get all the way to the top and still haven't
-- * found any online mems, return node_states[N_MEMORY].
-+ * online mems.  The top cpuset always has some mems online.
-  *
-  * One way or another, we guarantee to return some non-empty subset
-  * of node_states[N_MEMORY].
-  *
-  * Call with callback_mutex held.
-  */
+ /**
+- * cpuset_test_cpumask - test a task's cpus_allowed versus its cpuset's
+- * @tsk: task to test
+- * @scan: struct cgroup_scanner contained in its struct cpuset_hotplug_scanner
+- *
+- * Call with cpuset_mutex held.  May take callback_mutex during call.
+- * Called for each task in a cgroup by cgroup_scan_tasks().
+- * Return nonzero if this tasks's cpus_allowed mask should be changed (in other
+- * words, if its mask is not equal to its cpuset's mask).
+- */
+-static int cpuset_test_cpumask(struct task_struct *tsk,
+-			       struct cgroup_scanner *scan)
+-{
+-	return !cpumask_equal(&tsk->cpus_allowed,
+-			(cgroup_cs(scan->cg))->cpus_allowed);
+-}
 -
- static void guarantee_online_mems(const struct cpuset *cs, nodemask_t *pmask)
- {
--	while (cs && !nodes_intersects(cs->mems_allowed,
--					node_states[N_MEMORY]))
-+	while (!nodes_intersects(cs->mems_allowed, node_states[N_MEMORY]))
- 		cs = parent_cs(cs);
--	if (cs)
--		nodes_and(*pmask, cs->mems_allowed,
--					node_states[N_MEMORY]);
--	else
--		*pmask = node_states[N_MEMORY];
--	BUG_ON(!nodes_intersects(*pmask, node_states[N_MEMORY]));
-+	nodes_and(*pmask, cs->mems_allowed, node_states[N_MEMORY]);
- }
+-/**
+  * cpuset_change_cpumask - make a task's cpus_allowed the same as its cpuset's
+  * @tsk: task to test
+  * @scan: struct cgroup_scanner containing the cgroup of the task
+@@ -834,7 +817,7 @@ static void update_tasks_cpumask(struct cpuset *cs, struct ptr_heap *heap)
+ 	struct cgroup_scanner scan;
  
- /*
+ 	scan.cg = cs->css.cgroup;
+-	scan.test_task = cpuset_test_cpumask;
++	scan.test_task = NULL;
+ 	scan.process_task = cpuset_change_cpumask;
+ 	scan.heap = heap;
+ 	cgroup_scan_tasks(&scan);
 -- 
 1.8.0.2
