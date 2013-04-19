@@ -1,7 +1,7 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 08/10] cpuset: introduce effective_{cpumask|nodemask}_cpuset()
-Date: Fri, 19 Apr 2013 20:28:41 +0800
-Message-ID: <51713879.7010205__15739.5841008567$1366374549$gmane$org@huawei.com>
+Subject: [PATCH 09/10] cpuset: allow to keep tasks in empty cpusets
+Date: Fri, 19 Apr 2013 20:29:24 +0800
+Message-ID: <517138A4.3070209__41159.8325394609$1366374638$gmane$org@huawei.com>
 References: <517137A7.4020605@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,187 +21,295 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-effective_cpumask_cpuset() returns an ancestor cpuset which has
-non-empty cpumask.
+To achieve this:
 
-If a cpuset is empty and the tasks in it need to update their
-cpus_allowed, they take on the ancestor cpuset's cpumask.
+- We call update_tasks_cpumask/nodemask() for empty cpusets when
+hotplug happens, instead of moving tasks out of them.
 
-This currently won't change any behavior, but it will later allow us
-to keep tasks in empty cpusets.
+- When a cpuset's masks are changed by writing cpuset.cpus/mems,
+we also update tasks in child cpusets which are empty.
 
 Signed-off-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 ---
- kernel/cpuset.c | 76 ++++++++++++++++++++++++++++++++++++++++++++++++---------
- 1 file changed, 65 insertions(+), 11 deletions(-)
+ kernel/cpuset.c | 171 +++++++++++++++++++++++++++++++++++++++++++++++---------
+ 1 file changed, 146 insertions(+), 25 deletions(-)
 
 diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index c4f9ebd..741e652 100644
+index 741e652..95e9394 100644
 --- a/kernel/cpuset.c
 +++ b/kernel/cpuset.c
-@@ -794,6 +794,45 @@ void rebuild_sched_domains(void)
- 	mutex_unlock(&cpuset_mutex);
- }
+@@ -99,6 +99,9 @@ struct cpuset {
+ 	 */
+ 	nodemask_t old_mems_allowed;
  
-+/*
-+ * effective_cpumask_cpuset - return nearest ancestor with non-empty cpus
-+ * @cs: the cpuset in interest
-+ *
-+ * A cpuset's effective cpumask is the cpumask of the nearest ancestor
-+ * with non-empty cpus. We use effective cpumask whenever:
-+ * - we update tasks' cpus_allowed. (they take on the ancestor's cpumask
-+ *   if the cpuset they reside in has no cpus)
-+ * - we want to retrieve task_cs(tsk)'s cpus_allowed.
-+ *
-+ * Called with cpuset_mutex held. cpuset_cpus_allowed_fallback() is an
-+ * exception. See comments there.
-+ */
-+static struct cpuset *effective_cpumask_cpuset(struct cpuset *cs)
-+{
-+	while (cpumask_empty(cs->cpus_allowed))
-+		cs = parent_cs(cs);
-+	return cs;
-+}
++	/* used in cpuset_update_nodemask_workfn() */
++	struct ptr_heap *heap;
 +
-+/*
-+ * effective_nodemask_cpuset - return nearest ancestor with non-empty mems
-+ * @cs: the cpuset in interest
-+ *
-+ * A cpuset's effective nodemask is the nodemask of the nearest ancestor
-+ * with non-empty memss. We use effective nodemask whenever:
-+ * - we update tasks' mems_allowed. (they take on the ancestor's nodemask
-+ *   if the cpuset they reside in has no mems)
-+ * - we want to retrieve task_cs(tsk)'s mems_allowed.
-+ *
-+ * Called with cpuset_mutex held.
-+ */
-+static struct cpuset *effective_nodemask_cpuset(struct cpuset *cs)
-+{
-+	while (nodes_empty(cs->mems_allowed))
-+		cs = parent_cs(cs);
-+	return cs;
-+}
+ 	struct fmeter fmeter;		/* memory_pressure filter */
+ 
+ 	/*
+@@ -114,6 +117,7 @@ struct cpuset {
+ 	int relax_domain_level;
+ 
+ 	struct work_struct hotplug_work;
++	struct work_struct update_nodemask_work;
+ };
+ 
+ /* Retrieve the cpuset for a cgroup */
+@@ -276,6 +280,8 @@ static struct cpuset top_cpuset = {
+ static DEFINE_MUTEX(cpuset_mutex);
+ static DEFINE_MUTEX(callback_mutex);
+ 
++static struct workqueue_struct *cpuset_update_nodemask_wq;
 +
- /**
-  * cpuset_change_cpumask - make a task's cpus_allowed the same as its cpuset's
-  * @tsk: task to test
-@@ -808,7 +847,10 @@ void rebuild_sched_domains(void)
- static void cpuset_change_cpumask(struct task_struct *tsk,
- 				  struct cgroup_scanner *scan)
- {
--	set_cpus_allowed_ptr(tsk, ((cgroup_cs(scan->cg))->cpus_allowed));
-+	struct cpuset *cpus_cs;
-+	
-+	cpus_cs = effective_cpumask_cpuset(cgroup_cs(scan->cg));
-+	set_cpus_allowed_ptr(tsk, cpus_cs->cpus_allowed);
- }
- 
- /**
-@@ -923,12 +965,14 @@ static void cpuset_migrate_mm(struct mm_struct *mm, const nodemask_t *from,
- 							const nodemask_t *to)
- {
- 	struct task_struct *tsk = current;
-+	struct cpuset *mems_cs;
- 
- 	tsk->mems_allowed = *to;
- 
- 	do_migrate_pages(mm, from, to, MPOL_MF_MOVE_ALL);
- 
--	guarantee_online_mems(task_cs(tsk),&tsk->mems_allowed);
-+	mems_cs = effective_nodemask_cpuset(task_cs(tsk));
-+	guarantee_online_mems(mems_cs, &tsk->mems_allowed);
- }
- 
  /*
-@@ -1021,10 +1065,11 @@ static void update_tasks_nodemask(struct cpuset *cs, struct ptr_heap *heap)
- {
- 	static nodemask_t newmems;	/* protected by cpuset_mutex */
- 	struct cgroup_scanner scan;
-+	struct cpuset *mems_cs = effective_nodemask_cpuset(cs);
+  * CPU / memory hotplug is handled asynchronously.
+  */
+@@ -877,6 +883,39 @@ static void update_tasks_cpumask(struct cpuset *cs, struct ptr_heap *heap)
+ 	cgroup_scan_tasks(&scan);
+ }
  
- 	cpuset_being_rebound = cs;		/* causes mpol_dup() rebind */
++/*
++ * update_tasks_cpumask_hier - Update the cpumasks of tasks in the hierarchy.
++ * @root_cs: the root cpuset of the hierarchy
++ * @update_root: update root cpuset or not?
++ * @heap: the heap used by cgroup_scan_tasks()
++ *
++ * This will update cpumasks of tasks in @root_cs and all other empty cpusets
++ * which take on cpumask of @root_cs.
++ *
++ * Called with cpuset_mutex held
++ */
++static void update_tasks_cpumask_hier(struct cpuset *root_cs,
++				      bool update_root, struct ptr_heap *heap)
++{
++	struct cpuset *cp;
++	struct cgroup *pos_cgrp;
++
++	if (update_root)
++		update_tasks_cpumask(root_cs, heap);
++
++	rcu_read_lock();
++	cpuset_for_each_descendant_pre(cp, pos_cgrp, root_cs) {
++		/* skip the whole subtree if @cp have some CPU */
++		if (!cpumask_empty(cp->cpus_allowed)) {
++			pos_cgrp = cgroup_rightmost_descendant(pos_cgrp);
++			continue;
++		}
++
++		update_tasks_cpumask(cp, heap);
++	}
++	rcu_read_unlock();
++}
++
+ /**
+  * update_cpumask - update the cpus_allowed mask of a cpuset and all tasks in it
+  * @cs: the cpuset to consider
+@@ -928,11 +967,7 @@ static int update_cpumask(struct cpuset *cs, struct cpuset *trialcs,
+ 	cpumask_copy(cs->cpus_allowed, trialcs->cpus_allowed);
+ 	mutex_unlock(&callback_mutex);
  
--	guarantee_online_mems(cs, &newmems);
-+	guarantee_online_mems(mems_cs, &newmems);
+-	/*
+-	 * Scan tasks in the cpuset, and update the cpumasks of any
+-	 * that need an update.
+-	 */
+-	update_tasks_cpumask(cs, &heap);
++	update_tasks_cpumask_hier(cs, true, &heap);
  
- 	scan.cg = cs->css.cgroup;
- 	scan.test_task = NULL;
-@@ -1408,6 +1453,8 @@ static void cpuset_attach(struct cgroup *cgrp, struct cgroup_taskset *tset)
- 	struct cgroup *oldcgrp = cgroup_taskset_cur_cgroup(tset);
- 	struct cpuset *cs = cgroup_cs(cgrp);
- 	struct cpuset *oldcs = cgroup_cs(oldcgrp);
-+	struct cpuset *cpus_cs = effective_cpumask_cpuset(cs);
-+	struct cpuset *mems_cs = effective_nodemask_cpuset(cs);
+ 	heap_free(&heap);
+ 
+@@ -1099,6 +1134,78 @@ static void update_tasks_nodemask(struct cpuset *cs, struct ptr_heap *heap)
+ 	cpuset_being_rebound = NULL;
+ }
+ 
++static void cpuset_update_nodemask_workfn(struct work_struct *work)
++{
++	struct cpuset *cs = container_of(work, struct cpuset,
++					update_nodemask_work);
++
++	update_tasks_nodemask(cs, cs->heap);
++	css_put(&cs->css);
++}
++
++static void schedule_update_tasks_nodemask(struct cpuset *cs,
++					   struct ptr_heap *heap)
++{
++	bool queued;
++
++	/* Will be released when the work item finishes executing. */
++	if (!css_tryget(&cs->css))
++		return;
++
++	/*
++	 * The caller will flush the workqueue with cpuset_mutex held,
++	 * so it's not possible a work item was already queued, and
++	 * we're sure cs->heap is valid.
++	 */
++	cs->heap = heap;
++	queued = queue_work(cpuset_update_nodemask_wq,
++			    &cs->update_nodemask_work);
++	if (queued) {
++		WARN_ON(1);
++		css_put(&cs->css);
++	}
++}
++
++/*
++ * update_tasks_nodemask_hier - Update the nodemasks of tasks in the hierarchy.
++ * @cs: the root cpuset of the hierarchy
++ * @update_root: update the root cpuset or not?
++ * @heap: the heap used by cgroup_scan_tasks()
++ *
++ * This will update nodemasks of tasks in @root_cs and all other empty cpusets
++ * which take on nodemask of @root_cs.
++ *
++ * Called with cpuset_mutex held
++ */
++static void update_tasks_nodemask_hier(struct cpuset *root_cs,
++				       bool update_root, struct ptr_heap *heap)
++{
++	struct cpuset *cp;
++	struct cgroup *pos_cgrp;
++
++	if (update_root)
++		update_tasks_nodemask(root_cs, heap);
++
++	rcu_read_lock();
++	cpuset_for_each_descendant_pre(cp, pos_cgrp, root_cs) {
++		/* skip the whole subtree if @cp have some CPU */
++		if (!nodes_empty(cp->mems_allowed)) {
++			pos_cgrp = cgroup_rightmost_descendant(pos_cgrp);
++			continue;
++		}
++
++		schedule_update_tasks_nodemask(cp, heap);
++	}
++	rcu_read_unlock();
++
++	/*
++	 * The only reason we use workqueue is update_tasks_nodemask() can't
++	 * be called in rcu_read_lock(). Flush the workqueue to make sure
++	 * all the updates are done before we return.
++	 */
++	flush_workqueue(cpuset_update_nodemask_wq);
++}
++
+ /*
+  * Handle user request to change the 'mems' memory placement
+  * of a cpuset.  Needs to validate the request, update the
+@@ -1163,7 +1270,7 @@ static int update_nodemask(struct cpuset *cs, struct cpuset *trialcs,
+ 	cs->mems_allowed = trialcs->mems_allowed;
+ 	mutex_unlock(&callback_mutex);
+ 
+-	update_tasks_nodemask(cs, &heap);
++	update_tasks_nodemask_hier(cs, true, &heap);
+ 
+ 	heap_free(&heap);
+ done:
+@@ -1888,6 +1995,7 @@ static struct cgroup_subsys_state *cpuset_css_alloc(struct cgroup *cont)
+ 	nodes_clear(cs->mems_allowed);
+ 	fmeter_init(&cs->fmeter);
+ 	INIT_WORK(&cs->hotplug_work, cpuset_propagate_hotplug_workfn);
++	INIT_WORK(&cs->update_nodemask_work, cpuset_update_nodemask_workfn);
+ 	cs->relax_domain_level = -1;
+ 
+ 	return &cs->css;
+@@ -2063,31 +2171,36 @@ static void cpuset_propagate_hotplug_workfn(struct work_struct *work)
+ 	static nodemask_t off_mems;
+ 	struct cpuset *cs = container_of(work, struct cpuset, hotplug_work);
+ 	bool is_empty;
++	bool sane = cgroup_sane_behavior(cs->css.cgroup);
  
  	mutex_lock(&cpuset_mutex);
  
-@@ -1415,9 +1462,9 @@ static void cpuset_attach(struct cgroup *cgrp, struct cgroup_taskset *tset)
- 	if (cs == &top_cpuset)
- 		cpumask_copy(cpus_attach, cpu_possible_mask);
- 	else
--		guarantee_online_cpus(cs, cpus_attach);
-+		guarantee_online_cpus(cpus_cs, cpus_attach);
+ 	cpumask_andnot(&off_cpus, cs->cpus_allowed, top_cpuset.cpus_allowed);
+ 	nodes_andnot(off_mems, cs->mems_allowed, top_cpuset.mems_allowed);
  
--	guarantee_online_mems(cs, &cpuset_attach_nodemask_to);
-+	guarantee_online_mems(mems_cs, &cpuset_attach_nodemask_to);
+-	/* remove offline cpus from @cs */
+-	if (!cpumask_empty(&off_cpus)) {
+-		mutex_lock(&callback_mutex);
+-		cpumask_andnot(cs->cpus_allowed, cs->cpus_allowed, &off_cpus);
+-		mutex_unlock(&callback_mutex);
++	mutex_lock(&callback_mutex);
++	cpumask_andnot(cs->cpus_allowed, cs->cpus_allowed, &off_cpus);
++	mutex_unlock(&callback_mutex);
  
- 	cgroup_taskset_for_each(task, cgrp, tset) {
- 		/*
-@@ -1436,9 +1483,11 @@ static void cpuset_attach(struct cgroup *cgrp, struct cgroup_taskset *tset)
- 	 */
- 	mm = get_task_mm(leader);
- 	if (mm) {
-+		struct cpuset *mems_oldcs = effective_nodemask_cpuset(oldcs);
-+
- 		mpol_rebind_mm(mm, &cpuset_attach_nodemask_to);
- 		if (is_memory_migrate(cs))
--			cpuset_migrate_mm(mm, &oldcs->mems_allowed,
-+			cpuset_migrate_mm(mm, &mems_oldcs->mems_allowed,
- 					  &cpuset_attach_nodemask_to);
- 		mmput(mm);
- 	}
-@@ -2227,20 +2276,23 @@ void __init cpuset_init_smp(void)
+-		if (!cpumask_empty(cs->cpus_allowed))
+-			update_tasks_cpumask(cs, NULL);
+-	}
++	/*
++	 * If sane_behavior flag is set, we need to update tasks' cpumask
++	 * for empy cpuset to take on ancestor's cpumask
++	 */
++	if ((sane && cpumask_empty(cs->cpus_allowed)) ||
++	    (!cpumask_empty(&off_cpus) && !cpumask_empty(cs->cpus_allowed)))
++		update_tasks_cpumask(cs, NULL);
  
- void cpuset_cpus_allowed(struct task_struct *tsk, struct cpumask *pmask)
- {
-+	struct cpuset *cpus_cs;
-+
- 	mutex_lock(&callback_mutex);
- 	task_lock(tsk);
--	guarantee_online_cpus(task_cs(tsk), pmask);
-+	cpus_cs = effective_cpumask_cpuset(task_cs(tsk));
-+	guarantee_online_cpus(cpus_cs, pmask);
- 	task_unlock(tsk);
- 	mutex_unlock(&callback_mutex);
- }
+-	/* remove offline mems from @cs */
+-	if (!nodes_empty(off_mems)) {
+-		mutex_lock(&callback_mutex);
+-		nodes_andnot(cs->mems_allowed, cs->mems_allowed, off_mems);
+-		mutex_unlock(&callback_mutex);
++	mutex_lock(&callback_mutex);
++	nodes_andnot(cs->mems_allowed, cs->mems_allowed, off_mems);
++	mutex_unlock(&callback_mutex);
  
- void cpuset_cpus_allowed_fallback(struct task_struct *tsk)
- {
--	const struct cpuset *cs;
-+	const struct cpuset *cpus_cs;
+-		if (!nodes_empty(cs->mems_allowed))
+-			update_tasks_nodemask(cs, NULL);
+-	}
++	/*
++	 * If sane_behavior flag is set, we need to update tasks' nodemask
++	 * for empy cpuset to take on ancestor's nodemask
++	 */
++	if ((sane && nodes_empty(cs->mems_allowed)) ||
++	    (!nodes_empty(off_mems) && !nodes_empty(cs->mems_allowed)))
++		update_tasks_nodemask(cs, NULL);
  
- 	rcu_read_lock();
--	cs = task_cs(tsk);
--	do_set_cpus_allowed(tsk, cs->cpus_allowed);
-+	cpus_cs = effective_cpumask_cpuset(task_cs(tsk));
-+	do_set_cpus_allowed(tsk, cpus_cs->cpus_allowed);
- 	rcu_read_unlock();
+ 	is_empty = cpumask_empty(cs->cpus_allowed) ||
+ 		nodes_empty(cs->mems_allowed);
+@@ -2095,11 +2208,13 @@ static void cpuset_propagate_hotplug_workfn(struct work_struct *work)
+ 	mutex_unlock(&cpuset_mutex);
  
  	/*
-@@ -2279,11 +2331,13 @@ void cpuset_init_current_mems_allowed(void)
+-	 * If @cs became empty, move tasks to the nearest ancestor with
+-	 * execution resources.  This is full cgroup operation which will
++	 * If sane_behavior flag is set, we'll keep tasks in empty cpusets.
++	 *
++	 * Otherwise move tasks to the nearest ancestor with execution
++	 *  resources.  This is full cgroup operation which will
+ 	 * also call back into cpuset.  Should be done outside any lock.
+ 	 */
+-	if (is_empty)
++	if (!sane && is_empty)
+ 		remove_tasks_in_empty_cpuset(cs);
  
- nodemask_t cpuset_mems_allowed(struct task_struct *tsk)
- {
-+	struct cpuset *mems_cs;
- 	nodemask_t mask;
+ 	/* the following may free @cs, should be the last operation */
+@@ -2174,6 +2289,7 @@ static void cpuset_hotplug_workfn(struct work_struct *work)
+ 		cpumask_copy(top_cpuset.cpus_allowed, &new_cpus);
+ 		mutex_unlock(&callback_mutex);
+ 		/* we don't mess with cpumasks of tasks in top_cpuset */
++		update_tasks_cpumask_hier(&top_cpuset, false, NULL);
+ 	}
  
- 	mutex_lock(&callback_mutex);
- 	task_lock(tsk);
--	guarantee_online_mems(task_cs(tsk), &mask);
-+	mems_cs = effective_nodemask_cpuset(task_cs(tsk));
-+	guarantee_online_mems(mems_cs, &mask);
- 	task_unlock(tsk);
- 	mutex_unlock(&callback_mutex);
+ 	/* synchronize mems_allowed to N_MEMORY */
+@@ -2182,6 +2298,7 @@ static void cpuset_hotplug_workfn(struct work_struct *work)
+ 		top_cpuset.mems_allowed = new_mems;
+ 		mutex_unlock(&callback_mutex);
+ 		update_tasks_nodemask(&top_cpuset, NULL);
++		update_tasks_nodemask_hier(&top_cpuset, false, NULL);
+ 	}
  
+ 	/* if cpus or mems went down, we need to propagate to descendants */
+@@ -2261,6 +2378,10 @@ void __init cpuset_init_smp(void)
+ 	cpuset_propagate_hotplug_wq =
+ 		alloc_ordered_workqueue("cpuset_hotplug", 0);
+ 	BUG_ON(!cpuset_propagate_hotplug_wq);
++
++	cpuset_update_nodemask_wq =
++		create_workqueue("cpuset_update_nodemask");
++	BUG_ON(!cpuset_update_nodemask_wq);
+ }
+ 
+ /**
 -- 
 1.8.0.2
