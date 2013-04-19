@@ -1,13 +1,15 @@
-From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 10/10] cpuset: allow to move tasks to empty cpusets
-Date: Fri, 19 Apr 2013 20:29:37 +0800
-Message-ID: <517138B1.6070502@huawei.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 04/10] cpuset: remove cpuset_test_cpumask()
+Date: Fri, 19 Apr 2013 11:27:10 -0700
+Message-ID: <20130419182710.GB13811__35797.0474091873$1366396046$gmane$org@mtj.dyndns.org>
 References: <517137A7.4020605@huawei.com>
+ <517137E7.20505@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <517137A7.4020605-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <517137E7.20505-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,76 +19,22 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Currently some cpuset behaviors are not friendly when cpuset is co-mounted
-with other cgroup controllers.
+On Fri, Apr 19, 2013 at 08:26:15PM +0800, Li Zefan wrote:
+> The test is done in set_cpus_allowed_ptr(), so it's redundant.
+> 
+> Signed-off-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 
-Now with this patchset if cpuset is mounted with sane_behavior option,
-it behaves differently:
+For 0001-0004,
 
-- Tasks will be kept in empty cpusets when hotplug happens and take
-  masks of ancestors with non-empty cpus/mems, instead of being moved to
-  an ancestor.
+ Acked-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 
-- A task can be moved into an empty cpuset, and again it takes masks of
-  ancestors, so we drop a task into a newly created cgroup without the
-  user having to do anything for it.
+I'll apply these into for-3.11 once v3.10-rc1 drops.
 
-As tasks can reside in empy cpusets, here're some rules:
+Thanks.
 
-- They can be moved to another cpuset, regardless it's empty or not.
-
-- Though it takes masks from ancestors, it takes other configs from the
-  empty cpuset.
-
-- If the ancestors' masks are changed, those tasks will also be updated
-  to take new masks.
-
-Signed-off-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
----
- kernel/cpuset.c | 12 +++++++++---
- 1 file changed, 9 insertions(+), 3 deletions(-)
-
-diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index 95e9394..646c794 100644
---- a/kernel/cpuset.c
-+++ b/kernel/cpuset.c
-@@ -489,7 +489,7 @@ static int validate_change(const struct cpuset *cur, const struct cpuset *trial)
- 	 */
- 	ret = -ENOSPC;
- 	if ((cgroup_task_count(cur->css.cgroup) || cur->attach_in_progress) &&
--	    (cpumask_empty(trial->cpus_allowed) ||
-+	    (cpumask_empty(trial->cpus_allowed) &&
- 	     nodes_empty(trial->mems_allowed)))
- 		goto out;
- 
-@@ -1502,8 +1502,13 @@ static int cpuset_can_attach(struct cgroup *cgrp, struct cgroup_taskset *tset)
- 
- 	mutex_lock(&cpuset_mutex);
- 
-+	/*
-+	 * We allow to move tasks into an empty cpuset if sane_behavior
-+	 * flag is set.
-+	 */
- 	ret = -ENOSPC;
--	if (cpumask_empty(cs->cpus_allowed) || nodes_empty(cs->mems_allowed))
-+	if (!cgroup_sane_behavior(cgrp) &&
-+	    (cpumask_empty(cs->cpus_allowed) || nodes_empty(cs->mems_allowed)))
- 		goto out_unlock;
- 
- 	cgroup_taskset_for_each(task, cgrp, tset) {
-@@ -1608,7 +1613,8 @@ static void cpuset_attach(struct cgroup *cgrp, struct cgroup_taskset *tset)
- 	 * propagation if @cs doesn't have any CPU or memory.  It will move
- 	 * the newly added tasks to the nearest parent which can execute.
- 	 */
--	if (cpumask_empty(cs->cpus_allowed) || nodes_empty(cs->mems_allowed))
-+	if (!cgroup_sane_behavior(cgrp) &&
-+	    (cpumask_empty(cs->cpus_allowed) || nodes_empty(cs->mems_allowed)))
- 		schedule_cpuset_propagate_hotplug(cs);
- 
- 	mutex_unlock(&cpuset_mutex);
 -- 
-1.8.0.2
+tejun
