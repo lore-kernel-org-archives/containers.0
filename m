@@ -1,12 +1,16 @@
-From: =?windows-1251?B?1+Xh7vLq7uI=?= <povalyaeva25-HPQIj1OAFZMvJsYlp49lxw@public.gmane.org>
-Subject: =?windows-1251?B?7vfl7fwg7fPm7eD/IO/u5OHu8OrgIOjt9Psg?=
-	=?windows-1251?B?8+/w4OLr5e328w==?=
-Date: Sun, 21 Apr 2013 01:18:27 +0400
-Message-ID: <4D707B63F29441BAAA5A83428C04190F@wdankuk>
-Reply-To: =?windows-1251?B?1+Xh7vLq7uI=?= <akusteva_oliviya1977-HPQIj1OAFZMvJsYlp49lxw@public.gmane.org>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 09/10] cpuset: allow to keep tasks in empty cpusets
+Date: Sat, 20 Apr 2013 18:41:36 -0700
+Message-ID: <20130421014136.GB19097@mtj.dyndns.org>
+References: <517137A7.4020605@huawei.com> <517138A4.3070209@huawei.com>
+	<20130419205821.GA15543@mtj.dyndns.org>
+	<5171EDC1.4070805@huawei.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============0226761300851794127=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <5171EDC1.4070805-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,143 +20,29 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: vargans-sub-uCKOA6ERizojmsMGrRdz4w@public.gmane.org, zakaz-aVoOEKvFPdhLHijH+K7Xyw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, sales-gTEiMzKh0rqHXe+LvDLADg@public.gmane.org, 320057mail-78de6iVTozfwCo8hhA8L/4dd74u8MsAO@public.gmane.org, findir-Xh+9qzJNxlQox3rIn2DAYQ@public.gmane.org
+To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
+Hello, Li.
 
---===============0226761300851794127==
-Content-Type: image/jpeg;
-	name="image_QCBECS.jpg"
-Content-Transfer-Encoding: base64
+On Sat, Apr 20, 2013 at 09:22:09AM +0800, Li Zefan wrote:
+> > migration is being done.  Another approach would be converting cgroup
+> > to use SRCU instead, which would lessen pain on other places too.  The
+> > only problem there would be that srcu_read_lock() is a bit more
+> > expensive than rcu_read_lock().  I'm not sure whether that'd show up
+> > in some hot path or not.  Ideas?
+> 
+> I guess we can live with rcu_read_lock() for now, and see if we can
+> change it to srcu when other significant changes are done in all
+> cgroup controllers. (hierarchy support in blkcg, etc..)
 
-/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAKBueIx4ZKCMgoy0qqC+8P//8Nzc8P//////////////
-////////////////////////////////////////////2wBDAaq0tPDS8P//////////////////
-////////////////////////////////////////////////////////////wAARCAC2AXMDASIA
-AhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQA
-AAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3
-ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWm
-p6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEA
-AwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSEx
-BhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElK
-U1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3
-uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwCamNIF
-OMEn2pznCE+1NiGIx70AAlBOCCp96fSMAykGo49zRjBwQaAJaKiHmFyu/oPSnSFlQc85HNAD6KjI
-kCk7+ntRuPkhs88fzoAkopkjYGB9400u3khs8/8A16AJaKRjhCR6f0phYiHdnnigCSikB4FMViYm
-JPIzQBJRSKwIHIzTZWKpkUAPJwM03euQAc59KR2I247mkkcjheo6+1AElFC8qKbKxVCR1oAdRUR8
-wLu3/pTi+IwTyT/OgB9FR7ZOu4Z9MU9Wyue/f60ALRUSeY6534/CnRMSGyc4OKAH0VGQ55Lbfalj
-YkkHqO9AD6KiQu+RnAB6/wBKcpIbYxyeoNAD6Kjy0hO04Ud6AzIwVzkHoaAJKKYWwzZPAApU3EZY
-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
-/9k=
+Ooh, I'm almost done with converting blk-throttle to support hierarchy
+as cfq is already ready, blkcg will be ready very soon.  The only
+thing left to do in terms of hierarchy support would be internal
+weight for cpu.  :)
 
---===============0226761300851794127==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+Thanks.
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============0226761300851794127==--
+-- 
+tejun
