@@ -1,7 +1,7 @@
-From: "U decision" <noreply-8nzttPkiOJCkqlQVS2g5fQ@public.gmane.org>
-Subject: Soluzione Mobile Wind All Inclusive special edition
-Date: Sun, 28 Apr 2013 13:07:38 +0200
-Message-ID: <000001145.06218B96.noreply@udecision.biz>
+From: Harini Donthineni <harini.donthineni-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: hi regarding the Linux containers
+Date: Sun, 28 Apr 2013 23:15:39 +0530
+Message-ID: <CAHfs=Wzf5cQqoa4Q3EuG3rfp7qQAmDWGfpQQ5Z3H5fzVG3puVA@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,12 +18,34 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+hi ,
+I have few queries in this area,can u pls help me ?
+
+I am trying to create virtual router using test Linux kernel code 3.8
+
+so my question is
+
+looks like this can be done by container concept.various approaches are
+
+lxc containers,openvz which ur discussing.
 
 
 
-Minuti, SMS ed Internet senza limiti, scegli l'offerta All Inclusive Unlimited! In  promozione a soli 29 euro al mese, invece di 60 euro al mese, se attivi  l'offerta entro il 30 aprile 2013. Scopri Promo All Inclusive e i vantaggi  esclusivi per i nuovi clienti. Se attivi uno dei piano All Inclusive SIM  Edition,il canone mensile rimane scontato per i primi 5
+so my question is only using the Linux kernel src code can i develop a
+virtual router sample program with out using Openvz like using setns and
+netns .
+
+
+is netns supported by Linux kernel latest ?
+
+
+do i need to exclusively download and incorporate the patches ?
+
+can u pls let me where can i get the documentation with sample examples for
+the same.
 
 
 
-Per cancellarsi dai nostri archivi utilizzi il link sottostante. risulta iscritto con la mail: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-                                                                                                       Per cancellarti dalla mailing list clicca qui.
+-- 
+Thanks & Regards
+Harini
