@@ -1,8 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 07/31] blk-throttle: removed deferred config application
-	mechanism
-Date: Wed,  1 May 2013 17:39:25 -0700
-Message-ID: <1367455189-6957-8-git-send-email-tj@kernel.org>
+Subject: [PATCH 08/31] blk-throttle: collapse throtl_dispatch() into the work
+	function
+Date: Wed,  1 May 2013 17:39:26 -0700
+Message-ID: <1367455189-6957-9-git-send-email-tj@kernel.org>
 References: <1367455189-6957-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,155 +22,94 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-When bps or iops configuration changes, blk-throttle records the new
-configuration and sets a flag indicating that the config has changed.
-The flag is checked in the bio dispatch path and applied.  This
-deferred config application was necessary due to limitations in blkcg
-framework, which haven't existed for quite a while now.
+blk-throttle is about to go through major restructuring to support
+hierarchy.  Do cosmetic updates in preparation.
 
-This patch removes the deferred config application mechanism and
-applies new configurations directly from tg_set_conf(), which is
-simpler.
+* s/throtl_data->throtl_work/throtl_data->dispatch_work/
+
+* s/blk_throtl_work()/blk_throtl_dispatch_work_fn()/
+
+* Collapse throtl_dispatch() into blk_throtl_dispatch_work_fn()
+
+This patch is purely cosmetic.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- block/blk-throttle.c | 75 +++++++++++++++-------------------------------------
- 1 file changed, 22 insertions(+), 53 deletions(-)
+ block/blk-throttle.c | 26 +++++++++-----------------
+ 1 file changed, 9 insertions(+), 17 deletions(-)
 
 diff --git a/block/blk-throttle.c b/block/blk-throttle.c
-index 3960787..7a5e08e 100644
+index 7a5e08e..d50d8d1 100644
 --- a/block/blk-throttle.c
 +++ b/block/blk-throttle.c
-@@ -85,9 +85,6 @@ struct throtl_grp {
- 	unsigned long slice_start[2];
- 	unsigned long slice_end[2];
- 
--	/* Some throttle limits got updated for the group */
--	int limits_changed;
--
- 	/* Per cpu stats pointer */
- 	struct tg_stats_cpu __percpu *stats_cpu;
- 
-@@ -112,8 +109,6 @@ struct throtl_data
+@@ -108,7 +108,7 @@ struct throtl_data
+ 	unsigned int nr_undestroyed_grps;
  
  	/* Work for dispatching throttled bios */
- 	struct delayed_work throtl_work;
--
--	int limits_changed;
+-	struct delayed_work throtl_work;
++	struct delayed_work dispatch_work;
  };
  
  /* list and work item to allocate percpu group stats */
-@@ -223,7 +218,6 @@ static void throtl_pd_init(struct blkcg_gq *blkg)
- 	RB_CLEAR_NODE(&tg->rb_node);
- 	bio_list_init(&tg->bio_lists[0]);
- 	bio_list_init(&tg->bio_lists[1]);
--	tg->limits_changed = false;
- 
- 	tg->bps[READ] = -1;
- 	tg->bps[WRITE] = -1;
-@@ -826,45 +820,6 @@ static int throtl_select_dispatch(struct throtl_data *td, struct bio_list *bl)
+@@ -820,10 +820,12 @@ static int throtl_select_dispatch(struct throtl_data *td, struct bio_list *bl)
  	return nr_disp;
  }
  
--static void throtl_process_limit_change(struct throtl_data *td)
--{
--	struct request_queue *q = td->queue;
--	struct blkcg_gq *blkg, *n;
--
--	if (!td->limits_changed)
--		return;
--
--	xchg(&td->limits_changed, false);
--
--	throtl_log(td, "limits changed");
--
--	list_for_each_entry_safe(blkg, n, &q->blkg_list, q_node) {
--		struct throtl_grp *tg = blkg_to_tg(blkg);
--
--		if (!tg->limits_changed)
--			continue;
--
--		if (!xchg(&tg->limits_changed, false))
--			continue;
--
--		throtl_log_tg(td, tg, "limit change rbps=%llu wbps=%llu"
--			" riops=%u wiops=%u", tg->bps[READ], tg->bps[WRITE],
--			tg->iops[READ], tg->iops[WRITE]);
--
--		/*
--		 * Restart the slices for both READ and WRITES. It
--		 * might happen that a group's limit are dropped
--		 * suddenly and we don't want to account recently
--		 * dispatched IO with new low rate
--		 */
--		throtl_start_new_slice(td, tg, 0);
--		throtl_start_new_slice(td, tg, 1);
--
--		if (throtl_tg_on_rr(tg))
--			tg_update_disptime(td, tg);
--	}
+-/* Dispatch throttled bios. Should be called without queue lock held. */
+-static int throtl_dispatch(struct request_queue *q)
++/* work function to dispatch throttled bios */
++void blk_throtl_dispatch_work_fn(struct work_struct *work)
+ {
+-	struct throtl_data *td = q->td;
++	struct throtl_data *td = container_of(to_delayed_work(work),
++					      struct throtl_data, dispatch_work);
++	struct request_queue *q = td->queue;
+ 	unsigned int nr_disp = 0;
+ 	struct bio_list bio_list_on_stack;
+ 	struct bio *bio;
+@@ -859,16 +861,6 @@ out:
+ 			generic_make_request(bio);
+ 		blk_finish_plug(&plug);
+ 	}
+-	return nr_disp;
 -}
 -
- /* Dispatch throttled bios. Should be called without queue lock held. */
- static int throtl_dispatch(struct request_queue *q)
- {
-@@ -876,8 +831,6 @@ static int throtl_dispatch(struct request_queue *q)
- 
- 	spin_lock_irq(q->queue_lock);
- 
--	throtl_process_limit_change(td);
+-void blk_throtl_work(struct work_struct *work)
+-{
+-	struct throtl_data *td = container_of(work, struct throtl_data,
+-					throtl_work.work);
+-	struct request_queue *q = td->queue;
 -
- 	if (!total_nr_queued(td))
- 		goto out;
+-	throtl_dispatch(q);
+ }
  
-@@ -925,8 +878,7 @@ throtl_schedule_delayed_work(struct throtl_data *td, unsigned long delay)
+ /* Call with queue lock held */
+@@ -876,7 +868,7 @@ static void
+ throtl_schedule_delayed_work(struct throtl_data *td, unsigned long delay)
+ {
  
- 	struct delayed_work *dwork = &td->throtl_work;
+-	struct delayed_work *dwork = &td->throtl_work;
++	struct delayed_work *dwork = &td->dispatch_work;
  
--	/* schedule work if limits changed even if no bio is queued */
--	if (total_nr_queued(td) || td->limits_changed) {
-+	if (total_nr_queued(td)) {
+ 	if (total_nr_queued(td)) {
  		mod_delayed_work(kthrotld_workqueue, dwork, delay);
- 		throtl_log(td, "schedule work. delay=%lu jiffies=%lu",
- 				delay, jiffies);
-@@ -1023,9 +975,27 @@ static int tg_set_conf(struct cgroup *cgrp, struct cftype *cft, const char *buf,
- 	else
- 		*(unsigned int *)((void *)tg + cft->private) = ctx.v;
+@@ -1060,7 +1052,7 @@ static void throtl_shutdown_wq(struct request_queue *q)
+ {
+ 	struct throtl_data *td = q->td;
  
--	/* XXX: we don't need the following deferred processing */
--	xchg(&tg->limits_changed, true);
--	xchg(&td->limits_changed, true);
-+	throtl_log_tg(td, tg, "limit change rbps=%llu wbps=%llu riops=%u wiops=%u",
-+		      tg->bps[READ], tg->bps[WRITE],
-+		      tg->iops[READ], tg->iops[WRITE]);
-+
-+	/*
-+	 * We're already holding queue_lock and know @tg is valid.  Let's
-+	 * apply the new config directly.
-+	 *
-+	 * Restart the slices for both READ and WRITES. It might happen
-+	 * that a group's limit are dropped suddenly and we don't want to
-+	 * account recently dispatched IO with new low rate.
-+	 */
-+	throtl_start_new_slice(td, tg, 0);
-+	throtl_start_new_slice(td, tg, 1);
-+
-+	if (throtl_tg_on_rr(tg)) {
-+		tg_update_disptime(td, tg);
-+		throtl_schedule_next_dispatch(td);
-+	}
-+
-+	/* kick dispatch in case disptime got shortened */
- 	throtl_schedule_delayed_work(td, 0);
+-	cancel_delayed_work_sync(&td->throtl_work);
++	cancel_delayed_work_sync(&td->dispatch_work);
+ }
  
- 	blkg_conf_finish(&ctx);
-@@ -1239,7 +1209,6 @@ int blk_throtl_init(struct request_queue *q)
+ static struct blkcg_policy blkcg_policy_throtl = {
+@@ -1209,7 +1201,7 @@ int blk_throtl_init(struct request_queue *q)
  		return -ENOMEM;
  
  	td->tg_service_tree = THROTL_RB_ROOT;
--	td->limits_changed = false;
- 	INIT_DELAYED_WORK(&td->throtl_work, blk_throtl_work);
+-	INIT_DELAYED_WORK(&td->throtl_work, blk_throtl_work);
++	INIT_DELAYED_WORK(&td->dispatch_work, blk_throtl_dispatch_work_fn);
  
  	q->td = td;
+ 	td->queue = q;
 -- 
 1.8.1.4
