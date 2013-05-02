@@ -1,17 +1,20 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCHSET] blk-throttle: implement proper hierarchy support
-Date: Thu, 2 May 2013 14:59:52 -0400
-Message-ID: <20130502185952.GJ30020__3957.5980547399$1367521209$gmane$org@redhat.com>
+Date: Thu, 2 May 2013 15:07:32 -0400
+Message-ID: <20130502190732.GK30020@redhat.com>
 References: <1367455189-6957-1-git-send-email-tj@kernel.org>
 	<20130502173428.GA4771@redhat.com>
-	<20130502180815.GG30020@redhat.com>
-	<20130502184426.GO19814@mtj.dyndns.org>
+	<20130502175701.GL19814@mtj.dyndns.org>
+	<20130502181747.GH30020@redhat.com>
+	<20130502182933.GN19814@mtj.dyndns.org>
+	<20130502184514.GI30020@redhat.com>
+	<20130502184953.GP19814@mtj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20130502184426.GO19814-9pTldWuhBndy/B6EtB590w@public.gmane.org>
+In-Reply-To: <20130502184953.GP19814-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,42 +28,47 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, May 02, 2013 at 11:44:26AM -0700, Tejun Heo wrote:
-
-[..]
-> Also, if you're actually thinking about reimplementing blk-throttle,
-> please do consider the followings.
+On Thu, May 02, 2013 at 11:49:53AM -0700, Tejun Heo wrote:
+> Hello,
 > 
-> * Currently, blk-throttle doesn't throttle the number of bios being
->   queued.  Note that this breaks the basic back-pressure mechanism
->   where IO pressure is propagated back to the issuer by throttling the
->   issuing task.  blk-throttle breaks that link and converts it to a
->   memory pressure.
+> On Thu, May 02, 2013 at 02:45:14PM -0400, Vivek Goyal wrote:
+> > I did not understand this point. In flat model, application issuing
+> > at configured page will not get penalized.
+> > 
+> > This penalty is coming from the fact that we are moving bios after the
+> > wait and make them wait in another queue.
+> > 
+> > In flat model there is no such problem. So to me, it is the problem
+> > of how hierarchical scheduling is implemented. In flat model, I did
+> > not have to deal with it.
+> 
+> But seen from the parent, the child isn't different from any other
+> issuer in flat hierarchy.  It's just being repeated, so if you assume
+> a process which behaves in the exact same manner, that process would
+> get penalized too.  e.g. imagine an application which throttles itself
+> and issues exactly 1MB/s amount of data in direct IO.  It'd get
+> penalized the same way, right?
 
-Agreed. Implementing something along the lines of per group nr_requests
-is needed.
+It should not. Why do you think in flat model an application which
+throttles itself will be penalized.
+
+So application issue an bio of size 1MB in a group of rate 1MB/s. bio
+gets queued and gets dispatched after 1 second. Almost immediately next
+bio will come from application (as application also is throttling 
+itself at 1MB/s rate). And then this bio waits for a second. So we
+almost get steady rate of 1MB/s as configured.
+
+Sorry, I am not able uderstand the problem here.
 
 > 
-> * It's almost inherently unscalable with highops devices.  Given that
->   IO limiting doesn't require very fine granularity, I think doing
->   this per-cpu shouldn't be too hard.  e.g. build a per-cpu token
->   distributing hierarchy with rebalancing across CPUs happening
->   periodically.
-
-Interesting. I thought for highops devices we will these multi queue
-patches from jens and there we can probably implement per queue tokens
-and rebalance tokens across queues periodically.
-
+> > Ok. Not having a perfect algorithm now is fine. We can always redo it
+> > later.
 > 
-> In short, right now, the goal is getting the hierarchy support
-> acceptably working ASAP and yeap we wanna get the nested limits and at
-> least certain level of fairness, but let's please implement something
-> simple for now and strive for sophistification later because it's
-> holding back everyone else.
+> I think we can do source-based RR on bio_lists[] fetching which is
+> simple enough and should be able to avoid most of the problems, right?
 
-I am fine with this. Having some hierarchical algorithm and not blocking
-full hierarchical support for cgroup is better than not having any
-hierachical support and wait for better implementation.
+Yes, maintaining per child/source bio_lists[] in parent and doing round
+robin there should mitigate the fairness problem to a great extent.
 
 Thanks
 Vivek
