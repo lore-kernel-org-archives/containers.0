@@ -1,7 +1,7 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Subject: Re: [PATCHSET] blk-throttle: implement proper hierarchy support
-Date: Thu, 2 May 2013 15:07:32 -0400
-Message-ID: <20130502190732.GK30020@redhat.com>
+Date: Thu, 2 May 2013 12:11:30 -0700
+Message-ID: <CAOS58YOk7G=dBG1v5Ed2z3biMMyKkkutp30vH5XC72z0_Z85cw@mail.gmail.com>
 References: <1367455189-6957-1-git-send-email-tj@kernel.org>
 	<20130502173428.GA4771@redhat.com>
 	<20130502175701.GL19814@mtj.dyndns.org>
@@ -9,12 +9,12 @@ References: <1367455189-6957-1-git-send-email-tj@kernel.org>
 	<20130502182933.GN19814@mtj.dyndns.org>
 	<20130502184514.GI30020@redhat.com>
 	<20130502184953.GP19814@mtj.dyndns.org>
+	<20130502190732.GK30020@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20130502184953.GP19814-9pTldWuhBndy/B6EtB590w@public.gmane.org>
+In-Reply-To: <20130502190732.GK30020-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,51 +24,42 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, May 02, 2013 at 11:49:53AM -0700, Tejun Heo wrote:
-> Hello,
-> 
-> On Thu, May 02, 2013 at 02:45:14PM -0400, Vivek Goyal wrote:
-> > I did not understand this point. In flat model, application issuing
-> > at configured page will not get penalized.
-> > 
-> > This penalty is coming from the fact that we are moving bios after the
-> > wait and make them wait in another queue.
-> > 
-> > In flat model there is no such problem. So to me, it is the problem
-> > of how hierarchical scheduling is implemented. In flat model, I did
-> > not have to deal with it.
-> 
-> But seen from the parent, the child isn't different from any other
-> issuer in flat hierarchy.  It's just being repeated, so if you assume
-> a process which behaves in the exact same manner, that process would
-> get penalized too.  e.g. imagine an application which throttles itself
-> and issues exactly 1MB/s amount of data in direct IO.  It'd get
-> penalized the same way, right?
+Hey,
 
-It should not. Why do you think in flat model an application which
-throttles itself will be penalized.
 
-So application issue an bio of size 1MB in a group of rate 1MB/s. bio
-gets queued and gets dispatched after 1 second. Almost immediately next
-bio will come from application (as application also is throttling 
-itself at 1MB/s rate). And then this bio waits for a second. So we
-almost get steady rate of 1MB/s as configured.
+On Thu, May 2, 2013 at 12:07 PM, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> It should not. Why do you think in flat model an application which
+> throttles itself will be penalized.
+>
+> So application issue an bio of size 1MB in a group of rate 1MB/s. bio
+> gets queued and gets dispatched after 1 second. Almost immediately next
+> bio will come from application (as application also is throttling
+> itself at 1MB/s rate). And then this bio waits for a second. So we
+> almost get steady rate of 1MB/s as configured.
 
-Sorry, I am not able uderstand the problem here.
+I'm confused now, so why does the hierarchy make any difference? When
+seen from the parent, what's the difference between a process issuing
+IO directly and an IO which already went through another throttle
+layer if the IOs arrive at the same intervals?
 
-> 
-> > Ok. Not having a perfect algorithm now is fine. We can always redo it
-> > later.
-> 
-> I think we can do source-based RR on bio_lists[] fetching which is
-> simple enough and should be able to avoid most of the problems, right?
+>
+> >
+> > > Ok. Not having a perfect algorithm now is fine. We can always redo it
+> > > later.
+> >
+> > I think we can do source-based RR on bio_lists[] fetching which is
+> > simple enough and should be able to avoid most of the problems, right?
+>
+> Yes, maintaining per child/source bio_lists[] in parent and doing round
+> robin there should mitigate the fairness problem to a great extent.
 
-Yes, maintaining per child/source bio_lists[] in parent and doing round
-robin there should mitigate the fairness problem to a great extent.
+Yeap, will implement that.
 
-Thanks
-Vivek
+Thanks.
+
+--
+tejun
