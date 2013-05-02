@@ -1,8 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 21/31] blk-throttle: implement sq_to_tg(),
-	sq_to_td() and throtl_log()
-Date: Wed,  1 May 2013 17:39:39 -0700
-Message-ID: <1367455189-6957-22-git-send-email-tj__37469.3722151735$1367455532$gmane$org@kernel.org>
+Subject: [PATCH 22/31] blk-throttle: set REQ_THROTTLED from
+	throtl_charge_bio() and gate stats update with it
+Date: Wed,  1 May 2013 17:39:40 -0700
+Message-ID: <1367455189-6957-23-git-send-email-tj__29029.2360041805$1367455546$gmane$org@kernel.org>
 References: <1367455189-6957-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,211 +22,90 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Now that both throtl_data and throtl_grp embed throtl_service_queue,
-we can unify throtl_log() and throtl_log_tg().
+With proper hierarchy support, a bio can be dispatched multiple times
+until it reaches the top-level service_queue and we don't want to
+update dispatch stats at each step.  They are local stats and will be
+kept local.  If recursive stats are necessary, they should be
+implemented separately and definitely not by updating counters
+recursively on each dispatch.
 
-* sq_to_tg() is added.  This returns the throtl_grp a service_queue is
-  embedded in.  If the service_queue is the top-level one embedded in
-  throtl_data, NULL is returned.
+This patch moves REQ_THROTTLED setting to throtl_charge_bio() and gate
+stats update with it so that dispatch stats are updated only on the
+first time the bio is charged to a throtl_grp, which will always be
+the throtl_grp the bio was originally queued to.
 
-* sq_to_td() is added.  A service_queue is always associated with a
-  throtl_data.  This function finds the associated td and returns it.
-
-* throtl_log() is updated to take throtl_service_queue instead of
-  throtl_data.  If the service_queue is one embedded in throtl_grp, it
-  prints the same header as throtl_log_tg() did.  If it's one embedded
-  in throtl_data, it behaves the same as before.  This renders
-  throtl_log_tg() unnecessary.  Removed.
-
-This change is necessary for hierarchy support as we're gonna be using
-the same code paths to dispatch bios to intermediate service_queues
-embedded in throtl_grps and the top-level service_queue embedded in
-throtl_data.
-
-This patch doesn't make any behavior changes.
+This means that REQ_THROTTLED would be set even for bios which don't
+get throttled.  As we don't want bios to leave blk-throtl with the
+flag set, move REQ_THROTLLED clearing to the end of blk_throtl_bio()
+and clear if the bio is being issued directly.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- block/blk-throttle.c | 105 +++++++++++++++++++++++++++++++++++++--------------
- 1 file changed, 77 insertions(+), 28 deletions(-)
+ block/blk-throttle.c | 30 +++++++++++++++++++++++++-----
+ 1 file changed, 25 insertions(+), 5 deletions(-)
 
 diff --git a/block/blk-throttle.c b/block/blk-throttle.c
-index 64d1923..9bbe312 100644
+index 9bbe312..7f8ca43 100644
 --- a/block/blk-throttle.c
 +++ b/block/blk-throttle.c
-@@ -151,16 +151,62 @@ static inline struct throtl_grp *td_root_tg(struct throtl_data *td)
- 	return blkg_to_tg(td->queue->root_blkg);
+@@ -754,7 +754,22 @@ static void throtl_charge_bio(struct throtl_grp *tg, struct bio *bio)
+ 	tg->bytes_disp[rw] += bio->bi_size;
+ 	tg->io_disp[rw]++;
+ 
+-	throtl_update_dispatch_stats(tg_to_blkg(tg), bio->bi_size, bio->bi_rw);
++	/*
++	 * REQ_THROTTLED is used to prevent the same bio to be throttled
++	 * more than once as a throttled bio will go through blk-throtl the
++	 * second time when it eventually gets issued.  Set it when a bio
++	 * is being charged to a tg.
++	 *
++	 * Dispatch stats aren't recursive and each @bio should only be
++	 * accounted by the @tg it was originally associated with.  Let's
++	 * update the stats when setting REQ_THROTTLED for the first time
++	 * which is guaranteed to be for the @bio's original tg.
++	 */
++	if (!(bio->bi_rw & REQ_THROTTLED)) {
++		bio->bi_rw |= REQ_THROTTLED;
++		throtl_update_dispatch_stats(tg_to_blkg(tg), bio->bi_size,
++					     bio->bi_rw);
++	}
  }
  
--#define throtl_log_tg(tg, fmt, args...)	do {				\
-+/**
-+ * sq_to_tg - return the throl_grp the specified service queue belongs to
-+ * @sq: the throtl_service_queue of interest
-+ *
-+ * Return the throtl_grp @sq belongs to.  If @sq is the top-level one
-+ * embedded in throtl_data, %NULL is returned.
-+ */
-+static struct throtl_grp *sq_to_tg(struct throtl_service_queue *sq)
-+{
-+	if (sq && sq->parent_sq)
-+		return container_of(sq, struct throtl_grp, service_queue);
-+	else
-+		return NULL;
-+}
-+
-+/**
-+ * sq_to_td - return throtl_data the specified service queue belongs to
-+ * @sq: the throtl_service_queue of interest
-+ *
-+ * A service_queue can be embeded in either a throtl_grp or throtl_data.
-+ * Determine the associated throtl_data accordingly and return it.
-+ */
-+static struct throtl_data *sq_to_td(struct throtl_service_queue *sq)
-+{
-+	struct throtl_grp *tg = sq_to_tg(sq);
-+
-+	if (tg)
-+		return tg->td;
-+	else
-+		return container_of(sq, struct throtl_data, service_queue);
-+}
-+
-+/**
-+ * throtl_log - log debug message via blktrace
-+ * @sq: the service_queue being reported
-+ * @fmt: printf format string
-+ * @args: printf args
-+ *
-+ * The messages are prefixed with "throtl BLKG_NAME" if @sq belongs to a
-+ * throtl_grp; otherwise, just "throtl".
-+ *
-+ * TODO: this should be made a function and name formatting should happen
-+ * after testing whether blktrace is enabled.
-+ */
-+#define throtl_log(sq, fmt, args...)	do {				\
-+	struct throtl_grp *__tg = sq_to_tg((sq));			\
-+	struct throtl_data *__td = sq_to_td((sq));			\
- 	char __pbuf[128];						\
- 									\
--	blkg_path(tg_to_blkg(tg), __pbuf, sizeof(__pbuf));		\
--	blk_add_trace_msg((tg)->td->queue, "throtl %s " fmt, __pbuf, ##args); \
-+	__pbuf[0] = ' ';						\
-+	__pbuf[1] = '\0';						\
-+	if ((__tg))							\
-+		blkg_path(tg_to_blkg(__tg), __pbuf + 1, sizeof(__pbuf) - 1); \
-+	blk_add_trace_msg(__td->queue, "throtl%s" fmt, __pbuf, ##args); \
- } while (0)
+ static void throtl_add_bio_tg(struct bio *bio, struct throtl_grp *tg)
+@@ -818,7 +833,6 @@ static void tg_dispatch_one_bio(struct throtl_grp *tg, bool rw)
  
--#define throtl_log(td, fmt, args...)	\
--	blk_add_trace_msg((td)->queue, "throtl " fmt, ##args)
--
- /*
-  * Worker for allocating per cpu stat for tgs. This is scheduled on the
-  * system_wq once there are some groups on the alloc_list waiting for
-@@ -402,9 +448,10 @@ static void throtl_schedule_delayed_work(struct throtl_data *td,
- 					 unsigned long delay)
- {
- 	struct delayed_work *dwork = &td->dispatch_work;
-+	struct throtl_service_queue *sq = &td->service_queue;
+ 	throtl_charge_bio(tg, bio);
+ 	bio_list_add(&sq->parent_sq->bio_lists[rw], bio);
+-	bio->bi_rw |= REQ_THROTTLED;
  
- 	mod_delayed_work(kthrotld_workqueue, dwork, delay);
--	throtl_log(td, "schedule work. delay=%lu jiffies=%lu", delay, jiffies);
-+	throtl_log(sq, "schedule work. delay=%lu jiffies=%lu", delay, jiffies);
+ 	throtl_trim_slice(tg, rw);
  }
+@@ -1128,10 +1142,9 @@ bool blk_throtl_bio(struct request_queue *q, struct bio *bio)
+ 	struct blkcg *blkcg;
+ 	bool throttled = false;
  
- static void throtl_schedule_next_dispatch(struct throtl_data *td)
-@@ -429,9 +476,10 @@ static inline void throtl_start_new_slice(struct throtl_grp *tg, bool rw)
- 	tg->io_disp[rw] = 0;
- 	tg->slice_start[rw] = jiffies;
- 	tg->slice_end[rw] = jiffies + throtl_slice;
--	throtl_log_tg(tg, "[%c] new slice start=%lu end=%lu jiffies=%lu",
--			rw == READ ? 'R' : 'W', tg->slice_start[rw],
--			tg->slice_end[rw], jiffies);
-+	throtl_log(&tg->service_queue,
-+		   "[%c] new slice start=%lu end=%lu jiffies=%lu",
-+		   rw == READ ? 'R' : 'W', tg->slice_start[rw],
-+		   tg->slice_end[rw], jiffies);
- }
- 
- static inline void throtl_set_slice_end(struct throtl_grp *tg, bool rw,
-@@ -444,9 +492,10 @@ static inline void throtl_extend_slice(struct throtl_grp *tg, bool rw,
- 				       unsigned long jiffy_end)
- {
- 	tg->slice_end[rw] = roundup(jiffy_end, throtl_slice);
--	throtl_log_tg(tg, "[%c] extend slice start=%lu end=%lu jiffies=%lu",
--			rw == READ ? 'R' : 'W', tg->slice_start[rw],
--			tg->slice_end[rw], jiffies);
-+	throtl_log(&tg->service_queue,
-+		   "[%c] extend slice start=%lu end=%lu jiffies=%lu",
-+		   rw == READ ? 'R' : 'W', tg->slice_start[rw],
-+		   tg->slice_end[rw], jiffies);
- }
- 
- /* Determine if previously allocated or extended slice is complete or not */
-@@ -511,10 +560,10 @@ static inline void throtl_trim_slice(struct throtl_grp *tg, bool rw)
- 
- 	tg->slice_start[rw] += nr_slices * throtl_slice;
- 
--	throtl_log_tg(tg, "[%c] trim slice nr=%lu bytes=%llu io=%lu"
--			" start=%lu end=%lu jiffies=%lu",
--			rw == READ ? 'R' : 'W', nr_slices, bytes_trim, io_trim,
--			tg->slice_start[rw], tg->slice_end[rw], jiffies);
-+	throtl_log(&tg->service_queue,
-+		   "[%c] trim slice nr=%lu bytes=%llu io=%lu start=%lu end=%lu jiffies=%lu",
-+		   rw == READ ? 'R' : 'W', nr_slices, bytes_trim, io_trim,
-+		   tg->slice_start[rw], tg->slice_end[rw], jiffies);
- }
- 
- static bool tg_with_in_iops_limit(struct throtl_grp *tg, struct bio *bio,
-@@ -852,7 +901,7 @@ void blk_throtl_dispatch_work_fn(struct work_struct *work)
- 
- 	bio_list_init(&bio_list_on_stack);
- 
--	throtl_log(td, "dispatch nr_queued=%u read=%u write=%u",
-+	throtl_log(sq, "dispatch nr_queued=%u read=%u write=%u",
- 		   td->nr_queued[READ] + td->nr_queued[WRITE],
- 		   td->nr_queued[READ], td->nr_queued[WRITE]);
- 
-@@ -863,7 +912,7 @@ void blk_throtl_dispatch_work_fn(struct work_struct *work)
- 			bio_list_merge(&bio_list_on_stack, &sq->bio_lists[rw]);
- 			bio_list_init(&sq->bio_lists[rw]);
- 		}
--		throtl_log(td, "bios disp=%u", nr_disp);
-+		throtl_log(sq, "bios disp=%u", nr_disp);
- 	}
- 
- 	throtl_schedule_next_dispatch(td);
-@@ -972,9 +1021,10 @@ static int tg_set_conf(struct cgroup *cgrp, struct cftype *cft, const char *buf,
- 	else
- 		*(unsigned int *)((void *)tg + cft->private) = ctx.v;
- 
--	throtl_log_tg(tg, "limit change rbps=%llu wbps=%llu riops=%u wiops=%u",
--		      tg->bps[READ], tg->bps[WRITE],
--		      tg->iops[READ], tg->iops[WRITE]);
-+	throtl_log(&tg->service_queue,
-+		   "limit change rbps=%llu wbps=%llu riops=%u wiops=%u",
-+		   tg->bps[READ], tg->bps[WRITE],
-+		   tg->iops[READ], tg->iops[WRITE]);
+-	if (bio->bi_rw & REQ_THROTTLED) {
+-		bio->bi_rw &= ~REQ_THROTTLED;
++	/* see throtl_charge_bio() */
++	if (bio->bi_rw & REQ_THROTTLED)
+ 		goto out;
+-	}
  
  	/*
- 	 * We're already holding queue_lock and know @tg is valid.  Let's
-@@ -1134,12 +1184,11 @@ bool blk_throtl_bio(struct request_queue *q, struct bio *bio)
- 	}
+ 	 * A throtl_grp pointer retrieved under rcu can be used to access
+@@ -1205,6 +1218,13 @@ out_unlock:
+ out_unlock_rcu:
+ 	rcu_read_unlock();
+ out:
++	/*
++	 * As multiple blk-throtls may stack in the same issue path, we
++	 * don't want bios to leave with the flag set.  Clear the flag if
++	 * being issued.
++	 */
++	if (!throttled)
++		bio->bi_rw &= ~REQ_THROTTLED;
+ 	return throttled;
+ }
  
- queue_bio:
--	throtl_log_tg(tg, "[%c] bio. bdisp=%llu sz=%u bps=%llu"
--			" iodisp=%u iops=%u queued=%d/%d",
--			rw == READ ? 'R' : 'W',
--			tg->bytes_disp[rw], bio->bi_size, tg->bps[rw],
--			tg->io_disp[rw], tg->iops[rw],
--			sq->nr_queued[READ], sq->nr_queued[WRITE]);
-+	throtl_log(sq, "[%c] bio. bdisp=%llu sz=%u bps=%llu iodisp=%u iops=%u queued=%d/%d",
-+		   rw == READ ? 'R' : 'W',
-+		   tg->bytes_disp[rw], bio->bi_size, tg->bps[rw],
-+		   tg->io_disp[rw], tg->iops[rw],
-+		   sq->nr_queued[READ], sq->nr_queued[WRITE]);
- 
- 	bio_associate_current(bio);
- 	throtl_add_bio_tg(bio, tg);
 -- 
 1.8.1.4
