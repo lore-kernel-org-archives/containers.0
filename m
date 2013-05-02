@@ -1,16 +1,18 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCHSET] blk-throttle: implement proper hierarchy support
-Date: Thu, 2 May 2013 11:44:26 -0700
-Message-ID: <20130502184426.GO19814@mtj.dyndns.org>
+Date: Thu, 2 May 2013 14:45:14 -0400
+Message-ID: <20130502184514.GI30020@redhat.com>
 References: <1367455189-6957-1-git-send-email-tj@kernel.org>
 	<20130502173428.GA4771@redhat.com>
-	<20130502180815.GG30020@redhat.com>
+	<20130502175701.GL19814@mtj.dyndns.org>
+	<20130502181747.GH30020@redhat.com>
+	<20130502182933.GN19814@mtj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20130502180815.GG30020-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20130502182933.GN19814-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,67 +22,59 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, Vivek.
-
-On Thu, May 02, 2013 at 02:08:15PM -0400, Vivek Goyal wrote:
-> 			G1
-> 		       /  \
-> 	              T1  G2
-> 			  |
-> 			  T2
+On Thu, May 02, 2013 at 11:29:33AM -0700, Tejun Heo wrote:
+> Hello, Vivek.
 > 
-> G1 and G2 are 2 groups and T1 and T2 are tasks in groups respectively.
-> Assume both G1 and G2 are having 1MB/s IO rate limit. Assume T1 and
-> T2 are doing enough IO to keep respective queues backlogged.
+> On Thu, May 02, 2013 at 02:17:48PM -0400, Vivek Goyal wrote:
+> > Sorry, did not understand how did you arrive at 15% penalty. I think
+> > in worst case it will be 50%. Assume size of bio is 1MB. So it will
+> 
+> Oh, that's the number I got by running test.
+> 
+> > wait for 1 second in child group and then it will wait again for
+> > another second in parent group. Assume next bio gets queued only
+> > after first bio gets dispatched. 
+> > 
+> > That means each 1MB bio will wait for 2 second which will lead to
+> > effective rate of .5MB/second.
+> 
+> Then the scheduling algorithm is broken in itself regardless of
+> hierarchy.  That means an issuer which issues at exact the exactly
+> configured pace gets penalized, right?
 
-For the most part, I don't really care as long as the limits are
-followed.  We can implement something better when dispatching from
-child group into ->bio_lists[].  ->bio_lists[] could be organized in a
-way that it round robins certain number of bios from different sources
-- ie. it becomes FIFO lists of different sources of bios which is
-fetched in round-robin.  We already have a similar logic in
-select_dispatch() BTW.
+I did not understand this point. In flat model, application issuing
+at configured page will not get penalized.
 
-> I was thinking that we should implement it something along the lines
-> of what cpu scheduler has done. All parent groups get enqueued on 
-> service tree when IO gets queued in any of child groups. Time slice
-> accounting starts at each level. And at each level we do round robin
-> for dispatch of bio from each eligible child group/queue.
+This penalty is coming from the fact that we are moving bios after the
+wait and make them wait in another queue.
 
-Let's please not do something which is gonna take a lot of time and
-effort.  If the fairness bothers you, please implement something
-simple on top.  It really just comes down to doing RR when taking bios
-from ->bio_lists[].  If you wanna reimplement the whole thing, that's
-fine too but let's please do that after getting the basic hierarchy
-support working because blkcg literally is the last subsystem with
-.broken_hierarchy at this point.
+In flat model there is no such problem. So to me, it is the problem
+of how hierarchical scheduling is implemented. In flat model, I did
+not have to deal with it.
 
-Also, if you're actually thinking about reimplementing blk-throttle,
-please do consider the followings.
+> 
+> > > I don't particularly like doing that as a separate step, maybe we can
+> > > just push the child's start time to the parent while dispatching?
+> > > Does that sound doable to you?
+> > 
+> > May be. But climbing the ladder has unfairness problems too. We might
+> > have to rethink about the hierarchical algorithm altogether.
+> 
+> Meh, it's not different from flat case.  It gives workable enough
+> fairness from the simple fact that the queues at each layer are FIFO.
+> Beyond that, as long as the limits are honored, it's fine.  If this
+> thing is going to be used for high-bandwidth applications, it should
+> probably get reimplemented as per-cpu token distributing hierarchy,
+> but blk-throttle is not gonna hold back the whole cgroup hierarchy
+> support.  If you want to reimplement the whole thing, please feel free
+> to do so afterwards.
 
-* Currently, blk-throttle doesn't throttle the number of bios being
-  queued.  Note that this breaks the basic back-pressure mechanism
-  where IO pressure is propagated back to the issuer by throttling the
-  issuing task.  blk-throttle breaks that link and converts it to a
-  memory pressure.
+Ok. Not having a perfect algorithm now is fine. We can always redo it
+later.
 
-* It's almost inherently unscalable with highops devices.  Given that
-  IO limiting doesn't require very fine granularity, I think doing
-  this per-cpu shouldn't be too hard.  e.g. build a per-cpu token
-  distributing hierarchy with rebalancing across CPUs happening
-  periodically.
-
-In short, right now, the goal is getting the hierarchy support
-acceptably working ASAP and yeap we wanna get the nested limits and at
-least certain level of fairness, but let's please implement something
-simple for now and strive for sophistification later because it's
-holding back everyone else.
-
-Thanks.
-
--- 
-tejun
+Thanks
+Vivek
