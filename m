@@ -1,8 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 26/31] blk-throttle: make blk_throtl_drain() ready for
-	hierarchy
-Date: Wed,  1 May 2013 17:39:44 -0700
-Message-ID: <1367455189-6957-27-git-send-email-tj__28959.0278910056$1367455599$gmane$org@kernel.org>
+Subject: [PATCH 27/31] blk-throttle: make blk_throtl_bio() ready for hierarchy
+Date: Wed,  1 May 2013 17:39:45 -0700
+Message-ID: <1367455189-6957-28-git-send-email-tj__2907.14111547477$1367455612$gmane$org@kernel.org>
 References: <1367455189-6957-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,98 +21,71 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The current blk_throtl_drain() assumes that all active throtl_grps are
-queued on throtl_data->service_queue, which won't be true once
-hierarchy support is implemented.
+Currently, blk_throtl_bio() issues the passed in bio directly if it's
+within limits of its associated tg (throtl_grp).  This behavior
+becomes incorrect with hierarchy support as the bio should be
+accounted to and throttled by the ancestor throtl_grps too.
 
-This patch makes blk_throtl_drain() perform post-order walk of the
-blkg hierarchy draining each associated throtl_grp, which guarantees
-that all bios will eventually be pushed to the top-level service_queue
-in throtl_data.
+This patch makes the direct issue path of blk_throtl_bio() to loop
+until it reaches the top-level service_queue or gets throttled.  If
+the former, the bio can be issued directly; otherwise, it gets queued
+at the first layer it was above limits.
+
+As tg->parent_sq is always the top-level service queue currently, this
+patch in itself doesn't make any behavior differences.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- block/blk-throttle.c | 51 ++++++++++++++++++++++++++++++++++++++++-----------
- 1 file changed, 40 insertions(+), 11 deletions(-)
+ block/blk-throttle.c | 27 ++++++++++++++++++++-------
+ 1 file changed, 20 insertions(+), 7 deletions(-)
 
 diff --git a/block/blk-throttle.c b/block/blk-throttle.c
-index 8f435a7..1080563 100644
+index 1080563..99e1e78 100644
 --- a/block/blk-throttle.c
 +++ b/block/blk-throttle.c
-@@ -1299,6 +1299,28 @@ out:
- 	return throttled;
- }
+@@ -1239,12 +1239,16 @@ bool blk_throtl_bio(struct request_queue *q, struct bio *bio)
  
-+/*
-+ * Dispatch all bios from all children tg's queued on @parent_sq.  On
-+ * return, @parent_sq is guaranteed to not have any active children tg's
-+ * and all bios from previously active tg's are on @parent_sq->bio_lists[].
-+ */
-+static void tg_drain_bios(struct throtl_service_queue *parent_sq)
-+{
-+	struct throtl_grp *tg;
+ 	sq = &tg->service_queue;
+ 
+-	/* throtl is FIFO - if other bios are already queued, should queue */
+-	if (sq->nr_queued[rw])
+-		goto queue_bio;
++	while (true) {
++		/* throtl is FIFO - if bios are already queued, should queue */
++		if (sq->nr_queued[rw])
++			break;
+ 
+-	/* Bio is with-in rate limit of group */
+-	if (tg_may_dispatch(tg, bio, NULL)) {
++		/* if above limits, break to queue */
++		if (!tg_may_dispatch(tg, bio, NULL))
++			break;
 +
-+	while ((tg = throtl_rb_first(parent_sq))) {
-+		struct throtl_service_queue *sq = &tg->service_queue;
-+		struct bio *bio;
++		/* within limits, let's charge and dispatch directly */
+ 		throtl_charge_bio(tg, bio);
+ 
+ 		/*
+@@ -1259,10 +1263,19 @@ bool blk_throtl_bio(struct request_queue *q, struct bio *bio)
+ 		 * So keep on trimming slice even if bio is not queued.
+ 		 */
+ 		throtl_trim_slice(tg, rw);
+-		goto out_unlock;
 +
-+		throtl_dequeue_tg(tg);
-+
-+		while ((bio = bio_list_peek(&sq->bio_lists[READ])))
-+			tg_dispatch_one_bio(tg, bio_data_dir(bio));
-+		while ((bio = bio_list_peek(&sq->bio_lists[WRITE])))
-+			tg_dispatch_one_bio(tg, bio_data_dir(bio));
-+	}
-+}
-+
- /**
-  * blk_throtl_drain - drain throttled bios
-  * @q: request_queue to drain throttled bios for
-@@ -1309,27 +1331,34 @@ void blk_throtl_drain(struct request_queue *q)
- 	__releases(q->queue_lock) __acquires(q->queue_lock)
- {
- 	struct throtl_data *td = q->td;
--	struct throtl_service_queue *parent_sq = &td->service_queue;
--	struct throtl_grp *tg;
-+	struct blkcg_gq *blkg;
-+	struct cgroup *pos_cgrp;
- 	struct bio *bio;
- 	int rw;
++		/*
++		 * @bio passed through this layer without being throttled.
++		 * Climb up the ladder.  If we''re already at the top, it
++		 * can be executed directly.
++		 */
++		sq = sq->parent_sq;
++		tg = sq_to_tg(sq);
++		if (!tg)
++			goto out_unlock;
+ 	}
  
- 	queue_lockdep_assert_held(q);
-+	rcu_read_lock();
- 
--	while ((tg = throtl_rb_first(parent_sq))) {
--		struct throtl_service_queue *sq = &tg->service_queue;
-+	/*
-+	 * Drain each tg while doing post-order walk on the blkg tree, so
-+	 * that all bios are propagated to td->service_queue.  It'd be
-+	 * better to walk service_queue tree directly but blkg walk is
-+	 * easier.
-+	 */
-+	blkg_for_each_descendant_post(blkg, pos_cgrp, td->queue->root_blkg)
-+		tg_drain_bios(&blkg_to_tg(blkg)->service_queue);
- 
--		throtl_dequeue_tg(tg);
-+	tg_drain_bios(&td_root_tg(td)->service_queue);
- 
--		while ((bio = bio_list_peek(&sq->bio_lists[READ])))
--			tg_dispatch_one_bio(tg, bio_data_dir(bio));
--		while ((bio = bio_list_peek(&sq->bio_lists[WRITE])))
--			tg_dispatch_one_bio(tg, bio_data_dir(bio));
--	}
-+	/* finally, transfer bios from top-level tg's into the td */
-+	tg_drain_bios(&td->service_queue);
-+
-+	rcu_read_unlock();
- 	spin_unlock_irq(q->queue_lock);
- 
-+	/* all bios now should be in td->service_queue, issue them */
- 	for (rw = READ; rw <= WRITE; rw++)
--		while ((bio = bio_list_pop(&parent_sq->bio_lists[rw])))
-+		while ((bio = bio_list_pop(&td->service_queue.bio_lists[rw])))
- 			generic_make_request(bio);
- 
- 	spin_lock_irq(q->queue_lock);
+-queue_bio:
++	/* out-of-limit, queue to @tg */
+ 	throtl_log(sq, "[%c] bio. bdisp=%llu sz=%u bps=%llu iodisp=%u iops=%u queued=%d/%d",
+ 		   rw == READ ? 'R' : 'W',
+ 		   tg->bytes_disp[rw], bio->bi_size, tg->bps[rw],
 -- 
 1.8.1.4
