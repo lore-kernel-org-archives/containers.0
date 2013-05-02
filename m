@@ -1,8 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 02/31] blkcg: move blkg_for_each_descendant_pre() to
-	block/blk-cgroup.h
-Date: Wed,  1 May 2013 17:39:20 -0700
-Message-ID: <1367455189-6957-3-git-send-email-tj@kernel.org>
+Subject: [PATCH 03/31] blkcg: implement blkg_for_each_descendant_post()
+Date: Wed,  1 May 2013 17:39:21 -0700
+Message-ID: <1367455189-6957-4-git-send-email-tj@kernel.org>
 References: <1367455189-6957-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,88 +21,37 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-blk-throttle hierarchy support will make use of it.  Move
-blkg_for_each_descendant_pre() from block/blk-cgroup.c to
-block/blk-cgroup.h.
+This will be used by blk-throttle hierarchy support.
 
-signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- block/blk-cgroup.c | 24 ++----------------------
- block/blk-cgroup.h | 20 ++++++++++++++++++++
- 2 files changed, 22 insertions(+), 22 deletions(-)
+ block/blk-cgroup.h | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
-diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
-index 0ab211a..6b10d5c 100644
---- a/block/blk-cgroup.c
-+++ b/block/blk-cgroup.c
-@@ -32,26 +32,6 @@ EXPORT_SYMBOL_GPL(blkcg_root);
- 
- static struct blkcg_policy *blkcg_policy[BLKCG_MAX_POLS];
- 
--static struct blkcg_gq *__blkg_lookup(struct blkcg *blkcg,
--				      struct request_queue *q, bool update_hint);
--
--/**
-- * blkg_for_each_descendant_pre - pre-order walk of a blkg's descendants
-- * @d_blkg: loop cursor pointing to the current descendant
-- * @pos_cgrp: used for iteration
-- * @p_blkg: target blkg to walk descendants of
-- *
-- * Walk @c_blkg through the descendants of @p_blkg.  Must be used with RCU
-- * read locked.  If called under either blkcg or queue lock, the iteration
-- * is guaranteed to include all and only online blkgs.  The caller may
-- * update @pos_cgrp by calling cgroup_rightmost_descendant() to skip
-- * subtree.
-- */
--#define blkg_for_each_descendant_pre(d_blkg, pos_cgrp, p_blkg)		\
--	cgroup_for_each_descendant_pre((pos_cgrp), (p_blkg)->blkcg->css.cgroup) \
--		if (((d_blkg) = __blkg_lookup(cgroup_to_blkcg(pos_cgrp), \
--					      (p_blkg)->q, false)))
--
- static bool blkcg_policy_enabled(struct request_queue *q,
- 				 const struct blkcg_policy *pol)
- {
-@@ -158,8 +138,8 @@ err_free:
-  * @q's bypass state.  If @update_hint is %true, the caller should be
-  * holding @q->queue_lock and lookup hint is updated on success.
-  */
--static struct blkcg_gq *__blkg_lookup(struct blkcg *blkcg,
--				      struct request_queue *q, bool update_hint)
-+struct blkcg_gq *__blkg_lookup(struct blkcg *blkcg, struct request_queue *q,
-+			       bool update_hint)
- {
- 	struct blkcg_gq *blkg;
- 
 diff --git a/block/blk-cgroup.h b/block/blk-cgroup.h
-index 4e595ee..11f5b92 100644
+index 11f5b92..e15f731 100644
 --- a/block/blk-cgroup.h
 +++ b/block/blk-cgroup.h
-@@ -282,6 +282,26 @@ static inline void blkg_put(struct blkcg_gq *blkg)
- 		__blkg_release(blkg);
- }
+@@ -303,6 +303,20 @@ struct blkcg_gq *__blkg_lookup(struct blkcg *blkcg, struct request_queue *q,
+ 					      (p_blkg)->q, false)))
  
-+struct blkcg_gq *__blkg_lookup(struct blkcg *blkcg, struct request_queue *q,
-+			       bool update_hint);
-+
-+/**
-+ * blkg_for_each_descendant_pre - pre-order walk of a blkg's descendants
+ /**
++ * blkg_for_each_descendant_post - post-order walk of a blkg's descendants
 + * @d_blkg: loop cursor pointing to the current descendant
 + * @pos_cgrp: used for iteration
 + * @p_blkg: target blkg to walk descendants of
 + *
-+ * Walk @c_blkg through the descendants of @p_blkg.  Must be used with RCU
-+ * read locked.  If called under either blkcg or queue lock, the iteration
-+ * is guaranteed to include all and only online blkgs.  The caller may
-+ * update @pos_cgrp by calling cgroup_rightmost_descendant() to skip
-+ * subtree.
++ * Similar to blkg_for_each_descendant_pre() but performs post-order
++ * traversal instead.  Synchronization rules are the same.
 + */
-+#define blkg_for_each_descendant_pre(d_blkg, pos_cgrp, p_blkg)		\
-+	cgroup_for_each_descendant_pre((pos_cgrp), (p_blkg)->blkcg->css.cgroup) \
++#define blkg_for_each_descendant_post(d_blkg, pos_cgrp, p_blkg)		\
++	cgroup_for_each_descendant_post((pos_cgrp), (p_blkg)->blkcg->css.cgroup) \
 +		if (((d_blkg) = __blkg_lookup(cgroup_to_blkcg(pos_cgrp), \
 +					      (p_blkg)->q, false)))
 +
- /**
++/**
   * blk_get_rl - get request_list to use
   * @q: request_queue of interest
+  * @bio: bio which will be attached to the allocated request (may be %NULL)
 -- 
 1.8.1.4
