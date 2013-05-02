@@ -1,7 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 27/31] blk-throttle: make blk_throtl_bio() ready for hierarchy
-Date: Wed,  1 May 2013 17:39:45 -0700
-Message-ID: <1367455189-6957-28-git-send-email-tj__2907.14111547477$1367455612$gmane$org@kernel.org>
+Subject: [PATCH 28/31] blk-throttle: make tg_dispatch_one_bio() ready for
+	hierarchy
+Date: Wed,  1 May 2013 17:39:46 -0700
+Message-ID: <1367455189-6957-29-git-send-email-tj__38231.4582741403$1367455625$gmane$org@kernel.org>
 References: <1367455189-6957-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,71 +22,92 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Currently, blk_throtl_bio() issues the passed in bio directly if it's
-within limits of its associated tg (throtl_grp).  This behavior
-becomes incorrect with hierarchy support as the bio should be
-accounted to and throttled by the ancestor throtl_grps too.
+tg_dispatch_one_bio() currently assumes that the parent_sq is the top
+level one and the bio being dispatched is ready to be issued; however,
+this assumption will be wrong with proper hierarchy support.  This
+patch makes the following changes to make tg_dispatch_on_bio() ready
+for hiearchy.
 
-This patch makes the direct issue path of blk_throtl_bio() to loop
-until it reaches the top-level service_queue or gets throttled.  If
-the former, the bio can be issued directly; otherwise, it gets queued
-at the first layer it was above limits.
+* throtl_data->nr_queued[] is incremented in blk_throtl_bio() instead
+  of throtl_add_bio_tg() so that throtl_add_bio_tg() can be used to
+  transfer a bio from a child tg to its parent.
 
-As tg->parent_sq is always the top-level service queue currently, this
-patch in itself doesn't make any behavior differences.
+* tg_dispatch_one_bio() is updated to distinguish whether its parent
+  is another throtl_grp or the throtl_data.  If former, the bio is
+  transferred to the parent throtl_grp using throtl_add_bio_tg().  If
+  latter, the bio is ready to be issued and put on the top-level
+  service_queue's bio_lists[] and throtl_data->nr_queued is
+  decremented.
+
+As all throtl_grps currently have the top level service_queue as their
+->parent_sq, this patch in itself doesn't make any behavior
+difference.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- block/blk-throttle.c | 27 ++++++++++++++++++++-------
- 1 file changed, 20 insertions(+), 7 deletions(-)
+ block/blk-throttle.c | 28 +++++++++++++++++++++-------
+ 1 file changed, 21 insertions(+), 7 deletions(-)
 
 diff --git a/block/blk-throttle.c b/block/blk-throttle.c
-index 1080563..99e1e78 100644
+index 99e1e78..367c269 100644
 --- a/block/blk-throttle.c
 +++ b/block/blk-throttle.c
-@@ -1239,12 +1239,16 @@ bool blk_throtl_bio(struct request_queue *q, struct bio *bio)
+@@ -821,7 +821,6 @@ static void throtl_add_bio_tg(struct bio *bio, struct throtl_grp *tg)
+ 	/* Take a bio reference on tg */
+ 	blkg_get(tg_to_blkg(tg));
+ 	sq->nr_queued[rw]++;
+-	tg->td->nr_queued[rw]++;
+ 	throtl_enqueue_tg(tg);
+ }
  
- 	sq = &tg->service_queue;
+@@ -852,20 +851,34 @@ static void tg_update_disptime(struct throtl_grp *tg)
+ static void tg_dispatch_one_bio(struct throtl_grp *tg, bool rw)
+ {
+ 	struct throtl_service_queue *sq = &tg->service_queue;
++	struct throtl_service_queue *parent_sq = sq->parent_sq;
++	struct throtl_grp *parent_tg = sq_to_tg(parent_sq);
+ 	struct bio *bio;
  
--	/* throtl is FIFO - if other bios are already queued, should queue */
--	if (sq->nr_queued[rw])
--		goto queue_bio;
-+	while (true) {
-+		/* throtl is FIFO - if bios are already queued, should queue */
-+		if (sq->nr_queued[rw])
-+			break;
+ 	bio = bio_list_pop(&sq->bio_lists[rw]);
+ 	sq->nr_queued[rw]--;
+-	/* Drop bio reference on blkg */
+-	blkg_put(tg_to_blkg(tg));
+-
+-	BUG_ON(tg->td->nr_queued[rw] <= 0);
+-	tg->td->nr_queued[rw]--;
  
--	/* Bio is with-in rate limit of group */
--	if (tg_may_dispatch(tg, bio, NULL)) {
-+		/* if above limits, break to queue */
-+		if (!tg_may_dispatch(tg, bio, NULL))
-+			break;
+ 	throtl_charge_bio(tg, bio);
+-	bio_list_add(&sq->parent_sq->bio_lists[rw], bio);
 +
-+		/* within limits, let's charge and dispatch directly */
- 		throtl_charge_bio(tg, bio);
++	/*
++	 * If our parent is another tg, we just need to transfer @bio to
++	 * the parent using throtl_add_bio_tg().  If our parent is
++	 * @td->service_queue, @bio is ready to be issued.  Put it on its
++	 * bio_lists[] and decrease total number queued.  The caller is
++	 * responsible for issuing these bios.
++	 */
++	if (parent_tg) {
++		throtl_add_bio_tg(bio, parent_tg);
++	} else {
++		bio_list_add(&parent_sq->bio_lists[rw], bio);
++		BUG_ON(tg->td->nr_queued[rw] <= 0);
++		tg->td->nr_queued[rw]--;
++	}
  
- 		/*
-@@ -1259,10 +1263,19 @@ bool blk_throtl_bio(struct request_queue *q, struct bio *bio)
- 		 * So keep on trimming slice even if bio is not queued.
- 		 */
- 		throtl_trim_slice(tg, rw);
--		goto out_unlock;
+ 	throtl_trim_slice(tg, rw);
 +
-+		/*
-+		 * @bio passed through this layer without being throttled.
-+		 * Climb up the ladder.  If we''re already at the top, it
-+		 * can be executed directly.
-+		 */
-+		sq = sq->parent_sq;
-+		tg = sq_to_tg(sq);
-+		if (!tg)
-+			goto out_unlock;
- 	}
++	/* @bio is transferred to parent, drop its blkg reference */
++	blkg_put(tg_to_blkg(tg));
+ }
  
--queue_bio:
-+	/* out-of-limit, queue to @tg */
- 	throtl_log(sq, "[%c] bio. bdisp=%llu sz=%u bps=%llu iodisp=%u iops=%u queued=%d/%d",
- 		   rw == READ ? 'R' : 'W',
- 		   tg->bytes_disp[rw], bio->bi_size, tg->bps[rw],
+ static int throtl_dispatch_tg(struct throtl_grp *tg)
+@@ -1283,6 +1296,7 @@ bool blk_throtl_bio(struct request_queue *q, struct bio *bio)
+ 		   sq->nr_queued[READ], sq->nr_queued[WRITE]);
+ 
+ 	bio_associate_current(bio);
++	tg->td->nr_queued[rw]++;
+ 	throtl_add_bio_tg(bio, tg);
+ 	throttled = true;
+ 
 -- 
 1.8.1.4
