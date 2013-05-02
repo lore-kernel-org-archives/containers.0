@@ -1,8 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 14/31] blk-throttle: pass around throtl_service_queue instead
-	of throtl_data
-Date: Wed,  1 May 2013 17:39:32 -0700
-Message-ID: <1367455189-6957-15-git-send-email-tj@kernel.org>
+Subject: [PATCH 15/31] blk-throttle: reorganize throtl_service_queue passed
+	around as argument
+Date: Wed,  1 May 2013 17:39:33 -0700
+Message-ID: <1367455189-6957-16-git-send-email-tj@kernel.org>
 References: <1367455189-6957-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,177 +22,261 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-throtl_service_queue will be used as the basic block to implement
-hierarchy support.  Pass around throtl_service_queue *sq instead of
-throtl_data *td in the following functions which will be used across
-multiple levels of hierarchy.
+throtl_service_queue will be the building block of hierarchy support
+and will form a tree.  This patch updates its usages as arguments to
+reduce confusion.
 
-* [__]throtl_enqueue/dequeue_tg()
+* When a service queue is used as the parent role - the host of the
+  rbtree - use @parent_sq instead of @sq.
 
-* throtl_add_bio_tg()
+* For functions taking both @tg and @parent_sq, reorder them so that
+  the order is (@tg, @parent_sq) not the other way around.  This makes
+  the code follow the usual convention of specifying the primary
+  target of the operation as the first argument.
 
-* tg_update_disptime()
-
-* throtl_select_dispatch()
+This patch doesn't make any functional differences.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- block/blk-throttle.c | 53 +++++++++++++++++++++++++++-------------------------
- 1 file changed, 28 insertions(+), 25 deletions(-)
+ block/blk-throttle.c | 100 ++++++++++++++++++++++++++-------------------------
+ 1 file changed, 51 insertions(+), 49 deletions(-)
 
 diff --git a/block/blk-throttle.c b/block/blk-throttle.c
-index 6aae239..a81e10b 100644
+index a81e10b..56b5e2a 100644
 --- a/block/blk-throttle.c
 +++ b/block/blk-throttle.c
-@@ -352,31 +352,33 @@ static void tg_service_queue_add(struct throtl_service_queue *sq,
- 	rb_insert_color(&tg->rb_node, &sq->pending_tree);
+@@ -284,17 +284,18 @@ static struct throtl_grp *throtl_lookup_create_tg(struct throtl_data *td,
+ 	return tg;
  }
  
--static void __throtl_enqueue_tg(struct throtl_data *td, struct throtl_grp *tg)
-+static void __throtl_enqueue_tg(struct throtl_service_queue *sq,
-+				struct throtl_grp *tg)
+-static struct throtl_grp *throtl_rb_first(struct throtl_service_queue *sq)
++static struct throtl_grp *
++throtl_rb_first(struct throtl_service_queue *parent_sq)
  {
--	struct throtl_service_queue *sq = &td->service_queue;
--
- 	tg_service_queue_add(sq, tg);
- 	tg->flags |= THROTL_TG_PENDING;
- 	sq->nr_pending++;
+ 	/* Service tree is empty */
+-	if (!sq->nr_pending)
++	if (!parent_sq->nr_pending)
+ 		return NULL;
+ 
+-	if (!sq->first_pending)
+-		sq->first_pending = rb_first(&sq->pending_tree);
++	if (!parent_sq->first_pending)
++		parent_sq->first_pending = rb_first(&parent_sq->pending_tree);
+ 
+-	if (sq->first_pending)
+-		return rb_entry_tg(sq->first_pending);
++	if (parent_sq->first_pending)
++		return rb_entry_tg(parent_sq->first_pending);
+ 
+ 	return NULL;
+ }
+@@ -305,29 +306,30 @@ static void rb_erase_init(struct rb_node *n, struct rb_root *root)
+ 	RB_CLEAR_NODE(n);
  }
  
--static void throtl_enqueue_tg(struct throtl_data *td, struct throtl_grp *tg)
-+static void throtl_enqueue_tg(struct throtl_service_queue *sq,
-+			      struct throtl_grp *tg)
+-static void throtl_rb_erase(struct rb_node *n, struct throtl_service_queue *sq)
++static void throtl_rb_erase(struct rb_node *n,
++			    struct throtl_service_queue *parent_sq)
+ {
+-	if (sq->first_pending == n)
+-		sq->first_pending = NULL;
+-	rb_erase_init(n, &sq->pending_tree);
+-	--sq->nr_pending;
++	if (parent_sq->first_pending == n)
++		parent_sq->first_pending = NULL;
++	rb_erase_init(n, &parent_sq->pending_tree);
++	--parent_sq->nr_pending;
+ }
+ 
+-static void update_min_dispatch_time(struct throtl_service_queue *sq)
++static void update_min_dispatch_time(struct throtl_service_queue *parent_sq)
+ {
+ 	struct throtl_grp *tg;
+ 
+-	tg = throtl_rb_first(sq);
++	tg = throtl_rb_first(parent_sq);
+ 	if (!tg)
+ 		return;
+ 
+-	sq->first_pending_disptime = tg->disptime;
++	parent_sq->first_pending_disptime = tg->disptime;
+ }
+ 
+-static void tg_service_queue_add(struct throtl_service_queue *sq,
+-				 struct throtl_grp *tg)
++static void tg_service_queue_add(struct throtl_grp *tg,
++				 struct throtl_service_queue *parent_sq)
+ {
+-	struct rb_node **node = &sq->pending_tree.rb_node;
++	struct rb_node **node = &parent_sq->pending_tree.rb_node;
+ 	struct rb_node *parent = NULL;
+ 	struct throtl_grp *__tg;
+ 	unsigned long key = tg->disptime;
+@@ -346,39 +348,39 @@ static void tg_service_queue_add(struct throtl_service_queue *sq,
+ 	}
+ 
+ 	if (left)
+-		sq->first_pending = &tg->rb_node;
++		parent_sq->first_pending = &tg->rb_node;
+ 
+ 	rb_link_node(&tg->rb_node, parent, node);
+-	rb_insert_color(&tg->rb_node, &sq->pending_tree);
++	rb_insert_color(&tg->rb_node, &parent_sq->pending_tree);
+ }
+ 
+-static void __throtl_enqueue_tg(struct throtl_service_queue *sq,
+-				struct throtl_grp *tg)
++static void __throtl_enqueue_tg(struct throtl_grp *tg,
++				struct throtl_service_queue *parent_sq)
+ {
+-	tg_service_queue_add(sq, tg);
++	tg_service_queue_add(tg, parent_sq);
+ 	tg->flags |= THROTL_TG_PENDING;
+-	sq->nr_pending++;
++	parent_sq->nr_pending++;
+ }
+ 
+-static void throtl_enqueue_tg(struct throtl_service_queue *sq,
+-			      struct throtl_grp *tg)
++static void throtl_enqueue_tg(struct throtl_grp *tg,
++			      struct throtl_service_queue *parent_sq)
  {
  	if (!(tg->flags & THROTL_TG_PENDING))
--		__throtl_enqueue_tg(td, tg);
-+		__throtl_enqueue_tg(sq, tg);
+-		__throtl_enqueue_tg(sq, tg);
++		__throtl_enqueue_tg(tg, parent_sq);
  }
  
--static void __throtl_dequeue_tg(struct throtl_data *td, struct throtl_grp *tg)
-+static void __throtl_dequeue_tg(struct throtl_service_queue *sq,
-+				struct throtl_grp *tg)
+-static void __throtl_dequeue_tg(struct throtl_service_queue *sq,
+-				struct throtl_grp *tg)
++static void __throtl_dequeue_tg(struct throtl_grp *tg,
++				struct throtl_service_queue *parent_sq)
  {
--	throtl_rb_erase(&tg->rb_node, &td->service_queue);
-+	throtl_rb_erase(&tg->rb_node, sq);
+-	throtl_rb_erase(&tg->rb_node, sq);
++	throtl_rb_erase(&tg->rb_node, parent_sq);
  	tg->flags &= ~THROTL_TG_PENDING;
  }
  
--static void throtl_dequeue_tg(struct throtl_data *td, struct throtl_grp *tg)
-+static void throtl_dequeue_tg(struct throtl_service_queue *sq,
-+			      struct throtl_grp *tg)
+-static void throtl_dequeue_tg(struct throtl_service_queue *sq,
+-			      struct throtl_grp *tg)
++static void throtl_dequeue_tg(struct throtl_grp *tg,
++			      struct throtl_service_queue *parent_sq)
  {
  	if (tg->flags & THROTL_TG_PENDING)
--		__throtl_dequeue_tg(td, tg);
-+		__throtl_dequeue_tg(sq, tg);
+-		__throtl_dequeue_tg(sq, tg);
++		__throtl_dequeue_tg(tg, parent_sq);
  }
  
  /* Call with queue lock held */
-@@ -689,8 +691,8 @@ static void throtl_charge_bio(struct throtl_grp *tg, struct bio *bio)
+@@ -691,8 +693,8 @@ static void throtl_charge_bio(struct throtl_grp *tg, struct bio *bio)
  	throtl_update_dispatch_stats(tg_to_blkg(tg), bio->bi_size, bio->bi_rw);
  }
  
--static void throtl_add_bio_tg(struct throtl_data *td, struct throtl_grp *tg,
--			struct bio *bio)
-+static void throtl_add_bio_tg(struct throtl_service_queue *sq,
-+			      struct throtl_grp *tg, struct bio *bio)
+-static void throtl_add_bio_tg(struct throtl_service_queue *sq,
+-			      struct throtl_grp *tg, struct bio *bio)
++static void throtl_add_bio_tg(struct bio *bio, struct throtl_grp *tg,
++			      struct throtl_service_queue *parent_sq)
  {
  	bool rw = bio_data_dir(bio);
  
-@@ -698,11 +700,12 @@ static void throtl_add_bio_tg(struct throtl_data *td, struct throtl_grp *tg,
- 	/* Take a bio reference on tg */
+@@ -701,11 +703,11 @@ static void throtl_add_bio_tg(struct throtl_service_queue *sq,
  	blkg_get(tg_to_blkg(tg));
  	tg->nr_queued[rw]++;
--	td->nr_queued[rw]++;
--	throtl_enqueue_tg(td, tg);
-+	tg->td->nr_queued[rw]++;
-+	throtl_enqueue_tg(sq, tg);
+ 	tg->td->nr_queued[rw]++;
+-	throtl_enqueue_tg(sq, tg);
++	throtl_enqueue_tg(tg, parent_sq);
  }
  
--static void tg_update_disptime(struct throtl_data *td, struct throtl_grp *tg)
-+static void tg_update_disptime(struct throtl_service_queue *sq,
-+			       struct throtl_grp *tg)
+-static void tg_update_disptime(struct throtl_service_queue *sq,
+-			       struct throtl_grp *tg)
++static void tg_update_disptime(struct throtl_grp *tg,
++			       struct throtl_service_queue *parent_sq)
  {
  	unsigned long read_wait = -1, write_wait = -1, min_wait = -1, disptime;
  	struct bio *bio;
-@@ -717,9 +720,9 @@ static void tg_update_disptime(struct throtl_data *td, struct throtl_grp *tg)
+@@ -720,9 +722,9 @@ static void tg_update_disptime(struct throtl_service_queue *sq,
  	disptime = jiffies + min_wait;
  
  	/* Update dispatch time */
--	throtl_dequeue_tg(td, tg);
-+	throtl_dequeue_tg(sq, tg);
+-	throtl_dequeue_tg(sq, tg);
++	throtl_dequeue_tg(tg, parent_sq);
  	tg->disptime = disptime;
--	throtl_enqueue_tg(td, tg);
-+	throtl_enqueue_tg(sq, tg);
+-	throtl_enqueue_tg(sq, tg);
++	throtl_enqueue_tg(tg, parent_sq);
  }
  
  static void tg_dispatch_one_bio(struct throtl_grp *tg, bool rw,
-@@ -774,11 +777,11 @@ static int throtl_dispatch_tg(struct throtl_grp *tg, struct bio_list *bl)
+@@ -777,14 +779,14 @@ static int throtl_dispatch_tg(struct throtl_grp *tg, struct bio_list *bl)
  	return nr_reads + nr_writes;
  }
  
--static int throtl_select_dispatch(struct throtl_data *td, struct bio_list *bl)
-+static int throtl_select_dispatch(struct throtl_service_queue *sq,
-+				  struct bio_list *bl)
+-static int throtl_select_dispatch(struct throtl_service_queue *sq,
++static int throtl_select_dispatch(struct throtl_service_queue *parent_sq,
+ 				  struct bio_list *bl)
  {
  	unsigned int nr_disp = 0;
  	struct throtl_grp *tg;
--	struct throtl_service_queue *sq = &td->service_queue;
  
  	while (1) {
- 		tg = throtl_rb_first(sq);
-@@ -789,12 +792,12 @@ static int throtl_select_dispatch(struct throtl_data *td, struct bio_list *bl)
+-		tg = throtl_rb_first(sq);
++		tg = throtl_rb_first(parent_sq);
+ 
+ 		if (!tg)
+ 			break;
+@@ -792,12 +794,12 @@ static int throtl_select_dispatch(struct throtl_service_queue *sq,
  		if (time_before(jiffies, tg->disptime))
  			break;
  
--		throtl_dequeue_tg(td, tg);
-+		throtl_dequeue_tg(sq, tg);
+-		throtl_dequeue_tg(sq, tg);
++		throtl_dequeue_tg(tg, parent_sq);
  
  		nr_disp += throtl_dispatch_tg(tg, bl);
  
  		if (tg->nr_queued[0] || tg->nr_queued[1])
--			tg_update_disptime(td, tg);
-+			tg_update_disptime(sq, tg);
+-			tg_update_disptime(sq, tg);
++			tg_update_disptime(tg, parent_sq);
  
  		if (nr_disp >= throtl_quantum)
  			break;
-@@ -822,7 +825,7 @@ void blk_throtl_dispatch_work_fn(struct work_struct *work)
- 		   td->nr_queued[READ] + td->nr_queued[WRITE],
- 		   td->nr_queued[READ], td->nr_queued[WRITE]);
- 
--	nr_disp = throtl_select_dispatch(td, &bio_list_on_stack);
-+	nr_disp = throtl_select_dispatch(&td->service_queue, &bio_list_on_stack);
- 
- 	if (nr_disp)
- 		throtl_log(td, "bios disp=%u", nr_disp);
-@@ -949,7 +952,7 @@ static int tg_set_conf(struct cgroup *cgrp, struct cftype *cft, const char *buf,
+@@ -952,7 +954,7 @@ static int tg_set_conf(struct cgroup *cgrp, struct cftype *cft, const char *buf,
  	throtl_start_new_slice(tg, 1);
  
  	if (tg->flags & THROTL_TG_PENDING) {
--		tg_update_disptime(td, tg);
-+		tg_update_disptime(&td->service_queue, tg);
+-		tg_update_disptime(&td->service_queue, tg);
++		tg_update_disptime(tg, &td->service_queue);
  		throtl_schedule_next_dispatch(td);
  	}
  
-@@ -1106,11 +1109,11 @@ queue_bio:
+@@ -1109,11 +1111,11 @@ queue_bio:
  			tg->nr_queued[READ], tg->nr_queued[WRITE]);
  
  	bio_associate_current(bio);
--	throtl_add_bio_tg(q->td, tg, bio);
-+	throtl_add_bio_tg(&q->td->service_queue, tg, bio);
+-	throtl_add_bio_tg(&q->td->service_queue, tg, bio);
++	throtl_add_bio_tg(bio, tg, &q->td->service_queue);
  	throttled = true;
  
  	if (update_disptime) {
--		tg_update_disptime(td, tg);
-+		tg_update_disptime(&td->service_queue, tg);
+-		tg_update_disptime(&td->service_queue, tg);
++		tg_update_disptime(tg, &td->service_queue);
  		throtl_schedule_next_dispatch(td);
  	}
  
-@@ -1142,7 +1145,7 @@ void blk_throtl_drain(struct request_queue *q)
+@@ -1135,7 +1137,7 @@ void blk_throtl_drain(struct request_queue *q)
+ 	__releases(q->queue_lock) __acquires(q->queue_lock)
+ {
+ 	struct throtl_data *td = q->td;
+-	struct throtl_service_queue *sq = &td->service_queue;
++	struct throtl_service_queue *parent_sq = &td->service_queue;
+ 	struct throtl_grp *tg;
+ 	struct bio_list bl;
+ 	struct bio *bio;
+@@ -1144,8 +1146,8 @@ void blk_throtl_drain(struct request_queue *q)
+ 
  	bio_list_init(&bl);
  
- 	while ((tg = throtl_rb_first(sq))) {
--		throtl_dequeue_tg(td, tg);
-+		throtl_dequeue_tg(sq, tg);
+-	while ((tg = throtl_rb_first(sq))) {
+-		throtl_dequeue_tg(sq, tg);
++	while ((tg = throtl_rb_first(parent_sq))) {
++		throtl_dequeue_tg(tg, parent_sq);
  
  		while ((bio = bio_list_peek(&tg->bio_lists[READ])))
  			tg_dispatch_one_bio(tg, bio_data_dir(bio), &bl);
