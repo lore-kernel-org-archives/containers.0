@@ -1,7 +1,7 @@
 From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCHSET] blk-throttle: implement proper hierarchy support
-Date: Fri, 3 May 2013 15:26:56 -0400
-Message-ID: <20130503192656.GD6062@redhat.com>
+Date: Fri, 3 May 2013 17:05:13 -0400
+Message-ID: <20130503210513.GE6062__20597.1524156213$1367615141$gmane$org@redhat.com>
 References: <20130502184514.GI30020@redhat.com>
 	<20130502184953.GP19814@mtj.dyndns.org>
 	<20130502190732.GK30020@redhat.com>
@@ -48,18 +48,100 @@ On Fri, May 03, 2013 at 12:14:18PM -0700, Tejun Heo wrote:
 > whenever new slice is started.  Shouldn't be too difficult to get rid
 > of, right?
 
-Key thing here is when to start a new slice. Generally when an IO has been
-dispatched from a group, we do not expire slice immediately. We kind of
-give group some grace period of throtl_slice (100ms). If next IO does not
-come with-in that duration, we start a fresh slice upon next IO arrival.
+Hi Tejun,
 
-I think similar problem should happen if there are two stacked devices
-and both are doing throttling and if delays between 2 IOs are big enough
-that it forces expirty of slice on each device.
+Following inline patch implements transferring child's start time to 
+parent, if parent slice had expired at the time of bio migration.
 
-Atleast for the hiearchy case, we should be able to start a fresh time
-slice when child transfer bio to parent. I will write a patch and do
-some experiment.
+I does seem to help a lot on my machine. Can you please give it a try.
+
+I think even this approach is flawed. If there are multiple children,
+it might happen that one child pushes up the bio early (as it is smaller
+size bio or group rate is high). And later other child pushes up the bio
+(bio was big or group limit was slow). We still lost time and effective
+rate will still be lower than anticipated.
 
 Thanks
 Vivek
+
+
+---
+ block/blk-throttle.c |   40 ++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 38 insertions(+), 2 deletions(-)
+
+Index: linux-2.6/block/blk-throttle.c
+===================================================================
+--- linux-2.6.orig/block/blk-throttle.c	2013-05-03 16:03:10.279016400 -0400
++++ linux-2.6/block/blk-throttle.c	2013-05-03 16:46:11.398936631 -0400
+@@ -547,6 +547,30 @@ static bool throtl_schedule_next_dispatc
+ 	return false;
+ }
+ 
++static inline void throtl_start_new_slice_with_credit(struct throtl_grp *tg,
++		bool rw, unsigned long start)
++{
++	tg->bytes_disp[rw] = 0;
++	tg->io_disp[rw] = 0;
++
++	/*
++	 * Previous slice has expired. We must have trimmed it after last
++	 * bio dispatch. That means since start of last slice, we never used
++	 * that bandwidth. Do try to make use of that bandwidth while giving
++	 * credit
++	 */
++	if (time_after_eq(start, tg->slice_start[rw])) {
++		tg->slice_start[rw] = start;
++	} else
++		tg->slice_start[rw] = tg->slice_start[rw];
++
++	tg->slice_end[rw] = jiffies + throtl_slice;
++	throtl_log(&tg->service_queue,
++		   "[%c] new slice with credit start=%lu end=%lu jiffies=%lu",
++		   rw == READ ? 'R' : 'W', tg->slice_start[rw],
++		   tg->slice_end[rw], jiffies);
++}
++
+ static inline void throtl_start_new_slice(struct throtl_grp *tg, bool rw)
+ {
+ 	tg->bytes_disp[rw] = 0;
+@@ -888,6 +912,16 @@ static void tg_update_disptime(struct th
+ 	tg->flags &= ~THROTL_TG_WAS_EMPTY;
+ }
+ 
++static void start_parent_slice_with_credit(struct throtl_grp *child_tg,
++					struct throtl_grp *parent_tg, bool rw)
++{
++	if (throtl_slice_used(parent_tg, rw)) {
++		throtl_start_new_slice_with_credit(parent_tg, rw,
++				child_tg->slice_start[rw]);
++	}
++
++}
++
+ static void tg_dispatch_one_bio(struct throtl_grp *tg, bool rw)
+ {
+ 	struct throtl_service_queue *sq = &tg->service_queue;
+@@ -908,7 +942,9 @@ static void tg_dispatch_one_bio(struct t
+ 	 * responsible for issuing these bios.
+ 	 */
+ 	if (parent_tg) {
++		throtl_log(parent_sq, "add bio sz=%u", bio->bi_size);
+ 		throtl_add_bio_tg(bio, parent_tg);
++		start_parent_slice_with_credit(tg, parent_tg, rw);
+ 	} else {
+ 		bio_list_add(&parent_sq->bio_lists[rw], bio);
+ 		BUG_ON(tg->td->nr_queued[rw] <= 0);
+@@ -1369,11 +1405,11 @@ bool blk_throtl_bio(struct request_queue
+ 	}
+ 
+ 	/* out-of-limit, queue to @tg */
+-	throtl_log(sq, "[%c] bio. bdisp=%llu sz=%u bps=%llu iodisp=%u iops=%u queued=%d/%d",
++	throtl_log(sq, "[%c] bio. bdisp=%llu sz=%u bps=%llu iodisp=%u iops=%u queued=%d/%d sz=%u",
+ 		   rw == READ ? 'R' : 'W',
+ 		   tg->bytes_disp[rw], bio->bi_size, tg->bps[rw],
+ 		   tg->io_disp[rw], tg->iops[rw],
+-		   sq->nr_queued[READ], sq->nr_queued[WRITE]);
++		   sq->nr_queued[READ], sq->nr_queued[WRITE], bio->bi_size);
+ 
+ 	bio_associate_current(bio);
+ 	tg->td->nr_queued[rw]++;
