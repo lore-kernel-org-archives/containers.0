@@ -1,8 +1,8 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 21/31] blk-throttle: implement sq_to_tg(), sq_to_td() and
 	throtl_log()
-Date: Mon, 6 May 2013 13:39:59 -0700
-Message-ID: <20130506203959.GF800__27239.0009872199$1367872816$gmane$org@mtj.dyndns.org>
+Date: Mon, 6 May 2013 16:41:41 -0400
+Message-ID: <20130506204141.GF11731@redhat.com>
 References: <1367455189-6957-1-git-send-email-tj@kernel.org>
 	<1367455189-6957-22-git-send-email-tj@kernel.org>
 	<20130506173644.GD11731@redhat.com>
@@ -22,7 +22,7 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
@@ -52,11 +52,6 @@ On Mon, May 06, 2013 at 01:38:27PM -0700, Tejun Heo wrote:
 > instead of "throtl %s " is because when the path is nil, we don't
 > wanna print out two consecutive spaces, so AFAICS the code is correct.
 
-Oops, I was wrong again, you mean after '%s'.  Yeah, right.  I need to
-change it so that it does __pbuf[0] = '\0' if no path and add space
-after '%s'.  Updating...
+What about space after the cgroup path info (when path is not nil).
 
-Sorry about the confusion.
-
--- 
-tejun
+Vivek
