@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 30/33] blk-throttle: add throtl_qnode for dispatch fairness
-Date: Mon,  6 May 2013 15:46:09 -0700
-Message-ID: <1367880372-28312-31-git-send-email-tj__20654.265737585$1367880759$gmane$org@kernel.org>
+Subject: [PATCH 32/33] blk-throttle: implement throtl_grp->has_rules[]
+Date: Mon,  6 May 2013 15:46:11 -0700
+Message-ID: <1367880372-28312-33-git-send-email-tj__29604.5613628396$1367880774$gmane$org@kernel.org>
 References: <1367880372-28312-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,410 +21,132 @@ To: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-With flat hierarchy, there's only single level of dispatching
-happening and fairness beyond that point is the responsibility of the
-rest of the block layer and driver, which usually works out okay;
-however, with the planned hierarchy support,
-service_queue->bio_lists[] can be filled up by bios from a single
-source.  While the limits would still be honored, it'd be very easy to
-starve IOs from siblings or children.
+blk_throtl_bio() has a quick exit path for throtl_grps without limits
+configured.  It looks at the bps and iops limits and if both are not
+configured, the bio is issued immediately.  While this is correct in
+the current flat hierarchy as each throtl_grp behaves completely
+independently, it would become wrong in proper hierarchy mode.  A
+group without any limits could still be limited by one of its
+ancestors and bio's queued for such group should not bypass
+blk-throtl.
 
-To avoid such starvation, this patch implements throtl_qnode and
-converts service_queue->bio_lists[] to lists of per-source qnodes
-which in turn contains the bio's.  For example, when a bio is
-dispatched from a child group, the bio doesn't get queued on
-->bio_lists[] directly but it first gets queued on the group's qnode
-which in turn gets queued on service_queue->queued[].  When
-dispatching for the upper level, the ->queued[] list is consumed in
-round-robing order so that the dispatch windows is consumed fairly by
-all IO sources.
+As having a quick bypass mechanism is beneficial, this patch
+reimplements the mechanism such that it's correct even with proper
+hierarchy.  throtl_grp->has_rules[] is added.  These booleans are
+updated for the whole subtree whenever a config is updated so that
+has_rules[] of the whole subtree stays synchronized.  They're also
+updated when a new throtl_grp comes online so that it can't escape the
+limits of its ancestors.
 
-There are two ways a bio can come to a throtl_grp - directly queued to
-the group or dispatched from a child.  For the former
-throtl_grp->qnode_on_self[rw] is used.  For the latter, the child's
-->qnode_on_parent[rw].
-
-Note that this means that the child which is contributing a bio to its
-parent should stay pinned until all its bios are dispatched to its
-grand-parent.  This patch moves blkg refcnting from bio add/remove
-spots to qnode activation/deactivation so that the blkg containing an
-active qnode is always pinned.  As child pins the parent, this is
-sufficient for keeping the relevant sub-tree pinned while bios are in
-flight.
-
-The starvation issue was spotted by Vivek Goyal.
-
-v2: The original patch used the same throtl_grp->qnode_on_self/parent
-    for reads and writes causing RWs to be queued incorrectly if there
-    already are outstanding IOs in the other direction.  They should
-    be throtl_grp->qnode_on_self/parent[2] so that READs and WRITEs
-    can use different qnodes.  Spotted by Vivek Goyal.
+As no throtl_grp has another throtl_grp as parent now, this patch
+doesn't yet make any behavior differences.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- block/blk-throttle.c | 201 ++++++++++++++++++++++++++++++++++++++++++++-------
- 1 file changed, 176 insertions(+), 25 deletions(-)
+ block/blk-throttle.c | 49 ++++++++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 42 insertions(+), 7 deletions(-)
 
 diff --git a/block/blk-throttle.c b/block/blk-throttle.c
-index bc65077..541bd0d 100644
+index 7477f33..27f006b 100644
 --- a/block/blk-throttle.c
 +++ b/block/blk-throttle.c
-@@ -26,6 +26,35 @@ static struct blkcg_policy blkcg_policy_throtl;
- /* A workqueue to queue throttle related work */
- static struct workqueue_struct *kthrotld_workqueue;
+@@ -124,6 +124,9 @@ struct throtl_grp {
+ 
+ 	unsigned int flags;
+ 
++	/* are there any throtl rules between this group and td? */
++	bool has_rules[2];
++
+ 	/* bytes per second rate limits */
+ 	uint64_t bps[2];
+ 
+@@ -422,6 +425,30 @@ static void throtl_pd_init(struct blkcg_gq *blkg)
+ 	spin_unlock_irqrestore(&tg_stats_alloc_lock, flags);
+ }
  
 +/*
-+ * To implement hierarchical throttling, throtl_grps form a tree and bios
-+ * are dispatched upwards level by level until they reach the top and get
-+ * issued.  When dispatching bios from the children and local group at each
-+ * level, if the bios are dispatched into a single bio_list, there's a risk
-+ * of a local or child group which can queue many bios at once filling up
-+ * the list starving others.
-+ *
-+ * To avoid such starvation, dispatched bios are queued separately
-+ * according to where they came from.  When they are again dispatched to
-+ * the parent, they're popped in round-robin order so that no single source
-+ * hogs the dispatch window.
-+ *
-+ * throtl_qnode is used to keep the queued bios separated by their sources.
-+ * Bios are queued to throtl_qnode which in turn is queued to
-+ * throtl_service_queue and then dispatched in round-robin order.
-+ *
-+ * It's also used to track the reference counts on blkg's.  A qnode always
-+ * belongs to a throtl_grp and gets queued on itself or the parent, so
-+ * incrementing the reference of the associated throtl_grp when a qnode is
-+ * queued and decrementing when dequeued is enough to keep the whole blkg
-+ * tree pinned while bios are in flight.
++ * Set has_rules[] if @tg or any of its parents have limits configured.
++ * This doesn't require walking up to the top of the hierarchy as the
++ * parent's has_rules[] is guaranteed to be correct.
 + */
-+struct throtl_qnode {
-+	struct list_head	node;		/* service_queue->queued[] */
-+	struct bio_list		bios;		/* queued bios */
-+	struct throtl_grp	*tg;		/* tg this qnode belongs to */
-+};
-+
- struct throtl_service_queue {
- 	struct throtl_service_queue *parent_sq;	/* the parent service_queue */
- 
-@@ -33,7 +62,7 @@ struct throtl_service_queue {
- 	 * Bios queued directly to this service_queue or dispatched from
- 	 * children throtl_grp's.
- 	 */
--	struct bio_list		bio_lists[2];	/* queued bios [READ/WRITE] */
-+	struct list_head	queued[2];	/* throtl_qnode [READ/WRITE] */
- 	unsigned int		nr_queued[2];	/* number of queued bios */
- 
- 	/*
-@@ -76,6 +105,17 @@ struct throtl_grp {
- 	struct throtl_service_queue service_queue;
- 
- 	/*
-+	 * qnode_on_self is used when bios are directly queued to this
-+	 * throtl_grp so that local bios compete fairly with bios
-+	 * dispatched from children.  qnode_on_parent is used when bios are
-+	 * dispatched from this throtl_grp into its parent and will compete
-+	 * with the sibling qnode_on_parents and the parent's
-+	 * qnode_on_self.
-+	 */
-+	struct throtl_qnode qnode_on_self[2];
-+	struct throtl_qnode qnode_on_parent[2];
-+
-+	/*
- 	 * Dispatch time in jiffies. This is the estimated time when group
- 	 * will unthrottle and is ready to dispatch more bio. It is used as
- 	 * key to sort active groups in service tree.
-@@ -250,12 +290,95 @@ alloc_stats:
- 		goto alloc_stats;
- }
- 
-+static void throtl_qnode_init(struct throtl_qnode *qn, struct throtl_grp *tg)
++static void tg_update_has_rules(struct throtl_grp *tg)
 +{
-+	INIT_LIST_HEAD(&qn->node);
-+	bio_list_init(&qn->bios);
-+	qn->tg = tg;
-+}
-+
-+/**
-+ * throtl_qnode_add_bio - add a bio to a throtl_qnode and activate it
-+ * @bio: bio being added
-+ * @qn: qnode to add bio to
-+ * @queued: the service_queue->queued[] list @qn belongs to
-+ *
-+ * Add @bio to @qn and put @qn on @queued if it's not already on.
-+ * @qn->tg's reference count is bumped when @qn is activated.  See the
-+ * comment on top of throtl_qnode definition for details.
-+ */
-+static void throtl_qnode_add_bio(struct bio *bio, struct throtl_qnode *qn,
-+				 struct list_head *queued)
-+{
-+	bio_list_add(&qn->bios, bio);
-+	if (list_empty(&qn->node)) {
-+		list_add_tail(&qn->node, queued);
-+		blkg_get(tg_to_blkg(qn->tg));
-+	}
-+}
-+
-+/**
-+ * throtl_peek_queued - peek the first bio on a qnode list
-+ * @queued: the qnode list to peek
-+ */
-+static struct bio *throtl_peek_queued(struct list_head *queued)
-+{
-+	struct throtl_qnode *qn = list_first_entry(queued, struct throtl_qnode, node);
-+	struct bio *bio;
-+
-+	if (list_empty(queued))
-+		return NULL;
-+
-+	bio = bio_list_peek(&qn->bios);
-+	WARN_ON_ONCE(!bio);
-+	return bio;
-+}
-+
-+/**
-+ * throtl_pop_queued - pop the first bio form a qnode list
-+ * @queued: the qnode list to pop a bio from
-+ * @tg_to_put: optional out argument for throtl_grp to put
-+ *
-+ * Pop the first bio from the qnode list @queued.  After popping, the first
-+ * qnode is removed from @queued if empty or moved to the end of @queued so
-+ * that the popping order is round-robin.
-+ *
-+ * When the first qnode is removed, its associated throtl_grp should be put
-+ * too.  If @tg_to_put is NULL, this function automatically puts it;
-+ * otherwise, *@tg_to_put is set to the throtl_grp to put and the caller is
-+ * responsible for putting it.
-+ */
-+static struct bio *throtl_pop_queued(struct list_head *queued,
-+				     struct throtl_grp **tg_to_put)
-+{
-+	struct throtl_qnode *qn = list_first_entry(queued, struct throtl_qnode, node);
-+	struct bio *bio;
-+
-+	if (list_empty(queued))
-+		return NULL;
-+
-+	bio = bio_list_pop(&qn->bios);
-+	WARN_ON_ONCE(!bio);
-+
-+	if (bio_list_empty(&qn->bios)) {
-+		list_del_init(&qn->node);
-+		if (tg_to_put)
-+			*tg_to_put = qn->tg;
-+		else
-+			blkg_put(tg_to_blkg(qn->tg));
-+	} else {
-+		list_move_tail(&qn->node, queued);
-+	}
-+
-+	return bio;
-+}
-+
- /* init a service_queue, assumes the caller zeroed it */
- static void throtl_service_queue_init(struct throtl_service_queue *sq,
- 				      struct throtl_service_queue *parent_sq)
- {
--	bio_list_init(&sq->bio_lists[0]);
--	bio_list_init(&sq->bio_lists[1]);
-+	INIT_LIST_HEAD(&sq->queued[0]);
-+	INIT_LIST_HEAD(&sq->queued[1]);
- 	sq->pending_tree = RB_ROOT;
- 	sq->parent_sq = parent_sq;
- 	setup_timer(&sq->pending_timer, throtl_pending_timer_fn,
-@@ -272,8 +395,14 @@ static void throtl_pd_init(struct blkcg_gq *blkg)
- 	struct throtl_grp *tg = blkg_to_tg(blkg);
- 	struct throtl_data *td = blkg->q->td;
- 	unsigned long flags;
++	struct throtl_grp *parent_tg = sq_to_tg(tg->service_queue.parent_sq);
 +	int rw;
- 
- 	throtl_service_queue_init(&tg->service_queue, &td->service_queue);
-+	for (rw = READ; rw <= WRITE; rw++) {
-+		throtl_qnode_init(&tg->qnode_on_self[rw], tg);
-+		throtl_qnode_init(&tg->qnode_on_parent[rw], tg);
-+	}
 +
- 	RB_CLEAR_NODE(&tg->rb_node);
- 	tg->td = td;
- 
-@@ -715,7 +844,7 @@ static bool tg_may_dispatch(struct throtl_grp *tg, struct bio *bio,
- 	 * queued.
- 	 */
- 	BUG_ON(tg->service_queue.nr_queued[rw] &&
--	       bio != bio_list_peek(&tg->service_queue.bio_lists[rw]));
-+	       bio != throtl_peek_queued(&tg->service_queue.queued[rw]));
- 
- 	/* If tg->bps = -1, then BW is unlimited */
- 	if (tg->bps[rw] == -1 && tg->iops[rw] == -1) {
-@@ -806,11 +935,24 @@ static void throtl_charge_bio(struct throtl_grp *tg, struct bio *bio)
- 	}
- }
- 
--static void throtl_add_bio_tg(struct bio *bio, struct throtl_grp *tg)
-+/**
-+ * throtl_add_bio_tg - add a bio to the specified throtl_grp
-+ * @bio: bio to add
-+ * @qn: qnode to use
-+ * @tg: the target throtl_grp
-+ *
-+ * Add @bio to @tg's service_queue using @qn.  If @qn is not specified,
-+ * tg->qnode_on_self[] is used.
-+ */
-+static void throtl_add_bio_tg(struct bio *bio, struct throtl_qnode *qn,
-+			      struct throtl_grp *tg)
- {
- 	struct throtl_service_queue *sq = &tg->service_queue;
- 	bool rw = bio_data_dir(bio);
- 
-+	if (!qn)
-+		qn = &tg->qnode_on_self[rw];
-+
- 	/*
- 	 * If @tg doesn't currently have any bios queued in the same
- 	 * direction, queueing @bio can change when @tg should be
-@@ -820,9 +962,8 @@ static void throtl_add_bio_tg(struct bio *bio, struct throtl_grp *tg)
- 	if (!sq->nr_queued[rw])
- 		tg->flags |= THROTL_TG_WAS_EMPTY;
- 
--	bio_list_add(&sq->bio_lists[rw], bio);
--	/* Take a bio reference on tg */
--	blkg_get(tg_to_blkg(tg));
-+	throtl_qnode_add_bio(bio, qn, &sq->queued[rw]);
-+
- 	sq->nr_queued[rw]++;
- 	throtl_enqueue_tg(tg);
- }
-@@ -833,10 +974,10 @@ static void tg_update_disptime(struct throtl_grp *tg)
- 	unsigned long read_wait = -1, write_wait = -1, min_wait = -1, disptime;
- 	struct bio *bio;
- 
--	if ((bio = bio_list_peek(&sq->bio_lists[READ])))
-+	if ((bio = throtl_peek_queued(&sq->queued[READ])))
- 		tg_may_dispatch(tg, bio, &read_wait);
- 
--	if ((bio = bio_list_peek(&sq->bio_lists[WRITE])))
-+	if ((bio = throtl_peek_queued(&sq->queued[WRITE])))
- 		tg_may_dispatch(tg, bio, &write_wait);
- 
- 	min_wait = min(read_wait, write_wait);
-@@ -856,9 +997,16 @@ static void tg_dispatch_one_bio(struct throtl_grp *tg, bool rw)
- 	struct throtl_service_queue *sq = &tg->service_queue;
- 	struct throtl_service_queue *parent_sq = sq->parent_sq;
- 	struct throtl_grp *parent_tg = sq_to_tg(parent_sq);
-+	struct throtl_grp *tg_to_put = NULL;
- 	struct bio *bio;
- 
--	bio = bio_list_pop(&sq->bio_lists[rw]);
-+	/*
-+	 * @bio is being transferred from @tg to @parent_sq.  Popping a bio
-+	 * from @tg may put its reference and @parent_sq might end up
-+	 * getting released prematurely.  Remember the tg to put and put it
-+	 * after @bio is transferred to @parent_sq.
-+	 */
-+	bio = throtl_pop_queued(&sq->queued[rw], &tg_to_put);
- 	sq->nr_queued[rw]--;
- 
- 	throtl_charge_bio(tg, bio);
-@@ -871,17 +1019,18 @@ static void tg_dispatch_one_bio(struct throtl_grp *tg, bool rw)
- 	 * responsible for issuing these bios.
- 	 */
- 	if (parent_tg) {
--		throtl_add_bio_tg(bio, parent_tg);
-+		throtl_add_bio_tg(bio, &tg->qnode_on_parent[rw], parent_tg);
- 	} else {
--		bio_list_add(&parent_sq->bio_lists[rw], bio);
-+		throtl_qnode_add_bio(bio, &tg->qnode_on_parent[rw],
-+				     &parent_sq->queued[rw]);
- 		BUG_ON(tg->td->nr_queued[rw] <= 0);
- 		tg->td->nr_queued[rw]--;
- 	}
- 
- 	throtl_trim_slice(tg, rw);
- 
--	/* @bio is transferred to parent, drop its blkg reference */
--	blkg_put(tg_to_blkg(tg));
-+	if (tg_to_put)
-+		blkg_put(tg_to_blkg(tg_to_put));
- }
- 
- static int throtl_dispatch_tg(struct throtl_grp *tg)
-@@ -894,7 +1043,7 @@ static int throtl_dispatch_tg(struct throtl_grp *tg)
- 
- 	/* Try to dispatch 75% READS and 25% WRITES */
- 
--	while ((bio = bio_list_peek(&sq->bio_lists[READ])) &&
-+	while ((bio = throtl_peek_queued(&sq->queued[READ])) &&
- 	       tg_may_dispatch(tg, bio, NULL)) {
- 
- 		tg_dispatch_one_bio(tg, bio_data_dir(bio));
-@@ -904,7 +1053,7 @@ static int throtl_dispatch_tg(struct throtl_grp *tg)
- 			break;
- 	}
- 
--	while ((bio = bio_list_peek(&sq->bio_lists[WRITE])) &&
-+	while ((bio = throtl_peek_queued(&sq->queued[WRITE])) &&
- 	       tg_may_dispatch(tg, bio, NULL)) {
- 
- 		tg_dispatch_one_bio(tg, bio_data_dir(bio));
-@@ -1039,10 +1188,9 @@ void blk_throtl_dispatch_work_fn(struct work_struct *work)
- 	bio_list_init(&bio_list_on_stack);
- 
- 	spin_lock_irq(q->queue_lock);
--	for (rw = READ; rw <= WRITE; rw++) {
--		bio_list_merge(&bio_list_on_stack, &td_sq->bio_lists[rw]);
--		bio_list_init(&td_sq->bio_lists[rw]);
--	}
 +	for (rw = READ; rw <= WRITE; rw++)
-+		while ((bio = throtl_pop_queued(&td_sq->queued[rw], NULL)))
-+			bio_list_add(&bio_list_on_stack, bio);
- 	spin_unlock_irq(q->queue_lock);
- 
- 	if (!bio_list_empty(&bio_list_on_stack)) {
-@@ -1241,6 +1389,7 @@ static struct blkcg_policy blkcg_policy_throtl = {
- bool blk_throtl_bio(struct request_queue *q, struct bio *bio)
++		tg->has_rules[rw] = (parent_tg && parent_tg->has_rules[rw]) ||
++				    (tg->bps[rw] != -1 || tg->iops[rw] != -1);
++}
++
++static void throtl_pd_online(struct blkcg_gq *blkg)
++{
++	/*
++	 * We don't want new groups to escape the limits of its ancestors.
++	 * Update has_rules[] after a new group is brought online.
++	 */
++	tg_update_has_rules(blkg_to_tg(blkg));
++}
++
+ static void throtl_pd_exit(struct blkcg_gq *blkg)
  {
- 	struct throtl_data *td = q->td;
-+	struct throtl_qnode *qn = NULL;
+ 	struct throtl_grp *tg = blkg_to_tg(blkg);
+@@ -843,12 +870,6 @@ static bool tg_with_in_bps_limit(struct throtl_grp *tg, struct bio *bio,
+ 	return 0;
+ }
+ 
+-static bool tg_no_rule_group(struct throtl_grp *tg, bool rw) {
+-	if (tg->bps[rw] == -1 && tg->iops[rw] == -1)
+-		return 1;
+-	return 0;
+-}
+-
+ /*
+  * Returns whether one can dispatch a bio or not. Also returns approx number
+  * of jiffies to wait before this bio is with-in IO rate and can be dispatched
+@@ -1307,6 +1328,8 @@ static int tg_set_conf(struct cgroup *cgrp, struct cftype *cft, const char *buf,
+ 	struct blkg_conf_ctx ctx;
  	struct throtl_grp *tg;
  	struct throtl_service_queue *sq;
- 	bool rw = bio_data_dir(bio);
-@@ -1308,6 +1457,7 @@ bool blk_throtl_bio(struct request_queue *q, struct bio *bio)
- 		 * Climb up the ladder.  If we''re already at the top, it
- 		 * can be executed directly.
- 		 */
-+		qn = &tg->qnode_on_parent[rw];
- 		sq = sq->parent_sq;
- 		tg = sq_to_tg(sq);
- 		if (!tg)
-@@ -1323,7 +1473,7 @@ bool blk_throtl_bio(struct request_queue *q, struct bio *bio)
++	struct blkcg_gq *blkg;
++	struct cgroup *pos_cgrp;
+ 	int ret;
  
- 	bio_associate_current(bio);
- 	tg->td->nr_queued[rw]++;
--	throtl_add_bio_tg(bio, tg);
-+	throtl_add_bio_tg(bio, qn, tg);
- 	throttled = true;
+ 	ret = blkg_conf_prep(blkcg, &blkcg_policy_throtl, buf, &ctx);
+@@ -1330,6 +1353,17 @@ static int tg_set_conf(struct cgroup *cgrp, struct cftype *cft, const char *buf,
+ 		   tg->iops[READ], tg->iops[WRITE]);
  
  	/*
-@@ -1367,9 +1517,9 @@ static void tg_drain_bios(struct throtl_service_queue *parent_sq)
++	 * Update has_rules[] flags for the updated tg's subtree.  A tg is
++	 * considered to have rules if either the tg itself or any of its
++	 * ancestors has rules.  This identifies groups without any
++	 * restrictions in the whole hierarchy and allows them to bypass
++	 * blk-throttle.
++	 */
++	tg_update_has_rules(tg);
++	blkg_for_each_descendant_pre(blkg, pos_cgrp, ctx.blkg)
++		tg_update_has_rules(blkg_to_tg(blkg));
++
++	/*
+ 	 * We're already holding queue_lock and know @tg is valid.  Let's
+ 	 * apply the new config directly.
+ 	 *
+@@ -1415,6 +1449,7 @@ static struct blkcg_policy blkcg_policy_throtl = {
+ 	.cftypes		= throtl_files,
  
- 		throtl_dequeue_tg(tg);
- 
--		while ((bio = bio_list_peek(&sq->bio_lists[READ])))
-+		while ((bio = throtl_peek_queued(&sq->queued[READ])))
- 			tg_dispatch_one_bio(tg, bio_data_dir(bio));
--		while ((bio = bio_list_peek(&sq->bio_lists[WRITE])))
-+		while ((bio = throtl_peek_queued(&sq->queued[WRITE])))
- 			tg_dispatch_one_bio(tg, bio_data_dir(bio));
- 	}
- }
-@@ -1411,7 +1561,8 @@ void blk_throtl_drain(struct request_queue *q)
- 
- 	/* all bios now should be in td->service_queue, issue them */
- 	for (rw = READ; rw <= WRITE; rw++)
--		while ((bio = bio_list_pop(&td->service_queue.bio_lists[rw])))
-+		while ((bio = throtl_pop_queued(&td->service_queue.queued[rw],
-+						NULL)))
- 			generic_make_request(bio);
- 
- 	spin_lock_irq(q->queue_lock);
+ 	.pd_init_fn		= throtl_pd_init,
++	.pd_online_fn		= throtl_pd_online,
+ 	.pd_exit_fn		= throtl_pd_exit,
+ 	.pd_reset_stats_fn	= throtl_pd_reset_stats,
+ };
+@@ -1442,7 +1477,7 @@ bool blk_throtl_bio(struct request_queue *q, struct bio *bio)
+ 	blkcg = bio_blkcg(bio);
+ 	tg = throtl_lookup_tg(td, blkcg);
+ 	if (tg) {
+-		if (tg_no_rule_group(tg, rw)) {
++		if (!tg->has_rules[rw]) {
+ 			throtl_update_dispatch_stats(tg_to_blkg(tg),
+ 						     bio->bi_size, bio->bi_rw);
+ 			goto out_unlock_rcu;
 -- 
 1.8.1.4
