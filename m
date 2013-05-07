@@ -1,8 +1,8 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH RFC 42/48] Audit: selinux: translate audit_log_start to
-	audit_log_start_ns
-Date: Tue, 7 May 2013 10:21:03 +0800
-Message-ID: <1367893269-9308-43-git-send-email-gaofeng__45511.3798300319$1367893493$gmane$org@cn.fujitsu.com>
+Subject: [PATCH RFC 33/48] Audit: Log filter related audit message to proper
+	user namespace
+Date: Tue, 7 May 2013 10:20:54 +0800
+Message-ID: <1367893269-9308-34-git-send-email-gaofeng__3882.46158040619$1367893499$gmane$org@cn.fujitsu.com>
 References: <1367893269-9308-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,97 +22,46 @@ To: viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, eparis-H+wXaHxf7aLQT
 Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Now we can log audit message in the user namespace which current
-task belongs to.
+Now, we can log filter related audit message to the user namespace
+which the task belongs to.
 
 Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- security/selinux/hooks.c       | 14 ++++++++++----
- security/selinux/ss/services.c |  8 +++++---
- 2 files changed, 15 insertions(+), 7 deletions(-)
+ kernel/auditfilter.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
-index 5c6f2cd..93b6c72 100644
---- a/security/selinux/hooks.c
-+++ b/security/selinux/hooks.c
-@@ -2785,6 +2785,7 @@ static int selinux_inode_setxattr(struct dentry *dentry, const char *name,
- 			struct audit_buffer *ab;
- 			size_t audit_size;
- 			const char *str;
-+			struct user_namespace *ns = current_user_ns();
+diff --git a/kernel/auditfilter.c b/kernel/auditfilter.c
+index f2afe9b..8af148b 100644
+--- a/kernel/auditfilter.c
++++ b/kernel/auditfilter.c
+@@ -1120,15 +1120,16 @@ static void audit_log_rule_change(kuid_t loginuid, u32 sessionid, u32 sid,
+ 				  int res)
+ {
+ 	struct audit_buffer *ab;
++	struct user_namespace *ns = current_user_ns();
  
- 			/* We strip a nul only if it is at the end, otherwise the
- 			 * context contains a nul and we should audit that */
-@@ -2798,10 +2799,11 @@ static int selinux_inode_setxattr(struct dentry *dentry, const char *name,
- 				str = "";
- 				audit_size = 0;
- 			}
--			ab = audit_log_start(current->audit_context, GFP_ATOMIC, AUDIT_SELINUX_ERR);
-+			ab = audit_log_start_ns(ns, current->audit_context,
-+						GFP_ATOMIC, AUDIT_SELINUX_ERR);
- 			audit_log_format(ab, "op=setxattr invalid_context=");
- 			audit_log_n_untrustedstring(ab, value, audit_size);
--			audit_log_end(ab);
-+			audit_log_end_ns(ns, ab);
- 
- 			return rc;
- 		}
-@@ -5328,6 +5330,7 @@ static int selinux_setprocattr(struct task_struct *p,
- 			if (!capable(CAP_MAC_ADMIN)) {
- 				struct audit_buffer *ab;
- 				size_t audit_size;
-+				struct user_namespace *ns = current_user_ns();
- 
- 				/* We strip a nul only if it is at the end, otherwise the
- 				 * context contains a nul and we should audit that */
-@@ -5335,10 +5338,13 @@ static int selinux_setprocattr(struct task_struct *p,
- 					audit_size = size - 1;
- 				else
- 					audit_size = size;
--				ab = audit_log_start(current->audit_context, GFP_ATOMIC, AUDIT_SELINUX_ERR);
-+				ab = audit_log_start_ns(ns,
-+							current->audit_context,
-+							GFP_ATOMIC,
-+							AUDIT_SELINUX_ERR);
- 				audit_log_format(ab, "op=fscreate invalid_context=");
- 				audit_log_n_untrustedstring(ab, value, audit_size);
--				audit_log_end(ab);
-+				audit_log_end_ns(ns, ab);
- 
- 				return error;
- 			}
-diff --git a/security/selinux/ss/services.c b/security/selinux/ss/services.c
-index b4feecc..140a383 100644
---- a/security/selinux/ss/services.c
-+++ b/security/selinux/ss/services.c
-@@ -473,6 +473,7 @@ static void security_dump_masked_av(struct context *scontext,
- 	int index;
- 	u32 length;
- 	bool need_comma = false;
-+	struct user_namespace *ns;
- 
- 	if (!permissions)
+-	if (!audit_enabled)
++	if (!ns->audit.enabled)
  		return;
-@@ -501,8 +502,9 @@ static void security_dump_masked_av(struct context *scontext,
- 		goto out;
  
- 	/* audit a message */
--	ab = audit_log_start(current->audit_context,
--			     GFP_ATOMIC, AUDIT_SELINUX_ERR);
-+	ns = current_user_ns();
-+	ab = audit_log_start_ns(ns, current->audit_context,
-+				GFP_ATOMIC, AUDIT_SELINUX_ERR);
+-	ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_CONFIG_CHANGE);
++	ab = audit_log_start_ns(ns, NULL, GFP_KERNEL, AUDIT_CONFIG_CHANGE);
  	if (!ab)
- 		goto out;
- 
-@@ -522,7 +524,7 @@ static void security_dump_masked_av(struct context *scontext,
- 				 ? permission_names[index] : "????");
- 		need_comma = true;
- 	}
+ 		return;
+ 	audit_log_format(ab, "auid=%u ses=%u",
+-			 from_kuid(&init_user_ns, loginuid), sessionid);
++			 from_kuid(ns, loginuid), sessionid);
+ 	if (sid) {
+ 		char *ctx = NULL;
+ 		u32 len;
+@@ -1143,7 +1144,7 @@ static void audit_log_rule_change(kuid_t loginuid, u32 sessionid, u32 sid,
+ 	audit_log_string(ab, action);
+ 	audit_log_key(ab, rule->filterkey);
+ 	audit_log_format(ab, " list=%d res=%d", rule->listnr, res);
 -	audit_log_end(ab);
 +	audit_log_end_ns(ns, ab);
- out:
- 	/* release scontext/tcontext */
- 	kfree(tcontext_name);
+ }
+ 
+ /**
 -- 
 1.8.1.4
