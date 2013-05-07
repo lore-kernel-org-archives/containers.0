@@ -1,8 +1,8 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH RFC 23/48] Audit: netfilter: Log xt table replace behavior in
-	proper user namespace
-Date: Tue, 7 May 2013 10:20:44 +0800
-Message-ID: <1367893269-9308-24-git-send-email-gaofeng@cn.fujitsu.com>
+Subject: [PATCH RFC 24/48] Audit: xt_AUDIT: Log audit message in proper user
+	namespace
+Date: Tue, 7 May 2013 10:20:45 +0800
+Message-ID: <1367893269-9308-25-git-send-email-gaofeng@cn.fujitsu.com>
 References: <1367893269-9308-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,46 +22,43 @@ To: viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, eparis-H+wXaHxf7aLQT
 Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Log the audit message in the user namespace which
-current task belongs to.
+we can log audit message in the user namespace which
+netfilter xt_AUDIT rules belongs to.
 
 Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- net/netfilter/x_tables.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+ net/netfilter/xt_AUDIT.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/net/netfilter/x_tables.c b/net/netfilter/x_tables.c
-index 8b03028..ba90a1b 100644
---- a/net/netfilter/x_tables.c
-+++ b/net/netfilter/x_tables.c
-@@ -824,6 +824,7 @@ xt_replace_table(struct xt_table *table,
- 	      int *error)
+diff --git a/net/netfilter/xt_AUDIT.c b/net/netfilter/xt_AUDIT.c
+index 3228d7f..b1ffba2 100644
+--- a/net/netfilter/xt_AUDIT.c
++++ b/net/netfilter/xt_AUDIT.c
+@@ -122,12 +122,14 @@ static unsigned int
+ audit_tg(struct sk_buff *skb, const struct xt_action_param *par)
  {
- 	struct xt_table_info *private;
-+	struct user_namespace *ns = current_user_ns();
- 	int ret;
+ 	const struct xt_audit_info *info = par->targinfo;
++	struct net *net = dev_net(par->in ? par->in : par->out);
++	struct user_namespace *ns = net->user_ns;
+ 	struct audit_buffer *ab;
  
- 	ret = xt_jumpstack_alloc(newinfo);
-@@ -857,16 +858,16 @@ xt_replace_table(struct xt_table *table,
- 	local_bh_enable();
+-	if (audit_enabled == 0)
++	if (audit_enabled_ns(ns) == 0)
+ 		goto errout;
  
- #ifdef CONFIG_AUDIT
--	if (audit_enabled) {
-+	if (audit_enabled_ns(ns)) {
- 		struct audit_buffer *ab;
+-	ab = audit_log_start(NULL, GFP_ATOMIC, AUDIT_NETFILTER_PKT);
++	ab = audit_log_start_ns(ns, NULL, GFP_ATOMIC, AUDIT_NETFILTER_PKT);
+ 	if (ab == NULL)
+ 		goto errout;
  
--		ab = audit_log_start(current->audit_context, GFP_KERNEL,
--				     AUDIT_NETFILTER_CFG);
-+		ab = audit_log_start_ns(ns, current->audit_context,
-+					GFP_KERNEL, AUDIT_NETFILTER_CFG);
- 		if (ab) {
- 			audit_log_format(ab, "table=%s family=%u entries=%u",
- 					 table->name, table->af,
- 					 private->number);
--			audit_log_end(ab);
-+			audit_log_end_ns(ns, ab);
- 		}
- 	}
+@@ -172,7 +174,7 @@ audit_tg(struct sk_buff *skb, const struct xt_action_param *par)
+ 		audit_log_secctx(ab, skb->secmark);
  #endif
+ 
+-	audit_log_end(ab);
++	audit_log_end_ns(ns, ab);
+ 
+ errout:
+ 	return XT_CONTINUE;
 -- 
 1.8.1.4
