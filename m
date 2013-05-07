@@ -1,14 +1,13 @@
-From: Janne Karhunen <janne.karhunen-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH] Use CAP_SYS_RESOURCE as magic for escaping user
-	namespaces.
-Date: Tue, 7 May 2013 13:30:43 +0300
-Message-ID: <CAE=NcrY5oVFd-Eu=iBR6PcZ_M_DWcitAxz3bvovWh1smQ5wUog@mail.gmail.com>
-References: <1367913689-3423-1-git-send-email-Janne.Karhunen@gmail.com>
+From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Suggestion] kernel/cgroup.c: about kfree after 'get_new_cssid'
+Date: Tue, 7 May 2013 19:01:59 +0800
+Message-ID: <5188DF27.4080000@huawei.com>
+References: <5188DB93.2080504@asianux.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1367913689-3423-1-git-send-email-Janne.Karhunen-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <5188DB93.2080504-bOixZGp5f+dBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,45 +17,39 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Chen Gang <gang.chen-bOixZGp5f+dBDgjK7y7TUQ@public.gmane.org>
+Cc: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, May 7, 2013 at 11:01 AM, Janne Karhunen
-<janne.karhunen-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+On 2013/5/7 18:46, Chen Gang wrote:
+> Hello Maintainers:
+> 
+> After call get_new_cssid(), I can not find the related free function
+> (it seems free_css_id() is for that, but not used).
+> 
+> The memory location is:
+>   get_new_cssid() --> kzalloc() for 'struct css_id'
+>   get_new_cssid() --> idr_alloc() for 'ss->idr'
+> 
+> One work flow:
+>   cgroup_load_subsys() --> cgroup_init_idr() --> get_new_cssid()
+>   when get_new_cssid() fails, it will:
+>   cgroup_load_subsys() --> cgroup_unload_subsys() --> idr_destroy(),
+>   and also:
+>   cgroup_load_subsys() --> cgroup_unload_subsys() --> ss->css_free();
+>     ('css_free' may 'debug_css_free', or 'freezer_css_free' ...)
+> 
+> It seems the work flow above is not 'kfree' 'struct css_id', is it true?
+> 
+> BTW: I also guess, for cgroup_init_idr() in cgroup_init(), need check
+> the return value.
+> 
+> Please help check.
+> 
 
-> @@ -481,7 +490,7 @@ int cap_bprm_set_creds(struct linux_binprm *bprm)
->         const struct cred *old = current_cred();
->         struct cred *new = bprm->cred;
->         bool effective, has_cap = false;
-> -       int ret;
-> +       int ret, has_res;
->         kuid_t root_uid;
->
->         effective = false;
-> @@ -501,6 +510,8 @@ int cap_bprm_set_creds(struct linux_binprm *bprm)
->                         warn_setuid_and_fcaps_mixed(bprm->filename);
->                         goto skip;
->                 }
-> +               has_res = cap_raised(new->cap_permitted, CAP_SYS_RESOURCE);
-> +
->                 /*
->                  * To support inheritance of root-permissions and suid-root
->                  * executables under compatibility mode, we override the
-> @@ -512,6 +523,9 @@ int cap_bprm_set_creds(struct linux_binprm *bprm)
->                         /* pP' = (cap_bset & ~0) | (pI & ~0) */
->                         new->cap_permitted = cap_combine(old->cap_bset,
->                                                          old->cap_inheritable);
-> +
-> +                       if (!has_res && (old->user_ns != &init_user_ns))
-> +                               cap_lower (new->cap_permitted, CAP_SYS_RESOURCE);
->                 }
->                 if (uid_eq(new->euid, root_uid))
->                         effective = true;
+It's the specific cgroup subsystem that calls free_css_id() in it's subsys->css_free()
+callback. See __mem_cgroup_free() for example.
 
-I am also seriously unhappy about this 'setuid compatibility mode'
-here. It is highly surprising to have all caps elevated on uid/euid
-root exec regardless of the executable setuid flags...
-
-
---
-Janne
+There's a bug in cgroup_unload_subsys() that idr_destroy() should be called after
+ss->css_free(). That said, given there's no modular cgroup subsystem using css_id,
+and the whole css_id thing will be eliminated in 3.11, why bother fixing it.
