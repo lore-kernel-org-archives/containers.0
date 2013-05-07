@@ -1,7 +1,8 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH RFC 07/48] Audit: make audit_pid per user namespace
-Date: Tue, 7 May 2013 10:20:28 +0800
-Message-ID: <1367893269-9308-8-git-send-email-gaofeng@cn.fujitsu.com>
+Subject: [PATCH RFC 15/48] Audit: allow to send netlink message to auditd in
+	uninit user namespace
+Date: Tue, 7 May 2013 10:20:36 +0800
+Message-ID: <1367893269-9308-16-git-send-email-gaofeng__22003.9725922563$1367893279$gmane$org@cn.fujitsu.com>
 References: <1367893269-9308-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,184 +22,100 @@ To: viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, eparis-H+wXaHxf7aLQT
 Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-After this patch, audit_pid is per user namespace.
-Since we havn't prepared to enable audit for uninit
-user namespace now, use the audit_pid of init_user_ns
-instead of the audit_pid of per user namespace.
+We can allow audit kernel side netlink sock of uninit
+user namespace to send message to the right auditd.
 
 Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- include/linux/audit.h          |  1 +
- include/linux/user_namespace.h |  1 +
- kernel/audit.c                 | 22 +++++++++++-----------
- kernel/audit.h                 |  5 ++---
- kernel/auditsc.c               |  6 +++---
- 5 files changed, 18 insertions(+), 17 deletions(-)
+ kernel/audit.c | 28 ++++++++++++++--------------
+ 1 file changed, 14 insertions(+), 14 deletions(-)
 
-diff --git a/include/linux/audit.h b/include/linux/audit.h
-index 78f51ae..684599b 100644
---- a/include/linux/audit.h
-+++ b/include/linux/audit.h
-@@ -26,6 +26,7 @@
- #include <linux/sched.h>
- #include <linux/ptrace.h>
- #include <uapi/linux/audit.h>
-+#include <linux/user_namespace.h>
- 
- struct audit_sig_info {
- 	uid_t		uid;
-diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index 24f7c2f..a6c6174 100644
---- a/include/linux/user_namespace.h
-+++ b/include/linux/user_namespace.h
-@@ -21,6 +21,7 @@ struct uid_gid_map {	/* 64 bytes -- 1 cache line */
- #ifdef CONFIG_AUDIT
- struct audit_ctrl {
- 	struct sock		*sock;
-+	int			pid;
- 	struct sk_buff_head	queue;
- 	struct sk_buff_head	hold_queue;
- 	struct task_struct	*kauditd_task;
 diff --git a/kernel/audit.c b/kernel/audit.c
-index 839c4c0..2ce7a21 100644
+index 18cf5ce..d39296b 100644
 --- a/kernel/audit.c
 +++ b/kernel/audit.c
-@@ -92,7 +92,6 @@ static int	audit_failure = AUDIT_FAIL_PRINTK;
-  * contains the pid of the auditd process and audit_nlk_portid contains
-  * the portid to use to send netlink messages to that process.
+@@ -361,9 +361,9 @@ static int audit_set_failure(int state, kuid_t loginuid, u32 sessionid, u32 sid)
+  * This only holds messages is audit_default is set, aka booting with audit=1
+  * or building your kernel that way.
   */
--int		audit_pid;
- static int	audit_nlk_portid;
+-static void audit_hold_skb(struct sk_buff *skb)
++static void audit_hold_skb(struct user_namespace *ns, struct sk_buff *skb)
+ {
+-	struct sk_buff_head *list = &init_user_ns.audit.hold_queue;
++	struct sk_buff_head *list = &ns->audit.hold_queue;
  
- /* If audit_rate_limit is non-zero, limit the rate of sending audit records
-@@ -181,7 +180,7 @@ void audit_panic(const char *message)
- 		break;
- 	case AUDIT_FAIL_PANIC:
- 		/* test audit_pid since printk is always losey, why bother? */
--		if (audit_pid)
-+		if (&init_user_ns.audit.pid)
- 			panic("audit: %s\n", message);
- 		break;
+ 	if (audit_default &&
+ 	    skb_queue_len(list) < audit_backlog_limit)
+@@ -376,7 +376,7 @@ static void audit_hold_skb(struct sk_buff *skb)
+  * For one reason or another this nlh isn't getting delivered to the userspace
+  * audit daemon, just send it to printk.
+  */
+-static void audit_printk_skb(struct sk_buff *skb)
++static void audit_printk_skb(struct user_namespace *ns, struct sk_buff *skb)
+ {
+ 	struct nlmsghdr *nlh = nlmsg_hdr(skb);
+ 	char *data = nlmsg_data(nlh);
+@@ -388,24 +388,24 @@ static void audit_printk_skb(struct sk_buff *skb)
+ 			audit_log_lost("printk limit exceeded\n");
  	}
-@@ -404,9 +403,10 @@ static void kauditd_send_skb(struct sk_buff *skb)
- 			      audit_nlk_portid, 0);
+ 
+-	audit_hold_skb(skb);
++	audit_hold_skb(ns, skb);
+ }
+ 
+-static void kauditd_send_skb(struct sk_buff *skb)
++static void kauditd_send_skb(struct user_namespace *ns, struct sk_buff *skb)
+ {
+ 	int err;
+ 	/* take a reference in case we can't send it and we want to hold it */
+ 	skb_get(skb);
+-	err = netlink_unicast(init_user_ns.audit.sock, skb,
+-			      init_user_ns.audit.portid, 0);
++	err = netlink_unicast(ns->audit.sock, skb,
++			      ns->audit.portid, 0);
  	if (err < 0) {
  		BUG_ON(err != -ECONNREFUSED); /* Shouldn't happen */
--		printk(KERN_ERR "audit: *NO* daemon at audit_pid=%d\n", audit_pid);
-+		printk(KERN_ERR "audit: *NO* daemon at audit_pid=%d\n",
-+		       init_user_ns.audit.pid);
+ 		printk(KERN_ERR "audit: *NO* daemon at audit_pid=%d\n",
+-		       init_user_ns.audit.pid);
++		       ns->audit.pid);
  		audit_log_lost("auditd disappeared\n");
--		audit_pid = 0;
-+		init_user_ns.audit.pid = 0;
+-		init_user_ns.audit.pid = 0;
++		ns->audit.pid = 0;
  		/* we might get lucky and get this in the next auditd */
- 		audit_hold_skb(skb);
+-		audit_hold_skb(skb);
++		audit_hold_skb(ns, skb);
  	} else
-@@ -436,10 +436,10 @@ static int kauditd_thread(void *dummy)
- 		 * in 5 years when I want to play with this again I'll see this
- 		 * note and still have no friggin idea what i'm thinking today.
- 		 */
--		if (audit_default && audit_pid) {
-+		if (audit_default && ns->audit.pid) {
+ 		/* drop the extra reference if sent ok */
+ 		consume_skb(skb);
+@@ -437,7 +437,7 @@ static int kauditd_thread(void *dummy)
  			skb = skb_dequeue(hold_queue);
  			if (unlikely(skb)) {
--				while (skb && audit_pid) {
-+				while (skb && ns->audit.pid) {
- 					kauditd_send_skb(skb);
+ 				while (skb && ns->audit.pid) {
+-					kauditd_send_skb(skb);
++					kauditd_send_skb(ns, skb);
  					skb = skb_dequeue(hold_queue);
  				}
-@@ -449,7 +449,7 @@ static int kauditd_thread(void *dummy)
- 		skb = skb_dequeue(queue);
+ 			}
+@@ -447,9 +447,9 @@ static int kauditd_thread(void *dummy)
  		wake_up(&audit_backlog_wait);
  		if (skb) {
--			if (audit_pid)
-+			if (ns->audit.pid)
- 				kauditd_send_skb(skb);
+ 			if (ns->audit.pid)
+-				kauditd_send_skb(skb);
++				kauditd_send_skb(ns, skb);
  			else
- 				audit_printk_skb(skb);
-@@ -683,7 +683,7 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
- 	case AUDIT_GET:
- 		status_set.enabled	 = audit_enabled;
- 		status_set.failure	 = audit_failure;
--		status_set.pid		 = audit_pid;
-+		status_set.pid		 = ns->audit.pid;
- 		status_set.rate_limit	 = audit_rate_limit;
- 		status_set.backlog_limit = audit_backlog_limit;
- 		status_set.lost		 = atomic_read(&audit_lost);
-@@ -713,10 +713,10 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
- 
- 			if (audit_enabled != AUDIT_OFF)
- 				audit_log_config_change("audit_pid", new_pid,
--							audit_pid, loginuid,
-+							ns->audit.pid, loginuid,
- 							sessionid, sid, 1);
- 
--			audit_pid = new_pid;
-+			ns->audit.pid = new_pid;
- 			audit_nlk_portid = NETLINK_CB(skb).portid;
- 		}
- 		if (status_get->mask & AUDIT_STATUS_RATE_LIMIT) {
-@@ -1530,7 +1530,7 @@ void audit_log_end(struct audit_buffer *ab)
- 		struct nlmsghdr *nlh = nlmsg_hdr(ab->skb);
- 		nlh->nlmsg_len = ab->skb->len - NLMSG_HDRLEN;
- 
--		if (audit_pid) {
-+		if (init_user_ns.audit.pid) {
- 			skb_queue_tail(&init_user_ns.audit.queue,
+-				audit_printk_skb(skb);
++				audit_printk_skb(ns, skb);
+ 		} else {
+ 			DECLARE_WAITQUEUE(wait, current);
+ 			set_current_state(TASK_INTERRUPTIBLE);
+@@ -1529,7 +1529,7 @@ void audit_log_end(struct audit_buffer *ab)
  				       ab->skb);
  			wake_up_interruptible(&kauditd_wait);
-diff --git a/kernel/audit.h b/kernel/audit.h
-index 11468d9..ced93fe 100644
---- a/kernel/audit.h
-+++ b/kernel/audit.h
-@@ -61,8 +61,6 @@ struct audit_entry {
- 
- extern int audit_ever_enabled;
- 
--extern int audit_pid;
--
- #define AUDIT_INODE_BUCKETS	32
- extern struct list_head audit_inode_hash[AUDIT_INODE_BUCKETS];
- 
-@@ -153,7 +151,8 @@ extern u32 audit_sig_sid;
- extern int __audit_signal_info(int sig, struct task_struct *t);
- static inline int audit_signal_info(int sig, struct task_struct *t)
- {
--	if (unlikely((audit_pid && t->tgid == audit_pid) ||
-+	if (unlikely((init_user_ns.audit.pid &&
-+		      t->tgid == init_user_ns.audit.pid) ||
- 		     (audit_signals && !audit_dummy_context())))
- 		return __audit_signal_info(sig, t);
- 	return 0;
-diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-index c682294..6c97f36 100644
---- a/kernel/auditsc.c
-+++ b/kernel/auditsc.c
-@@ -871,7 +871,7 @@ static enum audit_state audit_filter_syscall(struct task_struct *tsk,
- 	struct audit_entry *e;
- 	enum audit_state state;
- 
--	if (audit_pid && tsk->tgid == audit_pid)
-+	if (init_user_ns.audit.pid && tsk->tgid == init_user_ns.audit.pid)
- 		return AUDIT_DISABLED;
- 
- 	rcu_read_lock();
-@@ -932,7 +932,7 @@ void audit_filter_inodes(struct task_struct *tsk, struct audit_context *ctx)
- {
- 	struct audit_names *n;
- 
--	if (audit_pid && tsk->tgid == audit_pid)
-+	if (init_user_ns.audit.pid && tsk->tgid == init_user_ns.audit.pid)
- 		return;
- 
- 	rcu_read_lock();
-@@ -2547,7 +2547,7 @@ int __audit_signal_info(int sig, struct task_struct *t)
- 	struct audit_context *ctx = tsk->audit_context;
- 	kuid_t uid = current_uid(), t_uid = task_uid(t);
- 
--	if (audit_pid && t->tgid == audit_pid) {
-+	if (init_user_ns.audit.pid && t->tgid == init_user_ns.audit.pid) {
- 		if (sig == SIGTERM || sig == SIGHUP || sig == SIGUSR1 || sig == SIGUSR2) {
- 			audit_sig_pid = tsk->pid;
- 			if (uid_valid(tsk->loginuid))
+ 		} else {
+-			audit_printk_skb(ab->skb);
++			audit_printk_skb(&init_user_ns, ab->skb);
+ 		}
+ 		ab->skb = NULL;
+ 	}
 -- 
 1.8.1.4
