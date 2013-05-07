@@ -1,8 +1,7 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH RFC 20/48] Audit: introduce new audit logging interface for
-	user namespace
-Date: Tue, 7 May 2013 10:20:41 +0800
-Message-ID: <1367893269-9308-21-git-send-email-gaofeng@cn.fujitsu.com>
+Subject: [PATCH RFC 27/48] Audit: make tree_list per user namespace
+Date: Tue, 7 May 2013 10:20:48 +0800
+Message-ID: <1367893269-9308-28-git-send-email-gaofeng__27282.2383478799$1367893405$gmane$org@cn.fujitsu.com>
 References: <1367893269-9308-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,243 +21,167 @@ To: viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, eparis-H+wXaHxf7aLQT
 Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This interface audit_log_start_ns and audit_log_end_ns
-will be used for logging audit logs in user namespace.
+tree_list is used to list the directory releated audit rules,
+it should be per user namespace.
 
 Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- include/linux/audit.h | 25 ++++++++++++--
- kernel/audit.c        | 95 ++++++++++++++++++++++++++++++---------------------
- 2 files changed, 78 insertions(+), 42 deletions(-)
+ include/linux/user_namespace.h |  1 +
+ kernel/audit.c                 |  2 ++
+ kernel/audit.h                 |  4 ++--
+ kernel/audit_tree.c            | 22 ++++++++++++----------
+ kernel/auditfilter.c           |  2 +-
+ 5 files changed, 18 insertions(+), 13 deletions(-)
 
-diff --git a/include/linux/audit.h b/include/linux/audit.h
-index 33e6584..f16db07 100644
---- a/include/linux/audit.h
-+++ b/include/linux/audit.h
-@@ -398,10 +398,18 @@ extern __printf(4, 5)
- void audit_log(struct audit_context *ctx, gfp_t gfp_mask, int type,
- 	       const char *fmt, ...);
- 
--extern struct audit_buffer *audit_log_start(struct audit_context *ctx, gfp_t gfp_mask, int type);
-+extern struct audit_buffer *
-+audit_log_start(struct audit_context *ctx, gfp_t gfp_mask, int type);
-+
-+extern struct audit_buffer *
-+audit_log_start_ns(struct user_namespace *ns, struct audit_context *ctx,
-+		   gfp_t gfp_mask, int type);
-+
- extern __printf(2, 3)
- void audit_log_format(struct audit_buffer *ab, const char *fmt, ...);
- extern void		    audit_log_end(struct audit_buffer *ab);
-+extern void		    audit_log_end_ns(struct user_namespace *ns,
-+					     struct audit_buffer *ab);
- extern int		    audit_string_contains_control(const char *string,
- 							  size_t len);
- extern void		    audit_log_n_hex(struct audit_buffer *ab,
-@@ -448,8 +456,16 @@ static inline __printf(4, 5)
- void audit_log(struct audit_context *ctx, gfp_t gfp_mask, int type,
- 	       const char *fmt, ...)
- { }
--static inline struct audit_buffer *audit_log_start(struct audit_context *ctx,
--						   gfp_t gfp_mask, int type)
-+static inline
-+struct audit_buffer *audit_log_start(struct audit_context *ctx,
-+				     gfp_t gfp_mask, int type)
-+{
-+	return NULL;
-+}
-+static inline
-+struct audit_buffer *audit_log_start_ns(struct user_namespace *ns,
-+					struct audit_context *ctx,
-+					gfp_t gfp_mask, int type)
- {
- 	return NULL;
- }
-@@ -458,6 +474,9 @@ void audit_log_format(struct audit_buffer *ab, const char *fmt, ...)
- { }
- static inline void audit_log_end(struct audit_buffer *ab)
- { }
-+static inline void audit_log_end_ns(struct user_namespace *ns,
-+				    struct audit_buffer *ab)
-+{ }
- static inline void audit_log_n_hex(struct audit_buffer *ab,
- 				   const unsigned char *buf, size_t len)
- { }
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index c56e276..c870e28 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -32,6 +32,7 @@ struct audit_ctrl {
+ 	wait_queue_head_t	backlog_wait;
+ #define AUDIT_INODE_BUCKETS	32
+ 	struct list_head	inode_hash[AUDIT_INODE_BUCKETS];
++	struct list_head	tree_list;
+ 	bool			ever_enabled;
+ };
+ #endif
 diff --git a/kernel/audit.c b/kernel/audit.c
-index 5ac9acd..594e4e1 100644
+index d254827..a0544b1 100644
 --- a/kernel/audit.c
 +++ b/kernel/audit.c
-@@ -1139,47 +1139,35 @@ static inline void audit_get_stamp(struct audit_context *ctx,
+@@ -1609,6 +1609,8 @@ void audit_set_user_ns(struct user_namespace *ns)
+ 	for (i = 0; i < AUDIT_INODE_BUCKETS; i++)
+ 		INIT_LIST_HEAD(&ns->audit.inode_hash[i]);
+ 
++	INIT_LIST_HEAD(&ns->audit.tree_list);
++
+ 	ns->audit.initialized = AUDIT_INITIALIZED;
+ }
+ 
+diff --git a/kernel/audit.h b/kernel/audit.h
+index a01c892..a509796 100644
+--- a/kernel/audit.h
++++ b/kernel/audit.h
+@@ -122,7 +122,7 @@ extern struct audit_chunk *audit_tree_lookup(const struct inode *);
+ extern void audit_put_chunk(struct audit_chunk *);
+ extern int audit_tree_match(struct audit_chunk *, struct audit_tree *);
+ extern int audit_make_tree(struct audit_krule *, char *, u32);
+-extern int audit_add_tree_rule(struct audit_krule *);
++extern int audit_add_tree_rule(struct user_namespace *ns, struct audit_krule *);
+ extern int audit_remove_tree_rule(struct audit_krule *);
+ extern void audit_trim_trees(void);
+ extern int audit_tag_tree(char *old, char *new);
+@@ -131,7 +131,7 @@ extern void audit_put_tree(struct audit_tree *);
+ extern void audit_kill_trees(struct list_head *);
+ #else
+ #define audit_remove_tree_rule(rule) BUG()
+-#define audit_add_tree_rule(rule) -EINVAL
++#define audit_add_tree_rule(ns, rule) -EINVAL
+ #define audit_make_tree(rule, str, op) -EINVAL
+ #define audit_trim_trees() (void)0
+ #define audit_put_tree(tree) (void)0
+diff --git a/kernel/audit_tree.c b/kernel/audit_tree.c
+index a291aa2..4531d73 100644
+--- a/kernel/audit_tree.c
++++ b/kernel/audit_tree.c
+@@ -35,7 +35,6 @@ struct audit_chunk {
+ 	} owners[];
+ };
+ 
+-static LIST_HEAD(tree_list);
+ static LIST_HEAD(prune_list);
+ 
  /*
-  * Wait for auditd to drain the queue a little
-  */
--static void wait_for_auditd(unsigned long sleep_time)
-+static void wait_for_auditd(struct user_namespace *ns,
-+			    unsigned long sleep_time)
+@@ -581,10 +580,11 @@ static int compare_root(struct vfsmount *mnt, void *arg)
+ void audit_trim_trees(void)
  {
--	const struct sk_buff_head *queue = &init_user_ns.audit.queue;
-+	const struct sk_buff_head *queue = &ns->audit.queue;
- 	DECLARE_WAITQUEUE(wait, current);
- 	set_current_state(TASK_INTERRUPTIBLE);
--	add_wait_queue(&init_user_ns.audit.backlog_wait, &wait);
-+	add_wait_queue(&ns->audit.backlog_wait, &wait);
+ 	struct list_head cursor;
++	struct list_head *tree_list = &current_user_ns()->audit.tree_list;
  
- 	if (audit_backlog_limit &&
- 	    skb_queue_len(queue) > audit_backlog_limit)
- 		schedule_timeout(sleep_time);
- 
- 	__set_current_state(TASK_RUNNING);
--	remove_wait_queue(&init_user_ns.audit.backlog_wait, &wait);
-+	remove_wait_queue(&ns->audit.backlog_wait, &wait);
+ 	mutex_lock(&audit_filter_mutex);
+-	list_add(&cursor, &tree_list);
+-	while (cursor.next != &tree_list) {
++	list_add(&cursor, tree_list);
++	while (cursor.next != tree_list) {
+ 		struct audit_tree *tree;
+ 		struct path path;
+ 		struct vfsmount *root_mnt;
+@@ -651,14 +651,14 @@ static int tag_mount(struct vfsmount *mnt, void *arg)
  }
  
--/**
-- * audit_log_start - obtain an audit buffer
-- * @ctx: audit_context (may be NULL)
-- * @gfp_mask: type of allocation
-- * @type: audit message type
-- *
-- * Returns audit_buffer pointer on success or NULL on error.
-- *
-- * Obtain an audit buffer.  This routine does locking to obtain the
-- * audit buffer, but then no locking is required for calls to
-- * audit_log_*format.  If the task (ctx) is a task that is currently in a
-- * syscall, then the syscall is marked as auditable and an audit record
-- * will be written at syscall exit.  If there is no associated task, then
-- * task context (ctx) should be NULL.
-- */
--struct audit_buffer *audit_log_start(struct audit_context *ctx, gfp_t gfp_mask,
--				     int type)
-+struct audit_buffer *audit_log_start_ns(struct user_namespace *ns,
-+					struct audit_context *ctx,
-+					gfp_t gfp_mask,
-+					int type)
+ /* called with audit_filter_mutex */
+-int audit_add_tree_rule(struct audit_krule *rule)
++int audit_add_tree_rule(struct user_namespace *ns, struct audit_krule *rule)
  {
- 	struct audit_buffer	*ab	= NULL;
- 	struct timespec		t;
- 	unsigned int		uninitialized_var(serial);
- 	int reserve;
- 	unsigned long timeout_start = jiffies;
--	struct sk_buff_head	*queue = &init_user_ns.audit.queue;
-+	struct sk_buff_head	*queue = &ns->audit.queue;
+ 	struct audit_tree *seed = rule->tree, *tree;
+ 	struct path path;
+ 	struct vfsmount *mnt;
+ 	int err;
  
--	if (init_user_ns.audit.initialized != AUDIT_INITIALIZED)
-+	if (ns->audit.initialized != AUDIT_INITIALIZED)
- 		return NULL;
- 
- 	if (unlikely(audit_filter_type(type)))
-@@ -1199,7 +1187,7 @@ struct audit_buffer *audit_log_start(struct audit_context *ctx, gfp_t gfp_mask,
- 			sleep_time = timeout_start + audit_backlog_wait_time -
- 					jiffies;
- 			if ((long)sleep_time > 0)
--				wait_for_auditd(sleep_time);
-+				wait_for_auditd(ns, sleep_time);
- 			continue;
+-	list_for_each_entry(tree, &tree_list, list) {
++	list_for_each_entry(tree, &ns->audit.tree_list, list) {
+ 		if (!strcmp(seed->pathname, tree->pathname)) {
+ 			put_tree(seed);
+ 			rule->tree = tree;
+@@ -667,7 +667,7 @@ int audit_add_tree_rule(struct audit_krule *rule)
  		}
- 		if (audit_rate_check() && printk_ratelimit())
-@@ -1210,7 +1198,7 @@ struct audit_buffer *audit_log_start(struct audit_context *ctx, gfp_t gfp_mask,
- 			       audit_backlog_limit);
- 		audit_log_lost("backlog limit exceeded");
- 		audit_backlog_wait_time = audit_backlog_wait_overflow;
--		wake_up(&init_user_ns.audit.backlog_wait);
-+		wake_up(&ns->audit.backlog_wait);
- 		return NULL;
+ 	}
+ 	tree = seed;
+-	list_add(&tree->list, &tree_list);
++	list_add(&tree->list, &ns->audit.tree_list);
+ 	list_add(&rule->rlist, &tree->rules);
+ 	/* do not set rule->tree yet */
+ 	mutex_unlock(&audit_filter_mutex);
+@@ -720,6 +720,8 @@ int audit_tag_tree(char *old, char *new)
+ 	int failed = 0;
+ 	struct path path1, path2;
+ 	struct vfsmount *tagged;
++	struct user_namespace *ns = current_user_ns();
++	struct list_head *tree_list = &ns->audit.tree_list;
+ 	int err;
+ 
+ 	err = kern_path(new, 0, &path2);
+@@ -737,10 +739,10 @@ int audit_tag_tree(char *old, char *new)
  	}
  
-@@ -1227,6 +1215,28 @@ struct audit_buffer *audit_log_start(struct audit_context *ctx, gfp_t gfp_mask,
- 	return ab;
- }
+ 	mutex_lock(&audit_filter_mutex);
+-	list_add(&barrier, &tree_list);
++	list_add(&barrier, tree_list);
+ 	list_add(&cursor, &barrier);
  
-+
-+/**
-+ * audit_log_start - obtain an audit buffer
-+ * @ctx: audit_context (may be NULL)
-+ * @gfp_mask: type of allocation
-+ * @type: audit message type
-+ *
-+ * Returns audit_buffer pointer on success or NULL on error.
-+ *
-+ * Obtain an audit buffer.  This routine does locking to obtain the
-+ * audit buffer, but then no locking is required for calls to
-+ * audit_log_*format.  If the task (ctx) is a task that is currently in a
-+ * syscall, then the syscall is marked as auditable and an audit record
-+ * will be written at syscall exit.  If there is no associated task, then
-+ * task context (ctx) should be NULL.
-+ */
-+struct audit_buffer *audit_log_start(struct audit_context *ctx, gfp_t gfp_mask,
-+				     int type)
-+{
-+	return audit_log_start_ns(&init_user_ns, ctx, gfp_mask, type);
-+}
-+
- /**
-  * audit_expand - expand skb in the audit buffer
-  * @ab: audit_buffer
-@@ -1496,16 +1506,7 @@ void audit_log_link_denied(const char *operation, struct path *link)
- 	audit_log_end(ab);
- }
+-	while (cursor.next != &tree_list) {
++	while (cursor.next != tree_list) {
+ 		struct audit_tree *tree;
+ 		int good_one = 0;
  
--/**
-- * audit_log_end - end one audit record
-- * @ab: the audit_buffer
-- *
-- * The netlink_* functions cannot be called inside an irq context, so
-- * the audit buffer is placed on a queue and a tasklet is scheduled to
-- * remove them from the queue outside the irq context.  May be called in
-- * any context.
-- */
--void audit_log_end(struct audit_buffer *ab)
-+void audit_log_end_ns(struct user_namespace *ns, struct audit_buffer *ab)
- {
- 	if (!ab)
- 		return;
-@@ -1515,12 +1516,12 @@ void audit_log_end(struct audit_buffer *ab)
- 		struct nlmsghdr *nlh = nlmsg_hdr(ab->skb);
- 		nlh->nlmsg_len = ab->skb->len - NLMSG_HDRLEN;
- 
--		if (init_user_ns.audit.pid) {
--			skb_queue_tail(&init_user_ns.audit.queue,
-+		if (ns->audit.pid) {
-+			skb_queue_tail(&ns->audit.queue,
- 				       ab->skb);
--			wake_up_interruptible(&init_user_ns.audit.kauditd_wait);
-+			wake_up_interruptible(&ns->audit.kauditd_wait);
- 		} else {
--			audit_printk_skb(&init_user_ns, ab->skb);
-+			audit_printk_skb(ns, ab->skb);
+@@ -773,13 +775,13 @@ int audit_tag_tree(char *old, char *new)
+ 		spin_lock(&hash_lock);
+ 		if (!tree->goner) {
+ 			list_del(&tree->list);
+-			list_add(&tree->list, &tree_list);
++			list_add(&tree->list, tree_list);
  		}
- 		ab->skb = NULL;
+ 		spin_unlock(&hash_lock);
+ 		put_tree(tree);
  	}
-@@ -1528,6 +1529,20 @@ void audit_log_end(struct audit_buffer *ab)
- }
  
- /**
-+ * audit_log_end - end one audit record
-+ * @ab: the audit_buffer
-+ *
-+ * The netlink_* functions cannot be called inside an irq context, so
-+ * the audit buffer is placed on a queue and a tasklet is scheduled to
-+ * remove them from the queue outside the irq context.  May be called in
-+ * any context.
-+ */
-+void audit_log_end(struct audit_buffer *ab)
-+{
-+	audit_log_end_ns(&init_user_ns, ab);
-+}
-+
-+/**
-  * audit_log - Log an audit record
-  * @ctx: audit context
-  * @gfp_mask: type of allocation
-@@ -1614,7 +1629,9 @@ void audit_free_user_ns(struct user_namespace *ns)
- }
+-	while (barrier.prev != &tree_list) {
++	while (barrier.prev != tree_list) {
+ 		struct audit_tree *tree;
  
- EXPORT_SYMBOL(audit_log_start);
-+EXPORT_SYMBOL(audit_log_start_ns);
- EXPORT_SYMBOL(audit_log_end);
-+EXPORT_SYMBOL(audit_log_end_ns);
- EXPORT_SYMBOL(audit_log_format);
- EXPORT_SYMBOL(audit_log);
- EXPORT_SYMBOL(audit_set_user_ns);
+ 		tree = container_of(barrier.prev, struct audit_tree, list);
+diff --git a/kernel/auditfilter.c b/kernel/auditfilter.c
+index 573385b..3c8fb2e 100644
+--- a/kernel/auditfilter.c
++++ b/kernel/auditfilter.c
+@@ -962,7 +962,7 @@ static inline int audit_add_rule(struct user_namespace *ns,
+ 		}
+ 	}
+ 	if (tree) {
+-		err = audit_add_tree_rule(&entry->rule);
++		err = audit_add_tree_rule(ns, &entry->rule);
+ 		if (err) {
+ 			mutex_unlock(&audit_filter_mutex);
+ 			goto error;
 -- 
 1.8.1.4
