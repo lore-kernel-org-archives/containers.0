@@ -1,7 +1,7 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH RFC 06/48] Audit: make kauditd_task per user namespace
-Date: Tue, 7 May 2013 10:20:27 +0800
-Message-ID: <1367893269-9308-7-git-send-email-gaofeng@cn.fujitsu.com>
+Subject: [PATCH RFC 11/48] Audit: make audit_ever_enabled per user namespace
+Date: Tue, 7 May 2013 10:20:32 +0800
+Message-ID: <1367893269-9308-12-git-send-email-gaofeng@cn.fujitsu.com>
 References: <1367893269-9308-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,87 +21,97 @@ To: viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, eparis-H+wXaHxf7aLQT
 Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch makes kauditd_task per user namespace,
-Since right now we only allow user in init user
-namesapce to send audit netlink message to kernel,
-so actually the kauditd_task belongs to other user
-namespace will still not run.
+We set audit_ever_enabled true after we enabled audit once.
+and if audit_ever_enabled is true, we will allocate audit
+context for task.
+
+We should decide if to allocate audit context for tasks based on
+if the audit is enabled once in the user namespace which the
+task belongs to.
+
+So audit_ever_enabled should be per user namespace too.
 
 Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- include/linux/user_namespace.h |  1 +
- kernel/audit.c                 | 25 +++++++++++++++----------
- 2 files changed, 16 insertions(+), 10 deletions(-)
+ include/linux/user_namespace.h | 1 +
+ kernel/audit.c                 | 7 +++----
+ kernel/auditsc.c               | 5 ++++-
+ 3 files changed, 8 insertions(+), 5 deletions(-)
 
 diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index 53420a4..24f7c2f 100644
+index 3b2ed90..d5a22b2 100644
 --- a/include/linux/user_namespace.h
 +++ b/include/linux/user_namespace.h
-@@ -23,6 +23,7 @@ struct audit_ctrl {
- 	struct sock		*sock;
+@@ -27,6 +27,7 @@ struct audit_ctrl {
  	struct sk_buff_head	queue;
  	struct sk_buff_head	hold_queue;
-+	struct task_struct	*kauditd_task;
+ 	struct task_struct	*kauditd_task;
++	bool			ever_enabled;
  };
  #endif
  
 diff --git a/kernel/audit.c b/kernel/audit.c
-index 61562c5..839c4c0 100644
+index 1138ff5..9ea5b27 100644
 --- a/kernel/audit.c
 +++ b/kernel/audit.c
-@@ -129,7 +129,6 @@ static DEFINE_SPINLOCK(audit_freelist_lock);
- static int	   audit_freelist_count;
- static LIST_HEAD(audit_freelist);
+@@ -76,7 +76,6 @@ static int	audit_initialized;
+ #define AUDIT_OFF	0
+ #define AUDIT_ON	1
+ #define AUDIT_LOCKED	2
+-bool		audit_ever_enabled;
  
--static struct task_struct *kauditd_task;
- static DECLARE_WAIT_QUEUE_HEAD(kauditd_wait);
- static DECLARE_WAIT_QUEUE_HEAD(audit_backlog_wait);
+ /* Default state when kernel boots without any parameters. */
+ static int	audit_default;
+@@ -331,7 +330,7 @@ static int audit_set_enabled(struct user_namespace *ns, int state,
+ 				     state, loginuid, sessionid, sid);
  
-@@ -418,8 +417,9 @@ static void kauditd_send_skb(struct sk_buff *skb)
- static int kauditd_thread(void *dummy)
- {
- 	struct sk_buff *skb;
--	struct sk_buff_head *queue = &init_user_ns.audit.queue;
--	struct sk_buff_head *hold_queue = &init_user_ns.audit.hold_queue;
-+	struct user_namespace *ns = dummy;
-+	struct sk_buff_head *queue = &ns->audit.queue;
-+	struct sk_buff_head *hold_queue = &ns->audit.hold_queue;
+ 	if (!rc)
+-		audit_ever_enabled |= !!state;
++		ns->audit.ever_enabled |= !!state;
  
- 	set_freezable();
- 	while (!kthread_should_stop()) {
-@@ -663,14 +663,16 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
- 	ns = current_user_ns();
- 	/* As soon as there's any sign of userspace auditd,
- 	 * start kauditd to talk to it */
--	if (!kauditd_task) {
--		kauditd_task = kthread_run(kauditd_thread, NULL, "kauditd");
--		if (IS_ERR(kauditd_task)) {
--			err = PTR_ERR(kauditd_task);
--			kauditd_task = NULL;
--			return err;
--		}
-+	if (!ns->audit.kauditd_task) {
-+		struct task_struct *tsk;
-+
-+		tsk = kthread_run(kauditd_thread, ns, "kauditd");
-+		if (IS_ERR(tsk))
-+			return PTR_ERR(tsk);
-+
-+		ns->audit.kauditd_task = tsk;
- 	}
-+
- 	loginuid = audit_get_loginuid(current);
- 	sessionid = audit_get_sessionid(current);
- 	security_task_getsecid(current, &sid);
-@@ -1615,6 +1617,9 @@ void audit_free_user_ns(struct user_namespace *ns)
+ 	return rc;
+ }
+@@ -994,7 +993,6 @@ static int __init audit_init(void)
  
- 	skb_queue_purge(&ns->audit.queue);
- 	skb_queue_purge(&ns->audit.hold_queue);
-+
-+	if (ns->audit.kauditd_task)
-+		kthread_stop(ns->audit.kauditd_task);
+ 	audit_set_user_ns(&init_user_ns);
+ 	audit_initialized = AUDIT_INITIALIZED;
+-	audit_ever_enabled |= !!audit_default;
+ 
+ 	audit_log(NULL, GFP_KERNEL, AUDIT_KERNEL, "initialized");
+ 
+@@ -1016,7 +1014,7 @@ static int __init audit_enable(char *str)
+ 
+ 	if (audit_initialized == AUDIT_INITIALIZED) {
+ 		init_user_ns.audit.enabled = audit_default;
+-		audit_ever_enabled |= !!audit_default;
++		init_user_ns.audit.ever_enabled |= !!audit_default;
+ 	} else if (audit_initialized == AUDIT_UNINITIALIZED) {
+ 		printk(" (after initialization)");
+ 	} else {
+@@ -1594,6 +1592,7 @@ void audit_set_user_ns(struct user_namespace *ns)
+ 	skb_queue_head_init(&ns->audit.queue);
+ 	skb_queue_head_init(&ns->audit.hold_queue);
+ 	ns->audit.enabled = audit_default;
++	ns->audit.ever_enabled |= !!audit_default;
  }
  
- EXPORT_SYMBOL(audit_log_start);
+ void audit_free_user_ns(struct user_namespace *ns)
+diff --git a/kernel/auditsc.c b/kernel/auditsc.c
+index 6c97f36..290cce6 100644
+--- a/kernel/auditsc.c
++++ b/kernel/auditsc.c
+@@ -1062,8 +1062,11 @@ int audit_alloc(struct task_struct *tsk)
+ 	struct audit_context *context;
+ 	enum audit_state     state;
+ 	char *key = NULL;
++	struct user_namespace *ns = current_user_ns();
++	/* Use current_user_ns, since this new task may run
++	 * in new user namespace */
+ 
+-	if (likely(!audit_ever_enabled))
++	if (likely(!ns->audit.ever_enabled))
+ 		return 0; /* Return if not auditing. */
+ 
+ 	state = audit_filter_task(tsk, &key);
 -- 
 1.8.1.4
