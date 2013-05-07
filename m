@@ -1,8 +1,8 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH RFC 33/48] Audit: Log filter related audit message to proper
-	user namespace
-Date: Tue, 7 May 2013 10:20:54 +0800
-Message-ID: <1367893269-9308-34-git-send-email-gaofeng__3882.46158040619$1367893499$gmane$org@cn.fujitsu.com>
+Subject: [PATCH RFC 31/48] Audit: pass proper user namespace to
+	audit_filter_syscall
+Date: Tue, 7 May 2013 10:20:52 +0800
+Message-ID: <1367893269-9308-32-git-send-email-gaofeng__21015.2405816645$1367893506$gmane$org@cn.fujitsu.com>
 References: <1367893269-9308-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,46 +22,52 @@ To: viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, eparis-H+wXaHxf7aLQT
 Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Now, we can log filter related audit message to the user namespace
-which the task belongs to.
+We should use the proper user namespace to filter the syscall.
 
 Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- kernel/auditfilter.c | 9 +++++----
+ kernel/auditsc.c | 9 +++++----
  1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/kernel/auditfilter.c b/kernel/auditfilter.c
-index f2afe9b..8af148b 100644
---- a/kernel/auditfilter.c
-+++ b/kernel/auditfilter.c
-@@ -1120,15 +1120,16 @@ static void audit_log_rule_change(kuid_t loginuid, u32 sessionid, u32 sid,
- 				  int res)
+diff --git a/kernel/auditsc.c b/kernel/auditsc.c
+index 29c3e05..5401d21 100644
+--- a/kernel/auditsc.c
++++ b/kernel/auditsc.c
+@@ -866,14 +866,15 @@ static enum audit_state audit_filter_task(struct task_struct *tsk, char **key)
+  * also not high enough that we already know we have to write an audit
+  * record (i.e., the state is AUDIT_SETUP_CONTEXT or AUDIT_BUILD_CONTEXT).
+  */
+-static enum audit_state audit_filter_syscall(struct task_struct *tsk,
++static enum audit_state audit_filter_syscall(struct user_namespace *ns,
++					     struct task_struct *tsk,
+ 					     struct audit_context *ctx,
+ 					     struct list_head *list)
  {
- 	struct audit_buffer *ab;
-+	struct user_namespace *ns = current_user_ns();
+ 	struct audit_entry *e;
+ 	enum audit_state state;
  
--	if (!audit_enabled)
-+	if (!ns->audit.enabled)
- 		return;
+-	if (init_user_ns.audit.pid && tsk->tgid == init_user_ns.audit.pid)
++	if (ns->audit.pid && tsk->tgid == ns->audit.pid)
+ 		return AUDIT_DISABLED;
  
--	ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_CONFIG_CHANGE);
-+	ab = audit_log_start_ns(ns, NULL, GFP_KERNEL, AUDIT_CONFIG_CHANGE);
- 	if (!ab)
- 		return;
- 	audit_log_format(ab, "auid=%u ses=%u",
--			 from_kuid(&init_user_ns, loginuid), sessionid);
-+			 from_kuid(ns, loginuid), sessionid);
- 	if (sid) {
- 		char *ctx = NULL;
- 		u32 len;
-@@ -1143,7 +1144,7 @@ static void audit_log_rule_change(kuid_t loginuid, u32 sessionid, u32 sid,
- 	audit_log_string(ab, action);
- 	audit_log_key(ab, rule->filterkey);
- 	audit_log_format(ab, " list=%d res=%d", rule->listnr, res);
--	audit_log_end(ab);
-+	audit_log_end_ns(ns, ab);
- }
+ 	rcu_read_lock();
+@@ -976,7 +977,7 @@ static inline struct audit_context *audit_get_context(struct task_struct *tsk,
+ 		context->return_code  = return_code;
  
- /**
+ 	if (context->in_syscall && !context->dummy) {
+-		audit_filter_syscall(tsk, context,
++		audit_filter_syscall(ns, tsk, context,
+ 				&ns->audit.filter_list[AUDIT_FILTER_EXIT]);
+ 		audit_filter_inodes(tsk, context);
+ 	}
+@@ -1784,7 +1785,7 @@ void __audit_syscall_entry(int arch, int major,
+ 	context->dummy = !audit_n_rules;
+ 	if (!context->dummy && state == AUDIT_BUILD_CONTEXT) {
+ 		context->prio = 0;
+-		state = audit_filter_syscall(tsk, context,
++		state = audit_filter_syscall(ns, tsk, context,
+ 			&ns->audit.filter_list[AUDIT_FILTER_ENTRY]);
+ 	}
+ 	if (state == AUDIT_DISABLED)
 -- 
 1.8.1.4
