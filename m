@@ -1,8 +1,8 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH RFC 34/48] Log audit tree related message in proper user
-	namespace
-Date: Tue, 7 May 2013 10:20:55 +0800
-Message-ID: <1367893269-9308-35-git-send-email-gaofeng@cn.fujitsu.com>
+Subject: [PATCH RFC 32/48] Audit: pass proper user namespace to
+	audit_filter_inode_name
+Date: Tue, 7 May 2013 10:20:53 +0800
+Message-ID: <1367893269-9308-33-git-send-email-gaofeng@cn.fujitsu.com>
 References: <1367893269-9308-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,181 +22,99 @@ To: viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, eparis-H+wXaHxf7aLQT
 Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Now, we can log audit tree related message in the right
-user namespace.
+We should use the right inode_hash list to filter the
+task.
 
 Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- kernel/audit.h      |  4 ++--
- kernel/audit_tree.c | 27 ++++++++++++++-------------
- kernel/auditsc.c    |  6 ++++--
- 3 files changed, 20 insertions(+), 17 deletions(-)
+ kernel/audit.h       |  5 +++--
+ kernel/audit_watch.c |  3 ++-
+ kernel/auditsc.c     | 14 ++++++++------
+ 3 files changed, 13 insertions(+), 9 deletions(-)
 
 diff --git a/kernel/audit.h b/kernel/audit.h
-index 0079cdd..64ee671 100644
+index 7934598..0079cdd 100644
 --- a/kernel/audit.h
 +++ b/kernel/audit.h
-@@ -129,7 +129,7 @@ extern void audit_trim_trees(void);
- extern int audit_tag_tree(char *old, char *new);
- extern const char *audit_tree_path(struct audit_tree *);
- extern void audit_put_tree(struct audit_tree *);
--extern void audit_kill_trees(struct list_head *);
-+extern void audit_kill_trees(struct user_namespace *ns, struct list_head *);
- #else
- #define audit_remove_tree_rule(rule) BUG()
- #define audit_add_tree_rule(ns, rule) -EINVAL
-@@ -138,7 +138,7 @@ extern void audit_kill_trees(struct list_head *);
- #define audit_put_tree(tree) (void)0
- #define audit_tag_tree(old, new) -EINVAL
- #define audit_tree_path(rule) ""	/* never called */
--#define audit_kill_trees(list) BUG()
-+#define audit_kill_trees(ns, list) BUG()
- #endif
- 
- extern char *audit_unpack_string(void **, size_t *, size_t);
-diff --git a/kernel/audit_tree.c b/kernel/audit_tree.c
-index 4531d73..521766d 100644
---- a/kernel/audit_tree.c
-+++ b/kernel/audit_tree.c
-@@ -448,11 +448,12 @@ static int tag_chunk(struct inode *inode, struct audit_tree *tree)
+@@ -157,11 +157,12 @@ static inline int audit_signal_info(int sig, struct task_struct *t)
+ 		return __audit_signal_info(sig, t);
  	return 0;
  }
+-extern void audit_filter_inodes(struct task_struct *, struct audit_context *);
++extern void audit_filter_inodes(struct user_namespace *ns,
++				struct task_struct *, struct audit_context *);
+ extern struct list_head *audit_killed_trees(void);
+ #else
+ #define audit_signal_info(s,t) AUDIT_DISABLED
+-#define audit_filter_inodes(t,c) AUDIT_DISABLED
++#define audit_filter_inodes(n, t, c) AUDIT_DISABLED
+ #endif
  
--static void audit_log_remove_rule(struct audit_krule *rule)
-+static void audit_log_remove_rule(struct user_namespace *ns,
-+				  struct audit_krule *rule)
- {
- 	struct audit_buffer *ab;
+ extern struct mutex audit_cmd_mutex;
+diff --git a/kernel/audit_watch.c b/kernel/audit_watch.c
+index 27c7a3b..6be4cbe 100644
+--- a/kernel/audit_watch.c
++++ b/kernel/audit_watch.c
+@@ -274,7 +274,8 @@ static void audit_update_watch(struct audit_parent *parent,
+ 		/* If the update involves invalidating rules, do the inode-based
+ 		 * filtering now, so we don't omit records. */
+ 		if (invalidating && !audit_dummy_context())
+-			audit_filter_inodes(current, current->audit_context);
++			audit_filter_inodes(current_user_ns(), current,
++					    current->audit_context);
  
--	ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_CONFIG_CHANGE);
-+	ab = audit_log_start_ns(ns, NULL, GFP_KERNEL, AUDIT_CONFIG_CHANGE);
- 	if (unlikely(!ab))
- 		return;
- 	audit_log_format(ab, "op=");
-@@ -461,10 +462,10 @@ static void audit_log_remove_rule(struct audit_krule *rule)
- 	audit_log_untrustedstring(ab, rule->tree->pathname);
- 	audit_log_key(ab, rule->filterkey);
- 	audit_log_format(ab, " list=%d res=1", rule->listnr);
--	audit_log_end(ab);
-+	audit_log_end_ns(ns, ab);
- }
- 
--static void kill_rules(struct audit_tree *tree)
-+static void kill_rules(struct user_namespace *ns, struct audit_tree *tree)
- {
- 	struct audit_krule *rule, *next;
- 	struct audit_entry *entry;
-@@ -475,7 +476,7 @@ static void kill_rules(struct audit_tree *tree)
- 		list_del_init(&rule->rlist);
- 		if (rule->tree) {
- 			/* not a half-baked one */
--			audit_log_remove_rule(rule);
-+			audit_log_remove_rule(ns, rule);
- 			rule->tree = NULL;
- 			list_del_rcu(&entry->list);
- 			list_del(&entry->rule.list);
-@@ -503,7 +504,7 @@ static void prune_one(struct audit_tree *victim)
- 
- /* trim the uncommitted chunks from tree */
- 
--static void trim_marked(struct audit_tree *tree)
-+static void trim_marked(struct user_namespace *ns, struct audit_tree *tree)
- {
- 	struct list_head *p, *q;
- 	spin_lock(&hash_lock);
-@@ -536,7 +537,7 @@ static void trim_marked(struct audit_tree *tree)
- 		tree->goner = 1;
- 		spin_unlock(&hash_lock);
- 		mutex_lock(&audit_filter_mutex);
--		kill_rules(tree);
-+		kill_rules(ns, tree);
- 		list_del_init(&tree->list);
- 		mutex_unlock(&audit_filter_mutex);
- 		prune_one(tree);
-@@ -616,7 +617,7 @@ void audit_trim_trees(void)
- 				node->index &= ~(1U<<31);
- 		}
- 		spin_unlock(&hash_lock);
--		trim_marked(tree);
-+		trim_marked(current_user_ns(), tree);
- 		drop_collected_mounts(root_mnt);
- skip_it:
- 		put_tree(tree);
-@@ -693,7 +694,7 @@ int audit_add_tree_rule(struct user_namespace *ns, struct audit_krule *rule)
- 			node->index &= ~(1U<<31);
- 		spin_unlock(&hash_lock);
- 	} else {
--		trim_marked(tree);
-+		trim_marked(ns, tree);
- 		goto Err;
- 	}
- 
-@@ -797,7 +798,7 @@ int audit_tag_tree(char *old, char *new)
- 				node->index &= ~(1U<<31);
- 			spin_unlock(&hash_lock);
- 		} else {
--			trim_marked(tree);
-+			trim_marked(ns, tree);
- 		}
- 
- 		put_tree(tree);
-@@ -847,7 +848,7 @@ static void audit_schedule_prune(void)
-  * ... and that one is done if evict_chunk() decides to delay until the end
-  * of syscall.  Runs synchronously.
-  */
--void audit_kill_trees(struct list_head *list)
-+void audit_kill_trees(struct user_namespace *ns, struct list_head *list)
- {
- 	mutex_lock(&audit_cmd_mutex);
- 	mutex_lock(&audit_filter_mutex);
-@@ -856,7 +857,7 @@ void audit_kill_trees(struct list_head *list)
- 		struct audit_tree *victim;
- 
- 		victim = list_entry(list->next, struct audit_tree, list);
--		kill_rules(victim);
-+		kill_rules(ns, victim);
- 		list_del_init(&victim->list);
- 
- 		mutex_unlock(&audit_filter_mutex);
-@@ -895,7 +896,7 @@ static void evict_chunk(struct audit_chunk *chunk)
- 		list_del_init(&owner->same_root);
- 		spin_unlock(&hash_lock);
- 		if (!postponed) {
--			kill_rules(owner);
-+			kill_rules(current_user_ns(), owner);
- 			list_move(&owner->list, &prune_list);
- 			need_prune = 1;
- 		} else {
+ 		/* updating ino will likely change which audit_hash_list we
+ 		 * are on so we need a new watch for the new list */
 diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-index 3e3e7c7..544eb82 100644
+index 5401d21..3e3e7c7 100644
 --- a/kernel/auditsc.c
 +++ b/kernel/auditsc.c
-@@ -1737,7 +1737,8 @@ void __audit_free(struct task_struct *tsk)
- 	if (context->in_syscall && context->current_state == AUDIT_RECORD_CONTEXT)
- 		audit_log_exit(context, tsk);
- 	if (!list_empty(&context->killed_trees))
--		audit_kill_trees(&context->killed_trees);
-+		audit_kill_trees(task_cred_xxx(tsk, user_ns),
-+				 &context->killed_trees);
+@@ -900,12 +900,13 @@ static enum audit_state audit_filter_syscall(struct user_namespace *ns,
+  * Given an audit_name check the inode hash table to see if they match.
+  * Called holding the rcu read lock to protect the use of audit_inode_hash
+  */
+-static int audit_filter_inode_name(struct task_struct *tsk,
++static int audit_filter_inode_name(struct user_namespace *ns,
++				   struct task_struct *tsk,
+ 				   struct audit_names *n,
+ 				   struct audit_context *ctx) {
+ 	int word, bit;
+ 	int h = audit_hash_ino((u32)n->ino);
+-	struct list_head *list = &init_user_ns.audit.inode_hash[h];
++	struct list_head *list = &ns->audit.inode_hash[h];
+ 	struct audit_entry *e;
+ 	enum audit_state state;
  
- 	audit_free_context(context);
- }
-@@ -1815,6 +1816,7 @@ void __audit_syscall_exit(int success, long return_code)
+@@ -931,17 +932,18 @@ static int audit_filter_inode_name(struct task_struct *tsk,
+  * buckets applicable to the inode numbers in audit_names.
+  * Regarding audit_state, same rules apply as for audit_filter_syscall().
+  */
+-void audit_filter_inodes(struct task_struct *tsk, struct audit_context *ctx)
++void audit_filter_inodes(struct user_namespace *ns,
++			 struct task_struct *tsk, struct audit_context *ctx)
  {
- 	struct task_struct *tsk = current;
- 	struct audit_context *context;
-+	struct user_namespace *ns = current_user_ns();
+ 	struct audit_names *n;
  
- 	if (success)
- 		success = AUDITSC_SUCCESS;
-@@ -1832,7 +1834,7 @@ void __audit_syscall_exit(int success, long return_code)
- 	context->prio = context->state == AUDIT_RECORD_CONTEXT ? ~0ULL : 0;
+-	if (init_user_ns.audit.pid && tsk->tgid == init_user_ns.audit.pid)
++	if (ns->audit.pid && tsk->tgid == ns->audit.pid)
+ 		return;
  
- 	if (!list_empty(&context->killed_trees))
--		audit_kill_trees(&context->killed_trees);
-+		audit_kill_trees(ns, &context->killed_trees);
+ 	rcu_read_lock();
  
- 	audit_free_names(context);
- 	unroll_tree_refs(context, NULL, 0);
+ 	list_for_each_entry(n, &ctx->names_list, list) {
+-		if (audit_filter_inode_name(tsk, n, ctx))
++		if (audit_filter_inode_name(ns, tsk, n, ctx))
+ 			break;
+ 	}
+ 	rcu_read_unlock();
+@@ -979,7 +981,7 @@ static inline struct audit_context *audit_get_context(struct task_struct *tsk,
+ 	if (context->in_syscall && !context->dummy) {
+ 		audit_filter_syscall(ns, tsk, context,
+ 				&ns->audit.filter_list[AUDIT_FILTER_EXIT]);
+-		audit_filter_inodes(tsk, context);
++		audit_filter_inodes(ns, tsk, context);
+ 	}
+ 
+ 	tsk->audit_context = NULL;
 -- 
 1.8.1.4
