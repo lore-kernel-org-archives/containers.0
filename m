@@ -1,8 +1,7 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH RFC 14/48] Audit: only allow init user namespace to change
-	audit_failure
-Date: Tue, 7 May 2013 10:20:35 +0800
-Message-ID: <1367893269-9308-15-git-send-email-gaofeng@cn.fujitsu.com>
+Subject: [PATCH RFC 18/48] Audit: make audit_backlog_wait per user namespace
+Date: Tue, 7 May 2013 10:20:39 +0800
+Message-ID: <1367893269-9308-19-git-send-email-gaofeng@cn.fujitsu.com>
 References: <1367893269-9308-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,29 +21,83 @@ To: viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, eparis-H+wXaHxf7aLQT
 Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Setting audit_failure to AUDIT_FAIL_PANIC may
-cause system panic.
-
-We should disallow uninit user namesapce to change it.
+Tasks are added to audit_backlog_wait when the
+audit_skb_queue of user namespace is full, so
+audit_backlog_wait should be per user namespace too.
 
 Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- kernel/audit.c | 3 +++
- 1 file changed, 3 insertions(+)
+ include/linux/user_namespace.h |  1 +
+ kernel/audit.c                 | 11 +++++------
+ 2 files changed, 6 insertions(+), 6 deletions(-)
 
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index 7c2c65c..5a778f8 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -29,6 +29,7 @@ struct audit_ctrl {
+ 	struct sk_buff_head	hold_queue;
+ 	struct task_struct	*kauditd_task;
+ 	wait_queue_head_t	kauditd_wait;
++	wait_queue_head_t	backlog_wait;
+ 	bool			ever_enabled;
+ };
+ #endif
 diff --git a/kernel/audit.c b/kernel/audit.c
-index 8a3ea47..18cf5ce 100644
+index ad03f4f..62f244b 100644
 --- a/kernel/audit.c
 +++ b/kernel/audit.c
-@@ -345,6 +345,9 @@ static int audit_set_failure(int state, kuid_t loginuid, u32 sessionid, u32 sid)
- 	    && state != AUDIT_FAIL_PANIC)
- 		return -EINVAL;
+@@ -117,8 +117,6 @@ static DEFINE_SPINLOCK(audit_freelist_lock);
+ static int	   audit_freelist_count;
+ static LIST_HEAD(audit_freelist);
  
-+	if (current_user_ns() != &init_user_ns)
-+		return -EPERM;
-+
- 	return audit_do_config_change("audit_failure", &audit_failure, state,
- 				      loginuid, sessionid, sid);
+-static DECLARE_WAIT_QUEUE_HEAD(audit_backlog_wait);
+-
+ /* Serialize requests from userspace. */
+ DEFINE_MUTEX(audit_cmd_mutex);
+ 
+@@ -444,7 +442,7 @@ static int kauditd_thread(void *dummy)
+ 		}
+ 
+ 		skb = skb_dequeue(queue);
+-		wake_up(&audit_backlog_wait);
++		wake_up(&ns->audit.backlog_wait);
+ 		if (skb) {
+ 			if (ns->audit.pid)
+ 				kauditd_send_skb(ns, skb);
+@@ -1146,14 +1144,14 @@ static void wait_for_auditd(unsigned long sleep_time)
+ 	const struct sk_buff_head *queue = &init_user_ns.audit.queue;
+ 	DECLARE_WAITQUEUE(wait, current);
+ 	set_current_state(TASK_INTERRUPTIBLE);
+-	add_wait_queue(&audit_backlog_wait, &wait);
++	add_wait_queue(&init_user_ns.audit.backlog_wait, &wait);
+ 
+ 	if (audit_backlog_limit &&
+ 	    skb_queue_len(queue) > audit_backlog_limit)
+ 		schedule_timeout(sleep_time);
+ 
+ 	__set_current_state(TASK_RUNNING);
+-	remove_wait_queue(&audit_backlog_wait, &wait);
++	remove_wait_queue(&init_user_ns.audit.backlog_wait, &wait);
+ }
+ 
+ /* Obtain an audit buffer.  This routine does locking to obtain the
+@@ -1219,7 +1217,7 @@ struct audit_buffer *audit_log_start(struct audit_context *ctx, gfp_t gfp_mask,
+ 			       audit_backlog_limit);
+ 		audit_log_lost("backlog limit exceeded");
+ 		audit_backlog_wait_time = audit_backlog_wait_overflow;
+-		wake_up(&audit_backlog_wait);
++		wake_up(&init_user_ns.audit.backlog_wait);
+ 		return NULL;
+ 	}
+ 
+@@ -1599,6 +1597,7 @@ void audit_set_user_ns(struct user_namespace *ns)
+ 	ns->audit.enabled = audit_default;
+ 	ns->audit.ever_enabled |= !!audit_default;
+ 	init_waitqueue_head(&ns->audit.kauditd_wait);
++	init_waitqueue_head(&ns->audit.backlog_wait);
+ 
+ 	ns->audit.initialized = AUDIT_INITIALIZED;
  }
 -- 
 1.8.1.4
