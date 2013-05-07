@@ -1,7 +1,7 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH RFC 12/48] Audit: make audit_initialized per user namespace
-Date: Tue, 7 May 2013 10:20:33 +0800
-Message-ID: <1367893269-9308-13-git-send-email-gaofeng@cn.fujitsu.com>
+Subject: [PATCH RFC 08/48] Audit: make audit_nlk_portid per user namesapce
+Date: Tue, 7 May 2013 10:20:29 +0800
+Message-ID: <1367893269-9308-9-git-send-email-gaofeng@cn.fujitsu.com>
 References: <1367893269-9308-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,113 +21,63 @@ To: viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, eparis-H+wXaHxf7aLQT
 Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-audit_initialized is used to identify if the audit
-related resources have been initialized. it should
-be per user namespace too.
+After this patch, audit_nlk_port is per user namespace.
+Just like prev patch does,use audit_nlk_portid of init
+user namespace in kauditd_send_skb.
 
 Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
  include/linux/user_namespace.h |  1 +
- kernel/audit.c                 | 21 +++++++++++----------
- 2 files changed, 12 insertions(+), 10 deletions(-)
+ kernel/audit.c                 | 11 ++---------
+ 2 files changed, 3 insertions(+), 9 deletions(-)
 
 diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index d5a22b2..c7b5bf7 100644
+index a6c6174..769a12b 100644
 --- a/include/linux/user_namespace.h
 +++ b/include/linux/user_namespace.h
-@@ -21,6 +21,7 @@ struct uid_gid_map {	/* 64 bytes -- 1 cache line */
- #ifdef CONFIG_AUDIT
+@@ -22,6 +22,7 @@ struct uid_gid_map {	/* 64 bytes -- 1 cache line */
  struct audit_ctrl {
  	struct sock		*sock;
-+	int			initialized;
- 	int			enabled;
  	int			pid;
- 	int			portid;
++	int			portid;
+ 	struct sk_buff_head	queue;
+ 	struct sk_buff_head	hold_queue;
+ 	struct task_struct	*kauditd_task;
 diff --git a/kernel/audit.c b/kernel/audit.c
-index 9ea5b27..bf8b59c 100644
+index 2ce7a21..b946b29 100644
 --- a/kernel/audit.c
 +++ b/kernel/audit.c
-@@ -66,12 +66,12 @@
+@@ -87,13 +87,6 @@ static int	audit_default;
+ /* If auditing cannot proceed, audit_failure selects what happens. */
+ static int	audit_failure = AUDIT_FAIL_PRINTK;
  
- #include "audit.h"
+-/*
+- * If audit records are to be written to the netlink socket, audit_pid
+- * contains the pid of the auditd process and audit_nlk_portid contains
+- * the portid to use to send netlink messages to that process.
+- */
+-static int	audit_nlk_portid;
+-
+ /* If audit_rate_limit is non-zero, limit the rate of sending audit records
+  * to that number per second.  This prevents DoS attacks, but results in
+  * audit records being dropped. */
+@@ -400,7 +393,7 @@ static void kauditd_send_skb(struct sk_buff *skb)
+ 	/* take a reference in case we can't send it and we want to hold it */
+ 	skb_get(skb);
+ 	err = netlink_unicast(init_user_ns.audit.sock, skb,
+-			      audit_nlk_portid, 0);
++			      init_user_ns.audit.portid, 0);
+ 	if (err < 0) {
+ 		BUG_ON(err != -ECONNREFUSED); /* Shouldn't happen */
+ 		printk(KERN_ERR "audit: *NO* daemon at audit_pid=%d\n",
+@@ -717,7 +710,7 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 							sessionid, sid, 1);
  
--/* No auditing will take place until audit_initialized == AUDIT_INITIALIZED.
-+/* No auditing will take place until user namespace's
-+ * audit.initialized == AUDIT_INITIALIZED.
-  * (Initialization happens after skb_init is called.) */
- #define AUDIT_DISABLED		-1
- #define AUDIT_UNINITIALIZED	0
- #define AUDIT_INITIALIZED	1
--static int	audit_initialized;
- 
- #define AUDIT_OFF	0
- #define AUDIT_ON	1
-@@ -982,7 +982,7 @@ static int __init audit_init(void)
- {
- 	int i;
- 
--	if (audit_initialized == AUDIT_DISABLED)
-+	if (init_user_ns.audit.initialized == AUDIT_DISABLED)
- 		return 0;
- 
- 	printk(KERN_INFO "audit: initializing netlink socket (%s)\n",
-@@ -992,7 +992,6 @@ static int __init audit_init(void)
- 		return -1;
- 
- 	audit_set_user_ns(&init_user_ns);
--	audit_initialized = AUDIT_INITIALIZED;
- 
- 	audit_log(NULL, GFP_KERNEL, AUDIT_KERNEL, "initialized");
- 
-@@ -1008,14 +1007,14 @@ static int __init audit_enable(char *str)
- {
- 	audit_default = !!simple_strtol(str, NULL, 0);
- 	if (!audit_default)
--		audit_initialized = AUDIT_DISABLED;
-+		init_user_ns.audit.initialized = AUDIT_DISABLED;
- 
- 	printk(KERN_INFO "audit: %s", audit_default ? "enabled" : "disabled");
- 
--	if (audit_initialized == AUDIT_INITIALIZED) {
-+	if (init_user_ns.audit.initialized == AUDIT_INITIALIZED) {
- 		init_user_ns.audit.enabled = audit_default;
- 		init_user_ns.audit.ever_enabled |= !!audit_default;
--	} else if (audit_initialized == AUDIT_UNINITIALIZED) {
-+	} else if (init_user_ns.audit.initialized == AUDIT_UNINITIALIZED) {
- 		printk(" (after initialization)");
- 	} else {
- 		printk(" (until reboot)");
-@@ -1183,7 +1182,7 @@ struct audit_buffer *audit_log_start(struct audit_context *ctx, gfp_t gfp_mask,
- 	unsigned long timeout_start = jiffies;
- 	struct sk_buff_head	*queue = &init_user_ns.audit.queue;
- 
--	if (audit_initialized != AUDIT_INITIALIZED)
-+	if (init_user_ns.audit.initialized != AUDIT_INITIALIZED)
- 		return NULL;
- 
- 	if (unlikely(audit_filter_type(type)))
-@@ -1586,18 +1585,20 @@ EXPORT_SYMBOL(audit_log_secctx);
- 
- void audit_set_user_ns(struct user_namespace *ns)
- {
--	if (audit_initialized == AUDIT_DISABLED)
-+	if (init_user_ns.audit.initialized == AUDIT_DISABLED)
- 		return;
- 
- 	skb_queue_head_init(&ns->audit.queue);
- 	skb_queue_head_init(&ns->audit.hold_queue);
- 	ns->audit.enabled = audit_default;
- 	ns->audit.ever_enabled |= !!audit_default;
-+
-+	ns->audit.initialized = AUDIT_INITIALIZED;
- }
- 
- void audit_free_user_ns(struct user_namespace *ns)
- {
--	if (audit_initialized == AUDIT_DISABLED)
-+	if (init_user_ns.audit.initialized == AUDIT_DISABLED)
- 		return;
- 
- 	if (ns->audit.sock) {
+ 			ns->audit.pid = new_pid;
+-			audit_nlk_portid = NETLINK_CB(skb).portid;
++			ns->audit.portid = NETLINK_CB(skb).portid;
+ 		}
+ 		if (status_get->mask & AUDIT_STATUS_RATE_LIMIT) {
+ 			err = audit_set_rate_limit(status_get->rate_limit,
 -- 
 1.8.1.4
