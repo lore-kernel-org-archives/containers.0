@@ -1,19 +1,13 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Use CAP_SYS_RESOURCE as magic for escaping user
-	namespaces.
-Date: Wed, 8 May 2013 10:21:07 -0500
-Message-ID: <20130508152107.GA3975@austin.hallyn.com>
-References: <1367913689-3423-1-git-send-email-Janne.Karhunen@gmail.com>
-	<20130507171007.GB10806@austin.hallyn.com>
-	<CAE=NcrakiaDPRXJTQz770JNcYw9xbBJcEfCHsap-MGhkT8z2gQ@mail.gmail.com>
-	<87fvxy8wk2.fsf@xmission.com>
-	<CAE=NcratxHJ1dzDVn3qNxTagcA+CWi4PM+0_sx-9HTBZH_ym_w@mail.gmail.com>
+From: Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH RFC 00/48] Add namespace support for audit
+Date: Wed, 08 May 2013 12:55:12 -0400
+Message-ID: <1368032112.2139.0.camel@localhost>
+References: <1367893269-9308-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <CAE=NcratxHJ1dzDVn3qNxTagcA+CWi4PM+0_sx-9HTBZH_ym_w-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <1367893269-9308-1-git-send-email-gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,52 +17,132 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Janne Karhunen <janne.karhunen-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Janne Karhunen (janne.karhunen-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> On Tue, May 7, 2013 at 9:38 PM, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+What kernel are these patches against?
+
+
+On Tue, 2013-05-07 at 10:20 +0800, Gao feng wrote:
+> This patchset try to add namespace support for audit.
 > 
-> > So far it appears that we don't need a device namespace.  As for most
-> > things the usual DAC permissions apply.
+> I choose to assign audit to the user namespace.
+> Right now,there are six kinds of namespaces, such as
+> net, mount, ipc, pid, uts and user. the first five
+> namespaces have special usage. the audit isn't suitable to
+> belong to these five namespaces, so the user namespace
+> may be the best choice.
 > 
-> Serge, please note ;)
-
-?
-
-Here are some possibilities regarding devices:
-
-1. ptys are already namespaced in their own way
-2. loop is not namespaced, but easily could be.  The question is how to
-   trigger a new namespace for them.  Maybe a loopfs with newinstance
-   option :)
-3. c 4 1 (/dev/tty1).  Right now containers handle this purely through
-   obfuscation at the filename level, symlinking /dev/tty1 to a pty.
-   We could namespace tasks at a tty level, so that c 4 1 either points
-   to a provided open fd, or to nothing, in the new namespace.
-4. Video cards could be handled by introducing virtual devices to
-   replace the physical ones, OR they could be handled by passing the
-   physical video card to a different X namespace (X being user, device,
-   or something else).  Both have in the past been mentioned by Eric,
-   and they're not mutually exclusive.
-
-So, I object to a blanket "this capability changes the meaning of all
-your other capabilities with respect to the hardware."  However, perhaps
-we could do something like "pass this device to that user namespace, so
-that any capabilities he has toward his user namespace will be allowed
-against that device."
-
-> > The exceptions that I am aware of where we need something extra are
-> > cases where the device abstraction is simply insufficient and needs
-> > to be improved.
-> >
-> > You can pass real network devices between network namespaces.
+> Through I decide to make audit related resources per user
+> namespace, but audit uses netlink to communicate between kernel
+> space and user space, and the netlink is a private resource
+> of per net namespace. So we need the capability to allow the
+> netlink sockets to communicate with each other in the same user
+> namespace even they are in different net namespace. [PATCH 2/48]
+> does this job, it adds a new function "compare" for per netlink
+> table to compare two sockets. it means the netlink protocols can
+> has its own compare fuction, For other protocols, two netlink
+> sockets are different if they belong to the different net namespace.
+> For audit protocol, two sockets can be the same even they in different
+> net namespace,we use user namespace not net namespace to make the
+> decision.
 > 
-> Have you considered passing things like frame buffer, input subsystem
-> and/or modem(s)?
-
-We have, but I'm not sure we've discussed (though I'm sure we've all
-thought about) just passing straight to a user namespace.
-
--serge
+> There is one point that some people may dislike,in [PATCH 1/48],
+> the kernel side audit netlink socket is created only when we create
+> the first netns for the userns, and this userns will hold the netns
+> until we destroy this userns.
+> 
+> The other patches just make the audit related resources per
+> user namespace.
+> 
+> This patchset is sent as an RFC,any comments are welcome.
+> 
+> Gao feng (48):
+>   Audit: make audit kernel side netlink sock per userns
+>   netlink: Add compare function for netlink_table
+>   Audit: implement audit self-defined compare function
+>   Audit: make audit_skb_queue per user namespace
+>   Audit: make audit_skb_hold_queue per user namespace
+>   Audit: make kauditd_task per user namespace
+>   Audit: make audit_pid per user namespace
+>   Audit: make audit_nlk_portid per user namesapce
+>   Audit: make audit_enabled per user namespace
+>   Audit: change type of audit_ever_enabled to bool
+>   Audit: make audit_ever_enabled per user namespace
+>   Audit: make audit_initialized per user namespace
+>   Audit: only allow init user namespace to change audit_rate_limit
+>   Audit: only allow init user namespace to change audit_failure
+>   Audit: allow to send netlink message to auditd in uninit user
+>     namespace
+>   Audit: user proper user namespace in audit_log_config_change
+>   Audit: make kauditd_wait per user namespace
+>   Audit: make audit_backlog_wait per user namespace
+>   Audit: remove duplicate comments
+>   Audit: introduce new audit logging interface for user namespace
+>   Audit: pass proper user namespace to audit_log_common_recv_msg
+>   Audit: Log audit config change in uninit user namespace
+>   Audit: netfilter: Log xt table replace behavior in proper user
+>     namespace
+>   Audit: xt_AUDIT: Log audit message in proper user namespace
+>   Audit: send reply message to the auditd in proper user namespace
+>   Audit: make audit_inode_hash per user namespace
+>   Audit: make tree_list per user namespace
+>   Audit: make audit filter list per user namespace
+>   Audit: make audit_krule belongs to user namespace
+>   Audit: reply audit filter list request to proper user namespace
+>   Audit: pass proper user namespace to audit_filter_syscall
+>   Audit: pass proper user namespace to audit_filter_inode_name
+>   Audit: Log filter related audit message to proper user namespace
+>   Log audit tree related message in proper user namespace
+>   Audit: Log task related audit message to proper user namespace
+>   Audit: Log watch related audit message to proper user namespace
+>   Audit: translate audit_log_start to audit_log_start_ns
+>   Audit: tty: translate audit_log_start to audit_log_start_ns
+>   Audit: netlabel: translate audit_log_start to audit_log_start_ns
+>   Audit: ima: translate audit_log_start to audit_log_start_ns
+>   Audit: lsm: translate audit_log_start to audit_log_start_ns
+>   Audit: selinux: translate audit_log_start to audit_log_start_ns
+>   Audit: xfrm: translate audit_log_start to audit_log_start_ns
+>   Audit: rename audit_log_start_ns to audit_log_start
+>   Audit: user audit_enabled_ns to replace audit_enabled
+>   Audit: rename audit_enabled_ns to audit_enabled
+>   Audit: make audit_log user namespace awared
+>   Audit: allow root user of un-init user namespace to set audit
+> 
+>  drivers/tty/tty_audit.c             |   9 +-
+>  include/linux/audit.h               |  44 ++--
+>  include/linux/netlink.h             |   1 +
+>  include/linux/user_namespace.h      |  25 +++
+>  include/net/xfrm.h                  |   7 +-
+>  kernel/audit.c                      | 393 +++++++++++++++++++++---------------
+>  kernel/audit.h                      |  24 +--
+>  kernel/audit_tree.c                 |  49 ++---
+>  kernel/audit_watch.c                |  23 ++-
+>  kernel/auditfilter.c                |  76 +++----
+>  kernel/auditsc.c                    | 156 ++++++++------
+>  kernel/user.c                       |  19 ++
+>  kernel/user_namespace.c             |   3 +
+>  net/core/dev.c                      |  12 +-
+>  net/ipv4/cipso_ipv4.c               |   4 +-
+>  net/netfilter/x_tables.c            |   9 +-
+>  net/netfilter/xt_AUDIT.c            |   8 +-
+>  net/netlabel/netlabel_domainhash.c  |   4 +-
+>  net/netlabel/netlabel_unlabeled.c   |   8 +-
+>  net/netlabel/netlabel_user.c        |   8 +-
+>  net/netlink/af_netlink.c            |  26 ++-
+>  net/netlink/af_netlink.h            |   1 +
+>  net/xfrm/xfrm_policy.c              |   4 +-
+>  net/xfrm/xfrm_state.c               |  14 +-
+>  security/apparmor/lib.c             |   2 +-
+>  security/integrity/ima/ima_api.c    |   5 +-
+>  security/integrity/ima/ima_audit.c  |  11 +-
+>  security/integrity/ima/ima_policy.c |   5 +-
+>  security/lsm_audit.c                |   8 +-
+>  security/selinux/avc.c              |   3 +-
+>  security/selinux/hooks.c            |  17 +-
+>  security/selinux/selinuxfs.c        |   9 +-
+>  security/selinux/ss/services.c      |  30 ++-
+>  security/smack/smack_lsm.c          |   3 +-
+>  34 files changed, 630 insertions(+), 390 deletions(-)
+> 
