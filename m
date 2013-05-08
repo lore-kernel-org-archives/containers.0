@@ -1,14 +1,15 @@
-From: Chen Gang <gang.chen-bOixZGp5f+dBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [Suggestion] kernel/cgroup.c: about kfree after 'get_new_cssid'
-Date: Wed, 08 May 2013 10:00:14 +0800
-Message-ID: <5189B1AE.4000906@asianux.com>
-References: <5188DB93.2080504@asianux.com> <5188DF27.4080000@huawei.com>
-	<5188E391.6040505@asianux.com> <5189A166.9080301@huawei.com>
+From: Matt Helsley <matthltc-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH RFC 10/48] Audit: change type of audit_ever_enabled to bool
+Date: Tue, 7 May 2013 19:06:26 -0700
+Message-ID: <20130508020626.GD24627@us.ibm.com>
+References: <1367893269-9308-1-git-send-email-gaofeng@cn.fujitsu.com>
+	<1367893269-9308-11-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <5189A166.9080301-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1367893269-9308-11-git-send-email-gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,30 +19,32 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gMjAxM+W5tDA15pyIMDjml6UgMDg6NTAsIExpIFplZmFuIHdyb3RlOgo+Pj4gVGhlcmUncyBh
-IGJ1ZyBpbiBjZ3JvdXBfdW5sb2FkX3N1YnN5cygpIHRoYXQgaWRyX2Rlc3Ryb3koKSBzaG91bGQg
-YmUgY2FsbGVkIGFmdGVyCj4+PiA+PiBzcy0+Y3NzX2ZyZWUoKS4gVGhhdCBzYWlkLCBnaXZlbiB0
-aGVyZSdzIG5vIG1vZHVsYXIgY2dyb3VwIHN1YnN5c3RlbSB1c2luZyBjc3NfaWQsCj4+PiA+PiBh
-bmQgdGhlIHdob2xlIGNzc19pZCB0aGluZyB3aWxsIGJlIGVsaW1pbmF0ZWQgaW4gMy4xMSwgd2h5
-IGJvdGhlciBmaXhpbmcgaXQuCj4+PiA+Pgo+PiA+IAo+PiA+IEkganVzdCBmaW5kIGl0IGJ5IHJl
-YWRpbmcgY29kZSAoSSBhbHNvIHdhbnQgdG8gbGVhcm4gYWJvdXQga2VybmVsKS4KPj4gPiAKPj4g
-PiBJIGd1ZXNzLCBmb3Igc29tZSBzdGFibGUgdmVyc2lvbnMsIG1heSBmb2N1cyBvbiBpdCwgdGhl
-eSBhcmUgdGhlCj4+ID4gZGlmZmVyZW50IGJyYW5jaGVzIGZyb20gdGhlIGxhdGVzdCB2ZXJzaW9u
-Lgo+PiA+IAo+PiA+IFNvLCBpcyBpdCBzdWl0YWJsZSB0byBzZW5kIHJlbGF0ZWQgcGF0Y2ggZm9y
-IHRoZSBidWcgPwo+PiA+IAo+IEFzIEkgc2FpZCwgdGhlcmUncyBubyBtb2R1bGFyIGNncm91cCBz
-dWJzeXN0ZW0gdXNpbmcgY3NzX2lkLCBzbyB0aGUgYnVnCj4gZG9lc24ndCBleGlzdCBpbiByZWFs
-IHdvcmxkLgo+IAo+IAo+IAoKRXhjdXNlIG1lLCBteSBFbmdsaXNoIGlzIG5vdCBxdWl0ZSB3ZWxs
-LCBJIGd1ZXNzIHdoYXQgeW91IHNhaWQgaXM6CgogIGEuIGlkcl9kZXN0cm95KCkgc2hvdWxkIGJl
-IGNhbGxlZCBhZnRlciBzcy0+Y3NzX2ZyZWUoKQogIGIuIG5lZWQgY2hlY2sgdGhlIHJldHVybiB2
-YWx1ZSBvZiBjZ3JvdXBfaW5pdF9pZHIoKSBpbiBjZ3JvdXBfaW5pdCgpLgoKICBidXQgYWxsIGZl
-YXR1cmVzIHdoaWNoIHJlbGF0ZWQgd2l0aCB0aGUgMiBpc3N1ZXMgYWJvdmUsIG5ldmVyIGJlIHVz
-ZWQKaW4gYW55IG1haW4gbGludXggbWFpbiBicmFuY2hlcy4KICBzbywgdGhlIDIgYnVncyBkb2Vz
-bid0IGV4aXN0IGluIHJlYWwgd29ybGQuCgpJcyB3aGF0IEkgZ3Vlc3MgY29ycmVjdCA/CgpUaGFu
-a3MuCgotLSAKQ2hlbiBHYW5nCgpBc2lhbnV4IENvcnBvcmF0aW9uCl9fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNv
-bnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZv
-dW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On Tue, May 07, 2013 at 10:20:31AM +0800, Gao feng wrote:
+> It's better to define audit_ever_enabled as bool
+> 
+> Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> ---
+>  kernel/audit.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/kernel/audit.c b/kernel/audit.c
+> index 4595a9e..1138ff5 100644
+> --- a/kernel/audit.c
+> +++ b/kernel/audit.c
+> @@ -76,7 +76,7 @@ static int	audit_initialized;
+>  #define AUDIT_OFF	0
+>  #define AUDIT_ON	1
+>  #define AUDIT_LOCKED	2
+> -int		audit_ever_enabled;
+> +bool		audit_ever_enabled;
+
+I think you're better off placing this at the beginning of the series
+and submitting it separately since it's only incidentally related to
+this RFC.
+
+Cheers,
+	-Matt Helsley
