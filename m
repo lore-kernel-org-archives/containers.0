@@ -1,13 +1,12 @@
-From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: For review: user_namespaces(7) man page
-Date: Tue, 14 May 2013 15:54:06 +0800
-Message-ID: <5191ED9E.4000100__22972.1923279159$1368517961$gmane$org@cn.fujitsu.com>
-References: <1367264746.18069.186@driftwood>
+From: Stone mosaic and Glass mosaic and Metal mosaic <2@vaaa.mygbiz.com>
+Subject: =?GB2312?B?U3RvbmUgbW9zYWljIGFuZCBHbGFzcyBtb3NhaWMgYW5kIE1ldGFsIG1vc2FpY9PrxPo=?=
+	=?GB2312?B?ubLP7cHLz+Cy4aGj?=
+Date: Tue, 14 May 2013 09:19:31 +0000
+Message-ID: <047d7bdcab20853c3c04dcaa2159@google.com>
+Reply-To: Stone mosaic and Glass mosaic and Metal mosaic <2@vaaa.mygbiz.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============2095076765149662657=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1367264746.18069.186@driftwood>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,65 +16,247 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Rob Landley <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org>
-Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, richard -rw- weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Vasily Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 04/30/2013 03:45 AM, Rob Landley wrote:
-> On 04/29/2013 02:45:45 AM, richard -rw- weinberger wrote:
->> On Thu, Mar 21, 2013 at 4:52 PM, Michael Kerrisk (man-pages)
->> <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
->> > Hi Serge,
->> >
->> > On Fri, Mar 15, 2013 at 4:38 PM, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> wrote:
->> >> Hi,
->> >>
->> >> you mention that after creating a new user namespace you at first have
->> >> all capabilities in the new ns.  You don't explicitly mention (or I
->> >> missed it - I did see the mention of securebits) that if you want to
->> >> keep those capabilities after doing an exec, you need to first have
->> >> something mapped to uid 0 in the userns, and do setuid(0).
->> >
->> > Good point. I'll add something on that.
->> >
->> >> You might not want to list manpages from other projects,
->> >
->> > Actually, not a problem. Many of the pages in my set already do this.
->> >
->> >> but Eric's
->> >> shadow patches introduce some good new manpages as well.  Those aren't yet
->> >> accepted upstream, but if/when they are then mention at least of
->> >> subuid(5), subgid(5), and newuidmap(1) and newgidmap(1) might be good.
->> >
->> > I'll add those.
->> >
->> > Cheers,
->> >
->> > Michael
->>
->> Can we please also document which capabilities are useless within an
->> user namespace?
->> E.g. CAP_MKNOD.
->> You get this capability but the kernel always checks it against the
->> initial userns.
-> 
-> Is there a device namespace?
-> 
+--===============2095076765149662657==
+Content-Type: multipart/related; boundary=047d7bdcab20853c3204dcaa2157
 
-No,and I don't think we need device namespace now.
+--047d7bdcab20853c3204dcaa2157
+Content-Type: text/plain; charset=windows-1252; format=flowed; delsp=yes
+Content-Transfer-Encoding: base64
 
-> I vaguely recall OpenVZ implemented moving individual PCI devices into containers so some large movie company could put one video card in each container for render farms. There are lots of devices
-> that aren't _really_ privileged (/dev/zero, /dev/null, /dev/full, /dev/ram) and more that could be emulated...
+ODEyMzU5ODQ0MDI1NzUxMDAwMTg5MTQ5OTIwMDk0OTU1MTkzMTkyNDExODgzNTczNzM3MTMxMDkz
+MjYzNTc2ODExNjY4Mjk0NzQ1ODA4NDMzMzQxMDE3MjkyMzQyNzM4NTUyNk15ICANCmRlYXIgIA0K
+ZnJpZW5kLA0KDQoNCkhvd5JzIHlvdXIgYnVzaW5lc3MgcmVjZW50bHk/DQoNCg0KV2UgYXJlIHdy
+aXRpbmcgdG8gdXBkYXRlIHlvdSBvdXIgbmV3IGRlc2lnbnMgaW4gMjAxMywgd2UgYXJlIHNwZWNp
+YWwgaW4gIA0KbWFudWZhY3R1cmluZyBhbmQgZGVzaWduaW5nIHRoZSBtb3NhaWMgdGlsZXMsIGlu
+Y2x1ZGluZyB0aGUgbWFyYmxlIHN0b25lICANCm1vc2FpYyBhbmQgZ2xhc3MgbW9zYWljIGFuZCBt
+ZXRhbCBtb3NhaWMsIGVjdC4NCg0KDQpXaXRoIG1vcmUgdGhhbiAxMCB5ZWFycyBwcm9kdWN0aW9u
+IGFuZCBleHBvcnQgZXhwZXJpZW5jZSwgd2UgaGF2ZSAgDQpzdWNjZXNzZnVsbHkgZGV2ZWxvcGVk
+IHRob3VzYW5kcyBvZiBtb3NhaWMgZGVzaWducyB0byBtZWV0IHRoZSBuZWVkIG9mICANCmRpZmZl
+cmVudCBtYXJrZXQhIEFuZCB3ZSBjYW4gYWxzbyBtYWtlIGl0IGFjY29yZGluZyB0byB5b3VyIG93
+biBkZXNpZ25zIG9yICANCnJlcXVpcmVtZW50cyENCg0KDQpJZiB5b3UgYXJlIGludGVyZXN0ZWQg
+aW4gb3VyIG1vc2FpY3MsIHdlIHdvdWxkIGxpa2UgdG8gc2VuZCB5b3Ugb3VyICANCmNhdGFsb2d1
+ZSBhbmQgcHJpY2VsaXN0IGZvciB5b3VyIHJlZmVyZW5jZSwgd2UgYXJlIGV4cGVjdGluZyB5b3Vy
+IGtpbmQgIA0KcHJvbXB0IHJlcGx5IGFuZCBmZWVkYmFjayEgVGhhbmtzIGluIGFkdmFuY2UhDQoN
+Cg0KDQotLS0NClRoYW5rcyAmIGJlc3QgcmVnYXJkcw0KU2FicmluYSBMYXcNCkdlbmVyYWwgbWFu
+YWdlcg0KTW9zYWljIEZhY3RvcnkNCkFkZC46IEZvc2hhbiBHdWFuZ2RvbmcgQ2hpbmENClpRZW9Y
+WEt3WHVHVkNVRktqWVZQaGVCWHZCeEpNYnh5SFJNcUZZc0xHdmJra2pvWlNaRFFQZ2ptZURTS3Zj
+ZnpjZ3VGYW5hTmJ4d1lHWEpObk5ZU2xpRWF6cm56UWZBb3hWUXR2YndCSnplbm9tck9WY0hVVGpu
+cGhHVk95Z2lEZmt5dWRyUVFyQU1wSW5NZERlcElhSmdRYmhkb0ZVY2RuS0Zqa1JYcnpvVVBRT1RF
+TFNpSklaT1JKaUxxb1ZLZlZNYWtUU0dHaHBDZXlkQlRmVFJMZGF4Z3J4dEZXWHN1RGJKbUNpcElR
+RmxnaGZrVk9WQWJNY2dqYXpjSHJuYndtZHJCa2tYSmtIVGlQZ1NXd2xpY3VyT2tJT0tXWm9LTFVl
+WkNTbEZZVElveA0KDQpodHRwczovL3BpY2FzYXdlYi5nb29nbGUuY29tL2xoL3NyZWRpcj91bmFt
+ZT0xMTA3NjIwMTM5Njg5Nzk2MjU5MjQmdGFyZ2V0PUFMQlVNJmlkPTU4NzUyMjQxMDY2MzY0MTg1
+MTMmYXV0aGtleT1HdjFzUmdDUHluZ3JIdHpvaW5MZyZpbnZpdGU9Q0xxRjE4b0smZmVhdD1lbWFp
+bA0K
+--047d7bdcab20853c3204dcaa2157
+Content-Type: image/gif; name="picasaweblogo-zh_CN.gif"
+Content-Disposition: attachment; filename="picasaweblogo-zh_CN.gif"
+Content-Transfer-Encoding: base64
+Content-ID: <picasaweblogo-zh_CN.gif>
 
-You can create these devices on host for container, and use device cgroup to limit which container can use these devices.
+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
+--047d7bdcab20853c3204dcaa2157
+Content-Type: image/jpeg; name="email.jpg"
+Content-Disposition: attachment; filename="email.jpg"
+Content-Transfer-Encoding: base64
+Content-ID: <5875224106636418513>
 
-> 
-> (Really this seems like a situation where devtmpfs needs -o newinstance and a corresponding filtered event netlink feed to pass to udev/mdev. And that might even have been feasible before Greg decided
-> that devtmpfs needed to have opinions about uids. Oh well.)
-> 
-> Rob--
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
-> 
+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
+--047d7bdcab20853c3204dcaa2157--
+
+--===============2095076765149662657==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============2095076765149662657==--
