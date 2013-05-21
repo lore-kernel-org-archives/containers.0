@@ -1,15 +1,16 @@
 From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 4/5] cgroup: update iterators to use cgroup_next_sibling()
-Date: Tue, 21 May 2013 17:31:00 -0500
-Message-ID: <20130521223100.GA32217__669.668583623384$1369175487$gmane$org@tp>
+Subject: Re: [PATCH 5/5] device_cgroup: simplify cgroup tree walk in
+	propagate_exception()
+Date: Tue, 21 May 2013 17:35:44 -0500
+Message-ID: <20130521223544.GA32316@tp>
 References: <1369101025-28335-1-git-send-email-tj@kernel.org>
-	<1369101025-28335-5-git-send-email-tj@kernel.org>
+	<1369101025-28335-6-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1369101025-28335-5-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1369101025-28335-6-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,145 +25,130 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, han
 List-Id: containers.vger.kernel.org
 
 Quoting Tejun Heo (tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org):
-> This patch converts cgroup_for_each_child(),
-> cgroup_next_descendant_pre/post() and thus
-> cgroup_for_each_descendant_pre/post() to use cgroup_next_sibling()
-> instead of manually dereferencing ->sibling.next.
+> During a config change, propagate_exception() needs to traverse the
+> subtree to update config on the subtree.  Because such config updates
+> need to allocate memory, it couldn't directly use
+> cgroup_for_each_descendant_pre() which required the whole iteration to
+> be contained in a single RCU read critical section.  To work around
+> the limitation, propagate_exception() built a linked list of
+> descendant cgroups while read-locking RCU and then walked the list
+> afterwards, which is safe as the whole iteration is protected by
+> devcgroup_mutex.  This works but is cumbersome.
 > 
-> The only reason the iterators couldn't allow dropping RCU read lock
-> while iteration is in progress was because they couldn't determine the
-> next sibling safely once RCU read lock is dropped.  Using
-> cgroup_next_sibling() removes that problem and enables all iterators
-> to allow dropping RCU read lock in the middle.  Comments are updated
-> accordingly.
-> 
-> This makes the iterators easier to use and will simplify controllers.
-> 
-> Note that @cgroup argument is renamed to @cgrp in
-> cgroup_for_each_child() because it conflicts with "struct cgroup" used
-> in the new macro body.
+> With the recent updates, cgroup iterators now allow dropping RCU read
+> lock while iteration is in progress making this workaround no longer
+> necessary.  This patch replaces dev_cgroup->propagate_pending list and
+> get_online_devcg() with direct cgroup_for_each_descendant_pre() walk.
 > 
 > Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-
-I didn't test, but it looks correct, thanks.
+> Cc: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Cc: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 Acked-by: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 
 > ---
->  include/linux/cgroup.h | 18 ++++++++++++++----
->  kernel/cgroup.c        | 25 +++++++++++++++++++------
->  2 files changed, 33 insertions(+), 10 deletions(-)
+>  security/device_cgroup.c | 56 ++++++++++++++++--------------------------------
+>  1 file changed, 18 insertions(+), 38 deletions(-)
 > 
-> diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-> index ee041a0..d0ad379 100644
-> --- a/include/linux/cgroup.h
-> +++ b/include/linux/cgroup.h
-> @@ -688,9 +688,9 @@ struct cgroup *cgroup_next_sibling(struct cgroup *pos);
+> diff --git a/security/device_cgroup.c b/security/device_cgroup.c
+> index dd0dc57..e8aad69 100644
+> --- a/security/device_cgroup.c
+> +++ b/security/device_cgroup.c
+> @@ -49,8 +49,6 @@ struct dev_cgroup {
+>  	struct cgroup_subsys_state css;
+>  	struct list_head exceptions;
+>  	enum devcg_behavior behavior;
+> -	/* temporary list for pending propagation operations */
+> -	struct list_head propagate_pending;
+>  };
+>  
+>  static inline struct dev_cgroup *css_to_devcgroup(struct cgroup_subsys_state *s)
+> @@ -241,7 +239,6 @@ static struct cgroup_subsys_state *devcgroup_css_alloc(struct cgroup *cgroup)
+>  	if (!dev_cgroup)
+>  		return ERR_PTR(-ENOMEM);
+>  	INIT_LIST_HEAD(&dev_cgroup->exceptions);
+> -	INIT_LIST_HEAD(&dev_cgroup->propagate_pending);
+>  	dev_cgroup->behavior = DEVCG_DEFAULT_NONE;
+>  
+>  	return &dev_cgroup->css;
+> @@ -445,34 +442,6 @@ static void revalidate_active_exceptions(struct dev_cgroup *devcg)
+>  }
+>  
 >  /**
->   * cgroup_for_each_child - iterate through children of a cgroup
->   * @pos: the cgroup * to use as the loop cursor
-> - * @cgroup: cgroup whose children to walk
-> + * @cgrp: cgroup whose children to walk
->   *
-> - * Walk @cgroup's children.  Must be called under rcu_read_lock().  A child
-> + * Walk @cgrp's children.  Must be called under rcu_read_lock().  A child
->   * cgroup which hasn't finished ->css_online() or already has finished
->   * ->css_offline() may show up during traversal and it's each subsystem's
->   * responsibility to verify that each @pos is alive.
-> @@ -698,9 +698,15 @@ struct cgroup *cgroup_next_sibling(struct cgroup *pos);
->   * If a subsystem synchronizes against the parent in its ->css_online() and
->   * before starting iterating, a cgroup which finished ->css_online() is
->   * guaranteed to be visible in the future iterations.
-> + *
-> + * It is allowed to temporarily drop RCU read lock during iteration.  The
-> + * caller is responsible for ensuring that @pos remains accessible until
-> + * the start of the next iteration by, for example, bumping the css refcnt.
->   */
-> -#define cgroup_for_each_child(pos, cgroup)				\
-> -	list_for_each_entry_rcu(pos, &(cgroup)->children, sibling)
-> +#define cgroup_for_each_child(pos, cgrp)				\
-> +	for ((pos) = list_first_or_null_rcu(&(cgrp)->children,		\
-> +					    struct cgroup, sibling);	\
-> +	     (pos); (pos) = cgroup_next_sibling((pos)))
->  
->  struct cgroup *cgroup_next_descendant_pre(struct cgroup *pos,
->  					  struct cgroup *cgroup);
-> @@ -759,6 +765,10 @@ struct cgroup *cgroup_rightmost_descendant(struct cgroup *pos);
->   * Alternatively, a subsystem may choose to use a single global lock to
->   * synchronize ->css_online() and ->css_offline() against tree-walking
->   * operations.
-> + *
-> + * It is allowed to temporarily drop RCU read lock during iteration.  The
-> + * caller is responsible for ensuring that @pos remains accessible until
-> + * the start of the next iteration by, for example, bumping the css refcnt.
->   */
->  #define cgroup_for_each_descendant_pre(pos, cgroup)			\
->  	for (pos = cgroup_next_descendant_pre(NULL, (cgroup)); (pos);	\
-> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index bc757d7..21b1ee4 100644
-> --- a/kernel/cgroup.c
-> +++ b/kernel/cgroup.c
-> @@ -3030,6 +3030,11 @@ EXPORT_SYMBOL_GPL(cgroup_next_sibling);
->   *
->   * To be used by cgroup_for_each_descendant_pre().  Find the next
->   * descendant to visit for pre-order traversal of @cgroup's descendants.
-> + *
-> + * While this function requires RCU read locking, it doesn't require the
-> + * whole traversal to be contained in a single RCU critical section.  This
-> + * function will return the correct next descendant as long as both @pos
-> + * and @cgroup are accessible and @pos is a descendant of @cgroup.
->   */
->  struct cgroup *cgroup_next_descendant_pre(struct cgroup *pos,
->  					  struct cgroup *cgroup)
-> @@ -3049,11 +3054,9 @@ struct cgroup *cgroup_next_descendant_pre(struct cgroup *pos,
->  
->  	/* no child, visit my or the closest ancestor's next sibling */
->  	while (pos != cgroup) {
-> -		next = list_entry_rcu(pos->sibling.next, struct cgroup,
-> -				      sibling);
-> -		if (&next->sibling != &pos->parent->children)
-> +		next = cgroup_next_sibling(pos);
-> +		if (next)
->  			return next;
+> - * get_online_devcg - walks the cgroup tree and fills a list with the online
+> - * 		      groups
+> - * @root: cgroup used as starting point
+> - * @online: list that will be filled with online groups
+> - *
+> - * Must be called with devcgroup_mutex held. Grabs RCU lock.
+> - * Because devcgroup_mutex is held, no devcg will become online or offline
+> - * during the tree walk (see devcgroup_online, devcgroup_offline)
+> - * A separated list is needed because propagate_behavior() and
+> - * propagate_exception() need to allocate memory and can block.
+> - */
+> -static void get_online_devcg(struct cgroup *root, struct list_head *online)
+> -{
+> -	struct cgroup *pos;
+> -	struct dev_cgroup *devcg;
 > -
->  		pos = pos->parent;
->  	}
->  
-> @@ -3068,6 +3071,11 @@ EXPORT_SYMBOL_GPL(cgroup_next_descendant_pre);
->   * Return the rightmost descendant of @pos.  If there's no descendant,
->   * @pos is returned.  This can be used during pre-order traversal to skip
->   * subtree of @pos.
-> + *
-> + * While this function requires RCU read locking, it doesn't require the
-> + * whole traversal to be contained in a single RCU critical section.  This
-> + * function will return the correct rightmost descendant as long as @pos is
-> + * accessible.
->   */
->  struct cgroup *cgroup_rightmost_descendant(struct cgroup *pos)
+> -	lockdep_assert_held(&devcgroup_mutex);
+> -
+> -	rcu_read_lock();
+> -	cgroup_for_each_descendant_pre(pos, root) {
+> -		devcg = cgroup_to_devcgroup(pos);
+> -		if (is_devcg_online(devcg))
+> -			list_add_tail(&devcg->propagate_pending, online);
+> -	}
+> -	rcu_read_unlock();
+> -}
+> -
+> -/**
+>   * propagate_exception - propagates a new exception to the children
+>   * @devcg_root: device cgroup that added a new exception
+>   * @ex: new exception to be propagated
+> @@ -482,15 +451,24 @@ static void get_online_devcg(struct cgroup *root, struct list_head *online)
+>  static int propagate_exception(struct dev_cgroup *devcg_root,
+>  			       struct dev_exception_item *ex)
 >  {
-> @@ -3107,6 +3115,11 @@ static struct cgroup *cgroup_leftmost_descendant(struct cgroup *pos)
->   *
->   * To be used by cgroup_for_each_descendant_post().  Find the next
->   * descendant to visit for post-order traversal of @cgroup's descendants.
-> + *
-> + * While this function requires RCU read locking, it doesn't require the
-> + * whole traversal to be contained in a single RCU critical section.  This
-> + * function will return the correct next descendant as long as both @pos
-> + * and @cgroup are accessible and @pos is a descendant of @cgroup.
->   */
->  struct cgroup *cgroup_next_descendant_post(struct cgroup *pos,
->  					   struct cgroup *cgroup)
-> @@ -3122,8 +3135,8 @@ struct cgroup *cgroup_next_descendant_post(struct cgroup *pos,
+> -	struct cgroup *root = devcg_root->css.cgroup;
+> -	struct dev_cgroup *devcg, *parent, *tmp;
+> +	struct cgroup *root = devcg_root->css.cgroup, *pos;
+>  	int rc = 0;
+> -	LIST_HEAD(pending);
+>  
+> -	get_online_devcg(root, &pending);
+> +	rcu_read_lock();
+>  
+> -	list_for_each_entry_safe(devcg, tmp, &pending, propagate_pending) {
+> -		parent = cgroup_to_devcgroup(devcg->css.cgroup->parent);
+> +	cgroup_for_each_descendant_pre(pos, root) {
+> +		struct dev_cgroup *devcg = cgroup_to_devcgroup(pos);
+> +
+> +		/*
+> +		 * Because devcgroup_mutex is held, no devcg will become
+> +		 * online or offline during the tree walk (see on/offline
+> +		 * methods), and online ones are safe to access outside RCU
+> +		 * read lock without bumping refcnt.
+> +		 */
+> +		if (!is_devcg_online(devcg))
+> +			continue;
+> +
+> +		rcu_read_unlock();
+>  
+>  		/*
+>  		 * in case both root's behavior and devcg is allow, a new
+> @@ -512,8 +490,10 @@ static int propagate_exception(struct dev_cgroup *devcg_root,
+>  		}
+>  		revalidate_active_exceptions(devcg);
+>  
+> -		list_del_init(&devcg->propagate_pending);
+> +		rcu_read_lock();
 >  	}
+> +
+> +	rcu_read_unlock();
+>  	return rc;
+>  }
 >  
->  	/* if there's an unvisited sibling, visit its leftmost descendant */
-> -	next = list_entry_rcu(pos->sibling.next, struct cgroup, sibling);
-> -	if (&next->sibling != &pos->parent->children)
-> +	next = cgroup_next_sibling(pos);
-> +	if (next)
->  		return cgroup_leftmost_descendant(next);
->  
->  	/* no sibling left, visit parent */
 > -- 
 > 1.8.1.4
 > 
