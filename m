@@ -1,14 +1,15 @@
-From: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCHSET] cgroup: allow dropping RCU read lock while iterating
-Date: Wed, 22 May 2013 10:53:17 -0400
-Message-ID: <20130522145316.GD16739@redhat.com>
+From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Subject: Re: [PATCH 1/5] cgroup: fix a subtle bug in descendant pre-order walk
+Date: Wed, 22 May 2013 20:22:49 +0200
+Message-ID: <20130522182247.GA24605__41489.0989115976$1369246987$gmane$org@dhcp22.suse.cz>
 References: <1369101025-28335-1-git-send-email-tj@kernel.org>
+	<1369101025-28335-2-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1369101025-28335-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1369101025-28335-2-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,79 +20,87 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Tejun,
-On Tue, May 21, 2013 at 10:50:20AM +0900, Tejun Heo wrote:
-> Currently all cgroup iterators require the whole traversal to be
-> contained in a single RCU read critical section, which can be too
-> restrictive as there are times when blocking operations are necessary
-> during traversal.  This forces controllers to implement specific
-> workarounds in those cases - building separate iteration list, punting
-> actual operations to work items and so on.
+On Tue 21-05-13 10:50:21, Tejun Heo wrote:
+> When cgroup_next_descendant_pre() initiates a walk, it checks whether
+> the subtree root doesn't have any children and if not returns NULL.
+> Later code assumes that the subtree isn't empty.  This is broken
+> because the subtree may become empty inbetween, which can lead to the
+> traversal escaping the subtree by walking to the sibling of the
+> subtree root.
 > 
-> This patchset updates cgroup iterators so that they allow dropping RCU
-> read lock while iteration is in progress so that controllers which
-> require sleeping during iteration don't need to implement their own
-> mechanisms.
+> There's no reason to have the early exit path.  Remove it along with
+> the later assumption that the subtree isn't empty.  This simplifies
+> the code a bit and fixes the subtle bug.
 > 
-> Dropping RCU read lock during iteration is unsafe because
-> cgroup->sibling.next can't be trusted once RCU read lock is dropped.
-> The sibling list is a RCU list and when a cgroup is removed the next
-> pointer is retained to keep RCU traversal working.  If the next
-> sibling is removed while RCU read lock is dropped, the removed current
-> cgroup's next won't be updated and the next sibling may complete its
-> grace period and get freed leaving the next pointer dangling.
+> While at it, fix the comment of cgroup_for_each_descendant_pre() which
+> was incorrectly referring to ->css_offline() instead of
+> ->css_online().
 > 
-> Working around the problem is relatiely simple.  Whether
-> ->sibling.next can be trusted can be trusted can be decided by looking
-> at CGRP_REMOVED - as cgroup removals are fully serialized, the flag is
-> guaranteed to be visible before the next sibling finishes its grace
-> period.  For those cases, each cgroup is assigned a monotonically
-> increasing serial number.  Because new cgroups are always appeneded to
-> the children list, it's guaranteed that all children list are sorted
-> in the ascending order of the serial numbers.  When the next pointer
-> can't be trusted, the next sibling can be located by walking the
-> parent's children list from the beginning looking for the first cgroup
-> with higher serial number.
-> 
-> The above is implemented in cgroup_next_sibling() and all iterators
-> are updated to use it to find out the next sibling thus allowing
-> droppping RCU read lock while iteration is in progress.  This patchset
-> replaces separate iteration list in device_cgroup with direct
-> descendant walk and there will be further patches making use of this
-> update.
-> 
-> This patchset contains the following five patches.
-> 
->  0001-cgroup-fix-a-subtle-bug-in-descendant-pre-order-walk.patch
->  0002-cgroup-make-cgroup_is_removed-static.patch
->  0003-cgroup-add-cgroup-serial_nr-and-implement-cgroup_nex.patch
->  0004-cgroup-update-iterators-to-use-cgroup_next_sibling.patch
->  0005-device_cgroup-simplify-cgroup-tree-walk-in-propagate.patch
-> 
-> 0001 fixes a subtle iteration bug.  Will be applied to for-3.10-fixes.
-> 
-> 0002 is a trivial prep patch.
-> 
-> 0003 implements cgroup_next_sibling() which can find out the next
-> sibling regardless of the state of the current cgroup.
-> 
-> 0004 updates all iterators to use cgroup_next_sibling().
-> 
-> 0005 replaces iteration list work around in device_cgroup with direct
-> iteration.
-> 
-> This patchset is on top of cgroup/for-3.11 23958e729e ("cgroup.h:
-> remove some functions that are now gone") and available in the
-> following git branch.
-> 
->  git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-interruptible-iter
+> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-patchset looks good to me. ran some tests in a kernel with it without problems.
+Well spotted and looks good to me
+Reviewed-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
 
-Acked-by: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> ---
+>  include/linux/cgroup.h | 2 +-
+>  kernel/cgroup.c        | 9 +++------
+>  2 files changed, 4 insertions(+), 7 deletions(-)
+> 
+> diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+> index 4f6f513..1df5f69 100644
+> --- a/include/linux/cgroup.h
+> +++ b/include/linux/cgroup.h
+> @@ -709,7 +709,7 @@ struct cgroup *cgroup_rightmost_descendant(struct cgroup *pos);
+>   *
+>   * If a subsystem synchronizes against the parent in its ->css_online() and
+>   * before starting iterating, and synchronizes against @pos on each
+> - * iteration, any descendant cgroup which finished ->css_offline() is
+> + * iteration, any descendant cgroup which finished ->css_online() is
+>   * guaranteed to be visible in the future iterations.
+>   *
+>   * In other words, the following guarantees that a descendant can't escape
+> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+> index 6b2b1d9..f20f80c 100644
+> --- a/kernel/cgroup.c
+> +++ b/kernel/cgroup.c
+> @@ -2990,11 +2990,8 @@ struct cgroup *cgroup_next_descendant_pre(struct cgroup *pos,
+>  	WARN_ON_ONCE(!rcu_read_lock_held());
+>  
+>  	/* if first iteration, pretend we just visited @cgroup */
+> -	if (!pos) {
+> -		if (list_empty(&cgroup->children))
+> -			return NULL;
+> +	if (!pos)
+>  		pos = cgroup;
+> -	}
+>  
+>  	/* visit the first child if exists */
+>  	next = list_first_or_null_rcu(&pos->children, struct cgroup, sibling);
+> @@ -3002,14 +2999,14 @@ struct cgroup *cgroup_next_descendant_pre(struct cgroup *pos,
+>  		return next;
+>  
+>  	/* no child, visit my or the closest ancestor's next sibling */
+> -	do {
+> +	while (pos != cgroup) {
+>  		next = list_entry_rcu(pos->sibling.next, struct cgroup,
+>  				      sibling);
+>  		if (&next->sibling != &pos->parent->children)
+>  			return next;
+>  
+>  		pos = pos->parent;
+> -	} while (pos != cgroup);
+> +	}
+>  
+>  	return NULL;
+>  }
+> -- 
+> 1.8.1.4
+> 
 
 -- 
-Aristeu
+Michal Hocko
+SUSE Labs
