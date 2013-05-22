@@ -1,15 +1,16 @@
 From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: [PATCH 1/5] cgroup: fix a subtle bug in descendant pre-order walk
-Date: Wed, 22 May 2013 20:22:49 +0200
-Message-ID: <20130522182247.GA24605__41489.0989115976$1369246987$gmane$org@dhcp22.suse.cz>
+Subject: Re: [PATCH 3/5] cgroup: add cgroup->serial_nr and implement
+	cgroup_next_sibling()
+Date: Wed, 22 May 2013 20:41:22 +0200
+Message-ID: <20130522184122.GB24605@dhcp22.suse.cz>
 References: <1369101025-28335-1-git-send-email-tj@kernel.org>
-	<1369101025-28335-2-git-send-email-tj@kernel.org>
+	<1369101025-28335-4-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1369101025-28335-2-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1369101025-28335-4-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,83 +21,182 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue 21-05-13 10:50:21, Tejun Heo wrote:
-> When cgroup_next_descendant_pre() initiates a walk, it checks whether
-> the subtree root doesn't have any children and if not returns NULL.
-> Later code assumes that the subtree isn't empty.  This is broken
-> because the subtree may become empty inbetween, which can lead to the
-> traversal escaping the subtree by walking to the sibling of the
-> subtree root.
+On Tue 21-05-13 10:50:23, Tejun Heo wrote:
+> Currently, there's no easy way to find out the next sibling cgroup
+> unless it's known that the current cgroup is accessed from the
+> parent's children list in a single RCU critical section.  This in turn
+> forces all iterators to require whole iteration to be enclosed in a
+> single RCU critical section, which sometimes is too restrictive.  This
+> patch implements cgroup_next_sibling() which can reliably determine
+> the next sibling regardless of the state of the current cgroup as long
+> as it's accessible.
 > 
-> There's no reason to have the early exit path.  Remove it along with
-> the later assumption that the subtree isn't empty.  This simplifies
-> the code a bit and fixes the subtle bug.
+> It currently is impossible to determine the next sibling after
+> dropping RCU read lock because the cgroup being iterated could be
+> removed anytime and if RCU read lock is dropped, nothing guarantess
+> its ->sibling.next pointer is accessible.  A removed cgroup would
+> continue to point to its next sibling for RCU accesses but stop
+> receiving updates from the sibling.  IOW, the next sibling could be
+> removed and then complete its grace period while RCU read lock is
+> dropped, making it unsafe to dereference ->sibling.next after dropping
+> and re-acquiring RCU read lock.
 > 
-> While at it, fix the comment of cgroup_for_each_descendant_pre() which
-> was incorrectly referring to ->css_offline() instead of
-> ->css_online().
+> This can be solved by adding a way to traverse to the next sibling
+> without dereferencing ->sibling.next.  This patch adds a monotonically
+> increasing cgroup serial number, cgroup->serial_nr, which guarantees
+> that all cgroup->children lists are kept in increasing serial_nr
+> order.  A new function, cgroup_next_sibling(), is implemented, which,
+> if CGRP_REMOVED is not set on the current cgroup, follows
+> ->sibling.next; otherwise, traverses the parent's ->children list
+> until it sees a sibling with higher ->serial_nr.
+> 
+> This allows the function to always return the next sibling regardless
+> of the state of the current cgroup without adding overhead in the fast
+> path.
+> 
+> Further patches will update the iterators to use cgroup_next_sibling()
+> so that they allow dropping RCU read lock and blocking while iteration
+> is in progress which in turn will be used to simplify controllers.
 > 
 > Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Well spotted and looks good to me
+OK, I was about to object that the given pos could be freed already but
+I can see that the next patch documents that the caller has to make sure
+that pos will not go away (by elevating css count) before rcu is
+dropped.
+
 Reviewed-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
 
 > ---
->  include/linux/cgroup.h | 2 +-
->  kernel/cgroup.c        | 9 +++------
->  2 files changed, 4 insertions(+), 7 deletions(-)
+>  include/linux/cgroup.h | 10 ++++++++
+>  kernel/cgroup.c        | 62 ++++++++++++++++++++++++++++++++++++++++++++++++++
+>  2 files changed, 72 insertions(+)
 > 
 > diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-> index 4f6f513..1df5f69 100644
+> index 8d9f3c9..ee041a0 100644
 > --- a/include/linux/cgroup.h
 > +++ b/include/linux/cgroup.h
-> @@ -709,7 +709,7 @@ struct cgroup *cgroup_rightmost_descendant(struct cgroup *pos);
->   *
->   * If a subsystem synchronizes against the parent in its ->css_online() and
->   * before starting iterating, and synchronizes against @pos on each
-> - * iteration, any descendant cgroup which finished ->css_offline() is
-> + * iteration, any descendant cgroup which finished ->css_online() is
->   * guaranteed to be visible in the future iterations.
->   *
->   * In other words, the following guarantees that a descendant can't escape
+> @@ -189,6 +189,14 @@ struct cgroup {
+>  	struct dentry *dentry;		/* cgroup fs entry, RCU protected */
+>  
+>  	/*
+> +	 * Monotonically increasing unique serial number which defines a
+> +	 * uniform order among all cgroups.  It's guaranteed that all
+> +	 * ->children lists are in the ascending order of ->serial_nr.
+> +	 * It's used to allow interrupting and resuming iterations.
+> +	 */
+> +	u64 serial_nr;
+> +
+> +	/*
+>  	 * This is a copy of dentry->d_name, and it's needed because
+>  	 * we can't use dentry->d_name in cgroup_path().
+>  	 *
+> @@ -675,6 +683,8 @@ static inline struct cgroup* task_cgroup(struct task_struct *task,
+>  	return task_subsys_state(task, subsys_id)->cgroup;
+>  }
+>  
+> +struct cgroup *cgroup_next_sibling(struct cgroup *pos);
+> +
+>  /**
+>   * cgroup_for_each_child - iterate through children of a cgroup
+>   * @pos: the cgroup * to use as the loop cursor
 > diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index 6b2b1d9..f20f80c 100644
+> index 3222f93..bc757d7 100644
 > --- a/kernel/cgroup.c
 > +++ b/kernel/cgroup.c
-> @@ -2990,11 +2990,8 @@ struct cgroup *cgroup_next_descendant_pre(struct cgroup *pos,
->  	WARN_ON_ONCE(!rcu_read_lock_held());
->  
->  	/* if first iteration, pretend we just visited @cgroup */
-> -	if (!pos) {
-> -		if (list_empty(&cgroup->children))
-> -			return NULL;
-> +	if (!pos)
->  		pos = cgroup;
-> -	}
->  
->  	/* visit the first child if exists */
->  	next = list_first_or_null_rcu(&pos->children, struct cgroup, sibling);
-> @@ -3002,14 +2999,14 @@ struct cgroup *cgroup_next_descendant_pre(struct cgroup *pos,
->  		return next;
->  
->  	/* no child, visit my or the closest ancestor's next sibling */
-> -	do {
-> +	while (pos != cgroup) {
->  		next = list_entry_rcu(pos->sibling.next, struct cgroup,
->  				      sibling);
->  		if (&next->sibling != &pos->parent->children)
->  			return next;
->  
->  		pos = pos->parent;
-> -	} while (pos != cgroup);
-> +	}
->  
->  	return NULL;
+> @@ -2975,6 +2975,55 @@ static void cgroup_enable_task_cg_lists(void)
 >  }
+>  
+>  /**
+> + * cgroup_next_sibling - find the next sibling of a given cgroup
+> + * @pos: the current cgroup
+> + *
+> + * This function returns the next sibling of @pos and should be called
+> + * under RCU read lock.  The only requirement is that @pos is accessible.
+> + * The next sibling is guaranteed to be returned regardless of @pos's
+> + * state.
+> + */
+> +struct cgroup *cgroup_next_sibling(struct cgroup *pos)
+> +{
+> +	struct cgroup *next;
+> +
+> +	WARN_ON_ONCE(!rcu_read_lock_held());
+> +
+> +	/*
+> +	 * @pos could already have been removed.  Once a cgroup is removed,
+> +	 * its ->sibling.next is no longer updated when its next sibling
+> +	 * changes.  As CGRP_REMOVED is set on removal which is fully
+> +	 * serialized, if we see it unasserted, it's guaranteed that the
+> +	 * next sibling hasn't finished its grace period even if it's
+> +	 * already removed, and thus safe to dereference from this RCU
+> +	 * critical section.  If ->sibling.next is inaccessible,
+> +	 * cgroup_is_removed() is guaranteed to be visible as %true here.
+> +	 */
+> +	if (likely(!cgroup_is_removed(pos))) {
+> +		next = list_entry_rcu(pos->sibling.next, struct cgroup, sibling);
+> +		if (&next->sibling != &pos->parent->children)
+> +			return next;
+> +		return NULL;
+> +	}
+> +
+> +	/*
+> +	 * Can't dereference the next pointer.  Each cgroup is given a
+> +	 * monotonically increasing unique serial number and always
+> +	 * appended to the sibling list, so the next one can be found by
+> +	 * walking the parent's children until we see a cgroup with higher
+> +	 * serial number than @pos's.
+> +	 *
+> +	 * While this path can be slow, it's taken only when either the
+> +	 * current cgroup is removed or iteration and reomval race.
+> +	 */
+> +	list_for_each_entry_rcu(next, &pos->parent->children, sibling)
+> +		if (next->serial_nr > pos->serial_nr)
+> +			return next;
+> +	return NULL;
+> +}
+> +EXPORT_SYMBOL_GPL(cgroup_next_sibling);
+> +
+> +/**
+>   * cgroup_next_descendant_pre - find the next descendant for pre-order walk
+>   * @pos: the current position (%NULL to initiate traversal)
+>   * @cgroup: cgroup whose descendants to walk
+> @@ -4136,6 +4185,7 @@ static void offline_css(struct cgroup_subsys *ss, struct cgroup *cgrp)
+>  static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+>  			     umode_t mode)
+>  {
+> +	static atomic64_t serial_nr_cursor = ATOMIC64_INIT(0);
+>  	struct cgroup *cgrp;
+>  	struct cgroup_name *name;
+>  	struct cgroupfs_root *root = parent->root;
+> @@ -4216,6 +4266,14 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+>  		goto err_free_all;
+>  	lockdep_assert_held(&dentry->d_inode->i_mutex);
+>  
+> +	/*
+> +	 * Assign a monotonically increasing serial number.  With the list
+> +	 * appending below, it guarantees that sibling cgroups are always
+> +	 * sorted in the ascending serial number order on the parent's
+> +	 * ->children.
+> +	 */
+> +	cgrp->serial_nr = atomic64_inc_return(&serial_nr_cursor);
+> +
+>  	/* allocation complete, commit to creation */
+>  	list_add_tail(&cgrp->allcg_node, &root->allcg_list);
+>  	list_add_tail_rcu(&cgrp->sibling, &cgrp->parent->children);
+> @@ -4303,6 +4361,10 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
+>  	 * removed.  This makes future css_tryget() and child creation
+>  	 * attempts fail thus maintaining the removal conditions verified
+>  	 * above.
+> +	 *
+> +	 * Note that CGRP_REMVOED clearing is depended upon by
+> +	 * cgroup_next_sibling() to resume iteration after dropping RCU
+> +	 * read lock.  See cgroup_next_sibling() for details.
+>  	 */
+>  	for_each_subsys(cgrp->root, ss) {
+>  		struct cgroup_subsys_state *css = cgrp->subsys[ss->subsys_id];
 > -- 
 > 1.8.1.4
 > 
