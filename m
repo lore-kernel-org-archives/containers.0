@@ -1,10 +1,9 @@
-From: postmaster-Bwd5JyuUO9BvQ+nWuYMvQ9BPR1lH4CV8@public.gmane.org
-Subject: failure notice
-Date: 23 May 2013 07:14:56 -0000
-Message-ID: <20130523072139.9A6178B6@mail.linuxfoundation.org>
+From: Mail Delivery Service <postmaster-1Ph4/jfBtgs@public.gmane.org>
+Subject: Delivery Status Notification
+Date: Thu, 23 May 2013 10:14:25 +0200
+Message-ID: <517FBCF30674E017@smtp101.alice.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============7966514464582183824=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,36 +17,73 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi. This is the qmail-send program at mxavas3.alicom.com.
-I'm afraid I wasn't able to deliver your message to the following addresses.
-This is a permanent error; I've given up. Sorry it didn't work out.
+This multi-part MIME message contains a Delivery Status Notification.
+If you can see this text, your mail client may not be able to understand MIME
+formatted messages or DSNs (see RFC 2045 through 2049 for general MIME
+information and RFC 1891 through 1894 for DSN specific information).
 
-<inforteam-55MdIm9j5ATOiWW7noV1PQ@public.gmane.org>:
-50.97.214.18 RBL filtered by bl.spamcop.net: Blocked - see http://www.spamcop.net/bl.shtml?50.97.214.18
-Mail not accepted.
+--===============7966514464582183824==
+Content-Type: Multipart/Report; report-type=delivery-status; boundary="========/517FBCF30674DC8D/smtp101.alice.it"
 
---- Below this line is a copy of the message.
+This multi-part MIME message contains a Delivery Status Notification.
+If you can see this text, your mail client may not be able to understand MIME
+formatted messages or DSNs (see RFC 2045 through 2049 for general MIME
+information and RFC 1891 through 1894 for DSN specific information).
+
+--========/517FBCF30674DC8D/smtp101.alice.it
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
+
+ - These recipients of your message have been processed by the mail serve=
+r:
+dunkelvampir-1Ph4/jfBtgs@public.gmane.org; Failed; 5.2.2 (mailbox full)
+
+    Remote MTA cpms-2d1.cp.alice.it: SMTP diagnostic: 552 RCPT TO:<dunkel=
+vampir-1Ph4/jfBtgs@public.gmane.org> Mailbox disk quota exceeded
+
+
+
+--========/517FBCF30674DC8D/smtp101.alice.it
+Content-Type: Message/Delivery-Status
+
+Reporting-MTA: dns; smtp101.alice.it
+Received-from-MTA: dns; q-live.ru (62.76.42.141)
+Arrival-Date: Thu, 23 May 2013 10:14:25 +0200
+
+Final-Recipient: rfc822; dunkelvampir-1Ph4/jfBtgs@public.gmane.org
+Action: Failed
+Status: 5.2.2 (mailbox full)
+Remote-MTA: dns; cpms-2d1.cp.alice.it
+Diagnostic-Code: smtp; 552 RCPT TO:<dunkelvampir-1Ph4/jfBtgs@public.gmane.org> Mailbox disk quota exceeded
+
+--========/517FBCF30674DC8D/smtp101.alice.it
+Content-Type: Text/RFC822-headers
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: (qmail 31347 invoked from network); 23 May 2013 07:14:56 -0000
-Received: from unknown (HELO linux01.comets.com.br) (50.97.214.18)
-  by 0 with SMTP; 23 May 2013 07:14:56 -0000
-Received: from [192.168.137.100] by linux01.comets.com.br id Him8LNfm9af2; Thu, 23 May 2013 04:14:55 -0300
-Message-ID: <004901ce5785$37dfbe00$6489a8c0-CujU1KeUx2dB/p3h89ylk3AWrOxMfm7/@public.gmane.org>
+Received: from q-live.ru (62.76.42.141) by smtp101.alice.it (8.6.058.01)
+        id 517FBCF30674DC8D for dunkelvampir-1Ph4/jfBtgs@public.gmane.org; Thu, 23 May 2013 10:14:16 +0200
+Received: from [192.168.137.100] by q-live.ru id 75waZY9F1wH6; Thu, 23 May 2013 12:14:14 +0400
+Message-ID: <001b01ce578d$81cca200$6489a8c0-3IlzEOFb/K6HXe+LvDLADg@public.gmane.org>
 From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <inforteam-55MdIm9j5ATOiWW7noV1PQ@public.gmane.org>
-Subject: Vi verra fatturata
-Date: Thu, 23 May 2013 04:14:55 -0300
+To: <dunkelvampir-1Ph4/jfBtgs@public.gmane.org>
+Subject: chiarimento dei dettagli
+Date: Thu, 23 May 2013 12:14:14 +0400
 MIME-Version: 1.0
-Content-type: text/plain; charset=windows-1252
+Content-type: text/plain; charset=us-ascii 
 Content-Transfer-Encoding: 8bit
-X-Spam-Rating: 0 1.6.2 0/1000/N
 
 
-
-Vi ricordiamo che avete un debito.
-Si deve essere rimborsato entro la fine della settimana, informazioni piu dettagliate sono disponibili all'indirizzo:
-http://206.225.85.136/Debito.zip?idmail==inforteam.7SMkXUY7NS3x
+--========/517FBCF30674DC8D/smtp101.alice.it--
 
 
-Tel./Fax.: (050) 634 71 87 
+--===============7966514464582183824==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============7966514464582183824==--
