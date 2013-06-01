@@ -1,12 +1,12 @@
-From: "Apple" <online-2kanFRK1NckAvxtiuMwx3w@public.gmane.org>
-Subject: Please confirm your information
-Date: Sat, 01 Jun 2013 21:40:13 -0400
-Message-ID: <REMOTE-TIMEVp20N39x00001910@remote-time.shensvc.com>
+From: "Alfred" <alfredrutherford-JGs/UdohzUI@public.gmane.org>
+Subject: Trade Inquiry
+Date: Sat, 1 Jun 2013 13:54:10 -0700
+Message-ID: <27018586.20130601135410@mail.ru>
+Reply-To: Alfred <alfredrutherfordinbox-JGs/UdohzUI@public.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Description: Mail message body
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,13 +16,19 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-   
-Please confirm your information
-       Confirmation of your Apple ID gives you easy access to a variety of Apple services, including the iTunes Store, Apple Online Store, iChat, and more
- Verification is required to protect your account information and helps us serve you better.
- Please log in  http://www.apple.com/   to verify your account:
- Log in to verify account
-       Copyright -- 2013 Apple Inc. All rights reserved. Terms of Use Privacy Policy 
+Sir, 
+Business Enquiry
+I am writing in request of your kind co-operation in my transaction venture. I have some unencumbered fund for immediate transfer in investment in a growing economy and industry. We want your contribution in the areas of provision of fund transfer facilities, investment and security of our fund for about 5-6 years till we need to repatriate the fund back.
+ 
+Remunerations: 20% (capital/total sum) 
+Please kindly contact: alfredrutherfordmail-YDxpq3io04c@public.gmane.org for detailed information and identification.
+Sincerely Yours, 
+
+Alfred
+05 School Road, SunnyRidge, Primrose 1401
+Germiston, 
+Tel: 0793385563
+South Africa
