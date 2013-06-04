@@ -1,16 +1,16 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Subject: Re: [PATCH cgroup/for-3.11 1/3] cgroup: mark "tasks" cgroup file as
 	insane
-Date: Tue, 4 Jun 2013 13:01:49 -0700
-Message-ID: <20130604200149.GD14916@htj.dyndns.org>
+Date: Tue, 4 Jun 2013 13:19:47 -0700
+Message-ID: <20130604201947.GE14916__40501.6530109153$1370377201$gmane$org@htj.dyndns.org>
 References: <20130604021302.GH29989@mtj.dyndns.org>
-	<20130604112139.GD31242@dhcp22.suse.cz>
+	<20130604111556.GA4963@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20130604112139.GD31242-2MMpYkNvuYDjFM9bn6wA6Q@public.gmane.org>
+In-Reply-To: <20130604111556.GA4963-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,33 +20,42 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kay.sievers-tD+1rO4QERM@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kay.sievers-tD+1rO4QERM@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Jun 04, 2013 at 01:21:39PM +0200, Michal Hocko wrote:
-> On Mon 03-06-13 19:13:02, Tejun Heo wrote:
-> > Some resources controlled by cgroup aren't per-task and cgroup core
-> > allowing threads of a single thread_group to be in different cgroups
-> > forced memcg do explicitly find the group leader and use it.  This is
-> > gonna be nasty when transitioning to unified hierarchy and in general
-> > we don't want and won't support granularity finer than processes.
-> > 
-> > Mark "tasks" with CFTYPE_INSANE.
-> 
-> Hmm, I wasn't aware that procs is a better interface to work with
-> entities in the group so I was using tasks which worked well for memcg.
-> I am afraid I am not the only one. Can we get a warning when somebody
-> opens the file?
-> 
-> That being said, I do not object against removal, please just add a
-> warning to let people know that procs is a preferred interface.
+Hey, Daniel.
 
-Hmmm... I don't know.  For users of multiple hierarchies, tasks are
-fine.  It's only gonna be an issue when we transition to unified
-hierarchy where a lot of other things would change too.  I'm not sure
-whether it'd be worthwhile to generate a warning now for everyone.
-Li, what do you think?
+On Tue, Jun 04, 2013 at 12:15:56PM +0100, Daniel P. Berrange wrote:
+> With libvirt and KVM we require the ability to put different threads
+
+I really don't think cgroup has ever been intended (if there were ever
+any such overall intending) or is suited for something as fine grained
+as in-process resource management.  There already are existing
+per-thread interfaces for that.  Please use them instead.  cgroup
+simply doesn't fit.
+
+> in different cgroups for the "cpu", "cpuset" & "cpuacct" controllers.
+
+cpu and cpuacct are in the process of being merged.  The scheduler
+people hate the duplicate accounting the separation causes and cpuacct
+is generally considered a mistake that we shouldn't repeat.  So, umm,
+you're really depending on a lot of things which are considered big
+mistakes in cgroup.
+
+> This is to allow us to control schedular tunables / placement for
+> QEMU vCPU threads, independantly of limits for QEMU I/O threads. So
+> requiring all threads of a process to be in the same cgroup isn't
+> sufficiently flexible for our needs.
+
+It was never suited to that level of flexibility and it will never be
+and things like that will be clearly forbidden rather than being left
+in the current "not fully supported but kinda works" state.  The
+existing stuff won't break but new things won't keep the support.  If
+you're fine with staying with the old interface, which will be around
+for the foreseeable future, that's fine too, but if you intend to move
+onto the new interface when it finally becomes ready, whenever that
+is, please move on.
 
 Thanks.
 
