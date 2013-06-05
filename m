@@ -1,8 +1,7 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH v2 01/10] cpuset: remove redundant check in
-	cpuset_cpus_allowed_fallback()
-Date: Wed, 5 Jun 2013 17:15:11 +0800
-Message-ID: <51AF019F.4050002@huawei.com>
+Subject: [PATCH v2 05/10] cpuset: re-structure update_cpumask() a bit
+Date: Wed, 5 Jun 2013 17:15:59 +0800
+Message-ID: <51AF01CF.1070706@huawei.com>
 References: <51AF0183.8070602@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,26 +21,43 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-task_cs() will never return NULL.
+Check if cpus_allowed is to be changed before calling validate_change().
+
+This won't change any behavior, but later it will allow us to do this:
+
+ # mkdir /cpuset/child
+ # echo $$ > /cpuset/child/tasks	/* empty cpuset */
+ # echo > /cpuset/child/cpuset.cpus	/* do nothing, won't fail */
+
+Without this patch, the last operation will fail.
 
 Signed-off-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 ---
- kernel/cpuset.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ kernel/cpuset.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
 diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index 64b3f79..f0c884a 100644
+index 51f8e1d..535dce6 100644
 --- a/kernel/cpuset.c
 +++ b/kernel/cpuset.c
-@@ -2253,8 +2253,7 @@ void cpuset_cpus_allowed_fallback(struct task_struct *tsk)
+@@ -856,14 +856,15 @@ static int update_cpumask(struct cpuset *cs, struct cpuset *trialcs,
+ 		if (!cpumask_subset(trialcs->cpus_allowed, cpu_active_mask))
+ 			return -EINVAL;
+ 	}
+-	retval = validate_change(cs, trialcs);
+-	if (retval < 0)
+-		return retval;
  
- 	rcu_read_lock();
- 	cs = task_cs(tsk);
--	if (cs)
--		do_set_cpus_allowed(tsk, cs->cpus_allowed);
-+	do_set_cpus_allowed(tsk, cs->cpus_allowed);
- 	rcu_read_unlock();
+ 	/* Nothing to do if the cpus didn't change */
+ 	if (cpumask_equal(cs->cpus_allowed, trialcs->cpus_allowed))
+ 		return 0;
  
- 	/*
++	retval = validate_change(cs, trialcs);
++	if (retval < 0)
++		return retval;
++
+ 	retval = heap_init(&heap, PAGE_SIZE, GFP_KERNEL, NULL);
+ 	if (retval)
+ 		return retval;
 -- 
 1.8.0.2
