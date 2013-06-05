@@ -1,11 +1,13 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH v2 00/10] cpuset: implement sane hierarchy behaviors
-Date: Wed, 5 Jun 2013 17:14:43 +0800
-Message-ID: <51AF0183.8070602@huawei.com>
+Subject: [PATCH v2 04/10] cpuset: remove cpuset_test_cpumask()
+Date: Wed, 5 Jun 2013 17:15:48 +0800
+Message-ID: <51AF01C4.9020806@huawei.com>
+References: <51AF0183.8070602@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <51AF0183.8070602-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,50 +21,49 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-v1 -> v2:
+The test is done in set_cpus_allowed_ptr(), so it's redundant.
 
-- add documentation in include/linux/cgroup.h
-- drop rcu_read_lock() before calling update_task_nodemask() when iterating
-cpuset hierarchy
+Signed-off-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+---
+ kernel/cpuset.c | 19 +------------------
+ 1 file changed, 1 insertion(+), 18 deletions(-)
 
-======================================
-
-Currently some cpuset behaviors are not friendly when cpuset is co-mounted
-with other cgroup controllers.
-
-Now with this patchset if cpuset is mounted with sane_behavior option, it
-behaves differently:
-
-- Tasks will be kept in empty cpusets when hotplug happens and take masks
-of ancestors with non-empty cpus/mems, instead of being moved to an ancestor.
-
-- A task can be moved into an empty cpuset, and again it takes masks of
-ancestors, so the user can drop a task into a newly created cgroup without
-having to do anything for it.
-
-As tasks can reside in empy cpusets, here're some rules:
-
-- They can be moved to another cpuset, regardless it's empty or not.
-
-- Though it takes masks from ancestors, it takes other configs from the
-empty cpuset.
-
-- If the ancestors' masks are changed, those tasks will also be updated
-to take new masks.
-
-Li Zefan (10):
-      cpuset: remove redundant check in cpuset_cpus_allowed_fallback()
-      cpuset: cleanup guarantee_online_{cpus|mems}()
-      cpuset: remove unnecessary variable in cpuset_attach()
-      cpuset: remove cpuset_test_cpumask()
-      cpuset: re-structure update_cpumask() a bit
-      cpuset: record old_mems_allowed in struct cpuset
-      cpuset: introduce effective_{cpumask|nodemask}_cpuset()
-      cpuset: allow to keep tasks in empty cpusets
-      cpuset: allow to move tasks to empty cpusets
-      cpuset: fix to migrate mm correctly in a corner case
-
---
- include/linux/cgroup.h |   7 +
- kernel/cpuset.c        | 342 ++++++++++++++++++++++++++++++++++---------------
- 2 files changed, 247 insertions(+), 102 deletions(-)
+diff --git a/kernel/cpuset.c b/kernel/cpuset.c
+index dbef832..51f8e1d 100644
+--- a/kernel/cpuset.c
++++ b/kernel/cpuset.c
+@@ -784,23 +784,6 @@ void rebuild_sched_domains(void)
+ }
+ 
+ /**
+- * cpuset_test_cpumask - test a task's cpus_allowed versus its cpuset's
+- * @tsk: task to test
+- * @scan: struct cgroup_scanner contained in its struct cpuset_hotplug_scanner
+- *
+- * Call with cpuset_mutex held.  May take callback_mutex during call.
+- * Called for each task in a cgroup by cgroup_scan_tasks().
+- * Return nonzero if this tasks's cpus_allowed mask should be changed (in other
+- * words, if its mask is not equal to its cpuset's mask).
+- */
+-static int cpuset_test_cpumask(struct task_struct *tsk,
+-			       struct cgroup_scanner *scan)
+-{
+-	return !cpumask_equal(&tsk->cpus_allowed,
+-			(cgroup_cs(scan->cg))->cpus_allowed);
+-}
+-
+-/**
+  * cpuset_change_cpumask - make a task's cpus_allowed the same as its cpuset's
+  * @tsk: task to test
+  * @scan: struct cgroup_scanner containing the cgroup of the task
+@@ -835,7 +818,7 @@ static void update_tasks_cpumask(struct cpuset *cs, struct ptr_heap *heap)
+ 	struct cgroup_scanner scan;
+ 
+ 	scan.cg = cs->css.cgroup;
+-	scan.test_task = cpuset_test_cpumask;
++	scan.test_task = NULL;
+ 	scan.process_task = cpuset_change_cpumask;
+ 	scan.heap = heap;
+ 	cgroup_scan_tasks(&scan);
+-- 
+1.8.0.2
