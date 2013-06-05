@@ -1,7 +1,8 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH v2 02/10] cpuset: cleanup guarantee_online_{cpus|mems}()
-Date: Wed, 5 Jun 2013 17:15:23 +0800
-Message-ID: <51AF01AB.2070405__36483.9613474489$1370423755$gmane$org@huawei.com>
+Subject: [PATCH v2 03/10] cpuset: remove unnecessary variable in
+	cpuset_attach()
+Date: Wed, 5 Jun 2013 17:15:35 +0800
+Message-ID: <51AF01B7.3010102__5635.94421041689$1370423799$gmane$org@huawei.com>
 References: <51AF0183.8070602@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,78 +22,41 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-- We never pass a NULL @cs to these functions.
-- The top cpuset always has some online cpus/mems.
+We can just use oldcs->mems_allowed.
 
 Signed-off-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 ---
- kernel/cpuset.c | 29 +++++++----------------------
- 1 file changed, 7 insertions(+), 22 deletions(-)
+ kernel/cpuset.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
 diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index f0c884a..d753837 100644
+index d753837..dbef832 100644
 --- a/kernel/cpuset.c
 +++ b/kernel/cpuset.c
-@@ -304,53 +304,38 @@ static struct file_system_type cpuset_fs_type = {
- /*
-  * Return in pmask the portion of a cpusets's cpus_allowed that
-  * are online.  If none are online, walk up the cpuset hierarchy
-- * until we find one that does have some online cpus.  If we get
-- * all the way to the top and still haven't found any online cpus,
-- * return cpu_online_mask.  Or if passed a NULL cs from an exit'ing
-- * task, return cpu_online_mask.
-+ * until we find one that does have some online cpus.  The top
-+ * cpuset always has some cpus online.
-  *
-  * One way or another, we guarantee to return some non-empty subset
-  * of cpu_online_mask.
-  *
-  * Call with callback_mutex held.
-  */
--
- static void guarantee_online_cpus(const struct cpuset *cs,
- 				  struct cpumask *pmask)
- {
--	while (cs && !cpumask_intersects(cs->cpus_allowed, cpu_online_mask))
-+	while (!cpumask_intersects(cs->cpus_allowed, cpu_online_mask))
- 		cs = parent_cs(cs);
--	if (cs)
--		cpumask_and(pmask, cs->cpus_allowed, cpu_online_mask);
--	else
--		cpumask_copy(pmask, cpu_online_mask);
--	BUG_ON(!cpumask_intersects(pmask, cpu_online_mask));
-+	cpumask_and(pmask, cs->cpus_allowed, cpu_online_mask);
- }
+@@ -1407,8 +1407,7 @@ static cpumask_var_t cpus_attach;
  
- /*
-  * Return in *pmask the portion of a cpusets's mems_allowed that
-  * are online, with memory.  If none are online with memory, walk
-  * up the cpuset hierarchy until we find one that does have some
-- * online mems.  If we get all the way to the top and still haven't
-- * found any online mems, return node_states[N_MEMORY].
-+ * online mems.  The top cpuset always has some mems online.
-  *
-  * One way or another, we guarantee to return some non-empty subset
-  * of node_states[N_MEMORY].
-  *
-  * Call with callback_mutex held.
-  */
--
- static void guarantee_online_mems(const struct cpuset *cs, nodemask_t *pmask)
+ static void cpuset_attach(struct cgroup *cgrp, struct cgroup_taskset *tset)
  {
--	while (cs && !nodes_intersects(cs->mems_allowed,
--					node_states[N_MEMORY]))
-+	while (!nodes_intersects(cs->mems_allowed, node_states[N_MEMORY]))
- 		cs = parent_cs(cs);
--	if (cs)
--		nodes_and(*pmask, cs->mems_allowed,
--					node_states[N_MEMORY]);
--	else
--		*pmask = node_states[N_MEMORY];
--	BUG_ON(!nodes_intersects(*pmask, node_states[N_MEMORY]));
-+	nodes_and(*pmask, cs->mems_allowed, node_states[N_MEMORY]);
- }
- 
- /*
+-	/* static bufs protected by cpuset_mutex */
+-	static nodemask_t cpuset_attach_nodemask_from;
++	/* static buf protected by cpuset_mutex */
+ 	static nodemask_t cpuset_attach_nodemask_to;
+ 	struct mm_struct *mm;
+ 	struct task_struct *task;
+@@ -1442,13 +1441,12 @@ static void cpuset_attach(struct cgroup *cgrp, struct cgroup_taskset *tset)
+ 	 * Change mm, possibly for multiple threads in a threadgroup. This is
+ 	 * expensive and may sleep.
+ 	 */
+-	cpuset_attach_nodemask_from = oldcs->mems_allowed;
+ 	cpuset_attach_nodemask_to = cs->mems_allowed;
+ 	mm = get_task_mm(leader);
+ 	if (mm) {
+ 		mpol_rebind_mm(mm, &cpuset_attach_nodemask_to);
+ 		if (is_memory_migrate(cs))
+-			cpuset_migrate_mm(mm, &cpuset_attach_nodemask_from,
++			cpuset_migrate_mm(mm, &oldcs->mems_allowed,
+ 					  &cpuset_attach_nodemask_to);
+ 		mmput(mm);
+ 	}
 -- 
 1.8.0.2
