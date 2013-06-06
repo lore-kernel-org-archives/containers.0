@@ -1,14 +1,14 @@
-From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v2 08/10] cpuset: allow to keep tasks in empty cpusets
-Date: Thu, 6 Jun 2013 18:26:46 +0800
-Message-ID: <51B063E6.30107__4045.43874688006$1370514453$gmane$org@huawei.com>
-References: <51AF0183.8070602@huawei.com> <51AF020B.3030701@huawei.com>
-	<20130605205146.GI10693@mtj.dyndns.org>
+From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Requirements for CAP_SYS_ADMIN on setns() ?
+Date: Thu, 6 Jun 2013 08:48:03 -0500
+Message-ID: <20130606134802.GA2930@ac100>
+References: <20130606100149.GG30217@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20130605205146.GI10693-9pTldWuhBndy/B6EtB590w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20130606100149.GG30217-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,52 +18,79 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 2013/6/6 4:51, Tejun Heo wrote:
-> Hello, Li.
+Quoting Daniel P. Berrange (berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
+> IIUC, currently, in order to be able to invoke setns() the calling
+> process is required to have CAP_SYS_ADMIN capability. Alternatively
+> with user namespaces, access is allowed if the process' effective
+> uid matches the uid of the owner of the namespace.
 > 
-> On Wed, Jun 05, 2013 at 05:16:59PM +0800, Li Zefan wrote:
->> @@ -2092,11 +2183,13 @@ static void cpuset_propagate_hotplug_workfn(struct work_struct *work)
->>  	mutex_unlock(&cpuset_mutex);
->>  
->>  	/*
->> -	 * If @cs became empty, move tasks to the nearest ancestor with
->> -	 * execution resources.  This is full cgroup operation which will
->> +	 * If sane_behavior flag is set, we'll keep tasks in empty cpusets.
->> +	 *
->> +	 * Otherwise move tasks to the nearest ancestor with execution
->> +	 *  resources.  This is full cgroup operation which will
->>  	 * also call back into cpuset.  Should be done outside any lock.
->>  	 */
->> -	if (is_empty)
->> +	if (!sane && is_empty)
->>  		remove_tasks_in_empty_cpuset(cs);
->>  
->>  	/* the following may free @cs, should be the last operation */
->> @@ -2171,6 +2264,7 @@ static void cpuset_hotplug_workfn(struct work_struct *work)
->>  		cpumask_copy(top_cpuset.cpus_allowed, &new_cpus);
->>  		mutex_unlock(&callback_mutex);
->>  		/* we don't mess with cpumasks of tasks in top_cpuset */
->> +		update_tasks_cpumask_hier(&top_cpuset, false, NULL);
->>  	}
+> I have a scenario though that isn't dealt with by those rules. I have
+> a container that was spawned by uid == 0, and I have an unprivileged
+> process uid != 0 in the initial namespace that I wish to allow to enter
+> the namespaces associated with the container.
 > 
-> I'm a little confused by the order of operation.  We now have two
-> different hierarchical walks for hotplug propagation, right?  I
-> suppose the above one is added because we now also need to update the
-> mask when cpus are being brought online?
+> With the CAP_SYS_ADMIN rule on setns(), it seems that the unprivileged
+> process will need to execute some setuid binary in order to gain the
+> CAP_SYS_ADMIN capability required to call setns().
 > 
+> Of course you can't call setns() without first obtaining a file
+> descriptor corresponding to the /proc/$CONTAINERPID/ns/XXXX namespace
+> you wish to join. This appears to require elevated privileges too.
+> 
+> Is it not sufficient to rely on the permissions on the /proc/$PID/ns/XXX
+> file to control access to a namespace, and thus allow setns() without
+> a CAP_SYS_ADMIN check ?   ie setns() is basically useless unless you
+> already have sufficient privileges to get a file descriptor for the
+> namespace, so why does setns need an additional privilege check beyond
+> that done at time of open() on the proc file.
+> 
+> In my scenario this would allow for a privileged daemon to open the
+> /proc/$PID/ns/XXX file, and then pass the file descriptor back to the
+> unprivileged process using SCM_RIGHTS, which could then invoke setns().
+> This kind of privilege separation is perferrable to requiring the
+> unprivileged process to run some kind of setuid program to gain the
+> CAP_SYS_ADMIN capability.
+> 
+> Regards,
+> Daniel
 
-The first one will only update tasks in empty cpusets (no matter online or
-offline), and the second one will only update tasks in non-empty cpusets
-(only when offline).
+Hey Daniel,
 
-> I wonder whether it'd be possible to merge the two paths.  My
-> suspicion is that we probably don't need propagate_hotplug_work
-> anymore now that we can drop RCU read lock while doing the pre-order
-> walk.  What do you think?
-> 
+it's possible that as things settle down we can find ways to relax this,
+but note that this behavior was very specifically added by the commit
+below.  Very unfortunate that this is a feature regression over the
+CONFIG_USER_NS=n case :(
 
-It indeed can be confusing. I'll see if we can make the code clearer.
+5e4a08476b50fa39210fca82e03325cc46b9c235
+Author: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Date:   Fri Dec 14 07:55:36 2012 -0800
+
+    userns: Require CAP_SYS_ADMIN for most uses of setns.
+    
+    Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> found a nasty little bug in
+    the permissions of setns.  With unprivileged user namespaces it
+    became possible to create new namespaces without privilege.
+    
+    However the setns calls were relaxed to only require CAP_SYS_ADMIN in
+    the user nameapce of the targed namespace.
+    
+    Which made the following nasty sequence possible.
+    
+    pid = clone(CLONE_NEWUSER | CLONE_NEWNS);
+    if (pid == 0) { /* child */
+        system("mount --bind /home/me/passwd /etc/passwd");
+    }
+    else if (pid != 0) { /* parent */
+        char path[PATH_MAX];
+        snprintf(path, sizeof(path), "/proc/%u/ns/mnt");
+        fd = open(path, O_RDONLY);
+        setns(fd, 0);
+        system("su -");
+    }
+    
+    Prevent this possibility by requiring CAP_SYS_ADMIN
+    in the current user namespace when joing all but the user namespace.
