@@ -1,14 +1,13 @@
-From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v2 06/10] cpuset: record old_mems_allowed in struct cpuset
-Date: Thu, 6 Jun 2013 17:58:44 +0800
-Message-ID: <51B05D54.4080205@huawei.com>
-References: <51AF0183.8070602@huawei.com> <51AF01E8.8080205@huawei.com>
-	<20130605194522.GG10693@mtj.dyndns.org>
+From: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Requirements for CAP_SYS_ADMIN on setns() ?
+Date: Thu, 6 Jun 2013 11:01:49 +0100
+Message-ID: <20130606100149.GG30217@redhat.com>
+Reply-To: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20130605194522.GG10693-9pTldWuhBndy/B6EtB590w@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,28 +17,45 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 2013/6/6 3:45, Tejun Heo wrote:
-> Hello, Li.
-> 
-> On Wed, Jun 05, 2013 at 05:16:24PM +0800, Li Zefan wrote:
->> @@ -1425,7 +1435,6 @@ static void cpuset_attach(struct cgroup *cgrp, struct cgroup_taskset *tset)
->>  	 * Change mm, possibly for multiple threads in a threadgroup. This is
->>  	 * expensive and may sleep.
->>  	 */
->> -	cpuset_attach_nodemask_to = cs->mems_allowed;
->>  	mm = get_task_mm(leader);
->>  	if (mm) {
->>  		mpol_rebind_mm(mm, &cpuset_attach_nodemask_to);
-> 
-> This looks a bit suspicious to me.  Now we're setting mm's nodemask to
-> guarantee_online_mems() output rather than cs->mems_allowed.  Is this
-> change intended?  If so, it probably deserves an explanation in the
-> description?
-> 
+IIUC, currently, in order to be able to invoke setns() the calling
+process is required to have CAP_SYS_ADMIN capability. Alternatively
+with user namespaces, access is allowed if the process' effective
+uid matches the uid of the owner of the namespace.
 
-It's possible that cs->mems_allowed is empty, but I should have left
-it as it is, as it's not related to this patch.
+I have a scenario though that isn't dealt with by those rules. I have
+a container that was spawned by uid == 0, and I have an unprivileged
+process uid != 0 in the initial namespace that I wish to allow to enter
+the namespaces associated with the container.
+
+With the CAP_SYS_ADMIN rule on setns(), it seems that the unprivileged
+process will need to execute some setuid binary in order to gain the
+CAP_SYS_ADMIN capability required to call setns().
+
+Of course you can't call setns() without first obtaining a file
+descriptor corresponding to the /proc/$CONTAINERPID/ns/XXXX namespace
+you wish to join. This appears to require elevated privileges too.
+
+Is it not sufficient to rely on the permissions on the /proc/$PID/ns/XXX
+file to control access to a namespace, and thus allow setns() without
+a CAP_SYS_ADMIN check ?   ie setns() is basically useless unless you
+already have sufficient privileges to get a file descriptor for the
+namespace, so why does setns need an additional privilege check beyond
+that done at time of open() on the proc file.
+
+In my scenario this would allow for a privileged daemon to open the
+/proc/$PID/ns/XXX file, and then pass the file descriptor back to the
+unprivileged process using SCM_RIGHTS, which could then invoke setns().
+This kind of privilege separation is perferrable to requiring the
+unprivileged process to run some kind of setuid program to gain the
+CAP_SYS_ADMIN capability.
+
+Regards,
+Daniel
+-- 
+|: http://berrange.com      -o-    http://www.flickr.com/photos/dberrange/ :|
+|: http://libvirt.org              -o-             http://virt-manager.org :|
+|: http://autobuild.org       -o-         http://search.cpan.org/~danberr/ :|
+|: http://entangle-photo.org       -o-       http://live.gnome.org/gtk-vnc :|
