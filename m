@@ -1,15 +1,18 @@
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH net-next RFC] netlink: Add compare function for
-	netlink_table
-Date: Thu, 6 Jun 2013 15:26:40 -0500
-Message-ID: <20130606202640.GA6205__25225.7560765885$1370550419$gmane$org@sergelap>
-References: <1370501351-3006-1-git-send-email-gaofeng@cn.fujitsu.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH cgroup/for-3.11 1/3] cgroup: mark "tasks" cgroup file as
+	insane
+Date: Thu, 6 Jun 2013 14:14:10 -0700
+Message-ID: <20130606211410.GF5045@htj.dyndns.org>
+References: <20130604021302.GH29989@mtj.dyndns.org>
+	<20130604111556.GA4963@redhat.com>
+	<20130604201947.GE14916@htj.dyndns.org>
+	<20130606092055.GF30217@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1370501351-3006-1-git-send-email-gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20130606092055.GF30217-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,207 +22,69 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, edumazet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org, pablo-Cap9r6Oaw4JrovVCs/uTlw@public.gmane.org
+To: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kay.sievers-tD+1rO4QERM@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Gao feng (gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
-> As we know, netlink sockets are private resource of
-> net namespace, they can communicate with each other
-> only when they in the same net namespace. this works
-> well until we try to add namespace support for other
-> subsystems which use netlink.
-> 
-> Don't like ipv4 and route table.., it is not suited to
-> make these subsytems belong to net namespace, Such as
-> audit and crypto subsystems,they are more suitable to
-> user namespace.
-> 
-> So we must have the ability to make the netlink sockets
-> in same user namespace can communicate with each other.
-> 
-> This patch adds a new function pointer "compare" for
-> netlink_table, we can decide if the netlink sockets can
-> communicate with each other through this netlink_table
-> self-defined compare function.
-> 
-> The behavior isn't changed if we don't provide the compare
-> function for netlink_table.
-> 
-> Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Hello,
 
-Hi,
+On Thu, Jun 06, 2013 at 10:20:55AM +0100, Daniel P. Berrange wrote:
+> Unless I'm mistaken there is no alternative that can work. With QEMU
+> we need to apply scheduling controls to 
+> 
+>   1. Individual vCPU threads
+>   2. All non-vCPU threads (ie QEMU's I/O threads)
+> 
+> We can use per-thread APIs for 1, but for 2 we require something that
+> applies to the group of threads as a whole, without also impacting the
+> controls set for the vCPU threads. AFAIK, nothing except cgroups as
+> we use them today can satisfy that requirement ? Am I wrong ? Is there
+> something else that can achieve this same setup ?
 
-I'm looking at that set right now.  So far all looks good to me.
-I expect to send a blanket ack for the set, but since you've sent
-this patch separately:
+Can you please explain more about your requirements on !vCPU threads?
 
-Acked-by: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+> I understand that having wildly distinct hiearchies across different
+> controllers causes alot of pain for the kernel. Libvirt doesn't
+> actually require that full level of flexibility though. Our needs
+> are very much simpler. We're happy with the same core hierarchy
+> across all controllers. We just want to be able to create an extra
+> leaf node in some controllers to move threads about. 
+> 
+> It would be fine with us if the kernel required that the same directory
+> hierarchy exists in all controllers, and mandated that threads can only
+> be moved to a directory immediately below where the process is initially
+> placed.
 
-> ---
-> Actually I already send a patchset to add namespace support
-> for audit subsystem [1]. this patch is a part of the patchset.
-> I think it's better to send this patch out separately, since
-> some people may have comments on this one. I need to know what's
-> the idea of network guy.
+The problem is that it doesn't make any sense to split threads of the
+same process for at least two major controllers and you end up with
+situation where you can't identify a resource to be belonging to a
+certain cgroup because such level of granularity is simply undefined.
+As I wrote before, we can special case certain controllers but I'm
+extremely reluctant.  If you need it, please convince me.
+
+> > It was never suited to that level of flexibility and it will never be
+> > and things like that will be clearly forbidden rather than being left
+> > in the current "not fully supported but kinda works" state.  The
+> > existing stuff won't break but new things won't keep the support.  If
+> > you're fine with staying with the old interface, which will be around
+> > for the foreseeable future, that's fine too, but if you intend to move
+> > onto the new interface when it finally becomes ready, whenever that
+> > is, please move on.
 > 
-> [1] http://lwn.net/Articles/549546/
-> 
->  include/linux/netlink.h  |  1 +
->  net/netlink/af_netlink.c | 33 +++++++++++++++++++++++++--------
->  net/netlink/af_netlink.h |  1 +
->  3 files changed, 27 insertions(+), 8 deletions(-)
-> 
-> diff --git a/include/linux/netlink.h b/include/linux/netlink.h
-> index 6358da5..f78b430 100644
-> --- a/include/linux/netlink.h
-> +++ b/include/linux/netlink.h
-> @@ -46,6 +46,7 @@ struct netlink_kernel_cfg {
->  	void		(*input)(struct sk_buff *skb);
->  	struct mutex	*cb_mutex;
->  	void		(*bind)(int group);
-> +	bool		(*compare)(struct net *net, struct sock *sk);
->  };
->  
->  extern struct sock *__netlink_kernel_create(struct net *net, int unit,
-> diff --git a/net/netlink/af_netlink.c b/net/netlink/af_netlink.c
-> index 12ac6b4..e399877 100644
-> --- a/net/netlink/af_netlink.c
-> +++ b/net/netlink/af_netlink.c
-> @@ -854,16 +854,23 @@ netlink_unlock_table(void)
->  		wake_up(&nl_table_wait);
->  }
->  
-> +static bool netlink_compare(struct net *net, struct sock *sk)
-> +{
-> +	return net_eq(sock_net(sk), net);
-> +}
-> +
->  static struct sock *netlink_lookup(struct net *net, int protocol, u32 portid)
->  {
-> -	struct nl_portid_hash *hash = &nl_table[protocol].hash;
-> +	struct netlink_table *table = &nl_table[protocol];
-> +	struct nl_portid_hash *hash = &table->hash;
->  	struct hlist_head *head;
->  	struct sock *sk;
->  
->  	read_lock(&nl_table_lock);
->  	head = nl_portid_hashfn(hash, portid);
->  	sk_for_each(sk, head) {
-> -		if (net_eq(sock_net(sk), net) && (nlk_sk(sk)->portid == portid)) {
-> +		if (table->compare(net, sk) &&
-> +		    (nlk_sk(sk)->portid == portid)) {
->  			sock_hold(sk);
->  			goto found;
->  		}
-> @@ -976,7 +983,8 @@ netlink_update_listeners(struct sock *sk)
->  
->  static int netlink_insert(struct sock *sk, struct net *net, u32 portid)
->  {
-> -	struct nl_portid_hash *hash = &nl_table[sk->sk_protocol].hash;
-> +	struct netlink_table *table = &nl_table[sk->sk_protocol];
-> +	struct nl_portid_hash *hash = &table->hash;
->  	struct hlist_head *head;
->  	int err = -EADDRINUSE;
->  	struct sock *osk;
-> @@ -986,7 +994,8 @@ static int netlink_insert(struct sock *sk, struct net *net, u32 portid)
->  	head = nl_portid_hashfn(hash, portid);
->  	len = 0;
->  	sk_for_each(osk, head) {
-> -		if (net_eq(sock_net(osk), net) && (nlk_sk(osk)->portid == portid))
-> +		if (table->compare(net, osk) &&
-> +		    (nlk_sk(osk)->portid == portid))
->  			break;
->  		len++;
->  	}
-> @@ -1161,6 +1170,7 @@ static int netlink_release(struct socket *sock)
->  			kfree_rcu(old, rcu);
->  			nl_table[sk->sk_protocol].module = NULL;
->  			nl_table[sk->sk_protocol].bind = NULL;
-> +			nl_table[sk->sk_protocol].compare = NULL;
->  			nl_table[sk->sk_protocol].flags = 0;
->  			nl_table[sk->sk_protocol].registered = 0;
->  		}
-> @@ -1183,7 +1193,8 @@ static int netlink_autobind(struct socket *sock)
->  {
->  	struct sock *sk = sock->sk;
->  	struct net *net = sock_net(sk);
-> -	struct nl_portid_hash *hash = &nl_table[sk->sk_protocol].hash;
-> +	struct netlink_table *table = &nl_table[sk->sk_protocol];
-> +	struct nl_portid_hash *hash = &table->hash;
->  	struct hlist_head *head;
->  	struct sock *osk;
->  	s32 portid = task_tgid_vnr(current);
-> @@ -1195,7 +1206,7 @@ retry:
->  	netlink_table_grab();
->  	head = nl_portid_hashfn(hash, portid);
->  	sk_for_each(osk, head) {
-> -		if (!net_eq(sock_net(osk), net))
-> +		if (!table->compare(net, osk))
->  			continue;
->  		if (nlk_sk(osk)->portid == portid) {
->  			/* Bind collision, search negative portid values. */
-> @@ -2282,9 +2293,12 @@ __netlink_kernel_create(struct net *net, int unit, struct module *module,
->  		rcu_assign_pointer(nl_table[unit].listeners, listeners);
->  		nl_table[unit].cb_mutex = cb_mutex;
->  		nl_table[unit].module = module;
-> +		nl_table[unit].compare = netlink_compare;
->  		if (cfg) {
->  			nl_table[unit].bind = cfg->bind;
->  			nl_table[unit].flags = cfg->flags;
-> +			if (cfg->compare)
-> +				nl_table[unit].compare = cfg->compare;
->  		}
->  		nl_table[unit].registered = 1;
->  	} else {
-> @@ -2707,6 +2721,7 @@ static void *netlink_seq_next(struct seq_file *seq, void *v, loff_t *pos)
->  {
->  	struct sock *s;
->  	struct nl_seq_iter *iter;
-> +	struct net *net;
->  	int i, j;
->  
->  	++*pos;
-> @@ -2714,11 +2729,12 @@ static void *netlink_seq_next(struct seq_file *seq, void *v, loff_t *pos)
->  	if (v == SEQ_START_TOKEN)
->  		return netlink_seq_socket_idx(seq, 0);
->  
-> +	net = seq_file_net(seq);
->  	iter = seq->private;
->  	s = v;
->  	do {
->  		s = sk_next(s);
-> -	} while (s && sock_net(s) != seq_file_net(seq));
-> +	} while (s && !nl_table[s->sk_protocol].compare(net, s));
->  	if (s)
->  		return s;
->  
-> @@ -2730,7 +2746,8 @@ static void *netlink_seq_next(struct seq_file *seq, void *v, loff_t *pos)
->  
->  		for (; j <= hash->mask; j++) {
->  			s = sk_head(&hash->table[j]);
-> -			while (s && sock_net(s) != seq_file_net(seq))
-> +
-> +			while (s && !nl_table[s->sk_protocol].compare(net, s))
->  				s = sk_next(s);
->  			if (s) {
->  				iter->link = i;
-> diff --git a/net/netlink/af_netlink.h b/net/netlink/af_netlink.h
-> index ed85222..eaa88d1 100644
-> --- a/net/netlink/af_netlink.h
-> +++ b/net/netlink/af_netlink.h
-> @@ -73,6 +73,7 @@ struct netlink_table {
->  	struct mutex		*cb_mutex;
->  	struct module		*module;
->  	void			(*bind)(int group);
-> +	bool			(*compare)(struct net *net, struct sock *sock);
->  	int			registered;
->  };
->  
-> -- 
-> 1.8.1.4
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+> You say the old interface will be around for the forseeable future, but
+> if systemd starts applying a different setup to comply with your new
+> scheme, then libvirt does get given any option to continue to use the
+> old scheme. So even if you leave old interfaces around, we're going to
+> be forced to change. That's not really a back-compatibility story that
+> works for applications.
+
+Even after unified hierarchy, it will be possible to tell systemd to
+not to do that and the system should be able to continue using
+multiple hierarchies as before.  Nothing really should change in that
+respect.  It may not be the prettiest but is still a workable
+compatibility.
+
+Thanks.
+
+-- 
+tejun
