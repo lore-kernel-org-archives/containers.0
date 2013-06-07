@@ -1,19 +1,17 @@
-From: Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCH cgroup/for-3.11 1/3] cgroup: mark "tasks" cgroup file
-	as insane
-Date: Fri, 7 Jun 2013 14:32:34 +0400
-Message-ID: <51B1B6C2.7000304__7518.65948918766$1370601119$gmane$org@parallels.com>
-References: <20130604021302.GH29989@mtj.dyndns.org>
-	<20130604111556.GA4963@redhat.com>
-	<20130604201947.GE14916@htj.dyndns.org>
-	<20130606092055.GF30217@redhat.com>
-	<20130606211410.GF5045@htj.dyndns.org>
-	<20130607101220.GE10742@redhat.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: Requirements for CAP_SYS_ADMIN on setns() ?
+Date: Fri, 07 Jun 2013 12:18:31 -0700
+Message-ID: <87a9n13f20.fsf@xmission.com>
+References: <20130606100149.GG30217@redhat.com> <20130606134802.GA2930@ac100>
+	<87txlb8atb.fsf@xmission.com>
+	<20130606164428.GA4687@austin.hallyn.com>
+	<87bo7j6r80.fsf@xmission.com> <20130607093459.GB10742@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20130607101220.GE10742-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20130607093459.GB10742-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> (Daniel P. Berrange's message
+	of "Fri, 7 Jun 2013 10:34:59 +0100")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,20 +22,58 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kay.sievers-tD+1rO4QERM@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 06/07/2013 02:12 PM, Daniel P. Berrange wrote:
->> The problem is that it doesn't make any sense to split threads of the
->> same process for at least two major controllers and you end up with
->> situation where you can't identify a resource to be belonging to a
->> certain cgroup because such level of granularity is simply undefined.
->> As I wrote before, we can special case certain controllers but I'm
->> extremely reluctant.  If you need it, please convince me.
+"Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
 
-It seems quite valid for me to split priority threads in a process and
-give them a 80 % timeslice guarantee, while leaving only 20 % for
-low-prio threads (for instance).
+> On Thu, Jun 06, 2013 at 11:15:11AM -0700, Eric W. Biederman wrote:
+>> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
+>> 
+>> > Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+>> >> Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> writes:
+>> >> 
+>> >> > Quoting Daniel P. Berrange (berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
+>> >> >> Is it not sufficient to rely on the permissions on the /proc/$PID/ns/XXX
+>> >> >> file to control access to a namespace, and thus allow setns() without
+>> >> >> a CAP_SYS_ADMIN check ?
+>> 
+>> The permissions on /proc/$PID/ns/XXX are sufficient to control access
+>> but they are not ok to allow use.
+>> 
+>> >> >> ie setns() is basically useless unless you
+>> >> >> already have sufficient privileges to get a file descriptor for the
+>> >> >> namespace, so why does setns need an additional privilege check beyond
+>> >> >> that done at time of open() on the proc file.
+>> 
+>> To be very clear.
+>> 
+>> setns requires CAP_SYS_ADMIN because changing the namespaces for your
+>> children can result in tricking a suid root application and thus lead
+>> to privilege escalation.
+>
+> Yep, ok I see that from the example shown earlier in the thread.
+>
+>> If you run setns inside a user namespace that you control the privilege
+>> escalation is not possible and so setns is allowed.
+>
+> What are the privilege requirements for being able to call setns() on
+> a user namespace FD ?
 
-In general, I don't think that it would hurt to allow separation at
-thread level *for the leaves*, specifically at the cpu related controllers.
+That you are not threaded and the user namespace is a child of the
+current user namespace that you have CAP_SYS_ADMIN rights over.
+
+Essentially the requirement is that it is a user namespace that your uid
+created.
+
+> Thinking some more, if there was a setpidns(pid_t containerpid) syscall
+> which unconditionally joined the caller to all namespaces associated with
+> the target pid, then you'd not have the security risk described, right ?
+
+The security risk is present unless you join the user namespace, as
+namespaces can be a bit leaky (fd passing etc).  At the same time the
+user namespace is sufficient to remove the security risk, as privilege
+escalation is not possible in the user namespace so even if you fool a
+suid application it does not matter.
+
+Eric
