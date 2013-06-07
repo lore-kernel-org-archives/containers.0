@@ -1,17 +1,20 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: Requirements for CAP_SYS_ADMIN on setns() ?
-Date: Fri, 07 Jun 2013 12:18:31 -0700
-Message-ID: <87a9n13f20.fsf@xmission.com>
-References: <20130606100149.GG30217@redhat.com> <20130606134802.GA2930@ac100>
-	<87txlb8atb.fsf@xmission.com>
-	<20130606164428.GA4687@austin.hallyn.com>
-	<87bo7j6r80.fsf@xmission.com> <20130607093459.GB10742@redhat.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH cgroup/for-3.11 1/3] cgroup: mark "tasks" cgroup file as
+	insane
+Date: Fri, 7 Jun 2013 13:03:07 -0700
+Message-ID: <20130607200307.GA14781__116.803163155232$1370635413$gmane$org@mtj.dyndns.org>
+References: <20130604021302.GH29989@mtj.dyndns.org>
+	<20130604111556.GA4963@redhat.com>
+	<20130604201947.GE14916@htj.dyndns.org>
+	<20130606092055.GF30217@redhat.com>
+	<20130606211410.GF5045@htj.dyndns.org>
+	<20130607051040.GA1364@tango.0pointer.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20130607093459.GB10742-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> (Daniel P. Berrange's message
-	of "Fri, 7 Jun 2013 10:34:59 +0100")
+Content-Disposition: inline
+In-Reply-To: <20130607051040.GA1364-kS5D54t9nk0aINubkmmoJbNAH6kLmebB@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,59 +24,30 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+To: Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kay.sievers-tD+1rO4QERM@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-"Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+Hello, Lennart.
 
-> On Thu, Jun 06, 2013 at 11:15:11AM -0700, Eric W. Biederman wrote:
->> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
->> 
->> > Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
->> >> Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> writes:
->> >> 
->> >> > Quoting Daniel P. Berrange (berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
->> >> >> Is it not sufficient to rely on the permissions on the /proc/$PID/ns/XXX
->> >> >> file to control access to a namespace, and thus allow setns() without
->> >> >> a CAP_SYS_ADMIN check ?
->> 
->> The permissions on /proc/$PID/ns/XXX are sufficient to control access
->> but they are not ok to allow use.
->> 
->> >> >> ie setns() is basically useless unless you
->> >> >> already have sufficient privileges to get a file descriptor for the
->> >> >> namespace, so why does setns need an additional privilege check beyond
->> >> >> that done at time of open() on the proc file.
->> 
->> To be very clear.
->> 
->> setns requires CAP_SYS_ADMIN because changing the namespaces for your
->> children can result in tricking a suid root application and thus lead
->> to privilege escalation.
->
-> Yep, ok I see that from the example shown earlier in the thread.
->
->> If you run setns inside a user namespace that you control the privilege
->> escalation is not possible and so setns is allowed.
->
-> What are the privilege requirements for being able to call setns() on
-> a user namespace FD ?
+On Fri, Jun 07, 2013 at 07:10:40AM +0200, Lennart Poettering wrote:
+> Uhm. So I don't think we will support two ways to set this up for long
+> in systemd (if at all). And even if we did, the distributions would pick
+> one or the other as default, and if you are unlucky, then you couldn't
+> run libvirt on it without reconfiguration and rebooting to get the other
+> cgroup setup logic...
 
-That you are not threaded and the user namespace is a child of the
-current user namespace that you have CAP_SYS_ADMIN rights over.
+Hmmm... would that mean that people wouldn't be able to boot older
+kernel w/o unified hierarhcy with new systemd fairly soon too?  We can
+make the new features which matter for management available for named
+mounts (w/o unified hierarchy) so that systemd can operate as if none
+of the actual controllers are enabled, which it should be able to
+handle anyway.  That wouldn't solve booting old kernels with new
+systemd problem but it should at least allow workable backward
+compatibility from userland side as long as the kernel keeps the
+compatibility, right?
 
-Essentially the requirement is that it is a user namespace that your uid
-created.
+Thanks.
 
-> Thinking some more, if there was a setpidns(pid_t containerpid) syscall
-> which unconditionally joined the caller to all namespaces associated with
-> the target pid, then you'd not have the security risk described, right ?
-
-The security risk is present unless you join the user namespace, as
-namespaces can be a bit leaky (fd passing etc).  At the same time the
-user namespace is sufficient to remove the security risk, as privilege
-escalation is not possible in the user namespace so even if you fool a
-suid application it does not matter.
-
-Eric
+-- 
+tejun
