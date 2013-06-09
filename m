@@ -1,18 +1,11 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: Requirements for CAP_SYS_ADMIN on setns() ?
-Date: Sat, 08 Jun 2013 22:33:12 -0700
-Message-ID: <87y5ajzw4n.fsf@xmission.com>
-References: <20130606100149.GG30217@redhat.com> <20130606134802.GA2930@ac100>
-	<87txlb8atb.fsf@xmission.com>
-	<20130606164428.GA4687@austin.hallyn.com>
-	<87bo7j6r80.fsf@xmission.com> <20130607093459.GB10742@redhat.com>
-	<1370721249.2776.87@driftwood>
+From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH v3 0/7] cpuset: implement sane hierarchy behaviors
+Date: Sun, 9 Jun 2013 17:14:02 +0800
+Message-ID: <51B4475A.8030509__28800.6465802484$1370769287$gmane$org@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1370721249.2776.87@driftwood> (Rob Landley's message of "Sat, 08
-	Jun 2013 14:54:09 -0500")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,45 +15,58 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Rob Landley <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Rob Landley <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org> writes:
+v2 -> v3:
 
-> Waaaay behind on my email...
->
-> On 06/07/2013 04:34:59 AM, Daniel P. Berrange wrote:
->> On Thu, Jun 06, 2013 at 11:15:11AM -0700, Eric W. Biederman wrote:
->> > "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
->> > setns requires CAP_SYS_ADMIN because changing the namespaces for  
->> your
->> > children can result in tricking a suid root application and thus  
->> lead
->> > to privilege escalation.
->> 
->> Yep, ok I see that from the example shown earlier in the thread.
->> 
->> > If you run setns inside a user namespace that you control the  
->> privilege
->> > escalation is not possible and so setns is allowed.
->> 
->> What are the privilege requirements for being able to call setns() on
->> a user namespace FD ?
->> 
->> Thinking some more, if there was a setpidns(pid_t containerpid)  
->> syscall
->> which unconditionally joined the caller to all namespaces associated  
->> with
->> the target pid, then you'd not have the security risk described,  
->> right ?
->
-> Sounds like you want a reparent_to_init() that works for a container's  
-> init.
+- remove async hotplug propagation work
+- do propagation work in one place for both hotplug and unplug
 
-setns on all of the namespaces effectively gives you that ability.  You
-probably want to play with cgroups and a few other similar things.  And
-there is a utility in util-linux that automates at least the namespace
-portion of this called nsenter.
+v1 -> v2:
 
-Eric
+- add documentation in include/linux/cgroup.h
+- drop rcu_read_lock() before calling update_task_nodemask() when iterating
+cpuset hierarchy
+
+======================================
+
+Currently some cpuset behaviors are not friendly when cpuset is co-mounted
+with other cgroup controllers.
+
+Now with this patchset if cpuset is mounted with sane_behavior option, it
+behaves differently:
+
+- Tasks will be kept in empty cpusets when hotplug happens and take masks
+of ancestors with non-empty cpus/mems, instead of being moved to an ancestor.
+
+- A task can be moved into an empty cpuset, and again it takes masks of
+ancestors, so the user can drop a task into a newly created cgroup without
+having to do anything for it.
+
+As tasks can reside in empy cpusets, here're some rules:
+
+- They can be moved to another cpuset, regardless it's empty or not.
+
+- Though it takes masks from ancestors, it takes other configs from the
+empty cpuset.
+
+- If the ancestors' masks are changed, those tasks will also be updated
+to take new masks.
+
+Li Zefan (7):
+  cpuset: let hotplug propagation work wait for task attaching
+  cpuset: remove async hotplug propagation work
+  cpuset: record old_mems_allowed in struct cpuset
+  cpuset: introduce effective_{cpumask|nodemask}_cpuset()
+  cpuset: allow to keep tasks in empty cpusets
+  cpuset: allow to move tasks to empty cpusets
+  cpuset: fix to migrate mm correctly in a corner case
+
+ include/linux/cgroup.h |   7 +
+ kernel/cpuset.c        | 390 ++++++++++++++++++++++++++++++++-----------------
+ 2 files changed, 264 insertions(+), 133 deletions(-)
+
+-- 
+1.8.0.2
