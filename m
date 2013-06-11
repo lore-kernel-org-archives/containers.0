@@ -1,16 +1,11 @@
-From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH RFC 00/48] Add namespace support for audit
-Date: Tue, 11 Jun 2013 13:59:26 +0800
-Message-ID: <51B6BCBE.7060608@cn.fujitsu.com>
-References: <1367893269-9308-1-git-send-email-gaofeng@cn.fujitsu.com>
-	<519B3B4E.1070405@cn.fujitsu.com> <20130606215255.GA28978@tp>
-	<20130606224710.GA30502@tp> <51B531CC.2020604@cn.fujitsu.com>
-	<20130610212437.GA11940@austin.hallyn.com>
+From: =?ISO-8859-15?Q?Servicio_de_env=EDo_de_correo?=
+	<postmaster-1FJtrD/cUloJ22SmgaZUrLmZmlD7ZVpgXnAhQTnVLytONR7KtQShzQ@public.gmane.org>
+Subject: =?ISO-8859-15?Q?Notificaci=F3n_del_estado_del_env=EDo?=
+Date: Tue, 11 Jun 2013 08:50:50 +0200
+Message-ID: <516BA726004E13EA@smtp01.correodeempresas.telefonica.es>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============9164714847010991460=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20130610212437.GA11940-anj0Drq5vpzx6HRWoRZK3AC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,173 +15,92 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 06/11/2013 05:24 AM, Serge E. Hallyn wrote:
-> Quoting Gao feng (gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
->> On 06/07/2013 06:47 AM, Serge Hallyn wrote:
->>> Quoting Serge Hallyn (serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org):
->>>> Quoting Gao feng (gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
->>>>> On 05/07/2013 10:20 AM, Gao feng wrote:
->>>>>> This patchset try to add namespace support for audit.
->>>>>>
->>>>>> I choose to assign audit to the user namespace.
->>>>>> Right now,there are six kinds of namespaces, such as
->>>>>> net, mount, ipc, pid, uts and user. the first five
->>>>>> namespaces have special usage. the audit isn't suitable to
->>>>>> belong to these five namespaces, so the user namespace
->>>>>> may be the best choice.
->>>>>>
->>>>>> Through I decide to make audit related resources per user
->>>>>> namespace, but audit uses netlink to communicate between kernel
->>>>>> space and user space, and the netlink is a private resource
->>>>>> of per net namespace. So we need the capability to allow the
->>>>>> netlink sockets to communicate with each other in the same user
->>>>>> namespace even they are in different net namespace. [PATCH 2/48]
->>>>>> does this job, it adds a new function "compare" for per netlink
->>>>>> table to compare two sockets. it means the netlink protocols can
->>>>>> has its own compare fuction, For other protocols, two netlink
->>>>>> sockets are different if they belong to the different net namespace.
->>>>>> For audit protocol, two sockets can be the same even they in different
->>>>>> net namespace,we use user namespace not net namespace to make the
->>>>>> decision.
->>>>>>
->>>>>> There is one point that some people may dislike,in [PATCH 1/48],
->>>>>> the kernel side audit netlink socket is created only when we create
->>>>>> the first netns for the userns, and this userns will hold the netns
->>>>>> until we destroy this userns.
->>>>>>
->>>>>> The other patches just make the audit related resources per
->>>>>> user namespace.
->>>>>>
->>>>>> This patchset is sent as an RFC,any comments are welcome.
->>>>
->>>> Hi,
->>>>
->>>> thanks for sending this.  I think you need to ping the selinux folks
->>>> for comment though.  It appears to me that, after this patchset, the
->>>> kernel with CONFIG_USER_NS=y could not be LSPP-compliant, because
->>>> the selinux-generated audit messages do not always go to init_user_ns.
->>>>
->>>> Additionally, the only type of namespacing selinux wants is where it
->>>> is enforced by policy compiler and installer using typenames - i.e.
->>>> 'container1.user_t' vs 'user_t'.  Selinux does not want user namespaces
->>>> to affect selinux enforcement at all.  (at least last I knew, several
->>>> years ago at a mini-summit, I believe this was from Stephen Smalley).
->>>
->>> That sort of sounds like I'm distancing myself from that, which I
->>> don't mean to do.  I agree with the decison:  MAC (selinux, apparmor
->>> and smack) should not be confuddled by user namespaces.  (posix caps
->>> are, as always, a bit different).
->>
->>
->> Thanks for your comments!
->>
->> Very useful information, it sounds reasonable.
->>
->> Let's just drop those patches.
->>
-> 
-> Hi Gao,
-> 
-> proceeding then,
-> 
-> The netfilter related changes I think make sense.  They log to the userns
-> which owns the netns in question, which seems right.
-> 
-> However looking at Audit-tty-translate-audit_log_start-to-audit_log_sta.patch,
-> it appears to log to the userns of the task which is doing the operation.
-> 
-> Keeping in mind that an unprivileged user can create a new user namespace,
-> this doesn't seem right.
-> 
-> Also, you are introducing per-userns syscall filter.  It looks like I
-> can then create a new userns to escape my existing syscall filter, since
-> the filters up the user_ns parent chain are not being applied.  Is that
-> correct?
+Este mensaje de varias partes en formato MIME contiene una notificación del estado del envío.
+Si puede ver este texto, es posible que su cliente de correo no pueda leer
+mensajes en formato MIME o DSN (consulte las secciones RFC 2045 a 2049 si necesita
+información general sobre el formato MIME o RFC 1891 a 1894 si necesita información específica sobre DSN).
 
-Hi Serge,
+--===============9164714847010991460==
+Content-Type: Multipart/Report; report-type=delivery-status; boundary="========/516BA726004E13E8/smtp01.correodeempresas.telefonica.es"
 
-I admit that the global resources related audit message should be logged to
-parent and ancestor. but this is more complex than the way I implemented.
-Because we should send message to all ancestor and we should consider not
-to exceed the rate_limit of all ancestor.
+Este mensaje de varias partes en formato MIME contiene una notificación del estado del envío.
+Si puede ver este texto, es posible que su cliente de correo no pueda leer
+mensajes en formato MIME o DSN (consulte las secciones RFC 2045 a 2049 si necesita
+información general sobre el formato MIME o RFC 1891 a 1894 si necesita información específica sobre DSN).
 
-I prefer to don't make these filters/rules per user namespace right now.
+--========/516BA726004E13E8/smtp01.correodeempresas.telefonica.es
+Content-Type: text/plain; charset=ISO-8859-15
+Content-Transfer-Encoding: quoted-printable
 
-> 
-> Did you have a particular rationale written out for what precisely you're
-> wanting to make per-userns?  That would be helpful in trying to figure
-> out which bits are appropriate.  Again I so far haven't seen a single
-> problem with the code itself, it's just a question of which bits we
-> actually want (and are safe).
-> 
+ - El servidor de correo ha procesado los siguientes destinatarios del me=
+nsaje:
+h.cunninghan-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org; Fallido; 5.1.1 (direcci=F3n del buz=F3n de correo=
+ de destino err=F3nea)
 
-In my option, the audit rules(inode, tree_list, filter) , some of audit
-controller related resources(enabled,pid,portid...) and skb queue, audit
-netlink sockets,kauditd thread should be per-userns. The audit user message
-which generated by the user in container should be per-userns too.
+    MTA remoto liberomx4.libero.it: diagn=F3stico SMTP: 550 #5.1.0 Addres=
+s rejected h.cunninghan-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
 
-Since netns is not implemented as a hierarchy, and the network related
-resources are not global. so network related audit message should be per-userns too.
 
-The security related audit message should be send to init user namespace
-as we discussed before. Maybe tty related audit message should be send
-to init user namespace too, I have no idea now.
 
-The next step, I will post a new patchset which only make the audit user
-message and the basic audit resource per userns. I think this patchset
-will easy to be reviewed and accepted, And will not influence the host.
-This patchset contains the below patches:
+--========/516BA726004E13E8/smtp01.correodeempresas.telefonica.es
+Content-Type: Message/Delivery-Status
 
-Gao feng (21):
-  Audit: make audit kernel side netlink sock per userns
-  netlink: Add compare function for netlink_table
-  Audit: implement audit self-defined compare function
-  Audit: make audit_skb_queue per user namespace
-  Audit: make audit_skb_hold_queue per user namespace
-  Audit: make kauditd_task per user namespace
-  Audit: make audit_pid per user namespace
-  Audit: make audit_nlk_portid per user namesapce
-  Audit: make audit_enabled per user namespace
-  Audit: make audit_ever_enabled per user namespace
-  Audit: make audit_initialized per user namespace
-  Audit: only allow init user namespace to change rate limit
-  Audit: only allow init user namespace to change audit_failure
-  Audit: allow to send netlink message to auditd in uninit user
-    namespace
-  Audit: make kauditd_wait per user namespace
-  Audit: make audit_backlog_wait per user namespace
-  Audit: introduce new audit logging interface for user namespace
-  Audit: pass proper user namespace to audit_log_common_recv_msg
-  Audit: Log audit config change in uninit user namespace
-  Audit: send reply message to the auditd in proper user namespace
-  Audit: Allow GET,SET,USER MSG operations in uninit user namespace
+Reporting-MTA: dns; smtp01.correodeempresas.telefonica.es
+Received-from-MTA: dns; bertha.3tierstrategy.com (50.57.134.10)
+Arrival-Date: Tue, 11 Jun 2013 08:50:48 +0200
 
- include/linux/audit.h          |  39 +++-
- include/linux/netlink.h        |   1 +
- include/linux/user_namespace.h |  33 +++-
- kernel/audit.c                 | 422 ++++++++++++++++++++++++++---------------
- kernel/audit.h                 |   5 +-
- kernel/auditsc.c               |  11 +-
- kernel/user_namespace.c        |   3 +
- net/netlink/af_netlink.c       |  32 +++-
- net/netlink/af_netlink.h       |   1 +
- 9 files changed, 369 insertions(+), 178 deletions(-)
+Final-Recipient: rfc822; h.cunninghan-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
+Action: Failed
+Status: 5.1.1 (bad destination mailbox address)
+Remote-MTA: dns; liberomx4.libero.it
+Diagnostic-Code: smtp; 550 #5.1.0 Address rejected h.cunninghan-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org
 
-Do you have any comments or advice to this plan? After the above patchs
-been accepted, I think it's easy to push other audit namespace related
-patches into upstream.
+--========/516BA726004E13E8/smtp01.correodeempresas.telefonica.es
+Content-Type: Message/RFC822
 
-Thanks,
-Gao
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from bertha.3tierstrategy.com (50.57.134.10) by smtp01.correodeempresas.telefonica.es (8.5.142.07) (authenticated as aasparrena.biblioteca-xj+jMWK0efsKn5qUnC1Yjg@public.gmane.org)
+        id 516BA726004E13E8; Tue, 11 Jun 2013 08:50:48 +0200
+Received: from [50.57.134.10] by bertha.3tierstrategy.com id HfnQRZbDYiBw3u; Tue, 11 Jun 2013 01:50:47 -0500
+Message-ID: <003f01ce666f$f0579e00$0200a8c0-9NVg08UUqdtXQo6UOAG+zEQPpUzl53L3@public.gmane.org>
+From: "Ils" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <h.cunninghan-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>
+Subject: Re: Questa sono io.
+Date: Tue, 11 Jun 2013 01:50:47 -0500
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
 
-> -serge
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
-> 
+
+
+Hello, h.cunninghan.
+
+Thursday, June 02, 2013, 2:49:49 PM, you wrote:
+
+>>> Ecco le foto promesse cattura)
+>>> Sono solo un po 'gelsi nudo :)
+>>> http://www.atdf.de/IMG00806.zip
+
+--=20
+Best regards,
+
+
+
+--========/516BA726004E13E8/smtp01.correodeempresas.telefonica.es--
+
+
+--===============9164714847010991460==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============9164714847010991460==--
