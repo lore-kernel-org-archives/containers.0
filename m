@@ -1,8 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 07/11] cgroup: drop unnecessary RCU dancing from
-	__put_css_set()
-Date: Wed, 12 Jun 2013 14:03:12 -0700
-Message-ID: <1371070996-20613-8-git-send-email-tj@kernel.org>
+Subject: [PATCH 08/11] cgroup: remove cgroup->count and use
+Date: Wed, 12 Jun 2013 14:03:13 -0700
+Message-ID: <1371070996-20613-9-git-send-email-tj__16248.3454485939$1371071089$gmane$org@kernel.org>
 References: <1371070996-20613-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,76 +21,105 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: cl-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, koverstreet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-__put_css_set() does RCU read access on @cgrp across dropping
-@cgrp->count so that it can continue accessing @cgrp even if the count
-reached zero and destruction of the cgroup commenced.  Given that both
-sides - __css_put() and cgroup_destroy_locked() - are cold paths, this
-is unnecessary.  Just making cgroup_destroy_locked() grab css_set_lock
-while checking @cgrp->count is enough.
+cgroup->count tracks the number of css_sets associated with the cgroup
+and used only to verify that no css_set is associated when the cgroup
+is being destroyed.  It's superflous as the destruction path can
+simply check whether cgroup->cset_links is empty instead.
 
-Remove the RCU read locking from __put_css_set() and make
-cgroup_destroy_locked() read-lock css_set_lock when checking
-@cgrp->count.  This will also allow removing @cgrp->count.
+Drop cgroup->count and check ->cset_links directly from
+cgroup_destroy_locked().
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 20 ++++++++++----------
- 1 file changed, 10 insertions(+), 10 deletions(-)
+ include/linux/cgroup.h |  6 ------
+ kernel/cgroup.c        | 21 +++++----------------
+ 2 files changed, 5 insertions(+), 22 deletions(-)
 
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 75a6733..5428738 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -169,12 +169,6 @@ struct cgroup_name {
+ struct cgroup {
+ 	unsigned long flags;		/* "unsigned long" so bitops work */
+ 
+-	/*
+-	 * count users of this cgroup. >0 means busy, but doesn't
+-	 * necessarily indicate the number of tasks in the cgroup
+-	 */
+-	atomic_t count;
+-
+ 	int id;				/* ida allocated in-hierarchy ID */
+ 
+ 	/*
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 0343df5..efe500b 100644
+index efe500b..aefda90 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -407,19 +407,13 @@ static void __put_css_set(struct css_set *cset, int taskexit)
- 		list_del_init(&link->cset_link);
+@@ -408,8 +408,7 @@ static void __put_css_set(struct css_set *cset, int taskexit)
  		list_del_init(&link->cgrp_link);
  
--		/*
--		 * We may not be holding cgroup_mutex, and if cgrp->count is
--		 * dropped to 0 the cgroup can be destroyed at any time, hence
--		 * rcu_read_lock is used to keep it alive.
--		 */
--		rcu_read_lock();
-+		/* @cgrp can't go away while we're holding css_set_lock */
- 		if (atomic_dec_and_test(&cgrp->count) &&
- 		    notify_on_release(cgrp)) {
+ 		/* @cgrp can't go away while we're holding css_set_lock */
+-		if (atomic_dec_and_test(&cgrp->count) &&
+-		    notify_on_release(cgrp)) {
++		if (list_empty(&cgrp->cset_links) && notify_on_release(cgrp)) {
  			if (taskexit)
  				set_bit(CGRP_RELEASABLE, &cgrp->flags);
  			check_for_release(cgrp);
- 		}
--		rcu_read_unlock();
- 
- 		kfree(link);
- 	}
-@@ -4373,11 +4367,19 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
- 	struct cgroup *parent = cgrp->parent;
- 	struct cgroup_event *event, *tmp;
- 	struct cgroup_subsys *ss;
-+	bool empty;
- 
- 	lockdep_assert_held(&d->d_inode->i_mutex);
+@@ -616,7 +615,6 @@ static void link_css_set(struct list_head *tmp_links, struct css_set *cset,
+ 	link = list_first_entry(tmp_links, struct cgrp_cset_link, cset_link);
+ 	link->cset = cset;
+ 	link->cgrp = cgrp;
+-	atomic_inc(&cgrp->count);
+ 	list_move(&link->cset_link, &cgrp->cset_links);
+ 	/*
+ 	 * Always add links to the tail of the list so that the list
+@@ -4373,11 +4371,11 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
  	lockdep_assert_held(&cgroup_mutex);
  
--	if (atomic_read(&cgrp->count) || !list_empty(&cgrp->children))
-+	/*
-+	 * css_set_lock prevents @cgrp from being removed while
-+	 * __put_css_set() is in progress.
-+	 */
-+	read_lock(&css_set_lock);
-+	empty = !atomic_read(&cgrp->count) && list_empty(&cgrp->children);
-+	read_unlock(&css_set_lock);
-+	if (!empty)
- 		return -EBUSY;
- 
  	/*
-@@ -5054,8 +5056,6 @@ void cgroup_exit(struct task_struct *tsk, int run_callbacks)
- 
+-	 * css_set_lock prevents @cgrp from being removed while
+-	 * __put_css_set() is in progress.
++	 * css_set_lock synchronizes access to ->cset_links and prevents
++	 * @cgrp from being removed while __put_css_set() is in progress.
+ 	 */
+ 	read_lock(&css_set_lock);
+-	empty = !atomic_read(&cgrp->count) && list_empty(&cgrp->children);
++	empty = list_empty(&cgrp->cset_links) && list_empty(&cgrp->children);
+ 	read_unlock(&css_set_lock);
+ 	if (!empty)
+ 		return -EBUSY;
+@@ -5057,7 +5055,7 @@ void cgroup_exit(struct task_struct *tsk, int run_callbacks)
  static void check_for_release(struct cgroup *cgrp)
  {
--	/* All of these checks rely on RCU to keep the cgroup
--	 * structure alive */
  	if (cgroup_is_releasable(cgrp) &&
- 	    !atomic_read(&cgrp->count) && list_empty(&cgrp->children)) {
+-	    !atomic_read(&cgrp->count) && list_empty(&cgrp->children)) {
++	    list_empty(&cgrp->cset_links) && list_empty(&cgrp->children)) {
  		/*
+ 		 * Control Group is currently removeable. If it's not
+ 		 * already queued for a userspace notification, queue
+@@ -5425,11 +5423,6 @@ static void debug_css_free(struct cgroup *cont)
+ 	kfree(cont->subsys[debug_subsys_id]);
+ }
+ 
+-static u64 cgroup_refcount_read(struct cgroup *cont, struct cftype *cft)
+-{
+-	return atomic_read(&cont->count);
+-}
+-
+ static u64 debug_taskcount_read(struct cgroup *cont, struct cftype *cft)
+ {
+ 	return cgroup_task_count(cont);
+@@ -5511,10 +5504,6 @@ static u64 releasable_read(struct cgroup *cgrp, struct cftype *cft)
+ 
+ static struct cftype debug_files[] =  {
+ 	{
+-		.name = "cgroup_refcount",
+-		.read_u64 = cgroup_refcount_read,
+-	},
+-	{
+ 		.name = "taskcount",
+ 		.read_u64 = debug_taskcount_read,
+ 	},
 -- 
 1.8.2.1
