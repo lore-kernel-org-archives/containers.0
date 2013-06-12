@@ -1,12 +1,12 @@
-From: "Dennis Roberts" <Dennis-iGcB0ZVh4iL76TDQA5HKw6xOck334EZe@public.gmane.org>
-Subject: Solar Window
-Date: Wed, 12 Jun 2013 02:08:01 -0500
-Message-ID: <20130612070814.27A83681@mail.linuxfoundation.org>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCHSET cgroup/for-3.11] cgroup: convert cgroup_subsys_state refcnt
+	to percpu_ref
+Date: Wed, 12 Jun 2013 14:03:05 -0700
+Message-ID: <1371070996-20613-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,32 +16,68 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, cl-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, koverstreet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-77u/QSBCaWxsaW9uIERvbGxhciBDb21wYW55IGp1c3Qgam9pbmVkIHVzIGZyb20gdGhlIG1pZGRs
-ZSBlYXN0IC0gZHJvYmVydHM0M0BzYmNnbG9iYWwubmV0CklO4oCZRkxFQ1RPUi1BIFVOSVFVRSBP
-UFBPUlRVTklUWSBJTiBUSEUgRU5FUkdZIEVGRklDSUVOQ1kgSU5EVVNUUlkKCgoKCiBKb2luIHVz
-IGZvciBhIFdlYmluYXIgb24gSnVuZSAyNQoKCiAgCgoKCkVuZXJneSBFZmZpY2llbmN5IERvbmUg
-UmlnaHQgcHJlc2VudHMgaW5mb3JtYXRpb24gb24gdGhlIEluJ0ZsZWN0b3IgU2VlIFRocm91Z2gg
-UmFkaWFudCBCYXJyaWVyIFdpbmRvdyBhbmQgU2t5bGlnaHQgSW5zdWxhdG9yIGFuZCB0aGUgRW5l
-cmd5IEVmZmljaWVuY3kgSW5kdXN0cnkuIFdlIHdpbGwgZXhhbWluZSB0aGUgZ3Jvd3RoIG9mIHRo
-ZSBlbmVyZ3kgZWZmaWNpZW5jeSwgY29uc2VydmF0aW9uLCBlbmVyZ3kgaW5kZXBlbmRlbmNlLCBh
-bmQgY2FyYm9uIGVtbWlzc2lvbiBpbmR1c3RyaWVzIGFuZCBleHBsYWluIG9wcG9ydHVuaXRpZXMg
-dG8gcmVwcmVzZW50IG9yIHB1cmNoYXNlIG91ciBJbnN1bGF0b3IgcHJvZHVjdHMuClRpdGxlOklO
-4oCZRkxFQ1RPUi1BIFVOSVFVRSBPUFBPUlRVTklUWSBJTiBUSEUgRU5FUkdZIEVGRklDSUVOQ1kg
-SU5EVVNUUlkKRGF0ZTpUdWVzZGF5LCBKdW5lIDI1LCAyMDEzClRpbWU6MTA6MDAgQU0gLSAxMTow
-MCBBTSBDRFQKQWZ0ZXIgcmVnaXN0ZXJpbmcgeW91IHdpbGwgcmVjZWl2ZSBhIGNvbmZpcm1hdGlv
-biBlbWFpbCBjb250YWluaW5nIGluZm9ybWF0aW9uIGFib3V0IGpvaW5pbmcgdGhlIFdlYmluYXIu
-ClN5c3RlbSBSZXF1aXJlbWVudHMKUEMtYmFzZWQgYXR0ZW5kZWVzClJlcXVpcmVkOiBXaW5kb3dz
-wq4gNywgVmlzdGEsIFhQIG9yIDIwMDMgU2VydmVyCgpNYWPCri1iYXNlZCBhdHRlbmRlZXMKUmVx
-dWlyZWQ6IE1hYyBPU8KuIFggMTAuNiBvciBuZXdlcgoKTW9iaWxlIGF0dGVuZGVlcwpSZXF1aXJl
-ZDogaVBob25lwq4sIGlQYWTCriwgQW5kcm9pZOKEoiBwaG9uZSBvciBBbmRyb2lkIHRhYmxldAoK
-U3BhY2UgaXMgbGltaXRlZC4KUmVzZXJ2ZSB5b3VyIFdlYmluYXIgc2VhdCBub3cgYXQ6Cmh0dHBz
-Oi8vd3d3MS5nb3RvbWVldGluZy5jb20vcmVnaXN0ZXIvOTE3Nzc3MzQ0CgoKCiAKVW5zdWJzY3Jp
-YmUgYnkgZW1haWwKIApLZWl0aCBSb2JlcnRzCjEwODU0IExha2UgUGF0aApTYW4gQW50b25pbywg
-VFggNzgyMTcKSW5mbGVjdG9yIFdpbmRvdyBJbnN1bGF0b3JzIC0gU2VlIFRocnUgUmFkaWFudCBC
-YXJyaWVyCmRyb2JlcnRzNDNAc2JjZ2xvYmFsLm5ldAoKX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVy
-c0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlv
-bi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Hello,
+
+This patchset does a lot of cleanup and then updates css
+(cgroup_subsys_state) refcnt to use the new percpu reference counter.
+A css (cgroup_subsys_state) is how each cgroup is represented to a
+controller.  As such, it can be used in hot paths across the various
+subsystems different controllers are associated with.
+
+One of the common operations is reference counting, which up until now
+has been implemented using a global atomic counter and can have
+significant adverse impact on scalability.  For example, css refcnt
+can be gotten and put multiple times by blkcg for each IO request.
+For highops configurations which try to do as much per-cpu as
+possible, the global frequent refcnting can be very expensive.
+
+In general, given the various hugely diverse paths css's end up being
+used from, we need to make it cheap and highly scalable.  In its
+usage, css refcnting isn't very different from module refcnting.
+
+This patchset contains the following 11 patches.
+
+ 0001-cgroup-remove-now-unused-css_depth.patch
+ 0002-cgroup-consistently-use-cset-for-struct-css_set-vari.patch
+ 0003-cgroup-bring-some-sanity-to-naming-around-cg_cgroup_.patch
+ 0004-cgroup-use-kzalloc-and-list_del_init.patch
+ 0005-cgroup-clean-up-css_-try-get-and-css_put.patch
+ 0006-cgroup-rename-CGRP_REMOVED-to-CGRP_DEAD.patch
+ 0007-cgroup-drop-unnecessary-RCU-dancing-from-__put_css_s.patch
+ 0008-cgroup-remove-cgroup-count-and-use.patch
+ 0009-cgroup-reorder-the-operations-in-cgroup_destroy_lock.patch
+ 0010-cgroup-split-cgroup-destruction-into-two-steps.patch
+ 0011-cgroup-use-percpu-refcnt-for-cgroup_subsys_states.patch
+
+0001-0007 are cleanups, many of them cosmetic.  They clean up the code
+paths which are related with the refcnting changes.  If you're only
+interested in the precpu usage, you can probably skip these.
+
+0008-0010 updates the cgroup destruction path so that percpu refcnting
+can be used.
+
+0011 updates css refcnting to use percpu_ref.
+
+This patchset is on top of
+
+  cgroup/for-3.11 d5c56ced77 ("cgroup: clean up the cftype array for the base cgroup files")
++ [1] percpu/review-percpu-ref-tryget
+
+and available in the following git branch.
+
+ git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-css-percpu-ref
+
+diffstat follows.  Thanks.
+
+ include/linux/cgroup.h |   87 ++----
+ kernel/cgroup.c        |  710 +++++++++++++++++++++++++------------------------
+ 2 files changed, 406 insertions(+), 391 deletions(-)
+
+--
+tejun
+
+[1] http://thread.gmane.org/gmane.linux.kernel/1507258
