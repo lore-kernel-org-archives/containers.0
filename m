@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 08/11] cgroup: remove cgroup->count and use
-Date: Wed, 12 Jun 2013 21:04:55 -0700
-Message-ID: <1371096298-24402-9-git-send-email-tj__20297.9321279146$1371096395$gmane$org@kernel.org>
+Subject: [PATCH 10/11] cgroup: split cgroup destruction into two steps
+Date: Wed, 12 Jun 2013 21:04:57 -0700
+Message-ID: <1371096298-24402-11-git-send-email-tj__21779.9978949644$1371096396$gmane$org@kernel.org>
 References: <1371096298-24402-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,105 +21,141 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: cl-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, koverstreet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-cgroup->count tracks the number of css_sets associated with the cgroup
-and used only to verify that no css_set is associated when the cgroup
-is being destroyed.  It's superflous as the destruction path can
-simply check whether cgroup->cset_links is empty instead.
+Split cgroup_destroy_locked() into two steps and put the latter half
+into cgroup_offline_fn() which is executed from a work item.  The
+latter half is responsible for offlining the css's, removing the
+cgroup from internal lists, and propagating release notification to
+the parent.  The separation is to allow using percpu refcnt for css.
 
-Drop cgroup->count and check ->cset_links directly from
-cgroup_destroy_locked().
+Note that this allows for other cgroup operations to happen between
+the first and second halves of destruction, including creating a new
+cgroup with the same name.  As the target cgroup is marked DEAD in the
+first half and cgroup internals don't care about the names of cgroups,
+this should be fine.  A comment explaining this will be added by the
+next patch which implements the actual percpu refcnting.
+
+As RCU freeing is guaranteed to happen after the second step of
+destruction, we can use the same work item for both.  This patch
+renames cgroup->free_work to ->destroy_work and uses it for both
+purposes.  INIT_WORK() is now performed right before queueing the work
+item.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- include/linux/cgroup.h |  6 ------
- kernel/cgroup.c        | 21 +++++----------------
- 2 files changed, 5 insertions(+), 22 deletions(-)
+ include/linux/cgroup.h |  2 +-
+ kernel/cgroup.c        | 38 +++++++++++++++++++++++++++-----------
+ 2 files changed, 28 insertions(+), 12 deletions(-)
 
 diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index c86a93a..81bfd02 100644
+index 81bfd02..e345d8b 100644
 --- a/include/linux/cgroup.h
 +++ b/include/linux/cgroup.h
-@@ -169,12 +169,6 @@ struct cgroup_name {
- struct cgroup {
- 	unsigned long flags;		/* "unsigned long" so bitops work */
+@@ -233,7 +233,7 @@ struct cgroup {
  
--	/*
--	 * count users of this cgroup. >0 means busy, but doesn't
--	 * necessarily indicate the number of tasks in the cgroup
--	 */
--	atomic_t count;
--
- 	int id;				/* ida allocated in-hierarchy ID */
+ 	/* For RCU-protected deletion */
+ 	struct rcu_head rcu_head;
+-	struct work_struct free_work;
++	struct work_struct destroy_work;
  
- 	/*
+ 	/* List of events which userspace want to receive */
+ 	struct list_head event_list;
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 22f9729..062653f 100644
+index 9261acc..ebbfc04 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -408,8 +408,7 @@ static void __put_css_set(struct css_set *cset, int taskexit)
- 		list_del(&link->cgrp_link);
+@@ -208,6 +208,7 @@ static struct cgroup_name root_cgroup_name = { .name = "/" };
+  */
+ static int need_forkexit_callback __read_mostly;
  
- 		/* @cgrp can't go away while we're holding css_set_lock */
--		if (atomic_dec_and_test(&cgrp->count) &&
--		    notify_on_release(cgrp)) {
-+		if (list_empty(&cgrp->cset_links) && notify_on_release(cgrp)) {
- 			if (taskexit)
- 				set_bit(CGRP_RELEASABLE, &cgrp->flags);
- 			check_for_release(cgrp);
-@@ -616,7 +615,6 @@ static void link_css_set(struct list_head *tmp_links, struct css_set *cset,
- 	link = list_first_entry(tmp_links, struct cgrp_cset_link, cset_link);
- 	link->cset = cset;
- 	link->cgrp = cgrp;
--	atomic_inc(&cgrp->count);
- 	list_move(&link->cset_link, &cgrp->cset_links);
- 	/*
- 	 * Always add links to the tail of the list so that the list
-@@ -4373,11 +4371,11 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
- 	lockdep_assert_held(&cgroup_mutex);
++static void cgroup_offline_fn(struct work_struct *work);
+ static int cgroup_destroy_locked(struct cgroup *cgrp);
+ static int cgroup_addrm_files(struct cgroup *cgrp, struct cgroup_subsys *subsys,
+ 			      struct cftype cfts[], bool is_add);
+@@ -830,7 +831,7 @@ static struct cgroup_name *cgroup_alloc_name(struct dentry *dentry)
  
- 	/*
--	 * css_set_lock prevents @cgrp from being removed while
--	 * __put_css_set() is in progress.
-+	 * css_set_lock synchronizes access to ->cset_links and prevents
-+	 * @cgrp from being removed while __put_css_set() is in progress.
- 	 */
- 	read_lock(&css_set_lock);
--	empty = !atomic_read(&cgrp->count) && list_empty(&cgrp->children);
-+	empty = list_empty(&cgrp->cset_links) && list_empty(&cgrp->children);
- 	read_unlock(&css_set_lock);
- 	if (!empty)
- 		return -EBUSY;
-@@ -5057,7 +5055,7 @@ void cgroup_exit(struct task_struct *tsk, int run_callbacks)
- static void check_for_release(struct cgroup *cgrp)
+ static void cgroup_free_fn(struct work_struct *work)
  {
- 	if (cgroup_is_releasable(cgrp) &&
--	    !atomic_read(&cgrp->count) && list_empty(&cgrp->children)) {
-+	    list_empty(&cgrp->cset_links) && list_empty(&cgrp->children)) {
- 		/*
- 		 * Control Group is currently removeable. If it's not
- 		 * already queued for a userspace notification, queue
-@@ -5425,11 +5423,6 @@ static void debug_css_free(struct cgroup *cont)
- 	kfree(cont->subsys[debug_subsys_id]);
+-	struct cgroup *cgrp = container_of(work, struct cgroup, free_work);
++	struct cgroup *cgrp = container_of(work, struct cgroup, destroy_work);
+ 	struct cgroup_subsys *ss;
+ 
+ 	mutex_lock(&cgroup_mutex);
+@@ -875,7 +876,8 @@ static void cgroup_free_rcu(struct rcu_head *head)
+ {
+ 	struct cgroup *cgrp = container_of(head, struct cgroup, rcu_head);
+ 
+-	schedule_work(&cgrp->free_work);
++	INIT_WORK(&cgrp->destroy_work, cgroup_free_fn);
++	schedule_work(&cgrp->destroy_work);
  }
  
--static u64 cgroup_refcount_read(struct cgroup *cont, struct cftype *cft)
--{
--	return atomic_read(&cont->count);
--}
--
- static u64 debug_taskcount_read(struct cgroup *cont, struct cftype *cft)
+ static void cgroup_diput(struct dentry *dentry, struct inode *inode)
+@@ -1407,7 +1409,6 @@ static void init_cgroup_housekeeping(struct cgroup *cgrp)
+ 	INIT_LIST_HEAD(&cgrp->allcg_node);
+ 	INIT_LIST_HEAD(&cgrp->release_list);
+ 	INIT_LIST_HEAD(&cgrp->pidlists);
+-	INIT_WORK(&cgrp->free_work, cgroup_free_fn);
+ 	mutex_init(&cgrp->pidlist_mutex);
+ 	INIT_LIST_HEAD(&cgrp->event_list);
+ 	spin_lock_init(&cgrp->event_list_lock);
+@@ -2994,12 +2995,13 @@ struct cgroup *cgroup_next_sibling(struct cgroup *pos)
+ 	/*
+ 	 * @pos could already have been removed.  Once a cgroup is removed,
+ 	 * its ->sibling.next is no longer updated when its next sibling
+-	 * changes.  As CGRP_DEAD is set on removal which is fully
+-	 * serialized, if we see it unasserted, it's guaranteed that the
+-	 * next sibling hasn't finished its grace period even if it's
+-	 * already removed, and thus safe to dereference from this RCU
+-	 * critical section.  If ->sibling.next is inaccessible,
+-	 * cgroup_is_dead() is guaranteed to be visible as %true here.
++	 * changes.  As CGRP_DEAD assertion is serialized and happens
++	 * before the cgroup is taken off the ->sibling list, if we see it
++	 * unasserted, it's guaranteed that the next sibling hasn't
++	 * finished its grace period even if it's already removed, and thus
++	 * safe to dereference from this RCU critical section.  If
++	 * ->sibling.next is inaccessible, cgroup_is_dead() is guaranteed
++	 * to be visible as %true here.
+ 	 */
+ 	if (likely(!cgroup_is_dead(pos))) {
+ 		next = list_entry_rcu(pos->sibling.next, struct cgroup, sibling);
+@@ -4362,7 +4364,6 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
+ 	__releases(&cgroup_mutex) __acquires(&cgroup_mutex)
  {
- 	return cgroup_task_count(cont);
-@@ -5511,10 +5504,6 @@ static u64 releasable_read(struct cgroup *cgrp, struct cftype *cft)
+ 	struct dentry *d = cgrp->dentry;
+-	struct cgroup *parent = cgrp->parent;
+ 	struct cgroup_event *event, *tmp;
+ 	struct cgroup_subsys *ss;
+ 	bool empty;
+@@ -4426,6 +4427,21 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
+ 	}
+ 	spin_unlock(&cgrp->event_list_lock);
  
- static struct cftype debug_files[] =  {
- 	{
--		.name = "cgroup_refcount",
--		.read_u64 = cgroup_refcount_read,
--	},
--	{
- 		.name = "taskcount",
- 		.read_u64 = debug_taskcount_read,
- 	},
++	INIT_WORK(&cgrp->destroy_work, cgroup_offline_fn);
++	schedule_work(&cgrp->destroy_work);
++
++	return 0;
++};
++
++static void cgroup_offline_fn(struct work_struct *work)
++{
++	struct cgroup *cgrp = container_of(work, struct cgroup, destroy_work);
++	struct cgroup *parent = cgrp->parent;
++	struct dentry *d = cgrp->dentry;
++	struct cgroup_subsys *ss;
++
++	mutex_lock(&cgroup_mutex);
++
+ 	/* tell subsystems to initate destruction */
+ 	for_each_subsys(cgrp->root, ss)
+ 		offline_css(ss, cgrp);
+@@ -4449,7 +4465,7 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
+ 	set_bit(CGRP_RELEASABLE, &parent->flags);
+ 	check_for_release(parent);
+ 
+-	return 0;
++	mutex_unlock(&cgroup_mutex);
+ }
+ 
+ static int cgroup_rmdir(struct inode *unused_dir, struct dentry *dentry)
 -- 
 1.8.2.1
