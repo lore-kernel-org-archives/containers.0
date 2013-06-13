@@ -1,8 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 09/11] cgroup: reorder the operations in
-	cgroup_destroy_locked()
-Date: Wed, 12 Jun 2013 21:04:56 -0700
-Message-ID: <1371096298-24402-10-git-send-email-tj@kernel.org>
+Subject: [PATCH 08/11] cgroup: remove cgroup->count and use
+Date: Wed, 12 Jun 2013 21:04:55 -0700
+Message-ID: <1371096298-24402-9-git-send-email-tj__20297.9321279146$1371096395$gmane$org@kernel.org>
 References: <1371096298-24402-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,119 +21,105 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: cl-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, koverstreet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch reorders the operations in cgroup_destroy_locked() such
-that the userland visible parts happen before css offlining and
-removal from the ->sibling list.  This will be used to make css use
-percpu refcnt.
+cgroup->count tracks the number of css_sets associated with the cgroup
+and used only to verify that no css_set is associated when the cgroup
+is being destroyed.  It's superflous as the destruction path can
+simply check whether cgroup->cset_links is empty instead.
 
-While at it, split out CGRP_DEAD related comment from the refcnt
-deactivation one and correct / clarify how different guarantees are
-met.
-
-While this patch changes the specific order of operations, it
-shouldn't cause any noticeable behavior difference.
+Drop cgroup->count and check ->cset_links directly from
+cgroup_destroy_locked().
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 61 +++++++++++++++++++++++++++++++++------------------------
- 1 file changed, 35 insertions(+), 26 deletions(-)
+ include/linux/cgroup.h |  6 ------
+ kernel/cgroup.c        | 21 +++++----------------
+ 2 files changed, 5 insertions(+), 22 deletions(-)
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 062653f..9261acc 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -4382,13 +4382,8 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
- 
- 	/*
- 	 * Block new css_tryget() by deactivating refcnt and mark @cgrp
--	 * removed.  This makes future css_tryget() and child creation
--	 * attempts fail thus maintaining the removal conditions verified
--	 * above.
--	 *
--	 * Note that CGRP_DEAD assertion is depended upon by
--	 * cgroup_next_sibling() to resume iteration after dropping RCU
--	 * read lock.  See cgroup_next_sibling() for details.
-+	 * removed.  This makes future css_tryget() attempts fail which we
-+	 * guarantee to ->css_offline() callbacks.
- 	 */
- 	for_each_subsys(cgrp->root, ss) {
- 		struct cgroup_subsys_state *css = cgrp->subsys[ss->subsys_id];
-@@ -4396,8 +4391,41 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
- 		WARN_ON(atomic_read(&css->refcnt) < 0);
- 		atomic_add(CSS_DEACT_BIAS, &css->refcnt);
- 	}
-+
-+	/*
-+	 * Mark @cgrp dead.  This prevents further task migration and child
-+	 * creation by disabling cgroup_lock_live_group().  Note that
-+	 * CGRP_DEAD assertion is depended upon by cgroup_next_sibling() to
-+	 * resume iteration after dropping RCU read lock.  See
-+	 * cgroup_next_sibling() for details.
-+	 */
- 	set_bit(CGRP_DEAD, &cgrp->flags);
- 
-+	/* CGRP_DEAD is set, remove from ->release_list for the last time */
-+	raw_spin_lock(&release_list_lock);
-+	if (!list_empty(&cgrp->release_list))
-+		list_del_init(&cgrp->release_list);
-+	raw_spin_unlock(&release_list_lock);
-+
-+	/*
-+	 * Remove @cgrp directory.  The removal puts the base ref but we
-+	 * aren't quite done with @cgrp yet, so hold onto it.
-+	 */
-+	dget(d);
-+	cgroup_d_remove_dir(d);
-+
-+	/*
-+	 * Unregister events and notify userspace.
-+	 * Notify userspace about cgroup removing only after rmdir of cgroup
-+	 * directory to avoid race between userspace and kernelspace.
-+	 */
-+	spin_lock(&cgrp->event_list_lock);
-+	list_for_each_entry_safe(event, tmp, &cgrp->event_list, list) {
-+		list_del_init(&event->list);
-+		schedule_work(&event->remove);
-+	}
-+	spin_unlock(&cgrp->event_list_lock);
-+
- 	/* tell subsystems to initate destruction */
- 	for_each_subsys(cgrp->root, ss)
- 		offline_css(ss, cgrp);
-@@ -4412,34 +4440,15 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
- 	for_each_subsys(cgrp->root, ss)
- 		css_put(cgrp->subsys[ss->subsys_id]);
- 
--	raw_spin_lock(&release_list_lock);
--	if (!list_empty(&cgrp->release_list))
--		list_del_init(&cgrp->release_list);
--	raw_spin_unlock(&release_list_lock);
--
- 	/* delete this cgroup from parent->children */
- 	list_del_rcu(&cgrp->sibling);
- 	list_del_init(&cgrp->allcg_node);
- 
--	dget(d);
--	cgroup_d_remove_dir(d);
- 	dput(d);
- 
- 	set_bit(CGRP_RELEASABLE, &parent->flags);
- 	check_for_release(parent);
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index c86a93a..81bfd02 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -169,12 +169,6 @@ struct cgroup_name {
+ struct cgroup {
+ 	unsigned long flags;		/* "unsigned long" so bitops work */
  
 -	/*
--	 * Unregister events and notify userspace.
--	 * Notify userspace about cgroup removing only after rmdir of cgroup
--	 * directory to avoid race between userspace and kernelspace.
+-	 * count users of this cgroup. >0 means busy, but doesn't
+-	 * necessarily indicate the number of tasks in the cgroup
 -	 */
--	spin_lock(&cgrp->event_list_lock);
--	list_for_each_entry_safe(event, tmp, &cgrp->event_list, list) {
--		list_del_init(&event->list);
--		schedule_work(&event->remove);
--	}
--	spin_unlock(&cgrp->event_list_lock);
+-	atomic_t count;
 -
- 	return 0;
+ 	int id;				/* ida allocated in-hierarchy ID */
+ 
+ 	/*
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 22f9729..062653f 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -408,8 +408,7 @@ static void __put_css_set(struct css_set *cset, int taskexit)
+ 		list_del(&link->cgrp_link);
+ 
+ 		/* @cgrp can't go away while we're holding css_set_lock */
+-		if (atomic_dec_and_test(&cgrp->count) &&
+-		    notify_on_release(cgrp)) {
++		if (list_empty(&cgrp->cset_links) && notify_on_release(cgrp)) {
+ 			if (taskexit)
+ 				set_bit(CGRP_RELEASABLE, &cgrp->flags);
+ 			check_for_release(cgrp);
+@@ -616,7 +615,6 @@ static void link_css_set(struct list_head *tmp_links, struct css_set *cset,
+ 	link = list_first_entry(tmp_links, struct cgrp_cset_link, cset_link);
+ 	link->cset = cset;
+ 	link->cgrp = cgrp;
+-	atomic_inc(&cgrp->count);
+ 	list_move(&link->cset_link, &cgrp->cset_links);
+ 	/*
+ 	 * Always add links to the tail of the list so that the list
+@@ -4373,11 +4371,11 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
+ 	lockdep_assert_held(&cgroup_mutex);
+ 
+ 	/*
+-	 * css_set_lock prevents @cgrp from being removed while
+-	 * __put_css_set() is in progress.
++	 * css_set_lock synchronizes access to ->cset_links and prevents
++	 * @cgrp from being removed while __put_css_set() is in progress.
+ 	 */
+ 	read_lock(&css_set_lock);
+-	empty = !atomic_read(&cgrp->count) && list_empty(&cgrp->children);
++	empty = list_empty(&cgrp->cset_links) && list_empty(&cgrp->children);
+ 	read_unlock(&css_set_lock);
+ 	if (!empty)
+ 		return -EBUSY;
+@@ -5057,7 +5055,7 @@ void cgroup_exit(struct task_struct *tsk, int run_callbacks)
+ static void check_for_release(struct cgroup *cgrp)
+ {
+ 	if (cgroup_is_releasable(cgrp) &&
+-	    !atomic_read(&cgrp->count) && list_empty(&cgrp->children)) {
++	    list_empty(&cgrp->cset_links) && list_empty(&cgrp->children)) {
+ 		/*
+ 		 * Control Group is currently removeable. If it's not
+ 		 * already queued for a userspace notification, queue
+@@ -5425,11 +5423,6 @@ static void debug_css_free(struct cgroup *cont)
+ 	kfree(cont->subsys[debug_subsys_id]);
  }
  
+-static u64 cgroup_refcount_read(struct cgroup *cont, struct cftype *cft)
+-{
+-	return atomic_read(&cont->count);
+-}
+-
+ static u64 debug_taskcount_read(struct cgroup *cont, struct cftype *cft)
+ {
+ 	return cgroup_task_count(cont);
+@@ -5511,10 +5504,6 @@ static u64 releasable_read(struct cgroup *cgrp, struct cftype *cft)
+ 
+ static struct cftype debug_files[] =  {
+ 	{
+-		.name = "cgroup_refcount",
+-		.read_u64 = cgroup_refcount_read,
+-	},
+-	{
+ 		.name = "taskcount",
+ 		.read_u64 = debug_taskcount_read,
+ 	},
 -- 
 1.8.2.1
