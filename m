@@ -1,12 +1,14 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH cgroup/for-3.11] cgroup: disallow rename(2) if sane_behavior
-Date: Thu, 13 Jun 2013 20:47:17 -0700
-Message-ID: <20130614034717.GA31533@htj.dyndns.org>
+Subject: Re: [PATCH] cpuset: rename cont to cgrp
+Date: Thu, 13 Jun 2013 20:48:58 -0700
+Message-ID: <20130614034858.GB31533__18236.7992740639$1371181759$gmane$org@htj.dyndns.org>
+References: <51BA8B83.8090607@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <51BA8B83.8090607-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,49 +19,21 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>
+Cc: cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-cgroup's rename(2) isn't a proper migration implementation - it can't
-move the cgroup to a different parent in the hierarchy.  All it can do
-is swapping the name string for that cgroup.  This isn't useful and
-can mislead users to think that cgroup supports proper cgroup-level
-migration.  Disallow rename(2) if sane_behavior.
+On Fri, Jun 14, 2013 at 11:18:27AM +0800, Li Zefan wrote:
+> Cont is short for container. control group was named process container
+> at first, but then people found container already has a meaning in
+> linux kernel.
+> 
+> Clean up the leftover variable name @cont.
+> 
+> Signed-off-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 
-Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
----
- include/linux/cgroup.h |    2 ++
- kernel/cgroup.c        |    7 +++++++
- 2 files changed, 9 insertions(+)
+Applied to cgroup/for-3.11-cpuset.
 
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 1760476..f975227 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -270,6 +270,8 @@ enum {
- 	 * - "release_agent" and "notify_on_release" are removed.
- 	 *   Replacement notification mechanism will be implemented.
- 	 *
-+	 * - rename(2) is disallowed.
-+	 *
- 	 * - memcg: use_hierarchy is on by default and the cgroup file for
- 	 *   the flag is not created.
- 	 */
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 2e9da7b..7d78902 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -2508,6 +2508,13 @@ static int cgroup_rename(struct inode *old_dir, struct dentry *old_dentry,
- 
- 	cgrp = __d_cgrp(old_dentry);
- 
-+	/*
-+	 * This isn't a proper migration and its usefulness is very
-+	 * limited.  Disallow if sane_behavior.
-+	 */
-+	if (cgroup_sane_behavior(cgrp))
-+		return -EINVAL;
-+
- 	name = cgroup_alloc_name(new_dentry);
- 	if (!name)
- 		return -ENOMEM;
+Thanks.
+
+-- 
+tejun
