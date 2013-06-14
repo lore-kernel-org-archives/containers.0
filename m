@@ -1,12 +1,11 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH cgroup/for-3.11] cgroup: update sane_behavior documentation
-Date: Thu, 13 Jun 2013 20:07:53 -0700
-Message-ID: <20130614030753.GC7846@htj.dyndns.org>
+From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH ] cgroup: rename cont to cgrp
+Date: Fri, 14 Jun 2013 11:17:19 +0800
+Message-ID: <51BA8B3F.3060606__8215.88926851309$1371179863$gmane$org@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,50 +15,115 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From f63674fd0d6afa1ba24309aee1f8c60195d39041 Mon Sep 17 00:00:00 2001
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Date: Thu, 13 Jun 2013 19:58:38 -0700
+Cont is short for container. control group was named process container
+at first, but then people found container already has a meaning in
+linux kernel.
 
-f12dc02014 ("cgroup: mark "tasks" cgroup file as insane") and
-cc5943a781 ("cgroup: mark "notify_on_release" and "release_agent"
-cgroup files insane") forgot to update the changed behavior
-documentation in cgroup.h.  Update it.
+Clean up the leftover variable name @cont.
 
-Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Signed-off-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 ---
-Forgot to update sane_behavior comment.  Applied this patch to
-cgroup/for-3.11.  Thanks.
 
- include/linux/cgroup.h | 11 ++++++-----
- 1 file changed, 6 insertions(+), 5 deletions(-)
+I'll clean up this for memcg later.
+
+---
+ include/linux/cgroup.h |  4 ++--
+ kernel/cgroup.c        | 22 +++++++++++-----------
+ 2 files changed, 13 insertions(+), 13 deletions(-)
 
 diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index b7bd4be..1760476 100644
+index b7bd4be..9f6e26a 100644
 --- a/include/linux/cgroup.h
 +++ b/include/linux/cgroup.h
-@@ -264,13 +264,14 @@ enum {
- 	 *
- 	 * - Remount is disallowed.
- 	 *
--	 * - memcg: use_hierarchy is on by default and the cgroup file for
--	 *   the flag is not created.
-+	 * - "tasks" is removed.  Everything should be at process
-+	 *   granularity.  Use "cgroup.procs" instead.
- 	 *
--	 * The followings are planned changes.
-+	 * - "release_agent" and "notify_on_release" are removed.
-+	 *   Replacement notification mechanism will be implemented.
- 	 *
--	 * - release_agent will be disallowed once replacement notification
--	 *   mechanism is implemented.
-+	 * - memcg: use_hierarchy is on by default and the cgroup file for
-+	 *   the flag is not created.
+@@ -436,13 +436,13 @@ struct cftype {
+ 	 * entry. The key/value pairs (and their ordering) should not
+ 	 * change between reboots.
  	 */
- 	CGRP_ROOT_SANE_BEHAVIOR	= (1 << 0),
+-	int (*read_map)(struct cgroup *cont, struct cftype *cft,
++	int (*read_map)(struct cgroup *cgrp, struct cftype *cft,
+ 			struct cgroup_map_cb *cb);
+ 	/*
+ 	 * read_seq_string() is used for outputting a simple sequence
+ 	 * using seqfile.
+ 	 */
+-	int (*read_seq_string)(struct cgroup *cont, struct cftype *cft,
++	int (*read_seq_string)(struct cgroup *cgrp, struct cftype *cft,
+ 			       struct seq_file *m);
  
+ 	ssize_t (*write)(struct cgroup *cgrp, struct cftype *cft,
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index dd4ab91..25f1054 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -5473,7 +5473,7 @@ struct cgroup_subsys_state *cgroup_css_from_dir(struct file *f, int id)
+ }
+ 
+ #ifdef CONFIG_CGROUP_DEBUG
+-static struct cgroup_subsys_state *debug_css_alloc(struct cgroup *cont)
++static struct cgroup_subsys_state *debug_css_alloc(struct cgroup *cgrp)
+ {
+ 	struct cgroup_subsys_state *css = kzalloc(sizeof(*css), GFP_KERNEL);
+ 
+@@ -5483,23 +5483,23 @@ static struct cgroup_subsys_state *debug_css_alloc(struct cgroup *cont)
+ 	return css;
+ }
+ 
+-static void debug_css_free(struct cgroup *cont)
++static void debug_css_free(struct cgroup *cgrp)
+ {
+-	kfree(cont->subsys[debug_subsys_id]);
++	kfree(cgrp->subsys[debug_subsys_id]);
+ }
+ 
+-static u64 debug_taskcount_read(struct cgroup *cont, struct cftype *cft)
++static u64 debug_taskcount_read(struct cgroup *cgrp, struct cftype *cft)
+ {
+-	return cgroup_task_count(cont);
++	return cgroup_task_count(cgrp);
+ }
+ 
+-static u64 current_css_set_read(struct cgroup *cont, struct cftype *cft)
++static u64 current_css_set_read(struct cgroup *cgrp, struct cftype *cft)
+ {
+ 	return (u64)(unsigned long)current->cgroups;
+ }
+ 
+-static u64 current_css_set_refcount_read(struct cgroup *cont,
+-					   struct cftype *cft)
++static u64 current_css_set_refcount_read(struct cgroup *cgrp,
++					 struct cftype *cft)
+ {
+ 	u64 count;
+ 
+@@ -5509,7 +5509,7 @@ static u64 current_css_set_refcount_read(struct cgroup *cont,
+ 	return count;
+ }
+ 
+-static int current_css_set_cg_links_read(struct cgroup *cont,
++static int current_css_set_cg_links_read(struct cgroup *cgrp,
+ 					 struct cftype *cft,
+ 					 struct seq_file *seq)
+ {
+@@ -5536,14 +5536,14 @@ static int current_css_set_cg_links_read(struct cgroup *cont,
+ }
+ 
+ #define MAX_TASKS_SHOWN_PER_CSS 25
+-static int cgroup_css_links_read(struct cgroup *cont,
++static int cgroup_css_links_read(struct cgroup *cgrp,
+ 				 struct cftype *cft,
+ 				 struct seq_file *seq)
+ {
+ 	struct cgrp_cset_link *link;
+ 
+ 	read_lock(&css_set_lock);
+-	list_for_each_entry(link, &cont->cset_links, cset_link) {
++	list_for_each_entry(link, &cgrp->cset_links, cset_link) {
+ 		struct css_set *cset = link->cset;
+ 		struct task_struct *task;
+ 		int count = 0;
 -- 
-1.8.2.1
+1.8.0.2
