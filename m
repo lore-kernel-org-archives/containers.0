@@ -1,7 +1,7 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH ] cgroup: rename cont to cgrp
-Date: Fri, 14 Jun 2013 11:17:19 +0800
-Message-ID: <51BA8B3F.3060606__8215.88926851309$1371179863$gmane$org@huawei.com>
+Subject: [PATCH] cpuset: rename cont to cgrp
+Date: Fri, 14 Jun 2013 11:18:27 +0800
+Message-ID: <51BA8B83.8090607__20017.8994135515$1371179928$gmane$org@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,7 +16,7 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Cont is short for container. control group was named process container
@@ -27,103 +27,121 @@ Clean up the leftover variable name @cont.
 
 Signed-off-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 ---
+ kernel/cpuset.c | 32 ++++++++++++++++----------------
+ 1 file changed, 16 insertions(+), 16 deletions(-)
 
-I'll clean up this for memcg later.
-
----
- include/linux/cgroup.h |  4 ++--
- kernel/cgroup.c        | 22 +++++++++++-----------
- 2 files changed, 13 insertions(+), 13 deletions(-)
-
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index b7bd4be..9f6e26a 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -436,13 +436,13 @@ struct cftype {
- 	 * entry. The key/value pairs (and their ordering) should not
- 	 * change between reboots.
+diff --git a/kernel/cpuset.c b/kernel/cpuset.c
+index 3be9597..171fe5c 100644
+--- a/kernel/cpuset.c
++++ b/kernel/cpuset.c
+@@ -116,9 +116,9 @@ struct cpuset {
+ };
+ 
+ /* Retrieve the cpuset for a cgroup */
+-static inline struct cpuset *cgroup_cs(struct cgroup *cont)
++static inline struct cpuset *cgroup_cs(struct cgroup *cgrp)
+ {
+-	return container_of(cgroup_subsys_state(cont, cpuset_subsys_id),
++	return container_of(cgroup_subsys_state(cgrp, cpuset_subsys_id),
+ 			    struct cpuset, css);
+ }
+ 
+@@ -433,7 +433,7 @@ static void free_trial_cpuset(struct cpuset *trial)
+ 
+ static int validate_change(const struct cpuset *cur, const struct cpuset *trial)
+ {
+-	struct cgroup *cont;
++	struct cgroup *cgrp;
+ 	struct cpuset *c, *par;
+ 	int ret;
+ 
+@@ -441,7 +441,7 @@ static int validate_change(const struct cpuset *cur, const struct cpuset *trial)
+ 
+ 	/* Each of our child cpusets must be a subset of us */
+ 	ret = -EBUSY;
+-	cpuset_for_each_child(c, cont, cur)
++	cpuset_for_each_child(c, cgrp, cur)
+ 		if (!is_cpuset_subset(c, trial))
+ 			goto out;
+ 
+@@ -462,7 +462,7 @@ static int validate_change(const struct cpuset *cur, const struct cpuset *trial)
+ 	 * overlap
  	 */
--	int (*read_map)(struct cgroup *cont, struct cftype *cft,
-+	int (*read_map)(struct cgroup *cgrp, struct cftype *cft,
- 			struct cgroup_map_cb *cb);
- 	/*
- 	 * read_seq_string() is used for outputting a simple sequence
- 	 * using seqfile.
- 	 */
--	int (*read_seq_string)(struct cgroup *cont, struct cftype *cft,
-+	int (*read_seq_string)(struct cgroup *cgrp, struct cftype *cft,
- 			       struct seq_file *m);
- 
- 	ssize_t (*write)(struct cgroup *cgrp, struct cftype *cft,
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index dd4ab91..25f1054 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -5473,7 +5473,7 @@ struct cgroup_subsys_state *cgroup_css_from_dir(struct file *f, int id)
- }
- 
- #ifdef CONFIG_CGROUP_DEBUG
--static struct cgroup_subsys_state *debug_css_alloc(struct cgroup *cont)
-+static struct cgroup_subsys_state *debug_css_alloc(struct cgroup *cgrp)
- {
- 	struct cgroup_subsys_state *css = kzalloc(sizeof(*css), GFP_KERNEL);
- 
-@@ -5483,23 +5483,23 @@ static struct cgroup_subsys_state *debug_css_alloc(struct cgroup *cont)
- 	return css;
- }
- 
--static void debug_css_free(struct cgroup *cont)
-+static void debug_css_free(struct cgroup *cgrp)
- {
--	kfree(cont->subsys[debug_subsys_id]);
-+	kfree(cgrp->subsys[debug_subsys_id]);
- }
- 
--static u64 debug_taskcount_read(struct cgroup *cont, struct cftype *cft)
-+static u64 debug_taskcount_read(struct cgroup *cgrp, struct cftype *cft)
- {
--	return cgroup_task_count(cont);
-+	return cgroup_task_count(cgrp);
- }
- 
--static u64 current_css_set_read(struct cgroup *cont, struct cftype *cft)
-+static u64 current_css_set_read(struct cgroup *cgrp, struct cftype *cft)
- {
- 	return (u64)(unsigned long)current->cgroups;
- }
- 
--static u64 current_css_set_refcount_read(struct cgroup *cont,
--					   struct cftype *cft)
-+static u64 current_css_set_refcount_read(struct cgroup *cgrp,
-+					 struct cftype *cft)
- {
- 	u64 count;
- 
-@@ -5509,7 +5509,7 @@ static u64 current_css_set_refcount_read(struct cgroup *cont,
+ 	ret = -EINVAL;
+-	cpuset_for_each_child(c, cont, par) {
++	cpuset_for_each_child(c, cgrp, par) {
+ 		if ((is_cpu_exclusive(trial) || is_cpu_exclusive(c)) &&
+ 		    c != cur &&
+ 		    cpumask_intersects(trial->cpus_allowed, c->cpus_allowed))
+@@ -1759,13 +1759,13 @@ static size_t cpuset_sprintf_memlist(char *page, struct cpuset *cs)
  	return count;
  }
  
--static int current_css_set_cg_links_read(struct cgroup *cont,
-+static int current_css_set_cg_links_read(struct cgroup *cgrp,
- 					 struct cftype *cft,
- 					 struct seq_file *seq)
+-static ssize_t cpuset_common_file_read(struct cgroup *cont,
++static ssize_t cpuset_common_file_read(struct cgroup *cgrp,
+ 				       struct cftype *cft,
+ 				       struct file *file,
+ 				       char __user *buf,
+ 				       size_t nbytes, loff_t *ppos)
  {
-@@ -5536,14 +5536,14 @@ static int current_css_set_cg_links_read(struct cgroup *cont,
+-	struct cpuset *cs = cgroup_cs(cont);
++	struct cpuset *cs = cgroup_cs(cgrp);
+ 	cpuset_filetype_t type = cft->private;
+ 	char *page;
+ 	ssize_t retval = 0;
+@@ -1795,9 +1795,9 @@ out:
+ 	return retval;
  }
  
- #define MAX_TASKS_SHOWN_PER_CSS 25
--static int cgroup_css_links_read(struct cgroup *cont,
-+static int cgroup_css_links_read(struct cgroup *cgrp,
- 				 struct cftype *cft,
- 				 struct seq_file *seq)
+-static u64 cpuset_read_u64(struct cgroup *cont, struct cftype *cft)
++static u64 cpuset_read_u64(struct cgroup *cgrp, struct cftype *cft)
  {
- 	struct cgrp_cset_link *link;
+-	struct cpuset *cs = cgroup_cs(cont);
++	struct cpuset *cs = cgroup_cs(cgrp);
+ 	cpuset_filetype_t type = cft->private;
+ 	switch (type) {
+ 	case FILE_CPU_EXCLUSIVE:
+@@ -1826,9 +1826,9 @@ static u64 cpuset_read_u64(struct cgroup *cont, struct cftype *cft)
+ 	return 0;
+ }
  
- 	read_lock(&css_set_lock);
--	list_for_each_entry(link, &cont->cset_links, cset_link) {
-+	list_for_each_entry(link, &cgrp->cset_links, cset_link) {
- 		struct css_set *cset = link->cset;
- 		struct task_struct *task;
- 		int count = 0;
+-static s64 cpuset_read_s64(struct cgroup *cont, struct cftype *cft)
++static s64 cpuset_read_s64(struct cgroup *cgrp, struct cftype *cft)
+ {
+-	struct cpuset *cs = cgroup_cs(cont);
++	struct cpuset *cs = cgroup_cs(cgrp);
+ 	cpuset_filetype_t type = cft->private;
+ 	switch (type) {
+ 	case FILE_SCHED_RELAX_DOMAIN_LEVEL:
+@@ -1940,14 +1940,14 @@ static struct cftype files[] = {
+ 
+ /*
+  *	cpuset_css_alloc - allocate a cpuset css
+- *	cont:	control group that the new cpuset will be part of
++ *	cgrp:	control group that the new cpuset will be part of
+  */
+ 
+-static struct cgroup_subsys_state *cpuset_css_alloc(struct cgroup *cont)
++static struct cgroup_subsys_state *cpuset_css_alloc(struct cgroup *cgrp)
+ {
+ 	struct cpuset *cs;
+ 
+-	if (!cont->parent)
++	if (!cgrp->parent)
+ 		return &top_cpuset.css;
+ 
+ 	cs = kzalloc(sizeof(*cs), GFP_KERNEL);
+@@ -2042,9 +2042,9 @@ static void cpuset_css_offline(struct cgroup *cgrp)
+  * will call rebuild_sched_domains_locked().
+  */
+ 
+-static void cpuset_css_free(struct cgroup *cont)
++static void cpuset_css_free(struct cgroup *cgrp)
+ {
+-	struct cpuset *cs = cgroup_cs(cont);
++	struct cpuset *cs = cgroup_cs(cgrp);
+ 
+ 	free_cpumask_var(cs->cpus_allowed);
+ 	kfree(cs);
 -- 
 1.8.0.2
