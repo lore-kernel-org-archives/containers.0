@@ -1,11 +1,12 @@
-From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] cpuset: rename cont to cgrp
-Date: Fri, 14 Jun 2013 11:18:27 +0800
-Message-ID: <51BA8B83.8090607__20017.8994135515$1371179928$gmane$org@huawei.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCH cgroup/for-3.11] cgroup: disallow rename(2) if sane_behavior
+Date: Thu, 13 Jun 2013 20:47:17 -0700
+Message-ID: <20130614034717.GA31533@htj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,133 +16,50 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Cont is short for container. control group was named process container
-at first, but then people found container already has a meaning in
-linux kernel.
+cgroup's rename(2) isn't a proper migration implementation - it can't
+move the cgroup to a different parent in the hierarchy.  All it can do
+is swapping the name string for that cgroup.  This isn't useful and
+can mislead users to think that cgroup supports proper cgroup-level
+migration.  Disallow rename(2) if sane_behavior.
 
-Clean up the leftover variable name @cont.
-
-Signed-off-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cpuset.c | 32 ++++++++++++++++----------------
- 1 file changed, 16 insertions(+), 16 deletions(-)
+ include/linux/cgroup.h |    2 ++
+ kernel/cgroup.c        |    7 +++++++
+ 2 files changed, 9 insertions(+)
 
-diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index 3be9597..171fe5c 100644
---- a/kernel/cpuset.c
-+++ b/kernel/cpuset.c
-@@ -116,9 +116,9 @@ struct cpuset {
- };
- 
- /* Retrieve the cpuset for a cgroup */
--static inline struct cpuset *cgroup_cs(struct cgroup *cont)
-+static inline struct cpuset *cgroup_cs(struct cgroup *cgrp)
- {
--	return container_of(cgroup_subsys_state(cont, cpuset_subsys_id),
-+	return container_of(cgroup_subsys_state(cgrp, cpuset_subsys_id),
- 			    struct cpuset, css);
- }
- 
-@@ -433,7 +433,7 @@ static void free_trial_cpuset(struct cpuset *trial)
- 
- static int validate_change(const struct cpuset *cur, const struct cpuset *trial)
- {
--	struct cgroup *cont;
-+	struct cgroup *cgrp;
- 	struct cpuset *c, *par;
- 	int ret;
- 
-@@ -441,7 +441,7 @@ static int validate_change(const struct cpuset *cur, const struct cpuset *trial)
- 
- 	/* Each of our child cpusets must be a subset of us */
- 	ret = -EBUSY;
--	cpuset_for_each_child(c, cont, cur)
-+	cpuset_for_each_child(c, cgrp, cur)
- 		if (!is_cpuset_subset(c, trial))
- 			goto out;
- 
-@@ -462,7 +462,7 @@ static int validate_change(const struct cpuset *cur, const struct cpuset *trial)
- 	 * overlap
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 1760476..f975227 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -270,6 +270,8 @@ enum {
+ 	 * - "release_agent" and "notify_on_release" are removed.
+ 	 *   Replacement notification mechanism will be implemented.
+ 	 *
++	 * - rename(2) is disallowed.
++	 *
+ 	 * - memcg: use_hierarchy is on by default and the cgroup file for
+ 	 *   the flag is not created.
  	 */
- 	ret = -EINVAL;
--	cpuset_for_each_child(c, cont, par) {
-+	cpuset_for_each_child(c, cgrp, par) {
- 		if ((is_cpu_exclusive(trial) || is_cpu_exclusive(c)) &&
- 		    c != cur &&
- 		    cpumask_intersects(trial->cpus_allowed, c->cpus_allowed))
-@@ -1759,13 +1759,13 @@ static size_t cpuset_sprintf_memlist(char *page, struct cpuset *cs)
- 	return count;
- }
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 2e9da7b..7d78902 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -2508,6 +2508,13 @@ static int cgroup_rename(struct inode *old_dir, struct dentry *old_dentry,
  
--static ssize_t cpuset_common_file_read(struct cgroup *cont,
-+static ssize_t cpuset_common_file_read(struct cgroup *cgrp,
- 				       struct cftype *cft,
- 				       struct file *file,
- 				       char __user *buf,
- 				       size_t nbytes, loff_t *ppos)
- {
--	struct cpuset *cs = cgroup_cs(cont);
-+	struct cpuset *cs = cgroup_cs(cgrp);
- 	cpuset_filetype_t type = cft->private;
- 	char *page;
- 	ssize_t retval = 0;
-@@ -1795,9 +1795,9 @@ out:
- 	return retval;
- }
+ 	cgrp = __d_cgrp(old_dentry);
  
--static u64 cpuset_read_u64(struct cgroup *cont, struct cftype *cft)
-+static u64 cpuset_read_u64(struct cgroup *cgrp, struct cftype *cft)
- {
--	struct cpuset *cs = cgroup_cs(cont);
-+	struct cpuset *cs = cgroup_cs(cgrp);
- 	cpuset_filetype_t type = cft->private;
- 	switch (type) {
- 	case FILE_CPU_EXCLUSIVE:
-@@ -1826,9 +1826,9 @@ static u64 cpuset_read_u64(struct cgroup *cont, struct cftype *cft)
- 	return 0;
- }
- 
--static s64 cpuset_read_s64(struct cgroup *cont, struct cftype *cft)
-+static s64 cpuset_read_s64(struct cgroup *cgrp, struct cftype *cft)
- {
--	struct cpuset *cs = cgroup_cs(cont);
-+	struct cpuset *cs = cgroup_cs(cgrp);
- 	cpuset_filetype_t type = cft->private;
- 	switch (type) {
- 	case FILE_SCHED_RELAX_DOMAIN_LEVEL:
-@@ -1940,14 +1940,14 @@ static struct cftype files[] = {
- 
- /*
-  *	cpuset_css_alloc - allocate a cpuset css
-- *	cont:	control group that the new cpuset will be part of
-+ *	cgrp:	control group that the new cpuset will be part of
-  */
- 
--static struct cgroup_subsys_state *cpuset_css_alloc(struct cgroup *cont)
-+static struct cgroup_subsys_state *cpuset_css_alloc(struct cgroup *cgrp)
- {
- 	struct cpuset *cs;
- 
--	if (!cont->parent)
-+	if (!cgrp->parent)
- 		return &top_cpuset.css;
- 
- 	cs = kzalloc(sizeof(*cs), GFP_KERNEL);
-@@ -2042,9 +2042,9 @@ static void cpuset_css_offline(struct cgroup *cgrp)
-  * will call rebuild_sched_domains_locked().
-  */
- 
--static void cpuset_css_free(struct cgroup *cont)
-+static void cpuset_css_free(struct cgroup *cgrp)
- {
--	struct cpuset *cs = cgroup_cs(cont);
-+	struct cpuset *cs = cgroup_cs(cgrp);
- 
- 	free_cpumask_var(cs->cpus_allowed);
- 	kfree(cs);
--- 
-1.8.0.2
++	/*
++	 * This isn't a proper migration and its usefulness is very
++	 * limited.  Disallow if sane_behavior.
++	 */
++	if (cgroup_sane_behavior(cgrp))
++		return -EINVAL;
++
+ 	name = cgroup_alloc_name(new_dentry);
+ 	if (!name)
+ 		return -ENOMEM;
