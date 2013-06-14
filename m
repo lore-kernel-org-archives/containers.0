@@ -1,17 +1,14 @@
-From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: [PATCH 11/11] cgroup: use percpu refcnt for cgroup_subsys_states
-Date: Fri, 14 Jun 2013 16:22:11 +0200
-Message-ID: <20130614142211.GG10084@dhcp22.suse.cz>
-References: <1371096298-24402-1-git-send-email-tj@kernel.org>
-	<1371096298-24402-12-git-send-email-tj@kernel.org>
-	<20130614125539.GC10084@dhcp22.suse.cz>
-	<20130614141510.GA19021@localhost.localdomain>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCH v2 cgroup/for-3.11] cgroup: disallow rename(2) if sane_behavior
+Date: Fri, 14 Jun 2013 11:18:22 -0700
+Message-ID: <20130614181822.GC6593@mtj.dyndns.org>
+References: <20130614034717.GA31533@htj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20130614141510.GA19021-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
+In-Reply-To: <20130614034717.GA31533-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,52 +18,54 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Glauber Costa <glommer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, cl-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Mike Snitzer <snitzer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mikulas Patocka <mpatocka-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Alasdair G. Kergon" <agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, koverstreet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri 14-06-13 18:15:12, Glauber Costa wrote:
-> On Fri, Jun 14, 2013 at 02:55:39PM +0200, Michal Hocko wrote:
-> > On Wed 12-06-13 21:04:58, Tejun Heo wrote:
-> > [...]
-> > > +/**
-> > > + * cgroup_destroy_locked - the first stage of cgroup destruction
-> > > + * @cgrp: cgroup to be destroyed
-> > > + *
-> > > + * css's make use of percpu refcnts whose killing latency shouldn't be
-> > > + * exposed to userland and are RCU protected.  Also, cgroup core needs to
-> > > + * guarantee that css_tryget() won't succeed by the time ->css_offline() is
-> > > + * invoked.  To satisfy all the requirements, destruction is implemented in
-> > > + * the following two steps.
-> > > + *
-> > > + * s1. Verify @cgrp can be destroyed and mark it dying.  Remove all
-> > > + *     userland visible parts and start killing the percpu refcnts of
-> > > + *     css's.  Set up so that the next stage will be kicked off once all
-> > > + *     the percpu refcnts are confirmed to be killed.
-> > > + *
-> > > + * s2. Invoke ->css_offline(), mark the cgroup dead and proceed with the
-> > > + *     rest of destruction.  Once all cgroup references are gone, the
-> > > + *     cgroup is RCU-freed.
-> > > + *
-> > > + * This function implements s1.  After this step, @cgrp is gone as far as
-> > > + * the userland is concerned and a new cgroup with the same name may be
-> > > + * created.  As cgroup doesn't care about the names internally, this
-> > > + * doesn't cause any problem.
-> > 
-> > Glauber is this asumption correct for kmem caches naming scheme?
-> > I guess it should, but I would rather be sure this won't blow up later
-> > specially when caches might live longer than css_offline.
-> > 
-> 
-> We append names to caches, but never the name alone, always (kmemcg_id:name)
-> So you can reuse the same name as many times as you want (from the kmemcg
-> perspective), provided you use different kmemcg_ids. Because kmemcg_ids are
-> dissociated from css_ids (partly because I was already seeing people talking
-> about wanting to free the css_ids earlier), we should not have any problems
-> with this.
+cgroup's rename(2) isn't a proper migration implementation - it can't
+move the cgroup to a different parent in the hierarchy.  All it can do
+is swapping the name string for that cgroup.  This isn't useful and
+can mislead users to think that cgroup supports proper cgroup-level
+migration.  Disallow rename(2) if sane_behavior.
 
-Thanks for double checking, Glauber!
+v2: Fail with -EPERM instead of -EINVAL so that it matches the vfs
+    return value when ->rename is not implemented as suggested by Li.
 
--- 
-Michal Hocko
-SUSE Labs
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+---
+ include/linux/cgroup.h |    2 ++
+ kernel/cgroup.c        |    7 +++++++
+ 2 files changed, 9 insertions(+)
+
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 1760476..f975227 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -270,6 +270,8 @@ enum {
+ 	 * - "release_agent" and "notify_on_release" are removed.
+ 	 *   Replacement notification mechanism will be implemented.
+ 	 *
++	 * - rename(2) is disallowed.
++	 *
+ 	 * - memcg: use_hierarchy is on by default and the cgroup file for
+ 	 *   the flag is not created.
+ 	 */
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 2e9da7b..c2c64005 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -2508,6 +2508,13 @@ static int cgroup_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 
+ 	cgrp = __d_cgrp(old_dentry);
+ 
++	/*
++	 * This isn't a proper migration and its usefulness is very
++	 * limited.  Disallow if sane_behavior.
++	 */
++	if (cgroup_sane_behavior(cgrp))
++		return -EPERM;
++
+ 	name = cgroup_alloc_name(new_dentry);
+ 	if (!name)
+ 		return -ENOMEM;
