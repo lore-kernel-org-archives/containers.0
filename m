@@ -1,14 +1,12 @@
-From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH cgroup/for-3.11] cgroup: disallow rename(2) if
-	sane_behavior
-Date: Fri, 14 Jun 2013 15:44:42 +0800
-Message-ID: <51BAC9EA.7020100@huawei.com>
-References: <20130614034717.GA31533@htj.dyndns.org>
+From: paul goodman <mrgoodman203-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Invitation: Greetings From Mr.Goodman, @ Fri Jun 14,
+	2013 7am - 8am (mrgoodman203-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org)
+Date: Fri, 14 Jun 2013 10:43:04 +0000
+Message-ID: <20cf303a30bf5e993a04df1ae9c7@google.com>
+Reply-To: paul goodman <mrgoodman203-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary=20cf303a30bf5e993204df1ae9c6
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20130614034717.GA31533-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,54 +16,137 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>
+To: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 2013/6/14 11:47, Tejun Heo wrote:
-> cgroup's rename(2) isn't a proper migration implementation - it can't
-> move the cgroup to a different parent in the hierarchy.  All it can do
-> is swapping the name string for that cgroup.  This isn't useful and
-> can mislead users to think that cgroup supports proper cgroup-level
-> migration.  Disallow rename(2) if sane_behavior.
-> 
-> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> ---
->  include/linux/cgroup.h |    2 ++
->  kernel/cgroup.c        |    7 +++++++
->  2 files changed, 9 insertions(+)
-> 
-> diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-> index 1760476..f975227 100644
-> --- a/include/linux/cgroup.h
-> +++ b/include/linux/cgroup.h
-> @@ -270,6 +270,8 @@ enum {
->  	 * - "release_agent" and "notify_on_release" are removed.
->  	 *   Replacement notification mechanism will be implemented.
->  	 *
-> +	 * - rename(2) is disallowed.
-> +	 *
->  	 * - memcg: use_hierarchy is on by default and the cgroup file for
->  	 *   the flag is not created.
->  	 */
-> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index 2e9da7b..7d78902 100644
-> --- a/kernel/cgroup.c
-> +++ b/kernel/cgroup.c
-> @@ -2508,6 +2508,13 @@ static int cgroup_rename(struct inode *old_dir, struct dentry *old_dentry,
->  
->  	cgrp = __d_cgrp(old_dentry);
->  
-> +	/*
-> +	 * This isn't a proper migration and its usefulness is very
-> +	 * limited.  Disallow if sane_behavior.
-> +	 */
-> +	if (cgroup_sane_behavior(cgrp))
-> +		return -EINVAL;
-> +
+--20cf303a30bf5e993204df1ae9c6
+Content-Type: text/plain; charset=windows-1252; format=flowed; delsp=yes
+Content-Transfer-Encoding: base64
 
-Isn't -EPERM a better errno? VFS will return -EPERM if inode->rename is NULL.
+WW91IGhhdmUgYmVlbiBpbnZpdGVkIHRvIHRoZSBmb2xsb3dpbmcgZXZlbnQuDQoNClRpdGxlOiBH
+cmVldGluZ3MgRnJvbSBNci5Hb29kbWFuLA0KR3JlZXRpbmdzIEZyb20gTXIuR29vZG1hbiwNCg0K
+RGVhciBwYXJ0bmVyLA0KDQpJIGtub3cgdGhhdCB0aGlzIG1lc3NhZ2UgbWF5IGNvbWUgdG8geW91
+IGFzIGEgc3VycHJpc2Ugc2luY2Ugd2UgaGF2ZSBuZXZlcg0KDQptZXQgYmVmb3JlLg0KDQpIb3dl
+dmVyLCBJIGRlY2lkZWQgdG8gcmVhY2ggeW91IHRocm91Z2ggZW1haWwgZHVlIHRvIHVyZ2VuY3kg
+YW5kDQoNCmNvbmZpZGVudGlhbGl0eSB3aGljaCBteSBwcm9wb3NhbCBkZW1hbmRzLg0KDQpJIGFt
+IE1yLkdvb2RtYW4sIEEgQmFua2VyLCBhbmQgSGVhZCBvZiBPcGVyYXRpb25zIHdpdGggKEJBTksg
+T0YgQUZSSUNBDQoNCkJVUktJTkEgRkFTTyApaW4gV2VzdCBBZnJpY2EgLg0KDQoNCg0KVGhlcmUg
+aXMgdGhlIHN1bSBvZiAkMjAuNSBNaWxsaW9uIERvbGxhcnMgY3VycmVudGx5IGluIG15IGJyYW5j
+aCwgVGhlDQoNCm1vbmV5IGJlbG9uZyB0byBvbmUgb2YgbXkgY2xpZW50IHdobyBkaWVkIHdpdGhv
+dXQgYSBkZWNyZWUgb3IgV0lMTCwgYW5kDQoNCnNpbmNlIDIwMDMgbm9ib2R5IGhhcyBvcGVyYXRl
+ZCBvbiB0aGlzIGFjY291bnQuIEFnYWluIGhlbmNlIHRoZSBtb25leSBpcw0KDQpmbG9hdGluZyBh
+bmQgaWYgSSBkbyBub3QgcmVtaXQgdGhpcyBtb25leSBvdXQgdXJnZW50bHkgaXQgd2lsbCBiZQ0K
+DQpmb3JmZWl0ZWQgZm9yIG5vdGhpbmcgYW5kIEdvdmVybm1lbnQgb2YgQnVya2luYSBGYXNvIHdp
+bGwgY29uZmlzY2F0ZSB0aGUNCg0KZnVuZHMgZm9yIHRoZWlyIHBlcnNvbmFsIHVzZSB3aGljaCBJ
+IHBlcnNvbmFsbHkgZG9uJ3Qgd2FudCBzdWNoIGluY2lkZW50DQoNCnRvIGhhcHBlbiBzZWVpbmcg
+dGhhdCB0aGlzIGlzIGEgZ3JlYXQgb3Bwb3J0dW5pdHkgZm9yIG1lIGFuZCB5b3UsIEkNCg0KZGVj
+aWRlZCB0byBhc2sgZm9yIHlvdXIgYXNzaXN0YW5jZSB0byBtYWtlIHRoZSBjbGFpbQ0KDQpUaGF0
+IGlzIHdoeSBJIGFzayB0aGF0IHdlIHdvcmsgdG9nZXRoZXIsIEkgd2lsbCBiZSBwbGVhc2VkIHRv
+IHdvcmsgd2l0aA0KDQp5b3UgYXMgdHJ1c3RlZCBwZXJzb24gYW5kIHNlZSB0aGF0IHRoZSBmdW5k
+IGlzIHRyYW5zZmVycmVkIG91dCBvZiBteSBCYW5rDQoNCmludG8gYW5vdGhlciBCYW5rIEFjY291
+bnQgd2hpY2ggeW91IGFyZSBnb2luZyB0byBwcm92aWRlLCBPbmNlIHRoZSBmdW5kcw0KDQpoYXZl
+IGJlZW4gdHJhbnNmZXJyZWQgdG8geW91ciBub21pbmF0ZWQgQmFuayBhY2NvdW50IHdlIHNoYWxs
+IHRoZW4gc2hhcmUNCg0KaXQgaW4gdGhlIHJhdGlvIG9mIDYwJSBmb3IgbWUsIDQwJSBmb3IgeW91
+LiBNZWFud2hpbGUsIGFsbCB0aGUgbGVnYWwNCg0KcGFwZXJzIHdpbGwgYmUgcHJvY2Vzc2VkIGlu
+IHlvdXIgYWNjZXB0YW5jZSB0byBwcm92ZSBvdXIgbGVnYWxpdHkgb2YgdGhlDQoNCmNsYWltLg0K
+DQpJZiB5b3UgYWdyZWUgdG8gbXkgYnVzaW5lc3MgcHJvcG9zYWwsIGZ1cnRoZXIgZGV0YWlscyBv
+ZiB0aGUgdHJhbnNmZXIgd2lsbA0KDQpiZSBmb3J3YXJkZWQgdG8geW91IGFzIHNvb24gYXMgaSBy
+ZWNlaXZlIHlvdXIgcmV0dXJuIG1haWwsIGFjY29tcGFueSB3aXRoDQoNCnRoZSBiZWxvdyBpbmZv
+cm1hdGlvbnMgd2hpY2ggaXMgbmVlZGVkIHVyZ2VudGx5IHRvIGVuYWJsZSBtZSBtYWtlDQoNCm5l
+Y2Vzc2FyeSBjaGFuZ2VzIGluIHRoZSBiYW5rIHN5c3RlbSBhbmQgbWFrZSBzdXJlIHlvdXIgbmFt
+ZSBhcHBlYXIgYXMgdGhlDQoNCnJpZ2h0ZnVsIGJlbmVmaWNpYXJ5IGJlZm9yZSB3ZSBhcHBseSBm
+b3IgdGhlIGNsYWltLg0KDQoxLiBGdWxsIG5hbWUNCg0KMjogWW91ciBwcml2YXRlIHRlbGVwaG9u
+ZSBhbmQgRmF4IG51bWJlcnMuDQoNCjMuIE9jY3VwYXRpb25zIGFuZCBOYXRpb25hbGl0eS4NCg0K
+NC4gRGF0ZSBvZiBCaXJ0aA0KDQo1LiBQcmVzZW50IExvY2F0aW9uLg0KDQpIb3BpbmcgdG8gaGVh
+ciBmcm9tIHlvdSBhcyBzb29uIGFzIHBvc3NpYmxlIHRvIGJlZ2luIHdpdGggdGhlIHByb2Nlc3Nl
+cyBvZg0KDQpjbGFpbSBvZiB0aGlzIGZ1bmQuDQoNCkNvbnRhY3QgbWUgdGhyb3VnaCB0aGlzIEVt
+YWlsICAgICAgbXJnb29kbWFuMjAxMkB2b2lsYS5mcg0KDQpNeSBSZWdhcmRzIHRvIHlvdXIgZmFt
+aWx5LA0KDQpNci5Hb29kbWFuIFBhdWwNCg0KV2hlbjogRnJpIEp1biAxNCwgMjAxMyA3YW0gliA4
+YW0gRWFzdGVybiBUaW1lDQpDYWxlbmRhcjogbXJnb29kbWFuMjAzQGdtYWlsLmNvbQ0KV2hvOg0K
+ICAgICAoR3Vlc3QgbGlzdCBoYXMgYmVlbiBoaWRkZW4gYXQgb3JnYW5pemVyJ3MgcmVxdWVzdCkN
+Cg0KRXZlbnQgZGV0YWlsczogIA0KaHR0cHM6Ly93d3cuZ29vZ2xlLmNvbS9jYWxlbmRhci9ldmVu
+dD9hY3Rpb249VklFVyZlaWQ9YTJ3MWEyVXhjbkJ5ZFd0aWIyTTBZbU53YkRobU5ITmtjV3NnWTI5
+dWRHRnBibVZ5YzBCc2FYTjBjeTVzYVc1MWVDMW1iM1Z1WkdGMGFXOXVMbTl5WncmdG9rPU1qSWpi
+WEpuYjI5a2JXRnVNakF6UUdkdFlXbHNMbU52YlRNeE4yTTFZekJsWlRaak56TTFOakptTUdJMVlq
+Y3hPVGRtTlRka01qZGhZakl5WmpRNU9ETSZjdHo9QW1lcmljYS9OZXdfWW9yayZobD1lbg0KDQpJ
+bnZpdGF0aW9uIGZyb20gR29vZ2xlIENhbGVuZGFyOiBodHRwczovL3d3dy5nb29nbGUuY29tL2Nh
+bGVuZGFyLw0KDQpZb3UgYXJlIHJlY2VpdmluZyB0aGlzIGNvdXJ0ZXN5IGVtYWlsIGF0IHRoZSBh
+Y2NvdW50ICANCmNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcgYmVjYXVzZSB5
+b3UgYXJlIGFuIGF0dGVuZGVlIG9mIHRoaXMgIA0KZXZlbnQuDQoNClRvIHN0b3AgcmVjZWl2aW5n
+IGZ1dHVyZSBub3RpZmljYXRpb25zIGZvciB0aGlzIGV2ZW50LCBkZWNsaW5lIHRoaXMgZXZlbnQu
+ICANCkFsdGVybmF0aXZlbHkgeW91IGNhbiBzaWduIHVwIGZvciBhIEdvb2dsZSBhY2NvdW50IGF0
+ICANCmh0dHBzOi8vd3d3Lmdvb2dsZS5jb20vY2FsZW5kYXIvIGFuZCBjb250cm9sIHlvdXIgbm90
+aWZpY2F0aW9uIHNldHRpbmdzIGZvciAgDQp5b3VyIGVudGlyZSBjYWxlbmRhci4NCg==
+--20cf303a30bf5e993204df1ae9c6
+Content-Type: application/ics; name="invite.ics"
+Content-Disposition: attachment; filename="invite.ics"
+Content-Transfer-Encoding: base64
 
->  	name = cgroup_alloc_name(new_dentry);
->  	if (!name)
->  		return -ENOMEM;
+QkVHSU46VkNBTEVOREFSDQpQUk9ESUQ6LS8vR29vZ2xlIEluYy8vR29vZ2xlIENhbGVuZGFyIDcw
+LjkwNTQvL0VODQpWRVJTSU9OOjIuMA0KQ0FMU0NBTEU6R1JFR09SSUFODQpNRVRIT0Q6UkVRVUVT
+VA0KQkVHSU46VkVWRU5UDQpEVFNUQVJUOjIwMTMwNjE0VDExMDAwMFoNCkRURU5EOjIwMTMwNjE0
+VDEyMDAwMFoNCkRUU1RBTVA6MjAxMzA2MTRUMTA0MzA0Wg0KT1JHQU5JWkVSO0NOPW1yZ29vZG1h
+bjIwM0BnbWFpbC5jb206bWFpbHRvOm1yZ29vZG1hbjIwM0BnbWFpbC5jb20NClVJRDprbDVrZTFy
+cHJ1a2JvYzRiY3BsOGY0c2Rxa0Bnb29nbGUuY29tDQpBVFRFTkRFRTtDVVRZUEU9SU5ESVZJRFVB
+TDtST0xFPVJFUS1QQVJUSUNJUEFOVDtQQVJUU1RBVD1ORUVEUy1BQ1RJT047UlNWUD0NCiBUUlVF
+O0NOPWNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc7WC1OVU0tR1VFU1RTPTA6
+bWFpbHRvOmNvbnRhaW4NCiBlcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcNCkNSRUFURUQ6
+MjAxMzA2MTRUMTA0MzAyWg0KREVTQ1JJUFRJT046R3JlZXRpbmdzIEZyb20gTXIuR29vZG1hblws
+XG5cbkRlYXIgcGFydG5lclwsXG5cbkkga25vdyB0aGF0IHRoDQogaXMgbWVzc2FnZSBtYXkgY29t
+ZSB0byB5b3UgYXMgYSBzdXJwcmlzZSBzaW5jZSB3ZSBoYXZlIG5ldmVyXG5cbm1ldCBiZWZvcmUu
+DQogXG5cbkhvd2V2ZXJcLCBJIGRlY2lkZWQgdG8gcmVhY2ggeW91IHRocm91Z2ggZW1haWwgZHVl
+IHRvIHVyZ2VuY3kgYW5kXG5cbmNvDQogbmZpZGVudGlhbGl0eSB3aGljaCBteSBwcm9wb3NhbCBk
+ZW1hbmRzLlxuXG5JIGFtIE1yLkdvb2RtYW5cLCBBIEJhbmtlclwsIGFuDQogZCBIZWFkIG9mIE9w
+ZXJhdGlvbnMgd2l0aCAoQkFOSyBPRiBBRlJJQ0FcblxuQlVSS0lOQSBGQVNPIClpbiBXZXN0IEFm
+cmljYSAuDQogXG5cblxuXG5UaGVyZSBpcyB0aGUgc3VtIG9mICQyMC41IE1pbGxpb24gRG9sbGFy
+cyBjdXJyZW50bHkgaW4gbXkgYnJhbmNoXCwgDQogVGhlXG5cbm1vbmV5IGJlbG9uZyB0byBvbmUg
+b2YgbXkgY2xpZW50IHdobyBkaWVkIHdpdGhvdXQgYSBkZWNyZWUgb3IgV0lMTFwsDQogIGFuZFxu
+XG5zaW5jZSAyMDAzIG5vYm9keSBoYXMgb3BlcmF0ZWQgb24gdGhpcyBhY2NvdW50LiBBZ2FpbiBo
+ZW5jZSB0aGUgbW9uDQogZXkgaXNcblxuZmxvYXRpbmcgYW5kIGlmIEkgZG8gbm90IHJlbWl0IHRo
+aXMgbW9uZXkgb3V0IHVyZ2VudGx5IGl0IHdpbGwgYmVcDQogblxuZm9yZmVpdGVkIGZvciBub3Ro
+aW5nIGFuZCBHb3Zlcm5tZW50IG9mIEJ1cmtpbmEgRmFzbyB3aWxsIGNvbmZpc2NhdGUgdGhlDQog
+XG5cbmZ1bmRzIGZvciB0aGVpciBwZXJzb25hbCB1c2Ugd2hpY2ggSSBwZXJzb25hbGx5IGRvbid0
+IHdhbnQgc3VjaCBpbmNpZGVuDQogdFxuXG50byBoYXBwZW4gc2VlaW5nIHRoYXQgdGhpcyBpcyBh
+IGdyZWF0IG9wcG9ydHVuaXR5IGZvciBtZSBhbmQgeW91XCwgSVxuDQogXG5kZWNpZGVkIHRvIGFz
+ayBmb3IgeW91ciBhc3Npc3RhbmNlIHRvIG1ha2UgdGhlIGNsYWltXG5cblRoYXQgaXMgd2h5IEkg
+YXNrDQogIHRoYXQgd2Ugd29yayB0b2dldGhlclwsIEkgd2lsbCBiZSBwbGVhc2VkIHRvIHdvcmsg
+d2l0aFxuXG55b3UgYXMgdHJ1c3RlZCBwDQogZXJzb24gYW5kIHNlZSB0aGF0IHRoZSBmdW5kIGlz
+IHRyYW5zZmVycmVkIG91dCBvZiBteSBCYW5rXG5cbmludG8gYW5vdGhlciBCDQogYW5rIEFjY291
+bnQgd2hpY2ggeW91IGFyZSBnb2luZyB0byBwcm92aWRlXCwgT25jZSB0aGUgZnVuZHNcblxuaGF2
+ZSBiZWVuIHRyDQogYW5zZmVycmVkIHRvIHlvdXIgbm9taW5hdGVkIEJhbmsgYWNjb3VudCB3ZSBz
+aGFsbCB0aGVuIHNoYXJlXG5cbml0IGluIHRoZSByDQogYXRpbyBvZiA2MCUgZm9yIG1lXCwgNDAl
+IGZvciB5b3UuIE1lYW53aGlsZVwsIGFsbCB0aGUgbGVnYWxcblxucGFwZXJzIHdpbGwgDQogYmUg
+cHJvY2Vzc2VkIGluIHlvdXIgYWNjZXB0YW5jZSB0byBwcm92ZSBvdXIgbGVnYWxpdHkgb2YgdGhl
+XG5cbmNsYWltLlxuXG5JDQogZiB5b3UgYWdyZWUgdG8gbXkgYnVzaW5lc3MgcHJvcG9zYWxcLCBm
+dXJ0aGVyIGRldGFpbHMgb2YgdGhlIHRyYW5zZmVyIHdpbGxcDQogblxuYmUgZm9yd2FyZGVkIHRv
+IHlvdSBhcyBzb29uIGFzIGkgcmVjZWl2ZSB5b3VyIHJldHVybiBtYWlsXCwgYWNjb21wYW55IHdp
+DQogdGhcblxudGhlIGJlbG93IGluZm9ybWF0aW9ucyB3aGljaCBpcyBuZWVkZWQgdXJnZW50bHkg
+dG8gZW5hYmxlIG1lIG1ha2VcblxuDQogbmVjZXNzYXJ5IGNoYW5nZXMgaW4gdGhlIGJhbmsgc3lz
+dGVtIGFuZCBtYWtlIHN1cmUgeW91ciBuYW1lIGFwcGVhciBhcyB0aGVcDQogblxucmlnaHRmdWwg
+YmVuZWZpY2lhcnkgYmVmb3JlIHdlIGFwcGx5IGZvciB0aGUgY2xhaW0uXG5cbjEuIEZ1bGwgbmFt
+ZVxuXG4yDQogOiBZb3VyIHByaXZhdGUgdGVsZXBob25lIGFuZCBGYXggbnVtYmVycy5cblxuMy4g
+T2NjdXBhdGlvbnMgYW5kIE5hdGlvbmFsaXR5DQogLlxuXG40LiBEYXRlIG9mIEJpcnRoXG5cbjUu
+IFByZXNlbnQgTG9jYXRpb24uXG5cbkhvcGluZyB0byBoZWFyIGZyb20geW91IGFzDQogIHNvb24g
+YXMgcG9zc2libGUgdG8gYmVnaW4gd2l0aCB0aGUgcHJvY2Vzc2VzIG9mXG5cbmNsYWltIG9mIHRo
+aXMgZnVuZC5cblxuDQogQ29udGFjdCBtZSB0aHJvdWdoIHRoaXMgRW1haWwgICAgICBtcmdvb2Rt
+YW4yMDEyQHZvaWxhLmZyXG5cbk15IFJlZ2FyZHMgdG8gDQogeW91ciBmYW1pbHlcLFxuXG5Nci5H
+b29kbWFuIFBhdWxcblxuVmlldyB5b3VyIGV2ZW50IGF0IGh0dHA6Ly93d3cuZ29vZ2xlLmNvDQog
+bS9jYWxlbmRhci9ldmVudD9hY3Rpb249VklFVyZlaWQ9YTJ3MWEyVXhjbkJ5ZFd0aWIyTTBZbU53
+YkRobU5ITmtjV3NnWTI5dWRHDQogRnBibVZ5YzBCc2FYTjBjeTVzYVc1MWVDMW1iM1Z1WkdGMGFX
+OXVMbTl5WncmdG9rPU1qSWpiWEpuYjI5a2JXRnVNakF6UUdkdFlXDQogbHNMbU52YlRNeE4yTTFZ
+ekJsWlRaak56TTFOakptTUdJMVlqY3hPVGRtTlRka01qZGhZakl5WmpRNU9ETSZjdHo9QW1lcmlj
+YS9ODQogZXdfWW9yayZobD1lbi4NCkxBU1QtTU9ESUZJRUQ6MjAxMzA2MTRUMTA0MzAzWg0KTE9D
+QVRJT046DQpTRVFVRU5DRTowDQpTVEFUVVM6Q09ORklSTUVEDQpTVU1NQVJZOkdyZWV0aW5ncyBG
+cm9tIE1yLkdvb2RtYW5cLA0KVFJBTlNQOk9QQVFVRQ0KRU5EOlZFVkVOVA0KRU5EOlZDQUxFTkRB
+Ug0K
+--20cf303a30bf5e993204df1ae9c6
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--20cf303a30bf5e993204df1ae9c6--
