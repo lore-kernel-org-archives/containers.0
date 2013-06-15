@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Subject: Re: [PATCH 11/11] cgroup: use percpu refcnt for cgroup_subsys_states
-Date: Fri, 14 Jun 2013 22:39:12 -0700
-Message-ID: <20130615053912.GB7017@htj.dyndns.org>
+Date: Fri, 14 Jun 2013 23:31:55 -0700
+Message-ID: <20130615063155.GC7017@htj.dyndns.org>
 References: <1371096298-24402-1-git-send-email-tj@kernel.org>
 	<1371096298-24402-12-git-send-email-tj@kernel.org>
 	<20130614132026.GD10084@dhcp22.suse.cz>
@@ -53,11 +53,53 @@ On Fri, Jun 14, 2013 at 10:35:22PM -0700, Tejun Heo wrote:
 >   128		112610025	2503229487	+2,122.92%
 >   256		 96828114	2069865752	+2,037.67%
 >   512		 95858297	1537726109	+1,504.17%
+> 
+> Ration of all cores / single core.
+> 
+>   copy size	atomic		percpu
+>   0		0.23		7.93
+>   32		0.24		7.92
+>   64		0.25		7.92
+>   128		0.33		7.93
+>   256		0.34		7.94
+>   512		0.51		7.96
 
-A bit of addition, this of course is completely synthetic and
-exaggerates the differences both ways, but it's pretty clear that this
-is gonna be a clear gain in any kind of workload which would generate
-some amount of cross-CPU refcnting, which would be the norm anyway.
+I was testing with CONFIG_PREEMPT, which makes rcu_read_[un]lock()s
+quite a bit more expensive.  The following is the same test results
+with CONFIG_PREEMPT_VOLUNTARY which would the most preemptive server
+distros would get anyway.
+
+One CPU.
+
+  copy size	atomic		percpu		diff in pct
+  0		534583387	1521561724	+184.63%
+  32		399098138	 615962137	+ 54.34%
+  64		388128431	 555599274	+ 43.15%
+  128		341336474	 464502792	+ 36.08%
+  256		280471681	 354186740	+ 26.28%
+  512		203784802	 240067596	+ 17.80%
+
+All eight CPUs.
+
+  copy size	atomic		percpu		diff in pct
+  0		117213982	12488998111	+10,554.87%
+  32		103545751	4940695158	+ 4,671.51%
+  64		 98135094	4456370409	+ 4,441.06%
+  128		117729659	3725434154	+ 3,064.40%
+  256		 95916768	2840992396	+ 2,861.94%
+  512		 95795993	1926044518	+ 1,910.57%
+
+Ration of all cores / single core.
+
+  copy size	atomic		percpu
+  0		0.22		8.21
+  32		0.26		8.02
+  64		0.25		8.02
+  128		0.34		8.02
+  256		0.34		8.02
+  512		0.47		8.02	
+
+So, it's faster even with only one CPU.
 
 Thanks.
 
