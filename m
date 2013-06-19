@@ -1,7 +1,8 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 12/22] Audit: make audit_initialized per user namespace
-Date: Wed, 19 Jun 2013 09:53:44 +0800
-Message-ID: <1371606834-5802-13-git-send-email-gaofeng@cn.fujitsu.com>
+Subject: [PATCH 13/22] Audit: only allow init user namespace to change rate
+	limit
+Date: Wed, 19 Jun 2013 09:53:45 +0800
+Message-ID: <1371606834-5802-14-git-send-email-gaofeng@cn.fujitsu.com>
 References: <1371606834-5802-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,113 +22,28 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lin
 Cc: serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, matthltc-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-audit_initialized is used to identify if the audit
-related resources have been initialized. it should
-be per user namespace too.
+Because We want to avoid the DoS attack caused by other user
+namespace,so don't make audit_rate_limit per user namespace.
+And only init user namespace has rights to change it.
 
 Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- include/linux/user_namespace.h |  1 +
- kernel/audit.c                 | 21 +++++++++++----------
- 2 files changed, 12 insertions(+), 10 deletions(-)
+ kernel/audit.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index a2c0a79..c665569 100644
---- a/include/linux/user_namespace.h
-+++ b/include/linux/user_namespace.h
-@@ -21,6 +21,7 @@ struct uid_gid_map {	/* 64 bytes -- 1 cache line */
- #ifdef CONFIG_AUDIT
- struct audit_ctrl {
- 	struct sock		*sock;
-+	int			initialized;
- 	int			enabled;
- 	int			pid;
- 	int			portid;
 diff --git a/kernel/audit.c b/kernel/audit.c
-index 923fe27..0b9cef2 100644
+index 0b9cef2..306231d 100644
 --- a/kernel/audit.c
 +++ b/kernel/audit.c
-@@ -68,12 +68,12 @@
+@@ -295,6 +295,9 @@ static int audit_do_config_change(char *function_name, int *to_change, int new)
  
- #include "audit.h"
- 
--/* No auditing will take place until audit_initialized == AUDIT_INITIALIZED.
-+/* No auditing will take place until user namespace's
-+ * audit.initialized == AUDIT_INITIALIZED.
-  * (Initialization happens after skb_init is called.) */
- #define AUDIT_DISABLED		-1
- #define AUDIT_UNINITIALIZED	0
- #define AUDIT_INITIALIZED	1
--static int	audit_initialized;
- 
- #define AUDIT_OFF	0
- #define AUDIT_ON	1
-@@ -953,7 +953,7 @@ static int __init audit_init(void)
+ static int audit_set_rate_limit(int limit)
  {
- 	int i;
- 
--	if (audit_initialized == AUDIT_DISABLED)
-+	if (init_user_ns.audit.initialized == AUDIT_DISABLED)
- 		return 0;
- 
- 	printk(KERN_INFO "audit: initializing netlink socket (%s)\n",
-@@ -963,7 +963,6 @@ static int __init audit_init(void)
- 		return -1;
- 
- 	audit_set_user_ns(&init_user_ns);
--	audit_initialized = AUDIT_INITIALIZED;
- 
- 	audit_log(NULL, GFP_KERNEL, AUDIT_KERNEL, "initialized");
- 
-@@ -979,14 +978,14 @@ static int __init audit_enable(char *str)
- {
- 	audit_default = !!simple_strtol(str, NULL, 0);
- 	if (!audit_default)
--		audit_initialized = AUDIT_DISABLED;
-+		init_user_ns.audit.initialized = AUDIT_DISABLED;
- 
- 	printk(KERN_INFO "audit: %s", audit_default ? "enabled" : "disabled");
- 
--	if (audit_initialized == AUDIT_INITIALIZED) {
-+	if (init_user_ns.audit.initialized == AUDIT_INITIALIZED) {
- 		init_user_ns.audit.enabled = audit_default;
- 		init_user_ns.audit.ever_enabled |= !!audit_default;
--	} else if (audit_initialized == AUDIT_UNINITIALIZED) {
-+	} else if (init_user_ns.audit.initialized == AUDIT_UNINITIALIZED) {
- 		printk(" (after initialization)");
- 	} else {
- 		printk(" (until reboot)");
-@@ -1147,7 +1146,7 @@ struct audit_buffer *audit_log_start(struct audit_context *ctx, gfp_t gfp_mask,
- 	unsigned long timeout_start = jiffies;
- 	struct sk_buff_head	*queue = &init_user_ns.audit.queue;
- 
--	if (audit_initialized != AUDIT_INITIALIZED)
-+	if (init_user_ns.audit.initialized != AUDIT_INITIALIZED)
- 		return NULL;
- 
- 	if (unlikely(audit_filter_type(type)))
-@@ -1784,18 +1783,20 @@ EXPORT_SYMBOL(audit_log_secctx);
- 
- void audit_set_user_ns(struct user_namespace *ns)
- {
--	if (audit_initialized == AUDIT_DISABLED)
-+	if (init_user_ns.audit.initialized == AUDIT_DISABLED)
- 		return;
- 
- 	skb_queue_head_init(&ns->audit.queue);
- 	skb_queue_head_init(&ns->audit.hold_queue);
- 	ns->audit.enabled = audit_default;
- 	ns->audit.ever_enabled |= !!audit_default;
++	if (current_user_ns() != &init_user_ns)
++		return -EPERM;
 +
-+	ns->audit.initialized = AUDIT_INITIALIZED;
+ 	return audit_do_config_change("audit_rate_limit", &audit_rate_limit, limit);
  }
  
- void audit_free_user_ns(struct user_namespace *ns)
- {
--	if (audit_initialized == AUDIT_DISABLED)
-+	if (init_user_ns.audit.initialized == AUDIT_DISABLED)
- 		return;
- 
- 	if (ns->audit.sock) {
 -- 
 1.8.1.4
