@@ -1,8 +1,8 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 22/22] Audit: Allow GET, SET,
-	USER MSG operations in uninit user namespace
-Date: Wed, 19 Jun 2013 09:53:54 +0800
-Message-ID: <1371606834-5802-23-git-send-email-gaofeng__3301.91669422693$1371606959$gmane$org@cn.fujitsu.com>
+Subject: [PATCH 19/22] Audit: pass proper user namespace to
+	audit_log_common_recv_msg
+Date: Wed, 19 Jun 2013 09:53:51 +0800
+Message-ID: <1371606834-5802-20-git-send-email-gaofeng__15555.2249205813$1371606960$gmane$org@cn.fujitsu.com>
 References: <1371606834-5802-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,58 +22,101 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lin
 Cc: serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, matthltc-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-After this patch, user can set/get audit informations
-in container, and they can also send user msg to the
-audit subsystem.
+The audit log that generated in user namespace should be
+received by the auditd running in this user namespace.
 
 Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- kernel/audit.c | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+ kernel/audit.c | 26 ++++++++++++++------------
+ 1 file changed, 14 insertions(+), 12 deletions(-)
 
 diff --git a/kernel/audit.c b/kernel/audit.c
-index 0b3fd8b..1b60a5a 100644
+index 5d3764c..2d81aac 100644
 --- a/kernel/audit.c
 +++ b/kernel/audit.c
-@@ -594,11 +594,6 @@ static int audit_netlink_ok(struct sk_buff *skb, u16 msg_type)
- {
- 	int err = 0;
+@@ -624,17 +624,18 @@ static int audit_netlink_ok(struct sk_buff *skb, u16 msg_type)
+ 	return err;
+ }
  
--	/* Only support the initial namespaces for now. */
--	if ((current_user_ns() != &init_user_ns) ||
--	    (task_active_pid_ns(current) != &init_pid_ns))
--		return -EPERM;
--
- 	switch (msg_type) {
- 	case AUDIT_LIST:
- 	case AUDIT_ADD:
-@@ -606,6 +601,7 @@ static int audit_netlink_ok(struct sk_buff *skb, u16 msg_type)
- 		return -EOPNOTSUPP;
- 	case AUDIT_GET:
- 	case AUDIT_SET:
-+		break;
- 	case AUDIT_LIST_RULES:
+-static int audit_log_common_recv_msg(struct audit_buffer **ab, u16 msg_type)
++static int audit_log_common_recv_msg(struct user_namespace *ns,
++				     struct audit_buffer **ab, u16 msg_type)
+ {
+ 	int rc = 0;
+-	uid_t uid = from_kuid(&init_user_ns, current_uid());
++	uid_t uid = from_kuid(ns, current_uid());
+ 
+-	if (!audit_enabled_ns(&init_user_ns)) {
++	if (!audit_enabled_ns(ns)) {
+ 		*ab = NULL;
+ 		return rc;
+ 	}
+ 
+-	*ab = audit_log_start(NULL, GFP_KERNEL, msg_type);
++	*ab = audit_log_start_ns(ns, NULL, GFP_KERNEL, msg_type);
+ 	if (unlikely(!*ab))
+ 		return rc;
+ 	audit_log_format(*ab, "pid=%d uid=%u", task_tgid_vnr(current), uid);
+@@ -737,7 +738,7 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 				if (err)
+ 					break;
+ 			}
+-			audit_log_common_recv_msg(&ab, msg_type);
++			audit_log_common_recv_msg(ns, &ab, msg_type);
+ 			if (msg_type != AUDIT_USER_TTY)
+ 				audit_log_format(ab, " msg='%.1024s'",
+ 						 (char *)data);
+@@ -752,7 +753,7 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 				audit_log_n_untrustedstring(ab, data, size);
+ 			}
+ 			audit_set_pid(ab, NETLINK_CB(skb).portid);
+-			audit_log_end(ab);
++			audit_log_end_ns(ns, ab);
+ 		}
+ 		break;
  	case AUDIT_ADD_RULE:
- 	case AUDIT_DEL_RULE:
-@@ -614,13 +610,17 @@ static int audit_netlink_ok(struct sk_buff *skb, u16 msg_type)
- 	case AUDIT_TTY_SET:
+@@ -760,10 +761,11 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 		if (nlmsg_len(nlh) < sizeof(struct audit_rule_data))
+ 			return -EINVAL;
+ 		if (ns->audit.enabled == AUDIT_LOCKED) {
+-			audit_log_common_recv_msg(&ab, AUDIT_CONFIG_CHANGE);
++			audit_log_common_recv_msg(ns, &ab,
++						  AUDIT_CONFIG_CHANGE);
+ 			audit_log_format(ab, " audit_enabled=%d res=0",
+ 					 ns->audit.enabled);
+-			audit_log_end(ab);
++			audit_log_end_ns(ns, ab);
+ 			return -EPERM;
+ 		}
+ 		/* fallthrough */
+@@ -773,9 +775,9 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 		break;
  	case AUDIT_TRIM:
- 	case AUDIT_MAKE_EQUIV:
--		if (!capable(CAP_AUDIT_CONTROL))
-+		/* These operations only support the initial
-+		 * namespaces for now. */
-+		if ((current_user_ns() != &init_user_ns) ||
-+		    (task_active_pid_ns(current) != &init_pid_ns) ||
-+		    !capable(CAP_AUDIT_CONTROL))
- 			err = -EPERM;
+ 		audit_trim_trees();
+-		audit_log_common_recv_msg(&ab, AUDIT_CONFIG_CHANGE);
++		audit_log_common_recv_msg(ns, &ab, AUDIT_CONFIG_CHANGE);
+ 		audit_log_format(ab, " op=trim res=1");
+-		audit_log_end(ab);
++		audit_log_end_ns(ns, ab);
  		break;
- 	case AUDIT_USER:
- 	case AUDIT_FIRST_USER_MSG ... AUDIT_LAST_USER_MSG:
- 	case AUDIT_FIRST_USER_MSG2 ... AUDIT_LAST_USER_MSG2:
--		if (!capable(CAP_AUDIT_WRITE))
-+		if (!ns_capable(current_user_ns(), CAP_AUDIT_WRITE))
- 			err = -EPERM;
+ 	case AUDIT_MAKE_EQUIV: {
+ 		void *bufp = data;
+@@ -803,14 +805,14 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 		/* OK, here comes... */
+ 		err = audit_tag_tree(old, new);
+ 
+-		audit_log_common_recv_msg(&ab, AUDIT_CONFIG_CHANGE);
++		audit_log_common_recv_msg(ns, &ab, AUDIT_CONFIG_CHANGE);
+ 
+ 		audit_log_format(ab, " op=make_equiv old=");
+ 		audit_log_untrustedstring(ab, old);
+ 		audit_log_format(ab, " new=");
+ 		audit_log_untrustedstring(ab, new);
+ 		audit_log_format(ab, " res=%d", !err);
+-		audit_log_end(ab);
++		audit_log_end_ns(ns, ab);
+ 		kfree(old);
+ 		kfree(new);
  		break;
- 	default:  /* bad msg */
 -- 
 1.8.1.4
