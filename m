@@ -1,7 +1,7 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 09/22] Audit: make audit_nlk_portid per user namesapce
-Date: Wed, 19 Jun 2013 09:53:41 +0800
-Message-ID: <1371606834-5802-10-git-send-email-gaofeng@cn.fujitsu.com>
+Subject: [PATCH 05/22] Audit: implement audit self-defined compare function
+Date: Wed, 19 Jun 2013 09:53:37 +0800
+Message-ID: <1371606834-5802-6-git-send-email-gaofeng@cn.fujitsu.com>
 References: <1371606834-5802-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,63 +21,38 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lin
 Cc: serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, matthltc-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-After this patch, audit_nlk_port is per user namespace.
-Just like prev patch does,use audit_nlk_portid of init
-user namespace in kauditd_send_skb.
+After this patch, audit netlink sockets can
+communicate with each other when they belong
+to the same user namespace.
 
 Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- include/linux/user_namespace.h |  1 +
- kernel/audit.c                 | 11 ++---------
- 2 files changed, 3 insertions(+), 9 deletions(-)
+ kernel/audit.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index ae69f20..60dd6da 100644
---- a/include/linux/user_namespace.h
-+++ b/include/linux/user_namespace.h
-@@ -22,6 +22,7 @@ struct uid_gid_map {	/* 64 bytes -- 1 cache line */
- struct audit_ctrl {
- 	struct sock		*sock;
- 	int			pid;
-+	int			portid;
- 	struct sk_buff_head	queue;
- 	struct sk_buff_head	hold_queue;
- 	struct task_struct	*kauditd_task;
 diff --git a/kernel/audit.c b/kernel/audit.c
-index 7b696cd5..ca61cf0 100644
+index 11b56b7..a411b02 100644
 --- a/kernel/audit.c
 +++ b/kernel/audit.c
-@@ -89,13 +89,6 @@ static int	audit_default;
- /* If auditing cannot proceed, audit_failure selects what happens. */
- static int	audit_failure = AUDIT_FAIL_PRINTK;
+@@ -895,6 +895,11 @@ static void audit_receive(struct sk_buff  *skb)
+ 	mutex_unlock(&audit_cmd_mutex);
+ }
  
--/*
-- * If audit records are to be written to the netlink socket, audit_pid
-- * contains the pid of the auditd process and audit_nlk_portid contains
-- * the portid to use to send netlink messages to that process.
-- */
--static int	audit_nlk_portid;
--
- /* If audit_rate_limit is non-zero, limit the rate of sending audit records
-  * to that number per second.  This prevents DoS attacks, but results in
-  * audit records being dropped. */
-@@ -381,7 +374,7 @@ static void kauditd_send_skb(struct sk_buff *skb)
- 	/* take a reference in case we can't send it and we want to hold it */
- 	skb_get(skb);
- 	err = netlink_unicast(init_user_ns.audit.sock, skb,
--			      audit_nlk_portid, 0);
-+			      init_user_ns.audit.portid, 0);
- 	if (err < 0) {
- 		BUG_ON(err != -ECONNREFUSED); /* Shouldn't happen */
- 		printk(KERN_ERR "audit: *NO* daemon at audit_pid=%d\n",
-@@ -716,7 +709,7 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
- 				audit_log_config_change("audit_pid", new_pid,
- 							ns->audit.pid, 1);
- 			ns->audit.pid = new_pid;
--			audit_nlk_portid = NETLINK_CB(skb).portid;
-+			ns->audit.portid = NETLINK_CB(skb).portid;
- 		}
- 		if (status_get->mask & AUDIT_STATUS_RATE_LIMIT) {
- 			err = audit_set_rate_limit(status_get->rate_limit);
++static bool audit_compare(struct net *net, struct sock *sk)
++{
++	return (sock_net(sk)->user_ns == net->user_ns);
++}
++
+ static int __net_init audit_net_init(struct net *net)
+ {
+ 	struct user_namespace *ns = net->user_ns;
+@@ -907,6 +912,7 @@ static int __net_init audit_net_init(struct net *net)
+ 		 */
+ 		struct netlink_kernel_cfg cfg = {
+ 			.input	= audit_receive,
++			.compare = audit_compare,
+ 		};
+ 
+ 		sk = netlink_kernel_create(net, NETLINK_AUDIT, &cfg);
 -- 
 1.8.1.4
