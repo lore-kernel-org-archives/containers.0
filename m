@@ -1,12 +1,11 @@
-From: "ING Direct Canada - FADEPT"<suzanne.beecher-8FpmcuxTRHE@public.gmane.org>
-Subject: Oranges Alerts: Please review your personalized financial statement -
-	June 2013
-Date: Fri, 21 Jun 2013 12:44:54 GMT
-Message-ID: <31494966609095440@PONDEROSA>
-Reply-To: suzanne.beecher-8FpmcuxTRHE@public.gmane.org
+From: "I.N.G. Direct Canada - Services"<carolyn.elliot-lxua1liRHjW3ikBYyZqyVg@public.gmane.org>
+Subject: Orange Alert: Please review your June 2013 monthly statement
+Date: Fri, 21 Jun 2013 12:46:43 GMT
+Message-ID: <31603984568915238@MWWC-AD>
+Reply-To: carolyn.elliot-lxua1liRHjW3ikBYyZqyVg@public.gmane.org
 Mime-Version: 1.0
 Content-Type: multipart/mixed;
-	boundary="= Multipart Boundary 0621130844"
+	boundary="= Multipart Boundary 0621130846"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -22,17 +21,17 @@ List-Id: containers.vger.kernel.org
 
 This is a multipart MIME message.
 
---= Multipart Boundary 0621130844
+--= Multipart Boundary 0621130846
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: 7bit
 
-'DEAR 'I.N.G. 'DIRECT 'CANADA 'CUSTOMER,
+DEAR ING DIRECT CUSTOMER,
 
 Your most recent monthly statement is ready  and is available for download (see attachement). The statement includes all ING Direct transactions and your starting and ending balances.
 
 We email you to let you know your account statement is ready. You can view or print a copy of your statement from the same page. kindly download the attached file to view your most recent statement.
 
-I.N.G. Direct Canada
+ING Direct Online Services
 Customer Relations Services
 
 
@@ -42,11 +41,11 @@ As this e-mail is an automated message, do not reply to this email.
 --------------------------------------------------
 
 No virus found in this message.
-Checked by AVG - www.avgantivirus.com
+Checked by AVG - www.avg.com
 Version: 2012.0.1901 / Virus Database: 2108/4641 - Release Date...
 
 
---= Multipart Boundary 0621130844
+--= Multipart Boundary 0621130846
 Content-Disposition: attachment;
 	filename="INGdirect_Statement_June2013.html"
 MIME-Version: 1.0
@@ -131,7 +130,7 @@ Business Banking
 
    DCSIMG
 
-   REFRESH(1560 sec): [44]file://localhost/tmp/tmpfs2RNt.html
+   REFRESH(1560 sec): [44]file://localhost/tmp/tmpLPFA3A.html
 
 References
 
@@ -178,9 +177,9 @@ References
   41. http://www.ingdirect.ca/en/privacy/index.html
   42. http://www.ingdirect.ca/en/legal/index.html
   43. http://www.ingdirect.ca/en/security/index.html
-  44. file://localhost/tmp/tmpfs2RNt.html
+  44. file://localhost/tmp/tmpLPFA3A.html
 
---= Multipart Boundary 0621130844
+--= Multipart Boundary 0621130846
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -190,4 +189,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---= Multipart Boundary 0621130844--
+--= Multipart Boundary 0621130846--
