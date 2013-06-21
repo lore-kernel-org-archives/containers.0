@@ -1,15 +1,16 @@
 From: Tejun Heo <theo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH cgroup/for-3.11 2/3] cgroup: fix RCU accesses around
-	task->cgroups
-Date: Fri, 21 Jun 2013 15:52:04 -0700
-Message-ID: <20130621225204.GD3949@htj.dyndns.org>
+Subject: [PATCH cgroup/for-3.11 3/3] cgroup: always use RCU accessors for
+	protected accesses
+Date: Fri, 21 Jun 2013 15:52:33 -0700
+Message-ID: <20130621225233.GE3949__44500.0344458551$1371855169$gmane$org@htj.dyndns.org>
 References: <20130621225116.GC3949@htj.dyndns.org>
+	<20130621225204.GD3949@htj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20130621225116.GC3949-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
+In-Reply-To: <20130621225204.GD3949-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,113 +24,103 @@ To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-There are several places in kernel/cgroup.c where task->cgroups is
-accessed and modified without going through proper RCU accessors.
-None is broken as they're all lock protected accesses; however, this
-still triggers sparse RCU address space warnings.
+kernel/cgroup.c still has places where a RCU pointer is set and
+accessed directly without going through RCU_INIT_POINTER() or
+rcu_dereference_protected().  They're all properly protected accesses
+so nothing is broken but it leads to spurious sparse RCU address space
+warnings.
 
-* Consistently use task_css_set() for task->cgroups dereferencing.
+Substitute direct accesses with RCU_INIT_POINTER() and
+rcu_dereference_protected().  Note that %true is specified as the
+extra condition for all derference updates.  This isn't ideal as all
+it does is suppressing warning without actually policing
+synchronization rules; however, most are scheduled to be removed
+pretty soon along with css_id itself, so no reason to be more
+elaborate.
 
-* Use RCU_INIT_POINTER() to clear task->cgroups to &init_css_set on
-  exit.
-
-* Remove unnecessary rcu_dereference_raw() from cset->subsys[]
-  dereference in cgroup_exit().
+Combined with the previous changes, this removes all RCU related
+sparse warnings from cgroup.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Reported-by: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
 ---
- kernel/cgroup.c |   24 +++++++++++++-----------
- 1 file changed, 13 insertions(+), 11 deletions(-)
+ kernel/cgroup.c |   21 ++++++++++++---------
+ 1 file changed, 12 insertions(+), 9 deletions(-)
 
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -704,7 +704,7 @@ static struct cgroup *task_cgroup_from_r
- 	 * task can't change groups, so the only thing that can happen
- 	 * is that it exits and its css is set back to init_css_set.
- 	 */
--	cset = task->cgroups;
-+	cset = task_css_set(task);
- 	if (cset == &init_css_set) {
- 		res = &root->top_cgroup;
- 	} else {
-@@ -1948,7 +1948,7 @@ static void cgroup_task_migrate(struct c
- 	 * css_set to init_css_set and dropping the old one.
- 	 */
- 	WARN_ON_ONCE(tsk->flags & PF_EXITING);
--	old_cset = tsk->cgroups;
-+	old_cset = task_css_set(tsk);
- 
- 	task_lock(tsk);
- 	rcu_assign_pointer(tsk->cgroups, new_cset);
-@@ -2071,8 +2071,11 @@ static int cgroup_attach_task(struct cgr
- 	 * we use find_css_set, which allocates a new one if necessary.
- 	 */
- 	for (i = 0; i < group_size; i++) {
-+		struct css_set *old_cset;
-+
- 		tc = flex_array_get(group, i);
--		tc->cg = find_css_set(tc->task->cgroups, cgrp);
-+		old_cset = task_css_set(tc->task);
-+		tc->cg = find_css_set(old_cset, cgrp);
- 		if (!tc->cg) {
- 			retval = -ENOMEM;
- 			goto out_put_css_set_refs;
-@@ -2989,7 +2992,7 @@ static void cgroup_enable_task_cg_lists(
- 		 * entry won't be deleted though the process has exited.
- 		 */
- 		if (!(p->flags & PF_EXITING) && list_empty(&p->cg_list))
--			list_add(&p->cg_list, &p->cgroups->tasks);
-+			list_add(&p->cg_list, &task_css_set(p)->tasks);
- 		task_unlock(p);
- 	} while_each_thread(g, p);
- 	read_unlock(&tasklist_lock);
-@@ -5046,8 +5049,8 @@ static const struct file_operations proc
- void cgroup_fork(struct task_struct *child)
- {
- 	task_lock(current);
-+	get_css_set(task_css_set(current));
- 	child->cgroups = current->cgroups;
--	get_css_set(child->cgroups);
- 	task_unlock(current);
- 	INIT_LIST_HEAD(&child->cg_list);
+@@ -1416,7 +1416,7 @@ static void init_cgroup_root(struct cgro
+ 	INIT_LIST_HEAD(&root->root_list);
+ 	root->number_of_cgroups = 1;
+ 	cgrp->root = root;
+-	cgrp->name = &root_cgroup_name;
++	RCU_INIT_POINTER(cgrp->name, &root_cgroup_name);
+ 	init_cgroup_housekeeping(cgrp);
  }
-@@ -5081,7 +5084,7 @@ void cgroup_post_fork(struct task_struct
- 		write_lock(&css_set_lock);
- 		task_lock(child);
- 		if (list_empty(&child->cg_list))
--			list_add(&child->cg_list, &child->cgroups->tasks);
-+			list_add(&child->cg_list, &task_css_set(child)->tasks);
- 		task_unlock(child);
- 		write_unlock(&css_set_lock);
+ 
+@@ -2535,7 +2535,7 @@ static int cgroup_rename(struct inode *o
+ 		return ret;
  	}
-@@ -5163,8 +5166,8 @@ void cgroup_exit(struct task_struct *tsk
  
- 	/* Reassign the task to the init_css_set. */
- 	task_lock(tsk);
--	cset = tsk->cgroups;
--	tsk->cgroups = &init_css_set;
-+	cset = task_css_set(tsk);
-+	RCU_INIT_POINTER(tsk->cgroups, &init_css_set);
+-	old_name = cgrp->name;
++	old_name = rcu_dereference_protected(cgrp->name, true);
+ 	rcu_assign_pointer(cgrp->name, name);
  
- 	if (run_callbacks && need_forkexit_callback) {
+ 	kfree_rcu(old_name, rcu_head);
+@@ -4154,13 +4154,15 @@ static int cgroup_populate_dir(struct cg
+ 	/* This cgroup is ready now */
+ 	for_each_subsys(cgrp->root, ss) {
+ 		struct cgroup_subsys_state *css = cgrp->subsys[ss->subsys_id];
++		struct css_id *id = rcu_dereference_protected(css->id, true);
++
  		/*
-@@ -5175,8 +5178,7 @@ void cgroup_exit(struct task_struct *tsk
- 			struct cgroup_subsys *ss = subsys[i];
+ 		 * Update id->css pointer and make this css visible from
+ 		 * CSS ID functions. This pointer will be dereferened
+ 		 * from RCU-read-side without locks.
+ 		 */
+-		if (css->id)
+-			rcu_assign_pointer(css->id->css, css);
++		if (id)
++			rcu_assign_pointer(id->css, css);
+ 	}
  
- 			if (ss->exit) {
--				struct cgroup *old_cgrp =
--					rcu_dereference_raw(cset->subsys[i])->cgroup;
-+				struct cgroup *old_cgrp = cset->subsys[i]->cgroup;
- 				struct cgroup *cgrp = task_cgroup(tsk, i);
- 				ss->exit(cgrp, old_cgrp, tsk);
- 			}
-@@ -5546,7 +5548,7 @@ static u64 current_css_set_refcount_read
- 	u64 count;
+ 	return 0;
+@@ -4837,7 +4839,7 @@ int __init cgroup_init_early(void)
+ 	css_set_count = 1;
+ 	init_cgroup_root(&rootnode);
+ 	root_count = 1;
+-	init_task.cgroups = &init_css_set;
++	RCU_INIT_POINTER(init_task.cgroups, &init_css_set);
  
- 	rcu_read_lock();
--	count = atomic_read(&current->cgroups->refcount);
-+	count = atomic_read(&task_css_set(current)->refcount);
- 	rcu_read_unlock();
- 	return count;
+ 	init_cgrp_cset_link.cset = &init_css_set;
+ 	init_cgrp_cset_link.cgrp = dummytop;
+@@ -5371,7 +5373,8 @@ bool css_is_ancestor(struct cgroup_subsy
+ 
+ void free_css_id(struct cgroup_subsys *ss, struct cgroup_subsys_state *css)
+ {
+-	struct css_id *id = css->id;
++	struct css_id *id = rcu_dereference_protected(css->id, true);
++
+ 	/* When this is called before css_id initialization, id can be NULL */
+ 	if (!id)
+ 		return;
+@@ -5437,8 +5440,8 @@ static int __init_or_module cgroup_init_
+ 		return PTR_ERR(newid);
+ 
+ 	newid->stack[0] = newid->id;
+-	newid->css = rootcss;
+-	rootcss->id = newid;
++	RCU_INIT_POINTER(newid->css, rootcss);
++	RCU_INIT_POINTER(rootcss->id, newid);
+ 	return 0;
  }
+ 
+@@ -5452,7 +5455,7 @@ static int alloc_css_id(struct cgroup_su
+ 	subsys_id = ss->subsys_id;
+ 	parent_css = parent->subsys[subsys_id];
+ 	child_css = child->subsys[subsys_id];
+-	parent_id = parent_css->id;
++	parent_id = rcu_dereference_protected(parent_css->id, true);
+ 	depth = parent_id->depth + 1;
+ 
+ 	child_id = get_new_cssid(ss, depth);
