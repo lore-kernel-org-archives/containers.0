@@ -1,12 +1,12 @@
-From: "I.N.G. Direct Canada - Services"<carolyn.elliot-lxua1liRHjW3ikBYyZqyVg@public.gmane.org>
-Subject: Orange Alert: Please review your June 2013 monthly statement
-Date: Fri, 21 Jun 2013 12:46:43 GMT
-Message-ID: <31603984568915238@MWWC-AD>
-Reply-To: carolyn.elliot-lxua1liRHjW3ikBYyZqyVg@public.gmane.org
+From: Tejun Heo <theo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH cgroup/for-3.11 1/3] cgroup: fix RCU accesses to task->cgroups
+Date: Fri, 21 Jun 2013 15:51:17 -0700
+Message-ID: <20130621225116.GC3949__18269.9278266684$1371855097$gmane$org@htj.dyndns.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
-	boundary="= Multipart Boundary 0621130846"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,177 +16,112 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a multipart MIME message.
+task->cgroups is a RCU pointer pointing to struct css_set.  A task
+switches to a different css_set on cgroup migration but a css_set
+doesn't change once created and its pointers to cgroup_subsys_states
+aren't RCU protected.
 
---= Multipart Boundary 0621130846
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: 7bit
+task_subsys_state[_check]() is the macro to acquire css given a task
+and subsys_id pair.  It RCU-dereferences task->cgroups->subsys[] not
+task->cgroups, so the RCU pointer task->cgroups ends up being
+dereferenced without read_barrier_depends() after it.  It's broken.
 
-DEAR ING DIRECT CUSTOMER,
+Fix it by introducing task_css_set[_check]() which does
+RCU-dereference on task->cgroups.  task_subsys_state[_check]() is
+reimplemented to directly dereference ->subsys[] of the css_set
+returned from task_css_set[_check]().
 
-Your most recent monthly statement is ready  and is available for download (see attachement). The statement includes all ING Direct transactions and your starting and ending balances.
+This removes some of sparse RCU warnings in cgroup.
 
-We email you to let you know your account statement is ready. You can view or print a copy of your statement from the same page. kindly download the attached file to view your most recent statement.
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Reported-by: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+---
+Hello,
 
-ING Direct Online Services
-Customer Relations Services
+Three RCU fixe patches.  The first one fixes an actual bug.  The other
+two add missing annoations so that sparse doesn't generate spurious
+RCU address space warnings.
 
+Thanks!
 
-As this e-mail is an automated message, do not reply to this email.
+ include/linux/cgroup.h |   58 ++++++++++++++++++++++++++++++++++++++++---------
+ 1 file changed, 48 insertions(+), 10 deletions(-)
 
-
---------------------------------------------------
-
-No virus found in this message.
-Checked by AVG - www.avg.com
-Version: 2012.0.1901 / Virus Database: 2108/4641 - Release Date...
-
-
---= Multipart Boundary 0621130846
-Content-Disposition: attachment;
-	filename="INGdirect_Statement_June2013.html"
-MIME-Version: 1.0
-Content-Type: text/plain; name="INGdirect_Statement_June2013.html"
-
-   24/7 Customer Service - 1-800-464-3473
-   [1]We're Here for You
-   [2]ING DIRECT - save your money
-     * [3]ABM Locator
-     * [4]Rates
-     * [5]Tools
-     * [6]FAQ
-     * [7]Contact Us
-     *
-
-       SEARCH: ____________________ Search
-
-     * [8]I'm a Client, let me in!
-     * [9]Savings
-          + [10]Savings Accounts
-          + [11]RSPs
-          + [12]Tax-Free Savings Accounts
-          + [13]GICs
-          + [14]Business Accounts
-     * [15]Chequing
-     * [16]Mutual Funds
-     * [17]Mortgages
-          + [18]What We Offer
-          + [19]How Much Can I Borrow?
-          + [20]Our Rates
-          + [21]Get a Mortgage in 4 Easy Steps
-          + [22]Apply Now!
-     * [23]About Us
-          + [24]Who We Are
-          + [25]How To Bank With Us
-          + [26]ING Direct Cafes
-          + [27]ABM Locator
-          + [28]Direct Talk
-          + [29]In The Community
-          + [30]Careers
-     * [31]Sign me up!
-
-   IFRAME:
-   [32]https://content.ingdirect.ca/en/banner/cifsignon_topmessage.html
-
-Personal Banking
-
-   Client or Card Number
-   ____________________
-   PIN Number
-   ____________________
-   [Use Another Client Number]
-
-   [_] Remember my Client or Card Number on this computer
-   [_] Remove this Client or Card Number from the saved list
-
-   GO
-
-   Name it
-   ____________________
-   Example: "Mom's money" (this is optional)
-
-Business Banking
-
-   [33]Go!
-
-   IFRAME: [34]https://content.ingdirect.ca/en/banner/cifsignon.html
-
-   [35]Trusteer [36]Security Guarantee
-
-   IFRAME:
-   [37]https://content.ingdirect.ca/en/banner/cifsignon_bottommessage.html
-
-     * [38]Careers
-     * [39]Site Map
-     * [40]ING DIRECT Worldwide
-     * [41]Privacy
-     * [42]Legal
-     * [43]Security
-
-   [mapleleaf_footer.gif]
-
-   DCSIMG
-
-   REFRESH(1560 sec): [44]file://localhost/tmp/tmpLPFA3A.html
-
-References
-
-   1. http://www.ingdirect.ca/en/service-promise/?gs=false
-   2. http://www.ingdirect.ca/en
-   3. https://secure.ingdirect.ca/InitialINGDirect.html?locale=en_CA&device=web&command=goToAbmLocator
-   4. http://www.ingdirect.ca/en/accounts-rates/ourrates/index.html
-   5. http://www.ingdirect.ca/en/tools/index.html
-   6. http://www.ingdirect.ca/en/aboutus/faq/index.html
-   7. http://www.ingdirect.ca/en/aboutus/contactus/index.html
-   8. http://www.angeles2.com/InitialINGDirect.html?command=displayLoginRegular&device=web&locale=en_CA
-   9. http://www.ingdirect.ca/en/save-invest/index.html
-  10. http://www.ingdirect.ca/en/save-invest/savingsaccounts/index.html
-  11. http://www.ingdirect.ca/en/save-invest/rsps/index.html
-  12. http://www.ingdirect.ca/en/save-invest/taxfreesavingsaccounts/index.html
-  13. http://www.ingdirect.ca/en/save-invest/gics/index.html
-  14. http://www.ingdirect.ca/en/save-invest/businessaccounts/index.html
-  15. http://www.ingdirect.ca/en/chequing/index.html
-  16. http://www.ingdirect.ca/en/mutualfunds/index.html
-  17. http://www.ingdirect.ca/en/mortgages/index.html
-  18. http://www.ingdirect.ca/en/mortgages/whatweoffer/index.html
-  19. javascript:popWin('http://www.ingdirect.ca/en/tools/calcs/Borrowing.html','800','650','scrollbars=no,noresize,top=50,left=50,screenX=50,screenY=50,location=no,toolbar=no,menubar=no')
-  20. http://www.ingdirect.ca/en/mortgages/index.html
-  21. http://www.ingdirect.ca/en/mortgages/getamortgage/index.html
-  22. http://www.angeles2.com/InitialINGDirect.html?command=displayMortgageStart&device=web&locale=en_CA
-  23. http://www.ingdirect.ca/en/aboutus/index.html
-  24. http://www.ingdirect.ca/en/aboutus/whoweare/index.html
-  25. http://www.ingdirect.ca/en/aboutus/bankingwithus/index.html
-  26. http://www.ingdirect.ca/en/aboutus/contactus/cafes/index.html
-  27. https://secure.ingdirect.ca/InitialINGDirect.html?locale=en_CA&device=web&command=goToAbmLocator
-  28. http://www.ingdirect.ca/en/aboutus/directtalk/index.html
-  29. http://www.ingdirect.ca/en/aboutus/inthecommunity/index.html
-  30. http://www.ingdirect.ca/en/aboutus/careers/index.html
-  31. http://www.ingdirect.ca/en/signmeup/index.html
-  32. https://content.ingdirect.ca/en/banner/cifsignon_topmessage.html
-  33. http://www.angeles2.com/secure.ingdirect.ca/indexb.html
-  34. https://content.ingdirect.ca/en/banner/cifsignon.html
-  35. javascript:popWin('http://www.ingdirect.ca/en/security/trusteer/index.html','800','800','scrollbars=yes,resizable=yes,top=50,left=50,screenX=50,screenY=50,location=no,toolbar=no')
-  36. javascript:popWin('http://www.ingdirect.ca/en/security/guarantee/index.html','800','750','scrollbars=no,resizable=yes,top=50,left=50,screenX=50,screenY=50,location=no,toolbar=no')
-  37. https://content.ingdirect.ca/en/banner/cifsignon_bottommessage.html
-  38. http://www.ingdirect.ca/en/aboutus/careers/index.html
-  39. http://www.ingdirect.ca/en/sitemap/index.html
-  40. http://www.ingdirect.ca/en/aboutus/whoweare/worldwide/index.html
-  41. http://www.ingdirect.ca/en/privacy/index.html
-  42. http://www.ingdirect.ca/en/legal/index.html
-  43. http://www.ingdirect.ca/en/security/index.html
-  44. file://localhost/tmp/tmpLPFA3A.html
-
---= Multipart Boundary 0621130846
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---= Multipart Boundary 0621130846--
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -638,22 +638,60 @@ static inline struct cgroup_subsys_state
+ 	return cgrp->subsys[subsys_id];
+ }
+ 
+-/*
+- * function to get the cgroup_subsys_state which allows for extra
+- * rcu_dereference_check() conditions, such as locks used during the
+- * cgroup_subsys::attach() methods.
++/**
++ * task_css_set_check - obtain a task's css_set with extra access conditions
++ * @task: the task to obtain css_set for
++ * @__c: extra condition expression to be passed to rcu_dereference_check()
++ *
++ * A task's css_set is RCU protected, initialized and exited while holding
++ * task_lock(), and can only be modified while holding both cgroup_mutex
++ * and task_lock() while the task is alive.  This macro verifies that the
++ * caller is inside proper critical section and returns @task's css_set.
++ *
++ * The caller can also specify additional allowed conditions via @__c, such
++ * as locks used during the cgroup_subsys::attach() methods.
+  */
+ #ifdef CONFIG_PROVE_RCU
+ extern struct mutex cgroup_mutex;
+-#define task_subsys_state_check(task, subsys_id, __c)			\
+-	rcu_dereference_check((task)->cgroups->subsys[(subsys_id)],	\
+-			      lockdep_is_held(&(task)->alloc_lock) ||	\
+-			      lockdep_is_held(&cgroup_mutex) || (__c))
++#define task_css_set_check(task, __c)					\
++	rcu_dereference_check((task)->cgroups,				\
++		lockdep_is_held(&(task)->alloc_lock) ||			\
++		lockdep_is_held(&cgroup_mutex) || (__c))
+ #else
+-#define task_subsys_state_check(task, subsys_id, __c)			\
+-	rcu_dereference((task)->cgroups->subsys[(subsys_id)])
++#define task_css_set_check(task, __c)					\
++	rcu_dereference_raw((task)->cgroups
+ #endif
+ 
++/**
++ * task_subsys_state_check - obtain css for (task, subsys) w/ extra access conds
++ * @task: the target task
++ * @subsys_id: the target subsystem ID
++ * @__c: extra condition expression to be passed to rcu_dereference_check()
++ *
++ * Return the cgroup_subsys_state for the (@task, @subsys_id) pair.  The
++ * synchronization rules are the same as task_css_set_check().
++ */
++#define task_subsys_state_check(task, subsys_id, __c)			\
++	task_css_set_check((task), (__c))->subsys[(subsys_id)]
++
++/**
++ * task_css_set - obtain a task's css_set
++ * @task: the task to obtain css_set for
++ *
++ * See task_css_set_check().
++ */
++static inline struct css_set *task_css_set(struct task_struct *task)
++{
++	return task_css_set_check(task, false);
++}
++
++/**
++ * task_subsys_state - obtain css for (task, subsys)
++ * @task: the target task
++ * @subsys_id: the target subsystem ID
++ *
++ * See task_subsys_state_check().
++ */
+ static inline struct cgroup_subsys_state *
+ task_subsys_state(struct task_struct *task, int subsys_id)
+ {
