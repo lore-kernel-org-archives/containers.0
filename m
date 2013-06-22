@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 3/6] cgroup: remove cgroup->actual_subsys_mask
-Date: Fri, 21 Jun 2013 18:34:11 -0700
-Message-ID: <1371864854-28364-4-git-send-email-tj__28186.1155097888$1371864894$gmane$org@kernel.org>
+Subject: [PATCH 4/6] cgroup: clean up find_css_set() and friends
+Date: Fri, 21 Jun 2013 18:34:12 -0700
+Message-ID: <1371864854-28364-5-git-send-email-tj__509.189422200684$1371864899$gmane$org@kernel.org>
 References: <1371864854-28364-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,140 +21,106 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-cgroup curiously has two subsystem masks, ->subsys_mask and
-->actual_subsys_mask.  The latter only exists because the new target
-subsys_mask is passed into rebind_subsystems() via @cgrp->subsys_mask.
-rebind_subsystems() needs to know what the current mask is to decide
-how to reach the target mask so ->actual_subsys_mask is used as the
-temp location to remember the current state.
+find_css_set() passes uninitialized on-stack template[] array to
+find_existing_css_set() which sets the entries for all subsystems.
+Passing around an uninitialized array is a bit icky and we want to
+introduce an iterator which only iterates loaded subsystems.  Let's
+initialize it on definition.
 
-Adding a temporary field to a permanent data structure is rather silly
-and can be misleading.  Update rebind_subsystems() to take @added_mask
-and @removed_mask instead and remove @cgrp->actual_subsys_mask.
+While at it, also make the following cosmetic cleanups.
 
-This patch shouldn't introduce any behavior changes.
+* Convert to proper /** comments.
+
+* Reorder variable declarations.
+
+* Replace comment on synchronization with lockdep_assert_held().
+
+This patch doesn't make any functional differences.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- include/linux/cgroup.h |  3 ---
- kernel/cgroup.c        | 22 ++++++++++++----------
- 2 files changed, 12 insertions(+), 13 deletions(-)
+ kernel/cgroup.c | 38 +++++++++++++++++---------------------
+ 1 file changed, 17 insertions(+), 21 deletions(-)
 
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 46a59d0..7d8c4ec 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -295,9 +295,6 @@ struct cgroupfs_root {
- 	/* Unique id for this hierarchy. */
- 	int hierarchy_id;
- 
--	/* The bitmask of subsystems currently attached to this hierarchy */
--	unsigned long actual_subsys_mask;
--
- 	/* A list running through the attached subsystems */
- 	struct list_head subsys_list;
- 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index dbb4418..c3222a7 100644
+index c3222a7..5f85f3a 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -986,17 +986,14 @@ static void cgroup_d_remove_dir(struct dentry *dentry)
-  * returns an error, no reference counts are touched.
-  */
- static int rebind_subsystems(struct cgroupfs_root *root,
--			      unsigned long final_subsys_mask)
-+			     unsigned long added_mask, unsigned removed_mask)
- {
--	unsigned long added_mask, removed_mask;
- 	struct cgroup *cgrp = &root->top_cgroup;
- 	int i;
- 
- 	BUG_ON(!mutex_is_locked(&cgroup_mutex));
- 	BUG_ON(!mutex_is_locked(&cgroup_root_mutex));
- 
--	removed_mask = root->actual_subsys_mask & ~final_subsys_mask;
--	added_mask = final_subsys_mask & ~root->actual_subsys_mask;
- 	/* Check that any added subsystems are currently free */
- 	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
- 		unsigned long bit = 1UL << i;
-@@ -1032,27 +1029,33 @@ static int rebind_subsystems(struct cgroupfs_root *root,
- 			BUG_ON(cgrp->subsys[i]);
- 			BUG_ON(!cgroup_dummy_top->subsys[i]);
- 			BUG_ON(cgroup_dummy_top->subsys[i]->cgroup != cgroup_dummy_top);
-+
- 			cgrp->subsys[i] = cgroup_dummy_top->subsys[i];
- 			cgrp->subsys[i]->cgroup = cgrp;
- 			list_move(&ss->sibling, &root->subsys_list);
- 			ss->root = root;
- 			if (ss->bind)
- 				ss->bind(cgrp);
-+
- 			/* refcount was already taken, and we're keeping it */
-+			root->subsys_mask |= bit;
- 		} else if (bit & removed_mask) {
- 			/* We're removing this subsystem */
- 			BUG_ON(ss == NULL);
- 			BUG_ON(cgrp->subsys[i] != cgroup_dummy_top->subsys[i]);
- 			BUG_ON(cgrp->subsys[i]->cgroup != cgrp);
-+
- 			if (ss->bind)
- 				ss->bind(cgroup_dummy_top);
- 			cgroup_dummy_top->subsys[i]->cgroup = cgroup_dummy_top;
- 			cgrp->subsys[i] = NULL;
- 			cgroup_subsys[i]->root = &cgroup_dummy_root;
- 			list_move(&ss->sibling, &cgroup_dummy_root.subsys_list);
-+
- 			/* subsystem is now free - drop reference on module */
- 			module_put(ss->module);
--		} else if (bit & final_subsys_mask) {
-+			root->subsys_mask &= ~bit;
-+		} else if (bit & root->subsys_mask) {
- 			/* Subsystem state should already exist */
- 			BUG_ON(ss == NULL);
- 			BUG_ON(!cgrp->subsys[i]);
-@@ -1069,7 +1072,6 @@ static int rebind_subsystems(struct cgroupfs_root *root,
- 			BUG_ON(cgrp->subsys[i]);
- 		}
- 	}
--	root->subsys_mask = root->actual_subsys_mask = final_subsys_mask;
- 
- 	return 0;
+@@ -434,7 +434,7 @@ static inline void put_css_set_taskexit(struct css_set *cset)
+ 	__put_css_set(cset, 1);
  }
-@@ -1343,7 +1345,7 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
- 	if (ret)
- 		goto out_unlock;
  
--	if (opts.subsys_mask != root->actual_subsys_mask || opts.release_agent)
-+	if (opts.subsys_mask != root->subsys_mask || opts.release_agent)
- 		pr_warning("cgroup: option changes via remount are deprecated (pid=%d comm=%s)\n",
- 			   task_tgid_nr(current), current->comm);
+-/*
++/**
+  * compare_css_sets - helper function for find_existing_css_set().
+  * @cset: candidate css_set being tested
+  * @old_cset: existing css_set for a task
+@@ -506,27 +506,20 @@ static bool compare_css_sets(struct css_set *cset,
+ 	return true;
+ }
  
-@@ -1365,7 +1367,7 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
- 	 */
- 	cgroup_clear_directory(cgrp->dentry, false, removed_mask);
+-/*
+- * find_existing_css_set() is a helper for
+- * find_css_set(), and checks to see whether an existing
+- * css_set is suitable.
+- *
+- * oldcg: the cgroup group that we're using before the cgroup
+- * transition
+- *
+- * cgrp: the cgroup that we're moving into
+- *
+- * template: location in which to build the desired set of subsystem
+- * state objects for the new cgroup group
++/**
++ * find_existing_css_set - init css array and find the matching css_set
++ * @old_cset: the css_set that we're using before the cgroup transition
++ * @cgrp: the cgroup that we're moving into
++ * @template: out param for the new set of csses, should be clear on entry
+  */
+ static struct css_set *find_existing_css_set(struct css_set *old_cset,
+ 					struct cgroup *cgrp,
+ 					struct cgroup_subsys_state *template[])
+ {
+-	int i;
+ 	struct cgroupfs_root *root = cgrp->root;
+ 	struct css_set *cset;
+ 	unsigned long key;
++	int i;
  
--	ret = rebind_subsystems(root, opts.subsys_mask);
-+	ret = rebind_subsystems(root, added_mask, removed_mask);
- 	if (ret) {
- 		/* rebind_subsystems failed, re-populate the removed files */
- 		cgroup_populate_dir(cgrp, false, removed_mask);
-@@ -1634,7 +1636,7 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
- 		if (ret)
- 			goto unlock_drop;
+ 	/*
+ 	 * Build the set of subsystem state objects that we want to see in the
+@@ -618,22 +611,25 @@ static void link_css_set(struct list_head *tmp_links, struct css_set *cset,
+ 	list_add_tail(&link->cgrp_link, &cset->cgrp_links);
+ }
  
--		ret = rebind_subsystems(root, root->subsys_mask);
-+		ret = rebind_subsystems(root, root->subsys_mask, 0);
- 		if (ret == -EBUSY) {
- 			free_cgrp_cset_links(&tmp_links);
- 			goto unlock_drop;
-@@ -1727,7 +1729,7 @@ static void cgroup_kill_sb(struct super_block *sb) {
- 	mutex_lock(&cgroup_root_mutex);
+-/*
+- * find_css_set() takes an existing cgroup group and a
+- * cgroup object, and returns a css_set object that's
+- * equivalent to the old group, but with the given cgroup
+- * substituted into the appropriate hierarchy. Must be called with
+- * cgroup_mutex held
++/**
++ * find_css_set - return a new css_set with one cgroup updated
++ * @old_cset: the baseline css_set
++ * @cgrp: the cgroup to be updated
++ *
++ * Return a new css_set that's equivalent to @old_cset, but with @cgrp
++ * substituted into the appropriate hierarchy.
+  */
+ static struct css_set *find_css_set(struct css_set *old_cset,
+ 				    struct cgroup *cgrp)
+ {
++	struct cgroup_subsys_state *template[CGROUP_SUBSYS_COUNT] = { };
+ 	struct css_set *cset;
+-	struct cgroup_subsys_state *template[CGROUP_SUBSYS_COUNT];
+ 	struct list_head tmp_links;
+ 	struct cgrp_cset_link *link;
+ 	unsigned long key;
  
- 	/* Rebind all subsystems back to the default hierarchy */
--	ret = rebind_subsystems(root, 0);
-+	ret = rebind_subsystems(root, 0, root->subsys_mask);
- 	/* Shouldn't be able to fail ... */
- 	BUG_ON(ret);
- 
++	lockdep_assert_held(&cgroup_mutex);
++
+ 	/* First see if we already have a cgroup group that matches
+ 	 * the desired set */
+ 	read_lock(&css_set_lock);
 -- 
 1.8.2.1
