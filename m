@@ -1,11 +1,13 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCHSET cgroup/for-3.11] cgroup: miscellaneous cleanups
-Date: Fri, 21 Jun 2013 18:34:08 -0700
-Message-ID: <1371864854-28364-1-git-send-email-tj__15827.2497276359$1371864878$gmane$org@kernel.org>
+Subject: [PATCH 1/6] cgroup: convert CFTYPE_* flags to enums
+Date: Fri, 21 Jun 2013 18:34:09 -0700
+Message-ID: <1371864854-28364-2-git-send-email-tj__36223.5378161587$1371864879$gmane$org@kernel.org>
+References: <1371864854-28364-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1371864854-28364-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,38 +18,34 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello,
+Purely cosmetic.
 
-These are misc clean up patches mostly focused on subsys handling that
-I ended up with while working on unified hierarchy support.  Nothing
-too interesting.  Just cleanups.
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+---
+ include/linux/cgroup.h | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
 
- 0001-cgroup-convert-CFTYPE_-flags-to-enums.patch
- 0002-cgroup-prefix-global-variables-with-cgroup_.patch
- 0003-cgroup-remove-cgroup-actual_subsys_mask.patch
- 0004-cgroup-clean-up-find_css_set-and-friends.patch
- 0005-cgroup-s-for_each_subsys-for_each_root_subsys.patch
- 0006-cgroup-implement-for_each_-builtin_-subsys.patch
-
-These patches are on top of
-
-  for-3.11 03c78cbebb ("cgroup: rename cont to cgrp")
-+ [1] RCU access fix patches
-
-and available in the following git branch.
-
- git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-cgroup-misc-cleanups
-
-Thanks.
-
- include/linux/cgroup.h |   11 -
- kernel/cgroup.c        |  379 +++++++++++++++++++++++--------------------------
- 2 files changed, 188 insertions(+), 202 deletions(-)
-
---
-tejun
-
-[1] http://thread.gmane.org/gmane.linux.kernel.cgroups/8130
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 04225939..46a59d0 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -385,9 +385,11 @@ struct cgroup_map_cb {
+  */
+ 
+ /* cftype->flags */
+-#define CFTYPE_ONLY_ON_ROOT	(1U << 0)	/* only create on root cg */
+-#define CFTYPE_NOT_ON_ROOT	(1U << 1)	/* don't create on root cg */
+-#define CFTYPE_INSANE		(1U << 2)	/* don't create if sane_behavior */
++enum {
++	CFTYPE_ONLY_ON_ROOT	= (1 << 0),	/* only create on root cg */
++	CFTYPE_NOT_ON_ROOT	= (1 << 1),	/* don't create on root cg */
++	CFTYPE_INSANE		= (1 << 2),	/* don't create if sane_behavior */
++};
+ 
+ #define MAX_CFTYPE_NAME		64
+ 
+-- 
+1.8.2.1
