@@ -1,15 +1,14 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH v2 3/6] cgroup: remove cgroup->actual_subsys_mask
-Date: Mon, 24 Jun 2013 15:30:26 -0700
-Message-ID: <20130624223026.GK1918__11189.044689718$1372113046$gmane$org@mtj.dyndns.org>
+Subject: Re: [PATCHSET cgroup/for-3.11] cgroup: miscellaneous cleanups
+Date: Mon, 24 Jun 2013 15:32:01 -0700
+Message-ID: <20130624223201.GL1918__22277.0096887418$1372113137$gmane$org@mtj.dyndns.org>
 References: <1371864854-28364-1-git-send-email-tj@kernel.org>
-	<1371864854-28364-4-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1371864854-28364-4-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1371864854-28364-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,157 +22,25 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From a8a648c4acee2095262f7fa65b0d8a68a03c32e4 Mon Sep 17 00:00:00 2001
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Date: Mon, 24 Jun 2013 15:21:47 -0700
+On Fri, Jun 21, 2013 at 06:34:08PM -0700, Tejun Heo wrote:
+> Hello,
+> 
+> These are misc clean up patches mostly focused on subsys handling that
+> I ended up with while working on unified hierarchy support.  Nothing
+> too interesting.  Just cleanups.
+> 
+>  0001-cgroup-convert-CFTYPE_-flags-to-enums.patch
+>  0002-cgroup-prefix-global-variables-with-cgroup_.patch
+>  0003-cgroup-remove-cgroup-actual_subsys_mask.patch
+>  0004-cgroup-clean-up-find_css_set-and-friends.patch
+>  0005-cgroup-s-for_each_subsys-for_each_root_subsys.patch
+>  0006-cgroup-implement-for_each_-builtin_-subsys.patch
 
-cgroup curiously has two subsystem masks, ->subsys_mask and
-->actual_subsys_mask.  The latter only exists because the new target
-subsys_mask is passed into rebind_subsystems() via @root>subsys_mask.
-rebind_subsystems() needs to know what the current mask is to decide
-how to reach the target mask so ->actual_subsys_mask is used as the
-temp location to remember the current state.
+Applied 0001-0005.  The patches are re-sequenced so that they can be
+applied before the RCU fixes.  Nothing noteworthy, just a couple
+trivial context conflicts.  Will soon post updated version of 0006.
 
-Adding a temporary field to a permanent data structure is rather silly
-and can be misleading.  Update rebind_subsystems() to take @added_mask
-and @removed_mask instead and remove @root->actual_subsys_mask.
+Thanks.
 
-This patch shouldn't introduce any behavior changes.
-
-v2: Comment and description updated as suggested by Li.
-
-Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
----
- include/linux/cgroup.h |  8 +-------
- kernel/cgroup.c        | 22 ++++++++++++----------
- 2 files changed, 13 insertions(+), 17 deletions(-)
-
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index ab27001..4c1eceb 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -286,18 +286,12 @@ enum {
- struct cgroupfs_root {
- 	struct super_block *sb;
- 
--	/*
--	 * The bitmask of subsystems intended to be attached to this
--	 * hierarchy
--	 */
-+	/* The bitmask of subsystems attached to this hierarchy */
- 	unsigned long subsys_mask;
- 
- 	/* Unique id for this hierarchy. */
- 	int hierarchy_id;
- 
--	/* The bitmask of subsystems currently attached to this hierarchy */
--	unsigned long actual_subsys_mask;
--
- 	/* A list running through the attached subsystems */
- 	struct list_head subsys_list;
- 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 8f296b8..67fc953 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -986,17 +986,14 @@ static void cgroup_d_remove_dir(struct dentry *dentry)
-  * returns an error, no reference counts are touched.
-  */
- static int rebind_subsystems(struct cgroupfs_root *root,
--			      unsigned long final_subsys_mask)
-+			     unsigned long added_mask, unsigned removed_mask)
- {
--	unsigned long added_mask, removed_mask;
- 	struct cgroup *cgrp = &root->top_cgroup;
- 	int i;
- 
- 	BUG_ON(!mutex_is_locked(&cgroup_mutex));
- 	BUG_ON(!mutex_is_locked(&cgroup_root_mutex));
- 
--	removed_mask = root->actual_subsys_mask & ~final_subsys_mask;
--	added_mask = final_subsys_mask & ~root->actual_subsys_mask;
- 	/* Check that any added subsystems are currently free */
- 	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
- 		unsigned long bit = 1UL << i;
-@@ -1032,27 +1029,33 @@ static int rebind_subsystems(struct cgroupfs_root *root,
- 			BUG_ON(cgrp->subsys[i]);
- 			BUG_ON(!cgroup_dummy_top->subsys[i]);
- 			BUG_ON(cgroup_dummy_top->subsys[i]->cgroup != cgroup_dummy_top);
-+
- 			cgrp->subsys[i] = cgroup_dummy_top->subsys[i];
- 			cgrp->subsys[i]->cgroup = cgrp;
- 			list_move(&ss->sibling, &root->subsys_list);
- 			ss->root = root;
- 			if (ss->bind)
- 				ss->bind(cgrp);
-+
- 			/* refcount was already taken, and we're keeping it */
-+			root->subsys_mask |= bit;
- 		} else if (bit & removed_mask) {
- 			/* We're removing this subsystem */
- 			BUG_ON(ss == NULL);
- 			BUG_ON(cgrp->subsys[i] != cgroup_dummy_top->subsys[i]);
- 			BUG_ON(cgrp->subsys[i]->cgroup != cgrp);
-+
- 			if (ss->bind)
- 				ss->bind(cgroup_dummy_top);
- 			cgroup_dummy_top->subsys[i]->cgroup = cgroup_dummy_top;
- 			cgrp->subsys[i] = NULL;
- 			cgroup_subsys[i]->root = &cgroup_dummy_root;
- 			list_move(&ss->sibling, &cgroup_dummy_root.subsys_list);
-+
- 			/* subsystem is now free - drop reference on module */
- 			module_put(ss->module);
--		} else if (bit & final_subsys_mask) {
-+			root->subsys_mask &= ~bit;
-+		} else if (bit & root->subsys_mask) {
- 			/* Subsystem state should already exist */
- 			BUG_ON(ss == NULL);
- 			BUG_ON(!cgrp->subsys[i]);
-@@ -1069,7 +1072,6 @@ static int rebind_subsystems(struct cgroupfs_root *root,
- 			BUG_ON(cgrp->subsys[i]);
- 		}
- 	}
--	root->subsys_mask = root->actual_subsys_mask = final_subsys_mask;
- 
- 	return 0;
- }
-@@ -1343,7 +1345,7 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
- 	if (ret)
- 		goto out_unlock;
- 
--	if (opts.subsys_mask != root->actual_subsys_mask || opts.release_agent)
-+	if (opts.subsys_mask != root->subsys_mask || opts.release_agent)
- 		pr_warning("cgroup: option changes via remount are deprecated (pid=%d comm=%s)\n",
- 			   task_tgid_nr(current), current->comm);
- 
-@@ -1365,7 +1367,7 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
- 	 */
- 	cgroup_clear_directory(cgrp->dentry, false, removed_mask);
- 
--	ret = rebind_subsystems(root, opts.subsys_mask);
-+	ret = rebind_subsystems(root, added_mask, removed_mask);
- 	if (ret) {
- 		/* rebind_subsystems failed, re-populate the removed files */
- 		cgroup_populate_dir(cgrp, false, removed_mask);
-@@ -1634,7 +1636,7 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
- 		if (ret)
- 			goto unlock_drop;
- 
--		ret = rebind_subsystems(root, root->subsys_mask);
-+		ret = rebind_subsystems(root, root->subsys_mask, 0);
- 		if (ret == -EBUSY) {
- 			free_cgrp_cset_links(&tmp_links);
- 			goto unlock_drop;
-@@ -1727,7 +1729,7 @@ static void cgroup_kill_sb(struct super_block *sb) {
- 	mutex_lock(&cgroup_root_mutex);
- 
- 	/* Rebind all subsystems back to the default hierarchy */
--	ret = rebind_subsystems(root, 0);
-+	ret = rebind_subsystems(root, 0, root->subsys_mask);
- 	/* Shouldn't be able to fail ... */
- 	BUG_ON(ret);
- 
 -- 
-1.8.2.1
+tejun
