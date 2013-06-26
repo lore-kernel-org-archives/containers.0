@@ -1,15 +1,14 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH cgroup/for-3.11 1/3] cgroup: fix RCU accesses to
-	task->cgroups
-Date: Wed, 26 Jun 2013 10:49:36 -0700
-Message-ID: <20130626174936.GE4405@mtj.dyndns.org>
-References: <20130621225116.GC3949@htj.dyndns.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH RFC] procfs: add pidnr file
+Date: Wed, 26 Jun 2013 12:39:33 -0700
+Message-ID: <877ghg4q6i.fsf@xmission.com>
+References: <20130626161820.GA32142@tp>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20130621225116.GC3949-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
+In-Reply-To: <20130626161820.GA32142@tp> (Serge Hallyn's message of "Wed, 26
+	Jun 2013 11:18:20 -0500")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,35 +18,78 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <theo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+To: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Cc: Colin Ian King <colin.king-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, =?utf-8?Q?St=C3=A9phane?= Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Jun 21, 2013 at 03:51:17PM -0700, Tejun Heo wrote:
-> task->cgroups is a RCU pointer pointing to struct css_set.  A task
-> switches to a different css_set on cgroup migration but a css_set
-> doesn't change once created and its pointers to cgroup_subsys_states
-> aren't RCU protected.
-> 
-> task_subsys_state[_check]() is the macro to acquire css given a task
-> and subsys_id pair.  It RCU-dereferences task->cgroups->subsys[] not
-> task->cgroups, so the RCU pointer task->cgroups ends up being
-> dereferenced without read_barrier_depends() after it.  It's broken.
-> 
-> Fix it by introducing task_css_set[_check]() which does
-> RCU-dereference on task->cgroups.  task_subsys_state[_check]() is
-> reimplemented to directly dereference ->subsys[] of the css_set
-> returned from task_css_set[_check]().
-> 
-> This removes some of sparse RCU warnings in cgroup.
-> 
-> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Reported-by: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-> Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-
-Applied 1-3 to cgroup/for-3.11.
-
-Thanks.
-
--- 
-tejun
+U2VyZ2UgSGFsbHluIDxzZXJnZS5oYWxseW5AdWJ1bnR1LmNvbT4gd3JpdGVzOgoKPiBBZGQgYSBm
+aWxlIGNhbGxlZCBwaWRuciB1bmRlciAvcHJvYy90YXNrLy4gIFJlYWRpbmcgdGhpcyBmaWxlIGdp
+dmVzIHRoZQo+IHBpZCBvZiAvcHJvYy90YXNrIGluIHRoZSByZWFkaW5nIHRhc2sncyBuYW1lc3Bh
+Y2UgKG9yIDAgaWYgdGhlcmUgaXMgbm8KPiB2YWxpZCBwaWQpLgo+Cj4gVGhpcyBmaWxscyBhIG5l
+ZWQgY3VycmVudGx5IG5vdCBzb2x2YWJsZSBhdCBhbGwuICBUaGUgcGFydGljdWxhciBuZWVkIEkK
+PiBoYXZlIGZvciBpdCBpcyBzbyB0aGF0IGEgdGFzayBpbnNpZGUgYSBjb250YWluZXIgY2FuIHBh
+c3MgcmVxdWVzdHMgdG8gYQo+IHRhc2sgb3V0c2lkZSB0aGUgY29udGFpbmVyICh1c2luZyBhbiBv
+cGVuIGZkIGZvciAvcHJvYy90YXNrKSB0byBoYXZlIHRoZQo+IHRhcmdldCB0YXNrIG1vdmVkIHRv
+IGEgbmV3IGNncm91cC4gIE90aGVycyBoYXZlIGFza2VkIGZvciB0aGlzIGFiaWxpdHkKPiBmb3Ig
+b3RoZXIgcmVhc29ucy4KClRoaXMgaXMgc29sdmFibGUgdG9kYXkuICBKdXN0IHBhc3MgdGhlIHBp
+ZCB1c2luZyBTQ01fQ1JFREVOVElBTFMgb3ZlciBhCnVuaXggZG9tYWluIHNvY2tldCBiZXR3ZWVu
+IHRoZSB0d28gcHJvY2Vzc2VzLiAgVGhhdCBpcyBhY3R1YWxseSBiZXR0ZXIKYmVjYXVzZSBhIHRh
+c2sgY2FuJ3QgY2xhaW0gdG8gYmUgYSBtZW1iZXIgb2YgYW5vdGhlciB0YXNrLiAgWW91IGFscmVh
+ZHkKaGF2ZSB0aGUgdW5peCBkb21haW4gc29ja2V0IGlmIHlvdSBhcmUgdXNpbmcgU0NNX1JJR0hU
+UyB0byBwYXNzIGZpbGUKZGVzY3JpcHRvcnMuCgpPaCBpY2suICBZb3UgaGF2ZSBhIGZpbGUgd2hv
+c2UgY29udGVudHMgY2hhbmdlIGRlcGVuZGluZyBvbiB3aG8gaXMKcmVhZGluZyBhbiBvcGVuIGZp
+bGUgZGVzY3JpcHRvci4gIFRoYXQgY2FuIGdldCByYXRoZXIgdWdseS4gIEl0IGlzCmJldHRlciBm
+b3IgdGhlIGNvbnRlbnRzIHRvIGJlIGNvbnN0YW50IGFuZCBiYXNlZCB1cG9uIHdoZW4gdGhlIGZp
+bGUgd2FzCm9wZW5lZC4KCkkgYWxzbyBkb24ndCBsaWtlIHRoZSBuYW1lLiAgTm90aGluZyBhYm91
+dCB0aGUgbmFtZSBzYXlzIHRvIG1lIHRoaXMgaXMKdGhlIHRhc2tzIHBpZCBmcm9tIHRoZSByZWFk
+aW5nIHRhc2tzIHBlcnNwZWN0aXZlLgoKSSBkbyBzeW1wYXRoaXplIHdpdGggdGhlIHByb2JsZW0g
+YW5kIEkgdGhpbmsgdGhpcyBwYXRjaCBjb3VsZCBiZSBvbgp0aGUgcmlnaHQgdHJhY2suCgpFcmlj
+Cgo+IFNpZ25lZC1vZmYtYnk6IFNlcmdlIEhhbGx5biA8c2VyZ2UuaGFsbHluQGNhbm9uaWNhbC5j
+b20+Cj4gQ2M6IEVyaWMgQmllZGVybWFuIDxlYmllZGVybUB4bWlzc2lvbi5jb20+Cj4gQ2M6ICJE
+YW5pZWwgUC4gQmVycmFuZ2UiIDxiZXJyYW5nZUByZWRoYXQuY29tPgo+IENjOiBjb250YWluZXJz
+QGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCj4gQ2M6IENvbGluIElhbiBLaW5nIDxjb2xpbi5r
+aW5nQGNhbm9uaWNhbC5jb20+Cj4gQ2M6IFN0w6lwaGFuZSBHcmFiZXIgPHN0Z3JhYmVyQHVidW50
+dS5jb20+Cj4gLS0tCj4gIGZzL3Byb2MvYmFzZS5jIHwgICAyNSArKysrKysrKysrKysrKysrKysr
+KysrKystCj4gIDEgZmlsZSBjaGFuZ2VkLCAyNCBpbnNlcnRpb25zKCspLCAxIGRlbGV0aW9uKC0p
+Cj4KPiBkaWZmIC0tZ2l0IGEvZnMvcHJvYy9iYXNlLmMgYi9mcy9wcm9jL2Jhc2UuYwo+IGluZGV4
+IGMzODM0ZGEuLmI3NDk5ZWIgMTAwNjQ0Cj4gLS0tIGEvZnMvcHJvYy9iYXNlLmMKPiArKysgYi9m
+cy9wcm9jL2Jhc2UuYwo+IEBAIC04OTksNiArODk5LDI4IEBAIHN0YXRpYyBjb25zdCBzdHJ1Y3Qg
+ZmlsZV9vcGVyYXRpb25zIHByb2NfZW52aXJvbl9vcGVyYXRpb25zID0gewo+ICAJLnJlbGVhc2UJ
+PSBtZW1fcmVsZWFzZSwKPiAgfTsKPiAgCj4gKyNkZWZpbmUgVE1QQlVGTEVOIDIxCj4gK3N0YXRp
+YyBzc2l6ZV90IHBpZG5yX3JlYWQoc3RydWN0IGZpbGUgKiBmaWxlLCBjaGFyIF9fdXNlciAqIGJ1
+ZiwKPiArCQkJCSAgc2l6ZV90IGNvdW50LCBsb2ZmX3QgKnBwb3MpCj4gK3sKPiArCXN0cnVjdCBp
+bm9kZSAqIGlub2RlID0gZmlsZV9pbm9kZShmaWxlKTsKPiArCXN0cnVjdCB0YXNrX3N0cnVjdCAq
+dGFzayA9IGdldF9wcm9jX3Rhc2soaW5vZGUpOwo+ICsJc3NpemVfdCBsZW5ndGg7Cj4gKwljaGFy
+IHRtcGJ1ZltUTVBCVUZMRU5dOwo+ICsKPiArCWlmICghdGFzaykKPiArCQlyZXR1cm4gLUVTUkNI
+Owo+ICsJbGVuZ3RoID0gc2NucHJpbnRmKHRtcGJ1ZiwgVE1QQlVGTEVOLCAiJXVcbiIsCj4gKwkJ
+CXRhc2tfcGlkX3Zucih0YXNrKSk7Cj4gKwlwdXRfdGFza19zdHJ1Y3QodGFzayk7Cj4gKwlyZXR1
+cm4gc2ltcGxlX3JlYWRfZnJvbV9idWZmZXIoYnVmLCBjb3VudCwgcHBvcywgdG1wYnVmLCBsZW5n
+dGgpOwo+ICt9Cj4gKwo+ICtzdGF0aWMgY29uc3Qgc3RydWN0IGZpbGVfb3BlcmF0aW9ucyBwaWRu
+cl9vcGVyYXRpb25zID0gewo+ICsJLnJlYWQJCT0gcGlkbnJfcmVhZCwKPiArCS5sbHNlZWsJCT0g
+Z2VuZXJpY19maWxlX2xsc2VlaywKPiArfTsKPiArCj4gIHN0YXRpYyBzc2l6ZV90IG9vbV9hZGpf
+cmVhZChzdHJ1Y3QgZmlsZSAqZmlsZSwgY2hhciBfX3VzZXIgKmJ1Ziwgc2l6ZV90IGNvdW50LAo+
+ICAJCQkgICAgbG9mZl90ICpwcG9zKQo+ICB7Cj4gQEAgLTEwOTYsNyArMTExOCw2IEBAIHN0YXRp
+YyBjb25zdCBzdHJ1Y3QgZmlsZV9vcGVyYXRpb25zIHByb2Nfb29tX3Njb3JlX2Fkal9vcGVyYXRp
+b25zID0gewo+ICB9Owo+ICAKPiAgI2lmZGVmIENPTkZJR19BVURJVFNZU0NBTEwKPiAtI2RlZmlu
+ZSBUTVBCVUZMRU4gMjEKPiAgc3RhdGljIHNzaXplX3QgcHJvY19sb2dpbnVpZF9yZWFkKHN0cnVj
+dCBmaWxlICogZmlsZSwgY2hhciBfX3VzZXIgKiBidWYsCj4gIAkJCQkgIHNpemVfdCBjb3VudCwg
+bG9mZl90ICpwcG9zKQo+ICB7Cj4gQEAgLTI2NDIsNiArMjY2Myw3IEBAIHN0YXRpYyBjb25zdCBz
+dHJ1Y3QgcGlkX2VudHJ5IHRnaWRfYmFzZV9zdHVmZltdID0gewo+ICAJRElSKCJuZXQiLCAgICAg
+ICAgU19JUlVHT3xTX0lYVUdPLCBwcm9jX25ldF9pbm9kZV9vcGVyYXRpb25zLCBwcm9jX25ldF9v
+cGVyYXRpb25zKSwKPiAgI2VuZGlmCj4gIAlSRUcoImVudmlyb24iLCAgICBTX0lSVVNSLCBwcm9j
+X2Vudmlyb25fb3BlcmF0aW9ucyksCj4gKwlSRUcoInBpZG5yIiwgICAgICBTX0lSVUdPLCBwaWRu
+cl9vcGVyYXRpb25zKSwKPiAgCUlORigiYXV4diIsICAgICAgIFNfSVJVU1IsIHByb2NfcGlkX2F1
+eHYpLAo+ICAJT05FKCJzdGF0dXMiLCAgICAgU19JUlVHTywgcHJvY19waWRfc3RhdHVzKSwKPiAg
+CU9ORSgicGVyc29uYWxpdHkiLCBTX0lSVUdPLCBwcm9jX3BpZF9wZXJzb25hbGl0eSksCj4gQEAg
+LTI5OTksNiArMzAyMSw3IEBAIHN0YXRpYyBjb25zdCBzdHJ1Y3QgcGlkX2VudHJ5IHRpZF9iYXNl
+X3N0dWZmW10gPSB7Cj4gIAlESVIoImZkaW5mbyIsICAgIFNfSVJVU1J8U19JWFVTUiwgcHJvY19m
+ZGluZm9faW5vZGVfb3BlcmF0aW9ucywgcHJvY19mZGluZm9fb3BlcmF0aW9ucyksCj4gIAlESVIo
+Im5zIiwJIFNfSVJVU1J8U19JWFVHTywgcHJvY19uc19kaXJfaW5vZGVfb3BlcmF0aW9ucywgcHJv
+Y19uc19kaXJfb3BlcmF0aW9ucyksCj4gIAlSRUcoImVudmlyb24iLCAgIFNfSVJVU1IsIHByb2Nf
+ZW52aXJvbl9vcGVyYXRpb25zKSwKPiArCVJFRygicGlkbnIiLCAgICAgU19JUlVHTywgcGlkbnJf
+b3BlcmF0aW9ucyksCj4gIAlJTkYoImF1eHYiLCAgICAgIFNfSVJVU1IsIHByb2NfcGlkX2F1eHYp
+LAo+ICAJT05FKCJzdGF0dXMiLCAgICBTX0lSVUdPLCBwcm9jX3BpZF9zdGF0dXMpLAo+ICAJT05F
+KCJwZXJzb25hbGl0eSIsIFNfSVJVR08sIHByb2NfcGlkX3BlcnNvbmFsaXR5KSwKX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5n
+IGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3Rz
+LmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
