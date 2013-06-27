@@ -1,23 +1,12 @@
-From: Mike Galbraith <bitbucket-BGeptl67XyCzQB+pC5nmwQ@public.gmane.org>
-Subject: Re: cgroup: status-quo and userland efforts
-Date: Fri, 28 Jun 2013 08:00:04 +0200
-Message-ID: <1372399204.5989.166.camel@marge.simpson.net>
-References: <CAAAKZwuXJwwyj7KSqb7rZ+nrTwBWEaUCWfa7kWecTBnHL8koGw@mail.gmail.com>
-	<CAAAKZwvP_7wBBYMmtFuiE2hZt=ByaLrnTyiR83CZr3OMip63Gg@mail.gmail.com>
-	<20130625000118.GT1918@mtj.dyndns.org>
-	<CAAAKZwt09k-qUwLCnMpAQeYJ-S0XtkjXe4=bJ-G_fcrkAqEzoA@mail.gmail.com>
-	<20130626212047.GB4536@htj.dyndns.org>
-	<1372311907.5871.78.camel@marge.simpson.net>
-	<20130627180143.GD5599@mtj.dyndns.org>
-	<1372391198.5989.110.camel@marge.simpson.net>
-	<20130628040930.GC2500@htj.dyndns.org>
-	<1372394950.5989.128.camel@marge.simpson.net>
-	<20130628050138.GD2500@htj.dyndns.org>
+From: samantha <samantha-HLBfVwsFBLPwvR0lvYjcXw@public.gmane.org>
+Subject: fatiguer de payer vos cigarettes trop cher ? alors cliquez ici
+Date: Thu, 27 Jun 2013 14:45:07 -0400
+Message-ID: <NzExODk4MwAC358568Y11BAMTM3MjM1ODcwNzc2NDIw@kingsmoking.com>
+Reply-To: samantha <samantha-HLBfVwsFBLPwvR0lvYjcXw@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20130628050138.GD2500-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,35 +16,46 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, lpoetter <lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, workman-devel <workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, jpoimboe <jpoimboe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "dhaval.giani" <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 2013-06-27 at 22:01 -0700, Tejun Heo wrote:
-
-> Anyways, if you're root, you can keep doing whatever you want.  You
-> could be stepping on the centralized agent's toes a bit and vice-versa
-
-Keep on truckn' sounds good, that vice-versa toe stomping not so good,
-but yeah, until systemd or ilk grows the ability to shut me down, I
-shouldn't feel any burning need to introduce it to my machete.
-
-> but I don't think that's gonna be disastrous.  What I'm trying to
-> stamp out is direct usages from !root domains and !system-management
-> binaries / scripts.  They absolutely have to go.  There's no question
-> about it and I'll take totalitarian userland agent anyday over the
-> current mess.
-
-I get some of the why.. and yeah, it's the dirt simple usage that I care
-about most, not the big hairy problem cases you're trying to address. 
-
-> Eventually, I think we'll be able to reach an equilibrium where most
-> things are reasonable and we'll be exploring the acceptable limits of
-> flexibility again, but right now, please bear with the brutality.
-> We're way over the line and I can't see a way back which isn't gonna
-> sting a bit.  I'm and will keep trying to make it as painless as
-> possible.
-
-Keep on driving, and thanks for listening.  Aaaooooo ;-)
-
--Mike
+Q2V0IGVtYWlsIGNvbnRpZW50IGRlcyBjYXJhY3RlcmVzIGdyYXBoaXF1ZSwgc2kgdm91cyBuZSBs
+ZSB2b3lleiBwYXMgwrtyZWdhcmRleiBsZSBlbiBsaWduZS4gKApodHRwOi8va2luZ3Ntb2tpbmcu
+Y29tL2pvb21sYS9pbmRleC5waHA/b3B0aW9uPWNvbV9hY3ltYWlsaW5nJmN0cmw9YXJjaGl2ZSZ0
+YXNrPXZpZXcmbWFpbGlkPTExJmtleT04NDFhZDVhODU2Yjk0NzcwMDY2ZThiNWEyNDBhZjEzYiZz
+dWJpZD0zNTg1NjgtNjc5MjY3OTU1MjAwMzRkY2M2ZTFlMzQzODgxYTgyMDgKKQoKUG91cnF1b2kg
+Y29udGludWVyIGEgcGF5ZXIgc2kgY2hlciA/ICggaHR0cDovL2tpbmdzbW9raW5nLmNvbS8gKQoK
+QWNoZXRleiB2b3MgY2lnYXJldHRlcyBvbmxpbmUgYSBwcml4IGRpc2NvdW50CgpydWVkdXRhYmFj
+IHZvdHJlIER1dHkgRnJlZSBmcmFuw6dhaXMgZW4gbGlnbmUKCkF2ZWMgcnVlZHV0YWJhYy5jb20g
+YWNoZXRleiB2b3MgY2lnYXJldHRlcyBlbiBsaWduZSBhIG1vaW5zIDcwJQogTm91cyB2b3VzIHBy
+b3Bvc29ucyB0b3V0ZXMgbGVzIG1hcnF1ZXMgZGUgY2lnYXJldHRlcyBlbnRyZSAyMCBldCAzMOKC
+rCBsYSBjYXJ0b3VjaGUgZGUgMjAwIGNpZ2FyZXR0ZXMuIExhIExpdnJhaXNvbiBzJ2VmZmVjdHVl
+IHBhciBsYSBQb3N0ZSBwYXJ0b3V0CmRhbnMgbGUgbW9uZGUsIG5vcyBjbGllbnRzIHNvbnQgcHJp
+bmNpcGFsZW1lbnQgZnJhbmNvcGhvbmVzLgoKTm90cmUgc29jaWV0ZSBlc3QgYWN0dWVsbGVtZW50
+IGxhIHNldWxlIHNvY2lldGUgZGUgdmVudGUgZW4gbGlnbmUgZGlzcG9zYW50IGQndW5lIGxpY2Vu
+c2UgZCdleHBvcnQgcGFydG91dCBkYW5zIGxlIG1vbmRlIGV0IGQndW4gY29udHJhdCBwb3N0YWwg
+cG91cgpsJ2V4cG9ydGF0aW9uIGF1IGRldGFpbCBkZSBjaWdhcmV0dGVzLgogRU4gU0FWT0lSIFBM
+VVMgKCBodHRwOi8va2luZ3Ntb2tpbmcuY29tLyApCgpDb21tZW50IHBvdXZvbnMgbm91cyBwcm9w
+b3NlciBjZXMgcHJpeCA/CkVuIHRhbnQgcXVlIHNvY2lldGUgb3BlcmFudCBkZXB1aXMgbGUgY29u
+dGluZW50IEV1cm9ww6llbiwgUHJpY2UgUGFyYWRpc2UgTHRkIHZvdXMgcGVybWV0IGTDqHMgYSBw
+cmVzZW50IGRlIGNvbW1hbmRlciB2b3MgY2lnYXJldHRlcyBzdXIgaW50ZXJuZXQKY29tbWUgbCdh
+dXRvc2lzZSBsYSBjb21taXNzaW9uIEV1cm9ww6llbmUuIE5vcyBwcml4IHNvbnQgZGVzIHByaXgg
+ZHV0eSBmcmVlIGNhciBub3VzIGFjaGV0b25zIGRlcyBjb250YWluZXJzIGVudGllcnMgZGUgY2ln
+YXJldHRlcyBwb3VyIGVuc3VpdGUKZXhwZWRpZXIgZW4gcGV0aXRlIHF1YW50aXTDqSBjZXMgY2ln
+YXJldHRlcyBhIG5vcyBjbGllbnRzIG1ham9yaXRhaXJlbWVudCBmcmFuY29waG9uZXMsIGxlcyBj
+aWdhcmV0dGVzIGFjaGV0w6llcyB2aWEgbm90cmUgc2l0ZSBkZSB2ZW50ZSBzb250CnVuaXF1ZW1l
+bnQgZGVzdGluw6llcyBhIGxhIGNvbnNvbW1hdGlvbiBwZXJzb25uZWxsZSBldCBkZSBkb2l2ZW50
+IHBhcyBldHJlIHJldmVuZHVlcy4gCgpBbG9ycyBuJ2hlc2l0ZXogcGFzIGEgY29tbWFuZGVyIHZv
+cyBwcmVtaWVyZXMgY2FydG91Y2hlcyBkZSBjaWdhcmV0dGVzIHN1ciBub3RyZSBzaXRlIGVuIGxp
+Z25lLCBub3RyZSBzdXBwb3J0IGVzdCBlZ2FsZW1lbnQgZGlzcG9uaWJsZSA3IGpvdXJzIHN1ciA3
+CmR1cmFudCBsZXMgaGV1cmVzIGRlIGJ1cmVhdSBwb3VyIHLDqXBvbmRyZSBhIHZvcyBxdWVzdGlv
+bnMgcGFyIGVtYWlsIG91IHRlbGVwaG9uZS4KCkVOIFNBVk9JUiBQTFVTICggaHR0cDovL2tpbmdz
+bW9raW5nLmNvbS8gKQoKd3d3LmtpbmdzbW9raW5nLmNvbSAoIGh0dHA6Ly90YWJhY21vaW5zY2hl
+ci5uZXQgKSB8IGNvbnRhY3QgfCBGYWNlYm9vayB8IFR3aXR0ZXIgCgpTaSB2b3VzIG4nZXRlcyBw
+bHVzIGludGVyZXNzZXIgcGFyIGxhIG5ld3NsZXR0ZXIgwrsgc2UgZGVzaW5zY3JpcmUgKApodHRw
+Oi8va2luZ3Ntb2tpbmcuY29tL2pvb21sYS9pbmRleC5waHA/c3ViaWQ9MzU4NTY4Jm9wdGlvbj1j
+b21fYWN5bWFpbGluZyZjdHJsPXVzZXImdGFzaz1vdXQmbWFpbGlkPTExJmtleT02NzkyNjc5NTUy
+MDAzNGRjYzZlMWUzNDM4ODFhODIwOCApCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3Rz
+LmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9t
+YWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
