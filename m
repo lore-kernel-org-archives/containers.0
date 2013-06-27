@@ -1,22 +1,16 @@
-From: Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>
-Subject: Re: cgroup: status-quo and userland efforts
-Date: Wed, 26 Jun 2013 20:42:21 -0700
-Message-ID: <CAAAKZwsMT7FRccyVxSn77GR8+9JsSeqmDO6oOy7ycNCY7Desnw@mail.gmail.com>
-References: <20130406012159.GA17159@mtj.dyndns.org>
-	<CAAAKZwvh_R2Xz--bmSLiN33fsqKanOJMq_6+6hoFWFRx38O4gA@mail.gmail.com>
-	<20130422214159.GG12543@htj.dyndns.org>
-	<CAAAKZwuXJwwyj7KSqb7rZ+nrTwBWEaUCWfa7kWecTBnHL8koGw@mail.gmail.com>
-	<CAAAKZwvP_7wBBYMmtFuiE2hZt=ByaLrnTyiR83CZr3OMip63Gg@mail.gmail.com>
-	<20130625000118.GT1918@mtj.dyndns.org>
-	<CAAAKZwt09k-qUwLCnMpAQeYJ-S0XtkjXe4=bJ-G_fcrkAqEzoA@mail.gmail.com>
-	<20130626212047.GB4536@htj.dyndns.org>
-	<CAAAKZws1qkSik4G4pRr7z+067Jp9-jHfpx9-euqbvmdHjoN_Zg@mail.gmail.com>
-	<20130627010427.GF4536@htj.dyndns.org>
+From: Zhu Yanhai <zhu.yanhai-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: PROBLEM: Processes writing large files in memory-limited LXC
+	container are killed by OOM
+Date: Thu, 27 Jun 2013 13:12:34 +0800
+Message-ID: <CAC8teKXNof5PdU2dMz4iZ8tM=Dx=aZ0efxotDhdc-xopeK-+Xg@mail.gmail.com>
+References: <CAMcjixYa-mjo5TrxmtBkr0MOf+8r_iSeW5MF4c8nJKdp5m+RPA@mail.gmail.com>
+	<20130625132432.GA4098@sergelap>
+	<CAMcjixZtW0KdAmLXyDoGFqL2qh4aEgdGjBYJWrPESFMz0dvELw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20130627010427.GF4536-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
+In-Reply-To: <CAMcjixZtW0KdAmLXyDoGFqL2qh4aEgdGjBYJWrPESFMz0dvELw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,216 +20,66 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: jpoimboe <jpoimboe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, lpoetter <lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, workman-devel <workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "dhaval.giani" <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Aaron Staley <aaron-ZNH+RosXeVlBDgjK7y7TUQ@public.gmane.org>
+Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Jun 26, 2013 at 6:04 PM, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> wrote:
-> Hello,
+Hi,
+Please check this patch, it could fix your problem,
+http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=e62e384e9da8d9a0c599795464a7e76fd490931c
+
+--
+Thanks,
+Zhu Yanhai
+
+
+2013/6/26 Aaron Staley <aaron-ZNH+RosXeVlBDgjK7y7TUQ@public.gmane.org>
+
+> Hi Serge,
 >
-> On Wed, Jun 26, 2013 at 05:06:02PM -0700, Tim Hockin wrote:
->> The first assertion, as I understood, was that (eventually) cgroupfs
->> will not allow split hierarchies - that unified hierarchy would be the
->> only mode.  Is that not the case?
+> Thanks a lot. Would you know of any workarounds outside of forcing every
+> write to sync to disk (which kills performance)? Perhaps some settings in
+> the container I can set?  Unfortunately, modifying dirty_background_ratio
+>  and dirty_expire_centiseconds globally (/etc/sysctl.conf) as suggested by
+> the serverfault answer will not stop the OOM kills.
 >
-> No, unified hierarchy would be an optional thing for quite a while.
+> Regards,
+> Aaron
 >
->> The second assertion, as I understood, was that (eventually) cgroupfs
->> would not support granting access to some cgroup control files to
->> users (through chown/chmod).  Is that not the case?
 >
-> Again, it'll be an opt-in thing.  The hierarchy controller would be
-> able to notice that and issue warnings if it wants to.
+> On Tue, Jun 25, 2013 at 6:24 AM, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org
+> >wrote:
 >
->> Hmm, so what exactly is changing then?  If, as you say here, the
->> existing interfaces will keep working - what is changing?
+> > Quoting Aaron Staley (aaron-ZNH+RosXeVlBDgjK7y7TUQ@public.gmane.org):
+> > > This is better explained here:
+> > >
+> >
+> http://serverfault.com/questions/516074/why-are-applications-in-a-memory-limited-lxc-container-writing-large-files-to-di
+> > > (The
+> > > highest-voted answer believes this to be a kernel bug.)
+> >
+> > Yeah, sorry I haven't had time to look more into it, but I'm pretty
+> > that's the case.  When you sent the previous email I looked quickly at
+> > the dd source.  I had always assumed that dd looked at available memory
+> > and malloced as much as it thought it could - but looking at the source,
+> > it does not in fact do that.  So yes, I think the kernel is simply
+> > leaving it all in page cache and accounting that to the process which
+> > then gets OOMed.
+> >
+> > Instead, the kernel should be throttling the task while it waits for
+> > the page cache to be written to disk (since blkio might also be
+> > slowed down).
+> >
+> > -serge
+> >
 >
-> New interface is being added and new features will be added only for
-> the new interface.  The old one will eventually be deprecated and
-> removed, but that *years* away.
-
-OK, then what I don't know is what is the new interface?  A new cgroupfs?
-
->> As I said, it's controlled delegated access.  And we have some patches
->> that we carry to prevent some of these DoS situations.
 >
-> I don't know.  You can probably hack around some of the most serious
-> problems but the whole thing isn't built for proper delgation and
-> that's not the direction the upstream kernel is headed at the moment.
->
->> I actually can not speak to the details of the default IO problem, as
->> it happened before I really got involved.  But just think through it.
->> If one half of the split has 5 processes running and the other half
->> has 200, the processes in the 200 set each get FAR less spindle time
->> than those in the 5 set.  That is NOT the semantic we need.  We're
->> trying to offer ~equal access for users of the non-DTF class of jobs.
->>
->> This is not the tail doing the wagging.  This is your assertion that
->> something should work, when it just doesn't.  We have two, totally
->> orthogonal classes of applications on two totally disjoint sets of
->> resources.  Conjoining them is the wrong answer.
->
-> As I've said multiple times, there sure are things that you cannot
-> achieve without orthogonal multiple hierarchies, but given the options
-> we have at hands, compromising inside a unified hierarchy seems like
-> the best trade-off.  Please take a step back from the immediate detail
-> and think of the general hierarchical organization of workloads.  If
-> DTF / non-DTF is a fundamental part of your workload classfication,
-> that should go above.
-
-DTF and CPU and cpuset all have "default" groups for some tasks (and
-not others) in our world today.  DTF actually has default, prio, and
-"normal".  I was simplifying before.  I really wish it were as simple
-as you think it is.  But if it were, do you think I'd still be
-arguing?
-
-> I don't really understand your example anyway because you can classify
-> by DTF / non-DTF first and then just propagate cpuset settings along.
-> You won't lose anything that way, right?
-
-This really doesn't scale when I have thousands of jobs running.
-Being able to disable at some levels on some controllers probably
-helps some, but I can't say for sure without knowing the new interface
-
-> Again, in general, you might not be able to achieve *exactly* what
-> you've been doing, but, an acceptable compromise should be possible
-> and not doing so leads to complete mess.
-
-We tried it in unified hierarchy.  We had our Top People on the
-problem.  The best we could get was bad enough that we embarked on a
-LITERAL 2 year transition to make it better.
-
->> > But I don't follow the conclusion here.  For short term workaround,
->> > sure, but having that dictate the whole architecture decision seems
->> > completely backwards to me.
->>
->> My point is that the orthogonality of resources is intrinsic.  Letting
->> "it's hard to make it work" dictate the architecture is what's
->> backwards.
->
-> No, it's not "it's hard to make it work".  It's more "it's
-> fundamentally broken".  You can't identify a resource to be belonging
-> to a cgroup independent of who's looking at the resource.
-
-What if you could ensure that for a given TID (or PID if required) in
-dir X of controller C, all of the other TIDs in that cgroup were in
-the same group, but maybe not the same sub-path, under every
-controller?  This gives you what it sounds like you wanted elsewhere -
-a container abstraction.
-
-In other words, define a container as a set of cgroups, one under each
-each active controller type.  A TID enters the container atomically,
-joining all of the cgroups or none of the cgroups.
-
-container C1 = { /cgroup/cpu/foo, /cgroup/memory/bar,
-/cgroup/io/default/foo/bar, /cgroup/cpuset/
-
-This is an abstraction that we maintain in userspace (more or less)
-and we do actually have headaches from split hierarchies here
-(handling partial failures, non-atomic joins, etc)
-
->> I'm not sure what "differing level of granularities" means?  But that
->
-> It means that you'll be able to ignore subtrees depending on
-> controllers.
-
-I'm still a bit fuzzy - is all of this written somewhere?
-
->> aside, who have you spoken to here?  On our internal discussions I
->> have not heard a SINGLE member of our prod-kernel team nor our cluster
->> management team who think this is a good idea.  Not one.
->
-> Some of memcg and blkcg people in infra kernel team.
-
-Well, if anyone there feels like we should be moving in this
-direction, I hope they will come and talk to me and enlighten me.
-
->> I still don't really get what the hellish mess is, and why it can't be
->> solved another way.  Your statement of "unified hierarchy isn't gonna
->> break them" is patently false, though.  If we did this it would a)
->> cause a large amount of work to happen and b) cause a major regression
->> for our users.
->
-> No, what I meant was that unified hierarchy won't break the multiple
-> hierarchy support immediately.
-
-I did not realize you were building a parallel <thing>.  This at least
-makes me believe I have time to adapt better (or have our teams hack
-some more), if I can't bring you to your senses.
-
->> I'm trying to understand your root problem so that I can try to find
->> other solutions.  "Just do what I say" is not a great way to defend
->> your position in the face of evidence to the contrary.  I'm presenting
->> you real life cases of situations that simply do not work, neither
->> philosophically nor in practice, and you continue to assert that it's
->> fine.  It's not fine.
->
-> I wrote about that many times, but here are two of the problems.
->
-> * There's no way to designate a cgroup to a resource, because cgroup
->   is only defined by the combination of who's looking at it for which
->   controller.  That's how you end up with tagging the same resource
->   multiple times for different controllers and even then it's broken
->   as when you move resources from one cgroup to another, you can't
->   tell what to do with other tags.
->
->   While allowing obscene level of flexibility, multiple hierarchies
->   destroy a very fundamental concept that it *should* provide - that
->   of a resource container.  It can't because a "cgroup" is undefined
->   under multiple hierarchies.
-
-It sounds like you're missing a layer of abstraction.  Why not add the
-abstraction you want to expose on top of powerful primitives, instead
-of dumbing down the primitives?
-
-> * The level of flexibility makes it very difficult to scope the common
->   usage models.  It's a problem for both the kernel and userland.  The
->   kernel has to be prepared to cope with anything - e.g. with unified
->   hierarchy, we can assume things like either all tasks in a cgroup
->   are frozen or not, with multiple, any combination is possible - and
->   the userland is generally lost on what to do and has been in a
->   complete disarray, and it's not really userland's fault because
->   enforcing any rule would mean hindering some crazy setup that
->   someone is using.
->
-> cgroup as it currently stands invites pretty insane usages which we
-> can't back out of later on.  Well, it's already painful to back out
-> but the sooner the better.  And all that for what?  Allowing exotic
-> specialized configurations which in all likelihood will be served
-> acceptably with unified hierarchy anyway?
-
-Again, not served acceptably.  Saying it over and over does not make
-it true.  Please believe me when I say that I understand how hard it
-is to back out of overly-flexible APIs that are hard to support.
-
-But it seems vastly better to define a next-gen API that retains the
-important flexibility but adds structure where it was lacking
-previously.
-
->> Somewhere I picked up the notion that you were talking about making
->> these changes in O(1.5 years).  Perhaps I got that wrong.  what *is*
->> the timeframe?  At what point will everything we depend on today no
->> longer be supported?
->
-> I'm making the changes as soon as possible.  There of course are two
-> steps involved here - implementing the new thing and then removing the
-> old thing.  Implementing the new thing is gonna happen, hopefully, in
-> a year's timeframe.  The latter.  I don't know for sure but probably
-> over five years.
->
->> OK.  So please shed some light?  Will split-hierarchies continue to
->> work for the indefinite future?  Or will they be disabled at some
->> point?  Or will they become so crippled or bit-rotted that they are
->> effectively removed, without having to actually say that?
->
-> It's gonna be properly maintained but new features in general will
-> only be implemented for the unified hierarchy.  In time, hopefully,
-> the difference in capabilities between the new and old interfaces
-> combined with other efforts will drive users towards the new
-> interface.  After the old interface's usage has sufficiently dwindled,
-> it will be deprecated.
->
-> Thanks.
 >
 > --
-> tejun
+> Aaron Staley
+> *PiCloud, Inc.*
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linuxfoundation.org/mailman/listinfo/containers
+>
