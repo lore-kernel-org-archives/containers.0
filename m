@@ -1,14 +1,23 @@
 From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: cgroup access daemon
-Date: Thu, 27 Jun 2013 13:11:08 -0500
-Message-ID: <20130627181108.GA26334@sergelap>
-References: <CAAAKZwuKxxYoVRn6Ye72Vs7vSd_T4cbvEwiU6Q3j4D-Z+VAPrw@mail.gmail.com>
+Subject: Re: cgroup: status-quo and userland efforts
+Date: Thu, 27 Jun 2013 13:14:57 -0500
+Message-ID: <20130627181457.GB26334__13527.4461507381$1372356915$gmane$org@sergelap>
+References: <CAAAKZwvh_R2Xz--bmSLiN33fsqKanOJMq_6+6hoFWFRx38O4gA@mail.gmail.com>
+	<20130422214159.GG12543@htj.dyndns.org>
+	<CAAAKZwuXJwwyj7KSqb7rZ+nrTwBWEaUCWfa7kWecTBnHL8koGw@mail.gmail.com>
+	<CAAAKZwvP_7wBBYMmtFuiE2hZt=ByaLrnTyiR83CZr3OMip63Gg@mail.gmail.com>
+	<20130625000118.GT1918@mtj.dyndns.org>
+	<CAAAKZwt09k-qUwLCnMpAQeYJ-S0XtkjXe4=bJ-G_fcrkAqEzoA@mail.gmail.com>
+	<20130626212047.GB4536@htj.dyndns.org>
+	<1372311907.5871.78.camel@marge.simpson.net>
+	<20130627132206.GE4003@sergelap>
+	<20130627174850.GC5599@mtj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <CAAAKZwuKxxYoVRn6Ye72Vs7vSd_T4cbvEwiU6Q3j4D-Z+VAPrw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20130627174850.GC5599-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,92 +27,59 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>
-Cc: Mike Galbraith <bitbucket-BGeptl67XyCzQB+pC5nmwQ@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, lpoetter <lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, jpoimboe <jpoimboe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "dhaval.giani" <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, workman-devel <workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, Mike Galbraith <bitbucket-BGeptl67XyCzQB+pC5nmwQ@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, lpoetter <lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, jpoimboe <jpoimboe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "dhaval.giani" <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, workman-devel <workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Tim Hockin (thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org):
-> Changing the subject, so as not to mix two discussions
+Quoting Tejun Heo (tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org):
+> Hello, Serge.
 > 
-> On Thu, Jun 27, 2013 at 9:18 AM, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> wrote:
-> >
-> >> > FWIW, the code is too embarassing yet to see daylight, but I'm playing
-> >> > with a very lowlevel cgroup manager which supports nesting itself.
-> >> > Access in this POC is low-level ("set freezer.state to THAWED for cgroup
-> >> > /c1/c2", "Create /c3"), but the key feature is that it can run in two
-> >> > modes - native mode in which it uses cgroupfs, and child mode where it
-> >> > talks to a parent manager to make the changes.
-> >>
-> >> In this world, are users able to read cgroup files, or do they have to
-> >> go through a central agent, too?
-> >
-> > The agent won't itself do anything to stop access through cgroupfs, but
-> > the idea would be that cgroupfs would only be mounted in the agent's
-> > mntns.  My hope would be that the libcgroup commands (like cgexec,
-> > cgcreate, etc) would know to talk to the agent when possible, and users
-> > would use those.
+> On Thu, Jun 27, 2013 at 08:22:06AM -0500, Serge Hallyn wrote:
+> > At some point (probably soon) we might want to talk about a standard API
+> > for these things.  However I think it will have to come in the form of
+> > a standard library, which knows to either send requests over dbus to
+> > systemd, or over /dev/cgroup sock to the manager.
 > 
-> For our use case this is a huge problem.  We have people who access
-> cgroup files in a fairly tight loops, polling for information.  We
-> have literally hundeds of jobs running on sub-second frequencies -
-> plumbing all of that through a daemon is going to be a disaster.
-> Either your daemon becomes a bottleneck, or we have to build something
-> far more scalable than you really want to.  Not to mention the
-> inefficiency of inserting a layer.
-
-Currently you can trivially create a container which has the
-container's cgroups bind-mounted to the expected places
-(/sys/fs/cgroup/$controller) by uncommenting two lines in the
-configuration file, and handle cgroups through cgroupfs there.
-(This is what the management agent wants to be an alternative
-for)  The main deficiency there is that /proc/self/cgroups is
-not filtered, so it will show /lxc/c1 for init's cgroup, while
-the host's /sys/fs/cgroup/devices/lxc/c1/c1.real will be what
-is seen under the container's /sys/fs/cgroup/devices (for
-instance).  Not ideal.
-
-> We also need the ability to set up eventfds for users or to let them
-> poll() on the socket from this daemon.
-
-So you'd want to be able to request updates when any cgroup value
-is changed, right?
-
-That's currently not in my very limited set of commands, but I can
-certainly add it, and yes it would be a simple unix sock so you can
-set up eventfd, select/poll, etc.
-
-> >> > So then the idea would be that userspace (like libvirt and lxc) would
-> >> > talk over /dev/cgroup to its manager.  Userspace inside a container
-> >> > (which can't actually mount cgroups itself) would talk to its own
-> >> > manager which is talking over a passed-in socket to the host manager,
-> >> > which in turn runs natively (uses cgroupfs, and nests "create /c1" under
-> >> > the requestor's cgroup).
-> >>
-> >> How do you handle updates of this agent?  Suppose I have hundreds of
-> >> running containers, and I want to release a new version of the cgroupd
-> >> ?
-> >
-> > This may change (which is part of what I want to investigate with some
-> > POC), but right now I'm building any controller-aware smarts into it.  I
-> > think that's what you're asking about?  The agent doesn't do "slices"
-> > etc.  This may turn out to be insufficient, we'll see.
+> Yeah, eventually, I think we'll have a standardized way to configure
+> resource distribution in the system.  Maybe we'll agree on a
+> standardized dbus protocol or there will be library, I don't know;
+> however, whatever form it may be in, it abstraction level should be
+> way higher than that of direct cgroupfs access.  It's way too low
+> level and very easy to end up in a complete nonsense configuration.
 > 
-> No, what I am asking is a release-engineering problem.  Suppose we
-> need to roll out a new version of this daemon (some new feature or a
-> bug or something).  We have hundreds of these "child" agents running
-> in the job containers.
+> e.g. enabling "cpu" on a cgroup whlie leaving other cgroups alone
+> wouldn't enable fair scheduling on that cgroup but drastically reduce
+> the amount of cpu share it gets as it now gets treated as single
+> entity competing with all tasks at the parent level.
 
-When I say "container" I mean an lxc container, with it's own isolated
-rootfs and mntns.  I'm not sure what your "containers" are, but I if
-they're not that, then they shouldn't need to run a child agent.  They
-can just talk over the host cgroup agent's socket.
+Right.  I *think* this can be offered as a daemon which sits as the
+sole consumer of my agent's API, and offers a higher level "do what I
+want" API.  But designing that API is going to be interesting.
 
-> How do I bring down all these children, and then bring them back up on
-> a new version in a way that does not disrupt user jobs (much)?
+I should find a good, up-to-date summary of the current behaviors of
+each controller so I can talk more intelligently about it.  (I'll
+start by looking at the kernel Documentation/cgroups, but don't
+feel too confident that they'll be uptodate :)
+
+> At the moment, I'm not sure what the eventual abstraction would look
+> like.  systemd is extending its basic constructs by adding slices and
+> scopes and it does make sense to integrate the general organization of
+> the system (services, user sessions, VMs and so on) with resource
+> management.  Given some time, I'm hoping we'll be able to come up with
+> and agree on some common constructs so that each workload can indicate
+> its resource requirements in a unified way.
 > 
-> Similarly, what happens when one of these child agents crashes?  Does
-> someone restart it?  Do user jobs just stop working?
+> That said, I really think we should experiment for a while before
+> trying to settle down on things.  We've now just started exploring how
+> system-wide resource managment can be made widely available to systems
+> without requiring extremely specialized hand-crafted configurations
+> and I'm pretty sure we're getting and gonna get quite a few details
+> wrong, so I don't think it'd be a good idea to try to agree on things
+> right now.  As far as such integration goes, I think it's time to play
+> with things and observe the results.
 
-An upstart^W$init_system job will restart it...
+Right,  I'm not attached to my toy implementation at all - except for
+the ability, in some fashion, to have nested agents which don't have
+cgroupfs access but talk to another agent to get the job done.
 
 -serge
