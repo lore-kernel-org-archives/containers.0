@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 1/9] cgroup: minor updates around cgroup_clear_directory()
-Date: Fri, 28 Jun 2013 16:45:37 -0700
-Message-ID: <1372463145-4245-2-git-send-email-tj__34794.293906498$1372463169$gmane$org@kernel.org>
+Subject: [PATCH 2/9] cgroup: fix error path of cgroup_addrm_files()
+Date: Fri, 28 Jun 2013 16:45:38 -0700
+Message-ID: <1372463145-4245-3-git-send-email-tj__31630.573111079$1372463178$gmane$org@kernel.org>
 References: <1372463145-4245-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,77 +21,74 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-* Rename it to cgroup_clear_dir() and make it take the pointer to the
-  target cgroup instead of the the dentry.  This makes the function
-  consistent with its counterpart - cgroup_populate_dir().
+cgroup_addrm_files() mishandled error return value from
+cgroup_add_file() and returns error iff the last file fails to create.
+As we're in the process of cleaning up file add/rm error handling and
+will reliably propagate file creation failures, there's no point in
+keeping adding files after a failure.
 
-* Move cgroup_clear_directory() invocation from cgroup_d_remove_dir()
-  to cgroup_remount() so that the function doesn't have to determine
-  the cgroup pointer back from the dentry.  cgroup_d_remove_dir() now
-  only deals with vfs, which is slightly cleaner.
-
-This patch doesn't introduce any functional differences.
+Replace the broken error collection logic with immediate error return.
+While at it, add lockdep assertions and function comment.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 19 ++++++++-----------
- 1 file changed, 8 insertions(+), 11 deletions(-)
+ kernel/cgroup.c | 28 ++++++++++++++++++++++------
+ 1 file changed, 22 insertions(+), 6 deletions(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 5a2fcf5..64877de 100644
+index 64877de..3df8e92 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -957,15 +957,14 @@ static void cgroup_rm_file(struct cgroup *cgrp, const struct cftype *cft)
+@@ -2780,11 +2780,26 @@ out:
+ 	return error;
  }
  
- /**
-- * cgroup_clear_directory - selective removal of base and subsystem files
-- * @dir: directory containing the files
-+ * cgroup_clear_dir - selective removal of base and subsystem files
-+ * @cgrp: target cgroup
-  * @base_files: true if the base files should be removed
-  * @subsys_mask: mask of the subsystem ids whose files should be removed
-  */
--static void cgroup_clear_directory(struct dentry *dir, bool base_files,
--				   unsigned long subsys_mask)
-+static void cgroup_clear_dir(struct cgroup *cgrp, bool base_files,
-+			     unsigned long subsys_mask)
++/**
++ * cgroup_addrm_files - add or remove files to a cgroup directory
++ * @cgrp: the target cgroup
++ * @subsys: the subsystem of files to be added
++ * @cfts: array of cftypes to be added
++ * @is_add: whether to add or remove
++ *
++ * Depending on @is_add, add or remove files defined by @cfts on @cgrp.
++ * All @cfts should belong to @subsys.  For removals, this function never
++ * fails.  If addition fails, this function doesn't remove files already
++ * added.  The caller is responsible for cleaning up.
++ */
+ static int cgroup_addrm_files(struct cgroup *cgrp, struct cgroup_subsys *subsys,
+ 			      struct cftype cfts[], bool is_add)
  {
--	struct cgroup *cgrp = __d_cgrp(dir);
- 	struct cgroup_subsys *ss;
+ 	struct cftype *cft;
+-	int err, ret = 0;
++	int ret;
++
++	lockdep_assert_held(&cgrp->dentry->d_inode->i_mutex);
++	lockdep_assert_held(&cgroup_mutex);
  
- 	for_each_root_subsys(cgrp->root, ss) {
-@@ -987,9 +986,6 @@ static void cgroup_clear_directory(struct dentry *dir, bool base_files,
- static void cgroup_d_remove_dir(struct dentry *dentry)
- {
- 	struct dentry *parent;
--	struct cgroupfs_root *root = dentry->d_sb->s_fs_info;
--
--	cgroup_clear_directory(dentry, true, root->subsys_mask);
+ 	for (cft = cfts; cft->name[0] != '\0'; cft++) {
+ 		/* does cft->flags tell us to skip this file on @cgrp? */
+@@ -2796,16 +2811,17 @@ static int cgroup_addrm_files(struct cgroup *cgrp, struct cgroup_subsys *subsys,
+ 			continue;
  
- 	parent = dentry->d_parent;
- 	spin_lock(&parent->d_lock);
-@@ -1376,7 +1372,7 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
- 	 * this before rebind_subsystems, since rebind_subsystems may
- 	 * change this hierarchy's subsys_list.
- 	 */
--	cgroup_clear_directory(cgrp->dentry, false, removed_mask);
-+	cgroup_clear_dir(cgrp, false, removed_mask);
+ 		if (is_add) {
+-			err = cgroup_add_file(cgrp, subsys, cft);
+-			if (err)
++			ret = cgroup_add_file(cgrp, subsys, cft);
++			if (ret) {
+ 				pr_warn("cgroup_addrm_files: failed to add %s, err=%d\n",
+-					cft->name, err);
+-			ret = err;
++					cft->name, ret);
++				return ret;
++			}
+ 		} else {
+ 			cgroup_rm_file(cgrp, cft);
+ 		}
+ 	}
+-	return ret;
++	return 0;
+ }
  
- 	ret = rebind_subsystems(root, added_mask, removed_mask);
- 	if (ret) {
-@@ -4541,9 +4537,10 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
- 	raw_spin_unlock(&release_list_lock);
- 
- 	/*
--	 * Remove @cgrp directory.  The removal puts the base ref but we
--	 * aren't quite done with @cgrp yet, so hold onto it.
-+	 * Clear and remove @cgrp directory.  The removal puts the base ref
-+	 * but we aren't quite done with @cgrp yet, so hold onto it.
- 	 */
-+	cgroup_clear_dir(cgrp, true, cgrp->root->subsys_mask);
- 	dget(d);
- 	cgroup_d_remove_dir(d);
- 
+ static void cgroup_cfts_prepare(void)
 -- 
 1.8.3.1
