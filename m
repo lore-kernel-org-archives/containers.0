@@ -1,22 +1,16 @@
 From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Workman-devel] cgroup: status-quo and userland efforts
-Date: Fri, 28 Jun 2013 10:53:06 -0500
-Message-ID: <20130628155306.GC26841__27705.8724001565$1372434811$gmane$org@sergelap>
-References: <CAAAKZwvh_R2Xz--bmSLiN33fsqKanOJMq_6+6hoFWFRx38O4gA@mail.gmail.com>
-	<20130422214159.GG12543@htj.dyndns.org>
-	<CAAAKZwuXJwwyj7KSqb7rZ+nrTwBWEaUCWfa7kWecTBnHL8koGw@mail.gmail.com>
-	<CAAAKZwvP_7wBBYMmtFuiE2hZt=ByaLrnTyiR83CZr3OMip63Gg@mail.gmail.com>
-	<20130625000118.GT1918@mtj.dyndns.org>
-	<CAAAKZwt09k-qUwLCnMpAQeYJ-S0XtkjXe4=bJ-G_fcrkAqEzoA@mail.gmail.com>
-	<20130626212047.GB4536@htj.dyndns.org>
-	<1372311907.5871.78.camel@marge.simpson.net>
-	<20130627132206.GE4003@sergelap> <20130628090910.GB2507@redhat.com>
+Subject: Re: cgroup access daemon
+Date: Fri, 28 Jun 2013 11:31:54 -0500
+Message-ID: <20130628163154.GA4989__8352.01158556647$1372437138$gmane$org@sergelap>
+References: <CAAAKZwuKxxYoVRn6Ye72Vs7vSd_T4cbvEwiU6Q3j4D-Z+VAPrw@mail.gmail.com>
+	<20130627181108.GA26334@sergelap>
+	<CAAAKZwvXYBznJ5uiWaEV7fNCHbciwLa6U+E5RUJkz1ioMu=cRg@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20130628090910.GB2507-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <CAAAKZwvXYBznJ5uiWaEV7fNCHbciwLa6U+E5RUJkz1ioMu=cRg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,81 +20,149 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, Mike Galbraith <bitbucket-BGeptl67XyCzQB+pC5nmwQ@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, lpoetter <lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "dhaval.giani" <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, workman-devel <workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>
+Cc: Mike Galbraith <bitbucket-BGeptl67XyCzQB+pC5nmwQ@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, lpoetter <lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, jpoimboe <jpoimboe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "dhaval.giani" <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, workman-devel <workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Daniel P. Berrange (berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
-> On Thu, Jun 27, 2013 at 08:22:06AM -0500, Serge Hallyn wrote:
-> > FWIW, the code is too embarassing yet to see daylight, but I'm playing
-> > with a very lowlevel cgroup manager which supports nesting itself.
-> > Access in this POC is low-level ("set freezer.state to THAWED for cgroup
-> > /c1/c2", "Create /c3"), but the key feature is that it can run in two
-> > modes - native mode in which it uses cgroupfs, and child mode where it
-> > talks to a parent manager to make the changes.
-> > 
-> > So then the idea would be that userspace (like libvirt and lxc) would
-> > talk over /dev/cgroup to its manager.  Userspace inside a container
-> > (which can't actually mount cgroups itself) would talk to its own
-> > manager which is talking over a passed-in socket to the host manager,
-> > which in turn runs natively (uses cgroupfs, and nests "create /c1" under
-> > the requestor's cgroup).
-> > 
-> > At some point (probably soon) we might want to talk about a standard API
-> > for these things.  However I think it will have to come in the form of
-> > a standard library, which knows to either send requests over dbus to
-> > systemd, or over /dev/cgroup sock to the manager.
+Quoting Tim Hockin (thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org):
+> On Thu, Jun 27, 2013 at 11:11 AM, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> wrote:
+> > Quoting Tim Hockin (thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org):
+> >
+> >> For our use case this is a huge problem.  We have people who access
+> >> cgroup files in a fairly tight loops, polling for information.  We
+> >> have literally hundeds of jobs running on sub-second frequencies -
+> >> plumbing all of that through a daemon is going to be a disaster.
+> >> Either your daemon becomes a bottleneck, or we have to build something
+> >> far more scalable than you really want to.  Not to mention the
+> >> inefficiency of inserting a layer.
+> >
+> > Currently you can trivially create a container which has the
+> > container's cgroups bind-mounted to the expected places
+> > (/sys/fs/cgroup/$controller) by uncommenting two lines in the
+> > configuration file, and handle cgroups through cgroupfs there.
+> > (This is what the management agent wants to be an alternative
+> > for)  The main deficiency there is that /proc/self/cgroups is
+> > not filtered, so it will show /lxc/c1 for init's cgroup, while
+> > the host's /sys/fs/cgroup/devices/lxc/c1/c1.real will be what
+> > is seen under the container's /sys/fs/cgroup/devices (for
+> > instance).  Not ideal.
 > 
-> Are you also planning to actually write a new cgroup parent manager
-> daemon too ? Currently my plan for libvirt is to just talk directly
+> I'm really saying that if your daemon is to provide a replacement for
+> cgroupfs direct access, it needs to be designed to be scalable.  If
+> we're going to get away from bind mounting cgroupfs into user
+> namespaces, then let's try to solve ALL the problems.
+> 
+> >> We also need the ability to set up eventfds for users or to let them
+> >> poll() on the socket from this daemon.
+> >
+> > So you'd want to be able to request updates when any cgroup value
+> > is changed, right?
+> 
+> Not necessarily ANY, but that's the terminus of this API facet.
+> 
+> > That's currently not in my very limited set of commands, but I can
+> > certainly add it, and yes it would be a simple unix sock so you can
+> > set up eventfd, select/poll, etc.
+> 
+> Assuming the protocol is basically a pass-through to basic filesystem
+> ops, it should be pretty easy.  You just need to add it to your
+> protocol.
+> 
+> But it brings up another point - access control.  How do you decide
+> which files a child agent should have access to?  Does that ever
+> change based on the child's configuration? In our world, the answer is
+> almost certainly yes.
 
-I'm toying with the idea, yes.  (Right now my toy runs in either native
-mode, using cgroupfs, or child mode, talking to a parent manager)  I'd
-love if someone else does it, but it needs to be done.
+Could you give examples?
 
-As I've said elsewhere in the thread, I see 2 problems to be addressed:
+If you have a white/academic paper I should go read, that'd be great.
 
-1. The ability to nest the cgroup manager daemons, so that a daemon
-running in a container can talk to a daemon running on the host.  This
-is the problem my current toy is aiming to address.  But the API it
-exports is just a thin layer over cgroupfs.
+At the moment I'm going on the naive belief that proper hierarchy
+controls will be enforced (eventually) by the kernel - i.e. if
+a task in cgroup /lxc/c1 is not allowed to mknod /dev/sda1, then it
+won't be possible for /lxc/c1/lxc/c2 to take that access.
 
-2. Abstract away the kernel/cgroupfs details so that userspace can
-explain its cgroup needs generically.  This is IIUC what systemd is
-addressing with slices and scopes.
+The native cgroup manager (the one using cgroupfs) will be checking
+the credentials of the requesting child manager for access(2) to
+the cgroup files.
 
-(2) is where I'd really like to have a well thought out, community
-designed API that everyone can agree on, and it might be worth getting
-together (with Tejun) at plumbers or something to lay something out.
+> >> >> > So then the idea would be that userspace (like libvirt and lxc) would
+> >> >> > talk over /dev/cgroup to its manager.  Userspace inside a container
+> >> >> > (which can't actually mount cgroups itself) would talk to its own
+> >> >> > manager which is talking over a passed-in socket to the host manager,
+> >> >> > which in turn runs natively (uses cgroupfs, and nests "create /c1" under
+> >> >> > the requestor's cgroup).
+> >> >>
+> >> >> How do you handle updates of this agent?  Suppose I have hundreds of
+> >> >> running containers, and I want to release a new version of the cgroupd
+> >> >> ?
+> >> >
+> >> > This may change (which is part of what I want to investigate with some
+> >> > POC), but right now I'm building any controller-aware smarts into it.  I
+> >> > think that's what you're asking about?  The agent doesn't do "slices"
+> >> > etc.  This may turn out to be insufficient, we'll see.
+> >>
+> >> No, what I am asking is a release-engineering problem.  Suppose we
+> >> need to roll out a new version of this daemon (some new feature or a
+> >> bug or something).  We have hundreds of these "child" agents running
+> >> in the job containers.
+> >
+> > When I say "container" I mean an lxc container, with it's own isolated
+> > rootfs and mntns.  I'm not sure what your "containers" are, but I if
+> > they're not that, then they shouldn't need to run a child agent.  They
+> > can just talk over the host cgroup agent's socket.
+> 
+> If they talk over the host agent's socket, where is the access control
+> and restriction done?  Who decides how deep I can nest groups?  Who
+> says which files I may access?  Who stops me from modifying someone
+> else's container?
+> 
+> Our containers are somewhat thinner and more managed than LXC, but not
+> that much.  If we're running a system agent in a user container, we
+> need to manage that software.  We can't just start up a version and
+> leave it running until the user decides to upgrade - we force
+> upgrades.
+> 
+> >> How do I bring down all these children, and then bring them back up on
+> >> a new version in a way that does not disrupt user jobs (much)?
+> >>
+> >> Similarly, what happens when one of these child agents crashes?  Does
+> >> someone restart it?  Do user jobs just stop working?
+> >
+> > An upstart^W$init_system job will restart it...
+> 
+> What happens when the main agent crashes?  All those children on UNIX
+> sockets need to reconnect, I guess.  This means your UNIX socket needs
+> to be a named socket, not just a socketpair(),  making your auth model
+> more complicated.
 
-In the end, something like libvirt or lxc should not need to care
-what is running underneat it.  It should be able to make its requests
-the same way regardless of whether it running in fedora or ubuntu,
-and whether it is running on the host or in a tightly bound container.
-That's my goal anyway :)
+It is a named socket.
 
-> to systemd's new DBus APIs for all management of cgroups, and then
-> fall back to writing to cgroupfs directly for cases where systemd
-> is not around.  Having a library to abstract these two possible
-> alternatives isn't all that compelling unless we think there will
-> be multiple cgroups manager daemons. I've been somewhat assuming that
-> even Ubuntu will eventually see the benefits & switch to systemd,
+> What happens when the main agent hangs?  Is someone health-checking
+> it?  How about all the child daemons?
+> 
+> I guess my main point is that this SOUNDS like a simple project, but
 
-So far I've seen no indication of that :)
+I guess it's not "simple".  It just focuses on one specific problem.
 
-If the systemd code to manage slices could be made separately
-compileable as a standalone library or daemon, then I'd advocate
-using that.  But I don't see a lot of incentive for systemd to do
-that, so I'd feel like a heel even asking.
+> if you just do the simple obvious things, it will be woefully
+> inadequate for anything but simple use-cases.  If we get forced into
+> such a model (and there are some good reasons to do it, even
+> disregarding all the other chatter), we'd rather use the same thing
+> that the upstream world uses, and not re-invent the whole thing
+> ourselves.
+> 
+> Do you have a design spec, or a requirements list, or even a prototype
+> that we can look at?
 
-> then the issue of multiple manager daemons wouldn't really exist.
+The readme at https://github.com/hallyn/cgroup-mgr/blob/master/README
+shows what I have in mind.  It (and the sloppy code next to it)
+represent a few hours' work over the last few days while waiting
+for compiles and in between emails...
 
-True.  But I'm running under the assumption that Ubuntu will stick with
-upstart, and therefore yes I'll need a separate (perhaps pair of)
-management daemons.
-
-Even if we were to switch to systemd, I'd like the API for userspace
-programs to configure and use cgroups to be as generic as possible,
-so that anyone who wanted to write their own daemon could do so.
+But again, it is completely predicated on my goal to have libvirt
+and lxc (and other cgroup users) be able to use the same library
+or API to make their requests whether they are on host or in a
+container, and regardless of the distro they're running under.
 
 -serge
