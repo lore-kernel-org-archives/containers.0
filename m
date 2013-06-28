@@ -1,15 +1,22 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH cgroup/for-3.11 2/2] cgroup: CGRP_ROOT_SUBSYS_BOUND should be
-	ignored when comparing mount options
-Date: Thu, 27 Jun 2013 19:40:03 -0700
-Message-ID: <20130628024003.GB2500__24811.0547232956$1372387216$gmane$org@htj.dyndns.org>
-References: <20130628023930.GA2500@htj.dyndns.org>
+From: Mike Galbraith <bitbucket-BGeptl67XyCzQB+pC5nmwQ@public.gmane.org>
+Subject: Re: cgroup: status-quo and userland efforts
+Date: Fri, 28 Jun 2013 05:46:38 +0200
+Message-ID: <1372391198.5989.110.camel__32690.8859344714$1372391235$gmane$org@marge.simpson.net>
+References: <20130406012159.GA17159@mtj.dyndns.org>
+	<CAAAKZwvh_R2Xz--bmSLiN33fsqKanOJMq_6+6hoFWFRx38O4gA@mail.gmail.com>
+	<20130422214159.GG12543@htj.dyndns.org>
+	<CAAAKZwuXJwwyj7KSqb7rZ+nrTwBWEaUCWfa7kWecTBnHL8koGw@mail.gmail.com>
+	<CAAAKZwvP_7wBBYMmtFuiE2hZt=ByaLrnTyiR83CZr3OMip63Gg@mail.gmail.com>
+	<20130625000118.GT1918@mtj.dyndns.org>
+	<CAAAKZwt09k-qUwLCnMpAQeYJ-S0XtkjXe4=bJ-G_fcrkAqEzoA@mail.gmail.com>
+	<20130626212047.GB4536@htj.dyndns.org>
+	<1372311907.5871.78.camel@marge.simpson.net>
+	<20130627180143.GD5599@mtj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20130628023930.GA2500-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
+In-Reply-To: <20130627180143.GD5599-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,65 +26,80 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, lpoetter <lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, workman-devel <workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, jpoimboe <jpoimboe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "dhaval.giani" <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From 0ce6cba35777cf96a54ce0d5856dc962566b8717 Mon Sep 17 00:00:00 2001
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Date: Thu, 27 Jun 2013 19:37:26 -0700
+On Thu, 2013-06-27 at 11:01 -0700, Tejun Heo wrote: 
+> Hello, Mike.
+> 
+> On Thu, Jun 27, 2013 at 07:45:07AM +0200, Mike Galbraith wrote:
+> > I can understand some alarm.  When I saw the below I started frothing at
+> > the face and howling at the moon, and I don't even use the things much.
+> 
+> Can I ask why?  The reasons are not apparent to me.
 
-1672d04070 ("cgroup: fix cgroupfs_root early destruction path")
-introduced CGRP_ROOT_SUBSYS_BOUND which is used to mark completion of
-subsys binding on a new root; however, this broke remounts.
-cgroup_remount() doesn't allow changing root options via remount and
-CGRP_ROOT_SUBSYS_BOUND, which is set on all fully initialized roots,
-makes the function reject all remounts.
+Sure, because in private property and I mandatory agent, I see "gimme
+yer wallet bitch", an incredibly arrogant and brutal mugging.  That's
+not the way it's meant, I know that, but that's how it comes across.
+You asked, so you get the straight up answer.
 
-Fix it by putting the options part in the lower 16 bits of root->flags
-and masking the comparions.  While at it, make cgroup_remount() emit
-an error message explaining why it's rejecting a remount request, so
-that it's less of a mystery.
+Offering to manage cgroups is one thing, very generous, forcefully
+placing itself between user and kernel quite another.  Perhaps I
+misread, but my interpretation was that the intent is to make systemd a
+mandatory agent, even saw reference to it taking up residence in the
+kernel tree (that bit made me chuckle, pull request would have to be
+very cleverly worded methinks).  I'm sure it will be quite capable, its
+authors are.  However, when I want to talk to my kernel, I expect to be
+able to tell anyone else using the phone to hang up.. now.
 
-Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
----
- include/linux/cgroup.h | 6 +++++-
- kernel/cgroup.c        | 5 ++++-
- 2 files changed, 9 insertions(+), 2 deletions(-)
+> > http://lists.freedesktop.org/archives/systemd-devel/2013-June/011521.html
+> > 
+> > Hierarchy layout aside, that "private property" bit says that the folks
+> > who currently own and use the cgroups interface will lose direct access
+> > to it.  I can imagine folks who have become dependent upon an on the fly
+> > management agents of their own design becoming a tad alarmed.
+> 
+> They're gonna be able to do what they've been doing for the
+> foreseeable future if they choose not to use systemd's unified
 
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index ad3555b..8db5397 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -276,7 +276,11 @@ enum {
- 
- 	CGRP_ROOT_NOPREFIX	= (1 << 1), /* mounted subsystems have no named prefix */
- 	CGRP_ROOT_XATTR		= (1 << 2), /* supports extended attributes */
--	CGRP_ROOT_SUBSYS_BOUND	= (1 << 3), /* subsystems finished binding */
-+
-+	/* mount options live below bit 16 */
-+	CGRP_ROOT_OPTION_MASK	= (1 << 16) - 1,
-+
-+	CGRP_ROOT_SUBSYS_BOUND	= (1 << 16), /* subsystems finished binding */
- };
- 
- /*
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 1b7b567..5a2fcf5 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -1362,8 +1362,11 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
- 	removed_mask = root->subsys_mask & ~opts.subsys_mask;
- 
- 	/* Don't allow flags or name to change at remount */
--	if (opts.flags != root->flags ||
-+	if (((opts.flags ^ root->flags) & CGRP_ROOT_OPTION_MASK) ||
- 	    (opts.name && strcmp(opts.name, root->name))) {
-+		pr_err("cgroup: option or name mismatch, new: 0x%lx \"%s\", old: 0x%lx \"%s\"\n",
-+		       opts.flags & CGRP_ROOT_OPTION_MASK, opts.name ?: "",
-+		       root->flags & CGRP_ROOT_OPTION_MASK, root->name);
- 		ret = -EINVAL;
- 		goto out_unlock;
- 	}
--- 
-1.8.3.1
+Those are the comforting words I wanted to hear, that the user chooses,
+that the user will not find that this that or any other userspace agent
+gains the right to insert itself between user and kernel.
+
+> AFAICS, having a userland agent which has overall knowledge of the
+> hierarchy and enforcesf structure and limiations is a requirement to
+> make cgroup generally useable and useful.
+
+It's useful now, usable to the point that enterprise users exist who
+have integrated cgroups into their business model.  But then you know
+that.  Sure, there are problems, things could and no doubt will get a
+lot better.
+
+However, wrt userspace agent, no agent is going to be the right answer
+for all, so that agent needs to have a step aside button so another
+agent can be tasked with the managerial duties, whether that be little
+ole /me or Aunt Tilly piddling with this and that because we damn well
+feel like it, or BigFoot company X going massively wild and crazy doing
+their business thing.
+
+>   For systemd based systems,
+> systemd serving that role isn't too crazy.  It's sure gonna have
+> teeting issues at the beginning but it has all the necessary
+> information to manage workloads on the system.
+
+No, it's not at all crazy, _offering_ the user a managerial service is
+great, generous, way to go guys, pass out the white hats.  Use force,
+and those pretty white hats turn black as night, hero to villain.
+
+> A valid issue is interoperability between systemd and non-systemd
+> systems.  I don't have an immediately good answer for that.  I wrote
+> in another reply but making cgroup generally available is a pretty new
+> effort and we're still in the process of figuring out what the right
+> constructs and abstractions are.  Hopefully, we'll be able to reach a
+> common set of abstractions to base things on top in itme.
+
+systemd and no systemd is also a valid issue.  I'm sure it'll all get
+worked out, but that link, and others like it make me see bright red.
+
+-Mike
