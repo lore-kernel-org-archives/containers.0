@@ -1,22 +1,11 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [Workman-devel] cgroup: status-quo and userland efforts
-Date: Fri, 28 Jun 2013 15:43:10 -0700
-Message-ID: <20130628224310.GF18889__20868.9977684573$1372459407$gmane$org@mtj.dyndns.org>
-References: <1372311907.5871.78.camel@marge.simpson.net>
-	<20130627180143.GD5599@mtj.dyndns.org>
-	<1372391198.5989.110.camel@marge.simpson.net>
-	<20130628040930.GC2500@htj.dyndns.org>
-	<1372394950.5989.128.camel@marge.simpson.net>
-	<20130628050138.GD2500@htj.dyndns.org>
-	<20130628150513.GD5125@dhcp22.suse.cz>
-	<20130628180155.GD16483@redhat.com>
-	<20130628195917.GG2507@redhat.com> <20130628224053.GA9426@tp>
+Subject: [PATCHSET] cgroup: fix and clean up cgroup file creations and removals
+Date: Fri, 28 Jun 2013 16:45:36 -0700
+Message-ID: <1372463145-4245-1-git-send-email-tj__33681.4586692073$1372463167$gmane$org@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20130628224053.GA9426@tp>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,25 +15,53 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Cc: Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, Mike Galbraith <bitbucket-BGeptl67XyCzQB+pC5nmwQ@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, lpoetter <lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, "dhaval.giani" <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, workman-devel <workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Jun 28, 2013 at 05:40:53PM -0500, Serge Hallyn wrote:
-> > The kernel can exposed a knob that would allow systemd to lock that
-> > down
-> 
-> Gah - why would you give him that idea?  :)
+Hello,
 
-That's one of the ideas I had from the beginning.
+cgroup has been pretty lax about errors while creating cgroupfs files.
+In most cases, it just ignores the errors and continues - cgroups
+created or subsystems bound under heavy memory pressure could be
+missing some files.  As such low memory conditions aren't too
+frequent, this hasn't caused a lot of problems but this is lousy and
+we'll be creating and removing cgroupfs files a lot more dynamically
+with unified hierarchy.  Let's get it in proper shape.
 
-> But yes, I'd sort of assume that was coming, eventually.
+This patchset contains the following nine patches.
 
-But I think we'll probably settle with a mechanism to find out whether
-someone else is touching the hierarchy, which will be generally useful
-for other consumers of cgroup too.
+ 0001-cgroup-minor-updates-around-cgroup_clear_directory.patch
+ 0002-cgroup-fix-error-path-of-cgroup_addrm_files.patch
+ 0003-cgroup-fix-cgroup_add_cftypes-error-handling.patch
+ 0004-cgroup-separate-out-cgroup_base_files-handling-out-o.patch
+ 0005-cgroup-update-error-handling-in-cgroup_populate_dir.patch
+ 0006-cgroup-make-rebind_subsystems-handle-file-additions-.patch
+ 0007-cgroup-cosmetic-follow-up-cleanups.patch
+ 0008-cgroup-move-number_of_cgroups-test-out-of-rebind_sub.patch
+ 0009-blkcg-make-blkcg_policy_register-correctly-handle-cg.patch
+
+0001-0007 clean up and get proper error handling implemented so that
+if a file creation fails, the whole operation fails.
+
+0008 is trivial reorganization to prepare for unified hierarchy.
+
+0009 updates blkcg to treat cgroup_add_cftypes(), which now behaves
+correctly after a failure, error properly.
+
+This patch is on top of cgroup/for-3.11 0ce6cba357 ("cgroup:
+CGRP_ROOT_SUBSYS_BOUND should be ignored when comparing mount
+options") and available in the following git branc.h
+
+ git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-file-error-handling
+
+diffstat follows.
+
+ block/blk-cgroup.c |    9 +-
+ kernel/cgroup.c    |  212 ++++++++++++++++++++++++++++++-----------------------
+ 2 files changed, 126 insertions(+), 95 deletions(-)
 
 Thanks.
 
--- 
+--
 tejun
