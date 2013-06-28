@@ -1,8 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 8/9] cgroup: move number_of_cgroups test out of
-	rebind_subsystems() into cgroup_remount()
-Date: Fri, 28 Jun 2013 16:45:44 -0700
-Message-ID: <1372463145-4245-9-git-send-email-tj__10656.6217531965$1372463217$gmane$org@kernel.org>
+Subject: [PATCH 9/9] blkcg: make blkcg_policy_register() correctly handle
+	cgroup_add_cftypes() failures
+Date: Fri, 28 Jun 2013 16:45:45 -0700
+Message-ID: <1372463145-4245-10-git-send-email-tj__14171.1556505927$1372463224$gmane$org@kernel.org>
 References: <1372463145-4245-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,53 +19,56 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
-Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-rebind_subsystems() currently fails if the hierarchy has any !root
-cgroups; however, on the planned unified hierarchy,
-rebind_subsystems() will be used while populated.  Move the test to
-cgroup_remount(), which is the only place the test is necessary
-anyway.
+Hello, Jens.
 
-As it's impossible for the other two callers of rebind_subsystems() to
-have populated hierarchy, this doesn't make any behavior changes.
+How should this one be routed?  It can go through either block or
+cgroup tree.
+
+Thanks!
+
+------------------------- 8< -------------------------
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: blkcg: make blkcg_policy_register() correctly handle cgroup_add_cftypes() failures
+
+blkcg_policy_register() currently triggers WARN when
+cgroup_add_cftypes() fails and proceeds, which is a rather crappy way
+to handle errors.  It was written that way as cgroup_add_cftypes()
+itself didn't handle errors correctly.  Now that cgroup_add_cftypes()
+correctly handles errors in itself, let's handle its failure properly.
+
+Remove the WARN_ON() and cancel and fail policy registration on
+cgroup_add_cftypes() failure.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
 ---
- kernel/cgroup.c | 13 ++++++-------
- 1 file changed, 6 insertions(+), 7 deletions(-)
+ block/blk-cgroup.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 51632b4..17c8985 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -1013,13 +1013,6 @@ static int rebind_subsystems(struct cgroupfs_root *root,
- 		if (test_bit(i, &added_mask) && ss->root != &cgroup_dummy_root)
- 			return -EBUSY;
+diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
+index e8918ff..b27a9d2 100644
+--- a/block/blk-cgroup.c
++++ b/block/blk-cgroup.c
+@@ -1127,10 +1127,13 @@ int blkcg_policy_register(struct blkcg_policy *pol)
+ 	pol->plid = i;
+ 	blkcg_policy[i] = pol;
  
--	/* Currently we don't handle adding/removing subsystems when
--	 * any child cgroups exist. This is theoretically supportable
--	 * but involves complex error handling, so it's being left until
--	 * later */
--	if (root->number_of_cgroups > 1)
--		return -EBUSY;
--
- 	ret = cgroup_populate_dir(cgrp, added_mask);
- 	if (ret)
- 		return ret;
-@@ -1365,6 +1358,12 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
- 		goto out_unlock;
- 	}
- 
-+	/* remounting is not allowed for populated hierarchies */
-+	if (root->number_of_cgroups > 1) {
-+		ret = -EBUSY;
-+		goto out_unlock;
+-	/* everything is in place, add intf files for the new policy */
+-	if (pol->cftypes)
+-		WARN_ON(cgroup_add_cftypes(&blkio_subsys, pol->cftypes));
++	/* try to add intf files for the new policy */
+ 	ret = 0;
++	if (pol->cftypes) {
++		ret = cgroup_add_cftypes(&blkio_subsys, pol->cftypes);
++		if (ret)
++			blkcg_policy[i] = NULL;
 +	}
-+
- 	ret = rebind_subsystems(root, added_mask, removed_mask);
- 	if (ret)
- 		goto out_unlock;
+ out_unlock:
+ 	mutex_unlock(&blkcg_pol_mutex);
+ 	return ret;
 -- 
 1.8.3.1
