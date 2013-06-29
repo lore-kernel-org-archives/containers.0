@@ -1,25 +1,13 @@
-From: Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>
-Subject: Re: cgroup: status-quo and userland efforts
-Date: Fri, 28 Jun 2013 20:05:43 -0700
-Message-ID: <CAAAKZwuzhSzPj99HZW=KD4emGXZbcsjsUu=+TCpafhs9MKD2JA@mail.gmail.com>
-References: <CAAAKZwvP_7wBBYMmtFuiE2hZt=ByaLrnTyiR83CZr3OMip63Gg@mail.gmail.com>
-	<20130625000118.GT1918@mtj.dyndns.org>
-	<CAAAKZwt09k-qUwLCnMpAQeYJ-S0XtkjXe4=bJ-G_fcrkAqEzoA@mail.gmail.com>
-	<20130626212047.GB4536@htj.dyndns.org>
-	<1372311907.5871.78.camel@marge.simpson.net>
-	<20130627180143.GD5599@mtj.dyndns.org>
-	<1372391198.5989.110.camel@marge.simpson.net>
-	<20130628040930.GC2500@htj.dyndns.org>
-	<1372394950.5989.128.camel@marge.simpson.net>
-	<20130628050138.GD2500@htj.dyndns.org>
-	<20130628150513.GD5125@dhcp22.suse.cz>
-	<CAAAKZwtqYe-c0bfkgHFbzsOKVHifjTwkqcpci=uS1JwqS9TJHQ@mail.gmail.com>
-	<51CE3CE0.9010506@redhat.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCH cgroup 1/2] cgroup: move module ref handling into
+	rebind_subsystems()
+Date: Fri, 28 Jun 2013 21:12:31 -0700
+Message-ID: <20130629041231.GA31353__17252.7802097195$1372479165$gmane$org@htj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <51CE3CE0.9010506-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -29,88 +17,243 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Lennart Poettering <lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: jpoimboe <jpoimboe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Mike Galbraith <bitbucket-BGeptl67XyCzQB+pC5nmwQ@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, workman-devel <workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, "dhaval.giani" <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Come on, now, Lennart.  You put a lot of words in my mouth.
+Hello,
 
-On Fri, Jun 28, 2013 at 6:48 PM, Lennart Poettering <lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> On 28.06.2013 20:53, Tim Hockin wrote:
->
->> a single-agent, we should make a kick-ass implementation that is
->> flexible and scalable, and full-featured enough to not require
->> divergence at the lowest layer of the stack.  Then build systemd on
->> top of that. Let systemd offer more features and policies and
->> "semantic" APIs.
->
->
-> Well, what if systemd is already kick-ass? I mean, if you have a problem
-> with systemd, then that's your own problem, but I really don't think why I
-> should bother?
+These two patches are on top of
 
-I didn't say it wasn't.  I said that we can build a common substrate
-that systemd can build on *and* non-systemd systems can use *and*
-Google can participate in.
+  cgroup/for-3.11 0ce6cba35 ("cgroup: CGRP_ROOT_SUBSYS_BOUND should be ignored when comparing mount options")
++ "cgroup: fix and clean up cgroup file creations and removals" patchset
+   http://thread.gmane.org/gmane.linux.kernel.cgroups/8245
 
-> I for sure am not going to make the PID 1 a client of another daemon. That's
-> just wrong. If you have a daemon that is both conceptually the manager of
-> another service and the client of that other service, then that's bad design
-> and you will easily run into deadlocks and such. Just think about it: if you
-> have some external daemon for managing cgroups, and you need cgroups for
-> running external daemons, how are you going to start the external daemon for
-> managing cgroups? Sure, you can hack around this, make that daemon special,
-> and magic, and stuff -- or you can just not do such nonsense. There's no
-> reason to repeat the fuckup that cgroup became in kernelspace a second time,
-> but this time in userspace, with multiple manager daemons all with different
-> and slightly incompatible definitions what a unit to manage actualy is...
+and available in the following git branch
 
-I forgot about the tautology of systemd.  systemd is monolithic.
-Therefore it can not have any external dependencies.  Therefore it
-must absorb anything it depends on.  Therefore systemd continues to
-grow in size and scope.  Up next: systemd manages your X sessions!
+ git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-module-ref
 
-But that's not my point.  It seems pretty easy to make this cgroup
-management (in "native mode") a library that can have either a thin
-veneer of a main() function, while also being usable by systemd.  The
-point is to solve all of the problems ONCE.  I'm trying to make the
-case that systemd itself should be focusing on features and policies
-and awesome APIs.
+Both patchsets I'm posting today are too late for for-3.11 unless
+there's gonna be -rc8.  I'll collect the reviews and apply these after
+-rc1 drops.
 
-> We want to run fewer, simpler things on our systems, we want to reuse as
+Thanks.
 
-Fewer and simpler are not compatible, unless you are losing
-functionality.  Systemd is fewer, but NOT simpler.
+---------------------------------- 8< ----------------------------------
+From e8645bf68bcada3e07538fd042e9f0ce8a1e72cd Mon Sep 17 00:00:00 2001
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Date: Fri, 28 Jun 2013 21:08:27 -0700
+Subject: [PATCH 1/2] cgroup: move module ref handling into rebind_subsystems()
 
-> much of the code as we can. You don't achieve that by running yet another
-> daemon that does worse what systemd can anyway do simpler, easier and
-> better.
+Module ref handling in cgroup is rather weird.
+parse_cgroupfs_options() grabs all the modules for the specified
+subsystems.  A module ref is kept if the specified subsystem is newly
+bound to the hierarchy.  If not, or the operation fails, the refs are
+dropped.  This scatters module ref handling across multiple functions
+making it difficult to track.  It also make the function nasty to use
+for dynamic subsystem binding which is necessary for the planned
+unified hierarchy.
 
-Considering this is all hypothetical, I find this to be a funny
-debate.  My hypothetical idea is better than your hypothetical idea.
+There's nothing which requires the subsystem modules to be pinned
+between parse_cgroupfs_options() and rebind_subsystems() in both mount
+and remount paths.  parse_cgroupfs_options() can just parse and
+rebind_subsystems() can handle pinning the subsystems that it wants to
+bind, which is a natural part of its task - binding - anyway.
 
-> The least you could grant us is to have a look at the final APIs we will
-> have to offer before you already imply that systemd cannot be a valid
-> implementation of any API people could ever agree on.
+Move module ref handling into rebind_subsystems() which makes the code
+a lot simpler - modules are gotten iff it's gonna be bound and put iff
+unbound or binding fails.
 
-Whoah, don't get defensive.  I said nothing of the sort.  The fact of
-the matter is that we do not run systemd, at least in part because of
-the monolithic nature.  That's unlikely to change in this timescale.
-What I said was that it would be a shame if we had to invent our own
-low-level cgroup daemon just because the "upstream" daemons was too
-tightly coupled with systemd.
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+---
+ kernel/cgroup.c | 87 +++++++++++++++------------------------------------------
+ 1 file changed, 22 insertions(+), 65 deletions(-)
 
-I think we have a lot of experience to offer to this project, and a
-vested interest in seeing it done well.  But if it is purely
-targetting systemd, we have little incentive to devote resources to
-it.
-
-Please note that I am strictly talking about the lowest layer of the
-API.  Just the thing that guards cgroupfs against mere mortals.  The
-higher layers - where abstractions exist, that are actually USEFUL to
-end users - are not really in scope right now.  We already have our
-own higher level APIs.
-
-This is supposed to be collaborative, not combative.
-
-Tim
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 3bc7a1a..a65aff1 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1003,6 +1003,7 @@ static int rebind_subsystems(struct cgroupfs_root *root,
+ {
+ 	struct cgroup *cgrp = &root->top_cgroup;
+ 	struct cgroup_subsys *ss;
++	unsigned long pinned = 0;
+ 	int i, ret;
+ 
+ 	BUG_ON(!mutex_is_locked(&cgroup_mutex));
+@@ -1010,20 +1011,26 @@ static int rebind_subsystems(struct cgroupfs_root *root,
+ 
+ 	/* Check that any added subsystems are currently free */
+ 	for_each_subsys(ss, i) {
+-		unsigned long bit = 1UL << i;
+-
+-		if (!(bit & added_mask))
++		if (!(added_mask & (1 << i)))
+ 			continue;
+ 
++		/* is the subsystem mounted elsewhere? */
+ 		if (ss->root != &cgroup_dummy_root) {
+-			/* Subsystem isn't free */
+-			return -EBUSY;
++			ret = -EBUSY;
++			goto out_put;
+ 		}
++
++		/* pin the module */
++		if (!try_module_get(ss->module)) {
++			ret = -ENOENT;
++			goto out_put;
++		}
++		pinned |= 1 << i;
+ 	}
+ 
+ 	ret = cgroup_populate_dir(cgrp, added_mask);
+ 	if (ret)
+-		return ret;
++		goto out_put;
+ 
+ 	/*
+ 	 * Nothing can fail from this point on.  Remove files for the
+@@ -1067,11 +1074,6 @@ static int rebind_subsystems(struct cgroupfs_root *root,
+ 		} else if (bit & root->subsys_mask) {
+ 			/* Subsystem state should already exist */
+ 			BUG_ON(!cgrp->subsys[i]);
+-			/*
+-			 * a refcount was taken, but we already had one, so
+-			 * drop the extra reference.
+-			 */
+-			module_put(ss->module);
+ #ifdef CONFIG_MODULE_UNLOAD
+ 			BUG_ON(ss->module && !module_refcount(ss->module));
+ #endif
+@@ -1088,6 +1090,12 @@ static int rebind_subsystems(struct cgroupfs_root *root,
+ 	root->flags |= CGRP_ROOT_SUBSYS_BOUND;
+ 
+ 	return 0;
++
++out_put:
++	for_each_subsys(ss, i)
++		if (pinned & (1 << i))
++			module_put(ss->module);
++	return ret;
+ }
+ 
+ static int cgroup_show_options(struct seq_file *seq, struct dentry *dentry)
+@@ -1138,7 +1146,6 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
+ 	char *token, *o = data;
+ 	bool all_ss = false, one_ss = false;
+ 	unsigned long mask = (unsigned long)-1;
+-	bool module_pin_failed = false;
+ 	struct cgroup_subsys *ss;
+ 	int i;
+ 
+@@ -1281,52 +1288,9 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
+ 	if (!opts->subsys_mask && !opts->name)
+ 		return -EINVAL;
+ 
+-	/*
+-	 * Grab references on all the modules we'll need, so the subsystems
+-	 * don't dance around before rebind_subsystems attaches them. This may
+-	 * take duplicate reference counts on a subsystem that's already used,
+-	 * but rebind_subsystems handles this case.
+-	 */
+-	for_each_subsys(ss, i) {
+-		if (!(opts->subsys_mask & (1UL << i)))
+-			continue;
+-		if (!try_module_get(cgroup_subsys[i]->module)) {
+-			module_pin_failed = true;
+-			break;
+-		}
+-	}
+-	if (module_pin_failed) {
+-		/*
+-		 * oops, one of the modules was going away. this means that we
+-		 * raced with a module_delete call, and to the user this is
+-		 * essentially a "subsystem doesn't exist" case.
+-		 */
+-		for (i--; i >= 0; i--) {
+-			/* drop refcounts only on the ones we took */
+-			unsigned long bit = 1UL << i;
+-
+-			if (!(bit & opts->subsys_mask))
+-				continue;
+-			module_put(cgroup_subsys[i]->module);
+-		}
+-		return -ENOENT;
+-	}
+-
+ 	return 0;
+ }
+ 
+-static void drop_parsed_module_refcounts(unsigned long subsys_mask)
+-{
+-	struct cgroup_subsys *ss;
+-	int i;
+-
+-	mutex_lock(&cgroup_mutex);
+-	for_each_subsys(ss, i)
+-		if (subsys_mask & (1UL << i))
+-			module_put(cgroup_subsys[i]->module);
+-	mutex_unlock(&cgroup_mutex);
+-}
+-
+ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
+ {
+ 	int ret = 0;
+@@ -1384,8 +1348,6 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
+ 	mutex_unlock(&cgroup_root_mutex);
+ 	mutex_unlock(&cgroup_mutex);
+ 	mutex_unlock(&cgrp->dentry->d_inode->i_mutex);
+-	if (ret)
+-		drop_parsed_module_refcounts(opts.subsys_mask);
+ 	return ret;
+ }
+ 
+@@ -1590,7 +1552,7 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
+ 	new_root = cgroup_root_from_opts(&opts);
+ 	if (IS_ERR(new_root)) {
+ 		ret = PTR_ERR(new_root);
+-		goto drop_modules;
++		goto out_err;
+ 	}
+ 	opts.new_root = new_root;
+ 
+@@ -1599,7 +1561,7 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
+ 	if (IS_ERR(sb)) {
+ 		ret = PTR_ERR(sb);
+ 		cgroup_free_root(opts.new_root);
+-		goto drop_modules;
++		goto out_err;
+ 	}
+ 
+ 	root = sb->s_fs_info;
+@@ -1710,9 +1672,6 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
+ 				pr_warning("cgroup: new mount options do not match the existing superblock, will be ignored\n");
+ 			}
+ 		}
+-
+-		/* no subsys rebinding, so refcounts don't change */
+-		drop_parsed_module_refcounts(opts.subsys_mask);
+ 	}
+ 
+ 	kfree(opts.release_agent);
+@@ -1729,8 +1688,6 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
+ 	mutex_unlock(&inode->i_mutex);
+  drop_new_super:
+ 	deactivate_locked_super(sb);
+- drop_modules:
+-	drop_parsed_module_refcounts(opts.subsys_mask);
+  out_err:
+ 	kfree(opts.release_agent);
+ 	kfree(opts.name);
+@@ -4838,7 +4795,7 @@ void cgroup_unload_subsys(struct cgroup_subsys *ss)
+ 
+ 	/*
+ 	 * we shouldn't be called if the subsystem is in use, and the use of
+-	 * try_module_get in parse_cgroupfs_options should ensure that it
++	 * try_module_get() in rebind_subsystems() should ensure that it
+ 	 * doesn't start being used while we're killing it off.
+ 	 */
+ 	BUG_ON(ss->root != &cgroup_dummy_root);
+-- 
+1.8.3.1
