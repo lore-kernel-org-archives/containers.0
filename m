@@ -1,12 +1,10 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [GIT PULL] cgroup changes for v3.11-rc1
-Date: Tue, 2 Jul 2013 08:38:17 -0700
-Message-ID: <20130702153817.GA17986@mtj.dyndns.org>
+From: MAILER-DAEMON-m+FDpevQVwScjkvNFx7tLSNE2gU6N8yCAL8bYrjMMd8@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Tue,  2 Jul 2013 18:03:04 +0200 (CEST)
+Message-ID: <20130702160304.685655DFE6D@relay10.dns-servicios.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============0804977328175793256=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,110 +14,109 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, Linus.
+This is a MIME-encapsulated message.
 
-Please note that cgroup/for-3.11 branch pulled in percpu/for-3.11 to
-convert cgroup_subsys_state reference counting to percpu-ref and this
-pull request assumes that percpu/for-3.11 is pulled in first.
+--===============0804977328175793256==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="A14CF5DFECA.1372780984/relay10.dns-servicios.com"
+Content-Transfer-Encoding: 7bit
 
-This pull request contains the following changes.
+This is a MIME-encapsulated message.
 
-* cgroup_subsys_state (css) reference counting has been converted to
-  percpu-ref.  css is what each resource controller embeds into its
-  own control structure and perform reference count against.  It may
-  be used in hot paths of various subsystems and is similar to module
-  refcnt in that aspect.  For example, block-cgroup's css refcnting
-  was showing up a lot in Mikulaus's device-mapper scalability work
-  and this should alleviate it.
+--A14CF5DFECA.1372780984/relay10.dns-servicios.com
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-* cgroup subtree iterator has been updated so that RCU read lock can
-  be released after grabbing reference.  This allows simplifying its
-  users which requires blocking which used to build iteration list
-  under RCU read lock and then traverse it outside.  This pull request
-  contains simplification of cgroup core and device-cgroup.  A
-  separate pull request will update cpuset.
+This is the mail system at host relay10.dns-servicios.com.
 
-* Fixes for various bugs including corner race conditions and RCU
-  usage bugs.
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
 
-* A lot of cleanups and some prepartory work for the planned unified
-  hierarchy support.
+For further assistance, please send mail to postmaster.
 
-The changes are available in the following git branch
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git for-3.11
+                   The mail system
 
-for you to fetch changes up to c7ba8287cd11f2fc9e2feee9e1fac34b7293658f:
+<haralambi446-YtmNun1Lwl5Wk0Htik3J/w@public.gmane.org>: host 82.194.84.111[82.194.84.111] said: 550 sorry,
+    no mailbox here by that name. (#5.7.17) (in reply to RCPT TO command)
 
-  cgroup: CGRP_ROOT_SUBSYS_BOUND should also be ignored when mounting an existing hierarchy (2013-06-29 14:06:10 -0700)
+--A14CF5DFECA.1372780984/relay10.dns-servicios.com
+Content-Description: Delivery report
+Content-Type: message/delivery-status
 
-Thanks.
+Reporting-MTA: dns; relay10.dns-servicios.com
+X-Postfix-Queue-ID: A14CF5DFECA
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Tue,  2 Jul 2013 18:02:56 +0200 (CEST)
 
-----------------------------------------------------------------
-Greg KH (1):
-      cgroup.h: remove some functions that are now gone
+Final-Recipient: rfc822; haralambi446-YtmNun1Lwl5Wk0Htik3J/w@public.gmane.org
+Original-Recipient: rfc822;haralambi446-YtmNun1Lwl5Wk0Htik3J/w@public.gmane.org
+Action: failed
+Status: 5.0.0
+Remote-MTA: dns; 82.194.84.111
+Diagnostic-Code: smtp; 550 sorry, no mailbox here by that name. (#5.7.17)
 
-Li Zefan (6):
-      cgroup: fix umount vs cgroup_cfts_commit() race
-      cgroup: fix umount vs cgroup_event_remove() race
-      cgroup: fix memory leak in cgroup_rm_cftypes()
-      cgroup: make serial_nr_cursor available throughout cgroup.c
-      cgroup: convert cgroup_cft_commit() to use cgroup_for_each_descendant_pre()
-      cgroup: rename cont to cgrp
+--A14CF5DFECA.1372780984/relay10.dns-servicios.com
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
 
-Tejun Heo (43):
-      cgroup: refactor hierarchy_id handling
-      cgroup: drop hierarchy_id_lock
-      cgroup: make hierarchy_id use cyclic idr
-      cgroup: implement task_cgroup_path_from_hierarchy()
-      Merge branch 'for-3.10-fixes' into for-3.11
-      cgroup: make cgroup_is_removed() static
-      cgroup: add cgroup->serial_nr and implement cgroup_next_sibling()
-      cgroup: update iterators to use cgroup_next_sibling()
-      device_cgroup: simplify cgroup tree walk in propagate_exception()
-      cgroup: mark "tasks" cgroup file as insane
-      cgroup: mark "notify_on_release" and "release_agent" cgroup files insane
-      cgroup: clean up the cftype array for the base cgroup files
-      cgroup: remove now unused css_depth()
-      cgroup: consistently use @cset for struct css_set variables
-      cgroup: bring some sanity to naming around cg_cgroup_link
-      cgroup: use kzalloc() instead of kmalloc()
-      cgroup: clean up css_[try]get() and css_put()
-      cgroup: rename CGRP_REMOVED to CGRP_DEAD
-      cgroup: drop unnecessary RCU dancing from __put_css_set()
-      cgroup: remove cgroup->count and use
-      cgroup: reorder the operations in cgroup_destroy_locked()
-      cgroup: split cgroup destruction into two steps
-      Merge branch 'for-3.11' of git://git.kernel.org/.../tj/percpu into for-3.11
-      cgroup: use percpu refcnt for cgroup_subsys_states
-      cgroup: update sane_behavior documentation
-      cgroup: disallow rename(2) if sane_behavior
-      cgroup: clean up cgroup_serial_nr_cursor
-      cgroup: convert CFTYPE_* flags to enums
-      cgroup: prefix global variables with "cgroup_"
-      cgroup: remove cgroup->actual_subsys_mask
-      cgroup: clean up find_css_set() and friends
-      cgroup: s/for_each_subsys()/for_each_root_subsys()/
-      cgroup: move init_css_set initialization inside cgroup_mutex
-      cgroup: implement for_each_[builtin_]subsys()
-      cgroup: reserve ID 0 for dummy_root and 1 for unified hierarchy
-      cgroup: fix cgroupfs_root early destruction path
-      cgroup: grab cgroup_mutex in drop_parsed_module_refcounts()
-      cgroup: fix RCU accesses to task->cgroups
-      cgroup: fix RCU accesses around task->cgroups
-      cgroup: always use RCU accessors for protected accesses
-      cgroup: fix deadlock on cgroup_mutex via drop_parsed_module_refcounts()
-      cgroup: CGRP_ROOT_SUBSYS_BOUND should be ignored when comparing mount options
-      cgroup: CGRP_ROOT_SUBSYS_BOUND should also be ignored when mounting an existing hierarchy
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from stockhaven.com (unknown [198.101.212.19])
+	by relay10.dns-servicios.com (Postfix) with ESMTP id 24F965DFF26
+	for <haralambi446-YtmNun1Lwl5Wk0Htik3J/w@public.gmane.org>; Tue,  2 Jul 2013 18:02:56 +0200 (CEST)
+Received: from [198.101.212.19] by stockhaven.com id SHoUFQqJ8Ama with SMTP; Tue, 02 Jul 2013 11:06:30 -0500
+Date: Tue, 02 Jul 2013 11:06:30 -0500
+From: "INCo Group" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.5.25.4) Home
+X-Priority: 3 (Normal)
+Message-ID: <428588229.40978402334419-KEfh4l553hs6GGFevw1D/A@public.gmane.org>
+To: <haralambi446-YtmNun1Lwl5Wk0Htik3J/w@public.gmane.org>
+Subject: {Spam?} calculo
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+X-CTCH-RefID: str=0001.0A0B020A.51D2F9B0.009E,ss=1,re=0.000,recu=0.000,reip=0.000,cl=1,cld=1,fgs=0
+X-Relay-Information: AntiSPAM and AntiVIRUS on relay10
+X-Relay-MsgID: 24F965DFF26.AC90F
+X-Relay-SpamCheck: spam, SpamAssassin (no almacenado, puntaje=11.201,
+	requerido 5.5, CTASD_SPAM_UNKNOWN -0.10, DNSSERVICIOS_CHECKS 1.00,
+	KAM_THEBAT 1.90, RCVD_IN_RPBL 2.00, RCVD_IN_RPSS_HIGH -0.10,
+	RDNS_NONE 1.00, SPF_FAIL 5.50, URIBL_BLOCKED 0.00)
+X-Relay-SpamScore: sssssssssss
+X-Relay-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-Spam-Status: Yes
+Content-Transfer-Encoding: quoted-printable
 
- include/linux/cgroup.h   |  222 ++++---
- kernel/cgroup.c          | 1536 ++++++++++++++++++++++++++--------------------
- security/device_cgroup.c |   56 +-
- 3 files changed, 1029 insertions(+), 785 deletions(-)
 
--- 
-tejun
+    =20
+
+En su solicitud en nuestro foro de  01.07.2013
+
+
+Le enviamos la informacion son adecuados:
+http://ourrestorationchurch.org/Info.zip
+
+
+  =20
+
+
+
+--A14CF5DFECA.1372780984/relay10.dns-servicios.com--
+
+--===============0804977328175793256==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============0804977328175793256==--
