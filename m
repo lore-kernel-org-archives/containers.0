@@ -1,28 +1,11 @@
-From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Subject: Re: cgroup: status-quo and userland efforts
-Date: Wed, 03 Jul 2013 10:11:42 -0700
-Message-ID: <1372871502.3601.59.camel__18266.4298140027$1372871517$gmane$org@dabdike>
-References: <CAAAKZwvP_7wBBYMmtFuiE2hZt=ByaLrnTyiR83CZr3OMip63Gg@mail.gmail.com>
-	<20130625000118.GT1918@mtj.dyndns.org>
-	<CAAAKZwt09k-qUwLCnMpAQeYJ-S0XtkjXe4=bJ-G_fcrkAqEzoA@mail.gmail.com>
-	<20130626212047.GB4536@htj.dyndns.org>
-	<1372311907.5871.78.camel@marge.simpson.net>
-	<20130627180143.GD5599@mtj.dyndns.org>
-	<1372391198.5989.110.camel@marge.simpson.net>
-	<20130628040930.GC2500@htj.dyndns.org>
-	<1372394950.5989.128.camel@marge.simpson.net>
-	<20130628050138.GD2500@htj.dyndns.org>
-	<20130628150513.GD5125@dhcp22.suse.cz>
-	<CAAAKZwtqYe-c0bfkgHFbzsOKVHifjTwkqcpci=uS1JwqS9TJHQ@mail.gmail.com>
-	<51CE3CE0.9010506@redhat.com>
-	<CAAAKZwuzhSzPj99HZW=KD4emGXZbcsjsUu=+TCpafhs9MKD2JA@mail.gmail.com>
-	<51D08976.6040005@redhat.com>
-	<alpine.DEB.2.02.1307030021480.4013@ionos.tec.linutronix.de>
+From: Waiman Long <Waiman.Long-VXdhtT5mjnY@public.gmane.org>
+Subject: [PATCH v3 23/25] cgroup: Change how dentry's d_lock field is accessed
+Date: Wed,  3 Jul 2013 16:22:06 -0400
+Message-ID: <1372882926-23239-1-git-send-email-Waiman.Long@hp.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <alpine.DEB.2.02.1307030021480.4013-3cz04HxQygjZikZi3RtOZ1XZhhPuCNm+@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -32,78 +15,51 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
-Cc: Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, Mike Galbraith <bitbucket-BGeptl67XyCzQB+pC5nmwQ@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Lennart Poettering <lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, workman-devel <workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, jpoimboe <jpoimboe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "dhaval.giani" <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Jeff Layton <jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Miklos Szeredi <mszeredi-AlSwsSmVLrQ@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
+Cc: Waiman Long <Waiman.Long-VXdhtT5mjnY@public.gmane.org>, Andi Kleen <andi-Vw/NltI1exuRpAAqCnN02g@public.gmane.org>, Benjamin Herrenschmidt <benh-XVmvHMARGAS8U2dJNN8I7kB+6BGkLq7r@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>, "Chandramouleeswaran,
+	Aswin" <aswin-VXdhtT5mjnY@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Norton,
+	Scott J" <scott.norton-VXdhtT5mjnY@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, 2013-07-03 at 01:57 +0200, Thomas Gleixner wrote:
-> Lennart,
-> 
-> On Sun, 30 Jun 2013, Lennart Poettering wrote:
-> > On 29.06.2013 05:05, Tim Hockin wrote:
-> > > But that's not my point.  It seems pretty easy to make this cgroup
-> > > management (in "native mode") a library that can have either a thin
-> > > veneer of a main() function, while also being usable by systemd.  The
-> > > point is to solve all of the problems ONCE.  I'm trying to make the
-> > > case that systemd itself should be focusing on features and policies
-> > > and awesome APIs.
-> > 
-> > You know, getting this all right isn't easy. If you want to do things
-> > properly, then you need to propagate attribute changes between the units you
-> > manage. You also need something like a scheduler, since a number of
-> > controllers can only be configured under certain external conditions (for
-> > example: the blkio or devices controller use major/minor parameters for
-> > configuring per-device limits. Since major/minor assignments are pretty much
-> > unpredictable these days -- and users probably want to configure things with
-> > friendly and stable /dev/disk/by-id/* symlinks anyway -- this requires us to
-> > wait for devices to show up before we can configure the parameters.) Soo...
-> > you need a graph of units, where you can propagate things, and schedule things
-> > based on some execution/event queue. And the propagation and scheduling are
-> > closely intermingled.
-> 
-> you are confusing policy and mechanisms.
-> 
->     The access to cgroupfs is mechanism.
-> 
->     The propagation of changes, the scheduling of cgroupfs access and
->     the correlation to external conditions are policy.
-> 
-> What Tim is asking for is to have a common interface, i.e. a library
-> which implements the low level access to the cgroupfs mechanism
-> without imposing systemd defined policies to it (It might implement a
-> set of common useful policies, but that's a different discussion).
-> 
-> That's definitely not an unreasonable request, because he wants to
-> implement his own set of policies which are not necessarily the same
-> as those which are implemented by systemd.
+Because of the changes made in dcache.h header file, files that
+use the d_lock field of the dentry structure need to be changed
+accordingly. All the d_lock's spin_lock() and spin_unlock() calls
+are replaced by the corresponding d_lock() and d_unlock() calls.
+There is no change in logic and everything should just work.
 
-Could I just add a me too to this from Parallels.  We need the ability
-to impose our own container policy on the kernel mechanisms.
+Signed-off-by: Waiman Long <Waiman.Long-VXdhtT5mjnY@public.gmane.org>
+---
+ kernel/cgroup.c |   10 +++++-----
+ 1 files changed, 5 insertions(+), 5 deletions(-)
 
-Perhaps I should step back a bit and say first of all that we all use
-the word "container" a lot, but if you analyse what we mean, you'll find
-that a Google container is different from a Parallels/OpenVZ container
-which is different from an LXC container and so on.  How we all build
-our containers is a policy we impose on the various cgroup and namespace
-mechanisms within the kernel.  We've spent a lot of discussion time over
-the years making sure that the kernel mechanisms support all of our
-different use cases, so I really don't want to see that change in the
-name of simplifying the API.
-
-I also don't think any quest for the one true container will be
-successful for the simple reason that containers are best when tuned for
-the job they're doing. For instance at Parallels we do IaaS containers.
-That means we can take a container, boot up any old Linux OS inside it
-and give you root on it in exactly the same way as you could for a
-virtual machine.  Google does something more like application containers
-for job control and some network companies do pure namespace containers
-without any cgroup controllers at all.  There's no one container
-description that would fit all use cases.
-
-So where we are is that the current APIs may be messy, but they support
-all use cases and all container structure policies.  If anyone, systemd
-included, wants to do a new API, it must support all use cases as well.
-Ideally, it should be agreed to and in the kernel as well rather than
-having some userspace filter.
-
-James
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index a7c9e6d..8935c05 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -974,11 +974,11 @@ static void cgroup_d_remove_dir(struct dentry *dentry)
+ 	cgroup_clear_directory(dentry, true, root->subsys_mask);
+ 
+ 	parent = dentry->d_parent;
+-	spin_lock(&parent->d_lock);
+-	spin_lock_nested(&dentry->d_lock, DENTRY_D_LOCK_NESTED);
++	d_lock(parent);
++	d_lock_nested(dentry, DENTRY_D_LOCK_NESTED);
+ 	list_del_init(&dentry->d_u.d_child);
+-	spin_unlock(&dentry->d_lock);
+-	spin_unlock(&parent->d_lock);
++	d_unlock(dentry);
++	d_unlock(parent);
+ 	remove_dir(dentry);
+ }
+ 
+@@ -1783,7 +1783,7 @@ static struct kobject *cgroup_kobj;
+  * Writes path of cgroup into buf.  Returns 0 on success, -errno on error.
+  *
+  * We can't generate cgroup path using dentry->d_name, as accessing
+- * dentry->name must be protected by irq-unsafe dentry->d_lock or parent
++ * dentry->name must be protected by irq-unsafe d_ret_lock(dentry) or parent
+  * inode's i_mutex, while on the other hand cgroup_path() can be called
+  * with some irq-safe spinlocks held.
+  */
+-- 
+1.7.1
