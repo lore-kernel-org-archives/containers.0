@@ -1,8 +1,15 @@
-From: Borislav Petkov <bp-Gina5bIWoIWzQB+pC5nmwQ@public.gmane.org>
+From: Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
 Subject: Re: cgroup: status-quo and userland efforts
-Date: Wed, 3 Jul 2013 09:37:40 +0200
-Message-ID: <20130703073740.GA14096__15547.9170768105$1372837075$gmane$org@pd.tnic>
-References: <20130628040930.GC2500@htj.dyndns.org>
+Date: Wed, 3 Jul 2013 11:30:08 +0200 (CEST)
+Message-ID: <alpine.DEB.2.02.1307030256390.4013__35866.5150743493$1372843840$gmane$org@ionos.tec.linutronix.de>
+References: <CAAAKZwvP_7wBBYMmtFuiE2hZt=ByaLrnTyiR83CZr3OMip63Gg@mail.gmail.com>
+	<20130625000118.GT1918@mtj.dyndns.org>
+	<CAAAKZwt09k-qUwLCnMpAQeYJ-S0XtkjXe4=bJ-G_fcrkAqEzoA@mail.gmail.com>
+	<20130626212047.GB4536@htj.dyndns.org>
+	<1372311907.5871.78.camel@marge.simpson.net>
+	<20130627180143.GD5599@mtj.dyndns.org>
+	<1372391198.5989.110.camel@marge.simpson.net>
+	<20130628040930.GC2500@htj.dyndns.org>
 	<1372394950.5989.128.camel@marge.simpson.net>
 	<20130628050138.GD2500@htj.dyndns.org>
 	<20130628150513.GD5125@dhcp22.suse.cz>
@@ -16,7 +23,6 @@ Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 In-Reply-To: <CAPXgP12AyogbFX_hPPmQD5GFG0-+_crsnHF3epDZSRds3-WNtQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -28,21 +34,26 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Kay Sievers <kay-tD+1rO4QERM@public.gmane.org>
-Cc: Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, Mike Galbraith <bitbucket-BGeptl67XyCzQB+pC5nmwQ@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, jpoimboe <jpoimboe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Lennart Poettering <lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, workman-devel <workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, "dhaval.giani" <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
+Cc: Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, Mike Galbraith <bitbucket-BGeptl67XyCzQB+pC5nmwQ@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, jpoimboe <jpoimboe-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Lennart Poettering <lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, workman-devel <workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, "dhaval.giani" <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Jul 03, 2013 at 02:44:31AM +0200, Kay Sievers wrote:
-> I don't think anybody needs your money.
+On Wed, 3 Jul 2013, Kay Sievers wrote:
+> On Wed, Jul 3, 2013 at 1:57 AM, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org> wrote:
+> > Before answering please think about the relevance of your statements
+> > "getting this all right isn't easy", "something like a scheduler",
+> > "users probably want ..."  and "stable /dev/disk/by-id/* symlinks" in
+> > those contexts.
 > 
+> I don't think anybody needs your money.
+
+Thanks for your well thought out technical argument.
+ 
 > But it's sure an improvement over last time when you wanted to use a
 > "Kantholz" to make your statement.
 
-Kantholz, frozen sharks, whatever helps get the real point across. Hint:
-this is not at all about the money.
+Using an out of context snippet from a private conversation at the bar
+to answer a technical argument is definitely proving your point.
 
--- 
-Regards/Gruss,
-    Boris.
+Thanks,
 
-Sent from a fat crate under my desk. Formatting is fine.
---
+	tglx
