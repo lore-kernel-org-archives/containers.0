@@ -1,14 +1,14 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/9] cgroup: minor updates around cgroup_clear_directory()
-Date: Thu, 11 Jul 2013 14:42:34 +0800
-Message-ID: <51DE53DA.5000407@huawei.com>
+Subject: Re: [PATCH 3/9] cgroup: fix cgroup_add_cftypes() error handling
+Date: Thu, 11 Jul 2013 14:43:32 +0800
+Message-ID: <51DE5414.6040608@huawei.com>
 References: <1372463145-4245-1-git-send-email-tj@kernel.org>
-	<1372463145-4245-2-git-send-email-tj@kernel.org>
+	<1372463145-4245-4-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1372463145-4245-2-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1372463145-4245-4-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,16 +23,16 @@ Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFL
 List-Id: containers.vger.kernel.org
 
 On 2013/6/29 7:45, Tejun Heo wrote:
-> * Rename it to cgroup_clear_dir() and make it take the pointer to the
->   target cgroup instead of the the dentry.  This makes the function
->   consistent with its counterpart - cgroup_populate_dir().
+> cgroup_add_cftypes() uses cgroup_cfts_commit() to actually create the
+> files; however, both functions ignore actual file creation errors and
+> just assume success.  This can lead to, for example, blkio hierarchy
+> with some of the cgroups with only subset of interface files populated
+> after cfq-iosched is loaded under heavy memory pressure, which is
+> nasty.
 > 
-> * Move cgroup_clear_directory() invocation from cgroup_d_remove_dir()
->   to cgroup_remount() so that the function doesn't have to determine
->   the cgroup pointer back from the dentry.  cgroup_d_remove_dir() now
->   only deals with vfs, which is slightly cleaner.
-> 
-> This patch doesn't introduce any functional differences.
+> This patch updates cgroup_cfts_commit() and cgroup_add_cftypes() to
+> guarantee that all files are created on success and no file is created
+> on failure.
 > 
 > Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 
