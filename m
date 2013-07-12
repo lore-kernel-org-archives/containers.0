@@ -1,15 +1,16 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH cgroup/for-3.12] cgroup: replace
-	task_cgroup_path_from_hierarchy() with task_cgroup_path()
-Date: Fri, 12 Jul 2013 13:02:47 -0700
-Message-ID: <20130712200247.GG23680__27364.7341448397$1373659384$gmane$org@mtj.dyndns.org>
-References: <20130711233448.GA2359@htj.dyndns.org>
+Subject: Re: [PATCH cgroup 1/2] cgroup: move module ref handling into
+	rebind_subsystems()
+Date: Fri, 12 Jul 2013 13:10:02 -0700
+Message-ID: <20130712201002.GH23680__23278.3454972834$1373659819$gmane$org@mtj.dyndns.org>
+References: <20130629041231.GA31353@htj.dyndns.org>
+	<51DFC650.9010801@huawei.com> <51DFC787.7080703@huawei.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20130711233448.GA2359-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
+In-Reply-To: <51DFC787.7080703-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,28 +21,34 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, Jan =?utf-8?Q?Kalu=C5=BEa?= <jkaluza-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gVGh1LCBKdWwgMTEsIDIwMTMgYXQgMDQ6MzQ6NDhQTSAtMDcwMCwgVGVqdW4gSGVvIHdyb3Rl
-Ogo+IHRhc2tfY2dyb3VwX3BhdGhfZnJvbV9oaWVyYXJjaHkoKSB3YXMgYWRkZWQgZm9yIHRoZSBw
-bGFubmVkIG5ldyB1c2Vycwo+IGFuZCBub25lIG9mIHRoZSBjdXJyZW50bHkgcGxhbm5lZCB1c2Vy
-cyB3YW50cyB0byBrbm93IGFib3V0IG11bHRpcGxlCj4gaGllcmFyY2hpZXMuICBUaGlzIHBhdGNo
-IGRyb3BzIHRoZSBtdWx0aXBsZSBoaWVyYXJjaHkgcGFydCBhbmQgbWFrZXMKPiBpdCBhbHdheXMg
-cmV0dXJuIHRoZSBwYXRoIGluIHRoZSBmaXJzdCBub24tZHVtbXkgaGllcmFyY2h5Lgo+IAo+IEFz
-IHVuaWZpZWQgaGllcmFyY2h5IHdpbGwgYWx3YXlzIGhhdmUgaWQgMSwgdGhpcyBpcyBndWFyYW50
-ZWVkIHRvCj4gcmV0dXJuIHRoZSBwYXRoIGZvciB0aGUgdW5pZmllZCBoaWVyYXJjaHkgaWYgbW91
-bnRlZDsgb3RoZXJ3aXNlLCBpdAo+IHdpbGwgcmV0dXJuIHRoZSBwYXRoIGZyb20gdGhlIGhpZXJh
-cmNoeSB3aGljaCBoYXBwZW5zIHRvIG9jY3VweSB0aGUKPiBsb3dlc3QgaGllcmFyY2h5IGlkLCB3
-aGljaCB3aWxsIHVzdWFsbHkgYmUgdGhlIGZpcnN0IGhpZXJhcmNoeSBtb3VudGVkCj4gYWZ0ZXIg
-Ym9vdC4KPiAKPiBTaWduZWQtb2ZmLWJ5OiBUZWp1biBIZW8gPHRqQGtlcm5lbC5vcmc+Cj4gQ2M6
-IExlbm5hcnQgUG9ldHRlcmluZyA8bGVubmFydEBwb2V0dGVyaW5nLm5ldD4KPiBDYzogS2F5IFNp
-ZXZlcnMgPGtheS5zaWV2ZXJzQHZyZnkub3JnPgo+IENjOiBKYW4gS2FsdcW+YSA8amthbHV6YUBy
-ZWRoYXQuY29tPgoKQXBwbGllZCB0aGlzIHRvIGNncm91cC9mb3ItMy4xMS1maXhlcyBzbyB0aGF0
-IHRoZSBvdXQtb2YtdHJlZSB1c2FnZXMKY3VycmVudGx5IGJlaW5nIGRldmVsb3BlZCBjYW4gdGFy
-Z2V0IDMuMTEga2VybmVsLiAgVGhpcyBmdW5jdGlvbgpjdXJyZW50bHkgZG9lc24ndCBoYXZlIGFu
-eSBpbi10cmVlIHVzZXJzIHNvIHRoaXMgd29uJ3QgYWZmZWN0CmFueXRoaW5nLgoKVGhhbmtzLgoK
-LS0gCnRlanVuCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-CkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlv
-bi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8v
-Y29udGFpbmVycw==
+On Fri, Jul 12, 2013 at 05:08:23PM +0800, Li Zefan wrote:
+> > so a modular cgroup subsystem can be unloaded inbetween, say it's net_cls, and
+> > then it's possible that:
+> > 
+> > 	# mount -t cgroup -o net_cls xxx /cgroup
+> > 
+> > The above operation succeeds but it's not binded to cgroupfs as it just got
+> > unloaded.
+
+Ooh, right, it'd be excluded from the iteration.
+
+> for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
+> 	...
+> 	if (!subsys[i] && (added_mask & (1 << i))
+> 		return -EINVAL;
+> 	...
+> }
+> 
+> This should work.
+
+Yeah, I kinda dislike the raw iteration tho.  I wonder whether setting
+the actually added mask and comparing would be cleaner.  I'll
+experiment with it and post the updated patch.
+
+Thanks!
+
+-- 
+tejun
