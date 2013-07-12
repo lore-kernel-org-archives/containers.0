@@ -1,13 +1,16 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH cgroup/for-3.12] cgroup: replace
-	task_cgroup_path_from_hierarchy() with task_cgroup_path()
-Date: Thu, 11 Jul 2013 16:34:48 -0700
-Message-ID: <20130711233448.GA2359__18204.6957583681$1373585701$gmane$org@htj.dyndns.org>
+From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH v2 5/9] cgroup: update error handling in
+	cgroup_populate_dir()
+Date: Fri, 12 Jul 2013 14:07:08 +0800
+Message-ID: <51DF9D0C.30304@huawei.com>
+References: <1372463145-4245-1-git-send-email-tj@kernel.org>
+	<1372463145-4245-6-git-send-email-tj@kernel.org>
+	<20130711171825.GD10195@mtj.dyndns.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20130711171825.GD10195-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,68 +20,26 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, Jan =?utf-8?Q?Kalu=C5=BEa?= <jkaluza-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-CnRhc2tfY2dyb3VwX3BhdGhfZnJvbV9oaWVyYXJjaHkoKSB3YXMgYWRkZWQgZm9yIHRoZSBwbGFu
-bmVkIG5ldyB1c2VycwphbmQgbm9uZSBvZiB0aGUgY3VycmVudGx5IHBsYW5uZWQgdXNlcnMgd2Fu
-dHMgdG8ga25vdyBhYm91dCBtdWx0aXBsZQpoaWVyYXJjaGllcy4gIFRoaXMgcGF0Y2ggZHJvcHMg
-dGhlIG11bHRpcGxlIGhpZXJhcmNoeSBwYXJ0IGFuZCBtYWtlcwppdCBhbHdheXMgcmV0dXJuIHRo
-ZSBwYXRoIGluIHRoZSBmaXJzdCBub24tZHVtbXkgaGllcmFyY2h5LgoKQXMgdW5pZmllZCBoaWVy
-YXJjaHkgd2lsbCBhbHdheXMgaGF2ZSBpZCAxLCB0aGlzIGlzIGd1YXJhbnRlZWQgdG8KcmV0dXJu
-IHRoZSBwYXRoIGZvciB0aGUgdW5pZmllZCBoaWVyYXJjaHkgaWYgbW91bnRlZDsgb3RoZXJ3aXNl
-LCBpdAp3aWxsIHJldHVybiB0aGUgcGF0aCBmcm9tIHRoZSBoaWVyYXJjaHkgd2hpY2ggaGFwcGVu
-cyB0byBvY2N1cHkgdGhlCmxvd2VzdCBoaWVyYXJjaHkgaWQsIHdoaWNoIHdpbGwgdXN1YWxseSBi
-ZSB0aGUgZmlyc3QgaGllcmFyY2h5IG1vdW50ZWQKYWZ0ZXIgYm9vdC4KClNpZ25lZC1vZmYtYnk6
-IFRlanVuIEhlbyA8dGpAa2VybmVsLm9yZz4KQ2M6IExlbm5hcnQgUG9ldHRlcmluZyA8bGVubmFy
-dEBwb2V0dGVyaW5nLm5ldD4KQ2M6IEtheSBTaWV2ZXJzIDxrYXkuc2lldmVyc0B2cmZ5Lm9yZz4K
-Q2M6IEphbiBLYWx1xb5hIDxqa2FsdXphQHJlZGhhdC5jb20+Ci0tLQogaW5jbHVkZS9saW51eC9j
-Z3JvdXAuaCB8ICAgIDMgKy0tCiBrZXJuZWwvY2dyb3VwLmMgICAgICAgIHwgICAzMSArKysrKysr
-KysrKysrKysrKysrLS0tLS0tLS0tLS0tCiAyIGZpbGVzIGNoYW5nZWQsIDIwIGluc2VydGlvbnMo
-KyksIDE0IGRlbGV0aW9ucygtKQoKLS0tIGEvaW5jbHVkZS9saW51eC9jZ3JvdXAuaAorKysgYi9p
-bmNsdWRlL2xpbnV4L2Nncm91cC5oCkBAIC01MzMsOCArNTMzLDcgQEAgaW50IGNncm91cF9ybV9j
-ZnR5cGVzKHN0cnVjdCBjZ3JvdXBfc3VicwogYm9vbCBjZ3JvdXBfaXNfZGVzY2VuZGFudChzdHJ1
-Y3QgY2dyb3VwICpjZ3JwLCBzdHJ1Y3QgY2dyb3VwICphbmNlc3Rvcik7CiAKIGludCBjZ3JvdXBf
-cGF0aChjb25zdCBzdHJ1Y3QgY2dyb3VwICpjZ3JwLCBjaGFyICpidWYsIGludCBidWZsZW4pOwot
-aW50IHRhc2tfY2dyb3VwX3BhdGhfZnJvbV9oaWVyYXJjaHkoc3RydWN0IHRhc2tfc3RydWN0ICp0
-YXNrLCBpbnQgaGllcmFyY2h5X2lkLAotCQkJCSAgICBjaGFyICpidWYsIHNpemVfdCBidWZsZW4p
-OworaW50IHRhc2tfY2dyb3VwX3BhdGgoc3RydWN0IHRhc2tfc3RydWN0ICp0YXNrLCBjaGFyICpi
-dWYsIHNpemVfdCBidWZsZW4pOwogCiBpbnQgY2dyb3VwX3Rhc2tfY291bnQoY29uc3Qgc3RydWN0
-IGNncm91cCAqY2dycCk7CiAKLS0tIGEva2VybmVsL2Nncm91cC5jCisrKyBiL2tlcm5lbC9jZ3Jv
-dXAuYwpAQCAtMTc5NywzNiArMTc5Nyw0MyBAQCBvdXQ6CiBFWFBPUlRfU1lNQk9MX0dQTChjZ3Jv
-dXBfcGF0aCk7CiAKIC8qKgotICogdGFza19jZ3JvdXBfcGF0aF9mcm9tX2hpZXJhcmNoeSAtIGNn
-cm91cCBwYXRoIG9mIGEgdGFzayBvbiBhIGhpZXJhcmNoeQorICogdGFza19jZ3JvdXBfcGF0aCAt
-IGNncm91cCBwYXRoIG9mIGEgdGFzayBpbiB0aGUgZmlyc3QgY2dyb3VwIGhpZXJhcmNoeQogICog
-QHRhc2s6IHRhcmdldCB0YXNrCi0gKiBAaGllcmFyY2h5X2lkOiB0aGUgaGllcmFyY2h5IHRvIGxv
-b2sgdXAgQHRhc2sncyBjZ3JvdXAgZnJvbQogICogQGJ1ZjogdGhlIGJ1ZmZlciB0byB3cml0ZSB0
-aGUgcGF0aCBpbnRvCiAgKiBAYnVmbGVuOiB0aGUgbGVuZ3RoIG9mIHRoZSBidWZmZXIKICAqCi0g
-KiBEZXRlcm1pbmUgQHRhc2sncyBjZ3JvdXAgb24gdGhlIGhpZXJhcmNoeSBzcGVjaWZpZWQgYnkg
-QGhpZXJhcmNoeV9pZCBhbmQKLSAqIGNvcHkgaXRzIHBhdGggaW50byBAYnVmLiAgVGhpcyBmdW5j
-dGlvbiBncmFicyBjZ3JvdXBfbXV0ZXggYW5kIHNob3VsZG4ndAotICogYmUgdXNlZCBpbnNpZGUg
-bG9ja3MgdXNlZCBieSBjZ3JvdXAgY29udHJvbGxlciBjYWxsYmFja3MuCisgKiBEZXRlcm1pbmUg
-QHRhc2sncyBjZ3JvdXAgb24gdGhlIGZpcnN0ICh0aGUgb25lIHdpdGggdGhlIGxvd2VzdCBub24t
-emVybworICogaGllcmFyY2h5X2lkKSBjZ3JvdXAgaGllcmFyY2h5IGFuZCBjb3B5IGl0cyBwYXRo
-IGludG8gQGJ1Zi4gIFRoaXMKKyAqIGZ1bmN0aW9uIGdyYWJzIGNncm91cF9tdXRleCBhbmQgc2hv
-dWxkbid0IGJlIHVzZWQgaW5zaWRlIGxvY2tzIHVzZWQgYnkKKyAqIGNncm91cCBjb250cm9sbGVy
-IGNhbGxiYWNrcy4KKyAqCisgKiBSZXR1cm5zIDAgb24gc3VjY2VzcywgZmFpbHMgd2l0aCAtJUVO
-QU1FVE9PTE9ORyBpZiBAYnVmbGVuIGlzIHRvbyBzaG9ydC4KICAqLwotaW50IHRhc2tfY2dyb3Vw
-X3BhdGhfZnJvbV9oaWVyYXJjaHkoc3RydWN0IHRhc2tfc3RydWN0ICp0YXNrLCBpbnQgaGllcmFy
-Y2h5X2lkLAotCQkJCSAgICBjaGFyICpidWYsIHNpemVfdCBidWZsZW4pCitpbnQgdGFza19jZ3Jv
-dXBfcGF0aChzdHJ1Y3QgdGFza19zdHJ1Y3QgKnRhc2ssIGNoYXIgKmJ1Ziwgc2l6ZV90IGJ1Zmxl
-bikKIHsKIAlzdHJ1Y3QgY2dyb3VwZnNfcm9vdCAqcm9vdDsKLQlzdHJ1Y3QgY2dyb3VwICpjZ3Jw
-ID0gTlVMTDsKLQlpbnQgcmV0ID0gLUVOT0VOVDsKKwlzdHJ1Y3QgY2dyb3VwICpjZ3JwOworCWlu
-dCBoaWVyYXJjaHlfaWQgPSAxLCByZXQgPSAwOworCisJaWYgKGJ1ZmxlbiA8IDIpCisJCXJldHVy
-biAtRU5BTUVUT09MT05HOwogCiAJbXV0ZXhfbG9jaygmY2dyb3VwX211dGV4KTsKIAotCXJvb3Qg
-PSBpZHJfZmluZCgmY2dyb3VwX2hpZXJhcmNoeV9pZHIsIGhpZXJhcmNoeV9pZCk7CisJcm9vdCA9
-IGlkcl9nZXRfbmV4dCgmY2dyb3VwX2hpZXJhcmNoeV9pZHIsICZoaWVyYXJjaHlfaWQpOworCiAJ
-aWYgKHJvb3QpIHsKIAkJY2dycCA9IHRhc2tfY2dyb3VwX2Zyb21fcm9vdCh0YXNrLCByb290KTsK
-IAkJcmV0ID0gY2dyb3VwX3BhdGgoY2dycCwgYnVmLCBidWZsZW4pOworCX0gZWxzZSB7CisJCS8q
-IGlmIG5vIGhpZXJhcmNoeSBleGlzdHMsIGV2ZXJ5b25lIGlzIGluICIvIiAqLworCQltZW1jcHko
-YnVmLCAiLyIsIDIpOwogCX0KIAogCW11dGV4X3VubG9jaygmY2dyb3VwX211dGV4KTsKLQogCXJl
-dHVybiByZXQ7CiB9Ci1FWFBPUlRfU1lNQk9MX0dQTCh0YXNrX2Nncm91cF9wYXRoX2Zyb21faGll
-cmFyY2h5KTsKK0VYUE9SVF9TWU1CT0xfR1BMKHRhc2tfY2dyb3VwX3BhdGgpOwogCiAvKgogICog
-Q29udHJvbCBHcm91cCB0YXNrc2V0Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGlu
-dXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxt
-YW4vbGlzdGluZm8vY29udGFpbmVycw==
+On 2013/7/12 1:18, Tejun Heo wrote:
+>>From 4b5e65e0911690422a9b253b8ef68b14288e99c5 Mon Sep 17 00:00:00 2001
+> From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> Date: Fri, 28 Jun 2013 16:24:11 -0700
+> 
+> cgroup_populate_dir() didn't use to check whether the actual file
+> creations were successful and could return success with only subset of
+> the requested files created, which is nasty.
+> 
+> This patch udpates cgroup_populate_dir() so that it either succeeds
+> with all files or fails with no file.
+> 
+> v2: The original patch also converted for_each_root_subsys() usages to
+>     for_each_subsys() without explaining why.  That part has been
+>     moved to a separate patch.
+> 
+> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+
+Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
