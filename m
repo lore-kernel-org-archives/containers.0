@@ -1,15 +1,20 @@
-From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH cgroup 1/2] cgroup: move module ref handling into
-	rebind_subsystems()
-Date: Fri, 12 Jul 2013 17:08:23 +0800
-Message-ID: <51DFC787.7080703@huawei.com>
-References: <20130629041231.GA31353@htj.dyndns.org>
-	<51DFC650.9010801@huawei.com>
+From: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Interaction user namespace, /proc/1 ownership & cap_set
+Date: Fri, 12 Jul 2013 11:04:20 +0100
+Message-ID: <20130712100420.GD25475@redhat.com>
+References: <20130701161625.GQ15954@redhat.com>
+	<51D261D3.3030002@cn.fujitsu.com> <87wqp9uz9a.fsf@xmission.com>
+	<51D295C5.1080003@nod.at> <20130702092554.GD2524@redhat.com>
+	<87ehbhthbl.fsf@xmission.com> <51D2A649.9030102@cn.fujitsu.com>
+	<8761wsudgk.fsf@xmission.com> <20130702164514.GB2524@redhat.com>
+	<87k3l8sx6l.fsf@xmission.com>
+Reply-To: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <51DFC650.9010801-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <87k3l8sx6l.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,104 +24,71 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
->> Subject: [PATCH 1/2] cgroup: move module ref handling into rebind_subsystems()
->>
->> Module ref handling in cgroup is rather weird.
->> parse_cgroupfs_options() grabs all the modules for the specified
->> subsystems.  A module ref is kept if the specified subsystem is newly
->> bound to the hierarchy.  If not, or the operation fails, the refs are
->> dropped.  This scatters module ref handling across multiple functions
->> making it difficult to track.  It also make the function nasty to use
->> for dynamic subsystem binding which is necessary for the planned
->> unified hierarchy.
->>
->> There's nothing which requires the subsystem modules to be pinned
->> between parse_cgroupfs_options() and rebind_subsystems() in both mount
->> and remount paths.  parse_cgroupfs_options() can just parse and
->> rebind_subsystems() can handle pinning the subsystems that it wants to
->> bind, which is a natural part of its task - binding - anyway.
->>
->> Move module ref handling into rebind_subsystems() which makes the code
->> a lot simpler - modules are gotten iff it's gonna be bound and put iff
->> unbound or binding fails.
->>
->> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
->> ---
->>  kernel/cgroup.c | 87 +++++++++++++++------------------------------------------
->>  1 file changed, 22 insertions(+), 65 deletions(-)
->>
->> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
->> index 3bc7a1a..a65aff1 100644
->> --- a/kernel/cgroup.c
->> +++ b/kernel/cgroup.c
->> @@ -1003,6 +1003,7 @@ static int rebind_subsystems(struct cgroupfs_root *root,
->>  {
->>  	struct cgroup *cgrp = &root->top_cgroup;
->>  	struct cgroup_subsys *ss;
->> +	unsigned long pinned = 0;
->>  	int i, ret;
->>  
->>  	BUG_ON(!mutex_is_locked(&cgroup_mutex));
->> @@ -1010,20 +1011,26 @@ static int rebind_subsystems(struct cgroupfs_root *root,
->>  
->>  	/* Check that any added subsystems are currently free */
->>  	for_each_subsys(ss, i) {
->> -		unsigned long bit = 1UL << i;
->> -
->> -		if (!(bit & added_mask))
->> +		if (!(added_mask & (1 << i)))
->>  			continue;
->>  
->> +		/* is the subsystem mounted elsewhere? */
->>  		if (ss->root != &cgroup_dummy_root) {
->> -			/* Subsystem isn't free */
->> -			return -EBUSY;
->> +			ret = -EBUSY;
->> +			goto out_put;
->>  		}
->> +
->> +		/* pin the module */
->> +		if (!try_module_get(ss->module)) {
->> +			ret = -ENOENT;
->> +			goto out_put;
->> +		}
->> +		pinned |= 1 << i;
->>  	}
+On Tue, Jul 02, 2013 at 10:12:34AM -0700, Eric W. Biederman wrote:
+> "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
 > 
-> This looks wrong to me.
+> > Ah, yes, that would explain it. My demo is removing the SYS_MODULE
+> > capability, and then exec'ing the shell binary. Since we are uid==0,
+> > and prctl(PR_CAPBSET_DROP) is not available inside the user namespace,
+> > the rules for capabilities vs execve() call will cause the shell
+> > binary to regain SYS_MODULE capability bit.
+> >
+> > So the problem I'm seeing in libvirt is all a result of the fact
+> > that we can't use PR_CAPBSET_DROP inside the user namespace. Given
+> > that there's no point trying to drop any capabilities inside the
+> > user namespace.
+> >
+> > The only slight problem here is that we want to drop CAP_MKNOD so
+> > that systemd can detect that it shouldn't attempt to run any units
+> > which would rely on mknod.
 > 
-> cgroup_mount()
-> {
-> 	mutex_lock(cgroup_mutex);
-> 	parse_cgroupfs_options();
-> 	mutex_unlock(cgroup_mutex);
-> 	...
+> I just looked at that and I don't see a justification for the
+> restriciton.
 > 
-> 	mutex_lock(cgroup_mutex);
-> 	...
-> 	rebind_subsystems();
-> 	...
-> 	mutex_unlock(cgroup_mutex);
-> }
+> Could you try the patch below and see if it fixes things for you?
 > 
-> so a modular cgroup subsystem can be unloaded inbetween, say it's net_cls, and
-> then it's possible that:
+> Eric
 > 
-> 	# mount -t cgroup -o net_cls xxx /cgroup
 > 
-> The above operation succeeds but it's not binded to cgroupfs as it just got
-> unloaded.
+> From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> Date: Tue, 2 Jul 2013 10:04:54 -0700
+> Subject: [PATCH] userns: Allow PR_CAPBSET_DROP in a user namespace.
 > 
+> As the capabilites and capability bounding set are per user namespace
+> properties it is safe to allow changing them with just CAP_SETPCAP
+> permission in the user namespace.
+> 
+> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> ---
+>  security/commoncap.c |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
+> 
+> diff --git a/security/commoncap.c b/security/commoncap.c
+> index 4d787e6..fd9b08f 100644
+> --- a/security/commoncap.c
+> +++ b/security/commoncap.c
+> @@ -843,7 +843,7 @@ int cap_task_setnice(struct task_struct *p, int nice)
+>   */
+>  static long cap_prctl_drop(struct cred *new, unsigned long cap)
+>  {
+> -	if (!capable(CAP_SETPCAP))
+> +	if (!ns_capable(current_user_ns(), CAP_SETPCAP))
+>  		return -EPERM;
+>  	if (!cap_valid(cap))
+>  		return -EINVAL;
 
-for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
-	...
-	if (!subsys[i] && (added_mask & (1 << i))
-		return -EINVAL;
-	...
-}
+Yes, that works in my testing with libvirt. Feel free to add
 
-This should work.
+  Tested-by: Daniel P. Berrange <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+
+Regards,
+Daniel
+-- 
+|: http://berrange.com      -o-    http://www.flickr.com/photos/dberrange/ :|
+|: http://libvirt.org              -o-             http://virt-manager.org :|
+|: http://autobuild.org       -o-         http://search.cpan.org/~danberr/ :|
+|: http://entangle-photo.org       -o-       http://live.gnome.org/gtk-vnc :|
