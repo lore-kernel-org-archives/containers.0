@@ -1,23 +1,12 @@
-From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: [Workman-devel] cgroup: status-quo and userland efforts
-Date: Tue, 23 Jul 2013 16:48:16 +0200
-Message-ID: <20130723144816.GK8677__29302.9165048667$1374590912$gmane$org@dhcp22.suse.cz>
-References: <1372311907.5871.78.camel@marge.simpson.net>
-	<20130627180143.GD5599@mtj.dyndns.org>
-	<1372391198.5989.110.camel@marge.simpson.net>
-	<20130628040930.GC2500@htj.dyndns.org>
-	<1372394950.5989.128.camel@marge.simpson.net>
-	<20130628050138.GD2500@htj.dyndns.org>
-	<20130628150513.GD5125@dhcp22.suse.cz>
-	<20130628180155.GD16483@redhat.com>
-	<20130630183838.GB23731@dhcp22.suse.cz>
-	<20130715184940.GG27338@redhat.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [GIT PULL] cgroup changes for 3.11-rc2
+Date: Tue, 23 Jul 2013 13:47:11 -0400
+Message-ID: <20130723174711.GE21100__36381.5970755697$1374601650$gmane$org@mtj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20130715184940.GG27338-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,51 +16,215 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, Mike Galbraith <bitbucket-BGeptl67XyCzQB+pC5nmwQ@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, lpoetter <lpoetter-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "dhaval.giani" <dhaval.giani-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, workman-devel <workman-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, kent.overstreet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon 15-07-13 14:49:40, Vivek Goyal wrote:
-> On Sun, Jun 30, 2013 at 08:38:38PM +0200, Michal Hocko wrote:
-> > On Fri 28-06-13 14:01:55, Vivek Goyal wrote:
-> > > On Fri, Jun 28, 2013 at 05:05:13PM +0200, Michal Hocko wrote:
-> > [...]
-> > > > OK, so libcgroup's rules daemon will still work and place my tasks in
-> > > > appropriate cgroups?
-> > > 
-> > > Do you use that daemon in practice?
-> > 
-> > I am not but my users do. And that is why I care.
-> 
-> Michael, 
-> 
-> would you have more details of how those users are exactly using
-> rules engine daemon.
+Hello, Linus.
 
-The most common usage is uid and exec names.
+This pull request contains two patches, both of which aren't fixes
+per-se but I think it'd be better to fast-track them.
 
-> To me rulesengined processed 3 kinds of rules.
-> 
-> - uid based
-> - gid based
-> - exec file path based
-> 
-> uid/gid based rule exection can be taken care by pam_cgroup module too.
-> So I think one should not need cgrulesengined for that.
+One removes bcache_subsys_id which was added without proper review
+through the block tree.  Fortunately, bcache cgroup code is
+unconditionally disabled, so this was never exposed to userland.  The
+cgroup subsys_id is removed.  Kent will remove the affected (disabled)
+code through bcache branch.
 
-I am not familiar with pam_cgroup much but it is a part of libcgroup
-package, right?
+The other simplifies task_group_path_from_hierarchy().  The function
+doesn't currently have in-kernel users but there are external code and
+development going on dependent on the function and making the function
+available for 3.11 would make things go smoother.
 
-> I am curious what kind of exec rules are useful. Any placement of
-> services one can do using systemd. So only executables we are left
-> to manage are which are not services. 
+The two patches are available in the git repository at:
 
-Yes, those are usually backup processes which should not disrupt the
-regular server workload.
+  git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git for-3.11-fixes
 
-uid ones are used to keep a leash on local users of the machine but i do
-not have many details as I usually do not have access to those machines.
-All I see are complains when something explodes ;)
--- 
-Michal Hocko
-SUSE Labs
+for you to fetch changes up to 913ffdb54366f94eec65c656cae8c6e00e1ab1b0:
+
+  cgroup: replace task_cgroup_path_from_hierarchy() with task_cgroup_path() (2013-07-12 12:49:05 -0700)
+
+Thanks.
+
+----------------------------------------------------------------
+Tejun Heo (2):
+      cgroup: remove bcache_subsys_id which got added stealthily
+      cgroup: replace task_cgroup_path_from_hierarchy() with task_cgroup_path()
+
+ include/linux/cgroup.h        |  3 +--
+ include/linux/cgroup_subsys.h | 45 +++++++------------------------------------
+ kernel/cgroup.c               | 31 +++++++++++++++++------------
+ 3 files changed, 27 insertions(+), 52 deletions(-)
+
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index fd097ec..21cfaff 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -540,8 +540,7 @@ int cgroup_rm_cftypes(struct cgroup_subsys *ss, struct cftype *cfts);
+ bool cgroup_is_descendant(struct cgroup *cgrp, struct cgroup *ancestor);
+ 
+ int cgroup_path(const struct cgroup *cgrp, char *buf, int buflen);
+-int task_cgroup_path_from_hierarchy(struct task_struct *task, int hierarchy_id,
+-				    char *buf, size_t buflen);
++int task_cgroup_path(struct task_struct *task, char *buf, size_t buflen);
+ 
+ int cgroup_task_count(const struct cgroup *cgrp);
+ 
+diff --git a/include/linux/cgroup_subsys.h b/include/linux/cgroup_subsys.h
+index 6e7ec64..b613ffd 100644
+--- a/include/linux/cgroup_subsys.h
++++ b/include/linux/cgroup_subsys.h
+@@ -1,86 +1,55 @@
+-/* Add subsystem definitions of the form SUBSYS(<name>) in this
+- * file. Surround each one by a line of comment markers so that
+- * patches don't collide
++/*
++ * List of cgroup subsystems.
++ *
++ * DO NOT ADD ANY SUBSYSTEM WITHOUT EXPLICIT ACKS FROM CGROUP MAINTAINERS.
+  */
+-
+-/* */
+-
+-/* */
+-
+ #if IS_SUBSYS_ENABLED(CONFIG_CPUSETS)
+ SUBSYS(cpuset)
+ #endif
+ 
+-/* */
+-
+ #if IS_SUBSYS_ENABLED(CONFIG_CGROUP_DEBUG)
+ SUBSYS(debug)
+ #endif
+ 
+-/* */
+-
+ #if IS_SUBSYS_ENABLED(CONFIG_CGROUP_SCHED)
+ SUBSYS(cpu_cgroup)
+ #endif
+ 
+-/* */
+-
+ #if IS_SUBSYS_ENABLED(CONFIG_CGROUP_CPUACCT)
+ SUBSYS(cpuacct)
+ #endif
+ 
+-/* */
+-
+ #if IS_SUBSYS_ENABLED(CONFIG_MEMCG)
+ SUBSYS(mem_cgroup)
+ #endif
+ 
+-/* */
+-
+ #if IS_SUBSYS_ENABLED(CONFIG_CGROUP_DEVICE)
+ SUBSYS(devices)
+ #endif
+ 
+-/* */
+-
+ #if IS_SUBSYS_ENABLED(CONFIG_CGROUP_FREEZER)
+ SUBSYS(freezer)
+ #endif
+ 
+-/* */
+-
+ #if IS_SUBSYS_ENABLED(CONFIG_NET_CLS_CGROUP)
+ SUBSYS(net_cls)
+ #endif
+ 
+-/* */
+-
+ #if IS_SUBSYS_ENABLED(CONFIG_BLK_CGROUP)
+ SUBSYS(blkio)
+ #endif
+ 
+-/* */
+-
+ #if IS_SUBSYS_ENABLED(CONFIG_CGROUP_PERF)
+ SUBSYS(perf)
+ #endif
+ 
+-/* */
+-
+ #if IS_SUBSYS_ENABLED(CONFIG_NETPRIO_CGROUP)
+ SUBSYS(net_prio)
+ #endif
+ 
+-/* */
+-
+ #if IS_SUBSYS_ENABLED(CONFIG_CGROUP_HUGETLB)
+ SUBSYS(hugetlb)
+ #endif
+-
+-/* */
+-
+-#ifdef CONFIG_CGROUP_BCACHE
+-SUBSYS(bcache)
+-#endif
+-
+-/* */
++/*
++ * DO NOT ADD ANY SUBSYSTEM WITHOUT EXPLICIT ACKS FROM CGROUP MAINTAINERS.
++ */
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index e5583d1..afb8d53 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1846,36 +1846,43 @@ out:
+ EXPORT_SYMBOL_GPL(cgroup_path);
+ 
+ /**
+- * task_cgroup_path_from_hierarchy - cgroup path of a task on a hierarchy
++ * task_cgroup_path - cgroup path of a task in the first cgroup hierarchy
+  * @task: target task
+- * @hierarchy_id: the hierarchy to look up @task's cgroup from
+  * @buf: the buffer to write the path into
+  * @buflen: the length of the buffer
+  *
+- * Determine @task's cgroup on the hierarchy specified by @hierarchy_id and
+- * copy its path into @buf.  This function grabs cgroup_mutex and shouldn't
+- * be used inside locks used by cgroup controller callbacks.
++ * Determine @task's cgroup on the first (the one with the lowest non-zero
++ * hierarchy_id) cgroup hierarchy and copy its path into @buf.  This
++ * function grabs cgroup_mutex and shouldn't be used inside locks used by
++ * cgroup controller callbacks.
++ *
++ * Returns 0 on success, fails with -%ENAMETOOLONG if @buflen is too short.
+  */
+-int task_cgroup_path_from_hierarchy(struct task_struct *task, int hierarchy_id,
+-				    char *buf, size_t buflen)
++int task_cgroup_path(struct task_struct *task, char *buf, size_t buflen)
+ {
+ 	struct cgroupfs_root *root;
+-	struct cgroup *cgrp = NULL;
+-	int ret = -ENOENT;
++	struct cgroup *cgrp;
++	int hierarchy_id = 1, ret = 0;
++
++	if (buflen < 2)
++		return -ENAMETOOLONG;
+ 
+ 	mutex_lock(&cgroup_mutex);
+ 
+-	root = idr_find(&cgroup_hierarchy_idr, hierarchy_id);
++	root = idr_get_next(&cgroup_hierarchy_idr, &hierarchy_id);
++
+ 	if (root) {
+ 		cgrp = task_cgroup_from_root(task, root);
+ 		ret = cgroup_path(cgrp, buf, buflen);
++	} else {
++		/* if no hierarchy exists, everyone is in "/" */
++		memcpy(buf, "/", 2);
+ 	}
+ 
+ 	mutex_unlock(&cgroup_mutex);
+-
+ 	return ret;
+ }
+-EXPORT_SYMBOL_GPL(task_cgroup_path_from_hierarchy);
++EXPORT_SYMBOL_GPL(task_cgroup_path);
+ 
+ /*
+  * Control Group taskset
