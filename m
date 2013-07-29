@@ -1,14 +1,14 @@
-From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 9/9] netfilter: use ns_printk in iptable context
-Date: Mon, 29 Jul 2013 17:48:56 +0800
-Message-ID: <51F63A88.4090405@cn.fujitsu.com>
+From: Gu Zheng <guz.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 2/9] syslog_ns: add syslog_ns into user_namespace
+Date: Mon, 29 Jul 2013 17:46:35 +0800
+Message-ID: <51F639FB.304@cn.fujitsu.com>
 References: <1375065080-26740-1-git-send-email-rui.xiang@huawei.com>
-	<1375065080-26740-10-git-send-email-rui.xiang@huawei.com>
+	<1375065080-26740-3-git-send-email-rui.xiang@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1375065080-26740-10-git-send-email-rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1375065080-26740-3-git-send-email-rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,55 +19,59 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, libo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, libo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Hi Rui,
+
 On 07/29/2013 10:31 AM, Rui Xiang wrote:
-> To containerise iptables log, use ns_printk
-> to report individual logs to container as
-> getting syslog_ns from skb->dev->nd_net->user_ns.
+
+> Add a syslog_ns pointer to user_namespace, and make
+> syslog_ns per user_namespace, not global.
+> 
+> Since syslog_ns is assigned to user_ns, we can have
+> full capabilities in new user_ns to create a new syslog_ns.
 > 
 > Signed-off-by: Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 > ---
->  include/net/netfilter/xt_log.h | 6 +++++-
->  net/netfilter/xt_LOG.c         | 4 ++--
->  2 files changed, 7 insertions(+), 3 deletions(-)
+>  include/linux/syslog.h         | 5 +++++
+>  include/linux/user_namespace.h | 1 +
+>  2 files changed, 6 insertions(+)
 > 
-> diff --git a/include/net/netfilter/xt_log.h b/include/net/netfilter/xt_log.h
-> index 9d9756c..5222cba 100644
-> --- a/include/net/netfilter/xt_log.h
-> +++ b/include/net/netfilter/xt_log.h
-> @@ -39,10 +39,14 @@ static struct sbuff *sb_open(void)
->  	return m;
->  }
+> diff --git a/include/linux/syslog.h b/include/linux/syslog.h
+> index 425fafe..62ce47f 100644
+> --- a/include/linux/syslog.h
+> +++ b/include/linux/syslog.h
+> @@ -90,6 +90,11 @@ struct syslog_namespace {
+>  	size_t syslog_partial;
 >  
-> -static void sb_close(struct sbuff *m)
-> +static void sb_close(struct sbuff *m, struct sk_buff *skb)
->  {
->  	m->buf[m->count] = 0;
-> +#ifdef CONFIG_NET_NS
-> +	ns_printk(skb->dev->nd_net->user_ns->syslog_ns, "%s\n", m->buf);
-> +#else
->  	printk("%s\n", m->buf);
-> +#endif
+>  	int dmesg_restrict;
+> +
+> +	/*
+> +	 * user namespace which owns this syslog ns.
+> +	 */
+> +	struct user_namespace *owner;
+>  };
 >  
->  	if (likely(m != &emergency))
->  		kfree(m);
-> diff --git a/net/netfilter/xt_LOG.c b/net/netfilter/xt_LOG.c
-> index 5ab2484..f2cd2fa3 100644
-> --- a/net/netfilter/xt_LOG.c
-> +++ b/net/netfilter/xt_LOG.c
-> @@ -493,7 +493,7 @@ ipt_log_packet(struct net *net,
+>  static inline struct syslog_namespace *get_syslog_ns(
+> diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+> index b6b215f..ce2de5b 100644
+> --- a/include/linux/user_namespace.h
+> +++ b/include/linux/user_namespace.h
+> @@ -28,6 +28,7 @@ struct user_namespace {
+>  	unsigned int		proc_inum;
+>  	bool			may_mount_sysfs;
+>  	bool			may_mount_proc;
+> +	struct syslog_namespace *syslog_ns;
+
+As we add a syslog_ns pointer to user_namespace to make
+syslog_ns per user_namespace and the caps check.
+But why also add a point to syslog_namespace in
+user_namespace? Am I missing something?:)
+
+Thanks,
+Gu
+
+>  };
 >  
->  	dump_ipv4_packet(m, loginfo, skb, 0);
->  
-> -	sb_close(m);
-> +	sb_close(m, skb);
-
-
-why don't you pass net directly to sb_close here?
-
-un init net namespace will not trigger any system log through ipt_LOG/ip6t_LOG.
-You can check the FIXME in ipt_log_packet.
-
-BTW,for this patch,you should cc netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org too.
+>  extern struct user_namespace init_user_ns;
