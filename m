@@ -1,7 +1,7 @@
 From: Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 9/9] netfilter: use ns_printk in iptable context
-Date: Mon, 29 Jul 2013 10:31:20 +0800
-Message-ID: <1375065080-26740-10-git-send-email-rui.xiang__28027.4331606508$1375065342$gmane$org@huawei.com>
+Subject: [PATCH 6/9] syslog_ns: use init syslog_ns for console action
+Date: Mon, 29 Jul 2013 10:31:17 +0800
+Message-ID: <1375065080-26740-7-git-send-email-rui.xiang__18356.5378691585$1375065358$gmane$org@huawei.com>
 References: <1375065080-26740-1-git-send-email-rui.xiang@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,57 +21,30 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lin
 Cc: serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, libo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-To containerise iptables log, use ns_printk
-to report individual logs to container as
-getting syslog_ns from skb->dev->nd_net->user_ns.
+While flags SYSLOG_ACTION_CONSOLE_ON/OFF/LEVEL of
+console actin are used in syslog syscall, the related
+hanlding should be targeted at host by init_syslog_ns.
 
 Signed-off-by: Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 ---
- include/net/netfilter/xt_log.h | 6 +++++-
- net/netfilter/xt_LOG.c         | 4 ++--
- 2 files changed, 7 insertions(+), 3 deletions(-)
+ kernel/printk.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/include/net/netfilter/xt_log.h b/include/net/netfilter/xt_log.h
-index 9d9756c..5222cba 100644
---- a/include/net/netfilter/xt_log.h
-+++ b/include/net/netfilter/xt_log.h
-@@ -39,10 +39,14 @@ static struct sbuff *sb_open(void)
- 	return m;
- }
+diff --git a/kernel/printk.c b/kernel/printk.c
+index c5c65a8..fd2d600 100644
+--- a/kernel/printk.c
++++ b/kernel/printk.c
+@@ -379,6 +379,11 @@ static int check_syslog_permissions(int type, bool from_file,
+ 	if (from_file && type != SYSLOG_ACTION_OPEN)
+ 		return 0;
  
--static void sb_close(struct sbuff *m)
-+static void sb_close(struct sbuff *m, struct sk_buff *skb)
- {
- 	m->buf[m->count] = 0;
-+#ifdef CONFIG_NET_NS
-+	ns_printk(skb->dev->nd_net->user_ns->syslog_ns, "%s\n", m->buf);
-+#else
- 	printk("%s\n", m->buf);
-+#endif
- 
- 	if (likely(m != &emergency))
- 		kfree(m);
-diff --git a/net/netfilter/xt_LOG.c b/net/netfilter/xt_LOG.c
-index 5ab2484..f2cd2fa3 100644
---- a/net/netfilter/xt_LOG.c
-+++ b/net/netfilter/xt_LOG.c
-@@ -493,7 +493,7 @@ ipt_log_packet(struct net *net,
- 
- 	dump_ipv4_packet(m, loginfo, skb, 0);
- 
--	sb_close(m);
-+	sb_close(m, skb);
- }
- 
- #if IS_ENABLED(CONFIG_IP6_NF_IPTABLES)
-@@ -824,7 +824,7 @@ ip6t_log_packet(struct net *net,
- 
- 	dump_ipv6_packet(m, loginfo, skb, skb_network_offset(skb), 1);
- 
--	sb_close(m);
-+	sb_close(m, skb);
- }
- #endif
- 
++	if (type == SYSLOG_ACTION_CONSOLE_OFF
++		|| type == SYSLOG_ACTION_CONSOLE_ON
++		|| type == SYSLOG_ACTION_CONSOLE_LEVEL)
++		ns = &init_syslog_ns;
++
+ 	if (syslog_action_restricted(type, ns)) {
+ 		if (ns_capable(ns->owner, CAP_SYSLOG))
+ 			return 0;
 -- 
 1.8.2.2
