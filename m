@@ -1,7 +1,7 @@
-From: Gu Zheng <guz.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [PATCH 7/9] syslog_ns: implement function for creating syslog ns
-Date: Mon, 29 Jul 2013 18:25:23 +0800
-Message-ID: <51F64313.4010700@cn.fujitsu.com>
+Date: Mon, 29 Jul 2013 18:39:44 +0800
+Message-ID: <51F64670.9080109@cn.fujitsu.com>
 References: <1375065080-26740-1-git-send-email-rui.xiang@huawei.com>
 	<1375065080-26740-8-git-send-email-rui.xiang@huawei.com>
 Mime-Version: 1.0
@@ -19,13 +19,10 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, libo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, libo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Rui,
-
 On 07/29/2013 10:31 AM, Rui Xiang wrote:
-
 > Add create_syslog_ns function to create a new ns. We
 > must create a user_ns before create a new syslog ns.
 > And then tie the new syslog_ns to current user_ns
@@ -68,12 +65,6 @@ On 07/29/2013 10:31 AM, Rui Xiang wrote:
 > +	if (type == SYSLOG_ACTION_NEW_NS)
 > +		return 0;
 > +
-
-Don't we need further permission or caps check here? Return success directly seems sloppy. 
-
-Thanks,
-Gu
-
 >  	if (syslog_action_restricted(type, ns)) {
 >  		if (ns_capable(ns->owner, CAP_SYSLOG))
 >  			return 0;
@@ -115,6 +106,10 @@ Gu
 > +	put_syslog_ns(oldns);
 > +	kref_init(&newns->kref);
 > +	userns->syslog_ns = newns;
+
+seems like user namespace references the syslog_ns and syslog_ns references
+user namespace too? how do you deal with the release?
+
 > +	newns = NULL;
 > +
 > +	err = 0;
@@ -139,3 +134,4 @@ Gu
 >  	default:
 >  		error = -EINVAL;
 >  		break;
+> 
