@@ -1,15 +1,15 @@
 From: Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 8/9] syslog_ns: implement ns_printk for specific syslog_ns
-Date: Mon, 29 Jul 2013 20:17:51 +0800
-Message-ID: <51F65D6F.40104@huawei.com>
+Subject: Re: [PATCH 9/9] netfilter: use ns_printk in iptable context
+Date: Mon, 29 Jul 2013 20:37:26 +0800
+Message-ID: <51F66206.1010504@huawei.com>
 References: <1375065080-26740-1-git-send-email-rui.xiang@huawei.com>
-	<1375065080-26740-9-git-send-email-rui.xiang@huawei.com>
-	<51F645E4.9070507@cn.fujitsu.com>
+	<1375065080-26740-10-git-send-email-rui.xiang@huawei.com>
+	<51F63A88.4090405@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <51F645E4.9070507-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <51F63A88.4090405-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,146 +19,68 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gu Zheng <guz.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, libo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, libo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 2013/7/29 18:37, Gu Zheng wrote:
-> Hi Rui,
-> 
+On 2013/7/29 17:48, Gao feng wrote:
 > On 07/29/2013 10:31 AM, Rui Xiang wrote:
-> 
->> Add a new interface named ns_printk, and assign an
->> patamater ns. Log which belong to a container can
->> be printed by ns_printk.
-> 
-> One question, with the syslog_ns used, do the log we print by *printk* in the
-> host contains the log in each syslog_ns(print out with ns_printk) or not?
-> 
-
-No. While using ns_printk, a parameter ns shouled be passed to identify syslog_ns.
-If this ns has been created, it has a own log_buf to store logs. Otherwise this ns
-comes from current->user_ns. When it is inis_syslog_ns the logs will be printed 
-out in host.
-
-> Thanks,
-> Gu
-> 
+>> To containerise iptables log, use ns_printk
+>> to report individual logs to container as
+>> getting syslog_ns from skb->dev->nd_net->user_ns.
 >>
 >> Signed-off-by: Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 >> ---
->>  include/linux/printk.h |  4 ++++
->>  kernel/printk.c        | 53 ++++++++++++++++++++++++++++++++++++++++++++++----
->>  2 files changed, 53 insertions(+), 4 deletions(-)
+>>  include/net/netfilter/xt_log.h | 6 +++++-
+>>  net/netfilter/xt_LOG.c         | 4 ++--
+>>  2 files changed, 7 insertions(+), 3 deletions(-)
 >>
->> diff --git a/include/linux/printk.h b/include/linux/printk.h
->> index 29e3f85..bf83ad9 100644
->> --- a/include/linux/printk.h
->> +++ b/include/linux/printk.h
->> @@ -6,6 +6,7 @@
->>  #include <linux/kern_levels.h>
->>  #include <linux/linkage.h>
->>  
->> +struct syslog_namespace;
->>  extern const char linux_banner[];
->>  extern const char linux_proc_banner[];
->>  
->> @@ -123,6 +124,9 @@ asmlinkage int printk_emit(int facility, int level,
->>  asmlinkage __printf(1, 2) __cold
->>  int printk(const char *fmt, ...);
->>  
->> +asmlinkage __printf(2, 3) __cold
->> +int ns_printk(struct syslog_namespace *ns, const char *fmt, ...);
->> +
->>  /*
->>   * Special printk facility for scheduler use only, _DO_NOT_USE_ !
->>   */
->> diff --git a/kernel/printk.c b/kernel/printk.c
->> index 6b561db..56a8b27 100644
->> --- a/kernel/printk.c
->> +++ b/kernel/printk.c
->> @@ -1554,9 +1554,10 @@ static size_t cont_print_text(char *text, size_t size)
->>  	return textlen;
+>> diff --git a/include/net/netfilter/xt_log.h b/include/net/netfilter/xt_log.h
+>> index 9d9756c..5222cba 100644
+>> --- a/include/net/netfilter/xt_log.h
+>> +++ b/include/net/netfilter/xt_log.h
+>> @@ -39,10 +39,14 @@ static struct sbuff *sb_open(void)
+>>  	return m;
 >>  }
 >>  
->> -asmlinkage int vprintk_emit(int facility, int level,
->> -			    const char *dict, size_t dictlen,
->> -			    const char *fmt, va_list args)
->> +static int ns_vprintk_emit(int facility, int level,
->> +			const char *dict, size_t dictlen,
->> +			const char *fmt, va_list args,
->> +			struct syslog_namespace *ns)
+>> -static void sb_close(struct sbuff *m)
+>> +static void sb_close(struct sbuff *m, struct sk_buff *skb)
 >>  {
->>  	static int recursion_bug;
->>  	static char textbuf[LOG_LINE_MAX];
->> @@ -1566,7 +1567,6 @@ asmlinkage int vprintk_emit(int facility, int level,
->>  	unsigned long flags;
->>  	int this_cpu;
->>  	int printed_len = 0;
->> -	struct syslog_namespace *ns = &init_syslog_ns;
->>  
->>  	boot_delay_msec(level);
->>  	printk_delay();
->> @@ -1697,6 +1697,14 @@ out_restore_irqs:
->>  
->>  	return printed_len;
->>  }
->> +
->> +asmlinkage int vprintk_emit(int facility, int level,
->> +				const char *dict, size_t dictlen,
->> +				const char *fmt, va_list args)
->> +{
->> +	return ns_vprintk_emit(facility, level, dict, dictlen, fmt, args,
->> +				&init_syslog_ns);
->> +}
->>  EXPORT_SYMBOL(vprintk_emit);
->>  
->>  asmlinkage int vprintk(const char *fmt, va_list args)
->> @@ -1762,6 +1770,43 @@ asmlinkage int printk(const char *fmt, ...)
->>  }
->>  EXPORT_SYMBOL(printk);
->>  
->> +/**
->> + * ns_printk - print a kernel message in syslog_ns
->> + * @ns: syslog namespace
->> + * @fmt: format string
->> + *
->> + * This is ns_printk().
->> + * It can be called from container context. We add a param
->> + * ns to record current syslog namespace, because we need to
->> + * print some log which are not generated by host, but contaner.
->> + *
->> + * See the vsnprintf() documentation for format string extensions over C99.
->> + **/
->> +asmlinkage int ns_printk(struct syslog_namespace *ns,
->> +					const char *fmt, ...)
->> +{
->> +	va_list args;
->> +	int r;
->> +
->> +	if (!ns)
->> +		ns = current_user_ns()->syslog_ns;
->> +
->> +#ifdef CONFIG_KGDB_KDB
->> +	if (unlikely(kdb_trap_printk)) {
->> +		va_start(args, fmt);
->> +		r = vkdb_printf(fmt, args);
->> +		va_end(args);
->> +		return r;
->> +	}
+>>  	m->buf[m->count] = 0;
+>> +#ifdef CONFIG_NET_NS
+>> +	ns_printk(skb->dev->nd_net->user_ns->syslog_ns, "%s\n", m->buf);
+>> +#else
+>>  	printk("%s\n", m->buf);
 >> +#endif
->> +	va_start(args, fmt);
->> +	r = ns_vprintk_emit(0, -1, NULL, 0, fmt, args, ns);
->> +	va_end(args);
->> +
->> +	return r;
->> +}
->> +EXPORT_SYMBOL(ns_printk);
->> +
+>>  
+>>  	if (likely(m != &emergency))
+>>  		kfree(m);
+>> diff --git a/net/netfilter/xt_LOG.c b/net/netfilter/xt_LOG.c
+>> index 5ab2484..f2cd2fa3 100644
+>> --- a/net/netfilter/xt_LOG.c
+>> +++ b/net/netfilter/xt_LOG.c
+>> @@ -493,7 +493,7 @@ ipt_log_packet(struct net *net,
+>>  
+>>  	dump_ipv4_packet(m, loginfo, skb, 0);
+>>  
+>> -	sb_close(m);
+>> +	sb_close(m, skb);
 > 
-> Here can we do some clean up to printk using ns_printk?
 > 
+> why don't you pass net directly to sb_close here?
+> 
+> un init net namespace will not trigger any system log through ipt_LOG/ip6t_LOG.
+> You can check the FIXME in ipt_log_packet.
+> 
+> BTW,for this patch,you should cc netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org too.
+> 
+Hi Gao,
 
-ok, I will have a try to do it.:)
+Thanks for your attention.
+
+Yes, you are right. In the 1st version, there was no net parameter in ipt_log_packet
+function. Here I didn't do any amendment. And I will alter it in next version.
+
+
 
 Thanks.
