@@ -1,7 +1,7 @@
 From: Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 3/9] syslog_ns: add init syslog_ns for global syslog
-Date: Mon, 29 Jul 2013 10:31:14 +0800
-Message-ID: <1375065080-26740-4-git-send-email-rui.xiang__21379.9142548398$1375065300$gmane$org@huawei.com>
+Subject: [PATCH 2/9] syslog_ns: add syslog_ns into user_namespace
+Date: Mon, 29 Jul 2013 10:31:13 +0800
+Message-ID: <1375065080-26740-3-git-send-email-rui.xiang@huawei.com>
 References: <1375065080-26740-1-git-send-email-rui.xiang@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,129 +21,45 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lin
 Cc: serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, libo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add init_syslog_ns to manage host log buffer, and
-initilize its fileds as the global variables.
+Add a syslog_ns pointer to user_namespace, and make
+syslog_ns per user_namespace, not global.
 
-Printk by default in kernel will continue to be
-targeted at init_syslog_ns. So the buf of init
-ns is just the same as the original global buf.
+Since syslog_ns is assigned to user_ns, we can have
+full capabilities in new user_ns to create a new syslog_ns.
 
 Signed-off-by: Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/syslog.h         |  1 +
- include/linux/user_namespace.h |  1 +
- kernel/printk.c                | 18 ++++++++++++++++++
- kernel/user.c                  |  3 +++
- kernel/user_namespace.c        |  4 ++++
- 5 files changed, 27 insertions(+)
+ include/linux/syslog.h         | 5 +++++
+ include/linux/user_namespace.h | 1 +
+ 2 files changed, 6 insertions(+)
 
 diff --git a/include/linux/syslog.h b/include/linux/syslog.h
-index 62ce47f..363bc56 100644
+index 425fafe..62ce47f 100644
 --- a/include/linux/syslog.h
 +++ b/include/linux/syslog.h
-@@ -122,4 +122,5 @@ static inline void put_syslog_ns(struct syslog_namespace *ns)
+@@ -90,6 +90,11 @@ struct syslog_namespace {
+ 	size_t syslog_partial;
  
- int do_syslog(int type, char __user *buf, int count, bool from_file);
+ 	int dmesg_restrict;
++
++	/*
++	 * user namespace which owns this syslog ns.
++	 */
++	struct user_namespace *owner;
+ };
  
-+extern struct syslog_namespace init_syslog_ns;
- #endif /* _LINUX_SYSLOG_H */
+ static inline struct syslog_namespace *get_syslog_ns(
 diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index ce2de5b..4b5e190 100644
+index b6b215f..ce2de5b 100644
 --- a/include/linux/user_namespace.h
 +++ b/include/linux/user_namespace.h
-@@ -32,6 +32,7 @@ struct user_namespace {
+@@ -28,6 +28,7 @@ struct user_namespace {
+ 	unsigned int		proc_inum;
+ 	bool			may_mount_sysfs;
+ 	bool			may_mount_proc;
++	struct syslog_namespace *syslog_ns;
  };
  
  extern struct user_namespace init_user_ns;
-+extern struct syslog_namespace init_syslog_ns;
- 
- #ifdef CONFIG_USER_NS
- 
-diff --git a/kernel/printk.c b/kernel/printk.c
-index 7e544bf..fd83ec1 100644
---- a/kernel/printk.c
-+++ b/kernel/printk.c
-@@ -45,6 +45,8 @@
- #include <linux/poll.h>
- #include <linux/irq_work.h>
- #include <linux/utsname.h>
-+#include <linux/cred.h>
-+#include <linux/user_namespace.h>
- 
- #include <asm/uaccess.h>
- 
-@@ -251,6 +253,22 @@ static u32 log_buf_len = __LOG_BUF_LEN;
- /* cpu currently holding logbuf_lock */
- static volatile unsigned int logbuf_cpu = UINT_MAX;
- 
-+struct syslog_namespace init_syslog_ns = {
-+	.kref = {
-+		.refcount = ATOMIC_INIT(2),
-+	},
-+	.logbuf_lock = __RAW_SPIN_LOCK_UNLOCKED(init_syslog_ns.logbuf_lock),
-+	.logbuf_cpu = UINT_MAX,
-+	.log_buf_len = __LOG_BUF_LEN,
-+	.log_buf = __log_buf,
-+	.owner = &init_user_ns,
-+#ifdef CONFIG_SECURITY_DMESG_RESTRICT
-+	.dmesg_restrict = 1,
-+#else
-+	.dmesg_restrict = 0,
-+#endif
-+};
-+
- /* human readable text of the record */
- static char *log_text(const struct log *msg)
- {
-diff --git a/kernel/user.c b/kernel/user.c
-index 69b4c3d..0bbd4f7 100644
---- a/kernel/user.c
-+++ b/kernel/user.c
-@@ -18,6 +18,8 @@
- #include <linux/user_namespace.h>
- #include <linux/proc_ns.h>
- 
-+struct syslog_namespace;
-+
- /*
-  * userns count is 1 for root user, 1 for init_uts_ns,
-  * and 1 for... ?
-@@ -53,6 +55,7 @@ struct user_namespace init_user_ns = {
- 	.proc_inum = PROC_USER_INIT_INO,
- 	.may_mount_sysfs = true,
- 	.may_mount_proc = true,
-+	.syslog_ns = &init_syslog_ns,
- };
- EXPORT_SYMBOL_GPL(init_user_ns);
- 
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index d8c30db..20f402f 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -22,6 +22,7 @@
- #include <linux/ctype.h>
- #include <linux/projid.h>
- #include <linux/fs_struct.h>
-+#include <linux/syslog.h>
- 
- static struct kmem_cache *user_ns_cachep __read_mostly;
- 
-@@ -95,6 +96,8 @@ int create_user_ns(struct cred *new)
- 	ns->owner = owner;
- 	ns->group = group;
- 
-+	ns->syslog_ns = get_syslog_ns(parent_ns->syslog_ns);
-+
- 	set_cred_user_ns(new, ns);
- 
- 	update_mnt_policy(ns);
-@@ -122,6 +125,7 @@ void free_user_ns(struct user_namespace *ns)
- 	struct user_namespace *parent;
- 
- 	do {
-+		put_syslog_ns(ns->syslog_ns);
- 		parent = ns->parent;
- 		proc_free_inum(ns->proc_inum);
- 		kmem_cache_free(user_ns_cachep, ns);
 -- 
 1.8.2.2
