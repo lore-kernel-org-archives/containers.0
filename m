@@ -1,15 +1,15 @@
 From: Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/9] syslog_ns: add syslog_namespace and put/get_syslog_ns
-Date: Mon, 29 Jul 2013 19:47:02 +0800
-Message-ID: <51F65636.6080505@huawei.com>
+Subject: Re: [PATCH 8/9] syslog_ns: implement ns_printk for specific syslog_ns
+Date: Mon, 29 Jul 2013 20:17:51 +0800
+Message-ID: <51F65D6F.40104@huawei.com>
 References: <1375065080-26740-1-git-send-email-rui.xiang@huawei.com>
-	<1375065080-26740-2-git-send-email-rui.xiang@huawei.com>
-	<51F6388B.8000308@cn.fujitsu.com>
+	<1375065080-26740-9-git-send-email-rui.xiang@huawei.com>
+	<51F645E4.9070507@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <51F6388B.8000308-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <51F645E4.9070507-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,55 +23,142 @@ To: Gu Zheng <guz.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, libo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 2013/7/29 17:40, Gu Zheng wrote:
+On 2013/7/29 18:37, Gu Zheng wrote:
 > Hi Rui,
-> 	Refer to inline:).
 > 
-Hi Gu,
-
-Thanks for your attention.
-
 > On 07/29/2013 10:31 AM, Rui Xiang wrote:
 > 
->> Add a struct syslog_namespace which contains the necessary
->> members for hanlding syslog and realize get_syslog_ns and
->> put_syslog_ns API.
+>> Add a new interface named ns_printk, and assign an
+>> patamater ns. Log which belong to a container can
+>> be printed by ns_printk.
+> 
+> One question, with the syslog_ns used, do the log we print by *printk* in the
+> host contains the log in each syslog_ns(print out with ns_printk) or not?
+> 
+
+No. While using ns_printk, a parameter ns shouled be passed to identify syslog_ns.
+If this ns has been created, it has a own log_buf to store logs. Otherwise this ns
+comes from current->user_ns. When it is inis_syslog_ns the logs will be printed 
+out in host.
+
+> Thanks,
+> Gu
+> 
 >>
 >> Signed-off-by: Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 >> ---
->>  include/linux/syslog.h | 68 ++++++++++++++++++++++++++++++++++++++++++++++++++
->>  kernel/printk.c        |  7 ------
->>  2 files changed, 68 insertions(+), 7 deletions(-)
+>>  include/linux/printk.h |  4 ++++
+>>  kernel/printk.c        | 53 ++++++++++++++++++++++++++++++++++++++++++++++----
+>>  2 files changed, 53 insertions(+), 4 deletions(-)
 >>
-
-...
-
+>> diff --git a/include/linux/printk.h b/include/linux/printk.h
+>> index 29e3f85..bf83ad9 100644
+>> --- a/include/linux/printk.h
+>> +++ b/include/linux/printk.h
+>> @@ -6,6 +6,7 @@
+>>  #include <linux/kern_levels.h>
+>>  #include <linux/linkage.h>
+>>  
+>> +struct syslog_namespace;
+>>  extern const char linux_banner[];
+>>  extern const char linux_proc_banner[];
+>>  
+>> @@ -123,6 +124,9 @@ asmlinkage int printk_emit(int facility, int level,
+>>  asmlinkage __printf(1, 2) __cold
+>>  int printk(const char *fmt, ...);
+>>  
+>> +asmlinkage __printf(2, 3) __cold
+>> +int ns_printk(struct syslog_namespace *ns, const char *fmt, ...);
 >> +
->> +static inline void free_syslog_ns(struct kref *kref)
+>>  /*
+>>   * Special printk facility for scheduler use only, _DO_NOT_USE_ !
+>>   */
+>> diff --git a/kernel/printk.c b/kernel/printk.c
+>> index 6b561db..56a8b27 100644
+>> --- a/kernel/printk.c
+>> +++ b/kernel/printk.c
+>> @@ -1554,9 +1554,10 @@ static size_t cont_print_text(char *text, size_t size)
+>>  	return textlen;
+>>  }
+>>  
+>> -asmlinkage int vprintk_emit(int facility, int level,
+>> -			    const char *dict, size_t dictlen,
+>> -			    const char *fmt, va_list args)
+>> +static int ns_vprintk_emit(int facility, int level,
+>> +			const char *dict, size_t dictlen,
+>> +			const char *fmt, va_list args,
+>> +			struct syslog_namespace *ns)
+>>  {
+>>  	static int recursion_bug;
+>>  	static char textbuf[LOG_LINE_MAX];
+>> @@ -1566,7 +1567,6 @@ asmlinkage int vprintk_emit(int facility, int level,
+>>  	unsigned long flags;
+>>  	int this_cpu;
+>>  	int printed_len = 0;
+>> -	struct syslog_namespace *ns = &init_syslog_ns;
+>>  
+>>  	boot_delay_msec(level);
+>>  	printk_delay();
+>> @@ -1697,6 +1697,14 @@ out_restore_irqs:
+>>  
+>>  	return printed_len;
+>>  }
+>> +
+>> +asmlinkage int vprintk_emit(int facility, int level,
+>> +				const char *dict, size_t dictlen,
+>> +				const char *fmt, va_list args)
 >> +{
->> +	struct syslog_namespace *ns;
->> +	ns = container_of(kref, struct syslog_namespace, kref);
->> +
->> +	kfree(ns->log_buf);
->> +	kfree(ns);
+>> +	return ns_vprintk_emit(facility, level, dict, dictlen, fmt, args,
+>> +				&init_syslog_ns);
 >> +}
+>>  EXPORT_SYMBOL(vprintk_emit);
+>>  
+>>  asmlinkage int vprintk(const char *fmt, va_list args)
+>> @@ -1762,6 +1770,43 @@ asmlinkage int printk(const char *fmt, ...)
+>>  }
+>>  EXPORT_SYMBOL(printk);
+>>  
+>> +/**
+>> + * ns_printk - print a kernel message in syslog_ns
+>> + * @ns: syslog namespace
+>> + * @fmt: format string
+>> + *
+>> + * This is ns_printk().
+>> + * It can be called from container context. We add a param
+>> + * ns to record current syslog namespace, because we need to
+>> + * print some log which are not generated by host, but contaner.
+>> + *
+>> + * See the vsnprintf() documentation for format string extensions over C99.
+>> + **/
+>> +asmlinkage int ns_printk(struct syslog_namespace *ns,
+>> +					const char *fmt, ...)
+>> +{
+>> +	va_list args;
+>> +	int r;
+>> +
+>> +	if (!ns)
+>> +		ns = current_user_ns()->syslog_ns;
+>> +
+>> +#ifdef CONFIG_KGDB_KDB
+>> +	if (unlikely(kdb_trap_printk)) {
+>> +		va_start(args, fmt);
+>> +		r = vkdb_printf(fmt, args);
+>> +		va_end(args);
+>> +		return r;
+>> +	}
+>> +#endif
+>> +	va_start(args, fmt);
+>> +	r = ns_vprintk_emit(0, -1, NULL, 0, fmt, args, ns);
+>> +	va_end(args);
+>> +
+>> +	return r;
+>> +}
+>> +EXPORT_SYMBOL(ns_printk);
+>> +
 > 
-> This interface seems a bit ugly, why not use the format like put_syslog_ns()?
-> 
-> static inline void free_syslog_ns(struct syslog_namespace *ns)
+> Here can we do some clean up to printk using ns_printk?
 > 
 
-Free_syslog_ns is used in put_syslog_ns. And the kref_put function uses kref as
-a parameter for its relase funtion. You can see that from 
-static inline int kref_put(struct kref *kref, void (*release)(struct kref *kref)).
+ok, I will have a try to do it.:)
 
 Thanks.
-
->> +
->> +static inline void put_syslog_ns(struct syslog_namespace *ns)
->> +{
->> +	if (ns)
->> +		kref_put(&ns->kref, free_syslog_ns);
->> +}
->> +
->> 
