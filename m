@@ -1,18 +1,14 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: memcg creates an unkillable task in 3.2-rc2
-Date: Mon, 29 Jul 2013 11:52:11 -0700
-Message-ID: <87a9l5w65g.fsf__4747.93598191372$1375123965$gmane$org@xmission.com>
-References: <20130723174711.GE21100@mtj.dyndns.org>
-	<8761vui4cr.fsf@xmission.com> <20130729075939.GA4678@dhcp22.suse.cz>
-	<87ehahg312.fsf@xmission.com> <20130729095109.GB4678@dhcp22.suse.cz>
-	<20130729161026.GD22605@mtj.dyndns.org> <87r4eh70yg.fsf@xmission.com>
-	<20130729181354.GX715@cmpxchg.org>
+Subject: Re: [PATCH 0/9] Add namespace support for syslog v2
+Date: Mon, 29 Jul 2013 11:58:23 -0700
+Message-ID: <87wqo9urao.fsf@xmission.com>
+References: <1375065080-26740-1-git-send-email-rui.xiang@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20130729181354.GX715-druUgvl0LCNAfugRpC6u6w@public.gmane.org> (Johannes Weiner's message of
-	"Mon, 29 Jul 2013 14:13:54 -0400")
+In-Reply-To: <1375065080-26740-1-git-send-email-rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org> (Rui
+	Xiang's message of "Mon, 29 Jul 2013 10:31:11 +0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,48 +18,80 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
-Cc: Glauber Costa <glommer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, kent.overstreet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, libo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org> writes:
+Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org> writes:
 
-> On Mon, Jul 29, 2013 at 10:03:35AM -0700, Eric W. Biederman wrote:
->> Yes.  From the looks of the looks of it the cgroup implementation is
->> rather badly borked right now, and definitely not up to the standards of
->> the other core pieces of the kernel.  One of the reasons I was rather
->> apalled when systemd started using them.  Until the code actually works
->> reliably and the races are removed most people's systems would be much
->> better off with cgroups compiled out.
->> 
->> A single unified hierarchy is a really nasty idea for the same set of
->> reasons. You have to recompile to disable a controller to see if it that
->> controller's bugs are what are causing problems on your production
->> system.  Compiles or even just a reboot is a very heavy hammer to ask
->> people to use when they are triaging a problem.
->
-> That's not how it works.  You can always select which controllers you
-> want to mount during runtime.  Unified hierarchy only means that there
-> is one cgroup tree for all mounted controllers, rather than every
-> controller having its own separate cgroup tree.
->
-> If you are like most users and currently mount all controllers in the
-> same directory so that their cgroup trees overlap and appear to be a
-> single tree, nothing changes for you.
+> This patchset introduces a system log namespace.
 
-My practical need is that I need the ability modify which controllers I
-am using on a per group basis.  So that I can make corrall new processes
-in a different set of controllers than currently existing processes.
+The largest outstanding question is not answered.  Can't we just fix
+iptables to log somehwere better than dmesg, and would that not entirely
+remove the need for this work?
 
-I might just be missing something but I don't see how to do that with
-all of the controllers mounted to the same filesystem.
-
-So while I currently have a single mount of cgroupfs, and don't yet see
-a need for orthogonal classification of processes.  To keep bugs and
-craziness under control I expect I will be implementing a mount of
-cgroupfs per controller within a month.
-
-But except for the need to limit the scope of bugs this is all getting
-rather badly off topic.
+That question needs to be answered before we proceed down this path.
 
 Eric
+
+> It is the 2nd version. The link of the 1st version is 
+> http://lwn.net/Articles/525728/. In that version, syslog_
+> namespace was added into nsproxy and created through a new
+> clone flag CLONE_SYSLOG when cloning a process. 
+>
+> There were some discussion in last November about the 1st 
+> version. This version used these important advice, and 
+> referred to Serge's patch(http://lwn.net/Articles/525629/).
+>
+> Unlike the 1st version, in this patchset, syslog namespace 
+> is tied to a user namespace. Add we must create a new user 
+> ns before create a new syslog ns, because that will make 
+> users have full capabilities in this new userns after 
+> cloning a new user ns. The syslog namespace can be created 
+> through a new command(11) to __NR_syslog syscall. That owe 
+> to a new syslog flag SYSLOG_ACTION_NEW_NS.
+>
+> In syslog_namespace, some necessary identifiers for handling 
+> syslog buf are containerized. When one container creates a
+> new syslog ns, individual buf will be allocated to store log
+> ownned this container. 
+>
+> A new interface ns_printk is added to print the logs which 
+> we want to see in the container. Through ns_printk, we can 
+> get more logs related to a specific net ns, for instance, 
+> iptables. Here we use it to report iptable logs per 
+> contianer.
+>
+> Then default printk targeted at the init_syslog_ns will 
+> continue to print out most kernel log to host.
+>
+> One task in a new syslog ns could affect only current 
+> container through "dmesg", "dmesg -c" and /dev/kmsg 
+> actions. The read/write interface such as /dev/kmsg, 
+> /pro/kmsg and syslog syscall continue to be useful for 
+> container users.
+>
+> This patchset is based on linus' linux tree.
+>
+> Rui Xiang (9):
+>   syslog_ns: add syslog_namespace and put/get_syslog_ns
+>   syslog_ns: add syslog_ns into user_namespace
+>   syslog_ns: add init syslog_ns for global syslog
+>   syslog_ns: make syslog handling per namespace
+>   syslog_ns: make permisiion check per user namespace
+>   syslog_ns: use init syslog_ns for console action
+>   syslog_ns: implement function for creating syslog ns
+>   syslog_ns: implement ns_printk for specific syslog_ns
+>   netfilter: use ns_printk in iptable context
+>
+>  fs/proc/kmsg.c                 |  17 +-
+>  include/linux/printk.h         |   5 +-
+>  include/linux/syslog.h         |  79 ++++-
+>  include/linux/user_namespace.h |   2 +
+>  include/net/netfilter/xt_log.h |   6 +-
+>  kernel/printk.c                | 642 ++++++++++++++++++++++++-----------------
+>  kernel/sysctl.c                |   3 +-
+>  kernel/user.c                  |   3 +
+>  kernel/user_namespace.c        |   4 +
+>  net/netfilter/xt_LOG.c         |   4 +-
+>  10 files changed, 493 insertions(+), 272 deletions(-)
