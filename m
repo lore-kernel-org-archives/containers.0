@@ -1,13 +1,14 @@
 From: Gu Zheng <guz.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 0/9] Add namespace support for syslog v2
-Date: Mon, 29 Jul 2013 17:33:26 +0800
-Message-ID: <51F636E6.3080607@cn.fujitsu.com>
+Subject: Re: [PATCH 1/9] syslog_ns: add syslog_namespace and put/get_syslog_ns
+Date: Mon, 29 Jul 2013 17:40:27 +0800
+Message-ID: <51F6388B.8000308@cn.fujitsu.com>
 References: <1375065080-26740-1-git-send-email-rui.xiang@huawei.com>
+	<1375065080-26740-2-git-send-email-rui.xiang@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1375065080-26740-1-git-send-email-rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1375065080-26740-2-git-send-email-rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,74 +23,126 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ser
 List-Id: containers.vger.kernel.org
 
 Hi Rui,
+	Refer to inline:).
 
 On 07/29/2013 10:31 AM, Rui Xiang wrote:
 
-> This patchset introduces a system log namespace.
+> Add a struct syslog_namespace which contains the necessary
+> members for hanlding syslog and realize get_syslog_ns and
+> put_syslog_ns API.
 > 
-> It is the 2nd version. The link of the 1st version is 
-> http://lwn.net/Articles/525728/. In that version, syslog_
-> namespace was added into nsproxy and created through a new
-> clone flag CLONE_SYSLOG when cloning a process. 
+> Signed-off-by: Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+> ---
+>  include/linux/syslog.h | 68 ++++++++++++++++++++++++++++++++++++++++++++++++++
+>  kernel/printk.c        |  7 ------
+>  2 files changed, 68 insertions(+), 7 deletions(-)
 > 
-> There were some discussion in last November about the 1st 
-> version. This version used these important advice, and 
-> referred to Serge's patch(http://lwn.net/Articles/525629/).
-> 
-> Unlike the 1st version, in this patchset, syslog namespace 
-> is tied to a user namespace. Add we must create a new user 
-> ns before create a new syslog ns, because that will make 
-> users have full capabilities in this new userns after 
-> cloning a new user ns. The syslog namespace can be created 
-> through a new command(11) to __NR_syslog syscall. That owe 
-> to a new syslog flag SYSLOG_ACTION_NEW_NS.
-> 
-> In syslog_namespace, some necessary identifiers for handling 
-> syslog buf are containerized. When one container creates a
-> new syslog ns, individual buf will be allocated to store log
-> ownned this container. 
-> 
-> A new interface ns_printk is added to print the logs which 
-> we want to see in the container. Through ns_printk, we can 
-> get more logs related to a specific net ns, for instance, 
-> iptables. Here we use it to report iptable logs per 
-> contianer.
-> 
-> Then default printk targeted at the init_syslog_ns will 
-> continue to print out most kernel log to host.
-> 
-> One task in a new syslog ns could affect only current 
-> container through "dmesg", "dmesg -c" and /dev/kmsg 
-> actions. The read/write interface such as /dev/kmsg, 
-> /pro/kmsg and syslog syscall continue to be useful for 
-> container users.
-> 
-> This patchset is based on linus' linux tree.
+> diff --git a/include/linux/syslog.h b/include/linux/syslog.h
+> index 98a3153..425fafe 100644
+> --- a/include/linux/syslog.h
+> +++ b/include/linux/syslog.h
+> @@ -21,6 +21,9 @@
+>  #ifndef _LINUX_SYSLOG_H
+>  #define _LINUX_SYSLOG_H
+>  
+> +#include <linux/slab.h>
+> +#include <linux/kref.h>
+> +
+>  /* Close the log.  Currently a NOP. */
+>  #define SYSLOG_ACTION_CLOSE          0
+>  /* Open the log. Currently a NOP. */
+> @@ -47,6 +50,71 @@
+>  #define SYSLOG_FROM_READER           0
+>  #define SYSLOG_FROM_PROC             1
+>  
+> +enum log_flags {
+> +	LOG_NOCONS      = 1,    /* already flushed, do not print to console */
+> +	LOG_NEWLINE     = 2,    /* text ended with a newline */
+> +	LOG_PREFIX      = 4,    /* text started with a prefix */
+> +	LOG_CONT        = 8,    /* text is a fragment of a continuation line */
+> +};
+> +
+> +struct syslog_namespace {
+> +	struct kref kref;	/* syslog_ns reference count & control */
+> +
+> +	raw_spinlock_t logbuf_lock; /* access conflict locker */
+> +	/* cpu currently holding logbuf_lock of ns */
+> +	unsigned int logbuf_cpu;
+> +
+> +	/* index and sequence number of the first record stored in the buffer */
+> +	u64 log_first_seq;
+> +	u32 log_first_idx;
+> +
+> +	/* index and sequence number of the next record stored in the buffer */
+> +	u64 log_next_seq;
+> +	u32 log_next_idx;
+> +
+> +	/* the next printk record to read after the last 'clear' command */
+> +	u64 clear_seq;
+> +	u32 clear_idx;
+> +
+> +	char *log_buf;
+> +	u32 log_buf_len;
+> +
+> +	/* the next printk record to write to the console */
+> +	u64 console_seq;
+> +	u32 console_idx;
+> +
+> +	/* the next printk record to read by syslog(READ) or /proc/kmsg */
+> +	u64 syslog_seq;
+> +	u32 syslog_idx;
+> +	enum log_flags syslog_prev;
+> +	size_t syslog_partial;
+> +
+> +	int dmesg_restrict;
+> +};
+> +
+> +static inline struct syslog_namespace *get_syslog_ns(
+> +				struct syslog_namespace *ns)
+> +{
+> +	if (ns)
+> +		kref_get(&ns->kref);
+> +	return ns;
+> +}
+> +
+> +static inline void free_syslog_ns(struct kref *kref)
+> +{
+> +	struct syslog_namespace *ns;
+> +	ns = container_of(kref, struct syslog_namespace, kref);
+> +
+> +	kfree(ns->log_buf);
+> +	kfree(ns);
+> +}
 
-Changelog details between V2 and V1 is seriously needed, the inline description
-is not easy reading for other guys.
+This interface seems a bit ugly, why not use the format like put_syslog_ns()?
 
-> 
-> Rui Xiang (9):
->   syslog_ns: add syslog_namespace and put/get_syslog_ns
->   syslog_ns: add syslog_ns into user_namespace
->   syslog_ns: add init syslog_ns for global syslog
->   syslog_ns: make syslog handling per namespace
->   syslog_ns: make permisiion check per user namespace
->   syslog_ns: use init syslog_ns for console action
->   syslog_ns: implement function for creating syslog ns
->   syslog_ns: implement ns_printk for specific syslog_ns
->   netfilter: use ns_printk in iptable context
-> 
->  fs/proc/kmsg.c                 |  17 +-
->  include/linux/printk.h         |   5 +-
->  include/linux/syslog.h         |  79 ++++-
->  include/linux/user_namespace.h |   2 +
->  include/net/netfilter/xt_log.h |   6 +-
->  kernel/printk.c                | 642 ++++++++++++++++++++++++-----------------
->  kernel/sysctl.c                |   3 +-
->  kernel/user.c                  |   3 +
->  kernel/user_namespace.c        |   4 +
->  net/netfilter/xt_LOG.c         |   4 +-
->  10 files changed, 493 insertions(+), 272 deletions(-)
-> 
+static inline void free_syslog_ns(struct syslog_namespace *ns)
+
+> +
+> +static inline void put_syslog_ns(struct syslog_namespace *ns)
+> +{
+> +	if (ns)
+> +		kref_put(&ns->kref, free_syslog_ns);
+> +}
+> +
+>  int do_syslog(int type, char __user *buf, int count, bool from_file);
+>  
+>  #endif /* _LINUX_SYSLOG_H */
+> diff --git a/kernel/printk.c b/kernel/printk.c
+> index d37d45c..7e544bf 100644
+> --- a/kernel/printk.c
+> +++ b/kernel/printk.c
+> @@ -193,13 +193,6 @@ static int console_may_schedule;
+>   * separated by ',', and find the message after the ';' character.
+>   */
+>  
+> -enum log_flags {
+> -	LOG_NOCONS	= 1,	/* already flushed, do not print to console */
+> -	LOG_NEWLINE	= 2,	/* text ended with a newline */
+> -	LOG_PREFIX	= 4,	/* text started with a prefix */
+> -	LOG_CONT	= 8,	/* text is a fragment of a continuation line */
+> -};
+> -
+>  struct log {
+>  	u64 ts_nsec;		/* timestamp in nanoseconds */
+>  	u16 len;		/* length of entire record */
