@@ -1,14 +1,14 @@
-From: Gu Zheng <guz.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 1/9] syslog_ns: add syslog_namespace and put/get_syslog_ns
-Date: Mon, 29 Jul 2013 17:40:27 +0800
-Message-ID: <51F6388B.8000308@cn.fujitsu.com>
+From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 9/9] netfilter: use ns_printk in iptable context
+Date: Mon, 29 Jul 2013 17:48:56 +0800
+Message-ID: <51F63A88.4090405@cn.fujitsu.com>
 References: <1375065080-26740-1-git-send-email-rui.xiang@huawei.com>
-	<1375065080-26740-2-git-send-email-rui.xiang@huawei.com>
+	<1375065080-26740-10-git-send-email-rui.xiang@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1375065080-26740-2-git-send-email-rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1375065080-26740-10-git-send-email-rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,130 +19,55 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, libo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, libo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Rui,
-	Refer to inline:).
-
 On 07/29/2013 10:31 AM, Rui Xiang wrote:
-
-> Add a struct syslog_namespace which contains the necessary
-> members for hanlding syslog and realize get_syslog_ns and
-> put_syslog_ns API.
+> To containerise iptables log, use ns_printk
+> to report individual logs to container as
+> getting syslog_ns from skb->dev->nd_net->user_ns.
 > 
 > Signed-off-by: Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 > ---
->  include/linux/syslog.h | 68 ++++++++++++++++++++++++++++++++++++++++++++++++++
->  kernel/printk.c        |  7 ------
->  2 files changed, 68 insertions(+), 7 deletions(-)
+>  include/net/netfilter/xt_log.h | 6 +++++-
+>  net/netfilter/xt_LOG.c         | 4 ++--
+>  2 files changed, 7 insertions(+), 3 deletions(-)
 > 
-> diff --git a/include/linux/syslog.h b/include/linux/syslog.h
-> index 98a3153..425fafe 100644
-> --- a/include/linux/syslog.h
-> +++ b/include/linux/syslog.h
-> @@ -21,6 +21,9 @@
->  #ifndef _LINUX_SYSLOG_H
->  #define _LINUX_SYSLOG_H
+> diff --git a/include/net/netfilter/xt_log.h b/include/net/netfilter/xt_log.h
+> index 9d9756c..5222cba 100644
+> --- a/include/net/netfilter/xt_log.h
+> +++ b/include/net/netfilter/xt_log.h
+> @@ -39,10 +39,14 @@ static struct sbuff *sb_open(void)
+>  	return m;
+>  }
 >  
-> +#include <linux/slab.h>
-> +#include <linux/kref.h>
-> +
->  /* Close the log.  Currently a NOP. */
->  #define SYSLOG_ACTION_CLOSE          0
->  /* Open the log. Currently a NOP. */
-> @@ -47,6 +50,71 @@
->  #define SYSLOG_FROM_READER           0
->  #define SYSLOG_FROM_PROC             1
+> -static void sb_close(struct sbuff *m)
+> +static void sb_close(struct sbuff *m, struct sk_buff *skb)
+>  {
+>  	m->buf[m->count] = 0;
+> +#ifdef CONFIG_NET_NS
+> +	ns_printk(skb->dev->nd_net->user_ns->syslog_ns, "%s\n", m->buf);
+> +#else
+>  	printk("%s\n", m->buf);
+> +#endif
 >  
-> +enum log_flags {
-> +	LOG_NOCONS      = 1,    /* already flushed, do not print to console */
-> +	LOG_NEWLINE     = 2,    /* text ended with a newline */
-> +	LOG_PREFIX      = 4,    /* text started with a prefix */
-> +	LOG_CONT        = 8,    /* text is a fragment of a continuation line */
-> +};
-> +
-> +struct syslog_namespace {
-> +	struct kref kref;	/* syslog_ns reference count & control */
-> +
-> +	raw_spinlock_t logbuf_lock; /* access conflict locker */
-> +	/* cpu currently holding logbuf_lock of ns */
-> +	unsigned int logbuf_cpu;
-> +
-> +	/* index and sequence number of the first record stored in the buffer */
-> +	u64 log_first_seq;
-> +	u32 log_first_idx;
-> +
-> +	/* index and sequence number of the next record stored in the buffer */
-> +	u64 log_next_seq;
-> +	u32 log_next_idx;
-> +
-> +	/* the next printk record to read after the last 'clear' command */
-> +	u64 clear_seq;
-> +	u32 clear_idx;
-> +
-> +	char *log_buf;
-> +	u32 log_buf_len;
-> +
-> +	/* the next printk record to write to the console */
-> +	u64 console_seq;
-> +	u32 console_idx;
-> +
-> +	/* the next printk record to read by syslog(READ) or /proc/kmsg */
-> +	u64 syslog_seq;
-> +	u32 syslog_idx;
-> +	enum log_flags syslog_prev;
-> +	size_t syslog_partial;
-> +
-> +	int dmesg_restrict;
-> +};
-> +
-> +static inline struct syslog_namespace *get_syslog_ns(
-> +				struct syslog_namespace *ns)
-> +{
-> +	if (ns)
-> +		kref_get(&ns->kref);
-> +	return ns;
-> +}
-> +
-> +static inline void free_syslog_ns(struct kref *kref)
-> +{
-> +	struct syslog_namespace *ns;
-> +	ns = container_of(kref, struct syslog_namespace, kref);
-> +
-> +	kfree(ns->log_buf);
-> +	kfree(ns);
-> +}
+>  	if (likely(m != &emergency))
+>  		kfree(m);
+> diff --git a/net/netfilter/xt_LOG.c b/net/netfilter/xt_LOG.c
+> index 5ab2484..f2cd2fa3 100644
+> --- a/net/netfilter/xt_LOG.c
+> +++ b/net/netfilter/xt_LOG.c
+> @@ -493,7 +493,7 @@ ipt_log_packet(struct net *net,
+>  
+>  	dump_ipv4_packet(m, loginfo, skb, 0);
+>  
+> -	sb_close(m);
+> +	sb_close(m, skb);
 
-This interface seems a bit ugly, why not use the format like put_syslog_ns()?
 
-static inline void free_syslog_ns(struct syslog_namespace *ns)
+why don't you pass net directly to sb_close here?
 
-> +
-> +static inline void put_syslog_ns(struct syslog_namespace *ns)
-> +{
-> +	if (ns)
-> +		kref_put(&ns->kref, free_syslog_ns);
-> +}
-> +
->  int do_syslog(int type, char __user *buf, int count, bool from_file);
->  
->  #endif /* _LINUX_SYSLOG_H */
-> diff --git a/kernel/printk.c b/kernel/printk.c
-> index d37d45c..7e544bf 100644
-> --- a/kernel/printk.c
-> +++ b/kernel/printk.c
-> @@ -193,13 +193,6 @@ static int console_may_schedule;
->   * separated by ',', and find the message after the ';' character.
->   */
->  
-> -enum log_flags {
-> -	LOG_NOCONS	= 1,	/* already flushed, do not print to console */
-> -	LOG_NEWLINE	= 2,	/* text ended with a newline */
-> -	LOG_PREFIX	= 4,	/* text started with a prefix */
-> -	LOG_CONT	= 8,	/* text is a fragment of a continuation line */
-> -};
-> -
->  struct log {
->  	u64 ts_nsec;		/* timestamp in nanoseconds */
->  	u16 len;		/* length of entire record */
+un init net namespace will not trigger any system log through ipt_LOG/ip6t_LOG.
+You can check the FIXME in ipt_log_packet.
+
+BTW,for this patch,you should cc netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org too.
