@@ -1,15 +1,19 @@
-From: Gu Zheng <guz.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 7/9] syslog_ns: implement function for creating syslog ns
-Date: Tue, 30 Jul 2013 11:42:34 +0800
-Message-ID: <51F7362A.3030509@cn.fujitsu.com>
-References: <1375065080-26740-1-git-send-email-rui.xiang@huawei.com>
-	<1375065080-26740-8-git-send-email-rui.xiang@huawei.com>
-	<51F64313.4010700@cn.fujitsu.com> <51F73555.1020204@huawei.com>
+From: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
+Subject: Re: [PATCH review 05/16] xfs: Update xfs_ioctl_setattr to handle
+	projids in any user namespace
+Date: Tue, 30 Jul 2013 13:57:48 +1000
+Message-ID: <20130730035748.GJ21982@dastard>
+References: <87txpaph4n.fsf@xmission.com>
+	<1361149870-27732-1-git-send-email-ebiederm@xmission.com>
+	<1361149870-27732-5-git-send-email-ebiederm@xmission.com>
+	<20130219015550.GJ26694@dastard> <51F616F2.5040906@cn.fujitsu.com>
+	<20130729075109.GF13468@dastard> <51F72FE6.4080202@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <51F73555.1020204-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <51F72FE6.4080202-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,49 +23,37 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, libo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Alex Elder <elder-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, xfs-VZNHf3L845pBDgjK7y7TUQ@public.gmane.org, Ben Myers <bpm-sJ/iWh9BUns@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 07/30/2013 11:39 AM, Rui Xiang wrote:
+On Tue, Jul 30, 2013 at 11:15:50AM +0800, Gao feng wrote:
+> On 07/29/2013 03:51 PM, Dave Chinner wrote:
+> > http://oss.sgi.com/pipermail/xfs/2013-July/028467.html
+> > 
+> > Basically, the discussion we are currently having is whether project
+> > IDs should be exposed to user namespaces at all. e.g:
+> > 
+> > http://oss.sgi.com/pipermail/xfs/2013-July/028497.html
+> > http://oss.sgi.com/pipermail/xfs/2013-July/028551.html
+> > 
+> > "Basically, until we have worked out *if* project quotas can be used
+> > safely within user namespaces, we need to reject any attempt to use
+> > them from within a user namespace container."
+> > 
+> 
+> yes, seems this v6 patchset allows user in un-init user namespace to setup proj quota
+> through ioctl, and the projid hasn't been converted to kprojid in this patchset.
+> Doesn't this will cause user in container has the ability to change the proj quota
+> which is set by root user in host?
 
-> On 2013/7/29 18:25, Gu Zheng wrote:
->> Hi Rui,
->>
->> On 07/29/2013 10:31 AM, Rui Xiang wrote:
->>
->>> Add create_syslog_ns function to create a new ns. We
->>> must create a user_ns before create a new syslog ns.
->>> And then tie the new syslog_ns to current user_ns
->>> instead of original syslog_ns which comes from
->>> parent user_ns.
-> 
-> ...
-> 
->>> diff --git a/kernel/printk.c b/kernel/printk.c
->>> index fd2d600..6b561db 100644
->>> --- a/kernel/printk.c
->>> +++ b/kernel/printk.c
->>> @@ -384,6 +384,10 @@ static int check_syslog_permissions(int type, bool from_file,
->>>  		|| type == SYSLOG_ACTION_CONSOLE_LEVEL)
->>>  		ns = &init_syslog_ns;
->>>  
->>> +	/* create a new syslog ns */
->>> +	if (type == SYSLOG_ACTION_NEW_NS)
->>> +		return 0;
->>> +
->>
->> Don't we need further permission or caps check here? Return success directly seems sloppy. 
->>
-> CAP_SYSLOG is checked in create_syslog_ns, so I think we can return 0 temporarily.
+Dwight just posted v7. can you discuss your concerns in reposnse to
+the relevant patch in that series, please? it's much easier for
+everyone if we keep the discussion int eh one thread ;)
 
-If so, why not move the check here? IMO, permission checking is the earlier the better,
-what's your opinion?
+Cheers,
 
-Regards,
-Gu
-
-> 
-> 
-> 
-> 
+Dave.
+-- 
+Dave Chinner
+david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org
