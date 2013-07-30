@@ -1,21 +1,12 @@
-From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: memcg creates an unkillable task in 3.11-rc2
-Date: Tue, 30 Jul 2013 14:31:20 +0200
-Message-ID: <20130730123120.GA15847@dhcp22.suse.cz>
-References: <20130723174711.GE21100@mtj.dyndns.org>
-	<8761vui4cr.fsf@xmission.com>
-	<20130729075939.GA4678@dhcp22.suse.cz>
-	<87ehahg312.fsf@xmission.com>
-	<20130729095109.GB4678@dhcp22.suse.cz>
-	<20130729161026.GD22605@mtj.dyndns.org>
-	<87r4eh70yg.fsf@xmission.com> <51F71DE2.4020102@huawei.com>
-	<87ppu0a298.fsf_-_@tw-ebiederman.twitter.com>
+From: Michel Kabore <kaboremichel4-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Invitation: Bank Manager. @ Tue 30 Jul 2013 10:00 - 11:00
+	(kaboremichel4-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org)
+Date: Tue, 30 Jul 2013 13:42:41 +0000
+Message-ID: <047d7bfea0f476109a04e2bac8a5@google.com>
+Reply-To: Michel Kabore <kaboremichel4-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary=047d7bfea0f476108f04e2bac8a4
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87ppu0a298.fsf_-_-HxuHnoDHeQZYhcs0q7wBk77fW72O3V7zAL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,77 +16,90 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Glauber Costa <glommer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, kent.overstreet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue 30-07-13 01:19:31, Eric W. Biederman wrote:
-[...]
-> Hmm. Looking farther I see what is going on. And it has nothing to do
-> with the freezer. (I have commented out that code and reproduced it
-> without the freezer to be doubly certain).
-> 
-> 
-> On the exit path exit_robust_list is triggering a page fault to fault a
-> page back in.  Which since we have no memory causes the exit path
-> to get stuck in mem_cgroup_handle_oom.
+--047d7bfea0f476108f04e2bac8a4
+Content-Type: text/plain; charset=windows-1252; format=flowed; delsp=yes
+Content-Transfer-Encoding: base64
 
-Hmm, interesting. I assume the exit is caused by the SIGKILL, right?
-If yes, then why it hasn't coughed early in __mem_cgroup_try_charge
+WW91IGhhdmUgYmVlbiBpbnZpdGVkIHRvIHRoZSBmb2xsb3dpbmcgZXZlbnQuDQoNClRpdGxlOiBC
+YW5rIE1hbmFnZXIuDQpEZWFyIEZyaWVuZCwNCg0KVGhpcyBtZXNzYWdlIG1pZ2h0IG1lZXQgeW91
+IGluIHV0bW9zdCBzdXJwcmlzZSwgaG93ZXZlcixpdCdzIGp1c3QgbXkgdXJnZW50ICANCm5lZWQg
+Zm9yIGZvcmVpZ24gcGFydG5lciB0aGF0IG1hZGUgbWUgdG8gY29udGFjdCB5b3UgZm9yIHRoaXMg
+dHJhbnNhY3Rpb24uICANCkkgYW0gYSBiYW5rZXIgYnkgcHJvZmVzc2lvbiBmcm9tIEJ1cmtpbmEg
+RmFzbyBpbiB3ZXN0IEFmcmljYSBhbmQgY3VycmVudGx5ICANCmhvbGRpbmcgdGhlIHBvc3Qgb2Yg
+QmlsbCBhbmQgRXhjaGFuZ2UgTWFuYWdlciBpbiB0aGlzIGJhbmsuSSBoYXZlIHRoZSAgDQpvcHBv
+cnR1bml0eSBvZiB0cmFuc2ZlcnJpbmcgdGhlIGxlZnQgb3ZlciBmdW5kcyAoJDkuNSBtaWxsaW9u
+KSBvZiBvbmUgb2YgbXkgIA0KYmFuayBjbGllbnRzIHdobyBkaWVkIGFsb25nIHdpdGggaGlzIGVu
+dGlyZSBmYW1pbHkgaW4gYSBwbGFuZSBjcmFzaC4gIA0KSGVuY2UsaSBhbSBpbnZpdGluZyB5b3Ug
+Zm9yIGEgYnVzaW5lc3MgZGVhbCB3aGVyZSBieSB0aGlzIG1vbmV5IGNhbiBiZSAgDQpzaGFyZWQg
+YmV0d2VlbiB1cyBpbiB0aGUgcmF0aW8gb2YgNjAvNDAgYW5kIDYwIGZvciBtZSB3aGlsZSA0MCBp
+cyBmb3IgeW91Lg0KDQpJZiB5b3UgYWdyZWUgdG8gbXkgYnVzaW5lc3MgcHJvcG9zYWwuZnVydGhl
+ciBkZXRhaWxzIG9mIHRoZSB0cmFuc2ZlciB3aWxsICANCmJlIGZvcndhcmRlZCB0byB5b3UgYXMg
+c29vbiBhcyBpIHJlY2VpdmUgeW91ciBtYWlsOmthYm9yZW1pY2hlbDJAZ21haWwuY29tICANCmhh
+dmUgYSBncmVhdCBkYXkuDQoNCkJlc3QgUmVnYXJkcywNCk1yLk1pY2hlbCBLYWJvcmUuDQpXaGVu
+OiBUdWUgMzAgSnVsIDIwMTMgMTA6MDAgliAxMTowMCBFYXN0ZXJuIFRpbWUNCkNhbGVuZGFyOiBr
+YWJvcmVtaWNoZWw0QGdtYWlsLmNvbQ0KV2hvOg0KICAgICAoR3Vlc3QgbGlzdCBoYXMgYmVlbiBo
+aWRkZW4gYXQgb3JnYW5pc2VyJ3MgcmVxdWVzdCkNCg0KRXZlbnQgZGV0YWlsczogIA0KaHR0cHM6
+Ly93d3cuZ29vZ2xlLmNvbS9jYWxlbmRhci9ldmVudD9hY3Rpb249VklFVyZlaWQ9YUd4d00yWjBi
+V3N4Tm1ScU5tb3haakJzY1RabWRqSTFaV2NnWTI5dWRHRnBibVZ5YzBCc2FYTjBjeTVzYVc1MWVD
+MW1iM1Z1WkdGMGFXOXVMbTl5WncmdG9rPU1qTWphMkZpYjNKbGJXbGphR1ZzTkVCbmJXRnBiQzVq
+YjIwek1UZGlNamMzTUdVek1tSm1OamxpTVRReU5UUXpOR1ZoWkRBMk16TXhNR0psWldFMVlUQTEm
+Y3R6PUFtZXJpY2EvTmV3X1lvcmsmaGw9ZW5fR0INCg0KSW52aXRhdGlvbiBmcm9tIEdvb2dsZSBD
+YWxlbmRhcjogaHR0cHM6Ly93d3cuZ29vZ2xlLmNvbS9jYWxlbmRhci8NCg0KWW91IGFyZSByZWNl
+aXZpbmcgdGhpcyBjb3VydGVzeSBlbWFpbCBhdCB0aGUgYWNjb3VudCAgDQpjb250YWluZXJzQGxp
+c3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnIGJlY2F1c2UgeW91IGFyZSBhbiBhdHRlbmRlZSBvZiB0
+aGlzICANCmV2ZW50Lg0KDQpUbyBzdG9wIHJlY2VpdmluZyBmdXR1cmUgbm90aWZpY2F0aW9ucyBm
+b3IgdGhpcyBldmVudCwgZGVjbGluZSB0aGlzIGV2ZW50LiAgDQpBbHRlcm5hdGl2ZWx5LCB5b3Ug
+Y2FuIHNpZ24gdXAgZm9yIGEgR29vZ2xlIGFjY291bnQgYXQgIA0KaHR0cHM6Ly93d3cuZ29vZ2xl
+LmNvbS9jYWxlbmRhci8gYW5kIGNvbnRyb2wgeW91ciBub3RpZmljYXRpb24gc2V0dGluZ3MgZm9y
+ICANCnlvdXIgZW50aXJlIGNhbGVuZGFyLg0K
+--047d7bfea0f476108f04e2bac8a4
+Content-Type: application/ics; name="invite.ics"
+Content-Disposition: attachment; filename="invite.ics"
+Content-Transfer-Encoding: base64
 
-> Which means the following change should fix the hang.  I will test it in just
-> a second.
-> 
-> The problem is that we only handled pending fatal signals and exiting
-> processes when the OOM logic was enabled. Sigh.
+QkVHSU46VkNBTEVOREFSDQpQUk9ESUQ6LS8vR29vZ2xlIEluYy8vR29vZ2xlIENhbGVuZGFyIDcw
+LjkwNTQvL0VODQpWRVJTSU9OOjIuMA0KQ0FMU0NBTEU6R1JFR09SSUFODQpNRVRIT0Q6UkVRVUVT
+VA0KQkVHSU46VkVWRU5UDQpEVFNUQVJUOjIwMTMwNzMwVDE0MDAwMFoNCkRURU5EOjIwMTMwNzMw
+VDE1MDAwMFoNCkRUU1RBTVA6MjAxMzA3MzBUMTM0MjQxWg0KT1JHQU5JWkVSO0NOPWthYm9yZW1p
+Y2hlbDRAZ21haWwuY29tOm1haWx0bzprYWJvcmVtaWNoZWw0QGdtYWlsLmNvbQ0KVUlEOmhscDNm
+dG1rMTZkajZqMWYwbHE2ZnYyNWVnQGdvb2dsZS5jb20NCkFUVEVOREVFO0NVVFlQRT1JTkRJVklE
+VUFMO1JPTEU9UkVRLVBBUlRJQ0lQQU5UO1BBUlRTVEFUPU5FRURTLUFDVElPTjtSU1ZQPQ0KIFRS
+VUU7Q049Y29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZztYLU5VTS1HVUVTVFM9
+MDptYWlsdG86Y29udGFpbg0KIGVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZw0KQ1JFQVRF
+RDoyMDEzMDczMFQxMzQyNDBaDQpERVNDUklQVElPTjpEZWFyIEZyaWVuZFwsXG5cblRoaXMgbWVz
+c2FnZSBtaWdodCBtZWV0IHlvdSBpbiB1dG1vc3Qgc3VycHJpc2UNCiBcLCBob3dldmVyXCxpdCdz
+IGp1c3QgbXkgdXJnZW50IG5lZWQgZm9yIGZvcmVpZ24gcGFydG5lciB0aGF0IG1hZGUgbWUgdG8g
+Y28NCiBudGFjdCB5b3UgZm9yIHRoaXMgdHJhbnNhY3Rpb24uIEkgYW0gYSBiYW5rZXIgYnkgcHJv
+ZmVzc2lvbiBmcm9tIEJ1cmtpbmEgRmENCiBzbyBpbiB3ZXN0IEFmcmljYSBhbmQgY3VycmVudGx5
+IGhvbGRpbmcgdGhlIHBvc3Qgb2YgQmlsbCBhbmQgRXhjaGFuZ2UgTWFuYWcNCiBlciBpbiB0aGlz
+IGJhbmsuSSBoYXZlIHRoZSBvcHBvcnR1bml0eSBvZiB0cmFuc2ZlcnJpbmcgdGhlIGxlZnQgb3Zl
+ciBmdW5kcyANCiAoJDkuNSBtaWxsaW9uKSBvZiBvbmUgb2YgbXkgYmFuayBjbGllbnRzIHdobyBk
+aWVkIGFsb25nIHdpdGggaGlzIGVudGlyZSBmYW0NCiBpbHkgaW4gYSBwbGFuZSBjcmFzaC4gSGVu
+Y2VcLGkgYW0gaW52aXRpbmcgeW91IGZvciBhIGJ1c2luZXNzIGRlYWwgd2hlcmUgYnkNCiAgdGhp
+cyBtb25leSBjYW4gYmUgc2hhcmVkIGJldHdlZW4gdXMgaW4gdGhlIHJhdGlvIG9mIDYwLzQwIGFu
+ZCA2MCBmb3IgbWUgd2gNCiBpbGUgNDAgaXMgZm9yIHlvdS5cblxuSWYgeW91IGFncmVlIHRvIG15
+IGJ1c2luZXNzIHByb3Bvc2FsLmZ1cnRoZXIgZGV0YWlscyANCiBvZiB0aGUgdHJhbnNmZXIgd2ls
+bCBiZSBmb3J3YXJkZWQgdG8geW91IGFzIHNvb24gYXMgaSByZWNlaXZlIHlvdXIgbWFpbDprYWIN
+CiBvcmVtaWNoZWwyQGdtYWlsLmNvbSBoYXZlIGEgZ3JlYXQgZGF5LlxuXG5CZXN0IFJlZ2FyZHNc
+LFxuTXIuTWljaGVsIEthYm9yZS4NCiBcblZpZXcgeW91ciBldmVudCBhdCBodHRwOi8vd3d3Lmdv
+b2dsZS5jb20vY2FsZW5kYXIvZXZlbnQ/YWN0aW9uPVZJRVcmZWlkPWENCiBHeHdNMlowYldzeE5t
+UnFObW94WmpCc2NUWm1kakkxWldjZ1kyOXVkR0ZwYm1WeWMwQnNhWE4wY3k1c2FXNTFlQzFtYjNW
+dVpHRjANCiBhVzl1TG05eVp3JnRvaz1Nak1qYTJGaWIzSmxiV2xqYUdWc05FQm5iV0ZwYkM1amIy
+MHpNVGRpTWpjM01HVXpNbUptTmpsaU1UUXkNCiBOVFF6TkdWaFpEQTJNek14TUdKbFpXRTFZVEEx
+JmN0ej1BbWVyaWNhL05ld19Zb3JrJmhsPWVuX0dCLg0KTEFTVC1NT0RJRklFRDoyMDEzMDczMFQx
+MzQyNDBaDQpMT0NBVElPTjoNClNFUVVFTkNFOjANClNUQVRVUzpDT05GSVJNRUQNClNVTU1BUlk6
+QmFuayBNYW5hZ2VyLg0KVFJBTlNQOk9QQVFVRQ0KRU5EOlZFVkVOVA0KRU5EOlZDQUxFTkRBUg0K
+--047d7bfea0f476108f04e2bac8a4
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-If this is about PF_EXITING then we should handle that earlier in the
-code chain (__mem_cgroup_try_charge sounds like a proper place). Let me
-think about that.
-
-Thanks for debugging this!
-
-> Eric
-> 
-> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-> index 00a7a66..5998a57 100644
-> --- a/mm/memcontrol.c
-> +++ b/mm/memcontrol.c
-> @@ -1792,16 +1792,6 @@ static void mem_cgroup_out_of_memory(struct mem_cgroup *memcg, gfp_t gfp_mask,
->         unsigned int points = 0;
->         struct task_struct *chosen = NULL;
->  
-> -       /*
-> -        * If current has a pending SIGKILL or is exiting, then automatically
-> -        * select it.  The goal is to allow it to allocate so that it may
-> -        * quickly exit and free its memory.
-> -        */
-> -       if (fatal_signal_pending(current) || current->flags & PF_EXITING) {
-> -               set_thread_flag(TIF_MEMDIE);
-> -               return;
-> -       }
-> -
->         check_panic_on_oom(CONSTRAINT_MEMCG, gfp_mask, order, NULL);
->         totalpages = mem_cgroup_get_limit(memcg) >> PAGE_SHIFT ? : 1;
->         for_each_mem_cgroup_tree(iter, memcg) {
-> @@ -2220,7 +2210,15 @@ static bool mem_cgroup_handle_oom(struct mem_cgroup *memcg, gfp_t mask,
->                 mem_cgroup_oom_notify(memcg);
->         spin_unlock(&memcg_oom_lock);
->  
-> -       if (need_to_kill) {
-> +       /*
-> +        * If current has a pending SIGKILL or is exiting, then automatically
-> +        * select it.  The goal is to allow it to allocate so that it may
-> +        * quickly exit and free its memory.
-> +        */
-> +       if (fatal_signal_pending(current) || current->flags & PF_EXITING) {
-> +               set_thread_flag(TIF_MEMDIE);
-> +               finish_wait(&memcg_oom_waitq, &owait.wait);
-> +       } else if (need_to_kill) {
->                 finish_wait(&memcg_oom_waitq, &owait.wait);
->                 mem_cgroup_out_of_memory(memcg, mask, order);
->         } else {
-
--- 
-Michal Hocko
-SUSE Labs
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--047d7bfea0f476108f04e2bac8a4--
