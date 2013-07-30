@@ -1,14 +1,15 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 0/9] Add namespace support for syslog v2
-Date: Mon, 29 Jul 2013 11:58:23 -0700
-Message-ID: <87wqo9urao.fsf@xmission.com>
+From: Gu Zheng <guz.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 1/9] syslog_ns: add syslog_namespace and put/get_syslog_ns
+Date: Tue, 30 Jul 2013 08:46:45 +0800
+Message-ID: <51F70CF5.9090003@cn.fujitsu.com>
 References: <1375065080-26740-1-git-send-email-rui.xiang@huawei.com>
+	<1375065080-26740-2-git-send-email-rui.xiang@huawei.com>
+	<51F6388B.8000308@cn.fujitsu.com> <51F65636.6080505@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1375065080-26740-1-git-send-email-rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org> (Rui
-	Xiang's message of "Mon, 29 Jul 2013 10:31:11 +0800")
+In-Reply-To: <51F65636.6080505-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,79 +20,68 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, libo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, libo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org> writes:
+On 07/29/2013 07:47 PM, Rui Xiang wrote:
 
-> This patchset introduces a system log namespace.
+> On 2013/7/29 17:40, Gu Zheng wrote:
+>> Hi Rui,
+>> 	Refer to inline:).
+>>
+> Hi Gu,
+> 
+> Thanks for your attention.
+> 
+>> On 07/29/2013 10:31 AM, Rui Xiang wrote:
+>>
+>>> Add a struct syslog_namespace which contains the necessary
+>>> members for hanlding syslog and realize get_syslog_ns and
+>>> put_syslog_ns API.
+>>>
+>>> Signed-off-by: Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+>>> ---
+>>>  include/linux/syslog.h | 68 ++++++++++++++++++++++++++++++++++++++++++++++++++
+>>>  kernel/printk.c        |  7 ------
+>>>  2 files changed, 68 insertions(+), 7 deletions(-)
+>>>
+> 
+> ...
+> 
+>>> +
+>>> +static inline void free_syslog_ns(struct kref *kref)
+>>> +{
+>>> +	struct syslog_namespace *ns;
+>>> +	ns = container_of(kref, struct syslog_namespace, kref);
+>>> +
+>>> +	kfree(ns->log_buf);
+>>> +	kfree(ns);
+>>> +}
+>>
+>> This interface seems a bit ugly, why not use the format like put_syslog_ns()?
+>>
+>> static inline void free_syslog_ns(struct syslog_namespace *ns)
+>>
+> 
+> Free_syslog_ns is used in put_syslog_ns. And the kref_put function uses kref as
+> a parameter for its relase funtion. You can see that from 
+> static inline int kref_put(struct kref *kref, void (*release)(struct kref *kref)).
 
-The largest outstanding question is not answered.  Can't we just fix
-iptables to log somehwere better than dmesg, and would that not entirely
-remove the need for this work?
+Got it.
 
-That question needs to be answered before we proceed down this path.
+Regards,
+Gu
 
-Eric
-
-> It is the 2nd version. The link of the 1st version is 
-> http://lwn.net/Articles/525728/. In that version, syslog_
-> namespace was added into nsproxy and created through a new
-> clone flag CLONE_SYSLOG when cloning a process. 
->
-> There were some discussion in last November about the 1st 
-> version. This version used these important advice, and 
-> referred to Serge's patch(http://lwn.net/Articles/525629/).
->
-> Unlike the 1st version, in this patchset, syslog namespace 
-> is tied to a user namespace. Add we must create a new user 
-> ns before create a new syslog ns, because that will make 
-> users have full capabilities in this new userns after 
-> cloning a new user ns. The syslog namespace can be created 
-> through a new command(11) to __NR_syslog syscall. That owe 
-> to a new syslog flag SYSLOG_ACTION_NEW_NS.
->
-> In syslog_namespace, some necessary identifiers for handling 
-> syslog buf are containerized. When one container creates a
-> new syslog ns, individual buf will be allocated to store log
-> ownned this container. 
->
-> A new interface ns_printk is added to print the logs which 
-> we want to see in the container. Through ns_printk, we can 
-> get more logs related to a specific net ns, for instance, 
-> iptables. Here we use it to report iptable logs per 
-> contianer.
->
-> Then default printk targeted at the init_syslog_ns will 
-> continue to print out most kernel log to host.
->
-> One task in a new syslog ns could affect only current 
-> container through "dmesg", "dmesg -c" and /dev/kmsg 
-> actions. The read/write interface such as /dev/kmsg, 
-> /pro/kmsg and syslog syscall continue to be useful for 
-> container users.
->
-> This patchset is based on linus' linux tree.
->
-> Rui Xiang (9):
->   syslog_ns: add syslog_namespace and put/get_syslog_ns
->   syslog_ns: add syslog_ns into user_namespace
->   syslog_ns: add init syslog_ns for global syslog
->   syslog_ns: make syslog handling per namespace
->   syslog_ns: make permisiion check per user namespace
->   syslog_ns: use init syslog_ns for console action
->   syslog_ns: implement function for creating syslog ns
->   syslog_ns: implement ns_printk for specific syslog_ns
->   netfilter: use ns_printk in iptable context
->
->  fs/proc/kmsg.c                 |  17 +-
->  include/linux/printk.h         |   5 +-
->  include/linux/syslog.h         |  79 ++++-
->  include/linux/user_namespace.h |   2 +
->  include/net/netfilter/xt_log.h |   6 +-
->  kernel/printk.c                | 642 ++++++++++++++++++++++++-----------------
->  kernel/sysctl.c                |   3 +-
->  kernel/user.c                  |   3 +
->  kernel/user_namespace.c        |   4 +
->  net/netfilter/xt_LOG.c         |   4 +-
->  10 files changed, 493 insertions(+), 272 deletions(-)
+> 
+> Thanks.
+> 
+>>> +
+>>> +static inline void put_syslog_ns(struct syslog_namespace *ns)
+>>> +{
+>>> +	if (ns)
+>>> +		kref_put(&ns->kref, free_syslog_ns);
+>>> +}
+>>> +
+>>>
+> 
+> 
