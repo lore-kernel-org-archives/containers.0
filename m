@@ -1,22 +1,12 @@
-From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: memcg creates an unkillable task in 3.11-rc2
-Date: Thu, 1 Aug 2013 11:06:20 +0200
-Message-ID: <20130801090620.GA5198@dhcp22.suse.cz>
-References: <87ehahg312.fsf@xmission.com>
-	<20130729095109.GB4678@dhcp22.suse.cz>
-	<20130729161026.GD22605@mtj.dyndns.org>
-	<87r4eh70yg.fsf@xmission.com> <51F71DE2.4020102@huawei.com>
-	<87ppu0a298.fsf_-_@tw-ebiederman.twitter.com>
-	<20130730123120.GA15847@dhcp22.suse.cz>
-	<874nbc3sx1.fsf@tw-ebiederman.twitter.com>
-	<20130731073726.GC30514@dhcp22.suse.cz>
-	<87zjt2tm9f.fsf@xmission.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCHSET cgroup/for-3.12] cgroup: use cgroup_subsys_state as the
+	primary subsystem interface handle
+Date: Thu,  1 Aug 2013 17:49:38 -0400
+Message-ID: <1375393801-4817-1-git-send-email-tj__34831.8133074374$1375393819$gmane$org@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87zjt2tm9f.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,168 +16,128 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Glauber Costa <glommer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, kent.overstreet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed 31-07-13 15:09:16, Eric W. Biederman wrote:
-> Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org> writes:
-> 
-> > [I am CCing David here as well]
-> >
-> > On Tue 30-07-13 09:37:46, Eric W. Biederman wrote:
-> >> Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org> writes:
-> >> 
-> >> > On Tue 30-07-13 01:19:31, Eric W. Biederman wrote:
-> >> > [...]
-> >> >> Hmm. Looking farther I see what is going on. And it has nothing to do
-> >> >> with the freezer. (I have commented out that code and reproduced it
-> >> >> without the freezer to be doubly certain).
-> >> >> 
-> >> >> 
-> >> >> On the exit path exit_robust_list is triggering a page fault to fault a
-> >> >> page back in.  Which since we have no memory causes the exit path
-> >> >> to get stuck in mem_cgroup_handle_oom.
-> >> >
-> >> > Hmm, interesting. I assume the exit is caused by the SIGKILL, right?
-> >> > If yes, then why it hasn't coughed early in __mem_cgroup_try_charge
-> >> 
-> >> Interesting question.  This isn't the primary thread but we do send
-> >> SIGKILL to the secondary threads as well.
-> >> 
-> >> We definitely need those checks on both paths making my change valid.
-> >> 
-> >> Oh. Duh!  This is after we act on SIGKILL so SIGKILL is no longer
-> >> pending.
-> >
-> > Very well spotted Eric! What do you think about the following patch?
-> > I would have to check since when the exit path could trigger the fault
-> > but I guess this is worth stable backport.
-> 
-> It doesn't have a prayer of working.
+Hello,
 
-So it hasn't passed your test?
+Currently, struct cgroup * is used as the main interface handle
+between cgroup core and its subsystems, which works but is a bit
+clunky because subsystems usually care much more about css's
+(cgroup_subsys_state) a lot more than cgroups, which is natural as a
+css is the intersection between a cgroup and a subsystem.
 
-> You leave open the race of a fatal signal being received before we go to
-> sleep.
+In addition to being a bit clunky, dealing with cgroups directly pose
+a bit of trouble for the planned unified hierarchy support on two
+fronts.  First, most iterations become subsystem dependent as task
+membership is affected by which subtree has the specific subsystem
+enabled and thus require specifying which subsystem the iteration is
+for, which is automatically achieved if the interfaces deal with css's
+instead of cgroups.
 
-If a fatal signal is received before we're going to sleep then
-schedule() should keep it on the runqueue, no?
+Second, as css's may be created, attached, detached and destroyed
+dynamically multiple times across the lifetime of a given cgroup as
+they're enabled and disabled, which makes cgroup -> css mapping much
+more difficult to synchronize.  Giving out cgroup to subsystems and
+then requiring them to take the extra steps to deal with their css's
+coming and going dynamically is a lot more fragile than cgroup core
+proper handling it internally and giving out the resulting css's to
+subsystems.
 
-static void __sched __schedule(void)
-{
-[...]
-        if (prev->state && !(preempt_count() & PREEMPT_ACTIVE)) {
-                if (unlikely(signal_pending_state(prev->state, prev))) {
-                        prev->state = TASK_RUNNING;
-                } else {
+So, this patchset converts all cgroup subsystem APIs to deal with
+css's instead of cgroups.  The patchset is fairly large but most of
+the conversions, while being tedious, aren't complex.  At the end of
+series, subsystems no longer make cgroup -> css mapping themselves and
+cgroup_css() - formerly cgroup_subsys_state() - is made internal to
+cgroup core proper.
 
-so it should get a timeslice eventually, mem_cgroup_handle_oom sees
-fatal_signal_pending and sets TIF_MEMDIE, bypass the charge, get to
-signal handling, start exiting, fault in, get to charge and bail out in
-__mem_cgroup_try_charge because it sees TIF_MEMDIE.
+This is a rather large update to the interface and likely to play as a
+barrier when porting commits, which is inconvenient but also provides
+an opportunity to clean up the API where we can as doing so won't
+significantly raise the level of inconvenience.  As such, this
+patchset contains some API cleanups and I'll probably follow up with
+further API updates that I've been meaning to do and, if you have some
+good idea to clean up cgroup internal API, this probably is a good
+time to submit it.
 
-Or what am I missing?
+This patchset contains the following 23 patches.
 
-> You don't handle a task that has processed the fatal signal and is in
-> PF_EXITING.  Which is what I experienced.
-> 
-> From earlier comments about my code not being early enough I thought I
-> was going to see a patch in __mem_cgroup_try_change so that the bypass
-> case will kick in also for tasks in PF_EXITING.
+ 0001-cgroup-s-cgroup_subsys_state-cgroup_css-s-task_subsy.patch
+ 0002-cpuset-drop-const-qualifiers-from-struct-cpuset-inst.patch
+ 0003-netprio_cgroup-pass-around-css-instead-of-cgroup-and.patch
+ 0004-hugetlb_cgroup-pass-around-hugetlb_cgroup-instead-of.patch
+ 0005-cgroup-add-subsystem-pointer-to-cgroup_subsys_state.patch
+ 0006-cgroup-add-update-accessors-which-obtain-subsys-spec.patch
+ 0007-cgroup-add-css_parent.patch
+ 0008-cgroup-pass-around-cgroup_subsys_state-instead-of-cg.patch
+ 0009-cgroup-add-subsys-backlink-pointer-to-cftype.patch
+ 0010-cgroup-pin-cgroup_subsys_state-when-opening-a-cgroup.patch
+ 0011-cgroup-add-cgroup-dummy_css.patch
+ 0012-cgroup-pass-around-cgroup_subsys_state-instead-of-cg.patch
+ 0013-cgroup-convert-cgroup_next_sibling-to-cgroup_next_ch.patch
+ 0014-cgroup-always-use-cgroup_next_child-to-walk-the-chil.patch
+ 0015-cgroup-make-hierarchy-iterators-deal-with-cgroup_sub.patch
+ 0016-cgroup-relocate-cgroup_advance_iter.patch
+ 0017-cgroup-rename-cgroup_iter-to-cgroup_task_iter.patch
+ 0018-cgroup-make-cgroup_task_iter-remember-the-cgroup-bei.patch
+ 0019-cgroup-remove-struct-cgroup_scanner.patch
+ 0020-cgroup-make-task-iterators-deal-with-cgroup_subsys_s.patch
+ 0021-cgroup-make-cftype-un-register_event-deal-with-cgrou.patch
+ 0022-cgroup-make-cgroup_taskset-deal-with-cgroup_subsys_s.patch
+ 0023-cgroup-unexport-cgroup_css.patch
 
-This shouldn't be necessary because TIF_MEMDIE was set for the killed
-task.  I was playing with PF_EXITING there as well but TIF_MEMDIE sounds
-like a more appropriate solution.
+0001-0007 prepare for css-based interface.  Individual subsystems are
+updated so that they're easier to convert and css_parent() is added so
+that upward travelsal can be done without going through cgroup.
 
-> You change actually addresses things later in the code path than mine
-> does.
-> 
-> I do like your summary of the problem.
-> 
-> Eric
-> 
-> > ---
-> > From 411408558f2858328ea25e69567e9a53a8314032 Mon Sep 17 00:00:00 2001
-> > From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-> > Date: Wed, 31 Jul 2013 08:48:54 +0200
-> > Subject: [PATCH] memcg: Do not hang on OOM when killed by userspace OOM
-> >
-> > Eric has reported that he can see task(s) stuck in memcg OOM handler
-> > regularly. The only way out is to
-> > 	echo 0 > $GROUP/memory.oom_controll
-> >
-> > His usecase is:
-> > - Setup a hierarchy with memory and the freezer
-> >   (disable kernel oom and have a process watch for oom).
-> > - In that memory cgroup add a process with one thread per cpu.
-> > - In one thread slowly allocate once per second I think it is 16M of ram
-> >   and mlock and dirty it (just to force the pages into ram and stay there).
-> > - When oom is achieved loop:
-> >   * attempt to freeze all of the tasks.
-> >   * if frozen send every task SIGKILL, unfreeze, remove the directory in
-> >     cgroupfs.
-> >
-> > Eric has then pinpointed the issue to be memcg specific.
-> >
-> > All tasks are sitting on the memcg_oom_waitq when memcg oom is disabled.
-> > Those that have received fatal signal will bypass the charge and should
-> > continue on their way out. The tricky part is that that exit path might
-> > trigger a page fault (e.g. exit_robust_list) thus the memcg charge
-> > while its memcg is still under OOM because nobody has released any
-> > charges. Unlike with the in-kernel OOM handler the exiting task doesn't
-> > get TIF_MEMDIE set so it doesn't shortcut charges and falls to the
-> > memcg OOM again without any way out of it as there are no fatal signals
-> > pending anymore.
-> >
-> > This patch sets the TIF_MEMDIE flag pro actively in mem_cgroup_handle_oom
-> > if the memcg is disabled after the task is woken up with fatal signal
-> > pending. This means that any further charges will be bypassed early in
-> > __mem_cgroup_try_charge and the task will have chance to exit finally.
-> >
-> > Strictly speaking we might mark also a task which hasn't been killed by
-> > userspace OOM handler but this is not harmful as the task is going away
-> > anyway and under-oom group would like to see it go as soon as possible.
-> >
-> > Reported-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> > Debugged-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> > Signed-off-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-> > ---
-> >  mm/memcontrol.c | 13 ++++++++++++-
-> >  1 file changed, 12 insertions(+), 1 deletion(-)
-> >
-> > diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-> > index d12ca6f..d4103b0 100644
-> > --- a/mm/memcontrol.c
-> > +++ b/mm/memcontrol.c
-> > @@ -2235,8 +2235,19 @@ static bool mem_cgroup_handle_oom(struct mem_cgroup *memcg, gfp_t mask,
-> >  
-> >  	mem_cgroup_unmark_under_oom(memcg);
-> >  
-> > -	if (test_thread_flag(TIF_MEMDIE) || fatal_signal_pending(current))
-> > +	if (test_thread_flag(TIF_MEMDIE))
-> >  		return false;
-> > +
-> > +	/*
-> > +	 * Userspace OOM killer might have killed this task but
-> > +	 * there is no way it could have set TIF_MEMDIE as well
-> > +	 * so we have to set it manually.
-> > +	 */
-> > +	if (fatal_signal_pending(current)) {
-> > +		if (memcg->oom_kill_disable)
-> > +			set_thread_flag(TIF_MEMDIE);
-> > +		return false;
-> > +	}
-> >  	/* Give chance to dying process */
-> >  	schedule_timeout_uninterruptible(1);
-> >  	return true;
-> > -- 
-> > 1.8.3.2
-> --
-> To unsubscribe from this list: send the line "unsubscribe cgroups" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+0008 updates all subsystem methods.
 
--- 
-Michal Hocko
-SUSE Labs
+0009-0012 update file operations.
+
+0013-0015 update hierarchy iterators.
+
+0016-0020 update task iterators.
+
+0021 updates events.
+
+0022 updates task_set handling.
+
+0023 unexports cgroup_css().
+
+This patchset is available in the following git branch.
+
+ git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-cssfy
+
+diffstat follows.
+
+ block/blk-cgroup.c           |   41 +-
+ block/blk-cgroup.h           |   34 -
+ block/blk-throttle.c         |   40 +-
+ block/cfq-iosched.c          |   90 ++--
+ fs/bio.c                     |    2
+ include/linux/cgroup.h       |  268 +++++++-------
+ include/linux/memcontrol.h   |    2
+ include/linux/vmpressure.h   |    6
+ include/net/cls_cgroup.h     |    4
+ include/net/netprio_cgroup.h |    8
+ kernel/cgroup.c              |  798 ++++++++++++++++++++++++-------------------
+ kernel/cgroup_freezer.c      |  128 +++---
+ kernel/cpuset.c              |  265 ++++++--------
+ kernel/events/core.c         |   22 -
+ kernel/sched/core.c          |  113 +++---
+ kernel/sched/cpuacct.c       |   51 +-
+ kernel/sched/sched.h         |    6
+ mm/hugetlb_cgroup.c          |   69 +--
+ mm/memcontrol.c              |  216 +++++------
+ mm/vmpressure.c              |   25 -
+ net/core/netprio_cgroup.c    |   72 +--
+ net/ipv4/tcp_memcontrol.c    |   12
+ net/sched/cls_cgroup.c       |   39 +-
+ security/device_cgroup.c     |   63 +--
+ 24 files changed, 1210 insertions(+), 1164 deletions(-)
+
+Thanks.
+
+--
+tejun
