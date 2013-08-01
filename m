@@ -1,8 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 21/23] cgroup: make cftype->[un]register_event() deal with
+Subject: [PATCH 22/23] cgroup: make cgroup_taskset deal with
 	cgroup_subsys_state instead of cgroup
-Date: Thu,  1 Aug 2013 17:49:59 -0400
-Message-ID: <1375393801-4817-22-git-send-email-tj__36219.6380076513$1375393981$gmane$org@kernel.org>
+Date: Thu,  1 Aug 2013 17:50:00 -0400
+Message-ID: <1375393801-4817-23-git-send-email-tj__44499.5535807267$1375393988$gmane$org@kernel.org>
 References: <1375393801-4817-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,7 +19,7 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daniel Wagner <daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 cgroup is in the process of converting to css (cgroup_subsys_state)
@@ -29,255 +29,232 @@ be created and destroyed dynamically but also helps cleaning up
 subsystem implementations as css is usually what they are interested
 in anyway.
 
-cftype->[un]register_event() is among the remaining couple interfaces
-which still use struct cgroup.  Convert it to cgroup_subsys_state.
-The conversion is mostly mechanical and removes the last users of
-mem_cgroup_from_cont() and cg_to_vmpressure(), which are removed.
+cgroup_taskset which is used by the subsystem attach methods is the
+last cgroup subsystem API which isn't using css as the handle.  Update
+cgroup_taskset_cur_cgroup() to cgroup_taskset_cur_css() and
+cgroup_taskset_for_each() to take @skip_css instead of @skip_cgrp.
+
+The conversions are pretty mechanical.  One exception is
+cpuset::cgroup_cs(), which lost its last user and got removed.
+
+This patch shouldn't introduce any functional changes.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
-Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Cc: Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Daniel Wagner <daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org>
+Cc: Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>
 ---
- include/linux/cgroup.h     |  8 +++++---
- include/linux/vmpressure.h |  6 ++++--
- kernel/cgroup.c            | 15 ++++++++-------
- mm/memcontrol.c            | 21 ++++++++-------------
- mm/vmpressure.c            | 21 +++++++++------------
- 5 files changed, 34 insertions(+), 37 deletions(-)
+ block/blk-cgroup.c        |  2 +-
+ include/linux/cgroup.h    | 12 +++++++-----
+ kernel/cgroup.c           | 16 +++++++++-------
+ kernel/cgroup_freezer.c   |  2 +-
+ kernel/cpuset.c           | 15 +++++----------
+ kernel/events/core.c      |  2 +-
+ kernel/sched/core.c       |  4 ++--
+ net/core/netprio_cgroup.c |  2 +-
+ net/sched/cls_cgroup.c    |  2 +-
+ 9 files changed, 28 insertions(+), 29 deletions(-)
 
+diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
+index 4b40640..54ad002 100644
+--- a/block/blk-cgroup.c
++++ b/block/blk-cgroup.c
+@@ -891,7 +891,7 @@ static int blkcg_can_attach(struct cgroup_subsys_state *css,
+ 	int ret = 0;
+ 
+ 	/* task_lock() is needed to avoid races with exit_io_context() */
+-	cgroup_taskset_for_each(task, css->cgroup, tset) {
++	cgroup_taskset_for_each(task, css, tset) {
+ 		task_lock(task);
+ 		ioc = task->io_context;
+ 		if (ioc && atomic_read(&ioc->nr_tasks) > 1)
 diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 6f6d87b..8f44411 100644
+index 8f44411..28e21f9 100644
 --- a/include/linux/cgroup.h
 +++ b/include/linux/cgroup.h
-@@ -506,15 +506,17 @@ struct cftype {
- 	 * you want to provide this functionality. Use eventfd_signal()
- 	 * on eventfd to send notification to userspace.
- 	 */
--	int (*register_event)(struct cgroup *cgrp, struct cftype *cft,
--			struct eventfd_ctx *eventfd, const char *args);
-+	int (*register_event)(struct cgroup_subsys_state *css,
-+			      struct cftype *cft, struct eventfd_ctx *eventfd,
-+			      const char *args);
- 	/*
- 	 * unregister_event() callback will be called when userspace
- 	 * closes the eventfd or on cgroup removing.
- 	 * This callback must be implemented, if you want provide
- 	 * notification functionality.
- 	 */
--	void (*unregister_event)(struct cgroup *cgrp, struct cftype *cft,
-+	void (*unregister_event)(struct cgroup_subsys_state *css,
-+				 struct cftype *cft,
- 			struct eventfd_ctx *eventfd);
- };
+@@ -563,20 +563,22 @@ int cgroup_task_count(const struct cgroup *cgrp);
+ struct cgroup_taskset;
+ struct task_struct *cgroup_taskset_first(struct cgroup_taskset *tset);
+ struct task_struct *cgroup_taskset_next(struct cgroup_taskset *tset);
+-struct cgroup *cgroup_taskset_cur_cgroup(struct cgroup_taskset *tset);
++struct cgroup_subsys_state *cgroup_taskset_cur_css(struct cgroup_taskset *tset,
++						   int subsys_id);
+ int cgroup_taskset_size(struct cgroup_taskset *tset);
  
-diff --git a/include/linux/vmpressure.h b/include/linux/vmpressure.h
-index 76be077..b239482 100644
---- a/include/linux/vmpressure.h
-+++ b/include/linux/vmpressure.h
-@@ -33,10 +33,12 @@ extern void vmpressure_init(struct vmpressure *vmpr);
- extern struct vmpressure *memcg_to_vmpressure(struct mem_cgroup *memcg);
- extern struct cgroup_subsys_state *vmpressure_to_css(struct vmpressure *vmpr);
- extern struct vmpressure *css_to_vmpressure(struct cgroup_subsys_state *css);
--extern int vmpressure_register_event(struct cgroup *cg, struct cftype *cft,
-+extern int vmpressure_register_event(struct cgroup_subsys_state *css,
-+				     struct cftype *cft,
- 				     struct eventfd_ctx *eventfd,
- 				     const char *args);
--extern void vmpressure_unregister_event(struct cgroup *cg, struct cftype *cft,
-+extern void vmpressure_unregister_event(struct cgroup_subsys_state *css,
-+					struct cftype *cft,
- 					struct eventfd_ctx *eventfd);
- #else
- static inline void vmpressure(gfp_t gfp, struct mem_cgroup *memcg,
+ /**
+  * cgroup_taskset_for_each - iterate cgroup_taskset
+  * @task: the loop cursor
+- * @skip_cgrp: skip if task's cgroup matches this, %NULL to iterate through all
++ * @skip_css: skip if task's css matches this, %NULL to iterate through all
+  * @tset: taskset to iterate
+  */
+-#define cgroup_taskset_for_each(task, skip_cgrp, tset)			\
++#define cgroup_taskset_for_each(task, skip_css, tset)			\
+ 	for ((task) = cgroup_taskset_first((tset)); (task);		\
+ 	     (task) = cgroup_taskset_next((tset)))			\
+-		if (!(skip_cgrp) ||					\
+-		    cgroup_taskset_cur_cgroup((tset)) != (skip_cgrp))
++		if (!(skip_css) ||					\
++		    cgroup_taskset_cur_css((tset),			\
++			(skip_css)->ss->subsys_id) != (skip_css))
+ 
+ /*
+  * Control Group subsystem type.
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index c61b24f..e0ef58e 100644
+index e0ef58e..ead0088 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -159,9 +159,9 @@ struct css_id {
-  */
- struct cgroup_event {
- 	/*
--	 * Cgroup which the event belongs to.
-+	 * css which the event belongs to.
- 	 */
--	struct cgroup *cgrp;
-+	struct cgroup_subsys_state *css;
- 	/*
- 	 * Control file which the event associated.
- 	 */
-@@ -3948,11 +3948,12 @@ static void cgroup_event_remove(struct work_struct *work)
- {
- 	struct cgroup_event *event = container_of(work, struct cgroup_event,
- 			remove);
--	struct cgroup *cgrp = event->cgrp;
-+	struct cgroup_subsys_state *css = event->css;
-+	struct cgroup *cgrp = css->cgroup;
- 
- 	remove_wait_queue(event->wqh, &event->wait);
- 
--	event->cft->unregister_event(cgrp, event->cft, event->eventfd);
-+	event->cft->unregister_event(css, event->cft, event->eventfd);
- 
- 	/* Notify userspace the event is going away. */
- 	eventfd_signal(event->eventfd, 1);
-@@ -3972,7 +3973,7 @@ static int cgroup_event_wake(wait_queue_t *wait, unsigned mode,
- {
- 	struct cgroup_event *event = container_of(wait,
- 			struct cgroup_event, wait);
--	struct cgroup *cgrp = event->cgrp;
-+	struct cgroup *cgrp = event->css->cgroup;
- 	unsigned long flags = (unsigned long)key;
- 
- 	if (flags & POLLHUP) {
-@@ -4041,7 +4042,7 @@ static int cgroup_write_event_control(struct cgroup_subsys_state *css,
- 	event = kzalloc(sizeof(*event), GFP_KERNEL);
- 	if (!event)
- 		return -ENOMEM;
--	event->cgrp = cgrp;
-+	event->css = css;
- 	INIT_LIST_HEAD(&event->list);
- 	init_poll_funcptr(&event->pt, cgroup_event_ptable_queue_proc);
- 	init_waitqueue_func_entry(&event->wait, cgroup_event_wake);
-@@ -4092,7 +4093,7 @@ static int cgroup_write_event_control(struct cgroup_subsys_state *css,
- 		goto out_put_cfile;
- 	}
- 
--	ret = event->cft->register_event(cgrp, event->cft,
-+	ret = event->cft->register_event(css, event->cft,
- 			event->eventfd, buffer);
- 	if (ret)
- 		goto out_put_cfile;
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 95106a9..2885e3e 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -1034,11 +1034,6 @@ static void memcg_check_events(struct mem_cgroup *memcg, struct page *page)
- 		preempt_enable();
- }
- 
--static inline struct mem_cgroup *mem_cgroup_from_cont(struct cgroup *cont)
--{
--	return mem_cgroup_from_css(cgroup_css(cont, mem_cgroup_subsys_id));
--}
--
- struct mem_cgroup *mem_cgroup_from_task(struct task_struct *p)
- {
- 	/*
-@@ -5620,10 +5615,10 @@ static void mem_cgroup_oom_notify(struct mem_cgroup *memcg)
- 		mem_cgroup_oom_notify_cb(iter);
- }
- 
--static int mem_cgroup_usage_register_event(struct cgroup *cgrp,
-+static int mem_cgroup_usage_register_event(struct cgroup_subsys_state *css,
- 	struct cftype *cft, struct eventfd_ctx *eventfd, const char *args)
- {
--	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
-+	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
- 	struct mem_cgroup_thresholds *thresholds;
- 	struct mem_cgroup_threshold_ary *new;
- 	enum res_type type = MEMFILE_TYPE(cft->private);
-@@ -5703,10 +5698,10 @@ unlock:
- 	return ret;
- }
- 
--static void mem_cgroup_usage_unregister_event(struct cgroup *cgrp,
-+static void mem_cgroup_usage_unregister_event(struct cgroup_subsys_state *css,
- 	struct cftype *cft, struct eventfd_ctx *eventfd)
- {
--	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
-+	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
- 	struct mem_cgroup_thresholds *thresholds;
- 	struct mem_cgroup_threshold_ary *new;
- 	enum res_type type = MEMFILE_TYPE(cft->private);
-@@ -5782,10 +5777,10 @@ unlock:
- 	mutex_unlock(&memcg->thresholds_lock);
- }
- 
--static int mem_cgroup_oom_register_event(struct cgroup *cgrp,
-+static int mem_cgroup_oom_register_event(struct cgroup_subsys_state *css,
- 	struct cftype *cft, struct eventfd_ctx *eventfd, const char *args)
- {
--	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
-+	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
- 	struct mem_cgroup_eventfd_list *event;
- 	enum res_type type = MEMFILE_TYPE(cft->private);
- 
-@@ -5807,10 +5802,10 @@ static int mem_cgroup_oom_register_event(struct cgroup *cgrp,
- 	return 0;
- }
- 
--static void mem_cgroup_oom_unregister_event(struct cgroup *cgrp,
-+static void mem_cgroup_oom_unregister_event(struct cgroup_subsys_state *css,
- 	struct cftype *cft, struct eventfd_ctx *eventfd)
- {
--	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
-+	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
- 	struct mem_cgroup_eventfd_list *ev, *tmp;
- 	enum res_type type = MEMFILE_TYPE(cft->private);
- 
-diff --git a/mm/vmpressure.c b/mm/vmpressure.c
-index 2a8a736..13489b1 100644
---- a/mm/vmpressure.c
-+++ b/mm/vmpressure.c
-@@ -74,11 +74,6 @@ static struct vmpressure *work_to_vmpressure(struct work_struct *work)
- 	return container_of(work, struct vmpressure, work);
- }
- 
--static struct vmpressure *cg_to_vmpressure(struct cgroup *cg)
--{
--	return css_to_vmpressure(cgroup_css(cg, mem_cgroup_subsys_id));
--}
--
- static struct vmpressure *vmpressure_parent(struct vmpressure *vmpr)
- {
- 	struct cgroup_subsys_state *css = vmpressure_to_css(vmpr);
-@@ -283,7 +278,7 @@ void vmpressure_prio(gfp_t gfp, struct mem_cgroup *memcg, int prio)
+@@ -1900,18 +1900,20 @@ struct task_struct *cgroup_taskset_next(struct cgroup_taskset *tset)
+ EXPORT_SYMBOL_GPL(cgroup_taskset_next);
  
  /**
-  * vmpressure_register_event() - Bind vmpressure notifications to an eventfd
-- * @cg:		cgroup that is interested in vmpressure notifications
-+ * @css:	css that is interested in vmpressure notifications
-  * @cft:	cgroup control files handle
-  * @eventfd:	eventfd context to link notifications with
-  * @args:	event arguments (used to set up a pressure level threshold)
-@@ -298,10 +293,11 @@ void vmpressure_prio(gfp_t gfp, struct mem_cgroup *memcg, int prio)
-  * cftype).register_event, and then cgroup core will handle everything by
-  * itself.
-  */
--int vmpressure_register_event(struct cgroup *cg, struct cftype *cft,
--			      struct eventfd_ctx *eventfd, const char *args)
-+int vmpressure_register_event(struct cgroup_subsys_state *css,
-+			      struct cftype *cft, struct eventfd_ctx *eventfd,
-+			      const char *args)
- {
--	struct vmpressure *vmpr = cg_to_vmpressure(cg);
-+	struct vmpressure *vmpr = css_to_vmpressure(css);
- 	struct vmpressure_event *ev;
- 	int level;
- 
-@@ -329,7 +325,7 @@ int vmpressure_register_event(struct cgroup *cg, struct cftype *cft,
- 
- /**
-  * vmpressure_unregister_event() - Unbind eventfd from vmpressure
-- * @cg:		cgroup handle
-+ * @css:	css handle
-  * @cft:	cgroup control files handle
-  * @eventfd:	eventfd context that was used to link vmpressure with the @cg
+- * cgroup_taskset_cur_cgroup - return the matching cgroup for the current task
++ * cgroup_taskset_cur_css - return the matching css for the current task
+  * @tset: taskset of interest
++ * @subsys_id: the ID of the target subsystem
   *
-@@ -341,10 +337,11 @@ int vmpressure_register_event(struct cgroup *cg, struct cftype *cft,
-  * cftype).unregister_event, and then cgroup core will handle everything
-  * by itself.
+- * Return the cgroup for the current (last returned) task of @tset.  This
+- * function must be preceded by either cgroup_taskset_first() or
+- * cgroup_taskset_next().
++ * Return the css for the current (last returned) task of @tset for
++ * subsystem specified by @subsys_id.  This function must be preceded by
++ * either cgroup_taskset_first() or cgroup_taskset_next().
   */
--void vmpressure_unregister_event(struct cgroup *cg, struct cftype *cft,
-+void vmpressure_unregister_event(struct cgroup_subsys_state *css,
-+				 struct cftype *cft,
- 				 struct eventfd_ctx *eventfd)
+-struct cgroup *cgroup_taskset_cur_cgroup(struct cgroup_taskset *tset)
++struct cgroup_subsys_state *cgroup_taskset_cur_css(struct cgroup_taskset *tset,
++						   int subsys_id)
  {
--	struct vmpressure *vmpr = cg_to_vmpressure(cg);
-+	struct vmpressure *vmpr = css_to_vmpressure(css);
- 	struct vmpressure_event *ev;
+-	return tset->cur_cgrp;
++	return cgroup_css(tset->cur_cgrp, subsys_id);
+ }
+-EXPORT_SYMBOL_GPL(cgroup_taskset_cur_cgroup);
++EXPORT_SYMBOL_GPL(cgroup_taskset_cur_css);
  
- 	mutex_lock(&vmpr->events_lock);
+ /**
+  * cgroup_taskset_size - return the number of tasks in taskset
+diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
+index 5cd2b6d..224da9a 100644
+--- a/kernel/cgroup_freezer.c
++++ b/kernel/cgroup_freezer.c
+@@ -189,7 +189,7 @@ static void freezer_attach(struct cgroup_subsys_state *new_css,
+ 	 * current state before executing the following - !frozen tasks may
+ 	 * be visible in a FROZEN cgroup and frozen tasks in a THAWED one.
+ 	 */
+-	cgroup_taskset_for_each(task, new_css->cgroup, tset) {
++	cgroup_taskset_for_each(task, new_css, tset) {
+ 		if (!(freezer->state & CGROUP_FREEZING)) {
+ 			__thaw_task(task);
+ 		} else {
+diff --git a/kernel/cpuset.c b/kernel/cpuset.c
+index 39e5217..bf69717 100644
+--- a/kernel/cpuset.c
++++ b/kernel/cpuset.c
+@@ -119,12 +119,6 @@ static inline struct cpuset *css_cs(struct cgroup_subsys_state *css)
+ 	return css ? container_of(css, struct cpuset, css) : NULL;
+ }
+ 
+-/* Retrieve the cpuset for a cgroup */
+-static inline struct cpuset *cgroup_cs(struct cgroup *cgrp)
+-{
+-	return css_cs(cgroup_css(cgrp, cpuset_subsys_id));
+-}
+-
+ /* Retrieve the cpuset for a task */
+ static inline struct cpuset *task_cs(struct task_struct *task)
+ {
+@@ -1459,7 +1453,7 @@ static int cpuset_can_attach(struct cgroup_subsys_state *css,
+ 	    (cpumask_empty(cs->cpus_allowed) || nodes_empty(cs->mems_allowed)))
+ 		goto out_unlock;
+ 
+-	cgroup_taskset_for_each(task, css->cgroup, tset) {
++	cgroup_taskset_for_each(task, css, tset) {
+ 		/*
+ 		 * Kthreads which disallow setaffinity shouldn't be moved
+ 		 * to a new cpuset; we don't want to change their cpu
+@@ -1511,9 +1505,10 @@ static void cpuset_attach(struct cgroup_subsys_state *css,
+ 	struct mm_struct *mm;
+ 	struct task_struct *task;
+ 	struct task_struct *leader = cgroup_taskset_first(tset);
+-	struct cgroup *oldcgrp = cgroup_taskset_cur_cgroup(tset);
++	struct cgroup_subsys_state *oldcss = cgroup_taskset_cur_css(tset,
++							cpuset_subsys_id);
+ 	struct cpuset *cs = css_cs(css);
+-	struct cpuset *oldcs = cgroup_cs(oldcgrp);
++	struct cpuset *oldcs = css_cs(oldcss);
+ 	struct cpuset *cpus_cs = effective_cpumask_cpuset(cs);
+ 	struct cpuset *mems_cs = effective_nodemask_cpuset(cs);
+ 
+@@ -1527,7 +1522,7 @@ static void cpuset_attach(struct cgroup_subsys_state *css,
+ 
+ 	guarantee_online_mems(mems_cs, &cpuset_attach_nodemask_to);
+ 
+-	cgroup_taskset_for_each(task, css->cgroup, tset) {
++	cgroup_taskset_for_each(task, css, tset) {
+ 		/*
+ 		 * can_attach beforehand should guarantee that this doesn't
+ 		 * fail.  TODO: have a better way to handle failure here
+diff --git a/kernel/events/core.c b/kernel/events/core.c
+index 9705a0e..c199c4f 100644
+--- a/kernel/events/core.c
++++ b/kernel/events/core.c
+@@ -7816,7 +7816,7 @@ static void perf_cgroup_attach(struct cgroup_subsys_state *css,
+ {
+ 	struct task_struct *task;
+ 
+-	cgroup_taskset_for_each(task, css->cgroup, tset)
++	cgroup_taskset_for_each(task, css, tset)
+ 		task_function_call(task, __perf_cgroup_move, task);
+ }
+ 
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index cc9a492..a7122d5 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -7135,7 +7135,7 @@ static int cpu_cgroup_can_attach(struct cgroup_subsys_state *css,
+ {
+ 	struct task_struct *task;
+ 
+-	cgroup_taskset_for_each(task, css->cgroup, tset) {
++	cgroup_taskset_for_each(task, css, tset) {
+ #ifdef CONFIG_RT_GROUP_SCHED
+ 		if (!sched_rt_can_attach(css_tg(css), task))
+ 			return -EINVAL;
+@@ -7153,7 +7153,7 @@ static void cpu_cgroup_attach(struct cgroup_subsys_state *css,
+ {
+ 	struct task_struct *task;
+ 
+-	cgroup_taskset_for_each(task, css->cgroup, tset)
++	cgroup_taskset_for_each(task, css, tset)
+ 		sched_move_task(task);
+ }
+ 
+diff --git a/net/core/netprio_cgroup.c b/net/core/netprio_cgroup.c
+index e00f60e..d9cd627 100644
+--- a/net/core/netprio_cgroup.c
++++ b/net/core/netprio_cgroup.c
+@@ -224,7 +224,7 @@ static void net_prio_attach(struct cgroup_subsys_state *css,
+ 	struct task_struct *p;
+ 	void *v;
+ 
+-	cgroup_taskset_for_each(p, css->cgroup, tset) {
++	cgroup_taskset_for_each(p, css, tset) {
+ 		task_lock(p);
+ 		v = (void *)(unsigned long)task_netprioidx(p);
+ 		iterate_fd(p->files, 0, update_netprio, v);
+diff --git a/net/sched/cls_cgroup.c b/net/sched/cls_cgroup.c
+index 8ea1184..867b4a3 100644
+--- a/net/sched/cls_cgroup.c
++++ b/net/sched/cls_cgroup.c
+@@ -74,7 +74,7 @@ static void cgrp_attach(struct cgroup_subsys_state *css,
+ 	struct task_struct *p;
+ 	void *v;
+ 
+-	cgroup_taskset_for_each(p, css->cgroup, tset) {
++	cgroup_taskset_for_each(p, css, tset) {
+ 		task_lock(p);
+ 		v = (void *)(unsigned long)task_cls_classid(p);
+ 		iterate_fd(p->files, 0, update_classid, v);
 -- 
 1.8.3.1
