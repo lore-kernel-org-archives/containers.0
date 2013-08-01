@@ -1,8 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 06/23] cgroup: add/update accessors which obtain subsys
-	specific data from css
-Date: Thu,  1 Aug 2013 17:49:44 -0400
-Message-ID: <1375393801-4817-7-git-send-email-tj@kernel.org>
+Subject: [PATCH 04/23] hugetlb_cgroup: pass around @hugetlb_cgroup instead of
+	@cgroup
+Date: Thu,  1 Aug 2013 17:49:42 -0400
+Message-ID: <1375393801-4817-5-git-send-email-tj@kernel.org>
 References: <1375393801-4817-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,251 +19,95 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
-Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, "Aneesh Kumar K.V" <aneesh.kumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-css (cgroup_subsys_state) is usually embedded in a subsys specific
-data structure.  Subsystems either use container_of() directly to cast
-from css to such data structure or has an accessor function wrapping
-such cast.  As cgroup as whole is moving towards using css as the main
-interface handle, add and update such accessors to ease dealing with
-css's.
+cgroup controller API will be converted to primarily use struct
+cgroup_subsys_state instead of struct cgroup.  In preparation, make
+hugetlb_cgroup functions pass around struct hugetlb_cgroup instead of
+struct cgroup.
 
-All accessors explicitly handle NULL input and return NULL in those
-cases.  While this looks like an extra branch in the code, as all
-controllers specific data structures have css as the first field, the
-casting doesn't involve any offsetting and the compiler can trivially
-optimize out the branch.
-
-* blkio, freezer, cpuset, cpu, cpuacct and net_cls didn't have such
-  accessor.  Added.
-
-* memory, hugetlb and devices already had one but didn't explicitly
-  handle NULL input.  Updated.
+This patch shouldn't cause any behavior differences.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Aneesh Kumar K.V <aneesh.kumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
 ---
- block/blk-cgroup.h       | 12 ++++++++----
- kernel/cgroup_freezer.c  | 11 +++++++----
- kernel/cpuset.c          | 11 +++++++----
- kernel/sched/core.c      |  8 ++++++--
- kernel/sched/cpuacct.c   | 11 +++++++----
- mm/hugetlb_cgroup.c      |  2 +-
- mm/memcontrol.c          |  2 +-
- net/sched/cls_cgroup.c   | 11 +++++++----
- security/device_cgroup.c |  2 +-
- 9 files changed, 45 insertions(+), 25 deletions(-)
+ mm/hugetlb_cgroup.c | 22 ++++++++++++----------
+ 1 file changed, 12 insertions(+), 10 deletions(-)
 
-diff --git a/block/blk-cgroup.h b/block/blk-cgroup.h
-index 628e50f..8e5863e 100644
---- a/block/blk-cgroup.h
-+++ b/block/blk-cgroup.h
-@@ -179,21 +179,25 @@ int blkg_conf_prep(struct blkcg *blkcg, const struct blkcg_policy *pol,
- void blkg_conf_finish(struct blkg_conf_ctx *ctx);
- 
- 
-+static inline struct blkcg *css_to_blkcg(struct cgroup_subsys_state *css)
-+{
-+	return css ? container_of(css, struct blkcg, css) : NULL;
-+}
-+
- static inline struct blkcg *cgroup_to_blkcg(struct cgroup *cgroup)
- {
--	return container_of(cgroup_css(cgroup, blkio_subsys_id),
--			    struct blkcg, css);
-+	return css_to_blkcg(cgroup_css(cgroup, blkio_subsys_id));
- }
- 
- static inline struct blkcg *task_blkcg(struct task_struct *tsk)
- {
--	return container_of(task_css(tsk, blkio_subsys_id), struct blkcg, css);
-+	return css_to_blkcg(task_css(tsk, blkio_subsys_id));
- }
- 
- static inline struct blkcg *bio_blkcg(struct bio *bio)
- {
- 	if (bio && bio->bi_css)
--		return container_of(bio->bi_css, struct blkcg, css);
-+		return css_to_blkcg(bio->bi_css);
- 	return task_blkcg(current);
- }
- 
-diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
-index 9d3f615..1db686e 100644
---- a/kernel/cgroup_freezer.c
-+++ b/kernel/cgroup_freezer.c
-@@ -45,16 +45,19 @@ struct freezer {
- 	spinlock_t			lock;
- };
- 
-+static inline struct freezer *css_freezer(struct cgroup_subsys_state *css)
-+{
-+	return css ? container_of(css, struct freezer, css) : NULL;
-+}
-+
- static inline struct freezer *cgroup_freezer(struct cgroup *cgroup)
- {
--	return container_of(cgroup_css(cgroup, freezer_subsys_id),
--			    struct freezer, css);
-+	return css_freezer(cgroup_css(cgroup, freezer_subsys_id));
- }
- 
- static inline struct freezer *task_freezer(struct task_struct *task)
- {
--	return container_of(task_css(task, freezer_subsys_id),
--			    struct freezer, css);
-+	return css_freezer(task_css(task, freezer_subsys_id));
- }
- 
- static struct freezer *parent_freezer(struct freezer *freezer)
-diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index f737134..6e9cbdd 100644
---- a/kernel/cpuset.c
-+++ b/kernel/cpuset.c
-@@ -114,18 +114,21 @@ struct cpuset {
- 	int relax_domain_level;
- };
- 
-+static inline struct cpuset *css_cs(struct cgroup_subsys_state *css)
-+{
-+	return css ? container_of(css, struct cpuset, css) : NULL;
-+}
-+
- /* Retrieve the cpuset for a cgroup */
- static inline struct cpuset *cgroup_cs(struct cgroup *cgrp)
- {
--	return container_of(cgroup_css(cgrp, cpuset_subsys_id),
--			    struct cpuset, css);
-+	return css_cs(cgroup_css(cgrp, cpuset_subsys_id));
- }
- 
- /* Retrieve the cpuset for a task */
- static inline struct cpuset *task_cs(struct task_struct *task)
- {
--	return container_of(task_css(task, cpuset_subsys_id),
--			    struct cpuset, css);
-+	return css_cs(task_css(task, cpuset_subsys_id));
- }
- 
- static inline struct cpuset *parent_cs(struct cpuset *cs)
-diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 323d907..5bccb02 100644
---- a/kernel/sched/core.c
-+++ b/kernel/sched/core.c
-@@ -7083,11 +7083,15 @@ int sched_rt_handler(struct ctl_table *table, int write,
- 
- #ifdef CONFIG_CGROUP_SCHED
- 
-+static inline struct task_group *css_tg(struct cgroup_subsys_state *css)
-+{
-+	return css ? container_of(css, struct task_group, css) : NULL;
-+}
-+
- /* return corresponding task_group object of a cgroup */
- static inline struct task_group *cgroup_tg(struct cgroup *cgrp)
- {
--	return container_of(cgroup_css(cgrp, cpu_cgroup_subsys_id),
--			    struct task_group, css);
-+	return css_tg(cgroup_css(cgrp, cpu_cgroup_subsys_id));
- }
- 
- static struct cgroup_subsys_state *cpu_cgroup_css_alloc(struct cgroup *cgrp)
-diff --git a/kernel/sched/cpuacct.c b/kernel/sched/cpuacct.c
-index 4a210fa..8ccfa10 100644
---- a/kernel/sched/cpuacct.c
-+++ b/kernel/sched/cpuacct.c
-@@ -33,18 +33,21 @@ struct cpuacct {
- 	struct kernel_cpustat __percpu *cpustat;
- };
- 
-+static inline struct cpuacct *css_ca(struct cgroup_subsys_state *css)
-+{
-+	return css ? container_of(css, struct cpuacct, css) : NULL;
-+}
-+
- /* return cpu accounting group corresponding to this container */
- static inline struct cpuacct *cgroup_ca(struct cgroup *cgrp)
- {
--	return container_of(cgroup_css(cgrp, cpuacct_subsys_id),
--			    struct cpuacct, css);
-+	return css_ca(cgroup_css(cgrp, cpuacct_subsys_id));
- }
- 
- /* return cpu accounting group to which this task belongs */
- static inline struct cpuacct *task_ca(struct task_struct *tsk)
- {
--	return container_of(task_css(tsk, cpuacct_subsys_id),
--			    struct cpuacct, css);
-+	return css_ca(task_css(tsk, cpuacct_subsys_id));
- }
- 
- static inline struct cpuacct *__parent_ca(struct cpuacct *ca)
 diff --git a/mm/hugetlb_cgroup.c b/mm/hugetlb_cgroup.c
-index d2f9fc0..95585a0 100644
+index 50f213f..d2f9fc0 100644
 --- a/mm/hugetlb_cgroup.c
 +++ b/mm/hugetlb_cgroup.c
-@@ -36,7 +36,7 @@ static struct hugetlb_cgroup *root_h_cgroup __read_mostly;
- static inline
- struct hugetlb_cgroup *hugetlb_cgroup_from_css(struct cgroup_subsys_state *s)
- {
--	return container_of(s, struct hugetlb_cgroup, css);
-+	return s ? container_of(s, struct hugetlb_cgroup, css) : NULL;
+@@ -56,17 +56,19 @@ static inline bool hugetlb_cgroup_is_root(struct hugetlb_cgroup *h_cg)
+ 	return (h_cg == root_h_cgroup);
  }
  
- static inline
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index b47bd3a..11d659e 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -486,7 +486,7 @@ static DEFINE_MUTEX(memcg_create_mutex);
- static inline
- struct mem_cgroup *mem_cgroup_from_css(struct cgroup_subsys_state *s)
+-static inline struct hugetlb_cgroup *parent_hugetlb_cgroup(struct cgroup *cg)
++static inline struct hugetlb_cgroup *
++parent_hugetlb_cgroup(struct hugetlb_cgroup *h_cg)
  {
--	return container_of(s, struct mem_cgroup, css);
-+	return s ? container_of(s, struct mem_cgroup, css) : NULL;
- }
- 
- /* Some nice accessors for the vmpressure. */
-diff --git a/net/sched/cls_cgroup.c b/net/sched/cls_cgroup.c
-index 5ee72a0..af412ab 100644
---- a/net/sched/cls_cgroup.c
-+++ b/net/sched/cls_cgroup.c
-@@ -23,16 +23,19 @@
- #include <net/sock.h>
- #include <net/cls_cgroup.h>
- 
-+static inline struct cgroup_cls_state *css_cls_state(struct cgroup_subsys_state *css)
-+{
-+	return css ? container_of(css, struct cgroup_cls_state, css) : NULL;
-+}
+-	if (!cg->parent)
++	struct cgroup *parent = h_cg->css.cgroup->parent;
 +
- static inline struct cgroup_cls_state *cgrp_cls_state(struct cgroup *cgrp)
- {
--	return container_of(cgroup_css(cgrp, net_cls_subsys_id),
--			    struct cgroup_cls_state, css);
-+	return css_cls_state(cgroup_css(cgrp, net_cls_subsys_id));
++	if (!parent)
+ 		return NULL;
+-	return hugetlb_cgroup_from_cgroup(cg->parent);
++	return hugetlb_cgroup_from_cgroup(parent);
  }
  
- static inline struct cgroup_cls_state *task_cls_state(struct task_struct *p)
+-static inline bool hugetlb_cgroup_have_usage(struct cgroup *cg)
++static inline bool hugetlb_cgroup_have_usage(struct hugetlb_cgroup *h_cg)
  {
--	return container_of(task_css(p, net_cls_subsys_id),
--			    struct cgroup_cls_state, css);
-+	return css_cls_state(task_css(p, net_cls_subsys_id));
+ 	int idx;
+-	struct hugetlb_cgroup *h_cg = hugetlb_cgroup_from_cgroup(cg);
+ 
+ 	for (idx = 0; idx < hugetlb_max_hstate; idx++) {
+ 		if ((res_counter_read_u64(&h_cg->hugepage[idx], RES_USAGE)) > 0)
+@@ -115,15 +117,14 @@ static void hugetlb_cgroup_css_free(struct cgroup *cgroup)
+  * page reference and test for page active here. This function
+  * cannot fail.
+  */
+-static void hugetlb_cgroup_move_parent(int idx, struct cgroup *cgroup,
++static void hugetlb_cgroup_move_parent(int idx, struct hugetlb_cgroup *h_cg,
+ 				       struct page *page)
+ {
+ 	int csize;
+ 	struct res_counter *counter;
+ 	struct res_counter *fail_res;
+ 	struct hugetlb_cgroup *page_hcg;
+-	struct hugetlb_cgroup *h_cg   = hugetlb_cgroup_from_cgroup(cgroup);
+-	struct hugetlb_cgroup *parent = parent_hugetlb_cgroup(cgroup);
++	struct hugetlb_cgroup *parent = parent_hugetlb_cgroup(h_cg);
+ 
+ 	page_hcg = hugetlb_cgroup_from_page(page);
+ 	/*
+@@ -155,6 +156,7 @@ out:
+  */
+ static void hugetlb_cgroup_css_offline(struct cgroup *cgroup)
+ {
++	struct hugetlb_cgroup *h_cg = hugetlb_cgroup_from_cgroup(cgroup);
+ 	struct hstate *h;
+ 	struct page *page;
+ 	int idx = 0;
+@@ -163,13 +165,13 @@ static void hugetlb_cgroup_css_offline(struct cgroup *cgroup)
+ 		for_each_hstate(h) {
+ 			spin_lock(&hugetlb_lock);
+ 			list_for_each_entry(page, &h->hugepage_activelist, lru)
+-				hugetlb_cgroup_move_parent(idx, cgroup, page);
++				hugetlb_cgroup_move_parent(idx, h_cg, page);
+ 
+ 			spin_unlock(&hugetlb_lock);
+ 			idx++;
+ 		}
+ 		cond_resched();
+-	} while (hugetlb_cgroup_have_usage(cgroup));
++	} while (hugetlb_cgroup_have_usage(h_cg));
  }
  
- static struct cgroup_subsys_state *cgrp_css_alloc(struct cgroup *cgrp)
-diff --git a/security/device_cgroup.c b/security/device_cgroup.c
-index 87a0a03..9095364 100644
---- a/security/device_cgroup.c
-+++ b/security/device_cgroup.c
-@@ -53,7 +53,7 @@ struct dev_cgroup {
- 
- static inline struct dev_cgroup *css_to_devcgroup(struct cgroup_subsys_state *s)
- {
--	return container_of(s, struct dev_cgroup, css);
-+	return s ? container_of(s, struct dev_cgroup, css) : NULL;
- }
- 
- static inline struct dev_cgroup *cgroup_to_devcgroup(struct cgroup *cgroup)
+ int hugetlb_cgroup_charge_cgroup(int idx, unsigned long nr_pages,
 -- 
 1.8.3.1
