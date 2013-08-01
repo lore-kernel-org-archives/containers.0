@@ -1,7 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 11/23] cgroup: add cgroup->dummy_css
-Date: Thu,  1 Aug 2013 17:49:49 -0400
-Message-ID: <1375393801-4817-12-git-send-email-tj@kernel.org>
+Subject: [PATCH 13/23] cgroup: convert cgroup_next_sibling() to
+	cgroup_next_child()
+Date: Thu,  1 Aug 2013 17:49:51 -0400
+Message-ID: <1375393801-4817-14-git-send-email-tj@kernel.org>
 References: <1375393801-4817-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,102 +22,155 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-cgroup subsystem API is being converted to use css
-(cgroup_subsys_state) as the main handle, which makes things a bit
-awkward for subsystem agnostic core features - the "cgroup.*"
-interface files and various iterations - a bit awkward as they don't
-have a css to use.
+cgroup is transitioning to using css (cgroup_subsys_state) as the main
+subsys interface handle instead of cgroup and the iterators will be
+updated to use css too.  The iterators need to walk the cgroup
+hierarchy and return the css's matching the origin css, which is a bit
+cumbersome to open code.
 
-This patch adds cgroup->dummy_css which has NULL ->ss and whose only
-role is pointing back to the cgroup.  This will be used to support
-subsystem agnostic features on the coming css based API.
+This patch converts cgroup_next_sibling() to cgroup_next_child() so
+that it can handle all steps of direct child iteration.  This will be
+used to update iterators to take @css instead of @cgrp.  In addition
+to the new iteration init handling, cgroup_next_child() is
+restructured so that the different branches share the end of iteration
+condition check.
 
-css_parent() is updated to handle dummy_css's.  Note that css will
-soon grow its own ->parent field and css_parent() will be made
-trivial.
+This patch doesn't change any behavior.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- include/linux/cgroup.h | 11 ++++++++++-
- kernel/cgroup.c        |  9 +++++----
- 2 files changed, 15 insertions(+), 5 deletions(-)
+ include/linux/cgroup.h |  4 ++--
+ kernel/cgroup.c        | 59 +++++++++++++++++++++++++-------------------------
+ 2 files changed, 32 insertions(+), 31 deletions(-)
 
 diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 2e0e9e2..085ca93 100644
+index 9749d63..a91c304 100644
 --- a/include/linux/cgroup.h
 +++ b/include/linux/cgroup.h
-@@ -225,6 +225,9 @@ struct cgroup {
- 	struct list_head pidlists;
- 	struct mutex pidlist_mutex;
+@@ -780,7 +780,7 @@ static inline struct cgroup *cgroup_from_id(struct cgroup_subsys *ss, int id)
+ 	return idr_find(&ss->root->cgroup_idr, id);
+ }
  
-+	/* dummy css with NULL ->ss, points back to this cgroup */
-+	struct cgroup_subsys_state dummy_css;
-+
- 	/* For css percpu_ref killing and RCU-protected deletion */
- 	struct rcu_head rcu_head;
- 	struct work_struct destroy_work;
-@@ -669,7 +672,13 @@ struct cgroup_subsys_state *css_parent(struct cgroup_subsys_state *css)
- {
- 	struct cgroup *parent_cgrp = css->cgroup->parent;
+-struct cgroup *cgroup_next_sibling(struct cgroup *pos);
++struct cgroup *cgroup_next_child(struct cgroup *pos, struct cgroup *cgrp);
  
--	return parent_cgrp ? parent_cgrp->subsys[css->ss->subsys_id] : NULL;
-+	if (!parent_cgrp)
-+		return NULL;
-+
-+	if (css->ss)
-+		return parent_cgrp->subsys[css->ss->subsys_id];
-+	else
-+		return &parent_cgrp->dummy_css;
+ /**
+  * cgroup_for_each_child - iterate through children of a cgroup
+@@ -803,7 +803,7 @@ struct cgroup *cgroup_next_sibling(struct cgroup *pos);
+ #define cgroup_for_each_child(pos, cgrp)				\
+ 	for ((pos) = list_first_or_null_rcu(&(cgrp)->children,		\
+ 					    struct cgroup, sibling);	\
+-	     (pos); (pos) = cgroup_next_sibling((pos)))
++	     (pos); (pos) = cgroup_next_child((pos), (cgrp)))
+ 
+ struct cgroup *cgroup_next_descendant_pre(struct cgroup *pos,
+ 					  struct cgroup *cgroup);
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 6c68192..e88b50e 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -3030,15 +3030,16 @@ static void cgroup_enable_task_cg_lists(void)
  }
  
  /**
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index b413e22..bb87c9f 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -1365,6 +1365,7 @@ static void init_cgroup_housekeeping(struct cgroup *cgrp)
- 	INIT_LIST_HEAD(&cgrp->release_list);
- 	INIT_LIST_HEAD(&cgrp->pidlists);
- 	mutex_init(&cgrp->pidlist_mutex);
-+	cgrp->dummy_css.cgroup = cgrp;
- 	INIT_LIST_HEAD(&cgrp->event_list);
- 	spin_lock_init(&cgrp->event_list_lock);
- 	simple_xattrs_init(&cgrp->xattrs);
-@@ -2278,7 +2279,7 @@ static struct cgroup_subsys_state *cgroup_file_css(struct cfent *cfe)
+- * cgroup_next_sibling - find the next sibling of a given cgroup
+- * @pos: the current cgroup
++ * cgroup_next_child - find the next child of a given cgroup
++ * @pos: the current position (%NULL to initiate traversal)
++ * @cgrp: cgroup whose descendants to walk
+  *
+- * This function returns the next sibling of @pos and should be called
+- * under RCU read lock.  The only requirement is that @pos is accessible.
+- * The next sibling is guaranteed to be returned regardless of @pos's
+- * state.
++ * This function returns the next child of @cgrp and should be called under
++ * RCU read lock.  The only requirement is that @cgrp and @pos are
++ * accessible.  The next sibling is guaranteed to be returned regardless of
++ * their states.
+  */
+-struct cgroup *cgroup_next_sibling(struct cgroup *pos)
++struct cgroup *cgroup_next_child(struct cgroup *pos, struct cgroup *cgrp)
+ {
+ 	struct cgroup *next;
  
- 	if (cft->ss)
- 		return cgrp->subsys[cft->ss->subsys_id];
--	return NULL;
-+	return &cgrp->dummy_css;
- }
- 
- /* A buffer size big enough for numbers or short strings */
-@@ -2460,7 +2461,7 @@ static int cgroup_file_open(struct inode *inode, struct file *file)
- 	 * unpinned either on open failure or release.  This ensures that
- 	 * @css stays alive for all file operations.
+@@ -3054,30 +3055,30 @@ struct cgroup *cgroup_next_sibling(struct cgroup *pos)
+ 	 * safe to dereference from this RCU critical section.  If
+ 	 * ->sibling.next is inaccessible, cgroup_is_dead() is guaranteed
+ 	 * to be visible as %true here.
++	 *
++	 * If @pos is dead, its next pointer can't be dereferenced;
++	 * however, as each cgroup is given a monotonically increasing
++	 * unique serial number and always appended to the sibling list,
++	 * the next one can be found by walking the parent's children until
++	 * we see a cgroup with higher serial number than @pos's.  While
++	 * this path can be slower, it's taken only when either the current
++	 * cgroup is removed or iteration and removal race.
  	 */
--	if (css && !css_tryget(css))
-+	if (css->ss && !css_tryget(css))
- 		return -ENODEV;
- 
- 	if (cft->read_map || cft->read_seq_string) {
-@@ -2470,7 +2471,7 @@ static int cgroup_file_open(struct inode *inode, struct file *file)
- 		err = cft->open(inode, file);
+-	if (likely(!cgroup_is_dead(pos))) {
++	if (!pos) {
++		next = list_entry_rcu(cgrp->children.next, struct cgroup, sibling);
++	} else if (likely(!cgroup_is_dead(pos))) {
+ 		next = list_entry_rcu(pos->sibling.next, struct cgroup, sibling);
+-		if (&next->sibling != &pos->parent->children)
+-			return next;
+-		return NULL;
++	} else {
++		list_for_each_entry_rcu(next, &cgrp->children, sibling)
++			if (next->serial_nr > pos->serial_nr)
++				break;
  	}
  
--	if (css && err)
-+	if (css->ss && err)
- 		css_put(css);
- 	return err;
+-	/*
+-	 * Can't dereference the next pointer.  Each cgroup is given a
+-	 * monotonically increasing unique serial number and always
+-	 * appended to the sibling list, so the next one can be found by
+-	 * walking the parent's children until we see a cgroup with higher
+-	 * serial number than @pos's.
+-	 *
+-	 * While this path can be slow, it's taken only when either the
+-	 * current cgroup is removed or iteration and removal race.
+-	 */
+-	list_for_each_entry_rcu(next, &pos->parent->children, sibling)
+-		if (next->serial_nr > pos->serial_nr)
+-			return next;
++	if (&next->sibling != &cgrp->children)
++		return next;
+ 	return NULL;
  }
-@@ -2484,7 +2485,7 @@ static int cgroup_file_release(struct inode *inode, struct file *file)
+-EXPORT_SYMBOL_GPL(cgroup_next_sibling);
++EXPORT_SYMBOL_GPL(cgroup_next_child);
  
- 	if (cft->release)
- 		ret = cft->release(inode, file);
--	if (css)
-+	if (css->ss)
- 		css_put(css);
- 	return ret;
- }
+ /**
+  * cgroup_next_descendant_pre - find the next descendant for pre-order walk
+@@ -3110,7 +3111,7 @@ struct cgroup *cgroup_next_descendant_pre(struct cgroup *pos,
+ 
+ 	/* no child, visit my or the closest ancestor's next sibling */
+ 	while (pos != cgroup) {
+-		next = cgroup_next_sibling(pos);
++		next = cgroup_next_child(pos, pos->parent);
+ 		if (next)
+ 			return next;
+ 		pos = pos->parent;
+@@ -3191,7 +3192,7 @@ struct cgroup *cgroup_next_descendant_post(struct cgroup *pos,
+ 	}
+ 
+ 	/* if there's an unvisited sibling, visit its leftmost descendant */
+-	next = cgroup_next_sibling(pos);
++	next = cgroup_next_child(pos, pos->parent);
+ 	if (next)
+ 		return cgroup_leftmost_descendant(next);
+ 
+@@ -4540,9 +4541,9 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
+ 	/*
+ 	 * Mark @cgrp dead.  This prevents further task migration and child
+ 	 * creation by disabling cgroup_lock_live_group().  Note that
+-	 * CGRP_DEAD assertion is depended upon by cgroup_next_sibling() to
++	 * CGRP_DEAD assertion is depended upon by cgroup_next_child() to
+ 	 * resume iteration after dropping RCU read lock.  See
+-	 * cgroup_next_sibling() for details.
++	 * cgroup_next_child() for details.
+ 	 */
+ 	set_bit(CGRP_DEAD, &cgrp->flags);
+ 
 -- 
 1.8.3.1
