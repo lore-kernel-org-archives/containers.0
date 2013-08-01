@@ -1,8 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 10/23] cgroup: pin cgroup_subsys_state when opening a cgroupfs
-	file
-Date: Thu,  1 Aug 2013 17:49:48 -0400
-Message-ID: <1375393801-4817-11-git-send-email-tj@kernel.org>
+Subject: [PATCH 11/23] cgroup: add cgroup->dummy_css
+Date: Thu,  1 Aug 2013 17:49:49 -0400
+Message-ID: <1375393801-4817-12-git-send-email-tj@kernel.org>
 References: <1375393801-4817-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,115 +21,102 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Previously, each file read/write operation relied on the inode
-reference count pinning the cgroup and simply checked whether the
-cgroup was marked dead before proceeding to invoke the per-subsystem
-callback.  This was rather silly as it didn't have any synchronization
-or css pinning around the check and the cgroup may be removed and all
-css refs drained between the DEAD check and actual method invocation.
+cgroup subsystem API is being converted to use css
+(cgroup_subsys_state) as the main handle, which makes things a bit
+awkward for subsystem agnostic core features - the "cgroup.*"
+interface files and various iterations - a bit awkward as they don't
+have a css to use.
 
-This patch pins the css between open() and release() so that it is
-guaranteed to be alive for all file operations and remove the silly
-DEAD checks from cgroup_file_read/write().
+This patch adds cgroup->dummy_css which has NULL ->ss and whose only
+role is pointing back to the cgroup.  This will be used to support
+subsystem agnostic features on the coming css based API.
+
+css_parent() is updated to handle dummy_css's.  Note that css will
+soon grow its own ->parent field and css_parent() will be made
+trivial.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 43 ++++++++++++++++++++++++++++++++-----------
- 1 file changed, 32 insertions(+), 11 deletions(-)
+ include/linux/cgroup.h | 11 ++++++++++-
+ kernel/cgroup.c        |  9 +++++----
+ 2 files changed, 15 insertions(+), 5 deletions(-)
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index f1fc4d8..b413e22 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -2270,6 +2270,17 @@ static int cgroup_sane_behavior_show(struct cgroup *cgrp, struct cftype *cft,
- 	return 0;
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 2e0e9e2..085ca93 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -225,6 +225,9 @@ struct cgroup {
+ 	struct list_head pidlists;
+ 	struct mutex pidlist_mutex;
+ 
++	/* dummy css with NULL ->ss, points back to this cgroup */
++	struct cgroup_subsys_state dummy_css;
++
+ 	/* For css percpu_ref killing and RCU-protected deletion */
+ 	struct rcu_head rcu_head;
+ 	struct work_struct destroy_work;
+@@ -669,7 +672,13 @@ struct cgroup_subsys_state *css_parent(struct cgroup_subsys_state *css)
+ {
+ 	struct cgroup *parent_cgrp = css->cgroup->parent;
+ 
+-	return parent_cgrp ? parent_cgrp->subsys[css->ss->subsys_id] : NULL;
++	if (!parent_cgrp)
++		return NULL;
++
++	if (css->ss)
++		return parent_cgrp->subsys[css->ss->subsys_id];
++	else
++		return &parent_cgrp->dummy_css;
  }
  
-+/* return the css for the given cgroup file */
-+static struct cgroup_subsys_state *cgroup_file_css(struct cfent *cfe)
-+{
-+	struct cftype *cft = cfe->type;
-+	struct cgroup *cgrp = __d_cgrp(cfe->dentry->d_parent);
-+
-+	if (cft->ss)
-+		return cgrp->subsys[cft->ss->subsys_id];
-+	return NULL;
-+}
-+
+ /**
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index b413e22..bb87c9f 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1365,6 +1365,7 @@ static void init_cgroup_housekeeping(struct cgroup *cgrp)
+ 	INIT_LIST_HEAD(&cgrp->release_list);
+ 	INIT_LIST_HEAD(&cgrp->pidlists);
+ 	mutex_init(&cgrp->pidlist_mutex);
++	cgrp->dummy_css.cgroup = cgrp;
+ 	INIT_LIST_HEAD(&cgrp->event_list);
+ 	spin_lock_init(&cgrp->event_list_lock);
+ 	simple_xattrs_init(&cgrp->xattrs);
+@@ -2278,7 +2279,7 @@ static struct cgroup_subsys_state *cgroup_file_css(struct cfent *cfe)
+ 
+ 	if (cft->ss)
+ 		return cgrp->subsys[cft->ss->subsys_id];
+-	return NULL;
++	return &cgrp->dummy_css;
+ }
+ 
  /* A buffer size big enough for numbers or short strings */
- #define CGROUP_LOCAL_BUFFER_SIZE 64
- 
-@@ -2347,8 +2358,6 @@ static ssize_t cgroup_file_write(struct file *file, const char __user *buf,
- 	struct cftype *cft = __d_cft(file->f_dentry);
- 	struct cgroup *cgrp = __d_cgrp(file->f_dentry->d_parent);
- 
--	if (cgroup_is_dead(cgrp))
--		return -ENODEV;
- 	if (cft->write)
- 		return cft->write(cgrp, cft, file, buf, nbytes, ppos);
- 	if (cft->write_u64 || cft->write_s64)
-@@ -2392,9 +2401,6 @@ static ssize_t cgroup_file_read(struct file *file, char __user *buf,
- 	struct cftype *cft = __d_cft(file->f_dentry);
- 	struct cgroup *cgrp = __d_cgrp(file->f_dentry->d_parent);
- 
--	if (cgroup_is_dead(cgrp))
--		return -ENODEV;
--
- 	if (cft->read)
- 		return cft->read(cgrp, cft, file, buf, nbytes, ppos);
- 	if (cft->read_u64)
-@@ -2440,15 +2446,22 @@ static const struct file_operations cgroup_seqfile_operations = {
- 
- static int cgroup_file_open(struct inode *inode, struct file *file)
- {
-+	struct cfent *cfe = __d_cfe(file->f_dentry);
-+	struct cftype *cft = __d_cft(file->f_dentry);
-+	struct cgroup_subsys_state *css = cgroup_file_css(cfe);
- 	int err;
--	struct cfent *cfe;
--	struct cftype *cft;
- 
- 	err = generic_file_open(inode, file);
- 	if (err)
- 		return err;
--	cfe = __d_cfe(file->f_dentry);
--	cft = cfe->type;
-+
-+	/*
-+	 * If the file belongs to a subsystem, pin the css.  Will be
-+	 * unpinned either on open failure or release.  This ensures that
-+	 * @css stays alive for all file operations.
-+	 */
-+	if (css && !css_tryget(css))
-+		return -ENODEV;
+@@ -2460,7 +2461,7 @@ static int cgroup_file_open(struct inode *inode, struct file *file)
+ 	 * unpinned either on open failure or release.  This ensures that
+ 	 * @css stays alive for all file operations.
+ 	 */
+-	if (css && !css_tryget(css))
++	if (css->ss && !css_tryget(css))
+ 		return -ENODEV;
  
  	if (cft->read_map || cft->read_seq_string) {
- 		file->f_op = &cgroup_seqfile_operations;
-@@ -2457,15 +2470,23 @@ static int cgroup_file_open(struct inode *inode, struct file *file)
+@@ -2470,7 +2471,7 @@ static int cgroup_file_open(struct inode *inode, struct file *file)
  		err = cft->open(inode, file);
  	}
  
-+	if (css && err)
-+		css_put(css);
+-	if (css && err)
++	if (css->ss && err)
+ 		css_put(css);
  	return err;
  }
+@@ -2484,7 +2485,7 @@ static int cgroup_file_release(struct inode *inode, struct file *file)
  
- static int cgroup_file_release(struct inode *inode, struct file *file)
- {
-+	struct cfent *cfe = __d_cfe(file->f_dentry);
- 	struct cftype *cft = __d_cft(file->f_dentry);
-+	struct cgroup_subsys_state *css = cgroup_file_css(cfe);
-+	int ret = 0;
-+
  	if (cft->release)
--		return cft->release(inode, file);
--	return 0;
-+		ret = cft->release(inode, file);
-+	if (css)
-+		css_put(css);
-+	return ret;
+ 		ret = cft->release(inode, file);
+-	if (css)
++	if (css->ss)
+ 		css_put(css);
+ 	return ret;
  }
- 
- /*
 -- 
 1.8.3.1
