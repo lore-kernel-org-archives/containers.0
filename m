@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 07/23] cgroup: add css_parent()
-Date: Thu,  1 Aug 2013 17:49:45 -0400
-Message-ID: <1375393801-4817-8-git-send-email-tj@kernel.org>
+Subject: [PATCH 09/23] cgroup: add subsys backlink pointer to cftype
+Date: Thu,  1 Aug 2013 17:49:47 -0400
+Message-ID: <1375393801-4817-10-git-send-email-tj__9902.97701578147$1375393882$gmane$org@kernel.org>
 References: <1375393801-4817-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,372 +18,305 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
-Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Currently, controllers have to explicitly follow the cgroup hierarchy
-to find the parent of a given css.  cgroup is moving towards using
-cgroup_subsys_state as the main controller interface construct, so
-let's provide a way to climb the hierarchy using just csses.
+cgroup is transitioning to using css (cgroup_subsys_state) instead of
+cgroup as the primary subsystem handle.  The cgroupfs file interface
+will be converted to use css's which requires finding out the
+subsystem from cftype so that the matching css can be determined from
+the cgroup.
 
-This patch implements css_parent() which, given a css, returns its
-parent.  The function is guarnateed to valid non-NULL parent css as
-long as the target css is not at the top of the hierarchy.
+This patch adds cftype->ss which points to the subsystem the file
+belongs to.  The field is initialized while a cftype is being
+registered.  This makes it unnecessary to explicitly specify the
+subsystem for other cftype handling functions.  @ss argument dropped
+from various cftype handling functions.
 
-freezer, cpuset, cpu, cpuacct, hugetlb, memory, net_cls and devices
-are converted to use css_parent() instead of accessing cgroup->parent
-directly.
-
-* __parent_ca() is dropped from cpuacct and its usage is replaced with
-  parent_ca().  The only difference between the two was NULL test on
-  cgroup->parent which is now embedded in css_parent() making the
-  distinction moot.  Note that eventually a css->parent field will be
-  added to css and the NULL check in css_parent() will go away.
-
-This patch shouldn't cause any behavior differences.
+This patch shouldn't introduce any behavior differences.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
 ---
- block/blk-cgroup.h       |  4 +---
- include/linux/cgroup.h   | 15 +++++++++++++++
- kernel/cgroup_freezer.c  |  8 ++------
- kernel/cpuset.c          |  6 +-----
- kernel/sched/core.c      |  9 +++------
- kernel/sched/cpuacct.c   | 11 ++---------
- mm/hugetlb_cgroup.c      |  6 +-----
- mm/memcontrol.c          | 39 +++++++++++----------------------------
- net/sched/cls_cgroup.c   |  8 +++++---
- security/device_cgroup.c | 18 +++++-------------
- 10 files changed, 46 insertions(+), 78 deletions(-)
+ block/blk-cgroup.c     |  2 +-
+ include/linux/cgroup.h |  8 +++++-
+ kernel/cgroup.c        | 78 ++++++++++++++++++++++++++++----------------------
+ 3 files changed, 51 insertions(+), 37 deletions(-)
 
-diff --git a/block/blk-cgroup.h b/block/blk-cgroup.h
-index 8e5863e..b6802c4 100644
---- a/block/blk-cgroup.h
-+++ b/block/blk-cgroup.h
-@@ -209,9 +209,7 @@ static inline struct blkcg *bio_blkcg(struct bio *bio)
-  */
- static inline struct blkcg *blkcg_parent(struct blkcg *blkcg)
- {
--	struct cgroup *pcg = blkcg->css.cgroup->parent;
--
--	return pcg ? cgroup_to_blkcg(pcg) : NULL;
-+	return css_to_blkcg(css_parent(&blkcg->css));
- }
+diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
+index 79fd9f4..3406373 100644
+--- a/block/blk-cgroup.c
++++ b/block/blk-cgroup.c
+@@ -1128,7 +1128,7 @@ void blkcg_policy_unregister(struct blkcg_policy *pol)
  
- /**
+ 	/* kill the intf files first */
+ 	if (pol->cftypes)
+-		cgroup_rm_cftypes(&blkio_subsys, pol->cftypes);
++		cgroup_rm_cftypes(pol->cftypes);
+ 
+ 	/* unregister and update blkgs */
+ 	blkcg_policy[pol->plid] = NULL;
 diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 9c2f9d7..b65f6b5 100644
+index 69b33f9..2e0e9e2 100644
 --- a/include/linux/cgroup.h
 +++ b/include/linux/cgroup.h
-@@ -648,6 +648,21 @@ struct cgroup_subsys {
- #undef SUBSYS
+@@ -429,6 +429,12 @@ struct cftype {
+ 	/* CFTYPE_* flags */
+ 	unsigned int flags;
+ 
++	/*
++	 * The subsys this file belongs to.  Initialized automatically
++	 * during registration.  NULL for cgroup core files.
++	 */
++	struct cgroup_subsys *ss;
++
+ 	int (*open)(struct inode *inode, struct file *file);
+ 	ssize_t (*read)(struct cgroup *cgrp, struct cftype *cft,
+ 			struct file *file,
+@@ -542,7 +548,7 @@ static inline const char *cgroup_name(const struct cgroup *cgrp)
+ }
+ 
+ int cgroup_add_cftypes(struct cgroup_subsys *ss, struct cftype *cfts);
+-int cgroup_rm_cftypes(struct cgroup_subsys *ss, struct cftype *cfts);
++int cgroup_rm_cftypes(struct cftype *cfts);
+ 
+ bool cgroup_is_descendant(struct cgroup *cgrp, struct cgroup *ancestor);
+ 
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index fae11e3..f1fc4d8 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -219,8 +219,8 @@ static struct cftype cgroup_base_files[];
+ 
+ static void cgroup_offline_fn(struct work_struct *work);
+ static int cgroup_destroy_locked(struct cgroup *cgrp);
+-static int cgroup_addrm_files(struct cgroup *cgrp, struct cgroup_subsys *subsys,
+-			      struct cftype cfts[], bool is_add);
++static int cgroup_addrm_files(struct cgroup *cgrp, struct cftype cfts[],
++			      bool is_add);
+ 
+ /* convenient tests for these bits */
+ static inline bool cgroup_is_dead(const struct cgroup *cgrp)
+@@ -974,7 +974,7 @@ static void cgroup_clear_dir(struct cgroup *cgrp, unsigned long subsys_mask)
+ 		if (!test_bit(i, &subsys_mask))
+ 			continue;
+ 		list_for_each_entry(set, &ss->cftsets, node)
+-			cgroup_addrm_files(cgrp, NULL, set->cfts, false);
++			cgroup_addrm_files(cgrp, set->cfts, false);
+ 	}
+ }
+ 
+@@ -1623,7 +1623,7 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
+ 		 */
+ 		cred = override_creds(&init_cred);
+ 
+-		ret = cgroup_addrm_files(root_cgrp, NULL, cgroup_base_files, true);
++		ret = cgroup_addrm_files(root_cgrp, cgroup_base_files, true);
+ 		if (ret)
+ 			goto rm_base_files;
+ 
+@@ -1681,7 +1681,7 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
+ 
+  rm_base_files:
+ 	free_cgrp_cset_links(&tmp_links);
+-	cgroup_addrm_files(&root->top_cgroup, NULL, cgroup_base_files, false);
++	cgroup_addrm_files(&root->top_cgroup, cgroup_base_files, false);
+ 	revert_creds(cred);
+  unlock_drop:
+ 	cgroup_exit_root_id(root);
+@@ -2687,8 +2687,7 @@ static umode_t cgroup_file_mode(const struct cftype *cft)
+ 	return mode;
+ }
+ 
+-static int cgroup_add_file(struct cgroup *cgrp, struct cgroup_subsys *subsys,
+-			   struct cftype *cft)
++static int cgroup_add_file(struct cgroup *cgrp, struct cftype *cft)
+ {
+ 	struct dentry *dir = cgrp->dentry;
+ 	struct cgroup *parent = __d_cgrp(dir);
+@@ -2698,8 +2697,8 @@ static int cgroup_add_file(struct cgroup *cgrp, struct cgroup_subsys *subsys,
+ 	umode_t mode;
+ 	char name[MAX_CGROUP_TYPE_NAMELEN + MAX_CFTYPE_NAME + 2] = { 0 };
+ 
+-	if (subsys && !(cgrp->root->flags & CGRP_ROOT_NOPREFIX)) {
+-		strcpy(name, subsys->name);
++	if (cft->ss && !(cgrp->root->flags & CGRP_ROOT_NOPREFIX)) {
++		strcpy(name, cft->ss->name);
+ 		strcat(name, ".");
+ 	}
+ 	strcat(name, cft->name);
+@@ -2736,17 +2735,16 @@ out:
+ /**
+  * cgroup_addrm_files - add or remove files to a cgroup directory
+  * @cgrp: the target cgroup
+- * @subsys: the subsystem of files to be added
+  * @cfts: array of cftypes to be added
+  * @is_add: whether to add or remove
+  *
+  * Depending on @is_add, add or remove files defined by @cfts on @cgrp.
+- * All @cfts should belong to @subsys.  For removals, this function never
+- * fails.  If addition fails, this function doesn't remove files already
+- * added.  The caller is responsible for cleaning up.
++ * For removals, this function never fails.  If addition fails, this
++ * function doesn't remove files already added.  The caller is responsible
++ * for cleaning up.
+  */
+-static int cgroup_addrm_files(struct cgroup *cgrp, struct cgroup_subsys *subsys,
+-			      struct cftype cfts[], bool is_add)
++static int cgroup_addrm_files(struct cgroup *cgrp, struct cftype cfts[],
++			      bool is_add)
+ {
+ 	struct cftype *cft;
+ 	int ret;
+@@ -2764,7 +2762,7 @@ static int cgroup_addrm_files(struct cgroup *cgrp, struct cgroup_subsys *subsys,
+ 			continue;
+ 
+ 		if (is_add) {
+-			ret = cgroup_add_file(cgrp, subsys, cft);
++			ret = cgroup_add_file(cgrp, cft);
+ 			if (ret) {
+ 				pr_warn("cgroup_addrm_files: failed to add %s, err=%d\n",
+ 					cft->name, ret);
+@@ -2789,11 +2787,11 @@ static void cgroup_cfts_prepare(void)
+ 	mutex_lock(&cgroup_mutex);
+ }
+ 
+-static int cgroup_cfts_commit(struct cgroup_subsys *ss,
+-			      struct cftype *cfts, bool is_add)
++static int cgroup_cfts_commit(struct cftype *cfts, bool is_add)
+ 	__releases(&cgroup_mutex)
+ {
+ 	LIST_HEAD(pending);
++	struct cgroup_subsys *ss = cfts[0].ss;
+ 	struct cgroup *cgrp, *root = &ss->root->top_cgroup;
+ 	struct super_block *sb = ss->root->sb;
+ 	struct dentry *prev = NULL;
+@@ -2821,7 +2819,7 @@ static int cgroup_cfts_commit(struct cgroup_subsys *ss,
+ 	inode = root->dentry->d_inode;
+ 	mutex_lock(&inode->i_mutex);
+ 	mutex_lock(&cgroup_mutex);
+-	ret = cgroup_addrm_files(root, ss, cfts, is_add);
++	ret = cgroup_addrm_files(root, cfts, is_add);
+ 	mutex_unlock(&cgroup_mutex);
+ 	mutex_unlock(&inode->i_mutex);
+ 
+@@ -2844,7 +2842,7 @@ static int cgroup_cfts_commit(struct cgroup_subsys *ss,
+ 		mutex_lock(&inode->i_mutex);
+ 		mutex_lock(&cgroup_mutex);
+ 		if (cgrp->serial_nr < update_before && !cgroup_is_dead(cgrp))
+-			ret = cgroup_addrm_files(cgrp, ss, cfts, is_add);
++			ret = cgroup_addrm_files(cgrp, cfts, is_add);
+ 		mutex_unlock(&cgroup_mutex);
+ 		mutex_unlock(&inode->i_mutex);
+ 
+@@ -2876,51 +2874,56 @@ out_deact:
+ int cgroup_add_cftypes(struct cgroup_subsys *ss, struct cftype *cfts)
+ {
+ 	struct cftype_set *set;
++	struct cftype *cft;
+ 	int ret;
+ 
+ 	set = kzalloc(sizeof(*set), GFP_KERNEL);
+ 	if (!set)
+ 		return -ENOMEM;
+ 
++	for (cft = cfts; cft->name[0] != '\0'; cft++)
++		cft->ss = ss;
++
+ 	cgroup_cfts_prepare();
+ 	set->cfts = cfts;
+ 	list_add_tail(&set->node, &ss->cftsets);
+-	ret = cgroup_cfts_commit(ss, cfts, true);
++	ret = cgroup_cfts_commit(cfts, true);
+ 	if (ret)
+-		cgroup_rm_cftypes(ss, cfts);
++		cgroup_rm_cftypes(cfts);
+ 	return ret;
+ }
+ EXPORT_SYMBOL_GPL(cgroup_add_cftypes);
  
  /**
-+ * css_parent - find the parent css
-+ * @css: the target cgroup_subsys_state
-+ *
-+ * Return the parent css of @css.  This function is guaranteed to return
-+ * non-NULL parent as long as @css isn't the root.
-+ */
-+static inline
-+struct cgroup_subsys_state *css_parent(struct cgroup_subsys_state *css)
-+{
-+	struct cgroup *parent_cgrp = css->cgroup->parent;
-+
-+	return parent_cgrp ? parent_cgrp->subsys[css->ss->subsys_id] : NULL;
-+}
-+
-+/**
-  * cgroup_css - obtain a cgroup's css for the specified subsystem
-  * @cgrp: the cgroup of interest
-  * @subsys_id: the subsystem of interest
-diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
-index 1db686e..657a73c 100644
---- a/kernel/cgroup_freezer.c
-+++ b/kernel/cgroup_freezer.c
-@@ -62,11 +62,7 @@ static inline struct freezer *task_freezer(struct task_struct *task)
- 
- static struct freezer *parent_freezer(struct freezer *freezer)
- {
--	struct cgroup *pcg = freezer->css.cgroup->parent;
--
--	if (pcg)
--		return cgroup_freezer(pcg);
--	return NULL;
-+	return css_freezer(css_parent(&freezer->css));
- }
- 
- bool cgroup_freezing(struct task_struct *task)
-@@ -234,7 +230,7 @@ static void freezer_fork(struct task_struct *task)
- 	 * The root cgroup is non-freezable, so we can skip the
- 	 * following check.
- 	 */
--	if (!freezer->css.cgroup->parent)
-+	if (!parent_freezer(freezer))
- 		goto out;
- 
- 	spin_lock_irq(&freezer->lock);
-diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index 6e9cbdd..259a4af 100644
---- a/kernel/cpuset.c
-+++ b/kernel/cpuset.c
-@@ -133,11 +133,7 @@ static inline struct cpuset *task_cs(struct task_struct *task)
- 
- static inline struct cpuset *parent_cs(struct cpuset *cs)
- {
--	struct cgroup *pcgrp = cs->css.cgroup->parent;
--
--	if (pcgrp)
--		return cgroup_cs(pcgrp);
--	return NULL;
-+	return css_cs(css_parent(&cs->css));
- }
- 
- #ifdef CONFIG_NUMA
-diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 5bccb02..7a10742 100644
---- a/kernel/sched/core.c
-+++ b/kernel/sched/core.c
-@@ -7114,13 +7114,10 @@ static struct cgroup_subsys_state *cpu_cgroup_css_alloc(struct cgroup *cgrp)
- static int cpu_cgroup_css_online(struct cgroup *cgrp)
- {
- 	struct task_group *tg = cgroup_tg(cgrp);
--	struct task_group *parent;
-+	struct task_group *parent = css_tg(css_parent(&tg->css));
- 
--	if (!cgrp->parent)
--		return 0;
--
--	parent = cgroup_tg(cgrp->parent);
--	sched_online_group(tg, parent);
-+	if (parent)
-+		sched_online_group(tg, parent);
- 	return 0;
- }
- 
-diff --git a/kernel/sched/cpuacct.c b/kernel/sched/cpuacct.c
-index 8ccfa10..f6926a1 100644
---- a/kernel/sched/cpuacct.c
-+++ b/kernel/sched/cpuacct.c
-@@ -50,16 +50,9 @@ static inline struct cpuacct *task_ca(struct task_struct *tsk)
- 	return css_ca(task_css(tsk, cpuacct_subsys_id));
- }
- 
--static inline struct cpuacct *__parent_ca(struct cpuacct *ca)
--{
--	return cgroup_ca(ca->css.cgroup->parent);
--}
--
- static inline struct cpuacct *parent_ca(struct cpuacct *ca)
- {
--	if (!ca->css.cgroup->parent)
--		return NULL;
--	return cgroup_ca(ca->css.cgroup->parent);
-+	return css_ca(css_parent(&ca->css));
- }
- 
- static DEFINE_PER_CPU(u64, root_cpuacct_cpuusage);
-@@ -284,7 +277,7 @@ void cpuacct_account_field(struct task_struct *p, int index, u64 val)
- 	while (ca != &root_cpuacct) {
- 		kcpustat = this_cpu_ptr(ca->cpustat);
- 		kcpustat->cpustat[index] += val;
--		ca = __parent_ca(ca);
-+		ca = parent_ca(ca);
- 	}
- 	rcu_read_unlock();
- }
-diff --git a/mm/hugetlb_cgroup.c b/mm/hugetlb_cgroup.c
-index 95585a0..57ecb5d 100644
---- a/mm/hugetlb_cgroup.c
-+++ b/mm/hugetlb_cgroup.c
-@@ -59,11 +59,7 @@ static inline bool hugetlb_cgroup_is_root(struct hugetlb_cgroup *h_cg)
- static inline struct hugetlb_cgroup *
- parent_hugetlb_cgroup(struct hugetlb_cgroup *h_cg)
- {
--	struct cgroup *parent = h_cg->css.cgroup->parent;
--
--	if (!parent)
--		return NULL;
--	return hugetlb_cgroup_from_cgroup(parent);
-+	return hugetlb_cgroup_from_css(css_parent(&h_cg->css));
- }
- 
- static inline bool hugetlb_cgroup_have_usage(struct hugetlb_cgroup *h_cg)
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 11d659e..69b3e52 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -1524,10 +1524,8 @@ static unsigned long mem_cgroup_margin(struct mem_cgroup *memcg)
- 
- int mem_cgroup_swappiness(struct mem_cgroup *memcg)
- {
--	struct cgroup *cgrp = memcg->css.cgroup;
--
- 	/* root ? */
--	if (cgrp->parent == NULL)
-+	if (!css_parent(&memcg->css))
- 		return vm_swappiness;
- 
- 	return memcg->swappiness;
-@@ -5026,11 +5024,7 @@ static int mem_cgroup_hierarchy_write(struct cgroup *cont, struct cftype *cft,
- {
- 	int retval = 0;
- 	struct mem_cgroup *memcg = mem_cgroup_from_cont(cont);
--	struct cgroup *parent = cont->parent;
--	struct mem_cgroup *parent_memcg = NULL;
--
--	if (parent)
--		parent_memcg = mem_cgroup_from_cont(parent);
-+	struct mem_cgroup *parent_memcg = mem_cgroup_from_css(css_parent(&memcg->css));
- 
- 	mutex_lock(&memcg_create_mutex);
- 
-@@ -5282,18 +5276,15 @@ static int mem_cgroup_write(struct cgroup *cont, struct cftype *cft,
- static void memcg_get_hierarchical_limit(struct mem_cgroup *memcg,
- 		unsigned long long *mem_limit, unsigned long long *memsw_limit)
- {
--	struct cgroup *cgroup;
- 	unsigned long long min_limit, min_memsw_limit, tmp;
- 
- 	min_limit = res_counter_read_u64(&memcg->res, RES_LIMIT);
- 	min_memsw_limit = res_counter_read_u64(&memcg->memsw, RES_LIMIT);
--	cgroup = memcg->css.cgroup;
- 	if (!memcg->use_hierarchy)
- 		goto out;
- 
--	while (cgroup->parent) {
--		cgroup = cgroup->parent;
--		memcg = mem_cgroup_from_cont(cgroup);
-+	while (css_parent(&memcg->css)) {
-+		memcg = mem_cgroup_from_css(css_parent(&memcg->css));
- 		if (!memcg->use_hierarchy)
- 			break;
- 		tmp = res_counter_read_u64(&memcg->res, RES_LIMIT);
-@@ -5523,16 +5514,11 @@ static int mem_cgroup_swappiness_write(struct cgroup *cgrp, struct cftype *cft,
- 				       u64 val)
- {
- 	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
--	struct mem_cgroup *parent;
--
--	if (val > 100)
--		return -EINVAL;
-+	struct mem_cgroup *parent = mem_cgroup_from_css(css_parent(&memcg->css));
- 
--	if (cgrp->parent == NULL)
-+	if (val > 100 || !parent)
- 		return -EINVAL;
- 
--	parent = mem_cgroup_from_cont(cgrp->parent);
--
- 	mutex_lock(&memcg_create_mutex);
- 
- 	/* If under hierarchy, only empty-root can set this value */
-@@ -5861,14 +5847,12 @@ static int mem_cgroup_oom_control_write(struct cgroup *cgrp,
- 	struct cftype *cft, u64 val)
- {
- 	struct mem_cgroup *memcg = mem_cgroup_from_cont(cgrp);
--	struct mem_cgroup *parent;
-+	struct mem_cgroup *parent = mem_cgroup_from_css(css_parent(&memcg->css));
- 
- 	/* cannot set to root cgroup and only 0 and 1 are allowed */
--	if (!cgrp->parent || !((val == 0) || (val == 1)))
-+	if (!parent || !((val == 0) || (val == 1)))
- 		return -EINVAL;
- 
--	parent = mem_cgroup_from_cont(cgrp->parent);
--
- 	mutex_lock(&memcg_create_mutex);
- 	/* oom-kill-disable is a flag for subhierarchy. */
- 	if ((parent->use_hierarchy) || memcg_has_children(memcg)) {
-@@ -6266,15 +6250,14 @@ free_out:
- static int
- mem_cgroup_css_online(struct cgroup *cont)
- {
--	struct mem_cgroup *memcg, *parent;
-+	struct mem_cgroup *memcg = mem_cgroup_from_cont(cont);
-+	struct mem_cgroup *parent = mem_cgroup_from_css(css_parent(&memcg->css));
- 	int error = 0;
- 
--	if (!cont->parent)
-+	if (!parent)
- 		return 0;
- 
- 	mutex_lock(&memcg_create_mutex);
--	memcg = mem_cgroup_from_cont(cont);
--	parent = mem_cgroup_from_cont(cont->parent);
- 
- 	memcg->use_hierarchy = parent->use_hierarchy;
- 	memcg->oom_kill_disable = parent->oom_kill_disable;
-diff --git a/net/sched/cls_cgroup.c b/net/sched/cls_cgroup.c
-index af412ab..9e6b75e 100644
---- a/net/sched/cls_cgroup.c
-+++ b/net/sched/cls_cgroup.c
-@@ -50,9 +50,11 @@ static struct cgroup_subsys_state *cgrp_css_alloc(struct cgroup *cgrp)
- 
- static int cgrp_css_online(struct cgroup *cgrp)
- {
--	if (cgrp->parent)
--		cgrp_cls_state(cgrp)->classid =
--			cgrp_cls_state(cgrp->parent)->classid;
-+	struct cgroup_cls_state *cs = cgrp_cls_state(cgrp);
-+	struct cgroup_cls_state *parent = css_cls_state(css_parent(&cs->css));
-+
-+	if (parent)
-+		cs->classid = parent->classid;
- 	return 0;
- }
- 
-diff --git a/security/device_cgroup.c b/security/device_cgroup.c
-index 9095364..635a49d 100644
---- a/security/device_cgroup.c
-+++ b/security/device_cgroup.c
-@@ -198,13 +198,11 @@ static inline bool is_devcg_online(const struct dev_cgroup *devcg)
+  * cgroup_rm_cftypes - remove an array of cftypes from a subsystem
+- * @ss: target cgroup subsystem
+  * @cfts: zero-length name terminated array of cftypes
+  *
+- * Unregister @cfts from @ss.  Files described by @cfts are removed from
+- * all existing cgroups to which @ss is attached and all future cgroups
+- * won't have them either.  This function can be called anytime whether @ss
+- * is attached or not.
++ * Unregister @cfts.  Files described by @cfts are removed from all
++ * existing cgroups and all future cgroups won't have them either.  This
++ * function can be called anytime whether @cfts' subsys is attached or not.
+  *
+  * Returns 0 on successful unregistration, -ENOENT if @cfts is not
+- * registered with @ss.
++ * registered.
   */
- static int devcgroup_online(struct cgroup *cgroup)
+-int cgroup_rm_cftypes(struct cgroup_subsys *ss, struct cftype *cfts)
++int cgroup_rm_cftypes(struct cftype *cfts)
  {
--	struct dev_cgroup *dev_cgroup, *parent_dev_cgroup = NULL;
-+	struct dev_cgroup *dev_cgroup = cgroup_to_devcgroup(cgroup);
-+	struct dev_cgroup *parent_dev_cgroup = css_to_devcgroup(css_parent(&dev_cgroup->css));
- 	int ret = 0;
+ 	struct cftype_set *set;
  
- 	mutex_lock(&devcgroup_mutex);
--	dev_cgroup = cgroup_to_devcgroup(cgroup);
--	if (cgroup->parent)
--		parent_dev_cgroup = cgroup_to_devcgroup(cgroup->parent);
++	if (!cfts || !cfts[0].ss)
++		return -ENOENT;
++
+ 	cgroup_cfts_prepare();
  
- 	if (parent_dev_cgroup == NULL)
- 		dev_cgroup->behavior = DEVCG_DEFAULT_ALLOW;
-@@ -394,12 +392,10 @@ static bool may_access(struct dev_cgroup *dev_cgroup,
- static int parent_has_perm(struct dev_cgroup *childcg,
- 				  struct dev_exception_item *ex)
- {
--	struct cgroup *pcg = childcg->css.cgroup->parent;
--	struct dev_cgroup *parent;
-+	struct dev_cgroup *parent = css_to_devcgroup(css_parent(&childcg->css));
+-	list_for_each_entry(set, &ss->cftsets, node) {
++	list_for_each_entry(set, &cfts[0].ss->cftsets, node) {
+ 		if (set->cfts == cfts) {
+ 			list_del(&set->node);
+ 			kfree(set);
+-			cgroup_cfts_commit(ss, cfts, false);
++			cgroup_cfts_commit(cfts, false);
+ 			return 0;
+ 		}
+ 	}
  
--	if (!pcg)
-+	if (!parent)
- 		return 1;
--	parent = cgroup_to_devcgroup(pcg);
- 	return may_access(parent, ex, childcg->behavior);
+-	cgroup_cfts_commit(ss, NULL, false);
++	cgroup_cfts_commit(NULL, false);
+ 	return -ENOENT;
  }
  
-@@ -524,15 +520,11 @@ static int devcgroup_update_access(struct dev_cgroup *devcgroup,
- 	char temp[12];		/* 11 + 1 characters needed for a u32 */
- 	int count, rc = 0;
- 	struct dev_exception_item ex;
--	struct cgroup *p = devcgroup->css.cgroup;
--	struct dev_cgroup *parent = NULL;
-+	struct dev_cgroup *parent = css_to_devcgroup(css_parent(&devcgroup->css));
+@@ -4141,7 +4144,7 @@ static int cgroup_populate_dir(struct cgroup *cgrp, unsigned long subsys_mask)
+ 			continue;
  
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
+ 		list_for_each_entry(set, &ss->cftsets, node) {
+-			ret = cgroup_addrm_files(cgrp, ss, set->cfts, true);
++			ret = cgroup_addrm_files(cgrp, set->cfts, true);
+ 			if (ret < 0)
+ 				goto err;
+ 		}
+@@ -4368,7 +4371,7 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
  
--	if (p->parent)
--		parent = cgroup_to_devcgroup(p->parent);
--
- 	memset(&ex, 0, sizeof(ex));
- 	b = buffer;
+ 	idr_replace(&root->cgroup_idr, cgrp, cgrp->id);
  
+-	err = cgroup_addrm_files(cgrp, NULL, cgroup_base_files, true);
++	err = cgroup_addrm_files(cgrp, cgroup_base_files, true);
+ 	if (err)
+ 		goto err_destroy;
+ 
+@@ -4529,7 +4532,7 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
+ 	 * but we aren't quite done with @cgrp yet, so hold onto it.
+ 	 */
+ 	cgroup_clear_dir(cgrp, cgrp->root->subsys_mask);
+-	cgroup_addrm_files(cgrp, NULL, cgroup_base_files, false);
++	cgroup_addrm_files(cgrp, cgroup_base_files, false);
+ 	dget(d);
+ 	cgroup_d_remove_dir(d);
+ 
+@@ -4623,6 +4626,11 @@ static void __init_or_module cgroup_init_cftsets(struct cgroup_subsys *ss)
+ 	 * deregistration.
+ 	 */
+ 	if (ss->base_cftypes) {
++		struct cftype *cft;
++
++		for (cft = ss->base_cftypes; cft->name[0] != '\0'; cft++)
++			cft->ss = ss;
++
+ 		ss->base_cftset.cfts = ss->base_cftypes;
+ 		list_add_tail(&ss->base_cftset.node, &ss->cftsets);
+ 	}
 -- 
 1.8.3.1
