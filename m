@@ -1,15 +1,16 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH cgroup/for-3.12] cgroup: make css_for_each_descendant()
-	and friends include the origin css in the iteration
-Date: Mon, 5 Aug 2013 11:29:41 -0400
-Message-ID: <20130805152941.GB6440@redhat.com>
-References: <20130804230703.GA12029@htj.dyndns.org>
+From: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 08/23] cgroup: pass around cgroup_subsys_state instead of
+	cgroup in subsystem methods
+Date: Mon, 5 Aug 2013 13:57:06 -0400
+Message-ID: <20130805175706.GA7878@redhat.com>
+References: <1375393801-4817-1-git-send-email-tj@kernel.org>
+	<1375393801-4817-9-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20130804230703.GA12029-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
+In-Reply-To: <1375393801-4817-9-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,77 +21,50 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daniel Wagner <daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sun, Aug 04, 2013 at 07:07:03PM -0400, Tejun Heo wrote:
-> Hello,
+On Thu, Aug 01, 2013 at 05:49:46PM -0400, Tejun Heo wrote:
+> cgroup is currently in the process of transitioning to using struct
+> cgroup_subsys_state * as the primary handle instead of struct cgroup *
+> in subsystem implementations for the following reasons.
 > 
-> I've been wanting to do this for some time and given all the recent
-> API updates now seems like a pretty good opportunity.  Verified
-> freezer and blkcg.  The conversions are mostly straight forward but
-> I'd much appreciate acks from controller maintainers.
+> * With unified hierarchy, subsystems will be dynamically bound and
+>   unbound from cgroups and thus css's (cgroup_subsys_state) may be
+>   created and destroyed dynamically over the lifetime of a cgroup,
+>   which is different from the current state where all css's are
+>   allocated and destroyed together with the associated cgroup.  This
+>   in turn means that cgroup_css() should be synchronized and may
+>   return NULL, making it more cumbersome to use.
 > 
-> The patch is on top of
+> * Differing levels of per-subsystem granularity in the unified
+>   hierarchy means that the task and descendant iterators should behave
+>   differently depending on the specific subsystem the iteration is
+>   being performed for.
 > 
->   cgroup/for-3.12 61584e3f4 ("cgroup: Merge branch 'for-3.11-fixes' into for-3.12")
-> + [1] cgroup: use cgroup_subsys_state as the primary subsystem interface handle
-> + [2] cgroup: make cgroup_event specific to memcg
+> * In majority of the cases, subsystems only care about its part in the
+>   cgroup hierarchy - ie. the hierarchy of css's.  Subsystem methods
+>   often obtain the matching css pointer from the cgroup and don't
+>   bother with the cgroup pointer itself.  Passing around css fits
+>   much better.
 > 
-> and available in the following git branch.
+> This patch converts all cgroup_subsys methods to take @css instead of
+> @cgroup.  The conversions are mostly straight-forward.  A few
+> noteworthy changes are
 > 
->  git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-descendant-update
+> * ->css_alloc() now takes css of the parent cgroup rather than the
+>   pointer to the new cgroup as the css for the new cgroup doesn't
+>   exist yet.  Knowing the parent css is enough for all the existing
+>   subsystems.
 > 
-> Thanks.
+> * In kernel/cgroup.c::offline_css(), unnecessary open coded css
+>   dereference is replaced with local variable access.
 > 
-> [1] https://lkml.org/lkml/2013/8/1/722
-> [2] http://thread.gmane.org/gmane.linux.kernel.cgroups/8726
-> 
-> ------- 8< -------
-> 
-> >From 0e84b0865ab8a87f1c1443e4777c20c7f14e13b6 Mon Sep 17 00:00:00 2001
-> From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Date: Sun, 4 Aug 2013 19:01:23 -0400
-> 
-> Previously, all css descendant iterators didn't include the origin
-> (root of subtree) css in the iteration.  The reasons were maintaining
-> consistency with css_for_each_child() and that at the time of
-> introduction more use cases needed skipping the origin anyway;
-> however, given that css_is_descendant() considers self to be a
-> descendant, omitting the origin css has become more confusing and
-> looking at the accumulated use cases rather clearly indicates that
-> including origin would result in simpler code overall.
-> 
-> While this is a change which can easily lead to subtle bugs, cgroup
-> API including the iterators has recently gone through major
-> restructuring and no out-of-tree changes will be applicable without
-> adjustments making this a relatively acceptable opportunity for this
-> type of change.
-> 
-> The conversions are mostly straight-forward.  If the iteration block
-> had explicit origin handling before or after, it's moved inside the
-> iteration.  If not, if (pos == origin) continue; is added.  Some
-> conversions add extra reference get/put around origin handling by
-> consolidating origin handling and the rest.  While the extra ref
-> operations aren't strictly necessary, this shouldn't cause any
-> noticeable difference.
-> 
-> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-> Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
-> Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Cc: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
-> Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-> Cc: Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> Cc: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> ---
->  block/blk-cgroup.c       |  8 ++------
->  block/blk-cgroup.h       |  4 +++-
->  block/blk-throttle.c     |  3 ---
+> This patch shouldn't cause any behavior differences.
 
-block/ bits look good to me.
+looks fine on device_cgroup.c bit
 
-Acked-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Acked-by: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
-Vivek
+-- 
+Aristeu
