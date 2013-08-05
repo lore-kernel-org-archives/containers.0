@@ -1,16 +1,16 @@
 From: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 08/23] cgroup: pass around cgroup_subsys_state instead of
-	cgroup in subsystem methods
-Date: Mon, 5 Aug 2013 13:57:06 -0400
-Message-ID: <20130805175706.GA7878@redhat.com>
+Subject: Re: [PATCH 12/23] cgroup: pass around cgroup_subsys_state instead of
+	cgroup in file methods
+Date: Mon, 5 Aug 2013 14:04:18 -0400
+Message-ID: <20130805180418.GB7878@redhat.com>
 References: <1375393801-4817-1-git-send-email-tj@kernel.org>
-	<1375393801-4817-9-git-send-email-tj@kernel.org>
+	<1375393801-4817-13-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1375393801-4817-9-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1375393801-4817-13-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,45 +24,38 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daniel Wagner <daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Aug 01, 2013 at 05:49:46PM -0400, Tejun Heo wrote:
+On Thu, Aug 01, 2013 at 05:49:50PM -0400, Tejun Heo wrote:
 > cgroup is currently in the process of transitioning to using struct
-> cgroup_subsys_state * as the primary handle instead of struct cgroup *
-> in subsystem implementations for the following reasons.
+> cgroup_subsys_state * as the primary handle instead of struct cgroup.
+> Please see the previous commit which converts the subsystem methods
+> for rationale.
 > 
-> * With unified hierarchy, subsystems will be dynamically bound and
->   unbound from cgroups and thus css's (cgroup_subsys_state) may be
->   created and destroyed dynamically over the lifetime of a cgroup,
->   which is different from the current state where all css's are
->   allocated and destroyed together with the associated cgroup.  This
->   in turn means that cgroup_css() should be synchronized and may
->   return NULL, making it more cumbersome to use.
+> This patch converts all cftype file operations to take @css instead of
+> @cgroup.  cftypes for the cgroup core files don't have their subsytem
+> pointer set.  These will automatically use the dummy_css added by the
+> previous patch and can be converted the same way.
 > 
-> * Differing levels of per-subsystem granularity in the unified
->   hierarchy means that the task and descendant iterators should behave
->   differently depending on the specific subsystem the iteration is
->   being performed for.
+> Most subsystem conversions are straight forwards but there are some
+> interesting ones.
 > 
-> * In majority of the cases, subsystems only care about its part in the
->   cgroup hierarchy - ie. the hierarchy of css's.  Subsystem methods
->   often obtain the matching css pointer from the cgroup and don't
->   bother with the cgroup pointer itself.  Passing around css fits
->   much better.
+> * freezer: update_if_frozen() is also converted to take @css instead
+>   of @cgroup for consistency.  This will make the code look simpler
+>   too once iterators are converted to use css.
 > 
-> This patch converts all cgroup_subsys methods to take @css instead of
-> @cgroup.  The conversions are mostly straight-forward.  A few
-> noteworthy changes are
+> * memory/vmpressure: mem_cgroup_from_css() needs to be exported to
+>   vmpressure while mem_cgroup_from_cont() can be made static.
+>   Updated accordingly.
 > 
-> * ->css_alloc() now takes css of the parent cgroup rather than the
->   pointer to the new cgroup as the css for the new cgroup doesn't
->   exist yet.  Knowing the parent css is enough for all the existing
->   subsystems.
+> * cpu: cgroup_tg() doesn't have any user left.  Removed.
 > 
-> * In kernel/cgroup.c::offline_css(), unnecessary open coded css
->   dereference is replaced with local variable access.
+> * cpuacct: cgroup_ca() doesn't have any user left.  Removed.
 > 
-> This patch shouldn't cause any behavior differences.
+> * hugetlb: hugetlb_cgroup_form_cgroup() doesn't have any user left.
+>   Removed.
+> 
+> * net_cls: cgrp_cls_state() doesn't have any user left.  Removed.
 
-looks fine on device_cgroup.c bit
+Also looks good on devcg part
 
 Acked-by: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
