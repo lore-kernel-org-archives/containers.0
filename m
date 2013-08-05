@@ -1,10 +1,16 @@
-From: Mail Delivery System <MAILER-DAEMON-YtgMKIfkAlZfj0CoURuP3jh339VZgyU0@public.gmane.org>
-Subject: Mail delivery failed
-Date: Mon, 05 Aug 2013 07:24:32 -0600
-Message-ID: <mxl~20f4.933c.0617@p02c11m016.mxlogic.net>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 12/23] cgroup: pass around cgroup_subsys_state instead of
+	cgroup in file methods
+Date: Mon, 5 Aug 2013 10:19:55 -0400
+Message-ID: <20130805141955.GC2274@redhat.com>
+References: <1375393801-4817-1-git-send-email-tj@kernel.org>
+	<1375393801-4817-13-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============2352995004484518447=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1375393801-4817-13-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,61 +20,61 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Daniel Wagner <daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.
-Portions of this message may be unreadable without a MIME-capable mail program.
+On Thu, Aug 01, 2013 at 05:49:50PM -0400, Tejun Heo wrote:
+> cgroup is currently in the process of transitioning to using struct
+> cgroup_subsys_state * as the primary handle instead of struct cgroup.
+> Please see the previous commit which converts the subsystem methods
+> for rationale.
+> 
+> This patch converts all cftype file operations to take @css instead of
+> @cgroup.  cftypes for the cgroup core files don't have their subsytem
+> pointer set.  These will automatically use the dummy_css added by the
+> previous patch and can be converted the same way.
+> 
+> Most subsystem conversions are straight forwards but there are some
+> interesting ones.
+> 
+> * freezer: update_if_frozen() is also converted to take @css instead
+>   of @cgroup for consistency.  This will make the code look simpler
+>   too once iterators are converted to use css.
+> 
+> * memory/vmpressure: mem_cgroup_from_css() needs to be exported to
+>   vmpressure while mem_cgroup_from_cont() can be made static.
+>   Updated accordingly.
+> 
+> * cpu: cgroup_tg() doesn't have any user left.  Removed.
+> 
+> * cpuacct: cgroup_ca() doesn't have any user left.  Removed.
+> 
+> * hugetlb: hugetlb_cgroup_form_cgroup() doesn't have any user left.
+>   Removed.
+> 
+> * net_cls: cgrp_cls_state() doesn't have any user left.  Removed.
+> 
+> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+> Cc: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+> Cc: Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
+> Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+> Cc: Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> Cc: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Cc: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Cc: Daniel Wagner <daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org>
+> Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
+> Cc: Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>
+> ---
+>  block/blk-cgroup.c         |   6 +-
+>  block/blk-throttle.c       |  32 ++++-----
+>  block/cfq-iosched.c        |  90 ++++++++++++-------------
 
---===============2352995004484518447==
-Content-Type: multipart/report; report-type=delivery-status;boundary="MXL-BOUNCE-1375709072-2107327974"
+blk-cgroup.c, blk-throttle.c and cfq-iosched.c bits look good to me.
 
-This is a MIME-formatted message.
-Portions of this message may be unreadable without a MIME-capable mail program.
+Acked-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 
---MXL-BOUNCE-1375709072-2107327974
-Content-Type: text/plain
-
-This message was created automatically by mail delivery software.
-
-A message that you have sent could not be delivered to one or more
-recipients.  This is a permanent error.  The following address failed:
-
-  <diane-j/ETwQfDZSxWk0Htik3J/w@public.gmane.org>: 553 sorry, that address is not in my list of allowed recipients; no valid cert for gatewaying (#5.7.1)
-
-
---MXL-BOUNCE-1375709072-2107327974
-Content-Type: text/plain
-
-Included is a copy of the message header:
------------------------------------------
-Received: from unknown [69.64.39.184] (EHLO dragon541)
-	by p02c11m016.mxlogic.net(mxl_mta-7.1.0-4)
-	with ESMTP id f87aff15.0.2166853.00-2034.2942814.p02c11m016.mxlogic.net (envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>);
-	Mon, 05 Aug 2013 07:24:31 -0600 (MDT)
-Received: from [69.64.39.184] by dragon541 id m9CFB4r9APqV with SMTP; Mon, 05 Aug 2013 15:24:31 +0200
-Date: Mon, 05 Aug 2013 15:24:31 +0200
-From: "OrderCo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.1.12.2) Home
-X-Priority: 3 (Normal)
-Message-ID: <49559260.13795927008147@dragon541>
-To: <diane-j/ETwQfDZSxWk0Htik3J/w@public.gmane.org>
-Subject: Your order reference is 9300435380
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
-Content-Transfer-Encoding: 8bit
-
---MXL-BOUNCE-1375709072-2107327974--
-
---===============2352995004484518447==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============2352995004484518447==--
+Vivek
