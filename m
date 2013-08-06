@@ -1,16 +1,18 @@
-From: Daniel Wagner <daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org>
-Subject: Re: [PATCH v2 08/23] cgroup: pass around cgroup_subsys_state instead
-	of cgroup in subsystem methods
-Date: Tue, 6 Aug 2013 09:19:45 +0200
-Message-ID: <5200A391.9030208__47919.8087509305$1375773604$gmane$org@bmw-carit.de>
-References: <1375393801-4817-1-git-send-email-tj@kernel.org>
-	<1375393801-4817-9-git-send-email-tj@kernel.org>
-	<20130802202408.GH29736@mtj.dyndns.org>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Pkg-shadow-devel] [PATCH 00/11] pkg-shadow support subordinate
+	ids with user namespaces
+Date: Tue, 6 Aug 2013 14:54:03 +0000
+Message-ID: <20130806145403.GA20913@mail.hallyn.com>
+References: <87d2wxshu0.fsf@xmission.com>
+	<20130728171451.GX5670@mykerinos.kheops.frmug.org>
+	<87r4eilg6y.fsf@xmission.com>
+	<11218395-363e-46cd-b7a1-4488079a4986@email.android.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20130802202408.GH29736-9pTldWuhBndy/B6EtB590w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <11218395-363e-46cd-b7a1-4488079a4986-2ueSQiBKiTY7tOexoI0I+QC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,73 +22,96 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: Nicolas =?iso-8859-1?Q?Fran=E7ois?= <nicolas.francois-Fa7rcPG4DJn7nK0/Xc0eeg@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Pkg-shadow-devel-XbBxUvOt3X2LieD7tvxI8l/i77bcL1HB@public.gmane.org, Christian PERRIER <bubulle-8fiUuRrzOP0dnm+yROfE0A@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 08/02/2013 10:24 PM, Tejun Heo wrote:
-> cgroup is currently in the process of transitioning to using struct
-> cgroup_subsys_state * as the primary handle instead of struct cgroup *
-> in subsystem implementations for the following reasons.
->
-> * With unified hierarchy, subsystems will be dynamically bound and
->    unbound from cgroups and thus css's (cgroup_subsys_state) may be
->    created and destroyed dynamically over the lifetime of a cgroup,
->    which is different from the current state where all css's are
->    allocated and destroyed together with the associated cgroup.  This
->    in turn means that cgroup_css() should be synchronized and may
->    return NULL, making it more cumbersome to use.
->
-> * Differing levels of per-subsystem granularity in the unified
->    hierarchy means that the task and descendant iterators should behave
->    differently depending on the specific subsystem the iteration is
->    being performed for.
->
-> * In majority of the cases, subsystems only care about its part in the
->    cgroup hierarchy - ie. the hierarchy of css's.  Subsystem methods
->    often obtain the matching css pointer from the cgroup and don't
->    bother with the cgroup pointer itself.  Passing around css fits
->    much better.
->
-> This patch converts all cgroup_subsys methods to take @css instead of
-> @cgroup.  The conversions are mostly straight-forward.  A few
-> noteworthy changes are
->
-> * ->css_alloc() now takes css of the parent cgroup rather than the
->    pointer to the new cgroup as the css for the new cgroup doesn't
->    exist yet.  Knowing the parent css is enough for all the existing
->    subsystems.
->
-> * In kernel/cgroup.c::offline_css(), unnecessary open coded css
->    dereference is replaced with local variable access.
->
-> This patch shouldn't cause any behavior differences.
->
-> v2: Unnecessary explicit cgrp->subsys[] deref in css_online() replaced
->      with local variable @css as suggested by Li Zefan.
->
->      Rebased on top of new for-3.12 which includes for-3.11-fixes so
->      that ->css_free() invocation added by da0a12caff ("cgroup: fix a
->      leak when percpu_ref_init() fails") is converted too.  Suggested
->      by Li Zefan.
->
-> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-> Acked-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-> Cc: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-> Cc: Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
-> Cc: Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> Cc: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Cc: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Cc: Daniel Wagner <daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org>
-> Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
-> Cc: Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>
+Quoting Serge Hallyn (serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org):
+> ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org wrote:
+> 
+> >Christian PERRIER <bubulle-8fiUuRrzOP0dnm+yROfE0A@public.gmane.org> writes:
+> >
+> >> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> >>> 
+> >>> The kernel support for user namespaces allows ordinary users to use
+> >>> multiple uids and gids if they can get a trusted program to tell the
+> >>> kernel the set of subordinate uids and gids they are allowed to use.
+> >>> 
+> >>> This is my work to make that trusted program.
+> >>> Two new files are added /etc/subuid /etc/subgid that specify
+> >>> ranges of uids and gids that users may uses.
+> >>> 
+> >>> useradd, and newusers are modifed to add users to those files.
+> >>> 
+> >>> userdel is modeifed to remove users from those files.
+> >>> 
+> >>> usermod is modified to give manual control of what goes in those
+> >files.
+> >>> 
+> >>> newuidmap and newgidmap read the new files and update
+> >>> /proc/[pid]/uid_map and /proc/[pid]/gid_map respectively
+> >>> as requested by their command line parameters and as allowed
+> >>> by the /etc/subuid and /etc/subgid.
+> >>> 
+> >>> The following patches are against the current developent trunk
+> >>> of pkg-shadow svn rev 3745.  With minor tweaking of man/Makefile.am
+> >>> these patches also apply to shadow 4.1.5.
+> >>> 
+> >>> Eric W. Biederman (11):
+> >>>       Documentation for /etc/subuid and /etc/subgid
+> >>>       login.defs.5: Document the new variables in login.defs
+> >>>       Implement commonio_append.
+> >>>       Add backend support for suboridnate uids and gids
+> >>>       Implement find_new_sub_uids find_new_sub_gids
+> >>>       userdel: Add support for removing subordinate user and group
+> >ids.
+> >>>       useradd: Add support for subordinate user identifiers
+> >>>       Add support for detecting busy subordinate user ids
+> >>>       usermod: Add support for subordinate uids and gids.
+> >>>       newusers: Add support for assiging subordinate uids and gids.
+> >>>       newuidmap,newgidmap: New suid helpers for using subordinate
+> >uids and gids
+> >>> ---
+> >>
+> >> OK, now we're ready for this.
+> >>
+> >> Eric, I have no skills to decide whether your patches can be included
+> >> or not. My proposal is to go ahead and include them in the upcomign
+> >> 4.2 release, that will be compiled and uploaded in Debian as soon as
+> >> released, so that it gets extensive testing.
+> >>
+> >> We now have an "upstream" git repository at
+> >>
+> >>
+> >> http://github.com/shadow-maint/shadow.git
+> >>
+> >> Would you mind pushing your set of patches there?
+> >>
+> >> That requires an account on github and include you in the project
+> >> members (Serge Hallyn can do that).
+> >>
+> >> I would prefer this over committing/pushing myself.
+> >>
+> >> I really apologize for the too long delay working on this. We now
+> >need
+> >> to revive shadow's development.
+> >
+> >Understood.
+> >
+> >At this point Serge has taken over stewardship of those patches and has
+> >a version with all of the known bug fixes applied that has been
+> >reviewed
+> >and included in Ubuntu.  So I expect the most responsible way is to
+> >just
+> >pull the branch with those changes that is in Ubuntu.
+> >
+> >Serge does that sound right?
+> >
+> >Eric
+> 
+> Sorry think I just sent a private reply.  To repeat, I can do this when I'm back at a kbd, maybe Friday, definately Monday.
 
-netprio and cls part:
+I rebased and pushed the patchset yesterday.
 
-Acked-By: Daniel Wagner <daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org>
-
-cheers,
-daniel
+thanks,
+-serge
