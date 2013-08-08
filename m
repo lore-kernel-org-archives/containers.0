@@ -1,15 +1,14 @@
-From: Ben Hutchings <bhutchings-s/n/eUQHGBpZroRs9YW3xA@public.gmane.org>
-Subject: Re: [PATCH v3 07/11] syslog_ns: implement function for creating
-	syslog ns
-Date: Wed, 7 Aug 2013 20:59:28 +0200
-Message-ID: <1375901968.2644.91.camel@deadeye.wl.decadent.org.uk>
+From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH v3 00/11] Add namespace support for syslog
+Date: Thu, 08 Aug 2013 09:37:35 +0800
+Message-ID: <5202F65F.40002@cn.fujitsu.com>
 References: <1375861035-24320-1-git-send-email-rui.xiang@huawei.com>
-	<1375861035-24320-8-git-send-email-rui.xiang@huawei.com>
+	<878v0evssv.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1375861035-24320-8-git-send-email-rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <878v0evssv.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,38 +18,31 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Rui Xiang <rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, libo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, guz.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, libo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, guz.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gV2VkLCAyMDEzLTA4LTA3IGF0IDE1OjM3ICswODAwLCBSdWkgWGlhbmcgd3JvdGU6ClsuLi5d
-Cj4gLS0tIGEva2VybmVsL3ByaW50ay5jCj4gKysrIGIva2VybmVsL3ByaW50ay5jClsuLi5dCj4g
-QEAgLTExMjUsNiArMTEyOSw1MSBAQCBzdGF0aWMgaW50IHN5c2xvZ19wcmludF9hbGwoY2hhciBf
-X3VzZXIgKmJ1ZiwgaW50IHNpemUsIGJvb2wgY2xlYXIsCj4gIAlyZXR1cm4gbGVuOwo+ICB9Cj4g
-IAo+ICtzdGF0aWMgaW50IGNyZWF0ZV9zeXNsb2dfbnModm9pZCkKPiArewo+ICsJc3RydWN0IHVz
-ZXJfbmFtZXNwYWNlICp1c2VybnMgPSBjdXJyZW50X3VzZXJfbnMoKTsKPiArCXN0cnVjdCBzeXNs
-b2dfbmFtZXNwYWNlICpvbGRucywgKm5ld25zOwo+ICsJaW50IGVycjsKPiArCj4gKwkvKgo+ICsJ
-ICogc3lzbG9nIG5zIGJlbG9uZ3MgdG8gYSB1c2VyIG5zLiAgU28geW91IGNhbiBvbmx5IHVuc2hh
-cmUgeW91cgo+ICsJICogdXNlcl9ucyBpZiB5b3Ugc2hhcmUgYSB1c2VyX25zIHdpdGggeW91ciBw
-YXJlbnQgdXNlcm5zCgpJdCBsb29rcyBsaWtlIHRoaXMgc2hvdWxkIHNheToKICAgICAgICAgICAq
-IHN5c2xvZ19ucyBpZiB5b3Ugc2hhcmUgYSBzeXNsb2dfbnMgd2l0aCB5b3VyIHBhcmVudCB1c2Vy
-X25zCgo+ICsJICovCj4gKwlpZiAodXNlcm5zID09ICZpbml0X3VzZXJfbnMgfHwKPiArCQl1c2Vy
-bnMtPnN5c2xvZ19ucyAhPSB1c2VybnMtPnBhcmVudC0+c3lzbG9nX25zKQo+ICsJCXJldHVybiAt
-RUlOVkFMOwo+ICsKPiArCWlmICghbnNfY2FwYWJsZSh1c2VybnMsIENBUF9TWVNMT0cpKQo+ICsJ
-CXJldHVybiAtRVBFUk07Cj4gKwo+ICsJZXJyID0gLUVOT01FTTsKPiArCW9sZG5zID0gdXNlcm5z
-LT5zeXNsb2dfbnM7Cj4gKwluZXducyA9IGt6YWxsb2Moc2l6ZW9mKCpuZXducyksIEdGUF9BVE9N
-SUMpOwoKVGhpcyBkb2Vzbid0IGFwcGVhciB0byBiZSBhbiBhdG9taWMgY29udGV4dCwgc28gdXNl
-IEdGUF9LRVJORUwuCgo+ICsJaWYgKCFuZXducykKPiArCQlnb3RvIG91dDsKPiArCW5ld25zLT5s
-b2dfYnVmX2xlbiA9IF9fTE9HX0JVRl9MRU47Cj4gKwluZXducy0+bG9nX2J1ZiA9IGt6YWxsb2Mo
-bmV3bnMtPmxvZ19idWZfbGVuLCBHRlBfQVRPTUlDKTsKWy4uLl0KClNhbWUgaGVyZS4KCkFsc2/C
-uCBJJ20gbm90IHN1cmUgdGhhdCBfX0xPR19CVUZfTEVOIGlzIHRoZSByaWdodCBsZW5ndGguICBP
-cGVuVloKY2VydGFpbmx5IHVzZXMgYSBzbWFsbCBidWZmZXIgZm9yIGNvbnRhaW5lciBzeXNsb2dz
-ICg0SykgcmF0aGVyIHRoYW4KdXNpbmcgdGhlIHNhbWUgbGVuZ3RoIGFzIHRoZSBnbG9iYWwgc3lz
-bG9nLiAgTWF5YmUgaXQgc2hvdWxkIGJlCnNlcGFyYXRlbHkgY29uZmlndXRhYmxlLgoKQmVuLgoK
-LS0gCkJlbiBIdXRjaGluZ3MsIFN0YWZmIEVuZ2luZWVyLCBTb2xhcmZsYXJlCk5vdCBzcGVha2lu
-ZyBmb3IgbXkgZW1wbG95ZXI7IHRoYXQncyB0aGUgbWFya2V0aW5nIGRlcGFydG1lbnQncyBqb2Iu
-ClRoZXkgYXNrZWQgdXMgdG8gbm90ZSB0aGF0IFNvbGFyZmxhcmUgcHJvZHVjdCBuYW1lcyBhcmUg
-dHJhZGVtYXJrZWQuCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5k
-YXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3Rp
-bmZvL2NvbnRhaW5lcnM=
+On 08/07/2013 03:55 PM, Eric W. Biederman wrote:
+> 
+> Since this still has not been addressed.  I am going to repeat Andrews
+> objection again.
+> 
+> Isn't there a better way to get iptables information out than to use
+> syslog.  I did not have time to follow up on that but it did appear that
+> someone did have a better way to get the information out.
+> 
+> Essentially the argument against this goes.  The kernel logging facility
+> is really not a particularly good tool to be using for anything other
+> than kernel debugging information, and there appear to be no substantial
+> uses for a separate syslog that should not be done in other ways.
+
+containerizing syslog is not only for iptables, it also isolates the /dev/kmsg,
+/proc/kmsg, syslog(2)... user space tools in container may use this interface
+to read/generate syslog.
+
+But I don't know how important/urgent this containerizing syslog work is,
+Rui Xiang, can you find an important/popular user space tool which uses this
+interfaces to generate kernel syslog?
+
+Thanks
+Gao
