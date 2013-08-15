@@ -1,16 +1,12 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH v3 00/11] Add namespace support for syslog
-Date: Wed, 14 Aug 2013 12:21:47 -0700
-Message-ID: <87a9kkcc38.fsf@xmission.com>
-References: <1375861035-24320-1-git-send-email-rui.xiang@huawei.com>
-	<878v0evssv.fsf@xmission.com> <5202F65F.40002@cn.fujitsu.com>
-	<52037D50.2050109@huawei.com> <20130814153017.GA18403@mail.hallyn.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCH cgroup/for-3.12 1/2] cgroup: fix cgroup_write_event_control()
+Date: Thu, 15 Aug 2013 11:40:32 -0400
+Message-ID: <20130815154032.GE14606__15574.5453470901$1376581253$gmane$org@htj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20130814153017.GA18403-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
-	message of "Wed, 14 Aug 2013 15:30:17 +0000")
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,60 +16,81 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, libo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, guz.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
+From 994a762080e4b136171c82ac78f7d7bbf17a451d Mon Sep 17 00:00:00 2001
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Date: Wed, 14 Aug 2013 23:38:21 -0400
 
-> Quoting Rui Xiang (rui.xiang-hv44wF8Li93QT0dZR+AlfA@public.gmane.org):
->> On 2013/8/8 9:37, Gao feng wrote:
->> > On 08/07/2013 03:55 PM, Eric W. Biederman wrote:
->> >>
->> >> Since this still has not been addressed.  I am going to repeat Andrews
->> >> objection again.
->> >>
->> >> Isn't there a better way to get iptables information out than to use
->> >> syslog.  I did not have time to follow up on that but it did appear that
->> >> someone did have a better way to get the information out.
->> >>
->> >> Essentially the argument against this goes.  The kernel logging facility
->> >> is really not a particularly good tool to be using for anything other
->> >> than kernel debugging information, and there appear to be no substantial
->> >> uses for a separate syslog that should not be done in other ways.
->> > 
->> > containerizing syslog is not only for iptables, it also isolates the /dev/kmsg,
->> > /proc/kmsg, syslog(2)... user space tools in container may use this interface
->> > to read/generate syslog.
->> > 
->> > But I don't know how important/urgent this containerizing syslog work is,
->> > Rui Xiang, can you find an important/popular user space tool which uses this
->> > interfaces to generate kernel syslog?
->> > 
->> 
->> There are some other cases. Some warnings (bad mount options for tmpfs,
->> bad uid owner for many of them, etc) emerged in the container should
->> be exported to the container. Some belong on the host - if they show 
->> a corrupt superblock which may indicate an attempt by the container 
->> to crash the kernel. Like these, Kernel will print out warnings when 
->> userspace in container uses a deprecated something or other, and these
->> logs should be invisible and specific for current container.
->> 
->> I can't say this work is terribly compelling and important, but the 
->> impact may be obvious, IMO.
->
-> Aug  9 21:49:13 sergeh1 kernel: [4644829.672768] init: Failed to spawn network-interface (veth8Ehlvj) post-stop process: unable to change root directory: No such file ricr:aeohgrticr  cfe rty444984 n:aetswnw-ta(ht -rrsultheoit: hlrro<4865i:i sntkta(ht ttpe btheoit: hlrrob r6ezt)nrgoadgte644915 c0pt(tyg ti wd a
-> Aug  9 21:49:13 sergeh1 kernel: X3f d-6:uigitra ora
-> Aug  9 22:19:54 sergeh1 kernel: 6[642.175 X3f d-6:mutdflsse ihodrddt oe==99 rfl=lccnanrdfutwt-etn"nm=/a/ah/x/lu-ui/m.AExdu"pi=91 om=mut sye"x3name="/devlo0" lg=r"ol pmc r=3an19pfel-nireu-tntgne/rc/cldudmHEqu d97o=otfy=x"ra=d/o/fg""8b:o vhc)nrgibdte646013 veeMzWe oso d<[4715]xr r1eMc egset
-> Aug
+81eeaf0411 ("cgroup: make cftype->[un]register_event() deal with
+cgroup_subsys_state inst ead of cgroup") updated the cftype event
+methods to take @css (cgroup_subsys_state) instead of @cgroup;
+however, it incorrectly used @css passed to
+cgroup_write_event_control(), which the dummy_css for the cgroup as
+the file is a cgroup core file.  This leads to oops on event
+registration.
 
-That is certainly a mess.  Now I don't believe we allow processes in a
-user namespace to write to the kernels log (certainly we shouldn't be)
-so part of that is not a problem.
+Fix it by using the css matching the event target file.
 
-What is interleaving messages into syslog?
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+---
+ kernel/cgroup.c | 20 ++++++++++++++++----
+ 1 file changed, 16 insertions(+), 4 deletions(-)
 
-And to be clear my only perspective is that we need to make certain we
-have this thought out.
-
-Eric
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 66d0107..ef93bfd 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -4044,10 +4044,10 @@ static void cgroup_event_ptable_queue_proc(struct file *file,
+  * Input must be in format '<event_fd> <control_fd> <args>'.
+  * Interpretation of args is defined by control file implementation.
+  */
+-static int cgroup_write_event_control(struct cgroup_subsys_state *css,
++static int cgroup_write_event_control(struct cgroup_subsys_state *dummy_css,
+ 				      struct cftype *cft, const char *buffer)
+ {
+-	struct cgroup *cgrp = css->cgroup;
++	struct cgroup *cgrp = dummy_css->cgroup;
+ 	struct cgroup_event *event;
+ 	struct cgroup *cgrp_cfile;
+ 	unsigned int efd, cfd;
+@@ -4069,7 +4069,7 @@ static int cgroup_write_event_control(struct cgroup_subsys_state *css,
+ 	event = kzalloc(sizeof(*event), GFP_KERNEL);
+ 	if (!event)
+ 		return -ENOMEM;
+-	event->css = css;
++
+ 	INIT_LIST_HEAD(&event->list);
+ 	init_poll_funcptr(&event->pt, cgroup_event_ptable_queue_proc);
+ 	init_waitqueue_func_entry(&event->wait, cgroup_event_wake);
+@@ -4105,6 +4105,18 @@ static int cgroup_write_event_control(struct cgroup_subsys_state *css,
+ 		goto out_put_cfile;
+ 	}
+ 
++	/* determine the css of @cfile and associate @event with it */
++	rcu_read_lock();
++
++	ret = -EINVAL;
++	event->css = cgroup_css(cgrp, event->cft->ss);
++	if (event->css)
++		ret = 0;
++
++	rcu_read_unlock();
++	if (ret)
++		goto out_put_cfile;
++
+ 	/*
+ 	 * The file to be monitored must be in the same cgroup as
+ 	 * cgroup.event_control is.
+@@ -4120,7 +4132,7 @@ static int cgroup_write_event_control(struct cgroup_subsys_state *css,
+ 		goto out_put_cfile;
+ 	}
+ 
+-	ret = event->cft->register_event(css, event->cft,
++	ret = event->cft->register_event(event->css, event->cft,
+ 			event->eventfd, buffer);
+ 	if (ret)
+ 		goto out_put_cfile;
+-- 
+1.8.3.1
