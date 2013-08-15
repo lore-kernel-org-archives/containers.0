@@ -1,8 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 05/12] cgroup: make cgroup_write_event_control() use
-	css_from_dir() instead of __d_cgrp()
-Date: Thu, 15 Aug 2013 12:02:23 -0400
-Message-ID: <1376582550-12548-6-git-send-email-tj__8509.73959682069$1376582605$gmane$org@kernel.org>
+Subject: [PATCH 07/12] memcg: cgroup_write_event_control() now knows @css is
+	for memcg
+Date: Thu, 15 Aug 2013 12:02:25 -0400
+Message-ID: <1376582550-12548-8-git-send-email-tj__28248.1469250799$1376582615$gmane$org@kernel.org>
 References: <1376582550-12548-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,63 +22,86 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.g
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-cgroup_event will be moved to its only user - memcg.  Replace
-__d_cgrp() usage with css_from_dir(), which is already exported.  This
-also simplifies the code a bit.
+@css for cgroup_write_event_control() is now always for memcg and the
+target file should be a memcg file too.  Drop code which assumes @css
+is dummy_css and the target file may belong to different subsystems.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 18 +++++-------------
- 1 file changed, 5 insertions(+), 13 deletions(-)
+ mm/memcontrol.c | 26 ++++++++++----------------
+ 1 file changed, 10 insertions(+), 16 deletions(-)
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 3e34c1e..6deed8b 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -4041,7 +4041,7 @@ static int cgroup_write_event_control(struct cgroup_subsys_state *dummy_css,
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index 9e54932..ef75925 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -6027,10 +6027,10 @@ static void cgroup_event_ptable_queue_proc(struct file *file,
+  * Input must be in format '<event_fd> <control_fd> <args>'.
+  * Interpretation of args is defined by control file implementation.
+  */
+-static int cgroup_write_event_control(struct cgroup_subsys_state *dummy_css,
++static int cgroup_write_event_control(struct cgroup_subsys_state *css,
+ 				      struct cftype *cft, const char *buffer)
  {
- 	struct cgroup *cgrp = dummy_css->cgroup;
+-	struct cgroup *cgrp = dummy_css->cgroup;
++	struct cgroup *cgrp = css->cgroup;
  	struct cgroup_event *event;
--	struct cgroup *cgrp_cfile;
-+	struct cgroup_subsys_state *cfile_css;
+ 	struct cgroup_subsys_state *cfile_css;
  	unsigned int efd, cfd;
- 	struct file *efile;
- 	struct file *cfile;
-@@ -4103,7 +4103,8 @@ static int cgroup_write_event_control(struct cgroup_subsys_state *dummy_css,
+@@ -6053,6 +6053,7 @@ static int cgroup_write_event_control(struct cgroup_subsys_state *dummy_css,
+ 	if (!event)
+ 		return -ENOMEM;
+ 
++	event->css = css;
+ 	INIT_LIST_HEAD(&event->list);
+ 	init_poll_funcptr(&event->pt, cgroup_event_ptable_queue_proc);
+ 	init_waitqueue_func_entry(&event->wait, cgroup_event_wake);
+@@ -6088,23 +6089,16 @@ static int cgroup_write_event_control(struct cgroup_subsys_state *dummy_css,
+ 		goto out_put_cfile;
  	}
  
+-	if (!event->cft->ss) {
+-		ret = -EBADF;
+-		goto out_put_cfile;
+-	}
+-
  	/*
--	 * Determine the css of @cfile and associate @event with it.
-+	 * Determine the css of @cfile, verify it belongs to the same
-+	 * cgroup as cgroup.event_control, and associate @event with it.
- 	 * Remaining events are automatically removed on cgroup destruction
- 	 * but the removal is asynchronous, so take an extra ref.
+-	 * Determine the css of @cfile, verify it belongs to the same
+-	 * cgroup as cgroup.event_control, and associate @event with it.
+-	 * Remaining events are automatically removed on cgroup destruction
+-	 * but the removal is asynchronous, so take an extra ref.
++	 * Verify @cfile should belong to @css.  Also, remaining events are
++	 * automatically removed on cgroup destruction but the removal is
++	 * asynchronous, so take an extra ref on @css.
  	 */
-@@ -4111,23 +4112,14 @@ static int cgroup_write_event_control(struct cgroup_subsys_state *dummy_css,
+ 	rcu_read_lock();
  
  	ret = -EINVAL;
- 	event->css = cgroup_css(cgrp, event->cft->ss);
--	if (event->css && css_tryget(event->css))
-+	cfile_css = css_from_dir(cfile->f_dentry->d_parent, event->cft->ss);
-+	if (event->css && event->css == cfile_css && css_tryget(event->css))
+-	event->css = cgroup_css(cgrp, event->cft->ss);
+-	cfile_css = css_from_dir(cfile->f_dentry->d_parent, event->cft->ss);
+-	if (event->css && event->css == cfile_css && css_tryget(event->css))
++	cfile_css = css_from_dir(cfile->f_dentry->d_parent, &mem_cgroup_subsys);
++	if (cfile_css == css && css_tryget(css))
  		ret = 0;
  
  	rcu_read_unlock();
- 	if (ret)
- 		goto out_put_cfile;
- 
--	/*
--	 * The file to be monitored must be in the same cgroup as
--	 * cgroup.event_control is.
--	 */
--	cgrp_cfile = __d_cgrp(cfile->f_dentry->d_parent);
--	if (cgrp_cfile != cgrp) {
--		ret = -EINVAL;
--		goto out_put_css;
--	}
--
- 	if (!event->cft->register_event || !event->cft->unregister_event) {
- 		ret = -EINVAL;
+@@ -6116,7 +6110,7 @@ static int cgroup_write_event_control(struct cgroup_subsys_state *dummy_css,
  		goto out_put_css;
+ 	}
+ 
+-	ret = event->cft->register_event(event->css, event->cft,
++	ret = event->cft->register_event(css, event->cft,
+ 			event->eventfd, buffer);
+ 	if (ret)
+ 		goto out_put_css;
+@@ -6133,7 +6127,7 @@ static int cgroup_write_event_control(struct cgroup_subsys_state *dummy_css,
+ 	return 0;
+ 
+ out_put_css:
+-	css_put(event->css);
++	css_put(css);
+ out_put_cfile:
+ 	fput(cfile);
+ out_put_eventfd:
 -- 
 1.8.3.1
