@@ -1,12 +1,14 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [GIT PULL] cgroup fixes for v3.11-rc5
-Date: Sun, 18 Aug 2013 07:20:05 -0400
-Message-ID: <20130818112005.GD7093@htj.dyndns.org>
+From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH cgroup/for-3.12 1/2] cgroup: fix subsystem file accesses
+	on the root cgroup
+Date: Mon, 19 Aug 2013 10:23:41 +0800
+Message-ID: <521181AD.7090700@huawei.com>
+References: <20130815154236.GG14606@htj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20130815154236.GG14606-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,53 +18,33 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, Linus.
+> 105347ba5 ("cgroup: make cgroup_file_open() rcu_read_lock() around
+> cgroup_css() and add cfent->css") added cfent->css to cache the
+> associted cgroup_subsys_state across file operations.
+> 
+> A cfent is associated with single css throughout its lifetime and the
+> origimal commit initialized the cache pointer during cgroup_add_file()
+> and verified that it matches the actual one in cgroup_file_open().
+> While this works fine for !root cgroups, it's broken for root cgroups
+> as files in a root cgroup are created before the css's are associated
+> with the cgroup and thus cgroup_css() call in cgroup_add_file()
+> returns NULL associating all cfents in the root cgroup with NULL css.
+> This makes cgroup_file_open() trigger WARN and fail with -ENODEV for
+> all !core subsystem files in the root cgroups.
+> 
+> There's no reason to initialize cfent->css separately from
+> cgroup_add_file().  As the association never changes,
+> cgroup_file_open() can set it unconditionally every time and
+> containing the logic in cgroup_file_open() makes more sense anyway as
+> the only reason it's necessary is file->private_data being already
+> occupied.
+> 
+> Fix it by setting cfent->css unconditionally from cgroup_file_open().
+> 
+> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 
-This pull request contains one patch to fix the return value of
-cpuset's cgroups interface function, which used to always return
--ENODEV for the writes on the "memory_pressure_enabled" file.
-
-The fix is available in the following branch
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git for-3.11-fixes
-
-for you to fetch changes up to a903f0865a190f8778c73df1a810ea6e25e5d7cf:
-
-  cpuset: fix the return value of cpuset_write_u64() (2013-08-13 10:54:40 -0400)
-
-Thanks.
-
-----------------------------------------------------------------
-Li Zefan (1):
-      cpuset: fix the return value of cpuset_write_u64()
-
- kernel/cpuset.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
-
-diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index e565778..010a008 100644
---- a/kernel/cpuset.c
-+++ b/kernel/cpuset.c
-@@ -1608,11 +1608,13 @@ static int cpuset_write_u64(struct cgroup *cgrp, struct cftype *cft, u64 val)
- {
- 	struct cpuset *cs = cgroup_cs(cgrp);
- 	cpuset_filetype_t type = cft->private;
--	int retval = -ENODEV;
-+	int retval = 0;
- 
- 	mutex_lock(&cpuset_mutex);
--	if (!is_cpuset_online(cs))
-+	if (!is_cpuset_online(cs)) {
-+		retval = -ENODEV;
- 		goto out_unlock;
-+	}
- 
- 	switch (type) {
- 	case FILE_CPU_EXCLUSIVE:
-
---
-tejun
+Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
