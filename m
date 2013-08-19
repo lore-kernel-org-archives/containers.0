@@ -1,14 +1,15 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH cgroup/for-3.12 1/2] cgroup: fix subsystem file accesses
-	on the root cgroup
-Date: Mon, 19 Aug 2013 10:23:41 +0800
-Message-ID: <521181AD.7090700@huawei.com>
+Subject: Re: [PATCH cgroup/for-3.12 2/2] cgroup: fix
+	cgroup_write_event_control()
+Date: Mon, 19 Aug 2013 10:41:55 +0800
+Message-ID: <521185F3.6060806@huawei.com>
 References: <20130815154236.GG14606@htj.dyndns.org>
+	<20130815154315.GH14606@htj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20130815154236.GG14606-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
+In-Reply-To: <20130815154315.GH14606-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,28 +23,23 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-> 105347ba5 ("cgroup: make cgroup_file_open() rcu_read_lock() around
-> cgroup_css() and add cfent->css") added cfent->css to cache the
-> associted cgroup_subsys_state across file operations.
+On 2013/8/15 23:43, Tejun Heo wrote:
+>>From ced043264c9c3f03ab3c992af17461db50421dd8 Mon Sep 17 00:00:00 2001
+> From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> Date: Thu, 15 Aug 2013 11:37:54 -0400
 > 
-> A cfent is associated with single css throughout its lifetime and the
-> origimal commit initialized the cache pointer during cgroup_add_file()
-> and verified that it matches the actual one in cgroup_file_open().
-> While this works fine for !root cgroups, it's broken for root cgroups
-> as files in a root cgroup are created before the css's are associated
-> with the cgroup and thus cgroup_css() call in cgroup_add_file()
-> returns NULL associating all cfents in the root cgroup with NULL css.
-> This makes cgroup_file_open() trigger WARN and fail with -ENODEV for
-> all !core subsystem files in the root cgroups.
+> 81eeaf0411 ("cgroup: make cftype->[un]register_event() deal with
+> cgroup_subsys_state inst ead of cgroup") updated the cftype event
+> methods to take @css (cgroup_subsys_state) instead of @cgroup;
+> however, it incorrectly used @css passed to
+> cgroup_write_event_control(), which the dummy_css for the cgroup as
+> the file is a cgroup core file.  This leads to oops on event
+> registration.
 > 
-> There's no reason to initialize cfent->css separately from
-> cgroup_add_file().  As the association never changes,
-> cgroup_file_open() can set it unconditionally every time and
-> containing the logic in cgroup_file_open() makes more sense anyway as
-> the only reason it's necessary is file->private_data being already
-> occupied.
-> 
-> Fix it by setting cfent->css unconditionally from cgroup_file_open().
+> Fix it by using the css matching the event target file.  Note that
+> cgroup_write_event_control() now disallows cgroup core files from
+> being event sources.  This is for simplicity and doesn't matter as
+> cgroup_event will be moved and made specific to memcg.
 > 
 > Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 
