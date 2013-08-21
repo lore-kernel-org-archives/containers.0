@@ -1,8 +1,8 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 01/11] cgroup: allow subsystems to create files for
-	sane_behavior only
-Date: Wed, 21 Aug 2013 17:58:58 +0800
-Message-ID: <52148F62.5060409__19901.7407525846$1377079167$gmane$org@huawei.com>
+Subject: [PATCH 03/11] cpuset: update cpuset->real_{cpus,mems}_allowed at
+	hotplug
+Date: Wed, 21 Aug 2013 17:59:23 +0800
+Message-ID: <52148F7B.7040302__37291.4202780978$1377079191$gmane$org@huawei.com>
 References: <52148F52.0@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,38 +22,62 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-So we can add new cgroupfs interfaces for sane_behavior only.
+We're going to have separate user-configured masks and effective ones.
+
+At last configured masks can only be changed by writing cpuset.cpus
+and cpuset.mems, and they won't be restricted by parent cpuset. While
+effective masks reflect cpu/memory hotplug and hierachical restriction.
+
+This is a preparation to make real_{cpus,mems}_allowed to be effective
+masks of the cpuset:
+
+- change the effective masks at hotplug: done
+- change the effective masks at config change: todo
+- take on ancestor's mask when the effective mask is empty: todo
+
+This won't introduce behavior change.
 
 Signed-off-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/cgroup.h | 1 +
- kernel/cgroup.c        | 2 ++
- 2 files changed, 3 insertions(+)
+ kernel/cpuset.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 3aac34d..7ba7764 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -411,6 +411,7 @@ enum {
- 	CFTYPE_ONLY_ON_ROOT	= (1 << 0),	/* only create on root cgrp */
- 	CFTYPE_NOT_ON_ROOT	= (1 << 1),	/* don't create on root cgrp */
- 	CFTYPE_INSANE		= (1 << 2),	/* don't create if sane_behavior */
-+	CFTYPE_SANE		= (1 << 3),	/* only create if sane_behavior */
- };
+diff --git a/kernel/cpuset.c b/kernel/cpuset.c
+index 404fea5..ab89c1e 100644
+--- a/kernel/cpuset.c
++++ b/kernel/cpuset.c
+@@ -2185,6 +2185,8 @@ retry:
  
- #define MAX_CFTYPE_NAME		64
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 737d752..6c770ee 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -2809,6 +2809,8 @@ static int cgroup_addrm_files(struct cgroup *cgrp, struct cftype cfts[],
- 		/* does cft->flags tell us to skip this file on @cgrp? */
- 		if ((cft->flags & CFTYPE_INSANE) && cgroup_sane_behavior(cgrp))
- 			continue;
-+		if ((cft->flags & CFTYPE_SANE) && !cgroup_sane_behavior(cgrp))
-+			continue;
- 		if ((cft->flags & CFTYPE_NOT_ON_ROOT) && !cgrp->parent)
- 			continue;
- 		if ((cft->flags & CFTYPE_ONLY_ON_ROOT) && cgrp->parent)
+ 	mutex_lock(&callback_mutex);
+ 	cpumask_andnot(cs->cpus_allowed, cs->cpus_allowed, &off_cpus);
++	cpumask_andnot(cs->real_cpus_allowed, cs->real_cpus_allowed,
++		       &off_cpus);
+ 	mutex_unlock(&callback_mutex);
+ 
+ 	/*
+@@ -2199,6 +2201,7 @@ retry:
+ 
+ 	mutex_lock(&callback_mutex);
+ 	nodes_andnot(cs->mems_allowed, cs->mems_allowed, off_mems);
++	nodes_andnot(cs->real_mems_allowed, cs->real_mems_allowed, off_mems);
+ 	mutex_unlock(&callback_mutex);
+ 
+ 	/*
+@@ -2262,6 +2265,7 @@ static void cpuset_hotplug_workfn(struct work_struct *work)
+ 	if (cpus_updated) {
+ 		mutex_lock(&callback_mutex);
+ 		cpumask_copy(top_cpuset.cpus_allowed, &new_cpus);
++		cpumask_copy(top_cpuset.real_cpus_allowed, &new_cpus);
+ 		mutex_unlock(&callback_mutex);
+ 		/* we don't mess with cpumasks of tasks in top_cpuset */
+ 	}
+@@ -2270,6 +2274,7 @@ static void cpuset_hotplug_workfn(struct work_struct *work)
+ 	if (mems_updated) {
+ 		mutex_lock(&callback_mutex);
+ 		top_cpuset.mems_allowed = new_mems;
++		top_cpuset.real_mems_allowed = new_mems;
+ 		mutex_unlock(&callback_mutex);
+ 		update_tasks_nodemask(&top_cpuset, NULL);
+ 	}
 -- 
 1.8.0.2
