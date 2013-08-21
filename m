@@ -1,8 +1,7 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 05/11] cpuset: inherite ancestor's masks if real_{cpus,
-	mems}_allowed become empty
-Date: Wed, 21 Aug 2013 17:59:44 +0800
-Message-ID: <52148F90.7070809@huawei.com>
+Subject: [PATCH 07/11] cpuset: use effective cpumask to build sched domains
+Date: Wed, 21 Aug 2013 18:00:09 +0800
+Message-ID: <52148FA9.806@huawei.com>
 References: <52148F52.0@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,95 +21,88 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-We're going to have separate user-configured masks and effective ones.
-
-At last configured masks can only be changed by writing cpuset.cpus
-and cpuset.mems, and they won't be restricted by parent cpuset. While
-effective masks reflect cpu/memory hotplug and hierachical restriction.
-
-This is a preparation to make real_{cpus,mems}_allowed to be effective
-masks of the cpuset:
-
-- change the effective masks at hotplug: done
-- change the effective masks at config change: done
-- take on ancestor's mask when the effective mask is empty: done
+We're going to have separate user-configured masks and effective ones,
+and configured masks won't be restricted by the parent, so we should
+use effective masks to build sched domains.
 
 This won't introduce behavior change.
 
 Signed-off-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 ---
- kernel/cpuset.c | 33 +++++++++++++++++++++++----------
- 1 file changed, 23 insertions(+), 10 deletions(-)
+ kernel/cpuset.c | 19 ++++++++++++-------
+ 1 file changed, 12 insertions(+), 7 deletions(-)
 
 diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index 72afef4..b7b63dd 100644
+index 0de15eb..e7ad4a7 100644
 --- a/kernel/cpuset.c
 +++ b/kernel/cpuset.c
-@@ -904,12 +904,14 @@ static void update_cpumasks_hier(struct cpuset *cs, struct cpuset *trialcs,
- 			    parent->real_cpus_allowed);
+@@ -500,11 +500,11 @@ out:
+ #ifdef CONFIG_SMP
+ /*
+  * Helper routine for generate_sched_domains().
+- * Do cpusets a, b have overlapping cpus_allowed masks?
++ * Do cpusets a, b have overlapping effective cpus_allowed masks?
+  */
+ static int cpusets_overlap(struct cpuset *a, struct cpuset *b)
+ {
+-	return cpumask_intersects(a->cpus_allowed, b->cpus_allowed);
++	return cpumask_intersects(a->real_cpus_allowed, b->real_cpus_allowed);
+ }
  
- 		/*
--		 * Skip the whole subtree if the cpumask is not changed, unless
--		 * it's empty, and in this case we need to update tasks to take
--		 * on an ancestor's cpumask.
-+		 * If it becomes empty, inherite the effective mask of the
-+		 * parent, which is guarantted to have some CPUs.
- 		 */
--		if (cpumask_equal(new_cpus, cp->real_cpus_allowed) &&
--		    ((cp == cs) || !cpumask_empty(new_cpus))) {
-+		if (cpumask_empty(new_cpus))
-+			cpumask_copy(new_cpus, parent->real_cpus_allowed);
-+
-+		/* Skip the whole subtree if the cpumask is not changed. */
-+		if (cpumask_equal(new_cpus, cp->real_cpus_allowed)) {
- 			pos_css = css_rightmost_descendant(pos_css);
- 			continue;
+ static void
+@@ -621,7 +621,7 @@ static int generate_sched_domains(cpumask_var_t **domains,
+ 			*dattr = SD_ATTR_INIT;
+ 			update_domain_attr_tree(dattr, &top_cpuset);
  		}
-@@ -1168,12 +1170,14 @@ static void update_nodemasks_hier(struct cpuset *cs, struct cpuset *trialcs,
- 			  parent->real_mems_allowed);
+-		cpumask_copy(doms[0], top_cpuset.cpus_allowed);
++		cpumask_copy(doms[0], top_cpuset.real_cpus_allowed);
  
- 		/*
--		 * Skip the whole subtree if the nodemask is not changed, unless
--		 * it's empty, and in this case we need to update tasks to take
--		 * on an ancestor's nodemask.
-+		 * If it becoms empty, inherite the effective mask of the
-+		 * parent, which is guaranteed to have some MEMs.
- 		 */
--		if (nodes_equal(*new_mems, cp->real_mems_allowed) &&
--		    ((cp == cs) || !nodes_empty(*new_mems))) {
-+		if (nodes_empty(*new_mems))
-+			*new_mems = parent->real_mems_allowed;
+ 		goto done;
+ 	}
+@@ -728,7 +728,7 @@ restart:
+ 			struct cpuset *b = csa[j];
+ 
+ 			if (apn == b->pn) {
+-				cpumask_or(dp, dp, b->cpus_allowed);
++				cpumask_or(dp, dp, b->real_cpus_allowed);
+ 				if (dattr)
+ 					update_domain_attr_tree(dattr + nslot, b);
+ 
+@@ -854,6 +854,7 @@ static void update_cpumasks_hier(struct cpuset *cs, struct cpuset *trialcs,
+ {
+ 	struct cgroup_subsys_state *pos_css;
+ 	struct cpuset *cp;
++	bool need_rebuild_sched_domains = false;
+ 
+ 	rcu_read_lock();
+ 	cpuset_for_each_descendant_pre(cp, pos_css, cs) {
+@@ -887,10 +888,17 @@ static void update_cpumasks_hier(struct cpuset *cs, struct cpuset *trialcs,
+ 
+ 		update_tasks_cpumask(cp, heap);
+ 
++		if (!cpumask_empty(cp->cpus_allowed) &&
++		    is_sched_load_balance(cp))
++			need_rebuild_sched_domains = true;
 +
-+		/* Skip the whole subtree if the nodemask is not changed. */
-+		if (nodes_equal(*new_mems, cp->real_mems_allowed)) {
- 			pos_css = css_rightmost_descendant(pos_css);
- 			continue;
- 		}
-@@ -2202,8 +2206,13 @@ retry:
- 
- 	mutex_lock(&callback_mutex);
- 	cpumask_andnot(cs->cpus_allowed, cs->cpus_allowed, &off_cpus);
+ 		rcu_read_lock();
+ 		css_put(&cp->css);
+ 	}
+ 	rcu_read_unlock();
 +
- 	cpumask_andnot(cs->real_cpus_allowed, cs->real_cpus_allowed,
- 		       &off_cpus);
-+	/* Inherite the effective mask of the parent, if it becomes empty */
-+	if (cpumask_empty(cs->real_cpus_allowed))
-+		cpumask_copy(cs->real_cpus_allowed,
-+			     parent_cs(cs)->real_cpus_allowed);
- 	mutex_unlock(&callback_mutex);
++	if (need_rebuild_sched_domains)
++		rebuild_sched_domains_locked();
+ }
  
- 	/*
-@@ -2218,7 +2227,11 @@ retry:
+ /**
+@@ -944,9 +952,6 @@ static int update_cpumask(struct cpuset *cs, struct cpuset *trialcs,
+ 	update_cpumasks_hier(cs, trialcs, &heap);
  
- 	mutex_lock(&callback_mutex);
- 	nodes_andnot(cs->mems_allowed, cs->mems_allowed, off_mems);
-+
- 	nodes_andnot(cs->real_mems_allowed, cs->real_mems_allowed, off_mems);
-+	/* Inherite the effective mask of the parent, if it becomes empty */
-+	if (nodes_empty(cs->real_mems_allowed))
-+		cs->real_mems_allowed = parent_cs(cs)->real_mems_allowed;
- 	mutex_unlock(&callback_mutex);
+ 	heap_free(&heap);
+-
+-	if (is_sched_load_balance(cs))
+-		rebuild_sched_domains_locked();
+ 	return 0;
+ }
  
- 	/*
 -- 
 1.8.0.2
