@@ -1,11 +1,14 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 00/11] cpuset: separate configured masks and effective masks
-Date: Wed, 21 Aug 2013 17:58:42 +0800
-Message-ID: <52148F52.0__36027.1373334855$1377079149$gmane$org@huawei.com>
+Subject: [PATCH 01/11] cgroup: allow subsystems to create files for
+	sane_behavior only
+Date: Wed, 21 Aug 2013 17:58:58 +0800
+Message-ID: <52148F62.5060409__19901.7407525846$1377079167$gmane$org@huawei.com>
+References: <52148F52.0@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <52148F52.0-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,42 +22,38 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patcheset introduces behavior changes, but only if you mount cgroupfs
-with sane_behavior option:
+So we can add new cgroupfs interfaces for sane_behavior only.
 
-- We introduce new interfaces cpuset.effective_cpus and cpuset.effective_mems,
-  while cpuset.cpus and cpuset.mems will be configured masks.
+Signed-off-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+---
+ include/linux/cgroup.h | 1 +
+ kernel/cgroup.c        | 2 ++
+ 2 files changed, 3 insertions(+)
 
-- The configured masks can be changed by writing cpuset.cpus/mems only. They
-  won't be changed when hotplug happens.
-
-- Users can config cpus and mems without restrictions from the parent cpuset.
-  effective masks will enforce the hierarchical behavior.
-
-- Users can also config cpus and mems to have already offlined CPU/nodes.
-
-- When a CPU/node is onlined, it will be brought back to the effective masks
-  if it's in the configured masks.
-
-- We build sched domains based on effective cpumask but not configured cpumask.
-
-Li Zefan (11):
-  cgroup: allow subsystems to create files for sane_behavior only
-  cpuset: add cs->real_cpus_allowed and cs->real_mems_allowed
-  cpuset: update cpuset->real_{cpus,mems}_allowed at hotplug
-  cpuset: update cs->real_{cpus,mems}_allowed when config changes
-  cpuset: inherite ancestor's masks if real_{cpus,mems}_allowed become empty
-  cpuset: apply cs->real_{cpus,mems}_allowed
-  cpuset: use effective cpumask to build sched domains
-  cpuset: separate configured masks and efffective masks
-  cpuset: enable onlined cpu/node in effective masks
-  cpuset: allow writing offlined masks to cpuset.cpus/mems
-  cpuset: export effective masks to userspace
-
- include/linux/cgroup.h |   1 +
- kernel/cgroup.c        |   2 +
- kernel/cpuset.c        | 466 ++++++++++++++++++++++++++++---------------------
- 3 files changed, 271 insertions(+), 198 deletions(-)
-
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 3aac34d..7ba7764 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -411,6 +411,7 @@ enum {
+ 	CFTYPE_ONLY_ON_ROOT	= (1 << 0),	/* only create on root cgrp */
+ 	CFTYPE_NOT_ON_ROOT	= (1 << 1),	/* don't create on root cgrp */
+ 	CFTYPE_INSANE		= (1 << 2),	/* don't create if sane_behavior */
++	CFTYPE_SANE		= (1 << 3),	/* only create if sane_behavior */
+ };
+ 
+ #define MAX_CFTYPE_NAME		64
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 737d752..6c770ee 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -2809,6 +2809,8 @@ static int cgroup_addrm_files(struct cgroup *cgrp, struct cftype cfts[],
+ 		/* does cft->flags tell us to skip this file on @cgrp? */
+ 		if ((cft->flags & CFTYPE_INSANE) && cgroup_sane_behavior(cgrp))
+ 			continue;
++		if ((cft->flags & CFTYPE_SANE) && !cgroup_sane_behavior(cgrp))
++			continue;
+ 		if ((cft->flags & CFTYPE_NOT_ON_ROOT) && !cgrp->parent)
+ 			continue;
+ 		if ((cft->flags & CFTYPE_ONLY_ON_ROOT) && cgrp->parent)
 -- 
 1.8.0.2
