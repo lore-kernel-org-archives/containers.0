@@ -1,8 +1,7 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 02/11] cpuset: add cs->real_cpus_allowed and
-	cs->real_mems_allowed
-Date: Wed, 21 Aug 2013 17:59:11 +0800
-Message-ID: <52148F6F.4070507__27633.639452006$1377079363$gmane$org@huawei.com>
+Subject: [PATCH 11/11] cpuset: export effective masks to userspace
+Date: Wed, 21 Aug 2013 18:01:32 +0800
+Message-ID: <52148FFC.4080701@huawei.com>
 References: <52148F52.0@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,152 +21,107 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-We're going to have separate user-configured masks and effective ones.
+cpuset.cpus and cpuset.mems are the configured masks, and we need
+to export effective masks to userspace, so users know the real
+cpus_allowed and mems_allowed that apply to the tasks in a cpuset.
 
-At last configured masks can only be changed by writing cpuset.cpus
-and cpuset.mems, and they won't be restricted by parent cpuset. While
-effective masks reflect cpu/memory hotplug and hierachical restriction.
-
-This patch adds and initializes the effective masks. The effective
-masks of the top cpuset is the same with configured masks, and a child
-cpuset inherites its parent's effective masks.
-
-This won't introduce behavior change.
+cpuset.effective_cpus and cpuset.effective_mems will be created for
+sane_behavior only.
 
 Signed-off-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 ---
- kernel/cpuset.c | 57 ++++++++++++++++++++++++++++++++++++++++++++++-----------
- 1 file changed, 46 insertions(+), 11 deletions(-)
+ kernel/cpuset.c | 36 ++++++++++++++++++++++++++++++------
+ 1 file changed, 30 insertions(+), 6 deletions(-)
 
 diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index 70ab3fd..404fea5 100644
+index c302979..a4f3483 100644
 --- a/kernel/cpuset.c
 +++ b/kernel/cpuset.c
-@@ -81,8 +81,14 @@ struct cpuset {
- 	struct cgroup_subsys_state css;
- 
- 	unsigned long flags;		/* "unsigned long" so bitops work */
--	cpumask_var_t cpus_allowed;	/* CPUs allowed to tasks in cpuset */
--	nodemask_t mems_allowed;	/* Memory Nodes allowed to tasks */
-+
-+	/* user-configured CPUs and Memory Nodes allow to tasks */
-+	cpumask_var_t cpus_allowed;
-+	nodemask_t mems_allowed;
-+
-+	/* effective CPUs and Memory Nodes allow to tasks */
-+	cpumask_var_t real_cpus_allowed;
-+	nodemask_t real_mems_allowed;
- 
- 	/*
- 	 * This is old Memory Nodes tasks took on.
-@@ -381,13 +387,20 @@ static struct cpuset *alloc_trial_cpuset(struct cpuset *cs)
- 	if (!trial)
- 		return NULL;
- 
--	if (!alloc_cpumask_var(&trial->cpus_allowed, GFP_KERNEL)) {
--		kfree(trial);
--		return NULL;
--	}
--	cpumask_copy(trial->cpus_allowed, cs->cpus_allowed);
-+	if (!alloc_cpumask_var(&trial->cpus_allowed, GFP_KERNEL))
-+		goto free_cs;
-+	if (!alloc_cpumask_var(&trial->real_cpus_allowed, GFP_KERNEL))
-+		goto free_cpus;
- 
-+	cpumask_copy(trial->cpus_allowed, cs->cpus_allowed);
-+	cpumask_copy(trial->real_cpus_allowed, cs->real_cpus_allowed);
- 	return trial;
-+
-+free_cpus:
-+	free_cpumask_var(trial->cpus_allowed);
-+free_cs:
-+	kfree(trial);
-+	return NULL;
- }
- 
- /**
-@@ -396,6 +409,7 @@ static struct cpuset *alloc_trial_cpuset(struct cpuset *cs)
+@@ -1583,6 +1583,8 @@ typedef enum {
+ 	FILE_MEMORY_MIGRATE,
+ 	FILE_CPULIST,
+ 	FILE_MEMLIST,
++	FILE_EFFECTIVE_CPULIST,
++	FILE_EFFECTIVE_MEMLIST,
+ 	FILE_CPU_EXCLUSIVE,
+ 	FILE_MEM_EXCLUSIVE,
+ 	FILE_MEM_HARDWALL,
+@@ -1731,23 +1733,23 @@ out_unlock:
+  * across a page fault.
   */
- static void free_trial_cpuset(struct cpuset *trial)
+ 
+-static size_t cpuset_sprintf_cpulist(char *page, struct cpuset *cs)
++static size_t cpuset_sprintf_cpulist(char *page, struct cpumask *pmask)
  {
-+	free_cpumask_var(trial->real_cpus_allowed);
- 	free_cpumask_var(trial->cpus_allowed);
- 	kfree(trial);
- }
-@@ -1949,18 +1963,26 @@ cpuset_css_alloc(struct cgroup_subsys_state *parent_css)
- 	cs = kzalloc(sizeof(*cs), GFP_KERNEL);
- 	if (!cs)
- 		return ERR_PTR(-ENOMEM);
--	if (!alloc_cpumask_var(&cs->cpus_allowed, GFP_KERNEL)) {
--		kfree(cs);
--		return ERR_PTR(-ENOMEM);
--	}
-+	if (!alloc_cpumask_var(&cs->cpus_allowed, GFP_KERNEL))
-+		goto free_cs;
-+	if (!alloc_cpumask_var(&cs->real_cpus_allowed, GFP_KERNEL))
-+		goto free_cpus;
+ 	size_t count;
  
- 	set_bit(CS_SCHED_LOAD_BALANCE, &cs->flags);
- 	cpumask_clear(cs->cpus_allowed);
- 	nodes_clear(cs->mems_allowed);
-+	cpumask_clear(cs->real_cpus_allowed);
-+	nodes_clear(cs->real_mems_allowed);
- 	fmeter_init(&cs->fmeter);
- 	cs->relax_domain_level = -1;
+ 	mutex_lock(&callback_mutex);
+-	count = cpulist_scnprintf(page, PAGE_SIZE, cs->cpus_allowed);
++	count = cpulist_scnprintf(page, PAGE_SIZE, pmask);
+ 	mutex_unlock(&callback_mutex);
  
- 	return &cs->css;
-+
-+free_cpus:
-+	free_cpumask_var(cs->cpus_allowed);
-+free_cs:
-+	kfree(cs);
-+	return ERR_PTR(-ENOMEM);
+ 	return count;
  }
  
- static int cpuset_css_online(struct cgroup_subsys_state *css)
-@@ -1983,6 +2005,11 @@ static int cpuset_css_online(struct cgroup_subsys_state *css)
- 
- 	number_of_cpusets++;
- 
-+	mutex_lock(&callback_mutex);
-+	cpumask_copy(cs->real_cpus_allowed, parent->real_cpus_allowed);
-+	cs->real_mems_allowed = parent->real_mems_allowed;
-+	mutex_unlock(&callback_mutex);
-+
- 	if (!test_bit(CGRP_CPUSET_CLONE_CHILDREN, &css->cgroup->flags))
- 		goto out_unlock;
- 
-@@ -2042,6 +2069,7 @@ static void cpuset_css_free(struct cgroup_subsys_state *css)
+-static size_t cpuset_sprintf_memlist(char *page, struct cpuset *cs)
++static size_t cpuset_sprintf_memlist(char *page, nodemask_t mask)
  {
- 	struct cpuset *cs = css_cs(css);
+ 	size_t count;
  
-+	free_cpumask_var(cs->real_cpus_allowed);
- 	free_cpumask_var(cs->cpus_allowed);
- 	kfree(cs);
- }
-@@ -2072,9 +2100,13 @@ int __init cpuset_init(void)
+ 	mutex_lock(&callback_mutex);
+-	count = nodelist_scnprintf(page, PAGE_SIZE, cs->mems_allowed);
++	count = nodelist_scnprintf(page, PAGE_SIZE, mask);
+ 	mutex_unlock(&callback_mutex);
  
- 	if (!alloc_cpumask_var(&top_cpuset.cpus_allowed, GFP_KERNEL))
- 		BUG();
-+	if (!alloc_cpumask_var(&top_cpuset.real_cpus_allowed, GFP_KERNEL))
-+		BUG();
+ 	return count;
+@@ -1771,10 +1773,16 @@ static ssize_t cpuset_common_file_read(struct cgroup_subsys_state *css,
  
- 	cpumask_setall(top_cpuset.cpus_allowed);
- 	nodes_setall(top_cpuset.mems_allowed);
-+	cpumask_setall(top_cpuset.real_cpus_allowed);
-+	nodes_setall(top_cpuset.real_mems_allowed);
+ 	switch (type) {
+ 	case FILE_CPULIST:
+-		s += cpuset_sprintf_cpulist(s, cs);
++		s += cpuset_sprintf_cpulist(s, cs->cpus_allowed);
+ 		break;
+ 	case FILE_MEMLIST:
+-		s += cpuset_sprintf_memlist(s, cs);
++		s += cpuset_sprintf_memlist(s, cs->mems_allowed);
++		break;
++	case FILE_EFFECTIVE_CPULIST:
++		s += cpuset_sprintf_cpulist(s, cs->real_cpus_allowed);
++		break;
++	case FILE_EFFECTIVE_MEMLIST:
++		s += cpuset_sprintf_memlist(s, cs->real_mems_allowed);
+ 		break;
+ 	default:
+ 		retval = -EINVAL;
+@@ -1849,6 +1857,14 @@ static struct cftype files[] = {
+ 	},
  
- 	fmeter_init(&top_cpuset.fmeter);
- 	set_bit(CS_SCHED_LOAD_BALANCE, &top_cpuset.flags);
-@@ -2312,6 +2344,9 @@ void __init cpuset_init_smp(void)
- 	top_cpuset.mems_allowed = node_states[N_MEMORY];
- 	top_cpuset.old_mems_allowed = top_cpuset.mems_allowed;
- 
-+	cpumask_copy(top_cpuset.real_cpus_allowed, cpu_active_mask);
-+	top_cpuset.real_mems_allowed = node_states[N_MEMORY];
+ 	{
++		.name = "effective_cpus",
++		.flags = CFTYPE_SANE,
++		.read = cpuset_common_file_read,
++		.max_write_len = (100U + 6 * NR_CPUS),
++		.private = FILE_EFFECTIVE_CPULIST,
++	},
 +
- 	register_hotmemory_notifier(&cpuset_track_online_nodes_nb);
- }
++	{
+ 		.name = "mems",
+ 		.read = cpuset_common_file_read,
+ 		.write_string = cpuset_write_resmask,
+@@ -1857,6 +1873,14 @@ static struct cftype files[] = {
+ 	},
  
+ 	{
++		.name = "effective_mems",
++		.flags = CFTYPE_SANE,
++		.read = cpuset_common_file_read,
++		.max_write_len = (100U + 6 * MAX_NUMNODES),
++		.private = FILE_EFFECTIVE_MEMLIST,
++	},
++
++	{
+ 		.name = "cpu_exclusive",
+ 		.read_u64 = cpuset_read_u64,
+ 		.write_u64 = cpuset_write_u64,
 -- 
 1.8.0.2
