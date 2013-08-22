@@ -1,11 +1,14 @@
-From: Oren Laadan <orenl-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org>
-Subject: RFC: Device Namespaces
-Date: Thu, 22 Aug 2013 13:43:06 -0400
-Message-ID: <CAA4jN2aw4zEW=UfKCyqaOvXnbiRb_J9srfCn4OXTFzc6vWBM4A@mail.gmail.com>
+From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: RFC: Device Namespaces
+Date: Thu, 22 Aug 2013 13:21:18 -0500
+Message-ID: <20130822182118.GA28331@sergelap>
+References: <CAA4jN2aw4zEW=UfKCyqaOvXnbiRb_J9srfCn4OXTFzc6vWBM4A@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <CAA4jN2aw4zEW=UfKCyqaOvXnbiRb_J9srfCn4OXTFzc6vWBM4A-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,65 +18,42 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: lxc-devel <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
+To: Oren Laadan <orenl-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lxc-devel <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi everyone!
-
-We [1] have been working on bringing lightweight virtualization to
-Linux-based mobile devices like Android (or other Linux-based devices with
-diverse I/O) and want to share our solution: device namespaces.
-
-Imagine you could run several instances of your favorite mobile OS or other
-distributions in isolated containers, each under the impression of having
-exclusive access to device drivers; Interact and switch between them within
-a blink, no flashing, no reboot.
-
-Device namespaces are an extension to existing Linux kernel namespaces that
-brings lightweight virtualization to Linux-based end-user devices,
-primarily mobile devices.
-Device namespaces introduce a private and virtual namespace for device
-drivers to create the illusion for a process group that it interacts
-exclusively with a set of drivers. Device namespaces also introduce the
-concepts of an =93active=94 namespace with which a user interacts, vs
-=93non-active=94 namespaces that run in the background, and the ability to
-switch between them.[2]
-
-We are planning to prepare individual patches to be submitted to the
-relevant maintainers and mailing lists. In the meantime, we already want to
-share a set of patches on top of the Android goldfish Kernel 3.4 as well as
-a user-space demo, so you can see where we are heading and get an overview
-of the approach and see how it works.
-
-We are aware that the patches are not ready for submission in their current
-state, and we'd highly appreciate any feedback or suggestions which may
-come to your mind once you have a look [3]. Of particular interest is to
-elaborate a proper userspace API with respect to existing and future
-use-cases. To illustrate a simple use-case we also provide a simple
-userspace demo for Android [4].
-
-I will be presenting "The Case for Linux Device Namespace" [5] at LinuxCon
-North America 2013 [6]. We will also be attending the Containers Track [7]
-at LPC 2013 to present the current state of the patches and discuss the
-best course to proceed.
-
-We are looking forward to hear from you!
-
-Thanks,
-
-Oren.
-
-
-1: http://www.cellrox.com/
-2: https://github.com/Cellrox/devns-patches/wiki/DeviceNamespace
-3: https://github.com/Cellrox/devns-patches
-4: https://github.com/Cellrox/devns-demo
-5: http://sched.co/1asN1v7
-6: http://events.linuxfoundation.org/events/linuxcon-north-america
-7: http://www.linuxplumbersconf.org/2013/ocw/events/LPC2013/tracks/153
-
--- =
-
- Oren Laadan
- Cellrox Ltd.
+UXVvdGluZyBPcmVuIExhYWRhbiAob3JlbmxAY2VsbHJveC5jb20pOgo+IEhpIGV2ZXJ5b25lIQo+
+IAo+IFdlIFsxXSBoYXZlIGJlZW4gd29ya2luZyBvbiBicmluZ2luZyBsaWdodHdlaWdodCB2aXJ0
+dWFsaXphdGlvbiB0bwo+IExpbnV4LWJhc2VkIG1vYmlsZSBkZXZpY2VzIGxpa2UgQW5kcm9pZCAo
+b3Igb3RoZXIgTGludXgtYmFzZWQgZGV2aWNlcyB3aXRoCj4gZGl2ZXJzZSBJL08pIGFuZCB3YW50
+IHRvIHNoYXJlIG91ciBzb2x1dGlvbjogZGV2aWNlIG5hbWVzcGFjZXMuCj4gCj4gSW1hZ2luZSB5
+b3UgY291bGQgcnVuIHNldmVyYWwgaW5zdGFuY2VzIG9mIHlvdXIgZmF2b3JpdGUgbW9iaWxlIE9T
+IG9yIG90aGVyCj4gZGlzdHJpYnV0aW9ucyBpbiBpc29sYXRlZCBjb250YWluZXJzLCBlYWNoIHVu
+ZGVyIHRoZSBpbXByZXNzaW9uIG9mIGhhdmluZwo+IGV4Y2x1c2l2ZSBhY2Nlc3MgdG8gZGV2aWNl
+IGRyaXZlcnM7IEludGVyYWN0IGFuZCBzd2l0Y2ggYmV0d2VlbiB0aGVtIHdpdGhpbgo+IGEgYmxp
+bmssIG5vIGZsYXNoaW5nLCBubyByZWJvb3QuCj4gCj4gRGV2aWNlIG5hbWVzcGFjZXMgYXJlIGFu
+IGV4dGVuc2lvbiB0byBleGlzdGluZyBMaW51eCBrZXJuZWwgbmFtZXNwYWNlcyB0aGF0Cj4gYnJp
+bmdzIGxpZ2h0d2VpZ2h0IHZpcnR1YWxpemF0aW9uIHRvIExpbnV4LWJhc2VkIGVuZC11c2VyIGRl
+dmljZXMsCj4gcHJpbWFyaWx5IG1vYmlsZSBkZXZpY2VzLgo+IERldmljZSBuYW1lc3BhY2VzIGlu
+dHJvZHVjZSBhIHByaXZhdGUgYW5kIHZpcnR1YWwgbmFtZXNwYWNlIGZvciBkZXZpY2UKPiBkcml2
+ZXJzIHRvIGNyZWF0ZSB0aGUgaWxsdXNpb24gZm9yIGEgcHJvY2VzcyBncm91cCB0aGF0IGl0IGlu
+dGVyYWN0cwo+IGV4Y2x1c2l2ZWx5IHdpdGggYSBzZXQgb2YgZHJpdmVycy4gRGV2aWNlIG5hbWVz
+cGFjZXMgYWxzbyBpbnRyb2R1Y2UgdGhlCj4gY29uY2VwdHMgb2YgYW4g4oCcYWN0aXZl4oCdIG5h
+bWVzcGFjZSB3aXRoIHdoaWNoIGEgdXNlciBpbnRlcmFjdHMsIHZzCj4g4oCcbm9uLWFjdGl2ZeKA
+nSBuYW1lc3BhY2VzIHRoYXQgcnVuIGluIHRoZSBiYWNrZ3JvdW5kLCBhbmQgdGhlIGFiaWxpdHkg
+dG8KPiBzd2l0Y2ggYmV0d2VlbiB0aGVtLlsyXQoKTm90ZSB0aGF0IHVubGVzcyBJJ20gbWlzdW5k
+ZXJzdGFuZGluZyB3aGF0IHlvdSdyZSBzYXlpbmcgaGVyZSwgdGhpcyBpcwphbHNvIHdoYXQgbmV0
+X25zIGRvZXMuICBBIG5ldG5zIGNhbiBleGlzdCB3aXRoIG5vIHByb2Nlc3NlcyBzbyBsb25nIGFz
+CnlvdSd2ZSBib3VuZCBpdHMgL3Byb2MvJCQvbnMvbmV0IHNvbWV3aGVyZS4gIFlvdSBjYW4gdGhl
+biByZS1lbnRlciB0aGF0Cm5zIHVzaW5nIG5zX2F0dGFjaC4gIEkgaGF2ZW4ndCBsb29rZWQgY2xv
+c2VseSBlbm91Z2ggeWV0IHRvIHNlZSB3aGV0aGVyCnlvdSBzaG91bGQgYmUgKG9yIGFyZSkgdXNp
+bmcgdGhlIHNhbWUgaW50ZXJmYWNlLgoKPiBXZSBhcmUgcGxhbm5pbmcgdG8gcHJlcGFyZSBpbmRp
+dmlkdWFsIHBhdGNoZXMgdG8gYmUgc3VibWl0dGVkIHRvIHRoZQoKTG9va2luZyBmb3J3YXJkIHRv
+IGl0LCBhbmQgc2VlaW5nIHlvdSBhdCB0aGUgY29udGFpbmVycyB0cmFjayAgOikKCj4gMjogaHR0
+cHM6Ly9naXRodWIuY29tL0NlbGxyb3gvZGV2bnMtcGF0Y2hlcy93aWtpL0RldmljZU5hbWVzcGFj
+ZQo+IDM6IGh0dHBzOi8vZ2l0aHViLmNvbS9DZWxscm94L2Rldm5zLXBhdGNoZXMKPiA0OiBodHRw
+czovL2dpdGh1Yi5jb20vQ2VsbHJveC9kZXZucy1kZW1vCgooSGF2ZSBsb29rZWQgb3ZlciB0aGUg
+d2lraSwgd2lsbCBsb29rIG92ZXIgdGhlIHBhdGNoZXMgYXMgd2VsbCkKCi1zZXJnZQpfX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxp
+bmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlz
+dHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
