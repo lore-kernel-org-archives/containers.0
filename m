@@ -1,17 +1,11 @@
-From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH] netns: unix: only allow to find out unix socket in same
-	net namespace
-Date: Thu, 22 Aug 2013 09:36:35 +0800
-Message-ID: <52156B23.7050208__4095.39882462031$1377138049$gmane$org@cn.fujitsu.com>
-References: <1377059473-25526-1-git-send-email-gaofeng@cn.fujitsu.com>
-	<87d2p7vcdx.fsf@xmission.com> <5214641C.9030902@cn.fujitsu.com>
-	<87wqnfttdf.fsf@xmission.com> <52146AC2.5070409@cn.fujitsu.com>
-	<87haejtjet.fsf@xmission.com>
+From: Oren Laadan <orenl-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org>
+Subject: RFC: Device Namespaces
+Date: Thu, 22 Aug 2013 13:43:06 -0400
+Message-ID: <CAA4jN2aw4zEW=UfKCyqaOvXnbiRb_J9srfCn4OXTFzc6vWBM4A@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87haejtjet.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,27 +15,65 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, "libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org" <libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: lxc-devel <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 08/21/2013 06:42 PM, Eric W. Biederman wrote:
-> Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> writes:
-> 
->> right now I only take note of the unix socket /run/systemd/private,
->> but there may have many similar unix sockets, they can exist in any
->> path. the strange problems will still happen.
-> 
-> It could just as easily have been a fifo in the filesystem, and the
-> result would have been the same.
-> 
-> The network namespace are all about communicating between network
-> namespaces and that is what was allowed here.
-> 
-> If you don't want a socket or a fifo or any other file to be used by a
-> container don't give it access to it.  It really is that simple.
-> 
+Hi everyone!
 
-Hmm, I tend to think you are right...
+We [1] have been working on bringing lightweight virtualization to
+Linux-based mobile devices like Android (or other Linux-based devices with
+diverse I/O) and want to share our solution: device namespaces.
 
-Thanks!
+Imagine you could run several instances of your favorite mobile OS or other
+distributions in isolated containers, each under the impression of having
+exclusive access to device drivers; Interact and switch between them within
+a blink, no flashing, no reboot.
+
+Device namespaces are an extension to existing Linux kernel namespaces that
+brings lightweight virtualization to Linux-based end-user devices,
+primarily mobile devices.
+Device namespaces introduce a private and virtual namespace for device
+drivers to create the illusion for a process group that it interacts
+exclusively with a set of drivers. Device namespaces also introduce the
+concepts of an =93active=94 namespace with which a user interacts, vs
+=93non-active=94 namespaces that run in the background, and the ability to
+switch between them.[2]
+
+We are planning to prepare individual patches to be submitted to the
+relevant maintainers and mailing lists. In the meantime, we already want to
+share a set of patches on top of the Android goldfish Kernel 3.4 as well as
+a user-space demo, so you can see where we are heading and get an overview
+of the approach and see how it works.
+
+We are aware that the patches are not ready for submission in their current
+state, and we'd highly appreciate any feedback or suggestions which may
+come to your mind once you have a look [3]. Of particular interest is to
+elaborate a proper userspace API with respect to existing and future
+use-cases. To illustrate a simple use-case we also provide a simple
+userspace demo for Android [4].
+
+I will be presenting "The Case for Linux Device Namespace" [5] at LinuxCon
+North America 2013 [6]. We will also be attending the Containers Track [7]
+at LPC 2013 to present the current state of the patches and discuss the
+best course to proceed.
+
+We are looking forward to hear from you!
+
+Thanks,
+
+Oren.
+
+
+1: http://www.cellrox.com/
+2: https://github.com/Cellrox/devns-patches/wiki/DeviceNamespace
+3: https://github.com/Cellrox/devns-patches
+4: https://github.com/Cellrox/devns-demo
+5: http://sched.co/1asN1v7
+6: http://events.linuxfoundation.org/events/linuxcon-north-america
+7: http://www.linuxplumbersconf.org/2013/ocw/events/LPC2013/tracks/153
+
+-- =
+
+ Oren Laadan
+ Cellrox Ltd.
