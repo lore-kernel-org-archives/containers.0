@@ -1,14 +1,15 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 11/12] memcg: rename cgroup_event to mem_cgroup_event
-Date: Fri, 23 Aug 2013 11:42:00 +0800
-Message-ID: <5216DA08.8040406__19631.3985776671$1377229360$gmane$org@huawei.com>
+Subject: Re: [PATCHSET v2 cgroup/for-3.12] cgroup: make cgroup_event specific
+	to memcg
+Date: Fri, 23 Aug 2013 11:43:43 +0800
+Message-ID: <5216DA6F.3080508__12036.1028974459$1377229453$gmane$org@huawei.com>
 References: <1376582550-12548-1-git-send-email-tj@kernel.org>
-	<1376582550-12548-12-git-send-email-tj@kernel.org>
+	<20130821201239.GB2436@htj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1376582550-12548-12-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <20130821201239.GB2436-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,20 +23,8 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: mhocko-AlSwsSmVLrQ@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
->  /*
-> + * DO NOT USE IN NEW FILES.
-> + *
-> + * "cgroup.event_control" implementation.
-> + *
-> + * This is way over-engineered.  It tries to support fully configureable
+On 2013/8/22 4:12, Tejun Heo wrote:
+> Li, Michal, ping.
+> 
 
-s/configureable/configurable
-
-> + * events for each user.  Such level of flexibility is completely
-> + * unnecessary especially in the light of the planned unified hierarchy.
-> + *
-> + * Please deprecate this and replace with something simpler if at all
-> + * possible.
-> + */
-> +
-> +/*
+I'm fine with the patchset. Feel free to add my acks. :)
