@@ -1,14 +1,14 @@
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: RFC: Device Namespaces
-Date: Thu, 22 Aug 2013 13:21:18 -0500
-Message-ID: <20130822182118.GA28331@sergelap>
-References: <CAA4jN2aw4zEW=UfKCyqaOvXnbiRb_J9srfCn4OXTFzc6vWBM4A@mail.gmail.com>
+From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 11/12] memcg: rename cgroup_event to mem_cgroup_event
+Date: Fri, 23 Aug 2013 11:42:00 +0800
+Message-ID: <5216DA08.8040406__19631.3985776671$1377229360$gmane$org@huawei.com>
+References: <1376582550-12548-1-git-send-email-tj@kernel.org>
+	<1376582550-12548-12-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <CAA4jN2aw4zEW=UfKCyqaOvXnbiRb_J9srfCn4OXTFzc6vWBM4A-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <1376582550-12548-12-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,42 +18,24 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lxc-devel <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: mhocko-AlSwsSmVLrQ@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-UXVvdGluZyBPcmVuIExhYWRhbiAob3JlbmxAY2VsbHJveC5jb20pOgo+IEhpIGV2ZXJ5b25lIQo+
-IAo+IFdlIFsxXSBoYXZlIGJlZW4gd29ya2luZyBvbiBicmluZ2luZyBsaWdodHdlaWdodCB2aXJ0
-dWFsaXphdGlvbiB0bwo+IExpbnV4LWJhc2VkIG1vYmlsZSBkZXZpY2VzIGxpa2UgQW5kcm9pZCAo
-b3Igb3RoZXIgTGludXgtYmFzZWQgZGV2aWNlcyB3aXRoCj4gZGl2ZXJzZSBJL08pIGFuZCB3YW50
-IHRvIHNoYXJlIG91ciBzb2x1dGlvbjogZGV2aWNlIG5hbWVzcGFjZXMuCj4gCj4gSW1hZ2luZSB5
-b3UgY291bGQgcnVuIHNldmVyYWwgaW5zdGFuY2VzIG9mIHlvdXIgZmF2b3JpdGUgbW9iaWxlIE9T
-IG9yIG90aGVyCj4gZGlzdHJpYnV0aW9ucyBpbiBpc29sYXRlZCBjb250YWluZXJzLCBlYWNoIHVu
-ZGVyIHRoZSBpbXByZXNzaW9uIG9mIGhhdmluZwo+IGV4Y2x1c2l2ZSBhY2Nlc3MgdG8gZGV2aWNl
-IGRyaXZlcnM7IEludGVyYWN0IGFuZCBzd2l0Y2ggYmV0d2VlbiB0aGVtIHdpdGhpbgo+IGEgYmxp
-bmssIG5vIGZsYXNoaW5nLCBubyByZWJvb3QuCj4gCj4gRGV2aWNlIG5hbWVzcGFjZXMgYXJlIGFu
-IGV4dGVuc2lvbiB0byBleGlzdGluZyBMaW51eCBrZXJuZWwgbmFtZXNwYWNlcyB0aGF0Cj4gYnJp
-bmdzIGxpZ2h0d2VpZ2h0IHZpcnR1YWxpemF0aW9uIHRvIExpbnV4LWJhc2VkIGVuZC11c2VyIGRl
-dmljZXMsCj4gcHJpbWFyaWx5IG1vYmlsZSBkZXZpY2VzLgo+IERldmljZSBuYW1lc3BhY2VzIGlu
-dHJvZHVjZSBhIHByaXZhdGUgYW5kIHZpcnR1YWwgbmFtZXNwYWNlIGZvciBkZXZpY2UKPiBkcml2
-ZXJzIHRvIGNyZWF0ZSB0aGUgaWxsdXNpb24gZm9yIGEgcHJvY2VzcyBncm91cCB0aGF0IGl0IGlu
-dGVyYWN0cwo+IGV4Y2x1c2l2ZWx5IHdpdGggYSBzZXQgb2YgZHJpdmVycy4gRGV2aWNlIG5hbWVz
-cGFjZXMgYWxzbyBpbnRyb2R1Y2UgdGhlCj4gY29uY2VwdHMgb2YgYW4g4oCcYWN0aXZl4oCdIG5h
-bWVzcGFjZSB3aXRoIHdoaWNoIGEgdXNlciBpbnRlcmFjdHMsIHZzCj4g4oCcbm9uLWFjdGl2ZeKA
-nSBuYW1lc3BhY2VzIHRoYXQgcnVuIGluIHRoZSBiYWNrZ3JvdW5kLCBhbmQgdGhlIGFiaWxpdHkg
-dG8KPiBzd2l0Y2ggYmV0d2VlbiB0aGVtLlsyXQoKTm90ZSB0aGF0IHVubGVzcyBJJ20gbWlzdW5k
-ZXJzdGFuZGluZyB3aGF0IHlvdSdyZSBzYXlpbmcgaGVyZSwgdGhpcyBpcwphbHNvIHdoYXQgbmV0
-X25zIGRvZXMuICBBIG5ldG5zIGNhbiBleGlzdCB3aXRoIG5vIHByb2Nlc3NlcyBzbyBsb25nIGFz
-CnlvdSd2ZSBib3VuZCBpdHMgL3Byb2MvJCQvbnMvbmV0IHNvbWV3aGVyZS4gIFlvdSBjYW4gdGhl
-biByZS1lbnRlciB0aGF0Cm5zIHVzaW5nIG5zX2F0dGFjaC4gIEkgaGF2ZW4ndCBsb29rZWQgY2xv
-c2VseSBlbm91Z2ggeWV0IHRvIHNlZSB3aGV0aGVyCnlvdSBzaG91bGQgYmUgKG9yIGFyZSkgdXNp
-bmcgdGhlIHNhbWUgaW50ZXJmYWNlLgoKPiBXZSBhcmUgcGxhbm5pbmcgdG8gcHJlcGFyZSBpbmRp
-dmlkdWFsIHBhdGNoZXMgdG8gYmUgc3VibWl0dGVkIHRvIHRoZQoKTG9va2luZyBmb3J3YXJkIHRv
-IGl0LCBhbmQgc2VlaW5nIHlvdSBhdCB0aGUgY29udGFpbmVycyB0cmFjayAgOikKCj4gMjogaHR0
-cHM6Ly9naXRodWIuY29tL0NlbGxyb3gvZGV2bnMtcGF0Y2hlcy93aWtpL0RldmljZU5hbWVzcGFj
-ZQo+IDM6IGh0dHBzOi8vZ2l0aHViLmNvbS9DZWxscm94L2Rldm5zLXBhdGNoZXMKPiA0OiBodHRw
-czovL2dpdGh1Yi5jb20vQ2VsbHJveC9kZXZucy1kZW1vCgooSGF2ZSBsb29rZWQgb3ZlciB0aGUg
-d2lraSwgd2lsbCBsb29rIG92ZXIgdGhlIHBhdGNoZXMgYXMgd2VsbCkKCi1zZXJnZQpfX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxp
-bmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlz
-dHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+>  /*
+> + * DO NOT USE IN NEW FILES.
+> + *
+> + * "cgroup.event_control" implementation.
+> + *
+> + * This is way over-engineered.  It tries to support fully configureable
+
+s/configureable/configurable
+
+> + * events for each user.  Such level of flexibility is completely
+> + * unnecessary especially in the light of the planned unified hierarchy.
+> + *
+> + * Please deprecate this and replace with something simpler if at all
+> + * possible.
+> + */
+> +
+> +/*
