@@ -1,23 +1,14 @@
-From: James Bottomley <jbottomley-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [systemd-devel] [PATCH] netns: unix: only allow to find out
-	unix socket in same net namespace
-Date: Mon, 26 Aug 2013 03:53:01 +0000
-Message-ID: <1377489181.2341.16.camel@dabdike>
-References: <1377059473-25526-1-git-send-email-gaofeng@cn.fujitsu.com>
-	<87d2p7vcdx.fsf@xmission.com> <5214641C.9030902@cn.fujitsu.com>
-	<87wqnfttdf.fsf@xmission.com> <52146AC2.5070409@cn.fujitsu.com>
-	<CAPXgP120YUEVnFiD0uPnqeO4x=5oRvHL79-cX5CnmEWc3d5mvQ@mail.gmail.com>
-	<1377450974.8757.41.camel@dabdike>
-	<CAPXgP115pEE8jxyCqauoMRWui3Qb0fBzPr9L2_SA411=gfnX3w@mail.gmail.com>
-	<1377454566.8757.53.camel@dabdike> <521AAA23.9050604@cn.fujitsu.com>
-	<1377487159.2341.4.camel@dabdike> <521ACCEF.4050101@cn.fujitsu.com>
+From: Oren Laadan <orenl-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: RFC: Device Namespaces
+Date: Mon, 26 Aug 2013 06:11:52 -0400
+Message-ID: <CAA4jN2YL7Lfu2+DW-i+MovFxWEhJfT4aBBKREU_vy7JX9TKGHA@mail.gmail.com>
+References: <CAA4jN2aw4zEW=UfKCyqaOvXnbiRb_J9srfCn4OXTFzc6vWBM4A@mail.gmail.com>
+	<20130822182118.GA28331@sergelap>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <521ACCEF.4050101-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Content-Language: en-US
-Content-ID: <0FF5E1C4A5250346A4BFA6330F04B1CC-ruSsrxOD6xDby3iVrkZq2A@public.gmane.org>
+In-Reply-To: <20130822182118.GA28331@sergelap>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,40 +18,114 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: "systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org" <systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org>, "libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org" <libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kay Sievers <kay-tD+1rO4QERM@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org" <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, "davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lxc-devel <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 2013-08-26 at 11:35 +0800, Gao feng wrote:
-> On 08/26/2013 11:19 AM, James Bottomley wrote:
-> > Yes, we are discussing this problem in this whole thread.
+Hi Serge,
 
-I wasn't really watching that bit, since the problem looks solved to me.
-I was just reacting against the unfortunate notion that a container
-should run init.
 
->  If so, OpenVZ
-> > has never suffered from that problem and I thought it was fixed
-> > upstream.  I've not tested lxc tools, but the latest vzctl from the
-> > openvz website will bring up a container on the vanilla 3.9 kernel
-> > (provided you have USER_NS compiled in) can also be used to reboot the
-> > container, so I see no reason it wouldn't work for lxc as well.
-> > 
-> 
-> I'm using libvirt lxc not lxc-tools.
-> Not all of users enable user namespace, I trust these container
-> management
-> tools can have right/proper setting which inhibit this reboot-problem
-> occur.
-> but I don't think this reboot-problem won't happen in any
-> configuration.
+On Thu, Aug 22, 2013 at 2:21 PM, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>wrot=
+e:
 
-It sounds like you're setting up your containers wrongly.  If a
-container can reboot the system it means that host root capabilities
-have leaked into the container, which is a big security no-no.  The
-upstream way of avoiding this is USER_NS (because root in the container
-is now not root in the host).  The OpenVZ kernel uses a different
-mechanism to solve the problem, but we think USER_NS is the better way
-to go on this.
+> Quoting Oren Laadan (orenl-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org):
+> > Hi everyone!
+> >
+> > We [1] have been working on bringing lightweight virtualization to
+> > Linux-based mobile devices like Android (or other Linux-based devices
+> with
+> > diverse I/O) and want to share our solution: device namespaces.
+> >
+> > Imagine you could run several instances of your favorite mobile OS or
+> other
+> > distributions in isolated containers, each under the impression of havi=
+ng
+> > exclusive access to device drivers; Interact and switch between them
+> within
+> > a blink, no flashing, no reboot.
+> >
+> > Device namespaces are an extension to existing Linux kernel namespaces
+> that
+> > brings lightweight virtualization to Linux-based end-user devices,
+> > primarily mobile devices.
+> > Device namespaces introduce a private and virtual namespace for device
+> > drivers to create the illusion for a process group that it interacts
+> > exclusively with a set of drivers. Device namespaces also introduce the
+> > concepts of an =93active=94 namespace with which a user interacts, vs
+> > =93non-active=94 namespaces that run in the background, and the ability=
+ to
+> > switch between them.[2]
+>
+> Note that unless I'm misunderstanding what you're saying here, this is
+> also what net_ns does.  A netns can exist with no processes so long as
+> you've bound its /proc/$$/ns/net somewhere.  You can then re-enter that
+> ns using ns_attach.  I haven't looked closely enough yet to see whether
+> you should be (or are) using the same interface.
+>
+>
+To illustrate the need for device namespaces, consider the use case of
+running two containers of your favorite OS (say, Android), on a single
+physical phone. As a user, you either work in one container, or in the
+other, and you will want to be able to switch between them (just like with
+apps on mobile devices: you interact with one application at a time, and
+switch between them).
 
-James
+See here for a demo of how it works:  http://vimeo.com/60113683
+
+To accomplish this, device namespaces solve two shortcomings of existing
+namespaces:
+
+1. A namespace for device drivers:  each (Android) container needs a
+private view of all devices. This includes logical drivers, like binder (in
+Android) but also loop device; and physical devices, like the framebuffer
+and the touch-screen.
+
+In other words, device namespaces virtualize the _major/minor_ and the
+_state_ of device drivers. With the exception of VFS, network, and PTY
+(note: all three offer/are virtual devices), device drivers are otherwise
+not isolated between containers.
+
+2. A namespace for interactive scenarios:  a namespace can be "active" - it
+has access to the hardware, e.g. display and touch-screen. This will be the
+container with which the user is interacting right now. Otherwise a
+namespace is "non-active" - it still runs in the background, but can
+neither alter the display nor receive input from the touch-screen.
+Switching to another container means a context switch in the relevant
+drivers, so that they restore the state and now "obey" the other namespace.
+
+You can also think about the "active" namespace as foreground, and the
+"non-active" as background, akin to foreground/background processes in a
+terminal with job-control. Similar to how a terminal delivers input to the
+foreground task only but not to the background tasks - this is enforced by
+the new device namespace.
+
+More details on this use-case are in the wiki:
+https://github.com/Cellrox/devns-patches/wiki/Thinvisor).
+
+
+> We are planning to prepare individual patches to be submitted to the
+>
+> Looking forward to it, and seeing you at the containers track  :)
+>
+
+Same here!
+
+
+>
+> > 2: https://github.com/Cellrox/devns-patches/wiki/DeviceNamespace
+> > 3: https://github.com/Cellrox/devns-patches
+> > 4: https://github.com/Cellrox/devns-demo
+>
+> (Have looked over the wiki, will look over the patches as well)
+>
+> -serge
+>
+
+
+Thanks,
+
+Oren.
+
+-- =
+
+ Oren Laadan
+ Cellrox Ltd.
