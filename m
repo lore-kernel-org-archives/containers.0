@@ -1,8 +1,8 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [REVIEW][PATCH] vfs: Don't copy mount bind mounts of
-	/proc/<pid>/ns/mnt between namespaces
-Date: Tue, 27 Aug 2013 14:39:19 -0700
-Message-ID: <87haeahkzc.fsf@xmission.com>
+Subject: [REVIEW][PATCH 1/2] userns: Better restrictions on when proc and
+	sysfs can be mounted
+Date: Tue, 27 Aug 2013 14:44:39 -0700
+Message-ID: <878uzmhkqg.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,155 +17,180 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-Don't copy bind mounts of /proc/<pid>/ns/mnt between namespaces.
-These files hold references to a mount namespace and copying them
-between namespaces could result in a reference counting loop.
+Rely on the fact that another flavor of the filesystem is already
+mounted and do not rely on state in the user namespace.
 
-The current mnt_ns_loop test prevents loops on the assumption that
-mounts don't cross between namespaces.  Unfortunately unsharing a
-mount namespace and shared substrees can both cause mounts to
-propogate between mount namespaces.
+Verify that the mounted filesystem is not covered in any significant
+way.  I would love to verify that the previously mounted filesystem
+has no mounts on top but there are at least the directories
+/proc/sys/fs/binfmt_misc and /sys/fs/cgroup/ that exist explicitly
+for other filesystems to mount on top of.
 
-Add two flags CL_COPY_UNBINDABLE and CL_COPY_MNT_NS_FILE are added to
-control this behavior, and CL_COPY_ALL is redefined as both of them.
+Refactor the test into a function named fs_fully_visible and call that
+function from the mount routines of proc and sysfs.  This makes this
+test local to the filesystems involved and the results current of when
+the mounts take place, removing a weird threading of the user
+namespace, the mount namespace and the filesystems themselves.
 
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/namespace.c |   46 ++++++++++++++++++++++++++++++++++------------
- fs/pnode.h     |    5 ++++-
- 2 files changed, 38 insertions(+), 13 deletions(-)
+ fs/namespace.c                 |   37 +++++++++++++++++++++++++------------
+ fs/proc/root.c                 |    7 +++++--
+ fs/sysfs/mount.c               |    3 ++-
+ include/linux/fs.h             |    1 +
+ include/linux/user_namespace.h |    4 ----
+ kernel/user.c                  |    2 --
+ kernel/user_namespace.c        |    2 --
+ 7 files changed, 33 insertions(+), 23 deletions(-)
 
 diff --git a/fs/namespace.c b/fs/namespace.c
-index 7e16a73..64627f8 100644
+index 64627f8..877e427 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -1355,14 +1355,11 @@ SYSCALL_DEFINE1(oldumount, char __user *, name)
+@@ -2867,25 +2867,38 @@ bool current_chrooted(void)
+ 	return chrooted;
+ }
+ 
+-void update_mnt_policy(struct user_namespace *userns)
++bool fs_fully_visible(struct file_system_type *type)
+ {
+ 	struct mnt_namespace *ns = current->nsproxy->mnt_ns;
+ 	struct mount *mnt;
++	bool visible = false;
+ 
+-	down_read(&namespace_sem);
++	if (unlikely(!ns))
++		return false;
++
++	namespace_lock();
+ 	list_for_each_entry(mnt, &ns->list, mnt_list) {
+-		switch (mnt->mnt.mnt_sb->s_magic) {
+-		case SYSFS_MAGIC:
+-			userns->may_mount_sysfs = true;
+-			break;
+-		case PROC_SUPER_MAGIC:
+-			userns->may_mount_proc = true;
+-			break;
++		struct mount *child;
++		if (mnt->mnt.mnt_sb->s_type != type)
++			continue;
++
++		/* This mount is not fully visible if there are any child mounts
++		 * that cover anything except for empty directories.
++		 */
++		list_for_each_entry(child, &mnt->mnt_mounts, mnt_child) {
++			struct inode *inode = child->mnt_mountpoint->d_inode;
++			if (!S_ISDIR(inode->i_mode))
++				goto next;
++			if (inode->i_nlink != 2)
++				goto next;
+ 		}
+-		if (userns->may_mount_sysfs && userns->may_mount_proc)
+-			break;
++		visible = true;
++		goto found;
++	next:	;
+ 	}
+-	up_read(&namespace_sem);
++found:
++	namespace_unlock();
++	return visible;
+ }
+ 
+ static void *mntns_get(struct task_struct *task)
+diff --git a/fs/proc/root.c b/fs/proc/root.c
+index 38bd5d4..45e5fb7 100644
+--- a/fs/proc/root.c
++++ b/fs/proc/root.c
+@@ -110,8 +110,11 @@ static struct dentry *proc_mount(struct file_system_type *fs_type,
+ 		ns = task_active_pid_ns(current);
+ 		options = data;
+ 
+-		if (!current_user_ns()->may_mount_proc ||
+-		    !ns_capable(ns->user_ns, CAP_SYS_ADMIN))
++		if (!capable(CAP_SYS_ADMIN) && !fs_fully_visible(fs_type))
++			return ERR_PTR(-EPERM);
++
++		/* Does the mounter have privilege over the pid namespace? */
++		if (!ns_capable(ns->user_ns, CAP_SYS_ADMIN))
+ 			return ERR_PTR(-EPERM);
+ 	}
+ 
+diff --git a/fs/sysfs/mount.c b/fs/sysfs/mount.c
+index afd8327..4a2da3a 100644
+--- a/fs/sysfs/mount.c
++++ b/fs/sysfs/mount.c
+@@ -112,7 +112,8 @@ static struct dentry *sysfs_mount(struct file_system_type *fs_type,
+ 	struct super_block *sb;
+ 	int error;
+ 
+-	if (!(flags & MS_KERNMOUNT) && !current_user_ns()->may_mount_sysfs)
++	if (!(flags & MS_KERNMOUNT) && !capable(CAP_SYS_ADMIN) &&
++	    !fs_fully_visible(fs_type))
+ 		return ERR_PTR(-EPERM);
+ 
+ 	info = kzalloc(sizeof(*info), GFP_KERNEL);
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 9818747..3050c62 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1897,6 +1897,7 @@ extern int vfs_ustat(dev_t, struct kstatfs *);
+ extern int freeze_super(struct super_block *super);
+ extern int thaw_super(struct super_block *super);
+ extern bool our_mnt(struct vfsmount *mnt);
++extern bool fs_fully_visible(struct file_system_type *);
+ 
+ extern int current_umask(void);
+ 
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index b6b215f..4ce0093 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -26,8 +26,6 @@ struct user_namespace {
+ 	kuid_t			owner;
+ 	kgid_t			group;
+ 	unsigned int		proc_inum;
+-	bool			may_mount_sysfs;
+-	bool			may_mount_proc;
+ };
+ 
+ extern struct user_namespace init_user_ns;
+@@ -84,6 +82,4 @@ static inline void put_user_ns(struct user_namespace *ns)
  
  #endif
  
--static bool mnt_ns_loop(struct path *path)
-+static bool is_mnt_ns_file(struct dentry *dentry)
- {
--	/* Could bind mounting the mount namespace inode cause a
--	 * mount namespace loop?
--	 */
--	struct inode *inode = path->dentry->d_inode;
-+	/* Is this a proxy for a mount namespace? */
-+	struct inode *inode = dentry->d_inode;
- 	struct proc_ns *ei;
--	struct mnt_namespace *mnt_ns;
+-void update_mnt_policy(struct user_namespace *userns);
+-
+ #endif /* _LINUX_USER_H */
+diff --git a/kernel/user.c b/kernel/user.c
+index 69b4c3d..5bbb919 100644
+--- a/kernel/user.c
++++ b/kernel/user.c
+@@ -51,8 +51,6 @@ struct user_namespace init_user_ns = {
+ 	.owner = GLOBAL_ROOT_UID,
+ 	.group = GLOBAL_ROOT_GID,
+ 	.proc_inum = PROC_USER_INIT_INO,
+-	.may_mount_sysfs = true,
+-	.may_mount_proc = true,
+ };
+ EXPORT_SYMBOL_GPL(init_user_ns);
  
- 	if (!proc_ns_inode(inode))
- 		return false;
-@@ -1371,7 +1368,19 @@ static bool mnt_ns_loop(struct path *path)
- 	if (ei->ns_ops != &mntns_operations)
- 		return false;
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index d8c30db..d58ad1e 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -97,8 +97,6 @@ int create_user_ns(struct cred *new)
  
--	mnt_ns = ei->ns;
-+	return true;
-+}
-+
-+static bool mnt_ns_loop(struct dentry *dentry)
-+{
-+	/* Could bind mounting the mount namespace inode cause a
-+	 * mount namespace loop?
-+	 */
-+	struct mnt_namespace *mnt_ns;
-+	if (!is_mnt_ns_file(dentry))
-+		return false;
-+
-+	mnt_ns = get_proc_ns(dentry->d_inode)->ns;
- 	return current->nsproxy->mnt_ns->seq >= mnt_ns->seq;
+ 	set_cred_user_ns(new, ns);
+ 
+-	update_mnt_policy(ns);
+-
+ 	return 0;
  }
  
-@@ -1380,7 +1389,10 @@ struct mount *copy_tree(struct mount *mnt, struct dentry *dentry,
- {
- 	struct mount *res, *p, *q, *r, *parent;
- 
--	if (!(flag & CL_COPY_ALL) && IS_MNT_UNBINDABLE(mnt))
-+	if (!(flag & CL_COPY_UNBINDABLE) && IS_MNT_UNBINDABLE(mnt))
-+		return ERR_PTR(-EINVAL);
-+
-+	if (!(flag & CL_COPY_MNT_NS_FILE) && is_mnt_ns_file(dentry))
- 		return ERR_PTR(-EINVAL);
- 
- 	res = q = clone_mnt(mnt, dentry, flag);
-@@ -1397,7 +1409,13 @@ struct mount *copy_tree(struct mount *mnt, struct dentry *dentry,
- 			continue;
- 
- 		for (s = r; s; s = next_mnt(s, r)) {
--			if (!(flag & CL_COPY_ALL) && IS_MNT_UNBINDABLE(s)) {
-+			if (!(flag & CL_COPY_UNBINDABLE) &&
-+			    IS_MNT_UNBINDABLE(s)) {
-+				s = skip_mnt_tree(s);
-+				continue;
-+			}
-+			if (!(flag & CL_COPY_MNT_NS_FILE) &&
-+			    is_mnt_ns_file(s->mnt.mnt_root)) {
- 				s = skip_mnt_tree(s);
- 				continue;
- 			}
-@@ -1733,7 +1751,7 @@ static int do_loopback(struct path *path, const char *old_name,
- 		return err;
- 
- 	err = -EINVAL;
--	if (mnt_ns_loop(&old_path))
-+	if (mnt_ns_loop(old_path.dentry))
- 		goto out; 
- 
- 	mp = lock_mount(path);
-@@ -1755,7 +1773,7 @@ static int do_loopback(struct path *path, const char *old_name,
- 		goto out2;
- 
- 	if (recurse)
--		mnt = copy_tree(old, old_path.dentry, 0);
-+		mnt = copy_tree(old, old_path.dentry, CL_COPY_MNT_NS_FILE);
- 	else
- 		mnt = clone_mnt(old, old_path.dentry, 0);
- 
-@@ -2417,7 +2435,7 @@ static struct mnt_namespace *dup_mnt_ns(struct mnt_namespace *mnt_ns,
- 
- 	namespace_lock();
- 	/* First pass: copy the tree topology */
--	copy_flags = CL_COPY_ALL | CL_EXPIRE;
-+	copy_flags = CL_COPY_UNBINDABLE | CL_EXPIRE;
- 	if (user_ns != mnt_ns->user_ns)
- 		copy_flags |= CL_SHARED_TO_SLAVE | CL_UNPRIVILEGED;
- 	new = copy_tree(old, old->mnt.mnt_root, copy_flags);
-@@ -2452,6 +2470,10 @@ static struct mnt_namespace *dup_mnt_ns(struct mnt_namespace *mnt_ns,
- 		}
- 		p = next_mnt(p, old);
- 		q = next_mnt(q, new);
-+		if (!q)
-+			break;
-+		while (p->mnt.mnt_root != q->mnt.mnt_root)
-+			p = next_mnt(p, old);
- 	}
- 	namespace_unlock();
- 
-diff --git a/fs/pnode.h b/fs/pnode.h
-index b091445..59e7eda 100644
---- a/fs/pnode.h
-+++ b/fs/pnode.h
-@@ -19,11 +19,14 @@
- 
- #define CL_EXPIRE    		0x01
- #define CL_SLAVE     		0x02
--#define CL_COPY_ALL 		0x04
-+#define CL_COPY_UNBINDABLE	0x04
- #define CL_MAKE_SHARED 		0x08
- #define CL_PRIVATE 		0x10
- #define CL_SHARED_TO_SLAVE	0x20
- #define CL_UNPRIVILEGED		0x40
-+#define CL_COPY_MNT_NS_FILE	0x80
-+
-+#define CL_COPY_ALL		(CL_COPY_UNBINDABLE | CL_COPY_MNT_NS_FILE)
- 
- static inline void set_mnt_shared(struct mount *mnt)
- {
 -- 
 1.7.5.4
