@@ -1,17 +1,12 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 06/12] cgroup, memcg: move cgroup_event implementation to
-	memcg
-Date: Tue, 27 Aug 2013 16:00:02 -0400
-Message-ID: <20130827200002.GD12212__5647.13381832025$1377633621$gmane$org@mtj.dyndns.org>
-References: <1376582550-12548-1-git-send-email-tj@kernel.org>
-	<1376582550-12548-7-git-send-email-tj@kernel.org>
-	<20130827142002.GC13302@dhcp22.suse.cz>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: [REVIEW][PATCH] vfs: Don't copy mount bind mounts of
+	/proc/<pid>/ns/mnt between namespaces
+Date: Tue, 27 Aug 2013 14:39:19 -0700
+Message-ID: <87haeahkzc.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20130827142002.GC13302-2MMpYkNvuYDjFM9bn6wA6Q@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,123 +16,156 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Cc: hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hey, Michal.
 
-On Tue, Aug 27, 2013 at 04:20:02PM +0200, Michal Hocko wrote:
-> Doing notification and read() every time might be a concern for
-> embedded-world who are worried about too many wakeups. We have
-> already seen suggestions to do a different modes of event triggering
-> to reduce wake up costs because of the power consumption (e.g.
-> http://comments.gmane.org/gmane.linux.kernel.mm/101628).
+Don't copy bind mounts of /proc/<pid>/ns/mnt between namespaces.
+These files hold references to a mount namespace and copying them
+between namespaces could result in a reference counting loop.
 
-Given the expected frequency of the event, I highly doubt it's gonna
-matter.  The patch you linked is different.  That's just the event
-designed wrong.  Sigh... so it's mixing events for vmpressure state
-changing and reclaim activities happening?  Am I understanding it
-correctly?  If so, I really have no idea why so many things are so ill
-designed, even the new things.
+The current mnt_ns_loop test prevents loops on the assumption that
+mounts don't cross between namespaces.  Unfortunately unsharing a
+mount namespace and shared substrees can both cause mounts to
+propogate between mount namespaces.
 
-* As a general principle, events should either be edge-triggered or
-  level-triggered with a way to acknowledge the current state;
-  otherwise, it's a fundamentally broken design.
+Add two flags CL_COPY_UNBINDABLE and CL_COPY_MNT_NS_FILE are added to
+control this behavior, and CL_COPY_ALL is redefined as both of them.
 
-* Let's please not slide in some completely unobvious side-channel
-  information into an event.  If someone wants to watch reclaim
-  events, add a dedicated event for that rather than overloading state
-  changed event.
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ fs/namespace.c |   46 ++++++++++++++++++++++++++++++++++------------
+ fs/pnode.h     |    5 ++++-
+ 2 files changed, 38 insertions(+), 13 deletions(-)
 
-Let's just hope I grossly misunderstood the whole thread.
-
-If it *really* is critical to discern low/mid and mid/high
-transitions, we can add a seprate file so that the transitions can be
-monitored separately but I can't emphasize enough that we shouldn't
-chase every single requirement people come up with without the overall
-sense of its relative importance and impact on long term maintenance
-of the subsystem.  I'm highly skeptical that distinguishing the two
-transitions and saving the occassional spurious events would be
-justifiable.
-
-> You just forgot to tell us what is that "something simpler". Does it
-> exist yet? What is the semantic?
-
-It's gonna be a file modified event, exactly the same as regular
-files.  Haven't we gone over this multiple times now?  cgroup
-implementation doesn't exist yet but everything about normal file
-events including its semantics are already well defined and
-understood.
-
-> We have been trying to reduce memcg specific things in the past and
-> this will add non trivial chunk of code. I would at least expect some
-> justification _why_ moving the maintenance burden is worth it. It
-> certainly won't make memcg live easier. I can bite a bullet though if
-> this is the roadblock for making important changes in the cgroup core.
-> But you didn't tell us anything like that, except that you do not like
-> the interface because like other parts it is over-engineered thus bad.
-
-Yes, it is a road block in two ways.
-
-* Everything is being made per-css which is necessary as css's
-  lifetime would no longer coincide with cgroup's.  Keeping this in
-  cgroup proper would mean that it needs to be updated so that it's
-  attached to css instead of cgroup.
-
-* The file system interface of cgroup will go through sysfs so that
-  cgroup doesn't have to worry about inode locking maze.  This is a
-  major issue for nested subsys enable / disable and implementating
-  migration as currently we end up having to lock inodes which belong
-  to different subtrees and vfs doesn't define locking order between
-  them.  So, short of meddling with vfs rename mutex, it'll deadlock.
-
-> You have mentioned it will help you clean up code further in the past
-> but I do not see any mention about it in this patch neither in the
-> leader email. Could you be more specific? How much? Is this piece of
-> code blocking those cleanups?
-
-See above.
-
-> That is what I _really_ dislike about this patch and why I am really
-> reluctant to ack it.
-
-See above.
-
-> And we might end up having that code there for ever because your new and
-> yet to be shown interface might turn out to be not the best fit for the
-> current users.
-
-We're gonna keep that code for years no matter what and you know that
-the existing interface has fundamental issues.  Regardless of what we
-do in the future, it needs to go.  That much is clear, isn't it?
-
-> Tejun, you have done _a lot_ of great work on cleaning up cgroup
-> core mess and I really appreciate that! I was supporting you in some
-> of those, I wish I had more time to do more. But I think you are
-> deprecating some things too easily without carrying much about the
-> current users assuming they will cope with that somehow and that a magic
-> central authority will do everything for them in a sane way. I am quite
-> skeptical, to be honest.
-
-This one eventually has to go.  It's the wrong piece of logic at the
-wrong place / layer.  The sequence could be debatable but I don't
-wanna introduce new thing before the filesystem part is converted to
-sysfs as it'll need to be re-done then and I can tell you with
-relative high level of confidence that the new interface will be
-implemented in some months and its interface will be something along
-the line of css_notify(css).
-
-And as for the general skepticism, well, I can't make you to see
-things my way.  I have been trying pretty hard with all involved and
-am confident enough that at least enough are looking towards the same
-general direction and the progress is pretty healthy too.  As for
-memcg, I don't know.  I frankly have no idea what your general
-direction and long term plan are and memcg in general still seems to
-be lost quite often.  So, ummm, I don't know.  Can you at least
-pretend to play along?
-
-Thanks.
-
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 7e16a73..64627f8 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -1355,14 +1355,11 @@ SYSCALL_DEFINE1(oldumount, char __user *, name)
+ 
+ #endif
+ 
+-static bool mnt_ns_loop(struct path *path)
++static bool is_mnt_ns_file(struct dentry *dentry)
+ {
+-	/* Could bind mounting the mount namespace inode cause a
+-	 * mount namespace loop?
+-	 */
+-	struct inode *inode = path->dentry->d_inode;
++	/* Is this a proxy for a mount namespace? */
++	struct inode *inode = dentry->d_inode;
+ 	struct proc_ns *ei;
+-	struct mnt_namespace *mnt_ns;
+ 
+ 	if (!proc_ns_inode(inode))
+ 		return false;
+@@ -1371,7 +1368,19 @@ static bool mnt_ns_loop(struct path *path)
+ 	if (ei->ns_ops != &mntns_operations)
+ 		return false;
+ 
+-	mnt_ns = ei->ns;
++	return true;
++}
++
++static bool mnt_ns_loop(struct dentry *dentry)
++{
++	/* Could bind mounting the mount namespace inode cause a
++	 * mount namespace loop?
++	 */
++	struct mnt_namespace *mnt_ns;
++	if (!is_mnt_ns_file(dentry))
++		return false;
++
++	mnt_ns = get_proc_ns(dentry->d_inode)->ns;
+ 	return current->nsproxy->mnt_ns->seq >= mnt_ns->seq;
+ }
+ 
+@@ -1380,7 +1389,10 @@ struct mount *copy_tree(struct mount *mnt, struct dentry *dentry,
+ {
+ 	struct mount *res, *p, *q, *r, *parent;
+ 
+-	if (!(flag & CL_COPY_ALL) && IS_MNT_UNBINDABLE(mnt))
++	if (!(flag & CL_COPY_UNBINDABLE) && IS_MNT_UNBINDABLE(mnt))
++		return ERR_PTR(-EINVAL);
++
++	if (!(flag & CL_COPY_MNT_NS_FILE) && is_mnt_ns_file(dentry))
+ 		return ERR_PTR(-EINVAL);
+ 
+ 	res = q = clone_mnt(mnt, dentry, flag);
+@@ -1397,7 +1409,13 @@ struct mount *copy_tree(struct mount *mnt, struct dentry *dentry,
+ 			continue;
+ 
+ 		for (s = r; s; s = next_mnt(s, r)) {
+-			if (!(flag & CL_COPY_ALL) && IS_MNT_UNBINDABLE(s)) {
++			if (!(flag & CL_COPY_UNBINDABLE) &&
++			    IS_MNT_UNBINDABLE(s)) {
++				s = skip_mnt_tree(s);
++				continue;
++			}
++			if (!(flag & CL_COPY_MNT_NS_FILE) &&
++			    is_mnt_ns_file(s->mnt.mnt_root)) {
+ 				s = skip_mnt_tree(s);
+ 				continue;
+ 			}
+@@ -1733,7 +1751,7 @@ static int do_loopback(struct path *path, const char *old_name,
+ 		return err;
+ 
+ 	err = -EINVAL;
+-	if (mnt_ns_loop(&old_path))
++	if (mnt_ns_loop(old_path.dentry))
+ 		goto out; 
+ 
+ 	mp = lock_mount(path);
+@@ -1755,7 +1773,7 @@ static int do_loopback(struct path *path, const char *old_name,
+ 		goto out2;
+ 
+ 	if (recurse)
+-		mnt = copy_tree(old, old_path.dentry, 0);
++		mnt = copy_tree(old, old_path.dentry, CL_COPY_MNT_NS_FILE);
+ 	else
+ 		mnt = clone_mnt(old, old_path.dentry, 0);
+ 
+@@ -2417,7 +2435,7 @@ static struct mnt_namespace *dup_mnt_ns(struct mnt_namespace *mnt_ns,
+ 
+ 	namespace_lock();
+ 	/* First pass: copy the tree topology */
+-	copy_flags = CL_COPY_ALL | CL_EXPIRE;
++	copy_flags = CL_COPY_UNBINDABLE | CL_EXPIRE;
+ 	if (user_ns != mnt_ns->user_ns)
+ 		copy_flags |= CL_SHARED_TO_SLAVE | CL_UNPRIVILEGED;
+ 	new = copy_tree(old, old->mnt.mnt_root, copy_flags);
+@@ -2452,6 +2470,10 @@ static struct mnt_namespace *dup_mnt_ns(struct mnt_namespace *mnt_ns,
+ 		}
+ 		p = next_mnt(p, old);
+ 		q = next_mnt(q, new);
++		if (!q)
++			break;
++		while (p->mnt.mnt_root != q->mnt.mnt_root)
++			p = next_mnt(p, old);
+ 	}
+ 	namespace_unlock();
+ 
+diff --git a/fs/pnode.h b/fs/pnode.h
+index b091445..59e7eda 100644
+--- a/fs/pnode.h
++++ b/fs/pnode.h
+@@ -19,11 +19,14 @@
+ 
+ #define CL_EXPIRE    		0x01
+ #define CL_SLAVE     		0x02
+-#define CL_COPY_ALL 		0x04
++#define CL_COPY_UNBINDABLE	0x04
+ #define CL_MAKE_SHARED 		0x08
+ #define CL_PRIVATE 		0x10
+ #define CL_SHARED_TO_SLAVE	0x20
+ #define CL_UNPRIVILEGED		0x40
++#define CL_COPY_MNT_NS_FILE	0x80
++
++#define CL_COPY_ALL		(CL_COPY_UNBINDABLE | CL_COPY_MNT_NS_FILE)
+ 
+ static inline void set_mnt_shared(struct mount *mnt)
+ {
 -- 
-tejun
+1.7.5.4
