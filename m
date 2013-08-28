@@ -1,7 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 1/9] cgroup: fix css leaks on online_css() failure
-Date: Wed, 28 Aug 2013 17:03:41 -0400
-Message-ID: <1377723829-22814-2-git-send-email-tj@kernel.org>
+Subject: [PATCH 2/9] cgroup: css iterations and css_from_dir() are safe under
+	cgroup_mutex
+Date: Wed, 28 Aug 2013 17:03:42 -0400
+Message-ID: <1377723829-22814-3-git-send-email-tj@kernel.org>
 References: <1377723829-22814-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,70 +22,162 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-ae7f164a09 ("cgroup: move cgroup->subsys[] assignment to
-online_css()") moved cgroup->subsys[] assignements later in
-cgroup_create() but didn't update error handling path accordingly
-leaking later css's after an online_css() failure.
+Currently, all css iterations and css_from_dir() require RCU read lock
+whether the caller is holding cgroup_mutex or not, which is
+unnecessarily restrictive.  They are all safe to use under
+cgroup_mutex without holding RCU read lock.
 
-This patch moves reference bumping inside online_css() loop, clears
-css_ar[] as css's are brought online successfully, and updates
-err_destroy path so that either a css is fully online and destroyed by
-cgroup_destroy_locked() or the error path frees it.  This creates a
-duplicate css free logic in the error path but it will be cleaned up
-soon.
+Factor out cgroup_assert_mutex_or_rcu_locked() from css_from_id() and
+apply it to all css iteration functions and css_from_dir().
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 23 +++++++++++++++--------
- 1 file changed, 15 insertions(+), 8 deletions(-)
+ kernel/cgroup.c | 56 ++++++++++++++++++++++++++++++--------------------------
+ 1 file changed, 30 insertions(+), 26 deletions(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index b5f4989..a4168cf 100644
+index a4168cf..a10baf8 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -4489,14 +4489,6 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
- 	list_add_tail_rcu(&cgrp->sibling, &cgrp->parent->children);
- 	root->number_of_cgroups++;
+@@ -82,8 +82,13 @@
+ #ifdef CONFIG_PROVE_RCU
+ DEFINE_MUTEX(cgroup_mutex);
+ EXPORT_SYMBOL_GPL(cgroup_mutex);	/* only for lockdep */
++#define cgroup_assert_mutex_or_rcu_locked()				\
++	rcu_lockdep_assert(rcu_read_lock_held() ||			\
++			   lockdep_is_held(&cgroup_mutex),		\
++			   "cgroup_mutex or RCU read lock required");
+ #else
+ static DEFINE_MUTEX(cgroup_mutex);
++#define cgroup_assert_mutex_or_rcu_locked()	do { } while (false)
+ #endif
  
--	/* each css holds a ref to the cgroup's dentry and the parent css */
--	for_each_root_subsys(root, ss) {
--		struct cgroup_subsys_state *css = css_ar[ss->subsys_id];
--
--		dget(dentry);
--		css_get(css->parent);
--	}
--
- 	/* hold a ref to the parent's dentry */
- 	dget(parent->dentry);
+ static DEFINE_MUTEX(cgroup_root_mutex);
+@@ -3036,9 +3041,9 @@ static void cgroup_enable_task_cg_lists(void)
+  * @parent_css: css whose children to walk
+  *
+  * This function returns the next child of @parent_css and should be called
+- * under RCU read lock.  The only requirement is that @parent_css and
+- * @pos_css are accessible.  The next sibling is guaranteed to be returned
+- * regardless of their states.
++ * under either cgroup_mutex or RCU read lock.  The only requirement is
++ * that @parent_css and @pos_css are accessible.  The next sibling is
++ * guaranteed to be returned regardless of their states.
+  */
+ struct cgroup_subsys_state *
+ css_next_child(struct cgroup_subsys_state *pos_css,
+@@ -3048,7 +3053,7 @@ css_next_child(struct cgroup_subsys_state *pos_css,
+ 	struct cgroup *cgrp = parent_css->cgroup;
+ 	struct cgroup *next;
  
-@@ -4508,6 +4500,13 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
- 		if (err)
- 			goto err_destroy;
+-	WARN_ON_ONCE(!rcu_read_lock_held());
++	cgroup_assert_mutex_or_rcu_locked();
  
-+		/* each css holds a ref to the cgroup's dentry and parent css */
-+		dget(dentry);
-+		css_get(css->parent);
-+
-+		/* mark it consumed for error path */
-+		css_ar[ss->subsys_id] = NULL;
-+
- 		if (ss->broken_hierarchy && !ss->warned_broken_hierarchy &&
- 		    parent->parent) {
- 			pr_warning("cgroup: %s (%d) created nested cgroup for controller \"%s\" which has incomplete hierarchy support. Nested cgroups may change behavior in the future.\n",
-@@ -4554,6 +4553,14 @@ err_free_cgrp:
- 	return err;
+ 	/*
+ 	 * @pos could already have been removed.  Once a cgroup is removed,
+@@ -3095,10 +3100,10 @@ EXPORT_SYMBOL_GPL(css_next_child);
+  * to visit for pre-order traversal of @root's descendants.  @root is
+  * included in the iteration and the first node to be visited.
+  *
+- * While this function requires RCU read locking, it doesn't require the
+- * whole traversal to be contained in a single RCU critical section.  This
+- * function will return the correct next descendant as long as both @pos
+- * and @root are accessible and @pos is a descendant of @root.
++ * While this function requires cgroup_mutex or RCU read locking, it
++ * doesn't require the whole traversal to be contained in a single critical
++ * section.  This function will return the correct next descendant as long
++ * as both @pos and @root are accessible and @pos is a descendant of @root.
+  */
+ struct cgroup_subsys_state *
+ css_next_descendant_pre(struct cgroup_subsys_state *pos,
+@@ -3106,7 +3111,7 @@ css_next_descendant_pre(struct cgroup_subsys_state *pos,
+ {
+ 	struct cgroup_subsys_state *next;
  
- err_destroy:
-+	for_each_root_subsys(root, ss) {
-+		struct cgroup_subsys_state *css = css_ar[ss->subsys_id];
-+
-+		if (css) {
-+			percpu_ref_cancel_init(&css->refcnt);
-+			ss->css_free(css);
-+		}
-+	}
- 	cgroup_destroy_locked(cgrp);
- 	mutex_unlock(&cgroup_mutex);
- 	mutex_unlock(&dentry->d_inode->i_mutex);
+-	WARN_ON_ONCE(!rcu_read_lock_held());
++	cgroup_assert_mutex_or_rcu_locked();
+ 
+ 	/* if first iteration, visit @root */
+ 	if (!pos)
+@@ -3137,17 +3142,17 @@ EXPORT_SYMBOL_GPL(css_next_descendant_pre);
+  * is returned.  This can be used during pre-order traversal to skip
+  * subtree of @pos.
+  *
+- * While this function requires RCU read locking, it doesn't require the
+- * whole traversal to be contained in a single RCU critical section.  This
+- * function will return the correct rightmost descendant as long as @pos is
+- * accessible.
++ * While this function requires cgroup_mutex or RCU read locking, it
++ * doesn't require the whole traversal to be contained in a single critical
++ * section.  This function will return the correct rightmost descendant as
++ * long as @pos is accessible.
+  */
+ struct cgroup_subsys_state *
+ css_rightmost_descendant(struct cgroup_subsys_state *pos)
+ {
+ 	struct cgroup_subsys_state *last, *tmp;
+ 
+-	WARN_ON_ONCE(!rcu_read_lock_held());
++	cgroup_assert_mutex_or_rcu_locked();
+ 
+ 	do {
+ 		last = pos;
+@@ -3183,10 +3188,11 @@ css_leftmost_descendant(struct cgroup_subsys_state *pos)
+  * to visit for post-order traversal of @root's descendants.  @root is
+  * included in the iteration and the last node to be visited.
+  *
+- * While this function requires RCU read locking, it doesn't require the
+- * whole traversal to be contained in a single RCU critical section.  This
+- * function will return the correct next descendant as long as both @pos
+- * and @cgroup are accessible and @pos is a descendant of @cgroup.
++ * While this function requires cgroup_mutex or RCU read locking, it
++ * doesn't require the whole traversal to be contained in a single critical
++ * section.  This function will return the correct next descendant as long
++ * as both @pos and @cgroup are accessible and @pos is a descendant of
++ * @cgroup.
+  */
+ struct cgroup_subsys_state *
+ css_next_descendant_post(struct cgroup_subsys_state *pos,
+@@ -3194,7 +3200,7 @@ css_next_descendant_post(struct cgroup_subsys_state *pos,
+ {
+ 	struct cgroup_subsys_state *next;
+ 
+-	WARN_ON_ONCE(!rcu_read_lock_held());
++	cgroup_assert_mutex_or_rcu_locked();
+ 
+ 	/* if first iteration, visit the leftmost descendant */
+ 	if (!pos) {
+@@ -5698,16 +5704,16 @@ EXPORT_SYMBOL_GPL(css_lookup);
+  * @dentry: directory dentry of interest
+  * @ss: subsystem of interest
+  *
+- * Must be called under RCU read lock.  The caller is responsible for
+- * pinning the returned css if it needs to be accessed outside the RCU
+- * critical section.
++ * Must be called under cgroup_mutex or RCU read lock.  The caller is
++ * responsible for pinning the returned css if it needs to be accessed
++ * outside the critical section.
+  */
+ struct cgroup_subsys_state *css_from_dir(struct dentry *dentry,
+ 					 struct cgroup_subsys *ss)
+ {
+ 	struct cgroup *cgrp;
+ 
+-	WARN_ON_ONCE(!rcu_read_lock_held());
++	cgroup_assert_mutex_or_rcu_locked();
+ 
+ 	/* is @dentry a cgroup dir? */
+ 	if (!dentry->d_inode ||
+@@ -5730,9 +5736,7 @@ struct cgroup_subsys_state *css_from_id(int id, struct cgroup_subsys *ss)
+ {
+ 	struct cgroup *cgrp;
+ 
+-	rcu_lockdep_assert(rcu_read_lock_held() ||
+-			   lockdep_is_held(&cgroup_mutex),
+-			   "css_from_id() needs proper protection");
++	cgroup_assert_mutex_or_rcu_locked();
+ 
+ 	cgrp = idr_find(&ss->root->cgroup_idr, id);
+ 	if (cgrp)
 -- 
 1.8.3.1
