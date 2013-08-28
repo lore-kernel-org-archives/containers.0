@@ -1,8 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 4/9] cgroup: move css_id commit from cgroup_populate_dir() to
-	online_css()
-Date: Wed, 28 Aug 2013 17:03:44 -0400
-Message-ID: <1377723829-22814-5-git-send-email-tj@kernel.org>
+Subject: [PATCH 5/9] cgroup: reorder operations in cgroup_create()
+Date: Wed, 28 Aug 2013 17:03:45 -0400
+Message-ID: <1377723829-22814-6-git-send-email-tj@kernel.org>
 References: <1377723829-22814-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,114 +21,158 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-css_id should be committed after a css is brought online fully.  This
-is currently done form cgroup_populate_dir() but we're gonna reorder
-operations such that cgroup_populate_dir() is called before css is
-onlined.  Let's move css_id commit from cgroup_populate_dir() to
-online_css().
+cgroup_create() currently does the followings.
 
-This change makes it possible for cgroup creation to fail after css_id
-is committed; however, as css is already fully initialized, the
-cleanup isn't different from the cgroup being removed.
+1. alloc cgroup
+2. alloc css's
+3. create the directory and commit to cgroup creation
+4. online css's
+5. create cgroup and css files
+
+The sequence performs allocations before other operations but it
+doesn't buy anything because each of the above steps may fail and
+should be unrollable.  Reorganize the sequence such that cgroup
+operations are done before css operations.
+
+1. alloc cgroup
+2. create the directory and files and commit to cgroup creation
+3. alloc css's
+4. create files for and online css's
+
+This simplifies the code a bit and enables further simplification and
+separating out css creation from cgroup creation which is necessary
+for the planned unified hierarchy where css's will be created and
+destroyed dynamically across the lifetime of a cgroup.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 53 +++++++++++++++++++++++++----------------------------
- 1 file changed, 25 insertions(+), 28 deletions(-)
+ kernel/cgroup.c | 78 +++++++++++++++++++++++++++------------------------------
+ 1 file changed, 37 insertions(+), 41 deletions(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index a65be0c..6a3ad20 100644
+index 6a3ad20..d41ddab 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -4244,7 +4244,7 @@ static struct cftype cgroup_base_files[] = {
- static int cgroup_populate_dir(struct cgroup *cgrp, unsigned long subsys_mask)
- {
- 	struct cgroup_subsys *ss;
--	int i, ret = 0;
-+	int i, ret;
+@@ -4456,52 +4456,66 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+ 	if (test_bit(CGRP_CPUSET_CLONE_CHILDREN, &parent->flags))
+ 		set_bit(CGRP_CPUSET_CLONE_CHILDREN, &cgrp->flags);
  
- 	/* process cftsets of each subsystem */
- 	for_each_subsys(ss, i) {
-@@ -4255,29 +4255,14 @@ static int cgroup_populate_dir(struct cgroup *cgrp, unsigned long subsys_mask)
++	/*
++	 * Create directory.  cgroup_create_file() returns with the new
++	 * directory locked on success so that it can be populated without
++	 * dropping cgroup_mutex.
++	 */
++	err = cgroup_create_file(dentry, S_IFDIR | mode, sb);
++	if (err < 0)
++		goto err_unlock;
++	lockdep_assert_held(&dentry->d_inode->i_mutex);
++
++	cgrp->serial_nr = cgroup_serial_nr_next++;
++
++	/* allocation complete, commit to creation */
++	list_add_tail_rcu(&cgrp->sibling, &cgrp->parent->children);
++	root->number_of_cgroups++;
++
++	/* hold a ref to the parent's dentry */
++	dget(parent->dentry);
++
++	/*
++	 * @cgrp is now fully operational.  If something fails after this
++	 * point, it'll be released via the normal destruction path.
++	 */
++	idr_replace(&root->cgroup_idr, cgrp, cgrp->id);
++
++	err = cgroup_addrm_files(cgrp, cgroup_base_files, true);
++	if (err)
++		goto err_destroy;
++
+ 	for_each_root_subsys(root, ss) {
+ 		struct cgroup_subsys_state *css;
  
- 		list_for_each_entry(set, &ss->cftsets, node) {
- 			ret = cgroup_addrm_files(cgrp, set->cfts, true);
--			if (ret < 0)
--				goto err;
-+			if (ret < 0) {
-+				cgroup_clear_dir(cgrp, subsys_mask);
-+				return ret;
-+			}
+ 		css = ss->css_alloc(cgroup_css(parent, ss));
+ 		if (IS_ERR(css)) {
+ 			err = PTR_ERR(css);
+-			goto err_free_all;
++			goto err_destroy;
+ 		}
+ 		css_ar[ss->subsys_id] = css;
+ 
+ 		err = percpu_ref_init(&css->refcnt, css_release);
+ 		if (err)
+-			goto err_free_all;
++			goto err_destroy;
+ 
+ 		init_css(css, ss, cgrp);
+ 
+ 		if (ss->use_id) {
+ 			err = alloc_css_id(css);
+ 			if (err)
+-				goto err_free_all;
++				goto err_destroy;
  		}
  	}
  
--	/* This cgroup is ready now */
--	for_each_root_subsys(cgrp->root, ss) {
--		struct cgroup_subsys_state *css = cgroup_css(cgrp, ss);
--		struct css_id *id = rcu_dereference_protected(css->id, true);
+-	/*
+-	 * Create directory.  cgroup_create_file() returns with the new
+-	 * directory locked on success so that it can be populated without
+-	 * dropping cgroup_mutex.
+-	 */
+-	err = cgroup_create_file(dentry, S_IFDIR | mode, sb);
+-	if (err < 0)
+-		goto err_free_all;
+-	lockdep_assert_held(&dentry->d_inode->i_mutex);
 -
--		/*
--		 * Update id->css pointer and make this css visible from
--		 * CSS ID functions. This pointer will be dereferened
--		 * from RCU-read-side without locks.
--		 */
--		if (id)
--			rcu_assign_pointer(id->css, css);
--	}
+-	cgrp->serial_nr = cgroup_serial_nr_next++;
 -
- 	return 0;
--err:
--	cgroup_clear_dir(cgrp, subsys_mask);
--	return ret;
- }
+-	/* allocation complete, commit to creation */
+-	list_add_tail_rcu(&cgrp->sibling, &cgrp->parent->children);
+-	root->number_of_cgroups++;
+-
+-	/* hold a ref to the parent's dentry */
+-	dget(parent->dentry);
+-
+ 	/* creation succeeded, notify subsystems */
+ 	for_each_root_subsys(root, ss) {
+ 		struct cgroup_subsys_state *css = css_ar[ss->subsys_id];
  
- /*
-@@ -4356,18 +4341,30 @@ static void init_css(struct cgroup_subsys_state *css, struct cgroup_subsys *ss,
- static int online_css(struct cgroup_subsys_state *css)
- {
- 	struct cgroup_subsys *ss = css->ss;
--	int ret = 0;
-+	struct css_id *id = rcu_dereference_protected(css->id, true);
-+	int ret;
- 
- 	lockdep_assert_held(&cgroup_mutex);
- 
--	if (ss->css_online)
-+	if (ss->css_online) {
- 		ret = ss->css_online(css);
--	if (!ret) {
--		css->flags |= CSS_ONLINE;
--		css->cgroup->nr_css++;
--		rcu_assign_pointer(css->cgroup->subsys[ss->subsys_id], css);
-+		if (ret)
-+			return ret;
++		err = cgroup_populate_dir(cgrp, 1 << ss->subsys_id);
++		if (err)
++			goto err_destroy;
++
+ 		err = online_css(css);
+ 		if (err)
+ 			goto err_destroy;
+@@ -4523,30 +4537,12 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+ 		}
  	}
--	return ret;
-+
-+	css->flags |= CSS_ONLINE;
-+	css->cgroup->nr_css++;
-+	rcu_assign_pointer(css->cgroup->subsys[ss->subsys_id], css);
-+
-+	/*
-+	 * Update id->css pointer and make this css visible from CSS ID
-+	 * functions. This pointer will be dereferened from RCU-read-side
-+	 * without locks.
-+	 */
-+	if (id)
-+		rcu_assign_pointer(id->css, css);
-+
-+	return 0;
- }
  
- /* if the CSS is online, invoke ->css_offline() on it and mark it offline */
-@@ -5678,7 +5675,7 @@ static int alloc_css_id(struct cgroup_subsys_state *child_css)
- 	child_id->stack[depth] = child_id->id;
- 	/*
- 	 * child_id->css pointer will be set after this cgroup is available
--	 * see cgroup_populate_dir()
-+	 * see online_css()
- 	 */
- 	rcu_assign_pointer(child_css->id, child_id);
+-	idr_replace(&root->cgroup_idr, cgrp, cgrp->id);
+-
+-	err = cgroup_addrm_files(cgrp, cgroup_base_files, true);
+-	if (err)
+-		goto err_destroy;
+-
+-	err = cgroup_populate_dir(cgrp, root->subsys_mask);
+-	if (err)
+-		goto err_destroy;
+-
+ 	mutex_unlock(&cgroup_mutex);
+ 	mutex_unlock(&cgrp->dentry->d_inode->i_mutex);
  
+ 	return 0;
+ 
+-err_free_all:
+-	for_each_root_subsys(root, ss) {
+-		struct cgroup_subsys_state *css = css_ar[ss->subsys_id];
+-
+-		if (css) {
+-			percpu_ref_cancel_init(&css->refcnt);
+-			ss->css_free(css);
+-		}
+-	}
++err_unlock:
+ 	mutex_unlock(&cgroup_mutex);
+ 	/* Release the reference count that we took on the superblock */
+ 	deactivate_super(sb);
 -- 
 1.8.3.1
