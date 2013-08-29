@@ -1,7 +1,8 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [REVIEW][PATCH 2/5] userns: Allow PR_CAPBSET_DROP in a user namespace.
-Date: Thu, 29 Aug 2013 16:54:00 -0700
-Message-ID: <87eh9cyrxj.fsf@xmission.com>
+Subject: [REVIEW][PATCH 3/5] pidns: Don't have unshare(CLONE_NEWPID) imply
+	CLONE_THREAD
+Date: Thu, 29 Aug 2013 16:55:01 -0700
+Message-ID: <87a9k0yrvu.fsf@xmission.com>
 References: <87ob8gys0d.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,32 +20,44 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-As the capabilites and capability bounding set are per user namespace
-properties it is safe to allow changing them with just CAP_SETPCAP
-permission in the user namespace.
+I goofed when I made unshare(CLONE_NEWPID) only work in a
+single-threaded process.  There is no need for that requirement and in
+fact I analyzied things right for setns.  The hard requirement
+is for tasks that share a VM to all be in the pid namespace and
+we properly prevent that in do_fork.
+
+Just to be certain I took a look through do_wait and
+forget_original_parent and there are no cases that make it any harder
+for children to be in the multiple pid namespaces than it is for
+children to be in the same pid namespace.  I also performed a check to
+see if there were in uses of task->nsproxy_pid_ns I was not familiar
+with, but it is only used when allocating a new pid for a new task,
+and in checks to prevent craziness from happening.
 
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Tested-by: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
 ---
- security/commoncap.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ kernel/fork.c |    5 -----
+ 1 files changed, 0 insertions(+), 5 deletions(-)
 
-diff --git a/security/commoncap.c b/security/commoncap.c
-index c44b6fe..9fccf71 100644
---- a/security/commoncap.c
-+++ b/security/commoncap.c
-@@ -824,7 +824,7 @@ int cap_task_setnice(struct task_struct *p, int nice)
-  */
- static long cap_prctl_drop(struct cred *new, unsigned long cap)
- {
--	if (!capable(CAP_SETPCAP))
-+	if (!ns_capable(current_user_ns(), CAP_SETPCAP))
- 		return -EPERM;
- 	if (!cap_valid(cap))
- 		return -EINVAL;
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 66635c8..eb45f1d 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -1818,11 +1818,6 @@ SYSCALL_DEFINE1(unshare, unsigned long, unshare_flags)
+ 	if (unshare_flags & CLONE_NEWUSER)
+ 		unshare_flags |= CLONE_THREAD | CLONE_FS;
+ 	/*
+-	 * If unsharing a pid namespace must also unshare the thread.
+-	 */
+-	if (unshare_flags & CLONE_NEWPID)
+-		unshare_flags |= CLONE_THREAD;
+-	/*
+ 	 * If unsharing a thread from a thread group, must also unshare vm.
+ 	 */
+ 	if (unshare_flags & CLONE_THREAD)
 -- 
 1.7.5.4
