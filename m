@@ -1,8 +1,7 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [REVIEW][PATCH 3/5] pidns: Don't have unshare(CLONE_NEWPID) imply
-	CLONE_THREAD
-Date: Thu, 29 Aug 2013 16:55:01 -0700
-Message-ID: <87a9k0yrvu.fsf@xmission.com>
+Subject: [REVIEW][PATCH 4/5] capabilities: allow nice if we are privileged
+Date: Thu, 29 Aug 2013 16:55:35 -0700
+Message-ID: <8761uoyruw.fsf@xmission.com>
 References: <87ob8gys0d.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,44 +19,46 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-I goofed when I made unshare(CLONE_NEWPID) only work in a
-single-threaded process.  There is no need for that requirement and in
-fact I analyzied things right for setns.  The hard requirement
-is for tasks that share a VM to all be in the pid namespace and
-we properly prevent that in do_fork.
+We allow task A to change B's nice level if it has a supserset of
+B's privileges, or of it has CAP_SYS_NICE.  Also allow it if A has
+CAP_SYS_NICE with respect to B - meaning it is root in the same
+namespace, or it created B's namespace.
 
-Just to be certain I took a look through do_wait and
-forget_original_parent and there are no cases that make it any harder
-for children to be in the multiple pid namespaces than it is for
-children to be in the same pid namespace.  I also performed a check to
-see if there were in uses of task->nsproxy_pid_ns I was not familiar
-with, but it is only used when allocating a new pid for a new task,
-and in checks to prevent craziness from happening.
-
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Signed-off-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Reviewed-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- kernel/fork.c |    5 -----
- 1 files changed, 0 insertions(+), 5 deletions(-)
+ security/commoncap.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/kernel/fork.c b/kernel/fork.c
-index 66635c8..eb45f1d 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1818,11 +1818,6 @@ SYSCALL_DEFINE1(unshare, unsigned long, unshare_flags)
- 	if (unshare_flags & CLONE_NEWUSER)
- 		unshare_flags |= CLONE_THREAD | CLONE_FS;
- 	/*
--	 * If unsharing a pid namespace must also unshare the thread.
--	 */
--	if (unshare_flags & CLONE_NEWPID)
--		unshare_flags |= CLONE_THREAD;
--	/*
- 	 * If unsharing a thread from a thread group, must also unshare vm.
- 	 */
- 	if (unshare_flags & CLONE_THREAD)
+diff --git a/security/commoncap.c b/security/commoncap.c
+index 9fccf71..b9d613e 100644
+--- a/security/commoncap.c
++++ b/security/commoncap.c
+@@ -768,16 +768,16 @@ int cap_task_fix_setuid(struct cred *new, const struct cred *old, int flags)
+  */
+ static int cap_safe_nice(struct task_struct *p)
+ {
+-	int is_subset;
++	int is_subset, ret = 0;
+ 
+ 	rcu_read_lock();
+ 	is_subset = cap_issubset(__task_cred(p)->cap_permitted,
+ 				 current_cred()->cap_permitted);
++	if (!is_subset && !ns_capable(__task_cred(p)->user_ns, CAP_SYS_NICE))
++		ret = -EPERM;
+ 	rcu_read_unlock();
+ 
+-	if (!is_subset && !capable(CAP_SYS_NICE))
+-		return -EPERM;
+-	return 0;
++	return ret;
+ }
+ 
+ /**
 -- 
 1.7.5.4
