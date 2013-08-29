@@ -1,13 +1,16 @@
-From: Stone mosaic and Glass mosaic and Metal mosaic <3@erwfgwef.mygbiz.com>
-Subject: =?GB2312?B?U3RvbmUgbW9zYWljIGFuZCBHbGFzcyBtb3NhaWMgYW5kIE1ldGFsIG1vc2FpY9PrxPo=?=
-	=?GB2312?B?ubLP7cHLz+Cy4aGj?=
-Date: Thu, 29 Aug 2013 15:44:00 +0000
-Message-ID: <bcaec52bf39992089104e517f975@google.com>
-Reply-To: Stone mosaic and Glass mosaic and Metal mosaic
-	<3@erwfgwef.mygbiz.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCH v3 06/12] cgroup, memcg: move cgroup_event implementation to
+	memcg
+Date: Thu, 29 Aug 2013 14:19:11 -0400
+Message-ID: <20130829181911.GA8517__45390.7595867806$1377800375$gmane$org@mtj.dyndns.org>
+References: <1376582550-12548-1-git-send-email-tj@kernel.org>
+	<1376582550-12548-7-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6481524963298468071=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1376582550-12548-7-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,244 +20,719 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============6481524963298468071==
-Content-Type: multipart/related; boundary=bcaec52bf39992088704e517f973
+Hello, Michal.
 
---bcaec52bf39992088704e517f973
-Content-Type: text/plain; charset=windows-1252; format=flowed; delsp=yes
-Content-Transfer-Encoding: base64
+Updated as requested.  If there's still somthing missing, please let
+me know.  In case you're okay with the change, how do you wanna route
+it?  01-05 are already in cgroup/for-3.12 and the rest can either be
+applie to cgroup/for-3.12, which will likely to require some, mostly
+trivial, adjustments to memcg patches in -mm, or these all can be
+routed through -mm.  Any preference?
 
-NDQ4ODA1MTcwNjcxMjA2NTY1NjMyMzk0MjkwMTk0OTUyMTkzMTAyNDExODYxNTgwNzA3ODMxMDkz
-MjcxNjc2ODkyNjY4MDk0NzE1OTg1MjMzMzQxMDE3MDkzMzQyNzA4NTIyNk15ICANCmRlYXIgIA0K
-ZnJpZW5kLA0KDQoNCkhvd5JzIHlvdXIgYnVzaW5lc3MgcmVjZW50bHk/DQoNCg0KV2UgYXJlIHdy
-aXRpbmcgdG8gdXBkYXRlIHlvdSBvdXIgbmV3IGRlc2lnbnMgaW4gMjAxMywgd2UgYXJlIHNwZWNp
-YWwgaW4gIA0KbWFudWZhY3R1cmluZyBhbmQgZGVzaWduaW5nIHRoZSBtb3NhaWMgdGlsZXMsIGlu
-Y2x1ZGluZyB0aGUgbWFyYmxlIHN0b25lICANCm1vc2FpYyBhbmQgZ2xhc3MgbW9zYWljIGFuZCBt
-ZXRhbCBtb3NhaWMsIGVjdC4NCg0KDQpXaXRoIG1vcmUgdGhhbiAxMCB5ZWFycyBwcm9kdWN0aW9u
-IGFuZCBleHBvcnQgZXhwZXJpZW5jZSwgd2UgaGF2ZSAgDQpzdWNjZXNzZnVsbHkgZGV2ZWxvcGVk
-IHRob3VzYW5kcyBvZiBtb3NhaWMgZGVzaWducyB0byBtZWV0IHRoZSBuZWVkIG9mICANCmRpZmZl
-cmVudCBtYXJrZXQhIEFuZCB3ZSBjYW4gYWxzbyBtYWtlIGl0IGFjY29yZGluZyB0byB5b3VyIG93
-biBkZXNpZ25zIG9yICANCnJlcXVpcmVtZW50cyENCg0KDQpJZiB5b3UgYXJlIGludGVyZXN0ZWQg
-aW4gb3VyIG1vc2FpY3MsIHdlIHdvdWxkIGxpa2UgdG8gc2VuZCB5b3Ugb3VyICANCmNhdGFsb2d1
-ZSBhbmQgcHJpY2VsaXN0IGZvciB5b3VyIHJlZmVyZW5jZSwgd2UgYXJlIGV4cGVjdGluZyB5b3Vy
-IGtpbmQgIA0KcHJvbXB0IHJlcGx5IGFuZCBmZWVkYmFjayEgVGhhbmtzIGluIGFkdmFuY2UhDQoN
-Cg0KDQotLS0NClRoYW5rcyAmIGJlc3QgcmVnYXJkcw0KU2FicmluYSBMYXcNCkdlbmVyYWwgbWFu
-YWdlcg0KTW9zYWljIEZhY3RvcnkNCkFkZC46IEZvc2hhbiBHdWFuZ2RvbmcgQ2hpbmENCkx2SlRv
-Q3BiQ1pYQWh5a29PcEF1TUpnQ2FTUGFyR2JQWndyVVdEWGNsYUdQUE9UcXhFaXZ1S09SSml4cFpI
-S2VITFpXRlNyUXJBTW9JbkxkRGRwakJrSHJCSERQZ3ZDRU5sZ0pMc3lSWlB1cXFwdWZsdEpranpw
-c2tKbVFPd2xGd21BTHR0Z2dJUWRGWUVjdUd1ckRWU3Baa3FteE9QbG13VEFldGFnQUl4ZFlaWGNO
-R05yU0VVWGFTclV6amVUb2VWanRjYlBCY3lMWkhZS09vY2FVbUhlQVplYm1wRWFibHVwVGlCVm9q
-WUVOTk1SQ3ZDZ3R0Sk1QSGd2b1lGSWNGS1hpRFFEcVJubU93TnpEZERQSWJZdlFwaGRwR1ZxZW5M
-R2psU21yZVR6SQ0KDQpodHRwczovL3BpY2FzYXdlYi5nb29nbGUuY29tL2xoL3NyZWRpcj91bmFt
-ZT0xMTUyMDQ5NjI5NTYxOTE4OTczNjQmdGFyZ2V0PUFMQlVNJmlkPTU5MDI3OTY4NzM5MDM0Nzc1
-MzcmYXV0aGtleT1HdjFzUmdDSVAza2Z2R3RJWC1VZyZpbnZpdGU9Q095VnI2d0cmZmVhdD1lbWFp
-bA0K
---bcaec52bf39992088704e517f973
-Content-Type: image/gif; name="picasaweblogo-zh_CN.gif"
-Content-Disposition: attachment; filename="picasaweblogo-zh_CN.gif"
-Content-Transfer-Encoding: base64
-Content-ID: <picasaweblogo-zh_CN.gif>
+Thanks.
 
-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
---bcaec52bf39992088704e517f973
-Content-Type: image/jpeg; name="email.jpg"
-Content-Disposition: attachment; filename="email.jpg"
-Content-Transfer-Encoding: base64
-Content-ID: <5902796873903477537>
+------ 8< ------
+cgroup_event is way over-designed and tries to build a generic
+flexible event mechanism into cgroup - fully customizable event
+specification for each user of the interface.  This is utterly
+unnecessary and overboard especially in the light of the planned
+unified hierarchy as there's gonna be single agent.  Simply generating
+events at fixed points, or if that's too restrictive, configureable
+cadence or single set of configureable points should be enough.
 
-/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAMCAg0ICw0KCwoICgsLEAoKDQgKCgkLCwoKCggKCw4K
-CwsLCwoLCAsKCg0KCgoKCg0ICgsKCg0NDQoKDAgKCggBAwQEBgUGCgYGCg0NDA0NDA0NDQwNDQwM
-DQ0MDAwMDAwMDAwNDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDP/AABEIAJAAhQMBEQACEQED
-EQH/xAAdAAACAgIDAQAAAAAAAAAAAAAFBwYIAwQBAgkA/8QAUxAAAgECAwUFAwQMBw8FAAAAAQID
-BBEAEiEFBgcxQQgTIlFhFCNxMoGRwRUkM0JSYpKTobHR0jRDREVTVZQJFlRyc3SCg4SjssPT4fAY
-JWSiwv/EABoBAAMBAQEBAAAAAAAAAAAAAAACAwQBBQb/xAAoEQACAQQCAwADAQACAwAAAAAAAQID
-ERIhMUEEE1EUImEFQnEjMlL/2gAMAwEAAhEDEQA/ALxbQHjb/Gb/AIjj2qcVgmYJc6MlJSX5kD42
-wzqwiCUitXbp3LqaqGlWlWofLJKzmnYggGFQobKwNib2+GPG8ys2v1PR8eKb2UzruDu0YxmaPaKj
-lmLMP1tc/px40a9Tg9P1Ujb3N3Nq4qmF2aqISWJirTmxyyKxuM2osDcEEW5jCqpJydzvppDoHDKK
-98yg3HOaMEMfW2hB5eWPPd3JnbRWkalVuXTRko81IrC11apgBFwCLgm/K3TDujJ8DZxRpS7s0Y51
-FF/aYML+PI57Y/Qhu5w7gqn7uCSnmexbJHPEzBRa7EDUAXAv5kY46EgziyabD4GPBIkqQnPGySDx
-rcFXBvpblb0xWjSlF3ElONrFkv75FBtkqPzTm/7ce5lo83FXYs9t9rzZtPK8MlUEkjZkeNkZWRlN
-iCpAN7+WGQmwLWdr7ZjMft6HLZbakHPme91tcDLksTz19MTlF/SvRyO1fss6Cth/+5P/AA4lg0UU
-lY3tl9pTZ0jKBWwAkjVvAPnZ8oUfHFaMbT2TnJNWQyY+MFC3Kv2efhVQfv4+hjVila552DuP3hnW
-rJSxujK6tmIdWDKwMjWIYaMCORHTHl1pJy0WSZA6uRM73dQcz6HmLORjUquMbE/Vshu9U5D+CNpF
-sPEhiHK9/ujpfnbS+MVSd9mlLoWPEbj1T7IKCrWePvQzLbuWBCkA3KSEDUjQ2xlc78l4wFHxI7W9
-DVwiOKSQEMrnMFAyqrcveAE5stgcT0PiKin4307GwXM7EJYNHrc2FgWJzE2664zYZPkaI6NncI6x
-flU4U8/u0DC3M3Be5N+R6eWFVHFl7im307DdZV1Es9qP3hzeOU5vkga2VvLocVxfQa7IVtfsU1ED
-lWNFcBXNpHOjFgOUfMkHTHL48s7aLGL2deDUmxawVTiFlMbx5InIclytr51VQLi5uemOKouxfXEt
-HHxkDLcUktx4TaSDmCdLZr9L466sUQlC70dKris1/wCCSg8/usHL8v6sc99ysaJS7il2ZZq2sqKo
-CmVZ5HkAd/EoNuemvxGmD3jYRA+yOw/VTkqgoyVCsQXt8osARddb5Tri8KmQklGwTP8Ac+K38Gi/
-PDHZXvo4sTg9hCsiBcijstybTLyAv09McWb4BqKBsXZimPSH5289OuLrxqzaZB1aSPWvsqbvtSbI
-pIHy5o0KHLy0lfT5uWKzg4OzI5J7RV3jV2ljs2qli9ieYBn8aSWB16jIbW+JvitahOyaJ5iQ23/d
-GliYxmglBFr++JtfXkIuoxlkrF4rVxecS+2XT7VKGakkTuQQgVO9JLMCSS6jLoLDKefwxldO75NK
-ysafDjfCm2lN3EUUiOVds0kCKtkXMfEeWgOJTpSitMpBt8oYlPuykbA5UuCD8hehDdBoLfoxmheI
-8/4Piv4vzjKe4pBmAb7vMSFY8mHdaG1j8TjY5aINMWdZ22ZY3dPsbIxRnTOhkKtlYgMCUXnb/vhf
-alyCg2QzejtVyzyGVdn1C5lWMqVe2VGYj6SxJ+A88TlKMuyyi10Bf/UfLfXZ8/zK/M21PM9MTcIv
-saKfw24+0/MPk7PmXW9gjnQm5Hz64X0w/wDoZp8nYdpubUignDHTOEe9vL09ed8d9ceExG5Ee2x2
-zGV8rUbXXoA5sCNAf1/P6YtGivpPZvbsdvX2Zmf2GRy4RSCWAGRnIINiTfOQQRpbGqMFEhO5LNjf
-3QxpyVXZx0BYjO97DT+jPphpNdCxTZIaDtpmb3b7NnVWurMmZjZhbQFUvpcc1588JTrqD2NOk2FK
-bjPQqRbZ+0eenu4v+pj1af8Ap00rGd+G3uxfTgHt5avZ8EyK6K4kIR7Zl984sbEjmOhxKpUVZ5Cq
-nho88+JnbVjiq6iJtjtIYpqiEyGoUZ+7mZM4HdGwbLmHobdMWXnwisWH4k3+yKk8UuIyVtTJUpRz
-QiTJeESoQCqBdCYhobA26HrjBOpCZujCUVaxE026D/J6j89EP+WcQcYvsqnJdBfdbiQ9G5kipmz5
-WW7yoQA3M2CrfTTnh1CP0m3PhEv2J2gquaVEFPCDIyJm1NgxC3sCL2HS4+PnKVOPTD9lyX3j4IW1
-NVKehAiTn5cybc76m3zYk3ZWO3M1B2doCPukxNyb5kFySTytpqTphXTUlcZTsJLjlsr7GTpDT07V
-IZM7M8oTKc5A5DW/w0t64zzjCBaM2xcLvVP/AFcg/wBpA/WMKvX2Ndm3QbandgDQIq3F2FRmIF+d
-uuKKNJuyCTaRa6Ps603INUflJ9adMWVOK6IZshG2ew1QzuXM9eCx1CtCBoLdYicX0jjm0LPfjse0
-lNMY1mrcqxxyZmeK5Z5ZlIFotQAi9CcxPniumTUmwRurwnp6RmkjadyR3YD2I1b8VF1zAC+mh1HP
-CygrFlomkW6tifdFiPxuunPrprYCxJxmjRc5DTqLkL0Oxibfa8pOnQga/Fj9WPXh/lp7POl5r4L9
-cBNkCn2fBGAQFEmh1OsznHJUsHiieeeygXFHsvRSVdRIsdS3eSzObXOryFiflCwLEkDkL6YsvAjJ
-ZM5+bKP6o7budiWimjDSirRySCoZRYXOtmV/T/zljnRjF2NMfJnILwdhLZx61rf6cfL191hMIoZ1
-p2F5x47LNJs2mEtLHLNKzrHkmlAWxViSciodLDqBiE0rDU5yEhszc6WJ1daOjDKVdW76U2ZSGBsW
-toR6/DGPNJl3GUuRppx023fSem+GSn/WYz8+HdaHFmHrf0gu2u2HtmnkeLv4GyG2Yw01+QPSIeem
-NSqRsTdJkW2n2oNoztnmjo5ntlzOouFBuAAuUADXkMTmoT5R2MJIZ/Zj35l2xXrTVMNKkWSVyYVU
-N4AOeYOMtz0F721xN0afSOycoq5ceLgpTDkJBfT+KuNP8nzH/gx1UoR2TU2+Q3FutI2orawHWwC0
-Vuf+bG/z3xS1+BskQaiWpYvevqRlkmQHutn/ACY6iRFOlLzIGvr6WAHFiOQP3g3LknYO1XUlwAuf
-JRglVdmAt7Pl0LE3AB9dMNY6kADw0AH8IqVtcXCUVz4r6EU3n1tfBYcyUO6xidWaeeQKV90wgVSf
-xu7hjb9I188CqOBKXwYEHEY/4PTAfBvp0fG2Pn1EiX48GWh4K7TM1FE5CqT3vhW9hadx1J8vPDqc
-p/syOGOkKXbG8zLI4vGAHkHyVv8AL6364JeRNKxXCHYF2hac3ZmH+JLLH+iNkBxklNt3Z3FLgrV2
-iKmshqo0oqyeGNogzIZJ5AX75xmBLsVOUgEXtbXGaVW3RpjTuK2ol2lJ90ry9uQdJHAPmAxIB6Xt
-jNKtfop6v6EN2o6xpY1kqYGQumZe5sSpcXAIta/K5sBhIzT5Ryat2XCG5VKP4qL8r16+Ij9eLWT6
-JbA1VwJ2bIxd6KiZm1Z2W5Y+ZudcXbXwazfZW/tCcEkSqVaKKmgiEalkSmSW7lm1uwbLoBoPP0GI
-zq49DRT7ZAdlcOaymYyQztC9iveRUqo+W+ozKoIBPMA9MIvI/g7jdBGWl2qf50r/AMmUfX9eO/kf
-UdVJGKOm2qNRtPaH++/bhX5XxHXRRrtsnad9NoVYvcmySakm5JAPMnUnqfjg/IYepDO4JbGmdpUr
-Kurle0eRjUVMNr57gKsqZ7+H6MaozyJSjiNmn4eRr8t6hh6VtZzvp/HXFtPPXD3J5Avb24CojBJq
-rOQ+Q+2VWrFDlveUg5XykX8vUYpTp5vZKchObL4K7XZlzVk1ri95X5df0Y9uHgqybMUq7XB6bcDd
-nGKghQ81DgnzPevr6388Za8cJYodTvsphxb7LrV9XNOJ5EzvI1lYgWLt0/7Y9CNKDhd2MWU1II7t
-bs0GyoI6er+xzSLm99VLBne7kgkyAs2UHS5Ggty0x4teKT0enSu+SQ0e9my1Hu5NkryByeyi5v8A
-ijTpocZFDsvkwHv3vHRyLF3U1GAHJcxtGCF7iW18o5Z8vyvDe2GxQmUiGQb70aZlaoprEFcxkjuN
-QQ1768rWFxY+l8TxXwdt2NaqGzXF/atlqfT2fx3PM+R62+vBZHIPZAaarokUi+zwA0pDWhJKmZ2Q
-i45WI05ZeXTGWpllo2RkiTbL37pYRZZaQWsCqNFkYWF7KDa+nTIdb3NrGeLfIN3MlXvhTyfyyBdT
-f3iqQPxRcLILnr4hfloccxkjmVgTW70wxMbVdPJoBcSiygjoL2L9DbT1vjn7/B4zQLp96I3YfbEN
-tNTIARpY3F9fMeuOqFT4dc0uCXbL2rTLGFllo+8LSWZzEGKmQlflAEDKRbU6eVhh/SyOYPrNo0b2
-znZ72N9RTMR8CRe3PFEpREcjR3m3cp6mC0HsqNmzF6dIO8UWsBdV5Fr6E288UTfJzRDNmcO3jdWS
-qqVIINwIlIt5FQCPmwjrVcv1O3iuUTmGnqv6x2j/AGlv3sWfk+TZJCP1vo9COzIjjZdOJHlkf315
-JGLOw9qltc638NgD5DG+llJXnyZ52vooZv8A8KA1VUM2cZpp21kk6zMdBfkL6DpjzZ0a7d1exojO
-iueRPb1blUMchjlqKdJABdHncOAeRy3vr088SwrJ7LKUHwOfs87+7O2TFJH7ZAneOjCzyNcBCDyV
-tPoucboKTWzPNpD03f4z0lU4igqllkILCONZWYhRckAJchRqT0x1wa5ETuZeIUTVVLPAFnYyo6ZO
-6qBfMtuqWHz4QvZdlTT2TH/wWo/Oy+fxHT1xik6mTxHSh9MUfZTdxmWmnYH74SSkaafhHla2FvV7
-Q6cDtF2S5P8ABaj85N+3Bep8Opx+mvL2VHBANNUAm9h30oJsCTbXoASfQYL1Dv6s2E7Jko8XstVp
-Y27yVh8ofe310w0HPLaEmo4uzL2CrH43X7x/1W0x6a/6MTT+kF2pxooo2Mb1tIjKWR1aVAysAQVY
-HVSp0sbWx3B/Dtv6R2o4wUHfs/ttHlMcKZu8WxKyzki99TZhf0thZRfwLmCXjbR57Cuo8lr3Ei26
-3VvIi4YHr8RiXrn8HyQQXitRy+BKylYnQKsgJJt6c8WpU2ntCTqq1iNbP4TwafbJ0t/Gj9uPpIU6
-eKu0eW3UvculwbQLRRBSGA7wBgb3tM/X43v648qulm8eDSr9ldd7d0KSaaUvI4YvJcASaNna/L1v
-jSvIhGNicqLdikvHDsnSVddNNB3Dwv3YQvI6vZYkU5la1vGGta97g48OvWcpaPSpwio7F8nYnq3Z
-kSCFigVmPerYBywFyzD8FifID1xH2S6K2gOLsw9nWq2JW+1S0bFe7kj9zJTu12tbwtKgsfO98djO
-T5C0f+Jana3EwU8bzS01ekcal3kK05CKupYhahiQBzsDhxWQiDtl7O6zt8bIeXoHNvhgja4mBg2F
-2t9mwRLE1QwIDXsoYeKQvoQ2vysO2GBKdh9piiqlLU/tUgQgMyQMwBIvYm/O2uEySFcWd9s8aYJG
-ikEdYRGXZgIGBs0Lrpci5BbUDpr0OOexIMJGZeOMPMQbQt5+zn97AqqDCRjfjnDp7jaIvyvTnX4e
-LFFWR1Ql2UW4y8BJa+vqamODwVEjSrnsGs1uYzeE6cv0nCzrtbRqhCLFjvHwKakIEywwltVEjBSQ
-DYkePlfCxnOptCOEYsFJw2T+kpvzq/vYsvZ9F/Ts2Nl8L0kYKGpiSQADIviNxYLdvFcm1x1+GD92
-cbpronVJ2ZZufcxD/SX979uOeisto4q1I9cOwvuU2z9hUtNIqI6GrYqpBFpNoVEgNx5qwJ6g40pN
-aZnnZvRWXirv5UU9VMiUDzKJJbSLKVv7xjcjum/XikvFclcVVEtCpqu1E1O5jfZtQGW1wHJAuAf6
-G1yCL9cefPGGmalk46Mmye1ysbvIaGtGcIvdrqBkLnMSYhzzW05WxLOP05ixi8NO0yNpTdxHRVEb
-gM+aZyiWA/CEbG/kADguuhlGxP8AeWOWqhkgMUKiVWjLd8SAGFjcdxqPTDoBRHsyDQWp/mCeX+S8
-8QlBt8lFOK6EDtzf7ZkErwyCbPEzxsBS5gGRiDZljII05476JPdw9kfgS2F2lKCkDJHFUsrkGwgK
-WAWx0yqCfI9PnwfjSl2d9i+BmPtk0qrYQVXl9yPpbyv19NccfjSXYZr4a8XbHpEJ91V62+9+m4t9
-HT0wq8dnHUXwwUXbNpVNlWpC62GRL6/H5+VsP+PJdiexfDco+0rB8sLP4hpfICRbmQW69bYSdN/R
-nJvggPGXeyDbDRvmWMxhhaRS3yjfTLy/T8cdU8ex4b5REt0eDqV8y08MlM0j5rAow+ShYkseWg09
-dMOpyfDCSinwOXcrsWSxVEMkjUgjjkjZ7XY5UcMQAAdTaw9cXpzae2RnFNaLnU3DyhAHiGmo8L/s
-OPch5NK1meVLx3fRZvhHEBSRhDdR3tj6d++M9SSlK6KqDWhUVe8EXeODAzENIC1xYkObn5Jt9OOx
-8tKOLQfj3d7if324Kw1kzzqXjMmUlCM4BCKumV4cui8iGNzz648ivCNRm2FTBWKp9pDa67CqEp1p
-2qA6CXvAzJbxEWy528jrmHMaYh+NFcssquRAd1u1eaR+8joJCwuLFsw1+L6W6Wvi9OjFdnJ5sZW6
-fbmnqZ4oBs9EMzxxCRmNl7yRVzHLIT4QSbDna3XFUo/TPJyRbuTYVQDrJSa6D3U3P096dMckrAqu
-uBB7x9g5aiWSb23KZmaQgQHwlmuQPfcgb264k4N8FY1l2hGcUuz+dl1AhVqmoOUP3kcYVVzFrKQZ
-edhfrfCTbjyy+al/6oip3Hf+jq/zcZ/5mJZr6wu/him3Hc80rPh3SEH5u8wZL6F38MT7jE84au3l
-3A5/NJ+3Bkn/AMg38J1sbedaaJITRV7ZFC58uW9h5d29vym/TibUZayGy/g0uE+7C7VV2WOeDuii
-kTNYsXBIsBFe2huTbCugn2OqtuUMvY/B008ySpJCWjz2VmksxZbWuItLAnWzXOlgBfFacFDszzlk
-7kmrO/jVm7ukNgW0mmubdPuFtcXjC87InLgTlF2kp3IA2XILkC/etYXPX3P7Pjj04+FJ7SMcqtj0
-X4DT5tnwkixPeHL5e/k0ws4ODsF7lHeKw2r7XOaaqCRiSW0bRQsLd41jrGSfjr8Mel+LeN/4Zvfu
-xMqDY8xRS1fXqxVS2UUAGYqL2vRtYXva98eJOdtNHoQipbI1vpwAptpkSVclZPIgKiVngVgmnhAj
-po00OoJXGeSXJeLtwIfjf2c4KHKaWJnuAWE8wFiXy6FI00t53wYpRyYKq7iz2NuXJTyJKkNPnjZZ
-FPfH5SsCOcZvY8x5YjGvDpDSjKQ6I+0lta/yaH6Utz/xR9WHl5ERfS1yP/dTblVNTxzSVSrI6hmR
-YIioJJ0F9SPicac046IuKRp7w7he1NnllLyWAzd1DYgaDKMpy9b66/NiEoKXIyk48AB+FyCWNGey
-uXDN3MRK5I2YWAUC7EBdbgA+eEdGI/tYQj4Nwt983zxw/sthfVEPYzsnBqH8Jif8lH9WO+mIeyRU
-3idxkNDVz0y0VPKsDtGJC9iwFvEQLjX0J5YdUKSHzYG3e7YFVSFzDR0aCTLdXLtqgIBGWRCNDrfM
-CfLFVGmuGI8mG37em0Dp7Ls78mXzv1nxTGmzmMjNSduesZhno6Mr1VO9U+drmSQan8W+KqUIu9xX
-GRJ6TtrspH/tUH9obT/d43x/0UtGV+HN7uel/ZM32O0dkU1UYxEZe/JiDZguWrmT5VlvfLfl1xGd
-RVHkgUMdMqDxS3/ro62pSB6bu1lkChoCTYMbhjmGY89fXE6n+hVhNQS6OUqMJ7E1trb21XYsKkJ+
-JGHVRr5DN9ePHlXbu2b1C2kQPiJxN2vQoj+2P42KgWuCAhP30foeuLU6qdrjuJDG7R20nU97NBJc
-jxPESwt5ZSvXXkcaZ1orVtE1Sd7mfdLjBW1FRDE8kWSSSFHtBY5GmQNZrHKct7E2sf04363wijzR
-6AR8KKduXfDp8pdL6X+Rp5+mGVJMi6jT2bLbjgAKlTWxqtgEX2UhdPN6WRteerfRi6SSscumC6LY
-MnfSL7ZW5YxHlIWhzXfNfN9qEHkpWwHM3v05i+gSTCTbo38TVFazC+Vj7EMpIsSAtILkjzB/RhGm
-GID32hkpaSeaKpqWkhilkTOtGVZ0jLKGy0yEgkAGxU4aKO4FL07Zu0RqfZz1uVTr8EF7fq53w7lF
-cncGLfeTiG9VK80lNCzyEu79663Y21AC2Uachjl6ZTFgmTeH/wCLD+ef9zA/WJLJHCbfsf4NEfxe
-9e36E+vHcoI6s7BfdnaImmjjNJF7x0TSZ9M7hdPDrqcNGMJuxOeS5LVUPZfXT7Vk10JMnIfQMepD
-/Mi9mR+XJaPR3sz7rrRbLp4I1KrH3wCk3IvUyMdeupOIzpKm8UGTeyqvE3dFJ6mYiphQl5NM8V75
-yeuv043wpUpWlJrgxRlNPSBGz6WCCPu5JqR5FuczNBc3J+nyx4ValFS1werTnK2zT2ts6knAuKKQ
-C7ZG7g2a2hFxz58raed8QxtwUzbE32h93ohRH2WKmilVlIeBIc5XUFTYHQ3547F/UK3IquKSrXXP
-UC3XJFoQR1yA6G1uWvXA5xXCNHrduQsm/u0xp9kNqD/XN+8MMpdiYLs7DiLtIfzhtHXzlJ9Or64T
-2L6LhFGzBxU2muor667Wu2a5Nr2vrcgaheemKRqfBowG52ad9a2t2jFDV1dXLARKzRtJKgYrGSPE
-rKefqMdc7jONi61Zu/D8krmVgysj1FQ6sttQQ0xBuOd74lL+CZWIXU8DdnD+RU2lhfNJr9MmDDV2
-h1Ub4K0cQOFjJUzCCOBYQxCL3DtZR0zd5rre3piTlFdHc2R0cOJvwIP7M/T/AE8J7V8B3fYe3L4b
-e+UVEUDR2e4EbpfLG1jcNmNjY2Hlikailqwln9GpsncilgdZY6SIMpDoWErDMpDKcrSWNmAYC2lt
-cUT/AG0Mot8sZ8PGip5fa3IE3hHPrpm+jG+PmVl+pCXj0y4nAbaBloIXNrt3hNhYX75+muGzb3Iz
-tJOyPObihuVCtXUs+QFpp2++0Jmc88w88YKnjVpbitF1UihRby7Gog+VpoQ3OzGXQH1DH6BjG6Ve
-PJeM79AT+9qiblNAfg9R+3HbVQug3u5w1hnbJA3eSEGyRvVFiALnRSSbAXxy1Vg42Jlsjs7SZ191
-Vcxp9uW59bgKfgTbCxjLsaVQetBs8jQwOLELrBIQLWH9Hrr8caVcg5HSn3sotVaagupKkM0Qa4Yg
-gg2sQbixta1umGsju2dqDeCgMhu+yjZY/lilYaGT8IHnpfryv0wySD9ug/SbX2e58P2Iu2hVUo/E
-Of4NzbS/liqSQrclyAOI2y6SWjqVii2f3rRTiMxRU3eBzC9imRM2YNYgrqDhtCJ3PPpd1as9Kn4F
-U0Pzr+vX1wrqyWoo1KMUjquzKvlnqBbpeMfrGh9NDieb7Qqp6uiwfZkKpFMKqSIvnS3tBhJCZDom
-YaC/O1tfmxxpy6FcWh0TV9LqpNCQf82/T5/N1wkYqLYYMD7S2PTTKY1FEGcMgdBCGBK2BBGq5eYt
-bGuhFSlsWV0gBsfswKjqxq3bKQbGa4NjyOuuPfh40L3PMqVZ9HpFwFpclBCvMDvRf/XyYwV0lNpD
-wba2Ibevgk88sjGkkcM8hv3d7guSDfqDceRx6lOdJQ29nnzhUvcrtxM7MdSJ2ePZdbMjBbd1CvhI
-UC3iQ31F+Y+VjwfLp+yV4s9jxpuMdkNHZoqzz2LtQfGmiP8A+RjzX4tTtmv2omHDDgpVbPnEw2Nt
-QWVwSlKgJDLbKtsuYnlY6WxalQlHknKohpRbVqh/Mu8Pn/A05/NNhvWxMkZY9v1Q/mXeE/7HH+i8
-wF8UVNhdCLr+ylVTvJMdmbRUzPJLlMEoI7yVms2WTLm18WXS/niE4TT/AFHUkYT2PKo/zftD81Uf
-9TE3Co+Rsl9Jpwp7OFXs2qWcUNePBKmYRTsQWAtfMzW+bFY05diSkiwMe7lWP5PXnlzjk+sYqqTT
-J3RsNuxWG3uKzS2uVx9Y1+GKWfQpVTe3sk1c80spoKwmR3e/dVHVyb+FgNfTGGUKrZohKKjZgKbs
-aVf9X1p/1VT9cmEarfCqnEwHsbVn9XV35qo/6mOqNXtBnH6bFD2OKwEH7H1w9e7qP158d/8AJ8Fc
-k+yQRdkesP8AIqwc7eCo5/lYIryMlvR1unY9COzpsCSl2ZSwSo8ckaZGje+ZSHbnfXlbU3Pnj1E3
-2Y5JX0My2GFPrYAOcAH2AD7AAJ27vPFSgNNNBCpOUPNIkalrE5QXIBawJsLmwPQYANSXfuBVjc1F
-MEmsInM0QWYmwAibNaUkkABCxN+vLABu7V3gjgCmWSGIOwjUySKgeRr5Y1zEZnaxsg8RsbDQ4AOa
-zeCOPNnkiTIpkbO6rljBI7xrkZUBBu5sosdbjAAPHECnyrJ7VSZJCUjk7+HJI4NsiNms7A3BVSWB
-6YACFJvBHI7xLJE8keUSRJIjPFnBK94gOaPMASuYC4BIvbAB9sDeOKqUvDLDMoJUvDIkihgASpZC
-QCAQSDrYjTUYACeADjAB9bAB9gA5wAdA+ADnNgA5BwAfXwAfXwAITtZbrT1S7Pemgqp/Zqw1Eq0s
-ez5ZUiOx9pU2dYtoSR0svvp4VYOSyqxZBmjGACv22+CVcKVFTZlTK8g2mqxsmx5ImWs2lPVCDa1D
-POYqNJJZ3kkqdjVWcRgqsEOSCKEAZXaO4abQrHjKU6TRCnrKKMUQp5Zomq0pP4Sm03jpzTZoWz1V
-PeuiAQRoVnmsAbPGHgJJUCuEdNM/tezoKaYwVYilqHjq7yUkVRULKUvS544RMqQN3hDtEZpZAALP
-eLg7tSoWN2pKmUZdo01LT1MG78ncpNU0skQ21H/B/ZaorNHWfYgNUGjihzh6geEAKQ8BK6aetC08
-6QCHasKpVR7PjO0PbtrU1WIHnpquc18bpFVxLJWw0QhgrEjaORnqZJACyPB1Q8lRMuxn2Tn7hM0o
-oknqjEsmrxUclRGiQhwkUjymVyzqY0WFDIAM/NgA+zYAOb4AOM+ADjvMAH//2Q==
---bcaec52bf39992088704e517f973--
+In addition, it's adding overhead for future changes for cgroup core.
 
---===============6481524963298468071==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+* Everything is being made per-css which is necessary as css's
+  lifetime would no longer coincide with cgroup's in the planned
+  unified hierarchy.  Keeping cgroup_event in cgroup proper means that
+  it should be updated to be managed per-css, which is silly as no
+  other subsystems will use this facility.
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============6481524963298468071==--
+* The file system interface of cgroup will be restructured so that it
+  uses sysfs.  The goal of the conversion is losing duplicate logic
+  and taking advantage of features provided by sysfs such as revoke
+  semantics on file deletion and decoupled synchronization from vfs
+  layer.
+
+  The conversion is likely to involve unifying all different file
+  operation types into a single type and having operations which are
+  as unusual as event callbacks adds unnecessary burden.  While making
+  it specific to memcg doesn't remove all conversion work, it'd lower
+  the amount of work necessary.  We don't have to worry how the
+  unusual event callbacks would fit into the new structure.
+
+Thankfully, memcg is the only user and gets to keep it.  Replacing it
+with something simpler on sane_behavior is strongly recommended.
+
+This patch moves cgroup_event and "cgroup.event_control"
+implementation to mm/memcontrol.c.  Clearing of events on cgroup
+destruction is moved from cgroup_destroy_locked() to
+mem_cgroup_css_offline(), which shouldn't make any noticeable
+difference.
+
+cgroup_css() and __file_cft() are exported to enable the move;
+however, this will soon be reverted once the event code is updated to
+be memcg specific.
+
+Note that "cgroup.event_control" will now exist only on the hierarchy
+with memcg attached to it.  While this change is visible to userland,
+it is unlikely to be noticeable as the file has never been meaningful
+outside memcg.
+
+Aside from the above change, this is pure code relocation.
+
+v2: Per Li Zefan's comments, init/Kconfig updated accordingly and
+    poll.h inclusion moved from cgroup.c to memcontrol.c.
+
+v3: Per Michal's request, update patch description.
+
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Acked-by: Kirill A. Shutemov <kirill.shutemov-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
+Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Cc: Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+ include/linux/cgroup.h |    5 
+ init/Kconfig           |    3 
+ kernel/cgroup.c        |  252 -------------------------------------------------
+ mm/memcontrol.c        |  247 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 256 insertions(+), 251 deletions(-)
+
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -907,6 +907,11 @@ unsigned short css_id(struct cgroup_subs
+ struct cgroup_subsys_state *css_from_dir(struct dentry *dentry,
+ 					 struct cgroup_subsys *ss);
+ 
++/* XXX: temporary */
++struct cgroup_subsys_state *cgroup_css(struct cgroup *cgrp,
++				       struct cgroup_subsys *ss);
++struct cftype *__file_cft(struct file *file);
++
+ #else /* !CONFIG_CGROUPS */
+ 
+ static inline int cgroup_init_early(void) { return 0; }
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -844,7 +844,6 @@ config NUMA_BALANCING
+ 
+ menuconfig CGROUPS
+ 	boolean "Control Group support"
+-	depends on EVENTFD
+ 	help
+ 	  This option adds support for grouping sets of processes together, for
+ 	  use with process control subsystems such as Cpusets, CFS, memory
+@@ -911,6 +910,7 @@ config MEMCG
+ 	bool "Memory Resource Controller for Control Groups"
+ 	depends on RESOURCE_COUNTERS
+ 	select MM_OWNER
++	select EVENTFD
+ 	help
+ 	  Provides a memory resource controller that manages both anonymous
+ 	  memory and page cache. (See Documentation/cgroups/memory.txt)
+@@ -1163,7 +1163,6 @@ config UIDGID_STRICT_TYPE_CHECKS
+ 
+ config SCHED_AUTOGROUP
+ 	bool "Automatic process group scheduling"
+-	select EVENTFD
+ 	select CGROUPS
+ 	select CGROUP_SCHED
+ 	select FAIR_GROUP_SCHED
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -56,8 +56,6 @@
+ #include <linux/pid_namespace.h>
+ #include <linux/idr.h>
+ #include <linux/vmalloc.h> /* TODO: replace with more sophisticated array */
+-#include <linux/eventfd.h>
+-#include <linux/poll.h>
+ #include <linux/flex_array.h> /* used in cgroup_attach_task */
+ #include <linux/kthread.h>
+ 
+@@ -155,36 +153,6 @@ struct css_id {
+ 	unsigned short stack[0]; /* Array of Length (depth+1) */
+ };
+ 
+-/*
+- * cgroup_event represents events which userspace want to receive.
+- */
+-struct cgroup_event {
+-	/*
+-	 * css which the event belongs to.
+-	 */
+-	struct cgroup_subsys_state *css;
+-	/*
+-	 * Control file which the event associated.
+-	 */
+-	struct cftype *cft;
+-	/*
+-	 * eventfd to signal userspace about the event.
+-	 */
+-	struct eventfd_ctx *eventfd;
+-	/*
+-	 * Each of these stored in a list by the cgroup.
+-	 */
+-	struct list_head list;
+-	/*
+-	 * All fields below needed to unregister event when
+-	 * userspace closes eventfd.
+-	 */
+-	poll_table pt;
+-	wait_queue_head_t *wqh;
+-	wait_queue_t wait;
+-	struct work_struct remove;
+-};
+-
+ /* The list of hierarchy roots */
+ 
+ static LIST_HEAD(cgroup_roots);
+@@ -234,8 +202,8 @@ static int cgroup_addrm_files(struct cgr
+  * keep accessing it outside the said locks.  This function may return
+  * %NULL if @cgrp doesn't have @subsys_id enabled.
+  */
+-static struct cgroup_subsys_state *cgroup_css(struct cgroup *cgrp,
+-					      struct cgroup_subsys *ss)
++struct cgroup_subsys_state *cgroup_css(struct cgroup *cgrp,
++				       struct cgroup_subsys *ss)
+ {
+ 	if (ss)
+ 		return rcu_dereference_check(cgrp->subsys[ss->subsys_id],
+@@ -2671,7 +2639,7 @@ static struct dentry *cgroup_lookup(stru
+ /*
+  * Check if a file is a control file
+  */
+-static inline struct cftype *__file_cft(struct file *file)
++struct cftype *__file_cft(struct file *file)
+ {
+ 	if (file_inode(file)->i_fop != &cgroup_file_operations)
+ 		return ERR_PTR(-EINVAL);
+@@ -3959,202 +3927,6 @@ static void cgroup_dput(struct cgroup *c
+ 	deactivate_super(sb);
+ }
+ 
+-/*
+- * Unregister event and free resources.
+- *
+- * Gets called from workqueue.
+- */
+-static void cgroup_event_remove(struct work_struct *work)
+-{
+-	struct cgroup_event *event = container_of(work, struct cgroup_event,
+-			remove);
+-	struct cgroup_subsys_state *css = event->css;
+-
+-	remove_wait_queue(event->wqh, &event->wait);
+-
+-	event->cft->unregister_event(css, event->cft, event->eventfd);
+-
+-	/* Notify userspace the event is going away. */
+-	eventfd_signal(event->eventfd, 1);
+-
+-	eventfd_ctx_put(event->eventfd);
+-	kfree(event);
+-	css_put(css);
+-}
+-
+-/*
+- * Gets called on POLLHUP on eventfd when user closes it.
+- *
+- * Called with wqh->lock held and interrupts disabled.
+- */
+-static int cgroup_event_wake(wait_queue_t *wait, unsigned mode,
+-		int sync, void *key)
+-{
+-	struct cgroup_event *event = container_of(wait,
+-			struct cgroup_event, wait);
+-	struct cgroup *cgrp = event->css->cgroup;
+-	unsigned long flags = (unsigned long)key;
+-
+-	if (flags & POLLHUP) {
+-		/*
+-		 * If the event has been detached at cgroup removal, we
+-		 * can simply return knowing the other side will cleanup
+-		 * for us.
+-		 *
+-		 * We can't race against event freeing since the other
+-		 * side will require wqh->lock via remove_wait_queue(),
+-		 * which we hold.
+-		 */
+-		spin_lock(&cgrp->event_list_lock);
+-		if (!list_empty(&event->list)) {
+-			list_del_init(&event->list);
+-			/*
+-			 * We are in atomic context, but cgroup_event_remove()
+-			 * may sleep, so we have to call it in workqueue.
+-			 */
+-			schedule_work(&event->remove);
+-		}
+-		spin_unlock(&cgrp->event_list_lock);
+-	}
+-
+-	return 0;
+-}
+-
+-static void cgroup_event_ptable_queue_proc(struct file *file,
+-		wait_queue_head_t *wqh, poll_table *pt)
+-{
+-	struct cgroup_event *event = container_of(pt,
+-			struct cgroup_event, pt);
+-
+-	event->wqh = wqh;
+-	add_wait_queue(wqh, &event->wait);
+-}
+-
+-/*
+- * Parse input and register new cgroup event handler.
+- *
+- * Input must be in format '<event_fd> <control_fd> <args>'.
+- * Interpretation of args is defined by control file implementation.
+- */
+-static int cgroup_write_event_control(struct cgroup_subsys_state *dummy_css,
+-				      struct cftype *cft, const char *buffer)
+-{
+-	struct cgroup *cgrp = dummy_css->cgroup;
+-	struct cgroup_event *event;
+-	struct cgroup_subsys_state *cfile_css;
+-	unsigned int efd, cfd;
+-	struct file *efile;
+-	struct file *cfile;
+-	char *endp;
+-	int ret;
+-
+-	efd = simple_strtoul(buffer, &endp, 10);
+-	if (*endp != ' ')
+-		return -EINVAL;
+-	buffer = endp + 1;
+-
+-	cfd = simple_strtoul(buffer, &endp, 10);
+-	if ((*endp != ' ') && (*endp != '\0'))
+-		return -EINVAL;
+-	buffer = endp + 1;
+-
+-	event = kzalloc(sizeof(*event), GFP_KERNEL);
+-	if (!event)
+-		return -ENOMEM;
+-
+-	INIT_LIST_HEAD(&event->list);
+-	init_poll_funcptr(&event->pt, cgroup_event_ptable_queue_proc);
+-	init_waitqueue_func_entry(&event->wait, cgroup_event_wake);
+-	INIT_WORK(&event->remove, cgroup_event_remove);
+-
+-	efile = eventfd_fget(efd);
+-	if (IS_ERR(efile)) {
+-		ret = PTR_ERR(efile);
+-		goto out_kfree;
+-	}
+-
+-	event->eventfd = eventfd_ctx_fileget(efile);
+-	if (IS_ERR(event->eventfd)) {
+-		ret = PTR_ERR(event->eventfd);
+-		goto out_put_efile;
+-	}
+-
+-	cfile = fget(cfd);
+-	if (!cfile) {
+-		ret = -EBADF;
+-		goto out_put_eventfd;
+-	}
+-
+-	/* the process need read permission on control file */
+-	/* AV: shouldn't we check that it's been opened for read instead? */
+-	ret = inode_permission(file_inode(cfile), MAY_READ);
+-	if (ret < 0)
+-		goto out_put_cfile;
+-
+-	event->cft = __file_cft(cfile);
+-	if (IS_ERR(event->cft)) {
+-		ret = PTR_ERR(event->cft);
+-		goto out_put_cfile;
+-	}
+-
+-	if (!event->cft->ss) {
+-		ret = -EBADF;
+-		goto out_put_cfile;
+-	}
+-
+-	/*
+-	 * Determine the css of @cfile, verify it belongs to the same
+-	 * cgroup as cgroup.event_control, and associate @event with it.
+-	 * Remaining events are automatically removed on cgroup destruction
+-	 * but the removal is asynchronous, so take an extra ref.
+-	 */
+-	rcu_read_lock();
+-
+-	ret = -EINVAL;
+-	event->css = cgroup_css(cgrp, event->cft->ss);
+-	cfile_css = css_from_dir(cfile->f_dentry->d_parent, event->cft->ss);
+-	if (event->css && event->css == cfile_css && css_tryget(event->css))
+-		ret = 0;
+-
+-	rcu_read_unlock();
+-	if (ret)
+-		goto out_put_cfile;
+-
+-	if (!event->cft->register_event || !event->cft->unregister_event) {
+-		ret = -EINVAL;
+-		goto out_put_css;
+-	}
+-
+-	ret = event->cft->register_event(event->css, event->cft,
+-			event->eventfd, buffer);
+-	if (ret)
+-		goto out_put_css;
+-
+-	efile->f_op->poll(efile, &event->pt);
+-
+-	spin_lock(&cgrp->event_list_lock);
+-	list_add(&event->list, &cgrp->event_list);
+-	spin_unlock(&cgrp->event_list_lock);
+-
+-	fput(cfile);
+-	fput(efile);
+-
+-	return 0;
+-
+-out_put_css:
+-	css_put(event->css);
+-out_put_cfile:
+-	fput(cfile);
+-out_put_eventfd:
+-	eventfd_ctx_put(event->eventfd);
+-out_put_efile:
+-	fput(efile);
+-out_kfree:
+-	kfree(event);
+-
+-	return ret;
+-}
+-
+ static u64 cgroup_clone_children_read(struct cgroup_subsys_state *css,
+ 				      struct cftype *cft)
+ {
+@@ -4180,11 +3952,6 @@ static struct cftype cgroup_base_files[]
+ 		.mode = S_IRUGO | S_IWUSR,
+ 	},
+ 	{
+-		.name = "cgroup.event_control",
+-		.write_string = cgroup_write_event_control,
+-		.mode = S_IWUGO,
+-	},
+-	{
+ 		.name = "cgroup.clone_children",
+ 		.flags = CFTYPE_INSANE,
+ 		.read_u64 = cgroup_clone_children_read,
+@@ -4676,7 +4443,6 @@ static int cgroup_destroy_locked(struct
+ 	__releases(&cgroup_mutex) __acquires(&cgroup_mutex)
+ {
+ 	struct dentry *d = cgrp->dentry;
+-	struct cgroup_event *event, *tmp;
+ 	struct cgroup_subsys *ss;
+ 	bool empty;
+ 
+@@ -4734,18 +4500,6 @@ static int cgroup_destroy_locked(struct
+ 	dget(d);
+ 	cgroup_d_remove_dir(d);
+ 
+-	/*
+-	 * Unregister events and notify userspace.
+-	 * Notify userspace about cgroup removing only after rmdir of cgroup
+-	 * directory to avoid race between userspace and kernelspace.
+-	 */
+-	spin_lock(&cgrp->event_list_lock);
+-	list_for_each_entry_safe(event, tmp, &cgrp->event_list, list) {
+-		list_del_init(&event->list);
+-		schedule_work(&event->remove);
+-	}
+-	spin_unlock(&cgrp->event_list_lock);
+-
+ 	return 0;
+ };
+ 
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -45,6 +45,7 @@
+ #include <linux/swapops.h>
+ #include <linux/spinlock.h>
+ #include <linux/eventfd.h>
++#include <linux/poll.h>
+ #include <linux/sort.h>
+ #include <linux/fs.h>
+ #include <linux/seq_file.h>
+@@ -239,6 +240,36 @@ struct mem_cgroup_eventfd_list {
+ 	struct eventfd_ctx *eventfd;
+ };
+ 
++/*
++ * cgroup_event represents events which userspace want to receive.
++ */
++struct cgroup_event {
++	/*
++	 * css which the event belongs to.
++	 */
++	struct cgroup_subsys_state *css;
++	/*
++	 * Control file which the event associated.
++	 */
++	struct cftype *cft;
++	/*
++	 * eventfd to signal userspace about the event.
++	 */
++	struct eventfd_ctx *eventfd;
++	/*
++	 * Each of these stored in a list by the cgroup.
++	 */
++	struct list_head list;
++	/*
++	 * All fields below needed to unregister event when
++	 * userspace closes eventfd.
++	 */
++	poll_table pt;
++	wait_queue_head_t *wqh;
++	wait_queue_t wait;
++	struct work_struct remove;
++};
++
+ static void mem_cgroup_threshold(struct mem_cgroup *memcg);
+ static void mem_cgroup_oom_notify(struct mem_cgroup *memcg);
+ 
+@@ -5919,6 +5950,202 @@ static void kmem_cgroup_css_offline(stru
+ }
+ #endif
+ 
++/*
++ * Unregister event and free resources.
++ *
++ * Gets called from workqueue.
++ */
++static void cgroup_event_remove(struct work_struct *work)
++{
++	struct cgroup_event *event = container_of(work, struct cgroup_event,
++			remove);
++	struct cgroup_subsys_state *css = event->css;
++
++	remove_wait_queue(event->wqh, &event->wait);
++
++	event->cft->unregister_event(css, event->cft, event->eventfd);
++
++	/* Notify userspace the event is going away. */
++	eventfd_signal(event->eventfd, 1);
++
++	eventfd_ctx_put(event->eventfd);
++	kfree(event);
++	css_put(css);
++}
++
++/*
++ * Gets called on POLLHUP on eventfd when user closes it.
++ *
++ * Called with wqh->lock held and interrupts disabled.
++ */
++static int cgroup_event_wake(wait_queue_t *wait, unsigned mode,
++		int sync, void *key)
++{
++	struct cgroup_event *event = container_of(wait,
++			struct cgroup_event, wait);
++	struct cgroup *cgrp = event->css->cgroup;
++	unsigned long flags = (unsigned long)key;
++
++	if (flags & POLLHUP) {
++		/*
++		 * If the event has been detached at cgroup removal, we
++		 * can simply return knowing the other side will cleanup
++		 * for us.
++		 *
++		 * We can't race against event freeing since the other
++		 * side will require wqh->lock via remove_wait_queue(),
++		 * which we hold.
++		 */
++		spin_lock(&cgrp->event_list_lock);
++		if (!list_empty(&event->list)) {
++			list_del_init(&event->list);
++			/*
++			 * We are in atomic context, but cgroup_event_remove()
++			 * may sleep, so we have to call it in workqueue.
++			 */
++			schedule_work(&event->remove);
++		}
++		spin_unlock(&cgrp->event_list_lock);
++	}
++
++	return 0;
++}
++
++static void cgroup_event_ptable_queue_proc(struct file *file,
++		wait_queue_head_t *wqh, poll_table *pt)
++{
++	struct cgroup_event *event = container_of(pt,
++			struct cgroup_event, pt);
++
++	event->wqh = wqh;
++	add_wait_queue(wqh, &event->wait);
++}
++
++/*
++ * Parse input and register new cgroup event handler.
++ *
++ * Input must be in format '<event_fd> <control_fd> <args>'.
++ * Interpretation of args is defined by control file implementation.
++ */
++static int cgroup_write_event_control(struct cgroup_subsys_state *dummy_css,
++				      struct cftype *cft, const char *buffer)
++{
++	struct cgroup *cgrp = dummy_css->cgroup;
++	struct cgroup_event *event;
++	struct cgroup_subsys_state *cfile_css;
++	unsigned int efd, cfd;
++	struct file *efile;
++	struct file *cfile;
++	char *endp;
++	int ret;
++
++	efd = simple_strtoul(buffer, &endp, 10);
++	if (*endp != ' ')
++		return -EINVAL;
++	buffer = endp + 1;
++
++	cfd = simple_strtoul(buffer, &endp, 10);
++	if ((*endp != ' ') && (*endp != '\0'))
++		return -EINVAL;
++	buffer = endp + 1;
++
++	event = kzalloc(sizeof(*event), GFP_KERNEL);
++	if (!event)
++		return -ENOMEM;
++
++	INIT_LIST_HEAD(&event->list);
++	init_poll_funcptr(&event->pt, cgroup_event_ptable_queue_proc);
++	init_waitqueue_func_entry(&event->wait, cgroup_event_wake);
++	INIT_WORK(&event->remove, cgroup_event_remove);
++
++	efile = eventfd_fget(efd);
++	if (IS_ERR(efile)) {
++		ret = PTR_ERR(efile);
++		goto out_kfree;
++	}
++
++	event->eventfd = eventfd_ctx_fileget(efile);
++	if (IS_ERR(event->eventfd)) {
++		ret = PTR_ERR(event->eventfd);
++		goto out_put_efile;
++	}
++
++	cfile = fget(cfd);
++	if (!cfile) {
++		ret = -EBADF;
++		goto out_put_eventfd;
++	}
++
++	/* the process need read permission on control file */
++	/* AV: shouldn't we check that it's been opened for read instead? */
++	ret = inode_permission(file_inode(cfile), MAY_READ);
++	if (ret < 0)
++		goto out_put_cfile;
++
++	event->cft = __file_cft(cfile);
++	if (IS_ERR(event->cft)) {
++		ret = PTR_ERR(event->cft);
++		goto out_put_cfile;
++	}
++
++	if (!event->cft->ss) {
++		ret = -EBADF;
++		goto out_put_cfile;
++	}
++
++	/*
++	 * Determine the css of @cfile, verify it belongs to the same
++	 * cgroup as cgroup.event_control, and associate @event with it.
++	 * Remaining events are automatically removed on cgroup destruction
++	 * but the removal is asynchronous, so take an extra ref.
++	 */
++	rcu_read_lock();
++
++	ret = -EINVAL;
++	event->css = cgroup_css(cgrp, event->cft->ss);
++	cfile_css = css_from_dir(cfile->f_dentry->d_parent, event->cft->ss);
++	if (event->css && event->css == cfile_css && css_tryget(event->css))
++		ret = 0;
++
++	rcu_read_unlock();
++	if (ret)
++		goto out_put_cfile;
++
++	if (!event->cft->register_event || !event->cft->unregister_event) {
++		ret = -EINVAL;
++		goto out_put_css;
++	}
++
++	ret = event->cft->register_event(event->css, event->cft,
++			event->eventfd, buffer);
++	if (ret)
++		goto out_put_css;
++
++	efile->f_op->poll(efile, &event->pt);
++
++	spin_lock(&cgrp->event_list_lock);
++	list_add(&event->list, &cgrp->event_list);
++	spin_unlock(&cgrp->event_list_lock);
++
++	fput(cfile);
++	fput(efile);
++
++	return 0;
++
++out_put_css:
++	css_put(event->css);
++out_put_cfile:
++	fput(cfile);
++out_put_eventfd:
++	eventfd_ctx_put(event->eventfd);
++out_put_efile:
++	fput(efile);
++out_kfree:
++	kfree(event);
++
++	return ret;
++}
++
+ static struct cftype mem_cgroup_files[] = {
+ 	{
+ 		.name = "usage_in_bytes",
+@@ -5966,6 +6193,12 @@ static struct cftype mem_cgroup_files[]
+ 		.read_u64 = mem_cgroup_hierarchy_read,
+ 	},
+ 	{
++		.name = "cgroup.event_control",
++		.write_string = cgroup_write_event_control,
++		.flags = CFTYPE_NO_PREFIX,
++		.mode = S_IWUGO,
++	},
++	{
+ 		.name = "swappiness",
+ 		.read_u64 = mem_cgroup_swappiness_read,
+ 		.write_u64 = mem_cgroup_swappiness_write,
+@@ -6298,6 +6531,20 @@ static void mem_cgroup_invalidate_reclai
+ static void mem_cgroup_css_offline(struct cgroup_subsys_state *css)
+ {
+ 	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
++	struct cgroup *cgrp = css->cgroup;
++	struct cgroup_event *event, *tmp;
++
++	/*
++	 * Unregister events and notify userspace.
++	 * Notify userspace about cgroup removing only after rmdir of cgroup
++	 * directory to avoid race between userspace and kernelspace.
++	 */
++	spin_lock(&cgrp->event_list_lock);
++	list_for_each_entry_safe(event, tmp, &cgrp->event_list, list) {
++		list_del_init(&event->list);
++		schedule_work(&event->remove);
++	}
++	spin_unlock(&cgrp->event_list_lock);
+ 
+ 	kmem_cgroup_css_offline(memcg);
