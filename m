@@ -1,15 +1,16 @@
-From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: [PATCH 11/12] memcg: rename cgroup_event to mem_cgroup_event
-Date: Fri, 30 Aug 2013 13:19:50 +0200
-Message-ID: <20130830111950.GE31605__1808.97919131002$1377861607$gmane$org@dhcp22.suse.cz>
-References: <1376582550-12548-1-git-send-email-tj@kernel.org>
-	<1376582550-12548-12-git-send-email-tj@kernel.org>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [REVIEW][PATCH 1/5] namespaces: Simplify copy_namespaces so it
+	is clear what is going on.
+Date: Fri, 30 Aug 2013 16:10:03 +0000
+Message-ID: <20130830161003.GA18857@mail.hallyn.com>
+References: <87ob8gys0d.fsf@xmission.com>
+ <87ioyoyryr.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1376582550-12548-12-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <87ioyoyryr.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,216 +20,88 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu 15-08-13 12:02:29, Tejun Heo wrote:
-> cgroup_event is only available in memcg now.  Let's brand it that way.
-> While at it, add a comment encouraging deprecation of the feature and
-> remove the respective section from cgroup documentation.
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
 > 
-> This patch is cosmetic.
+> Remove the test for the impossible case where tsk->nsproxy == NULL.  Fork
+> will never be called with tsk->nsproxy == NULL.
 > 
-> v2: Index in cgroups.txt updated accordingly as suggested by Li Zefan.
+> Only call get_nsproxy when we don't need to generate a new_nsproxy,
+> and mark the case where we don't generate a new nsproxy as likely.
+> 
+> Remove the code to drop an unnecessarily acquired nsproxy value.
+> 
+> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-OK, Documentation/cgroups/memory.txt contains a documentation for all
-interfaces so this can go.
-> 
-> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-
-Acked-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
 > ---
->  Documentation/cgroups/cgroups.txt | 20 --------------
->  mm/memcontrol.c                   | 57 +++++++++++++++++++++++++--------------
->  2 files changed, 37 insertions(+), 40 deletions(-)
+>  kernel/nsproxy.c |   35 +++++++++++------------------------
+>  1 files changed, 11 insertions(+), 24 deletions(-)
 > 
-> diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
-> index 638bf17..821de56 100644
-> --- a/Documentation/cgroups/cgroups.txt
-> +++ b/Documentation/cgroups/cgroups.txt
-> @@ -24,7 +24,6 @@ CONTENTS:
->    2.1 Basic Usage
->    2.2 Attaching processes
->    2.3 Mounting hierarchies by name
-> -  2.4 Notification API
->  3. Kernel API
->    3.1 Overview
->    3.2 Synchronization
-> @@ -472,25 +471,6 @@ you give a subsystem a name.
->  The name of the subsystem appears as part of the hierarchy description
->  in /proc/mounts and /proc/<pid>/cgroups.
+> diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+> index d9afd2563..a1ed011 100644
+> --- a/kernel/nsproxy.c
+> +++ b/kernel/nsproxy.c
+> @@ -125,22 +125,16 @@ int copy_namespaces(unsigned long flags, struct task_struct *tsk)
+>  	struct nsproxy *old_ns = tsk->nsproxy;
+>  	struct user_namespace *user_ns = task_cred_xxx(tsk, user_ns);
+>  	struct nsproxy *new_ns;
+> -	int err = 0;
 >  
-> -2.4 Notification API
-> ---------------------
+> -	if (!old_ns)
+> +	if (likely(!(flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
+> +			      CLONE_NEWPID | CLONE_NEWNET)))) {
+> +		get_nsproxy(old_ns);
+>  		return 0;
 > -
-> -There is mechanism which allows to get notifications about changing
-> -status of a cgroup.
+> -	get_nsproxy(old_ns);
 > -
-> -To register a new notification handler you need to:
-> - - create a file descriptor for event notification using eventfd(2);
-> - - open a control file to be monitored (e.g. memory.usage_in_bytes);
-> - - write "<event_fd> <control_fd> <args>" to cgroup.event_control.
-> -   Interpretation of args is defined by control file implementation;
+> -	if (!(flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
+> -				CLONE_NEWPID | CLONE_NEWNET)))
+> -		return 0;
 > -
-> -eventfd will be woken up by control file implementation or when the
-> -cgroup is removed.
-> -
-> -To unregister a notification handler just close eventfd.
-> -
-> -NOTE: Support of notifications should be implemented for the control
-> -file. See documentation for the subsystem.
+> -	if (!ns_capable(user_ns, CAP_SYS_ADMIN)) {
+> -		err = -EPERM;
+> -		goto out;
+>  	}
 >  
->  3. Kernel API
->  =============
-> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-> index 8663d6c..2f0a8e1 100644
-> --- a/mm/memcontrol.c
-> +++ b/mm/memcontrol.c
-> @@ -243,7 +243,7 @@ struct mem_cgroup_eventfd_list {
->  /*
->   * cgroup_event represents events which userspace want to receive.
->   */
-> -struct cgroup_event {
-> +struct mem_cgroup_event {
->  	/*
->  	 * memcg which the event belongs to.
->  	 */
-> @@ -5973,14 +5973,27 @@ static void kmem_cgroup_css_offline(struct mem_cgroup *memcg)
->  #endif
->  
->  /*
-> + * DO NOT USE IN NEW FILES.
-> + *
-> + * "cgroup.event_control" implementation.
-> + *
-> + * This is way over-engineered.  It tries to support fully configureable
-> + * events for each user.  Such level of flexibility is completely
-> + * unnecessary especially in the light of the planned unified hierarchy.
-> + *
-> + * Please deprecate this and replace with something simpler if at all
-> + * possible.
-> + */
+> +	if (!ns_capable(user_ns, CAP_SYS_ADMIN))
+> +		return -EPERM;
 > +
-> +/*
->   * Unregister event and free resources.
->   *
->   * Gets called from workqueue.
->   */
-> -static void cgroup_event_remove(struct work_struct *work)
-> +static void memcg_event_remove(struct work_struct *work)
->  {
-> -	struct cgroup_event *event = container_of(work, struct cgroup_event,
-> -			remove);
-> +	struct mem_cgroup_event *event =
-> +		container_of(work, struct mem_cgroup_event, remove);
->  	struct mem_cgroup *memcg = event->memcg;
->  
->  	remove_wait_queue(event->wqh, &event->wait);
-> @@ -6000,11 +6013,11 @@ static void cgroup_event_remove(struct work_struct *work)
->   *
->   * Called with wqh->lock held and interrupts disabled.
->   */
-> -static int cgroup_event_wake(wait_queue_t *wait, unsigned mode,
-> -		int sync, void *key)
-> +static int memcg_event_wake(wait_queue_t *wait, unsigned mode,
-> +			    int sync, void *key)
->  {
-> -	struct cgroup_event *event = container_of(wait,
-> -			struct cgroup_event, wait);
-> +	struct mem_cgroup_event *event =
-> +		container_of(wait, struct mem_cgroup_event, wait);
->  	struct mem_cgroup *memcg = event->memcg;
->  	unsigned long flags = (unsigned long)key;
->  
-> @@ -6033,27 +6046,29 @@ static int cgroup_event_wake(wait_queue_t *wait, unsigned mode,
->  	return 0;
->  }
->  
-> -static void cgroup_event_ptable_queue_proc(struct file *file,
-> +static void memcg_event_ptable_queue_proc(struct file *file,
->  		wait_queue_head_t *wqh, poll_table *pt)
->  {
-> -	struct cgroup_event *event = container_of(pt,
-> -			struct cgroup_event, pt);
-> +	struct mem_cgroup_event *event =
-> +		container_of(pt, struct mem_cgroup_event, pt);
->  
->  	event->wqh = wqh;
->  	add_wait_queue(wqh, &event->wait);
->  }
->  
->  /*
-> + * DO NOT USE IN NEW FILES.
-> + *
->   * Parse input and register new cgroup event handler.
->   *
->   * Input must be in format '<event_fd> <control_fd> <args>'.
->   * Interpretation of args is defined by control file implementation.
->   */
-> -static int cgroup_write_event_control(struct cgroup_subsys_state *css,
-> -				      struct cftype *cft, const char *buffer)
-> +static int memcg_write_event_control(struct cgroup_subsys_state *css,
-> +				     struct cftype *cft, const char *buffer)
->  {
->  	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
-> -	struct cgroup_event *event;
-> +	struct mem_cgroup_event *event;
->  	struct cgroup_subsys_state *cfile_css;
->  	unsigned int efd, cfd;
->  	struct file *efile;
-> @@ -6078,9 +6093,9 @@ static int cgroup_write_event_control(struct cgroup_subsys_state *css,
->  
->  	event->memcg = memcg;
->  	INIT_LIST_HEAD(&event->list);
-> -	init_poll_funcptr(&event->pt, cgroup_event_ptable_queue_proc);
-> -	init_waitqueue_func_entry(&event->wait, cgroup_event_wake);
-> -	INIT_WORK(&event->remove, cgroup_event_remove);
-> +	init_poll_funcptr(&event->pt, memcg_event_ptable_queue_proc);
-> +	init_waitqueue_func_entry(&event->wait, memcg_event_wake);
-> +	INIT_WORK(&event->remove, memcg_event_remove);
->  
->  	efile = eventfd_fget(efd);
->  	if (IS_ERR(efile)) {
-> @@ -6111,6 +6126,8 @@ static int cgroup_write_event_control(struct cgroup_subsys_state *css,
->  	 * to be done via struct cftype but cgroup core no longer knows
->  	 * about these events.  The following is crude but the whole thing
->  	 * is for compatibility anyway.
-> +	 *
-> +	 * DO NOT ADD NEW FILES.
->  	 */
->  	name = cfile->f_dentry->d_name.name;
->  
-> @@ -6221,8 +6238,8 @@ static struct cftype mem_cgroup_files[] = {
->  		.read_u64 = mem_cgroup_hierarchy_read,
->  	},
->  	{
-> -		.name = "cgroup.event_control",
-> -		.write_string = cgroup_write_event_control,
-> +		.name = "cgroup.event_control",		/* XXX: for compat */
-> +		.write_string = memcg_write_event_control,
->  		.flags = CFTYPE_NO_PREFIX,
->  		.mode = S_IWUGO,
->  	},
-> @@ -6555,7 +6572,7 @@ static void mem_cgroup_invalidate_reclaim_iterators(struct mem_cgroup *memcg)
->  static void mem_cgroup_css_offline(struct cgroup_subsys_state *css)
->  {
->  	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
-> -	struct cgroup_event *event, *tmp;
-> +	struct mem_cgroup_event *event, *tmp;
->  
 >  	/*
->  	 * Unregister events and notify userspace.
+>  	 * CLONE_NEWIPC must detach from the undolist: after switching
+>  	 * to a new ipc namespace, the semaphore arrays from the old
+> @@ -149,22 +143,15 @@ int copy_namespaces(unsigned long flags, struct task_struct *tsk)
+>  	 * it along with CLONE_NEWIPC.
+>  	 */
+>  	if ((flags & (CLONE_NEWIPC | CLONE_SYSVSEM)) ==
+> -		(CLONE_NEWIPC | CLONE_SYSVSEM)) {
+> -		err = -EINVAL;
+> -		goto out;
+> -	}
+> +		(CLONE_NEWIPC | CLONE_SYSVSEM)) 
+> +		return -EINVAL;
+>  
+>  	new_ns = create_new_namespaces(flags, tsk, user_ns, tsk->fs);
+> -	if (IS_ERR(new_ns)) {
+> -		err = PTR_ERR(new_ns);
+> -		goto out;
+> -	}
+> +	if (IS_ERR(new_ns))
+> +		return  PTR_ERR(new_ns);
+>  
+>  	tsk->nsproxy = new_ns;
+> -
+> -out:
+> -	put_nsproxy(old_ns);
+> -	return err;
+> +	return 0;
+>  }
+>  
+>  void free_nsproxy(struct nsproxy *ns)
 > -- 
-> 1.8.3.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe cgroups" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
--- 
-Michal Hocko
-SUSE Labs
+> 1.7.5.4
