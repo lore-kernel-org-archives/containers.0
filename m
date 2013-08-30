@@ -1,16 +1,15 @@
 From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: [PATCH 10/12] memcg: make cgroup_event deal with mem_cgroup
-	instead of cgroup_subsys_state
-Date: Fri, 30 Aug 2013 13:15:51 +0200
-Message-ID: <20130830111551.GD31605__10474.2120056928$1377861368$gmane$org@dhcp22.suse.cz>
+Subject: Re: [PATCH 11/12] memcg: rename cgroup_event to mem_cgroup_event
+Date: Fri, 30 Aug 2013 13:19:50 +0200
+Message-ID: <20130830111950.GE31605__1808.97919131002$1377861607$gmane$org@dhcp22.suse.cz>
 References: <1376582550-12548-1-git-send-email-tj@kernel.org>
-	<1376582550-12548-11-git-send-email-tj@kernel.org>
+	<1376582550-12548-12-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1376582550-12548-11-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1376582550-12548-12-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,262 +23,204 @@ To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu 15-08-13 12:02:28, Tejun Heo wrote:
-> cgroup_event is now memcg specific.  Replace cgroup_event->css with
-> ->memcg and convert [un]register_event() callbacks to take mem_cgroup
-> pointer instead of cgroup_subsys_state one.  This simplifies the code
-> slightly and makes css_to_vmpressure() unnecessary which is removed.
+On Thu 15-08-13 12:02:29, Tejun Heo wrote:
+> cgroup_event is only available in memcg now.  Let's brand it that way.
+> While at it, add a comment encouraging deprecation of the feature and
+> remove the respective section from cgroup documentation.
+> 
+> This patch is cosmetic.
+> 
+> v2: Index in cgroups.txt updated accordingly as suggested by Li Zefan.
+
+OK, Documentation/cgroups/memory.txt contains a documentation for all
+interfaces so this can go.
 > 
 > Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 
 Acked-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
 
 > ---
->  include/linux/vmpressure.h |  5 ++---
->  mm/memcontrol.c            | 53 +++++++++++++++++++---------------------------
->  mm/vmpressure.c            | 12 +++++------
->  3 files changed, 30 insertions(+), 40 deletions(-)
+>  Documentation/cgroups/cgroups.txt | 20 --------------
+>  mm/memcontrol.c                   | 57 +++++++++++++++++++++++++--------------
+>  2 files changed, 37 insertions(+), 40 deletions(-)
 > 
-> diff --git a/include/linux/vmpressure.h b/include/linux/vmpressure.h
-> index dd0b025..3c67eb3 100644
-> --- a/include/linux/vmpressure.h
-> +++ b/include/linux/vmpressure.h
-> @@ -33,11 +33,10 @@ extern void vmpressure_prio(gfp_t gfp, struct mem_cgroup *memcg, int prio);
->  extern void vmpressure_init(struct vmpressure *vmpr);
->  extern struct vmpressure *memcg_to_vmpressure(struct mem_cgroup *memcg);
->  extern struct cgroup_subsys_state *vmpressure_to_css(struct vmpressure *vmpr);
-> -extern struct vmpressure *css_to_vmpressure(struct cgroup_subsys_state *css);
-> -extern int vmpressure_register_event(struct cgroup_subsys_state *css,
-> +extern int vmpressure_register_event(struct mem_cgroup *memcg,
->  				     struct eventfd_ctx *eventfd,
->  				     const char *args);
-> -extern void vmpressure_unregister_event(struct cgroup_subsys_state *css,
-> +extern void vmpressure_unregister_event(struct mem_cgroup *memcg,
->  					struct eventfd_ctx *eventfd);
->  #else
->  static inline void vmpressure(gfp_t gfp, struct mem_cgroup *memcg,
+> diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
+> index 638bf17..821de56 100644
+> --- a/Documentation/cgroups/cgroups.txt
+> +++ b/Documentation/cgroups/cgroups.txt
+> @@ -24,7 +24,6 @@ CONTENTS:
+>    2.1 Basic Usage
+>    2.2 Attaching processes
+>    2.3 Mounting hierarchies by name
+> -  2.4 Notification API
+>  3. Kernel API
+>    3.1 Overview
+>    3.2 Synchronization
+> @@ -472,25 +471,6 @@ you give a subsystem a name.
+>  The name of the subsystem appears as part of the hierarchy description
+>  in /proc/mounts and /proc/<pid>/cgroups.
+>  
+> -2.4 Notification API
+> ---------------------
+> -
+> -There is mechanism which allows to get notifications about changing
+> -status of a cgroup.
+> -
+> -To register a new notification handler you need to:
+> - - create a file descriptor for event notification using eventfd(2);
+> - - open a control file to be monitored (e.g. memory.usage_in_bytes);
+> - - write "<event_fd> <control_fd> <args>" to cgroup.event_control.
+> -   Interpretation of args is defined by control file implementation;
+> -
+> -eventfd will be woken up by control file implementation or when the
+> -cgroup is removed.
+> -
+> -To unregister a notification handler just close eventfd.
+> -
+> -NOTE: Support of notifications should be implemented for the control
+> -file. See documentation for the subsystem.
+>  
+>  3. Kernel API
+>  =============
 > diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-> index 18e98ae..8663d6c 100644
+> index 8663d6c..2f0a8e1 100644
 > --- a/mm/memcontrol.c
 > +++ b/mm/memcontrol.c
-> @@ -245,9 +245,9 @@ struct mem_cgroup_eventfd_list {
+> @@ -243,7 +243,7 @@ struct mem_cgroup_eventfd_list {
+>  /*
+>   * cgroup_event represents events which userspace want to receive.
 >   */
->  struct cgroup_event {
+> -struct cgroup_event {
+> +struct mem_cgroup_event {
 >  	/*
-> -	 * css which the event belongs to.
-> +	 * memcg which the event belongs to.
+>  	 * memcg which the event belongs to.
 >  	 */
-> -	struct cgroup_subsys_state *css;
-> +	struct mem_cgroup *memcg;
->  	/*
->  	 * eventfd to signal userspace about the event.
->  	 */
-> @@ -261,14 +261,14 @@ struct cgroup_event {
->  	 * waiter for changes related to this event.  Use eventfd_signal()
->  	 * on eventfd to send notification to userspace.
->  	 */
-> -	int (*register_event)(struct cgroup_subsys_state *css,
-> +	int (*register_event)(struct mem_cgroup *memcg,
->  			      struct eventfd_ctx *eventfd, const char *args);
->  	/*
->  	 * unregister_event() callback will be called when userspace closes
->  	 * the eventfd or on cgroup removing.  This callback must be set,
->  	 * if you want provide notification functionality.
->  	 */
-> -	void (*unregister_event)(struct cgroup_subsys_state *css,
-> +	void (*unregister_event)(struct mem_cgroup *memcg,
->  				 struct eventfd_ctx *eventfd);
->  	/*
->  	 * All fields below needed to unregister event when
-> @@ -546,11 +546,6 @@ struct cgroup_subsys_state *vmpressure_to_css(struct vmpressure *vmpr)
->  	return &container_of(vmpr, struct mem_cgroup, vmpressure)->css;
->  }
+> @@ -5973,14 +5973,27 @@ static void kmem_cgroup_css_offline(struct mem_cgroup *memcg)
+>  #endif
 >  
-> -struct vmpressure *css_to_vmpressure(struct cgroup_subsys_state *css)
-> -{
-> -	return &mem_cgroup_from_css(css)->vmpressure;
-> -}
-> -
->  static inline bool mem_cgroup_is_root(struct mem_cgroup *memcg)
+>  /*
+> + * DO NOT USE IN NEW FILES.
+> + *
+> + * "cgroup.event_control" implementation.
+> + *
+> + * This is way over-engineered.  It tries to support fully configureable
+> + * events for each user.  Such level of flexibility is completely
+> + * unnecessary especially in the light of the planned unified hierarchy.
+> + *
+> + * Please deprecate this and replace with something simpler if at all
+> + * possible.
+> + */
+> +
+> +/*
+>   * Unregister event and free resources.
+>   *
+>   * Gets called from workqueue.
+>   */
+> -static void cgroup_event_remove(struct work_struct *work)
+> +static void memcg_event_remove(struct work_struct *work)
 >  {
->  	return (memcg == root_mem_cgroup);
-> @@ -5653,10 +5648,9 @@ static void mem_cgroup_oom_notify(struct mem_cgroup *memcg)
->  		mem_cgroup_oom_notify_cb(iter);
->  }
+> -	struct cgroup_event *event = container_of(work, struct cgroup_event,
+> -			remove);
+> +	struct mem_cgroup_event *event =
+> +		container_of(work, struct mem_cgroup_event, remove);
+>  	struct mem_cgroup *memcg = event->memcg;
 >  
-> -static int __mem_cgroup_usage_register_event(struct cgroup_subsys_state *css,
-> +static int __mem_cgroup_usage_register_event(struct mem_cgroup *memcg,
->  	struct eventfd_ctx *eventfd, const char *args, enum res_type type)
+>  	remove_wait_queue(event->wqh, &event->wait);
+> @@ -6000,11 +6013,11 @@ static void cgroup_event_remove(struct work_struct *work)
+>   *
+>   * Called with wqh->lock held and interrupts disabled.
+>   */
+> -static int cgroup_event_wake(wait_queue_t *wait, unsigned mode,
+> -		int sync, void *key)
+> +static int memcg_event_wake(wait_queue_t *wait, unsigned mode,
+> +			    int sync, void *key)
 >  {
-> -	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
->  	struct mem_cgroup_thresholds *thresholds;
->  	struct mem_cgroup_threshold_ary *new;
->  	u64 threshold, usage;
-> @@ -5735,22 +5729,21 @@ unlock:
->  	return ret;
->  }
+> -	struct cgroup_event *event = container_of(wait,
+> -			struct cgroup_event, wait);
+> +	struct mem_cgroup_event *event =
+> +		container_of(wait, struct mem_cgroup_event, wait);
+>  	struct mem_cgroup *memcg = event->memcg;
+>  	unsigned long flags = (unsigned long)key;
 >  
-> -static int mem_cgroup_usage_register_event(struct cgroup_subsys_state *css,
-> +static int mem_cgroup_usage_register_event(struct mem_cgroup *memcg,
->  	struct eventfd_ctx *eventfd, const char *args)
->  {
-> -	return __mem_cgroup_usage_register_event(css, eventfd, args, _MEM);
-> +	return __mem_cgroup_usage_register_event(memcg, eventfd, args, _MEM);
->  }
->  
-> -static int memsw_cgroup_usage_register_event(struct cgroup_subsys_state *css,
-> +static int memsw_cgroup_usage_register_event(struct mem_cgroup *memcg,
->  	struct eventfd_ctx *eventfd, const char *args)
->  {
-> -	return __mem_cgroup_usage_register_event(css, eventfd, args, _MEMSWAP);
-> +	return __mem_cgroup_usage_register_event(memcg, eventfd, args, _MEMSWAP);
->  }
->  
-> -static void __mem_cgroup_usage_unregister_event(struct cgroup_subsys_state *css,
-> +static void __mem_cgroup_usage_unregister_event(struct mem_cgroup *memcg,
->  	struct eventfd_ctx *eventfd, enum res_type type)
->  {
-> -	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
->  	struct mem_cgroup_thresholds *thresholds;
->  	struct mem_cgroup_threshold_ary *new;
->  	u64 usage;
-> @@ -5825,22 +5818,21 @@ unlock:
->  	mutex_unlock(&memcg->thresholds_lock);
->  }
->  
-> -static void mem_cgroup_usage_unregister_event(struct cgroup_subsys_state *css,
-> +static void mem_cgroup_usage_unregister_event(struct mem_cgroup *memcg,
->  	struct eventfd_ctx *eventfd)
->  {
-> -	return __mem_cgroup_usage_unregister_event(css, eventfd, _MEM);
-> +	return __mem_cgroup_usage_unregister_event(memcg, eventfd, _MEM);
->  }
->  
-> -static void memsw_cgroup_usage_unregister_event(struct cgroup_subsys_state *css,
-> +static void memsw_cgroup_usage_unregister_event(struct mem_cgroup *memcg,
->  	struct eventfd_ctx *eventfd)
->  {
-> -	return __mem_cgroup_usage_unregister_event(css, eventfd, _MEMSWAP);
-> +	return __mem_cgroup_usage_unregister_event(memcg, eventfd, _MEMSWAP);
->  }
->  
-> -static int mem_cgroup_oom_register_event(struct cgroup_subsys_state *css,
-> +static int mem_cgroup_oom_register_event(struct mem_cgroup *memcg,
->  	struct eventfd_ctx *eventfd, const char *args)
->  {
-> -	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
->  	struct mem_cgroup_eventfd_list *event;
->  
->  	event = kmalloc(sizeof(*event),	GFP_KERNEL);
-> @@ -5860,10 +5852,9 @@ static int mem_cgroup_oom_register_event(struct cgroup_subsys_state *css,
+> @@ -6033,27 +6046,29 @@ static int cgroup_event_wake(wait_queue_t *wait, unsigned mode,
 >  	return 0;
 >  }
 >  
-> -static void mem_cgroup_oom_unregister_event(struct cgroup_subsys_state *css,
-> +static void mem_cgroup_oom_unregister_event(struct mem_cgroup *memcg,
->  	struct eventfd_ctx *eventfd)
+> -static void cgroup_event_ptable_queue_proc(struct file *file,
+> +static void memcg_event_ptable_queue_proc(struct file *file,
+>  		wait_queue_head_t *wqh, poll_table *pt)
 >  {
-> -	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
->  	struct mem_cgroup_eventfd_list *ev, *tmp;
+> -	struct cgroup_event *event = container_of(pt,
+> -			struct cgroup_event, pt);
+> +	struct mem_cgroup_event *event =
+> +		container_of(pt, struct mem_cgroup_event, pt);
 >  
->  	spin_lock(&memcg_oom_lock);
-> @@ -5990,18 +5981,18 @@ static void cgroup_event_remove(struct work_struct *work)
->  {
->  	struct cgroup_event *event = container_of(work, struct cgroup_event,
->  			remove);
-> -	struct cgroup_subsys_state *css = event->css;
-> +	struct mem_cgroup *memcg = event->memcg;
->  
->  	remove_wait_queue(event->wqh, &event->wait);
->  
-> -	event->unregister_event(css, event->eventfd);
-> +	event->unregister_event(memcg, event->eventfd);
->  
->  	/* Notify userspace the event is going away. */
->  	eventfd_signal(event->eventfd, 1);
->  
->  	eventfd_ctx_put(event->eventfd);
->  	kfree(event);
-> -	css_put(css);
-> +	css_put(&memcg->css);
+>  	event->wqh = wqh;
+>  	add_wait_queue(wqh, &event->wait);
 >  }
 >  
 >  /*
-> @@ -6014,7 +6005,7 @@ static int cgroup_event_wake(wait_queue_t *wait, unsigned mode,
+> + * DO NOT USE IN NEW FILES.
+> + *
+>   * Parse input and register new cgroup event handler.
+>   *
+>   * Input must be in format '<event_fd> <control_fd> <args>'.
+>   * Interpretation of args is defined by control file implementation.
+>   */
+> -static int cgroup_write_event_control(struct cgroup_subsys_state *css,
+> -				      struct cftype *cft, const char *buffer)
+> +static int memcg_write_event_control(struct cgroup_subsys_state *css,
+> +				     struct cftype *cft, const char *buffer)
 >  {
->  	struct cgroup_event *event = container_of(wait,
->  			struct cgroup_event, wait);
-> -	struct mem_cgroup *memcg = mem_cgroup_from_css(event->css);
-> +	struct mem_cgroup *memcg = event->memcg;
->  	unsigned long flags = (unsigned long)key;
+>  	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
+> -	struct cgroup_event *event;
+> +	struct mem_cgroup_event *event;
+>  	struct cgroup_subsys_state *cfile_css;
+>  	unsigned int efd, cfd;
+>  	struct file *efile;
+> @@ -6078,9 +6093,9 @@ static int cgroup_write_event_control(struct cgroup_subsys_state *css,
 >  
->  	if (flags & POLLHUP) {
-> @@ -6085,7 +6076,7 @@ static int cgroup_write_event_control(struct cgroup_subsys_state *css,
->  	if (!event)
->  		return -ENOMEM;
->  
-> -	event->css = css;
-> +	event->memcg = memcg;
+>  	event->memcg = memcg;
 >  	INIT_LIST_HEAD(&event->list);
->  	init_poll_funcptr(&event->pt, cgroup_event_ptable_queue_proc);
->  	init_waitqueue_func_entry(&event->wait, cgroup_event_wake);
-> @@ -6156,7 +6147,7 @@ static int cgroup_write_event_control(struct cgroup_subsys_state *css,
->  	if (ret)
->  		goto out_put_cfile;
+> -	init_poll_funcptr(&event->pt, cgroup_event_ptable_queue_proc);
+> -	init_waitqueue_func_entry(&event->wait, cgroup_event_wake);
+> -	INIT_WORK(&event->remove, cgroup_event_remove);
+> +	init_poll_funcptr(&event->pt, memcg_event_ptable_queue_proc);
+> +	init_waitqueue_func_entry(&event->wait, memcg_event_wake);
+> +	INIT_WORK(&event->remove, memcg_event_remove);
 >  
-> -	ret = event->register_event(css, event->eventfd, buffer);
-> +	ret = event->register_event(memcg, event->eventfd, buffer);
->  	if (ret)
->  		goto out_put_css;
+>  	efile = eventfd_fget(efd);
+>  	if (IS_ERR(efile)) {
+> @@ -6111,6 +6126,8 @@ static int cgroup_write_event_control(struct cgroup_subsys_state *css,
+>  	 * to be done via struct cftype but cgroup core no longer knows
+>  	 * about these events.  The following is crude but the whole thing
+>  	 * is for compatibility anyway.
+> +	 *
+> +	 * DO NOT ADD NEW FILES.
+>  	 */
+>  	name = cfile->f_dentry->d_name.name;
 >  
-> diff --git a/mm/vmpressure.c b/mm/vmpressure.c
-> index 40ed6e8..96f7509 100644
-> --- a/mm/vmpressure.c
-> +++ b/mm/vmpressure.c
-> @@ -278,7 +278,7 @@ void vmpressure_prio(gfp_t gfp, struct mem_cgroup *memcg, int prio)
->  
->  /**
->   * vmpressure_register_event() - Bind vmpressure notifications to an eventfd
-> - * @css:	css that is interested in vmpressure notifications
-> + * @memcg:	memcg that is interested in vmpressure notifications
->   * @eventfd:	eventfd context to link notifications with
->   * @args:	event arguments (used to set up a pressure level threshold)
->   *
-> @@ -290,10 +290,10 @@ void vmpressure_prio(gfp_t gfp, struct mem_cgroup *memcg, int prio)
->   *
->   * To be used as memcg event method.
->   */
-> -int vmpressure_register_event(struct cgroup_subsys_state *css,
-> +int vmpressure_register_event(struct mem_cgroup *memcg,
->  			      struct eventfd_ctx *eventfd, const char *args)
+> @@ -6221,8 +6238,8 @@ static struct cftype mem_cgroup_files[] = {
+>  		.read_u64 = mem_cgroup_hierarchy_read,
+>  	},
+>  	{
+> -		.name = "cgroup.event_control",
+> -		.write_string = cgroup_write_event_control,
+> +		.name = "cgroup.event_control",		/* XXX: for compat */
+> +		.write_string = memcg_write_event_control,
+>  		.flags = CFTYPE_NO_PREFIX,
+>  		.mode = S_IWUGO,
+>  	},
+> @@ -6555,7 +6572,7 @@ static void mem_cgroup_invalidate_reclaim_iterators(struct mem_cgroup *memcg)
+>  static void mem_cgroup_css_offline(struct cgroup_subsys_state *css)
 >  {
-> -	struct vmpressure *vmpr = css_to_vmpressure(css);
-> +	struct vmpressure *vmpr = memcg_to_vmpressure(memcg);
->  	struct vmpressure_event *ev;
->  	int level;
+>  	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
+> -	struct cgroup_event *event, *tmp;
+> +	struct mem_cgroup_event *event, *tmp;
 >  
-> @@ -321,7 +321,7 @@ int vmpressure_register_event(struct cgroup_subsys_state *css,
->  
->  /**
->   * vmpressure_unregister_event() - Unbind eventfd from vmpressure
-> - * @css:	css handle
-> + * @memcg:	memcg handle
->   * @eventfd:	eventfd context that was used to link vmpressure with the @cg
->   *
->   * This function does internal manipulations to detach the @eventfd from
-> @@ -330,10 +330,10 @@ int vmpressure_register_event(struct cgroup_subsys_state *css,
->   *
->   * To be used as memcg event method.
->   */
-> -void vmpressure_unregister_event(struct cgroup_subsys_state *css,
-> +void vmpressure_unregister_event(struct mem_cgroup *memcg,
->  				 struct eventfd_ctx *eventfd)
->  {
-> -	struct vmpressure *vmpr = css_to_vmpressure(css);
-> +	struct vmpressure *vmpr = memcg_to_vmpressure(memcg);
->  	struct vmpressure_event *ev;
->  
->  	mutex_lock(&vmpr->events_lock);
+>  	/*
+>  	 * Unregister events and notify userspace.
 > -- 
 > 1.8.3.1
 > 
