@@ -1,18 +1,18 @@
-From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: [PATCH v3 0/3] Send audit/procinfo/cgroup data in socket-level
 	control message
-Date: Wed, 4 Sep 2013 11:20:22 -0400
-Message-ID: <20130904152022.GD28517__22020.1121563607$1378308048$gmane$org@madcap2.tricolour.ca>
+Date: Wed, 04 Sep 2013 08:30:21 -0700
+Message-ID: <1378308621.7360.110.camel@edumazet-glaptop>
 References: <1377614400-27122-1-git-send-email-jkaluza@redhat.com>
 	<1378275261-4553-1-git-send-email-jkaluza@redhat.com>
 	<878uzdf2xp.fsf@xmission.com>
 	<20130904145830.GC28517@madcap2.tricolour.ca>
+	<20130904152022.GD28517@madcap2.tricolour.ca>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20130904145830.GC28517-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org>
+In-Reply-To: <20130904152022.GD28517-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,40 +22,39 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Jan Kaluza <jkaluza-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
+To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Jan Kaluza <jkaluza-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Sep 04, 2013 at 10:58:30AM -0400, Richard Guy Briggs wrote:
-> On Wed, Sep 04, 2013 at 12:42:26AM -0700, Eric W. Biederman wrote:
-> > Jan Kaluza <jkaluza-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
-> > > this patchset against net-next (applies also to linux-next) adds 3 new types
-> > > of "Socket"-level control message (SCM_AUDIT, SCM_PROCINFO and SCM_CGROUP).
+On Wed, 2013-09-04 at 11:20 -0400, Richard Guy Briggs wrote:
+> On Wed, Sep 04, 2013 at 10:58:30AM -0400, Richard Guy Briggs wrote:
+> > On Wed, Sep 04, 2013 at 12:42:26AM -0700, Eric W. Biederman wrote:
+> > > Jan Kaluza <jkaluza-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+> > > > this patchset against net-next (applies also to linux-next) adds 3 new types
+> > > > of "Socket"-level control message (SCM_AUDIT, SCM_PROCINFO and SCM_CGROUP).
+> > 
+> > > By my count you have overflowed cb in struct sk_buff and are stomping on
+> > > _skb_refdest.
+> > 
+> > For patch1/3 I count 56/48, then for patch3 I get 48/48.  Jan, you might
+> > do the conversion to a pointer in patch1/3 to avoid bisect breakage.
 > 
-> > By my count you have overflowed cb in struct sk_buff and are stomping on
-> > _skb_refdest.
+> Wait, that __aligned(8) is for cb[48], not for the contents.
 > 
-> For patch1/3 I count 56/48, then for patch3 I get 48/48.  Jan, you might
-> do the conversion to a pointer in patch1/3 to avoid bisect breakage.
+> For patch1/3 I count 28/48 on 32-bit, 36/48 on 64-bit (or would that be
+> 56 by default on 64-bit arches without aligned specified?), then for
+> patch3 I get 24/48 on 32 and 40/48 on 64 (or again 48/48 by default?).
 
-Wait, that __aligned(8) is for cb[48], not for the contents.
+Do not count, just add this :
 
-For patch1/3 I count 28/48 on 32-bit, 36/48 on 64-bit (or would that be
-56 by default on 64-bit arches without aligned specified?), then for
-patch3 I get 24/48 on 32 and 40/48 on 64 (or again 48/48 by default?).
-
-> > Eric
-> 
-> - RGB
-
-- RGB
-
---
-Richard Guy Briggs <rbriggs-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Senior Software Engineer
-Kernel Security
-AMER ENG Base Operating Systems
-Remote, Ottawa, Canada
-Voice: +1.647.777.2635
-Internal: (81) 32635
-Alt: +1.613.693.0684x3545
+diff --git a/net/unix/af_unix.c b/net/unix/af_unix.c
+index 86de99a..5b61320 100644
+--- a/net/unix/af_unix.c
++++ b/net/unix/af_unix.c
+@@ -1329,6 +1329,7 @@ static void unix_detach_fds(struct scm_cookie *scm, struct sk_buff *skb)
+ {
+ 	int i;
+ 
++	BUILD_BUG_ON(sizeof(struct unix_skb_parms) > sizeof(skb->cb));
+ 	scm->fp = UNIXCB(skb).fp;
+ 	UNIXCB(skb).fp = NULL;
