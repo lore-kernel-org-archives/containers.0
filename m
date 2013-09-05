@@ -1,19 +1,14 @@
-From: =?UTF-8?B?SmFuIEthbHXFvmE=?= <jkaluza-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v3 0/3] Send audit/procinfo/cgroup data in socket-level
-	control message
-Date: Wed, 04 Sep 2013 17:40:19 +0200
-Message-ID: <52275463.4020206__3631.66254614971$1378309247$gmane$org@redhat.com>
-References: <1377614400-27122-1-git-send-email-jkaluza@redhat.com>
-	<1378275261-4553-1-git-send-email-jkaluza@redhat.com>
-	<878uzdf2xp.fsf@xmission.com>
-	<20130904145830.GC28517@madcap2.tricolour.ca>
-	<20130904152022.GD28517@madcap2.tricolour.ca>
-	<1378308621.7360.110.camel@edumazet-glaptop>
+From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCHSET cgroup/for-3.12] cgroup: factor out css creation into
+	create_css()
+Date: Thu, 5 Sep 2013 11:24:57 +0800
+Message-ID: <5227F989.10907@huawei.com>
+References: <1377723829-22814-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1378308621.7360.110.camel@edumazet-glaptop>
+In-Reply-To: <1377723829-22814-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,51 +18,30 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Eric Dumazet <eric.dumazet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 09/04/2013 05:30 PM, Eric Dumazet wrote:
-> On Wed, 2013-09-04 at 11:20 -0400, Richard Guy Briggs wrote:
->> On Wed, Sep 04, 2013 at 10:58:30AM -0400, Richard Guy Briggs wrote:
->>> On Wed, Sep 04, 2013 at 12:42:26AM -0700, Eric W. Biederman wrote:
->>>> Jan Kaluza <jkaluza-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
->>>>> this patchset against net-next (applies also to linux-next) adds 3 new types
->>>>> of "Socket"-level control message (SCM_AUDIT, SCM_PROCINFO and SCM_CGROUP).
->>>
->>>> By my count you have overflowed cb in struct sk_buff and are stomping on
->>>> _skb_refdest.
->>>
->>> For patch1/3 I count 56/48, then for patch3 I get 48/48.  Jan, you might
->>> do the conversion to a pointer in patch1/3 to avoid bisect breakage.
->>
->> Wait, that __aligned(8) is for cb[48], not for the contents.
->>
->> For patch1/3 I count 28/48 on 32-bit, 36/48 on 64-bit (or would that be
->> 56 by default on 64-bit arches without aligned specified?), then for
->> patch3 I get 24/48 on 32 and 40/48 on 64 (or again 48/48 by default?).
->
-> Do not count, just add this :
->
-> diff --git a/net/unix/af_unix.c b/net/unix/af_unix.c
-> index 86de99a..5b61320 100644
-> --- a/net/unix/af_unix.c
-> +++ b/net/unix/af_unix.c
-> @@ -1329,6 +1329,7 @@ static void unix_detach_fds(struct scm_cookie *scm, struct sk_buff *skb)
->   {
->   	int i;
->
-> +	BUILD_BUG_ON(sizeof(struct unix_skb_parms) > sizeof(skb->cb));
->   	scm->fp = UNIXCB(skb).fp;
->   	UNIXCB(skb).fp = NULL;
->
+On 2013/8/29 5:03, Tejun Heo wrote:
+> Hello,
+> 
+> For unified hierarchy, a css's (cgroup_subsys_state) lifetime will be
+> different from that of the associated cgroup.  css's may be created
+> and destroyed dynamically over the lifetime of a single cgroup.  The
+> previous changes decoupled css destruction from cgroup's.  This
+> patchset decouples css creation from cgroup's.
+> 
+> This patchset contains the following nine patches.
+> 
+>  0001-cgroup-fix-css-leaks-on-online_css-failure.patch
+>  0002-cgroup-css-iterations-and-css_from_dir-are-safe-unde.patch
+>  0003-cgroup-make-for_each_subsys-useable-under-cgroup_roo.patch
+>  0004-cgroup-move-css_id-commit-from-cgroup_populate_dir-t.patch
+>  0005-cgroup-reorder-operations-in-cgroup_create.patch
+>  0006-cgroup-combine-css-handling-loops-in-cgroup_create.patch
+>  0007-cgroup-factor-out-cgroup_subsys_state-creation-into-.patch
+>  0008-cgroup-implement-for_each_css.patch
+>  0009-cgroup-remove-for_each_root_subsys.patch
+> 
 
-That's already in af_unix.c:
-
-BUILD_BUG_ON(sizeof(struct unix_skb_parms) > FIELD_SIZEOF(struct 
-sk_buff, cb));
-
-This test is passing for me even with only patch1/3 applied when 
-building 64bit kernel.
-
-Jan Kaluza
+Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
