@@ -1,14 +1,22 @@
-From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCHSET cgroup/for-3.12] cgroup: factor out css creation into
-	create_css()
-Date: Thu, 5 Sep 2013 11:24:57 +0800
-Message-ID: <5227F989.10907@huawei.com>
-References: <1377723829-22814-1-git-send-email-tj@kernel.org>
+From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Subject: Re: memcg creates an unkillable task in 3.11-rc2
+Date: Thu, 5 Sep 2013 11:56:53 +0200
+Message-ID: <20130905095653.GB9702__38145.7002870322$1378375030$gmane$org@dhcp22.suse.cz>
+References: <20130729095109.GB4678@dhcp22.suse.cz>
+	<20130729161026.GD22605@mtj.dyndns.org>
+	<87r4eh70yg.fsf@xmission.com> <51F71DE2.4020102@huawei.com>
+	<87ppu0a298.fsf_-_@tw-ebiederman.twitter.com>
+	<20130730123120.GA15847@dhcp22.suse.cz>
+	<874nbc3sx1.fsf@tw-ebiederman.twitter.com>
+	<20130731073726.GC30514@dhcp22.suse.cz>
+	<87zjt2tm9f.fsf@xmission.com>
+	<20130801090620.GA5198@dhcp22.suse.cz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1377723829-22814-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20130801090620.GA5198-2MMpYkNvuYDjFM9bn6wA6Q@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,30 +26,180 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Glauber Costa <glommer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, kent.overstreet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 2013/8/29 5:03, Tejun Heo wrote:
-> Hello,
-> 
-> For unified hierarchy, a css's (cgroup_subsys_state) lifetime will be
-> different from that of the associated cgroup.  css's may be created
-> and destroyed dynamically over the lifetime of a single cgroup.  The
-> previous changes decoupled css destruction from cgroup's.  This
-> patchset decouples css creation from cgroup's.
-> 
-> This patchset contains the following nine patches.
-> 
->  0001-cgroup-fix-css-leaks-on-online_css-failure.patch
->  0002-cgroup-css-iterations-and-css_from_dir-are-safe-unde.patch
->  0003-cgroup-make-for_each_subsys-useable-under-cgroup_roo.patch
->  0004-cgroup-move-css_id-commit-from-cgroup_populate_dir-t.patch
->  0005-cgroup-reorder-operations-in-cgroup_create.patch
->  0006-cgroup-combine-css-handling-loops-in-cgroup_create.patch
->  0007-cgroup-factor-out-cgroup_subsys_state-creation-into-.patch
->  0008-cgroup-implement-for_each_css.patch
->  0009-cgroup-remove-for_each_root_subsys.patch
-> 
+It seems that this one fell though the cracks?
 
-Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+On Thu 01-08-13 11:06:20, Michal Hocko wrote:
+> On Wed 31-07-13 15:09:16, Eric W. Biederman wrote:
+> > Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org> writes:
+> > 
+> > > [I am CCing David here as well]
+> > >
+> > > On Tue 30-07-13 09:37:46, Eric W. Biederman wrote:
+> > >> Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org> writes:
+> > >> 
+> > >> > On Tue 30-07-13 01:19:31, Eric W. Biederman wrote:
+> > >> > [...]
+> > >> >> Hmm. Looking farther I see what is going on. And it has nothing to do
+> > >> >> with the freezer. (I have commented out that code and reproduced it
+> > >> >> without the freezer to be doubly certain).
+> > >> >> 
+> > >> >> 
+> > >> >> On the exit path exit_robust_list is triggering a page fault to fault a
+> > >> >> page back in.  Which since we have no memory causes the exit path
+> > >> >> to get stuck in mem_cgroup_handle_oom.
+> > >> >
+> > >> > Hmm, interesting. I assume the exit is caused by the SIGKILL, right?
+> > >> > If yes, then why it hasn't coughed early in __mem_cgroup_try_charge
+> > >> 
+> > >> Interesting question.  This isn't the primary thread but we do send
+> > >> SIGKILL to the secondary threads as well.
+> > >> 
+> > >> We definitely need those checks on both paths making my change valid.
+> > >> 
+> > >> Oh. Duh!  This is after we act on SIGKILL so SIGKILL is no longer
+> > >> pending.
+> > >
+> > > Very well spotted Eric! What do you think about the following patch?
+> > > I would have to check since when the exit path could trigger the fault
+> > > but I guess this is worth stable backport.
+> > 
+> > It doesn't have a prayer of working.
+> 
+> So it hasn't passed your test?
+> 
+> > You leave open the race of a fatal signal being received before we go to
+> > sleep.
+> 
+> If a fatal signal is received before we're going to sleep then
+> schedule() should keep it on the runqueue, no?
+> 
+> static void __sched __schedule(void)
+> {
+> [...]
+>         if (prev->state && !(preempt_count() & PREEMPT_ACTIVE)) {
+>                 if (unlikely(signal_pending_state(prev->state, prev))) {
+>                         prev->state = TASK_RUNNING;
+>                 } else {
+> 
+> so it should get a timeslice eventually, mem_cgroup_handle_oom sees
+> fatal_signal_pending and sets TIF_MEMDIE, bypass the charge, get to
+> signal handling, start exiting, fault in, get to charge and bail out in
+> __mem_cgroup_try_charge because it sees TIF_MEMDIE.
+> 
+> Or what am I missing?
+> 
+> > You don't handle a task that has processed the fatal signal and is in
+> > PF_EXITING.  Which is what I experienced.
+> > 
+> > From earlier comments about my code not being early enough I thought I
+> > was going to see a patch in __mem_cgroup_try_change so that the bypass
+> > case will kick in also for tasks in PF_EXITING.
+> 
+> This shouldn't be necessary because TIF_MEMDIE was set for the killed
+> task.  I was playing with PF_EXITING there as well but TIF_MEMDIE sounds
+> like a more appropriate solution.
+> 
+> > You change actually addresses things later in the code path than mine
+> > does.
+> > 
+> > I do like your summary of the problem.
+> > 
+> > Eric
+> > 
+> > > ---
+> > > From 411408558f2858328ea25e69567e9a53a8314032 Mon Sep 17 00:00:00 2001
+> > > From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+> > > Date: Wed, 31 Jul 2013 08:48:54 +0200
+> > > Subject: [PATCH] memcg: Do not hang on OOM when killed by userspace OOM
+> > >
+> > > Eric has reported that he can see task(s) stuck in memcg OOM handler
+> > > regularly. The only way out is to
+> > > 	echo 0 > $GROUP/memory.oom_controll
+> > >
+> > > His usecase is:
+> > > - Setup a hierarchy with memory and the freezer
+> > >   (disable kernel oom and have a process watch for oom).
+> > > - In that memory cgroup add a process with one thread per cpu.
+> > > - In one thread slowly allocate once per second I think it is 16M of ram
+> > >   and mlock and dirty it (just to force the pages into ram and stay there).
+> > > - When oom is achieved loop:
+> > >   * attempt to freeze all of the tasks.
+> > >   * if frozen send every task SIGKILL, unfreeze, remove the directory in
+> > >     cgroupfs.
+> > >
+> > > Eric has then pinpointed the issue to be memcg specific.
+> > >
+> > > All tasks are sitting on the memcg_oom_waitq when memcg oom is disabled.
+> > > Those that have received fatal signal will bypass the charge and should
+> > > continue on their way out. The tricky part is that that exit path might
+> > > trigger a page fault (e.g. exit_robust_list) thus the memcg charge
+> > > while its memcg is still under OOM because nobody has released any
+> > > charges. Unlike with the in-kernel OOM handler the exiting task doesn't
+> > > get TIF_MEMDIE set so it doesn't shortcut charges and falls to the
+> > > memcg OOM again without any way out of it as there are no fatal signals
+> > > pending anymore.
+> > >
+> > > This patch sets the TIF_MEMDIE flag pro actively in mem_cgroup_handle_oom
+> > > if the memcg is disabled after the task is woken up with fatal signal
+> > > pending. This means that any further charges will be bypassed early in
+> > > __mem_cgroup_try_charge and the task will have chance to exit finally.
+> > >
+> > > Strictly speaking we might mark also a task which hasn't been killed by
+> > > userspace OOM handler but this is not harmful as the task is going away
+> > > anyway and under-oom group would like to see it go as soon as possible.
+> > >
+> > > Reported-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> > > Debugged-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> > > Signed-off-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+> > > ---
+> > >  mm/memcontrol.c | 13 ++++++++++++-
+> > >  1 file changed, 12 insertions(+), 1 deletion(-)
+> > >
+> > > diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+> > > index d12ca6f..d4103b0 100644
+> > > --- a/mm/memcontrol.c
+> > > +++ b/mm/memcontrol.c
+> > > @@ -2235,8 +2235,19 @@ static bool mem_cgroup_handle_oom(struct mem_cgroup *memcg, gfp_t mask,
+> > >  
+> > >  	mem_cgroup_unmark_under_oom(memcg);
+> > >  
+> > > -	if (test_thread_flag(TIF_MEMDIE) || fatal_signal_pending(current))
+> > > +	if (test_thread_flag(TIF_MEMDIE))
+> > >  		return false;
+> > > +
+> > > +	/*
+> > > +	 * Userspace OOM killer might have killed this task but
+> > > +	 * there is no way it could have set TIF_MEMDIE as well
+> > > +	 * so we have to set it manually.
+> > > +	 */
+> > > +	if (fatal_signal_pending(current)) {
+> > > +		if (memcg->oom_kill_disable)
+> > > +			set_thread_flag(TIF_MEMDIE);
+> > > +		return false;
+> > > +	}
+> > >  	/* Give chance to dying process */
+> > >  	schedule_timeout_uninterruptible(1);
+> > >  	return true;
+> > > -- 
+> > > 1.8.3.2
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe cgroups" in
+> > the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> -- 
+> Michal Hocko
+> SUSE Labs
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
+
+-- 
+Michal Hocko
+SUSE Labs
