@@ -1,22 +1,13 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: memcg creates an unkillable task in 3.11-rc2
-Date: Fri, 06 Sep 2013 11:09:21 -0700
-Message-ID: <87ob85kejy.fsf@xmission.com>
-References: <20130729095109.GB4678@dhcp22.suse.cz>
-	<20130729161026.GD22605@mtj.dyndns.org> <87r4eh70yg.fsf@xmission.com>
-	<51F71DE2.4020102@huawei.com>
-	<87ppu0a298.fsf_-_@tw-ebiederman.twitter.com>
-	<20130730123120.GA15847@dhcp22.suse.cz>
-	<874nbc3sx1.fsf@tw-ebiederman.twitter.com>
-	<20130731073726.GC30514@dhcp22.suse.cz> <87zjt2tm9f.fsf@xmission.com>
-	<20130801090620.GA5198@dhcp22.suse.cz>
-	<20130905095653.GB9702@dhcp22.suse.cz>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCH cgroup/for-3.12-fixes] cgroup: fix cgroup post-order
+	descendant walk of empty subtree
+Date: Fri, 6 Sep 2013 15:31:08 -0400
+Message-ID: <20130906193108.GH22763__42069.6826339283$1378495886$gmane$org@mtj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20130905095653.GB9702-2MMpYkNvuYDjFM9bn6wA6Q@public.gmane.org> (Michal Hocko's message of
-	"Thu, 5 Sep 2013 11:56:53 +0200")
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,26 +17,39 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Cc: Glauber Costa <glommer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, kent.overstreet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org> writes:
+bd8815a6d8 ("cgroup: make css_for_each_descendant() and friends
+include the origin css in the iteration") updated cgroup descendant
+iterators to include the origin css; unfortuantely, it forgot to drop
+special case handling in css_next_descendant_post() for empty subtree
+leading to failure to visit the origin css without any child.
 
-> It seems that this one fell though the cracks?
+Fix it by dropping the special case handling and always returning the
+leftmost descendant on the first iteration.
 
-Not completely, but it happened just as I was doing my initial triage of
-memcg problems and I haven't quite made it back to this.
-
-I have an even nastier memcg hang (without yet an easy reproducer).
-During mkdir ext3 can add a page to the page cache with the ext3 journal
-transaction lock held.  Normally that isn't a problem but freezing there
-stops all writes to that filesystem, and the world stops.
-
-It looks like the only way to avoid that kind of scenario is to move the
-the memcg sleep to the edge of userspace, like we do with signals and a
-few other things so we can be guaranteed not to increase lock hold
-times, when it is avoidable.  I think I saw some similar comments about
-the slab limiting.
-
-Eric
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+---
+ kernel/cgroup.c |    8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index e0aeb32..8075b72 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -3187,11 +3187,9 @@ css_next_descendant_post(struct cgroup_subsys_state *pos,
+ 
+ 	WARN_ON_ONCE(!rcu_read_lock_held());
+ 
+-	/* if first iteration, visit the leftmost descendant */
+-	if (!pos) {
+-		next = css_leftmost_descendant(root);
+-		return next != root ? next : NULL;
+-	}
++	/* if first iteration, visit leftmost descendant which may be @root */
++	if (!pos)
++		return css_leftmost_descendant(root);
+ 
+ 	/* if we visited @root, we're done */
+ 	if (pos == root)
