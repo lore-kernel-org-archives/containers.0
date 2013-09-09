@@ -1,18 +1,22 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: RFC: Device Namespaces
-Date: Sun, 08 Sep 2013 17:51:55 -0700
-Message-ID: <871u4yddg4.fsf@xmission.com>
-References: <CAA4jN2aw4zEW=UfKCyqaOvXnbiRb_J9srfCn4OXTFzc6vWBM4A@mail.gmail.com>
-	<20130822182118.GA28331@sergelap>
-	<CAA4jN2YL7Lfu2+DW-i+MovFxWEhJfT4aBBKREU_vy7JX9TKGHA@mail.gmail.com>
-	<8761udlu0d.fsf@xmission.com>
-	<CAA2m6vexArJ+6jFbK80Amstk=LK30=XDNHdBHSswP=LgpSP-6A@mail.gmail.com>
+From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Subject: Re: memcg creates an unkillable task in 3.11-rc2
+Date: Mon, 9 Sep 2013 10:31:47 +0200
+Message-ID: <20130909083147.GA18056__30904.5164184228$1378715528$gmane$org@dhcp22.suse.cz>
+References: <87r4eh70yg.fsf@xmission.com> <51F71DE2.4020102@huawei.com>
+	<87ppu0a298.fsf_-_@tw-ebiederman.twitter.com>
+	<20130730123120.GA15847@dhcp22.suse.cz>
+	<874nbc3sx1.fsf@tw-ebiederman.twitter.com>
+	<20130731073726.GC30514@dhcp22.suse.cz>
+	<87zjt2tm9f.fsf@xmission.com>
+	<20130801090620.GA5198@dhcp22.suse.cz>
+	<20130905095653.GB9702@dhcp22.suse.cz>
+	<87ob85kejy.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAA2m6vexArJ+6jFbK80Amstk=LK30=XDNHdBHSswP=LgpSP-6A-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Amir Goldstein's message of "Sun, 8 Sep 2013 14:28:55 +0200")
+Content-Disposition: inline
+In-Reply-To: <87ob85kejy.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,46 +26,39 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Amir Goldstein <amir-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lxc-devel <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Glauber Costa <glommer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, kent.overstreet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-QW1pciBHb2xkc3RlaW4gPGFtaXJAY2VsbHJveC5jb20+IHdyaXRlczoKCj4gT24gRnJpLCBTZXAg
-NiwgMjAxMyBhdCA3OjUwIFBNLCBFcmljIFcuIEJpZWRlcm1hbgo+IDxlYmllZGVybUB4bWlzc2lv
-bi5jb20+IHdyb3RlOgo+Cj4gSGkgRXJpYywKPgo+IElmIHdlIGNhbiBnZXQgcGVvcGxlIHRvIHRh
-a2UgYSBxdWljayBsb29rIGF0IHRoZSBjb2RlIGJlZm9yZSBMUEMKPiB0aGF0IGNvdWxkIG1ha2Ug
-dGhlIExQQyBkaXNjdXNzaW9ucyBtb3JlIGVmZmVjdGl2ZS4KPiBFdmVuIGxvb2tpbmcgYXQgb25l
-IG9mIHRoZSBzdWJzeXN0ZW0gcGF0Y2hlcyBjYW4gZ2l2ZSBhIGJhc2ljCj4gaWRlYSBvZiB0aGUg
-d29yayB3ZSBoYXZlIGRvbmU6Cj4gaHR0cHM6Ly9naXRodWIuY29tL0NlbGxyb3gvbGludXgvY29t
-bWl0cy9kZXZucy1nb2xkZmlzaC0zLjQKPgo+ICAgICBJIHRoaW5rIHlvdSBhcmUgdGFsa2luZyBh
-Ym91dCBoYXZpbmcgd3JhcHBlcnMgYXJvdW5kIHlvdXIgZGV2aWNlcwo+ICAgICBzbyB5b3UKPiAg
-ICAgY2FuIHNoYXJlLiDCoFdoaWNoIGlzIG5vdCB0aGUgcXVpdGUgc2FtZSBwcm9ibGVtIHRoZSBy
-ZXN0IG9mIHVzCj4gICAgIGhhdmUgYmVlbgo+ICAgICB0aGlua2luZyBvZiB3aGVuIHRhbGtpbmcg
-YWJvdXQgYSBkZXZpY2UgbmFtZXNwYWNlLgo+Cj4gV2UgYXJlIGludGVyZXN0ZWQgaW4gYWxsIHBy
-b2JsZW1zIHJlbGF0ZWQgdG8gdmlydHVhbGl6YXRlZCB2aWV3IG9mCj4gZGV2aWNlcwo+IGluc2lk
-ZSBhIGNvbnRhaW5lciwgc28gbGV0IG91ciB3b3JrIHNvIGZhciBiZSBhIHN0YXJ0aW5nIHBvaW50
-IHRvCj4gZGlzY3VzcyBhbGwgb2YgdGhlbS4KPgo+ICAgICBNeSBmaXJzdCBpbXByZXNzaW9uIGlz
-IHRoYXQgdGhpcyBpcyBiZXR0ZXIgc29sdmVkIHdpdGggbW9yZQo+ICAgICBhcHByb3ByaWF0ZQo+
-ICAgICBhYnN0cmFjdGlvbnMgaW4gdXNlcnNwYWNlIG9yIGluIHRoZSBrZXJuZWwuCgpBcyBJIHJl
-YWQgeW91ciBjb2RlLCB5b3UgYXJlIHNvbHZpbmcgdGhlIHByb2JsZW0gb2Ygb25lIG9wZW5lciBv
-ZiBhCmRldmljZSBhbW9uZyBhIGdyb3VwIG9mIG9wZW5lcnMgYmVpbmcgYWJsZSB0byBhY2Nlc3Mg
-YSBkZXZpY2UgYXQgYSB0aW1lLgpXaGljaCBsZWFkcyB0byB0aGUgcXVlc3Rpb24gd2h5IGNhbid0
-IHRoZSBtdWx0aXBsZXhpbmcgaGFwcGVuIGluCnVzZXJzcGFjZT8KCkkgdGhpbmsgd2l0aCB5b3Vy
-IGRlc2lnbiBpdCB3b3VsZCBub3QgYmUgcG9zc2libGUgdG8gcGxheSBhIHNvbmcgaW4gb25lCmRl
-dmljZSBuYW1lc3BhY2Ugd2hpbGUgZG9pbmcgd29yayBpbiB0aGUgb3RoZXIuICBBcyBhIHNlY3Vy
-aXR5IG1vZGVsCnRoYXQgaXNuJ3Qgd3JvbmcgYnV0IGFzIHNvbWVvbmUgdHJ5aW5nIHRvIGdldCB3
-b3JrIGRvbmUgdGhhdCBjb3VsZCBiZSBhCnJlYWwgcGFpbi4KClRoZSBtb3JlIGNvbW1vbiBjb25j
-ZXJuIGlzIHRvIGhhdmUgZGV2aWNlcyB3ZSBjYW4gdXNlIGFsbCBvZiB0aGUgdGltZS4KClRoZXJl
-IG1heSBiZSBhIG5lZWQgZm9yIGEgZGV2aWNlIG5hbWVzcGFjZSBhbmQgbXVsdGlwbGV4aW5nIGFj
-Y2VzcyB0bwpoYXJkd2FyZSBkZXZpY2VzIG1ha2VzIHRoYXQgY2xlYXJlci4gIFNvIGZhciBub3Ro
-aW5nIGhhcyByaXNlbiB0byB0aGUKbGV2ZWwgb2Ygd2UgYWN0dWFsbHkgbmVlZCBhIGRldmljZSBu
-YW1lc3BhY2UgdG8gZG8gWC4gIEVzcGVjaWFsbHkgaW4gYW4KZXJyYSBvZiBob3RwbHVnIGFuZCBk
-eW5hbWljIGRldmljZSBudW1iZXJzLgoKSXQgaXMgYXJndWFibGUgdGhhdCB5b3UgY291bGQgZG8g
-eW91ciBraW5kIG9mIGRldmljZSBtdWx0aXBsZXhpbmcgd2l0aCBhCmZ1c2UgZGV2aWNlIGluIHVz
-ZXJzcGFjZSB0aGF0IGltcGxlbWVudHMgeW91ciBkZXNpcmVkIHBvbGljeS4KCkFuZCBwb2xpY3kg
-aXMgd2hlcmUgY2VsbCBzaXR1dGF0aW9uIHNlZW1zIHRvIGZhbGwgZG93biBiZWNhdXNlIGl0IGhh
-cmQKY29kZXMgb25lIHNwZWNpZmljIHBvbGljeSBpbnRvIHRoZSBrZXJuZWwsIGFuZCBhIHBvbGlj
-eSBtb3N0IHNpdHVhdGlvbnMKZG9uJ3QgZmluZCB1c2VmdWwuCgpFcmljCl9fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0
-CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51
-eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On Fri 06-09-13 11:09:21, Eric W. Biederman wrote:
+> Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org> writes:
+> 
+> > It seems that this one fell though the cracks?
+> 
+> Not completely, but it happened just as I was doing my initial triage of
+> memcg problems and I haven't quite made it back to this.
+
+OK. I am primarily asking because I am not sure I understood whether the
+proposed patch helped or not. It should as per my last email but it is
+possible that I have missed something...
+
+> I have an even nastier memcg hang (without yet an easy reproducer).
+> During mkdir ext3 can add a page to the page cache with the ext3 journal
+> transaction lock held.  Normally that isn't a problem but freezing there
+> stops all writes to that filesystem, and the world stops.
+> 
+> It looks like the only way to avoid that kind of scenario is to move the
+> the memcg sleep to the edge of userspace, like we do with signals and a
+> few other things so we can be guaranteed not to increase lock hold
+> times, when it is avoidable.  I think I saw some similar comments about
+> the slab limiting.
+
+Johannes has patches that move memcg oom out of any locks already: 
+https://lkml.org/lkml/2013/8/3/81. There is some development going on
+there and I guess he will post v3 soon but that sounds it might help
+with what you describe above.
+
+Thanks!
+-- 
+Michal Hocko
+SUSE Labs
