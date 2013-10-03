@@ -1,11 +1,14 @@
-From: "gsm-service-F+A7yfAiX+I@public.gmane.org" <gsm-service-F+A7yfAiX+I@public.gmane.org>
-Subject: action- Offer all-   in our boutique
-Date: Thu, 3 Oct 2013 11:25:07 +0400
-Message-ID: <524D5414.F318E2AC@mail.sandy.ru>
+From: Amir Goldstein <amir-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: Device Namespaces
+Date: Thu, 3 Oct 2013 11:58:39 +0300
+Message-ID: <CAA2m6vc3OFmS9VwiTavRzPqhn+qoe6vDCO2sitXpEQ8a1JVyfg@mail.gmail.com>
+References: <CAA2m6veny-7_ONMA973Wu36U4kz4gAuw0dpodkb8+GZDv6VNBQ@mail.gmail.com>
+	<87a9iri3ot.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <87a9iri3ot.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,9 +18,133 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: andreacervera-rphTv4pjVZMJGwgDXS7ZQA@public.gmane.org, ryan-sx6jBn5UrZlkyMDmhFm1iJqQE7yCjDx5@public.gmane.org, mikec-V0APJ6JwmAg@public.gmane.org, chendrix-XkckGZ689+c@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, debraklutz-SaMnSzMTH7DR7s880joybQ@public.gmane.org, dferber-uYQUlcT+riU@public.gmane.org, mchauveau-1uhxUnwEalxg9hUCZPvPmw@public.gmane.org, abdalla_ahmed-y9RNpCaG2K5BDgjK7y7TUQ@public.gmane.org, pete-XS2tXXM6jTals/Jj4OG/69BPR1lH4CV8@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, lxc-devel <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, mhw-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Stephane Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On Thu, Oct 3, 2013 at 3:44 AM, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>wrote:
 
-RE:Present for New Year! accessories  and accessories 
-http://bit.ly/17ejen6
+> Amir Goldstein <amir-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org> writes:
+>
+> > What we really like to see is a setns() style API that can be used to
+> > add a device in the context of a namespace in either a "shared" or
+> > "private" mode.
+>
+> I think you mean an "ip link set dev FOO netns XXX" style API.
+>
+
+correct.
+
+
+>
+> Right now one of the best suggestions on the table is:
+>
+> mkdir -p /dev/container/X
+> ln /dev/zero /dev/container/X/zero
+> ln /dev/null /dev/container/X/null
+> ...
+>
+> With /dev/container/X mounted on /dev for container X.
+>
+> Which seems to cover putting a device in a namespace, while allowing
+> things to still be reasonably managed.
+>
+> There are a few other variations on that scheme but nothing that says we
+> must have kernel support or to create any kind of kernel context beyond
+> which directory the device nodes live in.
+>
+> > This kind of API is a required building block for us to write device
+> > drivers that are namespace aware in a way that userspace will have
+> > enough flexibility for dynamic configuration.
+> >
+> > We are trying to come up with a proposal for that sort of API.  When
+> > we have something decent, we shall post it.
+>
+> I really think what you need to write are special drivers that
+> facilitate your use case.
+>
+> For the networking stack we wound up adding veth pairs, and macvlan
+> devices, to handle the common sharing modes.
+>
+> Outside of your sharing situation I am not seeing any need or any
+> advantage of creating devices that are modified to be sharable and I am
+> seeing a lot of disadvantages to implementing things that way.  The
+> biggest is that you seem to working independent of the subsystem
+> maintainers of those devices which is generally a poor idea.
+>
+> Unprivileged creation of device nodes we can handle if it can be shown
+> that it is safe to create device nodes.
+>
+> As I understand your problem you are trying to multiplex a device by
+> building a device with a built in stop light.  Where one opener can
+> write and the other openers are stopped/dropped.  That sounds very
+> similar to macvlan, or ethernet bridging.   From the patches you have
+> floated I suspect it would be very simple to build and just need a
+> little bit of glue.
+>
+
+Excellent! let's focus the discussion on a new device driver we want to
+write
+which is namespace aware. let's call this device driver valarm-dev.
+Similarly to Android's alarm-dev, valarm-dev can be used to request RTC
+wakeup calls
+from user space and get/set RTC values, but with valarm-dev, every container
+may use different values for current time.
+
+As you can see in our patch set, we already have a version of alarm-dev
+that maintains
+its state inside a context, instead of in global variable, so it is capable
+of providing
+different context per namespace.
+
+And now for the 1M$ question: per *which* namespace do we attribute the
+current realtime clock time?
+To UTS namespace (because T historically stands for Time)? To device
+namespace?
+Even if device namespace would exist, we do not want to tie the policy
+decision of "separate time"
+to a very wide definition of "separate devices".
+
+So what we want to create, is an API for device driver writers, that will
+enable to write a namespace
+aware device and allow userspace to configure when the namespace aware
+device context is unshared.
+
+We would like to share with you our very initial thoughts about how this
+will be implemented:
+- Extend register_pernet_subsys/device(ops) API
+to register_perns_subsys/device(nstype, ops) API
+- Extend pernet_operations to perns_operations that include optional
+migrate() and/or unshare() ops
+- Let valarm-dev register_peruser_subsys/device(&alarm_userns_ops)
+- Implement a new syscall (or netlink command if it makes more sense)
+setdevns(int dev_fd, int ns_fd, int nstype, int flags)
+- Unlike the netlink set netns case, this API is not used solely to *move*
+a device to a different namespace,
+  but also to *unshare* a device context between namespaces, for those
+devices that resigtered unshare() ops.
+
+This is our missing piece of the puzzle.
+After that, whether we make changes to existing drivers (e.g. evdev) or
+write new virtualized drivers (e.g. vevdev)
+is a technicality. We care not which way to go, whichever way seems more
+maintainable.
+
+What do you think of this master plan?
+
+P.S. Please try to refrain from addressing the validity of the use case of
+alarm-dev in particular,
+as we do not wish to get engage "Android sucks" wars.
+We simply want to present the case for improving the namespace
+infrastructure to cater the needs
+of device driver writers that wish to tailor their drivers for containers
+based products.
+
+Cheers,
+Amir.
+
+
+
+>
+> Eric
+>
