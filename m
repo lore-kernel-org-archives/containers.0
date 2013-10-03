@@ -1,14 +1,16 @@
-From: Amir Goldstein <amir-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: Device Namespaces
-Date: Thu, 3 Oct 2013 11:58:39 +0300
-Message-ID: <CAA2m6vc3OFmS9VwiTavRzPqhn+qoe6vDCO2sitXpEQ8a1JVyfg@mail.gmail.com>
+Date: Thu, 03 Oct 2013 02:17:17 -0700
+Message-ID: <87y56abtnm.fsf@xmission.com>
 References: <CAA2m6veny-7_ONMA973Wu36U4kz4gAuw0dpodkb8+GZDv6VNBQ@mail.gmail.com>
 	<87a9iri3ot.fsf@xmission.com>
+	<CAA2m6vc3OFmS9VwiTavRzPqhn+qoe6vDCO2sitXpEQ8a1JVyfg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87a9iri3ot.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <CAA2m6vc3OFmS9VwiTavRzPqhn+qoe6vDCO2sitXpEQ8a1JVyfg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Amir Goldstein's message of "Thu, 3 Oct 2013 11:58:39 +0300")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,133 +20,76 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Amir Goldstein <amir-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org>
 Cc: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, lxc-devel <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, mhw-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Stephane Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Oct 3, 2013 at 3:44 AM, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>wrote:
-
-> Amir Goldstein <amir-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org> writes:
->
-> > What we really like to see is a setns() style API that can be used to
-> > add a device in the context of a namespace in either a "shared" or
-> > "private" mode.
->
-> I think you mean an "ip link set dev FOO netns XXX" style API.
->
-
-correct.
-
-
->
-> Right now one of the best suggestions on the table is:
->
-> mkdir -p /dev/container/X
-> ln /dev/zero /dev/container/X/zero
-> ln /dev/null /dev/container/X/null
-> ...
->
-> With /dev/container/X mounted on /dev for container X.
->
-> Which seems to cover putting a device in a namespace, while allowing
-> things to still be reasonably managed.
->
-> There are a few other variations on that scheme but nothing that says we
-> must have kernel support or to create any kind of kernel context beyond
-> which directory the device nodes live in.
->
-> > This kind of API is a required building block for us to write device
-> > drivers that are namespace aware in a way that userspace will have
-> > enough flexibility for dynamic configuration.
-> >
-> > We are trying to come up with a proposal for that sort of API.  When
-> > we have something decent, we shall post it.
->
-> I really think what you need to write are special drivers that
-> facilitate your use case.
->
-> For the networking stack we wound up adding veth pairs, and macvlan
-> devices, to handle the common sharing modes.
->
-> Outside of your sharing situation I am not seeing any need or any
-> advantage of creating devices that are modified to be sharable and I am
-> seeing a lot of disadvantages to implementing things that way.  The
-> biggest is that you seem to working independent of the subsystem
-> maintainers of those devices which is generally a poor idea.
->
-> Unprivileged creation of device nodes we can handle if it can be shown
-> that it is safe to create device nodes.
->
-> As I understand your problem you are trying to multiplex a device by
-> building a device with a built in stop light.  Where one opener can
-> write and the other openers are stopped/dropped.  That sounds very
-> similar to macvlan, or ethernet bridging.   From the patches you have
-> floated I suspect it would be very simple to build and just need a
-> little bit of glue.
->
-
-Excellent! let's focus the discussion on a new device driver we want to
-write
-which is namespace aware. let's call this device driver valarm-dev.
-Similarly to Android's alarm-dev, valarm-dev can be used to request RTC
-wakeup calls
-from user space and get/set RTC values, but with valarm-dev, every container
-may use different values for current time.
-
-As you can see in our patch set, we already have a version of alarm-dev
-that maintains
-its state inside a context, instead of in global variable, so it is capable
-of providing
-different context per namespace.
-
-And now for the 1M$ question: per *which* namespace do we attribute the
-current realtime clock time?
-To UTS namespace (because T historically stands for Time)? To device
-namespace?
-Even if device namespace would exist, we do not want to tie the policy
-decision of "separate time"
-to a very wide definition of "separate devices".
-
-So what we want to create, is an API for device driver writers, that will
-enable to write a namespace
-aware device and allow userspace to configure when the namespace aware
-device context is unshared.
-
-We would like to share with you our very initial thoughts about how this
-will be implemented:
-- Extend register_pernet_subsys/device(ops) API
-to register_perns_subsys/device(nstype, ops) API
-- Extend pernet_operations to perns_operations that include optional
-migrate() and/or unshare() ops
-- Let valarm-dev register_peruser_subsys/device(&alarm_userns_ops)
-- Implement a new syscall (or netlink command if it makes more sense)
-setdevns(int dev_fd, int ns_fd, int nstype, int flags)
-- Unlike the netlink set netns case, this API is not used solely to *move*
-a device to a different namespace,
-  but also to *unshare* a device context between namespaces, for those
-devices that resigtered unshare() ops.
-
-This is our missing piece of the puzzle.
-After that, whether we make changes to existing drivers (e.g. evdev) or
-write new virtualized drivers (e.g. vevdev)
-is a technicality. We care not which way to go, whichever way seems more
-maintainable.
-
-What do you think of this master plan?
-
-P.S. Please try to refrain from addressing the validity of the use case of
-alarm-dev in particular,
-as we do not wish to get engage "Android sucks" wars.
-We simply want to present the case for improving the namespace
-infrastructure to cater the needs
-of device driver writers that wish to tailor their drivers for containers
-based products.
-
-Cheers,
-Amir.
-
-
-
->
-> Eric
->
+QW1pciBHb2xkc3RlaW4gPGFtaXJAY2VsbHJveC5jb20+IHdyaXRlczoKCj4gRXhjZWxsZW50ISBs
+ZXQncyBmb2N1cyB0aGUgZGlzY3Vzc2lvbiBvbiBhIG5ldyBkZXZpY2UgZHJpdmVyIHdlIHdhbnQK
+PiB0byB3cml0ZQo+IHdoaWNoIGlzIG5hbWVzcGFjZSBhd2FyZS4gbGV0J3MgY2FsbCB0aGlzIGRl
+dmljZSBkcml2ZXIgdmFsYXJtLWRldi4KPiBTaW1pbGFybHkgdG8gQW5kcm9pZCdzIGFsYXJtLWRl
+diwgdmFsYXJtLWRldiBjYW4gYmUgdXNlZCB0byByZXF1ZXN0Cj4gUlRDIHdha2V1cCBjYWxscwo+
+IGZyb20gdXNlciBzcGFjZSBhbmQgZ2V0L3NldCBSVEMgdmFsdWVzLCBidXQgd2l0aCB2YWxhcm0t
+ZGV2LCBldmVyeQo+IGNvbnRhaW5lcgo+IG1heSB1c2UgZGlmZmVyZW50IHZhbHVlcyBmb3IgY3Vy
+cmVudCB0aW1lLgo+Cj4gQXMgeW91IGNhbiBzZWUgaW4gb3VyIHBhdGNoIHNldCwgd2UgYWxyZWFk
+eSBoYXZlIGEgdmVyc2lvbiBvZgo+IGFsYXJtLWRldiB0aGF0IG1haW50YWlucwo+IGl0cyBzdGF0
+ZSBpbnNpZGUgYSBjb250ZXh0LCBpbnN0ZWFkIG9mIGluIGdsb2JhbCB2YXJpYWJsZSwgc28gaXQg
+aXMKPiBjYXBhYmxlIG9mIHByb3ZpZGluZwo+IGRpZmZlcmVudCBjb250ZXh0IHBlciBuYW1lc3Bh
+Y2UuCj4KPiBBbmQgbm93IGZvciB0aGUgMU0kIHF1ZXN0aW9uOiBwZXIgKndoaWNoKiBuYW1lc3Bh
+Y2UgZG8gd2UgYXR0cmlidXRlCj4gdGhlIGN1cnJlbnQgcmVhbHRpbWUgY2xvY2sgdGltZT8KClRv
+IG5vbmUgb2YgdGhlbS4gIEp1c3QgdXNlIGEgZGlmZmVyZW50IG1pbm9yIHBlciBpbnN0YW5jZSwg
+dGhlbiB5b3UKZG9uJ3QgaGF2ZSBhIGhhcmQgcXVlc3Rpb24gdG8gYW5zd2VyLgoKPiBUbyBVVFMg
+bmFtZXNwYWNlIChiZWNhdXNlIFQgaGlzdG9yaWNhbGx5IHN0YW5kcyBmb3IgVGltZSk/IFRvIGRl
+dmljZQo+IG5hbWVzcGFjZT8KPiBFdmVuIGlmIGRldmljZSBuYW1lc3BhY2Ugd291bGQgZXhpc3Qs
+IHdlIGRvIG5vdCB3YW50IHRvIHRpZSB0aGUgcG9saWN5Cj4gZGVjaXNpb24gb2YgInNlcGFyYXRl
+IHRpbWUiCj4gdG8gYSB2ZXJ5IHdpZGUgZGVmaW5pdGlvbiBvZiAic2VwYXJhdGUgZGV2aWNlcyIu
+Cj4KPiBTbyB3aGF0IHdlIHdhbnQgdG8gY3JlYXRlLCBpcyBhbiBBUEkgZm9yIGRldmljZSBkcml2
+ZXIgd3JpdGVycywgdGhhdAo+IHdpbGwgZW5hYmxlIHRvIHdyaXRlIGEgbmFtZXNwYWNlCj4gYXdh
+cmUgZGV2aWNlIGFuZCBhbGxvdyB1c2Vyc3BhY2UgdG8gY29uZmlndXJlIHdoZW4gdGhlIG5hbWVz
+cGFjZSBhd2FyZQo+IGRldmljZSBjb250ZXh0IGlzIHVuc2hhcmVkLgoKCj4gV2Ugd291bGQgbGlr
+ZSB0byBzaGFyZSB3aXRoIHlvdSBvdXIgdmVyeSBpbml0aWFsIHRob3VnaHRzIGFib3V0IGhvdwo+
+IHRoaXMgd2lsbCBiZSBpbXBsZW1lbnRlZDoKPiAtIEV4dGVuZMKgcmVnaXN0ZXJfcGVybmV0X3N1
+YnN5cy9kZXZpY2Uob3BzKSBBUEkKPiB0b8KgcmVnaXN0ZXJfcGVybnNfc3Vic3lzL2RldmljZShu
+c3R5cGUsIG9wcykgQVBJCj4gLSBFeHRlbmQgcGVybmV0X29wZXJhdGlvbnMgdG8gcGVybnNfb3Bl
+cmF0aW9ucyB0aGF0IGluY2x1ZGUgb3B0aW9uYWwKPiBtaWdyYXRlKCkgYW5kL29yIHVuc2hhcmUo
+KSBvcHMKPiAtIExldCB2YWxhcm0tZGV2IHJlZ2lzdGVyX3BlcnVzZXJfc3Vic3lzL2RldmljZSgm
+YWxhcm1fdXNlcm5zX29wcykKCkZvciB0aGUgbmV0d29yayBzdWJzeXN0ZW0gdGhhdCBtYWtlcyBz
+ZW5zZS4gIEJ1dCBpdCBkb2Vzbid0IG1ha2Ugc2Vuc2UKZm9yIGRldmljZXMuICBJdCBpcyBqdXN0
+IGFuIHVubmVlZGVkIGV4dHJhIGNvbXBsaWNhdGlvbi4KCj4gLSBJbXBsZW1lbnQgYSBuZXcgc3lz
+Y2FsbCAob3IgbmV0bGluayBjb21tYW5kIGlmIGl0IG1ha2VzIG1vcmUgc2Vuc2UpCj4gc2V0ZGV2
+bnMoaW50IGRldl9mZCwgaW50IG5zX2ZkLCBpbnQgbnN0eXBlLCBpbnQgZmxhZ3MpCgppb2N0bD8g
+IG1hc3RlciBkZXZpY2U/IEhvdyBkbyBwZW9wbGUgY29tbXVuaWNhdGUgd2l0aCByYXcgZGV2aWNl
+cyB0aGVzZQpkYXlzPwoKPiAtIFVubGlrZSB0aGUgbmV0bGluayBzZXQgbmV0bnMgY2FzZSwgdGhp
+cyBBUEkgaXMgbm90IHVzZWQgc29sZWx5IHRvCj4gKm1vdmUqIGEgZGV2aWNlIHRvIGEgZGlmZmVy
+ZW50IG5hbWVzcGFjZSwKPiDCoCBidXQgYWxzbyB0byAqdW5zaGFyZSogYSBkZXZpY2UgY29udGV4
+dCBiZXR3ZWVuIG5hbWVzcGFjZXMsIGZvciB0aG9zZQo+IGRldmljZXMgdGhhdCByZXNpZ3RlcmVk
+IHVuc2hhcmUoKSBvcHMuCgpJIHJlYWxseSB0aGluayB0aGlzIGFsbCBtYWtlcyBtb3N0IHNlbnNl
+IGEgZHJpdmVyIGEgdmlydHVhbCBkcml2ZXIgYXQgYQp0aW1lLgoKPiBUaGlzIGlzIG91ciBtaXNz
+aW5nIHBpZWNlIG9mIHRoZSBwdXp6bGUuCj4gQWZ0ZXIgdGhhdCwgd2hldGhlciB3ZSBtYWtlIGNo
+YW5nZXMgdG8gZXhpc3RpbmcgZHJpdmVycyAoZS5nLiBldmRldikKPiBvciB3cml0ZSBuZXcgdmly
+dHVhbGl6ZWQgZHJpdmVycyAoZS5nLiB2ZXZkZXYpCj4gaXMgYSB0ZWNobmljYWxpdHkuIFdlIGNh
+cmUgbm90IHdoaWNoIHdheSB0byBnbywgd2hpY2hldmVyIHdheSBzZWVtcwo+IG1vcmUgbWFpbnRh
+aW5hYmxlLgo+Cj4gV2hhdCBkbyB5b3UgdGhpbmsgb2YgdGhpcyBtYXN0ZXIgcGxhbj8KCkkgdGhp
+bmsgYnkgbWFraW5nIHlvdXIgZGV2aWNlcyBiZWhhdmlvciBkZXBlbmQgb24gd2hpY2ggbmFtZXNw
+YWNlIHRoZXkKYXJlIGluIHlvdSBhcmUgbWFraW5nIHRoZSBkcml2ZXJzIHVubmVjZXNhcmlseSBm
+cmFnaWxlLCBhbmQKdW5uZWNlc3NhcmlseSB1bnVzYWJsZS4KCkkgdGhpbmsgdGhlIGNvZGUgd2ls
+bCBiZSBzaW1wbGVyL2NsZWFuZXIvYmV0dGVyIGlmIHlvdSBkb24ndCBuZWVkIHRvCmhhdmUgY29u
+dGV4dCBvdXRzaWRlIG9mIHlvdXIgZHJpdmVycy4KCj4gUC5TLiBQbGVhc2UgdHJ5IHRvIHJlZnJh
+aW4gZnJvbSBhZGRyZXNzaW5nIHRoZSB2YWxpZGl0eSBvZiB0aGUgdXNlCj4gY2FzZSBvZiBhbGFy
+bS1kZXYgaW4gcGFydGljdWxhciwKPiBhcyB3ZSBkbyBub3Qgd2lzaCB0byBnZXQgZW5nYWdlICJB
+bmRyb2lkIHN1Y2tzIiB3YXJzLsKgCj4gV2Ugc2ltcGx5IHdhbnQgdG8gcHJlc2VudCB0aGUgY2Fz
+ZSBmb3IgaW1wcm92aW5nIHRoZSBuYW1lc3BhY2UKPiBpbmZyYXN0cnVjdHVyZSB0byBjYXRlciB0
+aGUgbmVlZHMKPiBvZiBkZXZpY2UgZHJpdmVyIHdyaXRlcnMgdGhhdCB3aXNoIHRvIHRhaWxvciB0
+aGVpciBkcml2ZXJzIGZvcgo+IGNvbnRhaW5lcnMgYmFzZWQgcHJvZHVjdHMuwqAKCkkgdGhpbmsg
+dGhpcyBpcyBhIGRyaXZlciBpbnRlcmZhY2UgcHJvYmxlbSwgbm90IGEgbmFtZXNwYWNlIHByb2Js
+ZW0uCk5vbmUgb2YgdGhlIHNpbWlsYXIgZHJpdmVycyB0aGF0IGV4aXN0IGluIHRoZSBuZXR3b3Jr
+IG5hbWVzcGFjZQpjaGFuZ2UgdGhlaXIgYmVoYXZpb3IgZGVwZW5kaW5nIG9uIHdoaWNoIG5hbWVz
+cGFjZSB0aGV5IGFyZSBpbi4KClRoZSB0d28gcHJhY3RpY2FsIGNob2ljZXMgSSBzZWUgYXJlLgox
+KSBVc2UgYSBidW5jaCBvZiBtaW5vcnMgZm9yIHlvdXIgZHJpdmVyLgoyKSBBY3Qgcm91Z2hseSBs
+aWtlIC9kZXYvcHRzIGFuZCB1c2UgZGlmZmVyZW50IG1vdW50cyBvZiB0aGUgZmlsZXN5c3RlbQog
+ICB0byBjcmVhdGUgbmV3IGluc3RhbmNlcy4KCkkgdGhpbmsgZGlmZmVyZW50IG1pbm9ycyBpcyBw
+cm9iYWJseSBlYXNpZXIsIGJ1dCB3ZSBoYXZlIHR3byBzdWNjZXNzZnVsbAptb2RlbHMgSSBhbSBh
+d2FyZSBvZiBzbyBJIGhhdmUgbWVudGlvbmVkIGJvdGguCgpFcmljCgpfX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApD
+b250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhm
+b3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
