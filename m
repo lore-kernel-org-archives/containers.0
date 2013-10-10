@@ -1,10 +1,11 @@
-From: "kate" <kate-+J/g3UmtXXwyTh+JdRw4UA@public.gmane.org>
-Subject: Chemical Industry Professionals DataList
-Date: Thu, 3 Oct 2013 16:24:11 -0400
-Message-ID: <82EC2DFF5ECA4542A4783C081E142BAE@DATAROCK.COM>
+From: Vodafone Partner  <info-9cLmRLb8SMY3/gMUCxEIEUEOCMrvLtNR@public.gmane.org>
+Subject: Scopri l'offerta illimitata con iPhone 5
+Date: Thu, 10 Oct 2013 07:07:41 +0200 (CEST)
+Message-ID: <mnidm.2448.520.128500.723176225._@mn1>
+Reply-To: info-9cLmRLb8SMY3/gMUCxEIEUEOCMrvLtNR@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -15,43 +16,41 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
 
- 
-
-Would you be interested in acquiring our Email Lists of Chemical Industry Professionals DataList? 
-
- 
-
-Chemical Industry List includes: Complete Contact Details and Verified Email Addresses of - CEO's, CFO, Directors, Presidents, Key Decision Makers, Marketing Managers, biopharmaceuticals, plastics and polymers, organic chemicals, agrochemicals, pharmaceuticals, Certified Chemists, Chemical Technicians, Pharmaceutical Ingredient (API) technology developers, Chemical and Biochemical Engineers, Synthesis, Analytical Laboratories, Chemicals Managements and Control Services Providers, Pharmaceutical and biotechnology, Consultants, Chemical Equipment Operators, FTE Chemistry Services, Biochemists and Biophysicists, Custom Chemical Manufacturing, Chemical Software Providers, Research Associates, Laboratories, Chemical Dependency Hospitals and Organisations, Distributors, Sales Representatives, Wh
- olesalers, Retailers and many more across US,UK, Canada, Australia and Europe all over the world.
+   [1]Visualizza la versione web
 
 
 
+                            [2]VODAFONE RELAX GO
+               [3]per te uno Smartphone di ultima generazione
+                   [4]Minuti ILLIMITATA - Internet Veloce
+                   [5]SMS ILLIMITATI - NO TAX per sempre
+                            [6]SCOPRI L'OFFERTA
 
-Do you have any alternate interest in Email Campaign/Data Appending?
+   [load.cp?PRO=3D258890&amp;ID=3D34618&amp;SUB=3D]
+
+   Ricevi questo messaggio in quanto sei registrato a MiglioriTariffe.com
+    e partner.  MiglioriTariffe ti propone regolarmente tutte le migliori
+      offerte e promozioni del web riservate solo ai propri utenti.  Il
+   trattamento e la conservazione dei dati avvengono in ossequio a quanto
+                prescritto dal D.Lgs 196/2003 (cod. privacy).
+      Per non ricevere altri messaggi dal mittente potete esercitare i
+     diritti previsti all'art. 7 del codice della privacy cancellandovi
+              dalla Newsletter utilizzando il link sottostante.
 
 
-Information available in our datalist include Company Name, Contact Name, Job title, Direct email, Phone Number, Fax number, Complete Mailing Address; SIC codes, Revenue of the Company, Employee Count and
-Web address.
 
+   [7]Non desideri pi=C3=B9 ricevere la newsletter?
 
-If this is of interest to you, Please send me your Target Audience and Geographical Area, so that I can give you more information, Counts, Pricing as well as few samples, just for your review.
+References
 
-
-
-Target Criteria: _______ Geography: _______ Titles/Other filters: __________
-
-Best Regards,
-
-Kate Campel
-Online Marketing Manager
-kate-+J/g3UmtXXwyTh+JdRw4UA@public.gmane.org
-Phone: 1800 710 6133
-
-Services: Company Profiling | Email Lists | Email / Data Appending | Email Campaign | Lead Generation | Tele Marketing | Social Media Marketing | Digital Marketing.
-
-If you wish to opt-out from our mailing list, reply as 'Unsubscribe" in the subject line.
+   1. http://apothem.mailmta.com/nl/n.jsp?mQ.fo.fIot.II.Dy.zG5i
+   2. http://apothem.mailmta.com/nl/l.jsp?mQ.fp.fIot.II.Dy.zG5i
+   3. http://apothem.mailmta.com/nl/l.jsp?mQ.fq.fIot.II.Dy.zG5i
+   4. http://apothem.mailmta.com/nl/l.jsp?mQ.fr.fIot.II.Dy.zG5i
+   5. http://apothem.mailmta.com/nl/l.jsp?mQ.fs.fIot.II.Dy.zG5i
+   6. http://apothem.mailmta.com/nl/l.jsp?mQ.ft.fIot.II.Dy.zG5i
+   7. http://apothem.mailmta.com/nl/i.jsp?mQ.Js.fIot.II.Dy.zG5i
