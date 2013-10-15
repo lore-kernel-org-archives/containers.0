@@ -1,7 +1,8 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [REVIEW][PATCH 0/4] vfs: Detach mounts on unlink
-Date: Tue, 15 Oct 2013 13:15:41 -0700
-Message-ID: <87iowyxpci.fsf_-_@xmission.com>
+Subject: [REVIEW][PATCH 1/4] vfs: Don't allow overwriting mounts in the
+	current mount namespace
+Date: Tue, 15 Oct 2013 13:16:48 -0700
+Message-ID: <87d2n6xpan.fsf_-___1353.36501193724$1381868229$gmane$org@xmission.com>
 References: <8761v7h2pt.fsf@tw-ebiederman.twitter.com>
 	<CAJfpegtT7y-1HhbEVAMKkdQugTG_w7G_epGtQHGvQLpcZB5FVA@mail.gmail.com>
 	<87li281wx6.fsf_-_@xmission.com> <87a9ioo37a.fsf_-_@xmission.com>
@@ -16,12 +17,13 @@ References: <8761v7h2pt.fsf@tw-ebiederman.twitter.com>
 	<87vc15mjuw.fsf@xmission.com>
 	<CAJfpegvF89LzAvNB0h0otv7sKoS3rewZzQKAauQx3P+rCkCcSg@mail.gmail.com>
 	<87iox38fkv.fsf@xmission.com> <87d2nb8dxy.fsf@xmission.com>
+	<87iowyxpci.fsf_-_@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87d2nb8dxy.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (Eric W. Biederman's message of
-	"Fri, 11 Oct 2013 18:39:53 -0700")
+In-Reply-To: <87iowyxpci.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (Eric W. Biederman's message of
+	"Tue, 15 Oct 2013 13:15:41 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -36,48 +38,91 @@ Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 List-Id: containers.vger.kernel.org
 
 
-This patchset is an addresses two problems:
-1) Not all modifications to the filesystems happen through the vfs and
-   since the vfs can not cope with a mount point being unlinked or
-   renamed filesystems whose modifications that do not come through the
-   vfs are required to lie.
+In preparation for allowing mountpoints to be renamed and unlinked
+in remote filesystems and in other mount namespaces test if on a dentry
+there is a mount in the local mount namespace before allowing it to
+be renamed or unlinked.
 
-2) Through an oversight it is now possible for one unprivileged user to
-   mount something on another unprivileged users dentry and make it
-   impossible for the other user to unlink or rename that dentry.
+The primary motivation here are old versions of fusermount unmount
+which is not safe if the a path can be renamed or unlinked while it is
+verifying the mount is safe to unmount.  More recent versions are simpler
+and safer by simply using UMOUNT_NOFOLLOW when unmounting a mount
+in a directory owned by an arbitrary user.
 
-It is now technically possible to easily lift the restriction on
-unlinking and renaming files with mount points on them, with a
-corresponding reduction in complexity of the vfs semantics.
+Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org> reports this is approach is good
+enough to remove concerns about new kernels mixed with old versions
+of fusermount.
 
-After review it seems that there are no objections to this approach as
-long as we retain the -EBUSY semantics for rmdir, unlink, and rename of
-mount points in the current mount namespace.  The first patch in this
-series now adds those local mount namespace restrictions.
+A secondary motivation for restrictions here is that it removing empty
+directories that have non-empty mount points on them appears to
+violate the rule that rmdir can not remove empty directories.  As
+Linus Torvalds pointed out this is useful for programs (like git) that
+test if a directory is empty with rmdir.
 
-All of the review comments should now be addressed and folded in, and
-I have take a careful look and it appears what I have is now correct
-and complete.  So I am posting this for one last round of review.
+Therefore this patch arranges to enforce the existing mount point
+semantics for local mount namespace.
 
-Al if you want to take this through the vfs tree, point me at a branch
-and I will give you versions of these patches that apply cleanly there.
-Otherwise I will push these patches to my userns tree as soon as all of
-these patches pass review.
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ fs/namei.c |   25 +++++++++++++++++++++++++
+ 1 files changed, 25 insertions(+), 0 deletions(-)
 
-Eric W. Biederman (4):
-      vfs: Don't allow overwriting mounts in the current mount namespace
-      vfs: Keep a list of mounts on a mount point
-      vfs: Add a function to lazily unmount all mounts from any dentry. v3
-      vfs: Lazily remove mounts on unlinked files and directories. v2
-
- fs/afs/dir.c           |    3 +-
- fs/dcache.c            |   80 ++++++++++++++++++++----------------------------
- fs/fuse/dir.c          |    3 +-
- fs/gfs2/dentry.c       |    4 +--
- fs/mount.h             |    3 ++
- fs/namei.c             |   55 +++++++++++++++++++++------------
- fs/namespace.c         |   30 ++++++++++++++++++
- fs/nfs/dir.c           |    5 +--
- fs/sysfs/dir.c         |    9 +-----
- include/linux/dcache.h |    3 +-
- 10 files changed, 108 insertions(+), 87 deletions(-)
+diff --git a/fs/namei.c b/fs/namei.c
+index 645268f23eb6..df7bd6e9c7b6 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -3547,6 +3547,20 @@ void dentry_unhash(struct dentry *dentry)
+ 	spin_unlock(&dentry->d_lock);
+ }
+ 
++static bool covered(struct vfsmount *mnt, struct dentry *dentry)
++{
++	/* test to see if a dentry is covered with a mount in
++	 * the current mount namespace.
++	 */
++	bool is_covered;
++
++	rcu_read_lock();
++	is_covered = d_mountpoint(dentry) && __lookup_mnt(mnt, dentry, 1);
++	rcu_read_unlock();
++
++	return is_covered;
++}
++
+ int vfs_rmdir(struct inode *dir, struct dentry *dentry)
+ {
+ 	int error = may_delete(dir, dentry, 1);
+@@ -3622,6 +3636,9 @@ retry:
+ 		error = -ENOENT;
+ 		goto exit3;
+ 	}
++	error = -EBUSY;
++	if (covered(nd.path.mnt, dentry))
++		goto exit3;
+ 	error = security_path_rmdir(&nd.path, dentry);
+ 	if (error)
+ 		goto exit3;
+@@ -3716,6 +3733,9 @@ retry:
+ 		inode = dentry->d_inode;
+ 		if (!inode)
+ 			goto slashes;
++		error = -EBUSY;
++		if (covered(nd.path.mnt, dentry))
++			goto exit2;
+ 		ihold(inode);
+ 		error = security_path_unlink(&nd.path, dentry);
+ 		if (error)
+@@ -4164,6 +4184,11 @@ retry:
+ 	error = -ENOTEMPTY;
+ 	if (new_dentry == trap)
+ 		goto exit5;
++	error = -EBUSY;
++	if (covered(oldnd.path.mnt, old_dentry))
++		goto exit5;
++	if (covered(newnd.path.mnt, new_dentry))
++		goto exit5;
+ 
+ 	error = security_path_rename(&oldnd.path, old_dentry,
+ 				     &newnd.path, new_dentry);
+-- 
+1.7.5.4
