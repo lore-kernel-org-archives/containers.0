@@ -1,10 +1,10 @@
-From: Udecision <noreply-8nzttPkiOJCkqlQVS2g5fQ@public.gmane.org>
-Subject: =?utf-8?B?R2FsYXh5IFM0IMOoIGluY2x1c28gY29uIFdpbmQgVW5saW1pdGVkIEZ1bGwgRWRpdGlvbg==?=
-Date: Fri, 18 Oct 2013 13:21:05 +0200
-Message-ID: <00000634C.031A0057.noreply@udecision.biz>
+From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: [Announceme] Checkpoint-restore tool v0.8
+Date: Fri, 18 Oct 2013 20:55:17 +0400
+Message-ID: <526167F5.1050906@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -15,29 +15,21 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: CRIU <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-IA0KU2Ftc3VuZyBHYWxheHkgUzQgTGlmZSBDb21wYW5pb24NCiBJbCBudW92byBTYW1zdW5nIEdB
-TEFYWSBTNCB0aSBhaXV0YSBhIGNhdHR1cmFyZSBlIHRlbmVyZSBzZW1wcmUgY29uIHRlIGkgbW9t
-ZW50aSBwacO5IGJlbGxpIGRlbGxhIHR1YSB2aXRhLiBPZ25pIGNhcmF0dGVyaXN0aWNhIMOoIHN0
-YXRhIHByb2dldHRhdGEgcGVyIHNlbXBsaWZpY2FyZSBsYSB0dWEgdml0YSBxdW90aWRpYW5hLiBJ
-bm9sdHJlLCBzaSBwcmVvY2N1cGEgZGkgbW9uaXRvcmFyZSBpbCB0dW8gc3RhdG8gZGkgc2FsdXRl
-IGUgbWlnbGlvcmFyZSBpbCB0dW8gYmVuZXNzZXJlLiBJbnNvbW1hLCBpbCBudW92byBHQUxBWFkg
-UzQgw6ggcXVpIHBlciB0ZSANCg0KV2luZCBBbGwgSW5jbHVzaXZlIFVubGltaXRlZCBNaW51dGks
-IFNNUyBlZCBJbnRlcm5ldCBzZW56YSBsaW1pdGksIHNjZWdsaSBsJ29mZmVydGEgQWxsIEluY2x1
-c2l2ZSBVbmxpbWl0ZWQhIEluICBwcm9tb3ppb25lIGEgc29saSAyOSBldXJvIGFsIG1lc2UsIGlu
-dmVjZSBkaSA2MCBldXJvIGFsIG1lc2UsIHNlIGF0dGl2aSAgbCdvZmZlcnRhIGVudHJvIGlsIDMx
-IG90dG9icmUgIDIwMTMuIENvbiBVbmxpbWl0ZWQgRnVsbCBFZHRpb24gw6ggaW5jbHVzbyAgdW5v
-IHNtYXJ0cGhvbmUgZGkgZmFzY2lhIGFsdGEgIGEgcHJlenppIHNjb250YXRpIHBhZ2FiaWxpIGlu
-IDI0IG1lc2kgY29uIHR1dHRpICBpIHZhbnRhZ2dpICBlc2NsdXNpdmkgcGVyIGkgbnVvdmkgY2xp
-ZW50aS4gU2UgYXR0aXZpIHVubyBkZWkgcGlhbm8gQWxsIEluY2x1c2l2ZSwgaWwgY2Fub25lIG1l
-bnNpbGUgcmltYW5lIHNjb250YXRvIHBlciBpIHByaW1pIDUgYW5uaSANCg0KDQoNClBlciBjYW5j
-ZWxsYXJzaSBkYWkgbm9zdHJpIGFyY2hpdmkgdXRpbGl6emkgaWwgbGluayBzb3R0b3N0YW50ZS4g
-cmlzdWx0YSBpc2NyaXR0byBjb24gbGEgbWFpbDogY29udGFpbmVyc0BsaXN0cy5saW51eC1mb3Vu
-ZGF0aW9uLm9yZw0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-IFBlciBjYW5jZWxsYXJ0aSBkYWxsYSBtYWlsaW5nIGxpc3QgY2xpY2NhIHF1aS4NCl9fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGlu
-ZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0
-cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+Hello, everyone!
+
+I'm glad to announce the 8th release of the checkpoint-restore tool.
+Though it was mostly bugfix release, we have added a couple of new
+features.
+
+You can find the changelog at http://criu.org/Download/criu/0.8
+and get the sourced from http://download.openvz.org/criu/criu-0.8.tar.bz2
+
+It doesn't require any _new_ kernel stuff, so you can run it on v3.11.
+
+Have fun!
+
+Thanks,
+Pavel
