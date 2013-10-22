@@ -1,8 +1,7 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [REVIEW][PATCH 1/4] vfs: Don't allow overwriting mounts in the
-	current mount namespace
-Date: Tue, 22 Oct 2013 19:04:06 +0000
-Message-ID: <20131022190406.GA10600@mail.hallyn.com>
+Subject: Re: [REVIEW][PATCH 2/4] vfs: Keep a list of mounts on a mount point
+Date: Tue, 22 Oct 2013 19:06:28 +0000
+Message-ID: <20131022190628.GB10600@mail.hallyn.com>
 References: <CALCETrWw=htmgxqq=RQztdJQ-a8c3860vmJh9Ni=Hhs0TkO3YA@mail.gmail.com>
 	<20131008161135.GK14242@tucsk.piliscsaba.szeredi.hu>
 	<87li23trll.fsf@tw-ebiederman.twitter.com>
@@ -10,13 +9,13 @@ References: <CALCETrWw=htmgxqq=RQztdJQ-a8c3860vmJh9Ni=Hhs0TkO3YA@mail.gmail.com>
 	<87vc15mjuw.fsf@xmission.com>
 	<CAJfpegvF89LzAvNB0h0otv7sKoS3rewZzQKAauQx3P+rCkCcSg@mail.gmail.com>
 	<87iox38fkv.fsf@xmission.com> <87d2nb8dxy.fsf@xmission.com>
-	<87iowyxpci.fsf_-_@xmission.com> <87d2n6xpan.fsf_-_@xmission.com>
+	<87iowyxpci.fsf_-_@xmission.com> <877gdexp9s.fsf_-_@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <87d2n6xpan.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <877gdexp9s.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -32,94 +31,89 @@ List-Id: containers.vger.kernel.org
 
 Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
 > 
-> In preparation for allowing mountpoints to be renamed and unlinked
-> in remote filesystems and in other mount namespaces test if on a dentry
-> there is a mount in the local mount namespace before allowing it to
-> be renamed or unlinked.
+> To spot any possible problems call BUG if a mountpoint
+> is put when it's list of mounts is not empty.
 > 
-> The primary motivation here are old versions of fusermount unmount
-> which is not safe if the a path can be renamed or unlinked while it is
-> verifying the mount is safe to unmount.  More recent versions are simpler
-> and safer by simply using UMOUNT_NOFOLLOW when unmounting a mount
-> in a directory owned by an arbitrary user.
-> 
-> Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org> reports this is approach is good
-> enough to remove concerns about new kernels mixed with old versions
-> of fusermount.
-> 
-> A secondary motivation for restrictions here is that it removing empty
-> directories that have non-empty mount points on them appears to
-> violate the rule that rmdir can not remove empty directories.  As
-> Linus Torvalds pointed out this is useful for programs (like git) that
-> test if a directory is empty with rmdir.
-> 
-> Therefore this patch arranges to enforce the existing mount point
-> semantics for local mount namespace.
-> 
-> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> Signed-off-by: Eric W. Biederman <ebiederman-1v8oiQdgUNlBDgjK7y7TUQ@public.gmane.org>
 
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
 > ---
->  fs/namei.c |   25 +++++++++++++++++++++++++
->  1 files changed, 25 insertions(+), 0 deletions(-)
+>  fs/mount.h     |    2 ++
+>  fs/namespace.c |    6 ++++++
+>  2 files changed, 8 insertions(+), 0 deletions(-)
 > 
-> diff --git a/fs/namei.c b/fs/namei.c
-> index 645268f23eb6..df7bd6e9c7b6 100644
-> --- a/fs/namei.c
-> +++ b/fs/namei.c
-> @@ -3547,6 +3547,20 @@ void dentry_unhash(struct dentry *dentry)
->  	spin_unlock(&dentry->d_lock);
+> diff --git a/fs/mount.h b/fs/mount.h
+> index 64a858143ff9..e4342b8dfab1 100644
+> --- a/fs/mount.h
+> +++ b/fs/mount.h
+> @@ -21,6 +21,7 @@ struct mnt_pcp {
+>  struct mountpoint {
+>  	struct list_head m_hash;
+>  	struct dentry *m_dentry;
+> +	struct list_head m_list;
+>  	int m_count;
+>  };
+>  
+> @@ -47,6 +48,7 @@ struct mount {
+>  	struct mount *mnt_master;	/* slave is on master->mnt_slave_list */
+>  	struct mnt_namespace *mnt_ns;	/* containing namespace */
+>  	struct mountpoint *mnt_mp;	/* where is it mounted */
+> +	struct list_head mnt_mp_list;	/* list mounts with the same mountpoint */
+>  #ifdef CONFIG_FSNOTIFY
+>  	struct hlist_head mnt_fsnotify_marks;
+>  	__u32 mnt_fsnotify_mask;
+> diff --git a/fs/namespace.c b/fs/namespace.c
+> index da5c49483430..e4fe22c23e00 100644
+> --- a/fs/namespace.c
+> +++ b/fs/namespace.c
+> @@ -197,6 +197,7 @@ static struct mount *alloc_vfsmnt(const char *name)
+>  		INIT_LIST_HEAD(&mnt->mnt_share);
+>  		INIT_LIST_HEAD(&mnt->mnt_slave_list);
+>  		INIT_LIST_HEAD(&mnt->mnt_slave);
+> +		INIT_LIST_HEAD(&mnt->mnt_mp_list);
+>  #ifdef CONFIG_FSNOTIFY
+>  		INIT_HLIST_HEAD(&mnt->mnt_fsnotify_marks);
+>  #endif
+> @@ -636,6 +637,7 @@ static struct mountpoint *new_mountpoint(struct dentry *dentry)
+>  	mp->m_dentry = dentry;
+>  	mp->m_count = 1;
+>  	list_add(&mp->m_hash, chain);
+> +	INIT_LIST_HEAD(&mp->m_list);
+>  	return mp;
 >  }
 >  
-> +static bool covered(struct vfsmount *mnt, struct dentry *dentry)
-> +{
-> +	/* test to see if a dentry is covered with a mount in
-> +	 * the current mount namespace.
-> +	 */
-> +	bool is_covered;
-> +
-> +	rcu_read_lock();
-> +	is_covered = d_mountpoint(dentry) && __lookup_mnt(mnt, dentry, 1);
-> +	rcu_read_unlock();
-> +
-> +	return is_covered;
-> +}
-> +
->  int vfs_rmdir(struct inode *dir, struct dentry *dentry)
+> @@ -643,6 +645,7 @@ static void put_mountpoint(struct mountpoint *mp)
 >  {
->  	int error = may_delete(dir, dentry, 1);
-> @@ -3622,6 +3636,9 @@ retry:
->  		error = -ENOENT;
->  		goto exit3;
->  	}
-> +	error = -EBUSY;
-> +	if (covered(nd.path.mnt, dentry))
-> +		goto exit3;
->  	error = security_path_rmdir(&nd.path, dentry);
->  	if (error)
->  		goto exit3;
-> @@ -3716,6 +3733,9 @@ retry:
->  		inode = dentry->d_inode;
->  		if (!inode)
->  			goto slashes;
-> +		error = -EBUSY;
-> +		if (covered(nd.path.mnt, dentry))
-> +			goto exit2;
->  		ihold(inode);
->  		error = security_path_unlink(&nd.path, dentry);
->  		if (error)
-> @@ -4164,6 +4184,11 @@ retry:
->  	error = -ENOTEMPTY;
->  	if (new_dentry == trap)
->  		goto exit5;
-> +	error = -EBUSY;
-> +	if (covered(oldnd.path.mnt, old_dentry))
-> +		goto exit5;
-> +	if (covered(newnd.path.mnt, new_dentry))
-> +		goto exit5;
+>  	if (!--mp->m_count) {
+>  		struct dentry *dentry = mp->m_dentry;
+> +		BUG_ON(!list_empty(&mp->m_list));
+>  		spin_lock(&dentry->d_lock);
+>  		dentry->d_flags &= ~DCACHE_MOUNTED;
+>  		spin_unlock(&dentry->d_lock);
+> @@ -689,6 +692,7 @@ static void detach_mnt(struct mount *mnt, struct path *old_path)
+>  	mnt->mnt_mountpoint = mnt->mnt.mnt_root;
+>  	list_del_init(&mnt->mnt_child);
+>  	list_del_init(&mnt->mnt_hash);
+> +	list_del_init(&mnt->mnt_mp_list);
+>  	put_mountpoint(mnt->mnt_mp);
+>  	mnt->mnt_mp = NULL;
+>  }
+> @@ -705,6 +709,7 @@ void mnt_set_mountpoint(struct mount *mnt,
+>  	child_mnt->mnt_mountpoint = dget(mp->m_dentry);
+>  	child_mnt->mnt_parent = mnt;
+>  	child_mnt->mnt_mp = mp;
+> +	list_add_tail(&child_mnt->mnt_mp_list, &mp->m_list);
+>  }
 >  
->  	error = security_path_rename(&oldnd.path, old_dentry,
->  				     &newnd.path, new_dentry);
+>  /*
+> @@ -1191,6 +1196,7 @@ void umount_tree(struct mount *mnt, int propagate)
+>  		list_del_init(&p->mnt_child);
+>  		if (mnt_has_parent(p)) {
+>  			p->mnt_parent->mnt_ghosts++;
+> +			list_del_init(&p->mnt_mp_list);
+>  			put_mountpoint(p->mnt_mp);
+>  			p->mnt_mp = NULL;
+>  		}
 > -- 
 > 1.7.5.4
