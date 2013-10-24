@@ -1,7 +1,7 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 09/20] audit: make audit_backlog_wait per audit namespace
-Date: Thu, 24 Oct 2013 15:31:54 +0800
-Message-ID: <1382599925-25143-10-git-send-email-gaofeng__32000.0846557834$1382599934$gmane$org@cn.fujitsu.com>
+Subject: [PATCH 07/20] aduit: make audit_nlk_portid per audit namespace
+Date: Thu, 24 Oct 2013 15:31:52 +0800
+Message-ID: <1382599925-25143-8-git-send-email-gaofeng__6148.7634935931$1382599941$gmane$org@cn.fujitsu.com>
 References: <1382599925-25143-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,83 +21,81 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-audit-H+wXaHxf7a
 Cc: toshi.okajima-+CUm20s59erQFUHtdCDX3A@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Tasks are added to audit_backlog_wait when the
-audit_skb_queue of audit namespace is full, so
-audit_backlog_wait should be per audit namespace too.
+We should use audit_nlk_portid to decide to send
+audit netlink message to which auditd processes.
+it should be per audit namespace too.
 
 Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- include/linux/audit_namespace.h |  1 +
- kernel/audit.c                  | 11 +++++------
- 2 files changed, 6 insertions(+), 6 deletions(-)
+ include/linux/audit_namespace.h |  2 ++
+ kernel/audit.c                  | 14 ++++----------
+ 2 files changed, 6 insertions(+), 10 deletions(-)
 
 diff --git a/include/linux/audit_namespace.h b/include/linux/audit_namespace.h
-index 2888238..79a9b78 100644
+index 2c0eede..a9e6a40 100644
 --- a/include/linux/audit_namespace.h
 +++ b/include/linux/audit_namespace.h
-@@ -20,6 +20,7 @@ struct audit_namespace {
- 	struct sk_buff_head hold_queue;
- 	struct task_struct *kauditd_task;
- 	wait_queue_head_t kauditd_wait;
-+	wait_queue_head_t backlog_wait;
- };
- 
- extern struct audit_namespace init_audit_ns;
+@@ -11,6 +11,8 @@ struct audit_namespace {
+ 	atomic_t count;
+ 	/* pid of the auditd process */
+ 	int pid;
++	/* portid of the auditd process's netlink socket */
++	int portid;
+ 	struct user_namespace *user_ns;
+ 	struct sk_buff_head queue;
+ 	/* queue of skbs to send to auditd when/if it comes back */
 diff --git a/kernel/audit.c b/kernel/audit.c
-index a4bfd7f..d7a0993 100644
+index ceb1cbd..37375fb 100644
 --- a/kernel/audit.c
 +++ b/kernel/audit.c
-@@ -126,8 +126,6 @@ static DEFINE_SPINLOCK(audit_freelist_lock);
- static int	   audit_freelist_count;
- static LIST_HEAD(audit_freelist);
+@@ -89,13 +89,6 @@ static int	audit_default;
+ /* If auditing cannot proceed, audit_failure selects what happens. */
+ static int	audit_failure = AUDIT_FAIL_PRINTK;
  
--static DECLARE_WAIT_QUEUE_HEAD(audit_backlog_wait);
+-/*
+- * If audit records are to be written to the netlink socket, audit_pid
+- * contains the pid of the auditd process and audit_nlk_portid contains
+- * the portid to use to send netlink messages to that process.
+- */
+-static int	audit_nlk_portid;
 -
- /* Serialize requests from userspace. */
- DEFINE_MUTEX(audit_cmd_mutex);
+ /* If audit_rate_limit is non-zero, limit the rate of sending audit records
+  * to that number per second.  This prevents DoS attacks, but results in
+  * audit records being dropped. */
+@@ -381,7 +374,7 @@ static void kauditd_send_skb(struct sk_buff *skb)
+ 	int err;
+ 	/* take a reference in case we can't send it and we want to hold it */
+ 	skb_get(skb);
+-	err = netlink_unicast(audit_sock, skb, audit_nlk_portid, 0);
++	err = netlink_unicast(audit_sock, skb, init_audit_ns.portid, 0);
+ 	if (err < 0) {
+ 		BUG_ON(err != -ECONNREFUSED); /* Shouldn't happen */
+ 		printk(KERN_ERR "audit: *NO* daemon at audit_pid=%d\n", init_audit_ns.pid);
+@@ -645,7 +638,7 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 	u16			msg_type = nlh->nlmsg_type;
+ 	struct audit_sig_info   *sig_data;
+ 	char			*ctx = NULL;
+-	struct audit_namespace	*ns = current_audit_ns();
++	struct audit_namespace	*ns = current->nsproxy->audit_ns;
+ 	u32			len;
  
-@@ -443,7 +441,7 @@ static int kauditd_thread(void *dummy)
- 		flush_hold_queue(ns);
+ 	err = audit_netlink_ok(skb, msg_type);
+@@ -721,7 +714,7 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 			init_audit_ns.pid = new_pid;
+ 			rcu_read_unlock();
  
- 		skb = skb_dequeue(&ns->queue);
--		wake_up(&audit_backlog_wait);
-+		wake_up(&init_audit_ns.backlog_wait);
- 		if (skb) {
- 			if (ns->pid)
- 				kauditd_send_skb(skb);
-@@ -941,6 +939,7 @@ static int __init audit_init(void)
+-			audit_nlk_portid = NETLINK_CB(skb).portid;
++			init_audit_ns.portid = NETLINK_CB(skb).portid;
+ 		}
+ 		if (status_get->mask & AUDIT_STATUS_RATE_LIMIT) {
+ 			err = audit_set_rate_limit(status_get->rate_limit);
+@@ -944,6 +937,7 @@ static int __init audit_init(void)
+ 		audit_sock->sk_sndtimeo = MAX_SCHEDULE_TIMEOUT;
+ 
+ 	init_audit_ns.pid = 0;
++	init_audit_ns.portid = 0;
+ 	init_audit_ns.kauditd_task = NULL;
  	skb_queue_head_init(&init_audit_ns.queue);
  	skb_queue_head_init(&init_audit_ns.hold_queue);
- 	init_waitqueue_head(&init_audit_ns.kauditd_wait);
-+	init_waitqueue_head(&init_audit_ns.backlog_wait);
- 	audit_initialized = AUDIT_INITIALIZED;
- 	audit_enabled = audit_default;
- 	audit_ever_enabled |= !!audit_default;
-@@ -1091,14 +1090,14 @@ static void wait_for_auditd(unsigned long sleep_time)
- {
- 	DECLARE_WAITQUEUE(wait, current);
- 	set_current_state(TASK_UNINTERRUPTIBLE);
--	add_wait_queue(&audit_backlog_wait, &wait);
-+	add_wait_queue(&init_audit_ns.backlog_wait, &wait);
- 
- 	if (audit_backlog_limit &&
- 	    skb_queue_len(&init_audit_ns.queue) > audit_backlog_limit)
- 		schedule_timeout(sleep_time);
- 
- 	__set_current_state(TASK_RUNNING);
--	remove_wait_queue(&audit_backlog_wait, &wait);
-+	remove_wait_queue(&init_audit_ns.backlog_wait, &wait);
- }
- 
- /* Obtain an audit buffer.  This routine does locking to obtain the
-@@ -1164,7 +1163,7 @@ struct audit_buffer *audit_log_start(struct audit_context *ctx, gfp_t gfp_mask,
- 			       audit_backlog_limit);
- 		audit_log_lost("backlog limit exceeded");
- 		audit_backlog_wait_time = audit_backlog_wait_overflow;
--		wake_up(&audit_backlog_wait);
-+		wake_up(&init_audit_ns.backlog_wait);
- 		return NULL;
- 	}
- 
 -- 
 1.8.3.1
