@@ -1,7 +1,7 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 20/20] audit: introduce /proc/<pid>/audit_backlog_limit
-Date: Thu, 24 Oct 2013 15:32:05 +0800
-Message-ID: <1382599925-25143-21-git-send-email-gaofeng__3524.85652915693$1382600018$gmane$org@cn.fujitsu.com>
+Subject: [PATCH 18/20] audit: add new message type AUDIT_CREATE_NS
+Date: Thu, 24 Oct 2013 15:32:03 +0800
+Message-ID: <1382599925-25143-19-git-send-email-gaofeng__41591.2753473551$1382600023$gmane$org@cn.fujitsu.com>
 References: <1382599925-25143-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,227 +21,149 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-audit-H+wXaHxf7a
 Cc: toshi.okajima-+CUm20s59erQFUHtdCDX3A@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Since the backlog_limit of new created audit namespace
-is zero, this audit namespace is unavailable, this patch
-introdeces a proc file audit_backlog_limit. only privileged
-user of host has rights to setup backlog_limit for audit
-namespace. this prevents unprivileged user into costing
-memory through create user namespace and then create audit
-namespace.
+Since there is no more place for flags of clone system call.
+we need to find a way to create audit namespace.
 
-Inder to keep the consistent behavior as before, for init
-audit namespace, the backlog_limit can be changed only
-through netlink interface.
+this patch add a new type of message AUDIT_CREATE_NS.
+user space can create new audit namespace through
+netlink.
+
+Right now, The privileged user in user namespace is allowed
+to create audit namespace. it means the unprivileged user can
+create an user namespace and then create audit namespace.
+
+Looks like it is not safe, but even the unprivileged user can
+create audit namespace, it can do no harm to the host. un-init
+audit namespace cann't effect the host.
+
+In the follow patches, the audit_backlog_limit will be per
+audit namesapace, but only the privileged user has rights to
+modify it. and the default value of audit_backlog_limit for
+uninit audit namespace will be set to 0.
+
+And the audit_rate_limit will be limited too.
 
 Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- fs/proc/base.c                  | 53 +++++++++++++++++++++++++
- include/linux/audit_namespace.h |  7 ++++
- kernel/audit_namespace.c        | 86 +++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 146 insertions(+)
+ include/linux/audit_namespace.h |  7 +++++++
+ include/uapi/linux/audit.h      |  1 +
+ kernel/audit.c                  | 22 ++++++++++++++++++++++
+ kernel/audit_namespace.c        | 29 +++++++++++++++++++++++++++++
+ 4 files changed, 59 insertions(+)
 
-diff --git a/fs/proc/base.c b/fs/proc/base.c
-index 1485e38..3553699 100644
---- a/fs/proc/base.c
-+++ b/fs/proc/base.c
-@@ -83,6 +83,7 @@
- #include <linux/elf.h>
- #include <linux/pid_namespace.h>
- #include <linux/user_namespace.h>
-+#include <linux/audit_namespace.h>
- #include <linux/fs_struct.h>
- #include <linux/slab.h>
- #include <linux/flex_array.h>
-@@ -2545,6 +2546,52 @@ static const struct file_operations proc_projid_map_operations = {
- };
- #endif /* CONFIG_USER_NS */
- 
-+#ifdef CONFIG_AUDIT_NS
-+ssize_t proc_audit_backlog_read(struct file *file,
-+				char __user *buf,
-+				size_t count,
-+				loff_t *ppos)
-+{
-+	struct task_struct *task = NULL;
-+	ssize_t ret;
-+
-+	task = get_proc_task(file_inode(file));
-+	if (!task)
-+		return -ESRCH;
-+
-+	ret = audit_backlog_read(task, buf, count, ppos);
-+
-+	put_task_struct(task);
-+
-+	return ret;
-+}
-+
-+ssize_t proc_audit_backlog_write(struct file *file,
-+				 const char __user *buf,
-+				 size_t size,
-+				 loff_t *ppos)
-+{
-+	int ret;
-+	struct task_struct *task;
-+
-+	task = get_proc_task(file_inode(file));
-+	if (!task)
-+		return -ESRCH;
-+
-+	ret = audit_backlog_write(task, buf, size, ppos);
-+
-+	put_task_struct(task);
-+
-+	return ret;
-+}
-+
-+static const struct file_operations proc_audit_backlog_operations = {
-+	.read		= proc_audit_backlog_read,
-+	.write		= proc_audit_backlog_write,
-+	.llseek		= generic_file_llseek,
-+};
-+#endif /* CONFIG_AUDIT_NS */
-+
- static int proc_pid_personality(struct seq_file *m, struct pid_namespace *ns,
- 				struct pid *pid, struct task_struct *task)
- {
-@@ -2635,6 +2682,9 @@ static const struct pid_entry tgid_base_stuff[] = {
- 	REG("loginuid",   S_IWUSR|S_IRUGO, proc_loginuid_operations),
- 	REG("sessionid",  S_IRUGO, proc_sessionid_operations),
- #endif
-+#ifdef CONFIG_AUDIT_NS
-+	REG("audit_backlog_limit", S_IRUGO|S_IWUSR, proc_audit_backlog_operations),
-+#endif
- #ifdef CONFIG_FAULT_INJECTION
- 	REG("make-it-fail", S_IRUGO|S_IWUSR, proc_fault_inject_operations),
- #endif
-@@ -2973,6 +3023,9 @@ static const struct pid_entry tid_base_stuff[] = {
- 	REG("loginuid",  S_IWUSR|S_IRUGO, proc_loginuid_operations),
- 	REG("sessionid",  S_IRUGO, proc_sessionid_operations),
- #endif
-+#ifdef CONFIG_AUDIT_NS
-+	REG("audit_backlog_limit", S_IRUGO|S_IWUSR, proc_audit_backlog_operations),
-+#endif
- #ifdef CONFIG_FAULT_INJECTION
- 	REG("make-it-fail", S_IRUGO|S_IWUSR, proc_fault_inject_operations),
- #endif
 diff --git a/include/linux/audit_namespace.h b/include/linux/audit_namespace.h
-index 4648b4f..c913fe8 100644
+index 79a9b78..b17f052 100644
 --- a/include/linux/audit_namespace.h
 +++ b/include/linux/audit_namespace.h
-@@ -58,6 +58,13 @@ void put_audit_ns(struct audit_namespace *ns)
+@@ -54,6 +54,8 @@ void put_audit_ns(struct audit_namespace *ns)
+ 		rcu_read_unlock();
+ 	}
  }
- 
- extern int unshare_audit_namespace(void);
-+extern ssize_t audit_backlog_read(struct task_struct *,
-+				  char __user *,
-+				  size_t, loff_t *);
-+extern ssize_t audit_backlog_write(struct task_struct *,
-+				   const char __user *,
-+				   size_t size, loff_t *);
 +
++extern int unshare_audit_namespace(void);
  #else
  static inline
  struct audit_namespace *get_audit_ns(struct audit_namespace *ns)
-diff --git a/kernel/audit_namespace.c b/kernel/audit_namespace.c
-index 28c608e..e2319b8 100644
---- a/kernel/audit_namespace.c
-+++ b/kernel/audit_namespace.c
-@@ -1,5 +1,11 @@
- #include <linux/audit_namespace.h>
- #include <linux/export.h>
-+#include <linux/proc_ns.h>
-+#include <linux/seq_file.h>
-+#include <linux/pid.h>
-+#include <linux/fs.h>
-+#include <linux/nsproxy.h>
-+#include "audit.h"
+@@ -66,6 +68,11 @@ void put_audit_ns(struct audit_namespace *ns)
+ {
  
- struct audit_namespace init_audit_ns = {
- 	.count = ATOMIC_INIT(1),
-@@ -35,3 +41,83 @@ int unshare_audit_namespace(void)
- 
- 	return 0;
  }
 +
-+#define TMPBUFLEN 21
-+ssize_t audit_backlog_read(struct task_struct *tsk,
-+			   char __user *buf,
-+			   size_t count,
-+			   loff_t *ppos)
++static inline int unshare_audit_namespace()
 +{
-+	ssize_t len;
-+	char tmpbuf[TMPBUFLEN];
-+	struct audit_namespace *ns = NULL;
-+
-+	rcu_read_lock();
-+	ns = get_audit_ns(tsk->nsproxy->audit_ns);
-+	rcu_read_unlock();
-+
-+	mutex_lock(&audit_cmd_mutex);
-+	len = scnprintf(tmpbuf, TMPBUFLEN, "%d", ns->backlog_limit);
-+	mutex_unlock(&audit_cmd_mutex);
-+
-+	put_audit_ns(ns);
-+
-+	return simple_read_from_buffer(buf, count, ppos, tmpbuf, len);
++	return -EINVAL;
 +}
+ #endif
+ 
+ static inline struct
+diff --git a/include/uapi/linux/audit.h b/include/uapi/linux/audit.h
+index 75cef3f..877d509 100644
+--- a/include/uapi/linux/audit.h
++++ b/include/uapi/linux/audit.h
+@@ -68,6 +68,7 @@
+ #define AUDIT_MAKE_EQUIV	1015	/* Append to watched tree */
+ #define AUDIT_TTY_GET		1016	/* Get TTY auditing status */
+ #define AUDIT_TTY_SET		1017	/* Set TTY auditing status */
++#define AUDIT_CREATE_NS		1018	/* Create new audit namespace */
+ 
+ #define AUDIT_FIRST_USER_MSG	1100	/* Userspace messages mostly uninteresting to kernel */
+ #define AUDIT_USER_AVC		1107	/* We filter this differently */
+diff --git a/kernel/audit.c b/kernel/audit.c
+index c4d4291..86212d3 100644
+--- a/kernel/audit.c
++++ b/kernel/audit.c
+@@ -596,6 +596,12 @@ static int audit_netlink_ok(struct sk_buff *skb, u16 msg_type)
+ 		    !capable(CAP_AUDIT_CONTROL))
+ 			err = -EPERM;
+ 		break;
++	case AUDIT_CREATE_NS:
++		/* Allow privileged user in user namespace to
++		 * create audit namespace */
++		if (!ns_capable(current_user_ns(), CAP_AUDIT_CONTROL))
++			err = -EPERM;
++		break;
+ 	case AUDIT_USER:
+ 	case AUDIT_FIRST_USER_MSG ... AUDIT_LAST_USER_MSG:
+ 	case AUDIT_FIRST_USER_MSG2 ... AUDIT_LAST_USER_MSG2:
+@@ -735,6 +741,22 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 		if (status_get->mask & AUDIT_STATUS_BACKLOG_LIMIT)
+ 			err = audit_set_backlog_limit(status_get->backlog_limit);
+ 		break;
++	case AUDIT_CREATE_NS:
++		err = unshare_audit_namespace();
 +
-+ssize_t audit_backlog_write(struct task_struct *tsk,
-+			    const char __user *buf,
-+			    size_t size,
-+			    loff_t *ppos)
++		if (audit_enabled == AUDIT_OFF)
++			break;
++
++		ab = audit_log_start_ns(ns, NULL, GFP_KERNEL, AUDIT_CREATE_NS);
++		if (ab) {
++			audit_log_format(ab, "Create audit namespace");
++			audit_log_session_info(ab);
++			audit_log_task_context(ab);
++			audit_log_format(ab, "res=%d", err ? 0 : 1);
++			audit_log_end_ns(ns, ab);
++		}
++
++		break;
+ 	case AUDIT_USER:
+ 	case AUDIT_FIRST_USER_MSG ... AUDIT_LAST_USER_MSG:
+ 	case AUDIT_FIRST_USER_MSG2 ... AUDIT_LAST_USER_MSG2:
+diff --git a/kernel/audit_namespace.c b/kernel/audit_namespace.c
+index 6d9cb8f..28c608e 100644
+--- a/kernel/audit_namespace.c
++++ b/kernel/audit_namespace.c
+@@ -6,3 +6,32 @@ struct audit_namespace init_audit_ns = {
+ 	.user_ns = &init_user_ns,
+ };
+ EXPORT_SYMBOL_GPL(init_audit_ns);
++
++int unshare_audit_namespace(void)
 +{
-+	ssize_t ret = 0;
-+	char *page = NULL, *tmp;
-+	int audit_log_limit = 0;
-+	struct audit_namespace *ns = NULL;
++	struct task_struct *tsk = current;
++	struct audit_namespace *new_audit = NULL;
++	struct nsproxy *new_nsp;
 +
-+	if (!capable(CAP_AUDIT_CONTROL))
-+		return -EPERM;
-+
-+	if (*ppos != 0)
-+		return -EINVAL;
-+
-+	if (size >= PAGE_SIZE)
-+		size = PAGE_SIZE - 1;
-+
-+	page = (char *)__get_free_page(GFP_TEMPORARY);
-+	if (!page)
++	new_audit = kzalloc(sizeof(struct audit_namespace), GFP_KERNEL);
++	if (!new_audit)
 +		return -ENOMEM;
 +
-+	rcu_read_lock();
-+	ns = get_audit_ns(tsk->nsproxy->audit_ns);
-+	rcu_read_unlock();
++	skb_queue_head_init(&new_audit->queue);
++	skb_queue_head_init(&new_audit->hold_queue);
++	init_waitqueue_head(&new_audit->kauditd_wait);
++	init_waitqueue_head(&new_audit->backlog_wait);
 +
-+	if (!ns)
-+		goto out_free_page;
++	new_nsp = create_new_namespaces(0, tsk, NULL, NULL);
++	if (IS_ERR(new_nsp)) {
++		kfree(new_audit);
++		return PTR_ERR(new_nsp);
++	}
 +
-+	/* Disallow to change init_audit_ns through proc interface */
-+	ret = -EPERM;
-+	if (ns == &init_audit_ns)
-+		goto out_put_audit;
++	new_audit->user_ns = get_user_ns(current_user_ns());
++	new_nsp->audit_ns = get_audit_ns(new_audit);
 +
-+	ret = -EFAULT;
-+	if (copy_from_user(page, buf, size))
-+		goto out_put_audit;
++	switch_task_namespaces(current, new_nsp);
 +
-+	ret = -EINVAL;
-+	page[size] = '\0';
-+	audit_log_limit = simple_strtoul(page, &tmp, 10);
-+	if (tmp == page)
-+		goto out_put_audit;
-+
-+	mutex_lock(&audit_cmd_mutex);
-+	ns->backlog_limit = audit_log_limit;
-+	mutex_unlock(&audit_cmd_mutex);
-+
-+	ret = size;
-+out_put_audit:
-+	put_audit_ns(ns);
-+out_free_page:
-+	free_page((unsigned long) page);
-+	return ret;
++	return 0;
 +}
 -- 
 1.8.3.1
