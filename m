@@ -1,7 +1,7 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 18/20] audit: add new message type AUDIT_CREATE_NS
-Date: Thu, 24 Oct 2013 15:32:03 +0800
-Message-ID: <1382599925-25143-19-git-send-email-gaofeng__41591.2753473551$1382600023$gmane$org@cn.fujitsu.com>
+Subject: [PATCH 19/20] audit: make audit_backlog_limit per audit namespace
+Date: Thu, 24 Oct 2013 15:32:04 +0800
+Message-ID: <1382599925-25143-20-git-send-email-gaofeng__9790.23906770653$1382600030$gmane$org@cn.fujitsu.com>
 References: <1382599925-25143-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,149 +21,164 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-audit-H+wXaHxf7a
 Cc: toshi.okajima-+CUm20s59erQFUHtdCDX3A@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Since there is no more place for flags of clone system call.
-we need to find a way to create audit namespace.
+This patch makes audit_backlog_limit per audit
+namespace, so we can limit the memory usage of
+audit namespace through limit the value of
+auditns's audit_backlog_limit.
 
-this patch add a new type of message AUDIT_CREATE_NS.
-user space can create new audit namespace through
-netlink.
-
-Right now, The privileged user in user namespace is allowed
-to create audit namespace. it means the unprivileged user can
-create an user namespace and then create audit namespace.
-
-Looks like it is not safe, but even the unprivileged user can
-create audit namespace, it can do no harm to the host. un-init
-audit namespace cann't effect the host.
-
-In the follow patches, the audit_backlog_limit will be per
-audit namesapace, but only the privileged user has rights to
-modify it. and the default value of audit_backlog_limit for
-uninit audit namespace will be set to 0.
-
-And the audit_rate_limit will be limited too.
+By default, the backlog_limit of new created
+audit namespace is zero, so processes in this
+auditns has no ability to generate audit log.
 
 Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- include/linux/audit_namespace.h |  7 +++++++
- include/uapi/linux/audit.h      |  1 +
- kernel/audit.c                  | 22 ++++++++++++++++++++++
- kernel/audit_namespace.c        | 29 +++++++++++++++++++++++++++++
- 4 files changed, 59 insertions(+)
+ include/linux/audit_namespace.h |  2 ++
+ kernel/audit.c                  | 47 +++++++++++++++++++++++------------------
+ 2 files changed, 28 insertions(+), 21 deletions(-)
 
 diff --git a/include/linux/audit_namespace.h b/include/linux/audit_namespace.h
-index 79a9b78..b17f052 100644
+index b17f052..4648b4f 100644
 --- a/include/linux/audit_namespace.h
 +++ b/include/linux/audit_namespace.h
-@@ -54,6 +54,8 @@ void put_audit_ns(struct audit_namespace *ns)
- 		rcu_read_unlock();
- 	}
- }
-+
-+extern int unshare_audit_namespace(void);
- #else
- static inline
- struct audit_namespace *get_audit_ns(struct audit_namespace *ns)
-@@ -66,6 +68,11 @@ void put_audit_ns(struct audit_namespace *ns)
- {
- 
- }
-+
-+static inline int unshare_audit_namespace()
-+{
-+	return -EINVAL;
-+}
- #endif
- 
- static inline struct
-diff --git a/include/uapi/linux/audit.h b/include/uapi/linux/audit.h
-index 75cef3f..877d509 100644
---- a/include/uapi/linux/audit.h
-+++ b/include/uapi/linux/audit.h
-@@ -68,6 +68,7 @@
- #define AUDIT_MAKE_EQUIV	1015	/* Append to watched tree */
- #define AUDIT_TTY_GET		1016	/* Get TTY auditing status */
- #define AUDIT_TTY_SET		1017	/* Set TTY auditing status */
-+#define AUDIT_CREATE_NS		1018	/* Create new audit namespace */
- 
- #define AUDIT_FIRST_USER_MSG	1100	/* Userspace messages mostly uninteresting to kernel */
- #define AUDIT_USER_AVC		1107	/* We filter this differently */
+@@ -14,6 +14,8 @@ struct audit_namespace {
+ 	int pid;
+ 	/* portid of the auditd process's netlink socket */
+ 	int portid;
++	/* number of outstanding audit_buffers allowed */
++	int backlog_limit;
+ 	struct user_namespace *user_ns;
+ 	struct sk_buff_head queue;
+ 	/* queue of skbs to send to auditd when/if it comes back */
 diff --git a/kernel/audit.c b/kernel/audit.c
-index c4d4291..86212d3 100644
+index 86212d3..63797557 100644
 --- a/kernel/audit.c
 +++ b/kernel/audit.c
-@@ -596,6 +596,12 @@ static int audit_netlink_ok(struct sk_buff *skb, u16 msg_type)
- 		    !capable(CAP_AUDIT_CONTROL))
- 			err = -EPERM;
- 		break;
-+	case AUDIT_CREATE_NS:
-+		/* Allow privileged user in user namespace to
-+		 * create audit namespace */
-+		if (!ns_capable(current_user_ns(), CAP_AUDIT_CONTROL))
-+			err = -EPERM;
-+		break;
- 	case AUDIT_USER:
- 	case AUDIT_FIRST_USER_MSG ... AUDIT_LAST_USER_MSG:
- 	case AUDIT_FIRST_USER_MSG2 ... AUDIT_LAST_USER_MSG2:
-@@ -735,6 +741,22 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
- 		if (status_get->mask & AUDIT_STATUS_BACKLOG_LIMIT)
- 			err = audit_set_backlog_limit(status_get->backlog_limit);
- 		break;
-+	case AUDIT_CREATE_NS:
-+		err = unshare_audit_namespace();
-+
-+		if (audit_enabled == AUDIT_OFF)
-+			break;
-+
-+		ab = audit_log_start_ns(ns, NULL, GFP_KERNEL, AUDIT_CREATE_NS);
-+		if (ab) {
-+			audit_log_format(ab, "Create audit namespace");
-+			audit_log_session_info(ab);
-+			audit_log_task_context(ab);
-+			audit_log_format(ab, "res=%d", err ? 0 : 1);
-+			audit_log_end_ns(ns, ab);
-+		}
-+
-+		break;
- 	case AUDIT_USER:
- 	case AUDIT_FIRST_USER_MSG ... AUDIT_LAST_USER_MSG:
- 	case AUDIT_FIRST_USER_MSG2 ... AUDIT_LAST_USER_MSG2:
-diff --git a/kernel/audit_namespace.c b/kernel/audit_namespace.c
-index 6d9cb8f..28c608e 100644
---- a/kernel/audit_namespace.c
-+++ b/kernel/audit_namespace.c
-@@ -6,3 +6,32 @@ struct audit_namespace init_audit_ns = {
- 	.user_ns = &init_user_ns,
- };
- EXPORT_SYMBOL_GPL(init_audit_ns);
-+
-+int unshare_audit_namespace(void)
+@@ -94,8 +94,6 @@ static int	audit_failure = AUDIT_FAIL_PRINTK;
+  * audit records being dropped. */
+ static int	audit_rate_limit;
+ 
+-/* Number of outstanding audit_buffers allowed. */
+-static int	audit_backlog_limit = 64;
+ static int	audit_backlog_wait_time = 60 * HZ;
+ static int	audit_backlog_wait_overflow = 0;
+ 
+@@ -210,15 +208,7 @@ static inline int audit_rate_check(void)
+ 	return retval;
+ }
+ 
+-/**
+- * audit_log_lost - conditionally log lost audit message event
+- * @message: the message stating reason for lost audit message
+- *
+- * Emit at least 1 message per second, even if audit_rate_check is
+- * throttling.
+- * Always increment the lost messages counter.
+-*/
+-void audit_log_lost(const char *message)
++void audit_log_lost_ns(struct audit_namespace *ns, const char *message)
+ {
+ 	static unsigned long	last_msg = 0;
+ 	static DEFINE_SPINLOCK(lock);
+@@ -240,18 +230,31 @@ void audit_log_lost(const char *message)
+ 		spin_unlock_irqrestore(&lock, flags);
+ 	}
+ 
+-	if (print) {
++	if (print && (ns == &init_audit_ns)) {
+ 		if (printk_ratelimit())
+ 			printk(KERN_WARNING
+ 				"audit: audit_lost=%d audit_rate_limit=%d "
+ 				"audit_backlog_limit=%d\n",
+ 				atomic_read(&audit_lost),
+ 				audit_rate_limit,
+-				audit_backlog_limit);
++				ns->backlog_limit);
+ 		audit_panic(message);
+ 	}
+ }
+ 
++/**
++ * audit_log_lost - conditionally log lost audit message event
++ * @message: the message stating reason for lost audit message
++ *
++ * Emit at least 1 message per second, even if audit_rate_check is
++ * throttling.
++ * Always increment the lost messages counter.
++*/
++void audit_log_lost(const char *message)
 +{
-+	struct task_struct *tsk = current;
-+	struct audit_namespace *new_audit = NULL;
-+	struct nsproxy *new_nsp;
-+
-+	new_audit = kzalloc(sizeof(struct audit_namespace), GFP_KERNEL);
-+	if (!new_audit)
-+		return -ENOMEM;
-+
-+	skb_queue_head_init(&new_audit->queue);
-+	skb_queue_head_init(&new_audit->hold_queue);
-+	init_waitqueue_head(&new_audit->kauditd_wait);
-+	init_waitqueue_head(&new_audit->backlog_wait);
-+
-+	new_nsp = create_new_namespaces(0, tsk, NULL, NULL);
-+	if (IS_ERR(new_nsp)) {
-+		kfree(new_audit);
-+		return PTR_ERR(new_nsp);
-+	}
-+
-+	new_audit->user_ns = get_user_ns(current_user_ns());
-+	new_nsp->audit_ns = get_audit_ns(new_audit);
-+
-+	switch_task_namespaces(current, new_nsp);
-+
-+	return 0;
++	return audit_log_lost_ns(&init_audit_ns, message);
 +}
++
+ static int audit_log_config_change(struct audit_namespace *ns,
+ 				   char *function_name,
+ 				   int new, int old,
+@@ -308,7 +311,8 @@ static int audit_set_rate_limit(int limit)
+ 
+ static int audit_set_backlog_limit(int limit)
+ {
+-	return audit_do_config_change("audit_backlog_limit", &audit_backlog_limit, limit);
++	return audit_do_config_change("audit_backlog_limit",
++				      &init_audit_ns.backlog_limit, limit);
+ }
+ 
+ static int audit_set_enabled(int state)
+@@ -346,7 +350,7 @@ static int audit_set_failure(int state)
+ static void audit_hold_skb(struct audit_namespace *ns, struct sk_buff *skb)
+ {
+ 	if (audit_default &&
+-	    skb_queue_len(&ns->hold_queue) < audit_backlog_limit)
++	    skb_queue_len(&ns->hold_queue) < ns->backlog_limit)
+ 		skb_queue_tail(&ns->hold_queue, skb);
+ 	else
+ 		kfree_skb(skb);
+@@ -675,7 +679,7 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 		status_set.failure	 = audit_failure;
+ 		status_set.pid		 = ns->pid;
+ 		status_set.rate_limit	 = audit_rate_limit;
+-		status_set.backlog_limit = audit_backlog_limit;
++		status_set.backlog_limit = ns->backlog_limit;
+ 		status_set.lost		 = atomic_read(&audit_lost);
+ 		status_set.backlog	 = skb_queue_len(&ns->queue);
+ 
+@@ -971,6 +975,7 @@ static int __init audit_init(void)
+ 
+ 	init_audit_ns.pid = 0;
+ 	init_audit_ns.portid = 0;
++	init_audit_ns.backlog_limit = 64;
+ 	init_audit_ns.kauditd_task = NULL;
+ 	skb_queue_head_init(&init_audit_ns.queue);
+ 	skb_queue_head_init(&init_audit_ns.hold_queue);
+@@ -1129,8 +1134,8 @@ static void wait_for_auditd(struct audit_namespace *ns,
+ 	set_current_state(TASK_UNINTERRUPTIBLE);
+ 	add_wait_queue(&ns->backlog_wait, &wait);
+ 
+-	if (audit_backlog_limit &&
+-	    skb_queue_len(&ns->queue) > audit_backlog_limit)
++	if (ns->backlog_limit &&
++	    skb_queue_len(&ns->queue) > ns->backlog_limit)
+ 		schedule_timeout(sleep_time);
+ 
+ 	__set_current_state(TASK_RUNNING);
+@@ -1167,8 +1172,8 @@ audit_log_start_ns(struct audit_namespace *ns,
+ 		reserve = 5; /* Allow atomic callers to go up to five
+ 				entries over the normal backlog limit */
+ 
+-	while (audit_backlog_limit
+-	       && skb_queue_len(&ns->queue) > audit_backlog_limit + reserve) {
++	while (ns->backlog_limit
++	       && skb_queue_len(&ns->queue) > ns->backlog_limit + reserve) {
+ 		if (gfp_mask & __GFP_WAIT && audit_backlog_wait_time) {
+ 			unsigned long sleep_time;
+ 
+@@ -1184,7 +1189,7 @@ audit_log_start_ns(struct audit_namespace *ns,
+ 			       "audit: audit_backlog=%d > "
+ 			       "audit_backlog_limit=%d\n",
+ 			       skb_queue_len(&ns->queue),
+-			       audit_backlog_limit);
++			       ns->backlog_limit);
+ 		audit_log_lost("backlog limit exceeded");
+ 		audit_backlog_wait_time = audit_backlog_wait_overflow;
+ 		wake_up(&init_audit_ns.backlog_wait);
 -- 
 1.8.3.1
