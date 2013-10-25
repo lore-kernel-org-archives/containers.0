@@ -1,16 +1,12 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 11/11] newuidmap,
-	newgidmap: New suid helpers for using subordinate uids and gids
-Date: Fri, 25 Oct 2013 17:42:12 -0700
-Message-ID: <87zjpw278b.fsf@xmission.com>
-References: <87d2wxshu0.fsf@xmission.com> <87ehhdpoag.fsf@xmission.com>
-	<20131025203025.GA2467@mail.hallyn.com>
+From: United Nations Inspection Unit <2221397042-9uewiaClKEY@public.gmane.org>
+Subject: United Nations Inspection Unit
+Date: Fri, 25 Oct 2013 23:08:12 +0100
+Message-ID: <E1VZpYC-0004s8-AZ@server43048x.masterweb.net>
+Reply-To: 2221397042-9uewiaClKEY@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20131025203025.GA2467-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
-	message of "Fri, 25 Oct 2013 20:30:25 +0000")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,34 +16,25 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Pkg-shadow-devel-XbBxUvOt3X2LieD7tvxI8l/i77bcL1HB@public.gmane.org, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Nicolas =?utf-8?Q?Fran=C3=A7ois?= <nicolas.francois-Fa7rcPG4DJn7nK0/Xc0eeg@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
-
-> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
->
-> Hi,
->
->> +static bool verify_range(struct passwd *pw, struct map_range *range)
->> +{
->> +	/* An empty range is invalid */
->> +	if (range->count == 0)
->> +		return false;
->> +
->> +	/* Test /etc/subuid */
->> +	if (have_sub_uids(pw->pw_name, range->lower, range->count))
->> +		return true;
->
-> I think the have_sub_uids() test should be skipped if we started
-> out as root.  Is there a reason not to do that?
-
-The only reason I can see for root to use this binary is if it a flavor
-of root that has dropped some capbilities.  Is there a reason for root
-to use newuidmap and newgid map at all?
-
-Otherwise I think it makes sense to enforce whatever the system choosen
-policy is on root, because root is opting in.
-
-Eric
+Hi
+I am Juan Arriola, Chief Inspection Agent- United Nations Inspection Unit at Hartsfield-Jackson Atlanta 
+International Airport. During my routine check, I discovered an abandoned shipment from a Diplomat from 
+London and when scanned it revealed an undisclosed sum of money in a metal trunk box.The consignment
+was abandoned because the Content was not properly declared by the consignee as money rather it was 
+declared as personal effect to avoid diversion by the shipping agent and also the Diplomat  to pay for Non 
+Inspection Fees of 3,700dollars.On my assumption, the box will contain about $2.5Million to $3Million and 
+the consignment is still left in the storage house till date. Approximately, the details of the consignment 
+including your name and address, the official document from United Nation office in London are tagged 
+on the Metal Trunk boxes. Provide your name, phone number and full home address, to cross check if it 
+corresponds with the name and address on the consignment including the name of nearest airport  around 
+your city and other details. You can send the required details to me by email for onward delivery.
+All communication must be held extremely confidential. I can get everything concluded within 5-6 hours 
+upon your acceptance and proceed to your address for delivery if you assure me of sharing the content 
+60% for you and 40%  for me on arrival to your house. I want us to transact this business with you and 
+share the money, since the shipper has abandoned it and disappeared. WE need to pay for the Non 
+inspection fee which is 3,700dollars together and arrange for the boxes to be moved out of this airport 
+to your address by myself but you have to assure me of my 40%share.send me all the requested information 
+to my email (2221397042-9uewiaClKEY@public.gmane.org).
