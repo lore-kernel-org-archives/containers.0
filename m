@@ -1,8 +1,7 @@
-From: United Nations Inspection Unit <2221397042-9uewiaClKEY@public.gmane.org>
-Subject: United Nations Inspection Unit
-Date: Fri, 25 Oct 2013 23:08:12 +0100
-Message-ID: <E1VZpYC-0004s8-AZ@server43048x.masterweb.net>
-Reply-To: 2221397042-9uewiaClKEY@public.gmane.org
+From: Daniel Walker <dwalker-zu3NM2574RrQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 3/3] cgroups: remove calls to simple_kstrtoll
+Date: Fri, 25 Oct 2013 19:33:13 -0700
+Message-ID: <1382754793-8827-3-git-send-email-dwalker__21785.8984055512$1382755382$gmane$org@fifo99.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,25 +15,47 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi
-I am Juan Arriola, Chief Inspection Agent- United Nations Inspection Unit at Hartsfield-Jackson Atlanta 
-International Airport. During my routine check, I discovered an abandoned shipment from a Diplomat from 
-London and when scanned it revealed an undisclosed sum of money in a metal trunk box.The consignment
-was abandoned because the Content was not properly declared by the consignee as money rather it was 
-declared as personal effect to avoid diversion by the shipping agent and also the Diplomat  to pay for Non 
-Inspection Fees of 3,700dollars.On my assumption, the box will contain about $2.5Million to $3Million and 
-the consignment is still left in the storage house till date. Approximately, the details of the consignment 
-including your name and address, the official document from United Nation office in London are tagged 
-on the Metal Trunk boxes. Provide your name, phone number and full home address, to cross check if it 
-corresponds with the name and address on the consignment including the name of nearest airport  around 
-your city and other details. You can send the required details to me by email for onward delivery.
-All communication must be held extremely confidential. I can get everything concluded within 5-6 hours 
-upon your acceptance and proceed to your address for delivery if you assure me of sharing the content 
-60% for you and 40%  for me on arrival to your house. I want us to transact this business with you and 
-share the money, since the shipper has abandoned it and disappeared. WE need to pay for the Non 
-inspection fee which is 3,700dollars together and arrange for the boxes to be moved out of this airport 
-to your address by myself but you have to assure me of my 40%share.send me all the requested information 
-to my email (2221397042-9uewiaClKEY@public.gmane.org).
+Signed-off-by: Daniel Walker <dwalker-zu3NM2574RrQT0dZR+AlfA@public.gmane.org>
+---
+ kernel/cgroup.c | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 41f71c3..bf8b891 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -2276,7 +2276,7 @@ static ssize_t cgroup_write_X64(struct cgroup_subsys_state *css,
+ {
+ 	char buffer[CGROUP_LOCAL_BUFFER_SIZE];
+ 	int retval = 0;
+-	char *end;
++	int ret;
+ 
+ 	if (!nbytes)
+ 		return -EINVAL;
+@@ -2287,13 +2287,15 @@ static ssize_t cgroup_write_X64(struct cgroup_subsys_state *css,
+ 
+ 	buffer[nbytes] = 0;     /* nul-terminate */
+ 	if (cft->write_u64) {
+-		u64 val = simple_strtoull(strstrip(buffer), &end, 0);
+-		if (*end)
++		u64 val;
++		ret = kstrtoull(strstrip(buffer), 0, &val);
++		if (ret != 0)
+ 			return -EINVAL;
+ 		retval = cft->write_u64(css, cft, val);
+ 	} else {
+-		s64 val = simple_strtoll(strstrip(buffer), &end, 0);
+-		if (*end)
++		s64 val;
++		ret = kstrtoll(strstrip(buffer), 0, &val);
++		if (ret != 0)
+ 			return -EINVAL;
+ 		retval = cft->write_s64(css, cft, val);
+ 	}
+-- 
+1.8.3.2
