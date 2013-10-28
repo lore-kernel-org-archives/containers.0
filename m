@@ -1,18 +1,21 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 11/11] newuidmap, newgidmap: New suid helpers for using
-	subordinate uids and gids
-Date: Sun, 27 Oct 2013 23:53:44 +0000
-Message-ID: <20131027235344.GA14373@mail.hallyn.com>
-References: <87d2wxshu0.fsf@xmission.com> <87ehhdpoag.fsf@xmission.com>
-	<20131025203025.GA2467@mail.hallyn.com>
-	<87zjpw278b.fsf@xmission.com> <20131026023346.GA2753@ac100>
-	<87iowjya4j.fsf@xmission.com>
+From: Andrey Wagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: Device Namespaces
+Date: Tue, 29 Oct 2013 03:31:17 +0400
+Message-ID: <CANaxB-x0tqoxh+oELSfXXFao0hOX3xo3hxBSR0BZGqymbwUDmg@mail.gmail.com>
+References: <CAA4jN2aw4zEW=UfKCyqaOvXnbiRb_J9srfCn4OXTFzc6vWBM4A@mail.gmail.com>
+	<20130822182118.GA28331@sergelap>
+	<CAA4jN2YL7Lfu2+DW-i+MovFxWEhJfT4aBBKREU_vy7JX9TKGHA@mail.gmail.com>
+	<8761udlu0d.fsf@xmission.com>
+	<CAA2m6vexArJ+6jFbK80Amstk=LK30=XDNHdBHSswP=LgpSP-6A@mail.gmail.com>
+	<871u4yddg4.fsf@xmission.com>
+	<CAA2m6vc_kWWGDWcdjk26N3YvTqZySLFxPQRjOD9_ypBOka2+GQ@mail.gmail.com>
+	<CAE=NcrbyFFoMn2nfBA_=ZtwD=eGLvqK=L-U9MuGrtJFLZfZppw@mail.gmail.com>
+	<87bo3gshz5.fsf_-_@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87iowjya4j.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <87bo3gshz5.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,54 +26,87 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Nicolas =?iso-8859-1?Q?Fran=E7ois?= <nicolas.francois-Fa7rcPG4DJn7nK0/Xc0eeg@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Pkg-shadow-devel-XbBxUvOt3X2LieD7tvxI8l/i77bcL1HB@public.gmane.org, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, lxc-devel <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, mhw-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Stephane Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> writes:
-> 
-> > Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> >> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
-> >> 
-> >> > Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> >> >
-> >> > Hi,
-> >> >
-> >> >> +static bool verify_range(struct passwd *pw, struct map_range *range)
-> >> >> +{
-> >> >> +	/* An empty range is invalid */
-> >> >> +	if (range->count == 0)
-> >> >> +		return false;
-> >> >> +
-> >> >> +	/* Test /etc/subuid */
-> >> >> +	if (have_sub_uids(pw->pw_name, range->lower, range->count))
-> >> >> +		return true;
-> >> >
-> >> > I think the have_sub_uids() test should be skipped if we started
-> >> > out as root.  Is there a reason not to do that?
-> >> 
-> >> The only reason I can see for root to use this binary is if it a flavor
-> >> of root that has dropped some capbilities.  Is there a reason for root
-> >> to use newuidmap and newgid map at all?
-> >
-> > Of course.  It keeps things simpler for creating mapped containers.
-> > Otherwise we have to special-case the "i am root" vs "i am not root"
-> > case when untarring a rootfs for a container.
-> 
-> I guess my practical question is don't we want to reserve a range of
-> subuid's for root owned containers as well.  Just so that we know
-> someone is using those uids and we don't get them allocated to another
-> purpose?
-> 
-> Or am I missing something here?
+2013/9/26 Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>
+>
+> From conversations at Linux Plumbers Converence it became fairly clear
+> that one if not the roughest edge on containers today is dealing with
+> devices.
+>
+> - Hotplug does not work.
+> - There seems to be no implementation that does a much beyond creating
+>   setting up a static set of /dev entries today.
+> - Containers do not see the appropriate uevents for their container.
+>
+> One of the more compelling cases I heard was of someone who was running
+> the a Linux Desktop in container and wanted to just let that container
+> see the devices needed for his desktop, and not everything else.
 
-That's a not unreasonable argument, but two counters:  1. "someone"
-using the uids used by root would mean root assigned those uids to
-someone.  That's a misconfiguration, in other words this is keeping
-root from shooting himself in the foot.  It's not in the kernel though,
-so maybe it's ok.  2.  I like to think that any time something fails
-as my user, if it fails due to permission reasons, then if I run it
-as root it should work.  That's useful for debugging, and just seems
-coherent with how most things work.
+I had experience of implementing this functionality in OpenVZ kernel.
+I had requirements to not modify user-space tools, so that
+implementations looks as dirty hack, but even hotplug of devices are
+workin there.
 
--serge
+....
+
+>
+> So the big issues for a device namespace to solve are filtering which
+> devices a container has access to and being able to dynamically change
+> which devices those are at run time (aka hotplug).
+>
+> After having thought about this for a bit I don't know if a pure
+> userspace solution is sufficient or actually a good idea.
+
+I would prefer to think a bit more about userspace solution. We can
+try to expand udev functionality.
+
+>
+> - We can manually manage a tmpfs with device nodes in userspace.
+>   (But that is deprecated functionality in the mainstream kernel).
+> - We can manually export a subset of sysfs with bind mounts.
+>   (But that feels hacky, and is essentially incompatible with hotplug).
+> - We can relay a call of /sbin/hotplug from outside of a container
+>   to inside of a container based on policy.
+>   (But no one uses /sbin/hotplug anymore).
+> - There is no way to fake netlink uevents for a container to see them.
+>   (The best we could do is replace udev everywhere with something that
+>    listens on a unix domain socket).
+
+or we can teach udev to listens on a unix domain socket.
+
+The host udev listens netlink. When it gets an event about a new
+device, it decides for which containers it must be avaliable, does all
+required actions and sends events in containers. Probably the protocol
+of notifications must be unified for all udev-like services.
+
+>
+> - It would be nice to replace the device cgroup with a comprehensive
+>   solution that really works. (Among other things the device cgroup
+>   does not work in terms of struct device the underlying kernel
+>   abstraction for devices).
+>
+> We must manage sysfs entries as well device nodes because:
+> - Seeing more than we should has the real potential to confuse
+>   userspace, especially a userspace that replays uevents.
+> - Some device control must happens through writing to sysfs files and
+>   if we don't remove all root privileges from a container only by
+>   exporting a subset of sysfs to that container can we limit which
+>   sysfs nodes can be written to.
+
+Sorry if a following idea will sound crazy. Can we use fuse
+filesystems for filtering sysfs and devtmpfs? When a CT mounts sysfs,
+it will mount fuse-sysfs, which is implemented by userspace program on
+host system.
+
+* This way allows to emulate the behavior of uevent files in
+containers, if we will use unix sockets between udev services.
+* Probably a userspace daemon will be more flexible and customizable
+than something in kernel
+
+Do we have a use case when a perfomance of sysfs is critical?
+
+Thanks,
+Andrey
