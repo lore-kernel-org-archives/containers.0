@@ -1,21 +1,13 @@
-From: Andrey Wagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: Device Namespaces
-Date: Tue, 29 Oct 2013 03:31:17 +0400
-Message-ID: <CANaxB-x0tqoxh+oELSfXXFao0hOX3xo3hxBSR0BZGqymbwUDmg@mail.gmail.com>
-References: <CAA4jN2aw4zEW=UfKCyqaOvXnbiRb_J9srfCn4OXTFzc6vWBM4A@mail.gmail.com>
-	<20130822182118.GA28331@sergelap>
-	<CAA4jN2YL7Lfu2+DW-i+MovFxWEhJfT4aBBKREU_vy7JX9TKGHA@mail.gmail.com>
-	<8761udlu0d.fsf@xmission.com>
-	<CAA2m6vexArJ+6jFbK80Amstk=LK30=XDNHdBHSswP=LgpSP-6A@mail.gmail.com>
-	<871u4yddg4.fsf@xmission.com>
-	<CAA2m6vc_kWWGDWcdjk26N3YvTqZySLFxPQRjOD9_ypBOka2+GQ@mail.gmail.com>
-	<CAE=NcrbyFFoMn2nfBA_=ZtwD=eGLvqK=L-U9MuGrtJFLZfZppw@mail.gmail.com>
-	<87bo3gshz5.fsf_-_@xmission.com>
+From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFC Part1 PATCH 00/20 v2] Add namespace support for audit
+Date: Thu, 31 Oct 2013 11:52:28 +0800
+Message-ID: <5271D3FC.8000709@cn.fujitsu.com>
+References: <1382599925-25143-1-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87bo3gshz5.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <1382599925-25143-1-git-send-email-gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,88 +17,127 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kay Sievers <kay.sievers-tD+1rO4QERM@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, lxc-devel <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, mhw-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Stephane Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+To: eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: toshi.okajima-+CUm20s59erQFUHtdCDX3A@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-2013/9/26 Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
->
->
-> From conversations at Linux Plumbers Converence it became fairly clear
-> that one if not the roughest edge on containers today is dealing with
-> devices.
->
-> - Hotplug does not work.
-> - There seems to be no implementation that does a much beyond creating
->   setting up a static set of /dev entries today.
-> - Containers do not see the appropriate uevents for their container.
->
-> One of the more compelling cases I heard was of someone who was running
-> the a Linux Desktop in container and wanted to just let that container
-> see the devices needed for his desktop, and not everything else.
+Hi Eric Paris,
 
-I had experience of implementing this functionality in OpenVZ kernel.
-I had requirements to not modify user-space tools, so that
-implementations looks as dirty hack, but even hotplug of devices are
-workin there.
+Can you give me some comments?
 
-....
+You think the tying audit namespace to user namespace is a bad idea,
+so this patchset doesn't assign auditns to userns and introduce an
+new audit netlink type to help to create audit namespace.
 
->
-> So the big issues for a device namespace to solve are filtering which
-> devices a container has access to and being able to dynamically change
-> which devices those are at run time (aka hotplug).
->
-> After having thought about this for a bit I don't know if a pure
-> userspace solution is sufficient or actually a good idea.
+and this patchset also introduces an new proc interface to make
+sure container can't influence the whole system.
 
-I would prefer to think a bit more about userspace solution. We can
-try to expand udev functionality.
+and the audit rules are not namespace aware, all of audit namespaces
+should comply with the rules. in next step, if we find it's need to
+make audit rules per audit namespace, then it's the time to do that
+job.
 
->
-> - We can manually manage a tmpfs with device nodes in userspace.
->   (But that is deprecated functionality in the mainstream kernel).
-> - We can manually export a subset of sysfs with bind mounts.
->   (But that feels hacky, and is essentially incompatible with hotplug).
-> - We can relay a call of /sbin/hotplug from outside of a container
->   to inside of a container based on policy.
->   (But no one uses /sbin/hotplug anymore).
-> - There is no way to fake netlink uevents for a container to see them.
->   (The best we could do is replace udev everywhere with something that
->    listens on a unix domain socket).
+This patchset also makes all of net namespaces have ability to send/
+receive audit netlink message.
 
-or we can teach udev to listens on a unix domain socket.
+I may miss some points, if you find there are some shortage or loophole,
+please let me know.
 
-The host udev listens netlink. When it gets an event about a new
-device, it decides for which containers it must be avaliable, does all
-required actions and sends events in containers. Probably the protocol
-of notifications must be unified for all udev-like services.
+Thanks!
 
->
-> - It would be nice to replace the device cgroup with a comprehensive
->   solution that really works. (Among other things the device cgroup
->   does not work in terms of struct device the underlying kernel
->   abstraction for devices).
->
-> We must manage sysfs entries as well device nodes because:
-> - Seeing more than we should has the real potential to confuse
->   userspace, especially a userspace that replays uevents.
-> - Some device control must happens through writing to sysfs files and
->   if we don't remove all root privileges from a container only by
->   exporting a subset of sysfs to that container can we limit which
->   sysfs nodes can be written to.
-
-Sorry if a following idea will sound crazy. Can we use fuse
-filesystems for filtering sysfs and devtmpfs? When a CT mounts sysfs,
-it will mount fuse-sysfs, which is implemented by userspace program on
-host system.
-
-* This way allows to emulate the behavior of uevent files in
-containers, if we will use unix sockets between udev services.
-* Probably a userspace daemon will be more flexible and customizable
-than something in kernel
-
-Do we have a use case when a perfomance of sysfs is critical?
-
-Thanks,
-Andrey
+On 10/24/2013 03:31 PM, Gao feng wrote:
+> Here is the v1 patchset: http://lwn.net/Articles/549546/
+> 
+> The main target of this patchset is allowing user in audit
+> namespace to generate the USER_MSG type of audit message,
+> some userspace tools need to generate audit message, or
+> these tools will broken.
+> 
+> And the login process in container may want to setup
+> /proc/<pid>/loginuid, right now this value is unalterable
+> once it being set. this will also broke the login problem
+> in container. After this patchset, we can reset this loginuid
+> to zero if task is running in a new audit namespace.
+> 
+> Same with v1 patchset, in this patchset, only the privileged
+> user in init_audit_ns and init_user_ns has rights to
+> add/del audit rules. and these rules are gloabl. all
+> audit namespace will comply with the rules.
+> 
+> Compared with v1, v2 patch has some big changes.
+> 1, the audit namespace is not assigned to user namespace.
+>    since there is no available bit of flags for clone, we
+>    create audit namespace through netlink, patch[18/20]
+>    introduces a new audit netlink type AUDIT_CREATE_NS.
+>    the privileged user in userns has rights to create a
+>    audit namespace, it means the unprivileged user can
+>    create auditns through create userns first. In order
+>    to prevent them from doing harm to host, the default
+>    audit_backlog_limit of un-init-audit-ns is zero(means
+>    audit is unavailable in audit namespace). and it can't
+>    be changed in auditns through netlink.
+> 
+> 2, introduce /proc/<pid>/audit_log_limit
+>    this interface is used to setup log_limit of audit
+>    namespace.  we need this interface to make audit
+>    available in un-init-audit-ns. Only the privileged user
+>    has right to set this value, it means only the root user
+>    of host can change it.
+> 
+> 3, make audit namespace don't depend on net namespace.
+>    patch[1/20] add a compare function audit_compare for
+>    audit netlink, it always return true, it means the
+>    netlink subsystem will find out the netlink socket
+>    only through portid and netlink type. So we needn't
+>    to create kernel side audit netlink socket for per
+>    net namespace, all userspace audit netlink socket
+>    can find out the audit_sock, and audit_sock can
+>    communicate with them through the proper portid.
+>    it's just like the behavior we don't have net
+>    namespace before.
+> 
+> 
+> This patchset still need some work, such as allow changing
+> audit_enabled in audit namespace, auditd wants this feature.
+> 
+> I send this patchset now in order to get more comments, so
+> I can keep on improving namespace support for audit.
+> 
+> Gao feng (20):
+>   Audit: make audit netlink socket net namespace unaware
+>   audit: introduce configure option CONFIG_AUDIT_NS
+>   audit: make audit_skb_queue per audit namespace
+>   audit: make audit_skb_hold_queue per audit namespace
+>   audit: make audit_pid per audit namespace
+>   audit: make kauditd_task per audit namespace
+>   aduit: make audit_nlk_portid per audit namespace
+>   audit: make kaudit_wait queue per audit namespace
+>   audit: make audit_backlog_wait per audit namespace
+>   audit: allow un-init audit ns to change pid and portid only
+>   audit: use proper audit namespace in audit_receive_msg
+>   audit: use proper audit_namespace in kauditd_thread
+>   audit: introduce new audit logging interface for audit namespace
+>   audit: pass proper audit namespace to audit_log_common_recv_msg
+>   audit: Log audit pid config change in audit namespace
+>   audit: allow GET,SET,USER MSG operations in audit namespace
+>   nsproxy: don't make create_new_namespaces static
+>   audit: add new message type AUDIT_CREATE_NS
+>   audit: make audit_backlog_limit per audit namespace
+>   audit: introduce /proc/<pid>/audit_backlog_limit
+> 
+>  fs/proc/base.c                  |  53 ++++++
+>  include/linux/audit.h           |  26 ++-
+>  include/linux/audit_namespace.h |  92 ++++++++++
+>  include/linux/nsproxy.h         |  15 +-
+>  include/uapi/linux/audit.h      |   1 +
+>  init/Kconfig                    |  10 ++
+>  kernel/Makefile                 |   2 +-
+>  kernel/audit.c                  | 364 +++++++++++++++++++++++++---------------
+>  kernel/audit.h                  |   5 +-
+>  kernel/audit_namespace.c        | 123 ++++++++++++++
+>  kernel/auditsc.c                |   6 +-
+>  kernel/nsproxy.c                |  18 +-
+>  12 files changed, 561 insertions(+), 154 deletions(-)
+>  create mode 100644 include/linux/audit_namespace.h
+>  create mode 100644 kernel/audit_namespace.c
+> 
