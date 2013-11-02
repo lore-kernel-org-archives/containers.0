@@ -1,13 +1,14 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFC Part1 PATCH 00/20 v2] Add namespace support for audit
-Date: Thu, 31 Oct 2013 11:52:28 +0800
-Message-ID: <5271D3FC.8000709@cn.fujitsu.com>
-References: <1382599925-25143-1-git-send-email-gaofeng@cn.fujitsu.com>
+Subject: Re: [REVIEW][PATCH 1/2] userns: Better restrictions on when proc
+	and sysfs can be mounted
+Date: Sat, 02 Nov 2013 14:06:27 +0800
+Message-ID: <52749663.2000701@cn.fujitsu.com>
+References: <878uzmhkqg.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1382599925-25143-1-git-send-email-gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <878uzmhkqg.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,127 +18,202 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: toshi.okajima-+CUm20s59erQFUHtdCDX3A@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Eric Paris,
+Hi Eric,
 
-Can you give me some comments?
+On 08/28/2013 05:44 AM, Eric W. Biederman wrote:
+> 
+> Rely on the fact that another flavor of the filesystem is already
+> mounted and do not rely on state in the user namespace.
+> 
+> Verify that the mounted filesystem is not covered in any significant
+> way.  I would love to verify that the previously mounted filesystem
+> has no mounts on top but there are at least the directories
+> /proc/sys/fs/binfmt_misc and /sys/fs/cgroup/ that exist explicitly
+> for other filesystems to mount on top of.
+> 
+> Refactor the test into a function named fs_fully_visible and call that
+> function from the mount routines of proc and sysfs.  This makes this
+> test local to the filesystems involved and the results current of when
+> the mounts take place, removing a weird threading of the user
+> namespace, the mount namespace and the filesystems themselves.
+> 
+> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> ---
+>  fs/namespace.c                 |   37 +++++++++++++++++++++++++------------
+>  fs/proc/root.c                 |    7 +++++--
+>  fs/sysfs/mount.c               |    3 ++-
+>  include/linux/fs.h             |    1 +
+>  include/linux/user_namespace.h |    4 ----
+>  kernel/user.c                  |    2 --
+>  kernel/user_namespace.c        |    2 --
+>  7 files changed, 33 insertions(+), 23 deletions(-)
+> 
+> diff --git a/fs/namespace.c b/fs/namespace.c
+> index 64627f8..877e427 100644
+> --- a/fs/namespace.c
+> +++ b/fs/namespace.c
+> @@ -2867,25 +2867,38 @@ bool current_chrooted(void)
+>  	return chrooted;
+>  }
+>  
+> -void update_mnt_policy(struct user_namespace *userns)
+> +bool fs_fully_visible(struct file_system_type *type)
+>  {
+>  	struct mnt_namespace *ns = current->nsproxy->mnt_ns;
+>  	struct mount *mnt;
+> +	bool visible = false;
+>  
+> -	down_read(&namespace_sem);
+> +	if (unlikely(!ns))
+> +		return false;
+> +
+> +	namespace_lock();
+>  	list_for_each_entry(mnt, &ns->list, mnt_list) {
+> -		switch (mnt->mnt.mnt_sb->s_magic) {
+> -		case SYSFS_MAGIC:
+> -			userns->may_mount_sysfs = true;
+> -			break;
+> -		case PROC_SUPER_MAGIC:
+> -			userns->may_mount_proc = true;
+> -			break;
+> +		struct mount *child;
+> +		if (mnt->mnt.mnt_sb->s_type != type)
+> +			continue;
+> +
+> +		/* This mount is not fully visible if there are any child mounts
+> +		 * that cover anything except for empty directories.
+> +		 */
+> +		list_for_each_entry(child, &mnt->mnt_mounts, mnt_child) {
+> +			struct inode *inode = child->mnt_mountpoint->d_inode;
+> +			if (!S_ISDIR(inode->i_mode))
+> +				goto next;
+> +			if (inode->i_nlink != 2)
+> +				goto next;
 
-You think the tying audit namespace to user namespace is a bad idea,
-so this patchset doesn't assign auditns to userns and introduce an
-new audit netlink type to help to create audit namespace.
 
-and this patchset also introduces an new proc interface to make
-sure container can't influence the whole system.
+I met a problem that proc filesystem failed to mount in user namespace,
+The problem is the i_nlink of sysctl entries under proc filesystem is not
+2. it always is 1 even it's a directory, see proc_sys_make_inode. and for
+btrfs, the i_nlink for an empty dir is 2 too. it seems like depends on the
+filesystem itself,not depends on vfs. In my system binfmt_misc is mounted
+on /proc/sys/fs/binfmt_misc, and the i_nlink of this directory's inode is
+1.
 
-and the audit rules are not namespace aware, all of audit namespaces
-should comply with the rules. in next step, if we find it's need to
-make audit rules per audit namespace, then it's the time to do that
-job.
+btw, I'm not quite understand what's the inode->i_nlink != 2 here means?
+is this directory empty? as I know, when we create a file(not dir) under
+a dir, the i_nlink of this dir will not increase.
 
-This patchset also makes all of net namespaces have ability to send/
-receive audit netlink message.
-
-I may miss some points, if you find there are some shortage or loophole,
-please let me know.
+And another question, it looks like if we don't have proc/sys fs mounted,
+then proc/sys will be failed to be mounted?
 
 Thanks!
 
-On 10/24/2013 03:31 PM, Gao feng wrote:
-> Here is the v1 patchset: http://lwn.net/Articles/549546/
-> 
-> The main target of this patchset is allowing user in audit
-> namespace to generate the USER_MSG type of audit message,
-> some userspace tools need to generate audit message, or
-> these tools will broken.
-> 
-> And the login process in container may want to setup
-> /proc/<pid>/loginuid, right now this value is unalterable
-> once it being set. this will also broke the login problem
-> in container. After this patchset, we can reset this loginuid
-> to zero if task is running in a new audit namespace.
-> 
-> Same with v1 patchset, in this patchset, only the privileged
-> user in init_audit_ns and init_user_ns has rights to
-> add/del audit rules. and these rules are gloabl. all
-> audit namespace will comply with the rules.
-> 
-> Compared with v1, v2 patch has some big changes.
-> 1, the audit namespace is not assigned to user namespace.
->    since there is no available bit of flags for clone, we
->    create audit namespace through netlink, patch[18/20]
->    introduces a new audit netlink type AUDIT_CREATE_NS.
->    the privileged user in userns has rights to create a
->    audit namespace, it means the unprivileged user can
->    create auditns through create userns first. In order
->    to prevent them from doing harm to host, the default
->    audit_backlog_limit of un-init-audit-ns is zero(means
->    audit is unavailable in audit namespace). and it can't
->    be changed in auditns through netlink.
-> 
-> 2, introduce /proc/<pid>/audit_log_limit
->    this interface is used to setup log_limit of audit
->    namespace.  we need this interface to make audit
->    available in un-init-audit-ns. Only the privileged user
->    has right to set this value, it means only the root user
->    of host can change it.
-> 
-> 3, make audit namespace don't depend on net namespace.
->    patch[1/20] add a compare function audit_compare for
->    audit netlink, it always return true, it means the
->    netlink subsystem will find out the netlink socket
->    only through portid and netlink type. So we needn't
->    to create kernel side audit netlink socket for per
->    net namespace, all userspace audit netlink socket
->    can find out the audit_sock, and audit_sock can
->    communicate with them through the proper portid.
->    it's just like the behavior we don't have net
->    namespace before.
-> 
-> 
-> This patchset still need some work, such as allow changing
-> audit_enabled in audit namespace, auditd wants this feature.
-> 
-> I send this patchset now in order to get more comments, so
-> I can keep on improving namespace support for audit.
-> 
-> Gao feng (20):
->   Audit: make audit netlink socket net namespace unaware
->   audit: introduce configure option CONFIG_AUDIT_NS
->   audit: make audit_skb_queue per audit namespace
->   audit: make audit_skb_hold_queue per audit namespace
->   audit: make audit_pid per audit namespace
->   audit: make kauditd_task per audit namespace
->   aduit: make audit_nlk_portid per audit namespace
->   audit: make kaudit_wait queue per audit namespace
->   audit: make audit_backlog_wait per audit namespace
->   audit: allow un-init audit ns to change pid and portid only
->   audit: use proper audit namespace in audit_receive_msg
->   audit: use proper audit_namespace in kauditd_thread
->   audit: introduce new audit logging interface for audit namespace
->   audit: pass proper audit namespace to audit_log_common_recv_msg
->   audit: Log audit pid config change in audit namespace
->   audit: allow GET,SET,USER MSG operations in audit namespace
->   nsproxy: don't make create_new_namespaces static
->   audit: add new message type AUDIT_CREATE_NS
->   audit: make audit_backlog_limit per audit namespace
->   audit: introduce /proc/<pid>/audit_backlog_limit
-> 
->  fs/proc/base.c                  |  53 ++++++
->  include/linux/audit.h           |  26 ++-
->  include/linux/audit_namespace.h |  92 ++++++++++
->  include/linux/nsproxy.h         |  15 +-
->  include/uapi/linux/audit.h      |   1 +
->  init/Kconfig                    |  10 ++
->  kernel/Makefile                 |   2 +-
->  kernel/audit.c                  | 364 +++++++++++++++++++++++++---------------
->  kernel/audit.h                  |   5 +-
->  kernel/audit_namespace.c        | 123 ++++++++++++++
->  kernel/auditsc.c                |   6 +-
->  kernel/nsproxy.c                |  18 +-
->  12 files changed, 561 insertions(+), 154 deletions(-)
->  create mode 100644 include/linux/audit_namespace.h
->  create mode 100644 kernel/audit_namespace.c
+>  		}
+> -		if (userns->may_mount_sysfs && userns->may_mount_proc)
+> -			break;
+> +		visible = true;
+> +		goto found;
+> +	next:	;
+>  	}
+> -	up_read(&namespace_sem);
+> +found:
+> +	namespace_unlock();
+> +	return visible;
+>  }
+>  
+>  static void *mntns_get(struct task_struct *task)
+> diff --git a/fs/proc/root.c b/fs/proc/root.c
+> index 38bd5d4..45e5fb7 100644
+> --- a/fs/proc/root.c
+> +++ b/fs/proc/root.c
+> @@ -110,8 +110,11 @@ static struct dentry *proc_mount(struct file_system_type *fs_type,
+>  		ns = task_active_pid_ns(current);
+>  		options = data;
+>  
+> -		if (!current_user_ns()->may_mount_proc ||
+> -		    !ns_capable(ns->user_ns, CAP_SYS_ADMIN))
+> +		if (!capable(CAP_SYS_ADMIN) && !fs_fully_visible(fs_type))
+> +			return ERR_PTR(-EPERM);
+> +
+> +		/* Does the mounter have privilege over the pid namespace? */
+> +		if (!ns_capable(ns->user_ns, CAP_SYS_ADMIN))
+>  			return ERR_PTR(-EPERM);
+>  	}
+>  
+> diff --git a/fs/sysfs/mount.c b/fs/sysfs/mount.c
+> index afd8327..4a2da3a 100644
+> --- a/fs/sysfs/mount.c
+> +++ b/fs/sysfs/mount.c
+> @@ -112,7 +112,8 @@ static struct dentry *sysfs_mount(struct file_system_type *fs_type,
+>  	struct super_block *sb;
+>  	int error;
+>  
+> -	if (!(flags & MS_KERNMOUNT) && !current_user_ns()->may_mount_sysfs)
+> +	if (!(flags & MS_KERNMOUNT) && !capable(CAP_SYS_ADMIN) &&
+> +	    !fs_fully_visible(fs_type))
+>  		return ERR_PTR(-EPERM);
+>  
+>  	info = kzalloc(sizeof(*info), GFP_KERNEL);
+> diff --git a/include/linux/fs.h b/include/linux/fs.h
+> index 9818747..3050c62 100644
+> --- a/include/linux/fs.h
+> +++ b/include/linux/fs.h
+> @@ -1897,6 +1897,7 @@ extern int vfs_ustat(dev_t, struct kstatfs *);
+>  extern int freeze_super(struct super_block *super);
+>  extern int thaw_super(struct super_block *super);
+>  extern bool our_mnt(struct vfsmount *mnt);
+> +extern bool fs_fully_visible(struct file_system_type *);
+>  
+>  extern int current_umask(void);
+>  
+> diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+> index b6b215f..4ce0093 100644
+> --- a/include/linux/user_namespace.h
+> +++ b/include/linux/user_namespace.h
+> @@ -26,8 +26,6 @@ struct user_namespace {
+>  	kuid_t			owner;
+>  	kgid_t			group;
+>  	unsigned int		proc_inum;
+> -	bool			may_mount_sysfs;
+> -	bool			may_mount_proc;
+>  };
+>  
+>  extern struct user_namespace init_user_ns;
+> @@ -84,6 +82,4 @@ static inline void put_user_ns(struct user_namespace *ns)
+>  
+>  #endif
+>  
+> -void update_mnt_policy(struct user_namespace *userns);
+> -
+>  #endif /* _LINUX_USER_H */
+> diff --git a/kernel/user.c b/kernel/user.c
+> index 69b4c3d..5bbb919 100644
+> --- a/kernel/user.c
+> +++ b/kernel/user.c
+> @@ -51,8 +51,6 @@ struct user_namespace init_user_ns = {
+>  	.owner = GLOBAL_ROOT_UID,
+>  	.group = GLOBAL_ROOT_GID,
+>  	.proc_inum = PROC_USER_INIT_INO,
+> -	.may_mount_sysfs = true,
+> -	.may_mount_proc = true,
+>  };
+>  EXPORT_SYMBOL_GPL(init_user_ns);
+>  
+> diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+> index d8c30db..d58ad1e 100644
+> --- a/kernel/user_namespace.c
+> +++ b/kernel/user_namespace.c
+> @@ -97,8 +97,6 @@ int create_user_ns(struct cred *new)
+>  
+>  	set_cred_user_ns(new, ns);
+>  
+> -	update_mnt_policy(ns);
+> -
+>  	return 0;
+>  }
+>  
 > 
