@@ -1,17 +1,12 @@
-From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC Part1 PATCH 00/20 v2] Add namespace support for audit
-Date: Tue, 5 Nov 2013 14:14:59 -0500
-Message-ID: <20131105191459.GF24236@madcap2.tricolour.ca>
-References: <1382599925-25143-1-git-send-email-gaofeng@cn.fujitsu.com>
-	<5271D3FC.8000709@cn.fujitsu.com> <5278A39B.6000303@cn.fujitsu.com>
-	<5278A3D5.3010309@cn.fujitsu.com> <5278A828.50406@huawei.com>
-	<5278B2D7.6060409@cn.fujitsu.com>
+From: Hongbing Wang <hongbingwang-rphTv4pjVZMJGwgDXS7ZQA@public.gmane.org>
+Subject: allocate specific port range for container?
+Date: Tue, 5 Nov 2013 11:37:22 -0800 (PST)
+Message-ID: <1383680242.61814.YahooMailNeo@web184303.mail.ne1.yahoo.com>
+Reply-To: Hongbing Wang <hongbingwang-rphTv4pjVZMJGwgDXS7ZQA@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <5278B2D7.6060409-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,33 +16,22 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: toshi.okajima-+CUm20s59erQFUHtdCDX3A@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Nov 05, 2013 at 04:56:55PM +0800, Gao feng wrote:
-> On 11/05/2013 04:11 PM, Li Zefan wrote:
-> > On 2013/11/5 15:52, Gao feng wrote:
-> >> On 11/05/2013 03:51 PM, Gao feng wrote:
-> >>> Ping...
-> >>
-> >> I want to catch up the merge window..
-> > 
-> > Even if your patches are accepted by a certain maintainer immediately,
-> > he will in no doubt queue them for 3.14.
-> 
-> Yes, you are right...
-> But I still want to get some comments..
+Hello LXC experts:
 
-Definitely won't make it in in this merge window.  I agree it needs
-discussion, but I won't start that for at least another week (I'm
-currently at IETF in Vancouver.).
+Is it possible to allocate specific transport port range for the socket bas=
+ed applications inside one container?=A0
 
+Say I have two containers: LXC_a and LXC_b, and each has some socket based =
+applications I cannot modify or have no source code. If I need port range 5=
+0000 - 51000 for LXC_a and 60000 - 61000 for LXC_b. Any way to achieve this?
 
-- RGB
+The /proc/sys/net/ipv4/ip_local_port_range is for the host to adjust the ep=
+hemeral port range, and we do not have the per LXC based setting on the loc=
+al_port_range. Is this due to that the LXC network namespace isolation is a=
+t the L3 level? How could I achieve this per port range LXC?
 
---
-Richard Guy Briggs <rbriggs-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Senior Software Engineer, Kernel Security, AMER ENG Base Operating Systems, Red Hat
-Remote, Ottawa, Canada
-Voice: +1.647.777.2635, Internal: (81) 32635, Alt: +1.613.693.0684x3545
+Regards,
+-HB
