@@ -1,15 +1,16 @@
-From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFC Part1 PATCH 00/20 v2] Add namespace support for audit
-Date: Tue, 05 Nov 2013 16:56:55 +0800
-Message-ID: <5278B2D7.6060409@cn.fujitsu.com>
-References: <1382599925-25143-1-git-send-email-gaofeng@cn.fujitsu.com>
-	<5271D3FC.8000709@cn.fujitsu.com> <5278A39B.6000303@cn.fujitsu.com>
-	<5278A3D5.3010309@cn.fujitsu.com> <5278A828.50406@huawei.com>
+From: Arnaldo Carvalho de Melo <acme-f8uhVLnGfZaxAyOMLChx1axOck334EZe@public.gmane.org>
+Subject: Re: [PATCH 02/10] netfilter: nf_log: prepar net namespace support
+	for nf_log
+Date: Tue, 5 Nov 2013 11:14:55 -0300
+Message-ID: <20131105141455.GB22912@ghostprotocols.net>
+References: <1360223390-15589-1-git-send-email-gaofeng@cn.fujitsu.com>
+	<1360223390-15589-2-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <5278A828.50406-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1360223390-15589-2-git-send-email-gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,22 +20,20 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: toshi.okajima-+CUm20s59erQFUHtdCDX3A@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lve-ke3WRBg/xIg@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, pablo-Cap9r6Oaw4JrovVCs/uTlw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 11/05/2013 04:11 PM, Li Zefan wrote:
-> On 2013/11/5 15:52, Gao feng wrote:
->> On 11/05/2013 03:51 PM, Gao feng wrote:
->>> Ping...
->>>
->>
->> I want to catch up the merge window..
->>
-> 
-> Even if your patches are accepted by a certain maintainer immediately,
-> he will in no doubt queue them for 3.14.
-> 
+Em Thu, Feb 07, 2013 at 03:49:42PM +0800, Gao feng escreveu:
+> index 9e31269..b1e5126 100644
+> +++ b/net/netfilter/nf_log.c
+> @@ -16,7 +16,6 @@
+>  #define NF_LOG_PREFIXLEN		128
+>  #define NFLOGGER_NAME_LEN		64
+>  
+> -static const struct nf_logger __rcu *nf_loggers[NFPROTO_NUMPROTO] __read_mostly;
 
-Yes, you are right...
-But I still want to get some comments..
+This was initialized to zeros, but then got moved to struct netns_nf,
+I'm trying to figure it out if it is being zeroed somewhere, ideas?
+
+- Arnaldo
