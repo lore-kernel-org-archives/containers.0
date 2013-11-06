@@ -1,15 +1,16 @@
-From: Hongbing Wang <hongbingwang-rphTv4pjVZMJGwgDXS7ZQA@public.gmane.org>
-Subject: Re: allocate specific port range for container?
-Date: Tue, 5 Nov 2013 14:35:07 -0800 (PST)
-Message-ID: <1383690907.99487.YahooMailNeo@web184302.mail.ne1.yahoo.com>
-References: <1383680242.61814.YahooMailNeo@web184303.mail.ne1.yahoo.com>
-	<20131105215324.GB4256@ac100>
-Reply-To: Hongbing Wang <hongbingwang-rphTv4pjVZMJGwgDXS7ZQA@public.gmane.org>
+From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 02/10] netfilter: nf_log: prepar net namespace support
+	for nf_log
+Date: Wed, 06 Nov 2013 10:00:04 +0800
+Message-ID: <5279A2A4.9060405__25733.0731642016$1383703164$gmane$org@cn.fujitsu.com>
+References: <1360223390-15589-1-git-send-email-gaofeng@cn.fujitsu.com>
+	<1360223390-15589-2-git-send-email-gaofeng@cn.fujitsu.com>
+	<20131105141455.GB22912@ghostprotocols.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20131105215324.GB4256@ac100>
+In-Reply-To: <20131105141455.GB22912-f8uhVLnGfZaxAyOMLChx1axOck334EZe@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,60 +20,23 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Arnaldo Carvalho de Melo <acme-f8uhVLnGfZaxAyOMLChx1axOck334EZe@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lve-ke3WRBg/xIg@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, pablo-Cap9r6Oaw4JrovVCs/uTlw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+On 11/05/2013 10:14 PM, Arnaldo Carvalho de Melo wrote:
+> Em Thu, Feb 07, 2013 at 03:49:42PM +0800, Gao feng escreveu:
+>> index 9e31269..b1e5126 100644
+>> +++ b/net/netfilter/nf_log.c
+>> @@ -16,7 +16,6 @@
+>>  #define NF_LOG_PREFIXLEN		128
+>>  #define NFLOGGER_NAME_LEN		64
+>>  
+>> -static const struct nf_logger __rcu *nf_loggers[NFPROTO_NUMPROTO] __read_mostly;
+> 
+> This was initialized to zeros, but then got moved to struct netns_nf,
+> I'm trying to figure it out if it is being zeroed somewhere, ideas?
+> 
 
-
-
-
-________________________________
- From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-To: Hongbing Wang <hongbingwang-rphTv4pjVZMJGwgDXS7ZQA@public.gmane.org> =
-
-Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm77oxUfYCNXn@public.gmane.org=
-ion.org> =
-
-Sent: Tuesday, November 5, 2013 1:53 PM
-Subject: Re: allocate specific port range for container?
- =
-
-
-Quoting Hongbing Wang (hongbingwang-rphTv4pjVZMJGwgDXS7ZQA@public.gmane.org):
-> Hello LXC experts:
-> =
-
-> Is it possible to allocate specific transport port range for the socket b=
-ased applications inside one container?=A0
-
-How do you mean?=A0 You want ports 50000-51000 of the host to be forwarded
-to container 1, and 60000-61000 to container 2?
-
-[HB] We want the apps inside LXC_a to use the port b/w 50k - 51k and LXC_b =
-to be allocated the port b/w 60k - 61k.
-
-> Say I have two containers: LXC_a and LXC_b, and each has some socket base=
-d applications I cannot modify or have no source code. If I need port range=
- 50000 - 51000 for LXC_a and 60000 - 61000 for LXC_b. Any way to achieve th=
-is?
-> =
-
-> The /proc/sys/net/ipv4/ip_local_port_range is for the host to adjust the =
-ephemeral port range, and we do not have the per LXC based setting on the l=
-ocal_port_range. Is this due to that the LXC network namespace isolation is=
- at the L3 level? How could I achieve this per port range LXC?
-
-The network namespaces are actually at L2, not L3.=A0 Each container has
-its own routing table.
-
-I think you can get what you want by simply giving each container a veth
-nic and using iptables on the host to forward the ports you want to the
-appropriate container.=A0 That's how I co-locate web, mail, and other
-server containers on the same host.
-
-[HB] for my specific case we do not use iptables. We can route the packets =
-to the LXC_a or LXC_b, but we want the ports to be within specific ranges.
-
-Regards,
--HB
+The init_net is defined as global, so the nf_loggers of init_net is initialized to zero,
+and for un init_net, we use kmem_cache_zalloc to allocate net struct, so it is initialized to zero too.
