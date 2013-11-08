@@ -1,12 +1,23 @@
-From: Chen Gang <gang.chen-bOixZGp5f+dBDgjK7y7TUQ@public.gmane.org>
-Subject: [Suggestion] kernel: cgroup: mount failure in LTP
-	cgroup_regression_test.sh
-Date: Fri, 08 Nov 2013 16:15:23 +0800
-Message-ID: <527C9D9B.8090802@asianux.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [REVIEW][PATCH 1/4] vfs: Don't allow overwriting mounts in the
+	current mount namespace
+Date: Fri, 08 Nov 2013 12:51:52 -0800
+Message-ID: <87bo1u8vmf.fsf@xmission.com>
+References: <CALCETrWw=htmgxqq=RQztdJQ-a8c3860vmJh9Ni=Hhs0TkO3YA@mail.gmail.com>
+	<20131008161135.GK14242@tucsk.piliscsaba.szeredi.hu>
+	<87li23trll.fsf@tw-ebiederman.twitter.com>
+	<CAJfpegv+h7xh_2e-X7is9dq1Fp06A0eKwsyWFMPX=azbbDCX5Q@mail.gmail.com>
+	<87vc15mjuw.fsf@xmission.com>
+	<CAJfpegvF89LzAvNB0h0otv7sKoS3rewZzQKAauQx3P+rCkCcSg@mail.gmail.com>
+	<87iox38fkv.fsf@xmission.com> <87d2nb8dxy.fsf@xmission.com>
+	<87iowyxpci.fsf_-_@xmission.com> <87d2n6xpan.fsf_-_@xmission.com>
+	<20131103035406.GA8537@ZenIV.linux.org.uk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20131103035406.GA8537-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org> (Al Viro's message of
+	"Sun, 3 Nov 2013 03:54:06 +0000")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,67 +27,83 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Cc: Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Linux-Fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Matthias Schniedermeyer <ms-QGhoYOTWWTg@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello Maintainers:
+Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org> writes:
 
-On Fedora16 with defconfig for next-20131107 kernel, use latest LTP
-(Linux Test Project) version, test_5() in cgroup_regression_test.sh
-will be fail. The related LTP output:
+> On Tue, Oct 15, 2013 at 01:16:48PM -0700, Eric W. Biederman wrote:
+>
+>>  int vfs_rmdir(struct inode *dir, struct dentry *dentry)
+>>  {
+>>  	int error = may_delete(dir, dentry, 1);
+>> @@ -3622,6 +3636,9 @@ retry:
+>>  		error = -ENOENT;
+>>  		goto exit3;
+>>  	}
+>> +	error = -EBUSY;
+>> +	if (covered(nd.path.mnt, dentry))
+>> +		goto exit3;
+>
+> Ugh...  And it's not racy because of...?  IOW, what's to keep the return
+> value of covered() from getting obsolete just as it's being calculated,
+> let alone returned?
 
-  <<<test_start>>>
-  tag=cgroup stime=1383562810
-  cmdline="       cgroup_regression_test.sh"
-  contacts=""
-  analysis=exit
-  <<<test_output>>>
-  cgroup_regression_test    1  TPASS  :  no kernel bug was found
-  /opt/ltp/testcases/bin/cgroup_regression_test.sh: line 118: 13283 Terminated              ./fork_processes
-  cgroup_regression_test    2  TPASS  :  notify_on_release is inherited
-  cgroup_regression_test    3  TCONF  :  CONFIG_SCHED_DEBUG is not enabled
-  cgroup_regression_test    4  TCONF  :  CONFIG_LOCKDEP is not enabled
-  mount: xxx already mounted or cgroup/ busy
-  cgroup_regression_test    5  TFAIL  :  mount freezer and cpuacct failed
-  cgroup_regression_test    6  TCONF  :  CONFIG_CGROUP_NS
-  /opt/ltp/testcases/bin/cgroup_regression_test.sh: line 360: 24428 Terminated              sleep 100 < cgroup/0
-  /opt/ltp/testcases/bin/cgroup_regression_test.sh: line 381: 24447 Terminated              sleep 100 < cgroup/0
-  cgroup_regression_test    7  TPASS  :  no kernel bug was found
-  cgroup_regression_test    8  TPASS  :  no kernel bug was found
-  cgroup_regression_test    9  TPASS  :  no kernel warning was found
-  rmdir: failed to remove `cgroup/0': No such file or directory
-  umount: /sys/fs/cgroup/systemd: device is busy.
-          (In some cases useful info about processes that use
-           the device is found by lsof(8) or fuser(1))
-  cgroup_regression_test   10  TPASS  :  no kernel warning was found
-  <<<execution_status>>>
-  initiation_status="ok"
-  duration=62 termination_type=exited termination_id=1 corefile=no
-  cutime=3341 cstime=6353
-  <<<test_end>>>
+The return value of d_mountpoint can be obsolete as soon as it returns
+as well, so I don't see this as being significantly different.
 
-After simplify, the related operation, environments and output are:
+I would like to say that any changes introduced here do not matter
+because all of this is just to keep a semblance of the old semantics.
+Unfortunately for me part of keeping that semblance is as much as is
+reasonable preserving the existing race guarantees.
 
-  [root@gchenlinux tmp]# df -Th | grep cgroup
-  tmpfs                             tmpfs    1001M     0 1001M   0% /sys/fs/cgroup
-  [root@gchenlinux tmp]# lsof | grep cgroup | grep -v grep
-  systemd       1          root    6r      DIR               0,18         0       5998 /sys/fs/cgroup/systemd/system
-  [root@gchenlinux tmp]# cat /proc/cgroups 
-  #subsys_name	hierarchy	num_cgroups	enabled
-  cpuset	3	4	1
-  cpu	4	35	1
-  cpuacct	4	35	1
-  freezer	5	4	1
-  [root@gchenlinux tmp]# mkdir cgroup
-  [root@gchenlinux tmp]# mount -t cgroup -o freezer,cpuacct xxx cgroup/
-  mount: xxx already mounted or cgroup/ busy
+In 3.12 we create a mount with:
+- The dentry->d_inode mutex held.
+- The namespace_sem held.
 
-Is it real issue of cgroup? If it is, I will/should continue analyzing.
+In 3.12 we remove a mount with just the namespace_sem held.
+
+I call covered in: do_rmdir, do_unlinkat, and renameat.
+
+In 3.12 vfs_rmdir checks d_mountpoint with the
+dentry->d_inode->i_mutex and
+dentry->d_parent->d_inode->i_mutex held.
+
+In 3.12 vfs_unlink checks d_mountpoint with the
+dentry->d_inode->i_mutex and
+dentry->d_parent->d_inode->i_mutex hel.d
+
+In 3.12 vfs_rename_dir and vfs_rename_other checks d_mountpint with the
+target->i_mutex, new_dir->i_mutex, and old_dir->i_mutex held.
 
 
-Welcome any additional suggestions and completions.
+Therefore the guarantees in 3.12 are:
+- unlink versus mount races are prevented by the
+  dentry->d_inode->i_mutex of the dentry being removed.
+- unlink versus umount races are uninteresting.
+- mount versus rename races in testing of d_mountpoint are ignored.
+- umount versus rename races in testing of d_mountpoint are ignored.
 
-Thanks.
---
-Chen Gang
+So comparing this to how I have implemented covered the test is at a
+slightly different location in the call path so there may be a slightly
+larger race in rename.
+
+For unlink there is a race where the mount could happen after testing
+covered.  Then the unlink happens.  Then we remove the mount with
+detach_mounts.
+
+
+In the context of the symlink attacks against umounting of fuse I don't
+see a difference.
+
+In the only case where there is a new race (unlink versus mount) I see
+a narrow window where new behavior will happen the unlink will win and
+we unmount the filesystem.  So there is a vary narrow window in which
+we might have a stale entry in /etc/mtab.
+
+So after all of that analysis I don't think we care.  If we do care with
+a little more work we can pass the mountpoint down and test covered with
+dentry->d_inode->i_mutex held, where we test d_mountpoint in 3.12 today.
+
+Eric
