@@ -1,23 +1,16 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [REVIEW][PATCH 1/4] vfs: Don't allow overwriting mounts in the
-	current mount namespace
-Date: Fri, 08 Nov 2013 14:17:31 -0800
-Message-ID: <87fvr61qtg.fsf@xmission.com>
-References: <87li23trll.fsf@tw-ebiederman.twitter.com>
-	<CAJfpegv+h7xh_2e-X7is9dq1Fp06A0eKwsyWFMPX=azbbDCX5Q@mail.gmail.com>
-	<87vc15mjuw.fsf@xmission.com>
-	<CAJfpegvF89LzAvNB0h0otv7sKoS3rewZzQKAauQx3P+rCkCcSg@mail.gmail.com>
-	<87iox38fkv.fsf@xmission.com> <87d2nb8dxy.fsf@xmission.com>
-	<87iowyxpci.fsf_-_@xmission.com> <87d2n6xpan.fsf_-_@xmission.com>
-	<20131103035406.GA8537@ZenIV.linux.org.uk>
-	<87bo1u8vmf.fsf@xmission.com>
-	<20131108213551.GR13318@ZenIV.linux.org.uk>
+Subject: Re: allocate specific port range for container?
+Date: Fri, 08 Nov 2013 15:40:17 -0800
+Message-ID: <87vc02qx7i.fsf@xmission.com>
+References: <1383680242.61814.YahooMailNeo@web184303.mail.ne1.yahoo.com>
+	<20131105215324.GB4256@ac100>
+	<1383690907.99487.YahooMailNeo@web184302.mail.ne1.yahoo.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20131108213551.GR13318-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org> (Al Viro's message of
-	"Fri, 8 Nov 2013 21:35:51 +0000")
+In-Reply-To: <1383690907.99487.YahooMailNeo-abza1nB0wQu2Y7dhQGSVAJOW+3bF1jUfVpNB7YpNyf8@public.gmane.org>
+	(Hongbing Wang's message of "Tue, 5 Nov 2013 14:35:07 -0800 (PST)")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,75 +20,59 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-Cc: Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Linux-Fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Matthias Schniedermeyer <ms-QGhoYOTWWTg@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Hongbing Wang <hongbingwang-rphTv4pjVZMJGwgDXS7ZQA@public.gmane.org>
+Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org> writes:
-
-> On Fri, Nov 08, 2013 at 12:51:52PM -0800, Eric W. Biederman wrote:
->
->> The return value of d_mountpoint can be obsolete as soon as it returns
->> as well, so I don't see this as being significantly different.
->
-> Not if the ->i_mutex of that sucker is held.  And it *is* held in
-> vfs_unlink/vfs_rmdir/vfs_rename.  Note that we only care about a mountpoint
-> being falsely assumed to be a non-mountpoint - in the other direction we
-> can just shrug and say that we'd won the race and got EBUSY for that.
-
-I wasn't certain of your question.  My point here was that covered() as
-a mechanism is as good as d_mountpoint.  So the only potential issue
-with covered() as a mechanism is where covered() is called.
-
-Also please note old_dentry->d_inode->i_mutex is not held in rename.
-
->> In 3.12 vfs_rmdir checks d_mountpoint with the
->> dentry->d_inode->i_mutex and
->> dentry->d_parent->d_inode->i_mutex held.
->> 
->> In 3.12 vfs_unlink checks d_mountpoint with the
->> dentry->d_inode->i_mutex and
->> dentry->d_parent->d_inode->i_mutex hel.d
->> 
->> In 3.12 vfs_rename_dir and vfs_rename_other checks d_mountpint with the
->> target->i_mutex, new_dir->i_mutex, and old_dir->i_mutex held.
->> 
->> 
->> Therefore the guarantees in 3.12 are:
->> - unlink versus mount races are prevented by the
->>   dentry->d_inode->i_mutex of the dentry being removed.
->> - unlink versus umount races are uninteresting.
->> - mount versus rename races in testing of d_mountpoint are ignored.
->
-> Read what you've written a few lines above.  The part about target->i_mutex
-> being held.
-
-That works for the rename as unlink case but we don't hold
-old_dentry->d_inode->i_mutex which is what is needed to prevent a mount
-on the dentry we are renaming.
-
->> So comparing this to how I have implemented covered the test is at a
->> slightly different location in the call path so there may be a slightly
->> larger race in rename.
->
-> You've got a race in unlink.  You've got a race in rename.  You've got a race
-> in rmdir.  And none of those had that race in 3.12 (including rename()).
-
-Rename absolutely has a race in 3.12.  With very lucky timing it is
-possible to mount something on directory a, simultaneously rename
-a to b, and have the mount show up on b.
-
-> BTW, could you describe the races with umount in a bit more details?  Races
-> with mount are simple - rmdir() sees that victim isn't a mountpoint and
-> proceeds, mount() sees that victim is still alive and proceeds, despite
-> the fact that victim is irretrievably on the way to removal.  And that's
-> what ->i_mutex on victim prevents, making "check for d_mountpoint / remove /
-> call dont_mount()" atomic wrt mount().  What is the problem you are seeing
-> with umount()?  rmdir() getting EBUSY because it hasn't noticed umount()
-> happening in parallel with it?  Legitimate behaviour, as far I can see...
-> Or is it about something different?
-
-I did not say it was a problem only that it was a race.  The only case I
-can see is getting a state EBUSY, and I see no problem with a that.
-
-Eric
+SG9uZ2JpbmcgV2FuZyA8aG9uZ2Jpbmd3YW5nQHNiY2dsb2JhbC5uZXQ+IHdyaXRlczoKCj4gX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX18KPiAgRnJvbTogU2VyZ2UgSGFsbHluIDxzZXJn
+ZS5oYWxseW5AdWJ1bnR1LmNvbT4KPiBUbzogSG9uZ2JpbmcgV2FuZyA8aG9uZ2Jpbmd3YW5nQHNi
+Y2dsb2JhbC5uZXQ+IAo+IENjOiAiY29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9y
+ZyIgPGNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc+IAo+IFNlbnQ6IFR1ZXNk
+YXksIE5vdmVtYmVyIDUsIDIwMTMgMTo1MyBQTQo+IFN1YmplY3Q6IFJlOiBhbGxvY2F0ZSBzcGVj
+aWZpYyBwb3J0IHJhbmdlIGZvciBjb250YWluZXI/Cj4gIAo+Cj4gUXVvdGluZyBIb25nYmluZyBX
+YW5nIChob25nYmluZ3dhbmdAc2JjZ2xvYmFsLm5ldCk6Cj4+IEhlbGxvIExYQyBleHBlcnRzOgo+
+PiAKPj4gSXMgaXQgcG9zc2libGUgdG8gYWxsb2NhdGUgc3BlY2lmaWMgdHJhbnNwb3J0IHBvcnQg
+cmFuZ2UgZm9yIHRoZSBzb2NrZXQgYmFzZWQgYXBwbGljYXRpb25zIGluc2lkZSBvbmUgY29udGFp
+bmVyP8KgCj4KPiBIb3cgZG8geW91IG1lYW4/wqAgWW91IHdhbnQgcG9ydHMgNTAwMDAtNTEwMDAg
+b2YgdGhlIGhvc3QgdG8gYmUgZm9yd2FyZGVkCj4gdG8gY29udGFpbmVyIDEsIGFuZCA2MDAwMC02
+MTAwMCB0byBjb250YWluZXIgMj8KPgo+IFtIQl0gV2Ugd2FudCB0aGUgYXBwcyBpbnNpZGUgTFhD
+X2EgdG8gdXNlIHRoZSBwb3J0IGIvdyA1MGsgLSA1MWsgYW5kIExYQ19iIHRvIGJlIGFsbG9jYXRl
+ZCB0aGUgcG9ydCBiL3cgNjBrIC0gNjFrLgo+Cj4+IFNheSBJIGhhdmUgdHdvIGNvbnRhaW5lcnM6
+IExYQ19hIGFuZCBMWENfYiwgYW5kIGVhY2ggaGFzIHNvbWUgc29ja2V0Cj4+IGJhc2VkIGFwcGxp
+Y2F0aW9ucyBJIGNhbm5vdCBtb2RpZnkgb3IgaGF2ZSBubyBzb3VyY2UgY29kZS4gSWYgSSBuZWVk
+Cj4+IHBvcnQgcmFuZ2UgNTAwMDAgLSA1MTAwMCBmb3IgTFhDX2EgYW5kIDYwMDAwIC0gNjEwMDAg
+Zm9yIExYQ19iLiBBbnkKPj4gd2F5IHRvIGFjaGlldmUgdGhpcz8KPj4gCj4+IFRoZSAvcHJvYy9z
+eXMvbmV0L2lwdjQvaXBfbG9jYWxfcG9ydF9yYW5nZSBpcyBmb3IgdGhlIGhvc3QgdG8gYWRqdXN0
+Cj4+IHRoZSBlcGhlbWVyYWwgcG9ydCByYW5nZSwgYW5kIHdlIGRvIG5vdCBoYXZlIHRoZSBwZXIg
+TFhDIGJhc2VkCj4+IHNldHRpbmcgb24gdGhlIGxvY2FsX3BvcnRfcmFuZ2UuIElzIHRoaXMgZHVl
+IHRvIHRoYXQgdGhlIExYQyBuZXR3b3JrCj4+IG5hbWVzcGFjZSBpc29sYXRpb24gaXMgYXQgdGhl
+IEwzIGxldmVsPyBIb3cgY291bGQgSSBhY2hpZXZlIHRoaXMgcGVyCj4+IHBvcnQgcmFuZ2UgTFhD
+PwoKPiBUaGUgbmV0d29yayBuYW1lc3BhY2VzIGFyZSBhY3R1YWxseSBhdCBMMiwgbm90IEwzLsKg
+IEVhY2ggY29udGFpbmVyIGhhcwo+IGl0cyBvd24gcm91dGluZyB0YWJsZS4KPgo+IEkgdGhpbmsg
+eW91IGNhbiBnZXQgd2hhdCB5b3Ugd2FudCBieSBzaW1wbHkgZ2l2aW5nIGVhY2ggY29udGFpbmVy
+IGEgdmV0aAo+IG5pYyBhbmQgdXNpbmcgaXB0YWJsZXMgb24gdGhlIGhvc3QgdG8gZm9yd2FyZCB0
+aGUgcG9ydHMgeW91IHdhbnQgdG8gdGhlCj4gYXBwcm9wcmlhdGUgY29udGFpbmVyLsKgIFRoYXQn
+cyBob3cgSSBjby1sb2NhdGUgd2ViLCBtYWlsLCBhbmQgb3RoZXIKPiBzZXJ2ZXIgY29udGFpbmVy
+cyBvbiB0aGUgc2FtZSBob3N0Lgo+Cj4gW0hCXSBmb3IgbXkgc3BlY2lmaWMgY2FzZSB3ZSBkbyBu
+b3QgdXNlIGlwdGFibGVzLiBXZSBjYW4gcm91dGUgdGhlCj4gcGFja2V0cyB0byB0aGUgTFhDX2Eg
+b3IgTFhDX2IsIGJ1dCB3ZSB3YW50IHRoZSBwb3J0cyB0byBiZSB3aXRoaW4KPiBzcGVjaWZpYyBy
+YW5nZXMuCgpJIGhhdmUgYmVlbiB3b3JraW5nIG9uIHRoaXMgcmVjZW50bHkuCgpJIGhhdmUgcmVj
+ZW50bHkgbWFkZSBpcF9sb2NhbF9wb3J0IHJhbmdlIHBlciBuZXRucyB0byBoZWxwIHN1cHBvcnQg
+dGhpcy4KCkJleW9uZCB0aGF0IHdoYXQgSSBhbSBkb2luZyBpcyB1c2luZyBpbmdyZXNzIHRyYWZm
+aWMgY29udHJvbCB0byByZWRpcmVjdApwYWNrZXRzIGluIHRoZSBhcHBvcHJpYXRlIHBvcnQgcmFu
+Z2UgaW50byB0aGUgYXBwcm9wcmlhdGUgbmV0d29yawpuYW1lc3BhY2UuCgpDb21wYXJlZCB0byBu
+YXQgd2l0aCBpcHRhYmxlcyBhbmQgc29tZSBvZiB0aGUgb3RoZXIgc29sdXRpb25zIGl0IGNvbWVz
+Cm91dCBmYWlybHkgY2xlYW4gYW5kIGl0IGF0IHRoZSB2ZXJ5IGJlZ2lubmluZyBzdGFnZXMgYXQg
+dGhlIHBhY2tldApwcm9jZXNzaW5nIHBhdGggc28gdW5uZWNlc3Nhcnkgd29yayBjYW4gYmUgYXZv
+aWRlZC4KClRoZXJlIGFyZSBhIGNvdXBsZSBvZiBjYXNlcyB5b3UgaGF2ZSB0byB3YXRjaCBmb3Ig
+aWNtcCwgYXJwIGFuZCBsb29waW5nCnBhY2tldHMgYmFjayB0byBvdGhlciBuYW1lc3BhY2VzIG9u
+IHRoZSBzYW1lIGJveCBidXQgaXQgaXMgcHJldHR5CnN0cmFpZ2h0IGZvcndhcmQgdG8gc2V0dXAu
+ICBUaGUgdHJpY2tpZXN0IGJpdCBpcyB0aGF0IHlvdSBoYXZlIHRvIHJlYWQKdGhlIHRjIHNvdXJj
+ZSB0byBmaW5kIHRoZSB0YyBjb21tYW5kcyB0aGF0IG1ha2UgdGhlIHRjIGNsYXNzaWZpZXIgZWFz
+eQp0byB1c2UuCgpUaGUgcHJpbWFyeSByZXN0cmljaXRpb24gSSBjdXJyZW50bHkgaGF2ZSBpcyB0
+aGF0IHRoZSBwb3J0IHJhbmdlcyBuZWVkCnRvIGJlIGEgcG93ZXIgb2YgMiBpbiBzaXplLCB0byBt
+YWtlIHRoZSB1MzIgY2xhc3NpZmllciBlYXN5IHRvIHVzZS4KCkVyaWMKCgoKX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxp
+c3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxp
+bnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
