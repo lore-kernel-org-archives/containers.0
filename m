@@ -1,16 +1,17 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+From: Hongbing Wang <hongbingwang-rphTv4pjVZMJGwgDXS7ZQA@public.gmane.org>
 Subject: Re: allocate specific port range for container?
-Date: Fri, 08 Nov 2013 15:40:17 -0800
-Message-ID: <87vc02qx7i.fsf@xmission.com>
+Date: Fri, 8 Nov 2013 17:14:21 -0800 (PST)
+Message-ID: <1383959661.2417.YahooMailNeo@web184305.mail.ne1.yahoo.com>
 References: <1383680242.61814.YahooMailNeo@web184303.mail.ne1.yahoo.com>
 	<20131105215324.GB4256@ac100>
 	<1383690907.99487.YahooMailNeo@web184302.mail.ne1.yahoo.com>
+	<87vc02qx7i.fsf@xmission.com>
+Reply-To: Hongbing Wang <hongbingwang-rphTv4pjVZMJGwgDXS7ZQA@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1383690907.99487.YahooMailNeo-abza1nB0wQu2Y7dhQGSVAJOW+3bF1jUfVpNB7YpNyf8@public.gmane.org>
-	(Hongbing Wang's message of "Tue, 5 Nov 2013 14:35:07 -0800 (PST)")
+In-Reply-To: <87vc02qx7i.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,59 +21,106 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Hongbing Wang <hongbingwang-rphTv4pjVZMJGwgDXS7ZQA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-SG9uZ2JpbmcgV2FuZyA8aG9uZ2Jpbmd3YW5nQHNiY2dsb2JhbC5uZXQ+IHdyaXRlczoKCj4gX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX18KPiAgRnJvbTogU2VyZ2UgSGFsbHluIDxzZXJn
-ZS5oYWxseW5AdWJ1bnR1LmNvbT4KPiBUbzogSG9uZ2JpbmcgV2FuZyA8aG9uZ2Jpbmd3YW5nQHNi
-Y2dsb2JhbC5uZXQ+IAo+IENjOiAiY29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9y
-ZyIgPGNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc+IAo+IFNlbnQ6IFR1ZXNk
-YXksIE5vdmVtYmVyIDUsIDIwMTMgMTo1MyBQTQo+IFN1YmplY3Q6IFJlOiBhbGxvY2F0ZSBzcGVj
-aWZpYyBwb3J0IHJhbmdlIGZvciBjb250YWluZXI/Cj4gIAo+Cj4gUXVvdGluZyBIb25nYmluZyBX
-YW5nIChob25nYmluZ3dhbmdAc2JjZ2xvYmFsLm5ldCk6Cj4+IEhlbGxvIExYQyBleHBlcnRzOgo+
-PiAKPj4gSXMgaXQgcG9zc2libGUgdG8gYWxsb2NhdGUgc3BlY2lmaWMgdHJhbnNwb3J0IHBvcnQg
-cmFuZ2UgZm9yIHRoZSBzb2NrZXQgYmFzZWQgYXBwbGljYXRpb25zIGluc2lkZSBvbmUgY29udGFp
-bmVyP8KgCj4KPiBIb3cgZG8geW91IG1lYW4/wqAgWW91IHdhbnQgcG9ydHMgNTAwMDAtNTEwMDAg
-b2YgdGhlIGhvc3QgdG8gYmUgZm9yd2FyZGVkCj4gdG8gY29udGFpbmVyIDEsIGFuZCA2MDAwMC02
-MTAwMCB0byBjb250YWluZXIgMj8KPgo+IFtIQl0gV2Ugd2FudCB0aGUgYXBwcyBpbnNpZGUgTFhD
-X2EgdG8gdXNlIHRoZSBwb3J0IGIvdyA1MGsgLSA1MWsgYW5kIExYQ19iIHRvIGJlIGFsbG9jYXRl
-ZCB0aGUgcG9ydCBiL3cgNjBrIC0gNjFrLgo+Cj4+IFNheSBJIGhhdmUgdHdvIGNvbnRhaW5lcnM6
-IExYQ19hIGFuZCBMWENfYiwgYW5kIGVhY2ggaGFzIHNvbWUgc29ja2V0Cj4+IGJhc2VkIGFwcGxp
-Y2F0aW9ucyBJIGNhbm5vdCBtb2RpZnkgb3IgaGF2ZSBubyBzb3VyY2UgY29kZS4gSWYgSSBuZWVk
-Cj4+IHBvcnQgcmFuZ2UgNTAwMDAgLSA1MTAwMCBmb3IgTFhDX2EgYW5kIDYwMDAwIC0gNjEwMDAg
-Zm9yIExYQ19iLiBBbnkKPj4gd2F5IHRvIGFjaGlldmUgdGhpcz8KPj4gCj4+IFRoZSAvcHJvYy9z
-eXMvbmV0L2lwdjQvaXBfbG9jYWxfcG9ydF9yYW5nZSBpcyBmb3IgdGhlIGhvc3QgdG8gYWRqdXN0
-Cj4+IHRoZSBlcGhlbWVyYWwgcG9ydCByYW5nZSwgYW5kIHdlIGRvIG5vdCBoYXZlIHRoZSBwZXIg
-TFhDIGJhc2VkCj4+IHNldHRpbmcgb24gdGhlIGxvY2FsX3BvcnRfcmFuZ2UuIElzIHRoaXMgZHVl
-IHRvIHRoYXQgdGhlIExYQyBuZXR3b3JrCj4+IG5hbWVzcGFjZSBpc29sYXRpb24gaXMgYXQgdGhl
-IEwzIGxldmVsPyBIb3cgY291bGQgSSBhY2hpZXZlIHRoaXMgcGVyCj4+IHBvcnQgcmFuZ2UgTFhD
-PwoKPiBUaGUgbmV0d29yayBuYW1lc3BhY2VzIGFyZSBhY3R1YWxseSBhdCBMMiwgbm90IEwzLsKg
-IEVhY2ggY29udGFpbmVyIGhhcwo+IGl0cyBvd24gcm91dGluZyB0YWJsZS4KPgo+IEkgdGhpbmsg
-eW91IGNhbiBnZXQgd2hhdCB5b3Ugd2FudCBieSBzaW1wbHkgZ2l2aW5nIGVhY2ggY29udGFpbmVy
-IGEgdmV0aAo+IG5pYyBhbmQgdXNpbmcgaXB0YWJsZXMgb24gdGhlIGhvc3QgdG8gZm9yd2FyZCB0
-aGUgcG9ydHMgeW91IHdhbnQgdG8gdGhlCj4gYXBwcm9wcmlhdGUgY29udGFpbmVyLsKgIFRoYXQn
-cyBob3cgSSBjby1sb2NhdGUgd2ViLCBtYWlsLCBhbmQgb3RoZXIKPiBzZXJ2ZXIgY29udGFpbmVy
-cyBvbiB0aGUgc2FtZSBob3N0Lgo+Cj4gW0hCXSBmb3IgbXkgc3BlY2lmaWMgY2FzZSB3ZSBkbyBu
-b3QgdXNlIGlwdGFibGVzLiBXZSBjYW4gcm91dGUgdGhlCj4gcGFja2V0cyB0byB0aGUgTFhDX2Eg
-b3IgTFhDX2IsIGJ1dCB3ZSB3YW50IHRoZSBwb3J0cyB0byBiZSB3aXRoaW4KPiBzcGVjaWZpYyBy
-YW5nZXMuCgpJIGhhdmUgYmVlbiB3b3JraW5nIG9uIHRoaXMgcmVjZW50bHkuCgpJIGhhdmUgcmVj
-ZW50bHkgbWFkZSBpcF9sb2NhbF9wb3J0IHJhbmdlIHBlciBuZXRucyB0byBoZWxwIHN1cHBvcnQg
-dGhpcy4KCkJleW9uZCB0aGF0IHdoYXQgSSBhbSBkb2luZyBpcyB1c2luZyBpbmdyZXNzIHRyYWZm
-aWMgY29udHJvbCB0byByZWRpcmVjdApwYWNrZXRzIGluIHRoZSBhcHBvcHJpYXRlIHBvcnQgcmFu
-Z2UgaW50byB0aGUgYXBwcm9wcmlhdGUgbmV0d29yawpuYW1lc3BhY2UuCgpDb21wYXJlZCB0byBu
-YXQgd2l0aCBpcHRhYmxlcyBhbmQgc29tZSBvZiB0aGUgb3RoZXIgc29sdXRpb25zIGl0IGNvbWVz
-Cm91dCBmYWlybHkgY2xlYW4gYW5kIGl0IGF0IHRoZSB2ZXJ5IGJlZ2lubmluZyBzdGFnZXMgYXQg
-dGhlIHBhY2tldApwcm9jZXNzaW5nIHBhdGggc28gdW5uZWNlc3Nhcnkgd29yayBjYW4gYmUgYXZv
-aWRlZC4KClRoZXJlIGFyZSBhIGNvdXBsZSBvZiBjYXNlcyB5b3UgaGF2ZSB0byB3YXRjaCBmb3Ig
-aWNtcCwgYXJwIGFuZCBsb29waW5nCnBhY2tldHMgYmFjayB0byBvdGhlciBuYW1lc3BhY2VzIG9u
-IHRoZSBzYW1lIGJveCBidXQgaXQgaXMgcHJldHR5CnN0cmFpZ2h0IGZvcndhcmQgdG8gc2V0dXAu
-ICBUaGUgdHJpY2tpZXN0IGJpdCBpcyB0aGF0IHlvdSBoYXZlIHRvIHJlYWQKdGhlIHRjIHNvdXJj
-ZSB0byBmaW5kIHRoZSB0YyBjb21tYW5kcyB0aGF0IG1ha2UgdGhlIHRjIGNsYXNzaWZpZXIgZWFz
-eQp0byB1c2UuCgpUaGUgcHJpbWFyeSByZXN0cmljaXRpb24gSSBjdXJyZW50bHkgaGF2ZSBpcyB0
-aGF0IHRoZSBwb3J0IHJhbmdlcyBuZWVkCnRvIGJlIGEgcG93ZXIgb2YgMiBpbiBzaXplLCB0byBt
-YWtlIHRoZSB1MzIgY2xhc3NpZmllciBlYXN5IHRvIHVzZS4KCkVyaWMKCgoKX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxp
-c3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxp
-bnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+
+
+
+
+________________________________
+ From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Hongbing Wang <hongbingwang-rphTv4pjVZMJGwgDXS7ZQA@public.gmane.org> =
+
+Cc: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>; "containers-cunTk1MwBs9QetFLy7KEm77oxUfYCNXn@public.gmane.org=
+ion.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>; Zhu Yanhai <zhu.yanhai@gm=
+ail.com> =
+
+Sent: Friday, November 8, 2013 3:40 PM
+Subject: Re: allocate specific port range for container?
+ =
+
+
+Hongbing Wang <hongbingwang-rphTv4pjVZMJGwgDXS7ZQA@public.gmane.org> writes:
+
+> ________________________________
+>=A0 From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+> To: Hongbing Wang <hongbingwang-rphTv4pjVZMJGwgDXS7ZQA@public.gmane.org> =
+
+> Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm2CgeU+1il2p@public.gmane.org=
+ation.org> =
+
+> Sent: Tuesday, November 5, 2013 1:53 PM
+> Subject: Re: allocate specific port range for container?
+>=A0 =
+
+>
+> Quoting Hongbing Wang (hongbingwang-rphTv4pjVZMJGwgDXS7ZQA@public.gmane.org):
+>> Hello LXC experts:
+>> =
+
+>> Is it possible to allocate specific transport port range for the socket =
+based applications inside one container?=A0
+>
+> How do you mean?=A0 You want ports 50000-51000 of the host to be forwarded
+> to container 1, and 60000-61000 to container 2?
+>
+> [HB] We want the apps inside LXC_a to use the port b/w 50k - 51k and LXC_=
+b to be allocated the port b/w 60k - 61k.
+>
+>> Say I have two containers: LXC_a and LXC_b, and each has some socket
+>> based applications I cannot modify or have no source code. If I need
+>> port range 50000 - 51000 for LXC_a and 60000 - 61000 for LXC_b. Any
+>> way to achieve this?
+>> =
+
+>> The /proc/sys/net/ipv4/ip_local_port_range is for the host to adjust
+>> the ephemeral port range, and we do not have the per LXC based
+>> setting on the local_port_range. Is this due to that the LXC network
+>> namespace isolation is at the L3 level? How could I achieve this per
+>> port range LXC?
+
+> The network namespaces are actually at L2, not L3.=A0 Each container has
+> its own routing table.
+>
+> I think you can get what you want by simply giving each container a veth
+> nic and using iptables on the host to forward the ports you want to the
+> appropriate container.=A0 That's how I co-locate web, mail, and other
+> server containers on the same host.
+>
+> [HB] for my specific case we do not use iptables. We can route the
+> packets to the LXC_a or LXC_b, but we want the ports to be within
+> specific ranges.
+
+I have been working on this recently.
+
+I have recently made ip_local_port range per netns to help support this.
+
+[HB] That is exactly what I am looking for! Do u have any plan to open-sour=
+ce your work?
+
+Yanhai posted that he is using SELinux, we use different distro with lots o=
+f other limitations which require to support the existing features.
+
+Thanks,
+-HB
+
+Beyond that what I am doing is using ingress traffic control to redirect
+packets in the appopriate port range into the appropriate network
+namespace.
+
+Compared to nat with iptables and some of the other solutions it comes
+out fairly clean and it at the very beginning stages at the packet
+processing path so unnecessary work can be avoided.
+
+There are a couple of cases you have to watch for icmp, arp and looping
+packets back to other namespaces on the same box but it is pretty
+straight forward to setup.=A0 The trickiest bit is that you have to read
+the tc source to find the tc commands that make the tc classifier easy
+to use.
+
+The primary restricition I currently have is that the port ranges need
+to be a power of 2 in size, to make the u32 classifier easy to use.
+
+Eric
