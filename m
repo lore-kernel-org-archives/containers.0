@@ -1,13 +1,16 @@
-From: "Dennis Roberts" <info-RLBMnbpGcnGdxj4G7La7A92XF6vvqC7n0E9HWUfgJXw@public.gmane.org>
-Subject: Solar Windows Webinar - US AIR FORCE APPROVED - See thru radiant
-	barrier
-Date: Sun, 10 Nov 2013 18:29:06 -0600
-Message-ID: <20131111005835.607788CF@mail.linuxfoundation.org>
+From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Subject: Re: [PATCHSET v2 cgroup/for-3.12] cgroup: make cgroup_event specific
+	to memcg
+Date: Mon, 11 Nov 2013 15:10:10 +0100
+Message-ID: <20131111141010.GB14497@dhcp22.suse.cz>
+References: <1376582550-12548-1-git-send-email-tj@kernel.org>
+	<20131110044811.GA25112@mtj.dyndns.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20131110044811.GA25112-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,28 +20,19 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-77u/V2hhdCBpcyBhbiBJbmZsZWN0b3IgV2luZG93IEluc3VsYXRvcj8gaHR0cDovL3d3dy55b3V0
-dWJlLmNvbS93YXRjaD92PTIxRGlLUzVtdDRrCiAKCiAgCgoKRW5lcmd5IEVmZmljaWVuY3kgRG9u
-ZSBSaWdodCBwcmVzZW50cyBpbmZvcm1hdGlvbiBvbiB0aGUgSW4nRmxlY3RvciBTZWUgVGhyb3Vn
-aCBSYWRpYW50IEJhcnJpZXIgV2luZG93IGFuZCBTa3lsaWdodCBJbnN1bGF0b3IgYW5kIHRoZSBF
-bmVyZ3kgRWZmaWNpZW5jeSBJbmR1c3RyeS4gV2Ugd2lsbCBleGFtaW5lIHRoZSBncm93dGggb2Yg
-dGhlIGVuZXJneSBlZmZpY2llbmN5LCBjb25zZXJ2YXRpb24sIGVuZXJneSBpbmRlcGVuZGVuY2Us
-IGFuZCBjYXJib24gZW1taXNzaW9uIGluZHVzdHJpZXMgYW5kIGV4cGxhaW4gb3Bwb3J0dW5pdGll
-cyB0byByZXByZXNlbnQgb3IgcHVyY2hhc2Ugb3VyIEluc3VsYXRvciBwcm9kdWN0cy4KClJlZ2lz
-dGVyIGZvciBhIHNlc3Npb24gbm93IGJ5IGNsaWNraW5nIGEgZGF0ZSBiZWxvdzoKCgoKCkRhdGU6
-VHVlc2RheSwgTm92ZW1iZXIgMTksIDIwMTMKVGltZToxMDowMCBBTSAtIDExOjAwIEFNIENTVAoK
-aHR0cHM6Ly93d3cxLmdvdG9tZWV0aW5nLmNvbS9yZWdpc3Rlci8xNjc5NjU3MjgKRGF0ZTpUdWVz
-ZGF5LCBOb3ZlbWJlciAxOSwgMjAxMwpUaW1lOjg6MDAgUE0gLSA5OjAwIFBNIENTVAoKaHR0cHM6
-Ly93d3cxLmdvdG9tZWV0aW5nLmNvbS9yZWdpc3Rlci82MDEwNTMzMjgKIApPbmNlIHJlZ2lzdGVy
-ZWQgeW91IHdpbGwgcmVjZWl2ZSBhbiBlbWFpbCBjb25maXJtaW5nIHlvdXIgcmVnaXN0cmF0aW9u
-CndpdGggaW5mb3JtYXRpb24geW91IG5lZWQgdG8gam9pbiB0aGUgV2ViaW5hci4KIApVbnN1YnNj
-cmliZSBieSBlbWFpbApLZWl0aCBSb2JlcnRzCjEwODU0IExha2UgUGF0aApTYW4gQW50b25pbywg
-VFggNzgyMTcKSW5mbGVjdG9yIFdpbmRvdyBJbnN1bGF0b3JzIC0gU2VlIFRocnUgUmFkaWFudCBC
-YXJyaWVyCmRyb2JlcnRzNDNAc2JjZ2xvYmFsLm5ldApUaGlzIGlzIGFuIGFkdmV0aXNlbWVudCBm
-b3IgYSB3ZWJpbmFyIQoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3Vu
-ZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0
-aW5mby9jb250YWluZXJz
+On Sun 10-11-13 13:48:11, Tejun Heo wrote:
+> Hey, guys.
+> 
+> I'll route this series through the cgroup tree with the acks added
+> once v3.13-rc1 drops.
+
+Do you have it a local branch which I can merge into mm git tree?
+
+Thanks
+-- 
+Michal Hocko
+SUSE Labs
