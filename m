@@ -1,22 +1,16 @@
-From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: memcg creates an unkillable task in 3.11-rc2
-Date: Tue, 12 Nov 2013 17:00:15 +0100
-Message-ID: <20131112160015.GE6049@dhcp22.suse.cz>
-References: <8761vui4cr.fsf@xmission.com>
-	<20130729075939.GA4678@dhcp22.suse.cz>
-	<87ehahg312.fsf@xmission.com>
-	<20130729095109.GB4678@dhcp22.suse.cz>
-	<20130729161026.GD22605@mtj.dyndns.org>
-	<87r4eh70yg.fsf@xmission.com> <51F71DE2.4020102@huawei.com>
-	<87ppu0a298.fsf_-_@tw-ebiederman.twitter.com>
-	<87ppu03td7.fsf@tw-ebiederman.twitter.com>
-	<CAHyO6Z33pUJ1_MjPO2OeUY_+ZRmc1niPiFm5DzGVDokm5vb4rw@mail.gmail.com>
+From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [REVIEW][PATCH 1/2] userns: Better restrictions on when proc
+	and sysfs can be mounted
+Date: Wed, 13 Nov 2013 15:26:19 +0800
+Message-ID: <5283299B.8080702@cn.fujitsu.com>
+References: <878uzmhkqg.fsf@xmission.com>
+	<52749663.2000701@cn.fujitsu.com>	<527C4D88.10907@cn.fujitsu.com>
+	<87k3gigmgj.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <CAHyO6Z33pUJ1_MjPO2OeUY_+ZRmc1niPiFm5DzGVDokm5vb4rw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <87k3gigmgj.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,92 +20,142 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Fabio Kung <fabio.kung-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Glauber Costa <glommer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, kent.overstreet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu 26-09-13 16:41:19, Fabio Kung wrote:
-> On Tue, Jul 30, 2013 at 9:28 AM, Eric W. Biederman
-> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
-> >
-> > ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) writes:
-> >
-> > Ok.  I have been trying for an hour and I have not been able to
-> > reproduce the weird hang with the memcg, and it used to be something I
-> > could reproduce trivially.  So it appears the patch below is the fix.
-> >
-> > After I sleep I will see if I can turn it into a proper patch.
+On 11/09/2013 01:42 PM, Eric W. Biederman wrote:
+> Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> writes:
 > 
+>> On 11/02/2013 02:06 PM, Gao feng wrote:
+>>> Hi Eric,
+>>>
+>>> On 08/28/2013 05:44 AM, Eric W. Biederman wrote:
+>>>>
+>>>> Rely on the fact that another flavor of the filesystem is already
+>>>> mounted and do not rely on state in the user namespace.
+>>>>
+>>>> Verify that the mounted filesystem is not covered in any significant
+>>>> way.  I would love to verify that the previously mounted filesystem
+>>>> has no mounts on top but there are at least the directories
+>>>> /proc/sys/fs/binfmt_misc and /sys/fs/cgroup/ that exist explicitly
+>>>> for other filesystems to mount on top of.
+>>>>
+>>>> Refactor the test into a function named fs_fully_visible and call that
+>>>> function from the mount routines of proc and sysfs.  This makes this
+>>>> test local to the filesystems involved and the results current of when
+>>>> the mounts take place, removing a weird threading of the user
+>>>> namespace, the mount namespace and the filesystems themselves.
+>>>>
+>>>> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>>>> ---
+>>>>  fs/namespace.c                 |   37 +++++++++++++++++++++++++------------
+>>>>  fs/proc/root.c                 |    7 +++++--
+>>>>  fs/sysfs/mount.c               |    3 ++-
+>>>>  include/linux/fs.h             |    1 +
+>>>>  include/linux/user_namespace.h |    4 ----
+>>>>  kernel/user.c                  |    2 --
+>>>>  kernel/user_namespace.c        |    2 --
+>>>>  7 files changed, 33 insertions(+), 23 deletions(-)
+>>>>
+>>>> diff --git a/fs/namespace.c b/fs/namespace.c
+>>>> index 64627f8..877e427 100644
+>>>> --- a/fs/namespace.c
+>>>> +++ b/fs/namespace.c
+>>>> @@ -2867,25 +2867,38 @@ bool current_chrooted(void)
+>>>>  	return chrooted;
+>>>>  }
+>>>>  
+>>>> -void update_mnt_policy(struct user_namespace *userns)
+>>>> +bool fs_fully_visible(struct file_system_type *type)
+>>>>  {
+>>>>  	struct mnt_namespace *ns = current->nsproxy->mnt_ns;
+>>>>  	struct mount *mnt;
+>>>> +	bool visible = false;
+>>>>  
+>>>> -	down_read(&namespace_sem);
+>>>> +	if (unlikely(!ns))
+>>>> +		return false;
+>>>> +
+>>>> +	namespace_lock();
+>>>>  	list_for_each_entry(mnt, &ns->list, mnt_list) {
+>>>> -		switch (mnt->mnt.mnt_sb->s_magic) {
+>>>> -		case SYSFS_MAGIC:
+>>>> -			userns->may_mount_sysfs = true;
+>>>> -			break;
+>>>> -		case PROC_SUPER_MAGIC:
+>>>> -			userns->may_mount_proc = true;
+>>>> -			break;
+>>>> +		struct mount *child;
+>>>> +		if (mnt->mnt.mnt_sb->s_type != type)
+>>>> +			continue;
+>>>> +
+>>>> +		/* This mount is not fully visible if there are any child mounts
+>>>> +		 * that cover anything except for empty directories.
+>>>> +		 */
+>>>> +		list_for_each_entry(child, &mnt->mnt_mounts, mnt_child) {
+>>>> +			struct inode *inode = child->mnt_mountpoint->d_inode;
+>>>> +			if (!S_ISDIR(inode->i_mode))
+>>>> +				goto next;
+>>>> +			if (inode->i_nlink != 2)
+>>>> +				goto next;
+>>>
+>>>
+>>> I met a problem that proc filesystem failed to mount in user namespace,
+>>> The problem is the i_nlink of sysctl entries under proc filesystem is not
+>>> 2. it always is 1 even it's a directory, see proc_sys_make_inode. and for
+>>> btrfs, the i_nlink for an empty dir is 2 too. it seems like depends on the
+>>> filesystem itself,not depends on vfs. In my system binfmt_misc is mounted
+>>> on /proc/sys/fs/binfmt_misc, and the i_nlink of this directory's inode is
+>>> 1.
 > 
-> Contributing with another data point: I am seeing similar issues with
-> un-killable tasks inside LXC containers on a vanilla 3.8.11 kernel.
-> The stack from zombie tasks look like this:
+> Yes. 1 is what filesystems that are too lazy to count the number of
+> links to a directory return, and /proc/sys is currently such a
+> filesystem.
 > 
-> # cat /proc/12499/stack
-> [<ffffffff81186226>] __mem_cgroup_try_charge+0xa96/0xbf0
-> [<ffffffff8118670b>] __mem_cgroup_try_charge_swapin+0xab/0xd0
-> [<ffffffff8118678d>] mem_cgroup_try_charge_swapin+0x5d/0x70
-> [<ffffffff811524f5>] handle_pte_fault+0x315/0xac0
-> [<ffffffff81152f11>] handle_mm_fault+0x271/0x3d0
-> [<ffffffff815bbf3b>] __do_page_fault+0x20b/0x4c0
-> [<ffffffff815bc1fe>] do_page_fault+0xe/0x10
-> [<ffffffff815b8718>] page_fault+0x28/0x30
-> [<ffffffff81056327>] mm_release+0x127/0x140
-> [<ffffffff8105ece1>] do_exit+0x171/0xa70
-> [<ffffffff8105f635>] do_group_exit+0x55/0xd0
-> [<ffffffff8106fa8f>] get_signal_to_deliver+0x23f/0x5d0
-> [<ffffffff81014402>] do_signal+0x42/0x600
-> [<ffffffff81014a48>] do_notify_resume+0x88/0xc0
-> [<ffffffff815c0b92>] int_signal+0x12/0x17
-> [<ffffffffffffffff>] 0xffffffffffffffff
+> Ordinarily nlink == 2 means a directory does not have any subdirectories.
 > 
-> Same symptoms that Eric described: a race condition in memcg when
-> there is a page fault and the process is exiting.
+>>> btw, I'm not quite understand what's the inode->i_nlink != 2 here means?
+>>> is this directory empty? as I know, when we create a file(not dir) under
+>>> a dir, the i_nlink of this dir will not increase.
+>>>
+>>> And another question, it looks like if we don't have proc/sys fs mounted,
+>>> then proc/sys will be failed to be mounted?
+>>>
+>>
+>> Any Idea?? or should we need to revert this patch??
 > 
-> I went ahead and reproduced the bug described earlier here on the same
-> 3.8.11 kernel, also using the Mesos framework
-> (http://mesos.apache.org/) memory Ballooning tests. The call trace
-> from zombie tasks in this case look very similar:
+> The patch is mostly doing what it is supposed to be doing.
 > 
-> # cat /proc/22827/stack
-> [<ffffffff81186280>] __mem_cgroup_try_charge+0xaf0/0xbf0
-> [<ffffffff8118670b>] __mem_cgroup_try_charge_swapin+0xab/0xd0
-> [<ffffffff8118678d>] mem_cgroup_try_charge_swapin+0x5d/0x70
-> [<ffffffff811524f5>] handle_pte_fault+0x315/0xac0
-> [<ffffffff81152f11>] handle_mm_fault+0x271/0x3d0
-> [<ffffffff815bbf3b>] __do_page_fault+0x20b/0x4c0
-> [<ffffffff815bc1fe>] do_page_fault+0xe/0x10
-> [<ffffffff815b8718>] page_fault+0x28/0x30
-> [<ffffffff81056327>] mm_release+0x127/0x140
-> [<ffffffff8105ece1>] do_exit+0x171/0xa70
-> [<ffffffff8105f635>] do_group_exit+0x55/0xd0
-> [<ffffffff8106fa8f>] get_signal_to_deliver+0x23f/0x5d0
-> [<ffffffff81014402>] do_signal+0x42/0x600
-> [<ffffffff81014a48>] do_notify_resume+0x88/0xc0
-> [<ffffffff815c0b92>] int_signal+0x12/0x17
-> [<ffffffffffffffff>] 0xffffffffffffffff
+> Now the code is slightly buggy.  inode->i_nlink will test to see if a
+> directory has subdirectories but it won't test to see if a directory is
+> empty.  Where did my brain go when I was writing that test?
 > 
-> Then, I applied Eric's patch below, and I can't reproduce the problem
-> anymore. Before the patch, it was very easy to reproduce it with some
-> extra memory pressure from other processes in the instance (increasing
-> the probability of page faults when processes are exiting).
+> Right now I would rather not have the empty directory exception than
+> remove this code.
+> 
+> The test is a little trickier to write than it might otherwise be
+> because /proc and /sys tend to be slightly imperfect filesystems.
+> 
+> I think the only way to really test that is to call readdir on the
+> directory itself :(  I don't like that thought.
+> 
+> I don't know what I was thinking when I wrote that test but I definitely
+> goofed up.  Grr!
+> 
+> I can certainly filter out any directory with nlink > 2.  That would be
+> an easy partial step forward.
+> 
+> The real question though is how do I detect directories it is safe to
+> mount on where there will not be files in them.  I can't call iterate
+> with the namespace_lock held so things are a bit tricky.
+> 
 
-Could you try to reproduce with the patch posted earlier in the thread,
-please? https://lkml.org/lkml/2013/7/31/94
+I know this problem is not easy to be resolved. why not let the user
+make the decision?  maybe we can introduce a new mount option MS_LOCK,
+if user wants to use mount to hide something, he should use mount with
+option MS_LOCK. so the unpriviged user can't umount this filesystem and
+fail to mount the filesystem if one of it's child mount is mounted with
+MS_LOCK option otherwise he use MS_REC too.
 
-Eric had some concerns about the patch (https://lkml.org/lkml/2013/7/31/603)
-but I wasn't quite sure whether the issue he raised exists. As I tried
-to explain in the follow up answer the race shouldn't exit and the
-thread basically died at that state.
-
-The memcg handling was reworked considerably since then by Johannes -
-merged in 3.12 - and it has moved outside of memcg charging path.
-I still think that the rework hasn't fixed this particular bug and we
-still need a fix. And I would prefer if we simply set TIF_MEMDIE after
-we wake up from the sleep.
-
-> We also tried a vanilla 3.11.1 kernel, and we could reproduce the bug
-> on it pretty easily.
--- 
-Michal Hocko
-SUSE Labs
+Thanks
