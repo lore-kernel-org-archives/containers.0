@@ -1,11 +1,13 @@
-From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH] userns: allow privileged user to operate locked mount
-Date: Wed, 13 Nov 2013 15:27:43 +0800
-Message-ID: <1384327663-12032-1-git-send-email-gaofeng@cn.fujitsu.com>
+From: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Getting userns enabled in vendor kernels
+Date: Wed, 13 Nov 2013 15:13:30 +0000
+Message-ID: <20131113151330.GZ32643@redhat.com>
+Reply-To: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,70 +17,59 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Privileged user should have rights to mount/umount/move
-these even locked mount.
+The user namespace work gave us two new features
 
-Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- fs/namespace.c | 14 ++++++++++----
- 1 file changed, 10 insertions(+), 4 deletions(-)
+ - Ability to set UID/GID mappings between containers & host
+ - Ability for unprivileged users to create namespaces
 
-diff --git a/fs/namespace.c b/fs/namespace.c
-index da5c494..7097fc7 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -1297,6 +1297,11 @@ static inline bool may_mount(void)
- 	return ns_capable(current->nsproxy->mnt_ns->user_ns, CAP_SYS_ADMIN);
- }
- 
-+static inline bool may_mount_lock(struct mount *mnt)
-+{
-+	return !(mnt->mnt.mnt_flags & MNT_LOCKED) || capable(CAP_SYS_ADMIN);
-+}
-+
- /*
-  * Now umount can handle mount points as well as block devices.
-  * This is important for filesystems which use unnamed block devices.
-@@ -1330,7 +1335,7 @@ SYSCALL_DEFINE2(umount, char __user *, name, int, flags)
- 		goto dput_and_out;
- 	if (!check_mnt(mnt))
- 		goto dput_and_out;
--	if (mnt->mnt.mnt_flags & MNT_LOCKED)
-+	if (!may_mount_lock(mnt))
- 		goto dput_and_out;
- 
- 	retval = do_umount(mnt, flags);
-@@ -1768,7 +1773,8 @@ static int do_loopback(struct path *path, const char *old_name,
- 	if (!check_mnt(parent) || !check_mnt(old))
- 		goto out2;
- 
--	if (!recurse && has_locked_children(old, old_path.dentry))
-+	if (!recurse && has_locked_children(old, old_path.dentry) &&
-+	    !capable(CAP_SYS_ADMIN))
- 		goto out2;
- 
- 	if (recurse)
-@@ -1895,7 +1901,7 @@ static int do_move_mount(struct path *path, const char *old_name)
- 	if (!check_mnt(p) || !check_mnt(old))
- 		goto out1;
- 
--	if (old->mnt.mnt_flags & MNT_LOCKED)
-+	if (!may_mount_lock(old))
- 		goto out1;
- 
- 	err = -EINVAL;
-@@ -2679,7 +2685,7 @@ SYSCALL_DEFINE2(pivot_root, const char __user *, new_root,
- 		goto out4;
- 	if (!check_mnt(root_mnt) || !check_mnt(new_mnt))
- 		goto out4;
--	if (new_mnt->mnt.mnt_flags & MNT_LOCKED)
-+	if (!may_mount_lock(new_mnt))
- 		goto out4;
- 	error = -ENOENT;
- 	if (d_unlinked(new.dentry))
+The first of these features is really critical to be able to make the
+use of LXC secure using DAC, rather than having to rely on the use of
+MAC (SELinux/AppArmour) protection.
+
+The second feature is a nice, but it is not critical in the same way,
+since it is all about opening up new use cases, rather than securing
+existing use cases.
+
+Both of these features are under the same CONFIG_USER_NS Kconfig setting,
+so you can't get the former without also getting the latter.
+
+This is a problem because distro kernel maintainers are rejecting requests
+to enable CONFIG_USER_NS over concern that it significantly expands the
+attack surface accessible to unprivileged users. Fedora, RHEL & Arch Linux
+have all rejected enabling CONFIG_USER_NS as it is due to this concern.
+
+This sucks, because there's a really pressing need to make the ID mapping
+feature available, while there isn't much sense of urgency over allowing
+unprivileged users to create namespaces.
+
+In Fedora I managed to get agreement to enable CONFIG_USER_NS provided
+that the following patch is reverted [1]
+
+  commit 5eaf563e53294d6696e651466697eb9d491f3946
+  Author: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+  Date:   Mon Nov 21 17:22:31 2011 -0800
+
+    userns: Allow unprivileged users to create user namespaces.
+
+If other distros have similar demands, I'm wondering if it is worth
+making the above patch be conditional on a new Kconfig parameter like
+CONFIG_USER_NS_UNPRIVILEGED ?
+
+Arch Linux maintainers suggested that this patch be made conditional
+on a sysctl setting, defaulting to 0, so those who want the unprivileged
+users to create namespaces have to explicitly opt-in at runtime[2].
+
+Regards,
+Daniel
+
+[1] https://bugzilla.redhat.com/show_bug.cgi?id=917708
+[2] https://bugs.archlinux.org/task/36969
 -- 
-1.8.3.1
+|: http://berrange.com      -o-    http://www.flickr.com/photos/dberrange/ :|
+|: http://libvirt.org              -o-             http://virt-manager.org :|
+|: http://autobuild.org       -o-         http://search.cpan.org/~danberr/ :|
+|: http://entangle-photo.org       -o-       http://live.gnome.org/gtk-vnc :|
