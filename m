@@ -1,16 +1,15 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: [REVIEW][PATCH 1/2] userns: Better restrictions on when proc and
-	sysfs can be mounted
-Date: Thu, 14 Nov 2013 08:54:24 -0800
-Message-ID: <CALCETrXtWtF=JgiwENNzh7UZKnXijHauOQ5ZjHYxYJC-BAU5Aw@mail.gmail.com>
-References: <878uzmhkqg.fsf@xmission.com> <52749663.2000701@cn.fujitsu.com>
-	<527C4D88.10907@cn.fujitsu.com> <87k3gigmgj.fsf@xmission.com>
-	<5283299B.8080702@cn.fujitsu.com> <5284AF90.7060506@cn.fujitsu.com>
+From: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Getting userns enabled in vendor kernels
+Date: Thu, 14 Nov 2013 12:44:02 -0500
+Message-ID: <20131114174401.GF12097@redhat.com>
+References: <20131113151330.GZ32643@redhat.com>
+	<1384444373.2005.8.camel@dabdike.int.hansenpartnership.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <5284AF90.7060506-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1384444373.2005.8.camel-sFMDBYUN5F8GjUHQrlYNx2Wm91YjaHnnhRte9Li2A+AAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,63 +19,20 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Nov 14, 2013 at 3:10 AM, Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
-> On 11/13/2013 03:26 PM, Gao feng wrote:
->> On 11/09/2013 01:42 PM, Eric W. Biederman wrote:
->>> Right now I would rather not have the empty directory exception than
->>> remove this code.
->>>
->>> The test is a little trickier to write than it might otherwise be
->>> because /proc and /sys tend to be slightly imperfect filesystems.
->>>
->>> I think the only way to really test that is to call readdir on the
->>> directory itself :(  I don't like that thought.
->>>
->>> I don't know what I was thinking when I wrote that test but I definitely
->>> goofed up.  Grr!
->>>
->>> I can certainly filter out any directory with nlink > 2.  That would be
->>> an easy partial step forward.
->>>
->>> The real question though is how do I detect directories it is safe to
->>> mount on where there will not be files in them.  I can't call iterate
->>> with the namespace_lock held so things are a bit tricky.
->>>
->>
->> I know this problem is not easy to be resolved. why not let the user
->> make the decision?  maybe we can introduce a new mount option MS_LOCK,
->> if user wants to use mount to hide something, he should use mount with
->> option MS_LOCK. so the unpriviged user can't umount this filesystem and
->> fail to mount the filesystem if one of it's child mount is mounted with
->> MS_LOCK option otherwise he use MS_REC too.
->>
->
-> Something like this.
->
-> From 437f33ea366623c7a9d557b2e84cae424876a44f Mon Sep 17 00:00:00 2001
-> From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> Date: Wed, 13 Nov 2013 16:06:46 +0800
-> Subject: [PATCH] userns: introduce new mount option MS_LOCK
->
-> After commit 5ff9d8a65ce80efb509ce4e8051394e9ed2cd942
-> vfs: Lock in place mounts from more privileged users,
-> in userns, the mounts of child mntns which copied from
-> parent mntns is locked and user has no rights to umount/move
-> them, it's too strict.
->
-> The core purpose of above commit is trying to prevent
-> unprivileged user from accessing files hidden by mount.
-> This patch introduces a new mount option MS_LOCK, this
-> gives user the capable to mount filesystem as the type
-> of lock if he wants to use mount to hide something.
->
+(Replying also to Serge, same argument)
+On Thu, Nov 14, 2013 at 07:52:53AM -0800, James Bottomley wrote:
+> The thing that worries me is that turning this off means no-one will
+> work on the bugs and one day distros will start to use USER_NS for
+> things other than containers.  When that happens, container roots will
+> need to use it to bring up distro IaaS instances.
 
-This is bad -- if something was secure in old kernels, it needs to
-stay secure.  If you had MS_NOT_A_LOCK, that would be okay, but it
-might not solve your problem.
+True, but the status we have now is that USER_NS is disabled completely
+in Fedora. This approach will split the process in two: enable part of
+it, let it soak, solve problems, enable user created namespaces later.
 
---Andy
+-- 
+Aristeu
