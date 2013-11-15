@@ -1,20 +1,15 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [REVIEW][PATCH 1/2] userns: Better restrictions on when proc and
-	sysfs can be mounted
-Date: Fri, 15 Nov 2013 00:37:13 -0800
-Message-ID: <87d2m2t612.fsf@xmission.com>
-References: <878uzmhkqg.fsf@xmission.com> <52749663.2000701@cn.fujitsu.com>
-	<527C4D88.10907@cn.fujitsu.com> <87k3gigmgj.fsf@xmission.com>
-	<5283299B.8080702@cn.fujitsu.com> <5284AF90.7060506@cn.fujitsu.com>
-	<CALCETrXtWtF=JgiwENNzh7UZKnXijHauOQ5ZjHYxYJC-BAU5Aw@mail.gmail.com>
-	<528575EC.2030309@cn.fujitsu.com> <87txfexo25.fsf@xmission.com>
-	<5285BBE2.7010001@cn.fujitsu.com>
+Subject: Re: Getting userns enabled in vendor kernels
+Date: Fri, 15 Nov 2013 00:52:14 -0800
+Message-ID: <87ob5moxmp.fsf@xmission.com>
+References: <20131113151330.GZ32643@redhat.com>
+	<5285AEF1.6000503@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <5285BBE2.7010001-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> (Gao feng's message of "Fri, 15
-	Nov 2013 14:14:58 +0800")
+In-Reply-To: <5285AEF1.6000503-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> (Gao feng's message of "Fri, 15
+	Nov 2013 13:19:45 +0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,39 +20,56 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> writes:
 
-> Ok,I agree with you that we should make container security by default.
+> On 11/13/2013 11:13 PM, Daniel P. Berrange wrote:
+>> 
+>>   commit 5eaf563e53294d6696e651466697eb9d491f3946
+>>   Author: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>>   Date:   Mon Nov 21 17:22:31 2011 -0800
+>> 
+>>     userns: Allow unprivileged users to create user namespaces.
 >
-> What's your idea that introduces option MS_NOT_A_LOCK just like Andy's
-> advisement?
+> I don't know what's the benefit this commit brings and what's use
+> case this commit tries to support.
+>
+> In most use case, the container/namespace is create by privilged
+> user and the id-map can prevent unsafe things.
+>
+> IMO, I think this patch can be reverted.
 
-It might be doable but it is unnecessary.
+This patch brings tremendous benefit, and by itself is completely safe.
 
-> In libvirt, host creates dev and devpts directories for container,then
-> mount devpts, tmpfs on them and create device nodes inside these dirs
-> for container. and then in container, these filesystems are moved to
-> container's /dev/ /dev/pts directory. We really have no need to lock
-> these mounts. they are just created for container.
+It is the added ns_capable calls that are potentially dangerous, and it
+seems you like the idea of taking advantage of those.
 
-If the global root creates the namespace and performs all of the mounts
-it is unnecessary.
+The goal is to not let anything that is not safe for an unprivileged
+user to use happen in a user namespace.  One primary use for user
+namespaces is separate administrative domains.  Aka allowing someone you
+don't trust with root privileges to do things on your box.  You trust
+them with shell access but that is another story.
 
-Now I believe you can create those directories for the most part as
-non-root in libvirt and gain some interesting applications.
+So if it is safe enough in general for people with shell access to use
+the functionality.  Restricting the creation of user namespaces to root
+is silly.
 
-That said if you don't want locked mounts you just just be able to
-create a temporary mount namespace as the global root, and do your prep
-work.
+Restricting user namespaces creation to root really is a form of
+sticking your fingers in your, closesing your eyes, and going
+la-la-la-la I can't hear you.  When faced with security issues.
 
-Then create your unprivileged mount namespace and bind mount the
-directories where you want them, and then pivot_root away the bits you
-don't want.
+For production use it is either as safe as the rest of the kernel or it
+is not.  A sysctl so you can turn user namespaces on/off so you can
+experiment with them while they are maturing is something that might be
+reasonable.  But again that is another form of CYA.  But a likely a
+reasonable CYA for a distroy kernel.
 
-There is already more mechanism than I like to deal with the mount
-namespace I would really rather not invent/debug/support any more.
+I intend to fix bugs and enable people to actually use their kernel not
+run around and trying and point the blame for things that go wrong at
+others.
+
+And now back to my regularly scheduled bug fixing.
 
 Eric
