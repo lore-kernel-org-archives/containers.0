@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 4/9] cgroup: introduce struct cgroup_pidlist_open_file
-Date: Sun, 24 Nov 2013 17:11:31 -0500
-Message-ID: <1385331096-7918-5-git-send-email-tj__30722.6018784151$1385331142$gmane$org@kernel.org>
+Subject: [PATCH 5/9] cgroup: refactor cgroup_pidlist_find()
+Date: Sun, 24 Nov 2013 17:11:32 -0500
+Message-ID: <1385331096-7918-6-git-send-email-tj__22286.6303207867$1385331150$gmane$org@kernel.org>
 References: <1385331096-7918-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,115 +21,126 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-For pidlist files, seq_file->private pointed to the loaded
-cgroup_pidlist; however, pidlist loading is planned to be moved to
-cgroup_pidlist_start() for kernfs conversion and seq_file->private
-needs to carry more information from open to allow that.
+Rename cgroup_pidlist_find() to cgroup_pidlist_find_create() and
+separate out finding proper to cgroup_pidlist_find().  Also, move
+locking to the caller.
 
-This patch introduces struct cgroup_pidlist_open_file which contains
-type, cgrp and pidlist and updates pidlist seq_file->private to point
-to it using seq_open_private() and seq_release_private().  Note that
-this eventually will be replaced by kernfs_open_file.
-
-While this patch makes more information available to seq_file
-operations, they don't use it yet and this patch doesn't introduce any
-behavior changes except for allocation of the extra private struct.
+This patch is preparation for pidlist restructure and doesn't
+introduce any behavior changes.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 36 ++++++++++++++++++++++++++----------
- 1 file changed, 26 insertions(+), 10 deletions(-)
+ kernel/cgroup.c | 65 +++++++++++++++++++++++++++++++++------------------------
+ 1 file changed, 38 insertions(+), 27 deletions(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 2e21490..0e902f4 100644
+index 0e902f4..33b6c4d 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -3466,6 +3466,13 @@ struct cgroup_pidlist {
- 	struct delayed_work destroy_dwork;
- };
+@@ -3573,48 +3573,50 @@ static int cmppid(const void *a, const void *b)
+ 	return *(pid_t *)a - *(pid_t *)b;
+ }
  
-+/* seq_file->private points to the following */
-+struct cgroup_pidlist_open_file {
-+	enum cgroup_filetype		type;
-+	struct cgroup			*cgrp;
-+	struct cgroup_pidlist		*pidlist;
-+};
++static struct cgroup_pidlist *cgroup_pidlist_find(struct cgroup *cgrp,
++						  enum cgroup_filetype type)
++{
++	struct cgroup_pidlist *l;
++	/* don't need task_nsproxy() if we're looking at ourself */
++	struct pid_namespace *ns = task_active_pid_ns(current);
++
++	lockdep_assert_held(&cgrp->pidlist_mutex);
++
++	list_for_each_entry(l, &cgrp->pidlists, links)
++		if (l->key.type == type && l->key.ns == ns)
++			return l;
++	return NULL;
++}
 +
  /*
-  * The following two functions "fix" the issue where there are more pids
-  * than kmalloc will give memory for; in such cases, we use vmalloc/vfree.
-@@ -3737,7 +3744,8 @@ static void *cgroup_pidlist_start(struct seq_file *s, loff_t *pos)
- 	 * after a seek to the start). Use a binary-search to find the
- 	 * next pid to display, if any
- 	 */
--	struct cgroup_pidlist *l = s->private;
-+	struct cgroup_pidlist_open_file *of = s->private;
-+	struct cgroup_pidlist *l = of->pidlist;
- 	int index = 0, pid = *pos;
- 	int *iter;
- 
-@@ -3767,13 +3775,15 @@ static void *cgroup_pidlist_start(struct seq_file *s, loff_t *pos)
- 
- static void cgroup_pidlist_stop(struct seq_file *s, void *v)
+  * find the appropriate pidlist for our purpose (given procs vs tasks)
+  * returns with the lock on that pidlist already held, and takes care
+  * of the use count, or returns NULL with no locks held if we're out of
+  * memory.
+  */
+-static struct cgroup_pidlist *cgroup_pidlist_find(struct cgroup *cgrp,
+-						  enum cgroup_filetype type)
++static struct cgroup_pidlist *cgroup_pidlist_find_create(struct cgroup *cgrp,
++						enum cgroup_filetype type)
  {
--	struct cgroup_pidlist *l = s->private;
--	up_read(&l->rwsem);
-+	struct cgroup_pidlist_open_file *of = s->private;
-+
-+	up_read(&of->pidlist->rwsem);
- }
- 
- static void *cgroup_pidlist_next(struct seq_file *s, void *v, loff_t *pos)
- {
--	struct cgroup_pidlist *l = s->private;
-+	struct cgroup_pidlist_open_file *of = s->private;
-+	struct cgroup_pidlist *l = of->pidlist;
- 	pid_t *p = v;
- 	pid_t *end = l->list + l->length;
- 	/*
-@@ -3818,11 +3828,11 @@ static void cgroup_release_pid_array(struct cgroup_pidlist *l)
- 
- static int cgroup_pidlist_release(struct inode *inode, struct file *file)
- {
--	struct cgroup_pidlist *l;
-+	struct cgroup_pidlist_open_file *of;
- 
--	l = ((struct seq_file *)file->private_data)->private;
--	cgroup_release_pid_array(l);
--	return seq_release(inode, file);
-+	of = ((struct seq_file *)file->private_data)->private;
-+	cgroup_release_pid_array(of->pidlist);
-+	return seq_release_private(inode, file);
- }
- 
- static const struct file_operations cgroup_pidlist_operations = {
-@@ -3841,6 +3851,7 @@ static const struct file_operations cgroup_pidlist_operations = {
- static int cgroup_pidlist_open(struct file *file, enum cgroup_filetype type)
- {
- 	struct cgroup *cgrp = __d_cgrp(file->f_dentry->d_parent);
-+	struct cgroup_pidlist_open_file *of;
  	struct cgroup_pidlist *l;
- 	int retval;
+-	/* don't need task_nsproxy() if we're looking at ourself */
+-	struct pid_namespace *ns = task_active_pid_ns(current);
  
-@@ -3851,12 +3862,17 @@ static int cgroup_pidlist_open(struct file *file, enum cgroup_filetype type)
- 	/* configure file information */
- 	file->f_op = &cgroup_pidlist_operations;
- 
--	retval = seq_open(file, &cgroup_pidlist_seq_operations);
-+	retval = seq_open_private(file, &cgroup_pidlist_seq_operations,
-+				  sizeof(*of));
- 	if (retval) {
- 		cgroup_release_pid_array(l);
- 		return retval;
- 	}
--	((struct seq_file *)file->private_data)->private = l;
+-	/*
+-	 * We can't drop the pidlist_mutex before taking the l->rwsem in case
+-	 * the last ref-holder is trying to remove l from the list at the same
+-	 * time. Holding the pidlist_mutex precludes somebody taking whichever
+-	 * list we find out from under us - compare release_pid_array().
+-	 */
+-	mutex_lock(&cgrp->pidlist_mutex);
+-	list_for_each_entry(l, &cgrp->pidlists, links) {
+-		if (l->key.type == type && l->key.ns == ns) {
+-			/* make sure l doesn't vanish out from under us */
+-			down_write(&l->rwsem);
+-			mutex_unlock(&cgrp->pidlist_mutex);
+-			return l;
+-		}
+-	}
++	lockdep_assert_held(&cgrp->pidlist_mutex);
 +
-+	of = ((struct seq_file *)file->private_data)->private;
-+	of->type = type;
-+	of->cgrp = cgrp;
-+	of->pidlist = l;
++	l = cgroup_pidlist_find(cgrp, type);
++	if (l)
++		return l;
++
+ 	/* entry not found; create a new one */
+ 	l = kzalloc(sizeof(struct cgroup_pidlist), GFP_KERNEL);
+-	if (!l) {
+-		mutex_unlock(&cgrp->pidlist_mutex);
++	if (!l)
+ 		return l;
+-	}
++
+ 	init_rwsem(&l->rwsem);
+ 	INIT_DELAYED_WORK(&l->destroy_dwork, cgroup_pidlist_destroy_work_fn);
+-	down_write(&l->rwsem);
+ 	l->key.type = type;
+-	l->key.ns = get_pid_ns(ns);
++	/* don't need task_nsproxy() if we're looking at ourself */
++	l->key.ns = get_pid_ns(task_active_pid_ns(current));
+ 	l->owner = cgrp;
+ 	list_add(&l->links, &cgrp->pidlists);
+-	mutex_unlock(&cgrp->pidlist_mutex);
+ 	return l;
+ }
+ 
+@@ -3660,17 +3662,26 @@ static int pidlist_array_load(struct cgroup *cgrp, enum cgroup_filetype type,
+ 	sort(array, length, sizeof(pid_t), cmppid, NULL);
+ 	if (type == CGROUP_FILE_PROCS)
+ 		length = pidlist_uniq(array, length);
+-	l = cgroup_pidlist_find(cgrp, type);
++
++	mutex_lock(&cgrp->pidlist_mutex);
++
++	l = cgroup_pidlist_find_create(cgrp, type);
+ 	if (!l) {
++		mutex_unlock(&cgrp->pidlist_mutex);
+ 		pidlist_free(array);
+ 		return -ENOMEM;
+ 	}
+-	/* store array, freeing old if necessary - lock already held */
++
++	/* store array, freeing old if necessary */
++	down_write(&l->rwsem);
+ 	pidlist_free(l->list);
+ 	l->list = array;
+ 	l->length = length;
+ 	l->use_count++;
+ 	up_write(&l->rwsem);
++
++	mutex_unlock(&cgrp->pidlist_mutex);
++
+ 	*lp = l;
  	return 0;
  }
- static int cgroup_tasks_open(struct inode *unused, struct file *file)
 -- 
 1.8.4.2
