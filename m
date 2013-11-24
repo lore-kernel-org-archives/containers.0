@@ -1,8 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 7/9] cgroup: load and release pidlists from seq_file start and
-	stop respectively
-Date: Sun, 24 Nov 2013 17:11:34 -0500
-Message-ID: <1385331096-7918-8-git-send-email-tj__6258.1269340173$1385331165$gmane$org@kernel.org>
+Subject: [PATCH 8/9] cgroup: remove cgroup_pidlist->use_count
+Date: Sun, 24 Nov 2013 17:11:35 -0500
+Message-ID: <1385331096-7918-9-git-send-email-tj__29503.881201572$1385331168$gmane$org@kernel.org>
 References: <1385331096-7918-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,183 +21,98 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Currently, pidlists are reference counted from file open and release
-methods.  This means that holding onto an open file may waste memory
-and reads may return data which is very stale.  Both aren't critical
-because pidlists are keyed and shared per namespace and, well, the
-user isn't supposed to have large delay between open and reads.
+After the recent changes, pidlist ref is held only between
+cgroup_pidlist_start() and cgroup_pidlist_stop() during which
+cgroup->pidlist_mutex is also held.  IOW, the reference count is
+redundant now.  While in use, it's always one and pidlist_mutex is
+held - holding the mutex has exactly the same protection.
 
-cgroup is planned to be converted to use kernfs and it'd be best if we
-can stick to just the seq_file operations - start, next, stop and
-show.  This can be achieved by loading pidlist on demand from start
-and release with time delay from stop, so that consecutive reads don't
-end up reloading the pidlist on each iteration.  This would remove the
-need for hooking into open and release while also avoiding issues with
-holding onto pidlist for too long.
+This patch collapses destroy_dwork queueing into cgroup_pidlist_stop()
+so that pidlist_mutex is not released inbetween and drops
+pidlist->use_count.
 
-The previous patches implemented delayed release and restructured
-pidlist handling so that pidlists can be loaded and released from
-seq_file start / stop.  This patch actually moves pidlist load to
-start and release to stop.
-
-This means that pidlist is pinned only between start and stop and may
-go away between two consecutive read calls if the two calls are apart
-by more than CGROUP_PIDLIST_DESTROY_DELAY.  cgroup_pidlist_start()
-thus can't re-use the stored cgroup_pid_list_open_file->pidlist
-directly.  During start, it's only used as a hint indicating whether
-this is the first start after open or not and pidlist is always looked
-up or created.
-
-pidlist_mutex locking and reference counting are moved out of
-pidlist_array_load() so that pidlist_array_load() can perform lookup
-and creation atomically.  While this enlarges the area covered by
-pidlist_mutex, given how the lock is used, it's highly unlikely to be
-noticeable.
+This patch shouldn't introduce any behavior changes.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 62 +++++++++++++++++++++++++++++++--------------------------
- 1 file changed, 34 insertions(+), 28 deletions(-)
+ kernel/cgroup.c | 28 +++++++---------------------
+ 1 file changed, 7 insertions(+), 21 deletions(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 4ceeab0..8d2d9d4 100644
+index 8d2d9d4..5c8cf0b 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -3471,6 +3471,8 @@ struct cgroup_pidlist_open_file {
+@@ -3454,8 +3454,6 @@ struct cgroup_pidlist {
+ 	pid_t *list;
+ 	/* how many elements the above list has */
+ 	int length;
+-	/* how many files are using the current array */
+-	int use_count;
+ 	/* each of these stored in a list by its cgroup */
+ 	struct list_head links;
+ 	/* pointer to the cgroup we belong to, for list removal purposes */
+@@ -3471,8 +3469,6 @@ struct cgroup_pidlist_open_file {
  	struct cgroup_pidlist		*pidlist;
  };
  
-+static void cgroup_release_pid_array(struct cgroup_pidlist *l);
-+
+-static void cgroup_release_pid_array(struct cgroup_pidlist *l);
+-
  /*
   * The following two functions "fix" the issue where there are more pids
   * than kmalloc will give memory for; in such cases, we use vmalloc/vfree.
-@@ -3628,6 +3630,8 @@ static int pidlist_array_load(struct cgroup *cgrp, enum cgroup_filetype type,
- 	struct task_struct *tsk;
- 	struct cgroup_pidlist *l;
+@@ -3522,10 +3518,10 @@ static void cgroup_pidlist_destroy_work_fn(struct work_struct *work)
+ 	mutex_lock(&l->owner->pidlist_mutex);
  
-+	lockdep_assert_held(&cgrp->pidlist_mutex);
-+
  	/*
- 	 * If cgroup gets more users after we read count, we won't have
- 	 * enough space - tough.  This race is indistinguishable to the
-@@ -3658,8 +3662,6 @@ static int pidlist_array_load(struct cgroup *cgrp, enum cgroup_filetype type,
- 	if (type == CGROUP_FILE_PROCS)
- 		length = pidlist_uniq(array, length);
- 
--	mutex_lock(&cgrp->pidlist_mutex);
--
- 	l = cgroup_pidlist_find_create(cgrp, type);
- 	if (!l) {
- 		mutex_unlock(&cgrp->pidlist_mutex);
-@@ -3671,10 +3673,6 @@ static int pidlist_array_load(struct cgroup *cgrp, enum cgroup_filetype type,
- 	pidlist_free(l->list);
- 	l->list = array;
- 	l->length = length;
--	l->use_count++;
--
--	mutex_unlock(&cgrp->pidlist_mutex);
--
- 	*lp = l;
- 	return 0;
- }
-@@ -3749,11 +3747,34 @@ static void *cgroup_pidlist_start(struct seq_file *s, loff_t *pos)
- 	 * next pid to display, if any
+-	 * Destroy iff we didn't race with a new user or get queued again.
+-	 * Queued state won't change as it can only be queued while locked.
++	 * Destroy iff we didn't get queued again.  The state won't change
++	 * as destroy_dwork can only be queued while locked.
  	 */
- 	struct cgroup_pidlist_open_file *of = s->private;
--	struct cgroup_pidlist *l = of->pidlist;
-+	struct cgroup *cgrp = of->cgrp;
-+	struct cgroup_pidlist *l;
- 	int index = 0, pid = *pos;
--	int *iter;
-+	int *iter, ret;
-+
-+	mutex_lock(&cgrp->pidlist_mutex);
-+
-+	/*
-+	 * !NULL @of->pidlist indicates that this isn't the first start()
-+	 * after open.  If the matching pidlist is around, we can use that.
-+	 * Look for it.  Note that @of->pidlist can't be used directly.  It
-+	 * could already have been destroyed.
-+	 */
-+	if (of->pidlist)
-+		of->pidlist = cgroup_pidlist_find(cgrp, of->type);
-+
-+	/*
-+	 * Either this is the first start() after open or the matching
-+	 * pidlist has been destroyed inbetween.  Create a new one.
-+	 */
-+	if (!of->pidlist) {
-+		ret = pidlist_array_load(of->cgrp, of->type, &of->pidlist);
-+		if (ret)
-+			return ERR_PTR(ret);
-+	}
-+	l = of->pidlist;
-+	l->use_count++;
+-	if (!l->use_count && !delayed_work_pending(dwork)) {
++	if (!delayed_work_pending(dwork)) {
+ 		list_del(&l->links);
+ 		pidlist_free(l->list);
+ 		put_pid_ns(l->key.ns);
+@@ -3773,7 +3769,6 @@ static void *cgroup_pidlist_start(struct seq_file *s, loff_t *pos)
+ 			return ERR_PTR(ret);
+ 	}
+ 	l = of->pidlist;
+-	l->use_count++;
  
--	mutex_lock(&of->cgrp->pidlist_mutex);
  	if (pid) {
  		int end = l->length;
- 
-@@ -3782,6 +3803,8 @@ static void cgroup_pidlist_stop(struct seq_file *s, void *v)
+@@ -3802,9 +3797,11 @@ static void cgroup_pidlist_stop(struct seq_file *s, void *v)
+ {
  	struct cgroup_pidlist_open_file *of = s->private;
  
- 	mutex_unlock(&of->cgrp->pidlist_mutex);
-+	if (of->pidlist)
-+		cgroup_release_pid_array(of->pidlist);
+-	mutex_unlock(&of->cgrp->pidlist_mutex);
+ 	if (of->pidlist)
+-		cgroup_release_pid_array(of->pidlist);
++		mod_delayed_work(cgroup_pidlist_destroy_wq,
++				 &of->pidlist->destroy_dwork,
++				 CGROUP_PIDLIST_DESTROY_DELAY);
++	mutex_unlock(&of->cgrp->pidlist_mutex);
  }
  
  static void *cgroup_pidlist_next(struct seq_file *s, void *v, loff_t *pos)
-@@ -3830,20 +3853,11 @@ static void cgroup_release_pid_array(struct cgroup_pidlist *l)
- 	mutex_unlock(&l->owner->pidlist_mutex);
- }
+@@ -3842,17 +3839,6 @@ static const struct seq_operations cgroup_pidlist_seq_operations = {
+ 	.show = cgroup_pidlist_show,
+ };
  
--static int cgroup_pidlist_release(struct inode *inode, struct file *file)
+-static void cgroup_release_pid_array(struct cgroup_pidlist *l)
 -{
--	struct cgroup_pidlist_open_file *of;
--
--	of = ((struct seq_file *)file->private_data)->private;
--	cgroup_release_pid_array(of->pidlist);
--	return seq_release_private(inode, file);
+-	mutex_lock(&l->owner->pidlist_mutex);
+-	BUG_ON(!l->use_count);
+-	/* if the last user, arm the destroy work */
+-	if (!--l->use_count)
+-		mod_delayed_work(cgroup_pidlist_destroy_wq, &l->destroy_dwork,
+-				 CGROUP_PIDLIST_DESTROY_DELAY);
+-	mutex_unlock(&l->owner->pidlist_mutex);
 -}
 -
  static const struct file_operations cgroup_pidlist_operations = {
  	.read = seq_read,
  	.llseek = seq_lseek,
- 	.write = cgroup_file_write,
--	.release = cgroup_pidlist_release,
-+	.release = seq_release_private,
- };
- 
- /*
-@@ -3856,27 +3870,19 @@ static int cgroup_pidlist_open(struct file *file, enum cgroup_filetype type)
- {
- 	struct cgroup *cgrp = __d_cgrp(file->f_dentry->d_parent);
- 	struct cgroup_pidlist_open_file *of;
--	struct cgroup_pidlist *l;
- 	int retval;
- 
--	/* have the array populated */
--	retval = pidlist_array_load(cgrp, type, &l);
--	if (retval)
--		return retval;
- 	/* configure file information */
- 	file->f_op = &cgroup_pidlist_operations;
- 
- 	retval = seq_open_private(file, &cgroup_pidlist_seq_operations,
- 				  sizeof(*of));
--	if (retval) {
--		cgroup_release_pid_array(l);
-+	if (retval)
- 		return retval;
--	}
- 
- 	of = ((struct seq_file *)file->private_data)->private;
- 	of->type = type;
- 	of->cgrp = cgrp;
--	of->pidlist = l;
- 	return 0;
- }
- static int cgroup_tasks_open(struct inode *unused, struct file *file)
 -- 
 1.8.4.2
