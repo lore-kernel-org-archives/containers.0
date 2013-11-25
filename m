@@ -1,18 +1,11 @@
-From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: [PATCHSET v2 cgroup/for-3.12] cgroup: make cgroup_event specific
-	to memcg
-Date: Mon, 25 Nov 2013 11:33:12 +0100
-Message-ID: <20131125103312.GA11849__17154.0784686387$1385375604$gmane$org@dhcp22.suse.cz>
-References: <1376582550-12548-1-git-send-email-tj@kernel.org>
-	<20131110044811.GA25112@mtj.dyndns.org>
-	<20131111141010.GB14497@dhcp22.suse.cz>
-	<20131122233947.GH8981@mtj.dyndns.org>
+From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: [Announce] Checkpoint-restore tool v1.0
+Date: Mon, 25 Nov 2013 20:32:57 +0400
+Message-ID: <52937BB9.9070703@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20131122233947.GH8981-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,36 +15,33 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: CRIU <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri 22-11-13 18:39:47, Tejun Heo wrote:
-> Hello,
-> 
-> On Mon, Nov 11, 2013 at 03:10:10PM +0100, Michal Hocko wrote:
-> > On Sun 10-11-13 13:48:11, Tejun Heo wrote:
-> > > Hey, guys.
-> > > 
-> > > I'll route this series through the cgroup tree with the acks added
-> > > once v3.13-rc1 drops.
-> > 
-> > Do you have it a local branch which I can merge into mm git tree?
-> 
-> Applied to cgroup/memcg_event which is based on top of v3.12 and then
-> pulled into cgroup/for-3.14.  Both branches are stable.  Please feel
-> free to use any.
+Hi,
 
-Cool! Thanks Tejun.
- 
->  git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git memcg_event
->  git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git for-3.14
-> 
-> Thanks.
-> 
-> -- 
-> tejun
+I'm very proud to announce the first major release of the C/R tool!
 
--- 
-Michal Hocko
-SUSE Labs
+About two months ago the lasts required kernel patch has found its
+way upstream. Since then we have concentrated on the tool itself
+making it work reliably and with as little ugly hacks as possible :)
+
+Right now it looks like the project is not just the "proof of concept"
+thing any more :)
+
+I'd also like to thank again all the people why participated in the
+discussions and development, the community help is the great part of
+what made this release happen!
+
+
+What we have now:
+* sources @ http://download.openvz.org/criu/criu-1.0.tar.bz2
+* full history @ http://git.criu.org/?p=crtools.git
+* docs, plans and more @ http://criu.org/
+* news @ https://plus.google.com/+CriuOrg
+
+
+Have fun and stay tuned!
+
+Thanks,
+Pavel
