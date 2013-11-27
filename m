@@ -1,13 +1,13 @@
-From: Weng Meiling <wengmeiling.weng-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: [stable bug] NFSd NULL pointer trigger kernel panic
-Date: Wed, 27 Nov 2013 15:54:02 +0800
-Message-ID: <5295A51A.7070909__34934.910797938$1385538871$gmane$org@huawei.com>
-References: <52959F5D.4000200@huawei.com>
+From: Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: [stable bug] NFSd NULL pointer trigger kernel panic
+Date: Wed, 27 Nov 2013 12:07:51 +0400
+Message-ID: <5295A857.6080301@parallels.com>
+References: <52959F5D.4000200@huawei.com> <5295A51A.7070909@huawei.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <52959F5D.4000200-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <5295A51A.7070909-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,122 +17,125 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+To: Weng Meiling <wengmeiling.weng-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>, "bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
-Hi guys,
-
-When I try to test NFS in different network namespace with stable-3.4,
-I trigger a kernel panic. When NFSd was started in one non init_net network
-namespace, and stopped in another one. This will trigger kernel panic, because
-RPCBIND client is stored per net, and will be NULL on NFSd shutdown.
-
-The detail steps are:
-
-#ip netns add test
-#ip netns exec test service nfsserver start
-#service nfsserver stop
-
-The main call trace:
-
-[  293.358078] BUG: unable to handle kernel NULL pointer dereference at 0000000000000060
-[  293.358089] IP: [<ffffffffa0446150>] call_start+0x10/0x30 [sunrpc]
-
-[  293.358215] Pid: 5323, comm: nfsd Not tainted 3.4.69-default-stable+
-
-[  293.358321] Call Trace:
-[  293.358336]  [<ffffffffa044f401>] __rpc_execute+0x91/0x160 [sunrpc]
-[  293.358351]  [<ffffffffa044f541>] rpc_execute+0x71/0x80 [sunrpc]
-[  293.358362]  [<ffffffffa04479a9>] rpc_run_task+0x89/0xa0 [sunrpc]
-[  293.358374]  [<ffffffffa0447abd>] rpc_call_sync+0x3d/0x70 [sunrpc]
-[  293.358390]  [<ffffffffa0457bc6>] rpcb_register+0xa6/0xd0 [sunrpc]
-[  293.358406]  [<ffffffffa0452345>] svc_unregister+0x95/0xf0 [sunrpc]
-[  293.358418]  [<ffffffffa04ab8a0>] ? nfsd_last_thread+0x50/0x50 [nfsd]
-[  293.358433]  [<ffffffffa04523b1>] svc_rpcb_cleanup+0x11/0x20 [sunrpc]
-[  293.358442]  [<ffffffffa04ab877>] nfsd_last_thread+0x27/0x50 [nfsd]
-[  293.358457]  [<ffffffffa0452280>] svc_shutdown_net+0x30/0x40 [sunrpc]
-[  293.358466]  [<ffffffffa04ab9ed>] nfsd+0x14d/0x1a0 [nfsd]
-[  293.358475]  [<ffffffffa04ab8a0>] ? nfsd_last_thread+0x50/0x50 [nfsd]
-[  293.358487]  [<ffffffff8106459e>] kthread+0x9e/0xb0
-[  293.358496]  [<ffffffff81465014>] kernel_thread_helper+0x4/0x10
-[  293.358503]  [<ffffffff81064500>] ? kthread_freezable_should_stop+0x70/0x70
-[  293.358509]  [<ffffffff81465010>] ? gs_change+0x13/0x13
-
-Walk through the code, this problem also exists in stable-3.5 to stable-3.7.
-Stanislav Kinsbursky had committed a fixed patch for 3.8:
-commit f7fb86c6e639360ad9c253cec534819ef928a674 (nfsd: use "init_net" for portmapper).
-This patch is suitable for stable-3.4, but it causes another bug, When starting NFSd
-in a non init_net network namespace will trigger kernel panic. Because RPCBIND client
-will be NULL when register RPC service with the local portmapper in svc_addsock(). This
-new bug also exists in 3.8, but disappears after patch commit 11f779421a39b86da8a523d97e5fd3477878d44f
-("containerize NFSd filesystem") in 3.9.
-
-The detail steps are:
-
-#ip netns add test
-#ip netns exec test service nfsserver start
-
-The main call trace:
-
-[  136.877527] BUG: unable to handle kernel NULL pointer dereference at 0000000000000060
-[  136.877538] IP: [<ffffffffa0451150>] call_start+0x10/0x30 [sunrpc]
-
-[  136.877664] Pid: 4854, comm: rpc.nfsd Not tainted 3.4.69-default-stable-nfs-test+
-
-[  136.877769] Call Trace:
-[  136.877785]  [<ffffffffa045a401>] __rpc_execute+0x91/0x160 [sunrpc]
-[  136.877799]  [<ffffffffa045a541>] rpc_execute+0x71/0x80 [sunrpc]
-[  136.877811]  [<ffffffffa04529a9>] rpc_run_task+0x89/0xa0 [sunrpc]
-[  136.877822]  [<ffffffffa0452abd>] rpc_call_sync+0x3d/0x70 [sunrpc]
-[  136.877839]  [<ffffffffa0462bc6>] rpcb_register+0xa6/0xd0 [sunrpc]
-[  136.877854]  [<ffffffffa045ca9e>] __svc_register+0x1ae/0x1c0 [sunrpc]
-[  136.877870]  [<ffffffffa045cb3f>] svc_register+0x8f/0xc0 [sunrpc]
-[  136.877882]  [<ffffffff8114d855>] ? kmem_cache_alloc_trace+0xc5/0x1e0
-[  136.877897]  [<ffffffffa045ec38>] svc_setup_socket+0x1a8/0x2c0 [sunrpc]
-[  136.877907]  [<ffffffff81009546>] ? read_tsc+0x16/0x40
-[  136.877922]  [<ffffffffa045f9b8>] svc_addsock+0x118/0x1c0 [sunrpc]
-[  136.877930]  [<ffffffff8108f225>] ? do_gettimeofday+0x15/0x50
-[  136.877941]  [<ffffffffa04aa69c>] ? nfsd_create_serv+0xdc/0x150 [nfsd]
-[  136.877951]  [<ffffffffa04abdce>] __write_ports+0x1fe/0x230 [nfsd]
-[  136.877961]  [<ffffffffa04abe37>] write_ports+0x37/0x60 [nfsd]
-[  136.877970]  [<ffffffffa04abe00>] ? __write_ports+0x230/0x230 [nfsd]
-[  136.877979]  [<ffffffffa04aadd2>] nfsctl_transaction_write+0x72/0x90 [nfsd]
-[  136.877987]  [<ffffffff8115b4ab>] vfs_write+0xcb/0x130
-[  136.877992]  [<ffffffff8115b600>] sys_write+0x50/0x90
-[  136.878000]  [<ffffffff81463cb9>] system_call_fastpath+0x16/0x1b
-
-
-Here is a way to resolve the problem:
-Maybe we can backport the following patches from 3.8 to cleanup init_net reference:
-
----
-
-Stanislav Kinsbursky (7):
-      nfsd: use "init_net" for portmapper 			commit f7fb86c6e639360ad9c253cec534819ef928a674
-      nfsd: pass net to nfsd_init_socks() 			commit db6e182c17cb1a7069f7f8924721ce58ac05d9a3
-      nfsd: pass net to nfsd_startup() and nfsd_shutdown() 	commit db42d1a76a8dfcaba7a2dc9c591fa4e231db22b3
-      nfsd: pass net to nfsd_create_serv() 			commit 6777436b0f072fb20a025a73e9b67a35ad8a5451
-      nfsd: pass net to nfsd_svc() 				commit d41a9417cd89a69f58a26935034b4264a2d882d6		
-      nfsd: pass net to nfsd_set_nrthreads() 			commit 3938a0d5eb5effcc89c6909741403f4e6a37252d
-      nfsd: pass net to __write_ports() and down 		commit 081603520b25f7b35ef63a363376a17c36ef74ed
-
-
- fs/nfsd/nfsctl.c |   27 +++++++++++++++------------
- fs/nfsd/nfsd.h   |    6 +++---
- fs/nfsd/nfssvc.c |   35 ++++++++++++++---------------------
- 3 files changed, 32 insertions(+), 36 deletions(-)
-
-Stanislav Kinsbursky:
-	nfsd: pass proper net to nfsd_destroy() from NFSd kthreads  commit 88c47666171989ed4c5b1a5687df09511e8c5e35
-
- fs/nfsd/nfssvc.c |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
-
-and then just a simple patch which uses the current->nsproxy->net_ns to repalce the
-init_net to make NFSd keep using a consistent network namespace all the time can
-resolve the problem. Maybe this is not optimal, what do you think about this problem?
-
-The related patches' links:
-http://linux-kernel.2935.n7.nabble.com/PATCH-0-7-nfsd-cleanup-quot-init-net-quot-references-td567366.html
-https://lkml.org/lkml/2012/12/6/161
+MjcuMTEuMjAxMyAxMTo1NCwgV2VuZyBNZWlsaW5nINC/0LjRiNC10YI6Cj4KPiBIaSBndXlzLAo+
+Cj4gV2hlbiBJIHRyeSB0byB0ZXN0IE5GUyBpbiBkaWZmZXJlbnQgbmV0d29yayBuYW1lc3BhY2Ug
+d2l0aCBzdGFibGUtMy40LAo+IEkgdHJpZ2dlciBhIGtlcm5lbCBwYW5pYy4gV2hlbiBORlNkIHdh
+cyBzdGFydGVkIGluIG9uZSBub24gaW5pdF9uZXQgbmV0d29yawo+IG5hbWVzcGFjZSwgYW5kIHN0
+b3BwZWQgaW4gYW5vdGhlciBvbmUuIFRoaXMgd2lsbCB0cmlnZ2VyIGtlcm5lbCBwYW5pYywgYmVj
+YXVzZQo+IFJQQ0JJTkQgY2xpZW50IGlzIHN0b3JlZCBwZXIgbmV0LCBhbmQgd2lsbCBiZSBOVUxM
+IG9uIE5GU2Qgc2h1dGRvd24uCj4KPiBUaGUgZGV0YWlsIHN0ZXBzIGFyZToKPgo+ICNpcCBuZXRu
+cyBhZGQgdGVzdAo+ICNpcCBuZXRucyBleGVjIHRlc3Qgc2VydmljZSBuZnNzZXJ2ZXIgc3RhcnQK
+PiAjc2VydmljZSBuZnNzZXJ2ZXIgc3RvcAo+Cj4gVGhlIG1haW4gY2FsbCB0cmFjZToKPgo+IFsg
+IDI5My4zNTgwNzhdIEJVRzogdW5hYmxlIHRvIGhhbmRsZSBrZXJuZWwgTlVMTCBwb2ludGVyIGRl
+cmVmZXJlbmNlIGF0IDAwMDAwMDAwMDAwMDAwNjAKPiBbICAyOTMuMzU4MDg5XSBJUDogWzxmZmZm
+ZmZmZmEwNDQ2MTUwPl0gY2FsbF9zdGFydCsweDEwLzB4MzAgW3N1bnJwY10KPgo+IFsgIDI5My4z
+NTgyMTVdIFBpZDogNTMyMywgY29tbTogbmZzZCBOb3QgdGFpbnRlZCAzLjQuNjktZGVmYXVsdC1z
+dGFibGUrCj4KPiBbICAyOTMuMzU4MzIxXSBDYWxsIFRyYWNlOgo+IFsgIDI5My4zNTgzMzZdICBb
+PGZmZmZmZmZmYTA0NGY0MDE+XSBfX3JwY19leGVjdXRlKzB4OTEvMHgxNjAgW3N1bnJwY10KPiBb
+ICAyOTMuMzU4MzUxXSAgWzxmZmZmZmZmZmEwNDRmNTQxPl0gcnBjX2V4ZWN1dGUrMHg3MS8weDgw
+IFtzdW5ycGNdCj4gWyAgMjkzLjM1ODM2Ml0gIFs8ZmZmZmZmZmZhMDQ0NzlhOT5dIHJwY19ydW5f
+dGFzaysweDg5LzB4YTAgW3N1bnJwY10KPiBbICAyOTMuMzU4Mzc0XSAgWzxmZmZmZmZmZmEwNDQ3
+YWJkPl0gcnBjX2NhbGxfc3luYysweDNkLzB4NzAgW3N1bnJwY10KPiBbICAyOTMuMzU4MzkwXSAg
+WzxmZmZmZmZmZmEwNDU3YmM2Pl0gcnBjYl9yZWdpc3RlcisweGE2LzB4ZDAgW3N1bnJwY10KPiBb
+ICAyOTMuMzU4NDA2XSAgWzxmZmZmZmZmZmEwNDUyMzQ1Pl0gc3ZjX3VucmVnaXN0ZXIrMHg5NS8w
+eGYwIFtzdW5ycGNdCj4gWyAgMjkzLjM1ODQxOF0gIFs8ZmZmZmZmZmZhMDRhYjhhMD5dID8gbmZz
+ZF9sYXN0X3RocmVhZCsweDUwLzB4NTAgW25mc2RdCj4gWyAgMjkzLjM1ODQzM10gIFs8ZmZmZmZm
+ZmZhMDQ1MjNiMT5dIHN2Y19ycGNiX2NsZWFudXArMHgxMS8weDIwIFtzdW5ycGNdCj4gWyAgMjkz
+LjM1ODQ0Ml0gIFs8ZmZmZmZmZmZhMDRhYjg3Nz5dIG5mc2RfbGFzdF90aHJlYWQrMHgyNy8weDUw
+IFtuZnNkXQo+IFsgIDI5My4zNTg0NTddICBbPGZmZmZmZmZmYTA0NTIyODA+XSBzdmNfc2h1dGRv
+d25fbmV0KzB4MzAvMHg0MCBbc3VucnBjXQo+IFsgIDI5My4zNTg0NjZdICBbPGZmZmZmZmZmYTA0
+YWI5ZWQ+XSBuZnNkKzB4MTRkLzB4MWEwIFtuZnNkXQo+IFsgIDI5My4zNTg0NzVdICBbPGZmZmZm
+ZmZmYTA0YWI4YTA+XSA/IG5mc2RfbGFzdF90aHJlYWQrMHg1MC8weDUwIFtuZnNkXQo+IFsgIDI5
+My4zNTg0ODddICBbPGZmZmZmZmZmODEwNjQ1OWU+XSBrdGhyZWFkKzB4OWUvMHhiMAo+IFsgIDI5
+My4zNTg0OTZdICBbPGZmZmZmZmZmODE0NjUwMTQ+XSBrZXJuZWxfdGhyZWFkX2hlbHBlcisweDQv
+MHgxMAo+IFsgIDI5My4zNTg1MDNdICBbPGZmZmZmZmZmODEwNjQ1MDA+XSA/IGt0aHJlYWRfZnJl
+ZXphYmxlX3Nob3VsZF9zdG9wKzB4NzAvMHg3MAo+IFsgIDI5My4zNTg1MDldICBbPGZmZmZmZmZm
+ODE0NjUwMTA+XSA/IGdzX2NoYW5nZSsweDEzLzB4MTMKPgo+IFdhbGsgdGhyb3VnaCB0aGUgY29k
+ZSwgdGhpcyBwcm9ibGVtIGFsc28gZXhpc3RzIGluIHN0YWJsZS0zLjUgdG8gc3RhYmxlLTMuNy4K
+PiBTdGFuaXNsYXYgS2luc2J1cnNreSBoYWQgY29tbWl0dGVkIGEgZml4ZWQgcGF0Y2ggZm9yIDMu
+ODoKPiBjb21taXQgZjdmYjg2YzZlNjM5MzYwYWQ5YzI1M2NlYzUzNDgxOWVmOTI4YTY3NCAobmZz
+ZDogdXNlICJpbml0X25ldCIgZm9yIHBvcnRtYXBwZXIpLgo+IFRoaXMgcGF0Y2ggaXMgc3VpdGFi
+bGUgZm9yIHN0YWJsZS0zLjQsIGJ1dCBpdCBjYXVzZXMgYW5vdGhlciBidWcsIFdoZW4gc3RhcnRp
+bmcgTkZTZAo+IGluIGEgbm9uIGluaXRfbmV0IG5ldHdvcmsgbmFtZXNwYWNlIHdpbGwgdHJpZ2dl
+ciBrZXJuZWwgcGFuaWMuIEJlY2F1c2UgUlBDQklORCBjbGllbnQKPiB3aWxsIGJlIE5VTEwgd2hl
+biByZWdpc3RlciBSUEMgc2VydmljZSB3aXRoIHRoZSBsb2NhbCBwb3J0bWFwcGVyIGluIHN2Y19h
+ZGRzb2NrKCkuIFRoaXMKPiBuZXcgYnVnIGFsc28gZXhpc3RzIGluIDMuOCwgYnV0IGRpc2FwcGVh
+cnMgYWZ0ZXIgcGF0Y2ggY29tbWl0IDExZjc3OTQyMWEzOWI4NmRhOGE1MjNkOTdlNWZkMzQ3Nzg3
+OGQ0NGYKPiAoImNvbnRhaW5lcml6ZSBORlNkIGZpbGVzeXN0ZW0iKSBpbiAzLjkuCj4KPiBUaGUg
+ZGV0YWlsIHN0ZXBzIGFyZToKPgo+ICNpcCBuZXRucyBhZGQgdGVzdAo+ICNpcCBuZXRucyBleGVj
+IHRlc3Qgc2VydmljZSBuZnNzZXJ2ZXIgc3RhcnQKPgo+IFRoZSBtYWluIGNhbGwgdHJhY2U6Cj4K
+PiBbICAxMzYuODc3NTI3XSBCVUc6IHVuYWJsZSB0byBoYW5kbGUga2VybmVsIE5VTEwgcG9pbnRl
+ciBkZXJlZmVyZW5jZSBhdCAwMDAwMDAwMDAwMDAwMDYwCj4gWyAgMTM2Ljg3NzUzOF0gSVA6IFs8
+ZmZmZmZmZmZhMDQ1MTE1MD5dIGNhbGxfc3RhcnQrMHgxMC8weDMwIFtzdW5ycGNdCj4KPiBbICAx
+MzYuODc3NjY0XSBQaWQ6IDQ4NTQsIGNvbW06IHJwYy5uZnNkIE5vdCB0YWludGVkIDMuNC42OS1k
+ZWZhdWx0LXN0YWJsZS1uZnMtdGVzdCsKPgo+IFsgIDEzNi44Nzc3NjldIENhbGwgVHJhY2U6Cj4g
+WyAgMTM2Ljg3Nzc4NV0gIFs8ZmZmZmZmZmZhMDQ1YTQwMT5dIF9fcnBjX2V4ZWN1dGUrMHg5MS8w
+eDE2MCBbc3VucnBjXQo+IFsgIDEzNi44Nzc3OTldICBbPGZmZmZmZmZmYTA0NWE1NDE+XSBycGNf
+ZXhlY3V0ZSsweDcxLzB4ODAgW3N1bnJwY10KPiBbICAxMzYuODc3ODExXSAgWzxmZmZmZmZmZmEw
+NDUyOWE5Pl0gcnBjX3J1bl90YXNrKzB4ODkvMHhhMCBbc3VucnBjXQo+IFsgIDEzNi44Nzc4MjJd
+ICBbPGZmZmZmZmZmYTA0NTJhYmQ+XSBycGNfY2FsbF9zeW5jKzB4M2QvMHg3MCBbc3VucnBjXQo+
+IFsgIDEzNi44Nzc4MzldICBbPGZmZmZmZmZmYTA0NjJiYzY+XSBycGNiX3JlZ2lzdGVyKzB4YTYv
+MHhkMCBbc3VucnBjXQo+IFsgIDEzNi44Nzc4NTRdICBbPGZmZmZmZmZmYTA0NWNhOWU+XSBfX3N2
+Y19yZWdpc3RlcisweDFhZS8weDFjMCBbc3VucnBjXQo+IFsgIDEzNi44Nzc4NzBdICBbPGZmZmZm
+ZmZmYTA0NWNiM2Y+XSBzdmNfcmVnaXN0ZXIrMHg4Zi8weGMwIFtzdW5ycGNdCj4gWyAgMTM2Ljg3
+Nzg4Ml0gIFs8ZmZmZmZmZmY4MTE0ZDg1NT5dID8ga21lbV9jYWNoZV9hbGxvY190cmFjZSsweGM1
+LzB4MWUwCj4gWyAgMTM2Ljg3Nzg5N10gIFs8ZmZmZmZmZmZhMDQ1ZWMzOD5dIHN2Y19zZXR1cF9z
+b2NrZXQrMHgxYTgvMHgyYzAgW3N1bnJwY10KPiBbICAxMzYuODc3OTA3XSAgWzxmZmZmZmZmZjgx
+MDA5NTQ2Pl0gPyByZWFkX3RzYysweDE2LzB4NDAKPiBbICAxMzYuODc3OTIyXSAgWzxmZmZmZmZm
+ZmEwNDVmOWI4Pl0gc3ZjX2FkZHNvY2srMHgxMTgvMHgxYzAgW3N1bnJwY10KPiBbICAxMzYuODc3
+OTMwXSAgWzxmZmZmZmZmZjgxMDhmMjI1Pl0gPyBkb19nZXR0aW1lb2ZkYXkrMHgxNS8weDUwCj4g
+WyAgMTM2Ljg3Nzk0MV0gIFs8ZmZmZmZmZmZhMDRhYTY5Yz5dID8gbmZzZF9jcmVhdGVfc2Vydisw
+eGRjLzB4MTUwIFtuZnNkXQo+IFsgIDEzNi44Nzc5NTFdICBbPGZmZmZmZmZmYTA0YWJkY2U+XSBf
+X3dyaXRlX3BvcnRzKzB4MWZlLzB4MjMwIFtuZnNkXQo+IFsgIDEzNi44Nzc5NjFdICBbPGZmZmZm
+ZmZmYTA0YWJlMzc+XSB3cml0ZV9wb3J0cysweDM3LzB4NjAgW25mc2RdCj4gWyAgMTM2Ljg3Nzk3
+MF0gIFs8ZmZmZmZmZmZhMDRhYmUwMD5dID8gX193cml0ZV9wb3J0cysweDIzMC8weDIzMCBbbmZz
+ZF0KPiBbICAxMzYuODc3OTc5XSAgWzxmZmZmZmZmZmEwNGFhZGQyPl0gbmZzY3RsX3RyYW5zYWN0
+aW9uX3dyaXRlKzB4NzIvMHg5MCBbbmZzZF0KPiBbICAxMzYuODc3OTg3XSAgWzxmZmZmZmZmZjgx
+MTViNGFiPl0gdmZzX3dyaXRlKzB4Y2IvMHgxMzAKPiBbICAxMzYuODc3OTkyXSAgWzxmZmZmZmZm
+ZjgxMTViNjAwPl0gc3lzX3dyaXRlKzB4NTAvMHg5MAo+IFsgIDEzNi44NzgwMDBdICBbPGZmZmZm
+ZmZmODE0NjNjYjk+XSBzeXN0ZW1fY2FsbF9mYXN0cGF0aCsweDE2LzB4MWIKPgo+Cj4gSGVyZSBp
+cyBhIHdheSB0byByZXNvbHZlIHRoZSBwcm9ibGVtOgo+IE1heWJlIHdlIGNhbiBiYWNrcG9ydCB0
+aGUgZm9sbG93aW5nIHBhdGNoZXMgZnJvbSAzLjggdG8gY2xlYW51cCBpbml0X25ldCByZWZlcmVu
+Y2U6Cj4KPiAtLS0KPgo+IFN0YW5pc2xhdiBLaW5zYnVyc2t5ICg3KToKPiAgICAgICAgbmZzZDog
+dXNlICJpbml0X25ldCIgZm9yIHBvcnRtYXBwZXIgCQkJY29tbWl0IGY3ZmI4NmM2ZTYzOTM2MGFk
+OWMyNTNjZWM1MzQ4MTllZjkyOGE2NzQKPiAgICAgICAgbmZzZDogcGFzcyBuZXQgdG8gbmZzZF9p
+bml0X3NvY2tzKCkgCQkJY29tbWl0IGRiNmUxODJjMTdjYjFhNzA2OWY3Zjg5MjQ3MjFjZTU4YWMw
+NWQ5YTMKPiAgICAgICAgbmZzZDogcGFzcyBuZXQgdG8gbmZzZF9zdGFydHVwKCkgYW5kIG5mc2Rf
+c2h1dGRvd24oKSAJY29tbWl0IGRiNDJkMWE3NmE4ZGZjYWJhN2EyZGM5YzU5MWZhNGUyMzFkYjIy
+YjMKPiAgICAgICAgbmZzZDogcGFzcyBuZXQgdG8gbmZzZF9jcmVhdGVfc2VydigpIAkJCWNvbW1p
+dCA2Nzc3NDM2YjBmMDcyZmIyMGEwMjVhNzNlOWI2N2EzNWFkOGE1NDUxCj4gICAgICAgIG5mc2Q6
+IHBhc3MgbmV0IHRvIG5mc2Rfc3ZjKCkgCQkJCWNvbW1pdCBkNDFhOTQxN2NkODlhNjlmNThhMjY5
+MzUwMzRiNDI2NGEyZDg4MmQ2CQkKPiAgICAgICAgbmZzZDogcGFzcyBuZXQgdG8gbmZzZF9zZXRf
+bnJ0aHJlYWRzKCkgCQkJY29tbWl0IDM5MzhhMGQ1ZWI1ZWZmY2M4OWM2OTA5NzQxNDAzZjRlNmEz
+NzI1MmQKPiAgICAgICAgbmZzZDogcGFzcyBuZXQgdG8gX193cml0ZV9wb3J0cygpIGFuZCBkb3du
+IAkJY29tbWl0IDA4MTYwMzUyMGIyNWY3YjM1ZWY2M2EzNjMzNzZhMTdjMzZlZjc0ZWQKPgo+Cj4g
+ICBmcy9uZnNkL25mc2N0bC5jIHwgICAyNyArKysrKysrKysrKysrKystLS0tLS0tLS0tLS0KPiAg
+IGZzL25mc2QvbmZzZC5oICAgfCAgICA2ICsrKy0tLQo+ICAgZnMvbmZzZC9uZnNzdmMuYyB8ICAg
+MzUgKysrKysrKysrKysrKystLS0tLS0tLS0tLS0tLS0tLS0tLS0KPiAgIDMgZmlsZXMgY2hhbmdl
+ZCwgMzIgaW5zZXJ0aW9ucygrKSwgMzYgZGVsZXRpb25zKC0pCj4KPiBTdGFuaXNsYXYgS2luc2J1
+cnNreToKPiAJbmZzZDogcGFzcyBwcm9wZXIgbmV0IHRvIG5mc2RfZGVzdHJveSgpIGZyb20gTkZT
+ZCBrdGhyZWFkcyAgY29tbWl0IDg4YzQ3NjY2MTcxOTg5ZWQ0YzViMWE1Njg3ZGYwOTUxMWU4YzVl
+MzUKPgo+ICAgZnMvbmZzZC9uZnNzdmMuYyB8ICAgIDQgKysrLQo+ICAgMSBmaWxlcyBjaGFuZ2Vk
+LCAzIGluc2VydGlvbnMoKyksIDEgZGVsZXRpb25zKC0pCj4KPiBhbmQgdGhlbiBqdXN0IGEgc2lt
+cGxlIHBhdGNoIHdoaWNoIHVzZXMgdGhlIGN1cnJlbnQtPm5zcHJveHktPm5ldF9ucyB0byByZXBh
+bGNlIHRoZQo+IGluaXRfbmV0IHRvIG1ha2UgTkZTZCBrZWVwIHVzaW5nIGEgY29uc2lzdGVudCBu
+ZXR3b3JrIG5hbWVzcGFjZSBhbGwgdGhlIHRpbWUgY2FuCj4gcmVzb2x2ZSB0aGUgcHJvYmxlbS4g
+TWF5YmUgdGhpcyBpcyBub3Qgb3B0aW1hbCwgd2hhdCBkbyB5b3UgdGhpbmsgYWJvdXQgdGhpcyBw
+cm9ibGVtPwo+CgpHcmVhdCBpbnZlc3RpZ2F0aW9uISBUaGFua3MuCkkgdGhpbmsgaXQncyB1cCB0
+byBCcnVjZSAoY2MnZCkgd2hhdCBpcyBiZXR0ZXI6IGJhY2twb3J0IG9yIHNpbXBsZSBmaXgsIHdo
+aWNoIGp1c3QgZm9yYmlkcwpORlNkIHN0YXJ0IGluIG5vbi1pbml0IG5ldHdvcmsgbmFtZXNwYWNl
+IGZvciBrZXJuZWxzLCBwcmlvciB0byAzLjkuCgo+IFRoZSByZWxhdGVkIHBhdGNoZXMnIGxpbmtz
+Ogo+IGh0dHA6Ly9saW51eC1rZXJuZWwuMjkzNS5uNy5uYWJibGUuY29tL1BBVENILTAtNy1uZnNk
+LWNsZWFudXAtcXVvdC1pbml0LW5ldC1xdW90LXJlZmVyZW5jZXMtdGQ1NjczNjYuaHRtbAo+IGh0
+dHBzOi8vbGttbC5vcmcvbGttbC8yMDEyLzEyLzYvMTYxCj4KPgo+Cj4KPgo+IC0tCj4gVG8gdW5z
+dWJzY3JpYmUgZnJvbSB0aGlzIGxpc3Q6IHNlbmQgdGhlIGxpbmUgInVuc3Vic2NyaWJlIGxpbnV4
+LW5mcyIgaW4KPiB0aGUgYm9keSBvZiBhIG1lc3NhZ2UgdG8gbWFqb3Jkb21vQHZnZXIua2VybmVs
+Lm9yZwo+IE1vcmUgbWFqb3Jkb21vIGluZm8gYXQgIGh0dHA6Ly92Z2VyLmtlcm5lbC5vcmcvbWFq
+b3Jkb21vLWluZm8uaHRtbAo+CgoKLS0gCkJlc3QgcmVnYXJkcywKU3RhbmlzbGF2IEtpbnNidXJz
+a3kKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFp
+bmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpo
+dHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWlu
+ZXJz
