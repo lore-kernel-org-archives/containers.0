@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 04/12] netprio_cgroup: convert away from cftype->read_map()
-Date: Wed, 27 Nov 2013 18:42:31 -0500
-Message-ID: <1385595759-17656-5-git-send-email-tj__42111.004345543$1385595799$gmane$org@kernel.org>
+Subject: [PATCH 05/12] hugetlb_cgroup: convert away from cftype->read()
+Date: Wed, 27 Nov 2013 18:42:32 -0500
+Message-ID: <1385595759-17656-6-git-send-email-tj__35495.4795017422$1385595804$gmane$org@kernel.org>
 References: <1385595759-17656-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,54 +18,91 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
-Cc: nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org, "Aneesh Kumar K.V" <aneesh.kumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 In preparation of conversion to kernfs, cgroup file handling is being
 consolidated so that it can be easily mapped to the seq_file based
 interface of kernfs.
 
-cftype->read_map() doesn't add any value and being replaced with
-->read_seq_string().  Update read_priomap() to use ->read_seq_string()
-instead.
+All users of cftype->read() can be easily served, usually better, by
+seq_file and other methods.  Update hugetlb_cgroup_read() to return
+u64 instead of printing itself and rename it to
+hugetlb_cgroup_read_u64().
 
 This patch doesn't make any visible behavior changes.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>
-Cc: Daniel Wagner <daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org>
+Cc: Aneesh Kumar K.V <aneesh.kumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
+Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
 ---
- net/core/netprio_cgroup.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ mm/hugetlb_cgroup.c | 22 ++++++++--------------
+ 1 file changed, 8 insertions(+), 14 deletions(-)
 
-diff --git a/net/core/netprio_cgroup.c b/net/core/netprio_cgroup.c
-index 9b7cf6c..498710d 100644
---- a/net/core/netprio_cgroup.c
-+++ b/net/core/netprio_cgroup.c
-@@ -174,13 +174,13 @@ static u64 read_prioidx(struct cgroup_subsys_state *css, struct cftype *cft)
+diff --git a/mm/hugetlb_cgroup.c b/mm/hugetlb_cgroup.c
+index bda8e44..d747a84 100644
+--- a/mm/hugetlb_cgroup.c
++++ b/mm/hugetlb_cgroup.c
+@@ -242,22 +242,16 @@ void hugetlb_cgroup_uncharge_cgroup(int idx, unsigned long nr_pages,
+ 	return;
  }
  
- static int read_priomap(struct cgroup_subsys_state *css, struct cftype *cft,
--			struct cgroup_map_cb *cb)
-+			struct seq_file *sf)
+-static ssize_t hugetlb_cgroup_read(struct cgroup_subsys_state *css,
+-				   struct cftype *cft, struct file *file,
+-				   char __user *buf, size_t nbytes,
+-				   loff_t *ppos)
++static u64 hugetlb_cgroup_read_u64(struct cgroup_subsys_state *css,
++				   struct cftype *cft)
  {
- 	struct net_device *dev;
+-	u64 val;
+-	char str[64];
+-	int idx, name, len;
++	int idx, name;
+ 	struct hugetlb_cgroup *h_cg = hugetlb_cgroup_from_css(css);
  
- 	rcu_read_lock();
- 	for_each_netdev_rcu(&init_net, dev)
--		cb->fill(cb, dev->name, netprio_prio(css, dev));
-+		seq_printf(sf, "%s %u\n", dev->name, netprio_prio(css, dev));
- 	rcu_read_unlock();
- 	return 0;
+ 	idx = MEMFILE_IDX(cft->private);
+ 	name = MEMFILE_ATTR(cft->private);
+ 
+-	val = res_counter_read_u64(&h_cg->hugepage[idx], name);
+-	len = scnprintf(str, sizeof(str), "%llu\n", (unsigned long long)val);
+-	return simple_read_from_buffer(buf, nbytes, ppos, str, len);
++	return res_counter_read_u64(&h_cg->hugepage[idx], name);
  }
-@@ -238,7 +238,7 @@ static struct cftype ss_files[] = {
- 	},
- 	{
- 		.name = "ifpriomap",
--		.read_map = read_priomap,
-+		.read_seq_string = read_priomap,
- 		.write_string = write_priomap,
- 	},
- 	{ }	/* terminate */
+ 
+ static int hugetlb_cgroup_write(struct cgroup_subsys_state *css,
+@@ -337,28 +331,28 @@ static void __init __hugetlb_cgroup_file_init(int idx)
+ 	cft = &h->cgroup_files[0];
+ 	snprintf(cft->name, MAX_CFTYPE_NAME, "%s.limit_in_bytes", buf);
+ 	cft->private = MEMFILE_PRIVATE(idx, RES_LIMIT);
+-	cft->read = hugetlb_cgroup_read;
++	cft->read_u64 = hugetlb_cgroup_read_u64;
+ 	cft->write_string = hugetlb_cgroup_write;
+ 
+ 	/* Add the usage file */
+ 	cft = &h->cgroup_files[1];
+ 	snprintf(cft->name, MAX_CFTYPE_NAME, "%s.usage_in_bytes", buf);
+ 	cft->private = MEMFILE_PRIVATE(idx, RES_USAGE);
+-	cft->read = hugetlb_cgroup_read;
++	cft->read_u64 = hugetlb_cgroup_read_u64;
+ 
+ 	/* Add the MAX usage file */
+ 	cft = &h->cgroup_files[2];
+ 	snprintf(cft->name, MAX_CFTYPE_NAME, "%s.max_usage_in_bytes", buf);
+ 	cft->private = MEMFILE_PRIVATE(idx, RES_MAX_USAGE);
+ 	cft->trigger = hugetlb_cgroup_reset;
+-	cft->read = hugetlb_cgroup_read;
++	cft->read_u64 = hugetlb_cgroup_read_u64;
+ 
+ 	/* Add the failcntfile */
+ 	cft = &h->cgroup_files[3];
+ 	snprintf(cft->name, MAX_CFTYPE_NAME, "%s.failcnt", buf);
+ 	cft->private  = MEMFILE_PRIVATE(idx, RES_FAILCNT);
+ 	cft->trigger  = hugetlb_cgroup_reset;
+-	cft->read = hugetlb_cgroup_read;
++	cft->read_u64 = hugetlb_cgroup_read_u64;
+ 
+ 	/* NULL terminate the last cft */
+ 	cft = &h->cgroup_files[4];
 -- 
 1.8.4.2
