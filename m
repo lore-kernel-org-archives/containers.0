@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 08/12] cgroup: unify read path so that seq_file is always used
-Date: Wed, 27 Nov 2013 18:42:35 -0500
-Message-ID: <1385595759-17656-9-git-send-email-tj__24317.2023598619$1385595827$gmane$org@kernel.org>
+Subject: [PATCH 10/12] cgroup: attach cgroup_open_file to all cgroup files
+Date: Wed, 27 Nov 2013 18:42:37 -0500
+Message-ID: <1385595759-17656-11-git-send-email-tj__2980.54743693701$1385595839$gmane$org@kernel.org>
 References: <1385595759-17656-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,139 +21,189 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org, mhocko-AlSwsSmVLrQ@public.gmane.org, mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-With the recent removal of cftype->read() and ->read_map(), only three
-operations are remaining, ->read_u64(), ->read_s64() and
-->read_seq_string().  Currently, the first two are handled directly
-while the last is handled through seq_file.
+In preparation of conversion to kernfs, cgroup file handling is
+updated so that it can be easily mapped to kernfs.  This patch
+attaches cgroup_open_file, which used to be attached to pidlist files,
+to all cgroup files, introduces seq_css/cft() accessors to determine
+the cgroup_subsys_state and cftype associated with a given cgroup
+seq_file, exports them as public interface.
 
-It is trivial to serve the first two through the seq_file path too.
-This patch restructures read path so that all operations are served
-through cgroup_seqfile_show().  This makes all cgroup files seq_file -
-single_open/release() are now used by default,
-cgroup_seqfile_operations is dropped, and cgroup_file_operations uses
-seq_read() for read.
-
-This simplifies the code and makes the read path easy to convert to
-use kernfs.
-
-Note that, while cgroup_file_operations uses seq_read() for read, it
-still uses generic_file_llseek() for seeking instead of seq_lseek().
-This is different from cgroup_seqfile_operations but shouldn't break
-anything and brings the seeking behavior aligned with kernfs.
+This doesn't cause any behavior changes but unifies cgroup file
+handling across different file types and will help converting them to
+kernfs seq_show() interface.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 68 +++++++++++++--------------------------------------------
- 1 file changed, 15 insertions(+), 53 deletions(-)
+ include/linux/cgroup.h | 33 +++++++++++++++++++++++++++++++++
+ kernel/cgroup.c        | 47 +++++++++++++++++------------------------------
+ 2 files changed, 50 insertions(+), 30 deletions(-)
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 23abe8e..7048e7f 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -2295,42 +2295,6 @@ out_free:
- 	return ret ?: nbytes;
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 53e11da..c3d698a 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -21,6 +21,7 @@
+ #include <linux/xattr.h>
+ #include <linux/fs.h>
+ #include <linux/percpu-refcount.h>
++#include <linux/seq_file.h>
+ 
+ #ifdef CONFIG_CGROUPS
+ 
+@@ -490,6 +491,26 @@ struct cftype_set {
+ };
+ 
+ /*
++ * cgroupfs file entry, pointed to from leaf dentry->d_fsdata.  Don't
++ * access directly.
++ */
++struct cfent {
++	struct list_head		node;
++	struct dentry			*dentry;
++	struct cftype			*type;
++	struct cgroup_subsys_state	*css;
++
++	/* file xattrs */
++	struct simple_xattrs		xattrs;
++};
++
++/* seq_file->private points to the following, only ->priv is public */
++struct cgroup_open_file {
++	struct cfent			*cfe;
++	void				*priv;
++};
++
++/*
+  * See the comment above CGRP_ROOT_SANE_BEHAVIOR for details.  This
+  * function can be called as long as @cgrp is accessible.
+  */
+@@ -504,6 +525,18 @@ static inline const char *cgroup_name(const struct cgroup *cgrp)
+ 	return rcu_dereference(cgrp->name)->name;
  }
  
--static ssize_t cgroup_read_u64(struct cgroup_subsys_state *css,
--			       struct cftype *cft, struct file *file,
--			       char __user *buf, size_t nbytes, loff_t *ppos)
--{
--	char tmp[CGROUP_LOCAL_BUFFER_SIZE];
--	u64 val = cft->read_u64(css, cft);
--	int len = sprintf(tmp, "%llu\n", (unsigned long long) val);
--
--	return simple_read_from_buffer(buf, nbytes, ppos, tmp, len);
--}
--
--static ssize_t cgroup_read_s64(struct cgroup_subsys_state *css,
--			       struct cftype *cft, struct file *file,
--			       char __user *buf, size_t nbytes, loff_t *ppos)
--{
--	char tmp[CGROUP_LOCAL_BUFFER_SIZE];
--	s64 val = cft->read_s64(css, cft);
--	int len = sprintf(tmp, "%lld\n", (long long) val);
--
--	return simple_read_from_buffer(buf, nbytes, ppos, tmp, len);
--}
--
--static ssize_t cgroup_file_read(struct file *file, char __user *buf,
--				size_t nbytes, loff_t *ppos)
--{
--	struct cfent *cfe = __d_cfe(file->f_dentry);
--	struct cftype *cft = __d_cft(file->f_dentry);
--	struct cgroup_subsys_state *css = cfe->css;
--
--	if (cft->read_u64)
--		return cgroup_read_u64(css, cft, file, buf, nbytes, ppos);
--	if (cft->read_s64)
--		return cgroup_read_s64(css, cft, file, buf, nbytes, ppos);
--	return -EINVAL;
--}
--
- /*
-  * seqfile ops/methods for returning structured data. Currently just
-  * supports string->u64 maps, but can be extended in future.
-@@ -2342,15 +2306,17 @@ static int cgroup_seqfile_show(struct seq_file *m, void *arg)
- 	struct cftype *cft = cfe->type;
- 	struct cgroup_subsys_state *css = cfe->css;
- 
--	return cft->read_seq_string(css, cft, m);
--}
-+	if (cft->read_seq_string)
-+		return cft->read_seq_string(css, cft, m);
- 
--static const struct file_operations cgroup_seqfile_operations = {
--	.read = seq_read,
--	.write = cgroup_file_write,
--	.llseek = seq_lseek,
--	.release = cgroup_file_release,
--};
-+	if (cft->read_u64)
-+		seq_printf(m, "%llu\n", cft->read_u64(css, cft));
-+	else if (cft->read_s64)
-+		seq_printf(m, "%lld\n", cft->read_s64(css, cft));
-+	else
-+		return -EINVAL;
-+	return 0;
++static inline struct cgroup_subsys_state *seq_css(struct seq_file *seq)
++{
++	struct cgroup_open_file *of = seq->private;
++	return of->cfe->css;
 +}
++
++static inline struct cftype *seq_cft(struct seq_file *seq)
++{
++	struct cgroup_open_file *of = seq->private;
++	return of->cfe->type;
++}
++
+ int cgroup_add_cftypes(struct cgroup_subsys *ss, struct cftype *cfts);
+ int cgroup_rm_cftypes(struct cftype *cfts);
  
- static int cgroup_file_open(struct inode *inode, struct file *file)
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index bdb8e8d..1189de7 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -41,7 +41,6 @@
+ #include <linux/rcupdate.h>
+ #include <linux/sched.h>
+ #include <linux/backing-dev.h>
+-#include <linux/seq_file.h>
+ #include <linux/slab.h>
+ #include <linux/magic.h>
+ #include <linux/spinlock.h>
+@@ -130,19 +129,6 @@ static struct cgroupfs_root cgroup_dummy_root;
+ /* dummy_top is a shorthand for the dummy hierarchy's top cgroup */
+ static struct cgroup * const cgroup_dummy_top = &cgroup_dummy_root.top_cgroup;
+ 
+-/*
+- * cgroupfs file entry, pointed to from leaf dentry->d_fsdata.
+- */
+-struct cfent {
+-	struct list_head		node;
+-	struct dentry			*dentry;
+-	struct cftype			*type;
+-	struct cgroup_subsys_state	*css;
+-
+-	/* file xattrs */
+-	struct simple_xattrs		xattrs;
+-};
+-
+ /* The list of hierarchy roots */
+ 
+ static LIST_HEAD(cgroup_roots);
+@@ -2302,9 +2288,8 @@ out_free:
+ 
+ static int cgroup_seqfile_show(struct seq_file *m, void *arg)
  {
-@@ -2387,12 +2353,10 @@ static int cgroup_file_open(struct inode *inode, struct file *file)
+-	struct cfent *cfe = m->private;
+-	struct cftype *cft = cfe->type;
+-	struct cgroup_subsys_state *css = cfe->css;
++	struct cftype *cft = seq_cft(m);
++	struct cgroup_subsys_state *css = seq_css(m);
+ 
+ 	if (cft->read_seq_string)
+ 		return cft->read_seq_string(css, cft, m);
+@@ -2353,10 +2338,18 @@ static int cgroup_file_open(struct inode *inode, struct file *file)
  	WARN_ON_ONCE(cfe->css && cfe->css != css);
  	cfe->css = css;
  
--	if (cft->read_seq_string) {
--		file->f_op = &cgroup_seqfile_operations;
--		err = single_open(file, cgroup_seqfile_show, cfe);
--	} else if (cft->open) {
-+	if (cft->open)
+-	if (cft->open)
++	if (cft->open) {
  		err = cft->open(inode, file);
--	}
-+	else
-+		err = single_open(file, cgroup_seqfile_show, cfe);
+-	else
+-		err = single_open(file, cgroup_seqfile_show, cfe);
++	} else {
++		err = single_open_size(file, cgroup_seqfile_show, cfe,
++				       sizeof(struct cgroup_open_file));
++		if (!err) {
++			struct seq_file *sf = file->private_data;
++			struct cgroup_open_file *of = sf->private;
++
++			of->cfe = cfe;
++		}
++	}
  
  	if (css->ss && err)
  		css_put(css);
-@@ -2406,9 +2370,7 @@ static int cgroup_file_release(struct inode *inode, struct file *file)
+@@ -3368,12 +3361,6 @@ struct cgroup_pidlist {
+ 	struct delayed_work destroy_dwork;
+ };
  
- 	if (css->ss)
- 		css_put(css);
--	if (file->f_op == &cgroup_seqfile_operations)
--		single_release(inode, file);
--	return 0;
-+	return single_release(inode, file);
- }
- 
+-/* seq_file->private points to the following */
+-struct cgroup_open_file {
+-	struct cfent			*cfe;
+-	void				*priv;
+-};
+-
  /*
-@@ -2519,7 +2481,7 @@ static ssize_t cgroup_listxattr(struct dentry *dentry, char *buf, size_t size)
+  * The following two functions "fix" the issue where there are more pids
+  * than kmalloc will give memory for; in such cases, we use vmalloc/vfree.
+@@ -3689,9 +3676,9 @@ static void *cgroup_pidlist_start(struct seq_file *s, loff_t *pos)
+ 	 * next pid to display, if any
+ 	 */
+ 	struct cgroup_open_file *of = s->private;
+-	struct cgroup *cgrp = of->cfe->css->cgroup;
++	struct cgroup *cgrp = seq_css(s)->cgroup;
+ 	struct cgroup_pidlist *l;
+-	enum cgroup_filetype type = of->cfe->type->private;
++	enum cgroup_filetype type = seq_cft(s)->private;
+ 	int index = 0, pid = *pos;
+ 	int *iter, ret;
+ 
+@@ -3749,7 +3736,7 @@ static void cgroup_pidlist_stop(struct seq_file *s, void *v)
+ 	if (l)
+ 		mod_delayed_work(cgroup_pidlist_destroy_wq, &l->destroy_dwork,
+ 				 CGROUP_PIDLIST_DESTROY_DELAY);
+-	mutex_unlock(&of->cfe->css->cgroup->pidlist_mutex);
++	mutex_unlock(&seq_css(s)->cgroup->pidlist_mutex);
  }
  
- static const struct file_operations cgroup_file_operations = {
--	.read = cgroup_file_read,
-+	.read = seq_read,
- 	.write = cgroup_file_write,
- 	.llseek = generic_file_llseek,
- 	.open = cgroup_file_open,
+ static void *cgroup_pidlist_next(struct seq_file *s, void *v, loff_t *pos)
+@@ -3766,7 +3753,7 @@ static void *cgroup_pidlist_next(struct seq_file *s, void *v, loff_t *pos)
+ 	if (p >= end) {
+ 		return NULL;
+ 	} else {
+-		*pos = cgroup_pid_fry(of->cfe->css->cgroup, *p);
++		*pos = cgroup_pid_fry(seq_css(s)->cgroup, *p);
+ 		return p;
+ 	}
+ }
 -- 
 1.8.4.2
