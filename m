@@ -1,7 +1,7 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [REVIEW][PATCH 1/3] vfs: In d_path don't call d_dname on a mount point
-Date: Tue, 26 Nov 2013 16:16:13 -0800
-Message-ID: <8738mi1yya.fsf_-_@xmission.com>
+Subject: [REVIEW][PATCH 2/3] fork: Allow CLONE_PARENT after setns(CLONE_NEWPID)
+Date: Tue, 26 Nov 2013 16:16:57 -0800
+Message-ID: <87vbzezojq.fsf_-_@xmission.com>
 References: <20131115164123.GN28794@redhat.com>
 	<20131116164840.GA4441@mail.hallyn.com>
 	<20131117030653.GA7670@mail.hallyn.com>
@@ -31,61 +31,70 @@ Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Containers
 List-Id: containers.vger.kernel.org
 
 
-Aditya Kali (adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org) wrote:
-> Commit bf056bfa80596a5d14b26b17276a56a0dcb080e5:
-> "proc: Fix the namespace inode permission checks." converted
-> the namespace files into symlinks. The same commit changed
-> the way namespace bind mounts appear in /proc/mounts:
->   $ mount --bind /proc/self/ns/ipc /mnt/ipc
-> Originally:
->   $ cat /proc/mounts | grep ipc
->   proc /mnt/ipc proc rw,nosuid,nodev,noexec 0 0
+Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> writes:
+> Hi Oleg,
 >
-> After commit bf056bfa80596a5d14b26b17276a56a0dcb080e5:
->   $ cat /proc/mounts | grep ipc
->   proc ipc:[4026531839] proc rw,nosuid,nodev,noexec 0 0
+> commit 40a0d32d1eaffe6aac7324ca92604b6b3977eb0e :
+> "fork: unify and tighten up CLONE_NEWUSER/CLONE_NEWPID checks"
+> breaks lxc-attach in 3.12.  That code forks a child which does
+> setns() and then does a clone(CLONE_PARENT).  That way the
+> grandchild can be in the right namespaces (which the child was
+> not) and be a child of the original task, which is the monitor.
 >
-> This breaks userspace which expects the 2nd field in
-> /proc/mounts to be a valid path.
+> lxc-attach in 3.11 was working fine with no side effects that I
+> could see.  Is there a real danger in allowing CLONE_PARENT
+> when current->nsproxy->pidns_for_children is not our pidns,
+> or was this done out of an "over-abundance of caution"?  Can we
+> safely revert that new extra check?
 
-The symlink /proc/<pid>/ns/{ipc,mnt,net,pid,user,uts} point to
-dentries allocated with d_alloc_pseudo that we can mount, and
-that have interesting names printed out with d_dname.
+The two fundamental things I know we can not allow are:
+- A shared signal queue aka CLONE_THREAD.  Because we compute the pid
+  and uid of the signal when we place it in the queue.
 
-When these files are bind mounted /proc/mounts is not currently
-displaying the mount point correctly because d_dname is called instead
-of just displaying the path where the file is mounted.
+- Changing the pid and by extention pid_namespace of an existing
+  process.
 
-Solve this by adding an explicit check to distinguish mounted pseudo
-inodes and unmounted pseudo inodes.  Unmounted pseudo inodes always
-use mount of their filesstem as the mnt_root  in their path making
-these two cases easy to distinguish.
+From a parents perspective there is nothing special about the pid
+namespace, to deny CLONE_PARENT, because the parent simply won't know or
+care.
 
-CC: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Reported-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+From the childs perspective all that is special really are shared signal
+queues.
+
+User mode threading with CLONE_PARENT|CLONE_VM|CLONE_SIGHAND and tasks
+in different pid namespaces is almost certainly going to break because
+it is complicated.  But shared signal handlers can look at per thread
+information to know which pid namespace a process is in, so I don't know
+of any reason not to support CLONE_PARENT|CLONE_VM|CLONE_SIGHAND threads
+at the kernel level.  It would be absolutely stupid to implement but
+that is a different thing.
+
+So hmm.
+
+Because it can do no harm, and because it is a regression let's remove
+the CLONE_PARENT check and send it stable.
+
+Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Acked-by: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Acked-by: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Acked-by: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/dcache.c |    7 ++++++-
- 1 files changed, 6 insertions(+), 1 deletions(-)
+ kernel/fork.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/fs/dcache.c b/fs/dcache.c
-index 4bdb300b16e2..f7282ebf1a37 100644
---- a/fs/dcache.c
-+++ b/fs/dcache.c
-@@ -3061,8 +3061,13 @@ char *d_path(const struct path *path, char *buf, int buflen)
- 	 * thus don't need to be hashed.  They also don't need a name until a
- 	 * user wants to identify the object in /proc/pid/fd/.  The little hack
- 	 * below allows us to generate a name for these objects on demand:
-+	 *
-+	 * Some pseudo inodes are mountable.  When they are mounted
-+	 * path->dentry == path->mnt->mnt_root.  In that case don't call d_dname
-+	 * and instead have d_path return the mounted path.
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 728d5be9548c..f82fa2ee7581 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -1171,7 +1171,7 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 	 * do not allow it to share a thread group or signal handlers or
+ 	 * parent with the forking task.
  	 */
--	if (path->dentry->d_op && path->dentry->d_op->d_dname)
-+	if (path->dentry->d_op && path->dentry->d_op->d_dname &&
-+	    (!IS_ROOT(path->dentry) || path->dentry != path->mnt->mnt_root))
- 		return path->dentry->d_op->d_dname(path->dentry, buf, buflen);
- 
- 	rcu_read_lock();
+-	if (clone_flags & (CLONE_SIGHAND | CLONE_PARENT)) {
++	if (clone_flags & CLONE_SIGHAND) {
+ 		if ((clone_flags & (CLONE_NEWUSER | CLONE_NEWPID)) ||
+ 		    (task_active_pid_ns(current) !=
+ 				current->nsproxy->pid_ns_for_children))
 -- 
 1.7.5.4
