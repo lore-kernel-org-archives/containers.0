@@ -1,21 +1,17 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: [REVIEW][PATCH 3/3] vfs: Fix a regression in mounting proc
-Date: Wed, 27 Nov 2013 08:41:31 -0800
-Message-ID: <CALCETrXFnw63=JoEaQxM+Opj+kCXSL=9XppymzGKhLzOnp3WaQ@mail.gmail.com>
-References: <20131116164840.GA4441@mail.hallyn.com>
-	<20131117030653.GA7670@mail.hallyn.com>
-	<20131118031932.GA17621@mail.hallyn.com>
-	<52899D09.5080202@cn.fujitsu.com>
-	<20131118140830.GA22075@mail.hallyn.com>
-	<20131118180134.GA24156@mail.hallyn.com>
-	<87k3g5gnuv.fsf@xmission.com> <20131126181043.GA25492@mail.hallyn.com>
-	<87siui1z1g.fsf_-_@xmission.com> <87pppmzoin.fsf_-_@xmission.com>
-	<20131127161300.GA24773@redhat.com>
+From: Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>
+Subject: Re: userns idea: preventing SCM_CREDENTIALS from leaking out
+Date: Wed, 27 Nov 2013 17:56:42 +0100
+Message-ID: <CAJfpeguHPFcX07bM=+3JJrV1kanDxp5wZWj4jBo-+1EMceonqg@mail.gmail.com>
+References: <CALCETrWWSVnwg6Sb=bZz0xuAj_ASjZmsLYy=ELoR_uSqKJJaWg@mail.gmail.com>
+	<20131127014920.GA31364@mail.hallyn.com>
+	<87eh62v8hc.fsf@xmission.com>
+	<20131127144431.GA6122@mail.hallyn.com>
+	<CALCETrVXKHO4=Q+0szERmte+5HYJMwVXnXJxLTdBThmoQMMPcg@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20131127161300.GA24773-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <CALCETrVXKHO4=Q+0szERmte+5HYJMwVXnXJxLTdBThmoQMMPcg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,24 +21,32 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Nov 27, 2013 at 8:13 AM, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> To all: sorry for noise, I can't comment this patch.
+On Wed, Nov 27, 2013 at 5:24 PM, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> wrote:
+>> Actually an option to aufs and overlayfs to say "any unix domain socket
+>> which is opened must first be copied to the writeable layer" would
+>> solve the issue (at least for all reasonable cases, iiuc)
 >
+> I guess I'm reasonably convinced that overlayfs is the right place to
+> fix this.  (Containers using lvm will be left in the cold -- oh,
+> well.)
 >
-> But Eric, could you please help me to understand? I am totally confused.
->
-> So, afaics, initially (even after MS_KERNMOUNT) fs_fully_visible("proc")
-> should return false.
->
-> After the normal "mout -t proc none /proc/" it becomes true.
->
-> And it is still true after, say, "mount -t ramfs none /proc/sys" because
-> "ls -ld /proc/sys" shows ->i_nlink == 1.
+> cc: Miklos, who is the most likely to implement one or both of these features.
 
-Grr.  mount -t ramfs none /proc/sys should make proc be not "fully visible".
+AFAICS implementing the option to copy up a unix domain socket on open
+is trivial:  just need to tweak ovl_open_need_copy_up().
 
---Andy
+Is that what you were thinking?
+
+> (In cases where containers share a (non-overlay) directory that one of
+> them can write, would it make sense to have an option MS_NOSOCKET that
+> works on bind mounts?)
+
+Isn't it "you can't send SCM_CREDENTIALS", rather than "you can't open
+unix domain socket"?
+
+Thanks,
+Miklos
