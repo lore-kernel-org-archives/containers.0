@@ -1,18 +1,22 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: userns idea: preventing SCM_CREDENTIALS from leaking out
-Date: Wed, 27 Nov 2013 16:26:26 +0000
-Message-ID: <20131127162626.GA7358@mail.hallyn.com>
-References: <CALCETrWWSVnwg6Sb=bZz0xuAj_ASjZmsLYy=ELoR_uSqKJJaWg@mail.gmail.com>
-	<20131127014920.GA31364@mail.hallyn.com>
-	<87eh62v8hc.fsf@xmission.com>
-	<20131127144431.GA6122@mail.hallyn.com>
-	<CALCETrVXKHO4=Q+0szERmte+5HYJMwVXnXJxLTdBThmoQMMPcg@mail.gmail.com>
+Subject: Re: [REVIEW][PATCH 3/3] vfs: Fix a regression in mounting proc
+Date: Wed, 27 Nov 2013 16:29:28 +0000
+Message-ID: <20131127162928.GB7358@mail.hallyn.com>
+References: <20131117030653.GA7670@mail.hallyn.com>
+	<20131118031932.GA17621@mail.hallyn.com>
+	<52899D09.5080202@cn.fujitsu.com>
+	<20131118140830.GA22075@mail.hallyn.com>
+	<20131118180134.GA24156@mail.hallyn.com>
+	<87k3g5gnuv.fsf@xmission.com>
+	<20131126181043.GA25492@mail.hallyn.com>
+	<87siui1z1g.fsf_-_@xmission.com> <87pppmzoin.fsf_-_@xmission.com>
+	<20131127161300.GA24773@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <CALCETrVXKHO4=Q+0szERmte+5HYJMwVXnXJxLTdBThmoQMMPcg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20131127161300.GA24773-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,79 +26,40 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Cc: Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Andy Lutomirski (luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org):
-> On Wed, Nov 27, 2013 at 6:44 AM, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
-> > Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> >> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
-> >>
-> >> > Quoting Andy Lutomirski (luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org):
-> >> >> IIUC there are multiple ways to end up with a socket pair for which
-> >> >> one end is in a user namespace and the other is outside of it.  That
-> >> >> means that SCM_CREDENTIALS can be used by a process in a userns to
-> >> >> authenticate to a process outside.
-> >> >>
-> >> >> This is all well and good (and, as far as I know, correct), but I'm
-> >> >
-> >> > And the cgroup manager I'm starting on depends on this.
-> >> >
-> >> >> not sure this is always the desired behavior.  In the context of a
-> >> >> tool like Docker, it might be useful to have several user namespaces
-> >> >> that have the *same* uids mapped.  Nonetheless, if one of those
-> >> >> namespaces is compromised, it probably shouldn't be permitted to
-> >> >> attack things outside the user namespace (or in the host, if any
-> >> >> interesting uids are mapped).
-> >> >>
-> >> >> Would it make sense to have an option to allow a user namespace to opt
-> >> >> into different behavior so that its users show up as the invalid uid
-> >> >> as seen from outside (as least for SCM_CREDENTIALS and SO_PEERCRED)?
-> >> >>
-> >> >> Implementing this might be awkward (ok, it might actively suck due to
-> >> >> a possible need for reference counting), but I'm wondering if it's a
-> >> >> good idea even in principle.
-> >> >
-> >> > Well, I'll grant you, if I have a single directory with a socket in
-> >> > it, and I make that the aufs or overlayfs underlay for two separate
-> >> > mounts, which each are in different containers, then you might have
-> >> > a problem here.
-> >> >
-> >> > Now maybe the answer to that is that the sockets should be created
-> >> > in tmpfss (/run, /tmp, etc) anyway.  But the more I think about it
-> >> > the more I, unfortunately, agree that this could be a problem.
-> >>
-> >> I really hate the concept of mapping a uid in some contexts and not
-> >> others.  That seems very prone to go wrong. Given all of the possible
-> >> kinds of perumutations I can't imagine how we would get it correct.
-> >>
-> >> MS_NOSUID and MS_RDONLY will help with some of the worst offenders.
-> >> But it will still be possible for the user namespace root to call
-> >> setuid(NNN); and create a process with that uid.  And if a unix domain
-> >> socket isn't the only means of interacting there will still be problems.
-> >>
-> >> I will suggest that writing a uid mapping filesystem like overlayfs or
-> >> perhaps as a mount option of overlayfs is likely to be a more robuse
-> >> solution in general.  Certainly that is what I originally had on the
-> >> drawing board to solve this class of problem.
-> >
-> > Actually an option to aufs and overlayfs to say "any unix domain socket
-> > which is opened must first be copied to the writeable layer" would
-> > solve the issue (at least for all reasonable cases, iiuc)
+Quoting Oleg Nesterov (oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
+> To all: sorry for noise, I can't comment this patch.
 > 
-> I guess I'm reasonably convinced that overlayfs is the right place to
-> fix this.  (Containers using lvm will be left in the cold -- oh,
-> well.)
+> 
+> But Eric, could you please help me to understand? I am totally confused.
+> 
+> So, afaics, initially (even after MS_KERNMOUNT) fs_fully_visible("proc")
+> should return false.
+> 
+> After the normal "mout -t proc none /proc/" it becomes true.
+> 
+> And it is still true after, say, "mount -t ramfs none /proc/sys" because
+> "ls -ld /proc/sys" shows ->i_nlink == 1.
+> 
+> However, say, "mount -t ramfs none /proc/tty/" should make
+> fs_fully_visible() == F, because in this case ->i_nlink == 4.
+> 
+> Correct?
+> 
+> If yes, could you explain what this "!CAP_SYS_ADMIN && !fs_fully_visible"
+> check actually tries to prevent and why?
 
-Have you tested that?  If I create two LVM snapshots of an LVM, with a
-unix sock on the original, and run containers on both snapshots, does
-the socket connect the two containers?
+The idea is that some admin on a host where /a/b/c/d exists, c/d should
+be hidden, so overmounts a tmpfs onto /a/b/c.  In that case, an unpriv
+user could clone(CLONE_NEWUSER), then clone(CLONE_NEWNS), then umount
+/a/b/c and see /a/b/c/d.  This patch was to try and prevent that.
 
-> cc: Miklos, who is the most likely to implement one or both of these features.
-> 
-> (In cases where containers share a (non-overlay) directory that one of
-> them can write, would it make sense to have an option MS_NOSOCKET that
-> works on bind mounts?)
-> 
-> --Andy
+I argue that it is easy enough for the admin to make /a/b/c permissions
+such that it can't be crossed by an unprivileged user, but that does
+require an action on the part of admins who used this (imo misguided)
+approach.
+
+-serge
