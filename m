@@ -1,21 +1,13 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: [REVIEW][PATCH 3/3] vfs: Fix a regression in mounting proc
-Date: Wed, 27 Nov 2013 12:41:06 -0800
-Message-ID: <CALCETrUwjK7iLMMJaCvKUbBwEqV58oXY4dWzTGJohYgg4DwjWQ__7541.68378557569$1385584901$gmane$org@mail.gmail.com>
-References: <20131118031932.GA17621@mail.hallyn.com>
-	<52899D09.5080202@cn.fujitsu.com>
-	<20131118140830.GA22075@mail.hallyn.com>
-	<20131118180134.GA24156@mail.hallyn.com>
-	<87k3g5gnuv.fsf@xmission.com> <20131126181043.GA25492@mail.hallyn.com>
-	<87siui1z1g.fsf_-_@xmission.com> <87pppmzoin.fsf_-_@xmission.com>
-	<20131127161300.GA24773@redhat.com> <871u21oeyr.fsf@xmission.com>
-	<20131127194722.GA32673@redhat.com> <87iovdmxl7.fsf@xmission.com>
-	<87wqjtlic3.fsf@xmission.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCH for-3.13-fixes] cgroup: fix cgroup_subsys_state leak for
+	seq_files
+Date: Wed, 27 Nov 2013 18:15:50 -0500
+Message-ID: <20131127231550.GE13098@mtj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87wqjtlic3.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,64 +17,62 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Nov 27, 2013 at 12:07 PM, Eric W. Biederman
-<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
-> ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) writes:
->
->> Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
->>
->>> Just to avoid the possible confusion, let me repeat that the fix itsef
->>> looks "obviously fine" to me, "i_nlink != 2" looks obviously wrong.
->>>
->>> I am not arguing with this patch, I am just trying to understand this
->>> logic.
->>>
->>> On 11/27, Eric W. Biederman wrote:
->>>>
->>>> [... snip ...]
->>>
->>> Thanks a lot.
->>>
->>>> For the real concern about jail environments where proc and sysfs are
->>>> not mounted at all a fs_visible check is all that is really required,
->>>
->>> this is what I can't understand...
->>>
->>> Lets ignore the implementation details. Suppose that proc was never
->>> mounted. Then "mount -t proc" should fail after CLONE_NEWUSER | NEWNS?
->>
->> Yes.
->
-> Well strictly speaking it should fail after CLONE_NEWUSER | NEWNS | NEWPID.
-> If proc was never mounted.
->
-> Fresh mounts of proc are not allowed unless you have also created the
-> pid namespace.  With just CLONE_NEWUSER | NEWNS you are limited to bind
-> mounts.
->
-> Has this cleared up the confusion?
->
-> Eric
->
+If a cgroup file implements either read_map() or read_seq_string(),
+such file is served using seq_file by overriding file->f_op to
+cgroup_seqfile_operations, which also overrides the release method to
+single_release() from cgroup_file_release().
 
-This is all obnoxiously complicated.  I wonder if we can do (a lot)
-better by allowing a "pid-only" variant of proc to be mounted.  It
-should contain:
+Because cgroup_file_open() didn't use to acquire any resources, this
+used to be fine, but since f7d58818ba42 ("cgroup: pin
+cgroup_subsys_state when opening a cgroupfs file"), cgroup_file_open()
+pins the css (cgroup_subsys_state) which is put by
+cgroup_file_release().  The patch forgot to update the release path
+for seq_files and each open/release cycle leaks a css reference.
 
- - All the pid directories
- - /proc/self, /proc/net, and /proc/mounts (but possibly not
-/proc/PID/net -- that's a weird interface IMO and isn't really related
-to the pid)
- - keys key-users (wtf is up with that interface, though -- those
-files are way too magical)
- - cpuinfo, version, and maybe other informational things (crypto?)
- - loadavg, perhaps
+Fix it by updating cgroup_file_release() to also handle seq_files and
+using it for seq_file release path too.
 
-I wonder it would be possible to boot a reasonable container with a
-heavily limited /proc like that.
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org # v3.12
+---
+Hello,
 
---Andy
+I'm applying this to for-3.13-fixes right away so that I can push it
+out to Linus tomorrow along with other fixes.
+
+Thanks.
+
+ kernel/cgroup.c |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -166,6 +166,7 @@ static void cgroup_destroy_css_killed(st
+ static int cgroup_destroy_locked(struct cgroup *cgrp);
+ static int cgroup_addrm_files(struct cgroup *cgrp, struct cftype cfts[],
+ 			      bool is_add);
++static int cgroup_file_release(struct inode *inode, struct file *file);
+ 
+ /**
+  * cgroup_css - obtain a cgroup's css for the specified subsystem
+@@ -2394,7 +2395,7 @@ static const struct file_operations cgro
+ 	.read = seq_read,
+ 	.write = cgroup_file_write,
+ 	.llseek = seq_lseek,
+-	.release = single_release,
++	.release = cgroup_file_release,
+ };
+ 
+ static int cgroup_file_open(struct inode *inode, struct file *file)
+@@ -2455,6 +2456,8 @@ static int cgroup_file_release(struct in
+ 		ret = cft->release(inode, file);
+ 	if (css->ss)
+ 		css_put(css);
++	if (file->f_op == &cgroup_seqfile_operations)
++		single_release(inode, file);
+ 	return ret;
+ }
