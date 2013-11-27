@@ -1,23 +1,13 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [REVIEW][PATCH 3/3] vfs: Fix a regression in mounting proc
-Date: Tue, 26 Nov 2013 21:00:02 -0800
-Message-ID: <87li0atp65.fsf__15119.132717564$1385528424$gmane$org@xmission.com>
-References: <20131115164123.GN28794@redhat.com>
-	<20131116164840.GA4441@mail.hallyn.com>
-	<20131117030653.GA7670@mail.hallyn.com>
-	<20131118031932.GA17621@mail.hallyn.com>
-	<52899D09.5080202@cn.fujitsu.com>
-	<20131118140830.GA22075@mail.hallyn.com>
-	<20131118180134.GA24156@mail.hallyn.com> <87k3g5gnuv.fsf@xmission.com>
-	<20131126181043.GA25492@mail.hallyn.com>
-	<87siui1z1g.fsf_-_@xmission.com> <87pppmzoin.fsf_-_@xmission.com>
-	<529564AA.8050100@cn.fujitsu.com>
+From: Weng Meiling <wengmeiling.weng-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Subject: [stable bug] NFSd NULL pointer trigger kernel panic
+Date: Wed, 27 Nov 2013 15:54:02 +0800
+Message-ID: <5295A51A.7070909__34934.910797938$1385538871$gmane$org@huawei.com>
+References: <52959F5D.4000200@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <529564AA.8050100-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> (Gao feng's message of "Wed, 27
-	Nov 2013 11:19:06 +0800")
+In-Reply-To: <52959F5D.4000200-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,61 +17,122 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> writes:
 
-> On 11/27/2013 08:17 AM, Eric W. Biederman wrote:
->> 
->> Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> reported that commit
->> e51db73532955dc5eaba4235e62b74b460709d5b
->> userns: Better restrictions on when proc and sysfs can be mounted
->> caused a regression on mounting a new instance of proc in a mount
->> namespace created with user namespace privileges, when binfmt_misc
->> is mounted on /proc/sys/fs/binfmt_misc.
->> 
->> This is an unintended regression caused by the absolutely bogus empty
->> directory check in fs_fully_visible.  The check fs_fully_visible replaced
->> didn't even bother to attempt to verify proc was fully visible and
->> hiding proc files with any kind of mount is rare.  So for now fix
->> the userspace regression by allowing directory with nlink == 1
->> as /proc/sys/fs/binfmt_misc has.
->> 
->> I will have a better patch but it is not stable material, or
->> last minute kernel material.  So it will have to wait.
->> 
->> Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
->> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
->> ---
->>  fs/namespace.c |    2 +-
->>  1 files changed, 1 insertions(+), 1 deletions(-)
->> 
->> diff --git a/fs/namespace.c b/fs/namespace.c
->> index ac2ce8a766e1..be32ebccdeb1 100644
->> --- a/fs/namespace.c
->> +++ b/fs/namespace.c
->> @@ -2886,7 +2886,7 @@ bool fs_fully_visible(struct file_system_type *type)
->>  			struct inode *inode = child->mnt_mountpoint->d_inode;
->>  			if (!S_ISDIR(inode->i_mode))
->>  				goto next;
->> -			if (inode->i_nlink != 2)
->> +			if (inode->i_nlink > 2)
->>  				goto next;
->>  		}
->>  		visible = true;
->> 
->
-> As a quick fix.
->
-> Acked-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> Tested-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
->
-> looking forward to your following patch. :)
+Hi guys,
 
-I might have to be prodded.  Sometimes it looks easy and sometimes I go
-ick locking craziness.  Once I am done sorting out the regressions I
-plan on focusing on the mount issues between namespaces.
+When I try to test NFS in different network namespace with stable-3.4,
+I trigger a kernel panic. When NFSd was started in one non init_net network
+namespace, and stopped in another one. This will trigger kernel panic, because
+RPCBIND client is stored per net, and will be NULL on NFSd shutdown.
 
-Eric
+The detail steps are:
+
+#ip netns add test
+#ip netns exec test service nfsserver start
+#service nfsserver stop
+
+The main call trace:
+
+[  293.358078] BUG: unable to handle kernel NULL pointer dereference at 0000000000000060
+[  293.358089] IP: [<ffffffffa0446150>] call_start+0x10/0x30 [sunrpc]
+
+[  293.358215] Pid: 5323, comm: nfsd Not tainted 3.4.69-default-stable+
+
+[  293.358321] Call Trace:
+[  293.358336]  [<ffffffffa044f401>] __rpc_execute+0x91/0x160 [sunrpc]
+[  293.358351]  [<ffffffffa044f541>] rpc_execute+0x71/0x80 [sunrpc]
+[  293.358362]  [<ffffffffa04479a9>] rpc_run_task+0x89/0xa0 [sunrpc]
+[  293.358374]  [<ffffffffa0447abd>] rpc_call_sync+0x3d/0x70 [sunrpc]
+[  293.358390]  [<ffffffffa0457bc6>] rpcb_register+0xa6/0xd0 [sunrpc]
+[  293.358406]  [<ffffffffa0452345>] svc_unregister+0x95/0xf0 [sunrpc]
+[  293.358418]  [<ffffffffa04ab8a0>] ? nfsd_last_thread+0x50/0x50 [nfsd]
+[  293.358433]  [<ffffffffa04523b1>] svc_rpcb_cleanup+0x11/0x20 [sunrpc]
+[  293.358442]  [<ffffffffa04ab877>] nfsd_last_thread+0x27/0x50 [nfsd]
+[  293.358457]  [<ffffffffa0452280>] svc_shutdown_net+0x30/0x40 [sunrpc]
+[  293.358466]  [<ffffffffa04ab9ed>] nfsd+0x14d/0x1a0 [nfsd]
+[  293.358475]  [<ffffffffa04ab8a0>] ? nfsd_last_thread+0x50/0x50 [nfsd]
+[  293.358487]  [<ffffffff8106459e>] kthread+0x9e/0xb0
+[  293.358496]  [<ffffffff81465014>] kernel_thread_helper+0x4/0x10
+[  293.358503]  [<ffffffff81064500>] ? kthread_freezable_should_stop+0x70/0x70
+[  293.358509]  [<ffffffff81465010>] ? gs_change+0x13/0x13
+
+Walk through the code, this problem also exists in stable-3.5 to stable-3.7.
+Stanislav Kinsbursky had committed a fixed patch for 3.8:
+commit f7fb86c6e639360ad9c253cec534819ef928a674 (nfsd: use "init_net" for portmapper).
+This patch is suitable for stable-3.4, but it causes another bug, When starting NFSd
+in a non init_net network namespace will trigger kernel panic. Because RPCBIND client
+will be NULL when register RPC service with the local portmapper in svc_addsock(). This
+new bug also exists in 3.8, but disappears after patch commit 11f779421a39b86da8a523d97e5fd3477878d44f
+("containerize NFSd filesystem") in 3.9.
+
+The detail steps are:
+
+#ip netns add test
+#ip netns exec test service nfsserver start
+
+The main call trace:
+
+[  136.877527] BUG: unable to handle kernel NULL pointer dereference at 0000000000000060
+[  136.877538] IP: [<ffffffffa0451150>] call_start+0x10/0x30 [sunrpc]
+
+[  136.877664] Pid: 4854, comm: rpc.nfsd Not tainted 3.4.69-default-stable-nfs-test+
+
+[  136.877769] Call Trace:
+[  136.877785]  [<ffffffffa045a401>] __rpc_execute+0x91/0x160 [sunrpc]
+[  136.877799]  [<ffffffffa045a541>] rpc_execute+0x71/0x80 [sunrpc]
+[  136.877811]  [<ffffffffa04529a9>] rpc_run_task+0x89/0xa0 [sunrpc]
+[  136.877822]  [<ffffffffa0452abd>] rpc_call_sync+0x3d/0x70 [sunrpc]
+[  136.877839]  [<ffffffffa0462bc6>] rpcb_register+0xa6/0xd0 [sunrpc]
+[  136.877854]  [<ffffffffa045ca9e>] __svc_register+0x1ae/0x1c0 [sunrpc]
+[  136.877870]  [<ffffffffa045cb3f>] svc_register+0x8f/0xc0 [sunrpc]
+[  136.877882]  [<ffffffff8114d855>] ? kmem_cache_alloc_trace+0xc5/0x1e0
+[  136.877897]  [<ffffffffa045ec38>] svc_setup_socket+0x1a8/0x2c0 [sunrpc]
+[  136.877907]  [<ffffffff81009546>] ? read_tsc+0x16/0x40
+[  136.877922]  [<ffffffffa045f9b8>] svc_addsock+0x118/0x1c0 [sunrpc]
+[  136.877930]  [<ffffffff8108f225>] ? do_gettimeofday+0x15/0x50
+[  136.877941]  [<ffffffffa04aa69c>] ? nfsd_create_serv+0xdc/0x150 [nfsd]
+[  136.877951]  [<ffffffffa04abdce>] __write_ports+0x1fe/0x230 [nfsd]
+[  136.877961]  [<ffffffffa04abe37>] write_ports+0x37/0x60 [nfsd]
+[  136.877970]  [<ffffffffa04abe00>] ? __write_ports+0x230/0x230 [nfsd]
+[  136.877979]  [<ffffffffa04aadd2>] nfsctl_transaction_write+0x72/0x90 [nfsd]
+[  136.877987]  [<ffffffff8115b4ab>] vfs_write+0xcb/0x130
+[  136.877992]  [<ffffffff8115b600>] sys_write+0x50/0x90
+[  136.878000]  [<ffffffff81463cb9>] system_call_fastpath+0x16/0x1b
+
+
+Here is a way to resolve the problem:
+Maybe we can backport the following patches from 3.8 to cleanup init_net reference:
+
+---
+
+Stanislav Kinsbursky (7):
+      nfsd: use "init_net" for portmapper 			commit f7fb86c6e639360ad9c253cec534819ef928a674
+      nfsd: pass net to nfsd_init_socks() 			commit db6e182c17cb1a7069f7f8924721ce58ac05d9a3
+      nfsd: pass net to nfsd_startup() and nfsd_shutdown() 	commit db42d1a76a8dfcaba7a2dc9c591fa4e231db22b3
+      nfsd: pass net to nfsd_create_serv() 			commit 6777436b0f072fb20a025a73e9b67a35ad8a5451
+      nfsd: pass net to nfsd_svc() 				commit d41a9417cd89a69f58a26935034b4264a2d882d6		
+      nfsd: pass net to nfsd_set_nrthreads() 			commit 3938a0d5eb5effcc89c6909741403f4e6a37252d
+      nfsd: pass net to __write_ports() and down 		commit 081603520b25f7b35ef63a363376a17c36ef74ed
+
+
+ fs/nfsd/nfsctl.c |   27 +++++++++++++++------------
+ fs/nfsd/nfsd.h   |    6 +++---
+ fs/nfsd/nfssvc.c |   35 ++++++++++++++---------------------
+ 3 files changed, 32 insertions(+), 36 deletions(-)
+
+Stanislav Kinsbursky:
+	nfsd: pass proper net to nfsd_destroy() from NFSd kthreads  commit 88c47666171989ed4c5b1a5687df09511e8c5e35
+
+ fs/nfsd/nfssvc.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+and then just a simple patch which uses the current->nsproxy->net_ns to repalce the
+init_net to make NFSd keep using a consistent network namespace all the time can
+resolve the problem. Maybe this is not optimal, what do you think about this problem?
+
+The related patches' links:
+http://linux-kernel.2935.n7.nabble.com/PATCH-0-7-nfsd-cleanup-quot-init-net-quot-references-td567366.html
+https://lkml.org/lkml/2012/12/6/161
