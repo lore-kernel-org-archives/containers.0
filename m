@@ -1,13 +1,16 @@
-From: Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [stable bug] NFSd NULL pointer trigger kernel panic
-Date: Wed, 27 Nov 2013 12:07:51 +0400
-Message-ID: <5295A857.6080301@parallels.com>
-References: <52959F5D.4000200@huawei.com> <5295A51A.7070909@huawei.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: userns idea: preventing SCM_CREDENTIALS from leaking out
+Date: Wed, 27 Nov 2013 14:44:31 +0000
+Message-ID: <20131127144431.GA6122@mail.hallyn.com>
+References: <CALCETrWWSVnwg6Sb=bZz0xuAj_ASjZmsLYy=ELoR_uSqKJJaWg@mail.gmail.com>
+	<20131127014920.GA31364@mail.hallyn.com>
+	<87eh62v8hc.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; Format="flowed"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <5295A51A.7070909-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <87eh62v8hc.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,125 +20,63 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Weng Meiling <wengmeiling.weng-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>, "bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-MjcuMTEuMjAxMyAxMTo1NCwgV2VuZyBNZWlsaW5nINC/0LjRiNC10YI6Cj4KPiBIaSBndXlzLAo+
-Cj4gV2hlbiBJIHRyeSB0byB0ZXN0IE5GUyBpbiBkaWZmZXJlbnQgbmV0d29yayBuYW1lc3BhY2Ug
-d2l0aCBzdGFibGUtMy40LAo+IEkgdHJpZ2dlciBhIGtlcm5lbCBwYW5pYy4gV2hlbiBORlNkIHdh
-cyBzdGFydGVkIGluIG9uZSBub24gaW5pdF9uZXQgbmV0d29yawo+IG5hbWVzcGFjZSwgYW5kIHN0
-b3BwZWQgaW4gYW5vdGhlciBvbmUuIFRoaXMgd2lsbCB0cmlnZ2VyIGtlcm5lbCBwYW5pYywgYmVj
-YXVzZQo+IFJQQ0JJTkQgY2xpZW50IGlzIHN0b3JlZCBwZXIgbmV0LCBhbmQgd2lsbCBiZSBOVUxM
-IG9uIE5GU2Qgc2h1dGRvd24uCj4KPiBUaGUgZGV0YWlsIHN0ZXBzIGFyZToKPgo+ICNpcCBuZXRu
-cyBhZGQgdGVzdAo+ICNpcCBuZXRucyBleGVjIHRlc3Qgc2VydmljZSBuZnNzZXJ2ZXIgc3RhcnQK
-PiAjc2VydmljZSBuZnNzZXJ2ZXIgc3RvcAo+Cj4gVGhlIG1haW4gY2FsbCB0cmFjZToKPgo+IFsg
-IDI5My4zNTgwNzhdIEJVRzogdW5hYmxlIHRvIGhhbmRsZSBrZXJuZWwgTlVMTCBwb2ludGVyIGRl
-cmVmZXJlbmNlIGF0IDAwMDAwMDAwMDAwMDAwNjAKPiBbICAyOTMuMzU4MDg5XSBJUDogWzxmZmZm
-ZmZmZmEwNDQ2MTUwPl0gY2FsbF9zdGFydCsweDEwLzB4MzAgW3N1bnJwY10KPgo+IFsgIDI5My4z
-NTgyMTVdIFBpZDogNTMyMywgY29tbTogbmZzZCBOb3QgdGFpbnRlZCAzLjQuNjktZGVmYXVsdC1z
-dGFibGUrCj4KPiBbICAyOTMuMzU4MzIxXSBDYWxsIFRyYWNlOgo+IFsgIDI5My4zNTgzMzZdICBb
-PGZmZmZmZmZmYTA0NGY0MDE+XSBfX3JwY19leGVjdXRlKzB4OTEvMHgxNjAgW3N1bnJwY10KPiBb
-ICAyOTMuMzU4MzUxXSAgWzxmZmZmZmZmZmEwNDRmNTQxPl0gcnBjX2V4ZWN1dGUrMHg3MS8weDgw
-IFtzdW5ycGNdCj4gWyAgMjkzLjM1ODM2Ml0gIFs8ZmZmZmZmZmZhMDQ0NzlhOT5dIHJwY19ydW5f
-dGFzaysweDg5LzB4YTAgW3N1bnJwY10KPiBbICAyOTMuMzU4Mzc0XSAgWzxmZmZmZmZmZmEwNDQ3
-YWJkPl0gcnBjX2NhbGxfc3luYysweDNkLzB4NzAgW3N1bnJwY10KPiBbICAyOTMuMzU4MzkwXSAg
-WzxmZmZmZmZmZmEwNDU3YmM2Pl0gcnBjYl9yZWdpc3RlcisweGE2LzB4ZDAgW3N1bnJwY10KPiBb
-ICAyOTMuMzU4NDA2XSAgWzxmZmZmZmZmZmEwNDUyMzQ1Pl0gc3ZjX3VucmVnaXN0ZXIrMHg5NS8w
-eGYwIFtzdW5ycGNdCj4gWyAgMjkzLjM1ODQxOF0gIFs8ZmZmZmZmZmZhMDRhYjhhMD5dID8gbmZz
-ZF9sYXN0X3RocmVhZCsweDUwLzB4NTAgW25mc2RdCj4gWyAgMjkzLjM1ODQzM10gIFs8ZmZmZmZm
-ZmZhMDQ1MjNiMT5dIHN2Y19ycGNiX2NsZWFudXArMHgxMS8weDIwIFtzdW5ycGNdCj4gWyAgMjkz
-LjM1ODQ0Ml0gIFs8ZmZmZmZmZmZhMDRhYjg3Nz5dIG5mc2RfbGFzdF90aHJlYWQrMHgyNy8weDUw
-IFtuZnNkXQo+IFsgIDI5My4zNTg0NTddICBbPGZmZmZmZmZmYTA0NTIyODA+XSBzdmNfc2h1dGRv
-d25fbmV0KzB4MzAvMHg0MCBbc3VucnBjXQo+IFsgIDI5My4zNTg0NjZdICBbPGZmZmZmZmZmYTA0
-YWI5ZWQ+XSBuZnNkKzB4MTRkLzB4MWEwIFtuZnNkXQo+IFsgIDI5My4zNTg0NzVdICBbPGZmZmZm
-ZmZmYTA0YWI4YTA+XSA/IG5mc2RfbGFzdF90aHJlYWQrMHg1MC8weDUwIFtuZnNkXQo+IFsgIDI5
-My4zNTg0ODddICBbPGZmZmZmZmZmODEwNjQ1OWU+XSBrdGhyZWFkKzB4OWUvMHhiMAo+IFsgIDI5
-My4zNTg0OTZdICBbPGZmZmZmZmZmODE0NjUwMTQ+XSBrZXJuZWxfdGhyZWFkX2hlbHBlcisweDQv
-MHgxMAo+IFsgIDI5My4zNTg1MDNdICBbPGZmZmZmZmZmODEwNjQ1MDA+XSA/IGt0aHJlYWRfZnJl
-ZXphYmxlX3Nob3VsZF9zdG9wKzB4NzAvMHg3MAo+IFsgIDI5My4zNTg1MDldICBbPGZmZmZmZmZm
-ODE0NjUwMTA+XSA/IGdzX2NoYW5nZSsweDEzLzB4MTMKPgo+IFdhbGsgdGhyb3VnaCB0aGUgY29k
-ZSwgdGhpcyBwcm9ibGVtIGFsc28gZXhpc3RzIGluIHN0YWJsZS0zLjUgdG8gc3RhYmxlLTMuNy4K
-PiBTdGFuaXNsYXYgS2luc2J1cnNreSBoYWQgY29tbWl0dGVkIGEgZml4ZWQgcGF0Y2ggZm9yIDMu
-ODoKPiBjb21taXQgZjdmYjg2YzZlNjM5MzYwYWQ5YzI1M2NlYzUzNDgxOWVmOTI4YTY3NCAobmZz
-ZDogdXNlICJpbml0X25ldCIgZm9yIHBvcnRtYXBwZXIpLgo+IFRoaXMgcGF0Y2ggaXMgc3VpdGFi
-bGUgZm9yIHN0YWJsZS0zLjQsIGJ1dCBpdCBjYXVzZXMgYW5vdGhlciBidWcsIFdoZW4gc3RhcnRp
-bmcgTkZTZAo+IGluIGEgbm9uIGluaXRfbmV0IG5ldHdvcmsgbmFtZXNwYWNlIHdpbGwgdHJpZ2dl
-ciBrZXJuZWwgcGFuaWMuIEJlY2F1c2UgUlBDQklORCBjbGllbnQKPiB3aWxsIGJlIE5VTEwgd2hl
-biByZWdpc3RlciBSUEMgc2VydmljZSB3aXRoIHRoZSBsb2NhbCBwb3J0bWFwcGVyIGluIHN2Y19h
-ZGRzb2NrKCkuIFRoaXMKPiBuZXcgYnVnIGFsc28gZXhpc3RzIGluIDMuOCwgYnV0IGRpc2FwcGVh
-cnMgYWZ0ZXIgcGF0Y2ggY29tbWl0IDExZjc3OTQyMWEzOWI4NmRhOGE1MjNkOTdlNWZkMzQ3Nzg3
-OGQ0NGYKPiAoImNvbnRhaW5lcml6ZSBORlNkIGZpbGVzeXN0ZW0iKSBpbiAzLjkuCj4KPiBUaGUg
-ZGV0YWlsIHN0ZXBzIGFyZToKPgo+ICNpcCBuZXRucyBhZGQgdGVzdAo+ICNpcCBuZXRucyBleGVj
-IHRlc3Qgc2VydmljZSBuZnNzZXJ2ZXIgc3RhcnQKPgo+IFRoZSBtYWluIGNhbGwgdHJhY2U6Cj4K
-PiBbICAxMzYuODc3NTI3XSBCVUc6IHVuYWJsZSB0byBoYW5kbGUga2VybmVsIE5VTEwgcG9pbnRl
-ciBkZXJlZmVyZW5jZSBhdCAwMDAwMDAwMDAwMDAwMDYwCj4gWyAgMTM2Ljg3NzUzOF0gSVA6IFs8
-ZmZmZmZmZmZhMDQ1MTE1MD5dIGNhbGxfc3RhcnQrMHgxMC8weDMwIFtzdW5ycGNdCj4KPiBbICAx
-MzYuODc3NjY0XSBQaWQ6IDQ4NTQsIGNvbW06IHJwYy5uZnNkIE5vdCB0YWludGVkIDMuNC42OS1k
-ZWZhdWx0LXN0YWJsZS1uZnMtdGVzdCsKPgo+IFsgIDEzNi44Nzc3NjldIENhbGwgVHJhY2U6Cj4g
-WyAgMTM2Ljg3Nzc4NV0gIFs8ZmZmZmZmZmZhMDQ1YTQwMT5dIF9fcnBjX2V4ZWN1dGUrMHg5MS8w
-eDE2MCBbc3VucnBjXQo+IFsgIDEzNi44Nzc3OTldICBbPGZmZmZmZmZmYTA0NWE1NDE+XSBycGNf
-ZXhlY3V0ZSsweDcxLzB4ODAgW3N1bnJwY10KPiBbICAxMzYuODc3ODExXSAgWzxmZmZmZmZmZmEw
-NDUyOWE5Pl0gcnBjX3J1bl90YXNrKzB4ODkvMHhhMCBbc3VucnBjXQo+IFsgIDEzNi44Nzc4MjJd
-ICBbPGZmZmZmZmZmYTA0NTJhYmQ+XSBycGNfY2FsbF9zeW5jKzB4M2QvMHg3MCBbc3VucnBjXQo+
-IFsgIDEzNi44Nzc4MzldICBbPGZmZmZmZmZmYTA0NjJiYzY+XSBycGNiX3JlZ2lzdGVyKzB4YTYv
-MHhkMCBbc3VucnBjXQo+IFsgIDEzNi44Nzc4NTRdICBbPGZmZmZmZmZmYTA0NWNhOWU+XSBfX3N2
-Y19yZWdpc3RlcisweDFhZS8weDFjMCBbc3VucnBjXQo+IFsgIDEzNi44Nzc4NzBdICBbPGZmZmZm
-ZmZmYTA0NWNiM2Y+XSBzdmNfcmVnaXN0ZXIrMHg4Zi8weGMwIFtzdW5ycGNdCj4gWyAgMTM2Ljg3
-Nzg4Ml0gIFs8ZmZmZmZmZmY4MTE0ZDg1NT5dID8ga21lbV9jYWNoZV9hbGxvY190cmFjZSsweGM1
-LzB4MWUwCj4gWyAgMTM2Ljg3Nzg5N10gIFs8ZmZmZmZmZmZhMDQ1ZWMzOD5dIHN2Y19zZXR1cF9z
-b2NrZXQrMHgxYTgvMHgyYzAgW3N1bnJwY10KPiBbICAxMzYuODc3OTA3XSAgWzxmZmZmZmZmZjgx
-MDA5NTQ2Pl0gPyByZWFkX3RzYysweDE2LzB4NDAKPiBbICAxMzYuODc3OTIyXSAgWzxmZmZmZmZm
-ZmEwNDVmOWI4Pl0gc3ZjX2FkZHNvY2srMHgxMTgvMHgxYzAgW3N1bnJwY10KPiBbICAxMzYuODc3
-OTMwXSAgWzxmZmZmZmZmZjgxMDhmMjI1Pl0gPyBkb19nZXR0aW1lb2ZkYXkrMHgxNS8weDUwCj4g
-WyAgMTM2Ljg3Nzk0MV0gIFs8ZmZmZmZmZmZhMDRhYTY5Yz5dID8gbmZzZF9jcmVhdGVfc2Vydisw
-eGRjLzB4MTUwIFtuZnNkXQo+IFsgIDEzNi44Nzc5NTFdICBbPGZmZmZmZmZmYTA0YWJkY2U+XSBf
-X3dyaXRlX3BvcnRzKzB4MWZlLzB4MjMwIFtuZnNkXQo+IFsgIDEzNi44Nzc5NjFdICBbPGZmZmZm
-ZmZmYTA0YWJlMzc+XSB3cml0ZV9wb3J0cysweDM3LzB4NjAgW25mc2RdCj4gWyAgMTM2Ljg3Nzk3
-MF0gIFs8ZmZmZmZmZmZhMDRhYmUwMD5dID8gX193cml0ZV9wb3J0cysweDIzMC8weDIzMCBbbmZz
-ZF0KPiBbICAxMzYuODc3OTc5XSAgWzxmZmZmZmZmZmEwNGFhZGQyPl0gbmZzY3RsX3RyYW5zYWN0
-aW9uX3dyaXRlKzB4NzIvMHg5MCBbbmZzZF0KPiBbICAxMzYuODc3OTg3XSAgWzxmZmZmZmZmZjgx
-MTViNGFiPl0gdmZzX3dyaXRlKzB4Y2IvMHgxMzAKPiBbICAxMzYuODc3OTkyXSAgWzxmZmZmZmZm
-ZjgxMTViNjAwPl0gc3lzX3dyaXRlKzB4NTAvMHg5MAo+IFsgIDEzNi44NzgwMDBdICBbPGZmZmZm
-ZmZmODE0NjNjYjk+XSBzeXN0ZW1fY2FsbF9mYXN0cGF0aCsweDE2LzB4MWIKPgo+Cj4gSGVyZSBp
-cyBhIHdheSB0byByZXNvbHZlIHRoZSBwcm9ibGVtOgo+IE1heWJlIHdlIGNhbiBiYWNrcG9ydCB0
-aGUgZm9sbG93aW5nIHBhdGNoZXMgZnJvbSAzLjggdG8gY2xlYW51cCBpbml0X25ldCByZWZlcmVu
-Y2U6Cj4KPiAtLS0KPgo+IFN0YW5pc2xhdiBLaW5zYnVyc2t5ICg3KToKPiAgICAgICAgbmZzZDog
-dXNlICJpbml0X25ldCIgZm9yIHBvcnRtYXBwZXIgCQkJY29tbWl0IGY3ZmI4NmM2ZTYzOTM2MGFk
-OWMyNTNjZWM1MzQ4MTllZjkyOGE2NzQKPiAgICAgICAgbmZzZDogcGFzcyBuZXQgdG8gbmZzZF9p
-bml0X3NvY2tzKCkgCQkJY29tbWl0IGRiNmUxODJjMTdjYjFhNzA2OWY3Zjg5MjQ3MjFjZTU4YWMw
-NWQ5YTMKPiAgICAgICAgbmZzZDogcGFzcyBuZXQgdG8gbmZzZF9zdGFydHVwKCkgYW5kIG5mc2Rf
-c2h1dGRvd24oKSAJY29tbWl0IGRiNDJkMWE3NmE4ZGZjYWJhN2EyZGM5YzU5MWZhNGUyMzFkYjIy
-YjMKPiAgICAgICAgbmZzZDogcGFzcyBuZXQgdG8gbmZzZF9jcmVhdGVfc2VydigpIAkJCWNvbW1p
-dCA2Nzc3NDM2YjBmMDcyZmIyMGEwMjVhNzNlOWI2N2EzNWFkOGE1NDUxCj4gICAgICAgIG5mc2Q6
-IHBhc3MgbmV0IHRvIG5mc2Rfc3ZjKCkgCQkJCWNvbW1pdCBkNDFhOTQxN2NkODlhNjlmNThhMjY5
-MzUwMzRiNDI2NGEyZDg4MmQ2CQkKPiAgICAgICAgbmZzZDogcGFzcyBuZXQgdG8gbmZzZF9zZXRf
-bnJ0aHJlYWRzKCkgCQkJY29tbWl0IDM5MzhhMGQ1ZWI1ZWZmY2M4OWM2OTA5NzQxNDAzZjRlNmEz
-NzI1MmQKPiAgICAgICAgbmZzZDogcGFzcyBuZXQgdG8gX193cml0ZV9wb3J0cygpIGFuZCBkb3du
-IAkJY29tbWl0IDA4MTYwMzUyMGIyNWY3YjM1ZWY2M2EzNjMzNzZhMTdjMzZlZjc0ZWQKPgo+Cj4g
-ICBmcy9uZnNkL25mc2N0bC5jIHwgICAyNyArKysrKysrKysrKysrKystLS0tLS0tLS0tLS0KPiAg
-IGZzL25mc2QvbmZzZC5oICAgfCAgICA2ICsrKy0tLQo+ICAgZnMvbmZzZC9uZnNzdmMuYyB8ICAg
-MzUgKysrKysrKysrKysrKystLS0tLS0tLS0tLS0tLS0tLS0tLS0KPiAgIDMgZmlsZXMgY2hhbmdl
-ZCwgMzIgaW5zZXJ0aW9ucygrKSwgMzYgZGVsZXRpb25zKC0pCj4KPiBTdGFuaXNsYXYgS2luc2J1
-cnNreToKPiAJbmZzZDogcGFzcyBwcm9wZXIgbmV0IHRvIG5mc2RfZGVzdHJveSgpIGZyb20gTkZT
-ZCBrdGhyZWFkcyAgY29tbWl0IDg4YzQ3NjY2MTcxOTg5ZWQ0YzViMWE1Njg3ZGYwOTUxMWU4YzVl
-MzUKPgo+ICAgZnMvbmZzZC9uZnNzdmMuYyB8ICAgIDQgKysrLQo+ICAgMSBmaWxlcyBjaGFuZ2Vk
-LCAzIGluc2VydGlvbnMoKyksIDEgZGVsZXRpb25zKC0pCj4KPiBhbmQgdGhlbiBqdXN0IGEgc2lt
-cGxlIHBhdGNoIHdoaWNoIHVzZXMgdGhlIGN1cnJlbnQtPm5zcHJveHktPm5ldF9ucyB0byByZXBh
-bGNlIHRoZQo+IGluaXRfbmV0IHRvIG1ha2UgTkZTZCBrZWVwIHVzaW5nIGEgY29uc2lzdGVudCBu
-ZXR3b3JrIG5hbWVzcGFjZSBhbGwgdGhlIHRpbWUgY2FuCj4gcmVzb2x2ZSB0aGUgcHJvYmxlbS4g
-TWF5YmUgdGhpcyBpcyBub3Qgb3B0aW1hbCwgd2hhdCBkbyB5b3UgdGhpbmsgYWJvdXQgdGhpcyBw
-cm9ibGVtPwo+CgpHcmVhdCBpbnZlc3RpZ2F0aW9uISBUaGFua3MuCkkgdGhpbmsgaXQncyB1cCB0
-byBCcnVjZSAoY2MnZCkgd2hhdCBpcyBiZXR0ZXI6IGJhY2twb3J0IG9yIHNpbXBsZSBmaXgsIHdo
-aWNoIGp1c3QgZm9yYmlkcwpORlNkIHN0YXJ0IGluIG5vbi1pbml0IG5ldHdvcmsgbmFtZXNwYWNl
-IGZvciBrZXJuZWxzLCBwcmlvciB0byAzLjkuCgo+IFRoZSByZWxhdGVkIHBhdGNoZXMnIGxpbmtz
-Ogo+IGh0dHA6Ly9saW51eC1rZXJuZWwuMjkzNS5uNy5uYWJibGUuY29tL1BBVENILTAtNy1uZnNk
-LWNsZWFudXAtcXVvdC1pbml0LW5ldC1xdW90LXJlZmVyZW5jZXMtdGQ1NjczNjYuaHRtbAo+IGh0
-dHBzOi8vbGttbC5vcmcvbGttbC8yMDEyLzEyLzYvMTYxCj4KPgo+Cj4KPgo+IC0tCj4gVG8gdW5z
-dWJzY3JpYmUgZnJvbSB0aGlzIGxpc3Q6IHNlbmQgdGhlIGxpbmUgInVuc3Vic2NyaWJlIGxpbnV4
-LW5mcyIgaW4KPiB0aGUgYm9keSBvZiBhIG1lc3NhZ2UgdG8gbWFqb3Jkb21vQHZnZXIua2VybmVs
-Lm9yZwo+IE1vcmUgbWFqb3Jkb21vIGluZm8gYXQgIGh0dHA6Ly92Z2VyLmtlcm5lbC5vcmcvbWFq
-b3Jkb21vLWluZm8uaHRtbAo+CgoKLS0gCkJlc3QgcmVnYXJkcywKU3RhbmlzbGF2IEtpbnNidXJz
-a3kKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFp
-bmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpo
-dHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWlu
-ZXJz
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
+> 
+> > Quoting Andy Lutomirski (luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org):
+> >> IIUC there are multiple ways to end up with a socket pair for which
+> >> one end is in a user namespace and the other is outside of it.  That
+> >> means that SCM_CREDENTIALS can be used by a process in a userns to
+> >> authenticate to a process outside.
+> >> 
+> >> This is all well and good (and, as far as I know, correct), but I'm
+> >
+> > And the cgroup manager I'm starting on depends on this.
+> >
+> >> not sure this is always the desired behavior.  In the context of a
+> >> tool like Docker, it might be useful to have several user namespaces
+> >> that have the *same* uids mapped.  Nonetheless, if one of those
+> >> namespaces is compromised, it probably shouldn't be permitted to
+> >> attack things outside the user namespace (or in the host, if any
+> >> interesting uids are mapped).
+> >> 
+> >> Would it make sense to have an option to allow a user namespace to opt
+> >> into different behavior so that its users show up as the invalid uid
+> >> as seen from outside (as least for SCM_CREDENTIALS and SO_PEERCRED)?
+> >> 
+> >> Implementing this might be awkward (ok, it might actively suck due to
+> >> a possible need for reference counting), but I'm wondering if it's a
+> >> good idea even in principle.
+> >
+> > Well, I'll grant you, if I have a single directory with a socket in
+> > it, and I make that the aufs or overlayfs underlay for two separate
+> > mounts, which each are in different containers, then you might have
+> > a problem here.
+> >
+> > Now maybe the answer to that is that the sockets should be created
+> > in tmpfss (/run, /tmp, etc) anyway.  But the more I think about it
+> > the more I, unfortunately, agree that this could be a problem.
+> 
+> I really hate the concept of mapping a uid in some contexts and not
+> others.  That seems very prone to go wrong. Given all of the possible
+> kinds of perumutations I can't imagine how we would get it correct.
+> 
+> MS_NOSUID and MS_RDONLY will help with some of the worst offenders.
+> But it will still be possible for the user namespace root to call
+> setuid(NNN); and create a process with that uid.  And if a unix domain
+> socket isn't the only means of interacting there will still be problems.
+> 
+> I will suggest that writing a uid mapping filesystem like overlayfs or
+> perhaps as a mount option of overlayfs is likely to be a more robuse
+> solution in general.  Certainly that is what I originally had on the
+> drawing board to solve this class of problem.
+
+Actually an option to aufs and overlayfs to say "any unix domain socket
+which is opened must first be copied to the writeable layer" would
+solve the issue (at least for all reasonable cases, iiuc)
+
+-serge
