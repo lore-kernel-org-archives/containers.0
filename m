@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 02/12] cpuset: convert away from cftype->read()
-Date: Wed, 27 Nov 2013 18:42:29 -0500
-Message-ID: <1385595759-17656-3-git-send-email-tj__20388.0341061906$1385595787$gmane$org@kernel.org>
+Subject: [PATCH 03/12] memcg: convert away from cftype->read() and ->read_map()
+Date: Wed, 27 Nov 2013 18:42:30 -0500
+Message-ID: <1385595759-17656-4-git-send-email-tj__21206.5077889294$1385595792$gmane$org@kernel.org>
 References: <1385595759-17656-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,132 +25,182 @@ In preparation of conversion to kernfs, cgroup file handling is being
 consolidated so that it can be easily mapped to the seq_file based
 interface of kernfs.
 
-All users of cftype->read() can be easily served, usually better, by
-seq_file and other methods.  Rename cpuset_common_file_read() to
-cpuset_common_read_seq_string() and convert it to use
-read_seq_string() interface instead.  This not only simplifies the
-code but also makes it more versatile.  Before, the file couldn't
-output if the result is longer than PAGE_SIZE.  After the conversion,
-seq_file automatically grows the buffer until the output can fit.
+cftype->read_map() doesn't add any value and being replaced with
+->read_seq_string(), and all users of cftype->read() can be easily
+served, usually better, by seq_file and other methods.
 
-This patch doesn't make any visible behavior changes except for being
-able to handle output larger than PAGE_SIZE.
+Update mem_cgroup_read() to return u64 instead of printing itself and
+rename it to mem_cgroup_read_u64(), and update
+mem_cgroup_oom_control_read() to use ->read_seq_string() instead of
+->read_map().
+
+This patch doesn't make any visible behavior changes.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
+Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Cc: Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 ---
- kernel/cpuset.c | 71 +++++++++++++++++++--------------------------------------
- 1 file changed, 24 insertions(+), 47 deletions(-)
+ mm/memcontrol.c | 49 +++++++++++++++++++++----------------------------
+ 1 file changed, 21 insertions(+), 28 deletions(-)
 
-diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index 4772034..032929f 100644
---- a/kernel/cpuset.c
-+++ b/kernel/cpuset.c
-@@ -1731,66 +1731,43 @@ out_unlock:
-  * used, list of ranges of sequential numbers, is variable length,
-  * and since these maps can change value dynamically, one could read
-  * gibberish by doing partial reads while a list was changing.
-- * A single large read to a buffer that crosses a page boundary is
-- * ok, because the result being copied to user land is not recomputed
-- * across a page fault.
-  */
--
--static size_t cpuset_sprintf_cpulist(char *page, struct cpuset *cs)
--{
--	size_t count;
--
--	mutex_lock(&callback_mutex);
--	count = cpulist_scnprintf(page, PAGE_SIZE, cs->cpus_allowed);
--	mutex_unlock(&callback_mutex);
--
--	return count;
--}
--
--static size_t cpuset_sprintf_memlist(char *page, struct cpuset *cs)
--{
--	size_t count;
--
--	mutex_lock(&callback_mutex);
--	count = nodelist_scnprintf(page, PAGE_SIZE, cs->mems_allowed);
--	mutex_unlock(&callback_mutex);
--
--	return count;
--}
--
--static ssize_t cpuset_common_file_read(struct cgroup_subsys_state *css,
--				       struct cftype *cft, struct file *file,
--				       char __user *buf, size_t nbytes,
--				       loff_t *ppos)
-+static int cpuset_common_read_seq_string(struct cgroup_subsys_state *css,
-+					 struct cftype *cft,
-+					 struct seq_file *sf)
- {
- 	struct cpuset *cs = css_cs(css);
- 	cpuset_filetype_t type = cft->private;
--	char *page;
--	ssize_t retval = 0;
--	char *s;
-+	ssize_t count;
-+	char *buf, *s;
-+	int ret = 0;
- 
--	if (!(page = (char *)__get_free_page(GFP_TEMPORARY)))
--		return -ENOMEM;
-+	count = seq_get_buf(sf, &buf);
-+	s = buf;
- 
--	s = page;
-+	mutex_lock(&callback_mutex);
- 
- 	switch (type) {
- 	case FILE_CPULIST:
--		s += cpuset_sprintf_cpulist(s, cs);
-+		s += cpulist_scnprintf(s, count, cs->cpus_allowed);
- 		break;
- 	case FILE_MEMLIST:
--		s += cpuset_sprintf_memlist(s, cs);
-+		s += nodelist_scnprintf(s, count, cs->mems_allowed);
- 		break;
- 	default:
--		retval = -EINVAL;
--		goto out;
-+		ret = -EINVAL;
-+		goto out_unlock;
- 	}
--	*s++ = '\n';
- 
--	retval = simple_read_from_buffer(buf, nbytes, ppos, page, s - page);
--out:
--	free_page((unsigned long)page);
--	return retval;
-+	if (s < buf + count - 1) {
-+		*s++ = '\n';
-+		seq_commit(sf, s - buf);
-+	} else {
-+		seq_commit(sf, -1);
-+	}
-+out_unlock:
-+	mutex_unlock(&callback_mutex);
-+	return ret;
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index 7aa0d40..f149521 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -5150,14 +5150,12 @@ static inline u64 mem_cgroup_usage(struct mem_cgroup *memcg, bool swap)
+ 	return val << PAGE_SHIFT;
  }
  
- static u64 cpuset_read_u64(struct cgroup_subsys_state *css, struct cftype *cft)
-@@ -1847,7 +1824,7 @@ static s64 cpuset_read_s64(struct cgroup_subsys_state *css, struct cftype *cft)
- static struct cftype files[] = {
- 	{
- 		.name = "cpus",
--		.read = cpuset_common_file_read,
-+		.read_seq_string = cpuset_common_read_seq_string,
- 		.write_string = cpuset_write_resmask,
- 		.max_write_len = (100U + 6 * NR_CPUS),
- 		.private = FILE_CPULIST,
-@@ -1855,7 +1832,7 @@ static struct cftype files[] = {
+-static ssize_t mem_cgroup_read(struct cgroup_subsys_state *css,
+-			       struct cftype *cft, struct file *file,
+-			       char __user *buf, size_t nbytes, loff_t *ppos)
++static u64 mem_cgroup_read_u64(struct cgroup_subsys_state *css,
++				   struct cftype *cft)
+ {
+ 	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
+-	char str[64];
+ 	u64 val;
+-	int name, len;
++	int name;
+ 	enum res_type type;
  
+ 	type = MEMFILE_TYPE(cft->private);
+@@ -5183,8 +5181,7 @@ static ssize_t mem_cgroup_read(struct cgroup_subsys_state *css,
+ 		BUG();
+ 	}
+ 
+-	len = scnprintf(str, sizeof(str), "%llu\n", (unsigned long long)val);
+-	return simple_read_from_buffer(buf, nbytes, ppos, str, len);
++	return val;
+ }
+ 
+ static int memcg_update_kmem_limit(struct cgroup_subsys_state *css, u64 val)
+@@ -5911,16 +5908,12 @@ static void mem_cgroup_oom_unregister_event(struct mem_cgroup *memcg,
+ }
+ 
+ static int mem_cgroup_oom_control_read(struct cgroup_subsys_state *css,
+-	struct cftype *cft,  struct cgroup_map_cb *cb)
++				       struct cftype *cft, struct seq_file *sf)
+ {
+ 	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
+ 
+-	cb->fill(cb, "oom_kill_disable", memcg->oom_kill_disable);
+-
+-	if (atomic_read(&memcg->under_oom))
+-		cb->fill(cb, "under_oom", 1);
+-	else
+-		cb->fill(cb, "under_oom", 0);
++	seq_printf(sf, "oom_kill_disable %d\n", memcg->oom_kill_disable);
++	seq_printf(sf, "under_oom %d\n", (bool)atomic_read(&memcg->under_oom));
+ 	return 0;
+ }
+ 
+@@ -6239,31 +6232,31 @@ static struct cftype mem_cgroup_files[] = {
  	{
- 		.name = "mems",
--		.read = cpuset_common_file_read,
-+		.read_seq_string = cpuset_common_read_seq_string,
- 		.write_string = cpuset_write_resmask,
- 		.max_write_len = (100U + 6 * MAX_NUMNODES),
- 		.private = FILE_MEMLIST,
+ 		.name = "usage_in_bytes",
+ 		.private = MEMFILE_PRIVATE(_MEM, RES_USAGE),
+-		.read = mem_cgroup_read,
++		.read_u64 = mem_cgroup_read_u64,
+ 	},
+ 	{
+ 		.name = "max_usage_in_bytes",
+ 		.private = MEMFILE_PRIVATE(_MEM, RES_MAX_USAGE),
+ 		.trigger = mem_cgroup_reset,
+-		.read = mem_cgroup_read,
++		.read_u64 = mem_cgroup_read_u64,
+ 	},
+ 	{
+ 		.name = "limit_in_bytes",
+ 		.private = MEMFILE_PRIVATE(_MEM, RES_LIMIT),
+ 		.write_string = mem_cgroup_write,
+-		.read = mem_cgroup_read,
++		.read_u64 = mem_cgroup_read_u64,
+ 	},
+ 	{
+ 		.name = "soft_limit_in_bytes",
+ 		.private = MEMFILE_PRIVATE(_MEM, RES_SOFT_LIMIT),
+ 		.write_string = mem_cgroup_write,
+-		.read = mem_cgroup_read,
++		.read_u64 = mem_cgroup_read_u64,
+ 	},
+ 	{
+ 		.name = "failcnt",
+ 		.private = MEMFILE_PRIVATE(_MEM, RES_FAILCNT),
+ 		.trigger = mem_cgroup_reset,
+-		.read = mem_cgroup_read,
++		.read_u64 = mem_cgroup_read_u64,
+ 	},
+ 	{
+ 		.name = "stat",
+@@ -6297,7 +6290,7 @@ static struct cftype mem_cgroup_files[] = {
+ 	},
+ 	{
+ 		.name = "oom_control",
+-		.read_map = mem_cgroup_oom_control_read,
++		.read_seq_string = mem_cgroup_oom_control_read,
+ 		.write_u64 = mem_cgroup_oom_control_write,
+ 		.private = MEMFILE_PRIVATE(_OOM_TYPE, OOM_CONTROL),
+ 	},
+@@ -6315,24 +6308,24 @@ static struct cftype mem_cgroup_files[] = {
+ 		.name = "kmem.limit_in_bytes",
+ 		.private = MEMFILE_PRIVATE(_KMEM, RES_LIMIT),
+ 		.write_string = mem_cgroup_write,
+-		.read = mem_cgroup_read,
++		.read_u64 = mem_cgroup_read_u64,
+ 	},
+ 	{
+ 		.name = "kmem.usage_in_bytes",
+ 		.private = MEMFILE_PRIVATE(_KMEM, RES_USAGE),
+-		.read = mem_cgroup_read,
++		.read_u64 = mem_cgroup_read_u64,
+ 	},
+ 	{
+ 		.name = "kmem.failcnt",
+ 		.private = MEMFILE_PRIVATE(_KMEM, RES_FAILCNT),
+ 		.trigger = mem_cgroup_reset,
+-		.read = mem_cgroup_read,
++		.read_u64 = mem_cgroup_read_u64,
+ 	},
+ 	{
+ 		.name = "kmem.max_usage_in_bytes",
+ 		.private = MEMFILE_PRIVATE(_KMEM, RES_MAX_USAGE),
+ 		.trigger = mem_cgroup_reset,
+-		.read = mem_cgroup_read,
++		.read_u64 = mem_cgroup_read_u64,
+ 	},
+ #ifdef CONFIG_SLABINFO
+ 	{
+@@ -6349,25 +6342,25 @@ static struct cftype memsw_cgroup_files[] = {
+ 	{
+ 		.name = "memsw.usage_in_bytes",
+ 		.private = MEMFILE_PRIVATE(_MEMSWAP, RES_USAGE),
+-		.read = mem_cgroup_read,
++		.read_u64 = mem_cgroup_read_u64,
+ 	},
+ 	{
+ 		.name = "memsw.max_usage_in_bytes",
+ 		.private = MEMFILE_PRIVATE(_MEMSWAP, RES_MAX_USAGE),
+ 		.trigger = mem_cgroup_reset,
+-		.read = mem_cgroup_read,
++		.read_u64 = mem_cgroup_read_u64,
+ 	},
+ 	{
+ 		.name = "memsw.limit_in_bytes",
+ 		.private = MEMFILE_PRIVATE(_MEMSWAP, RES_LIMIT),
+ 		.write_string = mem_cgroup_write,
+-		.read = mem_cgroup_read,
++		.read_u64 = mem_cgroup_read_u64,
+ 	},
+ 	{
+ 		.name = "memsw.failcnt",
+ 		.private = MEMFILE_PRIVATE(_MEMSWAP, RES_FAILCNT),
+ 		.trigger = mem_cgroup_reset,
+-		.read = mem_cgroup_read,
++		.read_u64 = mem_cgroup_read_u64,
+ 	},
+ 	{ },	/* terminate */
+ };
 -- 
 1.8.4.2
