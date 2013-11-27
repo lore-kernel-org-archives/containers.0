@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 01/12] cgroup, sched: convert away from cftype->read_map()
-Date: Wed, 27 Nov 2013 18:42:28 -0500
-Message-ID: <1385595759-17656-2-git-send-email-tj__38812.1475735263$1385595779$gmane$org@kernel.org>
+Subject: [PATCH 02/12] cpuset: convert away from cftype->read()
+Date: Wed, 27 Nov 2013 18:42:29 -0500
+Message-ID: <1385595759-17656-3-git-send-email-tj__20388.0341061906$1385595787$gmane$org@kernel.org>
 References: <1385595759-17656-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -25,91 +25,132 @@ In preparation of conversion to kernfs, cgroup file handling is being
 consolidated so that it can be easily mapped to the seq_file based
 interface of kernfs.
 
-cftype->read_map() doesn't add any value and being replaced with
-->read_seq_string().  Update cpu_stats_show() and cpuacct_stats_show()
-accordingly.
+All users of cftype->read() can be easily served, usually better, by
+seq_file and other methods.  Rename cpuset_common_file_read() to
+cpuset_common_read_seq_string() and convert it to use
+read_seq_string() interface instead.  This not only simplifies the
+code but also makes it more versatile.  Before, the file couldn't
+output if the result is longer than PAGE_SIZE.  After the conversion,
+seq_file automatically grows the buffer until the output can fit.
 
-This patch doesn't make any visible behavior changes.
+This patch doesn't make any visible behavior changes except for being
+able to handle output larger than PAGE_SIZE.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
 ---
- kernel/sched/core.c    | 10 +++++-----
- kernel/sched/cpuacct.c |  8 ++++----
- 2 files changed, 9 insertions(+), 9 deletions(-)
+ kernel/cpuset.c | 71 +++++++++++++++++++--------------------------------------
+ 1 file changed, 24 insertions(+), 47 deletions(-)
 
-diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index c180860..f28ec67 100644
---- a/kernel/sched/core.c
-+++ b/kernel/sched/core.c
-@@ -7257,14 +7257,14 @@ static int __cfs_schedulable(struct task_group *tg, u64 period, u64 quota)
- }
- 
- static int cpu_stats_show(struct cgroup_subsys_state *css, struct cftype *cft,
--		struct cgroup_map_cb *cb)
-+			  struct seq_file *sf)
+diff --git a/kernel/cpuset.c b/kernel/cpuset.c
+index 4772034..032929f 100644
+--- a/kernel/cpuset.c
++++ b/kernel/cpuset.c
+@@ -1731,66 +1731,43 @@ out_unlock:
+  * used, list of ranges of sequential numbers, is variable length,
+  * and since these maps can change value dynamically, one could read
+  * gibberish by doing partial reads while a list was changing.
+- * A single large read to a buffer that crosses a page boundary is
+- * ok, because the result being copied to user land is not recomputed
+- * across a page fault.
+  */
+-
+-static size_t cpuset_sprintf_cpulist(char *page, struct cpuset *cs)
+-{
+-	size_t count;
+-
+-	mutex_lock(&callback_mutex);
+-	count = cpulist_scnprintf(page, PAGE_SIZE, cs->cpus_allowed);
+-	mutex_unlock(&callback_mutex);
+-
+-	return count;
+-}
+-
+-static size_t cpuset_sprintf_memlist(char *page, struct cpuset *cs)
+-{
+-	size_t count;
+-
+-	mutex_lock(&callback_mutex);
+-	count = nodelist_scnprintf(page, PAGE_SIZE, cs->mems_allowed);
+-	mutex_unlock(&callback_mutex);
+-
+-	return count;
+-}
+-
+-static ssize_t cpuset_common_file_read(struct cgroup_subsys_state *css,
+-				       struct cftype *cft, struct file *file,
+-				       char __user *buf, size_t nbytes,
+-				       loff_t *ppos)
++static int cpuset_common_read_seq_string(struct cgroup_subsys_state *css,
++					 struct cftype *cft,
++					 struct seq_file *sf)
  {
- 	struct task_group *tg = css_tg(css);
- 	struct cfs_bandwidth *cfs_b = &tg->cfs_bandwidth;
+ 	struct cpuset *cs = css_cs(css);
+ 	cpuset_filetype_t type = cft->private;
+-	char *page;
+-	ssize_t retval = 0;
+-	char *s;
++	ssize_t count;
++	char *buf, *s;
++	int ret = 0;
  
--	cb->fill(cb, "nr_periods", cfs_b->nr_periods);
--	cb->fill(cb, "nr_throttled", cfs_b->nr_throttled);
--	cb->fill(cb, "throttled_time", cfs_b->throttled_time);
-+	seq_printf(sf, "nr_periods %d\n", cfs_b->nr_periods);
-+	seq_printf(sf, "nr_throttled %d\n", cfs_b->nr_throttled);
-+	seq_printf(sf, "throttled_time %llu\n", cfs_b->throttled_time);
+-	if (!(page = (char *)__get_free_page(GFP_TEMPORARY)))
+-		return -ENOMEM;
++	count = seq_get_buf(sf, &buf);
++	s = buf;
  
- 	return 0;
- }
-@@ -7318,7 +7318,7 @@ static struct cftype cpu_files[] = {
- 	},
- 	{
- 		.name = "stat",
--		.read_map = cpu_stats_show,
-+		.read_seq_string = cpu_stats_show,
- 	},
- #endif
- #ifdef CONFIG_RT_GROUP_SCHED
-diff --git a/kernel/sched/cpuacct.c b/kernel/sched/cpuacct.c
-index f64722f..dd88738 100644
---- a/kernel/sched/cpuacct.c
-+++ b/kernel/sched/cpuacct.c
-@@ -184,7 +184,7 @@ static const char * const cpuacct_stat_desc[] = {
- };
+-	s = page;
++	mutex_lock(&callback_mutex);
  
- static int cpuacct_stats_show(struct cgroup_subsys_state *css,
--			      struct cftype *cft, struct cgroup_map_cb *cb)
-+			      struct cftype *cft, struct seq_file *sf)
- {
- 	struct cpuacct *ca = css_ca(css);
- 	int cpu;
-@@ -196,7 +196,7 @@ static int cpuacct_stats_show(struct cgroup_subsys_state *css,
- 		val += kcpustat->cpustat[CPUTIME_NICE];
+ 	switch (type) {
+ 	case FILE_CPULIST:
+-		s += cpuset_sprintf_cpulist(s, cs);
++		s += cpulist_scnprintf(s, count, cs->cpus_allowed);
+ 		break;
+ 	case FILE_MEMLIST:
+-		s += cpuset_sprintf_memlist(s, cs);
++		s += nodelist_scnprintf(s, count, cs->mems_allowed);
+ 		break;
+ 	default:
+-		retval = -EINVAL;
+-		goto out;
++		ret = -EINVAL;
++		goto out_unlock;
  	}
- 	val = cputime64_to_clock_t(val);
--	cb->fill(cb, cpuacct_stat_desc[CPUACCT_STAT_USER], val);
-+	seq_printf(sf, "%s %lld\n", cpuacct_stat_desc[CPUACCT_STAT_USER], val);
+-	*s++ = '\n';
  
- 	val = 0;
- 	for_each_online_cpu(cpu) {
-@@ -207,7 +207,7 @@ static int cpuacct_stats_show(struct cgroup_subsys_state *css,
- 	}
- 
- 	val = cputime64_to_clock_t(val);
--	cb->fill(cb, cpuacct_stat_desc[CPUACCT_STAT_SYSTEM], val);
-+	seq_printf(sf, "%s %lld\n", cpuacct_stat_desc[CPUACCT_STAT_SYSTEM], val);
- 
- 	return 0;
+-	retval = simple_read_from_buffer(buf, nbytes, ppos, page, s - page);
+-out:
+-	free_page((unsigned long)page);
+-	return retval;
++	if (s < buf + count - 1) {
++		*s++ = '\n';
++		seq_commit(sf, s - buf);
++	} else {
++		seq_commit(sf, -1);
++	}
++out_unlock:
++	mutex_unlock(&callback_mutex);
++	return ret;
  }
-@@ -224,7 +224,7 @@ static struct cftype files[] = {
- 	},
+ 
+ static u64 cpuset_read_u64(struct cgroup_subsys_state *css, struct cftype *cft)
+@@ -1847,7 +1824,7 @@ static s64 cpuset_read_s64(struct cgroup_subsys_state *css, struct cftype *cft)
+ static struct cftype files[] = {
  	{
- 		.name = "stat",
--		.read_map = cpuacct_stats_show,
-+		.read_seq_string = cpuacct_stats_show,
- 	},
- 	{ }	/* terminate */
- };
+ 		.name = "cpus",
+-		.read = cpuset_common_file_read,
++		.read_seq_string = cpuset_common_read_seq_string,
+ 		.write_string = cpuset_write_resmask,
+ 		.max_write_len = (100U + 6 * NR_CPUS),
+ 		.private = FILE_CPULIST,
+@@ -1855,7 +1832,7 @@ static struct cftype files[] = {
+ 
+ 	{
+ 		.name = "mems",
+-		.read = cpuset_common_file_read,
++		.read_seq_string = cpuset_common_read_seq_string,
+ 		.write_string = cpuset_write_resmask,
+ 		.max_write_len = (100U + 6 * MAX_NUMNODES),
+ 		.private = FILE_MEMLIST,
 -- 
 1.8.4.2
