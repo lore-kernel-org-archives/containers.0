@@ -1,16 +1,15 @@
 From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: [PATCH 03/12] memcg: convert away from cftype->read() and
-	->read_map()
-Date: Thu, 28 Nov 2013 09:26:38 +0100
-Message-ID: <20131128082638.GB2761@dhcp22.suse.cz>
+Subject: Re: [PATCH 05/12] hugetlb_cgroup: convert away from cftype->read()
+Date: Thu, 28 Nov 2013 09:29:27 +0100
+Message-ID: <20131128082927.GC2761@dhcp22.suse.cz>
 References: <1385595759-17656-1-git-send-email-tj@kernel.org>
-	<1385595759-17656-4-git-send-email-tj@kernel.org>
+	<1385595759-17656-6-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1385595759-17656-4-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1385595759-17656-6-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,196 +20,98 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org, "Aneesh Kumar K.V" <aneesh.kumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed 27-11-13 18:42:30, Tejun Heo wrote:
+On Wed 27-11-13 18:42:32, Tejun Heo wrote:
 > In preparation of conversion to kernfs, cgroup file handling is being
 > consolidated so that it can be easily mapped to the seq_file based
 > interface of kernfs.
 > 
-> cftype->read_map() doesn't add any value and being replaced with
-> ->read_seq_string(), and all users of cftype->read() can be easily
-> served, usually better, by seq_file and other methods.
-> 
-> Update mem_cgroup_read() to return u64 instead of printing itself and
-> rename it to mem_cgroup_read_u64(), and update
-> mem_cgroup_oom_control_read() to use ->read_seq_string() instead of
-> ->read_map().
+> All users of cftype->read() can be easily served, usually better, by
+> seq_file and other methods.  Update hugetlb_cgroup_read() to return
+> u64 instead of printing itself and rename it to
+> hugetlb_cgroup_read_u64().
 > 
 > This patch doesn't make any visible behavior changes.
 > 
 > Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+> Cc: Aneesh Kumar K.V <aneesh.kumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 > Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
 > Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-> Cc: Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 
-Acked-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Reviewed-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
 
 Thanks!
 
 > ---
->  mm/memcontrol.c | 49 +++++++++++++++++++++----------------------------
->  1 file changed, 21 insertions(+), 28 deletions(-)
+>  mm/hugetlb_cgroup.c | 22 ++++++++--------------
+>  1 file changed, 8 insertions(+), 14 deletions(-)
 > 
-> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-> index 7aa0d40..f149521 100644
-> --- a/mm/memcontrol.c
-> +++ b/mm/memcontrol.c
-> @@ -5150,14 +5150,12 @@ static inline u64 mem_cgroup_usage(struct mem_cgroup *memcg, bool swap)
->  	return val << PAGE_SHIFT;
+> diff --git a/mm/hugetlb_cgroup.c b/mm/hugetlb_cgroup.c
+> index bda8e44..d747a84 100644
+> --- a/mm/hugetlb_cgroup.c
+> +++ b/mm/hugetlb_cgroup.c
+> @@ -242,22 +242,16 @@ void hugetlb_cgroup_uncharge_cgroup(int idx, unsigned long nr_pages,
+>  	return;
 >  }
 >  
-> -static ssize_t mem_cgroup_read(struct cgroup_subsys_state *css,
-> -			       struct cftype *cft, struct file *file,
-> -			       char __user *buf, size_t nbytes, loff_t *ppos)
-> +static u64 mem_cgroup_read_u64(struct cgroup_subsys_state *css,
+> -static ssize_t hugetlb_cgroup_read(struct cgroup_subsys_state *css,
+> -				   struct cftype *cft, struct file *file,
+> -				   char __user *buf, size_t nbytes,
+> -				   loff_t *ppos)
+> +static u64 hugetlb_cgroup_read_u64(struct cgroup_subsys_state *css,
 > +				   struct cftype *cft)
 >  {
->  	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
+> -	u64 val;
 > -	char str[64];
->  	u64 val;
-> -	int name, len;
-> +	int name;
->  	enum res_type type;
+> -	int idx, name, len;
+> +	int idx, name;
+>  	struct hugetlb_cgroup *h_cg = hugetlb_cgroup_from_css(css);
 >  
->  	type = MEMFILE_TYPE(cft->private);
-> @@ -5183,8 +5181,7 @@ static ssize_t mem_cgroup_read(struct cgroup_subsys_state *css,
->  		BUG();
->  	}
+>  	idx = MEMFILE_IDX(cft->private);
+>  	name = MEMFILE_ATTR(cft->private);
 >  
+> -	val = res_counter_read_u64(&h_cg->hugepage[idx], name);
 > -	len = scnprintf(str, sizeof(str), "%llu\n", (unsigned long long)val);
 > -	return simple_read_from_buffer(buf, nbytes, ppos, str, len);
-> +	return val;
+> +	return res_counter_read_u64(&h_cg->hugepage[idx], name);
 >  }
 >  
->  static int memcg_update_kmem_limit(struct cgroup_subsys_state *css, u64 val)
-> @@ -5911,16 +5908,12 @@ static void mem_cgroup_oom_unregister_event(struct mem_cgroup *memcg,
->  }
+>  static int hugetlb_cgroup_write(struct cgroup_subsys_state *css,
+> @@ -337,28 +331,28 @@ static void __init __hugetlb_cgroup_file_init(int idx)
+>  	cft = &h->cgroup_files[0];
+>  	snprintf(cft->name, MAX_CFTYPE_NAME, "%s.limit_in_bytes", buf);
+>  	cft->private = MEMFILE_PRIVATE(idx, RES_LIMIT);
+> -	cft->read = hugetlb_cgroup_read;
+> +	cft->read_u64 = hugetlb_cgroup_read_u64;
+>  	cft->write_string = hugetlb_cgroup_write;
 >  
->  static int mem_cgroup_oom_control_read(struct cgroup_subsys_state *css,
-> -	struct cftype *cft,  struct cgroup_map_cb *cb)
-> +				       struct cftype *cft, struct seq_file *sf)
->  {
->  	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
+>  	/* Add the usage file */
+>  	cft = &h->cgroup_files[1];
+>  	snprintf(cft->name, MAX_CFTYPE_NAME, "%s.usage_in_bytes", buf);
+>  	cft->private = MEMFILE_PRIVATE(idx, RES_USAGE);
+> -	cft->read = hugetlb_cgroup_read;
+> +	cft->read_u64 = hugetlb_cgroup_read_u64;
 >  
-> -	cb->fill(cb, "oom_kill_disable", memcg->oom_kill_disable);
-> -
-> -	if (atomic_read(&memcg->under_oom))
-> -		cb->fill(cb, "under_oom", 1);
-> -	else
-> -		cb->fill(cb, "under_oom", 0);
-> +	seq_printf(sf, "oom_kill_disable %d\n", memcg->oom_kill_disable);
-> +	seq_printf(sf, "under_oom %d\n", (bool)atomic_read(&memcg->under_oom));
->  	return 0;
->  }
+>  	/* Add the MAX usage file */
+>  	cft = &h->cgroup_files[2];
+>  	snprintf(cft->name, MAX_CFTYPE_NAME, "%s.max_usage_in_bytes", buf);
+>  	cft->private = MEMFILE_PRIVATE(idx, RES_MAX_USAGE);
+>  	cft->trigger = hugetlb_cgroup_reset;
+> -	cft->read = hugetlb_cgroup_read;
+> +	cft->read_u64 = hugetlb_cgroup_read_u64;
 >  
-> @@ -6239,31 +6232,31 @@ static struct cftype mem_cgroup_files[] = {
->  	{
->  		.name = "usage_in_bytes",
->  		.private = MEMFILE_PRIVATE(_MEM, RES_USAGE),
-> -		.read = mem_cgroup_read,
-> +		.read_u64 = mem_cgroup_read_u64,
->  	},
->  	{
->  		.name = "max_usage_in_bytes",
->  		.private = MEMFILE_PRIVATE(_MEM, RES_MAX_USAGE),
->  		.trigger = mem_cgroup_reset,
-> -		.read = mem_cgroup_read,
-> +		.read_u64 = mem_cgroup_read_u64,
->  	},
->  	{
->  		.name = "limit_in_bytes",
->  		.private = MEMFILE_PRIVATE(_MEM, RES_LIMIT),
->  		.write_string = mem_cgroup_write,
-> -		.read = mem_cgroup_read,
-> +		.read_u64 = mem_cgroup_read_u64,
->  	},
->  	{
->  		.name = "soft_limit_in_bytes",
->  		.private = MEMFILE_PRIVATE(_MEM, RES_SOFT_LIMIT),
->  		.write_string = mem_cgroup_write,
-> -		.read = mem_cgroup_read,
-> +		.read_u64 = mem_cgroup_read_u64,
->  	},
->  	{
->  		.name = "failcnt",
->  		.private = MEMFILE_PRIVATE(_MEM, RES_FAILCNT),
->  		.trigger = mem_cgroup_reset,
-> -		.read = mem_cgroup_read,
-> +		.read_u64 = mem_cgroup_read_u64,
->  	},
->  	{
->  		.name = "stat",
-> @@ -6297,7 +6290,7 @@ static struct cftype mem_cgroup_files[] = {
->  	},
->  	{
->  		.name = "oom_control",
-> -		.read_map = mem_cgroup_oom_control_read,
-> +		.read_seq_string = mem_cgroup_oom_control_read,
->  		.write_u64 = mem_cgroup_oom_control_write,
->  		.private = MEMFILE_PRIVATE(_OOM_TYPE, OOM_CONTROL),
->  	},
-> @@ -6315,24 +6308,24 @@ static struct cftype mem_cgroup_files[] = {
->  		.name = "kmem.limit_in_bytes",
->  		.private = MEMFILE_PRIVATE(_KMEM, RES_LIMIT),
->  		.write_string = mem_cgroup_write,
-> -		.read = mem_cgroup_read,
-> +		.read_u64 = mem_cgroup_read_u64,
->  	},
->  	{
->  		.name = "kmem.usage_in_bytes",
->  		.private = MEMFILE_PRIVATE(_KMEM, RES_USAGE),
-> -		.read = mem_cgroup_read,
-> +		.read_u64 = mem_cgroup_read_u64,
->  	},
->  	{
->  		.name = "kmem.failcnt",
->  		.private = MEMFILE_PRIVATE(_KMEM, RES_FAILCNT),
->  		.trigger = mem_cgroup_reset,
-> -		.read = mem_cgroup_read,
-> +		.read_u64 = mem_cgroup_read_u64,
->  	},
->  	{
->  		.name = "kmem.max_usage_in_bytes",
->  		.private = MEMFILE_PRIVATE(_KMEM, RES_MAX_USAGE),
->  		.trigger = mem_cgroup_reset,
-> -		.read = mem_cgroup_read,
-> +		.read_u64 = mem_cgroup_read_u64,
->  	},
->  #ifdef CONFIG_SLABINFO
->  	{
-> @@ -6349,25 +6342,25 @@ static struct cftype memsw_cgroup_files[] = {
->  	{
->  		.name = "memsw.usage_in_bytes",
->  		.private = MEMFILE_PRIVATE(_MEMSWAP, RES_USAGE),
-> -		.read = mem_cgroup_read,
-> +		.read_u64 = mem_cgroup_read_u64,
->  	},
->  	{
->  		.name = "memsw.max_usage_in_bytes",
->  		.private = MEMFILE_PRIVATE(_MEMSWAP, RES_MAX_USAGE),
->  		.trigger = mem_cgroup_reset,
-> -		.read = mem_cgroup_read,
-> +		.read_u64 = mem_cgroup_read_u64,
->  	},
->  	{
->  		.name = "memsw.limit_in_bytes",
->  		.private = MEMFILE_PRIVATE(_MEMSWAP, RES_LIMIT),
->  		.write_string = mem_cgroup_write,
-> -		.read = mem_cgroup_read,
-> +		.read_u64 = mem_cgroup_read_u64,
->  	},
->  	{
->  		.name = "memsw.failcnt",
->  		.private = MEMFILE_PRIVATE(_MEMSWAP, RES_FAILCNT),
->  		.trigger = mem_cgroup_reset,
-> -		.read = mem_cgroup_read,
-> +		.read_u64 = mem_cgroup_read_u64,
->  	},
->  	{ },	/* terminate */
->  };
+>  	/* Add the failcntfile */
+>  	cft = &h->cgroup_files[3];
+>  	snprintf(cft->name, MAX_CFTYPE_NAME, "%s.failcnt", buf);
+>  	cft->private  = MEMFILE_PRIVATE(idx, RES_FAILCNT);
+>  	cft->trigger  = hugetlb_cgroup_reset;
+> -	cft->read = hugetlb_cgroup_read;
+> +	cft->read_u64 = hugetlb_cgroup_read_u64;
+>  
+>  	/* NULL terminate the last cft */
+>  	cft = &h->cgroup_files[4];
 > -- 
 > 1.8.4.2
 > 
