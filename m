@@ -1,20 +1,17 @@
-From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [REVIEW][PATCH 3/3] vfs: Fix a regression in mounting proc
-Date: Fri, 29 Nov 2013 20:53:27 +0100
-Message-ID: <20131129195327.GA12974@redhat.com>
-References: <20131118180134.GA24156@mail.hallyn.com>
-	<87k3g5gnuv.fsf@xmission.com>
-	<20131126181043.GA25492@mail.hallyn.com>
-	<87siui1z1g.fsf_-_@xmission.com> <87pppmzoin.fsf_-_@xmission.com>
-	<20131127161300.GA24773@redhat.com> <871u21oeyr.fsf@xmission.com>
-	<20131127194722.GA32673@redhat.com>
-	<87iovdmxl7.fsf@xmission.com> <87wqjtlic3.fsf@xmission.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 07/12] cgroup: unify cgroup_write_X64() and
+	cgroup_write_string()
+Date: Fri, 29 Nov 2013 15:05:25 -0500
+Message-ID: <20131129200525.GC21755@mtj.dyndns.org>
+References: <1385595759-17656-1-git-send-email-tj@kernel.org>
+	<1385595759-17656-8-git-send-email-tj@kernel.org>
+	<20131128111818.GG2761@dhcp22.suse.cz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <87wqjtlic3.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <20131128111818.GG2761-2MMpYkNvuYDjFM9bn6wA6Q@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,28 +21,49 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Cc: nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 11/27, Eric W. Biederman wrote:
->
-> ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) writes:
->
-> > Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
-> >>
-> >> Lets ignore the implementation details. Suppose that proc was never
-> >> mounted. Then "mount -t proc" should fail after CLONE_NEWUSER | NEWNS?
-> >
-> > Yes.
->
-> Well strictly speaking it should fail after CLONE_NEWUSER | NEWNS | NEWPID.
+Hello, Michal.
 
-Yes, yes, I understand, the mounter should be CAP_SYS_ADMIN in
-task_active_pid_ns().
+On Thu, Nov 28, 2013 at 12:18:18PM +0100, Michal Hocko wrote:
+> > Unify the two into cgroup_file_write() which always allocates dynamic
+> > buffer for simplicity
+> 
+> It's true that this is simpler but the allocation might cause some
+> issues with memcg. Although it is not common that userspace oom handler
+> is a part of the target memcg there are users (e.g. Google) who do that.
+> 
+> Why is that a problem? Consider that a memcg is under OOM, handler gets
+> notified and tries to solve the situation by enlarging the hard limit.
+> This worked before this patch because cgroup_write_X64 used an on stack
+> buffer but now it would use kmalloc which might be accounted and trip
+> over the same OOM situation.
+> 
+> This is not limited to the OOM handling. The group might be close to OOM
+> and the last thing user expects is to trigger OOM when he tries to
+> enlarge the limit.
+> 
+> Is the additional simplicity worth breaking those usecases?
 
-> Has this cleared up the confusion?
+Whoa, so we support oom handler inside the memcg that it handles?
+Does that work reliably?  Changing the above detail in this patch
+isn't difficult (and we'll later need to update kernfs too) but
+supporting such setup properly would be a *lot* of commitment and I'm
+very doubtful we'd be able to achieve that by just carefully avoiding
+memory allocation in the operations that usreland oom handler uses -
+that set is destined to expand over time, extremely fragile and will
+be hellish to maintain.
 
-Yes. Thanks.
+So, I'm not at all excited about commiting to this guarantee.  This
+one is an easy one but it looks like the first step onto dizzying
+slippery slope.
 
-Oleg.
+Am I misunderstanding something here?  Are you and Johannes firm on
+supporting this?
+
+Thanks.
+
+-- 
+tejun
