@@ -1,15 +1,20 @@
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Q: use vlan in container
-Date: Fri, 29 Nov 2013 08:18:26 -0600
-Message-ID: <20131129141826.GA5018@sergelap>
-References: <5296E003.80804@huawei.com> <20131129050549.GB8830@sergelap>
-	<529836CD.1080900@huawei.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [REVIEW][PATCH 3/3] vfs: Fix a regression in mounting proc
+Date: Fri, 29 Nov 2013 14:56:27 +0000
+Message-ID: <20131129145627.GA32692@mail.hallyn.com>
+References: <87k3g5gnuv.fsf@xmission.com>
+	<20131126181043.GA25492@mail.hallyn.com>
+	<87siui1z1g.fsf_-_@xmission.com> <87pppmzoin.fsf_-_@xmission.com>
+	<20131127161300.GA24773@redhat.com> <871u21oeyr.fsf@xmission.com>
+	<20131127194722.GA32673@redhat.com> <87iovdmxl7.fsf@xmission.com>
+	<87wqjtlic3.fsf@xmission.com>
+	<CALCETrUwjK7iLMMJaCvKUbBwEqV58oXY4dWzTGJohYgg4DwjWQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <529836CD.1080900-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <CALCETrUwjK7iLMMJaCvKUbBwEqV58oXY4dWzTGJohYgg4DwjWQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,64 +24,70 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Libo Chen <clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "zhangwei(Jovi)" <jovi.zhangwei-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Libo Chen (clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org):
-> On 2013/11/29 13:05, Serge Hallyn wrote:
-> > Quoting Libo Chen (clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org):
-> >> Hello LXC experts,
+Quoting Andy Lutomirski (luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org):
+> On Wed, Nov 27, 2013 at 12:07 PM, Eric W. Biederman
+> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+> > ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) writes:
+> >
+> >> Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
 > >>
-> >> 	I meet a problem. When using vlan as network device in suse11 system container,
-> >> I can not use halt to stop this container. It hung on "eth0 is still used from interfaces eth0" in cycle.
+> >>> Just to avoid the possible confusion, let me repeat that the fix itsef
+> >>> looks "obviously fine" to me, "i_nlink != 2" looks obviously wrong.
+> >>>
+> >>> I am not arguing with this patch, I am just trying to understand this
+> >>> logic.
+> >>>
+> >>> On 11/27, Eric W. Biederman wrote:
+> >>>>
+> >>>> [... snip ...]
+> >>>
+> >>> Thanks a lot.
+> >>>
+> >>>> For the real concern about jail environments where proc and sysfs are
+> >>>> not mounted at all a fs_visible check is all that is really required,
+> >>>
+> >>> this is what I can't understand...
+> >>>
+> >>> Lets ignore the implementation details. Suppose that proc was never
+> >>> mounted. Then "mount -t proc" should fail after CLONE_NEWUSER | NEWNS?
 > >>
-> >> The config file:
-> >>
-> >> lxc.network.type = vlan
-> >> lxc.network.flags = up
-> >> lxc.network.link = eth0
-> >> lxc.network.name = eth0
-> >> lxc.network.vlan.id = 1301
-> >> lxc.network.ipv4 = 128.5.131.100/24
-> >>
-> >>
-> >> The reason is in the shell command /sbin/ifdown, see below:
-> >>
-> >> ######################################################################
-> >> # Shut down depending interfaces
-> >> #
-> >> # Check if there are interfaces which depend on this interface. If yes these
-> >> # have to be shut down first.
-> >> # For example these might be bonding or vlan interfaces. Note that we don't
-> >> # catch all types of depending interfaces currently. See function
-> >> # 'get_depending_ifaces' in file 'functions' for details.
-> >> #
-> >> test "$SCRIPTNAME" = ifdown && DEP_IFACES=`get_depending_ifaces $INTERFACE`
-> >> if [ "$?" = 0 -a "$NODEPS" != yes ] ; then
-> >>         message "`printf "    %-9s is still used from interfaces %s" \
-> >>                          $INTERFACE "$DEP_IFACES"`"
-> >>         for DI in $DEP_IFACES; do
-> > 
-> > Should the proper fix be to fix this script so that it doesn't call
-> > ifdown recursively if $DI = $INTERFACE ?
+> >> Yes.
+> >
+> > Well strictly speaking it should fail after CLONE_NEWUSER | NEWNS | NEWPID.
+> > If proc was never mounted.
+> >
+> > Fresh mounts of proc are not allowed unless you have also created the
+> > pid namespace.  With just CLONE_NEWUSER | NEWNS you are limited to bind
+> > mounts.
+> >
+> > Has this cleared up the confusion?
+> >
+> > Eric
+> >
 > 
-> Hi Serge,
+> This is all obnoxiously complicated.  I wonder if we can do (a lot)
+> better by allowing a "pid-only" variant of proc to be mounted.  It
+> should contain:
 > 
-> yes, I had try this way before as below:
+>  - All the pid directories
+>  - /proc/self, /proc/net, and /proc/mounts (but possibly not
+> /proc/PID/net -- that's a weird interface IMO and isn't really related
+> to the pid)
+>  - keys key-users (wtf is up with that interface, though -- those
+> files are way too magical)
+>  - cpuinfo, version, and maybe other informational things (crypto?)
+>  - loadavg, perhaps
 > 
->         for DI in $DEP_IFACES; do
-> 	         if [ "$DI" != "$INTERFACE" ] ; then
->                        ifdown $DI -o $OPTIONS
-> 	         fi
->         done
-> 
-> It works well, but I have no idea it is safe enough and no side effects?
+> I wonder it would be possible to boot a reasonable container with a
+> heavily limited /proc like that.
 
-It's safe enough and should have no side effects itself.  But
-I recommend you first look up how get_depending_ifaces() is
-implemented.  That's where this really should be fixed, and if
-it turns out that the proper fix for *that* is in the kernel
-then that's ok.
+Should be possible.  And heck, maybe some of the values could then
+be virtualized :)  cmdline could point to the container init's
+cmdline;  cpuinfo and loadavg and meminfo be filtered through
+cgroupfs.
 
 -serge
