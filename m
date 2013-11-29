@@ -1,20 +1,15 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [REVIEW][PATCH 3/3] vfs: Fix a regression in mounting proc
-Date: Fri, 29 Nov 2013 14:56:27 +0000
-Message-ID: <20131129145627.GA32692@mail.hallyn.com>
-References: <87k3g5gnuv.fsf@xmission.com>
-	<20131126181043.GA25492@mail.hallyn.com>
-	<87siui1z1g.fsf_-_@xmission.com> <87pppmzoin.fsf_-_@xmission.com>
-	<20131127161300.GA24773@redhat.com> <871u21oeyr.fsf@xmission.com>
-	<20131127194722.GA32673@redhat.com> <87iovdmxl7.fsf@xmission.com>
-	<87wqjtlic3.fsf@xmission.com>
-	<CALCETrUwjK7iLMMJaCvKUbBwEqV58oXY4dWzTGJohYgg4DwjWQ@mail.gmail.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCH v2 4/9] cgroup: introduce struct cgroup_pidlist_open_file
+Date: Fri, 29 Nov 2013 10:44:53 -0500
+Message-ID: <20131129154453.GD3717@htj.dyndns.org>
+References: <1385331096-7918-1-git-send-email-tj@kernel.org>
+	<1385331096-7918-5-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <CALCETrUwjK7iLMMJaCvKUbBwEqV58oXY4dWzTGJohYgg4DwjWQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <1385331096-7918-5-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,70 +19,128 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Andy Lutomirski (luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org):
-> On Wed, Nov 27, 2013 at 12:07 PM, Eric W. Biederman
-> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
-> > ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) writes:
-> >
-> >> Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
-> >>
-> >>> Just to avoid the possible confusion, let me repeat that the fix itsef
-> >>> looks "obviously fine" to me, "i_nlink != 2" looks obviously wrong.
-> >>>
-> >>> I am not arguing with this patch, I am just trying to understand this
-> >>> logic.
-> >>>
-> >>> On 11/27, Eric W. Biederman wrote:
-> >>>>
-> >>>> [... snip ...]
-> >>>
-> >>> Thanks a lot.
-> >>>
-> >>>> For the real concern about jail environments where proc and sysfs are
-> >>>> not mounted at all a fs_visible check is all that is really required,
-> >>>
-> >>> this is what I can't understand...
-> >>>
-> >>> Lets ignore the implementation details. Suppose that proc was never
-> >>> mounted. Then "mount -t proc" should fail after CLONE_NEWUSER | NEWNS?
-> >>
-> >> Yes.
-> >
-> > Well strictly speaking it should fail after CLONE_NEWUSER | NEWNS | NEWPID.
-> > If proc was never mounted.
-> >
-> > Fresh mounts of proc are not allowed unless you have also created the
-> > pid namespace.  With just CLONE_NEWUSER | NEWNS you are limited to bind
-> > mounts.
-> >
-> > Has this cleared up the confusion?
-> >
-> > Eric
-> >
-> 
-> This is all obnoxiously complicated.  I wonder if we can do (a lot)
-> better by allowing a "pid-only" variant of proc to be mounted.  It
-> should contain:
-> 
->  - All the pid directories
->  - /proc/self, /proc/net, and /proc/mounts (but possibly not
-> /proc/PID/net -- that's a weird interface IMO and isn't really related
-> to the pid)
->  - keys key-users (wtf is up with that interface, though -- those
-> files are way too magical)
->  - cpuinfo, version, and maybe other informational things (crypto?)
->  - loadavg, perhaps
-> 
-> I wonder it would be possible to boot a reasonable container with a
-> heavily limited /proc like that.
+From 62236858f3cc558135d1ab6b2af44d22c489bb7f Mon Sep 17 00:00:00 2001
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Date: Fri, 29 Nov 2013 10:42:58 -0500
 
-Should be possible.  And heck, maybe some of the values could then
-be virtualized :)  cmdline could point to the container init's
-cmdline;  cpuinfo and loadavg and meminfo be filtered through
-cgroupfs.
+For pidlist files, seq_file->private pointed to the loaded
+cgroup_pidlist; however, pidlist loading is planned to be moved to
+cgroup_pidlist_start() for kernfs conversion and seq_file->private
+needs to carry more information from open to allow that.
 
--serge
+This patch introduces struct cgroup_pidlist_open_file which contains
+type, cgrp and pidlist and updates pidlist seq_file->private to point
+to it using seq_open_private() and seq_release_private().  Note that
+this eventually will be replaced by kernfs_open_file.
+
+While this patch makes more information available to seq_file
+operations, they don't use it yet and this patch doesn't introduce any
+behavior changes except for allocation of the extra private struct.
+
+v2: use __seq_open_private() instead of seq_open_private() for brevity
+    as suggested by Li.
+
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+---
+ kernel/cgroup.c | 39 +++++++++++++++++++++++++++------------
+ 1 file changed, 27 insertions(+), 12 deletions(-)
+
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index acdcddf..ef019c0 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -3468,6 +3468,13 @@ struct cgroup_pidlist {
+ 	struct delayed_work destroy_dwork;
+ };
+ 
++/* seq_file->private points to the following */
++struct cgroup_pidlist_open_file {
++	enum cgroup_filetype		type;
++	struct cgroup			*cgrp;
++	struct cgroup_pidlist		*pidlist;
++};
++
+ /*
+  * The following two functions "fix" the issue where there are more pids
+  * than kmalloc will give memory for; in such cases, we use vmalloc/vfree.
+@@ -3739,7 +3746,8 @@ static void *cgroup_pidlist_start(struct seq_file *s, loff_t *pos)
+ 	 * after a seek to the start). Use a binary-search to find the
+ 	 * next pid to display, if any
+ 	 */
+-	struct cgroup_pidlist *l = s->private;
++	struct cgroup_pidlist_open_file *of = s->private;
++	struct cgroup_pidlist *l = of->pidlist;
+ 	int index = 0, pid = *pos;
+ 	int *iter;
+ 
+@@ -3769,13 +3777,15 @@ static void *cgroup_pidlist_start(struct seq_file *s, loff_t *pos)
+ 
+ static void cgroup_pidlist_stop(struct seq_file *s, void *v)
+ {
+-	struct cgroup_pidlist *l = s->private;
+-	up_read(&l->rwsem);
++	struct cgroup_pidlist_open_file *of = s->private;
++
++	up_read(&of->pidlist->rwsem);
+ }
+ 
+ static void *cgroup_pidlist_next(struct seq_file *s, void *v, loff_t *pos)
+ {
+-	struct cgroup_pidlist *l = s->private;
++	struct cgroup_pidlist_open_file *of = s->private;
++	struct cgroup_pidlist *l = of->pidlist;
+ 	pid_t *p = v;
+ 	pid_t *end = l->list + l->length;
+ 	/*
+@@ -3820,11 +3830,11 @@ static void cgroup_release_pid_array(struct cgroup_pidlist *l)
+ 
+ static int cgroup_pidlist_release(struct inode *inode, struct file *file)
+ {
+-	struct cgroup_pidlist *l;
++	struct cgroup_pidlist_open_file *of;
+ 
+-	l = ((struct seq_file *)file->private_data)->private;
+-	cgroup_release_pid_array(l);
+-	return seq_release(inode, file);
++	of = ((struct seq_file *)file->private_data)->private;
++	cgroup_release_pid_array(of->pidlist);
++	return seq_release_private(inode, file);
+ }
+ 
+ static const struct file_operations cgroup_pidlist_operations = {
+@@ -3843,6 +3853,7 @@ static const struct file_operations cgroup_pidlist_operations = {
+ static int cgroup_pidlist_open(struct file *file, enum cgroup_filetype type)
+ {
+ 	struct cgroup *cgrp = __d_cgrp(file->f_dentry->d_parent);
++	struct cgroup_pidlist_open_file *of;
+ 	struct cgroup_pidlist *l;
+ 	int retval;
+ 
+@@ -3853,12 +3864,16 @@ static int cgroup_pidlist_open(struct file *file, enum cgroup_filetype type)
+ 	/* configure file information */
+ 	file->f_op = &cgroup_pidlist_operations;
+ 
+-	retval = seq_open(file, &cgroup_pidlist_seq_operations);
+-	if (retval) {
++	of = __seq_open_private(file, &cgroup_pidlist_seq_operations,
++				sizeof(*of));
++	if (!of) {
+ 		cgroup_release_pid_array(l);
+-		return retval;
++		return -ENOMEM;
+ 	}
+-	((struct seq_file *)file->private_data)->private = l;
++
++	of->type = type;
++	of->cgrp = cgrp;
++	of->pidlist = l;
+ 	return 0;
+ }
+ static int cgroup_tasks_open(struct inode *unused, struct file *file)
+-- 
+1.8.4.2
