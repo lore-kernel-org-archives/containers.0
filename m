@@ -1,10 +1,9 @@
 From: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 Subject: Re: [REVIEW][PATCH 1/3] vfs: In d_path don't call d_dname on a mount
 	point
-Date: Sat, 30 Nov 2013 06:15:26 +0000
-Message-ID: <20131130061525.GY10323@ZenIV.linux.org.uk>
-References: <20131116164840.GA4441@mail.hallyn.com>
-	<20131117030653.GA7670@mail.hallyn.com>
+Date: Sat, 30 Nov 2013 17:02:26 +0000
+Message-ID: <20131130170226.GZ10323@ZenIV.linux.org.uk>
+References: <20131117030653.GA7670@mail.hallyn.com>
 	<20131118031932.GA17621@mail.hallyn.com>
 	<52899D09.5080202@cn.fujitsu.com>
 	<20131118140830.GA22075@mail.hallyn.com>
@@ -12,12 +11,13 @@ References: <20131116164840.GA4441@mail.hallyn.com>
 	<87k3g5gnuv.fsf@xmission.com>
 	<20131126181043.GA25492@mail.hallyn.com>
 	<87siui1z1g.fsf_-_@xmission.com> <8738mi1yya.fsf_-_@xmission.com>
+	<20131130061525.GY10323@ZenIV.linux.org.uk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <8738mi1yya.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <20131130061525.GY10323-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -28,55 +28,69 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Eric Dumazet <edumazet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Neil Brown <neilb-l3A5Bk7waGM@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Eric Dumazet <edumazet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-[Eric Dumazet Cc'd since ->d_dname() had been introduced by him]
+On Sat, Nov 30, 2013 at 06:15:26AM +0000, Al Viro wrote:
 
-On Tue, Nov 26, 2013 at 04:16:13PM -0800, Eric W. Biederman wrote:
-> >   proc ipc:[4026531839] proc rw,nosuid,nodev,noexec 0 0
-> >
-> > This breaks userspace which expects the 2nd field in
-> > /proc/mounts to be a valid path.
-> 
-> The symlink /proc/<pid>/ns/{ipc,mnt,net,pid,user,uts} point to
-> dentries allocated with d_alloc_pseudo that we can mount, and
-> that have interesting names printed out with d_dname.
-> 
-> When these files are bind mounted /proc/mounts is not currently
-> displaying the mount point correctly because d_dname is called instead
-> of just displaying the path where the file is mounted.
-> 
-> Solve this by adding an explicit check to distinguish mounted pseudo
-> inodes and unmounted pseudo inodes.  Unmounted pseudo inodes always
-> use mount of their filesstem as the mnt_root  in their path making
-> these two cases easy to distinguish.
+> There's a bunch of unpleasant details around the handling of "what if
+> the final vfsmount is detached or internal" (and induced weirdness
+> with d_absolute_path(), etc. callers deciding whether they want to
+> call ->d_dname() manually, since only d_path() calls it); I'll look into
+> that.
 
-Excuse me, but this is a wrong way to deal with that.  The root of the
-problem is your "let's give them ->d_dname() *and* let them live on the
-same procfs vfsmount".  The latter, BTW, requires the suckers to access
-nd->path.mnt, which is a bad thing by itself.  Plus the wrong way
-->d_dname() is called.  It was kinda-sorta defensible back when it
-had been introduced, but only because all filesystems with ->d_dname()
-had been MS_NOUSER ones.  Kinda-sorta since it introduced an unpleasant
-difference in semantics of d_path() and the rest of its ilk - see
-e.g. tomoyo calling ->d_dname() manually.
+FWIW, the other callers of prepend_path() boil down to /proc/mountinfo
+handling, apparmour d_namespace_path() (separate handling of MNT_INTERNAL,
+__d_path() or d_absolute_path() for the rest) and tomoyo_get_absolute_path()
+(this one directly calls ->d_dname() itself).  Note that /proc/mountinfo
+will spew garbage for your case (binding /proc/<pid>/ns/mnt somewhere);
+the mountpoint will show correctly, but the relative name won't - it
+goes through seq_dentry()->dentry_path() (this and apparmour d_namespace_path()
+being the only codepaths to dentry_path(), BTW).  Eric, what behaviour
+do you want there?
 
-->d_dname() addresses a real need, no arguments here - we do want to
-delay name generation for pipes and sockets until asked for it.  The
-problem is that it's dealt with in the wrong place - we ought to
-have it handled when prepend_path() reaches a vfsmount with no
-parent and an IS_ROOT() dentry.  _Then_ we need to check if it has
-->d_op->d_dname() and call one if it does.
+While we are at it: lustre contains this gem:
+static char* ll_d_path(struct dentry *dentry, char *buf, int bufsize)
+{
+        char *path = NULL;
 
-There's a bunch of unpleasant details around the handling of "what if
-the final vfsmount is detached or internal" (and induced weirdness
-with d_absolute_path(), etc. callers deciding whether they want to
-call ->d_dname() manually, since only d_path() calls it); I'll look into
-that.
+        struct path p;
 
-As for using this procfs vfsmount...  Frankly, I would rather add a mini-fs
-a-la aio one and have those inodes live _there_, with the same vfsmount
-used for all those guys.  Internal, of course.  Without bothering with
-register_filesystem(), with all associated headache ("what if userland
-mounts the entire thing", etc.)
+        p.dentry = dentry;
+        p.mnt = current->fs->root.mnt;
+        path_get(&p);
+        path = d_path(&p, buf, bufsize);
+        path_put(&p);
+
+        return path;
+}
+That should've been dentry_path(), reimplemented here with the usual braino.
+Think what this hack produces if current is chrooted into fs in question;
+the "clever" trick fails and instead of intended path from fs root we get
+path from wherever current's chrooted to.  There's a reason why dentry_path()
+had been introduced...
+
+<looks at the callers of that wonder>
+        /* this can be called inside spin lock so use GFP_ATOMIC. */
+        buf = (char *)__get_free_page(GFP_ATOMIC);
+        if (buf != NULL) {
+                dentry = d_find_alias(page->mapping->host);
+                if (dentry != NULL)
+                        path = ll_d_path(dentry, buf, PAGE_SIZE);
+        }
+	...
+	if (dentry)
+		dput(dentry);
+
+Good luck if it ever gets called under spinlock - dput() is not a thing you
+should call in such place, ditto for path_put() from ll_d_path() itself...
+What are the callchains leading there?  I've tried to track them, but gave
+up after a while ;-/  I really hope that it's just "called under spinlock"
+and not "called from softirq" or something like that...  Who maintains
+that thing, anyway?
+
+BTW, what happens if svc_export_request() ends up with pathname filling
+almost all space left, so that qword_add(bpp, blen, pth) right after the
+call of d_path() in there overwrites the beginning of d_path() output?
+Neil?  And while we are at it, handling of overflow in there looks also
+looks fishy...
