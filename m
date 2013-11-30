@@ -1,14 +1,23 @@
-From: Libo Chen <clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: Q: use vlan in container
-Date: Sat, 30 Nov 2013 09:46:59 +0800
-Message-ID: <52994393.8060601@huawei.com>
-References: <5296E003.80804@huawei.com> <20131129050549.GB8830@sergelap>
-	<529836CD.1080900@huawei.com> <20131129141826.GA5018@sergelap>
+From: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Subject: Re: [REVIEW][PATCH 1/3] vfs: In d_path don't call d_dname on a mount
+	point
+Date: Sat, 30 Nov 2013 06:15:26 +0000
+Message-ID: <20131130061525.GY10323@ZenIV.linux.org.uk>
+References: <20131116164840.GA4441@mail.hallyn.com>
+	<20131117030653.GA7670@mail.hallyn.com>
+	<20131118031932.GA17621@mail.hallyn.com>
+	<52899D09.5080202@cn.fujitsu.com>
+	<20131118140830.GA22075@mail.hallyn.com>
+	<20131118180134.GA24156@mail.hallyn.com>
+	<87k3g5gnuv.fsf@xmission.com>
+	<20131126181043.GA25492@mail.hallyn.com>
+	<87siui1z1g.fsf_-_@xmission.com> <8738mi1yya.fsf_-_@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20131129141826.GA5018@sergelap>
+Content-Disposition: inline
+In-Reply-To: <8738mi1yya.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,74 +27,56 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Cc: dingtianhong-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "zhangwei(Jovi)" <jovi.zhangwei-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Eric Dumazet <edumazet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 2013/11/29 22:18, Serge Hallyn wrote:
-> Quoting Libo Chen (clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org):
->> On 2013/11/29 13:05, Serge Hallyn wrote:
->>> Quoting Libo Chen (clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org):
->>>> Hello LXC experts,
->>>>
->>>> 	I meet a problem. When using vlan as network device in suse11 system container,
->>>> I can not use halt to stop this container. It hung on "eth0 is still used from interfaces eth0" in cycle.
->>>>
->>>> The config file:
->>>>
->>>> lxc.network.type = vlan
->>>> lxc.network.flags = up
->>>> lxc.network.link = eth0
->>>> lxc.network.name = eth0
->>>> lxc.network.vlan.id = 1301
->>>> lxc.network.ipv4 = 128.5.131.100/24
->>>>
->>>>
->>>> The reason is in the shell command /sbin/ifdown, see below:
->>>>
->>>> ######################################################################
->>>> # Shut down depending interfaces
->>>> #
->>>> # Check if there are interfaces which depend on this interface. If yes these
->>>> # have to be shut down first.
->>>> # For example these might be bonding or vlan interfaces. Note that we don't
->>>> # catch all types of depending interfaces currently. See function
->>>> # 'get_depending_ifaces' in file 'functions' for details.
->>>> #
->>>> test "$SCRIPTNAME" = ifdown && DEP_IFACES=`get_depending_ifaces $INTERFACE`
->>>> if [ "$?" = 0 -a "$NODEPS" != yes ] ; then
->>>>         message "`printf "    %-9s is still used from interfaces %s" \
->>>>                          $INTERFACE "$DEP_IFACES"`"
->>>>         for DI in $DEP_IFACES; do
->>>
->>> Should the proper fix be to fix this script so that it doesn't call
->>> ifdown recursively if $DI = $INTERFACE ?
->>
->> Hi Serge,
->>
->> yes, I had try this way before as below:
->>
->>         for DI in $DEP_IFACES; do
->> 	         if [ "$DI" != "$INTERFACE" ] ; then
->>                        ifdown $DI -o $OPTIONS
->> 	         fi
->>         done
->>
->> It works well, but I have no idea it is safe enough and no side effects?
-> 
-> It's safe enough and should have no side effects itself.  But
-> I recommend you first look up how get_depending_ifaces() is
-> implemented.  That's where this really should be fixed, and if
-> it turns out that the proper fix for *that* is in the kernel
-> then that's ok.
+[Eric Dumazet Cc'd since ->d_dname() had been introduced by him]
 
-thank you for your suggestion.
-
-Libo
-
-
+On Tue, Nov 26, 2013 at 04:16:13PM -0800, Eric W. Biederman wrote:
+> >   proc ipc:[4026531839] proc rw,nosuid,nodev,noexec 0 0
+> >
+> > This breaks userspace which expects the 2nd field in
+> > /proc/mounts to be a valid path.
 > 
-> -serge
+> The symlink /proc/<pid>/ns/{ipc,mnt,net,pid,user,uts} point to
+> dentries allocated with d_alloc_pseudo that we can mount, and
+> that have interesting names printed out with d_dname.
 > 
-> .
+> When these files are bind mounted /proc/mounts is not currently
+> displaying the mount point correctly because d_dname is called instead
+> of just displaying the path where the file is mounted.
 > 
+> Solve this by adding an explicit check to distinguish mounted pseudo
+> inodes and unmounted pseudo inodes.  Unmounted pseudo inodes always
+> use mount of their filesstem as the mnt_root  in their path making
+> these two cases easy to distinguish.
+
+Excuse me, but this is a wrong way to deal with that.  The root of the
+problem is your "let's give them ->d_dname() *and* let them live on the
+same procfs vfsmount".  The latter, BTW, requires the suckers to access
+nd->path.mnt, which is a bad thing by itself.  Plus the wrong way
+->d_dname() is called.  It was kinda-sorta defensible back when it
+had been introduced, but only because all filesystems with ->d_dname()
+had been MS_NOUSER ones.  Kinda-sorta since it introduced an unpleasant
+difference in semantics of d_path() and the rest of its ilk - see
+e.g. tomoyo calling ->d_dname() manually.
+
+->d_dname() addresses a real need, no arguments here - we do want to
+delay name generation for pipes and sockets until asked for it.  The
+problem is that it's dealt with in the wrong place - we ought to
+have it handled when prepend_path() reaches a vfsmount with no
+parent and an IS_ROOT() dentry.  _Then_ we need to check if it has
+->d_op->d_dname() and call one if it does.
+
+There's a bunch of unpleasant details around the handling of "what if
+the final vfsmount is detached or internal" (and induced weirdness
+with d_absolute_path(), etc. callers deciding whether they want to
+call ->d_dname() manually, since only d_path() calls it); I'll look into
+that.
+
+As for using this procfs vfsmount...  Frankly, I would rather add a mini-fs
+a-la aio one and have those inodes live _there_, with the same vfsmount
+used for all those guys.  Internal, of course.  Without bothering with
+register_filesystem(), with all associated headache ("what if userland
+mounts the entire thing", etc.)
