@@ -1,23 +1,18 @@
-From: "J.Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
-Subject: Re: [REVIEW][PATCH 1/3] vfs: In d_path don't call d_dname on a mount
-	point
-Date: Mon, 2 Dec 2013 11:23:40 -0500
-Message-ID: <20131202162340.GH1960__35569.1372570165$1386002585$gmane$org@fieldses.org>
-References: <52899D09.5080202@cn.fujitsu.com>
-	<20131118140830.GA22075@mail.hallyn.com>
-	<20131118180134.GA24156@mail.hallyn.com>
-	<87k3g5gnuv.fsf@xmission.com>
-	<20131126181043.GA25492@mail.hallyn.com>
-	<87siui1z1g.fsf_-_@xmission.com> <8738mi1yya.fsf_-_@xmission.com>
-	<20131130061525.GY10323@ZenIV.linux.org.uk>
-	<20131130170226.GZ10323@ZenIV.linux.org.uk>
-	<20131202164359.4f4f2c94@notabene.brown>
+From: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
+Subject: Re: [PATCH 07/12] cgroup: unify cgroup_write_X64() and
+	cgroup_write_string()
+Date: Mon, 2 Dec 2013 11:44:06 -0500
+Message-ID: <20131202164406.GP3556__47740.6389349655$1386005910$gmane$org@cmpxchg.org>
+References: <1385595759-17656-1-git-send-email-tj@kernel.org>
+	<1385595759-17656-8-git-send-email-tj@kernel.org>
+	<20131128111818.GG2761@dhcp22.suse.cz>
+	<20131129200525.GC21755@mtj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20131202164359.4f4f2c94-wvvUuzkyo1EYVZTmpyfIwg@public.gmane.org>
+In-Reply-To: <20131129200525.GC21755-9pTldWuhBndy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,70 +22,54 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>
-Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, NFS <linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Eric Dumazet <edumazet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Dec 02, 2013 at 04:43:59PM +1100, NeilBrown wrote:
-> On Sat, 30 Nov 2013 17:02:26 +0000 Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org> wrote:
+On Fri, Nov 29, 2013 at 03:05:25PM -0500, Tejun Heo wrote:
+> Hello, Michal.
 > 
+> On Thu, Nov 28, 2013 at 12:18:18PM +0100, Michal Hocko wrote:
+> > > Unify the two into cgroup_file_write() which always allocates dynamic
+> > > buffer for simplicity
+> > 
+> > It's true that this is simpler but the allocation might cause some
+> > issues with memcg. Although it is not common that userspace oom handler
+> > is a part of the target memcg there are users (e.g. Google) who do that.
+> > 
+> > Why is that a problem? Consider that a memcg is under OOM, handler gets
+> > notified and tries to solve the situation by enlarging the hard limit.
+> > This worked before this patch because cgroup_write_X64 used an on stack
+> > buffer but now it would use kmalloc which might be accounted and trip
+> > over the same OOM situation.
+> >
+> > This is not limited to the OOM handling. The group might be close to OOM
+> > and the last thing user expects is to trigger OOM when he tries to
+> > enlarge the limit.
+> > 
+> > Is the additional simplicity worth breaking those usecases?
 > 
-> > BTW, what happens if svc_export_request() ends up with pathname filling
-> > almost all space left, so that qword_add(bpp, blen, pth) right after the
-> > call of d_path() in there overwrites the beginning of d_path() output?
-> > Neil?  And while we are at it, handling of overflow in there looks also
-> > looks fishy...
+> Whoa, so we support oom handler inside the memcg that it handles?
+> Does that work reliably?  Changing the above detail in this patch
+> isn't difficult (and we'll later need to update kernfs too) but
+> supporting such setup properly would be a *lot* of commitment and I'm
+> very doubtful we'd be able to achieve that by just carefully avoiding
+> memory allocation in the operations that usreland oom handler uses -
+> that set is destined to expand over time, extremely fragile and will
+> be hellish to maintain.
 > 
-> In this case the returned *blen will be negative so cache_request() in
-> net/sunrpc/cache.h will return -EAGAIN.
-> cache_read() would then go into a tight loop, trying again and again to
-> create the request, but it will never fit in the buffer.
+> So, I'm not at all excited about commiting to this guarantee.  This
+> one is an easy one but it looks like the first step onto dizzying
+> slippery slope.
 > 
-> I guess maybe an EINVAL might help there, plus code to skip over impossible
-> requests.
-> Maybe the following.  We'd need to double check that no ->cache_request
-> function can fail in a way that is worth retrying, but I doubt they would.
-> 
-> Any thoughts Bruce?
+> Am I misunderstanding something here?  Are you and Johannes firm on
+> supporting this?
 
-Yes, the cache_request failures are all similarly fatal overflows.
+Handling a memcg OOM from userspace running inside that OOM memcg is
+completely crazy.  I mean, think about this for just two seconds...
+Really?
 
-Uh, not sure if I remember how the data structures here work: so
-userspace is now going to get an -EINVAL on read, and may just end up
-retrying the read?
-
-Or do we hit the "need to release rq" case in cache_read and just
-discard the request?
-
---b.
-
-> 
-> Thanks,
-> NeilBrown
-> 
-> 
-> diff --git a/net/sunrpc/cache.c b/net/sunrpc/cache.c
-> index a72de074172d..a065f827e2a3 100644
-> --- a/net/sunrpc/cache.c
-> +++ b/net/sunrpc/cache.c
-> @@ -748,7 +748,7 @@ static int cache_request(struct cache_detail *detail,
->  
->  	detail->cache_request(detail, crq->item, &bp, &len);
->  	if (len < 0)
-> -		return -EAGAIN;
-> +		return -EINVAL;
->  	return PAGE_SIZE - len;
->  }
->  
-> @@ -788,6 +788,11 @@ static ssize_t cache_read(struct file *filp, char __user *buf, size_t count,
->  
->  	if (rq->len == 0) {
->  		err = cache_request(cd, rq);
-> +		if (err == -EINVAL) {
-> +			spin_lock(&queue_lock);
-> +			list_move(&rp->q.list, &rq->q.list);
-> +			spin_unlock(&queue_lock);
-> +		}
->  		if (err < 0)
->  			goto out;
->  		rq->len = err;
+I get that people are doing it right now, and if you can get away with
+it for now, good for you.  But you have to be aware how crazy this is
+and if it breaks you get to keep the pieces and we are not going to
+accomodate this in the kernel.  Fix your crazy userspace.
