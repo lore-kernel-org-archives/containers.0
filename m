@@ -1,17 +1,22 @@
-From: Tetsuo Handa <penguin-kernel-JPay3/Yim36HaxMnTkn67Xf5DAMn2ifp@public.gmane.org>
+From: NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>
 Subject: Re: [REVIEW][PATCH 1/3] vfs: In d_path don't call d_dname on a
-	mountpoint
-Date: Sun, 1 Dec 2013 15:15:43 +0900
-Message-ID: <201312011515.BDE65649.LJQtMFOOSFOFVH__40111.0810497359$1385881195$gmane$org@I-love.SAKURA.ne.jp>
-References: <87siui1z1g.fsf_-_@xmission.com> <8738mi1yya.fsf_-_@xmission.com>
+	mount point
+Date: Mon, 2 Dec 2013 16:43:59 +1100
+Message-ID: <20131202164359.4f4f2c94@notabene.brown>
+References: <20131117030653.GA7670@mail.hallyn.com>
+	<20131118031932.GA17621@mail.hallyn.com>
+	<52899D09.5080202@cn.fujitsu.com>
+	<20131118140830.GA22075@mail.hallyn.com>
+	<20131118180134.GA24156@mail.hallyn.com>
+	<87k3g5gnuv.fsf@xmission.com>
+	<20131126181043.GA25492@mail.hallyn.com>
+	<87siui1z1g.fsf_-_@xmission.com> <8738mi1yya.fsf_-_@xmission.com>
 	<20131130061525.GY10323@ZenIV.linux.org.uk>
 	<20131130170226.GZ10323@ZenIV.linux.org.uk>
-	<20131201050930.GB10323@ZenIV.linux.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============8213884120781370329=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20131201050930.GB10323-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+In-Reply-To: <20131130170226.GZ10323-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,28 +26,102 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org
-Cc: adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, neilb-l3A5Bk7waGM@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org, edumazet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "J.Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
+Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, NFS <linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Eric Dumazet <edumazet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Al Viro wrote:
-> On Sat, Nov 30, 2013 at 05:02:26PM +0000, Al Viro wrote:
-> 
-> > FWIW, the other callers of prepend_path() boil down to /proc/mountinfo
-> > handling, apparmour d_namespace_path() (separate handling of MNT_INTERNAL,
-> > __d_path() or d_absolute_path() for the rest) and tomoyo_get_absolute_path()
-> > (this one directly calls ->d_dname() itself).
-> 
-> While we are at it, what's the origin of if (buflen >= 256) checks in
-> tomoyo_get_absolute_path() and tomoyo_get_dentry_path()?  The minimal
-> buflen value they can be called with is PAGE_SIZE - 1.
+--===============8213884120781370329==
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/sVtaMs+T9l0w.98tUaHrUR."; protocol="application/pgp-signature"
 
-This is a sanity check in case the caller by error called
-tomoyo_get_absolute_path() or tomoyo_get_local_path() with buflen < 2, for
-they might accesses buffer[buflen - 2].
+--Sig_/sVtaMs+T9l0w.98tUaHrUR.
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-But "PAGE_SIZE <= buf_len <= (UINT_MAX + 1) / 2" will be true because doing
-buf_len <<= 1 will not make buf_len == 0 since kmalloc((UINT_MAX + 1) / 2)
-will return NULL. Therefore, we can ignore/kill "if (buflen >= 256)" check.
+On Sat, 30 Nov 2013 17:02:26 +0000 Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org> wrote:
 
-Regards.
+
+> BTW, what happens if svc_export_request() ends up with pathname filling
+> almost all space left, so that qword_add(bpp, blen, pth) right after the
+> call of d_path() in there overwrites the beginning of d_path() output?
+> Neil?  And while we are at it, handling of overflow in there looks also
+> looks fishy...
+
+In this case the returned *blen will be negative so cache_request() in
+net/sunrpc/cache.h will return -EAGAIN.
+cache_read() would then go into a tight loop, trying again and again to
+create the request, but it will never fit in the buffer.
+
+I guess maybe an EINVAL might help there, plus code to skip over impossible
+requests.
+Maybe the following.  We'd need to double check that no ->cache_request
+function can fail in a way that is worth retrying, but I doubt they would.
+
+Any thoughts Bruce?
+
+Thanks,
+NeilBrown
+
+
+diff --git a/net/sunrpc/cache.c b/net/sunrpc/cache.c
+index a72de074172d..a065f827e2a3 100644
+--- a/net/sunrpc/cache.c
++++ b/net/sunrpc/cache.c
+@@ -748,7 +748,7 @@ static int cache_request(struct cache_detail *detail,
+=20
+ 	detail->cache_request(detail, crq->item, &bp, &len);
+ 	if (len < 0)
+-		return -EAGAIN;
++		return -EINVAL;
+ 	return PAGE_SIZE - len;
+ }
+=20
+@@ -788,6 +788,11 @@ static ssize_t cache_read(struct file *filp, char __us=
+er *buf, size_t count,
+=20
+ 	if (rq->len =3D=3D 0) {
+ 		err =3D cache_request(cd, rq);
++		if (err =3D=3D -EINVAL) {
++			spin_lock(&queue_lock);
++			list_move(&rp->q.list, &rq->q.list);
++			spin_unlock(&queue_lock);
++		}
+ 		if (err < 0)
+ 			goto out;
+ 		rq->len =3D err;
+
+--Sig_/sVtaMs+T9l0w.98tUaHrUR.
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQIVAwUBUpweHznsnt1WYoG5AQJ8aA//R8A7FpjPSLh3TiGqg6c27wJ6phhS6Z7B
+9B0MMDsYiYC0h3tZmGDBdv0XrT0nEPqgC7KPUijMuvKGRGLrhCVBGTctmJxFsvaE
+LNt+ki+gL2eC75qk5vvxd3rQicQy4QDaux8O5CMnmypy4D1Nebian/ZkmNv8V5ja
+vHsVbbvNRCTIezTX6u7z07sSrkaQz09dR9ijNh9xMQaEG5GK3xTT/vosx+0/yofH
+QBqeaxn0FdtBReE2ngSYDmCX+bqDjWv5qzC1Cs4HT1/8FYAMd+YjnOhUCECf47Un
+7nOJCpj8q1zZy61uVW71Lvj6obfBcSg1oAnMsR7lj1aAoi4jDDPO9bdfaYcjb9ft
+3cdkKCE31cr6lbZG2zLq7cB/OYRQoNQWp4NDbiDocLGh9v1MD2/lm3J44oNCqs6t
+HGVuj7CicN1aeFhxdUc8nZy3SemtE9M/Dy+7+Om229hrBa3y9oNeFnOIMp9OA8Fd
+HTe0z9LUobk3tCxlydI5CGKnFmdjaYgeXTw14VKQSnEdDcy/xra1xPgcFcVXoGIz
+vskEPyZF2iArOvcgapCHpkFPBNkuqKbSiIB1SeNIKlgnSjd5TqqtefIHs1KlmGvT
+sCkTrb3HBr5Ha+1JBRlWlXF5v4Yo4qFH31JCyI4+YNPzo/RG28Bbqg2hp+ZRys8l
+o6TrIKOgUoE=
+=Ydjl
+-----END PGP SIGNATURE-----
+
+--Sig_/sVtaMs+T9l0w.98tUaHrUR.--
+
+--===============8213884120781370329==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============8213884120781370329==--
