@@ -1,15 +1,23 @@
-From: "bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
-Subject: Re: [stable bug] NFSd NULL pointer trigger kernel panic
-Date: Mon, 2 Dec 2013 11:35:45 -0500
-Message-ID: <20131202163545.GJ1960@fieldses.org>
-References: <52959F5D.4000200@huawei.com> <5295A51A.7070909@huawei.com>
-	<5295A857.6080301@parallels.com>
+From: "J.Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
+Subject: Re: [REVIEW][PATCH 1/3] vfs: In d_path don't call d_dname on a mount
+	point
+Date: Mon, 2 Dec 2013 11:23:40 -0500
+Message-ID: <20131202162340.GH1960__35569.1372570165$1386002585$gmane$org@fieldses.org>
+References: <52899D09.5080202@cn.fujitsu.com>
+	<20131118140830.GA22075@mail.hallyn.com>
+	<20131118180134.GA24156@mail.hallyn.com>
+	<87k3g5gnuv.fsf@xmission.com>
+	<20131126181043.GA25492@mail.hallyn.com>
+	<87siui1z1g.fsf_-_@xmission.com> <8738mi1yya.fsf_-_@xmission.com>
+	<20131130061525.GY10323@ZenIV.linux.org.uk>
+	<20131130170226.GZ10323@ZenIV.linux.org.uk>
+	<20131202164359.4f4f2c94@notabene.brown>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <5295A857.6080301-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <20131202164359.4f4f2c94-wvvUuzkyo1EYVZTmpyfIwg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,129 +27,70 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>
+Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, NFS <linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Eric Dumazet <edumazet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gV2VkLCBOb3YgMjcsIDIwMTMgYXQgMTI6MDc6NTFQTSArMDQwMCwgU3RhbmlzbGF2IEtpbnNi
-dXJza3kgd3JvdGU6Cj4gMjcuMTEuMjAxMyAxMTo1NCwgV2VuZyBNZWlsaW5nINC/0LjRiNC10YI6
-Cj4gPgo+ID5IaSBndXlzLAo+ID4KPiA+V2hlbiBJIHRyeSB0byB0ZXN0IE5GUyBpbiBkaWZmZXJl
-bnQgbmV0d29yayBuYW1lc3BhY2Ugd2l0aCBzdGFibGUtMy40LAo+ID5JIHRyaWdnZXIgYSBrZXJu
-ZWwgcGFuaWMuIFdoZW4gTkZTZCB3YXMgc3RhcnRlZCBpbiBvbmUgbm9uIGluaXRfbmV0IG5ldHdv
-cmsKPiA+bmFtZXNwYWNlLCBhbmQgc3RvcHBlZCBpbiBhbm90aGVyIG9uZS4gVGhpcyB3aWxsIHRy
-aWdnZXIga2VybmVsIHBhbmljLCBiZWNhdXNlCj4gPlJQQ0JJTkQgY2xpZW50IGlzIHN0b3JlZCBw
-ZXIgbmV0LCBhbmQgd2lsbCBiZSBOVUxMIG9uIE5GU2Qgc2h1dGRvd24uCj4gPgo+ID5UaGUgZGV0
-YWlsIHN0ZXBzIGFyZToKPiA+Cj4gPiNpcCBuZXRucyBhZGQgdGVzdAo+ID4jaXAgbmV0bnMgZXhl
-YyB0ZXN0IHNlcnZpY2UgbmZzc2VydmVyIHN0YXJ0Cj4gPiNzZXJ2aWNlIG5mc3NlcnZlciBzdG9w
-Cj4gPgo+ID5UaGUgbWFpbiBjYWxsIHRyYWNlOgo+ID4KPiA+WyAgMjkzLjM1ODA3OF0gQlVHOiB1
-bmFibGUgdG8gaGFuZGxlIGtlcm5lbCBOVUxMIHBvaW50ZXIgZGVyZWZlcmVuY2UgYXQgMDAwMDAw
-MDAwMDAwMDA2MAo+ID5bICAyOTMuMzU4MDg5XSBJUDogWzxmZmZmZmZmZmEwNDQ2MTUwPl0gY2Fs
-bF9zdGFydCsweDEwLzB4MzAgW3N1bnJwY10KPiA+Cj4gPlsgIDI5My4zNTgyMTVdIFBpZDogNTMy
-MywgY29tbTogbmZzZCBOb3QgdGFpbnRlZCAzLjQuNjktZGVmYXVsdC1zdGFibGUrCj4gPgo+ID5b
-ICAyOTMuMzU4MzIxXSBDYWxsIFRyYWNlOgo+ID5bICAyOTMuMzU4MzM2XSAgWzxmZmZmZmZmZmEw
-NDRmNDAxPl0gX19ycGNfZXhlY3V0ZSsweDkxLzB4MTYwIFtzdW5ycGNdCj4gPlsgIDI5My4zNTgz
-NTFdICBbPGZmZmZmZmZmYTA0NGY1NDE+XSBycGNfZXhlY3V0ZSsweDcxLzB4ODAgW3N1bnJwY10K
-PiA+WyAgMjkzLjM1ODM2Ml0gIFs8ZmZmZmZmZmZhMDQ0NzlhOT5dIHJwY19ydW5fdGFzaysweDg5
-LzB4YTAgW3N1bnJwY10KPiA+WyAgMjkzLjM1ODM3NF0gIFs8ZmZmZmZmZmZhMDQ0N2FiZD5dIHJw
-Y19jYWxsX3N5bmMrMHgzZC8weDcwIFtzdW5ycGNdCj4gPlsgIDI5My4zNTgzOTBdICBbPGZmZmZm
-ZmZmYTA0NTdiYzY+XSBycGNiX3JlZ2lzdGVyKzB4YTYvMHhkMCBbc3VucnBjXQo+ID5bICAyOTMu
-MzU4NDA2XSAgWzxmZmZmZmZmZmEwNDUyMzQ1Pl0gc3ZjX3VucmVnaXN0ZXIrMHg5NS8weGYwIFtz
-dW5ycGNdCj4gPlsgIDI5My4zNTg0MThdICBbPGZmZmZmZmZmYTA0YWI4YTA+XSA/IG5mc2RfbGFz
-dF90aHJlYWQrMHg1MC8weDUwIFtuZnNkXQo+ID5bICAyOTMuMzU4NDMzXSAgWzxmZmZmZmZmZmEw
-NDUyM2IxPl0gc3ZjX3JwY2JfY2xlYW51cCsweDExLzB4MjAgW3N1bnJwY10KPiA+WyAgMjkzLjM1
-ODQ0Ml0gIFs8ZmZmZmZmZmZhMDRhYjg3Nz5dIG5mc2RfbGFzdF90aHJlYWQrMHgyNy8weDUwIFtu
-ZnNkXQo+ID5bICAyOTMuMzU4NDU3XSAgWzxmZmZmZmZmZmEwNDUyMjgwPl0gc3ZjX3NodXRkb3du
-X25ldCsweDMwLzB4NDAgW3N1bnJwY10KPiA+WyAgMjkzLjM1ODQ2Nl0gIFs8ZmZmZmZmZmZhMDRh
-YjllZD5dIG5mc2QrMHgxNGQvMHgxYTAgW25mc2RdCj4gPlsgIDI5My4zNTg0NzVdICBbPGZmZmZm
-ZmZmYTA0YWI4YTA+XSA/IG5mc2RfbGFzdF90aHJlYWQrMHg1MC8weDUwIFtuZnNkXQo+ID5bICAy
-OTMuMzU4NDg3XSAgWzxmZmZmZmZmZjgxMDY0NTllPl0ga3RocmVhZCsweDllLzB4YjAKPiA+WyAg
-MjkzLjM1ODQ5Nl0gIFs8ZmZmZmZmZmY4MTQ2NTAxND5dIGtlcm5lbF90aHJlYWRfaGVscGVyKzB4
-NC8weDEwCj4gPlsgIDI5My4zNTg1MDNdICBbPGZmZmZmZmZmODEwNjQ1MDA+XSA/IGt0aHJlYWRf
-ZnJlZXphYmxlX3Nob3VsZF9zdG9wKzB4NzAvMHg3MAo+ID5bICAyOTMuMzU4NTA5XSAgWzxmZmZm
-ZmZmZjgxNDY1MDEwPl0gPyBnc19jaGFuZ2UrMHgxMy8weDEzCj4gPgo+ID5XYWxrIHRocm91Z2gg
-dGhlIGNvZGUsIHRoaXMgcHJvYmxlbSBhbHNvIGV4aXN0cyBpbiBzdGFibGUtMy41IHRvIHN0YWJs
-ZS0zLjcuCj4gPlN0YW5pc2xhdiBLaW5zYnVyc2t5IGhhZCBjb21taXR0ZWQgYSBmaXhlZCBwYXRj
-aCBmb3IgMy44Ogo+ID5jb21taXQgZjdmYjg2YzZlNjM5MzYwYWQ5YzI1M2NlYzUzNDgxOWVmOTI4
-YTY3NCAobmZzZDogdXNlICJpbml0X25ldCIgZm9yIHBvcnRtYXBwZXIpLgo+ID5UaGlzIHBhdGNo
-IGlzIHN1aXRhYmxlIGZvciBzdGFibGUtMy40LCBidXQgaXQgY2F1c2VzIGFub3RoZXIgYnVnLCBX
-aGVuIHN0YXJ0aW5nIE5GU2QKPiA+aW4gYSBub24gaW5pdF9uZXQgbmV0d29yayBuYW1lc3BhY2Ug
-d2lsbCB0cmlnZ2VyIGtlcm5lbCBwYW5pYy4gQmVjYXVzZSBSUENCSU5EIGNsaWVudAo+ID53aWxs
-IGJlIE5VTEwgd2hlbiByZWdpc3RlciBSUEMgc2VydmljZSB3aXRoIHRoZSBsb2NhbCBwb3J0bWFw
-cGVyIGluIHN2Y19hZGRzb2NrKCkuIFRoaXMKPiA+bmV3IGJ1ZyBhbHNvIGV4aXN0cyBpbiAzLjgs
-IGJ1dCBkaXNhcHBlYXJzIGFmdGVyIHBhdGNoIGNvbW1pdCAxMWY3Nzk0MjFhMzliODZkYThhNTIz
-ZDk3ZTVmZDM0Nzc4NzhkNDRmCj4gPigiY29udGFpbmVyaXplIE5GU2QgZmlsZXN5c3RlbSIpIGlu
-IDMuOS4KPiA+Cj4gPlRoZSBkZXRhaWwgc3RlcHMgYXJlOgo+ID4KPiA+I2lwIG5ldG5zIGFkZCB0
-ZXN0Cj4gPiNpcCBuZXRucyBleGVjIHRlc3Qgc2VydmljZSBuZnNzZXJ2ZXIgc3RhcnQKPiA+Cj4g
-PlRoZSBtYWluIGNhbGwgdHJhY2U6Cj4gPgo+ID5bICAxMzYuODc3NTI3XSBCVUc6IHVuYWJsZSB0
-byBoYW5kbGUga2VybmVsIE5VTEwgcG9pbnRlciBkZXJlZmVyZW5jZSBhdCAwMDAwMDAwMDAwMDAw
-MDYwCj4gPlsgIDEzNi44Nzc1MzhdIElQOiBbPGZmZmZmZmZmYTA0NTExNTA+XSBjYWxsX3N0YXJ0
-KzB4MTAvMHgzMCBbc3VucnBjXQo+ID4KPiA+WyAgMTM2Ljg3NzY2NF0gUGlkOiA0ODU0LCBjb21t
-OiBycGMubmZzZCBOb3QgdGFpbnRlZCAzLjQuNjktZGVmYXVsdC1zdGFibGUtbmZzLXRlc3QrCj4g
-Pgo+ID5bICAxMzYuODc3NzY5XSBDYWxsIFRyYWNlOgo+ID5bICAxMzYuODc3Nzg1XSAgWzxmZmZm
-ZmZmZmEwNDVhNDAxPl0gX19ycGNfZXhlY3V0ZSsweDkxLzB4MTYwIFtzdW5ycGNdCj4gPlsgIDEz
-Ni44Nzc3OTldICBbPGZmZmZmZmZmYTA0NWE1NDE+XSBycGNfZXhlY3V0ZSsweDcxLzB4ODAgW3N1
-bnJwY10KPiA+WyAgMTM2Ljg3NzgxMV0gIFs8ZmZmZmZmZmZhMDQ1MjlhOT5dIHJwY19ydW5fdGFz
-aysweDg5LzB4YTAgW3N1bnJwY10KPiA+WyAgMTM2Ljg3NzgyMl0gIFs8ZmZmZmZmZmZhMDQ1MmFi
-ZD5dIHJwY19jYWxsX3N5bmMrMHgzZC8weDcwIFtzdW5ycGNdCj4gPlsgIDEzNi44Nzc4MzldICBb
-PGZmZmZmZmZmYTA0NjJiYzY+XSBycGNiX3JlZ2lzdGVyKzB4YTYvMHhkMCBbc3VucnBjXQo+ID5b
-ICAxMzYuODc3ODU0XSAgWzxmZmZmZmZmZmEwNDVjYTllPl0gX19zdmNfcmVnaXN0ZXIrMHgxYWUv
-MHgxYzAgW3N1bnJwY10KPiA+WyAgMTM2Ljg3Nzg3MF0gIFs8ZmZmZmZmZmZhMDQ1Y2IzZj5dIHN2
-Y19yZWdpc3RlcisweDhmLzB4YzAgW3N1bnJwY10KPiA+WyAgMTM2Ljg3Nzg4Ml0gIFs8ZmZmZmZm
-ZmY4MTE0ZDg1NT5dID8ga21lbV9jYWNoZV9hbGxvY190cmFjZSsweGM1LzB4MWUwCj4gPlsgIDEz
-Ni44Nzc4OTddICBbPGZmZmZmZmZmYTA0NWVjMzg+XSBzdmNfc2V0dXBfc29ja2V0KzB4MWE4LzB4
-MmMwIFtzdW5ycGNdCj4gPlsgIDEzNi44Nzc5MDddICBbPGZmZmZmZmZmODEwMDk1NDY+XSA/IHJl
-YWRfdHNjKzB4MTYvMHg0MAo+ID5bICAxMzYuODc3OTIyXSAgWzxmZmZmZmZmZmEwNDVmOWI4Pl0g
-c3ZjX2FkZHNvY2srMHgxMTgvMHgxYzAgW3N1bnJwY10KPiA+WyAgMTM2Ljg3NzkzMF0gIFs8ZmZm
-ZmZmZmY4MTA4ZjIyNT5dID8gZG9fZ2V0dGltZW9mZGF5KzB4MTUvMHg1MAo+ID5bICAxMzYuODc3
-OTQxXSAgWzxmZmZmZmZmZmEwNGFhNjljPl0gPyBuZnNkX2NyZWF0ZV9zZXJ2KzB4ZGMvMHgxNTAg
-W25mc2RdCj4gPlsgIDEzNi44Nzc5NTFdICBbPGZmZmZmZmZmYTA0YWJkY2U+XSBfX3dyaXRlX3Bv
-cnRzKzB4MWZlLzB4MjMwIFtuZnNkXQo+ID5bICAxMzYuODc3OTYxXSAgWzxmZmZmZmZmZmEwNGFi
-ZTM3Pl0gd3JpdGVfcG9ydHMrMHgzNy8weDYwIFtuZnNkXQo+ID5bICAxMzYuODc3OTcwXSAgWzxm
-ZmZmZmZmZmEwNGFiZTAwPl0gPyBfX3dyaXRlX3BvcnRzKzB4MjMwLzB4MjMwIFtuZnNkXQo+ID5b
-ICAxMzYuODc3OTc5XSAgWzxmZmZmZmZmZmEwNGFhZGQyPl0gbmZzY3RsX3RyYW5zYWN0aW9uX3dy
-aXRlKzB4NzIvMHg5MCBbbmZzZF0KPiA+WyAgMTM2Ljg3Nzk4N10gIFs8ZmZmZmZmZmY4MTE1YjRh
-Yj5dIHZmc193cml0ZSsweGNiLzB4MTMwCj4gPlsgIDEzNi44Nzc5OTJdICBbPGZmZmZmZmZmODEx
-NWI2MDA+XSBzeXNfd3JpdGUrMHg1MC8weDkwCj4gPlsgIDEzNi44NzgwMDBdICBbPGZmZmZmZmZm
-ODE0NjNjYjk+XSBzeXN0ZW1fY2FsbF9mYXN0cGF0aCsweDE2LzB4MWIKPiA+Cj4gPgo+ID5IZXJl
-IGlzIGEgd2F5IHRvIHJlc29sdmUgdGhlIHByb2JsZW06Cj4gPk1heWJlIHdlIGNhbiBiYWNrcG9y
-dCB0aGUgZm9sbG93aW5nIHBhdGNoZXMgZnJvbSAzLjggdG8gY2xlYW51cCBpbml0X25ldCByZWZl
-cmVuY2U6Cj4gPgo+ID4tLS0KPiA+Cj4gPlN0YW5pc2xhdiBLaW5zYnVyc2t5ICg3KToKPiA+ICAg
-ICAgIG5mc2Q6IHVzZSAiaW5pdF9uZXQiIGZvciBwb3J0bWFwcGVyIAkJCWNvbW1pdCBmN2ZiODZj
-NmU2MzkzNjBhZDljMjUzY2VjNTM0ODE5ZWY5MjhhNjc0Cj4gPiAgICAgICBuZnNkOiBwYXNzIG5l
-dCB0byBuZnNkX2luaXRfc29ja3MoKSAJCQljb21taXQgZGI2ZTE4MmMxN2NiMWE3MDY5ZjdmODky
-NDcyMWNlNThhYzA1ZDlhMwo+ID4gICAgICAgbmZzZDogcGFzcyBuZXQgdG8gbmZzZF9zdGFydHVw
-KCkgYW5kIG5mc2Rfc2h1dGRvd24oKSAJY29tbWl0IGRiNDJkMWE3NmE4ZGZjYWJhN2EyZGM5YzU5
-MWZhNGUyMzFkYjIyYjMKPiA+ICAgICAgIG5mc2Q6IHBhc3MgbmV0IHRvIG5mc2RfY3JlYXRlX3Nl
-cnYoKSAJCQljb21taXQgNjc3NzQzNmIwZjA3MmZiMjBhMDI1YTczZTliNjdhMzVhZDhhNTQ1MQo+
-ID4gICAgICAgbmZzZDogcGFzcyBuZXQgdG8gbmZzZF9zdmMoKSAJCQkJY29tbWl0IGQ0MWE5NDE3
-Y2Q4OWE2OWY1OGEyNjkzNTAzNGI0MjY0YTJkODgyZDYJCQo+ID4gICAgICAgbmZzZDogcGFzcyBu
-ZXQgdG8gbmZzZF9zZXRfbnJ0aHJlYWRzKCkgCQkJY29tbWl0IDM5MzhhMGQ1ZWI1ZWZmY2M4OWM2
-OTA5NzQxNDAzZjRlNmEzNzI1MmQKPiA+ICAgICAgIG5mc2Q6IHBhc3MgbmV0IHRvIF9fd3JpdGVf
-cG9ydHMoKSBhbmQgZG93biAJCWNvbW1pdCAwODE2MDM1MjBiMjVmN2IzNWVmNjNhMzYzMzc2YTE3
-YzM2ZWY3NGVkCj4gPgo+ID4KPiA+ICBmcy9uZnNkL25mc2N0bC5jIHwgICAyNyArKysrKysrKysr
-KysrKystLS0tLS0tLS0tLS0KPiA+ICBmcy9uZnNkL25mc2QuaCAgIHwgICAgNiArKystLS0KPiA+
-ICBmcy9uZnNkL25mc3N2Yy5jIHwgICAzNSArKysrKysrKysrKysrKy0tLS0tLS0tLS0tLS0tLS0t
-LS0tLQo+ID4gIDMgZmlsZXMgY2hhbmdlZCwgMzIgaW5zZXJ0aW9ucygrKSwgMzYgZGVsZXRpb25z
-KC0pCj4gPgo+ID5TdGFuaXNsYXYgS2luc2J1cnNreToKPiA+CW5mc2Q6IHBhc3MgcHJvcGVyIG5l
-dCB0byBuZnNkX2Rlc3Ryb3koKSBmcm9tIE5GU2Qga3RocmVhZHMgIGNvbW1pdCA4OGM0NzY2NjE3
-MTk4OWVkNGM1YjFhNTY4N2RmMDk1MTFlOGM1ZTM1Cj4gPgo+ID4gIGZzL25mc2QvbmZzc3ZjLmMg
-fCAgICA0ICsrKy0KPiA+ICAxIGZpbGVzIGNoYW5nZWQsIDMgaW5zZXJ0aW9ucygrKSwgMSBkZWxl
-dGlvbnMoLSkKPiA+Cj4gPmFuZCB0aGVuIGp1c3QgYSBzaW1wbGUgcGF0Y2ggd2hpY2ggdXNlcyB0
-aGUgY3VycmVudC0+bnNwcm94eS0+bmV0X25zIHRvIHJlcGFsY2UgdGhlCj4gPmluaXRfbmV0IHRv
-IG1ha2UgTkZTZCBrZWVwIHVzaW5nIGEgY29uc2lzdGVudCBuZXR3b3JrIG5hbWVzcGFjZSBhbGwg
-dGhlIHRpbWUgY2FuCj4gPnJlc29sdmUgdGhlIHByb2JsZW0uIE1heWJlIHRoaXMgaXMgbm90IG9w
-dGltYWwsIHdoYXQgZG8geW91IHRoaW5rIGFib3V0IHRoaXMgcHJvYmxlbT8KPiA+Cj4gCj4gR3Jl
-YXQgaW52ZXN0aWdhdGlvbiEgVGhhbmtzLgo+IEkgdGhpbmsgaXQncyB1cCB0byBCcnVjZSAoY2Mn
-ZCkgd2hhdCBpcyBiZXR0ZXI6IGJhY2twb3J0IG9yIHNpbXBsZSBmaXgsIHdoaWNoIGp1c3QgZm9y
-Ymlkcwo+IE5GU2Qgc3RhcnQgaW4gbm9uLWluaXQgbmV0d29yayBuYW1lc3BhY2UgZm9yIGtlcm5l
-bHMsIHByaW9yIHRvIDMuOS4KCkl0IHNlZW1zIHJ1ZGUgdG8gdHVybiBvZmYgYSBmZWF0dXJlIGlu
-IGEgc3RhYmxlIHNlcmllcywgc28gYmFja3BvcnRzIGFyZQpwcm9iYWJseSBiZXR0ZXIgaWYgd2Ug
-bmVlZCB0byBmaXggdGhpcy4gIEJ1dCBzb21lYm9keSB3b3VsZCBuZWVkIHRvIHRlc3QKdGhlIGJh
-Y2twb3J0cy4KCldlbmcgTWVpbGluZywgaWYgeW91IHdhbnQgdGhpcyBmaXhlZCBvbiBhIHN0YWJs
-ZSBicmFuY2g6CgktIGNvbmZpcm0gdGhhdCB0aG9zZSBwYXRjaGVzIGZpeCB0aGUgcHJvYmxlbS4K
-CS0gc2VuZCB0aGUgcmVzdWx0aW5nIHBhdGNoZXMgdG8gc3RhYmxlQHZnZXIua2VybmVsLm9yZyB3
-aXRoCgkgIGNjOidzIHRvIGF0IGxlYXN0IFN0YW5pc2xhdiBhbmQgbWUgYW5kCgkgIGxpbnV4LW5m
-c0B2Z2VyLmtlcm5lbC5vcmcKCmFuZCBJIGNhbiBhY2sgdGhlbS4KCi0tYi4KX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxp
-c3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxp
-bnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+On Mon, Dec 02, 2013 at 04:43:59PM +1100, NeilBrown wrote:
+> On Sat, 30 Nov 2013 17:02:26 +0000 Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org> wrote:
+> 
+> 
+> > BTW, what happens if svc_export_request() ends up with pathname filling
+> > almost all space left, so that qword_add(bpp, blen, pth) right after the
+> > call of d_path() in there overwrites the beginning of d_path() output?
+> > Neil?  And while we are at it, handling of overflow in there looks also
+> > looks fishy...
+> 
+> In this case the returned *blen will be negative so cache_request() in
+> net/sunrpc/cache.h will return -EAGAIN.
+> cache_read() would then go into a tight loop, trying again and again to
+> create the request, but it will never fit in the buffer.
+> 
+> I guess maybe an EINVAL might help there, plus code to skip over impossible
+> requests.
+> Maybe the following.  We'd need to double check that no ->cache_request
+> function can fail in a way that is worth retrying, but I doubt they would.
+> 
+> Any thoughts Bruce?
+
+Yes, the cache_request failures are all similarly fatal overflows.
+
+Uh, not sure if I remember how the data structures here work: so
+userspace is now going to get an -EINVAL on read, and may just end up
+retrying the read?
+
+Or do we hit the "need to release rq" case in cache_read and just
+discard the request?
+
+--b.
+
+> 
+> Thanks,
+> NeilBrown
+> 
+> 
+> diff --git a/net/sunrpc/cache.c b/net/sunrpc/cache.c
+> index a72de074172d..a065f827e2a3 100644
+> --- a/net/sunrpc/cache.c
+> +++ b/net/sunrpc/cache.c
+> @@ -748,7 +748,7 @@ static int cache_request(struct cache_detail *detail,
+>  
+>  	detail->cache_request(detail, crq->item, &bp, &len);
+>  	if (len < 0)
+> -		return -EAGAIN;
+> +		return -EINVAL;
+>  	return PAGE_SIZE - len;
+>  }
+>  
+> @@ -788,6 +788,11 @@ static ssize_t cache_read(struct file *filp, char __user *buf, size_t count,
+>  
+>  	if (rq->len == 0) {
+>  		err = cache_request(cd, rq);
+> +		if (err == -EINVAL) {
+> +			spin_lock(&queue_lock);
+> +			list_move(&rp->q.list, &rq->q.list);
+> +			spin_unlock(&queue_lock);
+> +		}
+>  		if (err < 0)
+>  			goto out;
+>  		rq->len = err;
