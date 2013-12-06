@@ -1,11 +1,13 @@
-From: GPS tracker with multi discrete <a@hrthwe.mygbiz.com>
-Subject: GPS tracker with multi discrete shared an album with you.
-Date: Fri, 06 Dec 2013 07:10:58 +0000
-Message-ID: <047d7b67739e1c33c004ecd8599e@google.com>
-Reply-To: GPS tracker with multi discrete <a@hrthwe.mygbiz.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCH cgroup/for-3.13-fixes] cgroup: fix cgroup_create() error
+	handling path
+Date: Fri, 6 Dec 2013 15:15:23 -0500
+Message-ID: <20131206201523.GG13373@htj.dyndns.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============4815883454762257676=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,234 +17,144 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: Vladimir Davydov <vdavydov-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============4815883454762257676==
-Content-Type: multipart/related; boundary=047d7b67739e1c33a804ecd8599c
+Hello,
 
---047d7b67739e1c33a804ecd8599c
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed; delsp=yes
+This patch was posted back in Aug, got reviewed and acked.
+Unfortunately, I somehow forgot to apply it and Vladimir reported the
+same problem.  Refreshed the patch, updated commit message and
+committed to libata/for-3.13-fixes.  The original posting is
 
-Tips:  GPS tracker with  multi discrete input and output /Attn: purchase  
-manager
+ http://permalink.gmane.org/gmane.linux.kernel.containers/26804
 
-Dear Sir
+Thanks.
 
-        This is Anna,the sales manager of Redview GPS in China.
-        VT310 is a GPS tracker with 5 discrete inputs ,5 discrete outputs  
-and 2 analog ports . With VT310,you can get vehicle windows status, door  
-status, engine status, temperature and tank fuel level ,etc. This is widely  
-used in truck tracking application.
+------ 8< ------
+From 266ccd505e8acb98717819cef9d91d66c7b237cc Mon Sep 17 00:00:00 2001
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Date: Fri, 6 Dec 2013 15:07:32 -0500
 
-        I would appreciate if you forward this letter to Technical Manager  
-or to other expert responsible for technical integration of new products in  
-your company, or provide me with his contact for we could discuss all the  
-details of our future cooperation.
+ae7f164a09 ("cgroup: move cgroup->subsys[] assignment to
+online_css()") moved cgroup->subsys[] assignements later in
+cgroup_create() but didn't update error handling path accordingly
+leading to the following oops and leaking later css's after an
+online_css() failure.  The oops is from cgroup destruction path being
+invoked on the partially constructed cgroup which is not ready to
+handle empty slots in cgrp->subsys[] array.
 
-        Your early reply is highly appreciated.
+  BUG: unable to handle kernel NULL pointer dereference at 0000000000000008
+  IP: [<ffffffff810eeaa8>] cgroup_destroy_locked+0x118/0x2f0
+  PGD a780a067 PUD aadbe067 PMD 0
+  Oops: 0000 [#1] SMP
+  Modules linked in:
+  CPU: 6 PID: 7360 Comm: mkdir Not tainted 3.13.0-rc2+ #69
+  Hardware name:
+  task: ffff8800b9dbec00 ti: ffff8800a781a000 task.ti: ffff8800a781a000
+  RIP: 0010:[<ffffffff810eeaa8>]  [<ffffffff810eeaa8>] cgroup_destroy_locked+0x118/0x2f0
+  RSP: 0018:ffff8800a781bd98  EFLAGS: 00010282
+  RAX: ffff880586903878 RBX: ffff880586903800 RCX: ffff880586903820
+  RDX: ffff880586903860 RSI: ffff8800a781bdb0 RDI: ffff880586903820
+  RBP: ffff8800a781bde8 R08: ffff88060e0b8048 R09: ffffffff811d7bc1
+  R10: 000000000000008c R11: 0000000000000001 R12: ffff8800a72286c0
+  R13: 0000000000000000 R14: ffffffff81cf7a40 R15: 0000000000000001
+  FS:  00007f60ecda57a0(0000) GS:ffff8806272c0000(0000) knlGS:0000000000000000
+  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+  CR2: 0000000000000008 CR3: 00000000a7a03000 CR4: 00000000000007e0
+  Stack:
+   ffff880586903860 ffff880586903910 ffff8800a72286c0 ffff880586903820
+   ffffffff81cf7a40 ffff880586903800 ffff88060e0b8018 ffffffff81cf7a40
+   ffff8800b9dbec00 ffff8800b9dbf098 ffff8800a781bec8 ffffffff810ef5bf
+  Call Trace:
+   [<ffffffff810ef5bf>] cgroup_mkdir+0x55f/0x5f0
+   [<ffffffff811c90ae>] vfs_mkdir+0xee/0x140
+   [<ffffffff811cb07e>] SyS_mkdirat+0x6e/0xf0
+   [<ffffffff811c6a19>] SyS_mkdir+0x19/0x20
+   [<ffffffff8169e569>] system_call_fastpath+0x16/0x1b
 
-Best Regards
+This patch moves reference bumping inside online_css() loop, clears
+css_ar[] as css's are brought online successfully, and updates
+err_destroy path so that either a css is fully online and destroyed by
+cgroup_destroy_locked() or the error path frees it.  This creates a
+duplicate css free logic in the error path but it will be cleaned up
+soon.
 
-Anna
+v2: Li pointed out that cgroup_destroy_locked() would do NULL-deref if
+    invoked with a cgroup which doesn't have all css's populated.
+    Update cgroup_destroy_locked() so that it skips NULL css's.
 
-https://picasaweb.google.com/lh/sredir?uname=116534114066929212505&target=ALBUM&id=5954172409245952241&authkey=Gv1sRgCKnY5aH8kZ2vogE&invite=CJLN-cwF&feat=email
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Reported-by: Vladimir Davydov <vdavydov-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org # v3.12+
+---
+ kernel/cgroup.c | 31 +++++++++++++++++++++----------
+ 1 file changed, 21 insertions(+), 10 deletions(-)
 
---047d7b67739e1c33a804ecd8599c
-Content-Type: image/gif; name="picasaweblogo-en_US.gif"
-Content-Disposition: attachment; filename="picasaweblogo-en_US.gif"
-Content-Transfer-Encoding: base64
-Content-ID: <picasaweblogo-en_US.gif>
-
-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
-Ry6fdwSwZ4NKuIRMWAZBAAA7
---047d7b67739e1c33a804ecd8599c
-Content-Type: image/jpeg; name="email.jpg"
-Content-Disposition: attachment; filename="email.jpg"
-Content-Transfer-Encoding: base64
-Content-ID: <5954172409245952241>
-
-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
---047d7b67739e1c33a804ecd8599c--
-
---===============4815883454762257676==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============4815883454762257676==--
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 8b729c2..bcb1755 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -4426,14 +4426,6 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+ 	list_add_tail_rcu(&cgrp->sibling, &cgrp->parent->children);
+ 	root->number_of_cgroups++;
+ 
+-	/* each css holds a ref to the cgroup's dentry and the parent css */
+-	for_each_root_subsys(root, ss) {
+-		struct cgroup_subsys_state *css = css_ar[ss->subsys_id];
+-
+-		dget(dentry);
+-		css_get(css->parent);
+-	}
+-
+ 	/* hold a ref to the parent's dentry */
+ 	dget(parent->dentry);
+ 
+@@ -4445,6 +4437,13 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+ 		if (err)
+ 			goto err_destroy;
+ 
++		/* each css holds a ref to the cgroup's dentry and parent css */
++		dget(dentry);
++		css_get(css->parent);
++
++		/* mark it consumed for error path */
++		css_ar[ss->subsys_id] = NULL;
++
+ 		if (ss->broken_hierarchy && !ss->warned_broken_hierarchy &&
+ 		    parent->parent) {
+ 			pr_warning("cgroup: %s (%d) created nested cgroup for controller \"%s\" which has incomplete hierarchy support. Nested cgroups may change behavior in the future.\n",
+@@ -4491,6 +4490,14 @@ err_free_cgrp:
+ 	return err;
+ 
+ err_destroy:
++	for_each_root_subsys(root, ss) {
++		struct cgroup_subsys_state *css = css_ar[ss->subsys_id];
++
++		if (css) {
++			percpu_ref_cancel_init(&css->refcnt);
++			ss->css_free(css);
++		}
++	}
+ 	cgroup_destroy_locked(cgrp);
+ 	mutex_unlock(&cgroup_mutex);
+ 	mutex_unlock(&dentry->d_inode->i_mutex);
+@@ -4652,8 +4659,12 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
+ 	 * will be invoked to perform the rest of destruction once the
+ 	 * percpu refs of all css's are confirmed to be killed.
+ 	 */
+-	for_each_root_subsys(cgrp->root, ss)
+-		kill_css(cgroup_css(cgrp, ss));
++	for_each_root_subsys(cgrp->root, ss) {
++		struct cgroup_subsys_state *css = cgroup_css(cgrp, ss);
++
++		if (css)
++			kill_css(css);
++	}
+ 
+ 	/*
+ 	 * Mark @cgrp dead.  This prevents further task migration and child
+-- 
+1.8.4.2
