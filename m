@@ -1,14 +1,16 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC Part1 PATCH 00/20 v2] Add namespace support for audit
-Date: Fri, 6 Dec 2013 21:31:35 +0000
-Message-ID: <20131206213135.GA22445@mail.hallyn.com>
+Subject: Re: [PATCH 16/20] audit: allow GET, SET, USER MSG operations in
+	audit namespace
+Date: Fri, 6 Dec 2013 22:00:34 +0000
+Message-ID: <20131206220033.GB22445@mail.hallyn.com>
 References: <1382599925-25143-1-git-send-email-gaofeng@cn.fujitsu.com>
+	<1382599925-25143-17-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1382599925-25143-1-git-send-email-gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <1382599925-25143-17-git-send-email-gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,37 +25,71 @@ Cc: toshi.okajima-+CUm20s59erQFUHtdCDX3A@public.gmane.org, containers-cunTk1MwBs
 List-Id: containers.vger.kernel.org
 
 Quoting Gao feng (gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
-> Here is the v1 patchset: http://lwn.net/Articles/549546/
+> 1, remove the permission check of pid namespace. it's no reason
+>    to deny un-init pid namespace to operate audit subsystem.
 > 
-> The main target of this patchset is allowing user in audit
-> namespace to generate the USER_MSG type of audit message,
-> some userspace tools need to generate audit message, or
-> these tools will broken.
+> 2, only allow init user namespace and init audit namespace to
+>    operate list/add/del rule, tty set, trim, make equiv operations.
 > 
-> And the login process in container may want to setup
-> /proc/<pid>/loginuid, right now this value is unalterable
-> once it being set. this will also broke the login problem
-> in container. After this patchset, we can reset this loginuid
-> to zero if task is running in a new audit namespace.
+> 3, allow audit namespace to get/set audit configuration, send
+>    userspace audit message.
 > 
-> Same with v1 patchset, in this patchset, only the privileged
-> user in init_audit_ns and init_user_ns has rights to
-> add/del audit rules. and these rules are gloabl. all
-> audit namespace will comply with the rules.
+> Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> ---
+>  kernel/audit.c | 13 ++++++-------
+>  1 file changed, 6 insertions(+), 7 deletions(-)
 > 
-> Compared with v1, v2 patch has some big changes.
-> 1, the audit namespace is not assigned to user namespace.
->    since there is no available bit of flags for clone, we
->    create audit namespace through netlink, patch[18/20]
->    introduces a new audit netlink type AUDIT_CREATE_NS.
->    the privileged user in userns has rights to create a
->    audit namespace, it means the unprivileged user can
->    create auditns through create userns first. In order
->    to prevent them from doing harm to host, the default
->    audit_backlog_limit of un-init-audit-ns is zero(means
->    audit is unavailable in audit namespace). and it can't
->    be changed in auditns through netlink.
+> diff --git a/kernel/audit.c b/kernel/audit.c
+> index 095f54d..c4d4291 100644
+> --- a/kernel/audit.c
+> +++ b/kernel/audit.c
+> @@ -573,11 +573,7 @@ out:
+>  static int audit_netlink_ok(struct sk_buff *skb, u16 msg_type)
+>  {
+>  	int err = 0;
+> -
+> -	/* Only support the initial namespaces for now. */
+> -	if ((current_user_ns() != &init_user_ns) ||
+> -	    (task_active_pid_ns(current) != &init_pid_ns))
+> -		return -EPERM;
+> +	struct audit_namespace *ns = current->nsproxy->audit_ns;
+>  
+>  	switch (msg_type) {
+>  	case AUDIT_LIST:
+> @@ -586,6 +582,7 @@ static int audit_netlink_ok(struct sk_buff *skb, u16 msg_type)
+>  		return -EOPNOTSUPP;
+>  	case AUDIT_GET:
+>  	case AUDIT_SET:
+> +		break;
 
-So the unprivileged user can create an audit-ns, but can't
-then actually send any messages there?  I guess setting it
-to something small would just be hacky?
+So, these AUDIT_SET and AUDIT_GET go from requiring CAP_AUDIT_CONTROL
+to not needing any privs at all?
+
+>  	case AUDIT_LIST_RULES:
+>  	case AUDIT_ADD_RULE:
+>  	case AUDIT_DEL_RULE:
+> @@ -594,13 +591,15 @@ static int audit_netlink_ok(struct sk_buff *skb, u16 msg_type)
+>  	case AUDIT_TTY_SET:
+>  	case AUDIT_TRIM:
+>  	case AUDIT_MAKE_EQUIV:
+> -		if (!capable(CAP_AUDIT_CONTROL))
+> +		if ((current_user_ns() != &init_user_ns) ||
+> +		    (ns != &init_audit_ns) ||
+> +		    !capable(CAP_AUDIT_CONTROL))
+>  			err = -EPERM;
+>  		break;
+>  	case AUDIT_USER:
+>  	case AUDIT_FIRST_USER_MSG ... AUDIT_LAST_USER_MSG:
+>  	case AUDIT_FIRST_USER_MSG2 ... AUDIT_LAST_USER_MSG2:
+> -		if (!capable(CAP_AUDIT_WRITE))
+> +		if (!ns_capable(ns->user_ns, CAP_AUDIT_WRITE))
+>  			err = -EPERM;
+>  		break;
+>  	default:  /* bad msg */
+> -- 
+> 1.8.3.1
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linuxfoundation.org/mailman/listinfo/containers
