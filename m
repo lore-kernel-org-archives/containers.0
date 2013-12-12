@@ -1,11 +1,13 @@
 From: Dwight Engen <dwight.engen-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH RFC 0/9] cgroups: add res_counter_write_u64() API
-Date: Thu, 12 Dec 2013 16:35:09 -0500
-Message-ID: <1386884118-14972-1-git-send-email-dwight.engen@oracle.com>
+Subject: [PATCH 1/9] cgroups: add res_counter_write_u64() API
+Date: Thu, 12 Dec 2013 16:35:10 -0500
+Message-ID: <1386884118-14972-2-git-send-email-dwight.engen@oracle.com>
+References: <1386884118-14972-1-git-send-email-dwight.engen@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1386884118-14972-1-git-send-email-dwight.engen-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,41 +21,79 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello,
+From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-I've seen that some sort of fork/task limiter has been proposed and
-discussed several times before. Despite the existance of kmem in memcg, a
-fork limiter is still often asked for by container users. Perhaps this is
-due to current granularity in kmem (ie. stack/struct task not split out from
-other slab allocations) but I believe it is just more natural for users to
-express a limit in terms of tasks.
+Extend the resource counter API with a mirror of res_counter_read_u64() to
+make it handy to update a resource counter value from a cgroup subsystem
+u64 value file.
 
-So what I've done is updated Frederic Weisbecker's task counter patchset and
-tried to address the concerns that I saw people had raised. This involved
-the following changes:
+[kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org: Separate 32 bits and 64 bits versions]
 
-- merged into cpuacct controller, as it seems there is a desire not to add
-  new controllers, this controller is already heirarchical, and I feel
-  limiting number of tasks/forks fits best here
-- included a fork_limit similar to the one Max Kellermann posted
-  (https://lkml.org/lkml/2011/2/17/116) which is a use case not addressable
-  with memcg
-- ala memcg kmem, for performance reasons don't account unless limit is set
-- ala memcg, allow usage to roll up to root (prevents warnings on
-  uncharge), but still don't allow setting limits in root
-- changed the interface at fork()/exit(), adding
-  can_fork()/cancel_can_fork() modeled on can_attach(). cgroup_fork()
-  can now return failure to fork().
-- ran Frederics selftests, and added a couple more
+Signed-off-by: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Acked-by: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
+Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>
+Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: Glauber Costa <glommer-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Cgroups <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Daniel J Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>
+Cc: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Signed-off-by: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+---
+ include/linux/res_counter.h |  2 ++
+ kernel/res_counter.c        | 14 ++++++++++++++
+ 2 files changed, 16 insertions(+)
 
-I also wrote a small fork micro benchmark to see how this change affected
-performance. I did 20 runs of 100000 fork/exit/waitpid, and took the
-average. Times are in seconds, base is without the change, cpuacct1 is with
-the change but no accounting be done (ie. no limit set), and cpuacct2 is
-with the test being in a cgroup 1 level deep.
-
-base  cpuacct1  cpuaac2
-5.59  5.59      5.64
-
-So I believe this change has minimal performance impact, especially when no
-limit is set.
+diff --git a/include/linux/res_counter.h b/include/linux/res_counter.h
+index 201a697..eb78440 100644
+--- a/include/linux/res_counter.h
++++ b/include/linux/res_counter.h
+@@ -78,6 +78,8 @@ ssize_t res_counter_read(struct res_counter *counter, int member,
+ int res_counter_memparse_write_strategy(const char *buf,
+ 					unsigned long long *res);
+ 
++void res_counter_write_u64(struct res_counter *counter, int member, u64 val);
++
+ /*
+  * the field descriptors. one for each member of res_counter
+  */
+diff --git a/kernel/res_counter.c b/kernel/res_counter.c
+index 4aa8a30..673a7a6 100644
+--- a/kernel/res_counter.c
++++ b/kernel/res_counter.c
+@@ -170,11 +170,25 @@ u64 res_counter_read_u64(struct res_counter *counter, int member)
+ 
+ 	return ret;
+ }
++
++void res_counter_write_u64(struct res_counter *counter, int member, u64 val)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&counter->lock, flags);
++	*res_counter_member(counter, member) = val;
++	spin_unlock_irqrestore(&counter->lock, flags);
++}
+ #else
+ u64 res_counter_read_u64(struct res_counter *counter, int member)
+ {
+ 	return *res_counter_member(counter, member);
+ }
++
++void res_counter_write_u64(struct res_counter *counter, int member, u64 val)
++{
++	*res_counter_member(counter, member) = val;
++}
+ #endif
+ 
+ int res_counter_memparse_write_strategy(const char *buf,
+-- 
+1.8.3.1
