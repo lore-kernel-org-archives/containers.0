@@ -1,7 +1,7 @@
 From: Dwight Engen <dwight.engen-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 8/9] cgroups: Add task and fork limits to cpuacct subsystem
-Date: Thu, 12 Dec 2013 16:35:17 -0500
-Message-ID: <1386884118-14972-9-git-send-email-dwight.engen@oracle.com>
+Subject: [PATCH 9/9] selftests: Add a new task counter selftest
+Date: Thu, 12 Dec 2013 16:35:18 -0500
+Message-ID: <1386884118-14972-10-git-send-email-dwight.engen@oracle.com>
 References: <1386884118-14972-1-git-send-email-dwight.engen@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,569 +21,541 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-A task limit can be set that is checked every time a task forks or
-is moved into the cgroup. For performance reasons the accounting is
-not performed unless a limit is set.
+From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-The primary goal is to protect against forkbombs that explode
-inside a container. The traditional NR_PROC rlimit is not
-efficient in that case because if we run containers in parallel
-under the same user, one of these could starve all the others
-by spawning a high number of tasks close to the user wide limit.
+This is a batch of tests running against the cgroup task counter
+subsystem in order to validate the expected behaviour from this
+cgroup feature.
 
-A secondary goal is to limit the total number of forks a container
-can do, for example for use in a temporary cgroup created to
-process a CGI request. This is implemented with a separate fork
-count limit.
+This checks the reliability of the value found in the tasks.usage file
+after events like forks, exits or cgroup migration of whole processes
+or individual threads.
 
-Original Author: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+This also check that forks or cgroup migration are either accepted or
+rejected according to the value set in the tasks.limit file.
+
+A forkbomb is also launched to test if the subsystem stops well its
+propagation and kills it properly as expected.
+
 Signed-off-by: Dwight Engen <dwight.engen-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
 ---
- Documentation/cgroups/cpuacct.txt |  35 ++++-
- include/linux/cgroup.h            |   8 +-
- kernel/cgroup.c                   |  37 ++++-
- kernel/exit.c                     |   2 +-
- kernel/fork.c                     |   7 +-
- kernel/sched/cpuacct.c            | 279 +++++++++++++++++++++++++++++++++++++-
- 6 files changed, 347 insertions(+), 21 deletions(-)
+ tools/testing/selftests/Makefile                   |   1 +
+ tools/testing/selftests/cpuacct/Makefile           |  11 ++
+ tools/testing/selftests/cpuacct/fork.c             |  40 ++++
+ tools/testing/selftests/cpuacct/forkbomb.c         |  40 ++++
+ tools/testing/selftests/cpuacct/multithread.c      |  68 +++++++
+ tools/testing/selftests/cpuacct/run_test           | 214 +++++++++++++++++++++
+ .../selftests/cpuacct/spread_thread_group.c        |  82 ++++++++
+ 7 files changed, 456 insertions(+)
+ create mode 100644 tools/testing/selftests/cpuacct/Makefile
+ create mode 100644 tools/testing/selftests/cpuacct/fork.c
+ create mode 100644 tools/testing/selftests/cpuacct/forkbomb.c
+ create mode 100644 tools/testing/selftests/cpuacct/multithread.c
+ create mode 100755 tools/testing/selftests/cpuacct/run_test
+ create mode 100644 tools/testing/selftests/cpuacct/spread_thread_group.c
 
-diff --git a/Documentation/cgroups/cpuacct.txt b/Documentation/cgroups/cpuacct.txt
-index 9d73cc0..4d5a568 100644
---- a/Documentation/cgroups/cpuacct.txt
-+++ b/Documentation/cgroups/cpuacct.txt
-@@ -2,11 +2,13 @@ CPU Accounting Controller
- -------------------------
+diff --git a/tools/testing/selftests/Makefile b/tools/testing/selftests/Makefile
+index 9f3eae2..61405ab 100644
+--- a/tools/testing/selftests/Makefile
++++ b/tools/testing/selftests/Makefile
+@@ -9,6 +9,7 @@ TARGETS += ptrace
+ TARGETS += timers
+ TARGETS += vm
+ TARGETS += powerpc
++TARGETS += cpuacct
  
- The CPU accounting controller is used to group tasks using cgroups and
--account the CPU usage of these groups of tasks.
-+account the CPU usage of these groups of tasks. It can also limit the
-+number of tasks running inside the cgroup, and limit the total number of
-+forks done by processes in the cgroup.
- 
- The CPU accounting controller supports multi-hierarchy groups. An accounting
--group accumulates the CPU usage of all of its child groups and the tasks
--directly present in its group.
-+group accumulates the CPU and task usage of all of its child groups and the
-+tasks directly present in its group.
- 
- Accounting groups can be created by first mounting the cgroup filesystem.
- 
-@@ -47,3 +49,30 @@ system times. This has two side effects:
-   against concurrent writes.
- - It is possible to see slightly outdated values for user and system times
-   due to the batch processing nature of percpu_counter.
+ all:
+ 	for TARGET in $(TARGETS); do \
+diff --git a/tools/testing/selftests/cpuacct/Makefile b/tools/testing/selftests/cpuacct/Makefile
+new file mode 100644
+index 0000000..feb39e5
+--- /dev/null
++++ b/tools/testing/selftests/cpuacct/Makefile
+@@ -0,0 +1,11 @@
++all:
++	gcc fork.c -o fork
++	gcc forkbomb.c -o forkbomb
++	gcc multithread.c -o multithread -lpthread
++	gcc spread_thread_group.c -o spread_thread_group -lpthread
 +
-+cpuacct.fork_usage maintains a counter which is incremented each time a new
-+process/thread is created. For performance reasons, this accounting is not
-+done unless cpuacct.fork_limit is set.
++run_tests: all
++	./run_test
 +
-+cpuacct.fork_limit limits the number of times a new child process or thread
-+can be created. If cpuacct.fork_limit is set, when cpuacct.fork_usage
-+reaches the limit, no process in the cgroup is allowed to create new child
-+processes/threads, even if existing ones quit. A limit other than 0 cannot
-+be set if the cgroup has children or tasks already assigned. Setting the
-+limit to 0 is useful for stopping an in progress fork bomb. The limit in the
-+root of the cgroup heirarchy cannot be set.
-+
-+This has been proven useful in a shared hosting environment.  A new
-+temporary cgroup is created for each CGI process, and the maximum fork
-+count is configured to a sensible value.  Since CGIs are expected to
-+run for only a short time with predictable resource usage, this may be
-+an appropriate tool to limit the damage that a freaked CGI can do.
-+
-+cpuacct.task_usage maintains a counter of the number of tasks in the cgroup.
-+For performance reasons, this accounting is not done unless
-+cpuacct.task_limit is set.
-+
-+cpuacct.task_limit limits the number of tasks running inside a given cgroup.
-+It behaves like the NR_PROC rlimit but in the scope of a cgroup instead of a
-+user. This limit is checked when a task forks or when it is migrated to the
-+cgroup. The limit in the root of the cgroup heirarchy cannot be set.
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 9b20ba9..519c80e 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -33,9 +33,9 @@ struct eventfd_ctx;
- 
- extern int cgroup_init_early(void);
- extern int cgroup_init(void);
--extern void cgroup_fork(struct task_struct *p);
-+extern int cgroup_fork(struct task_struct *p);
- extern void cgroup_post_fork(struct task_struct *p);
--extern void cgroup_exit(struct task_struct *p, int run_callbacks);
-+extern void cgroup_exit(struct task_struct *p);
- extern int cgroupstats_build(struct cgroupstats *stats,
- 				struct dentry *dentry);
- extern int cgroup_load_subsys(struct cgroup_subsys *ss);
-@@ -603,6 +603,8 @@ struct cgroup_subsys {
- 			      struct cgroup_taskset *tset);
- 	void (*attach)(struct cgroup_subsys_state *css,
- 		       struct cgroup_taskset *tset);
-+	int (*can_fork)(void);
-+	void (*cancel_can_fork)(void);
- 	void (*fork)(struct task_struct *task);
- 	void (*exit)(struct cgroup_subsys_state *css,
- 		     struct cgroup_subsys_state *old_css,
-@@ -913,7 +915,7 @@ static inline int cgroup_init_early(void) { return 0; }
- static inline int cgroup_init(void) { return 0; }
- static inline void cgroup_fork(struct task_struct *p) {}
- static inline void cgroup_post_fork(struct task_struct *p) {}
--static inline void cgroup_exit(struct task_struct *p, int callbacks) {}
-+static inline void cgroup_exit(struct task_struct *p) {}
- 
- static inline int cgroupstats_build(struct cgroupstats *stats,
- 					struct dentry *dentry)
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 5c9127d..8abacad 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -4855,7 +4855,7 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
- 	 * init_css_set is in the subsystem's top cgroup. */
- 	init_css_set.subsys[ss->subsys_id] = css;
- 
--	need_forkexit_callback |= ss->fork || ss->exit;
-+	need_forkexit_callback |= ss->fork || ss->can_fork || ss->exit;
- 
- 	/* At system boot, before all subsystems have been
- 	 * registered, no tasks have been forked, so we don't
-@@ -5282,13 +5282,40 @@ static const struct file_operations proc_cgroupstats_operations = {
-  * At the point that cgroup_fork() is called, 'current' is the parent
-  * task, and the passed argument 'child' points to the child task.
-  */
--void cgroup_fork(struct task_struct *child)
-+int cgroup_fork(struct task_struct *child)
- {
-+	struct cgroup_subsys *ss;
-+	struct cgroup_subsys *failed_ss;
-+	int i;
-+	int err = 0;
-+
- 	task_lock(current);
-+	if (need_forkexit_callback) {
-+		for_each_builtin_subsys(ss, i) {
-+			if (ss->can_fork) {
-+				err = ss->can_fork();
-+				if (err) {
-+					failed_ss = ss;
-+					goto out_cancel_fork;
-+				}
-+			}
-+		}
-+	}
- 	get_css_set(task_css_set(current));
- 	child->cgroups = current->cgroups;
--	task_unlock(current);
- 	INIT_LIST_HEAD(&child->cg_list);
-+
-+out_cancel_fork:
-+	if (err) {
-+		for_each_builtin_subsys(ss, i) {
-+			if (ss == failed_ss)
-+				break;
-+			if (ss->cancel_can_fork)
-+				ss->cancel_can_fork();
-+		}
-+	}
-+	task_unlock(current);
-+	return err;
- }
- 
- /**
-@@ -5381,7 +5408,7 @@ void cgroup_post_fork(struct task_struct *child)
-  *    which wards off any cgroup_attach_task() attempts, or task is a failed
-  *    fork, never visible to cgroup_attach_task.
-  */
--void cgroup_exit(struct task_struct *tsk, int run_callbacks)
-+void cgroup_exit(struct task_struct *tsk)
- {
- 	struct cgroup_subsys *ss;
- 	struct css_set *cset;
-@@ -5404,7 +5431,7 @@ void cgroup_exit(struct task_struct *tsk, int run_callbacks)
- 	cset = task_css_set(tsk);
- 	RCU_INIT_POINTER(tsk->cgroups, &init_css_set);
- 
--	if (run_callbacks && need_forkexit_callback) {
-+	if (need_forkexit_callback) {
- 		/*
- 		 * fork/exit callbacks are supported only for builtin
- 		 * subsystems, see cgroup_post_fork() for details.
-diff --git a/kernel/exit.c b/kernel/exit.c
-index a949819..74c4964 100644
---- a/kernel/exit.c
-+++ b/kernel/exit.c
-@@ -796,7 +796,7 @@ void do_exit(long code)
- 	 */
- 	perf_event_exit_task(tsk);
- 
--	cgroup_exit(tsk, 1);
-+	cgroup_exit(tsk);
- 
- 	if (group_dead)
- 		disassociate_ctty(1);
-diff --git a/kernel/fork.c b/kernel/fork.c
-index 086fe73..cff2f73 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1264,7 +1264,9 @@ static struct task_struct *copy_process(unsigned long clone_flags,
- 	p->audit_context = NULL;
- 	if (clone_flags & CLONE_THREAD)
- 		threadgroup_change_begin(current);
--	cgroup_fork(p);
-+	retval = cgroup_fork(p);
-+	if (retval)
-+		goto bad_fork_cleanup_threadgroup;
- #ifdef CONFIG_NUMA
- 	p->mempolicy = mpol_dup(p->mempolicy);
- 	if (IS_ERR(p->mempolicy)) {
-@@ -1523,9 +1525,10 @@ bad_fork_cleanup_policy:
- 	mpol_put(p->mempolicy);
- bad_fork_cleanup_cgroup:
- #endif
-+	cgroup_exit(p);
-+bad_fork_cleanup_threadgroup:
- 	if (clone_flags & CLONE_THREAD)
- 		threadgroup_change_end(current);
--	cgroup_exit(p, 0);
- 	delayacct_tsk_free(p);
- 	module_put(task_thread_info(p)->exec_domain->module);
- bad_fork_cleanup_count:
-diff --git a/kernel/sched/cpuacct.c b/kernel/sched/cpuacct.c
-index f64722f..e23e543 100644
---- a/kernel/sched/cpuacct.c
-+++ b/kernel/sched/cpuacct.c
-@@ -5,6 +5,7 @@
- #include <linux/cpumask.h>
- #include <linux/seq_file.h>
- #include <linux/rcupdate.h>
-+#include <linux/res_counter.h>
- #include <linux/kernel_stat.h>
- #include <linux/err.h>
- 
-@@ -31,6 +32,11 @@ struct cpuacct {
- 	/* cpuusage holds pointer to a u64-type object on every cpu */
- 	u64 __percpu *cpuusage;
- 	struct kernel_cpustat __percpu *cpustat;
-+
-+	/* counter for allowed tasks */
-+	struct res_counter task_limit;
-+	/* counter for allowed forks */
-+	struct res_counter fork_limit;
- };
- 
- static inline struct cpuacct *css_ca(struct cgroup_subsys_state *css)
-@@ -49,6 +55,11 @@ static inline struct cpuacct *parent_ca(struct cpuacct *ca)
- 	return css_ca(css_parent(&ca->css));
- }
- 
-+static inline bool res_limit_enabled(struct res_counter *res)
-+{
-+	return res_counter_read_u64(res, RES_LIMIT) != RES_COUNTER_MAX;
-+}
-+
- static DEFINE_PER_CPU(u64, root_cpuacct_cpuusage);
- static struct cpuacct root_cpuacct = {
- 	.cpustat	= &kernel_cpustat,
-@@ -61,8 +72,11 @@ cpuacct_css_alloc(struct cgroup_subsys_state *parent_css)
- {
- 	struct cpuacct *ca;
- 
--	if (!parent_css)
-+	if (!parent_css) {
-+		res_counter_init(&root_cpuacct.task_limit, NULL);
-+		res_counter_init(&root_cpuacct.fork_limit, NULL);
- 		return &root_cpuacct.css;
-+	}
- 
- 	ca = kzalloc(sizeof(*ca), GFP_KERNEL);
- 	if (!ca)
-@@ -76,6 +90,12 @@ cpuacct_css_alloc(struct cgroup_subsys_state *parent_css)
- 	if (!ca->cpustat)
- 		goto out_free_cpuusage;
- 
-+	res_counter_init(&ca->task_limit, &css_ca(parent_css)->task_limit);
-+	res_counter_inherit(&ca->task_limit, RES_LIMIT);
-+
-+	res_counter_init(&ca->fork_limit, &css_ca(parent_css)->fork_limit);
-+	res_counter_inherit(&ca->fork_limit, RES_LIMIT);
-+
- 	return &ca->css;
- 
- out_free_cpuusage:
-@@ -212,6 +232,223 @@ static int cpuacct_stats_show(struct cgroup_subsys_state *css,
- 	return 0;
- }
- 
-+static u64 cpuacct_task_limit_read_u64(struct cgroup_subsys_state *css,
-+				       struct cftype *cft)
-+{
-+	struct cpuacct *ca = css_ca(css);
-+	int type = cft->private;
-+
-+	return res_counter_read_u64(&ca->task_limit, type);
-+}
-+
-+static int cpuacct_task_limit_write_u64(struct cgroup_subsys_state *css,
-+					struct cftype *cft, u64 val)
-+{
-+	struct cpuacct *ca = css_ca(css);
-+	struct cgroup *cgrp = ca->css.cgroup;
-+	int type = cft->private;
-+
-+	if (ca == &root_cpuacct)
-+		return -EINVAL;
-+
-+	if (val != RES_COUNTER_MAX) {
-+		if (cgroup_task_count(cgrp) || !list_empty(&cgrp->children))
-+			return -EBUSY;
-+		res_counter_write_u64(&ca->task_limit, type, val);
-+	}
-+
-+	return 0;
-+}
-+
-+static u64 cpuacct_fork_limit_read_u64(struct cgroup_subsys_state *css,
-+				       struct cftype *cft)
-+{
-+	struct cpuacct *ca = css_ca(css);
-+	int type = cft->private;
-+
-+	return res_counter_read_u64(&ca->fork_limit, type);
-+}
-+
-+static int cpuacct_fork_limit_write_u64(struct cgroup_subsys_state *css,
-+					struct cftype *cft, u64 val)
-+{
-+	struct cpuacct *ca = css_ca(css);
-+	struct cgroup *cgrp = ca->css.cgroup;
-+	int type = cft->private;
-+
-+	if (ca == &root_cpuacct)
-+		return -EINVAL;
-+
-+	if (val != RES_COUNTER_MAX) {
-+		/* always allow 0 to stop an ongoing fork bomb */
-+		if (val != 0 &&
-+		    (cgroup_task_count(cgrp) || !list_empty(&cgrp->children)))
-+			return -EBUSY;
-+		res_counter_write_u64(&ca->fork_limit, type, val);
-+	}
-+
-+	return 0;
-+}
-+
-+static int cpuacct_can_fork(void)
-+{
-+	int err = 0;
-+	bool fork_charged = 0;
-+	struct cpuacct *ca = task_ca(current);
-+
-+	if (ca == &root_cpuacct)
-+		return 0;
-+
-+	if (res_limit_enabled(&ca->fork_limit)) {
-+		if (res_counter_charge(&ca->fork_limit, 1, NULL))
-+			return -EPERM;
-+		fork_charged = 1;
-+	}
-+
-+	if (res_limit_enabled(&ca->task_limit)) {
-+		if (res_counter_charge(&ca->task_limit, 1, NULL)) {
-+			err = -EAGAIN;
-+			goto err_task_limit;
-+		}
-+	}
-+
-+	return 0;
-+
-+err_task_limit:
-+	if (fork_charged)
-+		res_counter_uncharge(&ca->fork_limit, 1);
-+	return err;
-+}
-+
-+static void cpuacct_cancel_can_fork(void)
-+{
-+	struct cpuacct *ca = task_ca(current);
-+
-+	if (ca == &root_cpuacct)
-+		return;
-+
-+	if (res_limit_enabled(&ca->fork_limit))
-+		res_counter_uncharge(&ca->fork_limit, 1);
-+
-+	if (res_limit_enabled(&ca->task_limit))
-+		res_counter_uncharge(&ca->task_limit, 1);
-+}
-+
-+
-+static void cpuacct_exit(struct cgroup_subsys_state *css,
-+			 struct cgroup_subsys_state *old_css,
-+			 struct task_struct *task)
-+{
-+	struct cpuacct *ca = css_ca(old_css);
-+
-+	if (ca == &root_cpuacct)
-+		return;
-+
-+	if (res_limit_enabled(&ca->task_limit))
-+		res_counter_uncharge(&ca->task_limit, 1);
-+}
-+
++clean:
++	rm -f fork forkbomb multithread spread_thread_group *~
+diff --git a/tools/testing/selftests/cpuacct/fork.c b/tools/testing/selftests/cpuacct/fork.c
+new file mode 100644
+index 0000000..c85a610
+--- /dev/null
++++ b/tools/testing/selftests/cpuacct/fork.c
+@@ -0,0 +1,40 @@
 +/*
-+ * Complete the attach by uncharging the old cgroups. We can do that now that
-+ * we are sure the attachment can't be cancelled anymore, because this uncharge
-+ * operation couldn't be reverted later: a task in the old cgroup could fork
-+ * after we uncharge and reach the task counter limit, making our return there
-+ * not possible.
++ * Copyright (C) 2012 Red Hat, Inc., Frederic Weisbecker <fweisbec-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
++ *
++ * Licensed under the terms of the GNU GPL License version 2
++ *
++ * Move a task to a cgroup and try to fork on it.
 + */
-+static void cpuacct_attach(struct cgroup_subsys_state *css,
-+			   struct cgroup_taskset *tset)
++
++#include <stdio.h>
++#include <sys/types.h>
++#include <unistd.h>
++#include <string.h>
++
++int main(int argc, char **argv)
 +{
-+	struct task_struct *task;
-+	struct cpuacct *new = css_ca(css);
-+	struct cpuacct *old;
-+	struct res_counter *until;
++	FILE *fp;
++	int pid;
++	char cpid[50];
 +
-+	cgroup_taskset_for_each(task, NULL, tset) {
-+		old = css_ca(cgroup_taskset_cur_css(tset, cpuacct_subsys_id));
-+		until = res_counter_common_ancestor(&new->task_limit,
-+						    &old->task_limit);
-+		if (until == &root_cpuacct.task_limit)
-+			until = NULL;
-+		if (res_limit_enabled(&old->task_limit))
-+			res_counter_uncharge_until(&old->task_limit, until, 1);
++	if (argc < 2)
++		return -1;
++
++	pid = getpid();
++	fp = fopen(argv[1], "w");
++	if (!fp)
++		return -2;
++
++	sprintf(cpid, "%d\n", pid);
++
++	if (fwrite(cpid, strlen(cpid), 1, fp) != 1) {
++		perror("can't write pid");
++		return -3;
 +	}
-+}
++	fclose(fp);
 +
-+static void cpuacct_cancel_attach_until(struct cgroup_subsys_state *css,
-+					struct cgroup_taskset *tset,
-+					struct task_struct *until_task)
-+{
-+	struct task_struct *task;
-+	struct cpuacct *new = css_ca(css);
-+	struct cpuacct *old;
-+	struct res_counter *until;
-+
-+	cgroup_taskset_for_each(task, NULL, tset) {
-+		if (task == until_task)
-+			break;
-+		old = css_ca(cgroup_taskset_cur_css(tset, cpuacct_subsys_id));
-+		until = res_counter_common_ancestor(&new->task_limit,
-+						    &old->task_limit);
-+		if (until == &root_cpuacct.task_limit)
-+			until = NULL;
-+		if (res_limit_enabled(&new->task_limit))
-+			res_counter_uncharge_until(&new->task_limit, until, 1);
-+	}
-+}
-+
-+/*
-+ * This does more than just probing the ability to attach to the dest cgroup.
-+ * We can not just _check_ if we can attach to the destination and do the real
-+ * attachment later in cpuacct_attach() because a task in the dest cgroup can
-+ * fork before we get there and steal the last remaining count, thus we must
-+ * charge the dest cgroup right now.
-+ */
-+static int cpuacct_can_attach(struct cgroup_subsys_state *css,
-+			      struct cgroup_taskset *tset)
-+{
-+	struct task_struct *task;
-+	struct cpuacct *new = css_ca(css);
-+	struct cpuacct *old;
-+	struct res_counter *until;
-+	int err;
-+
-+	cgroup_taskset_for_each(task, NULL, tset) {
-+		old = css_ca(cgroup_taskset_cur_css(tset, cpuacct_subsys_id));
-+
-+		/*
-+		 * When moving a task from a cgroup to another, we don't want
-+		 * to charge the common ancestors, even though they would be
-+		 * uncharged later in cpuacct_attach(), because during that
-+		 * short window between charge and uncharge, a task could fork
-+		 * in the ancestor and spuriously fail due to the temporary
-+		 * charge. The exception is root_cpuacct since it is unlimited.
-+		 */
-+		until = res_counter_common_ancestor(&new->task_limit,
-+						    &old->task_limit);
-+		if (until == &root_cpuacct.task_limit)
-+			until = NULL;
-+
-+		if (!res_limit_enabled(&new->task_limit))
-+			continue;
-+
-+		err = res_counter_charge_until(&new->task_limit, until, 1, NULL);
-+		if (err) {
-+			cpuacct_cancel_attach_until(css, tset, task);
-+			return -EINVAL;
-+		}
-+	}
++	if (fork() == -1)
++		return -4;
 +
 +	return 0;
 +}
+diff --git a/tools/testing/selftests/cpuacct/forkbomb.c b/tools/testing/selftests/cpuacct/forkbomb.c
+new file mode 100644
+index 0000000..221fefb
+--- /dev/null
++++ b/tools/testing/selftests/cpuacct/forkbomb.c
+@@ -0,0 +1,40 @@
++/*
++ * Copyright (C) 2012 Red Hat, Inc., Frederic Weisbecker <fweisbec-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
++ *
++ * Licensed under the terms of the GNU GPL License version 2
++ *
++ * Move a task to a cgroup and forkbomb there.
++ */
 +
-+/* Uncharge the cgroup that we charged in cpuacct_can_attach() */
-+static void cpuacct_cancel_attach(struct cgroup_subsys_state *css,
-+				  struct cgroup_taskset *tset)
++#include <stdio.h>
++#include <sys/types.h>
++#include <unistd.h>
++#include <string.h>
++
++int main(int argc, char **argv)
 +{
-+	cpuacct_cancel_attach_until(css, tset, NULL);
++	FILE *fp;
++	int pid;
++	char cpid[50];
++
++	if (argc < 2)
++		return -1;
++
++	pid = getpid();
++	fp = fopen(argv[1], "w");
++	if (!fp)
++		return -2;
++
++	sprintf(cpid, "%d\n", pid);
++
++	if (fwrite(cpid, strlen(cpid), 1, fp) != 1) {
++		perror("can't write pid\n");
++		return -3;
++	}
++	fclose(fp);
++
++	for (;;)
++		fork();
++
++	return 0;
++}
+diff --git a/tools/testing/selftests/cpuacct/multithread.c b/tools/testing/selftests/cpuacct/multithread.c
+new file mode 100644
+index 0000000..6d485de
+--- /dev/null
++++ b/tools/testing/selftests/cpuacct/multithread.c
+@@ -0,0 +1,68 @@
++/*
++ * Copyright (C) 2012 Red Hat, Inc., Frederic Weisbecker <fweisbec-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
++ *
++ * Licensed under the terms of the GNU GPL License version 2
++ *
++ * Try to move a multithread proc to a cgroup.
++ */
++
++
++#include <stdio.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <string.h>
++#include <pthread.h>
++
++static volatile int thread_end;
++pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
++pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
++
++
++static void *thread_start(void *unused)
++{
++	pthread_mutex_lock(&mutex);
++
++	while (!thread_end)
++		pthread_cond_wait(&cond, &mutex);
++
++	pthread_mutex_unlock(&mutex);
++
++	return NULL;
 +}
 +
++int main(int argc, char **argv)
++{
++	int fd;
++	int pid;
++	char cpid[50];
++	pthread_t thread;
 +
- static struct cftype files[] = {
- 	{
- 		.name = "usage",
-@@ -226,6 +463,28 @@ static struct cftype files[] = {
- 		.name = "stat",
- 		.read_map = cpuacct_stats_show,
- 	},
-+	{
-+		.name = "task_limit",
-+		.read_u64 = cpuacct_task_limit_read_u64,
-+		.write_u64 = cpuacct_task_limit_write_u64,
-+		.private = RES_LIMIT,
-+	},
-+	{
-+		.name = "task_usage",
-+		.read_u64 = cpuacct_task_limit_read_u64,
-+		.private = RES_USAGE,
-+	},
-+	{
-+		.name = "fork_limit",
-+		.read_u64 = cpuacct_fork_limit_read_u64,
-+		.write_u64 = cpuacct_fork_limit_write_u64,
-+		.private = RES_LIMIT,
-+	},
-+	{
-+		.name = "fork_usage",
-+		.read_u64 = cpuacct_fork_limit_read_u64,
-+		.private = RES_USAGE,
-+	},
- 	{ }	/* terminate */
- };
- 
-@@ -278,10 +537,16 @@ void cpuacct_account_field(struct task_struct *p, int index, u64 val)
- }
- 
- struct cgroup_subsys cpuacct_subsys = {
--	.name		= "cpuacct",
--	.css_alloc	= cpuacct_css_alloc,
--	.css_free	= cpuacct_css_free,
--	.subsys_id	= cpuacct_subsys_id,
--	.base_cftypes	= files,
--	.early_init	= 1,
-+	.name			= "cpuacct",
-+	.css_alloc		= cpuacct_css_alloc,
-+	.css_free		= cpuacct_css_free,
-+	.subsys_id		= cpuacct_subsys_id,
-+	.base_cftypes		= files,
-+	.early_init		= 1,
-+	.can_fork		= cpuacct_can_fork,
-+	.cancel_can_fork	= cpuacct_cancel_can_fork,
-+	.exit			= cpuacct_exit,
-+	.attach			= cpuacct_attach,
-+	.can_attach		= cpuacct_can_attach,
-+	.cancel_attach		= cpuacct_cancel_attach,
- };
++	if (argc < 2)
++		return -1;
++
++	if (pthread_create(&thread, NULL, thread_start, NULL) != 0)
++		return -2;
++
++	pid = getpid();
++	fd = open(argv[1], O_WRONLY);
++	if (fd < 0)
++		return -3;
++
++	sprintf(cpid, "%d\n", pid);
++
++	if (write(fd, cpid, strlen(cpid)) < 0)
++		return -4;
++
++	close(fd);
++
++	pthread_mutex_lock(&mutex);
++	thread_end = 1;
++	pthread_cond_signal(&cond);
++	pthread_mutex_unlock(&mutex);
++
++	pthread_join(thread, NULL);
++
++	return 0;
++}
+diff --git a/tools/testing/selftests/cpuacct/run_test b/tools/testing/selftests/cpuacct/run_test
+new file mode 100755
+index 0000000..7532404
+--- /dev/null
++++ b/tools/testing/selftests/cpuacct/run_test
+@@ -0,0 +1,214 @@
++#!/bin/bash
++# Copyright (C) 2012 Red Hat, Inc., Frederic Weisbecker <fweisbec-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
++#
++# Licensed under the terms of the GNU GPL License version 2
++#
++# Validation tests for the cgroup task counter subsystem
++
++BASE=`grep '^cgroup.*cpuacct' /proc/mounts |awk '{print $2}'`
++
++if [ $UID != 0 ]
++then
++	echo "Must be root to run task counter selftest"
++	exit 0
++fi
++
++if [ -z $BASE ]
++then
++	echo "Can't find cpuacct mount in /proc/mounts"
++	echo "Ensure cpuacct cgroup is mounted"
++	exit 0
++fi
++
++sleep 1d &
++PID1=$!
++
++sleep 1d &
++PID2=$!
++
++echo 1 > $BASE/cgroup.clone_children
++mkdir $BASE/cgroup0
++
++function test_result
++{
++    # Result of the test
++    res=$1
++    # Expected result
++    expected=$2
++    # Invert test against expected result
++    # 0 = equal
++    # 1 = non equal
++    inv=$3
++    # String message
++    test_str=$4
++    passed=0
++
++    echo -n $test_str
++
++    if [ $res = $expected ]
++    then
++	passed=1
++    fi
++
++    passed=$[$passed ^ $inv]
++
++    if [ $passed = 1 ]
++    then
++	echo " [OK]"
++    else
++	echo " [FAILED]"
++    fi
++
++}
++
++# simple test limit
++echo 1 > $BASE/cgroup0/cpuacct.task_limit
++echo $PID1 >  $BASE/cgroup0/cgroup.procs
++test_result $? 0 0 "Allow 1 task on limit 1"
++
++echo $PID2 >  $BASE/cgroup0/cgroup.procs 2>/dev/null
++test_result $? 0 1 "Don't allow 2 tasks on limit 1"
++
++# can't change limit once cgroup has tasks
++echo 2 > $BASE/cgroup0/cpuacct.task_limit 2>/dev/null
++test_result $? 0 1 "Can't change limit with tasks"
++
++# simple test usage
++USAGE=$(cat $BASE/cgroup0/cpuacct.task_usage)
++test_result $USAGE 1 0 "Correct usage count "
++
++# simple test exit
++kill $PID1
++wait $PID1 2>/dev/null
++USAGE=$(cat $BASE/cgroup0/cpuacct.task_usage)
++test_result $USAGE 0 0 "Correct usage count after exit "
++
++sleep 1d &
++PID1=$!
++
++echo 1 > $BASE/cgroup0/cpuacct.task_limit
++echo $PID1 >  $BASE/cgroup0/cgroup.procs
++test_result $? 0 0 "Correct reuse after exit "
++USAGE=$(cat $BASE/cgroup0/cpuacct.task_usage)
++test_result $USAGE 1 0 "Correct usage count "
++
++# simple move to root
++
++echo $PID1 > $BASE/cgroup.procs
++test_result $? 0 0 "Correct move to root "
++
++# propagation tests
++
++mkdir $BASE/cgroup0/cgroup1
++mkdir $BASE/cgroup0/cgroup2
++
++echo 1 > $BASE/cgroup0/cgroup1/cpuacct.task_limit
++echo $PID1 > $BASE/cgroup0/cgroup1/cgroup.procs
++USAGE=$(cat $BASE/cgroup0/cpuacct.task_usage)
++test_result $USAGE 1 0 "Correct propagated usage "
++
++echo $PID1 > $BASE/cgroup0/cgroup.procs
++test_result $? 0 0 "Correct move on parent "
++
++
++# move
++
++echo $PID1 > $BASE/cgroup0/cgroup1/cgroup.procs
++test_result $? 0 0 "Correct move on child "
++
++echo $PID1 > $BASE/cgroup0/cgroup2/cgroup.procs
++test_result $? 0 0 "Correct move on sibling "
++
++echo $PID2 > $BASE/cgroup0/cgroup1/cgroup.procs 2>/dev/null
++test_result $? 0 1 "Correct propagation limit "
++
++kill $PID1
++wait $PID1 2>/dev/null
++kill $PID2
++wait $PID2 2>/dev/null
++
++rmdir $BASE/cgroup0/cgroup1
++rmdir $BASE/cgroup0/cgroup2
++
++# test limit on thread group
++usleep 100000
++echo 1024 > $BASE/cgroup0/cpuacct.task_limit
++mkdir $BASE/cgroup0/cgroup1
++
++# can't change limit once cgroup has children
++echo 2 > $BASE/cgroup0/cpuacct.task_limit 2>/dev/null
++test_result $? 0 1 "Can't change limit with children"
++
++echo 0 > $BASE/cgroup0/cgroup1/cpuacct.task_limit
++./multithread $BASE/cgroup0/cgroup1/cgroup.procs
++test_result $? 0 1 "Correct limit on multithreaded"
++
++# test move of a thread group
++echo 2 > $BASE/cgroup0/cgroup1/cpuacct.task_limit
++
++./multithread $BASE/cgroup0/cgroup1/cgroup.procs
++test_result $? 0 0 "Correct move of multithreaded"
++
++rmdir $BASE/cgroup0/cgroup1
++
++# test bug on common ancestor logic
++# as described in https://lkml.org/lkml/2011/11/8/218
++
++./spread_thread_group $BASE/cgroup0/cgroup.procs $BASE/tasks
++test_result $? 0 0 "Test bug on common ancestor logic"
++
++# test task limit with fork
++usleep 100000
++echo 1 > $BASE/cgroup0/cpuacct.task_limit
++./fork $BASE/cgroup0/cgroup.procs
++test_result $? 0 1 "Correct task limit "
++
++# test fork limit
++echo 2 > $BASE/cgroup0/cpuacct.task_limit
++echo 1 > $BASE/cgroup0/cpuacct.fork_limit
++./fork $BASE/cgroup0/cgroup.procs
++test_result $? 0 0 "Fork allowed "
++./fork $BASE/cgroup0/cgroup.procs
++test_result $? 0 1 "Fork denied "
++
++rmdir $BASE/cgroup0
++mkdir $BASE/cgroup0
++
++# test forkbomb
++
++echo 128 > $BASE/cgroup0/cpuacct.task_limit
++echo -n "Trying to stop forkbomb propagation..."
++./forkbomb $BASE/cgroup0/cgroup.procs &
++sleep 1
++RES=$(cat $BASE/cgroup0/cpuacct.task_usage)
++test_result $RES 128 0 ""
++
++# kill forkbomb
++
++echo -n "Trying to kill forkbomb "
++echo 0 > $BASE/cgroup0/cpuacct.fork_limit
++END=false
++
++while [ $END = false ]
++do
++	NR_TASKS=$(cat $BASE/cgroup0/cpuacct.task_usage)
++	NR_KILLED=0
++
++	for TASK in $(cat $BASE/cgroup0/cgroup.procs)
++	do
++		NR_KILLED=$(($NR_KILLED+1))
++		kill -KILL $TASK
++		wait $TASK 2>/dev/null
++	done
++
++	if [ "$NR_TASKS" = "$NR_KILLED" ]
++	then
++		END=true
++	fi
++done
++
++echo "[OK]"
++
++# Wait a bit for killed tasks to exit the cgroup
++sleep 1
++rmdir $BASE/cgroup0
+diff --git a/tools/testing/selftests/cpuacct/spread_thread_group.c b/tools/testing/selftests/cpuacct/spread_thread_group.c
+new file mode 100644
+index 0000000..24f42b9
+--- /dev/null
++++ b/tools/testing/selftests/cpuacct/spread_thread_group.c
+@@ -0,0 +1,82 @@
++/*
++ * Copyright (C) 2012 Red Hat, Inc., Frederic Weisbecker <fweisbec-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
++ *
++ * Licensed under the terms of the GNU GPL License version 2
++ *
++ * Try to reproduce bug on common ancestor logic as described
++ * at https://lkml.org/lkml/2011/11/8/218
++ */
++
++#include <stdio.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <string.h>
++#include <pthread.h>
++
++static volatile int thread_end;
++pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
++pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
++
++
++static void *thread_start(void *unused)
++{
++	pthread_mutex_lock(&mutex);
++
++	while (!thread_end)
++		pthread_cond_wait(&cond, &mutex);
++
++	pthread_mutex_unlock(&mutex);
++
++	return NULL;
++}
++
++int main(int argc, char **argv)
++{
++	int fd_root, fd;
++	int pid;
++	char cpid[50];
++	pthread_t thread;
++
++	if (argc < 3)
++		return -1;
++
++	if (pthread_create(&thread, NULL, thread_start, NULL) != 0)
++		return -2;
++
++	pid = getpid();
++	fd = open(argv[1], O_WRONLY);
++	if (fd < 0)
++		return -3;
++
++	sprintf(cpid, "%d\n", pid);
++
++	/* Move group to /dev/cgroup/cgroup0 */
++	if (write(fd, cpid, strlen(cpid)) < 0)
++		return -4;
++
++	fd_root = open(argv[2], O_WRONLY);
++	if (fd < 0)
++		return -5;
++
++	/* Move group leader to /dev/cgroup/ root */
++	if (write(fd_root, cpid, strlen(cpid)) < 0)
++		return -6;
++
++	/* Move back group to /dev/cgroup/cgroup0 */
++	if (write(fd, cpid, strlen(cpid)) < 0)
++		return -7;
++
++	close(fd_root);
++	close(fd);
++
++	pthread_mutex_lock(&mutex);
++	thread_end = 1;
++	pthread_cond_signal(&cond);
++	pthread_mutex_unlock(&mutex);
++
++	pthread_join(thread, NULL);
++
++	return 0;
++}
 -- 
 1.8.3.1
