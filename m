@@ -1,15 +1,11 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH -next] cgroup: fix missing unlock on error in
-	cgroup_load_subsys()
-Date: Thu, 12 Dec 2013 10:46:26 -0500
-Message-ID: <20131212154626.GE32683__23191.9253747494$1386863217$gmane$org@htj.dyndns.org>
-References: <CAPgLHd8s94-e2=tynt-jKKNmoSXzNFHs+vYeUS1uW3+Ohk_OVA@mail.gmail.com>
+From: Dwight Engen <dwight.engen-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH RFC 0/9] cgroups: add res_counter_write_u64() API
+Date: Thu, 12 Dec 2013 16:35:09 -0500
+Message-ID: <1386884118-14972-1-git-send-email-dwight.engen@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <CAPgLHd8s94-e2=tynt-jKKNmoSXzNFHs+vYeUS1uW3+Ohk_OVA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,21 +15,45 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Wei Yongjun <weiyj.lk-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, yongjun_wei-zrsr2BFq86L20UzCJQGyNP8+0UxHXcjY@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Dec 09, 2013 at 08:38:29PM +0800, Wei Yongjun wrote:
-> From: Wei Yongjun <yongjun_wei-zrsr2BFq86L20UzCJQGyNP8+0UxHXcjY@public.gmane.org>
-> 
-> Add the missing unlock before return from function cgroup_load_subsys()
-> in the error handling case.
-> 
-> Signed-off-by: Wei Yongjun <yongjun_wei-zrsr2BFq86L20UzCJQGyNP8+0UxHXcjY@public.gmane.org>
+Hello,
 
-Applied to cgroup/for-3.14.
+I've seen that some sort of fork/task limiter has been proposed and
+discussed several times before. Despite the existance of kmem in memcg, a
+fork limiter is still often asked for by container users. Perhaps this is
+due to current granularity in kmem (ie. stack/struct task not split out from
+other slab allocations) but I believe it is just more natural for users to
+express a limit in terms of tasks.
 
-Thanks.
+So what I've done is updated Frederic Weisbecker's task counter patchset and
+tried to address the concerns that I saw people had raised. This involved
+the following changes:
 
--- 
-tejun
+- merged into cpuacct controller, as it seems there is a desire not to add
+  new controllers, this controller is already heirarchical, and I feel
+  limiting number of tasks/forks fits best here
+- included a fork_limit similar to the one Max Kellermann posted
+  (https://lkml.org/lkml/2011/2/17/116) which is a use case not addressable
+  with memcg
+- ala memcg kmem, for performance reasons don't account unless limit is set
+- ala memcg, allow usage to roll up to root (prevents warnings on
+  uncharge), but still don't allow setting limits in root
+- changed the interface at fork()/exit(), adding
+  can_fork()/cancel_can_fork() modeled on can_attach(). cgroup_fork()
+  can now return failure to fork().
+- ran Frederics selftests, and added a couple more
+
+I also wrote a small fork micro benchmark to see how this change affected
+performance. I did 20 runs of 100000 fork/exit/waitpid, and took the
+average. Times are in seconds, base is without the change, cpuacct1 is with
+the change but no accounting be done (ie. no limit set), and cpuacct2 is
+with the test being in a cgroup 1 level deep.
+
+base  cpuacct1  cpuaac2
+5.59  5.59      5.64
+
+So I believe this change has minimal performance impact, especially when no
+limit is set.
