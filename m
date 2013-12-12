@@ -1,7 +1,7 @@
 From: Dwight Engen <dwight.engen-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 5/9] res_counter: allow charge failure pointer to be null
-Date: Thu, 12 Dec 2013 16:35:14 -0500
-Message-ID: <1386884118-14972-6-git-send-email-dwight.engen@oracle.com>
+Subject: [PATCH 2/9] cgroups: new resource counter inheritance API
+Date: Thu, 12 Dec 2013 16:35:11 -0500
+Message-ID: <1386884118-14972-3-git-send-email-dwight.engen@oracle.com>
 References: <1386884118-14972-1-git-send-email-dwight.engen@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,8 +23,12 @@ List-Id: containers.vger.kernel.org
 
 From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-So that callers of res_counter_charge() don't have to create and pass this
-pointer even if they aren't interested in it.
+Provide an API to inherit a counter value from a parent.  This can be
+useful to implement cgroup.clone_children on a resource counter.
+
+Still the resources of the children are limited by those of the parent, so
+this is only to provide a default setting behaviour when clone_children is
+set.
 
 Signed-off-by: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
@@ -45,32 +49,48 @@ Cc: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
 Acked-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 Signed-off-by: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 ---
- kernel/res_counter.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+ include/linux/res_counter.h |  2 ++
+ kernel/res_counter.c        | 18 ++++++++++++++++++
+ 2 files changed, 20 insertions(+)
 
+diff --git a/include/linux/res_counter.h b/include/linux/res_counter.h
+index eb78440..92b9e18 100644
+--- a/include/linux/res_counter.h
++++ b/include/linux/res_counter.h
+@@ -80,6 +80,8 @@ int res_counter_memparse_write_strategy(const char *buf,
+ 
+ void res_counter_write_u64(struct res_counter *counter, int member, u64 val);
+ 
++void res_counter_inherit(struct res_counter *counter, int member);
++
+ /*
+  * the field descriptors. one for each member of res_counter
+  */
 diff --git a/kernel/res_counter.c b/kernel/res_counter.c
-index 8c16224..ece24f7 100644
+index 673a7a6..6174478 100644
 --- a/kernel/res_counter.c
 +++ b/kernel/res_counter.c
-@@ -49,7 +49,8 @@ static int __res_counter_charge_until(struct res_counter *counter,
- 	struct res_counter *c, *u;
+@@ -219,3 +219,21 @@ int res_counter_memparse_write_strategy(const char *buf,
  
- 	r = ret = 0;
--	*limit_fail_at = NULL;
-+	if (limit_fail_at)
-+		*limit_fail_at = NULL;
- 	local_irq_save(flags);
- 	for (c = counter; c != top; c = c->parent) {
- 		spin_lock(&c->lock);
-@@ -57,7 +58,8 @@ static int __res_counter_charge_until(struct res_counter *counter,
- 		spin_unlock(&c->lock);
- 		if (r < 0 && !ret) {
- 			ret = r;
--			*limit_fail_at = c;
-+			if (limit_fail_at)
-+				*limit_fail_at = c;
- 			if (!force)
- 				break;
- 		}
+ 	return 0;
+ }
++
++/*
++ * Simple inheritance implementation to get the same value
++ * than a parent. However this doesn't enforce the child value
++ * to be always below the one of the parent. But the child is
++ * subject to its parent limitation anyway.
++ */
++void res_counter_inherit(struct res_counter *counter, int member)
++{
++	struct res_counter *parent;
++	unsigned long long val;
++
++	parent = counter->parent;
++	if (parent) {
++		val = res_counter_read_u64(parent, member);
++		res_counter_write_u64(counter, member, val);
++	}
++}
 -- 
 1.8.3.1
