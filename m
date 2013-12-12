@@ -1,7 +1,8 @@
 From: Dwight Engen <dwight.engen-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 4/9] cgroups: add res counter common ancestor searching
-Date: Thu, 12 Dec 2013 16:35:13 -0500
-Message-ID: <1386884118-14972-5-git-send-email-dwight.engen@oracle.com>
+Subject: [PATCH 6/9] cgroups: pull up res counter charge failure
+	interpretation to caller
+Date: Thu, 12 Dec 2013 16:35:15 -0500
+Message-ID: <1386884118-14972-7-git-send-email-dwight.engen@oracle.com>
 References: <1386884118-14972-1-git-send-email-dwight.engen@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,15 +22,21 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Add a new API to find the common ancestor between two resource counters.
-This includes the passed resource counter themselves.
+res_counter_charge() always returns -ENOMEM when the limit is reached and
+the charge thus can't happen.
 
-Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
+However it's up to the caller to interpret this failure and return the
+appropriate error value.  The task counter subsystem will need to report
+the user that a fork() has been cancelled because of some limit reached,
+not because we are too short on memory.
+
+Fix this by returning -1 when res_counter_charge() fails.
+
 Signed-off-by: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
+Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
 Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
@@ -43,71 +50,38 @@ Cc: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Cc: Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>
 Cc: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Acked-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 Signed-off-by: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 ---
- include/linux/res_counter.h |  4 ++++
- kernel/res_counter.c        | 34 ++++++++++++++++++++++++++++++++++
- 2 files changed, 38 insertions(+)
+ Documentation/cgroups/resource_counter.txt | 2 ++
+ kernel/res_counter.c                       | 2 +-
+ 2 files changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/include/linux/res_counter.h b/include/linux/res_counter.h
-index 9721fde..4addc7a 100644
---- a/include/linux/res_counter.h
-+++ b/include/linux/res_counter.h
-@@ -144,6 +144,10 @@ u64 res_counter_uncharge(struct res_counter *counter, unsigned long val);
- u64 res_counter_uncharge_until(struct res_counter *counter,
- 			       struct res_counter *top,
- 			       unsigned long val);
+diff --git a/Documentation/cgroups/resource_counter.txt b/Documentation/cgroups/resource_counter.txt
+index 57f41d5..7ca0d11 100644
+--- a/Documentation/cgroups/resource_counter.txt
++++ b/Documentation/cgroups/resource_counter.txt
+@@ -76,6 +76,8 @@ to work with it.
+ 	limit_fail_at parameter is set to the particular res_counter element
+ 	where the charging failed.
+ 
++	It returns 0 on success and -1 on failure.
 +
-+struct res_counter *res_counter_common_ancestor(struct res_counter *l,
-+						struct res_counter *r);
-+
- /**
-  * res_counter_margin - calculate chargeable space of a counter
-  * @cnt: the counter
+  d. int res_counter_charge_locked
+ 			(struct res_counter *rc, unsigned long val, bool force)
+ 
 diff --git a/kernel/res_counter.c b/kernel/res_counter.c
-index dadb16e..8c16224 100644
+index ece24f7..79155f9 100644
 --- a/kernel/res_counter.c
 +++ b/kernel/res_counter.c
-@@ -132,6 +132,40 @@ u64 res_counter_uncharge(struct res_counter *counter, unsigned long val)
- 	return res_counter_uncharge_until(counter, NULL, val);
- }
+@@ -29,7 +29,7 @@ int res_counter_charge_locked(struct res_counter *counter, unsigned long val,
  
-+/*
-+ * Walk through r1 and r2 parents and try to find the closest common one
-+ * between both. If none is found, it returns NULL.
-+ */
-+struct res_counter *
-+res_counter_common_ancestor(struct res_counter *r1, struct res_counter *r2)
-+{
-+	struct res_counter *iter;
-+	int r1_depth = 0, r2_depth = 0;
-+
-+	for (iter = r1; iter; iter = iter->parent)
-+		r1_depth++;
-+
-+	for (iter = r2; iter; iter = iter->parent)
-+		r2_depth++;
-+
-+	while (r1_depth > r2_depth) {
-+		r1 = r1->parent;
-+		r1_depth--;
-+	}
-+
-+	while (r2_depth > r1_depth) {
-+		r2 = r2->parent;
-+		r2_depth--;
-+	}
-+
-+	while (r1 != r2) {
-+		r1 = r1->parent;
-+		r2 = r2->parent;
-+	}
-+
-+	return r1;
-+}
-+
- static inline unsigned long long *
- res_counter_member(struct res_counter *counter, int member)
- {
+ 	if (counter->usage + val > counter->limit) {
+ 		counter->failcnt++;
+-		ret = -ENOMEM;
++		ret = -1;
+ 		if (!force)
+ 			return ret;
+ 	}
 -- 
 1.8.3.1
