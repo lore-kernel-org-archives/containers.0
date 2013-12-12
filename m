@@ -1,8 +1,7 @@
 From: Dwight Engen <dwight.engen-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 3/9] cgroups: ability to stop res charge propagation on
-	bounded ancestor
-Date: Thu, 12 Dec 2013 16:35:12 -0500
-Message-ID: <1386884118-14972-4-git-send-email-dwight.engen@oracle.com>
+Subject: [PATCH 4/9] cgroups: add res counter common ancestor searching
+Date: Thu, 12 Dec 2013 16:35:13 -0500
+Message-ID: <1386884118-14972-5-git-send-email-dwight.engen@oracle.com>
 References: <1386884118-14972-1-git-send-email-dwight.engen@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,24 +21,15 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 
-Moving a task from a cgroup to another may require to substract its
-resource charge from the old cgroup and add it to the new one.
+Add a new API to find the common ancestor between two resource counters.
+This includes the passed resource counter themselves.
 
-For this to happen, the uncharge/charge propagation can just stop when we
-reach the common ancestor for the two cgroups.  Further the performance
-reasons, we also want to avoid to temporarily overload the common
-ancestors with a non-accurate resource counter usage if we charge first
-the new cgroup and uncharge the old one thereafter.  This is going to be a
-requirement for the coming max number of task subsystem.
-
-To solve this, provide a pair of new API that can charge/uncharge a
-resource counter until we reach a given ancestor.
-
+Signed-off-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 Signed-off-by: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Acked-by: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
 Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Paul Menage <paul-inf54ven1CmVyaH7bEyXVA@public.gmane.org>
 Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
 Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
@@ -53,114 +43,71 @@ Cc: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Cc: Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>
 Cc: Mandeep Singh Baines <msb-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Acked-by: Kirill A. Shutemov <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>
 Signed-off-by: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 ---
- Documentation/cgroups/resource_counter.txt | 13 ++++++++++---
- include/linux/res_counter.h                |  4 ++++
- kernel/res_counter.c                       | 21 ++++++++++++++++-----
- 3 files changed, 30 insertions(+), 8 deletions(-)
+ include/linux/res_counter.h |  4 ++++
+ kernel/res_counter.c        | 34 ++++++++++++++++++++++++++++++++++
+ 2 files changed, 38 insertions(+)
 
-diff --git a/Documentation/cgroups/resource_counter.txt b/Documentation/cgroups/resource_counter.txt
-index c4d99ed..57f41d5 100644
---- a/Documentation/cgroups/resource_counter.txt
-+++ b/Documentation/cgroups/resource_counter.txt
-@@ -83,7 +83,14 @@ to work with it.
- 	res_counter->lock internally (it must be called with res_counter->lock
- 	held). The force parameter indicates whether we can bypass the limit.
- 
-- e. u64 res_counter_uncharge[_locked]
-+ e. int res_counter_charge_until(struct res_counter *counter,
-+			     struct res_counter *limit, unsigned long val,
-+			     struct res_counter **limit_fail_at)
-+
-+	The same as res_counter_charge(), but the charge propagation to
-+	the hierarchy stops at the limit given in the "limit" parameter.
-+
-+ f. u64 res_counter_uncharge[_locked]
- 			(struct res_counter *rc, unsigned long val)
- 
- 	When a resource is released (freed) it should be de-accounted
-@@ -93,12 +100,12 @@ to work with it.
- 
- 	The _locked routines imply that the res_counter->lock is taken.
- 
-- f. u64 res_counter_uncharge_until
-+ g. u64 res_counter_uncharge_until
- 		(struct res_counter *rc, struct res_counter *top,
- 		 unsinged long val)
- 
- 	Almost same as res_cunter_uncharge() but propagation of uncharge
--	stops when rc == top. This is useful when kill a res_coutner in
-+	stops when rc == top. This is useful when kill a res_counter in
- 	child cgroup.
- 
-  2.1 Other accounting routines
 diff --git a/include/linux/res_counter.h b/include/linux/res_counter.h
-index 92b9e18..9721fde 100644
+index 9721fde..4addc7a 100644
 --- a/include/linux/res_counter.h
 +++ b/include/linux/res_counter.h
-@@ -119,6 +119,10 @@ int __must_check res_counter_charge_locked(struct res_counter *counter,
- 					   unsigned long val, bool force);
- int __must_check res_counter_charge(struct res_counter *counter,
- 		unsigned long val, struct res_counter **limit_fail_at);
-+int __must_check res_counter_charge_until(struct res_counter *counter,
-+					  struct res_counter *top,
-+					  unsigned long val,
-+					  struct res_counter **limit_fail_at);
- int res_counter_charge_nofail(struct res_counter *counter,
- 		unsigned long val, struct res_counter **limit_fail_at);
- 
+@@ -144,6 +144,10 @@ u64 res_counter_uncharge(struct res_counter *counter, unsigned long val);
+ u64 res_counter_uncharge_until(struct res_counter *counter,
+ 			       struct res_counter *top,
+ 			       unsigned long val);
++
++struct res_counter *res_counter_common_ancestor(struct res_counter *l,
++						struct res_counter *r);
++
+ /**
+  * res_counter_margin - calculate chargeable space of a counter
+  * @cnt: the counter
 diff --git a/kernel/res_counter.c b/kernel/res_counter.c
-index 6174478..dadb16e 100644
+index dadb16e..8c16224 100644
 --- a/kernel/res_counter.c
 +++ b/kernel/res_counter.c
-@@ -40,8 +40,9 @@ int res_counter_charge_locked(struct res_counter *counter, unsigned long val,
- 	return ret;
+@@ -132,6 +132,40 @@ u64 res_counter_uncharge(struct res_counter *counter, unsigned long val)
+ 	return res_counter_uncharge_until(counter, NULL, val);
  }
  
--static int __res_counter_charge(struct res_counter *counter, unsigned long val,
--				struct res_counter **limit_fail_at, bool force)
-+static int __res_counter_charge_until(struct res_counter *counter,
-+			struct res_counter *top, unsigned long val,
-+			struct res_counter **limit_fail_at, bool force)
- {
- 	int ret, r;
- 	unsigned long flags;
-@@ -50,7 +51,7 @@ static int __res_counter_charge(struct res_counter *counter, unsigned long val,
- 	r = ret = 0;
- 	*limit_fail_at = NULL;
- 	local_irq_save(flags);
--	for (c = counter; c != NULL; c = c->parent) {
-+	for (c = counter; c != top; c = c->parent) {
- 		spin_lock(&c->lock);
- 		r = res_counter_charge_locked(c, val, force);
- 		spin_unlock(&c->lock);
-@@ -77,13 +78,23 @@ static int __res_counter_charge(struct res_counter *counter, unsigned long val,
- int res_counter_charge(struct res_counter *counter, unsigned long val,
- 			struct res_counter **limit_fail_at)
- {
--	return __res_counter_charge(counter, val, limit_fail_at, false);
-+	return __res_counter_charge_until(counter, NULL, val, limit_fail_at,
-+					  false);
++/*
++ * Walk through r1 and r2 parents and try to find the closest common one
++ * between both. If none is found, it returns NULL.
++ */
++struct res_counter *
++res_counter_common_ancestor(struct res_counter *r1, struct res_counter *r2)
++{
++	struct res_counter *iter;
++	int r1_depth = 0, r2_depth = 0;
++
++	for (iter = r1; iter; iter = iter->parent)
++		r1_depth++;
++
++	for (iter = r2; iter; iter = iter->parent)
++		r2_depth++;
++
++	while (r1_depth > r2_depth) {
++		r1 = r1->parent;
++		r1_depth--;
++	}
++
++	while (r2_depth > r1_depth) {
++		r2 = r2->parent;
++		r2_depth--;
++	}
++
++	while (r1 != r2) {
++		r1 = r1->parent;
++		r2 = r2->parent;
++	}
++
++	return r1;
 +}
 +
-+int res_counter_charge_until(struct res_counter *counter,
-+			     struct res_counter *top, unsigned long val,
-+			     struct res_counter **limit_fail_at)
-+{
-+	return __res_counter_charge_until(counter, top, val, limit_fail_at,
-+					  false);
- }
- 
- int res_counter_charge_nofail(struct res_counter *counter, unsigned long val,
- 			      struct res_counter **limit_fail_at)
+ static inline unsigned long long *
+ res_counter_member(struct res_counter *counter, int member)
  {
--	return __res_counter_charge(counter, val, limit_fail_at, true);
-+	return __res_counter_charge_until(counter, NULL, val, limit_fail_at,
-+					  true);
- }
- 
- u64 res_counter_uncharge_locked(struct res_counter *counter, unsigned long val)
 -- 
 1.8.3.1
