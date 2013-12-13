@@ -1,14 +1,19 @@
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] lxc-user-nic: fix the wrong use of realloc
-Date: Thu, 12 Dec 2013 22:24:01 -0600
-Message-ID: <20131213042401.GA26399@tp>
-References: <52AA8471.9010706@huawei.com>
+From: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [REVIEW][PATCH 3/3] vfs: Fix a regression in mounting proc
+Date: Fri, 13 Dec 2013 23:07:26 +0100
+Message-ID: <CAFLxGvxK4OAs87kh+foXZ6W6FFg3K8S=TEOMMZxNnH7paKDt+A__26853.3445116647$1386972461$gmane$org@mail.gmail.com>
+References: <20131118180134.GA24156@mail.hallyn.com>
+	<87k3g5gnuv.fsf@xmission.com>
+	<20131126181043.GA25492@mail.hallyn.com>
+	<87siui1z1g.fsf_-_@xmission.com> <87pppmzoin.fsf_-_@xmission.com>
+	<20131127161300.GA24773@redhat.com> <871u21oeyr.fsf@xmission.com>
+	<20131127194722.GA32673@redhat.com> <87iovdmxl7.fsf@xmission.com>
+	<87wqjtlic3.fsf@xmission.com> <20131129195327.GA12974@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <52AA8471.9010706-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20131129195327.GA12974-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,36 +23,37 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Libo Chen <clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org
+To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Libo Chen (clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org):
-> fix the wrong use of realloc
-> 
-> Signed-off-by: Libo Chen <clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+On Fri, Nov 29, 2013 at 8:53 PM, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> On 11/27, Eric W. Biederman wrote:
+>>
+>> ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) writes:
+>>
+>> > Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+>> >>
+>> >> Lets ignore the implementation details. Suppose that proc was never
+>> >> mounted. Then "mount -t proc" should fail after CLONE_NEWUSER | NEWNS?
+>> >
+>> > Yes.
+>>
+>> Well strictly speaking it should fail after CLONE_NEWUSER | NEWNS | NEWPID.
+>
+> Yes, yes, I understand, the mounter should be CAP_SYS_ADMIN in
+> task_active_pid_ns().
+>
+>> Has this cleared up the confusion?
+>
+> Yes. Thanks.
+>
+> Oleg.
 
-Embarassing.  Thanks.
+What is the state of this work?
+It would be nice to see this fixed seen.
+Users on 3.12 suffer already from this regression.
 
-Acked-by: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-
-> ---
->  src/lxc/lxc_user_nic.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/src/lxc/lxc_user_nic.c b/src/lxc/lxc_user_nic.c
-> index caa411a..ac7a242 100644
-> --- a/src/lxc/lxc_user_nic.c
-> +++ b/src/lxc/lxc_user_nic.c
-> @@ -318,7 +318,7 @@ static bool cull_entries(int fd, char *me, char *t, char *br)
->  	p = buf;
->  	e = buf + len;
->  	while ((p = find_line(p, e, me, t, br)) != NULL) {
-> -		struct entry_line *newe = realloc(entry_lines, n+1);
-> +		struct entry_line *newe = realloc(entry_lines, sizeof(*entry_lines)*(n+1));
->  		if (!newe) {
->  			free(entry_lines);
->  			return false;
-> -- 
-> 1.8.2.2
-> 
+-- 
+Thanks,
+//richard
