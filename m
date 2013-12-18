@@ -1,13 +1,14 @@
-From: Libo Chen <clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: cgroup filter on physics interface can't control container
-Date: Wed, 18 Dec 2013 17:12:13 +0800
-Message-ID: <52B166ED.7020508@huawei.com>
-References: <52A52BBF.6030105@huawei.com> <52A9A97F.20902@huawei.com>
+From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: a work for lxc monitor network interface
+Date: Wed, 18 Dec 2013 14:16:22 -0600
+Message-ID: <20131218201622.GA25926@tp>
+References: <52B15E7B.8080009@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <52A9A97F.20902-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <52B15E7B.8080009-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,63 +18,43 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, herbert-lOAM2aK0SrRLBo1qDEOMRrpzq4S04n8Q@public.gmane.org
-Cc: jeff-o2qLIJkoznsdnm+yROfE0A@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, daniel.wagner-98C5kh4wR6ohFhg+JK9F0w@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, honkiko-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, edumazet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, fbl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org, "zhangwei(Jovi)" <jovi.zhangwei-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+To: Libo Chen <clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, karma-sWkBwLop/e8RbODiWk9XIg@public.gmane.org, takano-ryousei-XSdjUN4cZ6fPDbFq/vQRIQ@public.gmane.org, caglar-mM0DFpta8ko@public.gmane.org, dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, "zhangwei(Jovi)" <jovi.zhangwei-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>, stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, james.hunt-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-hello guys,
-
-I said before "we can save sk_classid before skb_scrub_packet and
-restore it after that"  since skb->sk had been freed in
-skb_scrub_packet(), so it is not reasonable. yes?
-
-I have another idea.
-commit:f84517253(cls_cgroup: Store classid in struct sock) introduces
-sk_classid and put it in skb->sk pointer.  can we put sk_classid form
-struct sock to struct sk_buff? then sk_classid will not be affected
-by dev_forward_skb()->skb_scrub_packet() ?
-
-any comment are welcome!
-
-
-thanks,
-Libo
-
-
-On 2013/12/12 20:18, Libo Chen wrote:
-> ping...
+Quoting Libo Chen (clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org):
+> Hello LXC experts,
 > 
-> On 2013/12/9 10:32, Libo Chen wrote:
->> hello network hackers,
->>
->> 	A linux container was builded with veth pair(veth0 inside container, veth1 outside container),
->>
->> the config as below:
->>
->>   lxc.network.type = veth
->>   lxc.network.flags = up
->>   lxc.network.link = br0  // base on eth0
->>   lxc.network.name = eth0
->>   lxc.network.ipv4 = 128.5.130.26/24
->>
->> then I use tc command with cgroup filter on veth0, it works well. But when setting on eth0, it doesn`t work.
->>
->> The reason is dev_forward_skb() in veth_xmit will call skb_scrub_packet and clean all information including skb->sk
->> in the skb, so if cls_cgroup_classify is working in serving softirq state, it will return failer, see below:
->>
->> 	if (in_serving_softirq()) {
->> 		/* If there is an sk_classid we'll use that. */
->> 		if (!skb->sk)
->> 			return -1;
->> 		classid = skb->sk->sk_classid;
->> 	}
->>
->>
->> Qdisc with cgroup filter on physics interface can not control a container network, it is disappointed.
->>
->> we can save sk_classid before skb_scrub_packet and restore it after that. Is it reasonable?  or any way to achieve this?
->>
->> thanks,
->> Libo
->>
+> 	lxc tool can set network interface by config, but it is static.
+> In some scene, the network interface will be dynamic created on the host
+> and need be shared to container, but it is not suitable to do by hand,
+> so lxc can not work for it.
 > 
+> 	I also know lxc_user_nic() can only do a part of work, but we have
+> two more work:
+> 1. grasp the netlink/uevent message about network interface online
+> 2. config interface attached to container ip address .
+> 
+> so it can not fully meet my requirements.
+> 
+> 	I want there is a monitor can work for network interface hotplug.
+> 
+> 1. read config form config file, it describe monitor which network interface
+>    and what's the network configuration
+> 2. grasp the netlink/uevent message about network interface online on the host
+> 3. create veth pair, put veth attach to container and bridge
+> 4. config the veth attached to container ipaddr
+> 
+> 			
+>          	          netlink  create veth pair
+> monitor ---> read config  -------> veth0 attach to container --> config ipaddr
+> 				   veth1 attach to bridge
+> 
+> monitor may be the lxc-start or a child forked by lxc-start.
+> 
+> 
+>  Is this reasonable?  If so, I'd like to do it.
+
+I'm not quite clear on what you're trying to do, but it sounds like you
+could use a udev rule, triggered on the nic creation, and use lxc-device
+from inside that rule to attach the nic to the container.
