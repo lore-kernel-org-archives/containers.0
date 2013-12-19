@@ -1,14 +1,13 @@
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: a work for lxc monitor network interface
-Date: Wed, 18 Dec 2013 14:16:22 -0600
-Message-ID: <20131218201622.GA25926@tp>
-References: <52B15E7B.8080009@huawei.com>
+From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH] audit: listen in all network namespaces
+Date: Thu, 19 Dec 2013 11:59:22 +0800
+Message-ID: <52B26F1A.9070308@cn.fujitsu.com>
+References: <1374006760-7687-1-git-send-email-rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <52B15E7B.8080009-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1374006760-7687-1-git-send-email-rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,43 +17,75 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Libo Chen <clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, karma-sWkBwLop/e8RbODiWk9XIg@public.gmane.org, takano-ryousei-XSdjUN4cZ6fPDbFq/vQRIQ@public.gmane.org, caglar-mM0DFpta8ko@public.gmane.org, dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, "zhangwei(Jovi)" <jovi.zhangwei-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>, stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, james.hunt-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org
+To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Libo Chen (clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org):
-> Hello LXC experts,
+On 07/17/2013 04:32 AM, Richard Guy Briggs wrote:
+> Convert audit from only listening in init_net to use register_pernet_subsys()
+> to dynamically manage the netlink socket list.
 > 
-> 	lxc tool can set network interface by config, but it is static.
-> In some scene, the network interface will be dynamic created on the host
-> and need be shared to container, but it is not suitable to do by hand,
-> so lxc can not work for it.
-> 
-> 	I also know lxc_user_nic() can only do a part of work, but we have
-> two more work:
-> 1. grasp the netlink/uevent message about network interface online
-> 2. config interface attached to container ip address .
-> 
-> so it can not fully meet my requirements.
-> 
-> 	I want there is a monitor can work for network interface hotplug.
-> 
-> 1. read config form config file, it describe monitor which network interface
->    and what's the network configuration
-> 2. grasp the netlink/uevent message about network interface online on the host
-> 3. create veth pair, put veth attach to container and bridge
-> 4. config the veth attached to container ipaddr
-> 
-> 			
->          	          netlink  create veth pair
-> monitor ---> read config  -------> veth0 attach to container --> config ipaddr
-> 				   veth1 attach to bridge
-> 
-> monitor may be the lxc-start or a child forked by lxc-start.
-> 
-> 
->  Is this reasonable?  If so, I'd like to do it.
+> Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> ---
 
-I'm not quite clear on what you're trying to do, but it sounds like you
-could use a udev rule, triggered on the nic creation, and use lxc-device
-from inside that rule to attach the nic to the container.
+I think it's the time for us to discuss if we should revert this
+commit, since this one prevent me from continuing to achieve
+audit namespace.
+
+
+The major problem is in kaudit_send_skb, we have no idea which
+audit sock the skb should send to.
+
+in this patch, there only is one auditd proecess, so the
+audit_sock is the only one. but when we have audit namespace.
+there will be multi audit socks. we have to store audit_sock
+into auditns(auditns will be passed to kauditd_send_skb),
+this will cause auditns have to get a reference of netns.
+and for some reason(netfilter audit target), netns will
+get reference of auditns too. this is terrible...
+
+So why not we revert this one, and use a very simple one to
+replace it? the below patch will save us from the refer to
+each other case, achieve the same effect.
+
+what's your opinion?
+
+
+Add a compare function which always return true for
+audit netlink socket, this will cause audit netlink
+sockets netns unaware, and no matter which netns the
+user space audit netlink sockets belong to, they all
+can find out and communicate with audit_sock.
+
+This gets rid of the necessary to create per-netns
+audit kernel side socket(audit_sock), it's pain to
+depend on and get reference of netns for auditns.
+
+Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
+ kernel/audit.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/kernel/audit.c b/kernel/audit.c
+index 7b0e23a..468950b 100644
+--- a/kernel/audit.c
++++ b/kernel/audit.c
+@@ -886,12 +886,18 @@ static void audit_receive(struct sk_buff  *skb)
+ 	mutex_unlock(&audit_cmd_mutex);
+ }
+
++static bool audit_compare(struct net *net, struct sock *sk)
++{
++	return true;
++}
++
+ /* Initialize audit support at boot time. */
+ static int __init audit_init(void)
+ {
+ 	int i;
+ 	struct netlink_kernel_cfg cfg = {
+ 		.input	= audit_receive,
++		.compare = audit_compare,
+ 	};
+
+ 	if (audit_initialized == AUDIT_DISABLED)
