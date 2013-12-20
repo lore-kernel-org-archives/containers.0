@@ -1,14 +1,21 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH RFC 0/9] cgroups: add res_counter_write_u64() API
-Date: Fri, 20 Dec 2013 21:13:17 +0000
-Message-ID: <20131220211317.GA361@mail.hallyn.com>
-References: <1386884118-14972-1-git-send-email-dwight.engen@oracle.com>
+Subject: Re: [RFC Part1 PATCH 00/20 v2] Add namespace support for audit
+Date: Fri, 20 Dec 2013 21:15:57 +0000
+Message-ID: <20131220211557.GA418@mail.hallyn.com>
+References: <1382599925-25143-1-git-send-email-gaofeng@cn.fujitsu.com>
+	<529EE877.7030701@cn.fujitsu.com>
+	<20131206221241.GD22445@mail.hallyn.com>
+	<52A52599.3070502@cn.fujitsu.com> <20131209182619.GD6849@sergelap>
+	<52A6CDE1.8090404@cn.fujitsu.com> <20131210165152.GA6028@sergelap>
+	<1386705056.23829.13.camel@flatline.rdu.redhat.com>
+	<20131210203648.GA5835@mail.hallyn.com>
+	<52AE75D7.4020604@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1386884118-14972-1-git-send-email-dwight.engen-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <52AE75D7.4020604-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,59 +25,118 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dwight Engen <dwight.engen-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>
+To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Dwight Engen (dwight.engen-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org):
-> Hello,
+Quoting Gao feng (gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
+> On 12/11/2013 04:36 AM, Serge E. Hallyn wrote:
+> > Quoting Eric Paris (eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
+> >> On Tue, 2013-12-10 at 10:51 -0600, Serge Hallyn wrote:
+> >>> Quoting Gao feng (gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
+> >>>> On 12/10/2013 02:26 AM, Serge Hallyn wrote:
+> >>>>> Quoting Gao feng (gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
+> >>>>>> On 12/07/2013 06:12 AM, Serge E. Hallyn wrote:
+> >>>>>>> Quoting Gao feng (gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
+> >>>>>>>> Hi
+> >>>>>>>>
+> >>>>>>>> On 10/24/2013 03:31 PM, Gao feng wrote:
+> >>>>>>>>> Here is the v1 patchset: http://lwn.net/Articles/549546/
+> >>>>>>>>>
+> >>>>>>>>> The main target of this patchset is allowing user in audit
+> >>>>>>>>> namespace to generate the USER_MSG type of audit message,
+> >>>>>>>>> some userspace tools need to generate audit message, or
+> >>>>>>>>> these tools will broken.
+> >>>>>>>>>
+> >>>>>>>>
+> >>>>>>>> I really need this feature, right now,some process such as
+> >>>>>>>> logind are broken in container becase we leak of this feature.
+> >>>>>>>
+> >>>>>>> Your set doesn't address loginuid though right?  How exactly do you
+> >>>>>>> expect to do that?  If user violates MAC policy and audit msg is
+> >>>>>>> sent to init user ns by mac subsys, you need the loginuid from
+> >>>>>>> init_audit_ns.  where will that be stored if you allow updates
+> >>>>>>> of loginuid in auditns?
+> >>>>>>>
+> >>>>>> This patchset doesn't include the loginuid part.
+> >>>>>>
+> >>>>>> the loginuid is stored in task as before.
+> >>>>>> In my opinion, when task creates a new audit namespace, this task's
+> >>>>>> loginuid will be reset to zero, so the children tasks can set their
+> >>>>>> loginuid. Does this change break the MAC?
+> >>>>>
+> >>>>> I think so, yes.  In an LSPP selinux environment, if the task
+> >>>>> manages to trigger an selinux deny rule which is audited, then
+> >>>>> the loginuid must make sense on the host.  Now presumably it
+> >>>>> will get translated to the mapped host uid, and we can figure
+> >>>>> out the host uid owning it through /etc/subuid.  But that adds
+> >>>>> /etc/subuid as a new part of the TCB without any warning <shrug>
+> >>>>> So in that sense, for LSPP, it breaks it.
+> >>>>>
+> >>>>
+> >>>> Looks like my opinion is incorrect.
+> >>>>
+> >>>> In the audit-next tree, Eric added a new audit feature to allow privileged
+> >>>> user to disable AUDIT_LOGINUID_IMMUTABLE. after AUDIT_LOGINUID_IMMUTABLE
+> >>>> is disabled, the privileged user can reset/set the loginuid of task. I
+> >>>> think this way is safe since only privileged user can do the change.
+> >>>>
+> >>>> So I will not change the loginuid part.
+> >>>>
+> >>>> Thanks for your information Serge :)
+> >>>
+> >>> Unfortunately this makes the patchset much less compelling :)  The
+> >>> problem I was looking into is that a container running in a user
+> >>> namespace cannot (bc he has ns_capable(CAP_AUDIT_*) but not
+> >>> capable(CAP_AUDIT_*)) set loginuids at all.
+> >>>
+> >>> Which from an LSPP pov is correct;  which is why I was hoping you were
+> >>> going to have the audit namespaces be hierarchical, with a task in a
+> >>> level 2 audit ns having two loginuids - one in his own auditns, and
+> >>> one in the initial one.
+> >>
+> >> Right now user namespace + audit is just total crud.  We all know
+> >> this...  (I'm not sure pid is must better, but I digress)   All thoughts
+> >> around loginuid in the kernel right this very moment only make sense in
+> >> the initial user namespace and all permission checks are in the initial
+> >> user namespace as well.
+> >>
+> >> I think I'm a proponent of the hierarchical approach to audit
+> >> namespaces.  An audit namespace would hold a reference to the
+> >> pid/user/whatever namespace it was created in/with.  Each audit
+> >> namespace should have it's own set of filter rules, etc.  Instead of
+> >> just storing 'loginuid' we store 'loginuid+user namespace'.   When the
+> > 
+> > So long as the kernel stores the kuid_t (which the only sane thing to
+> > do) that is a non-issue.
+> > 
+> >> kernel creates a record it should translate the loginuid to the
+> >> namespace of the audit namespace and send the record.
+> > 
+> > Yup, that should go without saying.  Use kuid_t in kernel and translate
+> > at the kernel-user boundary.
+> > 
 > 
-> I've seen that some sort of fork/task limiter has been proposed and
-> discussed several times before. Despite the existance of kmem in memcg, a
-> fork limiter is still often asked for by container users. Perhaps this is
-> due to current granularity in kmem (ie. stack/struct task not split out from
-> other slab allocations) but I believe it is just more natural for users to
-> express a limit in terms of tasks.
+> I can implement audit namespace as a hierarchy, give per auditns a level value
+> and a pointer which point to parent auditns.
+> 
+> but for the loginuid part, I think we can implement it after we push the audit
+> ns into the upstream.
+> 
+> Is this ok?
 
-Sorry, I thought I had replied to this.  I'm in support of this patchset,
-and think you'd be better served just sending it to lkml.
+Well as I"ve said the loginuid part is the only one that interests
+me.  I'll be out most of the rest of the year, but I'll review any
+patchset you send for what seems to me to be correctness :)
 
-Unfortunately I will be out for most of the rest of the year, but
-please cc: me here and I'll do what I can to support you.
-
-Assuming you've run ltp with and without your patchset and saw no
-change in behavior, you should mention that here as well.
-
-> So what I've done is updated Frederic Weisbecker's task counter patchset and
-> tried to address the concerns that I saw people had raised. This involved
-> the following changes:
+> >> It's a pretty major rewrite, but at least it makes sense.  Things like
+> >> AVC's might show up in multiple audit logs, but in every log they would
+> >> make sense to the admin of that namespace...
+> >>
+> >> But what the hell do I know...
+> > 
+> > Exactly how it would all affect selinux.  I'm happy it seems we agree.
 > 
-> - merged into cpuacct controller, as it seems there is a desire not to add
->   new controllers, this controller is already heirarchical, and I feel
->   limiting number of tasks/forks fits best here
-> - included a fork_limit similar to the one Max Kellermann posted
->   (https://lkml.org/lkml/2011/2/17/116) which is a use case not addressable
->   with memcg
-> - ala memcg kmem, for performance reasons don't account unless limit is set
-> - ala memcg, allow usage to roll up to root (prevents warnings on
->   uncharge), but still don't allow setting limits in root
-> - changed the interface at fork()/exit(), adding
->   can_fork()/cancel_can_fork() modeled on can_attach(). cgroup_fork()
->   can now return failure to fork().
-> - ran Frederics selftests, and added a couple more
+> This idea looks good to me, I will Investigate this. :)
 > 
-> I also wrote a small fork micro benchmark to see how this change affected
-> performance. I did 20 runs of 100000 fork/exit/waitpid, and took the
-> average. Times are in seconds, base is without the change, cpuacct1 is with
-> the change but no accounting be done (ie. no limit set), and cpuacct2 is
-> with the test being in a cgroup 1 level deep.
-> 
-> base  cpuacct1  cpuaac2
-> 5.59  5.59      5.64
-> 
-> So I believe this change has minimal performance impact, especially when no
-> limit is set.
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+> Thanks.
