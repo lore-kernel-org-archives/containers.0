@@ -1,7 +1,7 @@
 From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [PATCH] audit: listen in all network namespaces
-Date: Fri, 20 Dec 2013 09:35:47 +0800
-Message-ID: <52B39EF3.5020202@cn.fujitsu.com>
+Date: Fri, 20 Dec 2013 10:46:39 +0800
+Message-ID: <52B3AF8F.5040607@cn.fujitsu.com>
 References: <1374006760-7687-1-git-send-email-rgb@redhat.com>	
 	<52B26F1A.9070308@cn.fujitsu.com>
 	<1387478422.29366.33.camel@flatline.rdu.redhat.com>
@@ -56,36 +56,10 @@ On 12/20/2013 02:40 AM, Eric Paris wrote:
 > I'm not sure I agree/understand this entirely...
 > 
 
-My brain must be destroyed, I need to think about if auditns
-should get reference of netns. it's not clear to me now. :(
-but I intend to think you are right.
+Yes, the audit_sock is created and destroyed by net namespace,
+so if auditns wants to use audit_sock, it must prevent netns
+from being destroyed. so auditns has to get reference of netns.
 
->> So why not we revert this one, and use a very simple one to
->> replace it? the below patch will save us from the refer to
->> each other case, achieve the same effect.
->>
->> what's your opinion?
-> 
-> Help me go all the way back to the beginning.  What's our end goal here
-> again?
-> 
-> When thinking about this I realized we have another problem that I don't
-> think we've considered.  Which makes me lean away from the single
-> socket/kauditd  :(
-> 
-> I we have one socket and one kauditd ANY auditd can completely freeze
-> the audit system.  Which seems problematic, especially if there isn't
-> equal levels of trust between the different namespaces...  If one auditd
-> gets hung (intentionally or not) the kernel will never send another
-> audit message....
-> 
-> Makes me think we really need a kauditd thread per namespace, possibly
-> an skb queue per namespace.  At which point an audit socket per
-> namespace makes a lot of sense too....
-> 
-
-You are right, and My prototype supports per kauditd/auditd/sbk queue per
-audit namespace. one auditd freeze in one auditns will not affect audit
-subsystem in another auditns.
-
-Thanks!
+and in some case, netns will get reference of auditns too. this
+is complex than making audit_sock global and getting rid of this
+reference.
