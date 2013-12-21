@@ -1,21 +1,11 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC Part1 PATCH 00/20 v2] Add namespace support for audit
-Date: Fri, 20 Dec 2013 21:15:57 +0000
-Message-ID: <20131220211557.GA418@mail.hallyn.com>
-References: <1382599925-25143-1-git-send-email-gaofeng@cn.fujitsu.com>
-	<529EE877.7030701@cn.fujitsu.com>
-	<20131206221241.GD22445@mail.hallyn.com>
-	<52A52599.3070502@cn.fujitsu.com> <20131209182619.GD6849@sergelap>
-	<52A6CDE1.8090404@cn.fujitsu.com> <20131210165152.GA6028@sergelap>
-	<1386705056.23829.13.camel@flatline.rdu.redhat.com>
-	<20131210203648.GA5835@mail.hallyn.com>
-	<52AE75D7.4020604@cn.fujitsu.com>
+From: Andreas Gruenbacher <agruen-63ez5xqkn6DQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] userns: Relax the posix_acl_valid() checks
+Date: Sat, 21 Dec 2013 19:22:26 +0100
+Message-ID: <1387650146-7219-1-git-send-email-agruen@linbit.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <52AE75D7.4020604-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,118 +15,73 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Andreas Dilger <adilger.kernel-m1MBpc4rdrD3fQ9qLvQP4Q@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Gao feng (gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
-> On 12/11/2013 04:36 AM, Serge E. Hallyn wrote:
-> > Quoting Eric Paris (eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
-> >> On Tue, 2013-12-10 at 10:51 -0600, Serge Hallyn wrote:
-> >>> Quoting Gao feng (gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
-> >>>> On 12/10/2013 02:26 AM, Serge Hallyn wrote:
-> >>>>> Quoting Gao feng (gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
-> >>>>>> On 12/07/2013 06:12 AM, Serge E. Hallyn wrote:
-> >>>>>>> Quoting Gao feng (gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
-> >>>>>>>> Hi
-> >>>>>>>>
-> >>>>>>>> On 10/24/2013 03:31 PM, Gao feng wrote:
-> >>>>>>>>> Here is the v1 patchset: http://lwn.net/Articles/549546/
-> >>>>>>>>>
-> >>>>>>>>> The main target of this patchset is allowing user in audit
-> >>>>>>>>> namespace to generate the USER_MSG type of audit message,
-> >>>>>>>>> some userspace tools need to generate audit message, or
-> >>>>>>>>> these tools will broken.
-> >>>>>>>>>
-> >>>>>>>>
-> >>>>>>>> I really need this feature, right now,some process such as
-> >>>>>>>> logind are broken in container becase we leak of this feature.
-> >>>>>>>
-> >>>>>>> Your set doesn't address loginuid though right?  How exactly do you
-> >>>>>>> expect to do that?  If user violates MAC policy and audit msg is
-> >>>>>>> sent to init user ns by mac subsys, you need the loginuid from
-> >>>>>>> init_audit_ns.  where will that be stored if you allow updates
-> >>>>>>> of loginuid in auditns?
-> >>>>>>>
-> >>>>>> This patchset doesn't include the loginuid part.
-> >>>>>>
-> >>>>>> the loginuid is stored in task as before.
-> >>>>>> In my opinion, when task creates a new audit namespace, this task's
-> >>>>>> loginuid will be reset to zero, so the children tasks can set their
-> >>>>>> loginuid. Does this change break the MAC?
-> >>>>>
-> >>>>> I think so, yes.  In an LSPP selinux environment, if the task
-> >>>>> manages to trigger an selinux deny rule which is audited, then
-> >>>>> the loginuid must make sense on the host.  Now presumably it
-> >>>>> will get translated to the mapped host uid, and we can figure
-> >>>>> out the host uid owning it through /etc/subuid.  But that adds
-> >>>>> /etc/subuid as a new part of the TCB without any warning <shrug>
-> >>>>> So in that sense, for LSPP, it breaks it.
-> >>>>>
-> >>>>
-> >>>> Looks like my opinion is incorrect.
-> >>>>
-> >>>> In the audit-next tree, Eric added a new audit feature to allow privileged
-> >>>> user to disable AUDIT_LOGINUID_IMMUTABLE. after AUDIT_LOGINUID_IMMUTABLE
-> >>>> is disabled, the privileged user can reset/set the loginuid of task. I
-> >>>> think this way is safe since only privileged user can do the change.
-> >>>>
-> >>>> So I will not change the loginuid part.
-> >>>>
-> >>>> Thanks for your information Serge :)
-> >>>
-> >>> Unfortunately this makes the patchset much less compelling :)  The
-> >>> problem I was looking into is that a container running in a user
-> >>> namespace cannot (bc he has ns_capable(CAP_AUDIT_*) but not
-> >>> capable(CAP_AUDIT_*)) set loginuids at all.
-> >>>
-> >>> Which from an LSPP pov is correct;  which is why I was hoping you were
-> >>> going to have the audit namespaces be hierarchical, with a task in a
-> >>> level 2 audit ns having two loginuids - one in his own auditns, and
-> >>> one in the initial one.
-> >>
-> >> Right now user namespace + audit is just total crud.  We all know
-> >> this...  (I'm not sure pid is must better, but I digress)   All thoughts
-> >> around loginuid in the kernel right this very moment only make sense in
-> >> the initial user namespace and all permission checks are in the initial
-> >> user namespace as well.
-> >>
-> >> I think I'm a proponent of the hierarchical approach to audit
-> >> namespaces.  An audit namespace would hold a reference to the
-> >> pid/user/whatever namespace it was created in/with.  Each audit
-> >> namespace should have it's own set of filter rules, etc.  Instead of
-> >> just storing 'loginuid' we store 'loginuid+user namespace'.   When the
-> > 
-> > So long as the kernel stores the kuid_t (which the only sane thing to
-> > do) that is a non-issue.
-> > 
-> >> kernel creates a record it should translate the loginuid to the
-> >> namespace of the audit namespace and send the record.
-> > 
-> > Yup, that should go without saying.  Use kuid_t in kernel and translate
-> > at the kernel-user boundary.
-> > 
-> 
-> I can implement audit namespace as a hierarchy, give per auditns a level value
-> and a pointer which point to parent auditns.
-> 
-> but for the loginuid part, I think we can implement it after we push the audit
-> ns into the upstream.
-> 
-> Is this ok?
+So far, POSIX ACLs are using a canonical representation that keeps all ACL
+entries in a strict order; the ACL_USER and ACL_GROUP entries for specific
+users and groups are ordered by user and group identifier, respectively. The
+user-space code provides ACL entries in this order; the kernel verifies that
+the ACL entry order is correct in posix_acl_valid().
 
-Well as I"ve said the loginuid part is the only one that interests
-me.  I'll be out most of the rest of the year, but I'll review any
-patchset you send for what seems to me to be correctness :)
+User namespaces allow to arbitrary map user and group identifiers which can
+cause the ACL_USER and ACL_GROUP entry order to differ between user space and
+the kernel; posix_acl_valid() would then fail.
 
-> >> It's a pretty major rewrite, but at least it makes sense.  Things like
-> >> AVC's might show up in multiple audit logs, but in every log they would
-> >> make sense to the admin of that namespace...
-> >>
-> >> But what the hell do I know...
-> > 
-> > Exactly how it would all affect selinux.  I'm happy it seems we agree.
-> 
-> This idea looks good to me, I will Investigate this. :)
-> 
-> Thanks.
+Work around this by allowing ACL_USER and ACL_GROUP entries to be in any order
+in the kernel. The effect is only minor: file permission checks will pick the
+first matching ACL_USER entry, and check all matching ACL_GROUP entries.
+
+(The libacl user-space library and getfacl / setfacl tools will not create ACLs
+with duplicate user or group idenfifiers; they will handle ACLs with entries in
+an arbitrary order correctly.)
+
+Signed-off-by: Andreas Gruenbacher <agruen-63ez5xqkn6DQT0dZR+AlfA@public.gmane.org>
+Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>
+Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Cc: Andreas Dilger <adilger.kernel-m1MBpc4rdrD3fQ9qLvQP4Q@public.gmane.org>
+Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
+---
+ fs/posix_acl.c | 10 ----------
+ 1 file changed, 10 deletions(-)
+
+diff --git a/fs/posix_acl.c b/fs/posix_acl.c
+index 8bd2135..1b30b11 100644
+--- a/fs/posix_acl.c
++++ b/fs/posix_acl.c
+@@ -78,8 +78,6 @@ posix_acl_valid(const struct posix_acl *acl)
+ {
+ 	const struct posix_acl_entry *pa, *pe;
+ 	int state = ACL_USER_OBJ;
+-	kuid_t prev_uid = INVALID_UID;
+-	kgid_t prev_gid = INVALID_GID;
+ 	int needs_mask = 0;
+ 
+ 	FOREACH_ACL_ENTRY(pa, acl, pe) {
+@@ -98,10 +96,6 @@ posix_acl_valid(const struct posix_acl *acl)
+ 					return -EINVAL;
+ 				if (!uid_valid(pa->e_uid))
+ 					return -EINVAL;
+-				if (uid_valid(prev_uid) &&
+-				    uid_lte(pa->e_uid, prev_uid))
+-					return -EINVAL;
+-				prev_uid = pa->e_uid;
+ 				needs_mask = 1;
+ 				break;
+ 
+@@ -117,10 +111,6 @@ posix_acl_valid(const struct posix_acl *acl)
+ 					return -EINVAL;
+ 				if (!gid_valid(pa->e_gid))
+ 					return -EINVAL;
+-				if (gid_valid(prev_gid) &&
+-				    gid_lte(pa->e_gid, prev_gid))
+-					return -EINVAL;
+-				prev_gid = pa->e_gid;
+ 				needs_mask = 1;
+ 				break;
+ 
+-- 
+1.8.1.4
