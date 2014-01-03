@@ -1,11 +1,14 @@
 From: Peter P Waskiewicz Jr <peter.p.waskiewicz.jr-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 0/4] x86: Add Cache QoS Monitoring (CQM) support
-Date: Fri,  3 Jan 2014 12:34:41 -0800
-Message-ID: <1388781285-18067-1-git-send-email-peter.p.waskiewicz.jr@intel.com>
+Subject: [PATCH 3/4] cgroup: Add new cacheqos cgroup subsys to support Cache
+	QoS Monitoring
+Date: Fri,  3 Jan 2014 12:34:44 -0800
+Message-ID: <1388781285-18067-4-git-send-email-peter.p.waskiewicz.jr@intel.com>
+References: <1388781285-18067-1-git-send-email-peter.p.waskiewicz.jr@intel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1388781285-18067-1-git-send-email-peter.p.waskiewicz.jr-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,33 +22,707 @@ To: Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar 
 Cc: Peter P Waskiewicz Jr <peter.p.waskiewicz.jr-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patchset adds support for the new Cache QoS Monitoring (CQM)
-feature found in future Intel Xeon processors.
+This patch adds a new cgroup subsystem, named cacheqos.  This cgroup
+controller is intended to manage task groups to track cache occupancy
+and usage of a CPU.
 
-CQM allows a process, or set of processes, to be tracked by the CPU
-to determine the cache usage of that task group.  Using this data
-from the CPU, software can be written to extract this data and
-report cache usage and occupancy for a particular process, or
-group of processes.
+The cacheqos subsystem operates very similarly to the cpuacct
+subsystem.  Tasks can be grouped into different child subgroups,
+and have separate cache occupancy accounting for each of the
+subgroups.  See Documentation/cgroups/cacheqos-subsystem.txt for
+more details.
 
-More information about Cache QoS Monitoring can be found in the
-Intel (R) x86 Architecture Software Developer Manual, section 17.14.
+The patch also adds the Kconfig option for enabling/disabling the
+CGROUP_CACHEQOS subsystem.  As this CPU feature is currently found
+only in Intel Xeon processors, the cgroup subsystem depends on X86.
 
-This series is also laying the framework for additional Platform
-QoS features in future Intel Xeon processors.
+Signed-off-by: Peter P Waskiewicz Jr <peter.p.waskiewicz.jr-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+---
+ arch/x86/kernel/cpu/perf_event_intel_uncore.c | 112 ++++++++
+ include/linux/cgroup_subsys.h                 |   4 +
+ include/linux/perf_event.h                    |  14 +
+ init/Kconfig                                  |  10 +
+ kernel/sched/Makefile                         |   1 +
+ kernel/sched/cacheqos.c                       | 397 ++++++++++++++++++++++++++
+ kernel/sched/cacheqos.h                       |  59 ++++
+ 7 files changed, 597 insertions(+)
+ create mode 100644 kernel/sched/cacheqos.c
+ create mode 100644 kernel/sched/cacheqos.h
 
-The CPU features themselves are relatively straight-forward, but
-the presentation of the data is less straight-forward.  Since this
-tracks cache usage and occupancy per process (by swapping Resource
-Monitor IDs, or RMIDs, when processes are rescheduled), perf would
-not be a good fit for this data, which does not report on a
-per-process level.  Therefore, a new cgroup subsystem, cacheqos, has
-been added.  This operates very similarly to the cpu and cpuacct
-cgroup subsystems, where tasks can be grouped into sub-leaves of the
-root-level cgroup.
-
-Peter P Waskiewicz Jr (4):
-      x86: Add support for Cache QoS Monitoring (CQM) detection
-      x86: Add Cache QoS Monitoring support to x86 perf uncore
-      cgroup: Add new cacheqos cgroup subsys to support Cache QoS Monitoring
-      Documentation: Add documentation for cacheqos cgroup
+diff --git a/arch/x86/kernel/cpu/perf_event_intel_uncore.c b/arch/x86/kernel/cpu/perf_event_intel_uncore.c
+index 29c2487..4d48e26 100644
+--- a/arch/x86/kernel/cpu/perf_event_intel_uncore.c
++++ b/arch/x86/kernel/cpu/perf_event_intel_uncore.c
+@@ -1633,6 +1633,118 @@ static struct intel_uncore_type *snb_msr_uncores[] = {
+ };
+ /* end of Sandy Bridge uncore support */
+ 
++#ifdef CONFIG_CGROUP_CACHEQOS
++
++/* needed for the cacheqos cgroup structs */
++#include "../../../kernel/sched/cacheqos.h"
++
++extern struct cacheqos root_cacheqos_group;
++static DEFINE_MUTEX(cqm_mutex);
++
++static int __init cacheqos_late_init(void)
++{
++	struct cpuinfo_x86 *c = &boot_cpu_data;
++	struct rmid_list_element *elem;
++	int i;
++
++	mutex_lock(&cqm_mutex);
++
++	if (cpu_has(c, X86_FEATURE_CQM_OCCUP_LLC)) {
++		root_cacheqos_group.subsys_info =
++		       kzalloc(sizeof(struct cacheqos_subsys_info), GFP_KERNEL);
++		if (!root_cacheqos_group.subsys_info) {
++			mutex_unlock(&cqm_mutex);
++			return -ENOMEM;
++		}
++
++		root_cacheqos_group.subsys_info->cache_max_rmid =
++							  c->x86_cache_max_rmid;
++		root_cacheqos_group.subsys_info->cache_occ_scale =
++							 c->x86_cache_occ_scale;
++		root_cacheqos_group.subsys_info->cache_size = c->x86_cache_size;
++	} else {
++		root_cacheqos_group.monitor_cache = false;
++		root_cacheqos_group.css.ss->disabled = 1;
++		mutex_unlock(&cqm_mutex);
++		return -ENODEV;
++	}
++
++	/* Populate the unused rmid list with all rmids. */
++	INIT_LIST_HEAD(&root_cacheqos_group.subsys_info->rmid_unused_fifo);
++	INIT_LIST_HEAD(&root_cacheqos_group.subsys_info->rmid_inuse_list);
++	elem = kzalloc(sizeof(*elem), GFP_KERNEL);
++	if (!elem)
++		return -ENOMEM;
++
++	elem->rmid = 0;
++	list_add_tail(&elem->list,
++		      &root_cacheqos_group.subsys_info->rmid_inuse_list);
++	for (i = 1; i < root_cacheqos_group.subsys_info->cache_max_rmid; i++) {
++		elem = kzalloc(sizeof(*elem), GFP_KERNEL);
++		if (!elem)
++			return -ENOMEM;
++
++		elem->rmid = i;
++		INIT_LIST_HEAD(&elem->list);
++		list_add_tail(&elem->list,
++			    &root_cacheqos_group.subsys_info->rmid_unused_fifo);
++	}
++
++	/* go live on the root group */
++	root_cacheqos_group.monitor_cache = true;
++
++	mutex_unlock(&cqm_mutex);
++	return 0;
++}
++late_initcall(cacheqos_late_init);
++
++void cacheqos_map_schedule_out(void)
++{
++	/*
++	 * cacheqos_map_schedule_in() will set the MSR correctly, but
++	 * clearing the MSR here will prevent occupancy counts against this
++	 * task during the context switch.  In other words, this gives a
++	 * "better" representation of what's happening in the cache.
++	 */
++	wrmsrl(IA32_PQR_ASSOC, 0);
++}
++
++void cacheqos_map_schedule_in(struct cacheqos *cq)
++{
++	u64 map;
++
++	map = cq->rmid & IA32_RMID_PQR_MASK;
++	wrmsrl(IA32_PQR_ASSOC, map);
++}
++
++void cacheqos_read(void *arg)
++{
++	struct cacheqos *cq = arg;
++	u64 config;
++	u64 result = 0;
++	int cpu, node;
++
++	cpu = smp_processor_id(),
++	node = cpu_to_node(cpu);
++	config = cq->rmid;
++	config = ((config & IA32_RMID_PQR_MASK) <<
++		   IA32_QM_EVTSEL_RMID_POSITION) |
++		   IA32_QM_EVTSEL_EVTID_READ_OCC;
++
++	wrmsrl(IA32_QM_EVTSEL, config);
++	rdmsrl(IA32_QM_CTR, result);
++
++	/* place results in sys_wide_info area for recovery */
++	if (result & IA32_QM_CTR_ERR)
++		result = -1;
++	else
++		result &= ~IA32_QM_CTR_ERR;
++
++	cq->subsys_info->node_results[node] =
++				      result * cq->subsys_info->cache_occ_scale;
++}
++#endif /* CONFIG_CGROUP_CACHEQOS */
++
+ /* Nehalem uncore support */
+ static void nhm_uncore_msr_disable_box(struct intel_uncore_box *box)
+ {
+diff --git a/include/linux/cgroup_subsys.h b/include/linux/cgroup_subsys.h
+index b613ffd..14b97e4 100644
+--- a/include/linux/cgroup_subsys.h
++++ b/include/linux/cgroup_subsys.h
+@@ -50,6 +50,10 @@ SUBSYS(net_prio)
+ #if IS_SUBSYS_ENABLED(CONFIG_CGROUP_HUGETLB)
+ SUBSYS(hugetlb)
+ #endif
++
++#if IS_SUBSYS_ENABLED(CONFIG_CGROUP_CACHEQOS)
++SUBSYS(cacheqos)
++#endif
+ /*
+  * DO NOT ADD ANY SUBSYSTEM WITHOUT EXPLICIT ACKS FROM CGROUP MAINTAINERS.
+  */
+diff --git a/include/linux/perf_event.h b/include/linux/perf_event.h
+index 2e069d1..59eabf3 100644
+--- a/include/linux/perf_event.h
++++ b/include/linux/perf_event.h
+@@ -54,6 +54,11 @@ struct perf_guest_info_callbacks {
+ #include <linux/perf_regs.h>
+ #include <asm/local.h>
+ 
++#ifdef CONFIG_CGROUP_CACHEQOS
++inline void cacheqos_sched_out(struct task_struct *task);
++inline void cacheqos_sched_in(struct task_struct *task);
++#endif /* CONFIG_CGROUP_CACHEQOS */
++
+ struct perf_callchain_entry {
+ 	__u64				nr;
+ 	__u64				ip[PERF_MAX_STACK_DEPTH];
+@@ -676,6 +681,10 @@ static inline void perf_event_task_sched_in(struct task_struct *prev,
+ {
+ 	if (static_key_false(&perf_sched_events.key))
+ 		__perf_event_task_sched_in(prev, task);
++
++#ifdef CONFIG_CGROUP_CACHEQOS
++	cacheqos_sched_in(task);
++#endif /* CONFIG_CGROUP_CACHEQOS */
+ }
+ 
+ static inline void perf_event_task_sched_out(struct task_struct *prev,
+@@ -685,6 +694,11 @@ static inline void perf_event_task_sched_out(struct task_struct *prev,
+ 
+ 	if (static_key_false(&perf_sched_events.key))
+ 		__perf_event_task_sched_out(prev, next);
++
++#ifdef CONFIG_CGROUP_CACHEQOS
++	/* use outgoing task to see if cacheqos is active or not */
++	cacheqos_sched_out(prev);
++#endif /* CONFIG_CGROUP_CACHEQOS */
+ }
+ 
+ extern void perf_event_mmap(struct vm_area_struct *vma);
+diff --git a/init/Kconfig b/init/Kconfig
+index 4e5d96a..9619cdc 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -905,6 +905,16 @@ config PROC_PID_CPUSET
+ 	depends on CPUSETS
+ 	default y
+ 
++config CGROUP_CACHEQOS
++	bool "Simple Cache QoS Monitoring cgroup subsystem"
++	depends on X86 || X86_64
++	help
++	  Provides a simple Resource Controller for monitoring the
++	  total cache occupancy by the tasks in a cgroup.  This requires
++	  hardware support to track cache usage.
++
++	  Say N if unsure.
++
+ config CGROUP_CPUACCT
+ 	bool "Simple CPU accounting cgroup subsystem"
+ 	help
+diff --git a/kernel/sched/Makefile b/kernel/sched/Makefile
+index 7b62140..30aa883 100644
+--- a/kernel/sched/Makefile
++++ b/kernel/sched/Makefile
+@@ -18,3 +18,4 @@ obj-$(CONFIG_SCHED_AUTOGROUP) += auto_group.o
+ obj-$(CONFIG_SCHEDSTATS) += stats.o
+ obj-$(CONFIG_SCHED_DEBUG) += debug.o
+ obj-$(CONFIG_CGROUP_CPUACCT) += cpuacct.o
++obj-$(CONFIG_CGROUP_CACHEQOS) += cacheqos.o
+diff --git a/kernel/sched/cacheqos.c b/kernel/sched/cacheqos.c
+new file mode 100644
+index 0000000..1ce799e
+--- /dev/null
++++ b/kernel/sched/cacheqos.c
+@@ -0,0 +1,397 @@
++#include <linux/cgroup.h>
++#include <linux/slab.h>
++#include <linux/percpu.h>
++#include <linux/spinlock.h>
++#include <linux/cpumask.h>
++#include <linux/seq_file.h>
++#include <linux/rcupdate.h>
++#include <linux/kernel_stat.h>
++#include <linux/err.h>
++
++#include "cacheqos.h"
++#include "sched.h"
++
++struct cacheqos root_cacheqos_group;
++static DEFINE_MUTEX(cacheqos_mutex);
++
++#if !defined(CONFIG_X86_64) || !defined(CONFIG_X86)
++static int __init cacheqos_late_init(void)
++{
++	/* No Cache QoS support on this architecture, disable the subsystem */
++	root_cacheqos_group.monitor_cache = false;
++	root_cacheqos_group.css.ss->disabled = 1;
++	return -ENODEV;
++}
++late_initcall(cacheqos_late_init);
++#endif
++
++inline void cacheqos_sched_out(struct task_struct *task)
++{
++	struct cacheqos *cq = task_cacheqos(task);
++	/*
++	 * Assumption is that this thread is running on the logical processor
++	 * from which the task is being scheduled out.
++	 *
++	 * As the task is scheduled out mapping goes back to default map.
++	 */
++	if (cq->monitor_cache)
++		cacheqos_map_schedule_out();
++}
++
++inline void cacheqos_sched_in(struct task_struct *task)
++{
++	struct cacheqos *cq = task_cacheqos(task);
++	/*
++	 * Assumption is that this thread is running on the logical processor
++	 * of which this task is being scheduled onto.
++	 *
++	 * As the task is scheduled in, the cgroup's rmid is loaded
++	 */
++	if (cq->monitor_cache)
++		cacheqos_map_schedule_in(cq);
++}
++
++static void cacheqos_adjust_children_rmid(struct cacheqos *cq)
++{
++	struct cgroup_subsys_state *css, *pos;
++	struct cacheqos *p_cq, *pos_cq;
++
++	css = &cq->css;
++	rcu_read_lock();
++
++	css_for_each_descendant_pre(pos, css) {
++		pos_cq = css_cacheqos(pos);
++		if (!pos_cq->monitor_cache) {
++			/* monitoring is disabled, so use the parent's RMID */
++			p_cq = parent_cacheqos(pos_cq);
++			spin_lock_irq(&pos_cq->lock);
++			pos_cq->rmid = p_cq->rmid;
++			spin_unlock_irq(&pos_cq->lock);
++		}
++	}
++	rcu_read_unlock();
++}
++
++static int cacheqos_move_rmid_to_unused_list(struct cacheqos *cq)
++{
++	struct rmid_list_element *elem;
++
++	/*
++	 * Assumes only called when cq->rmid is valid (ie, it is on the
++	 * inuse list) and cacheqos_mutex is held.
++	 */
++	lockdep_assert_held(&cacheqos_mutex);
++	list_for_each_entry(elem, &cq->subsys_info->rmid_inuse_list, list) {
++		if (cq->rmid == elem->rmid) {
++			/* Move rmid from inuse to unused list */
++			list_del_init(&elem->list);
++			list_add_tail(&elem->list,
++				      &cq->subsys_info->rmid_unused_fifo);
++			goto quick_exit;
++		}
++	}
++	return -ELIBBAD;
++
++quick_exit:
++	return 0;
++}
++
++static int cacheqos_deallocate_rmid(struct cacheqos *cq)
++{
++	struct cacheqos *cq_parent = parent_cacheqos(cq);
++	int err;
++
++	mutex_lock(&cacheqos_mutex);
++	err = cacheqos_move_rmid_to_unused_list(cq);
++	if (err)
++		return err;
++	/* assign parent's rmid to cgroup */
++	cq->monitor_cache = false;
++	cq->rmid = cq_parent->rmid;
++
++	/* Check for children using this cgroup's rmid, iterate */
++	cacheqos_adjust_children_rmid(cq);
++
++	mutex_unlock(&cacheqos_mutex);
++	return 0;
++}
++
++static int cacheqos_allocate_rmid(struct cacheqos *cq)
++{
++	struct rmid_list_element *elem;
++	struct list_head *item;
++
++	mutex_lock(&cacheqos_mutex);
++
++	if (list_empty(&cq->subsys_info->rmid_unused_fifo)) {
++		mutex_unlock(&cacheqos_mutex);
++		return -EAGAIN;
++	}
++
++	/* Move rmid from unused to inuse list */
++	item = cq->subsys_info->rmid_unused_fifo.next;
++	list_del_init(item);
++	list_add_tail(item, &cq->subsys_info->rmid_inuse_list);
++
++	/* assign rmid to cgroup */
++	elem = list_entry(item, struct rmid_list_element, list);
++	cq->rmid = elem->rmid;
++	cq->monitor_cache = true;
++
++	/* Check for children using this cgroup's rmid, iterate */
++	cacheqos_adjust_children_rmid(cq);
++
++	mutex_unlock(&cacheqos_mutex);
++
++	return 0;
++}
++
++/* create a new cacheqos cgroup */
++static struct cgroup_subsys_state *
++cacheqos_css_alloc(struct cgroup_subsys_state *parent_css)
++{
++	struct cacheqos *parent = css_cacheqos(parent_css);
++	struct cacheqos *cq;
++
++	if (!parent) {
++		/* cacheqos_late_init() will enable monitoring on the root */
++		root_cacheqos_group.rmid = 0;
++		return &root_cacheqos_group.css;
++	}
++
++	cq = kzalloc(sizeof(struct cacheqos), GFP_KERNEL);
++	if (!cq)
++		goto out;
++
++	cq->cgrp = parent_css->cgroup;
++	cq->monitor_cache = false;	/* disabled i.e., use parent's RMID */
++	cq->rmid = parent->rmid;	/* Start by using parent's RMID*/
++	cq->subsys_info = root_cacheqos_group.subsys_info;
++	return &cq->css;
++
++out:
++	return ERR_PTR(-ENOMEM);
++}
++
++/* destroy an existing cacheqos task group */
++static void cacheqos_css_free(struct cgroup_subsys_state *css)
++{
++	struct cacheqos *cq = css_cacheqos(css);
++
++	if (cq->monitor_cache) {
++		mutex_lock(&cacheqos_mutex);
++		cacheqos_move_rmid_to_unused_list(cq);
++		mutex_unlock(&cacheqos_mutex);
++	}
++	kfree(cq);
++}
++
++/* return task group's monitoring state */
++static u64 cacheqos_monitor_read(struct cgroup_subsys_state *css,
++				 struct cftype *cft)
++{
++	struct cacheqos *cq = css_cacheqos(css);
++
++	return cq->monitor_cache;
++}
++
++/* set the task group's monitoring state */
++static int cacheqos_monitor_write(struct cgroup_subsys_state *css,
++				  struct cftype *cftype, u64 enable)
++{
++	struct cacheqos *cq = css_cacheqos(css);
++	int err = 0;
++
++	if (enable != 0 && enable != 1) {
++		err = -EINVAL;
++		goto monitor_out;
++	}
++
++	if (enable && cq->monitor_cache)
++		goto monitor_out;
++
++	if (cq->monitor_cache)
++		err = cacheqos_deallocate_rmid(cq);
++	else
++		err = cacheqos_allocate_rmid(cq);
++
++monitor_out:
++	return err;
++}
++
++static int cacheqos_get_occupancy_data(struct cacheqos *cq)
++{
++	unsigned int cpu;
++	unsigned int node;
++	const struct cpumask *node_cpus;
++	int err = 0;
++
++	/* Assumes cacheqos_mutex is held */
++	lockdep_assert_held(&cacheqos_mutex);
++	for_each_node_with_cpus(node) {
++		node_cpus = cpumask_of_node(node);
++		cpu = any_online_cpu(*node_cpus);
++		err = smp_call_function_single(cpu, cacheqos_read, cq, 1);
++
++		if (err) {
++			break;
++		} else if (cq->subsys_info->node_results[node] == -1) {
++			err = -EPROTO;
++			break;
++		}
++	}
++	return err;
++}
++
++/* return total system LLC occupancy in bytes of a task group */
++static int cacheqos_occupancy_read(struct cgroup_subsys_state *css,
++				   struct cftype *cft, struct seq_file *m)
++{
++	struct cacheqos *cq = css_cacheqos(css);
++	u64 total_occupancy = 0;
++	int err, node;
++
++	mutex_lock(&cacheqos_mutex);
++	err = cacheqos_get_occupancy_data(cq);
++	if (err) {
++		mutex_unlock(&cacheqos_mutex);
++		return err;
++	}
++
++	for_each_node_with_cpus(node)
++		total_occupancy += cq->subsys_info->node_results[node];
++
++	mutex_unlock(&cacheqos_mutex);
++
++	seq_printf(m, "%llu\n", total_occupancy);
++	return 0;
++}
++
++/* return display each LLC's occupancy in bytes of a task group */
++static int
++cacheqos_occupancy_persocket_seq_read(struct cgroup_subsys_state *css,
++				      struct cftype *cft, struct seq_file *m)
++{
++	struct cacheqos *cq = css_cacheqos(css);
++	int err, node;
++
++	mutex_lock(&cacheqos_mutex);
++	err = cacheqos_get_occupancy_data(cq);
++	if (err) {
++		mutex_unlock(&cacheqos_mutex);
++		return err;
++	}
++
++	for_each_node_with_cpus(node) {
++		seq_printf(m, "%llu\n",
++			   cq->subsys_info->node_results[node]);
++	}
++
++	mutex_unlock(&cacheqos_mutex);
++
++	return 0;
++}
++
++/* return total system LLC occupancy as a %of system LLC for the task group */
++static int cacheqos_occupancy_percent_read(struct cgroup_subsys_state *css,
++					   struct cftype *cft,
++					   struct seq_file *m)
++{
++	struct cacheqos *cq = css_cacheqos(css);
++	u64 total_occupancy = 0;
++	int err, node;
++	int node_cnt = 0;
++	int parts_of_100, parts_of_10000;
++	int cache_size;
++
++	mutex_lock(&cacheqos_mutex);
++	err = cacheqos_get_occupancy_data(cq);
++	if (err) {
++		mutex_unlock(&cacheqos_mutex);
++		return err;
++	}
++
++	for_each_node_with_cpus(node) {
++		++node_cnt;
++		total_occupancy += cq->subsys_info->node_results[node];
++	}
++
++	mutex_unlock(&cacheqos_mutex);
++
++	cache_size = cq->subsys_info->cache_size * node_cnt;
++	parts_of_100 = (total_occupancy * 100) / (cache_size * 1024);
++	parts_of_10000 = (total_occupancy * 10000) / (cache_size * 1024) -
++				parts_of_100 * 100;
++	seq_printf(m, "%d.%02d\n", parts_of_100, parts_of_10000);
++
++	return 0;
++}
++
++/* return display each LLC's % occupancy of the socket's LLC for task group */
++static int
++cacheqos_occupancy_percent_persocket_seq_read(struct cgroup_subsys_state *css,
++					      struct cftype *cft,
++					      struct seq_file *m)
++{
++	struct cacheqos *cq = css_cacheqos(css);
++	u64 total_occupancy;
++	int err, node;
++	int cache_size;
++	int parts_of_100, parts_of_10000;
++
++	mutex_lock(&cacheqos_mutex);
++	err = cacheqos_get_occupancy_data(cq);
++	if (err) {
++		mutex_unlock(&cacheqos_mutex);
++		return err;
++	}
++
++	cache_size = cq->subsys_info->cache_size;
++	for_each_node_with_cpus(node) {
++		total_occupancy = cq->subsys_info->node_results[node];
++		parts_of_100 = (total_occupancy * 100) / (cache_size * 1024);
++		parts_of_10000 = (total_occupancy * 10000) /
++				 (cache_size * 1024) - parts_of_100 * 100;
++
++		seq_printf(m, "%d.%02d\n", parts_of_100, parts_of_10000);
++	}
++
++	mutex_unlock(&cacheqos_mutex);
++
++	return 0;
++}
++
++static struct cftype cacheqos_files[] = {
++	{
++		.name = "monitor_cache",
++		.read_u64 = cacheqos_monitor_read,
++		.write_u64 = cacheqos_monitor_write,
++		.mode = 0666,
++		.flags = CFTYPE_NOT_ON_ROOT,
++	},
++	{
++		.name = "occupancy_persocket",
++		.read_seq_string = cacheqos_occupancy_persocket_seq_read,
++	},
++	{
++		.name = "occupancy",
++		.read_seq_string = cacheqos_occupancy_read,
++	},
++	{
++		.name = "occupancy_percent_persocket",
++		.read_seq_string = cacheqos_occupancy_percent_persocket_seq_read,
++	},
++	{
++		.name = "occupancy_percent",
++		.read_seq_string = cacheqos_occupancy_percent_read,
++	},
++	{ }	/* terminate */
++};
++
++struct cgroup_subsys cacheqos_subsys = {
++	.name			= "cacheqos",
++	.css_alloc		= cacheqos_css_alloc,
++	.css_free		= cacheqos_css_free,
++	.subsys_id		= cacheqos_subsys_id,
++	.base_cftypes		= cacheqos_files,
++};
+diff --git a/kernel/sched/cacheqos.h b/kernel/sched/cacheqos.h
+new file mode 100644
+index 0000000..b20f25e
+--- /dev/null
++++ b/kernel/sched/cacheqos.h
+@@ -0,0 +1,59 @@
++#ifndef _CACHEQOS_H_
++#define _CACHEQOS_H_
++#ifdef CONFIG_CGROUP_CACHEQOS
++
++#include <linux/cgroup.h>
++
++struct rmid_list_element {
++	int rmid;
++	struct list_head list;
++};
++
++struct cacheqos_subsys_info {
++	struct list_head rmid_unused_fifo;
++	struct list_head rmid_inuse_list;
++	int cache_max_rmid;
++	int cache_occ_scale;
++	int cache_size;
++	u64 node_results[MAX_NUMNODES];
++};
++
++struct cacheqos {
++	struct cgroup_subsys_state css;
++	struct cacheqos_subsys_info *subsys_info;
++	struct cgroup *cgrp;
++	bool monitor_cache; /* false - use parent RMID / true - new RMID */
++
++	/*
++	 * Used for walking the task groups to update RMID's of the various
++	 * sub-groups.  If monitor_cache is false, the sub-groups will inherit
++	 * the parent's RMID.  If monitor_cache is true, then the group has its
++	 * own RMID.
++	 */
++	spinlock_t lock;
++	u32 rmid;
++};
++
++extern void cacheqos_map_schedule_out(void);
++extern void cacheqos_map_schedule_in(struct cacheqos *);
++extern void cacheqos_read(void *);
++
++/* return cacheqos group corresponding to this container */
++static inline struct cacheqos *css_cacheqos(struct cgroup_subsys_state *css)
++{
++	return css ? container_of(css, struct cacheqos, css) : NULL;
++}
++
++/* return cacheqos group to which this task belongs */
++static inline struct cacheqos *task_cacheqos(struct task_struct *task)
++{
++	return css_cacheqos(task_css(task, cacheqos_subsys_id));
++}
++
++static inline struct cacheqos *parent_cacheqos(struct cacheqos *cacheqos)
++{
++	return css_cacheqos(css_parent(&cacheqos->css));
++}
++
++#endif /* CONFIG_CGROUP_CACHEQOS */
++#endif /* _CACHEQOS_H_ */
+-- 
+1.8.3.1
