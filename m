@@ -1,8 +1,7 @@
 From: Libo Chen <clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: [RFC PATCH net-next 1/4] net: introduce backup_classid to struct
-	skbuff
-Date: Fri, 3 Jan 2014 11:11:04 +0800
-Message-ID: <52C62A48.1050604__16499.193016398$1388718752$gmane$org@huawei.com>
+Subject: [RFC PATCH net-next 3/4] veth: backup classid befor switch net_ns
+Date: Fri, 3 Jan 2014 11:11:14 +0800
+Message-ID: <52C62A52.8050003@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,31 +16,43 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jasowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org, edumazet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, honkiko-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, edumazet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-introduce backup_classid to struct skbuff,
-we can use it to backup sk_classid when net_ns switch.
+dev_forward_skb will clear skb->sk, so we need save classid
+before that, otherwise the skb can not be under control by
+net_cls.
 
 Signed-off-by: Libo Chen <clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/skbuff.h | 3 +++
- 1 file changed, 3 insertions(+)
+ drivers/net/veth.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/include/linux/skbuff.h b/include/linux/skbuff.h
-index c5cd016..b76e871 100644
---- a/include/linux/skbuff.h
-+++ b/include/linux/skbuff.h
-@@ -492,6 +492,9 @@ struct sk_buff {
- #ifdef CONFIG_NET_CLS_ACT
- 	__u16			tc_verd;	/* traffic control verdict */
- #endif
-+#ifdef CONFIG_NET_CLS_CGROUP
-+	__u32			backup_classid;
-+#endif
- #endif
+diff --git a/drivers/net/veth.c b/drivers/net/veth.c
+index 2ec2041..ce43a2d 100644
+--- a/drivers/net/veth.c
++++ b/drivers/net/veth.c
+@@ -18,6 +18,7 @@
+ #include <net/xfrm.h>
+ #include <linux/veth.h>
+ #include <linux/module.h>
++#include <net/cls_cgroup.h>
 
- 	__u16			queue_mapping;
+ #define DRV_NAME	"veth"
+ #define DRV_VERSION	"1.0"
+@@ -123,6 +124,12 @@ static netdev_tx_t veth_xmit(struct sk_buff *skb, struct net_device *dev)
+ 	    rcv->features & NETIF_F_RXCSUM)
+ 		skb->ip_summed = CHECKSUM_UNNECESSARY;
+
++	/**
++	 * dev_forward_sbk will clear skb->sk, so save
++	 * skb->sk->sk_classid for Qos
++	 */
++	bk_cls_classid(skb);
++
+ 	if (likely(dev_forward_skb(rcv, skb) == NET_RX_SUCCESS)) {
+ 		struct pcpu_vstats *stats = this_cpu_ptr(dev->vstats);
+
 -- 
 1.8.2.2
