@@ -1,7 +1,8 @@
-From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [Announce] Checkpoint-restore tool v1.1-rc1
-Date: Tue, 31 Dec 2013 14:28:08 +0400
-Message-ID: <52C29C38.7030207@parallels.com>
+From: Libo Chen <clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Subject: [RFC PATCH net-next 4/4] cls_cgroup: restore classid from
+	skb->sk_classid
+Date: Fri, 3 Jan 2014 11:11:17 +0800
+Message-ID: <52C62A55.4070901@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,24 +16,36 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: CRIU <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: jhs-jkUAjuhPggJWk0Htik3J/w@public.gmane.org, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, everyone!
 
-I'm glad to announce the 1st candidate for the upcoming 1.1 release.
-Two major changes here are
+if skb->sk is NULL, we can try to restore from skb->bk_classid,
+because we may have saved it.
 
-* libcriu.so (http://criu.org/C_API)
-* plugins (http://criu.org/Plugins)
+Signed-off-by: Libo Chen <clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+---
+ net/sched/cls_cgroup.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-If the proposed API is not sufficient, we'll change it before releasing
-the 1.1 itself.
+diff --git a/net/sched/cls_cgroup.c b/net/sched/cls_cgroup.c
+index d228a5d..6ab0e69 100644
+--- a/net/sched/cls_cgroup.c
++++ b/net/sched/cls_cgroup.c
+@@ -141,9 +141,10 @@ static int cls_cgroup_classify(struct sk_buff *skb, const struct tcf_proto *tp,
+ 	 */
+ 	if (in_serving_softirq()) {
+ 		/* If there is an sk_classid we'll use that. */
+-		if (!skb->sk)
+-			return -1;
+-		classid = skb->sk->sk_classid;
++		if (skb->sk)
++			classid = skb->sk->sk_classid;
++		else
++			classid = skb->backup_classid;
+ 	}
 
-Full changelog is at http://criu.org/Download/criu#v._1.1-rc1
-The sources are at http://download.openvz.org/criu/criu-1.1-rc1.tar.bz2
-
-Have fun and Happy new year!
-
-Thanks,
-Pavel
+ 	if (!classid)
+-- 
+1.8.2.2
