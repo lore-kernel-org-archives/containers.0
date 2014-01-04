@@ -1,12 +1,13 @@
-From: Peter P Waskiewicz Jr <peter.p.waskiewicz.jr-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 4/4] Documentation: Add documentation for cacheqos cgroup
-Date: Fri,  3 Jan 2014 12:34:45 -0800
-Message-ID: <1388781285-18067-5-git-send-email-peter.p.waskiewicz.jr@intel.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 0/4] x86: Add Cache QoS Monitoring (CQM) support
+Date: Sat, 4 Jan 2014 11:10:50 -0500
+Message-ID: <20140104161050.GA24306__41812.6785815277$1388851871$gmane$org@htj.dyndns.org>
 References: <1388781285-18067-1-git-send-email-peter.p.waskiewicz.jr@intel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 In-Reply-To: <1388781285-18067-1-git-send-email-peter.p.waskiewicz.jr-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,207 +18,32 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Peter P Waskiewicz Jr <peter.p.waskiewicz.jr-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Peter P Waskiewicz Jr <peter.p.waskiewicz.jr-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch adds the documentation for the new cacheqos cgroup
-subsystem.  It provides the overview of how the new subsystem
-works, how Cache QoS Monitoring works in the x86 architecture,
-and how everything is tied together between the hardware and the
-cgroup software stack.
+Hello,
 
-Signed-off-by: Peter P Waskiewicz Jr <peter.p.waskiewicz.jr-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
----
- Documentation/cgroups/00-INDEX     |   2 +
- Documentation/cgroups/cacheqos.txt | 166 +++++++++++++++++++++++++++++++++++++
- 2 files changed, 168 insertions(+)
- create mode 100644 Documentation/cgroups/cacheqos.txt
+On Fri, Jan 03, 2014 at 12:34:41PM -0800, Peter P Waskiewicz Jr wrote:
+> The CPU features themselves are relatively straight-forward, but
+> the presentation of the data is less straight-forward.  Since this
+> tracks cache usage and occupancy per process (by swapping Resource
+> Monitor IDs, or RMIDs, when processes are rescheduled), perf would
+> not be a good fit for this data, which does not report on a
+> per-process level.  Therefore, a new cgroup subsystem, cacheqos, has
+> been added.  This operates very similarly to the cpu and cpuacct
+> cgroup subsystems, where tasks can be grouped into sub-leaves of the
+> root-level cgroup.
 
-diff --git a/Documentation/cgroups/00-INDEX b/Documentation/cgroups/00-INDEX
-index bc461b6..055655d 100644
---- a/Documentation/cgroups/00-INDEX
-+++ b/Documentation/cgroups/00-INDEX
-@@ -2,6 +2,8 @@
- 	- this file
- blkio-controller.txt
- 	- Description for Block IO Controller, implementation and usage details.
-+cacheqos.txt
-+	- Description for Cache QoS Monitoring; implementation and usage details
- cgroups.txt
- 	- Control Groups definition, implementation details, examples and API.
- cpuacct.txt
-diff --git a/Documentation/cgroups/cacheqos.txt b/Documentation/cgroups/cacheqos.txt
-new file mode 100644
-index 0000000..b7b85ce
---- /dev/null
-+++ b/Documentation/cgroups/cacheqos.txt
-@@ -0,0 +1,166 @@
-+Cache QoS Monitoring Controller
-+-------------------------------
-+
-+1. Overview
-+===========
-+
-+The Cache QoS Monitoring controller is used to group tasks using cgroups and
-+monitor the CPU cache usage and occupancy of the grouped tasks.  This
-+monitoring does require hardware support for this information, especially
-+since cache optimization and usage models will vary between CPU architectures.
-+
-+The Cache QoS Monitoring controller supports multi-hierarchy groups. A
-+monitoring group accumulates the cache usage of all of its child groups and
-+the tasks directly present in its group.
-+
-+Monitoring groups can be created by first mounting the cgroup filesystem.
-+
-+# mount -t cgroup -ocacheqos none /sys/fs/cgroup/cacheqos
-+
-+With the above step, the initial or the parent monitoring group becomes
-+visible at /sys/fs/cgroup/cacheqos. At bootup, this group includes all the
-+tasks in the system. /sys/fs/cgroup/cacheqos/tasks lists the tasks in this
-+cgroup.  Each file in the cgroup is described in greater detail below.
-+
-+
-+2. Basic usage
-+==============
-+
-+New monitoring groups can be created under the parent group
-+/sys/fs/cgroup/cacheqos.
-+
-+# cd /sys/fs/cgroup/cacheqos
-+# mkdir g1
-+# echo $$ > g1/tasks
-+
-+The above steps create a new group g1 and move the current shell
-+process (bash) into it. At this point, the group is ready to be monitored.
-+However, since this process requires hardware support to identify tasks
-+properly, the mechanisms in the hardware are most likely a finite resource.
-+So new monitoring groups are not activated by default to monitor their
-+respective task groups.
-+
-+To enable a task group for hardware monitoring:
-+
-+# cd /sys/fs/cgroup/cacheqos
-+# mkdir g1
-+# echo $$ > g1/tasks
-+# echo 1 > g1/cacheqos.monitor_cache
-+
-+This will enable monitoring for the tasks in the g1 monitoring group.  Note
-+that the root monitoring group is always enabled and cannot be turned off.
-+
-+
-+3. Overview of files
-+====================
-+
-+- cacheqos.monitor_cache:
-+	Controls whether or not the monitoring group is enabled or not.  This
-+	is a R/W field, and expects 0 for disable, 1 for enable.
-+
-+	If no available hardware resources are left for monitoring, writing a
-+	1 to this file will result in -EAGAIN being returned (Resource
-+	temporarily unavailable).
-+
-+- cacheqos.occupancy:
-+	This is a read-only field.  It returns the total cache occupancy in
-+	bytes of the task group for all CPUs it has run on.
-+
-+- cacheqos.occupancy_percent:
-+	This is a read-only field.  It returns the total cache occupancy used
-+	as a percentage for all CPUs it has run on.  The percentage is based
-+	on the size of the cache, which can obviously vary from CPU to CPU.
-+
-+- cacheqos.occupancy_persocket:
-+	This is a read-only field.  It returns the total cache occupancy used
-+	by the task group, broken down per CPU socket (usually per NUMA node).
-+
-+- cacheqos.occupancy_percent_persocket:
-+	This is a read-only field.  It returns the total cache occupancy used
-+	by the task group, broken down per CPU socket (usually per NUMA node).
-+	Each socket's occupancy is presented as a percentage of the total
-+	cache.
-+
-+4. Adding new architectures
-+===========================
-+
-+Currently Cache QoS Monitoring support only exists in modern Intel Xeon
-+processors.  Due to this, the Kconfig option for Cache QoS Monitoring depends
-+on X86_64 or X86.  If another architecture supports cache monitoring, then
-+a few functions need to be implemented by the architecture, and that
-+architecture needs to be added to some #if clauses for support.  These are:
-+
-+- init/Kconfig
-+	Add the new architecture to the dependancy list
-+
-+- kernel/sched/cacheqos.c
-+	Add the new architecture to the #if line to compile out
-+	cacheqos_late_init():
-+
-+	#if !defined(CONFIG_X86_64) || !defined(CONFIG_X86)
-+	static int __init cacheqos_late_init(void)          ^^^^^^^
-+
-+The following functions need to be implemented by the architecture:
-+
-+- void cacheqos_map_schedule_out(void);
-+	This function is called by the scheduler when swapping out a task from
-+	a CPU.  This would be where the CPU architecture code to stop monitoring
-+	for a particular task would be executed.
-+
-+	Refer to arch/x86/kernel/cpu/perf_event_intel_uncore.c for an example.
-+
-+- void cacheqos_map_schedule_in(struct cacheqos *);
-+	This function is called by the scheduler when swapping a task into a
-+	CPU core.  This would be where the CPU architecture code to start
-+	monitoring a particular task would be executed.
-+
-+	Refer to arch/x86/kernel/cpu/perf_event_intel_uncore.c for an example.
-+
-+- void cacheqos_read(void *);
-+	This function is called by the cacheqos cgroup subsystem when
-+	collating the cache usage data.  This would be where the CPU
-+	architecture code to pull information for a particular monitoring
-+	unit would exist.
-+
-+	Refer to arch/x86/kernel/cpu/perf_event_intel_uncore.c for an example.
-+
-+- int __init cacheqos_late_init(void);  (late_initcall)
-+	This function needs to be implemented as late_initcall for the
-+	specific architecture.  The reason for a later invocation is the
-+	CPU features can be determined, which happens after the cgroup subsystem
-+	is started in the kernel boot sequence.  Since the configuration of
-+	the cacheqos cgroup depends on how much of particular monitoring
-+	resources are available, the cgroup's root_cacheqos_group's subsys_info
-+	field cannot be initialized until the CPU features are discovered.
-+
-+	This function's responsibility is to allocate the
-+	root_cacheqos_group.subsys_info field and initialize these fields:
-+		- cache_max_rmid: Maximum resource monitoring ID on this CPU
-+		- cache_occ_scale: This is used to scale the occupancy data
-+				   being collected, meant to help compress the
-+				   values being stored in the CPU.  This may
-+				   exist or not in a particular architecture.
-+		- cache_size: Size of the cache being monitored, used for the
-+			      percentage reporting.
-+
-+	Refer to arch/x86/kernel/cpu/perf_event_intel_uncore.c for an example.
-+
-+
-+5. Intel-specific implementation
-+================================
-+
-+Intel Xeon processors implement Cache QoS Monitoring using Resource Monitoring
-+Identifiers, or RMIDs.  When a task is scheduled on a CPU core, the RMID that
-+is associated with that task (or group that task belongs to) is written to the
-+IA32_PRQ_ASSOC MSR for that CPU.  That instructs that CPU to accumulate cache
-+occupancy data while that task runs.  When that task is scheduled out, the
-+IA32_PQR_ASSOC MSR is written with a 0, clearing the monitoring mechanism.
-+
-+To retrieve the monitoring data, the RMID for the task group being read is
-+used to build a configuration map for the IA32_QM_EVTSEL MSR.  Once the map is
-+written to that MSR, the result is written to the IA32_QM_CTR MSR.  That data
-+is then stored, but multiplied by the cache_occ_scale, which is read from the
-+CPUID sub-leaf during CPU initialization.
-+
-+For details on the implementation, please refer to the Intel Software
-+Development Manual, Volume 3, Chapter 17.14: Cache Quality of Service Monitoring
+I don't really understand why this is implemented as part of cgroup.
+There doesn't seem to be anything which requires cgroup.  Wouldn't
+just doing it per-process make more sense?  Even grouping would be
+better done along the traditional process hierarchy, no?  And
+per-cgroup accounting can be trivially achieved from userland by just
+accumulating the stats according to the process's cgroup membership.
+What am I missing here?
+
+Thanks.
+
 -- 
-1.8.3.1
+tejun
