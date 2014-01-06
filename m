@@ -1,13 +1,15 @@
-From: Libo Chen <clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: a work for lxc monitor network interface
-Date: Mon, 6 Jan 2014 16:38:01 +0800
-Message-ID: <52CA6B69.1000402@huawei.com>
-References: <52B15E7B.8080009@huawei.com> <20131218201622.GA25926@tp>
+From: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFC PATCH net-next 0/4] net_cls for sys container
+Date: Mon, 06 Jan 2014 16:42:40 +0800
+Message-ID: <52CA6C80.9060002@cn.fujitsu.com>
+References: <52C62A44.4070304@huawei.com>
+	<CAM_iQpW0+Ftvk=QBE+0yMNW00VkBee1+yAEmbPkT+zjij9RX-Q@mail.gmail.com>
+	<52CA614D.6040702@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20131218201622.GA25926@tp>
+In-Reply-To: <52CA614D.6040702-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,56 +19,35 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Cc: hadi-fAAogVwAN2Kw5LPnMra/2Q@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, karma-sWkBwLop/e8RbODiWk9XIg@public.gmane.org, takano-ryousei-XSdjUN4cZ6fPDbFq/vQRIQ@public.gmane.org, caglar-mM0DFpta8ko@public.gmane.org, dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, "zhangwei(Jovi)" <jovi.zhangwei-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>, stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, james.hunt-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org
+To: Libo Chen <clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>, Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Patrick McHardy <kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org>, Linux Kernel Network Developers <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, jasowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, pshelar-l0M0P4e3n4LQT0dZR+AlfA@public.gmane.org, Eric Dumazet <edumazet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 2013/12/19 4:16, Serge Hallyn wrote:
-> Quoting Libo Chen (clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org):
->> Hello LXC experts,
->>
->> 	lxc tool can set network interface by config, but it is static.
->> In some scene, the network interface will be dynamic created on the host
->> and need be shared to container, but it is not suitable to do by hand,
->> so lxc can not work for it.
->>
->> 	I also know lxc_user_nic() can only do a part of work, but we have
->> two more work:
->> 1. grasp the netlink/uevent message about network interface online
->> 2. config interface attached to container ip address .
->>
->> so it can not fully meet my requirements.
->>
->> 	I want there is a monitor can work for network interface hotplug.
->>
->> 1. read config form config file, it describe monitor which network interface
->>    and what's the network configuration
->> 2. grasp the netlink/uevent message about network interface online on the host
->> 3. create veth pair, put veth attach to container and bridge
->> 4. config the veth attached to container ipaddr
->>
->> 			
->>          	          netlink  create veth pair
->> monitor ---> read config  -------> veth0 attach to container --> config ipaddr
->> 				   veth1 attach to bridge
->>
->> monitor may be the lxc-start or a child forked by lxc-start.
+On 01/06/2014 03:54 PM, Libo Chen wrote:
+> On 2014/1/3 13:20, Cong Wang wrote:
+>> On Thu, Jan 2, 2014 at 7:11 PM, Libo Chen <clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org> wrote:
+>>> Hi guys,
+>>>
+>>> Now, lxc created with veth can not be under control by
+>>> cls_cgroup.
+>>>
+>>> the former discussion:
+>>> http://lkml.indiana.edu/hypermail/linux/kernel/1312.1/00214.html
+>>>
+>>> In short, because cls_cgroup relys classid attached to sock
+>>> filter skb, but sock will be cleared inside dev_forward_skb()
+>>> in veth_xmit().
 >>
 >>
->>  Is this reasonable?  If so, I'd like to do it.
+>> So what are you trying to achieve here?
 > 
-> I'm not quite clear on what you're trying to do, but it sounds like you
-> could use a udev rule, triggered on the nic creation, and use lxc-device
-> from inside that rule to attach the nic to the container.
+> sys container using veth can be controlled by cls_cgroup basing on physic network interface
 > 
-hi Serge,
 
-using udev rule is a good idea, but not common. for instance android uses ueventd and
-busybox uses mdev, sometimes nothing at all.
+It's a problem about virtual nic, not container/net namespace.
 
-so how about lxc itself provides this feature?
+If veth device is running in host. the skb is transmitted firstly by veth device and then delivered
+by physical device. if you set both qdisc rule on veth and physical device. which qdisc rule will take
+effect?
 
-
-
-> .
-> 
+In your patch, both qdisc rule are effective. it looks strange.
