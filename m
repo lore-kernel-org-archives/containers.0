@@ -1,18 +1,11 @@
-From: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Subject: Re: [PATCH 0/4] x86: Add Cache QoS Monitoring (CQM) support
-Date: Mon, 6 Jan 2014 12:16:24 +0100
-Message-ID: <20140106111624.GB5623@twins.programming.kicks-ass.net>
-References: <1388781285-18067-1-git-send-email-peter.p.waskiewicz.jr@intel.com>
-	<20140104161050.GA24306@htj.dyndns.org>
-	<1388875369.9761.25.camel@ppwaskie-mobl.amr.corp.intel.com>
-	<20140104225058.GC24306@htj.dyndns.org>
-	<1388899376.9761.45.camel@ppwaskie-mobl.amr.corp.intel.com>
+From: Rob van der Hoeven <robvanderhoeven-nv30jWqA7Mk@public.gmane.org>
+Subject: Program Space, a new lightweight virtualization technology
+Date: Mon, 06 Jan 2014 13:17:33 +0100
+Message-ID: <1389010653.4432.52.camel@pentium.freedom.box>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1388899376.9761.45.camel-29DAm2eTeB2q+SSgkFU3IPooFf0ArEBIu+b9c/7xato@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,67 +15,38 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Waskiewicz Jr, Peter P" <peter.p.waskiewicz.jr-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sun, Jan 05, 2014 at 05:23:07AM +0000, Waskiewicz Jr, Peter P wrote:
-> The processor doesn't need to understand the grouping at all, but it
-> also isn't tracking things per-process that are rolled up later.
-> They're tracked via the RMID resource in the hardware, which could
-> correspond to a single process, or 500 processes.  It really comes down
-> to the ease of management of grouping tasks in groups for two consumers,
-> 1) the end user, and 2) the process scheduler.
-> 
-> I think I still may not be explaining how the CPU side works well
-> enough, in order to better understand what I'm trying to do with the
-> cgroup.  Let me try to be a bit more clear, and if I'm still sounding
-> vague or not making sense, please tell me what isn't clear and I'll try
-> to be more specific.  The new Documentation addition in patch 4 also has
-> a good overview, but let's try this:
-> 
-> A CPU may have 32 RMID's in hardware.  This is for the platform, not per
-> core.  I may want to have a single process assigned to an RMID for
-> tracking, say qemu to monitor cache usage of a specific VM.  But I also
-> may want to monitor cache usage of all MySQL database processes with
-> another RMID, or even split specific processes of that database between
-> different RMID's.  It all comes down to how the end-user wants to
-> monitor their specific workloads, and how those workloads are impacting
-> cache usage and occupancy.
-> 
-> With this implementation I've sent, all tasks are in RMID 0 by default.
-> Then one can create a subdirectory, just like the cpuacct cgroup, and
-> then add tasks to that subdirectory's task list.  Once that
-> subdirectory's task list is enabled (through the cacheqos.monitor_cache
-> handle), then a free RMID is assigned from the CPU, and when the
-> scheduler switches to any of the tasks in that cgroup under that RMID,
-> the RMID begins monitoring the usage.
-> 
-> The CPU side is easy and clean.  When something in the software wants to
-> monitor when a particular task is scheduled and started, write whatever
-> RMID that task is assigned to (through some mechanism) to the proper MSR
-> in the CPU.  When that task is swapped out, clear the MSR to stop
-> monitoring of that RMID.  When that RMID's statistics are requested by
-> the software (through some mechanism), then the CPU's MSRs are written
-> with the RMID in question, and the value is read of what has been
-> collected so far.  In my case, I decided to use a cgroup for this
-> "mechanism" since so much of the grouping and task/group association
-> already exists and doesn't need to be rebuilt or re-invented.
+I'm proud to announce a new lightweight virtualization technology called
+Program Space which I developed over the past months.
 
-This still doesn't explain why you can't use perf-cgroup for this.
+Program Space is very lightweight. It is created and managed by a small
+program called psc (Program Space control) which starts a small psd
+daemon of which the namespace configuration can be configured. Programs
+running in Program Space are started as children of this daemon.
 
-> > In general, I'm quite strongly opposed against using cgroup as
-> > arbitrary grouping mechanism for anything other than resource control,
-> > especially given that we're moving away from multiple hierarchies.
-> 
-> Just to clarify then, would the mechanism in the cpuacct cgroup to
-> create a group off the root subsystem be considered multi-hierarchical?
-> If not, then the intent for this new cacheqos subsystem is to be
-> identical in that regard to cpuacct in the behavior.
-> 
-> This is a resource controller, it just happens to be tied to a hardware
-> resource instead of an OS resource.
+The psc program is designed to be used in scripts. It makes it possible
+to use ordinary system utilities like ip, mount and iptables for the
+configuration of the namespaces. 
 
-No, cpuacct and perf-cgroup aren't actually controllers at all. They're
-resource monitors at best. Same with your Cache QoS Monitor, it doesn't
-control anything.
+How things work is explained in the following article:
+
+http://freedomboxblog.nl/program_space
+
+The sourcecode for the psc program can be viewed at:
+
+http://freedomboxblog.nl/sourcecode_psc
+
+or downloaded at:
+
+http://freedomboxblog.nl/data/pscs-0.7.tar.gz
+
+The download contains what I call the Program Space Construction Set
+(PSCS). It not only includes the sourcecode for psc, but also some
+scripts that show you how psc can be used to setup a rootfs, network or
+create a full Program Space containing a LAMP stack running Wordpress.
+
+Enjoy,
+Rob van der Hoeven
+http://freedomboxblog.nl
