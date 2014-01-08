@@ -1,13 +1,16 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [PATCH] userns: Relax the posix_acl_valid() checks
-Date: Tue, 7 Jan 2014 15:57:10 -0800
-Message-ID: <20140107155710.fe565c597514fce00259f233@linux-foundation.org>
-References: <1387650146-7219-1-git-send-email-agruen@linbit.com>
+From: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>
+Subject: Re: [PATCH 2/2] binder: implement namepsace support for Android
+	binder driver
+Date: Wed, 8 Jan 2014 15:49:28 -0800
+Message-ID: <20140108234928.GA20259@kroah.com>
+References: <cover.1387706794.git.orenl@cellrox.com>
+	<45c5d62a35f19228a681f5be9834741baabfdb0d.1387706794.git.orenl@cellrox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1387650146-7219-1-git-send-email-agruen-63ez5xqkn6DQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <45c5d62a35f19228a681f5be9834741baabfdb0d.1387706794.git.orenl-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,28 +20,23 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andreas Gruenbacher <agruen-63ez5xqkn6DQT0dZR+AlfA@public.gmane.org>
-Cc: Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Andreas Dilger <adilger.kernel-m1MBpc4rdrD3fQ9qLvQP4Q@public.gmane.org>, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Oren Laadan <orenl-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Arve =?iso-8859-1?B?SGr4bm5lduVn?= <arve-z5hGa2qSFaRBDgjK7y7TUQ@public.gmane.org>, Eric Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, lxc-devel <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sat, 21 Dec 2013 19:22:26 +0100 Andreas Gruenbacher <agruen-63ez5xqkn6DQT0dZR+AlfA@public.gmane.org> wrote:
+On Sun, Dec 22, 2013 at 05:07:40AM -0500, Oren Laadan wrote:
+> Add namespaces support for the Android binder driver.
+> As binder is an IPC mechanism, tie its namespace to IPC_NS.
 
-> So far, POSIX ACLs are using a canonical representation that keeps all ACL
-> entries in a strict order; the ACL_USER and ACL_GROUP entries for specific
-> users and groups are ordered by user and group identifier, respectively. The
-> user-space code provides ACL entries in this order; the kernel verifies that
-> the ACL entry order is correct in posix_acl_valid().
-> 
-> User namespaces allow to arbitrary map user and group identifiers which can
-> cause the ACL_USER and ACL_GROUP entry order to differ between user space and
-> the kernel; posix_acl_valid() would then fail.
-> 
-> Work around this by allowing ACL_USER and ACL_GROUP entries to be in any order
-> in the kernel. The effect is only minor: file permission checks will pick the
-> first matching ACL_USER entry, and check all matching ACL_GROUP entries.
-> 
-> (The libacl user-space library and getfacl / setfacl tools will not create ACLs
-> with duplicate user or group idenfifiers; they will handle ACLs with entries in
-> an arbitrary order correctly.)
+Why does binder need namespace support?
 
-Should this be backported into -stable kernels?
+Does the Android userspace code support this?
+
+I need an ack from the Android developers before I can take this.
+
+Same goes for the ipc core changes, I need an ack from the maintainer of
+that code before I can take it as well.
+
+thanks,
+
+greg k-h
