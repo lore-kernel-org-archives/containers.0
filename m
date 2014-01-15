@@ -1,25 +1,17 @@
-From: "Waskiewicz Jr, Peter P" <peter.p.waskiewicz.jr-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 0/4] x86: Add Cache QoS Monitoring (CQM) support
-Date: Tue, 14 Jan 2014 20:46:53 +0000
-Message-ID: <1389732405.32504.193.camel__6802.52487441084$1389732426$gmane$org@ppwaskie-mobl.amr.corp.intel.com>
-References: <20140106180636.GG30183@twins.programming.kicks-ass.net>
-	<1389039035.32504.35.camel@ppwaskie-mobl.amr.corp.intel.com>
-	<20140106212623.GH30183@twins.programming.kicks-ass.net>
-	<1389044899.32504.43.camel@ppwaskie-mobl.amr.corp.intel.com>
-	<20140106221251.GJ30183@twins.programming.kicks-ass.net>
-	<1389048315.32504.57.camel@ppwaskie-mobl.amr.corp.intel.com>
-	<20140107083440.GL30183@twins.programming.kicks-ass.net>
-	<1389107743.32504.69.camel@ppwaskie-mobl.amr.corp.intel.com>
-	<20140107211229.GF2480@laptop.programming.kicks-ass.net>
-	<1389380100.32504.172.camel@ppwaskie-mobl.amr.corp.intel.com>
-	<20140113075528.GR7572@laptop.programming.kicks-ass.net>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [RFC PATCH net-next 0/4] net_cls for sys container
+Date: Tue, 14 Jan 2014 16:50:11 -0800
+Message-ID: <87y52idq64.fsf__47739.5453294323$1389747041$gmane$org@xmission.com>
+References: <52C62A44.4070304@huawei.com>
+	<CAM_iQpW0+Ftvk=QBE+0yMNW00VkBee1+yAEmbPkT+zjij9RX-Q@mail.gmail.com>
+	<52CA614D.6040702@huawei.com> <52CA6C80.9060002@cn.fujitsu.com>
+	<52CA8026.4010106@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140113075528.GR7572-RM5+C6weyIYnLiPH7yDmwOa11wxjtiyuLtmvbW2Dspo@public.gmane.org>
-Content-Language: en-US
-Content-ID: <313BB4370657944FA44FFA5E5277A95F-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <52CA8026.4010106-hv44wF8Li93QT0dZR+AlfA@public.gmane.org> (Libo Chen's message of "Mon, 6 Jan
+	2014 18:06:30 +0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -29,86 +21,64 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
+To: Libo Chen <clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: Linux Kernel Network Developers <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, jasowang-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Eric Dumazet <edumazet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, pshelar-l0M0P4e3n4LQT0dZR+AlfA@public.gmane.org, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Patrick McHardy <kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 2014-01-13 at 08:55 +0100, Peter Zijlstra wrote:
-> On Fri, Jan 10, 2014 at 06:55:11PM +0000, Waskiewicz Jr, Peter P wrote:
-> > I've spoken with the CPU architect, and he's set me straight.  I was
-> > getting some simulation data and reality mixed up, so apologies.
-> > 
-> > The cacheline is tagged with the RMID being tracked when it's brought
-> > into the cache.  That is the only time it's tagged, it does not get
-> > updated (I was looking at data showing impacts if it was updated).
-> > 
-> > If there are frequent RMID updates for a particular process, then there
-> > is the possibility that any remaining old data for that process can be
-> > accounted for on a different RMID.  This really is workload dependent,
-> > and my architect provided their data showing that this occurrence is
-> > pretty much in the noise.
-> 
-> What change frequency and what sided workloads did they test?
+Libo Chen <clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org> writes:
 
-I will see what data I can share, as much of this is internal testing
-with open access to hardware implementation details.
+> yes
+> On 2014/1/6 16:42, Gao feng wrote:
+>> On 01/06/2014 03:54 PM, Libo Chen wrote:
+>>> On 2014/1/3 13:20, Cong Wang wrote:
+>>>> On Thu, Jan 2, 2014 at 7:11 PM, Libo Chen <clbchenlibo.chen-hv44wF8Li93QT0dZR+AlfA@public.gmane.org> wrote:
+>>>>> Hi guys,
+>>>>>
+>>>>> Now, lxc created with veth can not be under control by
+>>>>> cls_cgroup.
+>>>>>
+>>>>> the former discussion:
+>>>>> http://lkml.indiana.edu/hypermail/linux/kernel/1312.1/00214.html
+>>>>>
+>>>>> In short, because cls_cgroup relys classid attached to sock
+>>>>> filter skb, but sock will be cleared inside dev_forward_skb()
+>>>>> in veth_xmit().
+>>>>
+>>>>
+>>>> So what are you trying to achieve here?
+>>>
+>>> sys container using veth can be controlled by cls_cgroup basing on physic network interface
+>>>
+>> 
+>> It's a problem about virtual nic, not container/net namespace.
+>
+> yes
+>
+>> 
+>> If veth device is running in host. the skb is transmitted firstly by veth device and then delivered
+>> by physical device. if you set both qdisc rule on veth and physical device. which qdisc rule will take
+>> effect?
+>
+> both, the end result depends on a smaller.
+>
+>> 
+>> In your patch, both qdisc rule are effective. it looks strange.
+>> 
+>
+> qdisc is based nic, does not distinguish virtual or physics. if you are all set,
+> it means that what you want.  so the logic is not the problemI and this appears to be normal.
 
-> I can make it significant; take a multi-threaded workload that mostly
-> fits in cache, then assign all theads but one RMDI 0, then fairly
-> quickly rotate RMID 1 between the threads.
-> 
-> The problem is, since there's a limited number of RMIDs we have to
-> rotate at some point, but since changing RMIDs is nondeterministic we
-> can't.
-> 
-> > Also, I did ask about the granularity of the RMID, and it is
-> > per-cacheline.  So if there is a non-exclusive cacheline, then the
-> > occupancy data in the other part of the cacheline will count against the
-> > RMID.
-> 
-> One more question:
-> 
->   u64 i;
->   u64 rmid_val[];
-> 
->   for (i = 0; i < rmid_max; i++) {
->     wrmsr(IA32_QM_EVTSEL, 1 | (i << 32));
->     rdmsr(IA32_QM_CTR, rmid_val[i]);
->   }
-> 
-> Is this the right way of reading these values? I couldn't find anything
-> that says the event must 'run' to accumulate a value at all, so all it
-> seems it a direct value read with a multiplexer to the RMID.
+My personal opinion on the matter is that the network class cgroup is
+brain dead and should not be used.  It is impossible to use for
+incomming packets, and it is part of the the problem plagued cgroup
+subsystem.
 
-Yes, this is correct.  In the SDM, the layout of the IA32_QM_CTR MSR has
-bits 61:0 contain the data, then bits 62 and 63 are error bits.  In
-order to select the RMID to read, the IA32_QM_EVTSEL must be programmed
-to get the data out; that's the only way to tell the CPU what RMID needs
-to be inspected.
+You have real network interfaces to do your classification with you
+don't need to enhance the network class cgroup.
 
-[...]
+The more this is asked about the more I think the network class cgroup
+should be be taken out into the woods some dark night and left in a
+shallow grave, never to bother us again.
 
-> I've not figured out how to deal with this stuff yet; exposing RMIDs to
-> userspace is a guaranteed fail though. Any interface that disallows the
-> kernel to manage the RMIDs is broken.
 
-Hence the first implementation in this patch series using cgroups.  The
-backend would assign an RMID to the task group when monitoring was
-enabled.  The RMID itself had no exposure to userspace.  It's quite a
-nice association that works well.  I still think it's a viable way to do
-it, and am trying to convince myself otherwise (but keep coming back to
-it).
-
-The implementation I'm talking about is to assign an arbitrary group
-number to the tasks, then have the kernel assign an RMID to that group
-number when the group's monitoring is enabled.  So basically the same
-functionality that the current patchset uses, but minus the cgroup.  I
-don't like the approach because it will reinvent some of the cgroup's
-functionality, but it does separate it from cgroups.
-
-Cheers,
--PJ
-
--- 
-PJ Waskiewicz				Open Source Technology Center
-peter.p.waskiewicz.jr-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org		Intel Corp.
+Eric
