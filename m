@@ -1,18 +1,16 @@
-From: =?windows-1252?Q?Jan_Kalu=9Ea?= <jkaluza-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v4 0/3] Send audit/procinfo/cgroup data in socket-level
-	control message
-Date: Thu, 16 Jan 2014 10:29:51 +0100
-Message-ID: <52D7A68F.5030700@redhat.com>
-References: <1377614400-27122-1-git-send-email-jkaluza@redhat.com>
-	<1389600109-30739-1-git-send-email-jkaluza@redhat.com>
-	<20140115.121730.1984913330507219167.davem@davemloft.net>
-	<1389828103.681.34.camel@flatline.rdu.redhat.com>
-	<20140115232345.GA22237@mtj.dyndns.org>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH audit-next 2/2] Audit: make audit netlink socket net
+	namespace unaware
+Date: Thu, 16 Jan 2014 22:29:33 +0000
+Message-ID: <20140116222933.GA22731@mail.hallyn.com>
+References: <1389258691-2680-1-git-send-email-gaofeng@cn.fujitsu.com>
+	<1389258691-2680-2-git-send-email-gaofeng@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140115232345.GA22237-9pTldWuhBndy/B6EtB590w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1389258691-2680-2-git-send-email-gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,33 +20,64 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+To: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 01/16/2014 12:23 AM, Tejun Heo wrote:
-> On Wed, Jan 15, 2014 at 06:21:43PM -0500, Eric Paris wrote:
->> Reliably being able to audit what process requested an action is
->> extremely useful.  And I like the audit patch, as it is a couple of ints
->> we are storing.
->>
->> procinfo and cgroup can both be up to 4k of data.
->>
->> Is there an alternative he should consider?  Some way to grab a
->> reference on task_struct and just attach that to the message?
->
-> Or maybe it can be made separately optional instead of tagging along
-> on an existing option so that it doesn't tax use cases which don't
-> care about the new stuff?
+Quoting Gao feng (gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
+> Add a compare function which always return true for
+> audit netlink socket, this will cause audit netlink
+> sockets netns unaware, and no matter which netns the
+> user space audit netlink sockets belong to, they all
+> can find out and communicate with audit_sock.
+> 
+> This gets rid of the necessary to create per-netns
+> audit kernel side socket(audit_sock), it's pain to
+> depend on and get reference of netns for auditns.
+> 
+> Signed-off-by: Gao feng <gaofeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
-Right, I could add new option next to SOCK_PASSCRED which could be used 
-to send newly added stuff. Would this be acceptable?
+So whereas before you could prevent a task from spamming
+audit by putting it into a private netns, now you have to
+do it using a user namespace (to prevent capable(CAP_AUDIT_WRITE))
+right?
 
-I would still vote for SCM_AUDIT to be part of SOCK_PASSCRED and move 
-SCM_CGROUP and SCM_PROCINFO into new option.
+I don't know that anyone is depending on that, in any case, but
+it's a change.
 
-> Thanks.
->
+Is this building up to something?
 
-Regards,
-Jan Kaluza
+> ---
+>  kernel/audit.c | 6 ++++++
+>  1 file changed, 6 insertions(+)
+> 
+> diff --git a/kernel/audit.c b/kernel/audit.c
+> index b62153a..2ac6212 100644
+> --- a/kernel/audit.c
+> +++ b/kernel/audit.c
+> @@ -1064,12 +1064,18 @@ static void audit_receive(struct sk_buff  *skb)
+>  	mutex_unlock(&audit_cmd_mutex);
+>  }
+>  
+> +static bool audit_compare(struct net *net, struct sock *sk)
+> +{
+> +	return true;
+> +}
+> +
+>  /* Initialize audit support at boot time. */
+>  static int __init audit_init(void)
+>  {
+>  	int i;
+>  	struct netlink_kernel_cfg cfg = {
+>  		.input	= audit_receive,
+> +		.compare = audit_compare,
+>  	};
+>  
+>  	if (audit_initialized == AUDIT_DISABLED)
+> -- 
+> 1.8.4.2
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linuxfoundation.org/mailman/listinfo/containers
