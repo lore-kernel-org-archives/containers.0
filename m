@@ -1,12 +1,14 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCHSET cgroup/for-3.14] cgroup: drop module support and
-	cgroup_root_mutex
-Date: Fri, 17 Jan 2014 13:11:51 -0500
-Message-ID: <1389982317-22225-1-git-send-email-tj@kernel.org>
+Subject: [PATCH 1/6] cgroup: make CONFIG_NET_CLS_CGROUP and
+	CONFIG_NETPRIO_CGROUP bool instead of tristate
+Date: Fri, 17 Jan 2014 13:11:52 -0500
+Message-ID: <1389982317-22225-2-git-send-email-tj@kernel.org>
+References: <1389982317-22225-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1389982317-22225-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,75 +19,145 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello,
+net_cls and net_prio are the only cgroups which are allowed to be
+built as modules.  The savings from allowing the two controllers to be
+built as modules are tiny especially given that cgroup module support
+itself adds quite a bit of complexity.
 
-There are only two controllers which make use of the module support -
-net_cls and net_prio, both of which, non-coincidentally, aren't actual
-resource controllers.  It's highly unlikely that the actual resource
-controlling controllers are gonna be made modular and we aren't gonna
-add more non-resource controllers either, so the value of module
-support is strictly restricted to the two existing controllers.
+The following are the sizes of vmlinux with both built as module and
+both built as part of the kernel image with cgroup module support
+removed.
 
-Both controllers are fairly simple while module support in cgroup core
-adds quite a bit of complexity.  Building those two controllers as
-module only saves about half-page in vmlinux, which really can't
-justify the additional complexity and (minute but existing) runtime
-overhead.
+	text		data		bss		dec
+	20292207	2411496		10784768	33488471
+	20293421	2412568		10784768	33490757
 
-This patchset makes net_cls and net_prio config options bool so that
-they can't be built as modules and drop module support from cgroup
-core, which in turn facilitates further simplification leading to
-removal of cgroup_root_mutex by allowing iterating subsystems outside
-the mutexes.
+The total difference is 2286 bytes.  Given that none of other
+controllers has much chance of being made a module and that we're
+unlikely to add new modular controllers, the added complexity is
+simply not justifiable.
 
-This patchset contains the following six patches.
+As a first step to drop cgroup module support, this patch changes the
+two config options to bool from tristate and drops module related code
+from the two controllers.
 
- 0001-cgroup-make-CONFIG_NET_CLS_CGROUP-and-CONFIG_NETPRIO.patch
- 0002-cgroup-drop-module-support.patch
- 0003-cgroup-clean-up-cgroup_subsys-names-and-initializati.patch
- 0004-cgroup-rename-cgroup_subsys-subsys_id-to-id.patch
- 0005-cgroup-update-locking-in-cgroup_show_options.patch
- 0006-cgroup-remove-cgroup_root_mutex.patch
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>
+Cc: Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>
+Cc: "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+---
+ net/Kconfig               |  2 +-
+ net/core/netprio_cgroup.c | 32 ++------------------------------
+ net/sched/Kconfig         |  2 +-
+ net/sched/cls_cgroup.c    | 23 ++---------------------
+ 4 files changed, 6 insertions(+), 53 deletions(-)
 
-0001-0002 drop cgroup module support.
-
-0003-0004 are cleanups.
-
-0005-0006 remove cgroup_root_mutex.
-
-The patchset is also available in the following git branch.
-
- git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-simplify
-
-diffstat follows.  Thanks.
-
- block/blk-cgroup.c             |    9
- block/blk-cgroup.h             |    2
- fs/bio.c                       |    2
- include/linux/cgroup.h         |   38 ---
- include/linux/cgroup_subsys.h  |   30 +--
- include/linux/hugetlb_cgroup.h |    2
- include/linux/memcontrol.h     |    2
- include/net/cls_cgroup.h       |    4
- include/net/netprio_cgroup.h   |    4
- kernel/cgroup.c                |  392 ++++++-----------------------------------
- kernel/cgroup_freezer.c        |    8
- kernel/cpuset.c                |   10 -
- kernel/events/core.c           |    8
- kernel/sched/core.c            |    6
- kernel/sched/cpuacct.c         |    6
- mm/hugetlb_cgroup.c            |    9
- mm/memcontrol.c                |   22 +-
- net/Kconfig                    |    2
- net/core/netprio_cgroup.c      |   37 ---
- net/ipv4/tcp_memcontrol.c      |    2
- net/sched/Kconfig              |    2
- net/sched/cls_cgroup.c         |   30 ---
- security/device_cgroup.c       |    8
- 23 files changed, 132 insertions(+), 503 deletions(-)
-
---
-tejun
+diff --git a/net/Kconfig b/net/Kconfig
+index d334678..fea7b88 100644
+--- a/net/Kconfig
++++ b/net/Kconfig
+@@ -239,7 +239,7 @@ config XPS
+ 	default y
+ 
+ config NETPRIO_CGROUP
+-	tristate "Network priority cgroup"
++	bool "Network priority cgroup"
+ 	depends on CGROUPS
+ 	---help---
+ 	  Cgroup subsystem for use in assigning processes to network priorities on
+diff --git a/net/core/netprio_cgroup.c b/net/core/netprio_cgroup.c
+index 56cbb69..8912da7 100644
+--- a/net/core/netprio_cgroup.c
++++ b/net/core/netprio_cgroup.c
+@@ -283,37 +283,9 @@ static struct notifier_block netprio_device_notifier = {
+ 
+ static int __init init_cgroup_netprio(void)
+ {
+-	int ret;
+-
+-	ret = cgroup_load_subsys(&net_prio_subsys);
+-	if (ret)
+-		goto out;
+-
+ 	register_netdevice_notifier(&netprio_device_notifier);
+-
+-out:
+-	return ret;
+-}
+-
+-static void __exit exit_cgroup_netprio(void)
+-{
+-	struct netprio_map *old;
+-	struct net_device *dev;
+-
+-	unregister_netdevice_notifier(&netprio_device_notifier);
+-
+-	cgroup_unload_subsys(&net_prio_subsys);
+-
+-	rtnl_lock();
+-	for_each_netdev(&init_net, dev) {
+-		old = rtnl_dereference(dev->priomap);
+-		RCU_INIT_POINTER(dev->priomap, NULL);
+-		if (old)
+-			kfree_rcu(old, rcu);
+-	}
+-	rtnl_unlock();
++	return 0;
+ }
+ 
+-module_init(init_cgroup_netprio);
+-module_exit(exit_cgroup_netprio);
++subsys_initcall(init_cgroup_netprio);
+ MODULE_LICENSE("GPL v2");
+diff --git a/net/sched/Kconfig b/net/sched/Kconfig
+index ad1f1d8..0a9e4d1 100644
+--- a/net/sched/Kconfig
++++ b/net/sched/Kconfig
+@@ -433,7 +433,7 @@ config NET_CLS_FLOW
+ 	  module will be called cls_flow.
+ 
+ config NET_CLS_CGROUP
+-	tristate "Control Group Classifier"
++	bool "Control Group Classifier"
+ 	select NET_CLS
+ 	depends on CGROUPS
+ 	---help---
+diff --git a/net/sched/cls_cgroup.c b/net/sched/cls_cgroup.c
+index 16006c9..2f6a9b4 100644
+--- a/net/sched/cls_cgroup.c
++++ b/net/sched/cls_cgroup.c
+@@ -309,27 +309,8 @@ static struct tcf_proto_ops cls_cgroup_ops __read_mostly = {
+ 
+ static int __init init_cgroup_cls(void)
+ {
+-	int ret;
+-
+-	ret = cgroup_load_subsys(&net_cls_subsys);
+-	if (ret)
+-		goto out;
+-
+-	ret = register_tcf_proto_ops(&cls_cgroup_ops);
+-	if (ret)
+-		cgroup_unload_subsys(&net_cls_subsys);
+-
+-out:
+-	return ret;
+-}
+-
+-static void __exit exit_cgroup_cls(void)
+-{
+-	unregister_tcf_proto_ops(&cls_cgroup_ops);
+-
+-	cgroup_unload_subsys(&net_cls_subsys);
++	return register_tcf_proto_ops(&cls_cgroup_ops);
+ }
+ 
+-module_init(init_cgroup_cls);
+-module_exit(exit_cgroup_cls);
++subsys_initcall(init_cgroup_cls);
+ MODULE_LICENSE("GPL");
+-- 
+1.8.4.2
