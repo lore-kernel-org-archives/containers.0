@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 4/6] cgroup: rename cgroup_subsys->subsys_id to ->id
-Date: Fri, 17 Jan 2014 13:11:55 -0500
-Message-ID: <1389982317-22225-5-git-send-email-tj@kernel.org>
+Subject: [PATCH 5/6] cgroup: update locking in cgroup_show_options()
+Date: Fri, 17 Jan 2014 13:11:56 -0500
+Message-ID: <1389982317-22225-6-git-send-email-tj@kernel.org>
 References: <1389982317-22225-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,114 +21,87 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-It's no longer referenced outside cgroup core, so renaming is easy.
-Let's rename it for consistency & brevity.
+cgroup_show_options() grabs cgroup_root_mutex to protect the options
+changing while printing; however, holding root_mutex or not doesn't
+really make much difference for the function.  subsys_mask can be
+atomically tested and most of the options aren't allowed to change
+anyway once mounted.
 
-This patch is pure rename.
+The only field which needs synchronization is ->release_agent_path.
+This patch introduces a dedicated spinlock to synchronize accesses to
+the field and drops cgroup_root_mutex locking from
+cgroup_show_options().  The next patch will remove cgroup_root_mutex.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- include/linux/cgroup.h |  4 ++--
- kernel/cgroup.c        | 18 +++++++++---------
- 2 files changed, 11 insertions(+), 11 deletions(-)
+ kernel/cgroup.c | 19 ++++++++++++++++---
+ 1 file changed, 16 insertions(+), 3 deletions(-)
 
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index cd6611e..198c7fc 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -548,7 +548,7 @@ int cgroup_taskset_size(struct cgroup_taskset *tset);
- 	     (task) = cgroup_taskset_next((tset)))			\
- 		if (!(skip_css) ||					\
- 		    cgroup_taskset_cur_css((tset),			\
--			(skip_css)->ss->subsys_id) != (skip_css))
-+			(skip_css)->ss->id) != (skip_css))
- 
- /*
-  * Control Group subsystem type.
-@@ -592,7 +592,7 @@ struct cgroup_subsys {
- 	bool warned_broken_hierarchy;
- 
- 	/* the following two fields are initialized automtically during boot */
--	int subsys_id;
-+	int id;
- #define MAX_CGROUP_TYPE_NAMELEN 32
- 	const char *name;
- 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index aace2ee..3b2fda0 100644
+index 3b2fda0..2736689 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -198,7 +198,7 @@ static struct cgroup_subsys_state *cgroup_css(struct cgroup *cgrp,
- 					      struct cgroup_subsys *ss)
- {
- 	if (ss)
--		return rcu_dereference_check(cgrp->subsys[ss->subsys_id],
-+		return rcu_dereference_check(cgrp->subsys[ss->id],
- 					     lockdep_is_held(&cgroup_mutex));
- 	else
- 		return &cgrp->dummy_css;
-@@ -4002,7 +4002,7 @@ static int online_css(struct cgroup_subsys_state *css)
- 	if (!ret) {
- 		css->flags |= CSS_ONLINE;
- 		css->cgroup->nr_css++;
--		rcu_assign_pointer(css->cgroup->subsys[ss->subsys_id], css);
-+		rcu_assign_pointer(css->cgroup->subsys[ss->id], css);
- 	}
- 	return ret;
+@@ -92,6 +92,12 @@ static DEFINE_MUTEX(cgroup_mutex);
+ 
+ static DEFINE_MUTEX(cgroup_root_mutex);
+ 
++/*
++ * Protects cgroup_subsys->release_agent_path.  Modifying it also requires
++ * cgroup_mutex.  Reading requires either cgroup_mutex or this spinlock.
++ */
++static DEFINE_SPINLOCK(release_agent_path_lock);
++
+ #define cgroup_assert_mutex_or_rcu_locked()				\
+ 	rcu_lockdep_assert(rcu_read_lock_held() ||			\
+ 			   lockdep_is_held(&cgroup_mutex),		\
+@@ -1024,7 +1030,6 @@ static int cgroup_show_options(struct seq_file *seq, struct dentry *dentry)
+ 	struct cgroup_subsys *ss;
+ 	int ssid;
+ 
+-	mutex_lock(&cgroup_root_mutex);
+ 	for_each_subsys(ss, ssid)
+ 		if (root->subsys_mask & (1 << ssid))
+ 			seq_printf(seq, ",%s", ss->name);
+@@ -1034,13 +1039,16 @@ static int cgroup_show_options(struct seq_file *seq, struct dentry *dentry)
+ 		seq_puts(seq, ",noprefix");
+ 	if (root->flags & CGRP_ROOT_XATTR)
+ 		seq_puts(seq, ",xattr");
++
++	spin_lock(&release_agent_path_lock);
+ 	if (strlen(root->release_agent_path))
+ 		seq_printf(seq, ",release_agent=%s", root->release_agent_path);
++	spin_unlock(&release_agent_path_lock);
++
+ 	if (test_bit(CGRP_CPUSET_CLONE_CHILDREN, &root->top_cgroup.flags))
+ 		seq_puts(seq, ",clone_children");
+ 	if (strlen(root->name))
+ 		seq_printf(seq, ",name=%s", root->name);
+-	mutex_unlock(&cgroup_root_mutex);
+ 	return 0;
  }
-@@ -4022,7 +4022,7 @@ static void offline_css(struct cgroup_subsys_state *css)
  
- 	css->flags &= ~CSS_ONLINE;
- 	css->cgroup->nr_css--;
--	RCU_INIT_POINTER(css->cgroup->subsys[ss->subsys_id], css);
-+	RCU_INIT_POINTER(css->cgroup->subsys[ss->id], css);
- }
+@@ -1262,8 +1270,11 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
+ 	if (ret)
+ 		goto out_unlock;
  
- /**
-@@ -4053,7 +4053,7 @@ static int create_css(struct cgroup *cgrp, struct cgroup_subsys *ss)
- 
- 	init_css(css, ss, cgrp);
- 
--	err = cgroup_populate_dir(cgrp, 1 << ss->subsys_id);
-+	err = cgroup_populate_dir(cgrp, 1 << ss->id);
- 	if (err)
- 		goto err_free;
- 
-@@ -4280,7 +4280,7 @@ static void css_killed_ref_fn(struct percpu_ref *ref)
-  */
- static void kill_css(struct cgroup_subsys_state *css)
- {
--	cgroup_clear_dir(css->cgroup, 1 << css->ss->subsys_id);
-+	cgroup_clear_dir(css->cgroup, 1 << css->ss->id);
- 
- 	/*
- 	 * Killing would put the base ref, but we need to keep it alive
-@@ -4492,7 +4492,7 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
- 	 * pointer to this state - since the subsystem is
- 	 * newly registered, all tasks and hence the
- 	 * init_css_set is in the subsystem's top cgroup. */
--	init_css_set.subsys[ss->subsys_id] = css;
-+	init_css_set.subsys[ss->id] = css;
- 
- 	need_forkexit_callback |= ss->fork || ss->exit;
- 
-@@ -4532,14 +4532,14 @@ int __init cgroup_init_early(void)
- 	list_add(&init_cgrp_cset_link.cgrp_link, &init_css_set.cgrp_links);
- 
- 	for_each_subsys(ss, i) {
--		WARN(!ss->css_alloc || !ss->css_free || ss->name || ss->subsys_id,
-+		WARN(!ss->css_alloc || !ss->css_free || ss->name || ss->id,
- 		     "invalid cgroup_subsys %d:%s css_alloc=%p css_free=%p name:id=%d:%s\n",
- 		     i, cgroup_subsys_name[i], ss->css_alloc, ss->css_free,
--		     ss->subsys_id, ss->name);
-+		     ss->id, ss->name);
- 		WARN(strlen(cgroup_subsys_name[i]) > MAX_CGROUP_TYPE_NAMELEN,
- 		     "cgroup_subsys_name %s too long\n", cgroup_subsys_name[i]);
- 
--		ss->subsys_id = i;
-+		ss->id = i;
- 		ss->name = cgroup_subsys_name[i];
- 
- 		if (ss->early_init)
+-	if (opts.release_agent)
++	if (opts.release_agent) {
++		spin_lock(&release_agent_path_lock);
+ 		strcpy(root->release_agent_path, opts.release_agent);
++		spin_unlock(&release_agent_path_lock);
++	}
+  out_unlock:
+ 	kfree(opts.release_agent);
+ 	kfree(opts.name);
+@@ -2172,7 +2183,9 @@ static int cgroup_release_agent_write(struct cgroup_subsys_state *css,
+ 	if (!cgroup_lock_live_group(css->cgroup))
+ 		return -ENODEV;
+ 	mutex_lock(&cgroup_root_mutex);
++	spin_lock(&release_agent_path_lock);
+ 	strcpy(css->cgroup->root->release_agent_path, buffer);
++	spin_unlock(&release_agent_path_lock);
+ 	mutex_unlock(&cgroup_root_mutex);
+ 	mutex_unlock(&cgroup_mutex);
+ 	return 0;
 -- 
 1.8.4.2
