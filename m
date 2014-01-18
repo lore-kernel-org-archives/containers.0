@@ -1,16 +1,15 @@
-From: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>
-Subject: Re: [PATCH 3/6] cgroup: clean up cgroup_subsys names and
-	initialization
-Date: Fri, 17 Jan 2014 15:49:33 -0500
-Message-ID: <20140117204933.GF19452__33857.9127019786$1389991839$gmane$org@hmsreliant.think-freely.org>
+From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/6] cgroup: make CONFIG_NET_CLS_CGROUP and
+	CONFIG_NETPRIO_CGROUP bool instead of tristate
+Date: Sat, 18 Jan 2014 09:08:49 +0800
+Message-ID: <52D9D421.6040608@huawei.com>
 References: <1389982317-22225-1-git-send-email-tj@kernel.org>
-	<1389982317-22225-4-git-send-email-tj@kernel.org>
+	<1389982317-22225-2-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1389982317-22225-4-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1389982317-22225-2-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,67 +20,54 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Rafael J. Wysocki" <rjw-LthD3rsA81gm4RdzfppkhA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Cc: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Daniel Borkmann <dborkman-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Jan 17, 2014 at 01:11:54PM -0500, Tejun Heo wrote:
-> cgroup_subsys is a bit messier than it needs to be.
+Cc: Daniel Borkmann <dborkman-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+
+On 2014/1/18 2:11, Tejun Heo wrote:
+> net_cls and net_prio are the only cgroups which are allowed to be
+> built as modules.  The savings from allowing the two controllers to be
+> built as modules are tiny especially given that cgroup module support
+> itself adds quite a bit of complexity.
 > 
-> * The name of a subsys can be different from its internal identifier
->   defined in cgroup_subsys.h.  Most subsystems use the matching name
->   but three - cpu, memory and perf_event - use different ones.
+> The following are the sizes of vmlinux with both built as module and
+> both built as part of the kernel image with cgroup module support
+> removed.
 > 
-> * cgroup_subsys_id enums are postfixed with _subsys_id and each
->   cgroup_subsys is postfixed with _subsys.  cgroup.h is widely
->   included throughout various subsystems, it doesn't and shouldn't
->   have claim on such generic names which don't have any qualifier
->   indicating that they belong to cgroup.
+> 	text		data		bss		dec
+> 	20292207	2411496		10784768	33488471
+> 	20293421	2412568		10784768	33490757
 > 
-> * cgroup_subsys->subsys_id should always equal the matching
->   cgroup_subsys_id enum; however, we require each controller to
->   initialize it and then BUG if they don't match, which is a bit
->   silly.
+> The total difference is 2286 bytes.  Given that none of other
+> controllers has much chance of being made a module and that we're
+> unlikely to add new modular controllers, the added complexity is
+> simply not justifiable.
 > 
-> This patch cleans up cgroup_subsys names and initialization by doing
-> the followings.
+> As a first step to drop cgroup module support, this patch changes the
+> two config options to bool from tristate and drops module related code
+> from the two controllers.
 > 
-> * cgroup_subsys_id enums are now postfixed with _cgrp_id, and each
->   cgroup_subsys with _cgrp_subsys.
-> 
-> * With the above, renaming subsys identifiers to match the userland
->   visible names doesn't cause any naming conflicts.  All non-matching
->   identifiers are renamed to match the official names.
-> 
->   cpu_cgroup -> cpu
->   mem_cgroup -> memory
->   perf -> perf_event
-> 
-> * controllers no longer need to initialize ->subsys_id and ->name.
->   They're generated in cgroup core and set automatically during boot.
-> 
-> * Redundant cgroup_subsys declarations removed.
-> 
-> * While updating BUG_ON()s in cgroup_init_early(), convert them to
->   WARN()s.  BUGging that early during boot is stupid - the kernel
->   can't print anything, even through serial console and the trap
->   handler doesn't even link stack frame properly for back-tracing.
-> 
-> This patch doesn't introduce any behavior changes.
-> 
+
+I sugguested Daniel to do this for net_cls, and the change has been in
+net-next.
+
+https://git.kernel.org/cgit/linux/kernel/git/davem/net-next.git/commit/?id=fe1217c4f3f7d7cbf8efdd8dd5fdc7204a1d65a8
+
+I was planning to remove module support after that change goes into
+upstream. :)
+
 > Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Cc: Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Cc: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-> Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-> Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
-> Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-> Cc: Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-> Cc: Aristeu Rozanski <aris-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Cc: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Cc: "Rafael J. Wysocki" <rjw-LthD3rsA81gm4RdzfppkhA@public.gmane.org>
-> Cc: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 > Cc: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>
 > Cc: Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>
 > Cc: "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-For the netprio and net_cls bits
-Acked-by: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>
+> ---
+>  net/Kconfig               |  2 +-
+>  net/core/netprio_cgroup.c | 32 ++------------------------------
+>  net/sched/Kconfig         |  2 +-
+>  net/sched/cls_cgroup.c    | 23 ++---------------------
+>  4 files changed, 6 insertions(+), 53 deletions(-)
+> 
+
+The modular version of task_netprioidx() in include/net/netprio_cgroup.h
+can be removed.
