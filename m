@@ -1,8 +1,8 @@
-From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 Subject: Re: [PATCH 1/6] cgroup: make CONFIG_NET_CLS_CGROUP and
 	CONFIG_NETPRIO_CGROUP bool instead of tristate
-Date: Sat, 18 Jan 2014 09:08:49 +0800
-Message-ID: <52D9D421.6040608@huawei.com>
+Date: Fri, 17 Jan 2014 19:10:10 -0800 (PST)
+Message-ID: <20140117.191010.934120940597677468.davem__29185.9106546783$1390014626$gmane$org@davemloft.net>
 References: <1389982317-22225-1-git-send-email-tj@kernel.org>
 	<1389982317-22225-2-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
@@ -19,13 +19,13 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Daniel Borkmann <dborkman-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+To: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org
+Cc: nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, tgraf-G/eBtMaohhA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Cc: Daniel Borkmann <dborkman-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Date: Fri, 17 Jan 2014 13:11:52 -0500
 
-On 2014/1/18 2:11, Tejun Heo wrote:
 > net_cls and net_prio are the only cgroups which are allowed to be
 > built as modules.  The savings from allowing the two controllers to be
 > built as modules are tiny especially given that cgroup module support
@@ -48,26 +48,6 @@ On 2014/1/18 2:11, Tejun Heo wrote:
 > two config options to bool from tristate and drops module related code
 > from the two controllers.
 > 
-
-I sugguested Daniel to do this for net_cls, and the change has been in
-net-next.
-
-https://git.kernel.org/cgit/linux/kernel/git/davem/net-next.git/commit/?id=fe1217c4f3f7d7cbf8efdd8dd5fdc7204a1d65a8
-
-I was planning to remove module support after that change goes into
-upstream. :)
-
 > Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Cc: Neil Horman <nhorman-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>
-> Cc: Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>
-> Cc: "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-> ---
->  net/Kconfig               |  2 +-
->  net/core/netprio_cgroup.c | 32 ++------------------------------
->  net/sched/Kconfig         |  2 +-
->  net/sched/cls_cgroup.c    | 23 ++---------------------
->  4 files changed, 6 insertions(+), 53 deletions(-)
-> 
 
-The modular version of task_netprioidx() in include/net/netprio_cgroup.h
-can be removed.
+Acked-by: David S. Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
