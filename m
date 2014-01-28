@@ -1,7 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 06/13] cgroup: update cgroup name handling
-Date: Tue, 28 Jan 2014 18:54:38 -0500
-Message-ID: <1390953285-16360-7-git-send-email-tj@kernel.org>
+Subject: [PATCH 07/13] cgroup: make cgroup_subsys->base_cftypes use
+	cgroup_add_cftypes()
+Date: Tue, 28 Jan 2014 18:54:39 -0500
+Message-ID: <1390953285-16360-8-git-send-email-tj__11072.2968740903$1390953353$gmane$org@kernel.org>
 References: <1390953285-16360-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,108 +22,96 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Straightforward updates to cgroup name handling in preparation of
-kernfs conversion.
+Currently, cgroup_subsys->base_cftypes registration is different from
+dynamic cftypes registartion.  Instead of going through
+cgroup_add_cftypes(), cgroup_init_subsys() invokes
+cgroup_init_cftsets() which makes use of cgroup_subsys->base_cftset
+which doesn't involve dynamic allocation.
 
-* cgroup_alloc_name() is updated to take const char * isntead of
-  dentry * for name source.
+While avoiding dynamic allocation is somewhat nice, having two
+separate paths for cftypes registration is nasty, especially as we're
+planning to add more operations during cftypes registration.
 
-* cgroup name formatting is separated out into cgroup_file_name().
-  While at it, buffer length protection is added.
+This patch drops cgroup_init_cftsets() and cgroup_subsys->base_cftset
+and registers base_cftypes using cgroup_add_cftypes().  This is done
+as a separate step in cgroup_init() instead of a part of
+cgroup_init_subsys().  This is because cgroup_init_subsys() can be
+called very early during boot when kmalloc() isn't available yet.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 35 ++++++++++++++++++++++-------------
- 1 file changed, 22 insertions(+), 13 deletions(-)
+ include/linux/cgroup.h |  3 +--
+ kernel/cgroup.c        | 29 ++++++++---------------------
+ 2 files changed, 9 insertions(+), 23 deletions(-)
 
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 2255639..884d367 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -602,9 +602,8 @@ struct cgroup_subsys {
+ 	/* list of cftype_sets */
+ 	struct list_head cftsets;
+ 
+-	/* base cftypes, automatically [de]registered with subsys itself */
++	/* base cftypes, automatically registered with subsys itself */
+ 	struct cftype *base_cftypes;
+-	struct cftype_set base_cftset;
+ };
+ 
+ #define SUBSYS(_x) extern struct cgroup_subsys _x ## _cgrp_subsys;
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index bdbd9ad..e832f90 100644
+index e832f90..ab5344d 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -67,6 +67,9 @@
-  */
- #define CGROUP_PIDLIST_DESTROY_DELAY	HZ
- 
-+#define CGROUP_FILE_NAME_MAX		(MAX_CGROUP_TYPE_NAMELEN +	\
-+					 MAX_CFTYPE_NAME + 2)
-+
- /*
-  * cgroup_tree_mutex nests above cgroup_mutex and protects cftypes, file
-  * creation/removal and hierarchy changing operations including cgroup
-@@ -799,17 +802,29 @@ static struct inode *cgroup_new_inode(umode_t mode, struct super_block *sb)
- 	return inode;
+@@ -4494,25 +4494,6 @@ static int cgroup_rmdir(struct inode *unused_dir, struct dentry *dentry)
+ 	return ret;
  }
  
--static struct cgroup_name *cgroup_alloc_name(struct dentry *dentry)
-+static struct cgroup_name *cgroup_alloc_name(const char *name_str)
- {
- 	struct cgroup_name *name;
- 
--	name = kmalloc(sizeof(*name) + dentry->d_name.len + 1, GFP_KERNEL);
-+	name = kmalloc(sizeof(*name) + strlen(name_str) + 1, GFP_KERNEL);
- 	if (!name)
- 		return NULL;
--	strcpy(name->name, dentry->d_name.name);
-+	strcpy(name->name, name_str);
- 	return name;
- }
- 
-+static char *cgroup_file_name(struct cgroup *cgrp, const struct cftype *cft,
-+			      char *buf)
-+{
-+	if (cft->ss && !(cft->flags & CFTYPE_NO_PREFIX) &&
-+	    !(cgrp->root->flags & CGRP_ROOT_NOPREFIX))
-+		snprintf(buf, CGROUP_FILE_NAME_MAX, "%s.%s",
-+			 cft->ss->name, cft->name);
-+	else
-+		strncpy(buf, cft->name, CGROUP_FILE_NAME_MAX);
-+	return buf;
-+}
-+
- static void cgroup_free_fn(struct work_struct *work)
- {
- 	struct cgroup *cgrp = container_of(work, struct cgroup, destroy_work);
-@@ -2428,7 +2443,7 @@ static int cgroup_rename(struct inode *old_dir, struct dentry *old_dentry,
- 	if (cgroup_sane_behavior(cgrp))
- 		return -EPERM;
- 
--	name = cgroup_alloc_name(new_dentry);
-+	name = cgroup_alloc_name(new_dentry->d_name.name);
- 	if (!name)
- 		return -ENOMEM;
- 
-@@ -2604,14 +2619,7 @@ static int cgroup_add_file(struct cgroup *cgrp, struct cftype *cft)
- 	struct cfent *cfe;
- 	int error;
- 	umode_t mode;
--	char name[MAX_CGROUP_TYPE_NAMELEN + MAX_CFTYPE_NAME + 2] = { 0 };
+-static void __init cgroup_init_cftsets(struct cgroup_subsys *ss)
+-{
+-	INIT_LIST_HEAD(&ss->cftsets);
 -
--	if (cft->ss && !(cft->flags & CFTYPE_NO_PREFIX) &&
--	    !(cgrp->root->flags & CGRP_ROOT_NOPREFIX)) {
--		strcpy(name, cft->ss->name);
--		strcat(name, ".");
+-	/*
+-	 * base_cftset is embedded in subsys itself, no need to worry about
+-	 * deregistration.
+-	 */
+-	if (ss->base_cftypes) {
+-		struct cftype *cft;
+-
+-		for (cft = ss->base_cftypes; cft->name[0] != '\0'; cft++)
+-			cft->ss = ss;
+-
+-		ss->base_cftset.cfts = ss->base_cftypes;
+-		list_add_tail(&ss->base_cftset.node, &ss->cftsets);
 -	}
--	strcat(name, cft->name);
-+	char name[CGROUP_FILE_NAME_MAX];
+-}
+-
+ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
+ {
+ 	struct cgroup_subsys_state *css;
+@@ -4522,8 +4503,7 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
+ 	mutex_lock(&cgroup_tree_mutex);
+ 	mutex_lock(&cgroup_mutex);
  
- 	BUG_ON(!mutex_is_locked(&dir->d_inode->i_mutex));
+-	/* init base cftset */
+-	cgroup_init_cftsets(ss);
++	INIT_LIST_HEAD(&ss->cftsets);
  
-@@ -2619,6 +2627,7 @@ static int cgroup_add_file(struct cgroup *cgrp, struct cftype *cft)
- 	if (!cfe)
- 		return -ENOMEM;
+ 	/* Create the top cgroup state for this subsystem */
+ 	ss->root = &cgroup_dummy_root;
+@@ -4612,6 +4592,13 @@ int __init cgroup_init(void)
+ 	for_each_subsys(ss, i) {
+ 		if (!ss->early_init)
+ 			cgroup_init_subsys(ss);
++
++		/*
++		 * cftype registration needs kmalloc and can't be done
++		 * during early_init.  Register base cftypes separately.
++		 */
++		if (ss->base_cftypes)
++			WARN_ON(cgroup_add_cftypes(ss, ss->base_cftypes));
+ 	}
  
-+	cgroup_file_name(cgrp, cft, name);
- 	dentry = lookup_one_len(name, dir, strlen(name));
- 	if (IS_ERR(dentry)) {
- 		error = PTR_ERR(dentry);
-@@ -4126,7 +4135,7 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
- 	if (!cgrp)
- 		return -ENOMEM;
- 
--	name = cgroup_alloc_name(dentry);
-+	name = cgroup_alloc_name(dentry->d_name.name);
- 	if (!name) {
- 		err = -ENOMEM;
- 		goto err_free_cgrp;
+ 	/* allocate id for the dummy hierarchy */
 -- 
 1.8.5.3
