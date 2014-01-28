@@ -1,11 +1,14 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCHSET cgroup/for-3.15] cgroup: convert to kernfs
-Date: Tue, 28 Jan 2014 18:54:32 -0500
-Message-ID: <1390953285-16360-1-git-send-email-tj@kernel.org>
+Subject: [PATCH 01/13] cgroup: improve css_from_dir() into
+	css_tryget_from_dir()
+Date: Tue, 28 Jan 2014 18:54:33 -0500
+Message-ID: <1390953285-16360-2-git-send-email-tj@kernel.org>
+References: <1390953285-16360-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1390953285-16360-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,90 +19,182 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello,
+css_from_dir() returns the matching css (cgroup_subsys_state) given a
+dentry and subsystem.  The function doesn't pin the css before
+returning and requires the caller to be holding RCU read lock or
+cgroup_mutex and handling pinning on the caller side.
 
-cgroup filesystem code was derived from the original sysfs
-implementation which was heavily intertwined with vfs objects and
-locking with the goal of re-using the existing vfs infrastructure.
-That experiment turned out rather disastrous and sysfs switched, a
-long time ago, to distributed filesystem model where a separate
-representation is maintained which is queried by vfs.  Unfortunately,
-cgroup stuck with the failed experiment all these years and
-accumulated even more problems over time.
+Given that users of the function are likely to want to pin the
+returned css (both existing users do) and that getting and putting
+css's are very cheap, there's no reason for the interface to be tricky
+like this.
 
-Locking and object lifetime management being entangled with vfs is
-probably the most egregious.  vfs was never designed to be misused
-like this and cgroup ends up jumping through various convoluted
-dancing to make things work.  Even then, operations across multiple
-cgroups can't be done safely as it'll deadlock with rename locking.
+Rename css_from_dir() to css_tryget_from_dir() and make it try to pin
+the found css and return it only if pinning succeeded.  The callers
+are updated so that they no longer do RCU locking and pinning around
+the function and just use the returned css.
 
-Recently, kernfs is separated out from sysfs so that it can be used by
-users other than sysfs.  This patchset converts cgroup to use kernfs.
-This simplifies code base quite a bit and allows further cleanups and
-implementation of features which depend on operating across multiple
-nodes.
+This will also ease converting cgroup to kernfs.
 
-This patchset contains the following 13 patches.
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>
+Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
+Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Cc: Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+---
+ include/linux/cgroup.h |  4 ++--
+ kernel/cgroup.c        | 25 ++++++++++++++++---------
+ kernel/events/core.c   | 17 +----------------
+ mm/memcontrol.c        | 16 +++++++---------
+ 4 files changed, 26 insertions(+), 36 deletions(-)
 
- 0001-cgroup-improve-css_from_dir-into-css_tryget_from_dir.patch
- 0002-cgroup-introduce-cgroup_tree_mutex.patch
- 0003-cgroup-release-cgroup_mutex-over-file-removals.patch
- 0004-cgroup-restructure-locking-and-error-handling-in-cgr.patch
- 0005-cgroup-factor-out-cgroup_setup_root-from-cgroup_moun.patch
- 0006-cgroup-update-cgroup-name-handling.patch
- 0007-cgroup-make-cgroup_subsys-base_cftypes-use-cgroup_ad.patch
- 0008-cgroup-update-the-meaning-of-cftype-max_write_len.patch
- 0009-cgroup-introduce-cgroup_init-exit_cftypes.patch
- 0010-cgroup-introduce-cgroup_ino.patch
- 0011-cgroup-misc-preps-for-kernfs-conversion.patch
- 0012-cgroup-relocate-functions-in-preparation-of-kernfs-c.patch
- 0013-cgroup-convert-to-kernfs.patch
-
-0001 updates css_from_dir() into css_tryget_from_dir() so that the
-caller doesn't have to worry about RCU locking.
-
-0002-0004 introduce cgroup_tree_mutex and prepare locking.
-
-0005-0006 are misc preps.
-
-0007-0008 update cftype handling in preparation.
-
-0009-0012 are misc preps.
-
-0013 converts cgroup to kernfs.
-
-This patchset is on top of
-
-  linus#master 54c0a4b46150 ("Merge branch 'akpm' (incoming from Andrew)")
-+ [1] [PATCHSET cgroup/for-3.14-fixes] cgroup: four misc fixes
-+ [2] [PATCH] arm, pm, vmpressure: add missing slab.h includes
-+ [3] [PATCHSET v2 cgroup/for-3.15] cgroup: drop module support and cgroup_root_mutex
-+ git://git.kernel.org/pub/scm/linux/kernel/git/tj/misc.git review-kernfs-cgroup-prep
-
-and also available in the following git branch.
-
- git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-kernfs-conversion
-
-diffstat follows.
-
- block/blk-throttle.c   |    4
- block/cfq-iosched.c    |    3
- include/linux/cgroup.h |   71 --
- kernel/cgroup.c        | 1712 ++++++++++++++++++++-----------------------------
- kernel/events/core.c   |   17
- mm/memcontrol.c        |   16
- mm/memory-failure.c    |    8
- 7 files changed, 754 insertions(+), 1077 deletions(-)
-
-Thanks.
-
---
-tejun
-
-[L] http://lkml.kernel.org/g/<1389982317-22225-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-[1] http://lkml.kernel.org/g/<1390923125-4369-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-[2] http://lkml.kernel.org/g/<20140128221922.GC16060-9pTldWuhBndy/B6EtB590w@public.gmane.org>
-[3] http://lkml.kernel.org/g/<1390952641-15950-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 198c7fc..2255639 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -823,8 +823,8 @@ int css_scan_tasks(struct cgroup_subsys_state *css,
+ int cgroup_attach_task_all(struct task_struct *from, struct task_struct *);
+ int cgroup_transfer_tasks(struct cgroup *to, struct cgroup *from);
+ 
+-struct cgroup_subsys_state *css_from_dir(struct dentry *dentry,
+-					 struct cgroup_subsys *ss);
++struct cgroup_subsys_state *css_tryget_from_dir(struct dentry *dentry,
++						struct cgroup_subsys *ss);
+ 
+ #else /* !CONFIG_CGROUPS */
+ 
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 3d92fd0..823e250 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -4964,28 +4964,35 @@ static int __init cgroup_disable(char *str)
+ __setup("cgroup_disable=", cgroup_disable);
+ 
+ /**
+- * css_from_dir - get corresponding css from the dentry of a cgroup dir
++ * css_tryget_from_dir - get corresponding css from the dentry of a cgroup dir
+  * @dentry: directory dentry of interest
+  * @ss: subsystem of interest
+  *
+- * Must be called under cgroup_mutex or RCU read lock.  The caller is
+- * responsible for pinning the returned css if it needs to be accessed
+- * outside the critical section.
++ * If @dentry is a directory for a cgroup which has @ss enabled on it, try
++ * to get the corresponding css and return it.  If such css doesn't exist
++ * or can't be pinned, an ERR_PTR value is returned.
+  */
+-struct cgroup_subsys_state *css_from_dir(struct dentry *dentry,
+-					 struct cgroup_subsys *ss)
++struct cgroup_subsys_state *css_tryget_from_dir(struct dentry *dentry,
++						struct cgroup_subsys *ss)
+ {
+ 	struct cgroup *cgrp;
+-
+-	cgroup_assert_mutex_or_rcu_locked();
++	struct cgroup_subsys_state *css;
+ 
+ 	/* is @dentry a cgroup dir? */
+ 	if (!dentry->d_inode ||
+ 	    dentry->d_inode->i_op != &cgroup_dir_inode_operations)
+ 		return ERR_PTR(-EBADF);
+ 
++	rcu_read_lock();
++
+ 	cgrp = __d_cgrp(dentry);
+-	return cgroup_css(cgrp, ss) ?: ERR_PTR(-ENOENT);
++	css = cgroup_css(cgrp, ss);
++
++	if (!css || !css_tryget(css))
++		css = ERR_PTR(-ENOENT);
++
++	rcu_read_unlock();
++	return css;
+ }
+ 
+ /**
+diff --git a/kernel/events/core.c b/kernel/events/core.c
+index 6490373..a3c3ab5 100644
+--- a/kernel/events/core.c
++++ b/kernel/events/core.c
+@@ -370,11 +370,6 @@ perf_cgroup_match(struct perf_event *event)
+ 				    event->cgrp->css.cgroup);
+ }
+ 
+-static inline bool perf_tryget_cgroup(struct perf_event *event)
+-{
+-	return css_tryget(&event->cgrp->css);
+-}
+-
+ static inline void perf_put_cgroup(struct perf_event *event)
+ {
+ 	css_put(&event->cgrp->css);
+@@ -593,9 +588,7 @@ static inline int perf_cgroup_connect(int fd, struct perf_event *event,
+ 	if (!f.file)
+ 		return -EBADF;
+ 
+-	rcu_read_lock();
+-
+-	css = css_from_dir(f.file->f_dentry, &perf_event_cgrp_subsys);
++	css = css_tryget_from_dir(f.file->f_dentry, &perf_event_cgrp_subsys);
+ 	if (IS_ERR(css)) {
+ 		ret = PTR_ERR(css);
+ 		goto out;
+@@ -604,13 +597,6 @@ static inline int perf_cgroup_connect(int fd, struct perf_event *event,
+ 	cgrp = container_of(css, struct perf_cgroup, css);
+ 	event->cgrp = cgrp;
+ 
+-	/* must be done before we fput() the file */
+-	if (!perf_tryget_cgroup(event)) {
+-		event->cgrp = NULL;
+-		ret = -ENOENT;
+-		goto out;
+-	}
+-
+ 	/*
+ 	 * all events in a group must monitor
+ 	 * the same cgroup because a task belongs
+@@ -621,7 +607,6 @@ static inline int perf_cgroup_connect(int fd, struct perf_event *event,
+ 		ret = -EINVAL;
+ 	}
+ out:
+-	rcu_read_unlock();
+ 	fdput(f);
+ 	return ret;
+ }
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index d4a8c40..ab4e412 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -6184,17 +6184,15 @@ static int memcg_write_event_control(struct cgroup_subsys_state *css,
+ 	 * automatically removed on cgroup destruction but the removal is
+ 	 * asynchronous, so take an extra ref on @css.
+ 	 */
+-	rcu_read_lock();
+-
++	cfile_css = css_tryget_from_dir(cfile.file->f_dentry->d_parent,
++					&memory_cgrp_subsys);
+ 	ret = -EINVAL;
+-	cfile_css = css_from_dir(cfile.file->f_dentry->d_parent,
+-				 &memory_cgrp_subsys);
+-	if (cfile_css == css && css_tryget(css))
+-		ret = 0;
+-
+-	rcu_read_unlock();
+-	if (ret)
++	if (IS_ERR(cfile_css))
+ 		goto out_put_cfile;
++	if (cfile_css != css) {
++		css_put(cfile_css);
++		goto out_put_cfile;
++	}
+ 
+ 	ret = event->register_event(memcg, event->eventfd, buffer);
+ 	if (ret)
+-- 
+1.8.5.3
