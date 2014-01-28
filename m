@@ -1,7 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 11/13] cgroup: misc preps for kernfs conversion
-Date: Tue, 28 Jan 2014 18:54:43 -0500
-Message-ID: <1390953285-16360-12-git-send-email-tj__41438.202330801$1390953381$gmane$org@kernel.org>
+Subject: [PATCH 12/13] cgroup: relocate functions in preparation of kernfs
+	conversion
+Date: Tue, 28 Jan 2014 18:54:44 -0500
+Message-ID: <1390953285-16360-13-git-send-email-tj__1854.0370780558$1390953388$gmane$org@kernel.org>
 References: <1390953285-16360-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,263 +22,308 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-* Un-inline seq_css().  After kernfs conversion, the function will
-  need to dereference internal data structures.
+Relocate cgroup_init/exit_root_id(), cgroup_free_root(),
+cgroup_kill_sb() and cgroup_file_name() in preparation of kernfs
+conversion.
 
-* Add cgroup_get/put_root() and replace direct super_block->s_active
-  manipulatinos with them.  These will be converted to kernfs_root
-  refcnting.
-
-* Add cgroup_get/put() and replace dget/put() on cgrp->dentry with
-  them.  These will be converted to kernfs refcnting.
-
-* Update current_css_set_cg_links_read() to use cgroup_name() instead
-  of reaching into the dentry name.  The end result is the same.
-
-These changes don't make functional differences but will make
-transition to kernfs easier.
+These are pure relocations to make kernfs conversion easier to follow.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- include/linux/cgroup.h |  8 ++---
- kernel/cgroup.c        | 85 +++++++++++++++++++++++++++++++-------------------
- 2 files changed, 55 insertions(+), 38 deletions(-)
+ kernel/cgroup.c | 232 ++++++++++++++++++++++++++++----------------------------
+ 1 file changed, 117 insertions(+), 115 deletions(-)
 
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 15b7839..4740cba 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -514,18 +514,14 @@ static inline ino_t cgroup_ino(struct cgroup *cgrp)
- 		return 0;
- }
- 
--static inline struct cgroup_subsys_state *seq_css(struct seq_file *seq)
--{
--	struct cgroup_open_file *of = seq->private;
--	return of->cfe->css;
--}
--
- static inline struct cftype *seq_cft(struct seq_file *seq)
- {
- 	struct cgroup_open_file *of = seq->private;
- 	return of->cfe->type;
- }
- 
-+struct cgroup_subsys_state *seq_css(struct seq_file *seq);
-+
- int cgroup_add_cftypes(struct cgroup_subsys *ss, struct cftype *cfts);
- int cgroup_rm_cftypes(struct cftype *cfts);
- 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index a8a1adc..0c5d1d1 100644
+index 0c5d1d1..228ed88 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -169,6 +169,7 @@ static int need_forkexit_callback __read_mostly;
- 
+@@ -170,6 +170,8 @@ static int need_forkexit_callback __read_mostly;
  static struct cftype cgroup_base_files[];
  
-+static void cgroup_put(struct cgroup *cgrp);
+ static void cgroup_put(struct cgroup *cgrp);
++static int rebind_subsystems(struct cgroupfs_root *root,
++			     unsigned long added_mask, unsigned removed_mask);
  static void cgroup_destroy_css_killed(struct cgroup *cgrp);
  static int cgroup_destroy_locked(struct cgroup *cgrp);
  static int cgroup_addrm_files(struct cgroup *cgrp, struct cftype cfts[],
-@@ -204,6 +205,13 @@ static inline bool cgroup_is_dead(const struct cgroup *cgrp)
- 	return test_bit(CGRP_DEAD, &cgrp->flags);
- }
- 
-+struct cgroup_subsys_state *seq_css(struct seq_file *seq)
-+{
-+	struct cgroup_open_file *of = seq->private;
-+	return of->cfe->css;
-+}
-+EXPORT_SYMBOL_GPL(seq_css);
-+
- /**
-  * cgroup_is_descendant - test ancestry
-  * @cgrp: the cgroup to be tested
-@@ -682,6 +690,16 @@ static struct css_set *find_css_set(struct css_set *old_cset,
+@@ -690,6 +692,42 @@ static struct css_set *find_css_set(struct css_set *old_cset,
  	return cset;
  }
  
-+static void cgroup_get_root(struct cgroupfs_root *root)
++static int cgroup_init_root_id(struct cgroupfs_root *root, int start, int end)
 +{
-+	atomic_inc(&root->sb->s_active);
++	int id;
++
++	lockdep_assert_held(&cgroup_mutex);
++
++	id = idr_alloc_cyclic(&cgroup_hierarchy_idr, root, start, end,
++			      GFP_KERNEL);
++	if (id < 0)
++		return id;
++
++	root->hierarchy_id = id;
++	return 0;
 +}
 +
-+static void cgroup_put_root(struct cgroupfs_root *root)
++static void cgroup_exit_root_id(struct cgroupfs_root *root)
 +{
-+	deactivate_super(root->sb);
++	lockdep_assert_held(&cgroup_mutex);
++
++	if (root->hierarchy_id) {
++		idr_remove(&cgroup_hierarchy_idr, root->hierarchy_id);
++		root->hierarchy_id = 0;
++	}
++}
++
++static void cgroup_free_root(struct cgroupfs_root *root)
++{
++	if (root) {
++		/* hierarhcy ID shoulid already have been released */
++		WARN_ON_ONCE(root->hierarchy_id);
++
++		idr_destroy(&root->cgroup_idr);
++		kfree(root);
++	}
++}
++
+ static void cgroup_get_root(struct cgroupfs_root *root)
+ {
+ 	atomic_inc(&root->sb->s_active);
+@@ -700,6 +738,59 @@ static void cgroup_put_root(struct cgroupfs_root *root)
+ 	deactivate_super(root->sb);
+ }
+ 
++static void cgroup_kill_sb(struct super_block *sb)
++{
++	struct cgroupfs_root *root = sb->s_fs_info;
++	struct cgroup *cgrp = &root->top_cgroup;
++	struct cgrp_cset_link *link, *tmp_link;
++	int ret;
++
++	BUG_ON(!root);
++
++	BUG_ON(root->number_of_cgroups != 1);
++	BUG_ON(!list_empty(&cgrp->children));
++
++	mutex_lock(&cgrp->dentry->d_inode->i_mutex);
++	mutex_lock(&cgroup_tree_mutex);
++	mutex_lock(&cgroup_mutex);
++
++	/* Rebind all subsystems back to the default hierarchy */
++	if (root->flags & CGRP_ROOT_SUBSYS_BOUND) {
++		ret = rebind_subsystems(root, 0, root->subsys_mask);
++		/* Shouldn't be able to fail ... */
++		BUG_ON(ret);
++	}
++
++	/*
++	 * Release all the links from cset_links to this hierarchy's
++	 * root cgroup
++	 */
++	write_lock(&css_set_lock);
++
++	list_for_each_entry_safe(link, tmp_link, &cgrp->cset_links, cset_link) {
++		list_del(&link->cset_link);
++		list_del(&link->cgrp_link);
++		kfree(link);
++	}
++	write_unlock(&css_set_lock);
++
++	if (!list_empty(&root->root_list)) {
++		list_del(&root->root_list);
++		cgroup_root_count--;
++	}
++
++	cgroup_exit_root_id(root);
++
++	mutex_unlock(&cgroup_mutex);
++	mutex_unlock(&cgroup_tree_mutex);
++	mutex_unlock(&cgrp->dentry->d_inode->i_mutex);
++
++	simple_xattrs_free(&cgrp->xattrs);
++
++	kill_litter_super(sb);
++	cgroup_free_root(root);
 +}
 +
  /*
   * Return the cgroup for "task" from the given hierarchy. Must be
   * called with cgroup_mutex held.
-@@ -837,18 +855,14 @@ static void cgroup_free_fn(struct work_struct *work)
- 	mutex_unlock(&cgroup_mutex);
- 
- 	/*
--	 * We get a ref to the parent's dentry, and put the ref when
--	 * this cgroup is being freed, so it's guaranteed that the
--	 * parent won't be destroyed before its children.
-+	 * We get a ref to the parent, and put the ref when this cgroup is
-+	 * being freed, so it's guaranteed that the parent won't be
-+	 * destroyed before its children.
- 	 */
--	dput(cgrp->parent->dentry);
-+	cgroup_put(cgrp->parent);
- 
--	/*
--	 * Drop the active superblock reference that we took when we
--	 * created the cgroup. This will free cgrp->root, if we are
--	 * holding the last reference to @sb.
--	 */
--	deactivate_super(cgrp->root->sb);
-+	/* put the root reference that we took when we created the cgroup */
-+	cgroup_put_root(cgrp->root);
- 
- 	cgroup_pidlist_destroy_all(cgrp);
- 
-@@ -866,6 +880,11 @@ static void cgroup_free_rcu(struct rcu_head *head)
- 	queue_work(cgroup_destroy_wq, &cgrp->destroy_work);
+@@ -846,6 +937,32 @@ static char *cgroup_file_name(struct cgroup *cgrp, const struct cftype *cft,
+ 	return buf;
  }
  
-+static void cgroup_get(struct cgroup *cgrp)
++/**
++ * cgroup_file_mode - deduce file mode of a control file
++ * @cft: the control file in question
++ *
++ * returns cft->mode if ->mode is not 0
++ * returns S_IRUGO|S_IWUSR if it has both a read and a write handler
++ * returns S_IRUGO if it has only a read handler
++ * returns S_IWUSR if it has only a write hander
++ */
++static umode_t cgroup_file_mode(const struct cftype *cft)
 +{
-+	dget(cgrp->dentry);
++	umode_t mode = 0;
++
++	if (cft->mode)
++		return cft->mode;
++
++	if (cft->read_u64 || cft->read_s64 || cft->seq_show)
++		mode |= S_IRUGO;
++
++	if (cft->write_u64 || cft->write_s64 || cft->write_string ||
++	    cft->trigger)
++		mode |= S_IWUSR;
++
++	return mode;
 +}
 +
- static void cgroup_diput(struct dentry *dentry, struct inode *inode)
+ static void cgroup_free_fn(struct work_struct *work)
  {
- 	/* is dentry a directory ? if so, kfree() associated cgroup */
-@@ -897,6 +916,11 @@ static void cgroup_diput(struct dentry *dentry, struct inode *inode)
- 	iput(inode);
+ 	struct cgroup *cgrp = container_of(work, struct cgroup, destroy_work);
+@@ -1356,31 +1473,6 @@ static void init_cgroup_root(struct cgroupfs_root *root)
+ 	idr_init(&root->cgroup_idr);
  }
  
-+static void cgroup_put(struct cgroup *cgrp)
-+{
-+	dput(cgrp->dentry);
-+}
-+
- static void remove_dir(struct dentry *d)
- {
- 	struct dentry *parent = dget(d->d_parent);
-@@ -2715,7 +2739,7 @@ static int cgroup_cfts_commit(struct cftype *cfts, bool is_add)
- 	struct cgroup_subsys *ss = cfts[0].ss;
- 	struct cgroup *root = &ss->root->top_cgroup;
- 	struct super_block *sb = ss->root->sb;
--	struct dentry *prev = NULL;
-+	struct cgroup *prev = NULL;
- 	struct inode *inode;
- 	struct cgroup_subsys_state *css;
- 	u64 update_before;
-@@ -2745,9 +2769,10 @@ static int cgroup_cfts_commit(struct cftype *cfts, bool is_add)
- 			continue;
- 
- 		inode = cgrp->dentry->d_inode;
--		dget(cgrp->dentry);
--		dput(prev);
--		prev = cgrp->dentry;
-+		cgroup_get(cgrp);
-+		if (prev)
-+			cgroup_put(prev);
-+		prev = cgrp;
- 
- 		mutex_unlock(&cgroup_tree_mutex);
- 		mutex_lock(&inode->i_mutex);
-@@ -2759,8 +2784,8 @@ static int cgroup_cfts_commit(struct cftype *cfts, bool is_add)
- 			break;
- 	}
- 	mutex_unlock(&cgroup_tree_mutex);
--	dput(prev);
--	deactivate_super(sb);
-+	cgroup_put(prev);
-+	cgroup_put_root(ss->root);
- 	return ret;
- }
- 
-@@ -3854,11 +3879,9 @@ static int cgroup_write_notify_on_release(struct cgroup_subsys_state *css,
-  */
- static void cgroup_dput(struct cgroup *cgrp)
- {
--	struct super_block *sb = cgrp->root->sb;
+-static int cgroup_init_root_id(struct cgroupfs_root *root, int start, int end)
+-{
+-	int id;
 -
--	atomic_inc(&sb->s_active);
--	dput(cgrp->dentry);
--	deactivate_super(sb);
-+	cgroup_get_root(cgrp->root);
-+	cgroup_put(cgrp);
-+	cgroup_put_root(cgrp->root);
+-	lockdep_assert_held(&cgroup_mutex);
+-
+-	id = idr_alloc_cyclic(&cgroup_hierarchy_idr, root, start, end,
+-			      GFP_KERNEL);
+-	if (id < 0)
+-		return id;
+-
+-	root->hierarchy_id = id;
+-	return 0;
+-}
+-
+-static void cgroup_exit_root_id(struct cgroupfs_root *root)
+-{
+-	lockdep_assert_held(&cgroup_mutex);
+-
+-	if (root->hierarchy_id) {
+-		idr_remove(&cgroup_hierarchy_idr, root->hierarchy_id);
+-		root->hierarchy_id = 0;
+-	}
+-}
+-
+ static int cgroup_test_super(struct super_block *sb, void *data)
+ {
+ 	struct cgroup_sb_opts *opts = data;
+@@ -1430,17 +1522,6 @@ static struct cgroupfs_root *cgroup_root_from_opts(struct cgroup_sb_opts *opts)
+ 	return root;
  }
  
- static u64 cgroup_clone_children_read(struct cgroup_subsys_state *css,
-@@ -4109,7 +4132,7 @@ static int create_css(struct cgroup *cgrp, struct cgroup_subsys *ss)
- 	if (err)
- 		goto err_free;
- 
--	dget(cgrp->dentry);
-+	cgroup_get(cgrp);
- 	css_get(css->parent);
- 
- 	if (ss->broken_hierarchy && !ss->warned_broken_hierarchy &&
-@@ -4188,7 +4211,7 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
- 	 * can be done outside cgroup_mutex, since the sb can't
- 	 * disappear while someone has an open control file on the
- 	 * fs */
--	atomic_inc(&sb->s_active);
-+	cgroup_get_root(root);
- 
- 	init_cgroup_housekeeping(cgrp);
- 
-@@ -4222,7 +4245,7 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
- 	root->number_of_cgroups++;
- 
- 	/* hold a ref to the parent's dentry */
--	dget(parent->dentry);
-+	cgroup_get(parent);
- 
- 	/*
- 	 * @cgrp is now fully operational.  If something fails after this
-@@ -4252,7 +4275,7 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
- err_unlock:
- 	mutex_unlock(&cgroup_mutex);
- 	/* Release the reference count that we took on the superblock */
--	deactivate_super(sb);
-+	cgroup_put_root(root);
- err_unlock_tree:
- 	mutex_unlock(&cgroup_tree_mutex);
- 	idr_remove(&root->cgroup_idr, cgrp->id);
-@@ -4484,7 +4507,6 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
- static void cgroup_destroy_css_killed(struct cgroup *cgrp)
+-static void cgroup_free_root(struct cgroupfs_root *root)
+-{
+-	if (root) {
+-		/* hierarhcy ID shoulid already have been released */
+-		WARN_ON_ONCE(root->hierarchy_id);
+-
+-		idr_destroy(&root->cgroup_idr);
+-		kfree(root);
+-	}
+-}
+-
+ static int cgroup_set_super(struct super_block *sb, void *data)
  {
- 	struct cgroup *parent = cgrp->parent;
--	struct dentry *d = cgrp->dentry;
+ 	int ret;
+@@ -1682,59 +1763,6 @@ out_unlock:
+ 		return ERR_PTR(ret);
+ }
  
- 	lockdep_assert_held(&cgroup_tree_mutex);
- 	lockdep_assert_held(&cgroup_mutex);
-@@ -4492,7 +4514,7 @@ static void cgroup_destroy_css_killed(struct cgroup *cgrp)
- 	/* delete this cgroup from parent->children */
- 	list_del_rcu(&cgrp->sibling);
+-static void cgroup_kill_sb(struct super_block *sb)
+-{
+-	struct cgroupfs_root *root = sb->s_fs_info;
+-	struct cgroup *cgrp = &root->top_cgroup;
+-	struct cgrp_cset_link *link, *tmp_link;
+-	int ret;
+-
+-	BUG_ON(!root);
+-
+-	BUG_ON(root->number_of_cgroups != 1);
+-	BUG_ON(!list_empty(&cgrp->children));
+-
+-	mutex_lock(&cgrp->dentry->d_inode->i_mutex);
+-	mutex_lock(&cgroup_tree_mutex);
+-	mutex_lock(&cgroup_mutex);
+-
+-	/* Rebind all subsystems back to the default hierarchy */
+-	if (root->flags & CGRP_ROOT_SUBSYS_BOUND) {
+-		ret = rebind_subsystems(root, 0, root->subsys_mask);
+-		/* Shouldn't be able to fail ... */
+-		BUG_ON(ret);
+-	}
+-
+-	/*
+-	 * Release all the links from cset_links to this hierarchy's
+-	 * root cgroup
+-	 */
+-	write_lock(&css_set_lock);
+-
+-	list_for_each_entry_safe(link, tmp_link, &cgrp->cset_links, cset_link) {
+-		list_del(&link->cset_link);
+-		list_del(&link->cgrp_link);
+-		kfree(link);
+-	}
+-	write_unlock(&css_set_lock);
+-
+-	if (!list_empty(&root->root_list)) {
+-		list_del(&root->root_list);
+-		cgroup_root_count--;
+-	}
+-
+-	cgroup_exit_root_id(root);
+-
+-	mutex_unlock(&cgroup_mutex);
+-	mutex_unlock(&cgroup_tree_mutex);
+-	mutex_unlock(&cgrp->dentry->d_inode->i_mutex);
+-
+-	simple_xattrs_free(&cgrp->xattrs);
+-
+-	kill_litter_super(sb);
+-	cgroup_free_root(root);
+-}
+-
+ static struct file_system_type cgroup_fs_type = {
+ 	.name = "cgroup",
+ 	.mount = cgroup_mount,
+@@ -2610,32 +2638,6 @@ static int cgroup_create_file(struct dentry *dentry, umode_t mode,
+ 	return 0;
+ }
  
--	dput(d);
-+	cgroup_put(cgrp);
- 
- 	set_bit(CGRP_RELEASABLE, &parent->flags);
- 	check_for_release(parent);
-@@ -5147,12 +5169,11 @@ static int current_css_set_cg_links_read(struct seq_file *seq, void *v)
- 	cset = rcu_dereference(current->cgroups);
- 	list_for_each_entry(link, &cset->cgrp_links, cgrp_link) {
- 		struct cgroup *c = link->cgrp;
--		const char *name;
-+		const char *name = "?";
-+
-+		if (c != cgroup_dummy_top)
-+			name = cgroup_name(c);
- 
--		if (c->dentry)
--			name = c->dentry->d_name.name;
--		else
--			name = "?";
- 		seq_printf(seq, "Root %d group %s\n",
- 			   c->root->hierarchy_id, name);
- 	}
+-/**
+- * cgroup_file_mode - deduce file mode of a control file
+- * @cft: the control file in question
+- *
+- * returns cft->mode if ->mode is not 0
+- * returns S_IRUGO|S_IWUSR if it has both a read and a write handler
+- * returns S_IRUGO if it has only a read handler
+- * returns S_IWUSR if it has only a write hander
+- */
+-static umode_t cgroup_file_mode(const struct cftype *cft)
+-{
+-	umode_t mode = 0;
+-
+-	if (cft->mode)
+-		return cft->mode;
+-
+-	if (cft->read_u64 || cft->read_s64 || cft->seq_show)
+-		mode |= S_IRUGO;
+-
+-	if (cft->write_u64 || cft->write_s64 || cft->write_string ||
+-	    cft->trigger)
+-		mode |= S_IWUSR;
+-
+-	return mode;
+-}
+-
+ static int cgroup_add_file(struct cgroup *cgrp, struct cftype *cft)
+ {
+ 	struct dentry *dir = cgrp->dentry;
 -- 
 1.8.5.3
