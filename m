@@ -1,7 +1,7 @@
-From: gagandeep singh <gaganthaparian-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org>
-Subject: network namespaces
-Date: Tue, 28 Jan 2014 10:26:30 +0530
-Message-ID: <COL128-W8738C1ACD5845F5152ED5D9AD0@phx.gbl>
+From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: [Announce] Checkpoint-restore tool v1.1
+Date: Tue, 28 Jan 2014 13:19:19 +0400
+Message-ID: <52E77617.8010900@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,46 +15,26 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: CRIU <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-hi,
+Hi guys!
 
- 
+The stabilization period for 1.1 is over so we tagged the release.
 
-i am working on network name spaces from last 1 month . i have make a namespace configure all . and make a bridge simply using linux bridge "brctl" .everything is working fine but there is problem regarding domain name server in network namespace when i ping in network name space as 
+The greatest new feature for 1.1 as compared to 1.0 is the API for
+plugins. Now it's possible to help CRIU dump and restore stuff that
+cannot be handled in a generic way, like device files or connections
+to host system from a container.
 
-ip netns exec myvpn ping 8.8.8.8
+More details on the plugins are described on http://criu.org/Plugins
 
-it works fine
+Other that this we have images deduplication, systemd integration 
+and a LOT of bugfixes.
 
-but when i ping as
+The detailed changelog is here: http://criu.org/Releases#v._1.1
+The sources here: http://download.openvz.org/criu/criu-1.1.tar.bz2
+Docs, news and more at http://criu.org
 
-ip netns exec myvpn ping www.google.com
-
-just error as ping:unknown host
-
-after i see i should use file resolv.conf in /etc/netns/myvpn/
-
-so i copy reolve .conf file from /etc/resolv.conf and resolvconf directory to /etc/netns/myvpn/
-
-now when i ping in netnamespace
-
-"i get error
-
-bind:etc/netns/myvpn/resolve --> /etc/resolve.conf failed no such directory
-
-time out"
-
-please help me how to resolve it thanks 
-
- 
-
-Gagan
-
- 
-
- 
-
- 
- 		 	   		  
+Thanks,
+Pavel
