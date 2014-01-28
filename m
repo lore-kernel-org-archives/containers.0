@@ -1,7 +1,7 @@
-From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [Announce] Checkpoint-restore tool v1.1
-Date: Tue, 28 Jan 2014 13:19:19 +0400
-Message-ID: <52E77617.8010900@parallels.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCHSET cgroup/for-3.14-fixes] cgroup: four misc fixes
+Date: Tue, 28 Jan 2014 10:32:01 -0500
+Message-ID: <1390923125-4369-1-git-send-email-tj__37015.6146506362$1390923142$gmane$org@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,26 +15,30 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: CRIU <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi guys!
+Hello,
 
-The stabilization period for 1.1 is over so we tagged the release.
+This patchset contains the following four fixes found during
+conversion to kernfs.  0001-0003 are marked with -stable.
 
-The greatest new feature for 1.1 as compared to 1.0 is the API for
-plugins. Now it's possible to help CRIU dump and restore stuff that
-cannot be handled in a generic way, like device files or connections
-to host system from a container.
+ 0001-cgroup-fix-error-return-value-in-cgroup_mount.patch
+ 0002-cgroup-fix-error-return-from-cgroup_create.patch
+ 0003-cgroup-fix-locking-in-cgroup_cfts_commit.patch
+ 0004-cgroup-move-the-one-off-opts-sanity-check-in-cgroup_.patch
 
-More details on the plugins are described on http://criu.org/Plugins
+The patches are also available in the following git branch.
 
-Other that this we have images deduplication, systemd integration 
-and a LOT of bugfixes.
+ git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-3.14-fixes
 
-The detailed changelog is here: http://criu.org/Releases#v._1.1
-The sources here: http://download.openvz.org/criu/criu-1.1.tar.bz2
-Docs, news and more at http://criu.org
+diffstat follows.
 
-Thanks,
-Pavel
+ kernel/cgroup.c |   46 ++++++++++++++++++----------------------------
+ 1 file changed, 18 insertions(+), 28 deletions(-)
+
+Thanks.
+
+--
+tejun
