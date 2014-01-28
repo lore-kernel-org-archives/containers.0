@@ -1,11 +1,13 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCHSET cgroup/for-3.14-fixes] cgroup: four misc fixes
-Date: Tue, 28 Jan 2014 10:32:01 -0500
-Message-ID: <1390923125-4369-1-git-send-email-tj__37015.6146506362$1390923142$gmane$org@kernel.org>
+Subject: [PATCH 1/4] cgroup: fix error return value in cgroup_mount()
+Date: Tue, 28 Jan 2014 10:32:02 -0500
+Message-ID: <1390923125-4369-2-git-send-email-tj@kernel.org>
+References: <1390923125-4369-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1390923125-4369-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,29 +18,36 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello,
+When cgroup_mount() fails to allocate an id for the root, it didn't
+set ret before jumping to unlock_drop ending up returning 0 after a
+failure.  Fix it.
 
-This patchset contains the following four fixes found during
-conversion to kernfs.  0001-0003 are marked with -stable.
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+---
+ kernel/cgroup.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
- 0001-cgroup-fix-error-return-value-in-cgroup_mount.patch
- 0002-cgroup-fix-error-return-from-cgroup_create.patch
- 0003-cgroup-fix-locking-in-cgroup_cfts_commit.patch
- 0004-cgroup-move-the-one-off-opts-sanity-check-in-cgroup_.patch
-
-The patches are also available in the following git branch.
-
- git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-3.14-fixes
-
-diffstat follows.
-
- kernel/cgroup.c |   46 ++++++++++++++++++----------------------------
- 1 file changed, 18 insertions(+), 28 deletions(-)
-
-Thanks.
-
---
-tejun
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index e2f46ba..364aeb22 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1566,10 +1566,10 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
+ 		mutex_lock(&cgroup_mutex);
+ 		mutex_lock(&cgroup_root_mutex);
+ 
+-		root_cgrp->id = idr_alloc(&root->cgroup_idr, root_cgrp,
+-					   0, 1, GFP_KERNEL);
+-		if (root_cgrp->id < 0)
++		ret = idr_alloc(&root->cgroup_idr, root_cgrp, 0, 1, GFP_KERNEL);
++		if (ret < 0)
+ 			goto unlock_drop;
++		root_cgrp->id = ret;
+ 
+ 		/* Check for name clashes with existing mounts */
+ 		ret = -EBUSY;
+-- 
+1.8.5.3
