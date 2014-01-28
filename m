@@ -1,14 +1,12 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 4/4] cgroup: move the one-off opts sanity check in
-	cgroup_root_from_opts() to parse_cgroupfs_options()
-Date: Tue, 28 Jan 2014 10:32:05 -0500
-Message-ID: <1390923125-4369-5-git-send-email-tj@kernel.org>
-References: <1390923125-4369-1-git-send-email-tj@kernel.org>
+Subject: [PATCHSET v2 cgroup/for-3.15] cgroup: drop module support and
+	cgroup_root_mutex
+Date: Tue, 28 Jan 2014 18:43:55 -0500
+Message-ID: <1390952641-15950-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1390923125-4369-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,82 +17,93 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
-Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-cgroup_root_from_opts() checks whether (!opts->subsys_mask &&
-!opts->none) and returns NULL if so.  After that, if allocation fails,
-returns ERR_PTR(-ENOMEM).  The caller, cgroup_mount(), doesn't treat
-NULL as an error but set opts.new_root to NULL; however, later on,
-cgroup_set_super() fails with -EINVAL if new_root is NULL.
+Hello,
 
-This is one bizarre error handling sequence especially when all other
-opts sanity checks including the very close (!opts->subsys_mask &&
-!opts->name) check are done in parse_cgroupfs_options().
+This is the second take.  Changes from the last take[L] are
 
-Let's move the one-off check in cgroup_root_from_opts() to
-parse_cgroupfs_options() where it can be combined with the
-(!opts->subsys_mask && !opts->name) check.  cgroup_root_from_opts() is
-updated to return NULL on memory allocation failure.
+* Updated to reflect changes in fe1217c4f3f7 ("net: net_cls: move
+  cgroupfs classid handling into core").
 
-Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
----
- kernel/cgroup.c | 19 ++++++-------------
- 1 file changed, 6 insertions(+), 13 deletions(-)
+* Rebased on top of the current linus#master + some cgroup fix
+  patches.
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index b0e030f..5c8fe40 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -1265,10 +1265,10 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
- 		return -EINVAL;
- 
- 	/*
--	 * We either have to specify by name or by subsystems. (So all
--	 * empty hierarchies must have a name).
-+	 * We either have to specify by name or by subsystems.  All empty
-+	 * hierarchies must have a name and also "none" option specified.
- 	 */
--	if (!opts->subsys_mask && !opts->name)
-+	if (!opts->subsys_mask && (!opts->name || !opts->none))
- 		return -EINVAL;
- 
- 	return 0;
-@@ -1417,12 +1417,9 @@ static struct cgroupfs_root *cgroup_root_from_opts(struct cgroup_sb_opts *opts)
- {
- 	struct cgroupfs_root *root;
- 
--	if (!opts->subsys_mask && !opts->none)
--		return NULL;
--
- 	root = kzalloc(sizeof(*root), GFP_KERNEL);
- 	if (!root)
--		return ERR_PTR(-ENOMEM);
-+		return NULL;
- 
- 	init_cgroup_root(root);
- 
-@@ -1461,10 +1458,6 @@ static int cgroup_set_super(struct super_block *sb, void *data)
- 	int ret;
- 	struct cgroup_sb_opts *opts = data;
- 
--	/* If we don't have a new root, we can't set up a new sb */
--	if (!opts->new_root)
--		return -EINVAL;
--
- 	BUG_ON(!opts->subsys_mask && !opts->none);
- 
- 	ret = set_anon_super(sb, NULL);
-@@ -1532,8 +1525,8 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
- 	 * reusing an existing hierarchy.
- 	 */
- 	new_root = cgroup_root_from_opts(&opts);
--	if (IS_ERR(new_root)) {
--		ret = PTR_ERR(new_root);
-+	if (!new_root) {
-+		ret = -ENOMEM;
- 		goto out_err;
- 	}
- 	opts.new_root = new_root;
--- 
-1.8.5.3
+There's only one controller which makes use of the module support -
+net_prio, which, non-coincidentally, isn't an actual resource
+controller.  It's highly unlikely that the actual resource controlling
+controllers are gonna be made modular and we aren't gonna add more
+non-resource controllers either, so the value of module support is
+strictly restricted to the particular controller.
+
+The controller is fairly simple while module support in cgroup core
+adds quite a bit of complexity.  Building the one controller as module
+only saves less than half-page in vmlinux, which really can't justify
+the additional complexity and (minute but existing) runtime overhead.
+
+This patchset makes net_prio config options bool so that it can't be
+built as modules and drops module support from cgroup core, which in
+turn facilitates further simplification leading to removal of
+cgroup_root_mutex by allowing iterating subsystems outside the
+mutexes.
+
+This patchset contains the following six patches.
+
+ 0001-cgroup-make-CONFIG_CGROUP_NET_PRIO-bool-and-drop-unn.patch
+ 0002-cgroup-drop-module-support.patch
+ 0003-cgroup-clean-up-cgroup_subsys-names-and-initializati.patch
+ 0004-cgroup-rename-cgroup_subsys-subsys_id-to-id.patch
+ 0005-cgroup-update-locking-in-cgroup_show_options.patch
+ 0006-cgroup-remove-cgroup_root_mutex.patch
+
+0001-0002 drop cgroup module support.
+
+0003-0004 are cleanups.
+
+0005-0006 remove cgroup_root_mutex.
+
+The patchset is on top of
+
+  linus#master 54c0a4b46150 ("Merge branch 'akpm' (incoming from Andrew)")
++ [1] [PATCHSET cgroup/for-3.14-fixes] cgroup: four misc fixes
++ [2] [PATCH] arm, pm, vmpressure: add missing slab.h includes
+
+and also available in the following git branch.
+
+ git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-simplify
+
+diffstat follows.  Thanks.
+
+ block/blk-cgroup.c             |    9
+ block/blk-cgroup.h             |    2
+ fs/bio.c                       |    2
+ include/linux/cgroup.h         |   38 ---
+ include/linux/cgroup_subsys.h  |   30 +--
+ include/linux/hugetlb_cgroup.h |    2
+ include/linux/memcontrol.h     |    2
+ include/net/cls_cgroup.h       |    2
+ include/net/netprio_cgroup.h   |   17 -
+ kernel/cgroup.c                |  394 ++++++-----------------------------------
+ kernel/cgroup_freezer.c        |    8
+ kernel/cpuset.c                |   10 -
+ kernel/events/core.c           |    8
+ kernel/sched/core.c            |    6
+ kernel/sched/cpuacct.c         |    6
+ mm/hugetlb_cgroup.c            |    9
+ mm/memcontrol.c                |   22 +-
+ net/Kconfig                    |    2
+ net/core/netclassid_cgroup.c   |   13 -
+ net/core/netprio_cgroup.c      |   37 ---
+ net/ipv4/tcp_memcontrol.c      |    2
+ security/device_cgroup.c       |    8
+ 22 files changed, 128 insertions(+), 501 deletions(-)
+
+Thanks.
+
+--
+tejun
+
+[L] http://lkml.kernel.org/g/<1389982317-22225-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+[1] http://lkml.kernel.org/g/<1390923125-4369-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+[2] http://lkml.kernel.org/g/<20140128221922.GC16060-9pTldWuhBndy/B6EtB590w@public.gmane.org>
