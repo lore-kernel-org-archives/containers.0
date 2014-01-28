@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 02/13] cgroup: introduce cgroup_tree_mutex
-Date: Tue, 28 Jan 2014 18:54:34 -0500
-Message-ID: <1390953285-16360-3-git-send-email-tj@kernel.org>
+Subject: [PATCH 03/13] cgroup: release cgroup_mutex over file removals
+Date: Tue, 28 Jan 2014 18:54:35 -0500
+Message-ID: <1390953285-16360-4-git-send-email-tj@kernel.org>
 References: <1390953285-16360-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,370 +21,94 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Currently cgroup uses combination of inode->i_mutex'es and
-cgroup_mutex for synchronization.  With the scheduled kernfs
-conversion, i_mutex'es will be removed.  Unfortunately, just using
-cgroup_mutex isn't possible.  All kernfs file and syscall operations,
-most of which require grabbing cgroup_mutex, will be called with
-kernfs active ref held and, if we try to perform kernfs removals under
-cgroup_mutex, it can deadlock as kernfs_remove() tries to drain the
-target node.
+Now that cftypes and all tree modification operations are protected by
+cgroup_tree_mutex, we can drop cgroup_mutex while deleting files and
+directories.  Drop cgroup_mutex over removals.
 
-Let's introduce a new outer mutex, cgroup_tree_mutex, which protects
-stuff used during hierarchy changing operations - cftypes and all the
-operations which may affect the cgroupfs.  It also covers css
-association and iteration.  This allows cgroup_css(), for_each_css()
-and other css iterators to be called under cgroup_tree_mutex.  The new
-mutex will nest above both kernfs's active ref protection and
-cgroup_mutex.  By protecting tree modifications with a separate outer
-mutex, we can get rid of the forementioned deadlock condition.
-
-Actual file additions and removals now require cgroup_tree_mutex
-instead of cgroup_mutex.  Currently, cgroup_tree_mutex is never used
-without cgroup_mutex; however, we'll soon add hierarchy modification
-sections which are only protected by cgroup_tree_mutex.  In the
-future, we might want to make the locking more granular by better
-splitting the coverages of the two mutexes.  For now, this should do.
+This doesn't make any noticeable difference now but is to help kernfs
+conversion.  In kernfs, removals are sync points which drain in-flight
+operations as those operations would grab cgroup_mutex, trying to
+delete under cgroup_mutex would deadlock.  This can be resolved by
+just holding the outer cgroup_tree_mutex which nests outside both
+kernfs active reference and cgroup_mutex.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 66 +++++++++++++++++++++++++++++++++++++++++++++------------
- 1 file changed, 53 insertions(+), 13 deletions(-)
+ kernel/cgroup.c | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 823e250..8018777 100644
+index 8018777..bff7d64 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -68,6 +68,15 @@
- #define CGROUP_PIDLIST_DESTROY_DELAY	HZ
- 
- /*
-+ * cgroup_tree_mutex nests above cgroup_mutex and protects cftypes, file
-+ * creation/removal and hierarchy changing operations including cgroup
-+ * creation, removal, css association and controller rebinding.  This outer
-+ * lock is needed mainly to resolve the circular dependency between kernfs
-+ * active ref and cgroup_mutex.  cgroup_tree_mutex nests above both.
-+ */
-+static DEFINE_MUTEX(cgroup_tree_mutex);
-+
-+/*
-  * cgroup_mutex is the master lock.  Any modification to cgroup or its
-  * hierarchy must be performed while holding it.
-  */
-@@ -84,10 +93,11 @@ static DEFINE_MUTEX(cgroup_mutex);
-  */
- static DEFINE_SPINLOCK(release_agent_path_lock);
- 
--#define cgroup_assert_mutex_or_rcu_locked()				\
-+#define cgroup_assert_mutexes_or_rcu_locked()				\
- 	rcu_lockdep_assert(rcu_read_lock_held() ||			\
-+			   lockdep_is_held(&cgroup_tree_mutex) ||	\
- 			   lockdep_is_held(&cgroup_mutex),		\
--			   "cgroup_mutex or RCU read lock required");
-+			   "cgroup_[tree_]mutex or RCU read lock required");
- 
- /*
-  * cgroup destruction makes heavy use of work items and there can be a lot
-@@ -179,7 +189,8 @@ static struct cgroup_subsys_state *cgroup_css(struct cgroup *cgrp,
- {
- 	if (ss)
- 		return rcu_dereference_check(cgrp->subsys[ss->id],
--					     lockdep_is_held(&cgroup_mutex));
-+					lockdep_is_held(&cgroup_tree_mutex) ||
-+					lockdep_is_held(&cgroup_mutex));
- 	else
- 		return &cgrp->dummy_css;
- }
-@@ -235,6 +246,7 @@ static int notify_on_release(const struct cgroup *cgrp)
- 	for ((ssid) = 0; (ssid) < CGROUP_SUBSYS_COUNT; (ssid)++)	\
- 		if (!((css) = rcu_dereference_check(			\
- 				(cgrp)->subsys[(ssid)],			\
-+				lockdep_is_held(&cgroup_tree_mutex) ||	\
- 				lockdep_is_held(&cgroup_mutex)))) { }	\
- 		else
- 
-@@ -881,7 +893,7 @@ static void cgroup_rm_file(struct cgroup *cgrp, const struct cftype *cft)
- 	struct cfent *cfe;
- 
- 	lockdep_assert_held(&cgrp->dentry->d_inode->i_mutex);
--	lockdep_assert_held(&cgroup_mutex);
-+	lockdep_assert_held(&cgroup_tree_mutex);
- 
- 	/*
- 	 * If we're doing cleanup due to failure of cgroup_create(),
-@@ -946,7 +958,8 @@ static int rebind_subsystems(struct cgroupfs_root *root,
- 	struct cgroup_subsys *ss;
- 	int i, ret;
- 
--	BUG_ON(!mutex_is_locked(&cgroup_mutex));
-+	lockdep_assert_held(&cgroup_tree_mutex);
-+	lockdep_assert_held(&cgroup_mutex);
- 
- 	/* Check that any added subsystems are currently free */
- 	for_each_subsys(ss, i)
-@@ -1218,6 +1231,7 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
- 	}
- 
- 	mutex_lock(&cgrp->dentry->d_inode->i_mutex);
-+	mutex_lock(&cgroup_tree_mutex);
- 	mutex_lock(&cgroup_mutex);
- 
- 	/* See what subsystems are wanted */
-@@ -1261,6 +1275,7 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
- 	kfree(opts.release_agent);
- 	kfree(opts.name);
- 	mutex_unlock(&cgroup_mutex);
-+	mutex_unlock(&cgroup_tree_mutex);
- 	mutex_unlock(&cgrp->dentry->d_inode->i_mutex);
- 	return ret;
- }
-@@ -1485,6 +1500,7 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
- 		inode = sb->s_root->d_inode;
- 
- 		mutex_lock(&inode->i_mutex);
-+		mutex_lock(&cgroup_tree_mutex);
- 		mutex_lock(&cgroup_mutex);
- 
- 		ret = idr_alloc(&root->cgroup_idr, root_cgrp, 0, 1, GFP_KERNEL);
-@@ -1559,6 +1575,7 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
- 		BUG_ON(root->number_of_cgroups != 1);
- 
- 		mutex_unlock(&cgroup_mutex);
-+		mutex_unlock(&cgroup_tree_mutex);
- 		mutex_unlock(&inode->i_mutex);
- 	} else {
- 		/*
-@@ -1589,6 +1606,7 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
-  unlock_drop:
- 	cgroup_exit_root_id(root);
- 	mutex_unlock(&cgroup_mutex);
-+	mutex_unlock(&cgroup_tree_mutex);
- 	mutex_unlock(&inode->i_mutex);
-  drop_new_super:
- 	deactivate_locked_super(sb);
-@@ -1611,6 +1629,7 @@ static void cgroup_kill_sb(struct super_block *sb)
- 	BUG_ON(!list_empty(&cgrp->children));
- 
- 	mutex_lock(&cgrp->dentry->d_inode->i_mutex);
-+	mutex_lock(&cgroup_tree_mutex);
- 	mutex_lock(&cgroup_mutex);
- 
- 	/* Rebind all subsystems back to the default hierarchy */
-@@ -1641,6 +1660,7 @@ static void cgroup_kill_sb(struct super_block *sb)
- 	cgroup_exit_root_id(root);
- 
- 	mutex_unlock(&cgroup_mutex);
-+	mutex_unlock(&cgroup_tree_mutex);
- 	mutex_unlock(&cgrp->dentry->d_inode->i_mutex);
- 
- 	simple_xattrs_free(&cgrp->xattrs);
-@@ -2616,7 +2636,7 @@ static int cgroup_addrm_files(struct cgroup *cgrp, struct cftype cfts[],
- 	int ret;
- 
- 	lockdep_assert_held(&cgrp->dentry->d_inode->i_mutex);
--	lockdep_assert_held(&cgroup_mutex);
-+	lockdep_assert_held(&cgroup_tree_mutex);
- 
- 	for (cft = cfts; cft->name[0] != '\0'; cft++) {
- 		/* does cft->flags tell us to skip this file on @cgrp? */
-@@ -2650,6 +2670,7 @@ static void cgroup_cfts_prepare(void)
- 	 * Instead, we use css_for_each_descendant_pre() and drop RCU read
- 	 * lock before calling cgroup_addrm_files().
+@@ -974,7 +974,9 @@ static int rebind_subsystems(struct cgroupfs_root *root,
+ 	 * Nothing can fail from this point on.  Remove files for the
+ 	 * removed subsystems and rebind each subsystem.
  	 */
-+	mutex_lock(&cgroup_tree_mutex);
- 	mutex_lock(&cgroup_mutex);
- }
++	mutex_unlock(&cgroup_mutex);
+ 	cgroup_clear_dir(cgrp, removed_mask);
++	mutex_lock(&cgroup_mutex);
  
-@@ -2670,6 +2691,7 @@ static int cgroup_cfts_commit(struct cftype *cfts, bool is_add)
- 	if (!cfts || ss->root == &cgroup_dummy_root ||
- 	    !atomic_inc_not_zero(&sb->s_active)) {
- 		mutex_unlock(&cgroup_mutex);
-+		mutex_unlock(&cgroup_tree_mutex);
- 		return 0;
- 	}
- 
-@@ -2693,7 +2715,9 @@ static int cgroup_cfts_commit(struct cftype *cfts, bool is_add)
- 		prev = cgrp->dentry;
- 
- 		mutex_unlock(&cgroup_mutex);
-+		mutex_unlock(&cgroup_tree_mutex);
- 		mutex_lock(&inode->i_mutex);
-+		mutex_lock(&cgroup_tree_mutex);
- 		mutex_lock(&cgroup_mutex);
- 		if (cgrp->serial_nr < update_before && !cgroup_is_dead(cgrp))
- 			ret = cgroup_addrm_files(cgrp, cfts, is_add);
-@@ -2702,6 +2726,7 @@ static int cgroup_cfts_commit(struct cftype *cfts, bool is_add)
- 			break;
- 	}
- 	mutex_unlock(&cgroup_mutex);
-+	mutex_unlock(&cgroup_tree_mutex);
- 	dput(prev);
- 	deactivate_super(sb);
- 	return ret;
-@@ -2847,7 +2872,7 @@ css_next_child(struct cgroup_subsys_state *pos_css,
- 	struct cgroup *cgrp = parent_css->cgroup;
- 	struct cgroup *next;
- 
--	cgroup_assert_mutex_or_rcu_locked();
-+	cgroup_assert_mutexes_or_rcu_locked();
- 
- 	/*
- 	 * @pos could already have been removed.  Once a cgroup is removed,
-@@ -2905,7 +2930,7 @@ css_next_descendant_pre(struct cgroup_subsys_state *pos,
- {
- 	struct cgroup_subsys_state *next;
- 
--	cgroup_assert_mutex_or_rcu_locked();
-+	cgroup_assert_mutexes_or_rcu_locked();
- 
- 	/* if first iteration, visit @root */
- 	if (!pos)
-@@ -2946,7 +2971,7 @@ css_rightmost_descendant(struct cgroup_subsys_state *pos)
- {
- 	struct cgroup_subsys_state *last, *tmp;
- 
--	cgroup_assert_mutex_or_rcu_locked();
-+	cgroup_assert_mutexes_or_rcu_locked();
- 
- 	do {
- 		last = pos;
-@@ -2994,7 +3019,7 @@ css_next_descendant_post(struct cgroup_subsys_state *pos,
- {
- 	struct cgroup_subsys_state *next;
- 
--	cgroup_assert_mutex_or_rcu_locked();
-+	cgroup_assert_mutexes_or_rcu_locked();
- 
- 	/* if first iteration, visit leftmost descendant which may be @root */
- 	if (!pos)
-@@ -3968,6 +3993,7 @@ static int online_css(struct cgroup_subsys_state *css)
- 	struct cgroup_subsys *ss = css->ss;
+ 	for_each_subsys(ss, i) {
+ 		unsigned long bit = 1UL << i;
+@@ -2687,10 +2689,11 @@ static int cgroup_cfts_commit(struct cftype *cfts, bool is_add)
+ 	u64 update_before;
  	int ret = 0;
  
-+	lockdep_assert_held(&cgroup_tree_mutex);
- 	lockdep_assert_held(&cgroup_mutex);
- 
- 	if (ss->css_online)
-@@ -3985,6 +4011,7 @@ static void offline_css(struct cgroup_subsys_state *css)
- {
- 	struct cgroup_subsys *ss = css->ss;
- 
-+	lockdep_assert_held(&cgroup_tree_mutex);
- 	lockdep_assert_held(&cgroup_mutex);
- 
- 	if (!(css->flags & CSS_ONLINE))
-@@ -4094,6 +4121,8 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
- 		goto err_free_name;
- 	}
- 
-+	mutex_lock(&cgroup_tree_mutex);
++	mutex_unlock(&cgroup_mutex);
 +
+ 	/* %NULL @cfts indicates abort and don't bother if @ss isn't attached */
+ 	if (!cfts || ss->root == &cgroup_dummy_root ||
+ 	    !atomic_inc_not_zero(&sb->s_active)) {
+-		mutex_unlock(&cgroup_mutex);
+ 		mutex_unlock(&cgroup_tree_mutex);
+ 		return 0;
+ 	}
+@@ -2714,18 +2717,15 @@ static int cgroup_cfts_commit(struct cftype *cfts, bool is_add)
+ 		dput(prev);
+ 		prev = cgrp->dentry;
+ 
+-		mutex_unlock(&cgroup_mutex);
+ 		mutex_unlock(&cgroup_tree_mutex);
+ 		mutex_lock(&inode->i_mutex);
+ 		mutex_lock(&cgroup_tree_mutex);
+-		mutex_lock(&cgroup_mutex);
+ 		if (cgrp->serial_nr < update_before && !cgroup_is_dead(cgrp))
+ 			ret = cgroup_addrm_files(cgrp, cfts, is_add);
+ 		mutex_unlock(&inode->i_mutex);
+ 		if (ret)
+ 			break;
+ 	}
+-	mutex_unlock(&cgroup_mutex);
+ 	mutex_unlock(&cgroup_tree_mutex);
+ 	dput(prev);
+ 	deactivate_super(sb);
+@@ -4378,10 +4378,13 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
  	/*
- 	 * Only live parents can have children.  Note that the liveliness
- 	 * check isn't strictly necessary because cgroup_mkdir() and
-@@ -4103,7 +4132,7 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+ 	 * Initiate massacre of all css's.  cgroup_destroy_css_killed()
+ 	 * will be invoked to perform the rest of destruction once the
+-	 * percpu refs of all css's are confirmed to be killed.
++	 * percpu refs of all css's are confirmed to be killed.  This
++	 * involves removing the subsystem's files, drop cgroup_mutex.
  	 */
- 	if (!cgroup_lock_live_group(parent)) {
- 		err = -ENODEV;
--		goto err_free_id;
-+		goto err_unlock_tree;
- 	}
++	mutex_unlock(&cgroup_mutex);
+ 	for_each_css(css, ssid, cgrp)
+ 		kill_css(css);
++	mutex_lock(&cgroup_mutex);
  
- 	/* Grab a reference on the superblock so the hierarchy doesn't
-@@ -4167,6 +4196,7 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
- 	}
- 
- 	mutex_unlock(&cgroup_mutex);
-+	mutex_unlock(&cgroup_tree_mutex);
- 	mutex_unlock(&cgrp->dentry->d_inode->i_mutex);
+ 	/*
+ 	 * Mark @cgrp dead.  This prevents further task migration and child
+@@ -4412,9 +4415,11 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
+ 	 * puts the base ref but we aren't quite done with @cgrp yet, so
+ 	 * hold onto it.
+ 	 */
++	mutex_unlock(&cgroup_mutex);
+ 	cgroup_addrm_files(cgrp, cgroup_base_files, false);
+ 	dget(d);
+ 	cgroup_d_remove_dir(d);
++	mutex_lock(&cgroup_mutex);
  
  	return 0;
-@@ -4175,7 +4205,8 @@ err_unlock:
- 	mutex_unlock(&cgroup_mutex);
- 	/* Release the reference count that we took on the superblock */
- 	deactivate_super(sb);
--err_free_id:
-+err_unlock_tree:
-+	mutex_unlock(&cgroup_tree_mutex);
- 	idr_remove(&root->cgroup_idr, cgrp->id);
- err_free_name:
- 	kfree(rcu_dereference_raw(cgrp->name));
-@@ -4186,6 +4217,7 @@ err_free_cgrp:
- err_destroy:
- 	cgroup_destroy_locked(cgrp);
- 	mutex_unlock(&cgroup_mutex);
-+	mutex_unlock(&cgroup_tree_mutex);
- 	mutex_unlock(&dentry->d_inode->i_mutex);
- 	return err;
- }
-@@ -4208,6 +4240,7 @@ static void css_killed_work_fn(struct work_struct *work)
- 		container_of(work, struct cgroup_subsys_state, destroy_work);
- 	struct cgroup *cgrp = css->cgroup;
- 
-+	mutex_lock(&cgroup_tree_mutex);
- 	mutex_lock(&cgroup_mutex);
- 
- 	/*
-@@ -4225,6 +4258,7 @@ static void css_killed_work_fn(struct work_struct *work)
- 		cgroup_destroy_css_killed(cgrp);
- 
- 	mutex_unlock(&cgroup_mutex);
-+	mutex_unlock(&cgroup_tree_mutex);
- 
- 	/*
- 	 * Put the css refs from kill_css().  Each css holds an extra
-@@ -4312,6 +4346,7 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
- 	int ssid;
- 
- 	lockdep_assert_held(&d->d_inode->i_mutex);
-+	lockdep_assert_held(&cgroup_tree_mutex);
- 	lockdep_assert_held(&cgroup_mutex);
- 
- 	/*
-@@ -4398,6 +4433,7 @@ static void cgroup_destroy_css_killed(struct cgroup *cgrp)
- 	struct cgroup *parent = cgrp->parent;
- 	struct dentry *d = cgrp->dentry;
- 
-+	lockdep_assert_held(&cgroup_tree_mutex);
- 	lockdep_assert_held(&cgroup_mutex);
- 
- 	/* delete this cgroup from parent->children */
-@@ -4413,9 +4449,11 @@ static int cgroup_rmdir(struct inode *unused_dir, struct dentry *dentry)
- {
- 	int ret;
- 
-+	mutex_lock(&cgroup_tree_mutex);
- 	mutex_lock(&cgroup_mutex);
- 	ret = cgroup_destroy_locked(dentry->d_fsdata);
- 	mutex_unlock(&cgroup_mutex);
-+	mutex_unlock(&cgroup_tree_mutex);
- 
- 	return ret;
- }
-@@ -4445,6 +4483,7 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
- 
- 	printk(KERN_INFO "Initializing cgroup subsys %s\n", ss->name);
- 
-+	mutex_lock(&cgroup_tree_mutex);
- 	mutex_lock(&cgroup_mutex);
- 
- 	/* init base cftset */
-@@ -4473,6 +4512,7 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
- 	BUG_ON(online_css(css));
- 
- 	mutex_unlock(&cgroup_mutex);
-+	mutex_unlock(&cgroup_tree_mutex);
- }
- 
- /**
-@@ -5007,7 +5047,7 @@ struct cgroup_subsys_state *css_from_id(int id, struct cgroup_subsys *ss)
- {
- 	struct cgroup *cgrp;
- 
--	cgroup_assert_mutex_or_rcu_locked();
-+	cgroup_assert_mutexes_or_rcu_locked();
- 
- 	cgrp = idr_find(&ss->root->cgroup_idr, id);
- 	if (cgrp)
+ };
 -- 
 1.8.5.3
