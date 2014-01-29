@@ -1,7 +1,7 @@
-From: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
 Subject: Re: [PATCH 6/8] cgroup: remove cgroup->name
-Date: Wed, 29 Jan 2014 11:47:12 +0100
-Message-ID: <20140129104712.GD9636@twins.programming.kicks-ass.net>
+Date: Wed, 29 Jan 2014 13:09:07 +0100
+Message-ID: <20140129120907.GA22183__3678.26862861893$1390997365$gmane$org@dhcp22.suse.cz>
 References: <1390953585-16554-1-git-send-email-tj@kernel.org>
 	<1390953585-16554-7-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
@@ -20,10 +20,10 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Jan 28, 2014 at 06:59:43PM -0500, Tejun Heo wrote:
+On Tue 28-01-14 18:59:43, Tejun Heo wrote:
 > cgroup->name handling became quite complicated over time involving
 > dedicated struct cgroup_name for RCU protection.  Now that cgroup is
 > on kernfs, we can drop all of it and simply use kernfs_name/path() and
@@ -45,10 +45,33 @@ On Tue, Jan 28, 2014 at 06:59:43PM -0500, Tejun Heo wrote:
 > 
 > Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 > Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+> Cc: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
 > Cc: Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 > Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
 > Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
 > Cc: Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 > Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 
-Acked-by: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Nice. I hated the way how we retrieved the name previously.
+Acked-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+
+Btw. after this change we should drop part of the comment above
+oom_info_lock:
+
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index 19d5d4274e22..d998baec5deb 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -1684,8 +1684,7 @@ static void move_unlock_mem_cgroup(struct mem_cgroup *memcg,
+ void mem_cgroup_print_oom_info(struct mem_cgroup *memcg, struct task_struct *p)
+ {
+ 	/*
+-	 * protects memcg_name and makes sure that parallel ooms do not
+-	 * interleave
++	 * Makes sure that parallel ooms do not interleave
+ 	 */
+ 	static DEFINE_SPINLOCK(oom_info_lock);
+ 	struct cgroup *task_cgrp;
+-- 
+Michal Hocko
+SUSE Labs
