@@ -1,15 +1,17 @@
-From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: [PATCH 6/8] cgroup: remove cgroup->name
-Date: Wed, 29 Jan 2014 13:09:07 +0100
-Message-ID: <20140129120907.GA22183__3678.26862861893$1390997365$gmane$org@dhcp22.suse.cz>
-References: <1390953585-16554-1-git-send-email-tj@kernel.org>
-	<1390953585-16554-7-git-send-email-tj@kernel.org>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 4/4] cgroup: move the one-off opts sanity check in
+	cgroup_root_from_opts() to parse_cgroupfs_options()
+Date: Wed, 29 Jan 2014 08:20:06 -0500
+Message-ID: <20140129132006.GA30842__32033.4288212054$1391001624$gmane$org@htj.dyndns.org>
+References: <1390923125-4369-1-git-send-email-tj@kernel.org>
+	<1390923125-4369-5-git-send-email-tj@kernel.org>
+	<52E87D64.30800@huawei.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1390953585-16554-7-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <52E87D64.30800-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,59 +21,41 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue 28-01-14 18:59:43, Tejun Heo wrote:
-> cgroup->name handling became quite complicated over time involving
-> dedicated struct cgroup_name for RCU protection.  Now that cgroup is
-> on kernfs, we can drop all of it and simply use kernfs_name/path() and
-> friends.  Replace cgroup->name and all related code with kernfs
-> name/path constructs.
+On Wed, Jan 29, 2014 at 12:02:44PM +0800, Li Zefan wrote:
+> On 2014/1/28 23:32, Tejun Heo wrote:
+> > cgroup_root_from_opts() checks whether (!opts->subsys_mask &&
+> > !opts->none) and returns NULL if so.  After that, if allocation fails,
+> > returns ERR_PTR(-ENOMEM).  The caller, cgroup_mount(), doesn't treat
+> > NULL as an error but set opts.new_root to NULL; however, later on,
+> > cgroup_set_super() fails with -EINVAL if new_root is NULL.
 > 
-> * Reimplement cgroup_name() and cgroup_path() as thin wrappers on top
->   of kernfs counterparts, which involves semantic changes.
->   pr_cont_cgroup_name() and pr_cont_cgroup_path() added.
+> This patch changes mount semantics.
 > 
-> * cgroup->name handling dropped from cgroup_rename().
+> If cgroup_root_from_opts() returns NULL, it means we should be looking
+> for existing superblock only.
 > 
-> * All users of cgroup_name/path() updated to the new semantics.  Users
->   which were formatting the string just to printk them are converted
->   to use pr_cont_cgroup_name/path() instead, which simplifies things
->   quite a bit.  As cgroup_name() no longer requires RCU read lock
->   around it, RCU lockings which were protecting only cgroup_name() are
->   removed.
+> This will fail:
 > 
-> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-> Cc: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-> Cc: Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
-> Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-> Cc: Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+>   # mount -t cgroup -o name=abc xxx /mnt
+> 
+> But this is ok:
+> 
+>   # mount -t cgroup -o none,name=abc xxx /mnt
+>   # mkdir /mnt/sub
+>   # umount /mnt
+>   # mount -t cgroup -o name=abc xxx /mnt   <-- this won't work with your patch
 
-Nice. I hated the way how we retrieved the name previously.
-Acked-by: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Ewwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww....
+urgghhghghghhh.............
 
-Btw. after this change we should drop part of the comment above
-oom_info_lock:
+Alright, dropping this patch and will update later patches to maintain
+the behavior.
 
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 19d5d4274e22..d998baec5deb 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -1684,8 +1684,7 @@ static void move_unlock_mem_cgroup(struct mem_cgroup *memcg,
- void mem_cgroup_print_oom_info(struct mem_cgroup *memcg, struct task_struct *p)
- {
- 	/*
--	 * protects memcg_name and makes sure that parallel ooms do not
--	 * interleave
-+	 * Makes sure that parallel ooms do not interleave
- 	 */
- 	static DEFINE_SPINLOCK(oom_info_lock);
- 	struct cgroup *task_cgrp;
+Thanks.
+
 -- 
-Michal Hocko
-SUSE Labs
+tejun
