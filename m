@@ -1,23 +1,14 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 4/4] vfs: Call d_dname from dentry_path
-Date: Thu, 06 Feb 2014 18:24:56 -0800
-Message-ID: <87wqh7fymf.fsf_-_@xmission.com>
-References: <20131118180134.GA24156@mail.hallyn.com>
-	<87k3g5gnuv.fsf@xmission.com> <20131126181043.GA25492@mail.hallyn.com>
-	<87siui1z1g.fsf_-_@xmission.com> <8738mi1yya.fsf_-_@xmission.com>
-	<20131130061525.GY10323@ZenIV.linux.org.uk>
-	<20131130170226.GZ10323@ZenIV.linux.org.uk>
-	<87a9glh838.fsf@xmission.com>
-	<20131130224340.GA10323@ZenIV.linux.org.uk>
-	<874n53gub7.fsf@xmission.com>
-	<20140117083901.GA10323@ZenIV.linux.org.uk>
-	<87iosrhdc0.fsf_-_@xmission.com>
+From: Rashika Kheria <rashika.kheria-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH 7/9] mm: Mark functions as static in page_cgroup.c
+Date: Fri, 7 Feb 2014 17:41:34 +0530
+Message-ID: <6054d570fc83c3d4f3de240d6da488f876e21450.1391167128.git.rashika.kheria__36521.8159663074$1391775115$gmane$org@gmail.com>
+References: <a7658fc8f2ab015bffe83de1448cc3db79d2a9fc.1391167128.git.rashika.kheria@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87iosrhdc0.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (Eric W. Biederman's message of
-	"Thu, 06 Feb 2014 18:21:51 -0800")
+Content-Disposition: inline
+In-Reply-To: <a7658fc8f2ab015bffe83de1448cc3db79d2a9fc.1391167128.git.rashika.kheria-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,37 +18,41 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Neil Brown <neilb-l3A5Bk7waGM@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Eric Dumazet <edumazet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: josh-iaAMLnmF4UmaiuxdJuQwMA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
-If the root dentry implements d_dname instead of ignoring it in
-__dentry_path call d_dname and return the result.
-
-The motivating example are files under /proc/<pid>/ns/ are bind
-mounted into other locations.  This change allow the name of the
-dentry that is bind mounted to show up in /proc/<pid>/mountinfo.
-However in general this is correct behavior any time dentry_path is
-called on a dentry that implements d_dname.
-
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- fs/dcache.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
-
-diff --git a/fs/dcache.c b/fs/dcache.c
-index c5c7847ff84b..a7a925fb3ce7 100644
---- a/fs/dcache.c
-+++ b/fs/dcache.c
-@@ -3162,6 +3162,8 @@ restart:
- 	done_seqretry(&rename_lock, seq);
- 	if (error)
- 		goto Elong;
-+	if (dentry->d_op && dentry->d_op->d_dname)
-+		retval = dentry->d_op->d_dname(dentry, buf, len);
- 	return retval;
- Elong:
- 	return ERR_PTR(-ENAMETOOLONG);
--- 
-1.7.5.4
+TWFyayBmdW5jdGlvbnMgYXMgc3RhdGljIGluIHBhZ2VfY2dyb3VwLmMgYmVjYXVzZSB0aGV5IGFy
+ZSBub3QgdXNlZApvdXRzaWRlIHRoaXMgZmlsZS4KClRoaXMgZWxpbWluYXRlcyB0aGUgZm9sbG93
+aW5nIHdhcm5pbmcgaW4gbW0vcGFnZV9jZ3JvdXAuYzoKbW0vcGFnZV9jZ3JvdXAuYzoxNzc6Njog
+d2FybmluZzogbm8gcHJldmlvdXMgcHJvdG90eXBlIGZvciDigJhfX2ZyZWVfcGFnZV9jZ3JvdXDi
+gJkgWy1XbWlzc2luZy1wcm90b3R5cGVzXQptbS9wYWdlX2Nncm91cC5jOjE5MDoxNTogd2Fybmlu
+Zzogbm8gcHJldmlvdXMgcHJvdG90eXBlIGZvciDigJhvbmxpbmVfcGFnZV9jZ3JvdXDigJkgWy1X
+bWlzc2luZy1wcm90b3R5cGVzXQptbS9wYWdlX2Nncm91cC5jOjIyNToxNTogd2FybmluZzogbm8g
+cHJldmlvdXMgcHJvdG90eXBlIGZvciDigJhvZmZsaW5lX3BhZ2VfY2dyb3Vw4oCZIFstV21pc3Np
+bmctcHJvdG90eXBlc10KClNpZ25lZC1vZmYtYnk6IFJhc2hpa2EgS2hlcmlhIDxyYXNoaWthLmto
+ZXJpYUBnbWFpbC5jb20+ClJldmlld2VkLWJ5OiBKb3NoIFRyaXBsZXR0IDxqb3NoQGpvc2h0cmlw
+bGV0dC5vcmc+Ci0tLQogbW0vcGFnZV9jZ3JvdXAuYyB8ICAgMTIgKysrKysrLS0tLS0tCiAxIGZp
+bGUgY2hhbmdlZCwgNiBpbnNlcnRpb25zKCspLCA2IGRlbGV0aW9ucygtKQoKZGlmZiAtLWdpdCBh
+L21tL3BhZ2VfY2dyb3VwLmMgYi9tbS9wYWdlX2Nncm91cC5jCmluZGV4IDZkNzU3ZTNhLi42ZWMz
+NDljIDEwMDY0NAotLS0gYS9tbS9wYWdlX2Nncm91cC5jCisrKyBiL21tL3BhZ2VfY2dyb3VwLmMK
+QEAgLTE3NCw3ICsxNzQsNyBAQCBzdGF0aWMgdm9pZCBmcmVlX3BhZ2VfY2dyb3VwKHZvaWQgKmFk
+ZHIpCiAJfQogfQogCi12b2lkIF9fZnJlZV9wYWdlX2Nncm91cCh1bnNpZ25lZCBsb25nIHBmbikK
+K3N0YXRpYyB2b2lkIF9fZnJlZV9wYWdlX2Nncm91cCh1bnNpZ25lZCBsb25nIHBmbikKIHsKIAlz
+dHJ1Y3QgbWVtX3NlY3Rpb24gKm1zOwogCXN0cnVjdCBwYWdlX2Nncm91cCAqYmFzZTsKQEAgLTE4
+Nyw5ICsxODcsOSBAQCB2b2lkIF9fZnJlZV9wYWdlX2Nncm91cCh1bnNpZ25lZCBsb25nIHBmbikK
+IAltcy0+cGFnZV9jZ3JvdXAgPSBOVUxMOwogfQogCi1pbnQgX19tZW1pbml0IG9ubGluZV9wYWdl
+X2Nncm91cCh1bnNpZ25lZCBsb25nIHN0YXJ0X3BmbiwKLQkJCXVuc2lnbmVkIGxvbmcgbnJfcGFn
+ZXMsCi0JCQlpbnQgbmlkKQorc3RhdGljIGludCBfX21lbWluaXQgb25saW5lX3BhZ2VfY2dyb3Vw
+KHVuc2lnbmVkIGxvbmcgc3RhcnRfcGZuLAorCQkJCXVuc2lnbmVkIGxvbmcgbnJfcGFnZXMsCisJ
+CQkJaW50IG5pZCkKIHsKIAl1bnNpZ25lZCBsb25nIHN0YXJ0LCBlbmQsIHBmbjsKIAlpbnQgZmFp
+bCA9IDA7CkBAIC0yMjIsOCArMjIyLDggQEAgaW50IF9fbWVtaW5pdCBvbmxpbmVfcGFnZV9jZ3Jv
+dXAodW5zaWduZWQgbG9uZyBzdGFydF9wZm4sCiAJcmV0dXJuIC1FTk9NRU07CiB9CiAKLWludCBf
+X21lbWluaXQgb2ZmbGluZV9wYWdlX2Nncm91cCh1bnNpZ25lZCBsb25nIHN0YXJ0X3BmbiwKLQkJ
+dW5zaWduZWQgbG9uZyBucl9wYWdlcywgaW50IG5pZCkKK3N0YXRpYyBpbnQgX19tZW1pbml0IG9m
+ZmxpbmVfcGFnZV9jZ3JvdXAodW5zaWduZWQgbG9uZyBzdGFydF9wZm4sCisJCQkJdW5zaWduZWQg
+bG9uZyBucl9wYWdlcywgaW50IG5pZCkKIHsKIAl1bnNpZ25lZCBsb25nIHN0YXJ0LCBlbmQsIHBm
+bjsKIAotLSAKMS43LjkuNQoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1m
+b3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9s
+aXN0aW5mby9jb250YWluZXJz
