@@ -1,8 +1,7 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 1/4] perfmon: Use d_alloc_pseudo like all of the d_dname
-	callers.
-Date: Thu, 06 Feb 2014 18:23:09 -0800
-Message-ID: <87d2izhd9u.fsf_-_@xmission.com>
+Subject: [PATCH 2/4] vfs: Simply when d_alloc_dname is called.
+Date: Thu, 06 Feb 2014 18:23:54 -0800
+Message-ID: <877g97hd8l.fsf_-_@xmission.com>
 References: <20131118180134.GA24156@mail.hallyn.com>
 	<87k3g5gnuv.fsf@xmission.com> <20131126181043.GA25492@mail.hallyn.com>
 	<87siui1z1g.fsf_-_@xmission.com> <8738mi1yya.fsf_-_@xmission.com>
@@ -33,32 +32,43 @@ Cc: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Neil Brown
 List-Id: containers.vger.kernel.org
 
 
+Now that all implementations of d_dname use d_alloc_psuedo only consider
+calling d_dname on root dentries, as all dentries returned
+d_alloc_pseudo by d_alloc_pseudo are root dentries.
 
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- arch/ia64/kernel/perfmon.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ fs/dcache.c |   16 ++++++----------
+ 1 files changed, 6 insertions(+), 10 deletions(-)
 
-diff --git a/arch/ia64/kernel/perfmon.c b/arch/ia64/kernel/perfmon.c
-index cb592773c78b..d1611f223768 100644
---- a/arch/ia64/kernel/perfmon.c
-+++ b/arch/ia64/kernel/perfmon.c
-@@ -2202,14 +2202,14 @@ pfm_alloc_file(pfm_context_t *ctx)
+diff --git a/fs/dcache.c b/fs/dcache.c
+index 265e0ce9769c..c250d97befe4 100644
+--- a/fs/dcache.c
++++ b/fs/dcache.c
+@@ -3056,18 +3056,14 @@ char *d_path(const struct path *path, char *buf, int buflen)
+ 	int error;
+ 
  	/*
- 	 * allocate a new dcache entry
+-	 * We have various synthetic filesystems that never get mounted.  On
+-	 * these filesystems dentries are never used for lookup purposes, and
+-	 * thus don't need to be hashed.  They also don't need a name until a
+-	 * user wants to identify the object in /proc/pid/fd/.  The little hack
+-	 * below allows us to generate a name for these objects on demand:
+-	 *
+-	 * Some pseudo inodes are mountable.  When they are mounted
+-	 * path->dentry == path->mnt->mnt_root.  In that case don't call d_dname
+-	 * and instead have d_path return the mounted path.
++	 * We have various synthetic files allocated with
++	 * d_alloc_pseudo that are not available through
++	 * ordinary path lookup and don't need a name until
++	 * a user wants to identify the object in
++	 * /proc/pid/fd/ or similiar.
  	 */
--	path.dentry = d_alloc(pfmfs_mnt->mnt_root, &this);
-+	path.dentry = d_alloc_pseudo(pfmfs_mnt->mnt_sb, &this);
- 	if (!path.dentry) {
- 		iput(inode);
- 		return ERR_PTR(-ENOMEM);
- 	}
- 	path.mnt = mntget(pfmfs_mnt);
+ 	if (path->dentry->d_op && path->dentry->d_op->d_dname &&
+-	    (!IS_ROOT(path->dentry) || path->dentry != path->mnt->mnt_root))
++	    IS_ROOT(path->dentry) && path->dentry != path->mnt->mnt_root)
+ 		return path->dentry->d_op->d_dname(path->dentry, buf, buflen);
  
--	d_add(path.dentry, inode);
-+	d_instantiate(path.dentry, inode);
- 
- 	file = alloc_file(&path, FMODE_READ, &pfm_file_ops);
- 	if (IS_ERR(file)) {
+ 	rcu_read_lock();
 -- 
 1.7.5.4
