@@ -1,7 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 03/13] cgroup: release cgroup_mutex over file removals
-Date: Sat,  8 Feb 2014 11:15:17 -0500
-Message-ID: <1391876127-7134-4-git-send-email-tj@kernel.org>
+Subject: [PATCH 04/13] cgroup: restructure locking and error handling in
+	cgroup_mount()
+Date: Sat,  8 Feb 2014 11:15:18 -0500
+Message-ID: <1391876127-7134-5-git-send-email-tj@kernel.org>
 References: <1391876127-7134-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,94 +22,199 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Now that cftypes and all tree modification operations are protected by
-cgroup_tree_mutex, we can drop cgroup_mutex while deleting files and
-directories.  Drop cgroup_mutex over removals.
+cgroup is scheduled to be converted to kernfs.  After conversion,
+cgroup_mount() won't use the sget() machinery for finding out existing
+super_blocks but instead would do that directly.  It'll search the
+existing cgroupfs_roots for a matching one and create a new one iff a
+match doesn't exist.  To ease such conversion, this patch restructures
+locking and error handling of the function.
 
-This doesn't make any noticeable difference now but is to help kernfs
-conversion.  In kernfs, removals are sync points which drain in-flight
-operations as those operations would grab cgroup_mutex, trying to
-delete under cgroup_mutex would deadlock.  This can be resolved by
-just holding the outer cgroup_tree_mutex which nests outside both
-kernfs active reference and cgroup_mutex.
+cgroup_tree_mutex and cgroup_mutex are grabbed from the get-go and
+held until return.  For now, due to the way vfs locks nest outside
+cgroup mutexes, the two cgroup mutexes are temporarily dropped across
+sget() and inode mutex locking, which looks quite ridiculous; however,
+these will be removed through kernfs conversion and structuring the
+code this way makes the conversion less painful.
+
+The error goto labels are consolidated to two.  This looks unwieldy
+now but the next patch will factor out creation of new root into a
+separate function with accompanying error handling and it'll look a
+lot better.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 15 ++++++++++-----
- 1 file changed, 10 insertions(+), 5 deletions(-)
+ kernel/cgroup.c | 73 +++++++++++++++++++++++++++++++--------------------------
+ 1 file changed, 40 insertions(+), 33 deletions(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index e41987d..908ad96 100644
+index 908ad96..d88393c 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -974,7 +974,9 @@ static int rebind_subsystems(struct cgroupfs_root *root,
- 	 * Nothing can fail from this point on.  Remove files for the
- 	 * removed subsystems and rebind each subsystem.
- 	 */
-+	mutex_unlock(&cgroup_mutex);
- 	cgroup_clear_dir(cgrp, removed_mask);
-+	mutex_lock(&cgroup_mutex);
+@@ -1457,21 +1457,22 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
+ 			 int flags, const char *unused_dev_name,
+ 			 void *data)
+ {
++	LIST_HEAD(tmp_links);
++	struct super_block *sb = NULL;
++	struct inode *inode = NULL;
++	struct cgroupfs_root *root = NULL;
+ 	struct cgroup_sb_opts opts;
+-	struct cgroupfs_root *root;
+-	int ret = 0;
+-	struct super_block *sb;
+ 	struct cgroupfs_root *new_root;
+-	struct list_head tmp_links;
+-	struct inode *inode;
+ 	const struct cred *cred;
++	int ret;
  
- 	for_each_subsys(ss, i) {
- 		unsigned long bit = 1UL << i;
-@@ -2694,10 +2696,11 @@ static int cgroup_cfts_commit(struct cftype *cfts, bool is_add)
- 	u64 update_before;
- 	int ret = 0;
- 
-+	mutex_unlock(&cgroup_mutex);
+-	/* First find the desired set of subsystems */
++	mutex_lock(&cgroup_tree_mutex);
+ 	mutex_lock(&cgroup_mutex);
 +
- 	/* %NULL @cfts indicates abort and don't bother if @ss isn't attached */
- 	if (!cfts || ss->root == &cgroup_dummy_root ||
- 	    !atomic_inc_not_zero(&sb->s_active)) {
--		mutex_unlock(&cgroup_mutex);
- 		mutex_unlock(&cgroup_tree_mutex);
- 		return 0;
- 	}
-@@ -2721,18 +2724,15 @@ static int cgroup_cfts_commit(struct cftype *cfts, bool is_add)
- 		dput(prev);
- 		prev = cgrp->dentry;
- 
--		mutex_unlock(&cgroup_mutex);
- 		mutex_unlock(&cgroup_tree_mutex);
- 		mutex_lock(&inode->i_mutex);
- 		mutex_lock(&cgroup_tree_mutex);
--		mutex_lock(&cgroup_mutex);
- 		if (cgrp->serial_nr < update_before && !cgroup_is_dead(cgrp))
- 			ret = cgroup_addrm_files(cgrp, cfts, is_add);
- 		mutex_unlock(&inode->i_mutex);
- 		if (ret)
- 			break;
- 	}
++	/* First find the desired set of subsystems */
+ 	ret = parse_cgroupfs_options(data, &opts);
 -	mutex_unlock(&cgroup_mutex);
+ 	if (ret)
+-		goto out_err;
++		goto out_unlock;
+ 
+ 	/*
+ 	 * Allocate a new cgroup root. We may not need it if we're
+@@ -1480,16 +1481,20 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
+ 	new_root = cgroup_root_from_opts(&opts);
+ 	if (IS_ERR(new_root)) {
+ 		ret = PTR_ERR(new_root);
+-		goto out_err;
++		goto out_unlock;
+ 	}
+ 	opts.new_root = new_root;
+ 
+ 	/* Locate an existing or new sb for this hierarchy */
++	mutex_unlock(&cgroup_mutex);
++	mutex_unlock(&cgroup_tree_mutex);
+ 	sb = sget(fs_type, cgroup_test_super, cgroup_set_super, 0, &opts);
++	mutex_lock(&cgroup_tree_mutex);
++	mutex_lock(&cgroup_mutex);
+ 	if (IS_ERR(sb)) {
+ 		ret = PTR_ERR(sb);
+ 		cgroup_free_root(opts.new_root);
+-		goto out_err;
++		goto out_unlock;
+ 	}
+ 
+ 	root = sb->s_fs_info;
+@@ -1503,9 +1508,12 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
+ 
+ 		BUG_ON(sb->s_root != NULL);
+ 
++		mutex_unlock(&cgroup_mutex);
++		mutex_unlock(&cgroup_tree_mutex);
++
+ 		ret = cgroup_get_rootdir(sb);
+ 		if (ret)
+-			goto drop_new_super;
++			goto out_unlock;
+ 		inode = sb->s_root->d_inode;
+ 
+ 		mutex_lock(&inode->i_mutex);
+@@ -1514,7 +1522,7 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
+ 
+ 		ret = idr_alloc(&root->cgroup_idr, root_cgrp, 0, 1, GFP_KERNEL);
+ 		if (ret < 0)
+-			goto unlock_drop;
++			goto out_unlock;
+ 		root_cgrp->id = ret;
+ 
+ 		/* Check for name clashes with existing mounts */
+@@ -1522,7 +1530,7 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
+ 		if (strlen(root->name))
+ 			for_each_active_root(existing_root)
+ 				if (!strcmp(existing_root->name, root->name))
+-					goto unlock_drop;
++					goto out_unlock;
+ 
+ 		/*
+ 		 * We're accessing css_set_count without locking
+@@ -1533,12 +1541,12 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
+ 		 */
+ 		ret = allocate_cgrp_cset_links(css_set_count, &tmp_links);
+ 		if (ret)
+-			goto unlock_drop;
++			goto out_unlock;
+ 
+ 		/* ID 0 is reserved for dummy root, 1 for unified hierarchy */
+ 		ret = cgroup_init_root_id(root, 2, 0);
+ 		if (ret)
+-			goto unlock_drop;
++			goto out_unlock;
+ 
+ 		sb->s_root->d_fsdata = root_cgrp;
+ 		root_cgrp->dentry = sb->s_root;
+@@ -1578,14 +1586,8 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
+ 			link_css_set(&tmp_links, cset, root_cgrp);
+ 		write_unlock(&css_set_lock);
+ 
+-		free_cgrp_cset_links(&tmp_links);
+-
+ 		BUG_ON(!list_empty(&root_cgrp->children));
+ 		BUG_ON(root->number_of_cgroups != 1);
+-
+-		mutex_unlock(&cgroup_mutex);
+-		mutex_unlock(&cgroup_tree_mutex);
+-		mutex_unlock(&inode->i_mutex);
+ 	} else {
+ 		/*
+ 		 * We re-used an existing hierarchy - the new root (if
+@@ -1597,32 +1599,37 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
+ 			if ((root->flags | opts.flags) & CGRP_ROOT_SANE_BEHAVIOR) {
+ 				pr_err("cgroup: sane_behavior: new mount options should match the existing superblock\n");
+ 				ret = -EINVAL;
+-				goto drop_new_super;
++				goto out_unlock;
+ 			} else {
+ 				pr_warning("cgroup: new mount options do not match the existing superblock, will be ignored\n");
+ 			}
+ 		}
+ 	}
+ 
+-	kfree(opts.release_agent);
+-	kfree(opts.name);
+-	return dget(sb->s_root);
++	ret = 0;
++	goto out_unlock;
+ 
+- rm_base_files:
+-	free_cgrp_cset_links(&tmp_links);
++rm_base_files:
+ 	cgroup_addrm_files(&root->top_cgroup, cgroup_base_files, false);
+ 	revert_creds(cred);
+- unlock_drop:
+ 	cgroup_exit_root_id(root);
++out_unlock:
+ 	mutex_unlock(&cgroup_mutex);
  	mutex_unlock(&cgroup_tree_mutex);
- 	dput(prev);
- 	deactivate_super(sb);
-@@ -4385,10 +4385,13 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
- 	/*
- 	 * Initiate massacre of all css's.  cgroup_destroy_css_killed()
- 	 * will be invoked to perform the rest of destruction once the
--	 * percpu refs of all css's are confirmed to be killed.
-+	 * percpu refs of all css's are confirmed to be killed.  This
-+	 * involves removing the subsystem's files, drop cgroup_mutex.
- 	 */
-+	mutex_unlock(&cgroup_mutex);
- 	for_each_css(css, ssid, cgrp)
- 		kill_css(css);
-+	mutex_lock(&cgroup_mutex);
+-	mutex_unlock(&inode->i_mutex);
+- drop_new_super:
+-	deactivate_locked_super(sb);
+- out_err:
++	if (inode)
++		mutex_unlock(&inode->i_mutex);
++
++	if (ret && !IS_ERR_OR_NULL(sb))
++		deactivate_locked_super(sb);
++
++	free_cgrp_cset_links(&tmp_links);
+ 	kfree(opts.release_agent);
+ 	kfree(opts.name);
+-	return ERR_PTR(ret);
++
++	if (!ret)
++		return dget(sb->s_root);
++	else
++		return ERR_PTR(ret);
+ }
  
- 	/*
- 	 * Mark @cgrp dead.  This prevents further task migration and child
-@@ -4419,9 +4422,11 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
- 	 * puts the base ref but we aren't quite done with @cgrp yet, so
- 	 * hold onto it.
- 	 */
-+	mutex_unlock(&cgroup_mutex);
- 	cgroup_addrm_files(cgrp, cgroup_base_files, false);
- 	dget(d);
- 	cgroup_d_remove_dir(d);
-+	mutex_lock(&cgroup_mutex);
- 
- 	return 0;
- };
+ static void cgroup_kill_sb(struct super_block *sb)
 -- 
 1.8.5.3
