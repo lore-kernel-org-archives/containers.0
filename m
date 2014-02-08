@@ -1,8 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 05/13] cgroup: factor out cgroup_setup_root() from
-	cgroup_mount()
-Date: Sat,  8 Feb 2014 11:15:19 -0500
-Message-ID: <1391876127-7134-6-git-send-email-tj@kernel.org>
+Subject: [PATCH 06/13] cgroup: update cgroup name handling
+Date: Sat,  8 Feb 2014 11:15:20 -0500
+Message-ID: <1391876127-7134-7-git-send-email-tj@kernel.org>
 References: <1391876127-7134-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,267 +21,108 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Factor out new root initialization into cgroup_setup_root() from
-cgroup_mount().  This makes it easier to follow and will ease kernfs
-conversion.
+Straightforward updates to cgroup name handling in preparation of
+kernfs conversion.
+
+* cgroup_alloc_name() is updated to take const char * isntead of
+  dentry * for name source.
+
+* cgroup name formatting is separated out into cgroup_file_name().
+  While at it, buffer length protection is added.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 211 ++++++++++++++++++++++++++++++--------------------------
- 1 file changed, 113 insertions(+), 98 deletions(-)
+ kernel/cgroup.c | 35 ++++++++++++++++++++++-------------
+ 1 file changed, 22 insertions(+), 13 deletions(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index d88393c..8a9548c 100644
+index 8a9548c..3cef4a3 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -1453,17 +1453,126 @@ static int cgroup_get_rootdir(struct super_block *sb)
- 	return 0;
+@@ -67,6 +67,9 @@
+  */
+ #define CGROUP_PIDLIST_DESTROY_DELAY	HZ
+ 
++#define CGROUP_FILE_NAME_MAX		(MAX_CGROUP_TYPE_NAMELEN +	\
++					 MAX_CFTYPE_NAME + 2)
++
+ /*
+  * cgroup_tree_mutex nests above cgroup_mutex and protects cftypes, file
+  * creation/removal and hierarchy changing operations including cgroup
+@@ -799,17 +802,29 @@ static struct inode *cgroup_new_inode(umode_t mode, struct super_block *sb)
+ 	return inode;
  }
  
-+static int cgroup_setup_root(struct cgroupfs_root *root)
+-static struct cgroup_name *cgroup_alloc_name(struct dentry *dentry)
++static struct cgroup_name *cgroup_alloc_name(const char *name_str)
+ {
+ 	struct cgroup_name *name;
+ 
+-	name = kmalloc(sizeof(*name) + dentry->d_name.len + 1, GFP_KERNEL);
++	name = kmalloc(sizeof(*name) + strlen(name_str) + 1, GFP_KERNEL);
+ 	if (!name)
+ 		return NULL;
+-	strcpy(name->name, dentry->d_name.name);
++	strcpy(name->name, name_str);
+ 	return name;
+ }
+ 
++static char *cgroup_file_name(struct cgroup *cgrp, const struct cftype *cft,
++			      char *buf)
 +{
-+	LIST_HEAD(tmp_links);
-+	struct super_block *sb = root->sb;
-+	struct cgroup *root_cgrp = &root->top_cgroup;
-+	struct cgroupfs_root *existing_root;
-+	struct css_set *cset;
-+	struct inode *inode;
-+	const struct cred *cred;
-+	int i, ret;
-+
-+	lockdep_assert_held(&cgroup_tree_mutex);
-+	lockdep_assert_held(&cgroup_mutex);
-+	BUG_ON(sb->s_root != NULL);
-+
-+	mutex_unlock(&cgroup_mutex);
-+	mutex_unlock(&cgroup_tree_mutex);
-+
-+	ret = cgroup_get_rootdir(sb);
-+	if (ret) {
-+		mutex_lock(&cgroup_tree_mutex);
-+		mutex_lock(&cgroup_mutex);
-+		return ret;
-+	}
-+	inode = sb->s_root->d_inode;
-+
-+	mutex_lock(&inode->i_mutex);
-+	mutex_lock(&cgroup_tree_mutex);
-+	mutex_lock(&cgroup_mutex);
-+
-+	ret = idr_alloc(&root->cgroup_idr, root_cgrp, 0, 1, GFP_KERNEL);
-+	if (ret < 0)
-+		goto out_unlock;
-+	root_cgrp->id = ret;
-+
-+	/* check for name clashes with existing mounts */
-+	ret = -EBUSY;
-+	if (strlen(root->name))
-+		for_each_active_root(existing_root)
-+			if (!strcmp(existing_root->name, root->name))
-+				goto out_unlock;
-+
-+	/*
-+	 * We're accessing css_set_count without locking css_set_lock here,
-+	 * but that's OK - it can only be increased by someone holding
-+	 * cgroup_lock, and that's us. The worst that can happen is that we
-+	 * have some link structures left over
-+	 */
-+	ret = allocate_cgrp_cset_links(css_set_count, &tmp_links);
-+	if (ret)
-+		goto out_unlock;
-+
-+	/* ID 0 is reserved for dummy root, 1 for unified hierarchy */
-+	ret = cgroup_init_root_id(root, 2, 0);
-+	if (ret)
-+		goto out_unlock;
-+
-+	sb->s_root->d_fsdata = root_cgrp;
-+	root_cgrp->dentry = sb->s_root;
-+
-+	/*
-+	 * We're inside get_sb() and will call lookup_one_len() to create
-+	 * the root files, which doesn't work if SELinux is in use.  The
-+	 * following cred dancing somehow works around it.  See 2ce9738ba
-+	 * ("cgroupfs: use init_cred when populating new cgroupfs mount")
-+	 * for more details.
-+	 */
-+	cred = override_creds(&init_cred);
-+
-+	ret = cgroup_addrm_files(root_cgrp, cgroup_base_files, true);
-+	if (ret)
-+		goto rm_base_files;
-+
-+	ret = rebind_subsystems(root, root->subsys_mask, 0);
-+	if (ret)
-+		goto rm_base_files;
-+
-+	revert_creds(cred);
-+
-+	/*
-+	 * There must be no failure case after here, since rebinding takes
-+	 * care of subsystems' refcounts, which are explicitly dropped in
-+	 * the failure exit path.
-+	 */
-+	list_add(&root->root_list, &cgroup_roots);
-+	cgroup_root_count++;
-+
-+	/*
-+	 * Link the top cgroup in this hierarchy into all the css_set
-+	 * objects.
-+	 */
-+	write_lock(&css_set_lock);
-+	hash_for_each(css_set_table, i, cset, hlist)
-+		link_css_set(&tmp_links, cset, root_cgrp);
-+	write_unlock(&css_set_lock);
-+
-+	BUG_ON(!list_empty(&root_cgrp->children));
-+	BUG_ON(root->number_of_cgroups != 1);
-+
-+	ret = 0;
-+	goto out_unlock;
-+
-+rm_base_files:
-+	cgroup_addrm_files(&root->top_cgroup, cgroup_base_files, false);
-+	revert_creds(cred);
-+	cgroup_exit_root_id(root);
-+out_unlock:
-+	mutex_unlock(&inode->i_mutex);
-+	free_cgrp_cset_links(&tmp_links);
-+	return ret;
++	if (cft->ss && !(cft->flags & CFTYPE_NO_PREFIX) &&
++	    !(cgrp->root->flags & CGRP_ROOT_NOPREFIX))
++		snprintf(buf, CGROUP_FILE_NAME_MAX, "%s.%s",
++			 cft->ss->name, cft->name);
++	else
++		strncpy(buf, cft->name, CGROUP_FILE_NAME_MAX);
++	return buf;
 +}
 +
- static struct dentry *cgroup_mount(struct file_system_type *fs_type,
- 			 int flags, const char *unused_dev_name,
- 			 void *data)
+ static void cgroup_free_fn(struct work_struct *work)
  {
--	LIST_HEAD(tmp_links);
- 	struct super_block *sb = NULL;
--	struct inode *inode = NULL;
- 	struct cgroupfs_root *root = NULL;
- 	struct cgroup_sb_opts opts;
- 	struct cgroupfs_root *new_root;
--	const struct cred *cred;
- 	int ret;
+ 	struct cgroup *cgrp = container_of(work, struct cgroup, destroy_work);
+@@ -2435,7 +2450,7 @@ static int cgroup_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 	if (cgroup_sane_behavior(cgrp))
+ 		return -EPERM;
  
- 	mutex_lock(&cgroup_tree_mutex);
-@@ -1500,94 +1609,9 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
- 	root = sb->s_fs_info;
- 	BUG_ON(!root);
- 	if (root == opts.new_root) {
--		/* We used the new root structure, so this is a new hierarchy */
--		struct cgroup *root_cgrp = &root->top_cgroup;
--		struct cgroupfs_root *existing_root;
--		int i;
--		struct css_set *cset;
--
--		BUG_ON(sb->s_root != NULL);
--
--		mutex_unlock(&cgroup_mutex);
--		mutex_unlock(&cgroup_tree_mutex);
--
--		ret = cgroup_get_rootdir(sb);
-+		ret = cgroup_setup_root(root);
- 		if (ret)
- 			goto out_unlock;
--		inode = sb->s_root->d_inode;
--
--		mutex_lock(&inode->i_mutex);
--		mutex_lock(&cgroup_tree_mutex);
--		mutex_lock(&cgroup_mutex);
--
--		ret = idr_alloc(&root->cgroup_idr, root_cgrp, 0, 1, GFP_KERNEL);
--		if (ret < 0)
--			goto out_unlock;
--		root_cgrp->id = ret;
--
--		/* Check for name clashes with existing mounts */
--		ret = -EBUSY;
--		if (strlen(root->name))
--			for_each_active_root(existing_root)
--				if (!strcmp(existing_root->name, root->name))
--					goto out_unlock;
--
--		/*
--		 * We're accessing css_set_count without locking
--		 * css_set_lock here, but that's OK - it can only be
--		 * increased by someone holding cgroup_lock, and
--		 * that's us. The worst that can happen is that we
--		 * have some link structures left over
--		 */
--		ret = allocate_cgrp_cset_links(css_set_count, &tmp_links);
--		if (ret)
--			goto out_unlock;
--
--		/* ID 0 is reserved for dummy root, 1 for unified hierarchy */
--		ret = cgroup_init_root_id(root, 2, 0);
--		if (ret)
--			goto out_unlock;
--
--		sb->s_root->d_fsdata = root_cgrp;
--		root_cgrp->dentry = sb->s_root;
--
--		/*
--		 * We're inside get_sb() and will call lookup_one_len() to
--		 * create the root files, which doesn't work if SELinux is
--		 * in use.  The following cred dancing somehow works around
--		 * it.  See 2ce9738ba ("cgroupfs: use init_cred when
--		 * populating new cgroupfs mount") for more details.
--		 */
--		cred = override_creds(&init_cred);
--
--		ret = cgroup_addrm_files(root_cgrp, cgroup_base_files, true);
--		if (ret)
--			goto rm_base_files;
--
--		ret = rebind_subsystems(root, root->subsys_mask, 0);
--		if (ret)
--			goto rm_base_files;
--
--		revert_creds(cred);
--
--		/*
--		 * There must be no failure case after here, since rebinding
--		 * takes care of subsystems' refcounts, which are explicitly
--		 * dropped in the failure exit path.
--		 */
--
--		list_add(&root->root_list, &cgroup_roots);
--		cgroup_root_count++;
--
--		/* Link the top cgroup in this hierarchy into all
--		 * the css_set objects */
--		write_lock(&css_set_lock);
--		hash_for_each(css_set_table, i, cset, hlist)
--			link_css_set(&tmp_links, cset, root_cgrp);
--		write_unlock(&css_set_lock);
--
--		BUG_ON(!list_empty(&root_cgrp->children));
--		BUG_ON(root->number_of_cgroups != 1);
- 	} else {
- 		/*
- 		 * We re-used an existing hierarchy - the new root (if
-@@ -1607,22 +1631,13 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
- 	}
+-	name = cgroup_alloc_name(new_dentry);
++	name = cgroup_alloc_name(new_dentry->d_name.name);
+ 	if (!name)
+ 		return -ENOMEM;
  
- 	ret = 0;
--	goto out_unlock;
+@@ -2611,14 +2626,7 @@ static int cgroup_add_file(struct cgroup *cgrp, struct cftype *cft)
+ 	struct cfent *cfe;
+ 	int error;
+ 	umode_t mode;
+-	char name[MAX_CGROUP_TYPE_NAMELEN + MAX_CFTYPE_NAME + 2] = { 0 };
 -
--rm_base_files:
--	cgroup_addrm_files(&root->top_cgroup, cgroup_base_files, false);
--	revert_creds(cred);
--	cgroup_exit_root_id(root);
- out_unlock:
- 	mutex_unlock(&cgroup_mutex);
- 	mutex_unlock(&cgroup_tree_mutex);
--	if (inode)
--		mutex_unlock(&inode->i_mutex);
+-	if (cft->ss && !(cft->flags & CFTYPE_NO_PREFIX) &&
+-	    !(cgrp->root->flags & CGRP_ROOT_NOPREFIX)) {
+-		strcpy(name, cft->ss->name);
+-		strcat(name, ".");
+-	}
+-	strcat(name, cft->name);
++	char name[CGROUP_FILE_NAME_MAX];
  
- 	if (ret && !IS_ERR_OR_NULL(sb))
- 		deactivate_locked_super(sb);
+ 	BUG_ON(!mutex_is_locked(&dir->d_inode->i_mutex));
  
--	free_cgrp_cset_links(&tmp_links);
- 	kfree(opts.release_agent);
- 	kfree(opts.name);
+@@ -2626,6 +2634,7 @@ static int cgroup_add_file(struct cgroup *cgrp, struct cftype *cft)
+ 	if (!cfe)
+ 		return -ENOMEM;
  
++	cgroup_file_name(cgrp, cft, name);
+ 	dentry = lookup_one_len(name, dir, strlen(name));
+ 	if (IS_ERR(dentry)) {
+ 		error = PTR_ERR(dentry);
+@@ -4133,7 +4142,7 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+ 	if (!cgrp)
+ 		return -ENOMEM;
+ 
+-	name = cgroup_alloc_name(dentry);
++	name = cgroup_alloc_name(dentry->d_name.name);
+ 	if (!name) {
+ 		err = -ENOMEM;
+ 		goto err_free_cgrp;
 -- 
 1.8.5.3
