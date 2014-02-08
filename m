@@ -1,13 +1,14 @@
-From: David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 7/9] mm: Mark functions as static in page_cgroup.c
-Date: Fri, 7 Feb 2014 12:56:11 -0800 (PST)
-Message-ID: <alpine.DEB.2.02.1402071255590.4212__31911.7742045366$1391806589$gmane$org@chino.kir.corp.google.com>
-References: <a7658fc8f2ab015bffe83de1448cc3db79d2a9fc.1391167128.git.rashika.kheria@gmail.com>
-	<6054d570fc83c3d4f3de240d6da488f876e21450.1391167128.git.rashika.kheria@gmail.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCHSET cgroup/for-3.14-fixes] cgroup: four misc fixes
+Date: Sat, 8 Feb 2014 10:25:51 -0500
+Message-ID: <20140208152551.GC3263@htj.dyndns.org>
+References: <1390923125-4369-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
-Content-Type: MULTIPART/MIXED; BOUNDARY="531381512-2145918811-1391806572=:4212"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6054d570fc83c3d4f3de240d6da488f876e21450.1391167128.git.rashika.kheria-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1390923125-4369-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,42 +18,22 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Rashika Kheria <rashika.kheria-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, josh-iaAMLnmF4UmaiuxdJuQwMA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-  This message is in MIME format.  The first part should be readable text,
-  while the remaining parts are likely unreadable without MIME-aware tools.
+On Tue, Jan 28, 2014 at 10:32:01AM -0500, Tejun Heo wrote:
+> Hello,
+> 
+> This patchset contains the following four fixes found during
+> conversion to kernfs.  0001-0003 are marked with -stable.
+> 
+>  0001-cgroup-fix-error-return-value-in-cgroup_mount.patch
+>  0002-cgroup-fix-error-return-from-cgroup_create.patch
+>  0003-cgroup-fix-locking-in-cgroup_cfts_commit.patch
+>  0004-cgroup-move-the-one-off-opts-sanity-check-in-cgroup_.patch
 
---531381512-2145918811-1391806572=:4212
-Content-Type: TEXT/PLAIN; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+Applied 0001-0003 to cgroup/for-3.14-fixes.  Thanks!
 
-On Fri, 7 Feb 2014, Rashika Kheria wrote:
-
-> Mark functions as static in page_cgroup.c because they are not used
-> outside this file.
->=20
-> This eliminates the following warning in mm/page_cgroup.c:
-> mm/page_cgroup.c:177:6: warning: no previous prototype for =E2=80=98__f=
-ree_page_cgroup=E2=80=99 [-Wmissing-prototypes]
-> mm/page_cgroup.c:190:15: warning: no previous prototype for =E2=80=98on=
-line_page_cgroup=E2=80=99 [-Wmissing-prototypes]
-> mm/page_cgroup.c:225:15: warning: no previous prototype for =E2=80=98of=
-fline_page_cgroup=E2=80=99 [-Wmissing-prototypes]
->=20
-> Signed-off-by: Rashika Kheria <rashika.kheria-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> Reviewed-by: Josh Triplett <josh-iaAMLnmF4UmaiuxdJuQwMA@public.gmane.org>
-
-Acked-by: David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
---531381512-2145918811-1391806572=:4212
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---531381512-2145918811-1391806572=:4212--
+-- 
+tejun
