@@ -1,8 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 01/16] cgroup: disallow xattr,
-	release_agent and name if sane_behavior
-Date: Sun,  9 Feb 2014 08:52:29 -0500
-Message-ID: <1391953964-22088-2-git-send-email-tj@kernel.org>
+Subject: [PATCH 02/16] cgroup: drop CGRP_ROOT_SUBSYS_BOUND
+Date: Sun,  9 Feb 2014 08:52:30 -0500
+Message-ID: <1391953964-22088-3-git-send-email-tj@kernel.org>
 References: <1391953964-22088-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,68 +21,118 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Disallow more mount options if sane_behavior.  Note that xattr used to
-generate warning.
+Before kernfs conversion, due to the way super_block lookup works,
+cgroup roots were created and made visible before being fully
+initialized.  This in turn required a special flag to mark that the
+root hasn't been fully initialized so that the destruction path can
+tell fully bound ones from half initialized.
 
-While at it, simplify option check in cgroup_mount() and update
-sane_behavior comment in cgroup.h.
+That flag is CGRP_ROOT_SUBSYS_BOUND and no longer necessary after the
+kernfs conversion as the lookup and creation of new root are atomic
+w.r.t. cgroup_mutex.  This patch removes the flag and passes the
+requests subsystem mask to cgroup_setup_root() so that it can set the
+respective mask bits as subsystems are bound.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- include/linux/cgroup.h |  6 +++---
- kernel/cgroup.c        | 14 ++++----------
- 2 files changed, 7 insertions(+), 13 deletions(-)
+ include/linux/cgroup.h |  2 --
+ kernel/cgroup.c        | 28 ++++------------------------
+ 2 files changed, 4 insertions(+), 26 deletions(-)
 
 diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 5f2c629..fa415a8 100644
+index fa415a8..8ca31c1 100644
 --- a/include/linux/cgroup.h
 +++ b/include/linux/cgroup.h
-@@ -225,8 +225,8 @@ enum {
- 	 *
- 	 * The followings are the behaviors currently affected this flag.
- 	 *
--	 * - Mount options "noprefix" and "clone_children" are disallowed.
--	 *   Also, cgroupfs file cgroup.clone_children is not created.
-+	 * - Mount options "noprefix", "xattr", "clone_children",
-+	 *   "release_agent" and "name" are disallowed.
- 	 *
- 	 * - When mounting an existing superblock, mount options should
- 	 *   match.
-@@ -244,7 +244,7 @@ enum {
- 	 * - "release_agent" and "notify_on_release" are removed.
- 	 *   Replacement notification mechanism will be implemented.
- 	 *
--	 * - "xattr" mount option is deprecated.  kernfs always enables it.
-+	 * - "cgroup.clone_children" is removed.
- 	 *
- 	 * - cpuset: tasks will be kept in empty cpusets when hotplug happens
- 	 *   and take masks of ancestors with non-empty cpus/mems, instead of
+@@ -265,8 +265,6 @@ enum {
+ 
+ 	/* mount options live below bit 16 */
+ 	CGRP_ROOT_OPTION_MASK	= (1 << 16) - 1,
+-
+-	CGRP_ROOT_SUBSYS_BOUND	= (1 << 16), /* subsystems finished binding */
+ };
+ 
+ /*
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 4c53e90..47160ce 100644
+index 47160ce..caed061 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -1224,18 +1224,12 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
- 	if (opts->flags & CGRP_ROOT_SANE_BEHAVIOR) {
- 		pr_warning("cgroup: sane_behavior: this is still under development and its behaviors will change, proceed at your own risk\n");
+@@ -733,7 +733,6 @@ static void cgroup_destroy_root(struct cgroupfs_root *root)
+ {
+ 	struct cgroup *cgrp = &root->top_cgroup;
+ 	struct cgrp_cset_link *link, *tmp_link;
+-	int ret;
  
--		if (opts->flags & CGRP_ROOT_NOPREFIX) {
--			pr_err("cgroup: sane_behavior: noprefix is not allowed\n");
-+		if ((opts->flags & (CGRP_ROOT_NOPREFIX | CGRP_ROOT_XATTR)) ||
-+		    opts->cpuset_clone_children || opts->release_agent ||
-+		    opts->name) {
-+			pr_err("cgroup: sane_behavior: noprefix, xattr, clone_children, release_agent and name are not allowed\n");
- 			return -EINVAL;
- 		}
--
--		if (opts->cpuset_clone_children) {
--			pr_err("cgroup: sane_behavior: clone_children is not allowed\n");
--			return -EINVAL;
--		}
--
--		if (opts->flags & CGRP_ROOT_XATTR)
--			pr_warning("cgroup: sane_behavior: xattr is always available, flag unnecessary\n");
- 	}
+ 	mutex_lock(&cgroup_tree_mutex);
+ 	mutex_lock(&cgroup_mutex);
+@@ -742,11 +741,7 @@ static void cgroup_destroy_root(struct cgroupfs_root *root)
+ 	BUG_ON(!list_empty(&cgrp->children));
+ 
+ 	/* Rebind all subsystems back to the default hierarchy */
+-	if (root->flags & CGRP_ROOT_SUBSYS_BOUND) {
+-		ret = rebind_subsystems(root, 0, root->subsys_mask);
+-		/* Shouldn't be able to fail ... */
+-		BUG_ON(ret);
+-	}
++	WARN_ON(rebind_subsystems(root, 0, root->subsys_mask));
  
  	/*
+ 	 * Release all the links from cset_links to this hierarchy's
+@@ -1053,13 +1048,7 @@ static int rebind_subsystems(struct cgroupfs_root *root,
+ 		}
+ 	}
+ 
+-	/*
+-	 * Mark @root has finished binding subsystems.  @root->subsys_mask
+-	 * now matches the bound subsystems.
+-	 */
+-	root->flags |= CGRP_ROOT_SUBSYS_BOUND;
+ 	kernfs_activate(cgrp->kn);
+-
+ 	return 0;
+ }
+ 
+@@ -1351,15 +1340,6 @@ static struct cgroupfs_root *cgroup_root_from_opts(struct cgroup_sb_opts *opts)
+ 
+ 	init_cgroup_root(root);
+ 
+-	/*
+-	 * We need to set @root->subsys_mask now so that @root can be
+-	 * matched by cgroup_test_super() before it finishes
+-	 * initialization; otherwise, competing mounts with the same
+-	 * options may try to bind the same subsystems instead of waiting
+-	 * for the first one leading to unexpected mount errors.
+-	 * SUBSYS_BOUND will be set once actual binding is complete.
+-	 */
+-	root->subsys_mask = opts->subsys_mask;
+ 	root->flags = opts->flags;
+ 	if (opts->release_agent)
+ 		strcpy(root->release_agent_path, opts->release_agent);
+@@ -1370,7 +1350,7 @@ static struct cgroupfs_root *cgroup_root_from_opts(struct cgroup_sb_opts *opts)
+ 	return root;
+ }
+ 
+-static int cgroup_setup_root(struct cgroupfs_root *root)
++static int cgroup_setup_root(struct cgroupfs_root *root, unsigned long ss_mask)
+ {
+ 	LIST_HEAD(tmp_links);
+ 	struct cgroup *root_cgrp = &root->top_cgroup;
+@@ -1413,7 +1393,7 @@ static int cgroup_setup_root(struct cgroupfs_root *root)
+ 	if (ret)
+ 		goto destroy_root;
+ 
+-	ret = rebind_subsystems(root, root->subsys_mask, 0);
++	ret = rebind_subsystems(root, ss_mask, 0);
+ 	if (ret)
+ 		goto destroy_root;
+ 
+@@ -1530,7 +1510,7 @@ retry:
+ 		goto out_unlock;
+ 	}
+ 
+-	ret = cgroup_setup_root(root);
++	ret = cgroup_setup_root(root, opts.subsys_mask);
+ 	if (ret)
+ 		cgroup_free_root(root);
+ 
 -- 
 1.8.5.3
