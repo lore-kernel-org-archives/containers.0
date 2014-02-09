@@ -1,8 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 07/16] cgroup: make css_set_lock a rwsem and rename it to
-	css_set_rwsem
-Date: Sun,  9 Feb 2014 08:52:35 -0500
-Message-ID: <1391953964-22088-8-git-send-email-tj@kernel.org>
+Subject: [PATCH 08/16] cpuset: use css_task_iter_start/next/end() instead of
+	css_scan_tasks()
+Date: Sun,  9 Feb 2014 08:52:36 -0500
+Message-ID: <1391953964-22088-9-git-send-email-tj@kernel.org>
 References: <1391953964-22088-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,420 +22,376 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Currently there are two ways to walk tasks of a cgroup -
-css_task_iter_start/next/end() and css_scan_tasks().  The latter
-builds on the former but allows blocking while iterating.
-Unfortunately, the way css_scan_tasks() is implemented is rather
-nasty, it uses a priority heap of pointers to extract some number of
-tasks in task creation order and loops over them invoking the callback
-and repeats that until it reaches the end.  It requires either
-preallocated heap or may fail under memory pressure, while unlikely to
-be problematic, the complexity is O(N^2), and in general just nasty.
+Now that css_task_iter_start/next_end() supports blocking while
+iterating, there's no reason to use css_scan_tasks() which is more
+cumbersome to use and scheduled to be removed.
 
-We're gonna convert all css_scan_users() to
-css_task_iter_start/next/end() and remove css_scan_users().  As
-css_scan_tasks() users may block, let's convert css_set_lock to a
-rwsem so that tasks can block during css_task_iter_*() is in progress.
-
-While this does increase the chance of possible deadlock scenarios,
-given the current usage, the probability is relatively low, and even
-if that happens, the right thing to do is updating the iteration in
-the similar way to css iterators so that it can handle blocking.
-
-Most conversions are trivial; however, task_cgroup_path() now expects
-to be called with css_set_rwsem locked instead of locking itself.
-This is because the function is called with RCU read lock held and
-rwsem locking should nest outside RCU read lock.
+Convert all css_scan_tasks() usages in cpuset to
+css_task_iter_start/next/end().  This simplifies the code by removing
+heap allocation and callbacks.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 ---
- kernel/cgroup.c | 104 +++++++++++++++++++++++++++++++-------------------------
- 1 file changed, 57 insertions(+), 47 deletions(-)
+ kernel/cpuset.c | 186 ++++++++++++++++++--------------------------------------
+ 1 file changed, 58 insertions(+), 128 deletions(-)
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index a5f965c..5ad1b25 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -42,6 +42,7 @@
- #include <linux/sched.h>
- #include <linux/slab.h>
- #include <linux/spinlock.h>
-+#include <linux/rwsem.h>
- #include <linux/string.h>
- #include <linux/sort.h>
- #include <linux/kmod.h>
-@@ -341,11 +342,10 @@ static struct css_set init_css_set;
- static struct cgrp_cset_link init_cgrp_cset_link;
+diff --git a/kernel/cpuset.c b/kernel/cpuset.c
+index ae190b0..65ae0bd 100644
+--- a/kernel/cpuset.c
++++ b/kernel/cpuset.c
+@@ -829,55 +829,36 @@ static struct cpuset *effective_nodemask_cpuset(struct cpuset *cs)
+ }
  
- /*
-- * css_set_lock protects the list of css_set objects, and the chain of
-- * tasks off each css_set.  Nests outside task->alloc_lock due to
-- * css_task_iter_start().
-+ * css_set_rwsem protects the list of css_set objects, and the chain of
-+ * tasks off each css_set.
+ /**
+- * cpuset_change_cpumask - make a task's cpus_allowed the same as its cpuset's
+- * @tsk: task to test
+- * @data: cpuset to @tsk belongs to
+- *
+- * Called by css_scan_tasks() for each task in a cgroup whose cpus_allowed
+- * mask needs to be changed.
+- *
+- * We don't need to re-check for the cgroup/cpuset membership, since we're
+- * holding cpuset_mutex at this point.
+- */
+-static void cpuset_change_cpumask(struct task_struct *tsk, void *data)
+-{
+-	struct cpuset *cs = data;
+-	struct cpuset *cpus_cs = effective_cpumask_cpuset(cs);
+-
+-	set_cpus_allowed_ptr(tsk, cpus_cs->cpus_allowed);
+-}
+-
+-/**
+  * update_tasks_cpumask - Update the cpumasks of tasks in the cpuset.
+  * @cs: the cpuset in which each task's cpus_allowed mask needs to be changed
+- * @heap: if NULL, defer allocating heap memory to css_scan_tasks()
+- *
+- * Called with cpuset_mutex held
+- *
+- * The css_scan_tasks() function will scan all the tasks in a cgroup,
+- * calling callback functions for each.
+  *
+- * No return value. It's guaranteed that css_scan_tasks() always returns 0
+- * if @heap != NULL.
++ * Iterate through each task of @cs updating its cpus_allowed to the
++ * effective cpuset's.  As this function is called with cpuset_mutex held,
++ * cpuset membership stays stable.
   */
--static DEFINE_RWLOCK(css_set_lock);
-+static DECLARE_RWSEM(css_set_rwsem);
- static int css_set_count;
- 
- /*
-@@ -380,9 +380,9 @@ static void __put_css_set(struct css_set *cset, int taskexit)
- 	 */
- 	if (atomic_add_unless(&cset->refcount, -1, 1))
- 		return;
--	write_lock(&css_set_lock);
-+	down_write(&css_set_rwsem);
- 	if (!atomic_dec_and_test(&cset->refcount)) {
--		write_unlock(&css_set_lock);
-+		up_write(&css_set_rwsem);
- 		return;
- 	}
- 
-@@ -396,7 +396,7 @@ static void __put_css_set(struct css_set *cset, int taskexit)
- 		list_del(&link->cset_link);
- 		list_del(&link->cgrp_link);
- 
--		/* @cgrp can't go away while we're holding css_set_lock */
-+		/* @cgrp can't go away while we're holding css_set_rwsem */
- 		if (list_empty(&cgrp->cset_links) && notify_on_release(cgrp)) {
- 			if (taskexit)
- 				set_bit(CGRP_RELEASABLE, &cgrp->flags);
-@@ -406,7 +406,7 @@ static void __put_css_set(struct css_set *cset, int taskexit)
- 		kfree(link);
- 	}
- 
--	write_unlock(&css_set_lock);
-+	up_write(&css_set_rwsem);
- 	kfree_rcu(cset, rcu_head);
- }
- 
-@@ -627,11 +627,11 @@ static struct css_set *find_css_set(struct css_set *old_cset,
- 
- 	/* First see if we already have a cgroup group that matches
- 	 * the desired set */
--	read_lock(&css_set_lock);
-+	down_read(&css_set_rwsem);
- 	cset = find_existing_css_set(old_cset, cgrp, template);
- 	if (cset)
- 		get_css_set(cset);
--	read_unlock(&css_set_lock);
-+	up_read(&css_set_rwsem);
- 
- 	if (cset)
- 		return cset;
-@@ -655,7 +655,7 @@ static struct css_set *find_css_set(struct css_set *old_cset,
- 	 * find_existing_css_set() */
- 	memcpy(cset->subsys, template, sizeof(cset->subsys));
- 
--	write_lock(&css_set_lock);
-+	down_write(&css_set_rwsem);
- 	/* Add reference counts and links from the new css_set. */
- 	list_for_each_entry(link, &old_cset->cgrp_links, cgrp_link) {
- 		struct cgroup *c = link->cgrp;
-@@ -673,7 +673,7 @@ static struct css_set *find_css_set(struct css_set *old_cset,
- 	key = css_set_hash(cset->subsys);
- 	hash_add(css_set_table, &cset->hlist, key);
- 
--	write_unlock(&css_set_lock);
-+	up_write(&css_set_rwsem);
- 
- 	return cset;
- }
-@@ -739,14 +739,14 @@ static void cgroup_destroy_root(struct cgroupfs_root *root)
- 	 * Release all the links from cset_links to this hierarchy's
- 	 * root cgroup
- 	 */
--	write_lock(&css_set_lock);
-+	down_write(&css_set_rwsem);
- 
- 	list_for_each_entry_safe(link, tmp_link, &cgrp->cset_links, cset_link) {
- 		list_del(&link->cset_link);
- 		list_del(&link->cgrp_link);
- 		kfree(link);
- 	}
--	write_unlock(&css_set_lock);
-+	up_write(&css_set_rwsem);
- 
- 	if (!list_empty(&root->root_list)) {
- 		list_del(&root->root_list);
-@@ -764,7 +764,7 @@ static void cgroup_destroy_root(struct cgroupfs_root *root)
- 
- /*
-  * Return the cgroup for "task" from the given hierarchy. Must be
-- * called with cgroup_mutex held.
-+ * called with cgroup_mutex and css_set_rwsem held.
-  */
- static struct cgroup *task_cgroup_from_root(struct task_struct *task,
- 					    struct cgroupfs_root *root)
-@@ -772,8 +772,9 @@ static struct cgroup *task_cgroup_from_root(struct task_struct *task,
- 	struct css_set *cset;
- 	struct cgroup *res = NULL;
- 
--	BUG_ON(!mutex_is_locked(&cgroup_mutex));
--	read_lock(&css_set_lock);
-+	lockdep_assert_held(&cgroup_mutex);
-+	lockdep_assert_held(&css_set_rwsem);
-+
- 	/*
- 	 * No need to lock the task - since we hold cgroup_mutex the
- 	 * task can't change groups, so the only thing that can happen
-@@ -794,7 +795,7 @@ static struct cgroup *task_cgroup_from_root(struct task_struct *task,
- 			}
- 		}
- 	}
--	read_unlock(&css_set_lock);
-+
- 	BUG_ON(!res);
- 	return res;
- }
-@@ -1308,7 +1309,7 @@ static void cgroup_enable_task_cg_lists(void)
+-static void update_tasks_cpumask(struct cpuset *cs, struct ptr_heap *heap)
++static void update_tasks_cpumask(struct cpuset *cs)
  {
- 	struct task_struct *p, *g;
- 
--	write_lock(&css_set_lock);
-+	down_write(&css_set_rwsem);
- 
- 	if (use_task_css_set_links)
- 		goto out_unlock;
-@@ -1341,7 +1342,7 @@ static void cgroup_enable_task_cg_lists(void)
- 	} while_each_thread(g, p);
- 	read_unlock(&tasklist_lock);
- out_unlock:
--	write_unlock(&css_set_lock);
-+	up_write(&css_set_rwsem);
+-	css_scan_tasks(&cs->css, NULL, cpuset_change_cpumask, cs, heap);
++	struct cpuset *cpus_cs = effective_cpumask_cpuset(cs);
++	struct css_task_iter it;
++	struct task_struct *task;
++
++	css_task_iter_start(&cs->css, &it);
++	while ((task = css_task_iter_next(&it)))
++		set_cpus_allowed_ptr(task, cpus_cs->cpus_allowed);
++	css_task_iter_end(&it);
  }
  
- static void init_cgroup_housekeeping(struct cgroup *cgrp)
-@@ -1406,7 +1407,7 @@ static int cgroup_setup_root(struct cgroupfs_root *root, unsigned long ss_mask)
- 	root_cgrp->id = ret;
+ /*
+  * update_tasks_cpumask_hier - Update the cpumasks of tasks in the hierarchy.
+  * @root_cs: the root cpuset of the hierarchy
+  * @update_root: update root cpuset or not?
+- * @heap: the heap used by css_scan_tasks()
+  *
+  * This will update cpumasks of tasks in @root_cs and all other empty cpusets
+  * which take on cpumask of @root_cs.
+  *
+  * Called with cpuset_mutex held
+  */
+-static void update_tasks_cpumask_hier(struct cpuset *root_cs,
+-				      bool update_root, struct ptr_heap *heap)
++static void update_tasks_cpumask_hier(struct cpuset *root_cs, bool update_root)
+ {
+ 	struct cpuset *cp;
+ 	struct cgroup_subsys_state *pos_css;
+@@ -898,7 +879,7 @@ static void update_tasks_cpumask_hier(struct cpuset *root_cs,
+ 			continue;
+ 		rcu_read_unlock();
  
- 	/*
--	 * We're accessing css_set_count without locking css_set_lock here,
-+	 * We're accessing css_set_count without locking css_set_rwsem here,
- 	 * but that's OK - it can only be increased by someone holding
- 	 * cgroup_lock, and that's us. The worst that can happen is that we
- 	 * have some link structures left over
-@@ -1449,10 +1450,10 @@ static int cgroup_setup_root(struct cgroupfs_root *root, unsigned long ss_mask)
- 	 * Link the top cgroup in this hierarchy into all the css_set
- 	 * objects.
- 	 */
--	write_lock(&css_set_lock);
-+	down_write(&css_set_rwsem);
- 	hash_for_each(css_set_table, i, cset, hlist)
- 		link_css_set(&tmp_links, cset, root_cgrp);
--	write_unlock(&css_set_lock);
-+	up_write(&css_set_rwsem);
+-		update_tasks_cpumask(cp, heap);
++		update_tasks_cpumask(cp);
  
- 	BUG_ON(!list_empty(&root_cgrp->children));
- 	BUG_ON(atomic_read(&root->nr_cgrps) != 1);
-@@ -1615,6 +1616,7 @@ char *task_cgroup_path(struct task_struct *task, char *buf, size_t buflen)
- 	char *path = NULL;
+ 		rcu_read_lock();
+ 		css_put(&cp->css);
+@@ -914,7 +895,6 @@ static void update_tasks_cpumask_hier(struct cpuset *root_cs,
+ static int update_cpumask(struct cpuset *cs, struct cpuset *trialcs,
+ 			  const char *buf)
+ {
+-	struct ptr_heap heap;
+ 	int retval;
+ 	int is_load_balanced;
  
- 	mutex_lock(&cgroup_mutex);
-+	down_read(&css_set_rwsem);
+@@ -947,19 +927,13 @@ static int update_cpumask(struct cpuset *cs, struct cpuset *trialcs,
+ 	if (retval < 0)
+ 		return retval;
  
- 	root = idr_get_next(&cgroup_hierarchy_idr, &hierarchy_id);
+-	retval = heap_init(&heap, PAGE_SIZE, GFP_KERNEL, NULL);
+-	if (retval)
+-		return retval;
+-
+ 	is_load_balanced = is_sched_load_balance(trialcs);
  
-@@ -1627,6 +1629,7 @@ char *task_cgroup_path(struct task_struct *task, char *buf, size_t buflen)
- 			path = buf;
- 	}
+ 	mutex_lock(&callback_mutex);
+ 	cpumask_copy(cs->cpus_allowed, trialcs->cpus_allowed);
+ 	mutex_unlock(&callback_mutex);
  
-+	up_read(&css_set_rwsem);
- 	mutex_unlock(&cgroup_mutex);
- 	return path;
- }
-@@ -1738,9 +1741,9 @@ static void cgroup_task_migrate(struct cgroup *old_cgrp,
+-	update_tasks_cpumask_hier(cs, true, &heap);
+-
+-	heap_free(&heap);
++	update_tasks_cpumask_hier(cs, true);
+ 
+ 	if (is_load_balanced)
+ 		rebuild_sched_domains_locked();
+@@ -1052,53 +1026,22 @@ static void cpuset_change_task_nodemask(struct task_struct *tsk,
  	task_unlock(tsk);
+ }
  
- 	/* Update the css_set linked lists if we're using them */
--	write_lock(&css_set_lock);
-+	down_write(&css_set_rwsem);
- 	list_move(&tsk->cg_list, &new_cset->tasks);
--	write_unlock(&css_set_lock);
-+	up_write(&css_set_rwsem);
+-struct cpuset_change_nodemask_arg {
+-	struct cpuset		*cs;
+-	nodemask_t		*newmems;
+-};
+-
+-/*
+- * Update task's mems_allowed and rebind its mempolicy and vmas' mempolicy
+- * of it to cpuset's new mems_allowed, and migrate pages to new nodes if
+- * memory_migrate flag is set. Called with cpuset_mutex held.
+- */
+-static void cpuset_change_nodemask(struct task_struct *p, void *data)
+-{
+-	struct cpuset_change_nodemask_arg *arg = data;
+-	struct cpuset *cs = arg->cs;
+-	struct mm_struct *mm;
+-	int migrate;
+-
+-	cpuset_change_task_nodemask(p, arg->newmems);
+-
+-	mm = get_task_mm(p);
+-	if (!mm)
+-		return;
+-
+-	migrate = is_memory_migrate(cs);
+-
+-	mpol_rebind_mm(mm, &cs->mems_allowed);
+-	if (migrate)
+-		cpuset_migrate_mm(mm, &cs->old_mems_allowed, arg->newmems);
+-	mmput(mm);
+-}
+-
+ static void *cpuset_being_rebound;
  
- 	/*
- 	 * We just gained a reference on old_cset by taking it from the
-@@ -1798,6 +1801,7 @@ static int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk,
- 	 * already PF_EXITING could be freed from underneath us unless we
- 	 * take an rcu_read_lock.
+ /**
+  * update_tasks_nodemask - Update the nodemasks of tasks in the cpuset.
+  * @cs: the cpuset in which each task's mems_allowed mask needs to be changed
+- * @heap: if NULL, defer allocating heap memory to css_scan_tasks()
+  *
+- * Called with cpuset_mutex held.  No return value. It's guaranteed that
+- * css_scan_tasks() always returns 0 if @heap != NULL.
++ * Iterate through each task of @cs updating its mems_allowed to the
++ * effective cpuset's.  As this function is called with cpuset_mutex held,
++ * cpuset membership stays stable.
+  */
+-static void update_tasks_nodemask(struct cpuset *cs, struct ptr_heap *heap)
++static void update_tasks_nodemask(struct cpuset *cs)
+ {
+ 	static nodemask_t newmems;	/* protected by cpuset_mutex */
+ 	struct cpuset *mems_cs = effective_nodemask_cpuset(cs);
+-	struct cpuset_change_nodemask_arg arg = { .cs = cs,
+-						  .newmems = &newmems };
++	struct css_task_iter it;
++	struct task_struct *task;
+ 
+ 	cpuset_being_rebound = cs;		/* causes mpol_dup() rebind */
+ 
+@@ -1114,7 +1057,25 @@ static void update_tasks_nodemask(struct cpuset *cs, struct ptr_heap *heap)
+ 	 * It's ok if we rebind the same mm twice; mpol_rebind_mm()
+ 	 * is idempotent.  Also migrate pages in each mm to new nodes.
  	 */
-+	down_read(&css_set_rwsem);
- 	rcu_read_lock();
- 	do {
- 		struct task_and_cgroup ent;
-@@ -1825,6 +1829,7 @@ static int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk,
- 			break;
- 	} while_each_thread(leader, tsk);
- 	rcu_read_unlock();
-+	up_read(&css_set_rwsem);
- 	/* remember the number of threads in the array for later. */
- 	group_size = i;
- 	tset.tc_array = group;
-@@ -2002,7 +2007,11 @@ int cgroup_attach_task_all(struct task_struct *from, struct task_struct *tsk)
- 
- 	mutex_lock(&cgroup_mutex);
- 	for_each_active_root(root) {
--		struct cgroup *from_cgrp = task_cgroup_from_root(from, root);
-+		struct cgroup *from_cgrp;
+-	css_scan_tasks(&cs->css, NULL, cpuset_change_nodemask, &arg, heap);
++	css_task_iter_start(&cs->css, &it);
++	while ((task = css_task_iter_next(&it))) {
++		struct mm_struct *mm;
++		bool migrate;
 +
-+		down_read(&css_set_rwsem);
-+		from_cgrp = task_cgroup_from_root(from, root);
-+		up_read(&css_set_rwsem);
++		cpuset_change_task_nodemask(task, &newmems);
++
++		mm = get_task_mm(task);
++		if (!mm)
++			continue;
++
++		migrate = is_memory_migrate(cs);
++
++		mpol_rebind_mm(mm, &cs->mems_allowed);
++		if (migrate)
++			cpuset_migrate_mm(mm, &cs->old_mems_allowed, &newmems);
++		mmput(mm);
++	}
++	css_task_iter_end(&it);
  
- 		retval = cgroup_attach_task(from_cgrp, tsk, false);
- 		if (retval)
-@@ -2395,10 +2404,10 @@ static int cgroup_task_count(const struct cgroup *cgrp)
- 	int count = 0;
- 	struct cgrp_cset_link *link;
- 
--	read_lock(&css_set_lock);
-+	down_read(&css_set_rwsem);
- 	list_for_each_entry(link, &cgrp->cset_links, cset_link)
- 		count += atomic_read(&link->cset->refcount);
--	read_unlock(&css_set_lock);
-+	up_read(&css_set_rwsem);
- 	return count;
- }
- 
-@@ -2629,12 +2638,12 @@ static void css_advance_task_iter(struct css_task_iter *it)
-  */
- void css_task_iter_start(struct cgroup_subsys_state *css,
- 			 struct css_task_iter *it)
--	__acquires(css_set_lock)
-+	__acquires(css_set_rwsem)
- {
- 	/* no one should try to iterate before mounting cgroups */
- 	WARN_ON_ONCE(!use_task_css_set_links);
- 
--	read_lock(&css_set_lock);
-+	down_read(&css_set_rwsem);
- 
- 	it->origin_css = css;
- 	it->cset_link = &css->cgroup->cset_links;
-@@ -2682,9 +2691,9 @@ struct task_struct *css_task_iter_next(struct css_task_iter *it)
-  * Finish task iteration started by css_task_iter_start().
-  */
- void css_task_iter_end(struct css_task_iter *it)
--	__releases(css_set_lock)
-+	__releases(css_set_rwsem)
- {
--	read_unlock(&css_set_lock);
-+	up_read(&css_set_rwsem);
- }
- 
- static inline int started_after_time(struct task_struct *t1,
-@@ -2734,7 +2743,7 @@ static inline int started_after(void *p1, void *p2)
+ 	/*
+ 	 * All the tasks' nodemasks have been updated, update
+@@ -1130,15 +1091,13 @@ static void update_tasks_nodemask(struct cpuset *cs, struct ptr_heap *heap)
+  * update_tasks_nodemask_hier - Update the nodemasks of tasks in the hierarchy.
+  * @cs: the root cpuset of the hierarchy
+  * @update_root: update the root cpuset or not?
+- * @heap: the heap used by css_scan_tasks()
   *
-  * @test may be NULL, meaning always true (select all tasks), which
-  * effectively duplicates css_task_iter_{start,next,end}() but does not
-- * lock css_set_lock for the call to @process.
-+ * lock css_set_rwsem for the call to @process.
+  * This will update nodemasks of tasks in @root_cs and all other empty cpusets
+  * which take on nodemask of @root_cs.
   *
-  * It is guaranteed that @process will act on every task that is a member
-  * of @css for the duration of this call.  This function may or may not
-@@ -3866,12 +3875,12 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
- 	lockdep_assert_held(&cgroup_mutex);
+  * Called with cpuset_mutex held
+  */
+-static void update_tasks_nodemask_hier(struct cpuset *root_cs,
+-				       bool update_root, struct ptr_heap *heap)
++static void update_tasks_nodemask_hier(struct cpuset *root_cs, bool update_root)
+ {
+ 	struct cpuset *cp;
+ 	struct cgroup_subsys_state *pos_css;
+@@ -1159,7 +1118,7 @@ static void update_tasks_nodemask_hier(struct cpuset *root_cs,
+ 			continue;
+ 		rcu_read_unlock();
+ 
+-		update_tasks_nodemask(cp, heap);
++		update_tasks_nodemask(cp);
+ 
+ 		rcu_read_lock();
+ 		css_put(&cp->css);
+@@ -1184,7 +1143,6 @@ static int update_nodemask(struct cpuset *cs, struct cpuset *trialcs,
+ 			   const char *buf)
+ {
+ 	int retval;
+-	struct ptr_heap heap;
  
  	/*
--	 * css_set_lock synchronizes access to ->cset_links and prevents
-+	 * css_set_rwsem synchronizes access to ->cset_links and prevents
- 	 * @cgrp from being removed while __put_css_set() is in progress.
- 	 */
--	read_lock(&css_set_lock);
-+	down_read(&css_set_rwsem);
- 	empty = list_empty(&cgrp->cset_links);
--	read_unlock(&css_set_lock);
-+	up_read(&css_set_rwsem);
- 	if (!empty)
- 		return -EBUSY;
+ 	 * top_cpuset.mems_allowed tracks node_stats[N_MEMORY];
+@@ -1223,17 +1181,11 @@ static int update_nodemask(struct cpuset *cs, struct cpuset *trialcs,
+ 	if (retval < 0)
+ 		goto done;
  
-@@ -4207,6 +4216,7 @@ int proc_cgroup_show(struct seq_file *m, void *v)
- 	retval = 0;
+-	retval = heap_init(&heap, PAGE_SIZE, GFP_KERNEL, NULL);
+-	if (retval < 0)
+-		goto done;
+-
+ 	mutex_lock(&callback_mutex);
+ 	cs->mems_allowed = trialcs->mems_allowed;
+ 	mutex_unlock(&callback_mutex);
  
- 	mutex_lock(&cgroup_mutex);
-+	down_read(&css_set_rwsem);
- 
- 	for_each_active_root(root) {
- 		struct cgroup_subsys *ss;
-@@ -4232,6 +4242,7 @@ int proc_cgroup_show(struct seq_file *m, void *v)
- 	}
- 
- out_unlock:
-+	up_read(&css_set_rwsem);
- 	mutex_unlock(&cgroup_mutex);
- 	put_task_struct(tsk);
- out_free:
-@@ -4327,12 +4338,12 @@ void cgroup_post_fork(struct task_struct *child)
- 	 * lock on fork.
- 	 */
- 	if (use_task_css_set_links) {
--		write_lock(&css_set_lock);
-+		down_write(&css_set_rwsem);
- 		task_lock(child);
- 		if (list_empty(&child->cg_list))
- 			list_add(&child->cg_list, &task_css_set(child)->tasks);
- 		task_unlock(child);
--		write_unlock(&css_set_lock);
-+		up_write(&css_set_rwsem);
- 	}
- 
- 	/*
-@@ -4389,15 +4400,14 @@ void cgroup_exit(struct task_struct *tsk, int run_callbacks)
- 	int i;
- 
- 	/*
--	 * Unlink from the css_set task list if necessary.
--	 * Optimistically check cg_list before taking
--	 * css_set_lock
-+	 * Unlink from the css_set task list if necessary.  Optimistically
-+	 * check cg_list before taking css_set_rwsem.
- 	 */
- 	if (!list_empty(&tsk->cg_list)) {
--		write_lock(&css_set_lock);
-+		down_write(&css_set_rwsem);
- 		if (!list_empty(&tsk->cg_list))
- 			list_del_init(&tsk->cg_list);
--		write_unlock(&css_set_lock);
-+		up_write(&css_set_rwsem);
- 	}
- 
- 	/* Reassign the task to the init_css_set. */
-@@ -4649,7 +4659,7 @@ static int current_css_set_cg_links_read(struct seq_file *seq, void *v)
- 	if (!name_buf)
- 		return -ENOMEM;
- 
--	read_lock(&css_set_lock);
-+	down_read(&css_set_rwsem);
- 	rcu_read_lock();
- 	cset = rcu_dereference(current->cgroups);
- 	list_for_each_entry(link, &cset->cgrp_links, cgrp_link) {
-@@ -4665,7 +4675,7 @@ static int current_css_set_cg_links_read(struct seq_file *seq, void *v)
- 			   c->root->hierarchy_id, name);
- 	}
- 	rcu_read_unlock();
--	read_unlock(&css_set_lock);
-+	up_read(&css_set_rwsem);
- 	kfree(name_buf);
- 	return 0;
+-	update_tasks_nodemask_hier(cs, true, &heap);
+-
+-	heap_free(&heap);
++	update_tasks_nodemask_hier(cs, true);
+ done:
+ 	return retval;
  }
-@@ -4676,7 +4686,7 @@ static int cgroup_css_links_read(struct seq_file *seq, void *v)
- 	struct cgroup_subsys_state *css = seq_css(seq);
- 	struct cgrp_cset_link *link;
- 
--	read_lock(&css_set_lock);
-+	down_read(&css_set_rwsem);
- 	list_for_each_entry(link, &css->cgroup->cset_links, cset_link) {
- 		struct css_set *cset = link->cset;
- 		struct task_struct *task;
-@@ -4692,7 +4702,7 @@ static int cgroup_css_links_read(struct seq_file *seq, void *v)
- 			}
- 		}
- 	}
--	read_unlock(&css_set_lock);
-+	up_read(&css_set_rwsem);
- 	return 0;
+@@ -1261,38 +1213,22 @@ static int update_relax_domain_level(struct cpuset *cs, s64 val)
  }
  
+ /**
+- * cpuset_change_flag - make a task's spread flags the same as its cpuset's
+- * @tsk: task to be updated
+- * @data: cpuset to @tsk belongs to
+- *
+- * Called by css_scan_tasks() for each task in a cgroup.
+- *
+- * We don't need to re-check for the cgroup/cpuset membership, since we're
+- * holding cpuset_mutex at this point.
+- */
+-static void cpuset_change_flag(struct task_struct *tsk, void *data)
+-{
+-	struct cpuset *cs = data;
+-
+-	cpuset_update_task_spread_flag(cs, tsk);
+-}
+-
+-/**
+  * update_tasks_flags - update the spread flags of tasks in the cpuset.
+  * @cs: the cpuset in which each task's spread flags needs to be changed
+- * @heap: if NULL, defer allocating heap memory to css_scan_tasks()
+- *
+- * Called with cpuset_mutex held
+  *
+- * The css_scan_tasks() function will scan all the tasks in a cgroup,
+- * calling callback functions for each.
+- *
+- * No return value. It's guaranteed that css_scan_tasks() always returns 0
+- * if @heap != NULL.
++ * Iterate through each task of @cs updating its spread flags.  As this
++ * function is called with cpuset_mutex held, cpuset membership stays
++ * stable.
+  */
+-static void update_tasks_flags(struct cpuset *cs, struct ptr_heap *heap)
++static void update_tasks_flags(struct cpuset *cs)
+ {
+-	css_scan_tasks(&cs->css, NULL, cpuset_change_flag, cs, heap);
++	struct css_task_iter it;
++	struct task_struct *task;
++
++	css_task_iter_start(&cs->css, &it);
++	while ((task = css_task_iter_next(&it)))
++		cpuset_update_task_spread_flag(cs, task);
++	css_task_iter_end(&it);
+ }
+ 
+ /*
+@@ -1310,7 +1246,6 @@ static int update_flag(cpuset_flagbits_t bit, struct cpuset *cs,
+ 	struct cpuset *trialcs;
+ 	int balance_flag_changed;
+ 	int spread_flag_changed;
+-	struct ptr_heap heap;
+ 	int err;
+ 
+ 	trialcs = alloc_trial_cpuset(cs);
+@@ -1326,10 +1261,6 @@ static int update_flag(cpuset_flagbits_t bit, struct cpuset *cs,
+ 	if (err < 0)
+ 		goto out;
+ 
+-	err = heap_init(&heap, PAGE_SIZE, GFP_KERNEL, NULL);
+-	if (err < 0)
+-		goto out;
+-
+ 	balance_flag_changed = (is_sched_load_balance(cs) !=
+ 				is_sched_load_balance(trialcs));
+ 
+@@ -1344,8 +1275,7 @@ static int update_flag(cpuset_flagbits_t bit, struct cpuset *cs,
+ 		rebuild_sched_domains_locked();
+ 
+ 	if (spread_flag_changed)
+-		update_tasks_flags(cs, &heap);
+-	heap_free(&heap);
++		update_tasks_flags(cs);
+ out:
+ 	free_trial_cpuset(trialcs);
+ 	return err;
+@@ -2138,7 +2068,7 @@ retry:
+ 	 */
+ 	if ((sane && cpumask_empty(cs->cpus_allowed)) ||
+ 	    (!cpumask_empty(&off_cpus) && !cpumask_empty(cs->cpus_allowed)))
+-		update_tasks_cpumask(cs, NULL);
++		update_tasks_cpumask(cs);
+ 
+ 	mutex_lock(&callback_mutex);
+ 	nodes_andnot(cs->mems_allowed, cs->mems_allowed, off_mems);
+@@ -2152,7 +2082,7 @@ retry:
+ 	 */
+ 	if ((sane && nodes_empty(cs->mems_allowed)) ||
+ 	    (!nodes_empty(off_mems) && !nodes_empty(cs->mems_allowed)))
+-		update_tasks_nodemask(cs, NULL);
++		update_tasks_nodemask(cs);
+ 
+ 	is_empty = cpumask_empty(cs->cpus_allowed) ||
+ 		nodes_empty(cs->mems_allowed);
+@@ -2214,7 +2144,7 @@ static void cpuset_hotplug_workfn(struct work_struct *work)
+ 		mutex_lock(&callback_mutex);
+ 		top_cpuset.mems_allowed = new_mems;
+ 		mutex_unlock(&callback_mutex);
+-		update_tasks_nodemask(&top_cpuset, NULL);
++		update_tasks_nodemask(&top_cpuset);
+ 	}
+ 
+ 	mutex_unlock(&cpuset_mutex);
 -- 
 1.8.5.3
