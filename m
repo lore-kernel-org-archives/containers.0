@@ -1,7 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 13/16] cpuset: don't use cgroup_taskset_cur_css()
-Date: Sun,  9 Feb 2014 08:52:41 -0500
-Message-ID: <1391953964-22088-14-git-send-email-tj__45814.5421384417$1391954095$gmane$org@kernel.org>
+Subject: [PATCH 14/16] cgroup: remove cgroup_taskset_cur_css() and
+	cgroup_taskset_size()
+Date: Sun,  9 Feb 2014 08:52:42 -0500
+Message-ID: <1391953964-22088-15-git-send-email-tj__6818.83396250686$1391954099$gmane$org@kernel.org>
 References: <1391953964-22088-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,52 +22,88 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-cgroup_taskset_cur_css() will be removed during the planned
-resturcturing of migration path.  The only use of
-cgroup_taskset_cur_css() is finding out the old cgroup_subsys_state of
-the leader in cpuset_attach().  This usage can easily be removed by
-remembering the old value from cpuset_can_attach().
+The two functions don't have any users left.  Remove them along with
+cgroup_taskset->cur_cgrp.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
 ---
- kernel/cpuset.c | 9 ++++++---
- 1 file changed, 6 insertions(+), 3 deletions(-)
+ include/linux/cgroup.h |  3 ---
+ kernel/cgroup.c        | 30 ------------------------------
+ 2 files changed, 33 deletions(-)
 
-diff --git a/kernel/cpuset.c b/kernel/cpuset.c
-index bf20e4a..d8bec21 100644
---- a/kernel/cpuset.c
-+++ b/kernel/cpuset.c
-@@ -1379,6 +1379,8 @@ static int fmeter_getrate(struct fmeter *fmp)
- 	return val;
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 3c67883..21887b6 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -526,9 +526,6 @@ bool cgroup_is_descendant(struct cgroup *cgrp, struct cgroup *ancestor);
+ struct cgroup_taskset;
+ struct task_struct *cgroup_taskset_first(struct cgroup_taskset *tset);
+ struct task_struct *cgroup_taskset_next(struct cgroup_taskset *tset);
+-struct cgroup_subsys_state *cgroup_taskset_cur_css(struct cgroup_taskset *tset,
+-						   int subsys_id);
+-int cgroup_taskset_size(struct cgroup_taskset *tset);
+ 
+ /**
+  * cgroup_taskset_for_each - iterate cgroup_taskset
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index ac78311..0108753 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1645,7 +1645,6 @@ struct cgroup_taskset {
+ 	struct flex_array	*tc_array;
+ 	int			tc_array_len;
+ 	int			idx;
+-	struct cgroup		*cur_cgrp;
+ };
+ 
+ /**
+@@ -1660,7 +1659,6 @@ struct task_struct *cgroup_taskset_first(struct cgroup_taskset *tset)
+ 		tset->idx = 0;
+ 		return cgroup_taskset_next(tset);
+ 	} else {
+-		tset->cur_cgrp = tset->single.cgrp;
+ 		return tset->single.task;
+ 	}
  }
+@@ -1681,39 +1679,11 @@ struct task_struct *cgroup_taskset_next(struct cgroup_taskset *tset)
+ 		return NULL;
  
-+static struct cpuset *cpuset_attach_old_cs;
-+
- /* Called by cgroups to determine if a cpuset is usable; cpuset_mutex held */
- static int cpuset_can_attach(struct cgroup_subsys_state *css,
- 			     struct cgroup_taskset *tset)
-@@ -1387,6 +1389,9 @@ static int cpuset_can_attach(struct cgroup_subsys_state *css,
- 	struct task_struct *task;
- 	int ret;
+ 	tc = flex_array_get(tset->tc_array, tset->idx++);
+-	tset->cur_cgrp = tc->cgrp;
+ 	return tc->task;
+ }
+ EXPORT_SYMBOL_GPL(cgroup_taskset_next);
  
-+	/* used later by cpuset_attach() */
-+	cpuset_attach_old_cs = task_cs(cgroup_taskset_first(tset));
-+
- 	mutex_lock(&cpuset_mutex);
- 
- 	/*
-@@ -1450,10 +1455,8 @@ static void cpuset_attach(struct cgroup_subsys_state *css,
- 	struct mm_struct *mm;
- 	struct task_struct *task;
- 	struct task_struct *leader = cgroup_taskset_first(tset);
--	struct cgroup_subsys_state *oldcss = cgroup_taskset_cur_css(tset,
--							cpuset_cgrp_id);
- 	struct cpuset *cs = css_cs(css);
--	struct cpuset *oldcs = css_cs(oldcss);
-+	struct cpuset *oldcs = cpuset_attach_old_cs;
- 	struct cpuset *cpus_cs = effective_cpumask_cpuset(cs);
- 	struct cpuset *mems_cs = effective_nodemask_cpuset(cs);
- 
+ /**
+- * cgroup_taskset_cur_css - return the matching css for the current task
+- * @tset: taskset of interest
+- * @subsys_id: the ID of the target subsystem
+- *
+- * Return the css for the current (last returned) task of @tset for
+- * subsystem specified by @subsys_id.  This function must be preceded by
+- * either cgroup_taskset_first() or cgroup_taskset_next().
+- */
+-struct cgroup_subsys_state *cgroup_taskset_cur_css(struct cgroup_taskset *tset,
+-						   int subsys_id)
+-{
+-	return cgroup_css(tset->cur_cgrp, cgroup_subsys[subsys_id]);
+-}
+-EXPORT_SYMBOL_GPL(cgroup_taskset_cur_css);
+-
+-/**
+- * cgroup_taskset_size - return the number of tasks in taskset
+- * @tset: taskset of interest
+- */
+-int cgroup_taskset_size(struct cgroup_taskset *tset)
+-{
+-	return tset->tc_array ? tset->tc_array_len : 1;
+-}
+-EXPORT_SYMBOL_GPL(cgroup_taskset_size);
+-
+-
+-/**
+  * cgroup_task_migrate - move a task from one cgroup to another.
+  * @old_cgrp; the cgroup @tsk is being migrated from
+  * @tsk: the task being migrated
 -- 
 1.8.5.3
