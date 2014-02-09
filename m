@@ -1,7 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 04/16] cgroup: relocate cgroup_enable_task_cg_lists()
-Date: Sun,  9 Feb 2014 08:52:32 -0500
-Message-ID: <1391953964-22088-5-git-send-email-tj@kernel.org>
+Subject: [PATCH 05/16] cgroup: implement cgroup_has_tasks() and unexport
+	cgroup_task_count()
+Date: Sun,  9 Feb 2014 08:52:33 -0500
+Message-ID: <1391953964-22088-6-git-send-email-tj__37009.6076083884$1391954024$gmane$org@kernel.org>
 References: <1391953964-22088-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,153 +19,106 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
-Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Move it above so that prototype isn't necessary.  Let's also move the
-definition of use_task_css_set_links next to it.
+cgroup_task_count() read-locks css_set_lock and walks all tasks to
+count them and then returns the result.  The only thing all the users
+want is determining whether the cgroup is empty or not.  This patch
+implements cgroup_has_tasks() which tests whether cgroup->cset_links
+is empty, replaces all cgroup_task_count() usages and unexports it.
 
-This is purely cosmetic.
+Note that the test isn't synchronized.  This is the same as before.
+The test has always been racy.
+
+This will help planned css_set locking update.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Cc: Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>
+Cc: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
+Cc: Balbir Singh <bsingharora-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 ---
- kernel/cgroup.c | 103 ++++++++++++++++++++++++++------------------------------
- 1 file changed, 48 insertions(+), 55 deletions(-)
+ include/linux/cgroup.h | 8 ++++++--
+ kernel/cgroup.c        | 2 +-
+ kernel/cpuset.c        | 2 +-
+ mm/memcontrol.c        | 4 ++--
+ 4 files changed, 10 insertions(+), 6 deletions(-)
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index efae7e2..1ebc6e30 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -173,7 +173,6 @@ static int cgroup_destroy_locked(struct cgroup *cgrp);
- static int cgroup_addrm_files(struct cgroup *cgrp, struct cftype cfts[],
- 			      bool is_add);
- static void cgroup_pidlist_destroy_all(struct cgroup *cgrp);
--static void cgroup_enable_task_cg_lists(void);
- 
- /**
-  * cgroup_css - obtain a cgroup's css for the specified subsystem
-@@ -370,14 +369,6 @@ static unsigned long css_set_hash(struct cgroup_subsys_state *css[])
- 	return key;
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 8ca31c1..f173cfb 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -455,6 +455,12 @@ static inline bool cgroup_sane_behavior(const struct cgroup *cgrp)
+ 	return cgrp->root->flags & CGRP_ROOT_SANE_BEHAVIOR;
  }
  
--/*
-- * We don't maintain the lists running through each css_set to its task
-- * until after the first call to css_task_iter_start().  This reduces the
-- * fork()/exit() overhead for people who have cgroups compiled into their
-- * kernel but not actually in use.
-- */
--static bool use_task_css_set_links __read_mostly;
--
- static void __put_css_set(struct css_set *cset, int taskexit)
- {
- 	struct cgrp_cset_link *link, *tmp_link;
-@@ -1305,6 +1296,54 @@ static int cgroup_remount(struct kernfs_root *kf_root, int *flags, char *data)
- 	return ret;
- }
- 
-+/*
-+ * To reduce the fork() overhead for systems that are not actually using
-+ * their cgroups capability, we don't maintain the lists running through
-+ * each css_set to its tasks until we see the list actually used - in other
-+ * words after the first mount.
-+ */
-+static bool use_task_css_set_links __read_mostly;
-+
-+static void cgroup_enable_task_cg_lists(void)
++/* no synchronization, the result can only be used as a hint */
++static inline bool cgroup_has_tasks(struct cgroup *cgrp)
 +{
-+	struct task_struct *p, *g;
-+
-+	write_lock(&css_set_lock);
-+
-+	if (use_task_css_set_links)
-+		goto out_unlock;
-+
-+	use_task_css_set_links = true;
-+
-+	/*
-+	 * We need tasklist_lock because RCU is not safe against
-+	 * while_each_thread(). Besides, a forking task that has passed
-+	 * cgroup_post_fork() without seeing use_task_css_set_links = 1
-+	 * is not guaranteed to have its child immediately visible in the
-+	 * tasklist if we walk through it with RCU.
-+	 */
-+	read_lock(&tasklist_lock);
-+	do_each_thread(g, p) {
-+		task_lock(p);
-+
-+		WARN_ON_ONCE(!list_empty(&p->cg_list) ||
-+			     task_css_set(p) != &init_css_set);
-+
-+		/*
-+		 * We should check if the process is exiting, otherwise
-+		 * it will race with cgroup_exit() in that the list
-+		 * entry won't be deleted though the process has exited.
-+		 */
-+		if (!(p->flags & PF_EXITING))
-+			list_add(&p->cg_list, &task_css_set(p)->tasks);
-+
-+		task_unlock(p);
-+	} while_each_thread(g, p);
-+	read_unlock(&tasklist_lock);
-+out_unlock:
-+	write_unlock(&css_set_lock);
++	return !list_empty(&cgrp->cset_links);
 +}
 +
- static void init_cgroup_housekeeping(struct cgroup *cgrp)
+ /* returns ino associated with a cgroup, 0 indicates unmounted root */
+ static inline ino_t cgroup_ino(struct cgroup *cgrp)
  {
- 	atomic_set(&cgrp->refcnt, 1);
-@@ -2363,52 +2402,6 @@ int cgroup_task_count(const struct cgroup *cgrp)
- 	return count;
- }
+@@ -514,8 +520,6 @@ int cgroup_rm_cftypes(struct cftype *cfts);
  
--/*
-- * To reduce the fork() overhead for systems that are not actually using
-- * their cgroups capability, we don't maintain the lists running through
-- * each css_set to its tasks until we see the list actually used - in other
-- * words after the first mount.
-- */
--static void cgroup_enable_task_cg_lists(void)
--{
--	struct task_struct *p, *g;
+ bool cgroup_is_descendant(struct cgroup *cgrp, struct cgroup *ancestor);
+ 
+-int cgroup_task_count(const struct cgroup *cgrp);
 -
--	write_lock(&css_set_lock);
--
--	if (use_task_css_set_links)
--		goto out_unlock;
--
--	use_task_css_set_links = true;
--
--	/*
--	 * We need tasklist_lock because RCU is not safe against
--	 * while_each_thread(). Besides, a forking task that has passed
--	 * cgroup_post_fork() without seeing use_task_css_set_links = 1
--	 * is not guaranteed to have its child immediately visible in the
--	 * tasklist if we walk through it with RCU.
--	 */
--	read_lock(&tasklist_lock);
--	do_each_thread(g, p) {
--		task_lock(p);
--
--		WARN_ON_ONCE(!list_empty(&p->cg_list) ||
--			     task_css_set(p) != &init_css_set);
--
--		/*
--		 * We should check if the process is exiting, otherwise
--		 * it will race with cgroup_exit() in that the list
--		 * entry won't be deleted though the process has exited.
--		 */
--		if (!(p->flags & PF_EXITING))
--			list_add(&p->cg_list, &task_css_set(p)->tasks);
--
--		task_unlock(p);
--	} while_each_thread(g, p);
--	read_unlock(&tasklist_lock);
--out_unlock:
--	write_unlock(&css_set_lock);
--}
--
- /**
-  * css_next_child - find the next child of a given css
-  * @pos_css: the current position (%NULL to initiate traversal)
+ /*
+  * Control Group taskset, used to pass around set of tasks to cgroup_subsys
+  * methods.
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 1ebc6e30..96a3a85 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -2390,7 +2390,7 @@ EXPORT_SYMBOL_GPL(cgroup_add_cftypes);
+  *
+  * Return the number of tasks in the cgroup.
+  */
+-int cgroup_task_count(const struct cgroup *cgrp)
++static int cgroup_task_count(const struct cgroup *cgrp)
+ {
+ 	int count = 0;
+ 	struct cgrp_cset_link *link;
+diff --git a/kernel/cpuset.c b/kernel/cpuset.c
+index e97a6e8..ae190b0 100644
+--- a/kernel/cpuset.c
++++ b/kernel/cpuset.c
+@@ -467,7 +467,7 @@ static int validate_change(struct cpuset *cur, struct cpuset *trial)
+ 	 * be changed to have empty cpus_allowed or mems_allowed.
+ 	 */
+ 	ret = -ENOSPC;
+-	if ((cgroup_task_count(cur->css.cgroup) || cur->attach_in_progress)) {
++	if ((cgroup_has_tasks(cur->css.cgroup) || cur->attach_in_progress)) {
+ 		if (!cpumask_empty(cur->cpus_allowed) &&
+ 		    cpumask_empty(trial->cpus_allowed))
+ 			goto out;
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index c1c2549..d9c6ac1 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -4958,7 +4958,7 @@ static int mem_cgroup_force_empty(struct mem_cgroup *memcg)
+ 	struct cgroup *cgrp = memcg->css.cgroup;
+ 
+ 	/* returns EBUSY if there is a task or if we come here twice. */
+-	if (cgroup_task_count(cgrp) || !list_empty(&cgrp->children))
++	if (cgroup_has_tasks(cgrp) || !list_empty(&cgrp->children))
+ 		return -EBUSY;
+ 
+ 	/* we call try-to-free pages for make this cgroup empty */
+@@ -5140,7 +5140,7 @@ static int __memcg_activate_kmem(struct mem_cgroup *memcg,
+ 	 * of course permitted.
+ 	 */
+ 	mutex_lock(&memcg_create_mutex);
+-	if (cgroup_task_count(memcg->css.cgroup) || memcg_has_children(memcg))
++	if (cgroup_has_tasks(memcg->css.cgroup) || memcg_has_children(memcg))
+ 		err = -EBUSY;
+ 	mutex_unlock(&memcg_create_mutex);
+ 	if (err)
 -- 
 1.8.5.3
