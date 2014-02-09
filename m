@@ -1,8 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 10/16] cgroup: separate out put_css_set_locked() and remove
-	put_css_set_taskexit()
-Date: Sun,  9 Feb 2014 08:52:38 -0500
-Message-ID: <1391953964-22088-11-git-send-email-tj@kernel.org>
+Subject: [PATCH 11/16] cgroup: move css_set_rwsem locking outside of
+	cgroup_task_migrate()
+Date: Sun,  9 Feb 2014 08:52:39 -0500
+Message-ID: <1391953964-22088-12-git-send-email-tj__16185.6445287869$1391954077$gmane$org@kernel.org>
 References: <1391953964-22088-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,133 +22,77 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-put_css_set() is performed in two steps - it first tries to put
-without grabbing css_set_rwsem if such put wouldn't make the count
-zero.  If that fails, it puts after write-locking css_set_rwsem.  This
-patch separates out the second phase into put_css_set_locked() which
-should be called with css_set_rwsem locked.
-
-Also, put_css_set_taskexit() is droped and put_css_set() is made to
-take @taskexit.  There are only a handful users of these functions.
-No point in providing different variants.
-
-put_css_locked() will be used by later changes.  This patch doesn't
-introduce any functional changes.
+Instead of repeatedly locking and unlocking css_set_rwsem inside
+cgroup_task_migrate(), update cgroup_attach_task() to grab it outside
+of the loop and update cgroup_task_migrate() to use
+put_css_set_locked().
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 50 +++++++++++++++++++++++---------------------------
- 1 file changed, 23 insertions(+), 27 deletions(-)
+ kernel/cgroup.c | 16 +++++++++++-----
+ 1 file changed, 11 insertions(+), 5 deletions(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 8c1f840..63d1a4e 100644
+index 63d1a4e..ac78311 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -369,22 +369,14 @@ static unsigned long css_set_hash(struct cgroup_subsys_state *css[])
- 	return key;
- }
+@@ -1713,10 +1713,13 @@ int cgroup_taskset_size(struct cgroup_taskset *tset)
+ EXPORT_SYMBOL_GPL(cgroup_taskset_size);
  
--static void __put_css_set(struct css_set *cset, int taskexit)
-+static void put_css_set_locked(struct css_set *cset, bool taskexit)
+ 
+-/*
++/**
+  * cgroup_task_migrate - move a task from one cgroup to another.
++ * @old_cgrp; the cgroup @tsk is being migrated from
++ * @tsk: the task being migrated
++ * @new_cset: the new css_set @tsk is being attached to
+  *
+- * Must be called with cgroup_mutex and threadgroup locked.
++ * Must be called with cgroup_mutex, threadgroup and css_set_rwsem locked.
+  */
+ static void cgroup_task_migrate(struct cgroup *old_cgrp,
+ 				struct task_struct *tsk,
+@@ -1724,6 +1727,9 @@ static void cgroup_task_migrate(struct cgroup *old_cgrp,
  {
- 	struct cgrp_cset_link *link, *tmp_link;
+ 	struct css_set *old_cset;
  
--	/*
--	 * Ensure that the refcount doesn't hit zero while any readers
--	 * can see it. Similar to atomic_dec_and_lock(), but for an
--	 * rwlock
--	 */
--	if (atomic_add_unless(&cset->refcount, -1, 1))
--		return;
--	down_write(&css_set_rwsem);
--	if (!atomic_dec_and_test(&cset->refcount)) {
--		up_write(&css_set_rwsem);
++	lockdep_assert_held(&cgroup_mutex);
 +	lockdep_assert_held(&css_set_rwsem);
 +
-+	if (!atomic_dec_and_test(&cset->refcount))
- 		return;
--	}
+ 	/*
+ 	 * We are synchronized through threadgroup_lock() against PF_EXITING
+ 	 * setting such that we can't race against cgroup_exit() changing the
+@@ -1737,9 +1743,7 @@ static void cgroup_task_migrate(struct cgroup *old_cgrp,
+ 	task_unlock(tsk);
  
- 	/* This css_set is dead. unlink it and release cgroup refcounts */
- 	hash_del(&cset->hlist);
-@@ -406,10 +398,24 @@ static void __put_css_set(struct css_set *cset, int taskexit)
- 		kfree(link);
- 	}
- 
+ 	/* Update the css_set linked lists if we're using them */
+-	down_write(&css_set_rwsem);
+ 	list_move(&tsk->cg_list, &new_cset->tasks);
 -	up_write(&css_set_rwsem);
- 	kfree_rcu(cset, rcu_head);
- }
  
-+static void put_css_set(struct css_set *cset, bool taskexit)
-+{
-+	/*
-+	 * Ensure that the refcount doesn't hit zero while any readers
-+	 * can see it. Similar to atomic_dec_and_lock(), but for an
-+	 * rwlock
-+	 */
-+	if (atomic_add_unless(&cset->refcount, -1, 1))
-+		return;
-+
-+	down_write(&css_set_rwsem);
-+	put_css_set_locked(cset, taskexit);
-+	up_write(&css_set_rwsem);
-+}
-+
- /*
-  * refcounted get/put for css_set objects
-  */
-@@ -418,16 +424,6 @@ static inline void get_css_set(struct css_set *cset)
- 	atomic_inc(&cset->refcount);
- }
- 
--static inline void put_css_set(struct css_set *cset)
--{
--	__put_css_set(cset, 0);
--}
--
--static inline void put_css_set_taskexit(struct css_set *cset)
--{
--	__put_css_set(cset, 1);
--}
--
- /**
-  * compare_css_sets - helper function for find_existing_css_set().
-  * @cset: candidate css_set being tested
-@@ -1751,7 +1747,7 @@ static void cgroup_task_migrate(struct cgroup *old_cgrp,
+ 	/*
+ 	 * We just gained a reference on old_cset by taking it from the
+@@ -1747,7 +1751,7 @@ static void cgroup_task_migrate(struct cgroup *old_cgrp,
  	 * we're safe to drop it here; it will be freed under RCU.
  	 */
  	set_bit(CGRP_RELEASABLE, &old_cgrp->flags);
--	put_css_set(old_cset);
-+	put_css_set(old_cset, false);
+-	put_css_set(old_cset, false);
++	put_css_set_locked(old_cset, false);
  }
  
  /**
-@@ -1897,7 +1893,7 @@ out_put_css_set_refs:
- 			tc = flex_array_get(group, i);
- 			if (!tc->cset)
- 				break;
--			put_css_set(tc->cset);
-+			put_css_set(tc->cset, false);
- 		}
+@@ -1870,10 +1874,12 @@ static int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk,
+ 	 * proceed to move all tasks to the new cgroup.  There are no
+ 	 * failure cases after here, so this is the commit point.
+ 	 */
++	down_write(&css_set_rwsem);
+ 	for (i = 0; i < group_size; i++) {
+ 		tc = flex_array_get(group, i);
+ 		cgroup_task_migrate(tc->cgrp, tc->task, tc->cset);
  	}
- out_cancel_attach:
-@@ -3714,7 +3710,7 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
++	up_write(&css_set_rwsem);
+ 	/* nothing is sensitive to fork() after this point. */
  
  	/*
- 	 * css_set_rwsem synchronizes access to ->cset_links and prevents
--	 * @cgrp from being removed while __put_css_set() is in progress.
-+	 * @cgrp from being removed while put_css_set() is in progress.
- 	 */
- 	down_read(&css_set_rwsem);
- 	empty = list_empty(&cgrp->cset_links);
-@@ -4266,7 +4262,7 @@ void cgroup_exit(struct task_struct *tsk, int run_callbacks)
- 	}
- 	task_unlock(tsk);
- 
--	put_css_set_taskexit(cset);
-+	put_css_set(cset, true);
- }
- 
- static void check_for_release(struct cgroup *cgrp)
 -- 
 1.8.5.3
