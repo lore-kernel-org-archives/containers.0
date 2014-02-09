@@ -1,7 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 09/16] cgroup: remove css_scan_tasks()
-Date: Sun,  9 Feb 2014 08:52:37 -0500
-Message-ID: <1391953964-22088-10-git-send-email-tj@kernel.org>
+Subject: [PATCH 10/16] cgroup: separate out put_css_set_locked() and remove
+	put_css_set_taskexit()
+Date: Sun,  9 Feb 2014 08:52:38 -0500
+Message-ID: <1391953964-22088-11-git-send-email-tj@kernel.org>
 References: <1391953964-22088-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,210 +22,133 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-css_scan_tasks() doesn't have any user left.  Remove it.
+put_css_set() is performed in two steps - it first tries to put
+without grabbing css_set_rwsem if such put wouldn't make the count
+zero.  If that fails, it puts after write-locking css_set_rwsem.  This
+patch separates out the second phase into put_css_set_locked() which
+should be called with css_set_rwsem locked.
+
+Also, put_css_set_taskexit() is droped and put_css_set() is made to
+take @taskexit.  There are only a handful users of these functions.
+No point in providing different variants.
+
+put_css_locked() will be used by later changes.  This patch doesn't
+introduce any functional changes.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- include/linux/cgroup.h |   6 --
- kernel/cgroup.c        | 162 -------------------------------------------------
- 2 files changed, 168 deletions(-)
+ kernel/cgroup.c | 50 +++++++++++++++++++++++---------------------------
+ 1 file changed, 23 insertions(+), 27 deletions(-)
 
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index f173cfb..db5ccf4 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -14,7 +14,6 @@
- #include <linux/rcupdate.h>
- #include <linux/rculist.h>
- #include <linux/cgroupstats.h>
--#include <linux/prio_heap.h>
- #include <linux/rwsem.h>
- #include <linux/idr.h>
- #include <linux/workqueue.h>
-@@ -811,11 +810,6 @@ void css_task_iter_start(struct cgroup_subsys_state *css,
- struct task_struct *css_task_iter_next(struct css_task_iter *it);
- void css_task_iter_end(struct css_task_iter *it);
- 
--int css_scan_tasks(struct cgroup_subsys_state *css,
--		   bool (*test)(struct task_struct *, void *),
--		   void (*process)(struct task_struct *, void *),
--		   void *data, struct ptr_heap *heap);
--
- int cgroup_attach_task_all(struct task_struct *from, struct task_struct *);
- int cgroup_transfer_tasks(struct cgroup *to, struct cgroup *from);
- 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 5ad1b25..8c1f840 100644
+index 8c1f840..63d1a4e 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -2696,168 +2696,6 @@ void css_task_iter_end(struct css_task_iter *it)
- 	up_read(&css_set_rwsem);
+@@ -369,22 +369,14 @@ static unsigned long css_set_hash(struct cgroup_subsys_state *css[])
+ 	return key;
  }
  
--static inline int started_after_time(struct task_struct *t1,
--				     struct timespec *time,
--				     struct task_struct *t2)
--{
--	int start_diff = timespec_compare(&t1->start_time, time);
--	if (start_diff > 0) {
--		return 1;
--	} else if (start_diff < 0) {
--		return 0;
--	} else {
--		/*
--		 * Arbitrarily, if two processes started at the same
--		 * time, we'll say that the lower pointer value
--		 * started first. Note that t2 may have exited by now
--		 * so this may not be a valid pointer any longer, but
--		 * that's fine - it still serves to distinguish
--		 * between two tasks started (effectively) simultaneously.
--		 */
--		return t1 > t2;
--	}
--}
--
--/*
-- * This function is a callback from heap_insert() and is used to order
-- * the heap.
-- * In this case we order the heap in descending task start time.
-- */
--static inline int started_after(void *p1, void *p2)
--{
--	struct task_struct *t1 = p1;
--	struct task_struct *t2 = p2;
--	return started_after_time(t1, &t2->start_time, t2);
--}
--
--/**
-- * css_scan_tasks - iterate though all the tasks in a css
-- * @css: the css to iterate tasks of
-- * @test: optional test callback
-- * @process: process callback
-- * @data: data passed to @test and @process
-- * @heap: optional pre-allocated heap used for task iteration
-- *
-- * Iterate through all the tasks in @css, calling @test for each, and if it
-- * returns %true, call @process for it also.
-- *
-- * @test may be NULL, meaning always true (select all tasks), which
-- * effectively duplicates css_task_iter_{start,next,end}() but does not
-- * lock css_set_rwsem for the call to @process.
-- *
-- * It is guaranteed that @process will act on every task that is a member
-- * of @css for the duration of this call.  This function may or may not
-- * call @process for tasks that exit or move to a different css during the
-- * call, or are forked or move into the css during the call.
-- *
-- * Note that @test may be called with locks held, and may in some
-- * situations be called multiple times for the same task, so it should be
-- * cheap.
-- *
-- * If @heap is non-NULL, a heap has been pre-allocated and will be used for
-- * heap operations (and its "gt" member will be overwritten), else a
-- * temporary heap will be used (allocation of which may cause this function
-- * to fail).
-- */
--int css_scan_tasks(struct cgroup_subsys_state *css,
--		   bool (*test)(struct task_struct *, void *),
--		   void (*process)(struct task_struct *, void *),
--		   void *data, struct ptr_heap *heap)
--{
--	int retval, i;
--	struct css_task_iter it;
--	struct task_struct *p, *dropped;
--	/* Never dereference latest_task, since it's not refcounted */
--	struct task_struct *latest_task = NULL;
--	struct ptr_heap tmp_heap;
--	struct timespec latest_time = { 0, 0 };
--
--	if (heap) {
--		/* The caller supplied our heap and pre-allocated its memory */
--		heap->gt = &started_after;
--	} else {
--		/* We need to allocate our own heap memory */
--		heap = &tmp_heap;
--		retval = heap_init(heap, PAGE_SIZE, GFP_KERNEL, &started_after);
--		if (retval)
--			/* cannot allocate the heap */
--			return retval;
--	}
--
-- again:
+-static void __put_css_set(struct css_set *cset, int taskexit)
++static void put_css_set_locked(struct css_set *cset, bool taskexit)
+ {
+ 	struct cgrp_cset_link *link, *tmp_link;
+ 
 -	/*
--	 * Scan tasks in the css, using the @test callback to determine
--	 * which are of interest, and invoking @process callback on the
--	 * ones which need an update.  Since we don't want to hold any
--	 * locks during the task updates, gather tasks to be processed in a
--	 * heap structure.  The heap is sorted by descending task start
--	 * time.  If the statically-sized heap fills up, we overflow tasks
--	 * that started later, and in future iterations only consider tasks
--	 * that started after the latest task in the previous pass. This
--	 * guarantees forward progress and that we don't miss any tasks.
+-	 * Ensure that the refcount doesn't hit zero while any readers
+-	 * can see it. Similar to atomic_dec_and_lock(), but for an
+-	 * rwlock
 -	 */
--	heap->size = 0;
--	css_task_iter_start(css, &it);
--	while ((p = css_task_iter_next(&it))) {
--		/*
--		 * Only affect tasks that qualify per the caller's callback,
--		 * if he provided one
--		 */
--		if (test && !test(p, data))
--			continue;
--		/*
--		 * Only process tasks that started after the last task
--		 * we processed
--		 */
--		if (!started_after_time(p, &latest_time, latest_task))
--			continue;
--		dropped = heap_insert(heap, p);
--		if (dropped == NULL) {
--			/*
--			 * The new task was inserted; the heap wasn't
--			 * previously full
--			 */
--			get_task_struct(p);
--		} else if (dropped != p) {
--			/*
--			 * The new task was inserted, and pushed out a
--			 * different task
--			 */
--			get_task_struct(p);
--			put_task_struct(dropped);
--		}
--		/*
--		 * Else the new task was newer than anything already in
--		 * the heap and wasn't inserted
--		 */
+-	if (atomic_add_unless(&cset->refcount, -1, 1))
+-		return;
+-	down_write(&css_set_rwsem);
+-	if (!atomic_dec_and_test(&cset->refcount)) {
+-		up_write(&css_set_rwsem);
++	lockdep_assert_held(&css_set_rwsem);
++
++	if (!atomic_dec_and_test(&cset->refcount))
+ 		return;
 -	}
--	css_task_iter_end(&it);
+ 
+ 	/* This css_set is dead. unlink it and release cgroup refcounts */
+ 	hash_del(&cset->hlist);
+@@ -406,10 +398,24 @@ static void __put_css_set(struct css_set *cset, int taskexit)
+ 		kfree(link);
+ 	}
+ 
+-	up_write(&css_set_rwsem);
+ 	kfree_rcu(cset, rcu_head);
+ }
+ 
++static void put_css_set(struct css_set *cset, bool taskexit)
++{
++	/*
++	 * Ensure that the refcount doesn't hit zero while any readers
++	 * can see it. Similar to atomic_dec_and_lock(), but for an
++	 * rwlock
++	 */
++	if (atomic_add_unless(&cset->refcount, -1, 1))
++		return;
++
++	down_write(&css_set_rwsem);
++	put_css_set_locked(cset, taskexit);
++	up_write(&css_set_rwsem);
++}
++
+ /*
+  * refcounted get/put for css_set objects
+  */
+@@ -418,16 +424,6 @@ static inline void get_css_set(struct css_set *cset)
+ 	atomic_inc(&cset->refcount);
+ }
+ 
+-static inline void put_css_set(struct css_set *cset)
+-{
+-	__put_css_set(cset, 0);
+-}
 -
--	if (heap->size) {
--		for (i = 0; i < heap->size; i++) {
--			struct task_struct *q = heap->ptrs[i];
--			if (i == 0) {
--				latest_time = q->start_time;
--				latest_task = q;
--			}
--			/* Process the task per the caller's callback */
--			process(q, data);
--			put_task_struct(q);
--		}
--		/*
--		 * If we had to process any tasks at all, scan again
--		 * in case some of them were in the middle of forking
--		 * children that didn't get processed.
--		 * Not the most efficient way to do it, but it avoids
--		 * having to take callback_mutex in the fork path
--		 */
--		goto again;
--	}
--	if (heap == &tmp_heap)
--		heap_free(&tmp_heap);
--	return 0;
+-static inline void put_css_set_taskexit(struct css_set *cset)
+-{
+-	__put_css_set(cset, 1);
 -}
 -
  /**
-  * cgroup_trasnsfer_tasks - move tasks from one cgroup to another
-  * @to: cgroup to which the tasks will be moved
+  * compare_css_sets - helper function for find_existing_css_set().
+  * @cset: candidate css_set being tested
+@@ -1751,7 +1747,7 @@ static void cgroup_task_migrate(struct cgroup *old_cgrp,
+ 	 * we're safe to drop it here; it will be freed under RCU.
+ 	 */
+ 	set_bit(CGRP_RELEASABLE, &old_cgrp->flags);
+-	put_css_set(old_cset);
++	put_css_set(old_cset, false);
+ }
+ 
+ /**
+@@ -1897,7 +1893,7 @@ out_put_css_set_refs:
+ 			tc = flex_array_get(group, i);
+ 			if (!tc->cset)
+ 				break;
+-			put_css_set(tc->cset);
++			put_css_set(tc->cset, false);
+ 		}
+ 	}
+ out_cancel_attach:
+@@ -3714,7 +3710,7 @@ static int cgroup_destroy_locked(struct cgroup *cgrp)
+ 
+ 	/*
+ 	 * css_set_rwsem synchronizes access to ->cset_links and prevents
+-	 * @cgrp from being removed while __put_css_set() is in progress.
++	 * @cgrp from being removed while put_css_set() is in progress.
+ 	 */
+ 	down_read(&css_set_rwsem);
+ 	empty = list_empty(&cgrp->cset_links);
+@@ -4266,7 +4262,7 @@ void cgroup_exit(struct task_struct *tsk, int run_callbacks)
+ 	}
+ 	task_unlock(tsk);
+ 
+-	put_css_set_taskexit(cset);
++	put_css_set(cset, true);
+ }
+ 
+ static void check_for_release(struct cgroup *cgrp)
 -- 
 1.8.5.3
