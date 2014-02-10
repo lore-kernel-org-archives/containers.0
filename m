@@ -1,13 +1,11 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 16/16] cgroup: unexport functions
-Date: Sun,  9 Feb 2014 08:52:44 -0500
-Message-ID: <1391953964-22088-17-git-send-email-tj__37039.3434809104$1391954113$gmane$org@kernel.org>
-References: <1391953964-22088-1-git-send-email-tj@kernel.org>
+From: =?windows-1251?B?wPD16Ovo7eA=?= <kozlitina040997-JGs/UdohzUI@public.gmane.org>
+Subject: =?windows-1251?B?NDY2fuLu7/Du8SDv8O4g4e7j4PLx8uLu?=
+Date: Mon, 10 Feb 2014 13:04:11 +0400
+Message-ID: <auto-000009548638@mail.stdmail.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1251"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1391953964-22088-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,85 +15,53 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
-Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: zakaz-aVoOEKvFPdhLHijH+K7Xyw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, sales-gTEiMzKh0rqHXe+LvDLADg@public.gmane.org, 320057mail-78de6iVTozfwCo8hhA8L/4dd74u8MsAO@public.gmane.org, findir-Xh+9qzJNxlQox3rIn2DAYQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-With module support gone, a lot of functions no longer need to be
-exported.  Unexport them.
-
-Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
----
- kernel/cgroup.c | 8 --------
- 1 file changed, 8 deletions(-)
-
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 057ab96..abb1873 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -242,7 +242,6 @@ bool cgroup_is_descendant(struct cgroup *cgrp, struct cgroup *ancestor)
- 	}
- 	return false;
- }
--EXPORT_SYMBOL_GPL(cgroup_is_descendant);
- 
- static int cgroup_is_releasable(const struct cgroup *cgrp)
- {
-@@ -1662,7 +1661,6 @@ struct task_struct *cgroup_taskset_first(struct cgroup_taskset *tset)
- 		return tset->single.task;
- 	}
- }
--EXPORT_SYMBOL_GPL(cgroup_taskset_first);
- 
- /**
-  * cgroup_taskset_next - iterate to the next task in taskset
-@@ -1681,7 +1679,6 @@ struct task_struct *cgroup_taskset_next(struct cgroup_taskset *tset)
- 	tc = flex_array_get(tset->tc_array, tset->idx++);
- 	return tc->task;
- }
--EXPORT_SYMBOL_GPL(cgroup_taskset_next);
- 
- /**
-  * cgroup_task_migrate - move a task from one cgroup to another.
-@@ -2364,7 +2361,6 @@ int cgroup_add_cftypes(struct cgroup_subsys *ss, struct cftype *cfts)
- 	mutex_unlock(&cgroup_tree_mutex);
- 	return ret;
- }
--EXPORT_SYMBOL_GPL(cgroup_add_cftypes);
- 
- /**
-  * cgroup_task_count - count the number of tasks in a cgroup.
-@@ -2438,7 +2434,6 @@ css_next_child(struct cgroup_subsys_state *pos_css,
- 
- 	return cgroup_css(next, parent_css->ss);
- }
--EXPORT_SYMBOL_GPL(css_next_child);
- 
- /**
-  * css_next_descendant_pre - find the next descendant for pre-order walk
-@@ -2481,7 +2476,6 @@ css_next_descendant_pre(struct cgroup_subsys_state *pos,
- 
- 	return NULL;
- }
--EXPORT_SYMBOL_GPL(css_next_descendant_pre);
- 
- /**
-  * css_rightmost_descendant - return the rightmost descendant of a css
-@@ -2513,7 +2507,6 @@ css_rightmost_descendant(struct cgroup_subsys_state *pos)
- 
- 	return last;
- }
--EXPORT_SYMBOL_GPL(css_rightmost_descendant);
- 
- static struct cgroup_subsys_state *
- css_leftmost_descendant(struct cgroup_subsys_state *pos)
-@@ -2567,7 +2560,6 @@ css_next_descendant_post(struct cgroup_subsys_state *pos,
- 	/* no sibling left, visit parent */
- 	return css_parent(pos);
- }
--EXPORT_SYMBOL_GPL(css_next_descendant_post);
- 
- /**
-  * css_advance_task_iter - advance a task itererator to the next css_set
--- 
-1.8.5.3
+CjxCUj48QlI+CiYjeDQxRjvwJiMxMDgwOyYjMTA3NDsmI3g2NTvy8SYjMTA5MDsmIzEwNzQ7JiMx
+MjE7/iAmQmV0YTvgJiMxMDg5OyEKCiAKJiN4MzE7JiN4MzU7MCAmIzMyOyYjMTA0MTsmIzY5OyYj
+MTA1MTsmIzEwNjc7JiN4M0E3OyBDJiMxMDYxOyYjeDQxNTsmTXU7ICYjMTA4OTvt6OYmI3g0MzU7
+JiMxMDg1O+gmI3g0NEY7JiN4MjA7JiMxMDg1OyYjeDYxO+smIzExMTsmI3g0MzM7JiN4NkY7JiN4
+NDMyOyZvbWljcm9uO+kmIzE2MDsmIzEwODU7JiN4NjE7JiN4NDMzO/AmIzEyMTvnJiN4MTM4OyYj
+eDQzODsmI3gyRTsKJiN4QTA7PEJSPgomI3g0MTc7wCYjNzU7Jk9taWNyb247JiM5MTk7JkV0YTvb
+RSAmIzEwODQ7JiMxMDc3OyYjMTA5MDsmI3gzQkY75CYjeDQ0QjsmI3gyMDsmI3g0Mzc7JiN4NDMw
+OyYjeDQ0OTsmI3g0Mzg7JiN4NDQyO/smIzE2MDsmIzEwODY78iAmI3g0M0Q7JiN4NjU773Bh4iYj
+eDNCRjvsJiN4NjU7JiMxMTI7JiMxMDg1OyYjeDQ0Qjv1IOQmI3g0MzU76WMmI3g0NDI7JiMxMDc0
+OyYjMTA4MDsmIzEwODE7ICYjMTExOyYjMTA4NzsmIzEwODc77u1l7SYjeDQ0Mjsmb21pY3Jvbjsm
+IzEwNzQ7JiM0NjsKIDxCUj48QlI+CsQmIzk1OTvvJiMxMTE76yYjeDQzRDvoJiMxMDkwO2UmI3g0
+M0I7JiN4NDRDOyYjMTA4NTthJiMxMTAzOyYjMzI7JiMxMDgwO+0mIzEwOTI7byYjeDcwOyYjMTA4
+NDsmIzk3O/YmIzEwODA7/yYjeDNBOyAgPj4+Pj4+Cmh0dHA6Ly9jcm90aGxhc2VyaGEuYnlldGhv
+c3Q3LmNvbSZuYnNwOwo8QlI+PEJSPksmIzk3OyYjeDQzQTsgJiN4NDM3O2HwJiM5NzsmI3g0MzE7
+JiMxMTE7JiN4NDQyOyYjeDYxO/L8JiN4QTA7JiMxMDczO+4mIzEwODM7/Pg/CiYjMTA3NzsmIzEw
+NTA7JiN4NjE7JiMzMTI7ICYjMTA5MTsmIzEwNzQ7JiN4NjU7JiN4NDNCOyYjeDQzODsmI3g0NDc7
+JiMxMDgwOyYjeDQ0MjsmIzExMDA7IO/w6CYjeDQzMTsmIzEwOTk7JiMxMDgzOz8gCiYjMTEwMDsm
+Izc1OyYjMTA3MjsmI3gzQkE7ICYjMTA4OTsmIzEwODU7JiMxMDgwOyYjMTA3OTvoJiMxMDkwOyYj
+eDQ0QzsmIzE2MDvoJiMxMDc5O+QmI3g2NTtw5iYjMTA4Mjs/IAroJiN4NDFDO+7m7SYjeDQzRTsg
+JiN4NDNCOyYjeDQzODsmI3gyMDsmI3g2MzsmI3g0NEQ7JiN4NDNBOyYjeDQzRTvtJiN4NDNFO+wm
+I3g0Mzg78vwmbmJzcDvtYSAmI3g0M0Q7JiMxMDcyOyYjMTA4MzsmI3g0M0U74yYjMTA3Mjs/IAom
+I3g3ODsmS2FwcGE7JiM5NzsmI3g0M0E7JiMzMjtjbyYjeDQ0NTvwYSYjeDQzRDvoJiMxMDkwO/wm
+I3hBMDsmIzEwNzk7JiN4NDMwOyYjMTEyOyYjOTc7JiN4NDMxOyYjeDQzRTvyYSYjMTA4NTsmIzEw
+ODU7JiMxMDg2Oz8gCiYjMTA3NzsmI3gyMDsKIAo8QlI+JiM3OTsmI3g0NDI74iYjeDY1OyYjMTA5
+MDsmI3g0NEI7ICYjeDQzNTtjJiMxMDkwOyYjMTEwMDsmI3gzQTsKICAmIzEwOTA7JiN4NDM1OyYj
+eDQzQjsmI3gzQTsmIzE2MDsKJiM1NjsmbmJzcDsmIzU3OyYjeDMwOyYjNTM7ICYjeDM1OyYjeDM1
+OyYjNTM7JiN4MkQ7JiN4MzM7JiM1NjsmIzQ1OyYjeDMzOzIgJiN4MjA7CiYjeDQxODsmI3g0Mzc7
+JiMxMDc2OyYjeDQzMDvtJiN4NDM4OyYjMTA3NzsmIzE2MDvvJiMxMDg4O+XnJiN4NDM1O+0mIzEw
+OTA7JiN4NjE74SYjeDQzNTsmI3g0M0I7/CYjMTA4NTsmI3g2RjsmIzEwNzU7JiN4NkY7ICYjMTA3
+NDvoJiMxMDc2OywmI3g0MzA7Jm5ic3A7JiMxMDg2OyYjMTA5MDvrJiMxMDgwOyYjMTA5NTvtJiMx
+MDcyOyYjeDQ0Rjsg7yYjeDNCRjvrJiMxMDgwOyYjMTA3NTvwYfQmI3g0Mzg7LCYjMTEwMzsg/SYj
+eDQzQTsmI3g2MzsmI3g0M0E7JiMxMDgzO/4mIzEwNzk7JiN4NDM4O+LtJiN4NjE7LP8gJiMxMDcy
+OyYjOTU0O/LzJiN4NDMwOyYjeDQzQjsmIzExMDA7JiN4NDNEOyYjMTA3MjsmI3g0NEY7JiMzMjsm
+IzEwODA7JiMxMDg1OyYjMTA5MjsmIzk1OTsmI3g0NDA77CYjMTA3MjsmIzEwOTQ76CwmI3g0NEY7
+Jm5ic3A75O4mI3g0NDE7JiMxMDkwOyYjeDc5O+/tJiN4NjE7JiN4NDRGOyYjeDIwOyYjMTA5Mjsm
+b21pY3JvbjtwJiMxMDg0OyYjeDYxOyAmI3g0Mzg7JiN4NDM3OyYjMTA4MzsmI3gzQkY75iYjeDQz
+NTsmI3g0M0Q76CYjMTEwMzsg8iYjeDQzNTsmI3gzQkY7cOgsJiMxMDgwOyYjeDIwO+8mIzk1OTsm
+IzEwODU7//ImI3g0M0Q7JiMxMDk5OyYjeDY1OyYjeEEwOyYjeDYzO/UmIzEwMTvs+yDoICYjMTA4
+NzsmIzExMTsmIzEwOTY7JiN4NjE7JiN4NDMzOyYjOTU5OyYjeDQzMjsmI3g0NEI7JiMxMDE7JiMx
+NjA7JiMxMDgwOyYjMTA4NTsmIzEwODk7JiMxMDkwOyYjMTEyOyYjMTIxOyZrYXBwYTv2JiMxMDgw
+Oy4K6CYjMzI7CjxCUj48QlI+JiN4MzlGOyYjMTA4NzvlJiMxMDg4O2EmI3g0NDI7JiN4NDM4OyYj
+MTA3NDsmIzEwODU74CYjeDQ0RjsmIzMyO+QmI3g0M0U7JiM5OTvyJiM5NzsmI3g0MzI7JmthcHBh
+O2EgJiMxMDg3OyYjeDQzRTsgUCYjMTExO2MmI3g0NDE7JiN4NDM4OywmI3g0Mzg7ICYjMTA4Mjsm
+IzEyMTsmIzExMjv8JiN4NjU7cCYjOTU5O+wKCiYjeDJFOyAKX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFp
+bmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRh
+dGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
