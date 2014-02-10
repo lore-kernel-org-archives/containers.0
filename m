@@ -1,7 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 1/5] cgroup: add css_set->mg_tasks
-Date: Mon, 10 Feb 2014 15:21:30 -0500
-Message-ID: <1392063694-26465-2-git-send-email-tj@kernel.org>
+Subject: [PATCH 2/5] cgroup: use css_set->mg_tasks to track target tasks
+	during migration
+Date: Mon, 10 Feb 2014 15:21:31 -0500
+Message-ID: <1392063694-26465-3-git-send-email-tj@kernel.org>
 References: <1392063694-26465-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -46,146 +47,404 @@ unfortunately, this has a couple issues.
   doesn't have enough information to roll back properly.  It just
   aborts with some tasks migrated and others not.
 
-To resolve the situation, we're going to use task->cg_list during
-migration too.  Instead of building a separate array, target tasks
-will be linked into a dedicated migration list_head on the owning
-css_set.  Tasks on the migration list are treated the same as tasks on
-the usual tasks list; however, being on a separate list allows cgroup
-migration code path to keep track of the target tasks by simply
-keeping the list of css_sets with tasks being migrated, making
-unpredictable dynamic allocation unnecessary.
+To resolve the situation, this patch updates the migration path to use
+task->cg_list to track target tasks.  The previous patch already added
+css_set->mg_tasks and updated iterations in non-migration paths to
+include them during task migration.  This patch updates migration path
+to actually make use of it.
 
-In prepartion of such migration path update, this patch introduces
-css_set->mg_tasks list and updates css_set task iterations so that
-they walk both css_set->tasks and ->mg_tasks.  Note that ->mg_tasks
-isn't used yet.
+Instead of putting onto a flex_array, each target task is moved from
+its css_set->tasks list to css_set->mg_tasks and the migration path
+keeps trace of all the source css_sets and the associated cgroups.
+Once all source css_sets are determined, the destination css_set for
+each is determined, linked to the matching source css_set and put on a
+separate list.
+
+To iterate the target tasks, migration path just needs to iterat
+through either the source or target css_sets, depending on whether
+migration has been committed or not, and the tasks on their ->mg_tasks
+lists.  cgroup_taskset is updated to contain the list_heads for source
+and target css_sets and the iteration cursor.  cgroup_taskset_*() are
+accordingly updated to walk through css_sets and their ->mg_tasks.
+
+This resolves the above listed issues with moderate additional
+complexity.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- include/linux/cgroup.h |  8 ++++++--
- kernel/cgroup.c        | 56 +++++++++++++++++++++++++++++++++-----------------
- 2 files changed, 43 insertions(+), 21 deletions(-)
+ include/linux/cgroup.h |  16 ++++
+ kernel/cgroup.c        | 223 +++++++++++++++++++++++++------------------------
+ 2 files changed, 131 insertions(+), 108 deletions(-)
 
 diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 21887b6..559a4cf 100644
+index 559a4cf..38d239b 100644
 --- a/include/linux/cgroup.h
 +++ b/include/linux/cgroup.h
-@@ -322,10 +322,14 @@ struct css_set {
- 	struct hlist_node hlist;
- 
- 	/*
--	 * List running through all tasks using this cgroup
--	 * group. Protected by css_set_lock
-+	 * Lists running through all tasks using this cgroup group.
-+	 * mg_tasks lists tasks which belong to this cset but are in the
-+	 * process of being migrated out or in.  Protected by
-+	 * css_set_rwsem, but, during migration, once tasks are moved to
-+	 * mg_tasks, it can be read safely while holding cgroup_mutex.
+@@ -344,6 +344,22 @@ struct css_set {
  	 */
- 	struct list_head tasks;
-+	struct list_head mg_tasks;
+ 	struct cgroup_subsys_state *subsys[CGROUP_SUBSYS_COUNT];
  
- 	/*
- 	 * List of cgrp_cset_links pointing at cgroups referenced from this
++	/*
++	 * List of csets participating in the on-going migration either as
++	 * source or destination.  Protected by cgroup_mutex.
++	 */
++	struct list_head mg_node;
++
++	/*
++	 * If this cset is acting as the source of migration the following
++	 * two fields are set.  mg_src_cgrp is the source cgroup of the
++	 * on-going migration and mg_dst_cset is the destination cset the
++	 * target tasks on this cset should be migrated to.  Protected by
++	 * cgroup_mutex.
++	 */
++	struct cgroup *mg_src_cgrp;
++	struct css_set *mg_dst_cset;
++
+ 	/* For RCU-protected deletion */
+ 	struct rcu_head rcu_head;
+ };
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 6006710..e183466 100644
+index e183466..6727171 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -644,6 +644,7 @@ static struct css_set *find_css_set(struct css_set *old_cset,
- 	atomic_set(&cset->refcount, 1);
+@@ -52,7 +52,6 @@
+ #include <linux/pid_namespace.h>
+ #include <linux/idr.h>
+ #include <linux/vmalloc.h> /* TODO: replace with more sophisticated array */
+-#include <linux/flex_array.h> /* used in cgroup_attach_task */
+ #include <linux/kthread.h>
+ #include <linux/delay.h>
+ 
+@@ -645,6 +644,7 @@ static struct css_set *find_css_set(struct css_set *old_cset,
  	INIT_LIST_HEAD(&cset->cgrp_links);
  	INIT_LIST_HEAD(&cset->tasks);
-+	INIT_LIST_HEAD(&cset->mg_tasks);
+ 	INIT_LIST_HEAD(&cset->mg_tasks);
++	INIT_LIST_HEAD(&cset->mg_node);
  	INIT_HLIST_NODE(&cset->hlist);
  
  	/* Copy the set of subsystem state objects generated in
-@@ -2581,9 +2582,14 @@ static void css_advance_task_iter(struct css_task_iter *it)
- 		}
- 		link = list_entry(l, struct cgrp_cset_link, cset_link);
- 		cset = link->cset;
--	} while (list_empty(&cset->tasks));
-+	} while (list_empty(&cset->tasks) && list_empty(&cset->mg_tasks));
+@@ -1631,20 +1631,26 @@ char *task_cgroup_path(struct task_struct *task, char *buf, size_t buflen)
+ }
+ EXPORT_SYMBOL_GPL(task_cgroup_path);
+ 
+-/*
+- * Control Group taskset
+- */
+-struct task_and_cgroup {
+-	struct task_struct	*task;
+-	struct cgroup		*cgrp;
+-	struct css_set		*cset;
+-};
+-
++/* used to track tasks and other necessary states during migration */
+ struct cgroup_taskset {
+-	struct task_and_cgroup	single;
+-	struct flex_array	*tc_array;
+-	int			tc_array_len;
+-	int			idx;
++	/* the src and dst cset list running through cset->mg_node */
++	struct list_head	src_csets;
++	struct list_head	dst_csets;
 +
- 	it->cset_link = l;
--	it->task = cset->tasks.next;
++	/*
++	 * Fields for cgroup_taskset_*() iteration.
++	 *
++	 * Before migration is committed, the target migration tasks are on
++	 * ->mg_tasks of the csets on ->src_csets.  After, on ->mg_tasks of
++	 * the csets on ->dst_csets.  ->csets point to either ->src_csets
++	 * or ->dst_csets depending on whether migration is committed.
++	 *
++	 * ->cur_csets and ->cur_task point to the current task position
++	 * during iteration.
++	 */
++	struct list_head	*csets;
++	struct css_set		*cur_cset;
++	struct task_struct	*cur_task;
+ };
+ 
+ /**
+@@ -1655,12 +1661,10 @@ struct cgroup_taskset {
+  */
+ struct task_struct *cgroup_taskset_first(struct cgroup_taskset *tset)
+ {
+-	if (tset->tc_array) {
+-		tset->idx = 0;
+-		return cgroup_taskset_next(tset);
+-	} else {
+-		return tset->single.task;
+-	}
++	tset->cur_cset = list_first_entry(tset->csets, struct css_set, mg_node);
++	tset->cur_task = NULL;
 +
-+	if (!list_empty(&cset->tasks))
-+		it->task = cset->tasks.next;
-+	else
-+		it->task = cset->mg_tasks.next;
++	return cgroup_taskset_next(tset);
  }
  
  /**
-@@ -2627,24 +2633,29 @@ struct task_struct *css_task_iter_next(struct css_task_iter *it)
+@@ -1672,13 +1676,27 @@ struct task_struct *cgroup_taskset_first(struct cgroup_taskset *tset)
+  */
+ struct task_struct *cgroup_taskset_next(struct cgroup_taskset *tset)
  {
- 	struct task_struct *res;
- 	struct list_head *l = it->task;
--	struct cgrp_cset_link *link;
-+	struct cgrp_cset_link *link = list_entry(it->cset_link,
-+					struct cgrp_cset_link, cset_link);
+-	struct task_and_cgroup *tc;
++	struct css_set *cset = tset->cur_cset;
++	struct task_struct *task = tset->cur_task;
  
- 	/* If the iterator cg is NULL, we have no tasks */
- 	if (!it->cset_link)
- 		return NULL;
- 	res = list_entry(l, struct task_struct, cg_list);
--	/* Advance iterator to find next entry */
-+
-+	/*
-+	 * Advance iterator to find next entry.  cset->tasks is consumed
-+	 * first and then ->mg_tasks.  After ->mg_tasks, we move onto the
-+	 * next cset.
-+	 */
- 	l = l->next;
--	link = list_entry(it->cset_link, struct cgrp_cset_link, cset_link);
--	if (l == &link->cset->tasks) {
--		/*
--		 * We reached the end of this task list - move on to the
--		 * next cgrp_cset_link.
--		 */
-+
-+	if (l == &link->cset->tasks)
-+		l = link->cset->mg_tasks.next;
-+
-+	if (l == &link->cset->mg_tasks)
- 		css_advance_task_iter(it);
--	} else {
-+	else
- 		it->task = l;
--	}
-+
- 	return res;
- }
+-	if (!tset->tc_array || tset->idx >= tset->tc_array_len)
+-		return NULL;
++	while (&cset->mg_node != tset->csets) {
++		if (!task)
++			task = list_first_entry(&cset->mg_tasks,
++						struct task_struct, cg_list);
++		else
++			task = list_next_entry(task, cg_list);
  
-@@ -4493,16 +4504,23 @@ static int cgroup_css_links_read(struct seq_file *seq, void *v)
- 		struct css_set *cset = link->cset;
- 		struct task_struct *task;
- 		int count = 0;
-+
- 		seq_printf(seq, "css_set %p\n", cset);
-+
- 		list_for_each_entry(task, &cset->tasks, cg_list) {
--			if (count++ > MAX_TASKS_SHOWN_PER_CSS) {
--				seq_puts(seq, "  ...\n");
--				break;
--			} else {
--				seq_printf(seq, "  task %d\n",
--					   task_pid_vnr(task));
--			}
-+			if (count++ > MAX_TASKS_SHOWN_PER_CSS)
-+				goto overflow;
-+			seq_printf(seq, "  task %d\n", task_pid_vnr(task));
+-	tc = flex_array_get(tset->tc_array, tset->idx++);
+-	return tc->task;
++		if (&task->cg_list != &cset->mg_tasks) {
++			tset->cur_cset = cset;
++			tset->cur_task = task;
++			return task;
 +		}
 +
-+		list_for_each_entry(task, &cset->mg_tasks, cg_list) {
-+			if (count++ > MAX_TASKS_SHOWN_PER_CSS)
-+				goto overflow;
-+			seq_printf(seq, "  task %d\n", task_pid_vnr(task));
++		cset = list_next_entry(cset, mg_node);
++		task = NULL;
++	}
++
++	return NULL;
+ }
+ 
+ /**
+@@ -1706,11 +1724,13 @@ static void cgroup_task_migrate(struct cgroup *old_cgrp,
+ 	WARN_ON_ONCE(tsk->flags & PF_EXITING);
+ 	old_cset = task_css_set(tsk);
+ 
++	get_css_set(new_cset);
++
+ 	task_lock(tsk);
+ 	rcu_assign_pointer(tsk->cgroups, new_cset);
+ 	task_unlock(tsk);
+ 
+-	list_move(&tsk->cg_list, &new_cset->tasks);
++	list_move(&tsk->cg_list, &new_cset->mg_tasks);
+ 
+ 	/*
+ 	 * We just gained a reference on old_cset by taking it from the
+@@ -1733,80 +1753,58 @@ static void cgroup_task_migrate(struct cgroup *old_cgrp,
+ static int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *leader,
+ 			      bool threadgroup)
+ {
+-	int ret, i, group_size;
+-	struct cgroupfs_root *root = cgrp->root;
++	struct cgroup_taskset tset = {
++		.src_csets	= LIST_HEAD_INIT(tset.src_csets),
++		.dst_csets	= LIST_HEAD_INIT(tset.dst_csets),
++		.csets		= &tset.src_csets,
++	};
+ 	struct cgroup_subsys_state *css, *failed_css = NULL;
+-	/* threadgroup list cursor and array */
+-	struct task_struct *task;
+-	struct task_and_cgroup *tc;
+-	struct flex_array *group;
+-	struct cgroup_taskset tset = { };
+-
+-	/*
+-	 * step 0: in order to do expensive, possibly blocking operations for
+-	 * every thread, we cannot iterate the thread group list, since it needs
+-	 * rcu or tasklist locked. instead, build an array of all threads in the
+-	 * group - group_rwsem prevents new threads from appearing, and if
+-	 * threads exit, this will just be an over-estimate.
+-	 */
+-	if (threadgroup)
+-		group_size = get_nr_threads(task);
+-	else
+-		group_size = 1;
+-	/* flex_array supports very large thread-groups better than kmalloc. */
+-	group = flex_array_alloc(sizeof(*tc), group_size, GFP_KERNEL);
+-	if (!group)
+-		return -ENOMEM;
+-	/* pre-allocate to guarantee space while iterating in rcu read-side. */
+-	ret = flex_array_prealloc(group, 0, group_size, GFP_KERNEL);
+-	if (ret)
+-		goto out_free_group_list;
++	struct css_set *cset, *tmp_cset;
++	struct task_struct *task, *tmp_task;
++	int i, ret;
+ 
+-	i = 0;
+ 	/*
+ 	 * Prevent freeing of tasks while we take a snapshot. Tasks that are
+ 	 * already PF_EXITING could be freed from underneath us unless we
+ 	 * take an rcu_read_lock.
+ 	 */
+-	down_read(&css_set_rwsem);
++	down_write(&css_set_rwsem);
+ 	rcu_read_lock();
+ 	task = leader;
+ 	do {
+-		struct task_and_cgroup ent;
++		struct cgroup *src_cgrp;
+ 
+ 		/* @task either already exited or can't exit until the end */
+ 		if (task->flags & PF_EXITING)
+ 			goto next;
+ 
+-		/* as per above, nr_threads may decrease, but not increase. */
+-		BUG_ON(i >= group_size);
+-		ent.task = task;
+-		ent.cgrp = task_cgroup_from_root(task, root);
++		cset = task_css_set(task);
++		src_cgrp = task_cgroup_from_root(task, cgrp->root);
++
+ 		/* nothing to do if this task is already in the cgroup */
+-		if (ent.cgrp == cgrp)
++		if (src_cgrp == cgrp)
+ 			goto next;
+-		/*
+-		 * saying GFP_ATOMIC has no effect here because we did prealloc
+-		 * earlier, but it's good form to communicate our expectations.
+-		 */
+-		ret = flex_array_put(group, i, &ent, GFP_ATOMIC);
+-		BUG_ON(ret != 0);
+-		i++;
++
++		if (!cset->mg_src_cgrp) {
++			WARN_ON(!list_empty(&cset->mg_tasks));
++			WARN_ON(!list_empty(&cset->mg_node));
++
++			cset->mg_src_cgrp = src_cgrp;
++			list_add(&cset->mg_node, &tset.src_csets);
++			get_css_set(cset);
++		}
++
++		list_move(&task->cg_list, &cset->mg_tasks);
+ 	next:
+ 		if (!threadgroup)
+ 			break;
+ 	} while_each_thread(leader, task);
+ 	rcu_read_unlock();
+-	up_read(&css_set_rwsem);
+-	/* remember the number of threads in the array for later. */
+-	group_size = i;
+-	tset.tc_array = group;
+-	tset.tc_array_len = group_size;
++	up_write(&css_set_rwsem);
+ 
+ 	/* methods shouldn't be called if no task is actually migrating */
+-	ret = 0;
+-	if (!group_size)
+-		goto out_free_group_list;
++	if (list_empty(&tset.src_csets))
++		return 0;
+ 
+ 	/*
+ 	 * step 1: check that we can legitimately attach to the cgroup.
+@@ -1825,16 +1823,21 @@ static int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *leader,
+ 	 * step 2: make sure css_sets exist for all threads to be migrated.
+ 	 * we use find_css_set, which allocates a new one if necessary.
+ 	 */
+-	for (i = 0; i < group_size; i++) {
+-		struct css_set *old_cset;
++	list_for_each_entry(cset, &tset.src_csets, mg_node) {
++		struct css_set *dst_cset;
+ 
+-		tc = flex_array_get(group, i);
+-		old_cset = task_css_set(tc->task);
+-		tc->cset = find_css_set(old_cset, cgrp);
+-		if (!tc->cset) {
++		dst_cset = find_css_set(cset, cgrp);
++		if (!dst_cset) {
+ 			ret = -ENOMEM;
+-			goto out_put_css_set_refs;
++			goto out_release_tset;
  		}
-+		continue;
-+	overflow:
-+		seq_puts(seq, "  ...\n");
++
++		if (list_empty(&dst_cset->mg_node))
++			list_add(&dst_cset->mg_node, &tset.dst_csets);
++		else
++			put_css_set(dst_cset, false);
++
++		cset->mg_dst_cset = dst_cset;
  	}
- 	up_read(&css_set_rwsem);
- 	return 0;
+ 
+ 	/*
+@@ -1843,12 +1846,17 @@ static int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *leader,
+ 	 * failure cases after here, so this is the commit point.
+ 	 */
+ 	down_write(&css_set_rwsem);
+-	for (i = 0; i < group_size; i++) {
+-		tc = flex_array_get(group, i);
+-		cgroup_task_migrate(tc->cgrp, tc->task, tc->cset);
++	list_for_each_entry(cset, &tset.src_csets, mg_node) {
++		list_for_each_entry_safe(task, tmp_task, &cset->mg_tasks, cg_list)
++			cgroup_task_migrate(cset->mg_src_cgrp, task,
++					    cset->mg_dst_cset);
+ 	}
+ 	up_write(&css_set_rwsem);
+-	/* nothing is sensitive to fork() after this point. */
++
++	/* migration is committed, all target tasks are now on dst_csets */
++	tset.csets = &tset.dst_csets;
++
++	/* nothing is sensitive to fork() after this point */
+ 
+ 	/*
+ 	 * step 4: do subsystem attach callbacks.
+@@ -1857,30 +1865,27 @@ static int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *leader,
+ 		if (css->ss->attach)
+ 			css->ss->attach(css, &tset);
+ 
+-	/*
+-	 * step 5: success! and cleanup
+-	 */
+ 	ret = 0;
+-out_put_css_set_refs:
+-	if (ret) {
+-		for (i = 0; i < group_size; i++) {
+-			tc = flex_array_get(group, i);
+-			if (!tc->cset)
+-				break;
+-			put_css_set(tc->cset, false);
+-		}
+-	}
++	goto out_release_tset;
++
+ out_cancel_attach:
+-	if (ret) {
+-		for_each_css(css, i, cgrp) {
+-			if (css == failed_css)
+-				break;
+-			if (css->ss->cancel_attach)
+-				css->ss->cancel_attach(css, &tset);
+-		}
++	for_each_css(css, i, cgrp) {
++		if (css == failed_css)
++			break;
++		if (css->ss->cancel_attach)
++			css->ss->cancel_attach(css, &tset);
+ 	}
+-out_free_group_list:
+-	flex_array_free(group);
++out_release_tset:
++	down_write(&css_set_rwsem);
++	list_splice_init(&tset.dst_csets, &tset.src_csets);
++	list_for_each_entry_safe(cset, tmp_cset, &tset.src_csets, mg_node) {
++		list_splice_init(&cset->mg_tasks, &cset->tasks);
++		cset->mg_dst_cset = NULL;
++		cset->mg_src_cgrp = NULL;
++		list_del_init(&cset->mg_node);
++		put_css_set_locked(cset, false);
++	}
++	up_write(&css_set_rwsem);
+ 	return ret;
+ }
+ 
+@@ -3882,6 +3887,8 @@ int __init cgroup_init_early(void)
+ 	atomic_set(&init_css_set.refcount, 1);
+ 	INIT_LIST_HEAD(&init_css_set.cgrp_links);
+ 	INIT_LIST_HEAD(&init_css_set.tasks);
++	INIT_LIST_HEAD(&init_css_set.mg_tasks);
++	INIT_LIST_HEAD(&init_css_set.mg_node);
+ 	INIT_HLIST_NODE(&init_css_set.hlist);
+ 	css_set_count = 1;
+ 	init_cgroup_root(&cgroup_dummy_root);
 -- 
 1.8.5.3
