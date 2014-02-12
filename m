@@ -1,15 +1,16 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCHSET v2 cgroup/for-3.15] cgroup: cleanups after kernfs
-	conversion
-Date: Wed, 12 Feb 2014 09:30:24 -0500
-Message-ID: <20140212143024.GK24490__6252.19133585251$1392215451$gmane$org@htj.dyndns.org>
-References: <1391877509-10855-1-git-send-email-tj@kernel.org>
+Subject: Re: [PATCH 5/5] cgroup: update cgroup_transfer_tasks() to either
+	succeed or fail
+Date: Wed, 12 Feb 2014 10:30:33 -0500
+Message-ID: <20140212153033.GA26809@htj.dyndns.org>
+References: <1392063694-26465-1-git-send-email-tj@kernel.org>
+	<1392063694-26465-6-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1391877509-10855-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1392063694-26465-6-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,18 +24,20 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sat, Feb 08, 2014 at 11:38:21AM -0500, Tejun Heo wrote:
-> Hello,
+On Mon, Feb 10, 2014 at 03:21:34PM -0500, Tejun Heo wrote:
+> cgroup_transfer_tasks() can currently fail in the middle due to memory
+> allocation failure.  When that happens, the function just aborts and
+> returns error code and there's no way to tell how many actually got
+> migrated at the point of failure and or to revert the partial
+> migration.
 > 
-> This is v2 of cleanups-after-kernfs-conversion patchset.  Nothing
-> really changed since the last take[L]. It just got rebased on top of
-> the updated patches.
-> 
-> This patchset does a number of cleanups which are possible now that
-> cgroup is converted to kernfs.  This patchset contains the following
-> eight patches.
+> Update it to use cgroup_migrate{_add_src|prepare_dst|migrate|finish}()
+> so that the function either succeeds or fails as a whole as long as
+> ->can_attach() doesn't fail.
 
-Applied to cgroup/for-3.15.
+While this solves one aspect of the problem, it may still race with
+fork and may leave newly forked tasks behind.  I'll think more about
+it.
 
 Thanks.
 
