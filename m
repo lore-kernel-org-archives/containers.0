@@ -1,9 +1,9 @@
 From: MAILER-DAEMON-i9wRM+HIrmnmtl4Z8vJ8Kg761KYD1DLY@public.gmane.org (Mail Delivery System)
 Subject: Undelivered Mail Returned to Sender
 Date: Sun, 16 Feb 2014 23:49:13 +0000 (GMT)
-Message-ID: <20140216234913.273CF65426E@smtp-in-76.livemail.co.uk>
+Message-ID: <20140216234913.0769465426C@smtp-in-76.livemail.co.uk>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1988082124533744456=="
+Content-Type: multipart/mixed; boundary="===============0121049195352386153=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,14 +19,14 @@ List-Id: containers.vger.kernel.org
 
 This is a MIME-encapsulated message.
 
---===============1988082124533744456==
+--===============0121049195352386153==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="07D9865426D.1392594553/smtp-in-76.livemail.co.uk"
+	boundary="E04F865425A.1392594553/smtp-in-76.livemail.co.uk"
 Content-Transfer-Encoding: 7bit
 
 This is a MIME-encapsulated message.
 
---07D9865426D.1392594553/smtp-in-76.livemail.co.uk
+--E04F865425A.1392594553/smtp-in-76.livemail.co.uk
 Content-Description: Notification
 Content-Type: text/plain
 
@@ -42,36 +42,36 @@ delete your own text from the message returned below.
 
 			The Postfix program
 
-<assaf.tomita-5VcVREoP/zUnrNepSm50m+qUGfbH9hYC@public.gmane.org>: host
+<asa_sascha-5VcVREoP/zUnrNepSm50m+qUGfbH9hYC@public.gmane.org>: host
     mailserver.crimestopsecurity.com[213.171.216.114] said: 550
-    <assaf.tomita-5VcVREoP/zUnrNepSm50m+qUGfbH9hYC@public.gmane.org>: Recipient address rejected: User
+    <asa_sascha-5VcVREoP/zUnrNepSm50m+qUGfbH9hYC@public.gmane.org>: Recipient address rejected: User
     unknown in virtual mailbox table (in reply to RCPT TO command)
 
---07D9865426D.1392594553/smtp-in-76.livemail.co.uk
+--E04F865425A.1392594553/smtp-in-76.livemail.co.uk
 Content-Description: Delivery report
 Content-Type: message/delivery-status
 
 Reporting-MTA: dns; smtp-in-76.livemail.co.uk
-X-Postfix-Queue-ID: 07D9865426D
+X-Postfix-Queue-ID: E04F865425A
 X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Sun, 16 Feb 2014 23:49:13 +0000 (GMT)
+Arrival-Date: Sun, 16 Feb 2014 23:49:12 +0000 (GMT)
 
-Final-Recipient: rfc822; assaf.tomita-5VcVREoP/zUnrNepSm50m+qUGfbH9hYC@public.gmane.org
+Final-Recipient: rfc822; asa_sascha-5VcVREoP/zUnrNepSm50m+qUGfbH9hYC@public.gmane.org
 Action: failed
 Status: 5.0.0
 Diagnostic-Code: X-Postfix; host
     mailserver.crimestopsecurity.com[213.171.216.114] said: 550
-    <assaf.tomita-5VcVREoP/zUnrNepSm50m+qUGfbH9hYC@public.gmane.org>: Recipient address rejected: User
+    <asa_sascha-5VcVREoP/zUnrNepSm50m+qUGfbH9hYC@public.gmane.org>: Recipient address rejected: User
     unknown in virtual mailbox table (in reply to RCPT TO command)
 
---07D9865426D.1392594553/smtp-in-76.livemail.co.uk
+--E04F865425A.1392594553/smtp-in-76.livemail.co.uk
 Content-Description: Undelivered Message
 Content-Type: message/rfc822
 Content-Transfer-Encoding: 7bit
 
 Received: from Postfix-filter-42a77884ce2a0a03efc6bb50a6dcdb21 (localhost [127.0.0.1])
-	by smtp-in-76.livemail.co.uk (Postfix) with SMTP id 07D9865426D
-	for <assaf.tomita-TWA+NJgA1GvPlRtfX+RAZ1pr/1R2p/CL@public.gmane.org>; Sun, 16 Feb 2014 23:49:13 +0000 (GMT)
+	by smtp-in-76.livemail.co.uk (Postfix) with SMTP id E04F865425A
+	for <asa_sascha-TWA+NJgA1GvPlRtfX+RAZ1pr/1R2p/CL@public.gmane.org>; Sun, 16 Feb 2014 23:49:12 +0000 (GMT)
 Received: from ns3002637.ip-37-59-5.eu (ns3002637.ip-37-59-5.eu [37.59.5.198])
 	by smtp-in-76.livemail.co.uk (Postfix) with ESMTP id 3A43665426A;
 	Sun, 16 Feb 2014 23:49:12 +0000 (GMT)
@@ -84,7 +84,7 @@ Date: Mon, 17 Feb 2014 00:49:16 +0100
 MIME-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1252"
-X-Original-To: assaf.tomita-TWA+NJgA1GvPlRtfX+RAZ1pr/1R2p/CL@public.gmane.org
+X-Original-To: asa_sascha-TWA+NJgA1GvPlRtfX+RAZ1pr/1R2p/CL@public.gmane.org
 Content-Transfer-Encoding: quoted-printable
 
 
@@ -105,9 +105,9 @@ Tel./Fax.: (440) 341 75 408             =20
 
 
 
---07D9865426D.1392594553/smtp-in-76.livemail.co.uk--
+--E04F865425A.1392594553/smtp-in-76.livemail.co.uk--
 
---===============1988082124533744456==
+--===============0121049195352386153==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -117,4 +117,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1988082124533744456==--
+--===============0121049195352386153==--
