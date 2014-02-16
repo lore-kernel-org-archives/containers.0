@@ -1,14 +1,10 @@
-From: arnaud gaboury <arnaud.gaboury-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: lxc and cgroups issue
-Date: Sat, 15 Feb 2014 14:40:49 +0100
-Message-ID: <CAK1hC9ucfG0jMyU_pD5ux_MpOwt7CuJnT=_FZcW2d4heqjY6hA@mail.gmail.com>
-References: <CAK1hC9tzeaZE8xaOG8cdZaJj8ff0aTfmG9u5E2XhtjchTxSuTQ@mail.gmail.com>
-	<CAK1hC9vUv4AF1QrH6wc1Ef6oWqP2z1CTfA+V=C+ZYJh_GwYrrQ@mail.gmail.com>
+From: MAILER-DAEMON-i9wRM+HIrmnmtl4Z8vJ8Kg761KYD1DLY@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Sun, 16 Feb 2014 23:49:12 +0000 (GMT)
+Message-ID: <20140216234912.E57CE65426B@smtp-in-76.livemail.co.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: multipart/mixed; boundary="===============1870230402071622874=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAK1hC9vUv4AF1QrH6wc1Ef6oWqP2z1CTfA+V=C+ZYJh_GwYrrQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,17 +17,104 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gU2F0LCBGZWIgMTUsIDIwMTQgYXQgMTI6NTggUE0sIGFybmF1ZCBnYWJvdXJ5Cjxhcm5hdWQu
-Z2Fib3VyeUBnbWFpbC5jb20+IHdyb3RlOgo+IEkgbXVzdCBhZGQgSSBjYW4gYm9vdCB0aGUgY29u
-dGFpbmVyIHRoaXMgd2F5IDoKPgo+ICBnYWJ4QGhvcnRlbnNpYSDinqTinqQgfiAjIHN5c3RlbWQt
-bnNwYXduIC1iRCAvbWFjaGluZS9kYWhsaWEKPgo+IEEgZmV3IGVycm9yIG1lc3NhZ2VzIGF0IGJv
-b3QgOgo+Cj4KPiBTZXQgaG9zdG5hbWUgdG8gPGRhaGxpYT4uCj4gRmFpbGVkIHRvIHZlcmlmeSBH
-UFQgcGFydGl0aW9uIC9kZXYvc2RiMTogTm8gc3VjaCBmaWxlIG9yIGRpcmVjdG9yeQo+IC91c3Iv
-bGliL3N5c3RlbWQvc3lzdGVtLQo+IGdlbmVyYXRvcnMvc3lzdGVtZC1ncHQtYXV0by1nZW5lcmF0
-b3IgZXhpdGVkCj4gd2l0aCBleGl0IHN0YXR1cyAxLgoKSXQgc2VlbXMgdGhpcyBpcyBkdWUgdG8g
-YnJva2VuIHVkZXYgaW5zaWRlIHRoZSBjb250YWluZXIKCi4gdWRldiBpcyBub3QgYXZhaWxhYmxl
-IGluIGNvbnRhaW5lcnMgWzFdCgpbMV1odHRwOi8vd3d3LmZyZWVkZXNrdG9wLm9yZy93aWtpL1Nv
-ZnR3YXJlL3N5c3RlbWQvQ29udGFpbmVySW50ZXJmYWNlLwpfX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWlu
-ZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0
-aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+This is a MIME-encapsulated message.
+
+--===============1870230402071622874==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="CE4BB654266.1392594552/smtp-in-76.livemail.co.uk"
+Content-Transfer-Encoding: 7bit
+
+This is a MIME-encapsulated message.
+
+--CE4BB654266.1392594552/smtp-in-76.livemail.co.uk
+Content-Description: Notification
+Content-Type: text/plain
+
+This is the Postfix program at host smtp-in-76.livemail.co.uk.
+
+I'm sorry to have to inform you that the message returned
+below could not be delivered to one or more destinations.
+
+For further assistance, please send mail to <postmaster>
+
+If you do so, please include this problem report. You can
+delete your own text from the message returned below.
+
+			The Postfix program
+
+<asa_nobre-5VcVREoP/zUnrNepSm50m+qUGfbH9hYC@public.gmane.org>: host
+    mailserver.crimestopsecurity.com[213.171.216.114] said: 550
+    <asa_nobre-5VcVREoP/zUnrNepSm50m+qUGfbH9hYC@public.gmane.org>: Recipient address rejected: User unknown
+    in virtual mailbox table (in reply to RCPT TO command)
+
+--CE4BB654266.1392594552/smtp-in-76.livemail.co.uk
+Content-Description: Delivery report
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; smtp-in-76.livemail.co.uk
+X-Postfix-Queue-ID: CE4BB654266
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Sun, 16 Feb 2014 23:49:12 +0000 (GMT)
+
+Final-Recipient: rfc822; asa_nobre-5VcVREoP/zUnrNepSm50m+qUGfbH9hYC@public.gmane.org
+Action: failed
+Status: 5.0.0
+Diagnostic-Code: X-Postfix; host
+    mailserver.crimestopsecurity.com[213.171.216.114] said: 550
+    <asa_nobre-5VcVREoP/zUnrNepSm50m+qUGfbH9hYC@public.gmane.org>: Recipient address rejected: User unknown
+    in virtual mailbox table (in reply to RCPT TO command)
+
+--CE4BB654266.1392594552/smtp-in-76.livemail.co.uk
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
+
+Received: from Postfix-filter-42a77884ce2a0a03efc6bb50a6dcdb21 (localhost [127.0.0.1])
+	by smtp-in-76.livemail.co.uk (Postfix) with SMTP id CE4BB654266
+	for <asa_nobre-TWA+NJgA1GvPlRtfX+RAZ1pr/1R2p/CL@public.gmane.org>; Sun, 16 Feb 2014 23:49:12 +0000 (GMT)
+Received: from ns3002637.ip-37-59-5.eu (ns3002637.ip-37-59-5.eu [37.59.5.198])
+	by smtp-in-76.livemail.co.uk (Postfix) with ESMTP id 3A43665426A;
+	Sun, 16 Feb 2014 23:49:12 +0000 (GMT)
+Received: from [37.59.5.198] by ns3002637.ip-37-59-5.eu id 5HnFSzOqH5mv; Mon, 17 Feb 2014 00:49:16 +0100
+Message-ID: <00b101cf2b71$b2513900$0500a8c0-Vu/wYa1sG4Atx1znV4rXQz7A4pIZrJa8@public.gmane.org>
+From: "Info" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <aryarach-TWA+NJgA1GvPlRtfX+RAZ1pr/1R2p/CL@public.gmane.org>
+Subject: Invoice 150811-970637538906
+Date: Mon, 17 Feb 2014 00:49:16 +0100
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="windows-1252"
+X-Original-To: asa_nobre-TWA+NJgA1GvPlRtfX+RAZ1pr/1R2p/CL@public.gmane.org
+Content-Transfer-Encoding: quoted-printable
+
+
+
+Thank you for the order,
+
+This message is to inform you that your order has been received
+and is currently being processed.
+Your order reference is 57830334.
+Your credit card will be charged for 305 dollars.
+
+Information about the order and delivery located at:
+http://win-s.ucoz.ua/Order.zip?yZNXnxAjhBN1uuMl
+
+____________________________
+Best regards, ticket service.
+Tel./Fax.: (440) 341 75 408             =20
+
+
+
+--CE4BB654266.1392594552/smtp-in-76.livemail.co.uk--
+
+--===============1870230402071622874==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============1870230402071622874==--
