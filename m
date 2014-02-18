@@ -1,9 +1,9 @@
-From: MAILER-DAEMON-eesob3c2KIA5lQfRKJLcjNvLeJWuRmrY@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Mon, 17 Feb 2014 16:47:01 -0800 (PST)
-Message-ID: <20140218004701.C9404DC357@hapkido.dreamhost.com>
+From: Mail Delivery System <mail-daemon-Ou26UN+f7CbZiNzuUuvNNDUZDU+1vuVT@public.gmane.org>
+Subject: Delivery status notification
+Date: Tue, 18 Feb 2014 04:20:13 +0100
+Message-ID: <20140218032827.080842B@mail.linuxfoundation.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6179173383837554206=="
+Content-Type: multipart/mixed; boundary="===============2571211707256821321=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,96 +17,68 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+This is a multi-part message in MIME format.
 
---===============6179173383837554206==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="0EC036C9.1392684421/hapkido.dreamhost.com"
+--===============2571211707256821321==
+Content-Type: multipart/report; boundary="------------I305M09060309060P_175113926936130"
 
-This is a MIME-encapsulated message.
+This is a multi-part message in MIME format.
 
---0EC036C9.1392684421/hapkido.dreamhost.com
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
-
-This is the mail system at host hapkido.dreamhost.com.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-If you are a current customer of DreamHost, please contact our 
-technical support team here
-
-https://panel.dreamhost.com/support
-
-If you are not a customer please use our contact form at.
-
-http://dreamhost.com/contact
-
-If you do so, please include this email in your support ticket. You can
-delete your own text from the attached returned message.
-
-		DreamHost Email Support
-
-<vahagn501-CvkCd6MYxauELgA04lAiVw@public.gmane.org>: host mx.2serve.de[80.88.16.15] said: 550 Address
-    unknown (in reply to RCPT TO command)
-
---0EC036C9.1392684421/hapkido.dreamhost.com
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; hapkido.dreamhost.com
-X-Postfix-Queue-ID: 0EC036C9
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Mon, 17 Feb 2014 16:46:55 -0800 (PST)
-
-Final-Recipient: rfc822; vahagn501-CvkCd6MYxauELgA04lAiVw@public.gmane.org
-Original-Recipient: rfc822;vahagn501-CvkCd6MYxauELgA04lAiVw@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mx.2serve.de
-Diagnostic-Code: smtp; 550 Address unknown
-
---0EC036C9.1392684421/hapkido.dreamhost.com
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from homiemail-a76.g.dreamhost.com (mailbigip.dreamhost.com [208.97.132.5])
-	by hapkido.dreamhost.com (Postfix) with ESMTP id 0EC036C9
-	for <vahagn501-CvkCd6MYxauELgA04lAiVw@public.gmane.org>; Mon, 17 Feb 2014 16:46:55 -0800 (PST)
-Received: from homiemail-a76.g.dreamhost.com (localhost [127.0.0.1])
-	by homiemail-a76.g.dreamhost.com (Postfix) with ESMTP id CA91045807C;
-	Mon, 17 Feb 2014 16:51:21 -0800 (PST)
-Received: from p3540655.pubip.serverbeach.com (unknown [46.20.119.178])
-	(Authenticated sender: info-D1/FLYJDIfT+Yak9yeWPdDUZDU+1vuVT@public.gmane.org)
-	by homiemail-a76.g.dreamhost.com (Postfix) with ESMTPA id 8B3D3458079;
-	Mon, 17 Feb 2014 16:51:20 -0800 (PST)
-Received: from [46.20.119.178] by p3540655.pubip.serverbeach.com id i5ocf4Yp4WfoDBt; Tue, 18 Feb 2014 00:51:18 +0000
-Message-ID: <004501cf2c43$87371a00$0200a8c0-WHr2u/oy4y1U5kMT42P4gQvIsqB7J+1HKgyenaPv0mk@public.gmane.org>
-From: "Inform" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <riz.pratch-CvkCd6MYxauELgA04lAiVw@public.gmane.org>
-Subject: Information N3547725970.
-Date: Tue, 18 Feb 2014 00:51:18 +0000
-MIME-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1252"
+--------------I305M09060309060P_175113926936130
+Content-Type: text/plain; charset=UTF-8;
 Content-Transfer-Encoding: quoted-printable
 
+      This is an automatically generated Delivery Status Notification.   =
+  =20
+
+Delivery to the following recipients was aborted after 7 second(s):
+
+  * jazz.zm-9Vj9tDbzfuSlVyrhU4qvOw@public.gmane.org
 
 
 
-Hello,=20
+--------------I305M09060309060P_175113926936130
+Content-Type: message/delivery-status; charset=UTF-8;
+Content-Transfer-Encoding: 7bit
 
-Zinsen in Hohe in den nachsten Monaten wird geandert.
-Informationen im folgenden Dokument enthaltenen
-http://www.ristorantelalioda.it/Antwort.zip
+Reporting-MTA: dns; smtpcm2-pc.aruba.it [10.10.176.189]
+Received-From-MTA: dns; ns3002637.ip-37-59-5.eu [37.59.5.198]
+Arrival-Date: Tue, 18 Feb 2014 04:20:06 +0100
+
+
+Final-recipient: rfc822; jazz.zm-9Vj9tDbzfuSlVyrhU4qvOw@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: smtp;  550 5.7.1 Sender Policy Framework of `lists.linux=
+
+-foundation.org' domain denied your IP address.
+Last-attempt-Date: Tue, 18 Feb 2014 04:20:13 +0100
+
+
+--------------I305M09060309060P_175113926936130
+Content-Type: text/rfc822-headers; Content-Transfer-Encoding: 8bit
+Content-Disposition: attachment
+
+Received: from [37.59.5.198] by ns3002637.ip-37-59-5.eu id pAqioAbrjvFr with SMTP; Tue, 18 Feb 2014 04:20:10 +0100
+Date: Tue, 18 Feb 2014 04:20:10 +0100
+From: "Consult Group" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.07.3) Home
+X-Priority: 3 (Normal)
+Message-ID: <708831852.60241019278960-Vu/wYa1sG4Atx1znV4rXQz7A4pIZrJa8@public.gmane.org>
+To: <jazz.zm-9Vj9tDbzfuSlVyrhU4qvOw@public.gmane.org>
+Subject: Re: report
+MIME-Version: 1.0
+Content-Type: text/plain;
+	charset="utf-8"
+Content-Transfer-Encoding: 8bit
 
 
 
---0EC036C9.1392684421/hapkido.dreamhost.com--
+--------------I305M09060309060P_175113926936130--
 
---===============6179173383837554206==
+
+
+--===============2571211707256821321==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -116,4 +88,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============6179173383837554206==--
+--===============2571211707256821321==--
