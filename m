@@ -1,8 +1,7 @@
-From: yayatura owocomes <yayaking1-1ViLX0X+lBJBDgjK7y7TUQ@public.gmane.org>
-Subject: Gold
-Date: Wed, 19 Feb 2014 08:31:50 -0500
-Message-ID: <201402191331.s1JDVoVg025781@mail.mrswing.com>
-Reply-To: yayaking1-1ViLX0X+lBJBDgjK7y7TUQ@public.gmane.org
+From: Mail Delivery System <Mailer-Daemon-n8VBZsX/W55AHbKaUvR+RYG+sDGE/sKLQQ4Iyu8u01E@public.gmane.org>
+Subject: Mail delivery failed: returning message to sender
+Date: Thu, 20 Feb 2014 01:49:36 -0600
+Message-ID: <E1WGOO0-00033Z-TH@roadster.websitewelcome.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,24 +18,60 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-   Dear Sir/Madam, I am Yayatura Owocomes. Residing in Accra-Ghana,the son
-   to late chief Nana Adnaike a local miner. Sir am contacting you
-   presently from Ghana International Airport where I have a consignment
-   belonging to my late father to be delivered to his partner in Europe
-   before he died. Several attempts have been made by me to contact him
-   all this while, but all has been in vain. we are local miners i work
-   with my late father before he die. since he die we can not operate at
-   the site because we don't have Machine Tools at the site all the
-   Machine Tools have broke down no money to buy we need your urgent
-   assist to move this gold bar out my country Ghana and ship it to your
-   country to market it in your country so that i will buyer my Machine
-   Tools from your country. i wont you to assist me so that we will pay
-   for the shipmenat 7% shipment to your country in your name and address.
-   50% for you 50% for me. I need a partner to assist me in receiving the
-   consignment which will be conveyed by a diplomat for security reason
-   based on the content of the consignment box 100kg gold bar/quality 22
-   carat/purity 92%, you will be the legal recipient of the consignment.
-   Kindly get back to me as soon as you receive this message it is very
-   urgent you do so. Here is my direct email address (), mail me back
-   immediately so I explain everything to you in details. The Attachment
-   is the gold box and deposit certificate Regards, Yayatura
+This message was created automatically by mail delivery software.
+
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
+
+  wojti1971-5tc4TXWwyLM@public.gmane.org
+    Domain inthompsonct.com has exceeded the max emails per hour (500/500 (100%)) allowed.  Message discarded.
+  dkalwar-hi6Y0CQ0nG0@public.gmane.org
+    Domain inthompsonct.com has exceeded the max emails per hour (500/500 (100%)) allowed.  Message discarded.
+  bauhpe-/X3ohV5yuCt52iLDkz0vLQ@public.gmane.org
+    Domain inthompsonct.com has exceeded the max emails per hour (500/500 (100%)) allowed.  Message discarded.
+  jhiegel-fBIn7JHAfCbUKx/7vDf7Bw@public.gmane.org
+    Domain inthompsonct.com has exceeded the max emails per hour (500/500 (100%)) allowed.  Message discarded.
+  dsanderson16-Wuw85uim5zDR7s880joybQ@public.gmane.org
+    Domain inthompsonct.com has exceeded the max emails per hour (500/500 (100%)) allowed.  Message discarded.
+  trygve.heigre-leGfsgx6Q84AvxtiuMwx3w@public.gmane.org
+    Domain inthompsonct.com has exceeded the max emails per hour (500/500 (100%)) allowed.  Message discarded.
+  paul.howard1-QgLWrMLu8clzjhtm8Ag3mw@public.gmane.org
+    Domain inthompsonct.com has exceeded the max emails per hour (500/500 (100%)) allowed.  Message discarded.
+  lirekassen-TgZ1smK1kV0@public.gmane.org
+    Domain inthompsonct.com has exceeded the max emails per hour (500/500 (100%)) allowed.  Message discarded.
+  ovidiu-pogTFl6YQ0YsoVEV1NGxLg@public.gmane.org
+    Domain inthompsonct.com has exceeded the max emails per hour (500/500 (100%)) allowed.  Message discarded.
+  bessi-sZ1Dco8AW8Y@public.gmane.org
+    Domain inthompsonct.com has exceeded the max emails per hour (500/500 (100%)) allowed.  Message discarded.
+
+------ This is a copy of the message, including all the headers. ------
+
+Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from [37.59.5.198] (port=39790 helo=ns3002637.ip-37-59-5.eu)
+	by roadster.websitewelcome.com with esmtpa (Exim 4.80.1)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1WGOO0-00030s-FM; Thu, 20 Feb 2014 01:49:36 -0600
+Received: from ns3002637.ip-37-59-5.eu (shE-93-35 [37.59.5.198]) by ns3002637.ip-37-59-5.eu (mailer) with SMTP id 3jVwkd3D2ySb for <wojti1971-5tc4TXWwyLM@public.gmane.org>; Thu, 20 Feb 2014 08:49:34 +0100
+Date: Thu, 20 Feb 2014 08:49:34 +0100
+From: "Alexander" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Message-ID: <57249436.05949409259929-Vu/wYa1sG4Atx1znV4rXQz7A4pIZrJa8@public.gmane.org>
+To: <wojti1971-5tc4TXWwyLM@public.gmane.org>
+Subject: Late report
+MIME-Version: 1.0
+Content-type: text/plain; charset=us-ascii 
+Content-Transfer-Encoding: 8bit
+
+
+
+Gentile, 
+
+
+Your request has been completed.
+Sorry for the late report.
+Details can be found in the document here:
+http://stalker-uo.pp.net.ua/Details/Details.zip?nrTOZmsWFD7=wojti1971-5tc4TXWwyLM@public.gmane.org
+
+
+==
+We work with you and for you!    
+Tel.: +44 20 75275434
