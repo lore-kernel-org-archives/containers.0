@@ -1,10 +1,10 @@
 From: <postmaster-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>
 Subject: Undeliverable: Late report 956270
-Date: Fri, 21 Feb 2014 07:47:23 +0000
-Message-ID: <ca6390f6-a08a-4c8f-a247-c73ac93c84d7@warkscol.ac.uk>
+Date: Fri, 21 Feb 2014 07:47:24 +0000
+Message-ID: <9c256b62-65e0-4a82-a55d-801d0cfcd2e2@warkscol.ac.uk>
 References: <77331811.24233120065320@gen3.icu2.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============8890956384638370940=="
+Content-Type: multipart/mixed; boundary="===============4819131903345796389=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Language: en-GB
 In-Reply-To: <77331811.24233120065320-8609xta563oWq+29V1O4KA@public.gmane.org>
@@ -20,18 +20,18 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============8890956384638370940==
+--===============4819131903345796389==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="3b656f41-5c6c-4e5a-a4f0-47add5985ab3"
+	boundary="bea9ee75-898e-4b8c-bbd5-f1c51d2c9075"
 Content-Language: en-GB
 
---3b656f41-5c6c-4e5a-a4f0-47add5985ab3
+--bea9ee75-898e-4b8c-bbd5-f1c51d2c9075
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: quoted-printable
 
 Delivery has failed to these recipients or groups:
 
-daviddellnn-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org<mailto:daviddellnn-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>
+davidwesseln-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org<mailto:davidwesseln-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>
 The email address that you entered couldn't be found. Check the address and=
  try resending the message. If the problem continues, please contact your h=
 elpdesk.
@@ -46,7 +46,7 @@ Diagnostic information for administrators:
 
 Generating server: warkscol.ac.uk
 
-daviddellnn-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org
+davidwesseln-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org
 #550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
 
 Original message headers:
@@ -54,18 +54,19 @@ Original message headers:
 Received: from humber.warkscol.ac.uk (212.219.41.150) by OWA.WARKSCOL.AC.UK
  (212.219.42.122) with Microsoft SMTP Server id 14.2.318.4; Fri, 21 Feb 201=
 4
- 07:47:23 +0000
-Received: (qmail 25943 invoked from network); 21 Feb 2014 07:47:18 -0000
+ 07:47:24 +0000
+Received: (qmail 25954 invoked from network); 21 Feb 2014 07:47:19 -0000
 Received: from localhost (127.0.0.1)  by humber.warkscol.ac.uk with SMTP; 2=
 1
- Feb 2014 07:47:18 -0000
+ Feb 2014 07:47:19 -0000
 Return-Path: <>
 Delivered-To: clean-quarantine
 X-Envelope-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Envelope-To: <daviddellnn-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>
+X-Envelope-To: <davidwesseln-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>
 Received: from humber.warkscol.ac.uk ([127.0.0.1]) by localhost
  (humber.warkscol.ac.uk [127.0.0.1]) (amavisd-new, port 10024) with SMTP id
- 25854-02 for <daviddellnn-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>; Fri, 21 Feb 2014 07:47:14 +0000
+ 25693-06 for <davidwesseln-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>; Fri, 21 Feb 2014 07:47:14 +000=
+0
  (GMT)
 Received: (qmail 23947 invoked by uid 599); 21 Feb 2014 07:43:48 -0000
 Received: from unknown (HELO gen3.icu2.com) (64.34.178.19)    by
@@ -89,35 +90,35 @@ X-Spam-Level: **
 Content-Type: text/plain
 
 
---3b656f41-5c6c-4e5a-a4f0-47add5985ab3
+--bea9ee75-898e-4b8c-bbd5-f1c51d2c9075
 Content-Type: message/delivery-status
 
 Reporting-MTA: dns;warkscol.ac.uk
 Received-From-MTA: dns;humber.warkscol.ac.uk
-Arrival-Date: Fri, 21 Feb 2014 07:47:23 +0000
+Arrival-Date: Fri, 21 Feb 2014 07:47:24 +0000
 
-Final-Recipient: rfc822;daviddellnn-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org
+Final-Recipient: rfc822;davidwesseln-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org
 Action: failed
 Status: 5.1.1
 Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
 
 
---3b656f41-5c6c-4e5a-a4f0-47add5985ab3
+--bea9ee75-898e-4b8c-bbd5-f1c51d2c9075
 Content-Type: message/rfc822
 
 Received: from humber.warkscol.ac.uk (212.219.41.150) by OWA.WARKSCOL.AC.UK
  (212.219.42.122) with Microsoft SMTP Server id 14.2.318.4; Fri, 21 Feb 2014
- 07:47:23 +0000
-Received: (qmail 25943 invoked from network); 21 Feb 2014 07:47:18 -0000
+ 07:47:24 +0000
+Received: (qmail 25954 invoked from network); 21 Feb 2014 07:47:19 -0000
 Received: from localhost (127.0.0.1)  by humber.warkscol.ac.uk with SMTP; 21
- Feb 2014 07:47:18 -0000
+ Feb 2014 07:47:19 -0000
 Return-Path: <>
 Delivered-To: clean-quarantine
 X-Envelope-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Envelope-To: <daviddellnn-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>
+X-Envelope-To: <davidwesseln-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>
 Received: from humber.warkscol.ac.uk ([127.0.0.1]) by localhost
  (humber.warkscol.ac.uk [127.0.0.1]) (amavisd-new, port 10024) with SMTP id
- 25854-02 for <daviddellnn-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>; Fri, 21 Feb 2014 07:47:14 +0000
+ 25693-06 for <davidwesseln-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>; Fri, 21 Feb 2014 07:47:14 +0000
  (GMT)
 Received: (qmail 23947 invoked by uid 599); 21 Feb 2014 07:43:48 -0000
 Received: from unknown (HELO gen3.icu2.com) (64.34.178.19)    by
@@ -154,9 +155,9 @@ Tel.: +44 20 95529144.
 
 
 
---3b656f41-5c6c-4e5a-a4f0-47add5985ab3--
+--bea9ee75-898e-4b8c-bbd5-f1c51d2c9075--
 
---===============8890956384638370940==
+--===============4819131903345796389==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -166,4 +167,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============8890956384638370940==--
+--===============4819131903345796389==--
