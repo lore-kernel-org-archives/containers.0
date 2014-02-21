@@ -1,7 +1,7 @@
 From: "Delivery Subsystem" <postmaster-IrfgNBc4iHDQT0dZR+AlfA@public.gmane.org>
 Subject: Message Delivery Delay
 Date: Fri, 21 Feb 2014 16:33:31 +0000
-Message-ID: <CEC9EF2616634B5EA25F5DD61708501B.MAI@dfsv20.com>
+Message-ID: <AC239976250D4587BB599C77E0451C54.MAI@dfsv20.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -30,7 +30,7 @@ Reason: Mail Server for beaconschool.co.uk could not accept your email at this t
 
 Message headers follow:
 	
-Received: with MailEnable Postoffice Connector; Fri, 21 Feb 2014 15:53:05 +0000
+Received: with MailEnable Postoffice Connector; Fri, 21 Feb 2014 15:53:08 +0000
 Received: from zulu1969.server4you.de ([62.75.236.214]) by dfsv20.com with MailEnable ESMTP; Fri, 21 Feb 2014 15:53:02 +0000
 Received: from zulu1969.server4you.de (hcx-70-93 [62.75.236.214]) by zulu1969.server4you.de (mailer) with SMTP id 4SbkdRl7xRXT for <arathy-ethier-tKqbhxzWlIz10XsdtD+oqA@public.gmane.org>; Fri, 21 Feb 2014 16:53:21 +0100
 Date: Fri, 21 Feb 2014 16:53:21 +0100
@@ -41,3 +41,4 @@ Subject: Account changed 606122
 MIME-Version: 1.0
 Content-type: text/plain; charset=windows-1252
 Content-Transfer-Encoding: 8bit
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
