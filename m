@@ -1,7 +1,7 @@
 From: "Delivery Subsystem" <postmaster-IrfgNBc4iHDQT0dZR+AlfA@public.gmane.org>
 Subject: Message Delivery Delay
-Date: Fri, 21 Feb 2014 16:33:31 +0000
-Message-ID: <AC239976250D4587BB599C77E0451C54.MAI@dfsv20.com>
+Date: Fri, 21 Feb 2014 17:33:31 +0000
+Message-ID: <1FFAA2025BE14108AD06FB09CA776AA3.MAI@dfsv20.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -23,14 +23,14 @@ MailEnable: Message delivery has been delayed.
 
 Message is waiting at dfsv20.com for delivery to mail.challoners.com.
 
-The message will be retried for another 29 hours.
+The message will be retried for another 28 hours.
 
 Reason: Mail Server for beaconschool.co.uk could not accept your email at this time. MailEnable will keep trying to deliver this message and will notify you of any progress.
 
 
 Message headers follow:
 	
-Received: with MailEnable Postoffice Connector; Fri, 21 Feb 2014 15:53:08 +0000
+Received: with MailEnable Postoffice Connector; Fri, 21 Feb 2014 15:53:05 +0000
 Received: from zulu1969.server4you.de ([62.75.236.214]) by dfsv20.com with MailEnable ESMTP; Fri, 21 Feb 2014 15:53:02 +0000
 Received: from zulu1969.server4you.de (hcx-70-93 [62.75.236.214]) by zulu1969.server4you.de (mailer) with SMTP id 4SbkdRl7xRXT for <arathy-ethier-tKqbhxzWlIz10XsdtD+oqA@public.gmane.org>; Fri, 21 Feb 2014 16:53:21 +0100
 Date: Fri, 21 Feb 2014 16:53:21 +0100
@@ -41,4 +41,3 @@ Subject: Account changed 606122
 MIME-Version: 1.0
 Content-type: text/plain; charset=windows-1252
 Content-Transfer-Encoding: 8bit
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
