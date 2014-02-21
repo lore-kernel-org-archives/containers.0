@@ -1,11 +1,13 @@
-From: Mail Delivery System <Mailer-Daemon-4SL2GjfYtPDq5fVKQiNIb6XQpeSSEwfj@public.gmane.org>
-Subject: Mail delivery failed: returning message to sender
-Date: Fri, 21 Feb 2014 01:39:58 -0500
-Message-ID: <E1WGjmA-002fHO-Fu@voda19.vodahost19.com>
+From: <postmaster-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>
+Subject: Undeliverable: Late report 956270
+Date: Fri, 21 Feb 2014 07:47:23 +0000
+Message-ID: <ca6390f6-a08a-4c8f-a247-c73ac93c84d7@warkscol.ac.uk>
+References: <77331811.24233120065320@gen3.icu2.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============8890956384638370940=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Language: en-GB
+In-Reply-To: <77331811.24233120065320-8609xta563oWq+29V1O4KA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,60 +20,150 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This message was created automatically by mail delivery software.
+--===============8890956384638370940==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="3b656f41-5c6c-4e5a-a4f0-47add5985ab3"
+Content-Language: en-GB
 
-A message that you sent could not be delivered to one or more of its
-recipients. This is a permanent error. The following address(es) failed:
+--3b656f41-5c6c-4e5a-a4f0-47add5985ab3
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
 
-  fireheartnn-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
-    Domain pigovat.com has exceeded the max emails per hour (625/500 (125%)) allowed.  Message discarded.
-  firehorse-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
-    Domain pigovat.com has exceeded the max emails per hour (625/500 (125%)) allowed.  Message discarded.
-  firehorsen-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
-    Domain pigovat.com has exceeded the max emails per hour (625/500 (125%)) allowed.  Message discarded.
-  firehorsenn-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
-    Domain pigovat.com has exceeded the max emails per hour (625/500 (125%)) allowed.  Message discarded.
-  firehouse-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
-    Domain pigovat.com has exceeded the max emails per hour (625/500 (125%)) allowed.  Message discarded.
-  firehoused-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
-    Domain pigovat.com has exceeded the max emails per hour (625/500 (125%)) allowed.  Message discarded.
-  firehousedd-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
-    Domain pigovat.com has exceeded the max emails per hour (625/500 (125%)) allowed.  Message discarded.
-  firejohn-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
-    Domain pigovat.com has exceeded the max emails per hour (625/500 (125%)) allowed.  Message discarded.
-  firejohnn-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
-    Domain pigovat.com has exceeded the max emails per hour (625/500 (125%)) allowed.  Message discarded.
-  firejohnnn-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
-    Domain pigovat.com has exceeded the max emails per hour (625/500 (125%)) allowed.  Message discarded.
+Delivery has failed to these recipients or groups:
 
------- This is a copy of the message, including all the headers. ------
+daviddellnn-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org<mailto:daviddellnn-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>
+The email address that you entered couldn't be found. Check the address and=
+ try resending the message. If the problem continues, please contact your h=
+elpdesk.
 
-Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from video.icu2.com ([64.34.178.19]:33386 helo=gen3.icu2.com)
-	by voda19.vodahost19.com with esmtpa (Exim 4.82)
-	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1WGjmA-002fHD-2T; Fri, 21 Feb 2014 01:39:58 -0500
-Received: from gen3.icu2.com (vUH-57-88 [64.34.178.19]) by gen3.icu2.com (mailer) with SMTP id vocifLT5kqLd for <fireheartnn-IWqWACnzNjwqdlJmJB21zg@public.gmane.org>; Fri, 21 Feb 2014 00:39:57 -0600
-Date: Fri, 21 Feb 2014 00:39:57 -0600
-From: "Emily" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Message-ID: <33586789.65784513471015-8609xta563oWq+29V1O4KA@public.gmane.org>
-To: <fireheartnn-IWqWACnzNjwqdlJmJB21zg@public.gmane.org>
-Subject: Your request
+
+
+
+
+
+
+Diagnostic information for administrators:
+
+Generating server: warkscol.ac.uk
+
+daviddellnn-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org
+#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
+
+Original message headers:
+
+Received: from humber.warkscol.ac.uk (212.219.41.150) by OWA.WARKSCOL.AC.UK
+ (212.219.42.122) with Microsoft SMTP Server id 14.2.318.4; Fri, 21 Feb 201=
+4
+ 07:47:23 +0000
+Received: (qmail 25943 invoked from network); 21 Feb 2014 07:47:18 -0000
+Received: from localhost (127.0.0.1)  by humber.warkscol.ac.uk with SMTP; 2=
+1
+ Feb 2014 07:47:18 -0000
+Return-Path: <>
+Delivered-To: clean-quarantine
+X-Envelope-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Envelope-To: <daviddellnn-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>
+Received: from humber.warkscol.ac.uk ([127.0.0.1]) by localhost
+ (humber.warkscol.ac.uk [127.0.0.1]) (amavisd-new, port 10024) with SMTP id
+ 25854-02 for <daviddellnn-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>; Fri, 21 Feb 2014 07:47:14 +0000
+ (GMT)
+Received: (qmail 23947 invoked by uid 599); 21 Feb 2014 07:43:48 -0000
+Received: from unknown (HELO gen3.icu2.com) (64.34.178.19)    by
+ humber.warkscol.ac.uk (qpsmtpd/0.28) with ESMTP; Fri, 21 Feb 2014 07:43:48
+ +0000
+Received: from gen3.icu2.com (pCW-29-89 [64.34.178.19]) by gen3.icu2.com
+ (mailer) with SMTP id gyPVEbZIrrsU for <daviddellnn-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>; Fri, =
+21
+ Feb 2014 01:43:49 -0600
+Date: Fri, 21 Feb 2014 01:43:49 -0600
+From: Grace <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Message-ID: <77331811.24233120065320-8609xta563oWq+29V1O4KA@public.gmane.org>
+To: <daviddellnn-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>
+Subject: Late report 956270
 MIME-Version: 1.0
-Content-Type: text/plain;charset=utf-8
-Content-Transfer-Encoding: 8bit
+X-Virus-Scanned: by iCritical at humber.warkscol.ac.uk
+X-Spam-Status: No, score=3D2.943 tagged_above=3D3.03 quarantined_above=3D3.=
+03
+ tests=3DBAYES_60, DK_POLICY_SIGNSOME, RCVD_IN_BL_SPAMCOP_NET, SPF_FAIL
+X-Spam-Level: **
+Content-Type: text/plain
+
+
+--3b656f41-5c6c-4e5a-a4f0-47add5985ab3
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;warkscol.ac.uk
+Received-From-MTA: dns;humber.warkscol.ac.uk
+Arrival-Date: Fri, 21 Feb 2014 07:47:23 +0000
+
+Final-Recipient: rfc822;daviddellnn-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
+
+
+--3b656f41-5c6c-4e5a-a4f0-47add5985ab3
+Content-Type: message/rfc822
+
+Received: from humber.warkscol.ac.uk (212.219.41.150) by OWA.WARKSCOL.AC.UK
+ (212.219.42.122) with Microsoft SMTP Server id 14.2.318.4; Fri, 21 Feb 2014
+ 07:47:23 +0000
+Received: (qmail 25943 invoked from network); 21 Feb 2014 07:47:18 -0000
+Received: from localhost (127.0.0.1)  by humber.warkscol.ac.uk with SMTP; 21
+ Feb 2014 07:47:18 -0000
+Return-Path: <>
+Delivered-To: clean-quarantine
+X-Envelope-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Envelope-To: <daviddellnn-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>
+Received: from humber.warkscol.ac.uk ([127.0.0.1]) by localhost
+ (humber.warkscol.ac.uk [127.0.0.1]) (amavisd-new, port 10024) with SMTP id
+ 25854-02 for <daviddellnn-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>; Fri, 21 Feb 2014 07:47:14 +0000
+ (GMT)
+Received: (qmail 23947 invoked by uid 599); 21 Feb 2014 07:43:48 -0000
+Received: from unknown (HELO gen3.icu2.com) (64.34.178.19)    by
+ humber.warkscol.ac.uk (qpsmtpd/0.28) with ESMTP; Fri, 21 Feb 2014 07:43:48
+ +0000
+Received: from gen3.icu2.com (pCW-29-89 [64.34.178.19]) by gen3.icu2.com
+ (mailer) with SMTP id gyPVEbZIrrsU for <daviddellnn-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>; Fri, 21
+ Feb 2014 01:43:49 -0600
+Date: Fri, 21 Feb 2014 01:43:49 -0600
+From: Grace <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Message-ID: <77331811.24233120065320-8609xta563oWq+29V1O4KA@public.gmane.org>
+To: <daviddellnn-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>
+Subject: Late report 956270
+MIME-Version: 1.0
+X-Virus-Scanned: by iCritical at humber.warkscol.ac.uk
+X-Spam-Status: No, score=2.943 tagged_above=3.03 quarantined_above=3.03
+ tests=BAYES_60, DK_POLICY_SIGNSOME, RCVD_IN_BL_SPAMCOP_NET, SPF_FAIL
+X-Spam-Level: **
+Content-Type: text/plain
 
 
 
-Hello,     
+Hello,
+    
 
-     
-Your request has been completed.
-Sorry for the late report.
+Your request has been completed.    
+Sorry for the late report.      
 Details can be found in the document here
-http://h1666015.stratoserver.net/inddex.html?Generate_to_client:fireheartnn-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
+http://nlconsulateorlandoorg.siteprotect.net/inddex.html?nSjFf2anGbsu8DADqHAN
 
 
-__      
-We look forward to your success!   
-Tel.: +44-9697683251.
+==
+Tel.: +44 20 95529144.
+
+
+
+--3b656f41-5c6c-4e5a-a4f0-47add5985ab3--
+
+--===============8890956384638370940==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============8890956384638370940==--
