@@ -1,10 +1,13 @@
-From: MAILER-DAEMON-pywm/YdjYMHhNd1XINWLZXQ5xPRZif3c@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Fri, 21 Feb 2014 13:32:42 +0100 (CET)
-Message-ID: <20140221123242.EA71B80F318@zulu1969.server4you.de>
+From: <postmaster-QRc8BMItFpiiMFqZbmIluw@public.gmane.org>
+Subject: Unzustellbar: Profile account
+Date: Fri, 21 Feb 2014 15:24:09 +0100
+Message-ID: <ba41ee56-8c24-4bfe-a6d3-f86de4706aa2@innovacell.com>
+References: <006501cf2f10$956d8a80$6489a8c0@p3540655.pubip.serverbeach.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5575122040461482964=="
+Content-Type: multipart/mixed; boundary="===============0717010945099599164=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Language: de-DE
+In-Reply-To: <006501cf2f10$956d8a80$6489a8c0-WHr2u/oy4y1U5kMT42P4gQvIsqB7J+1HKgyenaPv0mk@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,168 +20,103 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
-
---===============5575122040461482964==
+--===============0717010945099599164==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="CA9A280F3CF.1392985962/zulu1969.server4you.de"
-Content-Transfer-Encoding: 7bit
+	boundary="6884ae4d-cfe4-4fcf-a596-cbca8ede37be"
+Content-Language: de-DE
 
-This is a MIME-encapsulated message.
-
---CA9A280F3CF.1392985962/zulu1969.server4you.de
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
-
-This is the mail system at host zulu1969.server4you.de.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to postmaster.
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<burlile-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org>: mail for athene.co.uk loops back to myself
-
-<burliled-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org>: mail for athene.co.uk loops back to myself
-
-<burliledd-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org>: mail for athene.co.uk loops back to myself
-
-<burlin-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org>: mail for athene.co.uk loops back to myself
-
-<burlind-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org>: mail for athene.co.uk loops back to myself
-
-<burlindd-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org>: mail for athene.co.uk loops back to myself
-
-<burling-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org>: mail for athene.co.uk loops back to myself
-
-<burlingame-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org>: mail for athene.co.uk loops back to myself
-
-<burlingamen-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org>: mail for athene.co.uk loops back to myself
-
-<burlingamenn-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org>: mail for athene.co.uk loops back to myself
-
---CA9A280F3CF.1392985962/zulu1969.server4you.de
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; zulu1969.server4you.de
-X-Postfix-Queue-ID: CA9A280F3CF
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Fri, 21 Feb 2014 13:27:00 +0100 (CET)
-
-Final-Recipient: rfc822; burlile-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Original-Recipient: rfc822;burlile-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Action: failed
-Status: 5.4.6
-Diagnostic-Code: X-Postfix; mail for athene.co.uk loops back to myself
-
-Final-Recipient: rfc822; burliled-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Original-Recipient: rfc822;burliled-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Action: failed
-Status: 5.4.6
-Diagnostic-Code: X-Postfix; mail for athene.co.uk loops back to myself
-
-Final-Recipient: rfc822; burliledd-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Original-Recipient: rfc822;burliledd-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Action: failed
-Status: 5.4.6
-Diagnostic-Code: X-Postfix; mail for athene.co.uk loops back to myself
-
-Final-Recipient: rfc822; burlin-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Original-Recipient: rfc822;burlin-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Action: failed
-Status: 5.4.6
-Diagnostic-Code: X-Postfix; mail for athene.co.uk loops back to myself
-
-Final-Recipient: rfc822; burlind-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Original-Recipient: rfc822;burlind-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Action: failed
-Status: 5.4.6
-Diagnostic-Code: X-Postfix; mail for athene.co.uk loops back to myself
-
-Final-Recipient: rfc822; burlindd-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Original-Recipient: rfc822;burlindd-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Action: failed
-Status: 5.4.6
-Diagnostic-Code: X-Postfix; mail for athene.co.uk loops back to myself
-
-Final-Recipient: rfc822; burling-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Original-Recipient: rfc822;burling-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Action: failed
-Status: 5.4.6
-Diagnostic-Code: X-Postfix; mail for athene.co.uk loops back to myself
-
-Final-Recipient: rfc822; burlingame-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Original-Recipient: rfc822;burlingame-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Action: failed
-Status: 5.4.6
-Diagnostic-Code: X-Postfix; mail for athene.co.uk loops back to myself
-
-Final-Recipient: rfc822; burlingamen-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Original-Recipient: rfc822;burlingamen-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Action: failed
-Status: 5.4.6
-Diagnostic-Code: X-Postfix; mail for athene.co.uk loops back to myself
-
-Final-Recipient: rfc822; burlingamenn-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Original-Recipient: rfc822;burlingamenn-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Action: failed
-Status: 5.4.6
-Diagnostic-Code: X-Postfix; mail for athene.co.uk loops back to myself
-
---CA9A280F3CF.1392985962/zulu1969.server4you.de
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-No-Auth: unauthenticated sender
-X-No-Auth: unauthenticated sender
-X-No-Auth: unauthenticated sender
-X-No-Auth: unauthenticated sender
-X-No-Auth: unauthenticated sender
-X-No-Auth: unauthenticated sender
-X-No-Auth: unauthenticated sender
-X-No-Auth: unauthenticated sender
-X-No-Auth: unauthenticated sender
-X-No-Auth: unauthenticated sender
-Received: from zulu1969.server4you.de (localhost.localdomain [127.0.0.1])
-	by zulu1969.server4you.de (Postfix) with ESMTP id CA9A280F3CF;
-	Fri, 21 Feb 2014 13:27:00 +0100 (CET)
-Received: from zulu1969.server4you.de (vPR-70-46 [62.75.236.214]) by zulu1969.server4you.de (mailer) with SMTP id kxbFEsz3JCub for <burlile-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org>; Fri, 21 Feb 2014 13:27:00 +0100
-Date: Fri, 21 Feb 2014 13:27:00 +0100
-From: "Summer" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Message-ID: <36811704.42187704767957-pywm/YdjYMHhNd1XINWLZXQ5xPRZif3c@public.gmane.org>
-To: <burlile-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org>
-Subject: Fwd: Profile account
-MIME-Version: 1.0
-Content-Type: text/plain;charset=utf-8
+--6884ae4d-cfe4-4fcf-a596-cbca8ede37be
+Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 
+Fehler bei der Nachrichtenzustellung an folgende Empf=E4nger oder Gruppen:
+
+michael.kerschsieper-QRc8BMItFpjmE28z1DHXFg@public.gmane.org<mailto:michael.kerschsieper@innovacell.a=
+t>
+Die eingegebene E-Mail-Adresse konnte nicht gefunden werden. =DCberpr=FCfen=
+ Sie die E-Mail-Adresse des Empf=E4ngers, und versuchen Sie, die Nachricht =
+erneut zu senden. Wenden Sie sich an den Helpdesk, falls das Problem weiter=
+hin besteht.
 
 
-Hello, burlile-0TYCAhZcI2AqHr9BdHWcTg@public.gmane.org
-      =20
 
-Your request has been completed.    =20
-Sorry for the late report.     =20
-Details can be found in the document here
-http://easyworldphone.com/inddex.html?1oTDzDJTHmhRfOBhqtLZprHp
+
+
+
+
+Diagnoseinformationen f=FCr Administratoren:
+
+Generierender Server: innovacell.com
+
+michael.kerschsieper-QRc8BMItFpjmE28z1DHXFg@public.gmane.org
+#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
+
+Urspr=FCngliche Nachrichtenkopfzeilen:
+
+Received: from p3540655.pubip.serverbeach.com (46.20.119.178) by
+ ICSRV4-MAIL.ibk.innovacell.net (192.168.150.18) with Microsoft SMTP Server=
+ id
+ 14.1.438.0; Fri, 21 Feb 2014 15:24:08 +0100
+Received: from [192.168.137.100] by p3540655.pubip.serverbeach.com id
+ FpB79GF0NQWn; Fri, 21 Feb 2014 14:24:11 +0000
+Message-ID: <006501cf2f10$956d8a80$6489a8c0-WHr2u/oy4y1U5kMT42P4gQvIsqB7J+1HKgyenaPv0mk@public.gmane.org>
+From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <michael.kerschsieper-QRc8BMItFpjmE28z1DHXFg@public.gmane.org>
+Subject: Profile account
+Date: Fri, 21 Feb 2014 14:24:11 +0000
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+
+
+--6884ae4d-cfe4-4fcf-a596-cbca8ede37be
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;innovacell.com
+Received-From-MTA: dns;p3540655.pubip.serverbeach.com
+Arrival-Date: Fri, 21 Feb 2014 14:24:08 +0000
+
+Final-Recipient: rfc822;michael.kerschsieper-QRc8BMItFpjmE28z1DHXFg@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
+
+
+--6884ae4d-cfe4-4fcf-a596-cbca8ede37be
+Content-Type: message/rfc822
+
+Received: from p3540655.pubip.serverbeach.com (46.20.119.178) by
+ ICSRV4-MAIL.ibk.innovacell.net (192.168.150.18) with Microsoft SMTP Server id
+ 14.1.438.0; Fri, 21 Feb 2014 15:24:08 +0100
+Received: from [192.168.137.100] by p3540655.pubip.serverbeach.com id
+ FpB79GF0NQWn; Fri, 21 Feb 2014 14:24:11 +0000
+Message-ID: <006501cf2f10$956d8a80$6489a8c0-WHr2u/oy4y1U5kMT42P4gQvIsqB7J+1HKgyenaPv0mk@public.gmane.org>
+From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <michael.kerschsieper-QRc8BMItFpjmE28z1DHXFg@public.gmane.org>
+Subject: Profile account
+Date: Fri, 21 Feb 2014 14:24:11 +0000
+MIME-Version: 1.0
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+
+
+
+
+Bill must be paid before the end of the week
+http://images.topguncustomz.com/inddex.html
 
 
 =3D=3D
-Tel.: +44 20 71887962
+Tel.: +44 20 59012307.
+idhash=3D225517629923
 
 
 
---CA9A280F3CF.1392985962/zulu1969.server4you.de--
+--6884ae4d-cfe4-4fcf-a596-cbca8ede37be--
 
---===============5575122040461482964==
+--===============0717010945099599164==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -188,4 +126,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============5575122040461482964==--
+--===============0717010945099599164==--
