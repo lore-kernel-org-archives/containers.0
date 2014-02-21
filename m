@@ -1,9 +1,10 @@
-From: Mail Delivery Subsystem <MAILER-DAEMON-kA+93FWYoSpHorc4blYAR0K8FDhVFA20KnZSZiQdtc4@public.gmane.org>
-Subject: Returned mail: see transcript for details
-Date: Fri, 21 Feb 2014 06:19:39 GMT
-Message-ID: <201402210619.s1L6JY5H008717@mail.advanceditservices.co.uk>
+From: Mail Delivery System <Mailer-Daemon-4SL2GjfYtPDq5fVKQiNIb6XQpeSSEwfj@public.gmane.org>
+Subject: Mail delivery failed: returning message to sender
+Date: Fri, 21 Feb 2014 01:39:58 -0500
+Message-ID: <E1WGjmA-002fHO-Fu@voda19.vodahost19.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============7327742195775603949=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,162 +18,60 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message
+This message was created automatically by mail delivery software.
 
---===============7327742195775603949==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="s1L6JY5H008717.1392963579/mail.advanceditservices.co.uk"
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
 
-This is a MIME-encapsulated message
+  fireheartnn-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
+    Domain pigovat.com has exceeded the max emails per hour (625/500 (125%)) allowed.  Message discarded.
+  firehorse-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
+    Domain pigovat.com has exceeded the max emails per hour (625/500 (125%)) allowed.  Message discarded.
+  firehorsen-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
+    Domain pigovat.com has exceeded the max emails per hour (625/500 (125%)) allowed.  Message discarded.
+  firehorsenn-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
+    Domain pigovat.com has exceeded the max emails per hour (625/500 (125%)) allowed.  Message discarded.
+  firehouse-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
+    Domain pigovat.com has exceeded the max emails per hour (625/500 (125%)) allowed.  Message discarded.
+  firehoused-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
+    Domain pigovat.com has exceeded the max emails per hour (625/500 (125%)) allowed.  Message discarded.
+  firehousedd-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
+    Domain pigovat.com has exceeded the max emails per hour (625/500 (125%)) allowed.  Message discarded.
+  firejohn-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
+    Domain pigovat.com has exceeded the max emails per hour (625/500 (125%)) allowed.  Message discarded.
+  firejohnn-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
+    Domain pigovat.com has exceeded the max emails per hour (625/500 (125%)) allowed.  Message discarded.
+  firejohnnn-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
+    Domain pigovat.com has exceeded the max emails per hour (625/500 (125%)) allowed.  Message discarded.
 
---s1L6JY5H008717.1392963579/mail.advanceditservices.co.uk
+------ This is a copy of the message, including all the headers. ------
 
-The original message was received at Fri, 21 Feb 2014 06:19:30 GMT
-from orbitatelecom-net-91-206-14-ip-12.kurkino.net.ru [91.206.14.12] (may be forged)
-
-   ----- The following addresses had permanent fatal errors -----
-<mcmillaniogyo-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
-    (reason: 550 Requested action not taken: mailbox unavailable or not local)
-<nlegoiektlmjjd-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
-    (reason: 550 Requested action not taken: mailbox unavailable or not local)
-<nusjthk-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
-    (reason: 550 Requested action not taken: mailbox unavailable or not local)
-<oudadsse-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
-    (reason: 550 Requested action not taken: mailbox unavailable or not local)
-<ovxkrz-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
-    (reason: 550 Requested action not taken: mailbox unavailable or not local)
-<parhamhcccukmmrvjwu-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
-    (reason: 550 Requested action not taken: mailbox unavailable or not local)
-
-   ----- Transcript of session follows -----
-... while talking to [192.168.1.8]:
->>> RCPT To:<parhamhcccukmmrvjwu-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
-<<< 550 Requested action not taken: mailbox unavailable or not local
-550 5.1.1 <parhamhcccukmmrvjwu-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... User unknown
->>> RCPT To:<ovxkrz-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
-<<< 550 Requested action not taken: mailbox unavailable or not local
-550 5.1.1 <ovxkrz-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... User unknown
->>> RCPT To:<oudadsse-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
-<<< 550 Requested action not taken: mailbox unavailable or not local
-550 5.1.1 <oudadsse-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... User unknown
->>> RCPT To:<nusjthk-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
-<<< 550 Requested action not taken: mailbox unavailable or not local
-550 5.1.1 <nusjthk-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... User unknown
->>> RCPT To:<nlegoiektlmjjd-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
-<<< 550 Requested action not taken: mailbox unavailable or not local
-550 5.1.1 <nlegoiektlmjjd-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... User unknown
->>> RCPT To:<mcmillaniogyo-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
-<<< 550 Requested action not taken: mailbox unavailable or not local
-550 5.1.1 <mcmillaniogyo-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... User unknown
-451 4.4.1 reply: read error from [192.168.1.8]
-<mckennasmtpbvnltsck-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... Deferred: Connection reset by [192.168.1.8]
-<mcgillnusjthk-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... Deferred: Connection reset by [192.168.1.8]
-<maherkifdkztoiqar-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... Deferred: Connection reset by [192.168.1.8]
-<lpxwtli-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... Deferred: Connection reset by [192.168.1.8]
-
---s1L6JY5H008717.1392963579/mail.advanceditservices.co.uk
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; mail.advanceditservices.co.uk
-Arrival-Date: Fri, 21 Feb 2014 06:19:30 GMT
-
-Final-Recipient: RFC822; mcmillaniogyo-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; [192.168.1.8]
-Diagnostic-Code: SMTP; 550 Requested action not taken: mailbox unavailable or not local
-Last-Attempt-Date: Fri, 21 Feb 2014 06:19:39 GMT
-
-Final-Recipient: RFC822; nlegoiektlmjjd-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; [192.168.1.8]
-Diagnostic-Code: SMTP; 550 Requested action not taken: mailbox unavailable or not local
-Last-Attempt-Date: Fri, 21 Feb 2014 06:19:39 GMT
-
-Final-Recipient: RFC822; nusjthk-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; [192.168.1.8]
-Diagnostic-Code: SMTP; 550 Requested action not taken: mailbox unavailable or not local
-Last-Attempt-Date: Fri, 21 Feb 2014 06:19:39 GMT
-
-Final-Recipient: RFC822; oudadsse-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; [192.168.1.8]
-Diagnostic-Code: SMTP; 550 Requested action not taken: mailbox unavailable or not local
-Last-Attempt-Date: Fri, 21 Feb 2014 06:19:39 GMT
-
-Final-Recipient: RFC822; ovxkrz-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; [192.168.1.8]
-Diagnostic-Code: SMTP; 550 Requested action not taken: mailbox unavailable or not local
-Last-Attempt-Date: Fri, 21 Feb 2014 06:19:39 GMT
-
-Final-Recipient: RFC822; parhamhcccukmmrvjwu-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: DNS; [192.168.1.8]
-Diagnostic-Code: SMTP; 550 Requested action not taken: mailbox unavailable or not local
-Last-Attempt-Date: Fri, 21 Feb 2014 06:19:39 GMT
-
---s1L6JY5H008717.1392963579/mail.advanceditservices.co.uk
-Content-Type: message/rfc822
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from qbear.ru (orbitatelecom-net-91-206-14-ip-12.kurkino.net.ru [91.206.14.12] (may be forged))
-	by mail.advanceditservices.co.uk (8.13.8/8.13.8) with ESMTP id s1L6JTMT008657;
-	Fri, 21 Feb 2014 06:19:30 GMT
-Received: from qbear.ru (SNn-42-56 [91.206.14.12]) by qbear.ru (mailer) with SMTP id GH33J0AHXrnB for <lpxwtli-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>; Fri, 21 Feb 2014 10:24:19 +0400
-Date: Fri, 21 Feb 2014 10:24:19 +0400
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Message-ID: <04939873.57481045376306-LkkMg30Kw9I@public.gmane.org>
-To: <lpxwtli-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
-Subject: Profile account 1413644
+Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from video.icu2.com ([64.34.178.19]:33386 helo=gen3.icu2.com)
+	by voda19.vodahost19.com with esmtpa (Exim 4.82)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1WGjmA-002fHD-2T; Fri, 21 Feb 2014 01:39:58 -0500
+Received: from gen3.icu2.com (vUH-57-88 [64.34.178.19]) by gen3.icu2.com (mailer) with SMTP id vocifLT5kqLd for <fireheartnn-IWqWACnzNjwqdlJmJB21zg@public.gmane.org>; Fri, 21 Feb 2014 00:39:57 -0600
+Date: Fri, 21 Feb 2014 00:39:57 -0600
+From: "Emily" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Message-ID: <33586789.65784513471015-8609xta563oWq+29V1O4KA@public.gmane.org>
+To: <fireheartnn-IWqWACnzNjwqdlJmJB21zg@public.gmane.org>
+Subject: Your request
 MIME-Version: 1.0
-X-Advanced-IT-Services-MailScanner-Information: Please contact the ISP for more information
-X-Advanced-IT-Services-MailScanner-ID: s1L6JTMT008657
-X-Advanced-IT-Services-MailScanner: Found to be clean
-X-Advanced-IT-Services-MailScanner-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-
-Content-type text/plain charset= iso-8859-1
+Content-Type: text/plain;charset=utf-8
 Content-Transfer-Encoding: 8bit
 
 
 
-Hello,
+Hello,     
 
-The answer to your request about profile consultation on ours the Web to page of 09.02.2014.
-Statistics is enclosed in archive, we will be glad to cooperate in the future.
-http://bibleanswers4u.com/inddex.html
-
-
-
-Thanks,
-
- 
-Tony Caruso
-Consult Adviser
-Union Consult Group
-Tel.: +44-6331179384.
+     
+Your request has been completed.
+Sorry for the late report.
+Details can be found in the document here
+http://h1666015.stratoserver.net/inddex.html?Generate_to_client:fireheartnn-IWqWACnzNjwqdlJmJB21zg@public.gmane.org
 
 
-
-
-
---s1L6JY5H008717.1392963579/mail.advanceditservices.co.uk--
-
-
---===============7327742195775603949==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============7327742195775603949==--
+__      
+We look forward to your success!   
+Tel.: +44-9697683251.
