@@ -1,9 +1,9 @@
 From: Mail Delivery Subsystem <MAILER-DAEMON-kA+93FWYoSpHorc4blYAR0K8FDhVFA20KnZSZiQdtc4@public.gmane.org>
 Subject: Returned mail: see transcript for details
-Date: Fri, 21 Feb 2014 06:30:21 GMT
-Message-ID: <201402210630.s1L6LHj7009219@mail.advanceditservices.co.uk>
+Date: Fri, 21 Feb 2014 06:19:39 GMT
+Message-ID: <201402210619.s1L6JY5H008717@mail.advanceditservices.co.uk>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1236266117932205966=="
+Content-Type: multipart/mixed; boundary="===============7327742195775603949=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,77 +19,106 @@ List-Id: containers.vger.kernel.org
 
 This is a MIME-encapsulated message
 
---===============1236266117932205966==
+--===============7327742195775603949==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="s1L6LHj7009219.1392964221/mail.advanceditservices.co.uk"
+	boundary="s1L6JY5H008717.1392963579/mail.advanceditservices.co.uk"
 
 This is a MIME-encapsulated message
 
---s1L6LHj7009219.1392964221/mail.advanceditservices.co.uk
+--s1L6JY5H008717.1392963579/mail.advanceditservices.co.uk
 
 The original message was received at Fri, 21 Feb 2014 06:19:30 GMT
 from orbitatelecom-net-91-206-14-ip-12.kurkino.net.ru [91.206.14.12] (may be forged)
 
    ----- The following addresses had permanent fatal errors -----
-<mckennasmtpbvnltsck-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
+<mcmillaniogyo-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
     (reason: 550 Requested action not taken: mailbox unavailable or not local)
-<mcgillnusjthk-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
+<nlegoiektlmjjd-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
     (reason: 550 Requested action not taken: mailbox unavailable or not local)
-<maherkifdkztoiqar-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
+<nusjthk-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
     (reason: 550 Requested action not taken: mailbox unavailable or not local)
-<lpxwtli-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
+<oudadsse-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
+    (reason: 550 Requested action not taken: mailbox unavailable or not local)
+<ovxkrz-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
+    (reason: 550 Requested action not taken: mailbox unavailable or not local)
+<parhamhcccukmmrvjwu-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
     (reason: 550 Requested action not taken: mailbox unavailable or not local)
 
    ----- Transcript of session follows -----
 ... while talking to [192.168.1.8]:
->>> RCPT To:<lpxwtli-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
+>>> RCPT To:<parhamhcccukmmrvjwu-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
 <<< 550 Requested action not taken: mailbox unavailable or not local
-550 5.1.1 <lpxwtli-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... User unknown
->>> RCPT To:<maherkifdkztoiqar-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
+550 5.1.1 <parhamhcccukmmrvjwu-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... User unknown
+>>> RCPT To:<ovxkrz-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
 <<< 550 Requested action not taken: mailbox unavailable or not local
-550 5.1.1 <maherkifdkztoiqar-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... User unknown
->>> RCPT To:<mcgillnusjthk-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
+550 5.1.1 <ovxkrz-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... User unknown
+>>> RCPT To:<oudadsse-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
 <<< 550 Requested action not taken: mailbox unavailable or not local
-550 5.1.1 <mcgillnusjthk-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... User unknown
->>> RCPT To:<mckennasmtpbvnltsck-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
+550 5.1.1 <oudadsse-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... User unknown
+>>> RCPT To:<nusjthk-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
 <<< 550 Requested action not taken: mailbox unavailable or not local
-550 5.1.1 <mckennasmtpbvnltsck-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... User unknown
+550 5.1.1 <nusjthk-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... User unknown
+>>> RCPT To:<nlegoiektlmjjd-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
+<<< 550 Requested action not taken: mailbox unavailable or not local
+550 5.1.1 <nlegoiektlmjjd-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... User unknown
+>>> RCPT To:<mcmillaniogyo-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>
+<<< 550 Requested action not taken: mailbox unavailable or not local
+550 5.1.1 <mcmillaniogyo-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... User unknown
+451 4.4.1 reply: read error from [192.168.1.8]
+<mckennasmtpbvnltsck-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... Deferred: Connection reset by [192.168.1.8]
+<mcgillnusjthk-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... Deferred: Connection reset by [192.168.1.8]
+<maherkifdkztoiqar-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... Deferred: Connection reset by [192.168.1.8]
+<lpxwtli-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org>... Deferred: Connection reset by [192.168.1.8]
 
---s1L6LHj7009219.1392964221/mail.advanceditservices.co.uk
+--s1L6JY5H008717.1392963579/mail.advanceditservices.co.uk
 Content-Type: message/delivery-status
 
 Reporting-MTA: dns; mail.advanceditservices.co.uk
 Arrival-Date: Fri, 21 Feb 2014 06:19:30 GMT
 
-Final-Recipient: RFC822; mckennasmtpbvnltsck-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org
+Final-Recipient: RFC822; mcmillaniogyo-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org
 Action: failed
 Status: 5.1.1
 Remote-MTA: DNS; [192.168.1.8]
 Diagnostic-Code: SMTP; 550 Requested action not taken: mailbox unavailable or not local
-Last-Attempt-Date: Fri, 21 Feb 2014 06:30:21 GMT
+Last-Attempt-Date: Fri, 21 Feb 2014 06:19:39 GMT
 
-Final-Recipient: RFC822; mcgillnusjthk-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org
+Final-Recipient: RFC822; nlegoiektlmjjd-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org
 Action: failed
 Status: 5.1.1
 Remote-MTA: DNS; [192.168.1.8]
 Diagnostic-Code: SMTP; 550 Requested action not taken: mailbox unavailable or not local
-Last-Attempt-Date: Fri, 21 Feb 2014 06:30:21 GMT
+Last-Attempt-Date: Fri, 21 Feb 2014 06:19:39 GMT
 
-Final-Recipient: RFC822; maherkifdkztoiqar-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org
+Final-Recipient: RFC822; nusjthk-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org
 Action: failed
 Status: 5.1.1
 Remote-MTA: DNS; [192.168.1.8]
 Diagnostic-Code: SMTP; 550 Requested action not taken: mailbox unavailable or not local
-Last-Attempt-Date: Fri, 21 Feb 2014 06:30:21 GMT
+Last-Attempt-Date: Fri, 21 Feb 2014 06:19:39 GMT
 
-Final-Recipient: RFC822; lpxwtli-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org
+Final-Recipient: RFC822; oudadsse-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org
 Action: failed
 Status: 5.1.1
 Remote-MTA: DNS; [192.168.1.8]
 Diagnostic-Code: SMTP; 550 Requested action not taken: mailbox unavailable or not local
-Last-Attempt-Date: Fri, 21 Feb 2014 06:30:21 GMT
+Last-Attempt-Date: Fri, 21 Feb 2014 06:19:39 GMT
 
---s1L6LHj7009219.1392964221/mail.advanceditservices.co.uk
+Final-Recipient: RFC822; ovxkrz-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org
+Action: failed
+Status: 5.1.1
+Remote-MTA: DNS; [192.168.1.8]
+Diagnostic-Code: SMTP; 550 Requested action not taken: mailbox unavailable or not local
+Last-Attempt-Date: Fri, 21 Feb 2014 06:19:39 GMT
+
+Final-Recipient: RFC822; parhamhcccukmmrvjwu-bBCAaUvvGlYqdlJmJB21zg@public.gmane.org
+Action: failed
+Status: 5.1.1
+Remote-MTA: DNS; [192.168.1.8]
+Diagnostic-Code: SMTP; 550 Requested action not taken: mailbox unavailable or not local
+Last-Attempt-Date: Fri, 21 Feb 2014 06:19:39 GMT
+
+--s1L6JY5H008717.1392963579/mail.advanceditservices.co.uk
 Content-Type: message/rfc822
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
@@ -133,10 +162,10 @@ Tel.: +44-6331179384.
 
 
 
---s1L6LHj7009219.1392964221/mail.advanceditservices.co.uk--
+--s1L6JY5H008717.1392963579/mail.advanceditservices.co.uk--
 
 
---===============1236266117932205966==
+--===============7327742195775603949==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -146,4 +175,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1236266117932205966==--
+--===============7327742195775603949==--
