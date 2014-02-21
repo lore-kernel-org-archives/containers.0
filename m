@@ -1,10 +1,10 @@
 From: <postmaster-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>
 Subject: Undeliverable: Late report 956270
-Date: Fri, 21 Feb 2014 07:47:22 +0000
-Message-ID: <dc3ff423-3a34-45b5-9e3b-11055c675d34@warkscol.ac.uk>
+Date: Fri, 21 Feb 2014 07:47:24 +0000
+Message-ID: <5383c570-a8c0-42ac-826a-6be2a6734269@warkscol.ac.uk>
 References: <77331811.24233120065320@gen3.icu2.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============2719562337574839205=="
+Content-Type: multipart/mixed; boundary="===============4389861121033720384=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Language: en-GB
 In-Reply-To: <77331811.24233120065320-8609xta563oWq+29V1O4KA@public.gmane.org>
@@ -20,18 +20,18 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============2719562337574839205==
+--===============4389861121033720384==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="49175479-9cc1-4d82-8d43-7e2ccd31f119"
+	boundary="00047df4-0887-4847-9433-3c4d15b4a52c"
 Content-Language: en-GB
 
---49175479-9cc1-4d82-8d43-7e2ccd31f119
+--00047df4-0887-4847-9433-3c4d15b4a52c
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: quoted-printable
 
 Delivery has failed to these recipients or groups:
 
-davidwessel-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org<mailto:davidwessel-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>
+dbork10d-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org<mailto:dbork10d-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>
 The email address that you entered couldn't be found. Check the address and=
  try resending the message. If the problem continues, please contact your h=
 elpdesk.
@@ -46,7 +46,7 @@ Diagnostic information for administrators:
 
 Generating server: warkscol.ac.uk
 
-davidwessel-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org
+dbork10d-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org
 #550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
 
 Original message headers:
@@ -54,19 +54,19 @@ Original message headers:
 Received: from humber.warkscol.ac.uk (212.219.41.150) by OWA.WARKSCOL.AC.UK
  (212.219.42.121) with Microsoft SMTP Server id 14.2.318.4; Fri, 21 Feb 201=
 4
- 07:47:22 +0000
-Received: (qmail 25942 invoked from network); 21 Feb 2014 07:47:18 -0000
+ 07:47:24 +0000
+Received: (qmail 25952 invoked from network); 21 Feb 2014 07:47:19 -0000
 Received: from localhost (127.0.0.1)  by humber.warkscol.ac.uk with SMTP; 2=
 1
- Feb 2014 07:47:18 -0000
+ Feb 2014 07:47:19 -0000
 Return-Path: <>
 Delivered-To: clean-quarantine
 X-Envelope-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Envelope-To: <davidwessel-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>
+X-Envelope-To: <dbork10d-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>
 Received: from humber.warkscol.ac.uk ([127.0.0.1]) by localhost
  (humber.warkscol.ac.uk [127.0.0.1]) (amavisd-new, port 10024) with SMTP id
- 25785-04 for <davidwessel-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>; Fri, 21 Feb 2014 07:47:14 +0000
- (GMT)
+ 25785-05 for <dbork10d-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>; Fri, 21 Feb 2014 07:47:19 +0000 (G=
+MT)
 Received: (qmail 23947 invoked by uid 599); 21 Feb 2014 07:43:48 -0000
 Received: from unknown (HELO gen3.icu2.com) (64.34.178.19)    by
  humber.warkscol.ac.uk (qpsmtpd/0.28) with ESMTP; Fri, 21 Feb 2014 07:43:48
@@ -89,36 +89,35 @@ X-Spam-Level: **
 Content-Type: text/plain
 
 
---49175479-9cc1-4d82-8d43-7e2ccd31f119
+--00047df4-0887-4847-9433-3c4d15b4a52c
 Content-Type: message/delivery-status
 
 Reporting-MTA: dns;warkscol.ac.uk
 Received-From-MTA: dns;humber.warkscol.ac.uk
-Arrival-Date: Fri, 21 Feb 2014 07:47:22 +0000
+Arrival-Date: Fri, 21 Feb 2014 07:47:24 +0000
 
-Final-Recipient: rfc822;davidwessel-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org
+Final-Recipient: rfc822;dbork10d-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org
 Action: failed
 Status: 5.1.1
 Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
 
 
---49175479-9cc1-4d82-8d43-7e2ccd31f119
+--00047df4-0887-4847-9433-3c4d15b4a52c
 Content-Type: message/rfc822
 
 Received: from humber.warkscol.ac.uk (212.219.41.150) by OWA.WARKSCOL.AC.UK
  (212.219.42.121) with Microsoft SMTP Server id 14.2.318.4; Fri, 21 Feb 2014
- 07:47:22 +0000
-Received: (qmail 25942 invoked from network); 21 Feb 2014 07:47:18 -0000
+ 07:47:24 +0000
+Received: (qmail 25952 invoked from network); 21 Feb 2014 07:47:19 -0000
 Received: from localhost (127.0.0.1)  by humber.warkscol.ac.uk with SMTP; 21
- Feb 2014 07:47:18 -0000
+ Feb 2014 07:47:19 -0000
 Return-Path: <>
 Delivered-To: clean-quarantine
 X-Envelope-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Envelope-To: <davidwessel-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>
+X-Envelope-To: <dbork10d-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>
 Received: from humber.warkscol.ac.uk ([127.0.0.1]) by localhost
  (humber.warkscol.ac.uk [127.0.0.1]) (amavisd-new, port 10024) with SMTP id
- 25785-04 for <davidwessel-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>; Fri, 21 Feb 2014 07:47:14 +0000
- (GMT)
+ 25785-05 for <dbork10d-sWI4Ku/61KLQzY9nttDBhA@public.gmane.org>; Fri, 21 Feb 2014 07:47:19 +0000 (GMT)
 Received: (qmail 23947 invoked by uid 599); 21 Feb 2014 07:43:48 -0000
 Received: from unknown (HELO gen3.icu2.com) (64.34.178.19)    by
  humber.warkscol.ac.uk (qpsmtpd/0.28) with ESMTP; Fri, 21 Feb 2014 07:43:48
@@ -154,9 +153,9 @@ Tel.: +44 20 95529144.
 
 
 
---49175479-9cc1-4d82-8d43-7e2ccd31f119--
+--00047df4-0887-4847-9433-3c4d15b4a52c--
 
---===============2719562337574839205==
+--===============4389861121033720384==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -166,4 +165,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============2719562337574839205==--
+--===============4389861121033720384==--
