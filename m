@@ -1,7 +1,7 @@
 From: Sasha Levin <sasha.levin-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] cgroup: missing rcu read lock around task_css_set
-Date: Mon, 03 Mar 2014 17:48:19 -0500
-Message-ID: <531506B3.5030004__30864.6308760673$1393886988$gmane$org@oracle.com>
+Date: Mon, 03 Mar 2014 18:00:25 -0500
+Message-ID: <53150989.70307@oracle.com>
 References: <1393729211-937-1-git-send-email-sasha.levin@oracle.com>
 	<20140303223327.GB26523@mtj.dyndns.org>
 	<5315057F.3030602@oracle.com>
@@ -43,7 +43,15 @@ On 03/03/2014 05:45 PM, Tejun Heo wrote:
 > PF_EXITING check and add comment explaining that cset can no longer
 > change.  Can you please write up a patch?
 
-Sure!
+Hrm... there is a PF_EXITING check there already:
+
+	#define task_css_set_check(task, __c)			\
+		rcu_dereference_check((task)->cgroups,		\
+		lockdep_is_held(&cgroup_mutex) ||		\
+		lockdep_is_held(&css_set_rwsem) ||		\
+		((task)->flags & PF_EXITING) || (__c))
+
+I see it's not happening on Linus's master so I'll run a bisection to figure out what broke it.
 
 
 Thanks,
