@@ -1,13 +1,12 @@
-From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCH] proc: #68991 Fix GPF in /proc/$PID/map_files
-Date: Fri, 7 Mar 2014 18:29:13 +0400
-Message-ID: <5319D7B9.6050000@parallels.com>
-References: <20140308022033.GC5690@owamsq.epam.com>
+From: Artem Fetishev <artem_fetishev-uRwfk40T5oI@public.gmane.org>
+Subject: [PATCH] proc: #68991 Fix GPF in /proc/$PID/map_files
+Date: Sat, 8 Mar 2014 05:20:33 +0300
+Message-ID: <20140308022033.GC5690@owamsq.epam.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140308022033.GC5690-z1oL5kbKe2PzvzwRvDUw0Q@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,48 +16,41 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Artem Fetishev <artem_fetishev-uRwfk40T5oI@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, alexandr_terekhov-uRwfk40T5oI@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, alexandr_terekhov-uRwfk40T5oI@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 03/08/2014 06:20 AM, Artem Fetishev wrote:
-> https://bugzilla.kernel.org/show_bug.cgi?id=68991
-> 
-> The expected logic of proc_map_files_get_link() is either to return 0 and
-> initialize 'path' or return an error and leave 'path' uninitialized. By the time
-> dname_to_vma_addr() returns 0 the corresponding vma may have already be gone. In
-> this case the path is not initialized but the return value is still 0. This
-> results in 'general protection fault' inside d_path().
-> 
-> Steps to reproduce:
-> CONFIG_CHECKPOINT_RESTORE=y
-> 
-> fd = open(...);
-> while (1) {
-> 	mmap(fd, ...);
-> 	munmap(fd, ...);
-> }
-> 
-> ls -la /proc/$PID/map_files
-> 
-> Signed-off-by: Artem Fetishev <artem_fetishev-uRwfk40T5oI@public.gmane.org>
-> Signed-off-by: Aleksandr Terekhov <aleksandr_terekhov-uRwfk40T5oI@public.gmane.org>
+https://bugzilla.kernel.org/show_bug.cgi?id=68991
 
-Acked-by: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+The expected logic of proc_map_files_get_link() is either to return 0 and
+initialize 'path' or return an error and leave 'path' uninitialized. By the time
+dname_to_vma_addr() returns 0 the corresponding vma may have already be gone. In
+this case the path is not initialized but the return value is still 0. This
+results in 'general protection fault' inside d_path().
 
+Steps to reproduce:
+CONFIG_CHECKPOINT_RESTORE=y
 
-> ---
-> diff --git a/fs/proc/base.c b/fs/proc/base.c
-> index 5150706..b976062 100644
-> --- a/fs/proc/base.c
-> +++ b/fs/proc/base.c
-> @@ -1824,6 +1824,7 @@ static int proc_map_files_get_link(struct dentry *dentry, struct path *path)
->  	if (rc)
->  		goto out_mmput;
->  
-> +	rc = -ENOENT;
->  	down_read(&mm->mmap_sem);
->  	vma = find_exact_vma(mm, vm_start, vm_end);
->  	if (vma && vma->vm_file) {
-> .
-> 
+fd = open(...);
+while (1) {
+	mmap(fd, ...);
+	munmap(fd, ...);
+}
+
+ls -la /proc/$PID/map_files
+
+Signed-off-by: Artem Fetishev <artem_fetishev-uRwfk40T5oI@public.gmane.org>
+Signed-off-by: Aleksandr Terekhov <aleksandr_terekhov-uRwfk40T5oI@public.gmane.org>
+---
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index 5150706..b976062 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -1824,6 +1824,7 @@ static int proc_map_files_get_link(struct dentry *dentry, struct path *path)
+ 	if (rc)
+ 		goto out_mmput;
+ 
++	rc = -ENOENT;
+ 	down_read(&mm->mmap_sem);
+ 	vma = find_exact_vma(mm, vm_start, vm_end);
+ 	if (vma && vma->vm_file) {
