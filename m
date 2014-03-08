@@ -1,14 +1,12 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH] proc: #68991 Fix GPF in /proc/$PID/map_files
-Date: Fri, 07 Mar 2014 12:17:56 -0800
-Message-ID: <87r46dvk3v.fsf@xmission.com>
-References: <20140308022033.GC5690@owamsq.epam.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [GIT PULL] cgroup fixes for v3.14-rc5
+Date: Sat, 8 Mar 2014 10:32:09 -0500
+Message-ID: <20140308153209.GC25021__20489.8663716905$1394292746$gmane$org@htj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140308022033.GC5690-z1oL5kbKe2PzvzwRvDUw0Q@public.gmane.org> (Artem Fetishev's message
-	of "Sat, 8 Mar 2014 05:20:33 +0300")
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,48 +16,72 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Artem Fetishev <artem_fetishev-uRwfk40T5oI@public.gmane.org>
-Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org, alexandr_terekhov-uRwfk40T5oI@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Artem Fetishev <artem_fetishev-uRwfk40T5oI@public.gmane.org> writes:
+Hello, Linus.
 
-> https://bugzilla.kernel.org/show_bug.cgi?id=68991
->
-> The expected logic of proc_map_files_get_link() is either to return 0 and
-> initialize 'path' or return an error and leave 'path' uninitialized. By the time
-> dname_to_vma_addr() returns 0 the corresponding vma may have already be gone. In
-> this case the path is not initialized but the return value is still 0. This
-> results in 'general protection fault' inside d_path().
->
-> Steps to reproduce:
-> CONFIG_CHECKPOINT_RESTORE=y
->
-> fd = open(...);
-> while (1) {
-> 	mmap(fd, ...);
-> 	munmap(fd, ...);
-> }
->
-> ls -la /proc/$PID/map_files
->
-> Signed-off-by: Artem Fetishev <artem_fetishev-uRwfk40T5oI@public.gmane.org>
-> Signed-off-by: Aleksandr Terekhov <aleksandr_terekhov-uRwfk40T5oI@public.gmane.org>
-Reviewed-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> ---
-> diff --git a/fs/proc/base.c b/fs/proc/base.c
-> index 5150706..b976062 100644
-> --- a/fs/proc/base.c
-> +++ b/fs/proc/base.c
-> @@ -1824,6 +1824,7 @@ static int proc_map_files_get_link(struct dentry *dentry, struct path *path)
->  	if (rc)
->  		goto out_mmput;
->  
-> +	rc = -ENOENT;
->  	down_read(&mm->mmap_sem);
->  	vma = find_exact_vma(mm, vm_start, vm_end);
->  	if (vma && vma->vm_file) {
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+Two cpuset locking fixes from Li.  Both tagged for -stable.
+
+The following changes since commit 532de3fc72adc2a6525c4d53c07bf81e1732083d:
+
+  cgroup: update cgroup_enable_task_cg_lists() to grab siglock (2014-02-18 18:23:18 -0500)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git for-3.14-fixes
+
+for you to fetch changes up to 99afb0fd5f05aac467ffa85c36778fec4396209b:
+
+  cpuset: fix a race condition in __cpuset_node_allowed_softwall() (2014-02-27 09:39:54 -0500)
+
+Thanks.
+
+----------------------------------------------------------------
+Li Zefan (2):
+      cpuset: fix a locking issue in cpuset_migrate_mm()
+      cpuset: fix a race condition in __cpuset_node_allowed_softwall()
+
+ kernel/cpuset.c | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
+
+diff --git a/kernel/cpuset.c b/kernel/cpuset.c
+index 4410ac6..e6b1b66 100644
+--- a/kernel/cpuset.c
++++ b/kernel/cpuset.c
+@@ -974,12 +974,6 @@ static int update_cpumask(struct cpuset *cs, struct cpuset *trialcs,
+  *    Temporarilly set tasks mems_allowed to target nodes of migration,
+  *    so that the migration code can allocate pages on these nodes.
+  *
+- *    Call holding cpuset_mutex, so current's cpuset won't change
+- *    during this call, as manage_mutex holds off any cpuset_attach()
+- *    calls.  Therefore we don't need to take task_lock around the
+- *    call to guarantee_online_mems(), as we know no one is changing
+- *    our task's cpuset.
+- *
+  *    While the mm_struct we are migrating is typically from some
+  *    other task, the task_struct mems_allowed that we are hacking
+  *    is for our current task, which must allocate new pages for that
+@@ -996,8 +990,10 @@ static void cpuset_migrate_mm(struct mm_struct *mm, const nodemask_t *from,
+ 
+ 	do_migrate_pages(mm, from, to, MPOL_MF_MOVE_ALL);
+ 
++	rcu_read_lock();
+ 	mems_cs = effective_nodemask_cpuset(task_cs(tsk));
+ 	guarantee_online_mems(mems_cs, &tsk->mems_allowed);
++	rcu_read_unlock();
+ }
+ 
+ /*
+@@ -2486,9 +2482,9 @@ int __cpuset_node_allowed_softwall(int node, gfp_t gfp_mask)
+ 
+ 	task_lock(current);
+ 	cs = nearest_hardwall_ancestor(task_cs(current));
++	allowed = node_isset(node, cs->mems_allowed);
+ 	task_unlock(current);
+ 
+-	allowed = node_isset(node, cs->mems_allowed);
+ 	mutex_unlock(&callback_mutex);
+ 	return allowed;
+ }
