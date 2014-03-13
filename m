@@ -1,16 +1,12 @@
-From: Oren Laadan <orenl-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [lxc-devel] [systemd-devel] Suspending access to opened/active
-	/dev/nodes during application runtime
-Date: Tue, 11 Mar 2014 12:02:46 -0400
-Message-ID: <CAA4jN2Y0J3hWLM6mcAgFrtH-oYQFH57Hcrk7pz2KZdbBwO11SQ@mail.gmail.com>
-References: <9D7BA6C9-9F1F-4D09-8F4F-E7DA4720FF97@gmail.com>
-	<20140307192410.GA24453@tango.0pointer.de>
-	<9E972401-6FA3-439B-9531-49D1FCC8D61D@gmail.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCHSET cgroup/for-3.15] cgroup: prepare for the default unified
+	hierarchy
+Date: Thu, 13 Mar 2014 15:50:02 -0400
+Message-ID: <1394740213-17626-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <9E972401-6FA3-439B-9531-49D1FCC8D61D-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,56 +16,68 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: LXC development mailing-list <lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org>
-Cc: systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-input-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Herrmann <dh.herrmann-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Lennart Poettering <mzerqung-uLTowLwuiw4b1SvskN2V4Q@public.gmane.org>
+To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Mar 7, 2014 at 3:51 PM, Lukasz Pawelczyk <havner-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+Hello,
 
->
-> On 7 Mar 2014, at 20:24, Lennart Poettering <mzerqung-uLTowLwuiw4b1SvskN2V4Q@public.gmane.org> wrote:
->
-> > On Fri, 07.03.14 19:45, Lukasz Pawelczyk (havner-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org) wrote:
-> >
-> >> Problem:
-> >> Has anyone thought about a mechanism to limit/remove an access to a
-> >> device during an application runtime? Meaning we have an application
-> >> that has an open file descriptor to some /dev/node and depending on
-> >> *something* it gains or looses the access to it gracefully (with or
-> >> without a notification, but without any fatal consequences).
-> >
-> > logind can mute input devices as sessions are switched, to enable
-> > unpriviliged X11 and wayland compositors.
->
-> Would you please elaborate on this? Where is this mechanism? How does it
-> work without kernel space support? Is there some kernel space support I'm
-> not aware of?
->
-> >> Example:
-> >> LXC. Imagine we have 2 separate containers. Both running full operating
-> >> systems. Specifically with 2 X servers. Both running concurrently of
-> >
-> > Well, devices are not namespaced on Linux (with the single exception of
-> > network devices). An X server needs device access, hence this doesn't
-> > fly at all.
-> >
-> > When you enumerate devices with libudev in a container they will never
-> > be marked as "initialized" and you do not get any udev hotplug events in
-> > containers, and you don#t have the host's udev db around, nor would it
-> > make any sense to you if you had. X11 and friends rely on udev
-> > however...
-> >
-> > Before you think about doing something like this, you need to fix the
-> > kernel to provide namespaced devices (good luck!)
->
-> Precisly! That's the generic idea. I'm not for implementing it though at
-> this moment. I just wanted to know whether anybody actually though about it
-> or maybe someone is interested in starting such a work, etc.
->
+The planned unified hierarchy is just around the corner.  We're gonna
+repurpose the dummy hierarchy to serve as the default unified
+hierarchy.  Controllers which aren't attached to other hierarchies are
+already automatically bound to the dummy hierarchy; however, the dummy
+hierarchy is minimally initialized during boot and can't currently act
+as a full hierarchy.
 
-Yes, we have started such a thing. Here is the link to the wiki:
-https://github.com/Cellrox/devns-patches/wiki
+This patchset gradually turns the dummy hierarchy into fully
+functional default one and makes it mountable via selecting
+sane_behavior without any subsystems specified.  While this patchset
+does make the default hierarchy mountable, the unified hierarchy
+functionality isn't implemented yet and cgroup creation in the default
+hierarchy is rejected for now.
 
-[...]
+This lays down all the boilerplate work for the unified hierarchy.
+The next patchset will implement the actual unified functionality.
 
-Oren.
+This patchset contains the following eleven patches.
+
+ 0001-cgroup-cgroup-subsys-should-be-cleared-after-the-css.patch
+ 0002-cgroup-relocate-setting-of-CGRP_DEAD.patch
+ 0003-cgroup-reorganize-cgroup-bootstrapping.patch
+ 0004-cgroup-use-cgroup_setup_root-to-initialize-cgroup_du.patch
+ 0005-cgroup-remove-NULL-checks-from-pr_cont_-cgroup_-name.patch
+ 0006-cgroup-treat-cgroup_dummy_root-as-an-equivalent-hier.patch
+ 0007-cgroup-move-subsys_mask-from-cgroupfs_root-to-cgroup.patch
+ 0008-cgroup-rename-cgroup_dummy_root-and-related-names.patch
+ 0009-cgroup-drop-const-from-buffer-of-cftype-write_string.patch
+ 0010-cgroup-make-cgrp_dfl_root-mountable.patch
+ 0011-cgroup-implement-CFTYPE_ONLY_ON_DFL.patch
+
+0001-0002 are misc fix / prep.
+
+0003-0009 (mostly) turn the dummy hierarchy into a full hierarchy
+which takes on controllers which aren't attached to other hierarchies.
+
+0010-0011 make the default hierarchy mountable and implement
+CFTYPE_ONLY_DFL.
+
+This patchset is on top of cgroup/for-3.15 b8dadcb58d54 ("cpuset: use
+rcu_read_lock() to protect task_cs()").  diffstat follows.
+
+ block/blk-throttle.c      |    4
+ block/cfq-iosched.c       |    4
+ include/linux/cgroup.h    |   57 ++---
+ kernel/cgroup.c           |  464 +++++++++++++++++++++++++---------------------
+ kernel/cgroup_freezer.c   |    2
+ kernel/cpuset.c           |    2
+ mm/hugetlb_cgroup.c       |    2
+ mm/memcontrol.c           |    4
+ net/core/netprio_cgroup.c |    2
+ net/ipv4/tcp_memcontrol.c |    2
+ security/device_cgroup.c  |    4
+ 11 files changed, 295 insertions(+), 252 deletions(-)
+
+Thanks.
+
+--
+tejun
