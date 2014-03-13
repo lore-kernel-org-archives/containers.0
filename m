@@ -1,8 +1,8 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 04/11] cgroup: use cgroup_setup_root() to initialize
-	cgroup_dummy_root
-Date: Thu, 13 Mar 2014 15:50:06 -0400
-Message-ID: <1394740213-17626-5-git-send-email-tj@kernel.org>
+Subject: [PATCH 06/11] cgroup: treat cgroup_dummy_root as an equivalent
+	hierarchy during rebinding
+Date: Thu, 13 Mar 2014 15:50:08 -0400
+Message-ID: <1394740213-17626-7-git-send-email-tj@kernel.org>
 References: <1394740213-17626-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,152 +22,217 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-cgroup_dummy_root is used to host controllers which aren't attached to
-any other hierarchy.  The root is minimally set up during kernfs
-bootstrap and didn't go through full hierarchy initialization.  We're
-planning to use cgroup_dummy_root for the default unified hierarchy
-and thus want it to be fully functional.
+Currently, while rebinding, cgroup_dummy_root serves as the anchor
+point.  In addition to the target root, rebind_subsystems() takes
+@added_mask and @removed_mask.  The subsystems specified in the former
+are expected to be on the dummy root and then moved to the target
+root.  The ones in the latter are moved from non-dummy root to dummy.
+Now that the dummy root is a fully functional one and we're planning
+to use it for the default unified hierarchy, this level of distinction
+between dummy and non-dummy roots is quite awkward.
 
-Replace the special initialization, which was collected into
-cgroup_init() by the previous patch, with an invocation of
-cgroup_setup_root().  This simplifies the init path and makes
-cgroup_dummy_root a full hierarchy with its own kernfs_root and all.
+This patch updates rebind_subsystems() to take the target root and one
+subsystem mask and move the specified subsystmes to the target root
+which may or may not be the dummy root.  IOW, unbinding now becomes
+moving the subsystems to the dummy root and binding to non-dummy root.
+This makes the dummy root mostly equivalent to other hierarchies in
+terms of the mechanism of moving subsystems around; however, we still
+retain all the semantical restrictions so that this patch doesn't
+introduce any visible behavior differences.  Another noteworthy detail
+is that rebind_subsystems() guarantees that moving a subsystem to the
+dummy root never fails so that valid unmounting attempts always
+succeed.
 
-As this puts the dummy hierarchy on the cgroup_roots list, rename
-for_each_active_root() to for_each_root() and update its users to skip
-the dummy root for now.
+This unifies binding and unbinding of subsystems.  The invocation
+points of ->bind() were inconsistent between the two and now moved
+after whole rebinding is complete.  This doesn't break the current
+users and generally makes more sense.
 
-This patch doesn't cause any userland visible behavior changes at this
-point.
+All rebind_subsystems() users are converted accordingly.  Note that
+cgroup_remount() now makes two calls to rebind_subsystems() to bind
+and then unbind the requested subsystems.
+
+This will allow repurposing of the dummy hierarchy as the default
+unified hierarchy and shouldn't make any userland visible behavior
+difference.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 43 ++++++++++++++++++++-----------------------
- 1 file changed, 20 insertions(+), 23 deletions(-)
+ kernel/cgroup.c | 100 +++++++++++++++++++++++++++++++-------------------------
+ 1 file changed, 56 insertions(+), 44 deletions(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 12a0bda..2483f4e 100644
+index 2483f4e..9b9a294 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -289,8 +289,8 @@ static int notify_on_release(const struct cgroup *cgrp)
- 	for ((ssid) = 0; (ssid) < CGROUP_SUBSYS_COUNT &&		\
- 	     (((ss) = cgroup_subsys[ssid]) || true); (ssid)++)
+@@ -175,8 +175,8 @@ static int need_forkexit_callback __read_mostly;
+ static struct cftype cgroup_base_files[];
  
--/* iterate across the active hierarchies */
--#define for_each_active_root(root)					\
-+/* iterate across the hierarchies */
-+#define for_each_root(root)						\
- 	list_for_each_entry((root), &cgroup_roots, root_list)
+ static void cgroup_put(struct cgroup *cgrp);
+-static int rebind_subsystems(struct cgroupfs_root *root,
+-			     unsigned long added_mask, unsigned removed_mask);
++static int rebind_subsystems(struct cgroupfs_root *dst_root,
++			     unsigned long ss_mask);
+ static void cgroup_destroy_css_killed(struct cgroup *cgrp);
+ static int cgroup_destroy_locked(struct cgroup *cgrp);
+ static int cgroup_addrm_files(struct cgroup *cgrp, struct cftype cfts[],
+@@ -739,7 +739,7 @@ static void cgroup_destroy_root(struct cgroupfs_root *root)
+ 	BUG_ON(!list_empty(&cgrp->children));
  
- /**
-@@ -354,7 +354,6 @@ static struct css_set init_css_set = {
- 	.mg_node		= LIST_HEAD_INIT(init_css_set.mg_node),
- };
+ 	/* Rebind all subsystems back to the default hierarchy */
+-	WARN_ON(rebind_subsystems(root, 0, root->subsys_mask));
++	rebind_subsystems(&cgroup_dummy_root, root->subsys_mask);
  
--static struct cgrp_cset_link init_cgrp_cset_link;
- static int css_set_count	= 1;	/* 1 for init_css_set */
- 
- /*
-@@ -693,14 +692,13 @@ static struct cgroupfs_root *cgroup_root_from_kf(struct kernfs_root *kf_root)
- 	return top_cgrp->root;
+ 	/*
+ 	 * Release all the links from cset_links to this hierarchy's
+@@ -976,69 +976,77 @@ static void cgroup_clear_dir(struct cgroup *cgrp, unsigned long subsys_mask)
+ 	}
  }
  
--static int cgroup_init_root_id(struct cgroupfs_root *root, int start, int end)
-+static int cgroup_init_root_id(struct cgroupfs_root *root)
+-static int rebind_subsystems(struct cgroupfs_root *root,
+-			     unsigned long added_mask, unsigned removed_mask)
++static int rebind_subsystems(struct cgroupfs_root *dst_root,
++			     unsigned long ss_mask)
  {
- 	int id;
+-	struct cgroup *cgrp = &root->top_cgroup;
++	struct cgroup *dst_top = &dst_root->top_cgroup;
+ 	struct cgroup_subsys *ss;
+-	int i, ret;
++	int ssid, ret;
  
+ 	lockdep_assert_held(&cgroup_tree_mutex);
  	lockdep_assert_held(&cgroup_mutex);
  
--	id = idr_alloc_cyclic(&cgroup_hierarchy_idr, root, start, end,
--			      GFP_KERNEL);
-+	id = idr_alloc_cyclic(&cgroup_hierarchy_idr, root, 0, 0, GFP_KERNEL);
- 	if (id < 0)
- 		return id;
+-	/* Check that any added subsystems are currently free */
+-	for_each_subsys(ss, i)
+-		if ((added_mask & (1 << i)) && ss->root != &cgroup_dummy_root)
++	for_each_subsys(ss, ssid) {
++		if (!(ss_mask & (1 << ssid)))
++			continue;
++
++		/* if @ss is on the dummy_root, we can always move it */
++		if (ss->root == &cgroup_dummy_root)
++			continue;
++
++		/* if @ss has non-root cgroups attached to it, can't move */
++		if (!list_empty(&ss->root->top_cgroup.children))
+ 			return -EBUSY;
  
-@@ -1405,8 +1403,7 @@ static int cgroup_setup_root(struct cgroupfs_root *root, unsigned long ss_mask)
+-	ret = cgroup_populate_dir(cgrp, added_mask);
+-	if (ret)
+-		return ret;
++		/* can't move between two non-dummy roots either */
++		if (dst_root != &cgroup_dummy_root)
++			return -EBUSY;
++	}
++
++	if (dst_root != &cgroup_dummy_root) {
++		ret = cgroup_populate_dir(dst_top, ss_mask);
++		if (ret)
++			return ret;
++	}
+ 
+ 	/*
+ 	 * Nothing can fail from this point on.  Remove files for the
+ 	 * removed subsystems and rebind each subsystem.
+ 	 */
+ 	mutex_unlock(&cgroup_mutex);
+-	cgroup_clear_dir(cgrp, removed_mask);
++	for_each_subsys(ss, ssid)
++		if ((ss_mask & (1 << ssid)) && ss->root != &cgroup_dummy_root)
++			cgroup_clear_dir(&ss->root->top_cgroup, 1 << ssid);
+ 	mutex_lock(&cgroup_mutex);
+ 
+-	for_each_subsys(ss, i) {
+-		unsigned long bit = 1UL << i;
+-
+-		if (bit & added_mask) {
+-			/* We're binding this subsystem to this hierarchy */
+-			BUG_ON(cgroup_css(cgrp, ss));
+-			BUG_ON(!cgroup_css(cgroup_dummy_top, ss));
+-			BUG_ON(cgroup_css(cgroup_dummy_top, ss)->cgroup != cgroup_dummy_top);
++	for_each_subsys(ss, ssid) {
++		struct cgroupfs_root *src_root;
++		struct cgroup *src_top;
++		struct cgroup_subsys_state *css;
+ 
+-			rcu_assign_pointer(cgrp->subsys[i],
+-					   cgroup_css(cgroup_dummy_top, ss));
+-			cgroup_css(cgrp, ss)->cgroup = cgrp;
++		if (!(ss_mask & (1 << ssid)))
++			continue;
+ 
+-			ss->root = root;
+-			if (ss->bind)
+-				ss->bind(cgroup_css(cgrp, ss));
++		src_root = ss->root;
++		src_top = &src_root->top_cgroup;
++		css = cgroup_css(src_top, ss);
+ 
+-			/* refcount was already taken, and we're keeping it */
+-			root->subsys_mask |= bit;
+-		} else if (bit & removed_mask) {
+-			/* We're removing this subsystem */
+-			BUG_ON(cgroup_css(cgrp, ss) != cgroup_css(cgroup_dummy_top, ss));
+-			BUG_ON(cgroup_css(cgrp, ss)->cgroup != cgrp);
++		WARN_ON(!css || cgroup_css(dst_top, ss));
+ 
+-			if (ss->bind)
+-				ss->bind(cgroup_css(cgroup_dummy_top, ss));
++		RCU_INIT_POINTER(src_top->subsys[ssid], NULL);
++		rcu_assign_pointer(dst_top->subsys[ssid], css);
++		ss->root = dst_root;
++		css->cgroup = dst_top;
+ 
+-			cgroup_css(cgroup_dummy_top, ss)->cgroup = cgroup_dummy_top;
+-			RCU_INIT_POINTER(cgrp->subsys[i], NULL);
++		src_root->subsys_mask &= ~(1 << ssid);
++		dst_root->subsys_mask |= 1 << ssid;
+ 
+-			cgroup_subsys[i]->root = &cgroup_dummy_root;
+-			root->subsys_mask &= ~bit;
+-		}
++		if (ss->bind)
++			ss->bind(css);
+ 	}
+ 
+-	kernfs_activate(cgrp->kn);
++	if (dst_root != &cgroup_dummy_root)
++		kernfs_activate(dst_top->kn);
+ 	return 0;
+ }
+ 
+@@ -1277,10 +1285,12 @@ static int cgroup_remount(struct kernfs_root *kf_root, int *flags, char *data)
+ 		goto out_unlock;
+ 	}
+ 
+-	ret = rebind_subsystems(root, added_mask, removed_mask);
++	ret = rebind_subsystems(root, added_mask);
  	if (ret)
- 		goto out;
- 
--	/* ID 0 is reserved for dummy root, 1 for unified hierarchy */
--	ret = cgroup_init_root_id(root, 2, 0);
-+	ret = cgroup_init_root_id(root);
- 	if (ret)
- 		goto out;
- 
-@@ -1486,9 +1483,12 @@ retry:
  		goto out_unlock;
  
- 	/* look for a matching existing root */
--	for_each_active_root(root) {
-+	for_each_root(root) {
- 		bool name_match = false;
- 
-+		if (root == &cgroup_dummy_root)
-+			continue;
++	rebind_subsystems(&cgroup_dummy_root, removed_mask);
 +
- 		/*
- 		 * If we asked for a name then it must match.  Also, if
- 		 * name matches but sybsys_mask doesn't, we should fail.
-@@ -2106,9 +2106,12 @@ int cgroup_attach_task_all(struct task_struct *from, struct task_struct *tsk)
- 	int retval = 0;
+ 	if (opts.release_agent) {
+ 		spin_lock(&release_agent_path_lock);
+ 		strcpy(root->release_agent_path, opts.release_agent);
+@@ -1420,7 +1430,7 @@ static int cgroup_setup_root(struct cgroupfs_root *root, unsigned long ss_mask)
+ 	if (ret)
+ 		goto destroy_root;
  
- 	mutex_lock(&cgroup_mutex);
--	for_each_active_root(root) {
-+	for_each_root(root) {
- 		struct cgroup *from_cgrp;
+-	ret = rebind_subsystems(root, ss_mask, 0);
++	ret = rebind_subsystems(root, ss_mask);
+ 	if (ret)
+ 		goto destroy_root;
  
-+		if (root == &cgroup_dummy_root)
-+			continue;
+@@ -4026,6 +4036,8 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
+ 
+ 	BUG_ON(online_css(css));
+ 
++	cgroup_dummy_root.subsys_mask |= 1 << ss->id;
 +
- 		down_read(&css_set_rwsem);
- 		from_cgrp = task_cgroup_from_root(from, root);
- 		up_read(&css_set_rwsem);
-@@ -4073,26 +4076,17 @@ int __init cgroup_init(void)
- 
- 	BUG_ON(cgroup_init_cftypes(NULL, cgroup_base_files));
- 
--	/* allocate id for the dummy hierarchy */
-+	mutex_lock(&cgroup_tree_mutex);
- 	mutex_lock(&cgroup_mutex);
- 
- 	/* Add init_css_set to the hash table */
- 	key = css_set_hash(init_css_set.subsys);
- 	hash_add(css_set_table, &init_css_set.hlist, key);
- 
--	BUG_ON(cgroup_init_root_id(&cgroup_dummy_root, 0, 1));
--
--	err = idr_alloc(&cgroup_dummy_root.cgroup_idr, cgroup_dummy_top,
--			0, 1, GFP_KERNEL);
--	BUG_ON(err < 0);
--
--	cgroup_root_count = 1;
--	init_cgrp_cset_link.cset = &init_css_set;
--	init_cgrp_cset_link.cgrp = cgroup_dummy_top;
--	list_add(&init_cgrp_cset_link.cset_link, &cgroup_dummy_top->cset_links);
--	list_add(&init_cgrp_cset_link.cgrp_link, &init_css_set.cgrp_links);
-+	BUG_ON(cgroup_setup_root(&cgroup_dummy_root, 0));
- 
  	mutex_unlock(&cgroup_mutex);
-+	mutex_unlock(&cgroup_tree_mutex);
- 
- 	for_each_subsys(ss, ssid) {
- 		if (!ss->early_init)
-@@ -4176,11 +4170,14 @@ int proc_cgroup_show(struct seq_file *m, void *v)
- 	mutex_lock(&cgroup_mutex);
- 	down_read(&css_set_rwsem);
- 
--	for_each_active_root(root) {
-+	for_each_root(root) {
- 		struct cgroup_subsys *ss;
- 		struct cgroup *cgrp;
- 		int ssid, count = 0;
- 
-+		if (root == &cgroup_dummy_root)
-+			continue;
-+
- 		seq_printf(m, "%d:", root->hierarchy_id);
- 		for_each_subsys(ss, ssid)
- 			if (root->subsys_mask & (1 << ssid))
+ 	mutex_unlock(&cgroup_tree_mutex);
+ }
 -- 
 1.8.5.3
