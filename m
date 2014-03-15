@@ -1,13 +1,12 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 11/11] cgroup: implement CFTYPE_ONLY_ON_DFL
-Date: Thu, 13 Mar 2014 15:50:13 -0400
-Message-ID: <1394740213-17626-12-git-send-email-tj__45088.1124510945$1394740347$gmane$org@kernel.org>
-References: <1394740213-17626-1-git-send-email-tj@kernel.org>
+From: "U Decision" <noreply-8nzttPkiOJCkqlQVS2g5fQ@public.gmane.org>
+Subject: Occasionissima Samsung Galaxy S4 con Wind Unlimited
+Date: Sat, 15 Mar 2014 16:05:54 +0100
+Message-ID: <0000043AA.016E8FC8.noreply@udecision.biz>
+Reply-To: contatti-8nzttPkiOJD/wltNWqQaag@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1394740213-17626-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,43 +16,28 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
-Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This cftype flag makes the file only appear on the default hierarchy.
-This will later be used for cgroup.controllers file.
-
-Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
----
- include/linux/cgroup.h | 1 +
- kernel/cgroup.c        | 2 ++
- 2 files changed, 3 insertions(+)
-
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 7e9fa50..43d1ed3 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -384,6 +384,7 @@ enum {
- 	CFTYPE_NOT_ON_ROOT	= (1 << 1),	/* don't create on root cgrp */
- 	CFTYPE_INSANE		= (1 << 2),	/* don't create if sane_behavior */
- 	CFTYPE_NO_PREFIX	= (1 << 3),	/* (DON'T USE FOR NEW FILES) no subsys prefix */
-+	CFTYPE_ONLY_ON_DFL	= (1 << 4),	/* only on default hierarchy */
- };
- 
- #define MAX_CFTYPE_NAME		64
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index c42230c..79e3573 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -2356,6 +2356,8 @@ static int cgroup_addrm_files(struct cgroup *cgrp, struct cftype cfts[],
- 
- 	for (cft = cfts; cft->name[0] != '\0'; cft++) {
- 		/* does cft->flags tell us to skip this file on @cgrp? */
-+		if ((cft->flags & CFTYPE_ONLY_ON_DFL) && !cgroup_on_dfl(cgrp))
-+			continue;
- 		if ((cft->flags & CFTYPE_INSANE) && cgroup_sane_behavior(cgrp))
- 			continue;
- 		if ((cft->flags & CFTYPE_NOT_ON_ROOT) && !cgrp->parent)
--- 
-1.8.5.3
+IA0KU2Ftc3VuZyBHYWxheHkgUzQgTGlmZSBDb21wYW5pb24NCiBJbCBudW92byBTYW1zdW5nIEdB
+TEFYWSBTNCB0aSBhaXV0YSBhIGNhdHR1cmFyZSBlIHRlbmVyZSBzZW1wcmUgY29uIHRlIGkgbW9t
+ZW50aSBwacO5IGJlbGxpIGRlbGxhIHR1YSB2aXRhLiBPZ25pIGNhcmF0dGVyaXN0aWNhIMOoIHN0
+YXRhIHByb2dldHRhdGEgcGVyIHNlbXBsaWZpY2FyZSBsYSB0dWEgdml0YSBxdW90aWRpYW5hLiBJ
+bm9sdHJlLCBzaSBwcmVvY2N1cGEgZGkgbW9uaXRvcmFyZSBpbCB0dW8gc3RhdG8gZGkgc2FsdXRl
+IGUgbWlnbGlvcmFyZSBpbCB0dW8gYmVuZXNzZXJlLiBJbnNvbW1hLCBpbCBudW92byBHQUxBWFkg
+UzQgw6ggcXVpIHBlciB0ZSANCg0KV2luZCBBbGwgSW5jbHVzaXZlIFVubGltaXRlZCBNaW51dGks
+IFNNUyBlZCBJbnRlcm5ldCBzZW56YSBsaW1pdGksIHNjZWdsaSBsJ29mZmVydGEgQWxsIEluY2x1
+c2l2ZSBVbmxpbWl0ZWQhIEluICBwcm9tb3ppb25lIGEgc29saSAyOSBldXJvIGFsIG1lc2UsIGlu
+dmVjZSBkaSA2MCBldXJvIGFsIG1lc2UsIHNlIGF0dGl2aSAgbCdvZmZlcnRhIGVudHJvIGlsIDMx
+IG1hcnpvIDIwMTQuIFNjb3ByaSBUT1AgVW5saW1pdGVkIGUgaSB2YW50YWdnaSAgZXNjbHVzaXZp
+IHBlciBpIG51b3ZpIGNsaWVudGkuIFNlIGF0dGl2aSB1bm8gZGVpIHBpYW5vIEFsbCBJbmNsdXNp
+dmUsIGlsIGNhbm9uZSBtZW5zaWxlIHJpbWFuZSBzY29udGF0byBwZXIgaSBwcmltaSA1IGFubmkg
+DQoNCg0KDQpQZXIgY2FuY2VsbGFyc2kgZGFpIG5vc3RyaSBhcmNoaXZpIHV0aWxpenppIGlsIGxp
+bmsgc290dG9zdGFudGUuIHJpc3VsdGEgaXNjcml0dG8gY29uIGxhIG1haWw6IGNvbnRhaW5lcnNA
+bGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcNCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICBQZXIgY2FuY2VsbGFydGkgZGFsbGEgbWFpbGluZyBsaXN0IGNsaWNj
+YSBxdWkuDQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpD
+b250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24u
+b3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2Nv
+bnRhaW5lcnM=
