@@ -1,12 +1,14 @@
-From: "U Decision" <noreply-8nzttPkiOJCkqlQVS2g5fQ@public.gmane.org>
-Subject: Occasionissima Samsung Galaxy S4 con Wind Unlimited
-Date: Sat, 15 Mar 2014 16:05:54 +0100
-Message-ID: <0000043AA.016E8FC8.noreply@udecision.biz>
-Reply-To: contatti-8nzttPkiOJD/wltNWqQaag@public.gmane.org
+From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCHSET cgroup/for-3.15] cgroup: prepare for the default unified
+	hierarchy
+Date: Tue, 18 Mar 2014 11:55:07 +0800
+Message-ID: <5327C39B.10408__3322.6334410303$1395114935$gmane$org@huawei.com>
+References: <1394740213-17626-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1394740213-17626-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,28 +18,69 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-IA0KU2Ftc3VuZyBHYWxheHkgUzQgTGlmZSBDb21wYW5pb24NCiBJbCBudW92byBTYW1zdW5nIEdB
-TEFYWSBTNCB0aSBhaXV0YSBhIGNhdHR1cmFyZSBlIHRlbmVyZSBzZW1wcmUgY29uIHRlIGkgbW9t
-ZW50aSBwacO5IGJlbGxpIGRlbGxhIHR1YSB2aXRhLiBPZ25pIGNhcmF0dGVyaXN0aWNhIMOoIHN0
-YXRhIHByb2dldHRhdGEgcGVyIHNlbXBsaWZpY2FyZSBsYSB0dWEgdml0YSBxdW90aWRpYW5hLiBJ
-bm9sdHJlLCBzaSBwcmVvY2N1cGEgZGkgbW9uaXRvcmFyZSBpbCB0dW8gc3RhdG8gZGkgc2FsdXRl
-IGUgbWlnbGlvcmFyZSBpbCB0dW8gYmVuZXNzZXJlLiBJbnNvbW1hLCBpbCBudW92byBHQUxBWFkg
-UzQgw6ggcXVpIHBlciB0ZSANCg0KV2luZCBBbGwgSW5jbHVzaXZlIFVubGltaXRlZCBNaW51dGks
-IFNNUyBlZCBJbnRlcm5ldCBzZW56YSBsaW1pdGksIHNjZWdsaSBsJ29mZmVydGEgQWxsIEluY2x1
-c2l2ZSBVbmxpbWl0ZWQhIEluICBwcm9tb3ppb25lIGEgc29saSAyOSBldXJvIGFsIG1lc2UsIGlu
-dmVjZSBkaSA2MCBldXJvIGFsIG1lc2UsIHNlIGF0dGl2aSAgbCdvZmZlcnRhIGVudHJvIGlsIDMx
-IG1hcnpvIDIwMTQuIFNjb3ByaSBUT1AgVW5saW1pdGVkIGUgaSB2YW50YWdnaSAgZXNjbHVzaXZp
-IHBlciBpIG51b3ZpIGNsaWVudGkuIFNlIGF0dGl2aSB1bm8gZGVpIHBpYW5vIEFsbCBJbmNsdXNp
-dmUsIGlsIGNhbm9uZSBtZW5zaWxlIHJpbWFuZSBzY29udGF0byBwZXIgaSBwcmltaSA1IGFubmkg
-DQoNCg0KDQpQZXIgY2FuY2VsbGFyc2kgZGFpIG5vc3RyaSBhcmNoaXZpIHV0aWxpenppIGlsIGxp
-bmsgc290dG9zdGFudGUuIHJpc3VsdGEgaXNjcml0dG8gY29uIGxhIG1haWw6IGNvbnRhaW5lcnNA
-bGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcNCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICBQZXIgY2FuY2VsbGFydGkgZGFsbGEgbWFpbGluZyBsaXN0IGNsaWNj
-YSBxdWkuDQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpD
-b250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24u
-b3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2Nv
-bnRhaW5lcnM=
+On 2014/3/14 3:50, Tejun Heo wrote:
+> Hello,
+> 
+> The planned unified hierarchy is just around the corner.  We're gonna
+> repurpose the dummy hierarchy to serve as the default unified
+> hierarchy.  Controllers which aren't attached to other hierarchies are
+> already automatically bound to the dummy hierarchy; however, the dummy
+> hierarchy is minimally initialized during boot and can't currently act
+> as a full hierarchy.
+> 
+> This patchset gradually turns the dummy hierarchy into fully
+> functional default one and makes it mountable via selecting
+> sane_behavior without any subsystems specified.  While this patchset
+> does make the default hierarchy mountable, the unified hierarchy
+> functionality isn't implemented yet and cgroup creation in the default
+> hierarchy is rejected for now.
+> 
+> This lays down all the boilerplate work for the unified hierarchy.
+> The next patchset will implement the actual unified functionality.
+> 
+> This patchset contains the following eleven patches.
+> 
+>  0001-cgroup-cgroup-subsys-should-be-cleared-after-the-css.patch
+>  0002-cgroup-relocate-setting-of-CGRP_DEAD.patch
+>  0003-cgroup-reorganize-cgroup-bootstrapping.patch
+>  0004-cgroup-use-cgroup_setup_root-to-initialize-cgroup_du.patch
+>  0005-cgroup-remove-NULL-checks-from-pr_cont_-cgroup_-name.patch
+>  0006-cgroup-treat-cgroup_dummy_root-as-an-equivalent-hier.patch
+>  0007-cgroup-move-subsys_mask-from-cgroupfs_root-to-cgroup.patch
+>  0008-cgroup-rename-cgroup_dummy_root-and-related-names.patch
+>  0009-cgroup-drop-const-from-buffer-of-cftype-write_string.patch
+>  0010-cgroup-make-cgrp_dfl_root-mountable.patch
+>  0011-cgroup-implement-CFTYPE_ONLY_ON_DFL.patch
+> 
+> 0001-0002 are misc fix / prep.
+> 
+> 0003-0009 (mostly) turn the dummy hierarchy into a full hierarchy
+> which takes on controllers which aren't attached to other hierarchies.
+> 
+> 0010-0011 make the default hierarchy mountable and implement
+> CFTYPE_ONLY_DFL.
+> 
+> This patchset is on top of cgroup/for-3.15 b8dadcb58d54 ("cpuset: use
+> rcu_read_lock() to protect task_cs()").  diffstat follows.
+> 
+>  block/blk-throttle.c      |    4
+>  block/cfq-iosched.c       |    4
+>  include/linux/cgroup.h    |   57 ++---
+>  kernel/cgroup.c           |  464 +++++++++++++++++++++++++---------------------
+>  kernel/cgroup_freezer.c   |    2
+>  kernel/cpuset.c           |    2
+>  mm/hugetlb_cgroup.c       |    2
+>  mm/memcontrol.c           |    4
+>  net/core/netprio_cgroup.c |    2
+>  net/ipv4/tcp_memcontrol.c |    2
+>  security/device_cgroup.c  |    4
+>  11 files changed, 295 insertions(+), 252 deletions(-)
+> 
+
+Looks good in general!
+
+Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
