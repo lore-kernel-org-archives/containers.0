@@ -1,13 +1,14 @@
-From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCHSET cgroup/for-3.15] cgroup: prepare for the default unified
-	hierarchy
-Date: Tue, 18 Mar 2014 11:55:07 +0800
-Message-ID: <5327C39B.10408__3322.6334410303$1395114935$gmane$org@huawei.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCHSET cgroup/for-3.15] cgroup: prepare for the default
+	unified hierarchy
+Date: Wed, 19 Mar 2014 10:25:44 -0400
+Message-ID: <20140319142544.GA19874@htj.dyndns.org>
 References: <1394740213-17626-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 In-Reply-To: <1394740213-17626-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,13 +19,11 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 2014/3/14 3:50, Tejun Heo wrote:
-> Hello,
-> 
+On Thu, Mar 13, 2014 at 03:50:02PM -0400, Tejun Heo wrote:
 > The planned unified hierarchy is just around the corner.  We're gonna
 > repurpose the dummy hierarchy to serve as the default unified
 > hierarchy.  Controllers which aren't attached to other hierarchies are
@@ -55,32 +54,13 @@ On 2014/3/14 3:50, Tejun Heo wrote:
 >  0009-cgroup-drop-const-from-buffer-of-cftype-write_string.patch
 >  0010-cgroup-make-cgrp_dfl_root-mountable.patch
 >  0011-cgroup-implement-CFTYPE_ONLY_ON_DFL.patch
-> 
-> 0001-0002 are misc fix / prep.
-> 
-> 0003-0009 (mostly) turn the dummy hierarchy into a full hierarchy
-> which takes on controllers which aren't attached to other hierarchies.
-> 
-> 0010-0011 make the default hierarchy mountable and implement
-> CFTYPE_ONLY_DFL.
-> 
-> This patchset is on top of cgroup/for-3.15 b8dadcb58d54 ("cpuset: use
-> rcu_read_lock() to protect task_cs()").  diffstat follows.
-> 
->  block/blk-throttle.c      |    4
->  block/cfq-iosched.c       |    4
->  include/linux/cgroup.h    |   57 ++---
->  kernel/cgroup.c           |  464 +++++++++++++++++++++++++---------------------
->  kernel/cgroup_freezer.c   |    2
->  kernel/cpuset.c           |    2
->  mm/hugetlb_cgroup.c       |    2
->  mm/memcontrol.c           |    4
->  net/core/netprio_cgroup.c |    2
->  net/ipv4/tcp_memcontrol.c |    2
->  security/device_cgroup.c  |    4
->  11 files changed, 295 insertions(+), 252 deletions(-)
-> 
 
-Looks good in general!
+Applied 0002-0011 to libata/for-3.15.  0001 has the possibility to
+make css iterators malfunction as they don't exect the csses to be
+NULL.  It will be applied after iterators are updated to handle NULL
+csses.
 
-Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Thanks.
+
+-- 
+tejun
