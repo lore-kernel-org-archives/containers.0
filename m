@@ -1,11 +1,14 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCHSET cgroup/for-3.15] cgroup: implement unified hierarchy
-Date: Thu, 27 Mar 2014 22:40:49 -0400
-Message-ID: <1395974461-12735-1-git-send-email-tj@kernel.org>
+Subject: [PATCH 01/12] cgroup: update cgroup->subsys_mask to
+	->child_subsys_mask and restore cgroup_root->subsys_mask
+Date: Thu, 27 Mar 2014 22:40:50 -0400
+Message-ID: <1395974461-12735-2-git-send-email-tj@kernel.org>
+References: <1395974461-12735-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1395974461-12735-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,143 +19,216 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello,
+944196278d3d ("cgroup: move ->subsys_mask from cgroupfs_root to
+cgroup") moved ->subsys_mask from cgroup_root to cgroup to prepare for
+the unified hierarhcy; however, it turns out that carrying the
+subsys_mask of the children in the parent, instead of itself, is a lot
+more natural.  This patch restores cgroup_root->subsys_mask and morphs
+cgroup->subsys_mask into cgroup->child_subsys_mask.
 
-(this is too late for the upcoming merge window and is targeting the
-next devel cycle)
+* Uses of root->cgrp.subsys_mask are restored to root->subsys_mask.
 
-cgroup currently allows creating arbitrary number of hierarchies and
-any number of controllers may be associated with a given tree.  This
-allows for huge amount of variance how tasks are associated with
-various cgroups and controllers; unfortunately, the variance is
-extreme to the extent that it unnecessarily complicates capabilities
-which can otherwise be straight-forward and hinders implementation of
-features which can benefit from coordination among different
-controllers.
+* Remove automatic setting and clearing of cgrp->subsys_mask and
+  instead just inherit ->child_subsys_mask from the parent during
+  cgroup creation.  Note that this doesn't affect any current
+  behaviors.
 
-Here are some of the issues which we're facing with the current
-multiple hierarchies.
+* Undo __kill_css() separation.
 
-* cgroup membership of a task can't be described in finite number of
-  paths.  As there can be arbitrary number of hierarchies, the key
-  describing a task's cgroup membership can be arbitrarily long.  This
-  is painful when userland or other parts of the kernel needs to take
-  cgroup membership into account and leads to proliferation of
-  controllers which are just there to identify membership rather than
-  actually control resources, which in turn exacerbates the problem.
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+---
+ include/linux/cgroup.h |  7 ++++--
+ kernel/cgroup.c        | 64 +++++++++++++++++++++-----------------------------
+ 2 files changed, 32 insertions(+), 39 deletions(-)
 
-* Different controllers may or may not reside on the same hierarchy.
-  Features or optimizations which can benefit from sharing the
-  hierarchical organization either can't be implemented or becomes
-  overly complicated.
-
-* Tasks of a process may belong to different cgroups, which doesn't
-  make any sense for some controllers.  Those controllers end up
-  ignoring such configurations in their own ways leading to
-  inconsistent behavior.  In addition, in-process resource control
-  fundamentally isn't something which belongs to cgroup.  As it has to
-  be visible to the binary for the process, it must be part of the
-  stable programming interface which is easily accessible to the
-  process proper in an easy race-free way.
-
-* The current cgroup allows cgroups which have child cgroups to have
-  tasks in it.  This means that the child cgroups end up competing
-  against the internal tasks.  This introduces inherent ambiguity as
-  the two are separate types of entities and the latter doesn't have
-  the same control knobs assigned to them.
-
-  Different controllers are dealing with the issue in different ways.
-  cpu treats internal tasks and child cgroups as equivalents, which
-  makes giving a child cgroup a given ratio of the parent's cpu time
-  difficult as the number of competing entities may fluctuate without
-  any indication.  blkio, in my misguided attempt to deal with the
-  issue, introduced a whole duplicate set of knobs for internal tasks
-  and deal with them as if they belong to a separate child cgroup
-  making the interface and implementation a mess.  memcg seems
-  somewhat ambiguous on the issue but there are attempts to introduce
-  ad-hoc modifications to tilt the way it's handled to suit specific
-  use cases.
-
-  This is an inherent problem.  All of the solutions that different
-  controllers came up with are unsatisfactory, the different behaviors
-  greatly increases the level of inconsistency and complicates the
-  controller implementations.
-
-This patchset finally implements the default unified hierarchy.  The
-goal is providing enough flexibility while enforcing stricter common
-structure where appropriate to address the above listed issues.
-
-Controllers which aren't bound to other hierarchies are
-automatically attached to the unified hierarchy, which is different in
-that controllers are enabled explicitly for each subtree.
-"cgroup.subtree_control" controls which controllers are enabled on the
-child cgroups.  Let's assume a hierarchy like the following.
-
-  root - A - B - C
-               \ D
-
-root's "cgroup.subtree_control" determines which controllers are
-enabled on A.  A's on B.  B's on C and D.  This coincides with the
-fact that controllers on the immediate sub-level are used to
-distribute the resources of the parent.  In fact, it's natural to
-assume that resource control knobs of a child belong to its parent.
-Enabling a controller in "cgroup.subtree_control" declares that
-distribution of the respective resources of the cgroup will be
-controlled.  Note that this means that controller enable states are
-shared among siblings.
-
-The default hierarchy has an extra restriction - only cgroups which
-don't contain any task may have controllers enabled in
-"cgroup.subtree_control".  Combined with the other properties of the
-default hierarchy, this guarantees that, from the view point of
-controllers, tasks are only on the leaf cgroups.  In other words, only
-leaf csses may contain tasks.  This rules out situations where child
-cgroups compete against internal tasks of the parent.
-
-This patchset contains the following twelve patches.
-
- 0001-cgroup-update-cgroup-subsys_mask-to-child_subsys_mas.patch
- 0002-cgroup-introduce-effective-cgroup_subsys_state.patch
- 0003-cgroup-implement-cgroup-e_csets.patch
- 0004-cgroup-make-css_next_child-skip-missing-csses.patch
- 0005-cgroup-reorganize-css_task_iter.patch
- 0006-cgroup-teach-css_task_iter-about-effective-csses.patch
- 0007-cgroup-cgroup-subsys-should-be-cleared-after-the-css.patch
- 0008-cgroup-allow-cgroup-creation-and-suppress-automatic-.patch
- 0009-cgroup-add-css_set-dfl_cgrp.patch
- 0010-cgroup-update-subsystem-rebind-restrictions.patch
- 0011-cgroup-prepare-migration-path-for-unified-hierarchy.patch
- 0012-cgroup-implement-dynamic-subtree-controller-enable-d.patch
-
-0001 updates subsys_mask handling again to morph cgrp->subsys_mask to
-cgrp->child_subsys_mask.
-
-0002-0003 introduce effective cgroup.  The cgroup on the unified
-hierarchy a task belongs to when viewed from a controller.
-
-0004-0007 update iterators to handle effective cgroup correctly.
-
-0008-0011 prepare various paths for explicit controller
-enable/disable.
-
-0012 implements explicit controller enable/disable.
-
-The patchset is on top of cgroup/for-3.15 01a971406177 ("cgroup: Use
-RCU_INIT_POINTER(x, NULL) in cgroup.c") and also available in the
-following git branch.
-
- git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-unified
-
-diffstat follows.
-
- include/linux/cgroup.h |   44 ++-
- kernel/cgroup.c        |  651 +++++++++++++++++++++++++++++++++++++++++--------
- 2 files changed, 585 insertions(+), 110 deletions(-)
-
-Thanks.
-
---
-tejun
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 43d1ed3..e351a18 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -173,8 +173,8 @@ struct cgroup {
+ 	 */
+ 	u64 serial_nr;
+ 
+-	/* The bitmask of subsystems attached to this cgroup */
+-	unsigned long subsys_mask;
++	/* the bitmask of subsystems enabled on the child cgroups */
++	unsigned long child_subsys_mask;
+ 
+ 	/* Private pointers for each registered subsystem */
+ 	struct cgroup_subsys_state __rcu *subsys[CGROUP_SUBSYS_COUNT];
+@@ -282,6 +282,9 @@ enum {
+ struct cgroup_root {
+ 	struct kernfs_root *kf_root;
+ 
++	/* The bitmask of subsystems attached to this hierarchy */
++	unsigned long subsys_mask;
++
+ 	/* Unique id for this hierarchy. */
+ 	int hierarchy_id;
+ 
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index e378cb2..3c9c623 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -529,7 +529,7 @@ static struct css_set *find_existing_css_set(struct css_set *old_cset,
+ 	 * won't change, so no need for locking.
+ 	 */
+ 	for_each_subsys(ss, i) {
+-		if (root->cgrp.subsys_mask & (1UL << i)) {
++		if (root->subsys_mask & (1UL << i)) {
+ 			/* Subsystem is in this hierarchy. So we want
+ 			 * the subsystem state from the new
+ 			 * cgroup */
+@@ -742,7 +742,7 @@ static void cgroup_destroy_root(struct cgroup_root *root)
+ 	BUG_ON(!list_empty(&cgrp->children));
+ 
+ 	/* Rebind all subsystems back to the default hierarchy */
+-	rebind_subsystems(&cgrp_dfl_root, cgrp->subsys_mask);
++	rebind_subsystems(&cgrp_dfl_root, root->subsys_mask);
+ 
+ 	/*
+ 	 * Release all the links from cset_links to this hierarchy's
+@@ -1050,8 +1050,11 @@ static int rebind_subsystems(struct cgroup_root *dst_root,
+ 		ss->root = dst_root;
+ 		css->cgroup = &dst_root->cgrp;
+ 
+-		src_root->cgrp.subsys_mask &= ~(1 << ssid);
+-		dst_root->cgrp.subsys_mask |= 1 << ssid;
++		src_root->subsys_mask &= ~(1 << ssid);
++		src_root->cgrp.child_subsys_mask &= ~(1 << ssid);
++
++		dst_root->subsys_mask |= 1 << ssid;
++		dst_root->cgrp.child_subsys_mask |= 1 << ssid;
+ 
+ 		if (ss->bind)
+ 			ss->bind(css);
+@@ -1069,7 +1072,7 @@ static int cgroup_show_options(struct seq_file *seq,
+ 	int ssid;
+ 
+ 	for_each_subsys(ss, ssid)
+-		if (root->cgrp.subsys_mask & (1 << ssid))
++		if (root->subsys_mask & (1 << ssid))
+ 			seq_printf(seq, ",%s", ss->name);
+ 	if (root->flags & CGRP_ROOT_SANE_BEHAVIOR)
+ 		seq_puts(seq, ",sane_behavior");
+@@ -1273,12 +1276,12 @@ static int cgroup_remount(struct kernfs_root *kf_root, int *flags, char *data)
+ 	if (ret)
+ 		goto out_unlock;
+ 
+-	if (opts.subsys_mask != root->cgrp.subsys_mask || opts.release_agent)
++	if (opts.subsys_mask != root->subsys_mask || opts.release_agent)
+ 		pr_warning("cgroup: option changes via remount are deprecated (pid=%d comm=%s)\n",
+ 			   task_tgid_nr(current), current->comm);
+ 
+-	added_mask = opts.subsys_mask & ~root->cgrp.subsys_mask;
+-	removed_mask = root->cgrp.subsys_mask & ~opts.subsys_mask;
++	added_mask = opts.subsys_mask & ~root->subsys_mask;
++	removed_mask = root->subsys_mask & ~opts.subsys_mask;
+ 
+ 	/* Don't allow flags or name to change at remount */
+ 	if (((opts.flags ^ root->flags) & CGRP_ROOT_OPTION_MASK) ||
+@@ -1534,7 +1537,7 @@ retry:
+ 		 * subsystems) then they must match.
+ 		 */
+ 		if ((opts.subsys_mask || opts.none) &&
+-		    (opts.subsys_mask != root->cgrp.subsys_mask)) {
++		    (opts.subsys_mask != root->subsys_mask)) {
+ 			if (!name_match)
+ 				continue;
+ 			ret = -EBUSY;
+@@ -3640,8 +3643,6 @@ static int create_css(struct cgroup *cgrp, struct cgroup_subsys *ss)
+ 	cgroup_get(cgrp);
+ 	css_get(css->parent);
+ 
+-	cgrp->subsys_mask |= 1 << ss->id;
+-
+ 	if (ss->broken_hierarchy && !ss->warned_broken_hierarchy &&
+ 	    parent->parent) {
+ 		pr_warning("cgroup: %s (%d) created nested cgroup for controller \"%s\" which has incomplete hierarchy support. Nested cgroups may change behavior in the future.\n",
+@@ -3755,13 +3756,15 @@ static long cgroup_create(struct cgroup *parent, const char *name,
+ 
+ 	/* let's create and online css's */
+ 	for_each_subsys(ss, ssid) {
+-		if (root->cgrp.subsys_mask & (1 << ssid)) {
++		if (parent->child_subsys_mask & (1 << ssid)) {
+ 			err = create_css(cgrp, ss);
+ 			if (err)
+ 				goto err_destroy;
+ 		}
+ 	}
+ 
++	cgrp->child_subsys_mask = parent->child_subsys_mask;
++
+ 	kernfs_activate(kn);
+ 
+ 	mutex_unlock(&cgroup_mutex);
+@@ -3857,7 +3860,16 @@ static void css_killed_ref_fn(struct percpu_ref *ref)
+ 	queue_work(cgroup_destroy_wq, &css->destroy_work);
+ }
+ 
+-static void __kill_css(struct cgroup_subsys_state *css)
++/**
++ * kill_css - destroy a css
++ * @css: css to destroy
++ *
++ * This function initiates destruction of @css by removing cgroup interface
++ * files and putting its base reference.  ->css_offline() will be invoked
++ * asynchronously once css_tryget() is guaranteed to fail and when the
++ * reference count reaches zero, @css will be released.
++ */
++static void kill_css(struct cgroup_subsys_state *css)
+ {
+ 	lockdep_assert_held(&cgroup_tree_mutex);
+ 
+@@ -3887,28 +3899,6 @@ static void __kill_css(struct cgroup_subsys_state *css)
+ }
+ 
+ /**
+- * kill_css - destroy a css
+- * @css: css to destroy
+- *
+- * This function initiates destruction of @css by removing cgroup interface
+- * files and putting its base reference.  ->css_offline() will be invoked
+- * asynchronously once css_tryget() is guaranteed to fail and when the
+- * reference count reaches zero, @css will be released.
+- */
+-static void kill_css(struct cgroup_subsys_state *css)
+-{
+-	struct cgroup *cgrp = css->cgroup;
+-
+-	lockdep_assert_held(&cgroup_tree_mutex);
+-
+-	/* if already killed, noop */
+-	if (cgrp->subsys_mask & (1 << css->ss->id)) {
+-		cgrp->subsys_mask &= ~(1 << css->ss->id);
+-		__kill_css(css);
+-	}
+-}
+-
+-/**
+  * cgroup_destroy_locked - the first stage of cgroup destruction
+  * @cgrp: cgroup to be destroyed
+  *
+@@ -4120,7 +4110,7 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
+ 
+ 	BUG_ON(online_css(css));
+ 
+-	cgrp_dfl_root.cgrp.subsys_mask |= 1 << ss->id;
++	cgrp_dfl_root.subsys_mask |= 1 << ss->id;
+ 
+ 	mutex_unlock(&cgroup_mutex);
+ 	mutex_unlock(&cgroup_tree_mutex);
+@@ -4277,7 +4267,7 @@ int proc_cgroup_show(struct seq_file *m, void *v)
+ 
+ 		seq_printf(m, "%d:", root->hierarchy_id);
+ 		for_each_subsys(ss, ssid)
+-			if (root->cgrp.subsys_mask & (1 << ssid))
++			if (root->subsys_mask & (1 << ssid))
+ 				seq_printf(m, "%s%s", count++ ? "," : "", ss->name);
+ 		if (strlen(root->name))
+ 			seq_printf(m, "%sname=%s", count ? "," : "",
+-- 
+1.8.5.3
