@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 09/12] cgroup: add css_set->dfl_cgrp
-Date: Thu, 27 Mar 2014 22:40:58 -0400
-Message-ID: <1395974461-12735-10-git-send-email-tj@kernel.org>
+Subject: [PATCH 10/12] cgroup: update subsystem rebind restrictions
+Date: Thu, 27 Mar 2014 22:40:59 -0400
+Message-ID: <1395974461-12735-11-git-send-email-tj__45151.5719913461$1395974561$gmane$org@kernel.org>
 References: <1395974461-12735-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,45 +21,45 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-To implement the unified hierarchy behavior, we'll need to be able to
-determine the associated cgroup on the default hierarchy from css_set.
-Let's add css_set->dfl_cgrp so that it can be accessed conveniently
-and efficiently.
+Because the default root couldn't have any non-root csses attached to
+it, rebinding away from it was always allowed; however, the default
+hierarchy will soon host the unified hierarchy and have non-root csses
+so the rebind restrictions need to be updated accordingly.
+
+Instead of special casing rebinding from the default hierarchy and
+then checking whether the source hierarchy has children cgroups, which
+implies non-root csses for !dfl hierarchies, simply check whether the
+source hierarchy has non-root csses for the subsystem using
+css_next_child().
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- include/linux/cgroup.h | 3 +++
- kernel/cgroup.c        | 4 ++++
- 2 files changed, 7 insertions(+)
+ kernel/cgroup.c | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
 
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index cbfd8be..b6f5e40 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -354,6 +354,9 @@ struct css_set {
- 	 */
- 	struct list_head cgrp_links;
- 
-+	/* the default cgroup associated with this css_set */
-+	struct cgroup *dfl_cgrp;
-+
- 	/*
- 	 * Set of subsystem states, one for each subsystem. This array is
- 	 * immutable after creation apart from the init_css_set during
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 30f48b0..e714ccf 100644
+index e714ccf..0c67141 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -651,6 +651,10 @@ static void link_css_set(struct list_head *tmp_links, struct css_set *cset,
- 	struct cgrp_cset_link *link;
+@@ -1051,16 +1051,12 @@ static int rebind_subsystems(struct cgroup_root *dst_root,
+ 		if (!(ss_mask & (1 << ssid)))
+ 			continue;
  
- 	BUG_ON(list_empty(tmp_links));
-+
-+	if (cgroup_on_dfl(cgrp))
-+		cset->dfl_cgrp = cgrp;
-+
- 	link = list_first_entry(tmp_links, struct cgrp_cset_link, cset_link);
- 	link->cset = cset;
- 	link->cgrp = cgrp;
+-		/* if @ss is on the dummy_root, we can always move it */
+-		if (ss->root == &cgrp_dfl_root)
+-			continue;
+-
+-		/* if @ss has non-root cgroups attached to it, can't move */
+-		if (!list_empty(&ss->root->cgrp.children))
++		/* if @ss has non-root csses attached to it, can't move */
++		if (css_next_child(NULL, cgroup_css(&ss->root->cgrp, ss)))
+ 			return -EBUSY;
+ 
+ 		/* can't move between two non-dummy roots either */
+-		if (dst_root != &cgrp_dfl_root)
++		if (ss->root != &cgrp_dfl_root && dst_root != &cgrp_dfl_root)
+ 			return -EBUSY;
+ 	}
+ 
 -- 
 1.8.5.3
