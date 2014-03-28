@@ -1,8 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 08/12] cgroup: allow cgroup creation and suppress automatic
-	css creation in the unified hierarchy
-Date: Thu, 27 Mar 2014 22:40:57 -0400
-Message-ID: <1395974461-12735-9-git-send-email-tj@kernel.org>
+Subject: [PATCH 09/12] cgroup: add css_set->dfl_cgrp
+Date: Thu, 27 Mar 2014 22:40:58 -0400
+Message-ID: <1395974461-12735-10-git-send-email-tj@kernel.org>
 References: <1395974461-12735-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,62 +21,45 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Now that effective css handling has been added and iterators updated
-accordingly, it's safe to allow cgroup creation in the default
-hierarchy.  Unblock cgroup creation in the default hierarchy.
-
-As the default hierarchy will implement explicit enabling and
-disabling of controllers on each cgroup, suppress automatic css
-enabling on cgroup creation.
+To implement the unified hierarchy behavior, we'll need to be able to
+determine the associated cgroup on the default hierarchy from css_set.
+Let's add css_set->dfl_cgrp so that it can be accessed conveniently
+and efficiently.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- kernel/cgroup.c | 18 +++++++++---------
- 1 file changed, 9 insertions(+), 9 deletions(-)
+ include/linux/cgroup.h | 3 +++
+ kernel/cgroup.c        | 4 ++++
+ 2 files changed, 7 insertions(+)
 
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index cbfd8be..b6f5e40 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -354,6 +354,9 @@ struct css_set {
+ 	 */
+ 	struct list_head cgrp_links;
+ 
++	/* the default cgroup associated with this css_set */
++	struct cgroup *dfl_cgrp;
++
+ 	/*
+ 	 * Set of subsystem states, one for each subsystem. This array is
+ 	 * immutable after creation apart from the init_css_set during
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index c59946c..30f48b0 100644
+index 30f48b0..e714ccf 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -1115,8 +1115,10 @@ static int rebind_subsystems(struct cgroup_root *dst_root,
- 		src_root->subsys_mask &= ~(1 << ssid);
- 		src_root->cgrp.child_subsys_mask &= ~(1 << ssid);
+@@ -651,6 +651,10 @@ static void link_css_set(struct list_head *tmp_links, struct css_set *cset,
+ 	struct cgrp_cset_link *link;
  
-+		/* default hierarchy doesn't enable controllers by default */
- 		dst_root->subsys_mask |= 1 << ssid;
--		dst_root->cgrp.child_subsys_mask |= 1 << ssid;
-+		if (dst_root != &cgrp_dfl_root)
-+			dst_root->cgrp.child_subsys_mask |= 1 << ssid;
- 
- 		if (ss->bind)
- 			ss->bind(css);
-@@ -3765,13 +3767,6 @@ static long cgroup_create(struct cgroup *parent, const char *name,
- 	struct cgroup_subsys *ss;
- 	struct kernfs_node *kn;
- 
--	/*
--	 * XXX: The default hierarchy isn't fully implemented yet.  Block
--	 * !root cgroup creation on it for now.
--	 */
--	if (root == &cgrp_dfl_root)
--		return -EINVAL;
--
- 	/* allocate the cgroup and its ID, 0 is reserved for the root */
- 	cgrp = kzalloc(sizeof(*cgrp), GFP_KERNEL);
- 	if (!cgrp)
-@@ -3853,7 +3848,12 @@ static long cgroup_create(struct cgroup *parent, const char *name,
- 		}
- 	}
- 
--	cgrp->child_subsys_mask = parent->child_subsys_mask;
-+	/*
-+	 * On the default hierarchy, a child doesn't automatically inherit
-+	 * child_subsys_mask from the parent.  Each is configured manually.
-+	 */
-+	if (!cgroup_on_dfl(cgrp))
-+		cgrp->child_subsys_mask = parent->child_subsys_mask;
- 
- 	kernfs_activate(kn);
- 
+ 	BUG_ON(list_empty(tmp_links));
++
++	if (cgroup_on_dfl(cgrp))
++		cset->dfl_cgrp = cgrp;
++
+ 	link = list_first_entry(tmp_links, struct cgrp_cset_link, cset_link);
+ 	link->cset = cset;
+ 	link->cgrp = cgrp;
 -- 
 1.8.5.3
