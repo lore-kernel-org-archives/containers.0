@@ -1,18 +1,10 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH cgroup/for-3.15-fixes] cgroup: newly created dirs and files
-	should be owned by the creator
-Date: Mon, 7 Apr 2014 16:59:16 -0400
-Message-ID: <20140407205916.GD27461@htj.dyndns.org>
-References: <20140403164911.GE24119@htj.dyndns.org>
-	<CA+55aFyGz2q4iDEt56Bw+x_ri_-DQYLAKPJvk3Uxj9z-y+0uPw@mail.gmail.com>
-	<CA+55aFy+Jt0B32kj=Ldz9Krp4DXcXSP4r-o3f-2LPcVs4udGVA@mail.gmail.com>
-	<CA+55aFwM0aG1PHY7xOQbsFG+Ot4mL4=7yRnT7dssUaOyaLQ3GQ@mail.gmail.com>
+From: =?iso-8859-1?Q?St=E9phane?= Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: LXC 1.0.3 has been released!
+Date: Tue, 8 Apr 2014 19:25:03 -0400
+Message-ID: <20140408232503.GB27551__24757.1651627824$1396999528$gmane$org@castiana>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============4910187372092251131=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <CA+55aFwM0aG1PHY7xOQbsFG+Ot4mL4=7yRnT7dssUaOyaLQ3GQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,98 +14,72 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, lxc-users-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Applied to cgroup/for-3.15.  Will soon send pull request for this one
-and the cgroup_root refcnt fix from Li.
 
-Thanks.
+--===============4910187372092251131==
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="wq9mPyueHGvFACwf"
+Content-Disposition: inline
 
------- 8< ------
-From 49957f8e2a43035a97d05bddefa394492a969c0d Mon Sep 17 00:00:00 2001
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Date: Mon, 7 Apr 2014 16:44:47 -0400
 
-While converting cgroup to kernfs, 2bd59d48ebfb ("cgroup: convert to
-kernfs") accidentally dropped the logic which makes newly created
-cgroup dirs and files owned by the current uid / gid.  This broke
-cases where cgroup subtree management is delegated to !root as the sub
-manager wouldn't be able to create more than single level of hierarchy
-or put tasks into child cgroups it created.
+--wq9mPyueHGvFACwf
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Among other things, this breaks user session management in systemd and
-one of the symptoms was 90s hang during shutdown.  User session
-systemd running as the user creates a sub-service to initiate shutdown
-and tries to put kill(1) into it but fails because cgroup.procs is
-owned by root.  This leads to 90s hang during shutdown.
+Hello everyone,
 
-Implement cgroup_kn_set_ugid() which sets a kn's uid and gid to those
-of the caller and use it from file and dir creation paths.
+The third LXC 1.0 bugfix release is now out!
 
-Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Reported-by: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
----
- kernel/cgroup.c | 27 ++++++++++++++++++++++++++-
- 1 file changed, 26 insertions(+), 1 deletion(-)
+The full announcement and changelog may be found at:
+https://linuxcontainers.org/news/
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 0dfc732..9fcdaa7 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -2346,11 +2346,26 @@ static int cgroup_rename(struct kernfs_node *kn, struct kernfs_node *new_parent,
- 	return ret;
- }
- 
-+/* set uid and gid of cgroup dirs and files to that of the creator */
-+static int cgroup_kn_set_ugid(struct kernfs_node *kn)
-+{
-+	struct iattr iattr = { .ia_valid = ATTR_UID | ATTR_GID,
-+			       .ia_uid = current_fsuid(),
-+			       .ia_gid = current_fsgid(), };
-+
-+	if (uid_eq(iattr.ia_uid, GLOBAL_ROOT_UID) &&
-+	    gid_eq(iattr.ia_gid, GLOBAL_ROOT_GID))
-+		return 0;
-+
-+	return kernfs_setattr(kn, &iattr);
-+}
-+
- static int cgroup_add_file(struct cgroup *cgrp, struct cftype *cft)
- {
- 	char name[CGROUP_FILE_NAME_MAX];
- 	struct kernfs_node *kn;
- 	struct lock_class_key *key = NULL;
-+	int ret;
- 
- #ifdef CONFIG_DEBUG_LOCK_ALLOC
- 	key = &cft->lockdep_key;
-@@ -2358,7 +2373,13 @@ static int cgroup_add_file(struct cgroup *cgrp, struct cftype *cft)
- 	kn = __kernfs_create_file(cgrp->kn, cgroup_file_name(cgrp, cft, name),
- 				  cgroup_file_mode(cft), 0, cft->kf_ops, cft,
- 				  NULL, false, key);
--	return PTR_ERR_OR_ZERO(kn);
-+	if (IS_ERR(kn))
-+		return PTR_ERR(kn);
-+
-+	ret = cgroup_kn_set_ugid(kn);
-+	if (ret)
-+		kernfs_remove(kn);
-+	return ret;
- }
- 
- /**
-@@ -3753,6 +3774,10 @@ static long cgroup_create(struct cgroup *parent, const char *name,
- 	 */
- 	idr_replace(&root->cgroup_idr, cgrp, cgrp->id);
- 
-+	err = cgroup_kn_set_ugid(kn);
-+	if (err)
-+		goto err_destroy;
-+
- 	err = cgroup_addrm_files(cgrp, cgroup_base_files, true);
- 	if (err)
- 		goto err_destroy;
--- 
-1.9.0
+And as usual our tarballs may be downloaded from:
+https://linuxcontainers.org/downloads/
+
+
+As a reminder, LXC upstream is planning on maintaining the LXC 1.0
+branch with frequent bugfix and security updates until April 2019, this
+is the first of many such releases.
+
+
+St=E9phane Graber
+On behalf of the LXC development team
+
+--wq9mPyueHGvFACwf
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCgAGBQJTRIVPAAoJEMY4l01keS1n/04P/i25Yd/MyMEwMDxy21o/NBg/
+JqVeAiGnzCbZK507XEWvftf08ZStaO/3tyi9yIVsvAcOoiT5nEaK+KkJoqL0pfAZ
+1GX/IzxnFNiqWkLj17+HxzQPJebUQbKKw7MuIcvWwwBWjo8xtJap7JCTFUTAW5Mg
+NiFoDuk5aqsPh/U3D5Zb1GWxwKg/RhayH351XK8orpqAkU8OYqzDcEhuiin/xU3n
+4Jfme/YQyhRwiMYh3JhxAC4k9ccqKtkvQPjemDppST7euHVs3v/K3Tb+07nyKZ2P
+E4nYLTRFVsXv/P8c6AgtjNJYYL/RQT91SI2tOL9mmUPGrrHwDZbYasgaeR6kl04U
+B6jQPPoH3VNhQS7Nccb1R5dMy4V2xIdn+/CkmjJt2lEV61B3ayLLvfeq9YXMzw0h
+FTWswX0Gros3blUj0+XkF3GR8m8USW5T47i1HXZ2wNDhjKzkAXojcRd3upkaUV16
+rRnffQhMJPqBRURKZsgwDAtT/8yxCyOObVADEZQ8tlcdtLgF/RBXk8J1X8XQuPqH
+j5jUHDh5B5ljXb9/oyCGyHOK/bXylU8Au/d4pG6JocnTtA+P0OOS1aLJUFO/rnu6
+LtOzVXolQq7v21W/fVmw0UEZ+AkdQMAoJLr86+nYU0S4k/RT5xYpuhXYZsLxj3Cw
++vAF+7QBia+G4jBef5RK
+=FewV
+-----END PGP SIGNATURE-----
+
+--wq9mPyueHGvFACwf--
+
+--===============4910187372092251131==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============4910187372092251131==--
