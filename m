@@ -1,11 +1,13 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCHSET cgroup/for-3.16] cgroup: implement cgroup.populated
-Date: Wed,  9 Apr 2014 11:07:29 -0400
-Message-ID: <1397056052-2829-1-git-send-email-tj@kernel.org>
+Subject: [PATCH 1/3] kernfs: implement kernfs_root->supers list
+Date: Wed,  9 Apr 2014 11:07:30 -0400
+Message-ID: <1397056052-2829-2-git-send-email-tj@kernel.org>
+References: <1397056052-2829-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1397056052-2829-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,51 +18,116 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org
-Cc: rlove-L7G0xEPcOZbYtjvyW6yDsg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, kay-tD+1rO4QERM@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, john-jueV0HHMeujJJrXXpGQQMAC/G2K4zDHf@public.gmane.org
+Cc: rlove-L7G0xEPcOZbYtjvyW6yDsg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, kay-tD+1rO4QERM@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, john-jueV0HHMeujJJrXXpGQQMAC/G2K4zDHf@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello,
+Currently, there's no way to find out which super_blocks are
+associated with a given kernfs_root.  Let's implement it - the planned
+inotify extension to kernfs_notify() needs it.
 
-(inotify folks, can you please review the second patch which hooks up
- kernfs_notify() with fsnotify?  It works but directly invoking
- fsnotify_parent() and fsnotify() feels a bit dirty.  Maybe something
- like fsnotify_notify_modify_by_dentry() would make more sense?)
+Make kernfs_super_info point back to the super_block and chain it at
+kernfs_root->supers.
 
-cgroup users often need a way to determine when a cgroup's
-subhierarchy becomes empty so that it can be cleaned up.  cgroup
-currently provides release_agent for it; unfortunately, this mechanism
-is riddled with issues.  This patchset implements a replacement
-mechanism "cgroup.subtree_populated" which can be used to monitor
-whether the cgroup's subhierarchy has tasks in it or not and triggers
-poll and [di]notify events when its content changes.
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>
+---
+ fs/kernfs/dir.c             |  1 +
+ fs/kernfs/kernfs-internal.h |  5 +++++
+ fs/kernfs/mount.c           | 11 +++++++++++
+ include/linux/kernfs.h      |  4 ++++
+ 4 files changed, 21 insertions(+)
 
-This patchset contains the following three patches.
-
- 0001-kernfs-implement-kernfs_root-supers-list.patch
- 0002-kernfs-make-kernfs_notify-trigger-inotify-events-too.patch
- 0003-cgroup-implement-cgroup.subtree_populated-for-the-de.patch
-
-0001-0002 add [di]notify notification to kernfs_notify().
-
-0003 implements cgroup.subtree_populated.
-
-This patchset is on top of "cgroup: implement unified hierarchy"
-patchset[1] and availalbe in the following git branch.
-
- git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-populated
-
-diffstat follows.
-
- fs/kernfs/dir.c             |    1 
- fs/kernfs/file.c            |   41 +++++++++++++++++++++++----
- fs/kernfs/kernfs-internal.h |    5 +++
- fs/kernfs/mount.c           |   11 +++++++
- include/linux/cgroup.h      |   15 ++++++++++
- include/linux/kernfs.h      |    4 ++
- kernel/cgroup.c             |   65 +++++++++++++++++++++++++++++++++++++++++---
- 7 files changed, 132 insertions(+), 10 deletions(-)
-
---
-tejun
-
-[1] http://lkml.kernel.org/g/1395974461-12735-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org
+diff --git a/fs/kernfs/dir.c b/fs/kernfs/dir.c
+index 939684e..a8bf7ac 100644
+--- a/fs/kernfs/dir.c
++++ b/fs/kernfs/dir.c
+@@ -711,6 +711,7 @@ struct kernfs_root *kernfs_create_root(struct kernfs_syscall_ops *scops,
+ 		return ERR_PTR(-ENOMEM);
+ 
+ 	ida_init(&root->ino_ida);
++	INIT_LIST_HEAD(&root->supers);
+ 
+ 	kn = __kernfs_new_node(root, "", S_IFDIR | S_IRUGO | S_IXUGO,
+ 			       KERNFS_DIR);
+diff --git a/fs/kernfs/kernfs-internal.h b/fs/kernfs/kernfs-internal.h
+index a91d7a1..61e0920 100644
+--- a/fs/kernfs/kernfs-internal.h
++++ b/fs/kernfs/kernfs-internal.h
+@@ -49,6 +49,8 @@ static inline struct kernfs_root *kernfs_root(struct kernfs_node *kn)
+  * mount.c
+  */
+ struct kernfs_super_info {
++	struct super_block	*sb;
++
+ 	/*
+ 	 * The root associated with this super_block.  Each super_block is
+ 	 * identified by the root and ns it's associated with.
+@@ -62,6 +64,9 @@ struct kernfs_super_info {
+ 	 * an array and compare kernfs_node tag against every entry.
+ 	 */
+ 	const void		*ns;
++
++	/* anchored at kernfs_root->supers, protected by kernfs_mutex */
++	struct list_head	node;
+ };
+ #define kernfs_info(SB) ((struct kernfs_super_info *)(SB->s_fs_info))
+ 
+diff --git a/fs/kernfs/mount.c b/fs/kernfs/mount.c
+index e5b28b0..1f80295 100644
+--- a/fs/kernfs/mount.c
++++ b/fs/kernfs/mount.c
+@@ -68,6 +68,7 @@ static int kernfs_fill_super(struct super_block *sb)
+ 	struct inode *inode;
+ 	struct dentry *root;
+ 
++	info->sb = sb;
+ 	sb->s_blocksize = PAGE_CACHE_SIZE;
+ 	sb->s_blocksize_bits = PAGE_CACHE_SHIFT;
+ 	sb->s_magic = SYSFS_MAGIC;
+@@ -160,12 +161,18 @@ struct dentry *kernfs_mount_ns(struct file_system_type *fs_type, int flags,
+ 	if (IS_ERR(sb))
+ 		return ERR_CAST(sb);
+ 	if (!sb->s_root) {
++		struct kernfs_super_info *info = kernfs_info(sb);
++
+ 		error = kernfs_fill_super(sb);
+ 		if (error) {
+ 			deactivate_locked_super(sb);
+ 			return ERR_PTR(error);
+ 		}
+ 		sb->s_flags |= MS_ACTIVE;
++
++		mutex_lock(&kernfs_mutex);
++		list_add(&info->node, &root->supers);
++		mutex_unlock(&kernfs_mutex);
+ 	}
+ 
+ 	return dget(sb->s_root);
+@@ -184,6 +191,10 @@ void kernfs_kill_sb(struct super_block *sb)
+ 	struct kernfs_super_info *info = kernfs_info(sb);
+ 	struct kernfs_node *root_kn = sb->s_root->d_fsdata;
+ 
++	mutex_lock(&kernfs_mutex);
++	list_del(&info->node);
++	mutex_unlock(&kernfs_mutex);
++
+ 	/*
+ 	 * Remove the superblock from fs_supers/s_instances
+ 	 * so we can't find it, before freeing kernfs_super_info.
+diff --git a/include/linux/kernfs.h b/include/linux/kernfs.h
+index 649497a..d8ec4f2 100644
+--- a/include/linux/kernfs.h
++++ b/include/linux/kernfs.h
+@@ -144,6 +144,10 @@ struct kernfs_root {
+ 	/* private fields, do not use outside kernfs proper */
+ 	struct ida		ino_ida;
+ 	struct kernfs_syscall_ops *syscall_ops;
++
++	/* list of kernfs_super_info of this root, protected by kernfs_mutex */
++	struct list_head	supers;
++
+ 	wait_queue_head_t	deactivate_waitq;
+ };
+ 
+-- 
+1.9.0
