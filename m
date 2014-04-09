@@ -1,9 +1,10 @@
-From: =?iso-8859-1?Q?St=E9phane?= Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: LXC 1.0.3 has been released!
-Date: Tue, 8 Apr 2014 19:25:03 -0400
-Message-ID: <20140408232503.GB27551__24757.1651627824$1396999528$gmane$org@castiana>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCHSET cgroup/for-3.16] cgroup: implement cgroup.populated
+Date: Wed,  9 Apr 2014 11:07:29 -0400
+Message-ID: <1397056052-2829-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============4910187372092251131=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -14,72 +15,52 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, lxc-users-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org
+Cc: rlove-L7G0xEPcOZbYtjvyW6yDsg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, kay-tD+1rO4QERM@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, john-jueV0HHMeujJJrXXpGQQMAC/G2K4zDHf@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Hello,
 
---===============4910187372092251131==
-Content-Type: multipart/signed; micalg=pgp-sha512;
-	protocol="application/pgp-signature"; boundary="wq9mPyueHGvFACwf"
-Content-Disposition: inline
+(inotify folks, can you please review the second patch which hooks up
+ kernfs_notify() with fsnotify?  It works but directly invoking
+ fsnotify_parent() and fsnotify() feels a bit dirty.  Maybe something
+ like fsnotify_notify_modify_by_dentry() would make more sense?)
 
+cgroup users often need a way to determine when a cgroup's
+subhierarchy becomes empty so that it can be cleaned up.  cgroup
+currently provides release_agent for it; unfortunately, this mechanism
+is riddled with issues.  This patchset implements a replacement
+mechanism "cgroup.subtree_populated" which can be used to monitor
+whether the cgroup's subhierarchy has tasks in it or not and triggers
+poll and [di]notify events when its content changes.
 
---wq9mPyueHGvFACwf
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+This patchset contains the following three patches.
 
-Hello everyone,
+ 0001-kernfs-implement-kernfs_root-supers-list.patch
+ 0002-kernfs-make-kernfs_notify-trigger-inotify-events-too.patch
+ 0003-cgroup-implement-cgroup.subtree_populated-for-the-de.patch
 
-The third LXC 1.0 bugfix release is now out!
+0001-0002 add [di]notify notification to kernfs_notify().
 
-The full announcement and changelog may be found at:
-https://linuxcontainers.org/news/
+0003 implements cgroup.subtree_populated.
 
-And as usual our tarballs may be downloaded from:
-https://linuxcontainers.org/downloads/
+This patchset is on top of "cgroup: implement unified hierarchy"
+patchset[1] and availalbe in the following git branch.
 
+ git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-populated
 
-As a reminder, LXC upstream is planning on maintaining the LXC 1.0
-branch with frequent bugfix and security updates until April 2019, this
-is the first of many such releases.
+diffstat follows.
 
+ fs/kernfs/dir.c             |    1 
+ fs/kernfs/file.c            |   41 +++++++++++++++++++++++----
+ fs/kernfs/kernfs-internal.h |    5 +++
+ fs/kernfs/mount.c           |   11 +++++++
+ include/linux/cgroup.h      |   15 ++++++++++
+ include/linux/kernfs.h      |    4 ++
+ kernel/cgroup.c             |   65 +++++++++++++++++++++++++++++++++++++++++---
+ 7 files changed, 132 insertions(+), 10 deletions(-)
 
-St=E9phane Graber
-On behalf of the LXC development team
+--
+tejun
 
---wq9mPyueHGvFACwf
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBCgAGBQJTRIVPAAoJEMY4l01keS1n/04P/i25Yd/MyMEwMDxy21o/NBg/
-JqVeAiGnzCbZK507XEWvftf08ZStaO/3tyi9yIVsvAcOoiT5nEaK+KkJoqL0pfAZ
-1GX/IzxnFNiqWkLj17+HxzQPJebUQbKKw7MuIcvWwwBWjo8xtJap7JCTFUTAW5Mg
-NiFoDuk5aqsPh/U3D5Zb1GWxwKg/RhayH351XK8orpqAkU8OYqzDcEhuiin/xU3n
-4Jfme/YQyhRwiMYh3JhxAC4k9ccqKtkvQPjemDppST7euHVs3v/K3Tb+07nyKZ2P
-E4nYLTRFVsXv/P8c6AgtjNJYYL/RQT91SI2tOL9mmUPGrrHwDZbYasgaeR6kl04U
-B6jQPPoH3VNhQS7Nccb1R5dMy4V2xIdn+/CkmjJt2lEV61B3ayLLvfeq9YXMzw0h
-FTWswX0Gros3blUj0+XkF3GR8m8USW5T47i1HXZ2wNDhjKzkAXojcRd3upkaUV16
-rRnffQhMJPqBRURKZsgwDAtT/8yxCyOObVADEZQ8tlcdtLgF/RBXk8J1X8XQuPqH
-j5jUHDh5B5ljXb9/oyCGyHOK/bXylU8Au/d4pG6JocnTtA+P0OOS1aLJUFO/rnu6
-LtOzVXolQq7v21W/fVmw0UEZ+AkdQMAoJLr86+nYU0S4k/RT5xYpuhXYZsLxj3Cw
-+vAF+7QBia+G4jBef5RK
-=FewV
------END PGP SIGNATURE-----
-
---wq9mPyueHGvFACwf--
-
---===============4910187372092251131==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============4910187372092251131==--
+[1] http://lkml.kernel.org/g/1395974461-12735-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org
