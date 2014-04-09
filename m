@@ -1,7 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 1/3] kernfs: implement kernfs_root->supers list
-Date: Wed,  9 Apr 2014 11:07:30 -0400
-Message-ID: <1397056052-2829-2-git-send-email-tj@kernel.org>
+Subject: [PATCH 2/3] kernfs: make kernfs_notify() trigger inotify events too
+Date: Wed,  9 Apr 2014 11:07:31 -0400
+Message-ID: <1397056052-2829-3-git-send-email-tj@kernel.org>
 References: <1397056052-2829-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,113 +21,101 @@ To: gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org
 Cc: rlove-L7G0xEPcOZbYtjvyW6yDsg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, kay-tD+1rO4QERM@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, john-jueV0HHMeujJJrXXpGQQMAC/G2K4zDHf@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Currently, there's no way to find out which super_blocks are
-associated with a given kernfs_root.  Let's implement it - the planned
-inotify extension to kernfs_notify() needs it.
+kernfs_notify() is used to indicate either new data is available or
+the content of a file has changed.  It currently only triggers poll
+which may not be the most convenient to monitor especially when there
+are a lot to monitor.  Let's hook it up to fsnotify too so that the
+events can be monitored via inotify too.
 
-Make kernfs_super_info point back to the super_block and chain it at
-kernfs_root->supers.
+fsnotify_modify() requires file * but kernfs_notify() doesn't have any
+specific file associated; however, we can walk all super_blocks
+associated with a kernfs_root and as kernfs always associate one ino
+with inode and one dentry with an inode, it's trivial to look up the
+dentry associated with a given kernfs_node.  As any active monitor
+would pin dentry, just looking up existing dentry is enough.  This
+patch looks up the dentry associated with the specified kernfs_node
+and generates events equivalent to fsnotify_modify().
+
+Note that as fsnotify doesn't provide fsnotify_modify() equivalent
+which can be called with dentry, kernfs_notify() directly calls
+fsnotify_parent() and fsnotify().  It might be better to add a wrapper
+in fsnotify.h instead.
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Cc: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>
+Cc: John McCutchan <john-jueV0HHMeujJJrXXpGQQMAC/G2K4zDHf@public.gmane.org>
+Cc: Robert Love <rlove-L7G0xEPcOZbYtjvyW6yDsg@public.gmane.org>
+Cc: Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>
 ---
- fs/kernfs/dir.c             |  1 +
- fs/kernfs/kernfs-internal.h |  5 +++++
- fs/kernfs/mount.c           | 11 +++++++++++
- include/linux/kernfs.h      |  4 ++++
- 4 files changed, 21 insertions(+)
+ fs/kernfs/file.c | 41 +++++++++++++++++++++++++++++++++++------
+ 1 file changed, 35 insertions(+), 6 deletions(-)
 
-diff --git a/fs/kernfs/dir.c b/fs/kernfs/dir.c
-index 939684e..a8bf7ac 100644
---- a/fs/kernfs/dir.c
-+++ b/fs/kernfs/dir.c
-@@ -711,6 +711,7 @@ struct kernfs_root *kernfs_create_root(struct kernfs_syscall_ops *scops,
- 		return ERR_PTR(-ENOMEM);
+diff --git a/fs/kernfs/file.c b/fs/kernfs/file.c
+index ddcb471..774af54 100644
+--- a/fs/kernfs/file.c
++++ b/fs/kernfs/file.c
+@@ -14,6 +14,7 @@
+ #include <linux/poll.h>
+ #include <linux/pagemap.h>
+ #include <linux/sched.h>
++#include <linux/fsnotify.h>
  
- 	ida_init(&root->ino_ida);
-+	INIT_LIST_HEAD(&root->supers);
+ #include "kernfs-internal.h"
  
- 	kn = __kernfs_new_node(root, "", S_IFDIR | S_IRUGO | S_IXUGO,
- 			       KERNFS_DIR);
-diff --git a/fs/kernfs/kernfs-internal.h b/fs/kernfs/kernfs-internal.h
-index a91d7a1..61e0920 100644
---- a/fs/kernfs/kernfs-internal.h
-+++ b/fs/kernfs/kernfs-internal.h
-@@ -49,6 +49,8 @@ static inline struct kernfs_root *kernfs_root(struct kernfs_node *kn)
-  * mount.c
+@@ -784,20 +785,48 @@ static unsigned int kernfs_fop_poll(struct file *filp, poll_table *wait)
   */
- struct kernfs_super_info {
-+	struct super_block	*sb;
-+
- 	/*
- 	 * The root associated with this super_block.  Each super_block is
- 	 * identified by the root and ns it's associated with.
-@@ -62,6 +64,9 @@ struct kernfs_super_info {
- 	 * an array and compare kernfs_node tag against every entry.
- 	 */
- 	const void		*ns;
-+
-+	/* anchored at kernfs_root->supers, protected by kernfs_mutex */
-+	struct list_head	node;
- };
- #define kernfs_info(SB) ((struct kernfs_super_info *)(SB->s_fs_info))
+ void kernfs_notify(struct kernfs_node *kn)
+ {
++	struct kernfs_root *root = kernfs_root(kn);
+ 	struct kernfs_open_node *on;
++	struct kernfs_super_info *info;
+ 	unsigned long flags;
  
-diff --git a/fs/kernfs/mount.c b/fs/kernfs/mount.c
-index e5b28b0..1f80295 100644
---- a/fs/kernfs/mount.c
-+++ b/fs/kernfs/mount.c
-@@ -68,6 +68,7 @@ static int kernfs_fill_super(struct super_block *sb)
- 	struct inode *inode;
- 	struct dentry *root;
++	if (WARN_ON(kernfs_type(kn) != KERNFS_FILE))
++		return;
++
++	/* kick poll */
+ 	spin_lock_irqsave(&kernfs_open_node_lock, flags);
  
-+	info->sb = sb;
- 	sb->s_blocksize = PAGE_CACHE_SIZE;
- 	sb->s_blocksize_bits = PAGE_CACHE_SHIFT;
- 	sb->s_magic = SYSFS_MAGIC;
-@@ -160,12 +161,18 @@ struct dentry *kernfs_mount_ns(struct file_system_type *fs_type, int flags,
- 	if (IS_ERR(sb))
- 		return ERR_CAST(sb);
- 	if (!sb->s_root) {
-+		struct kernfs_super_info *info = kernfs_info(sb);
-+
- 		error = kernfs_fill_super(sb);
- 		if (error) {
- 			deactivate_locked_super(sb);
- 			return ERR_PTR(error);
- 		}
- 		sb->s_flags |= MS_ACTIVE;
-+
-+		mutex_lock(&kernfs_mutex);
-+		list_add(&info->node, &root->supers);
-+		mutex_unlock(&kernfs_mutex);
+-	if (!WARN_ON(kernfs_type(kn) != KERNFS_FILE)) {
+-		on = kn->attr.open;
+-		if (on) {
+-			atomic_inc(&on->event);
+-			wake_up_interruptible(&on->poll);
+-		}
++	on = kn->attr.open;
++	if (on) {
++		atomic_inc(&on->event);
++		wake_up_interruptible(&on->poll);
  	}
  
- 	return dget(sb->s_root);
-@@ -184,6 +191,10 @@ void kernfs_kill_sb(struct super_block *sb)
- 	struct kernfs_super_info *info = kernfs_info(sb);
- 	struct kernfs_node *root_kn = sb->s_root->d_fsdata;
- 
+ 	spin_unlock_irqrestore(&kernfs_open_node_lock, flags);
++
++	/* kick fsnotify */
 +	mutex_lock(&kernfs_mutex);
-+	list_del(&info->node);
++
++	list_for_each_entry(info, &root->supers, node) {
++		struct inode *inode;
++		struct dentry *dentry;
++
++		inode = ilookup(info->sb, kn->ino);
++		if (!inode)
++			continue;
++
++		dentry = d_find_any_alias(inode);
++		if (dentry) {
++			fsnotify_parent(NULL, dentry, FS_MODIFY);
++			fsnotify(inode, FS_MODIFY, inode, FSNOTIFY_EVENT_INODE,
++				 NULL, 0);
++			dput(dentry);
++		}
++
++		iput(inode);
++	}
++
 +	mutex_unlock(&kernfs_mutex);
-+
- 	/*
- 	 * Remove the superblock from fs_supers/s_instances
- 	 * so we can't find it, before freeing kernfs_super_info.
-diff --git a/include/linux/kernfs.h b/include/linux/kernfs.h
-index 649497a..d8ec4f2 100644
---- a/include/linux/kernfs.h
-+++ b/include/linux/kernfs.h
-@@ -144,6 +144,10 @@ struct kernfs_root {
- 	/* private fields, do not use outside kernfs proper */
- 	struct ida		ino_ida;
- 	struct kernfs_syscall_ops *syscall_ops;
-+
-+	/* list of kernfs_super_info of this root, protected by kernfs_mutex */
-+	struct list_head	supers;
-+
- 	wait_queue_head_t	deactivate_waitq;
- };
+ }
+ EXPORT_SYMBOL_GPL(kernfs_notify);
  
 -- 
 1.9.0
