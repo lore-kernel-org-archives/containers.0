@@ -1,8 +1,7 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 01/12] cgroup: update cgroup->subsys_mask to
-	->child_subsys_mask and restore cgroup_root->subsys_mask
-Date: Mon, 14 Apr 2014 17:36:59 -0400
-Message-ID: <1397511430-2673-2-git-send-email-tj__45885.762156877$1397511451$gmane$org@kernel.org>
+Subject: [PATCH 02/12] cgroup: introduce effective cgroup_subsys_state
+Date: Mon, 14 Apr 2014 17:37:00 -0400
+Message-ID: <1397511430-2673-3-git-send-email-tj@kernel.org>
 References: <1397511430-2673-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,213 +21,182 @@ To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
 Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-944196278d3d ("cgroup: move ->subsys_mask from cgroupfs_root to
-cgroup") moved ->subsys_mask from cgroup_root to cgroup to prepare for
-the unified hierarhcy; however, it turns out that carrying the
-subsys_mask of the children in the parent, instead of itself, is a lot
-more natural.  This patch restores cgroup_root->subsys_mask and morphs
-cgroup->subsys_mask into cgroup->child_subsys_mask.
+In the planned default unified hierarchy, controllers may get
+dynamically attached to and detached from a cgroup and a cgroup may
+not have csses for all the controllers associated with the hierarchy.
 
-* Uses of root->cgrp.subsys_mask are restored to root->subsys_mask.
+When a cgroup doesn't have its own css for a given controller, the css
+of the nearest ancestor with the controller enabled will be used,
+which is called the effective css.  This patch introduces
+cgroup_e_css() and for_each_e_css() to access the effective csses and
+convert compare_css_sets(), find_existing_css_set() and
+cgroup_migrate() to use the effective csses so that they can handle
+cgroups with partial csses correctly.
 
-* Remove automatic setting and clearing of cgrp->subsys_mask and
-  instead just inherit ->child_subsys_mask from the parent during
-  cgroup creation.  Note that this doesn't affect any current
-  behaviors.
+This means that for two css_sets to be considered identical, they
+should have both matching csses and cgroups.  compare_css_sets()
+already compares both, not for correctness but for optimization.  As
+this now becomes a matter of correctness, update the comments
+accordingly.
 
-* Undo __kill_css() separation.
+For all !default hierarchies, cgroup_e_css() always equals
+cgroup_css(), so this patch doesn't change behavior.
+
+While at it, fix incorrect locking comment for for_each_css().
 
 Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 ---
- include/linux/cgroup.h |  7 ++++--
- kernel/cgroup.c        | 64 +++++++++++++++++++++-----------------------------
- 2 files changed, 32 insertions(+), 39 deletions(-)
+ kernel/cgroup.c | 83 ++++++++++++++++++++++++++++++++++++++++++++-------------
+ 1 file changed, 64 insertions(+), 19 deletions(-)
 
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index c251585..1b5b2fe 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -173,8 +173,8 @@ struct cgroup {
- 	 */
- 	u64 serial_nr;
- 
--	/* The bitmask of subsystems attached to this cgroup */
--	unsigned long subsys_mask;
-+	/* the bitmask of subsystems enabled on the child cgroups */
-+	unsigned long child_subsys_mask;
- 
- 	/* Private pointers for each registered subsystem */
- 	struct cgroup_subsys_state __rcu *subsys[CGROUP_SUBSYS_COUNT];
-@@ -282,6 +282,9 @@ enum {
- struct cgroup_root {
- 	struct kernfs_root *kf_root;
- 
-+	/* The bitmask of subsystems attached to this hierarchy */
-+	unsigned long subsys_mask;
-+
- 	/* Unique id for this hierarchy. */
- 	int hierarchy_id;
- 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 9fcdaa7..dd40679 100644
+index dd40679..a6a438f 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -529,7 +529,7 @@ static struct css_set *find_existing_css_set(struct css_set *old_cset,
- 	 * won't change, so no need for locking.
- 	 */
- 	for_each_subsys(ss, i) {
--		if (root->cgrp.subsys_mask & (1UL << i)) {
-+		if (root->subsys_mask & (1UL << i)) {
- 			/* Subsystem is in this hierarchy. So we want
- 			 * the subsystem state from the new
- 			 * cgroup */
-@@ -742,7 +742,7 @@ static void cgroup_destroy_root(struct cgroup_root *root)
- 	BUG_ON(!list_empty(&cgrp->children));
- 
- 	/* Rebind all subsystems back to the default hierarchy */
--	rebind_subsystems(&cgrp_dfl_root, cgrp->subsys_mask);
-+	rebind_subsystems(&cgrp_dfl_root, root->subsys_mask);
- 
- 	/*
- 	 * Release all the links from cset_links to this hierarchy's
-@@ -1050,8 +1050,11 @@ static int rebind_subsystems(struct cgroup_root *dst_root,
- 		ss->root = dst_root;
- 		css->cgroup = &dst_root->cgrp;
- 
--		src_root->cgrp.subsys_mask &= ~(1 << ssid);
--		dst_root->cgrp.subsys_mask |= 1 << ssid;
-+		src_root->subsys_mask &= ~(1 << ssid);
-+		src_root->cgrp.child_subsys_mask &= ~(1 << ssid);
-+
-+		dst_root->subsys_mask |= 1 << ssid;
-+		dst_root->cgrp.child_subsys_mask |= 1 << ssid;
- 
- 		if (ss->bind)
- 			ss->bind(css);
-@@ -1069,7 +1072,7 @@ static int cgroup_show_options(struct seq_file *seq,
- 	int ssid;
- 
- 	for_each_subsys(ss, ssid)
--		if (root->cgrp.subsys_mask & (1 << ssid))
-+		if (root->subsys_mask & (1 << ssid))
- 			seq_printf(seq, ",%s", ss->name);
- 	if (root->flags & CGRP_ROOT_SANE_BEHAVIOR)
- 		seq_puts(seq, ",sane_behavior");
-@@ -1273,12 +1276,12 @@ static int cgroup_remount(struct kernfs_root *kf_root, int *flags, char *data)
- 	if (ret)
- 		goto out_unlock;
- 
--	if (opts.subsys_mask != root->cgrp.subsys_mask || opts.release_agent)
-+	if (opts.subsys_mask != root->subsys_mask || opts.release_agent)
- 		pr_warning("cgroup: option changes via remount are deprecated (pid=%d comm=%s)\n",
- 			   task_tgid_nr(current), current->comm);
- 
--	added_mask = opts.subsys_mask & ~root->cgrp.subsys_mask;
--	removed_mask = root->cgrp.subsys_mask & ~opts.subsys_mask;
-+	added_mask = opts.subsys_mask & ~root->subsys_mask;
-+	removed_mask = root->subsys_mask & ~opts.subsys_mask;
- 
- 	/* Don't allow flags or name to change at remount */
- 	if (((opts.flags ^ root->flags) & CGRP_ROOT_OPTION_MASK) ||
-@@ -1535,7 +1538,7 @@ retry:
- 		 * subsystems) then they must match.
- 		 */
- 		if ((opts.subsys_mask || opts.none) &&
--		    (opts.subsys_mask != root->cgrp.subsys_mask)) {
-+		    (opts.subsys_mask != root->subsys_mask)) {
- 			if (!name_match)
- 				continue;
- 			ret = -EBUSY;
-@@ -3662,8 +3665,6 @@ static int create_css(struct cgroup *cgrp, struct cgroup_subsys *ss)
- 	cgroup_get(cgrp);
- 	css_get(css->parent);
- 
--	cgrp->subsys_mask |= 1 << ss->id;
--
- 	if (ss->broken_hierarchy && !ss->warned_broken_hierarchy &&
- 	    parent->parent) {
- 		pr_warning("cgroup: %s (%d) created nested cgroup for controller \"%s\" which has incomplete hierarchy support. Nested cgroups may change behavior in the future.\n",
-@@ -3784,13 +3785,15 @@ static long cgroup_create(struct cgroup *parent, const char *name,
- 
- 	/* let's create and online css's */
- 	for_each_subsys(ss, ssid) {
--		if (root->cgrp.subsys_mask & (1 << ssid)) {
-+		if (parent->child_subsys_mask & (1 << ssid)) {
- 			err = create_css(cgrp, ss);
- 			if (err)
- 				goto err_destroy;
- 		}
- 	}
- 
-+	cgrp->child_subsys_mask = parent->child_subsys_mask;
-+
- 	kernfs_activate(kn);
- 
- 	mutex_unlock(&cgroup_mutex);
-@@ -3886,7 +3889,16 @@ static void css_killed_ref_fn(struct percpu_ref *ref)
- 	queue_work(cgroup_destroy_wq, &css->destroy_work);
+@@ -208,6 +208,34 @@ static struct cgroup_subsys_state *cgroup_css(struct cgroup *cgrp,
+ 		return &cgrp->dummy_css;
  }
  
--static void __kill_css(struct cgroup_subsys_state *css)
 +/**
-+ * kill_css - destroy a css
-+ * @css: css to destroy
++ * cgroup_e_css - obtain a cgroup's effective css for the specified subsystem
++ * @cgrp: the cgroup of interest
++ * @ss: the subsystem of interest (%NULL returns the dummy_css)
 + *
-+ * This function initiates destruction of @css by removing cgroup interface
-+ * files and putting its base reference.  ->css_offline() will be invoked
-+ * asynchronously once css_tryget() is guaranteed to fail and when the
-+ * reference count reaches zero, @css will be released.
++ * Similar to cgroup_css() but returns the effctive css, which is defined
++ * as the matching css of the nearest ancestor including self which has @ss
++ * enabled.  If @ss is associated with the hierarchy @cgrp is on, this
++ * function is guaranteed to return non-NULL css.
 + */
-+static void kill_css(struct cgroup_subsys_state *css)
++static struct cgroup_subsys_state *cgroup_e_css(struct cgroup *cgrp,
++						struct cgroup_subsys *ss)
++{
++	lockdep_assert_held(&cgroup_mutex);
++
++	if (!ss)
++		return &cgrp->dummy_css;
++
++	if (!(cgrp->root->subsys_mask & (1 << ss->id)))
++		return NULL;
++
++	while (cgrp->parent &&
++	       !(cgrp->parent->child_subsys_mask & (1 << ss->id)))
++		cgrp = cgrp->parent;
++
++	return cgroup_css(cgrp, ss);
++}
++
+ /* convenient tests for these bits */
+ static inline bool cgroup_is_dead(const struct cgroup *cgrp)
  {
- 	lockdep_assert_held(&cgroup_tree_mutex);
- 
-@@ -3916,28 +3928,6 @@ static void __kill_css(struct cgroup_subsys_state *css)
- }
+@@ -273,7 +301,7 @@ static int notify_on_release(const struct cgroup *cgrp)
+  * @ssid: the index of the subsystem, CGROUP_SUBSYS_COUNT after reaching the end
+  * @cgrp: the target cgroup to iterate css's of
+  *
+- * Should be called under cgroup_mutex.
++ * Should be called under cgroup_[tree_]mutex.
+  */
+ #define for_each_css(css, ssid, cgrp)					\
+ 	for ((ssid) = 0; (ssid) < CGROUP_SUBSYS_COUNT; (ssid)++)	\
+@@ -284,6 +312,20 @@ static int notify_on_release(const struct cgroup *cgrp)
+ 		else
  
  /**
-- * kill_css - destroy a css
-- * @css: css to destroy
-- *
-- * This function initiates destruction of @css by removing cgroup interface
-- * files and putting its base reference.  ->css_offline() will be invoked
-- * asynchronously once css_tryget() is guaranteed to fail and when the
-- * reference count reaches zero, @css will be released.
-- */
--static void kill_css(struct cgroup_subsys_state *css)
--{
--	struct cgroup *cgrp = css->cgroup;
--
--	lockdep_assert_held(&cgroup_tree_mutex);
--
--	/* if already killed, noop */
--	if (cgrp->subsys_mask & (1 << css->ss->id)) {
--		cgrp->subsys_mask &= ~(1 << css->ss->id);
--		__kill_css(css);
++ * for_each_e_css - iterate all effective css's of a cgroup
++ * @css: the iteration cursor
++ * @ssid: the index of the subsystem, CGROUP_SUBSYS_COUNT after reaching the end
++ * @cgrp: the target cgroup to iterate css's of
++ *
++ * Should be called under cgroup_[tree_]mutex.
++ */
++#define for_each_e_css(css, ssid, cgrp)					\
++	for ((ssid) = 0; (ssid) < CGROUP_SUBSYS_COUNT; (ssid)++)	\
++		if (!((css) = cgroup_e_css(cgrp, cgroup_subsys[(ssid)]))) \
++			;						\
++		else
++
++/**
+  * for_each_subsys - iterate all enabled cgroup subsystems
+  * @ss: the iteration cursor
+  * @ssid: the index of @ss, CGROUP_SUBSYS_COUNT after reaching the end
+@@ -452,20 +494,20 @@ static bool compare_css_sets(struct css_set *cset,
+ {
+ 	struct list_head *l1, *l2;
+ 
+-	if (memcmp(template, cset->subsys, sizeof(cset->subsys))) {
+-		/* Not all subsystems matched */
++	/*
++	 * On the default hierarchy, there can be csets which are
++	 * associated with the same set of cgroups but different csses.
++	 * Let's first ensure that csses match.
++	 */
++	if (memcmp(template, cset->subsys, sizeof(cset->subsys)))
+ 		return false;
 -	}
--}
+ 
+ 	/*
+ 	 * Compare cgroup pointers in order to distinguish between
+-	 * different cgroups in heirarchies with no subsystems. We
+-	 * could get by with just this check alone (and skip the
+-	 * memcmp above) but on most setups the memcmp check will
+-	 * avoid the need for this more expensive check on almost all
+-	 * candidates.
++	 * different cgroups in hierarchies.  As different cgroups may
++	 * share the same effective css, this comparison is always
++	 * necessary.
+ 	 */
 -
--/**
-  * cgroup_destroy_locked - the first stage of cgroup destruction
-  * @cgrp: cgroup to be destroyed
-  *
-@@ -4149,7 +4139,7 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
+ 	l1 = &cset->cgrp_links;
+ 	l2 = &old_cset->cgrp_links;
+ 	while (1) {
+@@ -530,13 +572,16 @@ static struct css_set *find_existing_css_set(struct css_set *old_cset,
+ 	 */
+ 	for_each_subsys(ss, i) {
+ 		if (root->subsys_mask & (1UL << i)) {
+-			/* Subsystem is in this hierarchy. So we want
+-			 * the subsystem state from the new
+-			 * cgroup */
+-			template[i] = cgroup_css(cgrp, ss);
++			/*
++			 * @ss is in this hierarchy, so we want the
++			 * effective css from @cgrp.
++			 */
++			template[i] = cgroup_e_css(cgrp, ss);
+ 		} else {
+-			/* Subsystem is not in this hierarchy, so we
+-			 * don't want to change the subsystem state */
++			/*
++			 * @ss is not in this hierarchy, so we don't want
++			 * to change the css.
++			 */
+ 			template[i] = old_cset->subsys[i];
+ 		}
+ 	}
+@@ -1969,7 +2014,7 @@ static int cgroup_migrate(struct cgroup *cgrp, struct task_struct *leader,
+ 		return 0;
  
- 	BUG_ON(online_css(css));
+ 	/* check that we can legitimately attach to the cgroup */
+-	for_each_css(css, i, cgrp) {
++	for_each_e_css(css, i, cgrp) {
+ 		if (css->ss->can_attach) {
+ 			ret = css->ss->can_attach(css, &tset);
+ 			if (ret) {
+@@ -1999,7 +2044,7 @@ static int cgroup_migrate(struct cgroup *cgrp, struct task_struct *leader,
+ 	 */
+ 	tset.csets = &tset.dst_csets;
  
--	cgrp_dfl_root.cgrp.subsys_mask |= 1 << ss->id;
-+	cgrp_dfl_root.subsys_mask |= 1 << ss->id;
+-	for_each_css(css, i, cgrp)
++	for_each_e_css(css, i, cgrp)
+ 		if (css->ss->attach)
+ 			css->ss->attach(css, &tset);
  
- 	mutex_unlock(&cgroup_mutex);
- 	mutex_unlock(&cgroup_tree_mutex);
-@@ -4306,7 +4296,7 @@ int proc_cgroup_show(struct seq_file *m, void *v)
+@@ -2007,7 +2052,7 @@ static int cgroup_migrate(struct cgroup *cgrp, struct task_struct *leader,
+ 	goto out_release_tset;
  
- 		seq_printf(m, "%d:", root->hierarchy_id);
- 		for_each_subsys(ss, ssid)
--			if (root->cgrp.subsys_mask & (1 << ssid))
-+			if (root->subsys_mask & (1 << ssid))
- 				seq_printf(m, "%s%s", count++ ? "," : "", ss->name);
- 		if (strlen(root->name))
- 			seq_printf(m, "%sname=%s", count ? "," : "",
+ out_cancel_attach:
+-	for_each_css(css, i, cgrp) {
++	for_each_e_css(css, i, cgrp) {
+ 		if (css == failed_css)
+ 			break;
+ 		if (css->ss->cancel_attach)
 -- 
 1.9.0
