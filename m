@@ -1,15 +1,13 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/3] cgroup: implement cgroup.subtree_populated for the
-	default hierarchy
-Date: Tue, 15 Apr 2014 08:57:21 +0800
-Message-ID: <534C83F1.9020106@huawei.com>
-References: <1397511846-2904-1-git-send-email-tj@kernel.org>
-	<1397511846-2904-4-git-send-email-tj@kernel.org>
+Subject: Re: [PATCHSET cgroup/for-3.16] cgroup: implement unified hierarchy, v2
+Date: Tue, 15 Apr 2014 10:23:55 +0800
+Message-ID: <534C983B.7080701@huawei.com>
+References: <1397511430-2673-1-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1397511846-2904-4-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1397511430-2673-1-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,56 +18,47 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: rlove-L7G0xEPcOZbYtjvyW6yDsg@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, kay-tD+1rO4QERM@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, john-jueV0HHMeujJJrXXpGQQMAC/G2K4zDHf@public.gmane.org
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 2014/4/15 5:44, Tejun Heo wrote:
-> cgroup users often need a way to determine when a cgroup's
-> subhierarchy becomes empty so that it can be cleaned up.  cgroup
-> currently provides release_agent for it; unfortunately, this mechanism
-> is riddled with issues.
+> This patchset finally implements the default unified hierarchy.  The
+> goal is providing enough flexibility while enforcing stricter common
+> structure where appropriate to address the above listed issues.
 > 
-> * It delivers events by forking and execing a userland binary
->   specified as the release_agent.  This is a long deprecated method of
->   notification delivery.  It's extremely heavy, slow and cumbersome to
->   integrate with larger infrastructure.
+> Controllers which aren't bound to other hierarchies are
+> automatically attached to the unified hierarchy, which is different in
+> that controllers are enabled explicitly for each subtree.
+> "cgroup.subtree_control" controls which controllers are enabled on the
+> child cgroups.  Let's assume a hierarchy like the following.
 > 
-> * There is single monitoring point at the root.  There's no way to
->   delegate management of subtree.
+>   root - A - B - C
+>                \ D
 > 
-> * The event isn't recursive.  It triggers when a cgroup doesn't have
->   any tasks or child cgroups.  Events for internal nodes trigger only
->   after all children are removed.  This again makes it impossible to
->   delegate management of subtree.
+> root's "cgroup.subtree_control" determines which controllers are
+> enabled on A.  A's on B.  B's on C and D.  This coincides with the
+> fact that controllers on the immediate sub-level are used to
+> distribute the resources of the parent.  In fact, it's natural to
+> assume that resource control knobs of a child belong to its parent.
+> Enabling a controller in "cgroup.subtree_control" declares that
+> distribution of the respective resources of the cgroup will be
+> controlled.  Note that this means that controller enable states are
+> shared among siblings.
 > 
-> * Events are filtered from the kernel side.  "notify_on_release" file
->   is used to subscribe to or suppress release event.  This is
->   unnecessarily complicated and probably done this way because event
->   delivery itself was expensive.
+> The default hierarchy has an extra restriction - only cgroups which
+> don't contain any task may have controllers enabled in
+> "cgroup.subtree_control".  Combined with the other properties of the
+> default hierarchy, this guarantees that, from the view point of
+> controllers, tasks are only on the leaf cgroups.  In other words, only
+> leaf csses may contain tasks.  This rules out situations where child
+> cgroups compete against internal tasks of the parent.
 > 
-> This patch implements interface file "cgroup.subtree_populated" which
-> can be used to monitor whether the cgroup's subhierarchy has tasks in
-> it or not.  Its value is 0 if there is no task in the cgroup and its
-> descendants; otherwise, 1, 
 
-Is cgroup.tree_populated a better name?
+Right after bootup:
 
-cgroup.subtree_control controls child cgroups only, but .subtree_populated
-shows 1 if there're tasks in the cgroup or its children, so the two
-are a bit inconsistent to me.
+# mount -t cgroup -o __DEVEL__sane_behavior xxx /mnt
+# ls /mnt
+cgroup.controllers  cgroup.procs  cgroup.sane_behavior  cgroup.subtree_control
+# cat /mnt/cgroup.controllers
+cpuset cpu cpuacct memory devices freezer net_cls blkio perf_event hugetlb
 
-> and kernfs_notify() notificaiton is
-> triggers when the value changes, which can be monitored through poll
-> and [di]notify.
-> 
-> This is a lot ligther and simpler and trivially allows delegating
-> management of subhierarchy - subhierarchy monitoring can block further
-> propgation simply by putting itself or another process in the root of
-> the subhierarchy and monitor events that it's interested in from there
-> without interfering with monitoring higher in the tree.
-> 
-> v2: Patch description updated as per Serge.
-> 
-> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Acked-by: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-> Cc: Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>
+I don't see any controller knobs...
