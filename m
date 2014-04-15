@@ -1,17 +1,12 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 3/3] cgroup: implement cgroup.subtree_populated for the
-	default hierarchy
-Date: Tue, 15 Apr 2014 10:54:50 -0400
-Message-ID: <20140415145450.GL1863__19868.8091863461$1397573706$gmane$org@htj.dyndns.org>
-References: <1397511846-2904-1-git-send-email-tj@kernel.org>
-	<1397511846-2904-4-git-send-email-tj@kernel.org>
-	<534C83F1.9020106@huawei.com>
+From: "cristine corner" <cristine.corner-XYgkjQFSZqwpQEy89N3eQAC/G2K4zDHf@public.gmane.org>
+Subject: Industry Specific List
+Date: Tue, 15 Apr 2014 08:52:23 -0700
+Message-ID: <10f701cf58c2$d48e9ed0$7dabdc70$@smarttechdata.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <534C83F1.9020106-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Content-Language: en-us
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,23 +16,59 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Cc: rlove-L7G0xEPcOZbYtjvyW6yDsg@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, kay-tD+1rO4QERM@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, john-jueV0HHMeujJJrXXpGQQMAC/G2K4zDHf@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello,
+Hi, 
 
-On Tue, Apr 15, 2014 at 08:57:21AM +0800, Li Zefan wrote:
-> Is cgroup.tree_populated a better name?
-> 
-> cgroup.subtree_control controls child cgroups only, but .subtree_populated
-> shows 1 if there're tasks in the cgroup or its children, so the two
-> are a bit inconsistent to me.
+ 
 
-Yes, good catch.  subtree_control affects subtree proper.
-subtree_populated covers self too.  The difference is subtle and the
-trade off between shared pattern in names and clarifying the subtlety
-didn't seem clear-cut to me.  Hmmm....
+Are you looking for any of the following Software Users Contact Information
+for your marketing campaigns? 
 
--- 
-tejun
+ 
+
+ERP: - JD Edwards, Infor Baan, SAP, Exact Software, NetSuite, PeopleSoft,
+etc. 
+
+CRM: - SalesForce, MS Dynamics, NetSuite, Siebel, Teradata, Epicor, Infor,
+CDC Software, etc.
+
+Engineering Software: - Autodesk, Siemens PLM, Adobe, AutoCAD, MAYA, Revitt,
+Solidworks, PTC, MADCAD, etc.
+
+Cloud Computing: - Amazon, RackSpace, and Google APPS, Hyper-V, NetApp, etc.
+
+Storage application: - NetApp, EMC, Citrix, HP, Brocade, DELL, etc. 
+
+Security Software: - Symantec, McAfee, IBM, Riverbed, Tabberg, Commvault,
+Juniper Networks, F5, etc.
+
+Networking: - Brocade, Symantec, Avaya, Cisco, Shoretel, etc.
+
+Medical Software: - NextGen, AllScripts, EMR, McKesson, Practice Fusion,
+eClinical Works, etc.
+
+Accounting Software: - Sage, PeachTree, Timberline, MS Dynamics, NetSuite,
+Deltek, Lawson, QuickBooks, etc.
+
+Business Intelligence: - SAP Business Objects, Microstratergy, Tibco,
+Microsoft BI, QlikTech, Information Builders, etc.
+
+ 
+
+We can provide data across the globe - North America, EMEA, Asia Pacific and
+LATAM. 
+
+Please review and let me know if you are looking for any type of list and we
+can service you.
+
+ 
+
+Thanks 
+
+Cristine Corner 
+
+Consultant 
+
+To remove from this mailing: reply with subject line as "leave out"
