@@ -1,14 +1,16 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH] kernfs: move the last knowledge of sysfs out from kernfs
-Date: Wed, 16 Apr 2014 13:26:44 -0400
-Message-ID: <20140416172644.GM1257@htj.dyndns.org>
-References: <1397669058-31720-1-git-send-email-nasa4836@gmail.com>
+From: Randy Dunlap <rdunlap-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Subject: Re: [PATCH cgroup/for-3.16] cgroup: add documentation about unified
+	hierarchy
+Date: Wed, 16 Apr 2014 13:16:18 -0700
+Message-ID: <534EE512.5090905__24400.8709596985$1397679405$gmane$org@infradead.org>
+References: <20140414220917.GD1863@htj.dyndns.org>
+	<534DB46D.7090207@infradead.org>
+	<20140416135120.GI30990@htj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1397669058-31720-1-git-send-email-nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <20140416135120.GI30990-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,33 +20,31 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jianyu Zhan <nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Brandon Philips <brandon.philips-JW9irJGTvgXQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Kay Sievers <kay-tD+1rO4QERM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Daniel Borkmann <dborkman-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Apr 17, 2014 at 01:24:18AM +0800, Jianyu Zhan wrote:
-> On Thu, Apr 17, 2014 at 12:46 AM, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> wrote:
-> > Please put it before @new_sb_created.
+On 04/16/2014 06:51 AM, Tejun Heo wrote:
+> Hello,
 > 
-> Ok.
+> On Tue, Apr 15, 2014 at 03:36:29PM -0700, Randy Dunlap wrote:
+>>> +depending on the specific controller.  IOW, hierarchy may be collapsed
+>>
+>> please spell out IOW
 > 
-> > Also, why isn't it unsigned long magic?
-> 
-> I just thought there may be more private data in the future, so I made
-> it a void pointer. But now I think this is overskill and meaningless.
-> 
-> Renewed patch here:
-> 
-> There is still one residue of sysfs remaining: the sb_magic
-> SYSFS_MAGIC. However this should be kernfs user specific,
-> so this patch moves it out. Kerrnfs user should specify their
-> magic number while mouting.
-> 
-> Signed-off-by: Jianyu Zhan <nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> Updated, but is this really necessary?
 
-Acked-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+It depends on who your audience is.  I probably think that the audience
+is larger than you think it is.
 
-Thanks.
+>> I would prefer to see CPU instead of cpu (except when it refers to a
+>> task or function).
+> 
+> cpu sometimes refer to the cpu controller.  Will use CPU when it's
+> actually referring to the CPU.
+
+OK, thanks.
+
 
 -- 
-tejun
+~Randy
