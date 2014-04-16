@@ -1,16 +1,16 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH cgroup/for-3.16] cgroup: add documentation about unified
+Subject: [PATCH v3 3/3] cgroup: implement cgroup.populated for the default
 	hierarchy
-Date: Wed, 16 Apr 2014 09:51:20 -0400
-Message-ID: <20140416135120.GI30990@htj.dyndns.org>
-References: <20140414220917.GD1863@htj.dyndns.org>
-	<534DB46D.7090207@infradead.org>
+Date: Wed, 16 Apr 2014 10:50:47 -0400
+Message-ID: <20140416145047.GC1257__48555.3942774006$1397659869$gmane$org@htj.dyndns.org>
+References: <1397511846-2904-1-git-send-email-tj@kernel.org>
+	<1397511846-2904-4-git-send-email-tj@kernel.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <534DB46D.7090207-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+In-Reply-To: <1397511846-2904-4-git-send-email-tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,216 +20,223 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Randy Dunlap <rdunlap-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Cc: Brandon Philips <brandon.philips-JW9irJGTvgXQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Kay Sievers <kay-tD+1rO4QERM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Daniel Borkmann <dborkman-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
+Cc: rlove-L7G0xEPcOZbYtjvyW6yDsg@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, kay-tD+1rO4QERM@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, john-jueV0HHMeujJJrXXpGQQMAC/G2K4zDHf@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Hello,
 
-On Tue, Apr 15, 2014 at 03:36:29PM -0700, Randy Dunlap wrote:
-> > +cgroup allows arbitrary number of hierarchies and each hierarchy can
-> 
->           allows an arbitrary
-> 
-> > +host any number of controllers.  While this seems to provide high
-> 
->                                                         provide a high
+Renamed to cgroup.populated.  git branch updated accordingly.
 
-Updated.
+Thanks.
+------- 8< -------
+From bf3fd307267ce307c4c8ec41834d7bddb6441907 Mon Sep 17 00:00:00 2001
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Date: Wed, 16 Apr 2014 10:48:38 -0400
 
-> > +depending on the specific controller.  IOW, hierarchy may be collapsed
-> 
-> please spell out IOW
+cgroup users often need a way to determine when a cgroup's
+subhierarchy becomes empty so that it can be cleaned up.  cgroup
+currently provides release_agent for it; unfortunately, this mechanism
+is riddled with issues.
 
-Updated, but is this really necessary?
+* It delivers events by forking and execing a userland binary
+  specified as the release_agent.  This is a long deprecated method of
+  notification delivery.  It's extremely heavy, slow and cumbersome to
+  integrate with larger infrastructure.
 
-> > +from leaf towards root when viewed from specific controllers.  For
-> > +example, a given configuration might not care about how memory is
-> > +distributed beyond certain level while still want to control how cpu
-> 
->                beyond a certain level while still wanting to control
+* There is single monitoring point at the root.  There's no way to
+  delegate management of a subtree.
 
-Updated.
+* The event isn't recursive.  It triggers when a cgroup doesn't have
+  any tasks or child cgroups.  Events for internal nodes trigger only
+  after all children are removed.  This again makes it impossible to
+  delegate management of a subtree.
 
-> I would prefer to see CPU instead of cpu (except when it refers to a
-> task or function).
+* Events are filtered from the kernel side.  "notify_on_release" file
+  is used to subscribe to or suppress release event.  This is
+  unnecessarily complicated and probably done this way because event
+  delivery itself was expensive.
 
-cpu sometimes refer to the cpu controller.  Will use CPU when it's
-actually referring to the CPU.
+This patch implements interface file "cgroup.populated" which can be
+used to monitor whether the cgroup's subhierarchy has tasks in it or
+not.  Its value is 0 if there is no task in the cgroup and its
+descendants; otherwise, 1, and kernfs_notify() notificaiton is
+triggers when the value changes, which can be monitored through poll
+and [di]notify.
 
-> > +mixing unified hierarchy with the traditional multiple hierarchies in
-> > +fully backward compatible way.
-> 
->    a fully backward
+This is a lot ligther and simpler and trivially allows delegating
+management of subhierarchy - subhierarchy monitoring can block further
+propgation simply by putting itself or another process in the root of
+the subhierarchy and monitor events that it's interested in from there
+without interfering with monitoring higher in the tree.
 
-Updated.
+v2: Patch description updated as per Serge.
 
-> > +
-> > +When read, the file contains space-separated list of currently enabled
-> 
->                        contains a space-separated
+v3: "cgroup.subtree_populated" renamed to "cgroup.populated".  The
+    subtree_ prefix was a bit confusing because
+    "cgroup.subtree_control" uses it to denote the tree rooted at the
+    cgroup sans the cgroup itself while the populated state includes
+    the cgroup itself.
 
-Updated.
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Acked-by: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Cc: Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>
+---
+ include/linux/cgroup.h | 15 ++++++++++++
+ kernel/cgroup.c        | 65 ++++++++++++++++++++++++++++++++++++++++++++++----
+ 2 files changed, 76 insertions(+), 4 deletions(-)
 
-> > +controllers.  A write to the file should contain spaced-separated list
-> 
->                                             contain a space-separated
-
-Updated.
-
-> > +2-3. cgroup.controllers
-> > +
-> > +Read-only "cgroup.controllers" contains space-separated list of
-> 
->                                   contains a space-separated
-
-Updated.
-
-> > +It is clear that this is something which needs to be addressed from
-> > +cgroup core proper in a uniform way so that controllers don't need to
-> > +worry about it and cgroup as a whole shows a consistent and logical
-> > +behavior.  To achieve that, unified hierarchy enforces the following
-> > +structural constraint.
-> 
->    structural constraint:
-
-Updated.
-
-> > +There are two things to note.  Firstly, the root cgroup is exempt from
-> > +the restriction.  Root contains tasks and anonymous resource
-> > +consumption which can't be associated with any other cgroup and
-> > +requires special treatment from most controllers.  How resource
-> > +consumption in the root cgroup is governed is upto each controller.
-> 
->                                                  up to
-
-Updated.
-
-> > +- There is single monitoring point at the root.  There's no way to
-> > +  delegate management of subtree.
-> 
-> "of subtree" seems incomplete...
-> At a minimum it should be "of a subtree."
-
-Changed to "of a subtree".
-
-> > +
-> > +- The event isn't recursive.  It triggers when a cgroup doesn't have
-> > +  any tasks or child cgroups.  Events for internal nodes trigger only
-> > +  after all children are removed.  This again makes it impossible to
-> > +  delegate management of subtree.
-> 
->                          of a subtree.
-
-Ditto.
-
-> > +
-> > +- Events are filtered from the kernel side.  "notify_on_release" file
-> 
->                                                 A "notify_on_release" file
-> 
-> > +  is used to subscribe to or suppress release event.  This is
-> 
->                                          release events.
-
-Updated.
-
-> > +  unnecessarily complicated and probably done this way because event
-> > +  delivery itself was expensive.
-> > +
-> > +Unified hierarchy implements interface file "cgroup.subtree_populated"
-> 
->                      implements an interface file
-
-Updated.
-
-> > +In unified hierarchy, release_agent mechanism is no longer supported
-> 
->                          the release_agent mechanism
-
-Updated.
-
-> > +This, in part, is to prevent cgroup interface from being inadvertently
-> 
->                         prevent the cgroup interface
-
-Updated.
-
-> > +cgroup" in race-free way or make multiple operations atomic against
-> 
->            in a race-free way
-
-Updated.
-
-> > +migration to another cgroup.
-> > +
-> > +Another aspect is that, for better or for worse, cgroup interface goes
-> 
->                                                     the cgroup interface goes
-
-Updated.
-
-> > +through far less scrutiny than regular interfaces for unprivileged
-> > +userland.  The upside is that cgroup is able to expose useful features
-> > +which may not be suitable for general consumption in reasonable time
-> 
->                                                      in a reasonable time
-
-Updated.
-
-> > +frame.  It provides a relatively short path between internal details
-> > +and userland-visible interface.  Of course, this shortcut comes with
-> > +high risk.  We go through what we go through for general kernel APIs
-> > +for good reasons.  It may end up leaking internal details in a way
-> > +which can exert significant pain by locking the kernel into a contract
-> > +that can't be maintained in a reasonable manner.
-> 
-> so the cgroup interface is not stable and won't be?
-
-It'll be as stable as any other administration interfaces - sysctl,
-iptables and so on, which are stable but can usually be deprecated if
-really necessary whereas a syscall interface exposed to lay programs
-has to be maintained for actual eternity.  It comes from the fact that
-the administrative tools are naturally more closely coupled with the
-kernel and the time it takes to reach the point where nobody notices
-removal of deprecated interface often measures in years rather than
-eternity.
-
-> > +Also, due to the specific nature, cgroup and its controllers don't
-> > +tend to attract attention from wide-scope of developers.  cgroup's
-> 
->                              from a wide scope of developers.
-
-Updated.
-
-> > +Keeping cgroup as an administration interface is both advantageous for
-> > +its role and an imperative given its nature.  Some of the cgroup
-> 
->             and imperative given
-
-Updated.  Dang articles.
-
-> Two comments that apply in multiple places:
-> 
-> a.  Call cgroup's interface files "files".  E.g.:
-> 
->   root's "cgroup.subtree_control" determines ...
-> 
-> becomes:
-> 
->   root's "cgroup.subtree_control" file determines
-> 
-> b.  Call cgroup controllers "controllers" or "controller".  E.g.:
-> 
->   memory currently doesn't have a way to control what happens between
-> 
-> becomes:
-> 
->   The memory controller currently doesn't have a way to control what happens between
-
-Updated.
-
-Thanks a lot for the review!
-
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index ada2392..4b38e2d 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -154,6 +154,14 @@ struct cgroup {
+ 	/* the number of attached css's */
+ 	int nr_css;
+ 
++	/*
++	 * If this cgroup contains any tasks, it contributes one to
++	 * populated_cnt.  All children with non-zero popuplated_cnt of
++	 * their own contribute one.  The count is zero iff there's no task
++	 * in this cgroup or its subtree.
++	 */
++	int populated_cnt;
++
+ 	atomic_t refcnt;
+ 
+ 	/*
+@@ -166,6 +174,7 @@ struct cgroup {
+ 	struct cgroup *parent;		/* my parent */
+ 	struct kernfs_node *kn;		/* cgroup kernfs entry */
+ 	struct kernfs_node *control_kn;	/* kn for "cgroup.subtree_control" */
++	struct kernfs_node *populated_kn; /* kn for "cgroup.subtree_populated" */
+ 
+ 	/*
+ 	 * Monotonically increasing unique serial number which defines a
+@@ -264,6 +273,12 @@ enum {
+ 	 *
+ 	 * - "cgroup.clone_children" is removed.
+ 	 *
++	 * - "cgroup.subtree_populated" is available.  Its value is 0 if
++	 *   the cgroup and its descendants contain no task; otherwise, 1.
++	 *   The file also generates kernfs notification which can be
++	 *   monitored through poll and [di]notify when the value of the
++	 *   file changes.
++	 *
+ 	 * - If mount is requested with sane_behavior but without any
+ 	 *   subsystem, the default unified hierarchy is mounted.
+ 	 *
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 7986aa6..2412cb7 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -411,6 +411,43 @@ static struct css_set init_css_set = {
+ 
+ static int css_set_count	= 1;	/* 1 for init_css_set */
+ 
++/**
++ * cgroup_update_populated - updated populated count of a cgroup
++ * @cgrp: the target cgroup
++ * @populated: inc or dec populated count
++ *
++ * @cgrp is either getting the first task (css_set) or losing the last.
++ * Update @cgrp->populated_cnt accordingly.  The count is propagated
++ * towards root so that a given cgroup's populated_cnt is zero iff the
++ * cgroup and all its descendants are empty.
++ *
++ * @cgrp's interface file "cgroup.populated" is zero if
++ * @cgrp->populated_cnt is zero and 1 otherwise.  When @cgrp->populated_cnt
++ * changes from or to zero, userland is notified that the content of the
++ * interface file has changed.  This can be used to detect when @cgrp and
++ * its descendants become populated or empty.
++ */
++static void cgroup_update_populated(struct cgroup *cgrp, bool populated)
++{
++	lockdep_assert_held(&css_set_rwsem);
++
++	do {
++		bool trigger;
++
++		if (populated)
++			trigger = !cgrp->populated_cnt++;
++		else
++			trigger = !--cgrp->populated_cnt;
++
++		if (!trigger)
++			break;
++
++		if (cgrp->populated_kn)
++			kernfs_notify(cgrp->populated_kn);
++		cgrp = cgrp->parent;
++	} while (cgrp);
++}
++
+ /*
+  * hash table for cgroup groups. This improves the performance to find
+  * an existing css_set. This hash doesn't (currently) take into
+@@ -456,10 +493,13 @@ static void put_css_set_locked(struct css_set *cset, bool taskexit)
+ 		list_del(&link->cgrp_link);
+ 
+ 		/* @cgrp can't go away while we're holding css_set_rwsem */
+-		if (list_empty(&cgrp->cset_links) && notify_on_release(cgrp)) {
+-			if (taskexit)
+-				set_bit(CGRP_RELEASABLE, &cgrp->flags);
+-			check_for_release(cgrp);
++		if (list_empty(&cgrp->cset_links)) {
++			cgroup_update_populated(cgrp, false);
++			if (notify_on_release(cgrp)) {
++				if (taskexit)
++					set_bit(CGRP_RELEASABLE, &cgrp->flags);
++				check_for_release(cgrp);
++			}
+ 		}
+ 
+ 		kfree(link);
+@@ -668,7 +708,11 @@ static void link_css_set(struct list_head *tmp_links, struct css_set *cset,
+ 	link = list_first_entry(tmp_links, struct cgrp_cset_link, cset_link);
+ 	link->cset = cset;
+ 	link->cgrp = cgrp;
++
++	if (list_empty(&cgrp->cset_links))
++		cgroup_update_populated(cgrp, true);
+ 	list_move(&link->cset_link, &cgrp->cset_links);
++
+ 	/*
+ 	 * Always add links to the tail of the list so that the list
+ 	 * is sorted by order of hierarchy creation
+@@ -2643,6 +2687,12 @@ err_undo_css:
+ 	goto out_unlock;
+ }
+ 
++static int cgroup_populated_show(struct seq_file *seq, void *v)
++{
++	seq_printf(seq, "%d\n", (bool)seq_css(seq)->cgroup->populated_cnt);
++	return 0;
++}
++
+ static ssize_t cgroup_file_write(struct kernfs_open_file *of, char *buf,
+ 				 size_t nbytes, loff_t off)
+ {
+@@ -2809,6 +2859,8 @@ static int cgroup_add_file(struct cgroup *cgrp, struct cftype *cft)
+ 
+ 	if (cft->seq_show == cgroup_subtree_control_show)
+ 		cgrp->control_kn = kn;
++	else if (cft->seq_show == cgroup_populated_show)
++		cgrp->populated_kn = kn;
+ 	return 0;
+ }
+ 
+@@ -3918,6 +3970,11 @@ static struct cftype cgroup_base_files[] = {
+ 		.seq_show = cgroup_subtree_control_show,
+ 		.write_string = cgroup_subtree_control_write,
+ 	},
++	{
++		.name = "cgroup.populated",
++		.flags = CFTYPE_ONLY_ON_DFL | CFTYPE_NOT_ON_ROOT,
++		.seq_show = cgroup_populated_show,
++	},
+ 
+ 	/*
+ 	 * Historical crazy stuff.  These don't have "cgroup."  prefix and
 -- 
-tejun
+1.9.0
