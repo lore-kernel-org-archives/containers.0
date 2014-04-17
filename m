@@ -1,16 +1,17 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v3 3/3] cgroup: implement cgroup.populated for the default
+Subject: Re: [PATCH cgroup/for-3.16] cgroup: add documentation about unified
 	hierarchy
-Date: Thu, 17 Apr 2014 09:23:08 +0800
-Message-ID: <534F2CFC.9040706@huawei.com>
-References: <1397511846-2904-1-git-send-email-tj@kernel.org>
-	<1397511846-2904-4-git-send-email-tj@kernel.org>
-	<20140416145047.GC1257@htj.dyndns.org>
+Date: Thu, 17 Apr 2014 09:41:13 +0800
+Message-ID: <534F3139.5010104@huawei.com>
+References: <20140414220917.GD1863@htj.dyndns.org>
+	<534DB46D.7090207@infradead.org>
+	<20140416135120.GI30990@htj.dyndns.org>
+	<534EE512.5090905@infradead.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140416145047.GC1257-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
+In-Reply-To: <534EE512.5090905-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,56 +21,23 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: rlove-L7G0xEPcOZbYtjvyW6yDsg@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, kay-tD+1rO4QERM@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, john-jueV0HHMeujJJrXXpGQQMAC/G2K4zDHf@public.gmane.org
+To: Randy Dunlap <rdunlap-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Cc: Brandon Philips <brandon.philips-JW9irJGTvgXQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Kay Sievers <kay-tD+1rO4QERM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>, Daniel Borkmann <dborkman-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-> cgroup users often need a way to determine when a cgroup's
-> subhierarchy becomes empty so that it can be cleaned up.  cgroup
-> currently provides release_agent for it; unfortunately, this mechanism
-> is riddled with issues.
+On 2014/4/17 4:16, Randy Dunlap wrote:
+> On 04/16/2014 06:51 AM, Tejun Heo wrote:
+>> Hello,
+>>
+>> On Tue, Apr 15, 2014 at 03:36:29PM -0700, Randy Dunlap wrote:
+>>>> +depending on the specific controller.  IOW, hierarchy may be collapsed
+>>>
+>>> please spell out IOW
+>>
+>> Updated, but is this really necessary?
 > 
-> * It delivers events by forking and execing a userland binary
->   specified as the release_agent.  This is a long deprecated method of
->   notification delivery.  It's extremely heavy, slow and cumbersome to
->   integrate with larger infrastructure.
+> It depends on who your audience is.  I probably think that the audience
+> is larger than you think it is.
 > 
-> * There is single monitoring point at the root.  There's no way to
->   delegate management of a subtree.
-> 
-> * The event isn't recursive.  It triggers when a cgroup doesn't have
->   any tasks or child cgroups.  Events for internal nodes trigger only
->   after all children are removed.  This again makes it impossible to
->   delegate management of a subtree.
-> 
-> * Events are filtered from the kernel side.  "notify_on_release" file
->   is used to subscribe to or suppress release event.  This is
->   unnecessarily complicated and probably done this way because event
->   delivery itself was expensive.
-> 
-> This patch implements interface file "cgroup.populated" which can be
-> used to monitor whether the cgroup's subhierarchy has tasks in it or
-> not.  Its value is 0 if there is no task in the cgroup and its
-> descendants; otherwise, 1, and kernfs_notify() notificaiton is
-> triggers when the value changes, which can be monitored through poll
-> and [di]notify.
-> 
-> This is a lot ligther and simpler and trivially allows delegating
-> management of subhierarchy - subhierarchy monitoring can block further
-> propgation simply by putting itself or another process in the root of
-> the subhierarchy and monitor events that it's interested in from there
-> without interfering with monitoring higher in the tree.
-> 
-> v2: Patch description updated as per Serge.
-> 
-> v3: "cgroup.subtree_populated" renamed to "cgroup.populated".  The
->     subtree_ prefix was a bit confusing because
->     "cgroup.subtree_control" uses it to denote the tree rooted at the
->     cgroup sans the cgroup itself while the populated state includes
->     the cgroup itself.
-> 
-> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Acked-by: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-> Cc: Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>
 
-Acked-by: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Yeah, I had to google it. :)
