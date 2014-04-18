@@ -1,16 +1,13 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH] cgroup: Use more current logging style
-Date: Thu, 17 Apr 2014 15:14:16 -0400
-Message-ID: <20140417191416.GS15326@htj.dyndns.org>
-References: <1397748555-6647-1-git-send-email-nasa4836@gmail.com>
-	<20140417153800.GO15326@htj.dyndns.org>
-	<1397757955.3104.11.camel@joe-AO725>
+From: Jan Engelhardt <jengelh-9+2X+4sQBs8@public.gmane.org>
+Subject: Re: [PATCH v2] xt_quota2: introduce support for network namespaces
+Date: Fri, 18 Apr 2014 19:20:52 +0200 (CEST)
+Message-ID: <alpine.LSU.2.11.1404181920430.11175__47107.0651816719$1397841665$gmane$org@nerf08.vanv.qr>
+References: <20140305110756.GA16910@earthship.local.cellrox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1397757955.3104.11.camel@joe-AO725>
+In-Reply-To: <20140305110756.GA16910-XJ2GtpFvYOzcMLnvn52sfNwH0Wv7OWhXQQ4Iyu8u01E@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,20 +17,13 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Joe Perches <joe-6d6DIl74uiNBDgjK7y7TUQ@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jianyu Zhan <nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Daniel Golle <dgolle-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org>
+Cc: Netfilter Developer Mailing List <netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jpa-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, john.stultz-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Apr 17, 2014 at 11:05:55AM -0700, Joe Perches wrote:
-> Use pr_fmt and remove embedded prefixes.
-> Realign modified multi-line statements to open parenthesis.
-> Convert embedded function name to "%s: ", __func__
-> 
-> Signed-off-by: Joe Perches <joe-6d6DIl74uiNBDgjK7y7TUQ@public.gmane.org>
+On Wednesday 2014-03-05 12:07, Daniel Golle wrote:
 
-Rolled into the series.  Will be applied after Jianyu's patch.
+>Initialize a separate xt_quota2 instance for each network
+>namespace so data limit can be set and enforced per container.
 
-Thanks.
-
--- 
-tejun
+That's applied now.
