@@ -1,10 +1,11 @@
 From: Jianyu Zhan <nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] hugetlb_cgroup: explicitly init the early_init field
-Date: Tue, 22 Apr 2014 13:30:20 +0800
-Message-ID: <1398144620-9630-1-git-send-email-nasa4836__17983.6182775491$1398144643$gmane$org@gmail.com>
+Subject: [PATCH] cgroup: use uninitialized_var() for may-be uninitialized
+	variable
+Date: Tue, 22 Apr 2014 13:44:39 +0800
+Message-ID: <1398145479-11400-1-git-send-email-nasa4836@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -16,30 +17,22 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-For a cgroup subsystem who should init early, then it should carefully
-take care of the implementation of css_alloc, because it will be called
-before mm_init() setup the world.
-
-Luckily we don't, and we better explicitly assign the early_init field
-to 0, for document reason.
-
-Signed-off-by: Jianyu Zhan <nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
----
- mm/hugetlb_cgroup.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/mm/hugetlb_cgroup.c b/mm/hugetlb_cgroup.c
-index 595d7fd..b5368f8 100644
---- a/mm/hugetlb_cgroup.c
-+++ b/mm/hugetlb_cgroup.c
-@@ -405,4 +405,5 @@ struct cgroup_subsys hugetlb_cgrp_subsys = {
- 	.css_alloc	= hugetlb_cgroup_css_alloc,
- 	.css_offline	= hugetlb_cgroup_css_offline,
- 	.css_free	= hugetlb_cgroup_css_free,
-+	.early_init	= 0,
- };
--- 
-2.0.0-rc0
+VG8gc3VwcHJlc3MgdGhpcyB3YXJuaW5nOgoKIHdhcm5pbmc6IOKAmGVycuKAmSBtYXkgYmUgdXNl
+ZCB1bmluaXRpYWxpemVkIGluIHRoaXMgZnVuY3Rpb24gWy1XbWF5YmUtdW5pbml0aWFsaXplZF0K
+ICBpbnQgZXJyOwoJXgoKVXNlIHRoZSB1bmluaXRpYWxpemVkX3ZhcigpIHRvIGRlY2FscmUgZXJy
+LiBJdCBhbHNvIHNlcnZlcyB0byBiZSBnb29kIGRvY3VtZXRhdGlvbi4KClNpZ25lZC1vZmYtYnk6
+IEppYW55dSBaaGFuIDxuYXNhNDgzNkBnbWFpbC5jb20+Ci0tLQoga2VybmVsL2Nncm91cC5jIHwg
+MiArLQogMSBmaWxlIGNoYW5nZWQsIDEgaW5zZXJ0aW9uKCspLCAxIGRlbGV0aW9uKC0pCgpkaWZm
+IC0tZ2l0IGEva2VybmVsL2Nncm91cC5jIGIva2VybmVsL2Nncm91cC5jCmluZGV4IDI0Njc1ZjUu
+LjkzMDU2OWMgMTAwNjQ0Ci0tLSBhL2tlcm5lbC9jZ3JvdXAuYworKysgYi9rZXJuZWwvY2dyb3Vw
+LmMKQEAgLTQxNDQsNyArNDE0NCw3IEBAIHN0YXRpYyBpbnQgY3JlYXRlX2NzcyhzdHJ1Y3QgY2dy
+b3VwICpjZ3JwLCBzdHJ1Y3QgY2dyb3VwX3N1YnN5cyAqc3MpCiB7CiAJc3RydWN0IGNncm91cCAq
+cGFyZW50ID0gY2dycC0+cGFyZW50OwogCXN0cnVjdCBjZ3JvdXBfc3Vic3lzX3N0YXRlICpjc3M7
+Ci0JaW50IGVycjsKKwlpbnQgdW5pbml0aWFsaXplZF92YXIoZXJyKTsKIAogCWxvY2tkZXBfYXNz
+ZXJ0X2hlbGQoJmNncm91cF9tdXRleCk7CiAKLS0gCjIuMC4wLXJjMAoKX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QK
+Q29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4
+Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
