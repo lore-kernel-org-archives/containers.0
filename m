@@ -1,7 +1,7 @@
 From: Jianyu Zhan <nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] cgroup_freezer: explicitly init the early_init field
-Date: Tue, 22 Apr 2014 13:28:09 +0800
-Message-ID: <1398144489-9412-1-git-send-email-nasa4836@gmail.com>
+Subject: [PATCH] hugetlb_cgroup: explicitly init the early_init field
+Date: Tue, 22 Apr 2014 13:30:20 +0800
+Message-ID: <1398144620-9630-1-git-send-email-nasa4836__17983.6182775491$1398144643$gmane$org@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,7 +16,7 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 For a cgroup subsystem who should init early, then it should carefully
@@ -28,17 +28,17 @@ to 0, for document reason.
 
 Signed-off-by: Jianyu Zhan <nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- kernel/cgroup_freezer.c | 1 +
+ mm/hugetlb_cgroup.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
-index 2bc4a22..74fe7f7 100644
---- a/kernel/cgroup_freezer.c
-+++ b/kernel/cgroup_freezer.c
-@@ -501,4 +501,5 @@ struct cgroup_subsys freezer_cgrp_subsys = {
- 	.attach		= freezer_attach,
- 	.fork		= freezer_fork,
- 	.base_cftypes	= files,
+diff --git a/mm/hugetlb_cgroup.c b/mm/hugetlb_cgroup.c
+index 595d7fd..b5368f8 100644
+--- a/mm/hugetlb_cgroup.c
++++ b/mm/hugetlb_cgroup.c
+@@ -405,4 +405,5 @@ struct cgroup_subsys hugetlb_cgrp_subsys = {
+ 	.css_alloc	= hugetlb_cgroup_css_alloc,
+ 	.css_offline	= hugetlb_cgroup_css_offline,
+ 	.css_free	= hugetlb_cgroup_css_free,
 +	.early_init	= 0,
  };
 -- 
