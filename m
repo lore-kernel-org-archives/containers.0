@@ -1,13 +1,14 @@
 From: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] cgroup: explicitly init the early_init field
-Date: Tue, 22 Apr 2014 14:22:18 +0800
-Message-ID: <53560A9A.4020800@huawei.com>
-References: <1398144449-9325-1-git-send-email-nasa4836@gmail.com>
+Subject: Re: [PATCH] cgroup: use uninitialized_var() for may-be uninitialized
+	variable
+Date: Tue, 22 Apr 2014 14:26:43 +0800
+Message-ID: <53560BA3.40501@huawei.com>
+References: <1398145479-11400-1-git-send-email-nasa4836@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1398144449-9325-1-git-send-email-nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1398145479-11400-1-git-send-email-nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,35 +22,30 @@ To: Jianyu Zhan <nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 2014/4/22 13:27, Jianyu Zhan wrote:
-> For a cgroup subsystem who should init early, then it should carefully
-> take care of the implementation of css_alloc, because it will be called
-> before mm_init() setup the world.
-> 
-> Luckily we don't, and we better explicitly assign the early_init field
-> to 0, for document reason.
-> 
-
-If you think this is the right thing to do, you can apply the same reason
-to the initialization of other structures in the whole kernel tree.
-
-> Signed-off-by: Jianyu Zhan <nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-
-nack
-
-> ---
->  kernel/cgroup.c | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index 559f822..f23cb67 100644
-> --- a/kernel/cgroup.c
-> +++ b/kernel/cgroup.c
-> @@ -5325,5 +5325,6 @@ struct cgroup_subsys debug_cgrp_subsys = {
->  	.css_alloc = debug_css_alloc,
->  	.css_free = debug_css_free,
->  	.base_cftypes = debug_files,
-> +	.early_init = 0,
->  };
->  #endif /* CONFIG_CGROUP_DEBUG */
-> 
+T24gMjAxNC80LzIyIDEzOjQ0LCBKaWFueXUgWmhhbiB3cm90ZToKPiBUbyBzdXBwcmVzcyB0aGlz
+IHdhcm5pbmc6Cj4gCj4gIHdhcm5pbmc6IOKAmGVycuKAmSBtYXkgYmUgdXNlZCB1bmluaXRpYWxp
+emVkIGluIHRoaXMgZnVuY3Rpb24gWy1XbWF5YmUtdW5pbml0aWFsaXplZF0KPiAgIGludCBlcnI7
+Cj4gCV4KCkkgZG9uJ3Qgc2VlIHRoaXMgd2FybmluZywgYW5kIEkgZG9uJ3Qgc2VlIGhvdyB0aGlz
+IGlzIHBvc3NpYmxlLgoKc3RhdGljIGludCBjcmVhdGVfY3NzKHN0cnVjdCBjZ3JvdXAgKmNncnAs
+IHN0cnVjdCBjZ3JvdXBfc3Vic3lzICpzcykKewoJc3RydWN0IGNncm91cCAqcGFyZW50ID0gY2dy
+cC0+cGFyZW50OwoJc3RydWN0IGNncm91cF9zdWJzeXNfc3RhdGUgKmNzczsKCWludCBlcnI7CgoJ
+bG9ja2RlcF9hc3NlcnRfaGVsZCgmY2dyb3VwX211dGV4KTsKCgljc3MgPSBzcy0+Y3NzX2FsbG9j
+KGNncm91cF9jc3MocGFyZW50LCBzcykpOwoJaWYgKElTX0VSUihjc3MpKQoJCXJldHVybiBQVFJf
+RVJSKGNzcyk7CgoJZXJyID0gcGVyY3B1X3JlZl9pbml0KCZjc3MtPnJlZmNudCwgY3NzX3JlbGVh
+c2UpOwoJaWYgKGVycikKCQlnb3RvIGVycl9mcmVlX2NzczsKCS4uLgoKCXJldHVybiBlcnI7Cn0K
+Cj4gCj4gVXNlIHRoZSB1bmluaXRpYWxpemVkX3ZhcigpIHRvIGRlY2FscmUgZXJyLiBJdCBhbHNv
+IHNlcnZlcyB0byBiZSBnb29kIGRvY3VtZXRhdGlvbi4KPiAKCmFueXdheSwgdW5pbml0aWFsaXpl
+ZF92YXIoKSBzaG91bGQgYmUgYXZvaWRlZCBpZiBwb3NzaWJsZS4KCm5hY2sKCj4gU2lnbmVkLW9m
+Zi1ieTogSmlhbnl1IFpoYW4gPG5hc2E0ODM2QGdtYWlsLmNvbT4KPiAtLS0KPiAga2VybmVsL2Nn
+cm91cC5jIHwgMiArLQo+ICAxIGZpbGUgY2hhbmdlZCwgMSBpbnNlcnRpb24oKyksIDEgZGVsZXRp
+b24oLSkKPiAKPiBkaWZmIC0tZ2l0IGEva2VybmVsL2Nncm91cC5jIGIva2VybmVsL2Nncm91cC5j
+Cj4gaW5kZXggMjQ2NzVmNS4uOTMwNTY5YyAxMDA2NDQKPiAtLS0gYS9rZXJuZWwvY2dyb3VwLmMK
+PiArKysgYi9rZXJuZWwvY2dyb3VwLmMKPiBAQCAtNDE0NCw3ICs0MTQ0LDcgQEAgc3RhdGljIGlu
+dCBjcmVhdGVfY3NzKHN0cnVjdCBjZ3JvdXAgKmNncnAsIHN0cnVjdCBjZ3JvdXBfc3Vic3lzICpz
+cykKPiAgewo+ICAJc3RydWN0IGNncm91cCAqcGFyZW50ID0gY2dycC0+cGFyZW50Owo+ICAJc3Ry
+dWN0IGNncm91cF9zdWJzeXNfc3RhdGUgKmNzczsKPiAtCWludCBlcnI7Cj4gKwlpbnQgdW5pbml0
+aWFsaXplZF92YXIoZXJyKTsKPiAgCj4gIAlsb2NrZGVwX2Fzc2VydF9oZWxkKCZjZ3JvdXBfbXV0
+ZXgpOwo+ICAKPiAKCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRh
+dGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGlu
+Zm8vY29udGFpbmVycw==
