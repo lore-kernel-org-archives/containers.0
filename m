@@ -1,7 +1,7 @@
 From: Jianyu Zhan <nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] cgroup: explicitly init the early_init field
-Date: Tue, 22 Apr 2014 13:27:29 +0800
-Message-ID: <1398144449-9325-1-git-send-email-nasa4836@gmail.com>
+Subject: [PATCH] cgroup_freezer: explicitly init the early_init field
+Date: Tue, 22 Apr 2014 13:28:09 +0800
+Message-ID: <1398144489-9412-1-git-send-email-nasa4836@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -28,19 +28,18 @@ to 0, for document reason.
 
 Signed-off-by: Jianyu Zhan <nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- kernel/cgroup.c | 1 +
+ kernel/cgroup_freezer.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 559f822..f23cb67 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -5325,5 +5325,6 @@ struct cgroup_subsys debug_cgrp_subsys = {
- 	.css_alloc = debug_css_alloc,
- 	.css_free = debug_css_free,
- 	.base_cftypes = debug_files,
-+	.early_init = 0,
+diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
+index 2bc4a22..74fe7f7 100644
+--- a/kernel/cgroup_freezer.c
++++ b/kernel/cgroup_freezer.c
+@@ -501,4 +501,5 @@ struct cgroup_subsys freezer_cgrp_subsys = {
+ 	.attach		= freezer_attach,
+ 	.fork		= freezer_fork,
+ 	.base_cftypes	= files,
++	.early_init	= 0,
  };
- #endif /* CONFIG_CGROUP_DEBUG */
 -- 
 2.0.0-rc0
