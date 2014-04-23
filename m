@@ -1,17 +1,19 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH v2 cgroup/for-3.16] cgroup: add documentation about
-	unified hierarchy
-Date: Tue, 22 Apr 2014 17:14:26 -0400
-Message-ID: <20140422211426.GD3615@mtj.dyndns.org>
-References: <20140414220917.GD1863@htj.dyndns.org>
-	<20140416145248.GD1257@htj.dyndns.org>
-	<20140422162707.GR29311@dhcp22.suse.cz>
+From: Marian Marinov <mm-NV7Lj0SOnH0@public.gmane.org>
+Subject: Re: Protection against container fork bombs [WAS: Re: memcg with
+	kmem limit doesn't recover after disk i/o causes limit to be hit]
+Date: Wed, 23 Apr 2014 09:07:28 +0300
+Message-ID: <535758A0.5000500__25978.6110058942$1398233896$gmane$org@yuhu.biz>
+References: <20140416154650.GA3034@alpha.arachsys.com>
+	<20140418155939.GE4523@dhcp22.suse.cz>
+	<5351679F.5040908@parallels.com>
+	<20140420142830.GC22077@alpha.arachsys.com>
+	<20140422143943.20609800@oracle.com>
+	<20140422200531.GA19334@alpha.arachsys.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20140422162707.GR29311-2MMpYkNvuYDjFM9bn6wA6Q@public.gmane.org>
+In-Reply-To: <20140422200531.GA19334-2oeHp4OYwSjPZs67QiJbJtBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,30 +23,47 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Cc: Brandon Philips <brandon.philips-JW9irJGTvgXQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Kay Sievers <kay-tD+1rO4QERM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Daniel Borkmann <dborkman-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Lennart Poettering <lennart-mdGvqq1h2p+GdvJs77BJ7Q@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Thomas Graf <tgraf-G/eBtMaohhA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Richard Davies <richard-li8END47hbdWk0Htik3J/w@public.gmane.org>, Dwight Engen <dwight.engen-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+Cc: Vladimir Davydov <vdavydov-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Daniel Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>, Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, William Dauchy <wdauchy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello,
+On 04/22/2014 11:05 PM, Richard Davies wrote:
+> Dwight Engen wrote:
+>> Richard Davies wrote:
+>>> Vladimir Davydov wrote:
+>>>> In short, kmem limiting for memory cgroups is currently broken. Do
+>>>> not use it. We are working on making it usable though.
+> ...
+>>> What is the best mechanism available today, until kmem limits mature?
+>>>
+>>> RLIMIT_NPROC exists but is per-user, not per-container.
+>>>
+>>> Perhaps there is an up-to-date task counter patchset or similar?
+>>
+>> I updated Frederic's task counter patches and included Max Kellermann's
+>> fork limiter here:
+>>
+>> http://thread.gmane.org/gmane.linux.kernel.containers/27212
+>>
+>> I can send you a more recent patchset (against 3.13.10) if you would
+>> find it useful.
+>
+> Yes please, I would be interested in that. Ideally even against 3.14.1 if
+> you have that too.
 
-Hope you enjoyed the vacation. :)
+Dwight, do you have these patches in any public repo?
 
-On Tue, Apr 22, 2014 at 06:27:07PM +0200, Michal Hocko wrote:
-> On Wed 16-04-14 10:52:48, Tejun Heo wrote:
-> [....]
-> > +The memory controller currently doesn't have a way to control what
-> > +happens between internal tasks and child cgroups and the behavior is
-> > +not clearly defined. 
-> 
-> I am not sure I understand this. Could you be more specific what exactly
-> is not clearly defined?
+I would like to test them also.
 
-Oh, the fact that there are no control knobs for the internal tasks,
-so when there's contention involving both internal tasks and child
-cgroups, how resources are distributed is implementation specific
-without clearly defined rules.
+Marian
 
-Thanks.
-
--- 
-tejun
+>
+> Thanks,
+>
+> Richard.
+> --
+> To unsubscribe from this list: send the line "unsubscribe cgroups" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
