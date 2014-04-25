@@ -1,14 +1,14 @@
-From: Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>
-Subject: Re: [PATCH] kernfs: move the last knowledge of sysfs out from kernfs
-Date: Fri, 25 Apr 2014 12:39:22 -0700
-Message-ID: <20140425193922.GA32567@kroah.com>
-References: <1397669058-31720-1-git-send-email-nasa4836@gmail.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: pid ns feature request
+Date: Fri, 25 Apr 2014 12:37:29 -0700
+Message-ID: <87ha5h42va.fsf@x220.int.ebiederm.org>
+References: <CALCETrVSaboa0Y2v_sTbSz3xOxOZ-6jSq_D7DyQXMRB9VXJB8w@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1397669058-31720-1-git-send-email-nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <CALCETrVSaboa0Y2v_sTbSz3xOxOZ-6jSq_D7DyQXMRB9VXJB8w-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Andy Lutomirski's message of "Fri, 25 Apr 2014 08:58:15 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,28 +18,33 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jianyu Zhan <nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Serge E. Hallyn" <serge-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Apr 17, 2014 at 01:24:18AM +0800, Jianyu Zhan wrote:
-> There is still one residue of sysfs remaining: the sb_magic
-> SYSFS_MAGIC. However this should be kernfs user specific,
-> so this patch moves it out. Kerrnfs user should specify their
-> magic number while mouting.
-> 
-> Signed-off-by: Jianyu Zhan <nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> Acked-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> ---
->  fs/kernfs/mount.c      | 11 ++++++-----
->  fs/sysfs/mount.c       |  4 +++-
->  include/linux/kernfs.h | 13 ++++++++-----
->  kernel/cgroup.c        |  4 +++-
->  4 files changed, 20 insertions(+), 12 deletions(-)
+Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> writes:
 
-This doesn't apply to my tree, can you please redo it against
-the driver-core-next branch and resend?
+> Unless I'm missing some trick, it's currently rather painful to mount
+> a namespace /proc.  You have to actually be in the pid namespace to
+> mount the correct /proc instance, and you can't unmount the old /proc
+> until you've mounted the new /proc.  This means that you have to fork
+> into the new pid namespace before you can finish setting it up.
 
-thanks,
+Yes.  You have to be inside just about all namespaces before you can
+finish setting them up.
 
-greg k-h
+I don't know the context in which needed to be inside the pid namespace
+is a burden.
+
+> Would it make sense to add a mount option to procfs to request a mount
+> for pid_ns_for_children instead of task_active_pid_ns?
+
+This is about the using setns and unshare?
+
+Adding a proc amount option that takes a pid namespace file descriptor
+would be the general solution, and might be worth implementing.
+
+Getting a pid namespace file descriptors when there are no pids might be
+a challenge.
+
+Eric
