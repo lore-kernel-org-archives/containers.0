@@ -1,7 +1,7 @@
-From: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [Resend][PATCH] ns,proc: introduce pid_in_ns
-Date: Fri, 25 Apr 2014 16:43:25 +0800
-Message-ID: <1398415405-19872-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: [Announce] Checkpoint-restore tool v1.3-rc1
+Date: Fri, 25 Apr 2014 15:57:32 +0400
+Message-ID: <535A4DAC.9030602@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,79 +15,31 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: CRIU <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-We lacked of convenient method of getting the pid inside containers.
+Hello everyone!
 
-If some issues occurred inside container guest, host user
-could not know which process is in trouble just by guest pid:
-the users of container guest only knew the pid inside containers.
-This will bring obstacle for trouble shooting.
+I'm glad to announce the first release candidate for CRIU version 1.3.
 
-This patch introduces pid_in_ns:
-If one process is in init_pid_ns, /proc/PID/pid_in_ns
-equals to /proc/PID;
-if one process is in pidns, /proc/PID/pid_in_ns
-will tell the pid inside containers;
-if pidns is nested, it depends on which pidns are you in.
+We've been working on making support for C/R of LXC containers and though
+not everything is ready yet, we have something to show.
 
-Signed-off-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- fs/proc/array.c    | 13 +++++++++++++
- fs/proc/base.c     |  1 +
- fs/proc/internal.h |  2 ++
- 3 files changed, 16 insertions(+)
+So, first of all, we have support for multiple mount namespaces, which are
+now always created by systemd. Another thing is that we have an ability to
+re-attach restored LXC container back to watching daemon after restore (the
+LXC part should appear soon). And we have started implementing the LXC
+live-migration in p.haul, so once the re-attach is finished p.haul will be
+able to do it "for real" :)
 
-diff --git a/fs/proc/array.c b/fs/proc/array.c
-index 64db2bc..3ff7050 100644
---- a/fs/proc/array.c
-+++ b/fs/proc/array.c
-@@ -562,6 +562,19 @@ int proc_tgid_stat(struct seq_file *m, struct pid_namespace *ns,
- 	return do_task_stat(m, ns, pid, task, 1);
- }
- 
-+int proc_pid_in_ns(struct seq_file *m, struct pid_namespace *ns,
-+			struct pid *pid, struct task_struct *task)
-+{
-+	pid_t pid_in_ns;
-+	unsigned int level;
-+
-+	level = pid->level;
-+	pid_in_ns = task_pid_nr_ns(task, pid->numbers[level].ns);
-+	seq_put_decimal_ull(m, 0, pid_in_ns);
-+	seq_putc(m, '\n');
-+	return 0;
-+}
-+
- int proc_pid_statm(struct seq_file *m, struct pid_namespace *ns,
- 			struct pid *pid, struct task_struct *task)
- {
-diff --git a/fs/proc/base.c b/fs/proc/base.c
-index 2d696b0..42904b7 100644
---- a/fs/proc/base.c
-+++ b/fs/proc/base.c
-@@ -2574,6 +2574,7 @@ static const struct pid_entry tgid_base_stuff[] = {
- 	INF("cmdline",    S_IRUGO, proc_pid_cmdline),
- 	ONE("stat",       S_IRUGO, proc_tgid_stat),
- 	ONE("statm",      S_IRUGO, proc_pid_statm),
-+	ONE("pid_in_ns",  S_IRUGO, proc_pid_in_ns),
- 	REG("maps",       S_IRUGO, proc_pid_maps_operations),
- #ifdef CONFIG_NUMA
- 	REG("numa_maps",  S_IRUGO, proc_pid_numa_maps_operations),
-diff --git a/fs/proc/internal.h b/fs/proc/internal.h
-index 3ab6d14..573841a 100644
---- a/fs/proc/internal.h
-+++ b/fs/proc/internal.h
-@@ -155,6 +155,8 @@ extern int proc_pid_status(struct seq_file *, struct pid_namespace *,
- 			   struct pid *, struct task_struct *);
- extern int proc_pid_statm(struct seq_file *, struct pid_namespace *,
- 			  struct pid *, struct task_struct *);
-+extern int proc_pid_in_ns(struct seq_file *, struct pid_namespace *,
-+			  struct pid *, struct task_struct *);
- 
- /*
-  * base.c
--- 
-1.9.0
+Another prominent feature is support for AArch64.
+
+
+For full changelog see the http://criu.org/Download/criu/1.3-rc1
+The sources can be get from http://download.openvz.org/criu/criu-1.3-rc1.tar.bz2
+
+Docs and news are as usual at http://criu.org/Main_Page
+And the P.Haul stuff sits at https://github.com/xemul/p.haul
+
+Thanks,
+Pavel
