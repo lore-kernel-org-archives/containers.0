@@ -1,17 +1,16 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH] cgroup: Use more current logging style
-Date: Sun, 27 Apr 2014 07:30:37 -0400
-Message-ID: <20140427113037.GA20040__21194.0782763579$1398598255$gmane$org@htj.dyndns.org>
-References: <1397748555-6647-1-git-send-email-nasa4836@gmail.com>
-	<20140417153800.GO15326@htj.dyndns.org>
-	<1397757955.3104.11.camel@joe-AO725>
-	<20140417191416.GS15326@htj.dyndns.org>
+From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: pid ns feature request
+Date: Mon, 28 Apr 2014 13:39:08 +0000
+Message-ID: <20140428133908.GE24913@ubuntumail>
+References: <CALCETrVSaboa0Y2v_sTbSz3xOxOZ-6jSq_D7DyQXMRB9VXJB8w@mail.gmail.com>
+	<87ha5h42va.fsf@x220.int.ebiederm.org>
+	<CALCETrX3GjNkhKkST9Nw4sk2ETt=MRUWcc+bNXnGFTXn7ve-ww@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20140417191416.GS15326-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
+In-Reply-To: <CALCETrX3GjNkhKkST9Nw4sk2ETt=MRUWcc+bNXnGFTXn7ve-ww-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,23 +20,40 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Joe Perches <joe-6d6DIl74uiNBDgjK7y7TUQ@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jianyu Zhan <nasa4836-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Serge E. Hallyn" <serge-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Apr 17, 2014 at 03:14:16PM -0400, Tejun Heo wrote:
-> On Thu, Apr 17, 2014 at 11:05:55AM -0700, Joe Perches wrote:
-> > Use pr_fmt and remove embedded prefixes.
-> > Realign modified multi-line statements to open parenthesis.
-> > Convert embedded function name to "%s: ", __func__
-> > 
-> > Signed-off-by: Joe Perches <joe-6d6DIl74uiNBDgjK7y7TUQ@public.gmane.org>
+Quoting Andy Lutomirski (luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org):
+> On Fri, Apr 25, 2014 at 12:37 PM, Eric W. Biederman
+> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+> > Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> writes:
+> >
+> >> Unless I'm missing some trick, it's currently rather painful to mount
+> >> a namespace /proc.  You have to actually be in the pid namespace to
+> >> mount the correct /proc instance, and you can't unmount the old /proc
+> >> until you've mounted the new /proc.  This means that you have to fork
+> >> into the new pid namespace before you can finish setting it up.
+> >
+> > Yes.  You have to be inside just about all namespaces before you can
+> > finish setting them up.
+> >
+> > I don't know the context in which needed to be inside the pid namespace
+> > is a burden.
 > 
-> Rolled into the series.  Will be applied after Jianyu's patch.
+> I'm trying to sandbox myself.  I unshare everything, setup up new
+> mounts, pivot_root, umount the old stuff, fork, and wait around for
+> the child to finish.
+> 
+> This doesn't work: the parent can't mount the new /proc, and the child
+> can't either because it's too late.
 
-All patches applied to cgroup/for-3.16.
+I'm probably not thinking it through enough...  But can't the parent, before
+forking, do
 
-Thanks.
+	mkdir -p /childproc/proc
+	mount --bind /childproc /childproc
+	mount --make-rshared /childproc
 
--- 
-tejun
+then the child mounts its proc under /childproc/proc and have that show
+up in the parent's tree?
