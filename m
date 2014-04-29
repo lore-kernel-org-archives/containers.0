@@ -1,24 +1,14 @@
-From: Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>
-Subject: Re: Protection against container fork bombs [WAS: Re: memcg with
-	kmem limit doesn't recover after disk i/o causes limit to be hit]
-Date: Tue, 29 Apr 2014 20:27:42 +0200
-Message-ID: <20140429182742.GB25609__41766.0340936438$1398796081$gmane$org@dhcp22.suse.cz>
-References: <20140428180025.GC25689@ubuntumail>
-	<20140429072515.GB15058@dhcp22.suse.cz>
-	<20140429130353.GA27354@ubuntumail>
-	<20140429154345.GH15058@dhcp22.suse.cz>
-	<CAO_RewYZDGLBAKit4CudTbqVk+zfDRX8kP0W6Zz90xJh7abM9Q@mail.gmail.com>
-	<20140429165114.GE6129@localhost.localdomain>
-	<CAO_Rewa20dneL8e3T4UPnu2Dkv28KTgFJR9_YSmRBKp-_yqewg@mail.gmail.com>
-	<20140429170639.GA25609@dhcp22.suse.cz>
-	<20140429133039.162d9dd7@oracle.com>
-	<20140429180927.GB29606@alpha.arachsys.com>
+From: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>
+Subject: Re: ioctl CAP_LINUX_IMMUTABLE is checked in the wrong namespace
+Date: Tue, 29 Apr 2014 14:35:34 -0400
+Message-ID: <20140429183534.GB19325__24328.2679272399$1398796558$gmane$org@thunk.org>
+References: <535FADDA.2070803@1h.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20140429180927.GB29606-2oeHp4OYwSjPZs67QiJbJtBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <535FADDA.2070803-108MBtLGafw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -28,81 +18,38 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Richard Davies <richard-li8END47hbdWk0Htik3J/w@public.gmane.org>
-Cc: Vladimir Davydov <vdavydov-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Marian Marinov <mm-NV7Lj0SOnH0@public.gmane.org>, Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>, Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Tim Hockin <thockin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, William Dauchy <wdauchy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Daniel Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Marian Marinov <mm-108MBtLGafw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LXC development mailing-list <lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue 29-04-14 19:09:27, Richard Davies wrote:
-> Dwight Engen wrote:
-> > Michal Hocko wrote:
-> > > Tim Hockin wrote:
-> > > > Here's the reason it doesn't work for us: It doesn't work.
-> > >
-> > > There is a "simple" solution for that. Help us to fix it.
-> > >
-> > > > It was something like 2 YEARS since we first wanted this, and it
-> > > > STILL does not work.
-> > >
-> > > My recollection is that it was primarily Parallels and Google asking
-> > > for the kmem accounting. The reason why I didn't fight against
-> > > inclusion although the implementation at the time didn't have a
-> > > proper slab shrinking implemented was that that would happen later.
-> > > Well, that later hasn't happened yet and we are slowly getting there.
-> > >
-> > > > You're postponing a pretty simple request indefinitely in
-> > > > favor of a much more complex feature, which still doesn't really
-> > > > give me what I want.
-> > >
-> > > But we cannot simply add a new interface that will have to be
-> > > maintained for ever just because something else that is supposed to
-> > > workaround bugs.
-> > >
-> > > > What I want is an API that works like rlimit but per-cgroup, rather
-> > > > than per-UID.
-> > >
-> > > You can use an out-of-tree patchset for the time being or help to get
-> > > kmem into shape. If there are principal reasons why kmem cannot be
-> > > used then you better articulate them.
-> >
-> > Is there a plan to separately account/limit stack pages vs kmem in
-> > general? Richard would have to verify, but I suspect kmem is not currently
-> > viable as a process limiter for him because icache/dcache/stack is all
-> > accounted together.
+On Tue, Apr 29, 2014 at 04:49:14PM +0300, Marian Marinov wrote:
 > 
-> Certainly I would like to be able to limit container fork-bombs without
-> limiting the amount of disk IO caching for processes in those containers.
-> 
-> In my testing with of kmem limits, I needed a limit of 256MB or lower to
-> catch fork bombs early enough. I would definitely like more than 256MB of
-> disk caching.
-> 
-> So if we go the "working kmem" route, I would like to be able to specify a
-> limit excluding disk cache.
+> I'm proposing a fix to this, by replacing the capable(CAP_LINUX_IMMUTABLE)
+> check with ns_capable(current_cred()->user_ns, CAP_LINUX_IMMUTABLE).
 
-Page cache (which is what you mean by disk cache probably) is a
-userspace accounted memory with the memory cgroup controller. And you
-do not have to limit that one. Kmem accounting refers to kernel internal
-allocations - slab memory and per process kernel stack. You can see how
-much memory is allocated per container by memory.kmem.usage_in_bytes or
-have a look at /proc/slabinfo to see what kind of memory kernel
-allocates globally and might be accounted for a container as well.
+Um, wouldn't it be better to simply fix the capable() function?
 
-The primary problem with the kmem accounting right now is that such a
-memory is not "reclaimed" and so if the kmem limit is reached all the
-further kmem allocations fail. The biggest user of the kmem allocations
-on many systems is dentry and inode chache which is reclaimable easily.
-When this is implemented the kmem limit will be usable to both prevent
-forkbombs but also other DOS scenarios when the kernel is pushed to
-allocate a huge amount of memory.
+/**
+ * capable - Determine if the current task has a superior capability in effect
+ * @cap: The capability to be tested for
+ *
+ * Return true if the current task has the given superior capability currently
+ * available for use, false if not.
+ *
+ * This sets PF_SUPERPRIV on the task if the capability is available on the
+ * assumption that it's about to be used.
+ */
+bool capable(int cap)
+{
+	return ns_capable(&init_user_ns, cap);
+}
+EXPORT_SYMBOL(capable);
 
-HTH
+The documentation states that it is for "the current task", and I
+can't imagine any use case, where user namespaces are in effect, where
+using init_user_ns would ever make sense.
 
-> I am also somewhat worried that normal software use could legitimately go
-> above 256MB of kmem (even excluding disk cache) - I got to 50MB in testing
-> just by booting a distro with a few daemons in a container.
-> 
-> Richard.
+No?  Otherwise, pretty much every single use of capable() would be
+broken, not just this once instances in ext4/ioctl.c.
 
--- 
-Michal Hocko
-SUSE Labs
+					- Ted
