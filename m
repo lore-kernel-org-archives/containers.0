@@ -1,20 +1,17 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: ioctl CAP_LINUX_IMMUTABLE is checked in the wrong namespace
-Date: Tue, 29 Apr 2014 17:12:48 -0700
-Message-ID: <CALCETrUeKdyhqzgM6b3mvUXJ9L9JPHmDgZBYhqYyVuDqBTtF8g@mail.gmail.com>
-References: <20140429185251.GA27969@ubuntumail> <53601E5B.5050004@1h.com>
+Date: Wed, 30 Apr 2014 00:16:41 +0000
+Message-ID: <20140430001641.GA28969@ubuntumail>
+References: <535FADDA.2070803@1h.com> <20140429183534.GB19325@thunk.org>
+	<20140429185251.GA27969@ubuntumail> <53601E5B.5050004@1h.com>
 	<20140429220234.GC28410@ubuntumail> <536026B3.1020905@1h.com>
 	<20140429222913.GD28410@ubuntumail> <53602B84.1020304@mit.edu>
-	<536033A9.5070504@1h.com>
-	<CALCETrVJY6SWjdbqSSCeOo9oid22TnL83v9oDVg06XLZfPkLCw@mail.gmail.com>
-	<20140429234739.GB2997@dakara>
-	<CALCETrXK6N8CLjPtnHVXB-BM_bxNU6e1xYGd=_UKcjKMrR3j0g@mail.gmail.com>
-	<20140430000101.GC2997@dakara> <53603F8F.6070304@1h.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <53603F8F.6070304-108MBtLGafw@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <53602B84.1020304-3s7WtUTddSA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,143 +21,88 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Marian Marinov <mm-108MBtLGafw@public.gmane.org>
-Cc: Ted Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, lxc-devel <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
+To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lxc-devel <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, Ted Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gVHVlLCBBcHIgMjksIDIwMTQgYXQgNToxMCBQTSwgTWFyaWFuIE1hcmlub3YgPG1tQDFoLmNv
-bT4gd3JvdGU6Cj4gT24gMDQvMzAvMjAxNCAwMzowMSBBTSwgU3TDqXBoYW5lIEdyYWJlciB3cm90
-ZToKPj4KPj4gT24gVHVlLCBBcHIgMjksIDIwMTQgYXQgMDQ6NTE6NTRQTSAtMDcwMCwgQW5keSBM
-dXRvbWlyc2tpIHdyb3RlOgo+Pj4KPj4+IE9uIFR1ZSwgQXByIDI5LCAyMDE0IGF0IDQ6NDcgUE0s
-IFN0w6lwaGFuZSBHcmFiZXIgPHN0Z3JhYmVyQHVidW50dS5jb20+Cj4+PiB3cm90ZToKPj4+Pgo+
-Pj4+IE9uIFR1ZSwgQXByIDI5LCAyMDE0IGF0IDA0OjIyOjU1UE0gLTA3MDAsIEFuZHkgTHV0b21p
-cnNraSB3cm90ZToKPj4+Pj4KPj4+Pj4gT24gVHVlLCBBcHIgMjksIDIwMTQgYXQgNDoyMCBQTSwg
-TWFyaWFuIE1hcmlub3YgPG1tQDFoLmNvbT4gd3JvdGU6Cj4+Pj4+Pgo+Pj4+Pj4gT24gMDQvMzAv
-MjAxNCAwMTo0NSBBTSwgQW5keSBMdXRvbWlyc2tpIHdyb3RlOgo+Pj4+Pj4+Cj4+Pj4+Pj4KPj4+
-Pj4+PiBPbiAwNC8yOS8yMDE0IDAzOjI5IFBNLCBTZXJnZSBIYWxseW4gd3JvdGU6Cj4+Pj4+Pj4+
-Cj4+Pj4+Pj4+Cj4+Pj4+Pj4+IFF1b3RpbmcgTWFyaWFuIE1hcmlub3YgKG1tLTEwOE1CdExHYWZ3
-QHB1YmxpYy5nbWFuZS5vcmcpOgo+Pj4+Pj4+Pj4KPj4+Pj4+Pj4+Cj4+Pj4+Pj4+PiBPbiAwNC8z
-MC8yMDE0IDAxOjAyIEFNLCBTZXJnZSBIYWxseW4gd3JvdGU6Cj4+Pj4+Pj4+Pj4KPj4+Pj4+Pj4+
-Pgo+Pj4+Pj4+Pj4+IFF1b3RpbmcgTWFyaWFuIE1hcmlub3YgKG1tLTEwOE1CdExHYWZ3QHB1Ymxp
-Yy5nbWFuZS5vcmcpOgo+Pj4+Pj4+Pj4+Pgo+Pj4+Pj4+Pj4+Pgo+Pj4+Pj4+Pj4+PiBPbiAwNC8y
-OS8yMDE0IDA5OjUyIFBNLCBTZXJnZSBIYWxseW4gd3JvdGU6Cj4+Pj4+Pj4+Pj4+Pgo+Pj4+Pj4+
-Pj4+Pj4KPj4+Pj4+Pj4+Pj4+IFF1b3RpbmcgVGhlb2RvcmUgVHMnbyAodHl0c28tM3M3V3RVVGRk
-U0FAcHVibGljLmdtYW5lLm9yZyk6Cj4+Pj4+Pj4+Pj4+Pj4KPj4+Pj4+Pj4+Pj4+Pgo+Pj4+Pj4+
-Pj4+Pj4+IE9uIFR1ZSwgQXByIDI5LCAyMDE0IGF0IDA0OjQ5OjE0UE0gKzAzMDAsIE1hcmlhbiBN
-YXJpbm92IHdyb3RlOgo+Pj4+Pj4+Pj4+Pj4+Pgo+Pj4+Pj4+Pj4+Pj4+Pgo+Pj4+Pj4+Pj4+Pj4+
-Pgo+Pj4+Pj4+Pj4+Pj4+PiBJJ20gcHJvcG9zaW5nIGEgZml4IHRvIHRoaXMsIGJ5IHJlcGxhY2lu
-ZyB0aGUKPj4+Pj4+Pj4+Pj4+Pj4gY2FwYWJsZShDQVBfTElOVVhfSU1NVVRBQkxFKQo+Pj4+Pj4+
-Pj4+Pj4+PiBjaGVjayB3aXRoIG5zX2NhcGFibGUoY3VycmVudF9jcmVkKCktPnVzZXJfbnMsCj4+
-Pj4+Pj4+Pj4+Pj4+IENBUF9MSU5VWF9JTU1VVEFCTEUpLgo+Pj4+Pj4+Pj4+Pj4+Cj4+Pj4+Pj4+
-Pj4+Pj4KPj4+Pj4+Pj4+Pj4+Pgo+Pj4+Pj4+Pj4+Pj4+IFVtLCB3b3VsZG4ndCBpdCBiZSBiZXR0
-ZXIgdG8gc2ltcGx5IGZpeCB0aGUgY2FwYWJsZSgpIGZ1bmN0aW9uPwo+Pj4+Pj4+Pj4+Pj4+Cj4+
-Pj4+Pj4+Pj4+Pj4gLyoqCj4+Pj4+Pj4+Pj4+Pj4gICAgKiBjYXBhYmxlIC0gRGV0ZXJtaW5lIGlm
-IHRoZSBjdXJyZW50IHRhc2sgaGFzIGEgc3VwZXJpb3IKPj4+Pj4+Pj4+Pj4+PiBjYXBhYmlsaXR5
-IGluIGVmZmVjdAo+Pj4+Pj4+Pj4+Pj4+ICAgICogQGNhcDogVGhlIGNhcGFiaWxpdHkgdG8gYmUg
-dGVzdGVkIGZvcgo+Pj4+Pj4+Pj4+Pj4+ICAgICoKPj4+Pj4+Pj4+Pj4+PiAgICAqIFJldHVybiB0
-cnVlIGlmIHRoZSBjdXJyZW50IHRhc2sgaGFzIHRoZSBnaXZlbiBzdXBlcmlvcgo+Pj4+Pj4+Pj4+
-Pj4+IGNhcGFiaWxpdHkgY3VycmVudGx5Cj4+Pj4+Pj4+Pj4+Pj4gICAgKiBhdmFpbGFibGUgZm9y
-IHVzZSwgZmFsc2UgaWYgbm90Lgo+Pj4+Pj4+Pj4+Pj4+ICAgICoKPj4+Pj4+Pj4+Pj4+PiAgICAq
-IFRoaXMgc2V0cyBQRl9TVVBFUlBSSVYgb24gdGhlIHRhc2sgaWYgdGhlIGNhcGFiaWxpdHkgaXMK
-Pj4+Pj4+Pj4+Pj4+PiBhdmFpbGFibGUgb24gdGhlCj4+Pj4+Pj4+Pj4+Pj4gICAgKiBhc3N1bXB0
-aW9uIHRoYXQgaXQncyBhYm91dCB0byBiZSB1c2VkLgo+Pj4+Pj4+Pj4+Pj4+ICAgICovCj4+Pj4+
-Pj4+Pj4+Pj4gYm9vbCBjYXBhYmxlKGludCBjYXApCj4+Pj4+Pj4+Pj4+Pj4gewo+Pj4+Pj4+Pj4+
-Pj4+ICAgICAgICAgIHJldHVybiBuc19jYXBhYmxlKCZpbml0X3VzZXJfbnMsIGNhcCk7Cj4+Pj4+
-Pj4+Pj4+Pj4gfQo+Pj4+Pj4+Pj4+Pj4+IEVYUE9SVF9TWU1CT0woY2FwYWJsZSk7Cj4+Pj4+Pj4+
-Pj4+Pj4KPj4+Pj4+Pj4+Pj4+PiBUaGUgZG9jdW1lbnRhdGlvbiBzdGF0ZXMgdGhhdCBpdCBpcyBm
-b3IgInRoZSBjdXJyZW50IHRhc2siLCBhbmQKPj4+Pj4+Pj4+Pj4+PiBJCj4+Pj4+Pj4+Pj4+Pj4g
-Y2FuJ3QgaW1hZ2luZSBhbnkgdXNlIGNhc2UsIHdoZXJlIHVzZXIgbmFtZXNwYWNlcyBhcmUgaW4K
-Pj4+Pj4+Pj4+Pj4+PiBlZmZlY3QsCj4+Pj4+Pj4+Pj4+Pj4gd2hlcmUKPj4+Pj4+Pj4+Pj4+PiB1
-c2luZyBpbml0X3VzZXJfbnMgd291bGQgZXZlciBtYWtlIHNlbnNlLgo+Pj4+Pj4+Pj4+Pj4KPj4+
-Pj4+Pj4+Pj4+Cj4+Pj4+Pj4+Pj4+Pgo+Pj4+Pj4+Pj4+Pj4gdGhlIGluaXRfdXNlcl9ucyByZXBy
-ZXNlbnRzIHRoZSB1c2VyX25zIG93bmluZyB0aGUgb2JqZWN0LCBub3QKPj4+Pj4+Pj4+Pj4+IHRo
-ZQo+Pj4+Pj4+Pj4+Pj4gc3ViamVjdC4KPj4+Pj4+Pj4+Pj4+Cj4+Pj4+Pj4+Pj4+PiBUaGUgcGF0
-Y2ggYnkgTWFyaWFuIGlzIHdyb25nLiAgQW55b25lIGNhbiBkbwo+Pj4+Pj4+Pj4+Pj4gJ2Nsb25l
-KENMT05FX05FV1VTRVIpJywKPj4+Pj4+Pj4+Pj4+IHNldHVpZCgwKSwgZXhlY3ZlLCBhbmQgZW5k
-IHVwIHNhdGlzZnlpbmcKPj4+Pj4+Pj4+Pj4+ICduc19jYXBhYmxlKGN1cnJlbnRfY3JlZCgpLT51
-c2VybnMsCj4+Pj4+Pj4+Pj4+PiBDQVBfU1lTX0lNTVVUQUJMRSknIGJ5IGRlZmluaXRpb24uCj4+
-Pj4+Pj4+Pj4+Pgo+Pj4+Pj4+Pj4+Pj4gU28gTkFDSyB0byB0aGF0IHBhcnRpY3VsYXIgcGF0Y2gu
-ICBJJ20gbm90IHN1cmUsIGJ1dCBJSVVDIGl0Cj4+Pj4+Pj4+Pj4+PiBzaG91bGQKPj4+Pj4+Pj4+
-Pj4+IGJlCj4+Pj4+Pj4+Pj4+PiBzYWZlIHRvIGNoZWNrIGFnYWluc3QgdGhlIHVzZXJucyBvd25p
-bmcgdGhlIGlub2RlPwo+Pj4+Pj4+Pj4+Pj4KPj4+Pj4+Pj4+Pj4KPj4+Pj4+Pj4+Pj4gU28gd2hh
-dCB5b3UgYXJlIHByb3Bvc2luZyBpcyB0byByZXBsYWNlCj4+Pj4+Pj4+Pj4+ICduc19jYXBhYmxl
-KGN1cnJlbnRfY3JlZCgpLT51c2VybnMsIENBUF9TWVNfSU1NVVRBQkxFKScgd2l0aAo+Pj4+Pj4+
-Pj4+PiAnaW5vZGVfY2FwYWJsZShpbm9kZSwgQ0FQX1NZU19JTU1VVEFCTEUpJyA/Cj4+Pj4+Pj4+
-Pj4+Cj4+Pj4+Pj4+Pj4+IEkgYWdyZWUgdGhhdCB0aGlzIGlzIG1vcmUgc2FuZS4KPj4+Pj4+Pj4+
-Pgo+Pj4+Pj4+Pj4+Cj4+Pj4+Pj4+Pj4KPj4+Pj4+Pj4+PiBSaWdodCwgYW5kIEkgdGhpbmsgdGhl
-IHR3byBvcGVyYXRpb25zIHlvdSdyZSBsb29raW5nIGF0IHNlZW0gc2FuZQo+Pj4+Pj4+Pj4+IHRv
-IGFsbG93Lgo+Pj4+Pj4+Pj4KPj4+Pj4+Pj4+Cj4+Pj4+Pj4+Pgo+Pj4+Pj4+Pj4gSWYgeW91IGFy
-ZSBvayB3aXRoIHRoaXMgcGF0Y2gsIEkgd2lsbCBmaXggYWxsIGZpbGUgc3lzdGVtcyBhbmQgc2Vu
-ZAo+Pj4+Pj4+Pj4gcGF0Y2hlcy4KPj4+Pj4+Pj4KPj4+Pj4+Pj4KPj4+Pj4+Pj4KPj4+Pj4+Pj4g
-U291bmRzIGdvb2QsIHRoYW5rcy4KPj4+Pj4+Pj4KPj4+Pj4+Pj4+IFNpZ25lZC1vZmYtYnk6IE1h
-cmlhbiBNYXJpbm92IDxtbS1OVjdMajBTT25IMEBwdWJsaWMuZ21hbmUub3JnPgo+Pj4+Pj4+Pgo+
-Pj4+Pj4+Pgo+Pj4+Pj4+Pgo+Pj4+Pj4+PiBBY2tlZC1ieTogU2VyZ2UgRS4gSGFsbHluCj4+Pj4+
-Pj4+IDxzZXJnZS5oYWxseW4tR2VXSUgvbk1aekxRVDBkWlIrQWxmQUBwdWJsaWMuZ21hbmUub3Jn
-Pgo+Pj4+Pj4+Cj4+Pj4+Pj4KPj4+Pj4+Pgo+Pj4+Pj4+IFdhaXQsIHdoYXQ/Cj4+Pj4+Pj4KPj4+
-Pj4+PiBJbm9kZXMgYXJlbid0IG93bmVkIGJ5IHVzZXIgbmFtZXNwYWNlczsgdGhleSdyZSBvd25l
-ZCBieSB1c2Vycy4gIEFuZAo+Pj4+Pj4+IGFueQo+Pj4+Pj4+IHVzZXIgY2FuIGFycmFuZ2UgdG8g
-aGF2ZSBhIHVzZXIgbmFtZXNwYWNlIGluIHdoaWNoIHRoZXkgcGFzcyBhbgo+Pj4+Pj4+IGlub2Rl
-X2NhcGFibGUgY2hlY2sgb24gYW55IGlub2RlIHRoYXQgdGhleSBvd24uCj4+Pj4+Pj4KPj4+Pj4+
-PiBQcmVzdW1hYmx5IHRoZXJlJ3MgYSByZWFzb24gdGhhdCBDQVBfU1lTX0lNTVVUQUJMRSBpcyBu
-ZWVkZWQuICBJZgo+Pj4+Pj4+IHRoaXMKPj4+Pj4+PiBnZXRzIG1lcmdlZCwgdGhlbiBpdCB3b3Vs
-ZCBiZSBiZXR0ZXIgdG8ganVzdCBkcm9wIENBUF9TWVNfSU1NVVRBQkxFCj4+Pj4+Pj4gZW50aXJl
-bHkuCj4+Pj4+Pgo+Pj4+Pj4KPj4+Pj4+Cj4+Pj4+PiBUaGUgcHJvYmxlbSBJJ20gdHJ5aW5nIHRv
-IHNvbHZlIGlzIHRoaXM6Cj4+Pj4+Pgo+Pj4+Pj4gY29udGFpbmVyIHdpdGggaXRzIG93biB1c2Vy
-IG5hbWVzcGFjZSBhbmQgQ0FQX1NZU19JTU1VVEFCTEUgc2hvdWxkIGJlCj4+Pj4+PiBhYmxlCj4+
-Pj4+PiB0byB1c2UgY2hhdHRyIG9uIGFsbCBmaWxlcyB3aXRjaCB0aGlzIGNvbnRhaW5lciBoYXMg
-YWNjZXNzIHRvLgo+Pj4+Pj4KPj4+Pj4+IFVuZm9ydHVuYXRlbHkgd2l0aCB0aGUgY2FwYWJsZShD
-QVBfU1lTX0lNTVVUQUJMRSkgY2hlY2sgdGhpcyBpcyBub3QKPj4+Pj4+IHdvcmtpbmcuCj4+Pj4+
-Pgo+Pj4+Pj4gV2l0aCB0aGUgcHJvcG9zZWQgdHdvIGZpeGVzIENBUF9TWVNfSU1NVVRBQkxFIHN0
-YXJ0ZWQgd29ya2luZyBpbiB0aGUKPj4+Pj4+IGNvbnRhaW5lci4KPj4+Pj4+Cj4+Pj4+PiBUaGUg
-Zmlyc3Qgc29sdXRpb24gZ290IGl0cyB1c2VyIG5hbWVzcGFjZSBmcm9tIHRoZSBjdXJyZW50bHkg
-cnVubmluZwo+Pj4+Pj4gcHJvY2Vzcwo+Pj4+Pj4gYW5kIHRoZSBzZWNvbmQgZ2V0cyBpdHMgdXNl
-ciBuYW1lc3BhY2UgZnJvbSB0aGUgY3VycmVudGx5IG9wZW5lZAo+Pj4+Pj4gaW5vZGUuCj4+Pj4+
-Pgo+Pj4+Pj4gU28gd2hhdCB3b3VsZCBiZSB0aGUgYmVzdCBzb2x1dGlvbiBpbiB0aGlzIGNhc2U/
-Cj4+Pj4+Cj4+Pj4+Cj4+Pj4+IEknZCBzdWdnZXN0IGFkZGluZyBhIG1vdW50IG9wdGlvbiBsaWtl
-IGZzX293bmVyX3VpZCB0aGF0IG5hbWVzIGEgdWlkCj4+Pj4+IHRoYXQgb3ducywgaW4gdGhlIHNl
-bnNlIG9mIGhhdmluZyB1bmxpbWl0ZWQgYWNjZXNzIHRvLCBhIGZpbGVzeXN0ZW0uCj4+Pj4+IFRo
-ZW4gYW55b25lIHdpdGggY2FwcyBvbiBhIG5hbWVzcGFjZSBvd25lZCBieSB0aGF0IHVpZCBjb3Vs
-ZCBkbwo+Pj4+PiB3aGF0ZXZlci4KPj4+Pj4KPj4+Pj4gRXJpYz8KPj4+Pj4KPj4+Pj4gLS1BbmR5
-Cj4+Pj4KPj4+Pgo+Pj4+IFRoZSBtb3N0IG9idmlvdXMgcHJvYmxlbSBJIGNhbiB0aGluayBvZiB3
-aXRoICJkbyB3aGF0ZXZlciIgaXMgdGhhdCB0aGlzCj4+Pj4gd2lsbCBsaWtlbHkgaW5jbHVkZSBt
-a25vZCBvZiBjaGFyIGFuZCBibG9jayBkZXZpY2VzIHdoaWNoIHlvdSBjYW4gdGhlbgo+Pj4+IGNo
-b3duL2NobW9kIGFzIHlvdSB3aXNoIGFuZCB1c2UgdG8gYWNjZXNzIGFueSBkZXZpY2VzIG9uIHRo
-ZSBzeXN0ZW0gZnJvbQo+Pj4+IGFuIHVucHJpdmlsZWdlZCBjb250YWluZXIuCj4+Pj4gVGhpcyBj
-YW4gaG93ZXZlciBiZSBtaXRpZ2F0ZWQgYnkgdXNpbmcgdGhlIGRldmljZXMgY2dyb3VwIGNvbnRy
-b2xsZXIuCj4+Pgo+Pj4KPj4+IE9yICdub2RldicuICBzZXR1aWQvc2V0Z2lkIG1heSBoYXZlIHRo
-ZSBzYW1lIHByb2JsZW0sIHRvby4KPj4+Cj4+PiBJbXBsZW1lbnRpbmcgc29tZXRoaW5nIGxpa2Ug
-dGhpcyB3b3VsZCBhbHNvIG1ha2UgQ0FQX0RBQ19SRUFEX1NFQVJDSAo+Pj4gYW5kIENBUF9EQUNf
-T1ZFUlJJREUgd29yay4KPj4+Cj4+PiBBcmd1YWJseSBpdCBzaG91bGQgYmUgaW1wb3NzaWJsZSB0
-byBtb3VudCBzdWNoIGEgdGhpbmcgaW4gdGhlIGZpcnN0Cj4+PiBwbGFjZSB3aXRob3V0IGdsb2Jh
-bCBwcml2aWxlZ2UuCj4+Pgo+Pj4+Cj4+Pj4gWW91IGFsc28gcHJvYmFibHkgd291bGRuJ3Qgd2Fu
-dCBhbnkgdW5wcml2aWxlZ2VkIHVzZXIgZnJvbSB0aGUgaG9zdCB0bwo+Pj4+IGZpbmQgYSB3YXkg
-dG8gYWNjZXNzIHRoYXQgbW91bnRlZCBmaWxlc3l0ZW0gYnV0IHNvIGxvbmcgYXMgeW91IGRvIHRo
-ZQo+Pj4+IG1vdW50IGluIGEgc2VwYXJhdGUgbW91bnRucyBhbmQgZG9uJ3Qgc2hhcmUgdWlkcyBi
-ZXR3ZWVuIHRoZSBob3N0IGFuZAo+Pj4+IHRoZSBjb250YWluZXIsIHRoYXQgc2hvdWxkIGJlIGZp
-bmUgdG9vLgo+Pj4KPj4+Cj4+PiBUaGlzIHBhcnQgc2hvdWxkIGJlIGEgbm9uaXNzdWUgLS0gYW4g
-dW5wcml2aWxlZ2VkIHVzZXIgd2hvIGhhcyB0aGUKPj4+IHJpZ2h0IHVpZCBvd25zIHRoZSBuYW1l
-c3BhY2UgYW55d2F5LCBzbyB0aGlzIGlzIHRoZSBsZWFzdCBvZiB5b3VyCj4+PiB3b3JyaWVzLgo+
-Pj4KPj4+IC0tQW5keQo+Pgo+Pgo+PiBJdCBzaG91bGQgYmUgYSBub25pc3N1ZSBzbyBsb25nIGFz
-IHdlIG1ha2Ugc3VyZSB0aGF0IGEgZmlsZSBvd25lZCBieSBhCj4+IHVpZCBvdXRzaWRlIHRoZSBz
-Y29wZSBvZiB0aGUgY29udGFpbmVyIG1heSBub3QgYmUgY2hhbmdlZCBldmVuIHRob3VnaAo+PiBm
-c19vd25lcl91aWQgaXMgc2V0LiBPdGhlcndpc2UsIGl0J3MganVzdCBhIG1hdHRlciBvZiBjaG1v
-ZCArUyBvbiBzYXkKPj4gYSBzaGVsbCBhbmQgYW55b25lIHdobyBjYW4gc2VlIHRoZSBmcyBmcm9t
-IHRoZSBob3N0IHdpbGwgYmUgZ2V0dGluZyBhCj4+IHJvb3Qgc2hlbGwgKGFzc3VtaW5nIHNhaWQg
-ZmlsZSBpcyBvd25lZCBieSB0aGUgaG9zdCdzIHVpZCAwKS4KPj4KPj4gU28gdGhhdCdzIHJlc3Ry
-aWN0aW5nIHNsaWdodGx5IHdoYXQgImRvIHdoYXRldmVyIiB3b3VsZCBkbyBpbiB0aGlzIGNhc2Uu
-Cj4+Cj4KPiBJbiBteSBjYXNlIEkgZ2l2ZSBhbiBMVk0gdm9sdW1lIHRvIGVhY2ggY29udGFpbmVy
-IGFuZCBsaW1pdCB0aGUgY29udGFpbmVyIHRvCj4gb25seSB0aGlzIGJsb2NrIGRldmljZSB1c2lu
-ZyB0aGUgZGV2aWNlcyBjZ3JvdXAuCj4gU28gdGhlIGlub2RlX2NhcGFibGUoKSBmaXggd29ya2Vk
-IGxpa2UgYSBjaGFybSBmb3IgbWUuCj4gVGhlIGNvbnRhaW5lciBjYW4gbm90IHNlZSBhbnkgZmls
-ZXN5c3RlbSBvdGhlciB0aGVuIGl0cyBvd24uCj4gQW5kIEkgaGF2ZSBhbm90aGVyIHBhdGNoIGZv
-ciBteSBrZXJuZWwgdGhhdCBwcm9oaWJpdHMgc2V0bnMgZnJvbSBjZ3JvdXAKPiBvdGhlciB0aGVu
-IC8gd2hpY2ggcHJldmVudHMgcHJvZ3JhbXMgZnJvbSB0aGUgY29udGFpbmVyIGZyb20gZ2V0dGlu
-ZyBvdXQuCj4gY2xvbmUoKSBjYW4gYmUgdXNlZCB0byBjcmVhdGUgbmV3IG5hbWVzcGFjZXMgYnV0
-IGNhbiBub3QgYmUgdXNlZCB0byBhdHRhY2gKPiB0byBhbHJlYWR5IGNyZWF0ZWQgbmFtZXNwYWNl
-cy4KCkRvZXNuJ3QgbWF0dGVyIC0tIHRoZSByaXNrIGhlcmUgaXMgdGhhdCBhbiBhdHRhY2tlciBv
-dXRzaWRlIHRoZQpuYW1lc3BhY2UgY2FuIGdldCBhbiBmZCB0aGF0IHBvaW50cyB0byBhIGRpcmVj
-dG9yeSBpbiB0aGUgbmFtZXNwYWNlLgpTQ01fUklHSFRTIHdvdWxkIGJlIHRoZSBtYWpvciB2ZWN0
-b3IuCgotLUFuZHkKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0
-aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5m
-by9jb250YWluZXJz
+Quoting Andy Lutomirski (luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org):
+> On 04/29/2014 03:29 PM, Serge Hallyn wrote:
+> > Quoting Marian Marinov (mm-108MBtLGafw-XMD5yJDbdMReXY1tMh2IBg@public.gmane.org):
+> >> On 04/30/2014 01:02 AM, Serge Hallyn wrote:
+> >>> Quoting Marian Marinov (mm-108MBtLGafw-XMD5yJDbdMReXY1tMh2IBg@public.gmane.org):
+> >>>> On 04/29/2014 09:52 PM, Serge Hallyn wrote:
+> >>>>> Quoting Theodore Ts'o (tytso-3s7WtUTddSA-XMD5yJDbdMReXY1tMh2IBg@public.gmane.org):
+> >>>>>> On Tue, Apr 29, 2014 at 04:49:14PM +0300, Marian Marinov wrote:
+> >>>>>>>
+> >>>>>>> I'm proposing a fix to this, by replacing the capable(CAP_LINUX_IMMUTABLE)
+> >>>>>>> check with ns_capable(current_cred()->user_ns, CAP_LINUX_IMMUTABLE).
+> >>>>>>
+> >>>>>> Um, wouldn't it be better to simply fix the capable() function?
+> >>>>>>
+> >>>>>> /**
+> >>>>>>  * capable - Determine if the current task has a superior capability in effect
+> >>>>>>  * @cap: The capability to be tested for
+> >>>>>>  *
+> >>>>>>  * Return true if the current task has the given superior capability currently
+> >>>>>>  * available for use, false if not.
+> >>>>>>  *
+> >>>>>>  * This sets PF_SUPERPRIV on the task if the capability is available on the
+> >>>>>>  * assumption that it's about to be used.
+> >>>>>>  */
+> >>>>>> bool capable(int cap)
+> >>>>>> {
+> >>>>>> 	return ns_capable(&init_user_ns, cap);
+> >>>>>> }
+> >>>>>> EXPORT_SYMBOL(capable);
+> >>>>>>
+> >>>>>> The documentation states that it is for "the current task", and I
+> >>>>>> can't imagine any use case, where user namespaces are in effect, where
+> >>>>>> using init_user_ns would ever make sense.
+> >>>>>
+> >>>>> the init_user_ns represents the user_ns owning the object, not the
+> >>>>> subject.
+> >>>>>
+> >>>>> The patch by Marian is wrong.  Anyone can do 'clone(CLONE_NEWUSER)',
+> >>>>> setuid(0), execve, and end up satisfying 'ns_capable(current_cred()->userns,
+> >>>>> CAP_SYS_IMMUTABLE)' by definition.
+> >>>>>
+> >>>>> So NACK to that particular patch.  I'm not sure, but IIUC it should be
+> >>>>> safe to check against the userns owning the inode?
+> >>>>>
+> >>>>
+> >>>> So what you are proposing is to replace 'ns_capable(current_cred()->userns, CAP_SYS_IMMUTABLE)' with
+> >>>> 'inode_capable(inode, CAP_SYS_IMMUTABLE)' ?
+> >>>>
+> >>>> I agree that this is more sane.
+> >>>
+> >>> Right, and I think the two operations you're looking at seem sane
+> >>> to allow.
+> >>
+> >> If you are ok with this patch, I will fix all file systems and send patches.
+> > 
+> > Sounds good, thanks.
+> > 
+> >> Signed-off-by: Marian Marinov <mm-NV7Lj0SOnH0-XMD5yJDbdMReXY1tMh2IBg@public.gmane.org>
+> > 
+> > Acked-by: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA-XMD5yJDbdMReXY1tMh2IBg@public.gmane.org>
+> 
+> Wait, what?
+> 
+> Inodes aren't owned by user namespaces; they're owned by users.  And any
+> user can arrange to have a user namespace in which they pass an
+> inode_capable check on any inode that they own.
+> 
+> Presumably there's a reason that CAP_SYS_IMMUTABLE is needed.  If this
+
+Sigh, yeah...  I just dont' understand what it is.  But you're right.
+
+> gets merged, then it would be better to just drop CAP_SYS_IMMUTABLE
+> entirely.
+> 
+> Nacked-by: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+
+I forget the details, but there was another case where I wanted to
+have the userns which 'owns' the whole fs available.  I guess we'd
+have to check against that instead of using inode_capable.
+
+-serge
