@@ -1,21 +1,18 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+From: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>
 Subject: Re: ioctl CAP_LINUX_IMMUTABLE is checked in the wrong namespace
-Date: Tue, 29 Apr 2014 17:23:57 -0700
-Message-ID: <CALCETrVh0hCtiK=9fmEYfUWuz4C1dPq22kvyd=OWFMH5pXGaZw@mail.gmail.com>
-References: <20140429220234.GC28410@ubuntumail> <536026B3.1020905@1h.com>
+Date: Tue, 29 Apr 2014 20:32:36 -0400
+Message-ID: <20140430003236.GA6472__10370.1437511065$1398818007$gmane$org@thunk.org>
+References: <535FADDA.2070803@1h.com> <20140429183534.GB19325@thunk.org>
+	<20140429185251.GA27969@ubuntumail> <53601E5B.5050004@1h.com>
+	<20140429220234.GC28410@ubuntumail> <536026B3.1020905@1h.com>
 	<20140429222913.GD28410@ubuntumail> <53602B84.1020304@mit.edu>
-	<536033A9.5070504@1h.com>
-	<CALCETrVJY6SWjdbqSSCeOo9oid22TnL83v9oDVg06XLZfPkLCw@mail.gmail.com>
-	<20140429234739.GB2997@dakara>
-	<CALCETrXK6N8CLjPtnHVXB-BM_bxNU6e1xYGd=_UKcjKMrR3j0g@mail.gmail.com>
-	<20140430000101.GC2997@dakara>
-	<CALCETrWz2i1xE_t982yA8GG4a-rD4AnU_43YA8cNdC9NpSD4Sg@mail.gmail.com>
-	<20140430002143.GB28969@ubuntumail>
+	<20140430001641.GA28969@ubuntumail>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140430002143.GB28969@ubuntumail>
+Content-Disposition: inline
+In-Reply-To: <20140430001641.GA28969@ubuntumail>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,40 +23,17 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Cc: Ted Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, lxc-devel <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
+Cc: Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lxc-devel <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Apr 29, 2014 at 5:21 PM, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> wrote:
-> Quoting Andy Lutomirski (luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org):
->> > It should be a nonissue so long as we make sure that a file owned by a
->> > uid outside the scope of the container may not be changed even though
->> > fs_owner_uid is set. Otherwise, it's just a matter of chmod +S on say
->> > a shell and anyone who can see the fs from the host will be getting a
->> > root shell (assuming said file is owned by the host's uid 0).
->>
->> I feel like that's too fragile.  I'd rather add a rule that one of
->
-> yeah I don't wnat to rush something like that.  I'd rather stash
-> the userns of the task which did the mounting and check against
-> that.  Note that would make it worthless unless and until we allowed
-> mounting from non-init userns, but then we can only claim "our fs
-> superblock readers suck and therefore containers can't mount an fs"
-> so long before we start to feel some shame and audit them...
->
->> these filesystems always acts like it's nosuid unless you're inside a
->> user namespace that matches fs_owner_uid.
->>
->> Maybe even that is too weird.  How about setuid, setgid, and fcaps
->> only work on mounts that are in mount namespaces that are owned by the
->> current user namespace or one of its parents?  IOW, a struct mount is
->> only trusted if mnt->mnt_ns->user_ns == current user ns or one of its
->> parents?
->>
->> Untrusted mounts would act like they are nosuid,nodev.  Someone can
->> try to figure out a safe way to relax nodev at some point.
+On Wed, Apr 30, 2014 at 12:16:41AM +0000, Serge Hallyn wrote:
+> I forget the details, but there was another case where I wanted to
+> have the userns which 'owns' the whole fs available.  I guess we'd
+> have to check against that instead of using inode_capable.
 
-Do you like this variant?  We could add a way for global root to mount
-an fs on behalf of a userns.  I'd rather this be more explicit than
-just mounting it in a mount ns owned by the user namespace, though.
+Yes, that sounds right.
 
---Andy
+And *please* tell me that that under no circumstances can anyone other
+than root@init_user_ns is allowed to use mknod....
+
+						- Ted
