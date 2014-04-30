@@ -1,20 +1,11 @@
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: ioctl CAP_LINUX_IMMUTABLE is checked in the wrong namespace
-Date: Wed, 30 Apr 2014 13:33:48 +0000
-Message-ID: <20140430133348.GB29994@ubuntumail>
-References: <20140429183534.GB19325@thunk.org>
-	<20140429185251.GA27969@ubuntumail> <53601E5B.5050004@1h.com>
-	<20140429220234.GC28410@ubuntumail> <536026B3.1020905@1h.com>
-	<20140429222913.GD28410@ubuntumail> <53602B84.1020304@mit.edu>
-	<20140430001641.GA28969@ubuntumail>
-	<20140430003236.GA6472@thunk.org>
-	<87ha5bntqm.fsf@x220.int.ebiederm.org>
+From: =?UTF-8?q?St=C3=A9phane=20Graber?= <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] net: Allow tc changes in user namespaces
+Date: Wed, 30 Apr 2014 11:25:43 -0400
+Message-ID: <1398871543-8435-1-git-send-email-stgraber@ubuntu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87ha5bntqm.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,45 +15,46 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, lxc-devel <lxc-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org> writes:
-> 
-> > On Wed, Apr 30, 2014 at 12:16:41AM +0000, Serge Hallyn wrote:
-> >> I forget the details, but there was another case where I wanted to
-> >> have the userns which 'owns' the whole fs available.  I guess we'd
-> >> have to check against that instead of using inode_capable.
-> >
-> > Yes, that sounds right.
-> >
-> > And *please* tell me that that under no circumstances can anyone other
-> > than root@init_user_ns is allowed to use mknod....
-> 
-> Nope.  mknod not allowed.  capable(CAP_MKNOD) is required is required
-> and I can't see any reason to change that.
-> 
-> As a rule of thumb, the only additional actions allowed in a user
-> namespace above and beyond what an ordinary unpriviliged user would be
-> allowed to do are those things which we only don't allow because they
-> could confuse a setuid root executable.
-> 
-> 
-> If we ever allow the creation of immutable files by unprivileged users
-> those files would at least have to be kept completely separate from the
-> files the global root encounters (aka a disjoint mount namespace).
-> 
-> I do not currently see a path to safely using immutable files with just
-> user namespace root permission.
-
-It's very far off, but I think the path is:
-
-1. at first mount of a blockdev, note the cred (or just userns) which
-mounted it
-2. work on auditing superblock readers so we can start allowing some
-blockdev mounts in user namespaces :)
-3. check for privilege against the userns owning a superblock
-
--serge
+VGhpcyBzd2l0Y2hlcyBhIGZldyByZW1haW5pbmcgY2FwYWJsZShDQVBfTkVUX0FETUlOKSB0byBu
+c19jYXBhYmxlIHNvCnRoYXQgcm9vdCBpbiBhIHVzZXIgbmFtZXNwYWNlIG1heSBzZXQgdGMgcnVs
+ZXMgaW5zaWRlIHRoYXQgbmFtZXNwYWNlLgoKU2lnbmVkLW9mZi1ieTogU3TDqXBoYW5lIEdyYWJl
+ciA8c3RncmFiZXJAdWJ1bnR1LmNvbT4KQWNrZWQtYnk6IFNlcmdlIEUuIEhhbGx5biA8c2VyZ2Uu
+aGFsbHluQHVidW50dS5jb20+CkNjOiAiRXJpYyBXLiBCaWVkZXJtYW4iIDxlYmllZGVybUB4bWlz
+c2lvbi5jb20+CkNjOiBKYW1hbCBIYWRpIFNhbGltIDxqaHNAbW9qYXRhdHUuY29tPgpDYzogIkRh
+dmlkIFMuIE1pbGxlciIgPGRhdmVtQGRhdmVtbG9mdC5uZXQ+CgotLS0KIG5ldC9zY2hlZC9jbHNf
+YXBpLmMgfCAzICsrLQogbmV0L3NjaGVkL3NjaF9hcGkuYyB8IDggKysrKystLS0KIDIgZmlsZXMg
+Y2hhbmdlZCwgNyBpbnNlcnRpb25zKCspLCA0IGRlbGV0aW9ucygtKQoKZGlmZiAtLWdpdCBhL25l
+dC9zY2hlZC9jbHNfYXBpLmMgYi9uZXQvc2NoZWQvY2xzX2FwaS5jCmluZGV4IDhlMTE4YWYuLjRj
+MzVmNGEgMTAwNjQ0Ci0tLSBhL25ldC9zY2hlZC9jbHNfYXBpLmMKKysrIGIvbmV0L3NjaGVkL2Ns
+c19hcGkuYwpAQCAtMTM4LDcgKzEzOCw4IEBAIHN0YXRpYyBpbnQgdGNfY3RsX3RmaWx0ZXIoc3Ry
+dWN0IHNrX2J1ZmYgKnNrYiwgc3RydWN0IG5sbXNnaGRyICpuKQogCWludCBlcnI7CiAJaW50IHRw
+X2NyZWF0ZWQgPSAwOwogCi0JaWYgKChuLT5ubG1zZ190eXBlICE9IFJUTV9HRVRURklMVEVSKSAm
+JiAhY2FwYWJsZShDQVBfTkVUX0FETUlOKSkKKwlpZiAoKG4tPm5sbXNnX3R5cGUgIT0gUlRNX0dF
+VFRGSUxURVIpICYmCisJICAgICFuc19jYXBhYmxlKG5ldC0+dXNlcl9ucywgQ0FQX05FVF9BRE1J
+TikpCiAJCXJldHVybiAtRVBFUk07CiAKIHJlcGxheToKZGlmZiAtLWdpdCBhL25ldC9zY2hlZC9z
+Y2hfYXBpLmMgYi9uZXQvc2NoZWQvc2NoX2FwaS5jCmluZGV4IGNkODE1MDUuLmZjOTBiZGUgMTAw
+NjQ0Ci0tLSBhL25ldC9zY2hlZC9zY2hfYXBpLmMKKysrIGIvbmV0L3NjaGVkL3NjaF9hcGkuYwpA
+QCAtMTA3OSw3ICsxMDc5LDggQEAgc3RhdGljIGludCB0Y19nZXRfcWRpc2Moc3RydWN0IHNrX2J1
+ZmYgKnNrYiwgc3RydWN0IG5sbXNnaGRyICpuKQogCXN0cnVjdCBRZGlzYyAqcCA9IE5VTEw7CiAJ
+aW50IGVycjsKIAotCWlmICgobi0+bmxtc2dfdHlwZSAhPSBSVE1fR0VUUURJU0MpICYmICFjYXBh
+YmxlKENBUF9ORVRfQURNSU4pKQorCWlmICgobi0+bmxtc2dfdHlwZSAhPSBSVE1fR0VUUURJU0Mp
+ICYmCisJICAgICFuc19jYXBhYmxlKG5ldC0+dXNlcl9ucywgQ0FQX05FVF9BRE1JTikpCiAJCXJl
+dHVybiAtRVBFUk07CiAKIAllcnIgPSBubG1zZ19wYXJzZShuLCBzaXplb2YoKnRjbSksIHRjYSwg
+VENBX01BWCwgTlVMTCk7CkBAIC0xMTQ2LDcgKzExNDcsNyBAQCBzdGF0aWMgaW50IHRjX21vZGlm
+eV9xZGlzYyhzdHJ1Y3Qgc2tfYnVmZiAqc2tiLCBzdHJ1Y3Qgbmxtc2doZHIgKm4pCiAJc3RydWN0
+IFFkaXNjICpxLCAqcDsKIAlpbnQgZXJyOwogCi0JaWYgKCFjYXBhYmxlKENBUF9ORVRfQURNSU4p
+KQorCWlmICghbnNfY2FwYWJsZShuZXQtPnVzZXJfbnMsIENBUF9ORVRfQURNSU4pKQogCQlyZXR1
+cm4gLUVQRVJNOwogCiByZXBsYXk6CkBAIC0xNDg2LDcgKzE0ODcsOCBAQCBzdGF0aWMgaW50IHRj
+X2N0bF90Y2xhc3Moc3RydWN0IHNrX2J1ZmYgKnNrYiwgc3RydWN0IG5sbXNnaGRyICpuKQogCXUz
+MiBxaWQ7CiAJaW50IGVycjsKIAotCWlmICgobi0+bmxtc2dfdHlwZSAhPSBSVE1fR0VUVENMQVNT
+KSAmJiAhY2FwYWJsZShDQVBfTkVUX0FETUlOKSkKKwlpZiAoKG4tPm5sbXNnX3R5cGUgIT0gUlRN
+X0dFVFRDTEFTUykgJiYKKwkgICAgIW5zX2NhcGFibGUobmV0LT51c2VyX25zLCBDQVBfTkVUX0FE
+TUlOKSkKIAkJcmV0dXJuIC1FUEVSTTsKIAogCWVyciA9IG5sbXNnX3BhcnNlKG4sIHNpemVvZigq
+dGNtKSwgdGNhLCBUQ0FfTUFYLCBOVUxMKTsKLS0gCjEuOS4xCgpfX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250
+YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3Vu
+ZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
