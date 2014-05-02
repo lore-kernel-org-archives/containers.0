@@ -1,17 +1,17 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCHSET cgroup/for-3.15] cgroup: implement unified hierarchy
-Date: Fri, 2 May 2014 11:12:50 -0400
-Message-ID: <20140502151250.GB10204@htj.dyndns.org>
-References: <1395974461-12735-1-git-send-email-tj@kernel.org>
-	<20140414154556.GA9552@redhat.com>
-	<20140414175236.GB15249@htj.dyndns.org>
-	<CAC4Lta0qd2vW4ENSOpzK+0i06MorzfmsZZZuW9xUtpZ_gWA9gA@mail.gmail.com>
+From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/2] namespaces: give each namespace a serial number
+Date: Fri, 2 May 2014 20:50:00 +0000
+Message-ID: <20140502204959.GE2631@ubuntumail>
+References: <cover.1398176489.git.rgb@redhat.com>
+	<be1358c6da51252cd79c51a51bb30bf157624ccd.1398176489.git.rgb@redhat.com>
+	<20140501225116.GB25669@mail.hallyn.com>
+	<20140502141530.GB24111@madcap2.tricolour.ca>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <CAC4Lta0qd2vW4ENSOpzK+0i06MorzfmsZZZuW9xUtpZ_gWA9gA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20140502141530.GB24111-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,52 +21,45 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Raghavendra KT <raghavendra.kt-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello,
-
-On Wed, Apr 30, 2014 at 04:27:51PM +0530, Raghavendra KT wrote:
-> For some controllers like cpuset, when we have exclusive_cpu is set,
-> what about having a knob in the cpuset controller
-> to move the task to non-root (when option is set).
-
-I'm doubtful.
-
-> Because all the way along, though we have freedom to make the cpusets
-> exclusive and move tasks (say VMs) into them,
-> making sure they do not interfere with each other, we can not prevent
-> the other tasks spawned in a system eating into cpus of
-> exclusive cpuset since they go to root automatically.
-
-I believe the right thing to do would be starting / confining other
-tasks in the appropriate non-root cgroups.  cgroup already provides
-mechanisms to achieve that.  The rest is upto userland.
-
-> Do you think having a knob, to make sure new tasks spawned go to say a
-> default  directory under root makes sense?
+Quoting Richard Guy Briggs (rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
+> On 14/05/02, Serge E. Hallyn wrote:
+> > Quoting Richard Guy Briggs (rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
+> > 
+> > Most of this looks reasonable, but I'm curious about something,
+> > 
+> > > +/**
+> > > + * ns_serial - compute a serial number for the namespace
+> > > + *
+> > > + * Compute a serial number for the namespace to uniquely identify it in
+> > > + * audit records.
+> > > + */
+> > > +unsigned int ns_serial(void)
+> > > +{
+> > > +	static DEFINE_SPINLOCK(serial_lock);
+> > > +	static unsigned int serial = 4; /* reserved for IPC, UTS, user, PID */
+> > > +
+> > > +	unsigned long flags;
+> > > +	unsigned int ret;
+> > > +
+> > > +	spin_lock_irqsave(&serial_lock, flags);
+> > > +	do {
+> > > +		ret = ++serial;
+> > > +	} while (unlikely(!ret));
+> > 
+> > Why exactly are you doing this?  Surely if serial is going to
+> > wrap around we've got a bigger problem than just wanting go
+> > bump one more time?
 > 
->  I understand that we could easily have a userspace script which could
-> achieve intended goal, but kernel solution
->  would really make the exclusive cpusets have exclusive access to cpus
-> it should have.
+> Thanks for catching this.
+> The code was templated off audit_serial() which tries to solve a
+> different problem and rolling it is much more likely.  I hadn't noticed
+> that rollover protection.  However, I *had* thought of making it a long
+> (which would be the same size on 32-bit arches, but larger on 64-bit)
+> since a 64-bit system is more likely to roll it out of sheer speed and
+> resource availability.  But perhaps a long long would be safer.
 
-This would just be a more reliable implementation of an ad-hoc
-mechanism when it can already be properly achieved by managing cgroups
-of all processes in the system.
-
-> (I also have a POC implemented for pre-unified hierarchy tree and
-> understand some bit of complications involved in that and
-> understand that we should not have complex policies in kernel for e.g.
-> filtering tasks based on patterns etc..).
-
-As I wrote above, I think this is something to be solved from
-userland.  I'm very positively against adding this sort of hacky
-ad-hoc policies which serves one or a few use cases well while
-introducing possible long-term maintenance issues.
-
-Thanks.
-
--- 
-tejun
+Sounds good, and perhaps a BUG_ON(!serial) for good measure.
