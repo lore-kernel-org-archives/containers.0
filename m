@@ -1,15 +1,17 @@
-From: Marian Marinov <mm-NV7Lj0SOnH0@public.gmane.org>
-Subject: Re: Protection against container fork bombs [WAS: Re: memcg with
-	kmem limit doesn't recover after disk i/o causes limit to be hit]
-Date: Tue, 06 May 2014 14:40:55 +0300
-Message-ID: <5368CA47.7030007__28686.4321250052$1399396636$gmane$org@yuhu.biz>
-References: <20140416154650.GA3034@alpha.arachsys.com>	<20140418155939.GE4523@dhcp22.suse.cz>	<5351679F.5040908@parallels.com>	<20140420142830.GC22077@alpha.arachsys.com>	<20140422143943.20609800@oracle.com>	<20140422200531.GA19334@alpha.arachsys.com>	<535758A0.5000500@yuhu.biz>
-	<20140423084942.560ae837@oracle.com>
+From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 0/2] namespaces: log namespaces per task
+Date: Tue, 6 May 2014 10:03:20 -0400
+Message-ID: <20140506140320.GG6867__13666.8623345487$1399399717$gmane$org@madcap2.tricolour.ca>
+References: <cover.1398176489.git.rgb@redhat.com>
+	<1399154328.2505.29.camel@dabdike.int.hansenpartnership.com>
+	<20140505214424.GB6867@madcap2.tricolour.ca>
+	<20140506033308.GE6508@ubuntumail>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140423084942.560ae837-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20140506033308.GE6508@ubuntumail>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,84 +21,102 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dwight Engen <dwight.engen-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Cc: Richard Davies <richard-li8END47hbdWk0Htik3J/w@public.gmane.org>, Vladimir Davydov <vdavydov-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Daniel Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>, Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, William Dauchy <wdauchy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 04/23/2014 03:49 PM, Dwight Engen wrote:
-> On Wed, 23 Apr 2014 09:07:28 +0300
-> Marian Marinov <mm-NV7Lj0SOnH0@public.gmane.org> wrote:
->
->> On 04/22/2014 11:05 PM, Richard Davies wrote:
->>> Dwight Engen wrote:
->>>> Richard Davies wrote:
->>>>> Vladimir Davydov wrote:
->>>>>> In short, kmem limiting for memory cgroups is currently broken.
->>>>>> Do not use it. We are working on making it usable though.
->>> ...
->>>>> What is the best mechanism available today, until kmem limits
->>>>> mature?
->>>>>
->>>>> RLIMIT_NPROC exists but is per-user, not per-container.
->>>>>
->>>>> Perhaps there is an up-to-date task counter patchset or similar?
->>>>
->>>> I updated Frederic's task counter patches and included Max
->>>> Kellermann's fork limiter here:
->>>>
->>>> http://thread.gmane.org/gmane.linux.kernel.containers/27212
->>>>
->>>> I can send you a more recent patchset (against 3.13.10) if you
->>>> would find it useful.
->>>
->>> Yes please, I would be interested in that. Ideally even against
->>> 3.14.1 if you have that too.
->>
->> Dwight, do you have these patches in any public repo?
->>
->> I would like to test them also.
->
-> Hi Marian, I put the patches against 3.13.11 and 3.14.1 up at:
->
-> git://github.com/dwengen/linux.git cpuacct-task-limit-3.13
-> git://github.com/dwengen/linux.git cpuacct-task-limit-3.14
->
-Guys I tested the patches with 3.12.16. However I see a problem with them.
+On 14/05/06, Serge Hallyn wrote:
+> Quoting Richard Guy Briggs (rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
+> > On 14/05/03, James Bottomley wrote:
+> > > On Tue, 2014-04-22 at 14:12 -0400, Richard Guy Briggs wrote:
+> > > > Questions:
+> > > > Is there a way to link serial numbers of namespaces involved in migration of a
+> > > > container to another kernel?  (I had a brief look at CRIU.)  Is there a unique
+> > > > identifier for each running instance of a kernel?  Or at least some identifier
+> > > > within the container migration realm?
+> > > 
+> > > Are you asking for a way of distinguishing an migrated container from an
+> > > unmigrated one?  The answer is pretty much "no" because the job of
+> > > migration is to restore to the same state as much as possible.
+> > 
+> > I hadn't thought to distinguish a migrated container from an unmigrated
+> > one, but rather I'm more interested in the underlying namespaces.  The
+> > use of a generation number to identify a migrated namespace may be
+> > useful along with the logging to tie them together.
+> > 
+> > > Reading between the lines, I think your goal is to correlate audit
+> > > information across a container migration, right?  Ideally the management
+> > > system should be able to cough up an audit trail for a container
+> > > wherever it's running and however many times it's been migrated?
+> > 
+> > The original intent was to track the underlying namespaces themselves.
+> > This sounds like another layer on top of that which sounds useful but
+> > that I had not yet considered.
+> > 
+> > But yes, that sounds like a good eventual goal.
+> 
+> Right and we don't need that now, all *I* wanted to convince myself of
+> was that a serial # as you were using it was not going to be a roadlbock
+> to that, since once we introduce a serial #, we're stuck with that as
+> user-space facing api.
 
-Trying to set the limit to a cgroup which already have processes in it does not work:
+Understood.  If a container gets migrated somewhere along with its
+namespace, the namespace elsewhere is going to have a new serial number,
+but the migration log is going to hopefully show both serial numbers.
+If that container gets migrated back, the supporting namespace will get
+yet a new serial number, with its log trail connecting the previous
+remote one.  Those logs can be used by a higher layer audit aggregator
+to piece together those log crumbs.
 
-[root@sp2 lxc]# echo 50 > cpuacct.task_limit
--bash: echo: write error: Device or resource busy
-[root@sp2 lxc]# echo 0 > cpuacct.task_limit
--bash: echo: write error: Device or resource busy
-[root@sp2 lxc]#
+The serial number was intended to be an alternative to the inode numbers
+which had the issues of needing a qualifying device number accompanying
+it, plus the reservation that that inode number could change in the
+future to solve unforseen technical problems.  I saw no other stable
+identifiers common to all namespace types with which I could work.
 
-I have even tried to remove this check:
-+               if (cgroup_task_count(cgrp) || !list_empty(&cgrp->children))
-+                       return -EBUSY;
-But still give me 'Device or resource busy'.
+Containers may have their own names, but I didn't see any consistent way
+to identify namespace instances.
 
-Any pointers of why is this happening ?
+> > > In that case, I think your idea of a numeric serial number in a dense
+> > > range is wrong.  Because the range is dense you're obviously never going
+> > > to be able to use the same serial number across a migration.  However,
+> > > if you look at all the management systems for containers, they all have
+> > > a concept of some unique ID per container, be it name, UUID or even
+> > > GUID.  I suspect it's that you should be using to tag the audit trail
+> > > with.
+> > 
+> > That does sound potentially useful but for the fact that several
+> > containers could share one or more types of namespaces.
+> > 
+> > Would logging just a container ID be sufficient for audit purposes?  I'm
+> > going to have to dig a bit to understand that one because I was unaware
+> > each container had a unique ID.
+> 
+> They don't :)
 
-Marian
+Ok, so I'd be looking in vain...
 
->> Marian
->>
->>>
->>> Thanks,
->>>
->>> Richard.
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe cgroups"
->>> in the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>>
->>
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe cgroups" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
+> > I did originally consider a UUID/GUID for namespaces.
+> 
+> So I think that apart from resending to address the serial # overflow
+> comment, I'm happy to ack the patches.  Then we probably need to convicne
+> Eric that we're not torturing kittens.
+
+I've already fixed the overflow issues.  I'll resend with the fixes.
+
+This patch pair was intended to sort out some of my understanding of the
+problem I perceived, and has helped me understand there are other layers
+that need work too to make it useful, but this is a good base.
+
+A subsequent piece would be to expose that serial number in the proc
+filesystem.
+
+> -serge
+
+- RGB
+
+--
+Richard Guy Briggs <rbriggs-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Senior Software Engineer, Kernel Security, AMER ENG Base Operating Systems, Red Hat
+Remote, Ottawa, Canada
+Voice: +1.647.777.2635, Internal: (81) 32635, Alt: +1.613.693.0684x3545
