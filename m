@@ -1,15 +1,15 @@
-From: Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 0/2] namespaces: log namespaces per task
-Date: Tue, 06 May 2014 14:35:03 +0200
-Message-ID: <5368D6F7.3030200__41029.5729795054$1399394975$gmane$org@6wind.com>
-References: <cover.1398176489.git.rgb@redhat.com>	<1399154328.2505.29.camel@dabdike.int.hansenpartnership.com>	<20140505034814.GA27548@mail.hallyn.com>	<20140505214818.GC6867@madcap2.tricolour.ca>	<1399326698.2164.47.camel@dabdike.int.hansenpartnership.com>	<20140505222758.GA6508@ubuntumail>	<1399329001.2164.56.camel@dabdike.int.hansenpartnership.com>	<20140505223638.GB6508@ubuntumail>
-	<a09ed85b-d6ef-4472-853b-84057d5957c2@email.android.com>
-Reply-To: nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org
+From: Marian Marinov <mm-NV7Lj0SOnH0@public.gmane.org>
+Subject: Re: Protection against container fork bombs [WAS: Re: memcg with
+	kmem limit doesn't recover after disk i/o causes limit to be hit]
+Date: Tue, 06 May 2014 14:40:55 +0300
+Message-ID: <5368CA47.7030007__28686.4321250052$1399396636$gmane$org@yuhu.biz>
+References: <20140416154650.GA3034@alpha.arachsys.com>	<20140418155939.GE4523@dhcp22.suse.cz>	<5351679F.5040908@parallels.com>	<20140420142830.GC22077@alpha.arachsys.com>	<20140422143943.20609800@oracle.com>	<20140422200531.GA19334@alpha.arachsys.com>	<535758A0.5000500@yuhu.biz>
+	<20140423084942.560ae837@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"; Format="flowed"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <a09ed85b-d6ef-4472-853b-84057d5957c2-2ueSQiBKiTY7tOexoI0I+QC/G2K4zDHf@public.gmane.org>
+In-Reply-To: <20140423084942.560ae837-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,110 +19,84 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: Dwight Engen <dwight.engen-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+Cc: Richard Davies <richard-li8END47hbdWk0Htik3J/w@public.gmane.org>, Vladimir Davydov <vdavydov-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Daniel Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Max Kellermann <mk-xMchvyqCc6DQT0dZR+AlfA@public.gmane.org>, Tim Hockin <thockin-Rl2oBbRerpQdnm+yROfE0A@public.gmane.org>, Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, Glauber Costa <glommer-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Michal Hocko <mhocko-AlSwsSmVLrQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, William Dauchy <wdauchy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Le 06/05/2014 01:23, James Bottomley a =E9crit :
+On 04/23/2014 03:49 PM, Dwight Engen wrote:
+> On Wed, 23 Apr 2014 09:07:28 +0300
+> Marian Marinov <mm-NV7Lj0SOnH0@public.gmane.org> wrote:
 >
->
-> On May 5, 2014 3:36:38 PM PDT, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> wro=
-te:
->> Quoting James Bottomley (James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org):
->>> On Mon, 2014-05-05 at 22:27 +0000, Serge Hallyn wrote:
->>>> Quoting James Bottomley (James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org):
->>>>> On Mon, 2014-05-05 at 17:48 -0400, Richard Guy Briggs wrote:
->>>>>> On 14/05/05, Serge E. Hallyn wrote:
->>>>>>> Quoting James Bottomley
->> (James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org):
->>>>>>>> On Tue, 2014-04-22 at 14:12 -0400, Richard Guy Briggs
->> wrote:
->>>>>>>>> Questions:
->>>>>>>>> Is there a way to link serial numbers of namespaces
->> involved in migration of a
->>>>>>>>> container to another kernel?  (I had a brief look at
->> CRIU.)  Is there a unique
->>>>>>>>> identifier for each running instance of a kernel?  Or at
->> least some identifier
->>>>>>>>> within the container migration realm?
->>>>>>>>
->>>>>>>> Are you asking for a way of distinguishing an migrated
->> container from an
->>>>>>>> unmigrated one?  The answer is pretty much "no" because the
->> job of
->>>>>>>> migration is to restore to the same state as much as
->> possible.
->>>>>>>>
->>>>>>>> Reading between the lines, I think your goal is to
->> correlate audit
->>>>>>>> information across a container migration, right?  Ideally
->> the management
->>>>>>>> system should be able to cough up an audit trail for a
->> container
->>>>>>>> wherever it's running and however many times it's been
->> migrated?
->>>>>>>>
->>>>>>>> In that case, I think your idea of a numeric serial number
->> in a dense
->>>>>>>> range is wrong.  Because the range is dense you're
->> obviously never going
->>>>>>>> to be able to use the same serial number across a
->> migration.  However,
->>>>>>>
->>>>>>> Ah, but I was being silly before, we can actually address
->> this pretty
->>>>>>> simply.  If we just (for instance) add
->>>>>>> /proc/self/ns/{ic,mnt,net,pid,user,uts}_seq containing the
->> serial number
->>>>>>> for the relevant ns for the task, then criu can dump this
->> info at
->>>>>>> checkpoint.  Then at restart it can dump an audit message per
->> task and
->>>>>>> ns saying old_serial=3D%x,new_serial=3D%x.  That way the audit
->> log reader
->>>>>>> can if it cares keep track.
->>>>>>
->>>>>> This is the sort of idea I had in mind...
+>> On 04/22/2014 11:05 PM, Richard Davies wrote:
+>>> Dwight Engen wrote:
+>>>> Richard Davies wrote:
+>>>>> Vladimir Davydov wrote:
+>>>>>> In short, kmem limiting for memory cgroups is currently broken.
+>>>>>> Do not use it. We are working on making it usable though.
+>>> ...
+>>>>> What is the best mechanism available today, until kmem limits
+>>>>> mature?
 >>>>>
->>>>> OK, but I don't understand then why you need a serial number.
->> There are
->>>>> plenty of things we preserve across a migration, like namespace
->> name for
->>>>> instance.  Could you explain what function it performs because I
->> think I
->>>>> might be missing something.
+>>>>> RLIMIT_NPROC exists but is per-user, not per-container.
+>>>>>
+>>>>> Perhaps there is an up-to-date task counter patchset or similar?
 >>>>
->>>> We're looking ahead to a time when audit is namespaced, and a
->> container
->>>> can keep its own audit logs (without limiting what the host audits
->> of
->>>> course).  So if a container is auditing suspicious activity by some
->>>> task in a sub-namesapce, then the whole parent container gets
->> migrated,
->>>> after migration we want to continue being able to correlate the
->> namespaces.
+>>>> I updated Frederic's task counter patches and included Max
+>>>> Kellermann's fork limiter here:
 >>>>
->>>> We're also looking at audit trails on a host that is up for years.
->> We
->>>> would like every namespace to be uniquely logged there.  That is
->> why
->>>> inode #s on /proc/self/ns/* are not sufficient, unless we add a
->> generation
->>>> # (which would end more complicated, not less, than a serial #).
+>>>> http://thread.gmane.org/gmane.linux.kernel.containers/27212
+>>>>
+>>>> I can send you a more recent patchset (against 3.13.10) if you
+>>>> would find it useful.
 >>>
->>> Right, but when the contaner has an audit namespace, that namespace
->> has
->>> a name,
+>>> Yes please, I would be interested in that. Ideally even against
+>>> 3.14.1 if you have that too.
 >>
->> What ns has a name?
+>> Dwight, do you have these patches in any public repo?
+>>
+>> I would like to test them also.
 >
-> The netns for instance.
-netns does not have names. iproute2 uses names (a filename in fact, to hold=
- a
-reference on the netns), but the kernel never got this name. It only get a =
-file
-descriptor (or a pid).
+> Hi Marian, I put the patches against 3.13.11 and 3.14.1 up at:
+>
+> git://github.com/dwengen/linux.git cpuacct-task-limit-3.13
+> git://github.com/dwengen/linux.git cpuacct-task-limit-3.14
+>
+Guys I tested the patches with 3.12.16. However I see a problem with them.
 
+Trying to set the limit to a cgroup which already have processes in it does not work:
 
-Regards,
-Nicolas
+[root@sp2 lxc]# echo 50 > cpuacct.task_limit
+-bash: echo: write error: Device or resource busy
+[root@sp2 lxc]# echo 0 > cpuacct.task_limit
+-bash: echo: write error: Device or resource busy
+[root@sp2 lxc]#
+
+I have even tried to remove this check:
++               if (cgroup_task_count(cgrp) || !list_empty(&cgrp->children))
++                       return -EBUSY;
+But still give me 'Device or resource busy'.
+
+Any pointers of why is this happening ?
+
+Marian
+
+>> Marian
+>>
+>>>
+>>> Thanks,
+>>>
+>>> Richard.
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe cgroups"
+>>> in the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+>>>
+>>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe cgroups" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
