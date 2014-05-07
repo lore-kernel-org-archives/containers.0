@@ -1,22 +1,18 @@
-From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+From: Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
 Subject: Re: [PATCH 0/2] namespaces: log namespaces per task
-Date: Tue, 06 May 2014 16:57:27 -0700
-Message-ID: <1399420647.11967.24.camel@dabdike>
+Date: Wed, 07 May 2014 11:35:05 +0200
+Message-ID: <5369FE49.7040103@6wind.com>
 References: <cover.1398176489.git.rgb@redhat.com>
-	<1399154328.2505.29.camel@dabdike.int.hansenpartnership.com>
-	<20140505034814.GA27548@mail.hallyn.com>
-	<20140505214818.GC6867@madcap2.tricolour.ca>
-	<1399326698.2164.47.camel@dabdike.int.hansenpartnership.com>
-	<20140505222758.GA6508@ubuntumail>
-	<1399329001.2164.56.camel@dabdike.int.hansenpartnership.com>
-	<20140505223638.GB6508@ubuntumail>
-	<a09ed85b-d6ef-4472-853b-84057d5957c2@email.android.com>
-	<20140506214129.GC15100@madcap2.tricolour.ca>
+	<20140501223212.GA25669@mail.hallyn.com>
+	<20140502142851.GC24111@madcap2.tricolour.ca>
+	<5367587B.20801@6wind.com>
+	<20140506211530.GB15100@madcap2.tricolour.ca>
+Reply-To: nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"; Format="flowed"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140506214129.GC15100-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org>
+In-Reply-To: <20140506211530.GB15100-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,176 +23,115 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 2014-05-06 at 17:41 -0400, Richard Guy Briggs wrote:
-> On 14/05/05, James Bottomley wrote:
-> > On May 5, 2014 3:36:38 PM PDT, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> wrote:
-> > >Quoting James Bottomley (James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org):
-> > >> On Mon, 2014-05-05 at 22:27 +0000, Serge Hallyn wrote:
-> > >> > Quoting James Bottomley (James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org):
-> > >> > > On Mon, 2014-05-05 at 17:48 -0400, Richard Guy Briggs wrote:
-> > >> > > > On 14/05/05, Serge E. Hallyn wrote:
-> > >> > > > > Quoting James Bottomley
-> > >(James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org):
-> > >> > > > > > On Tue, 2014-04-22 at 14:12 -0400, Richard Guy Briggs
-> > >wrote:
-> > >> > > > > > > Questions:
-> > >> > > > > > > Is there a way to link serial numbers of namespaces
-> > >involved in migration of a
-> > >> > > > > > > container to another kernel?  (I had a brief look at
-> > >CRIU.)  Is there a unique
-> > >> > > > > > > identifier for each running instance of a kernel?  Or at
-> > >least some identifier
-> > >> > > > > > > within the container migration realm?
-> > >> > > > > > 
-> > >> > > > > > Are you asking for a way of distinguishing an migrated
-> > >container from an
-> > >> > > > > > unmigrated one?  The answer is pretty much "no" because the
-> > >job of
-> > >> > > > > > migration is to restore to the same state as much as
-> > >possible.
-> > >> > > > > > 
-> > >> > > > > > Reading between the lines, I think your goal is to
-> > >correlate audit
-> > >> > > > > > information across a container migration, right?  Ideally
-> > >the management
-> > >> > > > > > system should be able to cough up an audit trail for a
-> > >container
-> > >> > > > > > wherever it's running and however many times it's been
-> > >migrated?
-> > >> > > > > > 
-> > >> > > > > > In that case, I think your idea of a numeric serial number
-> > >in a dense
-> > >> > > > > > range is wrong.  Because the range is dense you're
-> > >obviously never going
-> > >> > > > > > to be able to use the same serial number across a
-> > >migration.  However,
-> > >> > > > > 
-> > >> > > > > Ah, but I was being silly before, we can actually address
-> > >this pretty
-> > >> > > > > simply.  If we just (for instance) add
-> > >> > > > > /proc/self/ns/{ic,mnt,net,pid,user,uts}_seq containing the
-> > >serial number
-> > >> > > > > for the relevant ns for the task, then criu can dump this
-> > >info at
-> > >> > > > > checkpoint.  Then at restart it can dump an audit message per
-> > >task and
-> > >> > > > > ns saying old_serial=%x,new_serial=%x.  That way the audit
-> > >log reader
-> > >> > > > > can if it cares keep track.
-> > >> > > > 
-> > >> > > > This is the sort of idea I had in mind...
-> > >> > > 
-> > >> > > OK, but I don't understand then why you need a serial number. 
-> > >There are
-> > >> > > plenty of things we preserve across a migration, like namespace
-> > >name for
-> > >> > > instance.  Could you explain what function it performs because I
-> > >think I
-> > >> > > might be missing something.
-> > >> > 
-> > >> > We're looking ahead to a time when audit is namespaced, and a
-> > >container
-> > >> > can keep its own audit logs (without limiting what the host audits
-> > >of
-> > >> > course).  So if a container is auditing suspicious activity by some
-> > >> > task in a sub-namesapce, then the whole parent container gets
-> > >migrated,
-> > >> > after migration we want to continue being able to correlate the
-> > >namespaces.
-> > >> > 
-> > >> > We're also looking at audit trails on a host that is up for years. 
-> > >We
-> > >> > would like every namespace to be uniquely logged there.  That is
-> > >why
-> > >> > inode #s on /proc/self/ns/* are not sufficient, unless we add a
-> > >generation
-> > >> > # (which would end more complicated, not less, than a serial #).
-> > >> 
-> > >> Right, but when the contaner has an audit namespace, that namespace
-> > >has
-> > >> a name,
-> > >
-> > >What ns has a name?
-> > 
-> > The netns for instance.
-> > 
-> > >  The audit ns can be tied to 50 pid namespaces, and
-> > >we
-> > >want to log which pidns is responsible for something.
-> > >
-> > >If you mean the pidns has a name, that's the problem...  it does not,
-> > >it
-> > >only has a inode # which may later be re-use.
-> > 
-> > I still think there's a miscommunication somewhere: I believe you just
-> > need a stable id to tie the audit to, so why not just give the audit
-> > namespace a name like net?  The id would then be durable across
-> > migrations.
-> 
-> Audit does not have its own namespace (yet).
+Le 06/05/2014 23:15, Richard Guy Briggs a =E9crit :
+> On 14/05/05, Nicolas Dichtel wrote:
+>> Le 02/05/2014 16:28, Richard Guy Briggs a ?crit :
+>>> On 14/05/02, Serge E. Hallyn wrote:
+>>>> Quoting Richard Guy Briggs (rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
+>>>>> I saw no replies to my questions when I replied a year after Aris' po=
+sting, so
+>>>>> I don't know if it was ignored or got lost in stale threads:
+>>>>>          https://www.redhat.com/archives/linux-audit/2013-March/msg00=
+020.html
+>>>>>          https://www.redhat.com/archives/linux-audit/2013-March/msg00=
+033.html
+>>>>> 	(https://lists.linux-foundation.org/pipermail/containers/2013-March/=
+032063.html)
+>>>>>          https://www.redhat.com/archives/linux-audit/2014-January/msg=
+00180.html
+>>>>>
+>>>>> I've tried to answer a number of questions that were raised in that t=
+hread.
+>>>>>
+>>>>> The goal is not quite identical to Aris' patchset.
+>>>>>
+>>>>> The purpose is to track namespaces in use by logged processes from the
+>>>>> perspective of init_*_ns.  The first patch defines a function to list=
+ them.
+>>>>> The second patch provides an example of usage for audit_log_task_info=
+() which
+>>>>> is used by syscall audits, among others.  audit_log_task() and
+>>>>> audit_common_recv_message() would be other potential use cases.
+>>>>>
+>>>>> Use a serial number per namespace (unique across one boot of one kern=
+el)
+>>>>> instead of the inode number (which is claimed to have had the right t=
+o change
+>>>>> reserved and is not necessarily unique if there is more than one proc=
+ fs).  It
+>>>>> could be argued that the inode numbers have now become a defacto inte=
+rface and
+>>>>> can't change now, but I'm proposing this approach to see if this help=
+s address
+>>>>> some of the objections to the earlier patchset.
+>>>>>
+>>>>> There could also have messages added to track the creation and the de=
+struction
+>>>>> of namespaces, listing the parent for hierarchical namespaces such as=
+ pidns,
+>>>>> userns, and listing other ids for non-hierarchical namespaces, as wel=
+l as other
+>>>>> information to help identify a namespace.
+>>>>>
+>>>>> There has been some progress made for audit in net namespaces and pid
+>>>>> namespaces since this previous thread.  net namespaces are now served=
+ as peers
+>>>>> by one auditd in the init_net namespace with processes in a non-init_=
+net
+>>>>> namespace being able to write records if they are in the init_user_ns=
+ and have
+>>>>> CAP_AUDIT_WRITE.  Processes in a non-init_pid_ns can now similarly wr=
+ite
+>>>>> records.  As for CAP_AUDIT_READ, I just posted a patchset to check ca=
+pabilities
+>>>>> of userspace processes that try to join netlink broadcast groups.
+>>>>>
+>>>>>
+>>>>> Questions:
+>>>>> Is there a way to link serial numbers of namespaces involved in migra=
+tion of a
+>>>>> container to another kernel?  (I had a brief look at CRIU.)  Is there=
+ a unique
+>>>>> identifier for each running instance of a kernel?  Or at least some i=
+dentifier
+>>>>> within the container migration realm?
+>>>>
+>>>> Eric Biederman has always been adamantly opposed to adding new namespa=
+ces
+>>>> of namespaces, so the fact that you're asking this question concerns m=
+e.
+>>>
+>>> I have seen that position and I don't fully understand the justification
+>>> for it other than added complexity.
+>> Just FYI, have you seen this thread:
+>> http://thread.gmane.org/gmane.linux.network/286572/
+>>
+>> There is some explanations/examples about this topic.
+>
+> Thanks for that reference.  I read it through, but will need to do so
+> again to get it to sink in.
 
-So it would make the most sense to do this if audit were a separately
-attachable capability the orchestrator would like to control.  I'm not
-sure about that so I'll consider some use cases below.
+I think audit has the same problematic than x-netns netdevice: beeing able =
+to =
 
->   That idea is being
-> considered, but we would prefer to avoid it if it makes sense to tie it
-> in with an existing namespace.  The pid and user namespaces, being
-> heierarchical seem to make the most sense so far, but we are proceeding
-> very carefully to avoid creating a security nightmare in the process.
+identify a peer netns, when a userland apps "read" a message from the kerne=
+l.
 
-pid ns might be.  You need that on almost everything that runs in an OS
-like container, but it might not be present for an application.  For an
-IaaS container, it doesn't much matter: we attache every namespace.  For
-application type containers, it depends.  The lightest weight container
-setup is the containerised apache one where you have a shared web
-hosting service and you spawn the apache thread into a task cgroup
-connected to a mount namespace ... do you need to audit that?  Probably
-not; apache has reasonable logging on its own.
+The main problem with file descriptor is that you cannot use them when you
+broadcast a message from kernel to userland.
 
-The next class of applications is discrete service ones ... annoying
-apps that try to bind to 0.0.0.0; you containerise them by placing them
-in a net namespace only with their own net device.  Mostly you trust
-them to run, you just want to restrict their IP attachment.  Do you want
-to audit these ... possibly.
+Maybe we can use the local names concept (like file descriptors but without
+their constraints), ie having an identifier of a peer (net)ns which is only
+valid the current (net)ns. When the kernel needs to identify a peer (net)ns=
+, it
+uses this identifier (or allocate it the first time). After that, the userl=
+and
+apps may reuse this identifier to configure things in the peer (net)ns.
 
-Then there's the fully containerised applications, mostly used for
-multi-tenant services.  These often have a net name space (separate IP
-devices), a mount namespace (separate data stores) they may have a pid
-namespace and they might have a user one (but probably only if the
-application needs to run as root) .. they probably need auditing.
+Eric, any thoughts about this?
 
-Finally, of course, there's the full OS containers with one of every
-namespace and cgroup going ... they'll want to appear to run their own
-audit daemon (although we can make it a dummy and just pull it into the
-host).
-
-> >From the kernel's perspective, none of the namespaces have a name.  A
-> container concept of a group of namespaces may have been assigned one,
-> but that isn't apparent to the layer that is logging this information.
-
-That's why an audit namespace with a settable prefix looks potentially
-interesting: the orchestration system decides what stuff it cares about
-being audited separately and slaps it into its own audit namespace.
-Stuff you don't care about you leave to the host audit (no separate ns).
-It also gets you out of trying to decide which other namespace should be
-paired with audit, because now it's fully configurable.
-
-> > >> which CRIU would migrate, so why not use that name for the
-> > >> log .. no need for numbers (unless you make the name a number, of
-> > >> course)?
-> 
-> There would certainly need to be a way to tie these namespace
-> identifiers to container names in log messages.
-
-Right, and coming from a company that produces orchestration systems all
-we really care about is "what's coming out of this entity fred I
-configured up yesterday", so we don't care about labelling the
-individual namespaces and cgroups, we do care which of them correspond
-to fred.  I suppose there are other use cases, though, and I just didn't
-notice when people described them.
-
-James
+Regards,
+Nicolas
