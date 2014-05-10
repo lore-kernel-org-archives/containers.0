@@ -1,16 +1,15 @@
-From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH V2 6/6] audit: convert namespace serial number logging to use
-	proc ns_entries
-Date: Fri,  9 May 2014 20:27:27 -0400
-Message-ID: <d7f26c13de9ad02b10a9e334c6b13848c2dc8435.1399681022.git.rgb__27903.8008804948$1399681746$gmane$org@redhat.com>
+From: Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH V2 1/6] namespaces: assign each namespace instance a
+	serial number
+Date: Sat, 10 May 2014 11:01:59 -0400
+Message-ID: <1399734119.3558.16.camel@localhost>
 References: <cover.1399681022.git.rgb@redhat.com>
+	<f34b584ffed2538176f9a366e25bb98c531fb70f.1399681022.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <cover.1399681022.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-In-Reply-To: <cover.1399681022.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-References: <cover.1399681022.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <f34b584ffed2538176f9a366e25bb98c531fb70f.1399681022.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,83 +19,47 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Convert audit direct access to namespace serial numbers to insead use the proc
-namespace operations structure which lists all namespace types with a
-consistent api.
+On Fri, 2014-05-09 at 20:27 -0400, Richard Guy Briggs wrote:
+> Generate and assign a serial number per namespace instance since boot.
+> 
+> Use a serial number per namespace (unique across one boot of one kernel)
+> instead of the inode number (which is claimed to have had the right to change
+> reserved and is not necessarily unique if there is more than one proc fs) to
+> uniquely identify it per kernel boot.
+> 
+> Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> ---
 
-This should eventually squash down to: [audit: log namespace serial numbers]
-(which in turn will need to follow [namespaces: expose ns_entries])
+> +/**
+> + * ns_serial - compute a serial number for the namespace
+> + *
+> + * Compute a serial number for the namespace to uniquely identify it in
+> + * audit records.
+> + */
+> +unsigned long long ns_serial(void)
+> +{
+> +	static DEFINE_SPINLOCK(serial_lock);
+> +	static unsigned long long serial = 4; /* reserved for IPC, UTS, user, PID */
+> +	unsigned long flags;
+> +
+> +	spin_lock_irqsave(&serial_lock, flags);
+> +	++serial;
+> +	spin_unlock_irqrestore(&serial_lock, flags);
+> +	BUG_ON(!serial);
+> +
+> +	return serial;
+> +}
+> +
+>  static inline struct nsproxy *create_nsproxy(void)
+>  {
+>  	struct nsproxy *nsproxy;
 
-Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- kernel/audit.c |   43 ++++++++++++-------------------------------
- 1 files changed, 12 insertions(+), 31 deletions(-)
+atomic64_t instead of doing it yourself?
 
-diff --git a/kernel/audit.c b/kernel/audit.c
-index fe783ad..6452278 100644
---- a/kernel/audit.c
-+++ b/kernel/audit.c
-@@ -64,15 +64,7 @@
- #endif
- #include <linux/freezer.h>
- #include <linux/tty.h>
--#include <linux/nsproxy.h>
--#include <linux/utsname.h>
--#include <linux/ipc_namespace.h>
--#include "../fs/mount.h"
--#include <linux/mount.h>
--#include <linux/mnt_namespace.h>
--#include <linux/pid_namespace.h>
--#include <net/net_namespace.h>
--#include <linux/user_namespace.h>
-+#include <linux/proc_ns.h>
- #include <net/netns/generic.h>
- 
- #include "audit.h"
-@@ -1628,29 +1620,18 @@ void audit_log_session_info(struct audit_buffer *ab)
- #ifdef CONFIG_NAMESPACES
- void audit_log_namespace_info(struct audit_buffer *ab, struct task_struct *tsk)
- {
--	struct nsproxy *nsproxy;
--
--	rcu_read_lock();
--	nsproxy = task_nsproxy(tsk);
--	if (nsproxy != NULL) {
--		audit_log_format(ab, " mntns=%llx", nsproxy->mnt_ns->serial_num);
--#ifdef CONFIG_NET_NS
--		audit_log_format(ab, " netns=%llx", nsproxy->net_ns->serial_num);
--#endif
--#ifdef CONFIG_UTS_NS
--		audit_log_format(ab, " utsns=%llx", nsproxy->uts_ns->serial_num);
--#endif
--#ifdef CONFIG_IPC_NS
--		audit_log_format(ab, " ipcns=%llx", nsproxy->ipc_ns->serial_num);
--#endif
-+	const struct proc_ns_operations **entry;
-+	bool end = false;
-+
-+	if (!tsk)
-+		return;
-+	for (entry = ns_entries; !end; entry++) {
-+		void *ns = (*entry)->get(tsk);
-+		audit_log_format(ab, " %sns=%llx", (*entry)->name,
-+				 (*entry)->snum(ns));
-+		(*entry)->put(ns);
-+		end = (*entry)->type == CLONE_NEWNS;
- 	}
--#ifdef CONFIG_PID_NS
--	audit_log_format(ab, " pidns=%llx", task_active_pid_ns(tsk)->serial_num);
--#endif
--#ifdef CONFIG_USER_NS
--	audit_log_format(ab, " userns=%llx", task_cred_xxx(tsk, user_ns)->serial_num);
--#endif
--	rcu_read_unlock();
- }
- #endif /* CONFIG_NAMESPACES */
- 
--- 
-1.7.1
+and why _irqsave() ?  Can we seriously create new namespaces in irq
+context?  If you use the atomic though, you don't have to worry about
+it...
