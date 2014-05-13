@@ -1,16 +1,17 @@
 From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH V2 2/6] audit: log namespace serial numbers
-Date: Tue, 13 May 2014 10:28:22 -0400
-Message-ID: <20140513142822.GC27560@madcap2.tricolour.ca>
+Subject: Re: [PATCH V2 1/6] namespaces: assign each namespace instance a
+	serial number
+Date: Tue, 13 May 2014 10:39:25 -0400
+Message-ID: <20140513143925.GD27560@madcap2.tricolour.ca>
 References: <cover.1399681022.git.rgb@redhat.com>
-	<e1b3ea66770e9e8d067c4fb725a6940c41ccf2f2.1399681022.git.rgb@redhat.com>
-	<1399737362.3558.22.camel@localhost>
+	<f34b584ffed2538176f9a366e25bb98c531fb70f.1399681022.git.rgb@redhat.com>
+	<1399734119.3558.16.camel@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1399737362.3558.22.camel@localhost>
+In-Reply-To: <1399734119.3558.16.camel@localhost>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,27 +27,50 @@ List-Id: containers.vger.kernel.org
 
 On 14/05/10, Eric Paris wrote:
 > On Fri, 2014-05-09 at 20:27 -0400, Richard Guy Briggs wrote:
+> > Generate and assign a serial number per namespace instance since boot.
+> > 
+> > Use a serial number per namespace (unique across one boot of one kernel)
+> > instead of the inode number (which is claimed to have had the right to change
+> > reserved and is not necessarily unique if there is more than one proc fs) to
+> > uniquely identify it per kernel boot.
+> > 
+> > Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> > ---
 > 
-> Not so relevant because you delete all of this code later...  But
-> still...
-> 
-> > +#ifdef CONFIG_NAMESPACES
-> > +void audit_log_namespace_info(struct audit_buffer *ab, struct task_struct *tsk)
+> > +/**
+> > + * ns_serial - compute a serial number for the namespace
+> > + *
+> > + * Compute a serial number for the namespace to uniquely identify it in
+> > + * audit records.
+> > + */
+> > +unsigned long long ns_serial(void)
 > > +{
-> > +	struct nsproxy *nsproxy;
+> > +	static DEFINE_SPINLOCK(serial_lock);
+> > +	static unsigned long long serial = 4; /* reserved for IPC, UTS, user, PID */
+> > +	unsigned long flags;
 > > +
-> > +	rcu_read_lock();
+> > +	spin_lock_irqsave(&serial_lock, flags);
+> > +	++serial;
+> > +	spin_unlock_irqrestore(&serial_lock, flags);
+> > +	BUG_ON(!serial);
+> > +
+> > +	return serial;
+> > +}
+> > +
+> >  static inline struct nsproxy *create_nsproxy(void)
+> >  {
+> >  	struct nsproxy *nsproxy;
 > 
-> ok, so we are under rcu_read_lock() and cannot sleep
-> 
-> > +	nsproxy = task_nsproxy(tsk);
-> > +	if (nsproxy != NULL) {
-> > +		audit_log_format(ab, " mntns=%llx", nsproxy->mnt_ns->serial_num);
-> 
-> But this could do an allocation, are we sure that everything used
-> GFP_ATOMIC when creating the audit buffer? [hint: it doesn't]
+> atomic64_t instead of doing it yourself?
 
-Ugh, missed that.  Even more reason to go with the ns_entries export.
+I'm willing to switch to atomic64_*.  Thanks for pointing out its
+existence.
+
+> and why _irqsave() ?  Can we seriously create new namespaces in irq
+> context?  If you use the atomic though, you don't have to worry about
+> it...
+
+Agreed.  That is unlikely.
 
 - RGB
 
