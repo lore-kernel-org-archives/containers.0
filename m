@@ -1,17 +1,16 @@
-From: Andrey Wagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH driver-core-linus] kernfs, sysfs, cgroup: restrict extra
-	perm check on open to sysfs
-Date: Tue, 13 May 2014 00:22:35 +0400
-Message-ID: <20140512202234.GA4484__23979.8434930437$1399926174$gmane$org@gmail.com>
-References: <CANaxB-xUm3rJ-Cbp72q-rQJO5mZe1qK6qXsQM=vh0U8upJ44+A@mail.gmail.com>
-	<20140512151908.GC1421@htj.dyndns.org>
-	<20140512175627.GE1421@htj.dyndns.org>
+From: "chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: RE: [Resend][PATCH] ns,proc: introduce pid_in_ns
+Date: Tue, 13 May 2014 09:15:55 +0000
+Message-ID: <5871495633F38949900D2BF2DC04883E5119FF__4001.16211171753$1399972643$gmane$org@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <1398415405-19872-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<20140425185645.GA10637@redhat.com>
+	<87a9b95icy.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="gb2312"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20140512175627.GE1421-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
+In-Reply-To: <87a9b95icy.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,119 +20,52 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, libcg-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, May 12, 2014 at 01:56:27PM -0400, Tejun Heo wrote:
-> The kernfs open method - kernfs_fop_open() - inherited extra
-> permission checks from sysfs.  While the vfs layer allows ignoring the
-> read/write permissions checks if the issuer has CAP_DAC_OVERRIDE,
-> sysfs explicitly denied open regardless of the cap if the file doesn't
-> have any of the UGO perms of the requested access or doesn't implement
-> the requested operation.  It can be debated whether this was a good
-> idea or not but the behavior is too subtle and dangerous to change at
-> this point.
-> 
-> After cgroup got converted to kernfs, this extra perm check also got
-> applied to cgroup breaking libcgroup which opens write-only files with
-> O_RDWR as root.  This patch gates the extra open permission check with
-> a new flag KERNFS_ROOT_EXTRA_OPEN_PERM_CHECK and enables it for sysfs.
-> For sysfs, nothing changes.  For cgroup, root now can perform any
-> operation regardless of the permissions as it was before kernfs
-> conversion.  Note that kernfs still fails unimplemented operations
-> with -EINVAL.
-> 
-> While at it, add comments explaining KERNFS_ROOT flags.
->
-
-It works for me. Thank you for the quick response.
-
-Tested-by: Andrey Wagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-
-> Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> Reported-by: Andrey Wagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> Cc: Li Zefan <lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-> References: http://lkml.kernel.org/g/CANaxB-xUm3rJ-Cbp72q-rQJO5mZe1qK6qXsQM=vh0U8upJ44+A-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org
-> Fixes: 2bd59d48ebfb ("cgroup: convert to kernfs")
-> ---
->  fs/kernfs/file.c       |   19 +++++++++++--------
->  fs/sysfs/mount.c       |    3 ++-
->  include/linux/kernfs.h |   19 ++++++++++++++++++-
->  3 files changed, 31 insertions(+), 10 deletions(-)
-> 
-> --- a/fs/kernfs/file.c
-> +++ b/fs/kernfs/file.c
-> @@ -610,6 +610,7 @@ static void kernfs_put_open_node(struct
->  static int kernfs_fop_open(struct inode *inode, struct file *file)
->  {
->  	struct kernfs_node *kn = file->f_path.dentry->d_fsdata;
-> +	struct kernfs_root *root = kernfs_root(kn);
->  	const struct kernfs_ops *ops;
->  	struct kernfs_open_file *of;
->  	bool has_read, has_write, has_mmap;
-> @@ -624,14 +625,16 @@ static int kernfs_fop_open(struct inode
->  	has_write = ops->write || ops->mmap;
->  	has_mmap = ops->mmap;
->  
-> -	/* check perms and supported operations */
-> -	if ((file->f_mode & FMODE_WRITE) &&
-> -	    (!(inode->i_mode & S_IWUGO) || !has_write))
-> -		goto err_out;
-> -
-> -	if ((file->f_mode & FMODE_READ) &&
-> -	    (!(inode->i_mode & S_IRUGO) || !has_read))
-> -		goto err_out;
-> +	/* see the flag definition for details */
-> +	if (root->flags & KERNFS_ROOT_EXTRA_OPEN_PERM_CHECK) {
-> +		if ((file->f_mode & FMODE_WRITE) &&
-> +		    (!(inode->i_mode & S_IWUGO) || !has_write))
-> +			goto err_out;
-> +
-> +		if ((file->f_mode & FMODE_READ) &&
-> +		    (!(inode->i_mode & S_IRUGO) || !has_read))
-> +			goto err_out;
-> +	}
->  
->  	/* allocate a kernfs_open_file for the file */
->  	error = -ENOMEM;
-> --- a/fs/sysfs/mount.c
-> +++ b/fs/sysfs/mount.c
-> @@ -63,7 +63,8 @@ int __init sysfs_init(void)
->  {
->  	int err;
->  
-> -	sysfs_root = kernfs_create_root(NULL, 0, NULL);
-> +	sysfs_root = kernfs_create_root(NULL, KERNFS_ROOT_EXTRA_OPEN_PERM_CHECK,
-> +					NULL);
->  	if (IS_ERR(sysfs_root))
->  		return PTR_ERR(sysfs_root);
->  
-> --- a/include/linux/kernfs.h
-> +++ b/include/linux/kernfs.h
-> @@ -50,7 +50,24 @@ enum kernfs_node_flag {
->  
->  /* @flags for kernfs_create_root() */
->  enum kernfs_root_flag {
-> -	KERNFS_ROOT_CREATE_DEACTIVATED = 0x0001,
-> +	/*
-> +	 * kernfs_nodes are created in the deactivated state and invisible.
-> +	 * They require explicit kernfs_activate() to become visible.  This
-> +	 * can be used to make related nodes become visible atomically
-> +	 * after all nodes are created successfully.
-> +	 */
-> +	KERNFS_ROOT_CREATE_DEACTIVATED		= 0x0001,
-> +
-> +	/*
-> +	 * For regular flies, if the opener has CAP_DAC_OVERRIDE, open(2)
-> +	 * succeeds regardless of the RW permissions.  sysfs had an extra
-> +	 * layer of enforcement where open(2) fails with -EACCES regardless
-> +	 * of CAP_DAC_OVERRIDE if the permission doesn't have the
-> +	 * respective read or write access at all (none of S_IRUGO or
-> +	 * S_IWUGO) or the respective operation isn't implemented.  The
-> +	 * following flag enables that behavior.
-> +	 */
-> +	KERNFS_ROOT_EXTRA_OPEN_PERM_CHECK	= 0x0002,
->  };
->  
->  /* type-specific structures for kernfs_node union members */
+DQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogRXJpYyBXLiBCaWVkZXJt
+YW4gW21haWx0bzplYmllZGVybUB4bWlzc2lvbi5jb21dDQo+IFNlbnQ6IFNhdHVyZGF5LCBBcHJp
+bCAyNiwgMjAxNCAzOjE4IEFNDQo+IFRvOiBPbGVnIE5lc3Rlcm92DQo+IENjOiBDaGVuLCBIYW54
+aWFvL7PCIOrPz/Y7IGNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc7DQo+IGxp
+bnV4LWtlcm5lbEB2Z2VyLmtlcm5lbC5vcmc7IEFuZHJldyBNb3J0b247IFNlcmdlIEhhbGx5bjsg
+RGFuaWVsIFAuIEJlcnJhbmdlOw0KPiBBbCBWaXJvOyBEYXZpZCBIb3dlbGxzDQo+IFN1YmplY3Q6
+IFJlOiBbUmVzZW5kXVtQQVRDSF0gbnMscHJvYzogaW50cm9kdWNlIHBpZF9pbl9ucw0KPiANCj4g
+T2xlZyBOZXN0ZXJvdiA8b2xlZ0ByZWRoYXQuY29tPiB3cml0ZXM6DQo+IA0KPiA+IE9uIDA0LzI1
+LCBDaGVuIEhhbnhpYW8gd3JvdGU6DQo+ID4+DQo+ID4+IFdlIGxhY2tlZCBvZiBjb252ZW5pZW50
+IG1ldGhvZCBvZiBnZXR0aW5nIHRoZSBwaWQgaW5zaWRlIGNvbnRhaW5lcnMuDQo+IA0KPiBBcmUg
+dW5peCBkb21haW4gc29ja2V0cyBub3QgY29udmluaWVudD8NCj4gDQoNCkl0J3MgYSB2ZXJ5IGdv
+b2QgbWV0aG9kLCBidXQgbm90IHNvIGRpcmVjdGx5IGZvciBqdXN0IHBpZCB0cmFuc2xhdGlvbi4N
+Cg0KPiA+PiBJZiBzb21lIGlzc3VlcyBvY2N1cnJlZCBpbnNpZGUgY29udGFpbmVyIGd1ZXN0LCBo
+b3N0IHVzZXINCj4gPj4gY291bGQgbm90IGtub3cgd2hpY2ggcHJvY2VzcyBpcyBpbiB0cm91Ymxl
+IGp1c3QgYnkgZ3Vlc3QgcGlkOg0KPiA+PiB0aGUgdXNlcnMgb2YgY29udGFpbmVyIGd1ZXN0IG9u
+bHkga25ldyB0aGUgcGlkIGluc2lkZSBjb250YWluZXJzLg0KPiA+PiBUaGlzIHdpbGwgYnJpbmcg
+b2JzdGFjbGUgZm9yIHRyb3VibGUgc2hvb3RpbmcuDQo+ID4+DQo+ID4+IFRoaXMgcGF0Y2ggaW50
+cm9kdWNlcyBwaWRfaW5fbnM6DQo+ID4+IElmIG9uZSBwcm9jZXNzIGlzIGluIGluaXRfcGlkX25z
+LCAvcHJvYy9QSUQvcGlkX2luX25zDQo+ID4+IGVxdWFscyB0byAvcHJvYy9QSUQ7DQo+ID4+IGlm
+IG9uZSBwcm9jZXNzIGlzIGluIHBpZG5zLCAvcHJvYy9QSUQvcGlkX2luX25zDQo+ID4+IHdpbGwg
+dGVsbCB0aGUgcGlkIGluc2lkZSBjb250YWluZXJzOw0KPiA+PiBpZiBwaWRucyBpcyBuZXN0ZWQs
+IGl0IGRlcGVuZHMgb24gd2hpY2ggcGlkbnMgYXJlIHlvdSBpbi4NCj4gPg0KPiA+IFllcyBhbm90
+aGVyIC9wcm9jL3BpZC8gZmlsZS4uLg0KPiA+DQo+ID4gUGVyaGFwcyBpdCB3b3VsZCBiZSBiZXR0
+ZXIgdG8gY2hhbmdlIC9wcm9jL3BpZC9zdGF0dXNbIlBpZDoiXSB0byByZXBvcnQgdGhlDQo+ID4g
+bGlzdCBvZiBwaWRfbnIncywgZnJvbSBpdHMgbmFtZXNwYWNlIHVwIHRvIHRoZSBvYnNlcnZlcidz
+IG5hbWVzcGFjZS4gVGhlIHNhbWUNCj4gPiBmb3IgIlRnaWQ6Ii4NCj4gPg0KPiA+IChIbW0uIEFu
+ZCB3aHkgIk5naWQ6IiB3YXMgaW5zZXJ0ZWQgYmV0d2VlbiB0aWQgYW5kIHRnaWQgPykNCj4gDQo+
+IEFkZCB0byB0aGF0IE5naWQgaGFzIGEgY29tcGxldGVseSBob3NlZCBpbXBsZW1lbnRhdGlvbi4g
+IEl0IGlzIGEgcGlkDQo+IHN0b3JlZCBpbiBhIHBpZF90LCBub3QgYSBzdHJ1Y3QgcGlkICouICBT
+aWdoLg0KPiANCj4gSSBhbSBnZXR0aW5nIG1vcmUgYW5kIG1vcmUgdGVtcHRlZCB0byBvYmxpdGVy
+YXRlIHRhc2stPnBpZC4gIEl0IGp1c3QNCj4gZW5jb3VyYWdlcyBiYWQgY29kZS4NCj4gDQo+ID4+
+ICtpbnQgcHJvY19waWRfaW5fbnMoc3RydWN0IHNlcV9maWxlICptLCBzdHJ1Y3QgcGlkX25hbWVz
+cGFjZSAqbnMsDQo+ID4+ICsJCQlzdHJ1Y3QgcGlkICpwaWQsIHN0cnVjdCB0YXNrX3N0cnVjdCAq
+dGFzaykNCj4gPj4gK3sNCj4gPj4gKwlwaWRfdCBwaWRfaW5fbnM7DQo+ID4+ICsJdW5zaWduZWQg
+aW50IGxldmVsOw0KPiA+PiArDQo+ID4+ICsJbGV2ZWwgPSBwaWQtPmxldmVsOw0KPiA+PiArCXBp
+ZF9pbl9ucyA9IHRhc2tfcGlkX25yX25zKHRhc2ssIHBpZC0+bnVtYmVyc1tsZXZlbF0ubnMpOw0K
+PiA+DQo+ID4gVGhpcyBsb29rcyBvdmVyY29tcGxpY2F0ZWQgb3IgSSBtaXNzZWQgc29tZXRoaW5n
+Pw0KPiANCj4gSSBkbyB0aGluayBpZiB3ZSBjYXJlIHdlIG5lZWQgdG8gcHJpbnQgdGhlIGVudGly
+ZSBzZXQgb2YgcGlkcy4NCj4gSSBkb24ndCBrbm93IGlmIC9wcm9jL3BpZC9zdGF0dXMgaXMgdGhl
+IHByb3BlciBwbGFjZSBidXQgLi4uDQo+IA0KDQpMZXQncyBwcmludCB0aGUgZW50aXJlIHNldCBv
+ZiBwaWRzIGluIC9wcm9jL3BpZC9zdGF0dXMuDQoNCj4gRXJpYw0KDQpUaGFua3MgZm9yIHRoZSBj
+b21tZW50cy4NCnYyIHdpbGwgY29tZSBzb29uLg0KDQotIENoZW4NCg0KX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QK
+Q29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4
+Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
