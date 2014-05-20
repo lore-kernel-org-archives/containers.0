@@ -1,7 +1,7 @@
 From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH V3 4/6] namespaces: expose ns_entries
-Date: Tue, 20 May 2014 09:12:05 -0400
-Message-ID: <0998b34e1a42aab5b900c4d5a5bcfb48ad090c63.1400271129.git.rgb__37220.2737642967$1400591610$gmane$org@redhat.com>
+Subject: [PATCH V3 3/6] namespaces: expose ns instance serial numbers in proc
+Date: Tue, 20 May 2014 09:12:04 -0400
+Message-ID: <9975244b2ea7a260d616d2a0a6b118b0410f350b.1400271129.git.rgb__14280.8736920871$1400591616$gmane$org@redhat.com>
 References: <cover.1400271129.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,39 +23,94 @@ To: linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29T
 Cc: eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Expose ns_entries so subsystems other than proc can use this set of namespace
-operations.
+Expose the namespace instace serial numbers in the proc filesystem at
+/proc/<pid>/ns/<ns>_snum.  The link text gives the serial number in hex.
 
+"snum" was chosen instead of "seq" for consistency with inum and there are a
+number of other uses of "seq" in the namespace code.
+
+Suggested-by: Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- fs/proc/namespaces.c    |    2 +-
- include/linux/proc_ns.h |    1 +
- 2 files changed, 2 insertions(+), 1 deletions(-)
+ fs/proc/namespaces.c |   33 +++++++++++++++++++++++++--------
+ 1 files changed, 25 insertions(+), 8 deletions(-)
 
 diff --git a/fs/proc/namespaces.c b/fs/proc/namespaces.c
-index 57fce90..c2eb625 100644
+index 9ae46b8..57fce90 100644
 --- a/fs/proc/namespaces.c
 +++ b/fs/proc/namespaces.c
-@@ -15,7 +15,7 @@
- #include "internal.h"
+@@ -47,12 +47,15 @@ static char *ns_dname(struct dentry *dentry, char *buffer, int buflen)
+ 	struct inode *inode = dentry->d_inode;
+ 	const struct proc_ns_operations *ns_ops = PROC_I(inode)->ns.ns_ops;
  
+-	return dynamic_dname(dentry, buffer, buflen, "%s:[%lu]",
+-		ns_ops->name, inode->i_ino);
++	if (strstr(dentry->d_iname, "_snum"))
++		return dynamic_dname(dentry, buffer, buflen, "%s_snum:[%llx]",
++			ns_ops->name, ns_ops->snum(PROC_I(inode)->ns.ns));
++	else
++		return dynamic_dname(dentry, buffer, buflen, "%s:[%lu]",
++			ns_ops->name, inode->i_ino);
+ }
  
--static const struct proc_ns_operations *ns_entries[] = {
-+const struct proc_ns_operations *ns_entries[] = {
- #ifdef CONFIG_NET_NS
- 	&netns_operations,
- #endif
-diff --git a/include/linux/proc_ns.h b/include/linux/proc_ns.h
-index aaafe3e..f4563db 100644
---- a/include/linux/proc_ns.h
-+++ b/include/linux/proc_ns.h
-@@ -28,6 +28,7 @@ extern const struct proc_ns_operations ipcns_operations;
- extern const struct proc_ns_operations pidns_operations;
- extern const struct proc_ns_operations userns_operations;
- extern const struct proc_ns_operations mntns_operations;
-+extern const struct proc_ns_operations *ns_entries[];
+-const struct dentry_operations ns_dentry_operations =
+-{
++const struct dentry_operations ns_dentry_operations = {
+ 	.d_delete	= always_delete_dentry,
+ 	.d_dname	= ns_dname,
+ };
+@@ -160,7 +163,10 @@ static int proc_ns_readlink(struct dentry *dentry, char __user *buffer, int bufl
+ 	if (!ns)
+ 		goto out_put_task;
  
- /*
-  * We always define these enumerators
+-	snprintf(name, sizeof(name), "%s:[%u]", ns_ops->name, ns_ops->inum(ns));
++	if (strstr(dentry->d_iname, "_snum"))
++		snprintf(name, sizeof(name), "%s_snum:[%llx]", ns_ops->name, ns_ops->snum(ns));
++	else
++		snprintf(name, sizeof(name), "%s:[%u]", ns_ops->name, ns_ops->inum(ns));
+ 	len = strlen(name);
+ 
+ 	if (len > buflen)
+@@ -216,16 +222,23 @@ static int proc_ns_dir_readdir(struct file *file, struct dir_context *ctx)
+ 
+ 	if (!dir_emit_dots(file, ctx))
+ 		goto out;
+-	if (ctx->pos >= 2 + ARRAY_SIZE(ns_entries))
++	if (ctx->pos >= 2 + 2 * ARRAY_SIZE(ns_entries))
+ 		goto out;
+ 	entry = ns_entries + (ctx->pos - 2);
+ 	last = &ns_entries[ARRAY_SIZE(ns_entries) - 1];
+ 	while (entry <= last) {
+ 		const struct proc_ns_operations *ops = *entry;
++		char name[50];
++
+ 		if (!proc_fill_cache(file, ctx, ops->name, strlen(ops->name),
+ 				     proc_ns_instantiate, task, ops))
+ 			break;
+ 		ctx->pos++;
++		snprintf(name, sizeof(name), "%s_snum", ops->name);
++		if (!proc_fill_cache(file, ctx, name, strlen(name),
++				     proc_ns_instantiate, task, ops))
++			break;
++		ctx->pos++;
+ 		entry++;
+ 	}
+ out:
+@@ -253,9 +266,13 @@ static struct dentry *proc_ns_dir_lookup(struct inode *dir,
+ 
+ 	last = &ns_entries[ARRAY_SIZE(ns_entries)];
+ 	for (entry = ns_entries; entry < last; entry++) {
+-		if (strlen((*entry)->name) != len)
++		char name[50];
++
++		snprintf(name, sizeof(name), "%s_snum", (*entry)->name);
++		if (strlen((*entry)->name) != len && strlen(name) != len)
+ 			continue;
+-		if (!memcmp(dentry->d_name.name, (*entry)->name, len))
++		if (!memcmp(dentry->d_name.name, (*entry)->name, len)
++		    || !memcmp(dentry->d_name.name, name, len))
+ 			break;
+ 	}
+ 	if (entry == last)
 -- 
 1.7.1
