@@ -1,7 +1,7 @@
 From: Alin Dobre <alin.dobre-1hSFou9RDDldEee+Cai+ZQ@public.gmane.org>
-Subject: Netfilter owner matching inside user namespace
-Date: Tue, 20 May 2014 17:16:54 +0100
-Message-ID: <537B7FF6.9050103@elastichosts.com>
+Subject: Containers over 9p in 3.14
+Date: Tue, 20 May 2014 18:03:54 +0100
+Message-ID: <537B8AFA.4080303@elastichosts.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,41 +15,37 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: netfilter-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Jan Engelhardt <jengelh-nopoi9nDyk+ELgA04lAiVw@public.gmane.org>
+To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, v9fs-developer-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Eric Van Hensbergen <ericvh-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Hello,
 
-I am trying to run the following command inside an image using user
-namespaces via contain [1], a very simplistic implementation of linux
-containers:
-  contain /path/to/image /bin/bash
+We are using 9p to run containers on top of remote filesystems, and it
+works correctly using the 3.13.11 kernel. However, there were a bunch of
+updates in the fs/9p area in 3.14 which seem to have broken the
+namespaces support for containers.
 
-Although the host kernel does have support for owner matching and it
-works with no errors, running the following iptables command inside the
-container:
-  iptables -A OUTPUT -m owner --uid-owner root -j ACCEPT
-returns the error "Invalid argument".
+A simple description of how we run the container over 9p is:
+- on the remote source host we run diod as 9p server
+- on the local host we mount the filesystem in /some/path
+- also locally, we run
+  contain /some/path /bin/bash
 
-The last commit for the netfilter xt_owner module is exactly Eric's
-basic support for user namespaces, but there might be some other recent
-changes either in the namespaces area or netfilter in general, which
-brought the module in an unusable state inside containers - at least for
-the above command usage.
+In 3.14 (3.14.4 to be exact), the contain command can no longer mount
+the dev filesystem via mount("tmpfs", "dev", "tmpfs", 0, "mode=0755")
+after unsharing IPC, NS, USER, UTS and NET, but before unsharing PID.
+The above call returns an EPERM. You can look at the very simple code in
+contain.c and mount.c at [1].
 
-I can try to send the image I used for testing to anyone who desires,
-but a handy shortcut should be "deboostrap trusty /path/to/image" and
-"chroot /path/to/image apt-get install iptables".
+This call used to work fine in 3.13. I haven't tried to bisect and find
+out the exact patch that introduces the problem, but it's one of "git
+log --oneline b26d4cd.. fs/9p".
 
-The host kernel is 3.14.4, iptables version on the host is 1.4.15 and
-inside the Ubuntu container is 1.4.18. I have tried with Ubuntu 13.* and
-Ubuntu 14.04, but I don't think the userspace has anything to do with this.
+I can provide you with any additional information that might be needed.
 
-I can provide with any additional information needed.
-
-Any insights on this?
+Thank you for any feedback.
 
 Cheers,
-Alin.
+Ailn.
 
 [1] https://github.com/arachsys/containers
