@@ -1,14 +1,14 @@
-From: Dominique Martinet <dominique.martinet-KCE40YydGKI@public.gmane.org>
-Subject: Re: [V9fs-developer] Containers over 9p in 3.14
-Date: Wed, 21 May 2014 08:52:20 +0200
-Message-ID: <20140521065219.GA15962__42875.4576867961$1400659977$gmane$org@u-barrelet>
-References: <537B8AFA.4080303@elastichosts.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: Netfilter owner matching inside user namespace
+Date: Wed, 21 May 2014 14:04:45 -0700
+Message-ID: <877g5eg7wy.fsf__15087.864342104$1400706352$gmane$org@x220.int.ebiederm.org>
+References: <537B7FF6.9050103@elastichosts.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <537B8AFA.4080303-1hSFou9RDDldEee+Cai+ZQ@public.gmane.org>
+In-Reply-To: <537B7FF6.9050103-1hSFou9RDDldEee+Cai+ZQ@public.gmane.org> (Alin Dobre's message of
+	"Tue, 20 May 2014 17:16:54 +0100")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,34 +19,66 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Alin Dobre <alin.dobre-1hSFou9RDDldEee+Cai+ZQ@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, v9fs-developer-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Eric Van Hensbergen <ericvh-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jan Engelhardt <jengelh-nopoi9nDyk+ELgA04lAiVw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
+Alin Dobre <alin.dobre-1hSFou9RDDldEee+Cai+ZQ@public.gmane.org> writes:
 
-Alin Dobre wrote on Tue, May 20, 2014 at 06:03:54PM +0100:
-> This call used to work fine in 3.13. I haven't tried to bisect and find
-> out the exact patch that introduces the problem, but it's one of "git
-> log --oneline b26d4cd.. fs/9p".
-> 
-> I can provide you with any additional information that might be needed.
+> Hello,
+>
+> I am trying to run the following command inside an image using user
+> namespaces via contain [1], a very simplistic implementation of linux
+> containers:
+>   contain /path/to/image /bin/bash
+>
+> Although the host kernel does have support for owner matching and it
+> works with no errors, running the following iptables command inside the
+> container:
+>   iptables -A OUTPUT -m owner --uid-owner root -j ACCEPT
+> returns the error "Invalid argument".
+>
+> The last commit for the netfilter xt_owner module is exactly Eric's
+> basic support for user namespaces, but there might be some other recent
+> changes either in the namespaces area or netfilter in general, which
+> brought the module in an unusable state inside containers - at least for
+> the above command usage.
 
-For curiosity, I wouldn't mind seeing your exact mount options ? (cache
-if any, access, posixacl if set, etc..)
+The code says.
 
+static int owner_check(const struct xt_mtchk_param *par)
+{
+	struct xt_owner_match_info *info = par->matchinfo;
 
-I've got no experience with containers/no setup I could try it with
-right now, but I recall 3.14 broke the xattr_set call - you might want
-to try to revert this one:
-* bdd5c28 9p: fix return value in case in v9fs_fid_xattr_set()
+	/* For now only allow adding matches from the initial user namespace */
+	if ((info->match & (XT_OWNER_UID|XT_OWNER_GID)) &&
+	    (current_user_ns() != &init_user_ns))
+		return -EINVAL;
+	return 0;
+}
 
+So it is not expected to work in user namespaces by design.
 
-Philippe Deniel posted about it on this list a while ago but nothing
-that I could see got done to actually fix it, I guess I'll submit
-something today or tomorrow with proper fix (e.g. keep negative value if
-there's an error to report, but 0 on success)
+> I can try to send the image I used for testing to anyone who desires,
+> but a handy shortcut should be "deboostrap trusty /path/to/image" and
+> "chroot /path/to/image apt-get install iptables".
+>
+> The host kernel is 3.14.4, iptables version on the host is 1.4.15 and
+> inside the Ubuntu container is 1.4.18. I have tried with Ubuntu 13.* and
+> Ubuntu 14.04, but I don't think the userspace has anything to do with this.
+>
+> I can provide with any additional information needed.
+>
+> Any insights on this?
 
+As I recall this code largely matches directly on the values passed in
+from userspace.  Which in this case is a problem because I would like to
+store kuids and kgids in the data structures and compare those.
 
-I'll have a harder look if this isn't enough.
--- 
-Dominique Martinet
+I believe it would take some careful refactoring to allow massaging the
+data from the form the user supplied to something more appropriate
+before we perform the match.
+
+That is making this work is tricky so I punted and did not support it
+from inside a user namespace.
+
+Eric
