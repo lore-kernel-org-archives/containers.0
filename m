@@ -1,14 +1,14 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: Netfilter owner matching inside user namespace
-Date: Wed, 21 May 2014 14:04:45 -0700
-Message-ID: <877g5eg7wy.fsf__15087.864342104$1400706352$gmane$org@x220.int.ebiederm.org>
-References: <537B7FF6.9050103@elastichosts.com>
+Subject: Re: Containers over 9p in 3.14
+Date: Wed, 21 May 2014 14:15:45 -0700
+Message-ID: <87ha4iesu6.fsf@x220.int.ebiederm.org>
+References: <537B8AFA.4080303@elastichosts.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <537B7FF6.9050103-1hSFou9RDDldEee+Cai+ZQ@public.gmane.org> (Alin Dobre's message of
-	"Tue, 20 May 2014 17:16:54 +0100")
+In-Reply-To: <537B8AFA.4080303-1hSFou9RDDldEee+Cai+ZQ@public.gmane.org> (Alin Dobre's message of
+	"Tue, 20 May 2014 18:03:54 +0100")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,66 +19,60 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Alin Dobre <alin.dobre-1hSFou9RDDldEee+Cai+ZQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jan Engelhardt <jengelh-nopoi9nDyk+ELgA04lAiVw@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, v9fs-developer-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Eric Van Hensbergen <ericvh-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Alin Dobre <alin.dobre-1hSFou9RDDldEee+Cai+ZQ@public.gmane.org> writes:
 
 > Hello,
 >
-> I am trying to run the following command inside an image using user
-> namespaces via contain [1], a very simplistic implementation of linux
-> containers:
->   contain /path/to/image /bin/bash
+> We are using 9p to run containers on top of remote filesystems, and it
+> works correctly using the 3.13.11 kernel. However, there were a bunch of
+> updates in the fs/9p area in 3.14 which seem to have broken the
+> namespaces support for containers.
+
+That sounds very weird.  The filesystem used should be orthogonal.
+
+> A simple description of how we run the container over 9p is:
+> - on the remote source host we run diod as 9p server
+> - on the local host we mount the filesystem in /some/path
+> - also locally, we run
+>   contain /some/path /bin/bash
 >
-> Although the host kernel does have support for owner matching and it
-> works with no errors, running the following iptables command inside the
-> container:
->   iptables -A OUTPUT -m owner --uid-owner root -j ACCEPT
-> returns the error "Invalid argument".
+> In 3.14 (3.14.4 to be exact), the contain command can no longer mount
+> the dev filesystem via mount("tmpfs", "dev", "tmpfs", 0, "mode=0755")
+> after unsharing IPC, NS, USER, UTS and NET, but before unsharing PID.
+> The above call returns an EPERM. You can look at the very simple code in
+> contain.c and mount.c at [1].
 >
-> The last commit for the netfilter xt_owner module is exactly Eric's
-> basic support for user namespaces, but there might be some other recent
-> changes either in the namespaces area or netfilter in general, which
-> brought the module in an unusable state inside containers - at least for
-> the above command usage.
+> This call used to work fine in 3.13. I haven't tried to bisect and find
+> out the exact patch that introduces the problem, but it's one of "git
+> log --oneline b26d4cd.. fs/9p".
 
-The code says.
+That is weird.
 
-static int owner_check(const struct xt_mtchk_param *par)
-{
-	struct xt_owner_match_info *info = par->matchinfo;
+There has been a bunch of work to keep from abusing the ability to
+mount, that added some additional constraints.
 
-	/* For now only allow adding matches from the initial user namespace */
-	if ((info->match & (XT_OWNER_UID|XT_OWNER_GID)) &&
-	    (current_user_ns() != &init_user_ns))
-		return -EINVAL;
-	return 0;
-}
+For sys and proc those constraints pretty much mean other versions of
+those filesystems need to be mounted somewhere or you are not allowd to
+mount a fresh copy.
 
-So it is not expected to work in user namespaces by design.
+I can't think of any additional rules for tmpfs off of the top of my
+head.
 
-> I can try to send the image I used for testing to anyone who desires,
-> but a handy shortcut should be "deboostrap trusty /path/to/image" and
-> "chroot /path/to/image apt-get install iptables".
->
-> The host kernel is 3.14.4, iptables version on the host is 1.4.15 and
-> inside the Ubuntu container is 1.4.18. I have tried with Ubuntu 13.* and
-> Ubuntu 14.04, but I don't think the userspace has anything to do with this.
->
-> I can provide with any additional information needed.
->
-> Any insights on this?
+I can't imagine off the top of my head how 9p or any specific filesystem
+would be involved.
 
-As I recall this code largely matches directly on the values passed in
-from userspace.  Which in this case is a problem because I would like to
-store kuids and kgids in the data structures and compare those.
+> I can provide you with any additional information that might be
+> needed.
 
-I believe it would take some careful refactoring to allow massaging the
-data from the form the user supplied to something more appropriate
-before we perform the match.
+If you are building your own kernels and this is easily reproducible
+it may make sense to instrument up the mount call with printks can see
+where the failure is coming from.
 
-That is making this work is tricky so I punted and did not support it
-from inside a user namespace.
+Unless it is a basic 9p bug where directories don't appear as
+directories in some cases my deep hunch is that you have found some way
+to run afoul of the restrictions on mount points.
 
 Eric
