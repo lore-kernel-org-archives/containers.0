@@ -1,14 +1,13 @@
-From: Marian Marinov <mm-108MBtLGafw@public.gmane.org>
-Subject: Re: Netfilter owner matching inside user namespace
-Date: Thu, 22 May 2014 06:35:09 +0300
-Message-ID: <537D706D.4010303@1h.com>
-References: <537B7FF6.9050103@elastichosts.com>
-	<877g5eg7wy.fsf@x220.int.ebiederm.org>
+From: Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH V3 0/6] namespaces: log namespaces per task
+Date: Thu, 22 May 2014 12:20:57 +0200
+Message-ID: <CAHO5Pa0EdUsV9jJuLbkmbvFyopecQiUDZd0UasAJ5kMhtsVxjQ@mail.gmail.com>
+References: <cover.1400271129.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <877g5eg7wy.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <cover.1400271129.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,115 +17,155 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Alin Dobre <alin.dobre-1hSFou9RDDldEee+Cai+ZQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jan Engelhardt <jengelh-nopoi9nDyk+ELgA04lAiVw@public.gmane.org>
+To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+Richard,
 
-On 05/22/2014 12:04 AM, Eric W. Biederman wrote:
-> Alin Dobre <alin.dobre-1hSFou9RDDldEee+Cai+ZQ@public.gmane.org> writes:
-> 
->> Hello,
->> 
->> I am trying to run the following command inside an image using user namespaces via contain [1], a very simplistic
->> implementation of linux containers: contain /path/to/image /bin/bash
->> 
->> Although the host kernel does have support for owner matching and it works with no errors, running the following
->> iptables command inside the container: iptables -A OUTPUT -m owner --uid-owner root -j ACCEPT returns the error
->> "Invalid argument".
->> 
->> The last commit for the netfilter xt_owner module is exactly Eric's basic support for user namespaces, but there
->> might be some other recent changes either in the namespaces area or netfilter in general, which brought the
->> module in an unusable state inside containers - at least for the above command usage.
-> 
-> The code says.
-> 
-> static int owner_check(const struct xt_mtchk_param *par) { struct xt_owner_match_info *info = par->matchinfo;
-> 
-> /* For now only allow adding matches from the initial user namespace */ if ((info->match &
-> (XT_OWNER_UID|XT_OWNER_GID)) && (current_user_ns() != &init_user_ns)) return -EINVAL; return 0; }
-> 
-> So it is not expected to work in user namespaces by design.
-> 
->> I can try to send the image I used for testing to anyone who desires, but a handy shortcut should be "deboostrap
->> trusty /path/to/image" and "chroot /path/to/image apt-get install iptables".
->> 
->> The host kernel is 3.14.4, iptables version on the host is 1.4.15 and inside the Ubuntu container is 1.4.18. I
->> have tried with Ubuntu 13.* and Ubuntu 14.04, but I don't think the userspace has anything to do with this.
->> 
->> I can provide with any additional information needed.
->> 
->> Any insights on this?
-> 
-> As I recall this code largely matches directly on the values passed in from userspace.  Which in this case is a
-> problem because I would like to store kuids and kgids in the data structures and compare those.
-> 
-> I believe it would take some careful refactoring to allow massaging the data from the form the user supplied to
-> something more appropriate before we perform the match.
-> 
-> That is making this work is tricky so I punted and did not support it from inside a user namespace.
-> 
+On Tue, May 20, 2014 at 3:12 PM, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> The purpose is to track namespaces in use by logged processes from the
+> perspective of init_*_ns.
+>
+> 1/6 defines a function to generate them and assigns them.
+>
+> Use a serial number per namespace (unique across one boot of one kernel)
+> instead of the inode number (which is claimed to have had the right to change
+> reserved and is not necessarily unique if there is more than one proc fs).  It
+> could be argued that the inode numbers have now become a defacto interface and
+> can't change now, but I'm proposing this approach to see if this helps address
+> some of the objections to the earlier patchset.
+>
+> 2/6 adds access functions to get to the serial numbers in a similar way to
+> inode access for namespace proc operations.
+>
+> 3/6 implements, as suggested by Serge Hallyn, making these serial numbers
+> available in /proc/self/ns/{ipc,mnt,net,pid,user,uts}_snum.  I chose "snum"
+> instead of "seq" for consistency with inum and there are a number of other uses
+> of "seq" in the namespace code.
+>
+> 4/6 exposes proc's ns entries structure which lists a number of useful
+> operations per namespace type for other subsystems to use.
 
-Erik I have proposition about that... Please, tell me if I'm on the right track:
+Since the 3 and 4 change the ABI, please CC iterations of this patch
+series to linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, as per
+Documentation/SubmitChecklist.
 
-diff --git a/net/netfilter/xt_owner.c b/net/netfilter/xt_owner.c
-index ca2e577..3682825 100644
-- --- a/net/netfilter/xt_owner.c
-+++ b/net/netfilter/xt_owner.c
-@@ -33,6 +27,7 @@ owner_mt(const struct sk_buff *skb, struct xt_action_param *par)
- {
-        const struct xt_owner_match_info *info = par->matchinfo;
-        const struct file *filp;
-+ struct user_namespace *ns = get_current_cred()->user_ns;
+Cheers,
 
-        if (skb->sk == NULL || skb->sk->sk_socket == NULL)
-                return (info->match ^ info->invert) == 0;
-@@ -49,8 +44,8 @@ owner_mt(const struct sk_buff *skb, struct xt_action_param *par)
-                       (XT_OWNER_UID | XT_OWNER_GID)) == 0;
+Michael
 
-        if (info->match & XT_OWNER_UID) {
-- -           kuid_t uid_min = make_kuid(&init_user_ns, info->uid_min);
-- -           kuid_t uid_max = make_kuid(&init_user_ns, info->uid_max);
-+         kuid_t uid_min = make_kuid(ns, info->uid_min);
-+         kuid_t uid_max = make_kuid(ns, info->uid_max);
-                if ((uid_gte(filp->f_cred->fsuid, uid_min) &&
-                     uid_lte(filp->f_cred->fsuid, uid_max)) ^
-                    !(info->invert & XT_OWNER_UID))
-@@ -58,8 +53,8 @@ owner_mt(const struct sk_buff *skb, struct xt_action_param *par)
-        }
 
-        if (info->match & XT_OWNER_GID) {
-- -           kgid_t gid_min = make_kgid(&init_user_ns, info->gid_min);
-- -           kgid_t gid_max = make_kgid(&init_user_ns, info->gid_max);
-+         kgid_t gid_min = make_kgid(ns, info->gid_min);
-+         kgid_t gid_max = make_kgid(ns, info->gid_max);
-                if ((gid_gte(filp->f_cred->fsgid, gid_min) &&
-                     gid_lte(filp->f_cred->fsgid, gid_max)) ^
-                    !(info->invert & XT_OWNER_GID))
-
-If the process has its own user and network namespaces, are the above changes enough?
-
-Since the rule is added to its own network namespace is it still a problem?
-
-Marian
-
-> Eric _______________________________________________ Containers mailing list Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org 
+> 5/6 provides an example of usage for audit_log_task_info() which is used by
+> syscall audits, among others.  audit_log_task() and audit_common_recv_message()
+> would be other potential use cases.
+>
+> Proposed output format:
+> This differs slightly from Aristeu's patch because of the label conflict with
+> "pid=" due to including it in existing records rather than it being a seperate
+> record.  The serial numbers are printed in hex.
+>         type=SYSCALL msg=audit(1399651071.433:72): arch=c000003e syscall=272 success=yes exit=0 a0=40000000 a1=ffffffffffffffff a2=0 a3=22 items=0 ppid=1 pid=483 auid=4294967295 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=(none) ses=4294967295 comm="(t-daemon)" exe="/usr/lib/systemd/systemd" netns=97 utsns=2 ipcns=1 pidns=4 userns=3 mntns=5 subj=system_u:system_r:init_t:s0 key=(null)
+>
+> 6/6 tracks the creation and deletion of of namespaces, listing the type of
+> namespace instance, related namespace id if there is one and the newly minted
+> serial number.
+>
+> Proposed output format:
+>         type=NS_INIT msg=audit(1400217435.706:94): pid=524 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:mount_t:s0 type=20000 old_snum=0 snum=a1 res=1
+>         type=NS_DEL msg=audit(1400217435.730:95): pid=524 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:mount_t:s0 type=20000 snum=a1 res=1
+>
+>
+> v2 -> v3:
+>         Use atomic64_t in ns_serial to simplify it.
+>         Avoid funciton duplication in proc, keying on dentry.
+>         Squash down audit patch to avoid rcu sleep issues.
+>         Add tracking for creation and deletion of namespace instances.
+>
+> v1 -> v2:
+>         Avoid rollover by switching from an int to a long long.
+>         Change rollover behaviour from simply avoiding zero to raising a BUG.
+>         Expose serial numbers in /proc/<pid>/ns/*_snum.
+>         Expose ns_entries and use it in audit.
+>
+>
+> Notes:
+> There has been some progress made for audit in net namespaces and pid
+> namespaces since this previous thread.  net namespaces are now served as peers
+> by one auditd in the init_net namespace with processes in a non-init_net
+> namespace being able to write records if they are in the init_user_ns and have
+> CAP_AUDIT_WRITE.  Processes in a non-init_pid_ns can now similarly write
+> records.  As for CAP_AUDIT_READ, I just posted a patchset to check capabilities
+> of userspace processes that try to join netlink broadcast groups.
+>
+> This set does not try to solve the non-init namespace audit messages and
+> auditd problem yet.  That will come later, likely with additional auditd
+> instances running in another namespace with a limited ability to influence the
+> master auditd.  I echo Eric B's idea that messages destined for different
+> namespaces would have to be tailored for that namespace with references that
+> make sense (such as the right pid number reported to that pid namespace, and
+> not leaking info about parents or peers).
+>
+> Bugs:
+> Patch 6/6 has a timing bug such that mnt and net namespace initial namespaces
+> never get logged, I suspect because they are initialized before the audit
+> subsystem.  I've tried moving audit from __initcall to subsys_initcall, but
+> that doesn't help.
+>
+> Questions:
+> Is there a way to link serial numbers of namespaces involved in migration of a
+> container to another kernel?  It sounds like what is needed is a part of a
+> mangement application that is able to pull the audit rcords from constituent
+> hosts to build an audit trail of a container.
+>
+> What additional events should list this information?
+>
+> Does this present any problematic information leaks?  Only CAP_AUDIT_CONTROL
+> (and proposed CAP_AUDIT_READ) in init_user_ns can get to this information in
+> the init namespace at the moment from audit.  *However*, the addition of the
+> proc/<pid>/ns/*_snum does make it available to other processes now.
+>
+>
+> Richard Guy Briggs (6):
+>   namespaces: assign each namespace instance a serial number
+>   namespaces: expose namespace instance serial number in proc_ns_operations
+>   namespaces: expose ns instance serial numbers in proc
+>   namespaces: expose ns_entries
+>   audit: log namespace serial numbers
+>   audit: log creation and deletion of namespace instances
+>
+>  fs/mount.h                     |    1 +
+>  fs/namespace.c                 |   12 +++++++++
+>  fs/proc/namespaces.c           |   35 +++++++++++++++++++-------
+>  include/linux/audit.h          |   15 +++++++++++
+>  include/linux/ipc_namespace.h  |    1 +
+>  include/linux/nsproxy.h        |    8 ++++++
+>  include/linux/pid_namespace.h  |    1 +
+>  include/linux/proc_ns.h        |    2 +
+>  include/linux/user_namespace.h |    1 +
+>  include/linux/utsname.h        |    1 +
+>  include/net/net_namespace.h    |    1 +
+>  include/uapi/linux/audit.h     |    2 +
+>  init/version.c                 |    1 +
+>  ipc/msgutil.c                  |    1 +
+>  ipc/namespace.c                |   20 +++++++++++++++
+>  kernel/audit.c                 |   53 +++++++++++++++++++++++++++++++++++++++-
+>  kernel/nsproxy.c               |   17 +++++++++++++
+>  kernel/pid.c                   |    1 +
+>  kernel/pid_namespace.c         |   19 ++++++++++++++
+>  kernel/user.c                  |    1 +
+>  kernel/user_namespace.c        |   18 +++++++++++++
+>  kernel/utsname.c               |   20 +++++++++++++++
+>  net/core/net_namespace.c       |   20 ++++++++++++++-
+>  23 files changed, 240 insertions(+), 11 deletions(-)
+>
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 > https://lists.linuxfoundation.org/mailman/listinfo/containers
-> 
 
 
-- -- 
-Marian Marinov
-Founder & CEO of 1H Ltd.
-Jabber/GTalk: hackman-/eSpBmjxGS4dnm+yROfE0A@public.gmane.org
-ICQ: 7556201
-Mobile: +359 886 660 270
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
 
-iEYEARECAAYFAlN9cG0ACgkQ4mt9JeIbjJTs8wCeJ5JwH8molS6pG4uh1qRt5bP3
-u7gAoLrBEnPXQKo5ZMuZjDMuSlk22HRe
-=EmqL
------END PGP SIGNATURE-----
+-- 
+Michael Kerrisk Linux man-pages maintainer;
+http://www.kernel.org/doc/man-pages/
+Author of "The Linux Programming Interface", http://blog.man7.org/
