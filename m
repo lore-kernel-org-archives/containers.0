@@ -1,16 +1,15 @@
-From: Marian Marinov <mm-108MBtLGafw@public.gmane.org>
-Subject: Re: [PATCH] IPC initialize shmmax and shmall from the current value
-	not the default
-Date: Thu, 22 May 2014 16:01:20 +0300
-Message-ID: <537DF520.2050904__23870.6818236553$1400763713$gmane$org@1h.com>
-References: <5365723D.7030303@1h.com>
-	<1399161216.2573.9.camel@buesod1.americas.hpqcorp.net>
-	<536621D4.60002@colorfullife.com> <5367EDB6.3010408@1h.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: Netfilter owner matching inside user namespace
+Date: Thu, 22 May 2014 16:03:02 -0700
+Message-ID: <87k39dbemx.fsf__4123.51416093788$1400799849$gmane$org@x220.int.ebiederm.org>
+References: <537B7FF6.9050103@elastichosts.com>
+	<877g5eg7wy.fsf@x220.int.ebiederm.org> <537D706D.4010303@1h.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <5367EDB6.3010408-108MBtLGafw@public.gmane.org>
+In-Reply-To: <537D706D.4010303-108MBtLGafw@public.gmane.org> (Marian Marinov's message of "Thu, 22
+	May 2014 06:35:09 +0300")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,80 +19,104 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Manfred Spraul <manfred-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>, Davidlohr Bueso <davidlohr-VXdhtT5mjnY@public.gmane.org>
-Cc: Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, n-horiguchi-PaJj6Psr51x8UrSeD/g0lQ@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Marian Marinov <mm-108MBtLGafw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alin Dobre <alin.dobre-1hSFou9RDDldEee+Cai+ZQ@public.gmane.org>, Jan Engelhardt <jengelh-nopoi9nDyk+ELgA04lAiVw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+Marian Marinov <mm-108MBtLGafw@public.gmane.org> writes:
 
-On 05/05/2014 10:59 PM, Marian Marinov wrote:
-> On 05/04/2014 02:17 PM, Manfred Spraul wrote:
->> Hi Marian,
+> On 05/22/2014 12:04 AM, Eric W. Biederman wrote:
+>> Alin Dobre <alin.dobre-1hSFou9RDDldEee+Cai+ZQ@public.gmane.org> writes:
 >> 
->> Note: The limits will soon be increased to (nearly) ULONG_MAX. I.e.: If you propose the patch because you are
->> running into issues with a too small SEMMAX after an unshare(CLONE_NEWIPC), then this will be fixed soon.
->> 
->> 
->> On 05/04/2014 01:53 AM, Davidlohr Bueso wrote:
->>> On Sun, 2014-05-04 at 01:48 +0300, Marian Marinov wrote:
->>>> When we are creating new IPC namespace that should be cloned from the current namespace it is a good idea to
->>>> copy the values of the current shmmax and shmall to the new namespace.
->> The idea sounds reasonable: If an admin has reduced the limits, then the reduction should also apply after a
->> unshare(CLONE_NEWIPC).
->> 
->> But: Your patch doesn't use the current shmmax, it uses the shmmax from init_ipc_ns. Would it be possible to use
->> the current values?
-> 
-> In my tests it worked exactly as expected. Here is an example:
-> 
-> [root@sp2 ~]# sysctl -a|grep shmmax kernel.shmmax = 68719476736 [root@sp2 ~]# lxc-attach -n cent_plain 
-> [root@localhost ~]# sysctl -a|grep shmmax kernel.shmmax = 68719476736 [root@localhost ~]# halt [root@sp2 ~]# sysctl
-> -a|grep shmmax kernel.shmmax = 68719476736 [root@sp2 ~]# sysctl kernel.shmmax=34359738368 kernel.shmmax =
-> 34359738368 [root@sp2 ~]# lxc-start -n cent_plain -d [root@sp2 ~]# lxc-attach -n cent_plain [root@localhost ~]#
-> sysctl -a|grep shmmax kernel.shmmax = 34359738368 [root@localhost ~]#
-> 
-> So it seams to work as expected :)
-> 
-> It works because wen you setup a new shmmax limit it is actually the limit in the init_ipc_ns. So when we are
-> creating a new ipc_ns its ok to copy the values from init_ipc_ns.
-> 
-> -Marian
-> 
-
-Ping?
-
-So will there be any more comments on that?
-
-Marian
-
->> 
->>> Why is this a good idea?
+>>> Hello,
 >>> 
->>> This would break userspace that relies on the current behavior. Furthermore we've recently changed the default
->>> value of both these limits to be as large as you can get, thus deprecating them. I don't like the idea of this
->>> being replaced by namespaces.
->> Davidlohr: We are not deprecating them, we make the default huge. The limits should stay as usable as they were.
+>>> I am trying to run the following command inside an image using user namespaces via contain [1], a very simplistic
+>>> implementation of linux containers: contain /path/to/image /bin/bash
+>>> 
+>>> Although the host kernel does have support for owner matching and it works with no errors, running the following
+>>> iptables command inside the container: iptables -A OUTPUT -m owner --uid-owner root -j ACCEPT returns the error
+>>> "Invalid argument".
+>>> 
+>>> The last commit for the netfilter xt_owner module is exactly Eric's basic support for user namespaces, but there
+>>> might be some other recent changes either in the namespaces area or netfilter in general, which brought the
+>>> module in an unusable state inside containers - at least for the above command usage.
 >> 
->> With regards to breaking user space, I must think about it a bit more. Right now, each new namespace starts with
->> SEMMAX=32MB, i.e. an often unusable default.
+>> The code says.
 >> 
->> -- Manfred
+>> static int owner_check(const struct xt_mtchk_param *par) { struct xt_owner_match_info *info = par->matchinfo;
 >> 
-> 
-> 
+>> /* For now only allow adding matches from the initial user namespace */ if ((info->match &
+>> (XT_OWNER_UID|XT_OWNER_GID)) && (current_user_ns() != &init_user_ns)) return -EINVAL; return 0; }
+>> 
+>> So it is not expected to work in user namespaces by design.
+>> 
+>>> I can try to send the image I used for testing to anyone who desires, but a handy shortcut should be "deboostrap
+>>> trusty /path/to/image" and "chroot /path/to/image apt-get install iptables".
+>>> 
+>>> The host kernel is 3.14.4, iptables version on the host is 1.4.15 and inside the Ubuntu container is 1.4.18. I
+>>> have tried with Ubuntu 13.* and Ubuntu 14.04, but I don't think the userspace has anything to do with this.
+>>> 
+>>> I can provide with any additional information needed.
+>>> 
+>>> Any insights on this?
+>> 
+>> As I recall this code largely matches directly on the values passed in from userspace.  Which in this case is a
+>> problem because I would like to store kuids and kgids in the data structures and compare those.
+>> 
+>> I believe it would take some careful refactoring to allow massaging the data from the form the user supplied to
+>> something more appropriate before we perform the match.
+>> 
+>> That is making this work is tricky so I punted and did not support it from inside a user namespace.
+>> 
+>
+> Erik I have proposition about that... Please, tell me if I'm on the right track:
+>
+> diff --git a/net/netfilter/xt_owner.c b/net/netfilter/xt_owner.c
+> index ca2e577..3682825 100644
+> --- a/net/netfilter/xt_owner.c
+> +++ b/net/netfilter/xt_owner.c
+> @@ -33,6 +27,7 @@ owner_mt(const struct sk_buff *skb, struct xt_action_param *par)
+>  {
+>         const struct xt_owner_match_info *info = par->matchinfo;
+>         const struct file *filp;
+> + struct user_namespace *ns = get_current_cred()->user_ns;
+>
+>         if (skb->sk == NULL || skb->sk->sk_socket == NULL)
+>                 return (info->match ^ info->invert) == 0;
+> @@ -49,8 +44,8 @@ owner_mt(const struct sk_buff *skb, struct xt_action_param *par)
+>                        (XT_OWNER_UID | XT_OWNER_GID)) == 0;
+>
+>         if (info->match & XT_OWNER_UID) {
+> -           kuid_t uid_min = make_kuid(&init_user_ns, info->uid_min);
+> -           kuid_t uid_max = make_kuid(&init_user_ns, info->uid_max);
+> +         kuid_t uid_min = make_kuid(ns, info->uid_min);
+> +         kuid_t uid_max = make_kuid(ns, info->uid_max);
+>                 if ((uid_gte(filp->f_cred->fsuid, uid_min) &&
+>                      uid_lte(filp->f_cred->fsuid, uid_max)) ^
+>                     !(info->invert & XT_OWNER_UID))
+> @@ -58,8 +53,8 @@ owner_mt(const struct sk_buff *skb, struct xt_action_param *par)
+>         }
+>
+>         if (info->match & XT_OWNER_GID) {
+> -           kgid_t gid_min = make_kgid(&init_user_ns, info->gid_min);
+> -           kgid_t gid_max = make_kgid(&init_user_ns, info->gid_max);
+> +         kgid_t gid_min = make_kgid(ns, info->gid_min);
+> +         kgid_t gid_max = make_kgid(ns, info->gid_max);
+>                 if ((gid_gte(filp->f_cred->fsgid, gid_min) &&
+>                      gid_lte(filp->f_cred->fsgid, gid_max)) ^
+>                     !(info->invert & XT_OWNER_GID))
+>
+> If the process has its own user and network namespaces, are the above changes enough?
+>
+> Since the rule is added to its own network namespace is it still a
+> problem?
 
 
-- -- 
-Marian Marinov
-Founder & CEO of 1H Ltd.
-Jabber/GTalk: hackman-/eSpBmjxGS4dnm+yROfE0A@public.gmane.org
-ICQ: 7556201
-Mobile: +359 886 660 270
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
+As I read the code the netfilter match does not need to be and I would
+be highly surprised if it were called in the context of any specific
+user process.   Which means we can not rely on current.
 
-iEYEARECAAYFAlN99SAACgkQ4mt9JeIbjJQHrQCfdexU5xdW4A/pO66SvbcYQVqF
-uREAoJ1e6hytp6435YUrpKjEG2qVulI1
-=QqGi
------END PGP SIGNATURE-----
+Check comes close to being the right place to change things, but check
+doesn't change the data, only validates it :(
+
+Eric
