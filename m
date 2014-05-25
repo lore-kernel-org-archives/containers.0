@@ -1,15 +1,16 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [RFC][PATCH] net: Allow xt_owner in any user namespace
-Date: Sun, 25 May 2014 00:39:48 -0700
-Message-ID: <87vbsus3wb.fsf_-_@x220.int.ebiederm.org>
-References: <537B7FF6.9050103@elastichosts.com>
-	<877g5eg7wy.fsf@x220.int.ebiederm.org> <537D706D.4010303@1h.com>
+From: Manfred Spraul <manfred-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>
+Subject: Re: [PATCH] IPC initialize shmmax and shmall from the current value
+	not the default
+Date: Sun, 25 May 2014 22:01:17 +0200
+Message-ID: <53824C0D.1070204@colorfullife.com>
+References: <5365723D.7030303@1h.com>
+	<1399161216.2573.9.camel@buesod1.americas.hpqcorp.net>
+	<536621D4.60002@colorfullife.com> <5367EDB6.3010408@1h.com>
+	<537DF520.2050904@1h.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="------------040400010102080704000705"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <537D706D.4010303-108MBtLGafw@public.gmane.org> (Marian Marinov's message of "Thu, 22
-	May 2014 06:35:09 +0300")
+In-Reply-To: <537DF520.2050904-108MBtLGafw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,111 +20,254 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Marian Marinov <mm-108MBtLGafw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alin Dobre <alin.dobre-1hSFou9RDDldEee+Cai+ZQ@public.gmane.org>, Jan Engelhardt <jengelh-nopoi9nDyk+ELgA04lAiVw@public.gmane.org>
+To: Marian Marinov <mm-108MBtLGafw@public.gmane.org>, Davidlohr Bueso <davidlohr-VXdhtT5mjnY@public.gmane.org>
+Cc: Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, n-horiguchi-PaJj6Psr51x8UrSeD/g0lQ@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+This is a multi-part message in MIME format.
+--------------040400010102080704000705
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 
-Making this work is a little tricky as it really isn't kosher to
-change the xt_owner_match_info in a check function.
+Hi Marian,
 
-Without changing xt_owner_match_info we need to know the user
-namespace the uids and gids are specified in.  In the common case
-net->user_ns == current_user_ns().  Verify net->user_ns ==
-current_user_ns() in owner_check so we can later assume it in
-owner_mt.
+On 05/22/2014 03:01 PM, Marian Marinov wrote:
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA1
+>
+> On 05/05/2014 10:59 PM, Marian Marinov wrote:
+>>
+>> In my tests it worked exactly as expected. Here is an example:
+>>
+>> [root@sp2 ~]# sysctl -a|grep shmmax kernel.shmmax = 68719476736 [root@sp2 ~]# lxc-attach -n cent_plain
+>> [root@localhost ~]# sysctl -a|grep shmmax kernel.shmmax = 68719476736 [root@localhost ~]# halt [root@sp2 ~]# sysctl
+>> -a|grep shmmax kernel.shmmax = 68719476736 [root@sp2 ~]# sysctl kernel.shmmax=34359738368 kernel.shmmax =
+>> 34359738368 [root@sp2 ~]# lxc-start -n cent_plain -d [root@sp2 ~]# lxc-attach -n cent_plain [root@localhost ~]#
+>> sysctl -a|grep shmmax kernel.shmmax = 34359738368 [root@localhost ~]#
+>>
+>> So it seams to work as expected :)
+>>
+>> It works because wen you setup a new shmmax limit it is actually the limit in the init_ipc_ns. So when we are
+>> creating a new ipc_ns its ok to copy the values from init_ipc_ns.
+>>
+>> -Marian
+>>
+> Ping?
+>
+> So will there be any more comments on that?
+>
+>
+Attached is an untested idea:
+- each new namespace copies from it's parent, i.e. nested namespaces 
+should work.
+- msg, sem and shm updated
 
-In owner_check also verify that all of the uids and gids specified are
-in net->user_ns and that the expected min/max relationship exists
-between the uids and gids in xt_owner_match_info.
+--
+     Manfred
 
-In owner_mt get the network namespace from the outgoing socket, as this
-must be the same network namespace as the netfilter rules, and use that
-network namespace to find the user namespace the uids and gids in
-xt_match_owner_info are encoded in.  Then convert from their encoded
-from into the kernel internal format for uids and gids and perform the
-owner match.
+--------------040400010102080704000705
+Content-Type: text/x-patch;
+ name="0001-ipc-namespace-copy-settings-from-parent-namespace.patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+ filename*0="0001-ipc-namespace-copy-settings-from-parent-namespace.patch"
 
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+From ed73ce838fc3f55e34041591a72b3135ccaa460b Mon Sep 17 00:00:00 2001
+From: Manfred Spraul <manfred-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>
+Date: Sun, 25 May 2014 21:04:42 +0200
+Subject: [PATCH] ipc namespace: copy settings from parent namespace
+
+Right now, each IPC namespace starts with the kernel boot standard
+settings.
+This patch changes that:
+Now each new namespace starts with the settings from the parent
+namespace.
+
+The patch updates msg, sem and shm.
+
+Marian: Would that patch help you?
+
+It's just a proposal - not yet tested.
+
+Open issues:
+- auto_msgmni is not yet taken from parent.
+
+--
+	Manfred
 ---
- net/netfilter/xt_owner.c | 40 ++++++++++++++++++++++++++++++++++------
- 1 file changed, 34 insertions(+), 6 deletions(-)
+ ipc/msg.c       | 13 +++++++++----
+ ipc/namespace.c |  6 +++---
+ ipc/sem.c       | 19 +++++++++++++------
+ ipc/shm.c       | 19 +++++++++++++------
+ ipc/util.h      | 12 ++++++------
+ 5 files changed, 44 insertions(+), 25 deletions(-)
 
-diff --git a/net/netfilter/xt_owner.c b/net/netfilter/xt_owner.c
-index ca2e577ed8ac..8111d8a19113 100644
---- a/net/netfilter/xt_owner.c
-+++ b/net/netfilter/xt_owner.c
-@@ -20,11 +20,37 @@
- static int owner_check(const struct xt_mtchk_param *par)
- {
- 	struct xt_owner_match_info *info = par->matchinfo;
-+	struct net *net = par->net;
+diff --git a/ipc/msg.c b/ipc/msg.c
+index 6498531..6c72d43 100644
+--- a/ipc/msg.c
++++ b/ipc/msg.c
+@@ -107,10 +107,15 @@ void recompute_msgmni(struct ipc_namespace *ns)
+ 	ns->msg_ctlmni = allowed;
+ }
  
--	/* For now only allow adding matches from the initial user namespace */
-+	/* Only allow the common case where the userns of the writer
-+	 * matches the userns of the network namespace.
-+	 */
- 	if ((info->match & (XT_OWNER_UID|XT_OWNER_GID)) &&
--	    (current_user_ns() != &init_user_ns))
-+	    (current_user_ns() != net->user_ns))
- 		return -EINVAL;
-+
-+	/* Ensure the uids are valid */
-+	if (info->match & XT_OWNER_UID) {
-+		kuid_t uid_min = make_kuid(net->user_ns, info->uid_min);
-+		kuid_t uid_max = make_kuid(net->user_ns, info->uid_max);
-+		if (!uid_valid(uid_min) || !uid_valid(uid_max) ||
-+		    (info->uid_max <= info->uid_min) ||
-+		    uid_lte(uid_max, uid_min)) {
-+			return -EINVAL;
-+		}
+-void msg_init_ns(struct ipc_namespace *ns)
++void msg_init_ns(struct ipc_namespace *ns, struct ipc_namespace *old_ns)
+ {
+-	ns->msg_ctlmax = MSGMAX;
+-	ns->msg_ctlmnb = MSGMNB;
++	if (old_ns != NULL) {
++		ns->msg_ctlmax = old_ns->msg_ctlmax;
++		ns->msg_ctlmnb = old_ns->msg_ctlmnb;
++	} else {
++		ns->msg_ctlmax = MSGMAX;
++		ns->msg_ctlmnb = MSGMNB;
 +	}
-+
-+	/* Ensure the gids are valid */
-+	if (info->match & XT_OWNER_GID) {
-+		kgid_t gid_min = make_kgid(net->user_ns, info->gid_min);
-+		kgid_t gid_max = make_kgid(net->user_ns, info->gid_max);
-+		if (!gid_valid(gid_min) || !gid_valid(gid_max) ||
-+		    (info->gid_max <= info->gid_min) ||
-+		    gid_lte(gid_max, gid_min)) {
-+			return -EINVAL;
-+		}
+ 
+ 	recompute_msgmni(ns);
+ 
+@@ -129,7 +134,7 @@ void msg_exit_ns(struct ipc_namespace *ns)
+ 
+ void __init msg_init(void)
+ {
+-	msg_init_ns(&init_ipc_ns);
++	msg_init_ns(&init_ipc_ns, NULL);
+ 
+ 	printk(KERN_INFO "msgmni has been set to %d\n",
+ 		init_ipc_ns.msg_ctlmni);
+diff --git a/ipc/namespace.c b/ipc/namespace.c
+index 59451c1..57b65fa 100644
+--- a/ipc/namespace.c
++++ b/ipc/namespace.c
+@@ -41,9 +41,9 @@ static struct ipc_namespace *create_ipc_ns(struct user_namespace *user_ns,
+ 	}
+ 	atomic_inc(&nr_ipc_ns);
+ 
+-	sem_init_ns(ns);
+-	msg_init_ns(ns);
+-	shm_init_ns(ns);
++	sem_init_ns(ns, old_ns);
++	msg_init_ns(ns, old_ns);
++	shm_init_ns(ns, old_ns);
+ 
+ 	/*
+ 	 * msgmni has already been computed for the new ipc ns.
+diff --git a/ipc/sem.c b/ipc/sem.c
+index bee5554..0e232e6 100644
+--- a/ipc/sem.c
++++ b/ipc/sem.c
+@@ -170,12 +170,19 @@ static int sysvipc_sem_proc_show(struct seq_file *s, void *it);
+ #define sc_semopm	sem_ctls[2]
+ #define sc_semmni	sem_ctls[3]
+ 
+-void sem_init_ns(struct ipc_namespace *ns)
++void sem_init_ns(struct ipc_namespace *ns, struct ipc_namespace *old_ns)
+ {
+-	ns->sc_semmsl = SEMMSL;
+-	ns->sc_semmns = SEMMNS;
+-	ns->sc_semopm = SEMOPM;
+-	ns->sc_semmni = SEMMNI;
++	if (old_ns != NULL) {
++		ns->sc_semmsl = old_ns->sc_semmsl;
++		ns->sc_semmns = old_ns->sc_semmns;
++		ns->sc_semopm = old_ns->sc_semopm;
++		ns->sc_semmni = old_ns->sc_semmni;
++	} else {
++		ns->sc_semmsl = SEMMSL;
++		ns->sc_semmns = SEMMNS;
++		ns->sc_semopm = SEMOPM;
++		ns->sc_semmni = SEMMNI;
 +	}
-+
+ 	ns->used_sems = 0;
+ 	ipc_init_ids(&ns->ids[IPC_SEM_IDS]);
+ }
+@@ -190,7 +197,7 @@ void sem_exit_ns(struct ipc_namespace *ns)
+ 
+ void __init sem_init(void)
+ {
+-	sem_init_ns(&init_ipc_ns);
++	sem_init_ns(&init_ipc_ns, NULL);
+ 	ipc_init_proc_interface("sysvipc/sem",
+ 				"       key      semid perms      nsems   uid   gid  cuid  cgid      otime      ctime\n",
+ 				IPC_SEM_IDS, sysvipc_sem_proc_show);
+diff --git a/ipc/shm.c b/ipc/shm.c
+index 7645961..5c54b25 100644
+--- a/ipc/shm.c
++++ b/ipc/shm.c
+@@ -72,12 +72,19 @@ static void shm_destroy(struct ipc_namespace *ns, struct shmid_kernel *shp);
+ static int sysvipc_shm_proc_show(struct seq_file *s, void *it);
+ #endif
+ 
+-void shm_init_ns(struct ipc_namespace *ns)
++void shm_init_ns(struct ipc_namespace *ns, struct ipc_namespace *old_ns)
+ {
+-	ns->shm_ctlmax = SHMMAX;
+-	ns->shm_ctlall = SHMALL;
+-	ns->shm_ctlmni = SHMMNI;
+-	ns->shm_rmid_forced = 0;
++	if (old_ns != NULL) {
++		ns->shm_ctlmax = old_ns->shm_ctlmax;
++		ns->shm_ctlall = old_ns->shm_ctlall;
++		ns->shm_ctlmni = old_ns->shm_ctlmni;
++		ns->shm_rmid_forced = old_ns->shm_rmid_forced;
++	} else {
++		ns->shm_ctlmax = SHMMAX;
++		ns->shm_ctlall = SHMALL;
++		ns->shm_ctlmni = SHMMNI;
++		ns->shm_rmid_forced = 0;
++	}
+ 	ns->shm_tot = 0;
+ 	ipc_init_ids(&shm_ids(ns));
+ }
+@@ -110,7 +117,7 @@ void shm_exit_ns(struct ipc_namespace *ns)
+ 
+ static int __init ipc_ns_init(void)
+ {
+-	shm_init_ns(&init_ipc_ns);
++	shm_init_ns(&init_ipc_ns, NULL);
  	return 0;
  }
  
-@@ -33,6 +59,7 @@ owner_mt(const struct sk_buff *skb, struct xt_action_param *par)
- {
- 	const struct xt_owner_match_info *info = par->matchinfo;
- 	const struct file *filp;
-+	const struct net *net;
+diff --git a/ipc/util.h b/ipc/util.h
+index 9c47d6f..bb62b44 100644
+--- a/ipc/util.h
++++ b/ipc/util.h
+@@ -30,17 +30,17 @@ static inline void mq_put_mnt(struct ipc_namespace *ns) { }
+ #endif
  
- 	if (skb->sk == NULL || skb->sk->sk_socket == NULL)
- 		return (info->match ^ info->invert) == 0;
-@@ -48,9 +75,10 @@ owner_mt(const struct sk_buff *skb, struct xt_action_param *par)
- 		return ((info->match ^ info->invert) &
- 		       (XT_OWNER_UID | XT_OWNER_GID)) == 0;
+ #ifdef CONFIG_SYSVIPC
+-void sem_init_ns(struct ipc_namespace *ns);
+-void msg_init_ns(struct ipc_namespace *ns);
+-void shm_init_ns(struct ipc_namespace *ns);
++void sem_init_ns(struct ipc_namespace *ns, struct ipc_namespace *old_ns);
++void msg_init_ns(struct ipc_namespace *ns, struct ipc_namespace *old_ns);
++void shm_init_ns(struct ipc_namespace *ns, struct ipc_namespace *old_ns);
  
-+	net = sock_net(skb->sk);
- 	if (info->match & XT_OWNER_UID) {
--		kuid_t uid_min = make_kuid(&init_user_ns, info->uid_min);
--		kuid_t uid_max = make_kuid(&init_user_ns, info->uid_max);
-+		kuid_t uid_min = make_kuid(net->user_ns, info->uid_min);
-+		kuid_t uid_max = make_kuid(net->user_ns, info->uid_max);
- 		if ((uid_gte(filp->f_cred->fsuid, uid_min) &&
- 		     uid_lte(filp->f_cred->fsuid, uid_max)) ^
- 		    !(info->invert & XT_OWNER_UID))
-@@ -58,8 +86,8 @@ owner_mt(const struct sk_buff *skb, struct xt_action_param *par)
- 	}
+ void sem_exit_ns(struct ipc_namespace *ns);
+ void msg_exit_ns(struct ipc_namespace *ns);
+ void shm_exit_ns(struct ipc_namespace *ns);
+ #else
+-static inline void sem_init_ns(struct ipc_namespace *ns) { }
+-static inline void msg_init_ns(struct ipc_namespace *ns) { }
+-static inline void shm_init_ns(struct ipc_namespace *ns) { }
++static inline void sem_init_ns(struct ipc_namespace *ns, struct ipc_namespace *old_ns) { }
++static inline void msg_init_ns(struct ipc_namespace *ns, struct ipc_namespace *old_ns) { }
++static inline void shm_init_ns(struct ipc_namespace *ns, struct ipc_namespace *old_ns) { }
  
- 	if (info->match & XT_OWNER_GID) {
--		kgid_t gid_min = make_kgid(&init_user_ns, info->gid_min);
--		kgid_t gid_max = make_kgid(&init_user_ns, info->gid_max);
-+		kgid_t gid_min = make_kgid(net->user_ns, info->gid_min);
-+		kgid_t gid_max = make_kgid(net->user_ns, info->gid_max);
- 		if ((gid_gte(filp->f_cred->fsgid, gid_min) &&
- 		     gid_lte(filp->f_cred->fsgid, gid_max)) ^
- 		    !(info->invert & XT_OWNER_GID))
+ static inline void sem_exit_ns(struct ipc_namespace *ns) { }
+ static inline void msg_exit_ns(struct ipc_namespace *ns) { }
 -- 
-1.9.1
+1.9.0
+
+
+
+--------------040400010102080704000705
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--------------040400010102080704000705--
