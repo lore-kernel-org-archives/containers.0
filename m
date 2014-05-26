@@ -1,17 +1,15 @@
-From: Marian Marinov <mm-108MBtLGafw@public.gmane.org>
-Subject: Re: [PATCH] IPC initialize shmmax and shmall from the current value
-	not the default
-Date: Mon, 26 May 2014 03:07:10 +0300
-Message-ID: <538285AE.30102@1h.com>
-References: <5365723D.7030303@1h.com>
-	<1399161216.2573.9.camel@buesod1.americas.hpqcorp.net>
-	<536621D4.60002@colorfullife.com> <5367EDB6.3010408@1h.com>
-	<537DF520.2050904@1h.com> <53824C0D.1070204@colorfullife.com>
+From: Jan Engelhardt <jengelh-9+2X+4sQBs8@public.gmane.org>
+Subject: Re: [RFC][PATCH] net: Allow xt_owner in any user namespace
+Date: Mon, 26 May 2014 10:28:24 +0200 (CEST)
+Message-ID: <alpine.LSU.2.11.1405261025560.26860__36581.869578413$1401092919$gmane$org@nerf08.vanv.qr>
+References: <537B7FF6.9050103@elastichosts.com>
+	<877g5eg7wy.fsf@x220.int.ebiederm.org> <537D706D.4010303@1h.com>
+	<87vbsus3wb.fsf_-_@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <53824C0D.1070204-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>
+In-Reply-To: <87vbsus3wb.fsf_-_-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,65 +19,30 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Manfred Spraul <manfred-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>, Davidlohr Bueso <davidlohr-VXdhtT5mjnY@public.gmane.org>
-Cc: Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, n-horiguchi-PaJj6Psr51x8UrSeD/g0lQ@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter user mailing list <netfilter-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Alin Dobre <alin.dobre-1hSFou9RDDldEee+Cai+ZQ@public.gmane.org>, Jan Engelhardt <jengelh-nopoi9nDyk+ELgA04lAiVw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
 
-Hi Manfred,
+On Sunday 2014-05-25 09:39, Eric W. Biederman wrote:
+>
+>Making this work is a little tricky as it really isn't kosher to
+>change the xt_owner_match_info in a check function.
 
-On 05/25/2014 11:01 PM, Manfred Spraul wrote:
-> Hi Marian,
+It is ok if you set aside members for kernel internal use, though
+that is going to require a new match revision. That may be justified
+since it would alleviate repeated calls to make_kuid for each packet.
+
+>@@ -48,9 +75,10 @@ owner_mt(const struct sk_buff *skb, struct xt_action_param *par)
+> 		return ((info->match ^ info->invert) &
+> 		       (XT_OWNER_UID | XT_OWNER_GID)) == 0;
 > 
-> On 05/22/2014 03:01 PM, Marian Marinov wrote:
->> -----BEGIN PGP SIGNED MESSAGE----- Hash: SHA1
->> 
->> On 05/05/2014 10:59 PM, Marian Marinov wrote:
->>> 
->>> In my tests it worked exactly as expected. Here is an example:
->>> 
->>> [root@sp2 ~]# sysctl -a|grep shmmax kernel.shmmax = 68719476736 [root@sp2 ~]# lxc-attach -n cent_plain 
->>> [root@localhost ~]# sysctl -a|grep shmmax kernel.shmmax = 68719476736 [root@localhost ~]# halt [root@sp2 ~]#
->>> sysctl -a|grep shmmax kernel.shmmax = 68719476736 [root@sp2 ~]# sysctl kernel.shmmax=34359738368 kernel.shmmax
->>> = 34359738368 [root@sp2 ~]# lxc-start -n cent_plain -d [root@sp2 ~]# lxc-attach -n cent_plain [root@localhost
->>> ~]# sysctl -a|grep shmmax kernel.shmmax = 34359738368 [root@localhost ~]#
->>> 
->>> So it seams to work as expected :)
->>> 
->>> It works because wen you setup a new shmmax limit it is actually the limit in the init_ipc_ns. So when we are 
->>> creating a new ipc_ns its ok to copy the values from init_ipc_ns.
->>> 
->>> -Marian
->>> 
->> Ping?
->> 
->> So will there be any more comments on that?
->> 
->> 
-
-It seams logical. I like your approach even better.
-I'll test it tomorrow to confirm if all of my tests are successful.
-
-Marian
-
-> Attached is an untested idea: - each new namespace copies from it's parent, i.e. nested namespaces should work. -
-> msg, sem and shm updated
-> 
-> -- Manfred
-
-
-- -- 
-Marian Marinov
-Founder & CEO of 1H Ltd.
-Jabber/GTalk: hackman-/eSpBmjxGS4dnm+yROfE0A@public.gmane.org
-ICQ: 7556201
-Mobile: +359 886 660 270
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iEYEARECAAYFAlOCha4ACgkQ4mt9JeIbjJTMvwCdGHV2R7Y1H7x14n53Vyihg5AB
-2k4Anjp6inQsGjvof2MAx9Sh2/1K3L25
-=QTO9
------END PGP SIGNATURE-----
+>+	net = sock_net(skb->sk);
+> 	if (info->match & XT_OWNER_UID) {
+>-		kuid_t uid_min = make_kuid(&init_user_ns, info->uid_min);
+>-		kuid_t uid_max = make_kuid(&init_user_ns, info->uid_max);
+>+		kuid_t uid_min = make_kuid(net->user_ns, info->uid_min);
+>+		kuid_t uid_max = make_kuid(net->user_ns, info->uid_max);
+> 		if ((uid_gte(filp->f_cred->fsuid, uid_min) &&
+> 		     uid_lte(filp->f_cred->fsuid, uid_max)) ^
+> 		    !(info->invert & XT_OWNER_UID))
