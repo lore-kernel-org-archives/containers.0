@@ -1,15 +1,11 @@
-From: Jan Engelhardt <jengelh-9+2X+4sQBs8@public.gmane.org>
-Subject: Re: [RFC][PATCH] net: Allow xt_owner in any user namespace
-Date: Mon, 26 May 2014 10:28:24 +0200 (CEST)
-Message-ID: <alpine.LSU.2.11.1405261025560.26860__36581.869578413$1401092919$gmane$org@nerf08.vanv.qr>
-References: <537B7FF6.9050103@elastichosts.com>
-	<877g5eg7wy.fsf@x220.int.ebiederm.org> <537D706D.4010303@1h.com>
-	<87vbsus3wb.fsf_-_@x220.int.ebiederm.org>
+From: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH] /proc/pid/status: show all sets of pid according to ns
+Date: Mon, 26 May 2014 18:05:28 +0800
+Message-ID: <1401098728-2001-1-git-send-email-chenhanxiao__14698.5990847044$1401098800$gmane$org@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87vbsus3wb.fsf_-_-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,30 +15,68 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Netfilter user mailing list <netfilter-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Alin Dobre <alin.dobre-1hSFou9RDDldEee+Cai+ZQ@public.gmane.org>, Jan Engelhardt <jengelh-nopoi9nDyk+ELgA04lAiVw@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+We need a direct method of getting the pid inside containers.
+If some issues occurred inside a container guest, host user
+could not know which process is in trouble just by guest pid:
+the users of container guest only knew the pid inside containers.
+This will bring obstacle for trouble shooting.
 
-On Sunday 2014-05-25 09:39, Eric W. Biederman wrote:
->
->Making this work is a little tricky as it really isn't kosher to
->change the xt_owner_match_info in a check function.
+This patch expands fields of Tgid and Pid:
+a) In init_pid_ns, nothing changed;
 
-It is ok if you set aside members for kernel internal use, though
-that is going to require a new match revision. That may be justified
-since it would alleviate repeated calls to make_kuid for each packet.
+b) In one pidns, they will tell the pid inside containers:
+Tgid:	1628 	9 	3
+Pid:	1628 	9 	3
+** process id is 1628 in level 0, 9 in level 1, 3 in level 2.
 
->@@ -48,9 +75,10 @@ owner_mt(const struct sk_buff *skb, struct xt_action_param *par)
-> 		return ((info->match ^ info->invert) &
-> 		       (XT_OWNER_UID | XT_OWNER_GID)) == 0;
-> 
->+	net = sock_net(skb->sk);
-> 	if (info->match & XT_OWNER_UID) {
->-		kuid_t uid_min = make_kuid(&init_user_ns, info->uid_min);
->-		kuid_t uid_max = make_kuid(&init_user_ns, info->uid_max);
->+		kuid_t uid_min = make_kuid(net->user_ns, info->uid_min);
->+		kuid_t uid_max = make_kuid(net->user_ns, info->uid_max);
-> 		if ((uid_gte(filp->f_cred->fsuid, uid_min) &&
-> 		     uid_lte(filp->f_cred->fsuid, uid_max)) ^
-> 		    !(info->invert & XT_OWNER_UID))
+c) If pidns is nested, it depends on which pidns are you in.
+Tgid:	9 	3
+Pid:	9 	3
+** Views from level 1 for Pid 1628 in host.
+
+Signed-off-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
+ fs/proc/array.c | 20 +++++++++++++-------
+ 1 file changed, 13 insertions(+), 7 deletions(-)
+
+diff --git a/fs/proc/array.c b/fs/proc/array.c
+index 64db2bc..eef20dd 100644
+--- a/fs/proc/array.c
++++ b/fs/proc/array.c
+@@ -173,17 +173,23 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
+ 	cred = get_task_cred(p);
+ 	seq_printf(m,
+ 		"State:\t%s\n"
+-		"Tgid:\t%d\n"
+-		"Ngid:\t%d\n"
+-		"Pid:\t%d\n"
++		"Ngid:\t%d\n",
++		get_task_state(p),
++		task_numa_group_id(p));
++	seq_puts(m, "Tgid:");
++	for (g = ns->level; g <= pid->level; g++)
++		seq_printf(m, "\t%d ",
++		task_tgid_nr_ns(p, pid->numbers[g].ns));
++	seq_puts(m, "\nPid:");
++	for (g = ns->level; g <= pid->level; g++)
++		seq_printf(m, "\t%d ",
++		task_pid_nr_ns(p, pid->numbers[g].ns));
++	seq_putc(m, '\n');
++	seq_printf(m,
+ 		"PPid:\t%d\n"
+ 		"TracerPid:\t%d\n"
+ 		"Uid:\t%d\t%d\t%d\t%d\n"
+ 		"Gid:\t%d\t%d\t%d\t%d\n",
+-		get_task_state(p),
+-		task_tgid_nr_ns(p, ns),
+-		task_numa_group_id(p),
+-		pid_nr_ns(pid, ns),
+ 		ppid, tpid,
+ 		from_kuid_munged(user_ns, cred->uid),
+ 		from_kuid_munged(user_ns, cred->euid),
+-- 
+1.9.0
