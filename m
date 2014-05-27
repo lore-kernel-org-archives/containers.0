@@ -1,15 +1,11 @@
-From: "chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: RE: [PATCH] /proc/pid/status: show all sets of pid according to ns
-Date: Tue, 27 May 2014 10:01:53 +0000
-Message-ID: <5871495633F38949900D2BF2DC04883E51F963@G08CNEXMBPEKD02.g08.fujitsu.local>
-References: <1401098728-2001-1-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<20140526180443.GA11145@cachalot>
+From: Alin Dobre <alin.dobre-1hSFou9RDDldEee+Cai+ZQ@public.gmane.org>
+Subject: User namespace over 9p
+Date: Tue, 27 May 2014 11:25:08 +0100
+Message-ID: <53846804.6080408__42858.7472801611$1401186300$gmane$org@elastichosts.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="gb2312"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140526180443.GA11145@cachalot>
-Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,42 +15,27 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vasily Kulikov <segooon-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, v9fs-developer-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Eric Van Hensbergen <ericvh-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-SGkgVmFzaWx5LA0KDQo+IC0tLS0tT3JpZ2luYWwgTWVzc2FnZS0tLS0tDQo+IEZyb206IFZhc2ls
-eSBLdWxpa292IFttYWlsdG86c2Vnb29vbkBnbWFpbC5jb21dDQo+IFNlbnQ6IFR1ZXNkYXksIE1h
-eSAyNywgMjAxNCAyOjA1IEFNDQo+IFRvOiBDaGVuLCBIYW54aWFvL7PCIOrPz/YNCj4gQ2M6IGNv
-bnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc7IGxpbnV4LWtlcm5lbEB2Z2VyLmtl
-cm5lbC5vcmc7IFNlcmdlDQo+IEhhbGx5bjsgT2xlZyBOZXN0ZXJvdjsgRGF2aWQgSG93ZWxsczsg
-RXJpYyBXLiBCaWVkZXJtYW47IEFuZHJldyBNb3J0b247IEFsIFZpcm8NCj4gU3ViamVjdDogUmU6
-IFtQQVRDSF0gL3Byb2MvcGlkL3N0YXR1czogc2hvdyBhbGwgc2V0cyBvZiBwaWQgYWNjb3JkaW5n
-IHRvIG5zDQo+IA0KPiBIaSBDaGVuLA0KPiANCj4gT24gTW9uLCBNYXkgMjYsIDIwMTQgYXQgMTg6
-MDUgKzA4MDAsIENoZW4gSGFueGlhbyB3cm90ZToNCj4gPiBXZSBuZWVkIGEgZGlyZWN0IG1ldGhv
-ZCBvZiBnZXR0aW5nIHRoZSBwaWQgaW5zaWRlIGNvbnRhaW5lcnMuDQo+ID4gSWYgc29tZSBpc3N1
-ZXMgb2NjdXJyZWQgaW5zaWRlIGEgY29udGFpbmVyIGd1ZXN0LCBob3N0IHVzZXINCj4gPiBjb3Vs
-ZCBub3Qga25vdyB3aGljaCBwcm9jZXNzIGlzIGluIHRyb3VibGUganVzdCBieSBndWVzdCBwaWQ6
-DQo+ID4gdGhlIHVzZXJzIG9mIGNvbnRhaW5lciBndWVzdCBvbmx5IGtuZXcgdGhlIHBpZCBpbnNp
-ZGUgY29udGFpbmVycy4NCj4gPiBUaGlzIHdpbGwgYnJpbmcgb2JzdGFjbGUgZm9yIHRyb3VibGUg
-c2hvb3RpbmcuDQo+ID4NCj4gPiBUaGlzIHBhdGNoIGV4cGFuZHMgZmllbGRzIG9mIFRnaWQgYW5k
-IFBpZDoNCj4gPiBhKSBJbiBpbml0X3BpZF9ucywgbm90aGluZyBjaGFuZ2VkOw0KPiA+DQo+ID4g
-YikgSW4gb25lIHBpZG5zLCB0aGV5IHdpbGwgdGVsbCB0aGUgcGlkIGluc2lkZSBjb250YWluZXJz
-Og0KPiA+IFRnaWQ6CTE2MjggCTkgCTMNCj4gPiBQaWQ6CTE2MjggCTkgCTMNCj4gPiAqKiBwcm9j
-ZXNzIGlkIGlzIDE2MjggaW4gbGV2ZWwgMCwgOSBpbiBsZXZlbCAxLCAzIGluIGxldmVsIDIuDQo+
-IA0KPiAxLiBJdCBicmVha3MgQUJJLiAgQW55IGFwcGxpY2F0aW9uIHdoaWNoIGRvZXMgc29tZXRo
-aW5nIGxpa2UgImdyZXAgcGlkOiB8IGN1dCAtZDoNCj4gLWYyIg0KPiBpcyBub3cgYnJva2VuIGJ5
-IHRoZSBwYXRjaC4gIE1heWJlIGFkZCBhIG5ldyBmaWVsZCBsaWtlICdQaWQtbnMnLCAnUGlkTlMn
-LA0KPiBvciAnUGlkcycgYW5kIGxlYXZlIHRoZSBvbGQgb25lIGZvciBjb21wYXRpYmlsaXR5Pw0K
-PiANCg0KVGhhbmtzIGZvciB5b3VyIGNvbW1lbnRzLg0KQWRkaW5nIGEgbmV3IGZpZWxkIGNvdWxk
-IHNvbHZlIGJhY2t3YXJkIGNvbXBhdGliaWxpdHkgaXNzdWUuDQoNCj4gMi4gSXMgaXQgT0sgdG8g
-c2hvdyBpbnRlcm5hbCBwaWRzIHRvIHVucHJpdmlsZWdlZCBwcm9jZXNzZXM/ICBJIGNhbm5vdA0K
-PiBzZWUgYW55dGhpbmcgb2J2aW91c2x5IGRhbmdlcm91cyB3aXRoIGl0LCB0aG91Z2guDQo+IA0K
-DQpJIHRoaW5rcyBqdXN0ICdzaG93aW5nJyB0aGVtIHdvdWxkIG5vdCBicmluZyBzb21lIHRyb3Vi
-bGVzLg0KDQo+ID4gYykgSWYgcGlkbnMgaXMgbmVzdGVkLCBpdCBkZXBlbmRzIG9uIHdoaWNoIHBp
-ZG5zIGFyZSB5b3UgaW4uDQo+ID4gVGdpZDoJOSAJMw0KPiA+IFBpZDoJOSAJMw0KPiA+ICoqIFZp
-ZXdzIGZyb20gbGV2ZWwgMSBmb3IgUGlkIDE2MjggaW4gaG9zdC4NCj4gDQo+IC0tDQo+IFZhc2ls
-eQ0KDQpUaGFua3MsDQotIENoZW4NCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGlu
-dXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxt
-YW4vbGlzdGluZm8vY29udGFpbmVycw==
+Hello,
+
+Continuing the struggle to run containers over the 9p filesystem I am
+now running into another issue.
+
+A simple container with user namespace mapping UID -2 (4294967294) to
+root can run a container image found in /tmp/src without any problems.
+When I export that /tmp/src path via 9p and mount it in /tmp/dst,
+running the same container over /tmp/dst fails to allow chown (and
+probably chmod) system calls to be successful. This happens because 9p
+considers that the UID which runs the system calls is actually -2, but
+it's actually 0, because the lchown system call is run inside the
+namespace, not outside it. So, 9p should consider that the UID which
+does the system call is root.
+
+Do I understand this correctly as a problem, or does it work as
+intended? If latter, do you have any insights on how to achieve running
+containers in this scenario?
+
+Cheers,
+Alin.
