@@ -1,8 +1,8 @@
 From: paolo <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-Subject: [PATCH RFC RESEND 07/14] block,
-	bfq: add more fairness to boost throughput and reduce latency
-Date: Tue, 27 May 2014 14:42:31 +0200
-Message-ID: <1401194558-5283-8-git-send-email-paolo.valente@unimore.it>
+Subject: [PATCH RFC RESEND 14/14] block,
+	bfq: boost the throughput with random I/O on NCQ-capable HDDs
+Date: Tue, 27 May 2014 14:42:38 +0200
+Message-ID: <1401194558-5283-15-git-send-email-paolo.valente__36738.6986654767$1401195664$gmane$org@unimore.it>
 References: <1401194558-5283-1-git-send-email-paolo.valente@unimore.it>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,206 +24,279 @@ List-Id: containers.vger.kernel.org
 
 From: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
 
-We have found four sources of throughput loss and higher
-latencies. First, write requests tend to starve read requests,
-basically because, on one side, writes are slower than reads, whereas,
-on the other side, storage devices confuse schedulers by deceptively
-signaling the completion of write requests immediately after receiving
-them. This patch addresses this issue by just throttling writes. In
-particular, after a write request is dispatched for a queue, the
-budget of the queue is decremented by the number of sectors to write,
-multiplied by an (over)charge coefficient.
+This patch is basically the counterpart of patch 13 for NCQ-capable
+rotational devices. Exactly as patch 13 does on flash-based devices
+and for any workload, this patch disables device idling on rotational
+devices, but only for random I/O. More precisely, idling is disabled
+only for constantly-seeky queues (see patch 7). In fact, only with
+these queues disabling idling boosts the throughput on NCQ-capable
+rotational devices.
 
-The current value of this coefficient, as well as the values of the
-constants used in the following other changes, is the result of
-our tuning with different devices.
-
-The second source of problems is that some applications generate
-really few and small, yet very far, random requests at the beginning
-of a new I/O-bound phase. This causes the average seek distance,
-computed using a low-pass filter, to remain high for a non-negligible
-amount of time, even if then the application issues only sequential
-requests. Hence, for a while, the queue associated with the
-application is unavoidably detected as seeky (i.e., containing random
-requests). The device-idling timeout is then set to a very low value
-for the queue. This often caused a loss of throughput on rotational
-devices, as well as an increased latency. In contrast, this patch
-allows the device-idling timeout for a seeky queue to be set to a very
-low value only if the associated process has either already consumed
-at least a minimum fraction (1/8) of the maximum budget B_max, or
-already proved to generate random requests systematically. In
-particular, in the latter case the queue is flagged as "constantly
-seeky".
-
-Finally, the following additional BFQ mechanism causes throughput loss
-and increased latencies in two further situations. When the in-service
-queue is expired, BFQ also controls whether the queue has been "too
-slow", i.e., has consumed its last-assigned budget at such a low rate
-that it would have been impossible to consume all of it within the
-maximum time slice T_max (Subsec. 3.5 in [1]). In this case, the queue
-is always (over)charged the whole budget, to reduce its utilization of
-the device, exactly as it happens with seeky queues. The description
-of both the two situations in which this behavior causes problems and
-the solution provided by this patch follows.
-
-1. If too little time has elapsed since a process started doing
-sequential I/O, then the positive effect on the throughput of its
-sequential accesses may not have yet prevailed on the throughput loss
-caused by the fact that a random access had to be performed to get to
-the first sector requested by the process. For this reason, if a slow
-queue is expired after receiving very little service (at most 1/8 of
-the maximum budget), now it is not charged a full budget.
-
-2. Because of ZBR, a queue may be deemed as slow when its associated
-process is performing I/O on the slowest zones of a disk. However,
-unless the process is truly too slow, not reducing the disk
-utilization of the queue is more profitable in terms of disk
-throughput than the opposite. For this reason now a queue is never
-charged the whole budget if it has consumed at least a significant
-part of it (2/3).
-
-[1] P. Valente and M. Andreolini, "Improving Application
-    Responsiveness with the BFQ Disk I/O Scheduler", Proceedings of
-    the 5th Annual International Systems and Storage Conference
-    (SYSTOR '12), June 2012.
-    Slightly extended version:
-http://www.algogroup.unimo.it/people/paolo/disk_sched/bf1-v1-suite-results.pdf
+To not break service guarantees, idling is disabled for NCQ-enabled
+rotational devices and constantly-seeky queues only when the same
+symmetry conditions as in patch 13, plus an additional one, hold. The
+additional condition is related to the fact that this patch disables
+idling only for constantly-seeky queues. In fact, should idling be
+disabled for a constantly-seeky queue while some other
+non-constantly-seeky queue has pending requests, the latter queue
+would get more requests served, after being set as in service, than
+the former. This differentiated treatment would cause a deviation with
+respect to the desired throughput distribution (i.e., with respect to
+the throughput distribution corresponding to the weights assigned to
+processes and groups of processes).  For this reason, the additional
+condition for disabling idling for a constantly-seeky queue is that
+all queues with pending or in-flight requests are constantly seeky.
 
 Signed-off-by: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
 Signed-off-by: Arianna Avanzini <avanzini.arianna-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- block/bfq-iosched.c | 50 +++++++++++++++++++++++++++++++++++++++++++++-----
- block/bfq.h         |  5 +++++
- 2 files changed, 50 insertions(+), 5 deletions(-)
+ block/bfq-iosched.c | 79 +++++++++++++++++++++++++++++++++++++++++------------
+ block/bfq-sched.c   | 21 +++++++++++---
+ block/bfq.h         | 29 +++++++++++++++++++-
+ 3 files changed, 107 insertions(+), 22 deletions(-)
 
 diff --git a/block/bfq-iosched.c b/block/bfq-iosched.c
-index 2a4e03d..9e607a0 100644
+index 49856e1..b9aafa5 100644
 --- a/block/bfq-iosched.c
 +++ b/block/bfq-iosched.c
-@@ -87,6 +87,13 @@ static int bfq_slice_idle = HZ / 125;
- static const int bfq_default_max_budget = 16 * 1024;
- static const int bfq_max_budget_async_rq = 4;
+@@ -1910,8 +1910,12 @@ static void bfq_bfqq_expire(struct bfq_data *bfqd,
  
-+/*
-+ * Async to sync throughput distribution is controlled as follows:
-+ * when an async request is served, the entity is charged the number
-+ * of sectors of the request, multiplied by the factor below
-+ */
-+static const int bfq_async_charge_factor = 10;
-+
- /* Default timeout values, in jiffies, approximating CFQ defaults. */
- static const int bfq_timeout_sync = HZ / 8;
- static int bfq_timeout_async = HZ / 25;
-@@ -269,10 +276,12 @@ static struct request *bfq_find_next_rq(struct bfq_data *bfqd,
- 	return bfq_choose_req(bfqd, next, prev, blk_rq_pos(last));
- }
+ 	bfqq->service_from_backlogged += bfqq->entity.service;
  
-+/* see the definition of bfq_async_charge_factor for details */
- static inline unsigned long bfq_serv_to_charge(struct request *rq,
- 					       struct bfq_queue *bfqq)
+-	if (BFQQ_SEEKY(bfqq) && reason == BFQ_BFQQ_BUDGET_TIMEOUT)
++	if (BFQQ_SEEKY(bfqq) && reason == BFQ_BFQQ_BUDGET_TIMEOUT &&
++	    !bfq_bfqq_constantly_seeky(bfqq)) {
+ 		bfq_mark_bfqq_constantly_seeky(bfqq);
++		if (!blk_queue_nonrot(bfqd->queue))
++			bfqd->const_seeky_busy_in_flight_queues++;
++	}
+ 
+ 	if (bfqd->low_latency && bfqq->wr_coeff == 1)
+ 		bfqq->last_wr_start_finish = jiffies;
+@@ -2071,7 +2075,8 @@ static inline int bfq_may_expire_for_budg_timeout(struct bfq_queue *bfqq)
+  * Even in such a scenario, sequential I/O may still receive a preferential
+  * treatment, but this is not likely to be a big issue with flash-based
+  * devices, because of their non-dramatic loss of throughput with random
+- * I/O.
++ * I/O. Things do differ with HDDs, for which additional care is taken, as
++ * explained after completing the discussion for flash-based devices.
+  *
+  * Unfortunately, keeping the necessary state for evaluating exactly the
+  * above symmetry conditions would be quite complex and time-consuming.
+@@ -2088,17 +2093,42 @@ static inline int bfq_may_expire_for_budg_timeout(struct bfq_queue *bfqq)
+  * compound condition evaluates to true if any of the above symmetry
+  * sub-condition does not hold, or the device is not flash-based. Therefore,
+  * if also the first component is true, then idling is allowed for a sync
+- * queue. In contrast, if all the required symmetry sub-conditions hold and
+- * the device is flash-based, then the second component, and hence the
+- * whole compound condition, evaluates to false, and no idling is performed.
+- * This helps to keep the drives' internal queues full on NCQ-capable
+- * devices, and hence to boost the throughput, without causing 'almost' any
+- * loss of service guarantees. The 'almost' follows from the fact that, if
+- * the internal queue of one such device is filled while all the
+- * sub-conditions hold, but at some point in time some sub-condition stops
+- * to hold, then it may become impossible to let requests be served in the
+- * new desired order until all the requests already queued in the device
+- * have been served.
++ * queue. These are the only sub-conditions considered if the device is
++ * flash-based, as, for such a device, it is sensible to force idling only
++ * for service-guarantee issues. In fact, as for throughput, idling
++ * NCQ-capable flash-based devices would not boost the throughput even
++ * with sequential I/O; rather it would lower the throughput in proportion
++ * to how fast the device is. In the end, (only) if all the three
++ * sub-conditions hold and the device is flash-based, the compound
++ * condition evaluates to false and therefore no idling is performed.
++ *
++ * As already said, things change with a rotational device, where idling
++ * boosts the throughput with sequential I/O (even with NCQ). Hence, for
++ * such a device the second component of the compound condition evaluates
++ * to true also if the following additional sub-condition does not hold:
++ * the queue is constantly seeky. Unfortunately, this different behavior
++ * with respect to flash-based devices causes an additional asymmetry: if
++ * some sync queues enjoy idling and some other sync queues do not, then
++ * the latter get a low share of the device throughput, simply because the
++ * former get many requests served after being set as in service, whereas
++ * the latter do not. As a consequence, to guarantee the desired throughput
++ * distribution, on HDDs the compound expression evaluates to true (and
++ * hence device idling is performed) also if the following last symmetry
++ * condition does not hold: no other queue is benefiting from idling. Also
++ * this last condition is actually replaced with a simpler-to-maintain and
++ * stronger condition: there is no busy queue which is not constantly seeky
++ * (and hence may also benefit from idling).
++ *
++ * To sum up, when all the required symmetry and throughput-boosting
++ * sub-conditions hold, the second component of the compound condition
++ * evaluates to false, and hence no idling is performed. This helps to
++ * keep the drives' internal queues full on NCQ-capable devices, and hence
++ * to boost the throughput, without causing 'almost' any loss of service
++ * guarantees. The 'almost' follows from the fact that, if the internal
++ * queue of one such device is filled while all the sub-conditions hold,
++ * but at some point in time some sub-condition stops to hold, then it may
++ * become impossible to let requests be served in the new desired order
++ * until all the requests already queued in the device have been served.
+  */
+ static inline bool bfq_bfqq_must_not_expire(struct bfq_queue *bfqq)
  {
--	return blk_rq_sectors(rq);
-+	return blk_rq_sectors(rq) *
-+		(1 + ((!bfq_bfqq_sync(bfqq)) * bfq_async_charge_factor));
- }
+@@ -2109,6 +2139,9 @@ static inline bool bfq_bfqq_must_not_expire(struct bfq_queue *bfqq)
+ #else
+ #define symmetric_scenario	  (!bfq_differentiated_weights(bfqd))
+ #endif
++#define cond_for_seeky_on_ncq_hdd (bfq_bfqq_constantly_seeky(bfqq) && \
++				   bfqd->busy_in_flight_queues == \
++				   bfqd->const_seeky_busy_in_flight_queues)
+ /*
+  * Condition for expiring a non-weight-raised queue (and hence not idling
+  * the device).
+@@ -2116,7 +2149,8 @@ static inline bool bfq_bfqq_must_not_expire(struct bfq_queue *bfqq)
+ #define cond_for_expiring_non_wr  (bfqd->hw_tag && \
+ 				   (bfqd->wr_busy_queues > 0 || \
+ 				    (symmetric_scenario && \
+-				     blk_queue_nonrot(bfqd->queue))))
++				     (blk_queue_nonrot(bfqd->queue) || \
++				      cond_for_seeky_on_ncq_hdd))))
  
- /**
-@@ -565,13 +574,21 @@ static void bfq_arm_slice_timer(struct bfq_data *bfqd)
- 	 * We don't want to idle for seeks, but we do want to allow
- 	 * fair distribution of slice time for a process doing back-to-back
- 	 * seeks. So allow a little bit of time for him to submit a new rq.
-+	 *
-+	 * To prevent processes with (partly) seeky workloads from
-+	 * being too ill-treated, grant them a small fraction of the
-+	 * assigned budget before reducing the waiting time to
-+	 * BFQ_MIN_TT. This happened to help reduce latency.
- 	 */
- 	sl = bfqd->bfq_slice_idle;
- 	/*
--	 * Grant only minimum idle time if the queue has been seeky for long
--	 * enough.
-+	 * Grant only minimum idle time if the queue either has been seeky for
-+	 * long enough or has already proved to be constantly seeky.
- 	 */
--	if (bfq_sample_valid(bfqq->seek_samples) && BFQQ_SEEKY(bfqq))
-+	if (bfq_sample_valid(bfqq->seek_samples) &&
-+	    ((BFQQ_SEEKY(bfqq) && bfqq->entity.service >
-+				  bfq_max_budget(bfqq->bfqd) / 8) ||
-+	      bfq_bfqq_constantly_seeky(bfqq)))
- 		sl = min(sl, msecs_to_jiffies(BFQ_MIN_TT));
- 	bfqd->last_idling_start = ktime_get();
- 	mod_timer(&bfqd->idle_slice_timer, jiffies + sl);
-@@ -889,6 +906,16 @@ static int bfq_update_peak_rate(struct bfq_data *bfqd, struct bfq_queue *bfqq,
- 	}
- 
- 	/*
-+	 * If the process has been served for a too short time
-+	 * interval to let its possible sequential accesses prevail on
-+	 * the initial seek time needed to move the disk head on the
-+	 * first sector it requested, then give the process a chance
-+	 * and for the moment return false.
-+	 */
-+	if (bfqq->entity.budget <= bfq_max_budget(bfqd) / 8)
-+		return 0;
-+
-+	/*
- 	 * A process is considered ``slow'' (i.e., seeky, so that we
- 	 * cannot treat it fairly in the service domain, as it would
- 	 * slow down too much the other processes) if, when a slice
-@@ -954,10 +981,21 @@ static void bfq_bfqq_expire(struct bfq_data *bfqd,
- 	/*
- 	 * As above explained, 'punish' slow (i.e., seeky), timed-out
- 	 * and async queues, to favor sequential sync workloads.
-+	 *
-+	 * Processes doing I/O in the slower disk zones will tend to be
-+	 * slow(er) even if not seeky. Hence, since the estimated peak
-+	 * rate is actually an average over the disk surface, these
-+	 * processes may timeout just for bad luck. To avoid punishing
-+	 * them we do not charge a full budget to a process that
-+	 * succeeded in consuming at least 2/3 of its budget.
- 	 */
--	if (slow || reason == BFQ_BFQQ_BUDGET_TIMEOUT)
-+	if (slow || (reason == BFQ_BFQQ_BUDGET_TIMEOUT &&
-+		     bfq_bfqq_budget_left(bfqq) >=  bfqq->entity.budget / 3))
- 		bfq_bfqq_charge_full_budget(bfqq);
- 
-+	if (BFQQ_SEEKY(bfqq) && reason == BFQ_BFQQ_BUDGET_TIMEOUT)
-+		bfq_mark_bfqq_constantly_seeky(bfqq);
-+
- 	bfq_log_bfqq(bfqd, bfqq,
- 		"expire (%d, slow %d, num_disp %d, idle_win %d)", reason,
- 		slow, bfqq->dispatched, bfq_bfqq_idle_window(bfqq));
-@@ -1632,6 +1670,8 @@ static void bfq_rq_enqueued(struct bfq_data *bfqd, struct bfq_queue *bfqq,
+ 	return bfq_bfqq_sync(bfqq) && (
+ 		bfqq->wr_coeff > 1 ||
+@@ -2843,8 +2877,11 @@ static void bfq_rq_enqueued(struct bfq_data *bfqd, struct bfq_queue *bfqq,
  
  	bfq_update_io_thinktime(bfqd, bic);
  	bfq_update_io_seektime(bfqd, bfqq, rq);
-+	if (!BFQQ_SEEKY(bfqq))
-+		bfq_clear_bfqq_constantly_seeky(bfqq);
+-	if (!BFQQ_SEEKY(bfqq))
++	if (!BFQQ_SEEKY(bfqq) && bfq_bfqq_constantly_seeky(bfqq)) {
+ 		bfq_clear_bfqq_constantly_seeky(bfqq);
++		if (!blk_queue_nonrot(bfqd->queue))
++			bfqd->const_seeky_busy_in_flight_queues--;
++	}
  	if (bfqq->entity.service > bfq_max_budget(bfqd) / 8 ||
  	    !BFQQ_SEEKY(bfqq))
  		bfq_update_idle_window(bfqd, bfqq, bic);
+@@ -2996,9 +3033,15 @@ static void bfq_completed_request(struct request_queue *q, struct request *rq)
+ 	bfqd->rq_in_driver--;
+ 	bfqq->dispatched--;
+ 
+-	if (!bfqq->dispatched && !bfq_bfqq_busy(bfqq))
++	if (!bfqq->dispatched && !bfq_bfqq_busy(bfqq)) {
+ 		bfq_weights_tree_remove(bfqd, &bfqq->entity,
+ 					&bfqd->queue_weights_tree);
++		if (!blk_queue_nonrot(bfqd->queue)) {
++			bfqd->busy_in_flight_queues--;
++			if (bfq_bfqq_constantly_seeky(bfqq))
++				bfqd->const_seeky_busy_in_flight_queues--;
++		}
++	}
+ 
+ 	if (sync) {
+ 		bfqd->sync_flight--;
+@@ -3420,6 +3463,8 @@ static int bfq_init_queue(struct request_queue *q, struct elevator_type *e)
+ 					      * video.
+ 					      */
+ 	bfqd->wr_busy_queues = 0;
++	bfqd->busy_in_flight_queues = 0;
++	bfqd->const_seeky_busy_in_flight_queues = 0;
+ 
+ 	/*
+ 	 * Begin by assuming, optimistically, that the device peak rate is
+@@ -3739,7 +3784,7 @@ static int __init bfq_init(void)
+ 	device_speed_thresh[1] = (R_fast[1] + R_slow[1]) / 2;
+ 
+ 	elv_register(&iosched_bfq);
+-	pr_info("BFQ I/O-scheduler version: v6");
++	pr_info("BFQ I/O-scheduler version: v7r4");
+ 
+ 	return 0;
+ }
+diff --git a/block/bfq-sched.c b/block/bfq-sched.c
+index 473b36a..afc4c23 100644
+--- a/block/bfq-sched.c
++++ b/block/bfq-sched.c
+@@ -1064,9 +1064,15 @@ static void bfq_del_bfqq_busy(struct bfq_data *bfqd, struct bfq_queue *bfqq,
+ 
+ 	bfq_deactivate_bfqq(bfqd, bfqq, requeue);
+ 
+-	if (!bfqq->dispatched)
++	if (!bfqq->dispatched) {
+ 		bfq_weights_tree_remove(bfqd, &bfqq->entity,
+ 					&bfqd->queue_weights_tree);
++		if (!blk_queue_nonrot(bfqd->queue)) {
++			bfqd->busy_in_flight_queues--;
++			if (bfq_bfqq_constantly_seeky(bfqq))
++				bfqd->const_seeky_busy_in_flight_queues--;
++		}
++	}
+ 	if (bfqq->wr_coeff > 1)
+ 		bfqd->wr_busy_queues--;
+ }
+@@ -1083,9 +1089,16 @@ static void bfq_add_bfqq_busy(struct bfq_data *bfqd, struct bfq_queue *bfqq)
+ 	bfq_mark_bfqq_busy(bfqq);
+ 	bfqd->busy_queues++;
+ 
+-	if (!bfqq->dispatched && bfqq->wr_coeff == 1)
+-		bfq_weights_tree_add(bfqd, &bfqq->entity,
+-				     &bfqd->queue_weights_tree);
++	if (!bfqq->dispatched) {
++		if (bfqq->wr_coeff == 1)
++			bfq_weights_tree_add(bfqd, &bfqq->entity,
++					     &bfqd->queue_weights_tree);
++		if (!blk_queue_nonrot(bfqd->queue)) {
++			bfqd->busy_in_flight_queues++;
++			if (bfq_bfqq_constantly_seeky(bfqq))
++				bfqd->const_seeky_busy_in_flight_queues++;
++		}
++	}
+ 	if (bfqq->wr_coeff > 1)
+ 		bfqd->wr_busy_queues++;
+ }
 diff --git a/block/bfq.h b/block/bfq.h
-index a334eb4..ea5ecca 100644
+index 83c828d..f4c702c 100644
 --- a/block/bfq.h
 +++ b/block/bfq.h
-@@ -358,6 +358,10 @@ enum bfqq_state_flags {
- 	BFQ_BFQQ_FLAG_prio_changed,	/* task priority has changed */
- 	BFQ_BFQQ_FLAG_sync,		/* synchronous queue */
- 	BFQ_BFQQ_FLAG_budget_new,	/* no completion with this budget */
-+	BFQ_BFQQ_FLAG_constantly_seeky,	/*
-+					 * bfqq has proved to be slow and
-+					 * seeky until budget timeout
-+					 */
- };
+@@ -1,5 +1,5 @@
+ /*
+- * BFQ-v6 for 3.15.0: data structures and common functions prototypes.
++ * BFQ-v7r4 for 3.15.0: data structures and common functions prototypes.
+  *
+  * Based on ideas and code from CFQ:
+  * Copyright (C) 2003 Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
+@@ -340,6 +340,31 @@ enum bfq_device_speed {
+  *                     details).
+  * @busy_queues: number of bfq_queues containing requests (including the
+  *		 queue in service, even if it is idling).
++ * @busy_in_flight_queues: number of @bfq_queues containing pending or
++ *                         in-flight requests, plus the @bfq_queue in
++ *                         service, even if idle but waiting for the
++ *                         possible arrival of its next sync request. This
++ *                         field is updated only if the device is rotational,
++ *                         but used only if the device is also NCQ-capable.
++ *                         The reason why the field is updated also for non-
++ *                         NCQ-capable rotational devices is related to the
++ *                         fact that the value of @hw_tag may be set also
++ *                         later than when busy_in_flight_queues may need to
++ *                         be incremented for the first time(s). Taking also
++ *                         this possibility into account, to avoid unbalanced
++ *                         increments/decrements, would imply more overhead
++ *                         than just updating busy_in_flight_queues
++ *                         regardless of the value of @hw_tag.
++ * @const_seeky_busy_in_flight_queues: number of constantly-seeky @bfq_queues
++ *                                     (that is, seeky queues that expired
++ *                                     for budget timeout at least once)
++ *                                     containing pending or in-flight
++ *                                     requests, including the in-service
++ *                                     @bfq_queue if constantly seeky. This
++ *                                     field is updated only if the device
++ *                                     is rotational, but used only if the
++ *                                     device is also NCQ-capable (see the
++ *                                     comments to @busy_in_flight_queues).
+  * @wr_busy_queues: number of weight-raised busy @bfq_queues.
+  * @queued: number of queued requests.
+  * @rq_in_driver: number of requests dispatched and waiting for completion.
+@@ -414,6 +439,8 @@ struct bfq_data {
+ 	struct rb_root group_weights_tree;
  
- #define BFQ_BFQQ_FNS(name)						\
-@@ -382,6 +386,7 @@ BFQ_BFQQ_FNS(idle_window);
- BFQ_BFQQ_FNS(prio_changed);
- BFQ_BFQQ_FNS(sync);
- BFQ_BFQQ_FNS(budget_new);
-+BFQ_BFQQ_FNS(constantly_seeky);
- #undef BFQ_BFQQ_FNS
- 
- /* Logging facilities. */
+ 	int busy_queues;
++	int busy_in_flight_queues;
++	int const_seeky_busy_in_flight_queues;
+ 	int wr_busy_queues;
+ 	int queued;
+ 	int rq_in_driver;
 -- 
 1.9.2
