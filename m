@@ -1,11 +1,12 @@
 From: paolo <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-Subject: [PATCH RFC RESEND 06/14] block, bfq: modify the peak-rate estimator
-Date: Tue, 27 May 2014 14:42:30 +0200
-Message-ID: <1401194558-5283-7-git-send-email-paolo.valente@unimore.it>
+Subject: [PATCH RFC RESEND 10/14] block,
+	bfq: preserve a low latency also with NCQ-capable drives
+Date: Tue, 27 May 2014 14:42:34 +0200
+Message-ID: <1401194558-5283-11-git-send-email-paolo.valente@unimore.it>
 References: <1401194558-5283-1-git-send-email-paolo.valente@unimore.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <1401194558-5283-1-git-send-email-paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
@@ -21,88 +22,73 @@ To: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Tejun Heo <tj-Dg
 Cc: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Arianna Avanzini <avanzini.arianna-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paolo Valente <posta_paolo-whZMOeQn8C0@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-RnJvbTogUGFvbG8gVmFsZW50ZSA8cGFvbG8udmFsZW50ZUB1bmltb3JlLml0PgoKVW5sZXNzIHRo
-ZSBtYXhpbXVtIGJ1ZGdldCBCX21heCB0aGF0IEJGUSBjYW4gYXNzaWduIHRvIGEgcXVldWUgaXMg
-c2V0CmV4cGxpY2l0bHkgYnkgdGhlIHVzZXIsIEJGUSBhdXRvbWF0aWNhbGx5IHVwZGF0ZXMgQl9t
-YXguIEluCnBhcnRpY3VsYXIsIEJGUSBkeW5hbWljYWxseSBzZXRzIEJfbWF4IHRvIHRoZSBudW1i
-ZXIgb2Ygc2VjdG9ycyB0aGF0CmNhbiBiZSByZWFkLCBhdCB0aGUgY3VycmVudCBlc3RpbWF0ZWQg
-cGVhayByYXRlLCBkdXJpbmcgdGhlIG1heGltdW0KdGltZSwgVF9tYXgsIGFsbG93ZWQgYmVmb3Jl
-IGEgYnVkZ2V0IHRpbWVvdXQgb2NjdXJzLiBJbiBmb3JtdWxhcywgaWYKd2UgZGVub3RlIGFzIFJf
-ZXN0IHRoZSBlc3RpbWF0ZWQgcGVhayByYXRlLCB0aGVuIEJfbWF4ID0gVF9tYXgg4oiXClJfZXN0
-LiBIZW5jZSwgdGhlIGhpZ2hlciBSX2VzdCBpcyB3aXRoIHJlc3BlY3QgdG8gdGhlIGFjdHVhbCBk
-aXNrIHBlYWsKcmF0ZSwgdGhlIGhpZ2hlciB0aGUgcHJvYmFiaWxpdHkgdGhhdCBwcm9jZXNzZXMg
-aW5jdXIgYnVkZ2V0IHRpbWVvdXRzCnVuanVzdGx5IGlzLiBCZXNpZGVzLCBhIHRvbyBoaWdoIHZh
-bHVlIG9mIEJfbWF4IHVubmVjZXNzYXJpbHkKaW5jcmVhc2VzIHRoZSBkZXZpYXRpb24gZnJvbSBh
-biBpZGVhbCwgc21vb3RoIHNlcnZpY2UuCgpUbyBmaWx0ZXIgb3V0IHNwaWtlcywgdGhlIGVzdGlt
-YXRlZCBwZWFrIHJhdGUgaXMgdXBkYXRlZCBvbmx5IG9uIHRoZQpleHBpcmF0aW9uIG9mIHF1ZXVl
-cyB0aGF0IGhhdmUgYmVlbiBzZXJ2ZWQgZm9yIGEgbG9uZy1lbm91Z2ggdGltZS4gIEFzCmEgZmly
-c3Qgc3RlcCwgdGhlIGVzdGltYXRvciBjb21wdXRlcyB0aGUgZGV2aWNlIHJhdGUsIFJfbWVhcywg
-ZHVyaW5nCnRoZSBzZXJ2aWNlIG9mIHRoZSBxdWV1ZS4gQWZ0ZXIgdGhhdCwgaWYgUl9lc3QgPCBS
-X21lYXMsIHRoZW4gUl9lc3QgaXMKc2V0IHRvIFJfbWVhcy4KClVuZm9ydHVuYXRlbHksIG91ciBl
-eHBlcmltZW50cyBoaWdobGlnaHRlZCB0aGUgZm9sbG93aW5nIHR3bwpwcm9ibGVtcy4gRmlyc3Qs
-IGJlY2F1c2Ugb2YgWkJSLCBkZXBlbmRpbmcgb24gdGhlIGxvY2FsaXR5IG9mIHRoZQp3b3JrbG9h
-ZCwgdGhlIGVzdGltYXRvciBtYXkgZWFzaWx5IGNvbnZlcmdlIHRvIGEgdmFsdWUgdGhhdCBpcwph
-cHByb3ByaWF0ZSBvbmx5IGZvciBwYXJ0IG9mIGEgZGlzay4gU2Vjb25kLCBSX2VzdCBtYXkganVt
-cCAoYW5kCnJlbWFpbiBmb3JldmVyIGVxdWFsKSB0byBhIG11Y2ggaGlnaGVyIHZhbHVlIHRoYW4g
-dGhlIGFjdHVhbCBkZXZpY2UKcGVhayByYXRlLCBpbiBjYXNlIG9mIGhpdHMgaW4gdGhlIGRyaXZl
-IGNhY2hlLCB3aGljaCBtYXkgbGV0IHNlY3RvcnMKYmUgdHJhbnNmZXJyZWQgaW4gcHJhY3RpY2Ug
-YXQgYnVzIHJhdGUuCgpUbyB0cnkgdG8gY29udmVyZ2UgdG8gdGhlIGFjdHVhbCBhdmVyYWdlIHBl
-YWsgcmF0ZSBvdmVyIHRoZSBkaXNrCnN1cmZhY2UgKGluIGNhc2Ugb2Ygcm90YXRpb25hbCBkZXZp
-Y2VzKSwgYW5kIHRvIHNtb290aCB0aGUgc3Bpa2VzCmNhdXNlZCBieSB0aGUgZHJpdmUgY2FjaGUs
-IHRoaXMgcGF0Y2ggY2hhbmdlcyB0aGUgZXN0aW1hdG9yIGFzCmZvbGxvd3MuIEluIHRoZSBkZXNj
-cmlwdGlvbiBvZiB0aGUgY2hhbmdlcywgd2UgcmVmZXIgdG8gYSBxdWV1ZQpjb250YWluaW5nIHJh
-bmRvbSByZXF1ZXN0cyBhcyAnc2Vla3knLCBhY2NvcmRpbmcgdG8gdGhlIHRlcm1pbm9sb2d5CnVz
-ZWQgaW4gdGhlIGNvZGUsIGFuZCBpbmhlcml0ZWQgZnJvbSBDRlEuCgotIEZpcnN0LCBub3cgUl9l
-c3QgbWF5IGJlIHVwZGF0ZWQgYWxzbyBpbiBjYXNlIHRoZSBqdXN0LWV4cGlyZWQgcXVldWUsCiAg
-ZGVzcGl0ZSBub3QgYmVpbmcgZGV0ZWN0ZWQgYXMgc2Vla3ksIGhhcyBub3QgYmVlbiBob3dldmVy
-IGFibGUgdG8KICBjb25zdW1lIGFsbCBvZiBpdHMgYnVkZ2V0IHdpdGhpbiB0aGUgbWF4aW11bSB0
-aW1lIHNsaWNlIFRfbWF4LiBJbgogIGZhY3QsIHRoaXMgaXMgYW4gaW5kaWNhdGlvbiB0aGF0IEJf
-bWF4IGlzIHRvbyBsYXJnZS4gU2luY2UgQl9tYXggPQogIFRfbWF4IOKIlyBSX2VzdCwgUl9lc3Qg
-aXMgdGhlbiBwcm9iYWJseSB0b28gbGFyZ2UsIGFuZCBzaG91bGQgYmUKICByZWR1Y2VkLgoKLSBT
-ZWNvbmQsIHRvIGZpbHRlciB0aGUgc3Bpa2VzIGluIFJfbWVhcywgYSBkaXNjcmV0ZSBsb3ctcGFz
-cyBmaWx0ZXIKICBpcyBub3cgdXNlZCB0byB1cGRhdGUgUl9lc3QgaW5zdGVhZCBvZiBqdXN0IGtl
-ZXBpbmcgdGhlIGhpZ2hlc3QgcmF0ZQogIHNhbXBsZWQuIFRoZSByYXRpb25hbGUgaXMgdGhhdCB0
-aGUgYXZlcmFnZSBwZWFrIHJhdGUgb2YgYSBkaXNrIG92ZXIKICBpdHMgc3VyZmFjZSBpcyBhIHJl
-bGF0aXZlbHkgc3RhYmxlIHF1YW50aXR5LCBoZW5jZSBhIGxvdy1wYXNzIGZpbHRlcgogIHNob3Vs
-ZCBjb252ZXJnZSBtb3JlIG9yIGxlc3MgcXVpY2tseSB0byB0aGUgcmlnaHQgdmFsdWUuCgpXaXRo
-IHRoZSBjdXJyZW50IHZhbHVlcyBvZiB0aGUgY29uc3RhbnRzIHVzZWQgaW4gdGhlIGZpbHRlciwg
-dGhlCmxhdHRlciBzZWVtcyB0byBlZmZlY3RpdmVseSBzbW9vdGggZmx1Y3R1YXRpb25zIGFuZCBh
-bGxvdyB0aGUKZXN0aW1hdG9yIHRvIGNvbnZlcmdlIHRvIHRoZSBhY3R1YWwgcGVhayByYXRlIHdp
-dGggYWxsIHRoZSBkZXZpY2VzIHdlCnRlc3RlZC4KClNpZ25lZC1vZmYtYnk6IFBhb2xvIFZhbGVu
-dGUgPHBhb2xvLnZhbGVudGVAdW5pbW9yZS5pdD4KU2lnbmVkLW9mZi1ieTogQXJpYW5uYSBBdmFu
-emluaSA8YXZhbnppbmkuYXJpYW5uYUBnbWFpbC5jb20+Ci0tLQogYmxvY2svYmZxLWlvc2NoZWQu
-YyB8IDIzICsrKysrKysrKysrKysrKysrKy0tLS0tCiAxIGZpbGUgY2hhbmdlZCwgMTggaW5zZXJ0
-aW9ucygrKSwgNSBkZWxldGlvbnMoLSkKCmRpZmYgLS1naXQgYS9ibG9jay9iZnEtaW9zY2hlZC5j
-IGIvYmxvY2svYmZxLWlvc2NoZWQuYwppbmRleCA0OWZmMWRhLi4yYTRlMDNkIDEwMDY0NAotLS0g
-YS9ibG9jay9iZnEtaW9zY2hlZC5jCisrKyBiL2Jsb2NrL2JmcS1pb3NjaGVkLmMKQEAgLTgxOCw3
-ICs4MTgsNyBAQCBzdGF0aWMgdW5zaWduZWQgbG9uZyBiZnFfY2FsY19tYXhfYnVkZ2V0KHU2NCBw
-ZWFrX3JhdGUsIHU2NCB0aW1lb3V0KQogICogdGhyb3VnaHB1dC4gU2VlIHRoZSBjb2RlIGZvciBt
-b3JlIGRldGFpbHMuCiAgKi8KIHN0YXRpYyBpbnQgYmZxX3VwZGF0ZV9wZWFrX3JhdGUoc3RydWN0
-IGJmcV9kYXRhICpiZnFkLCBzdHJ1Y3QgYmZxX3F1ZXVlICpiZnFxLAotCQkJCWludCBjb21wZW5z
-YXRlKQorCQkJCWludCBjb21wZW5zYXRlLCBlbnVtIGJmcXFfZXhwaXJhdGlvbiByZWFzb24pCiB7
-CiAJdTY0IGJ3LCB1c2VjcywgZXhwZWN0ZWQsIHRpbWVvdXQ7CiAJa3RpbWVfdCBkZWx0YTsKQEAg
-LTg1NCwxMCArODU0LDIzIEBAIHN0YXRpYyBpbnQgYmZxX3VwZGF0ZV9wZWFrX3JhdGUoc3RydWN0
-IGJmcV9kYXRhICpiZnFkLCBzdHJ1Y3QgYmZxX3F1ZXVlICpiZnFxLAogCSAqIHRoZSBwZWFrIHJh
-dGUgZXN0aW1hdGlvbi4KIAkgKi8KIAlpZiAodXNlY3MgPiAyMDAwMCkgewotCQlpZiAoYncgPiBi
-ZnFkLT5wZWFrX3JhdGUpIHsKLQkJCWJmcWQtPnBlYWtfcmF0ZSA9IGJ3OworCQlpZiAoYncgPiBi
-ZnFkLT5wZWFrX3JhdGUgfHwKKwkJICAgKCFCRlFRX1NFRUtZKGJmcXEpICYmCisJCSAgICByZWFz
-b24gPT0gQkZRX0JGUVFfQlVER0VUX1RJTUVPVVQpKSB7CisJCQliZnFfbG9nKGJmcWQsICJtZWFz
-dXJlZCBidyA9JWxsdSIsIGJ3KTsKKwkJCS8qCisJCQkgKiBUbyBzbW9vdGggb3NjaWxsYXRpb25z
-IHVzZSBhIGxvdy1wYXNzIGZpbHRlciB3aXRoCisJCQkgKiBhbHBoYT03LzgsIGkuZS4sCisJCQkg
-KiBuZXdfcmF0ZSA9ICg3LzgpICogb2xkX3JhdGUgKyAoMS84KSAqIGJ3CisJCQkgKi8KKwkJCWRv
-X2RpdihidywgOCk7CisJCQlpZiAoYncgPT0gMCkKKwkJCQlyZXR1cm4gMDsKKwkJCWJmcWQtPnBl
-YWtfcmF0ZSAqPSA3OworCQkJZG9fZGl2KGJmcWQtPnBlYWtfcmF0ZSwgOCk7CisJCQliZnFkLT5w
-ZWFrX3JhdGUgKz0gYnc7CiAJCQl1cGRhdGUgPSAxOwotCQkJYmZxX2xvZyhiZnFkLCAibmV3IHBl
-YWtfcmF0ZT0lbGx1IiwgYncpOworCQkJYmZxX2xvZyhiZnFkLCAibmV3IHBlYWtfcmF0ZT0lbGx1
-IiwgYmZxZC0+cGVha19yYXRlKTsKIAkJfQogCiAJCXVwZGF0ZSB8PSBiZnFkLT5wZWFrX3JhdGVf
-c2FtcGxlcyA9PSBCRlFfUEVBS19SQVRFX1NBTVBMRVMgLSAxOwpAQCAtOTM2LDcgKzk0OSw3IEBA
-IHN0YXRpYyB2b2lkIGJmcV9iZnFxX2V4cGlyZShzdHJ1Y3QgYmZxX2RhdGEgKmJmcWQsCiAJLyog
-VXBkYXRlIGRpc2sgcGVhayByYXRlIGZvciBhdXRvdHVuaW5nIGFuZCBjaGVjayB3aGV0aGVyIHRo
-ZQogCSAqIHByb2Nlc3MgaXMgc2xvdyAoc2VlIGJmcV91cGRhdGVfcGVha19yYXRlKS4KIAkgKi8K
-LQlzbG93ID0gYmZxX3VwZGF0ZV9wZWFrX3JhdGUoYmZxZCwgYmZxcSwgY29tcGVuc2F0ZSk7CisJ
-c2xvdyA9IGJmcV91cGRhdGVfcGVha19yYXRlKGJmcWQsIGJmcXEsIGNvbXBlbnNhdGUsIHJlYXNv
-bik7CiAKIAkvKgogCSAqIEFzIGFib3ZlIGV4cGxhaW5lZCwgJ3B1bmlzaCcgc2xvdyAoaS5lLiwg
-c2Vla3kpLCB0aW1lZC1vdXQKLS0gCjEuOS4yCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxp
-c3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9y
-Zy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+From: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
+
+I/O schedulers typically allow NCQ-capable drives to prefetch I/O
+requests, as NCQ boosts the throughput exactly by prefetching and
+internally reordering requests.
+
+Unfortunately, as discussed in detail and shown experimentally in [1],
+this may cause fairness and latency guarantees to be violated. The
+main problem is that the internal scheduler of an NCQ-capable drive
+may postpone the service of some unlucky (prefetched) requests as long
+as it deems serving other requests more appropriate to boost the
+throughput.
+
+This patch addresses this issue by not disabling device idling for
+weight-raised queues, even if the device supports NCQ. This allows BFQ
+to start serving a new queue, and therefore allows the drive to
+prefetch new requests, only after the idling timeout expires. At that
+time, all the outstanding requests of the expired queue have been most
+certainly served.
+
+[1] P. Valente and M. Andreolini, "Improving Application
+    Responsiveness with the BFQ Disk I/O Scheduler", Proceedings of
+    the 5th Annual International Systems and Storage Conference
+    (SYSTOR '12), June 2012.
+    Slightly extended version:
+http://www.algogroup.unimo.it/people/paolo/disk_sched/bf1-v1-suite-results.pdf
+
+Signed-off-by: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
+Signed-off-by: Arianna Avanzini <avanzini.arianna-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+ block/bfq-iosched.c | 5 +++--
+ block/bfq.h         | 2 +-
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/block/bfq-iosched.c b/block/bfq-iosched.c
+index 661f948..0b24130 100644
+--- a/block/bfq-iosched.c
++++ b/block/bfq-iosched.c
+@@ -2051,7 +2051,8 @@ static void bfq_update_idle_window(struct bfq_data *bfqd,
+ 
+ 	if (atomic_read(&bic->icq.ioc->active_ref) == 0 ||
+ 	    bfqd->bfq_slice_idle == 0 ||
+-		(bfqd->hw_tag && BFQQ_SEEKY(bfqq)))
++		(bfqd->hw_tag && BFQQ_SEEKY(bfqq) &&
++			bfqq->wr_coeff == 1))
+ 		enable_idle = 0;
+ 	else if (bfq_sample_valid(bic->ttime.ttime_samples)) {
+ 		if (bic->ttime.ttime_mean > bfqd->bfq_slice_idle &&
+@@ -2874,7 +2875,7 @@ static int __init bfq_init(void)
+ 	device_speed_thresh[1] = (R_fast[1] + R_slow[1]) / 2;
+ 
+ 	elv_register(&iosched_bfq);
+-	pr_info("BFQ I/O-scheduler version: v1");
++	pr_info("BFQ I/O-scheduler version: v2");
+ 
+ 	return 0;
+ }
+diff --git a/block/bfq.h b/block/bfq.h
+index 5fa8b34..3b5763a7 100644
+--- a/block/bfq.h
++++ b/block/bfq.h
+@@ -1,5 +1,5 @@
+ /*
+- * BFQ-v1 for 3.15.0: data structures and common functions prototypes.
++ * BFQ-v2 for 3.15.0: data structures and common functions prototypes.
+  *
+  * Based on ideas and code from CFQ:
+  * Copyright (C) 2003 Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
+-- 
+1.9.2
