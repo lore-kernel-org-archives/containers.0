@@ -1,17 +1,15 @@
-From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH V3 0/6] namespaces: log namespaces per task
-Date: Mon, 26 May 2014 16:17:32 -0400
-Message-ID: <20140526201732.GD8079__34168.3914572515$1401135472$gmane$org@madcap2.tricolour.ca>
-References: <cover.1400271129.git.rgb@redhat.com>
-	<CAHO5Pa0EdUsV9jJuLbkmbvFyopecQiUDZd0UasAJ5kMhtsVxjQ@mail.gmail.com>
-	<20140526165858.GC8079@madcap2.tricolour.ca>
-	<CAKgNAkgfV5K6BWjibCVwzJE3GYfmAHNzk+aU05M0xEdrfZmzPg@mail.gmail.com>
+From: "chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: RE: [PATCH] /proc/pid/status: show all sets of pid according to ns
+Date: Tue, 27 May 2014 09:36:29 +0000
+Message-ID: <5871495633F38949900D2BF2DC04883E51F910__27676.0788787671$1401183467$gmane$org@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <1401098728-2001-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<CAFLxGvxNu8dR5AYC6oar3-Jus3oBLZm10=BWcEe0wR+hRxz7eA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <CAKgNAkgfV5K6BWjibCVwzJE3GYfmAHNzk+aU05M0xEdrfZmzPg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <CAFLxGvxNu8dR5AYC6oar3-Jus3oBLZm10=BWcEe0wR+hRxz7eA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,66 +19,76 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 14/05/26, Michael Kerrisk (man-pages) wrote:
-> Hi Richard
-> 
-> On Mon, May 26, 2014 at 6:58 PM, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> > On 14/05/22, Michael Kerrisk wrote:
-> >> Richard,
-> >
-> > Hi Michael,
-> >
-> >> On Tue, May 20, 2014 at 3:12 PM, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> >> > The purpose is to track namespaces in use by logged processes from the
-> >> > perspective of init_*_ns.
-> >> >
-> >> > 1/6 defines a function to generate them and assigns them.
-> >> >
-> >> > Use a serial number per namespace (unique across one boot of one kernel)
-> >> > instead of the inode number (which is claimed to have had the right to change
-> >> > reserved and is not necessarily unique if there is more than one proc fs).  It
-> >> > could be argued that the inode numbers have now become a defacto interface and
-> >> > can't change now, but I'm proposing this approach to see if this helps address
-> >> > some of the objections to the earlier patchset.
-> >> >
-> >> > 2/6 adds access functions to get to the serial numbers in a similar way to
-> >> > inode access for namespace proc operations.
-> >> >
-> >> > 3/6 implements, as suggested by Serge Hallyn, making these serial numbers
-> >> > available in /proc/self/ns/{ipc,mnt,net,pid,user,uts}_snum.  I chose "snum"
-> >> > instead of "seq" for consistency with inum and there are a number of other uses
-> >> > of "seq" in the namespace code.
-> >> >
-> >> > 4/6 exposes proc's ns entries structure which lists a number of useful
-> >> > operations per namespace type for other subsystems to use.
-> >>
-> >> Since the 3 and 4 change the ABI, please CC iterations of this patch
-> >> series to linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, as per Documentation/SubmitChecklist.
-> >
-> > Neither patch 3/6 nor 4/6 changes the syscall interface.
-> 
-> (Agreed.)
-> 
-> > Patch 3/6 adds /proc/<pid>/ns/ entries, which looks more like #16 in
-> > that document (for which /proc/<pid>/ns/<nstype> was never added).
-> 
-> But, that's a change to the surface that the kernel exposes to user
-> space, right? If so, it is best CCed to linux-api.
-
-Got it.  Thanks!
-
-> Thanks,
-> 
-> Michael
-
-- RGB
-
---
-Richard Guy Briggs <rbriggs-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Senior Software Engineer, Kernel Security, AMER ENG Base Operating Systems, Red Hat
-Remote, Ottawa, Canada
-Voice: +1.647.777.2635, Internal: (81) 32635, Alt: +1.613.693.0684x3545
+DQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogUmljaGFyZCBXZWluYmVy
+Z2VyIFttYWlsdG86cmljaGFyZC53ZWluYmVyZ2VyQGdtYWlsLmNvbV0NCj4gU2VudDogTW9uZGF5
+LCBNYXkgMjYsIDIwMTQgNzoxMCBQTQ0KPiBUbzogQ2hlbiwgSGFueGlhby/pmYgg5pmX6ZyEDQo+
+IENjOiBMaW51eCBDb250YWluZXJzOyBMS01MOyBBbmRyZXcgTW9ydG9uOyBFcmljIFcuIEJpZWRl
+cm1hbjsgU2VyZ2UgSGFsbHluOw0KPiBEYW5pZWwgUC4gQmVycmFuZ2U7IE9sZWcgTmVzdGVyb3Y7
+IEFsIFZpcm87IERhdmlkIEhvd2VsbHMNCj4gU3ViamVjdDogUmU6IFtQQVRDSF0gL3Byb2MvcGlk
+L3N0YXR1czogc2hvdyBhbGwgc2V0cyBvZiBwaWQgYWNjb3JkaW5nIHRvIG5zDQo+IA0KPiBPbiBN
+b24sIE1heSAyNiwgMjAxNCBhdCAxMjowNSBQTSwgQ2hlbiBIYW54aWFvDQo+IDxjaGVuaGFueGlh
+b0Bjbi5mdWppdHN1LmNvbT4gd3JvdGU6DQo+ID4gV2UgbmVlZCBhIGRpcmVjdCBtZXRob2Qgb2Yg
+Z2V0dGluZyB0aGUgcGlkIGluc2lkZSBjb250YWluZXJzLg0KPiA+IElmIHNvbWUgaXNzdWVzIG9j
+Y3VycmVkIGluc2lkZSBhIGNvbnRhaW5lciBndWVzdCwgaG9zdCB1c2VyDQo+ID4gY291bGQgbm90
+IGtub3cgd2hpY2ggcHJvY2VzcyBpcyBpbiB0cm91YmxlIGp1c3QgYnkgZ3Vlc3QgcGlkOg0KPiA+
+IHRoZSB1c2VycyBvZiBjb250YWluZXIgZ3Vlc3Qgb25seSBrbmV3IHRoZSBwaWQgaW5zaWRlIGNv
+bnRhaW5lcnMuDQo+ID4gVGhpcyB3aWxsIGJyaW5nIG9ic3RhY2xlIGZvciB0cm91YmxlIHNob290
+aW5nLg0KPiA+DQo+ID4gVGhpcyBwYXRjaCBleHBhbmRzIGZpZWxkcyBvZiBUZ2lkIGFuZCBQaWQ6
+DQo+ID4gYSkgSW4gaW5pdF9waWRfbnMsIG5vdGhpbmcgY2hhbmdlZDsNCj4gPg0KPiA+IGIpIElu
+IG9uZSBwaWRucywgdGhleSB3aWxsIHRlbGwgdGhlIHBpZCBpbnNpZGUgY29udGFpbmVyczoNCj4g
+PiBUZ2lkOiAgIDE2MjggICAgOSAgICAgICAzDQo+ID4gUGlkOiAgICAxNjI4ICAgIDkgICAgICAg
+Mw0KPiA+ICoqIHByb2Nlc3MgaWQgaXMgMTYyOCBpbiBsZXZlbCAwLCA5IGluIGxldmVsIDEsIDMg
+aW4gbGV2ZWwgMi4NCj4gPg0KPiA+IGMpIElmIHBpZG5zIGlzIG5lc3RlZCwgaXQgZGVwZW5kcyBv
+biB3aGljaCBwaWRucyBhcmUgeW91IGluLg0KPiA+IFRnaWQ6ICAgOSAgICAgICAzDQo+ID4gUGlk
+OiAgICA5ICAgICAgIDMNCj4gPiAqKiBWaWV3cyBmcm9tIGxldmVsIDEgZm9yIFBpZCAxNjI4IGlu
+IGhvc3QuDQo+ID4NCj4gPiBTaWduZWQtb2ZmLWJ5OiBDaGVuIEhhbnhpYW8gPGNoZW5oYW54aWFv
+QGNuLmZ1aml0c3UuY29tPg0KPiA+IC0tLQ0KPiA+ICBmcy9wcm9jL2FycmF5LmMgfCAyMCArKysr
+KysrKysrKysrLS0tLS0tLQ0KPiA+ICAxIGZpbGUgY2hhbmdlZCwgMTMgaW5zZXJ0aW9ucygrKSwg
+NyBkZWxldGlvbnMoLSkNCj4gPg0KPiA+IGRpZmYgLS1naXQgYS9mcy9wcm9jL2FycmF5LmMgYi9m
+cy9wcm9jL2FycmF5LmMNCj4gPiBpbmRleCA2NGRiMmJjLi5lZWYyMGRkIDEwMDY0NA0KPiA+IC0t
+LSBhL2ZzL3Byb2MvYXJyYXkuYw0KPiA+ICsrKyBiL2ZzL3Byb2MvYXJyYXkuYw0KPiA+IEBAIC0x
+NzMsMTcgKzE3MywyMyBAQCBzdGF0aWMgaW5saW5lIHZvaWQgdGFza19zdGF0ZShzdHJ1Y3Qgc2Vx
+X2ZpbGUgKm0sIHN0cnVjdA0KPiBwaWRfbmFtZXNwYWNlICpucywNCj4gPiAgICAgICAgIGNyZWQg
+PSBnZXRfdGFza19jcmVkKHApOw0KPiA+ICAgICAgICAgc2VxX3ByaW50ZihtLA0KPiA+ICAgICAg
+ICAgICAgICAgICAiU3RhdGU6XHQlc1xuIg0KPiA+IC0gICAgICAgICAgICAgICAiVGdpZDpcdCVk
+XG4iDQo+ID4gLSAgICAgICAgICAgICAgICJOZ2lkOlx0JWRcbiINCj4gPiAtICAgICAgICAgICAg
+ICAgIlBpZDpcdCVkXG4iDQo+ID4gKyAgICAgICAgICAgICAgICJOZ2lkOlx0JWRcbiIsDQo+IA0K
+PiBZb3UncmUgY2hhbmdpbmcgdGhlIG9yZGVyaW5nIG9mIFRnaWQgYW5kIE5naWQgaGVyZS4NCg0K
+SSBqdXN0IHdhbnQgdG8gcHV0IFRnaWQgYW5kIFBpZCB0b2dldGhlciwgZm9yIHNob3dpbmcgYWxs
+IHNldHMgb2YgcGlkcyBvZiB0aGVtLiANCg0KPiANCj4gPiArICAgICAgICAgICAgICAgZ2V0X3Rh
+c2tfc3RhdGUocCksDQo+ID4gKyAgICAgICAgICAgICAgIHRhc2tfbnVtYV9ncm91cF9pZChwKSk7
+DQo+ID4gKyAgICAgICBzZXFfcHV0cyhtLCAiVGdpZDoiKTsNCj4gPiArICAgICAgIGZvciAoZyA9
+IG5zLT5sZXZlbDsgZyA8PSBwaWQtPmxldmVsOyBnKyspDQo+ID4gKyAgICAgICAgICAgICAgIHNl
+cV9wcmludGYobSwgIlx0JWQgIiwNCj4gPiArICAgICAgICAgICAgICAgdGFza190Z2lkX25yX25z
+KHAsIHBpZC0+bnVtYmVyc1tnXS5ucykpOw0KPiANCj4gSSBsaWtlIHRoZSBpZGVhIGJ1dCBJTUhP
+IHdlIHNob3VsZCBrZWVwIFRnaWQgYW5kIFBpZCBhcyBpcyBhbmQgYmV0dGVyDQo+IGFkZCB0d28g
+bmV3IGZpZWxkcyB0byAvcHJvYy9waWQvc3RhdHVzLg0KPiBXaGF0IGFib3V0IE5TcGlkIGFuZCBO
+U2dpZD8NCj4gDQoNClRoYXQncyBhIGdvb2QgaWRlYS4NCkFzIFZhc2lseSdzIGNvbW1lbnRzLA0K
+a2VlcGluZyBQaWQgdW5jaGFuZ2VkIHdvdWxkIGJlIGJldHRlciBmb3IgYmFja3dhcmQgY29tcGF0
+aWJpbGl0eS4NCg0KPiA+ICsgICAgICAgc2VxX3B1dHMobSwgIlxuUGlkOiIpOw0KPiA+ICsgICAg
+ICAgZm9yIChnID0gbnMtPmxldmVsOyBnIDw9IHBpZC0+bGV2ZWw7IGcrKykNCj4gPiArICAgICAg
+ICAgICAgICAgc2VxX3ByaW50ZihtLCAiXHQlZCAiLA0KPiA+ICsgICAgICAgICAgICAgICB0YXNr
+X3BpZF9ucl9ucyhwLCBwaWQtPm51bWJlcnNbZ10ubnMpKTsNCj4gPiArICAgICAgIHNlcV9wdXRj
+KG0sICdcbicpOw0KPiA+ICsgICAgICAgc2VxX3ByaW50ZihtLA0KPiA+ICAgICAgICAgICAgICAg
+ICAiUFBpZDpcdCVkXG4iDQo+ID4gICAgICAgICAgICAgICAgICJUcmFjZXJQaWQ6XHQlZFxuIg0K
+PiA+ICAgICAgICAgICAgICAgICAiVWlkOlx0JWRcdCVkXHQlZFx0JWRcbiINCj4gPiAgICAgICAg
+ICAgICAgICAgIkdpZDpcdCVkXHQlZFx0JWRcdCVkXG4iLA0KPiA+IC0gICAgICAgICAgICAgICBn
+ZXRfdGFza19zdGF0ZShwKSwNCj4gPiAtICAgICAgICAgICAgICAgdGFza190Z2lkX25yX25zKHAs
+IG5zKSwNCj4gPiAtICAgICAgICAgICAgICAgdGFza19udW1hX2dyb3VwX2lkKHApLA0KPiA+IC0g
+ICAgICAgICAgICAgICBwaWRfbnJfbnMocGlkLCBucyksDQo+ID4gICAgICAgICAgICAgICAgIHBw
+aWQsIHRwaWQsDQo+ID4gICAgICAgICAgICAgICAgIGZyb21fa3VpZF9tdW5nZWQodXNlcl9ucywg
+Y3JlZC0+dWlkKSwNCj4gPiAgICAgICAgICAgICAgICAgZnJvbV9rdWlkX211bmdlZCh1c2VyX25z
+LCBjcmVkLT5ldWlkKSwNCj4gPiAtLQ0KPiA+IDEuOS4wDQo+ID4NCj4gPiAtLQ0KPiA+IFRvIHVu
+c3Vic2NyaWJlIGZyb20gdGhpcyBsaXN0OiBzZW5kIHRoZSBsaW5lICJ1bnN1YnNjcmliZSBsaW51
+eC1rZXJuZWwiIGluDQo+ID4gdGhlIGJvZHkgb2YgYSBtZXNzYWdlIHRvIG1ham9yZG9tb0B2Z2Vy
+Lmtlcm5lbC5vcmcNCj4gPiBNb3JlIG1ham9yZG9tbyBpbmZvIGF0ICBodHRwOi8vdmdlci5rZXJu
+ZWwub3JnL21ham9yZG9tby1pbmZvLmh0bWwNCj4gPiBQbGVhc2UgcmVhZCB0aGUgRkFRIGF0ICBo
+dHRwOi8vd3d3LnR1eC5vcmcvbGttbC8NCj4gDQo+IA0KPiANCj4gLS0NCj4gVGhhbmtzLA0KPiAv
+L3JpY2hhcmQNCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+CkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlv
+bi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8v
+Y29udGFpbmVycw==
