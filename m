@@ -1,14 +1,16 @@
-From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCH v2] /proc/pid/status: show all sets of pid according to ns
-Date: Wed, 28 May 2014 23:27:05 +0400
-Message-ID: <53863889.9080509__24763.4055828259$1401305273$gmane$org@parallels.com>
-References: <1401272683-1659-1-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<5385DA19.2060008@parallels.com> <20140528182824.GA5057@cachalot>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH RFC RESEND 01/14] block: kconfig update and build bits
+	for BFQ
+Date: Wed, 28 May 2014 18:19:29 -0400
+Message-ID: <20140528221929.GG1419__23117.6274166957$1401315585$gmane$org@htj.dyndns.org>
+References: <1401194558-5283-1-git-send-email-paolo.valente@unimore.it>
+	<1401194558-5283-2-git-send-email-paolo.valente@unimore.it>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140528182824.GA5057@cachalot>
+Content-Disposition: inline
+In-Reply-To: <1401194558-5283-2-git-send-email-paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,39 +20,26 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vasily Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
-Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: paolo <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Arianna Avanzini <avanzini.arianna-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paolo Valente <posta_paolo-whZMOeQn8C0@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 05/28/2014 10:28 PM, Vasily Kulikov wrote:
-> On Wed, May 28, 2014 at 16:44 +0400, Pavel Emelyanov wrote:
->> On 05/28/2014 02:24 PM, Chen Hanxiao wrote:
->>> We need a direct method of getting the pid inside containers.
->>
->> But there's more generic issue -- some day we'll need to know not only
->> PIDs as seen from different namespaces, but also SIDs and PGIDs.
-> 
-> Maybe include all per-ns ID in a separate file?
+On Tue, May 27, 2014 at 02:42:25PM +0200, paolo wrote:
+> diff --git a/block/Makefile b/block/Makefile
+> index 20645e8..cbd83fb 100644
+> --- a/block/Makefile
+> +++ b/block/Makefile
+> @@ -16,6 +16,7 @@ obj-$(CONFIG_BLK_DEV_THROTTLING)	+= blk-throttle.o
+>  obj-$(CONFIG_IOSCHED_NOOP)	+= noop-iosched.o
+>  obj-$(CONFIG_IOSCHED_DEADLINE)	+= deadline-iosched.o
+>  obj-$(CONFIG_IOSCHED_CFQ)	+= cfq-iosched.o
+> +obj-$(CONFIG_IOSCHED_BFQ)	+= bfq-iosched.o
 
-This looks reasonable, but wouldn't this file be too big for a loaded system?
+Doesn't this break builds where BFQ is enabled including all-y/m?
+Please make the config / makefile changes with the actual
+implementation.
 
-> Then the old 'status'
-> file includes IDs from the current namespace only, the new file (e.g.
-> 'ids' or 'ns_ids') contains only hierarchical IDs which differ from
-> namespace to namespace for all possible namespaces.  
+Thanks.
 
-For all visible namespaces. I.e. -- if a task lives in a container and reads
-its /proc/self/status it should _not_ see its host pid. Just like it is now
-in the current patch. Otherwise it would bring blockers to live migration :(
-
-> It will be simplier
-> to parse the file -- if 'ns_ids' file contains some ID then this ID for
-> every ns can be obtained regardless of the specific ID name (SID, PID,
-> PGID, etc.).
-
-True, but given a task PID how to determine which pid namespaces it lives in
-to get the idea of how PIDs map to each other? Maybe we need some explicit
-API for converting (ID, NS1, NS2) into (ID)?
-
-Thanks,
-Pavel
+-- 
+tejun
