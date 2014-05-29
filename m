@@ -1,14 +1,15 @@
-From: Alin Dobre <alin.dobre-1hSFou9RDDldEee+Cai+ZQ@public.gmane.org>
-Subject: Re: [RFC][PATCH] net: Allow xt_owner in any user namespace
-Date: Thu, 29 May 2014 14:39:15 +0100
-Message-ID: <53873883.4060408@elastichosts.com>
-References: <537B7FF6.9050103@elastichosts.com>	<877g5eg7wy.fsf@x220.int.ebiederm.org>
-	<537D706D.4010303@1h.com> <87vbsus3wb.fsf_-_@x220.int.ebiederm.org>
+From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] Per-user namespace process accounting
+Date: Thu, 29 May 2014 15:32:32 +0000
+Message-ID: <20140529153232.GB9714@ubuntumail>
+References: <5386D58D.2080809@1h.com> <87tx88nbko.fsf@x220.int.ebiederm.org>
+	<53870EAA.4060101@1h.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87vbsus3wb.fsf_-_-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <53870EAA.4060101-108MBtLGafw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,12 +19,55 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Marian Marinov <mm-108MBtLGafw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jan Engelhardt <jengelh-nopoi9nDyk+ELgA04lAiVw@public.gmane.org>
+To: Marian Marinov <mm-108MBtLGafw@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, LXC development mailing-list <lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Thanks, Eric. I'll give this a try and come back with some results if
-interested.
+Quoting Marian Marinov (mm-108MBtLGafw@public.gmane.org):
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA1
+> 
+> On 05/29/2014 01:06 PM, Eric W. Biederman wrote:
+> > Marian Marinov <mm-108MBtLGafw@public.gmane.org> writes:
+> > 
+> >> Hello,
+> >> 
+> >> I have the following proposition.
+> >> 
+> >> Number of currently running processes is accounted at the root user namespace. The problem I'm facing is that
+> >> multiple containers in different user namespaces share the process counters.
+> > 
+> > That is deliberate.
+> 
+> And I understand that very well ;)
+> 
+> > 
+> >> So if containerX runs 100 with UID 99, containerY should have NPROC limit of above 100 in order to execute any 
+> >> processes with ist own UID 99.
+> >> 
+> >> I know that some of you will tell me that I should not provision all of my containers with the same UID/GID maps,
+> >> but this brings another problem.
+> >> 
+> >> We are provisioning the containers from a template. The template has a lot of files 500k and more. And chowning
+> >> these causes a lot of I/O and also slows down provisioning considerably.
+> >> 
+> >> The other problem is that when we migrate one container from one host machine to another the IDs may be already
+> >> in use on the new machine and we need to chown all the files again.
+> > 
+> > You should have the same uid allocations for all machines in your fleet as much as possible.   That has been true
+> > ever since NFS was invented and is not new here.  You can avoid the cost of chowning if you untar your files inside
+> > of your user namespace.  You can have different maps per machine if you are crazy enough to do that.  You can even
+> > have shared uids that you use to share files between containers as long as none of those files is setuid.  And map
+> > those shared files to some kind of nobody user in your user namespace.
+> 
+> We are not using NFS. We are using a shared block storage that offers us snapshots. So provisioning new containers is
+> extremely cheep and fast. Comparing that with untar is comparing a race car with Smart. Yes it can be done and no, I
+> do not believe we should go backwards.
+> 
+> We do not share filesystems between containers, we offer them block devices.
 
-Cheers,
-Alin.
+Yes, this is a real nuisance for openstack style deployments.
+
+One nice solution to this imo would be a very thin stackable filesystem
+which does uid shifting, or, better yet, a non-stackable way of shifting
+uids at mount.
