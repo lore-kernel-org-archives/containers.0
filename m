@@ -1,12 +1,13 @@
 From: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-Subject: [PATCH RFC - TAKE TWO - 03/12] block, bfq: improve throughput boosting
-Date: Thu, 29 May 2014 11:05:34 +0200
-Message-ID: <1401354343-5527-4-git-send-email-paolo.valente@unimore.it>
+Subject: [PATCH RFC - TAKE TWO - 04/12] block,
+	bfq: modify the peak-rate estimator
+Date: Thu, 29 May 2014 11:05:35 +0200
+Message-ID: <1401354343-5527-5-git-send-email-paolo.valente@unimore.it>
 References: <20140528221929.GG1419@htj.dyndns.org>
 	<1401354343-5527-1-git-send-email-paolo.valente@unimore.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <1401354343-5527-1-git-send-email-paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
@@ -22,256 +23,87 @@ To: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Tejun Heo <tj-Dg
 Cc: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Arianna Avanzini <avanzini.arianna-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paolo Valente <posta_paolo-whZMOeQn8C0@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The feedback-loop algorithm used by BFQ to compute queue (process)
-budgets is basically a set of three update rules, one for each of the
-main reasons why a queue may be expired. If many processes suddenly
-switch from sporadic I/O to greedy and sequential I/O, then these
-rules are quite slow to assign large budgets to these processes, and
-hence to achieve a high throughput. On the opposite side, BFQ assigns
-the maximum possible budget B_max to a just-created queue. This allows
-a high throughput to be achieved immediately if the associated process
-is I/O-bound and performs sequential I/O from the beginning. But it
-also increases the worst-case latency experienced by the first
-requests issued by the process, because the larger the budget of a
-queue waiting for service is, the later the queue will be served by
-B-WF2Q+ (Subsec 3.3 in [1]). This is detrimental for an interactive or
-soft real-time application.
-
-To tackle these throughput and latency problems, on one hand this
-patch changes the initial budget value to B_max/2. On the other hand,
-it re-tunes the three rules, adopting a more aggressive,
-multiplicative increase/linear decrease scheme. This scheme trades
-latency for throughput more than before, and tends to assign large
-budgets quickly to processes that are or become I/O-bound. For two of
-the expiration reasons, the new version of the rules also contains
-some more little improvements, briefly described below.
-
-*No more backlog.* In this case, the budget was larger than the number
-of sectors actually read/written by the process before it stopped
-doing I/O. Hence, to reduce latency for the possible future I/O
-requests of the process, the old rule simply set the next budget to
-the number of sectors actually consumed by the process. However, if
-there are still outstanding requests, then the process may have not
-yet issued its next request just because it is still waiting for the
-completion of some of the still outstanding ones. If this sub-case
-holds true, then the new rule, instead of decreasing the budget,
-doubles it, proactively, in the hope that: 1) a larger budget will fit
-the actual needs of the process, and 2) the process is sequential and
-hence a higher throughput will be achieved by serving the process
-longer after granting it access to the device.
-
-*Budget timeout*. The original rule set the new budget to the maximum
-value B_max, to maximize throughput and let all processes experiencing
-budget timeouts receive the same share of the device time. In our
-experiments we verified that this sudden jump to B_max did not provide
-sensible benefits; rather it increased the latency of processes
-performing sporadic and short I/O. The new rule only doubles the
-budget.
-
-[1] P. Valente and M. Andreolini, "Improving Application
-    Responsiveness with the BFQ Disk I/O Scheduler", Proceedings of
-    the 5th Annual International Systems and Storage Conference
-    (SYSTOR '12), June 2012.
-    Slightly extended version:
-http://www.algogroup.unimo.it/people/paolo/disk_sched/bf1-v1-suite-results.pdf
-
-Signed-off-by: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-Signed-off-by: Arianna Avanzini <avanzini.arianna-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
----
- block/bfq-cgroup.c  |  2 ++
- block/bfq-ioc.c     |  2 ++
- block/bfq-iosched.c | 88 ++++++++++++++++++++++++++++-------------------------
- block/bfq-sched.c   |  2 ++
- block/bfq.h         |  2 ++
- 5 files changed, 55 insertions(+), 41 deletions(-)
-
-diff --git a/block/bfq-cgroup.c b/block/bfq-cgroup.c
-index 00a7a1b..805fe5e 100644
---- a/block/bfq-cgroup.c
-+++ b/block/bfq-cgroup.c
-@@ -7,6 +7,8 @@
-  * Copyright (C) 2008 Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
-  *		      Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-  *
-+ * Copyright (C) 2010 Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-+ *
-  * Licensed under the GPL-2 as detailed in the accompanying COPYING.BFQ
-  * file.
-  */
-diff --git a/block/bfq-ioc.c b/block/bfq-ioc.c
-index adfb5a1..7f6b000 100644
---- a/block/bfq-ioc.c
-+++ b/block/bfq-ioc.c
-@@ -6,6 +6,8 @@
-  *
-  * Copyright (C) 2008 Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
-  *		      Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-+ *
-+ * Copyright (C) 2010 Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-  */
- 
- /**
-diff --git a/block/bfq-iosched.c b/block/bfq-iosched.c
-index b2cbfce..49ff1da 100644
---- a/block/bfq-iosched.c
-+++ b/block/bfq-iosched.c
-@@ -7,6 +7,8 @@
-  * Copyright (C) 2008 Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
-  *		      Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-  *
-+ * Copyright (C) 2010 Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-+ *
-  * Licensed under the GPL-2 as detailed in the accompanying COPYING.BFQ
-  * file.
-  *
-@@ -101,9 +103,6 @@ struct kmem_cache *bfq_pool;
- #define BFQQ_SEEK_THR	 (sector_t)(8 * 1024)
- #define BFQQ_SEEKY(bfqq) ((bfqq)->seek_mean > BFQQ_SEEK_THR)
- 
--/* Budget feedback step. */
--#define BFQ_BUDGET_STEP         128
--
- /* Min samples used for peak rate estimation (for autotuning). */
- #define BFQ_PEAK_RATE_SAMPLES	32
- 
-@@ -537,36 +536,6 @@ static inline unsigned long bfq_max_budget(struct bfq_data *bfqd)
- 		return bfqd->bfq_max_budget;
- }
- 
-- /*
-- * bfq_default_budget - return the default budget for @bfqq on @bfqd.
-- * @bfqd: the device descriptor.
-- * @bfqq: the queue to consider.
-- *
-- * We use 3/4 of the @bfqd maximum budget as the default value
-- * for the max_budget field of the queues.  This lets the feedback
-- * mechanism to start from some middle ground, then the behavior
-- * of the process will drive the heuristics towards high values, if
-- * it behaves as a greedy sequential reader, or towards small values
-- * if it shows a more intermittent behavior.
-- */
--static unsigned long bfq_default_budget(struct bfq_data *bfqd,
--					struct bfq_queue *bfqq)
--{
--	unsigned long budget;
--
--	/*
--	 * When we need an estimate of the peak rate we need to avoid
--	 * to give budgets that are too short due to previous measurements.
--	 * So, in the first 10 assignments use a ``safe'' budget value.
--	 */
--	if (bfqd->budgets_assigned < 194 && bfqd->bfq_user_max_budget == 0)
--		budget = bfq_default_max_budget;
--	else
--		budget = bfqd->bfq_max_budget;
--
--	return budget - budget / 4;
--}
--
- /*
-  * Return min budget, which is a fraction of the current or default
-  * max budget (trying with 1/32)
-@@ -730,13 +699,51 @@ static void __bfq_bfqq_recalc_budget(struct bfq_data *bfqd,
- 		 * for throughput.
- 		 */
- 		case BFQ_BFQQ_TOO_IDLE:
--			if (budget > min_budget + BFQ_BUDGET_STEP)
--				budget -= BFQ_BUDGET_STEP;
--			else
--				budget = min_budget;
-+			/*
-+			 * This is the only case where we may reduce
-+			 * the budget: if there is no request of the
-+			 * process still waiting for completion, then
-+			 * we assume (tentatively) that the timer has
-+			 * expired because the batch of requests of
-+			 * the process could have been served with a
-+			 * smaller budget.  Hence, betting that
-+			 * process will behave in the same way when it
-+			 * becomes backlogged again, we reduce its
-+			 * next budget.  As long as we guess right,
-+			 * this budget cut reduces the latency
-+			 * experienced by the process.
-+			 *
-+			 * However, if there are still outstanding
-+			 * requests, then the process may have not yet
-+			 * issued its next request just because it is
-+			 * still waiting for the completion of some of
-+			 * the still outstanding ones.  So in this
-+			 * subcase we do not reduce its budget, on the
-+			 * contrary we increase it to possibly boost
-+			 * the throughput, as discussed in the
-+			 * comments to the BUDGET_TIMEOUT case.
-+			 */
-+			if (bfqq->dispatched > 0) /* still outstanding reqs */
-+				budget = min(budget * 2, bfqd->bfq_max_budget);
-+			else {
-+				if (budget > 5 * min_budget)
-+					budget -= 4 * min_budget;
-+				else
-+					budget = min_budget;
-+			}
- 			break;
- 		case BFQ_BFQQ_BUDGET_TIMEOUT:
--			budget = bfq_default_budget(bfqd, bfqq);
-+			/*
-+			 * We double the budget here because: 1) it
-+			 * gives the chance to boost the throughput if
-+			 * this is not a seeky process (which may have
-+			 * bumped into this timeout because of, e.g.,
-+			 * ZBR), 2) together with charge_full_budget
-+			 * it helps give seeky processes higher
-+			 * timestamps, and hence be served less
-+			 * frequently.
-+			 */
-+			budget = min(budget * 2, bfqd->bfq_max_budget);
- 			break;
- 		case BFQ_BFQQ_BUDGET_EXHAUSTED:
- 			/*
-@@ -748,8 +755,7 @@ static void __bfq_bfqq_recalc_budget(struct bfq_data *bfqd,
- 			 * definitely increase the budget of this good
- 			 * candidate to boost the disk throughput.
- 			 */
--			budget = min(budget + 8 * BFQ_BUDGET_STEP,
--				     bfqd->bfq_max_budget);
-+			budget = min(budget * 4, bfqd->bfq_max_budget);
- 			break;
- 		case BFQ_BFQQ_NO_MORE_REQUESTS:
- 		       /*
-@@ -1408,7 +1414,7 @@ static void bfq_init_bfqq(struct bfq_data *bfqd, struct bfq_queue *bfqq,
- 	}
- 
- 	/* Tentative initial value to trade off between thr and lat */
--	bfqq->max_budget = bfq_default_budget(bfqd, bfqq);
-+	bfqq->max_budget = (2 * bfq_max_budget(bfqd)) / 3;
- 	bfqq->pid = pid;
- }
- 
-diff --git a/block/bfq-sched.c b/block/bfq-sched.c
-index 8801b6c..075e472 100644
---- a/block/bfq-sched.c
-+++ b/block/bfq-sched.c
-@@ -6,6 +6,8 @@
-  *
-  * Copyright (C) 2008 Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
-  *		      Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-+ *
-+ * Copyright (C) 2010 Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-  */
- 
- #ifdef CONFIG_CGROUP_BFQIO
-diff --git a/block/bfq.h b/block/bfq.h
-index b982567..a334eb4 100644
---- a/block/bfq.h
-+++ b/block/bfq.h
-@@ -6,6 +6,8 @@
-  *
-  * Copyright (C) 2008 Fabio Checconi <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
-  *		      Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-+ *
-+ * Copyright (C) 2010 Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-  */
- 
- #ifndef _BFQ_H
--- 
-1.9.2
+VW5sZXNzIHRoZSBtYXhpbXVtIGJ1ZGdldCBCX21heCB0aGF0IEJGUSBjYW4gYXNzaWduIHRvIGEg
+cXVldWUgaXMgc2V0CmV4cGxpY2l0bHkgYnkgdGhlIHVzZXIsIEJGUSBhdXRvbWF0aWNhbGx5IHVw
+ZGF0ZXMgQl9tYXguIEluCnBhcnRpY3VsYXIsIEJGUSBkeW5hbWljYWxseSBzZXRzIEJfbWF4IHRv
+IHRoZSBudW1iZXIgb2Ygc2VjdG9ycyB0aGF0CmNhbiBiZSByZWFkLCBhdCB0aGUgY3VycmVudCBl
+c3RpbWF0ZWQgcGVhayByYXRlLCBkdXJpbmcgdGhlIG1heGltdW0KdGltZSwgVF9tYXgsIGFsbG93
+ZWQgYmVmb3JlIGEgYnVkZ2V0IHRpbWVvdXQgb2NjdXJzLiBJbiBmb3JtdWxhcywgaWYKd2UgZGVu
+b3RlIGFzIFJfZXN0IHRoZSBlc3RpbWF0ZWQgcGVhayByYXRlLCB0aGVuIEJfbWF4ID0gVF9tYXgg
+4oiXClJfZXN0LiBIZW5jZSwgdGhlIGhpZ2hlciBSX2VzdCBpcyB3aXRoIHJlc3BlY3QgdG8gdGhl
+IGFjdHVhbCBkaXNrIHBlYWsKcmF0ZSwgdGhlIGhpZ2hlciB0aGUgcHJvYmFiaWxpdHkgdGhhdCBw
+cm9jZXNzZXMgaW5jdXIgYnVkZ2V0IHRpbWVvdXRzCnVuanVzdGx5IGlzLiBCZXNpZGVzLCBhIHRv
+byBoaWdoIHZhbHVlIG9mIEJfbWF4IHVubmVjZXNzYXJpbHkKaW5jcmVhc2VzIHRoZSBkZXZpYXRp
+b24gZnJvbSBhbiBpZGVhbCwgc21vb3RoIHNlcnZpY2UuCgpUbyBmaWx0ZXIgb3V0IHNwaWtlcywg
+dGhlIGVzdGltYXRlZCBwZWFrIHJhdGUgaXMgdXBkYXRlZCBvbmx5IG9uIHRoZQpleHBpcmF0aW9u
+IG9mIHF1ZXVlcyB0aGF0IGhhdmUgYmVlbiBzZXJ2ZWQgZm9yIGEgbG9uZy1lbm91Z2ggdGltZS4g
+IEFzCmEgZmlyc3Qgc3RlcCwgdGhlIGVzdGltYXRvciBjb21wdXRlcyB0aGUgZGV2aWNlIHJhdGUs
+IFJfbWVhcywgZHVyaW5nCnRoZSBzZXJ2aWNlIG9mIHRoZSBxdWV1ZS4gQWZ0ZXIgdGhhdCwgaWYg
+Ul9lc3QgPCBSX21lYXMsIHRoZW4gUl9lc3QgaXMKc2V0IHRvIFJfbWVhcy4KClVuZm9ydHVuYXRl
+bHksIG91ciBleHBlcmltZW50cyBoaWdobGlnaHRlZCB0aGUgZm9sbG93aW5nIHR3bwpwcm9ibGVt
+cy4gRmlyc3QsIGJlY2F1c2Ugb2YgWkJSLCBkZXBlbmRpbmcgb24gdGhlIGxvY2FsaXR5IG9mIHRo
+ZQp3b3JrbG9hZCwgdGhlIGVzdGltYXRvciBtYXkgZWFzaWx5IGNvbnZlcmdlIHRvIGEgdmFsdWUg
+dGhhdCBpcwphcHByb3ByaWF0ZSBvbmx5IGZvciBwYXJ0IG9mIGEgZGlzay4gU2Vjb25kLCBSX2Vz
+dCBtYXkganVtcCAoYW5kCnJlbWFpbiBmb3JldmVyIGVxdWFsKSB0byBhIG11Y2ggaGlnaGVyIHZh
+bHVlIHRoYW4gdGhlIGFjdHVhbCBkZXZpY2UKcGVhayByYXRlLCBpbiBjYXNlIG9mIGhpdHMgaW4g
+dGhlIGRyaXZlIGNhY2hlLCB3aGljaCBtYXkgbGV0IHNlY3RvcnMKYmUgdHJhbnNmZXJyZWQgaW4g
+cHJhY3RpY2UgYXQgYnVzIHJhdGUuCgpUbyB0cnkgdG8gY29udmVyZ2UgdG8gdGhlIGFjdHVhbCBh
+dmVyYWdlIHBlYWsgcmF0ZSBvdmVyIHRoZSBkaXNrCnN1cmZhY2UgKGluIGNhc2Ugb2Ygcm90YXRp
+b25hbCBkZXZpY2VzKSwgYW5kIHRvIHNtb290aCB0aGUgc3Bpa2VzCmNhdXNlZCBieSB0aGUgZHJp
+dmUgY2FjaGUsIHRoaXMgcGF0Y2ggY2hhbmdlcyB0aGUgZXN0aW1hdG9yIGFzCmZvbGxvd3MuIElu
+IHRoZSBkZXNjcmlwdGlvbiBvZiB0aGUgY2hhbmdlcywgd2UgcmVmZXIgdG8gYSBxdWV1ZQpjb250
+YWluaW5nIHJhbmRvbSByZXF1ZXN0cyBhcyAnc2Vla3knLCBhY2NvcmRpbmcgdG8gdGhlIHRlcm1p
+bm9sb2d5CnVzZWQgaW4gdGhlIGNvZGUsIGFuZCBpbmhlcml0ZWQgZnJvbSBDRlEuCgotIEZpcnN0
+LCBub3cgUl9lc3QgbWF5IGJlIHVwZGF0ZWQgYWxzbyBpbiBjYXNlIHRoZSBqdXN0LWV4cGlyZWQg
+cXVldWUsCiAgZGVzcGl0ZSBub3QgYmVpbmcgZGV0ZWN0ZWQgYXMgc2Vla3ksIGhhcyBub3QgYmVl
+biBob3dldmVyIGFibGUgdG8KICBjb25zdW1lIGFsbCBvZiBpdHMgYnVkZ2V0IHdpdGhpbiB0aGUg
+bWF4aW11bSB0aW1lIHNsaWNlIFRfbWF4LiBJbgogIGZhY3QsIHRoaXMgaXMgYW4gaW5kaWNhdGlv
+biB0aGF0IEJfbWF4IGlzIHRvbyBsYXJnZS4gU2luY2UgQl9tYXggPQogIFRfbWF4IOKIlyBSX2Vz
+dCwgUl9lc3QgaXMgdGhlbiBwcm9iYWJseSB0b28gbGFyZ2UsIGFuZCBzaG91bGQgYmUKICByZWR1
+Y2VkLgoKLSBTZWNvbmQsIHRvIGZpbHRlciB0aGUgc3Bpa2VzIGluIFJfbWVhcywgYSBkaXNjcmV0
+ZSBsb3ctcGFzcyBmaWx0ZXIKICBpcyBub3cgdXNlZCB0byB1cGRhdGUgUl9lc3QgaW5zdGVhZCBv
+ZiBqdXN0IGtlZXBpbmcgdGhlIGhpZ2hlc3QgcmF0ZQogIHNhbXBsZWQuIFRoZSByYXRpb25hbGUg
+aXMgdGhhdCB0aGUgYXZlcmFnZSBwZWFrIHJhdGUgb2YgYSBkaXNrIG92ZXIKICBpdHMgc3VyZmFj
+ZSBpcyBhIHJlbGF0aXZlbHkgc3RhYmxlIHF1YW50aXR5LCBoZW5jZSBhIGxvdy1wYXNzIGZpbHRl
+cgogIHNob3VsZCBjb252ZXJnZSBtb3JlIG9yIGxlc3MgcXVpY2tseSB0byB0aGUgcmlnaHQgdmFs
+dWUuCgpXaXRoIHRoZSBjdXJyZW50IHZhbHVlcyBvZiB0aGUgY29uc3RhbnRzIHVzZWQgaW4gdGhl
+IGZpbHRlciwgdGhlCmxhdHRlciBzZWVtcyB0byBlZmZlY3RpdmVseSBzbW9vdGggZmx1Y3R1YXRp
+b25zIGFuZCBhbGxvdyB0aGUKZXN0aW1hdG9yIHRvIGNvbnZlcmdlIHRvIHRoZSBhY3R1YWwgcGVh
+ayByYXRlIHdpdGggYWxsIHRoZSBkZXZpY2VzIHdlCnRlc3RlZC4KClNpZ25lZC1vZmYtYnk6IFBh
+b2xvIFZhbGVudGUgPHBhb2xvLnZhbGVudGVAdW5pbW9yZS5pdD4KU2lnbmVkLW9mZi1ieTogQXJp
+YW5uYSBBdmFuemluaSA8YXZhbnppbmkuYXJpYW5uYUBnbWFpbC5jb20+Ci0tLQogYmxvY2svYmZx
+LWlvc2NoZWQuYyB8IDIzICsrKysrKysrKysrKysrKysrKy0tLS0tCiAxIGZpbGUgY2hhbmdlZCwg
+MTggaW5zZXJ0aW9ucygrKSwgNSBkZWxldGlvbnMoLSkKCmRpZmYgLS1naXQgYS9ibG9jay9iZnEt
+aW9zY2hlZC5jIGIvYmxvY2svYmZxLWlvc2NoZWQuYwppbmRleCA0OWZmMWRhLi4yYTRlMDNkIDEw
+MDY0NAotLS0gYS9ibG9jay9iZnEtaW9zY2hlZC5jCisrKyBiL2Jsb2NrL2JmcS1pb3NjaGVkLmMK
+QEAgLTgxOCw3ICs4MTgsNyBAQCBzdGF0aWMgdW5zaWduZWQgbG9uZyBiZnFfY2FsY19tYXhfYnVk
+Z2V0KHU2NCBwZWFrX3JhdGUsIHU2NCB0aW1lb3V0KQogICogdGhyb3VnaHB1dC4gU2VlIHRoZSBj
+b2RlIGZvciBtb3JlIGRldGFpbHMuCiAgKi8KIHN0YXRpYyBpbnQgYmZxX3VwZGF0ZV9wZWFrX3Jh
+dGUoc3RydWN0IGJmcV9kYXRhICpiZnFkLCBzdHJ1Y3QgYmZxX3F1ZXVlICpiZnFxLAotCQkJCWlu
+dCBjb21wZW5zYXRlKQorCQkJCWludCBjb21wZW5zYXRlLCBlbnVtIGJmcXFfZXhwaXJhdGlvbiBy
+ZWFzb24pCiB7CiAJdTY0IGJ3LCB1c2VjcywgZXhwZWN0ZWQsIHRpbWVvdXQ7CiAJa3RpbWVfdCBk
+ZWx0YTsKQEAgLTg1NCwxMCArODU0LDIzIEBAIHN0YXRpYyBpbnQgYmZxX3VwZGF0ZV9wZWFrX3Jh
+dGUoc3RydWN0IGJmcV9kYXRhICpiZnFkLCBzdHJ1Y3QgYmZxX3F1ZXVlICpiZnFxLAogCSAqIHRo
+ZSBwZWFrIHJhdGUgZXN0aW1hdGlvbi4KIAkgKi8KIAlpZiAodXNlY3MgPiAyMDAwMCkgewotCQlp
+ZiAoYncgPiBiZnFkLT5wZWFrX3JhdGUpIHsKLQkJCWJmcWQtPnBlYWtfcmF0ZSA9IGJ3OworCQlp
+ZiAoYncgPiBiZnFkLT5wZWFrX3JhdGUgfHwKKwkJICAgKCFCRlFRX1NFRUtZKGJmcXEpICYmCisJ
+CSAgICByZWFzb24gPT0gQkZRX0JGUVFfQlVER0VUX1RJTUVPVVQpKSB7CisJCQliZnFfbG9nKGJm
+cWQsICJtZWFzdXJlZCBidyA9JWxsdSIsIGJ3KTsKKwkJCS8qCisJCQkgKiBUbyBzbW9vdGggb3Nj
+aWxsYXRpb25zIHVzZSBhIGxvdy1wYXNzIGZpbHRlciB3aXRoCisJCQkgKiBhbHBoYT03LzgsIGku
+ZS4sCisJCQkgKiBuZXdfcmF0ZSA9ICg3LzgpICogb2xkX3JhdGUgKyAoMS84KSAqIGJ3CisJCQkg
+Ki8KKwkJCWRvX2RpdihidywgOCk7CisJCQlpZiAoYncgPT0gMCkKKwkJCQlyZXR1cm4gMDsKKwkJ
+CWJmcWQtPnBlYWtfcmF0ZSAqPSA3OworCQkJZG9fZGl2KGJmcWQtPnBlYWtfcmF0ZSwgOCk7CisJ
+CQliZnFkLT5wZWFrX3JhdGUgKz0gYnc7CiAJCQl1cGRhdGUgPSAxOwotCQkJYmZxX2xvZyhiZnFk
+LCAibmV3IHBlYWtfcmF0ZT0lbGx1IiwgYncpOworCQkJYmZxX2xvZyhiZnFkLCAibmV3IHBlYWtf
+cmF0ZT0lbGx1IiwgYmZxZC0+cGVha19yYXRlKTsKIAkJfQogCiAJCXVwZGF0ZSB8PSBiZnFkLT5w
+ZWFrX3JhdGVfc2FtcGxlcyA9PSBCRlFfUEVBS19SQVRFX1NBTVBMRVMgLSAxOwpAQCAtOTM2LDcg
+Kzk0OSw3IEBAIHN0YXRpYyB2b2lkIGJmcV9iZnFxX2V4cGlyZShzdHJ1Y3QgYmZxX2RhdGEgKmJm
+cWQsCiAJLyogVXBkYXRlIGRpc2sgcGVhayByYXRlIGZvciBhdXRvdHVuaW5nIGFuZCBjaGVjayB3
+aGV0aGVyIHRoZQogCSAqIHByb2Nlc3MgaXMgc2xvdyAoc2VlIGJmcV91cGRhdGVfcGVha19yYXRl
+KS4KIAkgKi8KLQlzbG93ID0gYmZxX3VwZGF0ZV9wZWFrX3JhdGUoYmZxZCwgYmZxcSwgY29tcGVu
+c2F0ZSk7CisJc2xvdyA9IGJmcV91cGRhdGVfcGVha19yYXRlKGJmcWQsIGJmcXEsIGNvbXBlbnNh
+dGUsIHJlYXNvbik7CiAKIAkvKgogCSAqIEFzIGFib3ZlIGV4cGxhaW5lZCwgJ3B1bmlzaCcgc2xv
+dyAoaS5lLiwgc2Vla3kpLCB0aW1lZC1vdXQKLS0gCjEuOS4yCgpfX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250
+YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3Vu
+ZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
