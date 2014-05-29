@@ -1,16 +1,18 @@
-From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+From: Vasily Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
 Subject: Re: [PATCH v2] /proc/pid/status: show all sets of pid according to ns
-Date: Thu, 29 May 2014 15:31:30 +0400
-Message-ID: <53871A92.9000004@parallels.com>
+Date: Thu, 29 May 2014 15:59:46 +0400
+Message-ID: <20140529115946.GA19889@cachalot>
 References: <1401272683-1659-1-git-send-email-chenhanxiao@cn.fujitsu.com>
 	<5385DA19.2060008@parallels.com> <20140528182824.GA5057@cachalot>
 	<53863889.9080509@parallels.com> <20140529055954.GA10354@cachalot>
 	<5386F8EA.8050501@parallels.com> <20140529111236.GA14576@cachalot>
+	<53871A92.9000004@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140529111236.GA14576@cachalot>
+Content-Disposition: inline
+In-Reply-To: <53871A92.9000004-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,70 +22,61 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vasily Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
+To: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 05/29/2014 03:12 PM, Vasily Kulikov wrote:
-> On Thu, May 29, 2014 at 13:07 +0400, Pavel Emelyanov wrote:
->> On 05/29/2014 09:59 AM, Vasily Kulikov wrote:
->>> On Wed, May 28, 2014 at 23:27 +0400, Pavel Emelyanov wrote:
->>> ] We need a direct method of getting the pid inside containers.
->>> ] If some issues occurred inside container guest, host user
->>> ] could not know which process is in trouble just by guest pid:
->>> ] the users of container guest only knew the pid inside containers.
->>> ] This will bring obstacle for trouble shooting.
->>>
->>> A new syscall might complicate trouble shooting by admin.
->>
->> Pure syscall -- yes. What if we teach the ps and top utilities to show additional
->> info? I think that would help.
-> 
-> I like the idea with low level non-shell API which can be used by
-> utility like ps (or implementation of a new tool to work with complex
-> namespace hierarchies).  It should fit for troublesooting.  Then there
-> should be no reason to implement two different APIs for observation from
-> shell via FS and from applications.
-
-Maybe we can reuse the existing kcmp() system call? We would have to store
-the collected pid values in some hash/tree anyway, and kcmp() provides us
-good comparing function for doing this.
-
-Like we can call kcmp(pid1, pid2, KCMP_PID, nsfd1, nsfd2) which will mean
-"Are tasks with pid1 in namespace pointed by nsfd1 and with pid2 in namespace
-nsfd2 the same?"
-
-What do you think?
-
-> However, maybe it is possible to implement not via new syscall but
-> by implementation of new symlink in sysfs?  Then both ps-like tool and
-> CRIU-like tool is able to obtain the ns information by the same means.
-> Maybe sort of a symlink to a parent namespace or a process which is
-> inside of the parent namespace?  Then a process may identify IDs using
-> following steps:
-> 
-> 1) identify target NS by walking current procfs
-> 2) do setns(2)/chroot(2)
-> 3) look at procfs to identify target IDs in the target NS
-
-Can you elaborate on this? Let's imagine we have picked two tasks with
-init_pid_ns' PIDs being 11 and 12 and we've found out using /proc/pid/ns/pid
-links that they both live in some non-init pid namespace.
-
-Then we have to look at this ns' proc. It says that there are also two 
-tasks -- 2 and 3. How can we determine which pid is which?
-
-
-By the way, calling setns() doesn't change the pids we see in any proc -- the
-namespace proc shows pids for is pinned at proc mount time. Neither you can
-mount this other pidns' proc into temporary location after setns, kernel uses 
-the pidns task really lives in -- the task_active_pid_ns(). But nonetheless, 
-we have the proc we want.
-
-> It would be impossible to identify foreign IDs for unprivileged
-> processes, however.
-
-Yes, that would be useful limitation.
-
-Thanks,
-Pavel
+T24gVGh1LCBNYXkgMjksIDIwMTQgYXQgMTU6MzEgKzA0MDAsIFBhdmVsIEVtZWx5YW5vdiB3cm90
+ZToKPiBPbiAwNS8yOS8yMDE0IDAzOjEyIFBNLCBWYXNpbHkgS3VsaWtvdiB3cm90ZToKPiA+IE9u
+IFRodSwgTWF5IDI5LCAyMDE0IGF0IDEzOjA3ICswNDAwLCBQYXZlbCBFbWVseWFub3Ygd3JvdGU6
+Cj4gPj4gT24gMDUvMjkvMjAxNCAwOTo1OSBBTSwgVmFzaWx5IEt1bGlrb3Ygd3JvdGU6Cj4gPj4+
+IE9uIFdlZCwgTWF5IDI4LCAyMDE0IGF0IDIzOjI3ICswNDAwLCBQYXZlbCBFbWVseWFub3Ygd3Jv
+dGU6Cj4gPj4+IF0gV2UgbmVlZCBhIGRpcmVjdCBtZXRob2Qgb2YgZ2V0dGluZyB0aGUgcGlkIGlu
+c2lkZSBjb250YWluZXJzLgo+ID4+PiBdIElmIHNvbWUgaXNzdWVzIG9jY3VycmVkIGluc2lkZSBj
+b250YWluZXIgZ3Vlc3QsIGhvc3QgdXNlcgo+ID4+PiBdIGNvdWxkIG5vdCBrbm93IHdoaWNoIHBy
+b2Nlc3MgaXMgaW4gdHJvdWJsZSBqdXN0IGJ5IGd1ZXN0IHBpZDoKPiA+Pj4gXSB0aGUgdXNlcnMg
+b2YgY29udGFpbmVyIGd1ZXN0IG9ubHkga25ldyB0aGUgcGlkIGluc2lkZSBjb250YWluZXJzLgo+
+ID4+PiBdIFRoaXMgd2lsbCBicmluZyBvYnN0YWNsZSBmb3IgdHJvdWJsZSBzaG9vdGluZy4KPiA+
+Pj4KPiA+Pj4gQSBuZXcgc3lzY2FsbCBtaWdodCBjb21wbGljYXRlIHRyb3VibGUgc2hvb3Rpbmcg
+YnkgYWRtaW4uCj4gPj4KPiA+PiBQdXJlIHN5c2NhbGwgLS0geWVzLiBXaGF0IGlmIHdlIHRlYWNo
+IHRoZSBwcyBhbmQgdG9wIHV0aWxpdGllcyB0byBzaG93IGFkZGl0aW9uYWwKPiA+PiBpbmZvPyBJ
+IHRoaW5rIHRoYXQgd291bGQgaGVscC4KPiA+IAo+ID4gSSBsaWtlIHRoZSBpZGVhIHdpdGggbG93
+IGxldmVsIG5vbi1zaGVsbCBBUEkgd2hpY2ggY2FuIGJlIHVzZWQgYnkKPiA+IHV0aWxpdHkgbGlr
+ZSBwcyAob3IgaW1wbGVtZW50YXRpb24gb2YgYSBuZXcgdG9vbCB0byB3b3JrIHdpdGggY29tcGxl
+eAo+ID4gbmFtZXNwYWNlIGhpZXJhcmNoaWVzKS4gIEl0IHNob3VsZCBmaXQgZm9yIHRyb3VibGVz
+b290aW5nLiAgVGhlbiB0aGVyZQo+ID4gc2hvdWxkIGJlIG5vIHJlYXNvbiB0byBpbXBsZW1lbnQg
+dHdvIGRpZmZlcmVudCBBUElzIGZvciBvYnNlcnZhdGlvbiBmcm9tCj4gPiBzaGVsbCB2aWEgRlMg
+YW5kIGZyb20gYXBwbGljYXRpb25zLgo+IAo+IE1heWJlIHdlIGNhbiByZXVzZSB0aGUgZXhpc3Rp
+bmcga2NtcCgpIHN5c3RlbSBjYWxsPyBXZSB3b3VsZCBoYXZlIHRvIHN0b3JlCj4gdGhlIGNvbGxl
+Y3RlZCBwaWQgdmFsdWVzIGluIHNvbWUgaGFzaC90cmVlIGFueXdheSwgYW5kIGtjbXAoKSBwcm92
+aWRlcyB1cwo+IGdvb2QgY29tcGFyaW5nIGZ1bmN0aW9uIGZvciBkb2luZyB0aGlzLgo+IAo+IExp
+a2Ugd2UgY2FuIGNhbGwga2NtcChwaWQxLCBwaWQyLCBLQ01QX1BJRCwgbnNmZDEsIG5zZmQyKSB3
+aGljaCB3aWxsIG1lYW4KPiAiQXJlIHRhc2tzIHdpdGggcGlkMSBpbiBuYW1lc3BhY2UgcG9pbnRl
+ZCBieSBuc2ZkMSBhbmQgd2l0aCBwaWQyIGluIG5hbWVzcGFjZQo+IG5zZmQyIHRoZSBzYW1lPyIK
+PiAKPiBXaGF0IGRvIHlvdSB0aGluaz8KCmtjbXAoKSBpcyBub3QgbmVlZGVkLCBqdXN0IGNvbXBh
+cmUgaW5vZGUgbnVtYmVyczoKCiAgICAjIGxzIC1pbCAvcHJvYy97NDMsc2VsZn0vbnMvbW50CiAg
+ICAyMDgxODIgbHJ3eHJ3eHJ3eCAxIHJvb3Qgcm9vdCAwINC80LDRjyAgIDI5IDE1OjUyIC9wcm9j
+LzQzL25zL21udCAtPiBtbnQ6WzQwMjY1MzE4NTZdCiAgICAyMTY1NTYgbHJ3eHJ3eHJ3eCAxIHJv
+b3Qgcm9vdCAwINC80LDRjyAgIDI5IDE1OjU3IC9wcm9jL3NlbGYvbnMvbW50IC0+IG1udDpbNDAy
+NjUzMTg0MF0KCj4gPiBIb3dldmVyLCBtYXliZSBpdCBpcyBwb3NzaWJsZSB0byBpbXBsZW1lbnQg
+bm90IHZpYSBuZXcgc3lzY2FsbCBidXQKPiA+IGJ5IGltcGxlbWVudGF0aW9uIG9mIG5ldyBzeW1s
+aW5rIGluIHN5c2ZzPyAgVGhlbiBib3RoIHBzLWxpa2UgdG9vbCBhbmQKPiA+IENSSVUtbGlrZSB0
+b29sIGlzIGFibGUgdG8gb2J0YWluIHRoZSBucyBpbmZvcm1hdGlvbiBieSB0aGUgc2FtZSBtZWFu
+cy4KPiA+IE1heWJlIHNvcnQgb2YgYSBzeW1saW5rIHRvIGEgcGFyZW50IG5hbWVzcGFjZSBvciBh
+IHByb2Nlc3Mgd2hpY2ggaXMKPiA+IGluc2lkZSBvZiB0aGUgcGFyZW50IG5hbWVzcGFjZT8gIFRo
+ZW4gYSBwcm9jZXNzIG1heSBpZGVudGlmeSBJRHMgdXNpbmcKPiA+IGZvbGxvd2luZyBzdGVwczoK
+PiA+IAo+ID4gMSkgaWRlbnRpZnkgdGFyZ2V0IE5TIGJ5IHdhbGtpbmcgY3VycmVudCBwcm9jZnMK
+PiA+IDIpIGRvIHNldG5zKDIpL2Nocm9vdCgyKQo+ID4gMykgbG9vayBhdCBwcm9jZnMgdG8gaWRl
+bnRpZnkgdGFyZ2V0IElEcyBpbiB0aGUgdGFyZ2V0IE5TCj4gCj4gQ2FuIHlvdSBlbGFib3JhdGUg
+b24gdGhpcz8gTGV0J3MgaW1hZ2luZSB3ZSBoYXZlIHBpY2tlZCB0d28gdGFza3Mgd2l0aAo+IGlu
+aXRfcGlkX25zJyBQSURzIGJlaW5nIDExIGFuZCAxMiBhbmQgd2UndmUgZm91bmQgb3V0IHVzaW5n
+IC9wcm9jL3BpZC9ucy9waWQKPiBsaW5rcyB0aGF0IHRoZXkgYm90aCBsaXZlIGluIHNvbWUgbm9u
+LWluaXQgcGlkIG5hbWVzcGFjZS4KPiAKPiBUaGVuIHdlIGhhdmUgdG8gbG9vayBhdCB0aGlzIG5z
+JyBwcm9jLiBJdCBzYXlzIHRoYXQgdGhlcmUgYXJlIGFsc28gdHdvIAo+IHRhc2tzIC0tIDIgYW5k
+IDMuIEhvdyBjYW4gd2UgZGV0ZXJtaW5lIHdoaWNoIHBpZCBpcyB3aGljaD8KCk9oLCByaWdodC4g
+IE15IGlkZWEgaXMgYnJva2VuLgoKLS0gClZhc2lseSBLdWxpa292Cmh0dHA6Ly93d3cub3Blbndh
+bGwuY29tIC0gYnJpbmdpbmcgc2VjdXJpdHkgaW50byBvcGVuIGNvbXB1dGluZyBlbnZpcm9ubWVu
+dHMKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFp
+bmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpo
+dHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWlu
+ZXJz
