@@ -1,17 +1,14 @@
-From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [PATCH v2] /proc/pid/status: show all sets of pid according to ns
-Date: Thu, 29 May 2014 16:53:01 +0400
-Message-ID: <53872DAD.1070502@parallels.com>
-References: <1401272683-1659-1-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<5385DA19.2060008@parallels.com> <20140528182824.GA5057@cachalot>
-	<53863889.9080509@parallels.com> <20140529055954.GA10354@cachalot>
-	<5386F8EA.8050501@parallels.com> <20140529111236.GA14576@cachalot>
-	<53871A92.9000004@parallels.com> <20140529115946.GA19889@cachalot>
+From: Alin Dobre <alin.dobre-1hSFou9RDDldEee+Cai+ZQ@public.gmane.org>
+Subject: Re: [RFC][PATCH] net: Allow xt_owner in any user namespace
+Date: Thu, 29 May 2014 14:39:15 +0100
+Message-ID: <53873883.4060408@elastichosts.com>
+References: <537B7FF6.9050103@elastichosts.com>	<877g5eg7wy.fsf@x220.int.ebiederm.org>
+	<537D706D.4010303@1h.com> <87vbsus3wb.fsf_-_@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140529115946.GA19889@cachalot>
+In-Reply-To: <87vbsus3wb.fsf_-_-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,46 +18,12 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vasily Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
-Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Marian Marinov <mm-108MBtLGafw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jan Engelhardt <jengelh-nopoi9nDyk+ELgA04lAiVw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gMDUvMjkvMjAxNCAwMzo1OSBQTSwgVmFzaWx5IEt1bGlrb3Ygd3JvdGU6Cj4gT24gVGh1LCBN
-YXkgMjksIDIwMTQgYXQgMTU6MzEgKzA0MDAsIFBhdmVsIEVtZWx5YW5vdiB3cm90ZToKPj4gT24g
-MDUvMjkvMjAxNCAwMzoxMiBQTSwgVmFzaWx5IEt1bGlrb3Ygd3JvdGU6Cj4+PiBPbiBUaHUsIE1h
-eSAyOSwgMjAxNCBhdCAxMzowNyArMDQwMCwgUGF2ZWwgRW1lbHlhbm92IHdyb3RlOgo+Pj4+IE9u
-IDA1LzI5LzIwMTQgMDk6NTkgQU0sIFZhc2lseSBLdWxpa292IHdyb3RlOgo+Pj4+PiBPbiBXZWQs
-IE1heSAyOCwgMjAxNCBhdCAyMzoyNyArMDQwMCwgUGF2ZWwgRW1lbHlhbm92IHdyb3RlOgo+Pj4+
-PiBdIFdlIG5lZWQgYSBkaXJlY3QgbWV0aG9kIG9mIGdldHRpbmcgdGhlIHBpZCBpbnNpZGUgY29u
-dGFpbmVycy4KPj4+Pj4gXSBJZiBzb21lIGlzc3VlcyBvY2N1cnJlZCBpbnNpZGUgY29udGFpbmVy
-IGd1ZXN0LCBob3N0IHVzZXIKPj4+Pj4gXSBjb3VsZCBub3Qga25vdyB3aGljaCBwcm9jZXNzIGlz
-IGluIHRyb3VibGUganVzdCBieSBndWVzdCBwaWQ6Cj4+Pj4+IF0gdGhlIHVzZXJzIG9mIGNvbnRh
-aW5lciBndWVzdCBvbmx5IGtuZXcgdGhlIHBpZCBpbnNpZGUgY29udGFpbmVycy4KPj4+Pj4gXSBU
-aGlzIHdpbGwgYnJpbmcgb2JzdGFjbGUgZm9yIHRyb3VibGUgc2hvb3RpbmcuCj4+Pj4+Cj4+Pj4+
-IEEgbmV3IHN5c2NhbGwgbWlnaHQgY29tcGxpY2F0ZSB0cm91YmxlIHNob290aW5nIGJ5IGFkbWlu
-Lgo+Pj4+Cj4+Pj4gUHVyZSBzeXNjYWxsIC0tIHllcy4gV2hhdCBpZiB3ZSB0ZWFjaCB0aGUgcHMg
-YW5kIHRvcCB1dGlsaXRpZXMgdG8gc2hvdyBhZGRpdGlvbmFsCj4+Pj4gaW5mbz8gSSB0aGluayB0
-aGF0IHdvdWxkIGhlbHAuCj4+Pgo+Pj4gSSBsaWtlIHRoZSBpZGVhIHdpdGggbG93IGxldmVsIG5v
-bi1zaGVsbCBBUEkgd2hpY2ggY2FuIGJlIHVzZWQgYnkKPj4+IHV0aWxpdHkgbGlrZSBwcyAob3Ig
-aW1wbGVtZW50YXRpb24gb2YgYSBuZXcgdG9vbCB0byB3b3JrIHdpdGggY29tcGxleAo+Pj4gbmFt
-ZXNwYWNlIGhpZXJhcmNoaWVzKS4gIEl0IHNob3VsZCBmaXQgZm9yIHRyb3VibGVzb290aW5nLiAg
-VGhlbiB0aGVyZQo+Pj4gc2hvdWxkIGJlIG5vIHJlYXNvbiB0byBpbXBsZW1lbnQgdHdvIGRpZmZl
-cmVudCBBUElzIGZvciBvYnNlcnZhdGlvbiBmcm9tCj4+PiBzaGVsbCB2aWEgRlMgYW5kIGZyb20g
-YXBwbGljYXRpb25zLgo+Pgo+PiBNYXliZSB3ZSBjYW4gcmV1c2UgdGhlIGV4aXN0aW5nIGtjbXAo
-KSBzeXN0ZW0gY2FsbD8gV2Ugd291bGQgaGF2ZSB0byBzdG9yZQo+PiB0aGUgY29sbGVjdGVkIHBp
-ZCB2YWx1ZXMgaW4gc29tZSBoYXNoL3RyZWUgYW55d2F5LCBhbmQga2NtcCgpIHByb3ZpZGVzIHVz
-Cj4+IGdvb2QgY29tcGFyaW5nIGZ1bmN0aW9uIGZvciBkb2luZyB0aGlzLgo+Pgo+PiBMaWtlIHdl
-IGNhbiBjYWxsIGtjbXAocGlkMSwgcGlkMiwgS0NNUF9QSUQsIG5zZmQxLCBuc2ZkMikgd2hpY2gg
-d2lsbCBtZWFuCj4+ICJBcmUgdGFza3Mgd2l0aCBwaWQxIGluIG5hbWVzcGFjZSBwb2ludGVkIGJ5
-IG5zZmQxIGFuZCB3aXRoIHBpZDIgaW4gbmFtZXNwYWNlCj4+IG5zZmQyIHRoZSBzYW1lPyIKPj4K
-Pj4gV2hhdCBkbyB5b3UgdGhpbms/Cj4gCj4ga2NtcCgpIGlzIG5vdCBuZWVkZWQsIGp1c3QgY29t
-cGFyZSBpbm9kZSBudW1iZXJzOgo+IAo+ICAgICAjIGxzIC1pbCAvcHJvYy97NDMsc2VsZn0vbnMv
-bW50Cj4gICAgIDIwODE4MiBscnd4cnd4cnd4IDEgcm9vdCByb290IDAg0LzQsNGPICAgMjkgMTU6
-NTIgL3Byb2MvNDMvbnMvbW50IC0+IG1udDpbNDAyNjUzMTg1Nl0KPiAgICAgMjE2NTU2IGxyd3hy
-d3hyd3ggMSByb290IHJvb3QgMCDQvNCw0Y8gICAyOSAxNTo1NyAvcHJvYy9zZWxmL25zL21udCAt
-PiBtbnQ6WzQwMjY1MzE4NDBdCgpCdXQgdGhhdCdzIGZvciBjb21wYXJpbmcgdGhlIG5hbWVzcGFj
-ZXMsIHdoaWxlIEknbSBwcm9wb3NpbmcgdGhlIGtjbXAgdG8KY2hlY2sgZm9yIFBJRHMuCgpUaGFu
-a3MsClBhdmVsCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-CkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlv
-bi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8v
-Y29udGFpbmVycw==
+Thanks, Eric. I'll give this a try and come back with some results if
+interested.
+
+Cheers,
+Alin.
