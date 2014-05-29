@@ -1,13 +1,17 @@
-From: Marian Marinov <mm-108MBtLGafw@public.gmane.org>
-Subject: Re: [RFC] Per-user namespace process accounting
-Date: Thu, 29 May 2014 13:40:42 +0300
-Message-ID: <53870EAA.4060101@1h.com>
-References: <5386D58D.2080809@1h.com> <87tx88nbko.fsf@x220.int.ebiederm.org>
+From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: [PATCH v2] /proc/pid/status: show all sets of pid according to ns
+Date: Thu, 29 May 2014 14:40:33 +0400
+Message-ID: <53870EA1.1040302@parallels.com>
+References: <1401272683-1659-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<5385DA19.2060008@parallels.com> <20140528182824.GA5057@cachalot>
+	<53863889.9080509@parallels.com> <20140529055954.GA10354@cachalot>
+	<5386F8EA.8050501@parallels.com>
+	<5871495633F38949900D2BF2DC04883E52A481@G08CNEXMBPEKD02.g08.fujitsu.local>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87tx88nbko.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <5871495633F38949900D2BF2DC04883E52A481-ZEd+hNNJ6a5ZYpXjqAkB5jz3u5zwRJJDAzI0kPv9QBlmR6Xm/wNWPw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,87 +21,41 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LXC development mailing-list <lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org>
+To: "chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Vasily Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-On 05/29/2014 01:06 PM, Eric W. Biederman wrote:
-> Marian Marinov <mm-108MBtLGafw@public.gmane.org> writes:
+On 05/29/2014 01:53 PM, chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org wrote:
 > 
->> Hello,
->> 
->> I have the following proposition.
->> 
->> Number of currently running processes is accounted at the root user namespace. The problem I'm facing is that
->> multiple containers in different user namespaces share the process counters.
 > 
-> That is deliberate.
-
-And I understand that very well ;)
-
+>> -----Original Message-----
+>> From: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+>> On 05/29/2014 09:59 AM, Vasily Kulikov wrote:
+>>> On Wed, May 28, 2014 at 23:27 +0400, Pavel Emelyanov wrote:
+>>>> On 05/28/2014 10:28 PM, Vasily Kulikov wrote:
+>>>>> On Wed, May 28, 2014 at 16:44 +0400, Pavel Emelyanov wrote:
+>>>>> It will be simplier
+>>>>> to parse the file -- if 'ns_ids' file contains some ID then this ID for
+>>>>> every ns can be obtained regardless of the specific ID name (SID, PID,
+>>>>> PGID, etc.).
+>>>>
+>>>> True, but given a task PID how to determine which pid namespaces it lives in
+>>>> to get the idea of how PIDs map to each other? Maybe we need some explicit
+>>>> API for converting (ID, NS1, NS2) into (ID)?
+>>>
+>>> AFAIU the idea of the patch is to add a new debugging information which
+>>> can be trivially obtained via 'cat /proc/...':
+>>
+>> I agree, but this ability will be very useful by checkpoint-restore project
+>> too and I'd really appreciate if the API we have for that would be scalable
+>> enough. Per-task proc file works for me, but how about sid-s and pgid-s?
+>>
 > 
->> So if containerX runs 100 with UID 99, containerY should have NPROC limit of above 100 in order to execute any 
->> processes with ist own UID 99.
->> 
->> I know that some of you will tell me that I should not provision all of my containers with the same UID/GID maps,
->> but this brings another problem.
->> 
->> We are provisioning the containers from a template. The template has a lot of files 500k and more. And chowning
->> these causes a lot of I/O and also slows down provisioning considerably.
->> 
->> The other problem is that when we migrate one container from one host machine to another the IDs may be already
->> in use on the new machine and we need to chown all the files again.
-> 
-> You should have the same uid allocations for all machines in your fleet as much as possible.   That has been true
-> ever since NFS was invented and is not new here.  You can avoid the cost of chowning if you untar your files inside
-> of your user namespace.  You can have different maps per machine if you are crazy enough to do that.  You can even
-> have shared uids that you use to share files between containers as long as none of those files is setuid.  And map
-> those shared files to some kind of nobody user in your user namespace.
+> Yes, a new syscall is very useful, but it should be another task.
+> Just for Pids, I think proc file is good enough.
 
-We are not using NFS. We are using a shared block storage that offers us snapshots. So provisioning new containers is
-extremely cheep and fast. Comparing that with untar is comparing a race car with Smart. Yes it can be done and no, I
-do not believe we should go backwards.
+It is, but since we're going to think about more generic API, that would serve
+your needs as well, why do we need two APIs?
 
-We do not share filesystems between containers, we offer them block devices.
-
-> 
->> Finally if we use different UID/GID maps we can not do live migration to another node because the UIDs may be
->> already in use.
->> 
->> So I'm proposing one hack modifying unshare_userns() to allocate new user_struct for the cred that is created for
->> the first task creating the user_ns and free it in exit_creds().
-> 
-> I do not like the idea of having user_structs be per user namespace, and deliberately made the code not work that
-> way.
-> 
->> Can you please comment on that?
-> 
-> I have been pondering having some recursive resources limits that are per user namespace and if all you are worried
-> about are process counts that might work.  I don't honestly know what makes sense at the moment.
-
-It seams to me that the only limit(from RLIMIT) that are generally a problem for the namespaces is number of processes
-and pending signals.
-This is why I proposed the above modification. However I'm not sure if the places I have chosen are right and also I'm
-not really convinced that having per-namespace user_struct is the right approach for the process counter.
-
-> 
-> Eric
-> 
-Marian
-
-- -- 
-Marian Marinov
-Founder & CEO of 1H Ltd.
-Jabber/GTalk: hackman-/eSpBmjxGS4dnm+yROfE0A@public.gmane.org
-ICQ: 7556201
-Mobile: +359 886 660 270
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.22 (GNU/Linux)
-
-iEYEARECAAYFAlOHDqoACgkQ4mt9JeIbjJRLPACZARH6agr856HeoB3Ub+e6U1PI
-ICgAoLbQTRM2SqcYOLep7WPIeuoiw4aB
-=/Ii4
------END PGP SIGNATURE-----
+Thanks,
+Pavel
