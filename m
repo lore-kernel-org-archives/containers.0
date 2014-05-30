@@ -1,15 +1,14 @@
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] Per-user namespace process accounting
-Date: Thu, 29 May 2014 15:32:32 +0000
-Message-ID: <20140529153232.GB9714@ubuntumail>
-References: <5386D58D.2080809@1h.com> <87tx88nbko.fsf@x220.int.ebiederm.org>
-	<53870EAA.4060101@1h.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH RFC RESEND 00/14] New version of the BFQ I/O Scheduler
+Date: Fri, 30 May 2014 11:32:28 -0400
+Message-ID: <20140530153228.GE16605@redhat.com>
+References: <1401194558-5283-1-git-send-email-paolo.valente@unimore.it>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <53870EAA.4060101-108MBtLGafw@public.gmane.org>
+In-Reply-To: <1401194558-5283-1-git-send-email-paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,55 +18,43 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Marian Marinov <mm-108MBtLGafw@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, LXC development mailing-list <lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: paolo <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Arianna Avanzini <avanzini.arianna-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paolo Valente <posta_paolo-whZMOeQn8C0@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Marian Marinov (mm-108MBtLGafw@public.gmane.org):
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
-> 
-> On 05/29/2014 01:06 PM, Eric W. Biederman wrote:
-> > Marian Marinov <mm-108MBtLGafw@public.gmane.org> writes:
-> > 
-> >> Hello,
-> >> 
-> >> I have the following proposition.
-> >> 
-> >> Number of currently running processes is accounted at the root user namespace. The problem I'm facing is that
-> >> multiple containers in different user namespaces share the process counters.
-> > 
-> > That is deliberate.
-> 
-> And I understand that very well ;)
-> 
-> > 
-> >> So if containerX runs 100 with UID 99, containerY should have NPROC limit of above 100 in order to execute any 
-> >> processes with ist own UID 99.
-> >> 
-> >> I know that some of you will tell me that I should not provision all of my containers with the same UID/GID maps,
-> >> but this brings another problem.
-> >> 
-> >> We are provisioning the containers from a template. The template has a lot of files 500k and more. And chowning
-> >> these causes a lot of I/O and also slows down provisioning considerably.
-> >> 
-> >> The other problem is that when we migrate one container from one host machine to another the IDs may be already
-> >> in use on the new machine and we need to chown all the files again.
-> > 
-> > You should have the same uid allocations for all machines in your fleet as much as possible.   That has been true
-> > ever since NFS was invented and is not new here.  You can avoid the cost of chowning if you untar your files inside
-> > of your user namespace.  You can have different maps per machine if you are crazy enough to do that.  You can even
-> > have shared uids that you use to share files between containers as long as none of those files is setuid.  And map
-> > those shared files to some kind of nobody user in your user namespace.
-> 
-> We are not using NFS. We are using a shared block storage that offers us snapshots. So provisioning new containers is
-> extremely cheep and fast. Comparing that with untar is comparing a race car with Smart. Yes it can be done and no, I
-> do not believe we should go backwards.
-> 
-> We do not share filesystems between containers, we offer them block devices.
+On Tue, May 27, 2014 at 02:42:24PM +0200, paolo wrote:
 
-Yes, this is a real nuisance for openstack style deployments.
+[..]
+> Strong fairness guarantees (already provided by BFQ-v0)
+> 
+> As for long-term guarantees, BFQ distributes the device throughput
+> (and not just the device time) as desired to I/O-bound applications,
+> with any workload and regardless of the device parameters.
 
-One nice solution to this imo would be a very thin stackable filesystem
-which does uid shifting, or, better yet, a non-stackable way of shifting
-uids at mount.
+I don't think most of the people care about strong fairness guarantee.
+As an algorithm round robin is not bad for ensuring fairness. CFQ had
+started with that but then it stopped focussing on fairness and rather
+focussed on trying to address various real issues.
+
+And CFQ's problems don't arise from not having a good fairness algorithm.
+So I don't think this should be the reason for taking a new scheduler.
+
+I think instead of numbers, what would help is a short description
+that what's the fundamental problem with CFQ which BFQ does not
+have and how did you solve that issue.
+
+One issue you seemed to mention is that write is a problem. CFQ 
+suppresses buffered writes very actively in an attempt to improve
+read latencies. How did you make it even better with BFQ.
+
+Last time I had looked at BFQ, it looked pretty similar to CFQ except
+that core round robin algorithm had been replaced by a more fair
+algo and more things done like less preemption etc.
+
+But personally I don't think using a more accurate fairness algorithm
+is the problem to begin with most of the time.
+
+So I fail to understand that why do we need BFQ.
+
+Thanks
+Vivek
