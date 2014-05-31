@@ -1,18 +1,19 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH RFC - TAKE TWO - 00/12] New version of the BFQ I/O
-	Scheduler
-Date: Sat, 31 May 2014 01:16:35 -0400
-Message-ID: <20140531051635.GA19925__20822.5388116718$1401513413$gmane$org@mtj.dyndns.org>
-References: <20140528221929.GG1419@htj.dyndns.org>
-	<1401354343-5527-1-git-send-email-paolo.valente@unimore.it>
-	<20140530160712.GG24871@htj.dyndns.org>
-	<538926F6.7080409@kernel.dk>
+From: Vasily Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
+Subject: Re: [PATCH v2] /proc/pid/status: show all sets of pid according to ns
+Date: Sat, 31 May 2014 10:07:13 +0400
+Message-ID: <20140531060713.GA5315@cachalot>
+References: <1401272683-1659-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<5385DA19.2060008@parallels.com> <20140528182824.GA5057@cachalot>
+	<53863889.9080509@parallels.com> <20140529055954.GA10354@cachalot>
+	<5386F8EA.8050501@parallels.com> <20140529111236.GA14576@cachalot>
+	<53871A92.9000004@parallels.com> <20140529115946.GA19889@cachalot>
+	<53872DAD.1070502@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <538926F6.7080409-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
+In-Reply-To: <53872DAD.1070502-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,43 +23,53 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
-Cc: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Arianna Avanzini <avanzini.arianna-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paolo Valente <posta_paolo-whZMOeQn8C0@public.gmane.org>
+To: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello, Jens.
-
-On Fri, May 30, 2014 at 06:48:54PM -0600, Jens Axboe wrote:
-> What I really like about the implementation is, as Tejun highlights, that
-> the algorithm is detailed and characterized. Nobody ever wrote any detailed
-> documentation on CFQ - I think the closest is a talk I gave at LCA in 2007
-> or so. That said, the devil is _always_ in the details when it comes to nice
-> algorithms. When theory meets practice, then the little tweaks and tunings
-> required to not drop 10% there or 20% here is when it gets ugly. And that's
-> where CFQ has the history going for it, at least. Which is another reason
-
-That's the thing I like about the new paper.  It looks like the
-original BFQ was the naive ideal implementation but the new paper
-basically takes most, if not all, heuristics implemented in cfq,
-properly characterizes them and applies the improved versions.  The
-end result, AFAICS, really is an evolution of cfq with the core
-round-robin + preemption scheduler replaced by something a lot firmer.
-It doesn't really lose much of what cfq has accumulated over time.
-
-> for turning patch #2 into a series of changes for CFQ instead. We need to
-> end up with something where we can potentially bisect our way down to
-> whatever caused any given regression. The worst possible situation is "CFQ
-> works fine for this workload, but BFQ does not" or vice versa. Or hangs, or
-> whatever it might be.
-
-It's likely that there will be some workloads out there which may be
-affected adversely, which is true for any change really but with both
-the core scheduling and heuristics properly characterized at least
-finding a reasonable trade-off should be much less of a crapshoot and
-the expected benefits seem to easily outweigh the risks as long as we
-can properly sequence the changes.
-
-Thanks.
-
--- 
-tejun
+T24gVGh1LCBNYXkgMjksIDIwMTQgYXQgMTY6NTMgKzA0MDAsIFBhdmVsIEVtZWx5YW5vdiB3cm90
+ZToKPiBPbiAwNS8yOS8yMDE0IDAzOjU5IFBNLCBWYXNpbHkgS3VsaWtvdiB3cm90ZToKPiA+IE9u
+IFRodSwgTWF5IDI5LCAyMDE0IGF0IDE1OjMxICswNDAwLCBQYXZlbCBFbWVseWFub3Ygd3JvdGU6
+Cj4gPj4gT24gMDUvMjkvMjAxNCAwMzoxMiBQTSwgVmFzaWx5IEt1bGlrb3Ygd3JvdGU6Cj4gPj4+
+IE9uIFRodSwgTWF5IDI5LCAyMDE0IGF0IDEzOjA3ICswNDAwLCBQYXZlbCBFbWVseWFub3Ygd3Jv
+dGU6Cj4gPj4+PiBPbiAwNS8yOS8yMDE0IDA5OjU5IEFNLCBWYXNpbHkgS3VsaWtvdiB3cm90ZToK
+PiA+Pj4+PiBPbiBXZWQsIE1heSAyOCwgMjAxNCBhdCAyMzoyNyArMDQwMCwgUGF2ZWwgRW1lbHlh
+bm92IHdyb3RlOgo+ID4+Pj4+IF0gV2UgbmVlZCBhIGRpcmVjdCBtZXRob2Qgb2YgZ2V0dGluZyB0
+aGUgcGlkIGluc2lkZSBjb250YWluZXJzLgo+ID4+Pj4+IF0gSWYgc29tZSBpc3N1ZXMgb2NjdXJy
+ZWQgaW5zaWRlIGNvbnRhaW5lciBndWVzdCwgaG9zdCB1c2VyCj4gPj4+Pj4gXSBjb3VsZCBub3Qg
+a25vdyB3aGljaCBwcm9jZXNzIGlzIGluIHRyb3VibGUganVzdCBieSBndWVzdCBwaWQ6Cj4gPj4+
+Pj4gXSB0aGUgdXNlcnMgb2YgY29udGFpbmVyIGd1ZXN0IG9ubHkga25ldyB0aGUgcGlkIGluc2lk
+ZSBjb250YWluZXJzLgo+ID4+Pj4+IF0gVGhpcyB3aWxsIGJyaW5nIG9ic3RhY2xlIGZvciB0cm91
+YmxlIHNob290aW5nLgo+ID4+Pj4+Cj4gPj4+Pj4gQSBuZXcgc3lzY2FsbCBtaWdodCBjb21wbGlj
+YXRlIHRyb3VibGUgc2hvb3RpbmcgYnkgYWRtaW4uCj4gPj4+Pgo+ID4+Pj4gUHVyZSBzeXNjYWxs
+IC0tIHllcy4gV2hhdCBpZiB3ZSB0ZWFjaCB0aGUgcHMgYW5kIHRvcCB1dGlsaXRpZXMgdG8gc2hv
+dyBhZGRpdGlvbmFsCj4gPj4+PiBpbmZvPyBJIHRoaW5rIHRoYXQgd291bGQgaGVscC4KPiA+Pj4K
+PiA+Pj4gSSBsaWtlIHRoZSBpZGVhIHdpdGggbG93IGxldmVsIG5vbi1zaGVsbCBBUEkgd2hpY2gg
+Y2FuIGJlIHVzZWQgYnkKPiA+Pj4gdXRpbGl0eSBsaWtlIHBzIChvciBpbXBsZW1lbnRhdGlvbiBv
+ZiBhIG5ldyB0b29sIHRvIHdvcmsgd2l0aCBjb21wbGV4Cj4gPj4+IG5hbWVzcGFjZSBoaWVyYXJj
+aGllcykuICBJdCBzaG91bGQgZml0IGZvciB0cm91Ymxlc29vdGluZy4gIFRoZW4gdGhlcmUKPiA+
+Pj4gc2hvdWxkIGJlIG5vIHJlYXNvbiB0byBpbXBsZW1lbnQgdHdvIGRpZmZlcmVudCBBUElzIGZv
+ciBvYnNlcnZhdGlvbiBmcm9tCj4gPj4+IHNoZWxsIHZpYSBGUyBhbmQgZnJvbSBhcHBsaWNhdGlv
+bnMuCj4gPj4KPiA+PiBNYXliZSB3ZSBjYW4gcmV1c2UgdGhlIGV4aXN0aW5nIGtjbXAoKSBzeXN0
+ZW0gY2FsbD8gV2Ugd291bGQgaGF2ZSB0byBzdG9yZQo+ID4+IHRoZSBjb2xsZWN0ZWQgcGlkIHZh
+bHVlcyBpbiBzb21lIGhhc2gvdHJlZSBhbnl3YXksIGFuZCBrY21wKCkgcHJvdmlkZXMgdXMKPiA+
+PiBnb29kIGNvbXBhcmluZyBmdW5jdGlvbiBmb3IgZG9pbmcgdGhpcy4KPiA+Pgo+ID4+IExpa2Ug
+d2UgY2FuIGNhbGwga2NtcChwaWQxLCBwaWQyLCBLQ01QX1BJRCwgbnNmZDEsIG5zZmQyKSB3aGlj
+aCB3aWxsIG1lYW4KPiA+PiAiQXJlIHRhc2tzIHdpdGggcGlkMSBpbiBuYW1lc3BhY2UgcG9pbnRl
+ZCBieSBuc2ZkMSBhbmQgd2l0aCBwaWQyIGluIG5hbWVzcGFjZQo+ID4+IG5zZmQyIHRoZSBzYW1l
+PyIKPiA+Pgo+ID4+IFdoYXQgZG8geW91IHRoaW5rPwo+ID4gCj4gPiBrY21wKCkgaXMgbm90IG5l
+ZWRlZCwganVzdCBjb21wYXJlIGlub2RlIG51bWJlcnM6Cj4gPiAKPiA+ICAgICAjIGxzIC1pbCAv
+cHJvYy97NDMsc2VsZn0vbnMvbW50Cj4gPiAgICAgMjA4MTgyIGxyd3hyd3hyd3ggMSByb290IHJv
+b3QgMCDQvNCw0Y8gICAyOSAxNTo1MiAvcHJvYy80My9ucy9tbnQgLT4gbW50Ols0MDI2NTMxODU2
+XQo+ID4gICAgIDIxNjU1NiBscnd4cnd4cnd4IDEgcm9vdCByb290IDAg0LzQsNGPICAgMjkgMTU6
+NTcgL3Byb2Mvc2VsZi9ucy9tbnQgLT4gbW50Ols0MDI2NTMxODQwXQo+IAo+IEJ1dCB0aGF0J3Mg
+Zm9yIGNvbXBhcmluZyB0aGUgbmFtZXNwYWNlcywgd2hpbGUgSSdtIHByb3Bvc2luZyB0aGUga2Nt
+cCB0bwo+IGNoZWNrIGZvciBQSURzLgoKSG0sIHJpZ2h0LgoKV2hhdCBhYm91dCB0aGUgZm9sbG93
+aW5nIHNvbHV0aW9uOiBleHBvcnQgZ2xvYmFsIHByb2Nlc3MgSUQgKFBJRCBpbgppbml0IG5zKSB3
+aGljaCBpcyB2aXNpYmxlIGluc2lkZSBvZiBhbnkgbmFtZXNwYWNlLiAgVGhlbiB5b3UgY2FuIGNv
+bXBhcmUKbnVtYmVycyByZWdhcmRsZXNzIGluIHdoYXQgbmFtZXNwYWNlIHlvdSBhcmUuCgotLSAK
+VmFzaWx5IEt1bGlrb3YKaHR0cDovL3d3dy5vcGVud2FsbC5jb20gLSBicmluZ2luZyBzZWN1cml0
+eSBpbnRvIG9wZW4gY29tcHV0aW5nIGVudmlyb25tZW50cwpfX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWlu
+ZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0
+aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
