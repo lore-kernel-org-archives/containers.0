@@ -1,18 +1,16 @@
-From: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
+From: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
 Subject: Re: [PATCH RFC - TAKE TWO - 00/12] New version of the BFQ I/O
 	Scheduler
-Date: Sat, 31 May 2014 01:54:34 +0200
-Message-ID: <A8467E78-FC96-4458-A018-8E377F23E0F4@unimore.it>
+Date: Fri, 30 May 2014 18:48:54 -0600
+Message-ID: <538926F6.7080409__49218.7291187749$1401497351$gmane$org@kernel.dk>
 References: <20140528221929.GG1419@htj.dyndns.org>
 	<1401354343-5527-1-git-send-email-paolo.valente@unimore.it>
 	<20140530160712.GG24871@htj.dyndns.org>
-	<464F6CBE-A63E-46EF-A90D-BF8450430444@unimore.it>
-	<20140530232804.GA5057@htj.dyndns.org>
-Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.2\))
-Content-Type: text/plain; charset="us-ascii"
+Mime-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140530232804.GA5057-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
+In-Reply-To: <20140530160712.GG24871-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,87 +20,46 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Arianna Avanzini <avanzini.arianna-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Arianna Avanzini <avanzini.arianna-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paolo Valente <posta_paolo-whZMOeQn8C0@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On 2014-05-30 10:07, Tejun Heo wrote:
+> We do have multiple ioscheds but sans for anticipatory which pretty
+> much has been superceded by cfq, they serve different purposes and I'd
+> really hate the idea of carrying two mostly similar ioscheds in tree.
 
-Il giorno 31/mag/2014, alle ore 01:28, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> ha scritto:
+AS was removed, and exactly for that reason. So lets make one thing very 
+clear: we are not going to carry two implementations of CFQ, that differ 
+in various ways. That will not happen. We're going to end up with one 
+"smart" IO scheduler, not several of them.
 
-> Hello,
-> 
-> On Sat, May 31, 2014 at 12:23:01AM +0200, Paolo Valente wrote:
->> I do agree that bfq has essentially the same purpose as cfq. I am
->> not sure that it is what you are proposing, but, in my opinion,
->> since both the engine and all the new heuristics of bfq differ from
->> those of cfq, a replacement would be most certainly a much easier
->> solution than any other transformation of cfq into bfq (needless to
->> say, leaving the same name for the scheduler would not be a problem
->> for me). Of course, before that we are willing to improve what has
->> to be improved in bfq.
-> 
-> Well, it's all about how to actually route the changes and in general
-> whenever avoidable we try to avoid whole-sale code replacement
-> especially when most of the structural code is similar like in this
-> case.  Gradually evolving cfq to bfq is likely to take more work but
-> I'm very positive that it'd definitely be a lot easier to merge the
-> changes that way and people involved, including the developers and
-> reviewers, would acquire a lot clearer picture of what's going on in
-> the process.
+> For some reason, blkcg implementation seems completely different but
+> outside of that, bfq doesn't really seem to have diverged a lot from
+> cfq and the most likely and probably only way for it to be merged
+> would be if you just mutate cfq into bfq.  The whole effort is mostly
+> about characterizing and refining the scheduling algorithm anyway,
+> right?  I'd really love to see that happening.
 
-I understand, and apologize for proposing an inappropriate shortcut.
+Patching CFQ would be the right way to go, imho. That would also make it 
+very clear what the steps are to get there, leaving us with something 
+that can actually be backtracked and debugged. I think the patch series 
+already looks pretty good, basically patch #2 "just" needs to be turned 
+into a series of patches for CFQ.
 
->  For example, AFAICS, most of the heuristics added by the
-> later patches are refined versions of what's already in cfq and at
-> least some are applicable regardless of the underlying scheduling
-> algorithm.
-
-Absolutely correct.
-
->  It all depends on the details but, for example, steps like
-> the following would be it a lot easier to get merged.
-> 
-> * Identify the improvements which can be applied to cfq as-is or with
->  some adaptation and apply those improvements to cfq.
-> 
-> * Make prepatory changes to make transition to new base scheduling
->  algorithm easier.
-> 
-> * Strip out or disable cfq features which get in the way of
->  conversion.
-> 
-> * Switch the base algorithm to the timestamp based one.
-> 
-> * Rebuild stripped down features and apply new heuristics,
->  optimizations and follow-up changes.
-> 
-
-OK, we can try.
-
-> I understand that this might be non-significant amount of work
-
-This may be a non-negligible difficulty, as Arianna, who is actively helping me with this project, and I are working on bfq in our (little) spare time. But if you are patient enough, we will be happy to try to make it one step at a time.
-
-> but at
-> the same time it's not something which is inherently difficult.  It's
-> mostly logistical after all and I'd be happy to help where I can.
-> 
-
-This is certainly reassuring for us.
-
-Thanks again,
-Paolo
-
-> Thanks.
-> 
-> -- 
-> tejun
+What I really like about the implementation is, as Tejun highlights, 
+that the algorithm is detailed and characterized. Nobody ever wrote any 
+detailed documentation on CFQ - I think the closest is a talk I gave at 
+LCA in 2007 or so. That said, the devil is _always_ in the details when 
+it comes to nice algorithms. When theory meets practice, then the little 
+tweaks and tunings required to not drop 10% there or 20% here is when it 
+gets ugly. And that's where CFQ has the history going for it, at least. 
+Which is another reason for turning patch #2 into a series of changes 
+for CFQ instead. We need to end up with something where we can 
+potentially bisect our way down to whatever caused any given regression. 
+The worst possible situation is "CFQ works fine for this workload, but 
+BFQ does not" or vice versa. Or hangs, or whatever it might be.
 
 
---
-Paolo Valente                                                 
-Algogroup
-Dipartimento di Fisica, Informatica e Matematica		
-Via Campi, 213/B
-41125 Modena - Italy        				  
-homepage:  http://algogroup.unimore.it/people/paolo/
+-- 
+Jens Axboe
