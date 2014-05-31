@@ -1,17 +1,19 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH RFC - TAKE TWO - 09/12] block, bfq: reduce latency during
-	request-pool saturation
-Date: Sat, 31 May 2014 09:54:02 -0400
-Message-ID: <20140531135402.GC24557@mtj.dyndns.org>
-References: <20140528221929.GG1419@htj.dyndns.org>
-	<1401354343-5527-1-git-send-email-paolo.valente@unimore.it>
-	<1401354343-5527-10-git-send-email-paolo.valente@unimore.it>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH v2] /proc/pid/status: show all sets of pid according to ns
+Date: Sat, 31 May 2014 13:08:01 -0700
+Message-ID: <87egz9lnj2.fsf@x220.int.ebiederm.org>
+References: <1401272683-1659-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<5385DA19.2060008@parallels.com> <20140528182824.GA5057@cachalot>
+	<53863889.9080509@parallels.com> <20140529055954.GA10354@cachalot>
+	<5386F8EA.8050501@parallels.com> <20140529111236.GA14576@cachalot>
+	<53871A92.9000004@parallels.com> <20140529115946.GA19889@cachalot>
+	<53872DAD.1070502@parallels.com> <20140531060713.GA5315@cachalot>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1401354343-5527-10-git-send-email-paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
+In-Reply-To: <20140531060713.GA5315@cachalot> (Vasily Kulikov's message of
+	"Sat, 31 May 2014 10:07:13 +0400")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,30 +23,56 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Arianna Avanzini <avanzini.arianna-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paolo Valente <posta_paolo-whZMOeQn8C0@public.gmane.org>
+To: Vasily Kulikov <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
+Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, May 29, 2014 at 11:05:40AM +0200, Paolo Valente wrote:
-> This patch introduces an heuristic that reduces latency when the
-> I/O-request pool is saturated. This goal is achieved by disabling
-> device idling, for non-weight-raised queues, when there are weight-
-> raised queues with pending or in-flight requests. In fact, as
-> explained in more detail in the comment to the function
-> bfq_bfqq_must_not_expire(), this reduces the rate at which processes
-> associated with non-weight-raised queues grab requests from the pool,
-> thereby increasing the probability that processes associated with
-> weight-raised queues get a request immediately (or at least soon) when
-> they need one.
-
-Wouldn't it be more straight-forward to simply control how many
-requests each queue consume by returning ELV_MQUEUE_NO?  Seeky ones do
-benefit from larger number of requests in elevator but to only certain
-number given the fifo timeout anyway and controlling that explicitly
-would be a lot easier to anticipate the behavior of than playing
-roulette with random request allocation failures.
-
-Thanks.
-
--- 
-tejun
+VmFzaWx5IEt1bGlrb3YgPHNlZ29vbkBvcGVud2FsbC5jb20+IHdyaXRlczoKCj4gT24gVGh1LCBN
+YXkgMjksIDIwMTQgYXQgMTY6NTMgKzA0MDAsIFBhdmVsIEVtZWx5YW5vdiB3cm90ZToKPj4gT24g
+MDUvMjkvMjAxNCAwMzo1OSBQTSwgVmFzaWx5IEt1bGlrb3Ygd3JvdGU6Cj4+ID4gT24gVGh1LCBN
+YXkgMjksIDIwMTQgYXQgMTU6MzEgKzA0MDAsIFBhdmVsIEVtZWx5YW5vdiB3cm90ZToKPj4gPj4g
+T24gMDUvMjkvMjAxNCAwMzoxMiBQTSwgVmFzaWx5IEt1bGlrb3Ygd3JvdGU6Cj4+ID4+PiBPbiBU
+aHUsIE1heSAyOSwgMjAxNCBhdCAxMzowNyArMDQwMCwgUGF2ZWwgRW1lbHlhbm92IHdyb3RlOgo+
+PiA+Pj4+IE9uIDA1LzI5LzIwMTQgMDk6NTkgQU0sIFZhc2lseSBLdWxpa292IHdyb3RlOgo+PiA+
+Pj4+PiBPbiBXZWQsIE1heSAyOCwgMjAxNCBhdCAyMzoyNyArMDQwMCwgUGF2ZWwgRW1lbHlhbm92
+IHdyb3RlOgo+PiA+Pj4+PiBdIFdlIG5lZWQgYSBkaXJlY3QgbWV0aG9kIG9mIGdldHRpbmcgdGhl
+IHBpZCBpbnNpZGUgY29udGFpbmVycy4KPj4gPj4+Pj4gXSBJZiBzb21lIGlzc3VlcyBvY2N1cnJl
+ZCBpbnNpZGUgY29udGFpbmVyIGd1ZXN0LCBob3N0IHVzZXIKPj4gPj4+Pj4gXSBjb3VsZCBub3Qg
+a25vdyB3aGljaCBwcm9jZXNzIGlzIGluIHRyb3VibGUganVzdCBieSBndWVzdCBwaWQ6Cj4+ID4+
+Pj4+IF0gdGhlIHVzZXJzIG9mIGNvbnRhaW5lciBndWVzdCBvbmx5IGtuZXcgdGhlIHBpZCBpbnNp
+ZGUgY29udGFpbmVycy4KPj4gPj4+Pj4gXSBUaGlzIHdpbGwgYnJpbmcgb2JzdGFjbGUgZm9yIHRy
+b3VibGUgc2hvb3RpbmcuCj4+ID4+Pj4+Cj4+ID4+Pj4+IEEgbmV3IHN5c2NhbGwgbWlnaHQgY29t
+cGxpY2F0ZSB0cm91YmxlIHNob290aW5nIGJ5IGFkbWluLgo+PiA+Pj4+Cj4+ID4+Pj4gUHVyZSBz
+eXNjYWxsIC0tIHllcy4gV2hhdCBpZiB3ZSB0ZWFjaCB0aGUgcHMgYW5kIHRvcCB1dGlsaXRpZXMg
+dG8gc2hvdyBhZGRpdGlvbmFsCj4+ID4+Pj4gaW5mbz8gSSB0aGluayB0aGF0IHdvdWxkIGhlbHAu
+Cj4+ID4+Pgo+PiA+Pj4gSSBsaWtlIHRoZSBpZGVhIHdpdGggbG93IGxldmVsIG5vbi1zaGVsbCBB
+UEkgd2hpY2ggY2FuIGJlIHVzZWQgYnkKPj4gPj4+IHV0aWxpdHkgbGlrZSBwcyAob3IgaW1wbGVt
+ZW50YXRpb24gb2YgYSBuZXcgdG9vbCB0byB3b3JrIHdpdGggY29tcGxleAo+PiA+Pj4gbmFtZXNw
+YWNlIGhpZXJhcmNoaWVzKS4gIEl0IHNob3VsZCBmaXQgZm9yIHRyb3VibGVzb290aW5nLiAgVGhl
+biB0aGVyZQo+PiA+Pj4gc2hvdWxkIGJlIG5vIHJlYXNvbiB0byBpbXBsZW1lbnQgdHdvIGRpZmZl
+cmVudCBBUElzIGZvciBvYnNlcnZhdGlvbiBmcm9tCj4+ID4+PiBzaGVsbCB2aWEgRlMgYW5kIGZy
+b20gYXBwbGljYXRpb25zLgo+PiA+Pgo+PiA+PiBNYXliZSB3ZSBjYW4gcmV1c2UgdGhlIGV4aXN0
+aW5nIGtjbXAoKSBzeXN0ZW0gY2FsbD8gV2Ugd291bGQgaGF2ZSB0byBzdG9yZQo+PiA+PiB0aGUg
+Y29sbGVjdGVkIHBpZCB2YWx1ZXMgaW4gc29tZSBoYXNoL3RyZWUgYW55d2F5LCBhbmQga2NtcCgp
+IHByb3ZpZGVzIHVzCj4+ID4+IGdvb2QgY29tcGFyaW5nIGZ1bmN0aW9uIGZvciBkb2luZyB0aGlz
+Lgo+PiA+Pgo+PiA+PiBMaWtlIHdlIGNhbiBjYWxsIGtjbXAocGlkMSwgcGlkMiwgS0NNUF9QSUQs
+IG5zZmQxLCBuc2ZkMikgd2hpY2ggd2lsbCBtZWFuCj4+ID4+ICJBcmUgdGFza3Mgd2l0aCBwaWQx
+IGluIG5hbWVzcGFjZSBwb2ludGVkIGJ5IG5zZmQxIGFuZCB3aXRoIHBpZDIgaW4gbmFtZXNwYWNl
+Cj4+ID4+IG5zZmQyIHRoZSBzYW1lPyIKPj4gPj4KPj4gPj4gV2hhdCBkbyB5b3UgdGhpbms/Cj4+
+ID4gCj4+ID4ga2NtcCgpIGlzIG5vdCBuZWVkZWQsIGp1c3QgY29tcGFyZSBpbm9kZSBudW1iZXJz
+Ogo+PiA+IAo+PiA+ICAgICAjIGxzIC1pbCAvcHJvYy97NDMsc2VsZn0vbnMvbW50Cj4+ID4gICAg
+IDIwODE4MiBscnd4cnd4cnd4IDEgcm9vdCByb290IDAg0LzQsNGPICAgMjkgMTU6NTIgL3Byb2Mv
+NDMvbnMvbW50IC0+IG1udDpbNDAyNjUzMTg1Nl0KPj4gPiAgICAgMjE2NTU2IGxyd3hyd3hyd3gg
+MSByb290IHJvb3QgMCDQvNCw0Y8gICAyOSAxNTo1NyAvcHJvYy9zZWxmL25zL21udCAtPiBtbnQ6
+WzQwMjY1MzE4NDBdCj4+IAo+PiBCdXQgdGhhdCdzIGZvciBjb21wYXJpbmcgdGhlIG5hbWVzcGFj
+ZXMsIHdoaWxlIEknbSBwcm9wb3NpbmcgdGhlIGtjbXAgdG8KPj4gY2hlY2sgZm9yIFBJRHMuCj4K
+PiBIbSwgcmlnaHQuCj4KPiBXaGF0IGFib3V0IHRoZSBmb2xsb3dpbmcgc29sdXRpb246IGV4cG9y
+dCBnbG9iYWwgcHJvY2VzcyBJRCAoUElEIGluCj4gaW5pdCBucykgd2hpY2ggaXMgdmlzaWJsZSBp
+bnNpZGUgb2YgYW55IG5hbWVzcGFjZS4gIFRoZW4geW91IGNhbiBjb21wYXJlCj4gbnVtYmVycyBy
+ZWdhcmRsZXNzIGluIHdoYXQgbmFtZXNwYWNlIHlvdSBhcmUuCgpXaGljaCB0aGVuIGRlZmVhdHMg
+dGhlIHBvaW50IG9mIGhhdmluZyBwaWQgbmFtZXNwYWNlcyBpbiB0aGUgZmlyc3QKcGxhY2UuCgpI
+b3cgZG8geW91IGdldCB0aGF0IHNhbWUgZ2xvYmFsIHBpZCBhZnRlciB5b3UgaGF2ZSBtaWdyYXRl
+ZCB5b3VyCmNvbnRhaW5lcj8KCkVyaWMKCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMu
+bGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21h
+aWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
