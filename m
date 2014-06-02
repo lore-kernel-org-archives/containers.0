@@ -1,17 +1,17 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH RFC - TAKE TWO - 10/12] block, bfq: add Early Queue Merge
-	(EQM)
-Date: Sat, 31 May 2014 20:03:31 -0400
-Message-ID: <20140601000331.GA29085__13567.9055391394$1401581032$gmane$org@htj.dyndns.org>
+From: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
+Subject: Re: [PATCH RFC - TAKE TWO - 11/12] block,
+	bfq: boost the throughput on NCQ-capable flash-based devices
+Date: Mon, 2 Jun 2014 11:26:07 +0200
+Message-ID: <36BFDB73-AEC2-4B87-9FD6-205E9431E722@unimore.it>
 References: <20140528221929.GG1419@htj.dyndns.org>
 	<1401354343-5527-1-git-send-email-paolo.valente@unimore.it>
-	<1401354343-5527-11-git-send-email-paolo.valente@unimore.it>
-Mime-Version: 1.0
+	<1401354343-5527-12-git-send-email-paolo.valente@unimore.it>
+	<20140531115216.GB5057@htj.dyndns.org>
+Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.2\))
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1401354343-5527-11-git-send-email-paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
+In-Reply-To: <20140531115216.GB5057-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,207 +21,152 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mauro Andreolini <mauro.andreolini-rcYM44yAMweonA0d6jMUrA@public.gmane.org>, Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Arianna Avanzini <avanzini.arianna-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Paolo Valente <posta_paolo-whZMOeQn8C0@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Arianna Avanzini <avanzini.arianna-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello,
 
-On Thu, May 29, 2014 at 11:05:41AM +0200, Paolo Valente wrote:
-> Unfortunately, in the following frequent case the mechanism
-> implemented in CFQ for detecting cooperating processes and merging
-> their queues is not responsive enough to handle also the fluctuating
-> I/O pattern of the second type of processes. Suppose that one process
-> of the second type issues a request close to the next request to serve
-> of another process of the same type. At that time the two processes
-> can be considered as cooperating. But, if the request issued by the
-> first process is to be merged with some other already-queued request,
-> then, from the moment at which this request arrives, to the moment
-> when CFQ controls whether the two processes are cooperating, the two
-> processes are likely to be already doing I/O in distant zones of the
-> disk surface or device memory.
+Il giorno 31/mag/2014, alle ore 13:52, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> ha scritto:
 
-I don't really follow the last part.  So, the difference is that
-cooperating queue setup also takes place during bio merge too, right?
-Are you trying to say that it's beneficial to detect cooperating
-queues before the issuing queue gets unplugged because the two queues
-might deviate while plugged?  If so, the above paragraph is, while
-quite wordy, a rather lousy description.
+> Hello, Paolo.
+> 
+> So, I've actually looked at the code.  Here are some questions.
+> 
+> On Thu, May 29, 2014 at 11:05:42AM +0200, Paolo Valente wrote:
+>> + * 1) all active queues have the same weight,
+>> + * 2) all active groups at the same level in the groups tree have the same
+>> + *    weight,
+>> + * 3) all active groups at the same level in the groups tree have the same
+>> + *    number of children.
+> 
+> 3) basically disables it whenever blkcg is used.  Might as well just
+> skip the whole thing if there are any !root cgroups.  It's only
+> theoretically interesting.
 
-> CFQ uses however preemption to get a sequential read pattern out of
-> the read requests performed by the second type of processes too.  As a
-> consequence, CFQ uses two different mechanisms to achieve the same
-> goal: boosting the throughput with interleaved I/O.
+It is easier for me to reply to this, and the other related comments, cumulatively below.
 
-You mean the cfq_rq_close() preemption, right?  Hmmm... interesting.
-I'm a bit bothered that we might do this multiple times for the same
-bio/request.  e.g. if bio is back merged to an existing request which
-would be the most common bio merge scenario anyway, is it really
-meaningful to retry it for each merge and then again on submission?
-cfq does it once when allocating the request.  That seems a lot more
-reasonable to me.  It's doing that once for one start sector.  I mean,
-plugging is usually extremely short compared to actual IO service
-time.  It's there to mask the latencies between bio issues that the
-same CPU is doing.  I can't see how this earliness can be actually
-useful.  Do you have results to back this one up?  Or is this just
-born out of thin air?
+> 
+>> static inline bool bfq_bfqq_must_not_expire(struct bfq_queue *bfqq)
+>> {
+>> 	struct bfq_data *bfqd = bfqq->bfqd;
+> 
+> 	bool symmetric_scenario, expire_non_wr;
+> 
+>> +#ifdef CONFIG_CGROUP_BFQIO
+>> +#define symmetric_scenario	  (!bfqd->active_numerous_groups && \
+>> +				   !bfq_differentiated_weights(bfqd))
+> 
+> 	symmetric_scenario = xxx;
+> 
+>> +#else
+>> +#define symmetric_scenario	  (!bfq_differentiated_weights(bfqd))
+> 
+> 	symmetric_scenario = yyy;
+> 
+>> +#endif
+>> /*
+>>  * Condition for expiring a non-weight-raised queue (and hence not idling
+>>  * the device).
+>>  */
+>> #define cond_for_expiring_non_wr  (bfqd->hw_tag && \
+>> -				   bfqd->wr_busy_queues > 0)
+>> +				   (bfqd->wr_busy_queues > 0 || \
+>> +				    (symmetric_scenario && \
+>> +				     blk_queue_nonrot(bfqd->queue))))
+> 
+> 	expire_non_wr = zzz;
+> 
 
-> +/*
-> + * Must be called with the queue_lock held.
+The solution you propose is the first that came to my mind. But then I went for a clumsy macro-based solution because: 1) the whole function is all about evaluating a long logical expression, 2) the macro-based solution allows the short-circuit to be used at best, and the number of steps to be minimized. For example, with async queues, only one condition is evaluated.
 
-Use lockdep_assert_held() instead?
+Defining three variables entails instead that the value of all the variables is computed every time, even if most of the times there is no need to.
 
-> + */
-> +static int bfqq_process_refs(struct bfq_queue *bfqq)
-> +{
-> +	int process_refs, io_refs;
-> +
-> +	io_refs = bfqq->allocated[READ] + bfqq->allocated[WRITE];
-> +	process_refs = atomic_read(&bfqq->ref) - io_refs - bfqq->entity.on_st;
-> +	return process_refs;
-> +}
-...
-> +static inline sector_t bfq_io_struct_pos(void *io_struct, bool request)
-> +{
-> +	if (request)
-> +		return blk_rq_pos(io_struct);
-> +	else
-> +		return ((struct bio *)io_struct)->bi_iter.bi_sector;
-> +}
-> +
-> +static inline sector_t bfq_dist_from(sector_t pos1,
-> +				     sector_t pos2)
-> +{
-> +	if (pos1 >= pos2)
-> +		return pos1 - pos2;
-> +	else
-> +		return pos2 - pos1;
-> +}
-> +
-> +static inline int bfq_rq_close_to_sector(void *io_struct, bool request,
-> +					 sector_t sector)
-> +{
-> +	return bfq_dist_from(bfq_io_struct_pos(io_struct, request), sector) <=
-> +	       BFQQ_SEEK_THR;
-> +}
+Would this gain be negligible (sorry for my ignorance), or would not it be however enough to justify these unusual macros?
 
-You can simply write the following.
+>> 
+>> 	return bfq_bfqq_sync(bfqq) && (
+>> 		bfqq->wr_coeff > 1 ||
+>> /**
+>> + * struct bfq_weight_counter - counter of the number of all active entities
+>> + *                             with a given weight.
+>> + * @weight: weight of the entities that this counter refers to.
+>> + * @num_active: number of active entities with this weight.
+>> + * @weights_node: weights tree member (see bfq_data's @queue_weights_tree
+>> + *                and @group_weights_tree).
+>> + */
+>> +struct bfq_weight_counter {
+>> +	short int weight;
+>> +	unsigned int num_active;
+>> +	struct rb_node weights_node;
+>> +};
+> 
+> This is way over-engineered.  In most cases, the only time you get the
+> same weight on all IO issuers would be when everybody is on the
+> default ioprio so might as well simply count the number of non-default
+> ioprios.  It'd be one integer instead of a tree of counters.
+> 
 
-	abs64(sector0 - sector1) < BFQQ_SEEKTHR;
+Reply below.
 
-Note that abs64() works whether the source type is signed or unsigned.
-Also, please don't do "void *" + type switch.  If it absoluately has
-to take two different types of pointers, just take two different
-pointers and BUG_ON() if both are set, but here this doesn't seem to
-be the case.  Just pass around the actual sectors.  This applies to
-all usages of void *io_struct.
+>> @@ -306,6 +322,22 @@ enum bfq_device_speed {
+>>  * @rq_pos_tree: rbtree sorted by next_request position, used when
+>>  *               determining if two or more queues have interleaving
+>>  *               requests (see bfq_close_cooperator()).
+>> + * @active_numerous_groups: number of bfq_groups containing more than one
+>> + *                          active @bfq_entity.
+> 
+> You can safely assume that on any system which uses blkcg, the above
+> counter is >1.
+> 
+> This optimization may be theoretically interesting but doesn't seem
+> practical at all and would make the sytem behave distinctively
+> differently depending on something which is extremely subtle and seems
+> completely unrelated.  Furthermore, on any system which uses blkcg,
+> ext4, btrfs or has any task which has non-zero nice value, it won't
+> make any difference.  Its value is only theoretical.
+> 
 
-> +static struct bfq_queue *bfqq_close(struct bfq_data *bfqd, sector_t sector)
+Turning on idling unconditionally when blkcg is used, is one of the first solutions we have considered. But there seem to be practical scenarios where this would cause an unjustified loss of throughput. The main example for us was ulatencyd, which AFAIK creates one group for each process and, by default, assigns to all processes the same weight. But the assigned weight is not the one associated to the default ioprio.
 
-bfqq_find_close() or find_close_bfqq()?
+I do not know how widespread a mechanism like ulatencyd is precisely, but in the symmetric scenario it creates, the throughput on, e.g., an HDD would drop by half if the workload is mostly random and we removed the more complex mechanism we set up.
+Wouldn't this be bad?
 
-> +/*
-> + * bfqd - obvious
-> + * cur_bfqq - passed in so that we don't decide that the current queue
-> + *            is closely cooperating with itself
-> + * sector - used as a reference point to search for a close queue
-> + */
+> Another thing to consider is that virtually all remotely modern
+> devices, rotational or not, are queued. At this point, it's rather
+> pointless to design one behavior for !queued and another for queued.
+> Things should just be designed for queued devices.
 
-If you're gonna do the above, please use proper function comment.
-Please take a look at Documentation/kernel-doc-nano-HOWTO.txt.
+I am sorry for expressing doubts again (mainly because of my ignorance), but a few months ago I had to work with some portable devices for a company specialized in ARM systems. As an HDD, they were using a Toshiba MK6006GAH. If I remember well, this device had no NCQ. Instead of the improvements that we obtained by using bfq with this slow device, removing the differentiated behavior of bfq with respect to queued/!queued devices would have caused just a loss of throughput.
 
-> +static struct bfq_queue *bfq_close_cooperator(struct bfq_data *bfqd,
-> +					      struct bfq_queue *cur_bfqq,
-> +					      sector_t sector)
-> +{
-> +	struct bfq_queue *bfqq;
-> +
-> +	if (bfq_class_idle(cur_bfqq))
-> +		return NULL;
-> +	if (!bfq_bfqq_sync(cur_bfqq))
-> +		return NULL;
-> +	if (BFQQ_SEEKY(cur_bfqq))
-> +		return NULL;
+>  I don't know what
+> the solution is but given that the benefits of NCQ for rotational
+> devices is extremely limited, sticking with single request model in
+> most cases and maybe allowing queued operation for specific workloads
+> might be a better approach.  As for ssds, just do something simple.
+> It's highly likely that most ssds won't travel this code path in the
+> near future anyway.
 
-Why are some of these conditions tested twice?  Once here and once in
-the caller?  Collect them into one place?
+This is the point that worries me mostly. As I pointed out in one of my previous emails, dispatching requests to an SSD  without control causes high latencies, or even complete unresponsiveness (Figure 8 in
+http://algogroup.unimore.it/people/paolo/disk_sched/extra_results.php
+or Figure 9 in
+http://algogroup.unimore.it/people/paolo/disk_sched/results.php).
 
-...
-> +	if (bfqq->entity.parent != cur_bfqq->entity.parent)
-> +		return NULL;
+I am of course aware that efficiency is a critical issue with fast devices, and is probably destined to become more and more critical in the future. But, as a user, I would be definitely unhappy with a system that can, e.g., update itself in one minute instead of five, but, during that minute may become unresponsive. In particular, I would not be pleased to buy a more expensive SSD and get a much less responsive system than that I had with a cheaper HDD and bfq fully working.
 
-This is the only place this rq position tree is being used, right?
-Any reason not to use per-parent tree instead?
+Thanks,
+Paolo
 
-> +	if (bfq_class_rt(bfqq) != bfq_class_rt(cur_bfqq))
-> +		return NULL;
+> 
+> Thanks.
+> 
+> -- 
+> tejun
 
-Test ioprio_class for equality?
 
-> +/*
-> + * Attempt to schedule a merge of bfqq with the currently in-service queue
-> + * or with a close queue among the scheduled queues.
-> + * Return NULL if no merge was scheduled, a pointer to the shared bfq_queue
-> + * structure otherwise.
-> + */
-> +static struct bfq_queue *
-> +bfq_setup_cooperator(struct bfq_data *bfqd, struct bfq_queue *bfqq,
-> +		     void *io_struct, bool request)
-> +{
-> +	struct bfq_queue *in_service_bfqq, *new_bfqq;
-> +
-> +	if (bfqq->new_bfqq)
-> +		return bfqq->new_bfqq;
-> +
-> +	if (!io_struct)
-> +		return NULL;
-> +
-> +	in_service_bfqq = bfqd->in_service_queue;
-> +
-> +	if (in_service_bfqq == NULL || in_service_bfqq == bfqq ||
-> +	    !bfqd->in_service_bic)
-> +		goto check_scheduled;
-> +
-> +	if (bfq_class_idle(in_service_bfqq) || bfq_class_idle(bfqq))
-> +		goto check_scheduled;
-> +
-> +	if (bfq_class_rt(in_service_bfqq) != bfq_class_rt(bfqq))
-> +		goto check_scheduled;
-> +
-> +	if (in_service_bfqq->entity.parent != bfqq->entity.parent)
-> +		goto check_scheduled;
-> +
-> +	if (bfq_rq_close_to_sector(io_struct, request, bfqd->last_position) &&
-> +	    bfq_bfqq_sync(in_service_bfqq) && bfq_bfqq_sync(bfqq)) {
-> +		new_bfqq = bfq_setup_merge(bfqq, in_service_bfqq);
-> +		if (new_bfqq != NULL)
-> +			return new_bfqq; /* Merge with in-service queue */
-> +	}
-> +
-> +	/*
-> +	 * Check whether there is a cooperator among currently scheduled
-> +	 * queues. The only thing we need is that the bio/request is not
-> +	 * NULL, as we need it to establish whether a cooperator exists.
-> +	 */
-> +check_scheduled:
-> +	new_bfqq = bfq_close_cooperator(bfqd, bfqq,
-> +					bfq_io_struct_pos(io_struct, request));
-> +	if (new_bfqq)
-> +		return bfq_setup_merge(bfqq, new_bfqq);
-
-Why don't in_service_queue and scheduled search share the cooperation
-conditions?  They should be the same, right?  Shouldn't the function
-be structured like the following instead?
-
-	if (bfq_try_close_cooperator(current_one, in_service_one))
-		return in_service_one;
-
-	found = bfq_find_close_cooperator();
-	if (bfq_try_close_cooperator(current_one, found))
-		return found;
-	return NULL;
-
-Thanks.
-
--- 
-tejun
+--
+Paolo Valente                                                 
+Algogroup
+Dipartimento di Fisica, Informatica e Matematica		
+Via Campi, 213/B
+41125 Modena - Italy        				  
+homepage:  http://algogroup.unimore.it/people/paolo/
