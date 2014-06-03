@@ -1,20 +1,19 @@
-From: Mike Galbraith <umgwanakikbuti-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH RFC - TAKE TWO - 00/12] New version of the BFQ I/O
-	Scheduler
-Date: Tue, 03 Jun 2014 06:12:45 +0200
-Message-ID: <1401768765.6214.39.camel@marge.simpson.net>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH RFC - TAKE TWO - 10/12] block, bfq: add Early Queue Merge
+	(EQM)
+Date: Tue, 3 Jun 2014 12:28:44 -0400
+Message-ID: <20140603162844.GD26210@htj.dyndns.org>
 References: <20140528221929.GG1419@htj.dyndns.org>
 	<1401354343-5527-1-git-send-email-paolo.valente@unimore.it>
-	<20140530160712.GG24871@htj.dyndns.org>
-	<464F6CBE-A63E-46EF-A90D-BF8450430444@unimore.it>
-	<20140530232804.GA5057@htj.dyndns.org>
-	<20140602111432.GA3737@amd.pavel.ucw.cz>
-	<20140602173332.GB8912@htj.dyndns.org>
+	<1401354343-5527-11-git-send-email-paolo.valente@unimore.it>
+	<20140601000331.GA29085@htj.dyndns.org>
+	<3B7B1A46-46EB-4C52-A52C-4F79C71D14C2@unimore.it>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140602173332.GB8912-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <3B7B1A46-46EB-4C52-A52C-4F79C71D14C2-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,47 +23,55 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>, Arianna Avanzini <avanzini.arianna-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
+Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mauro Andreolini <mauro.andreolini-rcYM44yAMweonA0d6jMUrA@public.gmane.org>, Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Arianna Avanzini <avanzini.arianna-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 2014-06-02 at 13:33 -0400, Tejun Heo wrote: 
-> Hello, Pavel.
+Hello,
+
+On Mon, Jun 02, 2014 at 11:46:45AM +0200, Paolo Valente wrote:
+> > I don't really follow the last part.  So, the difference is that
+> > cooperating queue setup also takes place during bio merge too, right?
 > 
-> On Mon, Jun 02, 2014 at 01:14:33PM +0200, Pavel Machek wrote:
-> > Now.. I see it is more work for storage maintainers, because there'll
-> > be more code to maintain in the interim. But perhaps user advantages
-> > are worth it?
+> Not only, in bfq an actual queue merge is performed in the bio-merge hook.
+
+I think I'm a bit confused because it's named "early" queue merge
+while it actually moves queue merging later than cfq - set_request()
+happens before bio/rq merging.  So, what it tries to do is
+compensating for the lack of cfq_rq_close() preemption at request
+issue time, right?
+
+> > cfq does it once when allocating the request.  That seems a lot more
+> > reasonable to me.  It's doing that once for one start sector.  I mean,
+> > plugging is usually extremely short compared to actual IO service
+> > time.  It's there to mask the latencies between bio issues that the
+> > same CPU is doing.  I can't see how this earliness can be actually
+> > useful.  Do you have results to back this one up?  Or is this just
+> > born out of thin air?
 > 
-> I'm quite skeptical about going that route.  Not necessarily because
-> of the extra amount of work but more the higher probability of getting
-> into situation where we can neither push forward or back out.  It's
-> difficult to define clear deadline and there will likely be unforeseen
-> challenges in the planned convergence of the two schedulers,
-> eventually, it isn't too unlikely to be in a situation where we have
-> to admit defeat and just keep both schedulers.  Note that developer
-> overhead isn't the only factor here.  Providing two slightly different
-> alternatives inevitably makes userland grow dependencies on subtleties
-> of both and there's a lot less pressure to make judgement calls and
-> take appropriate trade-offs, which have fairly high chance of
-> deadlocking progress towards any direction.
+> Arianna added the early-queue-merge part in the allow_merge_fn hook
+> about one year ago, as a a consequence of a throughput loss of about
+> 30% with KVM/QEMU workloads. In particular, we ran most of the tests
+> on a WDC WD60000HLHX-0 Velociraptor. That HDD might not be available
+> for testing any more, but we can reproduce our results for you on
+> other HDDs, with and without early queue merge. And, maybe through
+> traces, we can show you that the reason for the throughput loss is
+> exactly that described (in a wordy way) in this patch. Of course
+> unless we have missed something.
 
-But OTOH..
+Oh, as long as it makes measureable difference, I have no objection;
+however, I do think more explanation and comments would be nice.  I
+still can't quite understand why retrying on each merge attempt would
+make so much difference.  Maybe I just failed to understand what you
+wrote in the commit message.  Is it because the cooperating tasks
+issue IOs which grow large and close enough after merges but not on
+the first bio issuance?  If so, why isn't doing it on rq merge time
+enough?  Is the timing sensitive enough for certain workloads that
+waiting till unplug time misses the opportunity?  But plugging should
+be relatively short compared to the time actual IOs take, so why would
+it be that sensitive?  What am I missing here?
 
-This thing (allegedly) fixes issues that have existed for ages, issues
-which have (also allegedly) not been fixed in all that time despite a
-number of people having done a lot of this and that over the years.  If
-the claims are true, seems to me that would make BFQ a bit special, and
-perhaps worth some extra leeway and effort to ensure that what we are
-being offered on a silver plate doesn't molder away out of tree forever.
+Thanks.
 
-If it were say put in staging, and it were stated right up front that it
-isn't ever going to go further (Jens already said that more or less),
-and _will_ drop dead if it stagnates, that would surely increase the
-test base to shake out problem spots (surely it has some), and allow
-users who meet an issue in either IO scheduler to verify it with the
-flick of a switch every step of the way to whichever ending, and maybe
-even motivate other IO people to help with the merge and/or to compare
-their changes at the flick of that same switch.
-
--Mike
+-- 
+tejun
