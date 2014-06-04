@@ -1,8 +1,8 @@
 From: Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>
-Subject: Re: [PATCH RFC - TAKE TWO - 00/12] New version of the BFQ I/O
-	Scheduler
-Date: Wed, 4 Jun 2014 11:08:56 +0200
-Message-ID: <20140604090856.GA1196@amd.pavel.ucw.cz>
+Subject: BFQ speed tests [was Re: [PATCH RFC - TAKE TWO - 00/12] New
+	version of the BFQ I/O Scheduler]
+Date: Wed, 4 Jun 2014 12:03:58 +0200
+Message-ID: <20140604100358.GA4799__47310.9365477741$1401876256$gmane$org@amd.pavel.ucw.cz>
 References: <20140528221929.GG1419@htj.dyndns.org>
 	<1401354343-5527-1-git-send-email-paolo.valente@unimore.it>
 	<20140530160712.GG24871@htj.dyndns.org>
@@ -32,26 +32,45 @@ List-Id: containers.vger.kernel.org
 
 Hi!
 
-> Should this attempt be useless as well, I will, if you do not mind,
->try by asking you more details about your system and reproducing your
->configuration as much as I can.
+> Should this attempt be useless as well, I will, if you do not mind, try by asking you more details about your system and reproducing your configuration as much as I can.
+> 
 
-It fails during boot or shortly after that when clicking in gnome2
-desktop. I had BFQ as a default scheduler.
+Try making BFQ the default scheduler. That seems to break it for me,
+when selected at runtime, it looks stable.
 
-Now I set CFQ as a default and it boots (as expected).
+Anyway, here are some speed tests. Background load:
 
-root@duo:~# cat /sys/block/sda/queue/scheduler 
-noop deadline [cfq] bfq 
-root@duo:~# echo bfq > /sys/block/sda/queue/scheduler
-root@duo:~# dmesg | grep WARN
-WARNING: CPU: 1 PID: 1 at net/wireless/reg.c:479
-regulatory_init+0x88/0xf5()
-root@duo:~# 
+root@duo:/data/tmp# echo cfq > /sys/block/sda/queue/scheduler 
+root@duo:/data/tmp# echo 3 > /proc/sys/vm/drop_caches
+root@duo:/data/tmp# cat /dev/zero > delme; cat /dev/zero > delme;cat
+/dev/zero > delme;cat /dev/zero > delme;cat /dev/zero > delme;cat
+/dev/zero > delme
 
-Hmm, and I seem to have pretty much functional system.
+(Machine was running out of disk space.)
 
-I'll try to do some benchmarks now.
+(I alternate between cfq and bfq).
+
+Benchmark. I chose git describe because it is part of kernel build
+sometimes .. and I actually wait for that.
+
+pavel@duo:/data/l/linux-good$ time git describe
+warning: refname 'HEAD' is ambiguous.
+v3.15-rc8-144-g405dedd
+
+Unfortunately, results are not too good for BFQ. (Can you replicate
+the results?)
+
+# BFQ
+10.24user 1.62system 467.02 (7m47.028s) elapsed 2.54%CPU
+# CFQ
+8.55user 1.26system 69.57 (1m9.577s) elapsed 14.11%CPU
+# BFQ
+11.70user 3.18system 1491.59 (24m51.599s) elapsed 0.99%CPU
+# CFQ, no background load
+8.51user 0.75system 30.99 (0m30.994s) elapsed 29.91%CPU
+# CFQ
+8.70user 1.36system 74.72 (1m14.720s) elapsed 13.48%CPU
+
 									Pavel
 -- 
 (english) http://www.livejournal.com/~pavelmachek
