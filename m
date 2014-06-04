@@ -1,8 +1,8 @@
 From: Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>
 Subject: Re: [PATCH RFC - TAKE TWO - 00/12] New version of the BFQ I/O
 	Scheduler
-Date: Wed, 4 Jun 2014 10:39:55 +0200
-Message-ID: <20140604083955.GA878__12098.9343188286$1401871208$gmane$org@amd.pavel.ucw.cz>
+Date: Wed, 4 Jun 2014 11:08:56 +0200
+Message-ID: <20140604090856.GA1196@amd.pavel.ucw.cz>
 References: <20140528221929.GG1419@htj.dyndns.org>
 	<1401354343-5527-1-git-send-email-paolo.valente@unimore.it>
 	<20140530160712.GG24871@htj.dyndns.org>
@@ -32,47 +32,26 @@ List-Id: containers.vger.kernel.org
 
 Hi!
 
-> > Like this: I applied patch over today's git... 
-> > 
-> > I only see last bits of panic...
-> > 
-> > Call trace:
-> > __bfq_bfqq_expire
-> > bfq_bfqq_expire
-> > bfq_dispatch_requests
-> > sci_request_fn
-> > ...
-> > EIP: T.1839+0x26
+> Should this attempt be useless as well, I will, if you do not mind,
+>try by asking you more details about your system and reproducing your
+>configuration as much as I can.
 
-> > Any ideas?
-> > 			
-> 
-> We have tried to think about ways to trigger this failure, but in vain. Unfortunately, so far no user has reported any failure with this last version of bfq either. Finally, we have gone through a new static analysis, but also in this case uselessly.
-> 
-> So, if you are willing to retry, we have put online a version of the code filled with many BUG_ONs. I hope they can make it easier to track down the bug. The archive is here:
-> http://algogroup.unimore.it/people/paolo/disk_sched/debugging-patches/3.15.0-rc8-v7rc5.tgz
->
+It fails during boot or shortly after that when clicking in gnome2
+desktop. I had BFQ as a default scheduler.
 
-BUG: Unable to handle kernel paging request ad dee22fa0
-IP: bfq_del_bfqq_busy+0x4d
-...
-Tainted: GW 3.15.0-rc8+
-...
-Call trace:
-__bfq_bfqq_expire
-bfq_bfqq_expire
-? bfq_bfqq_expire
-? bfq_bfqq_expire
-bfq_idle_slice_timer
-call_timer_fn
-...
+Now I set CFQ as a default and it boots (as expected).
 
-> Should this attempt be useless as well, I will, if you do not mind, try by asking you more details about your system and reproducing your configuration as much as I can.
->
+root@duo:~# cat /sys/block/sda/queue/scheduler 
+noop deadline [cfq] bfq 
+root@duo:~# echo bfq > /sys/block/sda/queue/scheduler
+root@duo:~# dmesg | grep WARN
+WARNING: CPU: 1 PID: 1 at net/wireless/reg.c:479
+regulatory_init+0x88/0xf5()
+root@duo:~# 
 
-See the preivous email...
+Hmm, and I seem to have pretty much functional system.
 
-Best regards,
+I'll try to do some benchmarks now.
 									Pavel
 -- 
 (english) http://www.livejournal.com/~pavelmachek
