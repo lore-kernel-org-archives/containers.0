@@ -1,13 +1,14 @@
-From: H.H. Sheikh Mansour Bin Zayed Al Nahyan
-	<mansour.binzayed.alnahyan.adug-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: financial partner
-Date: Sun, 08 Jun 2014 18:17:56 -0400
-Message-ID: <E1WtlPY-0008Nn-Be@pw3.digitalproserver.com>
-Reply-To: mansour.binzayed.alnahyan.adug-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: Alin Dobre <alin.dobre-1hSFou9RDDldEee+Cai+ZQ@public.gmane.org>
+Subject: Re: [RFC][PATCH] net: Allow xt_owner in any user namespace
+Date: Mon, 09 Jun 2014 22:00:29 +0100
+Message-ID: <5396206D.2090607__11779.2411977009$1402347723$gmane$org@elastichosts.com>
+References: <537B7FF6.9050103@elastichosts.com>	<877g5eg7wy.fsf@x220.int.ebiederm.org>
+	<537D706D.4010303@1h.com> <87vbsus3wb.fsf_-_@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <87vbsus3wb.fsf_-_-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,27 +18,12 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Marian Marinov <mm-108MBtLGafw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jan Engelhardt <jengelh-nopoi9nDyk+ELgA04lAiVw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Unfortunately, applying this patch now makes iptables return EINVAL both
+on host and container.
 
-Dear partner,
-I represent International petroleum  Investment company (www.ipic.ae)
-base in Abu Dhabi,UAE.
-
-My group is ready to facilitate and fund any business that is capable
-of generating 5% annual return on investment (AROI).
-
-JV partnership and loan financing and crude oil deals can also be considered.
-Please contact us,for a possible business collaboration.
-Thank you.
-
-H.H. Sheikh Mansour Bin Zayed Al Nahyan
-chairman,
-International Petroleum Investment Company
-Member of the Emirates Investment Authority
-Sheikh Zayed the 1" Street
-Abu Dhabi, United Arab Emirates.
-Phone: 971 2 633 6555
-private Email: mansour.binzayed.alnahyan-mkVsJsPdsSwgShrbG2HseWXUKtMal90r1362AIYfs0M@public.gmane.org
-www.ipic.ae
+Cheers,
+Alin.
