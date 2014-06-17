@@ -1,21 +1,11 @@
-From: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-Subject: Re: [PATCH RFC - TAKE TWO - 10/12] block,
-	bfq: add Early Queue Merge (EQM)
-Date: Mon, 16 Jun 2014 13:23:34 +0200
-Message-ID: <EB40F548-C6D3-441D-B67B-2FCA8C797563__47718.9624486074$1402917834$gmane$org@unimore.it>
-References: <20140528221929.GG1419@htj.dyndns.org>
-	<1401354343-5527-1-git-send-email-paolo.valente@unimore.it>
-	<1401354343-5527-11-git-send-email-paolo.valente@unimore.it>
-	<20140601000331.GA29085@htj.dyndns.org>
-	<3B7B1A46-46EB-4C52-A52C-4F79C71D14C2@unimore.it>
-	<20140603162844.GD26210@htj.dyndns.org>
-	<91383F1F-69C3-4B88-B51E-30204818F1AB@unimore.it>
-	<20140604130446.GA5004@htj.dyndns.org>
-Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.2\))
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+From: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH] ns: introduce getnspid syscall
+Date: Tue, 17 Jun 2014 18:21:36 +0800
+Message-ID: <1403000496-10094-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140604130446.GA5004-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,87 +15,140 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mauro Andreolini <mauro.andreolini-rcYM44yAMweonA0d6jMUrA@public.gmane.org>, Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Arianna Avanzini <avanzini.arianna-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
+We need a direct method of getting the pid inside containers.
+If some issues occurred inside container guest, host user
+could not know which process is in trouble just by guest pid:
+the users of container guest only knew the pid inside containers.
+This will bring obstacle for trouble shooting.
 
-Il giorno 04/giu/2014, alle ore 15:04, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> ha scritto:
+int getnspid(pid_t pid, int fd1, int fd2, int pidtype);
 
-> Hello,
-> =
+pid: the pid number need to be translated.
 
->> [=85]
+fd: a file descriptor referring to one of
+    the namespace entries in a /proc/[pid]/ns/pid.
+    fd1 for destination ns(ns1), where the pid came from.
+    fd2 for reference ns(ns2), while fd2 = -2 means for current ns.
 
->> The problem is not the duration of the plugging, but the fact that, if a=
- request merge
->> succeeds for a bio, then there will be no set_request invocation for tha=
-t bio.
->> Therefore, without early merging, there will be no queue merge at all.
->> =
+pidtype: 0 PIDTYPE_PID; 1 PIDTYPE_PGID; 2 PIDTYPE_SID.
 
->> If my replies are correct and convince you, then I will use them to inte=
-grate and
->> hopefully improve the documentation for this patch.
-> =
+return value:
+    >0: translated pid in ns1(fd1) seen from ns2(fd2).
+    <0: on failure.
 
-> Ah, okay, so it's about missing the chance to look for cooperating
-> queues when merge succeeds.  Yeah, that makes a lot more sense to me.
-> If that's the case, wouldn't it be better to try finding cooperating
-> queues after each merge success rather than each allow_merge()
-> invocation?
+Signed-off-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
+ arch/x86/syscalls/syscall_32.tbl |  1 +
+ arch/x86/syscalls/syscall_64.tbl |  1 +
+ include/linux/syscalls.h         |  1 +
+ kernel/nsproxy.c                 | 60 ++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 63 insertions(+)
 
-If I have correctly understandood your question, then the answer is unfortu=
-nately no.
-
-First, without any queue-merge control in allow_merge, a bio-merge attempt =
-would
-fail if the destination queue of the bio differs from the queue containing =
-the target rq,
-even if the two queues should be merged. With early queue merge, not only t=
-he two
-queues are merged, but also the request-merge attempt succeeds.
-
-Second, if the queue-merge check was executed only after a successful reque=
-st merge,
-then, in the case of a request-merge failure, the next chance to merge the =
-destination queue
-of the bio with some other queue would be in the next add_request. But, acc=
-ording to the
-what we already discussed in some previous emails, waiting for the add_requ=
-est is usually
-too much with, e.g., the I/O generated by QEMU I/O threads.
-
-In the end, moving queue merging to after successful request merges would m=
-ost certainly
-cause the throughput to drop.
-
-
->  And let's please document what we're catching with the
-> extra attempts.
-> =
-
-
-Definitely, thanks,
-
-Paolo
-
-> Thanks.
-> =
-
-> -- =
-
-> tejun
-
-
---
-Paolo Valente                                                 =
-
-Algogroup
-Dipartimento di Fisica, Informatica e Matematica		=
-
-Via Campi, 213/B
-41125 Modena - Italy        				  =
-
-homepage:  http://algogroup.unimore.it/people/paolo/
+diff --git a/arch/x86/syscalls/syscall_32.tbl b/arch/x86/syscalls/syscall_32.tbl
+index d6b8679..9de0b32 100644
+--- a/arch/x86/syscalls/syscall_32.tbl
++++ b/arch/x86/syscalls/syscall_32.tbl
+@@ -360,3 +360,4 @@
+ 351	i386	sched_setattr		sys_sched_setattr
+ 352	i386	sched_getattr		sys_sched_getattr
+ 353	i386	renameat2		sys_renameat2
++354	i386	getnspid		sys_getnspid
+diff --git a/arch/x86/syscalls/syscall_64.tbl b/arch/x86/syscalls/syscall_64.tbl
+index ec255a1..1630a8a 100644
+--- a/arch/x86/syscalls/syscall_64.tbl
++++ b/arch/x86/syscalls/syscall_64.tbl
+@@ -323,6 +323,7 @@
+ 314	common	sched_setattr		sys_sched_setattr
+ 315	common	sched_getattr		sys_sched_getattr
+ 316	common	renameat2		sys_renameat2
++317	common	getnspid		sys_getnspid
+ 
+ #
+ # x32-specific system call numbers start at 512 to avoid cache impact
+diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+index b0881a0..271c7b1 100644
+--- a/include/linux/syscalls.h
++++ b/include/linux/syscalls.h
+@@ -866,4 +866,5 @@ asmlinkage long sys_process_vm_writev(pid_t pid,
+ asmlinkage long sys_kcmp(pid_t pid1, pid_t pid2, int type,
+ 			 unsigned long idx1, unsigned long idx2);
+ asmlinkage long sys_finit_module(int fd, const char __user *uargs, int flags);
++asmlinkage long sys_getpidns(pid_t pid, int fd1, int fd2, int pidtype);
+ #endif
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index 8e78110..3eda90a 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -261,6 +261,66 @@ out:
+ 	return err;
+ }
+ 
++SYSCALL_DEFINE4(getnspid, pid_t, pid, int, fd1, int, fd2, int, pidtype)
++{
++	struct file *file1 = NULL, *file2 = NULL;
++	struct task_struct *task;
++	struct pid_namespace *ns1, *ns2;
++	struct proc_ns *ei;
++	int ret = -1;
++
++	if (pidtype >= PIDTYPE_MAX)
++		return -EINVAL;
++
++	file1 = proc_ns_fget(fd1);
++	if (IS_ERR(file1))
++		return PTR_ERR(file1);
++	ei = get_proc_ns(file_inode(file1));
++	ns1 = (struct pid_namespace *)ei->ns;
++
++	/* fd == -2 for current pid ns */
++	if (fd2 == -2) {
++		ns2 = task_active_pid_ns(current);
++	} else {
++		file2 = proc_ns_fget(fd2);
++		if (IS_ERR(file2)) {
++			fput(file1);
++			return PTR_ERR(file2);
++		}
++		ei = get_proc_ns(file_inode(file2));
++		ns2 = (struct pid_namespace *)ei->ns;
++	}
++
++	rcu_read_lock();
++	task = find_task_by_pid_ns(pid, ns1);
++	rcu_read_unlock();
++	if (!task) {
++		ret = -ESRCH;
++		goto out;
++	}
++
++	switch (pidtype) {
++	case PIDTYPE_PID:
++		ret = task_pid_nr_ns(task, ns2);
++		break;
++	case PIDTYPE_PGID:
++		ret = task_pgrp_nr_ns(task, ns2);
++		break;
++	case PIDTYPE_SID:
++		ret = task_session_nr_ns(task, ns2);
++		break;
++	default:
++		ret = -EINVAL;
++	}
++	ret = (ret == 0) ? -ESRCH : ret;
++
++out:
++	fput(file1);
++	if (file2)
++		fput(file2);
++	return ret;
++}
++
+ int __init nsproxy_cache_init(void)
+ {
+ 	nsproxy_cachep = KMEM_CACHE(nsproxy, SLAB_PANIC);
+-- 
+1.9.0
