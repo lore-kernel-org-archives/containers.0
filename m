@@ -1,7 +1,7 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [PATCH] ns: introduce getnspid syscall
-Date: Tue, 17 Jun 2014 18:12:44 -0700
-Message-ID: <87mwdbnhpv.fsf@x220.int.ebiederm.org>
+Date: Tue, 17 Jun 2014 18:31:15 -0700
+Message-ID: <87fvj3ngv0.fsf@x220.int.ebiederm.org>
 References: <1403000496-10094-1-git-send-email-chenhanxiao@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,7 +19,7 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> writes:
@@ -31,13 +31,13 @@ Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> writes:
 > This will bring obstacle for trouble shooting.
 
 There is also some ongoing work to export this information via a proc
-file which may be more appropriate.  Certainly for debugging something
-easily human discoverable sounds more appropriate.
+file which seems more appropriate for solving your problem.  Certainly
+for debugging something easily human discoverable is needed.
 
 > int getnspid(pid_t pid, int fd1, int fd2, int pidtype);
 
 The pidtype is nonsense.  The translation of a pid does not depend upon
-type.  And using that kind of nonsense will just lead you into confusion.
+type.  Using that kind of nonsense will lead you and others into confusion.
 
 > pid: the pid number need to be translated.
 >
@@ -136,6 +136,10 @@ Eric
 > +
 > +	rcu_read_lock();
 > +	task = find_task_by_pid_ns(pid, ns1);
+
+The functions you want to be using here are:
+find_pid_ns and pid_nr_ns.
+
 > +	rcu_read_unlock();
 > +	if (!task) {
 > +		ret = -ESRCH;
