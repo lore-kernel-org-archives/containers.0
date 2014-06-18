@@ -1,14 +1,14 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH] ns: introduce getnspid syscall
-Date: Tue, 17 Jun 2014 18:31:15 -0700
-Message-ID: <87fvj3ngv0.fsf@x220.int.ebiederm.org>
+From: "chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: RE: [PATCH] ns: introduce getnspid syscall
+Date: Wed, 18 Jun 2014 08:28:30 +0000
+Message-ID: <5871495633F38949900D2BF2DC04883E5483C2@G08CNEXMBPEKD02.g08.fujitsu.local>
 References: <1403000496-10094-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<53A030CE.6070101@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============7967918347951534864=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1403000496-10094-1-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-	(Chen Hanxiao's message of "Tue, 17 Jun 2014 18:21:36 +0800")
+In-Reply-To: <53A030CE.6070101-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,156 +18,67 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> writes:
+--===============7967918347951534864==
+Content-Language: zh-CN
+Content-Type: text/plain; charset="gb2312"
+Content-Transfer-Encoding: base64
 
-> We need a direct method of getting the pid inside containers.
-> If some issues occurred inside container guest, host user
-> could not know which process is in trouble just by guest pid:
-> the users of container guest only knew the pid inside containers.
-> This will bring obstacle for trouble shooting.
+DQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogUGF2ZWwgRW1lbHlhbm92
+IFttYWlsdG86eGVtdWxAcGFyYWxsZWxzLmNvbV0NCj4gU2VudDogVHVlc2RheSwgSnVuZSAxNywg
+MjAxNCA4OjEzIFBNDQo+IFRvOiBDaGVuLCBIYW54aWFvL7PCIOrPz/YNCj4gQ2M6IGNvbnRhaW5l
+cnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc7IGxpbnV4LWtlcm5lbEB2Z2VyLmtlcm5lbC5v
+cmc7DQo+IEFuZHJldyBNb3J0b247IEVyaWMgVy4gQmllZGVybWFuOyBTZXJnZSBIYWxseW47IERh
+bmllbCBQLiBCZXJyYW5nZTsgT2xlZyBOZXN0ZXJvdjsNCj4gQWwgVmlybzsgRGF2aWQgSG93ZWxs
+czsgUmljaGFyZCBXZWluYmVyZ2VyOyBWYXNpbGl5IEt1bGlrb3Y7IEdvdG91LCBZYXN1bm9yaS8N
+Cj4gzuWNdSC/tc7EDQo+IFN1YmplY3Q6IFJlOiBbUEFUQ0hdIG5zOiBpbnRyb2R1Y2UgZ2V0bnNw
+aWQgc3lzY2FsbA0KPiANCj4gT24gMDYvMTcvMjAxNCAwMjoyMSBQTSwgQ2hlbiBIYW54aWFvIHdy
+b3RlOg0KPiA+IFdlIG5lZWQgYSBkaXJlY3QgbWV0aG9kIG9mIGdldHRpbmcgdGhlIHBpZCBpbnNp
+ZGUgY29udGFpbmVycy4NCj4gPiBJZiBzb21lIGlzc3VlcyBvY2N1cnJlZCBpbnNpZGUgY29udGFp
+bmVyIGd1ZXN0LCBob3N0IHVzZXINCj4gPiBjb3VsZCBub3Qga25vdyB3aGljaCBwcm9jZXNzIGlz
+IGluIHRyb3VibGUganVzdCBieSBndWVzdCBwaWQ6DQo+ID4gdGhlIHVzZXJzIG9mIGNvbnRhaW5l
+ciBndWVzdCBvbmx5IGtuZXcgdGhlIHBpZCBpbnNpZGUgY29udGFpbmVycy4NCj4gPiBUaGlzIHdp
+bGwgYnJpbmcgb2JzdGFjbGUgZm9yIHRyb3VibGUgc2hvb3RpbmcuDQo+ID4NCj4gPiBpbnQgZ2V0
+bnNwaWQocGlkX3QgcGlkLCBpbnQgZmQxLCBpbnQgZmQyLCBpbnQgcGlkdHlwZSk7DQo+ID4NCj4g
+PiBwaWQ6IHRoZSBwaWQgbnVtYmVyIG5lZWQgdG8gYmUgdHJhbnNsYXRlZC4NCj4gPg0KPiA+IGZk
+OiBhIGZpbGUgZGVzY3JpcHRvciByZWZlcnJpbmcgdG8gb25lIG9mDQo+ID4gICAgIHRoZSBuYW1l
+c3BhY2UgZW50cmllcyBpbiBhIC9wcm9jL1twaWRdL25zL3BpZC4NCj4gPiAgICAgZmQxIGZvciBk
+ZXN0aW5hdGlvbiBucyhuczEpLCB3aGVyZSB0aGUgcGlkIGNhbWUgZnJvbS4NCj4gPiAgICAgZmQy
+IGZvciByZWZlcmVuY2UgbnMobnMyKSwgd2hpbGUgZmQyID0gLTIgbWVhbnMgZm9yIGN1cnJlbnQg
+bnMuDQo+ID4NCj4gPiBwaWR0eXBlOiAwIFBJRFRZUEVfUElEOyAxIFBJRFRZUEVfUEdJRDsgMiBQ
+SURUWVBFX1NJRC4NCj4gPg0KPiA+IHJldHVybiB2YWx1ZToNCj4gPiAgICAgPjA6IHRyYW5zbGF0
+ZWQgcGlkIGluIG5zMShmZDEpIHNlZW4gZnJvbSBuczIoZmQyKS4NCj4gPiAgICAgPDA6IG9uIGZh
+aWx1cmUuDQo+ID4NCj4gPiArCX0NCj4gPiArDQo+ID4gKwlzd2l0Y2ggKHBpZHR5cGUpIHsNCj4g
+DQo+IFRoZXJlJ3Mgbm8gbmVlZCBpbiBzd2l0Y2gsIHRoZSBfX3Rhc2tfcGlkX25yX25zKCkgYWNj
+ZXB0cw0KPiB0aGUgdHlwZSBhcmd1bWVudC4NCj4gDQoNClllcywgSSB0aGluayB3ZSBzdGlsbCBo
+YXZlIHRoYXQga2luZCBvZiBmdW5jdGlvbnMsIHNvIEkgdXNlZCB0aGVtLi4uDQoNCj4gPiArCWNh
+c2UgUElEVFlQRV9QSUQ6DQo+ID4gKwkJcmV0ID0gdGFza19waWRfbnJfbnModGFzaywgbnMyKTsN
+Cj4gDQo+IEJ1dCB0aGlzIGlzIG5vdCBjb3JyZWN0LiBJZiB0YXNrIGRvZXNuJ3QgbGl2ZSBpbiBu
+czIsIGJ1dCBuczINCj4ganVzdCBoYXMgdGhlIG5zLT5sZXZlbCBzbWFsbCBlbm91Z2gsIHRoZW4g
+dGhlIHdyb25nIHBpZCB2YWx1ZQ0KPiB3b3VsZCBiZSByZXBvcnRlZC4NCj4gDQoNClJpZ2h0LCB3
+ZSBzaG91bGQgY2hlY2sgd2hldGhlciB0aGUgdGFzayBiZWxvbmdlZCB0byB0aGF0IG5hbWVzcGFj
+ZSBmaXJzdGx5Lg0KDQpUaGFua3MsDQotIENoZW4NCg0KPiA+ICsJCWJyZWFrOw0KPiA+ICsJY2Fz
+ZSBQSURUWVBFX1BHSUQ6DQo+ID4gKwkJcmV0ID0gdGFza19wZ3JwX25yX25zKHRhc2ssIG5zMik7
+DQo+ID4gKwkJYnJlYWs7DQo+ID4gKwljYXNlIFBJRFRZUEVfU0lEOg0KPiA+ICsJCXJldCA9IHRh
+c2tfc2Vzc2lvbl9ucl9ucyh0YXNrLCBuczIpOw0KPiA+ICsJCWJyZWFrOw0KPiA+ICsJZGVmYXVs
+dDoNCj4gPiArCQlyZXQgPSAtRUlOVkFMOw0KPiA+ICsJfQ0KPiA+ICsJcmV0ID0gKHJldCA9PSAw
+KSA/IC1FU1JDSCA6IHJldDsNCj4gPiArDQo+ID4gK291dDoNCj4gPiArCWZwdXQoZmlsZTEpOw0K
+PiA+ICsJaWYgKGZpbGUyKQ0KPiA+ICsJCWZwdXQoZmlsZTIpOw0KPiA+ICsJcmV0dXJuIHJldDsN
+Cj4gPiArfQ0KPiA+ICsNCj4gPiAgaW50IF9faW5pdCBuc3Byb3h5X2NhY2hlX2luaXQodm9pZCkN
+Cj4gPiAgew0KPiA+ICAJbnNwcm94eV9jYWNoZXAgPSBLTUVNX0NBQ0hFKG5zcHJveHksIFNMQUJf
+UEFOSUMpOw0KPiA+DQo+IA0KDQo=
 
-There is also some ongoing work to export this information via a proc
-file which seems more appropriate for solving your problem.  Certainly
-for debugging something easily human discoverable is needed.
+--===============7967918347951534864==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-> int getnspid(pid_t pid, int fd1, int fd2, int pidtype);
-
-The pidtype is nonsense.  The translation of a pid does not depend upon
-type.  Using that kind of nonsense will lead you and others into confusion.
-
-> pid: the pid number need to be translated.
->
-> fd: a file descriptor referring to one of
->     the namespace entries in a /proc/[pid]/ns/pid.
->     fd1 for destination ns(ns1), where the pid came from.
->     fd2 for reference ns(ns2), while fd2 = -2 means for current ns.
->
-> pidtype: 0 PIDTYPE_PID; 1 PIDTYPE_PGID; 2 PIDTYPE_SID.
->
-> return value:
->     >0: translated pid in ns1(fd1) seen from ns2(fd2).
->     <0: on failure.
-
-Elsewhere we use 0 on pid translation failure.  Why be different here?
-
-Eric
-
-
-> Signed-off-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> ---
->  arch/x86/syscalls/syscall_32.tbl |  1 +
->  arch/x86/syscalls/syscall_64.tbl |  1 +
->  include/linux/syscalls.h         |  1 +
->  kernel/nsproxy.c                 | 60 ++++++++++++++++++++++++++++++++++++++++
->  4 files changed, 63 insertions(+)
->
-> diff --git a/arch/x86/syscalls/syscall_32.tbl b/arch/x86/syscalls/syscall_32.tbl
-> index d6b8679..9de0b32 100644
-> --- a/arch/x86/syscalls/syscall_32.tbl
-> +++ b/arch/x86/syscalls/syscall_32.tbl
-> @@ -360,3 +360,4 @@
->  351	i386	sched_setattr		sys_sched_setattr
->  352	i386	sched_getattr		sys_sched_getattr
->  353	i386	renameat2		sys_renameat2
-> +354	i386	getnspid		sys_getnspid
-> diff --git a/arch/x86/syscalls/syscall_64.tbl b/arch/x86/syscalls/syscall_64.tbl
-> index ec255a1..1630a8a 100644
-> --- a/arch/x86/syscalls/syscall_64.tbl
-> +++ b/arch/x86/syscalls/syscall_64.tbl
-> @@ -323,6 +323,7 @@
->  314	common	sched_setattr		sys_sched_setattr
->  315	common	sched_getattr		sys_sched_getattr
->  316	common	renameat2		sys_renameat2
-> +317	common	getnspid		sys_getnspid
->  
->  #
->  # x32-specific system call numbers start at 512 to avoid cache impact
-> diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
-> index b0881a0..271c7b1 100644
-> --- a/include/linux/syscalls.h
-> +++ b/include/linux/syscalls.h
-> @@ -866,4 +866,5 @@ asmlinkage long sys_process_vm_writev(pid_t pid,
->  asmlinkage long sys_kcmp(pid_t pid1, pid_t pid2, int type,
->  			 unsigned long idx1, unsigned long idx2);
->  asmlinkage long sys_finit_module(int fd, const char __user *uargs, int flags);
-> +asmlinkage long sys_getpidns(pid_t pid, int fd1, int fd2, int pidtype);
->  #endif
-> diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-> index 8e78110..3eda90a 100644
-> --- a/kernel/nsproxy.c
-> +++ b/kernel/nsproxy.c
-> @@ -261,6 +261,66 @@ out:
->  	return err;
->  }
->  
-> +SYSCALL_DEFINE4(getnspid, pid_t, pid, int, fd1, int, fd2, int, pidtype)
-> +{
-> +	struct file *file1 = NULL, *file2 = NULL;
-> +	struct task_struct *task;
-> +	struct pid_namespace *ns1, *ns2;
-> +	struct proc_ns *ei;
-> +	int ret = -1;
-> +
-> +	if (pidtype >= PIDTYPE_MAX)
-> +		return -EINVAL;
-> +
-> +	file1 = proc_ns_fget(fd1);
-> +	if (IS_ERR(file1))
-> +		return PTR_ERR(file1);
-> +	ei = get_proc_ns(file_inode(file1));
-> +	ns1 = (struct pid_namespace *)ei->ns;
-> +
-> +	/* fd == -2 for current pid ns */
-> +	if (fd2 == -2) {
-> +		ns2 = task_active_pid_ns(current);
-> +	} else {
-> +		file2 = proc_ns_fget(fd2);
-> +		if (IS_ERR(file2)) {
-> +			fput(file1);
-> +			return PTR_ERR(file2);
-> +		}
-> +		ei = get_proc_ns(file_inode(file2));
-> +		ns2 = (struct pid_namespace *)ei->ns;
-> +	}
-> +
-> +	rcu_read_lock();
-> +	task = find_task_by_pid_ns(pid, ns1);
-
-The functions you want to be using here are:
-find_pid_ns and pid_nr_ns.
-
-> +	rcu_read_unlock();
-> +	if (!task) {
-> +		ret = -ESRCH;
-> +		goto out;
-> +	}
-> +
-> +	switch (pidtype) {
-> +	case PIDTYPE_PID:
-> +		ret = task_pid_nr_ns(task, ns2);
-> +		break;
-> +	case PIDTYPE_PGID:
-> +		ret = task_pgrp_nr_ns(task, ns2);
-> +		break;
-> +	case PIDTYPE_SID:
-> +		ret = task_session_nr_ns(task, ns2);
-> +		break;
-> +	default:
-> +		ret = -EINVAL;
-> +	}
-> +	ret = (ret == 0) ? -ESRCH : ret;
-> +
-> +out:
-> +	fput(file1);
-> +	if (file2)
-> +		fput(file2);
-> +	return ret;
-> +}
-> +
->  int __init nsproxy_cache_init(void)
->  {
->  	nsproxy_cachep = KMEM_CACHE(nsproxy, SLAB_PANIC);
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============7967918347951534864==--
