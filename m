@@ -1,14 +1,14 @@
-From: "chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: RE: [PATCH] ns: introduce getnspid syscall
-Date: Wed, 18 Jun 2014 10:03:40 +0000
-Message-ID: <5871495633F38949900D2BF2DC04883E548592@G08CNEXMBPEKD02.g08.fujitsu.local>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] ns: introduce getnspid syscall
+Date: Wed, 18 Jun 2014 19:58:07 +0200
+Message-ID: <20140618175807.GA21565@redhat.com>
 References: <1403000496-10094-1-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<87fvj3ngv0.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============7158187244849990721=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87fvj3ngv0.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
-Content-Language: zh-CN
+Content-Disposition: inline
+In-Reply-To: <1403000496-10094-1-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,68 +18,34 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
---===============7158187244849990721==
-Content-Language: zh-CN
-Content-Type: text/plain; charset="gb2312"
-Content-Transfer-Encoding: base64
+On 06/17, Chen Hanxiao wrote:
+>
+> +SYSCALL_DEFINE4(getnspid, pid_t, pid, int, fd1, int, fd2, int, pidtype)
+> +{
+> +	struct file *file1 = NULL, *file2 = NULL;
+> +	struct task_struct *task;
+> +	struct pid_namespace *ns1, *ns2;
+> +	struct proc_ns *ei;
+> +	int ret = -1;
+> +
+> +	if (pidtype >= PIDTYPE_MAX)
+> +		return -EINVAL;
+> +
+> +	file1 = proc_ns_fget(fd1);
+> +	if (IS_ERR(file1))
+> +		return PTR_ERR(file1);
+> +	ei = get_proc_ns(file_inode(file1));
+> +	ns1 = (struct pid_namespace *)ei->ns;
 
-SGksDQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogRXJpYyBXLiBCaWVk
-ZXJtYW4gW21haWx0bzplYmllZGVybUB4bWlzc2lvbi5jb21dDQo+IFNlbnQ6IFdlZG5lc2RheSwg
-SnVuZSAxOCwgMjAxNCA5OjMxIEFNDQo+IFRvOiBDaGVuLCBIYW54aWFvL7PCIOrPz/YNCj4gQ2M6
-IGNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc7IGxpbnV4LWtlcm5lbEB2Z2Vy
-Lmtlcm5lbC5vcmc7DQo+IEFuZHJldyBNb3J0b247IFNlcmdlIEhhbGx5bjsgRGFuaWVsIFAuIEJl
-cnJhbmdlOyBPbGVnIE5lc3Rlcm92OyBBbCBWaXJvOyBEYXZpZA0KPiBIb3dlbGxzOyBSaWNoYXJk
-IFdlaW5iZXJnZXI7IFBhdmVsIEVtZWx5YW5vdjsgVmFzaWxpeSBLdWxpa292OyBHb3RvdSwgWWFz
-dW5vcmkvDQo+IM7ljXUgv7XOxDsgTGludXggQVBJOyBNaWNoYWVsIEtlcnJpc2stbWFucGFnZXMN
-Cj4gU3ViamVjdDogUmU6IFtQQVRDSF0gbnM6IGludHJvZHVjZSBnZXRuc3BpZCBzeXNjYWxsDQo+
-IA0KPiBDaGVuIEhhbnhpYW8gPGNoZW5oYW54aWFvQGNuLmZ1aml0c3UuY29tPiB3cml0ZXM6DQo+
-IA0KPiA+IFdlIG5lZWQgYSBkaXJlY3QgbWV0aG9kIG9mIGdldHRpbmcgdGhlIHBpZCBpbnNpZGUg
-Y29udGFpbmVycy4NCj4gPiBJZiBzb21lIGlzc3VlcyBvY2N1cnJlZCBpbnNpZGUgY29udGFpbmVy
-IGd1ZXN0LCBob3N0IHVzZXINCj4gPiBjb3VsZCBub3Qga25vdyB3aGljaCBwcm9jZXNzIGlzIGlu
-IHRyb3VibGUganVzdCBieSBndWVzdCBwaWQ6DQo+ID4gdGhlIHVzZXJzIG9mIGNvbnRhaW5lciBn
-dWVzdCBvbmx5IGtuZXcgdGhlIHBpZCBpbnNpZGUgY29udGFpbmVycy4NCj4gPiBUaGlzIHdpbGwg
-YnJpbmcgb2JzdGFjbGUgZm9yIHRyb3VibGUgc2hvb3RpbmcuDQo+IA0KPiBUaGVyZSBpcyBhbHNv
-IHNvbWUgb25nb2luZyB3b3JrIHRvIGV4cG9ydCB0aGlzIGluZm9ybWF0aW9uIHZpYSBhIHByb2MN
-Cj4gZmlsZSB3aGljaCBzZWVtcyBtb3JlIGFwcHJvcHJpYXRlIGZvciBzb2x2aW5nIHlvdXIgcHJv
-YmxlbS4gIENlcnRhaW5seQ0KPiBmb3IgZGVidWdnaW5nIHNvbWV0aGluZyBlYXNpbHkgaHVtYW4g
-ZGlzY292ZXJhYmxlIGlzIG5lZWRlZC4NCj4gDQoNCkRvIHlvdSBtZWFuIHRoaXMgcGF0Y2g6DQov
-cHJvYy9waWQvc3RhdHVzOiBzaG93IGFsbCBzZXRzIG9mIHBpZCBhY2NvcmRpbmcgdG8gbnMNCmh0
-dHBzOi8vbGttbC5vcmcvbGttbC8yMDE0LzUvMjYvMTQ1DQoNCkJ1dCBubyBuZXcgY29tbWVudHMg
-b24gdGhpcyBwYXRjaCwNClBhdmVsIHN1Z2dlc3RlZCB0aGF0IGEgc3lzY2FsbCBzaG91bGQgYmUg
-YSBnb29kIGNob2ljZS4NCkRvIHdlIHNob3VsZCBjb250aW51ZSB0aGlzIGtpbmQgb2Ygd29yaz8N
-Cg0KPiA+IGludCBnZXRuc3BpZChwaWRfdCBwaWQsIGludCBmZDEsIGludCBmZDIsIGludCBwaWR0
-eXBlKTsNCj4gDQo+IFRoZSBwaWR0eXBlIGlzIG5vbnNlbnNlLiAgVGhlIHRyYW5zbGF0aW9uIG9m
-IGEgcGlkIGRvZXMgbm90IGRlcGVuZCB1cG9uDQo+IHR5cGUuICBVc2luZyB0aGF0IGtpbmQgb2Yg
-bm9uc2Vuc2Ugd2lsbCBsZWFkIHlvdSBhbmQgb3RoZXJzIGludG8gY29uZnVzaW9uLg0KPiANCg0K
-SSBzZWUuDQoNCj4gPiBwaWQ6IHRoZSBwaWQgbnVtYmVyIG5lZWQgdG8gYmUgdHJhbnNsYXRlZC4N
-Cj4gPg0KPiA+IGZkOiBhIGZpbGUgZGVzY3JpcHRvciByZWZlcnJpbmcgdG8gb25lIG9mDQo+ID4g
-ICAgIHRoZSBuYW1lc3BhY2UgZW50cmllcyBpbiBhIC9wcm9jL1twaWRdL25zL3BpZC4NCj4gPiAg
-ICAgZmQxIGZvciBkZXN0aW5hdGlvbiBucyhuczEpLCB3aGVyZSB0aGUgcGlkIGNhbWUgZnJvbS4N
-Cj4gPiAgICAgZmQyIGZvciByZWZlcmVuY2UgbnMobnMyKSwgd2hpbGUgZmQyID0gLTIgbWVhbnMg
-Zm9yIGN1cnJlbnQgbnMuDQo+ID4NCj4gPiBwaWR0eXBlOiAwIFBJRFRZUEVfUElEOyAxIFBJRFRZ
-UEVfUEdJRDsgMiBQSURUWVBFX1NJRC4NCj4gPg0KPiA+IHJldHVybiB2YWx1ZToNCj4gPiAgICAg
-PjA6IHRyYW5zbGF0ZWQgcGlkIGluIG5zMShmZDEpIHNlZW4gZnJvbSBuczIoZmQyKS4NCj4gPiAg
-ICAgPDA6IG9uIGZhaWx1cmUuDQo+IA0KPiBFbHNld2hlcmUgd2UgdXNlIDAgb24gcGlkIHRyYW5z
-bGF0aW9uIGZhaWx1cmUuICBXaHkgYmUgZGlmZmVyZW50IGhlcmU/DQo+IA0KDQpJdCBzaG91bGQg
-YmUgPD0wLiBBbmQgPDAgbWVhbnMgc29tZSBvdGhlciBmYWlsdXJlcy4NCg0KPiBFcmljDQo+IA0K
-PiANCj4gPiBTaWduZWQtb2ZmLWJ5OiBDaGVuIEhhbnhpYW8gPGNoZW5oYW54aWFvQGNuLmZ1aml0
-c3UuY29tPg0KPiA+ICsNCj4gPiArCXJjdV9yZWFkX2xvY2soKTsNCj4gPiArCXRhc2sgPSBmaW5k
-X3Rhc2tfYnlfcGlkX25zKHBpZCwgbnMxKTsNCj4gDQo+IFRoZSBmdW5jdGlvbnMgeW91IHdhbnQg
-dG8gYmUgdXNpbmcgaGVyZSBhcmU6DQo+IGZpbmRfcGlkX25zIGFuZCBwaWRfbnJfbnMuDQo+IA0K
-DQpUaGFua3MgZm9yIHlvdXIgaGludC4NCg0KLSBDaGVuDQoNCg0K
+and I am not sure this part is correct... shouldn't we also verify that
+ns_ops == pidns_operations ?
 
---===============7158187244849990721==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+Perhaps it makes sense to generalize get_net_ns_by_fd() into
+"void *get_ns_by_fd(fd, type)"... this probably needs another "check-and-get"
+method in proc_ns_operations(). I dunno.
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============7158187244849990721==--
+Oleg.
