@@ -1,15 +1,11 @@
-From: "chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: RE: [PATCH] ns: introduce getnspid syscall
-Date: Wed, 18 Jun 2014 08:29:56 +0000
-Message-ID: <5871495633F38949900D2BF2DC04883E5483D7@G08CNEXMBPEKD02.g08.fujitsu.local>
-References: <1403000496-10094-1-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<CAHO5Pa0SHZXsbT14adxnMYGg6dG0DaMabNoreWAO-JDCCUKmWA@mail.gmail.com>
+From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: [Announce] Checkpoint-restore tool v1.3-rc2
+Date: Wed, 18 Jun 2014 13:55:56 +0400
+Message-ID: <53A1622C.4000207@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAHO5Pa0SHZXsbT14adxnMYGg6dG0DaMabNoreWAO-JDCCUKmWA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,32 +15,34 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Linux Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: CRIU <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-DQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogbXRrLmxpbnV4Lmxpc3Rz
-QGdtYWlsLmNvbSBbbWFpbHRvOm10ay5saW51eC5saXN0c0BnbWFpbC5jb21dIE9uIEJlaGFsZiBP
-Zg0KPiBNaWNoYWVsIEtlcnJpc2sNCj4gU2VudDogV2VkbmVzZGF5LCBKdW5lIDE4LCAyMDE0IDI6
-MjcgQU0NCj4gVG86IENoZW4sIEhhbnhpYW8v6ZmIIOaZl+mchA0KPiBDYzogY29udGFpbmVyczsg
-TGludXggS2VybmVsOyBSaWNoYXJkIFdlaW5iZXJnZXI7IFNlcmdlIEhhbGx5bjsgT2xlZyBOZXN0
-ZXJvdjsNCj4gRGF2aWQgSG93ZWxsczsgRXJpYyBXLiBCaWVkZXJtYW47IEFuZHJldyBNb3J0b247
-IEFsIFZpcm87IExpbnV4IEFQSTsgTWljaGFlbA0KPiBLZXJyaXNrLW1hbnBhZ2VzDQo+IFN1Ympl
-Y3Q6IFJlOiBbUEFUQ0hdIG5zOiBpbnRyb2R1Y2UgZ2V0bnNwaWQgc3lzY2FsbA0KPiANCj4gSGVs
-bG8gQ2hlbiBIYW54aWFvDQo+IA0KPiBPbiBUdWUsIEp1biAxNywgMjAxNCBhdCAxMjoyMSBQTSwg
-Q2hlbiBIYW54aWFvDQo+IDxjaGVuaGFueGlhb0Bjbi5mdWppdHN1LmNvbT4gd3JvdGU6DQo+ID4g
-V2UgbmVlZCBhIGRpcmVjdCBtZXRob2Qgb2YgZ2V0dGluZyB0aGUgcGlkIGluc2lkZSBjb250YWlu
-ZXJzLg0KPiA+IElmIHNvbWUgaXNzdWVzIG9jY3VycmVkIGluc2lkZSBjb250YWluZXIgZ3Vlc3Qs
-IGhvc3QgdXNlcg0KPiA+IGNvdWxkIG5vdCBrbm93IHdoaWNoIHByb2Nlc3MgaXMgaW4gdHJvdWJs
-ZSBqdXN0IGJ5IGd1ZXN0IHBpZDoNCj4gPiB0aGUgdXNlcnMgb2YgY29udGFpbmVyIGd1ZXN0IG9u
-bHkga25ldyB0aGUgcGlkIGluc2lkZSBjb250YWluZXJzLg0KPiA+IFRoaXMgd2lsbCBicmluZyBv
-YnN0YWNsZSBmb3IgdHJvdWJsZSBzaG9vdGluZy4NCj4gPg0KPiA+IGludCBnZXRuc3BpZChwaWRf
-dCBwaWQsIGludCBmZDEsIGludCBmZDIsIGludCBwaWR0eXBlKTsNCj4gDQo+IFBsZWFzZSBDQyBs
-aW51eC1hcGlAdmdlci5rZXJuZWwub3JnIG9uIGFsbCBwYXRjaGVzIHRoYXQgY2hhbmdlIHRoZSBB
-UEkNCj4gdGhhdCB0aGUga2VybmVsIHByZXNlbnRzIHRvIHVzZXIgc3BhY2UuIFNlZQ0KPiBodHRw
-czovL3d3dy5rZXJuZWwub3JnL2RvYy9tYW4tcGFnZXMvbGludXgtYXBpLW1sLmh0bWwNCj4gDQo+
-IFRoYW5rcywNCj4gDQo+IE1pY2hhZWwNCj4gDQo+IA0KVGhhbmtzIGZvciByZW1pbmRpbmcuDQoN
-Ci0gQ2hlbg0KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18K
-Q29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9u
-Lm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9j
-b250YWluZXJz
+Hi,
+
+So, the 2nd candidate for 1.3 is out!
+
+New features include C/R of tasks-to-cgroups layout and native support
+for external bind mounts. The latter thing turned out to be absolutely
+necessary for LXC and Docker support, as mountpoints with external root
+is very typical to these containers. We also have many bugfixes, mainly
+in memory restore and mounpoints c/r.
+
+
+I'd like to thank Google guys Filipe and Saied who joined us during this
+cycle for problem reports, patches, fruitful discussions and a quick but
+useful HOWTO about CRIU + Docker.
+
+And also welcome Tycho and Serge from Canonical, hopefully we'll soon have
+full LXC and CRIU integration and tag the 1.3  :)
+
+
+Full changelog is http://criu.org/Download/criu/1.3-rc2
+Tarball with sources is http://download.openvz.org/criu/criu-1.3-rc2.tar.bz2
+News and docs are still at http://criu.org and https://plus.google.com/+CriuOrg
+
+
+Stay tuned and have fun!
+
+Thanks,
+Pavel
