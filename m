@@ -1,21 +1,14 @@
-From: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
-Subject: Re: [PATCH RFC - TAKE TWO - 00/12] New version of the BFQ I/O
-	Scheduler
-Date: Wed, 18 Jun 2014 19:29:48 -0700
-Message-ID: <53A24B1C.1070004@kernel.dk>
-References: <20140528221929.GG1419@htj.dyndns.org>
-	<1401354343-5527-1-git-send-email-paolo.valente@unimore.it>
-	<20140530160712.GG24871@htj.dyndns.org>
-	<538926F6.7080409@kernel.dk>
-	<20140531051635.GA19925@mtj.dyndns.org>
-	<538C8A47.1050502@kernel.dk>
-	<0A5218F8-0215-4B4F-959B-EE5AAEFC164A@unimore.it>
-	<20140619014600.GA20100@mtj.dyndns.org>
+From: "chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: RE: [PATCH] ns: introduce getnspid syscall
+Date: Fri, 20 Jun 2014 09:14:31 +0000
+Message-ID: <5871495633F38949900D2BF2DC04883E54B4DA@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <1403000496-10094-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<20140618175807.GA21565@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============2533660972272405594=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140619014600.GA20100-9pTldWuhBndy/B6EtB590w@public.gmane.org>
+In-Reply-To: <20140618175807.GA21565-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,67 +18,49 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Arianna Avanzini <avanzini.arianna-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 2014-06-18 18:46, Tejun Heo wrote:
-> Hello,
->
-> On Tue, Jun 17, 2014 at 05:55:57PM +0200, Paolo Valente wrote:
->> In general, with both a smooth but messy and a sharp but clean
->> transformation, there seems to be the following common problems:
->>
->> 1) The main benefits highlighted by Jens, i.e., being able to move
->> back and forth and easily understand what works and what does not,
->> seem to be lost, because, with both solutions, intermediate versions
->> would likely have a worse performance than the current version of
->> cfq.
->
-> So, the perfectly smooth and performant transformation is possible,
-> it'd be great, but I don't really think that'd be the case.  My
-> opinion is that if the infrastructure pieces can be mostly maintained
-> while making logical gradual steps it should be fine.  ie. pick
-> whatever strategy which seems executable, chop down the pieces which
-> get in the way (ie. tear down all the cfq heuristics if you have to),
-> transform the base and then build things on top again.  Ensuring that
-> each step is logical and keeps working should give us enough safety
-> net, IMO.
->
-> Jens, what do you think?
+--===============2533660972272405594==
+Content-Language: zh-CN
+Content-Type: text/plain; charset="gb2312"
+Content-Transfer-Encoding: base64
 
-I was thinking the same - strip CFQ back down, getting rid of the 
-heuristics, then go forward to BFQ. That should be feasible. You need to 
-find the common core first.
+DQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogT2xlZyBOZXN0ZXJvdiBb
+bWFpbHRvOm9sZWdAcmVkaGF0LmNvbV0NCj4gU2VudDogVGh1cnNkYXksIEp1bmUgMTksIDIwMTQg
+MTo1OCBBTQ0KPiBUbzogQ2hlbiwgSGFueGlhby+zwiDqz8/2DQo+IENjOiBjb250YWluZXJzQGxp
+c3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnOyBsaW51eC1rZXJuZWxAdmdlci5rZXJuZWwub3JnOw0K
+PiBBbmRyZXcgTW9ydG9uOyBFcmljIFcuIEJpZWRlcm1hbjsgU2VyZ2UgSGFsbHluOyBEYW5pZWwg
+UC4gQmVycmFuZ2U7IEFsIFZpcm87IERhdmlkDQo+IEhvd2VsbHM7IFJpY2hhcmQgV2VpbmJlcmdl
+cjsgUGF2ZWwgRW1lbHlhbm92OyBWYXNpbGl5IEt1bGlrb3Y7IEdvdG91LCBZYXN1bm9yaS8NCj4g
+zuWNdSC/tc7EDQo+IFN1YmplY3Q6IFJlOiBbUEFUQ0hdIG5zOiBpbnRyb2R1Y2UgZ2V0bnNwaWQg
+c3lzY2FsbA0KPiANCj4gT24gMDYvMTcsIENoZW4gSGFueGlhbyB3cm90ZToNCj4gPg0KPiA+ICtT
+WVNDQUxMX0RFRklORTQoZ2V0bnNwaWQsIHBpZF90LCBwaWQsIGludCwgZmQxLCBpbnQsIGZkMiwg
+aW50LCBwaWR0eXBlKQ0KPiA+ICt7DQo+ID4gKwlzdHJ1Y3QgZmlsZSAqZmlsZTEgPSBOVUxMLCAq
+ZmlsZTIgPSBOVUxMOw0KPiA+ICsJc3RydWN0IHRhc2tfc3RydWN0ICp0YXNrOw0KPiA+ICsJc3Ry
+dWN0IHBpZF9uYW1lc3BhY2UgKm5zMSwgKm5zMjsNCj4gPiArCXN0cnVjdCBwcm9jX25zICplaTsN
+Cj4gPiArCWludCByZXQgPSAtMTsNCj4gPiArDQo+ID4gKwlpZiAocGlkdHlwZSA+PSBQSURUWVBF
+X01BWCkNCj4gPiArCQlyZXR1cm4gLUVJTlZBTDsNCj4gPiArDQo+ID4gKwlmaWxlMSA9IHByb2Nf
+bnNfZmdldChmZDEpOw0KPiA+ICsJaWYgKElTX0VSUihmaWxlMSkpDQo+ID4gKwkJcmV0dXJuIFBU
+Ul9FUlIoZmlsZTEpOw0KPiA+ICsJZWkgPSBnZXRfcHJvY19ucyhmaWxlX2lub2RlKGZpbGUxKSk7
+DQo+ID4gKwluczEgPSAoc3RydWN0IHBpZF9uYW1lc3BhY2UgKillaS0+bnM7DQo+IA0KPiBhbmQg
+SSBhbSBub3Qgc3VyZSB0aGlzIHBhcnQgaXMgY29ycmVjdC4uLiBzaG91bGRuJ3Qgd2UgYWxzbyB2
+ZXJpZnkgdGhhdA0KPiBuc19vcHMgPT0gcGlkbnNfb3BlcmF0aW9ucyA/DQo+IA0KWW91J3JlIHJp
+Z2h0LiBXZSBzaG91bGQgY2hlY2sgdGhpcyBwYXJ0Lg0KDQpUaGFua3MsDQotIENoZW4NCg0KPiBQ
+ZXJoYXBzIGl0IG1ha2VzIHNlbnNlIHRvIGdlbmVyYWxpemUgZ2V0X25ldF9uc19ieV9mZCgpIGlu
+dG8NCj4gInZvaWQgKmdldF9uc19ieV9mZChmZCwgdHlwZSkiLi4uIHRoaXMgcHJvYmFibHkgbmVl
+ZHMgYW5vdGhlciAiY2hlY2stYW5kLWdldCINCj4gbWV0aG9kIGluIHByb2NfbnNfb3BlcmF0aW9u
+cygpLiBJIGR1bm5vLg0KPiANCj4gT2xlZy4NCg0K
 
->> 2) bfq, on one side, does not export some of the sysfs parameters of
->> cfq, such as slice_sync, and, on the other side, uses other common
->> parameters in a different way. For example, bfq turns I/O priorities
->> into throughput shares in a different way than cfq does. As a
->> consequence, existing configurations may break or behave in
->> unexpected ways.
->
-> This is why I hate exposing internal knobs without layering proper
-> semantic interpretation on top.  It ends up creating unnecessary
-> lock-in effect too often just to serve some esoteric cases which
-> aren't all that useful.  For knobs which don't make any sense for the
-> new scheduler, the appropriate thing to do would be just making them
-> noop and generate a warning message when it's written to.
->
-> As for behavior change for existing users, any change to scheduler
-> does that.  I don't think it's practical to avoid any changes for that
-> reason.  I think there already is a pretty solid platform to base
-> things on and the way forward is making the changes and iterating as
-> testing goes on and issues get reported.
+--===============2533660972272405594==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-Completely agree, don't worry about that. It's not like we advertise 
-hard guarantees on the priorities right now, for instance, so as long as 
-the end result isn't orders of magnitude different for the 
-classes/levels, then it'll likely be good enough.
-
-Ditto on the sysfs files, as some of those are likely fairly widely 
-used. But if we warn and do nothing, then that'll allow us to sort out 
-popular uses of it before we (later on) remove the files.
-
--- 
-Jens Axboe
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============2533660972272405594==--
