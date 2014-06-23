@@ -1,16 +1,22 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v2] ns: introduce getnspid syscall
-Date: Mon, 23 Jun 2014 15:32:30 +0200
-Message-ID: <20140623133230.GA31817@mail.hallyn.com>
-References: <1403259512-10510-1-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<53A414B2.20108@nod.at>
-	<5871495633F38949900D2BF2DC04883E54ECC5@G08CNEXMBPEKD02.g08.fujitsu.local>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+From: Paolo Valente <paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org>
+Subject: Re: [PATCH RFC - TAKE TWO - 00/12] New version of the BFQ I/O
+	Scheduler
+Date: Mon, 23 Jun 2014 15:53:09 +0200
+Message-ID: <8F719638-0CD7-4BD2-8F4F-088913A0EE2D@unimore.it>
+References: <20140528221929.GG1419@htj.dyndns.org>
+	<1401354343-5527-1-git-send-email-paolo.valente@unimore.it>
+	<20140530160712.GG24871@htj.dyndns.org>
+	<538926F6.7080409@kernel.dk>
+	<20140531051635.GA19925@mtj.dyndns.org>
+	<538C8A47.1050502@kernel.dk>
+	<0A5218F8-0215-4B4F-959B-EE5AAEFC164A@unimore.it>
+	<20140619014600.GA20100@mtj.dyndns.org>
+	<53A24B1C.1070004@kernel.dk>
+Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.2\))
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <5871495633F38949900D2BF2DC04883E54ECC5-ZEd+hNNJ6a5ZYpXjqAkB5jz3u5zwRJJDAzI0kPv9QBlmR6Xm/wNWPw@public.gmane.org>
+In-Reply-To: <53A24B1C.1070004-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,60 +26,129 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Arianna Avanzini <avanzini.arianna-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-UXVvdGluZyBjaGVuaGFueGlhb0Bjbi5mdWppdHN1LmNvbSAoY2hlbmhhbnhpYW9AY24uZnVqaXRz
-dS5jb20pOgo+IEhpCj4gCj4gPiAtLS0tLU9yaWdpbmFsIE1lc3NhZ2UtLS0tLQo+ID4gRnJvbTog
-UmljaGFyZCBXZWluYmVyZ2VyIFttYWlsdG86cmljaGFyZEBub2QuYXRdCj4gPiBTZW50OiBGcmlk
-YXksIEp1bmUgMjAsIDIwMTQgNzowMiBQTQo+ID4gVG86IENoZW4sIEhhbnhpYW8v6ZmIIOaZl+mc
-hDsgY29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZzsKPiA+IGxpbnV4LWtlcm5l
-bEB2Z2VyLmtlcm5lbC5vcmcKPiA+IENjOiBFcmljIFcuIEJpZWRlcm1hbjsgU2VyZ2UgSGFsbHlu
-OyBEYW5pZWwgUC4gQmVycmFuZ2U7IE9sZWcgTmVzdGVyb3Y7IEFsIFZpcm87Cj4gPiBEYXZpZCBI
-b3dlbGxzOyBQYXZlbCBFbWVseWFub3Y7IFZhc2lsaXkgS3VsaWtvdjsgR290b3UsIFlhc3Vub3Jp
-L+S6lOWztiDlurfmloc7Cj4gPiBsaW51eC1hcGlAdmdlci5rZXJuZWwub3JnCj4gPiBTdWJqZWN0
-OiBSZTogW1BBVENIIHYyXSBuczogaW50cm9kdWNlIGdldG5zcGlkIHN5c2NhbGwKPiA+IAo+ID4g
-QW0gMjAuMDYuMjAxNCAxMjoxOCwgc2NocmllYiBDaGVuIEhhbnhpYW86Cj4gPiA+IFdlIG5lZWQg
-YSBkaXJlY3QgbWV0aG9kIG9mIGdldHRpbmcgdGhlIHBpZCBpbnNpZGUgY29udGFpbmVycy4KPiA+
-ID4gSWYgc29tZSBpc3N1ZXMgb2NjdXJyZWQgaW5zaWRlIGNvbnRhaW5lciBndWVzdCwgaG9zdCB1
-c2VyCj4gPiA+IGNvdWxkIG5vdCBrbm93IHdoaWNoIHByb2Nlc3MgaXMgaW4gdHJvdWJsZSBqdXN0
-IGJ5IGd1ZXN0IHBpZDoKPiA+ID4gdGhlIHVzZXJzIG9mIGNvbnRhaW5lciBndWVzdCBvbmx5IGtu
-ZXcgdGhlIHBpZCBpbnNpZGUgY29udGFpbmVycy4KPiA+ID4gVGhpcyB3aWxsIGJyaW5nIG9ic3Rh
-Y2xlIGZvciB0cm91YmxlIHNob290aW5nLgo+ID4gPgo+ID4gPiBpbnQgZ2V0bnNwaWQocGlkX3Qg
-cGlkLCBpbnQgZmQxLCBpbnQgZmQyKTsKPiA+ID4KPiA+ID4gcGlkOiB0aGUgcGlkIG51bWJlciBu
-ZWVkIHRvIGJlIHRyYW5zbGF0ZWQuCj4gPiA+Cj4gPiA+IGZkOiBhIGZpbGUgZGVzY3JpcHRvciBy
-ZWZlcnJpbmcgdG8gb25lIG9mCj4gPiA+ICAgICB0aGUgbmFtZXNwYWNlIGVudHJpZXMgaW4gYSAv
-cHJvYy9bcGlkXS9ucy9waWQuCj4gPiA+ICAgICBmZDEgZm9yIGRlc3RpbmF0aW9uIG5zKG5zMSks
-IHdoZXJlIHRoZSBwaWQgY2FtZSBmcm9tLgo+ID4gPiAgICAgZmQyIGZvciByZWZlcmVuY2UgbnMo
-bnMyKSwgd2hpbGUgZmQyID0gLTIgbWVhbnMgZm9yIGN1cnJlbnQgbnMuCj4gPiA+Cj4gPiA+IHJl
-dHVybiB2YWx1ZToKPiA+ID4gICAgID4wIDogdHJhbnNsYXRlZCBwaWQgaW4gbnMxKGZkMSkgc2Vl
-biBmcm9tIG5zMihmZDIpLgo+ID4gPiAgICAgPD0wOiBvbiBmYWlsdXJlLgo+ID4gPgo+ID4gCj4g
-PiBJIGRvbid0IHRoaW5rIHRoYXQgYWRkaW5nIGEgbmV3IHN5c3RlbSBjYWxsIGZvciB0aGlzIGlz
-IGEgZ29vZCBzb2x1dGlvbi4KPiA+IFdlIG5lZWQgYSBtb3JlIGdlbmVyaWMgd2F5LiBJIGJldCBw
-ZW9wbGUgYXJlIGludGVyZXN0ZWQgaW4gbW9yZSB0aGFuIGp1c3QgUElECj4gPiBudW1iZXJzLgo+
-IAo+IENvdWxkIHlvdSBwbGVhc2UgZ2l2ZSBzb21lIGhpbnRzIG9uIGhvdyB0byBleHBhbmQgdGhp
-cyBpbnRlcmZhY2U/Cj4gCj4gPiAKPiA+IEkgYWdyZWUgd2l0aCBFcmljIHRoYXQgYSBwcm9jZnMg
-c29sdXRpb24gaXMgbW9yZSBhcHByb3ByaWF0ZS4KPiA+IAo+IAo+IFByb2NmcyBpcyBhIGdvb2Qg
-c29sdXRpb24sIGJ1dCBzeXNjYWxsIGlzIG5vdCBiYWQgdGhvdWdoLgoKSSBtaWdodCBiZSBpbmNs
-aW5lZCB0byBhZ3JlZSwgZXhjZXB0IHRoYXQgaW4gdGhpcyBjYXNlIHlvdSBhcmUgc3RpbGwKbmVl
-ZGluZyBtb3VudGVkIHByb2NmcyBhbnl3YXkgdG8gZ2V0IHRoZSBwcm9jLyRwaWQvbnMvcGlkIGZk
-cy4KCkknbSBzb3JyeSwgSSd2ZSBub3QgYmVlbiB3YXRjaGluZyB0aGlzIHRocmVhZCwgc28gdGhp
-cyBwcm9iYWJseSBoYXMgYmVlbgpjb25zaWRlcmVkIGFuZCBkZWNpZGVkIGFnYWluc3QsIGJ1dCBJ
-J20gZ29pbmcgdG8gYXNrIGFueXdheS4gIEtlZXBpbmcKaW4gbWluZCBib3RoIGNoZWNrcG9pbnQt
-cmVzdGFydCBhbmQgYW5kIGludHJvc3BlY3Rpb24gZm9yIHVzZSBpbiBhCnNldG5zJ2QgY29tbWVu
-ZCwgd2h5IG5vdCBtYWtlIGl0CgpwaWRfdCBnZXRuc3BpZChwaWRfdCBxdWVyeV9waWQsIHBpZF90
-IG9ic2VydmVyX3BpZCkKCndoaWNoIHJldHVybnMgdGhlIHByb2Nlc3MgaWQgb2YgcXVlcnlfcGlk
-IGFzIHNlZW4gZnJvbSBvYnNlcnZlcl9waWQncwpwaWRucz8KCgo+IFByb2NmcyB3b3JrcyBmb3Ig
-bWUsIGJ1dCB0aGF0IHNlZW1zIGNvdWxkIG5vdCBmaXQKPiBQYXZlbCdzIHJlcXVpcmVtZW50Lgo+
-IEhpcyBvcGluaW9uIGlzIHRoYXQgYSBzeXNjYWxsIGlzIGEgbW9yZSBnZW5lcmljIGludGVyZmFj
-ZQo+IHRoYW4gcHJvYyBmaWxlcywgYW5kICBhbHNvIHZlcnkgaGVscGZ1bC4KPiBBbmQgc3lzY2Fs
-bCBjb3VsZCB0ZWxsIHdoZXRoZXIgYSBwaWQgbGl2ZXMgaW4gYSBzcGVjaWZpYyBwaWQgbmFtZXNw
-YWNlLAo+IG11Y2ggY29udmVuaWVudCB0aGFuIHByb2Nmcy4KPiAKPiBUaGFua3MsCj4gLSBDaGVu
-Cgo+IF9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCj4gQ29u
-dGFpbmVycyBtYWlsaW5nIGxpc3QKPiBDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24u
-b3JnCj4gaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8v
-Y29udGFpbmVycwoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0
-aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5m
-by9jb250YWluZXJz
+
+Il giorno 19/giu/2014, alle ore 04:29, Jens Axboe <axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org> ha scri=
+tto:
+
+> On 2014-06-18 18:46, Tejun Heo wrote:
+>> Hello,
+>> =
+
+>> On Tue, Jun 17, 2014 at 05:55:57PM +0200, Paolo Valente wrote:
+>>> In general, with both a smooth but messy and a sharp but clean
+>>> transformation, there seems to be the following common problems:
+>>> =
+
+>>> 1) The main benefits highlighted by Jens, i.e., being able to move
+>>> back and forth and easily understand what works and what does not,
+>>> seem to be lost, because, with both solutions, intermediate versions
+>>> would likely have a worse performance than the current version of
+>>> cfq.
+>> =
+
+>> So, the perfectly smooth and performant transformation is possible,
+>> it'd be great, but I don't really think that'd be the case.  My
+>> opinion is that if the infrastructure pieces can be mostly maintained
+>> while making logical gradual steps it should be fine.  ie. pick
+>> whatever strategy which seems executable, chop down the pieces which
+>> get in the way (ie. tear down all the cfq heuristics if you have to),
+>> transform the base and then build things on top again.  Ensuring that
+>> each step is logical and keeps working should give us enough safety
+>> net, IMO.
+>> =
+
+>> Jens, what do you think?
+> =
+
+> I was thinking the same - strip CFQ back down, getting rid of the heurist=
+ics, then go forward to BFQ. That should be feasible. You need to find the =
+common core first.
+
+OK, I will try exactly this approach (hoping not to have misunderstood anyt=
+hing).
+Here is, very briefly, the strategy I am thinking about:
+1) In a first, only-destructive phase, bring CFQ back, more or less, to its=
+ state
+at the time when BFQ was forked initially, and justify the removal of every=
+ heuristic
+and improvement. Depending on how many patches come out during this phase,
+possibly pack them into a first, separate patch series.
+2) In a second, only-constructive phase: (a) turn the stripped-down version=
+ of CFQ into
+a flat BFQ-v0, (b) turn the latter into BFQ-v0, and, finally, (c) progressi=
+vely turn BFQ-v0
+into the last version of BFQ, through the previously-submitted patches. Of =
+course after
+fixing and improving all the involved patches according to the suggestions =
+and corrections
+of Tejun.
+
+I will wait shortly for a possible feedback on this proposal, and, then, if=
+ nothing has still to be
+changed or refined, silently start the process.
+
+> =
+
+>>> 2) bfq, on one side, does not export some of the sysfs parameters of
+>>> cfq, such as slice_sync, and, on the other side, uses other common
+>>> parameters in a different way. For example, bfq turns I/O priorities
+>>> into throughput shares in a different way than cfq does. As a
+>>> consequence, existing configurations may break or behave in
+>>> unexpected ways.
+>> =
+
+>> This is why I hate exposing internal knobs without layering proper
+>> semantic interpretation on top.  It ends up creating unnecessary
+>> lock-in effect too often just to serve some esoteric cases which
+>> aren't all that useful.  For knobs which don't make any sense for the
+>> new scheduler, the appropriate thing to do would be just making them
+>> noop and generate a warning message when it's written to.
+>> =
+
+>> As for behavior change for existing users, any change to scheduler
+>> does that.  I don't think it's practical to avoid any changes for that
+>> reason.  I think there already is a pretty solid platform to base
+>> things on and the way forward is making the changes and iterating as
+>> testing goes on and issues get reported.
+> =
+
+> Completely agree, don't worry about that. It's not like we advertise hard=
+ guarantees on the priorities right now, for instance, so as long as the en=
+d result isn't orders of magnitude different for the classes/levels, then i=
+t'll likely be good enough.
+> =
+
+> Ditto on the sysfs files, as some of those are likely fairly widely used.=
+ But if we warn and do nothing, then that'll allow us to sort out popular u=
+ses of it before we (later on) remove the files.
+
+Great, thanks. BTW, most of the =91internal=92 parameters inappropriately e=
+xposed by BFQ,
+as noted by Tejun, were exposed just because we forgot to remove them while=
+ turning
+the testing version of BFQ into the submitted one. Sorry about that.
+
+Thanks,
+Paolo
+
+> =
+
+> -- =
+
+> Jens Axboe
+
+
+--
+Paolo Valente                                                 =
+
+Algogroup
+Dipartimento di Fisica, Informatica e Matematica		=
+
+Via Campi, 213/B
+41125 Modena - Italy        				  =
+
+homepage:  http://algogroup.unimore.it/people/paolo/
