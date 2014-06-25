@@ -1,18 +1,17 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: question about default values for per-namespace settings
-Date: Wed, 25 Jun 2014 00:45:25 -0700
-Message-ID: <87wqc5xwiy.fsf@x220.int.ebiederm.org>
-References: <20140512140706.GA22082@macbook.localnet>
-	<cover.1399909529.git.vvs@openvz.org> <5370F781.7010909@parallels.com>
-	<53711B21.1060309@pandora.be> <53712B0A.7060007@parallels.com>
-	<53727246.4050306@pandora.be> <53748280.60906@parallels.com>
-	<537A5BD1.90906@pandora.be> <53A934F1.7040906@parallels.com>
+From: "chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: RE: [PATCH v2] ns: introduce getnspid syscall
+Date: Wed, 25 Jun 2014 10:00:13 +0000
+Message-ID: <5871495633F38949900D2BF2DC04883E551F09__38143.8400167555$1403690426$gmane$org@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <1403259512-10510-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<53A414B2.20108@nod.at>
+	<5871495633F38949900D2BF2DC04883E54ECC5@G08CNEXMBPEKD02.g08.fujitsu.local>
+	<20140623133230.GA31817@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <53A934F1.7040906-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> (Vasily Averin's message of
-	"Tue, 24 Jun 2014 12:21:05 +0400")
+In-Reply-To: <20140623133230.GA31817-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,124 +21,56 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vasily Averin <vvs-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: Bart De Schuymer <bdschuym-LPO8gxj9N8aZIoH1IeqzKA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Maciej =?utf-8?Q?=C5=BBenczykowski?= <zenczykowski-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Vasily Averin <vvs-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> writes:
-
-> On 05/19/2014 11:30 PM, Bart De Schuymer wrote:
->> As pointed out by Maciej, always
->> starting from init_net isn't really an option in case of nested
->> namespaces (start from the parent's namespace instead).
->
-> Dear Bart, Serge, Maciej
-> thank you very much for your feedback!
-
-I am missing the context which makes raises this issue.
-
-> I've analyzed possibility to inherit settings from parent net-namespace,
-> discovered problems described below and finally decided to follow
-> Maciej's way (a) "use some kernel defaults", with adding an ability
-> to change pre-compiled kernel defaults.
->
-> Below you can found more detailed description of discovered problems.
->
-> 1) there are no (easy) ways to find parent of given network namespace.
->
-> Network namespaces in kernel are not hierarchical but flat,
-> "struct net" have no reference to parent netns, and my collegians expect
-> that Eric Biederman will likely object to adding a parent netns pointer.
->
-> Without this reference I do not see any good ways to copy parents
-> settings.
-
-Copying settings can easily happen at netowkr namespace creation time.
-Copying at any other time is too weird to even think about.  So no you
-don't need a parent network namespace pointer to enable copying.
-
-> 2) settings inheriting does not work if subsystem module is loaded after
-> creation of network namespace. 
->
-> In this case all namespaces get pre-compiled defaults settings, and seems
-> there are no ways to apply "adjusted" setting to all already existing
-> netns.
-
-setns.
-
-> Moreover there is curious situation: to apply required sysctl settings
-> during module loading, Red Hat recommends to force "sysctl -p" execution
-> via install command in modprobe.conf
-> https://bugzilla.redhat.com/show_bug.cgi?id=634735#c7
->
-> However if module is loaded from inside one of network namespaces
-> it does not work!
-
-Why not?  The appropriate events should fire globally.  And note
-in most use cases participants in a network namespace won't have
-permissions to load modules.
-
-> In this case sysctl is executed inside netns. 
-> If assigned sysctl key is not virtualized -- sysctl command can fail
-> if key is virtualized  -- setting  in current netns  will be adjusted,
-> but not -- in init_net, that looks unexpected for me.
-
-From what little you have said.  This sounds like a don't do that
-then situation.  Certainly if a module is the kernel triggers request
-module the module will be loaded in the initial set of namespaces.
-
-> I believe initial subsystem settings of newly created namespace should
-> not differ from initial settings of newly created subsystem in already
-> existing namespace. In case in-kernel setting inheriting this behavior
-> cannot be reached, additional subsystem tuning is required anyway.
-
-You are arguing that creation of a network namespace should use the
-kernel's default values for sysctls?  That is a fairly reasonable
-position to take.
-
-> Therefore Maceiej's variant (a) "use some kernel defaults" looks like
-> right choice for me. If parent wants to assign some adjusted settings
-> in child environments -- it can only force loading of required modules
-> and apply required settings directly.
->
-> At the same time I would like to have an ability to change pre-compiled
-> defaults somehow. In my patch I'm going to add new module options, that
-> allows node owner to specify wished "safe" settings before module loading,
-> and change them via sysfs after this.
-
-Why sysfs and not sysctl?
-
-It is not clear to me what is going on, from the limited details I see
-in this message it sounds like there may be a bit of overdesign and
-tackling problems that do not matter in the real world going on.
-
-For any kernel settings that apply to a network namespace we have
-two very basic choices.
-- Set them to default values when a namespace is initialized.
-- Copy them from somewhere when the namespace is created.
-
-Last I looked at that code we were copying sysctl values from
-the initial network namespace instead of the creators network
-namespace.  Which has always seemed a bit silly to me.
-
-In general most people don't care and this does not cause an
-issue for most folks, or we could not have gone 5+ years without
-addressing it.
-
-For most things any practical program at this point is going to
-have to set the sysctls it cares about because it is going to
-have to run on existing kernels.
-
-Beyond that I don't have a strong opinion but we could either set values
-to well expected defaults, or copy them from the creators previous
-network namespace.  Both would give deterministic results without any
-significant chance of breaking userspace today.
-
-Is their a compelling use case in this conversation that could weigh the
-decision of which semantics make the most sense?
-
-Adding sysfs entries or module parameters to change the action of
-sysctls sounds like there is something broken somewhere.  Unfortunately
-it is not clear to me where that somewhere is.
-
-Eric
+SGksDQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogU2VyZ2UgRS4gSGFs
+bHluIFttYWlsdG86c2VyZ2VAaGFsbHluLmNvbV0NCj4gU2VudDogTW9uZGF5LCBKdW5lIDIzLCAy
+MDE0IDk6MzMgUE0NCj4gVG86IENoZW4sIEhhbnhpYW8v6ZmIIOaZl+mchA0KPiBDYzogUmljaGFy
+ZCBXZWluYmVyZ2VyOyBjb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnOw0KPiBs
+aW51eC1rZXJuZWxAdmdlci5rZXJuZWwub3JnOyBQYXZlbCBFbWVseWFub3Y7IGxpbnV4LWFwaUB2
+Z2VyLmtlcm5lbC5vcmc7DQo+IFNlcmdlIEhhbGx5bjsgT2xlZyBOZXN0ZXJvdjsgRGF2aWQgSG93
+ZWxsczsgRXJpYyBXLiBCaWVkZXJtYW47IEFsIFZpcm8NCj4gU3ViamVjdDogUmU6IFtQQVRDSCB2
+Ml0gbnM6IGludHJvZHVjZSBnZXRuc3BpZCBzeXNjYWxsDQo+IA0KPiA+ID4gPg0KPiA+ID4NCj4g
+PiA+IEkgZG9uJ3QgdGhpbmsgdGhhdCBhZGRpbmcgYSBuZXcgc3lzdGVtIGNhbGwgZm9yIHRoaXMg
+aXMgYSBnb29kIHNvbHV0aW9uLg0KPiA+ID4gV2UgbmVlZCBhIG1vcmUgZ2VuZXJpYyB3YXkuIEkg
+YmV0IHBlb3BsZSBhcmUgaW50ZXJlc3RlZCBpbiBtb3JlIHRoYW4ganVzdA0KPiBQSUQNCj4gPiA+
+IG51bWJlcnMuDQo+ID4NCj4gPiBDb3VsZCB5b3UgcGxlYXNlIGdpdmUgc29tZSBoaW50cyBvbiBo
+b3cgdG8gZXhwYW5kIHRoaXMgaW50ZXJmYWNlPw0KPiA+DQo+ID4gPg0KPiA+ID4gSSBhZ3JlZSB3
+aXRoIEVyaWMgdGhhdCBhIHByb2NmcyBzb2x1dGlvbiBpcyBtb3JlIGFwcHJvcHJpYXRlLg0KPiA+
+ID4NCj4gPg0KPiA+IFByb2NmcyBpcyBhIGdvb2Qgc29sdXRpb24sIGJ1dCBzeXNjYWxsIGlzIG5v
+dCBiYWQgdGhvdWdoLg0KPiANCj4gSSBtaWdodCBiZSBpbmNsaW5lZCB0byBhZ3JlZSwgZXhjZXB0
+IHRoYXQgaW4gdGhpcyBjYXNlIHlvdSBhcmUgc3RpbGwNCj4gbmVlZGluZyBtb3VudGVkIHByb2Nm
+cyBhbnl3YXkgdG8gZ2V0IHRoZSBwcm9jLyRwaWQvbnMvcGlkIGZkcy4NCj4gDQo+IEknbSBzb3Jy
+eSwgSSd2ZSBub3QgYmVlbiB3YXRjaGluZyB0aGlzIHRocmVhZCwgc28gdGhpcyBwcm9iYWJseSBo
+YXMgYmVlbg0KPiBjb25zaWRlcmVkIGFuZCBkZWNpZGVkIGFnYWluc3QsIGJ1dCBJJ20gZ29pbmcg
+dG8gYXNrIGFueXdheS4gIEtlZXBpbmcNCj4gaW4gbWluZCBib3RoIGNoZWNrcG9pbnQtcmVzdGFy
+dCBhbmQgYW5kIGludHJvc3BlY3Rpb24gZm9yIHVzZSBpbiBhDQo+IHNldG5zJ2QgY29tbWVuZCwg
+d2h5IG5vdCBtYWtlIGl0DQo+IA0KPiBwaWRfdCBnZXRuc3BpZChwaWRfdCBxdWVyeV9waWQsIHBp
+ZF90IG9ic2VydmVyX3BpZCkNCj4gDQo+IHdoaWNoIHJldHVybnMgdGhlIHByb2Nlc3MgaWQgb2Yg
+cXVlcnlfcGlkIGFzIHNlZW4gZnJvbSBvYnNlcnZlcl9waWQncw0KPiBwaWRucz8NCj4gDQoNCkJ1
+dCB0aGlzIGNvdWxkIGJlIGNvbmZ1c2VkIGluIG5lc3RlZCBucy4NCg0KRXg6DQoodGhhbmtzIGZv
+ciBQYXZlbCdzIGZpZ3VyZSkNCiAgICBpbml0X3BpZF9ucyAgICBuczEgICAgICAgICBuczINCnQx
+ICAyDQp0MiAgIGAtIDMgICAgICAgICAgMSANCnQzICAgICAgIGAtIDQgICAgICBgLSA1ICAgICAg
+ICAxDQp0NCAgNQ0KDQphKSBnZXRuc3BpZCgxLCAxKToNCldlIGV4cGVjdGVkIGl0IGNvdWxkIHJl
+dHVybiB0MidzIHBpZCgybmQgMSBhcyBwaWQNCnN1Y2ggYXMgc3lzdGVtZCBpbiBpbml0X3BpZF9u
+cyksDQpidXQgdDMncGlkIGlzIGFsc28gYW4gYXBwcm9wcmlhdGUgcmVzdWx0Lg0KV2UgbWF5IGdl
+dCBtb3JlIHRoYW4gb25lIHJldHVybnMuDQoNCmIpIGdldG5zcGlkKDUsIDEpOg0KKDFzdCA1IHdh
+cyBleHBlY3RlZCBhcyAgcGlkIGluIG5zMSkNCnQzJ3BpZCBhbmQgdDQncyBwaWQgY291bGQgYm90
+aCBiZSB0aGUgYW5zd2VyLg0KV2UgY291bGQgbm90IGRldGVybWluZSB3aGljaCBvbmUgaXMgd2hh
+dCB3ZSB3YW50Lg0KDQpTbyBzb21ldGhpbmcgdW5pcXVlIGxpa2UgZmRzIG9mIG5zIHNob3VsZCBi
+ZQ0KYSBiZXR0ZXIgcmVmZXJlbmNlLiANCg0KVGhhbmtzLA0KLSBDaGVuDQoNCj4gDQo+ID4gUHJv
+Y2ZzIHdvcmtzIGZvciBtZSwgYnV0IHRoYXQgc2VlbXMgY291bGQgbm90IGZpdA0KPiA+IFBhdmVs
+J3MgcmVxdWlyZW1lbnQuDQo+ID4gSGlzIG9waW5pb24gaXMgdGhhdCBhIHN5c2NhbGwgaXMgYSBt
+b3JlIGdlbmVyaWMgaW50ZXJmYWNlDQo+ID4gdGhhbiBwcm9jIGZpbGVzLCBhbmQgIGFsc28gdmVy
+eSBoZWxwZnVsLg0KPiA+IEFuZCBzeXNjYWxsIGNvdWxkIHRlbGwgd2hldGhlciBhIHBpZCBsaXZl
+cyBpbiBhIHNwZWNpZmljIHBpZCBuYW1lc3BhY2UsDQo+ID4gbXVjaCBjb252ZW5pZW50IHRoYW4g
+cHJvY2ZzLg0KPiA+DQo+ID4gVGhhbmtzLA0KPiA+IC0gQ2hlbg0KPiANCj4gPiBfX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXw0KPiA+IENvbnRhaW5lcnMgbWFp
+bGluZyBsaXN0DQo+ID4gQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZw0KPiA+
+IGh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRh
+aW5lcnMNCg0KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18K
+Q29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9u
+Lm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9j
+b250YWluZXJz
