@@ -1,18 +1,11 @@
 From: "chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: RE: [PATCH v2] ns: introduce getnspid syscall
-Date: Thu, 26 Jun 2014 10:19:55 +0000
-Message-ID: <5871495633F38949900D2BF2DC04883E5538AC__1518.27432350746$1403778017$gmane$org@G08CNEXMBPEKD02.g08.fujitsu.local>
-References: <1403259512-10510-1-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<53A414B2.20108@nod.at>
-	<5871495633F38949900D2BF2DC04883E54ECC5@G08CNEXMBPEKD02.g08.fujitsu.local>
-	<20140623133230.GA31817@mail.hallyn.com>
-	<5871495633F38949900D2BF2DC04883E551F09@G08CNEXMBPEKD02.g08.fujitsu.local>
-	<20140625143831.GB17169@ubuntumail>
+Subject: [RFC]Pid conversion between pid namespace
+Date: Thu, 3 Jul 2014 12:18:33 +0000
+Message-ID: <5871495633F38949900D2BF2DC04883E55C374@G08CNEXMBPEKD02.g08.fujitsu.local>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140625143831.GB17169@ubuntumail>
 Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -23,78 +16,66 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: "Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org)" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Serge Hallyn (serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org)" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "Oleg
+	Nesterov (oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org)" <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Richard Weinberger
+	(richard-/L3Ra7n9ekc@public.gmane.org)" <richard-/L3Ra7n9ekc@public.gmane.org>, "Pavel Emelyanov (xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org)" <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, "Vasily Kulikov (segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org)" <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>, "Gotou, Yasunori" <y-goto-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, "'Daniel
+	P. Berrange (berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org)'" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-DQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogU2VyZ2UgSGFsbHluIFtt
-YWlsdG86c2VyZ2UuaGFsbHluQHVidW50dS5jb21dDQo+IFNlbnQ6IFdlZG5lc2RheSwgSnVuZSAy
-NSwgMjAxNCAxMDozOSBQTQ0KPiBUbzogQ2hlbiwgSGFueGlhby/pmYgg5pmX6ZyEDQo+IENjOiBT
-ZXJnZSBFLiBIYWxseW47IEVyaWMgVy4gQmllZGVybWFuOyBSaWNoYXJkIFdlaW5iZXJnZXI7DQo+
-IGNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc7IGxpbnV4LWtlcm5lbEB2Z2Vy
-Lmtlcm5lbC5vcmc7IE9sZWcNCj4gTmVzdGVyb3Y7IERhdmlkIEhvd2VsbHM7IEFsIFZpcm87IGxp
-bnV4LWFwaUB2Z2VyLmtlcm5lbC5vcmcNCj4gPiA+ID4gPiA+DQo+ID4gPiA+ID4NCj4gPiA+ID4g
-PiBJIGRvbid0IHRoaW5rIHRoYXQgYWRkaW5nIGEgbmV3IHN5c3RlbSBjYWxsIGZvciB0aGlzIGlz
-IGEgZ29vZCBzb2x1dGlvbi4NCj4gPiA+ID4gPiBXZSBuZWVkIGEgbW9yZSBnZW5lcmljIHdheS4g
-SSBiZXQgcGVvcGxlIGFyZSBpbnRlcmVzdGVkIGluIG1vcmUgdGhhbiBqdXN0DQo+ID4gPiBQSUQN
-Cj4gPiA+ID4gPiBudW1iZXJzLg0KPiA+ID4gPg0KPiA+ID4gPiBDb3VsZCB5b3UgcGxlYXNlIGdp
-dmUgc29tZSBoaW50cyBvbiBob3cgdG8gZXhwYW5kIHRoaXMgaW50ZXJmYWNlPw0KPiA+ID4gPg0K
-PiA+ID4gPiA+DQo+ID4gPiA+ID4gSSBhZ3JlZSB3aXRoIEVyaWMgdGhhdCBhIHByb2NmcyBzb2x1
-dGlvbiBpcyBtb3JlIGFwcHJvcHJpYXRlLg0KPiA+ID4gPiA+DQo+ID4gPiA+DQo+ID4gPiA+IFBy
-b2NmcyBpcyBhIGdvb2Qgc29sdXRpb24sIGJ1dCBzeXNjYWxsIGlzIG5vdCBiYWQgdGhvdWdoLg0K
-PiA+ID4NCj4gPiA+IEkgbWlnaHQgYmUgaW5jbGluZWQgdG8gYWdyZWUsIGV4Y2VwdCB0aGF0IGlu
-IHRoaXMgY2FzZSB5b3UgYXJlIHN0aWxsDQo+ID4gPiBuZWVkaW5nIG1vdW50ZWQgcHJvY2ZzIGFu
-eXdheSB0byBnZXQgdGhlIHByb2MvJHBpZC9ucy9waWQgZmRzLg0KPiA+ID4NCj4gPiA+IEknbSBz
-b3JyeSwgSSd2ZSBub3QgYmVlbiB3YXRjaGluZyB0aGlzIHRocmVhZCwgc28gdGhpcyBwcm9iYWJs
-eSBoYXMgYmVlbg0KPiA+ID4gY29uc2lkZXJlZCBhbmQgZGVjaWRlZCBhZ2FpbnN0LCBidXQgSSdt
-IGdvaW5nIHRvIGFzayBhbnl3YXkuICBLZWVwaW5nDQo+ID4gPiBpbiBtaW5kIGJvdGggY2hlY2tw
-b2ludC1yZXN0YXJ0IGFuZCBhbmQgaW50cm9zcGVjdGlvbiBmb3IgdXNlIGluIGENCj4gPiA+IHNl
-dG5zJ2QgY29tbWVuZCwgd2h5IG5vdCBtYWtlIGl0DQo+ID4gPg0KPiA+ID4gcGlkX3QgZ2V0bnNw
-aWQocGlkX3QgcXVlcnlfcGlkLCBwaWRfdCBvYnNlcnZlcl9waWQpDQo+ID4gPg0KPiA+ID4gd2hp
-Y2ggcmV0dXJucyB0aGUgcHJvY2VzcyBpZCBvZiBxdWVyeV9waWQgYXMgc2VlbiBmcm9tIG9ic2Vy
-dmVyX3BpZCdzDQo+ID4gPiBwaWRucz8NCj4gPiA+DQo+ID4NCj4gPiBCdXQgdGhpcyBjb3VsZCBi
-ZSBjb25mdXNlZCBpbiBuZXN0ZWQgbnMuDQo+ID4NCj4gPiBFeDoNCj4gPiAodGhhbmtzIGZvciBQ
-YXZlbCdzIGZpZ3VyZSkNCj4gPiAgICAgaW5pdF9waWRfbnMgICAgbnMxICAgICAgICAgbnMyDQo+
-ID4gdDEgIDINCj4gPiB0MiAgIGAtIDMgICAgICAgICAgMQ0KPiA+IHQzICAgICAgIGAtIDQgICAg
-ICBgLSA1ICAgICAgICAxDQo+ID4gdDQgIDUNCj4gPg0KPiA+IGEpIGdldG5zcGlkKDEsIDEpOg0K
-PiA+IFdlIGV4cGVjdGVkIGl0IGNvdWxkIHJldHVybiB0MidzIHBpZCgybmQgMSBhcyBwaWQNCj4g
-DQo+IENsZWFybHkgdGhlIHBhc3NlZC1pbiBwaWRzIHNob3VsZCBiZSBpbnRlcnByZXRlZCBhcyBy
-ZWxhdGl2ZQ0KPiB0byBjdXJyZW50J3MgcGlkbnMuICBUaGVyZSBjYW4gYmUgbm8gYW1iaWd1aXR5
-IGF0IHRoYXQgcG9pbnQsDQo+IHVubGVzcyBJJ20gb3Zlcmxvb2tpbmcgc29tZXRoaW5nLg0KPiAN
-Cg0KRGVmYXVsdCB0byBjdXJyZW50J3MgcGlkbnMgbG9va3MgcmVhc29uYWJsZS4NCkJ1dCBuZXN0
-ZWQgbmFtZXNwYWNlIHdpbGwgc3RpbGwgYnJpbmcgdHJvdWJsZSB0byB1cy4NClNpbmNlIHRoZSBt
-aWRkbGUgbGV2ZWwgb2YgbmFtZXNwYWNlIGxvb2tzIGxlc3MgYXR0cmFjdGl2ZSB0byB1c2VycywN
-CmhvdyBhYm91dCBpZ25vcmUgdGhlbSwgYW5kIGp1c3Qgc2hvdyB0aGUgZGVlcGVzdCBsZXZlbCdz
-IHBpZD8NCg0KRXg6DQooVGhhbmtzIGZvciBQYXZlbCdzIGZpZ3VyZSBhZ2FpbikNCiAgICBpbml0
-X3BpZF9ucyAgICBuczEgICAgICAgICBuczINCnQxICAyDQp0MiAgIGAtIDMgICAgICAgICAgMQ0K
-dDMgICAgICAgYC0gNCAgICAgIGAtIDUgICAgICAgIDENCnQ0ICAgICAgICAgICBgLSA1ICAgICAg
-IGAtNyAgICAgIGAtIDINCg0KMS4gSW4gaW5pdF9waWRfbnM6DQphKSBnZXRuc3BpZCgyLCAxKToN
-CnJldHVybnMgMiAodDEpDQoNCmIpIGdldG5zcGlkKDEsIDMpOg0KcmV0dXJucyAzICh0MikNCg0K
-YykgZ2V0bnNwaWQoMSwgNCk6DQpyZXR1cm5zIDQgKHQzKQ0KDQpnZXRuc3BpZCgyLCA0KToNCnJl
-dHVybnMgNSAodDMpDQoNCjIuIEluIG5zMQ0KYSkgZ2V0bnNwaWQoMiwgNSk6DQpyZXR1cm5zIDcg
-KHQ0KQ0KDQpIb3cgZG8geW91IGxpa2UgdGhpcyBpZGVhPw0KDQpUaGFua3MsDQotIENoZW4NCg0K
-PiA+IHN1Y2ggYXMgc3lzdGVtZCBpbiBpbml0X3BpZF9ucyksDQo+ID4gYnV0IHQzJ3BpZCBpcyBh
-bHNvIGFuIGFwcHJvcHJpYXRlIHJlc3VsdC4NCj4gPiBXZSBtYXkgZ2V0IG1vcmUgdGhhbiBvbmUg
-cmV0dXJucy4NCj4gPg0KPiA+IGIpIGdldG5zcGlkKDUsIDEpOg0KPiA+ICgxc3QgNSB3YXMgZXhw
-ZWN0ZWQgYXMgIHBpZCBpbiBuczEpDQo+ID4gdDMncGlkIGFuZCB0NCdzIHBpZCBjb3VsZCBib3Ro
-IGJlIHRoZSBhbnN3ZXIuDQo+ID4gV2UgY291bGQgbm90IGRldGVybWluZSB3aGljaCBvbmUgaXMg
-d2hhdCB3ZSB3YW50Lg0KPiA+DQo+ID4gU28gc29tZXRoaW5nIHVuaXF1ZSBsaWtlIGZkcyBvZiBu
-cyBzaG91bGQgYmUNCj4gPiBhIGJldHRlciByZWZlcmVuY2UuDQo+ID4NCj4gPiBUaGFua3MsDQo+
-ID4gLSBDaGVuDQo+ID4NCj4gPiA+DQo+ID4gPiA+IFByb2NmcyB3b3JrcyBmb3IgbWUsIGJ1dCB0
-aGF0IHNlZW1zIGNvdWxkIG5vdCBmaXQNCj4gPiA+ID4gUGF2ZWwncyByZXF1aXJlbWVudC4NCj4g
-PiA+ID4gSGlzIG9waW5pb24gaXMgdGhhdCBhIHN5c2NhbGwgaXMgYSBtb3JlIGdlbmVyaWMgaW50
-ZXJmYWNlDQo+ID4gPiA+IHRoYW4gcHJvYyBmaWxlcywgYW5kICBhbHNvIHZlcnkgaGVscGZ1bC4N
-Cj4gPiA+ID4gQW5kIHN5c2NhbGwgY291bGQgdGVsbCB3aGV0aGVyIGEgcGlkIGxpdmVzIGluIGEg
-c3BlY2lmaWMgcGlkIG5hbWVzcGFjZSwNCj4gPiA+ID4gbXVjaCBjb252ZW5pZW50IHRoYW4gcHJv
-Y2ZzLg0KPiA+ID4gPg0KPiA+ID4gPiBUaGFua3MsDQo+ID4gPiA+IC0gQ2hlbg0KPiA+ID4NCj4g
-PiA+ID4gX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18NCj4g
-PiA+ID4gQ29udGFpbmVycyBtYWlsaW5nIGxpc3QNCj4gPiA+ID4gQ29udGFpbmVyc0BsaXN0cy5s
-aW51eC1mb3VuZGF0aW9uLm9yZw0KPiA+ID4gPiBodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlv
-bi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJzDQo+ID4NCj4gPiBfX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXw0KPiA+IENvbnRhaW5lcnMgbWFpbGlu
-ZyBsaXN0DQo+ID4gQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZw0KPiA+IGh0
-dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5l
-cnMNCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRh
-aW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcK
-aHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFp
-bmVycw==
+Hi,
+
+We had some discussions on how to carry out
+pid conversion between pid namespace via:
+syscall[1] and procfs[2].
+
+Pavel suggested that a syscall like
+(ID, NS1, NS2) into (ID).
+
+Serge suggested that a syscall 
+pid_t getnspid(pid_t query_pid, pid_t observer_pid).
+
+
+Eric and Richard suggested a procfs solution is
+more appropriate.
+
+Oleg suggested that we should expand /proc/pid/status
+to report this kind of information.
+
+And Richard suggested adding a directory like
+/proc/<pidX>/ns/proc/ which would contain everything
+from /proc/<pidX inside the namespace>/.
+
+As procfs provided a more user friendly interface,
+how about expose all sets of tgid, pid, pgid, sid 
+by expanding /proc/PID/status in procfs?
+And we could also expose ns hierarchy under /proc,
+which could be another reference.
+
+Ex:
+    init_pid_ns    ns1         ns2
+t1  2
+t2   `- 3          1 
+t3       `- 4      `- 5        1
+
+We could get in /proc/t3/status:
+NSpid: 4 5 1
+We knew that pid 1 in container is pid 4 in init ns.
+
+And we could get ns hierarchy under /proc/ns_hierarchy like:
+init_ns->ns1->ns2		(as the result of readlink)
+         ->ns3
+We knew that t3 in ns2, and its hierarchy.
+
+How these ideas looks like?
+Any comments would be appreciated.
+
+Thanks,
+- Chen
+
+
+a) syscall
+http://lwn.net/Articles/602987/
+
+b) procfs
+http://www.spinics.net/lists/kernel/msg1751688.html
