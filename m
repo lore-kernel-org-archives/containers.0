@@ -1,13 +1,12 @@
-From: Yasunori Goto <y-goto-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFC]Pid conversion between pid namespace
-Date: Fri, 04 Jul 2014 14:34:30 +0900
-Message-ID: <20140704143422.6B90.E1E9C6FF@jp.fujitsu.com>
-References: <5871495633F38949900D2BF2DC04883E55C374@G08CNEXMBPEKD02.g08.fujitsu.local>
+From: Institute of Project Management America <announcements-rrgp8KvIueTYtjvyW6yDsg@public.gmane.org>
+Subject: Project Management Masters Certification Program (July 22-25,
+	2014: Los Angeles, California)
+Date: 08 Jul 2014 06:39:40 -0700
+Message-ID: <20140708063938.1C3D290D1C874247@ipma3.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <5871495633F38949900D2BF2DC04883E55C374-ZEd+hNNJ6a5ZYpXjqAkB5jz3u5zwRJJDAzI0kPv9QBlmR6Xm/wNWPw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,111 +16,141 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: =?SHIFT_JIS?B?IkNoZW4sIEhhbnhpYW8vPyD61ui6Ig==?= <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: "Richard Weinberger (richard-/L3Ra7n9ekc@public.gmane.org)" <richard-/L3Ra7n9ekc@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Serge Hallyn (serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org)" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "Oleg Nesterov (oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org)" <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org)" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Vasily Kulikov (segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org)" <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Chen-san,
-
-I would like to recommend that you summarize pros/cons for all ideas so far.
-
-For example,
-
----------
-A) make new system call for transrate 
-
-   A-1) systemcall(ID, NS1, NS2) into (ID).
-     pros: 
-        - foo
-        - baa
-
-     cons: 
-        - hoge
-        - hogehogehoge
-
-   A-2) pid_t getnspid(pid_t query_pid, pid_t observer_pid) 
-      (ditto)
+   The Project Management Masters Certification Program will be
+   offered July 22 - 25, 2014 at the University of Southern California in
+   Los Angeles, CA. Project management professionals, business and
+   technology professionals, students, and educators are invited to
+   register at the Institute of Project Management America website [1]here
+   .
 
 
-B) make/change proc file/directories
-   B-1) expand /proc/pid/status
-       (ditto)
-   
-   B-2) /proc/<pidX>/ns/proc/ which would contain everything
-         from /proc/<pidX inside the namespace>/.
-       (ditto)
+   July 22 - 25, 2014
+   University of Southern California
+
+   Los Angeles, California
 
 
-------
+   The PMMC is designed for those seeking professional project management
+   certification. It serves as both a thorough professional education and
+   recognized certification. Those seeking additional credentials such as
+   the PMP=C2=AE/PgMP=C2=AE, PMI-SP=C2=AE, and PMI-RMP=C2=AE will benefit f=
+rom this dynamic
+   and interactive work session, while those currently holding credentials
+   will find the certification to be an enhancement as well as the most up
+   to date advanced professional development.
 
-Please make clear what is the good/bad point of each opinion by the above,
-  - Is it hard to keep compatiblity?
-  - Is it hard to understand for administorator/programmer?
-  - Is it difficult to show for "nested containers"?
-  - Is userland tool necessary?
-  - any other problems?
 
-I hope it will be good discussion by the above.
+   Project Management Masters Certification program provides 36 hours of
+   project management education, meeting education requirements for both
+   PMI's Certified Associate in Project Management (CAPM) =C2=AE and Project
+   Management Professional (PMP) certifications. Additionally, the Master
+   Certification provides 36 Professional Development Units (PDUs) for
+   current holders of PMP=C2=AE/PgMP=C2=AE, PMI-SP=C2=AE, and PMI-RMP=C2=AE=
+ credentials.
 
-Thanks,
 
-> Hi,
-> 
-> We had some discussions on how to carry out
-> pid conversion between pid namespace via:
-> syscall[1] and procfs[2].
-> 
-> Pavel suggested that a syscall like
-> (ID, NS1, NS2) into (ID).
-> 
-> Serge suggested that a syscall 
-> pid_t getnspid(pid_t query_pid, pid_t observer_pid).
-> 
-> 
-> Eric and Richard suggested a procfs solution is
-> more appropriate.
-> 
-> Oleg suggested that we should expand /proc/pid/status
-> to report this kind of information.
-> 
-> And Richard suggested adding a directory like
-> /proc/<pidX>/ns/proc/ which would contain everything
-> from /proc/<pidX inside the namespace>/.
-> 
-> As procfs provided a more user friendly interface,
-> how about expose all sets of tgid, pid, pgid, sid 
-> by expanding /proc/PID/status in procfs?
-> And we could also expose ns hierarchy under /proc,
-> which could be another reference.
-> 
-> Ex:
->     init_pid_ns    ns1         ns2
-> t1  2
-> t2   `- 3          1 
-> t3       `- 4      `- 5        1
-> 
-> We could get in /proc/t3/status:
-> NSpid: 4 5 1
-> We knew that pid 1 in container is pid 4 in init ns.
-> 
-> And we could get ns hierarchy under /proc/ns_hierarchy like:
-> init_ns->ns1->ns2		(as the result of readlink)
->          ->ns3
-> We knew that t3 in ns2, and its hierarchy.
-> 
-> How these ideas looks like?
-> Any comments would be appreciated.
-> 
-> Thanks,
-> - Chen
-> 
-> 
-> a) syscall
-> http://lwn.net/Articles/602987/
-> 
-> b) procfs
-> http://www.spinics.net/lists/kernel/msg1751688.html
-> 
+   The program meets the education requirement for all professional
+   designations through the Project Management Institute and other
+   professional agencies. Additionally, the program awards 3.6 Continuing
+   Education Units (CEUs) upon request.
 
--- 
-Yasunori Goto <y-goto-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+
+   Program Description
+
+   Our certificate program teaches technical and business professionals
+   how to master the critical skills of project management techniques as
+   part of their technical career development.
+
+
+   The skills developed in the Project Management Masters Certification
+   program apply to large and small projects, product design and
+   development efforts, construction projects, IT projects, software
+   development, and any project with critical performance, time, and
+   budget targets.
+
+
+   Our approach to project management education offers proven,
+   results-focused learning.
+
+
+   Courses are developed and facilitated by professional subject experts
+   with extensive industrial experience. Course emphasis is on providing
+   practical skills and tools supported by relevant case examples.
+
+
+   Tuition
+
+
+   Tuition for the four-day Project Management Masters Certification
+   program is $995.00
+
+
+   Program Schedule and Content
+
+   1. Project Initiation, Costing, and Selection, Day 1
+
+   2. Project Organization and Leadership, Day 2
+
+   3. Detailed Project Planning, Day 2 and 3
+
+   4. Project Monitoring and Control, Day 3 and 4
+
+   5. Project Risk Management, Day 4
+
+
+   Benefits
+
+   =C2=B7   A PMMC certificate of accomplishment is awarded upon completion=
+ of
+   the four day program of five courses. Completion letters are given for
+   each course.
+
+   =C2=B7   Our instructors have extensive industrial experience. They focu=
+s on
+   providing you with practical skills and tools using relevant case
+   examples.
+
+   =C2=B7   Each class is highly focused and promotes maximum interaction.
+
+   =C2=B7   You can network with other project management professionals fro=
+m a
+   variety of industries.
+
+   =C2=B7   Earn Professional Development Units (PDUs) for maintenance of
+   certification under the PMI Continuing Certification Requirements
+   Program.
+
+   =C2=B7    Applicants for PMI's Certified Associate in Project Management
+   (CAPM)=C2=AE and Project Management Professional (PMP) certifications wi=
+ll
+   have met all education requirements for eligibility.
+
+
+   Registration
+
+
+   Participants may reserve a seat online at the [2]Institute of Project
+   Management America website, by calling the Program Office toll-free at
+   (888) 859-5659 , or by sending their name and contact information via
+   email to the [3]Program Registrar .
+
+
+   Upon receiving your registration, a confirmation email is sent to
+   registrants that include session site information, travel information,
+   program description, and details on how to confirm attendance and make
+   payment arrangements.
+
+
+
+
+   Click [4]HERE to unsubscribe from this mailing list.
+
+References
+
+   1. http://www.ipma2014.org/
+   2. http://www.ipma2014.org/
+   3. mailto:registrar-drpaRwKoTntg9hUCZPvPmw@public.gmane.org
+   4. mailto:remove-drpaRwKoTntg9hUCZPvPmw@public.gmane.org
