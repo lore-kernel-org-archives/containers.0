@@ -1,15 +1,16 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: Could not mount sysfs when enable userns but disable netns
-Date: Fri, 11 Jul 2014 09:29:05 -0700
-Message-ID: <87ha2nyi3y.fsf@x220.int.ebiederm.org>
+From: "chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: RE: Could not mount sysfs when enable userns but disable netns
+Date: Mon, 14 Jul 2014 09:32:39 +0000
+Message-ID: <5871495633F38949900D2BF2DC04883E5632BD@G08CNEXMBPEKD02.g08.fujitsu.local>
 References: <5871495633F38949900D2BF2DC04883E562293@G08CNEXMBPEKD02.g08.fujitsu.local>
 	<20140711142806.GA26441@mail.hallyn.com>
+	<87ha2nyi3y.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="gb2312"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140711142806.GA26441-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
-	message of "Fri, 11 Jul 2014 16:28:06 +0200")
+In-Reply-To: <87ha2nyi3y.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,59 +20,79 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Serge Hallyn (serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org)" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, "'Daniel P. Berrange (berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org)'" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
-
-> Quoting chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org (chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
->> Hello,
->> 
->> How to reproduce:
->> 1. Prepare a container, enable userns and disable netns
->> 2. use libvirt-lxc to start a container
->> 3. libvirt could not mount sysfs then failed to start.
->> 
->> Then I found that
->> commit 7dc5dbc879bd0779924b5132a48b731a0bc04a1e says:
->> "Don't allow mounting sysfs unless the caller has CAP_SYS_ADMIN rights
->> over the net namespace."
->> 
->> But why should we check sysfs mouont permission over net namespace?
->> We've already checked CAP_SYS_ADMIN though.
-
-We already checked capable(CAP_SYS_ADMIN) and it failed.
-
->> What the relationship between sysfs and net namespace,
->> or this check is a little redundant?
-
-You want a bind mount not a new fresh mount.
-
-When looking at how evil actors could abuse things it turned out that in
-some circumstances the root user (before a user namespace is created)
-needs to control the policy on which filesystems may be mounted.  There
-are files in sysfs and in proc that you never want to see in a chroot
-jail, as they just create more surface area to attack.
-
-The only reason for creating a new fresh mount of sysfs is to get access
-to /sys/class/net.  So to keep things simple we restrict creation of
-that mount to cases where the mounter has permisions over the network
-namespace, and cases where nothing interesing is mounted on top of
-sysfs.
-
-If a new /sys/class/net is not needed it is possible to bind mount the
-existing copy of sysfs to the new location without loss of
-functionality.
-
-> It is not redundant.  The whole point is that after clone(CLONE_NEWUSER)
-> you get a newly filled set of capabilities.  But you should not have
-> privileges over the host's network namesapce.  After you unshare a new
-> network namespace, you *should* have privilege over it.  So the fact
-> that we've already check CAP_SYS_ADMIN means nothing, because the
-> capabilities need to be targeted.
-
-Exactly the tests are failing because the caller is not the global root
-and so the code is properly failing the permission checks.
-
-Eric
+DQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogRXJpYyBXLiBCaWVkZXJt
+YW4gW21haWx0bzplYmllZGVybUB4bWlzc2lvbi5jb21dDQo+IFNlbnQ6IFNhdHVyZGF5LCBKdWx5
+IDEyLCAyMDE0IDEyOjI5IEFNDQo+IFRvOiBTZXJnZSBFLiBIYWxseW4NCj4gQ2M6IENoZW4sIEhh
+bnhpYW8vs8Ig6s/P9jsgU2VyZ2UgSGFsbHluIChzZXJnZS5oYWxseW5AdWJ1bnR1LmNvbSk7IEdy
+ZWcNCj4gS3JvYWgtSGFydG1hbjsgY29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9y
+ZzsNCj4gbGludXgta2VybmVsQHZnZXIua2VybmVsLm9yZw0KPiBTdWJqZWN0OiBSZTogQ291bGQg
+bm90IG1vdW50IHN5c2ZzIHdoZW4gZW5hYmxlIHVzZXJucyBidXQgZGlzYWJsZSBuZXRucw0KPiAN
+Cj4gIlNlcmdlIEUuIEhhbGx5biIgPHNlcmdlQGhhbGx5bi5jb20+IHdyaXRlczoNCj4gDQo+ID4g
+UXVvdGluZyBjaGVuaGFueGlhb0Bjbi5mdWppdHN1LmNvbSAoY2hlbmhhbnhpYW9AY24uZnVqaXRz
+dS5jb20pOg0KPiA+PiBIZWxsbywNCj4gPj4NCj4gPj4gSG93IHRvIHJlcHJvZHVjZToNCj4gPj4g
+MS4gUHJlcGFyZSBhIGNvbnRhaW5lciwgZW5hYmxlIHVzZXJucyBhbmQgZGlzYWJsZSBuZXRucw0K
+PiA+PiAyLiB1c2UgbGlidmlydC1seGMgdG8gc3RhcnQgYSBjb250YWluZXINCj4gPj4gMy4gbGli
+dmlydCBjb3VsZCBub3QgbW91bnQgc3lzZnMgdGhlbiBmYWlsZWQgdG8gc3RhcnQuDQo+ID4+DQo+
+ID4+IFRoZW4gSSBmb3VuZCB0aGF0DQo+ID4+IGNvbW1pdCA3ZGM1ZGJjODc5YmQwNzc5OTI0YjUx
+MzJhNDhiNzMxYTBiYzA0YTFlIHNheXM6DQo+ID4+ICJEb24ndCBhbGxvdyBtb3VudGluZyBzeXNm
+cyB1bmxlc3MgdGhlIGNhbGxlciBoYXMgQ0FQX1NZU19BRE1JTiByaWdodHMNCj4gPj4gb3ZlciB0
+aGUgbmV0IG5hbWVzcGFjZS4iDQo+ID4+DQo+ID4+IEJ1dCB3aHkgc2hvdWxkIHdlIGNoZWNrIHN5
+c2ZzIG1vdW9udCBwZXJtaXNzaW9uIG92ZXIgbmV0IG5hbWVzcGFjZT8NCj4gPj4gV2UndmUgYWxy
+ZWFkeSBjaGVja2VkIENBUF9TWVNfQURNSU4gdGhvdWdoLg0KPiANCj4gV2UgYWxyZWFkeSBjaGVj
+a2VkIGNhcGFibGUoQ0FQX1NZU19BRE1JTikgYW5kIGl0IGZhaWxlZC4NCg0KQnV0IG9uIG15IG1h
+Y2hpbmUsIGNhcGFibGUoQ0FQX1NZU19BRE1JTikgcGFzc2VkDQpidXQgZmFpbGVkIGluIGtvYmpf
+bnNfY3VycmVudF9tYXlfbW91bnQuDQoNCkkgYWRkZWQgc29tZSBwcmludGtzIGluIHN5c2ZzX21v
+dW50Og0KICAgICAgICBpZiAoIShmbGFncyAmIE1TX0tFUk5NT1VOVCkpIHsNCi0gICAgICAgICAg
+ICAgICBpZiAoIWNhcGFibGUoQ0FQX1NZU19BRE1JTikgJiYgIWZzX2Z1bGx5X3Zpc2libGUoZnNf
+dHlwZSkpDQorICAgICAgICAgICAgICAgaWYgKCFjYXBhYmxlKENBUF9TWVNfQURNSU4pICYmICFm
+c19mdWxseV92aXNpYmxlKGZzX3R5cGUpKSB7DQorICAgICAgICAgICAgICAgICAgICAgICBwcmlu
+dGsoS0VSTl9XQVJOSU5HICJGYWlsZWQgaW4gY2FwYWJsZVxuIik7DQogICAgICAgICAgICAgICAg
+ICAgICAgICByZXR1cm4gRVJSX1BUUigtRVBFUk0pOw0KKyAgICAgICAgICAgICAgICB9DQogDQot
+ICAgICAgICAgICAgICAgaWYgKCFrb2JqX25zX2N1cnJlbnRfbWF5X21vdW50KEtPQkpfTlNfVFlQ
+RV9ORVQpKQ0KKyAgICAgICAgICAgICAgIGlmICgha29ial9uc19jdXJyZW50X21heV9tb3VudChL
+T0JKX05TX1RZUEVfTkVUKSkgew0KKyAgICAgICAgICAgICAgICAgICAgICAgcHJpbnRrKEtFUk5f
+V0FSTklORyAiRmFpbGVkIGluIGtvYmpfbnNfY3VycmVudF9tYXlfbW91bnRcbiIpOw0KICAgICAg
+ICAgICAgICAgICAgICAgICAgcmV0dXJuIEVSUl9QVFIoLUVQRVJNKTsNCisgICAgICAgICAgICAg
+ICAgfQ0KDQpBbmQgZm91bmQ6IA0KSnVsIDE0IDA5OjU1OjI2IGxvY2FsaG9zdCBzeXN0ZW1kOiBT
+dGFydGluZyBDb250YWluZXIgbHhjLWNoeC4NCkp1bCAxNCAwOTo1NToyNiBsb2NhbGhvc3Qgc3lz
+dGVtZC1tYWNoaW5lZDogTmV3IG1hY2hpbmUgbHhjLWNoeC4NCkp1bCAxNCAwOTo1NToyNiBsb2Nh
+bGhvc3Qgc3lzdGVtZDogU3RhcnRlZCBDb250YWluZXIgbHhjLWNoeC4NCkp1bCAxNCAwOTo1NToy
+NiBsb2NhbGhvc3Qga2VybmVsOiBbICA3ODQuMDQ0NzA5XSBGYWlsZWQgaW4ga29ial9uc19jdXJy
+ZW50X21heV9tb3VudA0KSnVsIDE0IDA5OjU1OjI2IGxvY2FsaG9zdCBzeXN0ZW1kLW1hY2hpbmVk
+OiBNYWNoaW5lIGx4Yy1jaHggdGVybWluYXRlZC4NCg0KPiANCj4gPj4gV2hhdCB0aGUgcmVsYXRp
+b25zaGlwIGJldHdlZW4gc3lzZnMgYW5kIG5ldCBuYW1lc3BhY2UsDQo+ID4+IG9yIHRoaXMgY2hl
+Y2sgaXMgYSBsaXR0bGUgcmVkdW5kYW50Pw0KPiANCj4gWW91IHdhbnQgYSBiaW5kIG1vdW50IG5v
+dCBhIG5ldyBmcmVzaCBtb3VudC4NCj4gDQoNClllcywgd2UgbmVlZCB0byBtb2RpZnkgbGlidmly
+dCdzIGNvZGVzIHRvIGRlYWwgd2l0aCBzeXNmcw0Kd2hlbiBlbmFibGUgdXNlcm5zIGJ1dCBkaXNh
+YmxlIG5ldG5zLg0KDQpUaGFua3MsDQotIENoZW4NCg0KPiBXaGVuIGxvb2tpbmcgYXQgaG93IGV2
+aWwgYWN0b3JzIGNvdWxkIGFidXNlIHRoaW5ncyBpdCB0dXJuZWQgb3V0IHRoYXQgaW4NCj4gc29t
+ZSBjaXJjdW1zdGFuY2VzIHRoZSByb290IHVzZXIgKGJlZm9yZSBhIHVzZXIgbmFtZXNwYWNlIGlz
+IGNyZWF0ZWQpDQo+IG5lZWRzIHRvIGNvbnRyb2wgdGhlIHBvbGljeSBvbiB3aGljaCBmaWxlc3lz
+dGVtcyBtYXkgYmUgbW91bnRlZC4gIFRoZXJlDQo+IGFyZSBmaWxlcyBpbiBzeXNmcyBhbmQgaW4g
+cHJvYyB0aGF0IHlvdSBuZXZlciB3YW50IHRvIHNlZSBpbiBhIGNocm9vdA0KPiBqYWlsLCBhcyB0
+aGV5IGp1c3QgY3JlYXRlIG1vcmUgc3VyZmFjZSBhcmVhIHRvIGF0dGFjay4NCj4gDQo+IFRoZSBv
+bmx5IHJlYXNvbiBmb3IgY3JlYXRpbmcgYSBuZXcgZnJlc2ggbW91bnQgb2Ygc3lzZnMgaXMgdG8g
+Z2V0IGFjY2Vzcw0KPiB0byAvc3lzL2NsYXNzL25ldC4gIFNvIHRvIGtlZXAgdGhpbmdzIHNpbXBs
+ZSB3ZSByZXN0cmljdCBjcmVhdGlvbiBvZg0KPiB0aGF0IG1vdW50IHRvIGNhc2VzIHdoZXJlIHRo
+ZSBtb3VudGVyIGhhcyBwZXJtaXNpb25zIG92ZXIgdGhlIG5ldHdvcmsNCj4gbmFtZXNwYWNlLCBh
+bmQgY2FzZXMgd2hlcmUgbm90aGluZyBpbnRlcmVzaW5nIGlzIG1vdW50ZWQgb24gdG9wIG9mDQo+
+IHN5c2ZzLg0KPiANCj4gSWYgYSBuZXcgL3N5cy9jbGFzcy9uZXQgaXMgbm90IG5lZWRlZCBpdCBp
+cyBwb3NzaWJsZSB0byBiaW5kIG1vdW50IHRoZQ0KPiBleGlzdGluZyBjb3B5IG9mIHN5c2ZzIHRv
+IHRoZSBuZXcgbG9jYXRpb24gd2l0aG91dCBsb3NzIG9mDQo+IGZ1bmN0aW9uYWxpdHkuDQo+IA0K
+PiA+IEl0IGlzIG5vdCByZWR1bmRhbnQuICBUaGUgd2hvbGUgcG9pbnQgaXMgdGhhdCBhZnRlciBj
+bG9uZShDTE9ORV9ORVdVU0VSKQ0KPiA+IHlvdSBnZXQgYSBuZXdseSBmaWxsZWQgc2V0IG9mIGNh
+cGFiaWxpdGllcy4gIEJ1dCB5b3Ugc2hvdWxkIG5vdCBoYXZlDQo+ID4gcHJpdmlsZWdlcyBvdmVy
+IHRoZSBob3N0J3MgbmV0d29yayBuYW1lc2FwY2UuICBBZnRlciB5b3UgdW5zaGFyZSBhIG5ldw0K
+PiA+IG5ldHdvcmsgbmFtZXNwYWNlLCB5b3UgKnNob3VsZCogaGF2ZSBwcml2aWxlZ2Ugb3ZlciBp
+dC4gIFNvIHRoZSBmYWN0DQo+ID4gdGhhdCB3ZSd2ZSBhbHJlYWR5IGNoZWNrIENBUF9TWVNfQURN
+SU4gbWVhbnMgbm90aGluZywgYmVjYXVzZSB0aGUNCj4gPiBjYXBhYmlsaXRpZXMgbmVlZCB0byBi
+ZSB0YXJnZXRlZC4NCj4gDQo+IEV4YWN0bHkgdGhlIHRlc3RzIGFyZSBmYWlsaW5nIGJlY2F1c2Ug
+dGhlIGNhbGxlciBpcyBub3QgdGhlIGdsb2JhbCByb290DQo+IGFuZCBzbyB0aGUgY29kZSBpcyBw
+cm9wZXJseSBmYWlsaW5nIHRoZSBwZXJtaXNzaW9uIGNoZWNrcy4NCj4gDQo+IEVyaWMNCl9fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFp
+bGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9s
+aXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
