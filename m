@@ -1,18 +1,15 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: Could not mount sysfs when enable userns but disable netns
-Date: Mon, 14 Jul 2014 10:23:32 -0700
-Message-ID: <878unvvoq3.fsf@x220.int.ebiederm.org>
-References: <5871495633F38949900D2BF2DC04883E562293@G08CNEXMBPEKD02.g08.fujitsu.local>
-	<20140711142806.GA26441@mail.hallyn.com>
-	<87ha2nyi3y.fsf@x220.int.ebiederm.org>
-	<5871495633F38949900D2BF2DC04883E5632BD@G08CNEXMBPEKD02.g08.fujitsu.local>
+From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC]Pid conversion between pid namespace
+Date: Tue, 15 Jul 2014 04:16:28 +0000
+Message-ID: <20140715041628.GL1132@ubuntumail>
+References: <5871495633F38949900D2BF2DC04883E55C374@G08CNEXMBPEKD02.g08.fujitsu.local>
+	<5871495633F38949900D2BF2DC04883E560412@G08CNEXMBPEKD02.g08.fujitsu.local>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <5871495633F38949900D2BF2DC04883E5632BD-ZEd+hNNJ6a5ZYpXjqAkB5jz3u5zwRJJDAzI0kPv9QBlmR6Xm/wNWPw@public.gmane.org>
-	(chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org's message of "Mon, 14 Jul 2014 09:32:39
-	+0000")
+Content-Disposition: inline
+In-Reply-To: <5871495633F38949900D2BF2DC04883E560412-ZEd+hNNJ6a5ZYpXjqAkB5jz3u5zwRJJDAzI0kPv9QBlmR6Xm/wNWPw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,63 +19,170 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "chenhanxiao@cn.fujitsu.com" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: "Richard Weinberger (richard-/L3Ra7n9ekc@public.gmane.org)" <richard-/L3Ra7n9ekc@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Oleg Nesterov (oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org)" <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org)" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Vasily Kulikov (segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org)" <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-ImNoZW5oYW54aWFvQGNuLmZ1aml0c3UuY29tIiA8Y2hlbmhhbnhpYW9AY24uZnVqaXRzdS5jb20+
-IHdyaXRlczoKCj4+IC0tLS0tT3JpZ2luYWwgTWVzc2FnZS0tLS0tCj4+IEZyb206IEVyaWMgVy4g
-QmllZGVybWFuIFttYWlsdG86ZWJpZWRlcm1AeG1pc3Npb24uY29tXQo+PiBTZW50OiBTYXR1cmRh
-eSwgSnVseSAxMiwgMjAxNCAxMjoyOSBBTQo+PiBUbzogU2VyZ2UgRS4gSGFsbHluCj4+IENjOiBD
-aGVuLCBIYW54aWFvL+mZiCDmmZfpnIQ7IFNlcmdlIEhhbGx5biAoc2VyZ2UuaGFsbHluQHVidW50
-dS5jb20pOyBHcmVnCj4+IEtyb2FoLUhhcnRtYW47IGNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91
-bmRhdGlvbi5vcmc7Cj4+IGxpbnV4LWtlcm5lbEB2Z2VyLmtlcm5lbC5vcmcKPj4gU3ViamVjdDog
-UmU6IENvdWxkIG5vdCBtb3VudCBzeXNmcyB3aGVuIGVuYWJsZSB1c2VybnMgYnV0IGRpc2FibGUg
-bmV0bnMKPj4gCj4+ICJTZXJnZSBFLiBIYWxseW4iIDxzZXJnZUBoYWxseW4uY29tPiB3cml0ZXM6
-Cj4+IAo+PiA+IFF1b3RpbmcgY2hlbmhhbnhpYW9AY24uZnVqaXRzdS5jb20gKGNoZW5oYW54aWFv
-QGNuLmZ1aml0c3UuY29tKToKPj4gPj4gSGVsbG8sCj4+ID4+Cj4+ID4+IEhvdyB0byByZXByb2R1
-Y2U6Cj4+ID4+IDEuIFByZXBhcmUgYSBjb250YWluZXIsIGVuYWJsZSB1c2VybnMgYW5kIGRpc2Fi
-bGUgbmV0bnMKPj4gPj4gMi4gdXNlIGxpYnZpcnQtbHhjIHRvIHN0YXJ0IGEgY29udGFpbmVyCj4+
-ID4+IDMuIGxpYnZpcnQgY291bGQgbm90IG1vdW50IHN5c2ZzIHRoZW4gZmFpbGVkIHRvIHN0YXJ0
-Lgo+PiA+Pgo+PiA+PiBUaGVuIEkgZm91bmQgdGhhdAo+PiA+PiBjb21taXQgN2RjNWRiYzg3OWJk
-MDc3OTkyNGI1MTMyYTQ4YjczMWEwYmMwNGExZSBzYXlzOgo+PiA+PiAiRG9uJ3QgYWxsb3cgbW91
-bnRpbmcgc3lzZnMgdW5sZXNzIHRoZSBjYWxsZXIgaGFzIENBUF9TWVNfQURNSU4gcmlnaHRzCj4+
-ID4+IG92ZXIgdGhlIG5ldCBuYW1lc3BhY2UuIgo+PiA+Pgo+PiA+PiBCdXQgd2h5IHNob3VsZCB3
-ZSBjaGVjayBzeXNmcyBtb3VvbnQgcGVybWlzc2lvbiBvdmVyIG5ldCBuYW1lc3BhY2U/Cj4+ID4+
-IFdlJ3ZlIGFscmVhZHkgY2hlY2tlZCBDQVBfU1lTX0FETUlOIHRob3VnaC4KPj4gCj4+IFdlIGFs
-cmVhZHkgY2hlY2tlZCBjYXBhYmxlKENBUF9TWVNfQURNSU4pIGFuZCBpdCBmYWlsZWQuCj4KPiBC
-dXQgb24gbXkgbWFjaGluZSwgY2FwYWJsZShDQVBfU1lTX0FETUlOKSBwYXNzZWQKPiBidXQgZmFp
-bGVkIGluIGtvYmpfbnNfY3VycmVudF9tYXlfbW91bnQuCgpOby4gIGNhcGFibGUoQ0FQX1NZU19B
-RE1JTikgZGlkIG5vdCBwYXNzLgpmc19mdWxseV92aXNpYmxlIGRpZCBwYXNzZWQuCgpUaGVyZSBp
-cyBhIHNpZ25pZmljYW50IGRpc3RpbmN0aW9uLiAgSWYgY2FwYWJsZShDQVBfU1lTX0FETUlOKSBo
-YWQKcGFzc2VkIGtvYmpfbnNfY3VycmVudF9tYXlfbW91bnQgKHdoaWNoIGlzIGEgZmFuY3kgd2F5
-IG9mIHNheWluZwpuc19jYXBhYmxlKG5ldC0+dXNlcl9ucywgQ0FQX1NZU19BRE1JTikpIHdvdWxk
-IGFsc28gaGF2ZSBwYXNzZWQuCgo+IEkgYWRkZWQgc29tZSBwcmludGtzIGluIHN5c2ZzX21vdW50
-Ogo+ICAgICAgICAgaWYgKCEoZmxhZ3MgJiBNU19LRVJOTU9VTlQpKSB7Cj4gLSAgICAgICAgICAg
-ICAgIGlmICghY2FwYWJsZShDQVBfU1lTX0FETUlOKSAmJiAhZnNfZnVsbHlfdmlzaWJsZShmc190
-eXBlKSkKPiArICAgICAgICAgICAgICAgaWYgKCFjYXBhYmxlKENBUF9TWVNfQURNSU4pICYmICFm
-c19mdWxseV92aXNpYmxlKGZzX3R5cGUpKSB7Cj4gKyAgICAgICAgICAgICAgICAgICAgICAgcHJp
-bnRrKEtFUk5fV0FSTklORyAiRmFpbGVkIGluIGNhcGFibGVcbiIpOwo+ICAgICAgICAgICAgICAg
-ICAgICAgICAgIHJldHVybiBFUlJfUFRSKC1FUEVSTSk7Cj4gKyAgICAgICAgICAgICAgICB9Cj4g
-IAo+IC0gICAgICAgICAgICAgICBpZiAoIWtvYmpfbnNfY3VycmVudF9tYXlfbW91bnQoS09CSl9O
-U19UWVBFX05FVCkpCj4gKyAgICAgICAgICAgICAgIGlmICgha29ial9uc19jdXJyZW50X21heV9t
-b3VudChLT0JKX05TX1RZUEVfTkVUKSkgewo+ICsgICAgICAgICAgICAgICAgICAgICAgIHByaW50
-ayhLRVJOX1dBUk5JTkcgIkZhaWxlZCBpbiBrb2JqX25zX2N1cnJlbnRfbWF5X21vdW50XG4iKTsK
-PiAgICAgICAgICAgICAgICAgICAgICAgICByZXR1cm4gRVJSX1BUUigtRVBFUk0pOwo+ICsgICAg
-ICAgICAgICAgICAgfQo+Cj4gQW5kIGZvdW5kOiAKPiBKdWwgMTQgMDk6NTU6MjYgbG9jYWxob3N0
-IHN5c3RlbWQ6IFN0YXJ0aW5nIENvbnRhaW5lciBseGMtY2h4Lgo+IEp1bCAxNCAwOTo1NToyNiBs
-b2NhbGhvc3Qgc3lzdGVtZC1tYWNoaW5lZDogTmV3IG1hY2hpbmUgbHhjLWNoeC4KPiBKdWwgMTQg
-MDk6NTU6MjYgbG9jYWxob3N0IHN5c3RlbWQ6IFN0YXJ0ZWQgQ29udGFpbmVyIGx4Yy1jaHguCj4g
-SnVsIDE0IDA5OjU1OjI2IGxvY2FsaG9zdCBrZXJuZWw6IFsgIDc4NC4wNDQ3MDldIEZhaWxlZCBp
-biBrb2JqX25zX2N1cnJlbnRfbWF5X21vdW50Cj4gSnVsIDE0IDA5OjU1OjI2IGxvY2FsaG9zdCBz
-eXN0ZW1kLW1hY2hpbmVkOiBNYWNoaW5lIGx4Yy1jaHggdGVybWluYXRlZC4KPgo+PiAKPj4gPj4g
-V2hhdCB0aGUgcmVsYXRpb25zaGlwIGJldHdlZW4gc3lzZnMgYW5kIG5ldCBuYW1lc3BhY2UsCj4+
-ID4+IG9yIHRoaXMgY2hlY2sgaXMgYSBsaXR0bGUgcmVkdW5kYW50Pwo+PiAKPj4gWW91IHdhbnQg
-YSBiaW5kIG1vdW50IG5vdCBhIG5ldyBmcmVzaCBtb3VudC4KPj4gCj4KPiBZZXMsIHdlIG5lZWQg
-dG8gbW9kaWZ5IGxpYnZpcnQncyBjb2RlcyB0byBkZWFsIHdpdGggc3lzZnMKPiB3aGVuIGVuYWJs
-ZSB1c2VybnMgYnV0IGRpc2FibGUgbmV0bnMuCgpQbGVhc2UgZ28gZm9yIGl0LiAgSSBkb24ndCBo
-YXZlIGFueSBpbnNpZ250IGludG8gbGlidmlydCBzbyBJIGNhbid0IGhlbHAKeW91IHRoZXJlLgoK
-RXJpYwpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250
-YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3Jn
-Cmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRh
-aW5lcnM=
+Quoting chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org (chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
+> Hi,
+> 
+> Let me summarize our discussions of ID conversion by pros/cons: 
+> 
+> A) make new system call for translation	
+>     A-1) systemcall(ID, NS1, NS2) into (ID).
+>     pros:
+>         - has a reference ns(NS2)
+>           We could get any lower level ID directly.
+> 		 
+>     cons:
+>         - lack of hierarchy information. 
+>           CRIU need hierarchy info for checkpoint/restore in nested containers.
+>         - not easy for debug. 
+>           And a lot of tools/libs need be modified.
+> 
+>     A-2) syscall pid_t getnspid(pid_t query_pid, pid_t observer_pid)
+>     pros:
+>         - ns procfs free, easy to use.
+>         We could get rid of mounted ns procfs.
+> 
+>     cons:
+>         - may find multiple results in nested ns.
+>           We wished the new API could tell us the exact answer.
+>           But if getnspid return more than one results will bring trouble to admins,
+
+(See below for more, but) the question being posed to getnspid has precisely
+one answer.
+
+>           they had to make another decision.
+>           Or we marked the deepest level for translation as prerequisite.
+> 
+>         -based on current pidns, no reference ns.
+
+Hm, no.  The intent here was that
+
+	observer_pid would be in current ns
+	query_pid would be in observer_pid's ns.
+
+So this would be ideal for "I got a pid in a logfile created by rsyslog in
+a nested contaner, what is the logged pid in my pidns."
+
+Taking a set of tasks (like a container with nesting) and bulding a tree
+of all pids shouldn't be too difficult either.  Start with the init pid,
+call getnspid($pid, $init_pid) for every $pid in the container;  to figure
+out whether any $pid is itself a nested init_pid, we can compare the
+/proc/$$/ns/pid, as well as look at getnspid($pid, $pid).
+
+> B) make/change proc file/directories
+> 	B-1) expand /proc/pid/status
+> 	pros:
+>         - easy to use and to debug
+>         - already had existed interface in kernel
+>         
+> 	cons:
+>         - based on current ns
+>           for middle level, we had to make another decision.
+>         - do not have hierarchy info.
+> 
+> 	B-2) /proc/<pidX>/ns/proc/ which would contain everything
+> 	pros:
+>         - have enough info from /proc in container
+> 
+> 	cons:
+>         - Requirements unclear.
+>           We need more discussion to decide which items should not be exposed.
+>         - do not have hierarchy info.
+> 
+> 
+> How about do these things in two steps: 
+> 
+> C)  1. expose all sets of pid, pgid, sid and tgid
+> via expanded /proc/PID/status
+>       We could get translated IDs from container like:
+>     NStgid:	16465 	5 	1 
+>     NSpid:	16465 	5 	1 
+>     NSpgid:	16465 	5 	1 
+>     NSsid:	16423 	1 	0
+>     (a set of IDs with 3 level of ns)
+> 
+>     2. add hierarchy info under /proc
+>       We lacked of method of getting hierarchy info, which is useful.
+>       Then we could know the relationship of ns.
+>       How about adding a new proc file just under /proc
+>       to show the hierarchy like readlink did:
+> 	  pid:[4026531836]-> [4026532390] -> [4026532484]
+>       pid:[4026531836]-> [4026532491]
+>       (A 3 level pid and 2 level pid_
+> 
+> Any comments would be appreciated.
+> 
+> Thanks,
+> - Chen
+> 
+> > -----Original Message-----
+> > Subject: [RFC]Pid conversion between pid namespace
+> > 
+> > Hi,
+> > 
+> > We had some discussions on how to carry out
+> > pid conversion between pid namespace via:
+> > syscall[1] and procfs[2].
+> > 
+> > Pavel suggested that a syscall like
+> > (ID, NS1, NS2) into (ID).
+> > 
+> > Serge suggested that a syscall
+> > pid_t getnspid(pid_t query_pid, pid_t observer_pid).
+> > 
+> > 
+> > Eric and Richard suggested a procfs solution is
+> > more appropriate.
+> > 
+> > Oleg suggested that we should expand /proc/pid/status
+> > to report this kind of information.
+> > 
+> > And Richard suggested adding a directory like
+> > /proc/<pidX>/ns/proc/ which would contain everything
+> > from /proc/<pidX inside the namespace>/.
+> > 
+> > As procfs provided a more user friendly interface,
+> > how about expose all sets of tgid, pid, pgid, sid
+> > by expanding /proc/PID/status in procfs?
+> > And we could also expose ns hierarchy under /proc,
+> > which could be another reference.
+> > 
+> > Ex:
+> >     init_pid_ns    ns1         ns2
+> > t1  2
+> > t2   `- 3          1
+> > t3       `- 4      `- 5        1
+> > 
+> > We could get in /proc/t3/status:
+> > NSpid: 4 5 1
+> > We knew that pid 1 in container is pid 4 in init ns.
+> > 
+> > And we could get ns hierarchy under /proc/ns_hierarchy like:
+> > init_ns->ns1->ns2		(as the result of readlink)
+> >          ->ns3
+> > We knew that t3 in ns2, and its hierarchy.
+> > 
+> > How these ideas looks like?
+> > Any comments would be appreciated.
+> > 
+> > Thanks,
+> > - Chen
+> > 
+> > 
+> > a) syscall
+> > http://lwn.net/Articles/602987/
+> > 
+> > b) procfs
+> > http://www.spinics.net/lists/kernel/msg1751688.html
+> > 
+> > _______________________________________________
+> > Containers mailing list
+> > Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> > https://lists.linuxfoundation.org/mailman/listinfo/containers
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linuxfoundation.org/mailman/listinfo/containers
