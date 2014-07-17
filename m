@@ -1,12 +1,14 @@
-From: "Axiatel" <info-L8AU2z0NbyDQT0dZR+AlfA@public.gmane.org>
-Subject: Ricevi i tuoi fax sul tuo indirizzo email
-Date: Wed, 16 Jul 2014 18:36:19 +0300
-Message-ID: <b8adf3d72c5db2878a299f577d135175@toprem.com>
-Reply-To: support-L8AU2z0NbyDQT0dZR+AlfA@public.gmane.org
+From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 4/5] cgroup: export cgroup_get() and cgroup_put()
+Date: Thu, 17 Jul 2014 12:52:10 -0700
+Message-ID: <1405626731-12220-5-git-send-email-adityakali@google.com>
+References: <adityakali-cgroupns>
+	<1405626731-12220-1-git-send-email-adityakali@google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; Format="flowed"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1405626731-12220-1-git-send-email-adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,31 +18,89 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-QXhpYXRlbApSaWNldmkgaSB0dW9pIGZheCBkaXJldHRhbWVudGUgdmlhIGVtYWlsCgpJbCBGYXgg
-T25saW5lIGRpIEF4aWF0ZWwuY29tIHRpIHBlcm1ldHRlIGRpIGludmlhcmUgZSByaWNldmVyZSBp
-IHR1b2kgZmF4CmRpcmV0dGFtZW50ZSB2aWEgZW1haWwuCgpQb3RyYWkgaW5vbHRyZSB1c3VmcnVp
-cmUgZGkgbnVtZXJvc2UgYWx0cmUgZnVuemlvbmFsaXTDoCwgY29tZSBhZCBlc2VtcGlvOgorU2Fs
-dmFyZSBpIHR1b2kgZmF4IGluIGZvcm1hdG8gZGlnaXRhbGUKK1NjZWdsaWVyZSB1biBudW1lcm8g
-ZGkgZmF4IG8gY29uc2VydmFyZSBxdWVsbG8gYXR0dWFsZSBjb24gbGEKcG9ydGFiaWxpdMOgCitQ
-ZXJzb25hbGl6emFyZSBsYSBjb3BlcnRpbmEgZSBpbCBtaXR0ZW50ZQorSW1wb3N0YXJlIGZpbm8g
-YSA1IGluZGlyaXp6aSBwZXIgbCdpbnZpbyBlIGxhIHJpY2V6aW9uZSBkZWkgZmF4CgpQcmV2ZW50
-aXZvIEdyYXR1aXRvOgpodHRwOi8vdHJhY2sxMzExNDY4My5lZmZpbWFpbHMxNi5jb20vc2Vydmxl
-dC9lZmZpLnJlZGlyP2lkX2NvbXB0ZXVyPTEzMTE0NjgzJnVybD1odHRwOi8vdHJhY2tpbmcuYXhp
-YXRlbC5jb20vZHluY2xpY2svYXhpYXRlbC1pdC8lM0ZlcHQtcHVibGlzaGVyJTNERWZmaWxpYXRp
-b24lMjZlcHQtbmFtZSUzREVmZmlsaWF0aW9uXzE0MDYyNV9GUE1fbGVhZF9zaW1wbGVfSVQlMjZl
-dXJsJTNEaHR0cCUyNTNBJTI1MkYlMjUyRnd3dy5heGlhdGVsLmNvbSUyNTJGaXQlMjUyRml0JTI1
-MkZscC5waHAlMjUzRmlkJTI1M0QxNjIxJTI1MjZhYyUyNTNERUZGVE5JVApfX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fClF1ZXN0byBtZXNzYWdnaW8gdmllbmUgaW52aWF0byB2aWEgTGVhZHNMZWFkZXIu
-IEMgYSBuIGMgZSBsIGwgYSB0IGkgZGFsbGEKbGlzdGE6Cmh0dHA6Ly9kb21uc2VyLmNvbS91bnN1
-Yi9pbmRleC5waHA/cT1jb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCl9fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4
-LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFu
-L2xpc3RpbmZvL2NvbnRhaW5lcnM=
+move cgroup_get() and cgroup_put() into cgroup.h so that
+they can be called from other places.
+
+Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+---
+ include/linux/cgroup.h | 17 +++++++++++++++++
+ kernel/cgroup.c        | 18 ------------------
+ 2 files changed, 17 insertions(+), 18 deletions(-)
+
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 707c302..4ea477f 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -530,6 +530,23 @@ static inline bool cgroup_on_dfl(const struct cgroup *cgrp)
+ 	return cgrp->root == &cgrp_dfl_root;
+ }
+ 
++/* convenient tests for these bits */
++static inline bool cgroup_is_dead(const struct cgroup *cgrp)
++{
++	return !(cgrp->self.flags & CSS_ONLINE);
++}
++
++static inline void cgroup_get(struct cgroup *cgrp)
++{
++	WARN_ON_ONCE(cgroup_is_dead(cgrp));
++	css_get(&cgrp->self);
++}
++
++static inline void cgroup_put(struct cgroup *cgrp)
++{
++	css_put(&cgrp->self);
++}
++
+ /* no synchronization, the result can only be used as a hint */
+ static inline bool cgroup_has_tasks(struct cgroup *cgrp)
+ {
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 1671345..8552513 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -185,7 +185,6 @@ static int need_forkexit_callback __read_mostly;
+ static struct cftype cgroup_dfl_base_files[];
+ static struct cftype cgroup_legacy_base_files[];
+ 
+-static void cgroup_put(struct cgroup *cgrp);
+ static int rebind_subsystems(struct cgroup_root *dst_root,
+ 			     unsigned int ss_mask);
+ static int cgroup_destroy_locked(struct cgroup *cgrp);
+@@ -286,12 +285,6 @@ static struct cgroup_subsys_state *cgroup_e_css(struct cgroup *cgrp,
+ 	return cgroup_css(cgrp, ss);
+ }
+ 
+-/* convenient tests for these bits */
+-static inline bool cgroup_is_dead(const struct cgroup *cgrp)
+-{
+-	return !(cgrp->self.flags & CSS_ONLINE);
+-}
+-
+ struct cgroup_subsys_state *of_css(struct kernfs_open_file *of)
+ {
+ 	struct cgroup *cgrp = of->kn->parent->priv;
+@@ -1029,17 +1022,6 @@ static umode_t cgroup_file_mode(const struct cftype *cft)
+ 	return mode;
+ }
+ 
+-static void cgroup_get(struct cgroup *cgrp)
+-{
+-	WARN_ON_ONCE(cgroup_is_dead(cgrp));
+-	css_get(&cgrp->self);
+-}
+-
+-static void cgroup_put(struct cgroup *cgrp)
+-{
+-	css_put(&cgrp->self);
+-}
+-
+ /**
+  * cgroup_refresh_child_subsys_mask - update child_subsys_mask
+  * @cgrp: the target cgroup
+-- 
+2.0.0.526.g5318336
