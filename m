@@ -1,14 +1,13 @@
 From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 5/5] cgroup: introduce cgroup namespaces
-Date: Thu, 17 Jul 2014 12:52:11 -0700
-Message-ID: <1405626731-12220-6-git-send-email-adityakali@google.com>
+Subject: [PATCH 0/5] RFC: CGroup Namespaces
+Date: Thu, 17 Jul 2014 12:52:06 -0700
+Message-ID: <1405626731-12220-1-git-send-email-adityakali__19793.2721734562$1405626794$gmane$org@google.com>
 References: <adityakali-cgroupns>
-	<1405626731-12220-1-git-send-email-adityakali@google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1405626731-12220-1-git-send-email-adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <adityakali-cgroupns>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,534 +21,152 @@ To: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, lizefan-hv44wF8Li93QT0dZR+AlfA@p
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Introduce the ability to create new cgroup namespace. The newly created
-cgroup namespace remembers the 'struct cgroup *root_cgrp' at the point
-of creation of the cgroup namespace. The task that creates the new
-cgroup namespace and all its future children will now be restricted only
-to the cgroup hierarchy under this root_cgrp. In the first version,
-setns() is not supported for cgroup namespaces.
-The main purpose of cgroup namespace is to virtualize the contents
-of /proc/self/cgroup file. Processes inside a cgroup namespace
-are only able to see paths relative to their namespace root.
-This allows container-tools (like libcontainer, lxc, lmctfy, etc.)
-to create completely virtualized containers without leaking system
-level cgroup hierarchy to the task.
-
-Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
----
- fs/proc/namespaces.c             |   3 +
- include/linux/cgroup.h           |  18 +++++-
- include/linux/cgroup_namespace.h |  62 +++++++++++++++++++
- include/linux/nsproxy.h          |   2 +
- include/linux/proc_ns.h          |   4 ++
- init/Kconfig                     |   9 +++
- kernel/Makefile                  |   1 +
- kernel/cgroup.c                  |  32 ++++++++++
- kernel/cgroup_namespace.c        | 128 +++++++++++++++++++++++++++++++++++++++
- kernel/fork.c                    |   2 +-
- kernel/nsproxy.c                 |  19 +++++-
- 11 files changed, 276 insertions(+), 4 deletions(-)
- create mode 100644 include/linux/cgroup_namespace.h
- create mode 100644 kernel/cgroup_namespace.c
-
-diff --git a/fs/proc/namespaces.c b/fs/proc/namespaces.c
-index 8902609..e04ed4b 100644
---- a/fs/proc/namespaces.c
-+++ b/fs/proc/namespaces.c
-@@ -32,6 +32,9 @@ static const struct proc_ns_operations *ns_entries[] = {
- 	&userns_operations,
- #endif
- 	&mntns_operations,
-+#ifdef CONFIG_CGROUP_NS
-+	&cgroupns_operations,
-+#endif
- };
- 
- static const struct file_operations ns_file_operations = {
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 4ea477f..d3c6070 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -22,6 +22,8 @@
- #include <linux/seq_file.h>
- #include <linux/kernfs.h>
- #include <linux/wait.h>
-+#include <linux/nsproxy.h>
-+#include <linux/types.h>
- 
- #ifdef CONFIG_CGROUPS
- 
-@@ -469,6 +471,13 @@ struct cftype {
- #endif
- };
- 
-+struct cgroup_namespace {
-+	atomic_t		count;
-+	unsigned int		proc_inum;
-+	struct user_namespace	*user_ns;
-+	struct cgroup		*root_cgrp;
-+};
-+
- extern struct cgroup_root cgrp_dfl_root;
- extern struct css_set init_css_set;
- 
-@@ -591,10 +600,17 @@ static inline int cgroup_name(struct cgroup *cgrp, char *buf, size_t buflen)
- 	return kernfs_name(cgrp->kn, buf, buflen);
- }
- 
-+static inline char * __must_check cgroup_path_ns(struct cgroup_namespace *ns,
-+						 struct cgroup *cgrp, char *buf,
-+						 size_t buflen)
-+{
-+	return kernfs_path_from_node(ns->root_cgrp->kn, cgrp->kn, buf, buflen);
-+}
-+
- static inline char * __must_check cgroup_path(struct cgroup *cgrp, char *buf,
- 					      size_t buflen)
- {
--	return kernfs_path(cgrp->kn, buf, buflen);
-+	return cgroup_path_ns(current->nsproxy->cgroup_ns, cgrp, buf, buflen);
- }
- 
- static inline void pr_cont_cgroup_name(struct cgroup *cgrp)
-diff --git a/include/linux/cgroup_namespace.h b/include/linux/cgroup_namespace.h
-new file mode 100644
-index 0000000..9f637fe
---- /dev/null
-+++ b/include/linux/cgroup_namespace.h
-@@ -0,0 +1,62 @@
-+#ifndef _LINUX_CGROUP_NAMESPACE_H
-+#define _LINUX_CGROUP_NAMESPACE_H
-+
-+#include <linux/nsproxy.h>
-+#include <linux/cgroup.h>
-+#include <linux/types.h>
-+#include <linux/user_namespace.h>
-+
-+extern struct cgroup_namespace init_cgroup_ns;
-+
-+static inline struct cgroup *task_cgroupns_root(struct task_struct *tsk)
-+{
-+	return tsk->nsproxy->cgroup_ns->root_cgrp;
-+}
-+
-+#ifdef CONFIG_CGROUP_NS
-+
-+extern void free_cgroup_ns(struct cgroup_namespace *ns);
-+
-+static inline struct cgroup_namespace *get_cgroup_ns(
-+		struct cgroup_namespace *ns)
-+{
-+	if (ns)
-+		atomic_inc(&ns->count);
-+	return ns;
-+}
-+
-+static inline void put_cgroup_ns(struct cgroup_namespace *ns)
-+{
-+	if (ns && atomic_dec_and_test(&ns->count))
-+		free_cgroup_ns(ns);
-+}
-+
-+extern struct cgroup_namespace *copy_cgroup_ns(unsigned long flags,
-+					       struct user_namespace *user_ns,
-+					       struct cgroup_namespace *old_ns);
-+
-+#else  /* CONFIG_CGROUP_NS */
-+
-+static inline struct cgroup_namespace *get_cgroup_ns(
-+		struct cgroup_namespace *ns)
-+{
-+	return &init_cgroup_ns;
-+}
-+
-+static inline void put_cgroup_ns(struct cgroup_namespace *ns)
-+{
-+}
-+
-+static inline struct cgroup_namespace *copy_cgroup_ns(
-+		unsigned long flags,
-+		struct user_namespace *user_ns,
-+		struct cgroup_namespace *old_ns) {
-+	if (flags & CLONE_NEWCGROUP)
-+		return ERR_PTR(-EINVAL);
-+
-+	return old_ns;
-+}
-+
-+#endif  /* CONFIG_CGROUP_NS */
-+
-+#endif  /* _LINUX_CGROUP_NAMESPACE_H */
-diff --git a/include/linux/nsproxy.h b/include/linux/nsproxy.h
-index b4ec59d..44f388c 100644
---- a/include/linux/nsproxy.h
-+++ b/include/linux/nsproxy.h
-@@ -8,6 +8,7 @@ struct mnt_namespace;
- struct uts_namespace;
- struct ipc_namespace;
- struct pid_namespace;
-+struct cgroup_namespace;
- struct fs_struct;
- 
- /*
-@@ -33,6 +34,7 @@ struct nsproxy {
- 	struct mnt_namespace *mnt_ns;
- 	struct pid_namespace *pid_ns_for_children;
- 	struct net 	     *net_ns;
-+	struct cgroup_namespace *cgroup_ns;
- };
- extern struct nsproxy init_nsproxy;
- 
-diff --git a/include/linux/proc_ns.h b/include/linux/proc_ns.h
-index 34a1e10..e56dd73 100644
---- a/include/linux/proc_ns.h
-+++ b/include/linux/proc_ns.h
-@@ -6,6 +6,8 @@
- 
- struct pid_namespace;
- struct nsproxy;
-+struct task_struct;
-+struct inode;
- 
- struct proc_ns_operations {
- 	const char *name;
-@@ -27,6 +29,7 @@ extern const struct proc_ns_operations ipcns_operations;
- extern const struct proc_ns_operations pidns_operations;
- extern const struct proc_ns_operations userns_operations;
- extern const struct proc_ns_operations mntns_operations;
-+extern const struct proc_ns_operations cgroupns_operations;
- 
- /*
-  * We always define these enumerators
-@@ -37,6 +40,7 @@ enum {
- 	PROC_UTS_INIT_INO	= 0xEFFFFFFEU,
- 	PROC_USER_INIT_INO	= 0xEFFFFFFDU,
- 	PROC_PID_INIT_INO	= 0xEFFFFFFCU,
-+	PROC_CGROUP_INIT_INO	= 0xEFFFFFFBU,
- };
- 
- #ifdef CONFIG_PROC_FS
-diff --git a/init/Kconfig b/init/Kconfig
-index 9d76b99..2f43ec9 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -1101,6 +1101,15 @@ config DEBUG_BLK_CGROUP
- 	Enable some debugging help. Currently it exports additional stat
- 	files in a cgroup which can be useful for debugging.
- 
-+config CGROUP_NS
-+	bool "CGroup Namespaces"
-+	default n
-+	help
-+	  This options enables CGroup Namespaces which can be used to isolate
-+	  cgroup paths. This feature is only useful when unified cgroup
-+	  hierarchy is in use (i.e. cgroups are mounted with sane_behavior
-+	  option).
-+
- endif # CGROUPS
- 
- config CHECKPOINT_RESTORE
-diff --git a/kernel/Makefile b/kernel/Makefile
-index f2a8b62..61c5791 100644
---- a/kernel/Makefile
-+++ b/kernel/Makefile
-@@ -52,6 +52,7 @@ obj-$(CONFIG_KEXEC) += kexec.o
- obj-$(CONFIG_BACKTRACE_SELF_TEST) += backtracetest.o
- obj-$(CONFIG_COMPAT) += compat.o
- obj-$(CONFIG_CGROUPS) += cgroup.o
-+obj-$(CONFIG_CGROUP_NS) += cgroup_namespace.o
- obj-$(CONFIG_CGROUP_FREEZER) += cgroup_freezer.o
- obj-$(CONFIG_CPUSETS) += cpuset.o
- obj-$(CONFIG_UTS_NS) += utsname.o
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 8552513..c04e971 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -57,6 +57,8 @@
- #include <linux/vmalloc.h> /* TODO: replace with more sophisticated array */
- #include <linux/kthread.h>
- #include <linux/delay.h>
-+#include <linux/proc_ns.h>
-+#include <linux/cgroup_namespace.h>
- 
- #include <linux/atomic.h>
- 
-@@ -196,6 +198,15 @@ static int cgroup_addrm_files(struct cgroup *cgrp, struct cftype cfts[],
- 			      bool is_add);
- static void cgroup_pidlist_destroy_all(struct cgroup *cgrp);
- 
-+struct cgroup_namespace init_cgroup_ns = {
-+	.count = {
-+		.counter = 1,
-+	},
-+	.proc_inum = PROC_CGROUP_INIT_INO,
-+	.user_ns = &init_user_ns,
-+	.root_cgrp = &cgrp_dfl_root.cgrp,
-+};
-+
- /* IDR wrappers which synchronize using cgroup_idr_lock */
- static int cgroup_idr_alloc(struct idr *idr, void *ptr, int start, int end,
- 			    gfp_t gfp_mask)
-@@ -2333,6 +2344,12 @@ static int cgroup_attach_task(struct cgroup *dst_cgrp,
- 	struct task_struct *task;
- 	int ret;
- 
-+	/* Only allow changing cgroups accessible within task's cgroup
-+	 * namespace. i.e. 'dst_cgrp' should be a descendant of task's
-+	 * cgroupns->root_cgrp. */
-+	if (!cgroup_is_descendant(dst_cgrp, task_cgroupns_root(leader)))
-+		return -EPERM;
-+
- 	/* look up all src csets */
- 	down_read(&css_set_rwsem);
- 	rcu_read_lock();
-@@ -4551,6 +4568,13 @@ static int cgroup_mkdir(struct kernfs_node *parent_kn, const char *name,
- 	parent = cgroup_kn_lock_live(parent_kn);
- 	if (!parent)
- 		return -ENODEV;
-+
-+	/* Allow mkdir only within process's cgroup namespace root. */
-+	if (!cgroup_is_descendant(parent, task_cgroupns_root(current))) {
-+		ret = -EPERM;
-+		goto out_unlock;
-+	}
-+
- 	root = parent->root;
- 
- 	/* allocate the cgroup and its ID, 0 is reserved for the root */
-@@ -4819,6 +4843,14 @@ static int cgroup_rmdir(struct kernfs_node *kn)
- 	cgrp = cgroup_kn_lock_live(kn);
- 	if (!cgrp)
- 		return 0;
-+
-+	/* Allow rmdir only within process's cgroup namespace root.
-+	 * The process can't delete its own root anyways. */
-+	if (!cgroup_is_descendant(cgrp, task_cgroupns_root(current))) {
-+		cgroup_kn_unlock(kn);
-+		return -EPERM;
-+	}
-+
- 	cgroup_get(cgrp);	/* for @kn->priv clearing */
- 
- 	ret = cgroup_destroy_locked(cgrp);
-diff --git a/kernel/cgroup_namespace.c b/kernel/cgroup_namespace.c
-new file mode 100644
-index 0000000..a2e6804
---- /dev/null
-+++ b/kernel/cgroup_namespace.c
-@@ -0,0 +1,128 @@
-+
-+#include <linux/cgroup.h>
-+#include <linux/cgroup_namespace.h>
-+#include <linux/sched.h>
-+#include <linux/slab.h>
-+#include <linux/nsproxy.h>
-+#include <linux/proc_ns.h>
-+
-+static struct cgroup_namespace *alloc_cgroup_ns(void)
-+{
-+	struct cgroup_namespace *new_ns;
-+
-+	new_ns = kmalloc(sizeof(struct cgroup_namespace), GFP_KERNEL);
-+	if (new_ns)
-+		atomic_set(&new_ns->count, 1);
-+	return new_ns;
-+}
-+
-+void free_cgroup_ns(struct cgroup_namespace *ns)
-+{
-+	cgroup_put(ns->root_cgrp);
-+	put_user_ns(ns->user_ns);
-+	proc_free_inum(ns->proc_inum);
-+}
-+EXPORT_SYMBOL(free_cgroup_ns);
-+
-+struct cgroup_namespace *copy_cgroup_ns(unsigned long flags,
-+					struct user_namespace *user_ns,
-+					struct cgroup_namespace *old_ns)
-+{
-+	struct cgroup_namespace *new_ns = NULL;
-+	struct cgroup *cgrp = NULL;
-+	int err;
-+
-+	BUG_ON(!old_ns);
-+
-+	if (!(flags & CLONE_NEWCGROUP))
-+		return get_cgroup_ns(old_ns);
-+
-+	/* Allow only sysadmin to create cgroup namespace. */
-+	err = -EPERM;
-+	if (!capable(CAP_SYS_ADMIN))
-+		goto err_out;
-+
-+	/* Prevent cgroup changes for this task. */
-+	threadgroup_lock(current);
-+
-+	cgrp = get_task_cgroup(current);
-+
-+	/* Creating new CGROUPNS is supported only when unified hierarchy is in
-+	 * use. */
-+	err = -EINVAL;
-+	if (!cgroup_on_dfl(cgrp))
-+		goto err_out_unlock;
-+
-+	err = -ENOMEM;
-+	new_ns = alloc_cgroup_ns();
-+	if (!new_ns)
-+		goto err_out_unlock;
-+
-+	err = proc_alloc_inum(&new_ns->proc_inum);
-+	if (err)
-+		goto err_out_unlock;
-+
-+	new_ns->user_ns = get_user_ns(user_ns);
-+	new_ns->root_cgrp = cgrp;
-+
-+	threadgroup_unlock(current);
-+
-+	return new_ns;
-+
-+err_out_unlock:
-+	threadgroup_unlock(current);
-+err_out:
-+	if (cgrp)
-+		cgroup_put(cgrp);
-+	kfree(new_ns);
-+	return ERR_PTR(err);
-+}
-+
-+static int cgroupns_install(struct nsproxy *nsproxy, void *ns)
-+{
-+	pr_info("setns not supported for cgroup namespace");
-+	return -EINVAL;
-+}
-+
-+static void *cgroupns_get(struct task_struct *task)
-+{
-+	struct cgroup_namespace *ns = NULL;
-+	struct nsproxy *nsproxy;
-+
-+	rcu_read_lock();
-+	nsproxy = task_nsproxy(task);
-+	if (nsproxy) {
-+		ns = nsproxy->cgroup_ns;
-+		get_cgroup_ns(ns);
-+	}
-+	rcu_read_unlock();
-+
-+	return ns;
-+}
-+
-+static void cgroupns_put(void *ns)
-+{
-+	put_cgroup_ns(ns);
-+}
-+
-+static unsigned int cgroupns_inum(void *ns)
-+{
-+	struct cgroup_namespace *cgroup_ns = ns;
-+
-+	return cgroup_ns->proc_inum;
-+}
-+
-+const struct proc_ns_operations cgroupns_operations = {
-+	.name		= "cgroup",
-+	.type		= CLONE_NEWCGROUP,
-+	.get		= cgroupns_get,
-+	.put		= cgroupns_put,
-+	.install	= cgroupns_install,
-+	.inum		= cgroupns_inum,
-+};
-+
-+static __init int cgroup_namespaces_init(void)
-+{
-+	return 0;
-+}
-+subsys_initcall(cgroup_namespaces_init);
-diff --git a/kernel/fork.c b/kernel/fork.c
-index d2799d1..95981a1 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1747,7 +1747,7 @@ static int check_unshare_flags(unsigned long unshare_flags)
- 	if (unshare_flags & ~(CLONE_THREAD|CLONE_FS|CLONE_NEWNS|CLONE_SIGHAND|
- 				CLONE_VM|CLONE_FILES|CLONE_SYSVSEM|
- 				CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWNET|
--				CLONE_NEWUSER|CLONE_NEWPID))
-+				CLONE_NEWUSER|CLONE_NEWPID|CLONE_NEWCGROUP))
- 		return -EINVAL;
- 	/*
- 	 * Not implemented, but pretend it works if there is nothing to
-diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-index 8e78110..e20298c 100644
---- a/kernel/nsproxy.c
-+++ b/kernel/nsproxy.c
-@@ -25,6 +25,7 @@
- #include <linux/proc_ns.h>
- #include <linux/file.h>
- #include <linux/syscalls.h>
-+#include <linux/cgroup_namespace.h>
- 
- static struct kmem_cache *nsproxy_cachep;
- 
-@@ -39,6 +40,7 @@ struct nsproxy init_nsproxy = {
- #ifdef CONFIG_NET
- 	.net_ns			= &init_net,
- #endif
-+	.cgroup_ns		= &init_cgroup_ns,
- };
- 
- static inline struct nsproxy *create_nsproxy(void)
-@@ -92,6 +94,13 @@ static struct nsproxy *create_new_namespaces(unsigned long flags,
- 		goto out_pid;
- 	}
- 
-+	new_nsp->cgroup_ns = copy_cgroup_ns(flags, user_ns,
-+					    tsk->nsproxy->cgroup_ns);
-+	if (IS_ERR(new_nsp->cgroup_ns)) {
-+		err = PTR_ERR(new_nsp->cgroup_ns);
-+		goto out_cgroup;
-+	}
-+
- 	new_nsp->net_ns = copy_net_ns(flags, user_ns, tsk->nsproxy->net_ns);
- 	if (IS_ERR(new_nsp->net_ns)) {
- 		err = PTR_ERR(new_nsp->net_ns);
-@@ -101,6 +110,9 @@ static struct nsproxy *create_new_namespaces(unsigned long flags,
- 	return new_nsp;
- 
- out_net:
-+	if (new_nsp->cgroup_ns)
-+		put_cgroup_ns(new_nsp->cgroup_ns);
-+out_cgroup:
- 	if (new_nsp->pid_ns_for_children)
- 		put_pid_ns(new_nsp->pid_ns_for_children);
- out_pid:
-@@ -128,7 +140,8 @@ int copy_namespaces(unsigned long flags, struct task_struct *tsk)
- 	struct nsproxy *new_ns;
- 
- 	if (likely(!(flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
--			      CLONE_NEWPID | CLONE_NEWNET)))) {
-+			      CLONE_NEWPID | CLONE_NEWNET |
-+			      CLONE_NEWCGROUP)))) {
- 		get_nsproxy(old_ns);
- 		return 0;
- 	}
-@@ -165,6 +178,8 @@ void free_nsproxy(struct nsproxy *ns)
- 		put_ipc_ns(ns->ipc_ns);
- 	if (ns->pid_ns_for_children)
- 		put_pid_ns(ns->pid_ns_for_children);
-+	if (ns->cgroup_ns)
-+		put_cgroup_ns(ns->cgroup_ns);
- 	put_net(ns->net_ns);
- 	kmem_cache_free(nsproxy_cachep, ns);
- }
-@@ -180,7 +195,7 @@ int unshare_nsproxy_namespaces(unsigned long unshare_flags,
- 	int err = 0;
- 
- 	if (!(unshare_flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
--			       CLONE_NEWNET | CLONE_NEWPID)))
-+			       CLONE_NEWNET | CLONE_NEWPID | CLONE_NEWCGROUP)))
- 		return 0;
- 
- 	user_ns = new_cred ? new_cred->user_ns : current_user_ns();
--- 
-2.0.0.526.g5318336
+QmFja2dyb3VuZAogIENncm91cHMgYW5kIE5hbWVzcGFjZXMgYXJlIHVzZWQgdG9nZXRoZXIgdG8g
+Y3JlYXRlIOKAnHZpcnR1YWzigJ0KICBjb250YWluZXJzIHRoYXQgaXNvbGF0ZXMgdGhlIGhvc3Qg
+ZW52aXJvbm1lbnQgZnJvbSB0aGUgcHJvY2Vzc2VzCiAgcnVubmluZyBpbiBjb250YWluZXIuIEJ1
+dCBzaW5jZSBjZ3JvdXBzIHRoZW1zZWx2ZXMgYXJlIG5vdAogIOKAnHZpcnR1YWxpemVk4oCdLCB0
+aGUgdGFzayBpcyBhbHdheXMgYWJsZSB0byBzZWUgZ2xvYmFsIGNncm91cHMgdmlldwogIHRocm91
+Z2ggY2dyb3VwZnMgbW91bnQgYW5kIHZpYSAvcHJvYy9zZWxmL2Nncm91cCBmaWxlLgoKICAkIGNh
+dCAvcHJvYy9zZWxmL2Nncm91cCAKICAwOmNwdXNldCxjcHUsY3B1YWNjdCxtZW1vcnksZGV2aWNl
+cyxmcmVlemVyLGh1Z2V0bGI6L2JhdGNoam9icy9jX2pvYl9pZDEKCiAgVGhpcyBleHBvc3VyZSBv
+ZiBjZ3JvdXAgbmFtZXMgdG8gdGhlIHByb2Nlc3NlcyBydW5uaW5nIGluc2lkZSBhCiAgY29udGFp
+bmVyIHJlc3VsdHMgaW4gc29tZSBwcm9ibGVtczoKICAoMSkgVGhlIGNvbnRhaW5lciBuYW1lcyBh
+cmUgdHlwaWNhbGx5IGhvc3QtY29udGFpbmVyLW1hbmFnZW1lbnQtYWdlbnQKICAgICAgKHN5c3Rl
+bWQsIGRvY2tlci9saWJjb250YWluZXIsIGV0Yy4pIGRhdGEgYW5kIGxlYWtpbmcgaXRzIG5hbWUg
+KG9yCiAgICAgIGxlYWtpbmcgdGhlIGhpZXJhcmNoeSkgcmV2ZWFscyB0b28gbXVjaCBpbmZvcm1h
+dGlvbiBhYm91dCB0aGUgaG9zdAogICAgICBzeXN0ZW0uCiAgKDIpIEl0IG1ha2VzIHRoZSBjb250
+YWluZXIgbWlncmF0aW9uIGFjcm9zcyBtYWNoaW5lcyAoQ1JJVSkgbW9yZQogICAgICBkaWZmaWN1
+bHQgYXMgdGhlIGNvbnRhaW5lciBuYW1lcyBuZWVkIHRvIGJlIHVuaXF1ZSBhY3Jvc3MgdGhlCiAg
+ICAgIG1hY2hpbmVzIGluIHRoZSBtaWdyYXRpb24gZG9tYWluLgogICgzKSBJdCBtYWtlcyBpdCBk
+aWZmaWN1bHQgdG8gcnVuIGNvbnRhaW5lciBtYW5hZ2VtZW50IHRvb2xzIChsaWtlCiAgICAgIGRv
+Y2tlci9saWJjb250YWluZXIsIGxtY3RmeSwgZXRjLikgd2l0aGluIHZpcnR1YWwgY29udGFpbmVy
+cwogICAgICB3aXRob3V0IGFkZGluZyBkZXBlbmRlbmN5IG9uIHNvbWUgc3RhdGUvYWdlbnQgcHJl
+c2VudCBvdXRzaWRlIHRoZQogICAgICBjb250YWluZXIuCgogIE5vdGUgdGhhdCB0aGUgZmVhdHVy
+ZSBwcm9wb3NlZCBoZXJlIGlzIGNvbXBsZXRlbHkgZGlmZmVyZW50IHRoYW4gdGhlCiAg4oCcbnMg
+Y2dyb3Vw4oCdIGZlYXR1cmUgd2hpY2ggZXhpc3RlZCBpbiB0aGUgbGludXgga2VybmVsIHVudGls
+IHJlY2VudGx5LgogIFRoZSBucyBjZ3JvdXAgYWxzbyBhdHRlbXB0ZWQgdG8gY29ubmVjdCBjZ3Jv
+dXBzIGFuZCBuYW1lc3BhY2VzIGJ5CiAgY3JlYXRpbmcgYSBuZXcgY2dyb3VwIGV2ZXJ5IHRpbWUg
+YSBuZXcgbmFtZXNwYWNlIHdhcyBjcmVhdGVkLiBJdCBkaWQKICBub3Qgc29sdmUgYW55IG9mIHRo
+ZSBhYm92ZSBtZW50aW9uZWQgcHJvYmxlbXMgYW5kIHdhcyBsYXRlciBkcm9wcGVkCiAgZnJvbSB0
+aGUga2VybmVsLgoKSW50cm9kdWNpbmcgQ0dyb3VwIE5hbWVzcGFjZXMKICBXaXRoIHVuaWZpZWQg
+Y2dyb3VwIGhpZXJhcmNoeQogIChEb2N1bWVudGF0aW9uL2Nncm91cHMvdW5pZmllZC1oaWVyYXJj
+aHkudHh0KSwgdGhlIGNvbnRhaW5lcnMgY2FuIG5vdwogIGhhdmUgYSBtdWNoIG1vcmUgY29oZXJl
+bnQgY2dyb3VwIHZpZXcgYW5kIGl0cyBlYXN5IHRvIGFzc29jaWF0ZSBhCiAgY29udGFpbmVyIHdp
+dGggYSBzaW5nbGUgY2dyb3VwLiBUaGlzIGFsc28gYWxsb3dzIHVzIHRvIHZpcnR1YWxpemUgdGhl
+CiAgY2dyb3VwIHZpZXcgZm9yIHRhc2tzIGluc2lkZSB0aGUgY29udGFpbmVyLgoKICBUaGUgbmV3
+IENHcm91cCBOYW1lc3BhY2UgYWxsb3dzIGEgcHJvY2VzcyB0byDigJx1bnNoYXJl4oCdIGl0cyBj
+Z3JvdXAKICBoaWVyYXJjaHkgc3RhcnRpbmcgZnJvbSB0aGUgY2dyb3VwIGl0cyBjdXJyZW50bHkg
+aW4uCiAgRm9yIEV4OgogICQgY2F0IC9wcm9jL3NlbGYvY2dyb3VwCiAgMDpjcHVzZXQsY3B1LGNw
+dWFjY3QsbWVtb3J5LGRldmljZXMsZnJlZXplcixodWdldGxiOi9iYXRjaGpvYnMvY19qb2JfaWQx
+CiAgJCBscyAtbCAvcHJvYy9zZWxmL25zL2Nncm91cAogIGxyd3hyd3hyd3ggMSByb290IHJvb3Qg
+MCAyMDE0LTA3LTE1IDEwOjM3IC9wcm9jL3NlbGYvbnMvY2dyb3VwIC0+IGNncm91cDpbNDAyNjUz
+MTgzNV0KICAkIH4vdW5zaGFyZSAtYyAgIyBjYWxscyB1bnNoYXJlKENMT05FX05FV0NHUk9VUCkg
+YW5kIGV4ZWPigJlzIC9iaW4vYmFzaAogIFtuc10kIGxzIC1sIC9wcm9jL3NlbGYvbnMvY2dyb3Vw
+CiAgbHJ3eHJ3eHJ3eCAxIHJvb3Qgcm9vdCAwIDIwMTQtMDctMTUgMTA6MzUgL3Byb2Mvc2VsZi9u
+cy9jZ3JvdXAgLT4gY2dyb3VwOls0MDI2NTMyMTgzXQogICMgRnJvbSB3aXRoaW4gbmV3IGNncm91
+cG5zLCBwcm9jZXNzIHNlZXMgdGhhdCBpdHMgaW4gdGhlIHJvb3QgY2dyb3VwCiAgW25zXSQgY2F0
+IC9wcm9jL3NlbGYvY2dyb3VwCiAgMDpjcHVzZXQsY3B1LGNwdWFjY3QsbWVtb3J5LGRldmljZXMs
+ZnJlZXplcixodWdldGxiOi8KCiAgIyBGcm9tIGdsb2JhbCBjZ3JvdXBuczoKICAkIGNhdCAvcHJv
+Yy88cGlkPi9jZ3JvdXAKICAwOmNwdXNldCxjcHUsY3B1YWNjdCxtZW1vcnksZGV2aWNlcyxmcmVl
+emVyLGh1Z2V0bGI6L2JhdGNoam9icy9jX2pvYl9pZDEKCiAgVGhlIHZpcnR1YWxpemF0aW9uIG9m
+IC9wcm9jL3NlbGYvY2dyb3VwIGZpbGUgY29tYmluZWQgd2l0aCByZXN0cmljdGluZwogIHRoZSB2
+aWV3IG9mIGNncm91cCBoaWVyYXJjaHkgYnkgYmluZC1tb3VudGluZyBmb3IgdGhlCiAgJENHUk9V
+UF9NT1VOVC9iYXRjaGpvYnMvY19qb2JfaWQxLyBkaXJlY3RvcnkgdG8KICAkQ09OVEFJTkVSX0NI
+Uk9PVC9zeXMvZnMvY2dyb3VwLykgc2hvdWxkIHByb3ZpZGUgYSBjb21wbGV0ZWx5IGlzb2xhdGVk
+CiAgY2dyb3VwIHZpZXcgaW5zaWRlIHRoZSBjb250YWluZXIuCgogIEluIGl0cyBjdXJyZW50IHNp
+bXBsaXN0aWMgZm9ybSwgdGhlIGNncm91cCBuYW1lc3BhY2VzIHByb3ZpZGUKICBmb2xsb3dpbmcg
+YmVoYXZpb3I6CgogICgxKSBUaGUg4oCccm9vdOKAnSBjZ3JvdXAgZm9yIGEgY2dyb3VwIG5hbWVz
+cGFjZSBpcyB0aGUgY2dyb3VwIGluIHdoaWNoCiAgICAgIHRoZSBwcm9jZXNzIGNhbGxpbmcgdW5z
+aGFyZSBpcyBydW5uaW5nLgogICAgICBGb3IgZXguIGlmIGEgcHJvY2VzcyBpbiAvYmF0Y2hqb2Jz
+L2Nfam9iX2lkMSBjZ3JvdXAgY2FsbHMgdW5zaGFyZSwKICAgICAgY2dyb3VwIC9iYXRjaGpvYnMv
+Y19qb2JfaWQxIGJlY29tZXMgdGhlIGNncm91cG5zLXJvb3QuCiAgICAgIEZvciB0aGUgaW5pdF9j
+Z3JvdXBfbnMsIHRoaXMgaXMgdGhlIHJlYWwgcm9vdCAo4oCcL+KAnSkgY2dyb3VwCiAgICAgIChp
+ZGVudGlmaWVkIGluIGNvZGUgYXMgY2dycF9kZmxfcm9vdC5jZ3JwKS4KCiAgKDIpIFRoZSBjZ3Jv
+dXBucy1yb290IGNncm91cCBkb2VzIG5vdCBjaGFuZ2UgZXZlbiBpZiB0aGUgbmFtZXNwYWNlCiAg
+ICAgIGNyZWF0b3IgcHJvY2VzcyBsYXRlciBtb3ZlcyB0byBhIGRpZmZlcmVudCBjZ3JvdXAuCiAg
+ICAgICQgfi91bnNoYXJlIC1jICMgdW5zaGFyZSBjZ3JvdXBucyBpbiBzb21lIGNncm91cAogICAg
+ICBbbnNdJCBjYXQgL3Byb2Mvc2VsZi9jZ3JvdXAgCiAgICAgIDA6Y3B1c2V0LGNwdSxjcHVhY2N0
+LG1lbW9yeSxkZXZpY2VzLGZyZWV6ZXIsaHVnZXRsYjovIAogICAgICBbbnNdJCBta2RpciBzdWJf
+Y2dycF8xCiAgICAgIFtuc10kIGVjaG8gMCA+IHN1Yl9jZ3JwXzEvY2dyb3VwLnByb2NzCiAgICAg
+IFtuc10kIGNhdCAvcHJvYy9zZWxmL2Nncm91cCAKICAgICAgMDpjcHVzZXQsY3B1LGNwdWFjY3Qs
+bWVtb3J5LGRldmljZXMsZnJlZXplcixodWdldGxiOi9zdWJfY2dycF8xCgogICgzKSBFYWNoIHBy
+b2Nlc3MgZ2V0cyBpdHMgQ0dST1VQTlMgc3BlY2lmaWMgdmlldyBvZgogICAgICAvcHJvYy88cGlk
+Pi9jZ3JvdXAuCiAgKGEpIFByb2Nlc3NlcyBydW5uaW5nIGluc2lkZSB0aGUgY2dyb3VwIG5hbWVz
+cGFjZSB3aWxsIGJlIGFibGUgdG8gc2VlCiAgICAgIGNncm91cCBwYXRocyAoaW4gL3Byb2Mvc2Vs
+Zi9jZ3JvdXApIG9ubHkgaW5zaWRlIHRoZWlyIHJvb3QgY2dyb3VwCiAgICAgIFtuc10kIHNsZWVw
+IDEwMDAwMCAmICAjIEZyb20gd2l0aGluIHVuc2hhcmVkIGNncm91cG5zCiAgICAgIFsxXSA3MzUz
+CiAgICAgIFtuc10kIGVjaG8gNzM1MyA+IHN1Yl9jZ3JwXzEvY2dyb3VwLnByb2NzCiAgICAgIFtu
+c10kIGNhdCAvcHJvYy83MzUzL2Nncm91cAogICAgICAwOmNwdXNldCxjcHUsY3B1YWNjdCxtZW1v
+cnksZGV2aWNlcyxmcmVlemVyLGh1Z2V0bGI6L3N1Yl9jZ3JwXzEKCiAgKGIpIEZyb20gZ2xvYmFs
+IGNncm91cG5zLCB0aGUgcmVhbCBjZ3JvdXAgcGF0aCB3aWxsIGJlIHZpc2libGU6CiAgICAgICQg
+Y2F0IC9wcm9jLzczNTMvY2dyb3VwCiAgICAgIDA6Y3B1c2V0LGNwdSxjcHVhY2N0LG1lbW9yeSxk
+ZXZpY2VzLGZyZWV6ZXIsaHVnZXRsYjovYmF0Y2hqb2JzL2Nfam9iX2lkMS9zdWJfY2dycF8xCgog
+IChjKSBGcm9tIGEgc2libGluZyBjZ3JvdXBucywgdGhlIHJlYWwgcGF0aCB3aWxsIGJlIHZpc2li
+bGU6CiAgICAgIFtuczJdJCBjYXQgL3Byb2MvNzM1My9jZ3JvdXAKICAgICAgMDpjcHVzZXQsY3B1
+LGNwdWFjY3QsbWVtb3J5LGRldmljZXMsZnJlZXplcixodWdldGxiOi9iYXRjaGpvYnMvY19qb2Jf
+aWQxL3N1Yl9jZ3JwXzEKICAgICAgKEluIGNvcnJlY3QgY29udGFpbmVyIHNldHVwIHRob3VnaCwg
+aXQgc2hvdWxkIG5vdCBiZSBwb3NzaWJsZSB0bwogICAgICAgYWNjZXNzIFBJRHMgaW4gYW5vdGhl
+ciBjb250YWluZXIgaW4gdGhlIGZpcnN0IHBsYWNlLiBUaGlzIGNhbiBiZQogICAgICAgZGV0ZWN0
+ZWQgY2hhbmdlZCBpZiBkZXNpcmVkLikKCiAgKDQpIFByb2Nlc3NlcyBpbnNpZGUgYSBjZ3JvdXBu
+cyBhcmUgbm90IGFsbG93ZWQgdG8gbW92ZSBvdXQgb2YgdGhlCiAgICAgIGNncm91cG5zLXJvb3Qu
+IFRoaXMgaXMgdHJ1ZSBldmVuIGlmIGEgcHJpdmlsZWdlZCBwcm9jZXNzIGluIGdsb2JhbAogICAg
+ICBjZ3JvdXBucyB0cmllcyB0byBtb3ZlIHRoZSBwcm9jZXNzIG91dCBvZiBpdHMgY2dyb3VwbnMt
+cm9vdC4KCiAgICAgICMgRnJvbSBnbG9iYWwgY2dyb3VwbnMKICAgICAgJCBjYXQgL3Byb2MvNzM1
+My9jZ3JvdXAKICAgICAgMDpjcHVzZXQsY3B1LGNwdWFjY3QsbWVtb3J5LGRldmljZXMsZnJlZXpl
+cixodWdldGxiOi9iYXRjaGpvYnMvY19qb2JfaWQxL3N1Yl9jZ3JwXzEKICAgICAgIyBjZ3JvdXBu
+cy1yb290IGZvciA3MzUzIGlzIC9iYXRjaGpvYnMvY19qb2JfaWQxCiAgICAgICQgZWNobyA3MzUz
+ID4gYmF0Y2hqb2JzL2Nfam9iX2lkMi9jZ3JvdXAucHJvY3MKICAgICAgLWJhc2g6IGVjaG86IHdy
+aXRlIGVycm9yOiBPcGVyYXRpb24gbm90IHBlcm1pdHRlZAoKICAoNSkgc2V0bnMoKSBpcyBub3Qg
+c3VwcG9ydGVkIGZvciBjZ3JvdXAgbmFtZXNwYWNlIGluIHRoZSBpbml0aWFsCiAgICAgIHZlcnNp
+b24uCgogICg2KSBXaGVuIHNvbWUgdGhyZWFkIGZyb20gYSBtdWx0aS10aHJlYWRlZCBwcm9jZXNz
+IHVuc2hhcmVzIGl0cwogICAgICBjZ3JvdXAtbmFtZXNwYWNlLCB0aGUgbmV3IGNncm91cG5zIGdl
+dHMgYXBwbGllZCB0byB0aGUgZW50aXJlCiAgICAgIHByb2Nlc3MgKGFsbCB0aGUgdGhyZWFkcyku
+IFRoaXMgc2hvdWxkIGJlIE9LIHNpbmNlCiAgICAgIHVuaWZpZWQtaGllcmFyY2h5IG9ubHkgYWxs
+b3dzIHByb2Nlc3MtbGV2ZWwgY29udGFpbmVyaXphdGlvbi4gU28KICAgICAgYWxsIHRoZSB0aHJl
+YWRzIGluIHRoZSBwcm9jZXNzIHdpbGwgaGF2ZSB0aGUgc2FtZSBjZ3JvdXAuIEFuZCBib3RoCiAg
+ICAgIC0gY2hhbmdpbmcgY2dyb3VwcyBhbmQgdW5zaGFyaW5nIG5hbWVzcGFjZXMgLSBhcmUgcHJv
+dGVjdGVkIHVuZGVyCiAgICAgIHRocmVhZGdyb3VwX2xvY2sodGFzaykuCgogICg3KSBUaGUgY2dy
+b3VwIG5hbWVzcGFjZSBpcyBhbGl2ZSBhcyBsb25nIGFzIHRoZXJlIGlzIGF0bGVhc3QgMQogICAg
+ICBwcm9jZXNzIGluc2lkZSBpdC4gV2hlbiB0aGUgbGFzdCBwcm9jZXNzIGV4aXRzLCB0aGUgY2dy
+b3VwCiAgICAgIG5hbWVzcGFjZSBpcyBkZXN0cm95ZWQuIFRoZSBjZ3JvdXBucy1yb290IGFuZCB0
+aGUgYWN0dWFsIGNncm91cHMKICAgICAgcmVtYWluIHRob3VnaC4KCkltcGxlbWVudGF0aW9uCiAg
+VGhlIGN1cnJlbnQgcGF0Y2gtc2V0IGlzIGJhc2VkIG9uIHRvcCBvZiBUZWp1bidzIGNncm91cCB0
+cmVlIChmb3ItbmV4dAogIGJyYW5jaCkuIEl0cyBmYWlybHkgbm9uLWludHJ1c2l2ZSBhbmQgcHJv
+dmlkZXMgYWJvdmUgbWVudGlvbmVkCiAgZmVhdHVyZXMuCgpQb3NzaWJsZSBleHRlbnNpb25zIG9m
+IENHUk9VUE5TOgogICgxKSBUaGUgRG9jdW1lbnRhdGlvbi9jZ3JvdXBzL3VuaWZpZWQtaGllcmFy
+Y2h5LnR4dCBtZW50aW9ucyB1c2Ugb2YKICAgICAgY2FwYWJpbGl0aWVzIHRvIHJlc3RyaWN0IGNn
+cm91cHMgdG8gYWRtaW5pc3RyYXRpdmUgdXNlcnMuIENHcm91cAogICAgICBuYW1lc3BhY2VzIGNv
+dWxkIGJlIG9mIGhlbHAgaGVyZS4gV2l0aCBjZ3JvdXAgbmFtZXNwYWNlcywgaXQgbWlnaHQKICAg
+ICAgYmUgcG9zc2libGUgdG8gZGVsZWdhdGUgYWRtaW5pc3RyYXRpb24gb2Ygc3ViLWNncm91cHMg
+dW5kZXIgYQogICAgICBjZ3JvdXBucy1yb290IHRvIHRoZSBjZ3JvdXBucyBvd25lci4KCiAgKDIp
+IFByb3ZpZGUgYSBjZ3JvdXBucyBzcGVjaWZpYyBjZ3JvdXBmcyBtb3VudC4gaS5lLiwgdGhlIGZv
+bGxvd2luZwogICAgICBjb21tYW5kIHdoZW4gcmFuIGZyb20gaW5zaWRlIGEgY2dyb3VwbnMgc2hv
+dWxkIG9ubHkgbW91bnQgdGhlCiAgICAgIGhpZXJhcmNoeSBmcm9tIGNncm91cG5zLXJvb3QgY2dy
+b3VwOgogICAgICAkIG1vdW50IC10IGNncm91cCBjZ3JvdXAgPGNncm91cC1tb3VudHBvaW50Pgog
+ICAgICAjIC1vIF9fREVWRUxfX3NhbmVfYmVoYXZpb3Igc2hvdWxkIGJlIGltcGxpY2l0CgogICAg
+ICBUaGlzIGlzIHNpbWlsYXIgdG8gaG93IHByb2NmcyBjYW4gYmUgbW91bnRlZCBmb3IgZXZlcnkg
+UElETlMuIFRoaXMKICAgICAgbWF5IGhhdmUgc29tZSB1c2VjYXNlcy4KCi0tLQogZnMva2VybmZz
+L2Rpci5jICAgICAgICAgICAgICAgICAgfCAgNTEgKysrKysrKysrKysrKy0tLQogZnMvcHJvYy9u
+YW1lc3BhY2VzLmMgICAgICAgICAgICAgfCAgIDMgKwogaW5jbHVkZS9saW51eC9jZ3JvdXAuaCAg
+ICAgICAgICAgfCAgMzYgKysrKysrKysrKy0KIGluY2x1ZGUvbGludXgvY2dyb3VwX25hbWVzcGFj
+ZS5oIHwgIDYyICsrKysrKysrKysrKysrKysrKysKIGluY2x1ZGUvbGludXgva2VybmZzLmggICAg
+ICAgICAgIHwgICAzICsKIGluY2x1ZGUvbGludXgvbnNwcm94eS5oICAgICAgICAgIHwgICAyICsK
+IGluY2x1ZGUvbGludXgvcHJvY19ucy5oICAgICAgICAgIHwgICA0ICsrCiBpbmNsdWRlL3VhcGkv
+bGludXgvc2NoZWQuaCAgICAgICB8ICAgMyArLQogaW5pdC9LY29uZmlnICAgICAgICAgICAgICAg
+ICAgICAgfCAgIDkgKysrCiBrZXJuZWwvTWFrZWZpbGUgICAgICAgICAgICAgICAgICB8ICAgMSAr
+CiBrZXJuZWwvY2dyb3VwLmMgICAgICAgICAgICAgICAgICB8ICA3NSArKysrKysrKysrKysrKysr
+Ky0tLS0tLQoga2VybmVsL2Nncm91cF9uYW1lc3BhY2UuYyAgICAgICAgfCAxMjggKysrKysrKysr
+KysrKysrKysrKysrKysrKysrKysrKysrKysrKysrCiBrZXJuZWwvZm9yay5jICAgICAgICAgICAg
+ICAgICAgICB8ICAgMiArLQoga2VybmVsL25zcHJveHkuYyAgICAgICAgICAgICAgICAgfCAgMTkg
+KysrKystCiAxNCBmaWxlcyBjaGFuZ2VkLCAzNjQgaW5zZXJ0aW9ucygrKSwgMzQgZGVsZXRpb25z
+KC0pCiBjcmVhdGUgbW9kZSAxMDA2NDQgaW5jbHVkZS9saW51eC9jZ3JvdXBfbmFtZXNwYWNlLmgK
+IGNyZWF0ZSBtb2RlIDEwMDY0NCBrZXJuZWwvY2dyb3VwX25hbWVzcGFjZS5jCgpbUEFUQ0ggMS81
+XSBrZXJuZnM6IEFkZCBBUEkgdG8gZ2V0IGdlbmVyYXRlIHJlbGF0aXZlIGtlcm5mcyBwYXRoCltQ
+QVRDSCAyLzVdIHNjaGVkOiBuZXcgY2xvbmUgZmxhZyBDTE9ORV9ORVdDR1JPVVAgZm9yIGNncm91
+cApbUEFUQ0ggMy81XSBjZ3JvdXA6IGFkZCBmdW5jdGlvbiB0byBnZXQgdGFzaydzIGNncm91cCBv
+biBkZWZhdWx0CltQQVRDSCA0LzVdIGNncm91cDogZXhwb3J0IGNncm91cF9nZXQoKSBhbmQgY2dy
+b3VwX3B1dCgpCltQQVRDSCA1LzVdIGNncm91cDogaW50cm9kdWNlIGNncm91cCBuYW1lc3BhY2Vz
+Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5l
+cnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0
+cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVy
+cw==
