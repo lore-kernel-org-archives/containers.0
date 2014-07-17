@@ -1,13 +1,14 @@
 From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 0/5] RFC: CGroup Namespaces
-Date: Thu, 17 Jul 2014 12:52:06 -0700
-Message-ID: <1405626731-12220-1-git-send-email-adityakali__19793.2721734562$1405626794$gmane$org@google.com>
+Subject: [PATCH 1/5] kernfs: Add API to get generate relative kernfs path
+Date: Thu, 17 Jul 2014 12:52:07 -0700
+Message-ID: <1405626731-12220-2-git-send-email-adityakali@google.com>
 References: <adityakali-cgroupns>
+	<1405626731-12220-1-git-send-email-adityakali@google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <adityakali-cgroupns>
+In-Reply-To: <1405626731-12220-1-git-send-email-adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,152 +22,132 @@ To: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, lizefan-hv44wF8Li93QT0dZR+AlfA@p
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-QmFja2dyb3VuZAogIENncm91cHMgYW5kIE5hbWVzcGFjZXMgYXJlIHVzZWQgdG9nZXRoZXIgdG8g
-Y3JlYXRlIOKAnHZpcnR1YWzigJ0KICBjb250YWluZXJzIHRoYXQgaXNvbGF0ZXMgdGhlIGhvc3Qg
-ZW52aXJvbm1lbnQgZnJvbSB0aGUgcHJvY2Vzc2VzCiAgcnVubmluZyBpbiBjb250YWluZXIuIEJ1
-dCBzaW5jZSBjZ3JvdXBzIHRoZW1zZWx2ZXMgYXJlIG5vdAogIOKAnHZpcnR1YWxpemVk4oCdLCB0
-aGUgdGFzayBpcyBhbHdheXMgYWJsZSB0byBzZWUgZ2xvYmFsIGNncm91cHMgdmlldwogIHRocm91
-Z2ggY2dyb3VwZnMgbW91bnQgYW5kIHZpYSAvcHJvYy9zZWxmL2Nncm91cCBmaWxlLgoKICAkIGNh
-dCAvcHJvYy9zZWxmL2Nncm91cCAKICAwOmNwdXNldCxjcHUsY3B1YWNjdCxtZW1vcnksZGV2aWNl
-cyxmcmVlemVyLGh1Z2V0bGI6L2JhdGNoam9icy9jX2pvYl9pZDEKCiAgVGhpcyBleHBvc3VyZSBv
-ZiBjZ3JvdXAgbmFtZXMgdG8gdGhlIHByb2Nlc3NlcyBydW5uaW5nIGluc2lkZSBhCiAgY29udGFp
-bmVyIHJlc3VsdHMgaW4gc29tZSBwcm9ibGVtczoKICAoMSkgVGhlIGNvbnRhaW5lciBuYW1lcyBh
-cmUgdHlwaWNhbGx5IGhvc3QtY29udGFpbmVyLW1hbmFnZW1lbnQtYWdlbnQKICAgICAgKHN5c3Rl
-bWQsIGRvY2tlci9saWJjb250YWluZXIsIGV0Yy4pIGRhdGEgYW5kIGxlYWtpbmcgaXRzIG5hbWUg
-KG9yCiAgICAgIGxlYWtpbmcgdGhlIGhpZXJhcmNoeSkgcmV2ZWFscyB0b28gbXVjaCBpbmZvcm1h
-dGlvbiBhYm91dCB0aGUgaG9zdAogICAgICBzeXN0ZW0uCiAgKDIpIEl0IG1ha2VzIHRoZSBjb250
-YWluZXIgbWlncmF0aW9uIGFjcm9zcyBtYWNoaW5lcyAoQ1JJVSkgbW9yZQogICAgICBkaWZmaWN1
-bHQgYXMgdGhlIGNvbnRhaW5lciBuYW1lcyBuZWVkIHRvIGJlIHVuaXF1ZSBhY3Jvc3MgdGhlCiAg
-ICAgIG1hY2hpbmVzIGluIHRoZSBtaWdyYXRpb24gZG9tYWluLgogICgzKSBJdCBtYWtlcyBpdCBk
-aWZmaWN1bHQgdG8gcnVuIGNvbnRhaW5lciBtYW5hZ2VtZW50IHRvb2xzIChsaWtlCiAgICAgIGRv
-Y2tlci9saWJjb250YWluZXIsIGxtY3RmeSwgZXRjLikgd2l0aGluIHZpcnR1YWwgY29udGFpbmVy
-cwogICAgICB3aXRob3V0IGFkZGluZyBkZXBlbmRlbmN5IG9uIHNvbWUgc3RhdGUvYWdlbnQgcHJl
-c2VudCBvdXRzaWRlIHRoZQogICAgICBjb250YWluZXIuCgogIE5vdGUgdGhhdCB0aGUgZmVhdHVy
-ZSBwcm9wb3NlZCBoZXJlIGlzIGNvbXBsZXRlbHkgZGlmZmVyZW50IHRoYW4gdGhlCiAg4oCcbnMg
-Y2dyb3Vw4oCdIGZlYXR1cmUgd2hpY2ggZXhpc3RlZCBpbiB0aGUgbGludXgga2VybmVsIHVudGls
-IHJlY2VudGx5LgogIFRoZSBucyBjZ3JvdXAgYWxzbyBhdHRlbXB0ZWQgdG8gY29ubmVjdCBjZ3Jv
-dXBzIGFuZCBuYW1lc3BhY2VzIGJ5CiAgY3JlYXRpbmcgYSBuZXcgY2dyb3VwIGV2ZXJ5IHRpbWUg
-YSBuZXcgbmFtZXNwYWNlIHdhcyBjcmVhdGVkLiBJdCBkaWQKICBub3Qgc29sdmUgYW55IG9mIHRo
-ZSBhYm92ZSBtZW50aW9uZWQgcHJvYmxlbXMgYW5kIHdhcyBsYXRlciBkcm9wcGVkCiAgZnJvbSB0
-aGUga2VybmVsLgoKSW50cm9kdWNpbmcgQ0dyb3VwIE5hbWVzcGFjZXMKICBXaXRoIHVuaWZpZWQg
-Y2dyb3VwIGhpZXJhcmNoeQogIChEb2N1bWVudGF0aW9uL2Nncm91cHMvdW5pZmllZC1oaWVyYXJj
-aHkudHh0KSwgdGhlIGNvbnRhaW5lcnMgY2FuIG5vdwogIGhhdmUgYSBtdWNoIG1vcmUgY29oZXJl
-bnQgY2dyb3VwIHZpZXcgYW5kIGl0cyBlYXN5IHRvIGFzc29jaWF0ZSBhCiAgY29udGFpbmVyIHdp
-dGggYSBzaW5nbGUgY2dyb3VwLiBUaGlzIGFsc28gYWxsb3dzIHVzIHRvIHZpcnR1YWxpemUgdGhl
-CiAgY2dyb3VwIHZpZXcgZm9yIHRhc2tzIGluc2lkZSB0aGUgY29udGFpbmVyLgoKICBUaGUgbmV3
-IENHcm91cCBOYW1lc3BhY2UgYWxsb3dzIGEgcHJvY2VzcyB0byDigJx1bnNoYXJl4oCdIGl0cyBj
-Z3JvdXAKICBoaWVyYXJjaHkgc3RhcnRpbmcgZnJvbSB0aGUgY2dyb3VwIGl0cyBjdXJyZW50bHkg
-aW4uCiAgRm9yIEV4OgogICQgY2F0IC9wcm9jL3NlbGYvY2dyb3VwCiAgMDpjcHVzZXQsY3B1LGNw
-dWFjY3QsbWVtb3J5LGRldmljZXMsZnJlZXplcixodWdldGxiOi9iYXRjaGpvYnMvY19qb2JfaWQx
-CiAgJCBscyAtbCAvcHJvYy9zZWxmL25zL2Nncm91cAogIGxyd3hyd3hyd3ggMSByb290IHJvb3Qg
-MCAyMDE0LTA3LTE1IDEwOjM3IC9wcm9jL3NlbGYvbnMvY2dyb3VwIC0+IGNncm91cDpbNDAyNjUz
-MTgzNV0KICAkIH4vdW5zaGFyZSAtYyAgIyBjYWxscyB1bnNoYXJlKENMT05FX05FV0NHUk9VUCkg
-YW5kIGV4ZWPigJlzIC9iaW4vYmFzaAogIFtuc10kIGxzIC1sIC9wcm9jL3NlbGYvbnMvY2dyb3Vw
-CiAgbHJ3eHJ3eHJ3eCAxIHJvb3Qgcm9vdCAwIDIwMTQtMDctMTUgMTA6MzUgL3Byb2Mvc2VsZi9u
-cy9jZ3JvdXAgLT4gY2dyb3VwOls0MDI2NTMyMTgzXQogICMgRnJvbSB3aXRoaW4gbmV3IGNncm91
-cG5zLCBwcm9jZXNzIHNlZXMgdGhhdCBpdHMgaW4gdGhlIHJvb3QgY2dyb3VwCiAgW25zXSQgY2F0
-IC9wcm9jL3NlbGYvY2dyb3VwCiAgMDpjcHVzZXQsY3B1LGNwdWFjY3QsbWVtb3J5LGRldmljZXMs
-ZnJlZXplcixodWdldGxiOi8KCiAgIyBGcm9tIGdsb2JhbCBjZ3JvdXBuczoKICAkIGNhdCAvcHJv
-Yy88cGlkPi9jZ3JvdXAKICAwOmNwdXNldCxjcHUsY3B1YWNjdCxtZW1vcnksZGV2aWNlcyxmcmVl
-emVyLGh1Z2V0bGI6L2JhdGNoam9icy9jX2pvYl9pZDEKCiAgVGhlIHZpcnR1YWxpemF0aW9uIG9m
-IC9wcm9jL3NlbGYvY2dyb3VwIGZpbGUgY29tYmluZWQgd2l0aCByZXN0cmljdGluZwogIHRoZSB2
-aWV3IG9mIGNncm91cCBoaWVyYXJjaHkgYnkgYmluZC1tb3VudGluZyBmb3IgdGhlCiAgJENHUk9V
-UF9NT1VOVC9iYXRjaGpvYnMvY19qb2JfaWQxLyBkaXJlY3RvcnkgdG8KICAkQ09OVEFJTkVSX0NI
-Uk9PVC9zeXMvZnMvY2dyb3VwLykgc2hvdWxkIHByb3ZpZGUgYSBjb21wbGV0ZWx5IGlzb2xhdGVk
-CiAgY2dyb3VwIHZpZXcgaW5zaWRlIHRoZSBjb250YWluZXIuCgogIEluIGl0cyBjdXJyZW50IHNp
-bXBsaXN0aWMgZm9ybSwgdGhlIGNncm91cCBuYW1lc3BhY2VzIHByb3ZpZGUKICBmb2xsb3dpbmcg
-YmVoYXZpb3I6CgogICgxKSBUaGUg4oCccm9vdOKAnSBjZ3JvdXAgZm9yIGEgY2dyb3VwIG5hbWVz
-cGFjZSBpcyB0aGUgY2dyb3VwIGluIHdoaWNoCiAgICAgIHRoZSBwcm9jZXNzIGNhbGxpbmcgdW5z
-aGFyZSBpcyBydW5uaW5nLgogICAgICBGb3IgZXguIGlmIGEgcHJvY2VzcyBpbiAvYmF0Y2hqb2Jz
-L2Nfam9iX2lkMSBjZ3JvdXAgY2FsbHMgdW5zaGFyZSwKICAgICAgY2dyb3VwIC9iYXRjaGpvYnMv
-Y19qb2JfaWQxIGJlY29tZXMgdGhlIGNncm91cG5zLXJvb3QuCiAgICAgIEZvciB0aGUgaW5pdF9j
-Z3JvdXBfbnMsIHRoaXMgaXMgdGhlIHJlYWwgcm9vdCAo4oCcL+KAnSkgY2dyb3VwCiAgICAgIChp
-ZGVudGlmaWVkIGluIGNvZGUgYXMgY2dycF9kZmxfcm9vdC5jZ3JwKS4KCiAgKDIpIFRoZSBjZ3Jv
-dXBucy1yb290IGNncm91cCBkb2VzIG5vdCBjaGFuZ2UgZXZlbiBpZiB0aGUgbmFtZXNwYWNlCiAg
-ICAgIGNyZWF0b3IgcHJvY2VzcyBsYXRlciBtb3ZlcyB0byBhIGRpZmZlcmVudCBjZ3JvdXAuCiAg
-ICAgICQgfi91bnNoYXJlIC1jICMgdW5zaGFyZSBjZ3JvdXBucyBpbiBzb21lIGNncm91cAogICAg
-ICBbbnNdJCBjYXQgL3Byb2Mvc2VsZi9jZ3JvdXAgCiAgICAgIDA6Y3B1c2V0LGNwdSxjcHVhY2N0
-LG1lbW9yeSxkZXZpY2VzLGZyZWV6ZXIsaHVnZXRsYjovIAogICAgICBbbnNdJCBta2RpciBzdWJf
-Y2dycF8xCiAgICAgIFtuc10kIGVjaG8gMCA+IHN1Yl9jZ3JwXzEvY2dyb3VwLnByb2NzCiAgICAg
-IFtuc10kIGNhdCAvcHJvYy9zZWxmL2Nncm91cCAKICAgICAgMDpjcHVzZXQsY3B1LGNwdWFjY3Qs
-bWVtb3J5LGRldmljZXMsZnJlZXplcixodWdldGxiOi9zdWJfY2dycF8xCgogICgzKSBFYWNoIHBy
-b2Nlc3MgZ2V0cyBpdHMgQ0dST1VQTlMgc3BlY2lmaWMgdmlldyBvZgogICAgICAvcHJvYy88cGlk
-Pi9jZ3JvdXAuCiAgKGEpIFByb2Nlc3NlcyBydW5uaW5nIGluc2lkZSB0aGUgY2dyb3VwIG5hbWVz
-cGFjZSB3aWxsIGJlIGFibGUgdG8gc2VlCiAgICAgIGNncm91cCBwYXRocyAoaW4gL3Byb2Mvc2Vs
-Zi9jZ3JvdXApIG9ubHkgaW5zaWRlIHRoZWlyIHJvb3QgY2dyb3VwCiAgICAgIFtuc10kIHNsZWVw
-IDEwMDAwMCAmICAjIEZyb20gd2l0aGluIHVuc2hhcmVkIGNncm91cG5zCiAgICAgIFsxXSA3MzUz
-CiAgICAgIFtuc10kIGVjaG8gNzM1MyA+IHN1Yl9jZ3JwXzEvY2dyb3VwLnByb2NzCiAgICAgIFtu
-c10kIGNhdCAvcHJvYy83MzUzL2Nncm91cAogICAgICAwOmNwdXNldCxjcHUsY3B1YWNjdCxtZW1v
-cnksZGV2aWNlcyxmcmVlemVyLGh1Z2V0bGI6L3N1Yl9jZ3JwXzEKCiAgKGIpIEZyb20gZ2xvYmFs
-IGNncm91cG5zLCB0aGUgcmVhbCBjZ3JvdXAgcGF0aCB3aWxsIGJlIHZpc2libGU6CiAgICAgICQg
-Y2F0IC9wcm9jLzczNTMvY2dyb3VwCiAgICAgIDA6Y3B1c2V0LGNwdSxjcHVhY2N0LG1lbW9yeSxk
-ZXZpY2VzLGZyZWV6ZXIsaHVnZXRsYjovYmF0Y2hqb2JzL2Nfam9iX2lkMS9zdWJfY2dycF8xCgog
-IChjKSBGcm9tIGEgc2libGluZyBjZ3JvdXBucywgdGhlIHJlYWwgcGF0aCB3aWxsIGJlIHZpc2li
-bGU6CiAgICAgIFtuczJdJCBjYXQgL3Byb2MvNzM1My9jZ3JvdXAKICAgICAgMDpjcHVzZXQsY3B1
-LGNwdWFjY3QsbWVtb3J5LGRldmljZXMsZnJlZXplcixodWdldGxiOi9iYXRjaGpvYnMvY19qb2Jf
-aWQxL3N1Yl9jZ3JwXzEKICAgICAgKEluIGNvcnJlY3QgY29udGFpbmVyIHNldHVwIHRob3VnaCwg
-aXQgc2hvdWxkIG5vdCBiZSBwb3NzaWJsZSB0bwogICAgICAgYWNjZXNzIFBJRHMgaW4gYW5vdGhl
-ciBjb250YWluZXIgaW4gdGhlIGZpcnN0IHBsYWNlLiBUaGlzIGNhbiBiZQogICAgICAgZGV0ZWN0
-ZWQgY2hhbmdlZCBpZiBkZXNpcmVkLikKCiAgKDQpIFByb2Nlc3NlcyBpbnNpZGUgYSBjZ3JvdXBu
-cyBhcmUgbm90IGFsbG93ZWQgdG8gbW92ZSBvdXQgb2YgdGhlCiAgICAgIGNncm91cG5zLXJvb3Qu
-IFRoaXMgaXMgdHJ1ZSBldmVuIGlmIGEgcHJpdmlsZWdlZCBwcm9jZXNzIGluIGdsb2JhbAogICAg
-ICBjZ3JvdXBucyB0cmllcyB0byBtb3ZlIHRoZSBwcm9jZXNzIG91dCBvZiBpdHMgY2dyb3VwbnMt
-cm9vdC4KCiAgICAgICMgRnJvbSBnbG9iYWwgY2dyb3VwbnMKICAgICAgJCBjYXQgL3Byb2MvNzM1
-My9jZ3JvdXAKICAgICAgMDpjcHVzZXQsY3B1LGNwdWFjY3QsbWVtb3J5LGRldmljZXMsZnJlZXpl
-cixodWdldGxiOi9iYXRjaGpvYnMvY19qb2JfaWQxL3N1Yl9jZ3JwXzEKICAgICAgIyBjZ3JvdXBu
-cy1yb290IGZvciA3MzUzIGlzIC9iYXRjaGpvYnMvY19qb2JfaWQxCiAgICAgICQgZWNobyA3MzUz
-ID4gYmF0Y2hqb2JzL2Nfam9iX2lkMi9jZ3JvdXAucHJvY3MKICAgICAgLWJhc2g6IGVjaG86IHdy
-aXRlIGVycm9yOiBPcGVyYXRpb24gbm90IHBlcm1pdHRlZAoKICAoNSkgc2V0bnMoKSBpcyBub3Qg
-c3VwcG9ydGVkIGZvciBjZ3JvdXAgbmFtZXNwYWNlIGluIHRoZSBpbml0aWFsCiAgICAgIHZlcnNp
-b24uCgogICg2KSBXaGVuIHNvbWUgdGhyZWFkIGZyb20gYSBtdWx0aS10aHJlYWRlZCBwcm9jZXNz
-IHVuc2hhcmVzIGl0cwogICAgICBjZ3JvdXAtbmFtZXNwYWNlLCB0aGUgbmV3IGNncm91cG5zIGdl
-dHMgYXBwbGllZCB0byB0aGUgZW50aXJlCiAgICAgIHByb2Nlc3MgKGFsbCB0aGUgdGhyZWFkcyku
-IFRoaXMgc2hvdWxkIGJlIE9LIHNpbmNlCiAgICAgIHVuaWZpZWQtaGllcmFyY2h5IG9ubHkgYWxs
-b3dzIHByb2Nlc3MtbGV2ZWwgY29udGFpbmVyaXphdGlvbi4gU28KICAgICAgYWxsIHRoZSB0aHJl
-YWRzIGluIHRoZSBwcm9jZXNzIHdpbGwgaGF2ZSB0aGUgc2FtZSBjZ3JvdXAuIEFuZCBib3RoCiAg
-ICAgIC0gY2hhbmdpbmcgY2dyb3VwcyBhbmQgdW5zaGFyaW5nIG5hbWVzcGFjZXMgLSBhcmUgcHJv
-dGVjdGVkIHVuZGVyCiAgICAgIHRocmVhZGdyb3VwX2xvY2sodGFzaykuCgogICg3KSBUaGUgY2dy
-b3VwIG5hbWVzcGFjZSBpcyBhbGl2ZSBhcyBsb25nIGFzIHRoZXJlIGlzIGF0bGVhc3QgMQogICAg
-ICBwcm9jZXNzIGluc2lkZSBpdC4gV2hlbiB0aGUgbGFzdCBwcm9jZXNzIGV4aXRzLCB0aGUgY2dy
-b3VwCiAgICAgIG5hbWVzcGFjZSBpcyBkZXN0cm95ZWQuIFRoZSBjZ3JvdXBucy1yb290IGFuZCB0
-aGUgYWN0dWFsIGNncm91cHMKICAgICAgcmVtYWluIHRob3VnaC4KCkltcGxlbWVudGF0aW9uCiAg
-VGhlIGN1cnJlbnQgcGF0Y2gtc2V0IGlzIGJhc2VkIG9uIHRvcCBvZiBUZWp1bidzIGNncm91cCB0
-cmVlIChmb3ItbmV4dAogIGJyYW5jaCkuIEl0cyBmYWlybHkgbm9uLWludHJ1c2l2ZSBhbmQgcHJv
-dmlkZXMgYWJvdmUgbWVudGlvbmVkCiAgZmVhdHVyZXMuCgpQb3NzaWJsZSBleHRlbnNpb25zIG9m
-IENHUk9VUE5TOgogICgxKSBUaGUgRG9jdW1lbnRhdGlvbi9jZ3JvdXBzL3VuaWZpZWQtaGllcmFy
-Y2h5LnR4dCBtZW50aW9ucyB1c2Ugb2YKICAgICAgY2FwYWJpbGl0aWVzIHRvIHJlc3RyaWN0IGNn
-cm91cHMgdG8gYWRtaW5pc3RyYXRpdmUgdXNlcnMuIENHcm91cAogICAgICBuYW1lc3BhY2VzIGNv
-dWxkIGJlIG9mIGhlbHAgaGVyZS4gV2l0aCBjZ3JvdXAgbmFtZXNwYWNlcywgaXQgbWlnaHQKICAg
-ICAgYmUgcG9zc2libGUgdG8gZGVsZWdhdGUgYWRtaW5pc3RyYXRpb24gb2Ygc3ViLWNncm91cHMg
-dW5kZXIgYQogICAgICBjZ3JvdXBucy1yb290IHRvIHRoZSBjZ3JvdXBucyBvd25lci4KCiAgKDIp
-IFByb3ZpZGUgYSBjZ3JvdXBucyBzcGVjaWZpYyBjZ3JvdXBmcyBtb3VudC4gaS5lLiwgdGhlIGZv
-bGxvd2luZwogICAgICBjb21tYW5kIHdoZW4gcmFuIGZyb20gaW5zaWRlIGEgY2dyb3VwbnMgc2hv
-dWxkIG9ubHkgbW91bnQgdGhlCiAgICAgIGhpZXJhcmNoeSBmcm9tIGNncm91cG5zLXJvb3QgY2dy
-b3VwOgogICAgICAkIG1vdW50IC10IGNncm91cCBjZ3JvdXAgPGNncm91cC1tb3VudHBvaW50Pgog
-ICAgICAjIC1vIF9fREVWRUxfX3NhbmVfYmVoYXZpb3Igc2hvdWxkIGJlIGltcGxpY2l0CgogICAg
-ICBUaGlzIGlzIHNpbWlsYXIgdG8gaG93IHByb2NmcyBjYW4gYmUgbW91bnRlZCBmb3IgZXZlcnkg
-UElETlMuIFRoaXMKICAgICAgbWF5IGhhdmUgc29tZSB1c2VjYXNlcy4KCi0tLQogZnMva2VybmZz
-L2Rpci5jICAgICAgICAgICAgICAgICAgfCAgNTEgKysrKysrKysrKysrKy0tLQogZnMvcHJvYy9u
-YW1lc3BhY2VzLmMgICAgICAgICAgICAgfCAgIDMgKwogaW5jbHVkZS9saW51eC9jZ3JvdXAuaCAg
-ICAgICAgICAgfCAgMzYgKysrKysrKysrKy0KIGluY2x1ZGUvbGludXgvY2dyb3VwX25hbWVzcGFj
-ZS5oIHwgIDYyICsrKysrKysrKysrKysrKysrKysKIGluY2x1ZGUvbGludXgva2VybmZzLmggICAg
-ICAgICAgIHwgICAzICsKIGluY2x1ZGUvbGludXgvbnNwcm94eS5oICAgICAgICAgIHwgICAyICsK
-IGluY2x1ZGUvbGludXgvcHJvY19ucy5oICAgICAgICAgIHwgICA0ICsrCiBpbmNsdWRlL3VhcGkv
-bGludXgvc2NoZWQuaCAgICAgICB8ICAgMyArLQogaW5pdC9LY29uZmlnICAgICAgICAgICAgICAg
-ICAgICAgfCAgIDkgKysrCiBrZXJuZWwvTWFrZWZpbGUgICAgICAgICAgICAgICAgICB8ICAgMSAr
-CiBrZXJuZWwvY2dyb3VwLmMgICAgICAgICAgICAgICAgICB8ICA3NSArKysrKysrKysrKysrKysr
-Ky0tLS0tLQoga2VybmVsL2Nncm91cF9uYW1lc3BhY2UuYyAgICAgICAgfCAxMjggKysrKysrKysr
-KysrKysrKysrKysrKysrKysrKysrKysrKysrKysrCiBrZXJuZWwvZm9yay5jICAgICAgICAgICAg
-ICAgICAgICB8ICAgMiArLQoga2VybmVsL25zcHJveHkuYyAgICAgICAgICAgICAgICAgfCAgMTkg
-KysrKystCiAxNCBmaWxlcyBjaGFuZ2VkLCAzNjQgaW5zZXJ0aW9ucygrKSwgMzQgZGVsZXRpb25z
-KC0pCiBjcmVhdGUgbW9kZSAxMDA2NDQgaW5jbHVkZS9saW51eC9jZ3JvdXBfbmFtZXNwYWNlLmgK
-IGNyZWF0ZSBtb2RlIDEwMDY0NCBrZXJuZWwvY2dyb3VwX25hbWVzcGFjZS5jCgpbUEFUQ0ggMS81
-XSBrZXJuZnM6IEFkZCBBUEkgdG8gZ2V0IGdlbmVyYXRlIHJlbGF0aXZlIGtlcm5mcyBwYXRoCltQ
-QVRDSCAyLzVdIHNjaGVkOiBuZXcgY2xvbmUgZmxhZyBDTE9ORV9ORVdDR1JPVVAgZm9yIGNncm91
-cApbUEFUQ0ggMy81XSBjZ3JvdXA6IGFkZCBmdW5jdGlvbiB0byBnZXQgdGFzaydzIGNncm91cCBv
-biBkZWZhdWx0CltQQVRDSCA0LzVdIGNncm91cDogZXhwb3J0IGNncm91cF9nZXQoKSBhbmQgY2dy
-b3VwX3B1dCgpCltQQVRDSCA1LzVdIGNncm91cDogaW50cm9kdWNlIGNncm91cCBuYW1lc3BhY2Vz
-Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5l
-cnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0
-cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVy
-cw==
+The new function kernfs_path_from_node() generates and returns
+kernfs path of a given kernfs_node relative to a given parent
+kernfs_node.
+
+Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+---
+ fs/kernfs/dir.c        | 51 ++++++++++++++++++++++++++++++++++++++++----------
+ include/linux/kernfs.h |  3 +++
+ 2 files changed, 44 insertions(+), 10 deletions(-)
+
+diff --git a/fs/kernfs/dir.c b/fs/kernfs/dir.c
+index a693f5b..2224f08 100644
+--- a/fs/kernfs/dir.c
++++ b/fs/kernfs/dir.c
+@@ -44,14 +44,22 @@ static int kernfs_name_locked(struct kernfs_node *kn, char *buf, size_t buflen)
+ 	return strlcpy(buf, kn->parent ? kn->name : "/", buflen);
+ }
+ 
+-static char * __must_check kernfs_path_locked(struct kernfs_node *kn, char *buf,
+-					      size_t buflen)
++static char * __must_check kernfs_path_from_node_locked(
++	struct kernfs_node *kn_root,
++	struct kernfs_node *kn,
++	char *buf,
++	size_t buflen)
+ {
+ 	char *p = buf + buflen;
+ 	int len;
+ 
+ 	*--p = '\0';
+ 
++	if (kn == kn_root) {
++		*--p = '/';
++		return p;
++	}
++
+ 	do {
+ 		len = strlen(kn->name);
+ 		if (p - buf < len + 1) {
+@@ -63,6 +71,8 @@ static char * __must_check kernfs_path_locked(struct kernfs_node *kn, char *buf,
+ 		memcpy(p, kn->name, len);
+ 		*--p = '/';
+ 		kn = kn->parent;
++		if (kn == kn_root)
++			break;
+ 	} while (kn && kn->parent);
+ 
+ 	return p;
+@@ -92,26 +102,47 @@ int kernfs_name(struct kernfs_node *kn, char *buf, size_t buflen)
+ }
+ 
+ /**
+- * kernfs_path - build full path of a given node
++ * kernfs_path_from_node - build path of node @kn relative to @kn_root.
++ * @kn_root: parent kernfs_node relative to which we need to build the path
+  * @kn: kernfs_node of interest
+- * @buf: buffer to copy @kn's name into
++ * @buf: buffer to copy @kn's path into
+  * @buflen: size of @buf
+  *
+- * Builds and returns the full path of @kn in @buf of @buflen bytes.  The
+- * path is built from the end of @buf so the returned pointer usually
++ * Builds and returns @kn's path relative to @kn_root. @kn_root is expected to
++ * be parent of @kn at some level. If this is not true or if @kn_root is NULL,
++ * then full path of @kn is returned.
++ * The path is built from the end of @buf so the returned pointer usually
+  * doesn't match @buf.  If @buf isn't long enough, @buf is nul terminated
+  * and %NULL is returned.
+  */
+-char *kernfs_path(struct kernfs_node *kn, char *buf, size_t buflen)
++char *kernfs_path_from_node(struct kernfs_node *kn_root, struct kernfs_node *kn,
++			    char *buf, size_t buflen)
+ {
+ 	unsigned long flags;
+ 	char *p;
+ 
+ 	spin_lock_irqsave(&kernfs_rename_lock, flags);
+-	p = kernfs_path_locked(kn, buf, buflen);
++	p = kernfs_path_from_node_locked(kn_root, kn, buf, buflen);
+ 	spin_unlock_irqrestore(&kernfs_rename_lock, flags);
+ 	return p;
+ }
++EXPORT_SYMBOL_GPL(kernfs_path_from_node);
++
++/**
++ * kernfs_path - build full path of a given node
++ * @kn: kernfs_node of interest
++ * @buf: buffer to copy @kn's name into
++ * @buflen: size of @buf
++ *
++ * Builds and returns the full path of @kn in @buf of @buflen bytes.  The
++ * path is built from the end of @buf so the returned pointer usually
++ * doesn't match @buf.  If @buf isn't long enough, @buf is nul terminated
++ * and %NULL is returned.
++ */
++char *kernfs_path(struct kernfs_node *kn, char *buf, size_t buflen)
++{
++	return kernfs_path_from_node(NULL, kn, buf, buflen);
++}
+ EXPORT_SYMBOL_GPL(kernfs_path);
+ 
+ /**
+@@ -145,8 +176,8 @@ void pr_cont_kernfs_path(struct kernfs_node *kn)
+ 
+ 	spin_lock_irqsave(&kernfs_rename_lock, flags);
+ 
+-	p = kernfs_path_locked(kn, kernfs_pr_cont_buf,
+-			       sizeof(kernfs_pr_cont_buf));
++	p = kernfs_path_from_node_locked(NULL, kn, kernfs_pr_cont_buf,
++					 sizeof(kernfs_pr_cont_buf));
+ 	if (p)
+ 		pr_cont("%s", p);
+ 	else
+diff --git a/include/linux/kernfs.h b/include/linux/kernfs.h
+index 20f4935..1627341 100644
+--- a/include/linux/kernfs.h
++++ b/include/linux/kernfs.h
+@@ -257,6 +257,9 @@ static inline bool kernfs_ns_enabled(struct kernfs_node *kn)
+ }
+ 
+ int kernfs_name(struct kernfs_node *kn, char *buf, size_t buflen);
++char * __must_check kernfs_path_from_node(struct kernfs_node *root_kn,
++					  struct kernfs_node *kn, char *buf,
++					  size_t buflen);
+ char * __must_check kernfs_path(struct kernfs_node *kn, char *buf,
+ 				size_t buflen);
+ void pr_cont_kernfs_name(struct kernfs_node *kn);
+-- 
+2.0.0.526.g5318336
