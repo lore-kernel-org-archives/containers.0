@@ -1,9 +1,10 @@
-From: postmaster-EunbckgpuBjP01IbtRslpbpzq4S04n8Q@public.gmane.org
-Subject: Delivery Status Notification (Failure)
-Date: Tue, 22 Jul 2014 17:02:02 +1000
-Message-ID: <Tmf4X6egi00000a35@rhkingsgrovesvr.rhkingsgrove.com.au>
+From: Mail Delivery System <Mailer-Daemon-uZ/IHx/nFoQLl/+CLPj3C2Xnswh1EIUO@public.gmane.org>
+Subject: Mail delivery failed: returning message to sender
+Date: Tue, 22 Jul 2014 11:24:07 +0200
+Message-ID: <E1X9WIp-00039E-AY@sv.travelhostdate.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5714328982870703374=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,94 +18,41 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  
-Portions of this message may be unreadable without a MIME-capable mail program.
+This message was created automatically by mail delivery software.
 
---===============5714328982870703374==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="9B095B5ADSN=_01CF576ED777B78000003267rhkingsgrovesvr."
+A message that you sent could not be delivered to one or more of its
+recipients. This is a permanent error. The following address(es) failed:
 
-This is a MIME-formatted message.  
-Portions of this message may be unreadable without a MIME-capable mail program.
+  artsaip-ZBadwT4OvJO6c6uEtOJ/EA@public.gmane.org
+    The mail server could not deliver mail to artsaip-ZBadwT4OvJP5c4y/nN6+SQ@public.gmane.org  The account or domain may not exist, they may be blacklisted, or missing the proper dns entries.
 
---9B095B5ADSN=_01CF576ED777B78000003267rhkingsgrovesvr.
-Content-Type: text/plain; charset=unicode-1-1-utf-7
+------ This is a copy of the message, including all the headers. ------
 
-This is an automatically generated Delivery Status Notification.
-
-Delivery to the following recipients failed.
-
-       3dharry-EunbckgpuBjP01IbtRslpbpzq4S04n8Q@public.gmane.org
-
-
-
-
---9B095B5ADSN=_01CF576ED777B78000003267rhkingsgrovesvr.
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns;rhkingsgrovesvr.rhkingsgrove.com.au
-Received-From-MTA: dns;pegasus.e-secure.net
-Arrival-Date: Tue, 22 Jul 2014 17:02:01 +1000
-
-Final-Recipient: rfc822;3dharry-EunbckgpuBjP01IbtRslpbpzq4S04n8Q@public.gmane.org
-Action: failed
-Status: 5.1.1
-
---9B095B5ADSN=_01CF576ED777B78000003267rhkingsgrovesvr.
-Content-Type: message/rfc822
-
-Received: from pegasus.e-secure.net ([203.98.87.100]) by rhkingsgrovesvr.rhkingsgrove.com.au with Microsoft SMTPSVC(6.0.3790.4675);
-	 Tue, 22 Jul 2014 17:02:01 +1000
-X-ASG-Debug-ID: 1406012507-01599b09f9a66ce0001-TN3BVa
-Received: from sv.travelhostdate.com (5.153.52.122-static.reverse.softlayer.com [5.153.52.122]) by pegasus.e-secure.net with ESMTP id FIFH6vf0VcKNVtKg for <3dharry-EunbckgpuBjP01IbtRslpbpzq4S04n8Q@public.gmane.org>; Tue, 22 Jul 2014 17:01:48 +1000 (EST)
-X-Barracuda-Envelope-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-Barracuda-Apparent-Source-IP: 5.153.52.122
-X-ASG-RBL-Restriction: l2.apews.org
-Received: from [5.153.52.122] by sv.travelhostdate.com id fIVyUnAnXI5lIt; Tue, 22 Jul 2014 09:01:49 +0200
-Message-ID: <00be01cfa57a$c95de200$01000a0a-uZ/IHx/nFoQLl/+CLPj3C2Xnswh1EIUO@public.gmane.org>
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <3dharry-EunbckgpuBjP01IbtRslpbpzq4S04n8Q@public.gmane.org>
-Subject: [SPAM]  Answer id YQrzUc
-Date: Tue, 22 Jul 2014 09:01:49 +0200
-X-ASG-Orig-Subj: Answer id YQrzUc
+Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from localhost.localdomain ([127.0.0.1]:55713 helo=sv.travelhostdate.com)
+	by sv.travelhostdate.com with esmtp (Exim 4.82)
+	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1X9WIf-00037q-50
+	for artsaip-ZBadwT4OvJO6c6uEtOJ/EA@public.gmane.org; Tue, 22 Jul 2014 11:23:57 +0200
+Received: from [5.153.52.122] by sv.travelhostdate.com id aj3ulifKoD7I8FrX; Tue, 22 Jul 2014 11:23:56 +0200
+Message-ID: <000b01cfa58e$a806f100$0200a8c0-uZ/IHx/nFoQLl/+CLPj3C2Xnswh1EIUO@public.gmane.org>
+From: "Cinzia" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <artsaip-ZBadwT4OvJO6c6uEtOJ/EA@public.gmane.org>
+Subject: Answer id:wT1B0m.
+Date: Tue, 22 Jul 2014 11:23:56 +0200
 MIME-Version: 1.0
 Content-Type: multipart/mixed;
  boundary="----------10816F611053FD0"
-X-Barracuda-Connect: 5.153.52.122-static.reverse.softlayer.com[5.153.52.122]
-X-Barracuda-Start-Time: 1406012507
-X-Barracuda-URL: http://203.98.87.100:8000/cgi-mod/mark.cgi
-X-Virus-Scanned: by bsmtpd at e-secure.net
-X-Barracuda-Bayes: INNOCENT GLOBAL 0.0000 1.0000 -2.0210
-X-ASG-Tag: RBL (l2.apews.org
-	)
-X-Barracuda-Spam-Score: -2.02
-X-Barracuda-Spam-Status: No, SCORE=-2.02 using global scores of TAG_LEVEL=3.0 QUARANTINE_LEVEL=5.0 KILL_LEVEL=7.0 tests=NO_REAL_NAME
-X-Barracuda-Spam-Report: Code version 3.2, rules version 3.2.3.7486
-	Rule breakdown below
-	 pts rule name              description
-	---- ---------------------- --------------------------------------------------
-	0.00 NO_REAL_NAME           From: does not include a real name
-X-Priority: 5 (Lowest)
-X-MSMail-Priority: Low
-Importance: Low
-X-Barracuda-Spam-Flag: YES
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-OriginalArrivalTime: 22 Jul 2014 07:02:02.0009 (UTC) FILETIME=[D67C3090:01CFA57A]
-X-TM-AS-Product-Ver: SMEX-8.6.0.1374-6.000.1038-17366.007
-X-TM-AS-Result: No--2.323400-5.000000-31
-X-TM-AS-User-Approved-Sender: No
-X-TM-AS-User-Blocked-Sender: No
-
 
 ------------10816F611053FD0
 Content-Type: text/plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 
-Hello, 3dharry-EunbckgpuBjP01IbtRslpflzjL+c3r5J@public.gmane.org
-    
-Send you the document you requested on the forum.
+Hello, artsaip-ZBadwT4OvJP5c4y/nN6+SQ@public.gmane.org
+  
+Here is a document which you asked.
 
-id:166791749924
+id:61458222
 ------------10816F611053FD0
 Content-Type: application/octet-stream;
  name="Reply.doc"
@@ -787,20 +735,3 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAP///////////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAA==
 ------------10816F611053FD0--
-
-
-
-
---9B095B5ADSN=_01CF576ED777B78000003267rhkingsgrovesvr.--
-
---===============5714328982870703374==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============5714328982870703374==--
