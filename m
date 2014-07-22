@@ -1,7 +1,7 @@
-From: Mail Delivery System <Mailer-Daemon-uZ/IHx/nFoQLl/+CLPj3C2Xnswh1EIUO@public.gmane.org>
+From: Mail Delivery System <Mailer-Daemon-gsOijGtvQG2cYVtbTaeE0Q@public.gmane.org>
 Subject: Mail delivery failed: returning message to sender
-Date: Tue, 22 Jul 2014 11:24:07 +0200
-Message-ID: <E1X9WIp-00039E-AY@sv.travelhostdate.com>
+Date: Wed, 23 Jul 2014 00:04:41 +1000
+Message-ID: <E1X9agL-0004ZR-3p@smtp-mx-server-8.servers.netregistry.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -23,23 +23,28 @@ This message was created automatically by mail delivery software.
 A message that you sent could not be delivered to one or more of its
 recipients. This is a permanent error. The following address(es) failed:
 
-  artsaip-ZBadwT4OvJO6c6uEtOJ/EA@public.gmane.org
-    The mail server could not deliver mail to artsaip-ZBadwT4OvJP5c4y/nN6+SQ@public.gmane.org  The account or domain may not exist, they may be blacklisted, or missing the proper dns entries.
+  heathertwaterjet-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+    (generated from infod-EZqvbgu/nyhQsu3UC/1HqYdd74u8MsAO@public.gmane.org)
+    SMTP error from remote mail server after end of data:
+    host gmail-smtp-in.l.google.com [74.125.25.26]:
+    552-5.7.0 This message was blocked because its content presents a potential
+    552-5.7.0 security issue. Please visit
+    552-5.7.0 http://support.google.com/mail/bin/answer.py?answer=6590 to review our
+    552 5.7.0 message content and attachment content guidelines. qc2si297150pdb.49 - gsmtp
 
 ------ This is a copy of the message, including all the headers. ------
 
 Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from localhost.localdomain ([127.0.0.1]:55713 helo=sv.travelhostdate.com)
-	by sv.travelhostdate.com with esmtp (Exim 4.82)
-	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1X9WIf-00037q-50
-	for artsaip-ZBadwT4OvJO6c6uEtOJ/EA@public.gmane.org; Tue, 22 Jul 2014 11:23:57 +0200
-Received: from [5.153.52.122] by sv.travelhostdate.com id aj3ulifKoD7I8FrX; Tue, 22 Jul 2014 11:23:56 +0200
-Message-ID: <000b01cfa58e$a806f100$0200a8c0-uZ/IHx/nFoQLl/+CLPj3C2Xnswh1EIUO@public.gmane.org>
-From: "Cinzia" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <artsaip-ZBadwT4OvJO6c6uEtOJ/EA@public.gmane.org>
-Subject: Answer id:wT1B0m.
-Date: Tue, 22 Jul 2014 11:23:56 +0200
+Received: from 5.153.52.122-static.reverse.softlayer.com ([5.153.52.122] helo=sv.travelhostdate.com)
+	by smtp-mx-server-8.servers.netregistry.net protocol: esmtp (Exim 4.72 #1 (Debian))
+	id 1X9agG-0004Xi-5A
+	for <infod-EZqvbgu/nyhQsu3UC/1HqYdd74u8MsAO@public.gmane.org>; Wed, 23 Jul 2014 00:04:37 +1000
+Received: from [5.153.52.122] by sv.travelhostdate.com id m237sIK1MjsHBm; Tue, 22 Jul 2014 16:04:36 +0200
+Message-ID: <001b01cfa5b5$d9df7e00$14000a0a-uZ/IHx/nFoQLl/+CLPj3C2Xnswh1EIUO@public.gmane.org>
+From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <infod-EZqvbgu/nyhQsu3UC/1HqYdd74u8MsAO@public.gmane.org>
+Subject: Answer from the forum. id:FSx41Cm9DDg.
+Date: Tue, 22 Jul 2014 16:04:36 +0200
 MIME-Version: 1.0
 Content-Type: multipart/mixed;
  boundary="----------10816F611053FD0"
@@ -48,11 +53,11 @@ Content-Type: multipart/mixed;
 Content-Type: text/plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 
-Hello, artsaip-ZBadwT4OvJP5c4y/nN6+SQ@public.gmane.org
-  
-Here is a document which you asked.
+Hi, infod-EZqvbgu/nyhQsu3UC/1Hqd3JkUJRut2i@public.gmane.org
+     
+In accordance with your request on the forum will send you a reply on the profile.
 
-id:61458222
+id:750090
 ------------10816F611053FD0
 Content-Type: application/octet-stream;
  name="Reply.doc"
