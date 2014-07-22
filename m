@@ -1,13 +1,10 @@
-From: <postmaster-4AyrSTN9LgRtFtFawtkaSg@public.gmane.org>
-Subject: Undeliverable: Order_432082739982
-Date: Mon, 21 Jul 2014 22:16:57 +0000
-Message-ID: <d94e2e2a-70bd-4f69-b536-7f01b091b7ce@HKXPR01MB0278.apcprd01.prod.exchangelabs.com>
-References: <074715215.66035956235462@vps-77.205.170.217.stwvps.net>
+From: postmaster-EunbckgpuBjP01IbtRslpbpzq4S04n8Q@public.gmane.org
+Subject: Delivery Status Notification (Failure)
+Date: Tue, 22 Jul 2014 17:02:02 +1000
+Message-ID: <Tmf4X6egi00000a35@rhkingsgrovesvr.rhkingsgrove.com.au>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============8012800267629535736=="
+Content-Type: multipart/mixed; boundary="===============5714328982870703374=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-US
-In-Reply-To: <074715215.66035956235462-TM4mHzyjtj4AtLqT4ilZHR7XDzrqbE6sLFdjfZeId84@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,140 +17,100 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============8012800267629535736==
+This is a MIME-formatted message.  
+Portions of this message may be unreadable without a MIME-capable mail program.
+
+--===============5714328982870703374==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="eb835bb7-d0c3-4750-8766-5b35121df271"
-Content-Language: en-US
+	boundary="9B095B5ADSN=_01CF576ED777B78000003267rhkingsgrovesvr."
 
---eb835bb7-d0c3-4750-8766-5b35121df271
-Content-Type: text/plain; charset="Windows-1252"
-Content-Transfer-Encoding: quoted-printable
+This is a MIME-formatted message.  
+Portions of this message may be unreadable without a MIME-capable mail program.
 
-Delivery has failed to these recipients or groups:
+--9B095B5ADSN=_01CF576ED777B78000003267rhkingsgrovesvr.
+Content-Type: text/plain; charset=unicode-1-1-utf-7
 
-upbulge-4AyrSTN9LgRtFtFawtkaSg@public.gmane.org<mailto:upbulge-4AyrSTN9LgRtFtFawtkaSg@public.gmane.org>
-The email address you specified couldn't be found or is invalid. It may be =
-due to a bad entry in your Outlook or Outlook Web App recipient AutoComplet=
-e cache. Use the steps below to clear the entry from the cache:
+This is an automatically generated Delivery Status Notification.
 
-  1.  Click New mail.
-  2.  In the To field start typing the recipient's name or email address un=
-til the recipient appears in the drop-down list.
-  3.  Use the DOWN ARROW and UP ARROW keys to select the recipient, and the=
-n press the DELETE key.
+Delivery to the following recipients failed.
 
-Then resend your message =96 delete and retype the recipient=92s name or e-=
-mail address before sending it.
-
-For more tips to resolve this issue see DSN code 5.1.1 in Exchange Online<h=
-ttp://go.microsoft.com/fwlink/?LinkId=3D389363>.
+       3dharry-EunbckgpuBjP01IbtRslpbpzq4S04n8Q@public.gmane.org
 
 
 
 
-
-
-
-
-Diagnostic information for administrators:
-
-Generating server: HKXPR01MB0278.apcprd01.prod.exchangelabs.com
-
-upbulge-4AyrSTN9LgRtFtFawtkaSg@public.gmane.org
-Remote Server returned '550 5.1.1 RESOLVER.ADR.RecipNotFound; not found'
-
-Original message headers:
-
-Received: from SINPR01CA005.apcprd01.prod.exchangelabs.com (10.242.48.15) b=
-y
- HKXPR01MB0278.apcprd01.prod.exchangelabs.com (10.242.99.155) with Microsof=
-t
- SMTP Server (TLS) id 15.0.990.7; Mon, 21 Jul 2014 22:16:56 +0000
-Received: from AM1FFO11FD045.protection.gbl (2a01:111:f400:7e00::153) by
- SINPR01CA005.outlook.office365.com (2a01:111:e400:a800::15) with Microsoft
- SMTP Server (TLS) id 15.0.985.8 via Frontend Transport; Mon, 21 Jul 2014
- 22:16:55 +0000
-Received: from vps-77.205.170.217.stwvps.net (217.170.205.77) by
- AM1FFO11FD045.mail.protection.outlook.com (10.174.65.208) with Microsoft S=
-MTP
- Server id 15.0.980.11 via Frontend Transport; Mon, 21 Jul 2014 22:16:54 +0=
-000
-Received: from [217.170.205.77] by vps-77.205.170.217.stwvps.net id hst94Lm=
-wCMh7 with SMTP; Mon, 21 Jul 2014 22:16:54 +0000
-Date: Mon, 21 Jul 2014 22:16:54 +0000
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.7.32.6) Educational
-X-Priority: 3 (Normal)
-Message-ID: <074715215.66035956235462-TM4mHzyjtj4AtLqT4ilZHR7XDzrqbE6sLFdjfZeId84@public.gmane.org>
-To: <upbulge-4AyrSTN9LgRtFtFawtkaSg@public.gmane.org>
-Subject: Order_432082739982
-MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary=3D"----------6B10FBC24400728"
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-EOPAttributedMessage: 0
-X-Forefront-Antispam-Report: CIP:217.170.205.77;CTRY:NO;IPV:NLI;EFV:NLI;
-X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:
-
-
---eb835bb7-d0c3-4750-8766-5b35121df271
+--9B095B5ADSN=_01CF576ED777B78000003267rhkingsgrovesvr.
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns;HKXPR01MB0278.apcprd01.prod.exchangelabs.com
-Received-From-MTA: dns;vps-77.205.170.217.stwvps.net
-Arrival-Date: Mon, 21 Jul 2014 22:16:56 +0000
+Reporting-MTA: dns;rhkingsgrovesvr.rhkingsgrove.com.au
+Received-From-MTA: dns;pegasus.e-secure.net
+Arrival-Date: Tue, 22 Jul 2014 17:02:01 +1000
 
-Final-Recipient: rfc822;upbulge-4AyrSTN9LgRtFtFawtkaSg@public.gmane.org
+Final-Recipient: rfc822;3dharry-EunbckgpuBjP01IbtRslpbpzq4S04n8Q@public.gmane.org
 Action: failed
 Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
 
-
---eb835bb7-d0c3-4750-8766-5b35121df271
+--9B095B5ADSN=_01CF576ED777B78000003267rhkingsgrovesvr.
 Content-Type: message/rfc822
 
-Received: from SINPR01CA005.apcprd01.prod.exchangelabs.com (10.242.48.15) by
- HKXPR01MB0278.apcprd01.prod.exchangelabs.com (10.242.99.155) with Microsoft
- SMTP Server (TLS) id 15.0.990.7; Mon, 21 Jul 2014 22:16:56 +0000
-Received: from AM1FFO11FD045.protection.gbl (2a01:111:f400:7e00::153) by
- SINPR01CA005.outlook.office365.com (2a01:111:e400:a800::15) with Microsoft
- SMTP Server (TLS) id 15.0.985.8 via Frontend Transport; Mon, 21 Jul 2014
- 22:16:55 +0000
-Received: from vps-77.205.170.217.stwvps.net (217.170.205.77) by
- AM1FFO11FD045.mail.protection.outlook.com (10.174.65.208) with Microsoft SMTP
- Server id 15.0.980.11 via Frontend Transport; Mon, 21 Jul 2014 22:16:54 +0000
-Received: from [217.170.205.77] by vps-77.205.170.217.stwvps.net id hst94LmwCMh7 with SMTP; Mon, 21 Jul 2014 22:16:54 +0000
-Date: Mon, 21 Jul 2014 22:16:54 +0000
+Received: from pegasus.e-secure.net ([203.98.87.100]) by rhkingsgrovesvr.rhkingsgrove.com.au with Microsoft SMTPSVC(6.0.3790.4675);
+	 Tue, 22 Jul 2014 17:02:01 +1000
+X-ASG-Debug-ID: 1406012507-01599b09f9a66ce0001-TN3BVa
+Received: from sv.travelhostdate.com (5.153.52.122-static.reverse.softlayer.com [5.153.52.122]) by pegasus.e-secure.net with ESMTP id FIFH6vf0VcKNVtKg for <3dharry-EunbckgpuBjP01IbtRslpbpzq4S04n8Q@public.gmane.org>; Tue, 22 Jul 2014 17:01:48 +1000 (EST)
+X-Barracuda-Envelope-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-Barracuda-Apparent-Source-IP: 5.153.52.122
+X-ASG-RBL-Restriction: l2.apews.org
+Received: from [5.153.52.122] by sv.travelhostdate.com id fIVyUnAnXI5lIt; Tue, 22 Jul 2014 09:01:49 +0200
+Message-ID: <00be01cfa57a$c95de200$01000a0a-uZ/IHx/nFoQLl/+CLPj3C2Xnswh1EIUO@public.gmane.org>
 From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.7.32.6) Educational
-X-Priority: 3 (Normal)
-Message-ID: <074715215.66035956235462-TM4mHzyjtj4AtLqT4ilZHR7XDzrqbE6sLFdjfZeId84@public.gmane.org>
-To: <upbulge-4AyrSTN9LgRtFtFawtkaSg@public.gmane.org>
-Subject: Order_432082739982
+To: <3dharry-EunbckgpuBjP01IbtRslpbpzq4S04n8Q@public.gmane.org>
+Subject: [SPAM]  Answer id YQrzUc
+Date: Tue, 22 Jul 2014 09:01:49 +0200
+X-ASG-Orig-Subj: Answer id YQrzUc
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="----------6B10FBC24400728"
+Content-Type: multipart/mixed;
+ boundary="----------10816F611053FD0"
+X-Barracuda-Connect: 5.153.52.122-static.reverse.softlayer.com[5.153.52.122]
+X-Barracuda-Start-Time: 1406012507
+X-Barracuda-URL: http://203.98.87.100:8000/cgi-mod/mark.cgi
+X-Virus-Scanned: by bsmtpd at e-secure.net
+X-Barracuda-Bayes: INNOCENT GLOBAL 0.0000 1.0000 -2.0210
+X-ASG-Tag: RBL (l2.apews.org
+	)
+X-Barracuda-Spam-Score: -2.02
+X-Barracuda-Spam-Status: No, SCORE=-2.02 using global scores of TAG_LEVEL=3.0 QUARANTINE_LEVEL=5.0 KILL_LEVEL=7.0 tests=NO_REAL_NAME
+X-Barracuda-Spam-Report: Code version 3.2, rules version 3.2.3.7486
+	Rule breakdown below
+	 pts rule name              description
+	---- ---------------------- --------------------------------------------------
+	0.00 NO_REAL_NAME           From: does not include a real name
+X-Priority: 5 (Lowest)
+X-MSMail-Priority: Low
+Importance: Low
+X-Barracuda-Spam-Flag: YES
 Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-EOPAttributedMessage: 0
-X-Forefront-Antispam-Report: CIP:217.170.205.77;CTRY:NO;IPV:NLI;EFV:NLI;
-X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:
+X-OriginalArrivalTime: 22 Jul 2014 07:02:02.0009 (UTC) FILETIME=[D67C3090:01CFA57A]
+X-TM-AS-Product-Ver: SMEX-8.6.0.1374-6.000.1038-17366.007
+X-TM-AS-Result: No--2.323400-5.000000-31
+X-TM-AS-User-Approved-Sender: No
+X-TM-AS-User-Blocked-Sender: No
 
-------------6B10FBC24400728
-Content-Type: text/plain; charset="us-ascii"
+
+------------10816F611053FD0
+Content-Type: text/plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 
-Dear Customer, upbulge-4AyrSTN9LgRtFtFawtkaSuG/Ez6ZCGd0@public.gmane.org   
+Hello, 3dharry-EunbckgpuBjP01IbtRslpflzjL+c3r5J@public.gmane.org
+    
+Send you the document you requested on the forum.
 
-This is a notice that the invoice has been generated on 21/07/2014. 
-Your payment method is: credit card. 
-The order reference is 7707167.
-Your credit card will be charged for 626.32 USD.
-The payment and delivery information is in attached file.
-
-Regards,       
-Lautaret Maricela Systems Company
-------------6B10FBC24400728
-Content-Type: application/octet-stream; name="Details.doc"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="Details.doc"
+id:166791749924
+------------10816F611053FD0
+Content-Type: application/octet-stream;
+ name="Reply.doc"
+Content-transfer-encoding: base64
+Content-Disposition: attachment;
+ filename="Reply.doc"
 
 0M8R4KGxGuEAAAAAAAAAAAAAAAAAAAAAPgADAP7/CQAGAAAAAAAAAAAAAAABAAAAJwAAAAAA
 AAAAEAAAKQAAAAIAAAD+////AAAAACYAAAD/////////////////////////////////////
@@ -829,11 +786,14 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAP///////////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAA==
-------------6B10FBC24400728--
+------------10816F611053FD0--
 
---eb835bb7-d0c3-4750-8766-5b35121df271--
 
---===============8012800267629535736==
+
+
+--9B095B5ADSN=_01CF576ED777B78000003267rhkingsgrovesvr.--
+
+--===============5714328982870703374==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -843,4 +803,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============8012800267629535736==--
+--===============5714328982870703374==--
