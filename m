@@ -1,11 +1,15 @@
-From: Virus-i9wRM+HIrmnmtl4Z8vJ8Kg761KYD1DLY@public.gmane.org,
-	Scanner-i9wRM+HIrmnmtl4Z8vJ8Kg761KYD1DLY@public.gmane.org
-Subject: Undeliverable message returned to sender
-Date: Wed, 23 Jul 2014 14:46:08 +0000
-Message-ID: <20140723144608.89EBD2A0249@mail104-va3-R.bigfish.com>
+From: =?windows-1251?B?weXw7eDk5fLy4C3y4PL/?=
+	<abdurakhmon_kezimova1995-L2CoSWrWm/8S+FvcfC7Uqw@public.gmane.org>
+Subject: =?windows-1251?B?MTQyIODh8e7r/vLt7iDw4OHu9+j1IODr4+7w?=
+	=?windows-1251?B?6PLs7uIg7Ojt6Ozo5+D26Ogg7eDr7uPu4iDi?=
+	=?windows-1251?B?INDu8fHo6A==?=
+Date: Wed, 23 Jul 2014 19:51:51 +0400
+Message-ID: <20140723155222.F238E96529@mail.elcat.kg>
+Reply-To: =?windows-1251?B?weXw7eDk5fLy4C3y4PL/?=
+	<danakul_kuzhina1993-L2CoSWrWm/8S+FvcfC7Uqw@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1251"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -16,57 +20,94 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: vargans-sub-uCKOA6ERizojmsMGrRdz4w@public.gmane.org, zakaz-aVoOEKvFPdhLHijH+K7Xyw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, sales-gTEiMzKh0rqHXe+LvDLADg@public.gmane.org, 320057mail-78de6iVTozfwCo8hhA8L/4dd74u8MsAO@public.gmane.org, findir-Xh+9qzJNxlQox3rIn2DAYQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This message was created automatically by mail delivery software.
-
-A message you sent was virus infected.
-The message could not be cleaned.
-
-Virus Scan Report:
-------------------
-	 Application.doc infected by: trojan-downloader.vbs.agent.aiv -> REJECT
-
-Delivery failed for the following recipient(s):
-	northquay-9znMUvWc9XqkFu+90NgDirpzq4S04n8Q@public.gmane.org
-For more information about this virus, visit http://www.antivirus.com/vinfo/virusencyclo/
-
------ Original Message Header -----
-Received-SPF: fail (mail104-va3: domain of lists.linux-foundation.org does not designate 184.154.100.154 as permitted sender) client-ip=184.154.100.154; envelope-from=containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org; helo=portal.obeikan.com.sa ;eikan.com.sa ;
-X-MS-Exchange-Organization-Antispam-Report: OrigIP: 184.154.100.154;Service: EHS
-Received: from mail104-va3 (localhost.localdomain [127.0.0.1]) by mail104-va3 (MessageSwitch) id 1406126767661556_31586; Wed, 23 Jul 2014 14:46:07 +0000 (UTC)
-Received: from VA3EHSMHS002.bigfish.com (unknown [10.7.14.237])
-	by mail104-va3.bigfish.com (Postfix) with ESMTP id 8FA851A0057
-	for <northquay-9znMUvWc9XqkFu+90NgDirpzq4S04n8Q@public.gmane.org>; Wed, 23 Jul 2014 14:46:07 +0000 (UTC)
-Received: from portal.obeikan.com.sa (184.154.100.154) by
- VA3EHSMHS002.bigfish.com (10.7.99.12) with Microsoft SMTP Server id
- 14.16.227.3; Wed, 23 Jul 2014 14:46:07 +0000
-Received: from [184.154.100.154] by portal.obeikan.com.sa id yyCHzQx5XCmS with
- SMTP; Wed, 23 Jul 2014 14:08:13 +0000
-Date: Wed, 23 Jul 2014 14:08:13 +0000
-From: Eleanora <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v2.05.7) Home
-X-Priority: 3 (Normal)
-Message-ID: <684640935.26826056547065-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
-To: <northquay-9znMUvWc9XqkFu+90NgDirpzq4S04n8Q@public.gmane.org>
-Subject: Fwd: Re: debt
-MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="----------126C01C51DBCF31C"
-X-MS-Exchange-Organization-OriginalArrivalTime: 23 Jul 2014 14:46:07.2876
- (UTC)
-X-MS-Exchange-Organization-OriginalClientIPAddress: 184.154.100.154
-X-MS-Exchange-Organization-OriginalServerIPAddress: 10.7.99.12
-X-MS-Exchange-Organization-AuthSource: VA3EHSMHS002.ehs.local
-X-MS-Exchange-Organization-AuthAs: Anonymous
-X-MS-Exchange-Organization-MessageDirectionality: Incoming
-X-MS-Exchange-Organization-ConnectorInfo:
- Dn%*$RO%0$FUIP%$LKIP%$KIPT%0$Id%0$Di%0$Tls%0$SF%0$PF%0$CF%0$FQDN%$TlsDn%$IpfH%IPV:NLI$EnfH%H:portal.obeikan.com.sa;RD:portal.obeikan.com.sa;EFVD:NLI$
-X-MS-Exchange-Organization-Company-Id:
-X-MS-Exchange-Organization-Attributed-Sender-Id:
-X-MS-Exchange-Organization-OriginalSize: 43827
-X-MS-Exchange-Organization-MessageScope: 00000000-0000-0000-0000-000000000000
-X-MS-Exchange-Organization-HygienePolicy: Standard
-X-AM: 0 Application.doc
-X-MS-Exchange-Organization-MessageLatencyInProgress:
- LSRV=VA3EHSMHS002.ehs.local:TOTAL=0;2014-07-23T14:46:07.568Z
+IGJnQ29sb3I9ImxlbW9uY2hpZmZvbiIgCgp3aWR0aD0iOTclIiAKCgpiZ0NvbG9yPSJ3aGl0ZSIK
+CgoKCgoKYmdDb2xvcj0ibGVtb25jaGlmZm9uIgoKJiN4MzE7JiM1MjswICYjNDk7JiN4MzA7JiN4
+MzA7JSYjeDJEOyYjeDQzRDsmI3g2RjsmI3hBMDs8Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAycHgi
+IHNpemU9MT4mI3hBRDs8L0ZPTlQ+JiMxMDg4O2EmIzEwNzM77iYjeDQ0NzvoJiN4Nzg7PEZPTlQg
+c3R5bGU9IkZPTlQtU0laRTogMXB4IiBzaXplPTE+JiN4QUQ7JiN4QUQ7JiMxNzM7PC9GT05UPiDx
+JiN4NDQ1O2UmI3g0M0M7Cgp5JiN4NDNDO2XtPEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMXB4IiBj
+b2xvcj0jZmNmZmZlICBzaXplPTE+JiN4MUE7PC9GT05UPiYjeDQ0Qzv4JiMxMDE7JiMxMDg1O+j/
+ICYjeDc5O+8mI3g0M0I7JiMxMDcyO/cmI3g0Mzg7JiMxMDc0OyYjOTc75SYjeDQzQzsmIzEwOTk7
+JiN4NDQ1OyYjMzI7JiMxMDg1OyYjOTc7JiMxMDgzOyYjMTExOyYjeDQzMzs8Rk9OVCBzdHlsZT0i
+Rk9OVC1TSVpFOiAxcHgiIHNpemU9MT4mI3hBRDsmI3hBRDsmIzE3Mzs8L0ZPTlQ+JiN4M0JGO+Im
+bmJzcDs8Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAxcHgiIHNpemU9MT4mI3hBRDs8L0ZPTlQ+JiN4
+NDMyOyBQJiM5MzQ7CgomIzQ5OzxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIgc2l6ZT0xPiYj
+MTczOyYjMTczOzwvRk9OVD4mIzUzOzA8Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAycHgiIHNpemU9
+MT4mI3hBRDs8L0ZPTlQ+JiM5OTsmI3g3ODs8Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAxcHgiIHNp
+emU9MT4mIzE3Mzs8L0ZPTlQ+ZSYjMTA5OzxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIgc2l6
+ZT0xPiYjMTczOyYjeEFEOyYjMTczOzwvRk9OVD4mI3gyRTs8Rk9OVCBzdHlsZT0iRk9OVC1TSVpF
+OiAzcHgiIHNpemU9MT4mI3hBRDs8L0ZPTlQ+eDxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIg
+c2l6ZT0xPiYjeEFEOyYjeEFEOzwvRk9OVD4mIzEwNjs8Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAy
+cHgiIHNpemU9MT4mIzE3MzsmIzE3Mzs8L0ZPTlQ+JiMxMDA7JiN4NzY7JiMxMTk7JiMxMDA7PEZP
+TlQgc3R5bGU9IkZPTlQtU0laRTogMXB4IiBzaXplPTE+JiN4QUQ7JiN4QUQ7JiN4QUQ7PC9GT05U
+PiYjeDJFOzxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDJweCIgc2l6ZT0xPiYjeEFEOzwvRk9OVD5y
+JiMxMTc7ICYjeDQxMDsmIzEwODU7YTxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDJweCIgc2l6ZT0x
+PiYjMTczOzwvRk9OVD4mIzEwODM7JiN4NDM4OyYjMTA5MDsmI3g0Mzg7JiMxMDk1OyYjeDY1OyYj
+OTk7JiM5NTQ7JiMxMDgwOyYjeDQzOTsmIzE2MDsmIzEwODY78iYjeDQ0NzsmIzEwNzc78iYjMzI7
+6CYjMTA3OTviJiMxMDE7JiN4NDQxO/ImI3g0M0Q7JiN4M0JGOyYjeDQzMzsmIzk1OTsmbmJzcDsm
+IzEwNzI7JiN4NDM0OyYjMTA3NDs8Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAxcHgiIGNvbG9yPSNm
+Y2ZjZmUgIHNpemU9MT4mI3gxRDs8L0ZPTlQ+Jm9taWNyb247JmthcHBhO2EmIzEwOTA74CYjeEEw
+OyYjNDA7JiMxMDgyOyYjMTA4NTsmIzEwODA7PEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMXB4IiBj
+b2xvcj0jZmZmZWZkICBzaXplPTE+JiN4MDQ7PC9GT05UPiYjeDQzMzsmIzk3OzxGT05UIHN0eWxl
+PSJGT05ULVNJWkU6IDFweCIgY29sb3I9I2ZkZmNmZSAgc2l6ZT0xPiYjeDEwOzwvRk9OVD4mIzE2
+MDsmIzQzOyYjMzI7QzxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIgc2l6ZT0xPiYjeEFEOzwv
+Rk9OVD4mIzEwNDQ7KQoKJiN4NDIzO+0mIzEwODA7JiMxMDgyOzxGT05UIHN0eWxlPSJGT05ULVNJ
+WkU6IDFweCIgY29sb3I9I2ZlZmRmZiAgc2l6ZT0xPiYjeDEyOzwvRk9OVD5h6yYjeDQ0QzsmIzEw
+ODU77iYjeDQzNTsgJiN4NDM4OzxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDJweCIgc2l6ZT0xPiYj
+MTczOzwvRk9OVD4mI3g0Mzc7JiMxMDc2O2EmIzEwODU7JiMxMDgwOyYjeDY1OyAmI3g0Mzg7IOTu
+JiMxMDg5OyYjMTA5MDsmI3gzQkY7JiN4NDM5OyYjeDQzRDv7JiMxMDgxOzxGT05UIHN0eWxlPSJG
+T05ULVNJWkU6IDFweCIgc2l6ZT0xPiYjeEFEOzwvRk9OVD4gJiN4NDMyOzxGT05UIHN0eWxlPSJG
+T05ULVNJWkU6IDFweCIgY29sb3I9I2ZkZmVmZCAgc2l6ZT0xPiYjMzE7PC9GT05UPiYjMTA4NTtl
++CYjMTA4NTs8Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAycHgiIHNpemU9MT4mIzE3Mzs8L0ZPTlQ+
+JiN4NDM4OyYjMTA4MTs8Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAxcHgiIGNvbG9yPSNmZWZlZmYg
+IHNpemU9MT4mI3gwNjs8L0ZPTlQ+ICYjeDQzMjsmI3g0Mzg7JiMxMDc2OyYjeDJFOyAgCgomIzEw
+NDQ7Jm9taWNyb247Y/ImIzEwNzI7JiMxMDc0OyYjeDQzQTs8Rk9OVCBzdHlsZT0iRk9OVC1TSVpF
+OiAxcHgiIGNvbG9yPSNmZGZkZmQgIHNpemU9MT4mIzE0MTs8L0ZPTlQ+JiN4NDMwOyZuYnNwOyYj
+MTA4NzsmI3gzQkY7JiMzMjs8Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAxcHgiIHNpemU9MT4mI3hB
+RDs8L0ZPTlQ+0DxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIgY29sb3I9I2ZmZmVmZSAgc2l6
+ZT0xPiYjMTc7PC9GT05UPiYjOTM0OyAma2FwcGE7JiN4NDQzOyYjMTEyO/wmI3g0MzU78CYjeDNC
+RjsmI3g0M0M7PEZPTlQgc3R5bGU9IkZPTlQtU0laRTogM3B4IiBzaXplPTE+JiMxNzM7PC9GT05U
+PiYjeDJFOyDTPEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMXB4IiBjb2xvcj0jZmNmZWZjICBzaXpl
+PTE+JiMxNjs8L0ZPTlQ+JiN4NDM0O+7hJiN4NDNEOzxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDNw
+eCIgc2l6ZT0xPiYjMTczOzwvRk9OVD4mIzk3OzxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIg
+c2l6ZT0xPiYjMTczOyYjeEFEOzwvRk9OVD7/JiMxNjA7IDxGT05UIHN0eWxlPSJGT05ULVNJWkU6
+IDFweCIgY29sb3I9I2ZkZmRmYyAgc2l6ZT0xPiYjODs8L0ZPTlQ+JiMxMDkyOyYjeDQzRTvwPEZP
+TlQgc3R5bGU9IkZPTlQtU0laRTogMXB4IiBjb2xvcj0jZmVmZmZkICBzaXplPTE+JiMxMjc7PC9G
+T05UPiYjeDQzQzsmI3g0MzA7Jm5ic3A7JiN4NkY7PEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMXB4
+IiBjb2xvcj0jZmZmZGZkICBzaXplPTE+JiMxMjk7PC9GT05UPu88Rk9OVCBzdHlsZT0iRk9OVC1T
+SVpFOiAxcHgiIGNvbG9yPSNmZWZmZmQgIHNpemU9MT4mIzg7PC9GT05UPusmIzk3OzxGT05UIHN0
+eWxlPSJGT05ULVNJWkU6IDFweCIgY29sb3I9I2ZlZmNmYyAgc2l6ZT0xPiYjeDE3OzwvRk9OVD4m
+IzEwOTA7+yYjeDJFOyYjMTA1NTsmI3g0M0U7PEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMXB4IiBz
+aXplPTE+JiMxNzM7JiN4QUQ7JiN4QUQ7PC9GT05UPiYjMTA3Njs8Rk9OVCBzdHlsZT0iRk9OVC1T
+SVpFOiAzcHgiIHNpemU9MT4mIzE3Mzs8L0ZPTlQ+cDxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDJw
+eCIgc2l6ZT0xPiYjMTczOyYjeEFEOzwvRk9OVD5vPEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMXB4
+IiBzaXplPTE+JiMxNzM7JiMxNzM7PC9GT05UPiYjMTA3Mzs8Rk9OVCBzdHlsZT0iRk9OVC1TSVpF
+OiAycHgiIHNpemU9MT4mI3hBRDs8L0ZPTlQ+JiMxMDg1OzxGT05UIHN0eWxlPSJGT05ULVNJWkU6
+IDFweCIgc2l6ZT0xPiYjMTczOzwvRk9OVD7gPEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMnB4IiBz
+aXplPTE+JiMxNzM7JiMxNzM7PC9GT05UPiYjeDQ0Rjs8Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAy
+cHgiIHNpemU9MT4mI3hBRDsmIzE3Mzs8L0ZPTlQ+JiMxNjA7JiMxMDgwOyYjeDQzRDs8Rk9OVCBz
+dHlsZT0iRk9OVC1TSVpFOiAxcHgiIHNpemU9MT4mIzE3Mzs8L0ZPTlQ+JiN4NDQ0O+48Rk9OVCBz
+dHlsZT0iRk9OVC1TSVpFOiAycHgiIHNpemU9MT4mI3hBRDs8L0ZPTlQ+JiN4NDQwOyYjMTA4NDsm
+I3g0MzA7PEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMnB4IiBzaXplPTE+JiN4QUQ7JiMxNzM7PC9G
+T05UPvY8Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAzcHgiIHNpemU9MT4mIzE3Mzs8L0ZPTlQ+JiN4
+NDM4OzxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIgc2l6ZT0xPiYjeEFEOyYjMTczOyYjeEFE
+OzwvRk9OVD7/IAoKPEZPTlQgc3R5bGU9IkZPTlQtU0laRTogM3B4IiBzaXplPTE+JiMxNzM7PC9G
+T05UPiYjNDM7JiN4Mzc7IDxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIgY29sb3I9I2ZjZmNm
+YyBzaXplPTE+8DwvRk9OVD4mI3gyODs5MTxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIgY29s
+b3I9I2ZjZmNmYyBzaXplPTE+5vo8L0ZPTlQ+JiN4MzY7KSYjeEEwOyYjNTI7PEZPTlQgc3R5bGU9
+IkZPTlQtU0laRTogMXB4IiBjb2xvcj0jZmNmY2ZjIHNpemU9MT5k9zwvRk9OVD4mI3gzNDs8Rk9O
+VCBzdHlsZT0iRk9OVC1TSVpFOiAxcHgiIHNpemU9MT4mI3hBRDsmIzE3MzsmIzE3Mzs8L0ZPTlQ+
+JiM1Mjs8Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAxcHgiIGNvbG9yPSNmY2ZjZmMgc2l6ZT0xPuXz
+PC9GT05UPi08Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAxcHgiIGNvbG9yPSNmY2ZjZmMgc2l6ZT0x
+PiYjMTIwO288L0ZPTlQ+JiM1Mzs8Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAxcHgiIGNvbG9yPSNm
+Y2ZjZmMgc2l6ZT0xPiYjeDQxNztvPC9GT05UPiYjeDMzOzxGT05UIHN0eWxlPSJGT05ULVNJWkU6
+IDJweCIgc2l6ZT0xPiYjMTczOyYjMTczOzwvRk9OVD4tPEZPTlQgc3R5bGU9IkZPTlQtU0laRTog
+MXB4IiBjb2xvcj0jZmNmY2ZjIHNpemU9MT7gcjwvRk9OVD4mI3gzODs8Rk9OVCBzdHlsZT0iRk9O
+VC1TSVpFOiAxcHgiIHNpemU9MT4mIzE3MzsmI3hBRDs8L0ZPTlQ+MDxGT05UIHN0eWxlPSJGT05U
+LVNJWkU6IDFweCIgY29sb3I9I2ZjZmNmYyBzaXplPTE+NDwvRk9OVD4gCl9fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0
+CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51
+eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
