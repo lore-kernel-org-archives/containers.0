@@ -1,9 +1,9 @@
 From: MAILER-DAEMON-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org (Mail Delivery System)
 Subject: Undelivered Mail Returned to Sender
-Date: Wed, 23 Jul 2014 17:46:54 +1000 (EST)
-Message-ID: <20140723074654.EA8D43C49BF@mail106.syd.optusnet.com.au>
+Date: Wed, 23 Jul 2014 20:16:52 +1000 (EST)
+Message-ID: <20140723101652.1D0A8D70593@mail109.syd.optusnet.com.au>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1893953479196281144=="
+Content-Type: multipart/mixed; boundary="===============4681286200339112822=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,17 +19,17 @@ List-Id: containers.vger.kernel.org
 
 This is a MIME-encapsulated message.
 
---===============1893953479196281144==
+--===============4681286200339112822==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="7B2BD3C4923.1406101614/mail106.syd.optusnet.com.au"
+	boundary="C7B04D705EF.1406110612/mail109.syd.optusnet.com.au"
 
 This is a MIME-encapsulated message.
 
---7B2BD3C4923.1406101614/mail106.syd.optusnet.com.au
+--C7B04D705EF.1406110612/mail109.syd.optusnet.com.au
 Content-Description: Notification
 Content-Type: text/plain; charset=us-ascii
 
-This is the mail system at host mail106.syd.optusnet.com.au.
+This is the mail system at host mail109.syd.optusnet.com.au.
 
 I'm sorry to have to inform you that your message could not
 be delivered to one or more recipients. It's attached below.
@@ -41,68 +41,68 @@ delete your own text from the attached returned message.
 
                    The mail system
 
-<jakeey-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org> (expanded from <jakeey-yP2FWuG//QYQrrorzV6ljw@public.gmane.org>): user unknown
+<lnend-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org> (expanded from <lnend-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org>): user unknown
 
---7B2BD3C4923.1406101614/mail106.syd.optusnet.com.au
+--C7B04D705EF.1406110612/mail109.syd.optusnet.com.au
 Content-Description: Delivery report
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; mail106.syd.optusnet.com.au
-X-Postfix-Queue-ID: 7B2BD3C4923
+Reporting-MTA: dns; mail109.syd.optusnet.com.au
+X-Postfix-Queue-ID: C7B04D705EF
 X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Wed, 23 Jul 2014 17:46:52 +1000 (EST)
+Arrival-Date: Wed, 23 Jul 2014 20:16:48 +1000 (EST)
 
-Final-Recipient: rfc822; jakeey-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org
-Original-Recipient: rfc822;jakeey-yP2FWuG//QYQrrorzV6ljw@public.gmane.org
+Final-Recipient: rfc822; lnend-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org
+Original-Recipient: rfc822;lnend-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org
 Action: failed
 Status: 5.1.1
 Diagnostic-Code: x-unix; user unknown
 
---7B2BD3C4923.1406101614/mail106.syd.optusnet.com.au
+--C7B04D705EF.1406110612/mail109.syd.optusnet.com.au
 Content-Description: Undelivered Message
 Content-Type: message/rfc822
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Received: from portal.obeikan.com.sa (unknown [184.154.100.154])
-	by mail106.syd.optusnet.com.au (Postfix) with ESMTP id 7B2BD3C4923
-	for <jakeey-yP2FWuG//QYQrrorzV6ljw@public.gmane.org>; Wed, 23 Jul 2014 17:46:52 +1000 (EST)
-Received: from [184.154.100.154] by portal.obeikan.com.sa id Z87lLVQy3LjL with SMTP; Wed, 23 Jul 2014 07:09:03 +0000
-Date: Wed, 23 Jul 2014 07:09:03 +0000
-From: "Adreana" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v2.06.3) Home
+	by mail109.syd.optusnet.com.au (Postfix) with ESMTP id C7B04D705EF
+	for <lnend-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org>; Wed, 23 Jul 2014 20:16:48 +1000 (EST)
+Received: from [184.154.100.154] by portal.obeikan.com.sa id vc2rokkDDNoA with SMTP; Wed, 23 Jul 2014 09:38:57 +0000
+Date: Wed, 23 Jul 2014 09:38:57 +0000
+From: "Cerelia" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.7.13.2) Home
 X-Priority: 3 (Normal)
-Message-ID: <3604379891.99310145546919-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
-To: <jakeey-yP2FWuG//QYQrrorzV6ljw@public.gmane.org>
-Subject: Information about payments
+Message-ID: <7190252574.43441229443366-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
+To: <lnend-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org>
+Subject: Fwd: Re: debt
 MIME-Version: 1.0
 Content-Type: multipart/mixed;
- boundary="----------126C01C51DBCF31C"
+ boundary="----------10CAA2C263A2BC3"
 X-Optus-CM-Score: 0
-X-Optus-CM-Analysis: v=2.1 cv=B4eAjodM c=1 sm=1 tr=0
+X-Optus-CM-Analysis: v=2.1 cv=dZS5gxne c=1 sm=1 tr=0
 	a=djP11DF0yJyQ26pFUmP7tA==:117 a=djP11DF0yJyQ26pFUmP7tA==:17
-	a=NEiEQogP1MkA:10 a=Z4Rwk6OoAAAA:8 a=a8_HU8NaAAAA:8 a=Pyw_07L0AAAA:8
-	a=GDJurOxAN53Wft0SrA4A:9 a=CjuIK1q_8ugA:10 a=4Y6PSookihIA:10
-	a=Q9X0ObaNBSsA:10 a=BvEPH07sH_wA:10 a=kheoFVORIJhbc5vQwLQA:9
-	a=diV1Cm6KfS4A:10
+	a=NEiEQogP1MkA:10 a=Z4Rwk6OoAAAA:8 a=a8_HU8NaAAAA:8 a=lojdg71KAAAA:8
+	a=hlR9vkNDehg1Rq9c-L0A:9 a=CjuIK1q_8ugA:10 a=PL9TDGXHru8A:10
+	a=Ta9Dil-V4IQA:10 a=Iv4jPbC1wK0A:10 a=xwnalc_TPc4A:10
+	a=kheoFVORIJhbc5vQwLQA:9 a=diV1Cm6KfS4A:10
 
-------------126C01C51DBCF31C
+------------10CAA2C263A2BC3
 Content-Type: text/plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 
-Hello jakeey-yP2FWuG//QYQrrorzV6ljw@public.gmane.org,   
+Hello lnend-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org,      
    
-Your account has been changed. Please read the information.
-See the attached file.  
+The interest rate will be changed next month.
+Information is in Doc file.  
   
---       
-Best regards,   
-Plotkin Kate
-------------126C01C51DBCF31C
+--     
+Tel.: +6135567131
+Gones Carmella
+------------10CAA2C263A2BC3
 Content-Type: application/octet-stream;
- name="Application.doc"
+ name="Information.doc"
 Content-transfer-encoding: base64
 Content-Disposition: attachment;
- filename="Application.doc"
+ filename="Information.doc"
 
 0M8R4KGxGuEAAAAAAAAAAAAAAAAAAAAAPgADAP7/CQAGAAAAAAAAAAAAAAABAAAAKAAAAAAA
 AAAAEAAAKwAAAAEAAAD+////AAAAACcAAAD/////////////////////////////////////
@@ -683,13 +683,13 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAD///////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAA=
-------------126C01C51DBCF31C--
+------------10CAA2C263A2BC3--
 
 
 
---7B2BD3C4923.1406101614/mail106.syd.optusnet.com.au--
+--C7B04D705EF.1406110612/mail109.syd.optusnet.com.au--
 
---===============1893953479196281144==
+--===============4681286200339112822==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -699,4 +699,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1893953479196281144==--
+--===============4681286200339112822==--
