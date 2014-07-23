@@ -1,9 +1,9 @@
-From: MAILER-DAEMON-5Mp3MHzwbMBhvkcftpj9HuTW4wlIGRCZ@public.gmane.org (Mail Delivery System)
+From: MAILER-DAEMON-0rtaY0SkNzyP7PRusMriD6JVjrxp3PHq@public.gmane.org (Mail Delivery System)
 Subject: Undelivered Mail Returned to Sender
-Date: Wed, 23 Jul 2014 12:01:08 -0700 (PDT)
-Message-ID: <3hJQxc6sr3zbtfj@bolt9a.mxthunder.net>
+Date: Wed, 23 Jul 2014 15:32:31 -0400 (EDT)
+Message-ID: <20140723193231.0ECC686038@sixdegreestheagency.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============8812539096810368188=="
+Content-Type: multipart/mixed; boundary="===============3859045813064495876=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,17 +19,17 @@ List-Id: containers.vger.kernel.org
 
 This is a MIME-encapsulated message.
 
---===============8812539096810368188==
+--===============3859045813064495876==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="3hJQxb5ycLzbtlF.1406142068/bolt9a.mxthunder.net"
+	boundary="CA39182787.1406143951/sixdegreestheagency.com"
 
 This is a MIME-encapsulated message.
 
---3hJQxb5ycLzbtlF.1406142068/bolt9a.mxthunder.net
+--CA39182787.1406143951/sixdegreestheagency.com
 Content-Description: Notification
 Content-Type: text/plain; charset=us-ascii
 
-This is the mail system at host bolt9a.mxthunder.net.
+This is the mail system at host sixdegreestheagency.com.
 
 I'm sorry to have to inform you that your message could not
 be delivered to one or more recipients. It's attached below.
@@ -41,71 +41,64 @@ delete your own text from the attached returned message.
 
                    The mail system
 
-<kidleroyd-Mbffm4Bjnif0CCvOHzKKcA@public.gmane.org>: host mx1.sunet.com.au[203.206.208.88] said: 550
-    <kidleroyd-Mbffm4Bjnif0CCvOHzKKcA@public.gmane.org>: Recipient address rejected: User unknown in local
-    recipient table (in reply to RCPT TO command)
+<_plesk_bounce_vma.org.au-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org> (expanded from
+    <svelezas-eBJhffhJRdoQrrorzV6ljw@public.gmane.org>): This address no longer accepts mail.
 
---3hJQxb5ycLzbtlF.1406142068/bolt9a.mxthunder.net
+--CA39182787.1406143951/sixdegreestheagency.com
 Content-Description: Delivery report
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; bolt9a.mxthunder.net
-X-Postfix-Queue-ID: 3hJQxb5ycLzbtlF
+Reporting-MTA: dns; sixdegreestheagency.com
+X-Postfix-Queue-ID: CA39182787
 X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Wed, 23 Jul 2014 12:00:54 -0700 (PDT)
+Arrival-Date: Wed, 23 Jul 2014 15:32:30 -0400 (EDT)
 
-Final-Recipient: rfc822; kidleroyd-Mbffm4Bjnif0CCvOHzKKcA@public.gmane.org
-Original-Recipient: rfc822;kidleroyd-Mbffm4Bjnif0CCvOHzKKcA@public.gmane.org
+Final-Recipient: rfc822; _plesk_bounce_vma.org.au-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org
+Original-Recipient: rfc822;svelezas-eBJhffhJRdoQrrorzV6ljw@public.gmane.org
 Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mx1.sunet.com.au
-Diagnostic-Code: smtp; 550 <kidleroyd-Mbffm4Bjnif0CCvOHzKKcA@public.gmane.org>: Recipient address
-    rejected: User unknown in local recipient table
+Status: 5.2.1
+Diagnostic-Code: x-unix; This address no longer accepts mail.
 
---3hJQxb5ycLzbtlF.1406142068/bolt9a.mxthunder.net
+--CA39182787.1406143951/sixdegreestheagency.com
 Content-Description: Undelivered Message
 Content-Type: message/rfc822
 
 Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: by bolt9a.mxthunder.net (Postfix, from userid 12345)
-	id 3hJQxb5ycLzbtlF; Wed, 23 Jul 2014 12:01:03 -0700 (PDT)
-Received: from vps-77.205.170.217.stwvps.net (vps-77.205.170.217.stwvps.net [217.170.205.77])
-	by bolt9a.mxthunder.net (Postfix) with ESMTP id 3hJQxM1qlGzbtjB
-	for <kidleroyd-Mbffm4Bjnif0CCvOHzKKcA@public.gmane.org>; Wed, 23 Jul 2014 12:00:54 -0700 (PDT)
-Received: from [217.170.205.77] by vps-77.205.170.217.stwvps.net id y1dLU3IMSo3YaH; Wed, 23 Jul 2014 19:00:53 +0000
-Message-ID: <006401cfa6a8$6bc7b380$01000a0a-TM4mHzyjtj4AtLqT4ilZHR7XDzrqbE6sLFdjfZeId84@public.gmane.org>
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <kidleroyd-Mbffm4Bjnif0CCvOHzKKcA@public.gmane.org>
-Subject: Fwd: Re: payment
-Date: Wed, 23 Jul 2014 19:00:53 +0000
+X-No-Auth: unauthenticated sender
+X-No-Relay: not in my network
+Received: from portal.obeikan.com.sa (unknown [184.154.100.154])
+	by sixdegreestheagency.com (Postfix) with ESMTP id CA39182787
+	for <svelezas-eBJhffhJRdoQrrorzV6ljw@public.gmane.org>; Wed, 23 Jul 2014 15:32:30 -0400 (EDT)
+Received: from [184.154.100.154] by portal.obeikan.com.sa id uJHh5MreuJjaHDh0; Wed, 23 Jul 2014 18:54:33 +0000
+Message-ID: <00b601cfa6a7$864d5d00$14000a0a-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
+From: "Ita" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <svelezas-eBJhffhJRdoQrrorzV6ljw@public.gmane.org>
+Subject: Fwd: Re: Information about payments
+Date: Wed, 23 Jul 2014 18:54:33 +0000
 MIME-Version: 1.0
 Content-Type: multipart/mixed;
- boundary="----------126C01C51DBCF31C"
-X-MXTHUNDER-Identifier: <006401cfa6a8$6bc7b380$01000a0a-TM4mHzyjtj4AtLqT4ilZHR7XDzrqbE6sLFdjfZeId84@public.gmane.org>
-X-MXTHUNDER-IP-Rating: 0, 217.170.205.77, Ugly c=0.703589 p=-0.88299 Source Normal
-X-MXTHUNDER-Scan-Result: 0
-X-MXTHUNDER-Rules: 0-0-0-32767-c
-X-MXTHUNDER-Clean: Yes
-X-MXTHUNDER-Group: OK
+ boundary="----------70D31DA34F98778"
 
-------------126C01C51DBCF31C
-Content-Type: text/plain; charset=us-ascii
-Content-Transfer-Encoding: 7bit
+------------70D31DA34F98778
+Content-Type: text/plain; charset=windows-1251
+Content-Transfer-Encoding: quoted-printable
 
-Hello kidleroyd-Mbffm4Bjnif0CCvOHzKKcA@public.gmane.org,    
-  
-We apologize for the delay, here are the new projects.
-Details are in the attached file MS Office Doc.  
+Hello svelezas-eBJhffhJRdoQrrorzV6ljw@public.gmane.org,      
      
---       
-Best regards,      
-Langstaff Valerie
-------------126C01C51DBCF31C
+In connection with the debt we have to stop the delivery.
+Details are given in Annex. =20
+    
+
+   
+--
+Tel./Fax.: 7666993
+Pounds Kristine
+------------70D31DA34F98778
 Content-Type: application/octet-stream;
- name="Application.doc"
+ name="Invoice.doc"
 Content-transfer-encoding: base64
 Content-Disposition: attachment;
- filename="Application.doc"
+ filename="Invoice.doc"
 
 0M8R4KGxGuEAAAAAAAAAAAAAAAAAAAAAPgADAP7/CQAGAAAAAAAAAAAAAAABAAAAKAAAAAAA
 AAAAEAAAKwAAAAEAAAD+////AAAAACcAAAD/////////////////////////////////////
@@ -686,13 +679,13 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAD///////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAA=
-------------126C01C51DBCF31C--
+------------70D31DA34F98778--
 
 
 
---3hJQxb5ycLzbtlF.1406142068/bolt9a.mxthunder.net--
+--CA39182787.1406143951/sixdegreestheagency.com--
 
---===============8812539096810368188==
+--===============3859045813064495876==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -702,4 +695,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============8812539096810368188==--
+--===============3859045813064495876==--
