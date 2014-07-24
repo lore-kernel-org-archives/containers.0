@@ -1,11 +1,16 @@
-From: Postmaster-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org
-Subject: DELIVERY FAILURE: User ravipul (ravipul-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org) not listed in
-	Domino Directory
-Date: Thu, 24 Jul 2014 12:31:14 +0300
-Message-ID: <OFE03382B5.8DFE9C00-ON65257D1F.0033D7C0-65257D1F.0033D7CA@in.ibm.com>
+From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/5] kernfs: Add API to get generate relative kernfs path
+Date: Thu, 24 Jul 2014 15:10:50 +0000
+Message-ID: <20140724151049.GK26600__9856.78678048334$1406214688$gmane$org@ubuntumail>
+References: <adityakali-cgroupns>
+	<1405626731-12220-1-git-send-email-adityakali@google.com>
+	<1405626731-12220-2-git-send-email-adityakali@google.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1921320387771896074=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1405626731-12220-2-git-send-email-adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,104 +20,152 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============1921320387771896074==
-Content-Type: multipart/report; report-type=delivery-status; boundary="==IFJRGLKFGIR91433850UHRUHIHD"
+Quoting Aditya Kali (adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org):
+> The new function kernfs_path_from_node() generates and returns
+> kernfs path of a given kernfs_node relative to a given parent
+> kernfs_node.
+> 
+> Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> ---
+>  fs/kernfs/dir.c        | 51 ++++++++++++++++++++++++++++++++++++++++----------
+>  include/linux/kernfs.h |  3 +++
+>  2 files changed, 44 insertions(+), 10 deletions(-)
+> 
+> diff --git a/fs/kernfs/dir.c b/fs/kernfs/dir.c
+> index a693f5b..2224f08 100644
+> --- a/fs/kernfs/dir.c
+> +++ b/fs/kernfs/dir.c
+> @@ -44,14 +44,22 @@ static int kernfs_name_locked(struct kernfs_node *kn, char *buf, size_t buflen)
+>  	return strlcpy(buf, kn->parent ? kn->name : "/", buflen);
+>  }
+>  
+> -static char * __must_check kernfs_path_locked(struct kernfs_node *kn, char *buf,
+> -					      size_t buflen)
+> +static char * __must_check kernfs_path_from_node_locked(
+> +	struct kernfs_node *kn_root,
+> +	struct kernfs_node *kn,
+> +	char *buf,
+> +	size_t buflen)
+>  {
+>  	char *p = buf + buflen;
+>  	int len;
+>  
+>  	*--p = '\0';
 
---==IFJRGLKFGIR91433850UHRUHIHD
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: base64
+I realize this is currently couldn't happen (hm, well through the
+EXPORT_SYMBOL_GPL(kernfs_path) it actually could), and it's the same in the
+current code, but could you add a BUG_ON(!buflen) here?
 
-WW91ciBtZXNzYWdlDQoNCiAgU3ViamVjdDogUmVwYXltZW50Lg0KDQp3YXMgbm90IGRlbGl2ZXJl
-ZCB0bzoNCg0KICByYXZpcHVsQGluLmlibS5jb20NCg0KYmVjYXVzZToNCg0KICBVc2VyIHJhdmlw
-dWwgKHJhdmlwdWxAaW4uaWJtLmNvbSkgbm90IGxpc3RlZCBpbiBEb21pbm8gRGlyZWN0b3J5DQoN
-Cg==
+Otherwise looks good to me.
 
---==IFJRGLKFGIR91433850UHRUHIHD
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns;d23hubm6.in.ibm.com
-
-Final-Recipient: rfc822;ravipul-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: X-Notes; User ravipul (ravipul-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org) not listed
-  in Domino Directory
-
---==IFJRGLKFGIR91433850UHRUHIHD
-Content-Type: message/rfc822
-
-Received: from d28relay04.in.ibm.com ([9.184.220.61])
-          by d23hubm6.in.ibm.com (Lotus Domino Release 8.5.3FP6)
-          with ESMTP id 2014072414561548-650375 ;
-          Thu, 24 Jul 2014 14:56:15 +0530
-Received: from d28av03.in.ibm.com (d28av03.in.ibm.com [9.184.220.65])
-	by d28relay04.in.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id s6O9VeEw5308478
-	for <ravipul-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>; Thu, 24 Jul 2014 15:01:40 +0530
-Received: from d28av03.in.ibm.com (localhost [127.0.0.1])
-	by d28av03.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id s6O9VJRH004878
-	for <ravipul-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>; Thu, 24 Jul 2014 15:01:19 +0530
-Received: from e28smtp04.in.ibm.com (e28esmtp04.in.ibm.com [9.126.67.36])
-	by d28av03.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVin) with ESMTP id s6O9VIAi004849
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <ravipul-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>; Thu, 24 Jul 2014 15:01:18 +0530
-Received: from /spool/local
-	by e28smtp04.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <ravipul-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org> from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>;
-	Thu, 24 Jul 2014 15:01:18 +0530
-Received: from portal.obeikan.com.sa (184.154.100.154)
-	by e28smtp04.in.ibm.com (192.168.2.134) with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted;
-	Thu, 24 Jul 2014 15:01:14 +0530
-Received: from [184.154.100.154] by portal.obeikan.com.sa id UIMeG0ktk; Thu, 24 Jul 2014 12:31:14 +0300
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <ravipul-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>
-Subject: Repayment.
-Date: Thu, 24 Jul 2014 12:31:14 +0300
-MIME-Version: 1.0
-X-ZLA-Header: unknown; 0
-X-ZLA-DetailInfo: BA=6.00002367; NDR=6.00000001; ZLA=6.00000002; ZF=6.00000003; ZB=6.00033539; ZH=6.00084659; ZP=6.00069772; ZU=6.00000001; UDB=6.00137475; UTC=2014-07-24 09:31:16
-x-cbid: 14072409-5564-0000-0000-0000003927B0
-X-IBM-ISS-SpamDetectors: Score=0.275812; BY=0.275812; FL=0; FP=0; FZ=0; HX=0;
- KW=0; PH=0; SC=0; ST=0; TS=0; UL=0; ISC=
-X-IBM-ISS-DetailInfo: BY=3.00002730; HX=3.00000227; KW=3.00000007;
- PH=3.00000002; SC=3.00000034; SDB=6.00390605; UDB=6.00137476; UTC=2014-07-24
- 09:31:17
-X-TM-AS-MML: disable
-X-MIMETrack: Itemize by SMTP Server on d23hubm6/23/H/IBM(Release 8.5.3FP6|November 21, 2013) at
- 07/24/2014 14:56:15,
-	Serialize by Router on d23hubm6/23/H/IBM(Release 8.5.3FP6|November 21, 2013) at
- 07/24/2014 14:56:18
-Message-ID: <OFE03382B5.8DFE9C00-ON65257D1F.0033D7C0-65257D1F.0033D7CA-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>
-Content-type: text/plain; charset=us-ascii 
-Content-Transfer-Encoding: quoted-printable
+Acked-by: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 
 
-        =20
-Hello,
-             =20
-Do you have arrears
-http://andante-co.jp/Payment.zip?K9Ms2YfIUL3h=3Dravipul-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org
-
-
-=3D=3D
-Tel./Fax.: 0460258
-Meriwether Hilary
-
-
-
---==IFJRGLKFGIR91433850UHRUHIHD--
-
-
---===============1921320387771896074==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1921320387771896074==--
+>  
+> +	if (kn == kn_root) {
+> +		*--p = '/';
+> +		return p;
+> +	}
+> +
+>  	do {
+>  		len = strlen(kn->name);
+>  		if (p - buf < len + 1) {
+> @@ -63,6 +71,8 @@ static char * __must_check kernfs_path_locked(struct kernfs_node *kn, char *buf,
+>  		memcpy(p, kn->name, len);
+>  		*--p = '/';
+>  		kn = kn->parent;
+> +		if (kn == kn_root)
+> +			break;
+>  	} while (kn && kn->parent);
+>  
+>  	return p;
+> @@ -92,26 +102,47 @@ int kernfs_name(struct kernfs_node *kn, char *buf, size_t buflen)
+>  }
+>  
+>  /**
+> - * kernfs_path - build full path of a given node
+> + * kernfs_path_from_node - build path of node @kn relative to @kn_root.
+> + * @kn_root: parent kernfs_node relative to which we need to build the path
+>   * @kn: kernfs_node of interest
+> - * @buf: buffer to copy @kn's name into
+> + * @buf: buffer to copy @kn's path into
+>   * @buflen: size of @buf
+>   *
+> - * Builds and returns the full path of @kn in @buf of @buflen bytes.  The
+> - * path is built from the end of @buf so the returned pointer usually
+> + * Builds and returns @kn's path relative to @kn_root. @kn_root is expected to
+> + * be parent of @kn at some level. If this is not true or if @kn_root is NULL,
+> + * then full path of @kn is returned.
+> + * The path is built from the end of @buf so the returned pointer usually
+>   * doesn't match @buf.  If @buf isn't long enough, @buf is nul terminated
+>   * and %NULL is returned.
+>   */
+> -char *kernfs_path(struct kernfs_node *kn, char *buf, size_t buflen)
+> +char *kernfs_path_from_node(struct kernfs_node *kn_root, struct kernfs_node *kn,
+> +			    char *buf, size_t buflen)
+>  {
+>  	unsigned long flags;
+>  	char *p;
+>  
+>  	spin_lock_irqsave(&kernfs_rename_lock, flags);
+> -	p = kernfs_path_locked(kn, buf, buflen);
+> +	p = kernfs_path_from_node_locked(kn_root, kn, buf, buflen);
+>  	spin_unlock_irqrestore(&kernfs_rename_lock, flags);
+>  	return p;
+>  }
+> +EXPORT_SYMBOL_GPL(kernfs_path_from_node);
+> +
+> +/**
+> + * kernfs_path - build full path of a given node
+> + * @kn: kernfs_node of interest
+> + * @buf: buffer to copy @kn's name into
+> + * @buflen: size of @buf
+> + *
+> + * Builds and returns the full path of @kn in @buf of @buflen bytes.  The
+> + * path is built from the end of @buf so the returned pointer usually
+> + * doesn't match @buf.  If @buf isn't long enough, @buf is nul terminated
+> + * and %NULL is returned.
+> + */
+> +char *kernfs_path(struct kernfs_node *kn, char *buf, size_t buflen)
+> +{
+> +	return kernfs_path_from_node(NULL, kn, buf, buflen);
+> +}
+>  EXPORT_SYMBOL_GPL(kernfs_path);
+>  
+>  /**
+> @@ -145,8 +176,8 @@ void pr_cont_kernfs_path(struct kernfs_node *kn)
+>  
+>  	spin_lock_irqsave(&kernfs_rename_lock, flags);
+>  
+> -	p = kernfs_path_locked(kn, kernfs_pr_cont_buf,
+> -			       sizeof(kernfs_pr_cont_buf));
+> +	p = kernfs_path_from_node_locked(NULL, kn, kernfs_pr_cont_buf,
+> +					 sizeof(kernfs_pr_cont_buf));
+>  	if (p)
+>  		pr_cont("%s", p);
+>  	else
+> diff --git a/include/linux/kernfs.h b/include/linux/kernfs.h
+> index 20f4935..1627341 100644
+> --- a/include/linux/kernfs.h
+> +++ b/include/linux/kernfs.h
+> @@ -257,6 +257,9 @@ static inline bool kernfs_ns_enabled(struct kernfs_node *kn)
+>  }
+>  
+>  int kernfs_name(struct kernfs_node *kn, char *buf, size_t buflen);
+> +char * __must_check kernfs_path_from_node(struct kernfs_node *root_kn,
+> +					  struct kernfs_node *kn, char *buf,
+> +					  size_t buflen);
+>  char * __must_check kernfs_path(struct kernfs_node *kn, char *buf,
+>  				size_t buflen);
+>  void pr_cont_kernfs_name(struct kernfs_node *kn);
+> -- 
+> 2.0.0.526.g5318336
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linuxfoundation.org/mailman/listinfo/containers
