@@ -1,13 +1,13 @@
-From: <postmaster-nPVaSG3y+P70CCvOHzKKcA@public.gmane.org>
-Subject: Undeliverable: Re[3]: Changes in payments ID-id9663199648
-Date: Thu, 24 Jul 2014 12:44:26 +0800
-Message-ID: <50328c43-0aa0-485d-a756-e0043e586e7f@rtime.com.au>
-References: <254499058.34220367378477@portal.obeikan.com.sa>
+From: <postmaster-8tPA9CtIBrUEPrcGaUwC1cM6rOWSkUom@public.gmane.org>
+Subject: Undeliverable: Re: documentation
+Date: Thu, 24 Jul 2014 15:10:49 +1000
+Message-ID: <42541.3525583737$1406178992@news.gmane.org>
+References: <006701cfa6f8$4e223a80$01000a0a@portal.obeikan.com.sa>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============2419049821824596952=="
+Content-Type: multipart/mixed; boundary="===============0205728982449779893=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Language: en-AU
-In-Reply-To: <254499058.34220367378477-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
+In-Reply-To: <006701cfa6f8$4e223a80$01000a0a-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,22 +20,25 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============2419049821824596952==
+--===============0205728982449779893==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="aeb00db9-25e5-4aa4-ab68-4995abd7605f"
+	boundary="5acb972b-8bd8-41b5-ae01-8c8177133f7f"
 Content-Language: en-AU
 
---aeb00db9-25e5-4aa4-ab68-4995abd7605f
+--5acb972b-8bd8-41b5-ae01-8c8177133f7f
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: quoted-printable
 
-Delivery has failed to these recipients or groups:
+Delivery has failed to these recipients or distribution lists:
 
-tonyd-nPVaSG3y+P70CCvOHzKKcA@public.gmane.org<mailto:tonyd-nPVaSG3y+P70CCvOHzKKcA@public.gmane.org>
-The e-mail address you entered couldn't be found. Please check the recipien=
-t's e-mail address and try to resend the message. If the problem continues,=
- please contact your helpdesk.
+nn-8tPA9CtIBrVDZ5L+gGylnfQIK84fMopw@public.gmane.org<mailto:nn-8tPA9CtIBrVDZ5L+gGylnfQIK84fMopw@public.gmane.org>
+The recipient's e-mail address was not found in the recipient's e-mail syst=
+em. Microsoft Exchange will not try to redeliver this message for you. Plea=
+se check the e-mail address and try resending this message, or provide the =
+following diagnostic text to your system administrator.
 
+________________________________
+Sent by Microsoft Exchange Server 2007
 
 
 
@@ -44,100 +47,76 @@ t's e-mail address and try to resend the message. If the problem continues,=
 
 Diagnostic information for administrators:
 
-Generating server: rtime.com.au
+Generating server: directfreight.local
 
-tonyd-nPVaSG3y+P70CCvOHzKKcA@public.gmane.org
+nn-8tPA9CtIBrVDZ5L+gGylnfQIK84fMopw@public.gmane.org
 #550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
 
 Original message headers:
 
-Received: from mail.rtime.com.au (10.100.113.14) by EXCHANGE.rtime.com.au
- (10.0.0.24) with Microsoft SMTP Server (TLS) id 14.1.438.0; Thu, 24 Jul 20=
-14
- 12:44:26 +0800
-Received: from portal.obeikan.com.sa (portal.obeikan.com.sa [184.154.100.15=
-4]
- (may be forged))       by mail.rtime.com.au (8.13.8/8.13.8) with ESMTP id
- s6O4UG1O018728 for <tonyd-nPVaSG3y+P70CCvOHzKKcA@public.gmane.org>; Thu, 24 Jul 2014 12:30:17 +0800
-Received: from [184.154.100.154] by portal.obeikan.com.sa id bAJiy8431vFC w=
-ith
- SMTP; Thu, 24 Jul 2014 04:06:13 +0000
-Date: Thu, 24 Jul 2014 04:06:13 +0000
+Received: from portal.obeikan.com.sa (184.154.100.154) by
+ directsvr-exch.directfreight.local (172.16.20.8) with Microsoft SMTP Serve=
+r
+ id 8.1.436.0; Thu, 24 Jul 2014 15:10:48 +1000
+Received: from [184.154.100.154] by portal.obeikan.com.sa id DsbmBX9T; Thu,=
+ 24
+ Jul 2014 04:32:43 +0000
+Message-ID: <006701cfa6f8$4e223a80$01000a0a-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
 From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v2.07.4) Personal
-X-Priority: 3 (Normal)
-Message-ID: <254499058.34220367378477-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
-To: <tonyd-nPVaSG3y+P70CCvOHzKKcA@public.gmane.org>
-Subject: Re[3]: Changes in payments ID-id9663199648
+To: <nn-8tPA9CtIBrVDZ5L+gGylnfQIK84fMopw@public.gmane.org>
+Subject: Re: documentation
+Date: Thu, 24 Jul 2014 04:32:43 +0000
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary=3D"----------70D31DA34F98778"
-X-RTIME-MailScanner-Information: Please contact the ISP for more informatio=
-n
-X-RTIME-MailScanner-ID: s6O4UG1O018728
-X-RTIME-MailScanner: Found to be clean
-X-RTIME-MailScanner-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-Spam-Status: No
+Content-Type: multipart/mixed; boundary=3D"----------126C01C51DBCF31C"
 Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 
 
---aeb00db9-25e5-4aa4-ab68-4995abd7605f
+--5acb972b-8bd8-41b5-ae01-8c8177133f7f
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns;rtime.com.au
-Received-From-MTA: dns;mail.rtime.com.au
-Arrival-Date: Thu, 24 Jul 2014 04:44:26 +0000
+Reporting-MTA: dns;directfreight.local
+Received-From-MTA: dns;portal.obeikan.com.sa
+Arrival-Date: Thu, 24 Jul 2014 05:10:48 +0000
 
-Final-Recipient: rfc822;tonyd-nPVaSG3y+P70CCvOHzKKcA@public.gmane.org
+Final-Recipient: rfc822;nn-8tPA9CtIBrVDZ5L+gGylnfQIK84fMopw@public.gmane.org
 Action: failed
 Status: 5.1.1
 Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
 
 
---aeb00db9-25e5-4aa4-ab68-4995abd7605f
+--5acb972b-8bd8-41b5-ae01-8c8177133f7f
 Content-Type: message/rfc822
 
-Received: from mail.rtime.com.au (10.100.113.14) by EXCHANGE.rtime.com.au
- (10.0.0.24) with Microsoft SMTP Server (TLS) id 14.1.438.0; Thu, 24 Jul 2014
- 12:44:26 +0800
-Received: from portal.obeikan.com.sa (portal.obeikan.com.sa [184.154.100.154]
- (may be forged))	by mail.rtime.com.au (8.13.8/8.13.8) with ESMTP id
- s6O4UG1O018728	for <tonyd-nPVaSG3y+P70CCvOHzKKcA@public.gmane.org>; Thu, 24 Jul 2014 12:30:17 +0800
-Received: from [184.154.100.154] by portal.obeikan.com.sa id bAJiy8431vFC with
- SMTP; Thu, 24 Jul 2014 04:06:13 +0000
-Date: Thu, 24 Jul 2014 04:06:13 +0000
+Received: from portal.obeikan.com.sa (184.154.100.154) by
+ directsvr-exch.directfreight.local (172.16.20.8) with Microsoft SMTP Server
+ id 8.1.436.0; Thu, 24 Jul 2014 15:10:48 +1000
+Received: from [184.154.100.154] by portal.obeikan.com.sa id DsbmBX9T; Thu, 24
+ Jul 2014 04:32:43 +0000
+Message-ID: <006701cfa6f8$4e223a80$01000a0a-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
 From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v2.07.4) Personal
-X-Priority: 3 (Normal)
-Message-ID: <254499058.34220367378477-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
-To: <tonyd-nPVaSG3y+P70CCvOHzKKcA@public.gmane.org>
-Subject: Re[3]: Changes in payments ID-id9663199648
+To: <nn-8tPA9CtIBrVDZ5L+gGylnfQIK84fMopw@public.gmane.org>
+Subject: Re: documentation
+Date: Thu, 24 Jul 2014 04:32:43 +0000
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="----------70D31DA34F98778"
-X-RTIME-MailScanner-Information: Please contact the ISP for more information
-X-RTIME-MailScanner-ID: s6O4UG1O018728
-X-RTIME-MailScanner: Found to be clean
-X-RTIME-MailScanner-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-Spam-Status: No
+Content-Type: multipart/mixed; boundary="----------126C01C51DBCF31C"
 Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 
-------------70D31DA34F98778
-Content-Type: text/plain; charset="windows-1251"
-Content-Transfer-Encoding: quoted-printable
+------------126C01C51DBCF31C
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 
-Hello tonyd-nPVaSG3y+P70CCvOHzKKcA@public.gmane.org,     
-    
-Information necessary for payments.
-Detailed information, refer to the attached file. =20
-    
-
-     
---
-Tel./Fax.: 0996633
-Mulik Tia
-------------70D31DA34F98778
-Content-Type: application/octet-stream; name="Invoice.doc"
+Hello nn-8tPA9CtIBrVDZ5L+gGylnfQIK84fMopw@public.gmane.org,     
+      
+In connection with the debt we have to stop the delivery.
+For details, see the attached file.  
+   
+--       
+Best regards,   
+Santacroce Gena
+------------126C01C51DBCF31C
+Content-Type: application/octet-stream; name="Application.doc"
 Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="Invoice.doc"
+Content-Disposition: attachment; filename="Application.doc"
 
 0M8R4KGxGuEAAAAAAAAAAAAAAAAAAAAAPgADAP7/CQAGAAAAAAAAAAAAAAABAAAAKAAAAAAA
 AAAAEAAAKwAAAAEAAAD+////AAAAACcAAAD/////////////////////////////////////
@@ -718,11 +697,11 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAD///////////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAA=
-------------70D31DA34F98778--
+------------126C01C51DBCF31C--
 
---aeb00db9-25e5-4aa4-ab68-4995abd7605f--
+--5acb972b-8bd8-41b5-ae01-8c8177133f7f--
 
---===============2419049821824596952==
+--===============0205728982449779893==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -732,4 +711,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============2419049821824596952==--
+--===============0205728982449779893==--
