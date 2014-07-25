@@ -1,16 +1,14 @@
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 4/5] cgroup: export cgroup_get() and cgroup_put()
-Date: Thu, 24 Jul 2014 17:03:16 +0000
-Message-ID: <20140724170316.GS26600__219.357925425534$1406221427$gmane$org@ubuntumail>
-References: <adityakali-cgroupns>
-	<1405626731-12220-1-git-send-email-adityakali@google.com>
-	<1405626731-12220-5-git-send-email-adityakali@google.com>
+From: "chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: RE: [RFC]Pid conversion between pid namespace
+Date: Fri, 25 Jul 2014 10:01:45 +0000
+Message-ID: <5871495633F38949900D2BF2DC04883E56C7A2@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <5871495633F38949900D2BF2DC04883E55C374@G08CNEXMBPEKD02.g08.fujitsu.local>
+	<5871495633F38949900D2BF2DC04883E560412@G08CNEXMBPEKD02.g08.fujitsu.local>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============8404762512831808386=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1405626731-12220-5-git-send-email-adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <5871495633F38949900D2BF2DC04883E560412-ZEd+hNNJ6a5ZYpXjqAkB5jz3u5zwRJJDAzI0kPv9QBlmR6Xm/wNWPw@public.gmane.org>
+Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,98 +18,158 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: "Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org)" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Serge Hallyn (serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org)" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "Oleg
+	Nesterov (oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org)" <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Richard Weinberger
+	(richard-/L3Ra7n9ekc@public.gmane.org)" <richard-/L3Ra7n9ekc@public.gmane.org>, "Pavel Emelyanov (xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org)" <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, "Vasily Kulikov (segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org)" <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>, "Gotou, Yasunori" <y-goto-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, "'Daniel
+	P. Berrange (berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org)'" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Aditya Kali (adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org):
-> move cgroup_get() and cgroup_put() into cgroup.h so that
-> they can be called from other places.
-> 
-> Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+--===============8404762512831808386==
+Content-Language: zh-CN
+Content-Type: text/plain; charset="gb2312"
+Content-Transfer-Encoding: base64
 
-Acked-by: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+SGksDQoNCldlIGRpc2N1c3NlZCB0d28gd2F5cyBvZiBwaWQgY29udmVyc2lvbjoNCnN5c2NhbGwg
+YW5kIHByb2Nmcy4NCg0KQm90aCBvZiB0aGVtIGNvdWxkIGRvIGEgcGlkIHRyYW5zbGF0aW9uIGpv
+Yi4NCkJ1dCBmb3IgbnMgaGllcmFyY2h5LCBzeXNjYWxsIGxpa2U6DQoNCnBpZF90KiBnZXRuc3Bp
+ZChwaWRfdCBxdWVyeV9waWQsIHBpZF90IG9ic2VydmVyX3BpZCkNCm9yDQpwaWRfdCBnZXRuc3Bp
+ZChwaWRfdCBxdWVyeV9waWQsIGludCBxdWVyeV9mZCwgaW50IHJlZl9mZCkNCg0KY291bGQgbm90
+IHdvcmssIHdlIGtuZXcgYSBwaWQgbGl2ZWQgaW4gb25lIG5zLCBidXQgd2UNCmRpZCBub3Qga25v
+dyB0aGVpciByZWxhdGlvbnNoaXBzLg0KRm9yIGdldHRpbmcgdGhlIGVudGlyZSBzZXQgb2YgcGlk
+cywgYm90aCBvZiB0aGVtIGNhbiBkby4NCg0KU28gdXNpbmcgcHJvY2ZzIGlzIGEgYmV0dGVyIHdh
+eS4NCg0KRXg6DQogICAgaW5pdF9waWRfbnMgICAgIG5zMSAgICAgICAgIG5zMg0KdDEgIDINCnQy
+ICAgYC0gMyAgICAgICAgICAgMSANCnQzICAgICAgIGAtIDQgICAgICAgYC0gNSAgICAgICAgMQ0K
+dDQgICAgICAgICAgIGAtNiAgICAgICAgYC04ICAgICAgYC05DQp0NSAgICAgICAgICAgICBgLTEw
+ICAgICAgICBgLTkgICAgICBgLTEwDQoNCjEuIEhvdyBwcm9jZnMgd29yazoNCmEpIGFkZGluZyBh
+IG5zcGlkIGhpZXJhcmNoeSAgdW5kZXIgL3Byb2MvIGxpa2U6DQpbcm9vdEBsb2NhbGhvc3QgcHJv
+Y10jIHRyZWUgL3Byb2MvbnNwaWQNCi9wcm9jL25zcGlkDQqpwKmkqaQgbnMwDQqppiAgICCpuKmk
+qaQgbnMxDQqppiAgICAgICCpwKmkqaQgbnMyDQqppiAgICAgICCppiAgIKm4qaSppCBwaWQgLT4g
+L3Byb2MvOS9ucw0KqaYgICAgICAgqbippKmkIHBpZCAtPiAvcHJvYy80L25zDQqpuKmkqaQgcGlk
+IC0+IC9wcm9jLzEvbnMgDQoNCldlIGNyZWF0ZWQgZGlycyBhbmQgYWRkIGEgbGluayB0byB0aGUg
+MXN0IHByb2Nlc3Mgb2YgdGhpcyBucy4NCg0KYikgZXhwb3NlIGFsbCBzZXRzIG9mIHBpZCwgcGdp
+ZCwgc2lkIGFuZCB0Z2lkDQp2aWEgZXhwYW5kZWQgL3Byb2MvUElEL3N0YXR1cw0KICAgICAgV2Ug
+Y291bGQgZ2V0IHRyYW5zbGF0ZWQgSURzIGZyb20gY29udGFpbmVyIGxpa2U6DQogICAgTlN0Z2lk
+Ogk2IAk4CTkgDQogICAgTlNwaWQ6CTYgCTggCTkNCiAgICBOU3BnaWQ6CTYgCTggCTkgDQogICAg
+TlNzaWQ6CTYgCTEgCTANCiAgICAoYSBzZXQgb2YgSURzIHdpdGggMyBsZXZlbCBvZiBucykNCg0K
+Mi4gQWR2YW50YWdlIG9mIHByb2NmcyBzb2x1dGlvbg0KYSkgZWFzeSB0byB1c2U6DQpnZXRuc3Bp
+ZCg2LCAxMCkgLT4gKDEwLCA5LCAxMCkNCm9yDQpnZXRuc3BpZCgxMCwgbnMxX2ZkLCBuczBfZmQp
+IC0+IDkNCmdldG5zcGlkKDEwLCBuczJfZmQsIG5zMF9mZCkgLT4gMTANCg0KQW5kIHdlIGNvdWxk
+IGFsc28gZ2V0IGl0IGJ5Og0KY2F0IC9wcm9jLzEwL3N0YXR1cyB8IGdyZXAgTlNwaWQ6DQpOU3Bp
+ZDoJMTAgCTkgCTEwDQouLi4NCg0KYikgaGllcmFyY2h5IGluZm86DQpXZSBjb3VsZCBub3QgZ2V0
+IHRoZSBucyBoaWVyYXJjaHkgaW5mbyBieSBqdXN0IG9uZSBzeXNjYWxsLg0KSWYgd2UgaGFkIHRv
+LCBpdCB3aWxsIGNvbXBsaWNhdGUgdGhlIGludGVyZmFjZS4NCg0KV2UgY291bGQgY2hlY2sgd2hl
+dGhlciB0d28gcHJvY2VzcyBoYWQgc29tZSByZWxhdGlvbnMNCnZpYSBwcm9jZnM6DQpyZWFkbGlu
+ayAvcHJvYy9QSUQxL25zL3BpZCAtPiBhYWENCnJlYWRsaW5rIC9wcm9jL1BJRDIvbnMvcGlkIC0+
+IGJiYg0KDQpUaGVuIHdlIGNvdWxkIGNoZWNrIC9wcm9jL25zcGlkL25zWC9uc1kvbnNaIA0KYW5k
+IGZpbmQgb3V0IHRoZWlyIHJlbGF0aW9uc2hpcC4NCkV4o7oNCldlIGtub3cgdDQgbGl2ZSBpbiBu
+czIsIA0KcmVhZGxpbmsgL3Byb2MvdDQvbnMvcGlkIC0+IEFBQQ0KdGhlbiB3ZSByZWZlciB0byAv
+cHJvYy9uc3BpZC8gYW5kIGZpbmQgYSBzYW1lIGludW0gQUFBIHVuZGVyDQovcHJvYy9uc3BpZC9u
+czAvbnMxL25zMg0KVGhlbiB3ZSBrbmV3IHRoYXQgdDQgaGF2ZSBwaWQgOSBpbiBuczIsIGhhdmUg
+cGlkIDggaW4gbnMxLg0KDQpBbnkgY29tbWVudHMgd291bGQgYmUgd2FybWx5IHdlbGNvbWVkIQ0K
+DQpUaGFua3MsDQotIENoZW4NCg0KPiAtLS0tLU9yaWdpbmFsIE1lc3NhZ2UtLS0tLQ0KPiBGcm9t
+OiBjb250YWluZXJzLWJvdW5jZXNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcNCj4gW21haWx0
+bzpjb250YWluZXJzLWJvdW5jZXNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmddIE9uIEJlaGFs
+ZiBPZg0KPiBjaGVuaGFueGlhb0Bjbi5mdWppdHN1LmNvbQ0KPiBTZW50OiBXZWRuZXNkYXksIEp1
+bHkgMDksIDIwMTQgNjozNCBQTQ0KPiBUbzogRXJpYyBXLiBCaWVkZXJtYW4gKGViaWVkZXJtQHht
+aXNzaW9uLmNvbSk7IFNlcmdlIEhhbGx5bg0KPiAoc2VyZ2UuaGFsbHluQHVidW50dS5jb20pOyBP
+bGVnIE5lc3Rlcm92IChvbGVnQHJlZGhhdC5jb20pOyBSaWNoYXJkIFdlaW5iZXJnZXINCj4gKHJp
+Y2hhcmRAbm9kLmF0KTsgUGF2ZWwgRW1lbHlhbm92ICh4ZW11bEBwYXJhbGxlbHMuY29tKTsgVmFz
+aWx5IEt1bGlrb3YNCj4gKHNlZ29vbkBvcGVud2FsbC5jb20pOyBHb3RvdSwgWWFzdW5vcmkvzuWN
+dSC/tc7EOyAnRGFuaWVsIFAuIEJlcnJhbmdlDQo+IChiZXJyYW5nZUByZWRoYXQuY29tKScNCj4g
+Q2M6IGNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc7IGxpbnV4LWtlcm5lbEB2
+Z2VyLmtlcm5lbC5vcmcNCj4gU3ViamVjdDogUkU6IFtSRkNdUGlkIGNvbnZlcnNpb24gYmV0d2Vl
+biBwaWQgbmFtZXNwYWNlDQo+IA0KPiBIaSwNCj4gDQo+IExldCBtZSBzdW1tYXJpemUgb3VyIGRp
+c2N1c3Npb25zIG9mIElEIGNvbnZlcnNpb24gYnkgcHJvcy9jb25zOg0KPiANCj4gQSkgbWFrZSBu
+ZXcgc3lzdGVtIGNhbGwgZm9yIHRyYW5zbGF0aW9uDQo+ICAgICBBLTEpIHN5c3RlbWNhbGwoSUQs
+IE5TMSwgTlMyKSBpbnRvIChJRCkuDQo+ICAgICBwcm9zOg0KPiAgICAgICAgIC0gaGFzIGEgcmVm
+ZXJlbmNlIG5zKE5TMikNCj4gICAgICAgICAgIFdlIGNvdWxkIGdldCBhbnkgbG93ZXIgbGV2ZWwg
+SUQgZGlyZWN0bHkuDQo+IA0KPiAgICAgY29uczoNCj4gICAgICAgICAtIGxhY2sgb2YgaGllcmFy
+Y2h5IGluZm9ybWF0aW9uLg0KPiAgICAgICAgICAgQ1JJVSBuZWVkIGhpZXJhcmNoeSBpbmZvIGZv
+ciBjaGVja3BvaW50L3Jlc3RvcmUgaW4gbmVzdGVkIGNvbnRhaW5lcnMuDQo+ICAgICAgICAgLSBu
+b3QgZWFzeSBmb3IgZGVidWcuDQo+ICAgICAgICAgICBBbmQgYSBsb3Qgb2YgdG9vbHMvbGlicyBu
+ZWVkIGJlIG1vZGlmaWVkLg0KPiANCj4gICAgIEEtMikgc3lzY2FsbCBwaWRfdCBnZXRuc3BpZChw
+aWRfdCBxdWVyeV9waWQsIHBpZF90IG9ic2VydmVyX3BpZCkNCj4gICAgIHByb3M6DQo+ICAgICAg
+ICAgLSBucyBwcm9jZnMgZnJlZSwgZWFzeSB0byB1c2UuDQo+ICAgICAgICAgV2UgY291bGQgZ2V0
+IHJpZCBvZiBtb3VudGVkIG5zIHByb2Nmcy4NCj4gDQo+ICAgICBjb25zOg0KPiAgICAgICAgIC0g
+bWF5IGZpbmQgbXVsdGlwbGUgcmVzdWx0cyBpbiBuZXN0ZWQgbnMuDQo+ICAgICAgICAgICBXZSB3
+aXNoZWQgdGhlIG5ldyBBUEkgY291bGQgdGVsbCB1cyB0aGUgZXhhY3QgYW5zd2VyLg0KPiAgICAg
+ICAgICAgQnV0IGlmIGdldG5zcGlkIHJldHVybiBtb3JlIHRoYW4gb25lIHJlc3VsdHMgd2lsbCBi
+cmluZyB0cm91YmxlIHRvIGFkbWlucywNCj4gICAgICAgICAgIHRoZXkgaGFkIHRvIG1ha2UgYW5v
+dGhlciBkZWNpc2lvbi4NCj4gICAgICAgICAgIE9yIHdlIG1hcmtlZCB0aGUgZGVlcGVzdCBsZXZl
+bCBmb3IgdHJhbnNsYXRpb24gYXMgcHJlcmVxdWlzaXRlLg0KPiANCj4gICAgICAgICAtYmFzZWQg
+b24gY3VycmVudCBwaWRucywgbm8gcmVmZXJlbmNlIG5zLg0KPiANCj4gQikgbWFrZS9jaGFuZ2Ug
+cHJvYyBmaWxlL2RpcmVjdG9yaWVzDQo+IAlCLTEpIGV4cGFuZCAvcHJvYy9waWQvc3RhdHVzDQo+
+IAlwcm9zOg0KPiAgICAgICAgIC0gZWFzeSB0byB1c2UgYW5kIHRvIGRlYnVnDQo+ICAgICAgICAg
+LSBhbHJlYWR5IGhhZCBleGlzdGVkIGludGVyZmFjZSBpbiBrZXJuZWwNCj4gDQo+IAljb25zOg0K
+PiAgICAgICAgIC0gYmFzZWQgb24gY3VycmVudCBucw0KPiAgICAgICAgICAgZm9yIG1pZGRsZSBs
+ZXZlbCwgd2UgaGFkIHRvIG1ha2UgYW5vdGhlciBkZWNpc2lvbi4NCj4gICAgICAgICAtIGRvIG5v
+dCBoYXZlIGhpZXJhcmNoeSBpbmZvLg0KPiANCj4gCUItMikgL3Byb2MvPHBpZFg+L25zL3Byb2Mv
+IHdoaWNoIHdvdWxkIGNvbnRhaW4gZXZlcnl0aGluZw0KPiAJcHJvczoNCj4gICAgICAgICAtIGhh
+dmUgZW5vdWdoIGluZm8gZnJvbSAvcHJvYyBpbiBjb250YWluZXINCj4gDQo+IAljb25zOg0KPiAg
+ICAgICAgIC0gUmVxdWlyZW1lbnRzIHVuY2xlYXIuDQo+ICAgICAgICAgICBXZSBuZWVkIG1vcmUg
+ZGlzY3Vzc2lvbiB0byBkZWNpZGUgd2hpY2ggaXRlbXMgc2hvdWxkIG5vdCBiZSBleHBvc2VkLg0K
+PiAgICAgICAgIC0gZG8gbm90IGhhdmUgaGllcmFyY2h5IGluZm8uDQo+IA0KPiANCj4gSG93IGFi
+b3V0IGRvIHRoZXNlIHRoaW5ncyBpbiB0d28gc3RlcHM6DQo+IA0KPiBDKSAgMS4gZXhwb3NlIGFs
+bCBzZXRzIG9mIHBpZCwgcGdpZCwgc2lkIGFuZCB0Z2lkDQo+IHZpYSBleHBhbmRlZCAvcHJvYy9Q
+SUQvc3RhdHVzDQo+ICAgICAgIFdlIGNvdWxkIGdldCB0cmFuc2xhdGVkIElEcyBmcm9tIGNvbnRh
+aW5lciBsaWtlOg0KPiAgICAgTlN0Z2lkOgkxNjQ2NSAJNSAJMQ0KPiAgICAgTlNwaWQ6CTE2NDY1
+IAk1IAkxDQo+ICAgICBOU3BnaWQ6CTE2NDY1IAk1IAkxDQo+ICAgICBOU3NpZDoJMTY0MjMgCTEg
+CTANCj4gICAgIChhIHNldCBvZiBJRHMgd2l0aCAzIGxldmVsIG9mIG5zKQ0KPiANCj4gICAgIDIu
+IGFkZCBoaWVyYXJjaHkgaW5mbyB1bmRlciAvcHJvYw0KPiAgICAgICBXZSBsYWNrZWQgb2YgbWV0
+aG9kIG9mIGdldHRpbmcgaGllcmFyY2h5IGluZm8sIHdoaWNoIGlzIHVzZWZ1bC4NCj4gICAgICAg
+VGhlbiB3ZSBjb3VsZCBrbm93IHRoZSByZWxhdGlvbnNoaXAgb2YgbnMuDQo+ICAgICAgIEhvdyBh
+Ym91dCBhZGRpbmcgYSBuZXcgcHJvYyBmaWxlIGp1c3QgdW5kZXIgL3Byb2MNCj4gICAgICAgdG8g
+c2hvdyB0aGUgaGllcmFyY2h5IGxpa2UgcmVhZGxpbmsgZGlkOg0KPiAJICBwaWQ6WzQwMjY1MzE4
+MzZdLT4gWzQwMjY1MzIzOTBdIC0+IFs0MDI2NTMyNDg0XQ0KPiAgICAgICBwaWQ6WzQwMjY1MzE4
+MzZdLT4gWzQwMjY1MzI0OTFdDQo+ICAgICAgIChBIDMgbGV2ZWwgcGlkIGFuZCAyIGxldmVsIHBp
+ZF8NCj4gDQo+IEFueSBjb21tZW50cyB3b3VsZCBiZSBhcHByZWNpYXRlZC4NCj4gDQo+IFRoYW5r
+cywNCj4gLSBDaGVuDQo+IA0KPiA+IC0tLS0tT3JpZ2luYWwgTWVzc2FnZS0tLS0tDQo+ID4gU3Vi
+amVjdDogW1JGQ11QaWQgY29udmVyc2lvbiBiZXR3ZWVuIHBpZCBuYW1lc3BhY2UNCj4gPg0KPiA+
+IEhpLA0KPiA+DQo+ID4gV2UgaGFkIHNvbWUgZGlzY3Vzc2lvbnMgb24gaG93IHRvIGNhcnJ5IG91
+dA0KPiA+IHBpZCBjb252ZXJzaW9uIGJldHdlZW4gcGlkIG5hbWVzcGFjZSB2aWE6DQo+ID4gc3lz
+Y2FsbFsxXSBhbmQgcHJvY2ZzWzJdLg0KPiA+DQo+ID4gUGF2ZWwgc3VnZ2VzdGVkIHRoYXQgYSBz
+eXNjYWxsIGxpa2UNCj4gPiAoSUQsIE5TMSwgTlMyKSBpbnRvIChJRCkuDQo+ID4NCj4gPiBTZXJn
+ZSBzdWdnZXN0ZWQgdGhhdCBhIHN5c2NhbGwNCj4gPiBwaWRfdCBnZXRuc3BpZChwaWRfdCBxdWVy
+eV9waWQsIHBpZF90IG9ic2VydmVyX3BpZCkuDQo+ID4NCj4gPg0KPiA+IEVyaWMgYW5kIFJpY2hh
+cmQgc3VnZ2VzdGVkIGEgcHJvY2ZzIHNvbHV0aW9uIGlzDQo+ID4gbW9yZSBhcHByb3ByaWF0ZS4N
+Cj4gPg0KPiA+IE9sZWcgc3VnZ2VzdGVkIHRoYXQgd2Ugc2hvdWxkIGV4cGFuZCAvcHJvYy9waWQv
+c3RhdHVzDQo+ID4gdG8gcmVwb3J0IHRoaXMga2luZCBvZiBpbmZvcm1hdGlvbi4NCj4gPg0KPiA+
+IEFuZCBSaWNoYXJkIHN1Z2dlc3RlZCBhZGRpbmcgYSBkaXJlY3RvcnkgbGlrZQ0KPiA+IC9wcm9j
+LzxwaWRYPi9ucy9wcm9jLyB3aGljaCB3b3VsZCBjb250YWluIGV2ZXJ5dGhpbmcNCj4gPiBmcm9t
+IC9wcm9jLzxwaWRYIGluc2lkZSB0aGUgbmFtZXNwYWNlPi8uDQo+ID4NCj4gPiBBcyBwcm9jZnMg
+cHJvdmlkZWQgYSBtb3JlIHVzZXIgZnJpZW5kbHkgaW50ZXJmYWNlLA0KPiA+IGhvdyBhYm91dCBl
+eHBvc2UgYWxsIHNldHMgb2YgdGdpZCwgcGlkLCBwZ2lkLCBzaWQNCj4gPiBieSBleHBhbmRpbmcg
+L3Byb2MvUElEL3N0YXR1cyBpbiBwcm9jZnM/DQo+ID4gQW5kIHdlIGNvdWxkIGFsc28gZXhwb3Nl
+IG5zIGhpZXJhcmNoeSB1bmRlciAvcHJvYywNCj4gPiB3aGljaCBjb3VsZCBiZSBhbm90aGVyIHJl
+ZmVyZW5jZS4NCj4gPg0KPiA+IEV4Og0KPiA+ICAgICBpbml0X3BpZF9ucyAgICBuczEgICAgICAg
+ICBuczINCj4gPiB0MSAgMg0KPiA+IHQyICAgYC0gMyAgICAgICAgICAxDQo+ID4gdDMgICAgICAg
+YC0gNCAgICAgIGAtIDUgICAgICAgIDENCj4gPg0KPiA+IFdlIGNvdWxkIGdldCBpbiAvcHJvYy90
+My9zdGF0dXM6DQo+ID4gTlNwaWQ6IDQgNSAxDQo+ID4gV2Uga25ldyB0aGF0IHBpZCAxIGluIGNv
+bnRhaW5lciBpcyBwaWQgNCBpbiBpbml0IG5zLg0KPiA+DQo+ID4gQW5kIHdlIGNvdWxkIGdldCBu
+cyBoaWVyYXJjaHkgdW5kZXIgL3Byb2MvbnNfaGllcmFyY2h5IGxpa2U6DQo+ID4gaW5pdF9ucy0+
+bnMxLT5uczIJCShhcyB0aGUgcmVzdWx0IG9mIHJlYWRsaW5rKQ0KPiA+ICAgICAgICAgIC0+bnMz
+DQo+ID4gV2Uga25ldyB0aGF0IHQzIGluIG5zMiwgYW5kIGl0cyBoaWVyYXJjaHkuDQo+ID4NCj4g
+PiBIb3cgdGhlc2UgaWRlYXMgbG9va3MgbGlrZT8NCj4gPiBBbnkgY29tbWVudHMgd291bGQgYmUg
+YXBwcmVjaWF0ZWQuDQo+ID4NCj4gPiBUaGFua3MsDQo+ID4gLSBDaGVuDQo+ID4NCj4gPg0KPiA+
+IGEpIHN5c2NhbGwNCj4gPiBodHRwOi8vbHduLm5ldC9BcnRpY2xlcy82MDI5ODcvDQo+ID4NCj4g
+PiBiKSBwcm9jZnMNCj4gPiBodHRwOi8vd3d3LnNwaW5pY3MubmV0L2xpc3RzL2tlcm5lbC9tc2cx
+NzUxNjg4Lmh0bWwNCj4gPg0KPiA+IF9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fDQo+ID4gQ29udGFpbmVycyBtYWlsaW5nIGxpc3QNCj4gPiBDb250YWluZXJz
+QGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnDQo+ID4gaHR0cHM6Ly9saXN0cy5saW51eGZvdW5k
+YXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw0KPiBfX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXw0KPiBDb250YWluZXJzIG1haWxpbmcgbGlz
+dA0KPiBDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnDQo+IGh0dHBzOi8vbGlz
+dHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnMNCg==
 
-> ---
->  include/linux/cgroup.h | 17 +++++++++++++++++
->  kernel/cgroup.c        | 18 ------------------
->  2 files changed, 17 insertions(+), 18 deletions(-)
-> 
-> diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-> index 707c302..4ea477f 100644
-> --- a/include/linux/cgroup.h
-> +++ b/include/linux/cgroup.h
-> @@ -530,6 +530,23 @@ static inline bool cgroup_on_dfl(const struct cgroup *cgrp)
->  	return cgrp->root == &cgrp_dfl_root;
->  }
->  
-> +/* convenient tests for these bits */
-> +static inline bool cgroup_is_dead(const struct cgroup *cgrp)
-> +{
-> +	return !(cgrp->self.flags & CSS_ONLINE);
-> +}
-> +
-> +static inline void cgroup_get(struct cgroup *cgrp)
-> +{
-> +	WARN_ON_ONCE(cgroup_is_dead(cgrp));
-> +	css_get(&cgrp->self);
-> +}
-> +
-> +static inline void cgroup_put(struct cgroup *cgrp)
-> +{
-> +	css_put(&cgrp->self);
-> +}
-> +
->  /* no synchronization, the result can only be used as a hint */
->  static inline bool cgroup_has_tasks(struct cgroup *cgrp)
->  {
-> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index 1671345..8552513 100644
-> --- a/kernel/cgroup.c
-> +++ b/kernel/cgroup.c
-> @@ -185,7 +185,6 @@ static int need_forkexit_callback __read_mostly;
->  static struct cftype cgroup_dfl_base_files[];
->  static struct cftype cgroup_legacy_base_files[];
->  
-> -static void cgroup_put(struct cgroup *cgrp);
->  static int rebind_subsystems(struct cgroup_root *dst_root,
->  			     unsigned int ss_mask);
->  static int cgroup_destroy_locked(struct cgroup *cgrp);
-> @@ -286,12 +285,6 @@ static struct cgroup_subsys_state *cgroup_e_css(struct cgroup *cgrp,
->  	return cgroup_css(cgrp, ss);
->  }
->  
-> -/* convenient tests for these bits */
-> -static inline bool cgroup_is_dead(const struct cgroup *cgrp)
-> -{
-> -	return !(cgrp->self.flags & CSS_ONLINE);
-> -}
-> -
->  struct cgroup_subsys_state *of_css(struct kernfs_open_file *of)
->  {
->  	struct cgroup *cgrp = of->kn->parent->priv;
-> @@ -1029,17 +1022,6 @@ static umode_t cgroup_file_mode(const struct cftype *cft)
->  	return mode;
->  }
->  
-> -static void cgroup_get(struct cgroup *cgrp)
-> -{
-> -	WARN_ON_ONCE(cgroup_is_dead(cgrp));
-> -	css_get(&cgrp->self);
-> -}
-> -
-> -static void cgroup_put(struct cgroup *cgrp)
-> -{
-> -	css_put(&cgrp->self);
-> -}
-> -
->  /**
->   * cgroup_refresh_child_subsys_mask - update child_subsys_mask
->   * @cgrp: the target cgroup
-> -- 
-> 2.0.0.526.g5318336
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============8404762512831808386==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============8404762512831808386==--
