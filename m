@@ -1,13 +1,17 @@
-From: <postmaster-wsYD/tXqMszPKJi+A6iv9c27eGsdWtzfyaeu1B9TQIZBDgjK7y7TUQ@public.gmane.org>
-Subject: Undeliverable: Account information.
-Date: Fri, 25 Jul 2014 11:18:50 +0000
-Message-ID: <458ab029-ed42-485f-9c26-8906d754b87c@AMXPR07MB085.eurprd07.prod.outlook.com>
-References: <7581685280.03112731616908@portal.obeikan.com.sa>
+From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC]Pid conversion between pid namespace
+Date: Fri, 25 Jul 2014 17:34:43 +0000
+Message-ID: <20140725173443.GH31507@ubuntumail>
+References: <5871495633F38949900D2BF2DC04883E55C374@G08CNEXMBPEKD02.g08.fujitsu.local>
+	<5871495633F38949900D2BF2DC04883E560412@G08CNEXMBPEKD02.g08.fujitsu.local>
+	<20140715041628.GL1132@ubuntumail>
+	<5871495633F38949900D2BF2DC04883E569892@G08CNEXMBPEKD02.g08.fujitsu.local>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============2591319677332007376=="
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-US
-In-Reply-To: <7581685280.03112731616908-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <5871495633F38949900D2BF2DC04883E569892-ZEd+hNNJ6a5ZYpXjqAkB5jz3u5zwRJJDAzI0kPv9QBlmR6Xm/wNWPw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,149 +21,57 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: "Richard Weinberger (richard-/L3Ra7n9ekc@public.gmane.org)" <richard-/L3Ra7n9ekc@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Oleg Nesterov (oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org)" <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org)" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Vasily Kulikov (segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org)" <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
---===============2591319677332007376==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="e4f6a400-6c40-45cc-8942-4bfaed3f2d02"
-Content-Language: en-US
-
---e4f6a400-6c40-45cc-8942-4bfaed3f2d02
-Content-Type: text/plain; charset="Windows-1252"
-Content-Transfer-Encoding: quoted-printable
-
-Delivery has failed to these recipients or groups:
-
-geaaaaa-wMzYYbhUBRRBDgjK7y7TUQ@public.gmane.org<mailto:geaaaaa-wMzYYbhUBRRBDgjK7y7TUQ@public.gmane.org>
-The email address you specified couldn't be found or is invalid. It may be =
-due to a bad entry in your Outlook or Outlook Web App recipient AutoComplet=
-e cache. Use the steps below to delete the entry from the cache:
-
-  1.  Click New mail.
-  2.  In the To field start typing the recipient's name or email address un=
-til the recipient appears in the drop-down list.
-  3.  Use the DOWN ARROW and UP ARROW keys to select the recipient, and the=
-n press the DELETE key.
-
-Then resend your message =96 delete and retype the recipient=92s name or e-=
-mail address before sending it.
-
-For more tips on how to resolve this issue see DSN code 5.1.1 in Exchange O=
-nline<http://go.microsoft.com/fwlink/?LinkId=3D389363>.
-
-
-
-
-
-
-
-
-Diagnostic information for administrators:
-
-Generating server: AMXPR07MB085.eurprd07.prod.outlook.com
-
-geaaaaa-wMzYYbhUBRRBDgjK7y7TUQ@public.gmane.org
-Remote Server returned '550 5.1.1 RESOLVER.ADR.RecipNotFound; not found'
-
-Original message headers:
-
-Received: from DBXPR07CA009.eurprd07.prod.outlook.com (10.255.191.167) by
- AMXPR07MB085.eurprd07.prod.outlook.com (10.242.70.139) with Microsoft SMTP
- Server (TLS) id 15.0.995.14; Fri, 25 Jul 2014 11:18:49 +0000
-Received: from AM1FFO11FD029.protection.gbl (2a01:111:f400:7e00::155) by
- DBXPR07CA009.outlook.office365.com (2a01:111:e400:9800::39) with Microsoft
- SMTP Server (TLS) id 15.0.990.7 via Frontend Transport; Fri, 25 Jul 2014
- 11:18:49 +0000
-Received: from portal.obeikan.com.sa (184.154.100.154) by
- AM1FFO11FD029.mail.protection.outlook.com (10.174.64.218) with Microsoft S=
-MTP
- Server id 15.0.980.11 via Frontend Transport; Fri, 25 Jul 2014 11:18:49 +0=
-000
-Received: from [184.154.100.154] by portal.obeikan.com.sa id 6pdExsoQJpCU w=
-ith SMTP; Fri, 25 Jul 2014 14:18:30 +0300
-Date: Fri, 25 Jul 2014 14:18:30 +0300
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.03.5) Personal
-X-Priority: 3 (Normal)
-Message-ID: <7581685280.03112731616908-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
-To: <geaaaaa-wMzYYbhUBRRBDgjK7y7TUQ@public.gmane.org>
-Subject: Account information.
-MIME-Version: 1.0
-Content-Type: text/plain; charset=3D"us-ascii"
-Content-Transfer-Encoding: 8bit
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-EOPAttributedMessage: 0
-X-Forefront-Antispam-Report: CIP:184.154.100.154;CTRY:US;IPV:NLI;EFV:NLI;
-X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:
-
-
---e4f6a400-6c40-45cc-8942-4bfaed3f2d02
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns;AMXPR07MB085.eurprd07.prod.outlook.com
-Received-From-MTA: dns;portal.obeikan.com.sa
-Arrival-Date: Fri, 25 Jul 2014 11:18:49 +0000
-
-Final-Recipient: rfc822;geaaaaa-wMzYYbhUBRRBDgjK7y7TUQ@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-
---e4f6a400-6c40-45cc-8942-4bfaed3f2d02
-Content-Type: message/rfc822
-
-Received: from DBXPR07CA009.eurprd07.prod.outlook.com (10.255.191.167) by
- AMXPR07MB085.eurprd07.prod.outlook.com (10.242.70.139) with Microsoft SMTP
- Server (TLS) id 15.0.995.14; Fri, 25 Jul 2014 11:18:49 +0000
-Received: from AM1FFO11FD029.protection.gbl (2a01:111:f400:7e00::155) by
- DBXPR07CA009.outlook.office365.com (2a01:111:e400:9800::39) with Microsoft
- SMTP Server (TLS) id 15.0.990.7 via Frontend Transport; Fri, 25 Jul 2014
- 11:18:49 +0000
-Received: from portal.obeikan.com.sa (184.154.100.154) by
- AM1FFO11FD029.mail.protection.outlook.com (10.174.64.218) with Microsoft SMTP
- Server id 15.0.980.11 via Frontend Transport; Fri, 25 Jul 2014 11:18:49 +0000
-Received: from [184.154.100.154] by portal.obeikan.com.sa id 6pdExsoQJpCU with SMTP; Fri, 25 Jul 2014 14:18:30 +0300
-Date: Fri, 25 Jul 2014 14:18:30 +0300
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.03.5) Personal
-X-Priority: 3 (Normal)
-Message-ID: <7581685280.03112731616908-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
-To: <geaaaaa-wMzYYbhUBRRBDgjK7y7TUQ@public.gmane.org>
-Subject: Account information.
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-EOPAttributedMessage: 0
-X-Forefront-Antispam-Report: CIP:184.154.100.154;CTRY:US;IPV:NLI;EFV:NLI;
-X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:
-
-
-HI
-            =20
-            =20
-You asked for information about our updated requisites for repayment.
-http://tematibohemia.cz/Payment.zip?Mkv9FA=3Dgeaaaaa-wMzYYbhUBRRBDgjK7y7TUQ@public.gmane.org
-
-
-=3D=3D
-Tel./Fax.: +61 2 9061198
-Thielemann Florence
-
-
-
---e4f6a400-6c40-45cc-8942-4bfaed3f2d02--
-
---===============2591319677332007376==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============2591319677332007376==--
+UXVvdGluZyBjaGVuaGFueGlhb0Bjbi5mdWppdHN1LmNvbSAoY2hlbmhhbnhpYW9AY24uZnVqaXRz
+dS5jb20pOgo+IEhpLAo+IAo+ID4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0KPiA+IEZyb206
+IFNlcmdlIEhhbGx5biBbbWFpbHRvOnNlcmdlLmhhbGx5bkB1YnVudHUuY29tXQo+ID4gU2VudDog
+VHVlc2RheSwgSnVseSAxNSwgMjAxNCAxMjoxNiBQTQo+ID4gVG86IENoZW4sIEhhbnhpYW8v6ZmI
+IOaZl+mchAo+ID4gU3ViamVjdDogUmU6IFtSRkNdUGlkIGNvbnZlcnNpb24gYmV0d2VlbiBwaWQg
+bmFtZXNwYWNlCj4gPiA+ICAgICBBLTIpIHN5c2NhbGwgcGlkX3QgZ2V0bnNwaWQocGlkX3QgcXVl
+cnlfcGlkLCBwaWRfdCBvYnNlcnZlcl9waWQpCj4gPiA+ICAgICBwcm9zOgo+ID4gPiAgICAgICAg
+IC0gbnMgcHJvY2ZzIGZyZWUsIGVhc3kgdG8gdXNlLgo+ID4gPiAgICAgICAgIFdlIGNvdWxkIGdl
+dCByaWQgb2YgbW91bnRlZCBucyBwcm9jZnMuCj4gPiA+Cj4gPiA+ICAgICBjb25zOgo+ID4gPiAg
+ICAgICAgIC0gbWF5IGZpbmQgbXVsdGlwbGUgcmVzdWx0cyBpbiBuZXN0ZWQgbnMuCj4gPiA+ICAg
+ICAgICAgICBXZSB3aXNoZWQgdGhlIG5ldyBBUEkgY291bGQgdGVsbCB1cyB0aGUgZXhhY3QgYW5z
+d2VyLgo+ID4gPiAgICAgICAgICAgQnV0IGlmIGdldG5zcGlkIHJldHVybiBtb3JlIHRoYW4gb25l
+IHJlc3VsdHMgd2lsbCBicmluZyB0cm91YmxlIHRvIGFkbWlucywKPiA+IAo+ID4gKFNlZSBiZWxv
+dyBmb3IgbW9yZSwgYnV0KSB0aGUgcXVlc3Rpb24gYmVpbmcgcG9zZWQgdG8gZ2V0bnNwaWQgaGFz
+IHByZWNpc2VseQo+ID4gb25lIGFuc3dlci4KPiA+IAo+ID4gPiAgICAgICAgICAgdGhleSBoYWQg
+dG8gbWFrZSBhbm90aGVyIGRlY2lzaW9uLgo+ID4gPiAgICAgICAgICAgT3Igd2UgbWFya2VkIHRo
+ZSBkZWVwZXN0IGxldmVsIGZvciB0cmFuc2xhdGlvbiBhcyBwcmVyZXF1aXNpdGUuCj4gPiA+Cj4g
+PiA+ICAgICAgICAgLWJhc2VkIG9uIGN1cnJlbnQgcGlkbnMsIG5vIHJlZmVyZW5jZSBucy4KPiA+
+IAo+ID4gSG0sIG5vLiAgVGhlIGludGVudCBoZXJlIHdhcyB0aGF0Cj4gPiAKPiA+IAlvYnNlcnZl
+cl9waWQgd291bGQgYmUgaW4gY3VycmVudCBucwo+ID4gCXF1ZXJ5X3BpZCB3b3VsZCBiZSBpbiBv
+YnNlcnZlcl9waWQncyBucy4KPiA+IAo+ID4gU28gdGhpcyB3b3VsZCBiZSBpZGVhbCBmb3IgIkkg
+Z290IGEgcGlkIGluIGEgbG9nZmlsZSBjcmVhdGVkIGJ5IHJzeXNsb2cgaW4KPiA+IGEgbmVzdGVk
+IGNvbnRhbmVyLCB3aGF0IGlzIHRoZSBsb2dnZWQgcGlkIGluIG15IHBpZG5zLiIKPiA+IAo+ID4g
+VGFraW5nIGEgc2V0IG9mIHRhc2tzIChsaWtlIGEgY29udGFpbmVyIHdpdGggbmVzdGluZykgYW5k
+IGJ1bGRpbmcgYSB0cmVlCj4gPiBvZiBhbGwgcGlkcyBzaG91bGRuJ3QgYmUgdG9vIGRpZmZpY3Vs
+dCBlaXRoZXIuICBTdGFydCB3aXRoIHRoZSBpbml0IHBpZCwKPiA+IGNhbGwgZ2V0bnNwaWQoJHBp
+ZCwgJGluaXRfcGlkKSBmb3IgZXZlcnkgJHBpZCBpbiB0aGUgY29udGFpbmVyOyAgdG8gZmlndXJl
+Cj4gPiBvdXQgd2hldGhlciBhbnkgJHBpZCBpcyBpdHNlbGYgYSBuZXN0ZWQgaW5pdF9waWQsIHdl
+IGNhbiBjb21wYXJlIHRoZQo+ID4gL3Byb2MvJCQvbnMvcGlkLCBhcyB3ZWxsIGFzIGxvb2sgYXQg
+Z2V0bnNwaWQoJHBpZCwgJHBpZCkuCj4gSSdtIGEgbGl0dGxlIGNvbmZ1c2VkIGluIHRoaXMgc2Vj
+dGlvbjoKPiAKPiBFeDoKPiAgICAgaW5pdF9waWRfbnMgICAgbnMxICAgICAgICAgbnMyCj4gdDEg
+IDIKPiB0MiAgIGAtIDMgICAgICAgICAgMSAKPiB0MyAgICAgICBgLSA0ICAgICAgYC0gNSAgICAg
+ICAgMQo+IHQ0ICAgICAgICAgICBgLTYgICAgICAgYC04ICAgICAgYC05Cj4gdDUgICAgICAgICAg
+ICAgYC0xMCAgICAgICBgLTkgICAgICBgLTEwCj4gCj4gRm9yIGdldG5zcGlkKCRwaWQsICRpbml0
+X3BpZCksCj4gRG9lcyBpbml0X3BpZCBtZWFucyBjb250YWluZXIncyBpbml0X3BpZCBzdWNoIGFz
+IDMgZm9yIHQyPwoKUmlnaHQsIGlmIHlvdSdyZSBpbiBpbml0X3BpZF9ucyBhbmQgbWFraW5nIHRo
+ZSBxdWVyeSwgdGhlbgp5b3UnZCBwYXNzIDMuCgo+IEluIG5lc3RlZCBjb250YWluZXJzLCBkb2Vz
+IHRoaXMgc3lzY2FsbCB3b3JrIGFzOgo+IGdldG5zcGlkKDksIDQpIC0+ICg2LCA4LCA5KSAKCk5v
+LCBhc3N1bWluZyB0aGUgcXVlcnlpbmcgdGFzayBpcyBpbiBpbml0X3BpZF9ucywKZ2V0bnNwaWQo
+OSwgNCkgd291bGQgcmV0dXJuIDYuCgo0IGlzIHRoZSBvYnNlcnZlciBwaWQgZ2l2ZW4gaW4gdGhl
+IHF1ZXJpZXIncyBvd24gcGlkbnMsIHNvCml0IHJlZmVycyB0byB0My4gIDkgaXMgdGhlIHBpZCBi
+ZWluZyBxdWVyaWVkLCBpbiB0aGUgb2JlcnZlcidzCnBpZG5zLCBzbyBpdCByZXZlcnMgdG8gdDQu
+ICBUaGUgcmVzdWx0IGlzLCB0aGUgcGlkIGluIG91ciBvd24KcGlkbnMuCgpEb2VzIHRoYXQgaGVs
+cCBjbGFyaWZ5IGF0IGFsbD8gIEknbSBub3Qgc3VyZSB3aGV0aGVyIHRoZSBwcm9ibGVtIGlzIHRo
+YXQKSSBkaWRuJ3QgZXhwbGFpbiB3ZWxsIGVub3VnaCBmcm9tIHRoZSBzdGFydCwgb3Igd2hldGhl
+ciB0aGlzIGp1c3Qgc2hvd3MKdGhhdCB0aGUgQVBJIGlzIG9uZSBvbmx5IGl0cyBtb3RoZXIgY291
+bGQgbG92ZSA6KQoKLXNlcmdlCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgt
+Zm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4v
+bGlzdGluZm8vY29udGFpbmVycw==
