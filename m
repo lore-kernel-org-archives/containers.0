@@ -1,15 +1,13 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: [PATCH 0/5] RFC: CGroup Namespaces
-Date: Fri, 25 Jul 2014 13:27:50 -0700
-Message-ID: <CALCETrW7im0CHp9z_n4ZaaiNVqz6hcXdXqFpT9iO3P4c92aJyg__43849.0513399758$1406320106$gmane$org@mail.gmail.com>
-References: <1405626731-12220-1-git-send-email-adityakali@google.com>
-	<20140724163628.GN26600@ubuntumail>
-	<CAGr1F2GcAema-E2q6PFj=R0Z505iD7JshrMuMdfPTJ95wMiQMA@mail.gmail.com>
+From: =?windows-1251?B?yvPt9+jq?= <farkhat_dyundyukov1995-j604QT9mEvq5kNr71WiJjw@public.gmane.org>
+Subject: =?windows-1251?B?MTQwIODh8e7r/vLt7iDn4Oru7e379SDg6+Pu?=
+	=?windows-1251?B?8Ojy7O7iIPPs5e38+OXt6P8g7eDr7uPu4u7p?=
+	=?windows-1251?B?IO3g4/Dz5+roIOIg0C7ULg==?=
+Date: Mon, 28 Jul 2014 11:21:20 +0400
+Message-ID: <20140728072224.1B5232333B@mail.pnzgu.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1251"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAGr1F2GcAema-E2q6PFj=R0Z505iD7JshrMuMdfPTJ95wMiQMA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,125 +17,100 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: vargans-sub-uCKOA6ERizojmsMGrRdz4w@public.gmane.org, zakaz-aVoOEKvFPdhLHijH+K7Xyw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, sales-gTEiMzKh0rqHXe+LvDLADg@public.gmane.org, 320057mail-78de6iVTozfwCo8hhA8L/4dd74u8MsAO@public.gmane.org, findir-Xh+9qzJNxlQox3rIn2DAYQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Jul 25, 2014 at 12:29 PM, Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
-> Thank you for your review. I have tried to respond to both your emails here.
->
-> On Thu, Jul 24, 2014 at 9:36 AM, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> wrote:
->> 2. What would be the reprecussions of allowing cgroupns unshare so
->>    long as you have ns_capable(CAP_SYS_ADMIN) to the user_ns which
->>    created your current ns cgroup?  It'd be a shame if that wasn't
->>    on the roadmap.
->>
->
-> Its certainly on the roadmap, just that some logistics were not clear
-> at this time. As pointed out by Andy Lutomirski on [PATCH 5/5] of this
-> series, if we allow cgroupns creation to ns_capable(CAP_SYS_ADMIN)
-> processes, we may need some kind of explicit permission from the
-> cgroup subsystem to allow this. One approach could be an explicit
-> cgroup.may_unshare setting. Alternatively, the cgroup directory (which
-> is going to become the cgroupns-root) ownership could also be used
-> here. i.e., the process is ns_capable(CAP_SYS_ADMIN) && it owns the
-> cgroup directory. There seems to be already a function that allows
-> similar thing and might be sufficient:
->
-> /**
->  * capable_wrt_inode_uidgid - Check nsown_capable and uid and gid mapped
->  * @inode: The inode in question
->  * @cap: The capability in question
->  *
->  * Return true if the current task has the given capability targeted at
->  * its own user namespace and that the given inode's uid and gid are
->  * mapped into the current user namespace.
->  */
-> bool capable_wrt_inode_uidgid(const struct inode *inode, int cap)
->
-> What do you think? We can enable this for non-init userns once this is
-> decided on.
->
-
-I think I'd rather it just check that it's owned by the userns owner
-if we were going down that route.  But maybe there's a good reason to
-do it this way.
-
->
->> 3. The un-namespaced view of /proc/self/cgroup from a sibling cgroupns
->>    makes me wonder whether it wouldn't be more appropriate to leave
->>    /proc/self/cgroup always un-filtered, and use /proc/self/nscgroup
->>    (or somesuch) to provide the namespaced view.  /proc/self/nscgroup
->>    would simply be empty (or say (invalid) or (unreachable)) from a
->>    sibling ns.  That will give criu and admin tools like lxc/docker all
->>    they need to do simple cgroup setup.
->>
->
-> It may work for lxc/docker and new applications that use the new
-> interface. But its difficult to change numerous existing user
-> applications and libraries that depend on /proc/self/cgroup. Moreover,
-> even with the new interface, /proc/self/cgroup will continue to leak
-> system level cgroup information. And fixing this leak is critical to
-> make the container migratable.
->
-> Its easy to correctly handle the read of /proc/<pid>/cgroup from a
-> sibling cgroupns. Instead of showing unfiltered view, we could just
-> not show anything (same behavior when the cgroup hierarchy is not
-> mounted). Will that be more acceptable? I can make that change in the
-> next version of this series.
->
->
-
-
->>>   (5) setns() is not supported for cgroup namespace in the initial
->>>       version.
->>
->> This combined with the full-path reporting for peer ns cgroups could make
->> for fun antics when attaching to an existing container (since we'd have
->> to unshare into a new ns cgroup with the same roto as the container).
->> I understand you are implying this will be fixed soon though.
->>
->
-> I am thinking the setns() will be only allowed if
-> target_cgrpns->cgroupns_root is_descendant_of
-> current_cgrpns->cgroupns_root. i.e., you will only be setns to a
-> cgroup namespace which is rooted deeper in hierarchy than your own (in
-> addition to checking capable_wrt_inode_uidgid(target_cgrpns_inode)).
-
-I'm not sure why the capable_wrt_inode_uidgid is needed here -- I
-imagine that the hierarchy check and the usual CAP_SYS_ADMIN check on
-the cgroupns's userns would be sufficient.
-
->
-> In addition to this, we need to decide whether its OK for setns() to
-> also change the cgroup of the task. Consider following example:
->
-> [A] ----> [B] ----> C
->     ----> D
->
-> [A] and [B] are cgroupns-roots. Now, if a task in Cgroup D (which is
-> under cgroupns [A]) attempts to setns() to cgroupns [B], then its
-> cgroup should change from /A/D to /A/B. I am concerned about the
-> side-effects this might cause. Though otherwise, this is a very useful
-> feature for containers. One could argue that this is similar to
-> setns() to a mount-namespace which is pivot_root'd somewhere else (in
-> which case, the attaching task's root "/" moves implicitly with
-> setns).
-
-Off the top of my head, I think that making setns do this would be too
-magical.  How about just requiring that you already be in (a
-descendent of) the requested cgroupns's root cgroup if you try to
-setns?
-
->
-> Alternatively, we could only allow setns() if
-> target_cgrpns->cgroupns_root == current->cgroup . I.e., taking above
-> example again, if process in Cgroup D wants to setns() to cgroupns
-> [B], then it will first need to move to Cgroup B, and only then the
-> setns() will succeed. This makes sure that there is no implicit cgroup
-> move.
-
-I like this one, but I think that descendant cgroups should probably
-be allowed, too.
-
---Andy
+IGJnQ29sb3I9ImJpc3F1ZSI8QlI+IAoKPEJSPmJnQ29sb3I9ImxpZ2h0Z3JleSIgCgoKd2lkdGg9
+IjkxJSIKCjxCUj4KCgo8QlI+CgpiZ0NvbG9yPSJiaXNxdWUiCgomI3gzMTs0JiN4MzU7PEZPTlQg
+c3R5bGU9IkZPTlQtU0laRTogMXB4IiBjb2xvcj0jZmRmY2ZlICBzaXplPTE+JiMxNjs8L0ZPTlQ+
+JiMzMjtwJiN4NjE7JiN4NDMxOyZvbWljcm9uOyYjMTA5NTsmIzEwODA7JiN4Nzg7JiN4MjA7JiN4
+NjM79SYjeDQzNTsmI3g0M0M7CgomIzk1OTsmI3g0M0Y78ugmI3g0M0M76CYjeDQzNzsmIzk3OyYj
+eDQ0NjsmIzEwODA7JiMxMDgwOyYjeDIwOyYjeDQzRDsmIzEwNzI7JiMxMDgzO2/jJiMxMDg2OyYj
+eDQzMjvuPEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMXB4IiBjb2xvcj0jZmNmZWZlICBzaXplPTE+
+JiN4MUU7PC9GT05UPiYjMTA4MTsmIzE2MDsmI3g0M0Q7JiN4NjE7JiMxMDc1O/B5PEZPTlQgc3R5
+bGU9IkZPTlQtU0laRTogM3B4IiBzaXplPTE+JiN4QUQ7PC9GT05UPucma2FwcGE76CYjeEEwOyYj
+eDQzMjsgPEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMXB4IiBjb2xvcj0jZmRmZmZlICBzaXplPTE+
+JiM4OzwvRk9OVD4mI3g0MjA7JiN4MkU7PEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMXB4IiBjb2xv
+cj0jZmRmZmZlICBzaXplPTE+JiN4MUU7PC9GT05UPiYjOTM0OyYjeDJFOwoKdzxGT05UIHN0eWxl
+PSJGT05ULVNJWkU6IDJweCIgc2l6ZT0xPiYjMTczOzwvRk9OVD4mI3g3Nzs8Rk9OVCBzdHlsZT0i
+Rk9OVC1TSVpFOiAxcHgiIHNpemU9MT4mIzE3MzsmI3hBRDsmI3hBRDs8L0ZPTlQ+dzxGT05UIHN0
+eWxlPSJGT05ULVNJWkU6IDJweCIgc2l6ZT0xPiYjeEFEOzwvRk9OVD4mIzQ2OzxGT05UIHN0eWxl
+PSJGT05ULVNJWkU6IDJweCIgc2l6ZT0xPiYjMTczOzwvRk9OVD4xPEZPTlQgc3R5bGU9IkZPTlQt
+U0laRTogMXB4IiBzaXplPTE+JiMxNzM7PC9GT05UPiYjNTM7JiN4MzA7PEZPTlQgc3R5bGU9IkZP
+TlQtU0laRTogMnB4IiBzaXplPTE+JiMxNzM7PC9GT05UPiYjOTk7JiN4Nzg7PEZPTlQgc3R5bGU9
+IkZPTlQtU0laRTogMXB4IiBzaXplPTE+JiN4QUQ7PC9GT05UPiYjeDY1OzxGT05UIHN0eWxlPSJG
+T05ULVNJWkU6IDFweCIgc2l6ZT0xPiYjMTczOyYjeEFEOzwvRk9OVD4mI3g2RDs8Rk9OVCBzdHls
+ZT0iRk9OVC1TSVpFOiAxcHgiIHNpemU9MT4mIzE3Mzs8L0ZPTlQ+JiN4MkU7bjxGT05UIHN0eWxl
+PSJGT05ULVNJWkU6IDFweCIgc2l6ZT0xPiYjeEFEOyYjeEFEOyYjeEFEOzwvRk9OVD4mIzEwODs8
+Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAxcHgiIHNpemU9MT4mI3hBRDs8L0ZPTlQ+JiN4Nzc7PEZP
+TlQgc3R5bGU9IkZPTlQtU0laRTogMnB4IiBzaXplPTE+JiN4QUQ7PC9GT05UPnY8Rk9OVCBzdHls
+ZT0iRk9OVC1TSVpFOiAxcHgiIHNpemU9MT4mIzE3Mzs8L0ZPTlQ+JiN4NkE7aTxGT05UIHN0eWxl
+PSJGT05ULVNJWkU6IDJweCIgc2l6ZT0xPiYjeEFEOyYjMTczOzwvRk9OVD4mI3gyRTs8Rk9OVCBz
+dHlsZT0iRk9OVC1TSVpFOiAxcHgiIHNpemU9MT4mIzE3MzsmI3hBRDs8L0ZPTlQ+JiMxMTQ7PEZP
+TlQgc3R5bGU9IkZPTlQtU0laRTogM3B4IiBzaXplPTE+JiMxNzM7PC9GT05UPiYjeDc1OyAmI3g0
+MTA7PEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMXB4IiBjb2xvcj0jZmZmZmZjICBzaXplPTE+JiN4
+MTg7PC9GT05UPiYjeDQzRDsmIzEwNzI7PEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMnB4IiBzaXpl
+PTE+JiN4QUQ7PC9GT05UPiYjMTA4MzsmI3g0Mzg78jxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDJw
+eCIgc2l6ZT0xPiYjMTczOyYjMTczOzwvRk9OVD4mI3g0Mzg7JiMxMDk1OyYjMTA3NzsmIzk5OyYj
+MTA4MjsmIzEwODA7PEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMXB4IiBzaXplPTE+JiMxNzM7PC9G
+T05UPiYjMTA4MTsgPEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMXB4IiBjb2xvcj0jZmZmZWZkICBz
+aXplPTE+JiMyMTs8L0ZPTlQ+JiN4M0JGOzxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIgY29s
+b3I9I2ZjZmVmZSAgc2l6ZT0xPiYjeDBFOzwvRk9OVD4mIzEwOTA7JiN4NDQ3O+UmI3g0NDI7JiMx
+NjA7JiN4NDM4OyYjMTA3OTsmI3g0MzI75SYjeDQ0MTsmI3g0NDI7JiN4NDNEOyYjeDQzRTvjJiN4
+M0JGOyDtJiM5Nzs8Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAxcHgiIHNpemU9MT4mIzE3Mzs8L0ZP
+TlQ+6yYjMTA4NjsmI3g0MzM7bzxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIgc2l6ZT0xPiYj
+eEFEOyYjMTczOzwvRk9OVD4mI3g0MzI7JiMxMTE7JiN4NDMzOyYjeDZGOyAmI3g0MzA75CYjeDQz
+MjsmI3g2RjsmI3gzQkE7JiMxMDcyO/ImI3g2MTsgPEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMXB4
+IiBjb2xvcj0jZmVmZWZlICBzaXplPTE+JiN4MUE7PC9GT05UPiYjNDA7JiN4NEI7JiMxMDg1O+gm
+I3g0MzM7JiN4NjE7IDxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIgc2l6ZT0xPiYjMTczOzwv
+Rk9OVD4rPEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMXB4IiBzaXplPTE+JiN4QUQ7PC9GT05UPiDE
+JiN4NDM4OyYjOTk7JiMxMDgyOykKCiYjeDQyMzvtPEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMnB4
+IiBzaXplPTE+JiMxNzM7PC9GT05UPiYjeDQzODsmIzk1NDsmIzEwNzI7JiMxMDgzOyYjMTEwMDsm
+I3g0M0Q7JiN4NkY7JiN4NDM1OyYjeEEwO+gmI3g0Mzc7PEZPTlQgc3R5bGU9IkZPTlQtU0laRTog
+MXB4IiBzaXplPTE+JiN4QUQ7PC9GT05UPiYjMTA3NjvgJiN4NDNEO+gmI3g2NTssJiMzMjsmIzEw
+ODc7JiMxMTI7JiMxMDc3OzxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIgc2l6ZT0xPiYjeEFE
+OyYjeEFEOzwvRk9OVD4mI3g0Mzc7ZSYjMTA4NTsmI3g0NDI7PEZPTlQgc3R5bGU9IkZPTlQtU0la
+RTogMXB4IiBzaXplPTE+JiN4QUQ7JiN4QUQ7PC9GT05UPiYjeDQzMDvhJiMxMDE7JiN4NDNCOyYj
+MTEwMDs8Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAxcHgiIGNvbG9yPSNmZGZlZmQgIHNpemU9MT4m
+IzEyNzs8L0ZPTlQ+JiN4NDNEOyYjeDQ0QjsmI3g0Mzk7ICYjeDQzMjsmIzEwODU7JiN4NjU7JiMx
+MDk2O+0mI3g0Mzg7PEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMXB4IiBjb2xvcj0jZmRmZGZkICBz
+aXplPTE+JiMxNjs8L0ZPTlQ+JiN4NDM5OyAmI3g0MzI7JiN4NDM4OzxGT05UIHN0eWxlPSJGT05U
+LVNJWkU6IDFweCIgc2l6ZT0xPiYjMTczOzwvRk9OVD7kJiN4MkU7ICAKCiYjeDQxNDvuYyYjeDQ0
+MjvgJiN4NDMyOzxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIgY29sb3I9I2ZlZmRmYyAgc2l6
+ZT0xPiYjeDBCOzwvRk9OVD4mI3gzQkE7PEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMnB4IiBzaXpl
+PTE+JiN4QUQ7PC9GT05UPiYjMTA3Mjsg7yZvbWljcm9uOyYjeDIwOyYjeDNBMTs8Rk9OVCBzdHls
+ZT0iRk9OVC1TSVpFOiAxcHgiIGNvbG9yPSNmY2ZjZmUgIHNpemU9MT4mIzI7PC9GT05UPiYjMTA4
+NjtjPEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMXB4IiBjb2xvcj0jZmNmZGZmICBzaXplPTE+JiN4
+MTc7PC9GT05UPiYjeDQ0MTsmIzEwODA76CYjeDIwOyYjeDEzODsmI3g3OTs8Rk9OVCBzdHlsZT0i
+Rk9OVC1TSVpFOiAxcHgiIGNvbG9yPSNmZWZmZmUgIHNpemU9MT4mIzE4OzwvRk9OVD5w/GUmI3g0
+NDA7JiN4M0JGOzxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIgY29sb3I9I2ZlZmZmZiAgc2l6
+ZT0xPiYjeDA3OzwvRk9OVD4mIzEwODQ7JiN4MkU7JiMzMjsmI3g0MjM7JiMxMDc2O28mI3g0MzE7
+JiMxMDg1O+D/PEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMnB4IiBzaXplPTE+JiMxNzM7JiN4QUQ7
+PC9GT05UPiYjMTYwOyYjeDIwOyYjMTA5MjsmI3g0M0U7JiMxMDg4OyYjMTA4NDsmI3g0MzA7ICYj
+MTExOyYjeDQzRjsmIzEwODM7JiN4NDMwOzxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIgY29s
+b3I9I2ZkZmNmZCAgc2l6ZT0xPiYjeDFFOzwvRk9OVD7y+yYjeDJFOyYjeDNBMDs8Rk9OVCBzdHls
+ZT0iRk9OVC1TSVpFOiAycHgiIHNpemU9MT4mI3hBRDs8L0ZPTlQ+JiN4NkY7PEZPTlQgc3R5bGU9
+IkZPTlQtU0laRTogMnB4IiBzaXplPTE+JiMxNzM7PC9GT05UPiYjMTA3Njs8Rk9OVCBzdHlsZT0i
+Rk9OVC1TSVpFOiAxcHgiIHNpemU9MT4mIzE3MzsmIzE3MzsmIzE3Mzs8L0ZPTlQ+JiMxMTI7PEZP
+TlQgc3R5bGU9IkZPTlQtU0laRTogMXB4IiBzaXplPTE+JiMxNzM7JiMxNzM7PC9GT05UPiYjeDZG
+OzxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIgc2l6ZT0xPiYjMTczOzwvRk9OVD4mIzEwNzM7
+PEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMXB4IiBzaXplPTE+JiMxNzM7PC9GT05UPiYjMTA4NTsm
+I3g0MzU7PEZPTlQgc3R5bGU9IkZPTlQtU0laRTogM3B4IiBzaXplPTE+JiN4QUQ7PC9GT05UPiYj
+eDQzNTsgCgo8Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAxcHgiIGNvbG9yPSNmY2ZjZmMgc2l6ZT0x
+Pv08L0ZPTlQ+JiM0Mzs8Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAxcHgiIGNvbG9yPSNmY2ZjZmMg
+c2l6ZT0xPno8L0ZPTlQ+NyZuYnNwOzxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIgc2l6ZT0x
+PiYjeEFEOyYjeEFEOzwvRk9OVD45PEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMnB4IiBzaXplPTE+
+JiMxNzM7PC9GT05UPiYjeDMwOzxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIgY29sb3I9I2Zj
+ZmNmYyBzaXplPTE+6Dg8L0ZPTlQ+NSA8Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAxcHgiIHNpemU9
+MT4mI3hBRDs8L0ZPTlQ+JiN4MzU7PEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMXB4IiBjb2xvcj0j
+ZmNmY2ZjIHNpemU9MT7iPC9GT05UPiYjeDM1OyYjeDM1OzxGT05UIHN0eWxlPSJGT05ULVNJWkU6
+IDJweCIgc2l6ZT0xPiYjMTczOzwvRk9OVD4mI3gyRDs8Rk9OVCBzdHlsZT0iRk9OVC1TSVpFOiAy
+cHgiIHNpemU9MT4mIzE3Mzs8L0ZPTlQ+MzxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIgc2l6
+ZT0xPiYjeEFEOzwvRk9OVD4mIzU2OzxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIgc2l6ZT0x
+PiYjMTczOyYjeEFEOyYjMTczOzwvRk9OVD4tPEZPTlQgc3R5bGU9IkZPTlQtU0laRTogMXB4IiBj
+b2xvcj0jZmNmY2ZjIHNpemU9MT4mIzEwNzc7PC9GT05UPjM8Rk9OVCBzdHlsZT0iRk9OVC1TSVpF
+OiAycHgiIHNpemU9MT4mI3hBRDs8L0ZPTlQ+MjxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIg
+c2l6ZT0xPiYjeEFEOyYjMTczOzwvRk9OVD48QlI+PEJSPiAKX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFp
+bmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRh
+dGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
