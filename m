@@ -1,12 +1,27 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [REVIEW][PATCH] namespaces: Use task_lock and not rcu to protect
-	nsproxy
-Date: Tue, 29 Jul 2014 18:21:07 -0700
-Message-ID: <87ha1zljzw.fsf@x220.int.ebiederm.org>
+Subject: [REVIEW][0/5] Fixing unprivileged mount -o remount,ro
+Date: Tue, 29 Jul 2014 20:38:45 -0700
+Message-ID: <87siljjz22.fsf_-_@x220.int.ebiederm.org>
+References: <87fvih4a99.fsf@x220.int.ebiederm.org>
+	<CAObL_7FfacSTdO=JEfYyqQrp8qOSob6qoWrGN=rSM5t9ckkTWg@mail.gmail.com>
+	<8761injfj9.fsf_-_@x220.int.ebiederm.org>
+	<CAObL_7GhpuO4m6HunKvNMSpiEYBuaJnvjfVDiyG88GZ8HOa-vg@mail.gmail.com>
+	<CAOP=4wgKGxJmLwSHYRKXCTva_Fyzn+D1vaWhtT-mo_t9Uu68zA@mail.gmail.com>
+	<87lhrihaan.fsf@x220.int.ebiederm.org>
+	<CAObL_7HSNkM=Kr9Jwc9JB7Zt7ZdR+skzmPrxYcFSkCutFDA5KA@mail.gmail.com>
+	<20140724194920.GU26600@ubuntumail>
+	<CAOP=4wh-AXf7qPy0rPaQ6RFbbJGRWKo0h1Rn=9vLUeJ6b6Q7YA@mail.gmail.com>
+	<8738dqh2j1.fsf@x220.int.ebiederm.org> <20140725060810.GC31313@1wt.eu>
+	<877g2xou2u.fsf@x220.int.ebiederm.org>
+	<87r415nf3k.fsf_-_@x220.int.ebiederm.org>
+	<874my1neyr.fsf_-_@x220.int.ebiederm.org>
+	<CAOP=4wj7m+w4aDJCuQaf3r9aFraPN1SvPgFSz=_UNkyC8gEHyQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <CAOP=4wj7m+w4aDJCuQaf3r9aFraPN1SvPgFSz=_UNkyC8gEHyQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Kenton Varda's message of "Tue, 29 Jul 2014 15:09:25 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,246 +32,34 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Rafael David Tinoco <rafael.tinoco-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Cc: Andrew Lutomirski <andy-RHosVwM/Cj8@public.gmane.org>, security-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Willy Tarreau <w@1wt.eu>
 List-Id: containers.vger.kernel.org
 
 
-The synchronous syncrhonize_rcu in switch_task_namespaces makes setns
-a sufficiently expensive system call that people have complained.
+This patchset addresses a nasty bug where
+"unshare --user --mount mount --bind -o remount,ro /path"
+would allow a following "mount --bind -o remount,rw" to succeed even
+when /path started out read-only in the initial mount namespace.
 
-Upon inspect nsproxy no longer needs rcu protection for remote reads.
-remote reads are rare.  So optimize for same process reads and write
-by switching using rask_lock instead.
+The fixes are quite simple and since they are user namespace specific I
+plan on carrying them in my user namespace tree and ultimately pushing
+them to Linus.
 
-This yields a simpler to understand lock, and a faster setns system call.
+If anyone has any concerns about the code before I do that please speak
+up so the issues can be addressed.
 
-In particular this fixes a performance regression observed
-by Rafael David Tinoco <rafael.tinoco-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>.
+Eric W. Biederman (5):
+      mnt: Only change user settable mount flags in remount
+      mnt: Move the test for MNT_LOCK_READONLY from change_mount_flags into do_remount
+      mnt: Correct permission checks in do_remount
+      mnt: Change the default remount atime from relatime to the existing value
+      mnt: Add tests for unprivileged remount cases that have found to be faulty
 
-This is effectively a revert of Pavel Emelyanov's commit
-cf7b708c8d1d7a27736771bcf4c457b332b0f818 Make access to task's nsproxy lighter
-from 2007.  The race this originialy fixed no longer exists as
-do_notify_parent uses task_active_pid_ns(parent) instead of
-parent->nsproxy.
+ fs/namespace.c                                     |  59 ++++-
+ include/linux/mount.h                              |   9 +-
+ tools/testing/selftests/Makefile                   |   1 +
+ tools/testing/selftests/mount/Makefile             |  17 ++
+ .../selftests/mount/unprivileged-remount-test.c    | 242 +++++++++++++++++++++
+ 5 files changed, 320 insertions(+), 8 deletions(-)
 
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- fs/namespace.c           |  6 +++---
- fs/proc/proc_net.c       |  4 +++-
- fs/proc_namespace.c      |  8 +++-----
- include/linux/nsproxy.h  | 16 ++++++----------
- ipc/namespace.c          |  6 +++---
- kernel/nsproxy.c         | 15 ++++-----------
- kernel/utsname.c         |  6 +++---
- net/core/net_namespace.c | 10 ++++++----
- 8 files changed, 31 insertions(+), 40 deletions(-)
-
-diff --git a/fs/namespace.c b/fs/namespace.c
-index 182bc41cd887..7187d01329c3 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -2972,13 +2972,13 @@ static void *mntns_get(struct task_struct *task)
- 	struct mnt_namespace *ns = NULL;
- 	struct nsproxy *nsproxy;
- 
--	rcu_read_lock();
--	nsproxy = task_nsproxy(task);
-+	task_lock(task);
-+	nsproxy = task->nsproxy;
- 	if (nsproxy) {
- 		ns = nsproxy->mnt_ns;
- 		get_mnt_ns(ns);
- 	}
--	rcu_read_unlock();
-+	task_unlock(task);
- 
- 	return ns;
- }
-diff --git a/fs/proc/proc_net.c b/fs/proc/proc_net.c
-index 4677bb7dc7c2..a63af3e0a612 100644
---- a/fs/proc/proc_net.c
-+++ b/fs/proc/proc_net.c
-@@ -113,9 +113,11 @@ static struct net *get_proc_task_net(struct inode *dir)
- 	rcu_read_lock();
- 	task = pid_task(proc_pid(dir), PIDTYPE_PID);
- 	if (task != NULL) {
--		ns = task_nsproxy(task);
-+		task_lock(task);
-+		ns = task->nsproxy;
- 		if (ns != NULL)
- 			net = get_net(ns->net_ns);
-+		task_unlock(task);
- 	}
- 	rcu_read_unlock();
- 
-diff --git a/fs/proc_namespace.c b/fs/proc_namespace.c
-index 1a81373947f3..73ca1740d839 100644
---- a/fs/proc_namespace.c
-+++ b/fs/proc_namespace.c
-@@ -232,17 +232,15 @@ static int mounts_open_common(struct inode *inode, struct file *file,
- 	if (!task)
- 		goto err;
- 
--	rcu_read_lock();
--	nsp = task_nsproxy(task);
-+	task_lock(task);
-+	nsp = task->nsproxy;
- 	if (!nsp || !nsp->mnt_ns) {
--		rcu_read_unlock();
-+		task_unlock(task);
- 		put_task_struct(task);
- 		goto err;
- 	}
- 	ns = nsp->mnt_ns;
- 	get_mnt_ns(ns);
--	rcu_read_unlock();
--	task_lock(task);
- 	if (!task->fs) {
- 		task_unlock(task);
- 		put_task_struct(task);
-diff --git a/include/linux/nsproxy.h b/include/linux/nsproxy.h
-index b4ec59d159ac..35fa08fd7739 100644
---- a/include/linux/nsproxy.h
-+++ b/include/linux/nsproxy.h
-@@ -40,32 +40,28 @@ extern struct nsproxy init_nsproxy;
-  * the namespaces access rules are:
-  *
-  *  1. only current task is allowed to change tsk->nsproxy pointer or
-- *     any pointer on the nsproxy itself
-+ *     any pointer on the nsproxy itself.  Current must hold the task_lock
-+ *     when changing tsk->nsproxy.
-  *
-  *  2. when accessing (i.e. reading) current task's namespaces - no
-  *     precautions should be taken - just dereference the pointers
-  *
-  *  3. the access to other task namespaces is performed like this
-- *     rcu_read_lock();
-- *     nsproxy = task_nsproxy(tsk);
-+ *     task_lock(task);
-+ *     nsproxy = task->nsproxy;
-  *     if (nsproxy != NULL) {
-  *             / *
-  *               * work with the namespaces here
-  *               * e.g. get the reference on one of them
-  *               * /
-  *     } / *
-- *         * NULL task_nsproxy() means that this task is
-+ *         * NULL task->nsproxy means that this task is
-  *         * almost dead (zombie)
-  *         * /
-- *     rcu_read_unlock();
-+ *     task_unlock(task);
-  *
-  */
- 
--static inline struct nsproxy *task_nsproxy(struct task_struct *tsk)
--{
--	return rcu_dereference(tsk->nsproxy);
--}
--
- int copy_namespaces(unsigned long flags, struct task_struct *tsk);
- void exit_task_namespaces(struct task_struct *tsk);
- void switch_task_namespaces(struct task_struct *tsk, struct nsproxy *new);
-diff --git a/ipc/namespace.c b/ipc/namespace.c
-index 59451c1e214d..b54468e48e32 100644
---- a/ipc/namespace.c
-+++ b/ipc/namespace.c
-@@ -154,11 +154,11 @@ static void *ipcns_get(struct task_struct *task)
- 	struct ipc_namespace *ns = NULL;
- 	struct nsproxy *nsproxy;
- 
--	rcu_read_lock();
--	nsproxy = task_nsproxy(task);
-+	task_lock(task);
-+	nsproxy = task->nsproxy;
- 	if (nsproxy)
- 		ns = get_ipc_ns(nsproxy->ipc_ns);
--	rcu_read_unlock();
-+	task_unlock(task);
- 
- 	return ns;
- }
-diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-index 8e7811086b82..ef42d0ab3115 100644
---- a/kernel/nsproxy.c
-+++ b/kernel/nsproxy.c
-@@ -204,20 +204,13 @@ void switch_task_namespaces(struct task_struct *p, struct nsproxy *new)
- 
- 	might_sleep();
- 
-+	task_lock(p);
- 	ns = p->nsproxy;
-+	p->nsproxy = new;
-+	task_unlock(p);
- 
--	rcu_assign_pointer(p->nsproxy, new);
--
--	if (ns && atomic_dec_and_test(&ns->count)) {
--		/*
--		 * wait for others to get what they want from this nsproxy.
--		 *
--		 * cannot release this nsproxy via the call_rcu() since
--		 * put_mnt_ns() will want to sleep
--		 */
--		synchronize_rcu();
-+	if (ns && atomic_dec_and_test(&ns->count))
- 		free_nsproxy(ns);
--	}
- }
- 
- void exit_task_namespaces(struct task_struct *p)
-diff --git a/kernel/utsname.c b/kernel/utsname.c
-index fd393124e507..883aaaa7de8a 100644
---- a/kernel/utsname.c
-+++ b/kernel/utsname.c
-@@ -93,13 +93,13 @@ static void *utsns_get(struct task_struct *task)
- 	struct uts_namespace *ns = NULL;
- 	struct nsproxy *nsproxy;
- 
--	rcu_read_lock();
--	nsproxy = task_nsproxy(task);
-+	task_lock(task);
-+	nsproxy = task->nsproxy;
- 	if (nsproxy) {
- 		ns = nsproxy->uts_ns;
- 		get_uts_ns(ns);
- 	}
--	rcu_read_unlock();
-+	task_unlock(task);
- 
- 	return ns;
- }
-diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
-index 85b62691f4f2..7c6b51a58968 100644
---- a/net/core/net_namespace.c
-+++ b/net/core/net_namespace.c
-@@ -373,9 +373,11 @@ struct net *get_net_ns_by_pid(pid_t pid)
- 	tsk = find_task_by_vpid(pid);
- 	if (tsk) {
- 		struct nsproxy *nsproxy;
--		nsproxy = task_nsproxy(tsk);
-+		task_lock(tsk);
-+		nsproxy = tsk->nsproxy;
- 		if (nsproxy)
- 			net = get_net(nsproxy->net_ns);
-+		task_unlock(tsk);
- 	}
- 	rcu_read_unlock();
- 	return net;
-@@ -632,11 +634,11 @@ static void *netns_get(struct task_struct *task)
- 	struct net *net = NULL;
- 	struct nsproxy *nsproxy;
- 
--	rcu_read_lock();
--	nsproxy = task_nsproxy(task);
-+	task_lock(task);
-+	nsproxy = task->nsproxy;
- 	if (nsproxy)
- 		net = get_net(nsproxy->net_ns);
--	rcu_read_unlock();
-+	task_unlock(task);
- 
- 	return net;
- }
--- 
-1.9.1
+Eric
