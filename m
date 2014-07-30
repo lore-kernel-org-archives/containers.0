@@ -1,18 +1,12 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/5] RFC: CGroup Namespaces
-Date: Tue, 29 Jul 2014 18:06:56 +0200
-Message-ID: <20140729160656.GA6980@mail.hallyn.com>
-References: <1405626731-12220-1-git-send-email-adityakali@google.com>
-	<20140724163628.GN26600@ubuntumail>
-	<CAGr1F2GcAema-E2q6PFj=R0Z505iD7JshrMuMdfPTJ95wMiQMA@mail.gmail.com>
-	<20140729045159.GB31047@mail.hallyn.com>
-	<CALCETrW5yQLo-SvDgqjt881OD1GnuxMmGKjoohYT4nwtYw=9+w@mail.gmail.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: [REVIEW][PATCH] namespaces: Use task_lock and not rcu to protect
+	nsproxy
+Date: Tue, 29 Jul 2014 18:21:07 -0700
+Message-ID: <87ha1zljzw.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <CALCETrW5yQLo-SvDgqjt881OD1GnuxMmGKjoohYT4nwtYw=9+w-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,70 +16,247 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Rafael David Tinoco <rafael.tinoco-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-UXVvdGluZyBBbmR5IEx1dG9taXJza2kgKGx1dG9AYW1hY2FwaXRhbC5uZXQpOgo+IE9uIE1vbiwg
-SnVsIDI4LCAyMDE0IGF0IDk6NTEgUE0sIFNlcmdlIEUuIEhhbGx5biA8c2VyZ2VAaGFsbHluLmNv
-bT4gd3JvdGU6Cj4gPiBRdW90aW5nIEFkaXR5YSBLYWxpIChhZGl0eWFrYWxpQGdvb2dsZS5jb20p
-Ogo+ID4+IFRoYW5rIHlvdSBmb3IgeW91ciByZXZpZXcuIEkgaGF2ZSB0cmllZCB0byByZXNwb25k
-IHRvIGJvdGggeW91ciBlbWFpbHMgaGVyZS4KPiA+Pgo+ID4+IE9uIFRodSwgSnVsIDI0LCAyMDE0
-IGF0IDk6MzYgQU0sIFNlcmdlIEhhbGx5biA8c2VyZ2UuaGFsbHluQHVidW50dS5jb20+IHdyb3Rl
-Ogo+ID4+ID4gUXVvdGluZyBBZGl0eWEgS2FsaSAoYWRpdHlha2FsaUBnb29nbGUuY29tKToKPiA+
-PiA+PiBCYWNrZ3JvdW5kCj4gPj4gPj4gICBDZ3JvdXBzIGFuZCBOYW1lc3BhY2VzIGFyZSB1c2Vk
-IHRvZ2V0aGVyIHRvIGNyZWF0ZSDigJx2aXJ0dWFs4oCdCj4gPj4gPj4gICBjb250YWluZXJzIHRo
-YXQgaXNvbGF0ZXMgdGhlIGhvc3QgZW52aXJvbm1lbnQgZnJvbSB0aGUgcHJvY2Vzc2VzCj4gPj4g
-Pj4gICBydW5uaW5nIGluIGNvbnRhaW5lci4gQnV0IHNpbmNlIGNncm91cHMgdGhlbXNlbHZlcyBh
-cmUgbm90Cj4gPj4gPj4gICDigJx2aXJ0dWFsaXplZOKAnSwgdGhlIHRhc2sgaXMgYWx3YXlzIGFi
-bGUgdG8gc2VlIGdsb2JhbCBjZ3JvdXBzIHZpZXcKPiA+PiA+PiAgIHRocm91Z2ggY2dyb3VwZnMg
-bW91bnQgYW5kIHZpYSAvcHJvYy9zZWxmL2Nncm91cCBmaWxlLgo+ID4+ID4+Cj4gPj4gPiBIaSwK
-PiA+PiA+Cj4gPj4gPiBBIGZldyBxdWVzdGlvbnMvY29tbWVudHM6Cj4gPj4gPgo+ID4+ID4gMS4g
-QmFzZWQgb24gdGhpcyBkZXNjcmlwdGlvbiwgYW0gSSB0byB1bmRlcnN0YW5kIHRoYXQgYWZ0ZXIg
-ZG9pbmcgYQo+ID4+ID4gICAgY2dyb3VwbnMgdW5zaGFyZSwgJ21vdW50IC10IGNncm91cCBjZ3Jv
-dXAgL21udCcgYnkgZGVmYXVsdCB3aWxsCj4gPj4gPiAgICBzdGlsbCBtb3VudCB0aGUgZ2xvYmFs
-IHJvb3QgY2dyb3VwPyAgQW55IHBsYW5zIG9uICJjaGFuZ2luZyIgdGhhdD8KPiA+Pgo+ID4+IFRo
-aXMgaXMgc3VnZ2VzdGVkIGluIHRoZSAiUG9zc2libGUgRXh0ZW5zaW9ucyBvZiBDR1JPVVBOUyIg
-c2VjdGlvbi4KPiA+PiBNb3JlIGRldGFpbHMgYmVsb3cuCj4gPj4KPiA+PiA+ICAgIFdpbGwgYXR0
-ZW1wdHMgdG8gY2hhbmdlIHNldHRpbmdzIG9mIGEgY2dyb3VwIHdoaWNoIGlzIG5vdCB1bmRlcgo+
-ID4+ID4gICAgb3VyIGN1cnJlbnQgbnMgYmUgcmVqZWN0ZWQ/ICAoVGhhdCBzaG91bGQgYmUgZWFz
-eSB0byBkbyBnaXZlbiB5b3VyCj4gPj4gPiAgICBwYXRjaCAxLzUpLiAgU29ycnkgaWYgaXQncyBk
-b25lIGluIHRoZSBzZXQsIEknbSBqdW1waW5nIGFyb3VuZC4uLgo+ID4+ID4KPiA+Pgo+ID4+IEN1
-cnJlbnRseSwgb25seSAnY2dyb3VwX2F0dGFjaF90YXNrJywgJ2Nncm91cF9ta2RpcicgYW5kCj4g
-Pj4gJ2Nncm91cF9ybWRpcicgb2YgY2dyb3VwcyBvdXRzaWRlIG9mIGNncm91cG5zLXJvb3QgYXJl
-IHByZXZlbnRlZC4gVGhlCj4gPj4gcmVhZC93cml0ZSBvZiBhY3R1YWwgY2dyb3VwIHByb3BlcnRp
-ZXMgYXJlIG5vdCBwcmV2ZW50ZWQuIFVzdWFsCj4gPj4gcGVybWlzc2lvbiBjaGVja3MgY29udGlu
-dWUgdG8gYXBwbHkgZm9yIHRob3NlLiBJIHdhcyBob3BpbmcgdGhhdAo+ID4+IHNob3VsZCBiZSBl
-bm91Z2gsIGJ1dCBzZWUgbW9yZSBjb21tZW50cyB0b3dhcmRzIHRoZSBlbmQuCj4gPj4KPiA+PiA+
-IDIuIFdoYXQgd291bGQgYmUgdGhlIHJlcHJlY3Vzc2lvbnMgb2YgYWxsb3dpbmcgY2dyb3VwbnMg
-dW5zaGFyZSBzbwo+ID4+ID4gICAgbG9uZyBhcyB5b3UgaGF2ZSBuc19jYXBhYmxlKENBUF9TWVNf
-QURNSU4pIHRvIHRoZSB1c2VyX25zIHdoaWNoCj4gPj4gPiAgICBjcmVhdGVkIHlvdXIgY3VycmVu
-dCBucyBjZ3JvdXA/ICBJdCdkIGJlIGEgc2hhbWUgaWYgdGhhdCB3YXNuJ3QKPiA+PiA+ICAgIG9u
-IHRoZSByb2FkbWFwLgo+ID4+ID4KPiA+Pgo+ID4+IEl0cyBjZXJ0YWlubHkgb24gdGhlIHJvYWRt
-YXAsIGp1c3QgdGhhdCBzb21lIGxvZ2lzdGljcyB3ZXJlIG5vdCBjbGVhcgo+ID4+IGF0IHRoaXMg
-dGltZS4gQXMgcG9pbnRlZCBvdXQgYnkgQW5keSBMdXRvbWlyc2tpIG9uIFtQQVRDSCA1LzVdIG9m
-IHRoaXMKPiA+PiBzZXJpZXMsIGlmIHdlIGFsbG93IGNncm91cG5zIGNyZWF0aW9uIHRvIG5zX2Nh
-cGFibGUoQ0FQX1NZU19BRE1JTikKPiA+PiBwcm9jZXNzZXMsIHdlIG1heSBuZWVkIHNvbWUga2lu
-ZCBvZiBleHBsaWNpdCBwZXJtaXNzaW9uIGZyb20gdGhlCj4gPj4gY2dyb3VwIHN1YnN5c3RlbSB0
-byBhbGxvdyB0aGlzLiBPbmUgYXBwcm9hY2ggY291bGQgYmUgYW4gZXhwbGljaXQKPiA+Cj4gPiBT
-byBsb25nIGFzIHlvdSBkbyBuc19jYXBhYmxlKGNncm91cF9ucy0+dXNlcl9ucywgQ0FQX1NZU19B
-RE1JTikgSSB0aGluawo+ID4geW91J3JlIGZpbmUuCj4gPgo+ID4gVGhlIG9ubHkgcmVhbCBwcm9i
-bGVtIEkgY2FuIHRoaW5rIG9mIHdpdGggdW5zaGFyaW5nIGEgY2dyb3VwX25zIGlzIHRoYXQKPiA+
-IHlvdSBjb3VsZCBsb2NrIGEgc2V0dWlkLXJvb3QgYXBwbGljYXRpb24gc29tZXBsYWNlIGl0IHdh
-c24ndCBleHBlY3RpbmcuCj4gPiBUaGUgYWJvdmUgY2hlY2sgZ3VhcmFudGVlcyB0aGF0IHlvdSB3
-ZXJlIHByaXZpbGVnZWQgZW5vdWdoIHRoYXQgeW91J2QKPiA+IGJldHRlciBiZSB0cnVzdGVkIGlu
-IHRoaXMgdXNlciBuYW1lc3BhY2UuCj4gPgo+ID4gKFVubGVzcyB0aGVyZSBpcyBzb21lIHBvc3Np
-YmxlIGludGVyYWN0aW9uIEknbSBvdmVybG9va2luZykKPiAKPiBJIHRoaW5rIHRoYXQsIGlmIGl0
-J3MgZG9uZSB0aGlzIHdheSwgeW91J2QgaGF2ZSB0byB1bnNoYXJlIGNncm91cG5zCj4gYmVmb3Jl
-IHVuc2hhcmluZyB1c2VybnMsIHNpbmNlIHlvdSBmb3JmZWl0IHRoYXQgY2FwYWJpbGl0eSB3aGVu
-IHlvdQo+IHVuc2hhcmUgeW91ciB1c2VybnMuICBUaGF0IG1lYW5zIHRoYXQgdGhlIG5ldyBjZ3Jv
-dXBucyBlbmRzIHVwIGJlaW5nCj4gYXNzb2NpYXRlZCB3LyB0aGUgcm9vdCB1c2VybnMsIHdoaWNo
-IG1heSBub3QgYmUgd2hhdCB5b3Ugd2FudC4KPiAKPiBZb3UgY291bGQgdW5zaGFyZSBib3RoIG5h
-bWVzcGFjZXMgaW4gb25lIHN5c2NhbGwgYW5kIGdpdmUgdGhhdCBzb21lCj4gbWFnaWMgc2VtYW50
-aWNzLCBidXQgdGhhdCdzIGtpbmQgb2Ygd2VpcmQuICBJdCB3b3VsZCBiZSBuaWNlIGlmIHlvdQo+
-IGNvdWxkIHVuc2hhcmUgeW91ciB1c2VybnMgYW5kIHRlbXBvcmFyaWx5IHJldGFpbnMgY2FwcyBp
-biB0aGUgcGFyZW50LAo+IGJ1dCB0aGVyZSBpcyBubyBzdWNoIG1lY2hhbmlzbSByaWdodCBub3cu
-CgpIbSwgZ29vZCBwb2ludC4KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1m
-b3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9s
-aXN0aW5mby9jb250YWluZXJz
+
+The synchronous syncrhonize_rcu in switch_task_namespaces makes setns
+a sufficiently expensive system call that people have complained.
+
+Upon inspect nsproxy no longer needs rcu protection for remote reads.
+remote reads are rare.  So optimize for same process reads and write
+by switching using rask_lock instead.
+
+This yields a simpler to understand lock, and a faster setns system call.
+
+In particular this fixes a performance regression observed
+by Rafael David Tinoco <rafael.tinoco-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>.
+
+This is effectively a revert of Pavel Emelyanov's commit
+cf7b708c8d1d7a27736771bcf4c457b332b0f818 Make access to task's nsproxy lighter
+from 2007.  The race this originialy fixed no longer exists as
+do_notify_parent uses task_active_pid_ns(parent) instead of
+parent->nsproxy.
+
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ fs/namespace.c           |  6 +++---
+ fs/proc/proc_net.c       |  4 +++-
+ fs/proc_namespace.c      |  8 +++-----
+ include/linux/nsproxy.h  | 16 ++++++----------
+ ipc/namespace.c          |  6 +++---
+ kernel/nsproxy.c         | 15 ++++-----------
+ kernel/utsname.c         |  6 +++---
+ net/core/net_namespace.c | 10 ++++++----
+ 8 files changed, 31 insertions(+), 40 deletions(-)
+
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 182bc41cd887..7187d01329c3 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -2972,13 +2972,13 @@ static void *mntns_get(struct task_struct *task)
+ 	struct mnt_namespace *ns = NULL;
+ 	struct nsproxy *nsproxy;
+ 
+-	rcu_read_lock();
+-	nsproxy = task_nsproxy(task);
++	task_lock(task);
++	nsproxy = task->nsproxy;
+ 	if (nsproxy) {
+ 		ns = nsproxy->mnt_ns;
+ 		get_mnt_ns(ns);
+ 	}
+-	rcu_read_unlock();
++	task_unlock(task);
+ 
+ 	return ns;
+ }
+diff --git a/fs/proc/proc_net.c b/fs/proc/proc_net.c
+index 4677bb7dc7c2..a63af3e0a612 100644
+--- a/fs/proc/proc_net.c
++++ b/fs/proc/proc_net.c
+@@ -113,9 +113,11 @@ static struct net *get_proc_task_net(struct inode *dir)
+ 	rcu_read_lock();
+ 	task = pid_task(proc_pid(dir), PIDTYPE_PID);
+ 	if (task != NULL) {
+-		ns = task_nsproxy(task);
++		task_lock(task);
++		ns = task->nsproxy;
+ 		if (ns != NULL)
+ 			net = get_net(ns->net_ns);
++		task_unlock(task);
+ 	}
+ 	rcu_read_unlock();
+ 
+diff --git a/fs/proc_namespace.c b/fs/proc_namespace.c
+index 1a81373947f3..73ca1740d839 100644
+--- a/fs/proc_namespace.c
++++ b/fs/proc_namespace.c
+@@ -232,17 +232,15 @@ static int mounts_open_common(struct inode *inode, struct file *file,
+ 	if (!task)
+ 		goto err;
+ 
+-	rcu_read_lock();
+-	nsp = task_nsproxy(task);
++	task_lock(task);
++	nsp = task->nsproxy;
+ 	if (!nsp || !nsp->mnt_ns) {
+-		rcu_read_unlock();
++		task_unlock(task);
+ 		put_task_struct(task);
+ 		goto err;
+ 	}
+ 	ns = nsp->mnt_ns;
+ 	get_mnt_ns(ns);
+-	rcu_read_unlock();
+-	task_lock(task);
+ 	if (!task->fs) {
+ 		task_unlock(task);
+ 		put_task_struct(task);
+diff --git a/include/linux/nsproxy.h b/include/linux/nsproxy.h
+index b4ec59d159ac..35fa08fd7739 100644
+--- a/include/linux/nsproxy.h
++++ b/include/linux/nsproxy.h
+@@ -40,32 +40,28 @@ extern struct nsproxy init_nsproxy;
+  * the namespaces access rules are:
+  *
+  *  1. only current task is allowed to change tsk->nsproxy pointer or
+- *     any pointer on the nsproxy itself
++ *     any pointer on the nsproxy itself.  Current must hold the task_lock
++ *     when changing tsk->nsproxy.
+  *
+  *  2. when accessing (i.e. reading) current task's namespaces - no
+  *     precautions should be taken - just dereference the pointers
+  *
+  *  3. the access to other task namespaces is performed like this
+- *     rcu_read_lock();
+- *     nsproxy = task_nsproxy(tsk);
++ *     task_lock(task);
++ *     nsproxy = task->nsproxy;
+  *     if (nsproxy != NULL) {
+  *             / *
+  *               * work with the namespaces here
+  *               * e.g. get the reference on one of them
+  *               * /
+  *     } / *
+- *         * NULL task_nsproxy() means that this task is
++ *         * NULL task->nsproxy means that this task is
+  *         * almost dead (zombie)
+  *         * /
+- *     rcu_read_unlock();
++ *     task_unlock(task);
+  *
+  */
+ 
+-static inline struct nsproxy *task_nsproxy(struct task_struct *tsk)
+-{
+-	return rcu_dereference(tsk->nsproxy);
+-}
+-
+ int copy_namespaces(unsigned long flags, struct task_struct *tsk);
+ void exit_task_namespaces(struct task_struct *tsk);
+ void switch_task_namespaces(struct task_struct *tsk, struct nsproxy *new);
+diff --git a/ipc/namespace.c b/ipc/namespace.c
+index 59451c1e214d..b54468e48e32 100644
+--- a/ipc/namespace.c
++++ b/ipc/namespace.c
+@@ -154,11 +154,11 @@ static void *ipcns_get(struct task_struct *task)
+ 	struct ipc_namespace *ns = NULL;
+ 	struct nsproxy *nsproxy;
+ 
+-	rcu_read_lock();
+-	nsproxy = task_nsproxy(task);
++	task_lock(task);
++	nsproxy = task->nsproxy;
+ 	if (nsproxy)
+ 		ns = get_ipc_ns(nsproxy->ipc_ns);
+-	rcu_read_unlock();
++	task_unlock(task);
+ 
+ 	return ns;
+ }
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index 8e7811086b82..ef42d0ab3115 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -204,20 +204,13 @@ void switch_task_namespaces(struct task_struct *p, struct nsproxy *new)
+ 
+ 	might_sleep();
+ 
++	task_lock(p);
+ 	ns = p->nsproxy;
++	p->nsproxy = new;
++	task_unlock(p);
+ 
+-	rcu_assign_pointer(p->nsproxy, new);
+-
+-	if (ns && atomic_dec_and_test(&ns->count)) {
+-		/*
+-		 * wait for others to get what they want from this nsproxy.
+-		 *
+-		 * cannot release this nsproxy via the call_rcu() since
+-		 * put_mnt_ns() will want to sleep
+-		 */
+-		synchronize_rcu();
++	if (ns && atomic_dec_and_test(&ns->count))
+ 		free_nsproxy(ns);
+-	}
+ }
+ 
+ void exit_task_namespaces(struct task_struct *p)
+diff --git a/kernel/utsname.c b/kernel/utsname.c
+index fd393124e507..883aaaa7de8a 100644
+--- a/kernel/utsname.c
++++ b/kernel/utsname.c
+@@ -93,13 +93,13 @@ static void *utsns_get(struct task_struct *task)
+ 	struct uts_namespace *ns = NULL;
+ 	struct nsproxy *nsproxy;
+ 
+-	rcu_read_lock();
+-	nsproxy = task_nsproxy(task);
++	task_lock(task);
++	nsproxy = task->nsproxy;
+ 	if (nsproxy) {
+ 		ns = nsproxy->uts_ns;
+ 		get_uts_ns(ns);
+ 	}
+-	rcu_read_unlock();
++	task_unlock(task);
+ 
+ 	return ns;
+ }
+diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
+index 85b62691f4f2..7c6b51a58968 100644
+--- a/net/core/net_namespace.c
++++ b/net/core/net_namespace.c
+@@ -373,9 +373,11 @@ struct net *get_net_ns_by_pid(pid_t pid)
+ 	tsk = find_task_by_vpid(pid);
+ 	if (tsk) {
+ 		struct nsproxy *nsproxy;
+-		nsproxy = task_nsproxy(tsk);
++		task_lock(tsk);
++		nsproxy = tsk->nsproxy;
+ 		if (nsproxy)
+ 			net = get_net(nsproxy->net_ns);
++		task_unlock(tsk);
+ 	}
+ 	rcu_read_unlock();
+ 	return net;
+@@ -632,11 +634,11 @@ static void *netns_get(struct task_struct *task)
+ 	struct net *net = NULL;
+ 	struct nsproxy *nsproxy;
+ 
+-	rcu_read_lock();
+-	nsproxy = task_nsproxy(task);
++	task_lock(task);
++	nsproxy = task->nsproxy;
+ 	if (nsproxy)
+ 		net = get_net(nsproxy->net_ns);
+-	rcu_read_unlock();
++	task_unlock(task);
+ 
+ 	return net;
+ }
+-- 
+1.9.1
