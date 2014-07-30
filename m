@@ -1,10 +1,13 @@
-From: MAILER-DAEMON-MLvymp07NfQQrrorzV6ljw@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Thu, 31 Jul 2014 02:08:16 +1000 (EST)
-Message-ID: <20140730160816.E78E422A08@mailhost.curriculum.edu.au>
+From: <postmaster-N3c0jytTK6lO0n7uQEQMm4CZgX+1HZI1@public.gmane.org>
+Subject: Undeliverable: Account information.
+Date: Wed, 30 Jul 2014 22:01:10 +0000
+Message-ID: <e40d7feb-69fd-435e-8e2b-0229e30f8c92@HKXPR03MB456.apcprd03.prod.outlook.com>
+References: <60867227.12337897480123@portal.obeikan.com.sa>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1427592328380153392=="
+Content-Type: multipart/mixed; boundary="===============4833867963408849432=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Language: en-US
+In-Reply-To: <60867227.12337897480123-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,88 +20,140 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
-
---===============1427592328380153392==
+--===============4833867963408849432==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="85D962B9D3.1406736496/mailhost.curriculum.edu.au"
+	boundary="d8a84df2-3f3d-4921-b88d-c249470bdb37"
+Content-Language: en-US
 
-This is a MIME-encapsulated message.
+--d8a84df2-3f3d-4921-b88d-c249470bdb37
+Content-Type: text/plain; charset="Windows-1252"
+Content-Transfer-Encoding: quoted-printable
 
---85D962B9D3.1406736496/mailhost.curriculum.edu.au
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+Delivery has failed to these recipients or groups:
 
-This is the mail system at host mailhost.curriculum.edu.au.
+mogadiscio-rqPZbr3A01oQL/OqXoauh4dd74u8MsAO@public.gmane.org<mailto:mogadiscio-rqPZbr3A01oQL/OqXoauh4dd74u8MsAO@public.gmane.org>
+The email address you specified couldn't be found or is invalid. It may be =
+due to a bad entry in your Outlook or Outlook Web App recipient AutoComplet=
+e cache. Use the steps below to delete the entry from the cache:
 
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
+  1.  Click New mail.
+  2.  In the To field start typing the recipient's name or email address un=
+til the recipient appears in the drop-down list.
+  3.  Use the DOWN ARROW and UP ARROW keys to select the recipient, and the=
+n press the DELETE key.
 
-For further assistance, please send mail to postmaster.
+Then resend your message =96 delete and retype the recipient=92s name or e-=
+mail address before sending it.
 
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
+For more tips on how to resolve this issue see DSN code 5.1.1 in Exchange O=
+nline<http://go.microsoft.com/fwlink/?LinkId=3D389363>.
 
-                   The mail system
 
-<edumail.vic.gov.au-CaCRP0HfvZa6c6uEtOJ/EA@public.gmane.org>: delivery temporarily suspended: connect to
-    172.18.12.8[172.18.12.8]:25: No route to host
 
---85D962B9D3.1406736496/mailhost.curriculum.edu.au
-Content-Description: Delivery report
-Content-Type: message/delivery-status
 
-Reporting-MTA: dns; mailhost.curriculum.edu.au
-X-Postfix-Queue-ID: 85D962B9D3
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Sat, 26 Jul 2014 01:10:09 +1000 (EST)
 
-Final-Recipient: rfc822; edumail.vic.gov.au-CaCRP0HfvZa6c6uEtOJ/EA@public.gmane.org
-Original-Recipient: rfc822;edumail.vic.gov.au-CaCRP0HfvZa6c6uEtOJ/EA@public.gmane.org
-Action: failed
-Status: 4.4.1
-Diagnostic-Code: X-Postfix; delivery temporarily suspended: connect to
-    172.18.12.8[172.18.12.8]:25: No route to host
 
---85D962B9D3.1406736496/mailhost.curriculum.edu.au
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
 
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from portal.obeikan.com.sa (unknown [10.0.254.9])
-	by mailhost.curriculum.edu.au (Postfix) with ESMTP id 85D962B9D3
-	for <edumail.vic.gov.au-CaCRP0HfvZa6c6uEtOJ/EA@public.gmane.org>; Sat, 26 Jul 2014 01:10:09 +1000 (EST)
-Received: from [184.154.100.154] by portal.obeikan.com.sa id DXrKJBjErGMz with SMTP; Fri, 25 Jul 2014 18:09:48 +0300
-Date: Fri, 25 Jul 2014 18:09:48 +0300
-From: "Maria" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.1.90.8) Home
+
+Diagnostic information for administrators:
+
+Generating server: HKXPR03MB456.apcprd03.prod.outlook.com
+
+mogadiscio-rqPZbr3A01oQL/OqXoauh4dd74u8MsAO@public.gmane.org
+Remote Server returned '550 5.1.1 RESOLVER.ADR.RecipNotFound; not found'
+
+Original message headers:
+
+Received: from SIXPR03CA001.apcprd03.prod.outlook.com (10.242.58.21) by
+ HKXPR03MB456.apcprd03.prod.outlook.com (10.242.123.20) with Microsoft SMTP
+ Server (TLS) id 15.0.995.14; Wed, 30 Jul 2014 22:01:10 +0000
+Received: from AM1FFO11FD037.protection.gbl (2a01:111:f400:7e00::187) by
+ SIXPR03CA001.outlook.office365.com (2a01:111:e400:2000::21) with Microsoft
+ SMTP Server (TLS) id 15.0.995.14 via Frontend Transport; Wed, 30 Jul 2014
+ 22:01:09 +0000
+Received: from portal.obeikan.com.sa (184.154.100.154) by
+ AM1FFO11FD037.mail.protection.outlook.com (10.174.64.226) with Microsoft S=
+MTP
+ Server id 15.0.980.11 via Frontend Transport; Wed, 30 Jul 2014 22:01:05 +0=
+000
+Received: from [184.154.100.154] by portal.obeikan.com.sa id RUZ0ZsKlOICT w=
+ith SMTP; Thu, 31 Jul 2014 00:59:14 +0300
+Date: Thu, 31 Jul 2014 00:59:14 +0300
+From: Donya <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.04.9) Business
 X-Priority: 3 (Normal)
-Message-ID: <75531886.88504347519443-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
-To: <edumail.vic.gov.au-CaCRP0HfvZa6c6uEtOJ/EA@public.gmane.org>
+Message-ID: <60867227.12337897480123-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
+To: <mogadiscio-rqPZbr3A01oQL/OqXoauh4dd74u8MsAO@public.gmane.org>
 Subject: Account information.
 MIME-Version: 1.0
-
-Content-type text/plain charset= iso-8859-1
+Content-Type: text/plain; charset=3D"windows-1252"
 Content-Transfer-Encoding: 8bit
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-EOPAttributedMessage: 0
+X-Forefront-Antispam-Report: CIP:184.154.100.154;CTRY:US;IPV:NLI;EFV:NLI;
+X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:
 
 
-          
+--d8a84df2-3f3d-4921-b88d-c249470bdb37
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;HKXPR03MB456.apcprd03.prod.outlook.com
+Received-From-MTA: dns;portal.obeikan.com.sa
+Arrival-Date: Wed, 30 Jul 2014 22:01:10 +0000
+
+Final-Recipient: rfc822;mogadiscio-rqPZbr3A01oQL/OqXoauh4dd74u8MsAO@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
+
+
+--d8a84df2-3f3d-4921-b88d-c249470bdb37
+Content-Type: message/rfc822
+
+Received: from SIXPR03CA001.apcprd03.prod.outlook.com (10.242.58.21) by
+ HKXPR03MB456.apcprd03.prod.outlook.com (10.242.123.20) with Microsoft SMTP
+ Server (TLS) id 15.0.995.14; Wed, 30 Jul 2014 22:01:10 +0000
+Received: from AM1FFO11FD037.protection.gbl (2a01:111:f400:7e00::187) by
+ SIXPR03CA001.outlook.office365.com (2a01:111:e400:2000::21) with Microsoft
+ SMTP Server (TLS) id 15.0.995.14 via Frontend Transport; Wed, 30 Jul 2014
+ 22:01:09 +0000
+Received: from portal.obeikan.com.sa (184.154.100.154) by
+ AM1FFO11FD037.mail.protection.outlook.com (10.174.64.226) with Microsoft SMTP
+ Server id 15.0.980.11 via Frontend Transport; Wed, 30 Jul 2014 22:01:05 +0000
+Received: from [184.154.100.154] by portal.obeikan.com.sa id RUZ0ZsKlOICT with SMTP; Thu, 31 Jul 2014 00:59:14 +0300
+Date: Thu, 31 Jul 2014 00:59:14 +0300
+From: Donya <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.04.9) Business
+X-Priority: 3 (Normal)
+Message-ID: <60867227.12337897480123-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
+To: <mogadiscio-rqPZbr3A01oQL/OqXoauh4dd74u8MsAO@public.gmane.org>
+Subject: Account information.
+MIME-Version: 1.0
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-EOPAttributedMessage: 0
+X-Forefront-Antispam-Report: CIP:184.154.100.154;CTRY:US;IPV:NLI;EFV:NLI;
+X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:
+
+
+            =20
 Hello,
-     
-Information for the calculations can be downloaded at.
-http://www.maxilovera.com.ar/Payment.zip?DqyX0qO=edumail.vic.gov.au-CaCRP0HfvZa6c6uEtOJ/EA@public.gmane.org
+    =20
+In your account in accordance with the contract was amended, please pay the=
+ debt.
+http://10oktober.at/Details.zip?pW6RGL=3Dmogadiscio-rqPZbr3A01oQL/OqXoauh4dd74u8MsAO@public.gmane.org
+
+
+=3D=3D
+Tel./Fax.: +6182825194
+Shand Sybil
 
 
 
-==
-Tel./Fax.: +6172413858
-Krzak Dana
+--d8a84df2-3f3d-4921-b88d-c249470bdb37--
 
-
-
---85D962B9D3.1406736496/mailhost.curriculum.edu.au--
-
---===============1427592328380153392==
+--===============4833867963408849432==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -108,4 +163,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1427592328380153392==--
+--===============4833867963408849432==--
