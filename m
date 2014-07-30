@@ -1,8 +1,8 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [REVIEW][PATCH 1/5] mnt: Only change user settable mount flags in
-	remount
-Date: Tue, 29 Jul 2014 20:52:35 -0700
-Message-ID: <87ha1zjyf0.fsf_-_@x220.int.ebiederm.org>
+Subject: [REVIEW][PATCH 2/5] mnt: Move the test for MNT_LOCK_READONLY from
+	change_mount_flags into do_remount
+Date: Tue, 29 Jul 2014 20:53:10 -0700
+Message-ID: <87bns7jye1.fsf_-_@x220.int.ebiederm.org>
 References: <87fvih4a99.fsf@x220.int.ebiederm.org>
 	<CAObL_7FfacSTdO=JEfYyqQrp8qOSob6qoWrGN=rSM5t9ckkTWg@mail.gmail.com>
 	<8761injfj9.fsf_-_@x220.int.ebiederm.org>
@@ -38,51 +38,50 @@ Cc: Andrew Lutomirski <andy-RHosVwM/Cj8@public.gmane.org>, security-DgEjT+Ai2ygd
 List-Id: containers.vger.kernel.org
 
 
-Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org> discovered that by remounting a
-read-only bind mount read-only in a user namespace the
-MNT_LOCK_READONLY bit would be cleared, allowing an unprivileged user
-to the remount a read-only mount read-write.
+There are no races as locked mount flags are guaranteed to never change.
 
-Correct this by replacing the mask of mount flags to preserve
-with a mask of mount flags that may be changed, and preserve
-all others.   This ensures that any future bugs with this mask and
-remount will fail in an easy to detect way where new mount flags
-simply won't change.
+Moving the test into do_remount makes it more visible, and ensures all
+filesystem remounts pass the MNT_LOCK_READONLY permission check.  This
+second case is not an issue today as filesystem remounts are guarded
+by capable(CAP_DAC_ADMIN) and thus will always fail in less privileged
+mount namespaces, but it could become an issue in the future.
 
 Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/namespace.c        | 2 +-
- include/linux/mount.h | 4 +++-
- 2 files changed, 4 insertions(+), 2 deletions(-)
+ fs/namespace.c | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
 
 diff --git a/fs/namespace.c b/fs/namespace.c
-index 7187d01329c3..cb40449ea0df 100644
+index cb40449ea0df..1105a577a14f 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -1937,7 +1937,7 @@ static int do_remount(struct path *path, int flags, int mnt_flags,
- 		err = do_remount_sb(sb, flags, data, 0);
- 	if (!err) {
- 		lock_mount_hash();
--		mnt_flags |= mnt->mnt.mnt_flags & MNT_PROPAGATION_MASK;
-+		mnt_flags |= mnt->mnt.mnt_flags & ~MNT_USER_SETTABLE_MASK;
- 		mnt->mnt.mnt_flags = mnt_flags;
- 		touch_mnt_namespace(mnt->mnt_ns);
- 		unlock_mount_hash();
-diff --git a/include/linux/mount.h b/include/linux/mount.h
-index 839bac270904..b637a89e1fae 100644
---- a/include/linux/mount.h
-+++ b/include/linux/mount.h
-@@ -42,7 +42,9 @@ struct mnt_namespace;
-  * flag, consider how it interacts with shared mounts.
-  */
- #define MNT_SHARED_MASK	(MNT_UNBINDABLE)
--#define MNT_PROPAGATION_MASK	(MNT_SHARED | MNT_UNBINDABLE)
-+#define MNT_USER_SETTABLE_MASK  (MNT_NOSUID | MNT_NODEV | MNT_NOEXEC \
-+				 | MNT_NOATIME | MNT_NODIRATIME | MNT_RELATIME \
-+				 | MNT_READONLY)
+@@ -1896,9 +1896,6 @@ static int change_mount_flags(struct vfsmount *mnt, int ms_flags)
+ 	if (readonly_request == __mnt_is_readonly(mnt))
+ 		return 0;
  
- #define MNT_INTERNAL_FLAGS (MNT_SHARED | MNT_WRITE_HOLD | MNT_INTERNAL | \
- 			    MNT_DOOMED | MNT_SYNC_UMOUNT | MNT_MARKED)
+-	if (mnt->mnt_flags & MNT_LOCK_READONLY)
+-		return -EPERM;
+-
+ 	if (readonly_request)
+ 		error = mnt_make_readonly(real_mount(mnt));
+ 	else
+@@ -1924,6 +1921,16 @@ static int do_remount(struct path *path, int flags, int mnt_flags,
+ 	if (path->dentry != path->mnt->mnt_root)
+ 		return -EINVAL;
+ 
++	/* Don't allow changing of locked mnt flags.
++	 *
++	 * No locks need to be held here while testing the various
++	 * MNT_LOCK flags because those flags can never be cleared
++	 * once they are set.
++	 */
++	if ((mnt->mnt.mnt_flags & MNT_LOCK_READONLY) &&
++	    !(mnt_flags & MNT_READONLY)) {
++		return -EPERM;
++	}
+ 	err = security_sb_remount(sb, data);
+ 	if (err)
+ 		return err;
 -- 
 1.9.1
