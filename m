@@ -1,13 +1,16 @@
-From: <postmaster-lRPTJH6ChWAQrrorzV6ljw@public.gmane.org>
-Subject: Undeliverable: Information on the calculation.
-Date: Thu, 31 Jul 2014 00:05:32 +0000
-Message-ID: <55e13b5c-9d4e-490f-94fb-014116a6c16f@AM1FFO11HUB061.mail.protection.outlook.com>
-References: <006701cfac52$d9e51b00$0500a8c0@portal.obeikan.com.sa>
+From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/5] sched: new clone flag CLONE_NEWCGROUP for cgroup
+	namespace
+Date: Thu, 31 Jul 2014 12:48:43 -0700
+Message-ID: <CAGr1F2FAiSFR_Y3t1=eBVoAtJvh4m=cNUi+vG146nDkgtBjisQ__18816.7667286054$1406836155$gmane$org@mail.gmail.com>
+References: <1405626731-12220-1-git-send-email-adityakali@google.com>
+	<1405626731-12220-3-git-send-email-adityakali@google.com>
+	<20140724170119.GR26600@ubuntumail>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============7839683277279675245=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-US
-In-Reply-To: <006701cfac52$d9e51b00$0500a8c0-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
+In-Reply-To: <20140724170119.GR26600@ubuntumail>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,140 +20,108 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
---===============7839683277279675245==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="723a9af3-86a3-44db-a14f-5eaf96011742"
-Content-Language: en-US
+On Thu, Jul 24, 2014 at 10:01 AM, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> wrote:
+> Quoting Aditya Kali (adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org):
+>> CLONE_NEWCGROUP will be used to create new cgroup namespace.
+>>
+>
+> This is fine and I'm not looking to bikeshed, but am wondering - did
+> you consider any other ways beside unshare (i.e. a new mount option
+> to cgroupfs)?  If so, do you have a list of the downsides of those?
+> (I mainly ask bc clone flags are still a scarce commodity)
+>
 
---723a9af3-86a3-44db-a14f-5eaf96011742
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+I did consider couple of other ways:
 
-SYDEXCH2013P01.sydney.ssw.com.au rejected your message to the following ema=
-il addresses:
+(1) having a cgroup.ns_root (or something) cgroup file. If this value
+is '1', it would mean that all processes it and its descendant cgroups
+will have their cgroup paths in /proc/self/cgroup terminated at this
+cgroup.
+ For ex:
+[A] --> [B] --> C
+    | --> [D] --> E
 
-eaxrticularitie-lRPTJH6ChWAQrrorzV6ljw@public.gmane.org<mailto:eaxrticularitie-lRPTJH6ChWAQrrorzV6ljw@public.gmane.org>
+[A], [B] and [D] has cgroup.ns_root = 1.
+* all processes in cgroup C & E will see their cgroup path as /C and
+/E respectively
+* all processes in cgroup B & D will see their own cgroup path as /
 
-SYDEXCH2013P01.sydney.ssw.com.au gave this error:
-User unknown
+In this model, its easy to know what to show if process is looking at
+its own cgroup paths (/proc/self/cgroup). It gets tricky when you are
+looking at other process's /proc/<pid>/cgroup. We may be able to come
+up with some hacky way read correct value, but depending on the
+cgroupfs mount, it may not make sense.
+One other major drawback of this approach is that "every" process in
+the cgroup will now get a restricted view. i.e., you cannot change
+cgroups without affecting your view. And this is undesirable for
+administrative processes.
 
-The email address you entered couldn't be found. Check the recipient's emai=
-l address then try to resend the message. For more tips to resolve this iss=
-ue see DSN code 5.1.1 in Exchange Online<http://go.microsoft.com/fwlink/?Li=
-nkId=3D389363>. If the problem continues contact your help desk.
+(2) Another idea that I didn't pursue further (and is a bit hacky as
+above) was having cgroup.ns_procs (like cgroup.procs, but all the pids
+in cgroup.ns_procs will have their /proc/self/cgroup restricted).
+Writing a pid to cgroup.ns_procs implies that you are writing it to
+cgroup.procs too. But, not vise-versa. So, you could move yourself in
+another cgroup by writing your pid in cgroup.procs, but not in
+cgroup.ns_procs, thus preventing from getting "rooted". I This was to
+solve administrative process issue in the above appraoch. But I think
+this is very clunky too and I find semantics for this approach to be
+non-intuitive. It almost looks like moving towards a separate "ns"
+subsystem. But as we already know, its a path to failure.
 
+I didn't think of using a mount option. I imagine the mount option
+(something like -o root=/bathjobs/container_1) could be used to
+restrict the visibility of cgroupfs inside the container's mount
+namespace. i.e., the value you read from /proc/<pid>/cgroup now
+depends on what mount namespace you are in. Its similar to cgroup
+namespace, but just that the cgroupns_root is now stored in the
+'struct mnt_namespace' instead of a separate 'struct
+cgroup_namespace'. But, since mount namespace on creation inherits
+mounts from its parent, the first cgroupfs mount in a mount namespace
+is now treated specially. Also, its not possible to restrict cgroups
+without mount namespace now. This is interesting and may not be too
+bad. I am willing to give this a try. But I feel the cgroup namespace
+approach fits well in-line with other namespaces where it does one
+thing - virtualize the view of /proc/<pid>/cgroup file for processes
+inside the namespace. The semantics are more intuitive as they are
+similar to other namespaces.
 
+Thanks,
 
-
-
-
-
-Diagnostic information for administrators:
-
-Generating server: AM1FFO11HUB061.mail.protection.outlook.com
-
-eaxrticularitie-lRPTJH6ChWAQrrorzV6ljw@public.gmane.org
-SYDEXCH2013P01.sydney.ssw.com.au
-Remote Server returned '550 5.1.1 User unknown'
-
-Original message headers:
-
-Received: from AM1FFO11FD010.protection.gbl (10.174.64.33) by
- AM1FFO11HUB061.protection.gbl (10.174.64.171) with Microsoft SMTP Server
- (TLS) id 15.0.980.11; Thu, 31 Jul 2014 00:05:22 +0000
-Received: from portal.obeikan.com.sa (184.154.100.154) by
- AM1FFO11FD010.mail.protection.outlook.com (10.174.65.99) with Microsoft SM=
-TP
- Server id 15.0.980.11 via Frontend Transport; Thu, 31 Jul 2014 00:05:21 +0=
-000
-Received: from [184.154.100.154] by portal.obeikan.com.sa id ucyYfqLd8n; Th=
-u, 31 Jul 2014 03:03:28 +0300
-Message-ID: <006701cfac52$d9e51b00$0500a8c0-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <eaxrticularitie-lRPTJH6ChWAQrrorzV6ljw@public.gmane.org>
-Subject: Information on the calculation.
-Date: Thu, 31 Jul 2014 03:03:28 +0300
-MIME-Version: 1.0
-Content-Type: text/plain; charset=3D"windows-1252"
-Content-Transfer-Encoding: 8bit
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-EOPAttributedMessage: 0
-X-Forefront-Antispam-Report:
-        CIP:184.154.100.154;CTRY:US;IPV:NLI;EFV:NLI;SFV:SPM;SFS:(6009001)(4=
-89007)(199002)(189002)(6262002)(48214007)(20776003)(54356999)(19580395003)(=
-2351001)(558084003)(19625735002)(33646002)(47776003)(81342001)(92726001)(10=
-6466001)(44976005)(87836001)(15202345003)(77982001)(23746002)(50466002)(956=
-66004)(50986999)(64706001)(77096002)(21056001)(99396002)(19580405001)(86362=
-001)(92566001)(107886001)(31966008)(85852003)(105606002)(102836001)(4396001=
-)(110136001)(229853001)(46102001)(85306003)(74662001)(15395725005)(509001);=
-DIR:INB;SFP:;SCL:5;SRVR:AM1FFO11HUB061;H:portal.obeikan.com.sa;FPR:;MLV:ovr=
-;PTR:portal.obeikan.com.sa;A:1;MX:3;UriScan:(84279437001);LANG:en;
-X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:
-Received-SPF: Fail (: domain of lists.linux-foundation.org does not designa=
-te
- 184.154.100.154 as permitted sender) receiver=3D; client-ip=3D184.154.100.=
-154;
- helo=3Dportal.obeikan.com.sa;
-Authentication-Results: spf=3Dfail (sender IP is 184.154.100.154)
- smtp.mailfrom=3Dcontainers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org;
-
-
---723a9af3-86a3-44db-a14f-5eaf96011742
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns;AM1FFO11HUB061.mail.protection.outlook.com
-Received-From-MTA: dns;portal.obeikan.com.sa
-Arrival-Date: Thu, 31 Jul 2014 00:05:22 +0000
-
-Final-Recipient: rfc822;eaxrticularitie-lRPTJH6ChWAQrrorzV6ljw@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 User unknown
-Remote-MTA: dns;SYDEXCH2013P01.sydney.ssw.com.au
+>> Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+>
+> Acked-by: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+>
+>> ---
+>>  include/uapi/linux/sched.h | 3 +--
+>>  1 file changed, 1 insertion(+), 2 deletions(-)
+>>
+>> diff --git a/include/uapi/linux/sched.h b/include/uapi/linux/sched.h
+>> index 34f9d73..2f90d00 100644
+>> --- a/include/uapi/linux/sched.h
+>> +++ b/include/uapi/linux/sched.h
+>> @@ -21,8 +21,7 @@
+>>  #define CLONE_DETACHED               0x00400000      /* Unused, ignored */
+>>  #define CLONE_UNTRACED               0x00800000      /* set if the tracing process can't force CLONE_PTRACE on this clone */
+>>  #define CLONE_CHILD_SETTID   0x01000000      /* set the TID in the child */
+>> -/* 0x02000000 was previously the unused CLONE_STOPPED (Start in stopped state)
+>> -   and is now available for re-use. */
+>> +#define CLONE_NEWCGROUP              0x02000000      /* New cgroup namespace */
+>>  #define CLONE_NEWUTS         0x04000000      /* New utsname group? */
+>>  #define CLONE_NEWIPC         0x08000000      /* New ipcs */
+>>  #define CLONE_NEWUSER                0x10000000      /* New user namespace */
+>> --
+>> 2.0.0.526.g5318336
+>>
+>> _______________________________________________
+>> Containers mailing list
+>> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+>> https://lists.linuxfoundation.org/mailman/listinfo/containers
 
 
---723a9af3-86a3-44db-a14f-5eaf96011742
-Content-Type: text/rfc822-headers
 
-Received: from AM1FFO11FD010.protection.gbl (10.174.64.33) by
- AM1FFO11HUB061.protection.gbl (10.174.64.171) with Microsoft SMTP Server
- (TLS) id 15.0.980.11; Thu, 31 Jul 2014 00:05:22 +0000
-Received: from portal.obeikan.com.sa (184.154.100.154) by
- AM1FFO11FD010.mail.protection.outlook.com (10.174.65.99) with Microsoft SMTP
- Server id 15.0.980.11 via Frontend Transport; Thu, 31 Jul 2014 00:05:21 +0000
-Received: from [184.154.100.154] by portal.obeikan.com.sa id ucyYfqLd8n; Thu, 31 Jul 2014 03:03:28 +0300
-Message-ID: <006701cfac52$d9e51b00$0500a8c0-MmIyCnPGEFDAFmtwL2SGOwOkpG7+uPjq@public.gmane.org>
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <eaxrticularitie-lRPTJH6ChWAQrrorzV6ljw@public.gmane.org>
-Subject: Information on the calculation.
-Date: Thu, 31 Jul 2014 03:03:28 +0300
-MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: 8bit
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-EOPAttributedMessage: 0
-X-Forefront-Antispam-Report:
-	CIP:184.154.100.154;CTRY:US;IPV:NLI;EFV:NLI;SFV:SPM;SFS:(6009001)(489007)(199002)(189002)(6262002)(48214007)(20776003)(54356999)(19580395003)(2351001)(558084003)(19625735002)(33646002)(47776003)(81342001)(92726001)(106466001)(44976005)(87836001)(15202345003)(77982001)(23746002)(50466002)(95666004)(50986999)(64706001)(77096002)(21056001)(99396002)(19580405001)(86362001)(92566001)(107886001)(31966008)(85852003)(105606002)(102836001)(4396001)(110136001)(229853001)(46102001)(85306003)(74662001)(15395725005)(509001);DIR:INB;SFP:;SCL:5;SRVR:AM1FFO11HUB061;H:portal.obeikan.com.sa;FPR:;MLV:ovr;PTR:portal.obeikan.com.sa;A:1;MX:3;UriScan:(84279437001);LANG:en;
-X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:
-Received-SPF: Fail (: domain of lists.linux-foundation.org does not designate
- 184.154.100.154 as permitted sender) receiver=; client-ip=184.154.100.154;
- helo=portal.obeikan.com.sa;
-Authentication-Results: spf=fail (sender IP is 184.154.100.154)
- smtp.mailfrom=containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org; 
-
---723a9af3-86a3-44db-a14f-5eaf96011742--
-
---===============7839683277279675245==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============7839683277279675245==--
+-- 
+Aditya
