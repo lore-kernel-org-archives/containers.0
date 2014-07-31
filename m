@@ -1,16 +1,12 @@
-From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/5] sched: new clone flag CLONE_NEWCGROUP for cgroup
-	namespace
-Date: Thu, 31 Jul 2014 12:48:43 -0700
-Message-ID: <CAGr1F2FAiSFR_Y3t1=eBVoAtJvh4m=cNUi+vG146nDkgtBjisQ__18816.7667286054$1406836155$gmane$org@mail.gmail.com>
-References: <1405626731-12220-1-git-send-email-adityakali@google.com>
-	<1405626731-12220-3-git-send-email-adityakali@google.com>
-	<20140724170119.GR26600@ubuntumail>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: [REVIEW][PATCH] NFS: Fix /proc/fs/nfsfs/servers and
+	/proc/fs/nfsfs/volumes
+Date: Thu, 31 Jul 2014 13:18:45 -0700
+Message-ID: <87mwbpe0yi.fsf__28705.1747939133$1406838170$gmane$org@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140724170119.GR26600@ubuntumail>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,108 +16,294 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Trond Myklebust <trond.myklebust-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org>, Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Jul 24, 2014 at 10:01 AM, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> wrote:
-> Quoting Aditya Kali (adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org):
->> CLONE_NEWCGROUP will be used to create new cgroup namespace.
->>
->
-> This is fine and I'm not looking to bikeshed, but am wondering - did
-> you consider any other ways beside unshare (i.e. a new mount option
-> to cgroupfs)?  If so, do you have a list of the downsides of those?
-> (I mainly ask bc clone flags are still a scarce commodity)
->
 
-I did consider couple of other ways:
+The usage of pid_ns->child_reaper->nsproxy->net_ns in
+nfs_server_list_open and nfs_client_list_open is not safe.
 
-(1) having a cgroup.ns_root (or something) cgroup file. If this value
-is '1', it would mean that all processes it and its descendant cgroups
-will have their cgroup paths in /proc/self/cgroup terminated at this
-cgroup.
- For ex:
-[A] --> [B] --> C
-    | --> [D] --> E
+/proc for a pid namespace can remain mounted after the all of the
+process in that pid namespace have exited.  There are also times
+before the initial process in a pid namespace has started or after the
+initial process in a pid namespace has exited where
+pid_ns->child_reaper can be NULL or stale.  Making the idiom
+pid_ns->child_reaper->nsproxy a double whammy of problems.
 
-[A], [B] and [D] has cgroup.ns_root = 1.
-* all processes in cgroup C & E will see their cgroup path as /C and
-/E respectively
-* all processes in cgroup B & D will see their own cgroup path as /
+Luckily all that needs to happen is to move /proc/fs/nfsfs/servers and
+/proc/fs/nfsfs/volumes under /proc/net to /proc/net/nfsfs/servers and
+/proc/net/nfsfs/volumes and add a symlink from the original location,
+and to use seq_open_net as it has been designed.
 
-In this model, its easy to know what to show if process is looking at
-its own cgroup paths (/proc/self/cgroup). It gets tricky when you are
-looking at other process's /proc/<pid>/cgroup. We may be able to come
-up with some hacky way read correct value, but depending on the
-cgroupfs mount, it may not make sense.
-One other major drawback of this approach is that "every" process in
-the cgroup will now get a restricted view. i.e., you cannot change
-cgroups without affecting your view. And this is undesirable for
-administrative processes.
+Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Trond Myklebust <trond.myklebust-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org>
+Cc: Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
 
-(2) Another idea that I didn't pursue further (and is a bit hacky as
-above) was having cgroup.ns_procs (like cgroup.procs, but all the pids
-in cgroup.ns_procs will have their /proc/self/cgroup restricted).
-Writing a pid to cgroup.ns_procs implies that you are writing it to
-cgroup.procs too. But, not vise-versa. So, you could move yourself in
-another cgroup by writing your pid in cgroup.procs, but not in
-cgroup.ns_procs, thus preventing from getting "rooted". I This was to
-solve administrative process issue in the above appraoch. But I think
-this is very clunky too and I find semantics for this approach to be
-non-intuitive. It almost looks like moving towards a separate "ns"
-subsystem. But as we already know, its a path to failure.
+Unless problems are discovered I intend to merge this patch through my
+namespace tree.
 
-I didn't think of using a mount option. I imagine the mount option
-(something like -o root=/bathjobs/container_1) could be used to
-restrict the visibility of cgroupfs inside the container's mount
-namespace. i.e., the value you read from /proc/<pid>/cgroup now
-depends on what mount namespace you are in. Its similar to cgroup
-namespace, but just that the cgroupns_root is now stored in the
-'struct mnt_namespace' instead of a separate 'struct
-cgroup_namespace'. But, since mount namespace on creation inherits
-mounts from its parent, the first cgroupfs mount in a mount namespace
-is now treated specially. Also, its not possible to restrict cgroups
-without mount namespace now. This is interesting and may not be too
-bad. I am willing to give this a try. But I feel the cgroup namespace
-approach fits well in-line with other namespaces where it does one
-thing - virtualize the view of /proc/<pid>/cgroup file for processes
-inside the namespace. The semantics are more intuitive as they are
-similar to other namespaces.
+ fs/nfs/client.c   | 95 ++++++++++++++++++++++++++++++++-----------------------
+ fs/nfs/inode.c    |  3 +-
+ fs/nfs/internal.h |  9 ++++++
+ fs/nfs/netns.h    |  3 ++
+ 4 files changed, 69 insertions(+), 41 deletions(-)
 
-Thanks,
-
->> Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
->
-> Acked-by: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
->
->> ---
->>  include/uapi/linux/sched.h | 3 +--
->>  1 file changed, 1 insertion(+), 2 deletions(-)
->>
->> diff --git a/include/uapi/linux/sched.h b/include/uapi/linux/sched.h
->> index 34f9d73..2f90d00 100644
->> --- a/include/uapi/linux/sched.h
->> +++ b/include/uapi/linux/sched.h
->> @@ -21,8 +21,7 @@
->>  #define CLONE_DETACHED               0x00400000      /* Unused, ignored */
->>  #define CLONE_UNTRACED               0x00800000      /* set if the tracing process can't force CLONE_PTRACE on this clone */
->>  #define CLONE_CHILD_SETTID   0x01000000      /* set the TID in the child */
->> -/* 0x02000000 was previously the unused CLONE_STOPPED (Start in stopped state)
->> -   and is now available for re-use. */
->> +#define CLONE_NEWCGROUP              0x02000000      /* New cgroup namespace */
->>  #define CLONE_NEWUTS         0x04000000      /* New utsname group? */
->>  #define CLONE_NEWIPC         0x08000000      /* New ipcs */
->>  #define CLONE_NEWUSER                0x10000000      /* New user namespace */
->> --
->> 2.0.0.526.g5318336
->>
->> _______________________________________________
->> Containers mailing list
->> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
->> https://lists.linuxfoundation.org/mailman/listinfo/containers
-
-
-
+diff --git a/fs/nfs/client.c b/fs/nfs/client.c
+index 1d09289c8f0e..180d1ec9c32e 100644
+--- a/fs/nfs/client.c
++++ b/fs/nfs/client.c
+@@ -1205,7 +1205,7 @@ static const struct file_operations nfs_server_list_fops = {
+ 	.open		= nfs_server_list_open,
+ 	.read		= seq_read,
+ 	.llseek		= seq_lseek,
+-	.release	= seq_release,
++	.release	= seq_release_net,
+ 	.owner		= THIS_MODULE,
+ };
+ 
+@@ -1226,7 +1226,7 @@ static const struct file_operations nfs_volume_list_fops = {
+ 	.open		= nfs_volume_list_open,
+ 	.read		= seq_read,
+ 	.llseek		= seq_lseek,
+-	.release	= seq_release,
++	.release	= seq_release_net,
+ 	.owner		= THIS_MODULE,
+ };
+ 
+@@ -1236,19 +1236,8 @@ static const struct file_operations nfs_volume_list_fops = {
+  */
+ static int nfs_server_list_open(struct inode *inode, struct file *file)
+ {
+-	struct seq_file *m;
+-	int ret;
+-	struct pid_namespace *pid_ns = file->f_dentry->d_sb->s_fs_info;
+-	struct net *net = pid_ns->child_reaper->nsproxy->net_ns;
+-
+-	ret = seq_open(file, &nfs_server_list_ops);
+-	if (ret < 0)
+-		return ret;
+-
+-	m = file->private_data;
+-	m->private = net;
+-
+-	return 0;
++	return seq_open_net(inode, file, &nfs_server_list_ops,
++			   sizeof(struct seq_net_private));
+ }
+ 
+ /*
+@@ -1256,7 +1245,7 @@ static int nfs_server_list_open(struct inode *inode, struct file *file)
+  */
+ static void *nfs_server_list_start(struct seq_file *m, loff_t *_pos)
+ {
+-	struct nfs_net *nn = net_generic(m->private, nfs_net_id);
++	struct nfs_net *nn = net_generic(seq_file_net(m), nfs_net_id);
+ 
+ 	/* lock the list against modification */
+ 	spin_lock(&nn->nfs_client_lock);
+@@ -1268,7 +1257,7 @@ static void *nfs_server_list_start(struct seq_file *m, loff_t *_pos)
+  */
+ static void *nfs_server_list_next(struct seq_file *p, void *v, loff_t *pos)
+ {
+-	struct nfs_net *nn = net_generic(p->private, nfs_net_id);
++	struct nfs_net *nn = net_generic(seq_file_net(p), nfs_net_id);
+ 
+ 	return seq_list_next(v, &nn->nfs_client_list, pos);
+ }
+@@ -1278,7 +1267,7 @@ static void *nfs_server_list_next(struct seq_file *p, void *v, loff_t *pos)
+  */
+ static void nfs_server_list_stop(struct seq_file *p, void *v)
+ {
+-	struct nfs_net *nn = net_generic(p->private, nfs_net_id);
++	struct nfs_net *nn = net_generic(seq_file_net(p), nfs_net_id);
+ 
+ 	spin_unlock(&nn->nfs_client_lock);
+ }
+@@ -1289,7 +1278,7 @@ static void nfs_server_list_stop(struct seq_file *p, void *v)
+ static int nfs_server_list_show(struct seq_file *m, void *v)
+ {
+ 	struct nfs_client *clp;
+-	struct nfs_net *nn = net_generic(m->private, nfs_net_id);
++	struct nfs_net *nn = net_generic(seq_file_net(m), nfs_net_id);
+ 
+ 	/* display header on line 1 */
+ 	if (v == &nn->nfs_client_list) {
+@@ -1321,19 +1310,8 @@ static int nfs_server_list_show(struct seq_file *m, void *v)
+  */
+ static int nfs_volume_list_open(struct inode *inode, struct file *file)
+ {
+-	struct seq_file *m;
+-	int ret;
+-	struct pid_namespace *pid_ns = file->f_dentry->d_sb->s_fs_info;
+-	struct net *net = pid_ns->child_reaper->nsproxy->net_ns;
+-
+-	ret = seq_open(file, &nfs_volume_list_ops);
+-	if (ret < 0)
+-		return ret;
+-
+-	m = file->private_data;
+-	m->private = net;
+-
+-	return 0;
++	return seq_open_net(inode, file, &nfs_server_list_ops,
++			   sizeof(struct seq_net_private));
+ }
+ 
+ /*
+@@ -1341,7 +1319,7 @@ static int nfs_volume_list_open(struct inode *inode, struct file *file)
+  */
+ static void *nfs_volume_list_start(struct seq_file *m, loff_t *_pos)
+ {
+-	struct nfs_net *nn = net_generic(m->private, nfs_net_id);
++	struct nfs_net *nn = net_generic(seq_file_net(m), nfs_net_id);
+ 
+ 	/* lock the list against modification */
+ 	spin_lock(&nn->nfs_client_lock);
+@@ -1353,7 +1331,7 @@ static void *nfs_volume_list_start(struct seq_file *m, loff_t *_pos)
+  */
+ static void *nfs_volume_list_next(struct seq_file *p, void *v, loff_t *pos)
+ {
+-	struct nfs_net *nn = net_generic(p->private, nfs_net_id);
++	struct nfs_net *nn = net_generic(seq_file_net(p), nfs_net_id);
+ 
+ 	return seq_list_next(v, &nn->nfs_volume_list, pos);
+ }
+@@ -1363,7 +1341,7 @@ static void *nfs_volume_list_next(struct seq_file *p, void *v, loff_t *pos)
+  */
+ static void nfs_volume_list_stop(struct seq_file *p, void *v)
+ {
+-	struct nfs_net *nn = net_generic(p->private, nfs_net_id);
++	struct nfs_net *nn = net_generic(seq_file_net(p), nfs_net_id);
+ 
+ 	spin_unlock(&nn->nfs_client_lock);
+ }
+@@ -1376,7 +1354,7 @@ static int nfs_volume_list_show(struct seq_file *m, void *v)
+ 	struct nfs_server *server;
+ 	struct nfs_client *clp;
+ 	char dev[8], fsid[17];
+-	struct nfs_net *nn = net_generic(m->private, nfs_net_id);
++	struct nfs_net *nn = net_generic(seq_file_net(m), nfs_net_id);
+ 
+ 	/* display header on line 1 */
+ 	if (v == &nn->nfs_volume_list) {
+@@ -1407,6 +1385,45 @@ static int nfs_volume_list_show(struct seq_file *m, void *v)
+ 	return 0;
+ }
+ 
++int nfs_fs_proc_net_init(struct net *net)
++{
++	struct nfs_net *nn = net_generic(net, nfs_net_id);
++	struct proc_dir_entry *p;
++
++	nn->proc_nfsfs = proc_net_mkdir(net, "nfsfs", net->proc_net);
++	if (!nn->proc_nfsfs)
++		goto error_0;
++
++	/* a file of servers with which we're dealing */
++	p = proc_create("servers", S_IFREG|S_IRUGO,
++			nn->proc_nfsfs, &nfs_server_list_fops);
++	if (!p)
++		goto error_1;
++
++	/* a file of volumes that we have mounted */
++	p = proc_create("volumes", S_IFREG|S_IRUGO,
++			nn->proc_nfsfs, &nfs_volume_list_fops);
++	if (!p)
++		goto error_2;
++	return 0;
++
++error_2:
++	remove_proc_entry("servers", nn->proc_nfsfs);
++error_1:
++	remove_proc_entry("fs/nfsfs", NULL);
++error_0:
++	return -ENOMEM;
++}
++
++void nfs_fs_proc_net_exit(struct net *net)
++{
++	struct nfs_net *nn = net_generic(net, nfs_net_id);
++
++	remove_proc_entry("volumes", nn->proc_nfsfs);
++	remove_proc_entry("servers", nn->proc_nfsfs);
++	remove_proc_entry("fs/nfsfs", NULL);
++}
++
+ /*
+  * initialise the /proc/fs/nfsfs/ directory
+  */
+@@ -1419,14 +1436,12 @@ int __init nfs_fs_proc_init(void)
+ 		goto error_0;
+ 
+ 	/* a file of servers with which we're dealing */
+-	p = proc_create("servers", S_IFREG|S_IRUGO,
+-			proc_fs_nfs, &nfs_server_list_fops);
++	p = proc_symlink("servers", proc_fs_nfs, "../../net/nfsfs/servers");
+ 	if (!p)
+ 		goto error_1;
+ 
+ 	/* a file of volumes that we have mounted */
+-	p = proc_create("volumes", S_IFREG|S_IRUGO,
+-			proc_fs_nfs, &nfs_volume_list_fops);
++	p = proc_symlink("volumes", proc_fs_nfs, "../../net/nfsfs/volumes");
+ 	if (!p)
+ 		goto error_2;
+ 	return 0;
+diff --git a/fs/nfs/inode.c b/fs/nfs/inode.c
+index 9927913c97c2..a732cbbd4e80 100644
+--- a/fs/nfs/inode.c
++++ b/fs/nfs/inode.c
+@@ -1840,11 +1840,12 @@ EXPORT_SYMBOL_GPL(nfs_net_id);
+ static int nfs_net_init(struct net *net)
+ {
+ 	nfs_clients_init(net);
+-	return 0;
++	return nfs_fs_proc_net_init(net);
+ }
+ 
+ static void nfs_net_exit(struct net *net)
+ {
++	nfs_fs_proc_net_exit(net);
+ 	nfs_cleanup_cb_ident_idr(net);
+ }
+ 
+diff --git a/fs/nfs/internal.h b/fs/nfs/internal.h
+index f415cbf9f6c3..57b99569d91e 100644
+--- a/fs/nfs/internal.h
++++ b/fs/nfs/internal.h
+@@ -195,7 +195,16 @@ extern struct rpc_clnt *nfs4_find_or_create_ds_client(struct nfs_client *,
+ #ifdef CONFIG_PROC_FS
+ extern int __init nfs_fs_proc_init(void);
+ extern void nfs_fs_proc_exit(void);
++extern int nfs_fs_proc_net_init(struct net *net);
++extern void nfs_fs_proc_net_exit(struct net *net);
+ #else
++static inline int nfs_fs_proc_net_init(struct net *net)
++{
++	return 0;
++}
++static inline void nfs_fs_proc_exit(struct net *net)
++{
++}
+ static inline int nfs_fs_proc_init(void)
+ {
+ 	return 0;
+diff --git a/fs/nfs/netns.h b/fs/nfs/netns.h
+index 8ee1fab83268..ef221fb8a183 100644
+--- a/fs/nfs/netns.h
++++ b/fs/nfs/netns.h
+@@ -29,6 +29,9 @@ struct nfs_net {
+ #endif
+ 	spinlock_t nfs_client_lock;
+ 	struct timespec boot_time;
++#ifdef CONFIG_PROC_FS
++	struct proc_dir_entry *proc_nfsfs;
++#endif
+ };
+ 
+ extern int nfs_net_id;
 -- 
-Aditya
+1.9.1
