@@ -1,11 +1,15 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [REVIEW][PATCH 0/4] /proc/thread-self
-Date: Thu, 31 Jul 2014 17:30:46 -0700
-Message-ID: <87oaw5caq1.fsf@x220.int.ebiederm.org>
+Subject: [REVIEW][PATCH 1/4] proc: Have net show up under
+	/proc/<tgid>/task/<tid>
+Date: Thu, 31 Jul 2014 17:33:27 -0700
+Message-ID: <87ha1xcalk.fsf__42631.1457100839$1406853448$gmane$org@x220.int.ebiederm.org>
+References: <87oaw5caq1.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <87oaw5caq1.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org> (Eric W. Biederman's
+	message of "Thu, 31 Jul 2014 17:30:46 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,39 +24,27 @@ Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-api-u79uwXL29TY
 List-Id: containers.vger.kernel.org
 
 
-This patchset implements /proc/thread-self a magic symlink that
-solves a couple of problems.
+Network namespaces are per task so it make sense for them to show up
+in the task directory.
 
-- It makes it easy to get to a specific threads directory in /proc
-  with gettid() not being exported in glibc this is currently a pain.
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ fs/proc/base.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-- It allows fixing the problem present in /proc/mounts and /proc/net
-  that when the thread group leader exits but the entire thread group
-  remains /proc/self/net and /proc/self/mounts and thus /proc/mounts and
-  /proc/net become empty.
-
-- As mount and network namespaces are per thread it allows /proc/net and
-  /proc/mounts to reflect this.
-
-This is small chance changing /proc/net and /proc/mounts will cause
-userspace regressions (although nothing has shown up in my testing) if
-that happens we can just point the change that moves them from
-/proc/self/... to /proc/thread-self/...
-
-Eric W. Biederman (4):
-      proc: Have net show up under /proc/<tgid>/task/<tid>
-      proc: Implement /proc/thread-self to point at the directory of the current thread
-      proc: Point /proc/net at /proc/thread-self/net instead of /proc/self/net
-      proc: Point /proc/mounts at /proc/thread-self/mounts instead of /proc/self/mounts
-
- fs/proc/Makefile              |  1 +
- fs/proc/base.c                | 18 ++++++---
- fs/proc/inode.c               |  7 +++-
- fs/proc/internal.h            |  6 +++
- fs/proc/proc_net.c            |  2 +-
- fs/proc/root.c                |  5 ++-
- fs/proc/thread_self.c         | 85 +++++++++++++++++++++++++++++++++++++++++++
- include/linux/pid_namespace.h |  1 +
- 8 files changed, 117 insertions(+), 8 deletions(-)
-
-Eric
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index 2d696b0c93bf..ed34e405c6b9 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -2895,6 +2895,9 @@ static const struct pid_entry tid_base_stuff[] = {
+ 	DIR("fd",        S_IRUSR|S_IXUSR, proc_fd_inode_operations, proc_fd_operations),
+ 	DIR("fdinfo",    S_IRUSR|S_IXUSR, proc_fdinfo_inode_operations, proc_fdinfo_operations),
+ 	DIR("ns",	 S_IRUSR|S_IXUGO, proc_ns_dir_inode_operations, proc_ns_dir_operations),
++#ifdef CONFIG_NET
++	DIR("net",        S_IRUGO|S_IXUGO, proc_net_inode_operations, proc_net_operations),
++#endif
+ 	REG("environ",   S_IRUSR, proc_environ_operations),
+ 	INF("auxv",      S_IRUSR, proc_pid_auxv),
+ 	ONE("status",    S_IRUGO, proc_pid_status),
+-- 
+1.9.1
