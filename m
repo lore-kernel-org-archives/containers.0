@@ -1,13 +1,13 @@
-From: <postmaster-7QMM9rUnTsZO0n7uQEQMm4CZgX+1HZI1@public.gmane.org>
-Subject: Undeliverable: 0rder_038875038078
-Date: Fri, 1 Aug 2014 13:52:47 +0000
-Message-ID: <483c0023-5099-4729-8173-e26c792dac6b@DBXPR03MB384.eurprd03.prod.outlook.com>
-References: <004e01cfad8f$dc00c400$0500a8c0@vps-77.205.170.217.stwvps.net>
+From: <postmaster-A6F9eYs8C4/66dRxsi22NpyrNiDsoR7y@public.gmane.org>
+Subject: Undeliverable: Successfull Order 012971706174.
+Date: Fri, 1 Aug 2014 11:33:22 -0500
+Message-ID: <6dd74a00-8d9b-400c-a80e-965be2e25bdd@ci.st-joseph.mo.us>
+References: <5883436784.24830021217460@qbear.ru>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5912313349348319843=="
+Content-Type: multipart/mixed; boundary="===============7703690541314406332=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Language: en-US
-In-Reply-To: <004e01cfad8f$dc00c400$0500a8c0-TM4mHzyjtj4AtLqT4ilZHR7XDzrqbE6sLFdjfZeId84@public.gmane.org>
+In-Reply-To: <5883436784.24830021217460-LkkMg30Kw9I@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,106 +20,21 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============5912313349348319843==
+--===============7703690541314406332==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="7f60e2bb-ba61-40f4-b3af-bc90bcfe26c2"
+	boundary="779febf3-abde-489c-bd8f-f6a82d29b514"
 Content-Language: en-US
 
---7f60e2bb-ba61-40f4-b3af-bc90bcfe26c2
-Content-Type: text/plain; charset="Windows-1252"
+--779febf3-abde-489c-bd8f-f6a82d29b514
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: quoted-printable
 
 Delivery has failed to these recipients or groups:
 
-eventsdd-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org<mailto:eventsdd-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org>
-The email address you specified couldn't be found or is invalid. It may be =
-due to a bad entry in your Outlook or Outlook Web App recipient AutoComplet=
-e cache. Use the steps below to delete the entry from the cache:
-
-  1.  Click New mail.
-  2.  In the To field start typing the recipient's name or email address un=
-til the recipient appears in the drop-down list.
-  3.  Use the DOWN ARROW and UP ARROW keys to select the recipient, and the=
-n press the DELETE key.
-
-Then resend your message =96 delete and retype the recipient=92s name or e-=
-mail address before sending it.
-
-For more tips on how to resolve this issue see DSN code 5.1.1 in Exchange O=
-nline<http://go.microsoft.com/fwlink/?LinkId=3D389363>.
-
-
-exhibitions-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org<mailto:exhibitions-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org>
-The email address you specified couldn't be found or is invalid. It may be =
-due to a bad entry in your Outlook or Outlook Web App recipient AutoComplet=
-e cache. Use the steps below to delete the entry from the cache:
-
-  1.  Click New mail.
-  2.  In the To field start typing the recipient's name or email address un=
-til the recipient appears in the drop-down list.
-  3.  Use the DOWN ARROW and UP ARROW keys to select the recipient, and the=
-n press the DELETE key.
-
-Then resend your message =96 delete and retype the recipient=92s name or e-=
-mail address before sending it.
-
-For more tips on how to resolve this issue see DSN code 5.1.1 in Exchange O=
-nline<http://go.microsoft.com/fwlink/?LinkId=3D389363>.
-
-
-gary-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org<mailto:gary-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org>
-The email address you specified couldn't be found or is invalid. It may be =
-due to a bad entry in your Outlook or Outlook Web App recipient AutoComplet=
-e cache. Use the steps below to delete the entry from the cache:
-
-  1.  Click New mail.
-  2.  In the To field start typing the recipient's name or email address un=
-til the recipient appears in the drop-down list.
-  3.  Use the DOWN ARROW and UP ARROW keys to select the recipient, and the=
-n press the DELETE key.
-
-Then resend your message =96 delete and retype the recipient=92s name or e-=
-mail address before sending it.
-
-For more tips on how to resolve this issue see DSN code 5.1.1 in Exchange O=
-nline<http://go.microsoft.com/fwlink/?LinkId=3D389363>.
-
-
-graeme-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org<mailto:graeme-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org>
-The email address you specified couldn't be found or is invalid. It may be =
-due to a bad entry in your Outlook or Outlook Web App recipient AutoComplet=
-e cache. Use the steps below to delete the entry from the cache:
-
-  1.  Click New mail.
-  2.  In the To field start typing the recipient's name or email address un=
-til the recipient appears in the drop-down list.
-  3.  Use the DOWN ARROW and UP ARROW keys to select the recipient, and the=
-n press the DELETE key.
-
-Then resend your message =96 delete and retype the recipient=92s name or e-=
-mail address before sending it.
-
-For more tips on how to resolve this issue see DSN code 5.1.1 in Exchange O=
-nline<http://go.microsoft.com/fwlink/?LinkId=3D389363>.
-
-
-greame-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org<mailto:greame-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org>
-The email address you specified couldn't be found or is invalid. It may be =
-due to a bad entry in your Outlook or Outlook Web App recipient AutoComplet=
-e cache. Use the steps below to delete the entry from the cache:
-
-  1.  Click New mail.
-  2.  In the To field start typing the recipient's name or email address un=
-til the recipient appears in the drop-down list.
-  3.  Use the DOWN ARROW and UP ARROW keys to select the recipient, and the=
-n press the DELETE key.
-
-Then resend your message =96 delete and retype the recipient=92s name or e-=
-mail address before sending it.
-
-For more tips on how to resolve this issue see DSN code 5.1.1 in Exchange O=
-nline<http://go.microsoft.com/fwlink/?LinkId=3D389363>.
-
+hemish-A6F9eYs8C4/66dRxsi22NpyrNiDsoR7y@public.gmane.org<mailto:hemish-A6F9eYs8C4/66dRxsi22NpyrNiDsoR7y@public.gmane.org>
+The e-mail address you entered couldn't be found. Please check the recipien=
+t's e-mail address and try to resend the message. If the problem continues,=
+ please contact your helpdesk.
 
 
 
@@ -129,142 +44,112 @@ nline<http://go.microsoft.com/fwlink/?LinkId=3D389363>.
 
 Diagnostic information for administrators:
 
-Generating server: DBXPR03MB384.eurprd03.prod.outlook.com
+Generating server: ci.st-joseph.mo.us
 
-eventsdd-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org
-Remote Server returned '550 5.1.1 RESOLVER.ADR.RecipNotFound; not found'
-
-exhibitions-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org
-Remote Server returned '550 5.1.1 RESOLVER.ADR.RecipNotFound; not found'
-
-gary-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org
-Remote Server returned '550 5.1.1 RESOLVER.ADR.RecipNotFound; not found'
-
-graeme-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org
-Remote Server returned '550 5.1.1 RESOLVER.ADR.RecipNotFound; not found'
-
-greame-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org
-Remote Server returned '550 5.1.1 RESOLVER.ADR.RecipNotFound; not found'
+hemish-A6F9eYs8C4/66dRxsi22NpyrNiDsoR7y@public.gmane.org
+#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
 
 Original message headers:
 
-Received: from DB3PR03CA0033.eurprd03.prod.outlook.com (10.255.183.33) by
- DBXPR03MB384.eurprd03.prod.outlook.com (10.141.10.20) with Microsoft SMTP
- Server (TLS) id 15.0.995.14; Fri, 1 Aug 2014 13:52:46 +0000
-Received: from AM1FFO11FD016.protection.gbl (2a01:111:f400:7e00::115) by
- DB3PR03CA0033.outlook.office365.com (2a01:111:e400:9438::33) with Microsof=
-t
- SMTP Server (TLS) id 15.0.995.14 via Frontend Transport; Fri, 1 Aug 2014
- 13:52:46 +0000
-Received: from vps-77.205.170.217.stwvps.net (217.170.205.77) by
- AM1FFO11FD016.mail.protection.outlook.com (10.174.64.94) with Microsoft SM=
-TP
- Server id 15.0.990.10 via Frontend Transport; Fri, 1 Aug 2014 13:52:44 +00=
-00
-Received: from [217.170.205.77] by vps-77.205.170.217.stwvps.net id DusqI9g=
-Rb; Fri, 01 Aug 2014 13:52:43 +0000
-Message-ID: <004e01cfad8f$dc00c400$0500a8c0-TM4mHzyjtj4AtLqT4ilZHR7XDzrqbE6sLFdjfZeId84@public.gmane.org>
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <eventsdd-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org>
-Subject: 0rder_038875038078
-Date: Fri, 1 Aug 2014 13:52:43 +0000
+Received: from qbear.ru (91.206.14.12) by mail.ci.st-joseph.mo.us
+ (172.16.1.114) with Microsoft SMTP Server id 14.3.174.1; Fri, 1 Aug 2014
+ 11:33:21 -0500
+Received: from [91.206.14.12] by qbear.ru id 22a9y8FrbCWG with SMTP; Fri, 0=
+1
+ Aug 2014 20:50:45 +0400
+Date: Fri, 1 Aug 2014 20:50:45 +0400
+From: Maurizia <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v2.01.4) Business
+X-Priority: 3 (Normal)
+Message-ID: <5883436784.24830021217460-LkkMg30Kw9I@public.gmane.org>
+To: <hemish-A6F9eYs8C4/66dRxsi22NpyrNiDsoR7y@public.gmane.org>
+Subject: Successfull Order 012971706174.
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary=3D"----------96221753AF42358"
+Content-Type: multipart/mixed; boundary=3D"----------6D10E3B385FDD9"
 Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-EOPAttributedMessage: 0
-X-Forefront-Antispam-Report: CIP:217.170.205.77;CTRY:NO;IPV:NLI;EFV:NLI;
-X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:
+X-Brightmail-Tracker: H4sIAAAAAAAAC+NgFupmVWLjYok+x8ejG3TwdrDB65b5ORaHF05hd=
+GAMYIhizcxLyq9IYM14+beFpaD1NFPF4vk+DYyHDjB1MXJxCAnMZZS4uH0VYxcjJ5CTJvHt8Tkw=
+m0VARaLp0mtWEJtNwEzi6salTCC2hICqROOpSYwQtpjEhHW/mEFsXgEDia0zO8DiIgLyEl0z/oH=
+1CgtoSMxZvIEVokZQ4uTMJywgNrOAk8TkjjY2iL1GEheW7gDq5QCaGSjxpcEBwrSXuLpDEGKTg0=
+TLthOsMPaX049YYUp6bhZBhHUk3kycDXWklURL5w2o8nCJ5stH2CYwisxCcsMsJDdA2DYShyYeZ=
+YewFSWmdD+Esk0l7t34AGXrSCzY/QmqXl5i+9s5zAsY2VcxSgSHePm7+jp6+hgZGBro5SZm5unl=
+5Ccn5mxiBMbMGgHGoh2Mv1/ZH2KU5GBSEuWdv/12sBBfUn5KZUZicUZ8UWlOavEhRgkOHiUR3uv=
+7gHK8xQWJucWZ6TApGQ4OJQneSSApwaLU9NSKtMycktQiiPQpRkkpcd5CkKQASF9GaR5c7hKjrJ=
+Qw795NQDmegtSi3MwSiDgswdxiFOQ4wCTEkpeflyoFFXvFKM7BqCTMOxFkIk9mXgncIa8YFTmYB=
+K4ySYHVAx1bYwh2bEkiQo1UA6PNZOmbqsUPvvMzxWb8zZD+WlEqFrvGmOPh5dZpHq+1bp+uZ3V4=
+O4FJvzvwnm/s/t39LmcvxPYnNQiHeM8RZ5l/LTPMfvOul/OS0+VPp5o777bfKbvv07UVruJXyp8=
+lX5v8LqyJeaXXD5PpP1Ue30hdX5atkmwxabpR6YTZx9ifbrKc8vXk8k9KLMUZiYZazEXFiQDm4f=
+7FHgMAAA=3D=3D
 
 
---7f60e2bb-ba61-40f4-b3af-bc90bcfe26c2
+--779febf3-abde-489c-bd8f-f6a82d29b514
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns;DBXPR03MB384.eurprd03.prod.outlook.com
-Received-From-MTA: dns;vps-77.205.170.217.stwvps.net
-Arrival-Date: Fri, 1 Aug 2014 13:52:46 +0000
+Reporting-MTA: dns;ci.st-joseph.mo.us
+Received-From-MTA: dns;qbear.ru
+Arrival-Date: Fri, 1 Aug 2014 16:33:21 +0000
 
-Final-Recipient: rfc822;eventsdd-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-Final-Recipient: rfc822;exhibitions-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-Final-Recipient: rfc822;gary-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-Final-Recipient: rfc822;graeme-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-Final-Recipient: rfc822;greame-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org
+Final-Recipient: rfc822;hemish-A6F9eYs8C4/66dRxsi22NpyrNiDsoR7y@public.gmane.org
 Action: failed
 Status: 5.1.1
 Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
 
 
---7f60e2bb-ba61-40f4-b3af-bc90bcfe26c2
+--779febf3-abde-489c-bd8f-f6a82d29b514
 Content-Type: message/rfc822
 
-Received: from DB3PR03CA0033.eurprd03.prod.outlook.com (10.255.183.33) by
- DBXPR03MB384.eurprd03.prod.outlook.com (10.141.10.20) with Microsoft SMTP
- Server (TLS) id 15.0.995.14; Fri, 1 Aug 2014 13:52:46 +0000
-Received: from AM1FFO11FD016.protection.gbl (2a01:111:f400:7e00::115) by
- DB3PR03CA0033.outlook.office365.com (2a01:111:e400:9438::33) with Microsoft
- SMTP Server (TLS) id 15.0.995.14 via Frontend Transport; Fri, 1 Aug 2014
- 13:52:46 +0000
-Received: from vps-77.205.170.217.stwvps.net (217.170.205.77) by
- AM1FFO11FD016.mail.protection.outlook.com (10.174.64.94) with Microsoft SMTP
- Server id 15.0.990.10 via Frontend Transport; Fri, 1 Aug 2014 13:52:44 +0000
-Received: from [217.170.205.77] by vps-77.205.170.217.stwvps.net id DusqI9gRb; Fri, 01 Aug 2014 13:52:43 +0000
-Message-ID: <004e01cfad8f$dc00c400$0500a8c0-TM4mHzyjtj4AtLqT4ilZHR7XDzrqbE6sLFdjfZeId84@public.gmane.org>
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <eventsdd-7QMM9rUnTsa9FHfhHBbuYA@public.gmane.org>
-Subject: 0rder_038875038078
-Date: Fri, 1 Aug 2014 13:52:43 +0000
+Received: from qbear.ru (91.206.14.12) by mail.ci.st-joseph.mo.us
+ (172.16.1.114) with Microsoft SMTP Server id 14.3.174.1; Fri, 1 Aug 2014
+ 11:33:21 -0500
+Received: from [91.206.14.12] by qbear.ru id 22a9y8FrbCWG with SMTP; Fri, 01
+ Aug 2014 20:50:45 +0400
+Date: Fri, 1 Aug 2014 20:50:45 +0400
+From: Maurizia <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v2.01.4) Business
+X-Priority: 3 (Normal)
+Message-ID: <5883436784.24830021217460-LkkMg30Kw9I@public.gmane.org>
+To: <hemish-A6F9eYs8C4/66dRxsi22NpyrNiDsoR7y@public.gmane.org>
+Subject: Successfull Order 012971706174.
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="----------96221753AF42358"
+Content-Type: multipart/mixed; boundary="----------6D10E3B385FDD9"
 Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-EOPAttributedMessage: 0
-X-Forefront-Antispam-Report: CIP:217.170.205.77;CTRY:NO;IPV:NLI;EFV:NLI;
-X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:
+X-Brightmail-Tracker: H4sIAAAAAAAAC+NgFupmVWLjYok+x8ejG3TwdrDB65b5ORaHF05hdGAMYIhizcxLyq9IYM14+beFpaD1NFPF4vk+DYyHDjB1MXJxCAnMZZS4uH0VYxcjJ5CTJvHt8Tkwm0VARaLp0mtWEJtNwEzi6salTCC2hICqROOpSYwQtpjEhHW/mEFsXgEDia0zO8DiIgLyEl0z/oH1CgtoSMxZvIEVokZQ4uTMJywgNrOAk8TkjjY2iL1GEheW7gDq5QCaGSjxpcEBwrSXuLpDEGKTg0TLthOsMPaX049YYUp6bhZBhHUk3kycDXWklURL5w2o8nCJ5stH2CYwisxCcsMsJDdA2DYShyYeZYewFSWmdD+Esk0l7t34AGXrSCzY/QmqXl5i+9s5zAsY2VcxSgSHePm7+jp6+hgZGBro5SZm5unl5Ccn5mxiBMbMGgHGoh2Mv1/ZH2KU5GBSEuWdv/12sBBfUn5KZUZicUZ8UWlOavEhRgkOHiUR3uv7gHK8xQWJucWZ6TApGQ4OJQneSSApwaLU9NSKtMycktQiiPQpRkkpcd5CkKQASF9GaR5c7hKjrJQw795NQDmegtSi3MwSiDgswdxiFOQ4wCTEkpeflyoFFXvFKM7BqCTMOxFkIk9mXgncIa8YFTmYBK4ySYHVAx1bYwh2bEkiQo1UA6PNZOmbqsUPvvMzxWb8zZD+WlEqFrvGmOPh5dZpHq+1bp+uZ3V4O4FJvzvwnm/s/t39LmcvxPYnNQiHeM8RZ5l/LTPMfvOul/OS0+
+ VPp5o777bfKbvv07UVruJXyp8lX5v8LqyJeaXXD5PpP1Ue30hdX5atkmwxabpR6YTZx9ifbrKc8vXk8k9KLMUZiYZazEXFiQDm4f7FHgMAAA==
 
-------------96221753AF42358
+------------6D10E3B385FDD9
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 
-Thank you for ordering from PureMobile Inc.
+Dear customer,
 
-This message is to inform you that your order has been received
-and is currently being processed.
+Thank you for placing an order with us!
+  
+We wish to inform you that we have received your order and it will be processed very shortly. 
+Your order number is 122505-087304 and it is expected to be delivered within 2-5 
 
-Your order reference is 966788-779833. 
-You will need this in all correspondence.
+working days. 
+Please note that in most cases, delivery is faster than stated as we want you to start 
+enjoying your purchase as soon as possible. In the meantime, you may log into the site and 
+check your order status at any time via the 'My Account' page.
+ 
 
-This receipt is NOT proof of purchase. We will send a printed
-invoice by mail to your billing address.
+As soon as order has been dispatched, our Customer Service Executive will monitor 
+the progress and keep you updated at all times.
+     
 
-You have chosen to pay by credit card. 
-Your card will be charged for the amount of 443.80 USD 
-and "Puremobile Inc." will appear next to the charge on your statement.
+Claim your Special Reward
+  
+Once again, we would like to thank you for your purchase and we hope to see you again soon.
+The payment and delivery information is in attached file.
 
-Your purchase information appears below in the file.
+     
+Customer Service Manager
+Lewandowsky Leila
+------------6D10E3B385FDD9--
 
+--779febf3-abde-489c-bd8f-f6a82d29b514--
 
-____________________________________________________
-PureMobile Inc.
-Toulson Lynn
-------------96221753AF42358--
-
---7f60e2bb-ba61-40f4-b3af-bc90bcfe26c2--
-
---===============5912313349348319843==
+--===============7703690541314406332==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -274,4 +159,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============5912313349348319843==--
+--===============7703690541314406332==--
