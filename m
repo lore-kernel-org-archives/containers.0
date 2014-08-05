@@ -1,18 +1,11 @@
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/5] sched: new clone flag CLONE_NEWCGROUP for cgroup
-	namespace
-Date: Mon, 4 Aug 2014 23:12:55 +0000
-Message-ID: <20140804231255.GM12438__32653.7525318146$1407194002$gmane$org@ubuntumail>
-References: <1405626731-12220-1-git-send-email-adityakali@google.com>
-	<1405626731-12220-3-git-send-email-adityakali@google.com>
-	<20140724170119.GR26600@ubuntumail>
-	<CAGr1F2FAiSFR_Y3t1=eBVoAtJvh4m=cNUi+vG146nDkgtBjisQ@mail.gmail.com>
+From: Mail Delivery Subsystem <mailer-daemon-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
+Subject: Delivery Status Notification (Failure)
+Date: Tue, 05 Aug 2014 06:47:13 +0000
+Message-ID: <047d7b671d3ac1184904ffdc3986@google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <CAGr1F2FAiSFR_Y3t1=eBVoAtJvh4m=cNUi+vG146nDkgtBjisQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,77 +15,48 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Aditya Kali (adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org):
-> On Thu, Jul 24, 2014 at 10:01 AM, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> wrote:
-> > Quoting Aditya Kali (adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org):
-> >> CLONE_NEWCGROUP will be used to create new cgroup namespace.
-> >>
-> >
-> > This is fine and I'm not looking to bikeshed, but am wondering - did
-> > you consider any other ways beside unshare (i.e. a new mount option
-> > to cgroupfs)?  If so, do you have a list of the downsides of those?
-> > (I mainly ask bc clone flags are still a scarce commodity)
-> >
-> 
-> I did consider couple of other ways:
-> 
-> (1) having a cgroup.ns_root (or something) cgroup file. If this value
-> is '1', it would mean that all processes it and its descendant cgroups
-> will have their cgroup paths in /proc/self/cgroup terminated at this
-> cgroup.
->  For ex:
-> [A] --> [B] --> C
->     | --> [D] --> E
-> 
-> [A], [B] and [D] has cgroup.ns_root = 1.
-> * all processes in cgroup C & E will see their cgroup path as /C and
-> /E respectively
-> * all processes in cgroup B & D will see their own cgroup path as /
-> 
-> In this model, its easy to know what to show if process is looking at
-> its own cgroup paths (/proc/self/cgroup). It gets tricky when you are
-> looking at other process's /proc/<pid>/cgroup. We may be able to come
-> up with some hacky way read correct value, but depending on the
-> cgroupfs mount, it may not make sense.
-> One other major drawback of this approach is that "every" process in
-> the cgroup will now get a restricted view. i.e., you cannot change
-> cgroups without affecting your view. And this is undesirable for
-> administrative processes.
-> 
-> (2) Another idea that I didn't pursue further (and is a bit hacky as
-> above) was having cgroup.ns_procs (like cgroup.procs, but all the pids
-> in cgroup.ns_procs will have their /proc/self/cgroup restricted).
-> Writing a pid to cgroup.ns_procs implies that you are writing it to
-> cgroup.procs too. But, not vise-versa. So, you could move yourself in
-> another cgroup by writing your pid in cgroup.procs, but not in
-> cgroup.ns_procs, thus preventing from getting "rooted". I This was to
-> solve administrative process issue in the above appraoch. But I think
-> this is very clunky too and I find semantics for this approach to be
-> non-intuitive. It almost looks like moving towards a separate "ns"
-> subsystem. But as we already know, its a path to failure.
-> 
-> I didn't think of using a mount option. I imagine the mount option
-> (something like -o root=/bathjobs/container_1) could be used to
-> restrict the visibility of cgroupfs inside the container's mount
-> namespace. i.e., the value you read from /proc/<pid>/cgroup now
-> depends on what mount namespace you are in. Its similar to cgroup
-> namespace, but just that the cgroupns_root is now stored in the
-> 'struct mnt_namespace' instead of a separate 'struct
-> cgroup_namespace'. But, since mount namespace on creation inherits
-> mounts from its parent, the first cgroupfs mount in a mount namespace
-> is now treated specially. Also, its not possible to restrict cgroups
-> without mount namespace now. This is interesting and may not be too
-> bad. I am willing to give this a try. But I feel the cgroup namespace
-> approach fits well in-line with other namespaces where it does one
-> thing - virtualize the view of /proc/<pid>/cgroup file for processes
-> inside the namespace. The semantics are more intuitive as they are
-> similar to other namespaces.
+Delivery to the following recipient failed permanently:
 
-Yeah, let's stick with what you have :)
+     info-yKSY/wR/bdsybXQ2qUz/+w@public.gmane.org
 
-thanks,
--serge
+Technical details of permanent failure: 
+Google tried to deliver your message, but it was rejected by the relay in.sjc.mx.trendmicro.com by in.sjc.mx.trendmicro.com. [216.99.131.210].
+
+The error that the other server returned was:
+554 5.7.1 <info-yKSY/wR/bdsybXQ2qUz/+w@public.gmane.org>: Recipient address rejected: Access denied
+
+----- Original message -----
+
+X-Gm-Message-State: ALoCoQlhaEYPHYVoiSzWLc7EsbsLzqZJyBZeplFeHZNtdi6d98vrhH7TkgGaVl4bdRXK5a9YWdnOPB5/u6/sQMDEoQ0LFsViRR7FIBqBrIad7Bu7oUwpsMAhL0GzKA9kH0SjR3X0wcxs
+X-Received: by 10.68.111.193 with SMTP id ik1mr1799021pbb.145.1407221233432;
+        Mon, 04 Aug 2014 23:47:13 -0700 (PDT)
+X-Received: by 10.68.111.193 with SMTP id ik1mr1799005pbb.145.1407221233295;
+        Mon, 04 Aug 2014 23:47:13 -0700 (PDT)
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from vmx10249.hosting24.com.au ([111.67.21.26])
+        by mx.google.com with ESMTP id id5si866794pbc.69.2014.08.04.23.47.11
+        for <info-yKSY/wR/bdsybXQ2qUz/+w@public.gmane.org>;
+        Mon, 04 Aug 2014 23:47:13 -0700 (PDT)
+Received-SPF: fail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 111.67.21.26 as permitted sender) client-ip=111.67.21.26;
+Authentication-Results: mx.google.com;
+       spf=hardfail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 111.67.21.26 as permitted sender) smtp.mail=containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Received: from [111.67.21.26] by vmx10249.hosting24.com.au id 69JlPDcUt3is with SMTP; Tue, 05 Aug 2014 16:47:10 +1000
+Date: Tue, 05 Aug 2014 16:47:10 +1000
+From: "Donatella" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.03.2) Business
+X-Priority: 3 (Normal)
+Message-ID: <5835130098.37750593141110-KlUJlHOL05Qr1ztElnclhPjaCExdxbGBh13vi7wywA4@public.gmane.org>
+To: <info-yKSY/wR/bdsybXQ2qUz/+w@public.gmane.org>
+Subject: Re: Answer id=jrVROLl.
+MIME-Version: 1.0
+Content-Type: multipart/mixed;
+ boundary="----------F84C15BAA497B0"
+
+Hello, info-yKSY/wR/bdsybXQ2qUz/++G/Ez6ZCGd0@public.gmane.org
+    
+Send you the document you requested on the forum.
+  
+id:091468973
