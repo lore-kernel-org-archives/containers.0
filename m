@@ -1,14 +1,12 @@
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Make Dynamic ELF binary loader settable.
-Date: Wed, 6 Aug 2014 04:09:53 +0000
-Message-ID: <20140806040953.GK14872@ubuntumail>
-References: <CANA3KFW9GWo6Kd1stCQypV3XwoLjWi-RrQ6AaiVDjYK-WbmS5w@mail.gmail.com>
+From: Stephen Rothwell <sfr-3FnU+UHB4dNDw9hX6IcOSA@public.gmane.org>
+Subject: Re: [GIT PULL] namespace updates for v3.17-rc1
+Date: Wed, 6 Aug 2014 14:46:43 +1000
+Message-ID: <20140806144643.45e5dab8@canb.auug.org.au>
+References: <87fvhav3ic.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============3761373110875513739=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <CANA3KFW9GWo6Kd1stCQypV3XwoLjWi-RrQ6AaiVDjYK-WbmS5w-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <87fvhav3ic.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,66 +16,83 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Peter Dolding <oiaohm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Check security/commoncap.c:get_vfs_caps_from_disk()
+--===============3761373110875513739==
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ boundary="Sig_/ldyByQSDKEd2wn32YQ=Q0EM"; protocol="application/pgp-signature"
 
-Quoting Peter Dolding (oiaohm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> Containers as used in docker give some application portability.
-> 
-> There is a universal headache in the room.    Dynamic ELF binaries
-> have a build into binary interpreter string.   Bad part is the dynamic
-> binary interpreter is part of the libc so you must have the right libc
-> and interpreter together or bad things can happen.
-> 
-> Ok patchelf is a option but its not a good one when you wake up that
-> you can no longer checksum your binary.    So you cannot do signed
-> binaries.
-> 
-> So the problem comes how to create a solution that will work and will
-> not cause a security mess.   What has come my mind is extended file
-> attributes(xattr) exist lets not make use of them.
-> 
-> I can get so far to creating a patch to fix this issue then I run into
-> a road block.
-> 
-> Yes I can find where the interpreter is read from the executable simple enough
-> In 2.16 Linux
-> fs/binfmt_elf.c line 655 as elf_interpreter
-> and
-> fs/binfmt_elf_fdpic.c line 216 as interpreter_name
-> 
-> Problem is I cannot find the other half I want.   How to lookup a
-> xattr in kernel space on the elf binary so allowing the interpreter to
-> be assigned from a xattr value if no xattr value do exactly what it
-> use to.   A small static binary for installers can set xattr option no
-> issues.  Its so annoying to be so close but so far from being able to
-> make a proto patch any clues about xattr look up.
-> 
-> This removes script wrapping and allows use of compatibility options.
-> 
-> Now if we can make this work.   This will allow kernel tools including
-> the ones to control containers to ship as distribution independent
-> binaries with bundled libc.
-> 
-> I can see debugging advantages.   Remember you cannot mix particular
-> licenses into a single binary either.   Yes that they can dynamic link
-> does not mean you can legally make a static binary of them.
-> 
-> If I can workout how to make kernel loader to xattr value the next
-> will be make ld-linux.so accept xattr options.   Like the orgin
-> problem with RPATH and LD_PRELOAD issue on Suid bit binaries heck
-> these days there are a lot of dbus using binaries where environmental
-> overrides of interpreter should fail since they are not directly
-> connected to the file.
-> 
-> Please pardon me posting this here.   I could not find a mailing list
-> that directly relates to messing with the loaders.
-> 
-> Peter Dolding
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+--Sig_/ldyByQSDKEd2wn32YQ=Q0EM
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
+
+Hi Eric,
+
+On Tue, 05 Aug 2014 17:57:31 -0700 ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman=
+) wrote:
+>
+> Please pull the for-linus branch from the git tree:
+>=20
+>    git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.=
+git for-linus
+>=20
+>    HEAD: 344470cac42e887e68cfb5bdfa6171baf27f1eb5 proc: Point /proc/mount=
+s at /proc/thread-self/mounts instead of /proc/self/mounts
+
+This has had 4 commits added since the merge window opened that have no
+Reviewed-by, Acked-by or Tested-by tags and only one Signed-off-by tag.
+
+> The last change is a small semantic cleanup introducing
+> /proc/thread-self and pointing /proc/mounts and /proc/net at it.  This
+> prevents several kinds of problemantic corner cases.  It is a
+> user-visible change so it has a minute chance of causing regressions so
+> the change to /proc/mounts and /proc/net are individual one line commits
+> that can be trivially reverted.  Unfortunately I lost and could not find
+> the email of the original reporter so he is not credited.  From at least
+> one perspective this change to /proc/net is a refgression fix to allow
+> pthread /proc/net uses that were broken by the introduction of the network
+> namespace.
+
+They appear to include this last change.
+
+--=20
+Cheers,
+Stephen Rothwell                    sfr-3FnU+UHB4dNDw9hX6IcOSA@public.gmane.org
+
+--Sig_/ldyByQSDKEd2wn32YQ=Q0EM
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBCAAGBQJT4bM4AAoJEMDTa8Ir7ZwViE8P/2Ok1V6Oi5EZ4tUBzBDVDB9q
+cz1LRHeoMqTDjfQrFTPJ8bXcDt1rW9aYCci+0uFgeP13XkHqMBHMktReBYfr3W3H
+dZOoYwisaI/fDy7STICurMGGmS9LEYQ7YCntrMq679FPAfHK2nTTbE/JpTChhlVr
+6TiGIitU0wQTeSxFSQwXbr2AsQ8SzlDviuhmmBRjUBCP/NA4/I9W0uEVfZliO5Sa
+0L312fmjFIStrSR0auUdvhE2dplkTZXXKrJBQGhGTnJ+UqXtam+2fjTvChYlt4bx
+JlsqIG58J5u+2YOi8EeS6OxCQyoP+j/qFCcHe1j2G7cXRcF1svYlI0MjzB139gVQ
+6HGeOXj/rW5w2hZxOVDeWN3QQRSZrwv0QRQ0VC5he9skiIhDt+9cB/qehX98ttQG
+CQtZQJemFP9yutB7YxJL+d3WusSjGQnQ30y3W5Sy6+2DiQaK77adP+3ppBD9zjRW
+/6fLYs2fvFyXEO4n/cfifzBv47eOfNr7x+kQRCKEIsvi//5vV017nF2XfsaXrLb/
+qtu7RlM4Q80Ty3ab6JEhZ80DfoBX6fUoocR8A7XeA5CyjpGvYmUoWf9WBQuHW3r2
+b1+No4/d30JoWhM9JuUKe+i0O4NVo2UPh9KUfhywrWFMF1tCoQrUnqk6akFdHups
+zifFHi4S+VfJRvjECbdJ
+=Hqul
+-----END PGP SIGNATURE-----
+
+--Sig_/ldyByQSDKEd2wn32YQ=Q0EM--
+
+--===============3761373110875513739==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============3761373110875513739==--
