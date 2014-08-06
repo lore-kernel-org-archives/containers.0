@@ -1,11 +1,13 @@
-From: Peter Dolding <oiaohm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Make Dynamic ELF binary loader settable.
-Date: Wed, 6 Aug 2014 12:23:19 +1000
-Message-ID: <CANA3KFW9GWo6Kd1stCQypV3XwoLjWi-RrQ6AaiVDjYK-WbmS5w@mail.gmail.com>
+From: <postmaster-Aq/xYZcL51cFoamAvNoUFN9u6TNh0Fb7@public.gmane.org>
+Subject: Undeliverable: Netbox: A message to you has been blocked
+Date: Wed, 6 Aug 2014 12:27:32 +1000
+Message-ID: <fa5aeac6-ad16-4a62-872d-5c8f80042c04@aitkencollege.edu.au>
+References: <20140806022731.A1BE8208C001@aitken.safenetbox.biz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============1854299205091517606=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Language: en-AU
+In-Reply-To: <20140806022731.A1BE8208C001-ztNJyPotlLF3RkFVz1pR+z+Xt/jVt2qR@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,55 +20,121 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Containers as used in docker give some application portability.
+--===============1854299205091517606==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="37b88786-5798-4721-95d0-b7f9f5c6a225"
+Content-Language: en-AU
 
-There is a universal headache in the room.    Dynamic ELF binaries
-have a build into binary interpreter string.   Bad part is the dynamic
-binary interpreter is part of the libc so you must have the right libc
-and interpreter together or bad things can happen.
+--37b88786-5798-4721-95d0-b7f9f5c6a225
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
 
-Ok patchelf is a option but its not a good one when you wake up that
-you can no longer checksum your binary.    So you cannot do signed
-binaries.
+Delivery has failed to these recipients or groups:
 
-So the problem comes how to create a solution that will work and will
-not cause a security mess.   What has come my mind is extended file
-attributes(xattr) exist lets not make use of them.
+olononagenarian-Aq/xYZcL51cFoamAvNoUFN9u6TNh0Fb7@public.gmane.org<mailto:olononagenarian@aitkencollege.e=
+du.au>
+The e-mail address you entered couldn't be found. Please check the recipien=
+t's e-mail address and try to resend the message. If the problem continues,=
+ please contact your helpdesk.
 
-I can get so far to creating a patch to fix this issue then I run into
-a road block.
 
-Yes I can find where the interpreter is read from the executable simple enough
-In 2.16 Linux
-fs/binfmt_elf.c line 655 as elf_interpreter
-and
-fs/binfmt_elf_fdpic.c line 216 as interpreter_name
 
-Problem is I cannot find the other half I want.   How to lookup a
-xattr in kernel space on the elf binary so allowing the interpreter to
-be assigned from a xattr value if no xattr value do exactly what it
-use to.   A small static binary for installers can set xattr option no
-issues.  Its so annoying to be so close but so far from being able to
-make a proto patch any clues about xattr look up.
 
-This removes script wrapping and allows use of compatibility options.
 
-Now if we can make this work.   This will allow kernel tools including
-the ones to control containers to ship as distribution independent
-binaries with bundled libc.
 
-I can see debugging advantages.   Remember you cannot mix particular
-licenses into a single binary either.   Yes that they can dynamic link
-does not mean you can legally make a static binary of them.
 
-If I can workout how to make kernel loader to xattr value the next
-will be make ld-linux.so accept xattr options.   Like the orgin
-problem with RPATH and LD_PRELOAD issue on Suid bit binaries heck
-these days there are a lot of dbus using binaries where environmental
-overrides of interpreter should fail since they are not directly
-connected to the file.
+Diagnostic information for administrators:
 
-Please pardon me posting this here.   I could not find a mailing list
-that directly relates to messing with the loaders.
+Generating server: aitkencollege.edu.au
 
-Peter Dolding
+olononagenarian-Aq/xYZcL51cFoamAvNoUFN9u6TNh0Fb7@public.gmane.org
+#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##rfc822;olononagenarian@a=
+itkencollege.edu.au
+
+Original message headers:
+
+Received: from aitken.safenetbox.biz (192.168.1.9) by
+ ACHTS01.intrl.aitkencollege.edu.au (192.168.1.174) with Microsoft SMTP Ser=
+ver
+ (TLS) id 14.1.438.0; Wed, 6 Aug 2014 12:27:31 +1000
+Received: from aitken.safenetbox.biz (aitken.safenetbox.biz [127.0.0.1])   =
+     by
+ aitken.safenetbox.biz (Postfix) with ESMTP id A1BE8208C001     for
+ <olononagenarian-Aq/xYZcL51cFoamAvNoUFN9u6TNh0Fb7@public.gmane.org>; Wed,  6 Aug 2014 12:27:31 +1000 (E=
+ST)
+Subject: =3D?utf-8?q?Netbox=3D3A_A_message_to_you_has_been_blocked?=3D
+From: <postmaster-Aq/xYZcL51cFoamAvNoUFN9u6TNh0Fb7@public.gmane.org>
+Content-Transfer-Encoding: base64
+MIME-Version: 1.0
+Content-Type: text/plain; charset=3D"utf-8"
+Message-ID: <20140806022731.A1BE8208C001-ztNJyPotlLF3RkFVz1pR+z+Xt/jVt2qR@public.gmane.org>
+Date: Wed, 6 Aug 2014 12:27:31 +1000
+To: Undisclosed recipients:;
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+
+
+--37b88786-5798-4721-95d0-b7f9f5c6a225
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;aitkencollege.edu.au
+Received-From-MTA: dns;aitken.safenetbox.biz
+Arrival-Date: Wed, 6 Aug 2014 02:27:31 +0000
+
+Original-Recipient: rfc822;olononagenarian-Aq/xYZcL51cFoamAvNoUFN9u6TNh0Fb7@public.gmane.org
+Final-Recipient: rfc822;olononagenarian-Aq/xYZcL51cFoamAvNoUFN9u6TNh0Fb7@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
+
+
+--37b88786-5798-4721-95d0-b7f9f5c6a225
+Content-Type: message/rfc822
+
+Received: from aitken.safenetbox.biz (192.168.1.9) by
+ ACHTS01.intrl.aitkencollege.edu.au (192.168.1.174) with Microsoft SMTP Server
+ (TLS) id 14.1.438.0; Wed, 6 Aug 2014 12:27:31 +1000
+Received: from aitken.safenetbox.biz (aitken.safenetbox.biz [127.0.0.1])	by
+ aitken.safenetbox.biz (Postfix) with ESMTP id A1BE8208C001	for
+ <olononagenarian-Aq/xYZcL51cFoamAvNoUFN9u6TNh0Fb7@public.gmane.org>; Wed,  6 Aug 2014 12:27:31 +1000 (EST)
+Subject: =?utf-8?q?Netbox=3A_A_message_to_you_has_been_blocked?=
+From: <postmaster-Aq/xYZcL51cFoamAvNoUFN9u6TNh0Fb7@public.gmane.org>
+Content-Transfer-Encoding: base64
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Message-ID: <20140806022731.A1BE8208C001-ztNJyPotlLF3RkFVz1pR+z+Xt/jVt2qR@public.gmane.org>
+Date: Wed, 6 Aug 2014 12:27:31 +1000
+To: Undisclosed recipients:;
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+
+VGhpcyBpcyBhbiBhdXRvbWF0ZWQgYWxlcnQgbWVzc2FnZSBmcm9tIHRoZSBOZXRib3ggIkFpdGtl
+biBDb2xsZWdlCkdyZWVudmFsZSIgKGFpdGtlbi5zYWZlbmV0Ym94LmJpeikuCgpBIG1lc3NhZ2Ug
+d2FzIHByb2Nlc3NlZCBieSB0aGUgTmV0Ym94IHRoYXQgdHJpZ2dlcmVkIGEgY29udGVudApzY2Fu
+bmluZyBydWxlLiBUaGUgZGV0YWlscyBvZiB0aGlzIG1lc3NhZ2UgYXJlIGFzIGZvbGxvd3M6CgpG
+cm9tOiAgICAgICAgICAgY29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpUbzog
+ICAgICAgICAgICAgb2xvbm9uYWdlbmFyaWFuQGFpdGtlbmNvbGxlZ2UuZWR1LmF1ClNlbnQgdGlt
+ZTogICAgICBXZWQgMDYgQXVnIDIwMTQgMTI6Mjc6MjYKUHJvdG9jb2w6ICAgICAgIFNNVFAKQ2xp
+ZW50IElQOiAgICAgIDcyLjMyLjY4LjIwMwpBY3Rpb246ICAgICAgICAgU2NhbiBFbWFpbApTZXJ2
+aWNlOiAgICAgICAgRW1haWwKQXBwbGljYXRpb246ICAgIEVtYWlsCgpTdW1tYXJ5OgpSZTogQW5z
+d2VyIGlkOjR5NEZMQ1pmTS4KCkhpLCBvbG9ub25hZ2VuYXJpYW5AYWl0a2VuY29sbGVnZS5lZHUu
+YXUuCgpPbiB5b3VyIHJlcXVlc3Qgd2Ugc2VuZCB5b3UgYSByZXBseS4KCmlkOjU2MTM1ODUyNjAy
+CgpUaGUgY29udGVudCBzY2FubmluZyBydWxlIHdhcyB0cmlnZ2VyZWQgZm9yIHRoZSBmb2xsb3dp
+bmcgcmVhc29uczoKTk9UIChTZW5kZXIgZGV0YWlscyBtYXRjaGVzICIqQGFsbGVhc2luZy5jb20u
+YXUiIE9SICIqQGNzZS5lZHUuYXUiIE9SCiIqQGUuaGVyYWxkc3VuLmNvbS5hdSIgT1IgIipAZmFt
+aWxjLi4uKQpOT1QgKENsaWVudCBJUCBhbnkgdHJ1c3RlZCBTTVRQIG5ldHdvcmspClVuc3BlY2lm
+aWVkIHJlYXNvbiBieSBibGFja2xpc3QgcHNibC5zdXJyaWVsLmNvbQoKSWYgeW91IGhhdmUgYW55
+IHF1ZXN0aW9ucywgdGhlIGFkbWluaXN0cmF0b3Igb2YgdGhpcyBOZXRib3ggY2FuIGJlCnJlYWNo
+ZWQgYXQgcG9zdG1hc3RlckBhaXRrZW5jb2xsZWdlLmVkdS5hdS4K
+
+--37b88786-5798-4721-95d0-b7f9f5c6a225--
+
+--===============1854299205091517606==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============1854299205091517606==--
