@@ -1,17 +1,18 @@
-From: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>
-Subject: Re: [GIT PULL] namespace updates for v3.17-rc1
-Date: Thu, 7 Aug 2014 09:28:23 -0400
-Message-ID: <20140807132823.GB32722@thunk.org>
-References: <87fvhav3ic.fsf@x220.int.ebiederm.org>
-	<20140806144643.45e5dab8@canb.auug.org.au>
-	<87lhr2tcyx.fsf@x220.int.ebiederm.org>
-	<20140806160608.218b6944@canb.auug.org.au>
+From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC]Pid conversion between pid namespace
+Date: Thu, 7 Aug 2014 16:11:41 +0000
+Message-ID: <20140807161141.GG18303@ubuntumail>
+References: <5871495633F38949900D2BF2DC04883E55C374@G08CNEXMBPEKD02.g08.fujitsu.local>
+	<5871495633F38949900D2BF2DC04883E560412@G08CNEXMBPEKD02.g08.fujitsu.local>
+	<5871495633F38949900D2BF2DC04883E56C7A2@G08CNEXMBPEKD02.g08.fujitsu.local>
+	<20140804222044.GJ12438@ubuntumail>
+	<5871495633F38949900D2BF2DC04883E57702E@G08CNEXMBPEKD02.g08.fujitsu.local>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20140806160608.218b6944-3FnU+UHB4dNDw9hX6IcOSA@public.gmane.org>
+In-Reply-To: <5871495633F38949900D2BF2DC04883E57702E-ZEd+hNNJ6a5ZYpXjqAkB5jz3u5zwRJJDAzI0kPv9QBlmR6Xm/wNWPw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,36 +22,105 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stephen Rothwell <sfr-3FnU+UHB4dNDw9hX6IcOSA@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: "Richard Weinberger (richard-/L3Ra7n9ekc@public.gmane.org)" <richard-/L3Ra7n9ekc@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Oleg Nesterov (oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org)" <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org)" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Vasily Kulikov (segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org)" <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Aug 06, 2014 at 04:06:08PM +1000, Stephen Rothwell wrote:
-> 
-> Yes, that is what confused my, sorry, since that commit and the ones
-> following are new commits but unchanged patches.
-
-As a suggestion, in addition to trying to count the number of commits
-that are new, or with the same patch id's, etc., is to provide the
-diff stats between the last version of the branch that landed in
-linux-next before the merge window opened, and the branch head that
-was requested for Linus to pull?
-
-This will get tripped up by those poeple who send multiple pull
-requests which are subsets of the branch that is tracked by linux-next
-(for example, to arrange the order of merging to minimize conflicts),
-so like all things, it's not perfect, but it might be useful
-additional indicator, at least in the early days of the merge window.
-
-Also, if you could report the commit id of the branch head before the
-merge window opened, then other people (including Linus) can do their
-own investigation and draw their own conclusions.
-
-Cheers,
-
-						- Ted
-
-P.S.  If there was some way this could be automated so that a 'bot
-sends out a report for every single pull request, then it minimizes
-the "J'accuse!" aspect, since the report is being done for all pull
-requests, and everyone knows that robots makes mistakes.  :-)
+UXVvdGluZyBjaGVuaGFueGlhb0Bjbi5mdWppdHN1LmNvbSAoY2hlbmhhbnhpYW9AY24uZnVqaXRz
+dS5jb20pOgo+IEhpLAo+IAo+ID4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0KPiA+IEZyb206
+IFNlcmdlIEhhbGx5biBbbWFpbHRvOnNlcmdlLmhhbGx5bkB1YnVudHUuY29tXQo+ID4gU2VudDog
+VHVlc2RheSwgQXVndXN0IDA1LCAyMDE0IDY6MjEgQU0KPiA+IAo+ID4gUXVvdGluZyBjaGVuaGFu
+eGlhb0Bjbi5mdWppdHN1LmNvbSAoY2hlbmhhbnhpYW9AY24uZnVqaXRzdS5jb20pOgo+ID4gPiBI
+aSwKPiA+ID4KPiA+ID4gV2UgZGlzY3Vzc2VkIHR3byB3YXlzIG9mIHBpZCBjb252ZXJzaW9uOgo+
+ID4gPiBzeXNjYWxsIGFuZCBwcm9jZnMuCj4gPiA+Cj4gPiA+IEJvdGggb2YgdGhlbSBjb3VsZCBk
+byBhIHBpZCB0cmFuc2xhdGlvbiBqb2IuCj4gPiA+IEJ1dCBmb3IgbnMgaGllcmFyY2h5LCBzeXNj
+YWxsIGxpa2U6Cj4gPiA+Cj4gPiA+IHBpZF90KiBnZXRuc3BpZChwaWRfdCBxdWVyeV9waWQsIHBp
+ZF90IG9ic2VydmVyX3BpZCkKPiA+ID4gb3IKPiA+ID4gcGlkX3QgZ2V0bnNwaWQocGlkX3QgcXVl
+cnlfcGlkLCBpbnQgcXVlcnlfZmQsIGludCByZWZfZmQpCj4gPiA+Cj4gPiA+IGNvdWxkIG5vdCB3
+b3JrLCB3ZSBrbmV3IGEgcGlkIGxpdmVkIGluIG9uZSBucywgYnV0IHdlCj4gPiAKPiA+IE5vdGUg
+SSBzdGlsbCBkaXNhZ3JlZSBoZXJlLiAKPiA+IAo+ID4gPiBkaWQgbm90IGtub3cgdGhlaXIgcmVs
+YXRpb25zaGlwcy4KPiA+ID4gRm9yIGdldHRpbmcgdGhlIGVudGlyZSBzZXQgb2YgcGlkcywgYm90
+aCBvZiB0aGVtIGNhbiBkby4KPiA+ID4KPiA+ID4gU28gdXNpbmcgcHJvY2ZzIGlzIGEgYmV0dGVy
+IHdheS4KPiA+ID4KPiA+ID4gRXg6Cj4gPiA+ICAgICBpbml0X3BpZF9ucyAgICAgbnMxICAgICAg
+ICAgbnMyCj4gPiA+IHQxICAyCj4gPiA+IHQyICAgYC0gMyAgICAgICAgICAgMQo+ID4gPiB0MyAg
+ICAgICBgLSA0ICAgICAgIGAtIDUgICAgICAgIDEKPiA+ID4gdDQgICAgICAgICAgIGAtNiAgICAg
+ICAgYC04ICAgICAgYC05Cj4gPiA+IHQ1ICAgICAgICAgICAgIGAtMTAgICAgICAgIGAtOSAgICAg
+IGAtMTAKPiA+ID4KPiA+ID4gMS4gSG93IHByb2NmcyB3b3JrOgo+ID4gPiBhKSBhZGRpbmcgYSBu
+c3BpZCBoaWVyYXJjaHkgIHVuZGVyIC9wcm9jLyBsaWtlOgo+ID4gPiBbcm9vdEBsb2NhbGhvc3Qg
+cHJvY10jIHRyZWUgL3Byb2MvbnNwaWQKPiA+ID4gL3Byb2MvbnNwaWQKPiA+ID4g4pSc4pSA4pSA
+IG5zMAo+ID4gPiDilIIgICAg4pSU4pSA4pSAIG5zMQo+ID4gCj4gPiBBcmUgdGhlc2UgYWN0dWFs
+bHkgY2FsbGVkICduczEnIGV0Yz8gIEFkZGluZyBhIG5hbWVzcGFjZSBvZiBwaWQKPiA+IG5hbWVz
+cGFjZSBuYW1lcyBpcyBhIGJhZCB0aGluZy4KPiAKPiBUaGF0J3MganVzdCBhbiBleGFtcGxlLgo+
+IFdlIGluY2xpbmUgdG8gbmFtZSBpdCBhcyBucyQoaW51bSksIAo+IGxpa2Ugd2hhdCB3ZSBkaWQg
+aW4gcHJvY19uc19yZWFkbGluay4KPiAKPiA+IAo+ID4gPiDilIIgICAgICAg4pSc4pSA4pSAIG5z
+Mgo+ID4gPiDilIIgICAgICAg4pSCICAg4pSU4pSA4pSAIHBpZCAtPiAvcHJvYy85L25zCj4gPiA+
+IOKUgiAgICAgICDilJTilIDilIAgcGlkIC0+IC9wcm9jLzQvbnMKPiA+ID4g4pSU4pSA4pSAIHBp
+ZCAtPiAvcHJvYy8xL25zCj4gPiA+Cj4gPiA+IFdlIGNyZWF0ZWQgZGlycyBhbmQgYWRkIGEgbGlu
+ayB0byB0aGUgMXN0IHByb2Nlc3Mgb2YgdGhpcyBucy4KPiA+IAo+ID4gSG93IG11Y2ggbW9yZSBr
+ZXJuZWwgc3BhY2UgZG9lcyB0aGlzIHRha2UgdXA/Cj4gPiAKPiAKPiBPbmx5IGZpcnN0IHByb2Nl
+c3Mgd2hlbiBjcmVhdGluZyBuZXcgbnMgd2lsbCBiZSBhZGQgaGVyZS4KPiBTbyB0aGVyZSB3b3Vs
+ZCBub3Qgc28gbWFueSBpdGVtcy4KCk9oLCBJIHNlZS4KCj4gPiBJcyB0aGVyZSBhbiBlYXN5IHdh
+eSB0byBnbyBmcm9tIGEgcGlkIGluIHlvdXIgb3duIG5hbWVzcGFjZQo+ID4gdG8gaXRzIHByb3Bl
+ciBub2RlIHVuZGVyIC9wcm9jL25zcGlkPyAgSS5lLiBpZiBJIGFtIGludGVyZXN0ZWQKPiA+IGlu
+IHBpZCA5OTg3LCB3aGljaCBoYXBwZW5zIHRvIGJlIHBpZCA1IGluc2lkZSBhIGNvbnRhaW5lciBp
+bgo+ID4gbnMyLCBhbmQgdGhlbiBJIHdhbnQgdG8ga25vdyB3aGF0IGl0IG1lYW5zIHdoZW4gaXQg
+KHBpZCA5OTg3KQo+ID4gaXMgdGFsa2luZyBhYm91dCAncGlkIDEwJy4gIElzIHRoZXJlIGEgbGlu
+ayB1bmRlciAvcHJvYy85OTg3Lwo+ID4gbGVhZGluZyB0byAvcHJvYy9uc3BpZC9uczIvNSA/Cj4g
+Cj4gSWYgeW91IHdhbnQgdG8gcXVlcnkgcGlkIDk5ODcsIHlvdSBjb3VsZDoKPiBhKSByZWFkbGlu
+ayAvcHJvYy85OTg3L25zL3BpZAo+IGIpIHJlZmVyIHRvIC9wcm9jL25zcGlkL25zJChpbnVtKS9u
+cyQoaW51bSkuLgo+IGMpIEFsc28gdGhlIGxpbmsgdG8gdGhlIDFzdCBuZXcgbnMgcHJvY2VzcyBj
+b3VsZCBiZSBmb3VuZCB1bmRlciBucyQoaW51bSkuCgpUaGlzIGlzIGdvb2QuICBMZXQncyBnbyB3
+aXRoIGl0LgoKPiBPciBhcyB3aGF0IHlvdSBzYWlkIGFib3ZlLAoKTmFoLiAgTGV0J3Mgbm90IGNo
+YW5nZSAvcHJvYy9QSUQvbnMvcGlkLgoKPiB3ZSBjb3VsZCBkbyBzb21lIGNoYW5nZSBpbiAvcHJv
+Yy9QSUQvbnMvcGlkCj4gYSkgd2hlbiBuZXcgbnMgY3JlYXRlZCwgd2UgcHV0IHRoZW0gdW5kZXIg
+L3Byb2MvbnNwaWQKPiBiKSBjcmVhdGUgYSBsaW5rIGZyb20gL3Byb2MvUElEL25zL3BpZCB0byAv
+cHJvYy9uc3BpZC9ucyQoaW51bSkvcGlkCj4gCj4gVGhlbiB3ZSBjb3VsZCBnZXQgYSBtb3JlIGNs
+ZWFyIHZpZXc6Cj4gMS4gcGlkbnMgdmlldwo+IC9wcm9jL25zcGlkCj4g4pSc4pSA4pSAIG5zXzQw
+MjY1MzE4MzYJKG5zMCkKPiDilIIgIOKUnOKUgCBuczEKPiDilIIgIOKUgiAgIOKUnOKUgOKUgOKU
+gCBuczIKPiDilIIgIOKUgiAgIOKUlOKUgOKUgCBwaWQgLT4gcGlkOls0MDI2NTMxODM2XQo+IOKU
+giAg4pSU4pSA4pSAIHBpZCAtPiBwaWQ6WzQwMjY1MzE4MTZdCj4g4pSU4pSA4pSAIHBpZCAtPiBw
+aWQ6WzQwMjY1MzE4MDZdCj4gCj4gVGhlbiB0aGVyZSB3aWxsIGJlIGEgbGluayB1bmRlciAvcHJv
+Yy85OTg3L25zL3BpZCB0byBuczI6Cj4gMi4gUElEMSBsaXZlIGluIG5zMCwgUElEMiBsaXZlIGlu
+IG5zMgo+IC9wcm9jL1BJRDEvbnMvcGlkLT4vcHJvYy9uc3BpZC9uc180MDI2NTMxODA2Cj4gCj4g
+L3Byb2MvUElEMi9ucy9waWQtPi9wcm9jL25zcGlkL25zXzQwMjY1MzE4MzYKPiAKPiA+IAo+ID4g
+PiBiKSBleHBvc2UgYWxsIHNldHMgb2YgcGlkLCBwZ2lkLCBzaWQgYW5kIHRnaWQKPiA+ID4gdmlh
+IGV4cGFuZGVkIC9wcm9jL1BJRC9zdGF0dXMKPiA+ID4gICAgICAgV2UgY291bGQgZ2V0IHRyYW5z
+bGF0ZWQgSURzIGZyb20gY29udGFpbmVyIGxpa2U6Cj4gPiA+ICAgICBOU3RnaWQ6CTYgCTgJOQo+
+ID4gPiAgICAgTlNwaWQ6CTYgCTggCTkKPiA+ID4gICAgIE5TcGdpZDoJNiAJOCAJOQo+ID4gPiAg
+ICAgTlNzaWQ6CTYgCTEgCTAKPiA+ID4gICAgIChhIHNldCBvZiBJRHMgd2l0aCAzIGxldmVsIG9m
+IG5zKQo+ID4gCj4gPiBUaGlzIHN1cmUgZG9lcyBzZWVtIHRoZSBzaW1wbGVzdCByb3V0ZS4gIEJ1
+dCBpdCBhY3R1YWxseSBzdGlsbAo+ID4gZG9lcyBub3QgcHJvdmlkZSB1cyBhbiBlYXN5IGFuc3dl
+ciB0byAid2hhdCBkb2VzIHBpZCA5OTg3IG1lYW4KPiA+IHdoZW4gaXQgdGFsa3MgYWJvdXQgcGlk
+IDEwPyIuCj4gCj4gRG8geW91IG1lYW46Cj4gaW5pdF9waWRfbnMgICBuczEgICAgIG5zMgo+IDk5
+ODcgICAgICAgICAgICAxMCAgICAgIDUKPiBOZWl0aGVyIGdldG5zcGlkIHN5c2NhbGwgbm9yIHBy
+b2MvUElEL3N0YXR1cyBleHBhbnNpb24KPiBjb3VsZCBhbnN3ZXIgdGhpcyB3aXRob3V0IGhpZXJh
+cmNoeSBpbmZvcm1hdGlvbi4KPiBGb3IgdXNlcnMgaW4gaW5pdF9waWRfbnMsIGdldG5zcGlkIG5l
+ZWRzCj4gYW4gb2JzZXJ2ZXIgcGlkIGxpdmUgYW5kIG9ubHkgbGl2ZSBpbiBuczEsCgpZZXMsIGdv
+b2QgcG9pbnQuICBUaGF0J3MgYSBkZWZpbml0ZSBkaXNhZHZhbnRhZ2Ugb2YgZ2V0bnNwaWQKY29t
+cGFyZWQgdG8geW91ciBwcm9jIGFwcHJvYWNoLgoKPiBvciB3ZSBzaG91bGQgY2FsbCBnZXRuc3Bp
+ZCBpbiBuczEuCj4gU2VlIGJlbG93IGZvciBtb3JlLgo+IAo+ID4gCj4gPiA+IDIuIEFkdmFudGFn
+ZSBvZiBwcm9jZnMgc29sdXRpb24KPiA+ID4gYSkgZWFzeSB0byB1c2U6Cj4gPiA+IGdldG5zcGlk
+KDYsIDEwKSAtPiAoMTAsIDksIDEwKQo+ID4gPiBvcgo+ID4gPiBnZXRuc3BpZCgxMCwgbnMxX2Zk
+LCBuczBfZmQpIC0+IDkKPiA+ID4gZ2V0bnNwaWQoMTAsIG5zMl9mZCwgbnMwX2ZkKSAtPiAxMAo+
+ID4gPgo+ID4gPiBBbmQgd2UgY291bGQgYWxzbyBnZXQgaXQgYnk6Cj4gPiA+IGNhdCAvcHJvYy8x
+MC9zdGF0dXMgfCBncmVwIE5TcGlkOgo+ID4gPiBOU3BpZDoJMTAgCTkgCTEwCj4gPiA+IC4uLgo+
+ID4gCj4gPiBJdCBsb29rcyBuaWNlLCBidXQgSSdtIG5vdCBjb252aW5jZWQgaXQgZ2l2ZXMgdXMg
+dGhlIGluZm8gd2UKPiA+IG5lZWQuCj4gPiAKPiA+IEl0J3MgY2VydGFpbmx5IHBvc3NpYmxlIHRo
+YXQgSSd2ZSBqdXN0IG5vdCB0aG91Z2h0IGl0IHRocm91Z2gKPiA+IGVub3VnaC4KPiA+IAo+ID4g
+UXVlc3Rpb246IGFyZSB5b3UgcHJvcG9zaW5nIHRoaXMgKC9wcm9jL3BpZC9zdGF0dXMgZXhwYW5z
+aW9uKSBhcyBhbgo+ID4gYWx0ZXJuYXRpdmUgdG8gL3Byb2MvbnNwaWQsIG9yIGFyZSB0aGV5IG1l
+YW50IHRvIGJlIGNvbXBsZW1lbnRhcnk/Cj4gPiAKPiAKPiBXZSB3YW50IC9wcm9jL25zcGlkIGFz
+IGEgY29tcGxlbWVudCBmb3IgcGlkIHRyYW5zbGF0aW9uLgoKT2suCgo+IEV4Ogo+ICAgICBpbml0
+X3BpZF9ucyAgICAgbnMxICAgICAgICAgbnMyCj4gdDEgIDIKPiB0MiAgIGAtIDMgICAgICAgICAg
+IDEgCj4gdDMgICAgICAgYC0gNCAgICAgICBgLSA1ICAgICAgICAxCj4gdDQgICAgICAgICAgIGAt
+NiAgICAgICAgYC04ICAgICAgYC05Cj4gdDUgICAgICAgICAgICAgYC0xMCAgICAgICAgYC05ICAg
+ICAgYC0xMAo+IFN1cHBvc2Ugd2Ugd2VyZSBpbiBpbml0X3BpZF9uczoKPiBnZXRuc3BpZCg5LDQp
+LT42ICh0NCkKPiBnZXRuc3BpZCg5LDMpLT4xMCh0NSkKPiBXZSBrbmV3IHQyIGluIG5zMSBhbmQg
+dDMgaW4gbnMyLCBidXQgd2UgZG9uJ3Qga25vdyB0aGVpciByZWxhdGlvbnNoaXAuCj4gSWYgd2Ug
+d2FudCB0byBxdWVyeSBwaWQgOSBpbiBuczEsIHdlIGNvdWxkIHVzZSBnZXRuc3BpZCg5LDMpLT4x
+MCh0NSkKPiBidXQgdGhlIHByZS1yZXF1aXNpdGUgaXMgdGhhdCB3ZSBrbm93IG5zMiBpcyB0aGUg
+Y2hpbGQgb2YgbnMxLiAKCkkgbGlrZSB5b3VyIHByb2MgYXBwcm9hY2guICBEbyB5b3UgaGF2ZSBh
+biBpbXBsZW1lbnRhdGlvbj8KCi1zZXJnZQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3Rz
+LmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9t
+YWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
