@@ -1,89 +1,26 @@
-From: "chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: RE: [RFC]Pid conversion between pid namespace
-Date: Fri, 8 Aug 2014 09:30:46 +0000
-Message-ID: <5871495633F38949900D2BF2DC04883E577E1A@G08CNEXMBPEKD02.g08.fujitsu.local>
-References: <5871495633F38949900D2BF2DC04883E55C374@G08CNEXMBPEKD02.g08.fujitsu.local>
-	<5871495633F38949900D2BF2DC04883E560412@G08CNEXMBPEKD02.g08.fujitsu.local>
-	<5871495633F38949900D2BF2DC04883E56C7A2@G08CNEXMBPEKD02.g08.fujitsu.local>
-	<20140804222044.GJ12438@ubuntumail>
-	<5871495633F38949900D2BF2DC04883E57702E@G08CNEXMBPEKD02.g08.fujitsu.local>
-	<20140807161141.GG18303@ubuntumail>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: cgroups manpage
+Date: Fri, 8 Aug 2014 22:01:25 +0200
+Message-ID: <20140808200125.GA24978@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140807161141.GG18303@ubuntumail>
-Content-Language: zh-CN
-List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Cc: "Richard Weinberger (richard-/L3Ra7n9ekc@public.gmane.org)" <richard-/L3Ra7n9ekc@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Oleg Nesterov (oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org)" <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org)" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Vasily Kulikov (segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org)" <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <cgroups-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
+Sender: cgroups-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-DQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogU2VyZ2UgSGFsbHluIFtt
-YWlsdG86c2VyZ2UuaGFsbHluQHVidW50dS5jb21dDQo+IFNlbnQ6IEZyaWRheSwgQXVndXN0IDA4
-LCAyMDE0IDEyOjEyIEFNDQo+IFRvOiBDaGVuLCBIYW54aWFvL+mZiCDmmZfpnIQNCg0KPiA+ID4g
-SG93IG11Y2ggbW9yZSBrZXJuZWwgc3BhY2UgZG9lcyB0aGlzIHRha2UgdXA/DQo+ID4gPg0KPiA+
-DQo+ID4gT25seSBmaXJzdCBwcm9jZXNzIHdoZW4gY3JlYXRpbmcgbmV3IG5zIHdpbGwgYmUgYWRk
-IGhlcmUuDQo+ID4gU28gdGhlcmUgd291bGQgbm90IHNvIG1hbnkgaXRlbXMuDQo+IA0KPiBPaCwg
-SSBzZWUuDQo+IA0KPiA+ID4gSXMgdGhlcmUgYW4gZWFzeSB3YXkgdG8gZ28gZnJvbSBhIHBpZCBp
-biB5b3VyIG93biBuYW1lc3BhY2UNCj4gPiA+IHRvIGl0cyBwcm9wZXIgbm9kZSB1bmRlciAvcHJv
-Yy9uc3BpZD8gIEkuZS4gaWYgSSBhbSBpbnRlcmVzdGVkDQo+ID4gPiBpbiBwaWQgOTk4Nywgd2hp
-Y2ggaGFwcGVucyB0byBiZSBwaWQgNSBpbnNpZGUgYSBjb250YWluZXIgaW4NCj4gPiA+IG5zMiwg
-YW5kIHRoZW4gSSB3YW50IHRvIGtub3cgd2hhdCBpdCBtZWFucyB3aGVuIGl0IChwaWQgOTk4NykN
-Cj4gPiA+IGlzIHRhbGtpbmcgYWJvdXQgJ3BpZCAxMCcuICBJcyB0aGVyZSBhIGxpbmsgdW5kZXIg
-L3Byb2MvOTk4Ny8NCj4gPiA+IGxlYWRpbmcgdG8gL3Byb2MvbnNwaWQvbnMyLzUgPw0KPiA+DQo+
-ID4gSWYgeW91IHdhbnQgdG8gcXVlcnkgcGlkIDk5ODcsIHlvdSBjb3VsZDoNCj4gPiBhKSByZWFk
-bGluayAvcHJvYy85OTg3L25zL3BpZA0KPiA+IGIpIHJlZmVyIHRvIC9wcm9jL25zcGlkL25zJChp
-bnVtKS9ucyQoaW51bSkuLg0KPiA+IGMpIEFsc28gdGhlIGxpbmsgdG8gdGhlIDFzdCBuZXcgbnMg
-cHJvY2VzcyBjb3VsZCBiZSBmb3VuZCB1bmRlciBucyQoaW51bSkuDQo+IA0KPiBUaGlzIGlzIGdv
-b2QuICBMZXQncyBnbyB3aXRoIGl0Lg0KDQpPSw0KDQo+IA0KPiA+IE9yIGFzIHdoYXQgeW91IHNh
-aWQgYWJvdmUsDQo+IA0KPiBOYWguICBMZXQncyBub3QgY2hhbmdlIC9wcm9jL1BJRC9ucy9waWQu
-DQo+IA0KPiA+ID4gVGhpcyBzdXJlIGRvZXMgc2VlbSB0aGUgc2ltcGxlc3Qgcm91dGUuICBCdXQg
-aXQgYWN0dWFsbHkgc3RpbGwNCj4gPiA+IGRvZXMgbm90IHByb3ZpZGUgdXMgYW4gZWFzeSBhbnN3
-ZXIgdG8gIndoYXQgZG9lcyBwaWQgOTk4NyBtZWFuDQo+ID4gPiB3aGVuIGl0IHRhbGtzIGFib3V0
-IHBpZCAxMD8iLg0KPiA+DQo+ID4gRG8geW91IG1lYW46DQo+ID4gaW5pdF9waWRfbnMgICBuczEg
-ICAgIG5zMg0KPiA+IDk5ODcgICAgICAgICAgICAxMCAgICAgIDUNCj4gPiBOZWl0aGVyIGdldG5z
-cGlkIHN5c2NhbGwgbm9yIHByb2MvUElEL3N0YXR1cyBleHBhbnNpb24NCj4gPiBjb3VsZCBhbnN3
-ZXIgdGhpcyB3aXRob3V0IGhpZXJhcmNoeSBpbmZvcm1hdGlvbi4NCj4gPiBGb3IgdXNlcnMgaW4g
-aW5pdF9waWRfbnMsIGdldG5zcGlkIG5lZWRzDQo+ID4gYW4gb2JzZXJ2ZXIgcGlkIGxpdmUgYW5k
-IG9ubHkgbGl2ZSBpbiBuczEsDQo+IA0KPiBZZXMsIGdvb2QgcG9pbnQuICBUaGF0J3MgYSBkZWZp
-bml0ZSBkaXNhZHZhbnRhZ2Ugb2YgZ2V0bnNwaWQNCj4gY29tcGFyZWQgdG8geW91ciBwcm9jIGFw
-cHJvYWNoLg0KPiANCj4gPiBvciB3ZSBzaG91bGQgY2FsbCBnZXRuc3BpZCBpbiBuczEuDQo+ID4g
-U2VlIGJlbG93IGZvciBtb3JlLg0KPiA+DQo+ID4gPg0KPiA+ID4gPiAyLiBBZHZhbnRhZ2Ugb2Yg
-cHJvY2ZzIHNvbHV0aW9uDQo+ID4gPiA+IGEpIGVhc3kgdG8gdXNlOg0KPiA+ID4gPiBnZXRuc3Bp
-ZCg2LCAxMCkgLT4gKDEwLCA5LCAxMCkNCj4gPiA+ID4gb3INCj4gPiA+ID4gZ2V0bnNwaWQoMTAs
-IG5zMV9mZCwgbnMwX2ZkKSAtPiA5DQo+ID4gPiA+IGdldG5zcGlkKDEwLCBuczJfZmQsIG5zMF9m
-ZCkgLT4gMTANCj4gPiA+ID4NCj4gPiA+ID4gQW5kIHdlIGNvdWxkIGFsc28gZ2V0IGl0IGJ5Og0K
-PiA+ID4gPiBjYXQgL3Byb2MvMTAvc3RhdHVzIHwgZ3JlcCBOU3BpZDoNCj4gPiA+ID4gTlNwaWQ6
-CTEwIAk5IAkxMA0KPiA+ID4gPiAuLi4NCj4gPiA+DQo+ID4gPiBJdCBsb29rcyBuaWNlLCBidXQg
-SSdtIG5vdCBjb252aW5jZWQgaXQgZ2l2ZXMgdXMgdGhlIGluZm8gd2UNCj4gPiA+IG5lZWQuDQo+
-ID4gPg0KPiA+ID4gSXQncyBjZXJ0YWlubHkgcG9zc2libGUgdGhhdCBJJ3ZlIGp1c3Qgbm90IHRo
-b3VnaHQgaXQgdGhyb3VnaA0KPiA+ID4gZW5vdWdoLg0KPiA+ID4NCj4gPiA+IFF1ZXN0aW9uOiBh
-cmUgeW91IHByb3Bvc2luZyB0aGlzICgvcHJvYy9waWQvc3RhdHVzIGV4cGFuc2lvbikgYXMgYW4N
-Cj4gPiA+IGFsdGVybmF0aXZlIHRvIC9wcm9jL25zcGlkLCBvciBhcmUgdGhleSBtZWFudCB0byBi
-ZSBjb21wbGVtZW50YXJ5Pw0KPiA+ID4NCj4gPg0KPiA+IFdlIHdhbnQgL3Byb2MvbnNwaWQgYXMg
-YSBjb21wbGVtZW50IGZvciBwaWQgdHJhbnNsYXRpb24uDQo+IA0KPiBPay4NCj4gDQo+ID4gRXg6
-DQo+ID4gICAgIGluaXRfcGlkX25zICAgICBuczEgICAgICAgICBuczINCj4gPiB0MSAgMg0KPiA+
-IHQyICAgYC0gMyAgICAgICAgICAgMQ0KPiA+IHQzICAgICAgIGAtIDQgICAgICAgYC0gNSAgICAg
-ICAgMQ0KPiA+IHQ0ICAgICAgICAgICBgLTYgICAgICAgIGAtOCAgICAgIGAtOQ0KPiA+IHQ1ICAg
-ICAgICAgICAgIGAtMTAgICAgICAgIGAtOSAgICAgIGAtMTANCj4gPiBTdXBwb3NlIHdlIHdlcmUg
-aW4gaW5pdF9waWRfbnM6DQo+ID4gZ2V0bnNwaWQoOSw0KS0+NiAodDQpDQo+ID4gZ2V0bnNwaWQo
-OSwzKS0+MTAodDUpDQo+ID4gV2Uga25ldyB0MiBpbiBuczEgYW5kIHQzIGluIG5zMiwgYnV0IHdl
-IGRvbid0IGtub3cgdGhlaXIgcmVsYXRpb25zaGlwLg0KPiA+IElmIHdlIHdhbnQgdG8gcXVlcnkg
-cGlkIDkgaW4gbnMxLCB3ZSBjb3VsZCB1c2UgZ2V0bnNwaWQoOSwzKS0+MTAodDUpDQo+ID4gYnV0
-IHRoZSBwcmUtcmVxdWlzaXRlIGlzIHRoYXQgd2Uga25vdyBuczIgaXMgdGhlIGNoaWxkIG9mIG5z
-MS4NCj4gDQo+IEkgbGlrZSB5b3VyIHByb2MgYXBwcm9hY2guICBEbyB5b3UgaGF2ZSBhbiBpbXBs
-ZW1lbnRhdGlvbj8NCg0KVGhhbmtzIGZvciB5b3VyIGNvbW1lbnRzLg0KSSdtIHByZXBhcmluZyB0
-aGUgcGlkbnMgaGllcmFyY2h5IHBhdGNoLg0KSXQgc2VlbXMgdGhhdCBpdCdzIG5vdCBlYXN5IHRv
-IGNhcnJ5IGl0IG91dC4NCg0KVGhhbmtzLA0KLSBDaGVuICANCl9fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRh
-aW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5k
-YXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+Hi,
+
+For quite some time I've been meaning to write a proper manpage for cgroups.
+I've gotten a start on it, but since I'm keeping it in github anyway and
+going so slowly, I figure I should let people know I'm working on it, and
+that contributions are appreciated :)
+
+The tree is at git://github.com/hallyn/cgroup.man
+
+I do think I'll find time in the next two weeks to fill a bunch more in, so
+hopefully I can pass it over to Michael at or after linuxcon.
+
+-serge
