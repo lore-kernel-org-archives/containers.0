@@ -1,18 +1,13 @@
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC]Pid conversion between pid namespace
-Date: Thu, 7 Aug 2014 16:11:41 +0000
-Message-ID: <20140807161141.GG18303@ubuntumail>
-References: <5871495633F38949900D2BF2DC04883E55C374@G08CNEXMBPEKD02.g08.fujitsu.local>
-	<5871495633F38949900D2BF2DC04883E560412@G08CNEXMBPEKD02.g08.fujitsu.local>
-	<5871495633F38949900D2BF2DC04883E56C7A2@G08CNEXMBPEKD02.g08.fujitsu.local>
-	<20140804222044.GJ12438@ubuntumail>
-	<5871495633F38949900D2BF2DC04883E57702E@G08CNEXMBPEKD02.g08.fujitsu.local>
+From: <postmaster-Jop/ca68CRITQxfVw830ZQ@public.gmane.org>
+Subject: Undeliverable: ***BULK*** termination of deliveries.
+Date: Fri, 8 Aug 2014 10:54:37 +0430
+Message-ID: <e8b4f544-4e0d-41dd-951f-c73b8273a46f@hamshahri.ir>
+References: <5524059856.95406959443746@192.168.23.2>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: multipart/mixed; boundary="===============8703333956857858655=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <5871495633F38949900D2BF2DC04883E57702E-ZEd+hNNJ6a5ZYpXjqAkB5jz3u5zwRJJDAzI0kPv9QBlmR6Xm/wNWPw@public.gmane.org>
+Content-Language: en-US
+In-Reply-To: <5524059856.95406959443746-Q0ErXNX1RuZXTX+6NLZhKQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,105 +17,136 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: "Richard Weinberger (richard-/L3Ra7n9ekc@public.gmane.org)" <richard-/L3Ra7n9ekc@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Oleg Nesterov (oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org)" <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org)" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Vasily Kulikov (segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org)" <segoon-cxoSlKxDwOJWk0Htik3J/w@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-UXVvdGluZyBjaGVuaGFueGlhb0Bjbi5mdWppdHN1LmNvbSAoY2hlbmhhbnhpYW9AY24uZnVqaXRz
-dS5jb20pOgo+IEhpLAo+IAo+ID4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0KPiA+IEZyb206
-IFNlcmdlIEhhbGx5biBbbWFpbHRvOnNlcmdlLmhhbGx5bkB1YnVudHUuY29tXQo+ID4gU2VudDog
-VHVlc2RheSwgQXVndXN0IDA1LCAyMDE0IDY6MjEgQU0KPiA+IAo+ID4gUXVvdGluZyBjaGVuaGFu
-eGlhb0Bjbi5mdWppdHN1LmNvbSAoY2hlbmhhbnhpYW9AY24uZnVqaXRzdS5jb20pOgo+ID4gPiBI
-aSwKPiA+ID4KPiA+ID4gV2UgZGlzY3Vzc2VkIHR3byB3YXlzIG9mIHBpZCBjb252ZXJzaW9uOgo+
-ID4gPiBzeXNjYWxsIGFuZCBwcm9jZnMuCj4gPiA+Cj4gPiA+IEJvdGggb2YgdGhlbSBjb3VsZCBk
-byBhIHBpZCB0cmFuc2xhdGlvbiBqb2IuCj4gPiA+IEJ1dCBmb3IgbnMgaGllcmFyY2h5LCBzeXNj
-YWxsIGxpa2U6Cj4gPiA+Cj4gPiA+IHBpZF90KiBnZXRuc3BpZChwaWRfdCBxdWVyeV9waWQsIHBp
-ZF90IG9ic2VydmVyX3BpZCkKPiA+ID4gb3IKPiA+ID4gcGlkX3QgZ2V0bnNwaWQocGlkX3QgcXVl
-cnlfcGlkLCBpbnQgcXVlcnlfZmQsIGludCByZWZfZmQpCj4gPiA+Cj4gPiA+IGNvdWxkIG5vdCB3
-b3JrLCB3ZSBrbmV3IGEgcGlkIGxpdmVkIGluIG9uZSBucywgYnV0IHdlCj4gPiAKPiA+IE5vdGUg
-SSBzdGlsbCBkaXNhZ3JlZSBoZXJlLiAKPiA+IAo+ID4gPiBkaWQgbm90IGtub3cgdGhlaXIgcmVs
-YXRpb25zaGlwcy4KPiA+ID4gRm9yIGdldHRpbmcgdGhlIGVudGlyZSBzZXQgb2YgcGlkcywgYm90
-aCBvZiB0aGVtIGNhbiBkby4KPiA+ID4KPiA+ID4gU28gdXNpbmcgcHJvY2ZzIGlzIGEgYmV0dGVy
-IHdheS4KPiA+ID4KPiA+ID4gRXg6Cj4gPiA+ICAgICBpbml0X3BpZF9ucyAgICAgbnMxICAgICAg
-ICAgbnMyCj4gPiA+IHQxICAyCj4gPiA+IHQyICAgYC0gMyAgICAgICAgICAgMQo+ID4gPiB0MyAg
-ICAgICBgLSA0ICAgICAgIGAtIDUgICAgICAgIDEKPiA+ID4gdDQgICAgICAgICAgIGAtNiAgICAg
-ICAgYC04ICAgICAgYC05Cj4gPiA+IHQ1ICAgICAgICAgICAgIGAtMTAgICAgICAgIGAtOSAgICAg
-IGAtMTAKPiA+ID4KPiA+ID4gMS4gSG93IHByb2NmcyB3b3JrOgo+ID4gPiBhKSBhZGRpbmcgYSBu
-c3BpZCBoaWVyYXJjaHkgIHVuZGVyIC9wcm9jLyBsaWtlOgo+ID4gPiBbcm9vdEBsb2NhbGhvc3Qg
-cHJvY10jIHRyZWUgL3Byb2MvbnNwaWQKPiA+ID4gL3Byb2MvbnNwaWQKPiA+ID4g4pSc4pSA4pSA
-IG5zMAo+ID4gPiDilIIgICAg4pSU4pSA4pSAIG5zMQo+ID4gCj4gPiBBcmUgdGhlc2UgYWN0dWFs
-bHkgY2FsbGVkICduczEnIGV0Yz8gIEFkZGluZyBhIG5hbWVzcGFjZSBvZiBwaWQKPiA+IG5hbWVz
-cGFjZSBuYW1lcyBpcyBhIGJhZCB0aGluZy4KPiAKPiBUaGF0J3MganVzdCBhbiBleGFtcGxlLgo+
-IFdlIGluY2xpbmUgdG8gbmFtZSBpdCBhcyBucyQoaW51bSksIAo+IGxpa2Ugd2hhdCB3ZSBkaWQg
-aW4gcHJvY19uc19yZWFkbGluay4KPiAKPiA+IAo+ID4gPiDilIIgICAgICAg4pSc4pSA4pSAIG5z
-Mgo+ID4gPiDilIIgICAgICAg4pSCICAg4pSU4pSA4pSAIHBpZCAtPiAvcHJvYy85L25zCj4gPiA+
-IOKUgiAgICAgICDilJTilIDilIAgcGlkIC0+IC9wcm9jLzQvbnMKPiA+ID4g4pSU4pSA4pSAIHBp
-ZCAtPiAvcHJvYy8xL25zCj4gPiA+Cj4gPiA+IFdlIGNyZWF0ZWQgZGlycyBhbmQgYWRkIGEgbGlu
-ayB0byB0aGUgMXN0IHByb2Nlc3Mgb2YgdGhpcyBucy4KPiA+IAo+ID4gSG93IG11Y2ggbW9yZSBr
-ZXJuZWwgc3BhY2UgZG9lcyB0aGlzIHRha2UgdXA/Cj4gPiAKPiAKPiBPbmx5IGZpcnN0IHByb2Nl
-c3Mgd2hlbiBjcmVhdGluZyBuZXcgbnMgd2lsbCBiZSBhZGQgaGVyZS4KPiBTbyB0aGVyZSB3b3Vs
-ZCBub3Qgc28gbWFueSBpdGVtcy4KCk9oLCBJIHNlZS4KCj4gPiBJcyB0aGVyZSBhbiBlYXN5IHdh
-eSB0byBnbyBmcm9tIGEgcGlkIGluIHlvdXIgb3duIG5hbWVzcGFjZQo+ID4gdG8gaXRzIHByb3Bl
-ciBub2RlIHVuZGVyIC9wcm9jL25zcGlkPyAgSS5lLiBpZiBJIGFtIGludGVyZXN0ZWQKPiA+IGlu
-IHBpZCA5OTg3LCB3aGljaCBoYXBwZW5zIHRvIGJlIHBpZCA1IGluc2lkZSBhIGNvbnRhaW5lciBp
-bgo+ID4gbnMyLCBhbmQgdGhlbiBJIHdhbnQgdG8ga25vdyB3aGF0IGl0IG1lYW5zIHdoZW4gaXQg
-KHBpZCA5OTg3KQo+ID4gaXMgdGFsa2luZyBhYm91dCAncGlkIDEwJy4gIElzIHRoZXJlIGEgbGlu
-ayB1bmRlciAvcHJvYy85OTg3Lwo+ID4gbGVhZGluZyB0byAvcHJvYy9uc3BpZC9uczIvNSA/Cj4g
-Cj4gSWYgeW91IHdhbnQgdG8gcXVlcnkgcGlkIDk5ODcsIHlvdSBjb3VsZDoKPiBhKSByZWFkbGlu
-ayAvcHJvYy85OTg3L25zL3BpZAo+IGIpIHJlZmVyIHRvIC9wcm9jL25zcGlkL25zJChpbnVtKS9u
-cyQoaW51bSkuLgo+IGMpIEFsc28gdGhlIGxpbmsgdG8gdGhlIDFzdCBuZXcgbnMgcHJvY2VzcyBj
-b3VsZCBiZSBmb3VuZCB1bmRlciBucyQoaW51bSkuCgpUaGlzIGlzIGdvb2QuICBMZXQncyBnbyB3
-aXRoIGl0LgoKPiBPciBhcyB3aGF0IHlvdSBzYWlkIGFib3ZlLAoKTmFoLiAgTGV0J3Mgbm90IGNo
-YW5nZSAvcHJvYy9QSUQvbnMvcGlkLgoKPiB3ZSBjb3VsZCBkbyBzb21lIGNoYW5nZSBpbiAvcHJv
-Yy9QSUQvbnMvcGlkCj4gYSkgd2hlbiBuZXcgbnMgY3JlYXRlZCwgd2UgcHV0IHRoZW0gdW5kZXIg
-L3Byb2MvbnNwaWQKPiBiKSBjcmVhdGUgYSBsaW5rIGZyb20gL3Byb2MvUElEL25zL3BpZCB0byAv
-cHJvYy9uc3BpZC9ucyQoaW51bSkvcGlkCj4gCj4gVGhlbiB3ZSBjb3VsZCBnZXQgYSBtb3JlIGNs
-ZWFyIHZpZXc6Cj4gMS4gcGlkbnMgdmlldwo+IC9wcm9jL25zcGlkCj4g4pSc4pSA4pSAIG5zXzQw
-MjY1MzE4MzYJKG5zMCkKPiDilIIgIOKUnOKUgCBuczEKPiDilIIgIOKUgiAgIOKUnOKUgOKUgOKU
-gCBuczIKPiDilIIgIOKUgiAgIOKUlOKUgOKUgCBwaWQgLT4gcGlkOls0MDI2NTMxODM2XQo+IOKU
-giAg4pSU4pSA4pSAIHBpZCAtPiBwaWQ6WzQwMjY1MzE4MTZdCj4g4pSU4pSA4pSAIHBpZCAtPiBw
-aWQ6WzQwMjY1MzE4MDZdCj4gCj4gVGhlbiB0aGVyZSB3aWxsIGJlIGEgbGluayB1bmRlciAvcHJv
-Yy85OTg3L25zL3BpZCB0byBuczI6Cj4gMi4gUElEMSBsaXZlIGluIG5zMCwgUElEMiBsaXZlIGlu
-IG5zMgo+IC9wcm9jL1BJRDEvbnMvcGlkLT4vcHJvYy9uc3BpZC9uc180MDI2NTMxODA2Cj4gCj4g
-L3Byb2MvUElEMi9ucy9waWQtPi9wcm9jL25zcGlkL25zXzQwMjY1MzE4MzYKPiAKPiA+IAo+ID4g
-PiBiKSBleHBvc2UgYWxsIHNldHMgb2YgcGlkLCBwZ2lkLCBzaWQgYW5kIHRnaWQKPiA+ID4gdmlh
-IGV4cGFuZGVkIC9wcm9jL1BJRC9zdGF0dXMKPiA+ID4gICAgICAgV2UgY291bGQgZ2V0IHRyYW5z
-bGF0ZWQgSURzIGZyb20gY29udGFpbmVyIGxpa2U6Cj4gPiA+ICAgICBOU3RnaWQ6CTYgCTgJOQo+
-ID4gPiAgICAgTlNwaWQ6CTYgCTggCTkKPiA+ID4gICAgIE5TcGdpZDoJNiAJOCAJOQo+ID4gPiAg
-ICAgTlNzaWQ6CTYgCTEgCTAKPiA+ID4gICAgIChhIHNldCBvZiBJRHMgd2l0aCAzIGxldmVsIG9m
-IG5zKQo+ID4gCj4gPiBUaGlzIHN1cmUgZG9lcyBzZWVtIHRoZSBzaW1wbGVzdCByb3V0ZS4gIEJ1
-dCBpdCBhY3R1YWxseSBzdGlsbAo+ID4gZG9lcyBub3QgcHJvdmlkZSB1cyBhbiBlYXN5IGFuc3dl
-ciB0byAid2hhdCBkb2VzIHBpZCA5OTg3IG1lYW4KPiA+IHdoZW4gaXQgdGFsa3MgYWJvdXQgcGlk
-IDEwPyIuCj4gCj4gRG8geW91IG1lYW46Cj4gaW5pdF9waWRfbnMgICBuczEgICAgIG5zMgo+IDk5
-ODcgICAgICAgICAgICAxMCAgICAgIDUKPiBOZWl0aGVyIGdldG5zcGlkIHN5c2NhbGwgbm9yIHBy
-b2MvUElEL3N0YXR1cyBleHBhbnNpb24KPiBjb3VsZCBhbnN3ZXIgdGhpcyB3aXRob3V0IGhpZXJh
-cmNoeSBpbmZvcm1hdGlvbi4KPiBGb3IgdXNlcnMgaW4gaW5pdF9waWRfbnMsIGdldG5zcGlkIG5l
-ZWRzCj4gYW4gb2JzZXJ2ZXIgcGlkIGxpdmUgYW5kIG9ubHkgbGl2ZSBpbiBuczEsCgpZZXMsIGdv
-b2QgcG9pbnQuICBUaGF0J3MgYSBkZWZpbml0ZSBkaXNhZHZhbnRhZ2Ugb2YgZ2V0bnNwaWQKY29t
-cGFyZWQgdG8geW91ciBwcm9jIGFwcHJvYWNoLgoKPiBvciB3ZSBzaG91bGQgY2FsbCBnZXRuc3Bp
-ZCBpbiBuczEuCj4gU2VlIGJlbG93IGZvciBtb3JlLgo+IAo+ID4gCj4gPiA+IDIuIEFkdmFudGFn
-ZSBvZiBwcm9jZnMgc29sdXRpb24KPiA+ID4gYSkgZWFzeSB0byB1c2U6Cj4gPiA+IGdldG5zcGlk
-KDYsIDEwKSAtPiAoMTAsIDksIDEwKQo+ID4gPiBvcgo+ID4gPiBnZXRuc3BpZCgxMCwgbnMxX2Zk
-LCBuczBfZmQpIC0+IDkKPiA+ID4gZ2V0bnNwaWQoMTAsIG5zMl9mZCwgbnMwX2ZkKSAtPiAxMAo+
-ID4gPgo+ID4gPiBBbmQgd2UgY291bGQgYWxzbyBnZXQgaXQgYnk6Cj4gPiA+IGNhdCAvcHJvYy8x
-MC9zdGF0dXMgfCBncmVwIE5TcGlkOgo+ID4gPiBOU3BpZDoJMTAgCTkgCTEwCj4gPiA+IC4uLgo+
-ID4gCj4gPiBJdCBsb29rcyBuaWNlLCBidXQgSSdtIG5vdCBjb252aW5jZWQgaXQgZ2l2ZXMgdXMg
-dGhlIGluZm8gd2UKPiA+IG5lZWQuCj4gPiAKPiA+IEl0J3MgY2VydGFpbmx5IHBvc3NpYmxlIHRo
-YXQgSSd2ZSBqdXN0IG5vdCB0aG91Z2h0IGl0IHRocm91Z2gKPiA+IGVub3VnaC4KPiA+IAo+ID4g
-UXVlc3Rpb246IGFyZSB5b3UgcHJvcG9zaW5nIHRoaXMgKC9wcm9jL3BpZC9zdGF0dXMgZXhwYW5z
-aW9uKSBhcyBhbgo+ID4gYWx0ZXJuYXRpdmUgdG8gL3Byb2MvbnNwaWQsIG9yIGFyZSB0aGV5IG1l
-YW50IHRvIGJlIGNvbXBsZW1lbnRhcnk/Cj4gPiAKPiAKPiBXZSB3YW50IC9wcm9jL25zcGlkIGFz
-IGEgY29tcGxlbWVudCBmb3IgcGlkIHRyYW5zbGF0aW9uLgoKT2suCgo+IEV4Ogo+ICAgICBpbml0
-X3BpZF9ucyAgICAgbnMxICAgICAgICAgbnMyCj4gdDEgIDIKPiB0MiAgIGAtIDMgICAgICAgICAg
-IDEgCj4gdDMgICAgICAgYC0gNCAgICAgICBgLSA1ICAgICAgICAxCj4gdDQgICAgICAgICAgIGAt
-NiAgICAgICAgYC04ICAgICAgYC05Cj4gdDUgICAgICAgICAgICAgYC0xMCAgICAgICAgYC05ICAg
-ICAgYC0xMAo+IFN1cHBvc2Ugd2Ugd2VyZSBpbiBpbml0X3BpZF9uczoKPiBnZXRuc3BpZCg5LDQp
-LT42ICh0NCkKPiBnZXRuc3BpZCg5LDMpLT4xMCh0NSkKPiBXZSBrbmV3IHQyIGluIG5zMSBhbmQg
-dDMgaW4gbnMyLCBidXQgd2UgZG9uJ3Qga25vdyB0aGVpciByZWxhdGlvbnNoaXAuCj4gSWYgd2Ug
-d2FudCB0byBxdWVyeSBwaWQgOSBpbiBuczEsIHdlIGNvdWxkIHVzZSBnZXRuc3BpZCg5LDMpLT4x
-MCh0NSkKPiBidXQgdGhlIHByZS1yZXF1aXNpdGUgaXMgdGhhdCB3ZSBrbm93IG5zMiBpcyB0aGUg
-Y2hpbGQgb2YgbnMxLiAKCkkgbGlrZSB5b3VyIHByb2MgYXBwcm9hY2guICBEbyB5b3UgaGF2ZSBh
-biBpbXBsZW1lbnRhdGlvbj8KCi1zZXJnZQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3Rz
-LmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9t
-YWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+--===============8703333956857858655==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="0a638155-25fa-4828-aae9-897ef984e04f"
+Content-Language: en-US
+
+--0a638155-25fa-4828-aae9-897ef984e04f
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+
+Delivery has failed to these recipients or groups:
+
+acde0657-Jop/ca68CRIm4RdzfppkhA@public.gmane.org<mailto:acde0657-Jop/ca68CRIm4RdzfppkhA@public.gmane.org>
+The server has tried to deliver this message, without success, and has stop=
+ped trying. Please try sending this message again. If the problem continues=
+, contact your helpdesk.
+
+
+
+
+
+
+
+
+Diagnostic information for administrators:
+
+Generating server: hamshahri.ir
+
+acde0657-Jop/ca68CRIm4RdzfppkhA@public.gmane.org
+#550 4.4.7 QUEUE.Expired; message expired ##
+
+Original message headers:
+
+Received: from 192.168.23.2 (217.133.117.26) by PostMan.Hamshahri.ir
+ (172.22.1.22) with Microsoft SMTP Server id 14.0.722.0; Wed, 6 Aug 2014
+ 10:51:41 +0430
+Received: from [192.168.23.2] by 192.168.23.2 id S38VYHRuQLwF with SMTP; We=
+d,
+ 06 Aug 2014 08:21:18 +0200
+Date: Wed, 6 Aug 2014 08:21:18 +0200
+From: Contessa <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Message-ID: <5524059856.95406959443746-Q0ErXNX1RuZXTX+6NLZhKQ@public.gmane.org>
+To: <acde0657-Jop/ca68CRIm4RdzfppkhA@public.gmane.org>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary=3D"----------56F72451E72A0A"
+X-WatchGuard-Spam-ID: str=3D0001.0A090203.53E1C849.00CE,ss=3D3,sh,fgs=3D0
+X-WatchGuard-Spam-Score: 3, bulk; 0, no virus
+X-WatchGuard-Mail-Client-IP: 217.133.117.26
+X-WatchGuard-Mail-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Subject: ***BULK*** termination of deliveries.
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+
+
+--0a638155-25fa-4828-aae9-897ef984e04f
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;hamshahri.ir
+Received-From-MTA: dns;192.168.23.2
+Arrival-Date: Wed, 6 Aug 2014 06:21:41 +0000
+
+Final-Recipient: rfc822;acde0657-Jop/ca68CRIm4RdzfppkhA@public.gmane.org
+Action: failed
+Status: 4.4.7
+Diagnostic-Code: smtp;550 4.4.7 QUEUE.Expired; message expired
+
+
+--0a638155-25fa-4828-aae9-897ef984e04f
+Content-Type: message/rfc822
+
+Received: from 192.168.23.2 (217.133.117.26) by PostMan.Hamshahri.ir
+ (172.22.1.22) with Microsoft SMTP Server id 14.0.722.0; Wed, 6 Aug 2014
+ 10:51:41 +0430
+Received: from [192.168.23.2] by 192.168.23.2 id S38VYHRuQLwF with SMTP; Wed,
+ 06 Aug 2014 08:21:18 +0200
+Date: Wed, 6 Aug 2014 08:21:18 +0200
+From: Contessa <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Message-ID: <5524059856.95406959443746-Q0ErXNX1RuZXTX+6NLZhKQ@public.gmane.org>
+To: <acde0657-Jop/ca68CRIm4RdzfppkhA@public.gmane.org>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="----------56F72451E72A0A"
+X-WatchGuard-Spam-ID: str=0001.0A090203.53E1C849.00CE,ss=3,sh,fgs=0
+X-WatchGuard-Spam-Score: 3, bulk; 0, no virus
+X-WatchGuard-Mail-Client-IP: 217.133.117.26
+X-WatchGuard-Mail-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Subject: ***BULK*** termination of deliveries.
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+
+------------56F72451E72A0A
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+
+HI
+  
+Interest at the rate in the next month will be changed. The information is contained in the attached document.
+     
+      
+Phan Arlene
+Tel.: 537 1212266
+------------56F72451E72A0A
+Content-Type: text/plain; name="message.txt"; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: inline; filename="message.txt"
+Content-Description: message.txt
+
+The WatchGuard Firebox that protects your network has detected a message =
+that may not be safe.=20
+
+Cause : The message content may not be safe.=20
+Content type : application/x-zip-compressed=20
+File name    : Info.zip=20
+Virus status : No information.=20
+Action       : The Firebox deleted Info.zip.=20
+
+Your network administrator can not restore this attachment.
+
+
+------------56F72451E72A0A--
+
+--0a638155-25fa-4828-aae9-897ef984e04f--
+
+--===============8703333956857858655==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============8703333956857858655==--
