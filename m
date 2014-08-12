@@ -1,14 +1,15 @@
-From: Rafael David Tinoco <rafael.tinoco-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: Re: [REVIEW][PATCH] namespaces: Use task_lock and not rcu to protect
-	nsproxy
-Date: Mon, 11 Aug 2014 08:40:28 -0300
-Message-ID: <1BABA618-11A6-40A1-806A-BDCC2CC76FCA@canonical.com>
-References: <87ha1zljzw.fsf@x220.int.ebiederm.org>
-Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.6\))
+From: Manfred Spraul <manfred-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>
+Subject: [PATCH 3/3] ipc namespace: copy settings from parent namespace
+Date: Tue, 12 Aug 2014 09:29:17 +0200
+Message-ID: <1407828557-31995-4-git-send-email-manfred@colorfullife.com>
+References: <1407828557-31995-1-git-send-email-manfred@colorfullife.com>
+	<1407828557-31995-2-git-send-email-manfred@colorfullife.com>
+	<1407828557-31995-3-git-send-email-manfred@colorfullife.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87ha1zljzw.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <1407828557-31995-3-git-send-email-manfred-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,264 +19,277 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, Manfred Spraul <manfred-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>, Rafael Aquini <aquini-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Davidlohr Bueso <davidlohr.bueso-VXdhtT5mjnY@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, 1vier1-S0/GAf8tV78@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-For those this might concern,
+Right now, each new IPC namespace starts with the kernel default values.
+This means that changes that were made to the limits get overwritten.
 
-This patch works for me and is running in a big production environment for more 
-then 2 weeks with no problems. Performance regression (observed after commit 
-#911af505 in http://people.canonical.com/~inaddy/lp1328088/charts/{250,500,750,
-1000,1250,1500,1750}.html) does not exist anymore. 
+With this patch, a new namespace inherits the settings from the parent
+namespace, which is less surprising.
 
-Changing locking mechanism from rcu_read_lock to task_lock makes network namespaces
-creation less sensible to _rcu implementation_ changes and fixed observed regression.
+The patch updates
+- SysV msg
+- SysV sem
+- SysV shm
+- POSIX mqueues
 
-Thank you very much.
+Cc: serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org
+Cc: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 
--Rafael
+Signed-off-by: Manfred Spraul <manfred-nhLOkwUX5cPe2c5cEj3t2g@public.gmane.org>
+---
+ include/linux/ipc_namespace.h |  6 ++++--
+ ipc/mqueue.c                  | 23 ++++++++++++++++-------
+ ipc/msg.c                     | 16 +++++++++++-----
+ ipc/namespace.c               |  8 ++++----
+ ipc/sem.c                     | 19 +++++++++++++------
+ ipc/shm.c                     | 19 +++++++++++++------
+ ipc/util.h                    | 20 ++++++++++++++------
+ 7 files changed, 75 insertions(+), 36 deletions(-)
 
-On Jul 29, 2014, at 10:21 PM, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
-
-> 
-> The synchronous syncrhonize_rcu in switch_task_namespaces makes setns
-> a sufficiently expensive system call that people have complained.
-> 
-> Upon inspect nsproxy no longer needs rcu protection for remote reads.
-> remote reads are rare.  So optimize for same process reads and write
-> by switching using rask_lock instead.
-> 
-> This yields a simpler to understand lock, and a faster setns system call.
-> 
-> In particular this fixes a performance regression observed
-> by Rafael David Tinoco <rafael.tinoco-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>.
-> 
-> This is effectively a revert of Pavel Emelyanov's commit
-> cf7b708c8d1d7a27736771bcf4c457b332b0f818 Make access to task's nsproxy lighter
-> from 2007.  The race this originialy fixed no longer exists as
-> do_notify_parent uses task_active_pid_ns(parent) instead of
-> parent->nsproxy.
-> 
-> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> ---
-> fs/namespace.c           |  6 +++---
-> fs/proc/proc_net.c       |  4 +++-
-> fs/proc_namespace.c      |  8 +++-----
-> include/linux/nsproxy.h  | 16 ++++++----------
-> ipc/namespace.c          |  6 +++---
-> kernel/nsproxy.c         | 15 ++++-----------
-> kernel/utsname.c         |  6 +++---
-> net/core/net_namespace.c | 10 ++++++----
-> 8 files changed, 31 insertions(+), 40 deletions(-)
-> 
-> diff --git a/fs/namespace.c b/fs/namespace.c
-> index 182bc41cd887..7187d01329c3 100644
-> --- a/fs/namespace.c
-> +++ b/fs/namespace.c
-> @@ -2972,13 +2972,13 @@ static void *mntns_get(struct task_struct *task)
-> 	struct mnt_namespace *ns = NULL;
-> 	struct nsproxy *nsproxy;
-> 
-> -	rcu_read_lock();
-> -	nsproxy = task_nsproxy(task);
-> +	task_lock(task);
-> +	nsproxy = task->nsproxy;
-> 	if (nsproxy) {
-> 		ns = nsproxy->mnt_ns;
-> 		get_mnt_ns(ns);
-> 	}
-> -	rcu_read_unlock();
-> +	task_unlock(task);
-> 
-> 	return ns;
-> }
-> diff --git a/fs/proc/proc_net.c b/fs/proc/proc_net.c
-> index 4677bb7dc7c2..a63af3e0a612 100644
-> --- a/fs/proc/proc_net.c
-> +++ b/fs/proc/proc_net.c
-> @@ -113,9 +113,11 @@ static struct net *get_proc_task_net(struct inode *dir)
-> 	rcu_read_lock();
-> 	task = pid_task(proc_pid(dir), PIDTYPE_PID);
-> 	if (task != NULL) {
-> -		ns = task_nsproxy(task);
-> +		task_lock(task);
-> +		ns = task->nsproxy;
-> 		if (ns != NULL)
-> 			net = get_net(ns->net_ns);
-> +		task_unlock(task);
-> 	}
-> 	rcu_read_unlock();
-> 
-> diff --git a/fs/proc_namespace.c b/fs/proc_namespace.c
-> index 1a81373947f3..73ca1740d839 100644
-> --- a/fs/proc_namespace.c
-> +++ b/fs/proc_namespace.c
-> @@ -232,17 +232,15 @@ static int mounts_open_common(struct inode *inode, struct file *file,
-> 	if (!task)
-> 		goto err;
-> 
-> -	rcu_read_lock();
-> -	nsp = task_nsproxy(task);
-> +	task_lock(task);
-> +	nsp = task->nsproxy;
-> 	if (!nsp || !nsp->mnt_ns) {
-> -		rcu_read_unlock();
-> +		task_unlock(task);
-> 		put_task_struct(task);
-> 		goto err;
-> 	}
-> 	ns = nsp->mnt_ns;
-> 	get_mnt_ns(ns);
-> -	rcu_read_unlock();
-> -	task_lock(task);
-> 	if (!task->fs) {
-> 		task_unlock(task);
-> 		put_task_struct(task);
-> diff --git a/include/linux/nsproxy.h b/include/linux/nsproxy.h
-> index b4ec59d159ac..35fa08fd7739 100644
-> --- a/include/linux/nsproxy.h
-> +++ b/include/linux/nsproxy.h
-> @@ -40,32 +40,28 @@ extern struct nsproxy init_nsproxy;
->  * the namespaces access rules are:
->  *
->  *  1. only current task is allowed to change tsk->nsproxy pointer or
-> - *     any pointer on the nsproxy itself
-> + *     any pointer on the nsproxy itself.  Current must hold the task_lock
-> + *     when changing tsk->nsproxy.
->  *
->  *  2. when accessing (i.e. reading) current task's namespaces - no
->  *     precautions should be taken - just dereference the pointers
->  *
->  *  3. the access to other task namespaces is performed like this
-> - *     rcu_read_lock();
-> - *     nsproxy = task_nsproxy(tsk);
-> + *     task_lock(task);
-> + *     nsproxy = task->nsproxy;
->  *     if (nsproxy != NULL) {
->  *             / *
->  *               * work with the namespaces here
->  *               * e.g. get the reference on one of them
->  *               * /
->  *     } / *
-> - *         * NULL task_nsproxy() means that this task is
-> + *         * NULL task->nsproxy means that this task is
->  *         * almost dead (zombie)
->  *         * /
-> - *     rcu_read_unlock();
-> + *     task_unlock(task);
->  *
->  */
-> 
-> -static inline struct nsproxy *task_nsproxy(struct task_struct *tsk)
-> -{
-> -	return rcu_dereference(tsk->nsproxy);
-> -}
-> -
-> int copy_namespaces(unsigned long flags, struct task_struct *tsk);
-> void exit_task_namespaces(struct task_struct *tsk);
-> void switch_task_namespaces(struct task_struct *tsk, struct nsproxy *new);
-> diff --git a/ipc/namespace.c b/ipc/namespace.c
-> index 59451c1e214d..b54468e48e32 100644
-> --- a/ipc/namespace.c
-> +++ b/ipc/namespace.c
-> @@ -154,11 +154,11 @@ static void *ipcns_get(struct task_struct *task)
-> 	struct ipc_namespace *ns = NULL;
-> 	struct nsproxy *nsproxy;
-> 
-> -	rcu_read_lock();
-> -	nsproxy = task_nsproxy(task);
-> +	task_lock(task);
-> +	nsproxy = task->nsproxy;
-> 	if (nsproxy)
-> 		ns = get_ipc_ns(nsproxy->ipc_ns);
-> -	rcu_read_unlock();
-> +	task_unlock(task);
-> 
-> 	return ns;
-> }
-> diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-> index 8e7811086b82..ef42d0ab3115 100644
-> --- a/kernel/nsproxy.c
-> +++ b/kernel/nsproxy.c
-> @@ -204,20 +204,13 @@ void switch_task_namespaces(struct task_struct *p, struct nsproxy *new)
-> 
-> 	might_sleep();
-> 
-> +	task_lock(p);
-> 	ns = p->nsproxy;
-> +	p->nsproxy = new;
-> +	task_unlock(p);
-> 
-> -	rcu_assign_pointer(p->nsproxy, new);
-> -
-> -	if (ns && atomic_dec_and_test(&ns->count)) {
-> -		/*
-> -		 * wait for others to get what they want from this nsproxy.
-> -		 *
-> -		 * cannot release this nsproxy via the call_rcu() since
-> -		 * put_mnt_ns() will want to sleep
-> -		 */
-> -		synchronize_rcu();
-> +	if (ns && atomic_dec_and_test(&ns->count))
-> 		free_nsproxy(ns);
-> -	}
-> }
-> 
-> void exit_task_namespaces(struct task_struct *p)
-> diff --git a/kernel/utsname.c b/kernel/utsname.c
-> index fd393124e507..883aaaa7de8a 100644
-> --- a/kernel/utsname.c
-> +++ b/kernel/utsname.c
-> @@ -93,13 +93,13 @@ static void *utsns_get(struct task_struct *task)
-> 	struct uts_namespace *ns = NULL;
-> 	struct nsproxy *nsproxy;
-> 
-> -	rcu_read_lock();
-> -	nsproxy = task_nsproxy(task);
-> +	task_lock(task);
-> +	nsproxy = task->nsproxy;
-> 	if (nsproxy) {
-> 		ns = nsproxy->uts_ns;
-> 		get_uts_ns(ns);
-> 	}
-> -	rcu_read_unlock();
-> +	task_unlock(task);
-> 
-> 	return ns;
-> }
-> diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
-> index 85b62691f4f2..7c6b51a58968 100644
-> --- a/net/core/net_namespace.c
-> +++ b/net/core/net_namespace.c
-> @@ -373,9 +373,11 @@ struct net *get_net_ns_by_pid(pid_t pid)
-> 	tsk = find_task_by_vpid(pid);
-> 	if (tsk) {
-> 		struct nsproxy *nsproxy;
-> -		nsproxy = task_nsproxy(tsk);
-> +		task_lock(tsk);
-> +		nsproxy = tsk->nsproxy;
-> 		if (nsproxy)
-> 			net = get_net(nsproxy->net_ns);
-> +		task_unlock(tsk);
-> 	}
-> 	rcu_read_unlock();
-> 	return net;
-> @@ -632,11 +634,11 @@ static void *netns_get(struct task_struct *task)
-> 	struct net *net = NULL;
-> 	struct nsproxy *nsproxy;
-> 
-> -	rcu_read_lock();
-> -	nsproxy = task_nsproxy(task);
-> +	task_lock(task);
-> +	nsproxy = task->nsproxy;
-> 	if (nsproxy)
-> 		net = get_net(nsproxy->net_ns);
-> -	rcu_read_unlock();
-> +	task_unlock(task);
-> 
-> 	return net;
-> }
-> -- 
-> 1.9.1
-> 
+diff --git a/include/linux/ipc_namespace.h b/include/linux/ipc_namespace.h
+index e365d5e..1cc36a0 100644
+--- a/include/linux/ipc_namespace.h
++++ b/include/linux/ipc_namespace.h
+@@ -73,7 +73,7 @@ static inline void shm_destroy_orphaned(struct ipc_namespace *ns) {}
+ #endif /* CONFIG_SYSVIPC */
+ 
+ #ifdef CONFIG_POSIX_MQUEUE
+-extern int mq_init_ns(struct ipc_namespace *ns);
++extern int mq_init_ns(struct ipc_namespace *ns, struct ipc_namespace *old_ns);
+ /*
+  * POSIX Message Queue default values:
+  *
+@@ -108,7 +108,9 @@ extern int mq_init_ns(struct ipc_namespace *ns);
+ #define DFLT_MSGSIZEMAX		     8192
+ #define HARD_MSGSIZEMAX	    (16*1024*1024)
+ #else
+-static inline int mq_init_ns(struct ipc_namespace *ns) { return 0; }
++static inline int mq_init_ns(struct ipc_namespace *ns,
++				struct ipc_namespace *old_ns)
++{ return 0; }
+ #endif
+ 
+ #if defined(CONFIG_IPC_NS)
+diff --git a/ipc/mqueue.c b/ipc/mqueue.c
+index 4fcf39a..3473072d 100644
+--- a/ipc/mqueue.c
++++ b/ipc/mqueue.c
+@@ -1397,14 +1397,23 @@ static struct file_system_type mqueue_fs_type = {
+ 	.fs_flags = FS_USERNS_MOUNT,
+ };
+ 
+-int mq_init_ns(struct ipc_namespace *ns)
++int mq_init_ns(struct ipc_namespace *ns, struct ipc_namespace *old_ns)
+ {
++	if (old_ns != NULL) {
++		ns->mq_queues_max    = old_ns->mq_queues_max;
++		ns->mq_msg_max       = old_ns->mq_msg_max;
++		ns->mq_msgsize_max   = old_ns->mq_msgsize_max;
++		ns->mq_msg_default   = old_ns->mq_msg_default;
++		ns->mq_msgsize_default  = old_ns->mq_msgsize_default;
++	} else {
++		ns->mq_queues_max    = DFLT_QUEUESMAX;
++		ns->mq_msg_max       = DFLT_MSGMAX;
++		ns->mq_msgsize_max   = DFLT_MSGSIZEMAX;
++		ns->mq_msg_default   = DFLT_MSG;
++		ns->mq_msgsize_default  = DFLT_MSGSIZE;
++	}
++
+ 	ns->mq_queues_count  = 0;
+-	ns->mq_queues_max    = DFLT_QUEUESMAX;
+-	ns->mq_msg_max       = DFLT_MSGMAX;
+-	ns->mq_msgsize_max   = DFLT_MSGSIZEMAX;
+-	ns->mq_msg_default   = DFLT_MSG;
+-	ns->mq_msgsize_default  = DFLT_MSGSIZE;
+ 
+ 	ns->mq_mnt = kern_mount_data(&mqueue_fs_type, ns);
+ 	if (IS_ERR(ns->mq_mnt)) {
+@@ -1444,7 +1453,7 @@ static int __init init_mqueue_fs(void)
+ 
+ 	spin_lock_init(&mq_lock);
+ 
+-	error = mq_init_ns(&init_ipc_ns);
++	error = mq_init_ns(&init_ipc_ns, NULL);
+ 	if (error)
+ 		goto out_filesystem;
+ 
+diff --git a/ipc/msg.c b/ipc/msg.c
+index a7261d5..3cbd2ad 100644
+--- a/ipc/msg.c
++++ b/ipc/msg.c
+@@ -990,11 +990,17 @@ SYSCALL_DEFINE5(msgrcv, int, msqid, struct msgbuf __user *, msgp, size_t, msgsz,
+ }
+ 
+ 
+-void msg_init_ns(struct ipc_namespace *ns)
++void msg_init_ns(struct ipc_namespace *ns, struct ipc_namespace *old_ns)
+ {
+-	ns->msg_ctlmax = MSGMAX;
+-	ns->msg_ctlmnb = MSGMNB;
+-	ns->msg_ctlmni = MSGMNI;
++	if (old_ns != NULL) {
++		ns->msg_ctlmax = old_ns->msg_ctlmax;
++		ns->msg_ctlmnb = old_ns->msg_ctlmnb;
++		ns->msg_ctlmni = old_ns->msg_ctlmni;
++	} else {
++		ns->msg_ctlmax = MSGMAX;
++		ns->msg_ctlmnb = MSGMNB;
++		ns->msg_ctlmni = MSGMNI;
++	}
+ 
+ 	atomic_set(&ns->msg_bytes, 0);
+ 	atomic_set(&ns->msg_hdrs, 0);
+@@ -1036,7 +1042,7 @@ static int sysvipc_msg_proc_show(struct seq_file *s, void *it)
+ 
+ void __init msg_init(void)
+ {
+-	msg_init_ns(&init_ipc_ns);
++	msg_init_ns(&init_ipc_ns, NULL);
+ 
+ 	ipc_init_proc_interface("sysvipc/msg",
+ 				"       key      msqid perms      cbytes       qnum lspid lrpid   uid   gid  cuid  cgid      stime      rtime      ctime\n",
+diff --git a/ipc/namespace.c b/ipc/namespace.c
+index 1a3ffd4..97e3332 100644
+--- a/ipc/namespace.c
++++ b/ipc/namespace.c
+@@ -33,7 +33,7 @@ static struct ipc_namespace *create_ipc_ns(struct user_namespace *user_ns,
+ 	}
+ 
+ 	atomic_set(&ns->count, 1);
+-	err = mq_init_ns(ns);
++	err = mq_init_ns(ns, old_ns);
+ 	if (err) {
+ 		proc_free_inum(ns->proc_inum);
+ 		kfree(ns);
+@@ -41,9 +41,9 @@ static struct ipc_namespace *create_ipc_ns(struct user_namespace *user_ns,
+ 	}
+ 	atomic_inc(&nr_ipc_ns);
+ 
+-	sem_init_ns(ns);
+-	msg_init_ns(ns);
+-	shm_init_ns(ns);
++	sem_init_ns(ns, old_ns);
++	msg_init_ns(ns, old_ns);
++	shm_init_ns(ns, old_ns);
+ 
+ 	ns->user_ns = get_user_ns(user_ns);
+ 
+diff --git a/ipc/sem.c b/ipc/sem.c
+index 454f6c6..f1ded77 100644
+--- a/ipc/sem.c
++++ b/ipc/sem.c
+@@ -170,12 +170,19 @@ static int sysvipc_sem_proc_show(struct seq_file *s, void *it);
+ #define sc_semopm	sem_ctls[2]
+ #define sc_semmni	sem_ctls[3]
+ 
+-void sem_init_ns(struct ipc_namespace *ns)
++void sem_init_ns(struct ipc_namespace *ns, struct ipc_namespace *old_ns)
+ {
+-	ns->sc_semmsl = SEMMSL;
+-	ns->sc_semmns = SEMMNS;
+-	ns->sc_semopm = SEMOPM;
+-	ns->sc_semmni = SEMMNI;
++	if (old_ns != NULL) {
++		ns->sc_semmsl = old_ns->sc_semmsl;
++		ns->sc_semmns = old_ns->sc_semmns;
++		ns->sc_semopm = old_ns->sc_semopm;
++		ns->sc_semmni = old_ns->sc_semmni;
++	} else {
++		ns->sc_semmsl = SEMMSL;
++		ns->sc_semmns = SEMMNS;
++		ns->sc_semopm = SEMOPM;
++		ns->sc_semmni = SEMMNI;
++	}
+ 	ns->used_sems = 0;
+ 	ipc_init_ids(&ns->ids[IPC_SEM_IDS]);
+ }
+@@ -190,7 +197,7 @@ void sem_exit_ns(struct ipc_namespace *ns)
+ 
+ void __init sem_init(void)
+ {
+-	sem_init_ns(&init_ipc_ns);
++	sem_init_ns(&init_ipc_ns, NULL);
+ 	ipc_init_proc_interface("sysvipc/sem",
+ 				"       key      semid perms      nsems   uid   gid  cuid  cgid      otime      ctime\n",
+ 				IPC_SEM_IDS, sysvipc_sem_proc_show);
+diff --git a/ipc/shm.c b/ipc/shm.c
+index 7fc9f9f..7856952 100644
+--- a/ipc/shm.c
++++ b/ipc/shm.c
+@@ -72,12 +72,19 @@ static void shm_destroy(struct ipc_namespace *ns, struct shmid_kernel *shp);
+ static int sysvipc_shm_proc_show(struct seq_file *s, void *it);
+ #endif
+ 
+-void shm_init_ns(struct ipc_namespace *ns)
++void shm_init_ns(struct ipc_namespace *ns, struct ipc_namespace *old_ns)
+ {
+-	ns->shm_ctlmax = SHMMAX;
+-	ns->shm_ctlall = SHMALL;
+-	ns->shm_ctlmni = SHMMNI;
+-	ns->shm_rmid_forced = 0;
++	if (old_ns != NULL) {
++		ns->shm_ctlmax = old_ns->shm_ctlmax;
++		ns->shm_ctlall = old_ns->shm_ctlall;
++		ns->shm_ctlmni = old_ns->shm_ctlmni;
++		ns->shm_rmid_forced = old_ns->shm_rmid_forced;
++	} else {
++		ns->shm_ctlmax = SHMMAX;
++		ns->shm_ctlall = SHMALL;
++		ns->shm_ctlmni = SHMMNI;
++		ns->shm_rmid_forced = 0;
++	}
+ 	ns->shm_tot = 0;
+ 	ipc_init_ids(&shm_ids(ns));
+ }
+@@ -110,7 +117,7 @@ void shm_exit_ns(struct ipc_namespace *ns)
+ 
+ static int __init ipc_ns_init(void)
+ {
+-	shm_init_ns(&init_ipc_ns);
++	shm_init_ns(&init_ipc_ns, NULL);
+ 	return 0;
+ }
+ 
+diff --git a/ipc/util.h b/ipc/util.h
+index 1a5a0fc..1be9830 100644
+--- a/ipc/util.h
++++ b/ipc/util.h
+@@ -30,17 +30,25 @@ static inline void mq_put_mnt(struct ipc_namespace *ns) { }
+ #endif
+ 
+ #ifdef CONFIG_SYSVIPC
+-void sem_init_ns(struct ipc_namespace *ns);
+-void msg_init_ns(struct ipc_namespace *ns);
+-void shm_init_ns(struct ipc_namespace *ns);
++void sem_init_ns(struct ipc_namespace *ns, struct ipc_namespace *old_ns);
++void msg_init_ns(struct ipc_namespace *ns, struct ipc_namespace *old_ns);
++void shm_init_ns(struct ipc_namespace *ns, struct ipc_namespace *old_ns);
+ 
+ void sem_exit_ns(struct ipc_namespace *ns);
+ void msg_exit_ns(struct ipc_namespace *ns);
+ void shm_exit_ns(struct ipc_namespace *ns);
+ #else
+-static inline void sem_init_ns(struct ipc_namespace *ns) { }
+-static inline void msg_init_ns(struct ipc_namespace *ns) { }
+-static inline void shm_init_ns(struct ipc_namespace *ns) { }
++static inline void sem_init_ns(struct ipc_namespace *ns,
++				struct ipc_namespace *old_ns)
++{ }
++
++static inline void msg_init_ns(struct ipc_namespace *ns,
++				struct ipc_namespace *old_ns)
++{ }
++
++static inline void shm_init_ns(struct ipc_namespace *ns,
++				struct ipc_namespace *old_ns)
++{ }
+ 
+ static inline void sem_exit_ns(struct ipc_namespace *ns) { }
+ static inline void msg_exit_ns(struct ipc_namespace *ns) { }
+-- 
+1.9.3
