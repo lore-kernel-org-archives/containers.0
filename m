@@ -1,13 +1,15 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [GIT PULL] namespace updates for v3.17-rc1
-Date: Tue, 12 Aug 2014 19:46:24 -0700
-Message-ID: <53EAD180.4010906@amacapital.net>
+Date: Tue, 12 Aug 2014 21:17:30 -0700
+Message-ID: <87sil1nhut.fsf@x220.int.ebiederm.org>
 References: <87fvhav3ic.fsf@x220.int.ebiederm.org>
+	<53EAD180.4010906@amacapital.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87fvhav3ic.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <53EAD180.4010906-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> (Andy Lutomirski's message of
+	"Tue, 12 Aug 2014 19:46:24 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,76 +19,46 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Cc: Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 08/05/2014 05:57 PM, Eric W. Biederman wrote:
-> 
-> Linus,
-> 
-> Please pull the for-linus branch from the git tree:
-> 
->    git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
-> 
->    HEAD: 344470cac42e887e68cfb5bdfa6171baf27f1eb5 proc: Point /proc/mounts at /proc/thread-self/mounts instead of /proc/self/mounts
-> 
-> This is a bunch of small changes built against 3.16-rc6.  The most
-> significant change for users is the first patch which makes setns
-> drmatically faster by removing unneded rcu handling.
-> 
-> The next chunk of changes are so that "mount -o remount,.." will not
-> allow the user namespace root to drop flags on a mount set by the system
-> wide root.  Aks this forces read-only mounts to stay read-only, no-dev
-> mounts to stay no-dev, no-suid mounts to stay no-suid, no-exec mounts to
-> stay no exec and it prevents unprivileged users from messing with a
-> mounts atime settings.  I have included my test case as the last patch
-> in this series so people performing backports can verify this change
-> works correctly.
-> 
+Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> writes:
 
-Sorry for catching this late.  I think this fix is likely to
-unnecessarily break valid userspace due to an odd interaction.
+> On 08/05/2014 05:57 PM, Eric W. Biederman wrote:
+>
+> Sorry for catching this late.  I think this fix is likely to
+> unnecessarily break valid userspace due to an odd interaction.
 
-do_new_mount contains this:
+The code is correct and safe (no security issues), but yes a blind
+remount might hit a snag.
 
-	if (user_ns != &init_user_ns) {
-		if (!(type->fs_flags & FS_USERNS_MOUNT)) {
-			put_filesystem(type);
-			return -EPERM;
-		}
-		/* Only in special cases allow devices from mounts
-		 * created outside the initial user namespace.
-		 */
-		if (!(type->fs_flags & FS_USERNS_DEV_MOUNT)) {
-			flags |= MS_NODEV;
-			mnt_flags |= MNT_NODEV | MNT_LOCK_NODEV;
-		}
-	}
+If you can find a userspace application that matters I might care
+that a security fix breaks it.
 
-This means that private tmpfs mounts end up with MNT_NODEV |
-MNT_LOCK_NODEV.  Certainly the change from MNT_NODEV to MNT_LOCK_NODEV
-is sensible *if MNT_NODEV made sense in the first place*.  But we didn't
-have MNT_LOCK_NODEV in the past, so this well-intentioned code never
-really worked.
+I think you have made a point that several more filesystems might
+be ok to not set nodev on (because we can not do anything to create
+device nodes on those filesystems).  I personally would prefer the much
+more paranoid approach of only allowing device nodes on a unprivileged
+mount if we have audited all of the code paths and know it is safe
+for device nodes to appear there.
 
-This has a very strange effect: mounting a private tmpfs with all
-default flags and then remounting with MS_REMOUNT | MS_BIND *without
-MS_NODEV* will now fail.  I suspect that this practice is rather common,
-since most likely no one ever paid attention to that implicit MNT_NODEV
-before.
+I don't actually think anyone cares ad remounts of filesystems like
+tmpfs, mqueue, sysfs, proc, ramfs are all quite rare.  Blind remounts
+are even rare.  The normal userspace utilities look at the appropriate
+version of /proc/mounts on remount.
 
-I would argue that the correct fix is to either remove the implicit
-MNT_NODEV entirely or to set FS_USERNS_DEV_MOUNT on most filesystems.
+These are not filesystems that a blind remount will likely be applied
+to.
 
-The relevant filesystems are tmpfs, mqueue, sysfs, proc, ramfs, and
-devpts.  devpts already sets FS_USERNS_DEV_MOUNT.  Setting
-FS_USERNS_DEV_MOUNT should be safe on all of the others in this list --
-I think that the only one that initially contains device nodes is sysfs
-on selinux systems, which contains a null node.
+Furthermore there is work underway to prepare patches to allow
+"mount --bind -ro" to work as expected.  That will further reduce
+the pressure from blind remounts.
 
-I think the point of this is to prevent mounts of filesystems with
-user-controlled initial contents from being dangerous.  But we don't
-have any of those yet.
+If there is an actual regression of actual code I am happy to deal
+with it.  But having the MNT_NODEV on those mounts has been the case
+for a long time now and is not new (no regression).  This change just
+closed the security hole that allowed nodev to be removed.  And that
+security hole we need to have fixed.
 
---Andy
+Eric
