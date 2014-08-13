@@ -1,17 +1,10 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: [GIT PULL] namespace updates for v3.17-rc1
-Date: Wed, 13 Aug 2014 10:03:47 -0700
-Message-ID: <CALCETrWT_p1-5nkiAjWoeta19fkO3rDiJe9_mhRVqF8x1zXv2A@mail.gmail.com>
-References: <87fvhav3ic.fsf@x220.int.ebiederm.org>
-	<53EAD180.4010906@amacapital.net>
-	<87sil1nhut.fsf@x220.int.ebiederm.org>
-	<CAOP=4widH1rMZ1O=hzAT+M_8exdzRPA8pJ+wH29AQ9L0ogu9nw@mail.gmail.com>
-	<87tx5ghekp.fsf@x220.int.ebiederm.org>
+From: MAILER-DAEMON-4tpxAe+GWKWzp2J5h9KejhbxjuAZBjCNEK66K81epY8@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Thu, 14 Aug 2014 08:38:11 +1000 (EST)
+Message-ID: <20140813223811.547AA39418D@mail.mediasuitesolutions.com.au>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============7357800903907368911=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87tx5ghekp.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,126 +14,116 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Aug 13, 2014 at 3:24 AM, Eric W. Biederman
-<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
-> Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org> writes:
->
->> On Tue, Aug 12, 2014 at 9:17 PM, Eric W. Biederman
-> I have a proposed fix as the end of this email.  Could you please
-> test it?
->
-> If I can get a Tested-by and possibly a Reviewed-by responses I would
-> appreciate it.
+This is a MIME-encapsulated message.
 
-Will test later today.
+--===============7357800903907368911==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="5B9A8394153.1407969491/mail.mediasuitesolutions.com.au"
+Content-Transfer-Encoding: 7bit
 
->
->> The problem is that users like us had no idea that nodev was being
->> silently added in the first place, and thus didn't know that we needed
->> to specify it in remounts.
->
-> Agreed.  And frankly that is extremely reasonable and it would in fact
-> break anything doing a traditional tracking of mounts with /etc/mtab.
-> So it is a pretty siginificant discontinuity.
->
-> I am not prepared to remove the the implicit adding of nodev from the
-> implementation as that would just break your code and probably others
-> code in a different way.
+This is a MIME-encapsulated message.
 
-I'm having trouble figuring out what would break.  The only way to end
-up with a device node on one of these filesystems would be to pass an
-fd to the file system out of the userns and have some globally
-privileged code put the device node there.
+--5B9A8394153.1407969491/mail.mediasuitesolutions.com.au
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
->
-> What we can do and that will work cleanly long term is make remount
-> match mount and implicitly add nodev.
->
->> We create the tmpfs, put some things in it,
->> and then want to remount it read-only for the sandbox. It seems
->> reasonable to expect that a newly-created tmpfs would have exactly the
->> flags I gave it when I created it, not silently get an additional flag
->> that I then need to pass on remount.
->
-> A reasonable expectation yes.  At the same time it is also a very
-> reasonable security requirement to not allow devices on filesystems
-> that the global root does not control.
+This is the mail system at host mail.mediasuitesolutions.com.au.
 
-But the magic nodev isn't needed for that; the checks in mknod are the
-right place for this -- they're sufficient, and they're required
-anyway.
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
 
->
-> Compared to Andy's suggestion of relaxing the nodev restriction this
-> will also work for filesystems like fuse and nfs when we allow begin to
-> allow unprivileged mounts of those filesystems, and it allows to sleep
-> better knowing the code is extremely paranoid.
+For further assistance, please send mail to postmaster.
 
-If we allow fuse and nfs, we need to deal with nosuid, too.  I want to
-avoid using nosuid for this; I want to change the suid logic to check
-the namespace, since I think that suid *should* work in a namespace.
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
 
-Also, that implicit nodev may be a problem down the road if we ever
-add device namespaces.
+                   The mail system
 
-...
+<maddie-ZqYAU6e2/SE0n/F98K4Iww@public.gmane.org>: user unknown
 
->
-> From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> Date: Wed, 13 Aug 2014 01:33:38 -0700
-> Subject: [PATCH] mnt: Implicitly add MNT_NODEV on remount as we do on mount
->
-> Now that remount is properly enforcing the rule that you can't
-> remove nodev at least sandstorm.io is breaking when performing
-> a remount.
->
-> It turns out that there is an easy intuitive solution implicitly
-> add nodev on remount under the same conditions that we do on mount.
->
-> Update the regression test for remounts to verify that this new
-> addition does not regress either.
->
-> Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> ---
->  fs/namespace.c                                     |  9 ++++
->  .../selftests/mount/unprivileged-remount-test.c    | 51 ++++++++++++----------
->  2 files changed, 36 insertions(+), 24 deletions(-)
->
-> diff --git a/fs/namespace.c b/fs/namespace.c
-> index 7886176232c1..0f158300c866 100644
-> --- a/fs/namespace.c
-> +++ b/fs/namespace.c
-> @@ -1934,6 +1934,15 @@ static int do_remount(struct path *path, int flags, int mnt_flags,
->         if (path->dentry != path->mnt->mnt_root)
->                 return -EINVAL;
->
-> +       /* Only in special cases allow devices from mounts created
-> +        * outside the initial user namespace.
+<beau-DCNh8qJEobyySXZzXPqEcykBLnlaf3ui@public.gmane.org>: host bsa01.tdfcloud.com[202.7.85.110] said: 554
+    rejected due to virus (in reply to end of DATA command)
 
-I don't like this comment at all.  If we stick with this approach, I
-think that this should say:
+--5B9A8394153.1407969491/mail.mediasuitesolutions.com.au
+Content-Description: Delivery report
+Content-Type: message/delivery-status
 
-Certain mounts are forced to have MNT_NODEV set.  For these mounts,
-user code might not realize that nodev is set, so force MS_NODEV on
-remount attempts to prevent confusing remount failures.
+Reporting-MTA: dns; mail.mediasuitesolutions.com.au
+X-Postfix-Queue-ID: 5B9A8394153
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Thu, 14 Aug 2014 08:38:10 +1000 (EST)
 
-> +        */
-> +       if ((mnt->mnt_ns->user_ns != &init_user_ns) &&
-> +           !(sb->s_type->fs_flags & FS_USERNS_DEV_MOUNT)) {
-> +               flags |= MS_NODEV;
-> +               mnt_flags |= MNT_NODEV;
-> +       }
-> +
->         /* Don't allow changing of locked mnt flags.
->          *
->          * No locks need to be held here while testing the various
+Final-Recipient: rfc822; maddie-ZqYAU6e2/SE0n/F98K4Iww@public.gmane.org
+Original-Recipient: rfc822;info-ZqYAU6e2/SE0n/F98K4Iww@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: x-unix; user unknown
 
-I will still advocate a different and much less magical approach.
-I'll send a patch later today.
+Final-Recipient: rfc822; beau-DCNh8qJEobyySXZzXPqEcykBLnlaf3ui@public.gmane.org
+Original-Recipient: rfc822;info-ZqYAU6e2/SE0n/F98K4Iww@public.gmane.org
+Action: failed
+Status: 5.0.0
+Remote-MTA: dns; bsa01.tdfcloud.com
+Diagnostic-Code: smtp; 554 rejected due to virus
 
---Andy
+--5B9A8394153.1407969491/mail.mediasuitesolutions.com.au
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by mail.mediasuitesolutions.com.au (Postfix) with ESMTP id 5B9A8394153;
+	Thu, 14 Aug 2014 08:38:10 +1000 (EST)
+X-Virus-Scanned: Debian amavisd-new at mail.mediasuitesolutions.com.au
+Received: from mail.mediasuitesolutions.com.au ([127.0.0.1])
+	by localhost (mail.mediasuitesolutions.com.au [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id GX2Ym+y00z5p; Thu, 14 Aug 2014 08:38:06 +1000 (EST)
+Message-ID: <005c01cfb747$35c99c80$14000a0a-/IEPHT2Ar21ujl2KyNram6VD0FRqGuVx@public.gmane.org>
+From: "Letizia" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <info-ZqYAU6e2/SE0n/F98K4Iww@public.gmane.org>
+Subject: Order_6476441
+Date: Thu, 14 Aug 2014 00:37:52 +0200
+MIME-Version: 1.0
+Content-Type: multipart/mixed;
+ boundary="----------451581E611FAFFC6"
+
+------------451581E611FAFFC6
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+
+Thank you for ordering from VOIP Inc.
+         
+This message is to inform you that your order has been received and is currently being processed.
+  
+Your order reference is 914082301583. 
+You will need this in all correspondence.
+This receipt is NOT proof of purchase. 
+We will send a printed invoice by mail to your billing address.
+       
+You have chosen to pay by credit card. Your card will be charged for the amount 
+of 712.41 USD and "VOIP Inc." 
+will appear next to the charge on your statement.
+Your purchase information appears below in the file.
+       
+Puremobile Inc.
+------------451581E611FAFFC6--
+
+
+
+--5B9A8394153.1407969491/mail.mediasuitesolutions.com.au--
+
+--===============7357800903907368911==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============7357800903907368911==--
