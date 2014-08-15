@@ -1,17 +1,16 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: [GIT PULL] namespace updates for v3.17-rc1
-Date: Fri, 15 Aug 2014 11:41:21 -0700
-Message-ID: <CALCETrXh4JLWDUmqC6knh6g0fyEMGQtajoaHzZdMaqsniiEc5Q__26604.7245743268$1408128117$gmane$org@mail.gmail.com>
-References: <87fvhav3ic.fsf@x220.int.ebiederm.org>
-	<53EAD180.4010906@amacapital.net>
-	<87sil1nhut.fsf@x220.int.ebiederm.org>
-	<CAOP=4widH1rMZ1O=hzAT+M_8exdzRPA8pJ+wH29AQ9L0ogu9nw@mail.gmail.com>
-	<87tx5ghekp.fsf@x220.int.ebiederm.org>
+From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] fs: Remove implicit nodev for new mounts in non-root
+	userns
+Date: Fri, 15 Aug 2014 19:05:52 +0000
+Message-ID: <20140815190552.GA11476__27518.0971985266$1408129576$gmane$org@ubuntumail>
+References: <CALCETrWT_p1-5nkiAjWoeta19fkO3rDiJe9_mhRVqF8x1zXv2A@mail.gmail.com>
+	<2686c32f00b14148379e8cfee9c028c794d4aa1a.1407974494.git.luto@amacapital.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87tx5ghekp.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <2686c32f00b14148379e8cfee9c028c794d4aa1a.1407974494.git.luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,191 +20,184 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Aug 13, 2014 at 3:24 AM, Eric W. Biederman
-<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
-> Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org> writes:
->
->> On Tue, Aug 12, 2014 at 9:17 PM, Eric W. Biederman
->> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+Quoting Andy Lutomirski (luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org):
+> Currently, creating a new mount (as opposed to bindmount) in a
+> non-root userns will implicitly set nodev unless the fs is devpts.
+> Something like this will be necessary for file systems that allow
+> the mounter to create device nodes without using mknod (e.g. FUSE
+> if/when that is allowed), but none of the currently allowed
+> filesystems do this.
 
-> From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> Date: Wed, 13 Aug 2014 01:33:38 -0700
-> Subject: [PATCH] mnt: Implicitly add MNT_NODEV on remount as we do on mount
->
-> Now that remount is properly enforcing the rule that you can't
-> remove nodev at least sandstorm.io is breaking when performing
-> a remount.
->
-> It turns out that there is an easy intuitive solution implicitly
-> add nodev on remount under the same conditions that we do on mount.
->
-> Update the regression test for remounts to verify that this new
-> addition does not regress either.
+Hi,
 
-Tested-but-disliked-by: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Sorry, I'm probably thinking stupidly, but I don't see this restriction
+being the case
 
-Quoting Alan Cox [1]:
+serge@sl:~$ mount | grep tmp
+[...]
+tmpfs on /run type tmpfs (rw,noexec,nosuid,size=10%,mode=0755)
+serge@sl:~$ sudo mknod /run/kvm c 10 232
+[sudo] password for serge: 
+serge@sl:~$ echo $?
+0
+serge@sl:~$ ls -l /run/kvm
+crw-r--r-- 1 root root 10, 232 Aug 15 14:04 /run/kvm
 
-Lying to apps generally ends up like children lying to parents - the
-lie gets more complicated to keep up each case you find until it
-breaks.
+But you seem to be saying I shouldn't be allowed to create a device inside
+a tmpfs.  What am I overlooking?
 
-The kernel was unnecessarily fudging mount flags, and it broke,
-because the fudge didn't go far enough.  This extends the fudge.
-Let's just delete it instead.
-
---Andy
-
-[1] https://lwn.net/Articles/608435/
-
->
+> Implicitly adding nodev is problematic, though.  It will make it
+> unsafe to ever remove the implicit addition, since userspace might
+> start to rely on it.
+> 
+> This fixes a minor regression in:
+> 
+>     9566d6742852 mnt: Correct permission checks in do_remount
+> 
+> Prior to that commit, MNT_NODEV wasn't enforced for remounts, so
+> there is existing user code that creates a new mount in a userns
+> without MS_NODEV and then expects a remount with matching options to
+> work.  That commit broke code that does this.
+> 
+> Fortunately, since the implicit nodev has no effect on any existing
+> filesystems, we can still safely remove it.
+> 
+> This replaces the implicit nodev with an explicit nodev requirement:
+> anyone who mounts a filesystem without FS_USERNS_DEV_MOUNT will get
+> -EPERM unless they set nodev.  If they set nodev, that setting will
+> be locked.
+> 
+> As an added benefit, if anything like device namespaces is ever
+> added, then user code will be able to opt out of nodev by clearing
+> nodev.
+> 
+> To keep existing code working, this adds FS_USERNS_DEV_MOUNT to all
+> FS_USERNS_MOUNT filesystems.  All of the current filesystems with
+> FS_USERNS_MOUNT set are safe.
+> 
+> I confirmed that this is compatible with Sandstorm's revision
+> 1bf0c4847b.  That revision of Sandstorm does not work without this
+> fix if 9566d6742852 is applied.
+> 
+> Cc: Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>
 > Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> Signed-off-by: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 > ---
->  fs/namespace.c                                     |  9 ++++
->  .../selftests/mount/unprivileged-remount-test.c    | 51 ++++++++++++----------
->  2 files changed, 36 insertions(+), 24 deletions(-)
->
+>  fs/namespace.c   | 16 ++++++++++++----
+>  fs/proc/root.c   |  2 +-
+>  fs/ramfs/inode.c |  2 +-
+>  fs/sysfs/mount.c |  2 +-
+>  ipc/mqueue.c     |  2 +-
+>  mm/shmem.c       |  4 ++--
+>  6 files changed, 18 insertions(+), 10 deletions(-)
+> 
 > diff --git a/fs/namespace.c b/fs/namespace.c
-> index 7886176232c1..0f158300c866 100644
+> index 0acabea58319..835fa9e8307e 100644
 > --- a/fs/namespace.c
 > +++ b/fs/namespace.c
-> @@ -1934,6 +1934,15 @@ static int do_remount(struct path *path, int flags, int mnt_flags,
->         if (path->dentry != path->mnt->mnt_root)
->                 return -EINVAL;
->
-> +       /* Only in special cases allow devices from mounts created
-> +        * outside the initial user namespace.
-> +        */
-> +       if ((mnt->mnt_ns->user_ns != &init_user_ns) &&
-> +           !(sb->s_type->fs_flags & FS_USERNS_DEV_MOUNT)) {
-> +               flags |= MS_NODEV;
-> +               mnt_flags |= MNT_NODEV;
-> +       }
+> @@ -2154,12 +2154,20 @@ static int do_new_mount(struct path *path, const char *fstype, int flags,
+>  			put_filesystem(type);
+>  			return -EPERM;
+>  		}
+> -		/* Only in special cases allow devices from mounts
+> -		 * created outside the initial user namespace.
 > +
->         /* Don't allow changing of locked mnt flags.
->          *
->          * No locks need to be held here while testing the various
-> diff --git a/tools/testing/selftests/mount/unprivileged-remount-test.c b/tools/testing/selftests/mount/unprivileged-remount-test.c
-> index 1b3ff2fda4d0..6d408c155e0f 100644
-> --- a/tools/testing/selftests/mount/unprivileged-remount-test.c
-> +++ b/tools/testing/selftests/mount/unprivileged-remount-test.c
-> @@ -118,7 +118,8 @@ static void create_and_enter_userns(void)
->  }
->
->  static
-> -bool test_unpriv_remount(int mount_flags, int remount_flags, int invalid_flags)
-> +bool test_unpriv_remount(const char *fstype, const char *mount_options,
-> +                        int mount_flags, int remount_flags, int invalid_flags)
->  {
->         pid_t child;
->
-> @@ -151,9 +152,11 @@ bool test_unpriv_remount(int mount_flags, int remount_flags, int invalid_flags)
->                         strerror(errno));
->         }
->
-> -       if (mount("testing", "/tmp", "ramfs", mount_flags, NULL) != 0) {
-> -               die("mount of /tmp failed: %s\n",
-> -                       strerror(errno));
-> +       if (mount("testing", "/tmp", fstype, mount_flags, mount_options) != 0) {
-> +               die("mount of %s with options '%s' on /tmp failed: %s\n",
-> +                   fstype,
-> +                   mount_options? mount_options : "",
-> +                   strerror(errno));
->         }
->
->         create_and_enter_userns();
-> @@ -181,60 +184,60 @@ bool test_unpriv_remount(int mount_flags, int remount_flags, int invalid_flags)
->
->  static bool test_unpriv_remount_simple(int mount_flags)
->  {
-> -       return test_unpriv_remount(mount_flags, mount_flags, 0);
-> +       return test_unpriv_remount("ramfs", NULL, mount_flags, mount_flags, 0);
->  }
->
->  static bool test_unpriv_remount_atime(int mount_flags, int invalid_flags)
->  {
-> -       return test_unpriv_remount(mount_flags, mount_flags, invalid_flags);
-> +       return test_unpriv_remount("ramfs", NULL, mount_flags, mount_flags,
-> +                                  invalid_flags);
->  }
->
->  int main(int argc, char **argv)
->  {
-> -       if (!test_unpriv_remount_simple(MS_RDONLY|MS_NODEV)) {
-> +       if (!test_unpriv_remount_simple(MS_RDONLY)) {
->                 die("MS_RDONLY malfunctions\n");
->         }
-> -       if (!test_unpriv_remount_simple(MS_NODEV)) {
-> +       if (!test_unpriv_remount("devpts", "newinstance", MS_NODEV, MS_NODEV, 0)) {
->                 die("MS_NODEV malfunctions\n");
->         }
-> -       if (!test_unpriv_remount_simple(MS_NOSUID|MS_NODEV)) {
-> +       if (!test_unpriv_remount_simple(MS_NOSUID)) {
->                 die("MS_NOSUID malfunctions\n");
->         }
-> -       if (!test_unpriv_remount_simple(MS_NOEXEC|MS_NODEV)) {
-> +       if (!test_unpriv_remount_simple(MS_NOEXEC)) {
->                 die("MS_NOEXEC malfunctions\n");
->         }
-> -       if (!test_unpriv_remount_atime(MS_RELATIME|MS_NODEV,
-> -                                      MS_NOATIME|MS_NODEV))
-> +       if (!test_unpriv_remount_atime(MS_RELATIME,
-> +                                      MS_NOATIME))
->         {
->                 die("MS_RELATIME malfunctions\n");
->         }
-> -       if (!test_unpriv_remount_atime(MS_STRICTATIME|MS_NODEV,
-> -                                      MS_NOATIME|MS_NODEV))
-> +       if (!test_unpriv_remount_atime(MS_STRICTATIME,
-> +                                      MS_NOATIME))
->         {
->                 die("MS_STRICTATIME malfunctions\n");
->         }
-> -       if (!test_unpriv_remount_atime(MS_NOATIME|MS_NODEV,
-> -                                      MS_STRICTATIME|MS_NODEV))
-> +       if (!test_unpriv_remount_atime(MS_NOATIME,
-> +                                      MS_STRICTATIME))
->         {
->                 die("MS_RELATIME malfunctions\n");
->         }
-> -       if (!test_unpriv_remount_atime(MS_RELATIME|MS_NODIRATIME|MS_NODEV,
-> -                                      MS_NOATIME|MS_NODEV))
-> +       if (!test_unpriv_remount_atime(MS_RELATIME|MS_NODIRATIME,
-> +                                      MS_NOATIME))
->         {
->                 die("MS_RELATIME malfunctions\n");
->         }
-> -       if (!test_unpriv_remount_atime(MS_STRICTATIME|MS_NODIRATIME|MS_NODEV,
-> -                                      MS_NOATIME|MS_NODEV))
-> +       if (!test_unpriv_remount_atime(MS_STRICTATIME|MS_NODIRATIME,
-> +                                      MS_NOATIME))
->         {
->                 die("MS_RELATIME malfunctions\n");
->         }
-> -       if (!test_unpriv_remount_atime(MS_NOATIME|MS_NODIRATIME|MS_NODEV,
-> -                                      MS_STRICTATIME|MS_NODEV))
-> +       if (!test_unpriv_remount_atime(MS_NOATIME|MS_NODIRATIME,
-> +                                      MS_STRICTATIME))
->         {
->                 die("MS_RELATIME malfunctions\n");
->         }
-> -       if (!test_unpriv_remount(MS_STRICTATIME|MS_NODEV, MS_NODEV,
-> -                                MS_NOATIME|MS_NODEV))
-> +       if (!test_unpriv_remount("ramfs", NULL, MS_STRICTATIME, 0, MS_NOATIME))
->         {
->                 die("Default atime malfunctions\n");
->         }
-> --
-> 1.9.1
->
-
-
-
--- 
-Andy Lutomirski
-AMA Capital Management, LLC
+> +		/*
+> +		 * If a filesystem might allow the mounter to put
+> +		 * device nodes on it without the checks in mknod,
+> +		 * then require MS_NODEV to mount it.
+>  		 */
+>  		if (!(type->fs_flags & FS_USERNS_DEV_MOUNT)) {
+> -			flags |= MS_NODEV;
+> -			mnt_flags |= MNT_NODEV | MNT_LOCK_NODEV;
+> +			if (!(mnt_flags & MNT_NODEV)) {
+> +				put_filesystem(type);
+> +				return -EPERM;
+> +			}
+> +
+> +			/* Do not allow nodev to be cleared. */
+> +			mnt_flags |= MNT_LOCK_NODEV;
+>  		}
+>  	}
+>  
+> diff --git a/fs/proc/root.c b/fs/proc/root.c
+> index 094e44d4a6be..2313b280729e 100644
+> --- a/fs/proc/root.c
+> +++ b/fs/proc/root.c
+> @@ -159,7 +159,7 @@ static struct file_system_type proc_fs_type = {
+>  	.name		= "proc",
+>  	.mount		= proc_mount,
+>  	.kill_sb	= proc_kill_sb,
+> -	.fs_flags	= FS_USERNS_MOUNT,
+> +	.fs_flags	= FS_USERNS_MOUNT | FS_USERNS_DEV_MOUNT,
+>  };
+>  
+>  void __init proc_root_init(void)
+> diff --git a/fs/ramfs/inode.c b/fs/ramfs/inode.c
+> index d365b1c4eb3c..b95b7302d4cc 100644
+> --- a/fs/ramfs/inode.c
+> +++ b/fs/ramfs/inode.c
+> @@ -261,7 +261,7 @@ static struct file_system_type ramfs_fs_type = {
+>  	.name		= "ramfs",
+>  	.mount		= ramfs_mount,
+>  	.kill_sb	= ramfs_kill_sb,
+> -	.fs_flags	= FS_USERNS_MOUNT,
+> +	.fs_flags	= FS_USERNS_MOUNT | FS_USERNS_DEV_MOUNT,
+>  };
+>  
+>  int __init init_ramfs_fs(void)
+> diff --git a/fs/sysfs/mount.c b/fs/sysfs/mount.c
+> index 8a49486bf30c..56ba59317e24 100644
+> --- a/fs/sysfs/mount.c
+> +++ b/fs/sysfs/mount.c
+> @@ -58,7 +58,7 @@ static struct file_system_type sysfs_fs_type = {
+>  	.name		= "sysfs",
+>  	.mount		= sysfs_mount,
+>  	.kill_sb	= sysfs_kill_sb,
+> -	.fs_flags	= FS_USERNS_MOUNT,
+> +	.fs_flags	= FS_USERNS_MOUNT | FS_USERNS_DEV_MOUNT,
+>  };
+>  
+>  int __init sysfs_init(void)
+> diff --git a/ipc/mqueue.c b/ipc/mqueue.c
+> index 4fcf39af1776..56abbc848d4c 100644
+> --- a/ipc/mqueue.c
+> +++ b/ipc/mqueue.c
+> @@ -1394,7 +1394,7 @@ static struct file_system_type mqueue_fs_type = {
+>  	.name = "mqueue",
+>  	.mount = mqueue_mount,
+>  	.kill_sb = kill_litter_super,
+> -	.fs_flags = FS_USERNS_MOUNT,
+> +	.fs_flags = FS_USERNS_MOUNT | FS_USERNS_DEV_MOUNT,
+>  };
+>  
+>  int mq_init_ns(struct ipc_namespace *ns)
+> diff --git a/mm/shmem.c b/mm/shmem.c
+> index a42add14331c..f4a708a8f9e3 100644
+> --- a/mm/shmem.c
+> +++ b/mm/shmem.c
+> @@ -3149,7 +3149,7 @@ static struct file_system_type shmem_fs_type = {
+>  	.name		= "tmpfs",
+>  	.mount		= shmem_mount,
+>  	.kill_sb	= kill_litter_super,
+> -	.fs_flags	= FS_USERNS_MOUNT,
+> +	.fs_flags	= FS_USERNS_MOUNT | FS_USERNS_DEV_MOUNT,
+>  };
+>  
+>  int __init shmem_init(void)
+> @@ -3208,7 +3208,7 @@ static struct file_system_type shmem_fs_type = {
+>  	.name		= "tmpfs",
+>  	.mount		= ramfs_mount,
+>  	.kill_sb	= kill_litter_super,
+> -	.fs_flags	= FS_USERNS_MOUNT,
+> +	.fs_flags	= FS_USERNS_MOUNT | FS_USERNS_DEV_MOUNT,
+>  };
+>  
+>  int __init shmem_init(void)
+> -- 
+> 1.9.3
+> 
