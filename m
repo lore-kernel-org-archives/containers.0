@@ -1,16 +1,10 @@
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] fs: Remove implicit nodev for new mounts in non-root
-	userns
-Date: Fri, 15 Aug 2014 20:16:55 +0000
-Message-ID: <20140815201655.GG11476__31469.2153050148$1408133831$gmane$org@ubuntumail>
-References: <CALCETrWT_p1-5nkiAjWoeta19fkO3rDiJe9_mhRVqF8x1zXv2A@mail.gmail.com>
-	<2686c32f00b14148379e8cfee9c028c794d4aa1a.1407974494.git.luto@amacapital.net>
+From: MAILER-DAEMON-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Sat, 16 Aug 2014 14:25:49 +1000 (EST)
+Message-ID: <20140816042549.A5FD4422E1A@mail104.syd.optusnet.com.au>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============4956326558770888877=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <2686c32f00b14148379e8cfee9c028c794d4aa1a.1407974494.git.luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,171 +14,103 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Andy Lutomirski (luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org):
-> Currently, creating a new mount (as opposed to bindmount) in a
-> non-root userns will implicitly set nodev unless the fs is devpts.
-> Something like this will be necessary for file systems that allow
-> the mounter to create device nodes without using mknod (e.g. FUSE
-> if/when that is allowed), but none of the currently allowed
-> filesystems do this.
-> 
-> Implicitly adding nodev is problematic, though.  It will make it
-> unsafe to ever remove the implicit addition, since userspace might
-> start to rely on it.
-> 
-> This fixes a minor regression in:
-> 
->     9566d6742852 mnt: Correct permission checks in do_remount
-> 
-> Prior to that commit, MNT_NODEV wasn't enforced for remounts, so
-> there is existing user code that creates a new mount in a userns
-> without MS_NODEV and then expects a remount with matching options to
-> work.  That commit broke code that does this.
-> 
-> Fortunately, since the implicit nodev has no effect on any existing
-> filesystems, we can still safely remove it.
-> 
-> This replaces the implicit nodev with an explicit nodev requirement:
-> anyone who mounts a filesystem without FS_USERNS_DEV_MOUNT will get
-> -EPERM unless they set nodev.  If they set nodev, that setting will
-> be locked.
-> 
-> As an added benefit, if anything like device namespaces is ever
-> added, then user code will be able to opt out of nodev by clearing
-> nodev.
-> 
-> To keep existing code working, this adds FS_USERNS_DEV_MOUNT to all
-> FS_USERNS_MOUNT filesystems.  All of the current filesystems with
-> FS_USERNS_MOUNT set are safe.
-> 
-> I confirmed that this is compatible with Sandstorm's revision
-> 1bf0c4847b.  That revision of Sandstorm does not work without this
-> fix if 9566d6742852 is applied.
-> 
+This is a MIME-encapsulated message.
 
-Acked-by: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+--===============4956326558770888877==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="722A6423058.1408163149/mail104.syd.optusnet.com.au"
 
-This seems like the best alternative by far.
+This is a MIME-encapsulated message.
 
-> Cc: Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>
-> Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> Signed-off-by: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-> ---
->  fs/namespace.c   | 16 ++++++++++++----
->  fs/proc/root.c   |  2 +-
->  fs/ramfs/inode.c |  2 +-
->  fs/sysfs/mount.c |  2 +-
->  ipc/mqueue.c     |  2 +-
->  mm/shmem.c       |  4 ++--
->  6 files changed, 18 insertions(+), 10 deletions(-)
-> 
-> diff --git a/fs/namespace.c b/fs/namespace.c
-> index 0acabea58319..835fa9e8307e 100644
-> --- a/fs/namespace.c
-> +++ b/fs/namespace.c
-> @@ -2154,12 +2154,20 @@ static int do_new_mount(struct path *path, const char *fstype, int flags,
->  			put_filesystem(type);
->  			return -EPERM;
->  		}
-> -		/* Only in special cases allow devices from mounts
-> -		 * created outside the initial user namespace.
-> +
-> +		/*
-> +		 * If a filesystem might allow the mounter to put
-> +		 * device nodes on it without the checks in mknod,
-> +		 * then require MS_NODEV to mount it.
->  		 */
->  		if (!(type->fs_flags & FS_USERNS_DEV_MOUNT)) {
-> -			flags |= MS_NODEV;
-> -			mnt_flags |= MNT_NODEV | MNT_LOCK_NODEV;
-> +			if (!(mnt_flags & MNT_NODEV)) {
-> +				put_filesystem(type);
-> +				return -EPERM;
-> +			}
-> +
-> +			/* Do not allow nodev to be cleared. */
-> +			mnt_flags |= MNT_LOCK_NODEV;
->  		}
->  	}
->  
-> diff --git a/fs/proc/root.c b/fs/proc/root.c
-> index 094e44d4a6be..2313b280729e 100644
-> --- a/fs/proc/root.c
-> +++ b/fs/proc/root.c
-> @@ -159,7 +159,7 @@ static struct file_system_type proc_fs_type = {
->  	.name		= "proc",
->  	.mount		= proc_mount,
->  	.kill_sb	= proc_kill_sb,
-> -	.fs_flags	= FS_USERNS_MOUNT,
-> +	.fs_flags	= FS_USERNS_MOUNT | FS_USERNS_DEV_MOUNT,
->  };
->  
->  void __init proc_root_init(void)
-> diff --git a/fs/ramfs/inode.c b/fs/ramfs/inode.c
-> index d365b1c4eb3c..b95b7302d4cc 100644
-> --- a/fs/ramfs/inode.c
-> +++ b/fs/ramfs/inode.c
-> @@ -261,7 +261,7 @@ static struct file_system_type ramfs_fs_type = {
->  	.name		= "ramfs",
->  	.mount		= ramfs_mount,
->  	.kill_sb	= ramfs_kill_sb,
-> -	.fs_flags	= FS_USERNS_MOUNT,
-> +	.fs_flags	= FS_USERNS_MOUNT | FS_USERNS_DEV_MOUNT,
->  };
->  
->  int __init init_ramfs_fs(void)
-> diff --git a/fs/sysfs/mount.c b/fs/sysfs/mount.c
-> index 8a49486bf30c..56ba59317e24 100644
-> --- a/fs/sysfs/mount.c
-> +++ b/fs/sysfs/mount.c
-> @@ -58,7 +58,7 @@ static struct file_system_type sysfs_fs_type = {
->  	.name		= "sysfs",
->  	.mount		= sysfs_mount,
->  	.kill_sb	= sysfs_kill_sb,
-> -	.fs_flags	= FS_USERNS_MOUNT,
-> +	.fs_flags	= FS_USERNS_MOUNT | FS_USERNS_DEV_MOUNT,
->  };
->  
->  int __init sysfs_init(void)
-> diff --git a/ipc/mqueue.c b/ipc/mqueue.c
-> index 4fcf39af1776..56abbc848d4c 100644
-> --- a/ipc/mqueue.c
-> +++ b/ipc/mqueue.c
-> @@ -1394,7 +1394,7 @@ static struct file_system_type mqueue_fs_type = {
->  	.name = "mqueue",
->  	.mount = mqueue_mount,
->  	.kill_sb = kill_litter_super,
-> -	.fs_flags = FS_USERNS_MOUNT,
-> +	.fs_flags = FS_USERNS_MOUNT | FS_USERNS_DEV_MOUNT,
->  };
->  
->  int mq_init_ns(struct ipc_namespace *ns)
-> diff --git a/mm/shmem.c b/mm/shmem.c
-> index a42add14331c..f4a708a8f9e3 100644
-> --- a/mm/shmem.c
-> +++ b/mm/shmem.c
-> @@ -3149,7 +3149,7 @@ static struct file_system_type shmem_fs_type = {
->  	.name		= "tmpfs",
->  	.mount		= shmem_mount,
->  	.kill_sb	= kill_litter_super,
-> -	.fs_flags	= FS_USERNS_MOUNT,
-> +	.fs_flags	= FS_USERNS_MOUNT | FS_USERNS_DEV_MOUNT,
->  };
->  
->  int __init shmem_init(void)
-> @@ -3208,7 +3208,7 @@ static struct file_system_type shmem_fs_type = {
->  	.name		= "tmpfs",
->  	.mount		= ramfs_mount,
->  	.kill_sb	= kill_litter_super,
-> -	.fs_flags	= FS_USERNS_MOUNT,
-> +	.fs_flags	= FS_USERNS_MOUNT | FS_USERNS_DEV_MOUNT,
->  };
->  
->  int __init shmem_init(void)
-> -- 
-> 1.9.3
-> 
+--722A6423058.1408163149/mail104.syd.optusnet.com.au
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
+
+This is the mail system at host mail104.syd.optusnet.com.au.
+
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
+
+For further assistance, please send mail to postmaster.
+
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+                   The mail system
+
+<elwinnn-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org> (expanded from <elwinnn-yP2FWuG//QYQrrorzV6ljw@public.gmane.org>): user unknown
+
+--722A6423058.1408163149/mail104.syd.optusnet.com.au
+Content-Description: Delivery report
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; mail104.syd.optusnet.com.au
+X-Postfix-Queue-ID: 722A6423058
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Sat, 16 Aug 2014 14:25:46 +1000 (EST)
+
+Final-Recipient: rfc822; elwinnn-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org
+Original-Recipient: rfc822;elwinnn-yP2FWuG//QYQrrorzV6ljw@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: x-unix; user unknown
+
+--722A6423058.1408163149/mail104.syd.optusnet.com.au
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from bran2.branneriet.se (mail.branneriet.se [212.247.11.153])
+	by mail104.syd.optusnet.com.au (Postfix) with ESMTP id 722A6423058
+	for <elwinnn-yP2FWuG//QYQrrorzV6ljw@public.gmane.org>; Sat, 16 Aug 2014 14:25:46 +1000 (EST)
+Received: from [212.247.11.153] by bran2.branneriet.se id xwvjPEIaziHk with SMTP; Sat, 16 Aug 2014 06:25:45 +0200
+Date: Sat, 16 Aug 2014 06:25:45 +0200
+From: "Clariee" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v2.04.9) Home
+X-Priority: 3 (Normal)
+Message-ID: <117547610.62252136462435-cNSa/GGZUkNpwsWCmidmvTAV6s6igYVG@public.gmane.org>
+To: <elwinnn-yP2FWuG//QYQrrorzV6ljw@public.gmane.org>
+Subject: Successfull Order 7206827672.
+MIME-Version: 1.0
+Content-Type: multipart/mixed;
+ boundary="----------3F1C415811728B92"
+X-Optus-CM-Spam: spam
+X-Optus-CM-Score: 100
+X-Optus-CM-Analysis: v=2.1 cv=AOuw8Gd4 c=1 sm=1 tr=0 p=cxrWrx4LPssA:10
+	p=91fWwWNU07YswU_M:21 p=7Yy0uXOg2Td6sqN8:21 p=OxX3JzG-Fykg_YM2HIsA:9
+	a=ewvMlgU0jRTIjjfb64+JMw==:117 a=ewvMlgU0jRTIjjfb64+JMw==:17
+	a=mOwtVXMRvh0A:10 a=NEiEQogP1MkA:10 a=Z4Rwk6OoAAAA:8
+	a=LJuGzTQRNHCiRkaOIEIA:9 a=CjuIK1q_8ugA:10 a=AmJT6pcmVd4A:10
+	a=YEVEp4x0S0EA:10 a=li9ar1O_j5IA:10 a=IKIoO-ieCDEA:10
+
+------------3F1C415811728B92
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+
+Dear customer. 
+     
+Thank you for the order, 
+your credit card will be charged for 472.42 dollars.
+Information about the order and delivery details is in attached file.
+  
+Best regards, ticket service.
+------------3F1C415811728B92--
+
+
+
+--722A6423058.1408163149/mail104.syd.optusnet.com.au--
+
+--===============4956326558770888877==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============4956326558770888877==--
