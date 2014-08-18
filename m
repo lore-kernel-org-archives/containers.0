@@ -1,11 +1,10 @@
-From: Vishnumurthy Prabhu <support+prabhuvishnumurthy-uHbeq+nFxh/9wjmJA0BvfA@public.gmane.org>
-Subject: My updated contact info
-Date: Sun, 17 Aug 2014 09:16:40 +0000 (UTC)
-Message-ID: <147e34118af.168c.173e13@ismtpd-018.sjc1.sendgrid.net>
-Reply-To: prabhuvmk-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: Mailer_Daemon-FNgtu3yjpm00n/F98K4Iww@public.gmane.org
+Subject: Delivery Status (Message Send Error)
+Date: Tue, 19 Aug 2014 02:05:05 +1000
+Message-ID: <20140818160502.CJOR17495.nskntmtas04p.mx.bigpond.com@nskntcmgw07p>
+Reply-To: postmaster-FNgtu3yjpm00n/F98K4Iww@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============1297354950732669777=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,27 +18,55 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+This is a MIME encapsulated Message
 
-Hello,
+--===============1297354950732669777==
+Content-Type: multipart/report; report-type=delivery-status;
+ boundary="----=_NextPart"
+
+This is a MIME encapsulated Message
+
+------=_NextPart
+Content-type: text/plain; charset=us-ascii
 
 
-Please find my updated contact information. Lets stay in touch.
+Your message (ID:) could not be delivered to the recipients below
+See the delivery status below for more information
+- svilleitalio-FNgtu3yjpm00n/F98K4Iww@public.gmane.org
 
-http://new.intouchapp.com/register/0739cc6c3ce4a10c188729a9f1e82f5ea4a92a06/?hide_mci=1
+VPOP3 was trying to send a message to the server "10.0.0.101" when it encountered errors.
+These errors probably originated from that server
 
-I am using IntouchApp to manage my contacts so we can stay in
-touch over time. When I make changes to my contact information, you
-will automatically see my updated information in your phone.
+Whilst trying to send to "svilleitalio-FNgtu3yjpm00n/F98K4Iww@public.gmane.org", VPOP3 received the error "550 (5.1.1 <svilleitalio-FNgtu3yjpm00n/F98K4Iww@public.gmane.org>: Recipient address rejected: User unknown in local recipient table) (failed)"
 
-If you join in, I will also have your latest contact info handy. I 
-think this is really useful, and thought you might like it too.
+------=_NextPart
+Content-type: message/delivery-status
+Content-disposition: inline
 
-Regards,
-Vishnumurthy Prabhu
-IntouchID: *prabhuvishnumurthy
+Reporting-MTA: dns; clubsqld.com.au
+Remote-MTA: dns; 10.0.0.101
 
-Get IntouchApp on your mobile: http://www.intouchapp.com
+Final-Recipient: rfc822;svilleitalio-FNgtu3yjpm00n/F98K4Iww@public.gmane.org
+Original-Recipient: rfc822;svilleitalio-FNgtu3yjpm00n/F98K4Iww@public.gmane.org
+Action: failed
+Status: 5.5.0 (5.1.1 <svilleitalio-FNgtu3yjpm00n/F98K4Iww@public.gmane.org>: Recipient address rejected: User unknown in local recipient table)
 
-What is IntouchApp?
-Watch the magic: http://www.youtube.com/watch?v=bLF5k0esXXo
-Learn more: http://www.theIntouchId.com/learnmore
+
+------=_NextPart
+Content-type: text/rfc822-headers
+Content-disposition: inline
+
+
+------=_NextPart--
+
+--===============1297354950732669777==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============1297354950732669777==--
