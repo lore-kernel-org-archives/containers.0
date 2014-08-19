@@ -1,11 +1,16 @@
-From: Mailer_Daemon-FNgtu3yjpm00n/F98K4Iww@public.gmane.org
-Subject: Delivery Status (Message Send Error)
-Date: Tue, 19 Aug 2014 02:05:05 +1000
-Message-ID: <20140818160502.CJOR17495.nskntmtas04p.mx.bigpond.com@nskntcmgw07p>
-Reply-To: postmaster-FNgtu3yjpm00n/F98K4Iww@public.gmane.org
+From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH V3 0/6] namespaces: log namespaces per task
+Date: Tue, 19 Aug 2014 12:46:17 -0400
+Message-ID: <20140819164617.GE9003@madcap2.tricolour.ca>
+References: <cover.1400271129.git.rgb@redhat.com>
+	<1400593754.15733.4.camel@flatline.rdu.redhat.com>
+	<20140520140146.GA8079@madcap2.tricolour.ca>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1297354950732669777=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20140520140146.GA8079-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,58 +20,77 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME encapsulated Message
+On 14/05/20, Richard Guy Briggs wrote:
+> On 14/05/20, Eric Paris wrote:
+> > On Tue, 2014-05-20 at 09:12 -0400, Richard Guy Briggs wrote:
+> > > The purpose is to track namespaces in use by logged processes from the
+> > > perspective of init_*_ns.
 
---===============1297354950732669777==
-Content-Type: multipart/report; report-type=delivery-status;
- boundary="----=_NextPart"
+(Including the Linux API list due to the additions to /proc/<pid>/ns/.
+Please see http://www.kernelhub.org/?p=2&msg=477668 and in particular
+http://www.kernelhub.org/?msg=477678&p=2 )
 
-This is a MIME encapsulated Message
+<snip>
 
-------=_NextPart
-Content-type: text/plain; charset=us-ascii
+> > > 5/6 provides an example of usage for audit_log_task_info() which is used by
+> > > syscall audits, among others.  audit_log_task() and audit_common_recv_message()
+> > > would be other potential use cases.
+> > > 
+> > > Proposed output format:
+> > > This differs slightly from Aristeu's patch because of the label conflict with
+> > > "pid=" due to including it in existing records rather than it being a seperate
+> > > record.  The serial numbers are printed in hex.
+> > > 	type=SYSCALL msg=audit(1399651071.433:72): arch=c000003e syscall=272 success=yes exit=0 a0=40000000 a1=ffffffffffffffff a2=0 a3=22 items=0 ppid=1 pid=483 auid=4294967295 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=(none) ses=4294967295 comm="(t-daemon)" exe="/usr/lib/systemd/systemd" netns=97 utsns=2 ipcns=1 pidns=4 userns=3 mntns=5 subj=system_u:system_r:init_t:s0 key=(null)
+> > 
+> > I'm undecided if I'd rather see this as a separate NS_INFO record type.
+> > It would mean we could filter them out of the logs...
+> 
+> I don't have a strong opinion either way.  Steve G.'s opinion would be
+> helpful here.
 
+Breaking this out into a seperate record type would mean calling
+audit_log_namespace_info() from the callers of audit_log_task_info()
+(presently audit_log_link_denied(), ima_audit_measurement(),
+audit_log_exit() ), but would make it easier to emit with other record
+types.
 
-Your message (ID:) could not be delivered to the recipients below
-See the delivery status below for more information
-- svilleitalio-FNgtu3yjpm00n/F98K4Iww@public.gmane.org
+> > Do we print out lots of pidns=0 for tasks not in a newly created NS?  Do
+> > we want to?
+> 
+> There is no "pidns=0", but I understand your point.  This would come
+> back to Steve G.'s point about disappearing fields, and the value of
+> having it as a seperate record that could be filtered.
+> 
+> > > 6/6 tracks the creation and deletion of of namespaces, listing the type of
+> > > namespace instance, related namespace id if there is one and the newly minted
+> > > serial number.
+> > > 
+> > > Proposed output format:
+> > > 	type=NS_INIT msg=audit(1400217435.706:94): pid=524 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:mount_t:s0 type=20000 old_snum=0 snum=a1 res=1
+> > 
+> > I'd love to be able to grep for netns=20 and find both the NS_INIT and
+> > the SYSCALL/NS_INFO records, instead of having them named different
+> > things.  So basically I think you want to translate the type= into a
+> > string for the old_X= and X=...
+> 
+> That actually makes a bit more sense, and we could do away with the
+> "type=" field since the "Xns=" fields are self-describing.
 
-VPOP3 was trying to send a message to the server "10.0.0.101" when it encountered errors.
-These errors probably originated from that server
+Steve, how do you feel about this since the NS_INIT/NS_DEL record type
+would have changing fields amongst the 6 namespace types.  Only one of
+the 6 would be present in each message.  I suppose we could have an
+NS_INIT_XXX/NS_DEL_XXX for each namespace type.
 
-Whilst trying to send to "svilleitalio-FNgtu3yjpm00n/F98K4Iww@public.gmane.org", VPOP3 received the error "550 (5.1.1 <svilleitalio-FNgtu3yjpm00n/F98K4Iww@public.gmane.org>: Recipient address rejected: User unknown in local recipient table) (failed)"
+> - RGB
 
-------=_NextPart
-Content-type: message/delivery-status
-Content-disposition: inline
+- RGB
 
-Reporting-MTA: dns; clubsqld.com.au
-Remote-MTA: dns; 10.0.0.101
-
-Final-Recipient: rfc822;svilleitalio-FNgtu3yjpm00n/F98K4Iww@public.gmane.org
-Original-Recipient: rfc822;svilleitalio-FNgtu3yjpm00n/F98K4Iww@public.gmane.org
-Action: failed
-Status: 5.5.0 (5.1.1 <svilleitalio-FNgtu3yjpm00n/F98K4Iww@public.gmane.org>: Recipient address rejected: User unknown in local recipient table)
-
-
-------=_NextPart
-Content-type: text/rfc822-headers
-Content-disposition: inline
-
-
-------=_NextPart--
-
---===============1297354950732669777==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1297354950732669777==--
+--
+Richard Guy Briggs <rbriggs-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Senior Software Engineer, Kernel Security, AMER ENG Base Operating Systems, Red Hat
+Remote, Ottawa, Canada
+Voice: +1.647.777.2635, Internal: (81) 32635, Alt: +1.613.693.0684x3545
