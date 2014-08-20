@@ -1,13 +1,17 @@
-From: <postmaster-qRcEd8s/j7wmlgWXwLrGsA@public.gmane.org>
-Subject: Undeliverable: Successfull Order 6318543337
-Date: Wed, 20 Aug 2014 09:42:17 +1000
-Message-ID: <28604.3210457594$1408492731@news.gmane.org>
-References: <58833474.73413006050638@helios.citizenside.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH V3 0/6] namespaces: log namespaces per task
+Date: Tue, 19 Aug 2014 21:04:57 -0700
+Message-ID: <8738crst5i.fsf__6038.54024452648$1408507801$gmane$org@x220.int.ebiederm.org>
+References: <cover.1400271129.git.rgb@redhat.com>
+	<1400593754.15733.4.camel@flatline.rdu.redhat.com>
+	<20140520140146.GA8079@madcap2.tricolour.ca>
+	<20140819164617.GE9003@madcap2.tricolour.ca>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1231482761220364463=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-AU
-In-Reply-To: <58833474.73413006050638-/IEPHT2Ar21ujl2KyNram6VD0FRqGuVx@public.gmane.org>
+In-Reply-To: <20140819164617.GE9003-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org> (Richard Guy
+	Briggs's message of "Tue, 19 Aug 2014 12:46:17 -0400")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,123 +21,94 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
---===============1231482761220364463==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="7f8df3df-8b18-47c0-ac59-ff1b00778921"
-Content-Language: en-AU
+Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
 
---7f8df3df-8b18-47c0-ac59-ff1b00778921
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+> On 14/05/20, Richard Guy Briggs wrote:
+>> On 14/05/20, Eric Paris wrote:
+>> > On Tue, 2014-05-20 at 09:12 -0400, Richard Guy Briggs wrote:
+>> > > The purpose is to track namespaces in use by logged processes from the
+>> > > perspective of init_*_ns.
+>
+> (Including the Linux API list due to the additions to /proc/<pid>/ns/.
+> Please see http://www.kernelhub.org/?p=2&msg=477668 and in particular
+> http://www.kernelhub.org/?msg=477678&p=2 )
 
-Delivery has failed to these recipients or distribution lists:
+Sigh if you have to use something like this use the proc inode
+number.  It is the same thing.
 
-3daimregions-xAH5Rgt1R+IpAS55Wn97og@public.gmane.org<mailto:3daimregions-xAH5Rgt1R+IpAS55Wn97og@public.gmane.org>
-The recipient's e-mail address was not found in the recipient's e-mail syst=
-em. Microsoft Exchange will not try to redeliver this message for you. Plea=
-se check the e-mail address and try resending this message, or provide the =
-following diagnostic text to your system administrator.
+I hate to claim it is unique absent of the proc superblock but it is and
+will be for the forseable future.  
 
-________________________________
-Sent by Microsoft Exchange Server 2007
+It would be better to include the block device number that appears in
+proc of 3h of the primary mount of to qualify the number.  But it is not
+particularly important.  Coming up with an additional unique number that
+needs to be maintained seems stronlgy silly.
 
-
-
-
-
-
-Diagnostic information for administrators:
-
-Generating server: AIMQLD.COM.AU
-
-3daimregions-xAH5Rgt1R+IpAS55Wn97og@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
-
-Original message headers:
-
-Received: from mx1.aimqld.com.au (172.17.101.100) by EXCHANGE.AIMQLD.COM.AU
- (172.16.0.102) with Microsoft SMTP Server id 8.3.83.0; Wed, 20 Aug 2014
- 09:42:17 +1000
-Received: from helios.citizenside.com ([80.248.219.186])        by mx1.aimq=
-ld.com.au
- (8.14.5/8.14.5) with ESMTP id s7JNcFEd002728   for
- <3daimregions-xAH5Rgt1R+IpAS55Wn97og@public.gmane.org>; Wed, 20 Aug 2014 09:38:16 +1000
-Received: from [80.248.219.186] by helios.citizenside.com id wapM2aOXljUK w=
-ith
- SMTP; Wed, 20 Aug 2014 01:42:09 +0200
-Date: Wed, 20 Aug 2014 01:42:09 +0200
-From: Rosalie <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.03.2) Home
-X-Priority: 3 (Normal)
-Message-ID: <58833474.73413006050638-/IEPHT2Ar21ujl2KyNram6VD0FRqGuVx@public.gmane.org>
-To: <3daimregions-xAH5Rgt1R+IpAS55Wn97og@public.gmane.org>
-Subject: Successfull Order 6318543337
-MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary=3D"----------3F1C415811728B92"
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Eric
 
 
---7f8df3df-8b18-47c0-ac59-ff1b00778921
-Content-Type: message/delivery-status
 
-Reporting-MTA: dns;AIMQLD.COM.AU
-Received-From-MTA: dns;mx1.aimqld.com.au
-Arrival-Date: Tue, 19 Aug 2014 23:42:17 +0000
-
-Final-Recipient: rfc822;3daimregions-xAH5Rgt1R+IpAS55Wn97og@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-
---7f8df3df-8b18-47c0-ac59-ff1b00778921
-Content-Type: message/rfc822
-
-Received: from mx1.aimqld.com.au (172.17.101.100) by EXCHANGE.AIMQLD.COM.AU
- (172.16.0.102) with Microsoft SMTP Server id 8.3.83.0; Wed, 20 Aug 2014
- 09:42:17 +1000
-Received: from helios.citizenside.com ([80.248.219.186])	by mx1.aimqld.com.au
- (8.14.5/8.14.5) with ESMTP id s7JNcFEd002728	for
- <3daimregions-xAH5Rgt1R+IpAS55Wn97og@public.gmane.org>; Wed, 20 Aug 2014 09:38:16 +1000
-Received: from [80.248.219.186] by helios.citizenside.com id wapM2aOXljUK with
- SMTP; Wed, 20 Aug 2014 01:42:09 +0200
-Date: Wed, 20 Aug 2014 01:42:09 +0200
-From: Rosalie <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.03.2) Home
-X-Priority: 3 (Normal)
-Message-ID: <58833474.73413006050638-/IEPHT2Ar21ujl2KyNram6VD0FRqGuVx@public.gmane.org>
-To: <3daimregions-xAH5Rgt1R+IpAS55Wn97og@public.gmane.org>
-Subject: Successfull Order 6318543337
-MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="----------3F1C415811728B92"
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-
-------------3F1C415811728B92
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-
-Dear customer. 
-        
-Thank you for the order, 
-your credit card will be charged for 764.10 dollars.
-Information about the order and delivery details is in attached file.
-   
-Best regards, ticket service.
-------------3F1C415811728B92--
-
---7f8df3df-8b18-47c0-ac59-ff1b00778921--
-
---===============1231482761220364463==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1231482761220364463==--
+> <snip>
+>
+>> > > 5/6 provides an example of usage for audit_log_task_info() which is used by
+>> > > syscall audits, among others.  audit_log_task() and audit_common_recv_message()
+>> > > would be other potential use cases.
+>> > > 
+>> > > Proposed output format:
+>> > > This differs slightly from Aristeu's patch because of the label conflict with
+>> > > "pid=" due to including it in existing records rather than it being a seperate
+>> > > record.  The serial numbers are printed in hex.
+>> > > 	type=SYSCALL msg=audit(1399651071.433:72): arch=c000003e syscall=272 success=yes exit=0 a0=40000000 a1=ffffffffffffffff a2=0 a3=22 items=0 ppid=1 pid=483 auid=4294967295 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=(none) ses=4294967295 comm="(t-daemon)" exe="/usr/lib/systemd/systemd" netns=97 utsns=2 ipcns=1 pidns=4 userns=3 mntns=5 subj=system_u:system_r:init_t:s0 key=(null)
+>> > 
+>> > I'm undecided if I'd rather see this as a separate NS_INFO record type.
+>> > It would mean we could filter them out of the logs...
+>> 
+>> I don't have a strong opinion either way.  Steve G.'s opinion would be
+>> helpful here.
+>
+> Breaking this out into a seperate record type would mean calling
+> audit_log_namespace_info() from the callers of audit_log_task_info()
+> (presently audit_log_link_denied(), ima_audit_measurement(),
+> audit_log_exit() ), but would make it easier to emit with other record
+> types.
+>
+>> > Do we print out lots of pidns=0 for tasks not in a newly created NS?  Do
+>> > we want to?
+>> 
+>> There is no "pidns=0", but I understand your point.  This would come
+>> back to Steve G.'s point about disappearing fields, and the value of
+>> having it as a seperate record that could be filtered.
+>> 
+>> > > 6/6 tracks the creation and deletion of of namespaces, listing the type of
+>> > > namespace instance, related namespace id if there is one and the newly minted
+>> > > serial number.
+>> > > 
+>> > > Proposed output format:
+>> > > 	type=NS_INIT msg=audit(1400217435.706:94): pid=524 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:mount_t:s0 type=20000 old_snum=0 snum=a1 res=1
+>> > 
+>> > I'd love to be able to grep for netns=20 and find both the NS_INIT and
+>> > the SYSCALL/NS_INFO records, instead of having them named different
+>> > things.  So basically I think you want to translate the type= into a
+>> > string for the old_X= and X=...
+>> 
+>> That actually makes a bit more sense, and we could do away with the
+>> "type=" field since the "Xns=" fields are self-describing.
+>
+> Steve, how do you feel about this since the NS_INIT/NS_DEL record type
+> would have changing fields amongst the 6 namespace types.  Only one of
+> the 6 would be present in each message.  I suppose we could have an
+> NS_INIT_XXX/NS_DEL_XXX for each namespace type.
+>
+>> - RGB
+>
+> - RGB
+>
+> --
+> Richard Guy Briggs <rbriggs-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> Senior Software Engineer, Kernel Security, AMER ENG Base Operating Systems, Red Hat
+> Remote, Ottawa, Canada
+> Voice: +1.647.777.2635, Internal: (81) 32635, Alt: +1.613.693.0684x3545
