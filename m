@@ -1,9 +1,9 @@
 From: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: For review: namespaces(7) man page
-Date: Wed, 20 Aug 2014 18:38:05 -0500
-Message-ID: <53F5315D.6090003@gmail.com>
+Subject: For review: pid_namespaces(7) man page
+Date: Wed, 20 Aug 2014 18:38:15 -0500
+Message-ID: <53F53167.4070207@gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------030203040903020903050808"
+Content-Type: multipart/mixed; boundary="------------080701000506080305070000"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,15 +19,15 @@ Cc: "linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-man-u79uwXL29TY76
 List-Id: containers.vger.kernel.org
 
 This is a multi-part message in MIME format.
---------------030203040903020903050808
+--------------080701000506080305070000
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: quoted-printable
 
 Hello Eric et al.
 
-Here is the current draft of the namespaces(7) man page, which
-gives an overview of namespaces and the namespaces API. The rendered
-version is below, and the source is attached.
+Here is the current draft of the pid_namespaces(7) man page, which
+described PID namespaces. The rendered version is below, and the
+source is attached.
 
 Review comments/suggestions for improvements / bug fixes welcome.
 
@@ -38,240 +38,215 @@ Michael
 =3D=3D
 
 NAME
-       namespaces - overview of Linux namespaces
+       pid_namespaces - overview of Linux PID namespaces
 
 DESCRIPTION
-       A namespace wraps a global system resource in an abstraction that
-       makes it appear to the processes within the namespace  that  they
-       have their own isolated instance of the global resource.  Changes
-       to the global resource are visible to other  processes  that  are
-       members  of  the namespace, but are invisible to other processes.
-       One use of namespaces is to implement containers.
+       For an overview of namespaces, see namespaces(7).
 
-       Linux provides the following namespaces:
-
-       Namespace   Constant        Isolates
-       IPC         CLONE_IPC       System V IPC, POSIX mesage queues
-       Network     CLONE_NEWNET    Network devices, stacks, ports, etc.
-       Mount       CLONE_NEWNS     Mount points
-       PID         CLONE_NEWPID    Process IDs
-       User        CLONE_NEWUSER   User and group IDs
-       UTS         CLONE_NEWUTS    Hostname and NIS domain name
-
-       This page describes the various  namespaces  and  the  associated
-       /proc files, and summarizes the APIs for working with namespaces.
-
-   The namespaces API
-       As  well  as  various /proc files described below, the namespaces
-       API includes the following system calls:
-
-       clone(2)
-              The clone(2) system call creates a new  process.   If  the
-              flags  argument  of  the call specifies one or more of the
-              CLONE_NEW* flags listed below,  then  new  namespaces  are
-              created  for  each  flag,  and the child process is made a
-              member of those namespaces.  (This system call also imple=E2=
+       PID  namespaces isolate the process ID number space, meaning that
+       processes in different PID namespaces can have the same PID.  PID
+       namespaces allow containers to provide functionality such as sus=E2=
 =80=90
-              ments a number of features unrelated to namespaces.)
+       pending/resuming the  set  of  processes  in  the  container  and
+       migrating  the container to a new host while the processes inside
+       the container maintain the same PIDs.
 
-       setns(2)
-              The  setns(2)  system  call  allows the calling process to
-              join an existing namespace.   The  namespace  to  join  is
-              specified  via a file descriptor that refers to one of the
-              /proc/[pid]/ns files described below.
-
-       unshare(2)
-              The unshare(2) system call moves the calling process to  a
-              new  namespace.   If the flags argument of the call speci=E2=
+       PIDs in a new PID namespace start at 1, somewhat  like  a  stand=E2=
 =80=90
-              fies one or more of the  CLONE_NEW*  flags  listed  below,
-              then  new  namespaces  are  created for each flag, and the
-              calling process is made  a  member  of  those  namespaces.
-              (This  system  call  also  implements a number of features
-              unrelated to namespaces.)
+       alone  system,  and  calls to fork(2), vfork(2), or clone(2) will
+       produce processes with PIDs that are unique within the namespace.
 
-       Creation of new namespaces using clone(2) and unshare(2) in  most
-       cases requires the CAP_SYS_ADMIN capability.  User namespaces are
-       the exception: since Linux 3.8, no privilege is required to  cre=E2=
+       Use of PID namespaces requires a kernel that is  configured  with
+       the CONFIG_PID_NS option.
+
+   The namespace init process
+       The  first  process created in a new namespace (i.e., the process
+       created using clone(2) with the CLONE_NEWPID flag, or  the  first
+       child  created  by a process after a call to unshare(2) using the
+       CLONE_NEWPID flag) has the PID 1, and is the "init"  process  for
+       the  namespace  (see  init(1)).  A child process that is orphaned
+       within the namespace will be reparented to  this  process  rather
+       than init(1) (unless one of the ancestors of the child
+        in    the    same    PID   namespace   employed   the   prctl(2)
+       PR_GET_CHILD_SUBREAPER command to mark itself as  the  reaper  of
+       orphaned descendant processes).
+
+       If  the  "init" process of a PID namespace terminates, the kernel
+       terminates all of the processes in the namespace  via  a  SIGKILL
+       signal.   This behavior reflects the fact that the "init" process
+       is essential for the correct operation of a  PID  namespace.   In
+       this case, a subsequent fork(2) into this PID namespace will fail
+       with the error ENOMEM; it is not possible to create  a  new  pro=E2=
 =80=90
-       ate a user namespace.
-
-   The /proc/[pid]/ns/ directory
-       Each  process  has  a /proc/[pid]/ns/ subdirectory containing one
-       entry for each  namespace  that  supports  being  manipulated  by
-       setns(2):
-
-           $ ls -l /proc/$$/ns
-           total 0
-           lrwxrwxrwx. 1 mtk mtk 0 Jan 14 01:20 ipc -> ipc:[4026531839]
-           lrwxrwxrwx. 1 mtk mtk 0 Jan 14 01:20 mnt -> mnt:[4026531840]
-           lrwxrwxrwx. 1 mtk mtk 0 Jan 14 01:20 net -> net:[4026531956]
-           lrwxrwxrwx. 1 mtk mtk 0 Jan 14 01:20 pid -> pid:[4026531836]
-           lrwxrwxrwx. 1 mtk mtk 0 Jan 14 01:20 user -> user:[4026531837]
-           lrwxrwxrwx. 1 mtk mtk 0 Jan 14 01:20 uts -> uts:[4026531838]
-
-       Bind  mounting  (see mount(2)) one of the files in this directory
-       to somewhere else  in  the  filesystem  keeps  the  corresponding
-       namespace  of the process specified by pid alive even if all pro=E2=
+       cesses  in  a  PID namespace whose "init" process has terminated.
+       Such scenarios can occur when, for example,  a  process  uses  an
+       open  file descriptor for a /proc/[pid]/ns/pid file corresponding
+       to a process that was in a namespace to setns(2) into that names=E2=
 =80=90
-       cesses currently in the namespace terminate.
+       pace  after  the "init" process has terminated.  Another possible
+       scenario can occur after a call to unshare(2): if the first child
+       subsequently  created  by  a  fork(2) terminates, then subsequent
+       calls to fork(2) will fail with ENOMEM.
 
-       Opening one of the files in this directory (or  a  file  that  is
-       bind mounted to one of these files) returns a file handle for the
-       corresponding namespace of the process specified by pid.  As long
-       as  this  file descriptor remains open, the namespace will remain
-       alive, even if all processes in  the  namespace  terminate.   The
-       file descriptor can be passed to setns(2).
-
-       In Linux 3.7 and earlier, these files were visible as hard links.
-       Since Linux 3.8, they appear as symbolic links.  If two processes
-       are  in  the  same  namespace,  then  the  inode numbers of their
-       /proc/[pid]/ns/xxx symbolic links will be the same;  an  applica=E2=
+       Only signals for which the "init" process has established a  sig=E2=
 =80=90
-       tion  can  check  this  using  the  stat.st_ino field returned by
-       stat(2).  The content of this symbolic link is a string  contain=E2=
+       nal handler can be sent to the "init" process by other members of
+       the PID namespace.  This restriction applies even  to  privileged
+       processes,  and  prevents other members of the PID namespace from
+       accidentally killing the "init" process.
+
+       Likewise, a process in an ancestor namespace can=E2=80=94subject  =
+to  the
+       usual  permission checks described in kill(2)=E2=80=94send signals=
+ to the
+       "init" process of a  child  PID  namespace  only  if  the  "init"
+       process  has  established a handler for that signal.  (Within the
+       handler, the siginfo_t si_pid  field  described  in  sigaction(2)
+       will  be  zero.)   SIGKILL  or SIGSTOP are treated exceptionally:
+       these signals are forcibly delivered when sent from  an  ancestor
+       PID  namespace.   Neither  of  these signals can be caught by the
+       "init" process, and so will result in the usual  actions  associ=E2=
 =80=90
-       ing the namespace type and inode number as in the following exam=E2=
+       ated  with  those signals (respectively, terminating and stopping
+       the process).
+
+       Starting with Linux 3.4, the reboot(2) system causes a signal  to
+       be  sent to the namespace "init" process.  See reboot(2) for more
+       details.
+
+   Nesting PID namespaces
+       PID namespaces can be nested: each PID namespace  has  a  parent,
+       except  for  the initial ("root") PID namespace.  The parent of a
+       PID namespace is the PID namespace of the  process  that  created
+       the  namespace using clone(2) or unshare(2).  PID namespaces thus
+       form a tree, with all namespaces ultimately tracing their  ances=E2=
 =80=90
-       ple:
+       try to the root namespace.
 
-           $ readlink /proc/$$/ns/uts
-           uts:[4026531838]
-
-       The files in this subdirectory are as follows:
-
-       /proc/[pid]/ns/ipc (since Linux 3.0)
-              This file is  a  handle  for  the  IPC  namespace  of  the
-              process.
-
-       /proc/[pid]/ns/mnt (since Linux 3.8)
-              This  file  is  a  handle  for  the mount namespace of the
-              process.
-
-       /proc/[pid]/ns/net (since Linux 3.0)
-              This file is a handle for the  network  namespace  of  the
-              process.
-
-       /proc/[pid]/ns/pid (since Linux 3.8)
-              This  file  is  a  handle  for  the  PID  namespace of the
-              process.
-
-       /proc/[pid]/ns/user (since Linux 3.8)
-              This file is a  handle  for  the  user  namespace  of  the
-              process.
-
-       /proc/[pid]/ns/uts (since Linux 3.0)
-              This  file  is  a  handle  for  the  IPC  namespace of the
-              process.
-
-   IPC namespaces (CLONE_NEWIPC)
-       IPC namespaces isolate certain IPC resources,  namely,  System  V
-       IPC objects (see svipc(7)) and (since Linux 2.6.30) POSIX message
-       queues (see mq_overview(7).  The common characteristic  of  these
-       IPC  mechanisms  is that IPC objects are identified by mechanisms
-       other than filesystem pathnames.
-
-       Each IPC namespace has its own set of System  V  IPC  identifiers
-       and  its  own POSIX message queue filesystem.  Objects created in
-       an IPC namespace are visible to all other processes that are mem=E2=
+       A process is visible to other processes in its PID namespace, and
+       to the processes in each direct ancestor PID namespace going back
+       to the root PID namespace.  In this context, "visible" means that
+       one process can be the target of operations  by  another  process
+       using  system  calls  that specify a process ID.  Conversely, the
+       processes in a child PID namespace can't  see  processes  in  the
+       parent  and further removed ancestor namespace.  More succinctly:
+       a process can see (e.g., send signals with kill(2), set nice val=E2=
 =80=90
-       bers of that namespace, but are not visible to processes in other
-       IPC namespaces.
+       ues  with  setpriority(2),  etc.) only processes contained in its
+       own PID namespace and in descendants of that namespace.
 
-       The following /proc interfaces are distinct in  each  IPC  names=E2=
+       A process has one process ID in each of the  layers  of  the  PID
+       namespace  hierarchy in which is visible, and walking back though
+       each direct ancestor namespace through to the root PID namespace.
+       System calls that operate on process IDs always operate using the
+       process ID that is visible in the PID namespace of the caller.  A
+       call  to  getpid(2)  always  returns  the PID associated with the
+       namespace in which the process was created.
+
+       Some processes in a PID namespace may have parents that are  out=E2=
 =80=90
-       pace:
-
-       *  The POSIX message queue interfaces in /proc/sys/fs/mqueue.
-
-       *  The  System V IPC interfaces in /proc/sys/kernel, namely: msg=E2=
+       side  of  the  namespace.  For example, the parent of the initial
+       process in the namespace (i.e., the init(1) process with  PID  1)
+       is  necessarily in another namespace.  Likewise, the direct chil=E2=
 =80=90
-          max,  msgmnb,  msgmni,  sem,  shmall,  shmmax,   shmmni,   and
-          shm_rmid_forced.
+       dren of a process that uses setns(2) to  cause  its  children  to
+       join  a  PID  namespace are in a different PID namespace from the
+       caller of setns(2).   Calls  to  getppid(2)  for  such  processes
+       return 0.
 
-       *  The System V IPC interfaces in /proc/sysvipc.
+   setns(2) and unshare(2) semantics
+       Calls  to  setns(2)  that specify a PID namespace file descriptor
+       and calls to unshare(2) with the CLONE_NEWPID flag cause children
+       subsequently  created  by  the caller to be placed in a different
+       PID namespace from the caller.   These  calls  do  not,  however,
+       change the PID namespace of the calling process, because doing so
+       would change the caller's idea of its own  PID  (as  reported  by
+       getpid()), which would break many applications and libraries.
 
-       When  an  IPC namespace is destroyed (i.e., when the last process
-       that is a member of the namespace terminates), all IPC objects in
-       the namespace are automatically destroyed.
+       To  put  things another way: a process's PID namespace membership
+       is determined when the process is created and cannot  be  changed
+       thereafter.   Among  other  things,  this means that the parental
+       relationship between processes mirrors the parental  relationship
+       between  PID namespaces: the parent of a process is either in the
+       same namespace or resides in the immediate parent PID namespace.
 
-       Use  of  IPC namespaces requires a kernel that is configured with
-       the CONFIG_IPC_NS option.
+   Compatibility of CLONE_NEWPID with other CLONE_* flags
+       CLONE_NEWPID can't be combined with some other CLONE_* flags:
 
-   Network namespaces (CLONE_NEWNET)
-       Network namespaces provide  isolation  of  the  system  resources
-       associated with networking: network devices, IPv4 and IPv6 proto=E2=
+       *  CLONE_THREAD requires being in the same PID namespace in order
+          that  that  the  threads in a process can send signals to each
+          other.  Similarly, it must be  possible  to  see  all  of  the
+          threads of a processes in the proc(5) filesystem.
+
+       *  CLONE_SIGHAND requires being in the same PID namespace; other=E2=
 =80=90
-       col stacks, IP routing tables, firewalls,  the  /proc/net  direc=E2=
+          wise the process ID of the process sending a signal could  not
+          be  meaningfully  encoded  when  a  signal  is  sent  (see the
+          description of the siginfo_t type in sigaction(2)).  A  signal
+          queue  shared  by  processes  in  multiple PID namespaces will
+          defeat that.
+
+       *  CLONE_VM requires all of the threads to be  in  the  same  PID
+          namespace,  because, from the point of view of a core dump, if
+          two processes share the same address space  they  are  threads
+          and  will  be core dumped together.  When a core dump is writ=E2=
 =80=90
-       tory,  the  /sys/class/net directory, port numbers (sockets), and
-       so on.  A physical network device can live in exactly one network
-       namespace.   A  virtual  network  device ("veth") pair provides a
-       pipe-like abstraction that can be used to create tunnels  between
-       network namespaces, and can be used to create a bridge to a phys=E2=
+          ten, the PID of each thread is written  into  the  core  dump.
+          Writing the process IDs could not meaningfully succeed if some
+          of the process IDs were in a parent PID namespace.
+
+       To summarize: there  is  a  technical  requirement  for  each  of
+       CLONE_THREAD,  CLONE_SIGHAND,  and CLONE_VM to share a PID names=E2=
 =80=90
-       ical network device in another namespace.
+       pace.  (Note furthermore that in clone(2) requires CLONE_VM to be
+       specified  if CLONE_THREAD or CLONE_SIGHAND is specified.)  Thus,
+       call sequences such as the following will fail  (with  the  error
+       EINVAL):
 
-       When a network namespace is freed (i.e., when the last process in
-       the namespace terminates), its physical network devices are moved
-       back to the initial network namespace (not to the parent  of  the
-       process).
+           unshare(CLONE_NEWPID);
+           clone(..., CLONE_VM, ...);    /* Fails */
 
-       Use  of  network  namespaces requires a kernel that is configured
-       with the CONFIG_NET_NS option.
+           setns(fd, CLONE_NEWPID);
+           clone(..., CLONE_VM, ...);    /* Fails */
 
-   Mount namespaces (CLONE_NEWNS)
-       Mount namespaces isolate the  set  of  filesystem  mount  points,
-       meaning  that  processes  in  different mount namespaces can have
-       different views of the filesystem hierarchy.  The set  of  mounts
-       in a mount namespace is modified using mount(2) and umount(2).
+           clone(..., CLONE_VM, ...);
+           setns(fd, CLONE_NEWPID);      /* Fails */
 
-       The  /proc/[pid]/mounts  file  (present since Linux 2.4.19) lists
-       all the filesystems currently  mounted  in  the  process's  mount
-       namespace.   The  format  of this file is documented in fstab(5).
-       Since kernel version 2.6.15, this file is pollable: after opening
-       the  file  for reading, a change in this file (i.e., a filesystem
-       mount or unmount) causes select(2) to mark the file descriptor as
-       readable,  and  poll(2) and epoll_wait(2) mark the file as having
-       an error condition.
+           clone(..., CLONE_VM, ...);
+           unshare(CLONE_NEWPID);        /* Fails */
 
-       The /proc/[pid]/mountstats  file  (present  since  Linux  2.6.17)
-       exports information (statistics, configuration information) about
-       the mount points in the process's mount namespace.  This file  is
-       only  readable  by  the owner of the process.  Lines in this file
-       have the form:
+   /proc and PID namespaces
+       A /proc filesystem shows (in the /proc/PID directories) only pro=E2=
+=80=90
+       cesses visible in the PID namespace of the process that performed
+       the  mount, even if the /proc filesystem is viewed from processes
+       in other namespaces.
 
-            device /dev/sda7 mounted on /home with fstype ext3 [statistic=
-s]
-            (       1      )            ( 2 )             (3 ) (4)
+       After creating a new PID namespace, it is useful for the child to
+       change  its  root  directory  and  mount a new procfs instance at
+       /proc so that tools such as ps(1) work correctly.  If a new mount
+       namespace  is  simultaneously created by including CLONE_NEWNS in
+       the flags argument of clone(2) or unshare(2), then it isn't  nec=E2=
+=80=90
+       essary to change the root directory: a new procfs instance can be
+       mounted directly over /proc.
 
-              The fields in each line are:
+       From a shell, the command to mount /proc is:
 
-              (1)  The name of the  mounted  device  (or  "nodevice"  if
-                   there is no corresponding device).
+           $ mount -t proc proc /proc
 
-              (2)  The mount point within the filesystem tree.
+       Calling readlink(2) on the path /proc/self yields the process  ID
+       of the caller in the PID namespace of the procfs mount (i.e., the
+       PID namespace of the process that mounted the procfs).  This  can
+       be  useful  for  introspection  purposes, when a process wants to
+       discover its PID in other namespaces.
 
-              (3)  The filesystem type.
-
-              (4)  Optional  statistics  and  configuration information.
-                   Currently (as at Linux 2.6.26), only NFS  filesystems
-                   export information via this field.
-
-   PID namespaces (CLONE_NEWPID)
-       See pid_namespaces(7).
-
-   User namespaces (CLONE_NEWUSER)
-       See user_namespaces(7).
-
-   UTS namespaces (CLONE_NEWUTS)
-       UTS  namespaces  provide isolation of two system identifiers: the
-       hostname and the NIS domain  name.   These  identifiers  are  set
-       using  sethostname(2)  and setdomainname(2), and can be retrieved
-       using uname(2), gethostname(2), and getdomainname(2).
-
-       Use of UTS namespaces requires a kernel that is  configured  with
-       the CONFIG_UTS_NS option.
+   Miscellaneous
+       When a process ID is passed  over  a  UNIX  domain  socket  to  a
+       process  in  a  different  PID  namespace (see the description of
+       SCM_CREDENTIALS in unix(7)), it is  translated  into  the  corre=E2=
+=80=90
+       sponding PID value in the receiving process's PID namespace.
 
 CONFORMING TO
        Namespaces are a Linux-specific feature.
@@ -280,22 +255,23 @@ EXAMPLE
        See user_namespaces(7).
 
 SEE ALSO
-       nsenter(1),    readlink(1),   unshare(1),   clone(2),   setns(2),
-       unshare(2), proc(5), credentials(7), capabilities(7),  pid_names=E2=
+       clone(2), setns(2), unshare(2), proc(5), credentials(7), capabil=E2=
 =80=90
-       paces(7), user_namespaces(7), switch_root(8)
+       ities(7), user_namespaces(7), switch_root(8)
+
+
 
 --=20
 Michael Kerrisk
 Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
 Linux/UNIX System Programming Training: http://man7.org/training/
 
---------------030203040903020903050808
+--------------080701000506080305070000
 Content-Type: application/x-troff-man;
- name="namespaces.7"
+ name="pid_namespaces.7"
 Content-Transfer-Encoding: 7bit
 Content-Disposition: attachment;
- filename="namespaces.7"
+ filename="pid_namespaces.7"
 
 .\" Copyright (c) 2013 by Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 .\" and Copyright (c) 2012 by Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
@@ -321,359 +297,336 @@ Content-Disposition: attachment;
 .\" the source, must acknowledge the copyright and authors of this work.
 .\"
 .\"
-.TH NAMESPACES 7 2013-01-14 "Linux" "Linux Programmer's Manual"
+.TH PID_NAMESPACES 7 2013-01-14 "Linux" "Linux Programmer's Manual"
 .SH NAME
-namespaces \- overview of Linux namespaces
+pid_namespaces \- overview of Linux PID namespaces
 .SH DESCRIPTION
-A namespace wraps a global system resource in an abstraction that
-makes it appear to the processes within the namespace that they
-have their own isolated instance of the global resource.
-Changes to the global resource are visible to other processes
-that are members of the namespace, but are invisible to other processes.
-One use of namespaces is to implement containers.
+For an overview of namespaces, see
+.BR namespaces (7).
 
-Linux provides the following namespaces:
+PID namespaces isolate the process ID number space,
+meaning that processes in different PID namespaces can have the same PID.
+PID namespaces allow containers to provide functionality
+such as suspending/resuming the set of processes in the container and
+migrating the container to a new host
+while the processes inside the container maintain the same PIDs.
 
-.TS
-lB lB lB
-l lB l.
-Namespace	Constant	Isolates
-IPC	CLONE_IPC	System V IPC, POSIX mesage queues
-Network	CLONE_NEWNET	Network devices, stacks, ports, etc.
-Mount	CLONE_NEWNS	Mount points
-PID	CLONE_NEWPID	Process IDs
-User	CLONE_NEWUSER	User and group IDs
-UTS	CLONE_NEWUTS	Hostname and NIS domain name
-.TE
-
-This page describes the various namespaces and the associated
-.I /proc
-files, and summarizes the APIs for working with namespaces.
-.\"
-.\" ==================== The namespaces API ====================
-.\"
-.SS The namespaces API
-As well as various
-.I /proc
-files described below,
-the namespaces API includes the following system calls:
-.TP
+PIDs in a new PID namespace start at 1,
+somewhat like a standalone system, and calls to
+.BR fork (2),
+.BR vfork (2),
+or
 .BR clone (2)
-The
+will produce processes with PIDs that are unique within the namespace.
+
+Use of PID namespaces requires a kernel that is configured with the
+.B CONFIG_PID_NS
+option.
+.\"
+.\" ============================================================
+.\"
+.SS The namespace "init" process
+The first process created in a new namespace
+(i.e., the process created using
 .BR clone (2)
-system call creates a new process.
-If the
-.I flags
-argument of the call specifies one or more of the
-.B CLONE_NEW*
-flags listed below, then new namespaces are created for each flag,
-and the child process is made a member of those namespaces.
-(This system call also implements a number of features
-unrelated to namespaces.)
-.TP
+with the
+.BR CLONE_NEWPID
+flag, or the first child created by a process after a call to
+.BR unshare (2)
+using the
+.BR CLONE_NEWPID
+flag) has the PID 1, and is the "init" process for the namespace (see
+.BR init (1)).
+A child process that is orphaned within the namespace will be reparented
+to this process rather than
+.BR init (1)
+(unless one of the ancestors of the child
+ in the same PID namespace employed the
+.BR prctl (2)
+.B PR_GET_CHILD_SUBREAPER
+command to mark itself as the reaper of orphaned descendant processes).
+
+If the "init" process of a PID namespace terminates,
+the kernel terminates all of the processes in the namespace via a
+.BR SIGKILL
+signal.
+This behavior reflects the fact that the "init" process
+is essential for the correct operation of a PID namespace.
+In this case, a subsequent
+.BR fork (2)
+into this PID namespace will fail with the error
+.BR ENOMEM ;
+it is not possible to create a new processes in a PID namespace whose "init"
+process has terminated.
+Such scenarios can occur when, for example,
+a process uses an open file descriptor for a
+.I /proc/[pid]/ns/pid
+file corresponding to a process that was in a namespace to
 .BR setns (2)
-The
-.BR setns (2)
-system call allows the calling process to join an existing namespace.
-The namespace to join is specified via a file descriptor that refers to
-one of the
-.IR /proc/[pid]/ns
-files described below.
-.TP
-.BR unshare (2)
-The
-.BR unshare (2)
-system call moves the calling process to a new namespace.
-If the
-.I flags
-argument of the call specifies one or more of the
-.B CLONE_NEW*
-flags listed below, then new namespaces are created for each flag,
-and the calling process is made a member of those namespaces.
-(This system call also implements a number of features
-unrelated to namespaces.)
-.PP
-Creation of new namespaces using
+into that namespace after the "init" process has terminated.
+Another possible scenario can occur after a call to
+.BR unshare (2):
+if the first child subsequently created by a
+.BR fork (2)
+terminates, then subsequent calls to
+.BR fork (2)
+will fail with
+.BR ENOMEM .
+
+Only signals for which the "init" process has established a signal handler
+can be sent to the "init" process by other members of the PID namespace.
+This restriction applies even to privileged processes,
+and prevents other members of the PID namespace from
+accidentally killing the "init" process.
+
+Likewise, a process in an ancestor namespace
+can\(emsubject to the usual permission checks described in
+.BR kill (2)\(emsend
+signals to the "init" process of a child PID namespace only
+if the "init" process has established a handler for that signal.
+(Within the handler, the
+.I siginfo_t
+.I si_pid
+field described in
+.BR sigaction (2)
+will be zero.)
+.B SIGKILL
+or
+.B SIGSTOP
+are treated exceptionally:
+these signals are forcibly delivered when sent from an ancestor PID namespace.
+Neither of these signals can be caught by the "init" process,
+and so will result in the usual actions associated with those signals
+(respectively, terminating and stopping the process).
+
+Starting with Linux 3.4, the
+.BR reboot (2)
+system causes a signal to be sent to the namespace "init" process.
+See
+.BR reboot (2)
+for more details.
+.\"
+.\" ============================================================
+.\"
+.SS Nesting PID namespaces
+PID namespaces can be nested:
+each PID namespace has a parent,
+except for the initial ("root") PID namespace.
+The parent of a PID namespace is the PID namespace of the process that
+created the namespace using
 .BR clone (2)
-and
-.BR unshare (2)
-in most cases requires the
-.BR CAP_SYS_ADMIN
-capability.
-User namespaces are the exception: since Linux 3.8,
-no privilege is required to create a user namespace.
-.\"
-.\" ==================== The /proc/[pid]/ns/ directory ====================
-.\"
-.SS The /proc/[pid]/ns/ directory
-Each process has a 
-.IR /proc/[pid]/ns/
-.\" See commit 6b4e306aa3dc94a0545eb9279475b1ab6209a31f
-subdirectory containing one entry for each namespace that
-supports being manipulated by
-.BR setns (2):
+or
+.BR unshare (2).
+PID namespaces thus form a tree,
+with all namespaces ultimately tracing their ancestry to the root namespace.
 
-.in +4n
-.nf
-$ \fBls -l /proc/$$/ns\fP
-total 0
-lrwxrwxrwx. 1 mtk mtk 0 Jan 14 01:20 ipc -> ipc:[4026531839]
-lrwxrwxrwx. 1 mtk mtk 0 Jan 14 01:20 mnt -> mnt:[4026531840]
-lrwxrwxrwx. 1 mtk mtk 0 Jan 14 01:20 net -> net:[4026531956]
-lrwxrwxrwx. 1 mtk mtk 0 Jan 14 01:20 pid -> pid:[4026531836]
-lrwxrwxrwx. 1 mtk mtk 0 Jan 14 01:20 user -> user:[4026531837]
-lrwxrwxrwx. 1 mtk mtk 0 Jan 14 01:20 uts -> uts:[4026531838]
-.fi
-.in
+A process is visible to other processes in its PID namespace,
+and to the processes in each direct ancestor PID namespace
+going back to the root PID namespace.
+In this context, "visible" means that one process
+can be the target of operations by another process using
+system calls that specify a process ID.
+Conversely, the processes in a child PID namespace can't see
+processes in the parent and further removed ancestor namespace.
+More succinctly: a process can see (e.g., send signals with
+.BR kill (2),
+set nice values with
+.BR setpriority (2),
+etc.) only processes contained in its own PID namespace
+and in descendants of that namespace.
 
-Bind mounting (see
-.BR mount (2))
-one of the files in this directory
-to somewhere else in the filesystem keeps
-the corresponding namespace of the process specified by
-.I pid
-alive even if all processes currently in the namespace terminate.
+A process has one process ID in each of the layers of the PID
+namespace hierarchy in which is visible,
+and walking back though each direct ancestor namespace
+through to the root PID namespace.
+System calls that operate on process IDs always
+operate using the process ID that is visible in the
+PID namespace of the caller.
+A call to
+.BR getpid (2)
+always returns the PID associated with the namespace in which
+the process was created.
 
-Opening one of the files in this directory
-(or a file that is bind mounted to one of these files)
-returns a file handle for
-the corresponding namespace of the process specified by
-.IR pid .
-As long as this file descriptor remains open,
-the namespace will remain alive,
-even if all processes in the namespace terminate.
-The file descriptor can be passed to
+Some processes in a PID namespace may have parents
+that are outside of the namespace.
+For example, the parent of the initial process in the namespace
+(i.e., the
+.BR init (1)
+process with PID 1) is necessarily in another namespace.
+Likewise, the direct children of a process that uses
+.BR setns (2)
+to cause its children to join a PID namespace are in a different
+PID namespace from the caller of
 .BR setns (2).
-
-In Linux 3.7 and earlier, these files were visible as hard links.
-Since Linux 3.8, they appear as symbolic links.
-If two processes are in the same namespace, then the inode numbers of their
-.IR /proc/[pid]/ns/xxx
-symbolic links will be the same; an application can check this using the
-.I stat.st_ino
-field returned by
-.BR stat (2).
-The content of this symbolic link is a string containing
-the namespace type and inode number as in the following example:
-
-.in +4n
-.nf
-$ \fBreadlink /proc/$$/ns/uts\fP
-uts:[4026531838]
-.fi
-.in
-
-The files in this subdirectory are as follows:
-.TP
-.IR /proc/[pid]/ns/ipc " (since Linux 3.0)"
-This file is a handle for the IPC namespace of the process.
-.TP
-.IR /proc/[pid]/ns/mnt " (since Linux 3.8)"
-This file is a handle for the mount namespace of the process.
-.TP
-.IR /proc/[pid]/ns/net " (since Linux 3.0)"
-This file is a handle for the network namespace of the process.
-.TP
-.IR /proc/[pid]/ns/pid " (since Linux 3.8)"
-This file is a handle for the PID namespace of the process.
-.TP
-.IR /proc/[pid]/ns/user " (since Linux 3.8)"
-This file is a handle for the user namespace of the process.
-.TP
-.IR /proc/[pid]/ns/uts " (since Linux 3.0)"
-This file is a handle for the IPC namespace of the process.
+Calls to
+.BR getppid (2)
+for such processes return 0.
 .\"
-.\" ==================== IPC namespaces ====================
+.\" ============================================================
 .\"
-.SS IPC namespaces (CLONE_NEWIPC)
-IPC namespaces isolate certain IPC resources,
-namely, System V IPC objects (see
-.BR svipc (7))
-and (since Linux 2.6.30)
-.\" commit 7eafd7c74c3f2e67c27621b987b28397110d643f
-.\" https://lwn.net/Articles/312232/
-POSIX message queues (see
-.BR mq_overview (7).
-The common characteristic of these IPC mechanisms is that IPC
-objects are identified by mechanisms other than filesystem
-pathnames.
+.SS setns(2) and unshare(2) semantics
+Calls to
+.BR setns (2)
+that specify a PID namespace file descriptor
+and calls to
+.BR unshare (2)
+with the
+.BR CLONE_NEWPID
+flag cause children subsequently created
+by the caller to be placed in a different PID namespace from the caller.
+These calls do not, however,
+change the PID namespace of the calling process,
+because doing so would change the caller's idea of its own PID
+(as reported by
+.BR getpid ()),
+which would break many applications and libraries.
 
-Each IPC namespace has its own set of System V IPC identifiers and
-its own POSIX message queue filesystem.
-Objects created in an IPC namespace are visible to all other processes
-that are members of that namespace,
-but are not visible to processes in other IPC namespaces.
-
-The following
-.I /proc
-interfaces are distinct in each IPC namespace:
+To put things another way:
+a process's PID namespace membership is determined when the process is created
+and cannot be changed thereafter.
+Among other things, this means that the parental relationship
+between processes mirrors the parental relationship between PID namespaces:
+the parent of a process is either in the same namespace
+or resides in the immediate parent PID namespace.
+.SS Compatibility of CLONE_NEWPID with other CLONE_* flags
+.BR CLONE_NEWPID
+can't be combined with some other
+.BR CLONE_*
+flags:
 .IP * 3
-The POSIX message queue interfaces in
-.IR /proc/sys/fs/mqueue .
+.B CLONE_THREAD
+requires being in the same PID namespace in order that that
+the threads in a process can send signals to each other.
+Similarly, it must be possible to see all of the threads
+of a processes in the
+.BR proc (5)
+filesystem.
 .IP *
-The System V IPC interfaces in
-.IR /proc/sys/kernel ,
-namely:
-.IR msgmax ,
-.IR msgmnb  ,
-.IR msgmni ,
-.IR sem ,
-.IR shmall ,
-.IR shmmax ,
-.IR shmmni ,
-and
-.IR shm_rmid_forced .
+.BR CLONE_SIGHAND
+requires being in the same PID namespace;
+otherwise the process ID of the process sending a signal
+could not be meaningfully encoded when a signal is sent
+(see the description of the
+.I siginfo_t
+type in
+.BR sigaction (2)).
+A signal queue shared by processes in multiple PID namespaces
+will defeat that.
 .IP *
-The System V IPC interfaces in
-.IR /proc/sysvipc .
+.BR CLONE_VM
+requires all of the threads to be in the same PID namespace,
+because, from the point of view of a core dump,
+if two processes share the same address space they are threads and will
+be core dumped together.
+When a core dump is written, the PID of each
+thread is written into the core dump.
+Writing the process IDs could not meaningfully succeed
+if some of the process IDs were in a parent PID namespace.
 .PP
-When an IPC namespace is destroyed
-(i.e., when the last process that is a member of the namespace terminates),
-all IPC objects in the namespace are automatically destroyed.
-
-Use of IPC namespaces requires a kernel that is configured with the
-.B CONFIG_IPC_NS
-option.
-.\"
-.\" ==================== Network namespaces ====================
-.\"
-.SS Network namespaces (CLONE_NEWNET)
-Network namespaces provide isolation of the system resources associated
-with networking: network devices, IPv4 and IPv6 protocol stacks,
-IP routing tables, firewalls, the
-.I /proc/net
-directory, the 
-.I /sys/class/net 
-directory, port numbers (sockets), and so on.
-A physical network device can live in exactly one
-network namespace.
-A virtual network device ("veth") pair provides a pipe-like abstraction
-.\" FIXME Add pointer to veth(4) page when it is eventually completed
-that can be used to create tunnels between network namespaces,
-and can be used to create a bridge to a physical network device
-in another namespace.
-
-When a network namespace is freed
-(i.e., when the last process in the namespace terminates),
-its physical network devices are moved back to the
-initial network namespace (not to the parent of the process).
-
-Use of network namespaces requires a kernel that is configured with the
-.B CONFIG_NET_NS
-option.
-.\"
-.\" ==================== Mount namespaces ====================
-.\"
-.SS Mount namespaces (CLONE_NEWNS)
-Mount namespaces isolate the set of filesystem mount points,
-meaning that processes in different mount namespaces can
-have different views of the filesystem hierarchy.
-The set of mounts in a mount namespace is modified using
-.BR mount (2)
+To summarize: there is a technical requirement for each of
+.BR CLONE_THREAD ,
+.BR CLONE_SIGHAND ,
 and
-.BR umount (2).
+.BR CLONE_VM
+to share a PID namespace.
+(Note furthermore that in
+.BR clone (2)
+requires
+.BR CLONE_VM
+to be specified if
+.BR CLONE_THREAD
+or
+.BR CLONE_SIGHAND
+is specified.)
+Thus, call sequences such as the following will fail (with the error
+.BR EINVAL ):
 
-The
-.IR /proc/[pid]/mounts
-file (present since Linux 2.4.19)
-lists all the filesystems currently mounted in the
-process's mount namespace.
-The format of this file is documented in
-.BR fstab (5).
-Since kernel version 2.6.15, this file is pollable:
-after opening the file for reading, a change in this file
-(i.e., a filesystem mount or unmount) causes
-.BR select (2)
-to mark the file descriptor as readable, and
-.BR poll (2)
-and
-.BR epoll_wait (2)
-mark the file as having an error condition.
-
-The
-.IR /proc/[pid]/mountstats
-file (present since Linux 2.6.17)
-exports information (statistics, configuration information)
-about the mount points in the process's mount namespace.
-This file is only readable by the owner of the process.
-Lines in this file have the form:
-.RS
-.in 12
 .nf
+    unshare(CLONE_NEWPID);
+    clone(..., CLONE_VM, ...);    /* Fails */
 
-device /dev/sda7 mounted on /home with fstype ext3 [statistics]
-(       1      )            ( 2 )             (3 ) (4)
+    setns(fd, CLONE_NEWPID);
+    clone(..., CLONE_VM, ...);    /* Fails */
+
+    clone(..., CLONE_VM, ...);
+    setns(fd, CLONE_NEWPID);      /* Fails */
+
+    clone(..., CLONE_VM, ...);
+    unshare(CLONE_NEWPID);        /* Fails */
 .fi
-.in
+.\"
+.\" ============================================================
+.\"
+.SS /proc and PID namespaces
+A
+.I /proc
+filesystem shows (in the
+.I /proc/PID
+directories) only processes visible in the PID namespace
+of the process that performed the mount, even if the
+.I /proc
+filesystem is viewed from processes in other namespaces.
 
-The fields in each line are:
-.TP 5
-(1)
-The name of the mounted device
-(or "nodevice" if there is no corresponding device).
-.TP
-(2)
-The mount point within the filesystem tree.
-.TP
-(3)
-The filesystem type.
-.TP
-(4)
-Optional statistics and configuration information.
-Currently (as at Linux 2.6.26), only NFS filesystems export
-information via this field.
-.RE
-.\"
-.\" ==================== PID namespaces ====================
-.\"
-.SS PID namespaces (CLONE_NEWPID)
-See
-.BR pid_namespaces (7).
-.\"
-.\" ==================== User namespaces ====================
-.\"
-.SS User namespaces (CLONE_NEWUSER)
-See
-.BR user_namespaces (7).
-.\"
-.\" ==================== UTS namespaces ====================
-.\"
-.SS UTS namespaces (CLONE_NEWUTS)
-UTS namespaces provide isolation of two system identifiers:
-the hostname and the NIS domain name.
-These identifiers are set using
-.BR sethostname (2)
-and
-.BR setdomainname (2),
-and can be retrieved using
-.BR uname (2),
-.BR gethostname (2),
-and
-.BR getdomainname (2).
+After creating a new PID namespace,
+it is useful for the child to change its root directory
+and mount a new procfs instance at
+.I /proc
+so that tools such as
+.BR ps (1)
+work correctly.
+If a new mount namespace is simultaneously created by including
+.BR CLONE_NEWNS
+in the
+.IR flags
+argument of
+.BR clone (2)
+or
+.BR unshare (2),
+then it isn't necessary to change the root directory:
+a new procfs instance can be mounted directly over
+.IR /proc .
 
-Use of UTS namespaces requires a kernel that is configured with the
-.B CONFIG_UTS_NS
-option.
+From a shell, the command to mount
+.I /proc
+is:
+
+    $ mount -t proc proc /proc
+
+Calling
+.BR readlink (2)
+on the path
+.I /proc/self
+yields the process ID of the caller in the PID namespace of the procfs mount
+(i.e., the PID namespace of the process that mounted the procfs).
+This can be useful for introspection purposes,
+when a process wants to discover its PID in other namespaces.
+.\"
+.\" ============================================================
+.\"
+.SS Miscellaneous
+When a process ID is passed over a UNIX domain socket to a
+process in a different PID namespace (see the description of
+.B SCM_CREDENTIALS
+in
+.BR unix (7)),
+it is translated into the corresponding PID value in
+the receiving process's PID namespace.
 .SH CONFORMING TO
 Namespaces are a Linux-specific feature.
 .SH EXAMPLE
 See
 .BR user_namespaces (7).
 .SH SEE ALSO
-.BR nsenter (1),
-.BR readlink (1),
-.BR unshare (1),
 .BR clone (2),
 .BR setns (2),
 .BR unshare (2),
 .BR proc (5),
 .BR credentials (7),
 .BR capabilities (7),
-.BR pid_namespaces (7),
 .BR user_namespaces (7),
 .BR switch_root (8)
 
---------------030203040903020903050808
+--------------080701000506080305070000
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -683,4 +636,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---------------030203040903020903050808--
+--------------080701000506080305070000--
