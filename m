@@ -1,17 +1,14 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [GIT PULL] namespace updates for v3.17-rc1
-Date: Thu, 21 Aug 2014 09:09:50 -0500
-Message-ID: <87k362vsr5.fsf@x220.int.ebiederm.org>
-References: <87fvhav3ic.fsf@x220.int.ebiederm.org>
-	<CAFLxGvwi-iJRyfwv8v9fcRkiSu2d-az8W55xMPbp_d8wQKmwjg@mail.gmail.com>
-	<87vbpm4f4y.fsf@x220.int.ebiederm.org>
-	<20140821131257.GA4264@infradead.org> <53F5F2AD.5010607@nod.at>
+From: Aristeu Rozanski <arozansk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH V4 0/8] namespaces: log namespaces per task
+Date: Thu, 21 Aug 2014 16:05:55 -0400
+Message-ID: <20140821200555.GK5620@redhat.com>
+References: <cover.1408581429.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <53F5F2AD.5010607-/L3Ra7n9ekc@public.gmane.org> (Richard Weinberger's message of "Thu,
-	21 Aug 2014 15:22:53 +0200")
+Content-Disposition: inline
+In-Reply-To: <cover.1408581429.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,36 +18,30 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
-Cc: "libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org" <libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org> writes:
+Hi Richard,
+On Wed, Aug 20, 2014 at 09:09:33PM -0400, Richard Guy Briggs wrote:
+> Is there a way to link serial numbers of namespaces involved in migration of a
+> container to another kernel?  It sounds like what is needed is a part of a
+> mangement application that is able to pull the audit records from constituent
+> hosts to build an audit trail of a container.
 
-> Am 21.08.2014 15:12, schrieb Christoph Hellwig:
->> On Wed, Aug 20, 2014 at 09:53:49PM -0700, Eric W. Biederman wrote:
->>> Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
->>>
->>>> On Wed, Aug 6, 2014 at 2:57 AM, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->>>>
->>>> This commit breaks libvirt-lxc.
->>>> libvirt does in lxcContainerMountBasicFS():
->>>
->>> The bugs fixed are security issues, so if we have to break a small
->>> number of userspace applications we will.  Anything that we can
->>> reasonably do to avoid regressions will be done.
->> 
->> Can you explain the security issues in detail?  Breaking common
->> userspace like libvirt-lxc with just a little bit of handwaiving is
->> entirely unacceptable.
->
-> It looks like commit 87b47932f40a11280584bce260cbdb3b5f9e8b7d in
-> git.kernel.org/cgit/linux/kernel/git/ebiederm/user-namespace.git for-next
-> unbreaks libvirt-lxc.
-> I hope it hits Linus tree and -stable before the offending commit hits users.
+since you're introducing a brand new serial number to make it unique
+across different procfs mounts, why not instead of a simple counter,
+use the hash output of say, $hostname-$creation_time-$random? Or perhaps
+get a short hash of the hostname (generated once whenever hostname is
+set) and append the serial number you're implementing? It'd be way less human
+readable than your current proposal but it'd be unique "globally" (as long you
+don't have machines with the same hostname migrating containers between them),
+allowing the migrated namespaces to retain their unique identification across
+audit logs. It'd of course be way more costly than just using an atomic counter,
+but could be useful to anything that needs to refer to a namespace and could be
+migrated to another machine.
 
-I plan to send the pull request to Linus as soon as I have caught my
-breath (from all of the conferences this week) that I can be certain I
-am thinking clearly and not rushing things.
+What you think? Sounds too crazy? :)
 
-Eric
+-- 
+Aristeu
