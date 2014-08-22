@@ -1,17 +1,14 @@
-From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH V4 3/8] namespaces: expose ns instance serial numbers in
-	proc
-Date: Thu, 21 Aug 2014 21:58:03 -0400
-Message-ID: <20140822015803.GG20529__41536.3522283316$1408672702$gmane$org@madcap2.tricolour.ca>
-References: <cover.1408581429.git.rgb@redhat.com>
-	<cd6cd0622ce677b639afae18a69ff79c72490bab.1408581429.git.rgb@redhat.com>
-	<CALCETrUnzG1V8w+H9ctAJP+Hvo8LQax=dhLG4bBpBKmVi+C1cQ@mail.gmail.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: For review: user_namespace(7) man page
+Date: Fri, 22 Aug 2014 23:12:15 +0200
+Message-ID: <20140822211215.GA26308@mail.hallyn.com>
+References: <53F5310A.5080503@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <CALCETrUnzG1V8w+H9ctAJP+Hvo8LQax=dhLG4bBpBKmVi+C1cQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <53F5310A.5080503-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,147 +18,93 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: "linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 14/08/21, Andy Lutomirski wrote:
-> On Aug 20, 2014 8:12 PM, "Richard Guy Briggs" <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> > Expose the namespace instace serial numbers in the proc filesystem at
-> > /proc/<pid>/ns/<ns>_snum.  The link text gives the serial number in hex.
-> 
-> What's the use case?
-> 
-> I understand the utility of giving unique numbers to the audit code,
-> but I don't think this part is necessary for that, and I'd like to
-> understand what else will use this before committing to a duplicative
-> API like this.
-
-How does a container manager get those numbers?  It could provoke a task
-to cause an audit event that emits a NS_INFO message, or it could run a
-task in that container to report its namespace serial numbers directly
-from its /proc mount.
-
-The discussion in this thread touches on the use cases:
-	https://lkml.org/lkml/2014/4/22/662
-
-> Note that this API is thoroughly incompatible with CRIU.  If we do
-> this, someone will ask for a namespace number namespace, and that way
-> lies madness.
-
-I had a very brief look at CRIU, but not enough to understand the issue.
-Others have hinted at this problem.
-
-Do you have a suggestion of a different approach that would be
-compatible with CRIU?
-
-I'd originally considered some sort of UUID that would be globally
-unique, but that would be very hard to devise or guarantee, and besides,
-namespaces aren't only used by containers and could be shared in other
-ways.  Tracking the usage and migration of namespaces should be the task
-of an upper layer.
-
-> --Andy
-> 
-> >
-> > "snum" was chosen instead of "seq" for consistency with inum and there are a
-> > number of other uses of "seq" in the namespace code.
-> >
-> > Suggested-by: Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-> > Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> > ---
-> >  fs/proc/namespaces.c |   33 +++++++++++++++++++++++++--------
-> >  1 files changed, 25 insertions(+), 8 deletions(-)
-> >
-> > diff --git a/fs/proc/namespaces.c b/fs/proc/namespaces.c
-> > index 8902609..e953e0a 100644
-> > --- a/fs/proc/namespaces.c
-> > +++ b/fs/proc/namespaces.c
-> > @@ -47,12 +47,15 @@ static char *ns_dname(struct dentry *dentry, char *buffer, int buflen)
-> >         struct inode *inode = dentry->d_inode;
-> >         const struct proc_ns_operations *ns_ops = PROC_I(inode)->ns.ns_ops;
-> >
-> > -       return dynamic_dname(dentry, buffer, buflen, "%s:[%lu]",
-> > -               ns_ops->name, inode->i_ino);
-> > +       if (strstr(dentry->d_iname, "_snum"))
-> > +               return dynamic_dname(dentry, buffer, buflen, "%s_snum:[%llx]",
-> > +                       ns_ops->name, ns_ops->snum(PROC_I(inode)->ns.ns));
-> > +       else
-> > +               return dynamic_dname(dentry, buffer, buflen, "%s:[%lu]",
-> > +                       ns_ops->name, inode->i_ino);
-> >  }
-> >
-> > -const struct dentry_operations ns_dentry_operations =
-> > -{
-> > +const struct dentry_operations ns_dentry_operations = {
-> >         .d_delete       = always_delete_dentry,
-> >         .d_dname        = ns_dname,
-> >  };
-> > @@ -160,7 +163,10 @@ static int proc_ns_readlink(struct dentry *dentry, char __user *buffer, int bufl
-> >         if (!ns)
-> >                 goto out_put_task;
-> >
-> > -       snprintf(name, sizeof(name), "%s:[%u]", ns_ops->name, ns_ops->inum(ns));
-> > +       if (strstr(dentry->d_iname, "_snum"))
-> > +               snprintf(name, sizeof(name), "%s_snum:[%llx]", ns_ops->name, ns_ops->snum(ns));
-> > +       else
-> > +               snprintf(name, sizeof(name), "%s:[%u]", ns_ops->name, ns_ops->inum(ns));
-> >         res = readlink_copy(buffer, buflen, name);
-> >         ns_ops->put(ns);
-> >  out_put_task:
-> > @@ -210,16 +216,23 @@ static int proc_ns_dir_readdir(struct file *file, struct dir_context *ctx)
-> >
-> >         if (!dir_emit_dots(file, ctx))
-> >                 goto out;
-> > -       if (ctx->pos >= 2 + ARRAY_SIZE(ns_entries))
-> > +       if (ctx->pos >= 2 + 2 * ARRAY_SIZE(ns_entries))
-> >                 goto out;
-> >         entry = ns_entries + (ctx->pos - 2);
-> >         last = &ns_entries[ARRAY_SIZE(ns_entries) - 1];
-> >         while (entry <= last) {
-> >                 const struct proc_ns_operations *ops = *entry;
-> > +               char name[50];
-> > +
-> >                 if (!proc_fill_cache(file, ctx, ops->name, strlen(ops->name),
-> >                                      proc_ns_instantiate, task, ops))
-> >                         break;
-> >                 ctx->pos++;
-> > +               snprintf(name, sizeof(name), "%s_snum", ops->name);
-> > +               if (!proc_fill_cache(file, ctx, name, strlen(name),
-> > +                                    proc_ns_instantiate, task, ops))
-> > +                       break;
-> > +               ctx->pos++;
-> >                 entry++;
-> >         }
-> >  out:
-> > @@ -247,9 +260,13 @@ static struct dentry *proc_ns_dir_lookup(struct inode *dir,
-> >
-> >         last = &ns_entries[ARRAY_SIZE(ns_entries)];
-> >         for (entry = ns_entries; entry < last; entry++) {
-> > -               if (strlen((*entry)->name) != len)
-> > +               char name[50];
-> > +
-> > +               snprintf(name, sizeof(name), "%s_snum", (*entry)->name);
-> > +               if (strlen((*entry)->name) != len && strlen(name) != len)
-> >                         continue;
-> > -               if (!memcmp(dentry->d_name.name, (*entry)->name, len))
-> > +               if (!memcmp(dentry->d_name.name, (*entry)->name, len)
-> > +                   || !memcmp(dentry->d_name.name, name, len))
-> >                         break;
-> >         }
-> >         if (entry == last)
-> > --
-> > 1.7.1
-> >
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-api" in
-> > the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-- RGB
-
---
-Richard Guy Briggs <rbriggs-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Senior Software Engineer, Kernel Security, AMER ENG Base Operating Systems, Red Hat
-Remote, Ottawa, Canada
-Voice: +1.647.777.2635, Internal: (81) 32635, Alt: +1.613.693.0684x3545
+UXVvdGluZyBNaWNoYWVsIEtlcnJpc2sgKG1hbi1wYWdlcykgKG10ay5tYW5wYWdlc0BnbWFpbC5j
+b20pOgo+IEhlbGxvIEVyaWMgZXQgYWwuLAo+IAo+IEZvciB2YXJpb3VzIHJlYXNvbnMsIG15IHdv
+cmsgb24gdGhlIG5hbWVzcGFjZXMgbWFuIHBhZ2VzIAo+IGZlbGwgb2ZmIHRoZSB0YWJsZSBhIHdo
+aWxlIGJhY2suIE5ldmVydGhlbGVzcywgdGhlIHBhZ2VzIGhhdmUKPiBiZWVuIGNsb3NlIHRvIGNv
+bXBsZXRpb24gZm9yIGEgd2hpbGUgbm93LCBhbmQgSSByZWNlbnRseSByZXN0YXJ0ZWQsCj4gaW4g
+YW4gZWZmb3J0IHRvIGZpbmlzaCB0aGVtLiBBcyB5b3UgYWxzbyBub3RlZCB0byBtZSBmMmYsIHRo
+ZXJlIGhhdmUKPiBiZWVuIHJlY2VudGx5IGJlZW4gc29tZSBzbWFsbCBuYW1lc3BhY2UgY2hhbmdl
+cyB0aGF0IHlvdSBtYXkgYWZmZWN0Cj4gdGhlIGNvbnRlbnQgb2YgdGhlIHBhZ2VzLiBUaGVyZWZv
+cmUsIEknbGwgdGFrZSB0aGUgb3Bwb3J0dW5pdHkgdG8KPiBzZW5kIHRoZSBuYW1lc3BhY2UtcmVs
+YXRlZCBwYWdlcyBvdXQgZm9yIGZ1cnRoZXIgKGZpbmFsPykgcmV2aWV3Lgo+IAo+IFNvLCBoZXJl
+LCBJIHN0YXJ0IHdpdGggdGhlIHVzZXJfbmFtZXNwYWNlcyg3KSBwYWdlLCB3aGljaCBpcyBzaG93
+biAKPiBpbiByZW5kZXJlZCBmb3JtIGJlbG93LCB3aXRoIHNvdXJjZSBhdHRhY2hlZCB0byB0aGlz
+IG1haWwuIEknbGwKPiBzZW5kIHZhcmlvdXMgb3RoZXIgcGFnZXMgaW4gZm9sbG93LW9uIG1haWxz
+Lgo+IAo+IFJldmlldyBjb21tZW50cy9zdWdnZXN0aW9ucyBmb3IgaW1wcm92ZW1lbnRzIC8gYnVn
+IGZpeGVzIHdlbGNvbWUuCj4gCj4gQ2hlZXJzLAo+IAo+IE1pY2hhZWwKPiAKPiA9PQo+IAo+IE5B
+TUUKPiAgICAgICAgdXNlcl9uYW1lc3BhY2VzIC0gb3ZlcnZpZXcgb2YgTGludXggdXNlcl9uYW1l
+c3BhY2VzCj4gCj4gREVTQ1JJUFRJT04KPiAgICAgICAgRm9yIGFuIG92ZXJ2aWV3IG9mIG5hbWVz
+cGFjZXMsIHNlZSBuYW1lc3BhY2VzKDcpLgo+IAo+ICAgICAgICBVc2VyICAgbmFtZXNwYWNlcyAg
+IGlzb2xhdGUgICBzZWN1cml0eS1yZWxhdGVkICAgaWRlbnRpZmllcnMgIGFuZAo+ICAgICAgICBh
+dHRyaWJ1dGVzLCBpbiBwYXJ0aWN1bGFyLCB1c2VyIElEcyBhbmQgZ3JvdXAgIElEcyAgKHNlZSAg
+Y3JlZGVu4oCQCj4gICAgICAgIHRpYWxzKDcpLCB0aGUgcm9vdCBkaXJlY3RvcnksIGtleXMgKHNl
+ZSBrZXljdGwoMikpLCBhbmQgY2FwYWJpbGnigJAKPiAgICAgICAgdGllcyAoc2VlIGNhcGFiaWxp
+dGllcyg3KSkuICBBIHByb2Nlc3MncyB1c2VyIGFuZCBncm91cCAgSURzICBjYW4KPiAgICAgICAg
+YmUgZGlmZmVyZW50IGluc2lkZSBhbmQgb3V0c2lkZSBhIHVzZXIgbmFtZXNwYWNlLiAgSW4gcGFy
+dGljdWxhciwKPiAgICAgICAgYSBwcm9jZXNzIGNhbiBoYXZlIGEgbm9ybWFsIHVucHJpdmlsZWdl
+ZCB1c2VyIElEIG91dHNpZGUgIGEgIHVzZXIKPiAgICAgICAgbmFtZXNwYWNlIHdoaWxlIGF0IHRo
+ZSBzYW1lIHRpbWUgaGF2aW5nIGEgdXNlciBJRCBvZiAwIGluc2lkZSB0aGUKPiAgICAgICAgbmFt
+ZXNwYWNlOyBpbiBvdGhlciB3b3JkcywgdGhlIHByb2Nlc3MgaGFzICBmdWxsICBwcml2aWxlZ2Vz
+ICBmb3IKPiAgICAgICAgb3BlcmF0aW9ucyAgaW5zaWRlICB0aGUgIHVzZXIgIG5hbWVzcGFjZSwg
+YnV0IGlzIHVucHJpdmlsZWdlZCBmb3IKPiAgICAgICAgb3BlcmF0aW9ucyBvdXRzaWRlIHRoZSBu
+YW1lc3BhY2UuCj4gCj4gICAgTmVzdGVkIG5hbWVzcGFjZXMsIG5hbWVzcGFjZSBtZW1iZXJzaGlw
+Cj4gICAgICAgIFVzZXIgbmFtZXNwYWNlcyBjYW4gYmUgbmVzdGVkOyAgdGhhdCAgaXMsICBlYWNo
+ICB1c2VyICBuYW1lc3BhY2XigJQKPiAgICAgICAgZXhjZXB0ICB0aGUgIGluaXRpYWwgICgicm9v
+dCIpIG5hbWVzcGFjZeKAlGhhcyBhIHBhcmVudCB1c2VyIG5hbWVz4oCQCj4gICAgICAgIHBhY2Us
+IGFuZCBjYW4gaGF2ZSB6ZXJvIG9yIG1vcmUgY2hpbGQgdXNlciBuYW1lc3BhY2VzLiAgVGhlICBw
+YXLigJAKPiAgICAgICAgZW50IHVzZXIgbmFtZXNwYWNlIGlzIHRoZSB1c2VyIG5hbWVzcGFjZSBv
+ZiB0aGUgcHJvY2VzcyB0aGF0IGNyZeKAkAo+ICAgICAgICBhdGVzIHRoZSB1c2VyIG5hbWVzcGFj
+ZSB2aWEgYSBjYWxsIHRvIHVuc2hhcmUoMikgb3IgY2xvbmUoMikgd2l0aAo+ICAgICAgICB0aGUg
+Q0xPTkVfTkVXVVNFUiBmbGFnLgo+IAo+ICAgICAgICBUaGUga2VybmVsIGltcG9zZXMgKHNpbmNl
+IHZlcnNpb24gMy4xMSkgYSBsaW1pdCBvZiAzMiBuZXN0ZWQgbGV24oCQCj4gICAgICAgIGVscyBv
+ZiB1c2VyIG5hbWVzcGFjZXMuICBDYWxscyB0byAgdW5zaGFyZSgyKSAgb3IgIGNsb25lKDIpICB0
+aGF0Cj4gICAgICAgIHdvdWxkIGNhdXNlIHRoaXMgbGltaXQgdG8gYmUgZXhjZWVkZWQgZmFpbCB3
+aXRoIHRoZSBlcnJvciBFVVNFUlMuCj4gCj4gICAgICAgIEVhY2ggIHByb2Nlc3MgIGlzICBhICBt
+ZW1iZXIgIG9mICBleGFjdGx5ICBvbmUgdXNlciBuYW1lc3BhY2UuICBBCj4gICAgICAgIHByb2Nl
+c3MgY3JlYXRlZCB2aWEgZm9yaygyKSBvciBjbG9uZSgyKSB3aXRob3V0IHRoZSBDTE9ORV9ORVdV
+U0VSCj4gICAgICAgIGZsYWcgIGlzICBhICBtZW1iZXIgIG9mIHRoZSBzYW1lIHVzZXIgbmFtZXNw
+YWNlIGFzIGl0cyBwYXJlbnQuICBBCj4gICAgICAgIHByb2Nlc3MgY2FuIGpvaW4gYW5vdGhlciB1
+c2VyIG5hbWVzcGFjZSB3aXRoIHNldG5zKDIpIGlmICBpdCAgaGFzCj4gICAgICAgIHRoZSAgQ0FQ
+X1NZU19BRE1JTiAgaW4gIHRoYXQgbmFtZXNwYWNlOyB1cG9uIGRvaW5nIHNvLCBpdCBnYWlucyBh
+Cj4gICAgICAgIGZ1bGwgc2V0IG9mIGNhcGFiaWxpdGllcyBpbiB0aGF0IG5hbWVzcGFjZS4KPiAK
+PiAgICAgICAgQSBjYWxsIHRvIGNsb25lKDIpIG9yICB1bnNoYXJlKDIpICB3aXRoICB0aGUgIENM
+T05FX05FV1VTRVIgIGZsYWcKPiAgICAgICAgbWFrZXMgIHRoZSAgbmV3ICBjaGlsZCAgcHJvY2Vz
+cyAoZm9yIGNsb25lKDIpKSBvciB0aGUgY2FsbGVyIChmb3IKPiAgICAgICAgdW5zaGFyZSgyKSkg
+YSBtZW1iZXIgb2YgdGhlIG5ldyB1c2VyICBuYW1lc3BhY2UgIGNyZWF0ZWQgIGJ5ICB0aGUKPiAg
+ICAgICAgY2FsbC4KPiAKPiAgICBDYXBhYmlsaXRpZXMKPiAgICAgICAgVGhlIGNoaWxkIHByb2Nl
+c3MgY3JlYXRlZCBieSBjbG9uZSgyKSB3aXRoIHRoZSBDTE9ORV9ORVdVU0VSIGZsYWcKPiAgICAg
+ICAgc3RhcnRzIG91dCB3aXRoIGEgY29tcGxldGUgc2V0IG9mIGNhcGFiaWxpdGllcyBpbiAgdGhl
+ICBuZXcgIHVzZXIKPiAgICAgICAgbmFtZXNwYWNlLiAgTGlrZXdpc2UsIGEgcHJvY2VzcyB0aGF0
+IGNyZWF0ZXMgYSBuZXcgdXNlciBuYW1lc3BhY2UKPiAgICAgICAgdXNpbmcgdW5zaGFyZSgyKSAg
+b3IgIGpvaW5zICBhbiAgZXhpc3RpbmcgIHVzZXIgIG5hbWVzcGFjZSAgdXNpbmcKPiAgICAgICAg
+c2V0bnMoMikgIGdhaW5zIGEgZnVsbCBzZXQgb2YgY2FwYWJpbGl0aWVzIGluIHRoYXQgbmFtZXNw
+YWNlLiAgT24KPiAgICAgICAgdGhlIG90aGVyIGhhbmQsIHRoYXQgcHJvY2VzcyBoYXMgbm8gY2Fw
+YWJpbGl0aWVzICBpbiAgdGhlICBwYXJlbnQKPiAgICAgICAgKGluICB0aGUgY2FzZSBvZiBjbG9u
+ZSgyKSkgb3IgcHJldmlvdXMgKGluIHRoZSBjYXNlIG9mIHVuc2hhcmUoMikKPiAgICAgICAgYW5k
+IHNldG5zKDIpKSB1c2VyIG5hbWVzcGFjZSwgZXZlbiBpZiB0aGUgbmV3IG5hbWVzcGFjZSAgaXMg
+IGNyZeKAkAo+ICAgICAgICBhdGVkICBvciAgam9pbmVkIGJ5IHRoZSByb290IHVzZXIgKGkuZS4s
+IGEgcHJvY2VzcyB3aXRoIHVzZXIgSUQgMAo+ICAgICAgICBpbiB0aGUgcm9vdCBuYW1lc3BhY2Up
+Lgo+IAo+ICAgICAgICBOb3RlIHRoYXQgYSBjYWxsIHRvIGV4ZWN2ZSgyKSB3aWxsIGNhdXNlIGEg
+cHJvY2VzcyAgdG8gIGxvc2UgIGFueQo+ICAgICAgICBjYXBhYmlsaXRpZXMgdGhhdCBpdCBoYXMs
+IHVubGVzcyBpdCBoYXMgYSB1c2VyIElEIG9mIDAgd2l0aGluIHRoZQo+ICAgICAgICBuYW1lc3Bh
+Y2UuICBTZWUgdGhlIGRpc2N1c3Npb24gb2YgdXNlciAgYW5kICBncm91cCAgSUQgIG1hcHBpbmdz
+LAo+ICAgICAgICBiZWxvdy4KClRoZSBhYm92ZSBpcyBhbiBhcHByb3hpbWF0aW9uLCBidXQgYSBi
+aXQgbWlzbGVhZGluZy4gIE9uIGV4ZWMsIHRoZSB0YXNrCmNhcGFiaWxpdHkgc2V0IGlzIHJlY2Fs
+Y3VsYXRlZCBhY2NvcmRpbmcgdG8gdGhlIHVzdWFsIHJ1bGVzLiAgU28gaWYgdGhlCmZpbGUgYmVp
+bmcgZXhlY3V0ZWQgaGFzIGZpbGUgY2FwYWJpbGl0aWVzLCB0aGUgcmVzdWx0IHRhc2sgbWF5IGVu
+ZCB1cAp3aXRoIGNhcGFiaWxpdGllcyBldmVuIGlmIGl0IGlzIG5vdCByb290IChldmVuIGlmIGl0
+IGlzIHVpZCAtMSkuCgpQZXJoYXBzIGl0IHNob3VsZCBiZSBwaHJhc2VkIGFzOgoKICAgICAgICBO
+b3RlIHRoYXQgYSBjYWxsIHRvIGV4ZWN2ZSgyKSB3aWxsIGNhdXNlIGEgcHJvY2VzcycgY2FwYWJp
+bGl0aWVzCgl0byBiZSByZWNhbGN1bGF0ZWQgKHNlZSBjYXBhYmlsaXRpZXMoNykpLCBzbyB0aGF0
+IHVzdWFsbHksIHVubGVzcwoJaXQgaGFzIGEgdXNlciBJRCBvZiAwIHdpdGhpbiB0aGUgbmFtZXNw
+YWNlLCBpdCB3aWxsIGxvc2UgYWxsCgljYXBhYmlsaXRpZXMuICBTZWUgdGhlIGRpc2N1c3Npb24g
+b2YgdXNlciAgYW5kICBncm91cCAgSUQgIG1hcHBpbmdzLAogICAgICAgIGJlbG93LgoKLXNlcmdl
+Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5l
+cnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0
+cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVy
+cw==
