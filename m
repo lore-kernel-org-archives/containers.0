@@ -1,14 +1,17 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: For review: user_namespace(7) man page
-Date: Fri, 22 Aug 2014 23:12:15 +0200
-Message-ID: <20140822211215.GA26308@mail.hallyn.com>
-References: <53F5310A.5080503@gmail.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH V4 1/8] namespaces: assign each namespace instance a
+	serial number
+Date: Sat, 23 Aug 2014 07:05:35 -0500
+Message-ID: <87ioljs968.fsf@x220.int.ebiederm.org>
+References: <cover.1408581429.git.rgb@redhat.com>
+	<cover.1408581429.git.rgb@redhat.com>
+	<d5bfd81a219c5c45c910494d6a3478ce83052e1f.1408581429.git.rgb@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <53F5310A.5080503-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <d5bfd81a219c5c45c910494d6a3478ce83052e1f.1408581429.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+	(Richard Guy Briggs's message of "Wed, 20 Aug 2014 21:09:34 -0400")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,93 +21,83 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: "linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-UXVvdGluZyBNaWNoYWVsIEtlcnJpc2sgKG1hbi1wYWdlcykgKG10ay5tYW5wYWdlc0BnbWFpbC5j
-b20pOgo+IEhlbGxvIEVyaWMgZXQgYWwuLAo+IAo+IEZvciB2YXJpb3VzIHJlYXNvbnMsIG15IHdv
-cmsgb24gdGhlIG5hbWVzcGFjZXMgbWFuIHBhZ2VzIAo+IGZlbGwgb2ZmIHRoZSB0YWJsZSBhIHdo
-aWxlIGJhY2suIE5ldmVydGhlbGVzcywgdGhlIHBhZ2VzIGhhdmUKPiBiZWVuIGNsb3NlIHRvIGNv
-bXBsZXRpb24gZm9yIGEgd2hpbGUgbm93LCBhbmQgSSByZWNlbnRseSByZXN0YXJ0ZWQsCj4gaW4g
-YW4gZWZmb3J0IHRvIGZpbmlzaCB0aGVtLiBBcyB5b3UgYWxzbyBub3RlZCB0byBtZSBmMmYsIHRo
-ZXJlIGhhdmUKPiBiZWVuIHJlY2VudGx5IGJlZW4gc29tZSBzbWFsbCBuYW1lc3BhY2UgY2hhbmdl
-cyB0aGF0IHlvdSBtYXkgYWZmZWN0Cj4gdGhlIGNvbnRlbnQgb2YgdGhlIHBhZ2VzLiBUaGVyZWZv
-cmUsIEknbGwgdGFrZSB0aGUgb3Bwb3J0dW5pdHkgdG8KPiBzZW5kIHRoZSBuYW1lc3BhY2UtcmVs
-YXRlZCBwYWdlcyBvdXQgZm9yIGZ1cnRoZXIgKGZpbmFsPykgcmV2aWV3Lgo+IAo+IFNvLCBoZXJl
-LCBJIHN0YXJ0IHdpdGggdGhlIHVzZXJfbmFtZXNwYWNlcyg3KSBwYWdlLCB3aGljaCBpcyBzaG93
-biAKPiBpbiByZW5kZXJlZCBmb3JtIGJlbG93LCB3aXRoIHNvdXJjZSBhdHRhY2hlZCB0byB0aGlz
-IG1haWwuIEknbGwKPiBzZW5kIHZhcmlvdXMgb3RoZXIgcGFnZXMgaW4gZm9sbG93LW9uIG1haWxz
-Lgo+IAo+IFJldmlldyBjb21tZW50cy9zdWdnZXN0aW9ucyBmb3IgaW1wcm92ZW1lbnRzIC8gYnVn
-IGZpeGVzIHdlbGNvbWUuCj4gCj4gQ2hlZXJzLAo+IAo+IE1pY2hhZWwKPiAKPiA9PQo+IAo+IE5B
-TUUKPiAgICAgICAgdXNlcl9uYW1lc3BhY2VzIC0gb3ZlcnZpZXcgb2YgTGludXggdXNlcl9uYW1l
-c3BhY2VzCj4gCj4gREVTQ1JJUFRJT04KPiAgICAgICAgRm9yIGFuIG92ZXJ2aWV3IG9mIG5hbWVz
-cGFjZXMsIHNlZSBuYW1lc3BhY2VzKDcpLgo+IAo+ICAgICAgICBVc2VyICAgbmFtZXNwYWNlcyAg
-IGlzb2xhdGUgICBzZWN1cml0eS1yZWxhdGVkICAgaWRlbnRpZmllcnMgIGFuZAo+ICAgICAgICBh
-dHRyaWJ1dGVzLCBpbiBwYXJ0aWN1bGFyLCB1c2VyIElEcyBhbmQgZ3JvdXAgIElEcyAgKHNlZSAg
-Y3JlZGVu4oCQCj4gICAgICAgIHRpYWxzKDcpLCB0aGUgcm9vdCBkaXJlY3RvcnksIGtleXMgKHNl
-ZSBrZXljdGwoMikpLCBhbmQgY2FwYWJpbGnigJAKPiAgICAgICAgdGllcyAoc2VlIGNhcGFiaWxp
-dGllcyg3KSkuICBBIHByb2Nlc3MncyB1c2VyIGFuZCBncm91cCAgSURzICBjYW4KPiAgICAgICAg
-YmUgZGlmZmVyZW50IGluc2lkZSBhbmQgb3V0c2lkZSBhIHVzZXIgbmFtZXNwYWNlLiAgSW4gcGFy
-dGljdWxhciwKPiAgICAgICAgYSBwcm9jZXNzIGNhbiBoYXZlIGEgbm9ybWFsIHVucHJpdmlsZWdl
-ZCB1c2VyIElEIG91dHNpZGUgIGEgIHVzZXIKPiAgICAgICAgbmFtZXNwYWNlIHdoaWxlIGF0IHRo
-ZSBzYW1lIHRpbWUgaGF2aW5nIGEgdXNlciBJRCBvZiAwIGluc2lkZSB0aGUKPiAgICAgICAgbmFt
-ZXNwYWNlOyBpbiBvdGhlciB3b3JkcywgdGhlIHByb2Nlc3MgaGFzICBmdWxsICBwcml2aWxlZ2Vz
-ICBmb3IKPiAgICAgICAgb3BlcmF0aW9ucyAgaW5zaWRlICB0aGUgIHVzZXIgIG5hbWVzcGFjZSwg
-YnV0IGlzIHVucHJpdmlsZWdlZCBmb3IKPiAgICAgICAgb3BlcmF0aW9ucyBvdXRzaWRlIHRoZSBu
-YW1lc3BhY2UuCj4gCj4gICAgTmVzdGVkIG5hbWVzcGFjZXMsIG5hbWVzcGFjZSBtZW1iZXJzaGlw
-Cj4gICAgICAgIFVzZXIgbmFtZXNwYWNlcyBjYW4gYmUgbmVzdGVkOyAgdGhhdCAgaXMsICBlYWNo
-ICB1c2VyICBuYW1lc3BhY2XigJQKPiAgICAgICAgZXhjZXB0ICB0aGUgIGluaXRpYWwgICgicm9v
-dCIpIG5hbWVzcGFjZeKAlGhhcyBhIHBhcmVudCB1c2VyIG5hbWVz4oCQCj4gICAgICAgIHBhY2Us
-IGFuZCBjYW4gaGF2ZSB6ZXJvIG9yIG1vcmUgY2hpbGQgdXNlciBuYW1lc3BhY2VzLiAgVGhlICBw
-YXLigJAKPiAgICAgICAgZW50IHVzZXIgbmFtZXNwYWNlIGlzIHRoZSB1c2VyIG5hbWVzcGFjZSBv
-ZiB0aGUgcHJvY2VzcyB0aGF0IGNyZeKAkAo+ICAgICAgICBhdGVzIHRoZSB1c2VyIG5hbWVzcGFj
-ZSB2aWEgYSBjYWxsIHRvIHVuc2hhcmUoMikgb3IgY2xvbmUoMikgd2l0aAo+ICAgICAgICB0aGUg
-Q0xPTkVfTkVXVVNFUiBmbGFnLgo+IAo+ICAgICAgICBUaGUga2VybmVsIGltcG9zZXMgKHNpbmNl
-IHZlcnNpb24gMy4xMSkgYSBsaW1pdCBvZiAzMiBuZXN0ZWQgbGV24oCQCj4gICAgICAgIGVscyBv
-ZiB1c2VyIG5hbWVzcGFjZXMuICBDYWxscyB0byAgdW5zaGFyZSgyKSAgb3IgIGNsb25lKDIpICB0
-aGF0Cj4gICAgICAgIHdvdWxkIGNhdXNlIHRoaXMgbGltaXQgdG8gYmUgZXhjZWVkZWQgZmFpbCB3
-aXRoIHRoZSBlcnJvciBFVVNFUlMuCj4gCj4gICAgICAgIEVhY2ggIHByb2Nlc3MgIGlzICBhICBt
-ZW1iZXIgIG9mICBleGFjdGx5ICBvbmUgdXNlciBuYW1lc3BhY2UuICBBCj4gICAgICAgIHByb2Nl
-c3MgY3JlYXRlZCB2aWEgZm9yaygyKSBvciBjbG9uZSgyKSB3aXRob3V0IHRoZSBDTE9ORV9ORVdV
-U0VSCj4gICAgICAgIGZsYWcgIGlzICBhICBtZW1iZXIgIG9mIHRoZSBzYW1lIHVzZXIgbmFtZXNw
-YWNlIGFzIGl0cyBwYXJlbnQuICBBCj4gICAgICAgIHByb2Nlc3MgY2FuIGpvaW4gYW5vdGhlciB1
-c2VyIG5hbWVzcGFjZSB3aXRoIHNldG5zKDIpIGlmICBpdCAgaGFzCj4gICAgICAgIHRoZSAgQ0FQ
-X1NZU19BRE1JTiAgaW4gIHRoYXQgbmFtZXNwYWNlOyB1cG9uIGRvaW5nIHNvLCBpdCBnYWlucyBh
-Cj4gICAgICAgIGZ1bGwgc2V0IG9mIGNhcGFiaWxpdGllcyBpbiB0aGF0IG5hbWVzcGFjZS4KPiAK
-PiAgICAgICAgQSBjYWxsIHRvIGNsb25lKDIpIG9yICB1bnNoYXJlKDIpICB3aXRoICB0aGUgIENM
-T05FX05FV1VTRVIgIGZsYWcKPiAgICAgICAgbWFrZXMgIHRoZSAgbmV3ICBjaGlsZCAgcHJvY2Vz
-cyAoZm9yIGNsb25lKDIpKSBvciB0aGUgY2FsbGVyIChmb3IKPiAgICAgICAgdW5zaGFyZSgyKSkg
-YSBtZW1iZXIgb2YgdGhlIG5ldyB1c2VyICBuYW1lc3BhY2UgIGNyZWF0ZWQgIGJ5ICB0aGUKPiAg
-ICAgICAgY2FsbC4KPiAKPiAgICBDYXBhYmlsaXRpZXMKPiAgICAgICAgVGhlIGNoaWxkIHByb2Nl
-c3MgY3JlYXRlZCBieSBjbG9uZSgyKSB3aXRoIHRoZSBDTE9ORV9ORVdVU0VSIGZsYWcKPiAgICAg
-ICAgc3RhcnRzIG91dCB3aXRoIGEgY29tcGxldGUgc2V0IG9mIGNhcGFiaWxpdGllcyBpbiAgdGhl
-ICBuZXcgIHVzZXIKPiAgICAgICAgbmFtZXNwYWNlLiAgTGlrZXdpc2UsIGEgcHJvY2VzcyB0aGF0
-IGNyZWF0ZXMgYSBuZXcgdXNlciBuYW1lc3BhY2UKPiAgICAgICAgdXNpbmcgdW5zaGFyZSgyKSAg
-b3IgIGpvaW5zICBhbiAgZXhpc3RpbmcgIHVzZXIgIG5hbWVzcGFjZSAgdXNpbmcKPiAgICAgICAg
-c2V0bnMoMikgIGdhaW5zIGEgZnVsbCBzZXQgb2YgY2FwYWJpbGl0aWVzIGluIHRoYXQgbmFtZXNw
-YWNlLiAgT24KPiAgICAgICAgdGhlIG90aGVyIGhhbmQsIHRoYXQgcHJvY2VzcyBoYXMgbm8gY2Fw
-YWJpbGl0aWVzICBpbiAgdGhlICBwYXJlbnQKPiAgICAgICAgKGluICB0aGUgY2FzZSBvZiBjbG9u
-ZSgyKSkgb3IgcHJldmlvdXMgKGluIHRoZSBjYXNlIG9mIHVuc2hhcmUoMikKPiAgICAgICAgYW5k
-IHNldG5zKDIpKSB1c2VyIG5hbWVzcGFjZSwgZXZlbiBpZiB0aGUgbmV3IG5hbWVzcGFjZSAgaXMg
-IGNyZeKAkAo+ICAgICAgICBhdGVkICBvciAgam9pbmVkIGJ5IHRoZSByb290IHVzZXIgKGkuZS4s
-IGEgcHJvY2VzcyB3aXRoIHVzZXIgSUQgMAo+ICAgICAgICBpbiB0aGUgcm9vdCBuYW1lc3BhY2Up
-Lgo+IAo+ICAgICAgICBOb3RlIHRoYXQgYSBjYWxsIHRvIGV4ZWN2ZSgyKSB3aWxsIGNhdXNlIGEg
-cHJvY2VzcyAgdG8gIGxvc2UgIGFueQo+ICAgICAgICBjYXBhYmlsaXRpZXMgdGhhdCBpdCBoYXMs
-IHVubGVzcyBpdCBoYXMgYSB1c2VyIElEIG9mIDAgd2l0aGluIHRoZQo+ICAgICAgICBuYW1lc3Bh
-Y2UuICBTZWUgdGhlIGRpc2N1c3Npb24gb2YgdXNlciAgYW5kICBncm91cCAgSUQgIG1hcHBpbmdz
-LAo+ICAgICAgICBiZWxvdy4KClRoZSBhYm92ZSBpcyBhbiBhcHByb3hpbWF0aW9uLCBidXQgYSBi
-aXQgbWlzbGVhZGluZy4gIE9uIGV4ZWMsIHRoZSB0YXNrCmNhcGFiaWxpdHkgc2V0IGlzIHJlY2Fs
-Y3VsYXRlZCBhY2NvcmRpbmcgdG8gdGhlIHVzdWFsIHJ1bGVzLiAgU28gaWYgdGhlCmZpbGUgYmVp
-bmcgZXhlY3V0ZWQgaGFzIGZpbGUgY2FwYWJpbGl0aWVzLCB0aGUgcmVzdWx0IHRhc2sgbWF5IGVu
-ZCB1cAp3aXRoIGNhcGFiaWxpdGllcyBldmVuIGlmIGl0IGlzIG5vdCByb290IChldmVuIGlmIGl0
-IGlzIHVpZCAtMSkuCgpQZXJoYXBzIGl0IHNob3VsZCBiZSBwaHJhc2VkIGFzOgoKICAgICAgICBO
-b3RlIHRoYXQgYSBjYWxsIHRvIGV4ZWN2ZSgyKSB3aWxsIGNhdXNlIGEgcHJvY2VzcycgY2FwYWJp
-bGl0aWVzCgl0byBiZSByZWNhbGN1bGF0ZWQgKHNlZSBjYXBhYmlsaXRpZXMoNykpLCBzbyB0aGF0
-IHVzdWFsbHksIHVubGVzcwoJaXQgaGFzIGEgdXNlciBJRCBvZiAwIHdpdGhpbiB0aGUgbmFtZXNw
-YWNlLCBpdCB3aWxsIGxvc2UgYWxsCgljYXBhYmlsaXRpZXMuICBTZWUgdGhlIGRpc2N1c3Npb24g
-b2YgdXNlciAgYW5kICBncm91cCAgSUQgIG1hcHBpbmdzLAogICAgICAgIGJlbG93LgoKLXNlcmdl
-Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5l
-cnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0
-cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVy
-cw==
+Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+
+> Generate and assign a serial number per namespace instance since boot.
+>
+> Use a serial number per namespace (unique across one boot of one kernel)
+> instead of the inode number (which is claimed to have had the right to change
+> reserved and is not necessarily unique if there is more than one proc fs) to
+> uniquely identify it per kernel boot.
+
+This approach is just broken.
+
+For this to work with migration (aka criu) you need to implement a
+namespace of namespaces.  You haven't done this, and therefore
+such an interface will break existing userspace.
+
+Inside of audit I can understand not caring about these issues,
+but you go foward and expose these serial numbers in proc,
+and generally make this infrastructure available to others.
+
+The deep issue with migration is that we move tasks from one machine
+from another and on the destination machine we need to have all of the
+same global identifiers for software to function properly.
+
+My weasel words around the proc inode numbers is to preserve to allow us
+room to be able to restore those ids if it every becomes relevant for
+migration.
+
+That is the proc inode numbers (technically) live in a pid namespace,
+(aka a mount of proc).  So depending on the pid namespace you are in
+or the mount of proc you look in the numbers could change.
+
+Qualifications like that must exist to have a prayer of ever supporting
+process migration in the crazy corner cases where people start caring
+about inode numbers.
+
+We currently don't and inode numbers for a namespace will never change
+after a namespace is created.  So I think you really are ok using the
+proc inode numbers.  I am happy declaring by fiat that the inode numbers
+that audit uses are the numbers connected to the initial pid namespace.
+
+At a fairly basic level anything that is used to identify namespaces for
+any general purpose use needs to have most if not all of the same
+properties of the proc inode numbers.  The most important of which is
+being tied to some context/namespace so there is a ability if we ever
+need it to migrate those numbers from one machine to another.
+
+Eric
+
+> diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+> index 8e78110..93cb380 100644
+> --- a/kernel/nsproxy.c
+> +++ b/kernel/nsproxy.c
+> @@ -41,6 +41,23 @@ struct nsproxy init_nsproxy = {
+>  #endif
+>  };
+>  
+> +/**
+> + * ns_serial - compute a serial number for the namespace
+> + *
+> + * Compute a serial number for the namespace to uniquely identify it in
+> + * audit records.
+> + */
+> +long long ns_serial(void)
+> +{
+> +	static atomic64_t serial = ATOMIC_INIT(4); /* reserved for IPC, UTS, user, PID */
+> +	long long ret;
+> +
+> +	ret = atomic64_add_return(1, &serial);
+> +	BUG_ON(!ret);
+> +
+> +	return ret;
+> +}
+> +
+>  static inline struct nsproxy *create_nsproxy(void)
+>  {
+>  	struct nsproxy *nsproxy;
