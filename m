@@ -1,18 +1,10 @@
-From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH V4 1/8] namespaces: assign each namespace instance a
-	serial number
-Date: Sun, 24 Aug 2014 16:38:27 -0400
-Message-ID: <20140824203827.GI9003__5281.59126774899$1408912728$gmane$org@madcap2.tricolour.ca>
-References: <cover.1408581429.git.rgb@redhat.com>
-	<cover.1408581429.git.rgb@redhat.com>
-	<d5bfd81a219c5c45c910494d6a3478ce83052e1f.1408581429.git.rgb@redhat.com>
-	<87ioljs968.fsf@x220.int.ebiederm.org>
+From: =?iso-8859-1?Q?St=E9phane?= Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: Linux Plumbers 2014: talk proposals
+Date: Sun, 24 Aug 2014 23:19:40 -0400
+Message-ID: <20140825031013.GA26670@dakara>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============8332280973211424301=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87ioljs968.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,107 +14,80 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: containers-cunTk1MwBs98uUxBSJOaYoYkZiVZrdSR2LY78lusg7I@public.gmane.org, lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, lxc-users-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org
+Cc: brandon-Qdl1sq8EXS0@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 14/08/23, Eric W. Biederman wrote:
-> Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
-> 
-> > Generate and assign a serial number per namespace instance since boot.
-> >
-> > Use a serial number per namespace (unique across one boot of one kernel)
-> > instead of the inode number (which is claimed to have had the right to change
-> > reserved and is not necessarily unique if there is more than one proc fs) to
-> > uniquely identify it per kernel boot.
-> 
-> This approach is just broken.
-> 
-> For this to work with migration (aka criu) you need to implement a
-> namespace of namespaces.  You haven't done this, and therefore
-> such an interface will break existing userspace.
-> 
-> Inside of audit I can understand not caring about these issues,
-> but you go foward and expose these serial numbers in proc,
-> and generally make this infrastructure available to others.
-> 
-> The deep issue with migration is that we move tasks from one machine
-> from another and on the destination machine we need to have all of the
-> same global identifiers for software to function properly.
-> 
-> My weasel words around the proc inode numbers is to preserve to allow us
-> room to be able to restore those ids if it every becomes relevant for
-> migration.
 
-What do you do if the inode number is already in use on the target host?
+--===============8332280973211424301==
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="V0207lvV8h4k8FAm"
+Content-Disposition: inline
 
-> That is the proc inode numbers (technically) live in a pid namespace,
-> (aka a mount of proc).  So depending on the pid namespace you are in
-> or the mount of proc you look in the numbers could change.
-> 
-> Qualifications like that must exist to have a prayer of ever supporting
-> process migration in the crazy corner cases where people start caring
-> about inode numbers.
-> 
-> We currently don't and inode numbers for a namespace will never change
-> after a namespace is created.  So I think you really are ok using the
-> proc inode numbers.  I am happy declaring by fiat that the inode numbers
-> that audit uses are the numbers connected to the initial pid namespace.
 
-But once a namespace/container is migrated, it is a different audit that
-is looking at it (unless we create an audit manager or entity that
-functions at the level of a container manager), so audit should not care.
+--V0207lvV8h4k8FAm
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-> At a fairly basic level anything that is used to identify namespaces for
-> any general purpose use needs to have most if not all of the same
-> properties of the proc inode numbers.  The most important of which is
-> being tied to some context/namespace so there is a ability if we ever
-> need it to migrate those numbers from one machine to another.
+Hello,
 
-Sooo...  does it make any sense to have those inode or serial numbers be
-blank inside the namespace/container itself, but only visible to its
-manager outside the container (unless it is the initial namespace)?
+This is a quick reminder that we are still accepting talk proposals for
+the Containers mini-summit at Linux Plumbers 2014 (October 15-17 in
+D=FCsseldorf, Germany).
 
-> Eric
-> 
-> > diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-> > index 8e78110..93cb380 100644
-> > --- a/kernel/nsproxy.c
-> > +++ b/kernel/nsproxy.c
-> > @@ -41,6 +41,23 @@ struct nsproxy init_nsproxy = {
-> >  #endif
-> >  };
-> >  
-> > +/**
-> > + * ns_serial - compute a serial number for the namespace
-> > + *
-> > + * Compute a serial number for the namespace to uniquely identify it in
-> > + * audit records.
-> > + */
-> > +long long ns_serial(void)
-> > +{
-> > +	static atomic64_t serial = ATOMIC_INIT(4); /* reserved for IPC, UTS, user, PID */
-> > +	long long ret;
-> > +
-> > +	ret = atomic64_add_return(1, &serial);
-> > +	BUG_ON(!ret);
-> > +
-> > +	return ret;
-> > +}
-> > +
-> >  static inline struct nsproxy *create_nsproxy(void)
-> >  {
-> >  	struct nsproxy *nsproxy;
-> 
-> --
-> Linux-audit mailing list
-> Linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-> https://www.redhat.com/mailman/listinfo/linux-audit
+You may submit a talk proposal here:
+http://www.linuxplumbersconf.org/2014/ocw/events/LPC2014/proposals
 
-- RGB
 
---
-Richard Guy Briggs <rbriggs-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Senior Software Engineer, Kernel Security, AMER ENG Base Operating Systems, Red Hat
-Remote, Ottawa, Canada
-Voice: +1.647.777.2635, Internal: (81) 32635, Alt: +1.613.693.0684x3545
+The whole event is 3 hours long so we're mostly interested in talks or
+discussions ranging from 15min to 30min.
+
+
+Also, even though Linux Plumbers is sold out, we have 3 free speaker
+badges and 3 discounted registration tickets to give away, so if you are
+interested by any of those, please submit a talk and get in touch with
+me BEFORE THIS TUESDAY (anyone granted one of those will be given a
+special code and will have to register for the conference BEFORE THIS
+WEDNESDAY).
+
+--=20
+St=E9phane Graber
+Ubuntu developer
+http://www.ubuntu.com
+
+--V0207lvV8h4k8FAm
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCgAGBQJT+qtMAAoJEMY4l01keS1nQUAP/RGa4IfJEaEzCk314ru8BZDN
+H0pdIkOF9KLrwpYtNyqpL6u5FCp3aOLXQG9pqYBG7MX1PtlO1kP44Dt6bEYwUcXl
+VT0M4GrmB9z/JpXOGS5XyPrbY5ovOzX+2bwBKaswuJXW+8Lv8QOHo7/N8Imdoo3y
+7oHR8dpSySeIM/cT7ZRWmIlRozQJjsqJaz+by+iX6G/8ILqMLEMSkDgKpIiZO5IF
+KpqZkY2Hczjx5i4SrB9xRQdBnd7/bHrCEhVUhE+o71hq6zFglu8ow57syV5B5SsD
+Y687Y4Unrm+xZQzmM2MCm/cDlwXy7NYWh0KnhMaTgNSS2ZofRAGzFoux353DcCNc
+xv0xq5W4JgzOBvHTlWBhF2oa8KAS1M5fTqlqTgKCURFYa2x5ss/7DL/NnQQhFmUH
+ruV6NCf/KtIIuvBbWS/qYw+/DryVB9Il6DFw6lN/SA81Pe/gK3NdPEH14RyRluyH
+NOvjHIBwQWQl0ikdIAZE6O/duWgPm9cBPwUzuRdmyOs0rA0s6wf5q+cbGOuH+Tni
+Tzq4KqH6D3RkQM1heFE6o1TNgFnl4hoCE+TRVx5AzfJa/0rVAUR2hKTyIQP8y9if
+CDKIONg59bogTzETs5Ijq7j5HQa3EUsQSeImZuaJrlbF5Bd3MumP0udqZ+Ao+oUc
+zScE6YPDEA5MCUlVyPMD
+=FQld
+-----END PGP SIGNATURE-----
+
+--V0207lvV8h4k8FAm--
+
+--===============8332280973211424301==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============8332280973211424301==--
