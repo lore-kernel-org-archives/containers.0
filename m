@@ -1,19 +1,21 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: [PATCH V4 3/8] namespaces: expose ns instance serial numbers in
-	proc
-Date: Mon, 25 Aug 2014 07:04:28 -0700
-Message-ID: <CALCETrW1Lv0qeccMjNHSEzgtiaNN3NgJVR1dFjjR_dw5KVVnqA@mail.gmail.com>
+From: Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH V4 3/8] namespaces: expose ns instance serial numbers
+	in proc
+Date: Mon, 25 Aug 2014 17:43:31 +0200
+Message-ID: <53FB59A3.5030804__10660.3784989149$1408981432$gmane$org@6wind.com>
 References: <cover.1408581429.git.rgb@redhat.com>
 	<cd6cd0622ce677b639afae18a69ff79c72490bab.1408581429.git.rgb@redhat.com>
 	<CALCETrUnzG1V8w+H9ctAJP+Hvo8LQax=dhLG4bBpBKmVi+C1cQ@mail.gmail.com>
 	<20140822015803.GG20529@madcap2.tricolour.ca>
 	<CALCETrUkFD0iNi1SV_6ypN5Kf4GYybT5tzjRjRQuLzT9iBnQAg@mail.gmail.com>
 	<53FB3A86.2060203@6wind.com>
+	<CALCETrW1Lv0qeccMjNHSEzgtiaNN3NgJVR1dFjjR_dw5KVVnqA@mail.gmail.com>
+Reply-To: nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <53FB3A86.2060203-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <CALCETrW1Lv0qeccMjNHSEzgtiaNN3NgJVR1dFjjR_dw5KVVnqA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,79 +25,127 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org
+To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Aug 25, 2014 6:30 AM, "Nicolas Dichtel" <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org> wrote:
->> CRIU wants to save the complete state of a namespace and then restore
->> it.  For that to work, any information exposed to things in the
->> namespace *cannot* be globally unique or unique per boot, since CRIU
->> needs to arrange for that information to match whatever it was when
->> CRIU saved it.
->
-> How are ifindex of network devices managed? These ifindexes are unique per boot,
-> thus can change depending on the order in which netdev are created.
-> These ifindexes are unique per boot and exposed to userspace ...
->
-
-This does not appear to be true.
-
-$ sudo unshare --net
-# ip link add veth0 type veth peer name veth1
-# ip link
-1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN mode DEFAULT group default
-    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
-2: veth1: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode
-DEFAULT group default qlen 1000
-    link/ether 06:0d:59:c7:a6:a8 brd ff:ff:ff:ff:ff:ff
-3: veth0: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode
-DEFAULT group default qlen 1000
-    link/ether b2:5c:8b:f2:12:28 brd ff:ff:ff:ff:ff:ff
-# logout
-$ ip link
-1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
-    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
-3: em1: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc pfifo_fast
-state DOWN qlen 1000
-
->
->>
->> Also, I think that code running in a namespace has no business even
->> knowing a unique identity of that namespace from the perspective of
->> the host.
->
-> Another scenario is when you have virtual network devices across two netns. You
-> need to identify the peer netns to have a netlink message which is fully interpretable by the userspace.
-
-Let me try again, with emphasis in the right place.
-
-I think that *code running in a namespace* has no business even
-knowing a unique identity of *that namespace* from the perspective of
-the host.
-
-In your example, if there's a veth device between netns A and netns B,
-then code *in netns A* has no business knowing the identity of its
-veth peer if its peer (B) is a sibling or ancestor.  It also IMO has
-no business knowing the identity of its own netns (A) other than as
-"my netns".
-
-If A and B are siblings, then their parent needs to know where that
-veth device goes, but I think this is already the case to a sufficient
-extent today.
-
-I feel like this discussion is falling into a common trap of new API
-discussions.  Can one of you who wants this API please articulate,
-with a reasonably precise example, what it is that you want to do, why
-you can't easily do it already, and how this API helps?  I currently
-understand how the API creates problems, but I don't understand how it
-solves any problems, and I will NAK it (and I suspect that Eric will,
-too, which is pretty much fatal) unless that changes.
-
-Thanks,
-Andy
-
->
->
-> Regards,
-> Nicolas
+TGUgMjUvMDgvMjAxNCAxNjowNCwgQW5keSBMdXRvbWlyc2tpIGEgw6ljcml0IDoKPiBPbiBBdWcg
+MjUsIDIwMTQgNjozMCBBTSwgIk5pY29sYXMgRGljaHRlbCIgPG5pY29sYXMuZGljaHRlbEA2d2lu
+ZC5jb20+IHdyb3RlOgo+Pj4gQ1JJVSB3YW50cyB0byBzYXZlIHRoZSBjb21wbGV0ZSBzdGF0ZSBv
+ZiBhIG5hbWVzcGFjZSBhbmQgdGhlbiByZXN0b3JlCj4+PiBpdC4gIEZvciB0aGF0IHRvIHdvcmss
+IGFueSBpbmZvcm1hdGlvbiBleHBvc2VkIHRvIHRoaW5ncyBpbiB0aGUKPj4+IG5hbWVzcGFjZSAq
+Y2Fubm90KiBiZSBnbG9iYWxseSB1bmlxdWUgb3IgdW5pcXVlIHBlciBib290LCBzaW5jZSBDUklV
+Cj4+PiBuZWVkcyB0byBhcnJhbmdlIGZvciB0aGF0IGluZm9ybWF0aW9uIHRvIG1hdGNoIHdoYXRl
+dmVyIGl0IHdhcyB3aGVuCj4+PiBDUklVIHNhdmVkIGl0Lgo+Pgo+PiBIb3cgYXJlIGlmaW5kZXgg
+b2YgbmV0d29yayBkZXZpY2VzIG1hbmFnZWQ/IFRoZXNlIGlmaW5kZXhlcyBhcmUgdW5pcXVlIHBl
+ciBib290LAo+PiB0aHVzIGNhbiBjaGFuZ2UgZGVwZW5kaW5nIG9uIHRoZSBvcmRlciBpbiB3aGlj
+aCBuZXRkZXYgYXJlIGNyZWF0ZWQuCj4+IFRoZXNlIGlmaW5kZXhlcyBhcmUgdW5pcXVlIHBlciBi
+b290IGFuZCBleHBvc2VkIHRvIHVzZXJzcGFjZSAuLi4KPj4KPgo+IFRoaXMgZG9lcyBub3QgYXBw
+ZWFyIHRvIGJlIHRydWUuCj4KPiAkIHN1ZG8gdW5zaGFyZSAtLW5ldAo+ICMgaXAgbGluayBhZGQg
+dmV0aDAgdHlwZSB2ZXRoIHBlZXIgbmFtZSB2ZXRoMQo+ICMgaXAgbGluawo+IDE6IGxvOiA8TE9P
+UEJBQ0s+IG10dSA2NTUzNiBxZGlzYyBub29wIHN0YXRlIERPV04gbW9kZSBERUZBVUxUIGdyb3Vw
+IGRlZmF1bHQKPiAgICAgIGxpbmsvbG9vcGJhY2sgMDA6MDA6MDA6MDA6MDA6MDAgYnJkIDAwOjAw
+OjAwOjAwOjAwOjAwCj4gMjogdmV0aDE6IDxCUk9BRENBU1QsTVVMVElDQVNUPiBtdHUgMTUwMCBx
+ZGlzYyBub29wIHN0YXRlIERPV04gbW9kZQo+IERFRkFVTFQgZ3JvdXAgZGVmYXVsdCBxbGVuIDEw
+MDAKPiAgICAgIGxpbmsvZXRoZXIgMDY6MGQ6NTk6Yzc6YTY6YTggYnJkIGZmOmZmOmZmOmZmOmZm
+OmZmCj4gMzogdmV0aDA6IDxCUk9BRENBU1QsTVVMVElDQVNUPiBtdHUgMTUwMCBxZGlzYyBub29w
+IHN0YXRlIERPV04gbW9kZQo+IERFRkFVTFQgZ3JvdXAgZGVmYXVsdCBxbGVuIDEwMDAKPiAgICAg
+IGxpbmsvZXRoZXIgYjI6NWM6OGI6ZjI6MTI6MjggYnJkIGZmOmZmOmZmOmZmOmZmOmZmCj4gIyBs
+b2dvdXQKPiAkIGlwIGxpbmsKPiAxOiBsbzogPExPT1BCQUNLLFVQLExPV0VSX1VQPiBtdHUgNjU1
+MzYgcWRpc2Mgbm9xdWV1ZSBzdGF0ZSBVTktOT1dOCj4gICAgICBsaW5rL2xvb3BiYWNrIDAwOjAw
+OjAwOjAwOjAwOjAwIGJyZCAwMDowMDowMDowMDowMDowMAo+IDM6IGVtMTogPE5PLUNBUlJJRVIs
+QlJPQURDQVNULE1VTFRJQ0FTVCxVUD4gbXR1IDE1MDAgcWRpc2MgcGZpZm9fZmFzdAo+IHN0YXRl
+IERPV04gcWxlbiAxMDAwCj4KSSd2ZSBwcm9iYWJseSBtaXN1bmRlcnN0b29kIHdoYXQgeW91J3Jl
+IHRyeWluZyB0byBzYXkuIGlmaW5kZXhlcyBhcmUgdW5pcXVlIHBlcgpib290IGFuZCBwZXIgbmV0
+bnMuIFRoZXNlIGlmaW5kZXhlcyBkZXBlbmQgb24gdGhlIGludGVyZmFjZSBjcmVhdGlvbiBvcmRl
+cjoKCiQgaXAgbmV0bnMgYWRkIDEKJCBpcCBsaW5rIHNldCBldGgxIG5ldG5zIDEKJCBpcCBuZXRu
+cyBleGVjIDEgaXAgbGluayBhZGQgdmV0aDAgdHlwZSB2ZXRoIHBlZXIgbmFtZSB2ZXRoMQokIGlw
+IG5ldG5zIGV4ZWMgMSBpcCBsaW5rCjE6IGxvOiA8TE9PUEJBQ0s+IG10dSA2NTUzNiBxZGlzYyBu
+b29wIHN0YXRlIERPV04gbW9kZSBERUZBVUxUIGdyb3VwIGRlZmF1bHQKICAgICBsaW5rL2xvb3Bi
+YWNrIDAwOjAwOjAwOjAwOjAwOjAwIGJyZCAwMDowMDowMDowMDowMDowMAoyOiB2ZXRoMTogPEJS
+T0FEQ0FTVCxNVUxUSUNBU1Q+IG10dSAxNTAwIHFkaXNjIG5vb3Agc3RhdGUgRE9XTiBtb2RlIERF
+RkFVTFQgCmdyb3VwIGRlZmF1bHQgcWxlbiAxMDAwCiAgICAgbGluay9ldGhlciA5YTphMDo4OTo5
+OTphMDozYyBicmQgZmY6ZmY6ZmY6ZmY6ZmY6ZmYKMzogZXRoMTogPEJST0FEQ0FTVCxNVUxUSUNB
+U1Q+IG10dSAxNTAwIHFkaXNjIG5vb3Agc3RhdGUgRE9XTiBtb2RlIERFRkFVTFQgZ3JvdXAgCmRl
+ZmF1bHQgcWxlbiAxMDAwCiAgICAgbGluay9ldGhlciA1Mjo1NDowMDoxMjozNDo1NyBicmQgZmY6
+ZmY6ZmY6ZmY6ZmY6ZmYKNDogdmV0aDA6IDxCUk9BRENBU1QsTVVMVElDQVNUPiBtdHUgMTUwMCBx
+ZGlzYyBub29wIHN0YXRlIERPV04gbW9kZSBERUZBVUxUIApncm91cCBkZWZhdWx0IHFsZW4gMTAw
+MAogICAgIGxpbmsvZXRoZXIgOTY6ODY6NDQ6NDk6Y2U6YTggYnJkIGZmOmZmOmZmOmZmOmZmOmZm
+CiQgaXAgbmV0bnMgZGVsIDEKJCBpcCBuZXRucyBhZGQgMQokIGlwIG5ldG5zIGV4ZWMgMSBpcCBs
+aW5rIGFkZCB2ZXRoMCB0eXBlIHZldGggcGVlciBuYW1lIHZldGgxCiQgaXAgbGluayBzZXQgZXRo
+MSBuZXRucyAxCiQgaXAgbmV0bnMgZXhlYyAxIGlwIGxpbmsKMTogbG86IDxMT09QQkFDSz4gbXR1
+IDY1NTM2IHFkaXNjIG5vb3Agc3RhdGUgRE9XTiBtb2RlIERFRkFVTFQgZ3JvdXAgZGVmYXVsdAog
+ICAgIGxpbmsvbG9vcGJhY2sgMDA6MDA6MDA6MDA6MDA6MDAgYnJkIDAwOjAwOjAwOjAwOjAwOjAw
+CjI6IHZldGgxOiA8QlJPQURDQVNULE1VTFRJQ0FTVD4gbXR1IDE1MDAgcWRpc2Mgbm9vcCBzdGF0
+ZSBET1dOIG1vZGUgREVGQVVMVCAKZ3JvdXAgZGVmYXVsdCBxbGVuIDEwMDAKICAgICBsaW5rL2V0
+aGVyIDg2OjkyOjkwOjAxOjMyOjZiIGJyZCBmZjpmZjpmZjpmZjpmZjpmZgozOiB2ZXRoMDogPEJS
+T0FEQ0FTVCxNVUxUSUNBU1Q+IG10dSAxNTAwIHFkaXNjIG5vb3Agc3RhdGUgRE9XTiBtb2RlIERF
+RkFVTFQgCmdyb3VwIGRlZmF1bHQgcWxlbiAxMDAwCiAgICAgbGluay9ldGhlciBhZTo4YjpkMjo3
+MTo0ODphMiBicmQgZmY6ZmY6ZmY6ZmY6ZmY6ZmYKNDogZXRoMTogPEJST0FEQ0FTVCxNVUxUSUNB
+U1Q+IG10dSAxNTAwIHFkaXNjIG5vb3Agc3RhdGUgRE9XTiBtb2RlIERFRkFVTFQgZ3JvdXAgCmRl
+ZmF1bHQgcWxlbiAxMDAwCiAgICAgbGluay9ldGhlciA1Mjo1NDowMDoxMjozNDo1NyBicmQgZmY6
+ZmY6ZmY6ZmY6ZmY6ZmYKCk5vdGU6IHdoZW4gYW4gaW50ZXJmYWNlIGlzIG1vdmVkIHRvIGFub3Ro
+ZXIgbmV0bnMsIHRoZSBpZmluZGV4IGlzIGtlcHQgaWYKcG9zc2libGUsIGVsc2UgYW5vdGhlciBp
+ZmluZGV4IGlzIGNob3Nlbi4KSSB3aWxsIGRpZyBhIGJpdCB0byB1bmRlcnN0YW5kIGhvdyBDUklV
+IHNhdmUgdGhlc2UgbmV0bnMgaW5mb3JtYXRpb25zLgoKPj4KPj4+Cj4+PiBBbHNvLCBJIHRoaW5r
+IHRoYXQgY29kZSBydW5uaW5nIGluIGEgbmFtZXNwYWNlIGhhcyBubyBidXNpbmVzcyBldmVuCj4+
+PiBrbm93aW5nIGEgdW5pcXVlIGlkZW50aXR5IG9mIHRoYXQgbmFtZXNwYWNlIGZyb20gdGhlIHBl
+cnNwZWN0aXZlIG9mCj4+PiB0aGUgaG9zdC4KPj4KPj4gQW5vdGhlciBzY2VuYXJpbyBpcyB3aGVu
+IHlvdSBoYXZlIHZpcnR1YWwgbmV0d29yayBkZXZpY2VzIGFjcm9zcyB0d28gbmV0bnMuIFlvdQo+
+PiBuZWVkIHRvIGlkZW50aWZ5IHRoZSBwZWVyIG5ldG5zIHRvIGhhdmUgYSBuZXRsaW5rIG1lc3Nh
+Z2Ugd2hpY2ggaXMgZnVsbHkgaW50ZXJwcmV0YWJsZSBieSB0aGUgdXNlcnNwYWNlLgo+Cj4gTGV0
+IG1lIHRyeSBhZ2Fpbiwgd2l0aCBlbXBoYXNpcyBpbiB0aGUgcmlnaHQgcGxhY2UuCj4KPiBJIHRo
+aW5rIHRoYXQgKmNvZGUgcnVubmluZyBpbiBhIG5hbWVzcGFjZSogaGFzIG5vIGJ1c2luZXNzIGV2
+ZW4KPiBrbm93aW5nIGEgdW5pcXVlIGlkZW50aXR5IG9mICp0aGF0IG5hbWVzcGFjZSogZnJvbSB0
+aGUgcGVyc3BlY3RpdmUgb2YKPiB0aGUgaG9zdC4KPgo+IEluIHlvdXIgZXhhbXBsZSwgaWYgdGhl
+cmUncyBhIHZldGggZGV2aWNlIGJldHdlZW4gbmV0bnMgQSBhbmQgbmV0bnMgQiwKPiB0aGVuIGNv
+ZGUgKmluIG5ldG5zIEEqIGhhcyBubyBidXNpbmVzcyBrbm93aW5nIHRoZSBpZGVudGl0eSBvZiBp
+dHMKPiB2ZXRoIHBlZXIgaWYgaXRzIHBlZXIgKEIpIGlzIGEgc2libGluZyBvciBhbmNlc3Rvci4g
+IEl0IGFsc28gSU1PIGhhcwo+IG5vIGJ1c2luZXNzIGtub3dpbmcgdGhlIGlkZW50aXR5IG9mIGl0
+cyBvd24gbmV0bnMgKEEpIG90aGVyIHRoYW4gYXMKPiAibXkgbmV0bnMiLgpJIGRvIG5vdCBhZ3Jl
+ZSAoc2VlIHRoZSBleGFtcGxlIGJlbG93KS4KCj4KPiBJZiBBIGFuZCBCIGFyZSBzaWJsaW5ncywg
+dGhlbiB0aGVpciBwYXJlbnQgbmVlZHMgdG8ga25vdyB3aGVyZSB0aGF0Cj4gdmV0aCBkZXZpY2Ug
+Z29lcywgYnV0IEkgdGhpbmsgdGhpcyBpcyBhbHJlYWR5IHRoZSBjYXNlIHRvIGEgc3VmZmljaWVu
+dAo+IGV4dGVudCB0b2RheS4KSSdtIG5vdCBhd2FyZSBvZiBhIGhpZXJhcmNoeSBiZXR3ZWVuIG5l
+dG5zLiBBIGRhZW1vbiBzaG91bGQgYmUgYWJsZSB0bwpnb3QgdGhlIGZ1bGwgbmV0d29yayBjb25m
+aWd1cmF0aW9uLCBldmVuIGlmIGl0J3Mgc3RhcnRlZCB3aGVuIHRoaXMgY29uZmlndXJhdGlvbgpp
+cyBhbHJlYWR5IGFwcGxpZWQsIGllIGV2ZW4gaWYgaXQgZG9lc24ndCBrbm93IHdoYXQgaGFwcGVu
+IGJlZm9yZSBpdCBzdGFydHMuCgo+Cj4gSSBmZWVsIGxpa2UgdGhpcyBkaXNjdXNzaW9uIGlzIGZh
+bGxpbmcgaW50byBhIGNvbW1vbiB0cmFwIG9mIG5ldyBBUEkKPiBkaXNjdXNzaW9ucy4gIENhbiBv
+bmUgb2YgeW91IHdobyB3YW50cyB0aGlzIEFQSSBwbGVhc2UgYXJ0aWN1bGF0ZSwKPiB3aXRoIGEg
+cmVhc29uYWJseSBwcmVjaXNlIGV4YW1wbGUsIHdoYXQgaXQgaXMgdGhhdCB5b3Ugd2FudCB0byBk
+bywgd2h5Cj4geW91IGNhbid0IGVhc2lseSBkbyBpdCBhbHJlYWR5LCBhbmQgaG93IHRoaXMgQVBJ
+IGhlbHBzPyAgSSBjdXJyZW50bHkKPiB1bmRlcnN0YW5kIGhvdyB0aGUgQVBJIGNyZWF0ZXMgcHJv
+YmxlbXMsIGJ1dCBJIGRvbid0IHVuZGVyc3RhbmQgaG93IGl0Cj4gc29sdmVzIGFueSBwcm9ibGVt
+cywgYW5kIEkgd2lsbCBOQUsgaXQgKGFuZCBJIHN1c3BlY3QgdGhhdCBFcmljIHdpbGwsCj4gdG9v
+LCB3aGljaCBpcyBwcmV0dHkgbXVjaCBmYXRhbCkgdW5sZXNzIHRoYXQgY2hhbmdlcy4KV2hhdCBJ
+J20gdHJ5aW5nIHRvIHNvbHZlIGlzIHRvIGhhdmUgZnVsbCBpbmZvIGluIG5ldGxpbmsgbWVzc2Fn
+ZXMgc2VudCBieSB0aGUKa2VybmVsLCB0aHVzIGJlZWluZyBhYmxlIHRvIGlkZW50aWZ5IGEgcGVl
+ciBuZXRucyAoYW5kIHRoaXMgaXMgY2xvc2UgZnJvbSB3aGF0CmF1ZGl0IGd1eXMgYXJlIHRyeWlu
+ZyB0byBoYXZlKS4gVGhlb3JpY2FsbHksIG1lc3NhZ2VzIHNlbnQgYnkgdGhlIGtlcm5lbCBjYW4g
+YmUKcmV1c2VkIGFzIGlzIHRvIGhhdmUgdGhlIHNhbWUgY29uZmlndXJhdGlvbi4gVGhpcyBpcyBu
+b3QgdGhlIGNhc2Ugd2l0aCB4LW5ldG5zCmRldmljZXMuIEhlcmUgaXMgYW4gZXhhbXBsZSwgd2l0
+aCBpcCB0dW5uZWxzOgoKJCBpcCBuZXRucyBhZGQgMQokIGlwIGxpbmsgYWRkIGlwaXAxIHR5cGUg
+aXBpcCByZW1vdGUgMTAuMTYuMC4xMjEgbG9jYWwgMTAuMTYuMC4yNDkgZGV2IGV0aDAKJCBpcCAt
+ZCBsaW5rIGxzIGlwaXAxCjg6IGlwaXAxQGV0aDA6IDxQT0lOVE9QT0lOVCxOT0FSUD4gbXR1IDE0
+ODAgcWRpc2Mgbm9vcCBzdGF0ZSBET1dOIG1vZGUgREVGQVVMVCAKZ3JvdXAgZGVmYXVsdAogICAg
+IGxpbmsvaXBpcCAxMC4xNi4wLjI0OSBwZWVyIDEwLjE2LjAuMTIxIHByb21pc2N1aXR5IDAKICAg
+ICBpcGlwIHJlbW90ZSAxMC4xNi4wLjEyMSBsb2NhbCAxMC4xNi4wLjI0OSBkZXYgZXRoMCB0dGwg
+aW5oZXJpdCBwbXR1ZGlzYwokIGlwIGxpbmsgc2V0IGlwaXAxIG5ldG5zIDEKJCBpcCBuZXRucyBl
+eGVjIDEgaXAgLWQgbGluayBscyBpcGlwMQo4OiBpcGlwMUB0dW5sMDogPFBPSU5UT1BPSU5ULE5P
+QVJQLE0tRE9XTj4gbXR1IDE0ODAgcWRpc2Mgbm9vcCBzdGF0ZSBET1dOIG1vZGUgCkRFRkFVTFQg
+Z3JvdXAgZGVmYXVsdAogICAgIGxpbmsvaXBpcCAxMC4xNi4wLjI0OSBwZWVyIDEwLjE2LjAuMTIx
+IHByb21pc2N1aXR5IDAKICAgICBpcGlwIHJlbW90ZSAxMC4xNi4wLjEyMSBsb2NhbCAxMC4xNi4w
+LjI0OSBkZXYgdHVubDAgdHRsIGluaGVyaXQgcG10dWRpc2MKCk5vdyBpbmZvcm1hdGlvbnMgZ290
+IHdpdGggJ2lwIGxpbmsnIGFyZSB3cm9uZyBhbmQgaW5jb21wbGV0ZToKICAtIHRoZSBsaW5rIGRl
+diBpcyBub3cgdHVubDAgaW5zdGVhZCBvZiBldGgwLCBiZWNhdXNlIHdlIG9ubHkgZ290IGFuIGlm
+aW5kZXgKICAgIGZyb20gdGhlIGtlcm5lbCB3aXRob3V0IGFueSBuZXRucyBpbmZvcm1hdGlvbnMu
+CiAgLSB0aGUgZW5jYXBzdWxhdGlvbiBhZGRyZXNzZXMgYXJlIG5vdCBwYXJ0IG9mIHRoaXMgbmV0
+bnMgYnV0IHRoZSB1c2VyIGRvZXNuJ3QKICAgIGtub3duIHRoYXQgKHN0aWxsIGJlY2F1c2UgbmV0
+bnMgaW5mbyBpcyBtaXNzaW5nKS4gVGhlc2UgSVB2NCBhZGRyZXNzZXMgbWF5CiAgICBleGlzdCBp
+bnRvIHRoaXMgbmV0bnMuCiAgLSBpdCdzIG5vdCBwb3NzaWJsZSB0byBjcmVhdGUgdGhlIHNhbWUg
+bmV0ZGV2aWNlIHdpdGggdGhlc2UgaW5mb3MuCgoKSG9wZSBpdCdzIG1vcmUgY2xlYXIgbm93LgoK
+ClJlZ2FyZHMsCk5pY29sYXMKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1m
+b3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9s
+aXN0aW5mby9jb250YWluZXJz
