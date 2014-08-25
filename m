@@ -1,12 +1,16 @@
-From: "ATTENTION" <pede_pede-DVwv8s8LYhRaa/9Udqfwiw@public.gmane.org>
-Subject: Re: Attached File Of Overdue Payment
-Date: Mon, 25 Aug 2014 08:54:19 -0700
-Message-ID: <15640409597473336@smtp.aol.com>
-Reply-To: charlesaddam-9uewiaClKEY@public.gmane.org
+From: Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH V4 3/8] namespaces: expose ns instance serial numbers
+	in proc
+Date: Mon, 25 Aug 2014 15:30:46 +0200
+Message-ID: <53FB3A86.2060203__30687.5857444995$1408973464$gmane$org@6wind.com>
+References: <cover.1408581429.git.rgb@redhat.com>	<cd6cd0622ce677b639afae18a69ff79c72490bab.1408581429.git.rgb@redhat.com>	<CALCETrUnzG1V8w+H9ctAJP+Hvo8LQax=dhLG4bBpBKmVi+C1cQ@mail.gmail.com>	<20140822015803.GG20529@madcap2.tricolour.ca>
+	<CALCETrUkFD0iNi1SV_6ypN5Kf4GYybT5tzjRjRQuLzT9iBnQAg@mail.gmail.com>
+Reply-To: nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
-Content-Type: multipart/mixed; charset="ISO-8859-1";
-	boundary="e=_e0g5ER4FHsNVr6VZXdyp8gOKmXdR9KX0"
+Content-Type: text/plain; charset="windows-1252"; Format="flowed"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <CALCETrUkFD0iNi1SV_6ypN5Kf4GYybT5tzjRjRQuLzT9iBnQAg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,171 +20,76 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format
+Le 24/08/2014 19:52, Andy Lutomirski a =E9crit :
+> On Thu, Aug 21, 2014 at 6:58 PM, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrot=
+e:
+>> On 14/08/21, Andy Lutomirski wrote:
+>>> On Aug 20, 2014 8:12 PM, "Richard Guy Briggs" <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+>>>> Expose the namespace instace serial numbers in the proc filesystem at
+>>>> /proc/<pid>/ns/<ns>_snum.  The link text gives the serial number in he=
+x.
+>>>
+>>> What's the use case?
+>>>
+>>> I understand the utility of giving unique numbers to the audit code,
+>>> but I don't think this part is necessary for that, and I'd like to
+>>> understand what else will use this before committing to a duplicative
+>>> API like this.
+>>
+>> How does a container manager get those numbers?  It could provoke a task
+>> to cause an audit event that emits a NS_INFO message, or it could run a
+>> task in that container to report its namespace serial numbers directly
+>> from its /proc mount.
+>
+> Why does a container manager need them?  Is there any reason that
+> keeping them entirely contained within the audit system would be a
+> problem?
+>
+>>
+>> The discussion in this thread touches on the use cases:
+>>          https://lkml.org/lkml/2014/4/22/662
+>>
+>>> Note that this API is thoroughly incompatible with CRIU.  If we do
+>>> this, someone will ask for a namespace number namespace, and that way
+>>> lies madness.
+>>
+>> I had a very brief look at CRIU, but not enough to understand the issue.
+>> Others have hinted at this problem.
+>>
+>> Do you have a suggestion of a different approach that would be
+>> compatible with CRIU?
+>>
+>> I'd originally considered some sort of UUID that would be globally
+>> unique, but that would be very hard to devise or guarantee, and besides,
+>> namespaces aren't only used by containers and could be shared in other
+>> ways.  Tracking the usage and migration of namespaces should be the task
+>> of an upper layer.
+>>
+>
+> CRIU wants to save the complete state of a namespace and then restore
+> it.  For that to work, any information exposed to things in the
+> namespace *cannot* be globally unique or unique per boot, since CRIU
+> needs to arrange for that information to match whatever it was when
+> CRIU saved it.
+How are ifindex of network devices managed? These ifindexes are unique per =
+boot,
+thus can change depending on the order in which netdev are created.
+These ifindexes are unique per boot and exposed to userspace ...
 
---e=_e0g5ER4FHsNVr6VZXdyp8gOKmXdR9KX0
-Content-Type: text/plain ; charset="ISO-8859-1"
-Content-Transfer-Encoding: quoted-printable
+>
+> Also, I think that code running in a namespace has no business even
+> knowing a unique identity of that namespace from the perspective of
+> the host.
+Another scenario is when you have virtual network devices across two netns.=
+ You
+need to identify the peer netns to have a netlink message which is fully =
 
-Please I will Advice You View The Attached File Of Overdue Payment
+interpretable by the userspace.
 
 
----
-This email is free from viruses and malware because avast! Antivirus protec=
-tion is active.
-http://www.avast.com
-
---e=_e0g5ER4FHsNVr6VZXdyp8gOKmXdR9KX0
-Content-Type: application/octet-stream;
-        name="Important File.rtf"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment;
-        filename="Important File.rtf"
-
-e1xydGYxXGFkZWZsYW5nMTAyNVxhbnNpXGFuc2ljcGcxMjUyXHVjMVxhZGVmZjBcZGVmZjBcc3Rz
-aGZkYmNoMTNcc3RzaGZsb2NoMFxzdHNoZmhpY2gwXHN0c2hmYmkwXGRlZmxhbmcxMDMzXGRlZmxh
-bmdmZTIwNTJ7XGZvbnR0Ymx7XGYwXGZyb21hblxmY2hhcnNldDBcZnBycTJ7XCpccGFub3NlIDAy
-MDIwNjAzMDUwNDA1MDIwMzA0fVRpbWVzIE5ldyBSb21hbjt9e1xmMVxmc3dpc3NcZmNoYXJzZXQw
-XGZwcnEye1wqXHBhbm9zZSAwMjBiMDYwNDAyMDIwMjAyMDIwNH1BcmlhbDt9DQp7XGYxM1xmbmls
-XGZjaGFyc2V0MTM0XGZwcnEye1wqXHBhbm9zZSAwMjAxMDYwMDAzMDEwMTAxMDEwMX1TaW1TdW57
-XCpcZmFsdCA/Pz9cJ2ExXCdlYz8/fTt9e1xmMzdcZm5pbFxmY2hhcnNldDEzNFxmcHJxMntcKlxw
-YW5vc2UgMDIwMTA2MDAwMzAxMDEwMTAxMDF9QFNpbVN1bjt9e1xmNTBcZnJvbWFuXGZjaGFyc2V0
-MjM4XGZwcnEyIFRpbWVzIE5ldyBSb21hbiBDRTt9DQp7XGY1MVxmcm9tYW5cZmNoYXJzZXQyMDRc
-ZnBycTIgVGltZXMgTmV3IFJvbWFuIEN5cjt9e1xmNTNcZnJvbWFuXGZjaGFyc2V0MTYxXGZwcnEy
-IFRpbWVzIE5ldyBSb21hbiBHcmVlazt9e1xmNTRcZnJvbWFuXGZjaGFyc2V0MTYyXGZwcnEyIFRp
-bWVzIE5ldyBSb21hbiBUdXI7fXtcZjU1XGZiaWRpIFxmcm9tYW5cZmNoYXJzZXQxNzdcZnBycTIg
-VGltZXMgTmV3IFJvbWFuIChIZWJyZXcpO30NCntcZjU2XGZiaWRpIFxmcm9tYW5cZmNoYXJzZXQx
-NzhcZnBycTIgVGltZXMgTmV3IFJvbWFuIChBcmFiaWMpO317XGY1N1xmcm9tYW5cZmNoYXJzZXQx
-ODZcZnBycTIgVGltZXMgTmV3IFJvbWFuIEJhbHRpYzt9e1xmNThcZnJvbWFuXGZjaGFyc2V0MTYz
-XGZwcnEyIFRpbWVzIE5ldyBSb21hbiAoVmlldG5hbWVzZSk7fXtcZjYwXGZzd2lzc1xmY2hhcnNl
-dDIzOFxmcHJxMiBBcmlhbCBDRTt9DQp7XGY2MVxmc3dpc3NcZmNoYXJzZXQyMDRcZnBycTIgQXJp
-YWwgQ3lyO317XGY2M1xmc3dpc3NcZmNoYXJzZXQxNjFcZnBycTIgQXJpYWwgR3JlZWs7fXtcZjY0
-XGZzd2lzc1xmY2hhcnNldDE2MlxmcHJxMiBBcmlhbCBUdXI7fXtcZjY1XGZiaWRpIFxmc3dpc3Nc
-ZmNoYXJzZXQxNzdcZnBycTIgQXJpYWwgKEhlYnJldyk7fXtcZjY2XGZiaWRpIFxmc3dpc3NcZmNo
-YXJzZXQxNzhcZnBycTIgQXJpYWwgKEFyYWJpYyk7fQ0Ke1xmNjdcZnN3aXNzXGZjaGFyc2V0MTg2
-XGZwcnEyIEFyaWFsIEJhbHRpYzt9e1xmNjhcZnN3aXNzXGZjaGFyc2V0MTYzXGZwcnEyIEFyaWFs
-IChWaWV0bmFtZXNlKTt9e1xmMTgyXGZuaWxcZmNoYXJzZXQwXGZwcnEyIFNpbVN1biBXZXN0ZXJu
-e1wqXGZhbHQgPz8/XCdhMVwnZWM/P307fXtcZjQyMlxmbmlsXGZjaGFyc2V0MFxmcHJxMiBAU2lt
-U3VuIFdlc3Rlcm47fX17XGNvbG9ydGJsO1xyZWQwXGdyZWVuMFxibHVlMDsNClxyZWQwXGdyZWVu
-MFxibHVlMjU1O1xyZWQwXGdyZWVuMjU1XGJsdWUyNTU7XHJlZDBcZ3JlZW4yNTVcYmx1ZTA7XHJl
-ZDI1NVxncmVlbjBcYmx1ZTI1NTtccmVkMjU1XGdyZWVuMFxibHVlMDtccmVkMjU1XGdyZWVuMjU1
-XGJsdWUwO1xyZWQyNTVcZ3JlZW4yNTVcYmx1ZTI1NTtccmVkMFxncmVlbjBcYmx1ZTEyODtccmVk
-MFxncmVlbjEyOFxibHVlMTI4O1xyZWQwXGdyZWVuMTI4XGJsdWUwO1xyZWQxMjhcZ3JlZW4wXGJs
-dWUxMjg7DQpccmVkMTI4XGdyZWVuMFxibHVlMDtccmVkMTI4XGdyZWVuMTI4XGJsdWUwO1xyZWQx
-MjhcZ3JlZW4xMjhcYmx1ZTEyODtccmVkMTkyXGdyZWVuMTkyXGJsdWUxOTI7fXtcc3R5bGVzaGVl
-dHtccWwgXGxpMFxyaTBcd2lkY3RscGFyXGFzcGFscGhhXGFzcG51bVxmYWF1dG9cYWRqdXN0cmln
-aHRccmluMFxsaW4wXGl0YXAwIFxydGxjaFxmY3MxIFxhZjBcYWZzMjRcYWxhbmcxMDI1IFxsdHJj
-aFxmY3MwIA0KXGZzMjRcbGFuZzEwMzNcbGFuZ2ZlMjA1Mlxsb2NoXGYwXGhpY2hcYWYwXGRiY2hc
-YWYxM1xjZ3JpZFxsYW5nbnAxMDMzXGxhbmdmZW5wMjA1MiBcc25leHQwIE5vcm1hbDt9e1wqXGNz
-MTAgXGFkZGl0aXZlIFxzc2VtaWhpZGRlbiBEZWZhdWx0IFBhcmFncmFwaCBGb250O317XCoNClx0
-czExXHRzcm93ZFx0cmZ0c1dpZHRoQjNcdHJwYWRkbDEwOFx0cnBhZGRyMTA4XHRycGFkZGZsM1x0
-cnBhZGRmdDNcdHJwYWRkZmIzXHRycGFkZGZyM1x0cmNicGF0MVx0cmNmcGF0MVx0c2NlbGx3aWR0
-aGZ0czBcdHN2ZXJ0YWx0XHRzYnJkcnRcdHNicmRybFx0c2JyZHJiXHRzYnJkcnJcdHNicmRyZGds
-XHRzYnJkcmRnclx0c2JyZHJoXHRzYnJkcnYgDQpccWwgXGxpMFxyaTBcd2lkY3RscGFyXGFzcGFs
-cGhhXGFzcG51bVxmYWF1dG9cYWRqdXN0cmlnaHRccmluMFxsaW4wXGl0YXAwIFxydGxjaFxmY3Mx
-IFxhZjBcYWZzMjAgXGx0cmNoXGZjczAgXGZzMjBcbGFuZzEwMjRcbGFuZ2ZlMTAyNFxsb2NoXGYw
-XGhpY2hcYWYwXGRiY2hcYWYxM1xjZ3JpZFxsYW5nbnAxMDI0XGxhbmdmZW5wMTAyNCBcc25leHQx
-MSBcc3NlbWloaWRkZW4gTm9ybWFsIFRhYmxlO319e1wqXHJzaWR0YmwgXHJzaWQxODU0NDYwDQpc
-cnNpZDEwOTA0MzEyXHJzaWQxMTI3NzE4M1xyc2lkMTE2OTQ1ODdccnNpZDE2MjA0OTY1fXtcKlxn
-ZW5lcmF0b3IgTWljcm9zb2Z0IFdvcmQgMTAuMC4yNjI3O317XGluZm97XHRpdGxlIEZyb20gRGVz
-ayBvZiB0aGUgU2VjcmV0YXJ5LUdlbmVyYWx9e1xhdXRob3IgdXNlcn17XG9wZXJhdG9yIHVzZXJ9
-e1xjcmVhdGltXHlyMjAxNFxtbzhcZHk0XGhyMTlcbWluMTN9e1xyZXZ0aW1ceXIyMDE0XG1vOFxk
-eTRcaHIxOVxtaW4xM317XHZlcnNpb24yfQ0Ke1xlZG1pbnM3fXtcbm9mcGFnZXMxfXtcbm9md29y
-ZHMyMTF9e1xub2ZjaGFyczEyMDR9e1xub2ZjaGFyc3dzMTQxM317XHZlcm4xNjQzN319XG1hcmds
-MTQ0MFxtYXJncjE0NDBcbHRyc2VjdCBcd2lkb3djdHJsXGZ0bmJqXGFlbmRkb2Ncbm94bGF0dG95
-ZW5cZXhwc2hydG5cbm91bHRybHNwY1xkbnRibG5zYmRiXG5vc3BhY2Vmb3J1bFxoeXBoY2FwczBc
-aG9yemRvY1xkZ2hzcGFjZTEyMFxkZ3ZzcGFjZTEyMFxkZ2hvcmlnaW4xNzAxDQpcZGd2b3JpZ2lu
-MTk4NFxkZ2hzaG93MFxkZ3ZzaG93M1xqY29tcHJlc3Ncdmlld2tpbmQxXHZpZXdzY2FsZTEwMFxu
-b2xuaHRhZGp0YmxccnNpZHJvb3QxMDkwNDMxMiBcZmV0MFxsdHJwYXIgXHNlY3RkIFxsdHJzZWN0
-XGxpbmV4MFxzZWN0ZGVmYXVsdGNsXHNmdG5iaiB7XCpccG5zZWNsdmwxXHBudWNybVxwbnFjXHBu
-c3RhcnQxXHBuaW5kZW50NzIwXHBuaGFuZyB7XHBudHh0YSAufX17XCpccG5zZWNsdmwyDQpccG51
-Y2x0clxwbnFjXHBuc3RhcnQxXHBuaW5kZW50NzIwXHBuaGFuZyB7XHBudHh0YSAufX17XCpccG5z
-ZWNsdmwzXHBuZGVjXHBucWNccG5zdGFydDFccG5pbmRlbnQ3MjBccG5oYW5nIHtccG50eHRhIC59
-fXtcKlxwbnNlY2x2bDRccG5sY2x0clxwbnFjXHBuc3RhcnQxXHBuaW5kZW50NzIwXHBuaGFuZyB7
-XHBudHh0YSApfX17XCpccG5zZWNsdmw1XHBuZGVjXHBucWNccG5zdGFydDFccG5pbmRlbnQ3MjBc
-cG5oYW5nIHtccG50eHRiICh9DQp7XHBudHh0YSApfX17XCpccG5zZWNsdmw2XHBubGNsdHJccG5x
-Y1xwbnN0YXJ0MVxwbmluZGVudDcyMFxwbmhhbmcge1xwbnR4dGIgKH17XHBudHh0YSApfX17XCpc
-cG5zZWNsdmw3XHBubGNybVxwbnFjXHBuc3RhcnQxXHBuaW5kZW50NzIwXHBuaGFuZyB7XHBudHh0
-YiAofXtccG50eHRhICl9fXtcKlxwbnNlY2x2bDhccG5sY2x0clxwbnFjXHBuc3RhcnQxXHBuaW5k
-ZW50NzIwXHBuaGFuZyB7XHBudHh0YiAofXtccG50eHRhICl9fQ0Ke1wqXHBuc2VjbHZsOVxwbmxj
-cm1ccG5xY1xwbnN0YXJ0MVxwbmluZGVudDcyMFxwbmhhbmcge1xwbnR4dGIgKH17XHBudHh0YSAp
-fX1ccGFyZFxwbGFpbiBcbHRycGFyXHFsIFxsaTBccmkwXG5vd2lkY3RscGFyXGZhYXV0b1xyaW4w
-XGxpbjBcaXRhcDBccGFyYXJzaWQxNjIwNDk2NSBccnRsY2hcZmNzMSBcYWYwXGFmczI0XGFsYW5n
-MTAyNSBcbHRyY2hcZmNzMCANClxmczI0XGxhbmcxMDMzXGxhbmdmZTIwNTJcbG9jaFxhZjBcaGlj
-aFxhZjBcZGJjaFxhZjEzXGNncmlkXGxhbmducDEwMzNcbGFuZ2ZlbnAyMDUyIHtccnRsY2hcZmNz
-MSBcYWYxXGFmczIwIFxsdHJjaFxmY3MwIFxmMVxmczIwXGluc3JzaWQxNjIwNDk2NSBcaGljaFxh
-ZjFcZGJjaFxhZjEzXGxvY2hcZjEgRnJvbSBEZXNrIG9mIHRoZSBTZWNyZXRhcnktR2VuZXJhbA0K
-XHBhciANClxwYXIgXGhpY2hcYWYxXGRiY2hcYWYxM1xsb2NoXGYxIFdvcmxkIEJhbmsgR3JvdXAs
-IExPTkRPTiwgVU5JVEVEIEtJTkdET00NClxwYXIgDQpccGFyIFxoaWNoXGFmMVxkYmNoXGFmMTNc
-bG9jaFxmMSBEZWFyIFNpci9NYWRhbQ0KXHBhciANClxwYXIgDQpccGFyIA0KXHBhciBcaGljaFxh
-ZjFcZGJjaFxhZjEzXGxvY2hcZjEgSSBhbSBNclxoaWNoXGFmMVxkYmNoXGFmMTNcbG9jaFxmMSAN
-Ci4gQ2hhcmxlcyBBZGFtcywgQmlsbCBhbmQgRXhjaGFuZ2UgTWFuYWdlci8gU2VjcmV0YXJ5IEdl
-bmVyYWwsIEhlYWQgb2YgdGhlIFdvcmxkIEJhbmsgRmluYW5jZSBHcm91cCwgTG9uZG9uIEJyYW5j
-aCwgc2V0IHVwIHRvIGZpZ2h0IGFnYWluc3Qgc2NhbSBhbmQgZnJhdWR1bGVudCBhY3Rpdml0aWVz
-IHdvcmxkd2lkZS4gVGhpcyBHcm91cCBpcyByZXNwb25zaWJsZSBmb3IgaW52ZXN0aWdhdGluZyB0
-aGUgbGVnaXRpbWFjeSBvZiB1bnBhaWQgY29udA0KXGhpY2hcYWYxXGRiY2hcYWYxM1xsb2NoXGYx
-IHJcaGljaFxhZjFcZGJjaFxhZjEzXGxvY2hcZjEgDQphY3QsIGluaGVyaXRhbmNlIGFuZCBsb3R0
-byB3aW5uaW5nIGNsYWltcyBieSBjb21wYW5pZXMgYW5kIGluZGl2aWR1YWxzIGFuZCBkaXJlY3Rz
-IHRoZSBwYXlpbmcgYXV0aG9yaXRpZXMgKGJhbmtzKSB3b3JsZHdpZGUgdG8gbWFrZSBpbW1lZGlh
-dGUgcGF5bWVudCBvZiB2ZXJpZmllZCBjbGFpbXMgdG8gdGhlIGJlbmVmaWNpYXJpZXMgd2l0aG91
-dCBmdXJ0aGVyIGRlbGF5Lg0KXHBhciANClxwYXIgDQpccGFyIA0KXHBhciANClxwYXIgXGhpY2hc
-YWYxXGRiY2hcYWYxM1xsb2NoXGYxIFlvdSBhcmUgYmVpbmcgbGVnYWxseSBjb250YWN0ZWQgcmVn
-YXJkaVxoaWNoXGFmMVxkYmNoXGFmMTNcbG9jaFxmMSBuZyB0aGUgcmVsZWFzZSBvZiB5b3VyIGxv
-bmcgYXdhaXRlZCBmdW5kLiBBZnRlciBhIGRldGFpbGVkIHJldmlldyBvZiB5b3VyIGZpbGUsIHRo
-ZSBXb3JsZCBCYW5rIEdyb3VwIGhhcyBtYW5kYXRlZCB0aGF0IHlvdXIgZnVuZCBzaG91bGQgYmUg
-cmVsZWFzZSBpbW1lZGlhdGVseSANClxoaWNoXGFmMVxkYmNoXGFmMTNcbG9jaFxmMSB0aGVcaGlj
-aFxhZjFcZGJjaFxhZjEzXGxvY2hcZjEgIHN1bSBvZiBVUyQxMCw2MjUsMDAwLjAwIChUZW4gTWls
-bGlvbiBTaXggSHVuZHJlZCBhbmQgVHdlbnR5IEZpdmUgVGhvdXNhbmQgVW5pdGVkIFN0YXRlcyBE
-b2xsYVxoaWNoXGFmMVxkYmNoXGFmMTNcbG9jaFxmMSANCnJzKSBoYXMgYmVlbiBhcHByb3ZlZCBp
-biB5b3VyIGZhdm9yIHZpYSBteSBkZXNrLiBJIHRoZXJlZm9yZSB3aXNoIHRvIGluZm9ybSB5b3Ug
-dGhhdCB5b3VyIHBheW1lbnQgaXMgYmVpbmcgcHJvY2Vzc2VkIGFuZCB3aWxsIGJlIHJlbGVhc2Vk
-IHRvIHlvdSBhcyBzb29uIGFzIHlvdSByZXNwb25kIHRvIHRoaXMgbGV0dGVyLg0KXHBhciANClxw
-YXIgDQpccGFyIA0KXHBhciBcaGljaFxhZjFcZGJjaFxhZjEzXGxvY2hcZjEgUGxlYXNlIHJlLWNv
-bmZpcm0gdG8gdXMgdGhlIGZvbGxvd2luZzoNClxwYXIgDQpccGFyIA0KXHBhciANClxwYXIgXGhp
-Y2hcYWYxXGRiY2hcYWYxM1xsb2NoXGYxICgxKSBZb3VyIEZ1bGwgTmFtZX17XHJ0bGNoXGZjczEg
-XGFmMVxhZnMyMiBcbHRyY2hcZmNzMCBcZjFcZnMyMlxjZjZcaW5zcnNpZDE2MjA0OTY1XGNoYXJy
-c2lkMTg1NDQ2MCBcaGljaFxhZjFcZGJjaFxhZjEzXGxvY2hcZjEgOlxoaWNoXGFmMVxkYmNoXGFm
-MTNcbG9jaFxmMSAgDQpccGFyIH17XHJ0bGNoXGZjczEgXGFmMVxhZnMyMCBcbHRyY2hcZmNzMCBc
-ZjFcZnMyMFxpbnNyc2lkMTYyMDQ5NjUgDQpccGFyIFxoaWNoXGFmMVxkYmNoXGFmMTNcbG9jaFxm
-MSAoMikgUGhvbmUsIEZheCBhbg0KXHBhciANClxwYXIgXGhpY2hcYWYxXGRiY2hcYWYxM1xsb2No
-XGYxIE1vYmlsZSBOdW1iZXJ9e1xydGxjaFxmY3MxIFxhZjFcYWZzMjAgXGx0cmNoXGZjczAgXGYx
-XGZzMjBcY2Y2XGluc3JzaWQxNjIwNDk2NVxjaGFycnNpZDE4NTQ0NjAgXGhpY2hcYWYxXGRiY2hc
-YWYxM1xsb2NoXGYxIDoNClxwYXIgfXtccnRsY2hcZmNzMSBcYWYxXGFmczIwIFxsdHJjaFxmY3Mw
-IFxmMVxmczIwXGluc3JzaWQxNjIwNDk2NSANClxwYXIgXGhpY2hcYWYxXGRiY2hcYWYxM1xsb2No
-XGYxICgzKSBDb21wYW55IE5hbWUsIEhvbWUgQWRkcmVzczpcaGljaFxhZjFcZGJjaFxhZjEzXGxv
-Y2hcZjEgIA0KXHBhciANClxwYXIgXGhpY2hcYWYxXGRiY2hcYWYxM1xsb2NoXGYxICg0KSBQcm9m
-ZXNzaW9uLCBBZ2UgYW5kIE1hcml0YWwgc3RhdHVzOlxoaWNoXGFmMVxkYmNoXGFmMTNcbG9jaFxm
-MSAgfXtccnRsY2hcZmNzMSBcYWYxXGFmczIwIFxsdHJjaFxmY3MwIFxmMVxmczIwXGNmNlxpbnNy
-c2lkMTYyMDQ5NjVcY2hhcnJzaWQxODU0NDYwIA0KXHBhciB9e1xydGxjaFxmY3MxIFxhZjFcYWZz
-MjAgXGx0cmNoXGZjczAgXGYxXGZzMjBcaW5zcnNpZDE2MjA0OTY1IA0KXHBhciANClxwYXIgDQpc
-cGFyIFxoaWNoXGFmMVxkYmNoXGFmMTNcbG9jaFxmMSBOb3RlIHRoYXQgdGhlIGFib3ZlIGZ1bmQg
-aGFzIGJlZW4gY2xlYXJlZCBmcm9tIHRlcnJvcmlzdCBvciBmcmF1ZCByZWxhdGVkIGFjdGl2aXRp
-ZXMuDQpccGFyIA0KXHBhciBcaGljaFxhZjFcZGJjaFxhZjEzXGxvY2hcZjEgVGhhbmtzIGZvciBZ
-b3VyIENvb3BlcmF0aW9uLg0KXHBhciANClxwYXIgDQpccGFyIA0KXHBhciBcaGljaFxhZjFcZGJj
-aFxhZjEzXGxvY2hcZjEgTXIuIENoYXJsZXMgQWRhbXMNClxwYXIgDQpccGFyIFxoaWNoXGFmMVxk
-YmNoXGFmMTNcbG9jaFxmMSAoU2VjcmV0YXJ5LUdlbmVyYWwpDQpccGFyIA0KXHBhciBcaGljaFxh
-ZjFcZGJjaFxhZjEzXGxvY2hcZjEgV29ybGQgQmFuayBHclxoaWNoXGFmMVxkYmNoXGFmMTNcbG9j
-aFxmMSBvdXAufXtccnRsY2hcZmNzMSBcYWYxXGFmczIwIFxsdHJjaFxmY3MwIFxmMVxmczIwXGNm
-MVxpbnNyc2lkMTYyMDQ5NjUgXGhpY2hcYWYxXGRiY2hcYWYxM1xsb2NoXGYxICB9e1xydGxjaFxm
-Y3MxIFxhZjBcYWZzMjAgXGx0cmNoXGZjczAgXGluc3JzaWQxNjIwNDk2NVxjaGFycnNpZDEwOTA0
-MzEyIA0KXHBhciB9XHBhcmQgXGx0cnBhclxxbCBcbGkwXHJpMFx3aWRjdGxwYXJcYXNwYWxwaGFc
-YXNwbnVtXGZhYXV0b1xhZGp1c3RyaWdodFxyaW4wXGxpbjBcaXRhcDBccGFyYXJzaWQxNjIwNDk2
-NSB7XHJ0bGNoXGZjczEgXGFmMFxhZnMyMCBcbHRyY2hcZmNzMCBcaW5zcnNpZDEwOTA0MzEyXGNo
-YXJyc2lkMTYyMDQ5NjUgXGhpY2hcYWYwXGRiY2hcYWYxM1xsb2NoXGYwICB9e1xydGxjaFxmY3Mx
-IFxhZjBcYWZzMjAgXGx0cmNoXGZjczAgDQpcaW5zcnNpZDExNjk0NTg3XGNoYXJyc2lkMTYyMDQ5
-NjUgDQpccGFyIH19
-
---e=_e0g5ER4FHsNVr6VZXdyp8gOKmXdR9KX0
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---e=_e0g5ER4FHsNVr6VZXdyp8gOKmXdR9KX0--
+Regards,
+Nicolas
