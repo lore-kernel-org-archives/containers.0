@@ -1,24 +1,13 @@
-From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH V4 3/8] namespaces: expose ns instance serial numbers in
-	proc
-Date: Wed, 27 Aug 2014 11:17:01 -0400
-Message-ID: <20140827151701.GO20529__28148.0270591148$1409152676$gmane$org@madcap2.tricolour.ca>
-References: <cd6cd0622ce677b639afae18a69ff79c72490bab.1408581429.git.rgb@redhat.com>
-	<CALCETrUnzG1V8w+H9ctAJP+Hvo8LQax=dhLG4bBpBKmVi+C1cQ@mail.gmail.com>
-	<20140822015803.GG20529@madcap2.tricolour.ca>
-	<CALCETrUkFD0iNi1SV_6ypN5Kf4GYybT5tzjRjRQuLzT9iBnQAg@mail.gmail.com>
-	<53FB3A86.2060203@6wind.com>
-	<CALCETrW1Lv0qeccMjNHSEzgtiaNN3NgJVR1dFjjR_dw5KVVnqA@mail.gmail.com>
-	<53FB59A3.5030804@6wind.com>
-	<CALCETrWHrWhm89B5s=pLt_9eTx3ZF8ifA6y6CwknWaWU7dp=sQ@mail.gmail.com>
-	<53FB673F.8070200@6wind.com>
-	<CALCETrVVQ2Ugesq8zWK_gmj46Zr6mFL2Riyf=Lrdqy8ze3YfPA@mail.gmail.com>
+From: <postmaster-jqgE5fp0DjpH6FXHpj7jOcmnrtQfU0CGQQ4Iyu8u01E@public.gmane.org>
+Subject: Undeliverable: 0rder 7409275964
+Date: Wed, 27 Aug 2014 17:35:54 +0000
+Message-ID: <b325a8a0-d27d-432b-b0fd-61c5898f3fc1@HKXPR02MB246.apcprd02.prod.outlook.com>
+References: <006801cfc21d$56045b80$0a00a8c0@fix.85.147.212.vtx.ch>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: multipart/mixed; boundary="===============2981509251680741753=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <CALCETrVVQ2Ugesq8zWK_gmj46Zr6mFL2Riyf=Lrdqy8ze3YfPA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Language: en-US
+In-Reply-To: <006801cfc21d$56045b80$0a00a8c0-ZyUUbeKRWpXrGyE43YLB5W8xMaXul+a5@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -28,258 +17,211 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 14/08/25, Andy Lutomirski wrote:
-> On Mon, Aug 25, 2014 at 9:41 AM, Nicolas Dichtel
-> <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org> wrote:
-> > Le 25/08/2014 18:13, Andy Lutomirski a =E9crit :
-> >
-> >> On Mon, Aug 25, 2014 at 8:43 AM, Nicolas Dichtel
-> >> <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org> wrote:
-> >>>
-> >>> Le 25/08/2014 16:04, Andy Lutomirski a =E9crit :
-> >>>
-> >>>> On Aug 25, 2014 6:30 AM, "Nicolas Dichtel" <nicolas.dichtel-pdR9zngts4E@public.gmane.org=
-m>
-> >>>> wrote:
-> >>>>>>
-> >>>>>>
-> >>>>>> CRIU wants to save the complete state of a namespace and then rest=
-ore
-> >>>>>> it.  For that to work, any information exposed to things in the
-> >>>>>> namespace *cannot* be globally unique or unique per boot, since CR=
-IU
-> >>>>>> needs to arrange for that information to match whatever it was when
-> >>>>>> CRIU saved it.
-> >>>>>
-> >>>>>
-> >>>>>
-> >>>>> How are ifindex of network devices managed? These ifindexes are uni=
-que
-> >>>>> per boot,
-> >>>>> thus can change depending on the order in which netdev are created.
-> >>>>> These ifindexes are unique per boot and exposed to userspace ...
-> >>>>>
-> >>>>
-> >>>> This does not appear to be true.
-> >>>>
-> >>>> $ sudo unshare --net
-> >>>> # ip link add veth0 type veth peer name veth1
-> >>>> # ip link
-> >>>> 1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN mode DEFAULT group
-> >>>> default
-> >>>>       link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
-> >>>> 2: veth1: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode
-> >>>> DEFAULT group default qlen 1000
-> >>>>       link/ether 06:0d:59:c7:a6:a8 brd ff:ff:ff:ff:ff:ff
-> >>>> 3: veth0: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode
-> >>>> DEFAULT group default qlen 1000
-> >>>>       link/ether b2:5c:8b:f2:12:28 brd ff:ff:ff:ff:ff:ff
-> >>>> # logout
-> >>>> $ ip link
-> >>>> 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
-> >>>>       link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
-> >>>> 3: em1: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc pfifo_fast
-> >>>> state DOWN qlen 1000
-> >>>>
-> >>> I've probably misunderstood what you're trying to say. ifindexes are
-> >>> unique
-> >>> per
-> >>> boot and per netns.
-> >>
-> >>
-> >> I think we both misunderstood each other.  The ifindexes are unique
-> >> *per netns*, which means that, if you're unprivileged in a netns,
-> >> global information doesn't leak to you.  I think this is good.
-> >
-> > Ok, I agree. I think audit daemons are always running under privileged
-> > users.
-> >
-> >
-> >>
-> >>>>
-> >>>> Let me try again, with emphasis in the right place.
-> >>>>
-> >>>> I think that *code running in a namespace* has no business even
-> >>>> knowing a unique identity of *that namespace* from the perspective of
-> >>>> the host.
-> >>>>
-> >>>> In your example, if there's a veth device between netns A and netns =
-B,
-> >>>> then code *in netns A* has no business knowing the identity of its
-> >>>> veth peer if its peer (B) is a sibling or ancestor.  It also IMO has
-> >>>> no business knowing the identity of its own netns (A) other than as
-> >>>> "my netns".
-> >>>
-> >>>
-> >>> I do not agree (see the example below).
-> >>>
-> >>>
-> >>>>
-> >>>> If A and B are siblings, then their parent needs to know where that
-> >>>> veth device goes, but I think this is already the case to a sufficie=
-nt
-> >>>> extent today.
-> >>>
-> >>>
-> >>> I'm not aware of a hierarchy between netns. A daemon should be able to
-> >>> got the full network configuration, even if it's started when this
-> >>> configuration
-> >>> is already applied, ie even if it doesn't know what happen before it
-> >>> starts.
-> >>>
-> >>
-> >> I don't know exactly which namespaces have an explicit hierarchy, but
-> >> there is certainly a hierarchy of *user* namespaces, and network
-> >> namespaces live in user namespaces, so they at least have somewhat of
-> >> a hierarchy.
-> >>
-> >>>
-> >>>>
-> >>>> I feel like this discussion is falling into a common trap of new API
-> >>>> discussions.  Can one of you who wants this API please articulate,
-> >>>> with a reasonably precise example, what it is that you want to do, w=
-hy
-> >>>> you can't easily do it already, and how this API helps?  I currently
-> >>>> understand how the API creates problems, but I don't understand how =
-it
-> >>>> solves any problems, and I will NAK it (and I suspect that Eric will,
-> >>>> too, which is pretty much fatal) unless that changes.
-> >>>
-> >>>
-> >>> What I'm trying to solve is to have full info in netlink messages sen=
-t by
-> >>> the
-> >>> kernel, thus beeing able to identify a peer netns (and this is close =
-from
-> >>> what
-> >>> audit guys are trying to have). Theorically, messages sent by the ker=
-nel
-> >>> can
-> >>> be
-> >>> reused as is to have the same configuration. This is not the case with
-> >>> x-netns
-> >>> devices. Here is an example, with ip tunnels:
-> >>>
-> >>> $ ip netns add 1
-> >>> $ ip link add ipip1 type ipip remote 10.16.0.121 local 10.16.0.249 dev
-> >>> eth0
-> >>> $ ip -d link ls ipip1
-> >>> 8: ipip1@eth0: <POINTOPOINT,NOARP> mtu 1480 qdisc noop state DOWN mode
-> >>> DEFAULT group default
-> >>>      link/ipip 10.16.0.249 peer 10.16.0.121 promiscuity 0
-> >>>      ipip remote 10.16.0.121 local 10.16.0.249 dev eth0 ttl inherit
-> >>> pmtudisc
-> >>> $ ip link set ipip1 netns 1
-> >>> $ ip netns exec 1 ip -d link ls ipip1
-> >>> 8: ipip1@tunl0: <POINTOPOINT,NOARP,M-DOWN> mtu 1480 qdisc noop state =
-DOWN
-> >>> mode DEFAULT group default
-> >>>      link/ipip 10.16.0.249 peer 10.16.0.121 promiscuity 0
-> >>>      ipip remote 10.16.0.121 local 10.16.0.249 dev tunl0 ttl inherit
-> >>> pmtudisc
-> >>>
-> >>> Now informations got with 'ip link' are wrong and incomplete:
-> >>>   - the link dev is now tunl0 instead of eth0, because we only got an
-> >>> ifindex
-> >>>     from the kernel without any netns informations.
-> >>>   - the encapsulation addresses are not part of this netns but the us=
-er
-> >>> doesn't
-> >>>     known that (still because netns info is missing). These IPv4
-> >>> addresses
-> >>> may
-> >>>     exist into this netns.
-> >>>   - it's not possible to create the same netdevice with these infos.
-> >>>
-> >>
-> >> Aha.  That's a genuine problem.
-> >>
-> >> Perhaps we need a concept of which netnses should be able to see each
-> >> other.
-> >
-> > Yes, I agree. This is not required for all netns, only a subset of netns
-> > should
-> >
-> > be able to see each other.
-> >
-> >>
-> >> I think I would be okay with a somewhat different outcome from your
-> >> example:
-> >>
-> >> $ ip netns exec 1 ip -d link ls ipip1
-> >> 8: ipip1@[unknown device in another namespace]:
-> >> <POINTOPOINT,NOARP,M-DOWN> mtu 1480 qdisc noop state DOWN
-> >>
-> >> I think this outcome is mandatory if netns 1 lives in a subsidiary
-> >> user namespace.
-> >
-> > Yes.
-> >
-> >
-> >>
-> >> Certainly, if you do the 'ip link' in the original namespace, I agree
-> >> that this should work.
-> >
-> > And yes :)
-> >
-> > I will update my previous proposal
-> > (http://thread.gmane.org/gmane.linux.network/315933/focus=3D321753)
-> > to allow to get an id for a peer netns only when the user namespace is =
-the
-> > same.
-> =
+--===============2981509251680741753==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="26d5d51e-aa24-4142-bfdf-fec64c554755"
+Content-Language: en-US
 
-> I think it should work if the peer userns is the same or a descendent.
-> I also wonder whether the peer's ifindex should be suppressed if peer
-> userns is not the same or a descendent.
-> =
+--26d5d51e-aa24-4142-bfdf-fec64c554755
+Content-Type: text/plain; charset="Windows-1252"
+Content-Transfer-Encoding: quoted-printable
 
-> Now you just have to get Eric to be happy with the id allocation. :)
-> This may be nontrivial.
-> =
+Delivery has failed to these recipients or groups:
 
-> >> For most namespace types, this all works transparently, since
-> >> everything has an real identity all the way up the hierarchy.  Network
-> >> namespaces are different.
-> >>
-> >> I don't think that exposing serial numbers in /proc is a good
-> >> solution, both for the reasons already described and because I don't
-> >> think that iproute2 should need to muck around with /proc to function
-> >
-> > A netlink API is probably enough. But it will help only for the network
-> > problem, not for audit. I was hoping to find a common solution.
-> =
+newsletters-6eTTe190j59jw1KLL+b5wQ2qpkVpPULF@public.gmane.org<mailto:newsletters-6eTTe190j59jw1KLL+b5wQ2qpkVpPULF@public.gmane.org>
+The email address you specified couldn't be found or is invalid. It may be =
+due to a bad entry in your Outlook or Outlook Web App recipient AutoComplet=
+e cache. Use the steps below to delete the entry from the cache:
 
-> I still don't understand why audit needs anything beyond the audit
-> part of this patch set.  I have no problem with audit seeing that
-> migrated/restored namespaces are really brand-new namespaces, as long
-> as the code in those namespaces isn't exposed to it.
+  1.  Click New mail.
+  2.  In the To field start typing the recipient's name or email address un=
+til the recipient appears in the drop-down list.
+  3.  Use the DOWN ARROW and UP ARROW keys to select the recipient, and the=
+n press the DELETE key.
 
-Ok, I'm starting to get this...  Perhaps /proc wasn't the best place to
-expose this.  Audit or an audit aggregator is the only one that needs to
-know any of this information.  This could be accomplished with
-CAP_AUDIT_CONTROL and a new netlink audit message type to fetch
-individual or all namespace IDs for a particular PID via auditctl, or by
-having a CAP_AUDIT_WRITE-capable application pull the trigger to simply
-dump that information to the log.
+Then resend your message =96 delete and retype the recipient=92s name or e-=
+mail address before sending it.
 
-> >> correctly.  Eric, any clever ideas here?  Do we need fancier netlink
-> >> messages for this?
-> >>
-> >> --Andy
-> =
+For more tips on how to resolve this issue see DSN code 5.1.1 in Exchange O=
+nline<http://go.microsoft.com/fwlink/?LinkId=3D389363>.
 
-> Andy Lutomirski
 
-- RGB
 
---
-Richard Guy Briggs <rbriggs-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Senior Software Engineer, Kernel Security, AMER ENG Base Operating Systems,=
- Red Hat
-Remote, Ottawa, Canada
-Voice: +1.647.777.2635, Internal: (81) 32635, Alt: +1.613.693.0684x3545
+
+
+
+
+
+Diagnostic information for administrators:
+
+Generating server: HKXPR02MB246.apcprd02.prod.outlook.com
+
+newsletters-6eTTe190j59jw1KLL+b5wQ2qpkVpPULF@public.gmane.org
+Remote Server returned '550 5.1.1 RESOLVER.ADR.RecipNotFound; not found'
+
+Original message headers:
+
+Received: from HKNPR02CA016.apcprd02.prod.outlook.com (10.141.16.11) by
+ HKXPR02MB246.apcprd02.prod.outlook.com (10.141.131.18) with Microsoft SMTP
+ Server (TLS) id 15.0.1015.19; Wed, 27 Aug 2014 17:35:53 +0000
+Received: from AM1FFO11FD026.protection.gbl (2a01:111:f400:7e00::150) by
+ HKNPR02CA016.outlook.office365.com (2a01:111:e400:a000::11) with Microsoft
+ SMTP Server (TLS) id 15.0.1015.19 via Frontend Transport; Wed, 27 Aug 2014
+ 17:35:52 +0000
+Received: from fix.85.147.212.vtx.ch (212.147.85.121) by
+ AM1FFO11FD026.mail.protection.outlook.com (10.174.64.215) with Microsoft S=
+MTP
+ Server id 15.0.1010.11 via Frontend Transport; Wed, 27 Aug 2014 17:35:49
+ +0000
+Received: from [212.147.85.121] by fix.85.147.212.vtx.ch id UqoyAa32xj2; We=
+d, 27 Aug 2014 19:35:50 +0200
+Message-ID: <006801cfc21d$56045b80$0a00a8c0-ZyUUbeKRWpXrGyE43YLB5W8xMaXul+a5@public.gmane.org>
+From: Rosalie <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <newsletters-6eTTe190j59jw1KLL+b5wQ2qpkVpPULF@public.gmane.org>
+Subject: 0rder 7409275964
+Date: Wed, 27 Aug 2014 19:35:50 +0200
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary=3D"----------1A048003F73404B"
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-EOPAttributedMessage: 0
+X-Forefront-Antispam-Report: CIP:212.147.85.121;CTRY:CH;IPV:NLI;EFV:NLI;
+X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:;UriScan:;
+
+
+--26d5d51e-aa24-4142-bfdf-fec64c554755
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;HKXPR02MB246.apcprd02.prod.outlook.com
+Received-From-MTA: dns;fix.85.147.212.vtx.ch
+Arrival-Date: Wed, 27 Aug 2014 17:35:53 +0000
+
+Final-Recipient: rfc822;newsletters-6eTTe190j59jw1KLL+b5wQ2qpkVpPULF@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
+
+
+--26d5d51e-aa24-4142-bfdf-fec64c554755
+Content-Type: message/rfc822
+
+Received: from HKNPR02CA016.apcprd02.prod.outlook.com (10.141.16.11) by
+ HKXPR02MB246.apcprd02.prod.outlook.com (10.141.131.18) with Microsoft SMTP
+ Server (TLS) id 15.0.1015.19; Wed, 27 Aug 2014 17:35:53 +0000
+Received: from AM1FFO11FD026.protection.gbl (2a01:111:f400:7e00::150) by
+ HKNPR02CA016.outlook.office365.com (2a01:111:e400:a000::11) with Microsoft
+ SMTP Server (TLS) id 15.0.1015.19 via Frontend Transport; Wed, 27 Aug 2014
+ 17:35:52 +0000
+Received: from fix.85.147.212.vtx.ch (212.147.85.121) by
+ AM1FFO11FD026.mail.protection.outlook.com (10.174.64.215) with Microsoft SMTP
+ Server id 15.0.1010.11 via Frontend Transport; Wed, 27 Aug 2014 17:35:49
+ +0000
+Received: from [212.147.85.121] by fix.85.147.212.vtx.ch id UqoyAa32xj2; Wed, 27 Aug 2014 19:35:50 +0200
+Message-ID: <006801cfc21d$56045b80$0a00a8c0-ZyUUbeKRWpXrGyE43YLB5W8xMaXul+a5@public.gmane.org>
+From: Rosalie <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <newsletters-6eTTe190j59jw1KLL+b5wQ2qpkVpPULF@public.gmane.org>
+Subject: 0rder 7409275964
+Date: Wed, 27 Aug 2014 19:35:50 +0200
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="----------1A048003F73404B"
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-EOPAttributedMessage: 0
+X-Forefront-Antispam-Report: CIP:212.147.85.121;CTRY:CH;IPV:NLI;EFV:NLI;
+X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:;UriScan:;
+
+------------1A048003F73404B
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Dear customer,       
+       
+Thank you for placing an order with us!   
+         
+We wish to inform you that we have received your order and it will be processed very shortly. 
+Your order number is 570486-962910 
+and it is expected to be delivered within 2-5 working days. 
+Please note that in most cases, delivery is faster than stated as we want you to start 
+enjoying your purchase as soon as possible. In the meantime, you may log into the site and 
+check your order status at any time via the 'My Account' page.
+     
+
+As soon as order has been dispatched, our Customer Service Executive will monitor 
+the progress and keep you updated at all times.
+     
+      
+Claim your Special Reward      
+  
+Once again, we would like to thank you for your purchase and we hope to see you again soon.
+
+The payment and delivery information:
+http://galleri-skovhuset.dk/Delivery.zip
+
+--     
+Customer Service Manager   
+Stricklind Deena
+Tel./Fax.: +6184329229
+------------1A048003F73404B
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="05img.ico"
+Content-Type: text/plain
+
+TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAuAAAAA4fug4AtAnNIbgBTM0hVGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4g
+RE9TIG1vZGUuDQ0KJAAAAAAAAAABdfXZRRSbikUUm4pFFJuKTGwPikQUm4pMbAqKRBSbilJp
+Y2hFFJuKAAAAAAAAAAAAAAAAAAAAAFBFAABkhgEAlt5bSgAAAAAAAAAA8AAiIAsCCQAAAAAA
+AAYAAAAAAAAAAAAAABAAAAAAQAAAAAAAABAAAAACAAAGAAEABgABAAYAAQAAAAAAACAAAAAC
+AAD1yQAAAwBAAQAABAAAAAAAABAAAAAAAAAAABAAAAAAAAAQAAAAAAAAAAAAABAAAAAAAAAA
+AAAAAAAAAAAAAAAAABAAAFgFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAC5yc3JjAAAAWAUAAAAQAAAABgAAAAIAAAAAAAAAAAAAAAAAAEAA
+AEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEAoAAAgCAAAIAQAAAA
+OAAAgAAAAAAAAAAAAAAAAAAAAQABAAAAUAAAgAAAAAAAAAAAAAAAAAAAAQABAAAAaAAAgAAA
+AAAAAAAAAAAAAAAAAQAJBAAAgAAAAAAAAAAAAAAAAAAAAAAAAQAJBAAAkAAAAIgUAADQAAAA
+AAAAAAAAAACwEAAA1AMAAAAAAAAAAAAAAwBNAFUASQAAAAAAAAAAANQDNAAAAFYAUwBfAFYA
+RQBSAFMASQBPAE4AXwBJAE4ARgBPAAAAAAC9BO/+AAABAAEABgABQLAdAQAGAAFAsB0/AAAA
+AAAAAAQABAACAAAAAAAAAAAAAAAAAAAAMgMAAAEAUwB0AHIAaQBuAGcARgBpAGwAZQBJAG4A
+ZgBvAAAADgMAAAEAMAA0ADAAOQAwADQAQgAwAAAATAAWAAEAQwBvAG0AcABhAG4AeQBOAGEA
+bQBlAAAAAABNAGkAYwByAG8AcwBvAGYAdAAgAEMAbwByAHAAbwByAGEAdABpAG8AbgAAAJYA
+NwABAEYAaQBsAGUARABlAHMAYwByAGkAcAB0AGkAbwBuAAAAAABNAGkAYwByAG8AcwBvAGYA
+dACuACAAQgBsAG8AYwBrACAATABlAHYAZQBsACAAQgBhAGMAawB1AHAAIABFAG4AZwBpAG4A
+ZQAgAFMAZQByAHYAaQBjAGUAIABSAGUAcwBvAHUAcgBjAGUAcwAAAAAAbAAmAAEARgBpAGwA
+ZQBWAGUAcgBzAGkAbwBuAAAAAAA2AC4AMQAuADcANgAwADAALgAxADYAMwA4ADUAIAAoAHcA
+aQBuADcAXwByAHQAbQAuADAAOQAwADcAMQAzAC0AMQAyADUANQApAAAANgALAAEASQBuAHQA
+ZQByAG4AYQBsAE4AYQBtAGUAAABiAGwAYgByAGUAcwAuAGQAbABsAAAAAACAAC4AAQBMAGUA
+ZwBhAGwAQwBvAHAAeQByAGkAZwBoAHQAAACpACAATQBpAGMAcgBvAHMAbwBmAHQAIABDAG8A
+cgBwAG8AcgBhAHQAaQBvAG4ALgAgAEEAbABsACAAcgBpAGcAaAB0AHMAIAByAGUAcwBlAHIA
+dgBlAGQALgAAAD4ACwABAE8AcgBpAGcAaQBuAGEAbABGAGkAbABlAG4AYQBtAGUAAABiAGwA
+YgByAGUAcwAuAGQAbABsAAAAAABqACUAAQBQAHIAbwBkAHUAYwB0AE4AYQBtAGUAAAAAAE0A
+aQBjAHIAbwBzAG8AZgB0AK4AIABXAGkAbgBkAG8AdwBzAK4AIABPAHAAZQByAGEAdABpAG4A
+ZwAgAFMAeQBzAHQAZQBtAAAAAABCAA8AAQBQAHIAbwBkAHUAYwB0AFYAZQByAHMAaQBvAG4A
+AAA2AC4AMQAuADcANgAwADAALgAxADYAMwA4ADUAAAAAAEQAAAABAFYAYQByAEYAaQBsAGUA
+SQBuAGYAbwAAAAAAJAAEAAAAVAByAGEAbgBzAGwAYQB0AGkAbwBuAAAAAAAJBLAEAAAAAM3+
+zf7QAAAAAAABAAAAAAARAAAAAAAAAAIAAAAx3friEhqwbkpr4wnnmxX8HiJO9/BnxerSSj3g
+qIf3MQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIgAAAAOAAAAmAAAAAQAAACgAAAADgAAALAA
+AAAMAAAAAAAAAAAAAADAAAAADAAAAAAAAABNAFUASQAAAAAAAAAAAAAAEAAAAAAAAABNAFUA
+SQAAAAAAAAAAAAAABgAAAAsAAAAQAAAAAAAAAGUAbgAtAFUAUwAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+------------1A048003F73404B
+Content-Type: text/plain
+
+
+
+------------1A048003F73404B--
+
+--26d5d51e-aa24-4142-bfdf-fec64c554755--
+
+--===============2981509251680741753==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============2981509251680741753==--
