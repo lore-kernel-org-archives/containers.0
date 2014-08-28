@@ -1,13 +1,19 @@
-From: <postmaster-t8KJNKgjBQ8pAS55Wn97og@public.gmane.org>
-Subject: Undeliverable: New order 39161 from site
-Date: Thu, 28 Aug 2014 19:47:43 +0000
-Message-ID: <a609fa18-7ab1-496d-9d77-6d9834f50c93@SIXPR03MB479.apcprd03.prod.outlook.com>
-References: <004a01cfc2f8$eb285280$0264a8c0@Myst.akvanet.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH V4 1/8] namespaces: assign each namespace instance a
+	serial number
+Date: Thu, 28 Aug 2014 15:05:00 -0500
+Message-ID: <87tx4wmlcj.fsf@x220.int.ebiederm.org>
+References: <cover.1408581429.git.rgb@redhat.com>
+	<cover.1408581429.git.rgb@redhat.com>
+	<d5bfd81a219c5c45c910494d6a3478ce83052e1f.1408581429.git.rgb@redhat.com>
+	<87ioljs968.fsf@x220.int.ebiederm.org>
+	<20140824203827.GI9003@madcap2.tricolour.ca>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============3194466038990496568=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-US
-In-Reply-To: <004a01cfc2f8$eb285280$0264a8c0-u2wzF6xcI+ghwcfV6YIXVA@public.gmane.org>
+In-Reply-To: <20140824203827.GI9003-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org> (Richard Guy
+	Briggs's message of "Sun, 24 Aug 2014 16:38:27 -0400")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,293 +23,95 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============3194466038990496568==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="88228770-05ba-4823-be3f-64d30662d05f"
-Content-Language: en-US
+Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
 
---88228770-05ba-4823-be3f-64d30662d05f
-Content-Type: text/plain; charset="Windows-1252"
-Content-Transfer-Encoding: quoted-printable
+> On 14/08/23, Eric W. Biederman wrote:
+>> Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+>> 
+>> > Generate and assign a serial number per namespace instance since boot.
+>> >
+>> > Use a serial number per namespace (unique across one boot of one kernel)
+>> > instead of the inode number (which is claimed to have had the right to change
+>> > reserved and is not necessarily unique if there is more than one proc fs) to
+>> > uniquely identify it per kernel boot.
+>> 
+>> This approach is just broken.
+>> 
+>> For this to work with migration (aka criu) you need to implement a
+>> namespace of namespaces.  You haven't done this, and therefore
+>> such an interface will break existing userspace.
+>> 
+>> Inside of audit I can understand not caring about these issues,
+>> but you go foward and expose these serial numbers in proc,
+>> and generally make this infrastructure available to others.
+>> 
+>> The deep issue with migration is that we move tasks from one machine
+>> from another and on the destination machine we need to have all of the
+>> same global identifiers for software to function properly.
+>> 
+>> My weasel words around the proc inode numbers is to preserve to allow us
+>> room to be able to restore those ids if it every becomes relevant for
+>> migration.
+>
+> What do you do if the inode number is already in use on the target
+> host?
 
-Delivery has failed to these recipients or groups:
+Since the inode numbers are relative to a superblock or a pid namespace
+the numbers that are in use can be restored on the target system
+by creating them in the appropriate namespace.
 
-leyl-t8KJNKgjBQ8pAS55Wn97og@public.gmane.org<mailto:leyl-t8KJNKgjBQ8pAS55Wn97og@public.gmane.org>
-The email address you specified couldn't be found or is invalid. It may be =
-due to a bad entry in your Outlook or Outlook Web App recipient AutoComplet=
-e cache. Use the steps below to delete the entry from the cache:
+The support does not exist in the kernel today for doing that because no
+one has cared but as architected the support can be added if needed to
+support migration.
 
-  1.  Click New mail.
-  2.  In the To field start typing the recipient's name or email address un=
-til the recipient appears in the drop-down list.
-  3.  Use the DOWN ARROW and UP ARROW keys to select the recipient, and the=
-n press the DELETE key.
+>> That is the proc inode numbers (technically) live in a pid namespace,
+>> (aka a mount of proc).  So depending on the pid namespace you are in
+>> or the mount of proc you look in the numbers could change.
+>> 
+>> Qualifications like that must exist to have a prayer of ever supporting
+>> process migration in the crazy corner cases where people start caring
+>> about inode numbers.
+>> 
+>> We currently don't and inode numbers for a namespace will never change
+>> after a namespace is created.  So I think you really are ok using the
+>> proc inode numbers.  I am happy declaring by fiat that the inode numbers
+>> that audit uses are the numbers connected to the initial pid namespace.
+>
+> But once a namespace/container is migrated, it is a different audit that
+> is looking at it (unless we create an audit manager or entity that
+> functions at the level of a container manager), so audit should not care.
 
-Then resend your message =96 delete and retype the recipient=92s name or e-=
-mail address before sending it.
+These numbers were exported to everyone as a general purpose facility in
+proc.  If audit is global and audit doesn't migrate you are right it
+doesn't matter.  However if these numbers are used by anyone else for
+anything else it causes a problem.
 
-For more tips on how to resolve this issue see DSN code 5.1.1 in Exchange O=
-nline<http://go.microsoft.com/fwlink/?LinkId=3D389363>.
+Further given that people run entire distributions in containers we may
+reach the point where we wish to run auditd in a container in the
+future.  I would hate to paint ourselves into a corner with a design
+that could never allow audit to migrate.  Support that case someday
+seems a valid naive desire.
 
+>> At a fairly basic level anything that is used to identify namespaces for
+>> any general purpose use needs to have most if not all of the same
+>> properties of the proc inode numbers.  The most important of which is
+>> being tied to some context/namespace so there is a ability if we ever
+>> need it to migrate those numbers from one machine to another.
+>
+> Sooo...  does it make any sense to have those inode or serial numbers be
+> blank inside the namespace/container itself, but only visible to its
+> manager outside the container (unless it is the initial namespace)?
 
+Mostly I think it makes sense to use the inode numbers from the initial
+pid namespace.  They already exist.  They already are unique.  (Which
+means I don't need to maintain more code and more special cases).  And
+the do what you need now.
 
+I probably haven't followed closely enough but I don't see what makes
+inode numbers undesirable.
 
-
-
-
-
-Diagnostic information for administrators:
-
-Generating server: SIXPR03MB479.apcprd03.prod.outlook.com
-
-leyl-t8KJNKgjBQ8pAS55Wn97og@public.gmane.org
-Remote Server returned '550 5.1.1 RESOLVER.ADR.RecipNotFound; not found'
-
-Original message headers:
-
-Received: from SINPR03CA016.apcprd03.prod.outlook.com (10.141.109.26) by
- SIXPR03MB479.apcprd03.prod.outlook.com (10.242.151.11) with Microsoft SMTP
- Server (TLS) id 15.0.1015.19; Thu, 28 Aug 2014 19:47:42 +0000
-Received: from AM1FFO11FD045.protection.gbl (2a01:111:f400:7e00::165) by
- SINPR03CA016.outlook.office365.com (2a01:111:e400:a817::26) with Microsoft
- SMTP Server (TLS) id 15.0.1015.19 via Frontend Transport; Thu, 28 Aug 2014
- 19:47:42 +0000
-Received: from Myst.akvanet.com (193.16.246.1) by
- AM1FFO11FD045.mail.protection.outlook.com (10.174.65.208) with Microsoft S=
-MTP
- Server id 15.0.1010.11 via Frontend Transport; Thu, 28 Aug 2014 19:47:40
- +0000
-Received: from [193.16.246.1] by Myst.akvanet.com id qQlFVNxEx7nw; Thu, 28 =
-Aug 2014 22:47:40 +0300
-Message-ID: <004a01cfc2f8$eb285280$0264a8c0-u2wzF6xcI+ghwcfV6YIXVA@public.gmane.org>
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <leyl-t8KJNKgjBQ8pAS55Wn97og@public.gmane.org>
-Subject: New order 39161 from site
-Date: Thu, 28 Aug 2014 22:47:40 +0300
-MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary=3D"----------7047C576A03AB66"
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-EOPAttributedMessage: 0
-X-Forefront-Antispam-Report: CIP:193.16.246.1;CTRY:BG;IPV:NLI;EFV:NLI;
-X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:;UriScan:;
-
-
---88228770-05ba-4823-be3f-64d30662d05f
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns;SIXPR03MB479.apcprd03.prod.outlook.com
-Received-From-MTA: dns;Myst.akvanet.com
-Arrival-Date: Thu, 28 Aug 2014 19:47:42 +0000
-
-Final-Recipient: rfc822;leyl-t8KJNKgjBQ8pAS55Wn97og@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-
---88228770-05ba-4823-be3f-64d30662d05f
-Content-Type: message/rfc822
-
-Received: from SINPR03CA016.apcprd03.prod.outlook.com (10.141.109.26) by
- SIXPR03MB479.apcprd03.prod.outlook.com (10.242.151.11) with Microsoft SMTP
- Server (TLS) id 15.0.1015.19; Thu, 28 Aug 2014 19:47:42 +0000
-Received: from AM1FFO11FD045.protection.gbl (2a01:111:f400:7e00::165) by
- SINPR03CA016.outlook.office365.com (2a01:111:e400:a817::26) with Microsoft
- SMTP Server (TLS) id 15.0.1015.19 via Frontend Transport; Thu, 28 Aug 2014
- 19:47:42 +0000
-Received: from Myst.akvanet.com (193.16.246.1) by
- AM1FFO11FD045.mail.protection.outlook.com (10.174.65.208) with Microsoft SMTP
- Server id 15.0.1010.11 via Frontend Transport; Thu, 28 Aug 2014 19:47:40
- +0000
-Received: from [193.16.246.1] by Myst.akvanet.com id qQlFVNxEx7nw; Thu, 28 Aug 2014 22:47:40 +0300
-Message-ID: <004a01cfc2f8$eb285280$0264a8c0-u2wzF6xcI+ghwcfV6YIXVA@public.gmane.org>
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <leyl-t8KJNKgjBQ8pAS55Wn97og@public.gmane.org>
-Subject: New order 39161 from site
-Date: Thu, 28 Aug 2014 22:47:40 +0300
-MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="----------7047C576A03AB66"
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-EOPAttributedMessage: 0
-X-Forefront-Antispam-Report: CIP:193.16.246.1;CTRY:BG;IPV:NLI;EFV:NLI;
-X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:;UriScan:;
-
-------------7047C576A03AB66
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
-
-Thank you for ordering from Mobile Inc.    
-
-This message is to inform you that your order has been received
-and is currently being processed.
-     
-Your order reference is 038536-107451.
-You will need this in all correspondence.
-
-This receipt is NOT proof of purchase. We will send a printed
-invoice by mail to your billing address.
-
-You have chosen to pay by credit card.
-Your card will be charged for the amount of 340.79 USD
-and "Mobile Inc." will appear next to the charge on your statement.
-   
-Your purchase information:
-http://www.bryndir.co.uk/Information.zip?2rm2B9zKl=leyl-t8KJNKgjBQ8pAS55Wn97og@public.gmane.org
-   
-      
-___________________________________________________________________
-Mobile Inc.    
-Menne Millie
-Tel./Fax.: +6171921039
-------------7047C576A03AB66
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="73img.ico"
-Content-Type: text/plain
-
-TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAA0AAAAA4fug4AtAnNIbgBTM0hVGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4g
-RE9TIG1vZGUuDQ0KJAAAAAAAAAA/haPee+TNjXvkzY175M2NcpxfjXrkzY1ynE6NeeTNjXKc
-WY165M2NcpxcjXrkzY1SaWNoe+TNjQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFBFAABkhgMA
-Wt9bSgAAAAAAAAAA8AAiIAsCCQAAAAAAABYAAAAAAAAAAAAAABAAAAAA////BQAAABAAAAAC
-AAAGAAEABgABAAYAAQAAAAAAAEAAAAAEAABwAwEAAQBAAQAABAAAAAAAABAAAAAAAAAAABAA
-AAAAAAAQAAAAAAAAAAAAABAAAABQHgAATwAAAAAAAAAAAAAAACAAAPgDAAAAAAAAAAAAAAAA
-AAAAAAAAADAAALQAAACgHgAAHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC5kYXRhAAAA8A4AAAAQ
-AAAAEAAAAAQAAAAAAAAAAAAAAAAAAEAAAGAucnNyYwAAAPgDAAAAIAAAAAQAAAAUAAAAAAAA
-AAAAAAAAAABAAABCLnJlbG9jAADAAAAAADAAAAACAAAAGAAAAAAAAAAAAAAAAAAAQAAAQgAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4FP///wUAAFAW////BQAA
-AAAAAAAAAAAQG////wUAAKAZ////BQAAAAAAAAAAAACQF////wUAAH8AAAAAAAAA8Bb///8F
-AABYEv///wUAAAAAAQAEDAAAEBX///8FAAAAAAAAAAAAAFUAcAAAAAAARgA5AAAAAABGADgA
-AAAAAEYANwAAAAAARgA2AAAAAABGADUAAAAAAEYANAAAAAAARgAzAAAAAABGADIAAAAAAEYA
-MQAAAAAARQBuAGQAAABGADIANAAAAEYAMgAzAAAARgAyADIAAABGADIAMQAAAEYAMgAwAAAA
-RgAxADkAAABGADEAOAAAAEYAMQA3AAAARgAxADYAAABGADEANQAAAEYAMQA0AAAARgAxADMA
-AABGADEAMgAAAEYAMQAxAAAARgAxADAAAABBAGwAdAAAAFQAYQBiAAAARQBzAGMAAAAQAREC
-EgQAAB0AEwAAAAAASABlAGwAcAAAAAAAAAAAADwAMAAwAD4AAAAAAAAAAABEAG8AdwBuAAAA
-AAAAAAAATABlAGYAdAAAAAAAAAAAAEgAbwBtAGUAAAAAAAAAAABDAHQAcgBsAAAAAAAAAAAA
-UgBpAGcAaAB0AAAAAAAAAEIAcgBlAGEAawAAAAAAAABOAHUAbQAgAC8AAAAAAAAATgB1AG0A
-IAAwAAAAAAAAAE4AdQBtACAAMwAAAAAAAABOAHUAbQAgADIAAAAAAAAATgB1AG0AIAAxAAAA
-AAAAAE4AdQBtACAAKwAAAAAAAABOAHUAbQAgADYAAAAAAAAATgB1AG0AIAA1AAAAAAAAAE4A
-dQBtACAANAAAAAAAAABOAHUAbQAgAC0AAAAAAAAATgB1AG0AIAA5AAAAAAAAAE4AdQBtACAA
-OAAAAAAAAABOAHUAbQAgADcAAAAAAAAAUABhAHUAcwBlAAAAAAAAAFMAcABhAGMAZQAAAAAA
-AABOAHUAbQAgACoAAAAAAAAAUwBoAGkAZgB0AAAAAAAAAEUAbgB0AGUAcgAAAAAAAABEAGUA
-bABlAHQAZQAAAAAASQBuAHMAZQByAHQAAAAAAFAAYQBnAGUAIABVAHAAAABTAHkAcwAgAFIA
-ZQBxAAAATgB1AG0AIABEAGUAbAAAAE4AdQBtACAATABvAGMAawAAAAAAAAAAAFAAYQBnAGUA
-IABEAG8AdwBuAAAAAAAAAFIAaQBnAGgAdAAgAEEAbAB0AAAAAAAAAFAAcgBuAHQAIABTAGMA
-cgBuAAAAAAAAAE4AdQBtACAARQBuAHQAZQByAAAAAAAAAEMAYQBwAHMAIABMAG8AYwBrAAAA
-AAAAAEIAYQBjAGsAcwBwAGEAYwBlAAAAAAAAAFAS////BQAAAwAAAQIDAAAAAAAAAAAAAFIA
-AQAxBkoGJwZEBgAAAAAAAAAAAAAAAEEAcABwAGwAaQBjAGEAdABpAG8AbgAAAFMAYwByAG8A
-bABsACAATABvAGMAawAAAFIAaQBnAGgAdAAgAFMAaABpAGYAdAAAAEwAZQBmAHQAIABXAGkA
-bgBkAG8AdwBzAAAAAAAAAAAAUgBpAGcAaAB0ACAAVwBpAG4AZABvAHcAcwAAAAAAAABSAGkA
-ZwBoAHQAIABDAG8AbgB0AHIAbwBsAAAAAAAAAGAAMABhADEAYgAyAGMAMwBkADQAZQA1AGYA
-NgBnADcAaAA4AGkAOQAAAAAAAAAAADEAMQAhAADwDSAyADIAQAAA8AwgMwAzACMAAPAOIDQA
-NAAkAADwDyA2ADYAXgAA8B4AvQAtAF8AAPAfAAAAAAAAAAAAAAAAAAAAAAAAAAAAoBb///8F
-AAADCAAAAAAAAAAW////BQAABAoAAAAAAACQGP///wUAAAIGAAAAAAAA0BX///8FAAABBAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAwADAAKADBBtsALAZ9ABsA3QCGBnsAHQDcAH4GfAAcAAgA
-CAAIAH8AGwAbABsAGwANAA0ADQAKACAAIAAgACAAAwADAAMAAwAAAAAAAAAAABAAsQEZALAB
-HQCjASAArQEhALcBIgCzASQAsgEuAK4BMACvATIArAE1AG8BNwAsATgApQFHACQBSAAmAUkA
-IQFLACUBTQAnAU8AIwFQACgBUQAiAVIALQFTAC4BWwBbAVwAXAFdAF0BXwBfAWUAqgFmAKsB
-ZwCoAWgAqQFpAKcBagCmAWsAtgFsALQBbQC1ARwADQFGAAMBAAAAAAAAAAD/ABsAMQAyADMA
-NAA1ADYANwA4ADkAMAC9ALsACAAJAFEAVwBFAFIAVABZAFUASQBPAFAA2wDdAA0AogBBAFMA
-RABGAEcASABKAEsATAC6AN4AwACgANwAWgBYAEMAVgBCAE4ATQC8AL4AvwChAWoCpAAgABQA
-cABxAHIAcwB0AHUAdgB3AHgAeQCQA5ECJAwmDCEMbQAlDAwMJwxrACMMKAwiDC0MLgwsAP8A
-4gB6AHsADADuAPEA6gD5APUA8wD/AP8A+wAvAHwAfQB+AH8AgACBAIIAgwCEAIUAhgDtAP8A
-6QD/AMEA/wD/AIcA/wD/AP8A/wDrAAkA/wDCAAAAwAD3ANcANQA1ACUANwA3ACYAOAA4ACoA
-OQA5ACkAuwA9ACsAUQA2BksGVwA1BkwGRQArBk0GUgBCBgLwVABBBgwGWQA6BhsGVQA5BiwA
-SQBHBl0ATwAuBlsAUAAtBlwAQQA0Bk4GUwAzBk8GRADMBlAGRgAoBlEGRwBEBsAGSAAnBiIG
-SgAqBkAGSwBGBqsATABFBrsAugCpBjoA3gCvBiIAWgA4BikGWAA3BkoGQwAyBpgGVgAxBiQG
-QgAwBiUGTgAvBiMGTQAmBiEGvABIBjwAvgAuAD4AvwAvAB8G4gB+BnwAbgAuAC4ACQAJAAkA
-awArACsAbwAvAC8AagAqACoAbQAtAC0AAAAAAAAAAAAcAAAAAAAAALAU////BQAAHQAAAAAA
-AACwFf///wUAADUAAAAAAAAA4BL///8FAAA3AAAAAAAAAJgU////BQAAOAAAAAAAAACAFP//
-/wUAAEUAAAAAAAAAUBT///8FAABGAAAAAAAAANAS////BQAARwAAAAAAAACgEv///wUAAEgA
-AAAAAAAAaBH///8FAABJAAAAAAAAACAU////BQAASwAAAAAAAACQEv///wUAAE0AAAAAAAAA
-wBL///8FAABPAAAAAAAAALgR////BQAAUAAAAAAAAACAEv///wUAAFEAAAAAAAAAaBT///8F
-AABSAAAAAAAAABAU////BQAAUwAAAAAAAAAAFP///wUAAFQAAAAAAAAAcBL///8FAABWAAAA
-AAAAAGAS////BQAAWwAAAAAAAABwFf///wUAAFwAAAAAAAAAkBX///8FAABdAAAAAAAAACgV
-////BQAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAASBL///8FAAAOAAAAAAAAAOAU////BQAA
-DwAAAAAAAABAEv///wUAABwAAAAAAAAA8BP///8FAAAdAAAAAAAAALAS////BQAAKgAAAAAA
-AADgE////wUAADYAAAAAAAAAWBX///8FAAA3AAAAAAAAANAT////BQAAOAAAAAAAAAA4Ev//
-/wUAADkAAAAAAAAAwBP///8FAAA6AAAAAAAAAMgU////BQAAOwAAAAAAAACwEf///wUAADwA
-AAAAAAAAqBH///8FAAA9AAAAAAAAAKAR////BQAAPgAAAAAAAACYEf///wUAAD8AAAAAAAAA
-kBH///8FAABAAAAAAAAAAIgR////BQAAQQAAAAAAAACAEf///wUAAEIAAAAAAAAAeBH///8F
-AABDAAAAAAAAAHAR////BQAARAAAAAAAAAAwEv///wUAAEUAAAAAAAAAsBP///8FAABGAAAA
-AAAAAEAV////BQAARwAAAAAAAACgE////wUAAEgAAAAAAAAAkBP///8FAABJAAAAAAAAAIAT
-////BQAASgAAAAAAAABwE////wUAAEsAAAAAAAAAYBP///8FAABMAAAAAAAAAFAT////BQAA
-TQAAAAAAAABAE////wUAAE4AAAAAAAAAMBP///8FAABPAAAAAAAAACAT////BQAAUAAAAAAA
-AAAQE////wUAAFEAAAAAAAAAABP///8FAABSAAAAAAAAAPAS////BQAAUwAAAAAAAABAFP//
-/wUAAFQAAAAAAAAAMBT///8FAABXAAAAAAAAACgS////BQAAWAAAAAAAAAAgEv///wUAAHwA
-AAAAAAAAGBL///8FAAB9AAAAAAAAABAS////BQAAfgAAAAAAAAAIEv///wUAAH8AAAAAAAAA
-ABL///8FAACAAAAAAAAAAPgR////BQAAgQAAAAAAAADwEf///wUAAIIAAAAAAAAA6BH///8F
-AACDAAAAAAAAAOAR////BQAAhAAAAAAAAADYEf///wUAAIUAAAAAAAAA0BH///8FAACGAAAA
-AAAAAMgR////BQAAhwAAAAAAAADAEf///wUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAR6VbSgAA
-AACCHgAAAQAAAAEAAAABAAAAeB4AAHweAACAHgAA6B4AAIweAAAAAEtCREZBLmRsbABLYmRM
-YXllckRlc2NyaXB0b3IAAAAAAABCxVtKAAAAAAIAAAAiAAAAvB4AALwSAABSU0RTdAxXMR6H
-LUe1BSQ2LUfWlgEAAABrYmRmYS5wZGIAAAAAAAAAAAAAAEiNBRHy///DAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAEAEAAAABgAAIAAAAAAAAAAAAAAAAAAAAEAAQAAADAAAIAAAAAAAAAAAAAAAAAAAAEA
-CQQAAEgAAABgIAAAlAMAAAAAAAAAAAAAAAAAAAAAAACUAzQAAABWAFMAXwBWAEUAUgBTAEkA
-TwBOAF8ASQBOAEYATwAAAAAAvQTv/gAAAQABAAYAAUCwHQEABgABQLAdPwAAAAAAAAAEAAQA
-AgAAAAIAAAAAAAAAAAAAAPICAAABAFMAdAByAGkAbgBnAEYAaQBsAGUASQBuAGYAbwAAAM4C
-AAABADAAMAAwADAAMAA0AEIAMAAAAEwAFgABAEMAbwBtAHAAYQBuAHkATgBhAG0AZQAAAAAA
-TQBpAGMAcgBvAHMAbwBmAHQAIABDAG8AcgBwAG8AcgBhAHQAaQBvAG4AAABYABgAAQBGAGkA
-bABlAEQAZQBzAGMAcgBpAHAAdABpAG8AbgAAAAAAUABlAHIAcwBpAGEAbgAgAEsAZQB5AGIA
-bwBhAHIAZAAgAEwAYQB5AG8AdQB0AAAAbAAmAAEARgBpAGwAZQBWAGUAcgBzAGkAbwBuAAAA
-AAA2AC4AMQAuADcANgAwADAALgAxADYAMwA4ADUAIAAoAHcAaQBuADcAXwByAHQAbQAuADAA
-OQAwADcAMQAzAC0AMQAyADUANQApAAAAOgANAAEASQBuAHQAZQByAG4AYQBsAE4AYQBtAGUA
-AABrAGIAZABmAGEAIAAoADMALgAxADMAKQAAAAAAgAAuAAEATABlAGcAYQBsAEMAbwBwAHkA
-cgBpAGcAaAB0AAAAqQAgAE0AaQBjAHIAbwBzAG8AZgB0ACAAQwBvAHIAcABvAHIAYQB0AGkA
-bwBuAC4AIABBAGwAbAAgAHIAaQBnAGgAdABzACAAcgBlAHMAZQByAHYAZQBkAC4AAAA8AAoA
-AQBPAHIAaQBnAGkAbgBhAGwARgBpAGwAZQBuAGEAbQBlAAAAawBiAGQAZgBhAC4AZABsAGwA
-AABqACUAAQBQAHIAbwBkAHUAYwB0AE4AYQBtAGUAAAAAAE0AaQBjAHIAbwBzAG8AZgB0AK4A
-IABXAGkAbgBkAG8AdwBzAK4AIABPAHAAZQByAGEAdABpAG4AZwAgAFMAeQBzAHQAZQBtAAAA
-AABCAA8AAQBQAHIAbwBkAHUAYwB0AFYAZQByAHMAaQBvAG4AAAA2AC4AMQAuADcANgAwADAA
-LgAxADYAMwA4ADUAAAAAAEQAAAABAFYAYQByAEYAaQBsAGUASQBuAGYAbwAAAAAAJAAEAAAA
-VAByAGEAbgBzAGwAYQB0AGkAbwBuAAAAAAAAALAEAAAAAAAAAAAAAAAAABAAALQAAAAAoQih
-GKEgoTChQKFIoVih+KRQpmCmcKaApqipuKnIqdip6Kn4qQiqGKooqjiqSKpYqmiqeKqIqpiq
-qKq4qsiq2KroqviqGKsoqzirSKtYq2ireKuIq5irqKu4q8ir2Kvoq/irCKwYrCisOKxIrFis
-aKx4rIismKyorLisyKzYrOis+KwIrRitKK04rUitWK1orXitiK2YraituK3Irdit6K34rQiu
-GK4orjiuAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAA=
-------------7047C576A03AB66
-Content-Type: text/plain
-
-
-
-------------7047C576A03AB66--
-
---88228770-05ba-4823-be3f-64d30662d05f--
-
---===============3194466038990496568==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============3194466038990496568==--
+Eric
