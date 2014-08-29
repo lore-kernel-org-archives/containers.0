@@ -1,13 +1,10 @@
-From: <postmaster-E5f9BpyQAIn0CCvOHzKKcA@public.gmane.org>
-Subject: Undeliverable: Successfull Order 9121860.
-Date: Fri, 29 Aug 2014 03:21:41 +1000
-Message-ID: <847151f9-dc3c-4834-a315-b5d814e82ef4@HQEXCMS01.etspl.com.au>
-References: <008701cfc2e4$83680c80$0164a8c0@Myst.akvanet.com>
+From: postmaster-7WMDEKq5Nm/sBN0MCq728rpzq4S04n8Q@public.gmane.org
+Subject: Executable File Violation
+Date: Fri, 29 Aug 2014 16:01:14 +1000
+Message-ID: <C4.89.27900.A2710045@mailgatesyd.fairfax.com.au>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5821080502758294521=="
+Content-Type: multipart/mixed; boundary="=====mte=boundary=number=77794====="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-AU
-In-Reply-To: <008701cfc2e4$83680c80$0164a8c0-u2wzF6xcI+ghwcfV6YIXVA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,299 +17,94 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============5821080502758294521==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="be8929b6-230d-4e82-9de0-10aefc3b8f6b"
-Content-Language: en-AU
 
---be8929b6-230d-4e82-9de0-10aefc3b8f6b
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+--=====mte=boundary=number=77794=====
+Content-type: text/plain; charset="US-ASCII"
+Content-transfer-encoding: 7bit
 
-Delivery has failed to these recipients or groups:
+You attempted to send a message that contained an executable file.  Our company policy prohibits the sending of executable files via email.  The message was not delivered.
+--=====mte=boundary=number=77794=====
+Content-type: message/rfc822
 
-grant.rothwelld-E5f9BpyQAIn0CCvOHzKKcA@public.gmane.org<mailto:grant.rothwelld-E5f9BpyQAIn0CCvOHzKKcA@public.gmane.org>
-The email address you entered couldn't be found. Please check the recipient=
-'s email address and try to resend the message. If the problem continues, p=
-lease contact your helpdesk.
-
-
-
-
-
-
-
-Diagnostic information for administrators:
-
-Generating server: HQEXCMS01.etspl.com.au
-
-grant.rothwelld-E5f9BpyQAIn0CCvOHzKKcA@public.gmane.org
-Remote Server returned '550 5.1.1 RESOLVER.ADR.RecipNotFound; not found'
-
-Original message headers:
-
-Received: from HQEXCMS01.etspl.com.au (192.168.1.217) by
- HQEXCMS01.etspl.com.au (192.168.1.217) with Microsoft SMTP Server (TLS) id
- 15.0.847.32; Fri, 29 Aug 2014 03:21:40 +1000
-Received: from Myst.akvanet.com (193.16.246.1) by HQEXCMS01.etspl.com.au
- (192.168.1.217) with Microsoft SMTP Server id 15.0.847.32 via Frontend
- Transport; Fri, 29 Aug 2014 03:21:39 +1000
-Received: from [193.16.246.1] by Myst.akvanet.com id iWTiG2rFf3h; Thu, 28 A=
-ug
- 2014 20:21:39 +0300
-Message-ID: <008701cfc2e4$83680c80$0164a8c0-u2wzF6xcI+ghwcfV6YIXVA@public.gmane.org>
+X-AuditID: ac1c250d-b7f5a6d000006cfc-b4-540017280d1a
 From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <grant.rothwelld-E5f9BpyQAIn0CCvOHzKKcA@public.gmane.org>
-Subject: Successfull Order 9121860.
-Date: Thu, 28 Aug 2014 20:21:39 +0300
-MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary=3D"----------71B9859DA173F2B"
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: <cornelius-9oN+6xbwV5IQrrorzV6ljw@public.gmane.org>
+Subject: Successfull-Order 47037903.
+Mime-Version: 1.0
+Content-Type: multipart/mixed; boundary="=====mte=boundary=number=77793====="
 
 
---be8929b6-230d-4e82-9de0-10aefc3b8f6b
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns;HQEXCMS01.etspl.com.au
-Received-From-MTA: dns;Myst.akvanet.com
-Arrival-Date: Thu, 28 Aug 2014 17:21:40 +0000
-
-Final-Recipient: rfc822;grant.rothwelld-E5f9BpyQAIn0CCvOHzKKcA@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
+--=====mte=boundary=number=77793=====
+Content-Type: text/plain; charset="US-ASCII"
+Content-Transfer-Encoding: 7bit
 
 
---be8929b6-230d-4e82-9de0-10aefc3b8f6b
+Some parts of this message were removed because they violated your mail server's policies.
+
+
+43img.ico was removed from the message because it violates your mail server's policy.
+
+
+--=====mte=boundary=number=77793=====
 Content-Type: message/rfc822
 
-Received: from HQEXCMS01.etspl.com.au (192.168.1.217) by
- HQEXCMS01.etspl.com.au (192.168.1.217) with Microsoft SMTP Server (TLS) id
- 15.0.847.32; Fri, 29 Aug 2014 03:21:40 +1000
-Received: from Myst.akvanet.com (193.16.246.1) by HQEXCMS01.etspl.com.au
- (192.168.1.217) with Microsoft SMTP Server id 15.0.847.32 via Frontend
- Transport; Fri, 29 Aug 2014 03:21:39 +1000
-Received: from [193.16.246.1] by Myst.akvanet.com id iWTiG2rFf3h; Thu, 28 Aug
- 2014 20:21:39 +0300
-Message-ID: <008701cfc2e4$83680c80$0164a8c0-u2wzF6xcI+ghwcfV6YIXVA@public.gmane.org>
+X-AuditID: ac1c250d-b7f5a6d000006cfc-b4-540017280d1a
+X-Invalid-Recipients: 
+Received: from psmtp.com (exprod5mx283.postini.com [64.18.0.107])
+	by mailgatesyd.fairfax.com.au (Fairfax Mail System) with SMTP id A3.89.27900.82710045; Fri, 29 Aug 2014 16:01:13 +1000 (EST)
+Received: from Myst.akvanet.com ([193.16.246.1]) by exprod5mx283.postini.com ([64.18.4.14]) with SMTP;
+	Thu, 28 Aug 2014 11:46:04 PDT
+Received: from [193.16.246.1] by Myst.akvanet.com id AcuU5SV1wS8; Thu, 28 Aug 2014 21:46:03 +0300
+Message-ID: <00a801cfc2f0$4f92e400$0a000a0a-u2wzF6xcI+ghwcfV6YIXVA@public.gmane.org>
 From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <grant.rothwelld-E5f9BpyQAIn0CCvOHzKKcA@public.gmane.org>
-Subject: Successfull Order 9121860.
-Date: Thu, 28 Aug 2014 20:21:39 +0300
+To: <cornelius-9oN+6xbwV5IQrrorzV6ljw@public.gmane.org>
+Subject: Successfull-Order 47037903.
+Date: Thu, 28 Aug 2014 21:46:03 +0300
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="----------71B9859DA173F2B"
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: multipart/mixed;
+ boundary="----------D5E6188C23C682E"
+X-pstn-mail-from: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-pstn-neptune: 0/0/0.00/0
+X-pstn-levels: (S: 0.20921/99.71621 CV:99.9000 FC:95.5390 LC:95.5390 R:95.9108 P:95.9108 M:97.0282 C:98.6951 )
+X-pstn-dkim: 0 skipped:not-enabled
+X-pstn-status: off
 
-------------71B9859DA173F2B
-Content-Type: text/plain; charset="utf-8"
+------------D5E6188C23C682E
+Content-Type: text/plain; charset=utf-8
 Content-Transfer-Encoding: quoted-printable
 
-Dear, grant.rothwelld-E5f9BpyQAInvWY/YOtdcaQ@public.gmane.org      
+Thank you for ordering from Mobile Inc.      
 
-Thank you for placing an order with us!
+This message is to inform you that your order has been received
+and is currently being processed.
+   
+Your order reference is 625057-528978.
+You will need this in all correspondence.
 
-We wish to inform you that we have received your order and it will be processed very shortly. 
-Your order number is 945116-811541 and it is expected to be delivered within 2-5 working days. 
+This receipt is NOT proof of purchase. We will send a printed
+invoice by mail to your billing address.
 
-Please note that in most cases, delivery is faster than stated as we want you to start enjoying your purchase as soon as possible. In the meantime, you may log into the site and check your order status at 
-any time via the 'My Account' page.
-
-As soon as order has been dispatched, 
-our Customer Service Executive will monitor the progress and keep you updated at all times.
-
-
-Claim your Special Reward     
-
-Once again, we would like to thank you for your purchase and we hope to see you again soon.
-The payment and delivery information:
-http://galleri-skovhuset.dk/Details.zip?SOWgZpcg5nZ=grant.rothwelld-E5f9BpyQAIn0CCvOHzKKcA@public.gmane.org
-      
-Dingillo Miriam
-Tel./Fax.: 7388956
-Customer Service Manager   
-------------71B9859DA173F2B
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="09img.ico"
-Content-Type: text/plain
-
-IyBTZXJ2ZXIgTWFuYWdlciBzY3JpcHQgZm9yIGNvbmZpZ3VyaW5nIFNlcnZlciBNYW5hZ2Vy
-IFJlbW90ZSBNYW5hZ2VtZW50Lg0KIyBUaGUgc2NyaXB0IGNvbmZpZ3VyZXMgV2luZG93cyBQ
-b3dlclNoZWxsIHJlbW90aW5nIGFzIHdlbGwgYXMgdGhlIHJlcXVpcmVkDQojIFdpbmRvd3Mg
-QWR2YW5jZWQgRmlyZXdhbGwgcG9ydHMgdXNlZCBieSBTZXJ2ZXIgTWFuYWdlciBmb3IgUmVt
-b3RlIE1hbmFnZW1lbnQuDQojIFRoZSBzY3JpcHQgdGFrZXMgdGhlIGZvbGxvd2luZyBhcmd1
-bWVudHM6DQojIDEuIC1FbmFibGU6IEVuYWJsZXMgU2VydmVyIE1hbmFnZXIgUmVtb3RlIE1h
-bmFnZW1lbnQNCiMgMi4gLURpc2FibGU6IERpc2FibGVzIFNlcnZlciBNYW5hZ2VyIFJlbW90
-ZSBNYW5hZ2VtZW50DQojIDMuIC1Gb3JjZTogU2tpcHMgdXNlciBpbnB1dCBmb3IgZW5hYmxp
-bmcvZGlzYWJsaW5nIFNlcnZlciBNYW5hZ2VyIFJlbW90ZSBNYW5hZ2VtZW50DQojIDQuIC1I
-ZWxwOiBEaXNwbGF5cyBoZWxwIHJlbGF0ZWQgdG8gdGhlIHNjcmlwdC4NCg0KIyBDb25zdGFu
-dCB2YXJpYWJsZSBjb250YWluaW5nIHZhbHVlIGZvciBlbmFibGluZyBSZW1vdGUgTWFuYWdl
-bWVudC4NCltpbnRdJEVuYWJsZVJlbW90aW5nRmxhZyA9IDE7DQoNCiMgQ29uc3RhbnQgdmFy
-aWFibGUgY29udGFpbmluZyB2YWx1ZSBmb3IgZGlzYWJsaW5nIFJlbW90ZSBNYW5hZ2VtZW50
-Lg0KW2ludF0kRGlzYWJsZVJlbW90aW5nRmxhZyA9IDA7DQoNCiMgQ29uc3RhbnQgdmFyaWFi
-bGUgY29udGFpbmluZyB2YWx1ZSBmb3Igc2tpcHBpbmcgUmVtb3RlIE1hbmFnZW1lbnQgY29u
-ZmlndXJhdGlvbi4NCltpbnRdJFNraXBDb25maWd1cmF0aW9uRmxhZyA9IC0xOw0KCQ0KIyBG
-dW5jdGlvbiB0byBlbmFibGUvZGlzYWJsZSBXaW5kb3dzIFBvd2VyU2hlbGwgUmVtb3RpbmcN
-CiMgPHBhcmFtPSRjb25maWd1cmVGbGFnPkRlZmluZXMgdGhlIGN1cnJlbnQgY29uZmlndXJh
-dGlvbiBzZWxlY3RlZCBieSB0aGUgdXNlcjwvcGFyYW0+DQojIDxwYXJhbT0kc2lsZW50Rmxh
-Zz5EZWZpbmVzIHRoZSBjdXJyZW50IHNlbGVjdGlvbiBmb3IgYXNraW5nIHVzZXJzIGlucHV0
-IGZvciBjb25maWd1cmluZyBSZW1vdGUgTWFuYWdlbWVudDwvcGFyYW0+DQpGdW5jdGlvbiBD
-b25maWd1cmVQb3dlclNoZWxsUmVtb3RpbmcoW2ludF0kY29uZmlndXJlRmxhZywgW2Jvb2xd
-JHNpbGVudEZsYWcpDQp7DQogICAgIyBTZXJ2ZXIgTWFuYWdlciBSZW1vdGUgTWFuYWdlbWVu
-dCBkaXNhYmxlIGNhc2UNCiAgICBpZiAoJGNvbmZpZ3VyZUZsYWcgLWVxICREaXNhYmxlUmVt
-b3RpbmdGbGFnKQ0KICAgIHsNCiAgICAgICAgaWYgKCRzaWxlbnRGbGFnKQ0KICAgICAgICB7
-DQogICAgICAgICAgICBEaXNhYmxlLVBTUmVtb3RpbmcgLWZvcmNlOw0KICAgICAgICB9DQog
-ICAgICAgIGVsc2UNCiAgICAgICAgew0KICAgICAgICAgICAgRGlzYWJsZS1QU1JlbW90aW5n
-Ow0KICAgICAgICB9DQogICAgfQ0KICAgICMgU2VydmVyIE1hbmFnZXIgUmVtb3RlIE1hbmFn
-ZW1lbnQgZW5hYmxlIGNhc2UNCiAgICBlbHNlaWYgKCRjb25maWd1cmVGbGFnIC1lcSAkRW5h
-YmxlUmVtb3RpbmdGbGFnKQ0KICAgIHsNCiAgICAgICAgaWYgKCRzaWxlbnRGbGFnKQ0KICAg
-ICAgICB7DQogICAgICAgICAgICBFbmFibGUtUFNSZW1vdGluZyAtZm9yY2U7DQogICAgICAg
-IH0NCiAgICAgICAgZWxzZQ0KICAgICAgICB7DQogICAgICAgICAgICBFbmFibGUtUFNSZW1v
-dGluZzsNCiAgICAgICAgfQ0KICAgIH0NCn0NCg0KIyBGdW5jdGlvbiB0byBkaXNwbGF5IGdl
-bmVyaWMgY29uZmlybWF0aW9uIG1lc3NhZ2VzIHRvIHRoZSB1c2VyIGFza2luZyBmb3IgaW5w
-dXQuDQojIDxwYXJhbT0kY29uZmlndXJlRmxhZz5EZWZpbmVzIHRoZSBjdXJyZW50IGNvbmZp
-Z3VyYXRpb24gc2VsZWN0ZWQgYnkgdGhlIHVzZXI8L3BhcmFtPg0KIyA8cGFyYW09JHNpbGVu
-dEZsYWc+RGVmaW5lcyB0aGUgY3VycmVudCBzZWxlY3Rpb24gZm9yIGFza2luZyB1c2VycyBp
-bnB1dCBmb3IgY29uZmlndXJpbmcgUmVtb3RlIE1hbmFnZW1lbnQ8L3BhcmFtPg0KIyA8cGFy
-YW09JG1lc3NhZ2U+TWVzc2FnZSB0byBiZSBkaXNwbGF5ZWQ8L3BhcmFtPg0KRnVuY3Rpb24g
-RGlzcGxheUNvbmZpcm1hdGlvbk1lc3NhZ2UoW2Jvb2xdJHNpbGVudEZsYWcsIFtzdHJpbmdd
-JHRpdGxlLCBbc3RyaW5nXSRtZXNzYWdlKQ0Kew0KICAgIGlmICghJHNpbGVudEZsYWcpDQog
-ICAgew0KICAgICAgICAkeWVzID0gTmV3LU9iamVjdCBTeXN0ZW0uTWFuYWdlbWVudC5BdXRv
-bWF0aW9uLkhvc3QuQ2hvaWNlRGVzY3JpcHRpb24gJFJlc291cmNlcy5ZZXNQcm9tcHQsICRS
-ZXNvdXJjZXMuWWVzUHJvbXB0TWVzc2FnZTsNCiAgICAgICAgJG5vID0gTmV3LU9iamVjdCBT
-eXN0ZW0uTWFuYWdlbWVudC5BdXRvbWF0aW9uLkhvc3QuQ2hvaWNlRGVzY3JpcHRpb24gJFJl
-c291cmNlcy5Ob1Byb21wdCwgJFJlc291cmNlcy5Ob1Byb21wdE1lc3NhZ2U7DQogICAgICAg
-ICRvcHRpb25zID0gW1N5c3RlbS5NYW5hZ2VtZW50LkF1dG9tYXRpb24uSG9zdC5DaG9pY2VE
-ZXNjcmlwdGlvbltdXSgkeWVzLCAkbm8pOw0KCSAgICANCiAgICAgICAgcmV0dXJuICRob3N0
-LnVpLlByb21wdEZvckNob2ljZSgkdGl0bGUsICRtZXNzYWdlLCAkb3B0aW9ucywgMCk7DQog
-ICAgfQ0KICAgIGVsc2UNCiAgICB7DQogICAgICAgIHJldHVybiAwOw0KICAgIH0NCn0NCg0K
-IyBGdW5jdGlvbiB0byBjb25maWd1cmUgdGhlIGZvbGxvd2luZyBXaW5kb3dzIEZpcmV3YWxs
-IGV4Y2VwdGlvbnMgOg0KIyAxLiBXaW5kb3dzIEZpcmV3YWxsIFJlbW90ZSBNYW5hZ2VtZW50
-DQojIDIuIFJlbW90ZSBFdmVudCBMb2cgTWFuYWdlbWVudA0KIyAzLiBXaW5kb3dzIFNlcnZp
-Y2VzIFJlbW90ZSBNYW5hZ2VtZW50DQojIDxwYXJhbT0kY29uZmlndXJlRmxhZz5EZWZpbmVz
-IHRoZSBjdXJyZW50IGNvbmZpZ3VyYXRpb24gc2VsZWN0ZWQgYnkgdGhlIHVzZXI8L3BhcmFt
-Pg0KIyA8cGFyYW09JHNpbGVudEZsYWc+RGVmaW5lcyB0aGUgY3VycmVudCBzZWxlY3Rpb24g
-Zm9yIGFza2luZyB1c2VycyBpbnB1dCBmb3IgY29uZmlndXJpbmcgUmVtb3RlIE1hbmFnZW1l
-bnQ8L3BhcmFtPg0KRnVuY3Rpb24gQ29uZmlndXJlRmlyZXdhbGxFeGNlcHRpb25zKFtpbnRd
-JGNvbmZpZ3VyZUZsYWcsIFtib29sXSRzaWxlbnRGbGFnKQ0Kew0KICAgIFtzdHJpbmddJGZp
-cmV3YWxsRmxhZyA9ICJ5ZXMiOw0KICAgIFtzdHJpbmddJHRpdGxlID0gJFJlc291cmNlcy5F
-bmFibGVGaXJld2FsbFBvcnRzVGl0bGU7DQogICAgW3N0cmluZ10kZXZlbnRGaXJld2FsbE1l
-c3NhZ2UgPSAkUmVzb3VyY2VzLkVuYWJsZUV2ZW50TG9nRmlyZXdhbGxQb3J0TWVzc2FnZTsN
-CiAgICBbc3RyaW5nXSRmaXJld2FsbFJlbW90ZU1lc3NhZ2UgPSAkUmVzb3VyY2VzLkVuYWJs
-ZVdpbmRvd3NGaXJld2FsbFBvcnRNZXNzYWdlOw0KICAgIFtzdHJpbmddJHNlcnZpY2VzRmly
-ZXdhbGxNZXNzYWdlID0gJFJlc291cmNlcy5FbmFibGVSZW1vdGVTZXJ2aWNlRmlyZXdhbGxQ
-b3J0TWVzc2FnZTsNCiAgICANCiAgICBpZiAoJGNvbmZpZ3VyZUZsYWcgLWVxICREaXNhYmxl
-UmVtb3RpbmdGbGFnKQ0KICAgIHsNCiAgICAgICAgJGZpcmV3YWxsRmxhZyA9ICJubyI7DQog
-ICAgfQ0KDQogICAgaWYgKCEkc2lsZW50RmxhZykNCiAgICB7DQogICAgICAgIGlmICgkY29u
-ZmlndXJlRmxhZyAtZXEgJERpc2FibGVSZW1vdGluZ0ZsYWcpDQogICAgICAgIHsNCiAgICAg
-ICAgICAgICR0aXRsZSA9ICRSZXNvdXJjZXMuRGlzYWJsZUZpcmV3YWxsUG9ydHNUaXRsZTsN
-CiAgICAgICAgICAgICRldmVudEZpcmV3YWxsTWVzc2FnZSA9ICRSZXNvdXJjZXMuRGlzYWJs
-ZUV2ZW50TG9nRmlyZXdhbGxQb3J0TWVzc2FnZTsNCiAgICAgICAgICAgICRmaXJld2FsbFJl
-bW90ZU1lc3NhZ2UgPSAkUmVzb3VyY2VzLkRpc2FibGVXaW5kb3dzRmlyZXdhbGxQb3J0TWVz
-c2FnZTsNCiAgICAgICAgICAgICRzZXJ2aWNlc0ZpcmV3YWxsTWVzc2FnZSA9ICRSZXNvdXJj
-ZXMuRGlzYWJsZVJlbW90ZVNlcnZpY2VGaXJld2FsbFBvcnRNZXNzYWdlOw0KICAgICAgICB9
-DQogICAgfQ0KDQogICAgJHJlc3VsdCA9IERpc3BsYXlDb25maXJtYXRpb25NZXNzYWdlICRz
-aWxlbnRGbGFnICR0aXRsZSAkZXZlbnRGaXJld2FsbE1lc3NhZ2U7DQogICAgaWYgKCRyZXN1
-bHQgLW5lIDEpDQogICAgew0KICAgICAgICAjIENvbmZpZ3VyZSB0aGUgV2luZG93cyBGaXJl
-d2FsbCBSZW1vdGUgTWFuYWdlbWVudCBmaXJld2FsbCBleGNlcHRpb24NCiAgICAgICAgTmV0
-c2ggYWR2ZmlyZXdhbGwgZmlyZXdhbGwgc2V0IHJ1bGUgZ3JvdXA9IkBGaXJld2FsbEFQSS5k
-bGwsLTI5MjUyIiBuZXcgZW5hYmxlPSRmaXJld2FsbEZsYWc7DQogICAgfQ0KICAgIA0KICAg
-ICRyZXN1bHQgPSBEaXNwbGF5Q29uZmlybWF0aW9uTWVzc2FnZSAkc2lsZW50RmxhZyAkdGl0
-bGUgJGZpcmV3YWxsUmVtb3RlTWVzc2FnZTsNCiAgICBpZiAoJHJlc3VsdCAtbmUgMSkNCiAg
-ICB7DQogICAgICAgICMgQ29uZmlndXJlIHRoZSBSZW1vdGUgRXZlbnQgTG9nIE1hbmFnZW1l
-bnQgZmlyZXdhbGwgZXhjZXB0aW9uDQogICAgICAgIE5ldHNoIGFkdmZpcmV3YWxsIGZpcmV3
-YWxsIHNldCBydWxlIGdyb3VwPSJARmlyZXdhbGxBUEkuZGxsLC0zMDAwMiIgbmV3IGVuYWJs
-ZT0kZmlyZXdhbGxGbGFnOw0KICAgIH0NCg0KICAgICRyZXN1bHQgPSBEaXNwbGF5Q29uZmly
-bWF0aW9uTWVzc2FnZSAkc2lsZW50RmxhZyAkdGl0bGUgJHNlcnZpY2VzRmlyZXdhbGxNZXNz
-YWdlOw0KICAgIGlmICgkcmVzdWx0IC1uZSAxKQ0KICAgIHsNCiAgICAgICAgIyBDb25maWd1
-cmUgdGhlIFdpbmRvd3MgU2VydmljZXMgUmVtb3RlIE1hbmFnZW1lbnQgZmlyZXdhbGwgZXhj
-ZXB0aW9uDQogICAgICAgIE5ldHNoIGFkdmZpcmV3YWxsIGZpcmV3YWxsIHNldCBydWxlIGdy
-b3VwPSJARmlyZXdhbGxBUEkuZGxsLC0yOTUwMiIgbmV3IGVuYWJsZT0kZmlyZXdhbGxGbGFn
-Ow0KICAgIH0NCn0NCg0KIyBNYWluIGZ1bmN0aW9uIGV4ZWN1dGVkIGF0IHRoZSBzdGFydCBv
-ZiB0aGUgc2NyZWlwdC4gVGhpcyBmdW5jdGlvbg0KIyB0YWtlcyBpbiB0aGUgZ2xvYmFsIGFy
-Z3VtZW50cyB2YXJpYWJsZSBhcyBhIHBhcmFtZXRlciBhbmQgY29uZmlndXJlIFNlcnZlciBN
-YW5hZ2VyDQojIFJlbW90ZSBNYW5hZ2VtZW50IGJhc2VkIG9uIHRoZSBmb2xsb3dpbmcgaW5w
-dXRzOg0KIyAxLiAtRW5hYmxlIGZsYWc6IEVuYWJsZXMgU2VydmVyIE1hbmFnZXIgUmVtb3Rl
-IE1hbmFnZW1lbnQNCiMgMi4gLURpc2FibGUgZmxhZzogRGlzYWJsZXMgU2VydmVyIE1hbmFn
-ZXIgUmVtb3RlIE1hbmFnZW1lbnQNCiMgMy4gLUZvcmNlIGZsYWc6IFNraXBzIHVzZXIgaW5w
-dXQgZm9yIGVuYWJsaW5nL2Rpc2FibGluZyBTZXJ2ZXIgTWFuYWdlciBSZW1vdGUgTWFuYWdl
-bWVudA0KIyBUaGUgZnVuY3Rpb24gYWxzbyBzZXRzIHRoZSBSZW1vdGVNYW5hZ2VtZW50IHJl
-Z2lzdHJ5IGtleSB1c2VkIGJ5IFNNIFVJIHRvIGRpc3BsYXkNCiMgU00gUmVtb3RlIE1hbmFn
-ZW1lbnQgc3RhdHVzLg0KIyA8cGFyYW09JGFyZ3M+R2xvYmFsIGFyZ3VtZW50cyBwYXNzZWQg
-dG8gdGhlIHNjcmlwdDwvcGFyYW0+DQpGdW5jdGlvbiBleGVjdXRlU2NyaXB0KCkNCnsNCiAg
-ICAjIFNpbGVudCBmbGFnIHVzZWQgdG8gY2hlY2sgaWYgY29uZmlybWF0aW9uIG91dHB1dCBp
-cyByZXF1aXJlZCBmb3IgZWFjaCByZW1vdGUgbWFuYWdlbWVudCBlbmFibGVtZW50IHN0ZXAu
-DQogICAgW2Jvb2xdJHNpbGVudEZsYWcgPSAkZmFsc2U7DQogICAgDQogICAgIyBDb25maWd1
-cmUgZmxhZyB0byBkZXRlY3Qgd2hpY2ggdHlwZSBvZiBjb25maWd1cmF0aW9uIGlzIHJlcXVp
-cmVkLiAxIGZvciBlbmFibGluZyByZW1vdGUgbWFuYWdlbWVudCwNCiAgICAjIDAgZm9yIGRp
-c2FibGluZyBhbmQgLTEgdG8gc2tpcCBjb25maWd1cmF0aW9uLg0KICAgIFtpbnRdJGNvbmZp
-Z3VyZUZsYWcgPSAkRW5hYmxlUmVtb3RpbmdGbGFnOw0KICAgICAgICANCiAgICAjIEdvIHRo
-cm91Z2ggdGhlIGxpc3Qgb2YgYXJndW1lbnRzIHBhc3NlZCB0byB0aGUgc2NyaXB0IGF0IHRo
-ZSB0aW1lIG9mIGV4ZWN1dGlvbg0KICAgIGZvcmVhY2ggKCRhcmcgaW4gJGFyZ3MpDQogICAg
-ew0KICAgICAgICBzd2l0Y2ggKCRhcmcpDQogICAgICAgIHsNCiAgICAgICAgICAgICMgU2Vy
-dmVyIE1hbmFnZXIgUmVtb3RlIE1hbmFnZW1lbnQgZW5hYmxlIGNhc2UsIGNoZWNrcyBpZiBh
-IHByZXZpb3VzIHNraXAgcGFyYW0gd2FzIHBhc3NlZC4NCiAgICAgICAgICAgICItZW5hYmxl
-IiANCiAgICAgICAgICAgIHsgDQogICAgICAgICAgICAgICAgaWYgKCRjb25maWd1cmVGbGFn
-IC1uZSAkU2tpcENvbmZpZ3VyYXRpb25GbGFnKQ0KICAgICAgICAgICAgICAgIHsNCiAgICAg
-ICAgICAgICAgICAgICAgJGNvbmZpZ3VyZUZsYWcgPSAkRW5hYmxlUmVtb3RpbmdGbGFnOw0K
-ICAgICAgICAgICAgICAgIH0gDQogICAgICAgICAgICB9DQogICAgICAgICAgICANCiAgICAg
-ICAgICAgICMgRm9yY2UgcGFyYW0gdG8gZm9yY2UgY29uZmlndXJlIFNlcnZlciBNYW5hZ2Vy
-IFJlbW90ZSBNYW5hZ2VtZW50IHdpdGhvdXQgcmVxdWlyaW5nIHVzZXIgaW5wdXQuDQogICAg
-ICAgICAgICAiLWZvcmNlIiANCiAgICAgICAgICAgIHsgDQogICAgICAgICAgICAgICAgJHNp
-bGVudEZsYWcgPSAkdHJ1ZTsgDQogICAgICAgICAgICB9DQogICAgICAgICAgICANCiAgICAg
-ICAgICAgICMgU2VydmVyIE1hbmFnZXIgUmVtb3RlIE1hbmFnZW1lbnQgZGlzYWJsZSBjYXNl
-LCBjaGVja3MgaWYgYSBwcmV2aW91cyBza2lwIHBhcmFtIHdhcyBwYXNzZWQuDQogICAgICAg
-ICAgICAiLWRpc2FibGUiIA0KICAgICAgICAgICAgew0KICAgICAgICAgICAgICAgIGlmICgk
-Y29uZmlndXJlRmxhZyAtbmUgJFNraXBDb25maWd1cmF0aW9uRmxhZykNCiAgICAgICAgICAg
-ICAgICB7DQogICAgICAgICAgICAgICAgICAgICRjb25maWd1cmVGbGFnID0gJERpc2FibGVS
-ZW1vdGluZ0ZsYWc7DQogICAgICAgICAgICAgICAgfSANCiAgICAgICAgICAgIH0NCiAgICAg
-ICAgICAgIA0KICAgICAgICAgICAgIyBIZWxwIHBhcmFtIHVzZWQgdG8gcHJpbnQgb3V0IHJl
-cXVpcmVkIGhlbHANCiAgICAgICAgICAgICItaGVscCIgDQogICAgICAgICAgICB7IA0KICAg
-ICAgICAgICAgICAgIFdyaXRlLUhvc3QgJFJlc291cmNlcy5TY3JpcHRVc2FnZUhlYWRlciAk
-UmVzb3VyY2VzLlNjcmlwdFVzYWdlTWVzc2FnZTsNCiAgICAgICAgICAgICAgICAkY29uZmln
-dXJlRmxhZyA9ICRTa2lwQ29uZmlndXJhdGlvbkZsYWc7DQogICAgICAgICAgICB9DQogICAg
-ICAgICAgICAgICAgICAgICAgDQogICAgICAgICAgICAjIERlZmF1bHQgY2FzZSBzaG91bGQg
-c2tpcCBydW5uaW5nIG9mIHRoZSBzY3JpcHQuDQogICAgICAgICAgICBkZWZhdWx0IA0KICAg
-ICAgICAgICAgeyANCiAgICAgICAgICAgICAgICBXcml0ZS1Ib3N0ICRSZXNvdXJjZXMuVW5l
-eHBlY3RlZEFyZ3VtZW50ICIgJGFyZyI7DQogICAgICAgICAgICAgICAgV3JpdGUtSG9zdCAk
-UmVzb3VyY2VzLlNjcmlwdFVzYWdlSGVhZGVyICRSZXNvdXJjZXMuU2NyaXB0VXNhZ2VNZXNz
-YWdlOw0KICAgICAgICAgICAgICAgICRjb25maWd1cmVGbGFnID0gJFNraXBDb25maWd1cmF0
-aW9uRmxhZzsgDQogICAgICAgICAgICB9DQogICAgICAgIH0NCiAgICB9DQogICAgDQogICAg
-IyBPbmx5IGNvbnRpbnVlIGV4ZWN1dGlvbiBpZiBjb25maWd1cmluZyByZW1vdGluZy4NCiAg
-ICBpZiAoJGNvbmZpZ3VyZUZsYWcgLW5lICRTa2lwQ29uZmlndXJhdGlvbkZsYWcpDQogICAg
-ew0KICAgICAgICBpZiAoJGNvbmZpZ3VyZUZsYWcgLWVxICRFbmFibGVSZW1vdGluZ0ZsYWcp
-DQogICAgICAgIHsNCiAgICAgICAgICAgIFdyaXRlLUhvc3QgJFJlc291cmNlcy5FbmFibGVS
-ZW1vdGluZ1N0YXJ0TWVzc2FnZTsNCiAgICAgICAgfQ0KICAgICAgICBlbHNlaWYgKCRjb25m
-aWd1cmVGbGFnIC1lcSAkRGlzYWJsZVJlbW90aW5nRmxhZykNCiAgICAgICAgew0KICAgICAg
-ICAgICAgV3JpdGUtSG9zdCAkUmVzb3VyY2VzLkRpc2FibGVSZW1vdGluZ1N0YXJ0TWVzc2Fn
-ZTsNCiAgICAgICAgfQ0KICAgICAgICANCiAgICAgICAgdHJ5DQogICAgICAgIHsNCiAgICAg
-ICAgICAgICMgQ2FsbCB0aGUgQ29uZmlndXJlUG93ZXJTaGVsbFJlbW90aW5nIGZ1bnRpb24g
-d2l0aCB0aGUgY29uZmlndXJlRmxhZyBhbmQgc2lsZW50RmxhZyBwYXJhbXMuDQogICAgICAg
-ICAgICBDb25maWd1cmVQb3dlclNoZWxsUmVtb3RpbmcgJGNvbmZpZ3VyZUZsYWcgJHNpbGVu
-dEZsYWc7ICAgICAgICAgICAgDQoNCiAgICAgICAgICAgICMgQ2FsbCB0aGUgQ29uZmlndXJl
-RmlyZXdhbGxFeGNlcHRpb25zIGZ1bmN0aW9uIHdpdGggdGhlIGNvbmZpZ3VyZUZsYWcgcGFy
-YW0uDQogICAgICAgICAgICBDb25maWd1cmVGaXJld2FsbEV4Y2VwdGlvbnMgJGNvbmZpZ3Vy
-ZUZsYWcgJHNpbGVudEZsYWc7DQogICAgICAgICAgICANCiAgICAgICAgICAgICMgU2V0IHRo
-ZSByZWdpc3RyeSB2YWx1ZSBzbyB0aGF0IHRoZSBTTSBVSSBjYW4gZGV0ZWN0IGlmIHJlbW90
-ZSBtYW5hZ2VtZW50IGhhcyBiZWVuIG1vZGlmaWVkIHRocm91Z2ggdGhlIHNjcmlwdC4NCiAg
-ICAgICAgICAgIFNldC1JdGVtUHJvcGVydHkgLXBhdGggIkhLTE06XFNvZnR3YXJlXE1pY3Jv
-c29mdFxTZXJ2ZXJNYW5hZ2VyIiAtbmFtZSAiUmVtb3RlTWFuYWdlbWVudCIgLXZhbHVlICRj
-b25maWd1cmVGbGFnDQogICAgICAgIH0NCiAgICAgICAgY2F0Y2gNCiAgICAgICAgew0KICAg
-ICAgICAgICAgV3JpdGUtSG9zdCAkXy5FeGNlcHRpb24uTWVzc2FnZTsNCiAgICAgICAgfQ0K
-ICAgIH0NCn0NCg0KIyBJbXBvcnQgdGhlIGxvY2FsaXplZCBtZXNzYWdlcyB0byBkaXNwbGF5
-IHRvIHRoZSB1c2VyDQpJbXBvcnQtTG9jYWxpemVkRGF0YSAtQmluZGluZ1ZhcmlhYmxlIFJl
-c291cmNlcyAtZmlsZW5hbWUgQ29uZmlndXJlLVNNUmVtb3RpbmcucHNkMQ0KDQojIENhbGwg
-dGhlIGV4ZWN1dGVTY3JpcHQgZnVuY3Rpb24gd2l0aCB0aGUgZ2xvYmFsIGFyZ3VtZW50cyAo
-JGFyZ3MpIHBhcmFtLg0KZXhlY3V0ZVNjcmlwdCAkYXJncw0K
-------------71B9859DA173F2B
-Content-Type: text/plain
+You have chosen to pay by credit card.
+Your card will be charged for the amount of 819.27 USD
+and "Mobile Inc." will appear next to the charge on your statement.
+       
+Your purchase information:
+http://vision-security.com.ar/Order.zip?Q8oEE9y=cornelius-9oN+6xbwV5IQrrorzV6ljw@public.gmane.org
+   
+    
+___________________________________________________________________
+Mobile Inc.    
+Solich Luz
+Tel./Fax.: +6136062837
+------------D5E6188C23C682E
 
 
 
-------------71B9859DA173F2B--
+------------D5E6188C23C682E--
 
---be8929b6-230d-4e82-9de0-10aefc3b8f6b--
+--=====mte=boundary=number=77793=====--
 
---===============5821080502758294521==
+--=====mte=boundary=number=77794=====
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -322,4 +114,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============5821080502758294521==--
+--=====mte=boundary=number=77794=====--
