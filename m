@@ -1,15 +1,20 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: For review: user_namespace(7) man page
-Date: Mon, 01 Sep 2014 20:05:47 -0500
-Message-ID: <87sikade6s.fsf@x220.int.ebiederm.org>
-References: <53F5310A.5080503@gmail.com>
-	<87d2bhfxvc.fsf@x220.int.ebiederm.org> <5404AD7F.4070004@gmail.com>
+From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH V4 1/8] namespaces: assign each namespace instance a
+	serial number
+Date: Tue, 2 Sep 2014 17:40:35 -0400
+Message-ID: <20140902214035.GT4462@madcap2.tricolour.ca>
+References: <cover.1408581429.git.rgb@redhat.com>
+	<cover.1408581429.git.rgb@redhat.com>
+	<d5bfd81a219c5c45c910494d6a3478ce83052e1f.1408581429.git.rgb@redhat.com>
+	<87ioljs968.fsf@x220.int.ebiederm.org>
+	<20140824203827.GI9003@madcap2.tricolour.ca>
+	<87tx4wmlcj.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <5404AD7F.4070004-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> (Michael Kerrisk's message of "Mon,
-	01 Sep 2014 19:31:43 +0200")
+Content-Disposition: inline
+In-Reply-To: <87tx4wmlcj.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,213 +24,119 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: "linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Ik1pY2hhZWwgS2VycmlzayAobWFuLXBhZ2VzKSIgPG10ay5tYW5wYWdlc0BnbWFpbC5jb20+IHdy
-aXRlczoKCj4gT24gMDgvMzAvMjAxNCAxMTo1MyBQTSwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6
-Cj4+ICJNaWNoYWVsIEtlcnJpc2sgKG1hbi1wYWdlcykiIDxtdGsubWFucGFnZXNAZ21haWwuY29t
-PiB3cml0ZXM6Cgo+Pj4gRm9yIHZhcmlvdXMgcmVhc29ucywgbXkgd29yayBvbiB0aGUgbmFtZXNw
-YWNlcyBtYW4gcGFnZXMgCj4+PiBmZWxsIG9mZiB0aGUgdGFibGUgYSB3aGlsZSBiYWNrLiBOZXZl
-cnRoZWxlc3MsIHRoZSBwYWdlcyBoYXZlCj4+PiBiZWVuIGNsb3NlIHRvIGNvbXBsZXRpb24gZm9y
-IGEgd2hpbGUgbm93LCBhbmQgSSByZWNlbnRseSByZXN0YXJ0ZWQsCj4+PiBpbiBhbiBlZmZvcnQg
-dG8gZmluaXNoIHRoZW0uIEFzIHlvdSBhbHNvIG5vdGVkIHRvIG1lIGYyZiwgdGhlcmUgaGF2ZQo+
-Pj4gYmVlbiByZWNlbnRseSBiZWVuIHNvbWUgc21hbGwgbmFtZXNwYWNlIGNoYW5nZXMgdGhhdCB5
-b3UgbWF5IGFmZmVjdAo+Pj4gdGhlIGNvbnRlbnQgb2YgdGhlIHBhZ2VzLiBUaGVyZWZvcmUsIEkn
-bGwgdGFrZSB0aGUgb3Bwb3J0dW5pdHkgdG8KPj4+IHNlbmQgdGhlIG5hbWVzcGFjZS1yZWxhdGVk
-IHBhZ2VzIG91dCBmb3IgZnVydGhlciAoZmluYWw/KSByZXZpZXcuCj4+Pgo+Pj4gU28sIGhlcmUs
-IEkgc3RhcnQgd2l0aCB0aGUgdXNlcl9uYW1lc3BhY2VzKDcpIHBhZ2UsIHdoaWNoIGlzIHNob3du
-IAo+Pj4gaW4gcmVuZGVyZWQgZm9ybSBiZWxvdywgd2l0aCBzb3VyY2UgYXR0YWNoZWQgdG8gdGhp
-cyBtYWlsLiBJJ2xsCj4+PiBzZW5kIHZhcmlvdXMgb3RoZXIgcGFnZXMgaW4gZm9sbG93LW9uIG1h
-aWxzLgo+Pj4KPj4+IFJldmlldyBjb21tZW50cy9zdWdnZXN0aW9ucyBmb3IgaW1wcm92ZW1lbnRz
-IC8gYnVnIGZpeGVzIHdlbGNvbWUuCj4+Pgo+Pj4gQ2hlZXJzLAo+Pj4KPj4+IE1pY2hhZWwKPj4+
-Cj4+PiA9PQo+Pj4KPj4+IE5BTUUKPj4+ICAgICAgICB1c2VyX25hbWVzcGFjZXMgLSBvdmVydmll
-dyBvZiBMaW51eCB1c2VyX25hbWVzcGFjZXMKPj4+Cj4+PiBERVNDUklQVElPTgo+Pj4gICAgICAg
-IEZvciBhbiBvdmVydmlldyBvZiBuYW1lc3BhY2VzLCBzZWUgbmFtZXNwYWNlcyg3KS4KPj4+Cj4+
-PiAgICAgICAgVXNlciAgIG5hbWVzcGFjZXMgICBpc29sYXRlICAgc2VjdXJpdHktcmVsYXRlZCAg
-IGlkZW50aWZpZXJzICBhbmQKPj4+ICAgICAgICBhdHRyaWJ1dGVzLCBpbiBwYXJ0aWN1bGFyLCB1
-c2VyIElEcyBhbmQgZ3JvdXAgIElEcyAgKHNlZSAgY3JlZGVu4oCQCj4+PiAgICAgICAgdGlhbHMo
-NyksIHRoZSByb290IGRpcmVjdG9yeSwga2V5cyAoc2VlIGtleWN0bCgyKSksIGFuZCBjYXBhYmls
-aeKAkAo+Pj4gICAgICAgIHRpZXMgKHNlZSBjYXBhYmlsaXRpZXMoNykpLiAgQSBwcm9jZXNzJ3Mg
-dXNlciBhbmQgZ3JvdXAgIElEcyAgY2FuCj4+PiAgICAgICAgYmUgZGlmZmVyZW50IGluc2lkZSBh
-bmQgb3V0c2lkZSBhIHVzZXIgbmFtZXNwYWNlLiAgSW4gcGFydGljdWxhciwKPj4+ICAgICAgICBh
-IHByb2Nlc3MgY2FuIGhhdmUgYSBub3JtYWwgdW5wcml2aWxlZ2VkIHVzZXIgSUQgb3V0c2lkZSAg
-YSAgdXNlcgo+Pj4gICAgICAgIG5hbWVzcGFjZSB3aGlsZSBhdCB0aGUgc2FtZSB0aW1lIGhhdmlu
-ZyBhIHVzZXIgSUQgb2YgMCBpbnNpZGUgdGhlCj4+PiAgICAgICAgbmFtZXNwYWNlOyBpbiBvdGhl
-ciB3b3JkcywgdGhlIHByb2Nlc3MgaGFzICBmdWxsICBwcml2aWxlZ2VzICBmb3IKPj4+ICAgICAg
-ICBvcGVyYXRpb25zICBpbnNpZGUgIHRoZSAgdXNlciAgbmFtZXNwYWNlLCBidXQgaXMgdW5wcml2
-aWxlZ2VkIGZvcgo+Pj4gICAgICAgIG9wZXJhdGlvbnMgb3V0c2lkZSB0aGUgbmFtZXNwYWNlLgo+
-Pj4KPj4+ICAgIE5lc3RlZCBuYW1lc3BhY2VzLCBuYW1lc3BhY2UgbWVtYmVyc2hpcAo+Pj4gICAg
-ICAgIFVzZXIgbmFtZXNwYWNlcyBjYW4gYmUgbmVzdGVkOyAgdGhhdCAgaXMsICBlYWNoICB1c2Vy
-ICBuYW1lc3BhY2XigJQKPj4+ICAgICAgICBleGNlcHQgIHRoZSAgaW5pdGlhbCAgKCJyb290Iikg
-bmFtZXNwYWNl4oCUaGFzIGEgcGFyZW50IHVzZXIgbmFtZXPigJAKPj4+ICAgICAgICBwYWNlLCBh
-bmQgY2FuIGhhdmUgemVybyBvciBtb3JlIGNoaWxkIHVzZXIgbmFtZXNwYWNlcy4gIFRoZSAgcGFy
-4oCQCj4+PiAgICAgICAgZW50IHVzZXIgbmFtZXNwYWNlIGlzIHRoZSB1c2VyIG5hbWVzcGFjZSBv
-ZiB0aGUgcHJvY2VzcyB0aGF0IGNyZeKAkAo+Pj4gICAgICAgIGF0ZXMgdGhlIHVzZXIgbmFtZXNw
-YWNlIHZpYSBhIGNhbGwgdG8gdW5zaGFyZSgyKSBvciBjbG9uZSgyKSB3aXRoCj4+PiAgICAgICAg
-dGhlIENMT05FX05FV1VTRVIgZmxhZy4KPj4+Cj4+PiAgICAgICAgVGhlIGtlcm5lbCBpbXBvc2Vz
-IChzaW5jZSB2ZXJzaW9uIDMuMTEpIGEgbGltaXQgb2YgMzIgbmVzdGVkIGxlduKAkAo+Pj4gICAg
-ICAgIGVscyBvZiB1c2VyIG5hbWVzcGFjZXMuICBDYWxscyB0byAgdW5zaGFyZSgyKSAgb3IgIGNs
-b25lKDIpICB0aGF0Cj4+PiAgICAgICAgd291bGQgY2F1c2UgdGhpcyBsaW1pdCB0byBiZSBleGNl
-ZWRlZCBmYWlsIHdpdGggdGhlIGVycm9yIEVVU0VSUy4KPj4+Cj4+PiAgICAgICAgRWFjaCAgcHJv
-Y2VzcyAgaXMgIGEgIG1lbWJlciAgb2YgIGV4YWN0bHkgIG9uZSB1c2VyIG5hbWVzcGFjZS4gIEEK
-Pj4+ICAgICAgICBwcm9jZXNzIGNyZWF0ZWQgdmlhIGZvcmsoMikgb3IgY2xvbmUoMikgd2l0aG91
-dCB0aGUgQ0xPTkVfTkVXVVNFUgo+Pj4gICAgICAgIGZsYWcgIGlzICBhICBtZW1iZXIgIG9mIHRo
-ZSBzYW1lIHVzZXIgbmFtZXNwYWNlIGFzIGl0cyBwYXJlbnQuCj4+PiAgICAgICAgQQo+PiAgICAg
-ICAgICAgIF4gc2luZ2xlLXRocmVhZGVkCj4+IAo+PiBCZWNhdXNlIG9mIGNocm9vdCBhbmQgb3Ro
-ZXIgdGhpbmdzIG11bHRpLXRocmVhZGVkIHByb2Nlc3NlcyBhcmUgbm90Cj4+IGFsbG93ZWQgdG8g
-am9pbiBhIHVzZXIgbmFtZXNwYWNlLiAgRm9yIHRoZSBkb2N1bWVudGF0aW9uIGp1c3Qgc2F5aW5n
-Cj4+IHNpbmdsZS10aHJlYWRlZCBzb3VuZHMgbGlrZSBlbm91Z2ggaGVyZS4KPgo+IFRoYW5rcy4g
-Rml4ZWQuCj4KPj4+ICAgICAgICBwcm9jZXNzIGNhbiBqb2luIGFub3RoZXIgdXNlciBuYW1lc3Bh
-Y2Ugd2l0aCBzZXRucygyKSBpZiAgaXQgIGhhcwo+Pj4gICAgICAgIHRoZSAgQ0FQX1NZU19BRE1J
-TiAgaW4gIHRoYXQgbmFtZXNwYWNlOyB1cG9uIGRvaW5nIHNvLCBpdCBnYWlucyBhCj4+PiAgICAg
-ICAgZnVsbCBzZXQgb2YgY2FwYWJpbGl0aWVzIGluIHRoYXQgbmFtZXNwYWNlLgo+Pj4KPj4+ICAg
-ICAgICBBIGNhbGwgdG8gY2xvbmUoMikgb3IgIHVuc2hhcmUoMikgIHdpdGggIHRoZSAgQ0xPTkVf
-TkVXVVNFUiAgZmxhZwo+Pj4gICAgICAgIG1ha2VzICB0aGUgIG5ldyAgY2hpbGQgIHByb2Nlc3Mg
-KGZvciBjbG9uZSgyKSkgb3IgdGhlIGNhbGxlciAoZm9yCj4+PiAgICAgICAgdW5zaGFyZSgyKSkg
-YSBtZW1iZXIgb2YgdGhlIG5ldyB1c2VyICBuYW1lc3BhY2UgIGNyZWF0ZWQgIGJ5ICB0aGUKPj4+
-ICAgICAgICBjYWxsLgo+Pj4KPj4+ICAgIENhcGFiaWxpdGllcwo+Pj4gICAgICAgIFRoZSBjaGls
-ZCBwcm9jZXNzIGNyZWF0ZWQgYnkgY2xvbmUoMikgd2l0aCB0aGUgQ0xPTkVfTkVXVVNFUiBmbGFn
-Cj4+PiAgICAgICAgc3RhcnRzIG91dCB3aXRoIGEgY29tcGxldGUgc2V0IG9mIGNhcGFiaWxpdGll
-cyBpbiAgdGhlICBuZXcgIHVzZXIKPj4+ICAgICAgICBuYW1lc3BhY2UuICBMaWtld2lzZSwgYSBw
-cm9jZXNzIHRoYXQgY3JlYXRlcyBhIG5ldyB1c2VyIG5hbWVzcGFjZQo+Pj4gICAgICAgIHVzaW5n
-IHVuc2hhcmUoMikgIG9yICBqb2lucyAgYW4gIGV4aXN0aW5nICB1c2VyICBuYW1lc3BhY2UgIHVz
-aW5nCj4+PiAgICAgICAgc2V0bnMoMikgIGdhaW5zIGEgZnVsbCBzZXQgb2YgY2FwYWJpbGl0aWVz
-IGluIHRoYXQgbmFtZXNwYWNlLiAgT24KPj4+ICAgICAgICB0aGUgb3RoZXIgaGFuZCwgdGhhdCBw
-cm9jZXNzIGhhcyBubyBjYXBhYmlsaXRpZXMgIGluICB0aGUgIHBhcmVudAo+Pj4gICAgICAgIChp
-biAgdGhlIGNhc2Ugb2YgY2xvbmUoMikpIG9yIHByZXZpb3VzIChpbiB0aGUgY2FzZSBvZiB1bnNo
-YXJlKDIpCj4+PiAgICAgICAgYW5kIHNldG5zKDIpKSB1c2VyIG5hbWVzcGFjZSwgZXZlbiBpZiB0
-aGUgbmV3IG5hbWVzcGFjZSAgaXMgIGNyZeKAkAo+Pj4gICAgICAgIGF0ZWQgIG9yICBqb2luZWQg
-YnkgdGhlIHJvb3QgdXNlciAoaS5lLiwgYSBwcm9jZXNzIHdpdGggdXNlciBJRCAwCj4+PiAgICAg
-ICAgaW4gdGhlIHJvb3QgbmFtZXNwYWNlKS4KPj4+Cj4+PiAgICAgICAgTm90ZSB0aGF0IGEgY2Fs
-bCB0byBleGVjdmUoMikgd2lsbCBjYXVzZSBhIHByb2Nlc3MgIHRvICBsb3NlICBhbnkKPj4+ICAg
-ICAgICBjYXBhYmlsaXRpZXMgdGhhdCBpdCBoYXMsIHVubGVzcyBpdCBoYXMgYSB1c2VyIElEIG9m
-IDAgd2l0aGluIHRoZQo+Pj4gICAgICAgIG5hbWVzcGFjZS4gIFNlZSB0aGUgZGlzY3Vzc2lvbiBv
-ZiB1c2VyICBhbmQgIGdyb3VwICBJRCAgbWFwcGluZ3MsCj4+PiAgICAgICAgYmVsb3cuCj4+Pgo+
-Pj4gICAgICAgIEEgICBjYWxsICAgdG8gICBjbG9uZSgyKSwgICB1bnNoYXJlKDIpLCAgb3IgIHNl
-dG5zKDIpICB1c2luZyAgdGhlCj4+PiAgICAgICAgQ0xPTkVfTkVXVVNFUiBmbGFnIHNldHMgdGhl
-ICAic2VjdXJlYml0cyIgIGZsYWdzICAoc2VlICBjYXBhYmlsaeKAkAo+Pj4gICAgICAgIHRpZXMo
-NykpICB0byAgdGhlaXIgIGRlZmF1bHQgIHZhbHVlcyAgKGFsbCBmbGFncyBkaXNhYmxlZCkgaW4g
-dGhlCj4+PiAgICAgICAgY2hpbGQgKGZvciBjbG9uZSgyKSkgb3IgY2FsbGVyICAoZm9yICB1bnNo
-YXJlKDIpLCAgb3IgIHNldG5zKDIpKS4KPj4+ICAgICAgICBOb3RlICB0aGF0ICBiZWNhdXNlICB0
-aGUgY2FsbGVyIG5vIGxvbmdlciBoYXMgY2FwYWJpbGl0aWVzIGluIGl0cwo+Pj4gICAgICAgIG9y
-aWdpbmFsIHVzZXIgbmFtZXNwYWNlIGFmdGVyIGEgY2FsbCB0byBzZXRucygyKSwgaXQgaXMgbm90
-ICBwb3PigJAKPj4+ICAgICAgICBzaWJsZSBmb3IgYSBwcm9jZXNzIHRvIHJlc2V0IGl0cyAic2Vj
-dXJlYml0cyIgZmxhZ3Mgd2hpbGUgcmV0YWlu4oCQCj4+PiAgICAgICAgaW5nIGl0cyB1c2VyIG5h
-bWVzcGFjZSBtZW1iZXJzaGlwIGJ5IHVzaW5nICBhICBwYWlyICBvZiAgc2V0bnMoMikKPj4+ICAg
-ICAgICBjYWxscyAgdG8gIG1vdmUgIHRvIGFub3RoZXIgdXNlciBuYW1lc3BhY2UgYW5kIHRoZW4g
-cmV0dXJuIHRvIGl0cwo+Pj4gICAgICAgIG9yaWdpbmFsIHVzZXIgbmFtZXNwYWNlLgo+Pj4KPj4+
-ICAgICAgICBIYXZpbmcgYSBjYXBhYmlsaXR5IGluc2lkZSBhIHVzZXIgbmFtZXNwYWNlIHBlcm1p
-dHMgYSBwcm9jZXNzICB0bwo+Pj4gICAgICAgIHBlcmZvcm0gIG9wZXJhdGlvbnMgICh0aGF0ICBy
-ZXF1aXJlICBwcml2aWxlZ2UpIG9ubHkgb24gcmVzb3VyY2VzCj4+PiAgICAgICAgZ292ZXJuZWQg
-YnkgdGhhdCBuYW1lc3BhY2UuICBUaGUgcnVsZXMgZm9yIGRldGVybWluaW5nIHdoZXRoZXIgb3IK
-Pj4+ICAgICAgICBub3QgYSBwcm9jZXNzIGhhcyBhIGNhcGFiaWxpdHkgaW4gYSBwYXJ0aWN1bGFy
-IHVzZXIgbmFtZXNwYWNlIGFyZQo+Pj4gICAgICAgIGFzIGZvbGxvd3M6Cj4+Pgo+Pj4gICAgICAg
-IDEuIEEgcHJvY2VzcyBoYXMgYSBjYXBhYmlsaXR5IGluc2lkZSBhIHVzZXIgbmFtZXNwYWNlIGlm
-IGl0IGlzICBhCj4+PiAgICAgICAgICAgbWVtYmVyICBvZiAgdGhhdCAgbmFtZXNwYWNlICBhbmQg
-IGl0IGhhcyB0aGUgY2FwYWJpbGl0eSBpbiBpdHMKPj4+ICAgICAgICAgICBlZmZlY3RpdmUgY2Fw
-YWJpbGl0eSBzZXQuICBBIHByb2Nlc3MgY2FuIGdhaW4gY2FwYWJpbGl0aWVzICBpbgo+Pj4gICAg
-ICAgICAgIGl0cyBlZmZlY3RpdmUgY2FwYWJpbGl0eSBzZXQgaW4gdmFyaW91cyB3YXlzLiAgRm9y
-IGV4YW1wbGUsIGl0Cj4+PiAgICAgICAgICAgbWF5IGV4ZWN1dGUgYSBzZXQtdXNlci1JRCBwcm9n
-cmFtIG9yIGFuIGV4ZWN1dGFibGUgd2l0aCAgYXNzb+KAkAo+Pj4gICAgICAgICAgIGNpYXRlZCAg
-ZmlsZSAgY2FwYWJpbGl0aWVzLiAgIEluICBhZGRpdGlvbiwgYSBwcm9jZXNzIG1heSBnYWluCj4+
-PiAgICAgICAgICAgY2FwYWJpbGl0aWVzICB2aWEgIHRoZSAgZWZmZWN0ICBvZiAgY2xvbmUoMiks
-ICB1bnNoYXJlKDIpLCAgb3IKPj4+ICAgICAgICAgICBzZXRucygyKSwgYXMgYWxyZWFkeSBkZXNj
-cmliZWQuCj4+Pgo+Pj4gICAgICAgIDIuIElmIGEgcHJvY2VzcyBoYXMgYSBjYXBhYmlsaXR5IGlu
-IGEgdXNlciBuYW1lc3BhY2UsIHRoZW4gaXQgaGFzCj4+PiAgICAgICAgICAgdGhhdCBjYXBhYmls
-aXR5IGluIGFsbCBjaGlsZCAoYW5kIGZ1cnRoZXIgcmVtb3ZlZCAgZGVzY2VuZGFudCkKPj4+ICAg
-ICAgICAgICBuYW1lc3BhY2VzIGFzIHdlbGwuCj4+Pgo+Pj4gICAgICAgIDMuIFdoZW4gIGEgIHVz
-ZXIgIG5hbWVzcGFjZSAgaXMgIGNyZWF0ZWQsICB0aGUga2VybmVsIHJlY29yZHMgdGhlCj4+PiAg
-ICAgICAgICAgZWZmZWN0aXZlIHVzZXIgSUQgb2YgdGhlIGNyZWF0aW5nIHByb2Nlc3MgYXMgYmVp
-bmcgdGhlICJvd25lciIKPj4+ICAgICAgICAgICBvZiB0aGUgbmFtZXNwYWNlLiAgQSBwcm9jZXNz
-IHRoYXQgcmVzaWRlcyBpbiB0aGUgcGFyZW50IG9mIHRoZQo+Pj4gICAgICAgICAgIHVzZXIgbmFt
-ZXNwYWNlIGFuZCB3aG9zZSBlZmZlY3RpdmUgdXNlciBJRCBtYXRjaGVzICB0aGUgIG93bmVyCj4+
-PiAgICAgICAgICAgb2YgIHRoZSAgbmFtZXNwYWNlICBoYXMgYWxsIGNhcGFiaWxpdGllcyBpbiB0
-aGUgbmFtZXNwYWNlLiAgQnkKPj4+ICAgICAgICAgICB2aXJ0dWUgb2YgdGhlIHByZXZpb3VzIHJ1
-bGUsIHRoaXMgbWVhbnMgdGhhdCB0aGUgIHByb2Nlc3MgIGhhcwo+Pj4gICAgICAgICAgIGFsbCBj
-YXBhYmlsaXRpZXMgaW4gYWxsIGZ1cnRoZXIgcmVtb3ZlZCBkZXNjZW5kYW50IHVzZXIgbmFtZXPi
-gJAKPj4+ICAgICAgICAgICBwYWNlcyBhcyB3ZWxsLgo+Pj4KPj4+ICAgIEludGVyYWN0aW9uIG9m
-IHVzZXIgbmFtZXNwYWNlcyBhbmQgb3RoZXIgdHlwZXMgb2YgbmFtZXNwYWNlcwo+Pj4gICAgICAg
-IFN0YXJ0aW5nIGluIExpbnV4IDMuOCwgdW5wcml2aWxlZ2VkICBwcm9jZXNzZXMgIGNhbiAgY3Jl
-YXRlICB1c2VyCj4+PiAgICAgICAgbmFtZXNwYWNlcywgIGFuZCBtb3VudCwgUElELCBJUEMsIG5l
-dHdvcmssIGFuZCBVVFMgbmFtZXNwYWNlcyBjYW4KPj4+ICAgICAgICBiZSBjcmVhdGVkIHdpdGgg
-anVzdCB0aGUgQ0FQX1NZU19BRE1JTiBjYXBhYmlsaXR5IGluIHRoZSBjYWxsZXIncwo+Pj4gICAg
-ICAgIHVzZXIgbmFtZXNwYWNlLgo+Pj4KPj4+ICAgICAgICBJZiAgQ0xPTkVfTkVXVVNFUiAgaXMg
-c3BlY2lmaWVkIGFsb25nIHdpdGggb3RoZXIgQ0xPTkVfTkVXKiBmbGFncwo+Pj4gICAgICAgIGlu
-IGEgc2luZ2xlIGNsb25lKDIpIG9yIHVuc2hhcmUoMikgY2FsbCwgdGhlICB1c2VyICBuYW1lc3Bh
-Y2UgIGlzCj4+PiAgICAgICAgZ3VhcmFudGVlZCAgdG8gIGJlICBjcmVhdGVkIGZpcnN0LCBnaXZp
-bmcgdGhlIGNoaWxkIChjbG9uZSgyKSkgb3IKPj4+ICAgICAgICBjYWxsZXIgKHVuc2hhcmUoMikp
-IHByaXZpbGVnZXMgb3ZlciB0aGUgcmVtYWluaW5nIG5hbWVzcGFjZXMgY3Jl4oCQCj4+PiAgICAg
-ICAgYXRlZCBieSB0aGUgY2FsbC4gIFRodXMsIGl0IGlzIHBvc3NpYmxlIGZvciBhbiB1bnByaXZp
-bGVnZWQgY2FsbOKAkAo+Pj4gICAgICAgIGVyIHRvIHNwZWNpZnkgdGhpcyBjb21iaW5hdGlvbiBv
-ZiBmbGFncy4KPj4+Cj4+PiAgICAgICAgV2hlbiBhIG5ldyBJUEMsIG1vdW50LCBuZXR3b3JrLCBQ
-SUQsIG9yIFVUUyBuYW1lc3BhY2UgaXMgIGNyZWF0ZWQKPj4+ICAgICAgICB2aWEgY2xvbmUoMikg
-b3IgdW5zaGFyZSgyKSwgdGhlIGtlcm5lbCByZWNvcmRzIHRoZSB1c2VyIG5hbWVzcGFjZQo+Pj4g
-ICAgICAgIG9mIHRoZSBjcmVhdGluZyBwcm9jZXNzIGFnYWluc3QgdGhlIG5ldyBuYW1lc3BhY2Uu
-ICAoVGhpcyBhc3NvY2nigJAKPj4+ICAgICAgICBhdGlvbiAgY2FuJ3QgIGJlICBjaGFuZ2VkLikg
-ICBXaGVuIGEgcHJvY2VzcyBpbiB0aGUgbmV3IG5hbWVzcGFjZQo+Pj4gICAgICAgIHN1YnNlcXVl
-bnRseSAgcGVyZm9ybXMgIHByaXZpbGVnZWQgIG9wZXJhdGlvbnMgIHRoYXQgIG9wZXJhdGUgIG9u
-Cj4+PiAgICAgICAgZ2xvYmFsIHJlc291cmNlcyBpc29sYXRlZCBieSB0aGUgbmFtZXNwYWNlLCB0
-aGUgcGVybWlzc2lvbiBjaGVja3MKPj4+ICAgICAgICBhcmUgcGVyZm9ybWVkIGFjY29yZGluZyB0
-byB0aGUgcHJvY2VzcydzIGNhcGFiaWxpdGllcyBpbiB0aGUgdXNlcgo+Pj4gICAgICAgIG5hbWVz
-cGFjZSB0aGF0IHRoZSBrZXJuZWwgYXNzb2NpYXRlZCB3aXRoIHRoZSBuZXcgbmFtZXNwYWNlLgo+
-PiAKPj4gUmVzdHJpY3Rpb25zIG9uIG1vdW50IG5hbWVzcGFjZXMuCj4+IAo+PiAtIEEgbW91bnQg
-bmFtZXNwYWNlIGhhcyBhIG93bmVyIHVzZXIgbmFtZXNwYWNlLiAgQSBtb3VudCBuYW1lc3BhY2Ug
-d2hvc2UKPj4gICBvd25lciB1c2VyIG5hbWVzcGFjZSBpcyBkaWZmZXJlbnQgdGhhbiB0aGUgb3dl
-cm5lciB1c2VyIG5hbWVzcGFjZSBvZgo+PiAgIGl0J3MgcGFyZW50IG1vdW50IG5hbWVzcGFjZSBp
-cyBjb25zaWRlcmVkIGEgbGVzcyBwcml2aWxlZ2VkIG1vdW50Cj4+ICAgbmFtZXNwYWNlLgo+PiAK
-Pj4gLSBXaGVuIGNyZWF0aW5nIGEgbGVzcyBwcml2aWxlZ2VkIG1vdW50IG5hbWVzcGFjZSBzaGFy
-ZWQgbW91bnRzIGFyZQo+PiAgIHJlZHVjZWQgdG8gc2xhdmUgbW91bnRzLiAgVGhpcyBlbnN1cmVz
-IHRoYXQgbWFwcGluZ3MgcGVyZm9ybWVkIGluIGxlc3MKPj4gICBwcml2aWxlZ2VkIG1vdW50IG5h
-bWVzcGFjZXMgd2lsbCBub3QgcHJvcG9nYXRlIHRvIG1vcmUgcHJpdmllbGdlZAo+PiAgIG1vdW50
-IG5hbWVzcGFjZXMuCj4+IAo+PiAtIE1vdW50cyB0aGF0IGNvbWUgYXMgYSBzaW5nbGUgdW5pdCBm
-cm9tIG1vcmUgcHJpdmlsZWdlZCBtb3VudCBhcmUKPj4gICBsb2NrZWQgdG9nZXRoZXIgYW5kIG1h
-eSBub3QgYmUgc2VwYXJhdGVkIGluIGEgbGVzcyBwcml2aWVsZ2VkIG1vdW50Cj4+ICAgbmFtZXNw
-YWNlLgo+PiAKPj4gLSBUaGUgbW91bnQgZmxhZ3MgcmVhZG9ubHksIG5vZGV2LCBub3N1aWQsIG5v
-ZXhlYywgYW5kIHRoZSBtb3VudCBhdGltZQo+PiAgIHNldHRpbmdzIHdoZW4gcHJvcG9nYXRlZCBm
-cm9tIGEgbW9yZSBwcml2aWVsZ2VkIHRvIGEgbGVzcyBwcml2aWxlZ2VkCj4+ICAgbW91bnQgbmFt
-ZXNwYWNlIGJlY29tZSBsb2NrZWQsIGFuZCBtYXkgbm90IGJlIGNoYW5nZWQgaW4gdGhlIGxlc3MK
-Pj4gICBwcml2aWVsZ2VkIG1vdW50IG5hbWVzcGFjZS4KPj4gCj4+IC0gKEFzIG9mIDMuMTgtcmMx
-IChpbiB0b2RheXMgQWwgVmlyb3MgdmZzLmdpdCNmb3ItbmV4dCB0cmVlKSkgQSBmaWxlIG9yCj4+
-ICAgZGlyZWN0b3J5IHRoYXQgaXMgYSBtb3VudHBvaW50IGluIG9uZSBuYW1lc3BhY2UgdGhhdCBp
-cyBub3QgYSBtb3VudAo+PiAgIHBvaW50IGluIGFub3RoZXIgbmFtZXNwYWNlLCBtYXkgYmUgcmVu
-YW1lZCwgdW5saW5rZWQsIG9yIHJtZGlyZWQgaW4KPj4gICB0aGUgbW91bnQgbmFtZXNwYWNlIGlu
-IHdoaWNoIGl0IGlzIG5vdCBhIG1vdW50IG5hbWVzcGFjZSBpZiB0aGUKPj4gICBvcmRpbmFyeSBw
-ZXJtaXNzaW9uIGNoZWNrcyBwYXNzLgo+PiAKPj4gICBQcmV2aW91c2x5IGF0dGVtcGluZyB0byBy
-bWRpciwgdW5saW5rIG9yIHJlbmFtZSBhIGZpbGUgb3IgZGlyZWN0b3J5Cj4+ICAgdGhhdCB3YXMg
-YSBtb3VudCBwb2ludCBpbiBhbm90aGVyIG1vdW50IG5hbWVzcGFjZSB3b3VsZCByZXN1bHQgaW4K
-Pj4gICAtRUJVU1kuICBUaGlzIGJlaGF2aW9yIGhhZCB0ZWNobmljYWwgcHJvYmxlbXMgb2YgZW5m
-b3JjZW1lbnQgKG5mcykKPj4gICBhbmQgcmVzdWx0ZWQgaW4gYSBuaWNlIGRlbmlhbCBvZiBzZXJ2
-aWFsIGF0dGFjayBhZ2FpbnN0IG1vcmUKPj4gICBwcml2aWxlZ2VkIHVzZXJzLiAgKEFrYSBwcmV2
-ZW50aW5nIGluZGl2aWR1YWwgZmlsZXMgZnJvbSBiZWluZyB1cGRhdGVkCj4+ICAgYnkgYmluZCBt
-b3VudGluZyBvbiB0b3Agb2YgdGhlbSkuCj4KPiBJIG5lZWQgc29tZSBoZWxwIGhlcmUuIFdoYXQg
-aXMgeW91ciBpbnRlbnRpb24gZm9yIHRoZSBhYm92ZSB0ZXh0Lgo+IERvIHlvdSBtZWFuIEkgc2hv
-dWxkIGFkZCBpdCBwcmV0dHkgbXVjaCBhcyBpcyB1bmRlciBhIHN1YmhlYWRpbmcKPiAiUmVzdHJp
-Y3Rpb25zIG9uIG1vdW50IG5hbWVzcGFjZXMiPwoKCllvdSBoYXZlIHRoZSBoZWFkaW5nICJJbnRl
-cmFjdGlvbnMgb2YgdXNlciBuYW1lc3BhY2VzIGFuZCBvdGhlciB0eXBlcyBvZgpuYW1lc3BhY2Vz
-IiBhbmQgbG9va2luZyB0aHJvdWdoIHRoZSBtYW4gcGFnZXMgeW91IGhhdmUgcG9zdGVkIGZvciBy
-ZXZpZXcKc29tZXdoZXJlIHVuZGVyIHRoYXQgaGVhZGluZyBpcyB0aGUgYmVzdCBwbGFjZSBJIGNv
-dWxkIGZpbmQgZm9yIHRoaXMKY29udGVudC4gKEJldHRlciBzdWdnZXN0aW9ucyBhcmUgd2VsY29t
-ZSkuCgpNeSBleHBlcmllbmNlIHdpdGggd29ya2luZyB3aXRoIHlvdSBwcmV2aW91c2x5IGlzIHRo
-YXQgeW91IHRlbmRlZCB0bwpyZXdvcmQgd2hhdCBJIGhhZCB3cml0dGVuIHRvIG1ha2UgdGhlIGNv
-bnRlbnQgbW9yZSByZWFkYWJsZS4gIFBlcmhhcHMKc3RyYXlpbmcgZnJvbSBleGFjdGx5IGFjY3Vy
-YXRlIHRvIHRoZSBwcmFjdGljYWwuCgpTbyByYXRoZXIgdGhhbiB0cnkgYW5kIHdyaXRlIHRoZSBw
-ZXJmZWN0IGRlYXRobGVzcyBlbmQtdXNlciBwcm9zZSBJCmZpZ3VyZWQgSSB3b3VsZCB3cml0ZSBk
-b3duIHdoYXQgdGhlIHdlaXJkIHJlc3RyaWN0aW9ucyBhcmUgb24gbW91bnQKbmFtZXNwYWNlcyB3
-aGVuIHlvdSBjcmVhdGUgdGhlbSBpbiB1c2VyIG5hbWVzcGFjZXMgYWNjdXJhdGVseS4KClRoZSB0
-ZXN0IHdpbGwgZG8gZmluZSBhcyBhIHN1YnNlY3Rpb24gZW50aXRsZWQgIlJlc3RyaWN0aW9ucyBv
-biBtb3VudApuYW1lc3BhY2VzIiBhcyBJIGhhdmUgd3JpdHRlbiBpdC4gIE9yIGl0IGlzIGZpbmUg
-YXMgYSBzZWVkIGZvciBzb21ldGhpbmcKYmV0dGVyLiAgQnV0IHRob3NlIHJlc3RyaWN0aW9ucyBh
-cmUgaW1wb3J0YW50IHRvIGRvY3VtZW50IHNvIHRoYXQgcGVvcGxlCmtub3cgd2hhdCB0byBleHBl
-Y3QgZnJvbSBtb3VudCBuYW1lc3BhY2VzLgoKCgpPbiBhIHJlbGF0ZWQgbm90ZS4gIE9uZSB0aGlu
-ZyB0aGF0IGhhcyBjb21lIHVwIHJlY2VudGx5IChpbiAzIHNlcGFyYXRlCmltcGxlbWVudGF0aW9u
-cyBpcyB0aGF0IG1vdW50KE1TX1JFTU9VTlR8Li4uLC4uLikgbXVzdCBpbmNsdWRlIGFsbCBvZgp0
-aGUgbW91bnQgZmxhZ3MgdGhhdCBuZWVkIHRvIGJlIHByZXNlcnZlZC4gICBQZW9wbGUgY3JlYXRp
-bmcgcmVhZC1vbmx5CmJpbmQgbW91bnRzIHRlbmQgdG8gbWlzcyB0aGF0IGFuZCB0aGUgbG9ja2Vk
-IGZsYWdzIGluIG1vdW50IG5hbWVzcGFjZXMuClRoYXQgaXNzdWUgd2FzIGZsdXNoZWQgb3V0IG5v
-dyB0aGF0IHRoZSBrZXJuZWwgaXMgbm93IG5vdCBhbGxvd2luZyBtb3N0Cm1vdW50IGZsYWdzIHRv
-IGJlIGNsZWFyZWQgaW4gbW91bnQgbmFtZXNwYWNlcy4KCkVyaWMKX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29u
-dGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91
-bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+On 14/08/28, Eric W. Biederman wrote:
+> Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+> > On 14/08/23, Eric W. Biederman wrote:
+> >> Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+> >> 
+> >> > Generate and assign a serial number per namespace instance since boot.
+> >> >
+> >> > Use a serial number per namespace (unique across one boot of one kernel)
+> >> > instead of the inode number (which is claimed to have had the right to change
+> >> > reserved and is not necessarily unique if there is more than one proc fs) to
+> >> > uniquely identify it per kernel boot.
+> >> 
+> >> This approach is just broken.
+> >> 
+> >> For this to work with migration (aka criu) you need to implement a
+> >> namespace of namespaces.  You haven't done this, and therefore
+> >> such an interface will break existing userspace.
+> >> 
+> >> Inside of audit I can understand not caring about these issues,
+> >> but you go foward and expose these serial numbers in proc,
+> >> and generally make this infrastructure available to others.
+> >> 
+> >> The deep issue with migration is that we move tasks from one machine
+> >> from another and on the destination machine we need to have all of the
+> >> same global identifiers for software to function properly.
+> >> 
+> >> My weasel words around the proc inode numbers is to preserve to allow us
+> >> room to be able to restore those ids if it every becomes relevant for
+> >> migration.
+> >
+> > What do you do if the inode number is already in use on the target
+> > host?
+> 
+> Since the inode numbers are relative to a superblock or a pid namespace
+> the numbers that are in use can be restored on the target system
+> by creating them in the appropriate namespace.
+
+So you seem to be advocating for a namespace of namespaces, since
+neither host can create a new namespace without consulting the others in
+its pool for a new free number.
+
+> The support does not exist in the kernel today for doing that because no
+> one has cared but as architected the support can be added if needed to
+> support migration.
+> 
+> >> That is the proc inode numbers (technically) live in a pid namespace,
+> >> (aka a mount of proc).  So depending on the pid namespace you are in
+> >> or the mount of proc you look in the numbers could change.
+> >> 
+> >> Qualifications like that must exist to have a prayer of ever supporting
+> >> process migration in the crazy corner cases where people start caring
+> >> about inode numbers.
+> >> 
+> >> We currently don't and inode numbers for a namespace will never change
+> >> after a namespace is created.  So I think you really are ok using the
+> >> proc inode numbers.  I am happy declaring by fiat that the inode numbers
+> >> that audit uses are the numbers connected to the initial pid namespace.
+> >
+> > But once a namespace/container is migrated, it is a different audit that
+> > is looking at it (unless we create an audit manager or entity that
+> > functions at the level of a container manager), so audit should not care.
+> 
+> These numbers were exported to everyone as a general purpose facility in
+> proc.  If audit is global and audit doesn't migrate you are right it
+> doesn't matter.  However if these numbers are used by anyone else for
+> anything else it causes a problem.
+
+So let us restrict their use to audit, by removing them from
+/proc/<pid>/ns/ and only exposing them via netlink calls to audit gated
+by CAP_AUDIT_WRITE or CAP_AUDIT_CONTROL.
+
+> Further given that people run entire distributions in containers we may
+> reach the point where we wish to run auditd in a container in the
+> future.  I would hate to paint ourselves into a corner with a design
+> that could never allow audit to migrate.  Support that case someday
+> seems a valid naive desire.
+
+Agreed.  That is an option we do not want to rule out at this point.
+I'll need to think about this one more.
+
+> >> At a fairly basic level anything that is used to identify namespaces for
+> >> any general purpose use needs to have most if not all of the same
+> >> properties of the proc inode numbers.  The most important of which is
+> >> being tied to some context/namespace so there is a ability if we ever
+> >> need it to migrate those numbers from one machine to another.
+> >
+> > Sooo...  does it make any sense to have those inode or serial numbers be
+> > blank inside the namespace/container itself, but only visible to its
+> > manager outside the container (unless it is the initial namespace)?
+> 
+> Mostly I think it makes sense to use the inode numbers from the initial
+> pid namespace.  They already exist.  They already are unique.  (Which
+> means I don't need to maintain more code and more special cases).  And
+> the do what you need now.
+
+Will inode numbers never be re-used once they are freed?  Guaranteed?
+
+> I probably haven't followed closely enough but I don't see what makes
+> inode numbers undesirable.
+
+This posting:
+	https://www.redhat.com/archives/linux-audit/2013-March/msg00032.html
+
+> Eric
+
+- RGB
+
+--
+Richard Guy Briggs <rbriggs-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Senior Software Engineer, Kernel Security, AMER ENG Base Operating Systems, Red Hat
+Remote, Ottawa, Canada
+Voice: +1.647.777.2635, Internal: (81) 32635, Alt: +1.613.693.0684x3545
