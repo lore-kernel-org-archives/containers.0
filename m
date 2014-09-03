@@ -1,11 +1,11 @@
 From: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [RFC PATCH 1/3] procfs: check uniq proc_dir_entry subdir name
-Date: Wed, 3 Sep 2014 18:29:58 +0800
-Message-ID: <1409740200-26461-2-git-send-email-chenhanxiao@cn.fujitsu.com>
+Subject: [RFC PATCH 2/3] procfs: show hierarchy of pid namespace
+Date: Wed, 3 Sep 2014 18:29:59 +0800
+Message-ID: <1409740200-26461-3-git-send-email-chenhanxiao@cn.fujitsu.com>
 References: <1409740200-26461-1-git-send-email-chenhanxiao@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <1409740200-26461-1-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
@@ -21,62 +21,106 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lin
 Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Check whether a proc dir has a subdir
-with a specific name.
-Will be used in a later patch.
-
-Signed-off-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- fs/proc/generic.c       | 15 +++++++++++++++
- include/linux/proc_fs.h |  3 +++
- 2 files changed, 18 insertions(+)
-
-diff --git a/fs/proc/generic.c b/fs/proc/generic.c
-index b7f268e..4d576c2 100644
---- a/fs/proc/generic.c
-+++ b/fs/proc/generic.c
-@@ -173,6 +173,21 @@ static const struct inode_operations proc_link_inode_operations = {
- 	.follow_link	= proc_follow_link,
- };
- 
-+/* check whether dir has @name member */
-+struct proc_dir_entry *proc_uniq_dir(struct proc_dir_entry *de, char *name)
-+{
-+	spin_lock(&proc_subdir_lock);
-+	for (de = de->subdir; de ; de = de->next) {
-+		if (!strcmp(de->name, name)) {
-+			spin_unlock(&proc_subdir_lock);
-+			return de;
-+		}
-+	}
-+	spin_unlock(&proc_subdir_lock);
-+	return NULL;
-+}
-+EXPORT_SYMBOL(proc_uniq_dir);
-+
- /*
-  * Don't create negative dentries here, return -ENOENT by hand
-  * instead.
-diff --git a/include/linux/proc_fs.h b/include/linux/proc_fs.h
-index 9d117f6..38e87aa 100644
---- a/include/linux/proc_fs.h
-+++ b/include/linux/proc_fs.h
-@@ -41,6 +41,7 @@ extern void *proc_get_parent_data(const struct inode *);
- extern void proc_remove(struct proc_dir_entry *);
- extern void remove_proc_entry(const char *, struct proc_dir_entry *);
- extern int remove_proc_subtree(const char *, struct proc_dir_entry *);
-+extern struct proc_dir_entry *proc_uniq_dir(struct proc_dir_entry *, char *);
- 
- #else /* CONFIG_PROC_FS */
- 
-@@ -71,6 +72,8 @@ static inline void *proc_get_parent_data(const struct inode *inode) { BUG(); ret
- static inline void proc_remove(struct proc_dir_entry *de) {}
- #define remove_proc_entry(name, parent) do {} while (0)
- static inline int remove_proc_subtree(const char *name, struct proc_dir_entry *parent) { return 0; }
-+static inline struct proc_dir_entry *proc_uniq_dir(struct proc_dir_entry *,
-+	char *) {return 0; }
- 
- #endif /* CONFIG_PROC_FS */
- 
--- 
-1.9.0
+VGhpcyBwYXRjaCB3aWxsIHNob3cgdGhlIGhpZXJhcmNoeSBvZiBwaWQgbmFtZXNwYWNlCnVuZGVy
+IC9wcm9jL3BpZG5zIGxpa2U6Ci9wcm9jL3BpZG5zCuKUnOKUgOKUgCBoaWVyYXJjaHkK4pSCICAg
+4pSc4pSA4pSAIHBpZG5zNDAyNjUzMjM5OQrilIIgICDilIIgICDilJzilIDilIAgcGlkbnMgLT4g
+L3Byb2MvMjg2My9ucy9waWQK4pSCICAg4pSCICAg4pSU4pSA4pSAIHBpZG5zNDAyNjUzMjUxNQri
+lIIgICDilIIgICAgICAg4pSU4pSA4pSAIHBpZG5zIC0+IC9wcm9jLzEwNjExL25zL3BpZArilIIg
+ICDilJTilIDilIAgcGlkbnM0MDI2NTMyNTA0CuKUgiAgICAgICDilJTilIDilIAgcGlkbnMgLT4g
+L3Byb2MvNDQ1MC9ucy9waWQK4pSU4pSA4pSAIHJlZnJlc2gKCmEpIGhpZXJhcmNoeSBkaXI6CiAg
+dXNlIHRvIHNob3cgaGllcmFyY2h5IGluZm9tYXRpb24gdXNpbmcgZGlyIGFuZCBzeW1saW5rcy4K
+ICBkaXJzIGFyZSBuYW1lZCBhcyBwaWRucygkaW51bSkKICBhIHN5bWxpbmsgaXMgY3JlYXRlZCB1
+bmRlciBwaWRucygkaW51bSksIGFuZCBsaW5rZWQgdG8KICB0aGF0IHBpZCBuYW1lc3BhY2UuCgpi
+KSByZWZyZXNoCiAgdHJpZ2dlciBrZXkuCiAgV2UgbmVlZCB0byB3cml0ZSBzdGggdG8gL3Byb2Mv
+bnNwaWQvcmVmcmVzaCwKICB0aGVuIHdlIGNvdWxkIGdldCBoaWVyYXJjaHkgaW5mbwogIHVuZGVy
+IC9wcm9jL3BpZG5zL2hpZXJhcmNoeS4KClNpZ25lZC1vZmYtYnk6IENoZW4gSGFueGlhbyA8Y2hl
+bmhhbnhpYW9AY24uZnVqaXRzdS5jb20+Ci0tLQogZnMvcHJvYy9LY29uZmlnICAgICAgICAgICB8
+ICAgNiArKwogZnMvcHJvYy9NYWtlZmlsZSAgICAgICAgICB8ICAgMSArCiBmcy9wcm9jL3BpZG5z
+X2hpZXJhcmNoeS5jIHwgMTYxICsrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysr
+KysrKysrKysKIDMgZmlsZXMgY2hhbmdlZCwgMTY4IGluc2VydGlvbnMoKykKIGNyZWF0ZSBtb2Rl
+IDEwMDY0NCBmcy9wcm9jL3BpZG5zX2hpZXJhcmNoeS5jCgpkaWZmIC0tZ2l0IGEvZnMvcHJvYy9L
+Y29uZmlnIGIvZnMvcHJvYy9LY29uZmlnCmluZGV4IDIxODNmY2YuLmUyZTIyOTIgMTAwNjQ0Ci0t
+LSBhL2ZzL3Byb2MvS2NvbmZpZworKysgYi9mcy9wcm9jL0tjb25maWcKQEAgLTcxLDMgKzcxLDkg
+QEAgY29uZmlnIFBST0NfUEFHRV9NT05JVE9SCiAJICAvcHJvYy9waWQvc21hcHMsIC9wcm9jL3Bp
+ZC9jbGVhcl9yZWZzLCAvcHJvYy9waWQvcGFnZW1hcCwKIAkgIC9wcm9jL2twYWdlY291bnQsIGFu
+ZCAvcHJvYy9rcGFnZWZsYWdzLiBEaXNhYmxpbmcgdGhlc2UKICAgICAgICAgICBpbnRlcmZhY2Vz
+IHdpbGwgcmVkdWNlIHRoZSBzaXplIG9mIHRoZSBrZXJuZWwgYnkgYXBwcm94aW1hdGVseSA0a2Iu
+CisKK2NvbmZpZyBQUk9DX1BJRF9ISUVSQVJDSFkKKwlib29sICJFbmFibGUgL3Byb2MvcGlkbnNf
+aGllcmFyY2h5IHN1cHBvcnQiIGlmIEVYUEVSVAorCWRlcGVuZHMgb24gUFJPQ19GUworCWhlbHAK
+KwkgIFNob3cgcGlkIG5hbWVzcGFjZSBoaWVyYXJjaHkgaW5mb21hdGlvbgpkaWZmIC0tZ2l0IGEv
+ZnMvcHJvYy9NYWtlZmlsZSBiL2ZzL3Byb2MvTWFrZWZpbGUKaW5kZXggMjM5NDkzZS4uNzMzNTk5
+YiAxMDA2NDQKLS0tIGEvZnMvcHJvYy9NYWtlZmlsZQorKysgYi9mcy9wcm9jL01ha2VmaWxlCkBA
+IC0yOSwzICsyOSw0IEBAIHByb2MtJChDT05GSUdfUFJPQ19LQ09SRSkJKz0ga2NvcmUubwogcHJv
+Yy0kKENPTkZJR19QUk9DX1ZNQ09SRSkJKz0gdm1jb3JlLm8KIHByb2MtJChDT05GSUdfUFJJTlRL
+KQkrPSBrbXNnLm8KIHByb2MtJChDT05GSUdfUFJPQ19QQUdFX01PTklUT1IpCSs9IHBhZ2Uubwor
+cHJvYy0kKENPTkZJR19QUk9DX1BJRF9ISUVSQVJDSFkpCSs9IHBpZG5zX2hpZXJhcmNoeS5vCmRp
+ZmYgLS1naXQgYS9mcy9wcm9jL3BpZG5zX2hpZXJhcmNoeS5jIGIvZnMvcHJvYy9waWRuc19oaWVy
+YXJjaHkuYwpuZXcgZmlsZSBtb2RlIDEwMDY0NAppbmRleCAwMDAwMDAwLi5kMzUzNDBmCi0tLSAv
+ZGV2L251bGwKKysrIGIvZnMvcHJvYy9waWRuc19oaWVyYXJjaHkuYwpAQCAtMCwwICsxLDE2MSBA
+QAorLyoKKyAqIHByb2NfcGlkbnNfaGllcmFyY2h5LmMgLS0gaGFuZGxlcyBwaWRucyBoaWVyYXJj
+aHkKKyAqCisgKiBDb3B5cmlnaHQgMjAxNAorICovCisKKyNpbmNsdWRlIDxsaW51eC9pbml0Lmg+
+CisjaW5jbHVkZSA8bGludXgvZXJybm8uaD4KKyNpbmNsdWRlIDxsaW51eC9wcm9jX2ZzLmg+Cisj
+aW5jbHVkZSA8bGludXgvbW9kdWxlLmg+CisjaW5jbHVkZSA8bGludXgvbGlzdC5oPgorI2luY2x1
+ZGUgPGxpbnV4L3NsYWIuaD4KKyNpbmNsdWRlIDxsaW51eC9waWRfbmFtZXNwYWNlLmg+CisKKy8q
+CisgKiBUaGUgL3Byb2MvcGlkbnMgZGlyZWN0b3J5CisgKi8KKworI2RlZmluZSBCQVNFX0RJUgki
+cGlkbnMiCQkJLyogU3ViZGlyIGluIC9wcm9jICovCisjZGVmaW5lIEhJRVJBUkNIWV9ESVIJInBp
+ZG5zL2hpZXJhcmNoeSIJLyogaGllcmFyY2h5IGRpciAqLworI2RlZmluZSBSRUZSRVNIX0tFWQki
+cGlkbnMvcmVmcmVzaCIJCS8qIHJlZnJlc2gga2V5ICovCisjZGVmaW5lIE5BTUUJCSJwaWRuc19o
+aWVyYXJjaHkiCS8qIE1vZHVsZSBuYW1lICovCisKK3N0YXRpYyBMSVNUX0hFQUQocGlkbnNfbGlz
+dCk7CitzdGF0aWMgREVGSU5FX1JXTE9DSyhwaWRuc19sb2NrKTsKK3N0YXRpYyBzdHJ1Y3QgcHJv
+Y19kaXJfZW50cnkgKnByb2Nfcm9vdDsKKworc3RydWN0IG5zX3BpZF9saXN0IHsKKwlzdHJ1Y3Qg
+cGlkICpwaWQ7CisJc3RydWN0IGxpc3RfaGVhZCBsaXN0OworfTsKKworc3RhdGljIHZvaWQgZnJl
+ZV9waWRuc19saXN0KHN0cnVjdCBsaXN0X2hlYWQgKmhlYWQpCit7CisJc3RydWN0IG5zX3BpZF9s
+aXN0ICp0bXAsICpwb3M7CisKKwlsaXN0X2Zvcl9lYWNoX2VudHJ5X3NhZmUocG9zLCB0bXAsIGhl
+YWQsIGxpc3QpIHsKKwkJbGlzdF9kZWwoJnBvcy0+bGlzdCk7CisJCWtmcmVlKHBvcyk7CisJfQor
+fQorCisvKgorICogT25seSBhZGQgcGlkcyB3aXRoIGRpZmZlcmVudCBucworICovCitzdGF0aWMg
+aW50Cituc19waWRfbGlzdF9yZWFsbHlfYWRkKHN0cnVjdCBwaWQgKnBpZCkKK3sKKwlzdHJ1Y3Qg
+bnNfcGlkX2xpc3QgKnRtcCwgKnBvczsKKworCWxpc3RfZm9yX2VhY2hfZW50cnlfc2FmZShwb3Ms
+IHRtcCwgJnBpZG5zX2xpc3QsIGxpc3QpCisJCWlmIChuc19vZl9waWQocGlkKSA9PSBuc19vZl9w
+aWQocG9zLT5waWQpKQorCQkJcmV0dXJuIDA7CisKKwlyZXR1cm4gMTsKK30KKworc3RhdGljIGlu
+dAorbnNfcGlkX2xpc3RfYWRkKHN0cnVjdCBwaWQgKnBpZCkKK3sKKwlzdHJ1Y3QgbnNfcGlkX2xp
+c3QgKmVudDsKKworCWVudCA9IGttYWxsb2Moc2l6ZW9mKCplbnQpLCBHRlBfS0VSTkVMKTsKKwlp
+ZiAoIWVudCkKKwkJcmV0dXJuIC1FTk9NRU07CisJZW50LT5waWQgPSBwaWQ7CisJaWYgKG5zX3Bp
+ZF9saXN0X3JlYWxseV9hZGQocGlkKSkKKwkJbGlzdF9hZGRfdGFpbCgmZW50LT5saXN0LCAmcGlk
+bnNfbGlzdCk7CisKKwlyZXR1cm4gMDsKK30KKworc3RhdGljIHZvaWQgcHJpbnRfbGlzdCh2b2lk
+KQoreworCXN0cnVjdCBuc19waWRfbGlzdCAqdG1wLCAqcG9zOworCXN0cnVjdCBwcm9jX2Rpcl9l
+bnRyeSAqcGFyZW50LCAqcGFyZW50X25ldzsKKwlzdHJ1Y3QgcGlkX25hbWVzcGFjZSAqbnMsICpj
+dXJyX25zOworCXN0cnVjdCBwaWQgKnBpZDsKKwljaGFyIG5hbWVfYnVmWzE2XSwgcGlkX2J1Zlsz
+Ml07CisJaW50IGksIGs7CisKKwljdXJyX25zID0gdGFza19hY3RpdmVfcGlkX25zKGN1cnJlbnQp
+OworCisJbGlzdF9mb3JfZWFjaF9lbnRyeV9zYWZlKHBvcywgdG1wLCAmcGlkbnNfbGlzdCwgbGlz
+dCkgeworCQlwaWQgPSBwb3MtPnBpZDsKKwkJayA9IC0xOworCQlucyA9IHBpZC0+bnVtYmVyc1tw
+aWQtPmxldmVsXS5uczsKKwkJLyogQ2hlY2sgd2hldGhlciBwaWQgaGFzIHJlbGF0aW9uc2hpcCB3
+aXRoIGN1cnJlbnQgbnMgKi8KKwkJZm9yICg7IG5zICE9IE5VTEw7IG5zID0gbnMtPnBhcmVudCkK
+KwkJCWlmIChucyA9PSBjdXJyX25zKQorCQkJCWsgPSBjdXJyX25zLT5sZXZlbDsKKwkJaWYgKGsg
+PT0gLTEpCisJCQljb250aW51ZTsKKwkJcGFyZW50ID0gcHJvY19yb290OworCQlmb3IgKGkgPSBr
+ICsgMTsgaSA8PSBwaWQtPmxldmVsOyBpKyspIHsKKwkJCW5zID0gcGlkLT5udW1iZXJzW2ldLm5z
+OworCQkJc25wcmludGYobmFtZV9idWYsIDE2LCAicGlkbnMldSIsCisJCQkJcGlkLT5udW1iZXJz
+W2ldLm5zLT5wcm9jX2ludW0pOworCQkJc25wcmludGYocGlkX2J1ZiwgMzIsICIvcHJvYy8ldS9u
+cy9waWQiLAorCQkJCXBpZC0+bnVtYmVyc1swXS5ucik7CisJCQkvKiBkb24ndCBkdXBsaWNhdGUg
+bnMgZGlycyAqLworCQkJcGFyZW50X25ldyA9IHByb2NfdW5pcV9kaXIocGFyZW50LCBuYW1lX2J1
+Zik7CisJCQlpZiAoIXBhcmVudF9uZXcpIHsKKwkJCQlwYXJlbnRfbmV3ID0gcHJvY19ta2Rpcihu
+YW1lX2J1ZiwgcGFyZW50KTsKKwkJCQlwcm9jX3N5bWxpbmsoInBpZG5zIiwgcGFyZW50X25ldywg
+cGlkX2J1Zik7CisJCQl9CisJCXBhcmVudCA9IHBhcmVudF9uZXc7CisJCX0KKwl9Cit9CisKK3Zv
+aWQgcHJvY19waWRuc19saXN0KHZvaWQpCit7CisJc3RydWN0IHBpZCAqcGlkOworCXN0cnVjdCB0
+YXNrX3N0cnVjdCAqdGFzayA9ICZpbml0X3Rhc2s7CisKKwlyZW1vdmVfcHJvY19zdWJ0cmVlKEhJ
+RVJBUkNIWV9ESVIsIE5VTEwpOworCXByb2Nfcm9vdCA9IHByb2NfbWtkaXIoSElFUkFSQ0hZX0RJ
+UiwgTlVMTCk7CisJZnJlZV9waWRuc19saXN0KCZwaWRuc19saXN0KTsKKworCWRvIHsKKwkJcGlk
+ID0gdGFza19waWQodGFzayk7CisJCWlmIChwaWQpIHsKKwkJCWlmIChwaWQtPmxldmVsID4gMCkK
+KwkJCQluc19waWRfbGlzdF9hZGQocGlkKTsKKwkJfQorCX0gd2hpbGUgKCh0YXNrID0gbmV4dF90
+YXNrKHRhc2spKSAhPSAmaW5pdF90YXNrKTsKKworCXByaW50X2xpc3QoKTsKKwlwcmludGsoS0VS
+Tl9JTkZPICJyZWZyZXNoIGZpbmlzaGVkXG4iKTsKK30KKworc3NpemVfdCBwcm9jX3BpZG5zX3Jl
+ZnJlc2hfc3dpdGNoKHN0cnVjdCBmaWxlICpmaWxlLCBjb25zdCBjaGFyIF9fdXNlciAqYnVmLAor
+CQlzaXplX3Qgc2l6ZSwgbG9mZl90ICpwcG9zKQoreworCXdyaXRlX2xvY2soJnBpZG5zX2xvY2sp
+OworCXByb2NfcGlkbnNfbGlzdCgpOworCXdyaXRlX3VubG9jaygmcGlkbnNfbG9jayk7CisJcmV0
+dXJuIDE7Cit9CisKK3N0YXRpYyBjb25zdCBzdHJ1Y3QgZmlsZV9vcGVyYXRpb25zIHByb2NfcGlk
+bnNfcmVmcmVzaF9mb3BzID0geworCS53cml0ZSA9IHByb2NfcGlkbnNfcmVmcmVzaF9zd2l0Y2gs
+Cit9OworCitzdGF0aWMgaW50IF9faW5pdCBwaWRuc19oaWVyYXJjaHlfaW5pdCh2b2lkKQorewor
+CisJaWYgKCFwcm9jX21rZGlyKEJBU0VfRElSLCBOVUxMKSkKKwkJcmV0dXJuIC1FTk9NRU07CisJ
+cHJvY19yb290ID0gcHJvY19ta2RpcihISUVSQVJDSFlfRElSLCBOVUxMKTsKKwlpZiAoIXByb2Nf
+cm9vdCkKKwkJcmV0dXJuIC1FTk9NRU07CisKKwlwcm9jX2NyZWF0ZShSRUZSRVNIX0tFWSwgU19J
+V1VHTywKKwkJTlVMTCwgJnByb2NfcGlkbnNfcmVmcmVzaF9mb3BzKTsKKwlwcmludGsoS0VSTl9J
+TkZPICIlczogbG9hZGVkIHN1Y2Nlc3NmdWxseVxuIiwgTkFNRSk7CisKKwlyZXR1cm4gMDsKK30K
+K2ZzX2luaXRjYWxsKHBpZG5zX2hpZXJhcmNoeV9pbml0KTsKLS0gCjEuOS4wCgpfX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcg
+bGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMu
+bGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
