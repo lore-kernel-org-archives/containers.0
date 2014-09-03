@@ -1,13 +1,15 @@
-From: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 3/3] /proc/pid/status: show all sets of pid according to ns
-Date: Wed, 3 Sep 2014 18:30:00 +0800
-Message-ID: <1409740200-26461-4-git-send-email-chenhanxiao@cn.fujitsu.com>
+From: Vasiliy Kulikov <segooon-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC PATCH 2/3] procfs: show hierarchy of pid namespace
+Date: Wed, 3 Sep 2014 16:46:55 +0400
+Message-ID: <20140903124655.GA5578@cachalot>
 References: <1409740200-26461-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<1409740200-26461-3-git-send-email-chenhanxiao@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1409740200-26461-1-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1409740200-26461-3-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,68 +19,37 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-If some issues occurred inside a container guest, host user
-could not know which process is in trouble just by guest pid:
-the users of container guest only knew the pid inside containers.
-This will bring obstacle for trouble shooting.
-
-This patch adds four fields: NStgid, NSpid, NSpgid and NSsid:
-a) In init_pid_ns, nothing changed;
-
-b) In one pidns, will tell the pid inside containers:
-NStgid:	21776 	5 	1
-NSpid:	21776 	5 	1
-NSpgid:	21776 	5 	1
-NSsid:	21729 	1 	0
-** Process id is 21776 in level 0, 5 in level 1, 1 in level 2.
-
-c) If pidns is nested, it depends on which pidns are you in.
-NStgid:	5 	1
-NSpid:	5 	1
-NSpgid:	5 	1
-NSsid:	1 	0
-** Views from level 1
-
-v2: add two new fields: NStgid and NSpid.
-    keep fields of Tgid and Pid unchanged for back compatibility.
-v3: add another two fields: NSpgid and NSsid.
-
-Signed-off-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- fs/proc/array.c | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
-
-diff --git a/fs/proc/array.c b/fs/proc/array.c
-index cd3653e..c30875d 100644
---- a/fs/proc/array.c
-+++ b/fs/proc/array.c
-@@ -193,6 +193,23 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
- 		from_kgid_munged(user_ns, cred->egid),
- 		from_kgid_munged(user_ns, cred->sgid),
- 		from_kgid_munged(user_ns, cred->fsgid));
-+	seq_puts(m, "NStgid:");
-+	for (g = ns->level; g <= pid->level; g++)
-+		seq_printf(m, "\t%d ",
-+			task_tgid_nr_ns(p, pid->numbers[g].ns));
-+	seq_puts(m, "\nNSpid:");
-+	for (g = ns->level; g <= pid->level; g++)
-+		seq_printf(m, "\t%d ",
-+			task_pid_nr_ns(p, pid->numbers[g].ns));
-+	seq_puts(m, "\nNSpgid:");
-+	for (g = ns->level; g <= pid->level; g++)
-+		seq_printf(m, "\t%d ",
-+			task_pgrp_nr_ns(p, pid->numbers[g].ns));
-+	seq_puts(m, "\nNSsid:");
-+	for (g = ns->level; g <= pid->level; g++)
-+		seq_printf(m, "\t%d ",
-+			task_session_nr_ns(p, pid->numbers[g].ns));
-+	seq_putc(m, '\n');
- 
- 	task_lock(p);
- 	if (p->files)
--- 
-1.9.0
+SGksCgpPbiBXZWQsIFNlcCAwMywgMjAxNCBhdCAxODoyOSArMDgwMCwgQ2hlbiBIYW54aWFvIHdy
+b3RlOgo+IFRoaXMgcGF0Y2ggd2lsbCBzaG93IHRoZSBoaWVyYXJjaHkgb2YgcGlkIG5hbWVzcGFj
+ZQo+IHVuZGVyIC9wcm9jL3BpZG5zIGxpa2U6Cj4gL3Byb2MvcGlkbnMKPiDilJzilIDilIAgaGll
+cmFyY2h5Cj4g4pSCICAg4pSc4pSA4pSAIHBpZG5zNDAyNjUzMjM5OQo+IOKUgiAgIOKUgiAgIOKU
+nOKUgOKUgCBwaWRucyAtPiAvcHJvYy8yODYzL25zL3BpZAo+IOKUgiAgIOKUgiAgIOKUlOKUgOKU
+gCBwaWRuczQwMjY1MzI1MTUKPiDilIIgICDilIIgICAgICAg4pSU4pSA4pSAIHBpZG5zIC0+IC9w
+cm9jLzEwNjExL25zL3BpZAo+IOKUgiAgIOKUlOKUgOKUgCBwaWRuczQwMjY1MzI1MDQKPiDilIIg
+ICAgICAg4pSU4pSA4pSAIHBpZG5zIC0+IC9wcm9jLzQ0NTAvbnMvcGlkCj4g4pSU4pSA4pSAIHJl
+ZnJlc2gKClJlOiB0aGlzIGhpZXJhcmNoeToKCjEpIEkgdGhpbmsgaXQgaXMgYSBiaXQgd2VpcmQg
+dGhhdCB0aGVyZSBpcyBhIGdsb2JhbCBoaWVyYXJjaHkgb2YgTlNzIHdpdGgKc3ltbGlua3MgdG8g
+YWN0dWFsIE5TcyBsb2NhdGVkIGluIHNvbWUgcmFuZG9tIC9wcm9jL1BJRC9ucy9waWQKZGlyZWN0
+b3JpZXMuICBJdCB3b3VsZCBiZSBiZXR0ZXIgdG8gaGF2ZSBhIGdsb2JhbCB0cmVlIHdpdGggYWN0
+dWFsCmRpcmVjdG9yaWVzIGFuZCBwcm9jZXNzIGRpcmVjdG9yaWVzIHdvdWxkIGhhdmUgc3ltbGlu
+a3MgdG8gc29tZSBzdWJkaXJzCmluIHRoaXMgZ2xvYmFsIHRyZWUuCgoyKSBUaGUgbmFtaW5nIGNh
+biBiZSBjaGFuZ2VkIGZvciBldmVuIG1vcmUgdHJpdmlhbCBOU3MgdHJhdmVyc2FsLgpJZiB0aGUg
+aGllcmFyY2h5IGlzIGFzIGZvbGxvd2luZyAtLQoKICAgIGhpZXJhcmNoeS8KICAgICAgcGlkbnMx
+MjM0LwogICAgICAgIHBpZG5zCiAgICAgICAgY2hpbGRyZW4vCiAgICAgICAgICBwaWRuczM0NTYv
+CiAgICAgICAgICAgIC4uLgogICAgICAgICAgcGlkbnM1Njc4LwogICAgICAgICAgICAuLi4KCi0t
+IHRoZW4gaXQgaXMgbW9yZSBzaW1wbGUgdG8gdHJhdmVyc2UgdGhlIHRyZWUgYXMgY2hpbGQgTlNz
+IGFyZSBhbGwKZmlsZXMgaW4gcGlkbnNYWFgvY2hpbGRyZW4vLCBub3QgYWxsIGZpbGVzIG9mIHRo
+ZSBtYXNrIHBpZG5zWzAtOV0rLgoKPiBhKSBoaWVyYXJjaHkgZGlyOgo+ICAgdXNlIHRvIHNob3cg
+aGllcmFyY2h5IGluZm9tYXRpb24gdXNpbmcgZGlyIGFuZCBzeW1saW5rcy4KPiAgIGRpcnMgYXJl
+IG5hbWVkIGFzIHBpZG5zKCRpbnVtKQo+ICAgYSBzeW1saW5rIGlzIGNyZWF0ZWQgdW5kZXIgcGlk
+bnMoJGludW0pLCBhbmQgbGlua2VkIHRvCj4gICB0aGF0IHBpZCBuYW1lc3BhY2UuCj4gCj4gYikg
+cmVmcmVzaAo+ICAgdHJpZ2dlciBrZXkuCj4gICBXZSBuZWVkIHRvIHdyaXRlIHN0aCB0byAvcHJv
+Yy9uc3BpZC9yZWZyZXNoLAo+ICAgdGhlbiB3ZSBjb3VsZCBnZXQgaGllcmFyY2h5IGluZm8KPiAg
+IHVuZGVyIC9wcm9jL3BpZG5zL2hpZXJhcmNoeS4KPiAKCi0tIApWYXNpbHkKX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxp
+c3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxp
+bnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
