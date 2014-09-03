@@ -1,15 +1,17 @@
-From: Vasiliy Kulikov <segooon-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC PATCH 2/3] procfs: show hierarchy of pid namespace
-Date: Wed, 3 Sep 2014 16:46:55 +0400
-Message-ID: <20140903124655.GA5578@cachalot>
-References: <1409740200-26461-1-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<1409740200-26461-3-git-send-email-chenhanxiao@cn.fujitsu.com>
+From: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [GIT PULL] namespace updates for v3.17-rc1
+Date: Wed, 3 Sep 2014 23:18:39 +0200
+Message-ID: <CAFLxGvyj01YTwhPJWuAMwJO-QGjHi4UZwhhemDbaPvuEJddhqg@mail.gmail.com>
+References: <87fvhav3ic.fsf@x220.int.ebiederm.org>
+	<CAFLxGvwi-iJRyfwv8v9fcRkiSu2d-az8W55xMPbp_d8wQKmwjg@mail.gmail.com>
+	<87vbpm4f4y.fsf@x220.int.ebiederm.org>
+	<20140821131257.GA4264@infradead.org> <53F5F2AD.5010607@nod.at>
+	<87k362vsr5.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1409740200-26461-3-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <87k362vsr5.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,37 +21,23 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: "libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org" <libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-SGksCgpPbiBXZWQsIFNlcCAwMywgMjAxNCBhdCAxODoyOSArMDgwMCwgQ2hlbiBIYW54aWFvIHdy
-b3RlOgo+IFRoaXMgcGF0Y2ggd2lsbCBzaG93IHRoZSBoaWVyYXJjaHkgb2YgcGlkIG5hbWVzcGFj
-ZQo+IHVuZGVyIC9wcm9jL3BpZG5zIGxpa2U6Cj4gL3Byb2MvcGlkbnMKPiDilJzilIDilIAgaGll
-cmFyY2h5Cj4g4pSCICAg4pSc4pSA4pSAIHBpZG5zNDAyNjUzMjM5OQo+IOKUgiAgIOKUgiAgIOKU
-nOKUgOKUgCBwaWRucyAtPiAvcHJvYy8yODYzL25zL3BpZAo+IOKUgiAgIOKUgiAgIOKUlOKUgOKU
-gCBwaWRuczQwMjY1MzI1MTUKPiDilIIgICDilIIgICAgICAg4pSU4pSA4pSAIHBpZG5zIC0+IC9w
-cm9jLzEwNjExL25zL3BpZAo+IOKUgiAgIOKUlOKUgOKUgCBwaWRuczQwMjY1MzI1MDQKPiDilIIg
-ICAgICAg4pSU4pSA4pSAIHBpZG5zIC0+IC9wcm9jLzQ0NTAvbnMvcGlkCj4g4pSU4pSA4pSAIHJl
-ZnJlc2gKClJlOiB0aGlzIGhpZXJhcmNoeToKCjEpIEkgdGhpbmsgaXQgaXMgYSBiaXQgd2VpcmQg
-dGhhdCB0aGVyZSBpcyBhIGdsb2JhbCBoaWVyYXJjaHkgb2YgTlNzIHdpdGgKc3ltbGlua3MgdG8g
-YWN0dWFsIE5TcyBsb2NhdGVkIGluIHNvbWUgcmFuZG9tIC9wcm9jL1BJRC9ucy9waWQKZGlyZWN0
-b3JpZXMuICBJdCB3b3VsZCBiZSBiZXR0ZXIgdG8gaGF2ZSBhIGdsb2JhbCB0cmVlIHdpdGggYWN0
-dWFsCmRpcmVjdG9yaWVzIGFuZCBwcm9jZXNzIGRpcmVjdG9yaWVzIHdvdWxkIGhhdmUgc3ltbGlu
-a3MgdG8gc29tZSBzdWJkaXJzCmluIHRoaXMgZ2xvYmFsIHRyZWUuCgoyKSBUaGUgbmFtaW5nIGNh
-biBiZSBjaGFuZ2VkIGZvciBldmVuIG1vcmUgdHJpdmlhbCBOU3MgdHJhdmVyc2FsLgpJZiB0aGUg
-aGllcmFyY2h5IGlzIGFzIGZvbGxvd2luZyAtLQoKICAgIGhpZXJhcmNoeS8KICAgICAgcGlkbnMx
-MjM0LwogICAgICAgIHBpZG5zCiAgICAgICAgY2hpbGRyZW4vCiAgICAgICAgICBwaWRuczM0NTYv
-CiAgICAgICAgICAgIC4uLgogICAgICAgICAgcGlkbnM1Njc4LwogICAgICAgICAgICAuLi4KCi0t
-IHRoZW4gaXQgaXMgbW9yZSBzaW1wbGUgdG8gdHJhdmVyc2UgdGhlIHRyZWUgYXMgY2hpbGQgTlNz
-IGFyZSBhbGwKZmlsZXMgaW4gcGlkbnNYWFgvY2hpbGRyZW4vLCBub3QgYWxsIGZpbGVzIG9mIHRo
-ZSBtYXNrIHBpZG5zWzAtOV0rLgoKPiBhKSBoaWVyYXJjaHkgZGlyOgo+ICAgdXNlIHRvIHNob3cg
-aGllcmFyY2h5IGluZm9tYXRpb24gdXNpbmcgZGlyIGFuZCBzeW1saW5rcy4KPiAgIGRpcnMgYXJl
-IG5hbWVkIGFzIHBpZG5zKCRpbnVtKQo+ICAgYSBzeW1saW5rIGlzIGNyZWF0ZWQgdW5kZXIgcGlk
-bnMoJGludW0pLCBhbmQgbGlua2VkIHRvCj4gICB0aGF0IHBpZCBuYW1lc3BhY2UuCj4gCj4gYikg
-cmVmcmVzaAo+ICAgdHJpZ2dlciBrZXkuCj4gICBXZSBuZWVkIHRvIHdyaXRlIHN0aCB0byAvcHJv
-Yy9uc3BpZC9yZWZyZXNoLAo+ICAgdGhlbiB3ZSBjb3VsZCBnZXQgaGllcmFyY2h5IGluZm8KPiAg
-IHVuZGVyIC9wcm9jL3BpZG5zL2hpZXJhcmNoeS4KPiAKCi0tIApWYXNpbHkKX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxp
-c3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxp
-bnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+On Thu, Aug 21, 2014 at 4:09 PM, Eric W. Biederman
+<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+>> It looks like commit 87b47932f40a11280584bce260cbdb3b5f9e8b7d in
+>> git.kernel.org/cgit/linux/kernel/git/ebiederm/user-namespace.git for-next
+>> unbreaks libvirt-lxc.
+>> I hope it hits Linus tree and -stable before the offending commit hits users.
+>
+> I plan to send the pull request to Linus as soon as I have caught my
+> breath (from all of the conferences this week) that I can be certain I
+> am thinking clearly and not rushing things.
+
+*kind reminder* :-)
+
+-- 
+Thanks,
+//richard
