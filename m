@@ -1,11 +1,15 @@
-From: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH] userns: use marco instead of magic number for max userns level
-Date: Fri, 5 Sep 2014 13:39:25 +0800
-Message-ID: <1409895565-26572-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+From: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: RE: [RFC PATCH 0/3] ns,	procfs: pid conversion between ns and
+	showing pidns hierarchy
+Date: Fri, 5 Sep 2014 05:21:47 +0000
+Message-ID: <5871495633F38949900D2BF2DC04883E59172F@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <1409740200-26461-1-git-send-email-chenhanxiao@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1409740200-26461-1-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,39 +19,38 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Fabian Frederick <fabf-AgBVmzD5pcezQB+pC5nmwQ@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Use marco instead of magic number
-for max user namespace level.
+Hi,
 
-Signed-off-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- kernel/user_namespace.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+> -----Original Message-----
+> Quoting Chen Hanxiao (chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
+> > This series will expose pid inside containers
+> > via procfs.
+> > Also show the hierarchy of pid namespcae.
+> > Then we could know how pid looks inside a container
+> > and their ns relationships.
+> > 
+> > Chen Hanxiao (3):
+> >   procfs: check uniq proc_dir_entry subdir name
+> >   procfs: show hierarchy of pid namespace
+> >   /proc/pid/status: show all sets of pid according to ns
+> > 
+> >  fs/proc/Kconfig           |   6 ++
+> >  fs/proc/Makefile          |   1 +
+> >  fs/proc/array.c           |  17 +++++
+> >  fs/proc/generic.c         |  15 +++++
+> >  fs/proc/pidns_hierarchy.c | 161 ++++++++++++++++++++++++++++++++++++++++++++++
+> >  include/linux/proc_fs.h   |   3 +
+> >  6 files changed, 203 insertions(+)
+> >  create mode 100644 fs/proc/pidns_hierarchy.c
+> 
+>Thanks, Chen.  I'm sorry I won't have a chance to review this week, but
+>hope to do next week.
+>
 
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index aa312b0..5435489 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -47,6 +47,8 @@ static void set_cred_user_ns(struct cred *cred, struct user_namespace *user_ns)
- 	cred->user_ns = user_ns;
- }
- 
-+#define MAX_USER_NS_LEVEL 32
-+
- /*
-  * Create a new user namespace, deriving the creator from the user in the
-  * passed credentials, and replacing that user with the new root user for the
-@@ -62,7 +64,7 @@ int create_user_ns(struct cred *new)
- 	kgid_t group = new->egid;
- 	int ret;
- 
--	if (parent_ns->level > 32)
-+	if (parent_ns->level > MAX_USER_NS_LEVEL)
- 		return -EUSERS;
- 
- 	/*
--- 
-1.9.0
+Thanks for your time and kindly help.
+
+-Chen
