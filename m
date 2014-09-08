@@ -1,15 +1,11 @@
-From: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: RE: [RFC PATCH 0/3] ns,	procfs: pid conversion between ns and
-	showing pidns hierarchy
-Date: Fri, 5 Sep 2014 05:21:47 +0000
-Message-ID: <5871495633F38949900D2BF2DC04883E59172F@G08CNEXMBPEKD02.g08.fujitsu.local>
-References: <1409740200-26461-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+From: =?windows-1251?B?xuDr7g==?= <lesha-tarelk1n-JGs/UdohzUI@public.gmane.org>
+Subject: =?windows-1251?B?0u7r/OruIPHu4uvg5OXr/PbzIC0g?=
+Date: Mon, 8 Sep 2014 23:03:57 +0300
+Message-ID: <20140908191321.31D2F918@mail.linuxfoundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1251"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1409740200-26461-1-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,38 +15,18 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: 8121487a-Zt1HRbbEf/E@public.gmane.org, direktor-9di1SsEJpXXWUoS+0EaYnA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, masamich-iFcOxfkKmgPr/T9rk+pNBkB+6BGkLq7r@public.gmane.org, falssiguadist-GX11XX5ZkZTQT0dZR+AlfA@public.gmane.org, 2460099-Lt6t8zp7ix8vJsYlp49lxw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
-
-> -----Original Message-----
-> Quoting Chen Hanxiao (chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
-> > This series will expose pid inside containers
-> > via procfs.
-> > Also show the hierarchy of pid namespcae.
-> > Then we could know how pid looks inside a container
-> > and their ns relationships.
-> > 
-> > Chen Hanxiao (3):
-> >   procfs: check uniq proc_dir_entry subdir name
-> >   procfs: show hierarchy of pid namespace
-> >   /proc/pid/status: show all sets of pid according to ns
-> > 
-> >  fs/proc/Kconfig           |   6 ++
-> >  fs/proc/Makefile          |   1 +
-> >  fs/proc/array.c           |  17 +++++
-> >  fs/proc/generic.c         |  15 +++++
-> >  fs/proc/pidns_hierarchy.c | 161 ++++++++++++++++++++++++++++++++++++++++++++++
-> >  include/linux/proc_fs.h   |   3 +
-> >  6 files changed, 203 insertions(+)
-> >  create mode 100644 fs/proc/pidns_hierarchy.c
-> 
->Thanks, Chen.  I'm sorry I won't have a chance to review this week, but
->hope to do next week.
->
-
-Thanks for your time and kindly help.
-
--Chen
+IAo8QlI+PERJVj4mIzMyOzwvRElWPiA8RElWPjxGT05UIHN0eWxlPSJGT05ULVNJWkU6IDFweCIg
+c2l6ZT0xPiYjMTczOyYjeEFEOyYjeEFEOzwvRk9OVD48L0RJVj48RElWPiYjMzI7PC9ESVY+PERJ
+Vj4mI3gyMDs8L0RJVj48QlI+IAoKPEJSPjxESVY+JiN4MjA7PC9ESVY+PEJSPgo8RElWPjxGT05U
+IHN0eWxlPSJGT05ULVNJWkU6IDFweCIgc2l6ZT0xPiYjMTczOyYjeEFEOzwvRk9OVD48L0RJVj4g
+Cs4mIzEwNzY77SYjMTExOyYjMTA3OTsmIzEwODU7JiM5NzsmI3g0NDc7JiMxMDg1OyZvbWljcm9u
+OyYjeDIwOyYjMTA4NTsmIzEwNzc7JiMxMTE74SYjeDQ0NTvu5OgmI3g0M0M78CYjeEEwO+gmI3g0
+M0M75SYjMTA5MDsmIzExMDA7IPjlJiMxMDkyO3kmI3hBMDsmIzEwODA7IOImI3hBMDsmb21pY3Jv
+bjv0JiMxMDgwOyYjeDQ0MTvlJiN4MkU7CgoKPEJSPjxCUj4gCjxCUj48RElWPiYjeEEwOzwvRElW
+PgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWlu
+ZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0
+dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5l
+cnM=
