@@ -1,10 +1,15 @@
-From: MAILER-DAEMON-+NbaIjSFD8nd8Zgiw/MPxQ@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Wed, 10 Sep 2014 07:33:42 -0700 (PDT)
-Message-ID: <20140910143342.5B5A756784B3A@c9mailgw14.amadis.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC PATCH 2/3] procfs: show hierarchy of pid namespace
+Date: Wed, 10 Sep 2014 18:23:15 +0200
+Message-ID: <20140910162315.GB7748@mail.hallyn.com>
+References: <1409740200-26461-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<1409740200-26461-3-git-send-email-chenhanxiao@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============3842414389876833458=="
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1409740200-26461-3-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,133 +19,133 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
-
---===============3842414389876833458==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="3000056784945.1410359622/c9mailgw14.amadis.com"
-
-This is a MIME-encapsulated message.
-
---3000056784945.1410359622/c9mailgw14.amadis.com
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
-
-This is the mail system at host c9mailgw14.amadis.com.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to postmaster.
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<0000-7XRkppT4KCs@public.gmane.org>: host m2w-in1.ctmail.com[74.202.142.24] said: 550 5.1.1
-    <0000-7XRkppT4KCs@public.gmane.org> is not a valid mailbox (in reply to RCPT TO command)
-
---3000056784945.1410359622/c9mailgw14.amadis.com
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; c9mailgw14.amadis.com
-X-Postfix-Queue-ID: 3000056784945
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Wed, 10 Sep 2014 07:33:33 -0700 (PDT)
-
-Final-Recipient: rfc822; 0000-7XRkppT4KCs@public.gmane.org
-Original-Recipient: rfc822;0000-7XRkppT4KCs@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; m2w-in1.ctmail.com
-Diagnostic-Code: smtp; 550 5.1.1 <0000-7XRkppT4KCs@public.gmane.org> is not a valid mailbox
-
---3000056784945.1410359622/c9mailgw14.amadis.com
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-
-Received: from ns28460.ovh.net (unknown [91.121.94.45])
-	by c9mailgw14.amadis.com (Postfix) with ESMTP id 4B7B356783B2E
-	for <0000-7XRkppT4KCs@public.gmane.org>; Wed, 10 Sep 2014 07:33:33 -0700 (PDT)
-Received: from [91.121.94.45] by ns28460.ovh.net id Y06onzaUJtmubhE; Wed, 10 Sep 2014 16:33:33 +0200
-Message-ID: <004901cfcd04$30d71900$0200a8c0-m0sq/3GtrjhJq9fFQhofsg@public.gmane.org>
-From: "anna" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <0000-7XRkppT4KCs@public.gmane.org>
-Subject: ny vakans
-Date: Wed, 10 Sep 2014 16:33:33 +0200
-MIME-Version: 1.0
-Content-type: text/plain charset= iso-8859-1
-X-CTASD-RefID: str=0001.0A090208.54106141.009F,ss=1,re=0.000,recu=0.000,reip=0.000,cl=1,cld=1,fgs=0
-X-CTASD-IP: 91.121.94.45
-X-CTASD-Sender: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-x-ctasd: uncategorized
-x-ctasd-vod: uncategorized
-x-ctasd-station: 
-Content-Transfer-Encoding: quoted-printable
-
-Hello, 0000-rYA6p1M1myM@public.gmane.org    =20
-
-Our company offers a vacancy for people who are interested in editing tex=
-ts=20
-(especially when it comes to correcting grammar mistakes).
-
-We are looking for native speakers of Swedish.=20
-We'll send you texts written in your native language (Swedish)=20
-and you'll have to correct spell and grammar mistakes found there.
-
-As soon as the texts are edited you'll send them back to us=20
-(it shoud be the same day, the only exceptions are Saturdays and Sundays)=
-.=20
-Work takes no more than 1 hour per day.
-
-Salary is 5.00 euro for 1Kb. We pay 1500-2500 euro per month.=20
-If you are interested, please, send your contact information=20
-(name, address and phone number) in English mailto:anna.melkova-O5WfVfzUwx8@public.gmane.org
-
-
-Important:
-English language skills
-Vart foretag erbjuder jobb for dem som ar intresserade av att redigera fa=
-rdiga texter.
-Tjansten ar tillganglig till de svenska medborgarna som var fodda i Sveri=
-ge,=20
-bor dar och pratar svenska som modersmal.=20
-
-Samarbetet ska ske pa foljande satt: =20
-vi skickar er texter som man skrev pa svenska och ni behover ratta fel so=
-m galler gramatiken och sammanhang.
-
-Samma dag skickar ni redigerade texter till oss sa snart som mojligt=20
-(ni far skicka dem senare bara om det ar lordag eller sondag).=20
-Namnda uppgifter tar inte mer ar en timme per dag.
-
-Ni far 5.00 euro per 1Kb. Vi erbjuder 1500-2500 euro per manad.=20
-Om du ar intresserade av tjansten, kontakta oss via e-mail anna.melkova@m=
-ail.com=20
-Skicka garna ett meddelande (pa engelska) med ditt namn, address och tele=
-fonnummer.
-
-   =20
-Viktigt:
-Ni maste kunna engelska ocksa
-
-
-
---3000056784945.1410359622/c9mailgw14.amadis.com--
-
---===============3842414389876833458==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============3842414389876833458==--
+UXVvdGluZyBDaGVuIEhhbnhpYW8gKGNoZW5oYW54aWFvQGNuLmZ1aml0c3UuY29tKToKPiBUaGlz
+IHBhdGNoIHdpbGwgc2hvdyB0aGUgaGllcmFyY2h5IG9mIHBpZCBuYW1lc3BhY2UKPiB1bmRlciAv
+cHJvYy9waWRucyBsaWtlOgo+IC9wcm9jL3BpZG5zCj4g4pSc4pSA4pSAIGhpZXJhcmNoeQo+IOKU
+giAgIOKUnOKUgOKUgCBwaWRuczQwMjY1MzIzOTkKPiDilIIgICDilIIgICDilJzilIDilIAgcGlk
+bnMgLT4gL3Byb2MvMjg2My9ucy9waWQKPiDilIIgICDilIIgICDilJTilIDilIAgcGlkbnM0MDI2
+NTMyNTE1Cj4g4pSCICAg4pSCICAgICAgIOKUlOKUgOKUgCBwaWRucyAtPiAvcHJvYy8xMDYxMS9u
+cy9waWQKPiDilIIgICDilJTilIDilIAgcGlkbnM0MDI2NTMyNTA0Cj4g4pSCICAgICAgIOKUlOKU
+gOKUgCBwaWRucyAtPiAvcHJvYy80NDUwL25zL3BpZAo+IOKUlOKUgOKUgCByZWZyZXNoCj4gCj4g
+YSkgaGllcmFyY2h5IGRpcjoKPiAgIHVzZSB0byBzaG93IGhpZXJhcmNoeSBpbmZvbWF0aW9uIHVz
+aW5nIGRpciBhbmQgc3ltbGlua3MuCj4gICBkaXJzIGFyZSBuYW1lZCBhcyBwaWRucygkaW51bSkK
+PiAgIGEgc3ltbGluayBpcyBjcmVhdGVkIHVuZGVyIHBpZG5zKCRpbnVtKSwgYW5kIGxpbmtlZCB0
+bwo+ICAgdGhhdCBwaWQgbmFtZXNwYWNlLgo+IAo+IGIpIHJlZnJlc2gKPiAgIHRyaWdnZXIga2V5
+Lgo+ICAgV2UgbmVlZCB0byB3cml0ZSBzdGggdG8gL3Byb2MvbnNwaWQvcmVmcmVzaCwKPiAgIHRo
+ZW4gd2UgY291bGQgZ2V0IGhpZXJhcmNoeSBpbmZvCj4gICB1bmRlciAvcHJvYy9waWRucy9oaWVy
+YXJjaHkuCgpPdWNoLiAgVGhlcmUgbWF5IG5vdCBiZSBhIGJldHRlciB3YXksIGJ1dCBpdCBzdXJl
+IHdvdWxkIGJlIG5pY2UgaWYKd2UgY291bGQgc2ltcGx5IGhhdmUgdGhlIGxpc3QgdXBkYXRlIGlu
+IHJlYWwtdGltZS4KCklmIHdlIGhhdmUgdG8gJ2VjaG8gMSA+IC9wcm9jL3BpZG5zL3JlZnJlc2gn
+IHRvIHVwZGF0ZSB0aGUgZnMgdHJlZSB1bmRlcgovcHJvYy9waWRucy8gdG8gcmVmbGVjdCBuZXcg
+cGlkbnMgYWN0aXZpdHksIHRoZW4gd2h5IG5vdCBqdXN0IG1ha2UgdGhpcwphIHRleHQgZmlsZT8g
+IEkgc3VwcG9zZSBpZiBpdCB3ZXJlIGEgdGV4dGZpbGUgeW91J2QgYmUgZW5jb3VyYWdpbmcgcHBs
+CnRvICdjYXQgcGlkbGlzdCB8IHdoaWxlIHJlYWQgbGluZTsgZG8gZ3JlcCBsaW5lIC9wcm9jL3Bp
+ZG5zOyBkb25lJywKd2hpY2ggd291bGQgY2F1c2UgYSByZWZyZXNoIG9mIHRoYXQgZmlsZSBmb3Ig
+ZXZlcnkgZ3JlcD8KCk15IGNvbmNlcm4gd2l0aCB0aGlzIGFwcHJvYWNoIGlzIHRoYXQgaXQgaXMg
+dW5saWtlIGFueSBvdGhlciBwc2V1ZG8tZnMKdGhhdCBJIGtub3cgb2YsIGFuZCBwZW9wbGUgbWF5
+IHNpbXBseSBleHBlY3QgdGhlIGZzIGNvbnRlbnRzIHRvIGJlCnVwdG9kYXRlIHJhdGhlciB0aGFu
+IGEgc25hcHNob3QuCgo+IFNpZ25lZC1vZmYtYnk6IENoZW4gSGFueGlhbyA8Y2hlbmhhbnhpYW9A
+Y24uZnVqaXRzdS5jb20+Cj4gLS0tCj4gIGZzL3Byb2MvS2NvbmZpZyAgICAgICAgICAgfCAgIDYg
+KysKPiAgZnMvcHJvYy9NYWtlZmlsZSAgICAgICAgICB8ICAgMSArCj4gIGZzL3Byb2MvcGlkbnNf
+aGllcmFyY2h5LmMgfCAxNjEgKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysr
+KysrKysrKwo+ICAzIGZpbGVzIGNoYW5nZWQsIDE2OCBpbnNlcnRpb25zKCspCj4gIGNyZWF0ZSBt
+b2RlIDEwMDY0NCBmcy9wcm9jL3BpZG5zX2hpZXJhcmNoeS5jCj4gCj4gZGlmZiAtLWdpdCBhL2Zz
+L3Byb2MvS2NvbmZpZyBiL2ZzL3Byb2MvS2NvbmZpZwo+IGluZGV4IDIxODNmY2YuLmUyZTIyOTIg
+MTAwNjQ0Cj4gLS0tIGEvZnMvcHJvYy9LY29uZmlnCj4gKysrIGIvZnMvcHJvYy9LY29uZmlnCj4g
+QEAgLTcxLDMgKzcxLDkgQEAgY29uZmlnIFBST0NfUEFHRV9NT05JVE9SCj4gIAkgIC9wcm9jL3Bp
+ZC9zbWFwcywgL3Byb2MvcGlkL2NsZWFyX3JlZnMsIC9wcm9jL3BpZC9wYWdlbWFwLAo+ICAJICAv
+cHJvYy9rcGFnZWNvdW50LCBhbmQgL3Byb2Mva3BhZ2VmbGFncy4gRGlzYWJsaW5nIHRoZXNlCj4g
+ICAgICAgICAgICBpbnRlcmZhY2VzIHdpbGwgcmVkdWNlIHRoZSBzaXplIG9mIHRoZSBrZXJuZWwg
+YnkgYXBwcm94aW1hdGVseSA0a2IuCj4gKwo+ICtjb25maWcgUFJPQ19QSURfSElFUkFSQ0hZCj4g
+Kwlib29sICJFbmFibGUgL3Byb2MvcGlkbnNfaGllcmFyY2h5IHN1cHBvcnQiIGlmIEVYUEVSVAo+
+ICsJZGVwZW5kcyBvbiBQUk9DX0ZTCj4gKwloZWxwCj4gKwkgIFNob3cgcGlkIG5hbWVzcGFjZSBo
+aWVyYXJjaHkgaW5mb21hdGlvbgo+IGRpZmYgLS1naXQgYS9mcy9wcm9jL01ha2VmaWxlIGIvZnMv
+cHJvYy9NYWtlZmlsZQo+IGluZGV4IDIzOTQ5M2UuLjczMzU5OWIgMTAwNjQ0Cj4gLS0tIGEvZnMv
+cHJvYy9NYWtlZmlsZQo+ICsrKyBiL2ZzL3Byb2MvTWFrZWZpbGUKPiBAQCAtMjksMyArMjksNCBA
+QCBwcm9jLSQoQ09ORklHX1BST0NfS0NPUkUpCSs9IGtjb3JlLm8KPiAgcHJvYy0kKENPTkZJR19Q
+Uk9DX1ZNQ09SRSkJKz0gdm1jb3JlLm8KPiAgcHJvYy0kKENPTkZJR19QUklOVEspCSs9IGttc2cu
+bwo+ICBwcm9jLSQoQ09ORklHX1BST0NfUEFHRV9NT05JVE9SKQkrPSBwYWdlLm8KPiArcHJvYy0k
+KENPTkZJR19QUk9DX1BJRF9ISUVSQVJDSFkpCSs9IHBpZG5zX2hpZXJhcmNoeS5vCj4gZGlmZiAt
+LWdpdCBhL2ZzL3Byb2MvcGlkbnNfaGllcmFyY2h5LmMgYi9mcy9wcm9jL3BpZG5zX2hpZXJhcmNo
+eS5jCj4gbmV3IGZpbGUgbW9kZSAxMDA2NDQKPiBpbmRleCAwMDAwMDAwLi5kMzUzNDBmCj4gLS0t
+IC9kZXYvbnVsbAo+ICsrKyBiL2ZzL3Byb2MvcGlkbnNfaGllcmFyY2h5LmMKPiBAQCAtMCwwICsx
+LDE2MSBAQAo+ICsvKgo+ICsgKiBwcm9jX3BpZG5zX2hpZXJhcmNoeS5jIC0tIGhhbmRsZXMgcGlk
+bnMgaGllcmFyY2h5Cj4gKyAqCj4gKyAqIENvcHlyaWdodCAyMDE0Cj4gKyAqLwo+ICsKPiArI2lu
+Y2x1ZGUgPGxpbnV4L2luaXQuaD4KPiArI2luY2x1ZGUgPGxpbnV4L2Vycm5vLmg+Cj4gKyNpbmNs
+dWRlIDxsaW51eC9wcm9jX2ZzLmg+Cj4gKyNpbmNsdWRlIDxsaW51eC9tb2R1bGUuaD4KPiArI2lu
+Y2x1ZGUgPGxpbnV4L2xpc3QuaD4KPiArI2luY2x1ZGUgPGxpbnV4L3NsYWIuaD4KPiArI2luY2x1
+ZGUgPGxpbnV4L3BpZF9uYW1lc3BhY2UuaD4KPiArCj4gKy8qCj4gKyAqIFRoZSAvcHJvYy9waWRu
+cyBkaXJlY3RvcnkKPiArICovCj4gKwo+ICsjZGVmaW5lIEJBU0VfRElSCSJwaWRucyIJCQkvKiBT
+dWJkaXIgaW4gL3Byb2MgKi8KPiArI2RlZmluZSBISUVSQVJDSFlfRElSCSJwaWRucy9oaWVyYXJj
+aHkiCS8qIGhpZXJhcmNoeSBkaXIgKi8KPiArI2RlZmluZSBSRUZSRVNIX0tFWQkicGlkbnMvcmVm
+cmVzaCIJCS8qIHJlZnJlc2gga2V5ICovCj4gKyNkZWZpbmUgTkFNRQkJInBpZG5zX2hpZXJhcmNo
+eSIJLyogTW9kdWxlIG5hbWUgKi8KPiArCj4gK3N0YXRpYyBMSVNUX0hFQUQocGlkbnNfbGlzdCk7
+Cj4gK3N0YXRpYyBERUZJTkVfUldMT0NLKHBpZG5zX2xvY2spOwo+ICtzdGF0aWMgc3RydWN0IHBy
+b2NfZGlyX2VudHJ5ICpwcm9jX3Jvb3Q7Cj4gKwo+ICtzdHJ1Y3QgbnNfcGlkX2xpc3Qgewo+ICsJ
+c3RydWN0IHBpZCAqcGlkOwo+ICsJc3RydWN0IGxpc3RfaGVhZCBsaXN0Owo+ICt9Owo+ICsKPiAr
+c3RhdGljIHZvaWQgZnJlZV9waWRuc19saXN0KHN0cnVjdCBsaXN0X2hlYWQgKmhlYWQpCj4gK3sK
+PiArCXN0cnVjdCBuc19waWRfbGlzdCAqdG1wLCAqcG9zOwo+ICsKPiArCWxpc3RfZm9yX2VhY2hf
+ZW50cnlfc2FmZShwb3MsIHRtcCwgaGVhZCwgbGlzdCkgewo+ICsJCWxpc3RfZGVsKCZwb3MtPmxp
+c3QpOwo+ICsJCWtmcmVlKHBvcyk7Cj4gKwl9Cj4gK30KPiArCj4gKy8qCj4gKyAqIE9ubHkgYWRk
+IHBpZHMgd2l0aCBkaWZmZXJlbnQgbnMKPiArICovCj4gK3N0YXRpYyBpbnQKPiArbnNfcGlkX2xp
+c3RfcmVhbGx5X2FkZChzdHJ1Y3QgcGlkICpwaWQpCj4gK3sKPiArCXN0cnVjdCBuc19waWRfbGlz
+dCAqdG1wLCAqcG9zOwo+ICsKPiArCWxpc3RfZm9yX2VhY2hfZW50cnlfc2FmZShwb3MsIHRtcCwg
+JnBpZG5zX2xpc3QsIGxpc3QpCj4gKwkJaWYgKG5zX29mX3BpZChwaWQpID09IG5zX29mX3BpZChw
+b3MtPnBpZCkpCj4gKwkJCXJldHVybiAwOwo+ICsKPiArCXJldHVybiAxOwo+ICt9Cj4gKwo+ICtz
+dGF0aWMgaW50Cj4gK25zX3BpZF9saXN0X2FkZChzdHJ1Y3QgcGlkICpwaWQpCj4gK3sKPiArCXN0
+cnVjdCBuc19waWRfbGlzdCAqZW50Owo+ICsKPiArCWVudCA9IGttYWxsb2Moc2l6ZW9mKCplbnQp
+LCBHRlBfS0VSTkVMKTsKPiArCWlmICghZW50KQo+ICsJCXJldHVybiAtRU5PTUVNOwo+ICsJZW50
+LT5waWQgPSBwaWQ7Cj4gKwlpZiAobnNfcGlkX2xpc3RfcmVhbGx5X2FkZChwaWQpKQo+ICsJCWxp
+c3RfYWRkX3RhaWwoJmVudC0+bGlzdCwgJnBpZG5zX2xpc3QpOwo+ICsKPiArCXJldHVybiAwOwo+
+ICt9Cj4gKwo+ICtzdGF0aWMgdm9pZCBwcmludF9saXN0KHZvaWQpCj4gK3sKPiArCXN0cnVjdCBu
+c19waWRfbGlzdCAqdG1wLCAqcG9zOwo+ICsJc3RydWN0IHByb2NfZGlyX2VudHJ5ICpwYXJlbnQs
+ICpwYXJlbnRfbmV3Owo+ICsJc3RydWN0IHBpZF9uYW1lc3BhY2UgKm5zLCAqY3Vycl9uczsKPiAr
+CXN0cnVjdCBwaWQgKnBpZDsKPiArCWNoYXIgbmFtZV9idWZbMTZdLCBwaWRfYnVmWzMyXTsKPiAr
+CWludCBpLCBrOwo+ICsKPiArCWN1cnJfbnMgPSB0YXNrX2FjdGl2ZV9waWRfbnMoY3VycmVudCk7
+Cj4gKwo+ICsJbGlzdF9mb3JfZWFjaF9lbnRyeV9zYWZlKHBvcywgdG1wLCAmcGlkbnNfbGlzdCwg
+bGlzdCkgewo+ICsJCXBpZCA9IHBvcy0+cGlkOwo+ICsJCWsgPSAtMTsKPiArCQlucyA9IHBpZC0+
+bnVtYmVyc1twaWQtPmxldmVsXS5uczsKPiArCQkvKiBDaGVjayB3aGV0aGVyIHBpZCBoYXMgcmVs
+YXRpb25zaGlwIHdpdGggY3VycmVudCBucyAqLwo+ICsJCWZvciAoOyBucyAhPSBOVUxMOyBucyA9
+IG5zLT5wYXJlbnQpCj4gKwkJCWlmIChucyA9PSBjdXJyX25zKQo+ICsJCQkJayA9IGN1cnJfbnMt
+PmxldmVsOwo+ICsJCWlmIChrID09IC0xKQo+ICsJCQljb250aW51ZTsKPiArCQlwYXJlbnQgPSBw
+cm9jX3Jvb3Q7Cj4gKwkJZm9yIChpID0gayArIDE7IGkgPD0gcGlkLT5sZXZlbDsgaSsrKSB7Cj4g
+KwkJCW5zID0gcGlkLT5udW1iZXJzW2ldLm5zOwo+ICsJCQlzbnByaW50ZihuYW1lX2J1ZiwgMTYs
+ICJwaWRucyV1IiwKPiArCQkJCXBpZC0+bnVtYmVyc1tpXS5ucy0+cHJvY19pbnVtKTsKPiArCQkJ
+c25wcmludGYocGlkX2J1ZiwgMzIsICIvcHJvYy8ldS9ucy9waWQiLAo+ICsJCQkJcGlkLT5udW1i
+ZXJzWzBdLm5yKTsKPiArCQkJLyogZG9uJ3QgZHVwbGljYXRlIG5zIGRpcnMgKi8KPiArCQkJcGFy
+ZW50X25ldyA9IHByb2NfdW5pcV9kaXIocGFyZW50LCBuYW1lX2J1Zik7Cj4gKwkJCWlmICghcGFy
+ZW50X25ldykgewo+ICsJCQkJcGFyZW50X25ldyA9IHByb2NfbWtkaXIobmFtZV9idWYsIHBhcmVu
+dCk7Cj4gKwkJCQlwcm9jX3N5bWxpbmsoInBpZG5zIiwgcGFyZW50X25ldywgcGlkX2J1Zik7Cj4g
+KwkJCX0KPiArCQlwYXJlbnQgPSBwYXJlbnRfbmV3Owo+ICsJCX0KPiArCX0KPiArfQo+ICsKPiAr
+dm9pZCBwcm9jX3BpZG5zX2xpc3Qodm9pZCkKPiArewo+ICsJc3RydWN0IHBpZCAqcGlkOwo+ICsJ
+c3RydWN0IHRhc2tfc3RydWN0ICp0YXNrID0gJmluaXRfdGFzazsKPiArCj4gKwlyZW1vdmVfcHJv
+Y19zdWJ0cmVlKEhJRVJBUkNIWV9ESVIsIE5VTEwpOwo+ICsJcHJvY19yb290ID0gcHJvY19ta2Rp
+cihISUVSQVJDSFlfRElSLCBOVUxMKTsKPiArCWZyZWVfcGlkbnNfbGlzdCgmcGlkbnNfbGlzdCk7
+Cj4gKwo+ICsJZG8gewo+ICsJCXBpZCA9IHRhc2tfcGlkKHRhc2spOwo+ICsJCWlmIChwaWQpIHsK
+PiArCQkJaWYgKHBpZC0+bGV2ZWwgPiAwKQo+ICsJCQkJbnNfcGlkX2xpc3RfYWRkKHBpZCk7Cj4g
+KwkJfQo+ICsJfSB3aGlsZSAoKHRhc2sgPSBuZXh0X3Rhc2sodGFzaykpICE9ICZpbml0X3Rhc2sp
+Owo+ICsKPiArCXByaW50X2xpc3QoKTsKPiArCXByaW50ayhLRVJOX0lORk8gInJlZnJlc2ggZmlu
+aXNoZWRcbiIpOwo+ICt9Cj4gKwo+ICtzc2l6ZV90IHByb2NfcGlkbnNfcmVmcmVzaF9zd2l0Y2go
+c3RydWN0IGZpbGUgKmZpbGUsIGNvbnN0IGNoYXIgX191c2VyICpidWYsCj4gKwkJc2l6ZV90IHNp
+emUsIGxvZmZfdCAqcHBvcykKPiArewo+ICsJd3JpdGVfbG9jaygmcGlkbnNfbG9jayk7Cj4gKwlw
+cm9jX3BpZG5zX2xpc3QoKTsKPiArCXdyaXRlX3VubG9jaygmcGlkbnNfbG9jayk7Cj4gKwlyZXR1
+cm4gMTsKPiArfQo+ICsKPiArc3RhdGljIGNvbnN0IHN0cnVjdCBmaWxlX29wZXJhdGlvbnMgcHJv
+Y19waWRuc19yZWZyZXNoX2ZvcHMgPSB7Cj4gKwkud3JpdGUgPSBwcm9jX3BpZG5zX3JlZnJlc2hf
+c3dpdGNoLAo+ICt9Owo+ICsKPiArc3RhdGljIGludCBfX2luaXQgcGlkbnNfaGllcmFyY2h5X2lu
+aXQodm9pZCkKPiArewo+ICsKPiArCWlmICghcHJvY19ta2RpcihCQVNFX0RJUiwgTlVMTCkpCj4g
+KwkJcmV0dXJuIC1FTk9NRU07Cj4gKwlwcm9jX3Jvb3QgPSBwcm9jX21rZGlyKEhJRVJBUkNIWV9E
+SVIsIE5VTEwpOwo+ICsJaWYgKCFwcm9jX3Jvb3QpCj4gKwkJcmV0dXJuIC1FTk9NRU07Cj4gKwo+
+ICsJcHJvY19jcmVhdGUoUkVGUkVTSF9LRVksIFNfSVdVR08sCj4gKwkJTlVMTCwgJnByb2NfcGlk
+bnNfcmVmcmVzaF9mb3BzKTsKPiArCXByaW50ayhLRVJOX0lORk8gIiVzOiBsb2FkZWQgc3VjY2Vz
+c2Z1bGx5XG4iLCBOQU1FKTsKPiArCj4gKwlyZXR1cm4gMDsKPiArfQo+ICtmc19pbml0Y2FsbChw
+aWRuc19oaWVyYXJjaHlfaW5pdCk7Cj4gLS0gCj4gMS45LjAKPiAKPiBfX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwo+IENvbnRhaW5lcnMgbWFpbGluZyBsaXN0
+Cj4gQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwo+IGh0dHBzOi8vbGlzdHMu
+bGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnMKX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5n
+IGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3Rz
+LmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
