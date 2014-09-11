@@ -1,12 +1,15 @@
-From: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [RESEND][PATCH] userns: use marco instead of magic number for max
-	userns level
-Date: Thu, 11 Sep 2014 17:51:31 +0800
-Message-ID: <1410429091-7234-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+From: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: For review: user_namespace(7) man page
+Date: Thu, 11 Sep 2014 07:40:12 -0700
+Message-ID: <5411B44C.5050405@gmail.com>
+References: <53F5310A.5080503@gmail.com>	<87d2bhfxvc.fsf@x220.int.ebiederm.org>
+	<5404AD7F.4070004@gmail.com>	<87sikade6s.fsf@x220.int.ebiederm.org>
+	<540F07FD.7010106@gmail.com> <87bnqon513.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <87bnqon513.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,39 +19,31 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Fabian Frederick <fabf-AgBVmzD5pcezQB+pC5nmwQ@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: "linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Use marco instead of magic number
-for max user namespace level.
+On 09/09/2014 09:16 AM, Eric W. Biederman wrote:
+>>> On a related note.  One thing that has come up recently (in 3 separate
+>>> >> implementations is that mount(MS_REMOUNT|...,...) must include all of
+>>> >> the mount flags that need to be preserved.   People creating read-only
+>>> >> bind mounts tend to miss that and the locked flags in mount namespaces.
+>>> >> That issue was flushed out now that the kernel is now not allowing most
+>>> >> mount flags to be cleared in mount namespaces.
+>> >
+>> > So, are you meaning that something needs to be added to the page
+>> > regarding this point?
+> Yes.  The interface is non-intuitive and we should at least document
+> the weirdness.
 
-Signed-off-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- kernel/user_namespace.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+Okay -- I have added that piece to mount(2).
 
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index aa312b0..5435489 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -47,6 +47,8 @@ static void set_cred_user_ns(struct cred *cred, struct user_namespace *user_ns)
- 	cred->user_ns = user_ns;
- }
- 
-+#define MAX_USER_NS_LEVEL 32
-+
- /*
-  * Create a new user namespace, deriving the creator from the user in the
-  * passed credentials, and replacing that user with the new root user for the
-@@ -62,7 +64,7 @@ int create_user_ns(struct cred *new)
- 	kgid_t group = new->egid;
- 	int ret;
- 
--	if (parent_ns->level > 32)
-+	if (parent_ns->level > MAX_USER_NS_LEVEL)
- 		return -EUSERS;
- 
- 	/*
+Thanks,
+
+Michael
+
+
 -- 
-1.9.0
+Michael Kerrisk
+Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
+Linux/UNIX System Programming Training: http://man7.org/training/
