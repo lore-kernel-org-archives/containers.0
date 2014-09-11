@@ -1,16 +1,12 @@
-From: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: RE: [RFC PATCH 2/3] procfs: show hierarchy of pid namespace
-Date: Thu, 11 Sep 2014 09:48:51 +0000
-Message-ID: <5871495633F38949900D2BF2DC04883E5A0375@G08CNEXMBPEKD02.g08.fujitsu.local>
-References: <1409740200-26461-1-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<1409740200-26461-3-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<20140910162315.GB7748@mail.hallyn.com>
+From: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [RESEND][PATCH] userns: use marco instead of magic number for max
+	userns level
+Date: Thu, 11 Sep 2014 17:51:31 +0800
+Message-ID: <1410429091-7234-1-git-send-email-chenhanxiao@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140910162315.GB7748-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
-Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,51 +16,39 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Fabian Frederick <fabf-AgBVmzD5pcezQB+pC5nmwQ@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-DQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogU2VyZ2UgRS4gSGFsbHlu
-IFttYWlsdG86c2VyZ2VAaGFsbHluLmNvbV0NCj4gU2VudDogVGh1cnNkYXksIFNlcHRlbWJlciAx
-MSwgMjAxNCAxMjoyMyBBTQ0KPiBUbzogQ2hlbiwgSGFueGlhby/pmYgg5pmX6ZyEDQo+IENjOiBj
-b250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnOyBsaW51eC1rZXJuZWxAdmdlci5r
-ZXJuZWwub3JnOw0KPiBSaWNoYXJkIFdlaW5iZXJnZXI7IFNlcmdlIEhhbGx5bjsgT2xlZyBOZXN0
-ZXJvdjsgRGF2aWQgSG93ZWxsczsgRXJpYyBXLiBCaWVkZXJtYW47DQo+IEFsIFZpcm8NCj4gU3Vi
-amVjdDogUmU6IFtSRkMgUEFUQ0ggMi8zXSBwcm9jZnM6IHNob3cgaGllcmFyY2h5IG9mIHBpZCBu
-YW1lc3BhY2UNCj4gDQo+IFF1b3RpbmcgQ2hlbiBIYW54aWFvIChjaGVuaGFueGlhb0Bjbi5mdWpp
-dHN1LmNvbSk6DQo+ID4gVGhpcyBwYXRjaCB3aWxsIHNob3cgdGhlIGhpZXJhcmNoeSBvZiBwaWQg
-bmFtZXNwYWNlDQo+ID4gdW5kZXIgL3Byb2MvcGlkbnMgbGlrZToNCj4gPiAvcHJvYy9waWRucw0K
-PiA+IOKUnOKUgOKUgCBoaWVyYXJjaHkNCj4gPiDilIIgICDilJzilIDilIAgcGlkbnM0MDI2NTMy
-Mzk5DQo+ID4g4pSCICAg4pSCICAg4pSc4pSA4pSAIHBpZG5zIC0+IC9wcm9jLzI4NjMvbnMvcGlk
-DQo+ID4g4pSCICAg4pSCICAg4pSU4pSA4pSAIHBpZG5zNDAyNjUzMjUxNQ0KPiA+IOKUgiAgIOKU
-giAgICAgICDilJTilIDilIAgcGlkbnMgLT4gL3Byb2MvMTA2MTEvbnMvcGlkDQo+ID4g4pSCICAg
-4pSU4pSA4pSAIHBpZG5zNDAyNjUzMjUwNA0KPiA+IOKUgiAgICAgICDilJTilIDilIAgcGlkbnMg
-LT4gL3Byb2MvNDQ1MC9ucy9waWQNCj4gPiDilJTilIDilIAgcmVmcmVzaA0KPiA+DQo+ID4gYSkg
-aGllcmFyY2h5IGRpcjoNCj4gPiAgIHVzZSB0byBzaG93IGhpZXJhcmNoeSBpbmZvbWF0aW9uIHVz
-aW5nIGRpciBhbmQgc3ltbGlua3MuDQo+ID4gICBkaXJzIGFyZSBuYW1lZCBhcyBwaWRucygkaW51
-bSkNCj4gPiAgIGEgc3ltbGluayBpcyBjcmVhdGVkIHVuZGVyIHBpZG5zKCRpbnVtKSwgYW5kIGxp
-bmtlZCB0bw0KPiA+ICAgdGhhdCBwaWQgbmFtZXNwYWNlLg0KPiA+DQo+ID4gYikgcmVmcmVzaA0K
-PiA+ICAgdHJpZ2dlciBrZXkuDQo+ID4gICBXZSBuZWVkIHRvIHdyaXRlIHN0aCB0byAvcHJvYy9u
-c3BpZC9yZWZyZXNoLA0KPiA+ICAgdGhlbiB3ZSBjb3VsZCBnZXQgaGllcmFyY2h5IGluZm8NCj4g
-PiAgIHVuZGVyIC9wcm9jL3BpZG5zL2hpZXJhcmNoeS4NCj4gDQo+IE91Y2guICBUaGVyZSBtYXkg
-bm90IGJlIGEgYmV0dGVyIHdheSwgYnV0IGl0IHN1cmUgd291bGQgYmUgbmljZSBpZg0KPiB3ZSBj
-b3VsZCBzaW1wbHkgaGF2ZSB0aGUgbGlzdCB1cGRhdGUgaW4gcmVhbC10aW1lLg0KPiANCj4gSWYg
-d2UgaGF2ZSB0byAnZWNobyAxID4gL3Byb2MvcGlkbnMvcmVmcmVzaCcgdG8gdXBkYXRlIHRoZSBm
-cyB0cmVlIHVuZGVyDQo+IC9wcm9jL3BpZG5zLyB0byByZWZsZWN0IG5ldyBwaWRucyBhY3Rpdml0
-eSwgdGhlbiB3aHkgbm90IGp1c3QgbWFrZSB0aGlzDQo+IGEgdGV4dCBmaWxlPyAgSSBzdXBwb3Nl
-IGlmIGl0IHdlcmUgYSB0ZXh0ZmlsZSB5b3UnZCBiZSBlbmNvdXJhZ2luZyBwcGwNCj4gdG8gJ2Nh
-dCBwaWRsaXN0IHwgd2hpbGUgcmVhZCBsaW5lOyBkbyBncmVwIGxpbmUgL3Byb2MvcGlkbnM7IGRv
-bmUnLA0KPiB3aGljaCB3b3VsZCBjYXVzZSBhIHJlZnJlc2ggb2YgdGhhdCBmaWxlIGZvciBldmVy
-eSBncmVwPw0KDQpMZXQncyBleHBvc2UgaXQgaW4gYSB0ZXh0IGZpbGUNCmFuZCByZWZyZXNoIGl0
-IHdoZW4gdXNlciBvcGVuIGl0Lg0Kc3R5bGUgbGlrZToNCg0KbGV2ZWwxICAgICAgICAgICAgICAg
-ICAgICBsZXZlbDINCi9wcm9jLzI4NjMvbnMvcGlkIC9wcm9jLzEwNjExL25zL3BpZCANCi9wcm9j
-LzQ0NTAvbnMvcGlkDQoNCkl0IHByb3ZpZGVkIGZhaXJseSB0aGUgc2FtZSBpbmZvcm1hdGlvbiBh
-cyBkaXIgdHJlZXMuDQpBbmQgZWFzeSB0byB1c2UgdG9vLg0KDQo+IA0KPiBNeSBjb25jZXJuIHdp
-dGggdGhpcyBhcHByb2FjaCBpcyB0aGF0IGl0IGlzIHVubGlrZSBhbnkgb3RoZXIgcHNldWRvLWZz
-DQo+IHRoYXQgSSBrbm93IG9mLCBhbmQgcGVvcGxlIG1heSBzaW1wbHkgZXhwZWN0IHRoZSBmcyBj
-b250ZW50cyB0byBiZQ0KPiB1cHRvZGF0ZSByYXRoZXIgdGhhbiBhIHNuYXBzaG90Lg0KPiANCllv
-dSdyZSByaWdodCwgc25hcHNob3QgaXMgbm90IGEgZ29vZCBpZGVhLg0KdjIgd2lsbCB1c2UgYSBm
-aWxlIC9wcm9jL3BpZG5zX2hpZXJhcmNoeSB0byBzaG93Lg0KDQpUaGFua3MsDQotIENoZW4NCg0K
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVy
-cyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRw
-czovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Use marco instead of magic number
+for max user namespace level.
+
+Signed-off-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
+ kernel/user_namespace.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index aa312b0..5435489 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -47,6 +47,8 @@ static void set_cred_user_ns(struct cred *cred, struct user_namespace *user_ns)
+ 	cred->user_ns = user_ns;
+ }
+ 
++#define MAX_USER_NS_LEVEL 32
++
+ /*
+  * Create a new user namespace, deriving the creator from the user in the
+  * passed credentials, and replacing that user with the new root user for the
+@@ -62,7 +64,7 @@ int create_user_ns(struct cred *new)
+ 	kgid_t group = new->egid;
+ 	int ret;
+ 
+-	if (parent_ns->level > 32)
++	if (parent_ns->level > MAX_USER_NS_LEVEL)
+ 		return -EUSERS;
+ 
+ 	/*
+-- 
+1.9.0
