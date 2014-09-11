@@ -1,16 +1,16 @@
-From: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 Subject: Re: For review: user_namespace(7) man page
-Date: Thu, 11 Sep 2014 07:47:17 -0700
-Message-ID: <5411B5F5.2090500@gmail.com>
+Date: Thu, 11 Sep 2014 08:14:36 -0700
+Message-ID: <CALCETrV1EtrzfEhS55ToPD5VTbY9VjmmOA6bv2H9PGGQ-G=WGA@mail.gmail.com>
 References: <53F5310A.5080503@gmail.com>
 	<CALCETrX2qwvzmeoVcLFLxEK=1Fv+f0Ri0TouzzvbN_rgDjka4A@mail.gmail.com>
 	<540F0810.7030408@gmail.com> <87ppf4n5ib.fsf@x220.int.ebiederm.org>
-	<CALCETrV4WizRXD9JuwibUBbQE9hhNrRDJ3cYyXdhd=OfPziF5g@mail.gmail.com>
+	<5411B5D6.9010201@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CALCETrV4WizRXD9JuwibUBbQE9hhNrRDJ3cYyXdhd=OfPziF5g-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <5411B5D6.9010201-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,55 +20,48 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: "linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, richard -rw- weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: "linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, richard -rw- weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Andy,
-
-On 09/09/2014 12:26 PM, Andy Lutomirski wrote:
-> On Tue, Sep 9, 2014 at 9:05 AM, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+On Thu, Sep 11, 2014 at 7:46 AM, Michael Kerrisk (man-pages)
+<mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+> Hi Eric,
+>
+> On 09/09/2014 09:05 AM, Eric W. Biederman wrote:
+>> "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
 >>
->> We may also want to discuss the specific restrictions on chroot.
+>>> Hi Andy, and Eric,
+>>>>>        1. The  writing  process  must  have  the CAP_SETUID (CAP_SETGID)
+>>>>>           capability in the user namespace of the process pid.
+>>>>
+>>>> This checked for the opening process (and I don't actually remember
+>>>> whether it's checked for the writing process).
+>>>
+>>> Eric, can you comment?
 >>
->> The text about chroot at least gives people a strong hint that the
->> chroot rules are affected by user namespaces.
+>> We have to check for the opening processes and that changes was made
+>> after I implemented my interface. Pieces of the code appear to also
+>> examine the writing process and verify everything applies to it as well.
 >>
->> The restrictions that we have settled on to avoid chroot being a problem
->> are the creator of a user namespace must not be chrooted in their
->> current mount namespace, and the creator of the user namespace must not
->> be threaded.
->>
->> Andy can you check me on this it looks like unshare is currently buggy
->> in that it will allow a threaded application to create a user namespace.
-> 
-> I think it's this code in unshare:
-> 
->     /*
->      * If unsharing a user namespace must also unshare the thread.
->      */
->     if (unshare_flags & CLONE_NEWUSER)
->         unshare_flags |= CLONE_THREAD | CLONE_FS;
-> 
-> I suppose that this should be documented.
-> 
-> CLONE_FS prevents the chroot from leaking out of the namespace.  (But
-> see the other thread that I'm about to start...)
+>> I goofed when I designed the interface originall and had not realized
+>> what a classic design error it can be to not restrict by the opening
+>> process.
+>
+> So, I still need some help here. Should the sentence above just read:
+>
+>         1. The  *opening*  process  must  have  the CAP_SETUID (CAP_SETGID)
+>            capability in the user namespace of the process pid.
 
-So, in the current draft of the setns(2) page, there is
+I think this is sufficient.
 
-    CLONE_NEWNS
-        ...
-        Since  Linux 3.9, CLONE_NEWUSER also automatically  implies
-        CLONE_FS.
+>
+> or must something also be said about the writing process? (If so, i'd
+> appreciate a completely formed sentence or two that I can just drop into
+> the man page..)
 
-Does that cover your point? Or did you mean that more needs to be said?
+There might be a restriction there, too, but I think it could be
+removed, and I also think that it's unlikely that anyone will
+encounter it.
 
-Thanks,
-
-Michael
-
--- 
-Michael Kerrisk
-Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
-Linux/UNIX System Programming Training: http://man7.org/training/
+--Andy
