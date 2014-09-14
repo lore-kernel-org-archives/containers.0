@@ -1,7 +1,7 @@
 From: "Mr. Matthew" <ahaqing-9Onoh4P/yGk@public.gmane.org>
 Subject: Ask for a long-term and friendly cooperative relations with you!
-Date: Sat, 13 Sep 2014 12:49:48 GMT
-Message-ID: <20140913052332.733137AC@mail.linuxfoundation.org>
+Date: Sun, 14 Sep 2014 02:24:41 GMT
+Message-ID: <20140913185824.CD3C0990@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="gb2312"
 Content-Transfer-Encoding: base64
