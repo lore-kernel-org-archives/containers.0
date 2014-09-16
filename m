@@ -1,11 +1,12 @@
 From: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCHv2 1/2] procfs: show hierarchy of pid namespace
-Date: Tue, 16 Sep 2014 18:17:26 +0800
-Message-ID: <1410862647-14213-2-git-send-email-chenhanxiao@cn.fujitsu.com>
+Subject: [RESEND][PATCH 2/2] /proc/PID/status: show all sets of pid according
+	to ns
+Date: Tue, 16 Sep 2014 18:17:27 +0800
+Message-ID: <1410862647-14213-3-git-send-email-chenhanxiao@cn.fujitsu.com>
 References: <1410862647-14213-1-git-send-email-chenhanxiao@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <1410862647-14213-1-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
@@ -21,124 +22,64 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lin
 Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-VGhpcyBwYXRjaCB3aWxsIHNob3cgdGhlIGhpZXJhcmNoeSBvZiBwaWQgbmFtZXNwYWNlCmJ5IC9w
-cm9jL3BpZG5zX2hpZXJhcmNoeSBsaWtlOgoKW3Jvb3RAbG9jYWxob3N0IH5dI2NhdCAvcHJvYy9w
-aWRuc19oaWVyYXJjaHkKL3Byb2MvMTgwNjAvbnMvcGlkIC9wcm9jLzE4MTAyL25zL3BpZCAvcHJv
-Yy8xNTM0L25zL3BpZAovcHJvYy8xODA2MC9ucy9waWQgL3Byb2MvMTgxMDIvbnMvcGlkIC9wcm9j
-LzE2MDAvbnMvcGlkCi9wcm9jLzE1NTAvbnMvcGlkCgpJdCBzaG93cyB0aGUgcGlkIGhpZXJhcmNo
-eSBiZWxvdzoKCiAgICAgICAgICAgaW5pdF9ucwogICAgICAgICAgICAgIOKUggrilIzilIDilIDi
-lIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilJAKbnMxICAgICAgICAgICAgICAg
-ICAgICAgICAgICBuczIK4pSCICAgICAgICAgICAgICAgICAgICAgICAgICAgIOKUggovcHJvYy8x
-NTUwL25zL3BpZCAgICAvcHJvYy8xODA2MC9ucy9waWQKICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAg4pSCCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIOKUggogICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgIG5zMwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICDilIIKICAg
-ICAgICAgICAgICAgICAgICAgL3Byb2MvMTgxMDIvbnMvcGlkCiAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgIOKUggogICAgICAgICAgICAgICAgICAgICDilIzilIDilIDilIDilIDilIDilIDi
-lIDilIDilIDilIDilJIKICAgICAgICAgICAgICAgICAgICAgbnM0ICAgICAgICAgICAgICAgICAg
-IG5zNQogICAgICAgICAgICAgICAgICAgICDilIIgICAgICAgICAgICAgICAgICAgIOKUggogICAg
-ICAgICAgICAgICAgICAgICAvcHJvYy8xNTM0L25zL3BpZCAgIC9wcm9jLzE2MDAvbnMvcGlkCgpF
-dmVyeSBwaWQgcHJpbnRlZCBpbiBwaWRuc19oaWVyYXJjaHkKaXMgdGhlIGluaXQgcGlkIG9mIHRo
-YXQgcGlkIG5zIGxldmVsLgoKU2lnbmVkLW9mZi1ieTogQ2hlbiBIYW54aWFvIDxjaGVuaGFueGlh
-b0Bjbi5mdWppdHN1LmNvbT4KLS0tCnYyOiB1c2UgcHJvY2ZzIHRleHQgZmlsZSBpbnN0ZWFkIG9m
-IGRpcnMgdW5kZXIgL3Byb2MKCiBmcy9wcm9jL0tjb25maWcgICAgICAgICAgIHwgICA2ICsrCiBm
-cy9wcm9jL01ha2VmaWxlICAgICAgICAgIHwgICAxICsKIGZzL3Byb2MvcGlkbnNfaGllcmFyY2h5
-LmMgfCAxOTUgKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKwog
-MyBmaWxlcyBjaGFuZ2VkLCAyMDIgaW5zZXJ0aW9ucygrKQogY3JlYXRlIG1vZGUgMTAwNjQ0IGZz
-L3Byb2MvcGlkbnNfaGllcmFyY2h5LmMKCmRpZmYgLS1naXQgYS9mcy9wcm9jL0tjb25maWcgYi9m
-cy9wcm9jL0tjb25maWcKaW5kZXggMjE4M2ZjZi4uZTJlMjI5MiAxMDA2NDQKLS0tIGEvZnMvcHJv
-Yy9LY29uZmlnCisrKyBiL2ZzL3Byb2MvS2NvbmZpZwpAQCAtNzEsMyArNzEsOSBAQCBjb25maWcg
-UFJPQ19QQUdFX01PTklUT1IKIAkgIC9wcm9jL3BpZC9zbWFwcywgL3Byb2MvcGlkL2NsZWFyX3Jl
-ZnMsIC9wcm9jL3BpZC9wYWdlbWFwLAogCSAgL3Byb2Mva3BhZ2Vjb3VudCwgYW5kIC9wcm9jL2tw
-YWdlZmxhZ3MuIERpc2FibGluZyB0aGVzZQogICAgICAgICAgIGludGVyZmFjZXMgd2lsbCByZWR1
-Y2UgdGhlIHNpemUgb2YgdGhlIGtlcm5lbCBieSBhcHByb3hpbWF0ZWx5IDRrYi4KKworY29uZmln
-IFBST0NfUElEX0hJRVJBUkNIWQorCWJvb2wgIkVuYWJsZSAvcHJvYy9waWRuc19oaWVyYXJjaHkg
-c3VwcG9ydCIgaWYgRVhQRVJUCisJZGVwZW5kcyBvbiBQUk9DX0ZTCisJaGVscAorCSAgU2hvdyBw
-aWQgbmFtZXNwYWNlIGhpZXJhcmNoeSBpbmZvbWF0aW9uCmRpZmYgLS1naXQgYS9mcy9wcm9jL01h
-a2VmaWxlIGIvZnMvcHJvYy9NYWtlZmlsZQppbmRleCA3MTUxZWE0Li4zM2UzODRiIDEwMDY0NAot
-LS0gYS9mcy9wcm9jL01ha2VmaWxlCisrKyBiL2ZzL3Byb2MvTWFrZWZpbGUKQEAgLTMwLDMgKzMw
-LDQgQEAgcHJvYy0kKENPTkZJR19QUk9DX0tDT1JFKQkrPSBrY29yZS5vCiBwcm9jLSQoQ09ORklH
-X1BST0NfVk1DT1JFKQkrPSB2bWNvcmUubwogcHJvYy0kKENPTkZJR19QUklOVEspCSs9IGttc2cu
-bwogcHJvYy0kKENPTkZJR19QUk9DX1BBR0VfTU9OSVRPUikJKz0gcGFnZS5vCitwcm9jLSQoQ09O
-RklHX1BST0NfUElEX0hJRVJBUkNIWSkJKz0gcGlkbnNfaGllcmFyY2h5Lm8KZGlmZiAtLWdpdCBh
-L2ZzL3Byb2MvcGlkbnNfaGllcmFyY2h5LmMgYi9mcy9wcm9jL3BpZG5zX2hpZXJhcmNoeS5jCm5l
-dyBmaWxlIG1vZGUgMTAwNjQ0CmluZGV4IDAwMDAwMDAuLjIwNDJkOTIKLS0tIC9kZXYvbnVsbAor
-KysgYi9mcy9wcm9jL3BpZG5zX2hpZXJhcmNoeS5jCkBAIC0wLDAgKzEsMTk1IEBACisjaW5jbHVk
-ZSA8bGludXgvaW5pdC5oPgorI2luY2x1ZGUgPGxpbnV4L2Vycm5vLmg+CisjaW5jbHVkZSA8bGlu
-dXgvcHJvY19mcy5oPgorI2luY2x1ZGUgPGxpbnV4L21vZHVsZS5oPgorI2luY2x1ZGUgPGxpbnV4
-L2xpc3QuaD4KKyNpbmNsdWRlIDxsaW51eC9zbGFiLmg+CisjaW5jbHVkZSA8bGludXgvcGlkX25h
-bWVzcGFjZS5oPgorI2luY2x1ZGUgPGxpbnV4L3NlcV9maWxlLmg+CisjaW5jbHVkZSA8bGludXgv
-bXV0ZXguaD4KKworLyoKKyAqICAvcHJvYy9waWRuc19oaWVyYXJjaHkKKyAqICBzaG93IHRoZSBo
-aWVyYXJjaHkgb2YgcGlkIG5hbWVzcGFjZQorICovCisKKyNkZWZpbmUgTlNfSElFUkFSQ0hZCSJw
-aWRuc19oaWVyYXJjaHkiCisKK3N0YXRpYyBMSVNUX0hFQUQocGlkbnNfbGlzdCk7CitzdGF0aWMg
-TElTVF9IRUFEKHBpZG5zX3RyZWUpOworc3RhdGljIERFRklORV9NVVRFWChwaWRuc19saXN0X2xv
-Y2spOworCisvKiBsaXN0IGZvciBob3N0IHBpZCBjb2xsZWN0aW9uICovCitzdHJ1Y3QgcGlkbnNf
-bGlzdCB7CisJc3RydWN0IGxpc3RfaGVhZCBsaXN0OworCXN0cnVjdCBwaWQgKnBpZDsKK307CisK
-K3N0YXRpYyB2b2lkIGZyZWVfcGlkbnNfbGlzdChzdHJ1Y3QgbGlzdF9oZWFkICpoZWFkKQorewor
-CXN0cnVjdCBwaWRuc19saXN0ICp0bXAsICpwb3M7CisKKwlsaXN0X2Zvcl9lYWNoX2VudHJ5X3Nh
-ZmUocG9zLCB0bXAsIGhlYWQsIGxpc3QpIHsKKwkJbGlzdF9kZWwoJnBvcy0+bGlzdCk7CisJCWtm
-cmVlKHBvcyk7CisJfQorfQorCisvKgorICogT25seSBhZGQgaW5pdCBwaWQgaW4gZGlmZmVyZW50
-IG5hbWVzcGFjZXMKKyAqLworc3RhdGljIGludAorcGlkbnNfbGlzdF9yZWFsbHlfYWRkKHN0cnVj
-dCBwaWQgKnBpZCwgc3RydWN0IGxpc3RfaGVhZCAqbGlzdF9oZWFkKQoreworCXN0cnVjdCBwaWRu
-c19saXN0ICp0bXAsICpwb3M7CisKKwlpZiAoIWlzX2NoaWxkX3JlYXBlcihwaWQpKQorCQlyZXR1
-cm4gMDsKKworCWxpc3RfZm9yX2VhY2hfZW50cnlfc2FmZShwb3MsIHRtcCwgbGlzdF9oZWFkLCBs
-aXN0KQorCQlpZiAobnNfb2ZfcGlkKHBpZCkgPT0gbnNfb2ZfcGlkKHBvcy0+cGlkKSkKKwkJCXJl
-dHVybiAwOworCisJcmV0dXJuIDE7Cit9CisKK3N0YXRpYyBpbnQKK3BpZG5zX2xpc3RfYWRkKHN0
-cnVjdCBwaWQgKnBpZCwgc3RydWN0IGxpc3RfaGVhZCAqbGlzdF9oZWFkKQoreworCXN0cnVjdCBw
-aWRuc19saXN0ICplbnQ7CisKKwllbnQgPSBrbWFsbG9jKHNpemVvZigqZW50KSwgR0ZQX0tFUk5F
-TCk7CisJaWYgKCFlbnQpCisJCXJldHVybiAtRU5PTUVNOworCisJZW50LT5waWQgPSBwaWQ7CisJ
-aWYgKHBpZG5zX2xpc3RfcmVhbGx5X2FkZChwaWQsIGxpc3RfaGVhZCkpCisJCWxpc3RfYWRkX3Rh
-aWwoJmVudC0+bGlzdCwgbGlzdF9oZWFkKTsKKworCXJldHVybiAwOworfQorCitzdGF0aWMgdm9p
-ZAorcGlkbnNfbGlzdF9maWx0ZXIodm9pZCkKK3sKKwlzdHJ1Y3QgcGlkbnNfbGlzdCAqdG1wLCAq
-cG9zOworCXN0cnVjdCBwaWRuc19saXN0ICp0bXBfdCwgKnBvc190OworCXN0cnVjdCBwaWRfbmFt
-ZXNwYWNlICpuczAsICpuczE7CisJc3RydWN0IHBpZCAqcGlkMCwgKnBpZDE7CisJaW50IGZsYWcg
-PSAwOworCisJLyogc2NyZWVuIHBpZCB3aXRoIHJlbGF0aW9uc2hpcAorCSAqIGluIHBpZG5zX2xp
-c3QsIHdlIG1heSBhZGQgcGlkcyBsaWtlCisJICogbnMwICAgbnMxICAgbnMyCisJICogcGlkMS0+
-cGlkMi0+cGlkMworCSAqIHdlIHNob3VsZCBzY3JlZW4gcGlkMSwgcGlkMiBhbmQga2VlcCBwaWQz
-CisJICovCisJbGlzdF9mb3JfZWFjaF9lbnRyeV9zYWZlKHBvcywgdG1wLCAmcGlkbnNfbGlzdCwg
-bGlzdCkgeworCQlsaXN0X2Zvcl9lYWNoX2VudHJ5X3NhZmUocG9zX3QsIHRtcF90LCAmcGlkbnNf
-bGlzdCwgbGlzdCkgeworCQkJZmxhZyA9IDA7CisJCQlwaWQwID0gcG9zLT5waWQ7CisJCQlwaWQx
-ID0gcG9zX3QtPnBpZDsKKwkJCW5zMCA9IHBpZDAtPm51bWJlcnNbcGlkMC0+bGV2ZWxdLm5zOwor
-CQkJbnMxID0gcGlkMS0+bnVtYmVyc1twaWQxLT5sZXZlbF0ubnM7CisJCQlpZiAocG9zLT5waWQt
-PmxldmVsIDwgcG9zX3QtPnBpZC0+bGV2ZWwpCisJCQkJZm9yICg7IG5zMSAhPSBOVUxMOyBuczEg
-PSBuczEtPnBhcmVudCkKKwkJCQkJaWYgKG5zMCA9PSBuczEpIHsKKwkJCQkJCWZsYWcgPSAxOwor
-CQkJCQkJYnJlYWs7CisJCQkJCX0KKwkJCWlmIChmbGFnID09IDEpCisJCQkJYnJlYWs7CisJCX0K
-KworCQlpZiAoZmxhZyA9PSAwKQorCQkJcGlkbnNfbGlzdF9hZGQocG9zLT5waWQsICZwaWRuc190
-cmVlKTsKKwl9CisKKwlmcmVlX3BpZG5zX2xpc3QoJnBpZG5zX2xpc3QpOworfQorCisvKiBjb2xs
-ZWN0IHBpZHMgaW4gcGlkbnNfbGlzdCwKKyAqIHRoZW4gcmVtb3ZlIGR1cGxpY2F0ZWQgb25lcywK
-KyAqIGFkZCB0aGUgcmVzdCB0byBwaWRuc190cmVlCisgKi8KK3N0YXRpYyB2b2lkIHByb2NfcGlk
-bnNfbGlzdF9yZWZyZXNoKHZvaWQpCit7CisJc3RydWN0IHBpZCAqcGlkOworCXN0cnVjdCB0YXNr
-X3N0cnVjdCAqcDsKKworCS8qIGNvbGxlY3QgcGlkIGluIGRpZmZlcmV0IG5zICovCisJcmN1X3Jl
-YWRfbG9jaygpOworCWZvcl9lYWNoX3Byb2Nlc3MocCkgeworCQlwaWQgPSB0YXNrX3BpZChwKTsK
-KwkJaWYgKHBpZCAmJiAocGlkLT5sZXZlbCA+IDApKQorCQkJcGlkbnNfbGlzdF9hZGQocGlkLCAm
-cGlkbnNfbGlzdCk7CisJfQorCXJjdV9yZWFkX3VubG9jaygpOworCisJLyogc2NyZWVuIGR1cGxp
-Y2F0ZSBwaWRzICovCisJcGlkbnNfbGlzdF9maWx0ZXIoKTsKK30KKworc3RhdGljIGludCBuc2xp
-c3RfcHJvY19zaG93KHN0cnVjdCBzZXFfZmlsZSAqbSwgdm9pZCAqdikKK3sKKwlzdHJ1Y3QgcGlk
-bnNfbGlzdCAqdG1wLCAqcG9zOworCXN0cnVjdCBwaWRfbmFtZXNwYWNlICpucywgKmN1cnJfbnM7
-CisJc3RydWN0IHBpZCAqcGlkOworCWNoYXIgcGlkX2J1ZlszMl07CisJaW50IGksIGN1cnJfbGV2
-ZWw7CisKKwljdXJyX25zID0gdGFza19hY3RpdmVfcGlkX25zKGN1cnJlbnQpOworCisJbXV0ZXhf
-bG9jaygmcGlkbnNfbGlzdF9sb2NrKTsKKwlwcm9jX3BpZG5zX2xpc3RfcmVmcmVzaCgpOworCisJ
-LyogcHJpbnQgcGlkIG5hbWVzcGFjZSBoaWVyYXJjaHkgKi8KKwlsaXN0X2Zvcl9lYWNoX2VudHJ5
-X3NhZmUocG9zLCB0bXAsICZwaWRuc190cmVlLCBsaXN0KSB7CisJCXBpZCA9IHBvcy0+cGlkOwor
-CQljdXJyX2xldmVsID0gLTE7CisJCW5zID0gcGlkLT5udW1iZXJzW3BpZC0+bGV2ZWxdLm5zOwor
-CQkvKiBDaGVjayB3aGV0aGVyIHBpZCBoYXMgcmVsYXRpb25zaGlwIHdpdGggY3VycmVudCBucyAq
-LworCQlmb3IgKDsgbnMgIT0gTlVMTDsgbnMgPSBucy0+cGFyZW50KQorCQkJaWYgKG5zID09IGN1
-cnJfbnMpCisJCQkJY3Vycl9sZXZlbCA9IGN1cnJfbnMtPmxldmVsOworCisJCWlmIChjdXJyX2xl
-dmVsID09IC0xKQorCQkJY29udGludWU7CisKKwkJZm9yIChpID0gY3Vycl9sZXZlbCArIDE7IGkg
-PD0gcGlkLT5sZXZlbDsgaSsrKSB7CisJCQlucyA9IHBpZC0+bnVtYmVyc1tpXS5uczsKKwkJCS8q
-IFBJRCAxIGluIHNwZWNpZmljIHBpZCBucyAqLworCQkJc25wcmludGYocGlkX2J1ZiwgMzIsICIv
-cHJvYy8ldS9ucy9waWQiLAorCQkJCXBpZF92bnIoZmluZF9waWRfbnMoMSwgbnMpKSk7CisJCQlz
-ZXFfcHJpbnRmKG0sICIlcyAiLCBwaWRfYnVmKTsKKwkJfQorCisJCXNlcV9wdXRjKG0sICdcbicp
-OworCX0KKworCWZyZWVfcGlkbnNfbGlzdCgmcGlkbnNfdHJlZSk7CisJbXV0ZXhfdW5sb2NrKCZw
-aWRuc19saXN0X2xvY2spOworCisJcmV0dXJuIDA7Cit9CisKK3N0YXRpYyBpbnQgbnNsaXN0X3By
-b2Nfb3BlbihzdHJ1Y3QgaW5vZGUgKmlub2RlLCBzdHJ1Y3QgZmlsZSAqZmlsZSkKK3sKKwlyZXR1
-cm4gc2luZ2xlX29wZW4oZmlsZSwgbnNsaXN0X3Byb2Nfc2hvdywgTlVMTCk7Cit9CisKK3N0YXRp
-YyBjb25zdCBzdHJ1Y3QgZmlsZV9vcGVyYXRpb25zIHByb2NfbnNwaWRfbnNsaXN0X2ZvcHMgPSB7
-CisJLm9wZW4JCT0gbnNsaXN0X3Byb2Nfb3BlbiwKKwkucmVhZAkJPSBzZXFfcmVhZCwKKwkubGxz
-ZWVrCQk9IHNlcV9sc2VlaywKKwkucmVsZWFzZQk9IHNpbmdsZV9yZWxlYXNlLAorfTsKKworc3Rh
-dGljIGludCBfX2luaXQgcGlkbnNfaGllcmFyY2h5X2luaXQodm9pZCkKK3sKKwlwcm9jX2NyZWF0
-ZShOU19ISUVSQVJDSFksIFNfSVdVR08sCisJCU5VTEwsICZwcm9jX25zcGlkX25zbGlzdF9mb3Bz
-KTsKKworCXJldHVybiAwOworfQorZnNfaW5pdGNhbGwocGlkbnNfaGllcmFyY2h5X2luaXQpOwot
-LSAKMS45LjAKCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-CkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlv
-bi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8v
-Y29udGFpbmVycw==
+If some issues occurred inside a container guest, host user
+could not know which process is in trouble just by guest pid:
+the users of container guest only knew the pid inside containers.
+This will bring obstacle for trouble shooting.
+
+This patch adds four fields: NStgid, NSpid, NSpgid and NSsid:
+a) In init_pid_ns, nothing changed;
+
+b) In one pidns, will tell the pid inside containers:
+NStgid:	21776 	5 	1
+NSpid:	21776 	5 	1
+NSpgid:	21776 	5 	1
+NSsid:	21729 	1 	0
+** Process id is 21776 in level 0, 5 in level 1, 1 in level 2.
+
+c) If pidns is nested, it depends on which pidns are you in.
+NStgid:	5 	1
+NSpid:	5 	1
+NSpgid:	5 	1
+NSsid:	1 	0
+** Views from level 1
+
+Signed-off-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
+v2: add two new fields: NStgid and NSpid.
+    keep fields of Tgid and Pid unchanged for back compatibility.
+v3: add another two fielsd: NSpgid and NSsid.
+
+ fs/proc/array.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/fs/proc/array.c b/fs/proc/array.c
+index cd3653e..c30875d 100644
+--- a/fs/proc/array.c
++++ b/fs/proc/array.c
+@@ -193,6 +193,23 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
+ 		from_kgid_munged(user_ns, cred->egid),
+ 		from_kgid_munged(user_ns, cred->sgid),
+ 		from_kgid_munged(user_ns, cred->fsgid));
++	seq_puts(m, "NStgid:");
++	for (g = ns->level; g <= pid->level; g++)
++		seq_printf(m, "\t%d ",
++			task_tgid_nr_ns(p, pid->numbers[g].ns));
++	seq_puts(m, "\nNSpid:");
++	for (g = ns->level; g <= pid->level; g++)
++		seq_printf(m, "\t%d ",
++			task_pid_nr_ns(p, pid->numbers[g].ns));
++	seq_puts(m, "\nNSpgid:");
++	for (g = ns->level; g <= pid->level; g++)
++		seq_printf(m, "\t%d ",
++			task_pgrp_nr_ns(p, pid->numbers[g].ns));
++	seq_puts(m, "\nNSsid:");
++	for (g = ns->level; g <= pid->level; g++)
++		seq_printf(m, "\t%d ",
++			task_session_nr_ns(p, pid->numbers[g].ns));
++	seq_putc(m, '\n');
+ 
+ 	task_lock(p);
+ 	if (p->files)
+-- 
+1.9.0
