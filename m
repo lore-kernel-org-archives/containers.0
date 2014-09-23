@@ -1,11 +1,13 @@
 From: Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
-Subject: [RFC PATCH net-next v2 0/5] netns: allow to identify peer netns
-Date: Tue, 23 Sep 2014 15:20:25 +0200
-Message-ID: <1411478430-4989-1-git-send-email-nicolas.dichtel__35161.6806853146$1411478472$gmane$org@6wind.com>
+Subject: [RFC PATCH net-next v2 1/5] netns: allocate netns ids
+Date: Tue, 23 Sep 2014 15:20:26 +0200
+Message-ID: <1411478430-4989-2-git-send-email-nicolas.dichtel__26689.7182133564$1411478488$gmane$org@6wind.com>
+References: <1411478430-4989-1-git-send-email-nicolas.dichtel@6wind.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1411478430-4989-1-git-send-email-nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,75 +18,146 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: stephen-OTpzqLSitTUnbdJkjeBofR2eb7JE58TQ@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org, stephen-OTpzqLSitTUnbdJkjeBofR2eb7JE58TQ@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The goal of this serie is to be able to multicast netlink messages with an
-attribute that identify a peer netns.
-This is needed by the userland to interpret some informations contained in
-netlink messages (like IFLA_LINK value, but also some other attributes in case
-of x-netns netdevice (see also
-http://thread.gmane.org/gmane.linux.network/315933/focus=316064 and
-http://thread.gmane.org/gmane.linux.kernel.containers/28301/focus=4239)).
+With this patch, an id is allocated for each netns. Id database is stored in the
+user namespace. It's allowed to get an id of a peer netns only if they share the
+same user ns.
 
-Ids are stored in the parent user namespace. These ids are valid only inside
-this user namespace. The user can retrieve these ids via a new netlink messages,
-but only if peer netns are in the same user namespace.
+Signed-off-by: Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
+---
+ include/linux/user_namespace.h |  4 ++++
+ include/net/net_namespace.h    | 11 +++++++++++
+ kernel/user_namespace.c        |  6 ++++++
+ net/core/net_namespace.c       | 20 +++++++++++++++++++-
+ 4 files changed, 40 insertions(+), 1 deletion(-)
 
-Patch 1/5 and 2/5 introduce the netlink API mechanism to exports these ids to
-the userland.
-Patch 3/5 and 4/5 shows an example of how to use these ids in rtnetlink
-messages. And patch 5/5 shows that the netlink messages can be symetric between
-a GET and a SET.
-
-iproute2 patches are available, I can send them on demand.
-
-Here is a small screenshot to show how it can be used by userland:
-$ ip netns add foo
-$ ip netns del foo
-$ ip netns
-$ touch /var/run/netns/init_net
-$ mount --bind /proc/1/ns/net /var/run/netns/init_net
-$ ip netns add foo
-$ ip netns
-foo (id: 3)
-init_net (id: 1)
-$ ip netns exec foo ip netns
-foo (id: 3)
-init_net (id: 1)
-$ ip netns exec foo ip link add ipip1 link-netnsid 1 type ipip remote 10.16.0.121 local 10.16.0.249
-$ ip netns exec foo ip l ls ipip1
-6: ipip1@NONE: <POINTOPOINT,NOARP> mtu 1480 qdisc noop state DOWN mode DEFAULT group default 
-    link/ipip 10.16.0.249 peer 10.16.0.121 link-netnsid 1
-
-The parameter link-netnsid shows us where the interface sends and receives
-packets (and thus we know where encapsulated addresses are set).
-
-RFCv1 -> RFCv2:
-  remove useless ()
-  ids are now stored in the user ns. It's possible to get an id for a peer netns
-  only if the current netns and the peer netns have the same user ns parent.
-
- MAINTAINERS                    |   1 +
- include/linux/user_namespace.h |   4 ++
- include/net/ip_tunnels.h       |   1 +
- include/net/net_namespace.h    |  12 +++++
- include/net/rtnetlink.h        |   2 +
- include/uapi/linux/Kbuild      |   1 +
- include/uapi/linux/if_link.h   |   1 +
- include/uapi/linux/netns.h     |  29 ++++++++++
- kernel/user_namespace.c        |   6 +++
- net/core/net_namespace.c       | 119 ++++++++++++++++++++++++++++++++++++++++-
- net/core/rtnetlink.c           |  47 ++++++++++++++--
- net/ipv4/ip_gre.c              |   2 +
- net/ipv4/ip_tunnel.c           |   8 +++
- net/ipv4/ip_vti.c              |   1 +
- net/ipv4/ipip.c                |   1 +
- net/ipv6/sit.c                 |   1 +
- net/netlink/genetlink.c        |   4 ++
- 17 files changed, 236 insertions(+), 4 deletions(-)
-
-Comments are welcome.
-
-Regards,
-Nicolas
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index e95372654f09..9d122b540422 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -5,6 +5,7 @@
+ #include <linux/nsproxy.h>
+ #include <linux/sched.h>
+ #include <linux/err.h>
++#include <linux/idr.h>
+ 
+ #define UID_GID_MAP_MAX_EXTENTS 5
+ 
+@@ -33,6 +34,9 @@ struct user_namespace {
+ 	struct key		*persistent_keyring_register;
+ 	struct rw_semaphore	persistent_keyring_register_sem;
+ #endif
++#ifdef CONFIG_NET_NS
++	struct idr		netns_ids;
++#endif
+ };
+ 
+ extern struct user_namespace init_user_ns;
+diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
+index 361d26077196..92b5f94e2842 100644
+--- a/include/net/net_namespace.h
++++ b/include/net/net_namespace.h
+@@ -59,6 +59,7 @@ struct net {
+ 	struct list_head	exit_list;	/* Use only net_mutex */
+ 
+ 	struct user_namespace   *user_ns;	/* Owning user namespace */
++	int			netnsid;
+ 
+ 	unsigned int		proc_inum;
+ 
+@@ -289,6 +290,16 @@ static inline struct net *read_pnet(struct net * const *pnet)
+ #define __net_initconst	__initconst
+ #endif
+ 
++static inline int peernet2id(struct net *net, struct net *peer)
++{
++	if (net->user_ns != peer->user_ns)
++		return -EPERM;
++
++	return peer->netnsid;
++}
++
++struct net *get_net_from_netnsid(struct net *net, int id);
++
+ struct pernet_operations {
+ 	struct list_head list;
+ 	int (*init)(struct net *net);
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index aa312b0dc3ec..30316a2eed49 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -104,6 +104,9 @@ int create_user_ns(struct cred *new)
+ #ifdef CONFIG_PERSISTENT_KEYRINGS
+ 	init_rwsem(&ns->persistent_keyring_register_sem);
+ #endif
++#ifdef CONFIG_NET_NS
++	idr_init(&ns->netns_ids);
++#endif
+ 	return 0;
+ }
+ 
+@@ -133,6 +136,9 @@ void free_user_ns(struct user_namespace *ns)
+ 
+ 	do {
+ 		parent = ns->parent;
++#ifdef CONFIG_NET_NS
++		idr_destroy(&ns->netns_ids);
++#endif
+ #ifdef CONFIG_PERSISTENT_KEYRINGS
+ 		key_put(ns->persistent_keyring_register);
+ #endif
+diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
+index 7f155175bba8..f44378de7831 100644
+--- a/net/core/net_namespace.c
++++ b/net/core/net_namespace.c
+@@ -144,6 +144,19 @@ static void ops_free_list(const struct pernet_operations *ops,
+ 	}
+ }
+ 
++struct net *get_net_from_netnsid(struct net *net, int id)
++{
++	struct net *peer;
++
++	rcu_read_lock();
++	peer = idr_find(&net->user_ns->netns_ids, id);
++	if (peer)
++		get_net(peer);
++	rcu_read_unlock();
++
++	return peer;
++}
++
+ /*
+  * setup_net runs the initializers for the network namespace object.
+  */
+@@ -151,13 +164,16 @@ static __net_init int setup_net(struct net *net, struct user_namespace *user_ns)
+ {
+ 	/* Must be called with net_mutex held */
+ 	const struct pernet_operations *ops, *saved_ops;
+-	int error = 0;
++	int error = 0, id;
+ 	LIST_HEAD(net_exit_list);
+ 
+ 	atomic_set(&net->count, 1);
+ 	atomic_set(&net->passive, 1);
+ 	net->dev_base_seq = 1;
+ 	net->user_ns = user_ns;
++	id = idr_alloc_cyclic(&user_ns->netns_ids, net, 1, 0, GFP_KERNEL);
++	if (id > 0)
++		net->netnsid = id;
+ 
+ #ifdef NETNS_REFCNT_DEBUG
+ 	atomic_set(&net->use_count, 0);
+@@ -288,6 +304,8 @@ static void cleanup_net(struct work_struct *work)
+ 	list_for_each_entry(net, &net_kill_list, cleanup_list) {
+ 		list_del_rcu(&net->list);
+ 		list_add_tail(&net->exit_list, &net_exit_list);
++		if (net->netnsid)
++			idr_remove(&net->user_ns->netns_ids, net->netnsid);
+ 	}
+ 	rtnl_unlock();
+ 
+-- 
+2.1.0
