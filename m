@@ -1,8 +1,8 @@
 From: Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
-Subject: [RFC PATCH net-next v2 2/5] netns: add genl cmd to get the id of a
-	netns
-Date: Tue, 23 Sep 2014 15:20:27 +0200
-Message-ID: <1411478430-4989-3-git-send-email-nicolas.dichtel__34391.0086121925$1411478501$gmane$org@6wind.com>
+Subject: [RFC PATCH net-next v2 4/5] iptunnels: advertise link netns via
+	netlink
+Date: Tue, 23 Sep 2014 15:20:29 +0200
+Message-ID: <1411478430-4989-5-git-send-email-nicolas.dichtel__26830.6375401609$1411478507$gmane$org@6wind.com>
 References: <1411478430-4989-1-git-send-email-nicolas.dichtel@6wind.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,224 +22,105 @@ To: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy
 Cc: davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org, stephen-OTpzqLSitTUnbdJkjeBofR2eb7JE58TQ@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch allows a user to get an id of a peer netns. It will be usefull for
-userland to be able to associate a netns file descriptor with a netns id.
-
-Note: to be able to got an id, both netns should be in the same user ns.
+Implement rtnl_link_ops->get_link_net() callback so that IFLA_LINK_NETNSID is
+added to rtnetlink messages.
 
 Signed-off-by: Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
 ---
- MAINTAINERS                 |  1 +
- include/net/net_namespace.h |  1 +
- include/uapi/linux/Kbuild   |  1 +
- include/uapi/linux/netns.h  | 29 +++++++++++++
- net/core/net_namespace.c    | 99 +++++++++++++++++++++++++++++++++++++++++++++
- net/netlink/genetlink.c     |  4 ++
- 6 files changed, 135 insertions(+)
- create mode 100644 include/uapi/linux/netns.h
+ include/net/ip_tunnels.h | 1 +
+ net/ipv4/ip_gre.c        | 2 ++
+ net/ipv4/ip_tunnel.c     | 8 ++++++++
+ net/ipv4/ip_vti.c        | 1 +
+ net/ipv4/ipip.c          | 1 +
+ net/ipv6/sit.c           | 1 +
+ 6 files changed, 14 insertions(+)
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index b4e23acc6441..dbf691c68473 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -6278,6 +6278,7 @@ F:	include/linux/netdevice.h
- F:	include/uapi/linux/in.h
- F:	include/uapi/linux/net.h
- F:	include/uapi/linux/netdevice.h
-+F:	include/uapi/linux/netns.h
- F:	tools/net/
- F:	tools/testing/selftests/net/
- F:	lib/random32.c
-diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
-index 92b5f94e2842..1b65f5ccacf5 100644
---- a/include/net/net_namespace.h
-+++ b/include/net/net_namespace.h
-@@ -299,6 +299,7 @@ static inline int peernet2id(struct net *net, struct net *peer)
- }
+diff --git a/include/net/ip_tunnels.h b/include/net/ip_tunnels.h
+index 7f538ba6e267..c92a99b5b77e 100644
+--- a/include/net/ip_tunnels.h
++++ b/include/net/ip_tunnels.h
+@@ -119,6 +119,7 @@ struct ip_tunnel_net {
+ int ip_tunnel_init(struct net_device *dev);
+ void ip_tunnel_uninit(struct net_device *dev);
+ void  ip_tunnel_dellink(struct net_device *dev, struct list_head *head);
++struct net *ip_tunnel_get_link_net(const struct net_device *dev);
+ int ip_tunnel_init_net(struct net *net, int ip_tnl_net_id,
+ 		       struct rtnl_link_ops *ops, char *devname);
  
- struct net *get_net_from_netnsid(struct net *net, int id);
-+int netns_genl_register(void);
- 
- struct pernet_operations {
- 	struct list_head list;
-diff --git a/include/uapi/linux/Kbuild b/include/uapi/linux/Kbuild
-index fb3f7b675229..840f049c48fa 100644
---- a/include/uapi/linux/Kbuild
-+++ b/include/uapi/linux/Kbuild
-@@ -275,6 +275,7 @@ header-y += netfilter_decnet.h
- header-y += netfilter_ipv4.h
- header-y += netfilter_ipv6.h
- header-y += netlink.h
-+header-y += netns.h
- header-y += netrom.h
- header-y += nfc.h
- header-y += nfs.h
-diff --git a/include/uapi/linux/netns.h b/include/uapi/linux/netns.h
-new file mode 100644
-index 000000000000..72537e31d7d2
---- /dev/null
-+++ b/include/uapi/linux/netns.h
-@@ -0,0 +1,29 @@
-+#ifndef _UAPI_LINUX_NETNS_H_
-+#define _UAPI_LINUX_NETNS_H_
-+
-+/* Generic netlink messages */
-+
-+#define NETNS_GENL_NAME			"netns"
-+#define NETNS_GENL_VERSION		0x1
-+
-+/* Commands */
-+enum {
-+	NETNS_CMD_UNSPEC,
-+	NETNS_CMD_GET,
-+	__NETNS_CMD_MAX,
-+};
-+
-+#define NETNS_CMD_MAX		(__NETNS_CMD_MAX - 1)
-+
-+/* Attributes */
-+enum {
-+	NETNSA_NONE,
-+	NETNSA_NSINDEX,
-+	NETNSA_PID,
-+	NETNSA_FD,
-+	__NETNSA_MAX,
-+};
-+
-+#define NETNSA_MAX		(__NETNSA_MAX - 1)
-+
-+#endif /* _UAPI_LINUX_NETNS_H_ */
-diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
-index f44378de7831..a60f2bbf4302 100644
---- a/net/core/net_namespace.c
-+++ b/net/core/net_namespace.c
-@@ -15,6 +15,8 @@
- #include <linux/file.h>
- #include <linux/export.h>
- #include <linux/user_namespace.h>
-+#include <linux/netns.h>
-+#include <net/genetlink.h>
- #include <net/net_namespace.h>
- #include <net/netns/generic.h>
- 
-@@ -417,6 +419,103 @@ static struct pernet_operations __net_initdata net_ns_ops = {
- 	.exit = net_ns_net_exit,
+diff --git a/net/ipv4/ip_gre.c b/net/ipv4/ip_gre.c
+index 829aff8bf723..05157427d8f0 100644
+--- a/net/ipv4/ip_gre.c
++++ b/net/ipv4/ip_gre.c
+@@ -825,6 +825,7 @@ static struct rtnl_link_ops ipgre_link_ops __read_mostly = {
+ 	.dellink	= ip_tunnel_dellink,
+ 	.get_size	= ipgre_get_size,
+ 	.fill_info	= ipgre_fill_info,
++	.get_link_net	= ip_tunnel_get_link_net,
  };
  
-+static struct genl_family netns_nl_family = {
-+	.id		= GENL_ID_GENERATE,
-+	.name		= NETNS_GENL_NAME,
-+	.version	= NETNS_GENL_VERSION,
-+	.hdrsize	= 0,
-+	.maxattr	= NETNSA_MAX,
-+	.netnsok	= true,
-+};
-+
-+static struct nla_policy netns_nl_policy[NETNSA_MAX + 1] = {
-+	[NETNSA_NONE]		= { .type = NLA_UNSPEC, },
-+	[NETNSA_NSINDEX]	= { .type = NLA_U32, },
-+	[NETNSA_PID]		= { .type = NLA_U32 },
-+	[NETNSA_FD]		= { .type = NLA_U32 },
-+};
-+
-+static int netns_nl_get_size(void)
+ static struct rtnl_link_ops ipgre_tap_ops __read_mostly = {
+@@ -839,6 +840,7 @@ static struct rtnl_link_ops ipgre_tap_ops __read_mostly = {
+ 	.dellink	= ip_tunnel_dellink,
+ 	.get_size	= ipgre_get_size,
+ 	.fill_info	= ipgre_fill_info,
++	.get_link_net	= ip_tunnel_get_link_net,
+ };
+ 
+ static int __net_init ipgre_tap_init_net(struct net *net)
+diff --git a/net/ipv4/ip_tunnel.c b/net/ipv4/ip_tunnel.c
+index e3a3dc91e49c..da5a2b6fed81 100644
+--- a/net/ipv4/ip_tunnel.c
++++ b/net/ipv4/ip_tunnel.c
+@@ -954,6 +954,14 @@ void ip_tunnel_dellink(struct net_device *dev, struct list_head *head)
+ }
+ EXPORT_SYMBOL_GPL(ip_tunnel_dellink);
+ 
++struct net *ip_tunnel_get_link_net(const struct net_device *dev)
 +{
-+	return nla_total_size(sizeof(u32)) /* NETNSA_NSINDEX */
-+	       ;
++	struct ip_tunnel *tunnel = netdev_priv(dev);
++
++	return tunnel->net;
 +}
++EXPORT_SYMBOL(ip_tunnel_get_link_net);
 +
-+static int netns_nl_fill(struct sk_buff *skb, u32 portid, u32 seq, int flags,
-+			 int cmd, struct net *net, struct net *peer)
-+{
-+	void *hdr;
-+	int id;
-+
-+	hdr = genlmsg_put(skb, portid, seq, &netns_nl_family, flags, cmd);
-+	if (!hdr)
-+		return -EMSGSIZE;
-+
-+	id = peernet2id(net, peer);
-+	if (id < 0)
-+		return id;
-+	if (nla_put_u32(skb, NETNSA_NSINDEX, id))
-+		goto nla_put_failure;
-+
-+	return genlmsg_end(skb, hdr);
-+
-+nla_put_failure:
-+	genlmsg_cancel(skb, hdr);
-+	return -EMSGSIZE;
-+}
-+
-+static int netns_nl_cmd_getid(struct sk_buff *skb, struct genl_info *info)
-+{
-+	struct net *net = genl_info_net(info);
-+	struct net *peer;
-+	struct sk_buff *msg;
-+	int err = -ENOBUFS;
-+
-+	if (info->attrs[NETNSA_PID])
-+		peer = get_net_ns_by_pid(nla_get_u32(info->attrs[NETNSA_PID]));
-+	else if (info->attrs[NETNSA_FD])
-+		peer = get_net_ns_by_fd(nla_get_u32(info->attrs[NETNSA_FD]));
-+	else
-+		return -EINVAL;
-+
-+	if (IS_ERR(peer))
-+		return PTR_ERR(peer);
-+
-+	msg = genlmsg_new(netns_nl_get_size(), GFP_KERNEL);
-+	if (!msg) {
-+		err = -ENOMEM;
-+		goto out;
-+	}
-+
-+	err = netns_nl_fill(msg, info->snd_portid, info->snd_seq,
-+			    NLM_F_ACK, NETNS_CMD_GETID, net, peer);
-+	if (err < 0)
-+		goto err_out;
-+
-+	err = genlmsg_unicast(net, msg, info->snd_portid);
-+	goto out;
-+
-+err_out:
-+	nlmsg_free(msg);
-+out:
-+	put_net(peer);
-+	return err;
-+}
-+
-+static struct genl_ops netns_nl_ops[] = {
-+	{
-+		.cmd = NETNS_CMD_GETID,
-+		.policy = netns_nl_policy,
-+		.doit = netns_nl_cmd_getid,
-+		.flags = GENL_ADMIN_PERM,
-+	},
-+};
-+
-+int netns_genl_register(void)
-+{
-+	return genl_register_family_with_ops(&netns_nl_family, netns_nl_ops);
-+}
-+
- static int __init net_ns_init(void)
+ int ip_tunnel_init_net(struct net *net, int ip_tnl_net_id,
+ 				  struct rtnl_link_ops *ops, char *devname)
  {
- 	struct net_generic *ng;
-diff --git a/net/netlink/genetlink.c b/net/netlink/genetlink.c
-index 76393f2f4b22..c6f39e40c9f3 100644
---- a/net/netlink/genetlink.c
-+++ b/net/netlink/genetlink.c
-@@ -1029,6 +1029,10 @@ static int __init genl_init(void)
- 	if (err)
- 		goto problem;
+diff --git a/net/ipv4/ip_vti.c b/net/ipv4/ip_vti.c
+index e453cb724a95..93862411669c 100644
+--- a/net/ipv4/ip_vti.c
++++ b/net/ipv4/ip_vti.c
+@@ -530,6 +530,7 @@ static struct rtnl_link_ops vti_link_ops __read_mostly = {
+ 	.changelink	= vti_changelink,
+ 	.get_size	= vti_get_size,
+ 	.fill_info	= vti_fill_info,
++	.get_link_net	= ip_tunnel_get_link_net,
+ };
  
-+	err = netns_genl_register();
-+	if (err < 0)
-+		goto problem;
-+
- 	return 0;
+ static int __init vti_init(void)
+diff --git a/net/ipv4/ipip.c b/net/ipv4/ipip.c
+index bfec31df8b21..fd423e65d6df 100644
+--- a/net/ipv4/ipip.c
++++ b/net/ipv4/ipip.c
+@@ -496,6 +496,7 @@ static struct rtnl_link_ops ipip_link_ops __read_mostly = {
+ 	.dellink	= ip_tunnel_dellink,
+ 	.get_size	= ipip_get_size,
+ 	.fill_info	= ipip_fill_info,
++	.get_link_net	= ip_tunnel_get_link_net,
+ };
  
- problem:
+ static struct xfrm_tunnel ipip_handler __read_mostly = {
+diff --git a/net/ipv6/sit.c b/net/ipv6/sit.c
+index db75809ab843..5c227cc13170 100644
+--- a/net/ipv6/sit.c
++++ b/net/ipv6/sit.c
+@@ -1761,6 +1761,7 @@ static struct rtnl_link_ops sit_link_ops __read_mostly = {
+ 	.get_size	= ipip6_get_size,
+ 	.fill_info	= ipip6_fill_info,
+ 	.dellink	= ipip6_dellink,
++	.get_link_net	= ip_tunnel_get_link_net,
+ };
+ 
+ static struct xfrm_tunnel sit_handler __read_mostly = {
 -- 
 2.1.0
