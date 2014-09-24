@@ -1,15 +1,10 @@
-From: Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCHv3 1/2] procfs: show hierarchy of pid namespace
-Date: Wed, 24 Sep 2014 19:45:28 +0200
-Message-ID: <20140924174527.GF10474@mguzik>
-References: <1411552827-31056-1-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<1411552827-31056-2-git-send-email-chenhanxiao@cn.fujitsu.com>
+From: =?iso-8859-1?Q?St=E9phane?= Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: LXC 1.0.6 has been released!
+Date: Wed, 24 Sep 2014 16:37:25 -0400
+Message-ID: <20140924203725.GZ19386@dakara>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============7697542826867136098=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1411552827-31056-2-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,165 +14,77 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, lxc-users-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Sep 24, 2014 at 06:00:26PM +0800, Chen Hanxiao wrote:
-> +static int
-> +pidns_list_filter(void)
-> +{
-> +	struct pidns_list *pos, *pos_t;
-> +	struct pid_namespace *ns0, *ns1;
-> +	struct pid *pid0, *pid1;
-> +	int flag = 0;
-> +	int rc;
-> +
-> +	/* screen pid with relationship
-> +	 * in pidns_list, we may add pids like
-> +	 * ns0   ns1   ns2
-> +	 * pid1->pid2->pid3
-> +	 * we should screen pid1, pid2 and keep pid3
-> +	 */
-> +	list_for_each_entry(pos, &pidns_list, list) {
-> +		list_for_each_entry(pos_t, &pidns_list, list) {
 
-In the previous thread I tried to note this will be terribly inefficient
-to use and adding a list of children to pid_namespace struct would deal
-with the problem.
+--===============7697542826867136098==
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="O2v8LnVIcZ+EDjcF"
+Content-Disposition: inline
 
-> +			flag = 0;
-> +			pid0 = pos->pid;
-> +			pid1 = pos_t->pid;
-> +			ns0 = pid0->numbers[pid0->level].ns;
-> +			ns1 = pid1->numbers[pid1->level].ns;
-> +			if (pos->pid->level < pos_t->pid->level)
-> +				for (; ns1 != NULL; ns1 = ns1->parent)
-> +					if (ns0 == ns1) {
-> +						flag = 1;
-> +						break;
-> +					}
-> +			if (flag == 1)
-> +				break;
-> +		}
-> +
-> +		if (flag == 0) {
-> +			rc = pidns_list_add(pos->pid, &pidns_tree);
-> +			if (rc)
-> +				goto out;
-> +		}
-> +	}
-> +
-> +	/* Now all usefull stuff are in pidns_tree, free pidns_list*/
-> +	free_pidns_list(&pidns_list);
-> +
-> +	return 0;
-> +
-> +out:
-> +	free_pidns_list(&pidns_tree);
-> +	return rc;
-> +}
-> +
-> +/* collect pids in pidns_list,
-> + * then remove duplicated ones,
-> + * add the rest to pidns_tree
-> + */
-> +static int proc_pidns_list_refresh(void)
-> +{
-> +	struct pid *pid;
-> +	struct task_struct *p;
-> +	int rc;
-> +
-> +	/* collect pid in differet ns */
-> +	rcu_read_lock();
-> +	for_each_process(p) {
-> +		pid = task_pid(p);
-> +		if (pid && (pid->level > 0)) {
-> +			rc = pidns_list_add(pid, &pidns_list);
-> +			if (rc)
-> +				goto out;
-> +		}
-> +	}
-> +
-> +	/* screen duplicate pids from list pidns_list
-> +	* and form a new list pidns_tree
-> +	*/
-> +	rc = pidns_list_filter();
-> +	if (rc)
-> +		goto out;
-> +	rcu_read_unlock();
-> +
-> +	return 0;
-> +
-> +out:
-> +	free_pidns_list(&pidns_list);
-> +	rcu_read_unlock();
-> +	return rc;
-> +}
-> +
-> +static int nslist_proc_show(struct seq_file *m, void *v)
-> +{
-> +	struct pidns_list *pos;
-> +	struct pid_namespace *ns, *curr_ns;
-> +	struct pid *pid;
-> +	char pid_buf[32];
-> +	int i, curr_level;
-> +	int rc;
-> +
-> +	curr_ns = task_active_pid_ns(current);
-> +
-> +	mutex_lock(&pidns_list_lock);
-> +	rc = proc_pidns_list_refresh();
-> +	if (rc) {
-> +		mutex_unlock(&pidns_list_lock);
-> +		return rc;
-> +	}
-> +
-> +	/* print pid namespace hierarchy */
-> +	list_for_each_entry(pos, &pidns_tree, list) {
 
-What keeps pid_namespace's safe to use? Similarly to previous patch,
-here we hit a place where the code is not protected with rcu and
-structures were just plugged into the list.
+--O2v8LnVIcZ+EDjcF
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Recreating the list for each open seems quite unnecessary as well.
+Hello everyone,
 
-One could work around that by caching generated output and having a
-generation counter for namespaces to know whether the content is stale.
-But that still does not seem right.
+The sixth LXC 1.0 bugfix release is now out!
 
-It looks like in the original thread someone suggested hooking this up
-under proc as a directory tree which sounds much better to me.
+This includes over two months worth of bugfixes contributed by 24
+individual developers. The most important fix is the support for nested
+unprivileged containers which was broken recently because of a kernel
+security update.
 
-Just my $0,03.
 
-> +		pid = pos->pid;
-> +		curr_level = -1;
-> +		ns = pid->numbers[pid->level].ns;
-> +		/* Check whether a pid has relationship with current ns */
-> +		for (; ns != NULL; ns = ns->parent)
-> +			if (ns == curr_ns)
-> +				curr_level = curr_ns->level;
-> +
-> +		if (curr_level == -1)
-> +			continue;
-> +
-> +		for (i = curr_level + 1; i <= pid->level; i++) {
-> +			ns = pid->numbers[i].ns;
-> +			/* show PID '1' in specific pid ns */
-> +			snprintf(pid_buf, 32, "/proc/%u/ns/pid",
-> +				pid_vnr(find_pid_ns(1, ns)));
-> +			seq_printf(m, "%s ", pid_buf);
-> +		}
-> +
-> +		seq_putc(m, '\n');
-> +	}
-> +
-> +	free_pidns_list(&pidns_tree);
-> +	mutex_unlock(&pidns_list_lock);
-> +
-> +	return 0;
-> +}
+As usual, the full announcement and changelog may be found at:
+https://linuxcontainers.org/news/
 
--- 
-Mateusz Guzik
+And our tarballs can be downloaded from:
+https://linuxcontainers.org/downloads/
+
+
+As a reminder, LXC upstream is planning on maintaining the LXC 1.0
+branch with frequent bugfix and security updates until April 2019.
+
+
+St=E9phane Graber
+On behalf of the LXC development team
+
+--O2v8LnVIcZ+EDjcF
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCgAGBQJUIyuFAAoJEMY4l01keS1n1CMP/RJKxq0HGjqllUhtSrO0d+ab
+xOJYBfO2QFj3uotuHvALr6vJOAb+Fjmw1EZt9aUytRWyAatGesyDOLohCNfZis1l
+8AhU4FWUfAkOu3xNGHIhFtpkro+/b6bNv1xzSCbS+LdGSM9KN6iEzT2QfzkaC61e
+lFzeP/zVUPlwuDOE0cF53/sfUeaNGzjbcS2bjdE1yg7JTjHkuUhntDJg9aZsRX5N
+Iykre5M9Fli3yHEutVrlegvJiCMvuQB5eMTmkTNz10iji9R11E6NVYeU/MD/BzTF
+u6qfyFvkDnIJ/SImGT3xaVdF7nBPDtlguzh9tJQzQVaHzr5azKnuJovt9P2OKA5V
+cn1lIswGIsopXAf89En7asIzhqBf9qlY9VFCghsW0LnveoocEPVqoSfLEuEewCX5
+1HTPd0hh/RomWWi45aE1dd7Te3/UVOSox9my/fkaAT+/xbASnZ9ZY6t5nCDceupq
+bftUCjKsyRRITKnRyo15UthU2X0MSZvmmblQzlzCn83IdIZpa3C+Oe8kf1sLdhgX
+e/OLUVeJDxE0ElY8KHsQZ95upXSEviFABxpFMIMiZJ5CLQLsamJ8y6Ink3rV7gwI
+KQ1jNXgcTtBMK/govzeb1C7EjipxA8G+NQD3d2E8C6TTq7uZQ75bDoGbwSisn2oQ
+5RLXdiQ3X1t6Mv7yRbC/
+=ba1c
+-----END PGP SIGNATURE-----
+
+--O2v8LnVIcZ+EDjcF--
+
+--===============7697542826867136098==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============7697542826867136098==--
