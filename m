@@ -1,16 +1,15 @@
-From: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: RE: [RESEND][PATCHv2 1/2] procfs: show hierarchy of pid namespace
-Date: Wed, 24 Sep 2014 03:53:29 +0000
-Message-ID: <5871495633F38949900D2BF2DC04883E5BF0AB@G08CNEXMBPEKD02.g08.fujitsu.local>
-References: <1411379614-30665-1-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<1411379614-30665-2-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<20140922141623.GA10474@mguzik>
+From: Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC PATCH net-next v2 0/5] netns: allow to identify peer netns
+Date: Wed, 24 Sep 2014 11:23:19 +0200
+Message-ID: <54228D87.3070309@6wind.com>
+References: <1411478430-4989-1-git-send-email-nicolas.dichtel@6wind.com>
+	<CAHA+R7NnBJ=T3sukzzp-OD2am1nd318XbrXCX84LfSL=nu9ojw@mail.gmail.com>
+Reply-To: nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20140922141623.GA10474@mguzik>
-Content-Language: zh-CN
+In-Reply-To: <CAHA+R7NnBJ=T3sukzzp-OD2am1nd318XbrXCX84LfSL=nu9ojw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,241 +19,42 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Cong Wang <cwang-xCSkyg8dI+0RB7SZvlqPiA@public.gmane.org>
+Cc: netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Stephen Hemminger <stephen-OTpzqLSitTUnbdJkjeBofR2eb7JE58TQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
-
-> -----Original Message-----
-> From: Mateusz Guzik [mailto:mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org]
-> On Mon, Sep 22, 2014 at 05:53:33PM +0800, Chen Hanxiao wrote:
-> > This patch will show the hierarchy of pid namespace
-> > by /proc/pidns_hierarchy like:
-> >
-> > [root@localhost ~]#cat /proc/pidns_hierarchy
-> > /proc/18060/ns/pid /proc/18102/ns/pid /proc/1534/ns/pid
-> > /proc/18060/ns/pid /proc/18102/ns/pid /proc/1600/ns/pid
-> > /proc/1550/ns/pid
-> >
-> 
-> I don't really know the area, just had a quick look and the patch does
-> not seem right.
-> 
-> > +/*
-> > + *  /proc/pidns_hierarchy
-> > + *  show the hierarchy of pid namespace
-> > + */
-> > +
-> > +#define NS_HIERARCHY	"pidns_hierarchy"
-> > +
-> > +static LIST_HEAD(pidns_list);
-> > +static LIST_HEAD(pidns_tree);
-> > +static DEFINE_MUTEX(pidns_list_lock);
-> > +
-> > +/* list for host pid collection */
-> > +struct pidns_list {
-> > +	struct list_head list;
-> > +	struct pid *pid;
-> > +};
-> > +
-> > +static void free_pidns_list(struct list_head *head)
-> > +{
-> > +	struct pidns_list *tmp, *pos;
-> > +
-> > +	list_for_each_entry_safe(pos, tmp, head, list) {
-> > +		list_del(&pos->list);
-> > +		kfree(pos);
-> > +	}
-> > +}
-> > +
-> > +/*
-> > + * Only add init pid in different namespaces
-> > + */
-> > +static int
-> > +pidns_list_really_add(struct pid *pid, struct list_head *list_head)
-> > +{
-> > +	struct pidns_list *tmp, *pos;
-> > +
-> > +	if (!is_child_reaper(pid))
-> > +		return 0;
-> > +
-> > +	list_for_each_entry_safe(pos, tmp, list_head, list)
-> > +		if (ns_of_pid(pid) == ns_of_pid(pos->pid))
-> > +			return 0;
-> > +
-> > +	return 1;
-> > +}
-> > +
-> > +static int
-> > +pidns_list_add(struct pid *pid, struct list_head *list_head)
-> > +{
-> > +	struct pidns_list *ent;
-> > +
-> > +	ent = kmalloc(sizeof(*ent), GFP_KERNEL);
-> > +	if (!ent)
-> > +		return -ENOMEM;
-> > +
-> 
-> A call from proc_pidns_list_refresh will enter with rcu read-locked.
-> Is it really ok to sleep in such case?
-> 
-
-The flag should be GFP_ATOMIC.
-
-> > +	ent->pid = pid;
-> > +	if (pidns_list_really_add(pid, list_head))
-> > +		list_add_tail(&ent->list, list_head);
-> > +
-> 
-> Does not this leak memory if pidns_list_really_add returns 0?
-> 
-Will fix.
-
-> Also, you just add stuff to the list and don't ref it in any way, so for
-> instance in proc_pidns_list_refresh below...
-
-I add stuffs to list called 'pidns_list',
-then screen them to form a new list called 'pidns_tree'.
-
-> 
-> > +static void
-> > +pidns_list_filter(void)
-> > +{
-> > +	struct pidns_list *tmp, *pos;
-> > +	struct pidns_list *tmp_t, *pos_t;
-> > +	struct pid_namespace *ns0, *ns1;
-> > +	struct pid *pid0, *pid1;
-> > +	int flag = 0;
-> > +
-> > +	/* screen pid with relationship
-> > +	 * in pidns_list, we may add pids like
-> > +	 * ns0   ns1   ns2
-> > +	 * pid1->pid2->pid3
-> > +	 * we should keep pid3 and screen pid1, pid2
-> > +	 */
-> > +	list_for_each_entry_safe(pos, tmp, &pidns_list, list) {
-> > +		list_for_each_entry_safe(pos_t, tmp_t, &pidns_list, list) {
-> 
-> At this point maybe it would be beneficial to have a list of children
-> namespaces in pid_namespace?
-
-pid_namespace don't have such member to identify who is its children.
-It only knew who is its parent.
-So I had to use a double loop to check
-whether one pid be another pid's children.
-
-> 
-> > +			flag = 0;
-> > +			pid0 = pos->pid;
-> > +			pid1 = pos_t->pid;
-> > +			ns0 = pid0->numbers[pid0->level].ns;
-> > +			ns1 = pid1->numbers[pid1->level].ns;
-> > +			if (pos->pid->level < pos_t->pid->level)
-> > +				for (; ns1 != NULL; ns1 = ns1->parent)
-> > +					if (ns0 == ns1) {
-> > +						flag = 1;
-> > +						break;
-> > +					}
-> > +			if (flag == 1)
-> > +				break;
-> > +		}
-> > +
-> > +		if (flag == 0)
-> > +			pidns_list_add(pos->pid, &pidns_tree);
-> > +	}
-> > +
-> > +	free_pidns_list(&pidns_list);
-> > +}
-> > +
-> 
-> > +/* collect pids in pidns_list,
-> > + * then remove duplicated ones,
-> > + * add the rest to pidns_tree
-> > + */
-> > +static void proc_pidns_list_refresh(void)
-> > +{
-> > +	struct pid *pid;
-> > +	struct task_struct *p;
-> > +
-> > +	/* collect pid in differet ns */
-> > +	rcu_read_lock();
-> > +	for_each_process(p) {
-> > +		pid = task_pid(p);
-> > +		if (pid && (pid->level > 0))
-> > +			pidns_list_add(pid, &pidns_list);
-> > +	}
-> > +	rcu_read_unlock();
-> > +
-> > +	/* screen duplicate pids */
-> > +	pidns_list_filter();
-> 
-> What makes it safe to traverse the list after rcu_read_unlock?
-
-pidns_list_filter should be moved before rcu_read_unlock.
-
-> 
-> > +}
-> > +
-> > +static int nslist_proc_show(struct seq_file *m, void *v)
-> > +{
-> > +	struct pidns_list *tmp, *pos;
-> > +	struct pid_namespace *ns, *curr_ns;
-> > +	struct pid *pid;
-> > +	char pid_buf[32];
-> > +	int i, curr_level;
-> > +
-> > +	curr_ns = task_active_pid_ns(current);
-> > +
-> > +	mutex_lock(&pidns_list_lock);
-> > +	proc_pidns_list_refresh();
-> > +
-> 
-> So this reiterates everything for each open? Maybe a generation counter
-> could be employed here to avoid unnecessary work.
-
-Yes.
-We don't trace the life circle of pidns.
-So an easy way to do this is to reiterate everything for each open.
-After show hierarchy of pidns, all lists of pid collections
-will be freed.
-
-Thanks for your review.
-New version will come soon.
-
-- Chen
-
-> 
-> > +	/* print pid namespace hierarchy */
-> > +	list_for_each_entry_safe(pos, tmp, &pidns_tree, list) {
-> > +		pid = pos->pid;
-> > +		curr_level = -1;
-> > +		ns = pid->numbers[pid->level].ns;
-> > +		/* Check whether pid has relationship with current ns */
-> > +		for (; ns != NULL; ns = ns->parent)
-> > +			if (ns == curr_ns)
-> > +				curr_level = curr_ns->level;
-> > +
-> > +		if (curr_level == -1)
-> > +			continue;
-> > +
-> > +		for (i = curr_level + 1; i <= pid->level; i++) {
-> > +			ns = pid->numbers[i].ns;
-> > +			/* PID 1 in specific pid ns */
-> > +			snprintf(pid_buf, 32, "/proc/%u/ns/pid",
-> > +				pid_vnr(find_pid_ns(1, ns)));
-> > +			seq_printf(m, "%s ", pid_buf);
-> > +		}
-> > +
-> > +		seq_putc(m, '\n');
-> > +	}
-> > +
-> > +	free_pidns_list(&pidns_tree);
-> > +	mutex_unlock(&pidns_list_lock);
-> > +
-> > +	return 0;
-> > +}
-> > +
-> 
-> --
-> Mateusz Guzik
+TGUgMjMvMDkvMjAxNCAyMToyMiwgQ29uZyBXYW5nIGEgw6ljcml0IDoKPiBPbiBUdWUsIFNlcCAy
+MywgMjAxNCBhdCA2OjIwIEFNLCBOaWNvbGFzIERpY2h0ZWwKPiA8bmljb2xhcy5kaWNodGVsQDZ3
+aW5kLmNvbT4gd3JvdGU6Cj4+Cj4+IEhlcmUgaXMgYSBzbWFsbCBzY3JlZW5zaG90IHRvIHNob3cg
+aG93IGl0IGNhbiBiZSB1c2VkIGJ5IHVzZXJsYW5kOgo+PiAkIGlwIG5ldG5zIGFkZCBmb28KPj4g
+JCBpcCBuZXRucyBkZWwgZm9vCj4+ICQgaXAgbmV0bnMKPj4gJCB0b3VjaCAvdmFyL3J1bi9uZXRu
+cy9pbml0X25ldAo+PiAkIG1vdW50IC0tYmluZCAvcHJvYy8xL25zL25ldCAvdmFyL3J1bi9uZXRu
+cy9pbml0X25ldAo+PiAkIGlwIG5ldG5zIGFkZCBmb28KPj4gJCBpcCBuZXRucwo+PiBmb28gKGlk
+OiAzKQo+PiBpbml0X25ldCAoaWQ6IDEpCj4+ICQgaXAgbmV0bnMgZXhlYyBmb28gaXAgbmV0bnMK
+Pj4gZm9vIChpZDogMykKPj4gaW5pdF9uZXQgKGlkOiAxKQo+PiAkIGlwIG5ldG5zIGV4ZWMgZm9v
+IGlwIGxpbmsgYWRkIGlwaXAxIGxpbmstbmV0bnNpZCAxIHR5cGUgaXBpcCByZW1vdGUgMTAuMTYu
+MC4xMjEgbG9jYWwgMTAuMTYuMC4yNDkKPj4gJCBpcCBuZXRucyBleGVjIGZvbyBpcCBsIGxzIGlw
+aXAxCj4+IDY6IGlwaXAxQE5PTkU6IDxQT0lOVE9QT0lOVCxOT0FSUD4gbXR1IDE0ODAgcWRpc2Mg
+bm9vcCBzdGF0ZSBET1dOIG1vZGUgREVGQVVMVCBncm91cCBkZWZhdWx0Cj4+ICAgICAgbGluay9p
+cGlwIDEwLjE2LjAuMjQ5IHBlZXIgMTAuMTYuMC4xMjEgbGluay1uZXRuc2lkIDEKPj4KPj4gVGhl
+IHBhcmFtZXRlciBsaW5rLW5ldG5zaWQgc2hvd3MgdXMgd2hlcmUgdGhlIGludGVyZmFjZSBzZW5k
+cyBhbmQgcmVjZWl2ZXMKPj4gcGFja2V0cyAoYW5kIHRodXMgd2Uga25vdyB3aGVyZSBlbmNhcHN1
+bGF0ZWQgYWRkcmVzc2VzIGFyZSBzZXQpLgo+Pgo+Cj4gU28gaXBpcDEgaXMgc2hvd24gaW4gbmV0
+bnMgZm9vIGJ1dCBmdW5jdGlvbmluZyBpbiBuZXRucyBpbml0X25ldD8gR2V0dGluZyB0aGUKPiBp
+ZCBvZiBpbml0X25ldCBpbiBmb28gZGVwZW5kcyBvbiB5b3VyIG1vdW50IG5hbWVzcGFjZSwgL3Zh
+ci9ydW4vbmV0bnMvIG1heQo+IG5vdCB2aXNpYmxlIGluc2lkZSBmb28sIGluIHRoaXMgY2FzZSwg
+bGluay1uZXRuc2lkIGlzIG1lYW5pbmdsZXNzLiBJdAo+IGlzIG5vdCB5b3VyCj4gZmF1bHQsIG5l
+dHdvcmsgbmFtZXNwYWNlIGFscmVhZHkgaGVhdmlseSByZWxpZXMgb24gbW91bnQgbmFtZXNwYWNl
+IChzeXNmcwo+IG5lZWRzIHRvIGJlIHJlbW91bnQgb3RoZXJ3aXNlIHlvdSBjYW4gbm90IGNyZWF0
+ZSBkZXZpY2Ugd2l0aCB0aGUgc2FtZSBuYW1lLikKPgo+IE9uIHRoZSBvdGhlciBoYW5kLCB3aGF0
+J3MgdGhlIHByb2JsZW0geW91IGFyZSB0cnlpbmcgdG8gc29sdmU/IEFGQUlLLAo+IHRoZSBpZmlu
+ZGV4Cj4gaXNzdWUgaXMgcHVyZWx5IGluIG91dHB1dCwgSU9XLCB0aGUgZGV2aWNlIHN0aWxsIGZ1
+bmN0aW9ucyBjb3JyZWN0bHkKPiBldmVuIHRocm91Z2gKPiBpdHMgbGluayBpZmluZGV4IGlzIG5v
+dCBjb3JyZWN0IGFmdGVyIG1vdmluZyB0byBhbm90aGVyIG5hbWVzcGFjZS4gSWYKPiBub3QsIGl0
+IGlzIGJ1Zwo+IHdlIG5lZWQgdG8gZml4Lgo+ClRoZSBwcm9ibGVtIGlzIGV4cGxhaW5lZCBoZXJl
+OgpodHRwOi8vdGhyZWFkLmdtYW5lLm9yZy9nbWFuZS5saW51eC5uZXR3b3JrLzMxNTkzMy9mb2N1
+cz0zMTYwNjQKYW5kIGhlcmU6Cmh0dHA6Ly90aHJlYWQuZ21hbmUub3JnL2dtYW5lLmxpbnV4Lmtl
+cm5lbC5jb250YWluZXJzLzI4MzAxL2ZvY3VzPTQyMzkKCgpSZWdhcmRzLApOaWNvbGFzCl9fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFp
+bGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9s
+aXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
