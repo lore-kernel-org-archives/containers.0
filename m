@@ -1,10 +1,17 @@
-From: =?iso-8859-1?Q?St=E9phane?= Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: LXC 1.0.6 has been released!
-Date: Wed, 24 Sep 2014 16:37:25 -0400
-Message-ID: <20140924203725.GZ19386@dakara>
+From: Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC PATCH net-next v2 0/5] netns: allow to identify peer netns
+Date: Thu, 25 Sep 2014 09:54:59 +0200
+Message-ID: <5423CA53.5020207__28287.2063610286$1411631717$gmane$org@6wind.com>
+References: <1411478430-4989-1-git-send-email-nicolas.dichtel@6wind.com>
+	<CALCETrWnZtWstBviDxcHpLpjHF3R+sgS48RYf2pbKBYeExZVOQ@mail.gmail.com>
+	<54228F8B.2030804@6wind.com>
+	<CALCETrXMkV_1XR2mXOoO_2_vpB=6cPbWAAOhPFhPbDa_1P+zxw@mail.gmail.com>
+Reply-To: nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============7697542826867136098=="
+Content-Type: text/plain; charset="utf-8"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <CALCETrXMkV_1XR2mXOoO_2_vpB=6cPbWAAOhPFhPbDa_1P+zxw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,77 +21,36 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, lxc-users-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Cc: Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Stephen Hemminger <stephen-OTpzqLSitTUnbdJkjeBofR2eb7JE58TQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
---===============7697542826867136098==
-Content-Type: multipart/signed; micalg=pgp-sha512;
-	protocol="application/pgp-signature"; boundary="O2v8LnVIcZ+EDjcF"
-Content-Disposition: inline
-
-
---O2v8LnVIcZ+EDjcF
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-Hello everyone,
-
-The sixth LXC 1.0 bugfix release is now out!
-
-This includes over two months worth of bugfixes contributed by 24
-individual developers. The most important fix is the support for nested
-unprivileged containers which was broken recently because of a kernel
-security update.
-
-
-As usual, the full announcement and changelog may be found at:
-https://linuxcontainers.org/news/
-
-And our tarballs can be downloaded from:
-https://linuxcontainers.org/downloads/
-
-
-As a reminder, LXC upstream is planning on maintaining the LXC 1.0
-branch with frequent bugfix and security updates until April 2019.
-
-
-St=E9phane Graber
-On behalf of the LXC development team
-
---O2v8LnVIcZ+EDjcF
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBCgAGBQJUIyuFAAoJEMY4l01keS1n1CMP/RJKxq0HGjqllUhtSrO0d+ab
-xOJYBfO2QFj3uotuHvALr6vJOAb+Fjmw1EZt9aUytRWyAatGesyDOLohCNfZis1l
-8AhU4FWUfAkOu3xNGHIhFtpkro+/b6bNv1xzSCbS+LdGSM9KN6iEzT2QfzkaC61e
-lFzeP/zVUPlwuDOE0cF53/sfUeaNGzjbcS2bjdE1yg7JTjHkuUhntDJg9aZsRX5N
-Iykre5M9Fli3yHEutVrlegvJiCMvuQB5eMTmkTNz10iji9R11E6NVYeU/MD/BzTF
-u6qfyFvkDnIJ/SImGT3xaVdF7nBPDtlguzh9tJQzQVaHzr5azKnuJovt9P2OKA5V
-cn1lIswGIsopXAf89En7asIzhqBf9qlY9VFCghsW0LnveoocEPVqoSfLEuEewCX5
-1HTPd0hh/RomWWi45aE1dd7Te3/UVOSox9my/fkaAT+/xbASnZ9ZY6t5nCDceupq
-bftUCjKsyRRITKnRyo15UthU2X0MSZvmmblQzlzCn83IdIZpa3C+Oe8kf1sLdhgX
-e/OLUVeJDxE0ElY8KHsQZ95upXSEviFABxpFMIMiZJ5CLQLsamJ8y6Ink3rV7gwI
-KQ1jNXgcTtBMK/govzeb1C7EjipxA8G+NQD3d2E8C6TTq7uZQ75bDoGbwSisn2oQ
-5RLXdiQ3X1t6Mv7yRbC/
-=ba1c
------END PGP SIGNATURE-----
-
---O2v8LnVIcZ+EDjcF--
-
---===============7697542826867136098==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============7697542826867136098==--
+TGUgMjQvMDkvMjAxNCAxOTowNSwgQW5keSBMdXRvbWlyc2tpIGEgw6ljcml0IDoKPiBPbiBXZWQs
+IFNlcCAyNCwgMjAxNCBhdCAyOjMxIEFNLCBOaWNvbGFzIERpY2h0ZWwKPiA8bmljb2xhcy5kaWNo
+dGVsQDZ3aW5kLmNvbT4gd3JvdGU6Cj4+IExlIDIzLzA5LzIwMTQgMjE6MjYsIEFuZHkgTHV0b21p
+cnNraSBhIMOpY3JpdCA6Cj4+Cj4+PiBPbiBUdWUsIFNlcCAyMywgMjAxNCBhdCA2OjIwIEFNLCBO
+aWNvbGFzIERpY2h0ZWwKPj4+IDxuaWNvbGFzLmRpY2h0ZWxANndpbmQuY29tPiB3cm90ZToKPj4+
+Pgo+Pj4+IFRoZSBnb2FsIG9mIHRoaXMgc2VyaWUgaXMgdG8gYmUgYWJsZSB0byBtdWx0aWNhc3Qg
+bmV0bGluayBtZXNzYWdlcyB3aXRoCj4+Pj4gYW4KPj4+PiBhdHRyaWJ1dGUgdGhhdCBpZGVudGlm
+eSBhIHBlZXIgbmV0bnMuCj4+Pj4gVGhpcyBpcyBuZWVkZWQgYnkgdGhlIHVzZXJsYW5kIHRvIGlu
+dGVycHJldCBzb21lIGluZm9ybWF0aW9ucyBjb250YWluZWQKPj4+PiBpbgo+Pj4+IG5ldGxpbmsg
+bWVzc2FnZXMgKGxpa2UgSUZMQV9MSU5LIHZhbHVlLCBidXQgYWxzbyBzb21lIG90aGVyIGF0dHJp
+YnV0ZXMgaW4KPj4+PiBjYXNlCj4+Pj4gb2YgeC1uZXRucyBuZXRkZXZpY2UgKHNlZSBhbHNvCj4+
+Pj4gaHR0cDovL3RocmVhZC5nbWFuZS5vcmcvZ21hbmUubGludXgubmV0d29yay8zMTU5MzMvZm9j
+dXM9MzE2MDY0IGFuZAo+Pj4+IGh0dHA6Ly90aHJlYWQuZ21hbmUub3JnL2dtYW5lLmxpbnV4Lmtl
+cm5lbC5jb250YWluZXJzLzI4MzAxL2ZvY3VzPTQyMzkpKS4KPj4+Pgo+Pj4+IElkcyBhcmUgc3Rv
+cmVkIGluIHRoZSBwYXJlbnQgdXNlciBuYW1lc3BhY2UuIFRoZXNlIGlkcyBhcmUgdmFsaWQgb25s
+eQo+Pj4+IGluc2lkZQo+Pj4+IHRoaXMgdXNlciBuYW1lc3BhY2UuIFRoZSB1c2VyIGNhbiByZXRy
+aWV2ZSB0aGVzZSBpZHMgdmlhIGEgbmV3IG5ldGxpbmsKPj4+PiBtZXNzYWdlcywKPj4+PiBidXQg
+b25seSBpZiBwZWVyIG5ldG5zIGFyZSBpbiB0aGUgc2FtZSB1c2VyIG5hbWVzcGFjZS4KPj4+Cj4+
+Pgo+Pj4gV2hhdCBhYm91dCB0aGUgcGFyZW50IC8gYW5jZXN0b3JzIG9mIHRoZSBvd25pbmcgdXNl
+cm5zPyAgQ2FuIHByb2Nlc3Nlcwo+Pj4gaW4gdGhvc2UgdXNlcm5zZXMgc2VlIGFueSBmb3JtIG9m
+IG5ldG5zIGlkPwo+Pgo+PiBXaXRoIHRoaXMgc2VyaWUgbm8uIEknbSBub3Qgc3VyZSBpZiBhbmNl
+c3RvcnMgcmVhbGx5IG5lZWRzIHRvIGJlIGFibGUgdG8KPj4gZ2V0IHRoZXNlIGlkcy4gV2hhdCBp
+cyB5b3VyIG9waW5pb24/Cj4KPiBJIG1pZ2h0IGJlIG1pc3Npbmcgc29tZSBjb25zaWRlcmF0aW9u
+IGhlcmUsIGJ1dCBJIHdvdWxkIGhvcGUgdGhhdCBpcAo+IGxpbmsgd291bGQgd29yayBjb3JyZWN0
+bHkgaWYgSSBoYXZlIGEgdmV0aCBpbnRlcmZhY2Ugc2hhcmVkIHdpdGggYQo+IG5ldG5zIHRoYXQn
+cyBpbiBhIGNoaWxkIHVzZXJucy4KTm8sIHlvdSdyZSByaWdodC4gV2lsbCBzZW5kIGEgdjMuCl9f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMg
+bWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6
+Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
