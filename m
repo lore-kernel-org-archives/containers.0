@@ -1,15 +1,14 @@
-From: Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [RFC PATCH net-next v2 0/5] netns: allow to identify peer netns
-Date: Fri, 26 Sep 2014 15:40:27 +0200
-Message-ID: <54256CCB.4000709@6wind.com>
-References: <1411478430-4989-1-git-send-email-nicolas.dichtel@6wind.com>	<CAHA+R7NnBJ=T3sukzzp-OD2am1nd318XbrXCX84LfSL=nu9ojw@mail.gmail.com>	<54228D87.3070309@6wind.com>	<CAHA+R7NfJYzCsZx0E9YVXKVCQbCm_thPSi+80tix8Z9nVA82Ug@mail.gmail.com>	<5422F0F4.6000709@6wind.com>	<CAHA+R7Ot2kLHb+ne5AW3bFNc87qkFOiEHEyDh9sFrsHqXgrY3g@mail.gmail.com>	<5423D80B.9060500@6wind.com>
-	<CAHA+R7Ooyam2L-QfP-TjMEZEOqrQcQDxYiebmw760kgEji4G=g@mail.gmail.com>
-Reply-To: nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org
+Date: Fri, 26 Sep 2014 11:10:31 -0700
+Message-ID: <87ppei45ig.fsf@x220.int.ebiederm.org>
+References: <1411478430-4989-1-git-send-email-nicolas.dichtel@6wind.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; Format="flowed"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAHA+R7Ooyam2L-QfP-TjMEZEOqrQcQDxYiebmw760kgEji4G=g@mail.gmail.com>
+In-Reply-To: <1411478430-4989-1-git-send-email-nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
+	(Nicolas Dichtel's message of "Tue, 23 Sep 2014 15:20:25 +0200")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,64 +18,66 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cong Wang <cwang-xCSkyg8dI+0RB7SZvlqPiA@public.gmane.org>
-Cc: netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Stephen Hemminger <stephen-OTpzqLSitTUnbdJkjeBofR2eb7JE58TQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+To: Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org, stephen-OTpzqLSitTUnbdJkjeBofR2eb7JE58TQ@public.gmane.org, Cong Wang <cwang-xCSkyg8dI+0RB7SZvlqPiA@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-TGUgMjYvMDkvMjAxNCAwNDowOSwgQ29uZyBXYW5nIGEgw6ljcml0IDoKPiBPbiBUaHUsIFNlcCAy
-NSwgMjAxNCBhdCAxOjUzIEFNLCBOaWNvbGFzIERpY2h0ZWwKPiA8bmljb2xhcy5kaWNodGVsQDZ3
-aW5kLmNvbT4gd3JvdGU6Cj4+IExlIDI0LzA5LzIwMTQgMTg6NDUsIENvbmcgV2FuZyBhIMOpY3Jp
-dCA6Cj4+Pgo+Pj4gT24gV2VkLCBTZXAgMjQsIDIwMTQgYXQgOToyNyBBTSwgTmljb2xhcyBEaWNo
-dGVsCj4+PiA8bmljb2xhcy5kaWNodGVsQDZ3aW5kLmNvbT4gd3JvdGU6Cj4+Pj4KPj4+PiBOb3cg
-aW5mb3JtYXRpb25zIGdvdCB3aXRoICdpcCBsaW5rJyBhcmUgd3JvbmcgYW5kIGluY29tcGxldGU6
-Cj4+Pj4gICAgIC0gdGhlIGxpbmsgZGV2IGlzIG5vdyB0dW5sMCBpbnN0ZWFkIG9mIGV0aDAsIGJl
-Y2F1c2Ugd2Ugb25seSBnb3QgYW4KPj4+PiBpZmluZGV4Cj4+Pj4gICAgICAgZnJvbSB0aGUga2Vy
-bmVsIHdpdGhvdXQgYW55IG5ldG5zIGluZm9ybWF0aW9ucy4KPj4+Cj4+Pgo+Pj4gVGhpcyBpcyBu
-b3QgbmV3LCBtYWN2bGFuIGhhcyB0aGUgc2FtZSBwcm9ibGVtLiBUaGlzIGlzIHdoeSBJIHNhaWQK
-Pj4+IGl0IGlzIG1vc3RseSBhIGRpc3BsYXkgcHJvYmxlbSwgbWF5YmUganVzdCBtYXJrIHRoZSBp
-ZmluZGV4IGFzIC0xIG9yCj4+PiBzb21ldGhpbmcgd2hlbiBpdCBpcyBub3QgaW4gdGhpcyBuZXRu
-cy4gQXQgbGVhc3QgSSBkb24ndCBleHBlY3QgdGhlIGlubmVyCj4+PiBuZXRucyBrbm93IGFueXRo
-aW5nIG91dHNpZGUsIGFuZCBJIGRvbid0IHRoaW5rIEkgYW0gdGhlIG9ubHkgb25lIHVzaW5nCj4+
-PiBuZXRucyBpbiB0aGlzIHdheS4KPj4KPj4gSSB1bmRlcnN0YW5kIHlvdXIgcG9pbnQgYnV0IHRo
-ZXJlIGlzIHNldmVyYWwgdXNlIG9mIG5ldG5zLiBOZXRucyBjYW4gYmUgdXNlZAo+PiBhbHNvIHRv
-IGluc3RhbnRpYXRlIHZpcnR1YWwgcm91dGVycy4gSW4gdGhpcyBjYXNlLCBhZG1pbmlzdHJhdG9y
-cyBvciBkYWVtb25zCj4+IG5lZWQgdG8gYmUgYWJsZSB0byBtb25pdG9yIGFuZCBkdW1wIHRoZSBj
-b25maWd1cmF0aW9uIG9uIGFsbCBuZXRucwo+PiAocGFydGljdWxhcmx5IGJlZWluZyBhYmxlIHRv
-IGlkZW50aWZ5IGZ1bGx5IHgtbmV0bnMgaW50ZXJmYWNlcykuIFdlIHN0YXJ0IHRvCj4+IGRpc2N1
-c3MgdGhpcyBpbiBvbmUgb2YgdGhlIHR3byB0aHJlYWQgcG9pbnRlZCBpbiBteSBjb3ZlciBsZXR0
-ZXIgYW5kIGdldCB0aGUKPj4gY29uY2x1c2lvbiB0aGF0IGNoZWNraW5nIHVzZXIgbnMgaXMgYSBn
-b29kIHdheSB0byBrbm93IGlmIGFuIGlkIHNob3VsZCBiZQo+PiBkaXNjbG9zZWQgb3Igbm90IGZv
-ciBhIHBlZXIgbmV0bnMuCj4KPiBUaGVuIHlvdSBhcmUgbGVha2luZyBpbmZvcm1hdGlvbiwgdGhp
-cyBicmVha3MgaXNvbGF0aW9uLgo+Cj4+IENhbiB5b3UgZGVzY3JpYmUgeW91ciB1c2UgY2FzZT8K
-Pgo+IFllcywgdG9vIHNpbXBsZTogaXNvbGF0aW9uIG5ldHdvcmtpbmcsIGRpZmZlcmVudCBuZXRu
-cydzIGRvbid0IHNlZSBlYWNoIG90aGVyCj4gKGluY2x1ZGluZyBhbnl0aGluZyBpbnNpZGUpIGFu
-ZCBvbmx5IGNvbW11bmljYXRlIHZpYSB2ZXRoLgpJZiB5b3UgYXJlIGEgcHJpdmlsZWdlZCB1c2Vy
-IGFuZCB5b3UgYXJlIGFibGUgdG8gYWNjZXNzIGEgcGVlciBuZXRucyAobW92ZSBhbgppbnRlcmZh
-Y2UgaW50byB0aGlzIHBlZXIgbmV0bnMsIG1vdmUgYW4gaW50ZXJmYWNlIGZyb20gdGhpcyBwZWVy
-IG5ldG5zIHRvIHlvdXIKb3duIG5ldG5zKSwgSSBkb24ndCBzZWUgYW55IHJlYXNvbiB0byBub3Qg
-YmVlaW5nIGFibGUgdG8gZ2V0IGluZm9ybWF0aW9uIGFib3V0CnRoaXMgcGVlciBuZXRucyAoeW91
-IGFyZSBhbHJlYWR5IGEgcHJpdmlsZWdlZCB1c2VyIGluIGJvdGggbmV0bnMpLgpJZiB5b3Ugd2Fu
-dCB0byBpc29sYXRlIHRoaXMgcGVlciBuZXRucyAoSSB0aGluayB5b3UgY2FsbCBpdCAiaW5uZXIg
-bmV0bnMiKSwgeW91CmhhdmUgdG8gY3JlYXRlIGEgbmV3IHVzZXIgbnMgZm9yIHRoaXMgbmV0bnMs
-IGhlbmNlIGEgcHJpdmlsZWdlZCB1c2VyIGludG8gdGhpcwpwZWVyIG5ldG5zIHdpbGwgbm90IGJl
-IGFibGUgdG8gYWN0IGluIHlvdXIgb3duIG5ldG5zLiBBbmQgd2l0aCB0aGlzIHNjZW5hcmlvIGFu
-ZApteSBwYXRjaGVzLCB0aGlzIHByaXZpbGVnZWQgdXNlciB3aWxsIG5vdCBiZSBhYmxlIHRvIGdl
-dCBhbiBpZC4gSXNvbGF0aW9uIGlzCnByZXNlcnZlZC4KSG93IGRvIHlvdSBwcmVzZXJ2ZWQgaXQg
-aW4geW91ciBzY2VuYXJpbz8KCj4KPgo+PiBJZiB5b3Ugb25seSBwbGF5IHdpdGggbmV0bnMsIHlv
-dSBtYXkgd2FudCB0byBtb25pdG9yIGFsbCBhY3RpdmllcyBpbiBhbGwKPj4gbmV0bnMKPj4gKHRo
-aXMgaXMgYWxyZWFkeSBwb3NzaWJsZSkgYW5kIGJlZWluZyBhYmxlIHRvIGxpbmsgaW5mb3JtYXRp
-b24gYmV0d2VlbiBuZXRucwo+PiAodGhpcyBpcyB3aGF0IEknbSB0cnlpbmcgdG8gc29sdmUpLgo+
-Cj4KPiBObywgSSBkb24ndCB3YW50IHRvIG1vbml0b3IgYW55dGhpbmcuIEV2ZW4gaWYgSSB3YW50
-ZWQsIEkgd291bGQganVzdCBzdGFydCBvbmUKPiBkYWVtb24gaW4gZWFjaCBuZXRucyBpbnN0ZWFk
-IG9mIG9uZSBmb3IgYWxsLgpPayB5b3UgZG9uJ3Qgd2FudCwgYnV0IHNvbWUgb3RoZXIgcGVvcGxl
-IChub3Qgb25seSBtZSkgd2FudCBpdCEgQW5kIGhhdmluZyBvbmUKZGFlbW9uIHBlciBuZXRucyBk
-b2VzIG5vdCBzY2FsZTogdGhlcmUgYXJlIHNjZW5hcmlpIHdpdGggdGhvdXNhbmQgbmV0bnMgd2hp
-Y2gKYXJlIGR5bmFtaWNhbGx5IGNyZWF0ZWQgYW5kIGRlbGV0ZWQuCgo+Cj4gT24gdGhlIG90aGVy
-IGhhbmQsIHdoeSBub3QgZXhjaGFuZ2UgdGhlIGNvbmZpZ3VyYXRpb24gdmlhIHZldGgKPiBiZXR3
-ZWVuIGRpZmZlcmVudCBuZXRucz8gVGhlcmUgYXJlIG1hbnkgd2F5cyB0byBkbyBzbyB3aXRoIFRD
-UCBIVFRQIGV0Yy4KPiBUaGlzIGRvZXNuJ3QgaGF2ZSB0byBiZSBzb2x2ZWQgaW4ga2VybmVsLgo+
-ClRoZSBzdGFuZGFyZCB3YXkgd2l0aCBsaW51eCB0byBtb25pdG9yIG5ldHdvcmsgY29uZmlndXJh
-dGlvbiBpcyBuZXRsaW5rLgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZv
-dW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xp
-c3RpbmZvL2NvbnRhaW5lcnM=
+Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org> writes:
+
+> The goal of this serie is to be able to multicast netlink messages with an
+> attribute that identify a peer netns.
+> This is needed by the userland to interpret some informations contained in
+> netlink messages (like IFLA_LINK value, but also some other attributes in case
+> of x-netns netdevice (see also
+> http://thread.gmane.org/gmane.linux.network/315933/focus=316064 and
+> http://thread.gmane.org/gmane.linux.kernel.containers/28301/focus=4239)).
+
+I want say that the problem addressed by patch 3/5 of this series is a
+fundamentally valid problem.  We have network objects spanning network
+namespaces and it would be very nice to be able to talk about them in
+netlink, and file descriptors are too local and argubably too heavy
+weight for netlink quires and especially for netlink broadcast messages.
+
+Furthermore the concept of ineternal concept of peernet2id seems valid.
+
+However what you do not address is a way for CRIU (aka process
+migration) to be able to restore these ids after process migration.
+Going farther it looks like you are actively breaking process migration
+at this time, making this set of patches a no-go.
+
+When adding a new form of namespace id CRIU patches are just about
+as necessary as iproute patches.
+
+> Ids are stored in the parent user namespace. These ids are valid only inside
+> this user namespace. The user can retrieve these ids via a new netlink messages,
+> but only if peer netns are in the same user namespace.
+
+That does not describe what you have actually implemented in the
+patches.
+
+I see two ways to go with this.
+
+- A per network namespace table to that you can store ids for ``peer''
+  network namespaces.  The table would need to be populated manually by
+  the likes of ip netns add.
+
+  That flips the order of assignment and makes this idea solid.
+
+  Unfortunately in the case of a fully referencing mesh of N network
+  namespaces such a mesh winds up taking O(N^2) space, which seems
+  undesirable.
+
+- Add a netlink attribute that says this network element is in a peer
+  network namespace.
+
+  Add a unicast query message that let's you ask if the remote
+  end of a tunnel is in a network namespace specified by file
+  descriptor.
+
+I personally lean towards the second version as it is fundamentally
+simpler, and generally scales better, and the visibility controls are
+the existing visibility controls.  The only downside is it requires
+a query after receiving a netlink broadcast message for the times that
+we care.
+
+Eric
