@@ -1,15 +1,17 @@
-From: Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC PATCH net-next v2 0/5] netns: allow to identify peer netns
-Date: Mon, 29 Sep 2014 14:06:38 +0200
-Message-ID: <54294B4E.70501__21156.0600124814$1411992426$gmane$org@6wind.com>
-References: <1411478430-4989-1-git-send-email-nicolas.dichtel@6wind.com>	<87ppei45ig.fsf@x220.int.ebiederm.org>	<CALCETrX5e0cp4QFCv1eAqR1hjoROU9Rh=cRos9U35DaR-py3Eg@mail.gmail.com>
-	<87y4t61a6v.fsf@x220.int.ebiederm.org>
-Reply-To: nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCHv3 2/2] /proc/PID/status: show all sets of pid according
+	to ns
+Date: Mon, 29 Sep 2014 16:00:10 +0200
+Message-ID: <20140929140010.GA20069@mail.hallyn.com>
+References: <1411552827-31056-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<1411552827-31056-3-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<5871495633F38949900D2BF2DC04883E5C7377@G08CNEXMBPEKD02.g08.fujitsu.local>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; Format="flowed"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87y4t61a6v.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <5871495633F38949900D2BF2DC04883E5C7377-ZEd+hNNJ6a5ZYpXjqAkB5jz3u5zwRJJDAzI0kPv9QBlmR6Xm/wNWPw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,95 +21,72 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Cc: Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Stephen Hemminger <stephen-OTpzqLSitTUnbdJkjeBofR2eb7JE58TQ@public.gmane.org>, Cong Wang <cwang-xCSkyg8dI+0RB7SZvlqPiA@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+To: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-TGUgMjYvMDkvMjAxNCAyMDo1NywgRXJpYyBXLiBCaWVkZXJtYW4gYSDDqWNyaXQgOgo+IEFuZHkg
-THV0b21pcnNraSA8bHV0b0BhbWFjYXBpdGFsLm5ldD4gd3JpdGVzOgo+Cj4+IE9uIEZyaSwgU2Vw
-IDI2LCAyMDE0IGF0IDExOjEwIEFNLCBFcmljIFcuIEJpZWRlcm1hbgo+PiA8ZWJpZWRlcm1AeG1p
-c3Npb24uY29tPiB3cm90ZToKPj4+IE5pY29sYXMgRGljaHRlbCA8bmljb2xhcy5kaWNodGVsQDZ3
-aW5kLmNvbT4gd3JpdGVzOgo+Pj4KPj4+PiBUaGUgZ29hbCBvZiB0aGlzIHNlcmllIGlzIHRvIGJl
-IGFibGUgdG8gbXVsdGljYXN0IG5ldGxpbmsgbWVzc2FnZXMgd2l0aCBhbgo+Pj4+IGF0dHJpYnV0
-ZSB0aGF0IGlkZW50aWZ5IGEgcGVlciBuZXRucy4KPj4+PiBUaGlzIGlzIG5lZWRlZCBieSB0aGUg
-dXNlcmxhbmQgdG8gaW50ZXJwcmV0IHNvbWUgaW5mb3JtYXRpb25zIGNvbnRhaW5lZCBpbgo+Pj4+
-IG5ldGxpbmsgbWVzc2FnZXMgKGxpa2UgSUZMQV9MSU5LIHZhbHVlLCBidXQgYWxzbyBzb21lIG90
-aGVyIGF0dHJpYnV0ZXMgaW4gY2FzZQo+Pj4+IG9mIHgtbmV0bnMgbmV0ZGV2aWNlIChzZWUgYWxz
-bwo+Pj4+IGh0dHA6Ly90aHJlYWQuZ21hbmUub3JnL2dtYW5lLmxpbnV4Lm5ldHdvcmsvMzE1OTMz
-L2ZvY3VzPTMxNjA2NCBhbmQKPj4+PiBodHRwOi8vdGhyZWFkLmdtYW5lLm9yZy9nbWFuZS5saW51
-eC5rZXJuZWwuY29udGFpbmVycy8yODMwMS9mb2N1cz00MjM5KSkuCj4+Pgo+Pj4gSSB3YW50IHNh
-eSB0aGF0IHRoZSBwcm9ibGVtIGFkZHJlc3NlZCBieSBwYXRjaCAzLzUgb2YgdGhpcyBzZXJpZXMg
-aXMgYQo+Pj4gZnVuZGFtZW50YWxseSB2YWxpZCBwcm9ibGVtLiAgV2UgaGF2ZSBuZXR3b3JrIG9i
-amVjdHMgc3Bhbm5pbmcgbmV0d29yawo+Pj4gbmFtZXNwYWNlcyBhbmQgaXQgd291bGQgYmUgdmVy
-eSBuaWNlIHRvIGJlIGFibGUgdG8gdGFsayBhYm91dCB0aGVtIGluCj4+PiBuZXRsaW5rLCBhbmQg
-ZmlsZSBkZXNjcmlwdG9ycyBhcmUgdG9vIGxvY2FsIGFuZCBhcmd1YmFibHkgdG9vIGhlYXZ5Cj4+
-PiB3ZWlnaHQgZm9yIG5ldGxpbmsgcXVpcmVzIGFuZCBlc3BlY2lhbGx5IGZvciBuZXRsaW5rIGJy
-b2FkY2FzdCBtZXNzYWdlcy4KPj4+Cj4+PiBGdXJ0aGVybW9yZSB0aGUgY29uY2VwdCBvZiBpbmV0
-ZXJuYWwgY29uY2VwdCBvZiBwZWVybmV0MmlkIHNlZW1zIHZhbGlkLgo+Pj4KPj4+IEhvd2V2ZXIg
-d2hhdCB5b3UgZG8gbm90IGFkZHJlc3MgaXMgYSB3YXkgZm9yIENSSVUgKGFrYSBwcm9jZXNzCj4+
-PiBtaWdyYXRpb24pIHRvIGJlIGFibGUgdG8gcmVzdG9yZSB0aGVzZSBpZHMgYWZ0ZXIgcHJvY2Vz
-cyBtaWdyYXRpb24uCj4+PiBHb2luZyBmYXJ0aGVyIGl0IGxvb2tzIGxpa2UgeW91IGFyZSBhY3Rp
-dmVseSBicmVha2luZyBwcm9jZXNzIG1pZ3JhdGlvbgo+Pj4gYXQgdGhpcyB0aW1lLCBtYWtpbmcg
-dGhpcyBzZXQgb2YgcGF0Y2hlcyBhIG5vLWdvLgpPaywgSSB3aWxsIGxvb2sgbW9yZSBkZWVwbHkg
-aW50byBDUklVLgoKPj4+Cj4+PiBXaGVuIGFkZGluZyBhIG5ldyBmb3JtIG9mIG5hbWVzcGFjZSBp
-ZCBDUklVIHBhdGNoZXMgYXJlIGp1c3QgYWJvdXQKPj4+IGFzIG5lY2Vzc2FyeSBhcyBpcHJvdXRl
-IHBhdGNoZXMuCk5vdGVkLgoKPj4+Cj4+Pj4gSWRzIGFyZSBzdG9yZWQgaW4gdGhlIHBhcmVudCB1
-c2VyIG5hbWVzcGFjZS4gVGhlc2UgaWRzIGFyZSB2YWxpZCBvbmx5IGluc2lkZQo+Pj4+IHRoaXMg
-dXNlciBuYW1lc3BhY2UuIFRoZSB1c2VyIGNhbiByZXRyaWV2ZSB0aGVzZSBpZHMgdmlhIGEgbmV3
-IG5ldGxpbmsgbWVzc2FnZXMsCj4+Pj4gYnV0IG9ubHkgaWYgcGVlciBuZXRucyBhcmUgaW4gdGhl
-IHNhbWUgdXNlciBuYW1lc3BhY2UuCj4+Pgo+Pj4gVGhhdCBkb2VzIG5vdCBkZXNjcmliZSB3aGF0
-IHlvdSBoYXZlIGFjdHVhbGx5IGltcGxlbWVudGVkIGluIHRoZQo+Pj4gcGF0Y2hlcy4KPj4+Cj4+
-PiBJIHNlZSB0d28gd2F5cyB0byBnbyB3aXRoIHRoaXMuCj4+Pgo+Pj4gLSBBIHBlciBuZXR3b3Jr
-IG5hbWVzcGFjZSB0YWJsZSB0byB0aGF0IHlvdSBjYW4gc3RvcmUgaWRzIGZvciBgYHBlZXInJwo+
-Pj4gICAgbmV0d29yayBuYW1lc3BhY2VzLiAgVGhlIHRhYmxlIHdvdWxkIG5lZWQgdG8gYmUgcG9w
-dWxhdGVkIG1hbnVhbGx5IGJ5Cj4+PiAgICB0aGUgbGlrZXMgb2YgaXAgbmV0bnMgYWRkLgo+Pj4K
-Pj4+ICAgIFRoYXQgZmxpcHMgdGhlIG9yZGVyIG9mIGFzc2lnbm1lbnQgYW5kIG1ha2VzIHRoaXMg
-aWRlYSBzb2xpZC4KSSBoYXZlIGEgcHJlZmVyZW5jZSBmb3IgdGhpcyBzb2x1dGlvbiwgYmVjYXVz
-ZSBpdCBhbGxvd3MgdG8gaGF2ZSBhIGZ1bGwKYnJvYWRjYXN0IG1lc3NhZ2VzLiBXaGVuIHlvdSBo
-YXZlIGEgbG90IG9mIG5ldHdvcmsgaW50ZXJmYWNlcyAoPiAxMGspLAppdCBzYXZlcyBhIGxvdCBv
-ZiB0aW1lIHRvIGF2b2lkIGFub3RoZXIgcmVxdWVzdCB0byBnZXQgYWxsIGluZm9ybWF0aW9ucy4K
-Cj4+Pgo+Pj4gICAgVW5mb3J0dW5hdGVseSBpbiB0aGUgY2FzZSBvZiBhIGZ1bGx5IHJlZmVyZW5j
-aW5nIG1lc2ggb2YgTiBuZXR3b3JrCj4+PiAgICBuYW1lc3BhY2VzIHN1Y2ggYSBtZXNoIHdpbmRz
-IHVwIHRha2luZyBPKE5eMikgc3BhY2UsIHdoaWNoIHNlZW1zCj4+PiAgICB1bmRlc2lyYWJsZS4K
-TWVtb3J5IGNvbnN1bXB0aW9uIHZzIHBlcmZvcm1hbmNlcyA7LSkKSW4gZmFjdCwgd2hlbiB5b3Ug
-aGF2ZSBhIGxvdCBvZiBuZXRucywgeW91IGFscmVhZHkgc2hvdWxkIGhhdmUgc29tZSBtZW1vcnkK
-YXZhaWxhYmxlIChhdCBsZWFzdCBOIGxvIGludGVyZmFjZXMgKyBOIGludGVyZmFjZXMgKHZldGgg
-b3IgYSB4LW5ldG5zCmludGVyZmFjZSkpLiBJJ20gbm90IGNvbnZpbmNlZCB0aGF0IHRoaXMgaXMg
-cmVhbGx5IGFuIG9ic3RhY2xlLgoKPj4+Cj4+PiAtIEFkZCBhIG5ldGxpbmsgYXR0cmlidXRlIHRo
-YXQgc2F5cyB0aGlzIG5ldHdvcmsgZWxlbWVudCBpcyBpbiBhIHBlZXIKPj4+ICAgIG5ldHdvcmsg
-bmFtZXNwYWNlLgo+Pj4KPj4+ICAgIEFkZCBhIHVuaWNhc3QgcXVlcnkgbWVzc2FnZSB0aGF0IGxl
-dCdzIHlvdSBhc2sgaWYgdGhlIHJlbW90ZQo+Pj4gICAgZW5kIG9mIGEgdHVubmVsIGlzIGluIGEg
-bmV0d29yayBuYW1lc3BhY2Ugc3BlY2lmaWVkIGJ5IGZpbGUKPj4+ICAgIGRlc2NyaXB0b3IuCj4+
-Pgo+Pj4gSSBwZXJzb25hbGx5IGxlYW4gdG93YXJkcyB0aGUgc2Vjb25kIHZlcnNpb24gYXMgaXQg
-aXMgZnVuZGFtZW50YWxseQo+Pj4gc2ltcGxlciwgYW5kIGdlbmVyYWxseSBzY2FsZXMgYmV0dGVy
-LCBhbmQgdGhlIHZpc2liaWxpdHkgY29udHJvbHMgYXJlCj4+PiB0aGUgZXhpc3RpbmcgdmlzaWJp
-bGl0eSBjb250cm9scy4gIFRoZSBvbmx5IGRvd25zaWRlIGlzIGl0IHJlcXVpcmVzCj4+PiBhIHF1
-ZXJ5IGFmdGVyIHJlY2VpdmluZyBhIG5ldGxpbmsgYnJvYWRjYXN0IG1lc3NhZ2UgZm9yIHRoZSB0
-aW1lcyB0aGF0Cj4+PiB3ZSBjYXJlLgo+Pgo+PiBUaGUgZG93bnNpZGUgb2YgdGhhdCBhcHByb2Fj
-aCwgYW5kIGFsbCB0aGUgc2ltaWxhciBrY21wIHN0dWZmLCBpcyB0aGF0Cj4+IGl0IHNjYWxlcyBw
-b29ybHkgZm9yIGFwcGxpY2F0aW9ucyB1c2luZyBpdC4gIFRoaXMgaXMgcHJvYmFibHkgbm90IHRo
-ZQo+PiBlbmQgb2YgdGhlIHdvcmxkLCBidXQgaXQncyBub3QgaWRlYWwuCj4KPiBBZ3JlZWQsIHRo
-ZSBlZmZpY2llbmN5IGlzIG5vdCBpZGVhbCBhbmQgdGhlcmUgaXMgcGxlbnR5IG9mIHJvb20gZm9y
-Cj4gb3B0aW1pemF0aW9uLiAgV2UgY291bGQgY2VydGFpbmx5IGFkb3B0IHNvbWUgb2Yga2NtcHMg
-b3JkZXJpbmcKPiBpbmZyYXN0cnVjdHVyZSB0byBtYWtlIGl0IHN1Y2sgbGVzcywgb3IgZXZlbiBw
-b3RlbnRpYWxseSB3b3JrIG91dCBob3cKPiB0byByZXR1cm4gYSBmaWxlIGRlc2NyaXB0b3IgdG8g
-dGhlIG5ldHdvcmsgbmFtZXNwYWNlIGluIHF1ZXN0aW9uLgo+Cj4gVGhlIGtleSBpbnNpZ2h0IG9m
-IG15IHNlY29uZCBwcm9wb3NhbCBpcyB0aGF0IHdlIGNhbiBnZXQgb3V0IG9mIHRoZQo+IGJyb2Fk
-Y2FzdCBtZXNzYWdlIGJ1c2luZXNzLCBhbmQgb25seSBjYXJlIGFib3V0IHRoZSByZW1vdGUgbmFt
-ZXNwYWNlIGZvcgo+IHVuaWNhc3QgbWVzc2FnZXMuICBQdXR0aW5nIHRoZSB3b3JrIGluIGFuIGlu
-ZnJlcXVlbnRseSB1c2VkIHNsb3cgcGF0aAo+IGluc3RlYWQgb2YgYSBjb21wYXJpdGl2ZWx5IGNv
-bW1vbiBwYXRoIGdpdmVzIHVzIG11Y2ggbW9yZSBmcmVlZG9tIGluCj4gdGhlIGltcGxlbWVudGF0
-aW9uLgpJIHRoaW5rIGl0J3MgYmV0dGVyIHRvIGhhdmUgYSBmdWxsIG5ldGxpbmsgbWVzc2FnZXMs
-IGluc3RlYWQgYSBwYXJ0aWFsIG9uZS4KVGhlcmUgaXMgYWxyZWFkeSBhIGxvdCBvZiBhdHRyaWJ1
-dGVzIGFkZGVkIGZvciBlYWNoIHJ0bmwgaW50ZXJmYWNlIG1lc3NhZ2VzIHRvCmJlIHN1cmUgdG8g
-ZGVzY3JpYmUgYWxsIHBhcmFtZXRlcnMgb2YgdGhlc2UgaW50ZXJmYWNlcy4KQW5kIGlmIHRoZSB1
-c2VyIGRvbid0IGNhcmUgYWJvdXQgaWRzICh1c2VyIGhhcyBub3Qgc2V0IGFueSBpZCB3aXRoIGlw
-cm91dGUyKSwKd2UgY2FuIGp1c3QgYWRkIHRoZSBzYW1lIGF0dHJpYnV0ZSB3aXRoIGlkIDAgKGxl
-dCdzIHNheSBpdCdzIGEgcmVzZXJ2ZWQgaWQpIHRvCmluZGljYXRlIHRoYXQgdGhlIGxpbmsgcGFy
-dCBvZiB0aGlzIGludGVyZmFjZSBpcyBpbiBhbm90aGVyIG5ldG5zLgoKVGhlIGdyZWF0IGJlbmVm
-aXQgb2YgeW91ciBmaXJzdCBwcm9wb3NhbCBpcyB0aGF0IHRoZSBpZHMgYXJlIHNldCBieSB0aGUK
-dXNlcnNwYWNlIGFuZCB0aHVzIGl0IGFsbG93cyBhIGhpZ2ggZmxleGliaWxpdHkuCgpXb3VsZCB5
-b3UgYWNjZXB0IGEgcGF0Y2ggdGhhdCBpbXBsZW1lbnRzIHRoaXMgZmlyc3Qgc29sdXRpb24/Cl9f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMg
-bWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6
-Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+Quoting Chen, Hanxiao (chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
+> Hi,
+> 
+> > -----Original Message-----
+> > From: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> > [mailto:containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org] On Behalf Of Chen
+> > Hanxiao
+> > Sent: Wednesday, September 24, 2014 6:00 PM
+> > To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org; linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> > Cc: Richard Weinberger; Serge Hallyn; Oleg Nesterov; Mateusz Guzik; David Howells;
+> > Eric W. Biederman
+> > Subject: [PATCHv3 2/2] /proc/PID/status: show all sets of pid according to ns
+> > 
+> > If some issues occurred inside a container guest, host user
+> > could not know which process is in trouble just by guest pid:
+> > the users of container guest only knew the pid inside containers.
+> > This will bring obstacle for trouble shooting.
+> > 
+> > This patch adds four fields: NStgid, NSpid, NSpgid and NSsid:
+> > a) In init_pid_ns, nothing changed;
+> > 
+> > b) In one pidns, will tell the pid inside containers:
+> > NStgid:	21776   5       1
+> > NSpid:  21776   5       1
+> > NSpgid:	21776   5       1
+> > NSsid:  21729   1       0
+> > ** Process id is 21776 in level 0, 5 in level 1, 1 in level 2.
+> > 
+> > c) If pidns is nested, it depends on which pidns are you in.
+> > NStgid: 5       1
+> > NSpid:  5       1
+> > NSpgid: 5       1
+> > NSsid:  1       0
+> > ** Views from level 1
+> > 
+> 
+> This patch is simple, useful and safe.
+> But currently there is not any feedbacks.
+> 
+> Any comments or ideas? 
+
+Thanks, Chen.  The code looks fine.  My concern is that you are
+exposing information which cannot be checkpointed and restarted.
+In particular, if I'm inside a nested container, so I'm in pidns
+level 3, then my own NSpid info, when I read it, will show the
+pids at parent namespaces.  If I'm restarted at the third pidns
+level, only the one pid can be restored.
+
+Now it may be fair to say "this is proc, and proc and sys show
+host info which is not containerized and cannot be checkpointed
+and restarted, deal with it."  But I'm not sure.
+
+There are two ways you could deal with this.  One would be to
+show the nspids only to the level of the reader of the file - but
+I don't think you need to do that.  I think you're better off
+simply showing the pids up to the level of the struct pid for
+the mounter of the procfs.  So if I'm inside container c2 which
+is inside container c1, my own /proc will only show pids which
+are valid in c2 (and any child namespaces), while the /proc
+mounted in c1 will show pids valid in c1 and c2 (and any children),
+but not those in the init_pid_ns.  It's then just up to the
+container administrators to make sure that c2 cannot see c1's
+/proc to confuse itself and confuddle checkpoint-restart
+
+-serge
