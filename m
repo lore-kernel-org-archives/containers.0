@@ -1,20 +1,12 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCHv3 2/2] /proc/PID/status: show all sets of pid according
-	to ns
-Date: Tue, 30 Sep 2014 18:07:55 +0200
-Message-ID: <20140930160755.GB6838@mail.hallyn.com>
-References: <1411552827-31056-1-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<1411552827-31056-3-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<5871495633F38949900D2BF2DC04883E5C7377@G08CNEXMBPEKD02.g08.fujitsu.local>
-	<20140929140010.GA20069@mail.hallyn.com>
-	<5871495633F38949900D2BF2DC04883E5CF0D5@G08CNEXMBPEKD02.g08.fujitsu.local>
-	<20140930160549.GA6838@mail.hallyn.com>
+From: =?windows-1251?B?zvHo7y3p7vHg9ODy?= <vasya.tsurikov-JGs/UdohzUI@public.gmane.org>
+Subject: =?windows-1251?B?ID0gwu3o7ODt6P4g8+/w4OLr//755ezzID0g?=
+Date: Tue, 30 Sep 2014 10:38:30 +0400
+Message-ID: <20140930161112.EC40FB06@mail.linuxfoundation.org>
+Reply-To: =?windows-1251?B?zvHo7y3p7vHg9ODy?= <vasya.tsurikov-JGs/UdohzUI@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1251"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20140930160549.GA6838-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,63 +16,27 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: info-un112uW6LsE@public.gmane.org, tegovud-fx+AEcjlHWY@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, buhgalter-6BsbgnTphTEvJsYlp49lxw@public.gmane.org, vikulin-CLH7srGzC5SHXe+LvDLADg@public.gmane.org, sysmail-q5Kw/nu8f7A+HpXMAQbUJA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Serge E. Hallyn (serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org):
-> Quoting Chen, Hanxiao (chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
-> > Hi,
-> > 
-> > > -----Original Message-----
-> > > From: Serge E. Hallyn [mailto:serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org]
-> > > Sent: Monday, September 29, 2014 10:00 PM
-> > > Subject: Re: [PATCHv3 2/2] /proc/PID/status: show all sets of pid according to
-> > > ns
-> > [snip]
-> > > > >
-> > > > > This patch adds four fields: NStgid, NSpid, NSpgid and NSsid:
-> > > > > a) In init_pid_ns, nothing changed;
-> > > > >
-> > > > > b) In one pidns, will tell the pid inside containers:
-> > > > > NStgid:	21776   5       1
-> > > > > NSpid:  21776   5       1
-> > > > > NSpgid:	21776   5       1
-> > > > > NSsid:  21729   1       0
-> > > > > ** Process id is 21776 in level 0, 5 in level 1, 1 in level 2.
-> > > > >
-> > > > > c) If pidns is nested, it depends on which pidns are you in.
-> > > > > NStgid: 5       1
-> > > > > NSpid:  5       1
-> > > > > NSpgid: 5       1
-> > > > > NSsid:  1       0
-> > > > > ** Views from level 1
-> > > > >
-> > > >
-> > > > This patch is simple, useful and safe.
-> > > > But currently there is not any feedbacks.
-> > > >
-> > > > Any comments or ideas?
-> > > 
-> > > Thanks, Chen.  The code looks fine.  My concern is that you are
-> > > exposing information which cannot be checkpointed and restarted.
-> > > In particular, if I'm inside a nested container, so I'm in pidns
-> > > level 3, then my own NSpid info, when I read it, will show the
-> > > pids at parent namespaces.  If I'm restarted at the third pidns
-> > > level, only the one pid can be restored.
-> > 
-> > If you're in level 3, read your own proc, only level 3's NSpid info
-> > will be shown. No parent namesapces info could be seen.
-> 
-> D'oh!  Sorry, I see, you're starting at ns->level.  And ns is the ns
-> of the proc mount, not the caller.  that looks good.
-> 
-> So
-> 
-> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-
-Also
-
-Tested-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-
-as I've tested this between a few containers.
+CgomI3gzQTE74OFvJiN4NDQ3O+hlIPEmI3g0NDU7JiMxMDE77PsgJiMxMDg5OyYjeDQzRDsmI3g0
+Mzg7JiN4NDM2OyYjMTAxO+3oJiN4NDRGOyYjMTYwO+0mI3g2MTvrJiMxMDg2OyYjeDQzMzvuJiN4
+NDMzO28mbmJzcDvh8CYjeDQzNTvsJiN4NDM1OyYjMTA4NTvoICYjMTA3NDsg8SYjMTA4NjsmIzEw
+NzQ7JiN4NDQwOyYjMTA3NzsmI3g0M0M75e0mI3g0M0Q7+3gmI3hBMDsmIzEyMTsmI3g2MzsmI3g0
+M0I7byYjMTA3NDsmI3g0Mzg7JiMxMTAzOyYjeDc4OyYjeDJFOwomI3gzMTs1MCAmI3g0MzQ7ZSYj
+MTA5MDsmIzk3OyYjeDQzQjv8JiMxMDg1O28mI3gyMDvo5+smIzEwODY75uXtJiN4NDNEO/smI3g0
+NDU7JiMxNjA7JiMxMDcyOyYjeDQzQjsmIzEwNzU7JiM5NTk7JiN4NzA76CYjMTA5MDvs7iYjeDQz
+Mjsg8SYjeDIwOyYjOTU5O+HwJiM5NzsmIzEwNzk7JiMxMDk0OyYjeDYxO+zoJiN4MjA7JiN4NDM0
+OyYjOTU5O+p5JiN4NDNDOyYjeDQzNTsmIzEwODU7JiN4NDRDOyYjMTA4MzviIOQmIzEwODM7/yAm
+IzEwNzM7JiN4Nzk7JiN4NDQ1O+MmI3g0MzA7JiN4NDNCOyYjMTA5MDsmIzEwNzc78OjoJiN4MkU7
+CiYjOTIyO+0mI3g0Mzg7JiMxMDc1O2EgJiN4MkQ7ICYjeDM2OyYjeDM0OzAg8SYjeDQ0MjtwJiN4
+MkU7ICYjeDQzODsgJiN4NDIxOyYjMTA0NDsgJiN4NjM7JiMzMjvkJiN4M0JGOyYjeDEzODsmIzEy
+MTsmIzEwODQ75SYjeDQzRDvyJiN4NjE7JiN4NDNDOyYjMTA4MDsmI3gyRTsKJiN4MzlBOyYjMTIx
+OyYjMTEyO/wmIzEwMTsmI3g0NDA7JiN4NDNFOyYjMTA4NDsmI3gyMDsmI3g0M0Y7JiMxMTE7ICZS
+aG87JiM5NTk7JiM5OTtj6CYjeDQzODssJiMzMjsmIzEwNzQ7Jm5ic3A7Jm9taWNyb247JiN4NDQ0
+OyYjMTA4MDvxIOgmI3g0M0I7JiMxMDgwOyAmIzEwODU7YSDkJiMxMTE7JiN4NDNDOyYjeDJFOwoK
+aHR0cDovL2w1MC5uYWxvZ292aWguY3hlbS5hNDMyMS5ydSAgCgpodHRwOi8vbDUwLm5hbG9nb3Zp
+aC5jeGVtLmE0MzIxLnJ1Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91
+bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlz
+dGluZm8vY29udGFpbmVycw==
