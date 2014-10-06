@@ -1,16 +1,14 @@
-From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH V5 08/13] sched: add a macro to ref all CLONE_NEW* flags
-Date: Mon, 6 Oct 2014 08:47:02 -0400
-Message-ID: <20141006124702.GW1992@madcap2.tricolour.ca>
-References: <cover.1412543112.git.rgb@redhat.com>
-	<958367f30fb7eddaa406487e63ec1889138ef54f.1412543112.git.rgb@redhat.com>
-	<5871495633F38949900D2BF2DC04883E5DABA4@G08CNEXMBPEKD02.g08.fujitsu.local>
+From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] sched: updated comments of CLONE_NEWNS
+Date: Mon, 6 Oct 2014 14:27:13 +0000
+Message-ID: <20141006142713.GA26187@ubuntumail>
+References: <1412587493-10547-1-git-send-email-chenhanxiao@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <5871495633F38949900D2BF2DC04883E5DABA4-ZEd+hNNJ6a5ZYpXjqAkB5jz3u5zwRJJDAzI0kPv9QBlmR6Xm/wNWPw@public.gmane.org>
+In-Reply-To: <1412587493-10547-1-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,56 +18,39 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: "aviro-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org" <aviro-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org" <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org" <pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org" <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org" <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 14/10/06, Chen, Hanxiao wrote:
+Quoting Chen Hanxiao (chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
+> Signed-off-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+
+Yeah that'll be helpful to anyone new to these parts.  But, why the question mark,
+should you drop that too?  Either way
+
+Acked-by: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+
+> ---
+>  include/uapi/linux/sched.h | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 > 
+> diff --git a/include/uapi/linux/sched.h b/include/uapi/linux/sched.h
+> index 34f9d73..db765b4 100644
+> --- a/include/uapi/linux/sched.h
+> +++ b/include/uapi/linux/sched.h
+> @@ -13,7 +13,7 @@
+>  #define CLONE_VFORK	0x00004000	/* set if the parent wants the child to wake it up on mm_release */
+>  #define CLONE_PARENT	0x00008000	/* set if we want to have the same parent as the cloner */
+>  #define CLONE_THREAD	0x00010000	/* Same thread group? */
+> -#define CLONE_NEWNS	0x00020000	/* New namespace group? */
+> +#define CLONE_NEWNS	0x00020000	/* New mount namespace group? */
+>  #define CLONE_SYSVSEM	0x00040000	/* share system V SEM_UNDO semantics */
+>  #define CLONE_SETTLS	0x00080000	/* create a new TLS for the child */
+>  #define CLONE_PARENT_SETTID	0x00100000	/* set the TID in the parent */
+> -- 
+> 1.9.0
 > 
-> > -----Original Message-----
-> > From: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> > [mailto:containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org] On Behalf Of Richard Guy
-> > Briggs
-> > Sent: Monday, October 06, 2014 1:09 PM
-> > To: linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org; linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org;
-> > containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> > Cc: eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org; pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org; aviro-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org; sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org;
-> > ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
-> > Subject: [PATCH V5 08/13] sched: add a macro to ref all CLONE_NEW* flags
-> > 
-> > ---
-> >  include/uapi/linux/sched.h |    6 ++++++
-> >  1 files changed, 6 insertions(+), 0 deletions(-)
-> > 
-> > diff --git a/include/uapi/linux/sched.h b/include/uapi/linux/sched.h
-> > index 34f9d73..5aceba2 100644
-> > --- a/include/uapi/linux/sched.h
-> > +++ b/include/uapi/linux/sched.h
-> > @@ -28,6 +28,12 @@
-> >  #define CLONE_NEWUSER		0x10000000	/* New user namespace */
-> >  #define CLONE_NEWPID		0x20000000	/* New pid namespace */
-> >  #define CLONE_NEWNET		0x40000000	/* New network namespace */
-> > +#define CLONE_NEW_MASK	( CLONE_NEWNS \
-> > +			| CLONE_NEWUTS \
-> > +			| CLONE_NEWIPC \
-> > +			| CLONE_NEWUSER \
-> > +			| CLONE_NEWPID \
-> > +			| CLONE_NEWNET)	/* mask of all namespace type flags */
-> >  #define CLONE_IO		0x80000000	/* Clone io context */
-> 
-> The name 'CLONE_NEW_MASK' may confuse readers.
-> How about something like CLONE_NEW_MASK_ALL?
-
-Fair enough.  Changed.
-
-> Thanks,
-> - Chen
-
-- RGB
-
---
-Richard Guy Briggs <rbriggs-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Senior Software Engineer, Kernel Security, AMER ENG Base Operating Systems, Red Hat
-Remote, Ottawa, Canada
-Voice: +1.647.777.2635, Internal: (81) 32635, Alt: +1.613.693.0684x3545
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linuxfoundation.org/mailman/listinfo/containers
