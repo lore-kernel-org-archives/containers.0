@@ -1,7 +1,7 @@
 From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH V5 12/13] namespaces: expose ns instance serial numbers in proc
-Date: Mon,  6 Oct 2014 01:08:37 -0400
-Message-ID: <53b81e89f7179ef8569409293f990b3ac7deac61.1412543112.git.rgb__23459.1097374961$1412572253$gmane$org@redhat.com>
+Subject: [PATCH V5 13/13] Documentation: add a section for /proc/<pid>/ns/
+Date: Mon,  6 Oct 2014 01:08:38 -0400
+Message-ID: <982503bc4e4c24cbdebd111b27191ed5bee75572.1412543112.git.rgb__44776.9308033914$1412572259$gmane$org@redhat.com>
 References: <cover.1412543112.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,94 +23,43 @@ To: linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29T
 Cc: eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, aviro-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Expose the namespace instace serial numbers in the proc filesystem at
-/proc/<pid>/ns/<ns>_snum.  The link text gives the serial number in hex.
-
-"snum" was chosen instead of "seq" for consistency with inum and there are a
-number of other uses of "seq" in the namespace code.
-
-Suggested-by: Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- fs/proc/namespaces.c |   33 +++++++++++++++++++++++++--------
- 1 files changed, 25 insertions(+), 8 deletions(-)
+ Documentation/filesystems/proc.txt |   16 ++++++++++++++++
+ 1 files changed, 16 insertions(+), 0 deletions(-)
 
-diff --git a/fs/proc/namespaces.c b/fs/proc/namespaces.c
-index 310da74..29c3909 100644
---- a/fs/proc/namespaces.c
-+++ b/fs/proc/namespaces.c
-@@ -47,12 +47,15 @@ static char *ns_dname(struct dentry *dentry, char *buffer, int buflen)
- 	struct inode *inode = dentry->d_inode;
- 	const struct proc_ns_operations *ns_ops = PROC_I(inode)->ns.ns_ops;
+diff --git a/Documentation/filesystems/proc.txt b/Documentation/filesystems/proc.txt
+index ddc531a..c4bfd6f 100644
+--- a/Documentation/filesystems/proc.txt
++++ b/Documentation/filesystems/proc.txt
+@@ -42,6 +42,7 @@ Table of Contents
+   3.6	/proc/<pid>/comm  & /proc/<pid>/task/<tid>/comm
+   3.7   /proc/<pid>/task/<tid>/children - Information about task children
+   3.8   /proc/<pid>/fdinfo/<fd> - Information about opened file
++  3.9   /proc/<pid>/ns/<ns>{,_snum} - Information about process namespaces
  
--	return dynamic_dname(dentry, buffer, buflen, "%s:[%lu]",
--		ns_ops->name, inode->i_ino);
-+	if (strstr(dentry->d_iname, "_snum"))
-+		return dynamic_dname(dentry, buffer, buflen, "%s_snum:[%llx]",
-+			ns_ops->name, ns_ops->snum(PROC_I(inode)->ns.ns));
-+	else
-+		return dynamic_dname(dentry, buffer, buflen, "%s:[%lu]",
-+			ns_ops->name, inode->i_ino);
- }
+   4	Configuring procfs
+   4.1	Mount options
+@@ -1744,6 +1745,21 @@ pair provide additional information particular to the objects they represent.
+ 	optional and may be omitted if no marks created yet.
  
--const struct dentry_operations ns_dentry_operations =
--{
-+const struct dentry_operations ns_dentry_operations = {
- 	.d_delete	= always_delete_dentry,
- 	.d_dname	= ns_dname,
- };
-@@ -160,7 +163,10 @@ static int proc_ns_readlink(struct dentry *dentry, char __user *buffer, int bufl
- 	if (!ns)
- 		goto out_put_task;
  
--	snprintf(name, sizeof(name), "%s:[%u]", ns_ops->name, ns_ops->inum(ns));
-+	if (strstr(dentry->d_iname, "_snum"))
-+		snprintf(name, sizeof(name), "%s_snum:[%llx]", ns_ops->name, ns_ops->snum(ns));
-+	else
-+		snprintf(name, sizeof(name), "%s:[%u]", ns_ops->name, ns_ops->inum(ns));
- 	res = readlink_copy(buffer, buflen, name);
- 	ns_ops->put(ns);
- out_put_task:
-@@ -210,16 +216,23 @@ static int proc_ns_dir_readdir(struct file *file, struct dir_context *ctx)
- 
- 	if (!dir_emit_dots(file, ctx))
- 		goto out;
--	if (ctx->pos >= 2 + ARRAY_SIZE(ns_entries))
-+	if (ctx->pos >= 2 + 2 * ARRAY_SIZE(ns_entries))
- 		goto out;
- 	entry = ns_entries + (ctx->pos - 2);
- 	last = &ns_entries[ARRAY_SIZE(ns_entries) - 1];
- 	while (entry <= last) {
- 		const struct proc_ns_operations *ops = *entry;
-+		char name[50];
++3.9	/proc/<pid>/ns/<nstype>{,_snum} - Information about process namespaces
++--------------------------------------------------------------------------
++These files provides information about the namespaces within which the process
++is contained.  The files named only with the namespace type <nstype> contain a
++link that lists the containing namespace' inode number in its proc filesystem.
++The files with suffix _snum contain a link that lists the containing
++namespace' instance serial number, unique per kernel since boot.  The
++namespace types are self-describing.
 +
- 		if (!proc_fill_cache(file, ctx, ops->name, strlen(ops->name),
- 				     proc_ns_instantiate, task, ops))
- 			break;
- 		ctx->pos++;
-+		snprintf(name, sizeof(name), "%s_snum", ops->name);
-+		if (!proc_fill_cache(file, ctx, name, strlen(name),
-+				     proc_ns_instantiate, task, ops))
-+			break;
-+		ctx->pos++;
- 		entry++;
- 	}
- out:
-@@ -247,9 +260,13 @@ static struct dentry *proc_ns_dir_lookup(struct inode *dir,
- 
- 	last = &ns_entries[ARRAY_SIZE(ns_entries)];
- 	for (entry = ns_entries; entry < last; entry++) {
--		if (strlen((*entry)->name) != len)
-+		char name[50];
++The output format of the inode links is:
++	<nstype>:[<inode_number>]
++The output format of the serial number links is:
++	<nstype>_snum:[<serial_number>]
 +
-+		snprintf(name, sizeof(name), "%s_snum", (*entry)->name);
-+		if (strlen((*entry)->name) != len && strlen(name) != len)
- 			continue;
--		if (!memcmp(dentry->d_name.name, (*entry)->name, len))
-+		if (!memcmp(dentry->d_name.name, (*entry)->name, len)
-+		    || !memcmp(dentry->d_name.name, name, len))
- 			break;
- 	}
- 	if (entry == last)
++
+ ------------------------------------------------------------------------------
+ Configuring procfs
+ ------------------------------------------------------------------------------
 -- 
 1.7.1
