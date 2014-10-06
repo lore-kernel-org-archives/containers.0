@@ -1,15 +1,14 @@
-From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH V5 13/13] Documentation: add a section for /proc/<pid>/ns/
-Date: Mon,  6 Oct 2014 01:08:38 -0400
-Message-ID: <982503bc4e4c24cbdebd111b27191ed5bee75572.1412543112.git.rgb__44776.9308033914$1412572259$gmane$org@redhat.com>
-References: <cover.1412543112.git.rgb@redhat.com>
+From: =?windows-1251?B?z/Dl5OXo7Q==?= <tandy6asembly-JGs/UdohzUI@public.gmane.org>
+Subject: =?windows-1251?B?zeXu4fXu5Ojs7iD17uf/6O3zLiDM6O3o7Ojn?=
+	=?windows-1251?B?4Pbo/yDt4Ovu4+7i7ukg7eDj8PPn6ugg4iDQ?=
+	=?windows-1251?B?1C4gwuDm7eD/IOjt9OAu?=
+Date: Mon, 6 Oct 2014 10:06:37 +0400
+Message-ID: <B5B006555E8AEBE83431788AEED7F772@tqaiajf>
+Reply-To: =?windows-1251?B?z/Dl5OXo7Q==?= <tandy6asembly-JGs/UdohzUI@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1251"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <cover.1412543112.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-In-Reply-To: <cover.1412543112.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-References: <cover.1412543112.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,47 +18,15 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, aviro-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: london-ng5TxdVTwqRpOXa+8eVDwA@public.gmane.org, noncmaresell-5h5HK1vOJSRBDgjK7y7TUQ@public.gmane.org, reseption-GqWNf/uwYfqK1JsEszxR+Mgurn75+9Lz@public.gmane.org, info-un112uW6LsE@public.gmane.org, tegovud-fx+AEcjlHWY@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
----
- Documentation/filesystems/proc.txt |   16 ++++++++++++++++
- 1 files changed, 16 insertions(+), 0 deletions(-)
-
-diff --git a/Documentation/filesystems/proc.txt b/Documentation/filesystems/proc.txt
-index ddc531a..c4bfd6f 100644
---- a/Documentation/filesystems/proc.txt
-+++ b/Documentation/filesystems/proc.txt
-@@ -42,6 +42,7 @@ Table of Contents
-   3.6	/proc/<pid>/comm  & /proc/<pid>/task/<tid>/comm
-   3.7   /proc/<pid>/task/<tid>/children - Information about task children
-   3.8   /proc/<pid>/fdinfo/<fd> - Information about opened file
-+  3.9   /proc/<pid>/ns/<ns>{,_snum} - Information about process namespaces
- 
-   4	Configuring procfs
-   4.1	Mount options
-@@ -1744,6 +1745,21 @@ pair provide additional information particular to the objects they represent.
- 	optional and may be omitted if no marks created yet.
- 
- 
-+3.9	/proc/<pid>/ns/<nstype>{,_snum} - Information about process namespaces
-+--------------------------------------------------------------------------
-+These files provides information about the namespaces within which the process
-+is contained.  The files named only with the namespace type <nstype> contain a
-+link that lists the containing namespace' inode number in its proc filesystem.
-+The files with suffix _snum contain a link that lists the containing
-+namespace' instance serial number, unique per kernel since boot.  The
-+namespace types are self-describing.
-+
-+The output format of the inode links is:
-+	<nstype>:[<inode_number>]
-+The output format of the serial number links is:
-+	<nstype>_snum:[<serial_number>]
-+
-+
- ------------------------------------------------------------------------------
- Configuring procfs
- ------------------------------------------------------------------------------
--- 
-1.7.1
+wOry8+Dr/O375SDs5fLu5Ojq6CDz7OXt/Pjl7ej/IO3g6+7j7uLu6SDt4OPw8+fq6CDiIPHu4vDl
+7OXt7fv1IPPx6+7i6P/1LgrI7fTu8Ozg9uj/IO/uIPHx++vq5SAKMTUwIOTl8uDr/O3uIPDg5+7h
+8ODt7fv1IPH15ewg8SDu4fDg5/bg7Ogg5O7q8+zl7fLu4iDk6/8g4fP14+Dr8uXw6OguCsrt6OPg
+IO7h+uXs7uwgNjQwIPHy8ODt6PYg6CDq7uzv4OryIOTo8eog8SDk7urz7OXt8uDs6C4Kz/Dl5+Xt
+8uDh5ev87fvpIOLo5Cwg4u7x8vDl4e7i4O3t4P8g6O304C4gzuPw4O3o9+Xt7fvpIPLo8ODmLgrE
+7vHy4OLo7CDiIPDl4+ju7fssIOTu7O7pIOjr6CDiIO706PEuCl9fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRh
+aW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5k
+YXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
