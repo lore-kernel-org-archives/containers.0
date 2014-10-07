@@ -1,15 +1,11 @@
-From: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: RE: [PATCH] sched: updated comments of CLONE_NEWNS
-Date: Tue, 7 Oct 2014 08:50:52 +0000
-Message-ID: <5871495633F38949900D2BF2DC04883E5DC9BC@G08CNEXMBPEKD02.g08.fujitsu.local>
-References: <1412587493-10547-1-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<20141006142713.GA26187@ubuntumail>
+From: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCHv2] sched: updated comments of CLONE_NEWNS
+Date: Tue, 7 Oct 2014 17:29:07 +0800
+Message-ID: <1412674147-8941-1-git-send-email-chenhanxiao@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="gb2312"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20141006142713.GA26187@ubuntumail>
-Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,24 +15,30 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Cc: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Cc: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-DQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogU2VyZ2UgSGFsbHluIFtt
-YWlsdG86c2VyZ2UuaGFsbHluQHVidW50dS5jb21dDQo+IFNlbnQ6IE1vbmRheSwgT2N0b2JlciAw
-NiwgMjAxNCAxMDoyNyBQTQ0KPiBUbzogQ2hlbiwgSGFueGlhby+zwiDqz8/2DQo+IENjOiBJbmdv
-IE1vbG5hcjsgUGV0ZXIgWmlqbHN0cmE7IERhdmlkIEhvd2VsbHM7DQo+IGNvbnRhaW5lcnNAbGlz
-dHMubGludXgtZm91bmRhdGlvbi5vcmc7IGxpbnV4LWtlcm5lbEB2Z2VyLmtlcm5lbC5vcmcNCj4g
-U3ViamVjdDogUmU6IFtQQVRDSF0gc2NoZWQ6IHVwZGF0ZWQgY29tbWVudHMgb2YgQ0xPTkVfTkVX
-TlMNCj4gDQo+IFF1b3RpbmcgQ2hlbiBIYW54aWFvIChjaGVuaGFueGlhb0Bjbi5mdWppdHN1LmNv
-bSk6DQo+ID4gU2lnbmVkLW9mZi1ieTogQ2hlbiBIYW54aWFvIDxjaGVuaGFueGlhb0Bjbi5mdWpp
-dHN1LmNvbT4NCj4gDQo+IFllYWggdGhhdCdsbCBiZSBoZWxwZnVsIHRvIGFueW9uZSBuZXcgdG8g
-dGhlc2UgcGFydHMuICBCdXQsIHdoeSB0aGUgcXVlc3Rpb24gbWFyaywNCj4gc2hvdWxkIHlvdSBk
-cm9wIHRoYXQgdG9vPyAgRWl0aGVyIHdheQ0KDQpZZXMsIHdlIHNob3VsZCBkcm9wIHRoYXQgcXVl
-c3Rpb24gbWFyay4NCkknbGwgc2VuZCBhIHYyIHBhdGNoIHNvb24uDQoNClRoYW5rcywNCi0gQ2hl
-bg0KDQo+IA0KPiBBY2tlZC1ieTogU2VyZ2UgRS4gSGFsbHluIDxzZXJnZS5oYWxseW5AdWJ1bnR1
-LmNvbT4NCj4gDQoNCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRh
-dGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGlu
-Zm8vY29udGFpbmVycw==
+Signed-off-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Acked-by: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+---
+v2: s/group?/group
+
+ include/uapi/linux/sched.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/uapi/linux/sched.h b/include/uapi/linux/sched.h
+index 34f9d73..db765b4 100644
+--- a/include/uapi/linux/sched.h
++++ b/include/uapi/linux/sched.h
+@@ -13,7 +13,7 @@
+ #define CLONE_VFORK	0x00004000	/* set if the parent wants the child to wake it up on mm_release */
+ #define CLONE_PARENT	0x00008000	/* set if we want to have the same parent as the cloner */
+ #define CLONE_THREAD	0x00010000	/* Same thread group? */
+-#define CLONE_NEWNS	0x00020000	/* New namespace group? */
++#define CLONE_NEWNS	0x00020000	/* New mount namespace group */
+ #define CLONE_SYSVSEM	0x00040000	/* share system V SEM_UNDO semantics */
+ #define CLONE_SETTLS	0x00080000	/* create a new TLS for the child */
+ #define CLONE_PARENT_SETTID	0x00100000	/* set the TID in the parent */
+-- 
+1.9.0
