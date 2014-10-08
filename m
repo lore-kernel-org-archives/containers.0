@@ -1,9 +1,11 @@
-From: MAILER-DAEMON-URz6qSllYcpwFqzsTH5u/w@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Tue,  7 Oct 2014 21:14:13 -0300 (BRT)
-Message-ID: <3jCGHn618vzKLK5B@a2-stealth5.uol.com.br>
+From: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH RFC] setns: return 0 directly if try to reassociate with
+	current namespace
+Date: Wed, 8 Oct 2014 17:13:07 +0800
+Message-ID: <1412759587-21320-1-git-send-email-chenhanxiao@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6552079179934685419=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -14,83 +16,58 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+We could use setns to join the current ns,
+which did a lot of unnecessary work.
+This patch will check this senario and
+return 0 directly.
 
---===============6552079179934685419==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="3jCGHm1WG5zKLK4R.1412727253/a2-stealth5.uol.com.br"
+Signed-off-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
+ kernel/nsproxy.c | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
 
-This is a MIME-encapsulated message.
-
---3jCGHm1WG5zKLK4R.1412727253/a2-stealth5.uol.com.br
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
-
-This is the mail system at host a2-stealth5.uol.com.br.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to postmaster.
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<pliniovalente-/1Rj0zDCqbBfyO9Q7EP/yw@public.gmane.org>: host mfuol.mail.sys.intranet[10.129.135.45] said:
-    550 RCPT TO:<pliniovalente-/1Rj0zDCqbBfyO9Q7EP/yw@public.gmane.org> User unknown (in reply to RCPT TO
-    command)
-
---3jCGHm1WG5zKLK4R.1412727253/a2-stealth5.uol.com.br
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; a2-stealth5.uol.com.br
-X-Postfix-Queue-ID: 3jCGHm1WG5zKLK4R
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Tue,  7 Oct 2014 21:14:10 -0300 (BRT)
-
-Final-Recipient: rfc822; pliniovalente-/1Rj0zDCqbBfyO9Q7EP/yw@public.gmane.org
-Original-Recipient: rfc822;pliniovalente-/1Rj0zDCqbBfyO9Q7EP/yw@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mfuol.mail.sys.intranet
-Diagnostic-Code: smtp; 550 RCPT TO:<pliniovalente-/1Rj0zDCqbBfyO9Q7EP/yw@public.gmane.org> User unknown
-
---3jCGHm1WG5zKLK4R.1412727253/a2-stealth5.uol.com.br
-Content-Description: Undelivered Message Headers
-Content-Type: text/rfc822-headers
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from dl123149.arvixevps.com (dl123149.arvixevps.com [23.91.115.19])
-	by a2-stealth5.uol.com.br (Postfix) with ESMTP id 3jCGHm1WG5zKLK4R
-	for <pliniovalente-/1Rj0zDCqbBfyO9Q7EP/yw@public.gmane.org>; Tue,  7 Oct 2014 21:14:10 -0300 (BRT)
-Authentication-Results: a2-stealth5.uol.com.br; dkim=none
-	reason="no signature"
-Received: from [23.91.115.19] by dl123149.arvixevps.com id yGi2lM7RVO; Tue, 07 Oct 2014 17:14:10 -0700
-Message-ID: <008701cfe28c$c676b180$0300a8c0-Z+S3l0O5+BwNDdxe9Ui7jcPN+1FZ69lz@public.gmane.org>
-From: "Cammeo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <pliniovalente-/1Rj0zDCqbBfyO9Q7EP/yw@public.gmane.org>
-Subject: The payment and delivery information
-Date: Tue, 07 Oct 2014 17:14:10 -0700
-MIME-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="----------52AC060E40FCFEE"
-
---3jCGHm1WG5zKLK4R.1412727253/a2-stealth5.uol.com.br--
-
---===============6552079179934685419==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============6552079179934685419==--
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index ef42d0a..66eea63 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -236,6 +236,34 @@ SYSCALL_DEFINE2(setns, int, fd, int, nstype)
+ 	ops = ei->ns_ops;
+ 	if (nstype && (ops->type != nstype))
+ 		goto out;
++	switch (ops->type) {
++	case CLONE_NEWIPC:
++		if (ei->ns == tsk->nsproxy->ipc_ns)
++			return 0;
++		break;
++	case CLONE_NEWNET:
++		if (ei->ns == tsk->nsproxy->net_ns)
++			return 0;
++		break;
++	case CLONE_NEWNS:
++		if (ei->ns == tsk->nsproxy->mnt_ns)
++			return 0;
++		break;
++	case CLONE_NEWPID:
++		if (ei->ns == tsk->nsproxy->pid_ns_for_children)
++			return 0;
++		break;
++	case CLONE_NEWUSER:
++		if (ei->ns == current_user_ns())
++			return 0;
++		break;
++	case CLONE_NEWUTS:
++		if (ei->ns == tsk->nsproxy->uts_ns)
++			return 0;
++		break;
++	default:
++		goto out;
++	}
+ 
+ 	new_nsproxy = create_new_namespaces(0, tsk, current_user_ns(), tsk->fs);
+ 	if (IS_ERR(new_nsproxy)) {
+-- 
+1.9.0
