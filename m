@@ -1,11 +1,9 @@
-From: Grant Funding USA <announcements-EGJiyZjCJz/TNKXJp0M/0kB+6BGkLq7r@public.gmane.org>
-Subject: Grant Funding and Proposal Writing Essentials Course (October 15-17,
-	2014: University of Southern California)
-Date: 07 Oct 2014 02:25:27 -0700
-Message-ID: <20141007022524.A6070E07AFB9A46F@grantfundingusa.org>
+From: MAILER-DAEMON-URz6qSllYcpwFqzsTH5u/w@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Tue,  7 Oct 2014 21:14:13 -0300 (BRT)
+Message-ID: <3jCGHn618vzKLK5B@a2-stealth5.uol.com.br>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============6552079179934685419=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,142 +17,80 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-   Grant Funding USA is offering the Grant Funding and  Proposal Writing
-   Essentials Course  to be held in Los Angeles, CA from October 15-17,
-   2014. Interested development professionals, researchers, faculty, and
-   graduate students should register as soon as possible, as demand means
-   that seats will fill up quickly. Please forward, post, and distribute
-   this e-mail to your colleagues and listservs.
+This is a MIME-encapsulated message.
 
+--===============6552079179934685419==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="3jCGHm1WG5zKLK4R.1412727253/a2-stealth5.uol.com.br"
 
-   All participants will receive certification in professional grant
-   writing. For more information call (213) 213-7410 or visit the Grant
-   Funding USA website at www.grantfundingusa.org.
+This is a MIME-encapsulated message.
 
+--3jCGHm1WG5zKLK4R.1412727253/a2-stealth5.uol.com.br
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-   Please find the program description below:
+This is the mail system at host a2-stealth5.uol.com.br.
 
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
 
-   Grant Funding USA's
+For further assistance, please send mail to postmaster.
 
-   Grant Funding and  Proposal Writing Essentials Course
-   will be held in
-   Los Angeles CA
-   on the campus of the
-   University of Southern California
-   October 15-17, 2014
-   8:00 AM - 5:00 PM
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
 
+                   The mail system
 
-   Grant Funding USA's Grant Funding and  Proposal Writing Essentials
-   Course  is an intensive and detailed introduction to the process,
-   structure, and skill of professional proposal writing. This course is
-   characterized by its ability to act as a thorough overview,
-   introduction, and refresher at the same time. In this course,
-   participants will learn the entire proposal writing process and
-   complete the course with a solid understanding of not only the ideal
-   proposal structure, but a holistic understanding of the essential
-   factors, which determine whether or not a program gets funded. Through
-   the completion of interactive exercises and activities, participants
-   will complement expert lectures by putting proven techniques into
-   practice. This course is designed for both the beginner looking for a
-   thorough introduction and the intermediate looking for a refresher
-   course that will strengthen their grant acquisition skills. This class,
-   simply put, is designed to get results by creating professional grant
-   proposal writers.
+<pliniovalente-/1Rj0zDCqbBfyO9Q7EP/yw@public.gmane.org>: host mfuol.mail.sys.intranet[10.129.135.45] said:
+    550 RCPT TO:<pliniovalente-/1Rj0zDCqbBfyO9Q7EP/yw@public.gmane.org> User unknown (in reply to RCPT TO
+    command)
 
+--3jCGHm1WG5zKLK4R.1412727253/a2-stealth5.uol.com.br
+Content-Description: Delivery report
+Content-Type: message/delivery-status
 
-   Participants will become competent program planning and proposal
-   writing professionals after successful completion of the Grant Funding
-   and  Proposal Writing Essentials Course.  In three active and
-   informative days, students will be exposed to the art of successful
-   grant writing practices, and led on a journey that ends with a
-   masterful grant proposal.
+Reporting-MTA: dns; a2-stealth5.uol.com.br
+X-Postfix-Queue-ID: 3jCGHm1WG5zKLK4R
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Tue,  7 Oct 2014 21:14:10 -0300 (BRT)
 
+Final-Recipient: rfc822; pliniovalente-/1Rj0zDCqbBfyO9Q7EP/yw@public.gmane.org
+Original-Recipient: rfc822;pliniovalente-/1Rj0zDCqbBfyO9Q7EP/yw@public.gmane.org
+Action: failed
+Status: 5.0.0
+Remote-MTA: dns; mfuol.mail.sys.intranet
+Diagnostic-Code: smtp; 550 RCPT TO:<pliniovalente-/1Rj0zDCqbBfyO9Q7EP/yw@public.gmane.org> User unknown
 
-   The Grant Funding and  Proposal Writing Essentials Course consists of
-   three (3) subject areas that will be completed during the three-day
-   workshop.
+--3jCGHm1WG5zKLK4R.1412727253/a2-stealth5.uol.com.br
+Content-Description: Undelivered Message Headers
+Content-Type: text/rfc822-headers
 
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from dl123149.arvixevps.com (dl123149.arvixevps.com [23.91.115.19])
+	by a2-stealth5.uol.com.br (Postfix) with ESMTP id 3jCGHm1WG5zKLK4R
+	for <pliniovalente-/1Rj0zDCqbBfyO9Q7EP/yw@public.gmane.org>; Tue,  7 Oct 2014 21:14:10 -0300 (BRT)
+Authentication-Results: a2-stealth5.uol.com.br; dkim=none
+	reason="no signature"
+Received: from [23.91.115.19] by dl123149.arvixevps.com id yGi2lM7RVO; Tue, 07 Oct 2014 17:14:10 -0700
+Message-ID: <008701cfe28c$c676b180$0300a8c0-Z+S3l0O5+BwNDdxe9Ui7jcPN+1FZ69lz@public.gmane.org>
+From: "Cammeo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <pliniovalente-/1Rj0zDCqbBfyO9Q7EP/yw@public.gmane.org>
+Subject: The payment and delivery information
+Date: Tue, 07 Oct 2014 17:14:10 -0700
+MIME-Version: 1.0
+Content-Type: multipart/mixed;
+ boundary="----------52AC060E40FCFEE"
 
-   (1) Fundamentals of Program Planning
+--3jCGHm1WG5zKLK4R.1412727253/a2-stealth5.uol.com.br--
 
+--===============6552079179934685419==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-   This session is centered on the belief that "it's all about the
-   program." This intensive session will teach professional program
-   development essentials and program evaluation. While most grant writing
-   "workshops" treat program development and evaluation as separate from
-   the writing of a proposal, this class will teach students the
-   relationship between overall program planning and grant writing.
-
-
-   (2) Proposal Writing Essentials
-
-
-   Designed for both the novice and experienced grant writer, this
-   component will make each student an overall proposal writing
-   specialist. In addition to teaching the basic components of a grant
-   proposal, successful approaches, and the do's and don'ts of grant
-   writing, this course is infused with expert principles that will lead
-   to a mastery of the process. Strategy resides at the forefront of this
-   course's intent to illustrate grant writing as an integrated,
-   multidimensional, and dynamic endeavor. Each student will learn to stop
-   writing the grant and to start writing the story. Ultimately, this
-   class will illustrate how each component of the grant proposal
-   represents an opportunity to use proven techniques for generating
-   support.
-
-
-   (3) Funding Research
-
-
-   At its foundation, this course will address the basics of foundation,
-   corporation, and government grant research. However, this course will
-   teach a strategic funding research approach that encourages students to
-   see research not as something they do before they write a proposal, but
-   as an integrated part of the grant seeking process. Students will be
-   exposed to online and database research tools, as well as publications
-   and directories that contain information about foundation, corporation,
-   and government grant opportunities. Focusing on funding sources and
-   basic social science research, this course teaches students how to use
-   research as part of a strategic grant acquisition effort.
-
-
-   Registration
-
-   $495.00 tuition includes all materials and certificates.
-
-
-   Each student will receive:
-
-   *Grant Funding USA's Certificate in Professional Grant Writing
-
-   *The Guide to Successful Grant Writing
-
-   *The Grant Writer's Workbook with sample proposals, forms, and outlines
-
-
-   Registration Methods
-
-
-   1) On-Line - Complete the [1]online registration form a'nd we'll send
-   your confirmation by e-mail.
-
-
-   2) By Phone - Call (213) 293-7410 to register by phone. Our friendly
-   Program Coordinators will be happy to assist you and answer your
-   questions.
-
-
-   We respect your privacy and want to ensure that interested parties are
-   made aware of  Grant Funding USA  programs and schedules. This is
-   intended to be a one-time announcement. In any event, you should not
-   receive any more announcements unless there is a program next year in
-   your area. To be excluded  from next year's announcement, send a blank
-   e-mail to [2]exclude-EGJiyZjCJz/TNKXJp0M/0kB+6BGkLq7r@public.gmane.org and write "Exclude" in the
-   subject line.
-
-References
-
-   1. http://www.123contactform.com/form-885131/Grant-Funding-USA-Registration-Form
-   2. mailto:exclude-EGJiyZjCJz/TNKXJp0M/0kB+6BGkLq7r@public.gmane.org
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============6552079179934685419==--
