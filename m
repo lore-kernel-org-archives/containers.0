@@ -1,18 +1,15 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH RFC] setns: return 0 directly if try to reassociate with
-	current namespace
-Date: Wed, 08 Oct 2014 22:52:26 -0700
-Message-ID: <871tqheqn9.fsf@x220.int.ebiederm.org>
-References: <1412759587-21320-1-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<20141008145740.GD30569@ubuntumail>
-	<87r3yih2e2.fsf@x220.int.ebiederm.org>
-	<5871495633F38949900D2BF2DC04883E5E0FAC@G08CNEXMBPEKD02.g08.fujitsu.local>
+From: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: RE: [PATCHv4] procfs: show hierarchy of pid namespace
+Date: Thu, 9 Oct 2014 09:01:21 +0000
+Message-ID: <5871495633F38949900D2BF2DC04883E5E1460@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <1412762198-21825-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<5435134E.1080802@nod.at>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <5871495633F38949900D2BF2DC04883E5E0FAC-ZEd+hNNJ6a5ZYpXjqAkB5jz3u5zwRJJDAzI0kPv9QBlmR6Xm/wNWPw@public.gmane.org>
-	(Hanxiao Chen's message of "Thu, 9 Oct 2014 04:14:23 +0000")
+In-Reply-To: <5435134E.1080802-/L3Ra7n9ekc@public.gmane.org>
+Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,76 +19,36 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-"Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> writes:
-
->> -----Original Message-----
->> From: Eric W. Biederman [mailto:ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org]
->> Sent: Thursday, October 09, 2014 1:56 AM
->> 
->> Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> writes:
->> 
->> > Quoting Chen Hanxiao (chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
->> >> We could use setns to join the current ns,
->> >> which did a lot of unnecessary work.
->> >> This patch will check this senario and
->> >> return 0 directly.
->> >>
->> >> Signed-off-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
->> >
->> > Plus it's just asking for trouble.
->> >
->> > I would ack this, except you need to fclose(file) on the
->> > return paths.  So just set err = 0 and goto out.
->> 
->> I completely disagree.
->> 
->> Nacked-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
->> 
->> This patch adds a new code path to test, and gets that new code path
->> wrong.  So unless there is a performance advantage for some real world
->> case I don't see the point.  Is there real software that is rejoining
->> the a current namespace.
->> 
->> This patch changes the behavior of CLONE_NEWNS (which always does a
->> chdir and chroot) when you change into the current namespace.
->> 
->> This patch changes the behavior of CLONE_NEWUSER which current errors
->> out.
->> 
->
-> As reentering the same namespace looks meaningless,
-> and handling reentering same ns we behaved differently,
-
-It is not meaningless in the case of CLONE_NEWNS.  It is weird but not
-meaningless.  Further return -EINVAL won't make the weird semantics go
-away it just makes them more expensive to take advantage of.
-
-> How about just *reject* the behaviour of setns to current namespace?
-
-Because we don't break userspace applications without a darn good reason.
-
-> +	switch (ops->type) {
-> +	case CLONE_NEWIPC:
-> +		if (ei->ns == tsk->nsproxy->ipc_ns) {
-> +            err = -EINVAL;
-> +			goto out;
-> +        }
-> ...
->
-> And things became easy, 6 simply cases could cover the whole scenario
-> and will not bring troubles to users.
-
-Since you are cavalierly suggesting changing the semantics presented to
-user space I don't belive the assertion that it will not bring trouble
-to users.
-
-Maybe on a day when I am not up to my neck in weird breakage in the
-mount namespace.  Because people now care because unprivileged users can
-use it we are starting to see bugs as old as 2.4 and they are a pain to
-deal with.
-
-Eric
+DQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogUmljaGFyZCBXZWluYmVy
+Z2VyIFttYWlsdG86cmljaGFyZEBub2QuYXRdDQo+IFNlbnQ6IFdlZG5lc2RheSwgT2N0b2JlciAw
+OCwgMjAxNCA2OjM1IFBNDQo+IFRvOiBDaGVuLCBIYW54aWFvL+mZiCDmmZfpnIQ7IGNvbnRhaW5l
+cnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc7DQo+IGxpbnV4LWtlcm5lbEB2Z2VyLmtlcm5l
+bC5vcmcNCj4gQ2M6IFNlcmdlIEhhbGx5bjsgRXJpYyBXLiBCaWVkZXJtYW47IE9sZWcgTmVzdGVy
+b3Y7IERhdmlkIEhvd2VsbHM7IFJpY2hhcmQNCj4gV2VpbmJlcmdlcjsgUGF2ZWwgRW1lbHlhbm92
+OyBWYXNpbGl5IEt1bGlrb3Y7IE1hdGV1c3ogR3V6aWsNCj4gU3ViamVjdDogUmU6IFtQQVRDSHY0
+XSBwcm9jZnM6IHNob3cgaGllcmFyY2h5IG9mIHBpZCBuYW1lc3BhY2UNCj4gDQo+IEFtIDA4LjEw
+LjIwMTQgMTE6NTYsIHNjaHJpZWIgQ2hlbiBIYW54aWFvOg0KPiA+IFRoaXMgcGF0Y2ggd2lsbCBz
+aG93IHRoZSBoaWVyYXJjaHkgb2YgcGlkIG5hbWVzcGFjZQ0KPiA+IGJ5IC9wcm9jL3BpZG5zX2hp
+ZXJhcmNoeSBsaWtlOg0KPiA+DQo+ID4gW3Jvb3RAbG9jYWxob3N0IH5dI2NhdCAvcHJvYy9waWRu
+c19oaWVyYXJjaHkNCj4gPiAvcHJvYy8xODA2MC9ucy9waWQgL3Byb2MvMTgxMDIvbnMvcGlkIC9w
+cm9jLzE1MzQvbnMvcGlkDQo+ID4gL3Byb2MvMTgwNjAvbnMvcGlkIC9wcm9jLzE4MTAyL25zL3Bp
+ZCAvcHJvYy8xNjAwL25zL3BpZA0KPiA+IC9wcm9jLzE1NTAvbnMvcGlkDQo+IA0KPiBBIHByb2Mg
+ZmlsZSB0aGF0IHByaW50cyBwYXRocyBvZiBvdGhlciBwcm9jIGZpbGVzLCBzcnNseT8gOykNCg0K
+WWVzLCBzb3VuZHMgd2VpcmQgIHRob3VnaC4NCg0KPiBJIGRpZG4ndCBmb2xsb3cgdGhlIHdob2xl
+IGRpc2N1c3Npb24gYnV0IHdoeSBpcyB0aGlzIG5vdA0KPiBhIGRpcmVjdG9yeSBjb250YWluaW5n
+IHN5bWJvbGljIGxpbmtzIHRvIG90aGVyIHBpZCBmaWxlcyBpbiAvcHJvYy88UElEPi9ucy9waWQ/
+DQoNCkluIHRoZSB2MSB2ZXJzaW9uIGl04oCZcyBhIGRpcmVjdG9yeSwgYW5kIGNvbnRhaW5lZCBz
+eW1saW5rcyB0byAvcHJvYy88UElEPi9ucy9waWQNCkJ1dCB3ZSBmb3VuZCB0aGF0IGlzIG5vdCBz
+byBlYXN5IHRvIHVzZToNCmEpIGRpcnMgbG9va3MgbGlrZSBhIHNuYXBzaG90DQpyZWZyZXNoaW5n
+IGl0IG5lZWRzIGEgbG90IG9mIHVubmVjZXNzYXJ5IGNvZGVzLg0KDQpiKSBkaXJzIGRpZCBub3Qg
+cHJvdmlkZSBtb3JlIGluZm8gdGhhbiBwcm9jIGZpbGUNCglXaGF0IHdlIHJlYWxseSBuZWVkIGlz
+IHRoZSA8UElEPiwgYW5kIHdlIGNvdWxkIGdldCBpdCBmcm9tDQoJcHJvYyBmaWxlLg0KCVdoZW4g
+d2UgcmVhZCB0aGUgZmlsZSwgd2UgcmVmcmVzaCBpdCBhdCB0aGF0IHRpbWUuDQoNClRoYW5rcywN
+Ci0gQ2hlbg0KDQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+XwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRp
+b24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZv
+L2NvbnRhaW5lcnM=
