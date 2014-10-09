@@ -1,15 +1,16 @@
-From: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: RE: [PATCHv4] procfs: show hierarchy of pid namespace
-Date: Thu, 9 Oct 2014 10:02:37 +0000
-Message-ID: <5871495633F38949900D2BF2DC04883E5E1649@G08CNEXMBPEKD02.g08.fujitsu.local>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCHv4] procfs: show hierarchy of pid namespace
+Date: Thu, 9 Oct 2014 23:34:14 +0200
+Message-ID: <20141009213414.GA10705@redhat.com>
 References: <1412762198-21825-1-git-send-email-chenhanxiao@cn.fujitsu.com>
 	<20141008151328.GB4835@redhat.com>
+	<5871495633F38949900D2BF2DC04883E5E1649@G08CNEXMBPEKD02.g08.fujitsu.local>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="gb2312"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20141008151328.GB4835-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Content-Language: zh-CN
+Content-Disposition: inline
+In-Reply-To: <5871495633F38949900D2BF2DC04883E5E1649-ZEd+hNNJ6a5ZYpXjqAkB5jz3u5zwRJJDAzI0kPv9QBlmR6Xm/wNWPw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,68 +20,65 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-DQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogT2xlZyBOZXN0ZXJvdiBb
-bWFpbHRvOm9sZWdAcmVkaGF0LmNvbV0NCj4gU2VudDogV2VkbmVzZGF5LCBPY3RvYmVyIDA4LCAy
-MDE0IDExOjEzIFBNDQo+IFRvOiBDaGVuLCBIYW54aWFvL7PCIOrPz/YNCj4gQ2M6IGNvbnRhaW5l
-cnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc7IGxpbnV4LWtlcm5lbEB2Z2VyLmtlcm5lbC5v
-cmc7IFNlcmdlDQo+IEhhbGx5bjsgRXJpYyBXLiBCaWVkZXJtYW47IERhdmlkIEhvd2VsbHM7IFJp
-Y2hhcmQgV2VpbmJlcmdlcjsgUGF2ZWwgRW1lbHlhbm92Ow0KPiBWYXNpbGl5IEt1bGlrb3Y7IE1h
-dGV1c3ogR3V6aWsNCj4gU3ViamVjdDogUmU6IFtQQVRDSHY0XSBwcm9jZnM6IHNob3cgaGllcmFy
-Y2h5IG9mIHBpZCBuYW1lc3BhY2UNCj4gDQo+IFNvcnJ5IGlmIHRoaXMgd2FzIGFscmVhZHkgZGlz
-Y3Vzc2VkLCBJIGhhdmUgdG8gYWRtaXQgdGhhdCBJIGlnbm9yZWQNCj4gdGhlIHByZXZpb3VzIGRp
-c2N1c3Npb24gOykgQW5kIGl0IGlzIHBvc3NpYmxlIEkgbWlzcmVhZCB0aGlzIHBhdGNoDQo+IGNv
-bXBsZXRlbHkuDQo+IA0KPiBPbiAxMC8wOCwgQ2hlbiBIYW54aWFvIHdyb3RlOg0KPiA+DQo+ID4g
-VGhpcyBwYXRjaCB3aWxsIHNob3cgdGhlIGhpZXJhcmNoeSBvZiBwaWQgbmFtZXNwYWNlDQo+ID4g
-YnkgL3Byb2MvcGlkbnNfaGllcmFyY2h5IGxpa2U6DQo+ID4NCj4gPiBbcm9vdEBsb2NhbGhvc3Qg
-fl0jY2F0IC9wcm9jL3BpZG5zX2hpZXJhcmNoeQ0KPiA+IC9wcm9jLzE4MDYwL25zL3BpZCAvcHJv
-Yy8xODEwMi9ucy9waWQgL3Byb2MvMTUzNC9ucy9waWQNCj4gPiAvcHJvYy8xODA2MC9ucy9waWQg
-L3Byb2MvMTgxMDIvbnMvcGlkIC9wcm9jLzE2MDAvbnMvcGlkDQo+ID4gL3Byb2MvMTU1MC9ucy9w
-aWQNCj4gDQo+IFdlbGwsIHBlcnNvbmFsbHkgSSB0b28gdGhpbmsgdGhhdCB0aGUgZmlsZW5hbWVz
-IGxvb2sgYSBiaXQgc3RyYW5nZSwNCj4gY2FuJ3QgaXQganVzdCBwcmludCB0aGUgbnVtYmVycz8N
-Cg0KWWVzLCBsZXQncyBwcmludCBQSUQgbnVtYmVycyBvbmx5Lg0KPiANCj4gQW5kLCBpaXVjIHdo
-YXQgdGhpcyBwYXRjaCBkb2VzLi4uIHBlcmhhcHMgaW4gdGhpcyBjYXNlIHdlIHNob3VsZA0KPiBz
-aW1wbHkgYWRkICJzdHJ1Y3QgbGlzdF9oZWFkIGNoaWxkcmVuIiBpbnRvIHN0cnVjdCBwaWRfbmFt
-ZXNwYWNlPw0KPiBJbiB0aGlzIGNhc2UgdGhlIHBhdGNoIHdpbGwgYmUgcmVhbGx5IHNpbXBsZS4g
-SSBkdW5uby4NCj4gDQoNCklmIHdlIGhhZCBhIGNoaWxkcmVuIGxpc3QgaW4gcGlkX25hbWVzcGFj
-ZSwNCmFsbCB3ZSBoYWQgdG8gZG8gaXMgYSBpdGVyYXRpb24gZnJvbSBwaWQgMSBvZiBjdXJyZW50
-IG5zLg0KVGhhdCB3b3VsZCBiZSBuaWNlLg0KDQo+ID4gK3BpZG5zX2xpc3RfYWRkKHN0cnVjdCBw
-aWQgKnBpZCwgc3RydWN0IGxpc3RfaGVhZCAqbGlzdF9oZWFkLA0KPiA+ICsJCXN0cnVjdCBwaWRf
-bmFtZXNwYWNlICpjdXJyX25zKQ0KPiA+ICt7DQo+ID4gKwlzdHJ1Y3QgcGlkbnNfbGlzdCAqZW50
-Ow0KPiA+ICsJc3RydWN0IHBpZF9uYW1lc3BhY2UgKm5zOw0KPiA+ICsNCj4gPiArCWlmIChpc19j
-aGlsZF9yZWFwZXIocGlkKSkgew0KPiA+ICsJCWVudCA9IGttYWxsb2Moc2l6ZW9mKCplbnQpLCBH
-RlBfS0VSTkVMKTsNCj4gDQo+IEdGUF9LRVJORUwgdW5kZXIgcmN1X3JlYWRfbG9jaygpLiBUaGlz
-IGlzIG5vdCBzYWZlIHdpdGhvdXQNCj4gQ09ORklHX1BSRUVNUFRfUkNVLg0KDQpJdCBzaG91bGQg
-YmUgR0ZQX0FUT01JQywgTWF0ZXN1eiBoYXZlIGFscmVhZHkgcG9pbnRlZCBvdXQNCmFuZCBJJ3Yg
-Y2hhbmdlZCBpdCBpbiB2My4NClNvcnJ5IGZvciB0aGF0IG1pc3Rha2UuDQoNCj4gDQo+ID4gKwkJ
-aWYgKCFlbnQpDQo+ID4gKwkJCXJldHVybiAtRU5PTUVNOw0KPiA+ICsNCj4gPiArCQllbnQtPnBp
-ZCA9IHBpZDsNCj4gPiArCQlucyA9IHBpZC0+bnVtYmVyc1twaWQtPmxldmVsXS5uczsNCj4gPiAr
-CQlpZiAoY3Vycl9ucykgew0KPiA+ICsJCQkvKiBhZGQgcGlkcyB3aG8gaXMgdGhlIGNoaWxkIG9m
-IGN1cnJfbnMgKi8NCj4gPiArCQkJZm9yICg7IG5zICE9IE5VTEw7IG5zID0gbnMtPnBhcmVudCkN
-Cj4gPiArCQkJCWlmIChucyA9PSBjdXJyX25zKQ0KPiA+ICsJCQkJCWxpc3RfYWRkX3RhaWwoJmVu
-dC0+bGlzdCwgbGlzdF9oZWFkKTsNCj4gDQo+IGFmYWljcywgaXQgZG9lc24ndCBtYWtlIHNlbnNl
-IHRvIGNvbnRpbnVlIGFmdGVyIGxpc3RfYWRkKCkgPw0KDQpPb3BzLCB3ZSBuZWVkIGEgYnJlYWsg
-aGVyZS4NCg0KPiANCj4gPiArc3RhdGljIGludCBwcm9jX3BpZG5zX2xpc3RfcmVmcmVzaChzdHJ1
-Y3QgcGlkX25hbWVzcGFjZSAqY3Vycl9ucykNCj4gPiArew0KPiA+ICsJc3RydWN0IHBpZCAqcGlk
-Ow0KPiA+ICsJc3RydWN0IHRhc2tfc3RydWN0ICpwOw0KPiA+ICsJaW50IHJjOw0KPiA+ICsNCj4g
-PiArCS8qIGNvbGxlY3QgcGlkIGluIGRpZmZlcmV0IG5zICovDQo+ID4gKwlmb3JfZWFjaF9wcm9j
-ZXNzKHApIHsNCj4gDQo+IEhtbS4gV2Ugb25seSB3YW50IHRoZSB0YXNrcyBmcm9tIG91ciBuYW1l
-c3BhY2UsIHllcz8gUGVyaGFwcyBmaW5kX2dlX3BpZCgpDQo+IG1ha2VzIG1vcmUgc2Vuc2U/DQoN
-Ck9ubHkgdGFza3MgZnJvbSBvdXIgbnMgaXMgdmFsaWQuDQpCdXQgaG93IGNvdWxkIGZpbmRfZ2Vf
-cGlkKCkgZG8gdGhhdD8NCg0KbnIgPSAxOw0Kd2hpbGUgKG5yIDwgUElEX01BWF9MSU1JVCkgew0K
-CWZpbmRfZ2VfcGlkKG5yLCBjdXJyX25zKTsNCglsaXN0X2FkZCgpOw0KCW5yKys7DQp9DQpQZXJo
-YXBzIHRoYXQncyBub3QgYSBnb29kIHdheS4NCg0KPiANCj4gPiArCQlwaWQgPSB0YXNrX3BpZChw
-KTsNCj4gDQo+IFdlbGwsIGluIHRoZW9yeSB5b3UgbmVlZCBiYXJyaWVyKCkgaGVyZS4gT3IgcGVy
-aGFwcyB3ZSBzaG91bGQgYWRkDQo+IEFDQ0VTU19PTkNFKCkgaW50byB0YXNrX3BpZCgpLi4uDQoN
-CllvdSBtZWFuIG1vZGlmeSB0YXNrX3BpZCBhczoNCnJldHVybiBBQ0NFU1NfT05DRSh0YXNrLT5w
-aWRzW1BJRFRZUEVfUElEXS5waWQ7KTsNCg0KPiANCj4gQW5kIGltaG8gaXQgd291bGQgYmUgYmV0
-dGVyIHRvIGRlY2xhcmUgcGlkbnNfbGlzdC9waWRuc190cmVlIGxvY2FsbHkNCj4gaW4gbnNsaXN0
-X3Byb2Nfc2hvdygpIGFuZCBwYXNzIHRoZW0gdG8gdGhlIGNhbGxlZXMuDQoNClRoYXQncyBhIGdv
-b2QgaWRlYS4NCldpbGwgY2hhbmdlZCBpbiB0aGUgbmV4dCB2ZXJzaW9uLg0KDQpUaGFua3MsDQot
-IENoZW4NCg0KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18K
-Q29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9u
-Lm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9j
-b250YWluZXJz
+On 10/09, Chen, Hanxiao wrote:
+>
+> > From: Oleg Nesterov [mailto:oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org]
+> >
+> > Hmm. We only want the tasks from our namespace, yes? Perhaps find_ge_pid()
+> > makes more sense?
+>
+> Only tasks from our ns is valid.
+> But how could find_ge_pid() do that?
+>
+> nr = 1;
+> while (nr < PID_MAX_LIMIT) {
+> 	find_ge_pid(nr, curr_ns);
+> 	list_add();
+> 	nr++;
+> }
+
+something like this, except list_add() should obviously depend on
+is_child_reaper() check.
+
+This can be more optimal in sub-namespaces, you do not need to abuse
+the global process list.
+
+And if you change this code to use get_pid/put_pid, then you do not
+need to hold rcu_read_lock() throughout, you only need it around
+find_ge_pid + get_pid.
+
+At the same time, for_each_process() in the global namespace can be
+faster if there are a lot of sub-threads.
+
+> Perhaps that's not a good way.
+
+OK, I won't insist.
+
+although it would be nice to know why do you think this is bad.
+
+> > > +		pid = task_pid(p);
+> >
+> > Well, in theory you need barrier() here. Or perhaps we should add
+> > ACCESS_ONCE() into task_pid()...
+>
+> You mean modify task_pid as:
+> return ACCESS_ONCE(task->pids[PIDTYPE_PID].pid;);
+
+Yes. But not now an not in this patch of course. I'd suggest to add
+barrier() just in case.
+
+
+> > And imho it would be better to declare pidns_list/pidns_tree locally
+> > in nslist_proc_show() and pass them to the callees.
+>
+> That's a good idea.
+> Will changed in the next version.
+
+Good. And I forgot to mention, in this case you do not need pidns_list_lock
+at all afaics.
+
+Oleg.
