@@ -1,9 +1,10 @@
-From: MAILER-DAEMON-UNMweyRcH1hqYN+CpKdYrw@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Fri, 10 Oct 2014 16:49:06 +0200 (CEST)
-Message-ID: <20141010144906.709995640FB@aquila.aqp.it>
+From: =?iso-8859-1?Q?St=E9phane?= Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: Schedule for the =?iso-8859-1?Q?Containers?=
+	=?iso-8859-1?Q?_mini-summit_at_LPC_2014_=28next_week_in_D=FCsseldorf=29?=
+Date: Fri, 10 Oct 2014 17:21:51 +0200
+Message-ID: <20141010152151.GD24284@castiana>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============2044869832024440405=="
+Content-Type: multipart/mixed; boundary="===============1962687115478148906=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -14,161 +15,114 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs98uUxBSJOaYoYkZiVZrdSR2LY78lusg7I@public.gmane.org, lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, lxc-users-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org
+Cc: brandon-Qdl1sq8EXS0@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
 
---===============2044869832024440405==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="02E0E564101.1412952546/aquila.aqp.it"
-Content-Transfer-Encoding: 7bit
-
-This is a MIME-encapsulated message.
-
---02E0E564101.1412952546/aquila.aqp.it
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
-
-This is the mail system at host aquila.aqp.it.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to postmaster.
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<aqp.it3dg.cosmai-OxrrNuhVJBY@public.gmane.org>: host 88.45.184.210[88.45.184.210] said: 550 5.1.1
-    <aqp.it3dg.cosmai-OxrrNuhVJBY@public.gmane.org>... User unknown (in reply to RCPT TO command)
-
-<aqp.it3dg.sabato-OxrrNuhVJBY@public.gmane.org>: host 88.45.184.210[88.45.184.210] said: 550 5.1.1
-    <aqp.it3dg.sabato-OxrrNuhVJBY@public.gmane.org>... User unknown (in reply to RCPT TO command)
-
-<aqp.ita.carbonara-OxrrNuhVJBY@public.gmane.org>: host 88.45.184.210[88.45.184.210] said: 550 5.1.1
-    <aqp.ita.carbonara-OxrrNuhVJBY@public.gmane.org>... User unknown (in reply to RCPT TO command)
-
-<aqp.ita.degiglio-OxrrNuhVJBY@public.gmane.org>: host 88.45.184.210[88.45.184.210] said: 550 5.1.1
-    <aqp.ita.degiglio-OxrrNuhVJBY@public.gmane.org>... User unknown (in reply to RCPT TO command)
-
-<aqp.ita.dellerba-OxrrNuhVJBY@public.gmane.org>: host 88.45.184.210[88.45.184.210] said: 550 5.1.1
-    <aqp.ita.dellerba-OxrrNuhVJBY@public.gmane.org>... User unknown (in reply to RCPT TO command)
-
---02E0E564101.1412952546/aquila.aqp.it
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; aquila.aqp.it
-X-Postfix-Queue-ID: 02E0E564101
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Fri, 10 Oct 2014 16:49:06 +0200 (CEST)
-
-Final-Recipient: rfc822; aqp.it3dg.cosmai-OxrrNuhVJBY@public.gmane.org
-Original-Recipient: rfc822;aqp.it3dg.cosmai-OxrrNuhVJBY@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; 88.45.184.210
-Diagnostic-Code: smtp; 550 5.1.1 <aqp.it3dg.cosmai-OxrrNuhVJBY@public.gmane.org>... User unknown
-
-Final-Recipient: rfc822; aqp.it3dg.sabato-OxrrNuhVJBY@public.gmane.org
-Original-Recipient: rfc822;aqp.it3dg.sabato-OxrrNuhVJBY@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; 88.45.184.210
-Diagnostic-Code: smtp; 550 5.1.1 <aqp.it3dg.sabato-OxrrNuhVJBY@public.gmane.org>... User unknown
-
-Final-Recipient: rfc822; aqp.ita.carbonara-OxrrNuhVJBY@public.gmane.org
-Original-Recipient: rfc822;aqp.ita.carbonara-OxrrNuhVJBY@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; 88.45.184.210
-Diagnostic-Code: smtp; 550 5.1.1 <aqp.ita.carbonara-OxrrNuhVJBY@public.gmane.org>... User unknown
-
-Final-Recipient: rfc822; aqp.ita.degiglio-OxrrNuhVJBY@public.gmane.org
-Original-Recipient: rfc822;aqp.ita.degiglio-OxrrNuhVJBY@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; 88.45.184.210
-Diagnostic-Code: smtp; 550 5.1.1 <aqp.ita.degiglio-OxrrNuhVJBY@public.gmane.org>... User unknown
-
-Final-Recipient: rfc822; aqp.ita.dellerba-OxrrNuhVJBY@public.gmane.org
-Original-Recipient: rfc822;aqp.ita.dellerba-OxrrNuhVJBY@public.gmane.org
-Action: failed
-Status: 5.1.1
-Remote-MTA: dns; 88.45.184.210
-Diagnostic-Code: smtp; 550 5.1.1 <aqp.ita.dellerba-OxrrNuhVJBY@public.gmane.org>... User unknown
-
---02E0E564101.1412952546/aquila.aqp.it
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
-
-Received: from aquila.aqp.it (localhost.localdomain [127.0.0.1])
-	by localhost (Postfix) with SMTP id 02E0E564101;
-	Fri, 10 Oct 2014 16:49:06 +0200 (CEST)
-Received: from server1.stockrose.com (unknown [216.245.205.174])
-	by aquila.aqp.it (Postfix) with ESMTP id 0BA415640F2;
-	Fri, 10 Oct 2014 16:49:02 +0200 (CEST)
-Received: from [216.245.205.174] by server1.stockrose.com id mxR3oYYRsmbtnx7Y; Fri, 10 Oct 2014 18:56:32 +0400
-Message-ID: <21996_1412952545_5437F1E1_21996_701_5_007901cfe49a$5fc6e300$0300a8c0-HQcOjwhNS1cocd8CnDH2IWXnswh1EIUO@public.gmane.org>
-From: "Julietta" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <aqp.it3dg.cosmai-OxrrNuhVJBY@public.gmane.org>
-Subject: Fwd: Response from the forum #9280345
-Date: Fri, 10 Oct 2014 18:56:32 +0400
-MIME-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="----------4A39125D6F9D60A"
-X-PMX-Version: 5.6.1.2065439, Antispam-Engine: 2.7.2.376379, Antispam-Data: 2014.10.10.144222
+--===============1962687115478148906==
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="EY/WZ/HvNxOox07X"
+Content-Disposition: inline
 
 
-------------4A39125D6F9D60A
-Content-Type: text/plain; charset=utf-8
+--EY/WZ/HvNxOox07X
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-AQP S.p.A. - Messaggio del Sistema Antivirus: (aq) L'allegato e' stato rimo=
-sso perche' contente il/i seguente/i virus: WM97/DwnLdr-LYF. Segue messaggi=
-o originale =3D=3D=3D=3D>
-Hello user, aqp.it3dg.cosmai-IhsCRAD26UM@public.gmane.org
+Hey everyone,
 
-Upon your request submitted in the forum 09/13/2014 send you a detailed rep=
-ort on tax reporting.
-Statistics can be viewed in the attached file.=
+Just thought I'd send our current expected schedule for the containers
+mini-summit at Linux Plumbers 2014 happening next Friday morning at the
+congress center in D=FCsseldorf, Germany.
 
-------------4A39125D6F9D60A
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
-
-Il contenuto originale di questa parte del messaggio =C3=A8
-stato sostituito da questo testo, perch=C3=A9 conteneva il
-virus seguente (o i virus seguenti):
-
-    WM97/DwnLdr-LYF
-
-L'identificativo di questo messaggio =C3=A8
-'5437F1E1_21996_701_5'.
-
-Questa notifica =C3=A8 stata inviata a voi e ad eventuali altri
-destinatari originali.	 Per evitare disagi e per tenere
-sotto controllo il traffico di posta, il mittente originale
-del messaggio NON =C3=A8 stato avvertito. Tuttavia, se lo
-desiderate, potete inviare una notifica anche al mittente.
+We expect to mostly stick to this schedule with one potential last
+minute addition. We also may have to cut a bit of the tea break to fit
+everything.
 
 
-L'Amministratore di sistema
-PureMessage Admin <postmaster-OxrrNuhVJBY@public.gmane.org>
+=3D=3D First part (project updates) =3D=3D
+ - Title: Opening speech / schedule presentation / intros / ...
+   By: Brandon Philips and St=E9phane Graber
+   Length: 5min
 
-------------4A39125D6F9D60A
+ - Title: LXC after 1.0
+   By: St=E9phane Graber
+   Length: 10min
+
+ - Title: Are containers that we have now secure enough?
+   By: Vladimir Davydov and Pavel Emelyanov
+   Length: 10min
+
+ - Title: Checkpoint/restore of containers with CRIU
+   By: Tycho Andersen, Pavel Emelyanov, Serge Hallyn and Saied Kazemi
+   Length: 40min
+
+ - Title: systemd and containers: standards, integration, and APIs
+   By: Lennart Poettering
+   Length: 15min
+
+=3D=3D=3D=3D=3D Tea break =3D=3D=3D=3D=3D
+
+ - Title: Kubernetes and Google: Lessons learned from 8+ years of containers
+   By: Tim Hockin
+   Length: unknown
+
+ - Title: Resource management across different tools
+   By: Rohit Jnagal
+   Length: 15min
+
+=3D=3D Second part (device namespaces and related) =3D=3D
+
+ - Title: FUSE mounts from user namespaces
+   By: Seth Forshee
+   Length: 10-15min
+
+ - Title: Dynamic device management in an LXC environment
+   By: Michael Coss
+   Length: 15min
+
+ - Title: How far are we from running distributions inside containers?
+   By: Amir Goldstein and Oren Laadan
+   Length: unknown
 
 
 
-------------4A39125D6F9D60A--
 
---02E0E564101.1412952546/aquila.aqp.it--
+Looking forward to seeing you all next week!
 
---===============2044869832024440405==
+
+--=20
+St=E9phane Graber
+Ubuntu developer
+http://www.ubuntu.com
+
+--EY/WZ/HvNxOox07X
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCgAGBQJUN/mPAAoJEMY4l01keS1nSZ4P/2anv8xaFBEwhp4+cZVP4fd2
+bJJU4eTIbB2TrQyOegvpMCBBQYRGLNZPf7CbJdvsu5c7KIslwGT0Md3rnDpBoU+g
+RSt88N+lFFRJPAggPhDJgVmpxuod3lL/tnBWJmk8PEGYdkrqhlUW2dz/0wLGrc47
+lUMJKJh3xOrowVQ+XVSZ/HqHIdrB6ShEfEMP+h4nyEjgSga45FwbOGu/Kw3wwuKg
+Pu4AeJqQ7B/G6GXd8KofJxAYgTknN2daO/8AUHdXnpE4DTPrMEOoonpt+woL2r1f
+kkIYhaYKtIr9tKJKbDgmvNufB2RCgFdxJcGoi7UsmcyqatuDBgCpfvHHRoYR0SaA
+zHFggxkZXkmuQOKM7C6ve5Wa6XP8BcU0jDJBEXsm7gAu3sCKP1NwSYyHZ0gqmLvq
+Ooe7Q54Uz6Uqaxk1DV1hVvKLx72C/D0iU7JF969ADHLHHDa3/1D2QSCBNfAZViKp
+2IIF2o2lUAYQDOtpxbPqEMXWW4wSwbtyPybhFhU7kFyBv2IpcqK72/oZw2AfRNvE
+HYwaxLpN06/t+EkG6BnuPAHiyFJvmSJBi2s3IXusfpy67uvEPq3V8yMu+6TC/BFL
+XIY8tmP4TTYLaLtOnsUB1Mu8tykYIeZYCI8vkMqD/cERK/s/xHZezfrn0wNZ8GbK
+daXJJvffUvNzoAY4mehJ
+=uFHW
+-----END PGP SIGNATURE-----
+
+--EY/WZ/HvNxOox07X--
+
+--===============1962687115478148906==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -178,4 +132,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============2044869832024440405==--
+--===============1962687115478148906==--
