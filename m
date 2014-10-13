@@ -1,16 +1,15 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH V5 12/13] namespaces: expose ns instance serial numbers
-	in proc
-Date: Mon, 13 Oct 2014 15:41:03 +0200
-Message-ID: <20141013134103.GK24703@mail.hallyn.com>
+Subject: Re: [PATCH V5 13/13] Documentation: add a section for /proc/<pid>/ns/
+Date: Mon, 13 Oct 2014 15:46:59 +0200
+Message-ID: <20141013134659.GL24703@mail.hallyn.com>
 References: <cover.1412543112.git.rgb@redhat.com>
-	<53b81e89f7179ef8569409293f990b3ac7deac61.1412543112.git.rgb@redhat.com>
+	<982503bc4e4c24cbdebd111b27191ed5bee75572.1412543112.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <53b81e89f7179ef8569409293f990b3ac7deac61.1412543112.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <982503bc4e4c24cbdebd111b27191ed5bee75572.1412543112.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,100 +24,66 @@ Cc: aviro-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7
 List-Id: containers.vger.kernel.org
 
 Quoting Richard Guy Briggs (rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
-> Expose the namespace instace serial numbers in the proc filesystem at
-
-(s/stac/stanc/)
-
-> /proc/<pid>/ns/<ns>_snum.  The link text gives the serial number in hex.
-> 
-> "snum" was chosen instead of "seq" for consistency with inum and there are a
-> number of other uses of "seq" in the namespace code.
-> 
-> Suggested-by: Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+> ---
 
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
-> Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> ---
->  fs/proc/namespaces.c |   33 +++++++++++++++++++++++++--------
->  1 files changed, 25 insertions(+), 8 deletions(-)
+(some nitpicking below)
+
+Thanks, Richard.  IMO this patchset is great at the moment.  Now if I
+checkpoint a container, migrate it to another machine, and restart it
+there, the serial numbers will no longer match, but as the creations are
+all logged, userspace can track the changed snum, so I don't believe
+that is a problem.  (Pretty sure we've discussed that before, mostly
+mentioning it here to think through it myself)
+
+>  Documentation/filesystems/proc.txt |   16 ++++++++++++++++
+>  1 files changed, 16 insertions(+), 0 deletions(-)
 > 
-> diff --git a/fs/proc/namespaces.c b/fs/proc/namespaces.c
-> index 310da74..29c3909 100644
-> --- a/fs/proc/namespaces.c
-> +++ b/fs/proc/namespaces.c
-> @@ -47,12 +47,15 @@ static char *ns_dname(struct dentry *dentry, char *buffer, int buflen)
->  	struct inode *inode = dentry->d_inode;
->  	const struct proc_ns_operations *ns_ops = PROC_I(inode)->ns.ns_ops;
+> diff --git a/Documentation/filesystems/proc.txt b/Documentation/filesystems/proc.txt
+> index ddc531a..c4bfd6f 100644
+> --- a/Documentation/filesystems/proc.txt
+> +++ b/Documentation/filesystems/proc.txt
+> @@ -42,6 +42,7 @@ Table of Contents
+>    3.6	/proc/<pid>/comm  & /proc/<pid>/task/<tid>/comm
+>    3.7   /proc/<pid>/task/<tid>/children - Information about task children
+>    3.8   /proc/<pid>/fdinfo/<fd> - Information about opened file
+> +  3.9   /proc/<pid>/ns/<ns>{,_snum} - Information about process namespaces
 >  
-> -	return dynamic_dname(dentry, buffer, buflen, "%s:[%lu]",
-> -		ns_ops->name, inode->i_ino);
-> +	if (strstr(dentry->d_iname, "_snum"))
-> +		return dynamic_dname(dentry, buffer, buflen, "%s_snum:[%llx]",
-> +			ns_ops->name, ns_ops->snum(PROC_I(inode)->ns.ns));
-> +	else
-> +		return dynamic_dname(dentry, buffer, buflen, "%s:[%lu]",
-> +			ns_ops->name, inode->i_ino);
->  }
+>    4	Configuring procfs
+>    4.1	Mount options
+> @@ -1744,6 +1745,21 @@ pair provide additional information particular to the objects they represent.
+>  	optional and may be omitted if no marks created yet.
 >  
-> -const struct dentry_operations ns_dentry_operations =
-> -{
-> +const struct dentry_operations ns_dentry_operations = {
->  	.d_delete	= always_delete_dentry,
->  	.d_dname	= ns_dname,
->  };
-> @@ -160,7 +163,10 @@ static int proc_ns_readlink(struct dentry *dentry, char __user *buffer, int bufl
->  	if (!ns)
->  		goto out_put_task;
 >  
-> -	snprintf(name, sizeof(name), "%s:[%u]", ns_ops->name, ns_ops->inum(ns));
-> +	if (strstr(dentry->d_iname, "_snum"))
-> +		snprintf(name, sizeof(name), "%s_snum:[%llx]", ns_ops->name, ns_ops->snum(ns));
-> +	else
-> +		snprintf(name, sizeof(name), "%s:[%u]", ns_ops->name, ns_ops->inum(ns));
->  	res = readlink_copy(buffer, buflen, name);
->  	ns_ops->put(ns);
->  out_put_task:
-> @@ -210,16 +216,23 @@ static int proc_ns_dir_readdir(struct file *file, struct dir_context *ctx)
->  
->  	if (!dir_emit_dots(file, ctx))
->  		goto out;
-> -	if (ctx->pos >= 2 + ARRAY_SIZE(ns_entries))
-> +	if (ctx->pos >= 2 + 2 * ARRAY_SIZE(ns_entries))
->  		goto out;
->  	entry = ns_entries + (ctx->pos - 2);
->  	last = &ns_entries[ARRAY_SIZE(ns_entries) - 1];
->  	while (entry <= last) {
->  		const struct proc_ns_operations *ops = *entry;
-> +		char name[50];
+> +3.9	/proc/<pid>/ns/<nstype>{,_snum} - Information about process namespaces
+> +--------------------------------------------------------------------------
+> +These files provides information about the namespaces within which the process
+
+s/provides/provide/
+
+> +is contained.  The files named only with the namespace type <nstype> contain a
+> +link that lists the containing namespace' inode number in its proc filesystem.
+
+s/'/'s/
+
+... Maybe add "And which can be used with setns(2)."
+
+> +The files with suffix _snum contain a link that lists the containing
+> +namespace' instance serial number, unique per kernel since boot.  The
+
+s/'/'s/
+
+> +namespace types are self-describing.
 > +
->  		if (!proc_fill_cache(file, ctx, ops->name, strlen(ops->name),
->  				     proc_ns_instantiate, task, ops))
->  			break;
->  		ctx->pos++;
-> +		snprintf(name, sizeof(name), "%s_snum", ops->name);
-> +		if (!proc_fill_cache(file, ctx, name, strlen(name),
-> +				     proc_ns_instantiate, task, ops))
-> +			break;
-> +		ctx->pos++;
->  		entry++;
->  	}
->  out:
-> @@ -247,9 +260,13 @@ static struct dentry *proc_ns_dir_lookup(struct inode *dir,
->  
->  	last = &ns_entries[ARRAY_SIZE(ns_entries)];
->  	for (entry = ns_entries; entry < last; entry++) {
-> -		if (strlen((*entry)->name) != len)
-> +		char name[50];
+> +The output format of the inode links is:
+> +	<nstype>:[<inode_number>]
+> +The output format of the serial number links is:
+> +	<nstype>_snum:[<serial_number>]
 > +
-> +		snprintf(name, sizeof(name), "%s_snum", (*entry)->name);
-> +		if (strlen((*entry)->name) != len && strlen(name) != len)
->  			continue;
-> -		if (!memcmp(dentry->d_name.name, (*entry)->name, len))
-> +		if (!memcmp(dentry->d_name.name, (*entry)->name, len)
-> +		    || !memcmp(dentry->d_name.name, name, len))
->  			break;
->  	}
->  	if (entry == last)
+> +
+>  ------------------------------------------------------------------------------
+>  Configuring procfs
+>  ------------------------------------------------------------------------------
 > -- 
 > 1.7.1
