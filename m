@@ -1,10 +1,17 @@
-From: MAILER-DAEMON-lInf0NrTTXmB+jHODAdFcQ@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Mon, 13 Oct 2014 08:16:32 +0200 (CEST)
-Message-ID: <20141013061632.CF42E685743@wolverine.webtonika.com>
+From: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: RE: [PATCHv4] procfs: show hierarchy of pid namespace
+Date: Mon, 13 Oct 2014 10:13:50 +0000
+Message-ID: <5871495633F38949900D2BF2DC04883E5E864C__13983.8639217944$1413195245$gmane$org@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <1412762198-21825-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<20141008151328.GB4835@redhat.com>
+	<5871495633F38949900D2BF2DC04883E5E1649@G08CNEXMBPEKD02.g08.fujitsu.local>
+	<20141009213414.GA10705@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1517347738538885721=="
+Content-Type: text/plain; charset="gb2312"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20141009213414.GA10705-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,130 +21,53 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
-
---===============1517347738538885721==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="72E8B685190.1413180992/wolverine.webtonika.com"
-
-This is a MIME-encapsulated message.
-
---72E8B685190.1413180992/wolverine.webtonika.com
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
-
-This is the mail system at host wolverine.webtonika.com.
-
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to postmaster.
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<avvferrero+spam-3gflMi5pTzij3JcTiSUAPbfgyxqRq/wQ@public.gmane.org>: host
-    mail.studioferreroudine.it[195.36.14.21] said: 550 "Unknown User" (in reply
-    to RCPT TO command)
-
---72E8B685190.1413180992/wolverine.webtonika.com
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; wolverine.webtonika.com
-X-Postfix-Queue-ID: 72E8B685190
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Mon, 13 Oct 2014 08:16:32 +0200 (CEST)
-
-Final-Recipient: rfc822; avvferrero+spam-3gflMi5pTzij3JcTiSUAPbfgyxqRq/wQ@public.gmane.org
-Action: failed
-Status: 5.0.0
-Remote-MTA: dns; mail.studioferreroudine.it
-Diagnostic-Code: smtp; 550 "Unknown User"
-
---72E8B685190.1413180992/wolverine.webtonika.com
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: by wolverine.webtonika.com (Postfix, from userid 257)
-	id 72E8B685190; Mon, 13 Oct 2014 08:16:32 +0200 (CEST)
-X-Nucleus-Antivirus-check: T
-X-Nucleus-Antispam-check: T
-X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on
-	wolverine-v82-x64.webtonika.it
-X-Spam-Flag: YES
-X-Spam-Level: ***********
-X-Spam-Status: Yes, score=11.5 required=4.5 tests=BAYES_50,RATWARE_MS_HASH,
-	RATWARE_OUTLOOK_NONAME,RCVD_IN_BRBL_LASTEXT,RCVD_IN_RP_RNBL,RCVD_IN_XBL,
-	RDNS_NONE,URIBL_BLACK autolearn=no version=3.3.2
-X-Spam-Report: *  1.3 RCVD_IN_RP_RNBL RBL: Relay in RNBL,
-	*      https://senderscore.org/blacklistlookup/
-	*      [31.210.232.18 listed in bl.score.senderscore.com]
-	*  0.4 RCVD_IN_XBL RBL: Received via a relay in Spamhaus XBL
-	*      [31.210.232.18 listed in zen.spamhaus.org]
-	*  1.4 RCVD_IN_BRBL_LASTEXT RBL: RCVD_IN_BRBL_LASTEXT
-	*      [31.210.232.18 listed in bb.barracudacentral.org]
-	*  1.7 URIBL_BLACK Contains an URL listed in the URIBL blacklist
-	*      [URIs: therowdyranch.ca]
-	*  0.8 BAYES_50 BODY: Bayes spam probability is 40 to 60%
-	*      [score: 0.4438]
-	*  3.0 RATWARE_OUTLOOK_NONAME Bulk email fingerprint (Outlook no name)
-	*      found
-	*  0.8 RDNS_NONE Delivered to internal network by a host with no rDNS
-	*  2.1 RATWARE_MS_HASH Bulk email fingerprint (msgid ms hash) found
-X-Nucleus-IsRelay: F
-X-Nucleus-SourceIP: 31.210.232.18
-X-Nucleus-Id: 2783E660C0B
-X-Nucleus-From: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-Nucleus-Date: 2014-10-13 08:16:30 CEST
-X-Nucleus-IsFetchMail: F
-Received: from slp-gw-secondary.thn.crosspointcolo.co.uk (unknown [31.210.232.18])
-	by wolverine.webtonika.com (Postfix) with ESMTP id 2783E660C0B
-	for <avvferrero-toElgopxuq7wPvf36wkmP6icDR3qMxSs@public.gmane.org>; Mon, 13 Oct 2014 08:16:30 +0200 (CEST)
-Received: from [10.0.0.100] by slp-gw-secondary.thn.crosspointcolo.co.uk id 6BSRvFY56Z3w; Mon, 13 Oct 2014 07:17:02 +0100
-Message-ID: <000801cfe6ad$4c3f9600$6400000a-JwwxRrEnVNrJXtF6vewC6spmApm0/QOtbbScpkSWAvcgheT7Ap2FrVpr/1R2p/CL@public.gmane.org>
-From: "Elena" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <avvferrero-toElgopxuq7wPvf36wkmP6icDR3qMxSs@public.gmane.org>
-Subject: *****SPAM***** Fwd: Materiale
-Date: Mon, 13 Oct 2014 07:17:02 +0100
-MIME-Version: 1.0
-X-Spam-Prev-Subject: Fwd: Materiale
-X-Virus-Scanned: Secured by Nucleus mail security scanner
-
-Content-type text/plain charset= iso-8859-1
-Content-Transfer-Encoding: 8bit
-
-
-
-QBVlg,
-
-IcnTgx lHtIDG IMQLJShV mdKoyvVN,
-xBYd uPFnXIu RGa QsKlmwO
-http://therowdyranch.ca/Transazione.zip
-
-
-NsGbwD
-VgaPwg UpweG
-Anke Gelbrich
-
-
-
---72E8B685190.1413180992/wolverine.webtonika.com--
-
---===============1517347738538885721==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1517347738538885721==--
+DQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogT2xlZyBOZXN0ZXJvdiBb
+bWFpbHRvOm9sZWdAcmVkaGF0LmNvbV0NCj4gU2VudDogRnJpZGF5LCBPY3RvYmVyIDEwLCAyMDE0
+IDU6MzQgQU0NCj4gVG86IENoZW4sIEhhbnhpYW8vs8Ig6s/P9g0KPiBDYzogY29udGFpbmVyc0Bs
+aXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZzsgbGludXgta2VybmVsQHZnZXIua2VybmVsLm9yZzsg
+U2VyZ2UNCj4gSGFsbHluOyBFcmljIFcuIEJpZWRlcm1hbjsgRGF2aWQgSG93ZWxsczsgUmljaGFy
+ZCBXZWluYmVyZ2VyOyBQYXZlbCBFbWVseWFub3Y7DQo+IFZhc2lsaXkgS3VsaWtvdjsgTWF0ZXVz
+eiBHdXppaw0KPiBTdWJqZWN0OiBSZTogW1BBVENIdjRdIHByb2Nmczogc2hvdyBoaWVyYXJjaHkg
+b2YgcGlkIG5hbWVzcGFjZQ0KPiANCj4gT24gMTAvMDksIENoZW4sIEhhbnhpYW8gd3JvdGU6DQo+
+ID4NCj4gPiA+IEZyb206IE9sZWcgTmVzdGVyb3YgW21haWx0bzpvbGVnQHJlZGhhdC5jb21dDQo+
+ID4gPg0KPiA+ID4gSG1tLiBXZSBvbmx5IHdhbnQgdGhlIHRhc2tzIGZyb20gb3VyIG5hbWVzcGFj
+ZSwgeWVzPyBQZXJoYXBzIGZpbmRfZ2VfcGlkKCkNCj4gPiA+IG1ha2VzIG1vcmUgc2Vuc2U/DQo+
+ID4NCj4gPiBPbmx5IHRhc2tzIGZyb20gb3VyIG5zIGlzIHZhbGlkLg0KPiA+IEJ1dCBob3cgY291
+bGQgZmluZF9nZV9waWQoKSBkbyB0aGF0Pw0KPiA+DQo+ID4gbnIgPSAxOw0KPiA+IHdoaWxlIChu
+ciA8IFBJRF9NQVhfTElNSVQpIHsNCj4gPiAJZmluZF9nZV9waWQobnIsIGN1cnJfbnMpOw0KPiA+
+IAlsaXN0X2FkZCgpOw0KPiA+IAlucisrOw0KPiA+IH0NCj4gDQo+IHNvbWV0aGluZyBsaWtlIHRo
+aXMsIGV4Y2VwdCBsaXN0X2FkZCgpIHNob3VsZCBvYnZpb3VzbHkgZGVwZW5kIG9uDQo+IGlzX2No
+aWxkX3JlYXBlcigpIGNoZWNrLg0KPiANCj4gVGhpcyBjYW4gYmUgbW9yZSBvcHRpbWFsIGluIHN1
+Yi1uYW1lc3BhY2VzLCB5b3UgZG8gbm90IG5lZWQgdG8gYWJ1c2UNCj4gdGhlIGdsb2JhbCBwcm9j
+ZXNzIGxpc3QuDQo+IA0KPiBBbmQgaWYgeW91IGNoYW5nZSB0aGlzIGNvZGUgdG8gdXNlIGdldF9w
+aWQvcHV0X3BpZCwgdGhlbiB5b3UgZG8gbm90DQo+IG5lZWQgdG8gaG9sZCByY3VfcmVhZF9sb2Nr
+KCkgdGhyb3VnaG91dCwgeW91IG9ubHkgbmVlZCBpdCBhcm91bmQNCj4gZmluZF9nZV9waWQgKyBn
+ZXRfcGlkLg0KPiANCj4gQXQgdGhlIHNhbWUgdGltZSwgZm9yX2VhY2hfcHJvY2VzcygpIGluIHRo
+ZSBnbG9iYWwgbmFtZXNwYWNlIGNhbiBiZQ0KPiBmYXN0ZXIgaWYgdGhlcmUgYXJlIGEgbG90IG9m
+IHN1Yi10aHJlYWRzLg0KPiANCj4gPiBQZXJoYXBzIHRoYXQncyBub3QgYSBnb29kIHdheS4NCj4g
+DQo+IE9LLCBJIHdvbid0IGluc2lzdC4NCj4gDQo+IGFsdGhvdWdoIGl0IHdvdWxkIGJlIG5pY2Ug
+dG8ga25vdyB3aHkgZG8geW91IHRoaW5rIHRoaXMgaXMgYmFkLg0KPiANCkkgd29ycmllZCBhYm91
+dCBpdCBtYXkgc2xvd2VyIGluIGdsb2JhbCBuYW1lc3BhY2UuDQpCdXQgaXQgd2lsbCBwcm92aWRl
+IGEgZ3JlYXQgY29udmVuaWVudCB3YXkgd2hlbiBxdWVyeSBwaWQgaGllcmFyY2h5DQp3aGVuIG5v
+dCBpbiBpbml0X3BpZF9ucy4NCg0KDQo+ID4gPiA+ICsJCXBpZCA9IHRhc2tfcGlkKHApOw0KPiA+
+ID4NCj4gPiA+IFdlbGwsIGluIHRoZW9yeSB5b3UgbmVlZCBiYXJyaWVyKCkgaGVyZS4gT3IgcGVy
+aGFwcyB3ZSBzaG91bGQgYWRkDQo+ID4gPiBBQ0NFU1NfT05DRSgpIGludG8gdGFza19waWQoKS4u
+Lg0KPiA+DQo+ID4gWW91IG1lYW4gbW9kaWZ5IHRhc2tfcGlkIGFzOg0KPiA+IHJldHVybiBBQ0NF
+U1NfT05DRSh0YXNrLT5waWRzW1BJRFRZUEVfUElEXS5waWQ7KTsNCj4gDQo+IFllcy4gQnV0IG5v
+dCBub3cgYW4gbm90IGluIHRoaXMgcGF0Y2ggb2YgY291cnNlLiBJJ2Qgc3VnZ2VzdCB0byBhZGQN
+Cj4gYmFycmllcigpIGp1c3QgaW4gY2FzZS4NCj4gDQpXZSBjYW4gZ2V0IHJpZCBvZiB0YXNrX3Bp
+ZCB3aGVuIHdlIHVzZSBmaW5kX2dlX3BpZC4NCj4gDQo+ID4gPiBBbmQgaW1obyBpdCB3b3VsZCBi
+ZSBiZXR0ZXIgdG8gZGVjbGFyZSBwaWRuc19saXN0L3BpZG5zX3RyZWUgbG9jYWxseQ0KPiA+ID4g
+aW4gbnNsaXN0X3Byb2Nfc2hvdygpIGFuZCBwYXNzIHRoZW0gdG8gdGhlIGNhbGxlZXMuDQo+ID4N
+Cj4gPiBUaGF0J3MgYSBnb29kIGlkZWEuDQo+ID4gV2lsbCBjaGFuZ2VkIGluIHRoZSBuZXh0IHZl
+cnNpb24uDQo+IA0KPiBHb29kLiBBbmQgSSBmb3Jnb3QgdG8gbWVudGlvbiwgaW4gdGhpcyBjYXNl
+IHlvdSBkbyBub3QgbmVlZCBwaWRuc19saXN0X2xvY2sNCj4gYXQgYWxsIGFmYWljcy4NCg0KVGhh
+bmtzIGZvciB5b3VyIGNvbW1lbnRzLg0KSSdsbCBwb3N0IGEgbmV3IHBhdGNoIHVzaW5nIGZpbmRf
+Z2VfcGlkICsgZ2V0X3BpZCANCg0KVGhhbmtzLA0KLSBDaGVuDQoNCl9fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNv
+bnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZv
+dW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
