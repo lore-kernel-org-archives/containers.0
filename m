@@ -1,11 +1,16 @@
-From: "lrrcwccevljv" <zhenbeiakap-Xb2Y1Dfb9CI@public.gmane.org>
-Subject: dayelongshe333-/E1597aS9LRv1O+Z8WTAqQ@public.gmane.org(AD)
-Date: Mon, 13 Oct 2014 19:13:12 +0800
-Message-ID: <1413198792.20699646d2f949a083b97661543fd50c.zhenbeiakap@sohu.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH V5 06/13] audit: log creation and deletion of namespace
+	instances
+Date: Mon, 13 Oct 2014 14:26:06 +0200
+Message-ID: <20141013122606.GD24703@mail.hallyn.com>
+References: <cover.1412543112.git.rgb@redhat.com>
+	<55b0228c68d0e74480ce73f88e05d16455c4c843.1412543112.git.rgb@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <55b0228c68d0e74480ce73f88e05d16455c4c843.1412543112.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,215 +20,432 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: aviro-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-PFA+PFNQQU4gc3R5bGU9IkZPTlQtU0laRTogMjRweCI+PFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5
-cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7njLY8L1NQQU4+5oKoPFNQQU4g
-c3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7o
-v4Llv408L1NQQU4+5aW9PFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNv
-bHV0ZTsgVE9QOiAtNzg1N3B4Ij7lub08L1NQQU4+77yBPFNQQU4+PC9QPg0KPFA+PFNQQU4gc3R5
-bGU9IkZPTlQtU0laRTogMjRweCI+PFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9O
-OiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7mtqE8L1NQQU4+5LujPFNQQU4gc3R5bGU9IkxFRlQ6
-IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7mhZU8L1NQQU4+6ZaL
-PFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1
-N3B4Ij7pmYw8L1NQQU4+5ZyLPFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBh
-YnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7mpI08L1NQQU4+Jmx0OzxTUEFOIHN0eWxlPSJMRUZUOiAt
-NzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdweCI+5rK45YiDPC9TUEFOPuWc
-sDxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4
-NTdweCI+6ZqZ5Y2mPC9TUEFOPiZndDs8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJ
-T046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuiusDwvU1BBTj7nqIU8U1BBTiBzdHlsZT0iTEVG
-VDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPui8ieeohTwvU1BB
-Tj7npag8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6
-IC03ODU3cHgiPui+hjwvU1BBTj46PFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9O
-OiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7lgqc8L1NQQU4+5ZWGPFNQQU4gc3R5bGU9IkxFRlQ6
-IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7popE8L1NQQU4+5ZOB
-PFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1
-N3B4Ij7nqLE8L1NQQU4+6Yq3PFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBh
-YnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7nm7w8L1NQQU4+5ZSuPFNQQU4gc3R5bGU9IkxFRlQ6IC03
-MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7mvKzniq88L1NQQU4+LjxT
-UEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdw
-eCI+5YaIPC9TUEFOPuW7ujxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJz
-b2x1dGU7IFRPUDogLTc4NTdweCI+57ibPC9TUEFOPuadkDxTUEFOIHN0eWxlPSJMRUZUOiAtNzIy
-OXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdweCI+56iLPC9TUEFOPi48U1BBTiBz
-dHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuiY
-uOatuzwvU1BBTj7lu6M8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29s
-dXRlOyBUT1A6IC03ODU3cHgiPuWusDwvU1BBTj7lkYo8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlw
-eDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuavgDwvU1BBTj4uPFNQQU4gc3R5
-bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7nv5jm
-kp48L1NQQU4+5ZKoPFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0
-ZTsgVE9QOiAtNzg1N3B4Ij7mgavml7E8L1NQQU4+6KmiPFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5
-cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7omoo8L1NQQU4+LjxTUEFOIHN0
-eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdweCI+6Lyd
-5LqfPC9TUEFOPuacgzxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1
-dGU7IFRPUDogLTc4NTdweCI+6ZuNPC9TUEFOPuitsDxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4
-OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdweCI+5rWq5rmNPC9TUEFOPi48U1BBTiBz
-dHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuS5
-hzwvU1BBTj7ln7k8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRl
-OyBUT1A6IC03ODU3cHgiPuaAlea1qjwvU1BBTj7oqJM8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlw
-eDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPueBvzwvU1BBTj4uPFNQQU4+PC9Q
-Pg0KPFA+PFNQQU4gc3R5bGU9IkZPTlQtU0laRTogMjRweCI+PFNQQU4gc3R5bGU9IkxFRlQ6IC03
-MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7kvb88L1NQQU4+6aSQPFNQ
-QU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4
-Ij7ogqU8L1NQQU4+6aOyPFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNv
-bHV0ZTsgVE9QOiAtNzg1N3B4Ij7nv5I8L1NQQU4+LjxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4
-OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdweCI+5YmCPC9TUEFOPuS9jzxTUEFOIHN0
-eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdweCI+56C4
-PC9TUEFOPuWuvzxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7
-IFRPUDogLTc4NTdweCI+57KuPC9TUEFOPi48U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9T
-SVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuWBlTwvU1BBTj7mirU8U1BBTiBzdHlsZT0i
-TEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuabnTwvU1BB
-Tj7miaM8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6
-IC03ODU3cHgiPuWwmDwvU1BBTj7lop48U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJ
-T046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuiuvDwvU1BBTj7lgLw8U1BBTiBzdHlsZT0iTEVG
-VDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuWCheaOjzwvU1BB
-Tj7nqIU8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6
-IC03ODU3cHgiPuihheirpjwvU1BBTj4uPFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lU
-SU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7pmLY8L1NQQU4+5oq1PFNQQU4gc3R5bGU9IkxF
-RlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7miJjmi5M8L1NQ
-QU4+5omjPFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9Q
-OiAtNzg1N3B4Ij7mjJs8L1NQQU4+6YGLPFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lU
-SU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7oqb/mnaU8L1NQQU4+6Ly4PFNQQU4gc3R5bGU9
-IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7moaU8L1NQ
-QU4+LjxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDog
-LTc4NTdweCI+57KX6YO0PC9TUEFOPi48U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJ
-T046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPueiszwvU1BBTj4uPFNQQU4gc3R5bGU9IkxFRlQ6
-IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7lm7o8L1NQQU4+LjxT
-UEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdw
-eCI+5behPC9TUEFOPi48U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29s
-dXRlOyBUT1A6IC03ODU3cHgiPuajtTwvU1BBTj4uPFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7
-IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7oh6o8L1NQQU4+562JPFNQQU4gc3R5
-bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7mkrw8
-L1NQQU4+LDxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRP
-UDogLTc4NTdweCI+5Yig6K6APC9TUEFOPuiqoDxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQ
-T1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdweCI+5L6gPC9TUEFOPuS/oTxTUEFOIHN0eWxl
-PSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdweCI+56KM6LS4
-PC9TUEFOPuWQiDxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7
-IFRPUDogLTc4NTdweCI+5pah6K+0PC9TUEFOPuS9nDxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4
-OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdweCI+6YKE5oaKPC9TUEFOPiw8U1BBTiBz
-dHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPumD
-tTwvU1BBTj7miYA8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRl
-OyBUT1A6IC03ODU3cHgiPuiHmOS/oDwvU1BBTj7mnIk8U1BBTj48L1A+DQo8UD48U1BBTiBzdHls
-ZT0iRk9OVC1TSVpFOiAyNHB4Ij48U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046
-IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuirjzwvU1BBTj4oPFNQQU4gc3R5bGU9IkxFRlQ6IC03
-MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7kuJTmsK88L1NQQU4+56iF
-PFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1
-N3B4Ij7pjJg8L1NQQU4+56WoPFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBh
-YnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7ourrov6o8L1NQQU4+KTxTUEFOIHN0eWxlPSJMRUZUOiAt
-NzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdweCI+5YagPC9TUEFOPuWdhzxT
-UEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdw
-eCI+54mZ5Y+IPC9TUEFOPuWPrzxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjog
-YWJzb2x1dGU7IFRPUDogLTc4NTdweCI+54uZPC9TUEFOPuWFiDxTUEFOIHN0eWxlPSJMRUZUOiAt
-NzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdweCI+5Z2APC9TUEFOPumplzxT
-UEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdw
-eCI+6JCMPC9TUEFOPuitiTxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJz
-b2x1dGU7IFRPUDogLTc4NTdweCI+55m+PC9TUEFOPuWQjjxTUEFOIHN0eWxlPSJMRUZUOiAtNzIy
-OXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdweCI+55OkPC9TUEFOPuS7mDxTUEFO
-IHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdweCI+
-5pW1PC9TUEFOPuasvjxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1
-dGU7IFRPUDogLTc4NTdweCI+55ebPC9TUEFOPiw8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsg
-UE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuWPtzwvU1BBTj7mrKI8U1BBTiBzdHls
-ZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuaKkTwv
-U1BBTj7ov448U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBU
-T1A6IC03ODU3cHgiPuiAgzwvU1BBTj7kvoY8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9T
-SVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPua7izwvU1BBTj7pm7s8U1BBTiBzdHlsZT0i
-TEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPueJn+ewhzwv
-U1BBTj7lkqg8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBU
-T1A6IC03ODU3cHgiPuaztemZjDwvU1BBTj7oqaI8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsg
-UE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPueojTwvU1BBTj7lkIg8U1BBTiBzdHls
-ZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPumAl+eK
-rzwvU1BBTj7kvZw8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRl
-OyBUT1A6IC03ODU3cHgiPuWatzwvU1BBTj7jgII8U1BBTj48L1A+DQo8UD48U1BBTiBzdHlsZT0i
-Rk9OVC1TSVpFOiAyNHB4Ij48U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFi
-c29sdXRlOyBUT1A6IC03ODU3cHgiPuiwkee9lTwvU1BBTj7vvIg8U1BBTiBzdHlsZT0iTEVGVDog
-LTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuewp+iwmDwvU1BBTj7m
-law8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03
-ODU3cHgiPuWjnumMmDwvU1BBTj7oq4s8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJ
-T046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuiugOa3mDwvU1BBTj7kv508U1BBTiBzdHlsZT0i
-TEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPui5pDwvU1BB
-Tj7nlZk8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6
-IC03ODU3cHgiPua7i+WIgzwvU1BBTj7vvIw8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9T
-SVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPueWmjwvU1BBTj7ku6U8U1BBTiBzdHlsZT0i
-TEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuafvzwvU1BB
-Tj7lpIc8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6
-IC03ODU3cHgiPuiKrDwvU1BBTj7lkI48U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJ
-T046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPue0sDwvU1BBTj7pnIA8U1BBTiBzdHlsZT0iTEVG
-VDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuW/jDwvU1BBTj7v
-vIE8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03
-ODU3cHgiPuWcqDwvU1BBTj7miZM8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046
-IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuaZvjwvU1BBTj7mk748U1BBTiBzdHlsZT0iTEVGVDog
-LTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuWCujwvU1BBTj7lpIQ8
-U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3
-cHgiPuWTgTwvU1BBTj7oq4s8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFi
-c29sdXRlOyBUT1A6IC03ODU3cHgiPuapmeWLuzwvU1BBTj7opos8U1BBTiBzdHlsZT0iTEVGVDog
-LTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPumAn+WMqjwvU1BBTj7o
-q5I8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03
-ODU3cHgiPue8mjwvU1BBTj7vvIE8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046
-IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuWAmuayvDwvU1BBTj7vvIk8U1BBTj48L1A+DQo8UD48
-U1BBTiBzdHlsZT0iRk9OVC1TSVpFOiAyNHB4Ij48U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsg
-UE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuaFtzwvU1BBTj7pm7s8U1BBTiBzdHls
-ZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPua1iuie
-jTwvU1BBTj7oqbE8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRl
-OyBUT1A6IC03ODU3cHgiPuWRojwvU1BBTj46IDxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQ
-T1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdweCI+5pys6JWJPC9TUEFOPjE8U1BBTiBzdHls
-ZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPueLvDwv
-U1BBTj4zPFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9Q
-OiAtNzg1N3B4Ij7plpHmgK88L1NQQU4+NTxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJ
-VElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdweCI+5qC9PC9TUEFOPi08U1BBTiBzdHlsZT0iTEVG
-VDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuWWrOa1ijwvU1BB
-Tj4zPFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAt
-Nzg1N3B4Ij7pm408L1NQQU4+MzxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjog
-YWJzb2x1dGU7IFRPUDogLTc4NTdweCI+5rWqPC9TUEFOPjk8U1BBTiBzdHlsZT0iTEVGVDogLTcy
-MjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuS5hzwvU1BBTj4yPFNQQU4g
-c3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7m
-gJU8L1NQQU4+LTxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7
-IFRPUDogLTc4NTdweCI+54emPC9TUEFOPjA8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9T
-SVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuS9vzwvU1BBTj45PFNQQU4gc3R5bGU9IkxF
-RlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7ogqU8L1NQQU4+
-NjxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4
-NTdweCI+5Lmg5qygPC9TUEFOPjU8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046
-IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuWJguirhDwvU1BBTj4tPFNQQU4gc3R5bGU9IkxFRlQ6
-IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7noLg8L1NQQU4+LTxT
-UEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdw
-eCI+57Ku5outPC9TUEFOPi08U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFi
-c29sdXRlOyBUT1A6IC03ODU3cHgiPuWBlTwvU1BBTj4tPFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5
-cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7mnJ/ntZ48L1NQQU4+LTxTUEFO
-IHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdweCI+
-5b+xPC9TUEFOPi08U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRl
-OyBUT1A6IC03ODU3cHgiPuaQnOaKijwvU1BBTj7oga88U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlw
-eDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPumYnDwvU1BBTj7ns7s8U1BBTiBz
-dHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuiF
-pTwvU1BBTj7kuro8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRl
-OyBUT1A6IC03ODU3cHgiPuWbqjwvU1BBTj46PFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBP
-U0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7lhpLorJQ8L1NQQU4+6K64PFNQQU4gc3R5
-bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7ljbTo
-tr48L1NQQU4+5YWIPFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0
-ZTsgVE9QOiAtNzg1N3B4Ij7ovJ08L1NQQU4+55SfPFNQQU4+PC9QPg0KPFA+PFNQQU4gc3R5bGU9
-IkZPTlQtU0laRTogMjRweCI+PFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBh
-YnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7kuZQ8L1NQQU4+5a6iPFNQQU4gc3R5bGU9IkxFRlQ6IC03
-MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7nsIc8L1NQQU4+5pyNPFNQ
-QU4gc3R5bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4
-Ij7lmIY8L1NQQU4+UTxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1
-dGU7IFRPUDogLTc4NTdweCI+55OcPC9TUEFOPlE8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsg
-UE9TSVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuaxm+WEkDwvU1BBTj46PFNQQU4gc3R5
-bGU9IkxFRlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7kuZ08
-L1NQQU4+MTxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRP
-UDogLTc4NTdweCI+56eN6K6oPC9TUEFOPjk8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9T
-SVRJT046IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuWLnzwvU1BBTj43PFNQQU4gc3R5bGU9IkxF
-RlQ6IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7ok5bnoI08L1NQ
-QU4+LTxTUEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDog
-LTc4NTdweCI+6aCGPC9TUEFOPjE8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046
-IGFic29sdXRlOyBUT1A6IC03ODU3cHgiPuaUueWfoDwvU1BBTj45PFNQQU4gc3R5bGU9IkxFRlQ6
-IC03MjI5cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7lp5M8L1NQQU4+NjxT
-UEFOIHN0eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdw
-eCI+5Lqk6L6bPC9TUEFOPi08U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFi
-c29sdXRlOyBUT1A6IC03ODU3cHgiPuS7lzwvU1BBTj41PFNQQU4gc3R5bGU9IkxFRlQ6IC03MjI5
-cHg7IFBPU0lUSU9OOiBhYnNvbHV0ZTsgVE9QOiAtNzg1N3B4Ij7mk4Q8L1NQQU4+MTxTUEFOIHN0
-eWxlPSJMRUZUOiAtNzIyOXB4OyBQT1NJVElPTjogYWJzb2x1dGU7IFRPUDogLTc4NTdweCI+5oS/
-PC9TUEFOPjU8U1BBTiBzdHlsZT0iTEVGVDogLTcyMjlweDsgUE9TSVRJT046IGFic29sdXRlOyBU
-T1A6IC03ODU3cHgiPueFpemZlTwvU1BBTj42PFNQQU4+PC9QPjwvU1BBTj48L1NQQU4+PC9TUEFO
-PjwvU1BBTj48L1NQQU4+PC9TUEFOPjwvU1BBTj48L1NQQU4+PC9TUEFOPjwvU1BBTj48L1NQQU4+
-PC9TUEFOPjwvU1BBTj48L1NQQU4+Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGlu
-dXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxt
-YW4vbGlzdGluZm8vY29udGFpbmVycw==
+Quoting Richard Guy Briggs (rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
+> Log the creation and deletion of namespace instances in all 6 types of
+> namespaces.
+> 
+> Twelve new audit message types have been introduced:
+> AUDIT_NS_INIT_MNT       1330    /* Record mount namespace instance creation */
+> AUDIT_NS_INIT_UTS       1331    /* Record UTS namespace instance creation */
+> AUDIT_NS_INIT_IPC       1332    /* Record IPC namespace instance creation */
+> AUDIT_NS_INIT_USER      1333    /* Record USER namespace instance creation */
+> AUDIT_NS_INIT_PID       1334    /* Record PID namespace instance creation */
+> AUDIT_NS_INIT_NET       1335    /* Record NET namespace instance creation */
+> AUDIT_NS_DEL_MNT        1336    /* Record mount namespace instance deletion */
+> AUDIT_NS_DEL_UTS        1337    /* Record UTS namespace instance deletion */
+> AUDIT_NS_DEL_IPC        1338    /* Record IPC namespace instance deletion */
+> AUDIT_NS_DEL_USER       1339    /* Record USER namespace instance deletion */
+> AUDIT_NS_DEL_PID        1340    /* Record PID namespace instance deletion */
+> AUDIT_NS_DEL_NET        1341    /* Record NET namespace instance deletion */
+> 
+> As suggested by Eric Paris, there are 12 message types, one for each of
+> creation and deletion, one for each type of namespace so that text searches are
+> easier in conjunction with the AUDIT_NS_INFO message type, being able to search
+> for all records such as "netns=7 " and to avoid fields disappearing per message
+> type to make ausearch more efficient.
+> 
+> A typical startup would look roughly like:
+> 
+> 	type=AUDIT_NS_INIT_UTS msg=audit(1408577534.868:5): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=kernel old_utsns=0 utsns=2 res=1
+> 	type=AUDIT_NS_INIT_USER msg=audit(1408577534.868:6): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=kernel old_userns=0 userns=3 res=1
+> 	type=AUDIT_NS_INIT_PID msg=audit(1408577534.868:7): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=kernel old_pidns=0 pidns=4 res=1
+> 	type=AUDIT_NS_INIT_MNT msg=audit(1408577534.868:8): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=kernel old_mntns=0 mntns=5 res=1
+> 	type=AUDIT_NS_INIT_IPC msg=audit(1408577534.868:9): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=kernel old_ipcns=0 ipcns=1 res=1
+> 	type=AUDIT_NS_INIT_NET msg=audit(1408577533.500:10): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=kernel old_netns=0 netns=7 res=1
+> 
+> And a CLONE action would result in:
+> 	type=type=AUDIT_NS_INIT_NET msg=audit(1408577535.306:81): pid=481 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:init_t:s0 old_netns=7 netns=8 res=1
+> 	type=type=AUDIT_NS_INIT_MNT msg=audit(1408577535.307:83): pid=481 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:init_t:s0 old_mntns=5 mntns=9 res=1
+> 
+> While deleting a namespace would result in:
+> 	type=type=AUDIT_NS_DEL_MNT msg=audit(1408577552.221:85): pid=481 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:init_t:s0 mntns=9 res=1
+> 
+> If non-zero, old_snum lists the namespace from which it was cloned.
+> 
+> Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+
+Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+
+Two suggestions below though
+
+> ---
+>  fs/namespace.c             |   12 ++++++++++
+>  include/linux/audit.h      |    8 +++++++
+>  include/uapi/linux/audit.h |   12 ++++++++++
+>  ipc/namespace.c            |   10 +++++++++
+>  kernel/audit.c             |   49 ++++++++++++++++++++++++++++++++++++++++++++
+>  kernel/pid_namespace.c     |   10 +++++++++
+>  kernel/user_namespace.c    |   11 +++++++++
+>  kernel/utsname.c           |   11 +++++++++
+>  net/core/net_namespace.c   |   12 ++++++++++
+>  9 files changed, 135 insertions(+), 0 deletions(-)
+> 
+> diff --git a/fs/namespace.c b/fs/namespace.c
+> index f433f21..cb05b3d 100644
+> --- a/fs/namespace.c
+> +++ b/fs/namespace.c
+> @@ -24,6 +24,7 @@
+>  #include <linux/proc_ns.h>
+>  #include <linux/magic.h>
+>  #include <linux/bootmem.h>
+> +#include <linux/audit.h>
+>  #include "pnode.h"
+>  #include "internal.h"
+>  
+> @@ -2459,6 +2460,7 @@ dput_out:
+>  
+>  static void free_mnt_ns(struct mnt_namespace *ns)
+>  {
+> +	audit_log_ns_del(AUDIT_NS_DEL_MNT, ns->serial_num);
+>  	proc_free_inum(ns->proc_inum);
+>  	put_user_ns(ns->user_ns);
+>  	kfree(ns);
+> @@ -2519,6 +2521,7 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
+>  	new_ns = alloc_mnt_ns(user_ns);
+>  	if (IS_ERR(new_ns))
+>  		return new_ns;
+> +	audit_log_ns_init(AUDIT_NS_INIT_MNT, ns->serial_num, new_ns->serial_num);
+>  
+>  	namespace_lock();
+>  	/* First pass: copy the tree topology */
+> @@ -2831,6 +2834,15 @@ static void __init init_mount_tree(void)
+>  	set_fs_root(current->fs, &root);
+>  }
+>  
+> +/* log the serial number of init mnt namespace after audit service starts */
+> +static int __init mnt_ns_init_log(void)
+> +{
+> +	struct mnt_namespace *init_mnt_ns = init_task.nsproxy->mnt_ns;
+> +	audit_log_ns_init(AUDIT_NS_INIT_MNT, 0, init_mnt_ns->serial_num);
+> +	return 0;
+> +}
+> +late_initcall(mnt_ns_init_log);
+> +
+>  void __init mnt_init(void)
+>  {
+>  	unsigned u;
+> diff --git a/include/linux/audit.h b/include/linux/audit.h
+> index 7cdebdc..1474334 100644
+> --- a/include/linux/audit.h
+> +++ b/include/linux/audit.h
+> @@ -481,6 +481,9 @@ extern void		    audit_log_ns_info(struct task_struct *tsk);
+>  static inline void	    audit_log_ns_info(struct task_struct *tsk)
+>  { }
+>  #endif
+> +extern int		    audit_log_ns_init(int type, long long old_snum,
+> +					      long long snum);
+> +extern int		    audit_log_ns_del(int type, long long snum);
+>  
+>  extern int		    audit_update_lsm_rules(void);
+>  
+> @@ -539,6 +542,11 @@ static inline void audit_log_task_info(struct audit_buffer *ab,
+>  { }
+>  static inline void audit_log_ns_info(struct task_struct *tsk)
+>  { }
+> +static inline int audit_log_ns_init(int type, long long old_snum,
+> +				    long long snum)
+> +{ }
+> +static inline int audit_log_ns_del(int type, long long snum)
+> +{ }
+>  #define audit_enabled 0
+>  #endif /* CONFIG_AUDIT */
+>  static inline void audit_log_string(struct audit_buffer *ab, const char *buf)
+> diff --git a/include/uapi/linux/audit.h b/include/uapi/linux/audit.h
+> index 760357e..1acfea7 100644
+> --- a/include/uapi/linux/audit.h
+> +++ b/include/uapi/linux/audit.h
+> @@ -111,6 +111,18 @@
+>  #define AUDIT_PROCTITLE		1327	/* Proctitle emit event */
+>  #define AUDIT_FEATURE_CHANGE	1328	/* audit log listing feature changes */
+>  #define AUDIT_NS_INFO		1329	/* Record process namespace IDs */
+> +#define AUDIT_NS_INIT_MNT	1330	/* Record mount namespace instance creation */
+> +#define AUDIT_NS_INIT_UTS	1331	/* Record UTS namespace instance creation */
+> +#define AUDIT_NS_INIT_IPC	1332	/* Record IPC namespace instance creation */
+> +#define AUDIT_NS_INIT_USER	1333	/* Record USER namespace instance creation */
+> +#define AUDIT_NS_INIT_PID	1334	/* Record PID namespace instance creation */
+> +#define AUDIT_NS_INIT_NET	1335	/* Record NET namespace instance creation */
+> +#define AUDIT_NS_DEL_MNT	1336	/* Record mount namespace instance deletion */
+> +#define AUDIT_NS_DEL_UTS	1337	/* Record UTS namespace instance deletion */
+> +#define AUDIT_NS_DEL_IPC	1338	/* Record IPC namespace instance deletion */
+> +#define AUDIT_NS_DEL_USER	1339	/* Record USER namespace instance deletion */
+> +#define AUDIT_NS_DEL_PID	1340	/* Record PID namespace instance deletion */
+> +#define AUDIT_NS_DEL_NET	1341	/* Record NET namespace instance deletion */
+>  
+>  #define AUDIT_AVC		1400	/* SE Linux avc denial or grant */
+>  #define AUDIT_SELINUX_ERR	1401	/* Internal SE Linux Errors */
+> diff --git a/ipc/namespace.c b/ipc/namespace.c
+> index 36ce7ff..538c4b9 100644
+> --- a/ipc/namespace.c
+> +++ b/ipc/namespace.c
+> @@ -13,6 +13,7 @@
+>  #include <linux/mount.h>
+>  #include <linux/user_namespace.h>
+>  #include <linux/proc_ns.h>
+> +#include <linux/audit.h>
+>  
+>  #include "util.h"
+>  
+> @@ -42,6 +43,7 @@ static struct ipc_namespace *create_ipc_ns(struct user_namespace *user_ns,
+>  	atomic_inc(&nr_ipc_ns);
+>  
+>  	ns->serial_num = ns_serial();
+> +	audit_log_ns_init(AUDIT_NS_INIT_IPC, old_ns->serial_num, ns->serial_num);
+>  
+>  	sem_init_ns(ns);
+>  	msg_init_ns(ns);
+> @@ -121,6 +123,7 @@ static void free_ipc_ns(struct ipc_namespace *ns)
+>  	 */
+>  	ipcns_notify(IPCNS_REMOVED);
+>  	put_user_ns(ns->user_ns);
+> +	audit_log_ns_del(AUDIT_NS_DEL_IPC, ns->serial_num);
+>  	proc_free_inum(ns->proc_inum);
+>  	kfree(ns);
+>  }
+> @@ -207,3 +210,10 @@ const struct proc_ns_operations ipcns_operations = {
+>  	.inum		= ipcns_inum,
+>  	.snum		= ipcns_snum,
+>  };
+> +
+> +static int __init ipc_namespaces_init(void)
+> +{
+> +	return audit_log_ns_init(AUDIT_NS_INIT_IPC, 0, init_ipc_ns.serial_num);
+> +}
+> +
+> +late_initcall(ipc_namespaces_init);
+> diff --git a/kernel/audit.c b/kernel/audit.c
+> index 8ff7f28..a17a09f 100644
+> --- a/kernel/audit.c
+> +++ b/kernel/audit.c
+> @@ -1960,6 +1960,55 @@ out:
+>  	kfree(name);
+>  }
+>  
+> +#ifdef CONFIG_NAMESPACES
+> +static char* ns_name[] = {
+> +	"mnt",
+> +	"uts",
+> +	"ipc",
+> +	"user",
+> +	"pid",
+> +	"net",
+
+Comment here that the order corresponds to the AUDIT_NS_INIT_MNT..
+#defines order, and maybe even move this next to those.
+
+> +};
+> +
+> +/**
+> + * audit_log_ns_init - report a namespace instance creation
+> + * @type: type of audit namespace instance created message
+> + * @old_snum: the serial number of the cloned namespace instance
+> + * @snum: the serial number of the new namespace instance
+> + */
+> +int audit_log_ns_init(int type, long long old_snum, long long snum)
+> +{
+> +	struct audit_buffer *ab;
+> +	char* audit_ns_name = ns_name[type - AUDIT_NS_INIT_MNT];
+> +
+> +	if (type < AUDIT_NS_INIT_MNT || type > AUDIT_NS_INIT_NET)
+
+probably worth defining an AUDIT_NS_INIT_FIRST and AUDIT_NS_INIT_LAST
+in audit.h which can be updated at the source defines.
+
+> +		return 0;
+> +	audit_log_common_recv_msg(&ab, type);
+> +	audit_log_format(ab, " old_%sns=%llx %sns=%llx res=1",
+> +			 audit_ns_name, old_snum, audit_ns_name, snum);
+> +	audit_log_end(ab);
+> +	return 0;
+> +}
+> +
+> +/**
+> + * audit_log_ns_del - report a namespace instance deleted
+> + * @type: type of audit namespace instance deleted message
+> + * @snum: the serial number of the namespace instance
+> + */
+> +int audit_log_ns_del(int type, long long snum)
+> +{
+> +	struct audit_buffer *ab;
+> +	char* audit_ns_name = ns_name[type - AUDIT_NS_DEL_MNT];
+> +
+> +	if (type < AUDIT_NS_DEL_MNT || type > AUDIT_NS_DEL_NET)
+> +		return 0;
+> +	audit_log_common_recv_msg(&ab, type);
+> +	audit_log_format(ab, " %ssn=%llx res=1", audit_ns_name, snum);
+> +	audit_log_end(ab);
+> +	return 0;
+> +}
+> +#endif /* CONFIG_NAMESPACES */
+> +
+>  /**
+>   * audit_log_end - end one audit record
+>   * @ab: the audit_buffer
+> diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
+> index 059b330..7da351a 100644
+> --- a/kernel/pid_namespace.c
+> +++ b/kernel/pid_namespace.c
+> @@ -18,6 +18,7 @@
+>  #include <linux/proc_ns.h>
+>  #include <linux/reboot.h>
+>  #include <linux/export.h>
+> +#include <linux/audit.h>
+>  
+>  struct pid_cache {
+>  	int nr_ids;
+> @@ -110,6 +111,8 @@ static struct pid_namespace *create_pid_namespace(struct user_namespace *user_ns
+>  		goto out_free_map;
+>  
+>  	ns->serial_num = ns_serial();
+> +	audit_log_ns_init(AUDIT_NS_INIT_PID, parent_pid_ns->serial_num,
+> +			  ns->serial_num);
+>  
+>  	kref_init(&ns->kref);
+>  	ns->level = level;
+> @@ -144,6 +147,7 @@ static void destroy_pid_namespace(struct pid_namespace *ns)
+>  {
+>  	int i;
+>  
+> +	audit_log_ns_del(AUDIT_NS_DEL_PID, ns->serial_num);
+>  	proc_free_inum(ns->proc_inum);
+>  	for (i = 0; i < PIDMAP_ENTRIES; i++)
+>  		kfree(ns->pidmap[i].page);
+> @@ -397,3 +401,9 @@ static __init int pid_namespaces_init(void)
+>  }
+>  
+>  __initcall(pid_namespaces_init);
+> +
+> +static __init int pid_namespaces_late_init(void)
+> +{
+> +	return audit_log_ns_init(AUDIT_NS_INIT_PID, 0, init_pid_ns.serial_num);
+> +}
+> +late_initcall(pid_namespaces_late_init);
+> diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+> index 3f04df5..24497a0 100644
+> --- a/kernel/user_namespace.c
+> +++ b/kernel/user_namespace.c
+> @@ -22,6 +22,7 @@
+>  #include <linux/ctype.h>
+>  #include <linux/projid.h>
+>  #include <linux/fs_struct.h>
+> +#include <linux/audit.h>
+>  
+>  static struct kmem_cache *user_ns_cachep __read_mostly;
+>  
+> @@ -93,6 +94,8 @@ int create_user_ns(struct cred *new)
+>  	}
+>  
+>  	ns->serial_num = ns_serial();
+> +	audit_log_ns_init(AUDIT_NS_INIT_USER, parent_ns->serial_num,
+> +			  ns->serial_num);
+>  
+>  	atomic_set(&ns->count, 1);
+>  	/* Leave the new->user_ns reference with the new user namespace. */
+> @@ -138,6 +141,7 @@ void free_user_ns(struct user_namespace *ns)
+>  #ifdef CONFIG_PERSISTENT_KEYRINGS
+>  		key_put(ns->persistent_keyring_register);
+>  #endif
+> +		audit_log_ns_del(AUDIT_NS_DEL_USER, ns->serial_num);
+>  		proc_free_inum(ns->proc_inum);
+>  		kmem_cache_free(user_ns_cachep, ns);
+>  		ns = parent;
+> @@ -918,3 +922,10 @@ static __init int user_namespaces_init(void)
+>  	return 0;
+>  }
+>  subsys_initcall(user_namespaces_init);
+> +
+> +static __init int user_namespaces_late_init(void)
+> +{
+> +	return audit_log_ns_init(AUDIT_NS_INIT_USER, 0,
+> +				 init_user_ns.serial_num);
+> +}
+> +late_initcall(user_namespaces_late_init);
+> diff --git a/kernel/utsname.c b/kernel/utsname.c
+> index ffeac1b..05ecc2d 100644
+> --- a/kernel/utsname.c
+> +++ b/kernel/utsname.c
+> @@ -16,6 +16,7 @@
+>  #include <linux/slab.h>
+>  #include <linux/user_namespace.h>
+>  #include <linux/proc_ns.h>
+> +#include <linux/audit.h>
+>  
+>  static struct uts_namespace *create_uts_ns(void)
+>  {
+> @@ -49,6 +50,7 @@ static struct uts_namespace *clone_uts_ns(struct user_namespace *user_ns,
+>  	}
+>  
+>  	ns->serial_num = ns_serial();
+> +	audit_log_ns_init(AUDIT_NS_INIT_UTS, old_ns->serial_num, ns->serial_num);
+>  
+>  	down_read(&uts_sem);
+>  	memcpy(&ns->name, &old_ns->name, sizeof(ns->name));
+> @@ -86,6 +88,7 @@ void free_uts_ns(struct kref *kref)
+>  
+>  	ns = container_of(kref, struct uts_namespace, kref);
+>  	put_user_ns(ns->user_ns);
+> +	audit_log_ns_del(AUDIT_NS_DEL_UTS, ns->serial_num);
+>  	proc_free_inum(ns->proc_inum);
+>  	kfree(ns);
+>  }
+> @@ -148,3 +151,11 @@ const struct proc_ns_operations utsns_operations = {
+>  	.inum		= utsns_inum,
+>  	.snum		= utsns_snum,
+>  };
+> +
+> +static int __init uts_namespaces_init(void)
+> +{
+> +	return audit_log_ns_init(AUDIT_NS_INIT_UTS, 0,
+> +				 init_uts_ns.serial_num);
+> +}
+> +
+> +late_initcall(uts_namespaces_init);
+> diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
+> index c402eea..295ecc3 100644
+> --- a/net/core/net_namespace.c
+> +++ b/net/core/net_namespace.c
+> @@ -17,6 +17,7 @@
+>  #include <linux/user_namespace.h>
+>  #include <net/net_namespace.h>
+>  #include <net/netns/generic.h>
+> +#include <linux/audit.h>
+>  
+>  /*
+>   *	Our network namespace constructor/destructor lists
+> @@ -253,6 +254,8 @@ struct net *copy_net_ns(unsigned long flags,
+>  	mutex_lock(&net_mutex);
+>  	rv = setup_net(net, user_ns);
+>  	if (rv == 0) {
+> +		audit_log_ns_init(AUDIT_NS_INIT_NET, old_net->serial_num,
+> +				  net->serial_num);
+>  		rtnl_lock();
+>  		list_add_tail_rcu(&net->list, &net_namespace_list);
+>  		rtnl_unlock();
+> @@ -395,6 +398,7 @@ static __net_init int net_ns_net_init(struct net *net)
+>  
+>  static __net_exit void net_ns_net_exit(struct net *net)
+>  {
+> +	audit_log_ns_del(AUDIT_NS_DEL_NET, net->serial_num);
+>  	proc_free_inum(net->proc_inum);
+>  }
+>  
+> @@ -441,6 +445,14 @@ static int __init net_ns_init(void)
+>  
+>  pure_initcall(net_ns_init);
+>  
+> +/* log the serial number of init_net namespace after audit service starts */
+> +static int __init net_ns_init_log(void)
+> +{
+> +	audit_log_ns_init(AUDIT_NS_INIT_NET, 0, init_net.serial_num);
+> +	return 0;
+> +}
+> +late_initcall(net_ns_init_log);
+> +
+>  #ifdef CONFIG_NET_NS
+>  static int __register_pernet_operations(struct list_head *list,
+>  					struct pernet_operations *ops)
+> -- 
+> 1.7.1
