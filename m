@@ -1,8 +1,7 @@
 From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCHv1 6/8] cgroup: restrict cgroup operations within task's
-	cgroupns
-Date: Mon, 13 Oct 2014 14:23:48 -0700
-Message-ID: <1413235430-22944-7-git-send-email-adityakali@google.com>
+Subject: [PATCHv1 7/8] cgroup: cgroup namespace setns support
+Date: Mon, 13 Oct 2014 14:23:49 -0700
+Message-ID: <1413235430-22944-8-git-send-email-adityakali__21596.6577096426$1413235513$gmane$org@google.com>
 References: <adityakali-cgroupns>
 	<1413235430-22944-1-git-send-email-adityakali@google.com>
 Mime-Version: 1.0
@@ -23,101 +22,75 @@ To: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, lizefan-hv44wF8Li93QT0dZR+AlfA@p
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Restrict following operations within the calling tasks:
-* cgroup_mkdir & cgroup_rmdir
-* cgroup_attach_task
-* writes to cgroup files outside of task's cgroupns-root
-
-Also, read of /proc/<pid>/cgroup file is now restricted only
-to tasks under same cgroupns-root. If a task tries to look
-at cgroup of another task outside of its cgroupns-root, then
-it won't be able to see anything for the default hierarchy.
-This is same as if the cgroups are not mounted.
+setns on a cgroup namespace is allowed only if
+* task has CAP_SYS_ADMIN in its current user-namespace and
+  over the user-namespace associated with target cgroupns.
+* task's current cgroup is descendent of the target cgroupns-root
+  cgroup.
+* target cgroupns-root is same as or deeper than task's current
+  cgroupns-root. This is so that the task cannot escape out of its
+  cgroupns-root. This also ensures that setns() only makes the task
+  get restricted to a deeper cgroup hierarchy.
 
 Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 ---
- kernel/cgroup.c | 34 +++++++++++++++++++++++++++++++++-
- 1 file changed, 33 insertions(+), 1 deletion(-)
+ kernel/cgroup_namespace.c | 44 ++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 42 insertions(+), 2 deletions(-)
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index f8099b4..2fc0dfa 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -2318,6 +2318,12 @@ static int cgroup_attach_task(struct cgroup *dst_cgrp,
- 	struct task_struct *task;
- 	int ret;
+diff --git a/kernel/cgroup_namespace.c b/kernel/cgroup_namespace.c
+index c16604f..c612946 100644
+--- a/kernel/cgroup_namespace.c
++++ b/kernel/cgroup_namespace.c
+@@ -80,8 +80,48 @@ err_out:
  
-+	/* Only allow changing cgroups accessible within task's cgroup
-+	 * namespace. i.e. 'dst_cgrp' should be a descendant of task's
-+	 * cgroupns->root_cgrp. */
-+	if (!cgroup_is_descendant(dst_cgrp, task_cgroupns_root(leader)))
+ static int cgroupns_install(struct nsproxy *nsproxy, void *ns)
+ {
+-	pr_info("setns not supported for cgroup namespace");
+-	return -EINVAL;
++	struct cgroup_namespace *cgroup_ns = ns;
++	struct task_struct *task = current;
++	struct cgroup *cgrp = NULL;
++	int err = 0;
++
++	if (!ns_capable(current_user_ns(), CAP_SYS_ADMIN) ||
++	    !ns_capable(cgroup_ns->user_ns, CAP_SYS_ADMIN))
 +		return -EPERM;
 +
- 	/* look up all src csets */
- 	down_read(&css_set_rwsem);
- 	rcu_read_lock();
-@@ -2882,6 +2888,10 @@ static ssize_t cgroup_file_write(struct kernfs_open_file *of, char *buf,
- 	struct cgroup_subsys_state *css;
- 	int ret;
- 
-+	/* Reject writes to cgroup files outside of task's cgroupns-root. */
-+	if (!cgroup_is_descendant(cgrp, task_cgroupns_root(current)))
-+		return -EINVAL;
++	/* Prevent cgroup changes for this task. */
++	threadgroup_lock(task);
 +
- 	if (cft->write)
- 		return cft->write(of, buf, nbytes, off);
- 
-@@ -4560,6 +4570,13 @@ static int cgroup_mkdir(struct kernfs_node *parent_kn, const char *name,
- 	parent = cgroup_kn_lock_live(parent_kn);
- 	if (!parent)
- 		return -ENODEV;
++	cgrp = get_task_cgroup(task);
 +
-+	/* Allow mkdir only within process's cgroup namespace root. */
-+	if (!cgroup_is_descendant(parent, task_cgroupns_root(current))) {
-+		ret = -EPERM;
++	err = -EINVAL;
++	if (!cgroup_on_dfl(cgrp))
 +		goto out_unlock;
-+	}
 +
- 	root = parent->root;
- 
- 	/* allocate the cgroup and its ID, 0 is reserved for the root */
-@@ -4822,6 +4839,13 @@ static int cgroup_rmdir(struct kernfs_node *kn)
- 	if (!cgrp)
- 		return 0;
- 
-+	/* Allow rmdir only within process's cgroup namespace root.
-+	 * The process can't delete its own root anyways. */
-+	if (!cgroup_is_descendant(cgrp, task_cgroupns_root(current))) {
-+		cgroup_kn_unlock(kn);
-+		return -EPERM;
-+	}
++	/* Allow switch only if the task's current cgroup is descendant of the
++	 * target cgroup_ns->root_cgrp.
++	 */
++	if (!cgroup_is_descendant(cgrp, cgroup_ns->root_cgrp))
++		goto out_unlock;
 +
- 	ret = cgroup_destroy_locked(cgrp);
- 
- 	cgroup_kn_unlock(kn);
-@@ -5051,6 +5075,15 @@ int proc_cgroup_show(struct seq_file *m, struct pid_namespace *ns,
- 		if (root == &cgrp_dfl_root && !cgrp_dfl_root_visible)
- 			continue;
- 
-+		cgrp = task_cgroup_from_root(tsk, root);
++	/* Only allow setns to a cgroupns root-ed deeper than task's current
++	 * cgroupns-root. This will make sure that tasks cannot escape their
++	 * cgroupns by attaching to parent cgroupns.
++	 */
++	if (!cgroup_is_descendant(cgroup_ns->root_cgrp,
++				  task_cgroupns_root(task)))
++		goto out_unlock;
 +
-+		/* The cgroup path on default hierarchy is shown only if it
-+		 * falls under current task's cgroupns-root.
-+		 */
-+		if (root == &cgrp_dfl_root &&
-+		    !cgroup_is_descendant(cgrp, task_cgroupns_root(current)))
-+			continue;
++	err = 0;
++	get_cgroup_ns(cgroup_ns);
++	put_cgroup_ns(nsproxy->cgroup_ns);
++	nsproxy->cgroup_ns = cgroup_ns;
 +
- 		seq_printf(m, "%d:", root->hierarchy_id);
- 		for_each_subsys(ss, ssid)
- 			if (root->subsys_mask & (1 << ssid))
-@@ -5059,7 +5092,6 @@ int proc_cgroup_show(struct seq_file *m, struct pid_namespace *ns,
- 			seq_printf(m, "%sname=%s", count ? "," : "",
- 				   root->name);
- 		seq_putc(m, ':');
--		cgrp = task_cgroup_from_root(tsk, root);
- 		path = cgroup_path(cgrp, buf, PATH_MAX);
- 		if (!path) {
- 			retval = -ENAMETOOLONG;
++out_unlock:
++	threadgroup_unlock(current);
++	if (cgrp)
++		cgroup_put(cgrp);
++	return err;
+ }
+ 
+ static void *cgroupns_get(struct task_struct *task)
 -- 
 2.1.0.rc2.206.gedb03e5
