@@ -1,16 +1,16 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH V5 11/13] audit: emit AUDIT_NS_INFO record with
-	AUDIT_VIRT_CONTROL record
-Date: Mon, 13 Oct 2014 15:34:08 +0200
-Message-ID: <20141013133408.GJ24703@mail.hallyn.com>
+Subject: Re: [PATCH V5 12/13] namespaces: expose ns instance serial numbers
+	in proc
+Date: Mon, 13 Oct 2014 15:41:03 +0200
+Message-ID: <20141013134103.GK24703@mail.hallyn.com>
 References: <cover.1412543112.git.rgb@redhat.com>
-	<ad90efa917cfa5995421d36c84754f05e1934c53.1412543112.git.rgb@redhat.com>
+	<53b81e89f7179ef8569409293f990b3ac7deac61.1412543112.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <ad90efa917cfa5995421d36c84754f05e1934c53.1412543112.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <53b81e89f7179ef8569409293f990b3ac7deac61.1412543112.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,42 +25,100 @@ Cc: aviro-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7
 List-Id: containers.vger.kernel.org
 
 Quoting Richard Guy Briggs (rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
+> Expose the namespace instace serial numbers in the proc filesystem at
+
+(s/stac/stanc/)
+
+> /proc/<pid>/ns/<ns>_snum.  The link text gives the serial number in hex.
+> 
+> "snum" was chosen instead of "seq" for consistency with inum and there are a
+> number of other uses of "seq" in the namespace code.
+> 
+> Suggested-by: Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+
+Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+
 > Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 > ---
->  include/uapi/linux/audit.h |    2 ++
->  kernel/audit.c             |    2 ++
->  2 files changed, 4 insertions(+), 0 deletions(-)
+>  fs/proc/namespaces.c |   33 +++++++++++++++++++++++++--------
+>  1 files changed, 25 insertions(+), 8 deletions(-)
 > 
-> diff --git a/include/uapi/linux/audit.h b/include/uapi/linux/audit.h
-> index 7ec7209..beb23f7 100644
-> --- a/include/uapi/linux/audit.h
-> +++ b/include/uapi/linux/audit.h
-> @@ -163,6 +163,8 @@
+> diff --git a/fs/proc/namespaces.c b/fs/proc/namespaces.c
+> index 310da74..29c3909 100644
+> --- a/fs/proc/namespaces.c
+> +++ b/fs/proc/namespaces.c
+> @@ -47,12 +47,15 @@ static char *ns_dname(struct dentry *dentry, char *buffer, int buflen)
+>  	struct inode *inode = dentry->d_inode;
+>  	const struct proc_ns_operations *ns_ops = PROC_I(inode)->ns.ns_ops;
 >  
->  #define AUDIT_KERNEL		2000	/* Asynchronous audit record. NOT A REQUEST. */
+> -	return dynamic_dname(dentry, buffer, buflen, "%s:[%lu]",
+> -		ns_ops->name, inode->i_ino);
+> +	if (strstr(dentry->d_iname, "_snum"))
+> +		return dynamic_dname(dentry, buffer, buflen, "%s_snum:[%llx]",
+> +			ns_ops->name, ns_ops->snum(PROC_I(inode)->ns.ns));
+> +	else
+> +		return dynamic_dname(dentry, buffer, buflen, "%s:[%lu]",
+> +			ns_ops->name, inode->i_ino);
+>  }
 >  
-> +#define AUDIT_VIRT_CONTROL	2500	/* Start, Pause, Stop VM */
+> -const struct dentry_operations ns_dentry_operations =
+> -{
+> +const struct dentry_operations ns_dentry_operations = {
+>  	.d_delete	= always_delete_dentry,
+>  	.d_dname	= ns_dname,
+>  };
+> @@ -160,7 +163,10 @@ static int proc_ns_readlink(struct dentry *dentry, char __user *buffer, int bufl
+>  	if (!ns)
+>  		goto out_put_task;
+>  
+> -	snprintf(name, sizeof(name), "%s:[%u]", ns_ops->name, ns_ops->inum(ns));
+> +	if (strstr(dentry->d_iname, "_snum"))
+> +		snprintf(name, sizeof(name), "%s_snum:[%llx]", ns_ops->name, ns_ops->snum(ns));
+> +	else
+> +		snprintf(name, sizeof(name), "%s:[%u]", ns_ops->name, ns_ops->inum(ns));
+>  	res = readlink_copy(buffer, buflen, name);
+>  	ns_ops->put(ns);
+>  out_put_task:
+> @@ -210,16 +216,23 @@ static int proc_ns_dir_readdir(struct file *file, struct dir_context *ctx)
+>  
+>  	if (!dir_emit_dots(file, ctx))
+>  		goto out;
+> -	if (ctx->pos >= 2 + ARRAY_SIZE(ns_entries))
+> +	if (ctx->pos >= 2 + 2 * ARRAY_SIZE(ns_entries))
+>  		goto out;
+>  	entry = ns_entries + (ctx->pos - 2);
+>  	last = &ns_entries[ARRAY_SIZE(ns_entries) - 1];
+>  	while (entry <= last) {
+>  		const struct proc_ns_operations *ops = *entry;
+> +		char name[50];
 > +
->  /* Rule flags */
->  #define AUDIT_FILTER_USER	0x00	/* Apply rule to user-generated messages */
->  #define AUDIT_FILTER_TASK	0x01	/* Apply rule at task creation (not syscall) */
-> diff --git a/kernel/audit.c b/kernel/audit.c
-> index 84590d1..5404c24 100644
-> --- a/kernel/audit.c
-> +++ b/kernel/audit.c
-> @@ -941,6 +941,8 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
->  			}
->  			audit_set_portid(ab, NETLINK_CB(skb).portid);
->  			audit_log_end(ab);
-> +			if (msg_type == AUDIT_VIRT_CONTROL)
-> +				audit_log_ns_info(NULL);
-
-AFAICT your patchset leaves audit_log_ns_info() immediately returning if
-arg1 is NULL.  Is handling that coming later?  Why not leave this until
-that patch comes?
-
->  			mutex_lock(&audit_cmd_mutex);
->  		}
->  		break;
+>  		if (!proc_fill_cache(file, ctx, ops->name, strlen(ops->name),
+>  				     proc_ns_instantiate, task, ops))
+>  			break;
+>  		ctx->pos++;
+> +		snprintf(name, sizeof(name), "%s_snum", ops->name);
+> +		if (!proc_fill_cache(file, ctx, name, strlen(name),
+> +				     proc_ns_instantiate, task, ops))
+> +			break;
+> +		ctx->pos++;
+>  		entry++;
+>  	}
+>  out:
+> @@ -247,9 +260,13 @@ static struct dentry *proc_ns_dir_lookup(struct inode *dir,
+>  
+>  	last = &ns_entries[ARRAY_SIZE(ns_entries)];
+>  	for (entry = ns_entries; entry < last; entry++) {
+> -		if (strlen((*entry)->name) != len)
+> +		char name[50];
+> +
+> +		snprintf(name, sizeof(name), "%s_snum", (*entry)->name);
+> +		if (strlen((*entry)->name) != len && strlen(name) != len)
+>  			continue;
+> -		if (!memcmp(dentry->d_name.name, (*entry)->name, len))
+> +		if (!memcmp(dentry->d_name.name, (*entry)->name, len)
+> +		    || !memcmp(dentry->d_name.name, name, len))
+>  			break;
+>  	}
+>  	if (entry == last)
 > -- 
 > 1.7.1
