@@ -1,14 +1,12 @@
-From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCHv1 0/8] CGroup Namespaces
-Date: Tue, 14 Oct 2014 16:33:11 -0700
-Message-ID: <CAGr1F2HOhX-GQgi_Aep8kvyrLpKb60foDx7wkkfT5cG=hOKdig@mail.gmail.com>
-References: <1413235430-22944-1-git-send-email-adityakali@google.com>
-	<CALCETrVnjrBt3odufhAirf45_REq-S9T=HpoEWqmFef2M6PucA@mail.gmail.com>
+From: Grant Funding USA <programs-EGJiyZjCJz/TNKXJp0M/0kB+6BGkLq7r@public.gmane.org>
+Subject: Grant Funding and Proposal Writing Essentials Course (December 17-19,
+	2014: University of Southern California)
+Date: 15 Oct 2014 04:06:29 -0700
+Message-ID: <20141015040627.F344A975796EB310@grantfundingusa.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CALCETrVnjrBt3odufhAirf45_REq-S9T=HpoEWqmFef2M6PucA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,165 +16,146 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gVHVlLCBPY3QgMTQsIDIwMTQgYXQgMzo0MiBQTSwgQW5keSBMdXRvbWlyc2tpIDxsdXRvQGFt
-YWNhcGl0YWwubmV0PiB3cm90ZToKPiBPbiBNb24sIE9jdCAxMywgMjAxNCBhdCAyOjIzIFBNLCBB
-ZGl0eWEgS2FsaSA8YWRpdHlha2FsaUBnb29nbGUuY29tPiB3cm90ZToKPj4gU2Vjb25kIHRha2Ug
-YXQgdGhlIENncm91cCBOYW1lc3BhY2UgcGF0Y2gtc2V0Lgo+Pgo+PiBNYWpvciBjaGFuZ2VzIGZv
-cm0gUkZDIChWMCk6Cj4+IDEuIHNldG5zIHN1cHBvcnQgZm9yIGNncm91cG5zCj4+IDIuICdtb3Vu
-dCAtdCBjZ3JvdXAgY2dyb3VwIDxtbnRwdD4nIGZyb20gaW5zaWRlIGEgY2dyb3VwbnMgbm93Cj4+
-ICAgIG1vdW50cyB0aGUgY2dyb3VwIGhpZXJhcmN5IHdpdGggY2dyb3VwbnMtcm9vdCBhcyB0aGUg
-ZmlsZXN5c3RlbSByb290Lgo+PiAzLiB3cml0ZXMgdG8gY2dyb3VwIGZpbGVzIG91dHNpZGUgb2Yg
-Y2dyb3VwbnMtcm9vdCBhcmUgbm90IGFsbG93ZWQKPj4gNC4gdmlzaWJpbGl0eSBvZiAvcHJvYy88
-cGlkPi9jZ3JvdXAgaXMgZnVydGhlciByZXN0cmljdGVkIGJ5IG5vdCBzaG93aW5nCj4+ICAgIGFu
-eXRoaW5nIGlmIHRoZSA8cGlkPiBpcyBpbiBhIHNpYmxpbmcgY2dyb3VwbnMgYW5kIGl0cyBjZ3Jv
-dXAgZmFsbHMgb3V0c2lkZQo+PiAgICB5b3VyIGNncm91cG5zLXJvb3QuCj4+Cj4+IE1vcmUgZGV0
-YWlscyBpbiB0aGUgd3JpdGV1cCBiZWxvdy4KPj4KPj4gQmFja2dyb3VuZAo+PiAgIENncm91cHMg
-YW5kIE5hbWVzcGFjZXMgYXJlIHVzZWQgdG9nZXRoZXIgdG8gY3JlYXRlIOKAnHZpcnR1YWzigJ0K
-Pj4gICBjb250YWluZXJzIHRoYXQgaXNvbGF0ZXMgdGhlIGhvc3QgZW52aXJvbm1lbnQgZnJvbSB0
-aGUgcHJvY2Vzc2VzCj4+ICAgcnVubmluZyBpbiBjb250YWluZXIuIEJ1dCBzaW5jZSBjZ3JvdXBz
-IHRoZW1zZWx2ZXMgYXJlIG5vdAo+PiAgIOKAnHZpcnR1YWxpemVk4oCdLCB0aGUgdGFzayBpcyBh
-bHdheXMgYWJsZSB0byBzZWUgZ2xvYmFsIGNncm91cHMgdmlldwo+PiAgIHRocm91Z2ggY2dyb3Vw
-ZnMgbW91bnQgYW5kIHZpYSAvcHJvYy9zZWxmL2Nncm91cCBmaWxlLgo+Pgo+PiAgICQgY2F0IC9w
-cm9jL3NlbGYvY2dyb3VwCj4+ICAgMDpjcHVzZXQsY3B1LGNwdWFjY3QsbWVtb3J5LGRldmljZXMs
-ZnJlZXplcixodWdldGxiOi9iYXRjaGpvYnMvY19qb2JfaWQxCj4+Cj4+ICAgVGhpcyBleHBvc3Vy
-ZSBvZiBjZ3JvdXAgbmFtZXMgdG8gdGhlIHByb2Nlc3NlcyBydW5uaW5nIGluc2lkZSBhCj4+ICAg
-Y29udGFpbmVyIHJlc3VsdHMgaW4gc29tZSBwcm9ibGVtczoKPj4gICAoMSkgVGhlIGNvbnRhaW5l
-ciBuYW1lcyBhcmUgdHlwaWNhbGx5IGhvc3QtY29udGFpbmVyLW1hbmFnZW1lbnQtYWdlbnQKPj4g
-ICAgICAgKHN5c3RlbWQsIGRvY2tlci9saWJjb250YWluZXIsIGV0Yy4pIGRhdGEgYW5kIGxlYWtp
-bmcgaXRzIG5hbWUgKG9yCj4+ICAgICAgIGxlYWtpbmcgdGhlIGhpZXJhcmNoeSkgcmV2ZWFscyB0
-b28gbXVjaCBpbmZvcm1hdGlvbiBhYm91dCB0aGUgaG9zdAo+PiAgICAgICBzeXN0ZW0uCj4+ICAg
-KDIpIEl0IG1ha2VzIHRoZSBjb250YWluZXIgbWlncmF0aW9uIGFjcm9zcyBtYWNoaW5lcyAoQ1JJ
-VSkgbW9yZQo+PiAgICAgICBkaWZmaWN1bHQgYXMgdGhlIGNvbnRhaW5lciBuYW1lcyBuZWVkIHRv
-IGJlIHVuaXF1ZSBhY3Jvc3MgdGhlCj4+ICAgICAgIG1hY2hpbmVzIGluIHRoZSBtaWdyYXRpb24g
-ZG9tYWluLgo+PiAgICgzKSBJdCBtYWtlcyBpdCBkaWZmaWN1bHQgdG8gcnVuIGNvbnRhaW5lciBt
-YW5hZ2VtZW50IHRvb2xzIChsaWtlCj4+ICAgICAgIGRvY2tlci9saWJjb250YWluZXIsIGxtY3Rm
-eSwgZXRjLikgd2l0aGluIHZpcnR1YWwgY29udGFpbmVycwo+PiAgICAgICB3aXRob3V0IGFkZGlu
-ZyBkZXBlbmRlbmN5IG9uIHNvbWUgc3RhdGUvYWdlbnQgcHJlc2VudCBvdXRzaWRlIHRoZQo+PiAg
-ICAgICBjb250YWluZXIuCj4+Cj4+ICAgTm90ZSB0aGF0IHRoZSBmZWF0dXJlIHByb3Bvc2VkIGhl
-cmUgaXMgY29tcGxldGVseSBkaWZmZXJlbnQgdGhhbiB0aGUKPj4gICDigJxucyBjZ3JvdXDigJ0g
-ZmVhdHVyZSB3aGljaCBleGlzdGVkIGluIHRoZSBsaW51eCBrZXJuZWwgdW50aWwgcmVjZW50bHku
-Cj4+ICAgVGhlIG5zIGNncm91cCBhbHNvIGF0dGVtcHRlZCB0byBjb25uZWN0IGNncm91cHMgYW5k
-IG5hbWVzcGFjZXMgYnkKPj4gICBjcmVhdGluZyBhIG5ldyBjZ3JvdXAgZXZlcnkgdGltZSBhIG5l
-dyBuYW1lc3BhY2Ugd2FzIGNyZWF0ZWQuIEl0IGRpZAo+PiAgIG5vdCBzb2x2ZSBhbnkgb2YgdGhl
-IGFib3ZlIG1lbnRpb25lZCBwcm9ibGVtcyBhbmQgd2FzIGxhdGVyIGRyb3BwZWQKPj4gICBmcm9t
-IHRoZSBrZXJuZWwuIEluY2lkZW50YWxseSB0aG91Z2gsIGl0IHVzZWQgdGhlIHNhbWUgY29uZmln
-IG9wdGlvbgo+PiAgIG5hbWUgQ09ORklHX0NHUk9VUF9OUyBhcyB1c2VkIGluIG15IHByb3RvdHlw
-ZSEKPj4KPj4gSW50cm9kdWNpbmcgQ0dyb3VwIE5hbWVzcGFjZXMKPj4gICBXaXRoIHVuaWZpZWQg
-Y2dyb3VwIGhpZXJhcmNoeQo+PiAgIChEb2N1bWVudGF0aW9uL2Nncm91cHMvdW5pZmllZC1oaWVy
-YXJjaHkudHh0KSwgdGhlIGNvbnRhaW5lcnMgY2FuIG5vdwo+PiAgIGhhdmUgYSBtdWNoIG1vcmUg
-Y29oZXJlbnQgY2dyb3VwIHZpZXcgYW5kIGl0cyBlYXN5IHRvIGFzc29jaWF0ZSBhCj4+ICAgY29u
-dGFpbmVyIHdpdGggYSBzaW5nbGUgY2dyb3VwLiBUaGlzIGFsc28gYWxsb3dzIHVzIHRvIHZpcnR1
-YWxpemUgdGhlCj4+ICAgY2dyb3VwIHZpZXcgZm9yIHRhc2tzIGluc2lkZSB0aGUgY29udGFpbmVy
-Lgo+Pgo+PiAgIFRoZSBuZXcgQ0dyb3VwIE5hbWVzcGFjZSBhbGxvd3MgYSBwcm9jZXNzIHRvIOKA
-nHVuc2hhcmXigJ0gaXRzIGNncm91cAo+PiAgIGhpZXJhcmNoeSBzdGFydGluZyBmcm9tIHRoZSBj
-Z3JvdXAgaXRzIGN1cnJlbnRseSBpbi4KPj4gICBGb3IgRXg6Cj4+ICAgJCBjYXQgL3Byb2Mvc2Vs
-Zi9jZ3JvdXAKPj4gICAwOmNwdXNldCxjcHUsY3B1YWNjdCxtZW1vcnksZGV2aWNlcyxmcmVlemVy
-LGh1Z2V0bGI6L2JhdGNoam9icy9jX2pvYl9pZDEKPj4gICAkIGxzIC1sIC9wcm9jL3NlbGYvbnMv
-Y2dyb3VwCj4+ICAgbHJ3eHJ3eHJ3eCAxIHJvb3Qgcm9vdCAwIDIwMTQtMDctMTUgMTA6MzcgL3By
-b2Mvc2VsZi9ucy9jZ3JvdXAgLT4gY2dyb3VwOls0MDI2NTMxODM1XQo+PiAgICQgfi91bnNoYXJl
-IC1jICAjIGNhbGxzIHVuc2hhcmUoQ0xPTkVfTkVXQ0dST1VQKSBhbmQgZXhlY+KAmXMgL2Jpbi9i
-YXNoCj4+ICAgW25zXSQgbHMgLWwgL3Byb2Mvc2VsZi9ucy9jZ3JvdXAKPj4gICBscnd4cnd4cnd4
-IDEgcm9vdCByb290IDAgMjAxNC0wNy0xNSAxMDozNSAvcHJvYy9zZWxmL25zL2Nncm91cCAtPgo+
-PiAgIGNncm91cDpbNDAyNjUzMjE4M10KPj4gICAjIEZyb20gd2l0aGluIG5ldyBjZ3JvdXBucywg
-cHJvY2VzcyBzZWVzIHRoYXQgaXRzIGluIHRoZSByb290IGNncm91cAo+PiAgIFtuc10kIGNhdCAv
-cHJvYy9zZWxmL2Nncm91cAo+PiAgIDA6Y3B1c2V0LGNwdSxjcHVhY2N0LG1lbW9yeSxkZXZpY2Vz
-LGZyZWV6ZXIsaHVnZXRsYjovCj4+Cj4+ICAgIyBGcm9tIGdsb2JhbCBjZ3JvdXBuczoKPj4gICAk
-IGNhdCAvcHJvYy88cGlkPi9jZ3JvdXAKPj4gICAwOmNwdXNldCxjcHUsY3B1YWNjdCxtZW1vcnks
-ZGV2aWNlcyxmcmVlemVyLGh1Z2V0bGI6L2JhdGNoam9icy9jX2pvYl9pZDEKPj4KPj4gICAjIFVu
-c2hhcmUgY2dyb3VwbnMgYWxvbmcgd2l0aCB1c2VybnMgYW5kIG1vdW50bnMKPj4gICAjIEZvbGxv
-d2luZyBjYWxscyB1bnNoYXJlKENMT05FX05FV0NHUk9VUHxDTE9ORV9ORVdVU0VSfENMT05FX05F
-V05TKSwgdGhlbgo+PiAgICMgc2V0cyB1cCB1aWQvZ2lkIG1hcCBhbmQgZXhlY+KAmXMgL2Jpbi9i
-YXNoCj4+ICAgJCB+L3Vuc2hhcmUgLWMgLXUgLW0KPj4KPj4gICAjIE9yaWdpbmFsbHksIHdlIHdl
-cmUgaW4gL2JhdGNoam9icy9jX2pvYl9pZDEgY2dyb3VwLiBNb3VudCBvdXIgb3duIGNncm91cAo+
-PiAgICMgaGllcmFyY2h5Lgo+PiAgIFtuc10kIG1vdW50IC10IGNncm91cCBjZ3JvdXAgL3RtcC9j
-Z3JvdXAKPj4gICBbbnNdJCBscyAtbCAvdG1wL2Nncm91cAo+PiAgIHRvdGFsIDAKPj4gICAtci0t
-ci0tci0tIDEgcm9vdCByb290IDAgMjAxNC0xMC0xMyAwOTozMiBjZ3JvdXAuY29udHJvbGxlcnMK
-Pj4gICAtci0tci0tci0tIDEgcm9vdCByb290IDAgMjAxNC0xMC0xMyAwOTozMiBjZ3JvdXAucG9w
-dWxhdGVkCj4+ICAgLXJ3LXItLXItLSAxIHJvb3Qgcm9vdCAwIDIwMTQtMTAtMTMgMDk6MjUgY2dy
-b3VwLnByb2NzCj4+ICAgLXJ3LXItLXItLSAxIHJvb3Qgcm9vdCAwIDIwMTQtMTAtMTMgMDk6MzIg
-Y2dyb3VwLnN1YnRyZWVfY29udHJvbAo+Pgo+PiAgIFRoZSBjZ3JvdXBucy1yb290ICgvYmF0Y2hq
-b2JzL2Nfam9iX2lkMSBpbiBhYm92ZSBleGFtcGxlKSBiZWNvbWVzIHRoZQo+PiAgIGZpbGVzeXN0
-ZW0gcm9vdCBmb3IgdGhlIG5hbWVzcGFjZSBzcGVjaWZpYyBjZ3JvdXBmcyBtb3VudC4KPj4KPj4g
-ICBUaGUgdmlydHVhbGl6YXRpb24gb2YgL3Byb2Mvc2VsZi9jZ3JvdXAgZmlsZSBjb21iaW5lZCB3
-aXRoIHJlc3RyaWN0aW5nCj4+ICAgdGhlIHZpZXcgb2YgY2dyb3VwIGhpZXJhcmNoeSBieSBuYW1l
-c3BhY2UtcHJpdmF0ZSBjZ3JvdXBmcyBtb3VudAo+PiAgIHNob3VsZCBwcm92aWRlIGEgY29tcGxl
-dGVseSBpc29sYXRlZCBjZ3JvdXAgdmlldyBpbnNpZGUgdGhlIGNvbnRhaW5lci4KPj4KPj4gICBJ
-biBpdHMgY3VycmVudCBmb3JtLCB0aGUgY2dyb3VwIG5hbWVzcGFjZXMgcGF0Y2hlc2V0IHByb3Zp
-ZGVzIGZvbGxvd2luZwo+PiAgIGJlaGF2aW9yOgo+Pgo+PiAgICgxKSBUaGUg4oCccm9vdOKAnSBj
-Z3JvdXAgZm9yIGEgY2dyb3VwIG5hbWVzcGFjZSBpcyB0aGUgY2dyb3VwIGluIHdoaWNoCj4+ICAg
-ICAgIHRoZSBwcm9jZXNzIGNhbGxpbmcgdW5zaGFyZSBpcyBydW5uaW5nLgo+PiAgICAgICBGb3Ig
-ZXguIGlmIGEgcHJvY2VzcyBpbiAvYmF0Y2hqb2JzL2Nfam9iX2lkMSBjZ3JvdXAgY2FsbHMgdW5z
-aGFyZSwKPj4gICAgICAgY2dyb3VwIC9iYXRjaGpvYnMvY19qb2JfaWQxIGJlY29tZXMgdGhlIGNn
-cm91cG5zLXJvb3QuCj4+ICAgICAgIEZvciB0aGUgaW5pdF9jZ3JvdXBfbnMsIHRoaXMgaXMgdGhl
-IHJlYWwgcm9vdCAo4oCcL+KAnSkgY2dyb3VwCj4+ICAgICAgIChpZGVudGlmaWVkIGluIGNvZGUg
-YXMgY2dycF9kZmxfcm9vdC5jZ3JwKS4KPj4KPj4gICAoMikgVGhlIGNncm91cG5zLXJvb3QgY2dy
-b3VwIGRvZXMgbm90IGNoYW5nZSBldmVuIGlmIHRoZSBuYW1lc3BhY2UKPj4gICAgICAgY3JlYXRv
-ciBwcm9jZXNzIGxhdGVyIG1vdmVzIHRvIGEgZGlmZmVyZW50IGNncm91cC4KPj4gICAgICAgJCB+
-L3Vuc2hhcmUgLWMgIyB1bnNoYXJlIGNncm91cG5zIGluIHNvbWUgY2dyb3VwCj4+ICAgICAgIFtu
-c10kIGNhdCAvcHJvYy9zZWxmL2Nncm91cAo+PiAgICAgICAwOmNwdXNldCxjcHUsY3B1YWNjdCxt
-ZW1vcnksZGV2aWNlcyxmcmVlemVyLGh1Z2V0bGI6Lwo+PiAgICAgICBbbnNdJCBta2RpciBzdWJf
-Y2dycF8xCj4+ICAgICAgIFtuc10kIGVjaG8gMCA+IHN1Yl9jZ3JwXzEvY2dyb3VwLnByb2NzCj4+
-ICAgICAgIFtuc10kIGNhdCAvcHJvYy9zZWxmL2Nncm91cAo+PiAgICAgICAwOmNwdXNldCxjcHUs
-Y3B1YWNjdCxtZW1vcnksZGV2aWNlcyxmcmVlemVyLGh1Z2V0bGI6L3N1Yl9jZ3JwXzEKPj4KPj4g
-ICAoMykgRWFjaCBwcm9jZXNzIGdldHMgaXRzIENHUk9VUE5TIHNwZWNpZmljIHZpZXcgb2YKPj4g
-ICAgICAgL3Byb2MvPHBpZD4vY2dyb3VwLgo+PiAgIChhKSBQcm9jZXNzZXMgcnVubmluZyBpbnNp
-ZGUgdGhlIGNncm91cCBuYW1lc3BhY2Ugd2lsbCBiZSBhYmxlIHRvIHNlZQo+PiAgICAgICBjZ3Jv
-dXAgcGF0aHMgKGluIC9wcm9jL3NlbGYvY2dyb3VwKSBvbmx5IGluc2lkZSB0aGVpciByb290IGNn
-cm91cAo+PiAgICAgICBbbnNdJCBzbGVlcCAxMDAwMDAgJiAgIyBGcm9tIHdpdGhpbiB1bnNoYXJl
-ZCBjZ3JvdXBucwo+PiAgICAgICBbMV0gNzM1Mwo+PiAgICAgICBbbnNdJCBlY2hvIDczNTMgPiBz
-dWJfY2dycF8xL2Nncm91cC5wcm9jcwo+PiAgICAgICBbbnNdJCBjYXQgL3Byb2MvNzM1My9jZ3Jv
-dXAKPj4gICAgICAgMDpjcHVzZXQsY3B1LGNwdWFjY3QsbWVtb3J5LGRldmljZXMsZnJlZXplcixo
-dWdldGxiOi9zdWJfY2dycF8xCj4+Cj4+ICAgKGIpIEZyb20gZ2xvYmFsIGNncm91cG5zLCB0aGUg
-cmVhbCBjZ3JvdXAgcGF0aCB3aWxsIGJlIHZpc2libGU6Cj4+ICAgICAgICQgY2F0IC9wcm9jLzcz
-NTMvY2dyb3VwCj4+ICAgICAgIDA6Y3B1c2V0LGNwdSxjcHVhY2N0LG1lbW9yeSxkZXZpY2VzLGZy
-ZWV6ZXIsaHVnZXRsYjovYmF0Y2hqb2JzL2Nfam9iX2lkMS9zdWJfY2dycF8xCj4KPiBUaGlzIGlz
-IGEgbGl0dGxlIHdlaXJkLiAgTm90IHN1cmUgaXQncyBhIHByb2JsZW0uCj4KPj4KPj4gICAoYykg
-RnJvbSBhIHNpYmxpbmcgY2dyb3VwbnMgKGNncm91cG5zIHJvb3QtZWQgYXQgYSBzaWJsaW5nIGNn
-cm91cCksIG5vIGNncm91cAo+PiAgICAgICBwYXRoIHdpbGwgYmUgdmlzaWJsZToKPj4gICAgICAg
-IyBuczIncyBjZ3JvdXBucy1yb290IGlzIGF0ICcvYmF0Y2hqb2JzL2Nfam9iX2lkMicKPj4gICAg
-ICAgW25zMl0kIGNhdCAvcHJvYy83MzUzL2Nncm91cAo+PiAgICAgICBbbnMyXSQKPj4gICAgICAg
-VGhpcyBpcyBzYW1lIGFzIHdoZW4gY2dyb3VwIGhpZXJhcmNoeSBpcyBub3QgbW91bnRlZCBhdCBh
-bGwuCj4+ICAgICAgIChJbiBjb3JyZWN0IGNvbnRhaW5lciBzZXR1cCB0aG91Z2gsIGl0IHNob3Vs
-ZCBub3QgYmUgcG9zc2libGUgdG8KPj4gICAgICAgIGFjY2VzcyBQSURzIGluIGFub3RoZXIgY29u
-dGFpbmVyIGluIHRoZSBmaXJzdCBwbGFjZS4pCj4+Cj4+ICAgKDQpIFByb2Nlc3NlcyBpbnNpZGUg
-YSBjZ3JvdXBucyBhcmUgbm90IGFsbG93ZWQgdG8gbW92ZSBvdXQgb2YgdGhlCj4+ICAgICAgIGNn
-cm91cG5zLXJvb3QuIFRoaXMgaXMgdHJ1ZSBldmVuIGlmIGEgcHJpdmlsZWdlZCBwcm9jZXNzIGlu
-IGdsb2JhbAo+PiAgICAgICBjZ3JvdXBucyB0cmllcyB0byBtb3ZlIHRoZSBwcm9jZXNzIG91dCBv
-ZiBpdHMgY2dyb3VwbnMtcm9vdC4KPj4KPj4gICAgICAgIyBGcm9tIGdsb2JhbCBjZ3JvdXBucwo+
-PiAgICAgICAkIGNhdCAvcHJvYy83MzUzL2Nncm91cAo+PiAgICAgICAwOmNwdXNldCxjcHUsY3B1
-YWNjdCxtZW1vcnksZGV2aWNlcyxmcmVlemVyLGh1Z2V0bGI6L2JhdGNoam9icy9jX2pvYl9pZDEv
-c3ViX2NncnBfMQo+PiAgICAgICAjIGNncm91cG5zLXJvb3QgZm9yIDczNTMgaXMgL2JhdGNoam9i
-cy9jX2pvYl9pZDEKPj4gICAgICAgJCBlY2hvIDczNTMgPiBiYXRjaGpvYnMvY19qb2JfaWQyL2Nn
-cm91cC5wcm9jcwo+PiAgICAgICAtYmFzaDogZWNobzogd3JpdGUgZXJyb3I6IE9wZXJhdGlvbiBu
-b3QgcGVybWl0dGVkCj4+Cj4KPj4KPj4gICAoNikgV2hlbiBzb21lIHRocmVhZCBmcm9tIGEgbXVs
-dGktdGhyZWFkZWQgcHJvY2VzcyB1bnNoYXJlcyBpdHMKPj4gICAgICAgY2dyb3VwLW5hbWVzcGFj
-ZSwgdGhlIG5ldyBjZ3JvdXBucyBnZXRzIGFwcGxpZWQgdG8gdGhlIGVudGlyZQo+PiAgICAgICBw
-cm9jZXNzIChhbGwgdGhlIHRocmVhZHMpLiBUaGlzIHNob3VsZCBiZSBPSyBzaW5jZQo+PiAgICAg
-ICB1bmlmaWVkLWhpZXJhcmNoeSBvbmx5IGFsbG93cyBwcm9jZXNzLWxldmVsIGNvbnRhaW5lcml6
-YXRpb24uIFNvCj4+ICAgICAgIGFsbCB0aGUgdGhyZWFkcyBpbiB0aGUgcHJvY2VzcyB3aWxsIGhh
-dmUgdGhlIHNhbWUgY2dyb3VwLiBBbmQgYm90aAo+PiAgICAgICAtIGNoYW5naW5nIGNncm91cHMg
-YW5kIHVuc2hhcmluZyBuYW1lc3BhY2VzIC0gYXJlIHByb3RlY3RlZCB1bmRlcgo+PiAgICAgICB0
-aHJlYWRncm91cF9sb2NrKHRhc2spLgo+Cj4gVGhpcyBzZWVtcyBvZGQgdG8gbWUuICBEb2VzIHVu
-c2hhcmluZyB0aGUgY2dyb3VwbnMgdW5zaGFyZSBmb3IgYWxsCj4gdGFza3MgaW4gdGhlIHByb2Nl
-c3M/ICBJZiBub3QsIHRoZW4gSSB0aGluayB0aGF0IGl0IHNob3VsZG4ndCBjaGFuZ2UKPiB0aGUg
-Y2dyb3VwIGVpdGhlci4KPgoKVW5zaGFyaW5nIGNnb3J1cG5zIHVuc2hhcmVzIGZvciBhbGwgdGFz
-a3MgaW4gdGhlIHByb2Nlc3MsIHllcy4KClRoZSBjZ3JvdXAgY2hhbmdlcyBhcmUgcHJvdGVjdGVk
-IGJ5IHRocmVhZGdyb3VwX2xvY2suIFNvIGl0IG1hZGUgc2Vuc2UKdG8gcHJvdGVjdCBjZ3JvdXBu
-cyBjaGFuZ2VzICh1bnNoYXJlIG9yIHNldG5zKSBieSB0aGUgc2FtZSBsb2NrIGFzIHdlCmRvbid0
-IHdhbnQgdGFzaydzIGNncm91cCB0byBjaGFuZ2UgdW5kZXJuZWF0aCB3aGlsZSB3ZSBhcmUgY2hh
-bmdpbmcKaXRzIGNncm91cC1uYW1lc3BhY2UuIE5vIGNncm91cCBjaGFuZ2UgaGFwcGVucyBkdXJp
-bmcgdGhlCnVuc2hhcmUvc2V0bnMgY2FsbC4KCj4gV2hhdCBkaWQgeW91IGVuZCB1cCBkb2luZyB0
-byBncmFudCBwZXJtaXNzaW9uIHRvIHVuc2hhcmUgdGhlIGNncm91cCBucz8KPgoKQ3VycmVudGx5
-IHRoZSBvbmx5IHJlcXVpcmVtZW50IGlzIG5zX2NhcGFibGUoY2dyb3VwbnMtPnVzZXJfbnMsCkNB
-UF9TWVNfQURNSU4pLiBJdHMgcG9zc2libGUgdG8gcmVmaW5lIHRoaXMgZnVydGhlciwgYnV0IGZv
-ciBub3cgSQpqdXN0IGtlcHQgaXQgc2ltcGxlci4gSSBhbSBsb29raW5nIGludG8gdGhlIGV4cGxp
-Y2l0IHBlcm1pc3Npb24gY2hlY2sKZGlzY3Vzc2VkIHByZXZpb3VzbHkgKGh0dHBzOi8vbGttbC5v
-cmcvbGttbC8yMDE0LzcvMjkvNDAyKSwgYnV0IHdhbnRlZAp0byBnZXQgdGhpcyBvdXQgc29vbmVy
-LgoKPiAtLUFuZHkKClRoYW5rcywKLS0gCkFkaXR5YQpfX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJz
-QGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9u
-Lm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+   Grant Funding USA is offering the Grant Funding and  Proposal Writing
+   Essentials Course  to be held in Los Angeles, CA from December 17-19,
+   2014. Interested development professionals, researchers, faculty, and
+   graduate students should register as soon as possible, as demand means
+   that seats will fill up quickly. Please forward, post, and distribute
+   this e-mail to your colleagues and listservs.
+
+    4
+
+   All participants will receive certification in professional grant
+   writing. For more information call (888) 888-859-5659 or visit the
+   Grant Funding USA website at www.grantfundingusa.org.
+
+
+   Please find the program description below:
+
+
+   Grant Funding USA's
+
+   Grant Funding and  Proposal Writing Essentials Course
+   will be held in
+   Los Angeles CA
+   on the campus of the
+   University of Southern California
+   December 17-19, 2014
+   8:00 AM - 5:00 PM
+
+
+   Grant Funding USA's Grant Funding and  Proposal Writing Essentials
+   Course  is an intensive and detailed introduction to the process,
+   structure, and skill of professional proposal writing. This course is
+   characterized by its ability to act as a thorough overview,
+   introduction, and refresher at the same time. In this course,
+   participants will learn the entire proposal writing process and
+   complete the course with a solid understanding of not only the ideal
+   proposal structure, but a holistic understanding of the essential
+   factors, which determine whether or not a program gets funded. Through
+   the completion of interactive exercises and activities, participants
+   will complement expert lectures by putting proven techniques into
+   practice. This course is designed for both the beginner looking for a
+   thorough introduction and the intermediate looking for a refresher
+   course that will strengthen their grant acquisition skills. This class,
+   simply put, is designed to get results by creating professional grant
+   proposal writers.
+
+
+   Participants will become competent program planning and proposal
+   writing professionals after successful completion of the Grant Funding
+   and  Proposal Writing Essentials Course.  In three active and
+   informative days, students will be exposed to the art of successful
+   grant writing practices, and led on a journey that ends with a
+   masterful grant proposal.
+
+
+   The Grant Funding and  Proposal Writing Essentials Course consists of
+   three (3) subject areas that will be completed during the three-day
+   workshop.
+
+
+   (1) Fundamentals of Program Planning
+
+
+   This session is centered on the belief that "it's all about the
+   program." This intensive session will teach professional program
+   development essentials and program evaluation. While most grant writing
+   "workshops" treat program development and evaluation as separate from
+   the writing of a proposal, this class will teach students the
+   relationship between overall program planning and grant writing.
+
+
+   (2) Proposal Writing Essentials
+
+
+   Designed for both the novice and experienced grant writer, this
+   component will make each student an overall proposal writing
+   specialist. In addition to teaching the basic components of a grant
+   proposal, successful approaches, and the do's and don'ts of grant
+   writing, this course is infused with expert principles that will lead
+   to a mastery of the process. Strategy resides at the forefront of this
+   course's intent to illustrate grant writing as an integrated,
+   multidimensional, and dynamic endeavor. Each student will learn to stop
+   writing the grant and to start writing the story. Ultimately, this
+   class will illustrate how each component of the grant proposal
+   represents an opportunity to use proven techniques for generating
+   support.
+
+
+   (3) Funding Research
+
+
+   At its foundation, this course will address the basics of foundation,
+   corporation, and government grant research. However, this course will
+   teach a strategic funding research approach that encourages students to
+   see research not as something they do before they write a proposal, but
+   as an integrated part of the grant seeking process. Students will be
+   exposed to online and database research tools, as well as publications
+   and directories that contain information about foundation, corporation,
+   and government grant opportunities. Focusing on funding sources and
+   basic social science research, this course teaches students how to use
+   research as part of a strategic grant acquisition effort.
+
+
+   Registration
+
+   $495.00 tuition includes all materials and certificates.
+
+
+   Each student will receive:
+
+   *Grant Funding USA's Certificate in Professional Grant Writing
+
+   *The Guide to Successful Grant Writing
+
+   *The Grant Writer's Workbook with sample proposals, forms, and outlines
+
+
+   Registration Methods
+
+
+   1) On-Line - Complete the [1]online registration form a'nd we'll send
+   your confirmation by e-mail.
+
+
+   2) By Phone - Call (888) 859-5659 to register by phone. Our friendly
+   Program Coordinators will be happy to assist you and answer your
+   questions.
+
+
+   We respect your privacy and want to ensure that interested parties are
+   made aware of  Grant Funding USA  programs and schedules. This is
+   intended to be a one-time announcement. In any event, you should not
+   receive any more announcements unless there is a program next year in
+   your area. To be excluded  from next year's announcement, send a blank
+   e-mail to [2]exclude-EGJiyZjCJz/TNKXJp0M/0kB+6BGkLq7r@public.gmane.org and write "Exclude" in the
+   subject line.
+
+References
+
+   1. http://www.123contactform.com/form-885131/Grant-Funding-USA-Registration-Form
+   2. mailto:exclude-EGJiyZjCJz/TNKXJp0M/0kB+6BGkLq7r@public.gmane.org
