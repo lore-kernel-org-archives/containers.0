@@ -1,14 +1,17 @@
-From: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [RESEND][PATCH 2/2v5] /proc/PID/status: show all sets of pid
-	according to ns
-Date: Fri, 24 Oct 2014 18:15:45 +0800
-Message-ID: <1414145745-30293-3-git-send-email-chenhanxiao@cn.fujitsu.com>
-References: <1414145745-30293-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCHv1 5/8] cgroup: introduce cgroup namespaces
+Date: Sat, 25 Oct 2014 05:16:08 +0200
+Message-ID: <20141025031608.GA13250@mail.hallyn.com>
+References: <1413235430-22944-1-git-send-email-adityakali@google.com>
+	<1413235430-22944-6-git-send-email-adityakali@google.com>
+	<20141016163703.GE1392@mail.hallyn.com>
+	<CAGr1F2E0VdBafZg6P2yeP6bgxsMEm53fEuT29HTLygTKobgi-w@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1414145745-30293-1-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <CAGr1F2E0VdBafZg6P2yeP6bgxsMEm53fEuT29HTLygTKobgi-w-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,67 +21,24 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-If some issues occurred inside a container guest, host user
-could not know which process is in trouble just by guest pid:
-the users of container guest only knew the pid inside containers.
-This will bring obstacle for trouble shooting.
+Quoting Aditya Kali (adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org):
+> >> +void free_cgroup_ns(struct cgroup_namespace *ns)
+> >> +{
+> >> +     cgroup_put(ns->root_cgrp);
+> >> +     put_user_ns(ns->user_ns);
+> >
+> > This is a problem on error patch in copy_cgroup_ns.  The
+> > alloc_cgroup_ns() doesn't initialize these values, so if
+> > you should fail in proc_alloc_inum() you'll show up here
+> > with fandom values in ns->*.
+> >
+> 
+> I don't see the codepath that leads to calling free_cgroup_ns() with
+> uninitialized members. We don't call free_cgroup_ns() on the error
+> path in copy_cgroup_ns().
 
-This patch adds four fields: NStgid, NSpid, NSpgid and NSsid:
-a) In init_pid_ns, nothing changed;
-
-b) In one pidns, will tell the pid inside containers:
-NStgid:	21776   5       1
-NSpid:  21776   5       1
-NSpgid:	21776   5       1
-NSsid:  21729   1       0
-** Process id is 21776 in level 0, 5 in level 1, 1 in level 2.
-
-c) If pidns is nested, it depends on which pidns are you in.
-NStgid: 5       1
-NSpid:  5       1
-NSpgid: 5       1
-NSsid:  1       0
-** Views from level 1
-
-Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Tested-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-
-Signed-off-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- fs/proc/array.c | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
-
-diff --git a/fs/proc/array.c b/fs/proc/array.c
-index cd3653e..c30875d 100644
---- a/fs/proc/array.c
-+++ b/fs/proc/array.c
-@@ -193,6 +193,23 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
- 		from_kgid_munged(user_ns, cred->egid),
- 		from_kgid_munged(user_ns, cred->sgid),
- 		from_kgid_munged(user_ns, cred->fsgid));
-+	seq_puts(m, "NStgid:");
-+	for (g = ns->level; g <= pid->level; g++)
-+		seq_printf(m, "\t%d ",
-+			task_tgid_nr_ns(p, pid->numbers[g].ns));
-+	seq_puts(m, "\nNSpid:");
-+	for (g = ns->level; g <= pid->level; g++)
-+		seq_printf(m, "\t%d ",
-+			task_pid_nr_ns(p, pid->numbers[g].ns));
-+	seq_puts(m, "\nNSpgid:");
-+	for (g = ns->level; g <= pid->level; g++)
-+		seq_printf(m, "\t%d ",
-+			task_pgrp_nr_ns(p, pid->numbers[g].ns));
-+	seq_puts(m, "\nNSsid:");
-+	for (g = ns->level; g <= pid->level; g++)
-+		seq_printf(m, "\t%d ",
-+			task_session_nr_ns(p, pid->numbers[g].ns));
-+	seq_putc(m, '\n');
- 
- 	task_lock(p);
- 	if (p->files)
--- 
-1.9.3
+Hm, yeah, I'm not seeing it now, sorry.
