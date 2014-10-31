@@ -1,15 +1,16 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH net-next v4 0/4] netns: allow to identify peer netns
-Date: Thu, 30 Oct 2014 11:41:03 -0700
-Message-ID: <871tpph03k.fsf@x220.int.ebiederm.org>
-References: <1412257690-31253-1-git-send-email-nicolas.dichtel@6wind.com>
-	<1414682728-4532-1-git-send-email-nicolas.dichtel@6wind.com>
+From: Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH net-next v4 1/4] netns: add genl cmd to add and get peer
+	netns ids
+Date: Fri, 31 Oct 2014 10:41:24 +0100
+Message-ID: <54535944.6050405__22512.5737990767$1414748502$gmane$org@6wind.com>
+References: <1412257690-31253-1-git-send-email-nicolas.dichtel@6wind.com>	<1414682728-4532-1-git-send-email-nicolas.dichtel@6wind.com>	<1414682728-4532-2-git-send-email-nicolas.dichtel@6wind.com>
+	<874mulh0cs.fsf@x220.int.ebiederm.org>
+Reply-To: nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1414682728-4532-1-git-send-email-nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
-	(Nicolas Dichtel's message of "Thu, 30 Oct 2014 16:25:24 +0100")
+In-Reply-To: <874mulh0cs.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,109 +20,31 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org, stephen-OTpzqLSitTUnbdJkjeBofR2eb7JE58TQ@public.gmane.org, cwang-xCSkyg8dI+0RB7SZvlqPiA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org> writes:
-
-> The goal of this serie is to be able to multicast netlink messages with an
-> attribute that identify a peer netns.
-> This is needed by the userland to interpret some informations contained in
-> netlink messages (like IFLA_LINK value, but also some other attributes in case
-> of x-netns netdevice (see also
-> http://thread.gmane.org/gmane.linux.network/315933/focus=316064 and
-> http://thread.gmane.org/gmane.linux.kernel.containers/28301/focus=4239)).
->
-> Ids of peer netns are set by userland via a new genl messages. These ids are
-> stored per netns and are local (ie only valid in the netns where they are set).
-> To avoid allocating an int for each peer netns, I use idr_for_each() to retrieve
-> the id of a peer netns. Note that it will be possible to add a table (struct net
-> -> id) later to optimize this lookup if needed.
->
-> Patch 1/4 introduces the netlink API mechanism to set and get these ids.
-> Patch 2/4 and 3/4 implements an example of how to use these ids in rtnetlink
-> messages. And patch 4/4 shows that the netlink messages can be symetric between
-> a GET and a SET.
->
-> iproute2 patches are available, I can send them on demand.
-
-A quick reply.  I think this patchset is in the right general direction.
-There are some oddball details that seem odd/awkward to me such as using
-genetlink instead of rtnetlink to get and set the ids, and not having
-ids if they are not set (that feels like a maintenance/usability challenge).
-
-I would like to give your patches a deep review, but I won't be able to
-do that for a couple of weeks.  I am deep in the process of moving,
-and will be mostly offline until about the Nov 11th.
-
-Eric
-
-
-> Here is a small screenshot to show how it can be used by userland.
->
-> First, setup netns and required ids:
-> $ ip netns add foo
-> $ ip netns del foo
-> $ ip netns
-> $ touch /var/run/netns/init_net
-> $ mount --bind /proc/1/ns/net /var/run/netns/init_net
-> $ ip netns add foo
-> $ ip netns exec foo ip netns set init_net 0
-> $ ip netns
-> foo
-> init_net
-> $ ip netns exec foo ip netns
-> foo
-> init_net (id: 0)
->
-> Now, add and display an ipip tunnel, with its link part in init_net (id 0 in
-> netns foo) and the netdevice in foo:
-> $ ip netns exec foo ip link add ipip1 link-netnsid 0 type ipip remote 10.16.0.121 local 10.16.0.249
-> $ ip netns exec foo ip l ls ipip1
-> 6: ipip1@NONE: <POINTOPOINT,NOARP> mtu 1480 qdisc noop state DOWN mode DEFAULT group default 
->     link/ipip 10.16.0.249 peer 10.16.0.121 link-netnsid 0
->
-> The parameter link-netnsid shows us where the interface sends and receives
-> packets (and thus we know where encapsulated addresses are set).
->
-> RFCv3 -> v4:
->   rebase on net-next
->   add copyright text in the new netns.h file
->
-> RFCv2 -> RFCv3:
->   ids are now defined by userland (via netlink). Ids are stored in each netns
->   (and they are local to this netns).
->   add get_link_net support for ip6 tunnels
->   netnsid is now a s32 instead of a u32
->
-> RFCv1 -> RFCv2:
->   remove useless ()
->   ids are now stored in the user ns. It's possible to get an id for a peer netns
->   only if the current netns and the peer netns have the same user ns parent.
->
->  MAINTAINERS                  |   1 +
->  include/net/ip6_tunnel.h     |   1 +
->  include/net/ip_tunnels.h     |   1 +
->  include/net/net_namespace.h  |   5 ++
->  include/net/rtnetlink.h      |   2 +
->  include/uapi/linux/Kbuild    |   1 +
->  include/uapi/linux/if_link.h |   1 +
->  include/uapi/linux/netns.h   |  38 +++++++++
->  net/core/net_namespace.c     | 195 +++++++++++++++++++++++++++++++++++++++++++
->  net/core/rtnetlink.c         |  38 ++++++++-
->  net/ipv4/ip_gre.c            |   2 +
->  net/ipv4/ip_tunnel.c         |   8 ++
->  net/ipv4/ip_vti.c            |   1 +
->  net/ipv4/ipip.c              |   1 +
->  net/ipv6/ip6_gre.c           |   1 +
->  net/ipv6/ip6_tunnel.c        |   9 ++
->  net/ipv6/ip6_vti.c           |   1 +
->  net/ipv6/sit.c               |   1 +
->  net/netlink/genetlink.c      |   4 +
->  19 files changed, 308 insertions(+), 3 deletions(-)
->
-> Comments are welcome.
->
-> Regards,
-> Nicolas
+TGUgMzAvMTAvMjAxNCAxOTozNSwgRXJpYyBXLiBCaWVkZXJtYW4gYSDDqWNyaXQgOgo+IE5pY29s
+YXMgRGljaHRlbCA8bmljb2xhcy5kaWNodGVsQDZ3aW5kLmNvbT4gd3JpdGVzOgo+Cj4+IFdpdGgg
+dGhpcyBwYXRjaCwgYSB1c2VyIGNhbiBkZWZpbmUgYW4gaWQgZm9yIGEgcGVlciBuZXRucyBieSBw
+cm92aWRpbmcgYSBGRCBvciBhCj4+IFBJRC4gVGhlc2UgaWRzIGFyZSBsb2NhbCB0byBuZXRucyAo
+aWUgdmFsaWQgb25seSBpbnRvIG9uZSBuZXRucykuCj4KPiBTY3JhdGNoZXMgaGVhZC4gIERvIHlv
+dSBhY3R1YWxseSBmaW5kIHZhbHVlIGluIHVzaW5nIHRoZSBwaWQgaW5zdGVhZCBvZgo+IGEgZmls
+ZSBkZXNjcmlwdG9yPwpJIGNvcGllZCB0aGUgbWVjaGFuaXNtIGZyb20gcnRubF9saW5rX2dldF9u
+ZXQoKToKRmlyc3QgY2hlY2sgaWYgdGhlIHVzZXIgcHJvdmlkZXMgYSBQSUQsIGlmIG5vdCwgY2hl
+Y2sgZm9yIGEgRkQuCgo+Cj4gRG9pbmcgdGhpbmdzIGJ5IHBpZCB3YXMgYW4gZWFybHkgYXR0ZW1w
+dCB0byBtYWtlIHRoaW5ncyB3b3JrLCBhbmQgaGFzCj4gYmVlbiBhIGJpdCBjbHV0c3kuICBJZiB5
+b3UgZG9uJ3QgZmluZCB2YWx1ZSBpbiBpdCBJIHdvdWxkIHJlY29tbWVuZCBqdXN0Cj4gc3VwcG9y
+dGluZyBnZXR0aW5nL3NldHRpbmcgdGhlIG5ldHdvcmsgbmFtZXNwYWNlIGJ5IGZpbGUgZGVzY3Jp
+cHRvci4KSG1tLCBpZiBJIHVuZGVyc3RhbmQgd2VsbCwgaXQncyB3aGF0IGlzIGRvbmUgaW4gdGhl
+IHBhdGNoOgoKW3NuaXBdCj4+ICtzdGF0aWMgaW50IG5ldG5zX25sX2NtZF9uZXdpZChzdHJ1Y3Qg
+c2tfYnVmZiAqc2tiLCBzdHJ1Y3QgZ2VubF9pbmZvICppbmZvKQo+PiArewpbc25pcF0KPj4gKwlp
+ZiAoaW5mby0+YXR0cnNbTkVUTlNBX1BJRF0pCj4+ICsJCXBlZXIgPSBnZXRfbmV0X25zX2J5X3Bp
+ZChubGFfZ2V0X3UzMihpbmZvLT5hdHRyc1tORVROU0FfUElEXSkpOwo+PiArCWVsc2UgaWYgKGlu
+Zm8tPmF0dHJzW05FVE5TQV9GRF0pCj4+ICsJCXBlZXIgPSBnZXRfbmV0X25zX2J5X2ZkKG5sYV9n
+ZXRfdTMyKGluZm8tPmF0dHJzW05FVE5TQV9GRF0pKTsKPj4gKwllbHNlCj4+ICsJCXJldHVybiAt
+RUlOVkFMOwo+PiArCWlmIChJU19FUlIocGVlcikpCj4+ICsJCXJldHVybiBQVFJfRVJSKHBlZXIp
+OwoKQW0gSSByaWdodD8KCgpSZWdhcmRzLApOaWNvbGFzCl9fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5l
+cnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRp
+b24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
