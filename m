@@ -1,17 +1,15 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: [PATCHv2 7/7] cgroup: mount cgroupns-root when inside non-init
-	cgroupns
-Date: Fri, 31 Oct 2014 20:29:15 -0700
-Message-ID: <CALCETrWTtGH=q0kD=hFv=LryA+h=K3yCV4_CmgD=TMbuaW3LrA@mail.gmail.com>
-References: <1414783141-6947-1-git-send-email-adityakali@google.com>
-	<1414783141-6947-8-git-send-email-adityakali@google.com>
-	<CALCETrXTaZ3SJ_t-gnbc93BVZXg-912NqO78kFd0Tpi-5-dZoQ@mail.gmail.com>
-	<87a94blj6m.fsf@x220.int.ebiederm.org>
+From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Subject: Re: [PATCH net-next v4 0/4] netns: allow to identify peer netns
+Date: Sat, 01 Nov 2014 17:08:12 -0400 (EDT)
+Message-ID: <20141101.170812.1034370067621331861.davem__20043.4954873801$1414876109$gmane$org@davemloft.net>
+References: <1412257690-31253-1-git-send-email-nicolas.dichtel@6wind.com>
+	<1414682728-4532-1-git-send-email-nicolas.dichtel@6wind.com>
+	<871tpph03k.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87a94blj6m.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <871tpph03k.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,75 +19,46 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org, stephen-OTpzqLSitTUnbdJkjeBofR2eb7JE58TQ@public.gmane.org, cwang-xCSkyg8dI+0RB7SZvlqPiA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Oct 31, 2014 at 7:59 PM, Eric W. Biederman
-<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
-> Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> writes:
->>> @@ -1862,6 +1904,7 @@ static struct file_system_type cgroup_fs_type = {
->>>         .name = "cgroup",
->>>         .mount = cgroup_mount,
->>>         .kill_sb = cgroup_kill_sb,
->>> +       .fs_flags = FS_USERNS_MOUNT,
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Date: Thu, 30 Oct 2014 11:41:03 -0700
+
+> Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org> writes:
+> 
+>> The goal of this serie is to be able to multicast netlink messages with an
+>> attribute that identify a peer netns.
+>> This is needed by the userland to interpret some informations contained in
+>> netlink messages (like IFLA_LINK value, but also some other attributes in case
+>> of x-netns netdevice (see also
+>> http://thread.gmane.org/gmane.linux.network/315933/focus=316064 and
+>> http://thread.gmane.org/gmane.linux.kernel.containers/28301/focus=4239)).
 >>
->> Aargh, another one!  Eric, can you either ack or nack my patch?
->> Because if my patch goes in, then this line may need to change.  Or
->> not, but if a stable release with cgroupfs and without my patch
->> happens, then we'll have an ABI break.
->
-> cgroupfs has no device nodes.  So as long as we are consistent in any
-> given release what happens here is orthogonal.
->
-> I don't remember if we have managed to get the original problem fixed
-> with the trivial backportable solution.  I think so.
+>> Ids of peer netns are set by userland via a new genl messages. These ids are
+>> stored per netns and are local (ie only valid in the netns where they are set).
+>> To avoid allocating an int for each peer netns, I use idr_for_each() to retrieve
+>> the id of a peer netns. Note that it will be possible to add a table (struct net
+>> -> id) later to optimize this lookup if needed.
+>>
+>> Patch 1/4 introduces the netlink API mechanism to set and get these ids.
+>> Patch 2/4 and 3/4 implements an example of how to use these ids in rtnetlink
+>> messages. And patch 4/4 shows that the netlink messages can be symetric between
+>> a GET and a SET.
+>>
+>> iproute2 patches are available, I can send them on demand.
+> 
+> A quick reply.  I think this patchset is in the right general direction.
+> There are some oddball details that seem odd/awkward to me such as using
+> genetlink instead of rtnetlink to get and set the ids, and not having
+> ids if they are not set (that feels like a maintenance/usability challenge).
+> 
+> I would like to give your patches a deep review, but I won't be able to
+> do that for a couple of weeks.  I am deep in the process of moving,
+> and will be mostly offline until about the Nov 11th.
 
-I don't remember.  I think the problem is still there, since I think
-my patch still applies, and my patch conflicts with your fix.  It's
-been long enough that I'm not sure it's worth applying your patch as
-an interim fix.
+I'm going to mark this patch set 'deferred' in patchwork until things
+move forward.
 
->
-> My apologies for not getting to that I haven't even had time to shepherd
-> through the regression associated regression fix.  I probably just lock
-> track of them but I haven't found the Tested-By's for it yet.
-
-No worries.  I've tested it, but it's my patch, so there's a big grain
-of salt there.  I think Serge tested it, too.
-
->
-> Nor have I had time to dig through and figure out how to safely deal
-> with umount -l aka MOUNT_DETACH.
-
-If you're talking about the do_remount_sb thing, that's already in Linus' tree.
-
->
-> Along with the question about what to do with nodev, there is also
-> your patch about nosuid.
-
-The nosuid patch has a couple versions, and I'm not sure which version
-I prefer.  It's certainly debatable.
-
->
-> Starting in about 5 minutes I am going to be mostly offline until
-> sometime in the 3rd week in November as I haul all of my stuff accross
-> the country to someplace that actually has winter and my allergies don't
-> kill me.
-
-Have fun!
-
---Andy
-
->
-> I am going to have to review and merge a lot of code as soon as I am
-> back to being a programmer full time again.  There is a lot of
-> interesting stuff coming in right now.
->
-> Eric
-
-
-
--- 
-Andy Lutomirski
-AMA Capital Management, LLC
+Thanks.
