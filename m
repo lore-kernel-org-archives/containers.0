@@ -1,16 +1,15 @@
-From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCHv2 7/7] cgroup: mount cgroupns-root when inside non-init
-	cgroupns
-Date: Mon, 03 Nov 2014 17:59:56 -0800
-Message-ID: <5458331C.50008__19489.5599423491$1415066411$gmane$org@google.com>
-References: <adityakali-cgroupns>
-	<1414783141-6947-1-git-send-email-adityakali@google.com>
-	<1414783141-6947-8-git-send-email-adityakali@google.com>
+From: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: RE: [PATCHv5] procfs: show hierarchy of pid namespace
+Date: Tue, 4 Nov 2014 08:31:27 +0000
+Message-ID: <5871495633F38949900D2BF2DC04883E619A56@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <1413460916-2852-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<g2lzcx.nebnfr.1hgfdih-qmf@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1414783141-6947-8-git-send-email-adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <g2lzcx.nebnfr.1hgfdih-qmf-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,201 +19,55 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch enables cgroup mounting inside userns when a process
-as appropriate privileges. The cgroup filesystem mounted is
-rooted at the cgroupns-root. Thus, in a container-setup, only
-the hierarchy under the cgroupns-root is exposed inside the container.
-This allows container management tools to run inside the containers
-without depending on any global state.
-In order to support this, a new kernfs api is added to lookup the
-dentry for the cgroupns-root.
-
-Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
----
-  fs/kernfs/mount.c      | 48 
-++++++++++++++++++++++++++++++++++++++++++++++++
-  include/linux/kernfs.h |  2 ++
-  kernel/cgroup.c        | 46 +++++++++++++++++++++++++++++++++++++++++++++-
-  3 files changed, 95 insertions(+), 1 deletion(-)
-
-diff --git a/fs/kernfs/mount.c b/fs/kernfs/mount.c
-index f973ae9..efe5e15 100644
---- a/fs/kernfs/mount.c
-+++ b/fs/kernfs/mount.c
-@@ -62,6 +62,54 @@ struct kernfs_root *kernfs_root_from_sb(struct 
-super_block *sb)
-  	return NULL;
-  }
-
-+/**
-+ * kernfs_obtain_root - get a dentry for the given kernfs_node
-+ * @sb: the kernfs super_block
-+ * @kn: kernfs_node for which a dentry is needed
-+ *
-+ * This can used used by callers which want to mount only a part of the 
-kernfs
-+ * as root of the filesystem.
-+ */
-+struct dentry *kernfs_obtain_root(struct super_block *sb,
-+				  struct kernfs_node *kn)
-+{
-+	struct dentry *dentry;
-+	struct inode *inode;
-+
-+	BUG_ON(sb->s_op != &kernfs_sops);
-+
-+	/* inode for the given kernfs_node should already exist. */
-+	inode = ilookup(sb, kn->ino);
-+	if (!inode) {
-+		pr_debug("kernfs: could not get inode for '");
-+		pr_cont_kernfs_path(kn);
-+		pr_cont("'.\n");
-+		return ERR_PTR(-EINVAL);
-+	}
-+
-+	/* instantiate and link root dentry */
-+	dentry = d_obtain_root(inode);
-+	if (!dentry) {
-+		pr_debug("kernfs: could not get dentry for '");
-+		pr_cont_kernfs_path(kn);
-+		pr_cont("'.\n");
-+		return ERR_PTR(-ENOMEM);
-+	}
-+
-+	/* If this is a new dentry, set it up. We need kernfs_mutex because this
-+	 * may be called by callers other than kernfs_fill_super. */
-+	mutex_lock(&kernfs_mutex);
-+	if (!dentry->d_fsdata) {
-+		kernfs_get(kn);
-+		dentry->d_fsdata = kn;
-+	} else {
-+		WARN_ON(dentry->d_fsdata != kn);
-+	}
-+	mutex_unlock(&kernfs_mutex);
-+
-+	return dentry;
-+}
-+
-  static int kernfs_fill_super(struct super_block *sb, unsigned long magic)
-  {
-  	struct kernfs_super_info *info = kernfs_info(sb);
-diff --git a/include/linux/kernfs.h b/include/linux/kernfs.h
-index 3c2be75..b9538e0 100644
---- a/include/linux/kernfs.h
-+++ b/include/linux/kernfs.h
-@@ -274,6 +274,8 @@ void kernfs_put(struct kernfs_node *kn);
-  struct kernfs_node *kernfs_node_from_dentry(struct dentry *dentry);
-  struct kernfs_root *kernfs_root_from_sb(struct super_block *sb);
-
-+struct dentry *kernfs_obtain_root(struct super_block *sb,
-+				  struct kernfs_node *kn);
-  struct kernfs_root *kernfs_create_root(struct kernfs_syscall_ops *scops,
-  				       unsigned int flags, void *priv);
-  void kernfs_destroy_root(struct kernfs_root *root);
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 7e5d597..8008c4c 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -1389,6 +1389,14 @@ static int parse_cgroupfs_options(char *data, 
-struct cgroup_sb_opts *opts)
-  			return -ENOENT;
-  	}
-
-+	/* If inside a non-init cgroup namespace, only allow default hierarchy
-+	 * to be mounted.
-+	 */
-+	if ((current->nsproxy->cgroup_ns != &init_cgroup_ns) &&
-+	    !(opts->flags & CGRP_ROOT_SANE_BEHAVIOR)) {
-+		return -EINVAL;
-+	}
-+
-  	if (opts->flags & CGRP_ROOT_SANE_BEHAVIOR) {
-  		pr_warn("sane_behavior: this is still under development and its 
-behaviors will change, proceed at your own risk\n");
-  		if (nr_opts != 1) {
-@@ -1581,6 +1589,15 @@ static void init_cgroup_root(struct cgroup_root 
-*root,
-  		set_bit(CGRP_CPUSET_CLONE_CHILDREN, &root->cgrp.flags);
-  }
-
-+struct dentry *cgroupns_get_root(struct super_block *sb,
-+				 struct cgroup_namespace *ns)
-+{
-+	struct dentry *nsdentry;
-+
-+	nsdentry = kernfs_obtain_root(sb, ns->root_cgrp->kn);
-+	return nsdentry;
-+}
-+
-  static int cgroup_setup_root(struct cgroup_root *root, unsigned int 
-ss_mask)
-  {
-  	LIST_HEAD(tmp_links);
-@@ -1685,6 +1702,14 @@ static struct dentry *cgroup_mount(struct 
-file_system_type *fs_type,
-  	int ret;
-  	int i;
-  	bool new_sb;
-+	struct cgroup_namespace *ns =
-+		get_cgroup_ns(current->nsproxy->cgroup_ns);
-+
-+	/* Check if the caller has permission to mount. */
-+	if (!ns_capable(ns->user_ns, CAP_SYS_ADMIN)) {
-+		put_cgroup_ns(ns);
-+		return ERR_PTR(-EPERM);
-+	}
-
-  	/*
-  	 * The first time anyone tries to mount a cgroup, enable the list
-@@ -1817,11 +1842,28 @@ out_free:
-  	kfree(opts.release_agent);
-  	kfree(opts.name);
-
--	if (ret)
-+	if (ret) {
-+		put_cgroup_ns(ns);
-  		return ERR_PTR(ret);
-+	}
-
-  	dentry = kernfs_mount(fs_type, flags, root->kf_root,
-  				CGROUP_SUPER_MAGIC, &new_sb);
-+
-+	if (!IS_ERR(dentry) && (root == &cgrp_dfl_root)) {
-+		/* If this mount is for the default hierarchy in non-init cgroup
-+		 * namespace, then instead of root cgroup's dentry, we return
-+		 * the dentry corresponding to the cgroupns->root_cgrp.
-+		 */
-+		if (ns != &init_cgroup_ns) {
-+			struct dentry *nsdentry;
-+
-+			nsdentry = cgroupns_get_root(dentry->d_sb, ns);
-+			dput(dentry);
-+			dentry = nsdentry;
-+		}
-+	}
-+
-  	if (IS_ERR(dentry) || !new_sb)
-  		cgroup_put(&root->cgrp);
-
-@@ -1834,6 +1876,7 @@ out_free:
-  		deactivate_super(pinned_sb);
-  	}
-
-+	put_cgroup_ns(ns);
-  	return dentry;
-  }
-
-@@ -1862,6 +1905,7 @@ static struct file_system_type cgroup_fs_type = {
-  	.name = "cgroup",
-  	.mount = cgroup_mount,
-  	.kill_sb = cgroup_kill_sb,
-+	.fs_flags = FS_USERNS_MOUNT,
-  };
-
-  static struct kobject *cgroup_kobj;
--- 
-2.1.0.rc2.206.gedb03e5
+DQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogc2VyZ2VAaGFsbHluLmNv
+bSBbbWFpbHRvOnNlcmdlQGhhbGx5bi5jb21dDQo+IFNlbnQ6IFNhdHVyZGF5LCBOb3ZlbWJlciAw
+MSwgMjAxNCAyOjMxIEFNDQo+IFRvOiBjb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24u
+b3JnOyBsaW51eC1rZXJuZWxAdmdlci5rZXJuZWwub3JnOyBDaGVuLA0KPiBIYW54aWFvL+mZiCDm
+mZfpnIQNCj4gQ2M6IFJpY2hhcmQgV2VpbmJlcmdlcjsgU2VyZ2UgSGFsbHluOyBPbGVnIE5lc3Rl
+cm92OyBNYXRldXN6IEd1emlrOyBEYXZpZCBIb3dlbGxzOw0KPiBFcmljIFcuIEJpZWRlcm1hbg0K
+PiBTdWJqZWN0OiBSZTogW1BBVENIdjVdIHByb2Nmczogc2hvdyBoaWVyYXJjaHkgb2YgcGlkIG5h
+bWVzcGFjZQ0KPiANCj4gSWYgcGlkbnNfbGlzdF9hZGQgZmFpbHMsIHRoZSBnZXRfcGlkIHRha2Vu
+IGluIHRoZSBjYWxsZXIgbGVha3MuDQo+IA0KV2lsbCBmaXggaW4gdGhlIG5leHQgcGF0Y2guDQoN
+Cj4gSXQncyBub3QgY2xlYXIgdG8gbWUgdGhhdCB0aGUgbG9vcCBpbiAnaWYgY3VybnMnIHdpbGwg
+YWx3YXlzIGVuZCBpbiBhIGxpc3RfYWRkX3RhaWwsDQo+IGFuZCBpZiBub3QgdGhlIGdldF9waWQg
+bGVha3MuICBJdCBkb2VzIGxvb2sgbGlrZSBpdCBzaG91bGQsIGJ1dCBzb21ldGhpbmcgdG8gY2F0
+Y2gNCj4gdGhlIHVuZXhwZWN0ZWQgZmFpbHVyZSAoZXNwZWNpYWxseSBhZnRlciBzb21lb25lIG1v
+ZGlmaWVzIHRoYXQgY29kZSkgd291bGQgYmUNCj4gbmljZQ0KDQpUaGUgcHJldmlvdXMgdmVyc2lv
+biBjb2xsZWN0IGFsbCBuYW1lc3BhY2UncyBwaWRzIG9uIGhvc3QsDQppbiBvbmUgc2NlbmFyaW8g
+d2UgaGFkIHRvIGFkZCB0aGVtIGludG8gbGlzdCBhY2NvcmRpbmcgdG8gY3Vycl9uczsNCmFub3Ro
+ZXIgc2NlbmFyaW8gd2UgYWRkIHRoZW0gaW50byBsaXN0IGRpcmVjdGx5Lg0KQnV0IG5vdyB1c2lu
+ZyBmaW5kX2dlX3BpZCwgd2Ugb25seSBjb2xsZWN0IHBpZHMgb2YgY3VycmVudCBucywNCnNvIHRo
+ZXNlIGNvZGVzIGFyZSByZWR1bmRhbnQuDQpTb3JyeSBmb3IgdGhhdCBtaXN0YWtlLg0KDQpUaGFu
+a3MsDQotIENoZW4NCg0KPiBPbiAxMC8xNi8xNCA3OjAxIENoZW4gSGFueGlhbyB3cm90ZToNCj4g
+V2UgbGFjayBvZiBwaWQgaGllcmFyY2h5IGluZm9ybWF0aW9uLCBhbmQgdGhpcyB3aWxsIGxlYWQg
+dG86DQo+IGEpIHdlIGRvbid0IGtub3cgcGlkcycgcmVsYXRpb25zaGlwLCB3aG8gaXMgd2hvc2Ug
+Y2hpbGQ6DQo+ICAgIC9wcm9jL1BJRC9ucy9waWQgb25seSB0ZWxsIHVzIHdoZXRoZXIgdHdvIHBp
+ZHMgbGl2ZSBpbiBzYW1lIG5zOw0KPiBiKSBicmluZyB0cm91YmxlIHRvIG5lc3RlZCBseGMgY29u
+dGFpbmVyIGNoZWNrL3Jlc3RvcmUvbWlncmF0aW9uDQo+IGMpIGJyaW5nIHRyb3VibGUgdG8gcGlk
+IHRyYW5zbGF0aW9uIGJldHdlZW4gY29udGFpbmVyczsNCj4gDQo+IFRoaXMgcGF0Y2ggd2lsbCBz
+aG93IHRoZSBoaWVyYXJjaHkgb2YgcGlkIG5hbWVzcGFjZQ0KPiBieSBwaWRuc19oaWVyYXJjaHkg
+bGlrZToNCj4gDQo+IFtyb290QGxvY2FsaG9zdCB+XSNjYXQgL3Byb2MvcGlkbnNfaGllcmFyY2h5
+DQo+IDE4MDYwIDE4MTAyIDE1MzQNCj4gMTgwNjAgMTgxMDIgMTYwMA0KPiAxNTUwDQo+ICpOb3Rl
+OiBudW1iZXJzIHJlcHJlc2VudCB0aGUgcGlkIDEgaW4gZGlmZmVyZW50IG5zDQo+IA0KPiBJdCBz
+aG93cyB0aGUgcGlkIGhpZXJhcmNoeSBiZWxvdzoNCj4gDQo+ICAgICAgIGluaXRfcGlkX25zIChu
+b3Qgc2hvd2VkIGluIC9wcm9jL3BpZG5zX2hpZXJhcmNoeSkNCj4gICAgICAgICAgICAgICDilIIN
+Cj4g4pSM4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSQDQo+IG5zMSAgICAg
+ICAgICAgICAgICAgICAgICBuczINCj4g4pSCICAgICAgICAgICAgICAgICAgICAgICAg4pSCDQo+
+IDE1NTAgICAgICAgICAgICAgICAgICAgIDE4MDYwDQo+ICAgICAgICAgICAgICAgICAgICAgICAg
+ICAg4pSCDQo+ICAgICAgICAgICAgICAgICAgICAgICAgICAg4pSCDQo+ICAgICAgICAgICAgICAg
+ICAgICAgICAgICBuczMNCj4gICAgICAgICAgICAgICAgICAgICAgICAgICDilIINCj4gICAgICAg
+ICAgICAgICAgICAgICAgICAgMTgxMDINCj4gICAgICAgICAgICAgICAgICAgICAgICAgICDilIIN
+Cj4gICAgICAgICAgICAgICAgICDilIzilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilJAN
+Cj4gICAgICAgICAgICAgICAgICBuczQgICAgICAgICAgICAgICAgICAgbnM1DQo+ICAgICAgICAg
+ICAgICAgICAg4pSCICAgICAgICAgICAgICAgICAgICDilIINCj4gICAgICAgICAgICAgICAgIDE1
+MzQgICAgICAgICAgICAgICAgICAxNjAwDQo+IA0KPiBFdmVyeSBwaWQgcHJpbnRlZCBpbiBwaWRu
+c19oaWVyYXJjaHkNCj4gaXMgdGhlIGluaXQgcGlkIG9mIHRoYXQgcGlkIG5zIGxldmVsLg0KPiAN
+Cj4gU2lnbmVkLW9mZi1ieTogQ2hlbiBIYW54aWFvIDxjaGVuaGFueGlhb0Bjbi5mdWppdHN1LmNv
+bT4NCj4gLS0tDQoNCltzbmlwXQ0KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51
+eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1h
+bi9saXN0aW5mby9jb250YWluZXJz
