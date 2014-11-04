@@ -1,15 +1,11 @@
-From: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: RE: [PATCHv5] procfs: show hierarchy of pid namespace
-Date: Tue, 4 Nov 2014 08:31:27 +0000
-Message-ID: <5871495633F38949900D2BF2DC04883E619A56@G08CNEXMBPEKD02.g08.fujitsu.local>
-References: <1413460916-2852-1-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<g2lzcx.nebnfr.1hgfdih-qmf@mail.hallyn.com>
+From: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH] sched: updated comments of CLONE_NEWUTS and CLONE_NEWIPC
+Date: Tue, 4 Nov 2014 16:51:22 +0800
+Message-ID: <1415091082-15093-1-git-send-email-chenhanxiao@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <g2lzcx.nebnfr.1hgfdih-qmf-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
-Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,55 +15,35 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Jiri Kosina <trivial-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-DQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogc2VyZ2VAaGFsbHluLmNv
-bSBbbWFpbHRvOnNlcmdlQGhhbGx5bi5jb21dDQo+IFNlbnQ6IFNhdHVyZGF5LCBOb3ZlbWJlciAw
-MSwgMjAxNCAyOjMxIEFNDQo+IFRvOiBjb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24u
-b3JnOyBsaW51eC1rZXJuZWxAdmdlci5rZXJuZWwub3JnOyBDaGVuLA0KPiBIYW54aWFvL+mZiCDm
-mZfpnIQNCj4gQ2M6IFJpY2hhcmQgV2VpbmJlcmdlcjsgU2VyZ2UgSGFsbHluOyBPbGVnIE5lc3Rl
-cm92OyBNYXRldXN6IEd1emlrOyBEYXZpZCBIb3dlbGxzOw0KPiBFcmljIFcuIEJpZWRlcm1hbg0K
-PiBTdWJqZWN0OiBSZTogW1BBVENIdjVdIHByb2Nmczogc2hvdyBoaWVyYXJjaHkgb2YgcGlkIG5h
-bWVzcGFjZQ0KPiANCj4gSWYgcGlkbnNfbGlzdF9hZGQgZmFpbHMsIHRoZSBnZXRfcGlkIHRha2Vu
-IGluIHRoZSBjYWxsZXIgbGVha3MuDQo+IA0KV2lsbCBmaXggaW4gdGhlIG5leHQgcGF0Y2guDQoN
-Cj4gSXQncyBub3QgY2xlYXIgdG8gbWUgdGhhdCB0aGUgbG9vcCBpbiAnaWYgY3VybnMnIHdpbGwg
-YWx3YXlzIGVuZCBpbiBhIGxpc3RfYWRkX3RhaWwsDQo+IGFuZCBpZiBub3QgdGhlIGdldF9waWQg
-bGVha3MuICBJdCBkb2VzIGxvb2sgbGlrZSBpdCBzaG91bGQsIGJ1dCBzb21ldGhpbmcgdG8gY2F0
-Y2gNCj4gdGhlIHVuZXhwZWN0ZWQgZmFpbHVyZSAoZXNwZWNpYWxseSBhZnRlciBzb21lb25lIG1v
-ZGlmaWVzIHRoYXQgY29kZSkgd291bGQgYmUNCj4gbmljZQ0KDQpUaGUgcHJldmlvdXMgdmVyc2lv
-biBjb2xsZWN0IGFsbCBuYW1lc3BhY2UncyBwaWRzIG9uIGhvc3QsDQppbiBvbmUgc2NlbmFyaW8g
-d2UgaGFkIHRvIGFkZCB0aGVtIGludG8gbGlzdCBhY2NvcmRpbmcgdG8gY3Vycl9uczsNCmFub3Ro
-ZXIgc2NlbmFyaW8gd2UgYWRkIHRoZW0gaW50byBsaXN0IGRpcmVjdGx5Lg0KQnV0IG5vdyB1c2lu
-ZyBmaW5kX2dlX3BpZCwgd2Ugb25seSBjb2xsZWN0IHBpZHMgb2YgY3VycmVudCBucywNCnNvIHRo
-ZXNlIGNvZGVzIGFyZSByZWR1bmRhbnQuDQpTb3JyeSBmb3IgdGhhdCBtaXN0YWtlLg0KDQpUaGFu
-a3MsDQotIENoZW4NCg0KPiBPbiAxMC8xNi8xNCA3OjAxIENoZW4gSGFueGlhbyB3cm90ZToNCj4g
-V2UgbGFjayBvZiBwaWQgaGllcmFyY2h5IGluZm9ybWF0aW9uLCBhbmQgdGhpcyB3aWxsIGxlYWQg
-dG86DQo+IGEpIHdlIGRvbid0IGtub3cgcGlkcycgcmVsYXRpb25zaGlwLCB3aG8gaXMgd2hvc2Ug
-Y2hpbGQ6DQo+ICAgIC9wcm9jL1BJRC9ucy9waWQgb25seSB0ZWxsIHVzIHdoZXRoZXIgdHdvIHBp
-ZHMgbGl2ZSBpbiBzYW1lIG5zOw0KPiBiKSBicmluZyB0cm91YmxlIHRvIG5lc3RlZCBseGMgY29u
-dGFpbmVyIGNoZWNrL3Jlc3RvcmUvbWlncmF0aW9uDQo+IGMpIGJyaW5nIHRyb3VibGUgdG8gcGlk
-IHRyYW5zbGF0aW9uIGJldHdlZW4gY29udGFpbmVyczsNCj4gDQo+IFRoaXMgcGF0Y2ggd2lsbCBz
-aG93IHRoZSBoaWVyYXJjaHkgb2YgcGlkIG5hbWVzcGFjZQ0KPiBieSBwaWRuc19oaWVyYXJjaHkg
-bGlrZToNCj4gDQo+IFtyb290QGxvY2FsaG9zdCB+XSNjYXQgL3Byb2MvcGlkbnNfaGllcmFyY2h5
-DQo+IDE4MDYwIDE4MTAyIDE1MzQNCj4gMTgwNjAgMTgxMDIgMTYwMA0KPiAxNTUwDQo+ICpOb3Rl
-OiBudW1iZXJzIHJlcHJlc2VudCB0aGUgcGlkIDEgaW4gZGlmZmVyZW50IG5zDQo+IA0KPiBJdCBz
-aG93cyB0aGUgcGlkIGhpZXJhcmNoeSBiZWxvdzoNCj4gDQo+ICAgICAgIGluaXRfcGlkX25zIChu
-b3Qgc2hvd2VkIGluIC9wcm9jL3BpZG5zX2hpZXJhcmNoeSkNCj4gICAgICAgICAgICAgICDilIIN
-Cj4g4pSM4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSQDQo+IG5zMSAgICAg
-ICAgICAgICAgICAgICAgICBuczINCj4g4pSCICAgICAgICAgICAgICAgICAgICAgICAg4pSCDQo+
-IDE1NTAgICAgICAgICAgICAgICAgICAgIDE4MDYwDQo+ICAgICAgICAgICAgICAgICAgICAgICAg
-ICAg4pSCDQo+ICAgICAgICAgICAgICAgICAgICAgICAgICAg4pSCDQo+ICAgICAgICAgICAgICAg
-ICAgICAgICAgICBuczMNCj4gICAgICAgICAgICAgICAgICAgICAgICAgICDilIINCj4gICAgICAg
-ICAgICAgICAgICAgICAgICAgMTgxMDINCj4gICAgICAgICAgICAgICAgICAgICAgICAgICDilIIN
-Cj4gICAgICAgICAgICAgICAgICDilIzilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilJAN
-Cj4gICAgICAgICAgICAgICAgICBuczQgICAgICAgICAgICAgICAgICAgbnM1DQo+ICAgICAgICAg
-ICAgICAgICAg4pSCICAgICAgICAgICAgICAgICAgICDilIINCj4gICAgICAgICAgICAgICAgIDE1
-MzQgICAgICAgICAgICAgICAgICAxNjAwDQo+IA0KPiBFdmVyeSBwaWQgcHJpbnRlZCBpbiBwaWRu
-c19oaWVyYXJjaHkNCj4gaXMgdGhlIGluaXQgcGlkIG9mIHRoYXQgcGlkIG5zIGxldmVsLg0KPiAN
-Cj4gU2lnbmVkLW9mZi1ieTogQ2hlbiBIYW54aWFvIDxjaGVuaGFueGlhb0Bjbi5mdWppdHN1LmNv
-bT4NCj4gLS0tDQoNCltzbmlwXQ0KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51
-eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1h
-bi9saXN0aW5mby9jb250YWluZXJz
+Remove question mark:
+s/New utsname group?/New utsname namespace
+
+Unified style for IPC:
+s/New ipcs/New ipc namespace
+
+Signed-off-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
+ include/uapi/linux/sched.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/include/uapi/linux/sched.h b/include/uapi/linux/sched.h
+index b932be9..cc89dde 100644
+--- a/include/uapi/linux/sched.h
++++ b/include/uapi/linux/sched.h
+@@ -23,8 +23,8 @@
+ #define CLONE_CHILD_SETTID	0x01000000	/* set the TID in the child */
+ /* 0x02000000 was previously the unused CLONE_STOPPED (Start in stopped state)
+    and is now available for re-use. */
+-#define CLONE_NEWUTS		0x04000000	/* New utsname group? */
+-#define CLONE_NEWIPC		0x08000000	/* New ipcs */
++#define CLONE_NEWUTS		0x04000000	/* New utsname namespace */
++#define CLONE_NEWIPC		0x08000000	/* New ipc namespace */
+ #define CLONE_NEWUSER		0x10000000	/* New user namespace */
+ #define CLONE_NEWPID		0x20000000	/* New pid namespace */
+ #define CLONE_NEWNET		0x40000000	/* New network namespace */
+-- 
+1.9.3
