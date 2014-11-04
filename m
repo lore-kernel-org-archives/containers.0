@@ -1,18 +1,18 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Subject: Re: [PATCHv2 7/7] cgroup: mount cgroupns-root when inside non-init
 	cgroupns
-Date: Tue, 4 Nov 2014 08:46:33 -0500
-Message-ID: <20141104134633.GA14014__36306.604211177$1415108814$gmane$org@htj.dyndns.org>
+Date: Tue, 4 Nov 2014 08:57:26 -0500
+Message-ID: <20141104135726.GB14014__10448.0921444067$1415109469$gmane$org@htj.dyndns.org>
 References: <1414783141-6947-1-git-send-email-adityakali@google.com>
 	<1414783141-6947-8-git-send-email-adityakali@google.com>
-	<87y4rvrakn.fsf@x220.int.ebiederm.org>
-	<CAGr1F2Hd_PS_AscBGMXdZC9qkHGRUp-MeQvJksDOQkRBB3RGoA@mail.gmail.com>
+	<CALCETrXTaZ3SJ_t-gnbc93BVZXg-912NqO78kFd0Tpi-5-dZoQ@mail.gmail.com>
+	<CAGr1F2FuPQxLraYv7PstJ9c8H-XQsgawaAtj4AS77B+_0k2o+A@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <CAGr1F2Hd_PS_AscBGMXdZC9qkHGRUp-MeQvJksDOQkRBB3RGoA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <CAGr1F2FuPQxLraYv7PstJ9c8H-XQsgawaAtj4AS77B+_0k2o+A-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -28,21 +28,16 @@ List-Id: containers.vger.kernel.org
 
 Hello, Aditya.
 
-On Mon, Nov 03, 2014 at 02:43:47PM -0800, Aditya Kali wrote:
-> I agree that this is effectively bind-mounting, but doing this in kernel
-> makes it really convenient for the userspace. The process that sets up the
-> container doesn't need to care whether it should bind-mount cgroupfs inside
-> the container or not. The tasks inside the container can mount cgroupfs on
-> as-needed basis. The root container manager can simply unshare cgroupns and
-> forget about the internal setup. I think this is useful just for the reason
-> that it makes life much simpler for userspace.
+On Mon, Nov 03, 2014 at 03:12:28PM -0800, Aditya Kali wrote:
+> I think the sane-behavior flag is only temporary and will be removed
+> anyways, right? So I didn't bother asking user to supply it. But I can
+> make the change as you suggested. We just have to make sure that tasks
+> inside cgroupns cannot mount non-default hierarchies as it would be a
+> regression.
 
-If it's okay to require userland to just do bind mounting, I'd be far
-happier with that.  cgroup mount code is already overcomplicated
-because of the dynamic matching of supers to mounts when it could just
-have told userland to use bind mounting.  Doesn't the host side have
-to set up some of the filesystem layouts anyway?  Does it really
-matter that we require the host to set up cgroup hierarchy too?
+I'm not sure whether supporting mounting from inside a ns is even
+necessary but, if it is, can't you just test against cgrp_dfl_root?
+There's no reason to do anything differnetly for ns mounting.
 
 Thanks.
 
