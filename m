@@ -1,9 +1,11 @@
-From: MAILER-DAEMON-b67vPhlYP0Q6OXu1HPdlRdkmqwFzkYv6@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Tue,  4 Nov 2014 20:53:00 -0500 (EST)
-Message-ID: <20141105015300.69A68115DC@emailone.dailysale.com>
+From: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH 0/2v6] ns,
+	procfs: pid conversion between ns and showing pidns hierarchy
+Date: Wed, 5 Nov 2014 18:41:53 +0800
+Message-ID: <1415184115-12022-1-git-send-email-chenhanxiao@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============4316485682648730902=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -14,112 +16,73 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+This series will expose pid inside containers
+via procfs.
+Also show the hierarchy of pid namespcae.
+Then we could know how pid looks inside a container
+and their ns relationships.
 
---===============4316485682648730902==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="77C4BC1B1.1415152380/emailone.dailysale.com"
+1. helpful for nested container check/restore
+From /proc/PID/ns/pid, we could know whether two pid lived
+in the same ns.
+From this patch, we could know whether two pid had relationship
+between each other.
 
-This is a MIME-encapsulated message.
+2. used for pid translation from container
+Ex:
+     init_pid_ns    ns1         ns2
+ t1  2
+ t2   `- 3          1
+ t3   `- 4          3
+ t4       `- 5      `- 5        1
+ t5       `- 6      `- 8        3
 
---77C4BC1B1.1415152380/emailone.dailysale.com
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+It could solve problems like: we see a pid 3 goes wrong
+in container's log, what is its pid on hosts:
+a) inside container:
+# readlink /proc/3/ns/pid
+pid:[4026532388]
 
-This is the mail system at host emailone.dailysale.com.
+b) on host:
+# cat /proc/pidns_hierarchy
+14918 16263
+16581
+Then we could easily find /proc/16263/ns/pid->4026532388.
+On host, we knew that reported pid 3 is in level 2,
+   and its parental pid ns is from pid 14918.
 
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
+c) on host, check child of 16263, grep it from status:
+NSpid:  16268   8       3
 
-For further assistance, please send mail to postmaster.
+We knew that pid 16268 is pid 3 reported by container.
 
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
+v6: fix some get_pid leaks and do some cleanups
+v5: collect pid by find_ge_pid;
+    use local list inside nslist_proc_show;
+    use get_pid, remove mutex lock.
+v4: simplify pid collection and some performance optimizamtion
+    fix another race issue.
+v3: fix a race issue and memory leak issue in pidns_hierarchy;
+    add another two fielsd: NSpgid and NSsid.
+v2: use a procfs text file instead of dirs under /proc for
+    showing pidns hierarchy;
+    add two new fields: NStgid and NSpid
+    keep fields of Tgid and Pid unchanged for back compatibility.
 
-                   The mail system
+Chen Hanxiao (2):
+  v5 procfs: show hierarchy of pid namespace
+  /proc/PID/status: show all sets of pid according to ns
 
-<boyersd-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org>: mail for athene.co.uk loops back to myself
+ fs/proc/Kconfig           |   6 ++
+ fs/proc/Makefile          |   1 +
+ fs/proc/array.c           |  17 ++++
+ fs/proc/pidns_hierarchy.c | 227 ++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 251 insertions(+)
+ create mode 100644 fs/proc/pidns_hierarchy.c
 
-<boyersdd-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org>: mail for athene.co.uk loops back to myself
-
-<boyes-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org>: mail for athene.co.uk loops back to myself
-
-<boyesd-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org>: mail for athene.co.uk loops back to myself
-
-<boyesdd-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org>: mail for athene.co.uk loops back to myself
-
---77C4BC1B1.1415152380/emailone.dailysale.com
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; emailone.dailysale.com
-X-Postfix-Queue-ID: 77C4BC1B1
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Tue,  4 Nov 2014 20:51:33 -0500 (EST)
-
-Final-Recipient: rfc822; boyersd-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Original-Recipient: rfc822;boyersd-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Action: failed
-Status: 5.4.6
-Diagnostic-Code: X-Postfix; mail for athene.co.uk loops back to myself
-
-Final-Recipient: rfc822; boyersdd-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Original-Recipient: rfc822;boyersdd-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Action: failed
-Status: 5.4.6
-Diagnostic-Code: X-Postfix; mail for athene.co.uk loops back to myself
-
-Final-Recipient: rfc822; boyes-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Original-Recipient: rfc822;boyes-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Action: failed
-Status: 5.4.6
-Diagnostic-Code: X-Postfix; mail for athene.co.uk loops back to myself
-
-Final-Recipient: rfc822; boyesd-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Original-Recipient: rfc822;boyesd-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Action: failed
-Status: 5.4.6
-Diagnostic-Code: X-Postfix; mail for athene.co.uk loops back to myself
-
-Final-Recipient: rfc822; boyesdd-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Original-Recipient: rfc822;boyesdd-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org
-Action: failed
-Status: 5.4.6
-Diagnostic-Code: X-Postfix; mail for athene.co.uk loops back to myself
-
---77C4BC1B1.1415152380/emailone.dailysale.com
-Content-Description: Undelivered Message Headers
-Content-Type: text/rfc822-headers
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from emailone.dailysale.com (localhost [127.0.0.1])
-	by emailone.dailysale.com (Postfix) with ESMTP id 77C4BC1B1;
-	Tue,  4 Nov 2014 20:51:33 -0500 (EST)
-Received: from [10.1.20.27] by emailone.dailysale.com id dyevlemEFBjN with SMTP; Tue, 04 Nov 2014 20:51:33 -0500
-Date: Tue, 04 Nov 2014 20:51:33 -0500
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.08.4) Business
-X-Priority: 3 (Normal)
-Message-ID: <466946233.14410389147379-b67vPhlYP0Q6OXu1HPdlRdkmqwFzkYv6@public.gmane.org>
-To: <boyersd-0TYCAhZcI2DQXOPxS62xeg@public.gmane.org>
-Subject: Successfull Order 15950
-MIME-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="----------A1C29F9E64BA4E1"
-
---77C4BC1B1.1415152380/emailone.dailysale.com--
-
---===============4316485682648730902==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============4316485682648730902==--
+-- 
+1.9.3
