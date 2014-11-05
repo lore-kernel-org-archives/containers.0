@@ -1,15 +1,15 @@
-From: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
-Subject: Re: [PATCH 1/2v6] procfs: show hierarchy of pid namespace
-Date: Wed, 05 Nov 2014 13:51:31 +0100
-Message-ID: <545A1D53.3070507@nod.at>
-References: <1415184115-12022-1-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<1415184115-12022-2-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<545A13DA.3090207@nod.at> <20141105124111.GA19563@mail.hallyn.com>
+From: Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH net-next v4 0/4] netns: allow to identify peer netns
+Date: Wed, 05 Nov 2014 15:23:00 +0100
+Message-ID: <545A32C4.7070108@6wind.com>
+References: <1412257690-31253-1-git-send-email-nicolas.dichtel@6wind.com>	<1414682728-4532-1-git-send-email-nicolas.dichtel@6wind.com>	<871tpph03k.fsf@x220.int.ebiederm.org>
+	<54535B00.5090708@6wind.com> <87wq7g831b.fsf@x220.int.ebiederm.org>
+Reply-To: nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20141105124111.GA19563-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+In-Reply-To: <87wq7g831b.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,56 +19,53 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org, stephen-OTpzqLSitTUnbdJkjeBofR2eb7JE58TQ@public.gmane.org, cwang-xCSkyg8dI+0RB7SZvlqPiA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Am 05.11.2014 um 13:41 schrieb Serge E. Hallyn:
-> Quoting Richard Weinberger (richard-/L3Ra7n9ekc@public.gmane.org):
->> Am 05.11.2014 um 11:41 schrieb Chen Hanxiao:
->>> We lack of pid hierarchy information, and this will lead to:
->>> a) we don't know pids' relationship, who is whose child:
->>>    /proc/PID/ns/pid only tell us whether two pids live in different ns
->>> b) bring trouble to nested lxc container check/restore/migration
->>> c) bring trouble to pid translation between containers;
->>>
->>> This patch will show the hierarchy of pid namespace
->>> by pidns_hierarchy like:
->>>
->>> [root@localhost ~]#cat /proc/pidns_hierarchy
->>> 18060 18102 1534
->>> 18060 18102 1600
->>> 1550
->>
->> Hmm, what about printing the pid hierarchy in the same way as /proc/self/mountinfo
->> does with mount namespaces?
->> Your current approach is not bad but we should really try to be consistent with existing
->> sources of information.
-> 
-> Good point.  How would you structure it to make it look mor elike mountinfo?
-> Adding the pidns inode number (in place of a mount sequence number) might be
-> useful, but it sounds like you have a more concrete idea?
-
-Just list <init_PID> <parent_of_init_PID>. This way we have exactly one
-information record per line and always exactly two columns to parse.
-
-e.g.
-[root@localhost ~]#cat /proc/pidns_hierarchy
-1550 1
-18060 1
-18102 18060
-1534 18102
-1600 18102
-
->> This function allocates memory per PID. If we have lots of PIDs, how does this scale?
->> I'd go so far and say this can be a DoS'able issue if the pidns_hierarchy file is opened multiple times...
-> 
-> It's not per pid, but per init-pid.  For non-reaper pids he bails and continue
-> through the loop a few lines above.  This still may be DOS-able if users don't
-> have kmem restrictions to prevent a ton of pid namespaces, but then the
-> namespaces themselves will take a lot more memory than the representation here.
-
-Ah, I've overlooked that fact. If it is per init-pid it is not that bad. :-)
-
-Thanks,
-//richard
+TGUgMzEvMTAvMjAxNCAyMDoxNCwgRXJpYyBXLiBCaWVkZXJtYW4gYSDDqWNyaXQgOgo+IE5pY29s
+YXMgRGljaHRlbCA8bmljb2xhcy5kaWNodGVsQDZ3aW5kLmNvbT4gd3JpdGVzOgo+Cj4+IExlIDMw
+LzEwLzIwMTQgMTk6NDEsIEVyaWMgVy4gQmllZGVybWFuIGEgw6ljcml0IDoKPj4+IE5pY29sYXMg
+RGljaHRlbCA8bmljb2xhcy5kaWNodGVsQDZ3aW5kLmNvbT4gd3JpdGVzOgo+Pj4KPj4+PiBUaGUg
+Z29hbCBvZiB0aGlzIHNlcmllIGlzIHRvIGJlIGFibGUgdG8gbXVsdGljYXN0IG5ldGxpbmsgbWVz
+c2FnZXMgd2l0aCBhbgo+Pj4+IGF0dHJpYnV0ZSB0aGF0IGlkZW50aWZ5IGEgcGVlciBuZXRucy4K
+Pj4+PiBUaGlzIGlzIG5lZWRlZCBieSB0aGUgdXNlcmxhbmQgdG8gaW50ZXJwcmV0IHNvbWUgaW5m
+b3JtYXRpb25zIGNvbnRhaW5lZCBpbgo+Pj4+IG5ldGxpbmsgbWVzc2FnZXMgKGxpa2UgSUZMQV9M
+SU5LIHZhbHVlLCBidXQgYWxzbyBzb21lIG90aGVyIGF0dHJpYnV0ZXMgaW4gY2FzZQo+Pj4+IG9m
+IHgtbmV0bnMgbmV0ZGV2aWNlIChzZWUgYWxzbwo+Pj4+IGh0dHA6Ly90aHJlYWQuZ21hbmUub3Jn
+L2dtYW5lLmxpbnV4Lm5ldHdvcmsvMzE1OTMzL2ZvY3VzPTMxNjA2NCBhbmQKPj4+PiBodHRwOi8v
+dGhyZWFkLmdtYW5lLm9yZy9nbWFuZS5saW51eC5rZXJuZWwuY29udGFpbmVycy8yODMwMS9mb2N1
+cz00MjM5KSkuCj4+Pj4KPj4+PiBJZHMgb2YgcGVlciBuZXRucyBhcmUgc2V0IGJ5IHVzZXJsYW5k
+IHZpYSBhIG5ldyBnZW5sIG1lc3NhZ2VzLiBUaGVzZSBpZHMgYXJlCj4+Pj4gc3RvcmVkIHBlciBu
+ZXRucyBhbmQgYXJlIGxvY2FsIChpZSBvbmx5IHZhbGlkIGluIHRoZSBuZXRucyB3aGVyZSB0aGV5
+IGFyZSBzZXQpLgo+Pj4+IFRvIGF2b2lkIGFsbG9jYXRpbmcgYW4gaW50IGZvciBlYWNoIHBlZXIg
+bmV0bnMsIEkgdXNlIGlkcl9mb3JfZWFjaCgpIHRvIHJldHJpZXZlCj4+Pj4gdGhlIGlkIG9mIGEg
+cGVlciBuZXRucy4gTm90ZSB0aGF0IGl0IHdpbGwgYmUgcG9zc2libGUgdG8gYWRkIGEgdGFibGUg
+KHN0cnVjdCBuZXQKPj4+PiAtPiBpZCkgbGF0ZXIgdG8gb3B0aW1pemUgdGhpcyBsb29rdXAgaWYg
+bmVlZGVkLgo+Pj4+Cj4+Pj4gUGF0Y2ggMS80IGludHJvZHVjZXMgdGhlIG5ldGxpbmsgQVBJIG1l
+Y2hhbmlzbSB0byBzZXQgYW5kIGdldCB0aGVzZSBpZHMuCj4+Pj4gUGF0Y2ggMi80IGFuZCAzLzQg
+aW1wbGVtZW50cyBhbiBleGFtcGxlIG9mIGhvdyB0byB1c2UgdGhlc2UgaWRzIGluIHJ0bmV0bGlu
+awo+Pj4+IG1lc3NhZ2VzLiBBbmQgcGF0Y2ggNC80IHNob3dzIHRoYXQgdGhlIG5ldGxpbmsgbWVz
+c2FnZXMgY2FuIGJlIHN5bWV0cmljIGJldHdlZW4KPj4+PiBhIEdFVCBhbmQgYSBTRVQuCj4+Pj4K
+Pj4+PiBpcHJvdXRlMiBwYXRjaGVzIGFyZSBhdmFpbGFibGUsIEkgY2FuIHNlbmQgdGhlbSBvbiBk
+ZW1hbmQuCj4+Pgo+Pj4gQSBxdWljayByZXBseS4gIEkgdGhpbmsgdGhpcyBwYXRjaHNldCBpcyBp
+biB0aGUgcmlnaHQgZ2VuZXJhbCBkaXJlY3Rpb24uCj4+PiBUaGVyZSBhcmUgc29tZSBvZGRiYWxs
+IGRldGFpbHMgdGhhdCBzZWVtIG9kZC9hd2t3YXJkIHRvIG1lIHN1Y2ggYXMgdXNpbmcKPj4+IGdl
+bmV0bGluayBpbnN0ZWFkIG9mIHJ0bmV0bGluayB0byBnZXQgYW5kIHNldCB0aGUgaWRzLCBhbmQg
+bm90IGhhdmluZwo+Pj4gaWRzIGlmIHRoZXkgYXJlIG5vdCBzZXQgKHRoYXQgZmVlbHMgbGlrZSBh
+IG1haW50ZW5hbmNlL3VzYWJpbGl0eSBjaGFsbGVuZ2UpLgo+PiBObyBwcm9ibGVtIHRvIHVzZSBy
+dG5ldGxpbmssIGluIGZhY3QsIEkgaGVzaXRhdGVkLgo+Pgo+PiBGb3IgdGhlIHNlY29uZCBwb2lu
+dCwgSSdtIG5vdCBzdXJlIHRvIGZvbGxvdyB5b3U6IGhvdyB0byBoYXZlIGFuIGlkLCB3aGljaCB3
+aWxsCj4+IG5vdCBicmVhayBtaWdyYXRpb24sIHdpdGhvdXQgYXNraW5nIHRoZSB1c2VyIHRvIHNl
+dCBpdD8KPgo+IFdlIGhhdmUgdGhhdCBzaXR1dGF0aW9uIHdpdGggaWZpbmRleCBhbHJlYWR5LiAg
+QmFzaWNhbGx5IHRoZSB0aG91Z2h0IGlzCj4gdG8gYWxsb3cgYW4gaWQgdG8gYmUgc2V0LCBidXQg
+YWxzbyBhbGxvdyBhbiBpZCB0byBiZSBhdXRvLWdlbmVyYXRlZCBpZgo+IHdlIHVzZSBhbiBuYW1l
+c3BhY2Ugd2l0aG91dCBhbiBpZCBiZWluZyBzZXQuCklmIG15IHVuZGVyc3RhbmRpbmcgaXMgY29y
+cmVjdCwgdGhlIGRpZmZlcmVuY2UgaXMgdGhhdCB3ZSB3YW50IHRvIGhpZGUgc29tZQpuZXRucy4K
+RG8geW91IHRoaW5rIHdlIGNhbiBnZW5lcmF0ZSBhbiBpZCBmb3IgZWFjaCBuZXRucyB0aGF0IGRv
+ZXMgbm90IGhhdmUgb25lIGFuZApyZWx5aW5nIG9uIHRoZSBmYWN0IHRoYXQgdGhpcyBpZCBoYXMg
+bm8gbWVhbmluZyB1bmxlc3MgeW91IGhhdmUgYSBuZXRucyBmaWxlCmRlc2NyaXB0b3IgdGhhdCBh
+bGxvdyB5b3UgdG8gZ2V0IHRoZSBpZCBvZiB0aGlzIG5ldG5zPwoKClJlZ2FyZHMsCk5pY29sYXMK
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVy
+cyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRw
+czovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
