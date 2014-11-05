@@ -1,14 +1,13 @@
-From: Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
 Subject: Re: [PATCH 1/2v6] procfs: show hierarchy of pid namespace
-Date: Wed, 5 Nov 2014 12:54:23 +0100
-Message-ID: <20141105115422.GA28654@mguzik>
+Date: Wed, 05 Nov 2014 13:11:06 +0100
+Message-ID: <545A13DA.3090207@nod.at>
 References: <1415184115-12022-1-git-send-email-chenhanxiao@cn.fujitsu.com>
 	<1415184115-12022-2-git-send-email-chenhanxiao@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 In-Reply-To: <1415184115-12022-2-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,238 +18,130 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Nov 05, 2014 at 06:41:54PM +0800, Chen Hanxiao wrote:
-> +static void free_pidns_list(struct list_head *head)
-> +{
-> +	struct pidns_list *tmp, *pos;
-> +
-> +	list_for_each_entry_safe(pos, tmp, head, list) {
-> +		list_del(&pos->list);
-
-Any need for this one? stuff is freed anyway...
-
-> +		put_pid(pos->pid);
-> +		kfree(pos);
-> +	}
-> +}
-> +
-> +static int
-> +pidns_list_add(struct pid *pid, struct list_head *list_head)
-> +{
-> +	struct pidns_list *ent;
-> +
-> +	ent = kmalloc(sizeof(*ent), GFP_KERNEL);
-> +	if (!ent)
-> +		return -ENOMEM;
-> +
-> +	ent->pid = pid;
-> +	list_add_tail(&ent->list, list_head);
-> +
-> +	return 0;
-> +}
-> +
-> +static int
-> +pidns_list_filter(struct list_head *pidns_pid_list,
-> +		struct list_head *pidns_pid_tree)
-> +{
-> +	struct pidns_list *pos, *pos_t;
-> +	struct pid_namespace *ns0, *ns1;
-> +	struct pid *pid0, *pid1;
-> +	int rc, flag = 0;
-> +
-> +	/*
-> +	 * screen pids with relationship
-> +	 * in pidns_pid_list, we may add pids like:
-> +	 * ns0   ns1   ns2
-> +	 * pid1->pid2->pid3
-> +	 * we should screen pid1, pid2 and keep pid3
-> +	 */
-> +	list_for_each_entry(pos, pidns_pid_list, list) {
-> +		list_for_each_entry(pos_t, pidns_pid_list, list) {
-> +			flag = 0;
-> +			pid0 = pos->pid;
-> +			pid1 = pos_t->pid;
-> +			ns0 = pid0->numbers[pid0->level].ns;
-> +			ns1 = pid1->numbers[pid1->level].ns;
-> +			if (pos->pid->level < pos_t->pid->level)
-> +				for (; ns1 != NULL; ns1 = ns1->parent)
-> +					if (ns0 == ns1) {
-> +						flag = 1;
-> +						break;
-> +					}
-> +			/* a redundant pid found */
-> +			if (flag == 1)
-> +				break;
-> +		}
-> +
-> +		if (flag == 0) {
-> +			rcu_read_lock();
-> +			get_pid(pos->pid);
-> +			rcu_read_unlock();
-
-At this point you should have a valid reference for pid, so rcu should
-not matter.
-
-
-> +			rc = pidns_list_add(pos->pid, pidns_pid_tree);
-> +			if (rc) {
-> +				put_pid(pos->pid);
-> +				goto out;
-> +                        }
-
-'}' is misindented. Also 'out' is not a good label if it used solely for
-cleanup on error. 'out_err', 'fail' or something woud be better.
-
-> +		}
-> +	}
-> +
-> +	/*
-> +	 * Now all usefull stuffs are in pidns_pid_tree,
-> +	 * free pidns_pid_list
-> +	 */
-> +	free_pidns_list(pidns_pid_list);
-> +
-> +	return 0;
-> +
-> +out:
-> +	free_pidns_list(pidns_pid_tree);
-> +	return rc;
-> +}
-> +
-> +/* 
-> + * collect pids and stored in pidns_pid_list,
-> + * then remove duplicated ones,
-> + * add the rest to pidns_pid_tree
-> + */
-> +static int proc_pidns_list_refresh(struct pid_namespace *curr_ns,
-> +		struct list_head *pidns_pid_list,
-> +		struct list_head *pidns_pid_tree)
-> +{
-> +	struct pid *pid;
-> +	int new_nr, nr = 0;
-> +	int rc;
-> +
-> +	/* collect pids in current namespace */
-> +	while (nr < PID_MAX_LIMIT) {
-> +		rcu_read_lock();
-> +		pid = find_ge_pid(nr, curr_ns);
-> +		if (pid) {
-> +			new_nr = pid_vnr(pid);
-> +			if (!is_child_reaper(pid)) {
-> +				nr = new_nr + 1;
-> +				rcu_read_unlock();
-> +				continue;
-> +			}
-> +			get_pid(pid);
-> +			rcu_read_unlock();
-> +			rc = pidns_list_add(pid, pidns_pid_list);
-> +			if (rc) {
-> +				put_pid(pid);
-> +				goto out;
-> +                        }
-> +		} else {
-> +			rcu_read_unlock();
-> +			break;
-> +		}
-> +		nr = new_nr + 1;
-> +	}
-> +
-
-Would be beneficial to reorganize this loop. Handle shorter case (!pid)
-first.
-
-I consulted Dr. Grep and it told me about delayed_put_pid, so I guess
-pid itself is not going to be freed in the meantime, but this still
-seems fishy. 
-
-> +	/*
-> +	 * Only one pid found as the child reaper,
-> +	 * so current pid namespace do not have sub-namespace,
-> +	 * return 0 directly.
-> +	 */
-> +	if (list_is_singular(pidns_pid_list)) {
-> +		rc = 0;
-> +		goto out;
-> +	}
-> +
-> +	/*
-> +	 * screen duplicate pids from pidns_pid_list
-> +	 * and form a new list pidns_pid_tree.
-> +	 */
-> +	rc = pidns_list_filter(pidns_pid_list, pidns_pid_tree);
-> +	if (rc)
-> +		goto out;
-> +
-> +	return 0;
-> +
-> +out:
-> +	free_pidns_list(pidns_pid_list);
-> +	return rc;
-> +}
-> +
-> +static int nslist_proc_show(struct seq_file *m, void *v)
-> +{
-> +	struct pidns_list *pos;
-> +	struct pid_namespace *ns, *curr_ns;
-> +	struct pid *pid;
-> +	char pid_buf[16];
-> +	int i, rc;
-> +
-> +	LIST_HEAD(pidns_pid_list);
-> +	LIST_HEAD(pidns_pid_tree);
-> +
-> +	curr_ns = task_active_pid_ns(current);
-> +
-> +	rc = proc_pidns_list_refresh(curr_ns, &pidns_pid_list, &pidns_pid_tree);
-> +	if (rc)
-> +		return rc;
-> +
-> +	/* print pid namespace's hierarchy */
-> +	list_for_each_entry(pos, &pidns_pid_tree, list) {
-> +		pid = pos->pid;
-> +		for (i = curr_ns->level + 1; i <= pid->level; i++) {
-> +			ns = pid->numbers[i].ns;
-> +			/* show PID '1' in specific pid ns */
-> +			snprintf(pid_buf, 16, "%u",
-> +				pid_vnr(find_pid_ns(1, ns)));
-> +			seq_printf(m, "%s ", pid_buf);
-> +		}
-> +
-> +		seq_putc(m, '\n');
-> +	}
-> +
-> +	free_pidns_list(&pidns_pid_tree);
-> +
-> +	return 0;
-> +}
-> +
-> +static int nslist_proc_open(struct inode *inode, struct file *file)
-> +{
-> +	return single_open(file, nslist_proc_show, NULL);
-> +}
-> +
-> +static const struct file_operations proc_nspid_nslist_fops = {
-> +	.open		= nslist_proc_open,
-> +	.read		= seq_read,
-> +	.llseek		= seq_lseek,
-> +	.release	= single_release,
-> +};
-> +
-> +static int __init pidns_hierarchy_init(void)
-> +{
-> +	proc_create(NS_HIERARCHY, S_IWUGO,
-> +		NULL, &proc_nspid_nslist_fops);
-> +
-> +	return 0;
-> +}
-> +fs_initcall(pidns_hierarchy_init);
-> -- 
-> 1.9.3
-> 
-
--- 
-Mateusz Guzik
+QW0gMDUuMTEuMjAxNCB1bSAxMTo0MSBzY2hyaWViIENoZW4gSGFueGlhbzoKPiBXZSBsYWNrIG9m
+IHBpZCBoaWVyYXJjaHkgaW5mb3JtYXRpb24sIGFuZCB0aGlzIHdpbGwgbGVhZCB0bzoKPiBhKSB3
+ZSBkb24ndCBrbm93IHBpZHMnIHJlbGF0aW9uc2hpcCwgd2hvIGlzIHdob3NlIGNoaWxkOgo+ICAg
+IC9wcm9jL1BJRC9ucy9waWQgb25seSB0ZWxsIHVzIHdoZXRoZXIgdHdvIHBpZHMgbGl2ZSBpbiBk
+aWZmZXJlbnQgbnMKPiBiKSBicmluZyB0cm91YmxlIHRvIG5lc3RlZCBseGMgY29udGFpbmVyIGNo
+ZWNrL3Jlc3RvcmUvbWlncmF0aW9uCj4gYykgYnJpbmcgdHJvdWJsZSB0byBwaWQgdHJhbnNsYXRp
+b24gYmV0d2VlbiBjb250YWluZXJzOwo+IAo+IFRoaXMgcGF0Y2ggd2lsbCBzaG93IHRoZSBoaWVy
+YXJjaHkgb2YgcGlkIG5hbWVzcGFjZQo+IGJ5IHBpZG5zX2hpZXJhcmNoeSBsaWtlOgo+IAo+IFty
+b290QGxvY2FsaG9zdCB+XSNjYXQgL3Byb2MvcGlkbnNfaGllcmFyY2h5Cj4gMTgwNjAgMTgxMDIg
+MTUzNAo+IDE4MDYwIDE4MTAyIDE2MDAKPiAxNTUwCgpIbW0sIHdoYXQgYWJvdXQgcHJpbnRpbmcg
+dGhlIHBpZCBoaWVyYXJjaHkgaW4gdGhlIHNhbWUgd2F5IGFzIC9wcm9jL3NlbGYvbW91bnRpbmZv
+CmRvZXMgd2l0aCBtb3VudCBuYW1lc3BhY2VzPwpZb3VyIGN1cnJlbnQgYXBwcm9hY2ggaXMgbm90
+IGJhZCBidXQgd2Ugc2hvdWxkIHJlYWxseSB0cnkgdG8gYmUgY29uc2lzdGVudCB3aXRoIGV4aXN0
+aW5nCnNvdXJjZXMgb2YgaW5mb3JtYXRpb24uCgo+ICpOb3RlOiBudW1iZXJzIHJlcHJlc2VudCB0
+aGUgcGlkIDEgaW4gZGlmZmVyZW50IG5zCj4gCj4gSXQgc2hvd3MgdGhlIHBpZCBoaWVyYXJjaHkg
+YmVsb3c6Cj4gCj4gICAgICAgaW5pdF9waWRfbnMgKG5vdCBzaG93ZWQgaW4gL3Byb2MvcGlkbnNf
+aGllcmFyY2h5KQo+ICAgICAgICAgICAgICAg4pSCCj4g4pSM4pSA4pSA4pSA4pSA4pSA4pSA4pSA
+4pSA4pSA4pSA4pSA4pSA4pSQCj4gbnMxICAgICAgICAgICAgICAgICAgICAgIG5zMgo+IOKUgiAg
+ICAgICAgICAgICAgICAgICAgICAgIOKUggo+IDE1NTAgICAgICAgICAgICAgICAgICAgIDE4MDYw
+Cj4gICAgICAgICAgICAgICAgICAgICAgICAgICDilIIKPiAgICAgICAgICAgICAgICAgICAgICAg
+ICAgIOKUggo+ICAgICAgICAgICAgICAgICAgICAgICAgICBuczMKPiAgICAgICAgICAgICAgICAg
+ICAgICAgICAgIOKUggo+ICAgICAgICAgICAgICAgICAgICAgICAgIDE4MTAyCj4gICAgICAgICAg
+ICAgICAgICAgICAgICAgICDilIIKPiAgICAgICAgICAgICAgICAgIOKUjOKUgOKUgOKUgOKUgOKU
+gOKUgOKUgOKUgOKUgOKUgOKUkAo+ICAgICAgICAgICAgICAgICAgbnM0ICAgICAgICAgICAgICAg
+ICAgIG5zNQo+ICAgICAgICAgICAgICAgICAg4pSCICAgICAgICAgICAgICAgICAgICDilIIKPiAg
+ICAgICAgICAgICAgICAgMTUzNCAgICAgICAgICAgICAgICAgIDE2MDAKPiAKPiBFdmVyeSBwaWQg
+cHJpbnRlZCBpbiBwaWRuc19oaWVyYXJjaHkKPiBpcyB0aGUgaW5pdCBwaWQgb2YgdGhhdCBwaWQg
+bnMgbGV2ZWwuCj4gCj4gU2lnbmVkLW9mZi1ieTogQ2hlbiBIYW54aWFvIDxjaGVuaGFueGlhb0Bj
+bi5mdWppdHN1LmNvbT4KPiAtLS0KPiB2NjogZml4IGdldF9waWQgbGVha3MgYW5kIGRvIHNvbWUg
+Y2xlYW51cHM7Cj4gdjU6IGNvbGxlY3QgcGlkIGJ5IGZpbmRfZ2VfcGlkOwo+ICAgICB1c2UgbG9j
+YWwgbGlzdCBpbnNpZGUgbnNsaXN0X3Byb2Nfc2hvdzsKPiAgICAgdXNlIGdldF9waWQsIHJlbW92
+ZSBtdXRleCBsb2NrLgo+IHY0OiBzaW1wbGlmeSBwaWQgY29sbGVjdGlvbiBhbmQgc29tZSBwZXJm
+b3JtYW5jZSBvcHRpbWl6YW10aW9uCj4gICAgIGZpeCBhbm90aGVyIHJhY2UgaXNzdWUuCj4gdjM6
+IGZpeCBhIHJhY2UgaXNzdWUgYW5kIG1lbW9yeSBsZWFrIGlzc3VlCj4gdjI6IHVzZSBhIHByb2Nm
+cyB0ZXh0IGZpbGUgaW5zdGVhZCBvZiBkaXJzIHVuZGVyIC9wcm9jCj4gCj4gIGZzL3Byb2MvS2Nv
+bmZpZyAgICAgICAgICAgfCAgIDYgKysKPiAgZnMvcHJvYy9NYWtlZmlsZSAgICAgICAgICB8ICAg
+MSArCj4gIGZzL3Byb2MvcGlkbnNfaGllcmFyY2h5LmMgfCAyMjcgKysrKysrKysrKysrKysrKysr
+KysrKysrKysrKysrKysrKysrKysrKysrKysrKwo+ICAzIGZpbGVzIGNoYW5nZWQsIDIzNCBpbnNl
+cnRpb25zKCspCj4gIGNyZWF0ZSBtb2RlIDEwMDY0NCBmcy9wcm9jL3BpZG5zX2hpZXJhcmNoeS5j
+Cj4gCj4gZGlmZiAtLWdpdCBhL2ZzL3Byb2MvS2NvbmZpZyBiL2ZzL3Byb2MvS2NvbmZpZwo+IGlu
+ZGV4IDIxODNmY2YuLjRiYjExMWMgMTAwNjQ0Cj4gLS0tIGEvZnMvcHJvYy9LY29uZmlnCj4gKysr
+IGIvZnMvcHJvYy9LY29uZmlnCj4gQEAgLTcxLDMgKzcxLDkgQEAgY29uZmlnIFBST0NfUEFHRV9N
+T05JVE9SCj4gIAkgIC9wcm9jL3BpZC9zbWFwcywgL3Byb2MvcGlkL2NsZWFyX3JlZnMsIC9wcm9j
+L3BpZC9wYWdlbWFwLAo+ICAJICAvcHJvYy9rcGFnZWNvdW50LCBhbmQgL3Byb2Mva3BhZ2VmbGFn
+cy4gRGlzYWJsaW5nIHRoZXNlCj4gICAgICAgICAgICBpbnRlcmZhY2VzIHdpbGwgcmVkdWNlIHRo
+ZSBzaXplIG9mIHRoZSBrZXJuZWwgYnkgYXBwcm94aW1hdGVseSA0a2IuCj4gKwo+ICtjb25maWcg
+UFJPQ19QSURfSElFUkFSQ0hZCj4gKwlib29sICJFbmFibGUgL3Byb2MvcGlkbnNfaGllcmFyY2h5
+IHN1cHBvcnQiIGlmIEVYUEVSVAo+ICsJZGVwZW5kcyBvbiBQUk9DX0ZTCj4gKwloZWxwCj4gKwkg
+IFNob3cgcGlkIG5hbWVzcGFjZSBoaWVyYXJjaHkgaW5mb3JtYXRpb24KCldoeSBkb2VzIHRoaXMg
+ZGVwZW5kIG9uIEVYUEVSVD8KRXZlcnkgTGludXggZGlzdHJvIHdpbGwgZW5hYmxlIHRoaXMgb3B0
+aW9uLgoKPiBkaWZmIC0tZ2l0IGEvZnMvcHJvYy9NYWtlZmlsZSBiL2ZzL3Byb2MvTWFrZWZpbGUK
+PiBpbmRleCA3MTUxZWE0Li4zM2UzODRiIDEwMDY0NAo+IC0tLSBhL2ZzL3Byb2MvTWFrZWZpbGUK
+PiArKysgYi9mcy9wcm9jL01ha2VmaWxlCj4gQEAgLTMwLDMgKzMwLDQgQEAgcHJvYy0kKENPTkZJ
+R19QUk9DX0tDT1JFKQkrPSBrY29yZS5vCj4gIHByb2MtJChDT05GSUdfUFJPQ19WTUNPUkUpCSs9
+IHZtY29yZS5vCj4gIHByb2MtJChDT05GSUdfUFJJTlRLKQkrPSBrbXNnLm8KPiAgcHJvYy0kKENP
+TkZJR19QUk9DX1BBR0VfTU9OSVRPUikJKz0gcGFnZS5vCj4gK3Byb2MtJChDT05GSUdfUFJPQ19Q
+SURfSElFUkFSQ0hZKQkrPSBwaWRuc19oaWVyYXJjaHkubwo+IGRpZmYgLS1naXQgYS9mcy9wcm9j
+L3BpZG5zX2hpZXJhcmNoeS5jIGIvZnMvcHJvYy9waWRuc19oaWVyYXJjaHkuYwo+IG5ldyBmaWxl
+IG1vZGUgMTAwNjQ0Cj4gaW5kZXggMDAwMDAwMC4uYWVlMzU5Zgo+IC0tLSAvZGV2L251bGwKPiAr
+KysgYi9mcy9wcm9jL3BpZG5zX2hpZXJhcmNoeS5jCj4gQEAgLTAsMCArMSwyMjcgQEAKPiArI2lu
+Y2x1ZGUgPGxpbnV4L2luaXQuaD4KPiArI2luY2x1ZGUgPGxpbnV4L2Vycm5vLmg+Cj4gKyNpbmNs
+dWRlIDxsaW51eC9wcm9jX2ZzLmg+Cj4gKyNpbmNsdWRlIDxsaW51eC9tb2R1bGUuaD4KPiArI2lu
+Y2x1ZGUgPGxpbnV4L2xpc3QuaD4KPiArI2luY2x1ZGUgPGxpbnV4L3NsYWIuaD4KPiArI2luY2x1
+ZGUgPGxpbnV4L3BpZF9uYW1lc3BhY2UuaD4KPiArI2luY2x1ZGUgPGxpbnV4L3NlcV9maWxlLmg+
+Cj4gKwo+ICsvKgo+ICsgKiAgL3Byb2MvcGlkbnNfaGllcmFyY2h5Cj4gKyAqCj4gKyAqICBzaG93
+IHRoZSBoaWVyYXJjaHkgb2YgcGlkIG5hbWVzcGFjZQo+ICsgKi8KPiArCj4gKyNkZWZpbmUgTlNf
+SElFUkFSQ0hZCSJwaWRuc19oaWVyYXJjaHkiCj4gKwo+ICsvKiBsaXN0IGZvciBob3N0IHBpZCBj
+b2xsZWN0aW9uICovCj4gK3N0cnVjdCBwaWRuc19saXN0IHsKPiArCXN0cnVjdCBsaXN0X2hlYWQg
+bGlzdDsKPiArCXN0cnVjdCBwaWQgKnBpZDsKPiArfTsKPiArCj4gK3N0YXRpYyB2b2lkIGZyZWVf
+cGlkbnNfbGlzdChzdHJ1Y3QgbGlzdF9oZWFkICpoZWFkKQo+ICt7Cj4gKwlzdHJ1Y3QgcGlkbnNf
+bGlzdCAqdG1wLCAqcG9zOwo+ICsKPiArCWxpc3RfZm9yX2VhY2hfZW50cnlfc2FmZShwb3MsIHRt
+cCwgaGVhZCwgbGlzdCkgewo+ICsJCWxpc3RfZGVsKCZwb3MtPmxpc3QpOwo+ICsJCXB1dF9waWQo
+cG9zLT5waWQpOwo+ICsJCWtmcmVlKHBvcyk7Cj4gKwl9Cj4gK30KPiArCj4gK3N0YXRpYyBpbnQK
+PiArcGlkbnNfbGlzdF9hZGQoc3RydWN0IHBpZCAqcGlkLCBzdHJ1Y3QgbGlzdF9oZWFkICpsaXN0
+X2hlYWQpCj4gK3sKPiArCXN0cnVjdCBwaWRuc19saXN0ICplbnQ7Cj4gKwo+ICsJZW50ID0ga21h
+bGxvYyhzaXplb2YoKmVudCksIEdGUF9LRVJORUwpOwo+ICsJaWYgKCFlbnQpCj4gKwkJcmV0dXJu
+IC1FTk9NRU07Cj4gKwo+ICsJZW50LT5waWQgPSBwaWQ7Cj4gKwlsaXN0X2FkZF90YWlsKCZlbnQt
+Pmxpc3QsIGxpc3RfaGVhZCk7Cj4gKwo+ICsJcmV0dXJuIDA7Cj4gK30KPiArCj4gK3N0YXRpYyBp
+bnQKPiArcGlkbnNfbGlzdF9maWx0ZXIoc3RydWN0IGxpc3RfaGVhZCAqcGlkbnNfcGlkX2xpc3Qs
+Cj4gKwkJc3RydWN0IGxpc3RfaGVhZCAqcGlkbnNfcGlkX3RyZWUpCj4gK3sKPiArCXN0cnVjdCBw
+aWRuc19saXN0ICpwb3MsICpwb3NfdDsKPiArCXN0cnVjdCBwaWRfbmFtZXNwYWNlICpuczAsICpu
+czE7Cj4gKwlzdHJ1Y3QgcGlkICpwaWQwLCAqcGlkMTsKPiArCWludCByYywgZmxhZyA9IDA7Cj4g
+Kwo+ICsJLyoKPiArCSAqIHNjcmVlbiBwaWRzIHdpdGggcmVsYXRpb25zaGlwCj4gKwkgKiBpbiBw
+aWRuc19waWRfbGlzdCwgd2UgbWF5IGFkZCBwaWRzIGxpa2U6Cj4gKwkgKiBuczAgICBuczEgICBu
+czIKPiArCSAqIHBpZDEtPnBpZDItPnBpZDMKPiArCSAqIHdlIHNob3VsZCBzY3JlZW4gcGlkMSwg
+cGlkMiBhbmQga2VlcCBwaWQzCj4gKwkgKi8KPiArCWxpc3RfZm9yX2VhY2hfZW50cnkocG9zLCBw
+aWRuc19waWRfbGlzdCwgbGlzdCkgewo+ICsJCWxpc3RfZm9yX2VhY2hfZW50cnkocG9zX3QsIHBp
+ZG5zX3BpZF9saXN0LCBsaXN0KSB7Cj4gKwkJCWZsYWcgPSAwOwo+ICsJCQlwaWQwID0gcG9zLT5w
+aWQ7Cj4gKwkJCXBpZDEgPSBwb3NfdC0+cGlkOwo+ICsJCQluczAgPSBwaWQwLT5udW1iZXJzW3Bp
+ZDAtPmxldmVsXS5uczsKPiArCQkJbnMxID0gcGlkMS0+bnVtYmVyc1twaWQxLT5sZXZlbF0ubnM7
+Cj4gKwkJCWlmIChwb3MtPnBpZC0+bGV2ZWwgPCBwb3NfdC0+cGlkLT5sZXZlbCkKPiArCQkJCWZv
+ciAoOyBuczEgIT0gTlVMTDsgbnMxID0gbnMxLT5wYXJlbnQpCj4gKwkJCQkJaWYgKG5zMCA9PSBu
+czEpIHsKPiArCQkJCQkJZmxhZyA9IDE7Cj4gKwkJCQkJCWJyZWFrOwo+ICsJCQkJCX0KPiArCQkJ
+LyogYSByZWR1bmRhbnQgcGlkIGZvdW5kICovCj4gKwkJCWlmIChmbGFnID09IDEpCj4gKwkJCQli
+cmVhazsKPiArCQl9Cj4gKwo+ICsJCWlmIChmbGFnID09IDApIHsKPiArCQkJcmN1X3JlYWRfbG9j
+aygpOwo+ICsJCQlnZXRfcGlkKHBvcy0+cGlkKTsKPiArCQkJcmN1X3JlYWRfdW5sb2NrKCk7Cj4g
+KwkJCXJjID0gcGlkbnNfbGlzdF9hZGQocG9zLT5waWQsIHBpZG5zX3BpZF90cmVlKTsKPiArCQkJ
+aWYgKHJjKSB7Cj4gKwkJCQlwdXRfcGlkKHBvcy0+cGlkKTsKPiArCQkJCWdvdG8gb3V0Owo+ICsg
+ICAgICAgICAgICAgICAgICAgICAgICB9Cj4gKwkJfQo+ICsJfQo+ICsKPiArCS8qCj4gKwkgKiBO
+b3cgYWxsIHVzZWZ1bGwgc3R1ZmZzIGFyZSBpbiBwaWRuc19waWRfdHJlZSwKPiArCSAqIGZyZWUg
+cGlkbnNfcGlkX2xpc3QKPiArCSAqLwo+ICsJZnJlZV9waWRuc19saXN0KHBpZG5zX3BpZF9saXN0
+KTsKPiArCj4gKwlyZXR1cm4gMDsKPiArCj4gK291dDoKPiArCWZyZWVfcGlkbnNfbGlzdChwaWRu
+c19waWRfdHJlZSk7Cj4gKwlyZXR1cm4gcmM7Cj4gK30KPiArCj4gKy8qIAo+ICsgKiBjb2xsZWN0
+IHBpZHMgYW5kIHN0b3JlZCBpbiBwaWRuc19waWRfbGlzdCwKPiArICogdGhlbiByZW1vdmUgZHVw
+bGljYXRlZCBvbmVzLAo+ICsgKiBhZGQgdGhlIHJlc3QgdG8gcGlkbnNfcGlkX3RyZWUKPiArICov
+Cj4gK3N0YXRpYyBpbnQgcHJvY19waWRuc19saXN0X3JlZnJlc2goc3RydWN0IHBpZF9uYW1lc3Bh
+Y2UgKmN1cnJfbnMsCj4gKwkJc3RydWN0IGxpc3RfaGVhZCAqcGlkbnNfcGlkX2xpc3QsCj4gKwkJ
+c3RydWN0IGxpc3RfaGVhZCAqcGlkbnNfcGlkX3RyZWUpCj4gK3sKPiArCXN0cnVjdCBwaWQgKnBp
+ZDsKPiArCWludCBuZXdfbnIsIG5yID0gMDsKPiArCWludCByYzsKPiArCj4gKwkvKiBjb2xsZWN0
+IHBpZHMgaW4gY3VycmVudCBuYW1lc3BhY2UgKi8KPiArCXdoaWxlIChuciA8IFBJRF9NQVhfTElN
+SVQpIHsKPiArCQlyY3VfcmVhZF9sb2NrKCk7Cj4gKwkJcGlkID0gZmluZF9nZV9waWQobnIsIGN1
+cnJfbnMpOwo+ICsJCWlmIChwaWQpIHsKPiArCQkJbmV3X25yID0gcGlkX3ZucihwaWQpOwo+ICsJ
+CQlpZiAoIWlzX2NoaWxkX3JlYXBlcihwaWQpKSB7Cj4gKwkJCQluciA9IG5ld19uciArIDE7Cj4g
+KwkJCQlyY3VfcmVhZF91bmxvY2soKTsKPiArCQkJCWNvbnRpbnVlOwo+ICsJCQl9Cj4gKwkJCWdl
+dF9waWQocGlkKTsKPiArCQkJcmN1X3JlYWRfdW5sb2NrKCk7Cj4gKwkJCXJjID0gcGlkbnNfbGlz
+dF9hZGQocGlkLCBwaWRuc19waWRfbGlzdCk7CgpUaGlzIGZ1bmN0aW9uIGFsbG9jYXRlcyBtZW1v
+cnkgcGVyIFBJRC4gSWYgd2UgaGF2ZSBsb3RzIG9mIFBJRHMsIGhvdyBkb2VzIHRoaXMgc2NhbGU/
+CkknZCBnbyBzbyBmYXIgYW5kIHNheSB0aGlzIGNhbiBiZSBhIERvUydhYmxlIGlzc3VlIGlmIHRo
+ZSBwaWRuc19oaWVyYXJjaHkgZmlsZSBpcyBvcGVuZWQgbXVsdGlwbGUgdGltZXMuLi4KClRoYW5r
+cywKLy9yaWNoYXJkCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRh
+dGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGlu
+Zm8vY29udGFpbmVycw==
