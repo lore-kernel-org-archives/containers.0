@@ -1,14 +1,20 @@
-From: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
-Subject: Re: [PATCH v7 1/2] procfs: show hierarchy of pid namespace
-Date: Wed, 12 Nov 2014 12:15:10 +0100
-Message-ID: <5463413E.6000800@nod.at>
-References: <1415786899-13392-1-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<1415786899-13392-2-git-send-email-chenhanxiao@cn.fujitsu.com>
+From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCHv2 7/7] cgroup: mount cgroupns-root when inside non-init
+	cgroupns
+Date: Wed, 12 Nov 2014 09:48:18 -0800
+Message-ID: <CAGr1F2Ho1kGVbVHxX1wY2PMhiAYgp6Tdnshj1pkV9pAeQLO=Qw__46324.5124243715$1415814534$gmane$org@mail.gmail.com>
+References: <1414783141-6947-1-git-send-email-adityakali@google.com>
+	<1414783141-6947-8-git-send-email-adityakali@google.com>
+	<87y4rvrakn.fsf@x220.int.ebiederm.org>
+	<CAGr1F2Hd_PS_AscBGMXdZC9qkHGRUp-MeQvJksDOQkRBB3RGoA@mail.gmail.com>
+	<20141104134633.GA14014@htj.dyndns.org>
+	<CALCETrUggQCJyxsTWRNrjt3GM=R0VMU6RjMkU1aw3YUNMx1xEw@mail.gmail.com>
+	<20141104155052.GA7027@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1415786899-13392-2-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20141104155052.GA7027-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,146 +24,66 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-QW0gMTIuMTEuMjAxNCB1bSAxMTowOCBzY2hyaWViIENoZW4gSGFueGlhbzoKPiBXZSBsYWNrIG9m
-IHBpZCBoaWVyYXJjaHkgaW5mb3JtYXRpb24sIGFuZCB0aGlzIHdpbGwgbGVhZCB0bzoKPiBhKSB3
-ZSBkb24ndCBrbm93IHBpZHMnIHJlbGF0aW9uc2hpcCwgd2hvIGlzIHdob3NlIGNoaWxkOgo+ICAg
-IC9wcm9jL1BJRC9ucy9waWQgb25seSB0ZWxsIHVzIHdoZXRoZXIgdHdvIHBpZHMgbGl2ZSBpbiBk
-aWZmZXJlbnQgbnMKPiBiKSBicmluZyB0cm91YmxlIHRvIG5lc3RlZCBseGMgY29udGFpbmVyIGNo
-ZWNrL3Jlc3RvcmUvbWlncmF0aW9uCj4gYykgYnJpbmcgdHJvdWJsZSB0byBwaWQgdHJhbnNsYXRp
-b24gYmV0d2VlbiBjb250YWluZXJzOwo+IAo+IFRoaXMgcGF0Y2ggd2lsbCBzaG93IHRoZSBoaWVy
-YXJjaHkgb2YgcGlkIG5hbWVzcGFjZQo+IGJ5IHBpZG5zX2hpZXJhcmNoeSBsaWtlOgo+IAo+IDxp
-bml0X1BJRD4gPHBhcmVudF9vZl9pbml0X1BJRD4gPHJlbGF0aXZlIFBJRCBsZXZlbD4KPiAKPiBF
-eDoKPiBbcm9vdEBsb2NhbGhvc3Qgfl0jY2F0IC9wcm9jL3BpZG5zX2hpZXJhcmNoeQo+IDE4MDYw
-IDEgMQo+IDE4MTAyIDE4MDYwIDIKPiAxNTM0ICAxODEwMiAzCj4gMTYwMCAgMTgxMDIgMwo+IDE1
-NTAgIDEgMQo+ICpOb3RlOiBudW1iZXJzIHJlcHJlc2VudCB0aGUgcGlkIDEgaW4gZGlmZmVyZW50
-IG5zCj4gCj4gSXQgc2hvd3MgdGhlIHBpZCBoaWVyYXJjaHkgYmVsb3c6Cj4gCj4gICAgICAgaW5p
-dF9waWRfbnMgMQo+ICAgICAgICAgICAgICAg4pSCCj4g4pSM4pSA4pSA4pSA4pSA4pSA4pSA4pSA
-4pSA4pSA4pSA4pSA4pSA4pSQCj4gbnMxICAgICAgICAgICAgICAgICAgICAgIG5zMgo+IOKUgiAg
-ICAgICAgICAgICAgICAgICAgICAgIOKUggo+IDE1NTAgICAgICAgICAgICAgICAgICAgIDE4MDYw
-Cj4gICAgICAgICAgICAgICAgICAgICAgICAgICDilIIKPiAgICAgICAgICAgICAgICAgICAgICAg
-ICAgIOKUggo+ICAgICAgICAgICAgICAgICAgICAgICAgICBuczMKPiAgICAgICAgICAgICAgICAg
-ICAgICAgICAgIOKUggo+ICAgICAgICAgICAgICAgICAgICAgICAgIDE4MTAyCj4gICAgICAgICAg
-ICAgICAgICAgICAgICAgICDilIIKPiAgICAgICAgICAgICAgICAgIOKUjOKUgOKUgOKUgOKUgOKU
-gOKUgOKUgOKUgOKUgOKUgOKUkAo+ICAgICAgICAgICAgICAgICAgbnM0ICAgICAgICAgICAgICAg
-ICAgIG5zNQo+ICAgICAgICAgICAgICAgICAg4pSCICAgICAgICAgICAgICAgICAgICDilIIKPiAg
-ICAgICAgICAgICAgICAgMTUzNCAgICAgICAgICAgICAgICAgIDE2MDAKPiAKPiBFdmVyeSBwaWQg
-cHJpbnRlZCBpbiBwaWRuc19oaWVyYXJjaHkKPiBpcyB0aGUgaW5pdCBwaWQgb2YgdGhhdCBwaWQg
-bnMgbGV2ZWwuCj4gCj4gU2lnbmVkLW9mZi1ieTogQ2hlbiBIYW54aWFvIDxjaGVuaGFueGlhb0Bj
-bi5mdWppdHN1LmNvbT4KPiAtLS0KPiB2NzogY2hhbmdlIHN0eXBlIHRvIGJlIGNvbnNpc3RlbnQg
-d2l0aCBjdXJyZW50IGludGVyZmFjZSBsaWtlCj4gICAgIDxpbml0X1BJRD4gPHBhcmVudF9vZl9p
-bml0X1BJRD4gPHJlbGF0aXZlIFBJRCBsZXZlbD4KPiAgICAgcmVtb3ZlIEVYUEVSVCBkZXBlbmRl
-bnQgaW4gS2NvbmZpZwo+IHY2OiBmaXggYSBnZXRfcGlkIGxlYWsgYW5kIGRvIHNvbWUgY2xlYW51
-cHM7Cj4gdjU6IGNvbGxlY3QgcGlkIGJ5IGZpbmRfZ2VfcGlkOwo+ICAgICB1c2UgbG9jYWwgbGlz
-dCBpbnNpZGUgbnNsaXN0X3Byb2Nfc2hvdzsKPiAgICAgdXNlIGdldF9waWQsIHJlbW92ZSBtdXRl
-eCBsb2NrLgo+IHY0OiBzaW1wbGlmeSBwaWQgY29sbGVjdGlvbiBhbmQgc29tZSBwZXJmb3JtYW5j
-ZSBvcHRpbWl6YW10aW9uCj4gICAgIGZpeCBhbm90aGVyIHJhY2UgaXNzdWUuCj4gdjM6IGZpeCBh
-IHJhY2UgaXNzdWUgYW5kIG1lbW9yeSBsZWFrIGlzc3VlCj4gdjI6IHVzZSBhIHByb2NmcyB0ZXh0
-IGZpbGUgaW5zdGVhZCBvZiBkaXJzIHVuZGVyIC9wcm9jCj4gCj4gIGZzL3Byb2MvS2NvbmZpZyAg
-ICAgICAgICAgfCAgIDYgKwo+ICBmcy9wcm9jL01ha2VmaWxlICAgICAgICAgIHwgICAxICsKPiAg
-ZnMvcHJvYy9waWRuc19oaWVyYXJjaHkuYyB8IDI4MCArKysrKysrKysrKysrKysrKysrKysrKysr
-KysrKysrKysrKysrKysrKysrKysrCj4gIDMgZmlsZXMgY2hhbmdlZCwgMjg3IGluc2VydGlvbnMo
-KykKPiAgY3JlYXRlIG1vZGUgMTAwNjQ0IGZzL3Byb2MvcGlkbnNfaGllcmFyY2h5LmMKPiAKPiBk
-aWZmIC0tZ2l0IGEvZnMvcHJvYy9LY29uZmlnIGIvZnMvcHJvYy9LY29uZmlnCj4gaW5kZXggMjE4
-M2ZjZi4uODJkZGE1NSAxMDA2NDQKPiAtLS0gYS9mcy9wcm9jL0tjb25maWcKPiArKysgYi9mcy9w
-cm9jL0tjb25maWcKPiBAQCAtNzEsMyArNzEsOSBAQCBjb25maWcgUFJPQ19QQUdFX01PTklUT1IK
-PiAgCSAgL3Byb2MvcGlkL3NtYXBzLCAvcHJvYy9waWQvY2xlYXJfcmVmcywgL3Byb2MvcGlkL3Bh
-Z2VtYXAsCj4gIAkgIC9wcm9jL2twYWdlY291bnQsIGFuZCAvcHJvYy9rcGFnZWZsYWdzLiBEaXNh
-YmxpbmcgdGhlc2UKPiAgICAgICAgICAgIGludGVyZmFjZXMgd2lsbCByZWR1Y2UgdGhlIHNpemUg
-b2YgdGhlIGtlcm5lbCBieSBhcHByb3hpbWF0ZWx5IDRrYi4KPiArCj4gK2NvbmZpZyBQUk9DX1BJ
-RF9ISUVSQVJDSFkKPiArCWJvb2wgIkVuYWJsZSAvcHJvYy9waWRuc19oaWVyYXJjaHkgc3VwcG9y
-dCIKPiArCWRlcGVuZHMgb24gUFJPQ19GUwo+ICsJaGVscAo+ICsJICBTaG93IHBpZCBuYW1lc3Bh
-Y2UgaGllcmFyY2h5IGluZm9ybWF0aW9uCj4gZGlmZiAtLWdpdCBhL2ZzL3Byb2MvTWFrZWZpbGUg
-Yi9mcy9wcm9jL01ha2VmaWxlCj4gaW5kZXggNzE1MWVhNC4uMzNlMzg0YiAxMDA2NDQKPiAtLS0g
-YS9mcy9wcm9jL01ha2VmaWxlCj4gKysrIGIvZnMvcHJvYy9NYWtlZmlsZQo+IEBAIC0zMCwzICsz
-MCw0IEBAIHByb2MtJChDT05GSUdfUFJPQ19LQ09SRSkJKz0ga2NvcmUubwo+ICBwcm9jLSQoQ09O
-RklHX1BST0NfVk1DT1JFKQkrPSB2bWNvcmUubwo+ICBwcm9jLSQoQ09ORklHX1BSSU5USykJKz0g
-a21zZy5vCj4gIHByb2MtJChDT05GSUdfUFJPQ19QQUdFX01PTklUT1IpCSs9IHBhZ2Uubwo+ICtw
-cm9jLSQoQ09ORklHX1BST0NfUElEX0hJRVJBUkNIWSkJKz0gcGlkbnNfaGllcmFyY2h5Lm8KPiBk
-aWZmIC0tZ2l0IGEvZnMvcHJvYy9waWRuc19oaWVyYXJjaHkuYyBiL2ZzL3Byb2MvcGlkbnNfaGll
-cmFyY2h5LmMKPiBuZXcgZmlsZSBtb2RlIDEwMDY0NAo+IGluZGV4IDAwMDAwMDAuLjQ2MjliZmQK
-PiAtLS0gL2Rldi9udWxsCj4gKysrIGIvZnMvcHJvYy9waWRuc19oaWVyYXJjaHkuYwo+IEBAIC0w
-LDAgKzEsMjgwIEBACj4gKyNpbmNsdWRlIDxsaW51eC9pbml0Lmg+Cj4gKyNpbmNsdWRlIDxsaW51
-eC9lcnJuby5oPgo+ICsjaW5jbHVkZSA8bGludXgvcHJvY19mcy5oPgo+ICsjaW5jbHVkZSA8bGlu
-dXgvbW9kdWxlLmg+Cj4gKyNpbmNsdWRlIDxsaW51eC9saXN0Lmg+Cj4gKyNpbmNsdWRlIDxsaW51
-eC9zbGFiLmg+Cj4gKyNpbmNsdWRlIDxsaW51eC9waWRfbmFtZXNwYWNlLmg+Cj4gKyNpbmNsdWRl
-IDxsaW51eC9zZXFfZmlsZS5oPgo+ICsKPiArLyoKPiArICogIC9wcm9jL3BpZG5zX2hpZXJhcmNo
-eQo+ICsgKgo+ICsgKiAgc2hvdyB0aGUgaGllcmFyY2h5IG9mIHBpZCBuYW1lc3BhY2UgaW46Cj4g
-KyAqICA8aW5pdF9QSUQ+ICA8cGFyZW50X29mX2luaXRfUElEPiA8cmVsYXRpdmUgUElEIGxldmVs
-Pgo+ICsgKgo+ICsgKiAgaW5pdF9QSUQ6IGNoaWxkIHJlYXBlciBpbiBucwo+ICsgKiAgcGFyZW50
-X29mX2luaXRfUElEOiBpbml0X1BJRCdzIHBhcmVudCwgYWxzbyBjaGlsZCByZWFwZXIKPiArICog
-IHJlbGF0aXZlIFBJRCBsZXZlbDogcGlkIGxldmVsIHJlbGF0aXZlIHRvIGNhbGxlcidzIG5zCj4g
-KyAqLwo+ICsKPiArI2RlZmluZSBOU19ISUVSQVJDSFkJInBpZG5zX2hpZXJhcmNoeSIKPiArI2Rl
-ZmluZSBNQVgoYSwgYikgKChhKSA+IChiKSA/IChhKSA6IChiKSkKClBsZWFzZSB1c2UgbWF4KCkg
-ZnJvbSBrZXJuZWwuaCwgdGhlcmUgaXMgbm8gbmVlZCB0byByZWludmVudCB0aGUgd2hlZWwuCgo+
-ICsKPiArLyogbGlzdCBmb3IgaG9zdCBwaWQgY29sbGVjdGlvbiAqLwo+ICtzdHJ1Y3QgcGlkbnNf
-bGlzdCB7Cj4gKwlzdHJ1Y3QgbGlzdF9oZWFkIGxpc3Q7Cj4gKwlzdHJ1Y3QgcGlkICpwaWQ7Cj4g
-KwlpbnQgc2hvd19sZXZlbDsKCnMvc2hvd19sZXZlbC9sZXZlbCwgdG8ga2VlcCBpdCBlYXN5LiA6
-LSkKCj4gK307Cj4gKwo+ICtzdGF0aWMgdm9pZCBmcmVlX3BpZG5zX2xpc3Qoc3RydWN0IGxpc3Rf
-aGVhZCAqaGVhZCkKPiArewo+ICsJc3RydWN0IHBpZG5zX2xpc3QgKnRtcCwgKnBvczsKPiArCj4g
-KwlsaXN0X2Zvcl9lYWNoX2VudHJ5X3NhZmUocG9zLCB0bXAsIGhlYWQsIGxpc3QpIHsKPiArCQls
-aXN0X2RlbCgmcG9zLT5saXN0KTsKPiArCQlwdXRfcGlkKHBvcy0+cGlkKTsKPiArCQlrZnJlZShw
-b3MpOwo+ICsJfQo+ICt9Cj4gKwo+ICtzdGF0aWMgaW50Cj4gK3BpZG5zX2xpc3RfYWRkKHN0cnVj
-dCBwaWQgKnBpZCwgc3RydWN0IGxpc3RfaGVhZCAqbGlzdF9oZWFkLAo+ICsJCWludCBzaG93X2xl
-dmVsKQo+ICt7Cj4gKwlzdHJ1Y3QgcGlkbnNfbGlzdCAqZW50Owo+ICsKPiArCWVudCA9IGttYWxs
-b2Moc2l6ZW9mKCplbnQpLCBHRlBfS0VSTkVMKTsKPiArCWlmICghZW50KQo+ICsJCXJldHVybiAt
-RU5PTUVNOwo+ICsKPiArCWVudC0+cGlkID0gcGlkOwo+ICsJZW50LT5zaG93X2xldmVsID0gc2hv
-d19sZXZlbDsKPiArCWxpc3RfYWRkX3RhaWwoJmVudC0+bGlzdCwgbGlzdF9oZWFkKTsKPiArCj4g
-KwlyZXR1cm4gMDsKPiArfQo+ICsKPiArc3RhdGljIGludAo+ICtwaWRuc19saXN0X2ZpbHRlcihz
-dHJ1Y3QgbGlzdF9oZWFkICpwaWRuc19waWRfbGlzdCwKPiArCQlzdHJ1Y3QgbGlzdF9oZWFkICpw
-aWRuc19waWRfdHJlZSkKPiArewo+ICsJc3RydWN0IHBpZG5zX2xpc3QgKnBvcywgKnBvc190Owo+
-ICsJc3RydWN0IHBpZF9uYW1lc3BhY2UgKm5zMCwgKm5zMTsKPiArCXN0cnVjdCBwaWQgKnBpZDAs
-ICpwaWQxOwo+ICsJaW50IHJjLCBmbGFnID0gMDsKPiArCj4gKwkvKgo+ICsJICogc2NyZWVuIHBp
-ZHMgd2l0aCByZWxhdGlvbnNoaXAKPiArCSAqIGluIHBpZG5zX3BpZF9saXN0LCB3ZSBtYXkgYWRk
-IHBpZHMgbGlrZToKPiArCSAqIG5zMCAgIG5zMSAgIG5zMgo+ICsJICogcGlkMS0+cGlkMi0+cGlk
-Mwo+ICsJICogd2Ugc2hvdWxkIHNjcmVlbiBwaWQxLCBwaWQyIGFuZCBrZWVwIHBpZDMKPiArCSAq
-Lwo+ICsJbGlzdF9mb3JfZWFjaF9lbnRyeShwb3MsIHBpZG5zX3BpZF9saXN0LCBsaXN0KSB7Cj4g
-KwkJbGlzdF9mb3JfZWFjaF9lbnRyeShwb3NfdCwgcGlkbnNfcGlkX2xpc3QsIGxpc3QpIHsKPiAr
-CQkJZmxhZyA9IDA7Cj4gKwkJCXBpZDAgPSBwb3MtPnBpZDsKPiArCQkJcGlkMSA9IHBvc190LT5w
-aWQ7Cj4gKwkJCW5zMCA9IHBpZDAtPm51bWJlcnNbcGlkMC0+bGV2ZWxdLm5zOwo+ICsJCQluczEg
-PSBwaWQxLT5udW1iZXJzW3BpZDEtPmxldmVsXS5uczsKPiArCQkJaWYgKHBvcy0+cGlkLT5sZXZl
-bCA8IHBvc190LT5waWQtPmxldmVsKQo+ICsJCQkJZm9yICg7IG5zMSAhPSBOVUxMOyBuczEgPSBu
-czEtPnBhcmVudCkKPiArCQkJCQlpZiAobnMwID09IG5zMSkgewo+ICsJCQkJCQlmbGFnID0gMTsK
-PiArCQkJCQkJYnJlYWs7Cj4gKwkJCQkJfQo+ICsJCQkvKiBhIHJlZHVuZGFudCBwaWQgZm91bmQg
-Ki8KPiArCQkJaWYgKGZsYWcgPT0gMSkKPiArCQkJCWJyZWFrOwo+ICsJCX0KPiArCj4gKwkJaWYg
-KGZsYWcgPT0gMCkgewo+ICsJCQlnZXRfcGlkKHBvcy0+cGlkKTsKPiArCQkJcmMgPSBwaWRuc19s
-aXN0X2FkZChwb3MtPnBpZCwgcGlkbnNfcGlkX3RyZWUsIDApOwo+ICsJCQlpZiAocmMpIHsKPiAr
-CQkJCXB1dF9waWQocG9zLT5waWQpOwo+ICsJCQkJZ290byBjbGVhbnVwOwo+ICsJCQl9Cj4gKwkJ
-fQo+ICsJfQo+ICsKPiArCS8qCj4gKwkgKiAgTm93IGFsbCB1c2VmdWwgc3R1ZmZzIGFyZSBpbiBw
-aWRuc19waWRfdHJlZSwKPiArCSAqICBmcmVlIHBpZG5zX3BpZF9saXN0Cj4gKwkgKi8KPiArCWZy
-ZWVfcGlkbnNfbGlzdChwaWRuc19waWRfbGlzdCk7Cj4gKwo+ICsJcmV0dXJuIDA7Cj4gKwo+ICtj
-bGVhbnVwOgo+ICsJZnJlZV9waWRuc19saXN0KHBpZG5zX3BpZF90cmVlKTsKPiArCXJldHVybiBy
-YzsKPiArfQo+ICsKPiArc3RhdGljIHZvaWQKPiArcGlkbnNfbGlzdF9zZXRfc2hvd19sZXZlbChz
-dHJ1Y3QgbGlzdF9oZWFkICpwaWRuc19saXN0X2luLAo+ICsJCXN0cnVjdCBwaWRfbmFtZXNwYWNl
-ICpjdXJyX25zKQo+ICt7Cj4gKwlzdHJ1Y3QgcGlkbnNfbGlzdCAqcG9zLCAqcG9zX3Q7Cj4gKwlz
-dHJ1Y3QgcGlkICpwaWQwLCAqcGlkMTsKPiArCWludCBpOwo+ICsKPiArCS8qCj4gKwkgKiBGcm9t
-IHRoZSBwaWQgaGllcmFyY2h5IHBvaW50IG9mIHZpZXcsCj4gKwkgKiB3ZSBhbHJlYWR5IGhhZCBh
-IGxpc3Qgb2YgcGlkcyB3aG8gYXJlIG5vdAo+ICsJICogdGhlIHN1YnNldCBvZiBlYWNoIG90aGVy
-Lgo+ICsJICogQnV0IHBhcnQgb2YgdGhlbSBtYXkgYmUgc2FtZS4KPiArCSAqIFdlIG5lZWQgdG8g
-c2V0IHRoZSBzaG93X2xldmVsIG9mIGVhY2ggcGlkczoKPiArCSAqIHBpZDA6ICAgICAgICAgQS0+
-Qi0+QyAgIHBpZDE6ICAgICAgIEEtPkItPkQKPiArCSAqIHNob3dfbGV2ZWwgICAgICAgMiAgICAg
-ICAgICAgICAgICAgIDAKPiArCSAqIFdlIHVzZSBzaG93X2xldmVsIHRvIGlkZW50aWZ5Cj4gKwkg
-KiB0aGUgcHVibGljIHBhcnQgb2YgZWFjaCBwaWRzLgo+ICsJICovCj4gKwlsaXN0X2Zvcl9lYWNo
-X2VudHJ5KHBvcywgcGlkbnNfbGlzdF9pbiwgbGlzdCkgewo+ICsJCWxpc3RfZm9yX2VhY2hfZW50
-cnkocG9zX3QsIHBpZG5zX2xpc3RfaW4sIGxpc3QpIHsKPiArCQkJcGlkMCA9IHBvcy0+cGlkOwo+
-ICsJCQlwaWQxID0gcG9zX3QtPnBpZDsKPiArCQkJaWYgKHBpZDAgPT0gcGlkMSkKPiArCQkJCWNv
-bnRpbnVlOwo+ICsJCQlpZiAocG9zX3QtPnNob3dfbGV2ZWwgPiAwKQo+ICsJCQkJY29udGludWU7
-Cj4gKwkJCWZvciAoaSA9IGN1cnJfbnMtPmxldmVsICsgMTsgaSA8PSBwaWQwLT5sZXZlbDsgaSsr
-KSB7Cj4gKwkJCQkvKiBza2lwIHRoZSBwdWJsaWMgcGFydHMgKi8KPiArCQkJCWlmIChwaWQwLT5u
-dW1iZXJzW2ldLm5zID09Cj4gKwkJCQkJCXBpZDEtPm51bWJlcnNbaV0ubnMpCj4gKwkJCQkJY29u
-dGludWU7Cj4gKwkJCQllbHNlCj4gKwkJCQkJYnJlYWs7Cj4gKwkJCX0KPiArCQkJcG9zLT5zaG93
-X2xldmVsID0gaSAtIDE7Cj4gKwkJfQo+ICsJfQo+ICt9Cj4gKwo+ICsvKgo+ICsgKiBjb2xsZWN0
-IHBpZHMgYW5kIHN0b3JlZCBpbiBwaWRuc19waWRfbGlzdCwKCnMvc3RvcmVkL3N0b3JlCgo+ICsg
-KiB0aGVuIHJlbW92ZSBkdXBsaWNhdGVkIG9uZXMsCj4gKyAqIGFkZCB0aGUgcmVzdCB0byBwaWRu
-c19waWRfdHJlZQo+ICsgKi8KClRoaXMgY29tbWVudCBpcyBhIGJpdCBjb25mdXNpbmcuCgpXaGF0
-IGFib3V0ICJwcm9jX3BpZG5zX2xpc3RfcmVmcmVzaCAtIEZpbmRzIGFsbCBpbml0IHBpZHMsIHBs
-YWNlcyB0aGVtIGludG8gcGlkbnNfcGlkX2xpc3QKYW5kIHRoZW4gc3RvcmVzIHRoZSBoaXJhcmNo
-eSBpbnRvIHBpZG5zX3BpZF90cmVlLiI/CgpCZXNpZGUgb2YgbXkgbWlub3IgY29tbWVudHMgSSBs
-aWtlIHRoZSBwYXRjaC4gOi0pClRoYW5rcyBhIGxvdCBmb3IgZG9pbmcgdGhpcyB3b3JrIQoKVGhh
-bmtzLAovL3JpY2hhcmQKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3Vu
-ZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0
-aW5mby9jb250YWluZXJz
+I agree with what Andy and Serge has to say. The ability to mount
+cgroupfs inside userns also seems consistent with other kernel
+interfaces like sysfs, procfs, etc.
+
+Though it would be great if we can atleast merge the rest of the
+patches first while we address the mounting part.
+
+Thanks for your feedback.
+
+On Tue, Nov 4, 2014 at 7:50 AM, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
+>
+> Quoting Andy Lutomirski (luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org):
+> > On Tue, Nov 4, 2014 at 5:46 AM, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> wrote:
+> > > Hello, Aditya.
+> > >
+> > > On Mon, Nov 03, 2014 at 02:43:47PM -0800, Aditya Kali wrote:
+> > >> I agree that this is effectively bind-mounting, but doing this in kernel
+> > >> makes it really convenient for the userspace. The process that sets up the
+> > >> container doesn't need to care whether it should bind-mount cgroupfs inside
+> > >> the container or not. The tasks inside the container can mount cgroupfs on
+> > >> as-needed basis. The root container manager can simply unshare cgroupns and
+> > >> forget about the internal setup. I think this is useful just for the reason
+> > >> that it makes life much simpler for userspace.
+> > >
+> > > If it's okay to require userland to just do bind mounting, I'd be far
+> > > happier with that.  cgroup mount code is already overcomplicated
+> > > because of the dynamic matching of supers to mounts when it could just
+> > > have told userland to use bind mounting.  Doesn't the host side have
+> > > to set up some of the filesystem layouts anyway?  Does it really
+> > > matter that we require the host to set up cgroup hierarchy too?
+> > >
+> >
+> > Sort of, but only sort of.
+> >
+> > You can create a container by unsharing namespaces, mounting
+> > everything, and then calling pivot_root.  But this is unpleasant
+> > because of the strange way that pid namespaces work -- you generally
+> > have to fork first, so this gets tedious.  And it doesn't integrate
+> > well with things like fstab or other container-side configuration
+> > mechanisms.
+> >
+> > It's nicer if you can unshare namespaces, mount the bare minimum,
+> > pivot_root, and let the contained software do as much setup as
+> > possible.
+>
+> Also, the bind-mount requires the container manager to know where
+> the guest distro will want the cgroups mounted.
+>
+> -serge
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linuxfoundation.org/mailman/listinfo/containers
+
+
+
+
+-- 
+Aditya
