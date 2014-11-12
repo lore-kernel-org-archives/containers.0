@@ -1,14 +1,12 @@
-From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCHv2 0/7] CGroup Namespaces
-Date: Thu, 6 Nov 2014 09:33:45 -0800
-Message-ID: <CAGr1F2Hm4+aCUz3RqkgUhbJAQtWvUbb2CRDkW5rJSZkwLM_huw@mail.gmail.com>
-References: <1414783141-6947-1-git-send-email-adityakali@google.com>
-	<20141104131030.GA2937@redhat.com>
+From: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH v7 0/2] ns,
+	procfs: pid conversion between ns and showing pidns hierarchy
+Date: Wed, 12 Nov 2014 18:08:17 +0800
+Message-ID: <1415786899-13392-1-git-send-email-chenhanxiao@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20141104131030.GA2937-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,43 +16,80 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Nov 4, 2014 at 5:10 AM, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> On Fri, Oct 31, 2014 at 12:18:54PM -0700, Aditya Kali wrote:
-> [..]
->>  fs/kernfs/dir.c                  | 194 ++++++++++++++++++++++++++++++++++-----
->>  fs/kernfs/mount.c                |  48 ++++++++++
->>  fs/proc/namespaces.c             |   1 +
->>  include/linux/cgroup.h           |  41 ++++++++-
->>  include/linux/cgroup_namespace.h |  36 ++++++++
->>  include/linux/kernfs.h           |   5 +
->>  include/linux/nsproxy.h          |   2 +
->>  include/linux/proc_ns.h          |   4 +
->>  include/uapi/linux/sched.h       |   3 +-
->>  kernel/Makefile                  |   2 +-
->>  kernel/cgroup.c                  | 108 +++++++++++++++++-----
->>  kernel/cgroup_namespace.c        | 148 +++++++++++++++++++++++++++++
->>  kernel/fork.c                    |   2 +-
->>  kernel/nsproxy.c                 |  19 +++-
->
-> Hi Aditya,
->
-> Can we provide a documentation file for cgroup namespace behavior. Say,
-> Documentation/namespaces/cgroup-namespace.txt.
->
-Yes, definitely. I will add it as soon as we have a consensus on the
-overall series.
+This series will expose pid inside containers
+via procfs.
+Also show the hierarchy of pid namespcae.
+Then we could know how pid looks inside a container
+and their ns relationships.
 
-> Namespaces are complicated and it might be a good idea to keep one .txt
-> file for each namespace.
->
-> Thanks
-> Vivek
+1. helpful for nested container check/restore
+From /proc/PID/ns/pid, we could know whether two pid lived
+in the same ns.
+From this patch, we could know whether two pid had relationship
+between each other.
 
+2. used for pid translation from container
+Ex:
+     init_pid_ns    ns1         ns2
+ t1  2
+ t2   `- 3          1
+ t3   `- 4          3
+ t4       `- 5      `- 5        1
+ t5       `- 6      `- 8        3
 
-Thanks,
+It could solve problems like: we see a pid 3 goes wrong
+in container's log, what is its pid on hosts:
+a) inside container:
+# readlink /proc/3/ns/pid
+pid:[4026532388]
+
+b) on host:
+We show it in the form of :
+<init_PID> <parent_of_init_PID> <relative PID level>
+
+# cat /proc/pidns_hierarchy
+14918 1 1
+16263 14918 2
+16581 1 1
+Then we could easily find /proc/16263/ns/pid->4026532388.
+On host, we knew that reported pid 3 is in level 2,
+   and its parental pid ns is from pid 14918.
+
+c) on host, check child of 16263, grep it from status:
+NSpid:  16268   8       3
+
+We knew that pid 16268 is pid 3 reported by container.
+
+v7: change stype to be consistent with current interface like
+    <init_PID> <parent_of_init_PID> <relative PID level>
+    remove EXPERT dependent in Kconfig
+v6: fix some get_pid leaks and do some cleanups
+v5: collect pid by find_ge_pid;
+    use local list inside nslist_proc_show;
+    use get_pid, remove mutex lock.
+v4: simplify pid collection and some performance optimizamtion
+    fix another race issue.
+v3: fix a race issue and memory leak issue in pidns_hierarchy;
+    add another two fielsd: NSpgid and NSsid.
+v2: use a procfs text file instead of dirs under /proc for
+    showing pidns hierarchy;
+    add two new fields: NStgid and NSpid
+    keep fields of Tgid and Pid unchanged for back compatibility.
+
+Chen Hanxiao (2):
+  procfs: show hierarchy of pid namespace
+  /proc/PID/status: show all sets of pid according to ns
+
+ fs/proc/Kconfig           |   6 +
+ fs/proc/Makefile          |   1 +
+ fs/proc/array.c           |  17 +++
+ fs/proc/pidns_hierarchy.c | 280 ++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 304 insertions(+)
+ create mode 100644 fs/proc/pidns_hierarchy.c
+
 -- 
-Aditya
+1.9.3
