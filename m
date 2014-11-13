@@ -1,20 +1,16 @@
-From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCHv2 7/7] cgroup: mount cgroupns-root when inside non-init
-	cgroupns
-Date: Wed, 12 Nov 2014 09:48:18 -0800
-Message-ID: <CAGr1F2Ho1kGVbVHxX1wY2PMhiAYgp6Tdnshj1pkV9pAeQLO=Qw__46324.5124243715$1415814534$gmane$org@mail.gmail.com>
-References: <1414783141-6947-1-git-send-email-adityakali@google.com>
-	<1414783141-6947-8-git-send-email-adityakali@google.com>
-	<87y4rvrakn.fsf@x220.int.ebiederm.org>
-	<CAGr1F2Hd_PS_AscBGMXdZC9qkHGRUp-MeQvJksDOQkRBB3RGoA@mail.gmail.com>
-	<20141104134633.GA14014@htj.dyndns.org>
-	<CALCETrUggQCJyxsTWRNrjt3GM=R0VMU6RjMkU1aw3YUNMx1xEw@mail.gmail.com>
-	<20141104155052.GA7027@mail.hallyn.com>
+From: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: RE: [PATCH v7 1/2] procfs: show hierarchy of pid namespace
+Date: Thu, 13 Nov 2014 09:44:41 +0000
+Message-ID: <5871495633F38949900D2BF2DC04883E63280E@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <1415786899-13392-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<1415786899-13392-2-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<5463413E.6000800@nod.at>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20141104155052.GA7027-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+In-Reply-To: <5463413E.6000800-/L3Ra7n9ekc@public.gmane.org>
+Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,66 +20,51 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg
+	Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-I agree with what Andy and Serge has to say. The ability to mount
-cgroupfs inside userns also seems consistent with other kernel
-interfaces like sysfs, procfs, etc.
-
-Though it would be great if we can atleast merge the rest of the
-patches first while we address the mounting part.
-
-Thanks for your feedback.
-
-On Tue, Nov 4, 2014 at 7:50 AM, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
->
-> Quoting Andy Lutomirski (luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org):
-> > On Tue, Nov 4, 2014 at 5:46 AM, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> wrote:
-> > > Hello, Aditya.
-> > >
-> > > On Mon, Nov 03, 2014 at 02:43:47PM -0800, Aditya Kali wrote:
-> > >> I agree that this is effectively bind-mounting, but doing this in kernel
-> > >> makes it really convenient for the userspace. The process that sets up the
-> > >> container doesn't need to care whether it should bind-mount cgroupfs inside
-> > >> the container or not. The tasks inside the container can mount cgroupfs on
-> > >> as-needed basis. The root container manager can simply unshare cgroupns and
-> > >> forget about the internal setup. I think this is useful just for the reason
-> > >> that it makes life much simpler for userspace.
-> > >
-> > > If it's okay to require userland to just do bind mounting, I'd be far
-> > > happier with that.  cgroup mount code is already overcomplicated
-> > > because of the dynamic matching of supers to mounts when it could just
-> > > have told userland to use bind mounting.  Doesn't the host side have
-> > > to set up some of the filesystem layouts anyway?  Does it really
-> > > matter that we require the host to set up cgroup hierarchy too?
-> > >
-> >
-> > Sort of, but only sort of.
-> >
-> > You can create a container by unsharing namespaces, mounting
-> > everything, and then calling pivot_root.  But this is unpleasant
-> > because of the strange way that pid namespaces work -- you generally
-> > have to fork first, so this gets tedious.  And it doesn't integrate
-> > well with things like fstab or other container-side configuration
-> > mechanisms.
-> >
-> > It's nicer if you can unshare namespaces, mount the bare minimum,
-> > pivot_root, and let the contained software do as much setup as
-> > possible.
->
-> Also, the bind-mount requires the container manager to know where
-> the guest distro will want the cgroups mounted.
->
-> -serge
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
-
-
-
-
--- 
-Aditya
+DQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogUmljaGFyZCBXZWluYmVy
+Z2VyIFttYWlsdG86cmljaGFyZEBub2QuYXRdDQo+IFNlbnQ6IFdlZG5lc2RheSwgTm92ZW1iZXIg
+MTIsIDIwMTQgNzoxNSBQTQ0KPiBUbzogQ2hlbiwgSGFueGlhby/pmYgg5pmX6ZyEOyBFcmljIFcu
+IEJpZWRlcm1hbjsgU2VyZ2UgSGFsbHluOyBPbGVnIE5lc3Rlcm92DQo+IENjOiBjb250YWluZXJz
+QGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnOyBsaW51eC1rZXJuZWxAdmdlci5rZXJuZWwub3Jn
+OyBEYXZpZA0KPiBIb3dlbGxzOyBSaWNoYXJkIFdlaW5iZXJnZXI7IFBhdmVsIEVtZWx5YW5vdjsg
+VmFzaWxpeSBLdWxpa292OyBNYXRldXN6IEd1emlrDQo+IFN1YmplY3Q6IFJlOiBbUEFUQ0ggdjcg
+MS8yXSBwcm9jZnM6IHNob3cgaGllcmFyY2h5IG9mIHBpZCBuYW1lc3BhY2UNCj4gDQo+IEFtIDEy
+LjExLjIwMTQgdW0gMTE6MDggc2NocmllYiBDaGVuIEhhbnhpYW86DQo+ID4gV2UgbGFjayBvZiBw
+aWQgaGllcmFyY2h5IGluZm9ybWF0aW9uLCBhbmQgdGhpcyB3aWxsIGxlYWQgdG86DQo+ID4gYSkg
+d2UgZG9uJ3Qga25vdyBwaWRzJyByZWxhdGlvbnNoaXAsIHdobyBpcyB3aG9zZSBjaGlsZDoNCj4g
+PiAgICAvcHJvYy9QSUQvbnMvcGlkIG9ubHkgdGVsbCB1cyB3aGV0aGVyIHR3byBwaWRzIGxpdmUg
+aW4gZGlmZmVyZW50IG5zDQo+ID4gYikgYnJpbmcgdHJvdWJsZSB0byBuZXN0ZWQgbHhjIGNvbnRh
+aW5lciBjaGVjay9yZXN0b3JlL21pZ3JhdGlvbg0KPiA+IGMpIGJyaW5nIHRyb3VibGUgdG8gcGlk
+IHRyYW5zbGF0aW9uIGJldHdlZW4gY29udGFpbmVyczsNCj4gPg0KPiA+IFRoaXMgcGF0Y2ggd2ls
+bCBzaG93IHRoZSBoaWVyYXJjaHkgb2YgcGlkIG5hbWVzcGFjZQ0KPiA+IGJ5IHBpZG5zX2hpZXJh
+cmNoeSBsaWtlOg0KPiA+DQo+ID4gPGluaXRfUElEPiA8cGFyZW50X29mX2luaXRfUElEPiA8cmVs
+YXRpdmUgUElEIGxldmVsPg0KPiA+DQo+ID4gRXg6DQo+ID4gW3Jvb3RAbG9jYWxob3N0IH5dI2Nh
+dCAvcHJvYy9waWRuc19oaWVyYXJjaHkNCj4gPiAxODA2MCAxIDENCj4gPiAxODEwMiAxODA2MCAy
+DQo+ID4gMTUzNCAgMTgxMDIgMw0KPiA+IDE2MDAgIDE4MTAyIDMNCj4gPiAxNTUwICAxIDENCj4g
+PiAqTm90ZTogbnVtYmVycyByZXByZXNlbnQgdGhlIHBpZCAxIGluIGRpZmZlcmVudCBucw0KPiA+
+DQpbc25pcF0NCj4gPiArDQo+ID4gKyNkZWZpbmUgTlNfSElFUkFSQ0hZCSJwaWRuc19oaWVyYXJj
+aHkiDQo+ID4gKyNkZWZpbmUgTUFYKGEsIGIpICgoYSkgPiAoYikgPyAoYSkgOiAoYikpDQo+IA0K
+PiBQbGVhc2UgdXNlIG1heCgpIGZyb20ga2VybmVsLmgsIHRoZXJlIGlzIG5vIG5lZWQgdG8gcmVp
+bnZlbnQgdGhlIHdoZWVsLg0KPiANCg0KVGhhbmtzIGZvciB5b3VyIHJlbWluZGluZy4NCg0KPiA+
+ICsNCj4gPiArLyogbGlzdCBmb3IgaG9zdCBwaWQgY29sbGVjdGlvbiAqLw0KPiA+ICtzdHJ1Y3Qg
+cGlkbnNfbGlzdCB7DQo+ID4gKwlzdHJ1Y3QgbGlzdF9oZWFkIGxpc3Q7DQo+ID4gKwlzdHJ1Y3Qg
+cGlkICpwaWQ7DQo+ID4gKwlpbnQgc2hvd19sZXZlbDsNCj4gDQo+IHMvc2hvd19sZXZlbC9sZXZl
+bCwgdG8ga2VlcCBpdCBlYXN5LiA6LSkNCg0KU3VyZSwgYWxzbyBjaGFuZ2UgdGhlIHR5cGUgdG8g
+dW5zaWduZWQgaW50IA0KZm9yIG1ha2luZyBtYXgoKSBoYXBweS4NCg0KW3NuaXBdDQo+ID4gK30N
+Cj4gPiArDQo+ID4gKy8qDQo+ID4gKyAqIGNvbGxlY3QgcGlkcyBhbmQgc3RvcmVkIGluIHBpZG5z
+X3BpZF9saXN0LA0KPiANCj4gcy9zdG9yZWQvc3RvcmUNCk9vcHMuLi4NCg0KPiANCj4gPiArICog
+dGhlbiByZW1vdmUgZHVwbGljYXRlZCBvbmVzLA0KPiA+ICsgKiBhZGQgdGhlIHJlc3QgdG8gcGlk
+bnNfcGlkX3RyZWUNCj4gPiArICovDQo+IA0KPiBUaGlzIGNvbW1lbnQgaXMgYSBiaXQgY29uZnVz
+aW5nLg0KPiANCj4gV2hhdCBhYm91dCAicHJvY19waWRuc19saXN0X3JlZnJlc2ggLSBGaW5kcyBh
+bGwgaW5pdCBwaWRzLCBwbGFjZXMgdGhlbSBpbnRvDQo+IHBpZG5zX3BpZF9saXN0DQo+IGFuZCB0
+aGVuIHN0b3JlcyB0aGUgaGlyYXJjaHkgaW50byBwaWRuc19waWRfdHJlZS4iPw0KPiANClRoYXQn
+cyBtdWNoIG1vcmUgY2xlYXIuDQoNCj4gQmVzaWRlIG9mIG15IG1pbm9yIGNvbW1lbnRzIEkgbGlr
+ZSB0aGUgcGF0Y2guIDotKQ0KPiBUaGFua3MgYSBsb3QgZm9yIGRvaW5nIHRoaXMgd29yayENCj4g
+DQoNClRoYW5rcyBmb3IgeW91ciBraW5kbHkgaGVscC4gOikNCg0KLSBDaGVuDQpfX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcg
+bGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMu
+bGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
