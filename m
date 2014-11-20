@@ -1,12 +1,15 @@
-From: "Andrea" <support-T1y/BZYX08Mk+I/owrrOrA@public.gmane.org>
-Subject: Miglior Software Fare soldi
-Date: Thu, 20 Nov 2014 10:30:05 -0500
-Message-ID: <b7c004bf7e79baa7e33967c62729fe05@tinasoft.info>
-Reply-To: support-T1y/BZYX08Mk+I/owrrOrA@public.gmane.org
+From: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
+Subject: Re: [PATCH v8 1/2] procfs: show hierarchy of pid namespace
+Date: Thu, 20 Nov 2014 22:29:42 +0100
+Message-ID: <546E5D46.4070805@nod.at>
+References: <1416303013-13762-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<1416303013-13762-2-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<5871495633F38949900D2BF2DC04883E73748A47@G08CNEXMBPEKD03.g08.fujitsu.local>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <5871495633F38949900D2BF2DC04883E73748A47-ZEd+hNNJ6a6dJ4BS92+ASzz3u5zwRJJDAzI0kPv9QBlmR6Xm/wNWPw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,12 +19,59 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org" <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Your email client cannot read this email.
-To view it online, please go here:
-http://tinasoft.info/display.php?M=38274&C=d41a135f19ecea03dad95f4d2c644753&S=3&L=1&N=1
-
-
-To stop receiving these emails:
+QW0gMjAuMTEuMjAxNCB1bSAxMDo1NyBzY2hyaWViIENoZW4sIEhhbnhpYW86Cj4gCj4gCj4+IC0t
+LS0tT3JpZ2luYWwgTWVzc2FnZS0tLS0tCj4+IEZyb206IGNvbnRhaW5lcnMtYm91bmNlc0BsaXN0
+cy5saW51eC1mb3VuZGF0aW9uLm9yZwo+PiBbbWFpbHRvOmNvbnRhaW5lcnMtYm91bmNlc0BsaXN0
+cy5saW51eC1mb3VuZGF0aW9uLm9yZ10gT24gQmVoYWxmIE9mIENoZW4KPj4gSGFueGlhbwo+PiBT
+ZW50OiBUdWVzZGF5LCBOb3ZlbWJlciAxOCwgMjAxNCA1OjMwIFBNCj4+IFRvOiBFcmljIFcuIEJp
+ZWRlcm1hbjsgU2VyZ2UgSGFsbHluOyBPbGVnIE5lc3Rlcm92OyBSaWNoYXJkIFdlaW5iZXJnZXIK
+Pj4gQ2M6IGNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc7IGxpbnV4LWtlcm5l
+bEB2Z2VyLmtlcm5lbC5vcmc7Cj4+IE1hdGV1c3ogR3V6aWs7IERhdmlkIEhvd2VsbHMKPj4gU3Vi
+amVjdDogW1BBVENIIHY4IDEvMl0gcHJvY2ZzOiBzaG93IGhpZXJhcmNoeSBvZiBwaWQgbmFtZXNw
+YWNlCj4+Cj4+IFdlIGxhY2sgb2YgcGlkIGhpZXJhcmNoeSBpbmZvcm1hdGlvbiwgYW5kIHRoaXMg
+d2lsbCBsZWFkIHRvOgo+PiBhKSB3ZSBkb24ndCBrbm93IHBpZHMnIHJlbGF0aW9uc2hpcCwgd2hv
+IGlzIHdob3NlIGNoaWxkOgo+PiAgICAvcHJvYy9QSUQvbnMvcGlkIG9ubHkgdGVsbCB1cyB3aGV0
+aGVyIHR3byBwaWRzIGxpdmUgaW4gZGlmZmVyZW50IG5zCj4+IGIpIGJyaW5nIHRyb3VibGUgdG8g
+bmVzdGVkIGx4YyBjb250YWluZXIgY2hlY2svcmVzdG9yZS9taWdyYXRpb24KPj4gYykgYnJpbmcg
+dHJvdWJsZSB0byBwaWQgdHJhbnNsYXRpb24gYmV0d2VlbiBjb250YWluZXJzOwo+Pgo+PiBUaGlz
+IHBhdGNoIHdpbGwgc2hvdyB0aGUgaGllcmFyY2h5IG9mIHBpZCBuYW1lc3BhY2UKPj4gYnkgcGlk
+bnNfaGllcmFyY2h5IGxpa2U6Cj4+Cj4+IDxpbml0X1BJRD4gPHBhcmVudF9vZl9pbml0X1BJRD4g
+PHJlbGF0aXZlIFBJRCBsZXZlbD4KPj4KPj4gRXg6Cj4+IFtyb290QGxvY2FsaG9zdCB+XSNjYXQg
+L3Byb2MvcGlkbnNfaGllcmFyY2h5Cj4+IDE4MDYwIDEgMQo+PiAxODEwMiAxODA2MCAyCj4+IDE1
+MzQgIDE4MTAyIDMKPj4gMTYwMCAgMTgxMDIgMwo+PiAxNTUwICAxIDEKPj4gKk5vdGU6IG51bWJl
+cnMgcmVwcmVzZW50IHRoZSBwaWQgMSBpbiBkaWZmZXJlbnQgbnMKPj4KPj4gSXQgc2hvd3MgdGhl
+IHBpZCBoaWVyYXJjaHkgYmVsb3c6Cj4+Cj4+ICAgICAgIGluaXRfcGlkX25zIDEKPj4gICAgICAg
+ICAgICAgICDilIIKPj4g4pSM4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSQ
+Cj4+IG5zMSAgICAgICAgICAgICAgICAgICAgICBuczIKPj4g4pSCICAgICAgICAgICAgICAgICAg
+ICAgICAg4pSCCj4+IDE1NTAgICAgICAgICAgICAgICAgICAgIDE4MDYwCj4+ICAgICAgICAgICAg
+ICAgICAgICAgICAgICAg4pSCCj4+ICAgICAgICAgICAgICAgICAgICAgICAgICAg4pSCCj4+ICAg
+ICAgICAgICAgICAgICAgICAgICAgICBuczMKPj4gICAgICAgICAgICAgICAgICAgICAgICAgICDi
+lIIKPj4gICAgICAgICAgICAgICAgICAgICAgICAgMTgxMDIKPj4gICAgICAgICAgICAgICAgICAg
+ICAgICAgICDilIIKPj4gICAgICAgICAgICAgICAgICDilIzilIDilIDilIDilIDilIDilIDilIDi
+lIDilIDilIDilJAKPj4gICAgICAgICAgICAgICAgICBuczQgICAgICAgICAgICAgICAgICAgbnM1
+Cj4+ICAgICAgICAgICAgICAgICAg4pSCICAgICAgICAgICAgICAgICAgICDilIIKPj4gICAgICAg
+ICAgICAgICAgIDE1MzQgICAgICAgICAgICAgICAgICAxNjAwCj4+Cj4+IEV2ZXJ5IHBpZCBwcmlu
+dGVkIGluIHBpZG5zX2hpZXJhcmNoeQo+PiBpcyB0aGUgaW5pdCBwaWQgb2YgdGhhdCBwaWQgbnMg
+bGV2ZWwuCj4+Cj4+IFNpZ25lZC1vZmYtYnk6IENoZW4gSGFueGlhbyA8Y2hlbmhhbnhpYW9AY24u
+ZnVqaXRzdS5jb20+Cj4+IC0tLQo+PiB2ODogZml4IHNvbWUgaW1wcm9wZXIgY29tbWVudHMKPj4g
+ICAgIHVzZSBtYXgoKSBmcm9tIGtlcm5lbC5oCj4+IHY3OiBjaGFuZ2Ugc3R5cGUgdG8gYmUgY29u
+c2lzdGVudCB3aXRoIGN1cnJlbnQgaW50ZXJmYWNlIGxpa2UKPj4gICAgIDxpbml0X1BJRD4gPHBh
+cmVudF9vZl9pbml0X1BJRD4gPHJlbGF0aXZlIFBJRCBsZXZlbD4KPj4gICAgIHJlbW92ZSBFWFBF
+UlQgZGVwZW5kZW50IGluIEtjb25maWcKPj4gdjY6IGZpeCBhIGdldF9waWQgbGVhayBhbmQgZG8g
+c29tZSBjbGVhbnVwczsKPj4gdjU6IGNvbGxlY3QgcGlkIGJ5IGZpbmRfZ2VfcGlkOwo+PiAgICAg
+dXNlIGxvY2FsIGxpc3QgaW5zaWRlIG5zbGlzdF9wcm9jX3Nob3c7Cj4+ICAgICB1c2UgZ2V0X3Bp
+ZCwgcmVtb3ZlIG11dGV4IGxvY2suCj4+IHY0OiBzaW1wbGlmeSBwaWQgY29sbGVjdGlvbiBhbmQg
+c29tZSBwZXJmb3JtYW5jZSBvcHRpbWl6YW10aW9uCj4+ICAgICBmaXggYW5vdGhlciByYWNlIGlz
+c3VlLgo+PiB2MzogZml4IGEgcmFjZSBpc3N1ZSBhbmQgbWVtb3J5IGxlYWsgaXNzdWUKPj4gdjI6
+IHVzZSBhIHByb2NmcyB0ZXh0IGZpbGUgaW5zdGVhZCBvZiBkaXJzIHVuZGVyIC9wcm9jCj4+Cj4g
+Cj4gSGksCj4gCj4gQW55IGNvbW1lbnRzPwoKRldJVywgQWNrZWQtYnk6IFJpY2hhcmQgV2VpbmJl
+cmVyIDxyaWNoYXJkQG5vZC5hdD4KClRoZSBtb3JlIGNoYWxsZW5naW5nIHF1ZXN0aW9uIGlzIHdo
+byB3aWxsIHBpY2t1cCB0aGlzIHNlcmllcz8KRXJpYz8gQW5kcmV3PwoKVGhhbmtzLAovL3JpY2hh
+cmQKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFp
+bmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpo
+dHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWlu
+ZXJz
