@@ -1,11 +1,18 @@
-From: "Alexandr Zelenov" <unarco-VL1tVIhH15PQT0dZR+AlfA@public.gmane.org>
-Subject: Fw:Swift
-Date: Fri, 21 Nov 2014 05:17:56 -0800
-Message-ID: <76993748.20141121051756@alumni.com>
-Reply-To: Alexandr Zelenov <unarco-VL1tVIhH15PQT0dZR+AlfA@public.gmane.org>
+From: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: RE: [PATCH v8 1/2] procfs: show hierarchy of pid namespace
+Date: Mon, 24 Nov 2014 09:47:59 +0000
+Message-ID: <5871495633F38949900D2BF2DC04883E73764172@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <1416303013-13762-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<1416303013-13762-2-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<5871495633F38949900D2BF2DC04883E73748A47@G08CNEXMBPEKD03.g08.fujitsu.local>
+	<546E5D46.4070805@nod.at>
+	<20141120142112.74b490298d3360e53dc3169a@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;  boundary="----_PartID_094023831000454"
+Content-Type: text/plain; charset="gb2312"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20141120142112.74b490298d3360e53dc3169a-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,31 +22,38 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "Pavel
+	Emelyanov (xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org)" <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
-
-------_PartID_094023831000454
-Content-Type: text/plain; charset="ISO-8859-1"
-Content-Transfer-Encoding: quoted-printable
-
-Good Day, 
-find in attachment, copy of bank Transfer slip that was effected to your
-account, on behalf of our client 
- 
-Alexandr Zelenov
-+7 495 771-91-00, fax: +7 495 621-64-65
-
-
-------_PartID_094023831000454
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
-------_PartID_094023831000454--
+DQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogQW5kcmV3IE1vcnRvbiBb
+bWFpbHRvOmFrcG1AbGludXgtZm91bmRhdGlvbi5vcmddDQo+IFNlbnQ6IEZyaWRheSwgTm92ZW1i
+ZXIgMjEsIDIwMTQgNjoyMSBBTQ0KPiBUbzogUmljaGFyZCBXZWluYmVyZ2VyDQo+IENjOiBDaGVu
+LCBIYW54aWFvL7PCIOrPz/Y7IEVyaWMgVy4gQmllZGVybWFuOyBTZXJnZSBIYWxseW47IE9sZWcg
+TmVzdGVyb3Y7DQo+IGNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc7IGxpbnV4
+LWtlcm5lbEB2Z2VyLmtlcm5lbC5vcmc7IE1hdGV1c3oNCj4gR3V6aWs7IERhdmlkIEhvd2VsbHMN
+Cj4gU3ViamVjdDogUmU6IFtQQVRDSCB2OCAxLzJdIHByb2Nmczogc2hvdyBoaWVyYXJjaHkgb2Yg
+cGlkIG5hbWVzcGFjZQ0KPiANCj4gT24gVGh1LCAyMCBOb3YgMjAxNCAyMjoyOTo0MiArMDEwMCBS
+aWNoYXJkIFdlaW5iZXJnZXIgPHJpY2hhcmRAbm9kLmF0PiB3cm90ZToNCj4gDQo+ID4gPg0KPiA+
+ID4gQW55IGNvbW1lbnRzPw0KPiA+DQo+ID4gRldJVywgQWNrZWQtYnk6IFJpY2hhcmQgV2VpbmJl
+cmVyIDxyaWNoYXJkQG5vZC5hdD4NCj4gPg0KPiA+IFRoZSBtb3JlIGNoYWxsZW5naW5nIHF1ZXN0
+aW9uIGlzIHdobyB3aWxsIHBpY2t1cCB0aGlzIHNlcmllcz8NCj4gPiBFcmljPyBBbmRyZXc/DQo+
+IA0KPiBJIGNhbiBtb25rZXkgdGhlIHBhdGNoZXMgYnV0IEknZCB2ZXJ5IG11Y2ggbGlrZSB0byBo
+ZWFyIEVyaWMncyBjb21tZW50cy4NCj4gDQo+IEFsc28gdGhlIENSSVUgcGVvcGxlLiAgSG93IGlz
+IENSSVUgcHJlc2VudGx5IHJlYXNzZW1ibGluZyB0aGVzZQ0KPiByZWxhdGlvbnNoaXBzPw0KPiAN
+Cj4gU2VyZ2UsIHdoYXQgd2FzIHlvdXIgdGFrZSBvbiB0aGUgdXNlZnVsbmVzcy9hcHBsaWNhYmls
+aXR5IG9mIHRoaXMgd29yaz8NCj4gSU9XLCB3aHkgdGhlIGFjaz8NCg0KVGhhbmtzIGZvciB5b3Vy
+IGF0dGVudGlvbiBhbmQgaGVscC4NCg0KSSdkIHZlcnkgbXVjaCBsaWtlIHRvIGhlYXIgRXJpYydz
+IGNvbW1lbnRzIG9uIHRoaXMgcGF0Y2ggdG9vLg0KDQpIaSwgUGF2ZWwsIGNvdWxkIHlvdSBwbGVh
+c2UgcHJvdmlkZSBzb21lIGlkZWFzIGZyb20gdGhlIENSSVUncyBwb2ludCBvZiB2aWV3Pw0KDQo+
+IA0KPiBUaGUgcGF0Y2hzZXQgZG9lc24ndCB0b3VjaCBEb2N1bWVudGF0aW9uLy4gIFRoYXQgd2ls
+bCBuZWVkIHRvIGJlIGZpeGVkLA0KPiBwbGVhc2UuICBUaGUgbmV3IGludGVyZmFjZXMgc2hvdWxk
+IGJlIGNvbXBsZXRlbHkgZGVzY3JpYmVkIGluIHRoZQ0KPiBrZXJuZWwgZG9jdW1lbnRhdGlvbi4N
+Cg0KSSdsbCBhZGQgYSBkb2N1bWVudGF0aW9uIHBhdGNoIHNvb24uDQoNCj4gDQo+IFRoZSBuZXcg
+Y29kZSBhcHBlYXJzIHRvIGJlIGluY2x1ZGVkIHdoZW4gQ09ORklHX1BJRF9OUz1uLiAgSXMgdGhl
+cmUgYW55DQo+IHBvaW50IGluIGRvaW5nIHRoYXQ/DQoNClRoYXQgY29kZSBzaG91bGQgbm90IGJl
+IGluY2x1ZGVkIHdoZW4gQ09ORklHX1BJRF9OUz1uLg0KDQpUaGFua3MsDQotIENoZW4NCl9fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFp
+bGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9s
+aXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
