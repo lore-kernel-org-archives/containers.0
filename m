@@ -1,15 +1,17 @@
-From: Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH net-next v4 0/4] netns: allow to identify peer netns
-Date: Mon, 24 Nov 2014 14:45:48 +0100
-Message-ID: <5473368C.5040409@6wind.com>
-References: <1412257690-31253-1-git-send-email-nicolas.dichtel@6wind.com>	<1414682728-4532-1-git-send-email-nicolas.dichtel@6wind.com>
-	<871tpph03k.fsf@x220.int.ebiederm.org>
-Reply-To: nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org
+From: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [GIT PULL] namespace updates for v3.17-rc1
+Date: Wed, 26 Nov 2014 00:15:31 +0100
+Message-ID: <CAFLxGvzyhHC+QF-bFfp-yNBpCkS3JJ+RAr+5iCj0k_su9wJbGw@mail.gmail.com>
+References: <87fvhav3ic.fsf@x220.int.ebiederm.org>
+	<CAFLxGvwi-iJRyfwv8v9fcRkiSu2d-az8W55xMPbp_d8wQKmwjg@mail.gmail.com>
+	<87vbpm4f4y.fsf@x220.int.ebiederm.org>
+	<20140821131257.GA4264@infradead.org> <53F5F2AD.5010607@nod.at>
+	<87k362vsr5.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; Format="flowed"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <871tpph03k.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <87k362vsr5.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,42 +22,52 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org, stephen-OTpzqLSitTUnbdJkjeBofR2eb7JE58TQ@public.gmane.org, cwang-xCSkyg8dI+0RB7SZvlqPiA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
+Cc: "libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org" <libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-TGUgMzAvMTAvMjAxNCAxOTo0MSwgRXJpYyBXLiBCaWVkZXJtYW4gYSDDqWNyaXQgOgo+IE5pY29s
-YXMgRGljaHRlbCA8bmljb2xhcy5kaWNodGVsQDZ3aW5kLmNvbT4gd3JpdGVzOgo+Cj4+IFRoZSBn
-b2FsIG9mIHRoaXMgc2VyaWUgaXMgdG8gYmUgYWJsZSB0byBtdWx0aWNhc3QgbmV0bGluayBtZXNz
-YWdlcyB3aXRoIGFuCj4+IGF0dHJpYnV0ZSB0aGF0IGlkZW50aWZ5IGEgcGVlciBuZXRucy4KPj4g
-VGhpcyBpcyBuZWVkZWQgYnkgdGhlIHVzZXJsYW5kIHRvIGludGVycHJldCBzb21lIGluZm9ybWF0
-aW9ucyBjb250YWluZWQgaW4KPj4gbmV0bGluayBtZXNzYWdlcyAobGlrZSBJRkxBX0xJTksgdmFs
-dWUsIGJ1dCBhbHNvIHNvbWUgb3RoZXIgYXR0cmlidXRlcyBpbiBjYXNlCj4+IG9mIHgtbmV0bnMg
-bmV0ZGV2aWNlIChzZWUgYWxzbwo+PiBodHRwOi8vdGhyZWFkLmdtYW5lLm9yZy9nbWFuZS5saW51
-eC5uZXR3b3JrLzMxNTkzMy9mb2N1cz0zMTYwNjQgYW5kCj4+IGh0dHA6Ly90aHJlYWQuZ21hbmUu
-b3JnL2dtYW5lLmxpbnV4Lmtlcm5lbC5jb250YWluZXJzLzI4MzAxL2ZvY3VzPTQyMzkpKS4KPj4K
-Pj4gSWRzIG9mIHBlZXIgbmV0bnMgYXJlIHNldCBieSB1c2VybGFuZCB2aWEgYSBuZXcgZ2VubCBt
-ZXNzYWdlcy4gVGhlc2UgaWRzIGFyZQo+PiBzdG9yZWQgcGVyIG5ldG5zIGFuZCBhcmUgbG9jYWwg
-KGllIG9ubHkgdmFsaWQgaW4gdGhlIG5ldG5zIHdoZXJlIHRoZXkgYXJlIHNldCkuCj4+IFRvIGF2
-b2lkIGFsbG9jYXRpbmcgYW4gaW50IGZvciBlYWNoIHBlZXIgbmV0bnMsIEkgdXNlIGlkcl9mb3Jf
-ZWFjaCgpIHRvIHJldHJpZXZlCj4+IHRoZSBpZCBvZiBhIHBlZXIgbmV0bnMuIE5vdGUgdGhhdCBp
-dCB3aWxsIGJlIHBvc3NpYmxlIHRvIGFkZCBhIHRhYmxlIChzdHJ1Y3QgbmV0Cj4+IC0+IGlkKSBs
-YXRlciB0byBvcHRpbWl6ZSB0aGlzIGxvb2t1cCBpZiBuZWVkZWQuCj4+Cj4+IFBhdGNoIDEvNCBp
-bnRyb2R1Y2VzIHRoZSBuZXRsaW5rIEFQSSBtZWNoYW5pc20gdG8gc2V0IGFuZCBnZXQgdGhlc2Ug
-aWRzLgo+PiBQYXRjaCAyLzQgYW5kIDMvNCBpbXBsZW1lbnRzIGFuIGV4YW1wbGUgb2YgaG93IHRv
-IHVzZSB0aGVzZSBpZHMgaW4gcnRuZXRsaW5rCj4+IG1lc3NhZ2VzLiBBbmQgcGF0Y2ggNC80IHNo
-b3dzIHRoYXQgdGhlIG5ldGxpbmsgbWVzc2FnZXMgY2FuIGJlIHN5bWV0cmljIGJldHdlZW4KPj4g
-YSBHRVQgYW5kIGEgU0VULgo+Pgo+PiBpcHJvdXRlMiBwYXRjaGVzIGFyZSBhdmFpbGFibGUsIEkg
-Y2FuIHNlbmQgdGhlbSBvbiBkZW1hbmQuCj4KPiBBIHF1aWNrIHJlcGx5LiAgSSB0aGluayB0aGlz
-IHBhdGNoc2V0IGlzIGluIHRoZSByaWdodCBnZW5lcmFsIGRpcmVjdGlvbi4KPiBUaGVyZSBhcmUg
-c29tZSBvZGRiYWxsIGRldGFpbHMgdGhhdCBzZWVtIG9kZC9hd2t3YXJkIHRvIG1lIHN1Y2ggYXMg
-dXNpbmcKPiBnZW5ldGxpbmsgaW5zdGVhZCBvZiBydG5ldGxpbmsgdG8gZ2V0IGFuZCBzZXQgdGhl
-IGlkcywgYW5kIG5vdCBoYXZpbmcKPiBpZHMgaWYgdGhleSBhcmUgbm90IHNldCAodGhhdCBmZWVs
-cyBsaWtlIGEgbWFpbnRlbmFuY2UvdXNhYmlsaXR5IGNoYWxsZW5nZSkuCj4KPiBJIHdvdWxkIGxp
-a2UgdG8gZ2l2ZSB5b3VyIHBhdGNoZXMgYSBkZWVwIHJldmlldywgYnV0IEkgd29uJ3QgYmUgYWJs
-ZSB0bwo+IGRvIHRoYXQgZm9yIGEgY291cGxlIG9mIHdlZWtzLiAgSSBhbSBkZWVwIGluIHRoZSBw
-cm9jZXNzIG9mIG1vdmluZywKPiBhbmQgd2lsbCBiZSBtb3N0bHkgb2ZmbGluZSB1bnRpbCBhYm91
-dCB0aGUgTm92IDExdGguCkVyaWMsIGRpZCB5b3UgaGF2ZSBhIGNoYW5jZSB0byBsb29rIGF0IHRo
-aXM/CgoKUmVnYXJkcywKTmljb2xhcwpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxp
-bnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWls
-bWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+Eric,
+
+On Thu, Aug 21, 2014 at 4:09 PM, Eric W. Biederman
+<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+> Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org> writes:
+>
+>> Am 21.08.2014 15:12, schrieb Christoph Hellwig:
+>>> On Wed, Aug 20, 2014 at 09:53:49PM -0700, Eric W. Biederman wrote:
+>>>> Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
+>>>>
+>>>>> On Wed, Aug 6, 2014 at 2:57 AM, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+>>>>>
+>>>>> This commit breaks libvirt-lxc.
+>>>>> libvirt does in lxcContainerMountBasicFS():
+>>>>
+>>>> The bugs fixed are security issues, so if we have to break a small
+>>>> number of userspace applications we will.  Anything that we can
+>>>> reasonably do to avoid regressions will be done.
+>>>
+>>> Can you explain the security issues in detail?  Breaking common
+>>> userspace like libvirt-lxc with just a little bit of handwaiving is
+>>> entirely unacceptable.
+>>
+>> It looks like commit 87b47932f40a11280584bce260cbdb3b5f9e8b7d in
+>> git.kernel.org/cgit/linux/kernel/git/ebiederm/user-namespace.git for-next
+>> unbreaks libvirt-lxc.
+>> I hope it hits Linus tree and -stable before the offending commit hits users.
+>
+> I plan to send the pull request to Linus as soon as I have caught my
+> breath (from all of the conferences this week) that I can be certain I
+> am thinking clearly and not rushing things.
+
+Today I've upgraded my LXC testbed to the most recent kernel and found
+libvirt-lxc broken again (sic!).
+Remounting /proc/sys/ is failing.
+Investigating into the issue showed that commit "mnt: Implicitly add
+MNT_NODEV on remount as we do on mount"
+is not mainline.
+Why did you left out this patch? In my previous mails I explicitly
+stated that exactly this commit unbreaks libvirt-lxc.
+
+Now the userspace breaking changes are mainline and hit users hard. :-(
+
+-- 
+Thanks,
+//richard
