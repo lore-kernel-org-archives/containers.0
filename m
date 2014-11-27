@@ -1,13 +1,19 @@
-From: Cameron Norman <camerontnorman-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [systemd-devel] systemd-cgroups-agent not working in containers
-Date: Thu, 27 Nov 2014 12:26:01 -0800
-Message-ID: <CALZWFRLVDW2fL_G0rC6mhMsBTPxsxYF1FATA1j-0unCS8WKAsg@mail.gmail.com>
-References: <54764639.3020100@nod.at>
+From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Subject: Re: [CFT][PATCH] userns: Avoid problems with negative groups
+Date: Thu, 27 Nov 2014 12:52:16 -0800
+Message-ID: <CALCETrUuWDq2akKfb50AiPHeDDWzPW7ijz1QwnuNiskyZbBEfA__27558.8730503388$1417121572$gmane$org@mail.gmail.com>
+References: <3ccec8a13019b5e8ce7b1d7889677b778b070dc8.1416041823.git.josh@joshtriplett.org>
+	<0895c1f268bc0b01cc6c8ed4607d7c3953f49728.1416041823.git.josh@joshtriplett.org>
+	<546A3942.5040906@schaufler-ca.com>
+	<CALCETrWy-3C1on3+2wE9aqcChBUCUY0i_4AL_Om8CSZ5QB18sQ@mail.gmail.com>
+	<CALCETrVn4gVXp7F=5h-bkN5VWuRMG9BoxgeQfKhX4+ZXxGE=wQ@mail.gmail.com>
+	<546A43CE.2030706@schaufler-ca.com>
+	<87lhmwwpey.fsf_-_@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <54764639.3020100-/L3Ra7n9ekc@public.gmane.org>
+In-Reply-To: <87lhmwwpey.fsf_-_-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,28 +23,126 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
-Cc: "libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org" <libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org" <systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org>, Martin Pitt <mpitt-8fiUuRrzOP0dnm+yROfE0A@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Josh Triplett <josh-iaAMLnmF4UmaiuxdJuQwMA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Nov 26, 2014 at 1:29 PM, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org> wrote:
-> Hi!
+On Thu, Nov 27, 2014 at 8:59 AM, Eric W. Biederman
+<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
 >
-> I run a Linux container setup with openSUSE 13.1/2 as guest distro.
-> After some time containers slow down.
-> An investigation showed that the containers slow down because a lot of stale
-> user sessions slow down almost all systemd tools, mostly systemctl.
-> loginctl reports many thousand sessions.
-> All in state "closing".
+> Classic unix permission checks have an interesting feature.  The group
+> permissions for a file can be set to less than the other permissions
+> on a file.  Occassionally this is used deliberately to give a certain
+> group of users fewer permissions than the default.
+>
+> Overlooking negative groups has resulted in the permission checks for
+> setting up a group mapping in a user namespace to be too lax.  Tighten
+> the permission checks in new_idmap_permitted to ensure that mapping
+> uids and gids into user namespaces without privilege will not result
+> in new combinations of credentials being available to the users.
+>
+> When setting mappings without privilege only the creator of the user
+> namespace is interesting as all other users that have CAP_SETUID over
+> the user namespace will also have CAP_SETUID over the user namespaces
+> parent.  So the scope of the unprivileged check is reduced to just
+> the case where cred->euid is the namespace creator.
+>
+> For setting a uid mapping without privilege only euid is considered as
+> setresuid can set uid, suid and fsuid from euid without privielege
+> making any combination of uids possible with user namespaces already
+> possible without them.
+>
+> For setting a gid mapping without privilege only egid on a credential
+> without supplementary groups is condsidered, as setresgid can set gid,
+> sgid and fsgid from egid without privilege.  The requirement for no
+> supplementary groups is because CAP_SETUID in a user namespace allows
+> supplementary groups to be cleared, which unfortunately means allowing
+> a credential with supplementary groups would allow new combinations
+> of credentials to exist, and thus would allow defeating negative
+> groups without permission.
+>
+> This change should break userspace by the minimal amount needed
+> to fix this issue.
+>
+> This should fix CVE-2014-8989.
 
-This sounds similar to an issue that systemd-shim in Debian had.
-Martin Pitt (helps to maintain systemd in Debian) fixed that issue; he
-may have some ideas here. I CC'd him.
+I think this is both unnecessarily restrictive and that it doesn't fix
+the bug.  For example, I can exploit CVE-2014-8989 without ever
+writing a uid map or a gid map.
 
-The bug (at Martin's message with most relevant info) for reference:
+IIUC, the only real issue is that user namespaces allow groups to be
+dropped using setgroups that wouldn't otherwise be dropped.  Can we
+get away with adding a per-user-ns flag that determines whether
+setgroups can be used?
 
-https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=756076#75
+setgroups would be unusable until the gid_map has been written and
+then it would become usable if and only if the parent userns could use
+setgroups and the opener of gid_map was privileged.
 
-Best regards,
---
-Cameron Norman
+If we wanted to allow finer-grained control, we could allow writing
+control lines like:
+
+options +setgroups
+
+or
+
+options -setgroups
+
+in gid_map, or we could add user_ns_flags that can only be written
+once and only before either uid_map or gid_map is written.
+
+--Andy
+
+>
+> Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> ---
+>
+> If people can test and review this change and verify  this and verify it
+> doesn't break anything I can't help breaking I will appreciate it.
+>
+>  kernel/user_namespace.c | 16 ++++++++++++----
+>  1 file changed, 12 insertions(+), 4 deletions(-)
+>
+> diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+> index aa312b0dc3ec..b338c42d04fd 100644
+> --- a/kernel/user_namespace.c
+> +++ b/kernel/user_namespace.c
+> @@ -812,16 +812,24 @@ static bool new_idmap_permitted(const struct file *file,
+>                                 struct user_namespace *ns, int cap_setid,
+>                                 struct uid_gid_map *new_map)
+>  {
+> -       /* Allow mapping to your own filesystem ids */
+> -       if ((new_map->nr_extents == 1) && (new_map->extent[0].count == 1)) {
+> +       const struct cred *cred = file->f_cred;
+> +
+> +       /* Allow mapping an id without CAP_SETUID and CAP_SETGID when
+> +        * allowing the root of the user namespace CAP_SETUID or
+> +        * CAP_SETGID restricted to just that id will not change the
+> +        * set of credentials available that user.
+> +        */
+> +       if ((new_map->nr_extents == 1) && (new_map->extent[0].count == 1) &&
+> +           uid_eq(ns->owner, cred->euid)) {
+>                 u32 id = new_map->extent[0].lower_first;
+>                 if (cap_setid == CAP_SETUID) {
+>                         kuid_t uid = make_kuid(ns->parent, id);
+> -                       if (uid_eq(uid, file->f_cred->fsuid))
+> +                       if (uid_eq(uid, cred->euid))
+>                                 return true;
+>                 } else if (cap_setid == CAP_SETGID) {
+>                         kgid_t gid = make_kgid(ns->parent, id);
+> -                       if (gid_eq(gid, file->f_cred->fsgid))
+> +                       if (gid_eq(gid, cred->egid) &&
+> +                           (cred->group_info->ngroups == 0))
+>                                 return true;
+>                 }
+>         }
+> --
+> 1.9.1
+>
+
+
+
+-- 
+Andy Lutomirski
+AMA Capital Management, LLC
