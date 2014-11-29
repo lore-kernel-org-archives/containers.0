@@ -1,12 +1,14 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: [RFC PATCH] userns: Disallow setgroups unless the gid_map writer is
-	privileged
-Date: Fri, 28 Nov 2014 14:53:20 -0800
-Message-ID: <81ba656ffbdc62a7f7e94ad17f0238ee063fe6b3.1417214430.git.luto__45336.6433772773$1417215221$gmane$org@amacapital.net>
+From: serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org
+Subject: Re: [RFC PATCH] userns: Disallow setgroups unless the gid_map writer
+	is privileged
+Date: Sat, 29 Nov 2014 15:55:46 +0000
+Message-ID: <vtm5as.nft5l4.1bs6p0c-qmf@mail.hallyn.com>
+References: <81ba656ffbdc62a7f7e94ad17f0238ee063fe6b3.1417214430.git.luto@amacapital.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <81ba656ffbdc62a7f7e94ad17f0238ee063fe6b3.1417214430.git.luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,6 +22,12 @@ To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Josh Triplett <josh-iaAMLnmF4UmaiuxdJuQwMA@public.gmane.org>, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+iiuc this should be ok for lxc since it always has a privileged map writer. 
+
+(sorry I'm pretty much afk until dec 10)
+
+Thanks,
+- sergeOn 11/28/14 16:53 Andy Lutomirski wrote:
 Classic unix permission checks have an interesting feature.  The
 group permissions for a file can be set to less than the other
 permissions on a file.  Occasionally this is used deliberately to
