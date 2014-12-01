@@ -1,12 +1,13 @@
 From: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH v9 0/3] ns,
-	procfs: pid conversion between ns and showing pidns hierarchy
-Date: Mon, 1 Dec 2014 19:06:15 +0800
-Message-ID: <1417431978-24723-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+Subject: [PATCH v9 3/3] Documentation: add docs for /proc/pidns_hierarchy
+Date: Mon, 1 Dec 2014 19:06:18 +0800
+Message-ID: <1417431978-24723-4-git-send-email-chenhanxiao@cn.fujitsu.com>
+References: <1417431978-24723-1-git-send-email-chenhanxiao@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1417431978-24723-1-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,84 +21,44 @@ To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Serg
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This series will expose pid inside containers
-via procfs.
-Also show the hierarchy of pid namespcae.
-Then we could know how pid looks inside a container
-and their ns relationships.
-
-1. helpful for nested container check/restore
-From /proc/PID/ns/pid, we could know whether two pid lived
-in the same ns.
-From this patch, we could know whether two pid had relationship
-between each other.
-
-2. used for pid translation from container
-Ex:
-     init_pid_ns    ns1         ns2
- t1  2
- t2   `- 3          1
- t3   `- 4          3
- t4       `- 5      `- 5        1
- t5       `- 6      `- 8        3
-
-It could solve problems like: we see a pid 3 goes wrong
-in container's log, what is its pid on hosts:
-a) inside container:
-# readlink /proc/3/ns/pid
-pid:[4026532388]
-
-b) on host:
-We show it in the form of :
-<init_PID> <parent_of_init_PID> <relative PID level>
-
-# cat /proc/pidns_hierarchy
-14918 1 1
-16263 14918 2
-16581 1 1
-Then we could easily find /proc/16263/ns/pid->4026532388.
-On host, we knew that reported pid 3 is in level 2,
-   and its parental pid ns is from pid 14918.
-
-c) on host, check child of 16263, grep it from status:
-NSpid:  16268   8       3
-
-We knew that pid 16268 is pid 3 reported by container.
-
-v9: fix codes be inluded if CONFIG_PID_NS=n
-v8: fix some improper comments
-    use max() from kernel.h
-v7: change stype to be consistent with current interface like
-    <init_PID> <parent_of_init_PID> <relative PID level>
-    remove EXPERT dependent in Kconfig
-v6: fix some get_pid leaks and do some cleanups
-v5: collect pid by find_ge_pid;
-    use local list inside nslist_proc_show;
-    use get_pid, remove mutex lock.
-v4: simplify pid collection and some performance optimizamtion
-    fix another race issue.
-v3: fix a race issue and memory leak issue in pidns_hierarchy;
-    add another two fielsd: NSpgid and NSsid.
-v2: use a procfs text file instead of dirs under /proc for
-    showing pidns hierarchy;
-    add two new fields: NStgid and NSpid
-    keep fields of Tgid and Pid unchanged for back compatibility.
-
-Chen Hanxiao (3):
-  procfs: show hierarchy of pid namespace
-  /proc/PID/status: show all sets of pid according to ns
-  Documentation: add docs for /proc/pidns_hierarchy
-
- Documentation/namespaces/pidns-hierarchy.txt |  51 +++++
- fs/proc/Kconfig                              |   6 +
- fs/proc/Makefile                             |   1 +
- fs/proc/array.c                              |  17 ++
- fs/proc/internal.h                           |   9 +
- fs/proc/pidns_hierarchy.c                    | 280 +++++++++++++++++++++++++++
- fs/proc/root.c                               |   1 +
- 7 files changed, 365 insertions(+)
- create mode 100644 Documentation/namespaces/pidns-hierarchy.txt
- create mode 100644 fs/proc/pidns_hierarchy.c
-
--- 
-1.9.3
+U2lnbmVkLW9mZi1ieTogQ2hlbiBIYW54aWFvIDxjaGVuaGFueGlhb0Bjbi5mdWppdHN1LmNvbT4K
+LS0tCiBEb2N1bWVudGF0aW9uL25hbWVzcGFjZXMvcGlkbnMtaGllcmFyY2h5LnR4dCB8IDUxICsr
+KysrKysrKysrKysrKysrKysrKysrKysrKysKIDEgZmlsZSBjaGFuZ2VkLCA1MSBpbnNlcnRpb25z
+KCspCiBjcmVhdGUgbW9kZSAxMDA2NDQgRG9jdW1lbnRhdGlvbi9uYW1lc3BhY2VzL3BpZG5zLWhp
+ZXJhcmNoeS50eHQKCmRpZmYgLS1naXQgYS9Eb2N1bWVudGF0aW9uL25hbWVzcGFjZXMvcGlkbnMt
+aGllcmFyY2h5LnR4dCBiL0RvY3VtZW50YXRpb24vbmFtZXNwYWNlcy9waWRucy1oaWVyYXJjaHku
+dHh0Cm5ldyBmaWxlIG1vZGUgMTAwNjQ0CmluZGV4IDAwMDAwMDAuLjE4MjBhZTZkCi0tLSAvZGV2
+L251bGwKKysrIGIvRG9jdW1lbnRhdGlvbi9uYW1lc3BhY2VzL3BpZG5zLWhpZXJhcmNoeS50eHQK
+QEAgLTAsMCArMSw1MSBAQAorVGhpcyBkb2N1bWVudCBpcyBhYm91dCBob3cgdG8gdXNlIHBpZCBu
+YW1lc3BhY2UgaGllcmFyY2h5IHByb2Nmcy4KKworV2Uga25ldyB3aGV0aGVyIHR3byBwaWRzIGxp
+dmluZyBpbiB0aGUgc2FtZSBwaWQgbmFtZXNwYWNlCitieSAvcHJvYy9QSUQvbnMvcGlkLCBidXQg
+dGhlaXIgcmVsYXRpb25zaGlwcworYmV0d2VlbiBwaWRzIHdlcmUgdW5rbm93bjoKK3dlIGNvdWxk
+bid0IHRlbGwgdGhhdCBvbmUgcGlkIHdhcyBhbm90aGVyIG9uZSdzIHBhcmVudC9zaWJsaW5ncy4u
+LgorQnV0IC9wcm9jL3BpZG5zX2hpZXJhcmNoeSBjb3VsZCB0ZWxsIHVzIHRoZSBhbnN3ZXIuCisK
+Ky9wcm9jL3BpZG5zX2hpZXJhcmNoeSB3aWxsIHNob3cgdGhlIGhpZXJhcmNoeSBvZiBwaWQgbmFt
+ZXNwYWNlCitpbiB0aGUgZm9ybSBvZjoKKworPGluaXRfUElEPiA8cGFyZW50X29mX2luaXRfUElE
+PiA8cmVsYXRpdmUgUElEIGxldmVsPgorCitpbml0X1BJRDogICAgICAgICAgICBjaGlsZCByZWFw
+ZXIgaW4gYSBwaWQgbmFtZXNwYWNlCitwYXJlbnRfb2ZfaW5pdF9QSUQ6ICBpbml0X1BJRCdzIHBh
+cmVudCwgY2hpbGQgcmVhcGVyIHRvbworcmVsYXRpdmUgUElEIGxldmVsOiAgcGlkIGxldmVsIHJl
+bGF0aXZlIHRvIGNhbGxlcidzIG5zLAorICAgICAgICAgICAgICAgICAgICAgc3RhcnRlZCBmcm9t
+ICcxJy4KKworSGVyZSBpcyBhIGNoYXJ0IHRvIGRlc2NyaWJlIHRoZSByZWxhdGlvbnNoaXAgYmV0
+d2Vlbgorc29tZSBwaWRzOgorCisgICAgICAgICBpbml0X3BpZF9ucyAgICAgICAgICAgICAgICAg
+ICAgICAgICAgbGV2ZWwgMAorICAgICAgICAgICAgICB8CisgICAgICAgICAgICAgIDEKKyAgICAg
+ICAgICAgICAgfAor4pSM4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSQCitu
+czEgICAgICAgICAgICAgICAgICAgICAgbnMyICAgICAgICAgICAgICAgICAgbGV2ZWwgMQorfCAg
+ICAgICAgICAgICAgICAgICAgICAgICB8CisxNTUwICAgICAgICAgICAgICAgICAgICAxODA2MAor
+ICAgICAgICAgICAgICAgICAgICAgICAgICB8CisgICAgICAgICAgICAgICAgICAgICAgICAgIHwK
+KyAgICAgICAgICAgICAgICAgICAgICAgICBuczMgICAgICAgICAgICAgICAgICBsZXZlbCAyCisg
+ICAgICAgICAgICAgICAgICAgICAgICAgIHwKKyAgICAgICAgICAgICAgICAgICAgICAgIDE4MTAy
+CisgICAgICAgICAgICAgICAgICAgICAgICAgIHwKKyAgICAgICAgICAgICAgICAg4pSM4pSA4pSA
+4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSQCisgICAgICAgICAgICAgICAgIG5zNCAgICAgICAg
+ICAgICAgICAgICBuczUgICAgbGV2ZWwgMworICAgICAgICAgICAgICAgICB8ICAgICAgICAgICAg
+ICAgICAgICAgfAorICAgICAgICAgICAgICAgIDE1MzQgICAgICAgICAgICAgICAgICAxNjAwCisK
+K0l0IHdpbGwgYmUgc2hvd2VkIGJ5IC9wcm9jL3BpZG5zX2hpZXJhcmNoeSBhcyBiZWxvdzoKKwor
+I2NhdCAvcHJvYy9waWRuc19oaWVyYXJjaHkKKzE4MDYwIDEgMQorMTgxMDIgMTgwNjAgMgorMTUz
+NCAgMTgxMDIgMworMTYwMCAgMTgxMDIgMworMTU1MCAgMSAxCisKK05vdGU6IG51bWJlcnMgaW4g
+Y29sdW1uIDEgYXJlIHBpZCBudW1iZXJzIGluIGN1cnJlbnQgbnMsCisgICAgdGhleSByZXByZXNl
+bnQgdGhlIHBpZCAnMScgaW4gZGlmZmVyZW50IG5zCi0tIAoxLjkuMwoKX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QK
+Q29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4
+Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
