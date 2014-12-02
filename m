@@ -1,22 +1,21 @@
-From: Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [RFC] lsm: namespace hooks
-Date: Tue, 02 Dec 2014 13:43:13 +0100
-Message-ID: <1417524193.1899.2.camel@samsung.com>
-References: <1417096866-25563-1-git-send-email-l.pawelczyk@samsung.com>
-	<1417096866-25563-2-git-send-email-l.pawelczyk@samsung.com>
-	<CAFLxGvzw4N4QFv5Vg1dDf9pdRe+Szbevmqn5QNwjLHN4xrokCg@mail.gmail.com>
-	<1417098928.1805.15.camel@samsung.com> <54773757.8090905@nod.at>
-	<1417099455.1805.17.camel@samsung.com> <54773CE7.5040303@nod.at>
-	<1417101060.1805.21.camel@samsung.com>
-	<87d288zm3a.fsf@x220.int.ebiederm.org>
-	<1417104439.1805.25.camel@samsung.com>
-	<871tooy4nc.fsf@x220.int.ebiederm.org>
-	<1417109911.1805.27.camel@samsung.com>
+From: joeyli <jlee-IBi9RG/b67k@public.gmane.org>
+Subject: Re: [CFT][PATCH] mnt: Implicitly add MNT_NODEV on remount when it
+	was implicitly added by mount
+Date: Tue, 2 Dec 2014 21:12:22 +0800
+Message-ID: <20141202131222.GC29118@linux-rxt1.site>
+References: <547B309E.9020706@nod.at>
+	<CALCETrUZRi=Y=CDTpq5oO-tPOvMsZ+osKiydkCk-P0dn4DKJkA@mail.gmail.com>
+	<547B34C6.6030709@nod.at>
+	<CALCETrW6QRRB_DfHwYv+UVJ_8yF+8Db+UP+ezd4jG599b4dSiA@mail.gmail.com>
+	<547B5066.4020509@nod.at> <871tokleo7.fsf@x220.int.ebiederm.org>
+	<547B6531.40504@nod.at> <87k32ci2dx.fsf@x220.int.ebiederm.org>
+	<547D77C8.7050100@nod.at> <87ppc22x9d.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-reply-to: <1417109911.1805.27.camel-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <87ppc22x9d.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,22 +26,52 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Vladimir Davydov <vdavydov-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Miklos Szeredi <mszeredi-AlSwsSmVLrQ@public.gmane.org>, Lukasz Pawelczyk <havner-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Mark Rustad <mark.d.rustad-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Juri Lelli <juri.lelli-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Daeseok Youn <daeseok.youn-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Jeff Kirsher <jeffrey.t.kirsher-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Alex Thorlton <athorlton-sJ/iWh9BUns@public.gmane.org>, Matthew Dempsky <mdempsky-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Nikolay Aleksandrov <nikolay-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dario Faggioli <raistlin-k2GhghHVRtY@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, James Morris <james.l.morris-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, "open list:ABI/API" <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Paul Moore <pmoore@redha>
+Cc: Stephen Rothwell <sfr-3FnU+UHB4dNDw9hX6IcOSA@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Jim Fehlig <jfehlig-IBi9RG/b67k@public.gmane.org>, Cedric Bosdonnat <cbosdonnat-IBi9RG/b67k@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On czw, 2014-11-27 at 18:38 +0100, Lukasz Pawelczyk wrote:
-> Right now the major issue I see is that LSM by itself is not defined how
-> it's going to behave. It's up to a specific LSM module.
+Hi Eric, 
+
+On Tue, Dec 02, 2014 at 03:53:34AM -0600, Eric W. Biederman wrote:
+> Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org> writes:
 > 
-> E.g. within the Smack namespace filling the map is a privileged
-> operation. So by tying them up you cripple the ability to create a fully
-> working user namespace as an unprivileged process.
+> > Am 01.12.2014 um 02:29 schrieb Eric W. Biederman:
+> >>>>>> Any chance you can test that with Eric's patch or mine [1] applied?
+> >>>>>> If that doesn't work, can you try to catch the failure with strace?
+> >>>>>
+> >>>>> With your patch applied on top of Linus's tree as of today libvirt-lxc works fine again. :)
+> >>>>
+> >>>> *Scratches head*
+> >>>>
+> >>>> Did you really have my latest patch applied?
+> >>>>
+> >>>> Andy's patch implies a change of policy that I really don't want to
+> >>>> deploy as a bug fix.
+> >>>
+> >>> Hmm, let me double check this tomorrow with a fresh brain.
+> >>> Maybe I got hit by another issue while testing your patch.
+> >>> Currently I'm fighting against three libvirt-lxc issues in parallel. :-\
+> >> 
+> >> Please do.  I just reran through my regression tests that explore this
+> >> issue rather throughly and all of my remount test cases are passing.  So
+> >> if things are truly failing I want to understand what is going on, and
+> >> add to my regression tests.
+> >> 
+> >> I should have done that sooner of course but I am still paging back in
+> >> after being distracted with the other things in life.
+> >
+> > I can confirm that your patch "mnt: Implicitly add MNT_NODEV on remount as we do on mount"
+> > unbreaks libvirt-lxc too. :-)
+> > Sorry for the false negative.
+> 
+> Thanks I will add your Tested-by.
+> 
+> Eric
 
-Entertaining the idea that LSM namespace would be tied to user namespace
-(as you suggested) how do you see the limitation I described above?
+Cedric help to test my kernel that included your patch. Please feel free to
+add:
+
+Tested-by: Cedric Bosdonnat <cbosdonnat-IBi9RG/b67k@public.gmane.org>
 
 
--- 
-Lukasz Pawelczyk
-Samsung R&D Institute Poland
-Samsung Electronics
+Regards
+Joey Lee
