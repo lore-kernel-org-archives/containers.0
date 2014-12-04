@@ -1,12 +1,15 @@
-From: "Ria Lamb" <ria.lamb-k1/Bug41vcdzbRFIqnYvSA@public.gmane.org>
-Subject: AWS Users Leads
-Date: Wed, 3 Dec 2014 10:56:06 -0600
-Message-ID: <!&!AAAAAAAAAAAYAAAAAAAAAHamHYRIOTROvPTTV0Za5EqCgQAAEAAAAGuljVyOWRZLvPchjjQhOSQBAAAAAA==@udsleads.us>
+From: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: RE: [PATCH v9 1/3] procfs: show hierarchy of pid namespace
+Date: Thu, 4 Dec 2014 12:23:11 +0000
+Message-ID: <5871495633F38949900D2BF2DC04883E737803A9__43407.6723446653$1417695813$gmane$org@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <1417431978-24723-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<1417431978-24723-2-git-send-email-chenhanxiao@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-us
+In-Reply-To: <1417431978-24723-2-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,119 +19,59 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Richard
+	Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
- 
-
- 
-
-Hi,
-
-
-Are you looking to reach Healthcare professionals and contacts with in
-Healthcare industry? We Maintain more than 1.5 million contacts with in
-healthcare industry with opt-in email addresses.
-
-
-Data Fields: Contact name, Company name, Job Title / Specialty, Website,
-Industry, SIC Code, Email address, Direct mail address, Telephone number,
-Revenue Size, Employee Size, etc.
-
-Below is the list of our master file for Healthcare industry with Opt-in
-email addresses.
-
- 
-
-
-SL No
-
-Pre- Package Lists
-
-Records Available
-
-
-1
-
-Healthcare Executives Email Data
-
-650,000+records
-
-
-2
-
-Doctors, Physicians and Surgeons Email Data
-
-500,000+records
-
-
-3
-
-Hospital Executives Email Data
-
-150,000+records
-
-
-4
-
-Pharmaceutical Executives Email Data
-
-120,000+records
-
-
-5
-
-Dentists Email Data
-
-55,000+records
-
-
-6
-
-Healthcare IT Executives Email Data
-
-  50, 000+records
-
-
-7
-
-Biotech Executives Email Data
-
-30,000+records
-
-
-8
-
-Nurses Email Data
-
-60,000+records
-
- 
-
-We maintain 36.2 million contacts with permission based email addresses for
-all industry vertical. If healthcare is not your target audience, please let
-us know your target audience to receive few samples for your review.
-
- 
-
-Looking forward to hearing from you.
-
- 
-
-Regards, 
-Nancy Powell
-Business Data Expert
-
- 
-
-  
-
- 
-
-If you don't wish to receive our newsletters, reply back with "EXCLUDE ME"
-in subject line.
-
-Disclaimer: If you have received this electronic mail by error or if you're
-not the right person to speak with in this regard, I'd appreciate if you
-would be so kind as to forward this email to the right person or the person
-in charge
+DQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogY29udGFpbmVycy1ib3Vu
+Y2VzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnDQo+IFttYWlsdG86Y29udGFpbmVycy1ib3Vu
+Y2VzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnXSBPbiBCZWhhbGYgT2YgQ2hlbg0KPiBIYW54
+aWFvDQo+IFNlbnQ6IE1vbmRheSwgRGVjZW1iZXIgMDEsIDIwMTQgNzowNiBQTQ0KPiBUbzogRXJp
+YyBXLiBCaWVkZXJtYW47IFNlcmdlIEhhbGx5bjsgT2xlZyBOZXN0ZXJvdjsgUmljaGFyZCBXZWlu
+YmVyZ2VyOyBBbmRyZXcNCj4gTW9ydG9uDQo+IENjOiBjb250YWluZXJzQGxpc3RzLmxpbnV4LWZv
+dW5kYXRpb24ub3JnOyBsaW51eC1rZXJuZWxAdmdlci5rZXJuZWwub3JnOw0KPiBNYXRldXN6IEd1
+emlrOyBEYXZpZCBIb3dlbGxzDQo+IFN1YmplY3Q6IFtQQVRDSCB2OSAxLzNdIHByb2Nmczogc2hv
+dyBoaWVyYXJjaHkgb2YgcGlkIG5hbWVzcGFjZQ0KPiANCj4gV2UgbGFjayBvZiBwaWQgaGllcmFy
+Y2h5IGluZm9ybWF0aW9uLCBhbmQgdGhpcyB3aWxsIGxlYWQgdG86DQo+IGEpIHdlIGRvbid0IGtu
+b3cgcGlkcycgcmVsYXRpb25zaGlwLCB3aG8gaXMgd2hvc2UgY2hpbGQ6DQo+ICAgIC9wcm9jL1BJ
+RC9ucy9waWQgb25seSB0ZWxsIHVzIHdoZXRoZXIgdHdvIHBpZHMgbGl2ZSBpbiBkaWZmZXJlbnQg
+bnMNCj4gYikgYnJpbmcgdHJvdWJsZSB0byBuZXN0ZWQgbHhjIGNvbnRhaW5lciBjaGVjay9yZXN0
+b3JlL21pZ3JhdGlvbg0KPiBjKSBicmluZyB0cm91YmxlIHRvIHBpZCB0cmFuc2xhdGlvbiBiZXR3
+ZWVuIGNvbnRhaW5lcnM7DQo+IA0KPiBUaGlzIHBhdGNoIHdpbGwgc2hvdyB0aGUgaGllcmFyY2h5
+IG9mIHBpZCBuYW1lc3BhY2UNCj4gYnkgcGlkbnNfaGllcmFyY2h5IGxpa2U6DQo+IA0KPiA8aW5p
+dF9QSUQ+IDxwYXJlbnRfb2ZfaW5pdF9QSUQ+IDxyZWxhdGl2ZSBQSUQgbGV2ZWw+DQo+IA0KPiBF
+eDoNCj4gW3Jvb3RAbG9jYWxob3N0IH5dI2NhdCAvcHJvYy9waWRuc19oaWVyYXJjaHkNCj4gMTgw
+NjAgMSAxDQo+IDE4MTAyIDE4MDYwIDINCj4gMTUzNCAgMTgxMDIgMw0KPiAxNjAwICAxODEwMiAz
+DQo+IDE1NTAgIDEgMQ0KPiAqTm90ZTogbnVtYmVycyByZXByZXNlbnQgdGhlIHBpZCAxIGluIGRp
+ZmZlcmVudCBucw0KPiANCj4gSXQgc2hvd3MgdGhlIHBpZCBoaWVyYXJjaHkgYmVsb3c6DQo+IA0K
+PiAgICAgICBpbml0X3BpZF9ucyAxDQo+ICAgICAgICAgICAgICAg4pSCDQo+IOKUjOKUgOKUgOKU
+gOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUkA0KPiBuczEgICAgICAgICAgICAgICAgICAg
+ICAgbnMyDQo+IOKUgiAgICAgICAgICAgICAgICAgICAgICAgIOKUgg0KPiAxNTUwICAgICAgICAg
+ICAgICAgICAgICAxODA2MA0KPiAgICAgICAgICAgICAgICAgICAgICAgICAgIOKUgg0KPiAgICAg
+ICAgICAgICAgICAgICAgICAgICAgIOKUgg0KPiAgICAgICAgICAgICAgICAgICAgICAgICAgbnMz
+DQo+ICAgICAgICAgICAgICAgICAgICAgICAgICAg4pSCDQo+ICAgICAgICAgICAgICAgICAgICAg
+ICAgIDE4MTAyDQo+ICAgICAgICAgICAgICAgICAgICAgICAgICAg4pSCDQo+ICAgICAgICAgICAg
+ICAgICAg4pSM4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSQDQo+ICAgICAgICAgICAg
+ICAgICAgbnM0ICAgICAgICAgICAgICAgICAgIG5zNQ0KPiAgICAgICAgICAgICAgICAgIOKUgiAg
+ICAgICAgICAgICAgICAgICAg4pSCDQo+ICAgICAgICAgICAgICAgICAxNTM0ICAgICAgICAgICAg
+ICAgICAgMTYwMA0KPiANCj4gRXZlcnkgcGlkIHByaW50ZWQgaW4gcGlkbnNfaGllcmFyY2h5DQo+
+IGlzIHRoZSBpbml0IHBpZCBvZiB0aGF0IHBpZCBucyBsZXZlbC4NCj4gDQo+IEFja2VkLWJ5OiBS
+aWNoYXJkIFdlaW5iZXJlciA8cmljaGFyZEBub2QuYXQ+DQo+IA0KPiBTaWduZWQtb2ZmLWJ5OiBD
+aGVuIEhhbnhpYW8gPGNoZW5oYW54aWFvQGNuLmZ1aml0c3UuY29tPg0KPiAtLS0NCj4gdjk6IGZp
+eCBjb2RlcyBiZSBpbmNsdWRlZCBpZiBDT05GSUdfUElEX05TPW4NCj4gdjg6IHVzZSBtYXgoKSBm
+cm9tIGtlcm5lbC5oDQo+ICAgICBmaXggc29tZSBpbXByb3BlciBjb21tZW50cw0KPiB2NzogY2hh
+bmdlIHN0eXBlIHRvIGJlIGNvbnNpc3RlbnQgd2l0aCBjdXJyZW50IGludGVyZmFjZSBsaWtlDQo+
+ICAgICA8aW5pdF9QSUQ+IDxwYXJlbnRfb2ZfaW5pdF9QSUQ+IDxyZWxhdGl2ZSBQSUQgbGV2ZWw+
+DQo+ICAgICByZW1vdmUgRVhQRVJUIGRlcGVuZGVudCBpbiBLY29uZmlnDQo+IHY2OiBmaXggYSBn
+ZXRfcGlkIGxlYWsgYW5kIGRvIHNvbWUgY2xlYW51cHM7DQo+IHY1OiBjb2xsZWN0IHBpZCBieSBm
+aW5kX2dlX3BpZDsNCj4gICAgIHVzZSBsb2NhbCBsaXN0IGluc2lkZSBuc2xpc3RfcHJvY19zaG93
+Ow0KPiAgICAgdXNlIGdldF9waWQsIHJlbW92ZSBtdXRleCBsb2NrLg0KPiB2NDogc2ltcGxpZnkg
+cGlkIGNvbGxlY3Rpb24gYW5kIHNvbWUgcGVyZm9ybWFuY2Ugb3B0aW1pemFtdGlvbg0KPiAgICAg
+Zml4IGFub3RoZXIgcmFjZSBpc3N1ZS4NCj4gdjM6IGZpeCBhIHJhY2UgaXNzdWUgYW5kIG1lbW9y
+eSBsZWFrIGlzc3VlDQo+IHYyOiB1c2UgYSBwcm9jZnMgdGV4dCBmaWxlIGluc3RlYWQgb2YgZGly
+cyB1bmRlciAvcHJvYw0KPiANCg0KSGksDQoNCkFueSBjb21tZW50cz8NCg0KVGhhbmtzLA0KLSBD
+aGVuDQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250
+YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3Jn
+Cmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRh
+aW5lcnM=
