@@ -1,13 +1,12 @@
-From: <postmaster-P+Pfz3U2m+D4n6Bv+Of6+w@public.gmane.org>
-Subject: Undeliverable: Information sur le paiement N170719.
-Date: Fri, 5 Dec 2014 20:45:32 +0000
-Message-ID: <3d4b7e6e-bf07-4736-8dbd-c13f1883c7c2@DB4PR05MB0735.eurprd05.prod.outlook.com>
-References: <916733453.85456502451609@de384>
+From: "Content-filter at sd-27347.dedibox.fr" <postmaster-P628U9ciDRYKFst7iSh0dFaPQRlvutdw@public.gmane.org>
+Subject: Considered UNSOLICITED BULK EMAIL, apparently from you
+Date: Sat,  6 Dec 2014 00:34:40 +0100 (CET)
+Message-ID: <SSOfRTTCOGVSEs@sd-27347.dedibox.fr>
+References: <550442000.71165716334322@server.relatiefront.nl>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============8602857051442025460=="
+Content-Type: multipart/mixed; boundary="===============3601229308249012863=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-US
-In-Reply-To: <916733453.85456502451609@de384>
+In-Reply-To: <550442000.71165716334322-GShGJHTS/rzoSVKQVDllloYESnTqepJF@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,145 +19,91 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============8602857051442025460==
+This is a multi-part message in MIME format...
+
+--===============3601229308249012863==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="6b9c6fba-979a-4d50-94fb-aebfe800b7a9"
-Content-Language: en-US
+ boundary="----------=_1417822482-28929-0"
+Content-Transfer-Encoding: 7bit
 
---6b9c6fba-979a-4d50-94fb-aebfe800b7a9
-Content-Type: text/plain; charset="Windows-1252"
-Content-Transfer-Encoding: quoted-printable
+This is a multi-part message in MIME format...
 
-Delivery has failed to these recipients or groups:
+------------=_1417822482-28929-0
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Disposition: inline
+Content-Transfer-Encoding: 7bit
 
-d.ledieu-N1OSpRtdIHxWj0EZb7rXcA@public.gmane.org<mailto:d.ledieu-N1OSpRtdIHxWj0EZb7rXcA@public.gmane.org>
-The email address you specified couldn't be found or is invalid. It may be =
-due to a bad entry in your Outlook or Outlook Web App recipient AutoComplet=
-e cache. Use the steps below to clear the entry from the cache:
+A message from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> to:
+-> contact-VP08zTK8LyBQFI55V6+gNQ@public.gmane.org
 
-  1.  Click New mail.
-  2.  In the To field start typing the recipient's name or email address un=
-til the recipient appears in the drop-down list.
-  3.  Use the DOWN ARROW and UP ARROW keys to select the recipient, and the=
-n press the DELETE key.
+was considered unsolicited bulk e-mail (UBE).
 
-Then resend your message =96 delete and retype the recipient=92s name or e-=
-mail address before sending it.
+Our internal reference code for your message is 28929-01/OfRTTCOGVSEs
 
-For more tips to help resolve this issue see DSN 5.1.x Errors in Exchange O=
-nline and Office 365<http://go.microsoft.com/fwlink/?LinkId=3D389363>.
+The message carried your return address, so it was either a genuine mail
+from you, or a sender address was faked and your e-mail address abused
+by third party, in which case we apologize for undesired notification.
 
+We do try to minimize backscatter for more prominent cases of UBE and
+for infected mail, but for less obvious cases of UBE some balance
+between losing genuine mail and sending undesired backscatter is sought,
+and there can be some collateral damage on both sides.
 
+First upstream SMTP client IP address: [146.185.175.177]
+  server.relatiefront.nl
+According to a 'Received:' trace, the message originated at:
+  [146.185.175.177], [146.185.175.177]
 
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+From: "Carina" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Message-ID: <550442000.71165716334322-GShGJHTS/rzoSVKQVDllloYESnTqepJF@public.gmane.org>
+Subject: Fwd: Des informations detaillees sur le paiement 4524970.
 
+Delivery of the email was stopped!
 
+------------=_1417822482-28929-0
+Content-Type: message/delivery-status; name="dsn_status"
+Content-Disposition: inline; filename="dsn_status"
+Content-Transfer-Encoding: 7bit
+Content-Description: Delivery error report
 
+Reporting-MTA: dns; sd-27347.dedibox.fr
+Received-From-MTA: smtp; sd-27347.dedibox.fr ([127.0.0.1])
+Arrival-Date: Sat,  6 Dec 2014 00:34:40 +0100 (CET)
 
-
-
-Diagnostic information for administrators:
-
-Generating server: DB4PR05MB0735.eurprd05.prod.outlook.com
-
-d.ledieu-N1OSpRtdIHxWj0EZb7rXcA@public.gmane.org
-Remote Server returned '550 5.1.1 RESOLVER.ADR.RecipNotFound; Recipient not=
- found by SMTP address lookup'
-
-Original message headers:
-
-Received: from DBXPR05CA0038.eurprd05.prod.outlook.com (10.255.178.38) by
- DB4PR05MB0735.eurprd05.prod.outlook.com (25.161.15.25) with Microsoft SMTP
- Server (TLS) id 15.1.26.15; Fri, 5 Dec 2014 20:45:32 +0000
-Received: from AM1FFO11FD033.protection.gbl (2a01:111:f400:7e00::137) by
- DBXPR05CA0038.outlook.office365.com (2a01:111:e400:9434::38) with Microsof=
-t
- SMTP Server (TLS) id 15.1.31.17 via Frontend Transport; Fri, 5 Dec 2014
- 20:45:31 +0000
-Received: from de384 (94.247.178.107) by
- AM1FFO11FD033.mail.protection.outlook.com (10.174.64.222) with Microsoft S=
-MTP
- Server id 15.1.26.17 via Frontend Transport; Fri, 5 Dec 2014 20:45:31 +000=
-0
-Received: from [94.247.178.107] by de384 id Li84UZwUq9Up with SMTP; Fri, 05=
- Dec 2014 21:45:31 +0100
-Date: Fri, 5 Dec 2014 21:45:31 +0100
-From: Leora <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.6.76.6) Home
-X-Priority: 3 (Normal)
-Message-ID: <916733453.85456502451609@de384>
-To: <d.ledieu-N1OSpRtdIHxWj0EZb7rXcA@public.gmane.org>
-Subject: Information sur le paiement N170719.
-MIME-Version: 1.0
-Content-Type: text/plain; charset=3D"utf-8"
-Content-Transfer-Encoding: 8bit
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-EOPAttributedMessage: 0
-X-Forefront-Antispam-Report: CIP:94.247.178.107;CTRY:FR;IPV:NLI;EFV:NLI;
-X-Microsoft-Antispam: UriScan:;
-X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:;SRVR:DB4PR05MB0735;
-
-
---6b9c6fba-979a-4d50-94fb-aebfe800b7a9
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns;DB4PR05MB0735.eurprd05.prod.outlook.com
-Received-From-MTA: dns;de384
-Arrival-Date: Fri, 5 Dec 2014 20:45:32 +0000
-
-Final-Recipient: rfc822;d.ledieu-N1OSpRtdIHxWj0EZb7rXcA@public.gmane.org
+Original-Recipient: rfc822;contact-VP08zTK8LyBQFI55V6+gNQ@public.gmane.org
+Final-Recipient: rfc822;contact-VP08zTK8LyBQFI55V6+gNQ@public.gmane.org
 Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; Recipient not found by SMTP address lookup
+Status: 5.7.0
+Diagnostic-Code: smtp; 554 5.7.0 Reject, id=28929-01 - SPAM
+Last-Attempt-Date: Sat,  6 Dec 2014 00:34:40 +0100 (CET)
+Final-Log-ID: 28929-01/OfRTTCOGVSEs
 
+------------=_1417822482-28929-0
+Content-Type: text/rfc822-headers; name="header"
+Content-Disposition: inline; filename="header"
+Content-Transfer-Encoding: 7bit
+Content-Description: Message header section
 
---6b9c6fba-979a-4d50-94fb-aebfe800b7a9
-Content-Type: message/rfc822
-
-Received: from DBXPR05CA0038.eurprd05.prod.outlook.com (10.255.178.38) by
- DB4PR05MB0735.eurprd05.prod.outlook.com (25.161.15.25) with Microsoft SMTP
- Server (TLS) id 15.1.26.15; Fri, 5 Dec 2014 20:45:32 +0000
-Received: from AM1FFO11FD033.protection.gbl (2a01:111:f400:7e00::137) by
- DBXPR05CA0038.outlook.office365.com (2a01:111:e400:9434::38) with Microsoft
- SMTP Server (TLS) id 15.1.31.17 via Frontend Transport; Fri, 5 Dec 2014
- 20:45:31 +0000
-Received: from de384 (94.247.178.107) by
- AM1FFO11FD033.mail.protection.outlook.com (10.174.64.222) with Microsoft SMTP
- Server id 15.1.26.17 via Frontend Transport; Fri, 5 Dec 2014 20:45:31 +0000
-Received: from [94.247.178.107] by de384 id Li84UZwUq9Up with SMTP; Fri, 05 Dec 2014 21:45:31 +0100
-Date: Fri, 5 Dec 2014 21:45:31 +0100
-From: Leora <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v3.6.76.6) Home
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from server.relatiefront.nl (server.relatiefront.nl [146.185.175.177])
+	by sd-27347.dedibox.fr (Postfix) with ESMTP id C24AD388CDC
+	for <contact-VP08zTK8LyBQFI55V6+gNQ@public.gmane.org>; Sat,  6 Dec 2014 00:34:39 +0100 (CET)
+Received: from [146.185.175.177] by server.relatiefront.nl id vOZX6Z8n4toE with SMTP; Fri, 05 Dec 2014 23:34:44 +0000
+Date: Fri, 05 Dec 2014 23:34:44 +0000
+From: "Carina" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v4.08.9) Home
 X-Priority: 3 (Normal)
-Message-ID: <916733453.85456502451609@de384>
-To: <d.ledieu-N1OSpRtdIHxWj0EZb7rXcA@public.gmane.org>
-Subject: Information sur le paiement N170719.
+Message-ID: <550442000.71165716334322-GShGJHTS/rzoSVKQVDllloYESnTqepJF@public.gmane.org>
+To: <contact-VP08zTK8LyBQFI55V6+gNQ@public.gmane.org>
+Subject: Fwd: Des informations detaillees sur le paiement 4524970.
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-EOPAttributedMessage: 0
-X-Forefront-Antispam-Report: CIP:94.247.178.107;CTRY:FR;IPV:NLI;EFV:NLI;
-X-Microsoft-Antispam: UriScan:;
-X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:;SRVR:DB4PR05MB0735;
+Content-type: text/plain; charset= iso-8859-1
+Content-Transfer-Encoding: 8bit
 
+------------=_1417822482-28929-0--
 
-
-Bonjour,
-
-
-Votre compte a ete change. Se il vous plait lire les informations:
-http://bbbjewelry.net/Informe.zip?_ID_d.ledieu-N1OSpRtdIHxWj0EZb7rXcA@public.gmane.org
-
-
-
-=3D=3D
-Les femmes au danger constant de roue.
-
-
-
---6b9c6fba-979a-4d50-94fb-aebfe800b7a9--
-
---===============8602857051442025460==
+--===============3601229308249012863==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -168,4 +113,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============8602857051442025460==--
+--===============3601229308249012863==--
