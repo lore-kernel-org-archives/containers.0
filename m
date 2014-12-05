@@ -1,7 +1,8 @@
 From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCHv3 8/8] cgroup: Add documentation for cgroup namespaces
-Date: Thu,  4 Dec 2014 17:55:50 -0800
-Message-ID: <1417744550-6461-9-git-send-email-adityakali@google.com>
+Subject: [PATCHv3 7/8] cgroup: mount cgroupns-root when inside non-init
+	cgroupns
+Date: Thu,  4 Dec 2014 17:55:49 -0800
+Message-ID: <1417744550-6461-8-git-send-email-adityakali__28779.0089184002$1417744653$gmane$org@google.com>
 References: <adityakali-cgroupns>
 	<1417744550-6461-1-git-send-email-adityakali@google.com>
 Mime-Version: 1.0
@@ -22,164 +23,189 @@ To: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, lizefan-hv44wF8Li93QT0dZR+AlfA@p
 Cc: richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+This patch enables cgroup mounting inside userns when a process
+as appropriate privileges. The cgroup filesystem mounted is
+rooted at the cgroupns-root. Thus, in a container-setup, only
+the hierarchy under the cgroupns-root is exposed inside the container.
+This allows container management tools to run inside the containers
+without depending on any global state.
+In order to support this, a new kernfs api is added to lookup the
+dentry for the cgroupns-root.
+
 Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 ---
- Documentation/cgroups/namespace.txt | 147 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 147 insertions(+)
- create mode 100644 Documentation/cgroups/namespace.txt
+ fs/kernfs/mount.c      | 48 ++++++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/kernfs.h |  2 ++
+ kernel/cgroup.c        | 46 +++++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 95 insertions(+), 1 deletion(-)
 
-diff --git a/Documentation/cgroups/namespace.txt b/Documentation/cgroups/namespace.txt
-new file mode 100644
-index 0000000..6480379
---- /dev/null
-+++ b/Documentation/cgroups/namespace.txt
-@@ -0,0 +1,147 @@
-+			CGroup Namespaces
+diff --git a/fs/kernfs/mount.c b/fs/kernfs/mount.c
+index f973ae9..efe5e15 100644
+--- a/fs/kernfs/mount.c
++++ b/fs/kernfs/mount.c
+@@ -62,6 +62,54 @@ struct kernfs_root *kernfs_root_from_sb(struct super_block *sb)
+ 	return NULL;
+ }
+ 
++/**
++ * kernfs_obtain_root - get a dentry for the given kernfs_node
++ * @sb: the kernfs super_block
++ * @kn: kernfs_node for which a dentry is needed
++ *
++ * This can used used by callers which want to mount only a part of the kernfs
++ * as root of the filesystem.
++ */
++struct dentry *kernfs_obtain_root(struct super_block *sb,
++				  struct kernfs_node *kn)
++{
++	struct dentry *dentry;
++	struct inode *inode;
 +
-+CGroup Namespace provides a mechanism to virtualize the view of the
-+/proc/<pid>/cgroup file. The CLONE_NEWCGROUP clone-flag can be used with
-+clone() and unshare() syscalls to create a new cgroup namespace.
-+The process running inside the cgroup namespace will have its /proc/<pid>/cgroup
-+output restricted to cgroupns-root. cgroupns-root is the cgroup of the process
-+at the time of creation of the cgroup namespace.
++	BUG_ON(sb->s_op != &kernfs_sops);
 +
-+Prior to CGroup Namespace, the /proc/<pid>/cgroup file used to show complete
-+path of the cgroup of a process. In a container setup (where a set of cgroups
-+and namespaces are intended to isolate processes), the /proc/<pid>/cgroup file
-+may leak potential system level information to the isolated processes.
++	/* inode for the given kernfs_node should already exist. */
++	inode = ilookup(sb, kn->ino);
++	if (!inode) {
++		pr_debug("kernfs: could not get inode for '");
++		pr_cont_kernfs_path(kn);
++		pr_cont("'.\n");
++		return ERR_PTR(-EINVAL);
++	}
 +
-+For Example:
-+  $ cat /proc/self/cgroup
-+  0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/batchjobs/container_id1
++	/* instantiate and link root dentry */
++	dentry = d_obtain_root(inode);
++	if (!dentry) {
++		pr_debug("kernfs: could not get dentry for '");
++		pr_cont_kernfs_path(kn);
++		pr_cont("'.\n");
++		return ERR_PTR(-ENOMEM);
++	}
 +
-+The path '/batchjobs/container_id1' can generally be considered as system-data
-+and its desirable to not expose it to the isolated process.
++	/* If this is a new dentry, set it up. We need kernfs_mutex because this
++	 * may be called by callers other than kernfs_fill_super. */
++	mutex_lock(&kernfs_mutex);
++	if (!dentry->d_fsdata) {
++		kernfs_get(kn);
++		dentry->d_fsdata = kn;
++	} else {
++		WARN_ON(dentry->d_fsdata != kn);
++	}
++	mutex_unlock(&kernfs_mutex);
 +
-+CGroup Namespaces can be used to restrict visibility of this path.
-+For Example:
-+  # Before creating cgroup namespace
-+  $ ls -l /proc/self/ns/cgroup
-+  lrwxrwxrwx 1 root root 0 2014-07-15 10:37 /proc/self/ns/cgroup -> cgroup:[4026531835]
-+  $ cat /proc/self/cgroup
-+  0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/batchjobs/container_id1
++	return dentry;
++}
 +
-+  # unshare(CLONE_NEWCGROUP) and exec /bin/bash
-+  $ ~/unshare -c
-+  [ns]$ ls -l /proc/self/ns/cgroup
-+  lrwxrwxrwx 1 root root 0 2014-07-15 10:35 /proc/self/ns/cgroup -> cgroup:[4026532183]
-+  # From within new cgroupns, process sees that its in the root cgroup
-+  [ns]$ cat /proc/self/cgroup
-+  0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/
+ static int kernfs_fill_super(struct super_block *sb, unsigned long magic)
+ {
+ 	struct kernfs_super_info *info = kernfs_info(sb);
+diff --git a/include/linux/kernfs.h b/include/linux/kernfs.h
+index 3c2be75..b9538e0 100644
+--- a/include/linux/kernfs.h
++++ b/include/linux/kernfs.h
+@@ -274,6 +274,8 @@ void kernfs_put(struct kernfs_node *kn);
+ struct kernfs_node *kernfs_node_from_dentry(struct dentry *dentry);
+ struct kernfs_root *kernfs_root_from_sb(struct super_block *sb);
+ 
++struct dentry *kernfs_obtain_root(struct super_block *sb,
++				  struct kernfs_node *kn);
+ struct kernfs_root *kernfs_create_root(struct kernfs_syscall_ops *scops,
+ 				       unsigned int flags, void *priv);
+ void kernfs_destroy_root(struct kernfs_root *root);
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index b1ae6d9..e779890 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1438,6 +1438,14 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
+ 			return -ENOENT;
+ 	}
+ 
++	/* If inside a non-init cgroup namespace, only allow default hierarchy
++	 * to be mounted.
++	 */
++	if ((current->nsproxy->cgroup_ns != &init_cgroup_ns) &&
++	    !(opts->flags & CGRP_ROOT_SANE_BEHAVIOR)) {
++		return -EINVAL;
++	}
 +
-+  # From global cgroupns:
-+  $ cat /proc/<pid>/cgroup
-+  0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/batchjobs/container_id1
+ 	if (opts->flags & CGRP_ROOT_SANE_BEHAVIOR) {
+ 		pr_warn("sane_behavior: this is still under development and its behaviors will change, proceed at your own risk\n");
+ 		if (nr_opts != 1) {
+@@ -1630,6 +1638,15 @@ static void init_cgroup_root(struct cgroup_root *root,
+ 		set_bit(CGRP_CPUSET_CLONE_CHILDREN, &root->cgrp.flags);
+ }
+ 
++struct dentry *cgroupns_get_root(struct super_block *sb,
++				 struct cgroup_namespace *ns)
++{
++	struct dentry *nsdentry;
 +
-+  # Unshare cgroupns along with userns and mountns
-+  # Following calls unshare(CLONE_NEWCGROUP|CLONE_NEWUSER|CLONE_NEWNS), then
-+  # sets up uid/gid map and execs /bin/bash
-+  $ ~/unshare -c -u -m
-+  # Originally, we were in /batchjobs/container_id1 cgroup. Mount our own cgroup
-+  # hierarchy.
-+  [ns]$ mount -t cgroup cgroup /tmp/cgroup
-+  [ns]$ ls -l /tmp/cgroup
-+  total 0
-+  -r--r--r-- 1 root root 0 2014-10-13 09:32 cgroup.controllers
-+  -r--r--r-- 1 root root 0 2014-10-13 09:32 cgroup.populated
-+  -rw-r--r-- 1 root root 0 2014-10-13 09:25 cgroup.procs
-+  -rw-r--r-- 1 root root 0 2014-10-13 09:32 cgroup.subtree_control
++	nsdentry = kernfs_obtain_root(sb, ns->root_cgrp->kn);
++	return nsdentry;
++}
 +
-+The cgroupns-root (/batchjobs/container_id1 in above example) becomes the
-+filesystem root for the namespace specific cgroupfs mount.
+ static int cgroup_setup_root(struct cgroup_root *root, unsigned int ss_mask)
+ {
+ 	LIST_HEAD(tmp_links);
+@@ -1734,6 +1751,14 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
+ 	int ret;
+ 	int i;
+ 	bool new_sb;
++	struct cgroup_namespace *ns =
++		get_cgroup_ns(current->nsproxy->cgroup_ns);
 +
-+The virtualization of /proc/self/cgroup file combined with restricting
-+the view of cgroup hierarchy by namespace-private cgroupfs mount
-+should provide a completely isolated cgroup view inside the container.
++	/* Check if the caller has permission to mount. */
++	if (!ns_capable(ns->user_ns, CAP_SYS_ADMIN)) {
++		put_cgroup_ns(ns);
++		return ERR_PTR(-EPERM);
++	}
+ 
+ 	/*
+ 	 * The first time anyone tries to mount a cgroup, enable the list
+@@ -1866,11 +1891,28 @@ out_free:
+ 	kfree(opts.release_agent);
+ 	kfree(opts.name);
+ 
+-	if (ret)
++	if (ret) {
++		put_cgroup_ns(ns);
+ 		return ERR_PTR(ret);
++	}
+ 
+ 	dentry = kernfs_mount(fs_type, flags, root->kf_root,
+ 				CGROUP_SUPER_MAGIC, &new_sb);
 +
-+Note that CGroup Namespaces virtualizes the path on unified hierarchy only. If
-+other hierarchies are mounted, /proc/<pid>/cgroup will continue to show the full
-+cgroup path for those.
++	if (!IS_ERR(dentry) && (root == &cgrp_dfl_root)) {
++		/* If this mount is for the default hierarchy in non-init cgroup
++		 * namespace, then instead of root cgroup's dentry, we return
++		 * the dentry corresponding to the cgroupns->root_cgrp.
++		 */
++		if (ns != &init_cgroup_ns) {
++			struct dentry *nsdentry;
 +
-+In its current form, the cgroup namespaces patcheset provides following
-+behavior:
++			nsdentry = cgroupns_get_root(dentry->d_sb, ns);
++			dput(dentry);
++			dentry = nsdentry;
++		}
++	}
 +
-+(1) The 'cgroupns-root' for a cgroup namespace is the cgroup in which
-+    the process calling unshare is running.
-+    For ex. if a process in /batchjobs/container_id1 cgroup calls unshare,
-+    cgroup /batchjobs/container_id1 becomes the cgroupns-root.
-+    For the init_cgroup_ns, this is the real root ('/') cgroup
-+    (identified in code as cgrp_dfl_root.cgrp).
-+
-+(2) The cgroupns-root cgroup does not change even if the namespace
-+    creator process later moves to a different cgroup.
-+    $ ~/unshare -c # unshare cgroupns in some cgroup
-+    [ns]$ cat /proc/self/cgroup
-+    0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/
-+    [ns]$ mkdir sub_cgrp_1
-+    [ns]$ echo 0 > sub_cgrp_1/cgroup.procs
-+    [ns]$ cat /proc/self/cgroup
-+    0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/sub_cgrp_1
-+
-+(3) Each process gets its CGROUPNS specific view of /proc/<pid>/cgroup
-+(a) Processes running inside the cgroup namespace will be able to see
-+    cgroup paths (in /proc/self/cgroup) only inside their root cgroup
-+    [ns]$ sleep 100000 &  # From within unshared cgroupns
-+    [1] 7353
-+    [ns]$ echo 7353 > sub_cgrp_1/cgroup.procs
-+    [ns]$ cat /proc/7353/cgroup
-+    0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/sub_cgrp_1
-+
-+(b) From global cgroupns, the real cgroup path will be visible:
-+    $ cat /proc/7353/cgroup
-+    0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/batchjobs/container_id1/sub_cgrp_1
-+
-+(c) From a sibling cgroupns (cgroupns root-ed at a different cgroup), cgroup
-+    path relative to its own cgroupns-root will be shown:
-+    # ns2's cgroupns-root is at '/batchjobs/container_id2'
-+    [ns2]$ cat /proc/7353/cgroup
-+    0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/../container_id2/sub_cgrp_1
-+
-+    Note that the relative path always starts with '/' to indicate that its
-+    relative to the cgroupns-root of the caller.
-+
-+(4) Processes inside a cgroupns can move in-and-out of the cgroupns-root
-+    (if they have proper access to external cgroups).
-+    # From inside cgroupns (with cgroupns-root at /batchjobs/container_id1), and
-+    # assuming that the global hierarchy is still accessible inside cgroupns:
-+    $ cat /proc/7353/cgroup
-+    0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/sub_cgrp_1
-+    $ echo 7353 > batchjobs/container_id2/cgroup.procs
-+    $ cat /proc/7353/cgroup
-+    0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/../container_id2
-+
-+    Note that this kind of setup is not encouraged. A task inside cgroupns
-+    should only be exposed to its own cgroupns hierarchy. Otherwise it makes
-+    the virtualization of /proc/<pid>/cgroup less useful.
-+
-+(5) Setns to another cgroup namespace is allowed when:
-+    (a) the process has CAP_SYS_ADMIN in its current userns
-+    (b) the process has CAP_SYS_ADMIN in the target cgroupns' userns
-+    No implicit cgroup changes happen with attaching to another cgroupns. It
-+    is expected that the somone moves the attaching process under the target
-+    cgroupns-root.
-+
-+(6) When some thread from a multi-threaded process unshares its
-+    cgroup-namespace, the new cgroupns gets applied to the entire
-+    process (all the threads). This should be OK since
-+    unified-hierarchy only allows process-level containerization. So
-+    all the threads in the process will have the same cgroup.
-+
-+(7) The cgroup namespace is alive as long as there is atleast 1
-+    process inside it. When the last process exits, the cgroup
-+    namespace is destroyed. The cgroupns-root and the actual cgroups
-+    remain though.
-+
-+(8) Namespace specific cgroup hierarchy can be mounted by a process running
-+    inside cgroupns:
-+    $ mount -t cgroup -o __DEVEL__sane_behavior cgroup $MOUNT_POINT
-+
-+    This will mount the unified cgroup hierarchy with cgroupns-root as the
-+    filesystem root. The process needs CAP_SYS_ADMIN in its userns and mntns.
-+
+ 	if (IS_ERR(dentry) || !new_sb)
+ 		cgroup_put(&root->cgrp);
+ 
+@@ -1883,6 +1925,7 @@ out_free:
+ 		deactivate_super(pinned_sb);
+ 	}
+ 
++	put_cgroup_ns(ns);
+ 	return dentry;
+ }
+ 
+@@ -1911,6 +1954,7 @@ static struct file_system_type cgroup_fs_type = {
+ 	.name = "cgroup",
+ 	.mount = cgroup_mount,
+ 	.kill_sb = cgroup_kill_sb,
++	.fs_flags = FS_USERNS_MOUNT,
+ };
+ 
+ static struct kobject *cgroup_kobj;
 -- 
 2.2.0.rc0.207.ga3a616c
