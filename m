@@ -1,11 +1,24 @@
-From: Philippe MALSERT <invitation-AANtjN3pneBl57MIdRCFDg@public.gmane.org>
-Subject: Re: Fwd: Details de la dette 78730858.
-Date: Tue, 09 Dec 2014 05:08:00 +0100
-Message-ID: <25123255.2220.1418098083444.JavaMail.root@mibv4.ldsysteme.fr>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [RFC] lsm: namespace hooks
+Date: Tue, 09 Dec 2014 10:13:04 -0600
+Message-ID: <871to8n6nj.fsf__12498.2694550001$1418141748$gmane$org@x220.int.ebiederm.org>
+References: <1417096866-25563-1-git-send-email-l.pawelczyk@samsung.com>
+	<1417096866-25563-2-git-send-email-l.pawelczyk@samsung.com>
+	<CAFLxGvzw4N4QFv5Vg1dDf9pdRe+Szbevmqn5QNwjLHN4xrokCg@mail.gmail.com>
+	<1417098928.1805.15.camel@samsung.com> <54773757.8090905@nod.at>
+	<1417099455.1805.17.camel@samsung.com> <54773CE7.5040303@nod.at>
+	<1417101060.1805.21.camel@samsung.com>
+	<87d288zm3a.fsf@x220.int.ebiederm.org>
+	<1417104439.1805.25.camel@samsung.com>
+	<871tooy4nc.fsf@x220.int.ebiederm.org>
+	<1417109911.1805.27.camel@samsung.com>
+	<1417524193.1899.2.camel@samsung.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
-	boundary="----=_Part_2218_5823846.1418098083444"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1417524193.1899.2.camel-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org> (Lukasz Pawelczyk's message
+	of "Tue, 02 Dec 2014 13:43:13 +0100")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,176 +28,30 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
+Cc: Vladimir Davydov <vdavydov-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Miklos Szeredi <mszeredi-AlSwsSmVLrQ@public.gmane.org>, Lukasz Pawelczyk <havner-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Mark Rustad <mark.d.rustad-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Matthew Dempsky <mdempsky-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Daeseok Youn <daeseok.youn-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Casey Schaufler <casey-b3nKl+2j+RWFDJjVbXIJbx6SZaWxuSEbQH7oEaQurus@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Jeff Kirsher <jeffrey.t.kirsher-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Alex Thorlton <athorlton-sJ/iWh9BUns@public.gmane.org>, Juri Lelli <juri.lelli-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Nikolay Aleksandrov <nikolay-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dario Faggioli <raistlin-k2GhghHVRtY@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, James Morris <james.l.morris-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, er-ca.com-i9wRM+HIrmnmtl4Z8vJ8Kg761KYD1DLY@public.gmane.org, "open list:ABI/API" <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux
 List-Id: containers.vger.kernel.org
 
-------=_Part_2218_5823846.1418098083444
-Content-Disposition: inline
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-
-
-
-
-   Pour Philippe MALSERT et LD Systeme,
-   chaque correspondant est important!
-
-
-   Bonjour,
-
-
-   Vous êtes entré en contact avec mon réseau de correspondants
-   privilégiés. Pour délivrer votre message et bénéficier de tous les
-   avantages offerts aux membres de ma communauté, je vous invite à
-   cliquer sur [1]ce lien.
-
-
-   Vous en remerciant par avance.
-
-
-   Bien cordialement,
-
-
-   Philippe MALSERT
-
-   LD Systeme
-
-
-
-
-   [line.jpg]
-
-
-
-   Every new contact matters to
-   Philippe MALSERT and LD Systeme!
-
-
-   Hello,
-
-
-   I woud like to invite you to join my network of trusted contacts.
-
-   Click on [2]this link to ensure the delivery of your message and to
-   benefit from all the advantages of being part of my network.
-
-
-   Kind regards.
-
-
-   Philippe MALSERT
-
-   LD Systeme
-
-
-
-
-   [line.jpg]
-
-
-
-   Per Philippe MALSERT e LD Systeme,
-   ogni corrispondente é importante!
-
-
-   Buongiorno,
-
-
-   Sei entrato in contatto con la mia rete di corrispondenti privilegiati.
-   Per inviare il messaggio e godere di tutti i vantaggi previsti per i
-   membri della mia comunità , vi invito a cliccare su [3]questo link.
-
-
-   Grazie in anticipo.
-
-
-   Sinceramente,
-
-
-   Philippe MALSERT
-
-   LD Systeme
-
-
-
-
-   [line.jpg]
-
-
-
-   Para Philippe MALSERT y LD Systeme,
-   cada correspondiente es importante!
-
-
-   Hola,
-
-
-   Usted entró en contacto con mi red de corresponsales privilegiados.
-   Para enviar su mensaje y disfrutar de todos los beneficios disponibles
-   para los miembros de mi red , los invito a hacer clic en [4]este
-   enlace.
-
-
-   Agradeciendo de antemano.
-
-
-   Sinceramente,
-
-
-   Philippe MALSERT
-
-   LD Systeme
-
-
-
-
-   [line.jpg]
-
-
-
-   Für Philippe MALSERT und LD Systeme,
-   Hat jeder Korrespondent Bedeutung!
-
-
-   Guten Tag,
-
-
-   Sie sind mit meinem Netz privilegierter Korrespondenten in Kontakt
-   getreten. Um Ihre Nachricht abzusenden und alle Vorteile dieser
-   Gemeinschaft nutzen zu können, bitte auf diesen [5]Link klicken.
-
-
-   Vielen Dank im voraus.
-
-
-   Beste Grüsse
-
-
-   Philippe MALSERT
-
-   LD Systeme
-
-
-
-
-   [powered-by-da.jpg]
-
-References
-
-   1. http://mibv4.ldsysteme.fr/captchaCom/captcha.jsp?id=OGE4MGZiZTcyYzg4MGJjMTAxMmNlNDcwYWZmNzFiY2I7Y29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZztGUjt2aW5DSXFXQlpXaWsvV1oyZGFxWlV1MVdYQ2c9&loc=fr
-   2. http://mibv4.ldsysteme.fr/captchaCom/captcha.jsp?id=OGE4MGZiZTcyYzg4MGJjMTAxMmNlNDcwYWZmNzFiY2I7Y29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZztFTjt2aW5DSXFXQlpXaWsvV1oyZGFxWlV1MVdYQ2c9&loc=en
-   3. http://mibv4.ldsysteme.fr/captchaCom/captcha.jsp?id=OGE4MGZiZTcyYzg4MGJjMTAxMmNlNDcwYWZmNzFiY2I7Y29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZztJVDt2aW5DSXFXQlpXaWsvV1oyZGFxWlV1MVdYQ2c9&loc=it
-   4. http://mibv4.ldsysteme.fr/captchaCom/captcha.jsp?id=OGE4MGZiZTcyYzg4MGJjMTAxMmNlNDcwYWZmNzFiY2I7Y29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZztFUzt2aW5DSXFXQlpXaWsvV1oyZGFxWlV1MVdYQ2c9&loc=es
-   5. http://mibv4.ldsysteme.fr/captchaCom/captcha.jsp?id=OGE4MGZiZTcyYzg4MGJjMTAxMmNlNDcwYWZmNzFiY2I7Y29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZztERTt2aW5DSXFXQlpXaWsvV1oyZGFxWlV1MVdYQ2c9&loc=de
-
-------=_Part_2218_5823846.1418098083444
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
-------=_Part_2218_5823846.1418098083444--
+Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org> writes:
+
+> On czw, 2014-11-27 at 18:38 +0100, Lukasz Pawelczyk wrote:
+>> Right now the major issue I see is that LSM by itself is not defined how
+>> it's going to behave. It's up to a specific LSM module.
+>> 
+>> E.g. within the Smack namespace filling the map is a privileged
+>> operation. So by tying them up you cripple the ability to create a fully
+>> working user namespace as an unprivileged process.
+>
+> Entertaining the idea that LSM namespace would be tied to user namespace
+> (as you suggested) how do you see the limitation I described above?
+
+If they are tied it means you wind up in a situation where there are no
+labels you can set.
+
+In general setting the uid and gid maps is also a privileged operations.
+
+I really don't know what makes sense to do with lsms and namespaces
+generically, but I do know that your lsm namespace patche were awkwards
+and weird and seemed to be taking things in the wrong direction.
+
+Eric
