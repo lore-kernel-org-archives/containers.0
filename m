@@ -1,8 +1,8 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [CFT][PATCH 6/7] userns: Add a knob to disable setgroups on a per
-	user namespace basis
-Date: Tue, 09 Dec 2014 13:31:39 -0600
-Message-ID: <87r3w8liw4.fsf@x220.int.ebiederm.org>
+Subject: [CFT][PATCH 1/8] userns: Document what the invariant required for
+	safe unprivileged mappings.
+Date: Tue, 09 Dec 2014 14:36:48 -0600
+Message-ID: <87iohklfvj.fsf_-_@x220.int.ebiederm.org>
 References: <52e0643bd47b1e5c65921d6e00aea1f724bb510a.1417281801.git.luto@amacapital.net>
 	<87h9xez20g.fsf@x220.int.ebiederm.org>
 	<CALCETrXOz4C7Tu8mggBtR=k47ZmkuAhinVUxWJSFyS1Ep0HvRw@mail.gmail.com>
@@ -21,12 +21,13 @@ References: <52e0643bd47b1e5c65921d6e00aea1f724bb510a.1417281801.git.luto@amacap
 	<87ppbtn4mv.fsf@x220.int.ebiederm.org>
 	<CALCETrXSScp77BUJR5NSTh5-RnEZ9rqELSGJBeEzgdQ-OtohuQ@mail.gmail.com>
 	<87a92xn2io.fsf@x220.int.ebiederm.org>
+	<87r3w8liw4.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87a92xn2io.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org> (Eric W. Biederman's
-	message of "Mon, 08 Dec 2014 17:30:07 -0600")
+In-Reply-To: <87r3w8liw4.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org> (Eric W. Biederman's
+	message of "Tue, 09 Dec 2014 13:31:39 -0600")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -40,30 +41,46 @@ To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Josh Triplett <josh-iaAMLnmF4UmaiuxdJuQwMA@public.gmane.org>, stable <stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) writes:
 
-> Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> writes:
->
->>
->> This text was actually my suggested comment text.
->
-> Now I see.
->
->> If you put smp_rmb() in this function with a comment like that, then I
->> think it will all make sense and be obviously correct (even with most
->> of the other barriers removed).
->
-> Right.
->
-> Given that we have to be careful when using these things anyway what
-> I was hoping to achieve with the barriers appears impossible, and
-> confusing so I will see about just adding barriers where we need them
-> for real.  Sigh.
+The rule is simple.  Don't allow anything that wouldn't be allowed
+without unprivileged mappings.
 
-Doh.  The code has been entirely too clever.
+It was previously overlooked that establishing gid mappings would
+allow dropping groups and potentially gaining permission to files and
+directories that had lesser permissions for a specific group than for
+all other users.
 
-There are no need for atomics or other cleverness, I just need to
-generalize id_map_mutex.  I knew that had to be a trivially correct
-way of handling this mess.
+This is the rule needed to fix CVE-2014-8989 and prevent any other
+security issues with new_idmap_permitted.
 
-Eric
+The reason for this rule is that the unix permission model is old and
+there are programs out there somewhere that take advantage of every
+little corner of it.  So allowing a uid or gid mapping to be
+established without privielge that would allow anything that would not
+be allowed without that mapping will result in expectations from some
+code somewhere being violated.  Violated expectations about the
+behavior of the OS is a long way to say a security issue.
+
+Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ kernel/user_namespace.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index aa312b0dc3ec..b99c862a2e3f 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -812,7 +812,9 @@ static bool new_idmap_permitted(const struct file *file,
+ 				struct user_namespace *ns, int cap_setid,
+ 				struct uid_gid_map *new_map)
+ {
+-	/* Allow mapping to your own filesystem ids */
++	/* Don't allow mappings that would allow anything that wouldn't
++	 * be allowed without the establishment of unprivileged mappings.
++	 */
+ 	if ((new_map->nr_extents == 1) && (new_map->extent[0].count == 1)) {
+ 		u32 id = new_map->extent[0].lower_first;
+ 		if (cap_setid == CAP_SETUID) {
+-- 
+1.9.1
