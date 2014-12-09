@@ -1,7 +1,8 @@
 From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: [CFT][PATCH 6/8] userns: Rename id_map_mutex to userns_state_mutex
-Date: Tue, 9 Dec 2014 14:49:32 -0800
-Message-ID: <CALCETrXffwu6+yn76FXB2xnk+2GQq5UZSxXokOk8pxsHz6Ye_Q@mail.gmail.com>
+Subject: Re: [CFT][PATCH 3/8] userns: Don't allow unprivileged creation of gid
+	mappings
+Date: Tue, 9 Dec 2014 15:00:24 -0800
+Message-ID: <CALCETrU+xU3N+kPW1Mf2MV6QF2_cJFmatR2x_Mq7RTDJLcM68A@mail.gmail.com>
 References: <52e0643bd47b1e5c65921d6e00aea1f724bb510a.1417281801.git.luto@amacapital.net>
 	<87h9xez20g.fsf@x220.int.ebiederm.org>
 	<CALCETrXOz4C7Tu8mggBtR=k47ZmkuAhinVUxWJSFyS1Ep0HvRw@mail.gmail.com>
@@ -22,12 +23,12 @@ References: <52e0643bd47b1e5c65921d6e00aea1f724bb510a.1417281801.git.luto@amacap
 	<87a92xn2io.fsf@x220.int.ebiederm.org>
 	<87r3w8liw4.fsf@x220.int.ebiederm.org>
 	<87iohklfvj.fsf_-_@x220.int.ebiederm.org>
-	<87mw6wk12i.fsf_-_@x220.int.ebiederm.org>
+	<874mt4lfr6.fsf_-_@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87mw6wk12i.fsf_-_-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <874mt4lfr6.fsf_-_-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -41,84 +42,50 @@ To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Josh Triplett <josh-iaAMLnmF4UmaiuxdJuQwMA@public.gmane.org>, stable <stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Dec 9, 2014 at 12:41 PM, Eric W. Biederman
+On Tue, Dec 9, 2014 at 12:39 PM, Eric W. Biederman
 <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
 >
-> Generalize id_map_mutex so it can be used for more state of a user namespace.
+> As any gid mapping will allow and must allow for backwards
+> compatibility dropping groups don't allow any gid mappings to be
+> established without CAP_SETGID in the parent user namespace.
+>
+> For a small class of applications this change breaks userspace
+> and removes useful functionality.  This small class of applications
+> includes tools/testing/selftests/mount/unprivilged-remount-test.c
+>
+> Most of the removed functionality will be added back with the addition
+> of a one way knob to disable setgroups.  Once setgroups is disabled
+> setting the gid_map becomes as safe as setting the uid_map.
+>
+> For more common applications that set the uid_map and the gid_map
+> with privilege this change will have no affect.
+>
 
 Reviewed-by: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 
+> This is part of a fix for CVE-2014-8989.
 >
 > Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 > Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 > ---
->  kernel/user_namespace.c | 14 ++++++--------
->  1 file changed, 6 insertions(+), 8 deletions(-)
+>  kernel/user_namespace.c | 4 ----
+>  1 file changed, 4 deletions(-)
 >
 > diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-> index 1e34de2fbd60..44a555ac6104 100644
+> index 27c8dab48c07..1ce6d67c07b7 100644
 > --- a/kernel/user_namespace.c
 > +++ b/kernel/user_namespace.c
-> @@ -24,6 +24,7 @@
->  #include <linux/fs_struct.h>
+> @@ -821,10 +821,6 @@ static bool new_idmap_permitted(const struct file *file,
+>                         kuid_t uid = make_kuid(ns->parent, id);
+>                         if (uid_eq(uid, file->f_cred->fsuid))
+>                                 return true;
+> -               } else if (cap_setid == CAP_SETGID) {
+> -                       kgid_t gid = make_kgid(ns->parent, id);
+> -                       if (gid_eq(gid, file->f_cred->fsgid))
+> -                               return true;
+>                 }
+>         }
 >
->  static struct kmem_cache *user_ns_cachep __read_mostly;
-> +static DEFINE_MUTEX(userns_state_mutex);
->
->  static bool new_idmap_permitted(const struct file *file,
->                                 struct user_namespace *ns, int cap_setid,
-> @@ -583,9 +584,6 @@ static bool mappings_overlap(struct uid_gid_map *new_map,
->         return false;
->  }
->
-> -
-> -static DEFINE_MUTEX(id_map_mutex);
-> -
->  static ssize_t map_write(struct file *file, const char __user *buf,
->                          size_t count, loff_t *ppos,
->                          int cap_setid,
-> @@ -602,7 +600,7 @@ static ssize_t map_write(struct file *file, const char __user *buf,
->         ssize_t ret = -EINVAL;
->
->         /*
-> -        * The id_map_mutex serializes all writes to any given map.
-> +        * The userns_state_mutex serializes all writes to any given map.
->          *
->          * Any map is only ever written once.
->          *
-> @@ -620,7 +618,7 @@ static ssize_t map_write(struct file *file, const char __user *buf,
->          * order and smp_rmb() is guaranteed that we don't have crazy
->          * architectures returning stale data.
->          */
-> -       mutex_lock(&id_map_mutex);
-> +       mutex_lock(&userns_state_mutex);
->
->         ret = -EPERM;
->         /* Only allow one successful write to the map */
-> @@ -750,7 +748,7 @@ static ssize_t map_write(struct file *file, const char __user *buf,
->         *ppos = count;
->         ret = count;
->  out:
-> -       mutex_unlock(&id_map_mutex);
-> +       mutex_unlock(&userns_state_mutex);
->         if (page)
->                 free_page(page);
->         return ret;
-> @@ -845,12 +843,12 @@ bool userns_may_setgroups(const struct user_namespace *ns)
->  {
->         bool allowed;
->
-> -       mutex_lock(&id_map_mutex);
-> +       mutex_lock(&userns_state_mutex);
->         /* It is not safe to use setgroups until a gid mapping in
->          * the user namespace has been established.
->          */
->         allowed = ns->gid_map.nr_extents != 0;
-> -       mutex_unlock(&id_map_mutex);
-> +       mutex_unlock(&userns_state_mutex);
->
->         return allowed;
->  }
 > --
 > 1.9.1
 >
