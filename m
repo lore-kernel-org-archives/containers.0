@@ -1,8 +1,8 @@
-From: "Eric W.Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 Subject: Re: [CFT][PATCH 7/8] userns: Add a knob to disable setgroups on a per
 	user namespace basis
-Date: Tue, 09 Dec 2014 18:04:17 -0600
-Message-ID: <971ad3f6-90fd-4e3f-916c-8988af3c826d@email.android.com>
+Date: Tue, 9 Dec 2014 16:21:23 -0800
+Message-ID: <CALCETrWpzvNm=fjOa3_+4QOqYP8qZUJvQAd6AsRZ71xyHZQRCg__35708.1875009046$1418170920$gmane$org@mail.gmail.com>
 References: <52e0643bd47b1e5c65921d6e00aea1f724bb510a.1417281801.git.luto@amacapital.net>
 	<87fvcxyf28.fsf_-_@x220.int.ebiederm.org>
 	<874mtdyexp.fsf_-_@x220.int.ebiederm.org>
@@ -21,11 +21,12 @@ References: <52e0643bd47b1e5c65921d6e00aea1f724bb510a.1417281801.git.luto@amacap
 	<87iohklfvj.fsf_-_@x220.int.ebiederm.org>
 	<87fvcok11h.fsf_-_@x220.int.ebiederm.org>
 	<CALCETrVfKiXuY=KY_=nHpkTyLWgpy_3DK=4Mr2mhpyX9z1TzrA@mail.gmail.com>
+	<971ad3f6-90fd-4e3f-916c-8988af3c826d@email.android.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CALCETrVfKiXuY=KY_=nHpkTyLWgpy_3DK=4Mr2mhpyX9z1TzrA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <971ad3f6-90fd-4e3f-916c-8988af3c826d-2ueSQiBKiTY7tOexoI0I+QC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -35,40 +36,52 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+To: "Eric W.Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Josh Triplett <josh-iaAMLnmF4UmaiuxdJuQwMA@public.gmane.org>, stable <stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-
-On December 9, 2014 4:28:38 PM CST, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> wrote:
->On Tue, Dec 9, 2014 at 12:42 PM, Eric W. Biederman
-><ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->>
->> - Expose the knob to user space through a proc file
->/proc/<pid>/setgroups
->>
->>   A value of "deny" means the setgroups system call is disabled in
->the
->>   current processes user namespace and can not be enabled in the
->>   future in this user namespace.
->>
->>   A value of "allow" means the segtoups system call is enabled.
->>
->> - Descendant user namespaces inherit the value of setgroups from
->>   their parents.
->>
->> - A proc file is used (instead of a sysctl) as sysctls
->>   currently do not pass in a struct file so file_ns_capable
->>   is unusable.
+On Tue, Dec 9, 2014 at 4:04 PM, Eric W.Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
 >
->Reviewed-by: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 >
->But I still don't like the name "setgroups".  People may look at that
->and have no clue what the scope of the setting is.  And anyone who, as
->root, writes "deny" to /proc/self/setgroups, thinking that it acts on
->self, will be in for a surprise.
+> On December 9, 2014 4:28:38 PM CST, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> wrote:
+>>On Tue, Dec 9, 2014 at 12:42 PM, Eric W. Biederman
+>><ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+>>>
+>>> - Expose the knob to user space through a proc file
+>>/proc/<pid>/setgroups
+>>>
+>>>   A value of "deny" means the setgroups system call is disabled in
+>>the
+>>>   current processes user namespace and can not be enabled in the
+>>>   future in this user namespace.
+>>>
+>>>   A value of "allow" means the segtoups system call is enabled.
+>>>
+>>> - Descendant user namespaces inherit the value of setgroups from
+>>>   their parents.
+>>>
+>>> - A proc file is used (instead of a sysctl) as sysctls
+>>>   currently do not pass in a struct file so file_ns_capable
+>>>   is unusable.
+>>
+>>Reviewed-by: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+>>
+>>But I still don't like the name "setgroups".  People may look at that
+>>and have no clue what the scope of the setting is.  And anyone who, as
+>>root, writes "deny" to /proc/self/setgroups, thinking that it acts on
+>>self, will be in for a surprise.
+>
+> True setgroups isn't perfect.  Documenting it in a manpage may have to be enough. The only real improvement I can think of would be to make the setting a sysctl.   But I think pursuing that approaches the point where perfection is the enemy of getting this problem fixed.
+>
 
-True setgroups isn't perfect.  Documenting it in a manpage may have to be enough. The only real improvement I can think of would be to make the setting a sysctl.   But I think pursuing that approaches the point where perfection is the enemy of getting this problem fixed.
+Would "userns_setgroups" be okay?
 
-Eric
+--Andy
+
+> Eric
+
+
+
+-- 
+Andy Lutomirski
+AMA Capital Management, LLC
