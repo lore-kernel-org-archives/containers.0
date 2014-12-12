@@ -1,7 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 03/18] umount: Disallow unprivileged mount force
-Date: Fri, 12 Dec 2014 16:48:14 -0600
-Message-ID: <1418424509-22389-3-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH review 04/18] umount: Do not allow unmounting rootfs.
+Date: Fri, 12 Dec 2014 16:48:15 -0600
+Message-ID: <1418424509-22389-4-git-send-email-ebiederm@xmission.com>
 References: <87k31wzehb.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,34 +18,104 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Forced unmount affects not just the mount namespace but the underlying
-superblock as well.  Restrict forced unmount to the global root user
-for now.  Otherwise it becomes possible a user in a less privileged
-mount namespace to force the shutdown of a superblock of a filesystem
-in a more privileged mount namespace, allowing a DOS attack on root.
+Andrew Vagin <avagin-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org> writes:
 
-Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> #define _GNU_SOURCE
+> #include <sys/types.h>
+> #include <sys/stat.h>
+> #include <fcntl.h>
+> #include <sched.h>
+> #include <unistd.h>
+> #include <sys/mount.h>
+>
+> int main(int argc, char **argv)
+> {
+> 	int fd;
+>
+> 	fd = open("/proc/self/ns/mnt", O_RDONLY);
+> 	if (fd < 0)
+> 	   return 1;
+> 	   while (1) {
+> 	   	 if (umount2("/", MNT_DETACH) ||
+> 		        setns(fd, CLONE_NEWNS))
+> 					break;
+> 					}
+>
+> 					return 0;
+> }
+>
+> root@ubuntu:/home/avagin# gcc -Wall nsenter.c -o nsenter
+> root@ubuntu:/home/avagin# strace ./nsenter
+> execve("./nsenter", ["./nsenter"], [/* 22 vars */]) = 0
+> ...
+> open("/proc/self/ns/mnt", O_RDONLY)     = 3
+> umount("/", MNT_DETACH)                 = 0
+> setns(3, 131072)                        = 0
+> umount("/", MNT_DETACH
+>
+causes:
+
+> [  260.548301] ------------[ cut here ]------------
+> [  260.550941] kernel BUG at /build/buildd/linux-3.13.0/fs/pnode.c:372!
+> [  260.552068] invalid opcode: 0000 [#1] SMP
+> [  260.552068] Modules linked in: xt_CHECKSUM iptable_mangle xt_tcpudp xt_addrtype xt_conntrack ipt_MASQUERADE iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack bridge stp llc dm_thin_pool dm_persistent_data dm_bufio dm_bio_prison iptable_filter ip_tables x_tables crct10dif_pclmul crc32_pclmul ghash_clmulni_intel binfmt_misc nfsd auth_rpcgss nfs_acl aesni_intel nfs lockd aes_x86_64 sunrpc fscache lrw gf128mul glue_helper ablk_helper cryptd serio_raw ppdev parport_pc lp parport btrfs xor raid6_pq libcrc32c psmouse floppy
+> [  260.552068] CPU: 0 PID: 1723 Comm: nsenter Not tainted 3.13.0-30-generic #55-Ubuntu
+> [  260.552068] Hardware name: Bochs Bochs, BIOS Bochs 01/01/2011
+> [  260.552068] task: ffff8800376097f0 ti: ffff880074824000 task.ti: ffff880074824000
+> [  260.552068] RIP: 0010:[<ffffffff811e9483>]  [<ffffffff811e9483>] propagate_umount+0x123/0x130
+> [  260.552068] RSP: 0018:ffff880074825e98  EFLAGS: 00010246
+> [  260.552068] RAX: ffff88007c741140 RBX: 0000000000000002 RCX: ffff88007c741190
+> [  260.552068] RDX: ffff88007c741190 RSI: ffff880074825ec0 RDI: ffff880074825ec0
+> [  260.552068] RBP: ffff880074825eb0 R08: 00000000000172e0 R09: ffff88007fc172e0
+> [  260.552068] R10: ffffffff811cc642 R11: ffffea0001d59000 R12: ffff88007c741140
+> [  260.552068] R13: ffff88007c741140 R14: ffff88007c741140 R15: 0000000000000000
+> [  260.552068] FS:  00007fd5c7e41740(0000) GS:ffff88007fc00000(0000) knlGS:0000000000000000
+> [  260.552068] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> [  260.552068] CR2: 00007fd5c7968050 CR3: 0000000070124000 CR4: 00000000000406f0
+> [  260.552068] Stack:
+> [  260.552068]  0000000000000002 0000000000000002 ffff88007c631000 ffff880074825ed8
+> [  260.552068]  ffffffff811dcfac ffff88007c741140 0000000000000002 ffff88007c741160
+> [  260.552068]  ffff880074825f38 ffffffff811dd12b ffffffff811cc642 0000000075640000
+> [  260.552068] Call Trace:
+> [  260.552068]  [<ffffffff811dcfac>] umount_tree+0x20c/0x260
+> [  260.552068]  [<ffffffff811dd12b>] do_umount+0x12b/0x300
+> [  260.552068]  [<ffffffff811cc642>] ? final_putname+0x22/0x50
+> [  260.552068]  [<ffffffff811cc849>] ? putname+0x29/0x40
+> [  260.552068]  [<ffffffff811dd88c>] SyS_umount+0xdc/0x100
+> [  260.552068]  [<ffffffff8172aeff>] tracesys+0xe1/0xe6
+> [  260.552068] Code: 89 50 08 48 8b 50 08 48 89 02 49 89 45 08 e9 72 ff ff ff 0f 1f 44 00 00 4c 89 e6 4c 89 e7 e8 f5 f6 ff ff 48 89 c3 e9 39 ff ff ff <0f> 0b 66 2e 0f 1f 84 00 00 00 00 00 90 66 66 66 66 90 55 b8 01
+> [  260.552068] RIP  [<ffffffff811e9483>] propagate_umount+0x123/0x130
+> [  260.552068]  RSP <ffff880074825e98>
+> [  260.611451] ---[ end trace 11c33d85f1d4c652 ]--
+
+Which in practice is totally uninteresting.  Only the global root user can
+do it, and it is just a stupid thing to do.
+
+However that is no excuse to allow a silly way to oops the kernel.
+
+We can avoid this silly problem by setting MNT_LOCKED on the rootfs
+mount point and thus avoid needing any special cases in the unmount
+code.
+
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/namespace.c | 3 +++
- 1 file changed, 3 insertions(+)
+ fs/namespace.c | 1 +
+ 1 file changed, 1 insertion(+)
 
 diff --git a/fs/namespace.c b/fs/namespace.c
-index 3a1a87dc33df..43b16af8af30 100644
+index 43b16af8af30..15d0328bd035 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -1544,6 +1544,9 @@ SYSCALL_DEFINE2(umount, char __user *, name, int, flags)
- 		goto dput_and_out;
- 	if (mnt->mnt.mnt_flags & MNT_LOCKED)
- 		goto dput_and_out;
-+	retval = -EPERM;
-+	if (flags & MNT_FORCE && !capable(CAP_SYS_ADMIN))
-+		goto dput_and_out;
+@@ -3011,6 +3011,7 @@ static void __init init_mount_tree(void)
  
- 	retval = do_umount(mnt, flags);
- dput_and_out:
+ 	root.mnt = mnt;
+ 	root.dentry = mnt->mnt_root;
++	mnt->mnt_flags |= MNT_LOCKED;
+ 
+ 	set_fs_pwd(current->fs, &root);
+ 	set_fs_root(current->fs, &root);
 -- 
 1.9.1
