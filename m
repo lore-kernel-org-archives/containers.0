@@ -1,8 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 11/18] userns: Don't allow unprivileged creation of gid
-	mappings
-Date: Fri, 12 Dec 2014 16:48:22 -0600
-Message-ID: <1418424509-22389-11-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH review 13/18] userns: Only allow the creator of the userns
+	unprivileged mappings
+Date: Fri, 12 Dec 2014 16:48:24 -0600
+Message-ID: <1418424509-22389-13-git-send-email-ebiederm@xmission.com>
 References: <87k31wzehb.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,44 +22,51 @@ To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-As any gid mapping will allow and must allow for backwards
-compatibility dropping groups don't allow any gid mappings to be
-established without CAP_SETGID in the parent user namespace.
+If you did not create the user namespace and are allowed
+to write to uid_map or gid_map you should already have the necessary
+privilege in the parent user namespace to establish any mapping
+you want so this will not affect userspace in practice.
 
-For a small class of applications this change breaks userspace
-and removes useful functionality.  This small class of applications
-includes tools/testing/selftests/mount/unprivilged-remount-test.c
+Limiting unprivileged uid mapping establishment to the creator of the
+user namespace makes it easier to verify all credentials obtained with
+the uid mapping can be obtained without the uid mapping without
+privilege.
 
-Most of the removed functionality will be added back with the addition
-of a one way knob to disable setgroups.  Once setgroups is disabled
-setting the gid_map becomes as safe as setting the uid_map.
+Limiting unprivileged gid mapping establishment (which is temporarily
+absent) to the creator of the user namespace also ensures that the
+combination of uid and gid can already be obtained without privilege.
 
-For more common applications that set the uid_map and the gid_map
-with privilege this change will have no affect.
-
-This is part of a fix for CVE-2014-8989.
+This is part of the fix for CVE-2014-8989.
 
 Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Reviewed-by: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- kernel/user_namespace.c | 4 ----
- 1 file changed, 4 deletions(-)
+ kernel/user_namespace.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 27c8dab48c07..1ce6d67c07b7 100644
+index 9451b12a9b6c..1e34de2fbd60 100644
 --- a/kernel/user_namespace.c
 +++ b/kernel/user_namespace.c
-@@ -821,10 +821,6 @@ static bool new_idmap_permitted(const struct file *file,
+@@ -812,14 +812,16 @@ static bool new_idmap_permitted(const struct file *file,
+ 				struct user_namespace *ns, int cap_setid,
+ 				struct uid_gid_map *new_map)
+ {
++	const struct cred *cred = file->f_cred;
+ 	/* Don't allow mappings that would allow anything that wouldn't
+ 	 * be allowed without the establishment of unprivileged mappings.
+ 	 */
+-	if ((new_map->nr_extents == 1) && (new_map->extent[0].count == 1)) {
++	if ((new_map->nr_extents == 1) && (new_map->extent[0].count == 1) &&
++	    uid_eq(ns->owner, cred->euid)) {
+ 		u32 id = new_map->extent[0].lower_first;
+ 		if (cap_setid == CAP_SETUID) {
  			kuid_t uid = make_kuid(ns->parent, id);
- 			if (uid_eq(uid, file->f_cred->fsuid))
+-			if (uid_eq(uid, file->f_cred->euid))
++			if (uid_eq(uid, cred->euid))
  				return true;
--		} else if (cap_setid == CAP_SETGID) {
--			kgid_t gid = make_kgid(ns->parent, id);
--			if (gid_eq(gid, file->f_cred->fsgid))
--				return true;
  		}
  	}
- 
 -- 
 1.9.1
