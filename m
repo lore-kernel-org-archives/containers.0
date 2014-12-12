@@ -1,8 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 13/18] userns: Only allow the creator of the userns
-	unprivileged mappings
-Date: Fri, 12 Dec 2014 16:48:24 -0600
-Message-ID: <1418424509-22389-13-git-send-email-ebiederm@xmission.com>
+Subject: [PATCH review 18/18] userns: Unbreak the unprivileged remount tests
+Date: Fri, 12 Dec 2014 16:48:29 -0600
+Message-ID: <1418424509-22389-18-git-send-email-ebiederm__15132.944394327$1418424946$gmane$org@xmission.com>
 References: <87k31wzehb.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,51 +21,89 @@ To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-If you did not create the user namespace and are allowed
-to write to uid_map or gid_map you should already have the necessary
-privilege in the parent user namespace to establish any mapping
-you want so this will not affect userspace in practice.
-
-Limiting unprivileged uid mapping establishment to the creator of the
-user namespace makes it easier to verify all credentials obtained with
-the uid mapping can be obtained without the uid mapping without
-privilege.
-
-Limiting unprivileged gid mapping establishment (which is temporarily
-absent) to the creator of the user namespace also ensures that the
-combination of uid and gid can already be obtained without privilege.
-
-This is part of the fix for CVE-2014-8989.
+A security fix in caused the way the unprivileged remount tests were
+using user namespaces to break.  Tweak the way user namespaces are
+being used so the test works again.
 
 Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Reviewed-by: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- kernel/user_namespace.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+ .../selftests/mount/unprivileged-remount-test.c    | 32 ++++++++++++++++------
+ 1 file changed, 24 insertions(+), 8 deletions(-)
 
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 9451b12a9b6c..1e34de2fbd60 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -812,14 +812,16 @@ static bool new_idmap_permitted(const struct file *file,
- 				struct user_namespace *ns, int cap_setid,
- 				struct uid_gid_map *new_map)
+diff --git a/tools/testing/selftests/mount/unprivileged-remount-test.c b/tools/testing/selftests/mount/unprivileged-remount-test.c
+index 9669d375625a..517785052f1c 100644
+--- a/tools/testing/selftests/mount/unprivileged-remount-test.c
++++ b/tools/testing/selftests/mount/unprivileged-remount-test.c
+@@ -53,17 +53,14 @@ static void die(char *fmt, ...)
+ 	exit(EXIT_FAILURE);
+ }
+ 
+-static void write_file(char *filename, char *fmt, ...)
++static void vmaybe_write_file(bool enoent_ok, char *filename, char *fmt, va_list ap)
  {
-+	const struct cred *cred = file->f_cred;
- 	/* Don't allow mappings that would allow anything that wouldn't
- 	 * be allowed without the establishment of unprivileged mappings.
- 	 */
--	if ((new_map->nr_extents == 1) && (new_map->extent[0].count == 1)) {
-+	if ((new_map->nr_extents == 1) && (new_map->extent[0].count == 1) &&
-+	    uid_eq(ns->owner, cred->euid)) {
- 		u32 id = new_map->extent[0].lower_first;
- 		if (cap_setid == CAP_SETUID) {
- 			kuid_t uid = make_kuid(ns->parent, id);
--			if (uid_eq(uid, file->f_cred->euid))
-+			if (uid_eq(uid, cred->euid))
- 				return true;
- 		}
+ 	char buf[4096];
+ 	int fd;
+ 	ssize_t written;
+ 	int buf_len;
+-	va_list ap;
+ 
+-	va_start(ap, fmt);
+ 	buf_len = vsnprintf(buf, sizeof(buf), fmt, ap);
+-	va_end(ap);
+ 	if (buf_len < 0) {
+ 		die("vsnprintf failed: %s\n",
+ 		    strerror(errno));
+@@ -74,6 +71,8 @@ static void write_file(char *filename, char *fmt, ...)
+ 
+ 	fd = open(filename, O_WRONLY);
+ 	if (fd < 0) {
++		if ((errno == ENOENT) && enoent_ok)
++			return;
+ 		die("open of %s failed: %s\n",
+ 		    filename, strerror(errno));
  	}
+@@ -92,6 +91,26 @@ static void write_file(char *filename, char *fmt, ...)
+ 	}
+ }
+ 
++static void maybe_write_file(char *filename, char *fmt, ...)
++{
++	va_list ap;
++
++	va_start(ap, fmt);
++	vmaybe_write_file(true, filename, fmt, ap);
++	va_end(ap);
++
++}
++
++static void write_file(char *filename, char *fmt, ...)
++{
++	va_list ap;
++
++	va_start(ap, fmt);
++	vmaybe_write_file(false, filename, fmt, ap);
++	va_end(ap);
++
++}
++
+ static int read_mnt_flags(const char *path)
+ {
+ 	int ret;
+@@ -144,13 +163,10 @@ static void create_and_enter_userns(void)
+ 			strerror(errno));
+ 	}
+ 
++	maybe_write_file("/proc/self/setgroups", "deny");
+ 	write_file("/proc/self/uid_map", "0 %d 1", uid);
+ 	write_file("/proc/self/gid_map", "0 %d 1", gid);
+ 
+-	if (setgroups(0, NULL) != 0) {
+-		die("setgroups failed: %s\n",
+-			strerror(errno));
+-	}
+ 	if (setgid(0) != 0) {
+ 		die ("setgid(0) failed %s\n",
+ 			strerror(errno));
 -- 
 1.9.1
