@@ -1,8 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 10/18] userns: Don't allow setgroups until a gid
-	mapping has been setablished
-Date: Fri, 12 Dec 2014 16:48:21 -0600
-Message-ID: <1418424509-22389-10-git-send-email-ebiederm__18954.5155190446$1418424752$gmane$org@xmission.com>
+Subject: [PATCH review 11/18] userns: Don't allow unprivileged creation of gid
+	mappings
+Date: Fri, 12 Dec 2014 16:48:22 -0600
+Message-ID: <1418424509-22389-11-git-send-email-ebiederm@xmission.com>
 References: <87k31wzehb.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,95 +22,44 @@ To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-setgroups is unique in not needing a valid mapping before it can be called,
-in the case of setgroups(0, NULL) which drops all supplemental groups.
+As any gid mapping will allow and must allow for backwards
+compatibility dropping groups don't allow any gid mappings to be
+established without CAP_SETGID in the parent user namespace.
 
-The design of the user namespace assumes that CAP_SETGID can not actually
-be used until a gid mapping is established.  Therefore add a helper function
-to see if the user namespace gid mapping has been established and call
-that function in the setgroups permission check.
+For a small class of applications this change breaks userspace
+and removes useful functionality.  This small class of applications
+includes tools/testing/selftests/mount/unprivilged-remount-test.c
 
-This is part of the fix for CVE-2014-8989, being able to drop groups
-without privilege using user namespaces.
+Most of the removed functionality will be added back with the addition
+of a one way knob to disable setgroups.  Once setgroups is disabled
+setting the gid_map becomes as safe as setting the uid_map.
+
+For more common applications that set the uid_map and the gid_map
+with privilege this change will have no affect.
+
+This is part of a fix for CVE-2014-8989.
 
 Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Reviewed-by: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- include/linux/user_namespace.h |  5 +++++
- kernel/groups.c                |  4 +++-
- kernel/user_namespace.c        | 14 ++++++++++++++
- 3 files changed, 22 insertions(+), 1 deletion(-)
+ kernel/user_namespace.c | 4 ----
+ 1 file changed, 4 deletions(-)
 
-diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index e95372654f09..8d493083486a 100644
---- a/include/linux/user_namespace.h
-+++ b/include/linux/user_namespace.h
-@@ -63,6 +63,7 @@ extern const struct seq_operations proc_projid_seq_operations;
- extern ssize_t proc_uid_map_write(struct file *, const char __user *, size_t, loff_t *);
- extern ssize_t proc_gid_map_write(struct file *, const char __user *, size_t, loff_t *);
- extern ssize_t proc_projid_map_write(struct file *, const char __user *, size_t, loff_t *);
-+extern bool userns_may_setgroups(const struct user_namespace *ns);
- #else
- 
- static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
-@@ -87,6 +88,10 @@ static inline void put_user_ns(struct user_namespace *ns)
- {
- }
- 
-+static inline bool userns_may_setgroups(const struct user_namespace *ns)
-+{
-+	return true;
-+}
- #endif
- 
- #endif /* _LINUX_USER_H */
-diff --git a/kernel/groups.c b/kernel/groups.c
-index 02d8a251c476..664411f171b5 100644
---- a/kernel/groups.c
-+++ b/kernel/groups.c
-@@ -6,6 +6,7 @@
- #include <linux/slab.h>
- #include <linux/security.h>
- #include <linux/syscalls.h>
-+#include <linux/user_namespace.h>
- #include <asm/uaccess.h>
- 
- /* init to 2 - one for init_task, one to ensure it is never freed */
-@@ -217,7 +218,8 @@ bool may_setgroups(void)
- {
- 	struct user_namespace *user_ns = current_user_ns();
- 
--	return ns_capable(user_ns, CAP_SETGID);
-+	return ns_capable(user_ns, CAP_SETGID) &&
-+		userns_may_setgroups(user_ns);
- }
- 
- /*
 diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index b99c862a2e3f..27c8dab48c07 100644
+index 27c8dab48c07..1ce6d67c07b7 100644
 --- a/kernel/user_namespace.c
 +++ b/kernel/user_namespace.c
-@@ -843,6 +843,20 @@ static bool new_idmap_permitted(const struct file *file,
- 	return false;
- }
+@@ -821,10 +821,6 @@ static bool new_idmap_permitted(const struct file *file,
+ 			kuid_t uid = make_kuid(ns->parent, id);
+ 			if (uid_eq(uid, file->f_cred->fsuid))
+ 				return true;
+-		} else if (cap_setid == CAP_SETGID) {
+-			kgid_t gid = make_kgid(ns->parent, id);
+-			if (gid_eq(gid, file->f_cred->fsgid))
+-				return true;
+ 		}
+ 	}
  
-+bool userns_may_setgroups(const struct user_namespace *ns)
-+{
-+	bool allowed;
-+
-+	mutex_lock(&id_map_mutex);
-+	/* It is not safe to use setgroups until a gid mapping in
-+	 * the user namespace has been established.
-+	 */
-+	allowed = ns->gid_map.nr_extents != 0;
-+	mutex_unlock(&id_map_mutex);
-+
-+	return allowed;
-+}
-+
- static void *userns_get(struct task_struct *task)
- {
- 	struct user_namespace *user_ns;
 -- 
 1.9.1
