@@ -1,8 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 12/18] userns: Check euid no fsuid when establishing an
-	unprivileged uid mapping
-Date: Fri, 12 Dec 2014 16:48:23 -0600
-Message-ID: <1418424509-22389-12-git-send-email-ebiederm__32637.9604558044$1418424959$gmane$org@xmission.com>
+Subject: [PATCH review 17/18] userns; Correct the comment in map_write
+Date: Fri, 12 Dec 2014 16:48:28 -0600
+Message-ID: <1418424509-22389-17-git-send-email-ebiederm__19145.4270658598$1418424971$gmane$org@xmission.com>
 References: <87k31wzehb.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,39 +18,32 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-setresuid allows the euid to be set to any of uid, euid, suid, and
-fsuid.  Therefor it is safe to allow an unprivileged user to map
-their euid and use CAP_SETUID privileged with exactly that uid,
-as no new credentials can be obtained.
+It is important that all maps are less than PAGE_SIZE
+or else setting the last byte of the buffer to '0'
+could write off the end of the allocated storage.
 
-I can not find a combination of existing system calls that allows setting
-uid, euid, suid, and fsuid from the fsuid making the previous use
-of fsuid for allowing unprivileged mappings a bug.
+Correct the misleading comment.
 
-This is part of a fix for CVE-2014-8989.
-
-Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Reviewed-by: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
  kernel/user_namespace.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 1ce6d67c07b7..9451b12a9b6c 100644
+index a2e37c5d2f63..ad419b04c146 100644
 --- a/kernel/user_namespace.c
 +++ b/kernel/user_namespace.c
-@@ -819,7 +819,7 @@ static bool new_idmap_permitted(const struct file *file,
- 		u32 id = new_map->extent[0].lower_first;
- 		if (cap_setid == CAP_SETUID) {
- 			kuid_t uid = make_kuid(ns->parent, id);
--			if (uid_eq(uid, file->f_cred->fsuid))
-+			if (uid_eq(uid, file->f_cred->euid))
- 				return true;
- 		}
- 	}
+@@ -643,7 +643,7 @@ static ssize_t map_write(struct file *file, const char __user *buf,
+ 	if (!page)
+ 		goto out;
+ 
+-	/* Only allow <= page size writes at the beginning of the file */
++	/* Only allow < page size writes at the beginning of the file */
+ 	ret = -EINVAL;
+ 	if ((*ppos != 0) || (count >= PAGE_SIZE))
+ 		goto out;
 -- 
 1.9.1
