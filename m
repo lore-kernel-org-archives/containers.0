@@ -1,17 +1,25 @@
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Limiting access to abstract unix domain sockets
-Date: Fri, 12 Dec 2014 03:38:25 +0000
-Message-ID: <20141212033825.GK20012@ubuntumail>
-References: <1418319385.9942.9.camel@redhat.com>
-	<20141211174921.GH20012@ubuntumail>
-	<87zjauatbt.fsf@x220.int.ebiederm.org>
-	<1418329944.9942.12.camel@redhat.com>
+From: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: RE: [CFT] Can I get some Tested-By's on this series?
+Date: Fri, 12 Dec 2014 06:56:13 +0000
+Message-ID: <5871495633F38949900D2BF2DC04883E737908F5@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <CALCETrXWx2-ZejEHmOi7aSoF-qJMRGR5yseeMhuurZwJRrQbUg@mail.gmail.com>
+	<87h9x5re41.fsf_-_@x220.int.ebiederm.org>
+	<87mw6xpzb0.fsf_-_@x220.int.ebiederm.org>
+	<CALCETrU-o5mPr1jCaLXDuuF6J2N470zAtx=8Fa-SjF=ZpdE8mQ@mail.gmail.com>
+	<87ppbtn4mv.fsf@x220.int.ebiederm.org>
+	<CALCETrXSScp77BUJR5NSTh5-RnEZ9rqELSGJBeEzgdQ-OtohuQ@mail.gmail.com>
+	<87a92xn2io.fsf@x220.int.ebiederm.org>
+	<87r3w8liw4.fsf@x220.int.ebiederm.org>
+	<87iohklfvj.fsf_-_@x220.int.ebiederm.org>
+	<87mw6vh31e.fsf_-_@x220.int.ebiederm.org>
+	<20141210224822.GG20012@ubuntumail> <5488CE4D.1000606@nod.at>
+	<87r3w7f5yc.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1418329944.9942.12.camel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <87r3w7f5yc.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+Content-Language: zh-CN
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,64 +29,58 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexander Larsson <alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
+Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Josh Triplett <josh-iaAMLnmF4UmaiuxdJuQwMA@public.gmane.org>, stable <stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Alexander Larsson (alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
-> On tor, 2014-12-11 at 13:18 -0600, Eric W. Biederman wrote:
-> > Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> writes:
-> > 
-> > > Quoting Alexander Larsson (alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
-> > >> I'm working on using container technology to sandbox desktop
-> > >> applications, and I've run into an issue with abstract unix domain
-> > >> sockets. Generally unix domain sockets work fine in a container
-> > >> situation because they are naturally namespaced via the filesystem
-> > >> namespace.
-> > >> 
-> > >> However, abstract socket addresses are global to the *network*
-> > >> namespace. This means that if you need to share the host network
-> > >> namespace (typically so you have full ip networking access) you can't
-> > >> limit access to *any* service that listens to an abstract unix socket.
-> > >> 
-> > >> I don't particularly need to use abstract sockets, so it would be ok to
-> > >> just disallow its use in the container. I've looked at using seccomp for
-> > >> this, but it doesn't seem to help here, as it needs to dereference the
-> > >> socket address to tell if its abstract or not.
-> > >> 
-> > >> Does anyone have any idea how to do this?
-> > >
-> > > You should be able to use recent apparmor or selinux.
-> > 
-> > Agreed.  If you are trying to firewall an application the lsm's are the
-> > firewall mechanism we have.
-> > 
-> > If you are building an application from scratch I would tend to
-> > recommend the use of privilege separation, and only allowing the
-> > ``privileged'' part of your application to setup network sockets.
-> > 
-> > To me one of the scaries things an application can have is a network
-> > socket to the outside world.
+
+
+> -----Original Message-----
+> From: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> [mailto:containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org] On Behalf Of Eric W.
+> Biederman
+> Sent: Thursday, December 11, 2014 7:20 AM
+> To: Richard Weinberger
+> Cc: linux-man; Kees Cook; Linux API; Linux Containers; Serge Hallyn; Josh Triplett;
+> stable; Andy Lutomirski; Kenton Varda; LSM; Michael Kerrisk-manpages; Casey
+> Schaufler; Andrew Morton; linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> Subject: Re: [CFT] Can I get some Tested-By's on this series?
 > 
-> Well, a great many apps don't need network access. Like say a game. For
-> these there would not be a problem, just give them their own network
-> namespace.
+> Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org> writes:
 > 
-> But, if we're talking about an existing (not privilege separated)
-> complex networking app, say an email client. How would you recommend
-> that such an app be contained (network-wise) in a generic framework? We
-> could give it its own network and IP that we NAT. But is this really
-> more "secure" in any sense? The app can still send stuff on the outside
-> network. I guess the inability to handle inbound traffic helps, but is
-> this all?
+> > Am 10.12.2014 um 23:48 schrieb Serge Hallyn:
+> >> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> >>>
+> >>> Will people please test these patches with their container project?
+> >>>
+> >>> These changes break container userspace (hopefully in a minimal way) if
+> >>> I could have that confirmed by testing I would really appreciate it.  I
+> >>> really don't want to send out a bug fix that accidentally breaks
+> >>> userspace again.
+> >>>
+> >>> The only issue sort of under discussion is if there is a better name for
+> >>> /proc/<pid>/setgroups, and the name of the file will not affect the
+> >>> functionality of the patchset.
+> >>>
+> >>> With the code reviewed and written in simple obviously correct, easily
+> >>> reviewable ways I am hoping/planning to send this to Linus ASAP.
+> >>>
+> >>> Eric
+> >>
+> >> Is there a git tree we can clone?
+> >
+> > I was about to ask that too.
+> > Hopefully I can tomorrow find some time for testing.
+> 
+> git pull git.kernel.org:/pub/scm/linux/kernel/git/ebiederm/user-namespace.git
+> for-testing
+> 
+> That holds my entire queue of fixes against 3.18-rc6
+> 
 
-I suspect there won't be an answer here because your question has gone
-off the original topic and become too unspecific.
+Tested on Fedora20 with libvirt 1.2.11, works fine.
 
-Basically you were right originally: so long as you share the host's
-network namespace, you can use its abstract sockets.  LSMs are one way
-to actually clamp down on that.  For instance, on new enough apparmor,
-by default applications under different apparmor profiles should not
-be able to connect to each other's sockets (configurable in policy).
+Tested-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
--serge
+Thanks,
+- Chen
