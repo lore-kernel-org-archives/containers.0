@@ -1,7 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 14/18] userns: Rename id_map_mutex to userns_state_mutex
-Date: Fri, 12 Dec 2014 16:48:25 -0600
-Message-ID: <1418424509-22389-14-git-send-email-ebiederm__21559.2684028254$1418424958$gmane$org@xmission.com>
+Subject: [PATCH review 12/18] userns: Check euid no fsuid when establishing an
+	unprivileged uid mapping
+Date: Fri, 12 Dec 2014 16:48:23 -0600
+Message-ID: <1418424509-22389-12-git-send-email-ebiederm__32637.9604558044$1418424959$gmane$org@xmission.com>
 References: <87k31wzehb.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,78 +22,36 @@ To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Generalize id_map_mutex so it can be used for more state of a user namespace.
+setresuid allows the euid to be set to any of uid, euid, suid, and
+fsuid.  Therefor it is safe to allow an unprivileged user to map
+their euid and use CAP_SETUID privileged with exactly that uid,
+as no new credentials can be obtained.
+
+I can not find a combination of existing system calls that allows setting
+uid, euid, suid, and fsuid from the fsuid making the previous use
+of fsuid for allowing unprivileged mappings a bug.
+
+This is part of a fix for CVE-2014-8989.
 
 Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Reviewed-by: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- kernel/user_namespace.c | 14 ++++++--------
- 1 file changed, 6 insertions(+), 8 deletions(-)
+ kernel/user_namespace.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 1e34de2fbd60..44a555ac6104 100644
+index 1ce6d67c07b7..9451b12a9b6c 100644
 --- a/kernel/user_namespace.c
 +++ b/kernel/user_namespace.c
-@@ -24,6 +24,7 @@
- #include <linux/fs_struct.h>
- 
- static struct kmem_cache *user_ns_cachep __read_mostly;
-+static DEFINE_MUTEX(userns_state_mutex);
- 
- static bool new_idmap_permitted(const struct file *file,
- 				struct user_namespace *ns, int cap_setid,
-@@ -583,9 +584,6 @@ static bool mappings_overlap(struct uid_gid_map *new_map,
- 	return false;
- }
- 
--
--static DEFINE_MUTEX(id_map_mutex);
--
- static ssize_t map_write(struct file *file, const char __user *buf,
- 			 size_t count, loff_t *ppos,
- 			 int cap_setid,
-@@ -602,7 +600,7 @@ static ssize_t map_write(struct file *file, const char __user *buf,
- 	ssize_t ret = -EINVAL;
- 
- 	/*
--	 * The id_map_mutex serializes all writes to any given map.
-+	 * The userns_state_mutex serializes all writes to any given map.
- 	 *
- 	 * Any map is only ever written once.
- 	 *
-@@ -620,7 +618,7 @@ static ssize_t map_write(struct file *file, const char __user *buf,
- 	 * order and smp_rmb() is guaranteed that we don't have crazy
- 	 * architectures returning stale data.
- 	 */
--	mutex_lock(&id_map_mutex);
-+	mutex_lock(&userns_state_mutex);
- 
- 	ret = -EPERM;
- 	/* Only allow one successful write to the map */
-@@ -750,7 +748,7 @@ static ssize_t map_write(struct file *file, const char __user *buf,
- 	*ppos = count;
- 	ret = count;
- out:
--	mutex_unlock(&id_map_mutex);
-+	mutex_unlock(&userns_state_mutex);
- 	if (page)
- 		free_page(page);
- 	return ret;
-@@ -845,12 +843,12 @@ bool userns_may_setgroups(const struct user_namespace *ns)
- {
- 	bool allowed;
- 
--	mutex_lock(&id_map_mutex);
-+	mutex_lock(&userns_state_mutex);
- 	/* It is not safe to use setgroups until a gid mapping in
- 	 * the user namespace has been established.
- 	 */
- 	allowed = ns->gid_map.nr_extents != 0;
--	mutex_unlock(&id_map_mutex);
-+	mutex_unlock(&userns_state_mutex);
- 
- 	return allowed;
- }
+@@ -819,7 +819,7 @@ static bool new_idmap_permitted(const struct file *file,
+ 		u32 id = new_map->extent[0].lower_first;
+ 		if (cap_setid == CAP_SETUID) {
+ 			kuid_t uid = make_kuid(ns->parent, id);
+-			if (uid_eq(uid, file->f_cred->fsuid))
++			if (uid_eq(uid, file->f_cred->euid))
+ 				return true;
+ 		}
+ 	}
 -- 
 1.9.1
