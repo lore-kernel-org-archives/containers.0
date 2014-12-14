@@ -1,23 +1,13 @@
-From: serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org
-Subject: Re: [CFT] Can I get some Tested-By's on this series?
-Date: Sat, 13 Dec 2014 22:31:59 +0000
-Message-ID: <ck3e3r.ngjl9i.670r4b-qmf__44299.7917919003$1418509945$gmane$org@mail.hallyn.com>
-References: <CALCETrXWx2-ZejEHmOi7aSoF-qJMRGR5yseeMhuurZwJRrQbUg@mail.gmail.com>
-	<87h9x5re41.fsf_-_@x220.int.ebiederm.org>
-	<87mw6xpzb0.fsf_-_@x220.int.ebiederm.org>
-	<CALCETrU-o5mPr1jCaLXDuuF6J2N470zAtx=8Fa-SjF=ZpdE8mQ@mail.gmail.com>
-	<87ppbtn4mv.fsf@x220.int.ebiederm.org>
-	<CALCETrXSScp77BUJR5NSTh5-RnEZ9rqELSGJBeEzgdQ-OtohuQ@mail.gmail.com>
-	<87a92xn2io.fsf@x220.int.ebiederm.org>
-	<87r3w8liw4.fsf@x220.int.ebiederm.org>
-	<87iohklfvj.fsf_-_@x220.int.ebiederm.org>
-	<87mw6vh31e.fsf_-_@x220.int.ebiederm.org>
-	<20141210224822.GG20012@ubuntumail>
+From: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
+Subject: Re: [PATCH review 00/18] userns: review of bug fixes for 3.19-rcX
+Date: Sun, 14 Dec 2014 20:41:11 +0100
+Message-ID: <548DE7D7.3080607@nod.at>
+References: <87k31wzehb.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20141210224822.GG20012@ubuntumail>
+In-Reply-To: <87k31wzehb.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,27 +17,36 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Josh Triplett <josh-iaAMLnmF4UmaiuxdJuQwMA@public.gmane.org>, stable <stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dottedmag-6nM9faFvqWvMFIMGWPqnnw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-sorry, I've only been back from the road the days...  Two tries at compiling have failed (infrastructure problems, not your set), hoping to fire of another build tonight.On 12/10/14 16:48 Serge Hallyn wrote:
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+Am 12.12.2014 um 23:32 schrieb Eric W. Biederman:
 > 
-> Will people please test these patches with their container project?
+> The entire tree for testing is available at:
+> 	git.kernel.org:/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-testing
 > 
-> These changes break container userspace (hopefully in a minimal way) if
-> I could have that confirmed by testing I would really appreciate it.  I
-> really don't want to send out a bug fix that accidentally breaks
-> userspace again.
+> This is my queue of important bug fixes for user namespaces.  Most of
+> these changes warrant being backported.  A few are bug fixes for cases
+> where only root can trigger the issue so have not been marked for being
+> back ported to stable.
 > 
-> The only issue sort of under discussion is if there is a better name for
-> /proc/<pid>/setgroups, and the name of the file will not affect the
-> functionality of the patchset.
+> A few of these patches have not been posted for review preivously, so I
+> a giving the light of mailling list before I send them to Linus.  This
+> patchset has seen some testing already. 
 > 
-> With the code reviewed and written in simple obviously correct, easily
-> reviewable ways I am hoping/planning to send this to Linus ASAP.
+> Since there are small deliberate breakage of userspace in here the more
+> reviewers/testers the better.
 > 
-> Eric
+> Baring complictions I intend to ask Linus to pull this patchset sometime
+> early next week.
+> 
+> So far nothing broke on my libvirt-lxc test bed. :-)
+> Tested with openSUSE 13.2 and libvirt 1.2.9.
+> Tested-by: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
 
-Is there a git tree we can clone?
+FYI, this change set breaks util-linux's unshare(1) tool
+as an unprivileged is no longer allowed to write to /proc/self/gid_map.
+
+Thanks,
+//richard
