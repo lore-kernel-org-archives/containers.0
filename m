@@ -1,14 +1,23 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH review 00/18] userns: review of bug fixes for 3.19-rcX
-Date: Sun, 14 Dec 2014 20:25:26 -0600
-Message-ID: <87a92py7hl.fsf__31459.6824384809$1418610485$gmane$org@x220.int.ebiederm.org>
-References: <87k31wzehb.fsf@x220.int.ebiederm.org> <548DE7D7.3080607@nod.at>
+From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [CFT] Can I get some Tested-By's on this series?
+Date: Mon, 15 Dec 2014 19:38:38 +0000
+Message-ID: <20141215193838.GB28375@ubuntumail>
+References: <87ppbtn4mv.fsf@x220.int.ebiederm.org>
+	<CALCETrXSScp77BUJR5NSTh5-RnEZ9rqELSGJBeEzgdQ-OtohuQ@mail.gmail.com>
+	<87a92xn2io.fsf@x220.int.ebiederm.org>
+	<87r3w8liw4.fsf@x220.int.ebiederm.org>
+	<87iohklfvj.fsf_-_@x220.int.ebiederm.org>
+	<87mw6vh31e.fsf_-_@x220.int.ebiederm.org>
+	<20141210224822.GG20012@ubuntumail>
+	<87lhmcy2et.fsf@x220.int.ebiederm.org>
+	<20141212220840.GF22091@castiana.ipv6.teksavvy.com>
+	<8761dgze56.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <548DE7D7.3080607-/L3Ra7n9ekc@public.gmane.org> (Richard Weinberger's message of "Sun,
-	14 Dec 2014 20:41:11 +0100")
+Content-Disposition: inline
+In-Reply-To: <8761dgze56.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,116 +27,82 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dottedmag-6nM9faFvqWvMFIMGWPqnnw@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Josh Triplett <josh-iaAMLnmF4UmaiuxdJuQwMA@public.gmane.org>, stable <stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org> writes:
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> St=E9phane Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> writes:
+> =
 
-> Am 12.12.2014 um 23:32 schrieb Eric W. Biederman:
->> 
->> The entire tree for testing is available at:
->> 	git.kernel.org:/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-testing
->> 
->> This is my queue of important bug fixes for user namespaces.  Most of
->> these changes warrant being backported.  A few are bug fixes for cases
->> where only root can trigger the issue so have not been marked for being
->> back ported to stable.
->> 
->> A few of these patches have not been posted for review preivously, so I
->> a giving the light of mailling list before I send them to Linus.  This
->> patchset has seen some testing already. 
->> 
->> Since there are small deliberate breakage of userspace in here the more
->> reviewers/testers the better.
->> 
->> Baring complictions I intend to ask Linus to pull this patchset sometime
->> early next week.
->> 
->> So far nothing broke on my libvirt-lxc test bed. :-)
->> Tested with openSUSE 13.2 and libvirt 1.2.9.
->> Tested-by: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
->
-> FYI, this change set breaks util-linux's unshare(1) tool
-> as an unprivileged is no longer allowed to write to
-> /proc/self/gid_map.
+> > On Fri, Dec 12, 2014 at 03:38:18PM -0600, Eric W. Biederman wrote:
+> >> Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> writes:
+> >> =
 
-Only the --map-root-user option.  The patch below fixes it.
-I will push this upstream after I push the main change to Linus.
+> >> > Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> >> >> =
 
-This probably deseres a little discussion on the util-linux list.  Most
-use cases will continue to work but with setgroups disabled some things
-won't work and can not be made to work without privilege.
+> >> >> Will people please test these patches with their container project?
+> >> >> =
 
-From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Date: Thu, 11 Dec 2014 20:05:25 -0600
-Subject: [PATCH] unshare: Fix --map-root-user to work on new kernels
+> >> >> These changes break container userspace (hopefully in a minimal way=
+) if
+> >> >> I could have that confirmed by testing I would really appreciate it=
+.  I
+> >> >> really don't want to send out a bug fix that accidentally breaks
+> >> >> userspace again.
+> >> >> =
 
-In rare cases droping groups with setgroups(0, NULL) is an operation
-that can grant a user additional privileges.  User namespaces were
-allwoing that operation to unprivileged users and that had to be
-fixed.
+> >> >> The only issue sort of under discussion is if there is a better nam=
+e for
+> >> >> /proc/<pid>/setgroups, and the name of the file will not affect the
+> >> >> functionality of the patchset.
+> >> >> =
 
-Update unshare --map-root-user to disable the setgroups operation
-before setting the gid_map.
+> >> >> With the code reviewed and written in simple obviously correct, eas=
+ily
+> >> >> reviewable ways I am hoping/planning to send this to Linus ASAP.
+> >> >> =
 
-This is needed as after the security fix gid_map is restricted to
-privileged users unless setgroups has been disabled.
+> >> >> Eric
+> >> >
+> >> > Is there a git tree we can clone?
+> >> =
 
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- include/pathnames.h |  1 +
- sys-utils/unshare.c | 19 +++++++++++++++++++
- 2 files changed, 20 insertions(+)
+> >> Have either of you been able to check to see if any of my changes
+> >> affects lxc?
+> >> =
 
-diff --git a/include/pathnames.h b/include/pathnames.h
-index 1cc4e15e6e4f..1c53e4554268 100644
---- a/include/pathnames.h
-+++ b/include/pathnames.h
-@@ -92,6 +92,7 @@
- 
- #define _PATH_PROC_UIDMAP	"/proc/self/uid_map"
- #define _PATH_PROC_GIDMAP	"/proc/self/gid_map"
-+#define _PATH_PROC_SETGROUPS	"/proc/self/setgroups"
- 
- #define _PATH_PROC_ATTR_CURRENT	"/proc/self/attr/current"
- #define _PATH_PROC_ATTR_EXEC	"/proc/self/attr/exec"
-diff --git a/sys-utils/unshare.c b/sys-utils/unshare.c
-index 95e4afbd055e..d409a7c936b6 100644
---- a/sys-utils/unshare.c
-+++ b/sys-utils/unshare.c
-@@ -39,6 +39,24 @@
- #include "pathnames.h"
- #include "all-io.h"
- 
-+static void disable_setgroups(void)
-+{
-+	const char *file = _PATH_PROC_SETGROUPS;
-+	const char *deny = "deny";
-+	int fd;
-+
-+	fd = open(file, O_WRONLY);
-+	if (fd < 0) {
-+		if (errno == ENOENT)
-+			return;
-+		 err(EXIT_FAILURE, _("cannot open %s"), file);
-+	}
-+
-+	if (write_all(fd, deny, strlen(deny)))
-+		err(EXIT_FAILURE, _("write failed %s"), file);
-+	close(fd);
-+}
-+
- static void map_id(const char *file, uint32_t from, uint32_t to)
- {
- 	char *buf;
-@@ -178,6 +196,7 @@ int main(int argc, char *argv[])
- 	}
- 
- 	if (maproot) {
-+		disable_setgroups();
- 		map_id(_PATH_PROC_UIDMAP, 0, real_euid);
- 		map_id(_PATH_PROC_GIDMAP, 0, real_egid);
- 	}
--- 
-2.1.3
+> >> I am trying to gauge how hard and how fast I should push to Linus.  lxc
+> >> being the largest adopter of unprivileged user namespaces for general
+> >> purpose containers.
+> >> =
+
+> >> I expect you just call newuidmap and newgidmap and don't actually care
+> >> about not being able to set gid_map without privilege.  But I really
+> >> want to avoid pushing a security fix and then being surprised that
+> >> things like lxc break.
+> >> =
+
+> >> Eric
+> >
+> > Hi Eric,
+> >
+> > I've unfortunately been pretty busy this week as I was (well, still am)
+> > travelling to South Africa for a meeting. I don't have a full kernel
+> > tree around here and a full git clone isn't really doable over the kind
+> > of Internet I've got here :)
+> >
+> > Hopefully Serge can give it a quick try, otherwise I should be able to
+> > do some tests on Tuesday when I'm back home.
+> =
+
+> I thought Serge was going to but I haven't heard yet so I am prodding ;-)
+
+Ok, thanks - yes, unprivileged lxc is working fine with your kernels.
+Just to be sure I was testing the right thing I also tested using
+my unprivileged nsexec testcases, and they failed on setgroup/setgid
+as now expected, and succeeded there without your patches.
+
+thanks,
+-serge
