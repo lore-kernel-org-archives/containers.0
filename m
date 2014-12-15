@@ -1,15 +1,14 @@
-From: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
-Subject: Re: [PATCHv3 8/8] cgroup: Add documentation for cgroup namespaces
-Date: Mon, 15 Dec 2014 00:05:50 +0100
-Message-ID: <548E17CE.8010704@nod.at>
-References: <adityakali-cgroupns>
-	<1417744550-6461-1-git-send-email-adityakali@google.com>
-	<1417744550-6461-9-git-send-email-adityakali@google.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH review 00/18] userns: review of bug fixes for 3.19-rcX
+Date: Sun, 14 Dec 2014 20:25:26 -0600
+Message-ID: <87a92py7hl.fsf__31459.6824384809$1418610485$gmane$org@x220.int.ebiederm.org>
+References: <87k31wzehb.fsf@x220.int.ebiederm.org> <548DE7D7.3080607@nod.at>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1417744550-6461-9-git-send-email-adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <548DE7D7.3080607-/L3Ra7n9ekc@public.gmane.org> (Richard Weinberger's message of "Sun,
+	14 Dec 2014 20:41:11 +0100")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,136 +18,116 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, lizefan-hv44wF8Li93QT0dZR+AlfA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dottedmag-6nM9faFvqWvMFIMGWPqnnw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Aditya,
+Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org> writes:
 
-I gave your patch set a try but it does not work for me.
-Maybe you can bring some light into the issues I'm facing.
-Sadly I still had no time to dig into your code.
+> Am 12.12.2014 um 23:32 schrieb Eric W. Biederman:
+>> 
+>> The entire tree for testing is available at:
+>> 	git.kernel.org:/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-testing
+>> 
+>> This is my queue of important bug fixes for user namespaces.  Most of
+>> these changes warrant being backported.  A few are bug fixes for cases
+>> where only root can trigger the issue so have not been marked for being
+>> back ported to stable.
+>> 
+>> A few of these patches have not been posted for review preivously, so I
+>> a giving the light of mailling list before I send them to Linus.  This
+>> patchset has seen some testing already. 
+>> 
+>> Since there are small deliberate breakage of userspace in here the more
+>> reviewers/testers the better.
+>> 
+>> Baring complictions I intend to ask Linus to pull this patchset sometime
+>> early next week.
+>> 
+>> So far nothing broke on my libvirt-lxc test bed. :-)
+>> Tested with openSUSE 13.2 and libvirt 1.2.9.
+>> Tested-by: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
+>
+> FYI, this change set breaks util-linux's unshare(1) tool
+> as an unprivileged is no longer allowed to write to
+> /proc/self/gid_map.
 
-Am 05.12.2014 um 02:55 schrieb Aditya Kali:
-> Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-> ---
->  Documentation/cgroups/namespace.txt | 147 ++++++++++++++++++++++++++++++++++++
->  1 file changed, 147 insertions(+)
->  create mode 100644 Documentation/cgroups/namespace.txt
-> 
-> diff --git a/Documentation/cgroups/namespace.txt b/Documentation/cgroups/namespace.txt
-> new file mode 100644
-> index 0000000..6480379
-> --- /dev/null
-> +++ b/Documentation/cgroups/namespace.txt
-> @@ -0,0 +1,147 @@
-> +			CGroup Namespaces
-> +
-> +CGroup Namespace provides a mechanism to virtualize the view of the
-> +/proc/<pid>/cgroup file. The CLONE_NEWCGROUP clone-flag can be used with
-> +clone() and unshare() syscalls to create a new cgroup namespace.
-> +The process running inside the cgroup namespace will have its /proc/<pid>/cgroup
-> +output restricted to cgroupns-root. cgroupns-root is the cgroup of the process
-> +at the time of creation of the cgroup namespace.
-> +
-> +Prior to CGroup Namespace, the /proc/<pid>/cgroup file used to show complete
-> +path of the cgroup of a process. In a container setup (where a set of cgroups
-> +and namespaces are intended to isolate processes), the /proc/<pid>/cgroup file
-> +may leak potential system level information to the isolated processes.
-> +
-> +For Example:
-> +  $ cat /proc/self/cgroup
-> +  0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/batchjobs/container_id1
-> +
-> +The path '/batchjobs/container_id1' can generally be considered as system-data
-> +and its desirable to not expose it to the isolated process.
-> +
-> +CGroup Namespaces can be used to restrict visibility of this path.
-> +For Example:
-> +  # Before creating cgroup namespace
-> +  $ ls -l /proc/self/ns/cgroup
-> +  lrwxrwxrwx 1 root root 0 2014-07-15 10:37 /proc/self/ns/cgroup -> cgroup:[4026531835]
-> +  $ cat /proc/self/cgroup
-> +  0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/batchjobs/container_id1
-> +
-> +  # unshare(CLONE_NEWCGROUP) and exec /bin/bash
-> +  $ ~/unshare -c
-> +  [ns]$ ls -l /proc/self/ns/cgroup
-> +  lrwxrwxrwx 1 root root 0 2014-07-15 10:35 /proc/self/ns/cgroup -> cgroup:[4026532183]
-> +  # From within new cgroupns, process sees that its in the root cgroup
-> +  [ns]$ cat /proc/self/cgroup
-> +  0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/
-> +
-> +  # From global cgroupns:
-> +  $ cat /proc/<pid>/cgroup
-> +  0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/batchjobs/container_id1
-> +
-> +  # Unshare cgroupns along with userns and mountns
-> +  # Following calls unshare(CLONE_NEWCGROUP|CLONE_NEWUSER|CLONE_NEWNS), then
-> +  # sets up uid/gid map and execs /bin/bash
-> +  $ ~/unshare -c -u -m
+Only the --map-root-user option.  The patch below fixes it.
+I will push this upstream after I push the main change to Linus.
 
-This command does not issue CLONE_NEWUSER, -U does.
+This probably deseres a little discussion on the util-linux list.  Most
+use cases will continue to work but with setgroups disabled some things
+won't work and can not be made to work without privilege.
 
-> +  # Originally, we were in /batchjobs/container_id1 cgroup. Mount our own cgroup
-> +  # hierarchy.
-> +  [ns]$ mount -t cgroup cgroup /tmp/cgroup
-> +  [ns]$ ls -l /tmp/cgroup
-> +  total 0
-> +  -r--r--r-- 1 root root 0 2014-10-13 09:32 cgroup.controllers
-> +  -r--r--r-- 1 root root 0 2014-10-13 09:32 cgroup.populated
-> +  -rw-r--r-- 1 root root 0 2014-10-13 09:25 cgroup.procs
-> +  -rw-r--r-- 1 root root 0 2014-10-13 09:32 cgroup.subtree_control
+From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Date: Thu, 11 Dec 2014 20:05:25 -0600
+Subject: [PATCH] unshare: Fix --map-root-user to work on new kernels
 
-I've patched libvirt-lxc to issue CLONE_NEWCGROUP and not bind mount cgroupfs into a container.
-But I'm unable to mount cgroupfs within the container, mount(2) is failing with EINVAL.
-And /proc/self/cgroup still shows the cgroup from outside.
+In rare cases droping groups with setgroups(0, NULL) is an operation
+that can grant a user additional privileges.  User namespaces were
+allwoing that operation to unprivileged users and that had to be
+fixed.
 
----cut---
-container:/ # ls /sys/fs/cgroup/
-container:/ # mount -t cgroup none /sys/fs/cgroup/
-mount: wrong fs type, bad option, bad superblock on none,
-       missing codepage or helper program, or other error
+Update unshare --map-root-user to disable the setgroups operation
+before setting the gid_map.
 
-       In some cases useful info is found in syslog - try
-       dmesg | tail or so.
-container:/ # cat /proc/self/cgroup
-8:memory:/machine/test00.libvirt-lxc
-7:devices:/machine/test00.libvirt-lxc
-6:hugetlb:/
-5:cpuset:/machine/test00.libvirt-lxc
-4:blkio:/machine/test00.libvirt-lxc
-3:cpu,cpuacct:/machine/test00.libvirt-lxc
-2:freezer:/machine/test00.libvirt-lxc
-1:name=systemd:/user.slice/user-0.slice/session-c2.scope
-container:/ # ls -la /proc/self/ns
-total 0
-dr-x--x--x 2 root root 0 Dec 14 23:02 .
-dr-xr-xr-x 8 root root 0 Dec 14 23:02 ..
-lrwxrwxrwx 1 root root 0 Dec 14 23:02 cgroup -> cgroup:[4026532240]
-lrwxrwxrwx 1 root root 0 Dec 14 23:02 ipc -> ipc:[4026532238]
-lrwxrwxrwx 1 root root 0 Dec 14 23:02 mnt -> mnt:[4026532235]
-lrwxrwxrwx 1 root root 0 Dec 14 23:02 net -> net:[4026532242]
-lrwxrwxrwx 1 root root 0 Dec 14 23:02 pid -> pid:[4026532239]
-lrwxrwxrwx 1 root root 0 Dec 14 23:02 user -> user:[4026532234]
-lrwxrwxrwx 1 root root 0 Dec 14 23:02 uts -> uts:[4026532236]
-container:/ #
+This is needed as after the security fix gid_map is restricted to
+privileged users unless setgroups has been disabled.
 
-#host side
-lxc-os132:~ # ls -la /proc/self/ns
-total 0
-dr-x--x--x 2 root root 0 Dec 14 23:56 .
-dr-xr-xr-x 8 root root 0 Dec 14 23:56 ..
-lrwxrwxrwx 1 root root 0 Dec 14 23:56 cgroup -> cgroup:[4026531835]
-lrwxrwxrwx 1 root root 0 Dec 14 23:56 ipc -> ipc:[4026531839]
-lrwxrwxrwx 1 root root 0 Dec 14 23:56 mnt -> mnt:[4026531840]
-lrwxrwxrwx 1 root root 0 Dec 14 23:56 net -> net:[4026531957]
-lrwxrwxrwx 1 root root 0 Dec 14 23:56 pid -> pid:[4026531836]
-lrwxrwxrwx 1 root root 0 Dec 14 23:56 user -> user:[4026531837]
-lrwxrwxrwx 1 root root 0 Dec 14 23:56 uts -> uts:[4026531838]
----cut---
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ include/pathnames.h |  1 +
+ sys-utils/unshare.c | 19 +++++++++++++++++++
+ 2 files changed, 20 insertions(+)
 
-Any ideas?
-
-Thanks,
-//richard
+diff --git a/include/pathnames.h b/include/pathnames.h
+index 1cc4e15e6e4f..1c53e4554268 100644
+--- a/include/pathnames.h
++++ b/include/pathnames.h
+@@ -92,6 +92,7 @@
+ 
+ #define _PATH_PROC_UIDMAP	"/proc/self/uid_map"
+ #define _PATH_PROC_GIDMAP	"/proc/self/gid_map"
++#define _PATH_PROC_SETGROUPS	"/proc/self/setgroups"
+ 
+ #define _PATH_PROC_ATTR_CURRENT	"/proc/self/attr/current"
+ #define _PATH_PROC_ATTR_EXEC	"/proc/self/attr/exec"
+diff --git a/sys-utils/unshare.c b/sys-utils/unshare.c
+index 95e4afbd055e..d409a7c936b6 100644
+--- a/sys-utils/unshare.c
++++ b/sys-utils/unshare.c
+@@ -39,6 +39,24 @@
+ #include "pathnames.h"
+ #include "all-io.h"
+ 
++static void disable_setgroups(void)
++{
++	const char *file = _PATH_PROC_SETGROUPS;
++	const char *deny = "deny";
++	int fd;
++
++	fd = open(file, O_WRONLY);
++	if (fd < 0) {
++		if (errno == ENOENT)
++			return;
++		 err(EXIT_FAILURE, _("cannot open %s"), file);
++	}
++
++	if (write_all(fd, deny, strlen(deny)))
++		err(EXIT_FAILURE, _("write failed %s"), file);
++	close(fd);
++}
++
+ static void map_id(const char *file, uint32_t from, uint32_t to)
+ {
+ 	char *buf;
+@@ -178,6 +196,7 @@ int main(int argc, char *argv[])
+ 	}
+ 
+ 	if (maproot) {
++		disable_setgroups();
+ 		map_id(_PATH_PROC_UIDMAP, 0, real_euid);
+ 		map_id(_PATH_PROC_GIDMAP, 0, real_egid);
+ 	}
+-- 
+2.1.3
