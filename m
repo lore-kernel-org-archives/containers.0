@@ -1,23 +1,33 @@
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 Subject: Re: [CFT] Can I get some Tested-By's on this series?
-Date: Mon, 15 Dec 2014 20:49:30 +0000
-Message-ID: <20141215204930.GD28877__45734.5329378315$1418676601$gmane$org@ubuntumail>
-References: <87a92xn2io.fsf@x220.int.ebiederm.org>
+Date: Mon, 15 Dec 2014 18:05:48 -0800
+Message-ID: <CALCETrWXp3eq2O068NZcd+KPCg+N2y0T57Q0JzHcZLjzq+mXLA@mail.gmail.com>
+References: <52e0643bd47b1e5c65921d6e00aea1f724bb510a.1417281801.git.luto@amacapital.net>
+	<87h9xez20g.fsf@x220.int.ebiederm.org>
+	<CALCETrXOz4C7Tu8mggBtR=k47ZmkuAhinVUxWJSFyS1Ep0HvRw@mail.gmail.com>
+	<87mw75ygwp.fsf@x220.int.ebiederm.org>
+	<CALCETrVfO4sBdZcQiZXsofPZMj7pqKeVbX+4g3dAj6WjUca+1w@mail.gmail.com>
+	<87fvcxyf28.fsf_-_@x220.int.ebiederm.org>
+	<874mtdyexp.fsf_-_@x220.int.ebiederm.org>
+	<CALCETrXyC7XPaqj6oe-TmyypOVc_CkZbF6UAAx8YfkyD=gEMOQ@mail.gmail.com>
+	<87a935u3nj.fsf@x220.int.ebiederm.org>
+	<CALCETrXkEOiyzpvqtXtk1f4sL+M1Q-Y6rV=K91ez3yv2nb4Y0Q@mail.gmail.com>
+	<87388xodlj.fsf@x220.int.ebiederm.org>
+	<CALCETrXWx2-ZejEHmOi7aSoF-qJMRGR5yseeMhuurZwJRrQbUg@mail.gmail.com>
+	<87h9x5re41.fsf_-_@x220.int.ebiederm.org>
+	<87mw6xpzb0.fsf_-_@x220.int.ebiederm.org>
+	<CALCETrU-o5mPr1jCaLXDuuF6J2N470zAtx=8Fa-SjF=ZpdE8mQ@mail.gmail.com>
+	<87ppbtn4mv.fsf@x220.int.ebiederm.org>
+	<CALCETrXSScp77BUJR5NSTh5-RnEZ9rqELSGJBeEzgdQ-OtohuQ@mail.gmail.com>
+	<87a92xn2io.fsf@x220.int.ebiederm.org>
 	<87r3w8liw4.fsf@x220.int.ebiederm.org>
 	<87iohklfvj.fsf_-_@x220.int.ebiederm.org>
 	<87mw6vh31e.fsf_-_@x220.int.ebiederm.org>
-	<20141210224822.GG20012@ubuntumail>
-	<87lhmcy2et.fsf@x220.int.ebiederm.org>
-	<20141212220840.GF22091@castiana.ipv6.teksavvy.com>
-	<8761dgze56.fsf@x220.int.ebiederm.org>
-	<20141215193838.GB28375@ubuntumail>
-	<8761dcwu40.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <8761dcwu40.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <87mw6vh31e.fsf_-_-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -28,108 +38,41 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Josh Triplett <josh-iaAMLnmF4UmaiuxdJuQwMA@public.gmane.org>, stable <stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Josh Triplett <josh-iaAMLnmF4UmaiuxdJuQwMA@public.gmane.org>, stable <stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> writes:
-> =
+On Wed, Dec 10, 2014 at 8:39 AM, Eric W. Biederman
+<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+>
+> Will people please test these patches with their container project?
+>
+> These changes break container userspace (hopefully in a minimal way) if
+> I could have that confirmed by testing I would really appreciate it.  I
+> really don't want to send out a bug fix that accidentally breaks
+> userspace again.
+>
+> The only issue sort of under discussion is if there is a better name for
+> /proc/<pid>/setgroups, and the name of the file will not affect the
+> functionality of the patchset.
+>
+> With the code reviewed and written in simple obviously correct, easily
+> reviewable ways I am hoping/planning to send this to Linus ASAP.
 
-> > Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> >> St=E9phane Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> writes:
-> >> =
 
-> >> > On Fri, Dec 12, 2014 at 03:38:18PM -0600, Eric W. Biederman wrote:
-> >> >> Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> writes:
-> >> >> =
+I tested this with Sandstorm.  It breaks as is and it works if I add
+the setgroups thing.
 
-> >> >> > Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> >> >> >> =
+Tested-by: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> # breaks things as designed :(
 
-> >> >> >> Will people please test these patches with their container proje=
-ct?
-> >> >> >> =
+I still don't like the name "setgroups".
 
-> >> >> >> These changes break container userspace (hopefully in a minimal =
-way) if
-> >> >> >> I could have that confirmed by testing I would really appreciate=
- it.  I
-> >> >> >> really don't want to send out a bug fix that accidentally breaks
-> >> >> >> userspace again.
-> >> >> >> =
+--Andy
 
-> >> >> >> The only issue sort of under discussion is if there is a better =
-name for
-> >> >> >> /proc/<pid>/setgroups, and the name of the file will not affect =
-the
-> >> >> >> functionality of the patchset.
-> >> >> >> =
+>
+> Eric
 
-> >> >> >> With the code reviewed and written in simple obviously correct, =
-easily
-> >> >> >> reviewable ways I am hoping/planning to send this to Linus ASAP.
-> >> >> >> =
 
-> >> >> >> Eric
-> >> >> >
-> >> >> > Is there a git tree we can clone?
-> >> >> =
 
-> >> >> Have either of you been able to check to see if any of my changes
-> >> >> affects lxc?
-> >> >> =
-
-> >> >> I am trying to gauge how hard and how fast I should push to Linus. =
- lxc
-> >> >> being the largest adopter of unprivileged user namespaces for gener=
-al
-> >> >> purpose containers.
-> >> >> =
-
-> >> >> I expect you just call newuidmap and newgidmap and don't actually c=
-are
-> >> >> about not being able to set gid_map without privilege.  But I really
-> >> >> want to avoid pushing a security fix and then being surprised that
-> >> >> things like lxc break.
-> >> >> =
-
-> >> >> Eric
-> >> >
-> >> > Hi Eric,
-> >> >
-> >> > I've unfortunately been pretty busy this week as I was (well, still =
-am)
-> >> > travelling to South Africa for a meeting. I don't have a full kernel
-> >> > tree around here and a full git clone isn't really doable over the k=
-ind
-> >> > of Internet I've got here :)
-> >> >
-> >> > Hopefully Serge can give it a quick try, otherwise I should be able =
-to
-> >> > do some tests on Tuesday when I'm back home.
-> >> =
-
-> >> I thought Serge was going to but I haven't heard yet so I am prodding =
-;-)
-> >
-> > Ok, thanks - yes, unprivileged lxc is working fine with your kernels.
-> > Just to be sure I was testing the right thing I also tested using
-> > my unprivileged nsexec testcases, and they failed on setgroup/setgid
-> > as now expected, and succeeded there without your patches.
-> =
-
-> Thanks.
-> =
-
-> Serge unless you object will add your Tested-By to my pull message to Lin=
-us.
-
-Sounds good.
-
-> Minor question do you runprivileged nsexec test cases test to see if the
-> write to gid_map succeeds?  I would have expected the gid_map write to
-> fail before the setgroups setgid system calls came into play.
-
-Yes, I did that by hand, and it failed (with your kernel).
-
--serge
+-- 
+Andy Lutomirski
+AMA Capital Management, LLC
