@@ -1,12 +1,14 @@
 From: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [resend][PATCH v9 0/3] ns,
-	procfs: pid conversion between ns and showing pidns hierarchy
-Date: Tue, 23 Dec 2014 18:20:36 +0800
-Message-ID: <1419330039-29207-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+Subject: [resend][PATCH v9 2/3] /proc/PID/status: show all sets of pid
+	according to ns
+Date: Tue, 23 Dec 2014 18:20:38 +0800
+Message-ID: <1419330039-29207-3-git-send-email-chenhanxiao@cn.fujitsu.com>
+References: <1419330039-29207-1-git-send-email-chenhanxiao@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1419330039-29207-1-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,62 +22,68 @@ To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Serg
 Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-VGhpcyBzZXJpZXMgd2lsbCBleHBvc2UgcGlkIGluc2lkZSBjb250YWluZXJzCnZpYSBwcm9jZnMu
-CkFsc28gc2hvdyB0aGUgaGllcmFyY2h5IG9mIHBpZCBuYW1lc3BjYWUuClRoZW4gd2UgY291bGQg
-a25vdyBob3cgcGlkIGxvb2tzIGluc2lkZSBhIGNvbnRhaW5lcgphbmQgdGhlaXIgbnMgcmVsYXRp
-b25zaGlwcy4KCjEuIGhlbHBmdWwgZm9yIG5lc3RlZCBjb250YWluZXIgY2hlY2twb2ludC9yZXN0
-b3JlCgogIFdlIGNvdWxkIGtub3cgd2hldGhlciB0d28gcGlkcyBoYWQgcmVsYXRpb25zaGlwCiAg
-YmV0d2VlbiBlYWNoIG90aGVyLgoKICAgICAgaW5pdF9waWRfbnMgMQogICAgICAgICAgICDilIIK
-ICAg4pSM4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSQCiAgbnMxICAgICAg
-ICAgICAgICAgICAgICAgICBuczIKICAg4pSCICAgICAgICAgICAgICAgICAgICAgICAg4pSCCiAg
-MjAwICAgICAgICAgICAgICAgICAgICAgICAzMDAKICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICDilIIKICAgICAgICAgICAgICAgICAgICAgICAgICAgIG5zMgogICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgIOKUggogICAgICAgICAgICAgICAgICAgICAgICAgICAgNDAwCgogICNjYXQgL3By
-b2MvcGlkbnNfaGllcmFyY2h5CiAgMjAwIDEgMQogIDMwMCAxIDEKICA0MDAgMzAwIDIKCjIuIHVz
-ZWZ1bCBmb3IgcGlkIHRyYW5zbGF0aW9uIGZyb20gY29udGFpbmVyCiAgRXg6CiAgICAgICBpbml0
-X3BpZF9ucyAgICBuczEgICAgICAgICBuczIKICAgdDEgIDIKICAgdDIgICBgLSAzICAgICAgICAg
-IDEKICAgdDMgICBgLSA0ICAgICAgICAgIDMKICAgdDQgICAgICAgYC0gNSAgICAgIGAtIDUgICAg
-ICAgIDEKICAgdDUgICAgICAgYC0gNiAgICAgIGAtIDggICAgICAgIDMKCiAgSXQgY291bGQgc29s
-dmUgcHJvYmxlbXMgbGlrZTogd2Ugc2VlIGEgcGlkIDMgZ29lcyB3cm9uZwogIGluIGNvbnRhaW5l
-cidzIGxvZywgd2hhdCBpcyBpdHMgcGlkIG9uIGhvc3RzOgogIGEpIGluc2lkZSBjb250YWluZXI6
-CiAgIyByZWFkbGluayAvcHJvYy8zL25zL3BpZAogIHBpZDpbNDAyNjUzMjM4OF0KCiAgYikgb24g
-aG9zdDoKICBXZSBzaG93IGl0IGluIHRoZSBmb3JtIG9mIDoKICA8aW5pdF9QSUQ+IDxwYXJlbnRf
-b2ZfaW5pdF9QSUQ+IDxyZWxhdGl2ZSBQSUQgbGV2ZWw+CgogICMgY2F0IC9wcm9jL3BpZG5zX2hp
-ZXJhcmNoeQogIDE0OTE4IDEgMQogIDE2MjYzIDE0OTE4IDIKICAxNjU4MSAxIDEKICBUaGVuIHdl
-IGNvdWxkIGVhc2lseSBmaW5kIC9wcm9jLzE2MjYzL25zL3BpZC0+NDAyNjUzMjM4OC4KICBPbiBo
-b3N0LCB3ZSBrbmV3IHRoYXQgcmVwb3J0ZWQgcGlkIDMgaXMgaW4gbGV2ZWwgMiwKICAgYW5kIGl0
-cyBwYXJlbnRhbCBwaWQgbnMgaXMgZnJvbSBwaWQgMTQ5MTguCgogIGMpIG9uIGhvc3QsIGNoZWNr
-IGNoaWxkIG9mIDE2MjYzLCBncmVwIGl0IGZyb20gc3RhdHVzOgogIE5TcGlkOiAgMTYyNjggICA4
-ICAgICAgIDMKCiAgV2Uga25ldyB0aGF0IHBpZCAxNjI2OCBpcyBwaWQgMyByZXBvcnRlZCBieSBj
-b250YWluZXIuCgp2OTogZml4IGNvZGVzIGJlIGlubHVkZWQgaWYgQ09ORklHX1BJRF9OUz1uCiAg
-ICBhZGQgZG9jcyB0byBkZXNjcmliZSB0aGUgdXNhZ2Ugb2YgcGlkbnNfaGllcmFyY2h5IHByb2Nm
-cwp2ODogZml4IHNvbWUgaW1wcm9wZXIgY29tbWVudHMKICAgIHVzZSBtYXgoKSBmcm9tIGtlcm5l
-bC5oCnY3OiBjaGFuZ2UgcGlkbnNfaGllcmFyY2h5IHN0eWxlIHRvIGJlIGNvbnNpc3RlbnQKICAg
-IHdpdGggY3VycmVudCBpbnRlcmZhY2UgbGlrZToKICAgIDxpbml0X1BJRD4gPHBhcmVudF9vZl9p
-bml0X1BJRD4gPHJlbGF0aXZlIFBJRCBsZXZlbD4KICAgIHJlbW92ZSBFWFBFUlQgZGVwZW5kZW50
-IGluIEtjb25maWcuCnY2OiBmaXggc29tZSBnZXRfcGlkIGxlYWtzIGFuZCBkbyBzb21lIGNsZWFu
-dXBzLgp2NTogY29sbGVjdCBwaWQgYnkgZmluZF9nZV9waWQ7CiAgICB1c2UgbG9jYWwgbGlzdCBp
-bnNpZGUgbnNsaXN0X3Byb2Nfc2hvdzsKICAgIHVzZSBnZXRfcGlkLCByZW1vdmUgbXV0ZXggbG9j
-ay4KdjQ6IHNpbXBsaWZ5IHBpZCBjb2xsZWN0aW9uIGFuZCBzb21lIHBlcmZvcm1hbmNlIG9wdGlt
-aXphbXRpb247CiAgICBmaXggYW5vdGhlciByYWNlIGlzc3VlLgp2MzogZml4IGEgcmFjZSBpc3N1
-ZSBhbmQgbWVtb3J5IGxlYWsgaXNzdWUgaW4gcGlkbnNfaGllcmFyY2h5OwogICAgYWRkIGFub3Ro
-ZXIgdHdvIGZpZWxzZDogTlNwZ2lkIGFuZCBOU3NpZC4KdjI6IHVzZSBhIHByb2NmcyB0ZXh0IGZp
-bGUsIHJlcGxhY2luZyBkaXJzIHVuZGVyIC9wcm9jIGZvcgogICAgc2hvd2luZyBwaWRucyBoaWVy
-YXJjaHk7CiAgICBhZGQgdHdvIG5ldyBmaWVsZHM6IE5TdGdpZCBhbmQgTlNwaWQKICAgIGtlZXAg
-ZmllbGRzIG9mIFRnaWQgYW5kIFBpZCB1bmNoYW5nZWQgZm9yIGJhY2sgY29tcGF0aWJpbGl0eS4K
-CkNoZW4gSGFueGlhbyAoMyk6CiAgcHJvY2ZzOiBzaG93IGhpZXJhcmNoeSBvZiBwaWQgbmFtZXNw
-YWNlCiAgL3Byb2MvUElEL3N0YXR1czogc2hvdyBhbGwgc2V0cyBvZiBwaWQgYWNjb3JkaW5nIHRv
-IG5zCiAgRG9jdW1lbnRhdGlvbjogYWRkIGRvY3MgZm9yIC9wcm9jL3BpZG5zX2hpZXJhcmNoeQoK
-IERvY3VtZW50YXRpb24vbmFtZXNwYWNlcy9waWRucy1oaWVyYXJjaHkudHh0IHwgIDUxICsrKysr
-CiBmcy9wcm9jL0tjb25maWcgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgNiArCiBm
-cy9wcm9jL01ha2VmaWxlICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgMSArCiBmcy9w
-cm9jL2FycmF5LmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAxNiArKwogZnMvcHJv
-Yy9pbnRlcm5hbC5oICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDkgKwogZnMvcHJvYy9w
-aWRuc19oaWVyYXJjaHkuYyAgICAgICAgICAgICAgICAgICAgfCAyODAgKysrKysrKysrKysrKysr
-KysrKysrKysrKysrCiBmcy9wcm9jL3Jvb3QuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICB8ICAgMSArCiA3IGZpbGVzIGNoYW5nZWQsIDM2NCBpbnNlcnRpb25zKCspCiBjcmVhdGUgbW9k
-ZSAxMDA2NDQgRG9jdW1lbnRhdGlvbi9uYW1lc3BhY2VzL3BpZG5zLWhpZXJhcmNoeS50eHQKIGNy
-ZWF0ZSBtb2RlIDEwMDY0NCBmcy9wcm9jL3BpZG5zX2hpZXJhcmNoeS5jCgotLSAKMS45LjMKCl9f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMg
-bWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6
-Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+If some issues occurred inside a container guest, host user
+could not know which process is in trouble just by guest pid:
+the users of container guest only knew the pid inside containers.
+This will bring obstacle for trouble shooting.
+
+This patch adds four fields: NStgid, NSpid, NSpgid and NSsid:
+a) In init_pid_ns, nothing changed;
+
+b) In one pidns, will tell the pid inside containers:
+  NStgid: 21776   5       1
+  NSpid:  21776   5       1
+  NSpgid: 21776   5       1
+  NSsid:  21729   1       0
+  ** Process id is 21776 in level 0, 5 in level 1, 1 in level 2.
+
+c) If pidns is nested, it depends on which pidns are you in.
+  NStgid: 5       1
+  NSpid:  5       1
+  NSpgid: 5       1
+  NSsid:  1       0
+  ** Views from level 1
+
+Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Tested-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+
+Signed-off-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
+v9: rebased on 3.19-rc1
+No change from v4-v8
+v3: add another two fielsd: NSpgid and NSsid.
+v2: add two new fields: NStgid and NSpid.
+    keep fields of Tgid and Pid unchanged for back compatibility.
+
+ fs/proc/array.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/fs/proc/array.c b/fs/proc/array.c
+index bd117d0..35205d4 100644
+--- a/fs/proc/array.c
++++ b/fs/proc/array.c
+@@ -208,6 +208,22 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
+ 			   from_kgid_munged(user_ns, GROUP_AT(group_info, g)));
+ 	put_cred(cred);
+ 
++	seq_puts(m, "\nNStgid:");
++	for (g = ns->level; g <= pid->level; g++)
++		seq_printf(m, "\t%d ",
++			task_tgid_nr_ns(p, pid->numbers[g].ns));
++	seq_puts(m, "\nNSpid:");
++	for (g = ns->level; g <= pid->level; g++)
++		seq_printf(m, "\t%d ",
++			task_pid_nr_ns(p, pid->numbers[g].ns));
++	seq_puts(m, "\nNSpgid:");
++	for (g = ns->level; g <= pid->level; g++)
++		seq_printf(m, "\t%d ",
++			task_pgrp_nr_ns(p, pid->numbers[g].ns));
++	seq_puts(m, "\nNSsid:");
++	for (g = ns->level; g <= pid->level; g++)
++		seq_printf(m, "\t%d ",
++			task_session_nr_ns(p, pid->numbers[g].ns));
+ 	seq_putc(m, '\n');
+ }
+ 
+-- 
+1.9.3
