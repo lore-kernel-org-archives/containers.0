@@ -1,7 +1,7 @@
-From: Timothy Chen <tnachen-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Vincent Batts <vbatts-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: How to start contributing to namespaces in the kernel.
-Date: Mon, 29 Dec 2014 13:31:17 -0800
-Message-ID: <CAFx0iW9EEAy1VDqpVmAygZgXBMAvQR4jjDMjSKx-YYx5dAeGDg@mail.gmail.com>
+Date: Mon, 29 Dec 2014 18:20:04 -0500
+Message-ID: <CAN6Zp5wQHryCQbUyPo97VgV0YrheCsi3-R6R3f7++xH4vv-Lrg@mail.gmail.com>
 References: <CAFx0iW_oZn=esL63swjJyChsuORMfmzcgRBLYFrKR0VVtM8Tcw@mail.gmail.com>
 	<87k31a2m6o.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
@@ -19,23 +19,14 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: Timothy Chen <tnachen-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Thanks Eric for the detailed reply!
+Thanks for this public post.
 
-I want to gain more understanding and context around namespaces in the
-kernel, and thought contributing is the best way to do so.
+vb
+On Dec 29, 2014 4:17 PM, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
 
-I wonder if there is a public backlog that lists open issues that you
-mentioned or haven't get to work on yet?
-
-Thanks!
-
-Tim
-
-On Mon, Dec 29, 2014 at 1:14 PM, Eric W. Biederman
-<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
 >
 > I was just asked how to start contributing to namespaces in the kernel
 > and my reply is generic to anyone so I am making it public in the hopes
@@ -43,19 +34,19 @@ On Mon, Dec 29, 2014 at 1:14 PM, Eric W. Biederman
 >
 > Timothy Chen <tnachen-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
 >
->> Hi Eric,
->>
->> My name is Timothy Chen and I work a lot on Mesos/Docker/Rocket that
->> all utilizes namespaces.
->>
->> I'm looking to contribute to Namespaces in the Kernel and besides
->> knowing where the code is I don't actually have much idea what the
->> process is like and what issues I can start looking at.
->>
->> I see you're the main person working with Namespaces so I wonder if
->> you can point me to where I can start learning how the patch process
->> work for namespaces, and what issues/bugs I can look at to start off
->> with?
+> > Hi Eric,
+> >
+> > My name is Timothy Chen and I work a lot on Mesos/Docker/Rocket that
+> > all utilizes namespaces.
+> >
+> > I'm looking to contribute to Namespaces in the Kernel and besides
+> > knowing where the code is I don't actually have much idea what the
+> > process is like and what issues I can start looking at.
+> >
+> > I see you're the main person working with Namespaces so I wonder if
+> > you can point me to where I can start learning how the patch process
+> > work for namespaces, and what issues/bugs I can look at to start off
+> > with?
 >
 > You will want to follow the containers mailling list:
 > http://lists.linuxfoundation.org/mailman/listinfo/containers
@@ -121,3 +112,8 @@ On Mon, Dec 29, 2014 at 1:14 PM, Eric W. Biederman
 > you can succesfully scratch.
 >
 > Eric
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linuxfoundation.org/mailman/listinfo/containers
+>
