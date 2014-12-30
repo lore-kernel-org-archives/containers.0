@@ -1,16 +1,16 @@
-From: Amir Goldstein <amir-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: How to start contributing to namespaces in the kernel.
-Date: Tue, 30 Dec 2014 05:23:04 +0200
-Message-ID: <CAA2m6vczmqJ3uBEL_5nGa04vb2dw43yM5HbzszruXPtFhDsDJw@mail.gmail.com>
-References: <CAFx0iW_oZn=esL63swjJyChsuORMfmzcgRBLYFrKR0VVtM8Tcw@mail.gmail.com>
-	<87k31a2m6o.fsf@x220.int.ebiederm.org>
-	<CAFx0iW9EEAy1VDqpVmAygZgXBMAvQR4jjDMjSKx-YYx5dAeGDg@mail.gmail.com>
-	<87r3vi0ws0.fsf@x220.int.ebiederm.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [resend][PATCH v9 2/3] /proc/PID/status: show all sets of pid
+	according to ns
+Date: Mon, 29 Dec 2014 23:39:26 -0600
+Message-ID: <87k3191ysx.fsf@x220.int.ebiederm.org>
+References: <1419330039-29207-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<1419330039-29207-3-git-send-email-chenhanxiao@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87r3vi0ws0.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <1419330039-29207-3-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+	(Chen Hanxiao's message of "Tue, 23 Dec 2014 18:20:38 +0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,55 +20,81 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Timothy Chen <tnachen-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Dec 30, 2014 at 3:08 AM, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-wrote:
+Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> writes:
 
-> Timothy Chen <tnachen-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
+> If some issues occurred inside a container guest, host user
+> could not know which process is in trouble just by guest pid:
+> the users of container guest only knew the pid inside containers.
+> This will bring obstacle for trouble shooting.
 >
-> > Thanks Eric for the detailed reply!
-> >
-> > I want to gain more understanding and context around namespaces in the
-> > kernel, and thought contributing is the best way to do so.
+> This patch adds four fields: NStgid, NSpid, NSpgid and NSsid:
+> a) In init_pid_ns, nothing changed;
 >
-> It can't hurt.
+> b) In one pidns, will tell the pid inside containers:
+>   NStgid: 21776   5       1
+>   NSpid:  21776   5       1
+>   NSpgid: 21776   5       1
+>   NSsid:  21729   1       0
+>   ** Process id is 21776 in level 0, 5 in level 1, 1 in level 2.
 >
-> > I wonder if there is a public backlog that lists open issues that you
-> > mentioned or haven't get to work on yet?
+> c) If pidns is nested, it depends on which pidns are you in.
+>   NStgid: 5       1
+>   NSpid:  5       1
+>   NSpgid: 5       1
+>   NSsid:  1       0
+>   ** Views from level 1
 >
-> Nothing more than I have posted.  That isn't how I work, and it isn't
-> how folks in the kernel tend to work.
+> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> Tested-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 >
+> Signed-off-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
-Setting up a wiki page could make for a good first contribution ;-)
+Acked-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+
+At a quick review and read through this looks good.  Once I finish
+clearing the security bug fixes from my tree I will see about picking this
+up.
+
+Eric
 
 
+> ---
+> v9: rebased on 3.19-rc1
+> No change from v4-v8
+> v3: add another two fielsd: NSpgid and NSsid.
+> v2: add two new fields: NStgid and NSpid.
+>     keep fields of Tgid and Pid unchanged for back compatibility.
 >
-> Start with assuming there aren't bugs in the kernel implementation.
-> The certainly are no known bugs that someone who is not familiar with
-> the kernel is likely to be able to fix.
+>  fs/proc/array.c | 16 ++++++++++++++++
+>  1 file changed, 16 insertions(+)
 >
-> So find something you would like to do with a container, and figure out
-> why you can't, and then send a patch or ask a question about how to make
-> it work.
->
-
-Sharing from my personal experience, I learned about Google summer of code
-in 2011 and found the program to be very helpful in matching itches to
-scratch
-with potential open source contributors.
-
-The Linux Foundation has been a participating organization in the program
-in recent years as well as several of the Linux distros.
-With the rising interest in containers, open source projects looking for
-new blood
-should consider applying to the program and propose containers related
-projects.
-
-As a mentor, it was very rewarding for me to help a new kernel developer
-join the community.
-
-Amir.
+> diff --git a/fs/proc/array.c b/fs/proc/array.c
+> index bd117d0..35205d4 100644
+> --- a/fs/proc/array.c
+> +++ b/fs/proc/array.c
+> @@ -208,6 +208,22 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
+>  			   from_kgid_munged(user_ns, GROUP_AT(group_info, g)));
+>  	put_cred(cred);
+>  
+> +	seq_puts(m, "\nNStgid:");
+> +	for (g = ns->level; g <= pid->level; g++)
+> +		seq_printf(m, "\t%d ",
+> +			task_tgid_nr_ns(p, pid->numbers[g].ns));
+> +	seq_puts(m, "\nNSpid:");
+> +	for (g = ns->level; g <= pid->level; g++)
+> +		seq_printf(m, "\t%d ",
+> +			task_pid_nr_ns(p, pid->numbers[g].ns));
+> +	seq_puts(m, "\nNSpgid:");
+> +	for (g = ns->level; g <= pid->level; g++)
+> +		seq_printf(m, "\t%d ",
+> +			task_pgrp_nr_ns(p, pid->numbers[g].ns));
+> +	seq_puts(m, "\nNSsid:");
+> +	for (g = ns->level; g <= pid->level; g++)
+> +		seq_printf(m, "\t%d ",
+> +			task_session_nr_ns(p, pid->numbers[g].ns));
+>  	seq_putc(m, '\n');
+>  }
