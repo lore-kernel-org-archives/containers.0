@@ -1,7 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 7/9] mnt: Simplify umount_tree
-Date: Fri,  2 Jan 2015 15:52:52 -0600
-Message-ID: <1420235574-15177-7-git-send-email-ebiederm__1728.54958004809$1420235792$gmane$org@xmission.com>
+Subject: [PATCH review 8/9] mnt: Remove redundant NULL tests in
+	namespace_unlock
+Date: Fri,  2 Jan 2015 15:52:53 -0600
+Message-ID: <1420235574-15177-8-git-send-email-ebiederm__13043.6790212572$1420235804$gmane$org@xmission.com>
 References: <871tncuaf6.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,35 +22,47 @@ To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Replace the open coded __detach_mnt with __detach_mnt.
+mntget, mntput, dput and pathput all test their arguments to see if
+they are NULL before taking any action, so testing for NULL in
+namespace_unlock is redundant.
+
+Remove the redundant checks making namespace_unlock a little
+shorter and easier to read.
+
+This also makes it possible for mnt_ex_mountpoint.mnt to be NULL
+allowing putting a dentry without a mount.  This is will be needed
+in __detach_mounts when detaching already unmounted children,
+as part of the fix for MNT_DETACH on MNT_LOCKED mounts.
 
 Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/namespace.c | 10 +---------
- 1 file changed, 1 insertion(+), 9 deletions(-)
+ fs/namespace.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
 diff --git a/fs/namespace.c b/fs/namespace.c
-index c3f526ce0522..9fae55f2242e 100644
+index 9fae55f2242e..3769dbd040c1 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -1368,16 +1368,8 @@ static void umount_tree(struct mount *mnt, enum umount_tree_flags how)
- 		if (how & UMOUNT_SYNC)
- 			p->mnt.mnt_flags |= MNT_SYNC_UMOUNT;
- 		if (mnt_has_parent(p)) {
--			hlist_del_init(&p->mnt_mp_list);
--			put_mountpoint(p->mnt_mp);
- 			mnt_add_count(p->mnt_parent, -1);
--			/* move the reference to mountpoint into ->mnt_ex_mountpoint */
--			p->mnt_ex_mountpoint.dentry = p->mnt_mountpoint;
--			p->mnt_ex_mountpoint.mnt = &p->mnt_parent->mnt;
--			p->mnt_mountpoint = p->mnt.mnt_root;
--			p->mnt_parent = p;
--			p->mnt_mp = NULL;
--			hlist_del_init_rcu(&p->mnt_hash);
-+			__detach_mnt(p, &p->mnt_ex_mountpoint);
- 		}
- 		change_mnt_propagation(p, MS_PRIVATE);
+@@ -1312,8 +1312,7 @@ static void namespace_unlock(void)
+ 
+ 	/* undo decrements we'd done in umount_tree() */
+ 	list_for_each_entry(mnt, &head, mnt_list)
+-		if (mnt->mnt_ex_mountpoint.mnt)
+-			mntget(mnt->mnt_ex_mountpoint.mnt);
++		mntget(mnt->mnt_ex_mountpoint.mnt);
+ 
+ 	up_write(&namespace_sem);
+ 
+@@ -1322,8 +1321,7 @@ static void namespace_unlock(void)
+ 	while (!list_empty(&head)) {
+ 		mnt = list_first_entry(&head, struct mount, mnt_list);
+ 		list_del_init(&mnt->mnt_list);
+-		if (mnt->mnt_ex_mountpoint.mnt)
+-			path_put(&mnt->mnt_ex_mountpoint);
++		path_put(&mnt->mnt_ex_mountpoint);
+ 		mntput(&mnt->mnt);
  	}
+ }
 -- 
 2.2.1
