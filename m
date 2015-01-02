@@ -1,18 +1,11 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: How to start contributing to namespaces in the kernel.
-Date: Tue, 30 Dec 2014 00:08:52 -0600
-Message-ID: <87lhlpy8i3.fsf@x220.int.ebiederm.org>
-References: <CAFx0iW_oZn=esL63swjJyChsuORMfmzcgRBLYFrKR0VVtM8Tcw@mail.gmail.com>
-	<87k31a2m6o.fsf@x220.int.ebiederm.org>
-	<CAFx0iW9EEAy1VDqpVmAygZgXBMAvQR4jjDMjSKx-YYx5dAeGDg@mail.gmail.com>
-	<87r3vi0ws0.fsf@x220.int.ebiederm.org>
-	<CAA2m6vczmqJ3uBEL_5nGa04vb2dw43yM5HbzszruXPtFhDsDJw@mail.gmail.com>
+Subject: [PATCH review 0/9] Call for testing and review of mount detach fixes
+Date: Fri, 02 Jan 2015 15:42:21 -0600
+Message-ID: <871tncuaf6.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAA2m6vczmqJ3uBEL_5nGa04vb2dw43yM5HbzszruXPtFhDsDJw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Amir Goldstein's message of "Tue, 30 Dec 2014 05:23:04 +0200")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,79 +15,43 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Amir Goldstein <amir-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org>
-Cc: Timothy Chen <tnachen-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Amir Goldstein <amir-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org> writes:
 
-> On Tue, Dec 30, 2014 at 3:08 AM, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> wrote:
->
->> Timothy Chen <tnachen-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
->>
->> > Thanks Eric for the detailed reply!
->> >
->> > I want to gain more understanding and context around namespaces in the
->> > kernel, and thought contributing is the best way to do so.
->>
->> It can't hurt.
->>
->> > I wonder if there is a public backlog that lists open issues that you
->> > mentioned or haven't get to work on yet?
->>
->> Nothing more than I have posted.  That isn't how I work, and it isn't
->> how folks in the kernel tend to work.
->>
->
-> Setting up a wiki page could make for a good first contribution ;-)
+Way back in October Andrey Vagin reported that umount(MNT_DETACH) could
+be used to defeat MNT_LOCKED.
 
-Only if the person who sets up the wiki can see why the wiki would be a
-good idea and has a vision of how it would help, and where the wiki
-needs to go.
+That MNT_DETACH is allowed in user namespace comes from my early
+misunderstanding what MNT_DETACH does.  My mistake.
 
-One of the largest challenges with kernel namespace patches from new
-contributors is many of them are poorly thought out.  Sometimes the
-original author isn't even certain what problem they are really trying
-to solve.  That tends to suck up the time and tax the patience of kernel
-maintainers who tend towards being over-worked as it is.
+To avoid breaking existing userspace the conflict between MNT_DETACH
+and MNT_LOCKED is fixed by leaving locked umounts attached in the mount
+hash table until the last reference goes away.
 
-As such I am very reluctant to encourage people with baby steps.  If
-folks can figure out how to jump in and deal with everything they that
-needs to be dealt with that would be a tremendous help.  If too much
-hand holding is necessary it becomes a drag because there are only so
-many hands to go around.
+While investigating this issue I also found an issue with
+__detach_mounts.  The code was unnecessarily and incorrectly triggering
+mount propagation.  Resulting in too many mounts going away when a
+directory is deleted, and too many cpu cycles burned while doing that.
 
->> Start with assuming there aren't bugs in the kernel implementation.
->> The certainly are no known bugs that someone who is not familiar with
->> the kernel is likely to be able to fix.
->>
->> So find something you would like to do with a container, and figure out
->> why you can't, and then send a patch or ask a question about how to make
->> it work.
->>
->
-> Sharing from my personal experience, I learned about Google summer of code
-> in 2011 and found the program to be very helpful in matching itches to
-> scratch with potential open source contributors.
->
-> The Linux Foundation has been a participating organization in the
-> program in recent years as well as several of the Linux distros.  With
-> the rising interest in containers, open source projects looking for
-> new blood should consider applying to the program and propose
-> containers related projects.
->
-> As a mentor, it was very rewarding for me to help a new kernel developer
-> join the community.
+For those who like to see everything in a single tree the code is at:
 
-I don't know that I have the time and am willing to be a mentor.  I am
-willing to describe what is going on and what it takes to contribute.
+   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-testing
 
-With namespaces most of the low hanging fruit has been picked long ago.
-It is only when someone comes in with a different perspective or a
-different use case that occassionally new low hanging fruit will be
-spotted.  I can't supply that different perspective or that different
-use case, at best I can encourage people to look at what they are doing,
-look at what the kernel and ask people to find that use case themselves.
+Eric W. Biederman (9):
+      mnt: Improve the umount_tree flags
+      mnt: Don't propagate umounts in __detach_mounts
+      mnt: In umount_tree reuse mnt_list instead of mnt_hash
+      mnt: Add MNT_UMOUNT flag
+      mnt: Delay removal from the mount hash.
+      mnt: Factor out __detach_mnt from detach_mnt
+      mnt: Simplify umount_tree
+      mnt: Remove redundant NULL tests in namespace_unlock
+      mnt: Honor MNT_LOCKED when detaching mounts
 
-Eric
+ fs/namespace.c        | 150 +++++++++++++++++++++++++++++++-------------------
+ fs/pnode.c            |   8 +--
+ fs/pnode.h            |   3 +-
+ include/linux/mount.h |   1 +
+ 4 files changed, 99 insertions(+), 63 deletions(-)
