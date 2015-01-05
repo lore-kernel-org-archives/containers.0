@@ -1,13 +1,15 @@
-From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 11/11] mnt: Honor MNT_LOCKED when detaching mounts
-Date: Mon,  5 Jan 2015 14:46:27 -0600
-Message-ID: <1420490787-14387-11-git-send-email-ebiederm__6380.4077370607$1420491140$gmane$org@xmission.com>
-References: <87mw5xq7lt.fsf@x220.int.ebiederm.org>
+From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCHv3 8/8] cgroup: Add documentation for cgroup namespaces
+Date: Mon, 5 Jan 2015 14:48:44 -0800
+Message-ID: <CAGr1F2HA6mzFwgp5ngX8P7=198-5CmCjLmuCJ8j3eQ08J2d9Qw@mail.gmail.com>
+References: <1417744550-6461-1-git-send-email-adityakali@google.com>
+	<1417744550-6461-9-git-send-email-adityakali@google.com>
+	<548E17CE.8010704@nod.at>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87mw5xq7lt.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <548E17CE.8010704-/L3Ra7n9ekc@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,142 +19,153 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
+Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups mailinglist <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Modify umount(MNT_DETACH) to keep mounts in the hash table that are
-locked to their parent mounts, when the parent is lazily unmounted.
-In doing this invert the reference count so that the parent holds a
-reference to the children instead of the children holding a reference
-to the parent.
+On Sun, Dec 14, 2014 at 3:05 PM, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org> wrote:
+> Aditya,
+>
+> I gave your patch set a try but it does not work for me.
+> Maybe you can bring some light into the issues I'm facing.
+> Sadly I still had no time to dig into your code.
+>
+> Am 05.12.2014 um 02:55 schrieb Aditya Kali:
+>> Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+>> ---
+>>  Documentation/cgroups/namespace.txt | 147 ++++++++++++++++++++++++++++++++++++
+>>  1 file changed, 147 insertions(+)
+>>  create mode 100644 Documentation/cgroups/namespace.txt
+>>
+>> diff --git a/Documentation/cgroups/namespace.txt b/Documentation/cgroups/namespace.txt
+>> new file mode 100644
+>> index 0000000..6480379
+>> --- /dev/null
+>> +++ b/Documentation/cgroups/namespace.txt
+>> @@ -0,0 +1,147 @@
+>> +                     CGroup Namespaces
+>> +
+>> +CGroup Namespace provides a mechanism to virtualize the view of the
+>> +/proc/<pid>/cgroup file. The CLONE_NEWCGROUP clone-flag can be used with
+>> +clone() and unshare() syscalls to create a new cgroup namespace.
+>> +The process running inside the cgroup namespace will have its /proc/<pid>/cgroup
+>> +output restricted to cgroupns-root. cgroupns-root is the cgroup of the process
+>> +at the time of creation of the cgroup namespace.
+>> +
+>> +Prior to CGroup Namespace, the /proc/<pid>/cgroup file used to show complete
+>> +path of the cgroup of a process. In a container setup (where a set of cgroups
+>> +and namespaces are intended to isolate processes), the /proc/<pid>/cgroup file
+>> +may leak potential system level information to the isolated processes.
+>> +
+>> +For Example:
+>> +  $ cat /proc/self/cgroup
+>> +  0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/batchjobs/container_id1
+>> +
+>> +The path '/batchjobs/container_id1' can generally be considered as system-data
+>> +and its desirable to not expose it to the isolated process.
+>> +
+>> +CGroup Namespaces can be used to restrict visibility of this path.
+>> +For Example:
+>> +  # Before creating cgroup namespace
+>> +  $ ls -l /proc/self/ns/cgroup
+>> +  lrwxrwxrwx 1 root root 0 2014-07-15 10:37 /proc/self/ns/cgroup -> cgroup:[4026531835]
+>> +  $ cat /proc/self/cgroup
+>> +  0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/batchjobs/container_id1
+>> +
+>> +  # unshare(CLONE_NEWCGROUP) and exec /bin/bash
+>> +  $ ~/unshare -c
+>> +  [ns]$ ls -l /proc/self/ns/cgroup
+>> +  lrwxrwxrwx 1 root root 0 2014-07-15 10:35 /proc/self/ns/cgroup -> cgroup:[4026532183]
+>> +  # From within new cgroupns, process sees that its in the root cgroup
+>> +  [ns]$ cat /proc/self/cgroup
+>> +  0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/
+>> +
+>> +  # From global cgroupns:
+>> +  $ cat /proc/<pid>/cgroup
+>> +  0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/batchjobs/container_id1
+>> +
+>> +  # Unshare cgroupns along with userns and mountns
+>> +  # Following calls unshare(CLONE_NEWCGROUP|CLONE_NEWUSER|CLONE_NEWNS), then
+>> +  # sets up uid/gid map and execs /bin/bash
+>> +  $ ~/unshare -c -u -m
+>
+> This command does not issue CLONE_NEWUSER, -U does.
+>
+I was using a custom unshare binary. But I will update the command
+line to be similar to the one in util-linux.
 
-Then in mntput_no_expire detach the children and in cleanup_mnt mntput
-the children and dput the dentry they were mounted on.
+>> +  # Originally, we were in /batchjobs/container_id1 cgroup. Mount our own cgroup
+>> +  # hierarchy.
+>> +  [ns]$ mount -t cgroup cgroup /tmp/cgroup
+>> +  [ns]$ ls -l /tmp/cgroup
+>> +  total 0
+>> +  -r--r--r-- 1 root root 0 2014-10-13 09:32 cgroup.controllers
+>> +  -r--r--r-- 1 root root 0 2014-10-13 09:32 cgroup.populated
+>> +  -rw-r--r-- 1 root root 0 2014-10-13 09:25 cgroup.procs
+>> +  -rw-r--r-- 1 root root 0 2014-10-13 09:32 cgroup.subtree_control
+>
+> I've patched libvirt-lxc to issue CLONE_NEWCGROUP and not bind mount cgroupfs into a container.
+> But I'm unable to mount cgroupfs within the container, mount(2) is failing with EINVAL.
+> And /proc/self/cgroup still shows the cgroup from outside.
+>
+> ---cut---
+> container:/ # ls /sys/fs/cgroup/
+> container:/ # mount -t cgroup none /sys/fs/cgroup/
 
-In __detach_mounts if there are any mounts that have been unmounted
-but still are on the list of mounts of a mountpoint, detach those
-mounts and schedule them to be mntput and their reference to the dentry
-to be put when it becomes safe to sleep.
+You need to provide "-o __DEVEL_sane_behavior" flag. Inside the
+container, only unified hierarchy can be mounted. So, for now, that
+flag is needed. I will fix the documentation too.
 
-Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- fs/namespace.c | 46 ++++++++++++++++++++++++++++++++++++++++++----
- fs/pnode.h     |  2 ++
- 2 files changed, 44 insertions(+), 4 deletions(-)
+> mount: wrong fs type, bad option, bad superblock on none,
+>        missing codepage or helper program, or other error
+>
+>        In some cases useful info is found in syslog - try
+>        dmesg | tail or so.
+> container:/ # cat /proc/self/cgroup
+> 8:memory:/machine/test00.libvirt-lxc
+> 7:devices:/machine/test00.libvirt-lxc
+> 6:hugetlb:/
+> 5:cpuset:/machine/test00.libvirt-lxc
+> 4:blkio:/machine/test00.libvirt-lxc
+> 3:cpu,cpuacct:/machine/test00.libvirt-lxc
+> 2:freezer:/machine/test00.libvirt-lxc
+> 1:name=systemd:/user.slice/user-0.slice/session-c2.scope
+> container:/ # ls -la /proc/self/ns
+> total 0
+> dr-x--x--x 2 root root 0 Dec 14 23:02 .
+> dr-xr-xr-x 8 root root 0 Dec 14 23:02 ..
+> lrwxrwxrwx 1 root root 0 Dec 14 23:02 cgroup -> cgroup:[4026532240]
+> lrwxrwxrwx 1 root root 0 Dec 14 23:02 ipc -> ipc:[4026532238]
+> lrwxrwxrwx 1 root root 0 Dec 14 23:02 mnt -> mnt:[4026532235]
+> lrwxrwxrwx 1 root root 0 Dec 14 23:02 net -> net:[4026532242]
+> lrwxrwxrwx 1 root root 0 Dec 14 23:02 pid -> pid:[4026532239]
+> lrwxrwxrwx 1 root root 0 Dec 14 23:02 user -> user:[4026532234]
+> lrwxrwxrwx 1 root root 0 Dec 14 23:02 uts -> uts:[4026532236]
+> container:/ #
+>
+> #host side
+> lxc-os132:~ # ls -la /proc/self/ns
+> total 0
+> dr-x--x--x 2 root root 0 Dec 14 23:56 .
+> dr-xr-xr-x 8 root root 0 Dec 14 23:56 ..
+> lrwxrwxrwx 1 root root 0 Dec 14 23:56 cgroup -> cgroup:[4026531835]
+> lrwxrwxrwx 1 root root 0 Dec 14 23:56 ipc -> ipc:[4026531839]
+> lrwxrwxrwx 1 root root 0 Dec 14 23:56 mnt -> mnt:[4026531840]
+> lrwxrwxrwx 1 root root 0 Dec 14 23:56 net -> net:[4026531957]
+> lrwxrwxrwx 1 root root 0 Dec 14 23:56 pid -> pid:[4026531836]
+> lrwxrwxrwx 1 root root 0 Dec 14 23:56 user -> user:[4026531837]
+> lrwxrwxrwx 1 root root 0 Dec 14 23:56 uts -> uts:[4026531838]
+> ---cut---
+>
+> Any ideas?
+>
 
-diff --git a/fs/namespace.c b/fs/namespace.c
-index ca801b41c643..689a27d6e950 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -1017,6 +1017,17 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
- 	return ERR_PTR(err);
- }
- 
-+static void mntput_children(struct mount *mnt)
-+{
-+	struct mount *p, *tmp;
-+
-+	list_for_each_entry_safe(p, tmp, &mnt->mnt_mounts, mnt_child) {
-+		list_del_init(&p->mnt_child);
-+		path_put(&p->mnt_ex_mountpoint);
-+		mntput(&p->mnt);
-+	}
-+}
-+
- static void cleanup_mnt(struct mount *mnt)
- {
- 	/*
-@@ -1030,6 +1041,8 @@ static void cleanup_mnt(struct mount *mnt)
- 	 * so mnt_get_writers() below is safe.
- 	 */
- 	WARN_ON(mnt_get_writers(mnt));
-+	if (unlikely(!list_empty(&mnt->mnt_mounts)))
-+		mntput_children(mnt);
- 	if (unlikely(mnt->mnt_pins.first))
- 		mnt_pin_kill(mnt);
- 	fsnotify_vfsmount_delete(&mnt->mnt);
-@@ -1080,6 +1093,15 @@ static void mntput_no_expire(struct mount *mnt)
- 	rcu_read_unlock();
- 
- 	list_del(&mnt->mnt_instance);
-+
-+	if (unlikely(!list_empty(&mnt->mnt_mounts))) {
-+		struct mount *p;
-+		list_for_each_entry(p, &mnt->mnt_mounts,  mnt_child) {
-+			__detach_mnt(p, &p->mnt_ex_mountpoint);
-+			/* No need to mntput mnt */
-+			p->mnt_ex_mountpoint.mnt = NULL;
-+		}
-+	}
- 	unlock_mount_hash();
- 
- 	if (likely(!(mnt->mnt.mnt_flags & MNT_INTERNAL))) {
-@@ -1342,7 +1364,7 @@ enum umount_tree_flags {
- static void umount_tree(struct mount *mnt, enum umount_tree_flags how)
- {
- 	LIST_HEAD(tmp_list);
--	struct mount *p;
-+	struct mount *tmp, *p;
- 
- 	if (how & UMOUNT_PROPAGATE)
- 		propagate_mount_unlock(mnt);
-@@ -1362,7 +1384,7 @@ static void umount_tree(struct mount *mnt, enum umount_tree_flags how)
- 	if (how & UMOUNT_PROPAGATE)
- 		propagate_umount(&tmp_list);
- 
--	list_for_each_entry(p, &tmp_list, mnt_list) {
-+	list_for_each_entry_safe(p, tmp, &tmp_list, mnt_list) {
- 		list_del_init(&p->mnt_expire);
- 		__touch_mnt_namespace(p->mnt_ns);
- 		p->mnt_ns = NULL;
-@@ -1370,7 +1392,14 @@ static void umount_tree(struct mount *mnt, enum umount_tree_flags how)
- 			p->mnt.mnt_flags |= MNT_SYNC_UMOUNT;
- 		if (mnt_has_parent(p)) {
- 			mnt_add_count(p->mnt_parent, -1);
--			__detach_mnt(p, &p->mnt_ex_mountpoint);
-+			if (IS_MNT_LOCKED_AND_LAZY(p)) {
-+				/* Don't mntput p in namespace_unlock */
-+				list_del_init(&p->mnt_list);
-+				/* Don't forget about p */
-+				list_add_tail(&p->mnt_child, &p->mnt_parent->mnt_mounts);
-+			} else {
-+				__detach_mnt(p, &p->mnt_ex_mountpoint);
-+			}
- 		}
- 		change_mnt_propagation(p, MS_PRIVATE);
- 	}
-@@ -1496,7 +1525,16 @@ void __detach_mounts(struct dentry *dentry)
- 	lock_mount_hash();
- 	while (!hlist_empty(&mp->m_list)) {
- 		mnt = hlist_entry(mp->m_list.first, struct mount, mnt_mp_list);
--		umount_tree(mnt, 0);
-+		if (mnt->mnt.mnt_flags & MNT_UMOUNT) {
-+			struct mount *p, *tmp;
-+			list_for_each_entry_safe(p, tmp, &mnt->mnt_mounts,  mnt_child) {
-+				detach_mnt(p, &p->mnt_ex_mountpoint);
-+				/* p->mnt_parent has already been mntput */
-+				p->mnt_ex_mountpoint.mnt = NULL;
-+				list_add_tail(&p->mnt_list, &unmounted);
-+			}
-+		}
-+		else umount_tree(mnt, 0);
- 	}
- 	unlock_mount_hash();
- 	put_mountpoint(mp);
-diff --git a/fs/pnode.h b/fs/pnode.h
-index 0fcdbe7ca648..7114ce6e6b9e 100644
---- a/fs/pnode.h
-+++ b/fs/pnode.h
-@@ -20,6 +20,8 @@
- #define SET_MNT_MARK(m) ((m)->mnt.mnt_flags |= MNT_MARKED)
- #define CLEAR_MNT_MARK(m) ((m)->mnt.mnt_flags &= ~MNT_MARKED)
- #define IS_MNT_LOCKED(m) ((m)->mnt.mnt_flags & MNT_LOCKED)
-+#define IS_MNT_LOCKED_AND_LAZY(m) \
-+	(((m)->mnt.mnt_flags & (MNT_LOCKED|MNT_SYNC_UMOUNT)) == MNT_LOCKED)
- 
- #define CL_EXPIRE    		0x01
- #define CL_SLAVE     		0x02
+Please try with "-o __DEVEL_sane_behavior" flag to the mount command.
+
+> Thanks,
+> //richard
+
+
+Thanks,
 -- 
-2.2.1
+Aditya
