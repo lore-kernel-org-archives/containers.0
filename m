@@ -1,8 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 08/11] mnt: Remove redundant NULL tests in
-	namespace_unlock
-Date: Mon,  5 Jan 2015 14:46:24 -0600
-Message-ID: <1420490787-14387-8-git-send-email-ebiederm__26295.8207786598$1420491021$gmane$org@xmission.com>
+Subject: [PATCH review 02/11] mnt: Don't propagate umounts in __detach_mounts
+Date: Mon,  5 Jan 2015 14:46:18 -0600
+Message-ID: <1420490787-14387-2-git-send-email-ebiederm__31207.5595291846$1420491025$gmane$org@xmission.com>
 References: <87mw5xq7lt.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,47 +21,41 @@ To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-mntget, mntput, dput and pathput all test their arguments to see if
-they are NULL before taking any action, so testing for NULL in
-namespace_unlock is redundant.
+Invoking mount propagation from __detach_mounts is inefficient and
+wrong.
 
-Remove the redundant checks making namespace_unlock a little
-shorter and easier to read.
+It is inefficient because __detach_mounts already walks the list of
+mounts that where something needs to be done, and mount propagation
+walks some subset of those mounts again.
 
-This also makes it possible for mnt_ex_mountpoint.mnt to be NULL
-allowing putting a dentry without a mount.  This is will be needed
-in __detach_mounts when detaching already unmounted children,
-as part of the fix for MNT_DETACH on MNT_LOCKED mounts.
+It is actively wrong because if the dentry that is passed to
+__detach_mounts is not part of the path to a mount that mount should
+not be affected.
+
+change_mnt_propagation(p,MS_PRIVATE) modifies the mount propagation
+tree of a master mount so it's slaves are connected to another master
+if possible.  Which means even removing a mount from the middle of a
+mount tree with __detach_mounts will not deprive any mount propagated
+mount events.
 
 Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/namespace.c | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+ fs/namespace.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/fs/namespace.c b/fs/namespace.c
-index 9fae55f2242e..3769dbd040c1 100644
+index 5bb96c440b31..07d0562290a5 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -1312,8 +1312,7 @@ static void namespace_unlock(void)
- 
- 	/* undo decrements we'd done in umount_tree() */
- 	list_for_each_entry(mnt, &head, mnt_list)
--		if (mnt->mnt_ex_mountpoint.mnt)
--			mntget(mnt->mnt_ex_mountpoint.mnt);
-+		mntget(mnt->mnt_ex_mountpoint.mnt);
- 
- 	up_write(&namespace_sem);
- 
-@@ -1322,8 +1321,7 @@ static void namespace_unlock(void)
- 	while (!list_empty(&head)) {
- 		mnt = list_first_entry(&head, struct mount, mnt_list);
- 		list_del_init(&mnt->mnt_list);
--		if (mnt->mnt_ex_mountpoint.mnt)
--			path_put(&mnt->mnt_ex_mountpoint);
-+		path_put(&mnt->mnt_ex_mountpoint);
- 		mntput(&mnt->mnt);
+@@ -1497,7 +1497,7 @@ void __detach_mounts(struct dentry *dentry)
+ 	lock_mount_hash();
+ 	while (!hlist_empty(&mp->m_list)) {
+ 		mnt = hlist_entry(mp->m_list.first, struct mount, mnt_mp_list);
+-		umount_tree(mnt, UMOUNT_PROPAGATE);
++		umount_tree(mnt, 0);
  	}
- }
+ 	unlock_mount_hash();
+ 	put_mountpoint(mp);
 -- 
 2.2.1
