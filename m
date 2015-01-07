@@ -1,7 +1,7 @@
 From: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
 Subject: Re: [PATCHv3 8/8] cgroup: Add documentation for cgroup namespaces
-Date: Wed, 07 Jan 2015 00:39:02 +0100
-Message-ID: <54AC7216.30001__9999.41972918368$1420587587$gmane$org@nod.at>
+Date: Wed, 07 Jan 2015 10:28:24 +0100
+Message-ID: <54ACFC38.5070007@nod.at>
 References: <1417744550-6461-1-git-send-email-adityakali@google.com>
 	<1417744550-6461-9-git-send-email-adityakali@google.com>
 	<548E17CE.8010704@nod.at>
@@ -36,43 +36,26 @@ Am 07.01.2015 um 00:20 schrieb Aditya Kali:
 > What do you expect to be mounted when you run:
 >   container:/ # mount -t cgroup none /sys/fs/cgroup/
 > from inside the container?
-
-I expect cgroupfs to behave exactly as it would in the initial namespace.
-Such that the container can do with it whatever it wants.
-systemd mounts and manages cgroups on its own.
-Like for CONFIG_DEVPTS_MULTIPLE_INSTANCES.
-
-If a new cgroup namespace cannot provide a clean and autonomous cgroupfs
-instance it is fundamentally flawed.
-You cannot provide a namespace mechanism which depends on the host side
-that much.
-This will also horrible break container migrations between hosts.
-i.e. Migrate a container from a Ubuntu host to a Fedora (systemd!) host.
-
+> 
 > Note that cgroup-namespace wont be able to change the way cgroups are
 > mounted .. i.e., if say cpu and cpuacct subsystems are mounted
 > together at a single mount-point, then we cannot mount them any other
 > way (inside a container or outside). This restriction exists today and
 > cgroup-namespaces won't change that.
 
-Why can't cgroup namespace change this?
-I think of cgroup namespace as a new and clean cgroupfs instance which inherits
-all limits from the outside.
+I wondered why cgroup namespaces won't change that and looked at your patches
+in more detail.
+What you propose as cgroup namespace is much more a cgroup chroot() than
+a namespace.
+As you pass relative paths into the namespace you depend on the mount structure
+of the host side.
+Hence, the abstraction between namespaces happens on the mount paths of the initial
+cgroupfs. But we really want a new cgroupfs instance within a container and not just
+a cut out of the initial cgroupfs mount.
 
-> So, If on the host we have:
-> root@adityakali-vm2:/sys/fs/cgroup# cat /proc/mounts | grep cgroup
-> tmpfs /sys/fs/cgroup tmpfs rw,relatime 0 0
-> cgroup /sys/fs/cgroup/cpu cgroup rw,relatime,cpuset,cpu,cpuacct 0 0
-> cgroup /sys/fs/cgroup/mem cgroup rw,relatime,memory,hugetlb 0 0
-> cgroup /sys/fs/cgroup/rest cgroup
-> rw,relatime,devices,freezer,net_cls,blkio,perf_event,net_prio 0 0
-> 
-> And inside the container we want each subsystem to be on its own
-> mount-point, then it will fail. Do you think even then its useful to
-> support virtualizing paths for non-unified hierarchies?
-
-As I've stated above I expect from cgroup namespaces a clean and sane
-cgroupfs instance no matter how the outer mounts are.
+I fear you approach is over simplified and won't work for all cases. It may work
+for your specific use case at Google but we really want something generic.
+Eric, what do you think?
 
 Thanks,
 //richard
