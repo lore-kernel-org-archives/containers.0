@@ -1,7 +1,7 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCHv3 8/8] cgroup: Add documentation for cgroup namespaces
-Date: Wed, 07 Jan 2015 08:45:05 -0600
-Message-ID: <87fvbmir9q.fsf@x220.int.ebiederm.org>
+Date: Wed, 7 Jan 2015 10:57:01 -0800
+Message-ID: <CAGr1F2H8wYtniAhd_DWCZc9RqmJspT6YKOuoQhU-f7WWWSRT6Q__47482.5327205055$1420657114$gmane$org@mail.gmail.com>
 References: <1417744550-6461-1-git-send-email-adityakali@google.com>
 	<1417744550-6461-9-git-send-email-adityakali@google.com>
 	<548E17CE.8010704@nod.at>
@@ -15,8 +15,7 @@ Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <54ACFC38.5070007-/L3Ra7n9ekc@public.gmane.org> (Richard Weinberger's message of "Wed,
-	07 Jan 2015 10:28:24 +0100")
+In-Reply-To: <54ACFC38.5070007-/L3Ra7n9ekc@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,20 +26,19 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
-Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups mailinglist <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups mailinglist <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org> writes:
-
+On Wed, Jan 7, 2015 at 1:28 AM, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org> wrote:
 > Am 07.01.2015 um 00:20 schrieb Aditya Kali:
 >> I understand your point. But it will add some complexity to the code.
->> 
+>>
 >> Before trying to make it work for non-unified hierarchy cases, I would
 >> like to get a clearer idea.
 >> What do you expect to be mounted when you run:
 >>   container:/ # mount -t cgroup none /sys/fs/cgroup/
 >> from inside the container?
->> 
+>>
 >> Note that cgroup-namespace wont be able to change the way cgroups are
 >> mounted .. i.e., if say cpu and cpuacct subsystems are mounted
 >> together at a single mount-point, then we cannot mount them any other
@@ -57,47 +55,41 @@ Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org> writes:
 > cgroupfs. But we really want a new cgroupfs instance within a container and not just
 > a cut out of the initial cgroupfs mount.
 >
+
+What you describe will be useful at Google too, just that I found it
+difficult/infeasible to include it in the scope of cgroup namespaces.
+The scope of cgroup namespace was deliberately limited to virtualize
+/proc/<pid>/cgroup file. That too in a way that doesn't need major
+changes to cgroup code itself. (It was also limited to unified
+hierarchy to keep things simple, but that can be changed).
+
+Many of the cgroup subsystems (memory, cpu, etc) rely on the fact that
+they can see entire cgroup view. For example, in a memcg-OOM scenario,
+the memory controller would need to look at all sub-cgroups inside the
+OOMing cgroup. A per namespace cgroupfs instance (if I understand
+correctly) would mean that sub-cgroups created inside the namespace
+won't be visible outside. I expect this will break the functionality
+of the subsystem.
+
+Illustration: memcg A is under OOM; [B] and [C] are cgroup namespace
+roots with possibly namespace-private sub-cgroups.
+              ------ [B]
+A --------|
+              ------ [C]
+
+Cgroups are heavily used inside the kernel for various purposes which
+need any namespace-agnostic view. Inherent limitation of running
+containers running on a machine is that they share the same kernel.
+Perhaps what you need is something like kexec to be supported inside a
+container.
+
 > I fear you approach is over simplified and won't work for all cases. It may work
 > for your specific use case at Google but we really want something generic.
 > Eric, what do you think?
-
-I think I probably need to go back upthread and read the patches.
-
-I think it is a reasonable practical requirement that a widely used long
-term supported distribution like RHEL 7 needs to be able to run in a linux
-container bizarre init system and all.  And that we the abstractions
-should be that that we should be able to migrate such a beast.
-
-There are a couple of issues in play and I think we need actual testing
-rather than reports that something shouldn't work before we reject a set
-of patches.    Aditya in one of his replies to me has reported a
-configuration that he expects will work.  So I think that configuration
-needs to be tested.
-
-cgroups is a weird beast and the problems tend not to lie where a person
-would first expect.
-
-I suspect no one strongly cares if the cgroup hierarchy is unified or
-not.  By unified hierarchy I mean that  every mount of cgroupfs has the
-same directories with the same processes in each directory.
-
-I do think people will care which controllers will show up in differ
-mounts of cgroupfs, and I think that is relevant to process migration.
+>
+> Thanks,
+> //richard
 
 
-
-
-I am going to segway into scope of what is achievable with a cgroup namespace.
-
-- If there are files in cgroupfs that are not safe to delegate we can
-  not support those files in a container. 
-
-  Last I looked there were such files and systemd used them.
-
-- Which controllers share hierarchies of processes to track resources is
-  a core cgroup issue and not a cgroup namespace issue.
-
-  If we find problems with using a unified hierarchy support we need to
-  go fix cgroups in general not cgroupfs.
-
-Eric
+-- 
+Aditya
