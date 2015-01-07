@@ -1,21 +1,17 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCHv3 8/8] cgroup: Add documentation for cgroup namespaces
-Date: Wed, 7 Jan 2015 20:30:59 +0100
-Message-ID: <20150107193059.GA1857__46282.8684751459$1420659407$gmane$org@mail.hallyn.com>
-References: <1417744550-6461-9-git-send-email-adityakali@google.com>
-	<548E17CE.8010704@nod.at>
-	<CAGr1F2HA6mzFwgp5ngX8P7=198-5CmCjLmuCJ8j3eQ08J2d9Qw@mail.gmail.com>
-	<54AB15BD.8020007@nod.at> <87lhlgpyxk.fsf@x220.int.ebiederm.org>
-	<CAGr1F2HSi_D07r2c5CKOsjSR1+58k9G2MrtACsd+HV6XKvJ7cA@mail.gmail.com>
-	<54AB2992.6060707@nod.at>
-	<CAGr1F2EGOUSEd3-G4PS0mq=9kU1nWG4CwHUOQaNUATepc11_Sw@mail.gmail.com>
-	<54ACFC38.5070007@nod.at> <87fvbmir9q.fsf@x220.int.ebiederm.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH review 11/11] mnt: Honor MNT_LOCKED when detaching mounts
+Date: Wed, 07 Jan 2015 13:53:12 -0600
+Message-ID: <87a91ufjvb.fsf@x220.int.ebiederm.org>
+References: <87mw5xq7lt.fsf@x220.int.ebiederm.org>
+	<1420490787-14387-11-git-send-email-ebiederm@xmission.com>
+	<20150107184334.GZ22149@ZenIV.linux.org.uk>
+	<20150107192807.GA22149@ZenIV.linux.org.uk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87fvbmir9q.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <20150107192807.GA22149-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org> (Al Viro's message of
+	"Wed, 7 Jan 2015 19:28:07 +0000")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,110 +21,61 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups mailinglist <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org> writes:
-> 
-> > Am 07.01.2015 um 00:20 schrieb Aditya Kali:
-> >> I understand your point. But it will add some complexity to the code.
-> >> 
-> >> Before trying to make it work for non-unified hierarchy cases, I would
-> >> like to get a clearer idea.
-> >> What do you expect to be mounted when you run:
-> >>   container:/ # mount -t cgroup none /sys/fs/cgroup/
-> >> from inside the container?
-> >> 
-> >> Note that cgroup-namespace wont be able to change the way cgroups are
-> >> mounted .. i.e., if say cpu and cpuacct subsystems are mounted
-> >> together at a single mount-point, then we cannot mount them any other
-> >> way (inside a container or outside). This restriction exists today and
-> >> cgroup-namespaces won't change that.
-> >
-> > I wondered why cgroup namespaces won't change that and looked at your patches
-> > in more detail.
-> > What you propose as cgroup namespace is much more a cgroup chroot() than
-> > a namespace.
-> > As you pass relative paths into the namespace you depend on the mount structure
-> > of the host side.
-> > Hence, the abstraction between namespaces happens on the mount paths of the initial
-> > cgroupfs. But we really want a new cgroupfs instance within a container and not just
-> > a cut out of the initial cgroupfs mount.
-> >
-> > I fear you approach is over simplified and won't work for all cases. It may work
-> > for your specific use case at Google but we really want something generic.
-> > Eric, what do you think?
-> 
-> I think I probably need to go back upthread and read the patches.
-> 
-> I think it is a reasonable practical requirement that a widely used long
-> term supported distribution like RHEL 7 needs to be able to run in a linux
-> container bizarre init system and all.  And that we the abstractions
-> should be that that we should be able to migrate such a beast.
+Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org> writes:
 
-Userspace should be able to deal with however cgroups are mounted for
-it.  The only case I've heard of where it really made a meaningful
-difference was google's advanced grid usage.  In fact, the whole
-justification of the unified cgroup stuff was that it was claimed (and
-argued against by google) that that sufficed for any users.
+> On Wed, Jan 07, 2015 at 06:43:34PM +0000, Al Viro wrote:
+>> On Mon, Jan 05, 2015 at 02:46:27PM -0600, Eric W. Biederman wrote:
+>> > Modify umount(MNT_DETACH) to keep mounts in the hash table that are
+>> > locked to their parent mounts, when the parent is lazily unmounted.
+>> > In doing this invert the reference count so that the parent holds a
+>> > reference to the children instead of the children holding a reference
+>> > to the parent.
+>> > 
+>> > Then in mntput_no_expire detach the children and in cleanup_mnt mntput
+>> > the children and dput the dentry they were mounted on.
+>> > 
+>> > In __detach_mounts if there are any mounts that have been unmounted
+>> > but still are on the list of mounts of a mountpoint, detach those
+>> > mounts and schedule them to be mntput and their reference to the dentry
+>> > to be put when it becomes safe to sleep.
+>> 
+>> Explicit description of your new refcounting rules, please.
+>
+> I really hate those path_put(&p->mnt_ex_mountpoint) in the resulting code...
+> Can you ever get to your mntput_children() with non-NULL ->mnt_ex_mountpoint.mnt
+> in one of the survivors?  Looks like it shouldn't be possible at all...
 
-Now yes, until now userspace could cache its info on how cgroups were
-mounted and assume that wouldn't change (because the kernel wouldn't
-let it), and migration will break that.  But if the cgroup roadmap
-is to obsolete anything but unified hierarchy, then this was going
-to happen regardless of what the cgroupns patchset did.
+> What's to prevent such a survivor (not contributing to the refcount of
+> parent, to be dropped when parent gets killed) in the child list of a parent
+> that is still normally mounted?
 
-I agree with Aditya.  So long as the proclaimed direction of cgroups is
-to only support unified cgroup hierarchy, there's no point in having
-cgroupns do anything more than the chrooting.
+umount_tree.
 
-> There are a couple of issues in play and I think we need actual testing
-> rather than reports that something shouldn't work before we reject a set
-> of patches.    Aditya in one of his replies to me has reported a
-> configuration that he expects will work.  So I think that configuration
-> needs to be tested.
-> 
-> cgroups is a weird beast and the problems tend not to lie where a person
-> would first expect.
-> 
-> I suspect no one strongly cares if the cgroup hierarchy is unified or
-> not.
+In the base case we know the parent is unmounted because we were called
+on the parent.
 
-Well, google does.  There are cases that were either much more complicated
-or impossible to represent with unified hierarchy.  But complicating cgroupns
-to support something which Tejun has said is explicitly not going to be
-supported in the future would be ill-advised.
+In the propagation case the code goes through one pass to identify trees
+where the parent -> child (MNT_LOCKED) state allows the subtree to be
+unmounted and we perform the normal are all of the children gone test.
 
->   By unified hierarchy I mean that  every mount of cgroupfs has the
-> same directories with the same processes in each directory.
+That is what the entire MNT_MARK business is about.
 
-No, my reading of Documentation/cgroups/unified-hierarchy.txt is that
-unified hierarchy means that all (sane) controllers are co-mounted into
-one hierarchy.
+> And what happens if it's hit again,
 
-> I do think people will care which controllers will show up in differ
-> mounts of cgroupfs, and I think that is relevant to process migration.
-> 
-> 
-> 
-> 
-> I am going to segway into scope of what is achievable with a cgroup namespace.
-> 
-> - If there are files in cgroupfs that are not safe to delegate we can
->   not support those files in a container. 
-> 
->   Last I looked there were such files and systemd used them.
-> 
-> - Which controllers share hierarchies of processes to track resources is
->   a core cgroup issue and not a cgroup namespace issue.
-> 
->   If we find problems with using a unified hierarchy support we need to
->   go fix cgroups in general not cgroupfs.
-> 
-> Eric
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+If I understand the question such a mount won't be hit again because the
+case you describe can't happen.
+
+> in addition to "what does /proc/mounts of the namespace the parent's in look
+> like"?
+
+These mounts are unmounted so don't show up in /proc/mounts. 
+
+If the umount propagates somewhere the parents can't be detached from
+the propagation is discarded.  Just like we discard propagation when the
+are additional children.
+
+Eric
