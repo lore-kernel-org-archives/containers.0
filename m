@@ -1,15 +1,14 @@
-From: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Detecting the use of a mount in another namespace
-Date: Thu, 15 Jan 2015 10:34:17 +0000
-Message-ID: <20150115103417.GC8057@redhat.com>
-References: <1421312165.8788.7.camel@redhat.com>
-Reply-To: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH net-next v5 2/4] rtnl: add link netns id to interface messages
+Date: Thu, 15 Jan 2015 15:11:16 +0100
+Message-ID: <1421331078-21622-3-git-send-email-nicolas.dichtel__21556.7457759336$1421331441$gmane$org@6wind.com>
+References: <87wq7g831b.fsf@x220.int.ebiederm.org>
+	<1421331078-21622-1-git-send-email-nicolas.dichtel@6wind.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1421312165.8788.7.camel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1421331078-21622-1-git-send-email-nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,43 +18,85 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexander Larsson <alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: cwang-xCSkyg8dI+0RB7SZvlqPiA@public.gmane.org, Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org, stephen-OTpzqLSitTUnbdJkjeBofR2eb7JE58TQ@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Jan 15, 2015 at 09:56:05AM +0100, Alexander Larsson wrote:
-> This is a bit of a weird request, but I'm working on an app sandboxing
-> system where each container gets /usr read-only bind mounted from a
-> hardlinked tree. When i update the /usr tree I write the new tree to a
-> different directory, which avoids affecting any currently running apps
-> against the old one.
-> 
-> However, after updating I'd like to clean out the old version if it is
-> not in use. I had a plan for this:
-> 1) Move the old usr to a "has been deleted" location
-> 2) Try to remove a file inside the user (say ".ref") which the app when
-> running has bind-mounted somewhere
-> 3) if the remove returned EBUSY, then the usr is in use.
-> 
-> However, with the recent changes to the semantics in this area this
-> doesn't work. The remove always succeeds even if the file is mounted in
-> some other namespace.
-> 
-> I realize that this is better semantics in general, but that was a quite
-> useful hack. Is there any other similar way i can detect that something
-> is in use in "any other namespace".
+This patch adds a new attribute (IFLA_LINK_NETNSID) which contains the 'link'
+netns id when this netns is different from the netns where the interface
+stands (for example for x-net interfaces like ip tunnels).
+With this attribute, it's possible to interpret correctly all advertised
+information (like IFLA_LINK, etc.).
 
-Presumably you want something more efficient than scaning /proc/$PID in
-the host OS ? eg you read /proc/$PID/mounts for each process, then iterate
-stating /proc/$PID/root/<mount> to lookup the st_dev+st_inode of the mount
-location to see if the one you care about still exists in any process ?
-Not really going to scale nicely with large numbers of $PIDs, so perhaps
-you could short circuit by keeping track of your container pid leaders ?
+Signed-off-by: Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
+---
+ include/net/rtnetlink.h      |  2 ++
+ include/uapi/linux/if_link.h |  1 +
+ net/core/rtnetlink.c         | 13 +++++++++++++
+ 3 files changed, 16 insertions(+)
 
-Regards,
-Daniel
+diff --git a/include/net/rtnetlink.h b/include/net/rtnetlink.h
+index e21b9f9653c0..6c6d5393fc34 100644
+--- a/include/net/rtnetlink.h
++++ b/include/net/rtnetlink.h
+@@ -46,6 +46,7 @@ static inline int rtnl_msg_family(const struct nlmsghdr *nlh)
+  *			    to create when creating a new device.
+  *	@get_num_rx_queues: Function to determine number of receive queues
+  *			    to create when creating a new device.
++ *	@get_link_net: Function to get the i/o netns of the device
+  */
+ struct rtnl_link_ops {
+ 	struct list_head	list;
+@@ -93,6 +94,7 @@ struct rtnl_link_ops {
+ 	int			(*fill_slave_info)(struct sk_buff *skb,
+ 						   const struct net_device *dev,
+ 						   const struct net_device *slave_dev);
++	struct net		*(*get_link_net)(const struct net_device *dev);
+ };
+ 
+ int __rtnl_link_register(struct rtnl_link_ops *ops);
+diff --git a/include/uapi/linux/if_link.h b/include/uapi/linux/if_link.h
+index 2a8380edbb7e..0deee3eeddbf 100644
+--- a/include/uapi/linux/if_link.h
++++ b/include/uapi/linux/if_link.h
+@@ -146,6 +146,7 @@ enum {
+ 	IFLA_PHYS_PORT_ID,
+ 	IFLA_CARRIER_CHANGES,
+ 	IFLA_PHYS_SWITCH_ID,
++	IFLA_LINK_NETNSID,
+ 	__IFLA_MAX
+ };
+ 
+diff --git a/net/core/rtnetlink.c b/net/core/rtnetlink.c
+index 6a6cdade1676..ab78ba9a34e8 100644
+--- a/net/core/rtnetlink.c
++++ b/net/core/rtnetlink.c
+@@ -875,6 +875,7 @@ static noinline size_t if_nlmsg_size(const struct net_device *dev,
+ 	       + nla_total_size(1) /* IFLA_OPERSTATE */
+ 	       + nla_total_size(1) /* IFLA_LINKMODE */
+ 	       + nla_total_size(4) /* IFLA_CARRIER_CHANGES */
++	       + nla_total_size(4) /* IFLA_LINK_NETNSID */
+ 	       + nla_total_size(ext_filter_mask
+ 			        & RTEXT_FILTER_VF ? 4 : 0) /* IFLA_NUM_VF */
+ 	       + rtnl_vfinfo_size(dev, ext_filter_mask) /* IFLA_VFINFO_LIST */
+@@ -1169,6 +1170,18 @@ static int rtnl_fill_ifinfo(struct sk_buff *skb, struct net_device *dev,
+ 			goto nla_put_failure;
+ 	}
+ 
++	if (dev->rtnl_link_ops &&
++	    dev->rtnl_link_ops->get_link_net) {
++		struct net *link_net = dev->rtnl_link_ops->get_link_net(dev);
++
++		if (!net_eq(dev_net(dev), link_net)) {
++			int id = peernet2id(dev_net(dev), link_net);
++
++			if (nla_put_s32(skb, IFLA_LINK_NETNSID, id))
++				goto nla_put_failure;
++		}
++	}
++
+ 	if (!(af_spec = nla_nest_start(skb, IFLA_AF_SPEC)))
+ 		goto nla_put_failure;
+ 
 -- 
-|: http://berrange.com      -o-    http://www.flickr.com/photos/dberrange/ :|
-|: http://libvirt.org              -o-             http://virt-manager.org :|
-|: http://autobuild.org       -o-         http://search.cpan.org/~danberr/ :|
-|: http://entangle-photo.org       -o-       http://live.gnome.org/gtk-vnc :|
+2.2.2
