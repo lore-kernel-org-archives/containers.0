@@ -1,11 +1,10 @@
-From: "Sylvain Marke" <info-Wrnml7jTX+J9bSujx8vJ3AC/G2K4zDHf@public.gmane.org>
-Subject: Re: Realisieren Sie Ihre Projekte...
-Date: Mon, 12 Jan 2015 07:47:51 +0100
-Message-ID: <2816368810000537314149@vps-3797>
-Reply-To: sylv.marke-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org
+From: Alexander Larsson <alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Detecting the use of a mount in another namespace
+Date: Thu, 15 Jan 2015 09:56:05 +0100
+Message-ID: <1421312165.8788.7.camel@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -16,63 +15,34 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-   Kontakt e-Mail: [1]sylv.marke-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org
+This is a bit of a weird request, but I'm working on an app sandboxing
+system where each container gets /usr read-only bind mounted from a
+hardlinked tree. When i update the /usr tree I write the new tree to a
+different directory, which avoids affecting any currently running apps
+against the old one.
 
-   Hallo
+However, after updating I'd like to clean out the old version if it is
+not in use. I had a plan for this:
+1) Move the old usr to a "has been deleted" location
+2) Try to remove a file inside the user (say ".ref") which the app when
+running has bind-mounted somewhere
+3) if the remove returned EBUSY, then the usr is in use.
 
-   Wir sind eine finanzielle f=C3=BCr Mikro-Darlehen, jede Art von Darlehen=
- und
-   Investitionen, und wir sind in Partnerschaft mit Banken und
-   Finanzinstituten =C3=BCberall auf der Welt.
+However, with the recent changes to the semantics in this area this
+doesn't work. The remove always succeeds even if the file is mounted in
+some other namespace.
 
-   Vielen Dank f=C3=BCr die Aufmerksamkeit, die Sie tragen unsere Botschaft.
+I realize that this is better semantics in general, but that was a quite
+useful hack. Is there any other similar way i can detect that something
+is in use in "any other namespace".
 
-   Der j=C3=A4hrliche Zinssatz betr=C3=A4gt 3 % und R=C3=BCckzahlung kann =
-=C3=BCber 25 Jahre
-   siehe ausdehnen je nach den beantragten Betrag und ihr Ziel.
-
-   -Brauchen Sie Kredit zu f=C3=BCllen?
-
-   -M=C3=B6chten Sie erstellen?
-
-   -Renovieren?
-
-   -Wiederherstellen?
-
-   -Oder einfach Ihre Residenz zu entwickeln?
-
-   -Um zu machen, ein Haus oder Land oder ein Auto kaufen?
-
-   -Decken pers=C3=B6nliche oder famili=C3=A4re Aufwendungen zu?
-
-   Sie k=C3=B6nnen diese finanziellen Gutschrift f=C3=BCr Ihre kurze oder l=
-ange
-   Sicht Projekte erhalten.
-
-   Wir lassen Sie die Wahl Ihr Darlehensbetrag und Ihre Laufzeit.
-
-   Bitte geben Sie die folgende Informationen:
-
-   -Betrag
-   gesucht................................................................
-   .
-
-   -Gew=C3=BCnschte Erstattung Zeitraum....................................=
-..
-
-   -Zweck des
-   Darlehens.....................................................
-
-   Kontakt e-Mail: [2]sylv.marke-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org
-
-
-
-   Warten Sie =C3=BCberpr=C3=BCfen.
-
-References
-
-   1. mailto:sylv.marke-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org
-   2. mailto:sylv.marke-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org
+-- 
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+ Alexander Larsson                                            Red Hat, Inc 
+       alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org            alexander.larsson-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org 
+He's a benighted drug-addicted werewolf with acid for blood. She's a 
+psychotic Bolivian mercenary with an incredible destiny. They fight 
+crime! 
