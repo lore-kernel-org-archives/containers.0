@@ -1,7 +1,7 @@
-From: Irina <irina-3vhxCw4DS+rNo8nFJ24aGw@public.gmane.org>
-Subject: =?UTF-8?B?R2V0LnBhaWQudG9kYXkuIE5vLmV4cGVyaWVuY2UubmVlZGVkLg==?=
-Date: Thu, 22 Jan 2015 11:28:07 +0100
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@godiumfood.com>
+From: Nick <nick-utEMSthukdrNo8nFJ24aGw@public.gmane.org>
+Subject: =?UTF-8?B?VGhlLmVhc2llc3Qud2F5LnRvLnRyYWRlLnByb2ZpdGFibHkuW0xPVy5SSVNLLlNUUkFURUdZXQ==?=
+Date: Thu, 22 Jan 2015 13:37:58 +0100
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@gromerfood.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,63 +18,14 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi, please save this important email.
+Hi,
 
-I found a position with NO EXPERIENCE NEEDED
-that will earn you money simply by
-using your MOBILE PHONE. And you can sign up now.
+this is simply the easiest way to trade
+and it involves only low risk:
 
-Just by using your mobile phone, 
-you can make $4,241 a day. 
-(See LIVE PROOF below.)
+>>> http://click.gromerfood.com/index.php?id=9715127&a=179391&b=3738&c=62
 
-Here's LIVE PROOF:
-
-==> http://click.godiumfood.com/index.php?id=9588611&a=179391&b=3726&c=62
-
-(Link takes you to a step-by-step video
-and lets you SIGN UP FOR FREE.)
-
-Here are the details:
-
-- You don't need an existing website
-- You don't need any technical experience
-- You don't need to be a sales person
-- You don't need any money to get started
-- You don't need to learn about SEO, Twitter,
-  link-building, CPA, PPV or any of that
-- You don't need to spend hours of your time
-  each day to make any money
- 
-All you have to do is run the app on your phone,
-follow the instructions, and get paid!
-
-==> http://click.godiumfood.com/index.php?id=9588611&a=179391&b=3726&c=62
-
-Because this is such an amazing position
-only a few spots are available.
-You need to claim your spot right now.
-
-It's FREE to reserve your spot. 
-Just click this link below:
-
-==> http://click.godiumfood.com/index.php?id=9588611&a=179391&b=3726&c=62
-
-Hurry, because spots are getting filled quickly. 
-You need to reserve your spot right now in this email.
-
-
-
-
-
-
-
-
-
-
-
-
-
+Nick
 
 
 
@@ -86,5 +37,5 @@ You need to reserve your spot right now in this email.
 
 Our address is Tortola, Providence 1512, British Virgin Islands, 
 If you do not wish to receive future email, click here.
-http://click.godiumfood.com/index.php?o=2&a=179391&b=3726&c=62
+http://click.gromerfood.com/index.php?o=2&a=179391&b=3738&c=62
 (You can also send your request to Customer Care at the street address above.) 
