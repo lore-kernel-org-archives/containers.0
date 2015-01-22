@@ -1,10 +1,10 @@
-From: Peter <peter-cL8FEDH//d7NHX1fEipQDA@public.gmane.org>
-Subject: =?UTF-8?B?UnVzc2lhbi5Nb25leS5NYWtpbmcuU29mdHdhcmUuTGVha2VkIQ==?=
-Date: Thu, 22 Jan 2015 00:05:54 +0100
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@igeoxissfood.com>
+From: Irina <irina-3vhxCw4DS+rNo8nFJ24aGw@public.gmane.org>
+Subject: =?UTF-8?B?R2V0LnBhaWQudG9kYXkuIE5vLmV4cGVyaWVuY2UubmVlZGVkLg==?=
+Date: Thu, 22 Jan 2015 11:28:07 +0100
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@godiumfood.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,15 +18,73 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SEFIQSEgSSBhbSBsYXVnaGluZyBhbGwgdGhlIHdheSB0byB0aGUgYmFua+KApgoKV2hhdCBpZGlv
-dHMhIQoKPj4+PiBodHRwOi8vY2xpY2suaWdlb3hpc3Nmb29kLmNvbS9pbmRleC5waHA/aWQ9NDUy
-MDk0JmE9MTc5MzkxJmI9MzcxMiZjPTYyCgpJIHdvdWxkbuKAmXQgYmUgZ2l2aW5nIHRoaXMgYXdh
-eSBmb3IgZnJlZSEKClRvIGVhY2ggaGlzIG93biBJIGd1ZXNz4oCmCgpQZXRlcgoKCgoKCgoKCgoK
-CgoKCgoKT3VyIGFkZHJlc3MgaXMgVG9ydG9sYSwgUHJvdmlkZW5jZSAxNTEyLCBCcml0aXNoIFZp
-cmdpbiBJc2xhbmRzLCAKSWYgeW91IGRvIG5vdCB3aXNoIHRvIHJlY2VpdmUgZnV0dXJlIGVtYWls
-LCBjbGljayBoZXJlLgpodHRwOi8vY2xpY2suaWdlb3hpc3Nmb29kLmNvbS9pbmRleC5waHA/bz0y
-JmE9MTc5MzkxJmI9MzcxMiZjPTYyCihZb3UgY2FuIGFsc28gc2VuZCB5b3VyIHJlcXVlc3QgdG8g
-Q3VzdG9tZXIgQ2FyZSBhdCB0aGUgc3RyZWV0IGFkZHJlc3MgYWJvdmUuKSAKX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxp
-c3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxp
-bnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Hi, please save this important email.
+
+I found a position with NO EXPERIENCE NEEDED
+that will earn you money simply by
+using your MOBILE PHONE. And you can sign up now.
+
+Just by using your mobile phone, 
+you can make $4,241 a day. 
+(See LIVE PROOF below.)
+
+Here's LIVE PROOF:
+
+==> http://click.godiumfood.com/index.php?id=9588611&a=179391&b=3726&c=62
+
+(Link takes you to a step-by-step video
+and lets you SIGN UP FOR FREE.)
+
+Here are the details:
+
+- You don't need an existing website
+- You don't need any technical experience
+- You don't need to be a sales person
+- You don't need any money to get started
+- You don't need to learn about SEO, Twitter,
+  link-building, CPA, PPV or any of that
+- You don't need to spend hours of your time
+  each day to make any money
+ 
+All you have to do is run the app on your phone,
+follow the instructions, and get paid!
+
+==> http://click.godiumfood.com/index.php?id=9588611&a=179391&b=3726&c=62
+
+Because this is such an amazing position
+only a few spots are available.
+You need to claim your spot right now.
+
+It's FREE to reserve your spot. 
+Just click this link below:
+
+==> http://click.godiumfood.com/index.php?id=9588611&a=179391&b=3726&c=62
+
+Hurry, because spots are getting filled quickly. 
+You need to reserve your spot right now in this email.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Our address is Tortola, Providence 1512, British Virgin Islands, 
+If you do not wish to receive future email, click here.
+http://click.godiumfood.com/index.php?o=2&a=179391&b=3726&c=62
+(You can also send your request to Customer Care at the street address above.) 
