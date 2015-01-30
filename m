@@ -1,10 +1,9 @@
-From: Alex <Paul-P6Cf2XXGEnqN0yu6rVEBmKHonnlKzd3f@public.gmane.org>
-Subject: =?UTF-8?B?SGVsbG8=?=
-Date: Thu, 29 Jan 2015 18:04:25 +0100
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@rcutwousfranc.info>
+From: =?iso-8859-1?Q?St=E9phane?= Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: LXC 1.1 has been released!
+Date: Fri, 30 Jan 2015 14:23:33 +0100
+Message-ID: <20150130132333.GI18477__6923.78922035477$1422624231$gmane$org@castiana.ipv6.teksavvy.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: multipart/mixed; boundary="===============8284753705165528597=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -15,47 +14,94 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, lxc-users-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-ICAgSWYgeW91IGNhbm5vdCB2aWV3IHRoaXMgZW1haWwsIFsxXWNsaWNrIGhlcmUKCiAgICAgICAg
-ICAgICAgICAgICAgICAgWzJdSGVhbHRoIFBsYW5zIG9mIEFtZXJpY2EgTG9nbwogICBbM11FeHBs
-b3JlIHlvdXIgQWZmb3JkYWJsZSBIZWFsdGhjYXJlIE9wdGlvbnMgYW5kIEdldCBDb3ZlcmVkLiBH
-ZXQgRnJlZQogICAgUXVvdGVzLCBDb21wYXJlIFBsYW5zLCBTYXZlIFRpbWUgYW5kIE1vbmV5LiBD
-bGljayB0byBnZXQgRnJlZSBPbmxpbmUKICAgICAgICAgICAgICAgICAgICAgICAgUXVvdGVzLiBD
-b21wYXJlIGFuZCBTYXZlIE5vdy4KICAgICAgICAgICAgICAgIFs0XUdldCBGcmVlIE9ubGluZSBR
-dW90ZXMuIENvbXBhcmUgYW5kIFNhdmUuCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICBbNV0KCiAgICAgICAgICAgICAgICAgQ29tcGFyZSBFdmVyeSBPYmFtYWNhcmUgUGxhbiBp
-biBZb3VyIEFyZWEhCgogICAgICAgICAgSHVycnkgdXAgYW5kIHNlZSBpZiB5b3UgcXVhbGlmeSBm
-b3IgYSBuZXcgcGxhbiBmb3IgMjAxNS4KICAgICAgICAgICAgICAgRmluZCBhbiBBZmZvcmRhYmxl
-IEhlYWx0aCBJbnN1cmFuY2UgUGxhbiBUb2RheSEKCiAgIEh1cnJ5IHVwIGFuZCBzZWUgaWYgeW91
-ciBxdWFsaWZ5IGZvciBhIG5ldyBwbGFuIGZvciAyMDE1ISBDbGljayB0byBmaW5kCiAgICAgdGhl
-IHJpZ2h0IGhlYWx0aCBpbnN1cmFuY2UgcGxhbiB0b2RheSB3aXRoIEhlYWx0aCBQbGFucyBvZiBB
-bWVyaWNhCiAgICAgICAgICAgICAgICAgICAgICAgICAgICBbNl1HZXQgRnJlZSBRdW90ZXMhCiAg
-ICAgICBbN11DYXJyaWVyIExvZ29zOiBLYWlzZXIgUGVybWFuZW50ZSwgQXNzdXJhbnQsIENvdmVu
-dHJ5LCBVbml0ZWQKICAgICAgICAgICAgICAgICAgICAgICAgICAgICBIZWFsdGhjYXJlLCBBbnRo
-ZW0uCiAgICAgICAgICAgICAgICAgICAgICAgICBbOF1HZXQgRnJlZSBPbmxpbmUgUXVvdGVzLgog
-ICAgICAgICAgICAgICAgICAgICAgICAgWzldR2V0IEZyZWUgT25saW5lIFF1b3Rlcy4KICAgICAg
-IENvcHlyaWdodCDCqSAyMDE0IEhlYWx0aCBQbGFucyBvZiBBbWVyaWNhLiBBbGwgcmlnaHRzIHJl
-c2VydmVkLgoKICAgIElmIHlvdSB3b3VsZCBubyBsb25nZXIgbGlrZSB0byByZWNlaXZlIG1lc3Nh
-Z2VzIGZyb20gdXMsIHBsZWFzZSBjbGljawogICAgICAgICBbMTBdaGVyZSBvciB3cml0ZSB0bzog
-MTM5IElsbGlub2lzIFN0LiBFbCBTZWd1bmRvLCBDQSA5MDI0NQogICAgICAgICAgICAgICAgICAg
-W2luZGV4LnBocD9vPTEmYT0zMzQ0NTI5JmI9Mzg5NiZjPTEwNF0KClJlZmVyZW5jZXMKCiAgIDEu
-IGh0dHA6Ly9jbGljay5yY3V0d291c2ZyYW5jLmluZm8vaW5kZXgucGhwP2lkPTkzNDUyMjUmYT0z
-MzQ0NTI5JmI9Mzg5NiZjPTEwNAogICAyLiBodHRwOi8vY2xpY2sucmN1dHdvdXNmcmFuYy5pbmZv
-L2luZGV4LnBocD9pZD05MzQ1MjI1JmE9MzM0NDUyOSZiPTM4OTYmYz0xMDQKICAgMy4gaHR0cDov
-L2NsaWNrLnJjdXR3b3VzZnJhbmMuaW5mby9pbmRleC5waHA/aWQ9OTM0NTIyNSZhPTMzNDQ1Mjkm
-Yj0zODk2JmM9MTA0CiAgIDQuIGh0dHA6Ly9jbGljay5yY3V0d291c2ZyYW5jLmluZm8vaW5kZXgu
-cGhwP2lkPTkzNDUyMjUmYT0zMzQ0NTI5JmI9Mzg5NiZjPTEwNAogICA1LiBodHRwOi8vY2xpY2su
-cmN1dHdvdXNmcmFuYy5pbmZvL2luZGV4LnBocD9pZD05MzQ1MjI1JmE9MzM0NDUyOSZiPTM4OTYm
-Yz0xMDQKICAgNi4gaHR0cDovL2NsaWNrLnJjdXR3b3VzZnJhbmMuaW5mby9pbmRleC5waHA/aWQ9
-OTM0NTIyNSZhPTMzNDQ1MjkmYj0zODk2JmM9MTA0CiAgIDcuIGh0dHA6Ly9jbGljay5yY3V0d291
-c2ZyYW5jLmluZm8vaW5kZXgucGhwP2lkPTkzNDUyMjUmYT0zMzQ0NTI5JmI9Mzg5NiZjPTEwNAog
-ICA4LiBodHRwOi8vY2xpY2sucmN1dHdvdXNmcmFuYy5pbmZvL2luZGV4LnBocD9pZD05MzQ1MjI1
-JmE9MzM0NDUyOSZiPTM4OTYmYz0xMDQKICAgOS4gaHR0cDovL2NsaWNrLnJjdXR3b3VzZnJhbmMu
-aW5mby9pbmRleC5waHA/aWQ9OTM0NTIyNSZhPTMzNDQ1MjkmYj0zODk2JmM9MTA0CiAgMTAuIGh0
-dHA6Ly9jbGljay5yY3V0d291c2ZyYW5jLmluZm8vaW5kZXgucGhwP2lkPTQ3ODA5ODUmYT0zMzQ0
-NTI5JmI9Mzg5NiZjPTEwNApfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZv
-dW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xp
-c3RpbmZvL2NvbnRhaW5lcnM=
+
+--===============8284753705165528597==
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="lZZ4ablUVnt2XgAh"
+Content-Disposition: inline
+
+
+--lZZ4ablUVnt2XgAh
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+Hello everyone,
+
+The LXC team is pleased to announce the release of LXC 1.1!
+
+This new upstream release is the result of the work of over 80
+individual contributors.
+
+The highlights are:
+ - Introduction of checkpoint/restore support for containers through CRIU.
+   This allows to serialize the container running state to disk, for
+   live migration or for later local restoration of the container.
+
+ - Support for running systemd as the init system inside the container
+   was also greatly improved and should now work by default both for
+   privileged and unprivileged containers when combined with lxcfs and a
+   recent systemd.
+
+ - Init scripts have now all been updated to provide the same feature
+   set, which means that a lxcbr0 bridge with a DHCP and DNS server
+   (dnsmasq) is now the default for anyone using LXC. We currently provide
+   init scripts for systemd, sysvinit and upstart.=20
+
+Those are just highlights, there are a lot more new features and user
+experience improvements. For a full list, see:
+https://linuxcontainers.org/lxc/news/
+
+The release tarball can be downloaded at:
+https://linuxcontainers.org/lxc/downloads/
+
+
+This release will be supported until January 2016 or 2 months after the
+next LXC release, whichever comes last.
+
+We therefore still recommend that people using LXC in production
+environments where long term support is important stick to LXC 1.0 which
+is supported until April 2019 and receives frequent bugfix updates.
+
+
+St=E9phane Graber
+On behalf of the LXC development team
+
+--lZZ4ablUVnt2XgAh
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCgAGBQJUy4XVAAoJEMY4l01keS1nUF4QAKL9ebVxcKRMaBN4AEGFSY6k
+GGoEuFBMKuZyCZ+SgmQceyfLNkeqA1cp8DeJFAgIaZ1+K8VZAKjRREOjiTzXhs8z
+inquvce0fBcMfqqfSJPtQ/wahNrCL/jF9xCZKmmTjloJwruyV2kzIEfKcT6WqeLI
+HfN0Lq5S3F9nFKOUd7FTJc34Lsv8K0GildWS8EfRQUoy6IYowbf3iHF1wsfZeLIA
+c8hTD1mTn2jhujw7FAKFrSDLT35eO17dJaKSLh0nAGUsgqYqHk1kKLx54maKc6E/
+XFP2NTzoJjSQbJdmegIRJeszpnbxmJwVlAkLOpkcNuwzqx7eg1g3XqM+TZME1oeH
+DvDY06Qe7IHKL0iUnwZwGDQdnNsqe1bJNKHeDkMNzGGtpZ2Ki3xqEmEtChgN8c+f
+PqSa1Qj+8wS1HZI9rUI3RiOzT3s+MLEVRa0nzJpZX9HcJavP4ydoCmulyO5PEJLZ
+k4fFkk2nYjwBI5kJgND2N4x6SQ4HkHqXJIhACAt24X0QL7xXre5SRd50hUxX3toY
+iuOEUh3cPr2/5pqE4zwBR3Xo4Je6uxk4a1RO+EZszWaA9M+4osVIKYa6UBtRCoHO
+Vajeyp4A3mWokq0IQIIKLt4pFdzIZxUGh7tpShOvTbgM52F7PcaUVYEuOcASbVTu
+veyk41s5FvDRorgoeKIY
+=EJEw
+-----END PGP SIGNATURE-----
+
+--lZZ4ablUVnt2XgAh--
+
+--===============8284753705165528597==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============8284753705165528597==--
