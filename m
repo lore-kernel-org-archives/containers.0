@@ -1,11 +1,15 @@
-From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: CRIU @Plumbers
-Date: Mon, 2 Feb 2015 13:05:51 +0300
-Message-ID: <54CF4BFF.8070505@parallels.com>
+From: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 1/2] proc.5: Document /proc/[pid]/setgroups
+Date: Mon, 02 Feb 2015 16:36:53 +0100
+Message-ID: <54CF9995.1050409__25749.5679813021$1422891430$gmane$org@gmail.com>
+References: <52e0643bd47b1e5c65921d6e00aea1f724bb510a.1417281801.git.luto@amacapital.net>	<CALCETrXWx2-ZejEHmOi7aSoF-qJMRGR5yseeMhuurZwJRrQbUg@mail.gmail.com>	<87h9x5re41.fsf_-_@x220.int.ebiederm.org>	<87mw6xpzb0.fsf_-_@x220.int.ebiederm.org>	<CALCETrU-o5mPr1jCaLXDuuF6J2N470zAtx=8Fa-SjF=ZpdE8mQ@mail.gmail.com>	<87ppbtn4mv.fsf@x220.int.ebiederm.org>	<CALCETrXSScp77BUJR5NSTh5-RnEZ9rqELSGJBeEzgdQ-OtohuQ@mail.gmail.com>	<87a92xn2io.fsf@x220.int.ebiederm.org>	<87r3w8liw4.fsf@x220.int.ebiederm.org>	<87iohklfvj.fsf_-_@x220.int.ebiederm.org>	<87fvcok11h.fsf_-_@x220.int.ebiederm.org>	<CALCETrVfKiXuY=KY_=nHpkTyLWgpy_3DK=4Mr2mhpyX9z1TzrA@mail.gmail.com>	<971ad3f6-90fd-4e3f-916c-8988af3c826d@email.android.com>	<CALCETrWpzvNm=fjOa3_+4QOqYP8qZUJvQAd6AsRZ71xyHZQRCg@mail.gmail.com>	<87wq5zf83t.fsf@x220.in
+ t.ebiederm.org>	<87iohh3c9c.fsf@x220.int.ebiederm.org>	<8761dh3b7k.fsf_-_@x220.int.ebiederm.org>	<878uicy1r9.fsf_-_@x220.int.ebiederm.org>
+	<87vblg1qme.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <87vblg1qme.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,22 +19,65 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: CRIU <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Josh Triplett <josh-iaAMLnmF4UmaiuxdJuQwMA@public.gmane.org>, stable <stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
-
-There's a call for micro-conferences now open at the upcoming Plumbers
-conference [1]. Before this one, CRIU was typically included into the 
-containers MC [2], but this year we can try to organize a separate [3]
-track if there's enough topics and attendees.
-
-Suggestions and thoughts are welcome.
-
-Thanks,
-Pavel
-
-
-[1] http://wiki.linuxplumbersconf.org/2015:topics
-[2] http://wiki.linuxplumbersconf.org/2015:containers
-[3] http://wiki.linuxplumbersconf.org/2015:ckptrestart
+W0FkZGluZyBKb3NoIHRvIENDIGluIGNhc2UgaGUgaGFzIGFueXRoaW5nIHRvIGFkZC5dCgpPbiAx
+Mi8xMi8yMDE0IDEwOjU0IFBNLCBFcmljIFcuIEJpZWRlcm1hbiB3cm90ZToKPiAKPiBTaWduZWQt
+b2ZmLWJ5OiBFcmljIFcuIEJpZWRlcm1hbiA8ZWJpZWRlcm1AeG1pc3Npb24uY29tPgo+IC0tLQo+
+ICBtYW41L3Byb2MuNSB8IDE1ICsrKysrKysrKysrKysrKwo+ICAxIGZpbGUgY2hhbmdlZCwgMTUg
+aW5zZXJ0aW9ucygrKQo+IAo+IGRpZmYgLS1naXQgYS9tYW41L3Byb2MuNSBiL21hbjUvcHJvYy41
+Cj4gaW5kZXggOTYwNzdkMGRkMTk1Li5kNjYxZThjZmVhYzkgMTAwNjQ0Cj4gLS0tIGEvbWFuNS9w
+cm9jLjUKPiArKysgYi9tYW41L3Byb2MuNQo+IEBAIC0xMDk3LDYgKzEwOTcsMjEgQEAgYXJlIG5v
+dCBhdmFpbGFibGUgaWYgdGhlIG1haW4gdGhyZWFkIGhhcyBhbHJlYWR5IHRlcm1pbmF0ZWQKPiAg
+LlwiICAgICAgIEFkZGVkIGluIDIuNi45Cj4gIC5cIiAgICAgICBDT05GSUdfU0NIRURTVEFUUwo+
+ICAuVFAKPiArLklSIC9wcm9jL1twaWRdL3NldGdyb3VwcyAiIChzaW5jZSBMaW51eCAzLjE5LXJj
+MSkiCj4gK1RoaXMgZmlsZSByZXBvcnRzCj4gKy5CUiBhbGxvdwo+ICtpZiB0aGUgc2V0Z3JvdXBz
+IHN5c3RlbSBjYWxsIGlzIGFsbG93ZWQgaW4gdGhlIGN1cnJlbnQgdXNlciBuYW1lc3BhY2UuCj4g
+K1RoaXMgZmlsZSByZXBvcnRzCj4gKy5CUiBkZW55Cj4gK2lmIHRoZSBzZXRncm91cHMgc3lzdGVt
+IGNhbGwgaXMgbm90IGFsbG93ZWQgaW4gdGhlIGN1cnJlbnQgdXNlciBuYW1lc3BhY2UuCj4gK1Ro
+aXMgZmlsZSBtYXkgYmUgd3JpdHRlbiB0byB3aXRoIHZhbHVlcyBvZgo+ICsuQlIgYWxsb3cKPiAr
+YW5kCj4gKy5CUiBkZW55Cj4gK2JlZm9yZQo+ICsuSVIgL3Byb2MvW3BpZF0vZ2lkX21hcAo+ICtp
+cyB3cml0dGVuIHRvIChlbmFibGluZyBzZXRncm91cHMpIGluIGEgdXNlciBuYW1lc3BhY2UuCj4g
+Ky5UUAo+ICAuSVIgL3Byb2MvW3BpZF0vc21hcHMgIiAoc2luY2UgTGludXggMi42LjE0KSIKPiAg
+VGhpcyBmaWxlIHNob3dzIG1lbW9yeSBjb25zdW1wdGlvbiBmb3IgZWFjaCBvZiB0aGUgcHJvY2Vz
+cydzIG1hcHBpbmdzLgo+ICAoVGhlCgpIaSBFcmljLAoKVGhhbmtzIGZvciB0aGlzIHBhdGNoLiBJ
+IGFwcGxpZWQgaXQsIGFuZCB0aGVuIHRyaWVkIHRvIHdvcmsgaW4KcXVpdGUgYSBmZXcgb3RoZXIg
+ZGV0YWlscyBnbGVhbmVkIGZyb20gdGhlIHNvdXJjZSBjb2RlIGFuZCBjb21taXQgCm1lc3NhZ2Us
+IGFuZCBKb24gQ29yYmV0J3MgYXJ0aWNsZSBhdCBodHRwOi8vbHduLm5ldC9BcnRpY2xlcy82MjY2
+NjUvLgpDb3VsZCB5b3UgcGxlYXNlIGxldCBtZSBrbm93IGlmIHRoZSBmb2xsb3dpbmcgaXMgY29y
+cmVjdDoKCiAgICAvcHJvYy9bcGlkXS9zZXRncm91cHMgKHNpbmNlIExpbnV4IDMuMTkpCiAgICAg
+ICAgICAgVGhpcyBmaWxlIGRpc3BsYXlzIHRoZSBzdHJpbmcgImFsbG93IiAgaWYgIHByb2Nlc3Nl
+cyAgaW4gCiAgICAgICAgICAgdGhlICB1c2VyICBuYW1lc3BhY2UgIHRoYXQgIGNvbnRhaW5zIHRo
+ZSBwcm9jZXNzIHBpZCBhcmUKICAgICAgICAgICBwZXJtaXR0ZWQgdG8gZW1wbG95IHRoZSBzZXRn
+cm91cHMoMikgIHN5c3RlbSAgY2FsbCwgIGFuZAogICAgICAgICAgICJkZW55IiAgaWYgIHNldGdy
+b3VwcygyKSAgaXMgIG5vdCBwZXJtaXR0ZWQgaW4gdGhhdCB1c2VyCiAgICAgICAgICAgbmFtZXNw
+YWNlLgoKICAgICAgICAgICBBIHByaXZpbGVnZWQgcHJvY2VzcyAob25lIHdpdGggdGhlICBDQVBf
+U1lTX0FETUlOICBjYXBh4oCQCiAgICAgICAgICAgYmlsaXR5IGluIHRoZSBuYW1lc3BhY2UpIG1h
+eSB3cml0ZSBlaXRoZXIgb2YgdGhlIHN0cmluZ3MKICAgICAgICAgICAiYWxsb3ciIG9yICJkZW55
+IiB0byB0aGlzIGZpbGUgYmVmb3JlIHdyaXRpbmcgYSBncm91cCBJRCAKICAgICAgICAgICBtYXBw
+aW5nICAgZm9yICAgdGhpcyAgIHVzZXIgICBuYW1lc3BhY2UgICB0byAgIHRoZSAgZmlsZQogICAg
+ICAgICAgIC9wcm9jL1twaWRdL2dpZF9tYXAuICBXcml0aW5nIHRoZSBzdHJpbmcgImRlbnkiIHBy
+ZXZlbnRzCiAgICAgICAgICAgYW55ICBwcm9jZXNzICBpbiAgdGhlIHVzZXIgbmFtZXNwYWNlIGZy
+b20gZW1wbG95aW5nIHNldOKAkAogICAgICAgICAgIGdyb3VwcygyKS4KCiAgICAgICAgICAgVGhl
+IGRlZmF1bHQgdmFsdWUgb2YgIHRoaXMgIGZpbGUgIGluICB0aGUgIGluaXRpYWwgIHVzZXIKICAg
+ICAgICAgICBuYW1lc3BhY2UgaXMgImFsbG93Ii4KCiAgICAgICAgICAgT25jZSAgL3Byb2MvW3Bp
+ZF0vZ2lkX21hcCBoYXMgYmVlbiB3cml0dGVuIHRvICh3aGljaCBoYXMKICAgICAgICAgICB0aGUg
+ZWZmZWN0IG9mIGVuYWJsaW5nIHNldGdyb3VwcygyKSBpbiB0aGUgIHVzZXIgIG5hbWVz4oCQCiAg
+ICAgICAgICAgcGFjZSksICBpdCBpcyBubyBsb25nZXIgcG9zc2libGUgdG8gZGVueSBzZXRncm91
+cHMoMikgYnkgCiAgICAgICAgICAgd3JpdGluZyB0byAvcHJvYy9bcGlkXS9zZXRncm91cHMuCgog
+ICAgICAgICAgIEEgY2hpbGQgdXNlciBuYW1lc3BhY2UgaW5oZXJpdHMgdGhlICAvcHJvYy9bcGlk
+XS9naWRfbWFwCiAgICAgICAgICAgc2V0dGluZyBmcm9tIGl0cyBwYXJlbnQuCgogICAgICAgICAg
+IElmICB0aGUgIHNldGdyb3VwcyAgZmlsZSAgaGFzIHRoZSB2YWx1ZSAiZGVueSIsIHRoZW4gdGhl
+CiAgICAgICAgICAgc2V0Z3JvdXBzKDIpIHN5c3RlbSBjYWxsIGNhbid0IHN1YnNlcXVlbnRseSBi
+ZSByZWVuYWJsZWQKICAgICAgICAgICAoYnkgd3JpdGluZyAiYWxsb3ciIHRvIHRoZSBmaWxlKSBp
+biB0aGlzIHVzZXIgbmFtZXNwYWNlLgogICAgICAgICAgIFRoaXMgcmVzdHJpY3Rpb24gYWxzbyBw
+cm9wYWdhdGVzIGRvd24gdG8gYWxsIGNoaWxkICB1c2VyCiAgICAgICAgICAgbmFtZXNwYWNlcyBv
+ZiB0aGlzIHVzZXIgbmFtZXNwYWNlLgoKVGhhbmtzLAoKTWljaGFlbAoKLS0gCk1pY2hhZWwgS2Vy
+cmlzawpMaW51eCBtYW4tcGFnZXMgbWFpbnRhaW5lcjsgaHR0cDovL3d3dy5rZXJuZWwub3JnL2Rv
+Yy9tYW4tcGFnZXMvCkxpbnV4L1VOSVggU3lzdGVtIFByb2dyYW1taW5nIFRyYWluaW5nOiBodHRw
+Oi8vbWFuNy5vcmcvdHJhaW5pbmcvCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGlu
+dXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxt
+YW4vbGlzdGluZm8vY29udGFpbmVycw==
