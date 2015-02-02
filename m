@@ -1,7 +1,7 @@
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+From: Tycho Andersen <tycho.andersen-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Subject: Re: [CRIU] CRIU @Plumbers
-Date: Mon, 2 Feb 2015 16:58:52 +0000
-Message-ID: <20150202165852.GC24351@ubuntumail>
+Date: Mon, 2 Feb 2015 19:06:09 +0200
+Message-ID: <20150202170609.GA2517@hopstrocity>
 References: <54CF4BFF.8070505@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,10 +22,7 @@ To: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 Cc: CRIU <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-I think it might be worthwhile - my main concern is that it not conflict
-timewise with the containers summit.
-
-Quoting Pavel Emelyanov (xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
+On Mon, Feb 02, 2015 at 01:05:51PM +0300, Pavel Emelyanov wrote:
 > Hi,
 > 
 > There's a call for micro-conferences now open at the upcoming Plumbers
@@ -34,7 +31,12 @@ Quoting Pavel Emelyanov (xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org):
 > track if there's enough topics and attendees.
 > 
 > Suggestions and thoughts are welcome.
-> 
+
+I'm very interested, hopefully I can (I should) get back some time to
+work on CRIU to have something to present.
+
+Tycho
+
 > Thanks,
 > Pavel
 > 
