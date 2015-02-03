@@ -1,12 +1,14 @@
-From: "=?utf-8?B?Q2hyaXN0b3BoZSBNaWNjaWNoZSBBLlRleHQgV29yaw==?="
-	<cmicciche-7L5H+puyKu39RPGrWp62eA@public.gmane.org>
-Subject: =?utf-8?Q?Traduction=20et=20Interpr=c3=a9tation?=
-Date: Tue, 3 Feb 2015 09:58:19 +0100
-Message-ID: <0.0.7.10E.1D03F8B496CE979.1414EB@mailpro-basic23.agenceweb.net>
-Reply-To: cmicciche-7L5H+puyKu39RPGrWp62eA@public.gmane.org
+From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Subject: Re: [CRIU] CRIU @Plumbers
+Date: Tue, 3 Feb 2015 17:58:30 +0300
+Message-ID: <54D0E216.3040007@parallels.com>
+References: <54CF4BFF.8070505@parallels.com>	<20150202170609.GA2517@hopstrocity>
+	<CA+Um-gj1ynTwOsQNV7482Lz2GsCX+Leuz=QdSfPL1MVaF1CRGQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1717715698229665539=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <CA+Um-gj1ynTwOsQNV7482Lz2GsCX+Leuz=QdSfPL1MVaF1CRGQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,53 +18,60 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Saied Kazemi <saied-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Tycho Andersen <tycho.andersen-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Cc: CRIU <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
- This is a multi-part message in MIME format.
- 
---===============1717715698229665539==
-Content-Type: text/plain; charset=charset="utf-8" 
+On 02/02/2015 10:19 PM, Saied Kazemi wrote:
+> Given the wide spectrum of CRIU use cases, I am also in favor of organizing a 
+> separate track for it.
+> 
+> To that end, I can present and do a live demo of how CRIU was used to provide
+> native Docker container checkpoint and restore.  This can be a full presentation
+> by itself or combined with another presentation.
 
-Si vous ne visualisez pas correctement l’e-mail, cliquez ici
-<http://url.snd25.ch/visu-CF23600B-BB16-449B-9FA7-D41D99150294-446366895-567701-03022015.html>
+That's great :) I'll start filling the page with data soon then. Feel free to
+join and add the stuff you want.
 
-Bonjour,
+> A minor nit: for consistency, can we call it checkpoint/restore instead of checkpoint/restart?
 
-Je me permets de vous écrire afin de vous proposer nos services de traduction
-et d’interprétariat.
+Google gives ~600k results for "checkpoint/restart" vs ~900k for "checkpoint/restore"
+so I don't mind :)
 
-Disposez-vous déjà d'une agence partenaire ?
-
-Notre agence, qui compte parmi les leaders du marché français de la
-traduction, peut intégralement prendre en charge vos projets multilingues.
-
-Voici quelques-unes de nos références:  CNRS, ITER, Bourbon, AirBusiness
-Academy (Airbus), Micronora, Saint Gobain, Groupe Moniteur, A-NSE Aero-Nautic
-Services & Engineering, Cea cadarache, CEA Grenoble, HC Engineering, Ragasco,
-Poujoulat SA, Gardner Denver (USA), Toyota, dbTechnologies, Panimatic, Redatech
-(Suisse), Recyl, Phoenix Mecano...
-
-Je suis à votre disposition pour toutes vos demandes d'informations et de
-devis.
-
-Bien cordialement
-
-Christophe Micciche
-
-Tél. : +33(0)4 42 93 34 29
-
-Si vous ne désirez plus recevoir notre lettre d'information, cliquez ici
-<http://url.snd25.ch/446366895/670045/uns-158179-fr-03022015-567701.html>
-
---===============1717715698229665539==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1717715698229665539==--
+> --Saied
+> 
+> 
+> On Mon, Feb 2, 2015 at 9:06 AM, Tycho Andersen <tycho.andersen-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org <mailto:tycho.andersen-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>> wrote:
+> 
+>     On Mon, Feb 02, 2015 at 01:05:51PM +0300, Pavel Emelyanov wrote:
+>     > Hi,
+>     >
+>     > There's a call for micro-conferences now open at the upcoming Plumbers
+>     > conference [1]. Before this one, CRIU was typically included into the
+>     > containers MC [2], but this year we can try to organize a separate [3]
+>     > track if there's enough topics and attendees.
+>     >
+>     > Suggestions and thoughts are welcome.
+> 
+>     I'm very interested, hopefully I can (I should) get back some time to
+>     work on CRIU to have something to present.
+> 
+>     Tycho
+> 
+>     > Thanks,
+>     > Pavel
+>     >
+>     >
+>     > [1] http://wiki.linuxplumbersconf.org/2015:topics
+>     > [2] http://wiki.linuxplumbersconf.org/2015:containers
+>     > [3] http://wiki.linuxplumbersconf.org/2015:ckptrestart
+>     > _______________________________________________
+>     > CRIU mailing list
+>     > CRIU-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org <mailto:CRIU-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+>     > https://lists.openvz.org/mailman/listinfo/criu
+>     _______________________________________________
+>     CRIU mailing list
+>     CRIU-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org <mailto:CRIU-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+>     https://lists.openvz.org/mailman/listinfo/criu
+> 
+> 
