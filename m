@@ -1,13 +1,16 @@
-From: Unknown <unknown@unknown.invalid>
-Subject: Assalamualaikum
-Date: Mon, 09 Feb 2015 13:55:42 +0900
-Message-ID: <E1YKgNq-0000Fu-1W@vps12.nonerror.com>
-Reply-To: engalfares6-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: Alexander Larsson <alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Detecting the use of a mount in another namespace
+Date: Tue, 10 Feb 2015 11:34:42 +0100
+Message-ID: <1423564482.14469.8.camel@redhat.com>
+References: <1421312165.8788.7.camel@redhat.com>
+	<20150115103417.GC8057@redhat.com>
+	<1421339341.29655.13.camel@redhat.com>
+	<87d26cvuy8.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-From: Eng Al-fares Hafiz Raheem <>
+In-Reply-To: <87d26cvuy8.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,11 +20,46 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Dear, 
-Complement of the day. Please I am sorry if I may have interrupted you in anyway by my email. I have no another way to reach you. I contacted you is, I want you to help me received some funds and use it for good investment in your country so that I could relocate my family to your beautiful country, out of Syria Now that Syria security and our Economic independent has been lost to the greatest lower level, and our culture has been lost and our happiness has been taking away from us. I believe whatever you may brief me about any good ways It will be highly recommended. Tell me more about your country how good it is. May God bless you, waiting for your good respond; you can also send your ideas to me engalfares6-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Regards,
-Eng Al-fares Hafiz Raheem
-Assalamualaikum
+T24gc8O2biwgMjAxNS0wMS0xOCBhdCAxMTo1MSAtMDYwMCwgRXJpYyBXLiBCaWVkZXJtYW4gd3Jv
+dGU6Cj4gQWxleGFuZGVyIExhcnNzb24gPGFsZXhsQHJlZGhhdC5jb20+IHdyaXRlczoKCj4gVGhl
+IHdheSBJIHdvdWxkIHJlY29tbWVuZCBpcyB0byBnaXZlIGVhY2ggb2YgeW91ciBjb250YWluZXJz
+IGEgcmVhZC1vbmx5Cj4gc25hcHNob3Qgb2YgL3VzciwgYW5kIHRoZW4gZGVsZXRlIHRoYXQgc25h
+cHNob3Qgd2hlbiBkb25lLgo+IEFrYToKPiAKPiBjcCAtbGRyIC91c3IgL3Vzci1zbmFwc2hvdAo+
+ICMgU29tZSB0aW1lIGxhdGVyIHdoZW4geW91IGFyZSBkb25lCj4gcm0gLXJmIC91c3Itc25hcHNo
+b3QKPiAKPiBUaGVyZSBhcmUgbW9yZSBlbGVnYW50IHdheXMgKGJ0cmZzIHNuYXBzaG90cyBldGMp
+IGJ1dCB0aGUgYWJvdmUgd2lsbAo+IHdvcmsgb24gZXZlcnkgZmlsZXN5c3RlbSB0aGF0IHN1cHBv
+cnRzIGhhcmRsaW5rcy4KPiAKPiBGb3Igd2hhdCB5b3Ugd2VyZSB3YW50aW5nIHRvIGRvIHdpdGgg
+bW91bnRzIGluIHRoZSBnZW5lcmFsIGNhc2UgdGhlCj4ga2VybmVsIGhhcyBuZXZlciBoYWQgZW5v
+dWdoIGluZm9ybWF0aW9uIHRvIGRvIHdoYXQgeW91IHdhbnQgdG8gZG8gd2l0aAo+IG1vdW50cy4g
+IFRoaW5rIHJlbW90ZSBmaWxlc3lzdGVtcyBsaWtlIG5mcy4gIEluZm9ybWF0aW9uIGZyb20gcmVt
+b3RlCj4gZmlsZXN5c3RlbXMgYWJvdXQgd2hvIGlmIGFueW9uZSBoYXMgYSBtb3VudHBvaW50IHNv
+bWV3aGVyZSBzaW1wbHkgZG9lcwo+IG5vdCBwcm9wYWdhdGUgYmV0d2VlbiBrZXJuZWxzLgoKSSdt
+IG5vdCB0cnlpbmcgdG8gc29sdmUgdGhlIGdlbmVyaWMgcHJvYmxlbSB0aG91Z2gsIGJ1dCBhIHZl
+cnkgc3BlY2lmaWMKb25lLiBJJ20gc2V0dGluZyB1cCBhIHNhbmRib3ggd2l0aCBhIGJpbmQgbW91
+bnQgZm9yIC91c3IgZnJvbSBhCmRpcmVjdG9yeSBJIG15c2VsZiBjb250cm9sLCBhbmQgSSB3YW50
+IHRvIGtub3cgaWYgYW55IHNhbmRib3ggKGZyb20gYW55CnVzZXIpIGlzIHN0aWxsIHJ1bm5pbmcg
+d2l0aCB0aGF0IC91c3IgbW91bnRlZC4KCkluIHRoZSBlbmQgSSBzZXQgdXAgYSAvdXNyLy5yZWYg
+ZmlsZSBhbmQgaGFkIHBpZCAxIGluIHRoZSBzYW5kYm94IHRha2UKYW4gYWR2aXNvcnkgcmVhZCBs
+b2NrIG9uIGl0LiBJIGNhbiB0aGVuIHRyeSB0byBnZXQgYSB3cml0ZSBsb2NrIG9uIHRoaXMKZmls
+ZSBhbmQgaWYgdGhhdCBmYWlscyBzb21lIHNhbmRib3ggbWF5IHN0aWxsIGJlIHVzaW5nIGl0LiBJ
+dCBpcyBub3QKZmFpbCBzYWZlLCBhcyBhbnlvbmUgZWxzZSBjYW4gZ3JhYiBhIGxvY2sgb24gdGhp
+cywgYnV0IGRvaW5nIHNvIGlzIG5vdApyZWFsbHkgYSBwcm9ibGVtLCBhcyBJIGNhbiBzdGlsbCBm
+b3JjZSByZW1vdmUgaXQgaWYgbmVlZGVkLiAKClRoZSBhYm92ZSBhbGxvd3MgbWUgdG8gZG8gYW4g
+YXV0b21hdGljICJsaXZlIHVwZGF0ZSIgb2Ygc3VjaCBhIC91c3IgYnkKc2V0dGluZyB1cCB0aGUg
+bmV3IC91c3IsIHRoZW4gbW92aW5nIHRoZSBvbGQgb25lIHRvIGEgInJlbW92ZWQiCnN1YmRpcmVj
+dG9yeSBhbmQgdGhlbiBkZWxheSByZW1vdmUgdW50aWwgaXQgaXMgbm8gbG9uZ2VyIGluIHVzZSAo
+b3IgdGhlCnVzZXIgZm9yY2UgcmVtb3ZlcyBpdCkuCgotLSAKPS09LT0tPS09LT0tPS09LT0tPS09
+LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09CiBB
+bGV4YW5kZXIgTGFyc3NvbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgUmVkIEhhdCwgSW5jIAogICAgICAgYWxleGxAcmVkaGF0LmNvbSAgICAgICAgICAgIGFsZXhh
+bmRlci5sYXJzc29uQGdtYWlsLmNvbSAKSGUncyBhIHNob3J0LXNpZ2h0ZWQgZGV2aW91cyBmaWxt
+bWFrZXIgd2hvIGhpZGVzIGhpcyBzY2FycmVkIGZhY2UgYmVoaW5kIAphIG1hc2suIFNoZSdzIGEg
+cmFkaWNhbCBzdHJlZXRzbWFydCBsYXd5ZXIgd2l0aCBvbmx5IGhlcnNlbGYgdG8gYmxhbWUuIApU
+aGV5IGZpZ2h0IGNyaW1lISAKCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgt
+Zm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4v
+bGlzdGluZm8vY29udGFpbmVycw==
