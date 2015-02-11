@@ -1,34 +1,23 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 2/2] user_namespaces.7: Update the documention to reflect
-	the fixes for negative groups
-Date: Wed, 11 Feb 2015 08:01:36 -0600
-Message-ID: <87egpwk0n3.fsf__37667.4284264029$1423663517$gmane$org@x220.int.ebiederm.org>
-References: <52e0643bd47b1e5c65921d6e00aea1f724bb510a.1417281801.git.luto@amacapital.net>
-	<CALCETrXWx2-ZejEHmOi7aSoF-qJMRGR5yseeMhuurZwJRrQbUg@mail.gmail.com>
-	<87h9x5re41.fsf_-_@x220.int.ebiederm.org>
-	<87mw6xpzb0.fsf_-_@x220.int.ebiederm.org>
-	<CALCETrU-o5mPr1jCaLXDuuF6J2N470zAtx=8Fa-SjF=ZpdE8mQ@mail.gmail.com>
-	<87ppbtn4mv.fsf@x220.int.ebiederm.org>
-	<CALCETrXSScp77BUJR5NSTh5-RnEZ9rqELSGJBeEzgdQ-OtohuQ@mail.gmail.com>
-	<87a92xn2io.fsf@x220.int.ebiederm.org>
-	<87r3w8liw4.fsf@x220.int.ebiederm.org>
-	<87iohklfvj.fsf_-_@x220.int.ebiederm.org>
-	<87fvcok11h.fsf_-_@x220.int.ebiederm.org>
-	<CALCETrVfKiXuY=KY_=nHpkTyLWgpy_3DK=4Mr2mhpyX9z1TzrA@mail.gmail.com>
-	<971ad3f6-90fd-4e3f-916c-8988af3c826d@email.android.com>
-	<CALCETrWpzvNm=fjOa3_+4QOqYP8qZUJvQAd6AsRZ71xyHZQRCg@mail.gmail.com>
-	<87wq5zf83t.fsf@x220.int.ebiederm.org>
-	<87iohh3c9c.fsf@x220.int.ebiederm.org>
-	<8761dh3b7k.fsf_-_@x220.int.ebiederm.org>
-	<878uicy1r9.fsf_-_@x220.int.ebiederm.org>
-	<87ppbo1ql4.fsf_-_@x220.int.ebiederm.org> <54CF99BF.8050401@gmail.com>
-	<CAKgNAkhmwK02DJQV84S+dEdrUDjzRuR32j+2gcKkgeDq8jTkuQ@mail.gmail.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCHv3 8/8] cgroup: Add documentation for cgroup namespaces
+Date: Wed, 11 Feb 2015 09:36:38 -0500
+Message-ID: <20150211143638.GD21356__49419.8563079864$1423665424$gmane$org@htj.duckdns.org>
+References: <20150107230615.GA28630@htj.dyndns.org>
+	<87fvbm2nni.fsf@x220.int.ebiederm.org>
+	<87y4peyxw5.fsf@x220.int.ebiederm.org>
+	<20150107233553.GC28630@htj.dyndns.org>
+	<20150211034616.GA25022@mail.hallyn.com>
+	<20150211040957.GC21356@htj.duckdns.org>
+	<20150211042942.GA27931@mail.hallyn.com>
+	<87oap1qbv3.fsf@x220.int.ebiederm.org>
+	<20150211051704.GB24897@mtj.duckdns.org>
+	<87twytklkv.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAKgNAkhmwK02DJQV84S+dEdrUDjzRuR32j+2gcKkgeDq8jTkuQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Michael Kerrisk's message of "Wed, 11 Feb 2015 09:02:30 +0100")
+Content-Disposition: inline
+In-Reply-To: <87twytklkv.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -38,157 +27,67 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Josh Triplett <josh-iaAMLnmF4UmaiuxdJuQwMA@public.gmane.org>, stable <stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, cgroups mailinglist <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-"Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
+Hey,
 
-> Hi Eric,
->
-> Ping!
->
-> Cheers,
->
-> Michael
->
->
-> On 2 February 2015 at 16:37, Michael Kerrisk (man-pages)
-> <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
->> Hi Eric,
->>
->> Thanks for writing this up!
->>
->> On 12/12/2014 10:54 PM, Eric W. Biederman wrote:
->>>
->>> Files with access permissions such as ---rwx---rwx give fewer
->>> permissions to their group then they do to everyone else.  Which means
->>> dropping groups with setgroups(0, NULL) actually grants a process
->>> privileges.
->>>
->>> The uprivileged setting of gid_map turned out not to be safe after
-        ^^^^^^^^^^^
-unprivileged  -- typo fix
+On Wed, Feb 11, 2015 at 12:29:20AM -0600, Eric W. Biederman wrote:
+> In general namespaces are not necessary if your scope of names
+> already has hierarchy.  Which means that new interfaces can almost
+> always be designed in such a way that you can support containers without
+> needing to add any special namespace support.  Which typically results
+> in more flexible and useful APIs for everyone, with no real code cost.
 
->>> this change.  Privilege setting of gid_map can be interpreted as
->>> meaning yes it is ok to drop groups.
->>
->> I had trouble to parse that sentence (and I'd like to make sure that
->> the right sentence ends up in the commit message). Did you mean:
->>
->>     "*Unprivileged* setting of gid_map can be interpreted as meaning
->>      yes it is ok to drop groups"
->> ?
->>
->> Or something else?
+Sure, and cgroup ns support isn't doing anything weird there.  Just
+bind mounting a subhierarchy is enough for the core features.  The ns
+part is dealing with things which can't easily be tied to such
+hierarchical scoping like path reported under through proc and even
+handling that can be achieved by, for example, marking delegation
+points in cgroup proper and forcing tasks beyond that point to
+consider that as its origin when determining the path to report.
 
+However, note that something like that is inherently similar to what's
+being provided by other namespaces.  It is true that it can be
+implemented outside namespace facility proper but that doesn't
+automatically make that the right choice and it's more likely to be
+worse - we'd be introducing a different way to perform about the same
+thing.
 
-I meant:  Setting of gid_map with privilege has been clarified to mean
-that dropping groups is ok.  This allows existing programs that set
-gid_map with privilege to work without changes.  That is newgidmap
-continues to work unchanged.
+So, the argument that adding namespace interface except for backward
+compatibility doesn't seem to hold water.  Like it or not, namespace
+is serving as a platform for certain type of features and we'd be
+foolish to not to consider putting a related feature together there
+and I fail to see a valid technical argument as of yet.
 
->>> To prevent this problem and future problems user namespaces were
->>> changed in such a way as to guarantee a user can not obtain
->>> credentials without privilege they could not obtain without the
->>> help of user namespaces.
->>>
->>> This meant testing the effective user ID and not the filesystem user
->>> ID as setresuid and setregid allow setting any process uid or gid
->>> (except the supplemental groups) to the effective ID.
->>>
->>> Furthermore to preserve in some form the useful applications that have
->>> been setting gid_map without privilege the file /proc/[pid]/setgroups
->>> was added to allow disabling setgroups.  With the setgroups system
->>> call permanently disabled in a user namespace it again becomes safe to
->>> allow writes to gid_map without privilege.
->>>
->>> Here is my meager attempt to update user_namespaces.7 to reflect these
->>> issues.
->>
->> It looked pretty serviceable as patch, IMO. So, thanks again. I've applied,
->> tweaking some wordings afterward, but changing nothing essential. See below
->> for a question.
->>
->>> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
->>> ---
->>>  man7/user_namespaces.7 | 52 +++++++++++++++++++++++++++++++++++++++++++++++---
->>>  1 file changed, 49 insertions(+), 3 deletions(-)
->>>
->>> diff --git a/man7/user_namespaces.7 b/man7/user_namespaces.7
->>> index d76721d9a0a1..f8333a762308 100644
->>> --- a/man7/user_namespaces.7
->>> +++ b/man7/user_namespaces.7
->>> @@ -533,11 +533,16 @@ One of the following is true:
->>>  The data written to
->>>  .I uid_map
->>>  .RI ( gid_map )
->>> -consists of a single line that maps the writing process's filesystem user ID
->>> +consists of a single line that maps the writing process's effective user ID
->>>  (group ID) in the parent user namespace to a user ID (group ID)
->>>  in the user namespace.
->>> -The usual case here is that this single line provides a mapping for user ID
->>> -of the process that created the namespace.
->>> +The writing process must have the same effective user ID as the process
->>> +that created the user namespace.
->>> +In the case of
->>> +.I gid_map
->>> +the
->>> +.I setgroups
->>> +file must have been written to earlier and disabled the setgroups system call.
->>>  .IP * 3
->>>  The opening process has the
->>>  .BR CAP_SETUID
->>> @@ -552,6 +557,47 @@ Writes that violate the above rules fail with the error
->>>  .\"
->>>  .\" ============================================================
->>>  .\"
->>> +.SS Interaction with system calls that change the uid or gid values
->>> +When in a user namespace where the
->>> +.I uid_map
->>> +or
->>> +.I gid_map
->>> +file has not been written the system calls that change user IDs
->>> +or group IDs respectively will fail.  After the
->>> +.I uid_map
->>> +and
->>> +.I gid_map
->>> +file have been written only the mapped values may be used in
->>> +system calls that change user IDs and group IDs.
->>> +
->>> +For user IDs these system calls include
->>> +.BR setuid ,
->>> +.BR setfsuid ,
->>> +.BR setreuid ,
->>> +and
->>> +.BR setresuid .
->>> +
->>> +For group IDs these system calls include
->>> +.BR setgid ,
->>> +.BR setfsgid ,
->>> +.BR setregid ,
->>> +.BR setresgid ,
->>> +and
->>> +.BR setgroups.
->>> +
->>> +Writing
->>> +.BR deny
->>> +to the
->>> +.I /proc/[pid]/setgroups
->>> +file before writing to
->>> +.I /proc/[pid]/gid_map
->>> +will permanently disable the setgroups system call in a user namespace
->>> +and allow writing to
->>> +.I /proc/[pid]/gid_map
->>> +without
->>> +.BR CAP_SETGID
->>> +in the parent user namespace.
->>
->> I just want to double check: you really did mean to write "*parent* namespace"
->> above, right?
+> Further in the cgroup namespace patchset I looked at a while ago, the
+> only reason for having a cgroup namespace was to provide a measure of
+> backwards compatibility with existing userspace.  I expect removing the
+> /proc/<pid>/cgroup file and replacing it with something in cgroupfs
+> itself would serve just as well if backwards compatibility is not the
+> objective.  Or possibly replacincg /proc/<pid>/cgroup into a magic
+> symlink onto somewhere in the unified cgroupfs itself.
 
-Yes.  At this point only privilege in the *parent* user namespace is
-meaningful, as applications in the new user namespace have all
-privileges.
+No matter what we do, we'd still need to mark the delegation point
+somehow; otherwise, there's no way to produce a scoped identifier.
+This isn't really about backward compatibility but rather the feature
+to scope a subhierarcy properly.
 
-Eric
+> I just don't see any point in doing weird silly namespace things to keep
+> existing userspace working when the existing userspace won't work.
+
+If it's too different from existing namespaces, sure, doing something
+is definitely an option but is it?
+
+> As such if a namespace doesn't implement compatibility with the existing
+> userspace it gets my nack.
+
+Hmmm.... I don't think making the proposed NS support to work across
+all hierarchies including the traditional multiple ones would be too
+difficult.  That should work then, right?
+
+Thanks.
+
+-- 
+tejun
