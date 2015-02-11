@@ -1,8 +1,8 @@
 From: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
-Subject: [PATCH RFC 3/6] quota: mangle statfs result according to project
-	quota usage and limits
-Date: Wed, 11 Feb 2015 18:11:49 +0300
-Message-ID: <20150211151149.6717.10971.stgit__18623.0174651884$1423667880$gmane$org@buzz>
+Subject: [PATCH RFC 6/6] tools/quota/project_quota: sample tool for early
+	adopters
+Date: Wed, 11 Feb 2015 18:11:53 +0300
+Message-ID: <20150211151153.6717.51053.stgit__1382.35474373705$1423667941$gmane$org@buzz>
 References: <20150211151146.6717.62017.stgit@buzz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,149 +22,382 @@ To: Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linu
 Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Dmitry Monakhov <dmonakhov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Li Xi <pkuelelixi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch updates amount of available space and inodes returned by
-vfs_statfs() according to project quota for this directory.
-This works only if sysctl fs.protected_projects = 1.
+Usage: ./project_quota <command> <path> [args]...
+Commands:
+  init    <path>                initialize quota file
+  on      <path>                turn on
+  off     <path>                turn off
+  info    <path>                show project, usage and limits
+  project <path> [<id>]         get / set project id
+  limit   <path> [<bytes>]      get / set space limit
+  ilimit  <path> [<inodes>]     get / set inodes limit
+
+
+How to enable feature using debugfs tool:
+# debugfs
+debugfs:  open -w <disk>
+debugfs:  feature +FEATURE_R12
+debugfs:  quit
+# mount ...
+# project_quota init <mountpoint>
+# project_quota on <mountpoint>
 
 Signed-off-by: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
 ---
- fs/quota/dquot.c         |   56 ++++++++++++++++++++++++++++++++++++++++++++--
- fs/statfs.c              |    5 +++-
- include/linux/quotaops.h |    5 ++++
- 3 files changed, 63 insertions(+), 3 deletions(-)
+ tools/quota/.gitignore      |    1 
+ tools/quota/Makefile        |    6 +
+ tools/quota/project_quota.c |  324 +++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 331 insertions(+)
+ create mode 100644 tools/quota/.gitignore
+ create mode 100644 tools/quota/Makefile
+ create mode 100644 tools/quota/project_quota.c
 
-diff --git a/fs/quota/dquot.c b/fs/quota/dquot.c
-index afa5f67..e3dfac8 100644
---- a/fs/quota/dquot.c
-+++ b/fs/quota/dquot.c
-@@ -65,6 +65,7 @@
- #include <linux/stat.h>
- #include <linux/tty.h>
- #include <linux/file.h>
-+#include <linux/statfs.h>
- #include <linux/slab.h>
- #include <linux/sysctl.h>
- #include <linux/init.h>
-@@ -1242,15 +1243,20 @@ static void flush_warnings(struct dquot_warn *warn)
- 	}
- }
- 
--static int ignore_hardlimit(struct dquot *dquot)
-+static bool sb_ignore_hardlimit(struct super_block *sb, int type)
- {
--	struct mem_dqinfo *info = &sb_dqopt(dquot->dq_sb)->info[dquot->dq_id.type];
-+	struct mem_dqinfo *info = sb_dqinfo(sb, type);
- 
- 	return capable(CAP_SYS_RESOURCE) &&
- 	       (info->dqi_format->qf_fmt_id != QFMT_VFS_OLD ||
- 		!(info->dqi_flags & DQF_ROOT_SQUASH));
- }
- 
-+static bool ignore_hardlimit(struct dquot *dquot)
+diff --git a/tools/quota/.gitignore b/tools/quota/.gitignore
+new file mode 100644
+index 0000000..4aacefc
+--- /dev/null
++++ b/tools/quota/.gitignore
+@@ -0,0 +1 @@
++project_quota
+diff --git a/tools/quota/Makefile b/tools/quota/Makefile
+new file mode 100644
+index 0000000..0c3daef
+--- /dev/null
++++ b/tools/quota/Makefile
+@@ -0,0 +1,6 @@
++CFLAGS=-Wall -W
++
++project_quota:
++
++clean:
++	rm project_quota
+diff --git a/tools/quota/project_quota.c b/tools/quota/project_quota.c
+new file mode 100644
+index 0000000..ca7f49a
+--- /dev/null
++++ b/tools/quota/project_quota.c
+@@ -0,0 +1,324 @@
++/*
++ * project_quota: Tool for project disk quota manipulations
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License as published by the Free
++ * Software Foundation; version 2.
++ *
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ *
++ * You should find a copy of v2 of the GNU General Public License somewhere on
++ * your Linux system; if not, write to the Free Software Foundation, Inc., 59
++ * Temple Place, Suite 330, Boston, MA 02111-1307 USA.
++ *
++ * Copyright (C) 2015 Yandex LLC
++ *
++ * Authors: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
++ */
++
++#define _FILE_OFFSET_BITS 64
++#define _GNU_SOURCE
++#include <stdlib.h>
++#include <stdio.h>
++#include <string.h>
++#include <errno.h>
++#include <err.h>
++#include <unistd.h>
++#include <fcntl.h>
++#include <limits.h>
++#include <linux/quota.h>
++#include <sys/quota.h>
++#include <sys/ioctl.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <sys/mount.h>
++
++#ifndef F_LINUX_SPECIFIC_BASE
++#define F_LINUX_SPECIFIC_BASE	1024
++#endif
++
++#ifndef F_GET_PROJECT
++#define F_GET_PROJECT  (F_LINUX_SPECIFIC_BASE + 11)
++#define F_SET_PROJECT  (F_LINUX_SPECIFIC_BASE + 12)
++#endif
++
++#ifndef PRJQUOTA
++#define PRJQUOTA 2
++#endif
++
++/* First generic header */
++struct v2_disk_dqheader {
++	__le32 dqh_magic;	/* Magic number identifying file */
++	__le32 dqh_version;	/* File version */
++};
++
++/* Header with type and version specific information */
++struct v2_disk_dqinfo {
++	__le32 dqi_bgrace;	/* Time before block soft limit becomes hard limit */
++	__le32 dqi_igrace;	/* Time before inode soft limit becomes hard limit */
++	__le32 dqi_flags;	/* Flags for quotafile (DQF_*) */
++	__le32 dqi_blocks;	/* Number of blocks in file */
++	__le32 dqi_free_blk;	/* Number of first free block in the list */
++	__le32 dqi_free_entry;	/* Number of block with at least one free entry */
++};
++
++#define PROJECT_QUOTA_FILE	"quota.project"
++#define PROJECT_QUOTA_MAGIC	0xd9c03f14
++
++static int find_mountpoint(const char *path, struct stat *path_st,
++		char **device, char **fstype, char **root_path)
 +{
-+	return sb_ignore_hardlimit(dquot->dq_sb, dquot->dq_id.type);
++	struct stat dev_st;
++	char *buf = NULL, *ptr, *real_device;
++	unsigned major, minor;
++	size_t len;
++	FILE *file;
++
++	if (stat(path, path_st))
++		return -1;
++
++	*root_path = malloc(PATH_MAX + 1);
++
++	/* since v2.6.26 */
++	file = fopen("/proc/self/mountinfo", "r");
++	if (!file)
++		goto parse_mounts;
++	while (getline(&buf, &len, file) > 0) {
++		sscanf(buf, "%*d %*d %u:%u %*s %s", &major, &minor, *root_path);
++		if (makedev(major, minor) != path_st->st_dev)
++			continue;
++		ptr = strstr(buf, " - ") + 3;
++		*fstype = strdup(strsep(&ptr, " "));
++		*device = strdup(strsep(&ptr, " "));
++		goto found;
++	}
++
++parse_mounts:
++	/* for older versions */
++	file = fopen("/proc/mounts", "r");
++	if (!file)
++		goto not_found;
++	while (getline(&buf, &len, file) > 0) {
++		ptr = buf;
++		strsep(&ptr, " ");
++		if (*buf != '/' || stat(buf, &dev_st) ||
++		    dev_st.st_rdev != path_st->st_dev)
++			continue;
++		strcpy(*root_path, strsep(&ptr, " "));
++		*fstype = strdup(strsep(&ptr, " "));
++		*device = strdup(buf);
++		goto found;
++	}
++not_found:
++	free(*root_path);
++	errno = ENODEV;
++	return -1;
++
++found:
++	real_device = realpath(*device, NULL);
++	if (real_device) {
++		free(*device);
++		*device = real_device;
++	}
++	return 0;
 +}
 +
- /* needs dq_data_lock */
- static int check_idq(struct dquot *dquot, qsize_t inodes,
- 		     struct dquot_warn *warn)
-@@ -2022,6 +2028,52 @@ int dquot_file_open(struct inode *inode, struct file *file)
- }
- EXPORT_SYMBOL(dquot_file_open);
- 
-+void dquot_mangle_statfs(const struct path *path, struct kstatfs *buf)
++static int init_project_quota(const char *quota_path)
 +{
-+	struct inode *inode = path->dentry->d_inode;
-+	struct super_block *sb = inode->i_sb;
-+	u64 blimit = 0, ilimit = 0, busage, iusage;
-+	struct dquot **dquots;
++	struct {
++		struct v2_disk_dqheader header;
++		struct v2_disk_dqinfo info;
++		char zero[1024 * 2 - 8 * 4];
++	} quota_init = {
++		.header = {
++			.dqh_magic = PROJECT_QUOTA_MAGIC,
++			.dqh_version = 1,
++		},
++		.info = {
++			.dqi_bgrace = 7 * 24 * 60 * 60,
++			.dqi_igrace = 7 * 24 * 60 * 60,
++			.dqi_flags = 0,
++			.dqi_blocks = 2, /* header and root */
++			.dqi_free_blk = 0,
++			.dqi_free_entry = 0,
++		},
++		.zero = {0, },
++	};
++	int fd;
 +
-+	if (!sysctl_protected_projects ||
-+	    !sb_has_quota_limits_enabled(sb, PRJQUOTA) ||
-+	    sb_ignore_hardlimit(sb, PRJQUOTA))
-+		return;
++	fd = open(quota_path, O_CREAT|O_RDWR|O_EXCL, 0600);
++	if (fd < 0)
++		return fd;
++	write(fd, &quota_init, sizeof(quota_init));
++	fsync(fd);
++	close(fd);
++	return 0;
++}
 +
-+	dquots = i_dquot(inode);
-+	if (!dquots[PRJQUOTA])
-+		return;
++static int get_project_id(const char *path, unsigned *project_id)
++{
++	int fd, ret;
 +
-+	spin_lock(&dq_data_lock);
-+	if (dquots[PRJQUOTA]) {
-+		struct mem_dqblk *dm = &(dquots[PRJQUOTA]->dq_dqb);
++	fd = open(path, O_PATH);
++	if (fd < 0)
++		return fd;
++	ret = fcntl(fd, F_GET_PROJECT, project_id);
++	close(fd);
++	return ret;
++}
 +
-+		blimit = dm->dqb_bsoftlimit ?: dm->dqb_bhardlimit;
-+		busage = dm->dqb_curspace + dm->dqb_rsvspace;
-+		ilimit = dm->dqb_isoftlimit ?: dm->dqb_ihardlimit;
-+		iusage = dm->dqb_curinodes;
++static int set_project_id(const char *path, unsigned project_id)
++{
++	int fd, ret;
++
++	fd = open(path, O_PATH);
++	if (fd < 0)
++		return fd;
++	ret = fcntl(fd, F_SET_PROJECT, project_id);
++	close(fd);
++	return ret;
++}
++
++static void get_project_quota(const char *device, unsigned project_id,
++		struct if_dqblk *quota)
++{
++	if (quotactl(QCMD(Q_GETQUOTA, PRJQUOTA), device,
++				project_id, (caddr_t)quota))
++		err(2, "cannot get project quota \"%u\" at \"%s\"",
++				project_id, device);
++}
++
++static void set_project_quota(const char *device, unsigned project_id,
++		struct if_dqblk *quota)
++{
++	if (quotactl(QCMD(Q_SETQUOTA, PRJQUOTA),
++		     device, project_id, (caddr_t)quota))
++		err(2, "cannot set project quota \"%u\" at \"%s\"",
++				project_id, device);
++}
++
++int main (int argc, char **argv) {
++	char *cmd, *path, *device, *fstype, *root_path;
++	struct if_dqblk quota;
++	struct stat path_st;
++	unsigned project_id;
++
++	if (argc < 3)
++		goto usage;
++
++	cmd = argv[1];
++	path = argv[2];
++	if (find_mountpoint(path, &path_st, &device, &fstype, &root_path))
++		err(2, "cannot find mountpoint for \"%s\"", path);
++
++	if (!strcmp(cmd, "limit") || !strcmp(cmd, "ilimit") ||
++	    !strcmp(cmd, "info") || !strcmp(cmd, "parent")) {
++		if (get_project_id(path, &project_id))
++			err(2, "cannot get project id for \"%s\"", path);
 +	}
-+	spin_unlock(&dq_data_lock);
 +
-+	if (blimit) {
-+		u64 bavail = (blimit <= busage) ? 0 :
-+			div64_long(blimit - busage, buf->f_bsize);
++	if (!strcmp(cmd, "init")) {
++		if (S_ISDIR(path_st.st_mode))
++			asprintf(&path, "%s/%s", path, PROJECT_QUOTA_FILE);
 +
-+		if (buf->f_bavail > bavail)
-+			buf->f_bavail = bavail;
-+	}
++		if (init_project_quota(path))
++			err(2, "cannot init project quota file \"%s\"", path);
 +
-+	if (ilimit) {
-+		u64 iavail = (ilimit <= iusage) ? 0 : (ilimit - iusage);
++	} else if (!strcmp(cmd, "on")) {
++		struct v2_disk_dqheader header;
++		int fd, format;
 +
-+		if (buf->f_ffree > iavail) {
-+			/* Cut count of "free" inodes but keep "used" */
-+			buf->f_files -= buf->f_ffree - iavail;
-+			buf->f_ffree = iavail;
++		if (S_ISDIR(path_st.st_mode))
++			asprintf(&path, "%s/%s", path, PROJECT_QUOTA_FILE);
++
++		fd = open(path, O_RDONLY);
++		if (fd < 0)
++			err(2, "cannot open quota file \"%s\"", path);
++		if (read(fd, &header, sizeof(header)) != sizeof(header))
++			err(2, "cannot read quota file \"%s\"", path);
++		close(fd);
++
++		if (header.dqh_magic != PROJECT_QUOTA_MAGIC)
++			errx(2, "wrong quota file magic");
++
++		if (header.dqh_version == 1)
++			format = QFMT_VFS_V1;
++		else
++			errx(2, "unsupported quota file version");
++
++		if (mount(NULL, root_path, NULL, MS_REMOUNT, "prjquota"))
++			err(2, "cannot remount \"%s\"", root_path);
++
++		if (quotactl(QCMD(Q_QUOTAON, PRJQUOTA), device,
++					format, (caddr_t)path))
++			err(2, "cannot turn on project quota for %s", device);
++
++	} else if (!strcmp(cmd, "off")) {
++
++		if (quotactl(QCMD(Q_QUOTAOFF, PRJQUOTA), device, 0, NULL))
++			err(2, "cannot turn off project quota for %s", device);
++
++	} else if (!strcmp(cmd, "project")) {
++		if (argc < 4) {
++			if (get_project_id(path, &project_id))
++				err(2, "cannot get project id for \"%s\"", path);
++			printf("%u\n", project_id);
++		} else {
++			project_id = atoi(argv[3]);
++			if (set_project_id(path, project_id))
++				err(2, "cannot set project id for \"%s\"", path);
 +		}
++	} else if (!strcmp(cmd, "limit")) {
++		if (argc < 4) {
++			get_project_quota(device, project_id, &quota);
++			printf("%lld\n", quota.dqb_bhardlimit * QIF_DQBLKSIZE);
++		} else {
++			quota.dqb_bhardlimit = atoll(argv[3]) / QIF_DQBLKSIZE;
++			quota.dqb_bsoftlimit = 0;
++			quota.dqb_valid = QIF_BLIMITS;
++			set_project_quota(device, project_id, &quota);
++		}
++	} else if (!strcmp(cmd, "ilimit")) {
++		if (argc < 4) {
++			get_project_quota(device, project_id, &quota);
++			printf("%lld\n", quota.dqb_ihardlimit);
++		} else {
++			quota.dqb_ihardlimit = atoll(argv[3]);
++			quota.dqb_isoftlimit = 0;
++			quota.dqb_valid = QIF_ILIMITS;
++			set_project_quota(device, project_id, &quota);
++		}
++	} else if (!strcmp(cmd, "info")) {
++		get_project_quota(device, project_id, &quota);
++		printf("project   %u\n", project_id);
++		printf("usage     %llu\n", quota.dqb_curspace);
++		printf("limit     %llu\n", quota.dqb_bhardlimit * QIF_DQBLKSIZE);
++		printf("inodes    %llu\n", quota.dqb_curinodes);
++		printf("ilimit    %llu\n", quota.dqb_ihardlimit);
++	} else {
++		warnx("Unknown command \"%s\"", cmd);
++		goto usage;
 +	}
-+}
 +
- /*
-  * Turn quota off on a device. type == -1 ==> quotaoff for all types (umount)
-  */
-diff --git a/fs/statfs.c b/fs/statfs.c
-index 083dc0a..3fa6192 100644
---- a/fs/statfs.c
-+++ b/fs/statfs.c
-@@ -7,6 +7,7 @@
- #include <linux/statfs.h>
- #include <linux/security.h>
- #include <linux/uaccess.h>
-+#include <linux/quotaops.h>
- #include "internal.h"
- 
- static int flags_by_mnt(int mnt_flags)
-@@ -68,8 +69,10 @@ int vfs_statfs(struct path *path, struct kstatfs *buf)
- 	int error;
- 
- 	error = statfs_by_dentry(path->dentry, buf);
--	if (!error)
-+	if (!error) {
- 		buf->f_flags = calculate_f_flags(path->mnt);
-+		dquot_mangle_statfs(path, buf);
-+	}
- 	return error;
- }
- EXPORT_SYMBOL(vfs_statfs);
-diff --git a/include/linux/quotaops.h b/include/linux/quotaops.h
-index ba54745..42fe4d9 100644
---- a/include/linux/quotaops.h
-+++ b/include/linux/quotaops.h
-@@ -85,6 +85,7 @@ int dquot_commit_info(struct super_block *sb, int type);
- int dquot_mark_dquot_dirty(struct dquot *dquot);
- 
- int dquot_file_open(struct inode *inode, struct file *file);
-+void dquot_mangle_statfs(const struct path *path, struct kstatfs *buf);
- 
- int dquot_enable(struct inode *inode, int type, int format_id,
- 	unsigned int flags);
-@@ -275,6 +276,10 @@ static inline int dquot_resume(struct super_block *sb, int type)
- 
- #define dquot_file_open		generic_file_open
- 
-+static inline void dquot_mangle_statfs(struct path *path, struct kstatfs *buf)
-+{
-+}
++	free(device);
++	free(fstype);
++	free(root_path);
 +
- static inline int dquot_writeback_dquots(struct super_block *sb, int type)
- {
- 	return 0;
++	return 0;
++
++usage:
++	fprintf(stderr, "Usage: %s <command> <path> [args]...\n"
++			"Commands:\n"
++			"  init    <path>                initialize quota file\n"
++			"  on      <path>                turn on\n"
++			"  off     <path>                turn off\n"
++			"  info    <path>                show project, usage and limits\n"
++			"  project <path> [<id>]         get / set project id\n"
++			"  limit   <path> [<bytes>]      get / set space limit\n"
++			"  ilimit  <path> [<inodes>]     get / set inodes limit\n",
++			argv[0]);
++	return 2;
++}
