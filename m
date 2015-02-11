@@ -1,24 +1,32 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCHv3 8/8] cgroup: Add documentation for cgroup namespaces
-Date: Wed, 11 Feb 2015 00:29:20 -0600
-Message-ID: <87twytklkv.fsf@x220.int.ebiederm.org>
-References: <20150107224430.GA28414@htj.dyndns.org>
-	<878uhe42km.fsf@x220.int.ebiederm.org>
-	<20150107230615.GA28630@htj.dyndns.org>
-	<87fvbm2nni.fsf@x220.int.ebiederm.org>
-	<87y4peyxw5.fsf@x220.int.ebiederm.org>
-	<20150107233553.GC28630@htj.dyndns.org>
-	<20150211034616.GA25022@mail.hallyn.com>
-	<20150211040957.GC21356@htj.duckdns.org>
-	<20150211042942.GA27931@mail.hallyn.com>
-	<87oap1qbv3.fsf@x220.int.ebiederm.org>
-	<20150211051704.GB24897@mtj.duckdns.org>
+From: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 1/2] proc.5: Document /proc/[pid]/setgroups
+Date: Wed, 11 Feb 2015 09:01:57 +0100
+Message-ID: <CAKgNAkgWnZ=7E4bk3JhzFS88CJ32szYCYcm_Sx166yVuWKhhUA@mail.gmail.com>
+References: <52e0643bd47b1e5c65921d6e00aea1f724bb510a.1417281801.git.luto@amacapital.net>
+	<CALCETrXWx2-ZejEHmOi7aSoF-qJMRGR5yseeMhuurZwJRrQbUg@mail.gmail.com>
+	<87h9x5re41.fsf_-_@x220.int.ebiederm.org>
+	<87mw6xpzb0.fsf_-_@x220.int.ebiederm.org>
+	<CALCETrU-o5mPr1jCaLXDuuF6J2N470zAtx=8Fa-SjF=ZpdE8mQ@mail.gmail.com>
+	<87ppbtn4mv.fsf@x220.int.ebiederm.org>
+	<CALCETrXSScp77BUJR5NSTh5-RnEZ9rqELSGJBeEzgdQ-OtohuQ@mail.gmail.com>
+	<87a92xn2io.fsf@x220.int.ebiederm.org>
+	<87r3w8liw4.fsf@x220.int.ebiederm.org>
+	<87iohklfvj.fsf_-_@x220.int.ebiederm.org>
+	<87fvcok11h.fsf_-_@x220.int.ebiederm.org>
+	<CALCETrVfKiXuY=KY_=nHpkTyLWgpy_3DK=4Mr2mhpyX9z1TzrA@mail.gmail.com>
+	<971ad3f6-90fd-4e3f-916c-8988af3c826d@email.android.com>
+	<CALCETrWpzvNm=fjOa3_+4QOqYP8qZUJvQAd6AsRZ71xyHZQRCg@mail.gmail.com>
+	<87wq5zf83t.fsf@x220.int.ebiederm.org>
+	<87iohh3c9c.fsf@x220.int.ebiederm.org>
+	<8761dh3b7k.fsf_-_@x220.int.ebiederm.org>
+	<878uicy1r9.fsf_-_@x220.int.ebiederm.org>
+	<87vblg1qme.fsf@x220.int.ebiederm.org> <54CF9995.1050409@gmail.com>
+Reply-To: mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20150211051704.GB24897-qYNAdHglDFBN0TnZuCh8vA@public.gmane.org> (Tejun Heo's message of
-	"Wed, 11 Feb 2015 00:17:04 -0500")
+In-Reply-To: <54CF9995.1050409-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -28,58 +36,72 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, cgroups mailinglist <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Josh Triplett <josh-iaAMLnmF4UmaiuxdJuQwMA@public.gmane.org>, stable <stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> writes:
-
-> Hey,
->
-> On Tue, Feb 10, 2015 at 11:02:40PM -0600, Eric W. Biederman wrote:
->> A slightly off topic comment, for where this thread has gone but
->> relevant if we are talking about cgroup namespaces.
->> 
->> If don't implement compatibility with existing userspace, they get a
->> nack.  A backwards-incompatible change should figure out how to remove
->> the need for any namespaces.
->>
->> Because that is what namespaces are about backwards compatibility.
->
-> Are you claiming that namespaces are soley about backwards
-> compatibility?  ie. to trick userland into scoping without letting it
-> notice?  That's a very restricted view and namespaces do provide
-> further isolation capabilties in addition to what can be achieved
-> otherwise and it is logical to collect simliar funtionalities there.
-
-In principle a namespace is an additional layer of indirection from
-names to objects.  A namespace does not invent new kinds of objects.
-A namespace takes things that were previously global and gives them a
-scope.
-
-In princple after name resolution a namespace should impose no overhead.
-
-In general namespaces are not necessary if your scope of names
-already has hierarchy.  Which means that new interfaces can almost
-always be designed in such a way that you can support containers without
-needing to add any special namespace support.  Which typically results
-in more flexible and useful APIs for everyone, with no real code cost.
-
-
-
-Further in the cgroup namespace patchset I looked at a while ago, the
-only reason for having a cgroup namespace was to provide a measure of
-backwards compatibility with existing userspace.  I expect removing the
-/proc/<pid>/cgroup file and replacing it with something in cgroupfs
-itself would serve just as well if backwards compatibility is not the
-objective.  Or possibly replacincg /proc/<pid>/cgroup into a magic
-symlink onto somewhere in the unified cgroupfs itself.
-
-
-I just don't see any point in doing weird silly namespace things to keep
-existing userspace working when the existing userspace won't work.
-
-As such if a namespace doesn't implement compatibility with the existing
-userspace it gets my nack.
-
-Eric
+SGkgRXJpYywKClBpbmchCgpDaGVlcnMsCgpNaWNoYWVsCgoKCk9uIDIgRmVicnVhcnkgMjAxNSBh
+dCAxNjozNiwgTWljaGFlbCBLZXJyaXNrIChtYW4tcGFnZXMpCjxtdGsubWFucGFnZXNAZ21haWwu
+Y29tPiB3cm90ZToKPiBbQWRkaW5nIEpvc2ggdG8gQ0MgaW4gY2FzZSBoZSBoYXMgYW55dGhpbmcg
+dG8gYWRkLl0KPgo+IE9uIDEyLzEyLzIwMTQgMTA6NTQgUE0sIEVyaWMgVy4gQmllZGVybWFuIHdy
+b3RlOgo+Pgo+PiBTaWduZWQtb2ZmLWJ5OiBFcmljIFcuIEJpZWRlcm1hbiA8ZWJpZWRlcm1AeG1p
+c3Npb24uY29tPgo+PiAtLS0KPj4gIG1hbjUvcHJvYy41IHwgMTUgKysrKysrKysrKysrKysrCj4+
+ICAxIGZpbGUgY2hhbmdlZCwgMTUgaW5zZXJ0aW9ucygrKQo+Pgo+PiBkaWZmIC0tZ2l0IGEvbWFu
+NS9wcm9jLjUgYi9tYW41L3Byb2MuNQo+PiBpbmRleCA5NjA3N2QwZGQxOTUuLmQ2NjFlOGNmZWFj
+OSAxMDA2NDQKPj4gLS0tIGEvbWFuNS9wcm9jLjUKPj4gKysrIGIvbWFuNS9wcm9jLjUKPj4gQEAg
+LTEwOTcsNiArMTA5NywyMSBAQCBhcmUgbm90IGF2YWlsYWJsZSBpZiB0aGUgbWFpbiB0aHJlYWQg
+aGFzIGFscmVhZHkgdGVybWluYXRlZAo+PiAgLlwiICAgICAgIEFkZGVkIGluIDIuNi45Cj4+ICAu
+XCIgICAgICAgQ09ORklHX1NDSEVEU1RBVFMKPj4gIC5UUAo+PiArLklSIC9wcm9jL1twaWRdL3Nl
+dGdyb3VwcyAiIChzaW5jZSBMaW51eCAzLjE5LXJjMSkiCj4+ICtUaGlzIGZpbGUgcmVwb3J0cwo+
+PiArLkJSIGFsbG93Cj4+ICtpZiB0aGUgc2V0Z3JvdXBzIHN5c3RlbSBjYWxsIGlzIGFsbG93ZWQg
+aW4gdGhlIGN1cnJlbnQgdXNlciBuYW1lc3BhY2UuCj4+ICtUaGlzIGZpbGUgcmVwb3J0cwo+PiAr
+LkJSIGRlbnkKPj4gK2lmIHRoZSBzZXRncm91cHMgc3lzdGVtIGNhbGwgaXMgbm90IGFsbG93ZWQg
+aW4gdGhlIGN1cnJlbnQgdXNlciBuYW1lc3BhY2UuCj4+ICtUaGlzIGZpbGUgbWF5IGJlIHdyaXR0
+ZW4gdG8gd2l0aCB2YWx1ZXMgb2YKPj4gKy5CUiBhbGxvdwo+PiArYW5kCj4+ICsuQlIgZGVueQo+
+PiArYmVmb3JlCj4+ICsuSVIgL3Byb2MvW3BpZF0vZ2lkX21hcAo+PiAraXMgd3JpdHRlbiB0byAo
+ZW5hYmxpbmcgc2V0Z3JvdXBzKSBpbiBhIHVzZXIgbmFtZXNwYWNlLgo+PiArLlRQCj4+ICAuSVIg
+L3Byb2MvW3BpZF0vc21hcHMgIiAoc2luY2UgTGludXggMi42LjE0KSIKPj4gIFRoaXMgZmlsZSBz
+aG93cyBtZW1vcnkgY29uc3VtcHRpb24gZm9yIGVhY2ggb2YgdGhlIHByb2Nlc3MncyBtYXBwaW5n
+cy4KPj4gIChUaGUKPgo+IEhpIEVyaWMsCj4KPiBUaGFua3MgZm9yIHRoaXMgcGF0Y2guIEkgYXBw
+bGllZCBpdCwgYW5kIHRoZW4gdHJpZWQgdG8gd29yayBpbgo+IHF1aXRlIGEgZmV3IG90aGVyIGRl
+dGFpbHMgZ2xlYW5lZCBmcm9tIHRoZSBzb3VyY2UgY29kZSBhbmQgY29tbWl0Cj4gbWVzc2FnZSwg
+YW5kIEpvbiBDb3JiZXQncyBhcnRpY2xlIGF0IGh0dHA6Ly9sd24ubmV0L0FydGljbGVzLzYyNjY2
+NS8uCj4gQ291bGQgeW91IHBsZWFzZSBsZXQgbWUga25vdyBpZiB0aGUgZm9sbG93aW5nIGlzIGNv
+cnJlY3Q6Cj4KPiAgICAgL3Byb2MvW3BpZF0vc2V0Z3JvdXBzIChzaW5jZSBMaW51eCAzLjE5KQo+
+ICAgICAgICAgICAgVGhpcyBmaWxlIGRpc3BsYXlzIHRoZSBzdHJpbmcgImFsbG93IiAgaWYgIHBy
+b2Nlc3NlcyAgaW4KPiAgICAgICAgICAgIHRoZSAgdXNlciAgbmFtZXNwYWNlICB0aGF0ICBjb250
+YWlucyB0aGUgcHJvY2VzcyBwaWQgYXJlCj4gICAgICAgICAgICBwZXJtaXR0ZWQgdG8gZW1wbG95
+IHRoZSBzZXRncm91cHMoMikgIHN5c3RlbSAgY2FsbCwgIGFuZAo+ICAgICAgICAgICAgImRlbnki
+ICBpZiAgc2V0Z3JvdXBzKDIpICBpcyAgbm90IHBlcm1pdHRlZCBpbiB0aGF0IHVzZXIKPiAgICAg
+ICAgICAgIG5hbWVzcGFjZS4KPgo+ICAgICAgICAgICAgQSBwcml2aWxlZ2VkIHByb2Nlc3MgKG9u
+ZSB3aXRoIHRoZSAgQ0FQX1NZU19BRE1JTiAgY2FwYeKAkAo+ICAgICAgICAgICAgYmlsaXR5IGlu
+IHRoZSBuYW1lc3BhY2UpIG1heSB3cml0ZSBlaXRoZXIgb2YgdGhlIHN0cmluZ3MKPiAgICAgICAg
+ICAgICJhbGxvdyIgb3IgImRlbnkiIHRvIHRoaXMgZmlsZSBiZWZvcmUgd3JpdGluZyBhIGdyb3Vw
+IElECj4gICAgICAgICAgICBtYXBwaW5nICAgZm9yICAgdGhpcyAgIHVzZXIgICBuYW1lc3BhY2Ug
+ICB0byAgIHRoZSAgZmlsZQo+ICAgICAgICAgICAgL3Byb2MvW3BpZF0vZ2lkX21hcC4gIFdyaXRp
+bmcgdGhlIHN0cmluZyAiZGVueSIgcHJldmVudHMKPiAgICAgICAgICAgIGFueSAgcHJvY2VzcyAg
+aW4gIHRoZSB1c2VyIG5hbWVzcGFjZSBmcm9tIGVtcGxveWluZyBzZXTigJAKPiAgICAgICAgICAg
+IGdyb3VwcygyKS4KPgo+ICAgICAgICAgICAgVGhlIGRlZmF1bHQgdmFsdWUgb2YgIHRoaXMgIGZp
+bGUgIGluICB0aGUgIGluaXRpYWwgIHVzZXIKPiAgICAgICAgICAgIG5hbWVzcGFjZSBpcyAiYWxs
+b3ciLgo+Cj4gICAgICAgICAgICBPbmNlICAvcHJvYy9bcGlkXS9naWRfbWFwIGhhcyBiZWVuIHdy
+aXR0ZW4gdG8gKHdoaWNoIGhhcwo+ICAgICAgICAgICAgdGhlIGVmZmVjdCBvZiBlbmFibGluZyBz
+ZXRncm91cHMoMikgaW4gdGhlICB1c2VyICBuYW1lc+KAkAo+ICAgICAgICAgICAgcGFjZSksICBp
+dCBpcyBubyBsb25nZXIgcG9zc2libGUgdG8gZGVueSBzZXRncm91cHMoMikgYnkKPiAgICAgICAg
+ICAgIHdyaXRpbmcgdG8gL3Byb2MvW3BpZF0vc2V0Z3JvdXBzLgo+Cj4gICAgICAgICAgICBBIGNo
+aWxkIHVzZXIgbmFtZXNwYWNlIGluaGVyaXRzIHRoZSAgL3Byb2MvW3BpZF0vZ2lkX21hcAo+ICAg
+ICAgICAgICAgc2V0dGluZyBmcm9tIGl0cyBwYXJlbnQuCj4KPiAgICAgICAgICAgIElmICB0aGUg
+IHNldGdyb3VwcyAgZmlsZSAgaGFzIHRoZSB2YWx1ZSAiZGVueSIsIHRoZW4gdGhlCj4gICAgICAg
+ICAgICBzZXRncm91cHMoMikgc3lzdGVtIGNhbGwgY2FuJ3Qgc3Vic2VxdWVudGx5IGJlIHJlZW5h
+YmxlZAo+ICAgICAgICAgICAgKGJ5IHdyaXRpbmcgImFsbG93IiB0byB0aGUgZmlsZSkgaW4gdGhp
+cyB1c2VyIG5hbWVzcGFjZS4KPiAgICAgICAgICAgIFRoaXMgcmVzdHJpY3Rpb24gYWxzbyBwcm9w
+YWdhdGVzIGRvd24gdG8gYWxsIGNoaWxkICB1c2VyCj4gICAgICAgICAgICBuYW1lc3BhY2VzIG9m
+IHRoaXMgdXNlciBuYW1lc3BhY2UuCj4KPiBUaGFua3MsCj4KPiBNaWNoYWVsCj4KPiAtLQo+IE1p
+Y2hhZWwgS2Vycmlzawo+IExpbnV4IG1hbi1wYWdlcyBtYWludGFpbmVyOyBodHRwOi8vd3d3Lmtl
+cm5lbC5vcmcvZG9jL21hbi1wYWdlcy8KPiBMaW51eC9VTklYIFN5c3RlbSBQcm9ncmFtbWluZyBU
+cmFpbmluZzogaHR0cDovL21hbjcub3JnL3RyYWluaW5nLwoKCgotLSAKTWljaGFlbCBLZXJyaXNr
+CkxpbnV4IG1hbi1wYWdlcyBtYWludGFpbmVyOyBodHRwOi8vd3d3Lmtlcm5lbC5vcmcvZG9jL21h
+bi1wYWdlcy8KTGludXgvVU5JWCBTeXN0ZW0gUHJvZ3JhbW1pbmcgVHJhaW5pbmc6IGh0dHA6Ly9t
+YW43Lm9yZy90cmFpbmluZy8KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1m
+b3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9s
+aXN0aW5mby9jb250YWluZXJz
