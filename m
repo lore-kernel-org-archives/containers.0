@@ -1,8 +1,7 @@
 From: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
-Subject: [PATCH RFC 6/6] tools/quota/project_quota: sample tool for early
-	adopters
-Date: Wed, 11 Feb 2015 18:11:53 +0300
-Message-ID: <20150211151153.6717.51053.stgit__1382.35474373705$1423667941$gmane$org@buzz>
+Subject: [PATCH RFC 4/6] ext4: add project id support
+Date: Wed, 11 Feb 2015 18:11:50 +0300
+Message-ID: <20150211151150.6717.68740.stgit__25705.2578301684$1423667941$gmane$org@buzz>
 References: <20150211151146.6717.62017.stgit@buzz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,382 +21,245 @@ To: Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linu
 Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Christoph Hellwig <hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Dmitry Monakhov <dmonakhov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Li Xi <pkuelelixi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Usage: ./project_quota <command> <path> [args]...
-Commands:
-  init    <path>                initialize quota file
-  on      <path>                turn on
-  off     <path>                turn off
-  info    <path>                show project, usage and limits
-  project <path> [<id>]         get / set project id
-  limit   <path> [<bytes>]      get / set space limit
-  ilimit  <path> [<inodes>]     get / set inodes limit
-
-
-How to enable feature using debugfs tool:
-# debugfs
-debugfs:  open -w <disk>
-debugfs:  feature +FEATURE_R12
-debugfs:  quit
-# mount ...
-# project_quota init <mountpoint>
-# project_quota on <mountpoint>
+This patch adds a new internal field of ext4 inode to save project identifier.
 
 Signed-off-by: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
 ---
- tools/quota/.gitignore      |    1 
- tools/quota/Makefile        |    6 +
- tools/quota/project_quota.c |  324 +++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 331 insertions(+)
- create mode 100644 tools/quota/.gitignore
- create mode 100644 tools/quota/Makefile
- create mode 100644 tools/quota/project_quota.c
+ fs/ext4/ext4.h   |   13 ++++++++++-
+ fs/ext4/ialloc.c |    6 +++++
+ fs/ext4/inode.c  |   65 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/ext4/namei.c  |   14 ++++++++++++
+ fs/ext4/super.c  |    2 ++
+ 5 files changed, 99 insertions(+), 1 deletion(-)
 
-diff --git a/tools/quota/.gitignore b/tools/quota/.gitignore
-new file mode 100644
-index 0000000..4aacefc
---- /dev/null
-+++ b/tools/quota/.gitignore
-@@ -0,0 +1 @@
-+project_quota
-diff --git a/tools/quota/Makefile b/tools/quota/Makefile
-new file mode 100644
-index 0000000..0c3daef
---- /dev/null
-+++ b/tools/quota/Makefile
-@@ -0,0 +1,6 @@
-+CFLAGS=-Wall -W
-+
-+project_quota:
-+
-+clean:
-+	rm project_quota
-diff --git a/tools/quota/project_quota.c b/tools/quota/project_quota.c
-new file mode 100644
-index 0000000..ca7f49a
---- /dev/null
-+++ b/tools/quota/project_quota.c
-@@ -0,0 +1,324 @@
+diff --git a/fs/ext4/ext4.h b/fs/ext4/ext4.h
+index a75fba6..a3fdbb5 100644
+--- a/fs/ext4/ext4.h
++++ b/fs/ext4/ext4.h
+@@ -683,6 +683,7 @@ struct ext4_inode {
+ 	__le32  i_crtime;       /* File Creation time */
+ 	__le32  i_crtime_extra; /* extra FileCreationtime (nsec << 2 | epoch) */
+ 	__le32  i_version_hi;	/* high 32 bits for 64-bit version */
++	__le32  i_projid;	/* Project ID */
+ };
+ 
+ struct move_extent {
+@@ -938,6 +939,7 @@ struct ext4_inode_info {
+ 
+ 	/* Precomputed uuid+inum+igen checksum for seeding inode checksums */
+ 	__u32 i_csum_seed;
++	kprojid_t i_projid;
+ };
+ 
+ /*
+@@ -1522,6 +1524,7 @@ static inline void ext4_clear_state_flags(struct ext4_inode_info *ei)
+  * GDT_CSUM bits are mutually exclusive.
+  */
+ #define EXT4_FEATURE_RO_COMPAT_METADATA_CSUM	0x0400
++#define EXT4_FEATURE_RO_COMPAT_PROJECT		0x1000 /* Project ID */
+ 
+ #define EXT4_FEATURE_INCOMPAT_COMPRESSION	0x0001
+ #define EXT4_FEATURE_INCOMPAT_FILETYPE		0x0002
+@@ -1571,7 +1574,8 @@ static inline void ext4_clear_state_flags(struct ext4_inode_info *ei)
+ 					 EXT4_FEATURE_RO_COMPAT_HUGE_FILE |\
+ 					 EXT4_FEATURE_RO_COMPAT_BIGALLOC |\
+ 					 EXT4_FEATURE_RO_COMPAT_METADATA_CSUM|\
+-					 EXT4_FEATURE_RO_COMPAT_QUOTA)
++					 EXT4_FEATURE_RO_COMPAT_QUOTA |\
++					 EXT4_FEATURE_RO_COMPAT_PROJECT)
+ 
+ /*
+  * Default values for user and/or group using reserved blocks
+@@ -1579,6 +1583,11 @@ static inline void ext4_clear_state_flags(struct ext4_inode_info *ei)
+ #define	EXT4_DEF_RESUID		0
+ #define	EXT4_DEF_RESGID		0
+ 
 +/*
-+ * project_quota: Tool for project disk quota manipulations
-+ *
-+ * This program is free software; you can redistribute it and/or modify it
-+ * under the terms of the GNU General Public License as published by the Free
-+ * Software Foundation; version 2.
-+ *
-+ * This program is distributed in the hope that it will be useful, but WITHOUT
-+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-+ * more details.
-+ *
-+ * You should find a copy of v2 of the GNU General Public License somewhere on
-+ * your Linux system; if not, write to the Free Software Foundation, Inc., 59
-+ * Temple Place, Suite 330, Boston, MA 02111-1307 USA.
-+ *
-+ * Copyright (C) 2015 Yandex LLC
-+ *
-+ * Authors: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
++ * Default project ID
 + */
++#define	EXT4_DEF_PROJID		0
 +
-+#define _FILE_OFFSET_BITS 64
-+#define _GNU_SOURCE
-+#include <stdlib.h>
-+#include <stdio.h>
-+#include <string.h>
-+#include <errno.h>
-+#include <err.h>
-+#include <unistd.h>
-+#include <fcntl.h>
-+#include <limits.h>
-+#include <linux/quota.h>
-+#include <sys/quota.h>
-+#include <sys/ioctl.h>
-+#include <sys/types.h>
-+#include <sys/stat.h>
-+#include <sys/mount.h>
+ #define EXT4_DEF_INODE_READAHEAD_BLKS	32
+ 
+ /*
+@@ -2131,6 +2140,8 @@ extern int ext4_zero_partial_blocks(handle_t *handle, struct inode *inode,
+ 			     loff_t lstart, loff_t lend);
+ extern int ext4_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf);
+ extern qsize_t *ext4_get_reserved_space(struct inode *inode);
++extern int ext4_get_projid(struct inode *inode, kprojid_t *projid);
++extern int ext4_set_projid(struct inode *inode, kprojid_t projid);
+ extern void ext4_da_update_reserve_space(struct inode *inode,
+ 					int used, int quota_claim);
+ 
+diff --git a/fs/ext4/ialloc.c b/fs/ext4/ialloc.c
+index ac644c3..d81a30d 100644
+--- a/fs/ext4/ialloc.c
++++ b/fs/ext4/ialloc.c
+@@ -756,6 +756,12 @@ struct inode *__ext4_new_inode(handle_t *handle, struct inode *dir,
+ 		inode->i_gid = dir->i_gid;
+ 	} else
+ 		inode_init_owner(inode, dir, mode);
 +
-+#ifndef F_LINUX_SPECIFIC_BASE
-+#define F_LINUX_SPECIFIC_BASE	1024
-+#endif
++	if (EXT4_HAS_RO_COMPAT_FEATURE(sb, EXT4_FEATURE_RO_COMPAT_PROJECT))
++		ei->i_projid = EXT4_I(dir)->i_projid;
++	else
++		ei->i_projid = KPROJIDT_INIT(EXT4_DEF_PROJID);
 +
-+#ifndef F_GET_PROJECT
-+#define F_GET_PROJECT  (F_LINUX_SPECIFIC_BASE + 11)
-+#define F_SET_PROJECT  (F_LINUX_SPECIFIC_BASE + 12)
-+#endif
-+
-+#ifndef PRJQUOTA
-+#define PRJQUOTA 2
-+#endif
-+
-+/* First generic header */
-+struct v2_disk_dqheader {
-+	__le32 dqh_magic;	/* Magic number identifying file */
-+	__le32 dqh_version;	/* File version */
-+};
-+
-+/* Header with type and version specific information */
-+struct v2_disk_dqinfo {
-+	__le32 dqi_bgrace;	/* Time before block soft limit becomes hard limit */
-+	__le32 dqi_igrace;	/* Time before inode soft limit becomes hard limit */
-+	__le32 dqi_flags;	/* Flags for quotafile (DQF_*) */
-+	__le32 dqi_blocks;	/* Number of blocks in file */
-+	__le32 dqi_free_blk;	/* Number of first free block in the list */
-+	__le32 dqi_free_entry;	/* Number of block with at least one free entry */
-+};
-+
-+#define PROJECT_QUOTA_FILE	"quota.project"
-+#define PROJECT_QUOTA_MAGIC	0xd9c03f14
-+
-+static int find_mountpoint(const char *path, struct stat *path_st,
-+		char **device, char **fstype, char **root_path)
+ 	dquot_initialize(inode);
+ 
+ 	if (!goal)
+diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
+index 5653fa4..0ae2c39 100644
+--- a/fs/ext4/inode.c
++++ b/fs/ext4/inode.c
+@@ -3863,6 +3863,53 @@ static inline void ext4_iget_extra_inode(struct inode *inode,
+ 		EXT4_I(inode)->i_inline_off = 0;
+ }
+ 
++int ext4_get_projid(struct inode *inode, kprojid_t *projid)
 +{
-+	struct stat dev_st;
-+	char *buf = NULL, *ptr, *real_device;
-+	unsigned major, minor;
-+	size_t len;
-+	FILE *file;
++	struct super_block *sb = inode->i_sb;
 +
-+	if (stat(path, path_st))
-+		return -1;
++	if (!EXT4_HAS_RO_COMPAT_FEATURE(sb, EXT4_FEATURE_RO_COMPAT_PROJECT))
++		return -EOPNOTSUPP;
 +
-+	*root_path = malloc(PATH_MAX + 1);
-+
-+	/* since v2.6.26 */
-+	file = fopen("/proc/self/mountinfo", "r");
-+	if (!file)
-+		goto parse_mounts;
-+	while (getline(&buf, &len, file) > 0) {
-+		sscanf(buf, "%*d %*d %u:%u %*s %s", &major, &minor, *root_path);
-+		if (makedev(major, minor) != path_st->st_dev)
-+			continue;
-+		ptr = strstr(buf, " - ") + 3;
-+		*fstype = strdup(strsep(&ptr, " "));
-+		*device = strdup(strsep(&ptr, " "));
-+		goto found;
-+	}
-+
-+parse_mounts:
-+	/* for older versions */
-+	file = fopen("/proc/mounts", "r");
-+	if (!file)
-+		goto not_found;
-+	while (getline(&buf, &len, file) > 0) {
-+		ptr = buf;
-+		strsep(&ptr, " ");
-+		if (*buf != '/' || stat(buf, &dev_st) ||
-+		    dev_st.st_rdev != path_st->st_dev)
-+			continue;
-+		strcpy(*root_path, strsep(&ptr, " "));
-+		*fstype = strdup(strsep(&ptr, " "));
-+		*device = strdup(buf);
-+		goto found;
-+	}
-+not_found:
-+	free(*root_path);
-+	errno = ENODEV;
-+	return -1;
-+
-+found:
-+	real_device = realpath(*device, NULL);
-+	if (real_device) {
-+		free(*device);
-+		*device = real_device;
-+	}
++	*projid = EXT4_I(inode)->i_projid;
 +	return 0;
 +}
 +
-+static int init_project_quota(const char *quota_path)
++/* Called with inode->i_mutex locked. */
++int ext4_set_projid(struct inode *inode, kprojid_t projid)
 +{
-+	struct {
-+		struct v2_disk_dqheader header;
-+		struct v2_disk_dqinfo info;
-+		char zero[1024 * 2 - 8 * 4];
-+	} quota_init = {
-+		.header = {
-+			.dqh_magic = PROJECT_QUOTA_MAGIC,
-+			.dqh_version = 1,
-+		},
-+		.info = {
-+			.dqi_bgrace = 7 * 24 * 60 * 60,
-+			.dqi_igrace = 7 * 24 * 60 * 60,
-+			.dqi_flags = 0,
-+			.dqi_blocks = 2, /* header and root */
-+			.dqi_free_blk = 0,
-+			.dqi_free_entry = 0,
-+		},
-+		.zero = {0, },
-+	};
-+	int fd;
++	struct super_block *sb = inode->i_sb;
++	struct ext4_inode *raw_inode;
++	struct ext4_iloc iloc;
++	handle_t *handle;
++	int err;
 +
-+	fd = open(quota_path, O_CREAT|O_RDWR|O_EXCL, 0600);
-+	if (fd < 0)
-+		return fd;
-+	write(fd, &quota_init, sizeof(quota_init));
-+	fsync(fd);
-+	close(fd);
-+	return 0;
++	if (!EXT4_HAS_RO_COMPAT_FEATURE(sb, EXT4_FEATURE_RO_COMPAT_PROJECT))
++		return -EOPNOTSUPP;
++
++	/* Sanity check */
++	if (EXT4_INODE_SIZE(sb) <= EXT4_GOOD_OLD_INODE_SIZE ||
++	    !EXT4_FITS_IN_INODE(raw_inode, EXT4_I(inode), i_projid))
++		return -EOPNOTSUPP;
++
++	if (projid_eq(EXT4_I(inode)->i_projid, projid))
++		return 0;
++
++	handle = ext4_journal_start(inode, EXT4_HT_INODE, 1);
++	if (IS_ERR(handle))
++		return PTR_ERR(handle);
++	err = ext4_reserve_inode_write(handle, inode, &iloc);
++	if (!err) {
++		inode->i_ctime = ext4_current_time(inode);
++		EXT4_I(inode)->i_projid = projid;
++		err = ext4_mark_iloc_dirty(handle, inode, &iloc);
++	}
++	if (IS_SYNC(inode))
++		ext4_handle_sync(handle);
++	ext4_journal_stop(handle);
++
++	return err;
 +}
 +
-+static int get_project_id(const char *path, unsigned *project_id)
-+{
-+	int fd, ret;
+ struct inode *ext4_iget(struct super_block *sb, unsigned long ino)
+ {
+ 	struct ext4_iloc iloc;
+@@ -3874,6 +3921,7 @@ struct inode *ext4_iget(struct super_block *sb, unsigned long ino)
+ 	int block;
+ 	uid_t i_uid;
+ 	gid_t i_gid;
++	projid_t i_projid;
+ 
+ 	inode = iget_locked(sb, ino);
+ 	if (!inode)
+@@ -3923,12 +3971,20 @@ struct inode *ext4_iget(struct super_block *sb, unsigned long ino)
+ 	inode->i_mode = le16_to_cpu(raw_inode->i_mode);
+ 	i_uid = (uid_t)le16_to_cpu(raw_inode->i_uid_low);
+ 	i_gid = (gid_t)le16_to_cpu(raw_inode->i_gid_low);
 +
-+	fd = open(path, O_PATH);
-+	if (fd < 0)
-+		return fd;
-+	ret = fcntl(fd, F_GET_PROJECT, project_id);
-+	close(fd);
-+	return ret;
-+}
++	if (EXT4_HAS_RO_COMPAT_FEATURE(sb, EXT4_FEATURE_RO_COMPAT_PROJECT) &&
++	    EXT4_FITS_IN_INODE(raw_inode, ei, i_projid))
++		i_projid = (projid_t)le32_to_cpu(raw_inode->i_projid);
++	else
++		i_projid = EXT4_DEF_PROJID;
 +
-+static int set_project_id(const char *path, unsigned project_id)
-+{
-+	int fd, ret;
+ 	if (!(test_opt(inode->i_sb, NO_UID32))) {
+ 		i_uid |= le16_to_cpu(raw_inode->i_uid_high) << 16;
+ 		i_gid |= le16_to_cpu(raw_inode->i_gid_high) << 16;
+ 	}
+ 	i_uid_write(inode, i_uid);
+ 	i_gid_write(inode, i_gid);
++	ei->i_projid = KPROJIDT_INIT(i_projid);
+ 	set_nlink(inode, le16_to_cpu(raw_inode->i_links_count));
+ 
+ 	ext4_clear_state_flags(ei);	/* Only relevant on 32-bit archs */
+@@ -4192,6 +4248,15 @@ static int ext4_do_update_inode(handle_t *handle,
+ 		raw_inode->i_uid_high = 0;
+ 		raw_inode->i_gid_high = 0;
+ 	}
 +
-+	fd = open(path, O_PATH);
-+	if (fd < 0)
-+		return fd;
-+	ret = fcntl(fd, F_SET_PROJECT, project_id);
-+	close(fd);
-+	return ret;
-+}
++	if (EXT4_HAS_RO_COMPAT_FEATURE(sb, EXT4_FEATURE_RO_COMPAT_PROJECT) &&
++	    EXT4_FITS_IN_INODE(raw_inode, ei, i_projid)) {
++		projid_t i_projid;
 +
-+static void get_project_quota(const char *device, unsigned project_id,
-+		struct if_dqblk *quota)
-+{
-+	if (quotactl(QCMD(Q_GETQUOTA, PRJQUOTA), device,
-+				project_id, (caddr_t)quota))
-+		err(2, "cannot get project quota \"%u\" at \"%s\"",
-+				project_id, device);
-+}
-+
-+static void set_project_quota(const char *device, unsigned project_id,
-+		struct if_dqblk *quota)
-+{
-+	if (quotactl(QCMD(Q_SETQUOTA, PRJQUOTA),
-+		     device, project_id, (caddr_t)quota))
-+		err(2, "cannot set project quota \"%u\" at \"%s\"",
-+				project_id, device);
-+}
-+
-+int main (int argc, char **argv) {
-+	char *cmd, *path, *device, *fstype, *root_path;
-+	struct if_dqblk quota;
-+	struct stat path_st;
-+	unsigned project_id;
-+
-+	if (argc < 3)
-+		goto usage;
-+
-+	cmd = argv[1];
-+	path = argv[2];
-+	if (find_mountpoint(path, &path_st, &device, &fstype, &root_path))
-+		err(2, "cannot find mountpoint for \"%s\"", path);
-+
-+	if (!strcmp(cmd, "limit") || !strcmp(cmd, "ilimit") ||
-+	    !strcmp(cmd, "info") || !strcmp(cmd, "parent")) {
-+		if (get_project_id(path, &project_id))
-+			err(2, "cannot get project id for \"%s\"", path);
++		i_projid = from_kprojid(&init_user_ns, ei->i_projid);
++		raw_inode->i_projid = cpu_to_le32(i_projid);
 +	}
 +
-+	if (!strcmp(cmd, "init")) {
-+		if (S_ISDIR(path_st.st_mode))
-+			asprintf(&path, "%s/%s", path, PROJECT_QUOTA_FILE);
+ 	raw_inode->i_links_count = cpu_to_le16(inode->i_nlink);
+ 
+ 	EXT4_INODE_SET_XTIME(i_ctime, inode, raw_inode);
+diff --git a/fs/ext4/namei.c b/fs/ext4/namei.c
+index 2291923..9337d81 100644
+--- a/fs/ext4/namei.c
++++ b/fs/ext4/namei.c
+@@ -2938,6 +2938,10 @@ static int ext4_link(struct dentry *old_dentry,
+ 	if (inode->i_nlink >= EXT4_LINK_MAX)
+ 		return -EMLINK;
+ 
++	if (!capable_mix_inode_project(EXT4_I(dir)->i_projid,
++				       EXT4_I(inode)->i_projid))
++		return -EXDEV;
 +
-+		if (init_project_quota(path))
-+			err(2, "cannot init project quota file \"%s\"", path);
+ 	dquot_initialize(dir);
+ 
+ retry:
+@@ -3217,6 +3221,10 @@ static int ext4_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 	int credits;
+ 	u8 old_file_type;
+ 
++	if (!capable_mix_inode_project(EXT4_I(new.dir)->i_projid,
++				       EXT4_I(old.inode)->i_projid))
++		return -EXDEV;
 +
-+	} else if (!strcmp(cmd, "on")) {
-+		struct v2_disk_dqheader header;
-+		int fd, format;
+ 	dquot_initialize(old.dir);
+ 	dquot_initialize(new.dir);
+ 
+@@ -3395,6 +3403,12 @@ static int ext4_cross_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 	u8 new_file_type;
+ 	int retval;
+ 
++	if (!capable_mix_inode_project(EXT4_I(new.dir)->i_projid,
++				       EXT4_I(old.inode)->i_projid) ||
++	    !capable_mix_inode_project(EXT4_I(old.dir)->i_projid,
++				       EXT4_I(new.inode)->i_projid))
++		return -EXDEV;
 +
-+		if (S_ISDIR(path_st.st_mode))
-+			asprintf(&path, "%s/%s", path, PROJECT_QUOTA_FILE);
-+
-+		fd = open(path, O_RDONLY);
-+		if (fd < 0)
-+			err(2, "cannot open quota file \"%s\"", path);
-+		if (read(fd, &header, sizeof(header)) != sizeof(header))
-+			err(2, "cannot read quota file \"%s\"", path);
-+		close(fd);
-+
-+		if (header.dqh_magic != PROJECT_QUOTA_MAGIC)
-+			errx(2, "wrong quota file magic");
-+
-+		if (header.dqh_version == 1)
-+			format = QFMT_VFS_V1;
-+		else
-+			errx(2, "unsupported quota file version");
-+
-+		if (mount(NULL, root_path, NULL, MS_REMOUNT, "prjquota"))
-+			err(2, "cannot remount \"%s\"", root_path);
-+
-+		if (quotactl(QCMD(Q_QUOTAON, PRJQUOTA), device,
-+					format, (caddr_t)path))
-+			err(2, "cannot turn on project quota for %s", device);
-+
-+	} else if (!strcmp(cmd, "off")) {
-+
-+		if (quotactl(QCMD(Q_QUOTAOFF, PRJQUOTA), device, 0, NULL))
-+			err(2, "cannot turn off project quota for %s", device);
-+
-+	} else if (!strcmp(cmd, "project")) {
-+		if (argc < 4) {
-+			if (get_project_id(path, &project_id))
-+				err(2, "cannot get project id for \"%s\"", path);
-+			printf("%u\n", project_id);
-+		} else {
-+			project_id = atoi(argv[3]);
-+			if (set_project_id(path, project_id))
-+				err(2, "cannot set project id for \"%s\"", path);
-+		}
-+	} else if (!strcmp(cmd, "limit")) {
-+		if (argc < 4) {
-+			get_project_quota(device, project_id, &quota);
-+			printf("%lld\n", quota.dqb_bhardlimit * QIF_DQBLKSIZE);
-+		} else {
-+			quota.dqb_bhardlimit = atoll(argv[3]) / QIF_DQBLKSIZE;
-+			quota.dqb_bsoftlimit = 0;
-+			quota.dqb_valid = QIF_BLIMITS;
-+			set_project_quota(device, project_id, &quota);
-+		}
-+	} else if (!strcmp(cmd, "ilimit")) {
-+		if (argc < 4) {
-+			get_project_quota(device, project_id, &quota);
-+			printf("%lld\n", quota.dqb_ihardlimit);
-+		} else {
-+			quota.dqb_ihardlimit = atoll(argv[3]);
-+			quota.dqb_isoftlimit = 0;
-+			quota.dqb_valid = QIF_ILIMITS;
-+			set_project_quota(device, project_id, &quota);
-+		}
-+	} else if (!strcmp(cmd, "info")) {
-+		get_project_quota(device, project_id, &quota);
-+		printf("project   %u\n", project_id);
-+		printf("usage     %llu\n", quota.dqb_curspace);
-+		printf("limit     %llu\n", quota.dqb_bhardlimit * QIF_DQBLKSIZE);
-+		printf("inodes    %llu\n", quota.dqb_curinodes);
-+		printf("ilimit    %llu\n", quota.dqb_ihardlimit);
-+	} else {
-+		warnx("Unknown command \"%s\"", cmd);
-+		goto usage;
-+	}
-+
-+	free(device);
-+	free(fstype);
-+	free(root_path);
-+
-+	return 0;
-+
-+usage:
-+	fprintf(stderr, "Usage: %s <command> <path> [args]...\n"
-+			"Commands:\n"
-+			"  init    <path>                initialize quota file\n"
-+			"  on      <path>                turn on\n"
-+			"  off     <path>                turn off\n"
-+			"  info    <path>                show project, usage and limits\n"
-+			"  project <path> [<id>]         get / set project id\n"
-+			"  limit   <path> [<bytes>]      get / set space limit\n"
-+			"  ilimit  <path> [<inodes>]     get / set inodes limit\n",
-+			argv[0]);
-+	return 2;
-+}
+ 	dquot_initialize(old.dir);
+ 	dquot_initialize(new.dir);
+ 
+diff --git a/fs/ext4/super.c b/fs/ext4/super.c
+index ac64edb..d656269 100644
+--- a/fs/ext4/super.c
++++ b/fs/ext4/super.c
+@@ -1103,6 +1103,8 @@ static const struct super_operations ext4_sops = {
+ 	.get_dquots	= ext4_get_dquots,
+ #endif
+ 	.bdev_try_to_free_page = bdev_try_to_free_page,
++	.get_projid	= ext4_get_projid,
++	.set_projid	= ext4_set_projid,
+ };
+ 
+ static const struct export_operations ext4_export_ops = {
