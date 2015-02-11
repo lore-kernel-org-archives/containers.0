@@ -1,16 +1,22 @@
-From: Alexander Larsson <alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Detecting the use of a mount in another namespace
-Date: Tue, 10 Feb 2015 11:34:42 +0100
-Message-ID: <1423564482.14469.8.camel@redhat.com>
-References: <1421312165.8788.7.camel@redhat.com>
-	<20150115103417.GC8057@redhat.com>
-	<1421339341.29655.13.camel@redhat.com>
-	<87d26cvuy8.fsf@x220.int.ebiederm.org>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCHv3 8/8] cgroup: Add documentation for cgroup namespaces
+Date: Wed, 11 Feb 2015 04:46:16 +0100
+Message-ID: <20150211034616.GA25022__38860.2945757613$1423626391$gmane$org@mail.hallyn.com>
+References: <54ACFC38.5070007@nod.at> <87fvbmir9q.fsf@x220.int.ebiederm.org>
+	<20150107193059.GA1857@mail.hallyn.com>
+	<87bnma6xwv.fsf@x220.int.ebiederm.org>
+	<20150107224430.GA28414@htj.dyndns.org>
+	<878uhe42km.fsf@x220.int.ebiederm.org>
+	<20150107230615.GA28630@htj.dyndns.org>
+	<87fvbm2nni.fsf@x220.int.ebiederm.org>
+	<87y4peyxw5.fsf@x220.int.ebiederm.org>
+	<20150107233553.GC28630@htj.dyndns.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87d26cvuy8.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20150107233553.GC28630-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,46 +26,71 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, cgroups mailinglist <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gc8O2biwgMjAxNS0wMS0xOCBhdCAxMTo1MSAtMDYwMCwgRXJpYyBXLiBCaWVkZXJtYW4gd3Jv
-dGU6Cj4gQWxleGFuZGVyIExhcnNzb24gPGFsZXhsQHJlZGhhdC5jb20+IHdyaXRlczoKCj4gVGhl
-IHdheSBJIHdvdWxkIHJlY29tbWVuZCBpcyB0byBnaXZlIGVhY2ggb2YgeW91ciBjb250YWluZXJz
-IGEgcmVhZC1vbmx5Cj4gc25hcHNob3Qgb2YgL3VzciwgYW5kIHRoZW4gZGVsZXRlIHRoYXQgc25h
-cHNob3Qgd2hlbiBkb25lLgo+IEFrYToKPiAKPiBjcCAtbGRyIC91c3IgL3Vzci1zbmFwc2hvdAo+
-ICMgU29tZSB0aW1lIGxhdGVyIHdoZW4geW91IGFyZSBkb25lCj4gcm0gLXJmIC91c3Itc25hcHNo
-b3QKPiAKPiBUaGVyZSBhcmUgbW9yZSBlbGVnYW50IHdheXMgKGJ0cmZzIHNuYXBzaG90cyBldGMp
-IGJ1dCB0aGUgYWJvdmUgd2lsbAo+IHdvcmsgb24gZXZlcnkgZmlsZXN5c3RlbSB0aGF0IHN1cHBv
-cnRzIGhhcmRsaW5rcy4KPiAKPiBGb3Igd2hhdCB5b3Ugd2VyZSB3YW50aW5nIHRvIGRvIHdpdGgg
-bW91bnRzIGluIHRoZSBnZW5lcmFsIGNhc2UgdGhlCj4ga2VybmVsIGhhcyBuZXZlciBoYWQgZW5v
-dWdoIGluZm9ybWF0aW9uIHRvIGRvIHdoYXQgeW91IHdhbnQgdG8gZG8gd2l0aAo+IG1vdW50cy4g
-IFRoaW5rIHJlbW90ZSBmaWxlc3lzdGVtcyBsaWtlIG5mcy4gIEluZm9ybWF0aW9uIGZyb20gcmVt
-b3RlCj4gZmlsZXN5c3RlbXMgYWJvdXQgd2hvIGlmIGFueW9uZSBoYXMgYSBtb3VudHBvaW50IHNv
-bWV3aGVyZSBzaW1wbHkgZG9lcwo+IG5vdCBwcm9wYWdhdGUgYmV0d2VlbiBrZXJuZWxzLgoKSSdt
-IG5vdCB0cnlpbmcgdG8gc29sdmUgdGhlIGdlbmVyaWMgcHJvYmxlbSB0aG91Z2gsIGJ1dCBhIHZl
-cnkgc3BlY2lmaWMKb25lLiBJJ20gc2V0dGluZyB1cCBhIHNhbmRib3ggd2l0aCBhIGJpbmQgbW91
-bnQgZm9yIC91c3IgZnJvbSBhCmRpcmVjdG9yeSBJIG15c2VsZiBjb250cm9sLCBhbmQgSSB3YW50
-IHRvIGtub3cgaWYgYW55IHNhbmRib3ggKGZyb20gYW55CnVzZXIpIGlzIHN0aWxsIHJ1bm5pbmcg
-d2l0aCB0aGF0IC91c3IgbW91bnRlZC4KCkluIHRoZSBlbmQgSSBzZXQgdXAgYSAvdXNyLy5yZWYg
-ZmlsZSBhbmQgaGFkIHBpZCAxIGluIHRoZSBzYW5kYm94IHRha2UKYW4gYWR2aXNvcnkgcmVhZCBs
-b2NrIG9uIGl0LiBJIGNhbiB0aGVuIHRyeSB0byBnZXQgYSB3cml0ZSBsb2NrIG9uIHRoaXMKZmls
-ZSBhbmQgaWYgdGhhdCBmYWlscyBzb21lIHNhbmRib3ggbWF5IHN0aWxsIGJlIHVzaW5nIGl0LiBJ
-dCBpcyBub3QKZmFpbCBzYWZlLCBhcyBhbnlvbmUgZWxzZSBjYW4gZ3JhYiBhIGxvY2sgb24gdGhp
-cywgYnV0IGRvaW5nIHNvIGlzIG5vdApyZWFsbHkgYSBwcm9ibGVtLCBhcyBJIGNhbiBzdGlsbCBm
-b3JjZSByZW1vdmUgaXQgaWYgbmVlZGVkLiAKClRoZSBhYm92ZSBhbGxvd3MgbWUgdG8gZG8gYW4g
-YXV0b21hdGljICJsaXZlIHVwZGF0ZSIgb2Ygc3VjaCBhIC91c3IgYnkKc2V0dGluZyB1cCB0aGUg
-bmV3IC91c3IsIHRoZW4gbW92aW5nIHRoZSBvbGQgb25lIHRvIGEgInJlbW92ZWQiCnN1YmRpcmVj
-dG9yeSBhbmQgdGhlbiBkZWxheSByZW1vdmUgdW50aWwgaXQgaXMgbm8gbG9uZ2VyIGluIHVzZSAo
-b3IgdGhlCnVzZXIgZm9yY2UgcmVtb3ZlcyBpdCkuCgotLSAKPS09LT0tPS09LT0tPS09LT0tPS09
-LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09CiBB
-bGV4YW5kZXIgTGFyc3NvbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgUmVkIEhhdCwgSW5jIAogICAgICAgYWxleGxAcmVkaGF0LmNvbSAgICAgICAgICAgIGFsZXhh
-bmRlci5sYXJzc29uQGdtYWlsLmNvbSAKSGUncyBhIHNob3J0LXNpZ2h0ZWQgZGV2aW91cyBmaWxt
-bWFrZXIgd2hvIGhpZGVzIGhpcyBzY2FycmVkIGZhY2UgYmVoaW5kIAphIG1hc2suIFNoZSdzIGEg
-cmFkaWNhbCBzdHJlZXRzbWFydCBsYXd5ZXIgd2l0aCBvbmx5IGhlcnNlbGYgdG8gYmxhbWUuIApU
-aGV5IGZpZ2h0IGNyaW1lISAKCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgt
-Zm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4v
-bGlzdGluZm8vY29udGFpbmVycw==
+Quoting Tejun Heo (tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org):
+> On Wed, Jan 07, 2015 at 05:27:38PM -0600, Eric W. Biederman wrote:
+> > >> The -o SUBSYS option doesn't exist.  Jesus, at least get yourself
+> > >> familiar with the basics before claiming random stuff.
+> > 
+> > Oh let's see I got that command line option out of /proc/mounts and yes
+> > it works.  Perhaps it doesn't if I invoke unified hiearchies but the
+> > option does in fact exist and work.
+> 
+> I meant the -o SUBSYS doesn't exist for unified hierarchy.
+> 
+> > Now I really do need to test report regressions, and send probably send
+> > regression fixes.  If I understand your strange ranting I think you just
+> > told me that option that -o SUBSYS does work with unified hierarchies.
+> 
+> What?  Why would -O SUBSYS exist for unified hierarchy?  It's unified
+> for all controllers.
+> 
+> > Tejun.  I asked you specifically about this case 2 years ago at plumbers
+> > and you personally told me this would continue to work.  I am going to
+> > hold you to that.
+> 
+> I have no idea what you're talking about in *THIS* thread.  I'm fully
+> aware of what was discussed *THEN*.
+> 
+> > Fixing bugs is one thing.  Gratuitious regressions that make supporting
+> > existing user space applications insane is another.
+> 
+> Can you explain what problem you're actually trying to talk about
+> without spouting random claims about regressions?
+
+A few weeks ago, in order to test the cgroup namespace patchset with lxc,
+I went through the motions of getting lxc to work with unified hierarchy.
+A few of the things I had to change:
+
+1. Hierarchy_num in /proc/cgroups and /proc/self/cgroup start at 0.  Used
+to start with 1.  I expect many userspace parsers to be broken by this.
+
+2. After creating every non-leaf cgroup, we must fill in the
+cgroup.subtree_cgroups file.  This is extra work which userspace
+doesn't have to do right now.
+
+3. Let's say we want to create a freezer cgroup /foo/bar for some set of
+tasks, which they will administer.  In fact let's assume we are going to
+use cgroup namespaces.  We have to put the tasks into /foo/bar, unshare
+the cgroup ns, then create /foo/bar/leaf, move the tasks into /foo/bar/leaf,
+and then write 'freezer' into /foo/bar.  (If we're not using cgroup
+namespaces, then we have to do a similar thing to let the tasks administer
+/foo/bar while placing them under /foo/bar/leaf).  The oddness I'm pointing
+to is where the tasks have to know that they can create cgroups in "..".
+
+For containers this becomes odd.  We tend to group containers by the
+tasks in and under a cgroup.  We now will have to assume a convention
+where we know to check for tasks in and under "..", since by definition
+pid 1's cgroup (in a container) cannot have children.
+
+4. The per-cgroup "tasks" file not existing seems odd, although certainly
+unexpected by much current software.
+
+So, if the unified hierarchy is going to not cause undue pain, existing
+software really needs to start working now to use it.  It's going to be
+a sizeable task for lxc.
+
+-serge
