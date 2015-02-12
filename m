@@ -1,11 +1,11 @@
-From: Brian <Sussan-Lp6NDs26mGtCPWQmNIN3aQ@public.gmane.org>
-Subject: =?UTF-8?Q?Would you like a new car??=
-Date: Thu, 12 Feb 2015 18:08:50 +0100
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@duousnews.info>
-Reply-To: bounce-38341-Lp6NDs26mGtCPWQmNIN3aQ@public.gmane.org
+From: Sussan <Luke-F3yL2tRIP7W9RC+f8J1Yzg@public.gmane.org>
+Subject: =?UTF-8?Q?Do you have my number??=
+Date: Thu, 12 Feb 2015 18:34:31 +0100
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@veggiesnews.info>
+Reply-To: bounce-38341-F3yL2tRIP7W9RC+f8J1Yzg@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,29 +19,15 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This video was recently been banned
-by some of the major search engines...
-
-But if you move fast, you can still see it 
-if you follow this special link.
- 
->>> http://click.duousnews.info/index.php?id=1431831&a=38341&b=4186&c=135
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Our address is Tortola, Providence 1512, British Virgin Islands, 
-If you do not wish to receive future email, click here.
-http://click.duousnews.info/index.php?o=2&a=38341&b=4186&c=135
-(You can also send your request to Customer Care at the street address above.) 
+QXQgdGhlIDE4IG1pbi4gbWFyayBpbiB0aGlzIHZpZGVvIEkgc2F3IHNvbWVvbmUgKEkgdGhpbmsg
+aXTigJlzCnlvdT8pIG1ha2luZyBvdmVyICQyLDAwMCEKCkNoZWNrIGl0IG91dCEKCmh0dHA6Ly9j
+bGljay52ZWdnaWVzbmV3cy5pbmZvL2luZGV4LnBocD9pZD0zNTM5NzA0JmE9MzgzNDEmYj00MTg3
+JmM9MTM1CgpQcmV0dHkgY29vbCByaWdodD8KCgoKCgoKCgoKCgoKCgoKT3VyIGFkZHJlc3MgaXMg
+VG9ydG9sYSwgUHJvdmlkZW5jZSAxNTEyLCBCcml0aXNoIFZpcmdpbiBJc2xhbmRzLCAKSWYgeW91
+IGRvIG5vdCB3aXNoIHRvIHJlY2VpdmUgZnV0dXJlIGVtYWlsLCBjbGljayBoZXJlLgpodHRwOi8v
+Y2xpY2sudmVnZ2llc25ld3MuaW5mby9pbmRleC5waHA/bz0yJmE9MzgzNDEmYj00MTg3JmM9MTM1
+CihZb3UgY2FuIGFsc28gc2VuZCB5b3VyIHJlcXVlc3QgdG8gQ3VzdG9tZXIgQ2FyZSBhdCB0aGUg
+c3RyZWV0IGFkZHJlc3MgYWJvdmUuKSAKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5s
+aW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFp
+bG1hbi9saXN0aW5mby9jb250YWluZXJz
