@@ -1,11 +1,11 @@
-From: Kevin <Luke-psGR4Jf9IJJ+xPeBQ9Deuw@public.gmane.org>
-Subject: =?UTF-8?Q?NEED YOUR HELP (Beginners Preferred)?=
-Date: Fri, 13 Feb 2015 21:10:54 +0100
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@nettlenews.info>
-Reply-To: bounce-38341-psGR4Jf9IJJ+xPeBQ9Deuw@public.gmane.org
+From: Danik <Brian-4Z0IBaXVlzkFHQQy/6e8+GGXanvQGlWp@public.gmane.org>
+Subject: =?UTF-8?Q?Do you have my number??=
+Date: Fri, 13 Feb 2015 22:15:49 +0100
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@shavingsnews.info>
+Reply-To: bounce-38341-4Z0IBaXVlzkFHQQy/6e8+GGXanvQGlWp@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,78 +19,15 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi there,
-
-I need your help for one second.
-This is really important and involves
-you getting PAID today.
-
-I need you to help me "beta-test"
-a brand new mobile app that's making
-over $44,491 per MONTH for its users.
-
-If you've never made a penny online before,
-this is EXACTLY what you've been looking for.
-
-Take 5 seconds to apply here:
-
-==> http://click.nettlenews.info/index.php?id=6283717&a=38341&b=4260&c=135
-
-Here are the details:
-
-- No Experience Necessary
-- Beginners Are Preferred
-- No websites needed
-- No CPA
-- No PPC
-- No Fake "1-Click" Systems To Try
-- No Fake Actors
-- JUST REAL RESULTS
-- Live Proof and Live Case Studies
-
-You simply DOWNLOAD THE APP and GET PAID.
-
-Go here right now and download the app:
-
-==> http://click.nettlenews.info/index.php?id=6283717&a=38341&b=4260&c=135
-
-REMEMBER: BEGINNERS ARE PREFERRED.
-
-If you're a beginner, you need to register
-and download the app now.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Our address is Tortola, Providence 1512, British Virgin Islands, 
-If you do not wish to receive future email, click here.
-http://click.nettlenews.info/index.php?o=2&a=38341&b=4260&c=135
-(You can also send your request to Customer Care at the street address above.) 
+QXQgdGhlIDE4IG1pbi4gbWFyayBpbiB0aGlzIHZpZGVvIEkgc2F3IHNvbWVvbmUgKEkgdGhpbmsg
+aXTigJlzCnlvdT8pIG1ha2luZyBvdmVyICQyLDAwMCEKCkNoZWNrIGl0IG91dCEKCmh0dHA6Ly9j
+bGljay5zaGF2aW5nc25ld3MuaW5mby9pbmRleC5waHA/aWQ9MzUzOTcwNCZhPTM4MzQxJmI9NDI2
+MSZjPTEzNQoKUHJldHR5IGNvb2wgcmlnaHQ/CgoKCgoKCgoKCgoKCgoKCk91ciBhZGRyZXNzIGlz
+IFRvcnRvbGEsIFByb3ZpZGVuY2UgMTUxMiwgQnJpdGlzaCBWaXJnaW4gSXNsYW5kcywgCklmIHlv
+dSBkbyBub3Qgd2lzaCB0byByZWNlaXZlIGZ1dHVyZSBlbWFpbCwgY2xpY2sgaGVyZS4KaHR0cDov
+L2NsaWNrLnNoYXZpbmdzbmV3cy5pbmZvL2luZGV4LnBocD9vPTImYT0zODM0MSZiPTQyNjEmYz0x
+MzUKKFlvdSBjYW4gYWxzbyBzZW5kIHlvdXIgcmVxdWVzdCB0byBDdXN0b21lciBDYXJlIGF0IHRo
+ZSBzdHJlZXQgYWRkcmVzcyBhYm92ZS4pIApfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3Rz
+LmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9t
+YWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
