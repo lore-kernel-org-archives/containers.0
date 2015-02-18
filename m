@@ -1,11 +1,11 @@
-From: Danik <Sussan-OBBfvjgFSdxCPWQmNIN3aQ@public.gmane.org>
-Subject: =?UTF-8?Q?eMobileCode is LIVE (Early Bird Access)?=
-Date: Wed, 18 Feb 2015 16:48:31 -0500
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@sorernews.info>
-Reply-To: bounce-38341-OBBfvjgFSdxCPWQmNIN3aQ@public.gmane.org
+From: Sussan <Kevin-iaDjsff1HTW9RC+f8J1Yzg@public.gmane.org>
+Subject: =?UTF-8?Q?Can You $250 into $8,787 in Hours? Yes!?=
+Date: Wed, 18 Feb 2015 17:21:58 -0500
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@sailingnews.info>
+Reply-To: bounce-38341-iaDjsff1HTW9RC+f8J1Yzg@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,81 +19,32 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Read this important email right now.
-
-If you have a mobile phone, I found a position
-for you that will earn you money tonight.
-Up to $4,241 in a single day.
-
-NO EXPERIENCE IS NEEDED for this position.
-You just need a mobile phone of any type.
-
-GET INSTANT ACCESS NOW:
-
-==> http://click.sorernews.info/index.php?id=5404545&a=38341&b=4423&c=135
-
-This is an extremely coveted position, 
-but if you register now, you can get a spot.
-
-Here are the qualifications to get in:
-
-- You must have a mobile phone or computer.
-- You do NOT need experience.
-- You do NOT need any money to get started.
-- You do NOT need to be able to make websites.
-- You do NOT need to spend a lot of time.
- 
-All you have to do is run a special app o
-on your phone, follow the instructions, and get paid!
-
-Get the app here:
-
-==> http://click.sorernews.info/index.php?id=5404545&a=38341&b=4423&c=135
-
-I wanted to make sure I passed this 
-along to you right away. You need to sign up now.
-
-You can make up to $4,241 TODAY simply by being
-at the right place at the right time. This is serious.
-
-You need to act now:
-
-==> http://click.sorernews.info/index.php?id=5404545&a=38341&b=4423&c=135
-
-Sign up now and start earning with your cellphone.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Our address is Tortola, Providence 1512, British Virgin Islands, 
-If you do not wish to receive future email, click here.
-http://click.sorernews.info/index.php?o=2&a=38341&b=4423&c=135
-(You can also send your request to Customer Care at the street address above.) 
+SGkgLAoKSW1hZ2luZSBzdGFydGluZyB5b3VyIGRheSBvdXQgd2l0aCBqdXN0ICQyNTAgaW4geW91
+ciAKdHJhZGluZyBhY2NvdW50IGFuZCBieSB0aGUgdGltZSB5b3UgZ2V0IGhvbWUgZnJvbSBkaW5u
+ZXLigKYKCkl04oCZcyBFWFBMT0RFRCBJTlRPICQxOSwwMDAhCgpJdOKAmXMgaGFwcGVuaW5nIGV2
+ZXJ5IGRheSBmb3IgdGhlIGx1Y2t5IHVzZXJzIG9mIENvbGluIApXYWxrZXLigJlzIEJpbmFyeSBN
+YWNoaW5lLgoKVGFrZSBhIGxvb2sgYXQgdGhpcyAtID09PiBodHRwOi8vY2xpY2suc2FpbGluZ25l
+d3MuaW5mby9pbmRleC5waHA/aWQ9NzUyMjA5OCZhPTM4MzQxJmI9NDQyNCZjPTEzNQoKUGF5b3V0
+cyBvZiAkMSw1MDAsICQxLDIwMCwgJDIsNTAw4oCmCgpUaGVuIG90aGVycyBhdCAkMSw4MDAsICQx
+LDUwMCBhbmQgZXZlbiAkMywwMDDigKYKCkFuZCBUSEFUIGlzIGEgdHlwaWNhbCBkYXkuCgpCcmlu
+Z2luZyBpbiAkMjAwLDAwMCBpbiBhIG1vbnRoIGlzIG5vdCB1bnVzdWFsLgoKVEhJUyBpcyBubyBq
+b2tlLgoKQ2hlY2sgaXQgb3V0IHJpZ2h0IG5vdyAtID09PiBodHRwOi8vY2xpY2suc2FpbGluZ25l
+d3MuaW5mby9pbmRleC5waHA/aWQ9NzUyMjA5OCZhPTM4MzQxJmI9NDQyNCZjPTEzNQoKSXQgcmVx
+dWlyZXMgcHJhY3RpY2FsbHkgbm90aGluZyBvdXQgb2YgcG9ja2V0IHRvIGdldCBzdGFydGVkLgoK
+U2VyaW91c2x5LCB5b3XigJlsbCBiZSBhYmxlIHRvIHR1cm4gYSBjb3VwbGUgb2YgaHVuZHJlZCAK
+YnVja3MgaW50byBzb21lIE1BSk9SIEJBTksgYnkgdGhpcyB0aW1lIHRvbW9ycm93IQoKQW5kIHJl
+bGF4OyB0aGVyZeKAmXMgbm90aGluZyB0byBidXksIG5vIHNjYW1zIHRvIHdvcnJ5IGFib3V0IAph
+bmQgbm8gbG9uZy10ZXJtIOKAnHNpZ24geW91ciBsaWZlIGF3YXnigJ0gb2JsaWdhdGlvbnMuCgpX
+ZeKAmXZlIGNoZWNrZWQgaXQgb3V0IGFuZCBJVCBJUyBUSEUgUkVBTCBERUFMLgoKVGFrZSBhIGxv
+b2sgaGVyZSAtID09PiBodHRwOi8vY2xpY2suc2FpbGluZ25ld3MuaW5mby9pbmRleC5waHA/aWQ9
+NzUyMjA5OCZhPTM4MzQxJmI9NDQyNCZjPTEzNQoKVG8geW91ciB3ZWFsdGghCgpTdXNzYW4KCgoK
+CgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgpPdXIgYWRkcmVzcyBpcyBUb3J0b2xhLCBQcm92
+aWRlbmNlIDE1MTIsIEJyaXRpc2ggVmlyZ2luIElzbGFuZHMsIApJZiB5b3UgZG8gbm90IHdpc2gg
+dG8gcmVjZWl2ZSBmdXR1cmUgZW1haWwsIGNsaWNrIGhlcmUuCmh0dHA6Ly9jbGljay5zYWlsaW5n
+bmV3cy5pbmZvL2luZGV4LnBocD9vPTImYT0zODM0MSZiPTQ0MjQmYz0xMzUKKFlvdSBjYW4gYWxz
+byBzZW5kIHlvdXIgcmVxdWVzdCB0byBDdXN0b21lciBDYXJlIGF0IHRoZSBzdHJlZXQgYWRkcmVz
+cyBhYm92ZS4pIAoKCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNv
+bnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5v
+cmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29u
+dGFpbmVycw==
