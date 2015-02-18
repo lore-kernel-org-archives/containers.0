@@ -1,11 +1,11 @@
-From: Kevin <Brian-UMs6txbTtBl+g8yakE3+Dg@public.gmane.org>
-Subject: =?UTF-8?Q?Did you see this trading tool??=
-Date: Mon, 16 Feb 2015 19:47:52 -0500
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@apenelawat.info>
-Reply-To: bounce-38341-UMs6txbTtBl+g8yakE3+Dg@public.gmane.org
+From: Danik <Sussan-OBBfvjgFSdxCPWQmNIN3aQ@public.gmane.org>
+Subject: =?UTF-8?Q?eMobileCode is LIVE (Early Bird Access)?=
+Date: Wed, 18 Feb 2015 16:48:31 -0500
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@sorernews.info>
+Reply-To: bounce-38341-OBBfvjgFSdxCPWQmNIN3aQ@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,23 +19,81 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SGV5ICwKCllvdSBnb3QgdG8gc2VlIHRoZSBwcm9maXRzIHRoaXMgc29mdHdhcmUgaXMgbWFraW5n
-ISAgCkl04oCZcyBTSU1QTEUgYW5kIEVGRkVDVElWRSBhbmQgaXTigJlzIEZSRUUKSXJpcy4gQyBy
-b3BlZCBpbiBFVVIgNTc0LDE3My42NyAgaW4gYSBGRVcgV0VFS1MhCkFmdGVyIEkgc2F3IHRoYXQg
-ZGVjaWRlZCB0byBqb2luIGFzIHdlbGzigKYKWW91IGNhbiB0b28gaWYgeW91IGNsaWNrIGJlbG93
-4oCmCgpodHRwOi8vY2xpY2suYXBlbmVsYXdhdC5pbmZvL2luZGV4LnBocD9pZD0xMDc2MDk2JmE9
-MzgzNDEmYj00MzU0JmM9MTM1Ckkga25vdyBmb3IgYSBmYWN0IHRoYXQgNTAgcGVvcGxlIApoYXZl
-IFBST0ZJVEVEIEhVR0VMWQoKWW91IERPTuKAmVQgTkVFRDoKRXhwZXJpZW5jZQpUZWNobmljYWwg
-S25vd2xlZGdlIApIYXJkIFdvcmsgCgpUbyBiZW5lZml0IGZyb20gdGhpcyBpbmNyZWRpYmxlIHRv
-b2whCkl04oCZcyB0aW1lIHRlc3RlZCBhbmQgcHJvdmVuIAp0byBnZW5lcmF0ZSBtYXNzaXZlIHBy
-b2ZpdHMgCnRvIHlvdXIgYWNjb3VudCBldmVyeSBzaW5nbGUgZGF5IQoKaHR0cDovL2NsaWNrLmFw
-ZW5lbGF3YXQuaW5mby9pbmRleC5waHA/aWQ9MTA3NjA5NiZhPTM4MzQxJmI9NDM1NCZjPTEzNQoK
-VGhhbmtzLApLZXZpbgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCk91ciBhZGRyZXNz
-IGlzIFRvcnRvbGEsIFByb3ZpZGVuY2UgMTUxMiwgQnJpdGlzaCBWaXJnaW4gSXNsYW5kcywgCklm
-IHlvdSBkbyBub3Qgd2lzaCB0byByZWNlaXZlIGZ1dHVyZSBlbWFpbCwgY2xpY2sgaGVyZS4KaHR0
-cDovL2NsaWNrLmFwZW5lbGF3YXQuaW5mby9pbmRleC5waHA/bz0yJmE9MzgzNDEmYj00MzU0JmM9
-MTM1CihZb3UgY2FuIGFsc28gc2VuZCB5b3VyIHJlcXVlc3QgdG8gQ3VzdG9tZXIgQ2FyZSBhdCB0
-aGUgc3RyZWV0IGFkZHJlc3MgYWJvdmUuKSAKCuKAgwoKX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVy
-c0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlv
-bi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Read this important email right now.
+
+If you have a mobile phone, I found a position
+for you that will earn you money tonight.
+Up to $4,241 in a single day.
+
+NO EXPERIENCE IS NEEDED for this position.
+You just need a mobile phone of any type.
+
+GET INSTANT ACCESS NOW:
+
+==> http://click.sorernews.info/index.php?id=5404545&a=38341&b=4423&c=135
+
+This is an extremely coveted position, 
+but if you register now, you can get a spot.
+
+Here are the qualifications to get in:
+
+- You must have a mobile phone or computer.
+- You do NOT need experience.
+- You do NOT need any money to get started.
+- You do NOT need to be able to make websites.
+- You do NOT need to spend a lot of time.
+ 
+All you have to do is run a special app o
+on your phone, follow the instructions, and get paid!
+
+Get the app here:
+
+==> http://click.sorernews.info/index.php?id=5404545&a=38341&b=4423&c=135
+
+I wanted to make sure I passed this 
+along to you right away. You need to sign up now.
+
+You can make up to $4,241 TODAY simply by being
+at the right place at the right time. This is serious.
+
+You need to act now:
+
+==> http://click.sorernews.info/index.php?id=5404545&a=38341&b=4423&c=135
+
+Sign up now and start earning with your cellphone.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Our address is Tortola, Providence 1512, British Virgin Islands, 
+If you do not wish to receive future email, click here.
+http://click.sorernews.info/index.php?o=2&a=38341&b=4423&c=135
+(You can also send your request to Customer Care at the street address above.) 
