@@ -1,11 +1,10 @@
-From: Sussan <Kevin-iaDjsff1HTW9RC+f8J1Yzg@public.gmane.org>
-Subject: =?UTF-8?Q?Can You $250 into $8,787 in Hours? Yes!?=
-Date: Wed, 18 Feb 2015 17:21:58 -0500
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@sailingnews.info>
-Reply-To: bounce-38341-iaDjsff1HTW9RC+f8J1Yzg@public.gmane.org
+From: "The Post Office" <noreply-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: Message could not be delivered
+Date: Thu, 19 Feb 2015 17:15:56 +0800
+Message-ID: <20150219091602.402B1AE2@mail.linuxfoundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: multipart/mixed;
+	boundary="----=_NextPart_000_0000_BFA31D03.0365C42E"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,32 +18,30 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SGkgLAoKSW1hZ2luZSBzdGFydGluZyB5b3VyIGRheSBvdXQgd2l0aCBqdXN0ICQyNTAgaW4geW91
-ciAKdHJhZGluZyBhY2NvdW50IGFuZCBieSB0aGUgdGltZSB5b3UgZ2V0IGhvbWUgZnJvbSBkaW5u
-ZXLigKYKCkl04oCZcyBFWFBMT0RFRCBJTlRPICQxOSwwMDAhCgpJdOKAmXMgaGFwcGVuaW5nIGV2
-ZXJ5IGRheSBmb3IgdGhlIGx1Y2t5IHVzZXJzIG9mIENvbGluIApXYWxrZXLigJlzIEJpbmFyeSBN
-YWNoaW5lLgoKVGFrZSBhIGxvb2sgYXQgdGhpcyAtID09PiBodHRwOi8vY2xpY2suc2FpbGluZ25l
-d3MuaW5mby9pbmRleC5waHA/aWQ9NzUyMjA5OCZhPTM4MzQxJmI9NDQyNCZjPTEzNQoKUGF5b3V0
-cyBvZiAkMSw1MDAsICQxLDIwMCwgJDIsNTAw4oCmCgpUaGVuIG90aGVycyBhdCAkMSw4MDAsICQx
-LDUwMCBhbmQgZXZlbiAkMywwMDDigKYKCkFuZCBUSEFUIGlzIGEgdHlwaWNhbCBkYXkuCgpCcmlu
-Z2luZyBpbiAkMjAwLDAwMCBpbiBhIG1vbnRoIGlzIG5vdCB1bnVzdWFsLgoKVEhJUyBpcyBubyBq
-b2tlLgoKQ2hlY2sgaXQgb3V0IHJpZ2h0IG5vdyAtID09PiBodHRwOi8vY2xpY2suc2FpbGluZ25l
-d3MuaW5mby9pbmRleC5waHA/aWQ9NzUyMjA5OCZhPTM4MzQxJmI9NDQyNCZjPTEzNQoKSXQgcmVx
-dWlyZXMgcHJhY3RpY2FsbHkgbm90aGluZyBvdXQgb2YgcG9ja2V0IHRvIGdldCBzdGFydGVkLgoK
-U2VyaW91c2x5LCB5b3XigJlsbCBiZSBhYmxlIHRvIHR1cm4gYSBjb3VwbGUgb2YgaHVuZHJlZCAK
-YnVja3MgaW50byBzb21lIE1BSk9SIEJBTksgYnkgdGhpcyB0aW1lIHRvbW9ycm93IQoKQW5kIHJl
-bGF4OyB0aGVyZeKAmXMgbm90aGluZyB0byBidXksIG5vIHNjYW1zIHRvIHdvcnJ5IGFib3V0IAph
-bmQgbm8gbG9uZy10ZXJtIOKAnHNpZ24geW91ciBsaWZlIGF3YXnigJ0gb2JsaWdhdGlvbnMuCgpX
-ZeKAmXZlIGNoZWNrZWQgaXQgb3V0IGFuZCBJVCBJUyBUSEUgUkVBTCBERUFMLgoKVGFrZSBhIGxv
-b2sgaGVyZSAtID09PiBodHRwOi8vY2xpY2suc2FpbGluZ25ld3MuaW5mby9pbmRleC5waHA/aWQ9
-NzUyMjA5OCZhPTM4MzQxJmI9NDQyNCZjPTEzNQoKVG8geW91ciB3ZWFsdGghCgpTdXNzYW4KCgoK
-CgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgpPdXIgYWRkcmVzcyBpcyBUb3J0b2xhLCBQcm92
-aWRlbmNlIDE1MTIsIEJyaXRpc2ggVmlyZ2luIElzbGFuZHMsIApJZiB5b3UgZG8gbm90IHdpc2gg
-dG8gcmVjZWl2ZSBmdXR1cmUgZW1haWwsIGNsaWNrIGhlcmUuCmh0dHA6Ly9jbGljay5zYWlsaW5n
-bmV3cy5pbmZvL2luZGV4LnBocD9vPTImYT0zODM0MSZiPTQ0MjQmYz0xMzUKKFlvdSBjYW4gYWxz
-byBzZW5kIHlvdXIgcmVxdWVzdCB0byBDdXN0b21lciBDYXJlIGF0IHRoZSBzdHJlZXQgYWRkcmVz
-cyBhYm92ZS4pIAoKCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNv
-bnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5v
-cmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29u
-dGFpbmVycw==
+This is a multi-part message in MIME format.
+
+------=_NextPart_000_0000_BFA31D03.0365C42E
+Content-Type: text/plain;
+	charset=us-ascii
+Content-Transfer-Encoding: 7bit
+
+The original message was received at Thu, 19 Feb 2015 17:15:56 +0800
+from lists.linux-foundation.org [196.192.74.217]
+
+----- The following addresses had permanent fatal errors -----
+<containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+
+
+
+
+------=_NextPart_000_0000_BFA31D03.0365C42E
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+------=_NextPart_000_0000_BFA31D03.0365C42E--
