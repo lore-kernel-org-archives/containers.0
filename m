@@ -1,10 +1,10 @@
-From: "Post Office" <noreply-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: Returned mail: Data format error
-Date: Sat, 21 Feb 2015 21:49:07 +0800
-Message-ID: <20150221134918.8068DA49@mail.linuxfoundation.org>
+From: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [resend][PATCH v10 0/2] ns, procfs: pid conversion between ns
+Date: Sun, 22 Feb 2015 19:48:03 +0800
+Message-ID: <1424605685-5081-1-git-send-email-chenhanxiao__6336.51626199043$1424605711$gmane$org@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
-	boundary="----=_NextPart_000_0012_C4BEAAB0.ABA446C4"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -15,33 +15,20 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Nathan Scott <nathans-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
 
-------=_NextPart_000_0012_C4BEAAB0.ABA446C4
-Content-Type: text/plain;
-	charset=us-ascii
-Content-Transfer-Encoding: 7bit
+Chen Hanxiao (1):
+  /proc/PID/status: show all sets of pid according to ns
 
-The original message was received at Sat, 21 Feb 2015 21:49:07 +0800
-from lists.linux-foundation.org [38.159.4.242]
+Nathan Scott (1):
+  docs: add missing and new /proc/PID/status file entries, fix typos
 
------ The following addresses had permanent fatal errors -----
-<containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+ Documentation/filesystems/proc.txt | 11 ++++++++---
+ fs/proc/array.c                    | 16 ++++++++++++++++
+ 2 files changed, 24 insertions(+), 3 deletions(-)
 
-
-
-
-------=_NextPart_000_0012_C4BEAAB0.ABA446C4
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
-------=_NextPart_000_0012_C4BEAAB0.ABA446C4--
+-- 
+2.1.0
