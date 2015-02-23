@@ -1,16 +1,15 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [resend][PATCH v10 1/2] /proc/PID/status: show all sets of pid
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: [PATCH v10 1/2] /proc/PID/status: show all sets of pid
 	according to ns
-Date: Mon, 23 Feb 2015 10:56:59 -0600
-Message-ID: <20150223165659.GD32181@mail.hallyn.com>
-References: <1424605685-5081-1-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<1424605685-5081-2-git-send-email-chenhanxiao@cn.fujitsu.com>
+Date: Mon, 23 Feb 2015 13:00:09 -0800
+Message-ID: <20150223130009.2c9c3f47d6d1dc183a5b2916@linux-foundation.org>
+References: <1423219550-4385-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<1423219550-4385-2-git-send-email-chenhanxiao@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1424605685-5081-2-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <1423219550-4385-2-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,10 +20,11 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Nathan Scott <nathans-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Nathan Scott <nathans-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sun, Feb 22, 2015 at 07:48:04PM +0800, Chen Hanxiao wrote:
+On Fri, 6 Feb 2015 18:45:49 +0800 Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+
 > If some issues occurred inside a container guest, host user
 > could not know which process is in trouble just by guest pid:
 > the users of container guest only knew the pid inside containers.
@@ -46,38 +46,12 @@ On Sun, Feb 22, 2015 at 07:48:04PM +0800, Chen Hanxiao wrote:
 >   NSpgid: 5       1
 >   NSsid:  1       0
 >   ** Views from level 1
-
-So obviously (since I acked it) I see no problems with this patch or
-the api, but it occurs to me that you have not cc:d linux-api?  Since
-a procfile addition is something we're stuck with for eternity, it
-seems worth it.  If we get an ack from there, then i'd say email
-to Linus directly.  Putting this through -mm doesn't really seem
-necessary given its nature.
-
-> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-> Acked-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 > 
-> Tested-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-> Tested-by: Nathan Scott <nathans-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> 
-> Signed-off-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> ---
-> v10: remove trailing space of pid numbers
->      rebased on 3.19
-> v9: rebased on 3.19-rc1
-> No change from v4-v8
-> v3: add another two fielsd: NSpgid and NSsid.
-> v2: add two new fields: NStgid and NSpid.
->     keep fields of Tgid and Pid unchanged for back compatibility.
-> 
->  fs/proc/array.c | 16 ++++++++++++++++
->  1 file changed, 16 insertions(+)
-> 
-> diff --git a/fs/proc/array.c b/fs/proc/array.c
-> index 1295a00..d79bad9 100644
+> ...
+>
 > --- a/fs/proc/array.c
 > +++ b/fs/proc/array.c
-> @@ -188,6 +188,22 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
+> @@ -208,6 +208,22 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
 >  			   from_kgid_munged(user_ns, GROUP_AT(group_info, g)));
 >  	put_cred(cred);
 >  
@@ -99,11 +73,5 @@ necessary given its nature.
 > +			task_session_nr_ns(p, pid->numbers[g].ns));
 >  	seq_putc(m, '\n');
 >  }
->  
-> -- 
-> 2.1.0
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+
+Is there any point in including this code if CONFIG_USER_NS=n?
