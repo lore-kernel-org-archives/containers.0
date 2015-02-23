@@ -1,14 +1,16 @@
-From: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH v10 2/2] docs: add missing and new /proc/PID/status file
-	entries, fix typos
-Date: Sun, 22 Feb 2015 19:48:05 +0800
-Message-ID: <1424605685-5081-3-git-send-email-chenhanxiao__6761.38651692799$1424605728$gmane$org@cn.fujitsu.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [resend][PATCH v10 1/2] /proc/PID/status: show all sets of pid
+	according to ns
+Date: Mon, 23 Feb 2015 10:56:59 -0600
+Message-ID: <20150223165659.GD32181@mail.hallyn.com>
 References: <1424605685-5081-1-git-send-email-chenhanxiao@cn.fujitsu.com>
+	<1424605685-5081-2-git-send-email-chenhanxiao@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1424605685-5081-1-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1424605685-5081-2-git-send-email-chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,54 +20,90 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Nathan Scott <nathans-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Nathan Scott <nathans-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Nathan Scott <nathans-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+On Sun, Feb 22, 2015 at 07:48:04PM +0800, Chen Hanxiao wrote:
+> If some issues occurred inside a container guest, host user
+> could not know which process is in trouble just by guest pid:
+> the users of container guest only knew the pid inside containers.
+> This will bring obstacle for trouble shooting.
+> 
+> This patch adds four fields: NStgid, NSpid, NSpgid and NSsid:
+> a) In init_pid_ns, nothing changed;
+> 
+> b) In one pidns, will tell the pid inside containers:
+>   NStgid: 21776   5       1
+>   NSpid:  21776   5       1
+>   NSpgid: 21776   5       1
+>   NSsid:  21729   1       0
+>   ** Process id is 21776 in level 0, 5 in level 1, 1 in level 2.
+> 
+> c) If pidns is nested, it depends on which pidns are you in.
+>   NStgid: 5       1
+>   NSpid:  5       1
+>   NSpgid: 5       1
+>   NSsid:  1       0
+>   ** Views from level 1
 
----
- Documentation/filesystems/proc.txt | 11 ++++++++---
- 1 file changed, 8 insertions(+), 3 deletions(-)
+So obviously (since I acked it) I see no problems with this patch or
+the api, but it occurs to me that you have not cc:d linux-api?  Since
+a procfile addition is something we're stuck with for eternity, it
+seems worth it.  If we get an ack from there, then i'd say email
+to Linus directly.  Putting this through -mm doesn't really seem
+necessary given its nature.
 
-diff --git a/Documentation/filesystems/proc.txt b/Documentation/filesystems/proc.txt
-index a07ba61..6d37062 100644
---- a/Documentation/filesystems/proc.txt
-+++ b/Documentation/filesystems/proc.txt
-@@ -200,12 +200,12 @@ contains details information about the process itself.  Its fields are
- explained in Table 1-4.
- 
- (for SMP CONFIG users)
--For making accounting scalable, RSS related information are handled in
--asynchronous manner and the vaule may not be very precise. To see a precise
-+For making accounting scalable, RSS related information are handled in an
-+asynchronous manner and the value may not be very precise. To see a precise
- snapshot of a moment, you can see /proc/<pid>/smaps file and scan page table.
- It's slow but very precise.
- 
--Table 1-2: Contents of the status files (as of 2.6.30-rc7)
-+Table 1-2: Contents of the status files (as of 3.20.0)
- ..............................................................................
-  Field                       Content
-  Name                        filename of the executable
-@@ -213,6 +213,7 @@ Table 1-2: Contents of the status files (as of 2.6.30-rc7)
-                              in an uninterruptible wait, Z is zombie,
- 			     T is traced or stopped)
-  Tgid                        thread group ID
-+ Ngid                        NUMA group ID (0 if none)
-  Pid                         process id
-  PPid                        process id of the parent process
-  TracerPid                   PID of process tracing this process (0 if not)
-@@ -220,6 +221,10 @@ Table 1-2: Contents of the status files (as of 2.6.30-rc7)
-  Gid                         Real, effective, saved set, and  file system GIDs
-  FDSize                      number of file descriptor slots currently allocated
-  Groups                      supplementary group list
-+ NStgid                      descendant namespace thread group ID hierarchy
-+ NSpid                       descendant namespace process ID hierarchy
-+ NSpgid                      descendant namespace process group ID hierarchy
-+ NSsid                       descendant namespace session ID hierarchy
-  VmPeak                      peak virtual memory size
-  VmSize                      total program size
-  VmLck                       locked memory size
--- 
-2.1.0
+> Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> Acked-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> 
+> Tested-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> Tested-by: Nathan Scott <nathans-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> 
+> Signed-off-by: Chen Hanxiao <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> ---
+> v10: remove trailing space of pid numbers
+>      rebased on 3.19
+> v9: rebased on 3.19-rc1
+> No change from v4-v8
+> v3: add another two fielsd: NSpgid and NSsid.
+> v2: add two new fields: NStgid and NSpid.
+>     keep fields of Tgid and Pid unchanged for back compatibility.
+> 
+>  fs/proc/array.c | 16 ++++++++++++++++
+>  1 file changed, 16 insertions(+)
+> 
+> diff --git a/fs/proc/array.c b/fs/proc/array.c
+> index 1295a00..d79bad9 100644
+> --- a/fs/proc/array.c
+> +++ b/fs/proc/array.c
+> @@ -188,6 +188,22 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
+>  			   from_kgid_munged(user_ns, GROUP_AT(group_info, g)));
+>  	put_cred(cred);
+>  
+> +	seq_puts(m, "\nNStgid:");
+> +	for (g = ns->level; g <= pid->level; g++)
+> +		seq_printf(m, "\t%d",
+> +			task_tgid_nr_ns(p, pid->numbers[g].ns));
+> +	seq_puts(m, "\nNSpid:");
+> +	for (g = ns->level; g <= pid->level; g++)
+> +		seq_printf(m, "\t%d",
+> +			task_pid_nr_ns(p, pid->numbers[g].ns));
+> +	seq_puts(m, "\nNSpgid:");
+> +	for (g = ns->level; g <= pid->level; g++)
+> +		seq_printf(m, "\t%d",
+> +			task_pgrp_nr_ns(p, pid->numbers[g].ns));
+> +	seq_puts(m, "\nNSsid:");
+> +	for (g = ns->level; g <= pid->level; g++)
+> +		seq_printf(m, "\t%d",
+> +			task_session_nr_ns(p, pid->numbers[g].ns));
+>  	seq_putc(m, '\n');
+>  }
+>  
+> -- 
+> 2.1.0
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linuxfoundation.org/mailman/listinfo/containers
