@@ -1,12 +1,11 @@
-From: "The Post Office" <noreply-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: (unknown)
-Date: Tue, 24 Feb 2015 21:55:39 +0800
-Message-ID: <20150224135543.E336CB0B@mail.linuxfoundation.org>
+From: "Post Office" <MAILER-DAEMON-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: RETURNED MAIL: DATA FORMAT ERROR
+Date: Thu, 26 Feb 2015 07:12:37 +0800
+Message-ID: <20150225231242.838AB475@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: multipart/mixed;
-	boundary="----=_NextPart_000_0006_48290067.DF85C776"
+	boundary="----=_NextPart_000_0005_F4E97742.D211CB14"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: 
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,7 +20,7 @@ List-Id: containers.vger.kernel.org
 
 This is a multi-part message in MIME format.
 
-------=_NextPart_000_0006_48290067.DF85C776
+------=_NextPart_000_0005_F4E97742.D211CB14
 Content-Type: text/plain;
 	charset=us-ascii
 Content-Transfer-Encoding: 7bit
@@ -29,7 +28,7 @@ Content-Transfer-Encoding: 7bit
 
 
 
-------=_NextPart_000_0006_48290067.DF85C776
+------=_NextPart_000_0005_F4E97742.D211CB14
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -39,4 +38,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
-------=_NextPart_000_0006_48290067.DF85C776--
+------=_NextPart_000_0005_F4E97742.D211CB14--
