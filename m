@@ -1,17 +1,13 @@
-From: "Chen, Hanxiao" <chenhanxiao-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: RE: [PATCH v10 2/2] docs: add missing and new /proc/PID/status file
-	entries, fix typos
-Date: Fri, 27 Feb 2015 10:05:09 +0000
-Message-ID: <5871495633F38949900D2BF2DC04883E73819258__48800.4316496246$1425031535$gmane$org@G08CNEXMBPEKD02.g08.fujitsu.local>
-References: <1423219550-4385-1-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<1423219550-4385-3-git-send-email-chenhanxiao@cn.fujitsu.com>
-	<20150223130146.463c3b432ab183580cbc1464@linux-foundation.org>
+From: <postmaster-U8vCC4TFd99TpBK7XY6O9JZ3qXmFLfmx@public.gmane.org>
+Subject: Undeliverable: wellcom
+Date: Fri, 27 Feb 2015 14:47:54 +0000
+Message-ID: <9667734a-33f2-4db2-824b-087906fb5480@DB4PR07MB346.eurprd07.prod.outlook.com>
+References: <42058063.73898940912456@hosting.eurofriuli.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="gb2312"
-Content-Transfer-Encoding: base64
+Content-Type: multipart/mixed; boundary="===============4931264038985520830=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20150223130146.463c3b432ab183580cbc1464-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Content-Language: zh-CN
+Content-Language: en-US
+In-Reply-To: <42058063.73898940912456-7c6Ix4kHDaQF6GOMAaok0lp4Cf+Kod9P@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,30 +17,159 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Nathan Scott <nathans-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-DQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogQW5kcmV3IE1vcnRvbiBb
-bWFpbHRvOmFrcG1AbGludXgtZm91bmRhdGlvbi5vcmddDQo+IFNlbnQ6IFR1ZXNkYXksIEZlYnJ1
-YXJ5IDI0LCAyMDE1IDU6MDIgQU0NCj4gVG86IENoZW4sIEhhbnhpYW8vs8Ig6s/P9g0KPiBDYzog
-RXJpYyBXLiBCaWVkZXJtYW47IGNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc7
-DQo+IGxpbnV4LWtlcm5lbEB2Z2VyLmtlcm5lbC5vcmc7IGxpbnV4LWRvY0B2Z2VyLmtlcm5lbC5v
-cmc7IFNlcmdlIEhhbGx5bjsgSm9uYXRoYW4NCj4gQ29yYmV0OyBHdWksIEppYW5mZW5nL7npIL2j
-t+U7IE5hdGhhbiBTY290dA0KPiBTdWJqZWN0OiBSZTogW1BBVENIIHYxMCAyLzJdIGRvY3M6IGFk
-ZCBtaXNzaW5nIGFuZCBuZXcgL3Byb2MvUElEL3N0YXR1cyBmaWxlIGVudHJpZXMsDQo+IGZpeCB0
-eXBvcw0KPiANCj4gT24gRnJpLCA2IEZlYiAyMDE1IDE4OjQ1OjUwICswODAwIENoZW4gSGFueGlh
-byA8Y2hlbmhhbnhpYW9AY24uZnVqaXRzdS5jb20+IHdyb3RlOg0KPiANCj4gPiBGcm9tOiBOYXRo
-YW4gU2NvdHQgPG5hdGhhbnNAcmVkaGF0LmNvbT4NCj4gPg0KPiA+IEZyb206IE5hdGhhbiBTY290
-dCA8bmF0aGFuc0ByZWRoYXQuY29tPg0KPiA+DQo+ID4gZG9jczogYWRkIG1pc3NpbmcgYW5kIG5l
-dyAvcHJvYy9QSUQvc3RhdHVzIGZpbGUgZW50cmllcywgZml4IHR5cG9zDQo+ID4NCj4gPiBTaWdu
-ZWQtb2ZmLWJ5OiBOYXRoYW4gU2NvdHQgPG5hdGhhbnNAcmVkaGF0LmNvbT4NCj4gDQo+IFRoaXMg
-c2hvdWxkIGhhdmUgaGFkIHlvdXIgc2lnbm9mZiwgYmVjYXVzZSB5b3Ugd2VyZSBvbiB0aGUgcGF0
-Y2gNCj4gZGVsaXZlcnkgcGF0aCAoRG9jdW1lbnRhdGlvbi9TdWJtaXR0aW5nUGF0Y2hlcyBzZWN0
-aW9uIDExIGhhcyBkZXRhaWxzKS4NCj4gDQo+IEkgaGF2ZSBtYWRlIHRoYXQgY2hhbmdlIHRvIG15
-IGNvcHkgb2YgdGhpcyBwYXRjaC4NCg0KSGksDQoNClRoYW5rcyBmb3IgeW91ciBoZWxwLg0KSSds
-bCBiZSBtb3JlIGNhcmVmdWwgbmV4dCB0aW1lLg0KDQpUaGFuayB5b3UgdmVyeSBtdWNoLg0KDQpS
-ZWdhcmRzLA0KLSBDaGVuDQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZv
-dW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xp
-c3RpbmZvL2NvbnRhaW5lcnM=
+--===============4931264038985520830==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="b7e20251-0fb3-40cf-b67c-939306bb4d4d"
+Content-Language: en-US
+
+--b7e20251-0fb3-40cf-b67c-939306bb4d4d
+Content-Type: text/plain; charset="Windows-1252"
+Content-Transfer-Encoding: quoted-printable
+
+Delivery has failed to these recipients or groups:
+
+amir.farouk-dK+NK3U5/BBl57MIdRCFDg@public.gmane.org<mailto:amir.farouk-dK+NK3U5/BBl57MIdRCFDg@public.gmane.org>
+The email address wasn=92t found at the destination domain. It might be mis=
+spelled or it might not exist any longer. Try retyping the address and rese=
+nding the message.
+
+If that doesn=92t work, contact the recipient (by phone or instant messagin=
+g, for example) to check that the address is correct. If the problem contin=
+ues, forward this message to your email admin.
+
+For Email Administrators
+For more tips to help fix this issue, see DSN 5.1.10 Errors in Exchange Onl=
+ine and Office 365<http://go.microsoft.com/fwlink/?LinkId=3D389363>.
+
+
+
+
+
+
+
+
+Diagnostic information for administrators:
+
+Generating server: DB4PR07MB346.eurprd07.prod.outlook.com
+
+amir.farouk-dK+NK3U5/BBl57MIdRCFDg@public.gmane.org
+Remote Server returned '550 5.1.10 RESOLVER.ADR.RecipientNotFound; Recipien=
+t not found by SMTP address lookup'
+
+Original message headers:
+
+Received: from AM2PR07CA0003.eurprd07.prod.outlook.com (25.163.24.141) by
+ DB4PR07MB346.eurprd07.prod.outlook.com (10.141.234.144) with Microsoft SMT=
+P
+ Server (TLS) id 15.1.99.14; Fri, 27 Feb 2015 14:47:54 +0000
+Received: from DB3FFO11FD025.protection.gbl (2a01:111:f400:7e04::179) by
+ AM2PR07CA0003.outlook.office365.com (2a01:111:e400:8448::13) with Microsof=
+t
+ SMTP Server (TLS) id 15.1.99.14 via Frontend Transport; Fri, 27 Feb 2015
+ 14:47:54 +0000
+Received: from hosting.eurofriuli.it (195.234.171.34) by
+ DB3FFO11FD025.mail.protection.outlook.com (10.47.217.56) with Microsoft SM=
+TP
+ Server id 15.1.99.6 via Frontend Transport; Fri, 27 Feb 2015 14:47:53 +000=
+0
+Received: from hosting.eurofriuli.it (WBH-72-14 [195.234.171.34]) by hostin=
+g.eurofriuli.it (mailer) with SMTP id yjBVONa9vKmA for <amir.farouk-ooxK+ISdzmk@public.gmane.org=
+le.com>; Fri, 27 Feb 2015 15:47:52 +0100
+Date: Fri, 27 Feb 2015 15:47:52 +0100
+From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Message-ID: <42058063.73898940912456-7c6Ix4kHDaQF6GOMAaok0lp4Cf+Kod9P@public.gmane.org>
+To: <amir.farouk-dK+NK3U5/BBl57MIdRCFDg@public.gmane.org>
+Subject: wellcom
+MIME-Version: 1.0
+Content-Type: text/plain; charset=3D"windows-1252"
+Content-Transfer-Encoding: 8bit
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-EOPAttributedMessage: 0
+Received-SPF: Fail (protection.outlook.com: domain of
+ lists.linux-foundation.org does not designate 195.234.171.34 as permitted
+ sender) receiver=3Dprotection.outlook.com; client-ip=3D195.234.171.34;
+ helo=3Dhosting.eurofriuli.it;
+Authentication-Results: spf=3Dfail (sender IP is 195.234.171.34)
+ smtp.mailfrom=3Dcontainers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org; qa.nestle.com; dkim=
+=3Dnone
+ (message not signed) header.d=3Dnone;qa.nestle.com; dmarc=3Dnone action=3D=
+none
+ header.from=3Dlists.linux-foundation.org;
+X-Forefront-Antispam-Report: CIP:195.234.171.34;CTRY:IT;IPV:NLI;EFV:NLI;
+X-Microsoft-Antispam: UriScan:;BCL:0;PCL:0;RULEID:;SRVR:DB4PR07MB346;
+
+
+--b7e20251-0fb3-40cf-b67c-939306bb4d4d
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;DB4PR07MB346.eurprd07.prod.outlook.com
+Received-From-MTA: dns;hosting.eurofriuli.it
+Arrival-Date: Fri, 27 Feb 2015 14:47:54 +0000
+
+Final-Recipient: rfc822;amir.farouk-dK+NK3U5/BBl57MIdRCFDg@public.gmane.org
+Action: failed
+Status: 5.1.10
+Diagnostic-Code: smtp;550 5.1.10 RESOLVER.ADR.RecipientNotFound; Recipient not found by SMTP address lookup
+
+
+--b7e20251-0fb3-40cf-b67c-939306bb4d4d
+Content-Type: message/rfc822
+
+Received: from AM2PR07CA0003.eurprd07.prod.outlook.com (25.163.24.141) by
+ DB4PR07MB346.eurprd07.prod.outlook.com (10.141.234.144) with Microsoft SMTP
+ Server (TLS) id 15.1.99.14; Fri, 27 Feb 2015 14:47:54 +0000
+Received: from DB3FFO11FD025.protection.gbl (2a01:111:f400:7e04::179) by
+ AM2PR07CA0003.outlook.office365.com (2a01:111:e400:8448::13) with Microsoft
+ SMTP Server (TLS) id 15.1.99.14 via Frontend Transport; Fri, 27 Feb 2015
+ 14:47:54 +0000
+Received: from hosting.eurofriuli.it (195.234.171.34) by
+ DB3FFO11FD025.mail.protection.outlook.com (10.47.217.56) with Microsoft SMTP
+ Server id 15.1.99.6 via Frontend Transport; Fri, 27 Feb 2015 14:47:53 +0000
+Received: from hosting.eurofriuli.it (WBH-72-14 [195.234.171.34]) by hosting.eurofriuli.it (mailer) with SMTP id yjBVONa9vKmA for <amir.farouk-dK+NK3U5/BBl57MIdRCFDg@public.gmane.org>; Fri, 27 Feb 2015 15:47:52 +0100
+Date: Fri, 27 Feb 2015 15:47:52 +0100
+From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Message-ID: <42058063.73898940912456-7c6Ix4kHDaQF6GOMAaok0lp4Cf+Kod9P@public.gmane.org>
+To: <amir.farouk-dK+NK3U5/BBl57MIdRCFDg@public.gmane.org>
+Subject: wellcom 
+MIME-Version: 1.0
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-EOPAttributedMessage: 0
+Received-SPF: Fail (protection.outlook.com: domain of
+ lists.linux-foundation.org does not designate 195.234.171.34 as permitted
+ sender) receiver=protection.outlook.com; client-ip=195.234.171.34;
+ helo=hosting.eurofriuli.it;
+Authentication-Results: spf=fail (sender IP is 195.234.171.34)
+ smtp.mailfrom=containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org; qa.nestle.com; dkim=none
+ (message not signed) header.d=none;qa.nestle.com; dmarc=none action=none
+ header.from=lists.linux-foundation.org;
+X-Forefront-Antispam-Report: CIP:195.234.171.34;CTRY:IT;IPV:NLI;EFV:NLI;
+X-Microsoft-Antispam: UriScan:;BCL:0;PCL:0;RULEID:;SRVR:DB4PR07MB346;
+
+
+         =20
+Hallo, amir.farouk-dK+NK3U5/BDYbTqN3TP0Kg@public.gmane.org        =20
+Wie geht es Ihnen? Wir treffen konnte? Ich mochte lernen Sie dir naher, was=
+ du daran denkst? Wenn du nichts dagegen haben, Dating, dann kannst du schr=
+eiben auf meine mailto:solen.mila-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org So kann ich senden dir mehr von=
+ meinen Fotos und uber sich selbst erzahlen. Ich werde deinen Brief warten.
+
+
+
+--b7e20251-0fb3-40cf-b67c-939306bb4d4d--
+
+--===============4931264038985520830==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============4931264038985520830==--
