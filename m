@@ -1,9 +1,9 @@
-From: "Mail Delivery System" <postmaster-q6EoVN9bke7vnOemgxGiVw@public.gmane.org>
-Subject: Delivery Status Notification (Failure)
-Date: 28 Feb 2015 15:14:26 +1100
-Message-ID: <bad2dd$1hleop@mx03.syd.iprimus.net.au>
+From: MAILER-DAEMON-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Sat, 28 Feb 2015 23:54:47 +1100 (AEDT)
+Message-ID: <20150228125447.DA00378218D@mail110.syd.optusnet.com.au>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5768491536375795451=="
+Content-Type: multipart/mixed; boundary="===============8438593151998367080=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,114 +17,146 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============5768491536375795451==
-Content-Type: multipart/report; report-type=delivery-status; boundary="36hi9.541uuXE5n.3LETL77C9aK.FQQ3qr+"
+This is a MIME-encapsulated message.
 
---36hi9.541uuXE5n.3LETL77C9aK.FQQ3qr+
-content-type: text/plain;
-    charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+--===============8438593151998367080==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="15E56782246.1425128087/mail110.syd.optusnet.com.au"
+Content-Transfer-Encoding: 7bit
 
-The following message to <steveevans-xIfgLkuENgG6c6uEtOJ/EA@public.gmane.org> was undeliverable.
-The reason for the problem:
-5.1.0 - Unknown address error 550-'RCPT TO:<steveevans-xIfgLkuENgG6c6uEtOJ/EA@public.gmane.org> User un=
-known'
+This is a MIME-encapsulated message.
 
---36hi9.541uuXE5n.3LETL77C9aK.FQQ3qr+
-content-type: message/delivery-status
+--15E56782246.1425128087/mail110.syd.optusnet.com.au
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-Reporting-MTA: dns; mx03.syd.iprimus.net.au
+This is the mail system at host mail110.syd.optusnet.com.au.
 
-Final-Recipient: rfc822;steveevans-xIfgLkuENgG6c6uEtOJ/EA@public.gmane.org
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
+
+For further assistance, please send mail to postmaster.
+
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+                   The mail system
+
+<jadriaansenn-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org> (expanded from <jadriaansenn-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org>):
+    user unknown
+
+--15E56782246.1425128087/mail110.syd.optusnet.com.au
+Content-Description: Delivery report
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; mail110.syd.optusnet.com.au
+X-Postfix-Queue-ID: 15E56782246
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Sat, 28 Feb 2015 23:54:45 +1100 (AEDT)
+
+Final-Recipient: rfc822; jadriaansenn-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org
+Original-Recipient: rfc822;jadriaansenn-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org
 Action: failed
-Status: 5.0.0 (permanent failure)
-Remote-MTA: dns; [210.50.30.196]
-Diagnostic-Code: smtp; 5.1.0 - Unknown address error 550-'RCPT TO:<steveevans-xIfgLkuENgG6c6uEtOJ/EA@public.gmane.org> User unknown' (delivery attempts: 0)
+Status: 5.1.1
+Diagnostic-Code: x-unix; user unknown
 
---36hi9.541uuXE5n.3LETL77C9aK.FQQ3qr+
-content-type: message/rfc822
+--15E56782246.1425128087/mail110.syd.optusnet.com.au
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
 
-Authentication-Results: mx03.syd.iprimus.net.au; dkim=neutral (message not signed) header.i=none
-Received: from server.relatiefront.nl ([146.185.175.177])
-  by mx03.syd.iprimus.net.au with ESMTP; 28 Feb 2015 15:14:25 +1100
-Received: from [192.168.137.1] by server.relatiefront.nl id k89uirXPNz02DQ; Sat, 28 Feb 2015 04:14:24 +0000
-Message-ID: <003a01d0530d$06f2cc80$0189a8c0-GShGJHTS/rzoSVKQVDllloYESnTqepJF@public.gmane.org>
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from host2.namtamusic.com (host2.namtamusic.com [67.43.1.169])
+	by mail110.syd.optusnet.com.au (Postfix) with ESMTP id 15E56782246
+	for <jadriaansenn-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org>; Sat, 28 Feb 2015 23:54:45 +1100 (AEDT)
+Received: from [192.168.137.100] by host2.namtamusic.com id Nw0YtvkfIPZs; Sat, 28 Feb 2015 07:54:45 -0500
+Message-ID: <003601d05355$b81d5500$6489a8c0-XK7zdmxJ/JRMB9q5UvrceFaTQe2KTcn/@public.gmane.org>
 From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <steveevans-xIfgLkuENgG6c6uEtOJ/EA@public.gmane.org>
-Subject: LIFE IS EXCELLENT, if there is love 
-Date: Sat, 28 Feb 2015 04:14:24 +0000
+To: <jadriaansenn-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org>
+Subject: I WAIT sparkle in your eyes 
+Date: Sat, 28 Feb 2015 07:54:45 -0500
+X-Optus-CM-Spam: spam
+X-Optus-CM-Score: 100
+X-Optus-CM-Analysis: v=2.1 cv=baJSDo/B c=1 sm=1 tr=0 p=cswzFbXsAAAA:8
+	p=Nc6e1EFgizgA:10 p=1THJtyfczl8A:10 a=du8Ljb8zUh6DJACJxOY2Eg==:117
+	a=du8Ljb8zUh6DJACJxOY2Eg==:17 a=8EobBDfZAAAA:8 a=PO7r1zJSAAAA:8
+	a=kj9zAlcOel0A:10 a=Z4Rwk6OoAAAA:8 a=0HtSIViG9nkA:10 a=lojdg71KAAAA:8
+	a=hEh3JUyyAAAA:8 a=UrilxRa90QiUXwEtBfkA:9 a=Z5PgrRQE-oCJNacN:21
+	a=dF-euLs5xKAgLQrF:21 a=dHa-2oKqSwPD_Iim:21 a=CjuIK1q_8ugA:10
+	a=_W_S_7VecoQA:10 a=SViJt0aFoRgA:10 a=EW4g2ddd6jMA:10 a=Q7olE7zuE-YA:10
+	a=qiWi7Edwir4A:10 a=NWVoK91CQyQA:10
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+Content-Type: text/plain; charset="us-ascii"
 
-   zmQtgg05KEyCy6
+   L'arcobaleno la mattina bagna il becco della gallina; l'arcobaleno la
+   sera buon tempo mena.
 
-   Chi perde ha sempre torto.
+   Hi, jadriaansenn-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org
 
-   Hi, steveevans-xIfgLkuENgH5c4y/nN6+SQ@public.gmane.org
-
-   Roma non fu fatta in un giorno.
+   Una rondine non fa primavera.
 
    Editor/Proofreader is needed
 
-   Vicino alla chiesa, lontano da Dio.
+   Se mangi, bevi e il culo rende, a quel paese le medicine e chi le
+   vende.
 
    Note: this position is for native English speakers only.
 
-   Ne donna, ne tela a lume di candela.
+   Chi a credenza molte merci spaccia, un presto fallimento si procaccia.
 
    Salary up to 400/week, 1-3 hours daily.
 
-   Ognuno ha cio che merita.
+   La fame caccia il lupo dal bosco.
 
    Proofreaders check written text after it has been edited and before it
    is printed or published, providing a final quality check to make sure
    that nothing has been missed by the copy editor.
 
-   Nel dubbio astieniti.
+   Male non fare, paura non avere.
 
    In this job you will need to be accurate and pay close attention to
    detail.
 
-   E meglio essere capo di lucertola che coda di leone.
+   La morte non ha paura del medico.
 
    You do not need any particular qualifications to be a proofreader.
 
-   Passata la festa, gabbato lo santo.
+   Tutti i gusti son gusti.
 
    You can proofread/edit at any time of the day-night that is convenient
    to you. But you need to meet deadlines.
 
-   Paga il giusto per il peccatore.
+   Necessita fa legge.
 
    To be eligible to apply for this position you must have an appropriate
    Australian work visa.
 
-   Vanga e zappa non vuol digiuno.
+   A brigante, brigante e mezzo.
 
    If you are intrested, please send you resume and phone number to
    e-mail: [1]anna.melkova-O5WfVfzUwx8@public.gmane.org
 
-   A cavallo giovane, cavaliere vecchio.
+   Chi ha tempo non aspetti tempo.
 
    Best Regards!
 
-   Non te fidare in omo che aggia rotto il groppone.
+   Al contadino non far sapere quanto e buono il formaggio con le pere.
 
    Zelenski CTS
 
 
 
-   Se non e zuppa e pan bagnato.
+   HcpDMVVm4N3HMVmfgGKe9SAn
+
+   Chi cento ne fa una ne aspetta.
 
 References
 
    1. mailto:anna.melkova-O5WfVfzUwx8@public.gmane.org
 
---36hi9.541uuXE5n.3LETL77C9aK.FQQ3qr+--
+--15E56782246.1425128087/mail110.syd.optusnet.com.au--
 
-
-
---===============5768491536375795451==
+--===============8438593151998367080==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -134,4 +166,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============5768491536375795451==--
+--===============8438593151998367080==--
