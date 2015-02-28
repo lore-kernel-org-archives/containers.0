@@ -1,13 +1,10 @@
-From: <postmaster-TybwBXz8wzaHXe+LvDLADg@public.gmane.org>
-Subject: Undeliverable: answer skipped
-Date: Sat, 28 Feb 2015 13:44:28 +1030
-Message-ID: <54ad7b7e-56dd-4061-90bd-587eae7936bf@h2.net.au>
-References: <ILfwZTGCUinfSj6f3RujYeYBVsdL69zP@qbear.ru>
+From: "Mail Delivery System" <postmaster-q6EoVN9bke7vnOemgxGiVw@public.gmane.org>
+Subject: Delivery Status Notification (Failure)
+Date: 28 Feb 2015 15:14:26 +1100
+Message-ID: <bad2dd$1hleop@mx03.syd.iprimus.net.au>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============0989227312572967580=="
+Content-Type: multipart/mixed; boundary="===============5768491536375795451=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-AU
-In-Reply-To: <ILfwZTGCUinfSj6f3RujYeYBVsdL69zP-LkkMg30Kw9I@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,204 +17,114 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============0989227312572967580==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="524fda5a-e94a-4c14-a988-1572f9c1457a"
-Content-Language: en-AU
+--===============5768491536375795451==
+Content-Type: multipart/report; report-type=delivery-status; boundary="36hi9.541uuXE5n.3LETL77C9aK.FQQ3qr+"
 
---524fda5a-e94a-4c14-a988-1572f9c1457a
-Content-Type: text/plain; charset="us-ascii"
+--36hi9.541uuXE5n.3LETL77C9aK.FQQ3qr+
+content-type: text/plain;
+    charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 
-Delivery has failed to these recipients or groups:
+The following message to <steveevans-xIfgLkuENgG6c6uEtOJ/EA@public.gmane.org> was undeliverable.
+The reason for the problem:
+5.1.0 - Unknown address error 550-'RCPT TO:<steveevans-xIfgLkuENgG6c6uEtOJ/EA@public.gmane.org> User un=
+known'
 
-mmwomti-sKtvjTG20lXMCbP7inAHUMk87cqNqjZ2@public.gmane.org<mailto:mmwomti-sKtvjTG20lXMCbP7inAHUMk87cqNqjZ2@public.gmane.org>
-The e-mail address you entered couldn't be found. Please check the recipien=
-t's e-mail address and try to resend the message. If the problem continues,=
- please contact your helpdesk.
+--36hi9.541uuXE5n.3LETL77C9aK.FQQ3qr+
+content-type: message/delivery-status
 
+Reporting-MTA: dns; mx03.syd.iprimus.net.au
 
-
-
-
-
-
-Diagnostic information for administrators:
-
-Generating server: h2.net.au
-
-mmwomti-sKtvjTG20lXMCbP7inAHUMk87cqNqjZ2@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
-
-Original message headers:
-
-Received: from mx5.hostus.net.au (203.128.232.240) by EXHUB01.h2.local
- (203.128.233.222) with Microsoft SMTP Server id 14.1.218.12; Sat, 28 Feb 2=
-015
- 13:44:27 +1030
-X-AuditID: cb80e8f0-f79b06d000000d99-57-54f132c9790b
-Received: from qbear.ru (orbitatelecom-net-91-206-14-ip-12.kurkino.net.ru
- [91.206.14.12])        by mx5.hostus.net.au (Hostus Email Filtering Gatewa=
-y) with
- SMTP id 06.C7.03481.AC231F45; Sat, 28 Feb 2015 13:45:24 +1030 (CST)
-Received: from [91.206.14.12] ([[91.206.14.12:40879]) by qbear.ru
- (envelope-from <update+XQnhND7x9HL-LkkMg30Kw9I@public.gmane.org>) (ecelerity 2.2.2.45 r(34222M=
-))
- with ECSTREAM id YU/03-51515-98080806; Sat, 28 Feb 2015 06:18:56 +0300
-Reply-To: nKc1RaBjw <update+DKKEg7kodqJR-LkkMg30Kw9I@public.gmane.org>
-Date: Sat, 28 Feb 2015 06:18:56 +0300
-To: <mmwomti-sKtvjTG20lXMCbP7inAHUMk87cqNqjZ2@public.gmane.org>
-From: Teresina <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: answer skipped
-Message-ID: <ILfwZTGCUinfSj6f3RujYeYBVsdL69zP-LkkMg30Kw9I@public.gmane.org>
-MIME-Version: 1.0
-Content-Type: text/html; charset=3D"us-ascii"
-Content-Transfer-Encoding: 8bit
-X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFnrIIsWRWlGSWpSXmKPExsUSfY6PR/eM0ccQg=
-+9LRCzW905hdmD0eLHk
-        HGsAYxSXTUpqTmZZapG+XQJXxrppk1gLnklXfJsr08D4WLyLkZNDQsBE4sf1BSwQtpj=
-EhXvr
-        2boYuTiEBG4xSlz+8oEdwrnKKDHr1Wk2kCohASOJOzt/AiU4OFgEVCWmTUsFMUWAzI6=
-HGiAV
-        bAIWEhPeLASrFhaQkFh+dR8riM0rYC6xZ9duRghbUOLkzCdge5kFtCSOvXkDZctLNG+=
-dzTyB
-        kXcWkrJZSMpmISlbwMi8ilEwt8JQLyO/uKS0WC8vtUQvsXQTIzBcTje8+LCDcf5zq0O=
-MAhyM
-        Sjy8O0TfhAixJpYVV+YeYpTkYFIS5T2WDxTiS8pPqcxILM6ILyrNSS0+xCjBwawkwrs=
-lGijH
-        m5JYWZValA+TkuZgURLnnSl/IkRIID2xJDU7NbUgtQgmK8PBoSTBm1YN1ChYlJqeWpG=
-WmVOC
-        kGbi4AQZzgM0/EsVyPDigsTc4sx0iPwpRmOOJxP2zmTimDNr/0wmIZa8/LxUKXHe7SD=
-jBEBK
-        M0rz4KbBYv4So6yUMC8jAwODEA/QJbmZJajyrxjFgZ4X5s0DmcKTmVcCt+8V0ClMQKf=
-sefwK
-        5JSSRISUVAPj3hu6jbu5JtlfbVA+E1WikL/d96vC9d7XUi+2blKp8n0689DjX74PJ4W=
-VKzIW
-        XL9pFFaaOzf20d3ZiVtznng2pi64utb0aHfQihdbwvwE7spPsf86J1vmh+fjpW9XhXZ=
-+kAnm
-        WdLdPf1UvSh3bsw3r5rpK2oP/v57jKcsYenJCQ2ORwX38xXpKLEUZyQaajEXFScCAMJ=
-0hIT0
-        AgAA
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-
-
---524fda5a-e94a-4c14-a988-1572f9c1457a
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns;h2.net.au
-Received-From-MTA: dns;mx5.hostus.net.au
-Arrival-Date: Sat, 28 Feb 2015 03:14:27 +0000
-
-Final-Recipient: rfc822;mmwomti-sKtvjTG20lXMCbP7inAHUMk87cqNqjZ2@public.gmane.org
+Final-Recipient: rfc822;steveevans-xIfgLkuENgG6c6uEtOJ/EA@public.gmane.org
 Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
+Status: 5.0.0 (permanent failure)
+Remote-MTA: dns; [210.50.30.196]
+Diagnostic-Code: smtp; 5.1.0 - Unknown address error 550-'RCPT TO:<steveevans-xIfgLkuENgG6c6uEtOJ/EA@public.gmane.org> User unknown' (delivery attempts: 0)
 
+--36hi9.541uuXE5n.3LETL77C9aK.FQQ3qr+
+content-type: message/rfc822
 
---524fda5a-e94a-4c14-a988-1572f9c1457a
-Content-Type: message/rfc822
-
-Received: from mx5.hostus.net.au (203.128.232.240) by EXHUB01.h2.local
- (203.128.233.222) with Microsoft SMTP Server id 14.1.218.12; Sat, 28 Feb 2015
- 13:44:27 +1030
-X-AuditID: cb80e8f0-f79b06d000000d99-57-54f132c9790b
-Received: from qbear.ru (orbitatelecom-net-91-206-14-ip-12.kurkino.net.ru
- [91.206.14.12])	by mx5.hostus.net.au (Hostus Email Filtering Gateway) with
- SMTP id 06.C7.03481.AC231F45; Sat, 28 Feb 2015 13:45:24 +1030 (CST)
-Received: from [91.206.14.12] ([[91.206.14.12:40879]) by qbear.ru
- (envelope-from <update+XQnhND7x9HL-LkkMg30Kw9I@public.gmane.org>) (ecelerity 2.2.2.45 r(34222M))
- with ECSTREAM id YU/03-51515-98080806; Sat, 28 Feb 2015 06:18:56 +0300
-Reply-To: nKc1RaBjw <update+DKKEg7kodqJR-LkkMg30Kw9I@public.gmane.org>
-Date: Sat, 28 Feb 2015 06:18:56 +0300
-To: <mmwomti-sKtvjTG20lXMCbP7inAHUMk87cqNqjZ2@public.gmane.org>
-From: Teresina <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: answer skipped 
-Message-ID: <ILfwZTGCUinfSj6f3RujYeYBVsdL69zP-LkkMg30Kw9I@public.gmane.org>
-X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFnrIIsWRWlGSWpSXmKPExsUSfY6PR/eM0ccQg+9LRCzW905hdmD0eLHk
-	HGsAYxSXTUpqTmZZapG+XQJXxrppk1gLnklXfJsr08D4WLyLkZNDQsBE4sf1BSwQtpjEhXvr
-	2boYuTiEBG4xSlz+8oEdwrnKKDHr1Wk2kCohASOJOzt/AiU4OFgEVCWmTUsFMUWAzI6HGiAV
-	bAIWEhPeLASrFhaQkFh+dR8riM0rYC6xZ9duRghbUOLkzCdge5kFtCSOvXkDZctLNG+dzTyB
-	kXcWkrJZSMpmISlbwMi8ilEwt8JQLyO/uKS0WC8vtUQvsXQTIzBcTje8+LCDcf5zq0OMAhyM
-	Sjy8O0TfhAixJpYVV+YeYpTkYFIS5T2WDxTiS8pPqcxILM6ILyrNSS0+xCjBwawkwrslGijH
-	m5JYWZValA+TkuZgURLnnSl/IkRIID2xJDU7NbUgtQgmK8PBoSTBm1YN1ChYlJqeWpGWmVOC
-	kGbi4AQZzgM0/EsVyPDigsTc4sx0iPwpRmOOJxP2zmTimDNr/0wmIZa8/LxUKXHe7SDjBEBK
-	M0rz4KbBYv4So6yUMC8jAwODEA/QJbmZJajyrxjFgZ4X5s0DmcKTmVcCt+8V0ClMQKfsefwK
-	5JSSRISUVAPj3hu6jbu5JtlfbVA+E1WikL/d96vC9d7XUi+2blKp8n0689DjX74PJ4WVKzIW
-	XL9pFFaaOzf20d3ZiVtznng2pi64utb0aHfQihdbwvwE7spPsf86J1vmh+fjpW9XhXZ+kAnm
-	WdLdPf1UvSh3bsw3r5rpK2oP/v57jKcsYenJCQ2ORwX38xXpKLEUZyQaajEXFScCAMJ0hIT0
-	AgAA
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Authentication-Results: mx03.syd.iprimus.net.au; dkim=neutral (message not signed) header.i=none
+Received: from server.relatiefront.nl ([146.185.175.177])
+  by mx03.syd.iprimus.net.au with ESMTP; 28 Feb 2015 15:14:25 +1100
+Received: from [192.168.137.1] by server.relatiefront.nl id k89uirXPNz02DQ; Sat, 28 Feb 2015 04:14:24 +0000
+Message-ID: <003a01d0530d$06f2cc80$0189a8c0-GShGJHTS/rzoSVKQVDllloYESnTqepJF@public.gmane.org>
+From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <steveevans-xIfgLkuENgG6c6uEtOJ/EA@public.gmane.org>
+Subject: LIFE IS EXCELLENT, if there is love 
+Date: Sat, 28 Feb 2015 04:14:24 +0000
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="iso-8859-1"
 
+   zmQtgg05KEyCy6
 
-   Asino di natura chi non sa legger la sua scrittura.
+   Chi perde ha sempre torto.
 
-   Hello, mmwomti-sKtvjTG20lXMCbP7inAHUBbxjuAZBjCN@public.gmane.org
+   Hi, steveevans-xIfgLkuENgH5c4y/nN6+SQ@public.gmane.org
 
-   Val piu un cattivo accordo che una buona sentenza.
+   Roma non fu fatta in un giorno.
 
    Editor/Proofreader is needed
 
-   L'amore e il naso rosso non si possono nascondere.
+   Vicino alla chiesa, lontano da Dio.
 
    Note: this position is for native English speakers only.
 
-   Rovo in buona terra covo.
+   Ne donna, ne tela a lume di candela.
 
    Salary up to 400/week, 1-3 hours daily.
 
-   Quando si e in ballo bisogna ballare.
+   Ognuno ha cio che merita.
 
    Proofreaders check written text after it has been edited and before it
    is printed or published, providing a final quality check to make sure
    that nothing has been missed by the copy editor.
 
-   Forte non e chi non cade mai, ma chi cadendo riesce a rialzarsi.
+   Nel dubbio astieniti.
 
    In this job you will need to be accurate and pay close attention to
    detail.
 
-   Le rose cascano, le spine restano.
+   E meglio essere capo di lucertola che coda di leone.
 
    You do not need any particular qualifications to be a proofreader.
 
-   Il passato non va dimenticato, ma va accantonato.
+   Passata la festa, gabbato lo santo.
 
    You can proofread/edit at any time of the day-night that is convenient
    to you. But you need to meet deadlines.
 
-   A pagare e a morire c'e sempre tempo.
+   Paga il giusto per il peccatore.
 
    To be eligible to apply for this position you must have an appropriate
    Australian work visa.
 
-   Chi ha i denti non ha il pane e chi ha il pane non ha i denti.
+   Vanga e zappa non vuol digiuno.
 
    If you are intrested, please send you resume and phone number to
    e-mail: [1]anna.melkova-O5WfVfzUwx8@public.gmane.org
 
-   La vita e il fine e il di loda la sera.
+   A cavallo giovane, cavaliere vecchio.
 
    Best Regards!
 
-   La luna mente: quando fa la C diminuisce, quando fa la D cresce.
+   Non te fidare in omo che aggia rotto il groppone.
 
    Zelenski CTS
 
 
 
-   Es9OsYtX
-
-   Quel che e fatto e reso.
+   Se non e zuppa e pan bagnato.
 
 References
 
    1. mailto:anna.melkova-O5WfVfzUwx8@public.gmane.org
 
---524fda5a-e94a-4c14-a988-1572f9c1457a--
+--36hi9.541uuXE5n.3LETL77C9aK.FQQ3qr+--
 
---===============0989227312572967580==
+
+
+--===============5768491536375795451==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -227,4 +134,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============0989227312572967580==--
+--===============5768491536375795451==--
