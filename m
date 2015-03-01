@@ -1,9 +1,9 @@
-From: MAILER-DAEMON-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Sat, 28 Feb 2015 23:54:47 +1100 (AEDT)
-Message-ID: <20150228125447.DA00378218D@mail110.syd.optusnet.com.au>
+From: "Mail Delivery System" <MAILER-DAEMON-tSUGXUpoDojFMFIKJrfHhIU4HjDoWQu7KQEueVp/e6I@public.gmane.org>
+Subject: Delivery Status Notification (Failure)
+Date: 01 Mar 2015 19:46:04 +1000
+Message-ID: <1d10b0$5nvu@MIT-COLO-ESA.mercuryit.com.au>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============8438593151998367080=="
+Content-Type: multipart/mixed; boundary="===============1593268576178842560=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,146 +17,116 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
+--===============1593268576178842560==
+Content-Type: multipart/report; report-type=delivery-status; boundary="j/y.543RuMYTt.2MT0kBhBcEt.Az4TtfZ"
 
---===============8438593151998367080==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="15E56782246.1425128087/mail110.syd.optusnet.com.au"
-Content-Transfer-Encoding: 7bit
+--j/y.543RuMYTt.2MT0kBhBcEt.Az4TtfZ
+content-type: text/plain;
+    charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
 
-This is a MIME-encapsulated message.
+The following message to <elizaveta_soloveva-7fKfrpX3floW+bLBXbPJGg@public.gmane.org> was undelive=
+rable.
+The reason for the problem:
+5.3.0 - Other mail system problem 550-'5.7.1 Requested action not taken: me=
+ssage refused'
 
---15E56782246.1425128087/mail110.syd.optusnet.com.au
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+--j/y.543RuMYTt.2MT0kBhBcEt.Az4TtfZ
+content-type: message/delivery-status
 
-This is the mail system at host mail110.syd.optusnet.com.au.
+Reporting-MTA: dns; MIT-COLO-ESA.mercuryit.com.au
 
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
-
-For further assistance, please send mail to postmaster.
-
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
-
-                   The mail system
-
-<jadriaansenn-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org> (expanded from <jadriaansenn-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org>):
-    user unknown
-
---15E56782246.1425128087/mail110.syd.optusnet.com.au
-Content-Description: Delivery report
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns; mail110.syd.optusnet.com.au
-X-Postfix-Queue-ID: 15E56782246
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Sat, 28 Feb 2015 23:54:45 +1100 (AEDT)
-
-Final-Recipient: rfc822; jadriaansenn-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org
-Original-Recipient: rfc822;jadriaansenn-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org
+Final-Recipient: rfc822;elizaveta_soloveva-7fKfrpX3floW+bLBXbPJGg@public.gmane.org
 Action: failed
-Status: 5.1.1
-Diagnostic-Code: x-unix; user unknown
+Status: 5.0.0 (permanent failure)
+Remote-MTA: dns; [125.253.99.225]
+Diagnostic-Code: smtp; 5.3.0 - Other mail system problem 550-'5.7.1 Requested action not taken: message refused' (delivery attempts: 0)
 
---15E56782246.1425128087/mail110.syd.optusnet.com.au
-Content-Description: Undelivered Message
-Content-Type: message/rfc822
-Content-Transfer-Encoding: 7bit
+--j/y.543RuMYTt.2MT0kBhBcEt.Az4TtfZ
+content-type: message/rfc822
 
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from host2.namtamusic.com (host2.namtamusic.com [67.43.1.169])
-	by mail110.syd.optusnet.com.au (Postfix) with ESMTP id 15E56782246
-	for <jadriaansenn-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org>; Sat, 28 Feb 2015 23:54:45 +1100 (AEDT)
-Received: from [192.168.137.100] by host2.namtamusic.com id Nw0YtvkfIPZs; Sat, 28 Feb 2015 07:54:45 -0500
-Message-ID: <003601d05355$b81d5500$6489a8c0-XK7zdmxJ/JRMB9q5UvrceFaTQe2KTcn/@public.gmane.org>
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <jadriaansenn-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org>
-Subject: I WAIT sparkle in your eyes 
-Date: Sat, 28 Feb 2015 07:54:45 -0500
-X-Optus-CM-Spam: spam
-X-Optus-CM-Score: 100
-X-Optus-CM-Analysis: v=2.1 cv=baJSDo/B c=1 sm=1 tr=0 p=cswzFbXsAAAA:8
-	p=Nc6e1EFgizgA:10 p=1THJtyfczl8A:10 a=du8Ljb8zUh6DJACJxOY2Eg==:117
-	a=du8Ljb8zUh6DJACJxOY2Eg==:17 a=8EobBDfZAAAA:8 a=PO7r1zJSAAAA:8
-	a=kj9zAlcOel0A:10 a=Z4Rwk6OoAAAA:8 a=0HtSIViG9nkA:10 a=lojdg71KAAAA:8
-	a=hEh3JUyyAAAA:8 a=UrilxRa90QiUXwEtBfkA:9 a=Z5PgrRQE-oCJNacN:21
-	a=dF-euLs5xKAgLQrF:21 a=dHa-2oKqSwPD_Iim:21 a=CjuIK1q_8ugA:10
-	a=_W_S_7VecoQA:10 a=SViJt0aFoRgA:10 a=EW4g2ddd6jMA:10 a=Q7olE7zuE-YA:10
-	a=qiWi7Edwir4A:10 a=NWVoK91CQyQA:10
+Received: from 94-247-178-107.ispfr.net (HELO de384) ([94.247.178.107])
+  by MIT-COLO-ESA.mercuryit.com.au with ESMTP; 01 Mar 2015 19:45:57 +1000
+Received: from [94.247.178.107] ([[94.247.178.107:21621]) by de384 (envelope-from <update+jGiTCrhi0XkKi@de384>) (ecelerity 2.2.2.45 r(34222M)) with ECSTREAM id OO/99-45851-25563380; Sun, 01 Mar 2015 10:45:57 +0100
+Reply-to: 5wUnx1XIjRZ1W <update+19sYzQiIhHtJ@de384>
+Date: Sun, 01 Mar 2015 10:45:57 +0100
+To: <elizaveta_soloveva-7fKfrpX3floW+bLBXbPJGg@public.gmane.org>
+From: "Lucilla" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: I'll always be with you :) 
+Message-ID: <0HhV4eXcxH4XIb0KltskJa31sxLXAXHBp@de384>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="utf-8"
 
-   L'arcobaleno la mattina bagna il becco della gallina; l'arcobaleno la
-   sera buon tempo mena.
 
-   Hi, jadriaansenn-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org
+   Chi dice donna dice danno.
 
-   Una rondine non fa primavera.
+   Hi, elizaveta_soloveva-7fKfrpX3floW+bLBXbPJGuG/Ez6ZCGd0@public.gmane.org
+
+   Chi fa altrui mestiere, fa la zuppa nel paniere.
 
    Editor/Proofreader is needed
 
-   Se mangi, bevi e il culo rende, a quel paese le medicine e chi le
-   vende.
+   Val piu un cattivo accordo che una buona sentenza.
 
    Note: this position is for native English speakers only.
 
-   Chi a credenza molte merci spaccia, un presto fallimento si procaccia.
+   Aiutati che il ciel t'aiuta.
 
    Salary up to 400/week, 1-3 hours daily.
 
-   La fame caccia il lupo dal bosco.
+   A rubar poco si va in galera a rubar tanto si fa carriera.
 
    Proofreaders check written text after it has been edited and before it
    is printed or published, providing a final quality check to make sure
    that nothing has been missed by the copy editor.
 
-   Male non fare, paura non avere.
+   Non sputare in cielo, che in faccia ti viene.
 
    In this job you will need to be accurate and pay close attention to
    detail.
 
-   La morte non ha paura del medico.
+   Fino alla bara sempre s'impara.
 
    You do not need any particular qualifications to be a proofreader.
 
-   Tutti i gusti son gusti.
+   Male che si vuole non duole.
 
    You can proofread/edit at any time of the day-night that is convenient
    to you. But you need to meet deadlines.
 
-   Necessita fa legge.
+   Primo prossimo e me medesimo.
 
    To be eligible to apply for this position you must have an appropriate
    Australian work visa.
 
-   A brigante, brigante e mezzo.
+   Quando non sai, frequenta il domandare.
 
    If you are intrested, please send you resume and phone number to
    e-mail: [1]anna.melkova-O5WfVfzUwx8@public.gmane.org
 
-   Chi ha tempo non aspetti tempo.
+   La donna e come l'ombra: se l'insegui ti scappa, se scappi t'insegue.
 
    Best Regards!
 
-   Al contadino non far sapere quanto e buono il formaggio con le pere.
+   Ogni lasciata e persa.
 
    Zelenski CTS
 
 
 
-   HcpDMVVm4N3HMVmfgGKe9SAn
+   3vHK77Jo2x4ZYaChQPrZ
 
-   Chi cento ne fa una ne aspetta.
+   Non tutte le ciambelle riescono col buco.
 
 References
 
    1. mailto:anna.melkova-O5WfVfzUwx8@public.gmane.org
 
---15E56782246.1425128087/mail110.syd.optusnet.com.au--
+--j/y.543RuMYTt.2MT0kBhBcEt.Az4TtfZ--
 
---===============8438593151998367080==
+
+
+--===============1593268576178842560==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -166,4 +136,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============8438593151998367080==--
+--===============1593268576178842560==--
