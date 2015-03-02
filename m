@@ -1,7 +1,8 @@
-From: Pavel Emelyanov <xemul-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: [Announce] Checkpoint-restore tool v1.5
-Date: Mon, 2 Mar 2015 15:46:58 +0300
-Message-ID: <54F45BC2.5030702@parallels.com>
+From: Discount-Canadian-Meds <noreply-/9dndDxue5u41k5uCYKmRQ@public.gmane.org>
+Subject: Throughout long years of our practice we have gathered unmatched
+	experience in pharmacy!
+Date: Mon, 2 Mar 2015 21:58:40 +0200
+Message-ID: <op.va47522b564b1d@fandtgroup.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,19 +16,191 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: CRIU <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: accessibility-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, printing-foomatic-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lf_desktop-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, accessibility-atspi-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, everyone!
+   
 
-The 1.5 is out. With it we have the image manipulation tool called CRIT,
-AIO rings support, additional stuff for Docker (fd inheritance and automatic
-veth-to-bridge assignment) and more objects to C/R inside user-namespaces.
+		Greenwich, darien, new roofing off feed thebodies cells no values
+fire. 
 
-Plus bug fixes, of course.
+		Me
+		ds
+		4f
+		or
+		3M
+		en
 
-The full changelog is http://criu.org/Download/criu/1.5
-Sources tarball is http://download.openvz.org/criu/criu-1.5.tar.bz2
+Vi
+Ci
+Ci
+Le
+Pr
+ ag
+al
+al
+vi
+op
+ ra
+is
+is
+tr
+ec
 
-Thanks,
-Pavel
+ S
+a 
+ia
+
+of
+
+t 
+
+Ta
+
+bs
+
+ $0
+$1
+$2
+$2
+$0
+ .9
+.6
+.5
+.5
+.4
+ 9
+5
+0
+0
+5
+
+		Me
+		ds
+		9f
+		or
+		4W
+		om
+		en
+
+Ac
+Cl
+De
+Fe
+Fe
+ om
+om
+fl
+ma
+ma
+ pl
+id
+uc
+le
+le
+ ia
+
+an
+ C
+ V
+
+ia
+ia
+
+li
+gr
+
+s 
+a 
+
+ $1
+$0
+$1
+$1
+$0
+ .7
+.4
+.2
+.1
+.7
+ 5
+5
+5
+1
+2
+
+ Vi
+Sp
+No
+An sa
+ec
+ p
+on ,M
+ia
+re
+ym as
+l 
+sc
+ou te
+in
+ri
+s  rc
+te
+pt
+de ar
+rn
+io
+li d,
+et
+n 
+ve Ec
+ p
+re
+ry he
+ri
+qu
+  ck
+ce
+ir
+
+s 
+ed
+
+   1
+ O
+ F
+ 2 00
+nl
+as
+4/ % 
+y 
+t 
+7  Au
+re
+wo
+cu th
+li
+rl
+st en
+ab
+dw
+om ti
+le
+id
+er c 
+ s
+e 
+ s Me
+up
+sh
+up ds
+pl
+ip
+po  
+ie
+pi
+rt  
+rs
+ng
+
+		>> Enter Here 
