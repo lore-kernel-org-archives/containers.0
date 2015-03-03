@@ -1,10 +1,10 @@
-From: "Mail Administrator" <noreply-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: Returned mail: see transcript for details
-Date: Tue, 3 Mar 2015 20:35:31 +0800
-Message-ID: <20150303123546.924B5A5A@mail.linuxfoundation.org>
+From: "Post Office" <postmaster-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: REPORT
+Date: Wed, 4 Mar 2015 06:01:28 +0800
+Message-ID: <20150303220135.2C137475@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: multipart/mixed;
-	boundary="----=_NextPart_000_0006_1E00F498.5FBFBE05"
+	boundary="----=_NextPart_000_0002_CA8F402A.3C2D54AF"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -20,15 +20,15 @@ List-Id: containers.vger.kernel.org
 
 This is a multi-part message in MIME format.
 
-------=_NextPart_000_0006_1E00F498.5FBFBE05
+------=_NextPart_000_0002_CA8F402A.3C2D54AF
 Content-Type: text/plain;
 	charset=us-ascii
 Content-Transfer-Encoding: 7bit
 
+Message could not be delivered
 
 
-
-------=_NextPart_000_0006_1E00F498.5FBFBE05
+------=_NextPart_000_0002_CA8F402A.3C2D54AF
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -38,4 +38,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
-------=_NextPart_000_0006_1E00F498.5FBFBE05--
+------=_NextPart_000_0002_CA8F402A.3C2D54AF--
