@@ -1,16 +1,14 @@
-From: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 2/2] user_namespaces.7: Update the documention to reflect
-	the fixes for negative groups
-Date: Wed, 04 Mar 2015 15:00:01 +0100
-Message-ID: <54F70FE1.60906__6487.26141448623$1425477637$gmane$org@gmail.com>
-References: <52e0643bd47b1e5c65921d6e00aea1f724bb510a.1417281801.git.luto@amacapital.net>	<87h9x5re41.fsf_-_@x220.int.ebiederm.org>	<87mw6xpzb0.fsf_-_@x220.int.ebiederm.org>	<CALCETrU-o5mPr1jCaLXDuuF6J2N470zAtx=8Fa-SjF=ZpdE8mQ@mail.gmail.com>	<87ppbtn4mv.fsf@x220.int.ebiederm.org>	<CALCETrXSScp77BUJR5NSTh5-RnEZ9rqELSGJBeEzgdQ-OtohuQ@mail.gmail.com>	<87a92xn2io.fsf@x220.int.ebiederm.org>	<87r3w8liw4.fsf@x220.int.ebiederm.org>	<87iohklfvj.fsf_-_@x220.int.ebiederm.org>	<87fvcok11h.fsf_-_@x220.int.ebiederm.org>	<CALCETrVfKiXuY=KY_=nHpkTyLWgpy_3DK=4Mr2mhpyX9z1TzrA@mail.gmail.com>	<971ad3f6-90fd-4e3f-916c-8988af3c826d@email.android.com>	<CALCETrWpzvNm=fjOa3_+4QOqYP8qZUJvQAd6AsRZ71xyHZQRCg@mail.gmail.com>	<87wq5zf83t.fsf@x220.int.ebiederm.org>	<87iohh3c9c.fsf@x220.int.ebiederm.org>	<8761dh3b7k.fs
- f_-_@x220.int.ebiederm.org>	<878uicy1r9.fsf_-_@x220.int.ebiederm.org>	<87ppbo1ql4.fsf_-_@x220.int.ebiederm.org>
-	<CAMXgnP7phuYTko6fHnxjJTi=HRdoa32uH6dp8DyD9uWPWr2kAg@mail.gmail.com>
+From: =?ks_c_5601-1987?B?TUlMLUMtMTcgTG93IExvc3MgQ2E=?=
+	=?ks_c_5601-1987?B?Ymxl?= <info-0W6APRdvTHGhKO8I20eFpwC/G2K4zDHf@public.gmane.org>
+Subject: =?ks_c_5601-1987?B?VUZBMjEwQiBUeXBlIExvdyBMb3M=?=
+	=?ks_c_5601-1987?B?cyBNaWNyb3dhdmUgQ29heGlhbCA=?=
+	=?ks_c_5601-1987?B?Q2FibGU=?=
+Date: Thu, 05 Mar 2015 19:34:27 +0900
+Message-ID: <201503051934649.SM01612@192.168.219.177>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAMXgnP7phuYTko6fHnxjJTi=HRdoa32uH6dp8DyD9uWPWr2kAg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,42 +18,111 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alban Crequy <alban.crequy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: linux-man <linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Josh Triplett <josh-iaAMLnmF4UmaiuxdJuQwMA@public.gmane.org>, stable <stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+To: =?ks_c_5601-1987?B?Y29udGFpbmVycw==?= <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 02/02/2015 10:31 PM, Alban Crequy wrote:
-> Hello,
-> 
-> Thanks for updating the man page.
-> 
-> On 12 December 2014 at 22:54, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
-> (...)
->> Furthermore to preserve in some form the useful applications that have
->> been setting gid_map without privilege the file /proc/[pid]/setgroups
->> was added to allow disabling setgroups.  With the setgroups system
->> call permanently disabled in a user namespace it again becomes safe to
->> allow writes to gid_map without privilege.
->>
->> Here is my meager attempt to update user_namespaces.7 to reflect these
->> issues.
-> 
-> The program userns_child_exec.c in user_namespaces.7 should be updated
-> to write in /proc/.../setgroups, near the line:
-> /* Update the UID and GID maps in the child */
-> 
-> Otherwise, the example given in the manpage does not work:
-> $ ./userns_child_exec -p -m -U -M '0 1000 1' -G '0 1000 1' bash
-
-Thanks, Alban. I've added code to the example to handle /proc/PID/setgroups
-(and tested).
-
-Cheers,
-
-Michael
 
 
--- 
-Michael Kerrisk
-Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
-Linux/UNIX System Programming Training: http://man7.org/training/
+
+ 
+
+ 
+
+Low Loss Microwave Coaxial Cables
+
+ 
+
+UFA210B Type 
+
+ 
+
+Microporosity PTFE Dielectric
+
+ 
+
+ 
+
+www.MIL-C-17.com
+
+ 
+
+ 
+
+
+
+
+
+
+
+
+ 
+
+ 
+
+       
+
+ 
+
+
+Center Conductor
+
+
+The center conductor is one of 19 Stranded Silver Plated Copper Wire in accordance with ASTM B-298. This stranded center conductor is excellent in flexibility and is more phase stable with flexure.
+
+
+ 
+
+
+Dielectric
+
+
+The Dielectric is composed by Low Density Extrusion PTFE with a lower dielectric constant compared with Solid PTFE. Almost of transmission losses are determined by the dielectric material and structure. In addition, the dielectric material and structure determines the velocity of propagation, the using temperature range, the power rating, the phase and amplitude stability, and a flexibility of cable. The LLC-M series cables are constructed by Low Density Extrusion PTFE having low thermal coefficient of expansion, also based on stable and equal pore distribution.
+
+
+ 
+
+
+
+Inner Shield
+
+
+The Inner Shield is composed by Silver Plated Copper Strip wrapped helically between layers. This shield structure provide the outstanding flexibility with providing 100 % coverage rate. The uniform impedance and ideal contact between individual layers of the shield are achieved by unique structure of Silver Plated Copper Strip wrapping. 
+
+
+ 
+
+
+
+Outer Shield
+
+
+The Silver Plated Copper Wire in accordance of ASTM B-298 is braided tightly over the inner shield. The braiding structure provide the tightness of inner shield and also present the additional shield effectiveness.
+
+
+ 
+
+
+
+Jacket
+
+
+The FEP ( Fluorinated Ethylene Propylene ) as the material of outer jacket have the strong resistance to Temperature and Chemical.
+
+
+ 
+
+
+
+ 
+
+
+
+ 
+
+
+
+
+ 
+
+
+If you do not want to receive this message,  Click Reject.  
