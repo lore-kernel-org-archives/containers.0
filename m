@@ -1,10 +1,7 @@
-From: =?ks_c_5601-1987?B?TUlMLUMtMTcgTG93IExvc3MgQ2E=?=
-	=?ks_c_5601-1987?B?Ymxl?= <info-0W6APRdvTHGhKO8I20eFpwC/G2K4zDHf@public.gmane.org>
-Subject: =?ks_c_5601-1987?B?VUZBMjEwQiBUeXBlIExvdyBMb3M=?=
-	=?ks_c_5601-1987?B?cyBNaWNyb3dhdmUgQ29heGlhbCA=?=
-	=?ks_c_5601-1987?B?Q2FibGU=?=
-Date: Thu, 05 Mar 2015 19:34:27 +0900
-Message-ID: <201503051934649.SM01612@192.168.219.177>
+From: "Mail Delivery System" <postmaster-j3+WO8EFB1XYLh3UgpQ8C4dd74u8MsAO@public.gmane.org>
+Subject: Delivery Failure Notification
+Date: Fri, 06 Mar 2015 19:58:14 +1000
+Message-ID: <20150306091213.74B5CA48@mail.linuxfoundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,111 +15,33 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: =?ks_c_5601-1987?B?Y29udGFpbmVycw==?= <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
-
-
- 
-
- 
-
-Low Loss Microwave Coaxial Cables
-
- 
-
-UFA210B Type 
-
- 
-
-Microporosity PTFE Dielectric
-
- 
-
- 
-
-www.MIL-C-17.com
-
- 
-
- 
-
-
-
-
-
-
-
-
- 
-
- 
-
-       
-
- 
-
-
-Center Conductor
-
-
-The center conductor is one of 19 Stranded Silver Plated Copper Wire in accordance with ASTM B-298. This stranded center conductor is excellent in flexibility and is more phase stable with flexure.
-
-
- 
-
-
-Dielectric
-
-
-The Dielectric is composed by Low Density Extrusion PTFE with a lower dielectric constant compared with Solid PTFE. Almost of transmission losses are determined by the dielectric material and structure. In addition, the dielectric material and structure determines the velocity of propagation, the using temperature range, the power rating, the phase and amplitude stability, and a flexibility of cable. The LLC-M series cables are constructed by Low Density Extrusion PTFE having low thermal coefficient of expansion, also based on stable and equal pore distribution.
-
-
- 
-
-
-
-Inner Shield
-
-
-The Inner Shield is composed by Silver Plated Copper Strip wrapped helically between layers. This shield structure provide the outstanding flexibility with providing 100 % coverage rate. The uniform impedance and ideal contact between individual layers of the shield are achieved by unique structure of Silver Plated Copper Strip wrapping. 
-
-
- 
-
-
-
-Outer Shield
-
-
-The Silver Plated Copper Wire in accordance of ASTM B-298 is braided tightly over the inner shield. The braiding structure provide the tightness of inner shield and also present the additional shield effectiveness.
-
-
- 
-
-
-
-Jacket
-
-
-The FEP ( Fluorinated Ethylene Propylene ) as the material of outer jacket have the strong resistance to Temperature and Chemical.
-
-
- 
-
-
-
- 
-
-
-
- 
-
-
-
-
- 
-
-
-If you do not want to receive this message,  Click Reject.  
+With reference to your message addressed to:
+     campst-W9ToFyu4zGPX/JP9YwkgDA@public.gmane.org
+
+One or more addresses in your message have failed with the following responses from the mail transport system:
+
+User <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> is denied from sending to this address, Message rejected
+
+Should you need assistance, please mail postmaster-j3+WO8EFB1XYLh3UgpQ8C4dd74u8MsAO@public.gmane.org
+
+------------------- Returned header follows ----------------------
+
+Received: from AntiSpam-1.federation.edu.au ([141.132.91.40])
+	by gretel.ballarat.edu.au (1.05.91) with SMTP id 1538170265;
+	Fri, 6 Mar 2015 19:57:11 +1000
+Received: from bran2.branneriet.se (mail.branneriet.se [212.247.11.153]) by AntiSpam-1.federation.edu.au with smtp
+	 id 1b9e_d44d_75d0a994_62fa_4cbe_a1ca_d4d3a13f6eab;
+	Fri, 06 Mar 2015 19:57:04 +1100
+Received: from [212.247.11.153] ([[212.247.11.153:21014]) by bran2.branneriet.se (envelope-from <update+VbdhhHnEMcMQd-cNSa/GGZUkNpwsWCmidmvTAV6s6igYVG@public.gmane.org>) (ecelerity 2.2.2.45 r(34222M)) with ECSTREAM id ec/43-88251-49086542; Fri, 06 Mar 2015 09:57:04 +0100
+Reply-to: 6Y3LvgiMK <update+wsVQDxI2FsEdL-cNSa/GGZUkNpwsWCmidmvTAV6s6igYVG@public.gmane.org>
+Date: Fri, 06 Mar 2015 09:57:04 +0100
+To: <campst-W9ToFyu4zGPX/JP9YwkgDA@public.gmane.org>
+From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: I'll always be with you :) 
+Message-ID: <rGZ8Wgha1dHkzbVvT1MhyejDXx-cNSa/GGZUkNpwsWCmidmvTAV6s6igYVG@public.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: 8bit
