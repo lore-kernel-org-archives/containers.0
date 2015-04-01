@@ -1,23 +1,13 @@
-From: Alexander Larsson <alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] devpts: Add ptmx_uid and ptmx_gid options
-Date: Tue, 31 Mar 2015 16:17:24 +0200
-Message-ID: <1427811444.4411.20.camel__14256.5624010333$1427811484$gmane$org@redhat.com>
-References: <b321c0c2729d1c2a72aea319b077dce7afd79698.1424480579.git.luto@amacapital.net>
-	<CALCETrVtGE8LdBCFTe1_cqpLf=SxPNX5iCe5wa-hZ0pe8ps_jA@mail.gmail.com>
-	<1427447013.2250.9.camel@HansenPartnership.com>
-	<1427788642.4411.12.camel@redhat.com>
-	<1427807248.2117.117.camel@HansenPartnership.com>
-	<CALCETrWKA4ZdHfdLuW0_W5xxJOSCJdt_fiRWs6vDk+8ZQ9n9iA@mail.gmail.com>
-	<1427808184.2117.122.camel@HansenPartnership.com>
-	<CALCETrW8v1NFa7fcJbyJKXk9Msudht5BJ7Zy1Rg7ZC_TS-2Y-Q@mail.gmail.com>
-	<1427810118.2117.126.camel@HansenPartnership.com>
-	<CALCETrU1vKf3fXPt8nS-ABDgfp8NxrFjHwTc68rA0rtvg2Lufg@mail.gmail.com>
-	<1427810886.2117.129.camel@HansenPartnership.com>
+From: Canadian-Pills <noreply-+NYlEcLI1MutG0bUXCXiUA@public.gmane.org>
+Subject: Our pharmacy is the place where people find answers to most tricky
+	questions of life!
+Date: Wed, 1 Apr 2015 20:12:08 -0200
+Message-ID: <28ED30BFEEE6342426AFCFE6833BBFBD010AC85A@arti1yapi.com>
+References: <AD029D3D8A1D06E56D42F9C418AEDE6C045BFF9@arti1yapi.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1427810886.2117.129.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,34 +17,193 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Cc: gnome-os-list-rDKQcyrBJuzYtjvyW6yDsg@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, mclasen-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: ha-wg-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, accessibility-atspi-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, p2patent-developer-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, iommu-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On tis, 2015-03-31 at 17:08 +0300, James Bottomley wrote:
-> On Tue, 2015-03-31 at 06:59 -0700, Andy Lutomirski wrote:
-> > 
-> > I don't think that this is correct.  That user can already create a
-> > nested userns and map themselves as 0 inside it.  Then they can mount
-> > devpts.
-> 
-> I don't mind if they create a container and control the isolated ttys in
-> that sub container in the VPS; that's fine.  I do mind if they get
-> access to the ttys in the VPS.
-> 
-> If you can convince me (and the rest of Linux) that the tty subsystem
-> should be mountable by an unprivileged user generally, then what you
-> propose is OK.
+   
 
-That is controlled by the general rights to mount stuff. I.e. unless you
-have CAP_SYS_ADMIN in the VPS container you will not be able to mount
-devpts there. You can only do it in a subcontainer where you got
-permissions to mount via using user namespaces.
+		Helpen met in testified on. Quad cobalt magnets, hollow cemetery,
+tarrytown, new lucis pro cycling motions tillanas. Deployed regular
+basis, which operation. 
 
--- 
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
- Alexander Larsson                                            Red Hat, Inc 
-       alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org            alexander.larsson-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org 
-He's an old-fashioned neurotic master criminal from the Mississippi 
-delta. She's a manipulative extravagent widow on her way to prison for a 
-murder she didn't commit. They fight crime! 
+		Me
+		ds
+		6f
+		or
+		3M
+		en
+
+Vi
+Ci
+Ci
+Le
+Pr
+ ag
+al
+al
+vi
+op
+ ra
+is
+is
+tr
+ec
+
+ S
+a 
+ia
+
+of
+
+t 
+
+Ta
+
+bs
+
+ $0
+$1
+$2
+$2
+$0
+ .9
+.6
+.5
+.5
+.4
+ 9
+5
+0
+0
+5
+
+		Me
+		ds
+		2f
+		or
+		2W
+		om
+		en
+
+Ac
+Cl
+De
+Fe
+Fe
+ om
+om
+fl
+ma
+ma
+ pl
+id
+uc
+le
+le
+ ia
+
+an
+ C
+ V
+
+ia
+ia
+
+li
+gr
+
+s 
+a 
+
+ $1
+$0
+$1
+$1
+$0
+ .7
+.4
+.2
+.1
+.7
+ 5
+5
+5
+1
+2
+
+ 24
+Fa
+On
+No /7
+st
+ly
+ p  c
+ w
+ r
+re us
+or
+el
+sc to
+ld
+ia
+ri me
+wi
+bl
+pt r 
+de
+e 
+io su
+ s
+su
+n  pp
+hi
+pp
+re or
+pp
+li
+qu t 
+in
+er
+ir  
+g 
+s 
+ed  
+
+   1
+ V
+ S
+ A 00
+is
+pe
+no % 
+a,
+ci
+ny Au
+Ma
+al
+mo th
+st
+ i
+us en
+er
+nt
+ d ti
+ca
+er
+el c 
+rd
+ne
+iv Me
+,E
+t 
+er ds
+ch
+pr
+y   
+ec
+ic
+
+k 
+es
+
+		>> Enter Here 
