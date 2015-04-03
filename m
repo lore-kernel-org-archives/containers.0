@@ -1,7 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review  08/19] mnt: Don't propagate unmounts to locked mounts
-Date: Thu,  2 Apr 2015 20:56:12 -0500
-Message-ID: <1428026183-14879-8-git-send-email-ebiederm__30626.9661793069$1428026492$gmane$org@xmission.com>
+Subject: [PATCH review 09/19] mnt: Fail collect_mounts when applied to
+	unmounted mounts
+Date: Thu,  2 Apr 2015 20:56:13 -0500
+Message-ID: <1428026183-14879-9-git-send-email-ebiederm__47856.169861234$1428026501$gmane$org@xmission.com>
 References: <87a8yqou41.fsf_-_@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,93 +22,46 @@ To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Omar Sandoval <osandov-nWWhXC5lh1RBDgjK7y7TUQ@public.gmane.org>, Willy Tarreau <w@1wt.eu>
 List-Id: containers.vger.kernel.org
 
-If the first mount in shared subtree is locked don't unmount the
-shared subtree.
+The only users of collect_mounts are in audit_tree.c
 
-This is ensured by walking through the mounts parents before children
-and marking a mount as unmountable if it is not locked or it is locked
-but it's parent is marked.
+In audit_tree_trees and audit_add_tree rule the path passed into
+collect_mounts is generated from kern_path passed an audit_tree
+pathname which is guaranteed to be an absolute path.   In those cases
+collect_mounts is obviously intended to work on mounted paths and
+if a race results in paths that are unmounted when collect_mounts
+it is reasonable to fail early.
 
-This allows recursive mount detach to propagate through a set of
-mounts when unmounting them would not reveal what is under any locked
-mount.
+The paths passed into audit_tag_tree don't have the absolute path
+check.  But are used to play with fsnotify and otherwise interact with
+the audit_trees, so again operating only on mounted paths appears
+reasonable.
 
-Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Avoid having to worry about what happens when we try and audit
+unmounted filesystems by restricting collect_mounts to mounts
+that appear in the mount tree.
+
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/pnode.c | 32 +++++++++++++++++++++++++++++---
- fs/pnode.h |  1 +
- 2 files changed, 30 insertions(+), 3 deletions(-)
+ fs/namespace.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/fs/pnode.c b/fs/pnode.c
-index 89890293dd0a..6367e1e435c6 100644
---- a/fs/pnode.c
-+++ b/fs/pnode.c
-@@ -382,6 +382,26 @@ void propagate_mount_unlock(struct mount *mnt)
- }
- 
- /*
-+ * Mark all mounts that the MNT_LOCKED logic will allow to be unmounted.
-+ */
-+static void mark_umount_candidates(struct mount *mnt)
-+{
-+	struct mount *parent = mnt->mnt_parent;
-+	struct mount *m;
-+
-+	BUG_ON(parent == mnt);
-+
-+	for (m = propagation_next(parent, parent); m;
-+			m = propagation_next(m, parent)) {
-+		struct mount *child = __lookup_mnt_last(&m->mnt,
-+						mnt->mnt_mountpoint);
-+		if (child && (!IS_MNT_LOCKED(child) || IS_MNT_MARKED(m))) {
-+			SET_MNT_MARK(child);
-+		}
-+	}
-+}
-+
-+/*
-  * NOTE: unmounting 'mnt' naturally propagates to all other mounts its
-  * parent propagates to.
-  */
-@@ -398,10 +418,13 @@ static void __propagate_umount(struct mount *mnt)
- 		struct mount *child = __lookup_mnt_last(&m->mnt,
- 						mnt->mnt_mountpoint);
- 		/*
--		 * umount the child only if the child has no
--		 * other children
-+		 * umount the child only if the child has no children
-+		 * and the child is marked safe to unmount.
- 		 */
--		if (child && list_empty(&child->mnt_mounts)) {
-+		if (!child || !IS_MNT_MARKED(child))
-+			continue;
-+		CLEAR_MNT_MARK(child);
-+		if (list_empty(&child->mnt_mounts)) {
- 			list_del_init(&child->mnt_child);
- 			child->mnt.mnt_flags |= MNT_UMOUNT;
- 			list_move_tail(&child->mnt_list, &mnt->mnt_list);
-@@ -420,6 +443,9 @@ int propagate_umount(struct list_head *list)
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 2b12b7a9455d..acc5583764dc 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -1669,8 +1669,11 @@ struct vfsmount *collect_mounts(struct path *path)
  {
- 	struct mount *mnt;
- 
-+	list_for_each_entry_reverse(mnt, list, mnt_list)
-+		mark_umount_candidates(mnt);
-+
- 	list_for_each_entry(mnt, list, mnt_list)
- 		__propagate_umount(mnt);
- 	return 0;
-diff --git a/fs/pnode.h b/fs/pnode.h
-index af47d4bd7b31..0fcdbe7ca648 100644
---- a/fs/pnode.h
-+++ b/fs/pnode.h
-@@ -19,6 +19,7 @@
- #define IS_MNT_MARKED(m) ((m)->mnt.mnt_flags & MNT_MARKED)
- #define SET_MNT_MARK(m) ((m)->mnt.mnt_flags |= MNT_MARKED)
- #define CLEAR_MNT_MARK(m) ((m)->mnt.mnt_flags &= ~MNT_MARKED)
-+#define IS_MNT_LOCKED(m) ((m)->mnt.mnt_flags & MNT_LOCKED)
- 
- #define CL_EXPIRE    		0x01
- #define CL_SLAVE     		0x02
+ 	struct mount *tree;
+ 	namespace_lock();
+-	tree = copy_tree(real_mount(path->mnt), path->dentry,
+-			 CL_COPY_ALL | CL_PRIVATE);
++	if (!check_mnt(real_mount(path->mnt)))
++		tree = ERR_PTR(-EINVAL);
++	else
++		tree = copy_tree(real_mount(path->mnt), path->dentry,
++				 CL_COPY_ALL | CL_PRIVATE);
+ 	namespace_unlock();
+ 	if (IS_ERR(tree))
+ 		return ERR_CAST(tree);
 -- 
 2.2.1
