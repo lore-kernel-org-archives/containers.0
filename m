@@ -1,8 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 04/19] mnt: In umount_tree reuse mnt_list instead of
-	mnt_hash
-Date: Thu,  2 Apr 2015 20:56:08 -0500
-Message-ID: <1428026183-14879-4-git-send-email-ebiederm__1354.92986669323$1428026469$gmane$org@xmission.com>
+Subject: [PATCH review  05/19] mnt: Add MNT_UMOUNT flag
+Date: Thu,  2 Apr 2015 20:56:09 -0500
+Message-ID: <1428026183-14879-5-git-send-email-ebiederm__46657.5901410126$1428026470$gmane$org@xmission.com>
 References: <87a8yqou41.fsf_-_@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,100 +21,59 @@ To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Omar Sandoval <osandov-nWWhXC5lh1RBDgjK7y7TUQ@public.gmane.org>, Willy Tarreau <w@1wt.eu>
 List-Id: containers.vger.kernel.org
 
-umount_tree builds a list of mounts that need to be unmounted.
-Utilize mnt_list for this purpose instead of mnt_hash.  This begins to
-allow keeping a mount on the mnt_hash after it is unmounted, which is
-necessary for a properly functioning MNT_LOCKED implementation.
+In some instances it is necessary to know if the the unmounting
+process has begun on a mount.  Add MNT_UMOUNT to make that reliably
+testable.
 
-The fact that mnt_list is an ordinary list makding available list_move
-is nice bonus.
+This fix gets used in fixing locked mounts in MNT_DETACH
 
 Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/namespace.c | 20 +++++++++++---------
- fs/pnode.c     |  6 +++---
- fs/pnode.h     |  2 +-
- 3 files changed, 15 insertions(+), 13 deletions(-)
+ fs/namespace.c        | 4 +++-
+ fs/pnode.c            | 1 +
+ include/linux/mount.h | 1 +
+ 3 files changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/fs/namespace.c b/fs/namespace.c
-index c68d9fc912e7..54cbef129f4a 100644
+index 54cbef129f4a..d1708147eb45 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -1327,23 +1327,25 @@ enum umount_tree_flags {
-  */
- static void umount_tree(struct mount *mnt, enum umount_tree_flags how)
- {
--	HLIST_HEAD(tmp_list);
-+	LIST_HEAD(tmp_list);
+@@ -1331,8 +1331,10 @@ static void umount_tree(struct mount *mnt, enum umount_tree_flags how)
  	struct mount *p;
  
--	for (p = mnt; p; p = next_mnt(p, mnt)) {
--		hlist_del_init_rcu(&p->mnt_hash);
--		hlist_add_head(&p->mnt_hash, &tmp_list);
--	}
-+	/* Gather the mounts to umount */
-+	for (p = mnt; p; p = next_mnt(p, mnt))
-+		list_move(&p->mnt_list, &tmp_list);
- 
--	hlist_for_each_entry(p, &tmp_list, mnt_hash)
-+	/* Hide the mounts from lookup_mnt and mnt_mounts */
-+	list_for_each_entry(p, &tmp_list, mnt_list) {
-+		hlist_del_init_rcu(&p->mnt_hash);
- 		list_del_init(&p->mnt_child);
+ 	/* Gather the mounts to umount */
+-	for (p = mnt; p; p = next_mnt(p, mnt))
++	for (p = mnt; p; p = next_mnt(p, mnt)) {
++		p->mnt.mnt_flags |= MNT_UMOUNT;
+ 		list_move(&p->mnt_list, &tmp_list);
 +	}
  
-+	/* Add propogated mounts to the tmp_list */
- 	if (how & UMOUNT_PROPAGATE)
- 		propagate_umount(&tmp_list);
- 
--	while (!hlist_empty(&tmp_list)) {
--		p = hlist_entry(tmp_list.first, struct mount, mnt_hash);
--		hlist_del_init_rcu(&p->mnt_hash);
-+	while (!list_empty(&tmp_list)) {
-+		p = list_first_entry(&tmp_list, struct mount, mnt_list);
- 		list_del_init(&p->mnt_expire);
- 		list_del_init(&p->mnt_list);
- 		__touch_mnt_namespace(p->mnt_ns);
+ 	/* Hide the mounts from lookup_mnt and mnt_mounts */
+ 	list_for_each_entry(p, &tmp_list, mnt_list) {
 diff --git a/fs/pnode.c b/fs/pnode.c
-index 260ac8f898a4..bf012af709dd 100644
+index bf012af709dd..ac3aa0d43b90 100644
 --- a/fs/pnode.c
 +++ b/fs/pnode.c
-@@ -384,7 +384,7 @@ static void __propagate_umount(struct mount *mnt)
+@@ -384,6 +384,7 @@ static void __propagate_umount(struct mount *mnt)
  		if (child && list_empty(&child->mnt_mounts)) {
  			list_del_init(&child->mnt_child);
  			hlist_del_init_rcu(&child->mnt_hash);
--			hlist_add_before_rcu(&child->mnt_hash, &mnt->mnt_hash);
-+			list_move_tail(&child->mnt_list, &mnt->mnt_list);
++			child->mnt.mnt_flags |= MNT_UMOUNT;
+ 			list_move_tail(&child->mnt_list, &mnt->mnt_list);
  		}
  	}
- }
-@@ -396,11 +396,11 @@ static void __propagate_umount(struct mount *mnt)
-  *
-  * vfsmount lock must be held for write
-  */
--int propagate_umount(struct hlist_head *list)
-+int propagate_umount(struct list_head *list)
- {
- 	struct mount *mnt;
+diff --git a/include/linux/mount.h b/include/linux/mount.h
+index c2c561dc0114..564beeec5d83 100644
+--- a/include/linux/mount.h
++++ b/include/linux/mount.h
+@@ -61,6 +61,7 @@ struct mnt_namespace;
+ #define MNT_DOOMED		0x1000000
+ #define MNT_SYNC_UMOUNT		0x2000000
+ #define MNT_MARKED		0x4000000
++#define MNT_UMOUNT		0x8000000
  
--	hlist_for_each_entry(mnt, list, mnt_hash)
-+	list_for_each_entry(mnt, list, mnt_list)
- 		__propagate_umount(mnt);
- 	return 0;
- }
-diff --git a/fs/pnode.h b/fs/pnode.h
-index 16afc3d6d2f2..aa6d65df7204 100644
---- a/fs/pnode.h
-+++ b/fs/pnode.h
-@@ -40,7 +40,7 @@ static inline void set_mnt_shared(struct mount *mnt)
- void change_mnt_propagation(struct mount *, int);
- int propagate_mnt(struct mount *, struct mountpoint *, struct mount *,
- 		struct hlist_head *);
--int propagate_umount(struct hlist_head *);
-+int propagate_umount(struct list_head *);
- int propagate_mount_busy(struct mount *, int);
- void mnt_release_group_id(struct mount *);
- int get_dominating_id(struct mount *mnt, const struct path *root);
+ struct vfsmount {
+ 	struct dentry *mnt_root;	/* root of the mounted tree */
 -- 
 2.2.1
