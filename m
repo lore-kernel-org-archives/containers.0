@@ -1,8 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 07/19] mnt: On an unmount propagate clearing of
-	MNT_LOCKED
-Date: Thu,  2 Apr 2015 20:56:11 -0500
-Message-ID: <1428026183-14879-7-git-send-email-ebiederm__35885.1314559162$1428026483$gmane$org@xmission.com>
+Subject: [PATCH review  08/19] mnt: Don't propagate unmounts to locked mounts
+Date: Thu,  2 Apr 2015 20:56:12 -0500
+Message-ID: <1428026183-14879-8-git-send-email-ebiederm__30626.9661793069$1428026492$gmane$org@xmission.com>
 References: <87a8yqou41.fsf_-_@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,61 +21,48 @@ To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Omar Sandoval <osandov-nWWhXC5lh1RBDgjK7y7TUQ@public.gmane.org>, Willy Tarreau <w@1wt.eu>
 List-Id: containers.vger.kernel.org
 
-A prerequisite of calling umount_tree is that the point where the tree
-is mounted at is valid to unmount.
+If the first mount in shared subtree is locked don't unmount the
+shared subtree.
 
-If we are propagating the effect of the unmount clear MNT_LOCKED in
-every instance where the same filesystem is mounted on the same
-mountpoint in the mount tree, as we know (by virtue of the fact
-that umount_tree was called) that it is safe to reveal what
-is at that mountpoint.
+This is ensured by walking through the mounts parents before children
+and marking a mount as unmountable if it is not locked or it is locked
+but it's parent is marked.
+
+This allows recursive mount detach to propagate through a set of
+mounts when unmounting them would not reveal what is under any locked
+mount.
 
 Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/namespace.c |  3 +++
- fs/pnode.c     | 20 ++++++++++++++++++++
- fs/pnode.h     |  1 +
- 3 files changed, 24 insertions(+)
+ fs/pnode.c | 32 +++++++++++++++++++++++++++++---
+ fs/pnode.h |  1 +
+ 2 files changed, 30 insertions(+), 3 deletions(-)
 
-diff --git a/fs/namespace.c b/fs/namespace.c
-index 083e3401a808..2b12b7a9455d 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -1333,6 +1333,9 @@ static void umount_tree(struct mount *mnt, enum umount_tree_flags how)
- 	LIST_HEAD(tmp_list);
- 	struct mount *p;
- 
-+	if (how & UMOUNT_PROPAGATE)
-+		propagate_mount_unlock(mnt);
-+
- 	/* Gather the mounts to umount */
- 	for (p = mnt; p; p = next_mnt(p, mnt)) {
- 		p->mnt.mnt_flags |= MNT_UMOUNT;
 diff --git a/fs/pnode.c b/fs/pnode.c
-index c27ae38ee250..89890293dd0a 100644
+index 89890293dd0a..6367e1e435c6 100644
 --- a/fs/pnode.c
 +++ b/fs/pnode.c
-@@ -362,6 +362,26 @@ int propagate_mount_busy(struct mount *mnt, int refcnt)
+@@ -382,6 +382,26 @@ void propagate_mount_unlock(struct mount *mnt)
  }
  
  /*
-+ * Clear MNT_LOCKED when it can be shown to be safe.
-+ *
-+ * mount_lock lock must be held for write
++ * Mark all mounts that the MNT_LOCKED logic will allow to be unmounted.
 + */
-+void propagate_mount_unlock(struct mount *mnt)
++static void mark_umount_candidates(struct mount *mnt)
 +{
 +	struct mount *parent = mnt->mnt_parent;
-+	struct mount *m, *child;
++	struct mount *m;
 +
 +	BUG_ON(parent == mnt);
 +
 +	for (m = propagation_next(parent, parent); m;
 +			m = propagation_next(m, parent)) {
-+		child = __lookup_mnt_last(&m->mnt, mnt->mnt_mountpoint);
-+		if (child)
-+			child->mnt.mnt_flags &= ~MNT_LOCKED;
++		struct mount *child = __lookup_mnt_last(&m->mnt,
++						mnt->mnt_mountpoint);
++		if (child && (!IS_MNT_LOCKED(child) || IS_MNT_MARKED(m))) {
++			SET_MNT_MARK(child);
++		}
 +	}
 +}
 +
@@ -84,17 +70,44 @@ index c27ae38ee250..89890293dd0a 100644
   * NOTE: unmounting 'mnt' naturally propagates to all other mounts its
   * parent propagates to.
   */
+@@ -398,10 +418,13 @@ static void __propagate_umount(struct mount *mnt)
+ 		struct mount *child = __lookup_mnt_last(&m->mnt,
+ 						mnt->mnt_mountpoint);
+ 		/*
+-		 * umount the child only if the child has no
+-		 * other children
++		 * umount the child only if the child has no children
++		 * and the child is marked safe to unmount.
+ 		 */
+-		if (child && list_empty(&child->mnt_mounts)) {
++		if (!child || !IS_MNT_MARKED(child))
++			continue;
++		CLEAR_MNT_MARK(child);
++		if (list_empty(&child->mnt_mounts)) {
+ 			list_del_init(&child->mnt_child);
+ 			child->mnt.mnt_flags |= MNT_UMOUNT;
+ 			list_move_tail(&child->mnt_list, &mnt->mnt_list);
+@@ -420,6 +443,9 @@ int propagate_umount(struct list_head *list)
+ {
+ 	struct mount *mnt;
+ 
++	list_for_each_entry_reverse(mnt, list, mnt_list)
++		mark_umount_candidates(mnt);
++
+ 	list_for_each_entry(mnt, list, mnt_list)
+ 		__propagate_umount(mnt);
+ 	return 0;
 diff --git a/fs/pnode.h b/fs/pnode.h
-index aa6d65df7204..af47d4bd7b31 100644
+index af47d4bd7b31..0fcdbe7ca648 100644
 --- a/fs/pnode.h
 +++ b/fs/pnode.h
-@@ -42,6 +42,7 @@ int propagate_mnt(struct mount *, struct mountpoint *, struct mount *,
- 		struct hlist_head *);
- int propagate_umount(struct list_head *);
- int propagate_mount_busy(struct mount *, int);
-+void propagate_mount_unlock(struct mount *);
- void mnt_release_group_id(struct mount *);
- int get_dominating_id(struct mount *mnt, const struct path *root);
- unsigned int mnt_get_count(struct mount *mnt);
+@@ -19,6 +19,7 @@
+ #define IS_MNT_MARKED(m) ((m)->mnt.mnt_flags & MNT_MARKED)
+ #define SET_MNT_MARK(m) ((m)->mnt.mnt_flags |= MNT_MARKED)
+ #define CLEAR_MNT_MARK(m) ((m)->mnt.mnt_flags &= ~MNT_MARKED)
++#define IS_MNT_LOCKED(m) ((m)->mnt.mnt_flags & MNT_LOCKED)
+ 
+ #define CL_EXPIRE    		0x01
+ #define CL_SLAVE     		0x02
 -- 
 2.2.1
