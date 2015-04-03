@@ -1,7 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review  19/19] vfs: Do not allow escaping from bind mounts.
-Date: Thu,  2 Apr 2015 20:56:23 -0500
-Message-ID: <1428026183-14879-19-git-send-email-ebiederm__22773.3752145015$1428026554$gmane$org@xmission.com>
+Subject: [PATCH review  13/19] mnt: Honor MNT_LOCKED when detaching mounts
+Date: Thu,  2 Apr 2015 20:56:17 -0500
+Message-ID: <1428026183-14879-13-git-send-email-ebiederm__5246.87153888426$1428026558$gmane$org@xmission.com>
 References: <87a8yqou41.fsf_-_@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,210 +21,100 @@ To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Omar Sandoval <osandov-nWWhXC5lh1RBDgjK7y7TUQ@public.gmane.org>, Willy Tarreau <w@1wt.eu>
 List-Id: containers.vger.kernel.org
 
-Rename can move a file or directory outside of a bind mount.  This has
-allowed programs with paths below the renamed directory to traverse up
-their directory tree to the real root of the filesystem instead of
-just the root of their bind mount.
+Modify umount(MNT_DETACH) to keep mounts in the hash table that are
+locked to their parent mounts, when the parent is lazily unmounted.
 
-In the presence of such renames limit applications to what the bind
-mount intended to reveal by marking mounts that have had dentries
-renamed out of them with MNT_VIOLATED, marking mounts that can no
-longer walk up to their parent mounts with MNT_UMOUNT_PENDING and then
-lazily unmounting such mounts.
+In mntput_no_expire detach the children from the hash table, depending
+on mnt_pin_kill in cleanup_mnt to decrement the mnt_count of the children.
 
-All moves go through __d_move so __d_move has been modified to mark
-all mounts whose dentries have been moved outside of them.
-
-Once the root dentry of a violated mount has been found a new function
-mnt_set_violated is called to:
-
-- mark all mounts that have that dentry as their root as violated
-
-- to mark all children of violated mounts that can no longer reach
-  their parents.
-
-- to schedule for unmounting all children of violated mounts that can
-  no longer reach their parents.
-
-The children that can't reach their parents are only scheduled for
-unmounting because the sleeping namespace_sem can not be taken inside
-of __d_move which can not sleep.
-
-This change adds a field to struct mount mnt_pending_umount that is
-used to thread the list of pending unmounts through struct mount.  As
-there are small but unavioable races between scheduling an unmount and
-the possibility of userspace calling umount_tree, umount_tree has been
-modified to remove all mounts that are being unmounted from the
-pending_umount list.
-
-This closes a hole where it was possible in some circumstances
-to follow .. past the root of a bind mount.
+In __detach_mounts if there are any mounts that have been unmounted
+but still are on the list of mounts of a mountpoint, remove their
+children from the mount hash table and those children to the unmounted
+list so they won't linger potentially indefinitely waiting for their
+final mntput, now that the mounts serve no purpose.
 
 Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/dcache.c    | 29 ++++++++++++++++++++++++++++
- fs/internal.h  |  1 +
- fs/mount.h     |  1 +
- fs/namespace.c | 61 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 92 insertions(+)
+ fs/namespace.c | 29 ++++++++++++++++++++++++++---
+ fs/pnode.h     |  2 ++
+ 2 files changed, 28 insertions(+), 3 deletions(-)
 
-diff --git a/fs/dcache.c b/fs/dcache.c
-index cae4a42c1846..e04e2a23ad00 100644
---- a/fs/dcache.c
-+++ b/fs/dcache.c
-@@ -2535,6 +2535,26 @@ static void dentry_unlock_for_move(struct dentry *dentry, struct dentry *target)
- 	spin_unlock(&dentry->d_lock);
- }
- 
-+static void mark_violated_mounts(struct dentry *dentry, struct dentry *target)
-+{
-+	/* Mark all mountroots that are ancestors of dentry
-+	 * that do not share a common ancestor with target
-+	 *
-+	 * This function assumes both dentries are part of a DAG.
-+	 */
-+	struct dentry *p;
-+
-+	for (p = dentry->d_parent; !IS_ROOT(p); p = p->d_parent) {
-+		if (!d_mountroot(p))
-+			continue;
-+
-+		if (d_ancestor(p, target))
-+			break;
-+
-+		mnt_set_violated(p, dentry);
-+	}
-+}
-+
- /*
-  * When switching names, the actual string doesn't strictly have to
-  * be preserved in the target - because we're dropping the target
-@@ -2569,6 +2589,15 @@ static void __d_move(struct dentry *dentry, struct dentry *target,
- 	BUG_ON(d_ancestor(dentry, target));
- 	BUG_ON(d_ancestor(target, dentry));
- 
-+	/* If we are not splicing a dentry, mark mounts which may have
-+	 * paths that are no longer able to follow d_parent up to
-+	 * mnt_root after this move.
-+	 */
-+	if (!IS_ROOT(dentry) && !IS_ROOT(target)) {
-+		mark_violated_mounts(dentry, target);
-+		mark_violated_mounts(target, dentry);
-+	}
-+
- 	dentry_lock_for_move(dentry, target);
- 
- 	write_seqcount_begin(&dentry->d_seq);
-diff --git a/fs/internal.h b/fs/internal.h
-index 046767f0042e..2f04050ab32f 100644
---- a/fs/internal.h
-+++ b/fs/internal.h
-@@ -71,6 +71,7 @@ extern int __mnt_want_write_file(struct file *);
- extern void __mnt_drop_write(struct vfsmount *);
- extern void __mnt_drop_write_file(struct file *);
- 
-+extern void mnt_set_violated(struct dentry *root, struct dentry *moving);
- /*
-  * fs_struct.c
-  */
-diff --git a/fs/mount.h b/fs/mount.h
-index a8be3033e022..0697b23fe417 100644
---- a/fs/mount.h
-+++ b/fs/mount.h
-@@ -41,6 +41,7 @@ struct mount {
- 	union {
- 		struct rcu_head mnt_rcu;
- 		struct llist_node mnt_llist;
-+		struct hlist_node mnt_pending_umount;
- 	};
- #ifdef CONFIG_SMP
- 	struct mnt_pcp __percpu *mnt_pcp;
 diff --git a/fs/namespace.c b/fs/namespace.c
-index 5b1b666439ac..c38d299ff26f 100644
+index 010d5bebcb7e..1894d1878dbc 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -245,6 +245,7 @@ static struct mount *alloc_vfsmnt(const char *name)
- 		mnt->mnt_writers = 0;
- #endif
+@@ -1099,6 +1099,13 @@ static void mntput_no_expire(struct mount *mnt)
+ 	rcu_read_unlock();
  
-+		INIT_HLIST_NODE(&mnt->mnt_pending_umount);
- 		INIT_HLIST_NODE(&mnt->mnt_hash);
- 		INIT_LIST_HEAD(&mnt->mnt_child);
- 		INIT_LIST_HEAD(&mnt->mnt_mounts);
-@@ -1485,6 +1486,7 @@ static void umount_tree(struct mount *mnt, enum umount_tree_flags how)
- 	while (!list_empty(&tmp_list)) {
- 		bool disconnect;
- 		p = list_first_entry(&tmp_list, struct mount, mnt_list);
-+		hlist_del_init(&mnt->mnt_pending_umount);
- 		list_del_init(&p->mnt_expire);
- 		list_del_init(&p->mnt_list);
- 		__touch_mnt_namespace(p->mnt_ns);
-@@ -1646,6 +1648,65 @@ out_unlock:
- 	namespace_unlock();
- }
- 
-+static HLIST_HEAD(pending_umount);
-+static void umount_pending_umounts(struct work_struct *unused)
-+{
-+	HLIST_HEAD(head);
+ 	list_del(&mnt->mnt_instance);
 +
-+	namespace_lock();
-+	lock_mount_hash();
-+
-+	hlist_move_list(&pending_umount, &head);
-+
-+	while (!hlist_empty(&head)) {
-+		struct mount *mnt =
-+			hlist_entry(head.first, struct mount, mnt_pending_umount);
-+		umount_tree(mnt, UMOUNT_CONNECTED);
-+	}
-+
-+	unlock_mount_hash();
-+	namespace_unlock();
-+}
-+
-+static DECLARE_WORK(pending_umount_work, umount_pending_umounts);
-+
-+void mnt_set_violated(struct dentry *root, struct dentry *moving)
-+{
-+	struct mountroot *mr;
-+	struct mount *mnt;
-+
-+	lock_mount_hash();
-+	mr = lookup_mountroot(root);
-+	if (!mr)
-+		goto out;
-+
-+	hlist_for_each_entry(mnt, &mr->r_list, mnt_mr_list) {
-+		struct mount *child;
-+		/* Be wary of this mount */
-+		mnt->mnt.mnt_flags |= MNT_VIOLATED;
-+
-+		list_for_each_entry(child, &mnt->mnt_mounts, mnt_child) {
-+			/* Ignore children that will continue to be connected */
-+			if ((child->mnt_mountpoint != moving) &&
-+			    !d_ancestor(moving, child->mnt_mountpoint))
-+				continue;
-+
-+			/* Deal with mounts loosing the connection to
-+			 * their parents
-+			 */
-+			if (!(child->mnt.mnt_flags & MNT_UMOUNT)) {
-+				child->mnt.mnt_flags |= MNT_UNREACHABLE_PARENT;
-+				hlist_add_head(&child->mnt_pending_umount, &pending_umount);
-+				schedule_work(&pending_umount_work);
-+			} else {
-+				umount_mnt(child);
-+			}
++	if (unlikely(!list_empty(&mnt->mnt_mounts))) {
++		struct mount *p, *tmp;
++		list_for_each_entry_safe(p, tmp, &mnt->mnt_mounts,  mnt_child) {
++			umount_mnt(p);
 +		}
 +	}
-+out:
-+	unlock_mount_hash();
-+}
+ 	unlock_mount_hash();
+ 
+ 	if (likely(!(mnt->mnt.mnt_flags & MNT_INTERNAL))) {
+@@ -1370,6 +1377,7 @@ static void umount_tree(struct mount *mnt, enum umount_tree_flags how)
+ 		propagate_umount(&tmp_list);
+ 
+ 	while (!list_empty(&tmp_list)) {
++		bool disconnect;
+ 		p = list_first_entry(&tmp_list, struct mount, mnt_list);
+ 		list_del_init(&p->mnt_expire);
+ 		list_del_init(&p->mnt_list);
+@@ -1378,10 +1386,18 @@ static void umount_tree(struct mount *mnt, enum umount_tree_flags how)
+ 		if (how & UMOUNT_SYNC)
+ 			p->mnt.mnt_flags |= MNT_SYNC_UMOUNT;
+ 
+-		pin_insert_group(&p->mnt_umount, &p->mnt_parent->mnt, &unmounted);
++		disconnect = !IS_MNT_LOCKED_AND_LAZY(p);
 +
- /* 
-  * Is the caller allowed to modify his namespace?
-  */
++		pin_insert_group(&p->mnt_umount, &p->mnt_parent->mnt,
++				 disconnect ? &unmounted : NULL);
+ 		if (mnt_has_parent(p)) {
+ 			mnt_add_count(p->mnt_parent, -1);
+-			umount_mnt(p);
++			if (!disconnect) {
++				/* Don't forget about p */
++				list_add_tail(&p->mnt_child, &p->mnt_parent->mnt_mounts);
++			} else {
++				umount_mnt(p);
++			}
+ 		}
+ 		change_mnt_propagation(p, MS_PRIVATE);
+ 	}
+@@ -1506,7 +1522,14 @@ void __detach_mounts(struct dentry *dentry)
+ 	lock_mount_hash();
+ 	while (!hlist_empty(&mp->m_list)) {
+ 		mnt = hlist_entry(mp->m_list.first, struct mount, mnt_mp_list);
+-		umount_tree(mnt, 0);
++		if (mnt->mnt.mnt_flags & MNT_UMOUNT) {
++			struct mount *p, *tmp;
++			list_for_each_entry_safe(p, tmp, &mnt->mnt_mounts,  mnt_child) {
++				hlist_add_head(&p->mnt_umount.s_list, &unmounted);
++				umount_mnt(p);
++			}
++		}
++		else umount_tree(mnt, 0);
+ 	}
+ 	unlock_mount_hash();
+ 	put_mountpoint(mp);
+diff --git a/fs/pnode.h b/fs/pnode.h
+index 0fcdbe7ca648..7114ce6e6b9e 100644
+--- a/fs/pnode.h
++++ b/fs/pnode.h
+@@ -20,6 +20,8 @@
+ #define SET_MNT_MARK(m) ((m)->mnt.mnt_flags |= MNT_MARKED)
+ #define CLEAR_MNT_MARK(m) ((m)->mnt.mnt_flags &= ~MNT_MARKED)
+ #define IS_MNT_LOCKED(m) ((m)->mnt.mnt_flags & MNT_LOCKED)
++#define IS_MNT_LOCKED_AND_LAZY(m) \
++	(((m)->mnt.mnt_flags & (MNT_LOCKED|MNT_SYNC_UMOUNT)) == MNT_LOCKED)
+ 
+ #define CL_EXPIRE    		0x01
+ #define CL_SLAVE     		0x02
 -- 
 2.2.1
