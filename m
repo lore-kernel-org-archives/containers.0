@@ -1,29 +1,15 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH] devpts: Add ptmx_uid and ptmx_gid options
-Date: Thu, 02 Apr 2015 13:27:55 -0500
-Message-ID: <87zj6qs7v8.fsf@x220.int.ebiederm.org>
-References: <b321c0c2729d1c2a72aea319b077dce7afd79698.1424480579.git.luto@amacapital.net>
-	<CALCETrVtGE8LdBCFTe1_cqpLf=SxPNX5iCe5wa-hZ0pe8ps_jA@mail.gmail.com>
-	<1427447013.2250.9.camel@HansenPartnership.com>
-	<1427788642.4411.12.camel@redhat.com>
-	<1427807248.2117.117.camel@HansenPartnership.com>
-	<CALCETrWKA4ZdHfdLuW0_W5xxJOSCJdt_fiRWs6vDk+8ZQ9n9iA@mail.gmail.com>
-	<1427808184.2117.122.camel@HansenPartnership.com>
-	<CALCETrW8v1NFa7fcJbyJKXk9Msudht5BJ7Zy1Rg7ZC_TS-2Y-Q@mail.gmail.com>
-	<1427810118.2117.126.camel@HansenPartnership.com>
-	<CALCETrU1vKf3fXPt8nS-ABDgfp8NxrFjHwTc68rA0rtvg2Lufg@mail.gmail.com>
-	<1427810886.2117.129.camel@HansenPartnership.com>
-	<1427811444.4411.20.camel@redhat.com>
-	<1427969525.3559.120.camel@HansenPartnership.com>
-	<CALCETrWyUYgHY53O451AdJUs9Mcjsqmr4fUzoNmYsTP1HLq+VA@mail.gmail.com>
-	<1427984969.13651.11.camel@redhat.com>
-	<CALCETrWYit+WiAM6DFm0enGeJN==uWNC63zXp_zRSsSJg2YGPg@mail.gmail.com>
+Subject: [PATCH review 0/19] Locked mount and loopback mount fixes
+Date: Thu, 02 Apr 2015 20:53:18 -0500
+Message-ID: <87a8yqou41.fsf_-___40072.5551801317$1428026265$gmane$org@x220.int.ebiederm.org>
+References: <871tncuaf6.fsf@x220.int.ebiederm.org>
+	<87mw5xq7lt.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CALCETrWYit+WiAM6DFm0enGeJN==uWNC63zXp_zRSsSJg2YGPg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Andy Lutomirski's message of "Thu, 2 Apr 2015 07:33:28 -0700")
+In-Reply-To: <87mw5xq7lt.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org> (Eric W. Biederman's
+	message of "Mon, 05 Jan 2015 14:45:50 -0600")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -33,113 +19,82 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Cc: gnome-os-list-rDKQcyrBJuzYtjvyW6yDsg@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, mclasen-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Omar Sandoval <osandov-nWWhXC5lh1RBDgjK7y7TUQ@public.gmane.org>, Willy Tarreau <w@1wt.eu>
 List-Id: containers.vger.kernel.org
 
-Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> writes:
 
-> On Thu, Apr 2, 2015 at 7:29 AM, Alexander Larsson <alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
->> On Thu, 2015-04-02 at 07:06 -0700, Andy Lutomirski wrote:
->>> On Thu, Apr 2, 2015 at 3:12 AM, James Bottomley
->>> <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org> wrote:
->>> > On Tue, 2015-03-31 at 16:17 +0200, Alexander Larsson wrote:
->>> >> On tis, 2015-03-31 at 17:08 +0300, James Bottomley wrote:
->>> >> > On Tue, 2015-03-31 at 06:59 -0700, Andy Lutomirski wrote:
->>> >> > >
->>> >> > > I don't think that this is correct.  That user can already create a
->>> >> > > nested userns and map themselves as 0 inside it.  Then they can mount
->>> >> > > devpts.
->>> >> >
->>> >> > I don't mind if they create a container and control the isolated ttys in
->>> >> > that sub container in the VPS; that's fine.  I do mind if they get
->>> >> > access to the ttys in the VPS.
->>> >> >
->>> >> > If you can convince me (and the rest of Linux) that the tty subsystem
->>> >> > should be mountable by an unprivileged user generally, then what you
->>> >> > propose is OK.
->>> >>
->>> >> That is controlled by the general rights to mount stuff. I.e. unless you
->>> >> have CAP_SYS_ADMIN in the VPS container you will not be able to mount
->>> >> devpts there. You can only do it in a subcontainer where you got
->>> >> permissions to mount via using user namespaces.
->>> >
->>> > OK let me try again.  Fine, if you want to speak capabilities, you've
->>> > given a non-root user an unexpected capability (the capability of
->>> > creating a ptmx device).  But you haven't used a capability separation
->>> > to do this, you've just hard coded it via a mount parameter mechanism.
->>> >
->>> > If you want to do this thing, do it properly, so it's acceptable to the
->>> > whole of Linux, not a special corner case for one particular type of
->>> > container.
->>> >
->>> > Security breaches are created when people code in special, little used,
->>> > corner cases because they don't get as thoroughly tested and inspected
->>> > as generally applicable mechanisms.
->>> >
->>> > What you want is to be able to use the tty subsystem as a non root user:
->>> > fine, but set that up globally, don't hide it in containers so a lot
->>> > fewer people care.
->>>
->>> I tend to agree, and not just for the tty subsystem.  This is an
->>> attack surface issue.  With unprivileged user namespaces, unprivileged
->>> users can create mount namespaces (probably a good thing for bind
->>> mounts, etc), network namespaces (reasonably safe by themselves),
->>> network interfaces and iptables rules (scary), fresh
->>> instances/superblocks of some filesystems (scariness depends on the fs
->>> -- tmpfs is probably fine), and more.
->>>
->>> I think we should have real controls for this, and this is mostly
->>> Eric's domain.  Eric?  A silly issue that sometimes prevents devpts
->>> from being mountable isn't a real control, though.
+Way back in October Andrey Vagin reported that umount(MNT_DETACH) could
+be used to defeat MNT_LOCKED.  As I worked to fix this I discovered
+that combined with mount propagation and an appropriate selection of
+shared subtrees a reference to a directory on an unmounted filesystem is
+not necessary.
 
-I thought the controls for limiting how much of the userspace API
-an application could use were called seccomp and seccomp2.
+That MNT_DETACH is allowed in user namespace in a form that can break
+MNT_LOCKED comes from my early misunderstanding what MNT_DETACH does.
 
-Do we need something like a PAM module so that we can set up these
-controls during login?
+To avoid breaking existing userspace the conflict between MNT_DETACH and
+MNT_LOCKED is fixed by leaving mounts that are locked to their parents
+in the mount hash table until the last reference goes away.
 
->> I'm honestly surprised that non-root is allowed to mount things in
->> general with user namespaces. This was long disabled use for non-root in
->> Fedora, but it is now enabled.
->>
->> For instance, using loopback mounted files you could probably attack
->> some of the less well tested filesystem implementations by feeding them
->> fuzzed data.
->>
->
-> You actually can't do that right now.  Filesystems have to opt in to
-> being mounted in unprivileged user namespaces, and no filesystems with
-> backing stores have opted in.  devpts has, but it's buggy without this
-> patch IMO.
+While investigating this issue I also found an issue with
+__detach_mounts.  The code was unnecessarily and incorrectly triggering
+mount propagation.  Resulting in too many mounts going away when a
+directory is deleted, and too many cpu cycles are burned while doing
+that.
 
-Arguably you should use two user namespaces.  The first to do what you
-want to as root the second to run as the uid you want to run as.
+Looking some more I realized that __detach_mounts by only keeping mounts
+connected that were MNT_LOCKED it had the potential to still leak
+information so I tweaked the code to keep everything locked together
+that possibly could be.
 
->> Anyway, I don't see how this affects devpts though. If you're running in
->> a container (or uncontained), as a regular users with no mount
->> capabilities you can already mount a devpts filesystem if you create a
->> subbcontainer with user namespaces and map your uid to 0 in the
->> subcontainer. Then you get a new ptmx device that you can do whatever
->> you want with. The mount option would let you do the same, except be
->> your regular uid in the subcontainer.
->>
->> The only difference outside of the subcontainer is that if the outer
->> container has no uid 0 mapped, yet the user has CAP_SYSADMIN rights in
->> that container. Then he can mount devpts in the outer container where he
->> before could only mount it in an inner container.
->>
->
-> Agreed.  Also, devpts doesn't seem scary at all to me from a userns
-> perspective.  Regular users on normal systems can already use ptmx,
-> and AFAICS basically all of the attack surface is already available
-> through the normal /dev/ptmx node.
+In the middle of all of this bug hunting and fixing it was reported that
+with a strategically placed rename ".." on bind mounts could go up
+past their root of the bind mount.  Which turned out to be very easy to
+understand and test for but tricky to actually fix in a way that would
+not slow down path name lookups in the common case.
 
-My only real take is that there are a lot more places that you need to
-tweak beyond devpts.  So this patch seemed lacking and boring.
+These fixes are against on v4.0-rc6 which has all of Al's new fs_pin
+code.
 
-Beyond that until I get the mount namespace sorted out things are pretty
-much in a feature freeze because I can't multitask well enough to do
-complicated patches and take feature patches.
+I have tested the code and I don't see any issues but as I am human I
+may have missed a corner case or two.  So any feedback is appreciated.
 
-Eric
+For those who like to see everything in a single tree the code is at:
+
+   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-testing
+
+Eric W. Biederman (19):
+      mnt: Use hlist_move_list in namespace_unlock
+      mnt: Improve the umount_tree flags
+      mnt: Don't propagate umounts in __detach_mounts
+      mnt: In umount_tree reuse mnt_list instead of mnt_hash
+      mnt: Add MNT_UMOUNT flag
+      mnt: Delay removal from the mount hash.
+      mnt: On an unmount propagate clearing of MNT_LOCKED
+      mnt: Don't propagate unmounts to locked mounts
+      mnt: Fail collect_mounts when applied to unmounted mounts
+      mnt: Factor out unhash_mnt from detach_mnt and umount_tree
+      mnt: Factor umount_mnt from umount_tree
+      fs_pin: Allow for the possibility that m_list or s_list go unused.
+      mnt: Honor MNT_LOCKED when detaching mounts
+      mnt: Fix the error check in __detach_mounts
+      mnt: Update detach_mounts to leave mounts connected
+      mnt: Track which mounts use a dentry as root.
+      vfs: Test for and handle paths that are unreachable from their mnt_root
+      vfs: Handle mounts whose parents are unreachable from their mountpoint
+      vfs: Do not allow escaping from bind mounts.
+
+ fs/dcache.c            |  35 +++++-
+ fs/fs_pin.c            |   4 +-
+ fs/internal.h          |   2 +
+ fs/mount.h             |   8 ++
+ fs/namei.c             |  34 +++++-
+ fs/namespace.c         | 325 +++++++++++++++++++++++++++++++++++++++++--------
+ fs/pnode.c             |  60 +++++++--
+ fs/pnode.h             |   7 +-
+ include/linux/dcache.h |   7 ++
+ include/linux/fs_pin.h |   2 +
+ include/linux/mount.h  |   3 +
+ include/linux/namei.h  |   2 +
+ 12 files changed, 424 insertions(+), 65 deletions(-)
