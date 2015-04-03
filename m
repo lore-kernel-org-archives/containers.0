@@ -1,7 +1,8 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review  06/19] mnt: Delay removal from the mount hash.
-Date: Thu,  2 Apr 2015 20:56:10 -0500
-Message-ID: <1428026183-14879-6-git-send-email-ebiederm__10369.7099876173$1428026479$gmane$org@xmission.com>
+Subject: [PATCH review 07/19] mnt: On an unmount propagate clearing of
+	MNT_LOCKED
+Date: Thu,  2 Apr 2015 20:56:11 -0500
+Message-ID: <1428026183-14879-7-git-send-email-ebiederm__35885.1314559162$1428026483$gmane$org@xmission.com>
 References: <87a8yqou41.fsf_-_@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,79 +22,79 @@ To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Omar Sandoval <osandov-nWWhXC5lh1RBDgjK7y7TUQ@public.gmane.org>, Willy Tarreau <w@1wt.eu>
 List-Id: containers.vger.kernel.org
 
-- Modify __lookup_mnt_hash_last to ignore mounts that have MNT_UMOUNTED set.
-- Don't remove mounts from the mount hash table in propogate_umount
-- Don't remove mounts from the mount hash table in umount_tree before
-  the entire list of mounts to be umounted is selected.
-- Remove mounts from the mount hash table as the last thing that
-  happens in the case where a mount has a parent in umount_tree.
-  Mounts without parents are not hashed (by definition).
+A prerequisite of calling umount_tree is that the point where the tree
+is mounted at is valid to unmount.
 
-This paves the way for delaying removal from the mount hash table even
-farther and fixing the MNT_LOCKED vs MNT_DETACH issue.
+If we are propagating the effect of the unmount clear MNT_LOCKED in
+every instance where the same filesystem is mounted on the same
+mountpoint in the mount tree, as we know (by virtue of the fact
+that umount_tree was called) that it is safe to reveal what
+is at that mountpoint.
 
 Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/namespace.c | 13 ++++++++-----
- fs/pnode.c     |  1 -
- 2 files changed, 8 insertions(+), 6 deletions(-)
+ fs/namespace.c |  3 +++
+ fs/pnode.c     | 20 ++++++++++++++++++++
+ fs/pnode.h     |  1 +
+ 3 files changed, 24 insertions(+)
 
 diff --git a/fs/namespace.c b/fs/namespace.c
-index d1708147eb45..083e3401a808 100644
+index 083e3401a808..2b12b7a9455d 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -632,14 +632,17 @@ struct mount *__lookup_mnt(struct vfsmount *mnt, struct dentry *dentry)
-  */
- struct mount *__lookup_mnt_last(struct vfsmount *mnt, struct dentry *dentry)
- {
--	struct mount *p, *res;
--	res = p = __lookup_mnt(mnt, dentry);
-+	struct mount *p, *res = NULL;
-+	p = __lookup_mnt(mnt, dentry);
- 	if (!p)
- 		goto out;
-+	if (!(p->mnt.mnt_flags & MNT_UMOUNT))
-+		res = p;
- 	hlist_for_each_entry_continue(p, mnt_hash) {
- 		if (&p->mnt_parent->mnt != mnt || p->mnt_mountpoint != dentry)
- 			break;
--		res = p;
-+		if (!(p->mnt.mnt_flags & MNT_UMOUNT))
-+			res = p;
- 	}
- out:
- 	return res;
-@@ -1336,9 +1339,8 @@ static void umount_tree(struct mount *mnt, enum umount_tree_flags how)
- 		list_move(&p->mnt_list, &tmp_list);
- 	}
+@@ -1333,6 +1333,9 @@ static void umount_tree(struct mount *mnt, enum umount_tree_flags how)
+ 	LIST_HEAD(tmp_list);
+ 	struct mount *p;
  
--	/* Hide the mounts from lookup_mnt and mnt_mounts */
-+	/* Hide the mounts from mnt_mounts */
- 	list_for_each_entry(p, &tmp_list, mnt_list) {
--		hlist_del_init_rcu(&p->mnt_hash);
- 		list_del_init(&p->mnt_child);
- 	}
- 
-@@ -1365,6 +1367,7 @@ static void umount_tree(struct mount *mnt, enum umount_tree_flags how)
- 			p->mnt_mountpoint = p->mnt.mnt_root;
- 			p->mnt_parent = p;
- 			p->mnt_mp = NULL;
-+			hlist_del_init_rcu(&p->mnt_hash);
- 		}
- 		change_mnt_propagation(p, MS_PRIVATE);
- 	}
++	if (how & UMOUNT_PROPAGATE)
++		propagate_mount_unlock(mnt);
++
+ 	/* Gather the mounts to umount */
+ 	for (p = mnt; p; p = next_mnt(p, mnt)) {
+ 		p->mnt.mnt_flags |= MNT_UMOUNT;
 diff --git a/fs/pnode.c b/fs/pnode.c
-index ac3aa0d43b90..c27ae38ee250 100644
+index c27ae38ee250..89890293dd0a 100644
 --- a/fs/pnode.c
 +++ b/fs/pnode.c
-@@ -383,7 +383,6 @@ static void __propagate_umount(struct mount *mnt)
- 		 */
- 		if (child && list_empty(&child->mnt_mounts)) {
- 			list_del_init(&child->mnt_child);
--			hlist_del_init_rcu(&child->mnt_hash);
- 			child->mnt.mnt_flags |= MNT_UMOUNT;
- 			list_move_tail(&child->mnt_list, &mnt->mnt_list);
- 		}
+@@ -362,6 +362,26 @@ int propagate_mount_busy(struct mount *mnt, int refcnt)
+ }
+ 
+ /*
++ * Clear MNT_LOCKED when it can be shown to be safe.
++ *
++ * mount_lock lock must be held for write
++ */
++void propagate_mount_unlock(struct mount *mnt)
++{
++	struct mount *parent = mnt->mnt_parent;
++	struct mount *m, *child;
++
++	BUG_ON(parent == mnt);
++
++	for (m = propagation_next(parent, parent); m;
++			m = propagation_next(m, parent)) {
++		child = __lookup_mnt_last(&m->mnt, mnt->mnt_mountpoint);
++		if (child)
++			child->mnt.mnt_flags &= ~MNT_LOCKED;
++	}
++}
++
++/*
+  * NOTE: unmounting 'mnt' naturally propagates to all other mounts its
+  * parent propagates to.
+  */
+diff --git a/fs/pnode.h b/fs/pnode.h
+index aa6d65df7204..af47d4bd7b31 100644
+--- a/fs/pnode.h
++++ b/fs/pnode.h
+@@ -42,6 +42,7 @@ int propagate_mnt(struct mount *, struct mountpoint *, struct mount *,
+ 		struct hlist_head *);
+ int propagate_umount(struct list_head *);
+ int propagate_mount_busy(struct mount *, int);
++void propagate_mount_unlock(struct mount *);
+ void mnt_release_group_id(struct mount *);
+ int get_dominating_id(struct mount *mnt, const struct path *root);
+ unsigned int mnt_get_count(struct mount *mnt);
 -- 
 2.2.1
