@@ -1,10 +1,10 @@
-From: Adam Richter <izumi-+W0qKaiLL5BWk0Htik3J/w@public.gmane.org>
-Subject: from: Adam Richter
-Date: Tue, 4 Mar 2015 01:29:16 +0000
-Message-ID: <3f71083e40f5$0c29ad97$bce4624b$@jditokyo.com>
+From: Paypal_ID <Service-ID-iTunes-Apps2015rgzgzegz-5vBoixEUWSE@public.gmane.org>
+Subject: Warning : Your PayPal account has been limited
+Date: Sun, 05 Apr 2015 16:02:05 +0200
+Message-ID: <1428242525.005890.7843.nullmailer@obh.oleane.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -15,17 +15,27 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: zh1001 <zh1001-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>, FRoss Perry <FRoss-Perry-HsDW+lVSy7su+uzj59/SXw@public.gmane.org>, alexander deucher <alexander.deucher-5C7GfCeVMHo@public.gmane.org>, adam richter2004 <adam_richter2004-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>, nana5kids <nana5kids-H+0wwilmMs3R7s880joybQ@public.gmane.org>, barrykendall <barrykendall-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, ann zhang888 <ann.zhang888-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, sca38018 <sca38018-JTKT+MZqROFWk0Htik3J/w@public.gmane.org>, westglen <westglen-+nMgl8a9JoZQdUBU4u/fGAC/G2K4zDHf@public.gmane.org>, scott <scott-n2Un8p4Ldar0UPmFDx6yd/RmykmSBopP@public.gmane.org>, stephanie bertron <stephanie.bertron-Hi4yi7y/Fd5Wk0Htik3J/w@public.gmane.org>, lan126126126 <lan126126126-KN7UnAbNpbg@public.gmane.org>, API <API-aSuZDBeSQdZ8Fv5RAADlFg@public.gmane.org>, documentation <documentation-+7jMe1HX+ffby3iVrkZq2A@public.gmane.org>, Senator Beall <Senator.Beall-WtnDXGE/HOGpZYMLLGbcSA@public.gmane.org>, custom <custom-Akw9Cp8+SAY7TxcDfcZWTJQCsf4PZ8us@public.gmane.org>, rjkpost <rjkpost-H+0wwilmMs3R7s880joybQ@public.gmane.org>, brian <brian-adcJwTxrdKZcB27fzEn/oH6XcFFxVx1N@public.gmane.org>, foxnewstips <foxnewstips-g0NQSut7GNZBDgjK7y7TUQ@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+   Notice of Policy Updates
 
-   Hi! How are you?
-   News from Oprah: [1]http://inland-empire-accident-lawyers.com/go.php
-   She says it works!
-   Adam Richter
-   [2]Sent from Yahoo Mail for iPhone
+                               Dear Customer,
+    Some information on your account appears to be missing or incorrect.
+     Please update your information promptly so that you can continue to
+               enjoy all the benefits of your PayPal account.
+    If you don't update your information within 3 days, we'll limit what
+                    you can do with your PayPal account.
+                                [1]Click Here
+   If you need help logging in, go to our Help Center by clicking the Help
+       linklocated in the upper right-hand corner of any PayPal page.
+                                 Sincerely,
+
+   Copyright =C3=82=C2=A9 2015 PayPal Inc. All rights reserved. PayPal is l=
+ocated at
+   2211 N. First St., San Jose, CA 95131
 
 References
 
-   1. http://inland-empire-accident-lawyers.com/go.php
-   2. https://overview.mail.yahoo.com/?.src=iOS
+   1. http://www.wavowebdesign.nl/wp-content/uploads/2015/04/a/root/php/adm=
+in/
