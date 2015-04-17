@@ -1,11 +1,15 @@
 From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH V6 00/10] namespaces: log namespaces per task
-Date: Fri, 17 Apr 2015 03:35:47 -0400
-Message-ID: <cover.1429252659.git.rgb@redhat.com>
+Subject: [PATCH V6 03/10] audit: log namespace ID numbers
+Date: Fri, 17 Apr 2015 03:35:50 -0400
+Message-ID: <8a9afed0517958092fb42a8fe4c8b1d1829327f2.1429252659.git.rgb@redhat.com>
+References: <cover.1429252659.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <cover.1429252659.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <cover.1429252659.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+References: <cover.1429252659.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,152 +20,164 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-ima-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The purpose is to track namespace instances in use by logged processes from the
-perspective of init_*_ns by logging the namespace IDs (device ID and namespace
-inode - offset).
+Log the namespace identifiers (device ID and proc inode minus base offset) of a
+task in a new record type (1329) (usually accompanies audit_log_task_info()
+type=SYSCALL record) which is used by syscall audits, among others..
 
+Idea first presented:
+	https://www.redhat.com/archives/linux-audit/2013-March/msg00020.html
 
-1/10 exposes proc's ns entries structure which lists a number of useful
-operations per namespace type for other subsystems to use.
+Typical output format would look something like:
+	type=NS_INFO msg=audit(1408577535.306:82): pid=374 dev=00:03 netns=116 utsns=-2 ipcns=-1 pidns=-4 userns=-3 mntns=0
 
-2/10  proc_ns: define PROC_*_INIT_INO in terms of PROC_DYNAMIC_FIRST
+The namespace identifier values are printed relative to PROC_DYNAMIC_FIRST
+(0xF000000) (so the first 4 are negative).
 
-3/10 provides an example of usage for audit_log_task_info() which is used by
-syscall audits, among others.  audit_log_task() and audit_common_recv_message()
-would be other potential use cases.
+Suggested-by: Aristeu Rozanski <arozansk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+---
+ include/linux/audit.h            |    8 ++++++++
+ include/uapi/linux/audit.h       |    1 +
+ kernel/audit.c                   |   35 +++++++++++++++++++++++++++++++++++
+ kernel/auditsc.c                 |    2 ++
+ security/integrity/ima/ima_api.c |    2 ++
+ 5 files changed, 48 insertions(+), 0 deletions(-)
 
-Proposed output format:
-This differs slightly from Aristeu's patch because of the label conflict with
-"pid=" due to including it in existing records rather than it being a seperate
-record.  It has now returned to being a seperate record.  The proc device
-major/minor are listed in hexadecimal and namespace IDs are the proc inode
-minus the base offset.
-	type=NS_INFO msg=audit(1408577535.306:82): dev=00:03 netns=3 utsns=-3 ipcns=-4 pidns=-1 userns=-2 mntns=0
-
-4/10 change audit startup from __initcall to subsys_initcall to get it started
-earlier to be able to receive initial namespace log messages.
-
-5/10 tracks the creation and deletion of namespaces, listing the type of
-namespace instance, proc device ID, related namespace id if there is one and
-the newly minted namespace ID.
-
-Proposed output format for initial namespace creation:
-	type=AUDIT_NS_INIT_UTS msg=audit(1408577534.868:5): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_utsns=(none) utsns=-3 res=1
-	type=AUDIT_NS_INIT_USER msg=audit(1408577534.868:6): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_userns=(none) userns=-2 res=1
-	type=AUDIT_NS_INIT_PID msg=audit(1408577534.868:7): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_pidns=(none) pidns=-1 res=1
-	type=AUDIT_NS_INIT_MNT msg=audit(1408577534.868:8): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_mntns=(none) mntns=0 res=1
-	type=AUDIT_NS_INIT_IPC msg=audit(1408577534.868:9): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_ipcns=(none) ipcns=-4 res=1
-	type=AUDIT_NS_INIT_NET msg=audit(1408577533.500:10): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_netns=(none) netns=2 res=1
-
-And a CLONE action would result in:
-	type=type=AUDIT_NS_INIT_NET msg=audit(1408577535.306:81): pid=481 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:init_t:s0 dev=00:03 old_netns=2 netns=3 res=1
-
-While deleting a namespace would result in:
-	type=type=AUDIT_NS_DEL_MNT msg=audit(1408577552.221:85): pid=481 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:init_t:s0 dev=00:03 mntns=4 res=1
-
-6/10 accepts a PID from userspace and requests logging an AUDIT_NS_INFO record
-type (CAP_AUDIT_CONTROL required).
-
-7/10 is a macro for CLONE_NEW_* flags.
-
-8/10 adds auditing on creation of namespace(s) in fork.
-
-9/10 adds auditing a change of namespace on setns.
-
-10/10 attaches a AUDIT_NS_INFO record to AUDIT_VIRT_CONTROL records
-(CAP_AUDIT_WRITE required).
-
-
-v5 -> v6:
-	Switch to using namespace ID based on namespace proc inode minus base offset
-	Added proc device ID to qualify proc inode reference
-	Eliminate exposed /proc interface
-
-v4 -> v5:
-	Clean up prototypes for dependencies on CONFIG_NAMESPACES.
-	Add AUDIT_NS_INFO record type to AUDIT_VIRT_CONTROL record.
-	Log AUDIT_NS_INFO with PID.
-	Move /proc/<pid>/ns_* patches to end of patchset to deprecate them.
-	Log on changing ns (setns).
-	Log on creating new namespaces when forking.
-	Added a macro for CLONE_NEW*.
-
-v3 -> v4:
-	Seperate out the NS_INFO message from the SYSCALL message.
-	Moved audit_log_namespace_info() out of audit_log_task_info().
-	Use a seperate message type per namespace type for each of INIT/DEL.
-	Make ns= easier to search across NS_INFO and NS_INIT/DEL_XXX msg types.
-	Add /proc/<pid>/ns/ documentation.
-	Fix dynamic initial ns logging.
-
-v2 -> v3:
-	Use atomic64_t in ns_serial to simplify it.
-	Avoid funciton duplication in proc, keying on dentry.
-	Squash down audit patch to avoid rcu sleep issues.
-	Add tracking for creation and deletion of namespace instances.
-
-v1 -> v2:
-	Avoid rollover by switching from an int to a long long.
-	Change rollover behaviour from simply avoiding zero to raising a BUG.
-	Expose serial numbers in /proc/<pid>/ns/*_snum.
-	Expose ns_entries and use it in audit.
-
-
-Notes:
-As for CAP_AUDIT_READ, a patchset has been accepted upstream to check
-capabilities of userspace processes that try to join netlink broadcast groups.
-
-This set does not try to solve the non-init namespace audit messages and
-auditd problem yet.  That will come later, likely with additional auditd
-instances running in another namespace with a limited ability to influence the
-master auditd.  I echo Eric B's idea that messages destined for different
-namespaces would have to be tailored for that namespace with references that
-make sense (such as the right pid number reported to that pid namespace, and
-not leaking info about parents or peers).
-
-Questions:
-Is there a way to link serial numbers of namespaces involved in migration of a
-container to another kernel?  It sounds like what is needed is a part of a
-mangement application that is able to pull the audit records from constituent
-hosts to build an audit trail of a container.
-
-What additional events should list this information?
-
-Does this present any problematic information leaks?  Only CAP_AUDIT_CONTROL
-(and now CAP_AUDIT_READ) in init_user_ns can get to this information in
-the init namespace at the moment from audit.
-
-
-Richard Guy Briggs (10):
-  namespaces: expose ns_entries
-  proc_ns: define PROC_*_INIT_INO in terms of PROC_DYNAMIC_FIRST
-  audit: log namespace ID numbers
-  audit: initialize at subsystem time rather than device time
-  audit: log creation and deletion of namespace instances
-  audit: dump namespace IDs for pid on receipt of AUDIT_NS_INFO
-  sched: add a macro to ref all CLONE_NEW* flags
-  fork: audit on creation of new namespace(s)
-  audit: log on switching namespace (setns)
-  audit: emit AUDIT_NS_INFO record with AUDIT_VIRT_CONTROL record
-
- fs/namespace.c                   |   13 +++
- fs/proc/generic.c                |    3 +-
- fs/proc/namespaces.c             |    2 +-
- include/linux/audit.h            |   20 +++++
- include/linux/proc_ns.h          |   10 ++-
- include/uapi/linux/audit.h       |   21 +++++
- include/uapi/linux/sched.h       |    6 ++
- ipc/namespace.c                  |   12 +++
- kernel/audit.c                   |  169 +++++++++++++++++++++++++++++++++++++-
- kernel/auditsc.c                 |    2 +
- kernel/fork.c                    |    3 +
- kernel/nsproxy.c                 |    4 +
- kernel/pid_namespace.c           |   13 +++
- kernel/user_namespace.c          |   13 +++
- kernel/utsname.c                 |   12 +++
- net/core/net_namespace.c         |   12 +++
- security/integrity/ima/ima_api.c |    2 +
- 17 files changed, 309 insertions(+), 8 deletions(-)
+diff --git a/include/linux/audit.h b/include/linux/audit.h
+index b481779..71698ec 100644
+--- a/include/linux/audit.h
++++ b/include/linux/audit.h
+@@ -478,6 +478,12 @@ static inline void	    audit_log_secctx(struct audit_buffer *ab, u32 secid)
+ extern int audit_log_task_context(struct audit_buffer *ab);
+ extern void audit_log_task_info(struct audit_buffer *ab,
+ 				struct task_struct *tsk);
++#ifdef CONFIG_NAMESPACES
++extern void		    audit_log_ns_info(struct task_struct *tsk);
++#else
++static inline void	    audit_log_ns_info(struct task_struct *tsk)
++{ }
++#endif
+ 
+ extern int		    audit_update_lsm_rules(void);
+ 
+@@ -534,6 +540,8 @@ static inline int audit_log_task_context(struct audit_buffer *ab)
+ static inline void audit_log_task_info(struct audit_buffer *ab,
+ 				       struct task_struct *tsk)
+ { }
++static inline void audit_log_ns_info(struct task_struct *tsk)
++{ }
+ #define audit_enabled 0
+ #endif /* CONFIG_AUDIT */
+ static inline void audit_log_string(struct audit_buffer *ab, const char *buf)
+diff --git a/include/uapi/linux/audit.h b/include/uapi/linux/audit.h
+index 2ccf19e..1ffb151 100644
+--- a/include/uapi/linux/audit.h
++++ b/include/uapi/linux/audit.h
+@@ -110,6 +110,7 @@
+ #define AUDIT_SECCOMP		1326	/* Secure Computing event */
+ #define AUDIT_PROCTITLE		1327	/* Proctitle emit event */
+ #define AUDIT_FEATURE_CHANGE	1328	/* audit log listing feature changes */
++#define AUDIT_NS_INFO		1329	/* Record process namespace IDs */
+ 
+ #define AUDIT_AVC		1400	/* SE Linux avc denial or grant */
+ #define AUDIT_SELINUX_ERR	1401	/* Internal SE Linux Errors */
+diff --git a/kernel/audit.c b/kernel/audit.c
+index d5a1220..68200ce 100644
+--- a/kernel/audit.c
++++ b/kernel/audit.c
+@@ -66,7 +66,9 @@
+ #include <linux/freezer.h>
+ #include <linux/tty.h>
+ #include <linux/pid_namespace.h>
++#include <linux/proc_ns.h>
+ #include <net/netns/generic.h>
++#include <linux/mount.h> /* struct vfsmount */
+ 
+ #include "audit.h"
+ 
+@@ -745,6 +747,8 @@ static void audit_log_feature_change(int which, u32 old_feature, u32 new_feature
+ 			 audit_feature_names[which], !!old_feature, !!new_feature,
+ 			 !!old_lock, !!new_lock, res);
+ 	audit_log_end(ab);
++
++	audit_log_ns_info(current);
+ }
+ 
+ static int audit_set_feature(struct sk_buff *skb)
+@@ -1653,6 +1657,35 @@ void audit_log_session_info(struct audit_buffer *ab)
+ 	audit_log_format(ab, " auid=%u ses=%u", auid, sessionid);
+ }
+ 
++#ifdef CONFIG_NAMESPACES
++void audit_log_ns_info(struct task_struct *tsk)
++{
++	const struct proc_ns_operations **entry;
++	bool end = false;
++	struct audit_buffer *ab;
++	struct vfsmount *mnt = task_active_pid_ns(tsk)->proc_mnt;
++	struct super_block *sb = mnt->mnt_sb;
++
++	if (!tsk)
++		return;
++	ab = audit_log_start(tsk->audit_context, GFP_KERNEL,
++			     AUDIT_NS_INFO);
++	if (!ab)
++		return;
++	audit_log_format(ab, "pid=%d", task_pid_nr(tsk));
++	audit_log_format(ab, " dev=%02x:%02x", MAJOR(sb->s_dev), MINOR(sb->s_dev));
++	for (entry = ns_entries; !end; entry++) {
++		void *ns = (*entry)->get(tsk);
++
++		audit_log_format(ab, " %sns=%d", (*entry)->name,
++				 (*entry)->inum(ns) - PROC_DYNAMIC_FIRST);
++		(*entry)->put(ns);
++		end = (*entry)->type == CLONE_NEWNS;
++	}
++	audit_log_end(ab);
++}
++#endif /* CONFIG_NAMESPACES */
++
+ void audit_log_key(struct audit_buffer *ab, char *key)
+ {
+ 	audit_log_format(ab, " key=");
+@@ -1935,6 +1968,8 @@ void audit_log_link_denied(const char *operation, struct path *link)
+ 	audit_log_format(ab, " res=0");
+ 	audit_log_end(ab);
+ 
++	audit_log_ns_info(current);
++
+ 	/* Generate AUDIT_PATH record with object. */
+ 	name->type = AUDIT_TYPE_NORMAL;
+ 	audit_copy_inode(name, link->dentry, link->dentry->d_inode);
+diff --git a/kernel/auditsc.c b/kernel/auditsc.c
+index 4b89f7f..3ca3416 100644
+--- a/kernel/auditsc.c
++++ b/kernel/auditsc.c
+@@ -1378,6 +1378,8 @@ static void audit_log_exit(struct audit_context *context, struct task_struct *ts
+ 	audit_log_key(ab, context->filterkey);
+ 	audit_log_end(ab);
+ 
++	audit_log_ns_info(tsk);
++
+ 	for (aux = context->aux; aux; aux = aux->next) {
+ 
+ 		ab = audit_log_start(context, GFP_KERNEL, aux->type);
+diff --git a/security/integrity/ima/ima_api.c b/security/integrity/ima/ima_api.c
+index d9cd5ce..58ac695 100644
+--- a/security/integrity/ima/ima_api.c
++++ b/security/integrity/ima/ima_api.c
+@@ -323,6 +323,8 @@ void ima_audit_measurement(struct integrity_iint_cache *iint,
+ 	audit_log_task_info(ab, current);
+ 	audit_log_end(ab);
+ 
++	audit_log_ns_info(current);
++
+ 	iint->flags |= IMA_AUDITED;
+ }
+ 
+-- 
+1.7.1
