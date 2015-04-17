@@ -1,8 +1,7 @@
 From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH V6 04/10] audit: initialize at subsystem time rather than
-	device time
-Date: Fri, 17 Apr 2015 03:35:51 -0400
-Message-ID: <02791fd55320a4bf2d3920b900d9b1fb14a9935e.1429252659.git.rgb@redhat.com>
+Subject: [PATCH V6 07/10] sched: add a macro to ref all CLONE_NEW* flags
+Date: Fri, 17 Apr 2015 03:35:54 -0400
+Message-ID: <cf1ed24f71743ea7f85682f26f3185202a1f8a32.1429252659.git.rgb@redhat.com>
 References: <cover.1429252659.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,29 +20,32 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The audit subsystem should be initialized a bit earlier so that it is in place
-in time for initial namespace ID number logging.
+Added the macro CLONE_NEW_MASK_ALL to refer to all CLONE_NEW* flags.
 
 Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- kernel/audit.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ include/uapi/linux/sched.h |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
 
-diff --git a/kernel/audit.c b/kernel/audit.c
-index 68200ce..63f32f4 100644
---- a/kernel/audit.c
-+++ b/kernel/audit.c
-@@ -1188,7 +1188,7 @@ static int __init audit_init(void)
+diff --git a/include/uapi/linux/sched.h b/include/uapi/linux/sched.h
+index 34f9d73..21ed8f4 100644
+--- a/include/uapi/linux/sched.h
++++ b/include/uapi/linux/sched.h
+@@ -28,6 +28,12 @@
+ #define CLONE_NEWUSER		0x10000000	/* New user namespace */
+ #define CLONE_NEWPID		0x20000000	/* New pid namespace */
+ #define CLONE_NEWNET		0x40000000	/* New network namespace */
++#define CLONE_NEW_MASK_ALL	 (CLONE_NEWNS \
++				| CLONE_NEWUTS \
++				| CLONE_NEWIPC \
++				| CLONE_NEWUSER \
++				| CLONE_NEWPID \
++				| CLONE_NEWNET)	/* mask of all namespace type flags */
+ #define CLONE_IO		0x80000000	/* Clone io context */
  
- 	return 0;
- }
--__initcall(audit_init);
-+subsys_initcall(audit_init);
- 
- /* Process kernel command-line parameter at boot time.  audit=0 or audit=1. */
- static int __init audit_enable(char *str)
+ /*
 -- 
 1.7.1
