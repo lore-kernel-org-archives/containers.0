@@ -1,17 +1,11 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [GIT PULL] Usernamespace related locked mount fixes
-Date: Thu, 16 Apr 2015 18:42:13 -0500
-Message-ID: <87sibzzlm2.fsf__41537.4033306309$1429228007$gmane$org@x220.int.ebiederm.org>
-References: <871tncuaf6.fsf@x220.int.ebiederm.org>
-	<87mw5xq7lt.fsf@x220.int.ebiederm.org>
-	<87a8yqou41.fsf_-_@x220.int.ebiederm.org>
-	<87383z1w1v.fsf_-_@x220.int.ebiederm.org>
+From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH V6 00/10] namespaces: log namespaces per task
+Date: Fri, 17 Apr 2015 03:35:47 -0400
+Message-ID: <cover.1429252659.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87383z1w1v.fsf_-_-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org> (Eric W. Biederman's
-	message of "Thu, 16 Apr 2015 18:40:44 -0500")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,75 +15,153 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Willy Tarreau <w@1wt.eu>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Linus,
+The purpose is to track namespace instances in use by logged processes from the
+perspective of init_*_ns by logging the namespace IDs (device ID and namespace
+inode - offset).
 
-Please pull the for-linus branch from the git tree:
 
-   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
+1/10 exposes proc's ns entries structure which lists a number of useful
+operations per namespace type for other subsystems to use.
 
-   HEAD: e0c9c0afd2fc958ffa34b697972721d81df8a56f mnt: Update detach_mounts to leave mounts connected
+2/10  proc_ns: define PROC_*_INIT_INO in terms of PROC_DYNAMIC_FIRST
 
-Way back in October Andrey Vagin reported that umount(MNT_DETACH) could
-be used to defeat MNT_LOCKED.  As I worked to fix this I discovered
-that combined with mount propagation and an appropriate selection of
-shared subtrees a reference to a directory on an unmounted filesystem is
-not necessary.
+3/10 provides an example of usage for audit_log_task_info() which is used by
+syscall audits, among others.  audit_log_task() and audit_common_recv_message()
+would be other potential use cases.
 
-That MNT_DETACH is allowed in user namespace in a form that can break
-MNT_LOCKED comes from my early misunderstanding what MNT_DETACH does.
+Proposed output format:
+This differs slightly from Aristeu's patch because of the label conflict with
+"pid=" due to including it in existing records rather than it being a seperate
+record.  It has now returned to being a seperate record.  The proc device
+major/minor are listed in hexadecimal and namespace IDs are the proc inode
+minus the base offset.
+	type=NS_INFO msg=audit(1408577535.306:82): dev=00:03 netns=3 utsns=-3 ipcns=-4 pidns=-1 userns=-2 mntns=0
 
-To avoid breaking existing userspace the conflict between MNT_DETACH and
-MNT_LOCKED is fixed by leaving mounts that are locked to their parents
-in the mount hash table until the last reference goes away.
+4/10 change audit startup from __initcall to subsys_initcall to get it started
+earlier to be able to receive initial namespace log messages.
 
-While investigating this issue I also found an issue with
-__detach_mounts.  The code was unnecessarily and incorrectly triggering
-mount propagation.  Resulting in too many mounts going away when a
-directory is deleted, and too many cpu cycles are burned while doing
-that.
+5/10 tracks the creation and deletion of namespaces, listing the type of
+namespace instance, proc device ID, related namespace id if there is one and
+the newly minted namespace ID.
 
-Looking some more I realized that __detach_mounts by only keeping mounts
-connected that were MNT_LOCKED it had the potential to still leak
-information so I tweaked the code to keep everything locked together
-that possibly could be.
+Proposed output format for initial namespace creation:
+	type=AUDIT_NS_INIT_UTS msg=audit(1408577534.868:5): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_utsns=(none) utsns=-3 res=1
+	type=AUDIT_NS_INIT_USER msg=audit(1408577534.868:6): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_userns=(none) userns=-2 res=1
+	type=AUDIT_NS_INIT_PID msg=audit(1408577534.868:7): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_pidns=(none) pidns=-1 res=1
+	type=AUDIT_NS_INIT_MNT msg=audit(1408577534.868:8): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_mntns=(none) mntns=0 res=1
+	type=AUDIT_NS_INIT_IPC msg=audit(1408577534.868:9): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_ipcns=(none) ipcns=-4 res=1
+	type=AUDIT_NS_INIT_NET msg=audit(1408577533.500:10): pid=1 uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_netns=(none) netns=2 res=1
 
-This code was almost ready last cycle but Al invented fs_pin which
-slightly simplifies this code but required rewrites and retesting,
-and I have not been in top form for a while so it took me a while to get
-all of that done.  Similiarly this pull request is late because I have
-been feeling absolutely miserable all week.
+And a CLONE action would result in:
+	type=type=AUDIT_NS_INIT_NET msg=audit(1408577535.306:81): pid=481 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:init_t:s0 dev=00:03 old_netns=2 netns=3 res=1
 
-The issue of being able to escape a bind mount has not yet been
-addressed, as the fixes are not yet mature.
+While deleting a namespace would result in:
+	type=type=AUDIT_NS_DEL_MNT msg=audit(1408577552.221:85): pid=481 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:init_t:s0 dev=00:03 mntns=4 res=1
 
-Eric W. Biederman (15):
-      mnt: Use hlist_move_list in namespace_unlock
-      mnt: Improve the umount_tree flags
-      mnt: Don't propagate umounts in __detach_mounts
-      mnt: In umount_tree reuse mnt_list instead of mnt_hash
-      mnt: Add MNT_UMOUNT flag
-      mnt: Delay removal from the mount hash.
-      mnt: On an unmount propagate clearing of MNT_LOCKED
-      mnt: Don't propagate unmounts to locked mounts
-      mnt: Fail collect_mounts when applied to unmounted mounts
-      mnt: Factor out unhash_mnt from detach_mnt and umount_tree
-      mnt: Factor umount_mnt from umount_tree
-      fs_pin: Allow for the possibility that m_list or s_list go unused.
-      mnt: Honor MNT_LOCKED when detaching mounts
-      mnt: Fix the error check in __detach_mounts
-      mnt: Update detach_mounts to leave mounts connected
+6/10 accepts a PID from userspace and requests logging an AUDIT_NS_INFO record
+type (CAP_AUDIT_CONTROL required).
 
- fs/fs_pin.c            |   4 +-
- fs/namespace.c         | 142 +++++++++++++++++++++++++++++++++----------------
- fs/pnode.c             |  60 ++++++++++++++++++---
- fs/pnode.h             |   7 ++-
- include/linux/fs_pin.h |   2 +
- include/linux/mount.h  |   1 +
- 6 files changed, 159 insertions(+), 57 deletions(-)
+7/10 is a macro for CLONE_NEW_* flags.
 
-p.s. My apologies for everyone who is seeing this twice I failed to
-send this to Linus...
+8/10 adds auditing on creation of namespace(s) in fork.
+
+9/10 adds auditing a change of namespace on setns.
+
+10/10 attaches a AUDIT_NS_INFO record to AUDIT_VIRT_CONTROL records
+(CAP_AUDIT_WRITE required).
+
+
+v5 -> v6:
+	Switch to using namespace ID based on namespace proc inode minus base offset
+	Added proc device ID to qualify proc inode reference
+	Eliminate exposed /proc interface
+
+v4 -> v5:
+	Clean up prototypes for dependencies on CONFIG_NAMESPACES.
+	Add AUDIT_NS_INFO record type to AUDIT_VIRT_CONTROL record.
+	Log AUDIT_NS_INFO with PID.
+	Move /proc/<pid>/ns_* patches to end of patchset to deprecate them.
+	Log on changing ns (setns).
+	Log on creating new namespaces when forking.
+	Added a macro for CLONE_NEW*.
+
+v3 -> v4:
+	Seperate out the NS_INFO message from the SYSCALL message.
+	Moved audit_log_namespace_info() out of audit_log_task_info().
+	Use a seperate message type per namespace type for each of INIT/DEL.
+	Make ns= easier to search across NS_INFO and NS_INIT/DEL_XXX msg types.
+	Add /proc/<pid>/ns/ documentation.
+	Fix dynamic initial ns logging.
+
+v2 -> v3:
+	Use atomic64_t in ns_serial to simplify it.
+	Avoid funciton duplication in proc, keying on dentry.
+	Squash down audit patch to avoid rcu sleep issues.
+	Add tracking for creation and deletion of namespace instances.
+
+v1 -> v2:
+	Avoid rollover by switching from an int to a long long.
+	Change rollover behaviour from simply avoiding zero to raising a BUG.
+	Expose serial numbers in /proc/<pid>/ns/*_snum.
+	Expose ns_entries and use it in audit.
+
+
+Notes:
+As for CAP_AUDIT_READ, a patchset has been accepted upstream to check
+capabilities of userspace processes that try to join netlink broadcast groups.
+
+This set does not try to solve the non-init namespace audit messages and
+auditd problem yet.  That will come later, likely with additional auditd
+instances running in another namespace with a limited ability to influence the
+master auditd.  I echo Eric B's idea that messages destined for different
+namespaces would have to be tailored for that namespace with references that
+make sense (such as the right pid number reported to that pid namespace, and
+not leaking info about parents or peers).
+
+Questions:
+Is there a way to link serial numbers of namespaces involved in migration of a
+container to another kernel?  It sounds like what is needed is a part of a
+mangement application that is able to pull the audit records from constituent
+hosts to build an audit trail of a container.
+
+What additional events should list this information?
+
+Does this present any problematic information leaks?  Only CAP_AUDIT_CONTROL
+(and now CAP_AUDIT_READ) in init_user_ns can get to this information in
+the init namespace at the moment from audit.
+
+
+Richard Guy Briggs (10):
+  namespaces: expose ns_entries
+  proc_ns: define PROC_*_INIT_INO in terms of PROC_DYNAMIC_FIRST
+  audit: log namespace ID numbers
+  audit: initialize at subsystem time rather than device time
+  audit: log creation and deletion of namespace instances
+  audit: dump namespace IDs for pid on receipt of AUDIT_NS_INFO
+  sched: add a macro to ref all CLONE_NEW* flags
+  fork: audit on creation of new namespace(s)
+  audit: log on switching namespace (setns)
+  audit: emit AUDIT_NS_INFO record with AUDIT_VIRT_CONTROL record
+
+ fs/namespace.c                   |   13 +++
+ fs/proc/generic.c                |    3 +-
+ fs/proc/namespaces.c             |    2 +-
+ include/linux/audit.h            |   20 +++++
+ include/linux/proc_ns.h          |   10 ++-
+ include/uapi/linux/audit.h       |   21 +++++
+ include/uapi/linux/sched.h       |    6 ++
+ ipc/namespace.c                  |   12 +++
+ kernel/audit.c                   |  169 +++++++++++++++++++++++++++++++++++++-
+ kernel/auditsc.c                 |    2 +
+ kernel/fork.c                    |    3 +
+ kernel/nsproxy.c                 |    4 +
+ kernel/pid_namespace.c           |   13 +++
+ kernel/user_namespace.c          |   13 +++
+ kernel/utsname.c                 |   12 +++
+ net/core/net_namespace.c         |   12 +++
+ security/integrity/ima/ima_api.c |    2 +
+ 17 files changed, 309 insertions(+), 8 deletions(-)
