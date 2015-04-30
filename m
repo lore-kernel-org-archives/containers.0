@@ -1,10 +1,13 @@
-From: MAILER-DAEMON-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org (Mail Delivery System)
-Subject: Undelivered Mail Returned to Sender
-Date: Thu, 30 Apr 2015 22:09:40 +1000 (AEST)
-Message-ID: <20150430120940.100A9D4953B@mail107.syd.optusnet.com.au>
+From: <postmaster-g3a2SAWtUajk1uMJSBkQmQ@public.gmane.org>
+Subject: Undeliverable: Delivery information - 2979620850.
+Date: Thu, 30 Apr 2015 16:07:36 +0000
+Message-ID: <8c6e9ed8-c69e-4198-a194-d07641ee7d8d@SG2PR06MB0902.apcprd06.prod.outlook.com>
+References: <6502293226.55698963644641@d110.netdc.pl>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5027405741327051396=="
+Content-Type: multipart/mixed; boundary="===============6538836415679405691=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Language: en-US
+In-Reply-To: <6502293226.55698963644641-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,70 +20,188 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-encapsulated message.
-
---===============5027405741327051396==
+--===============6538836415679405691==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="804EFD494F9.1430395780/mail107.syd.optusnet.com.au"
+	boundary="23208f92-5e41-4774-a88c-32ab02cea1b0"
+Content-Language: en-US
 
-This is a MIME-encapsulated message.
+--23208f92-5e41-4774-a88c-32ab02cea1b0
+Content-Type: text/plain; charset="Windows-1252"
+Content-Transfer-Encoding: quoted-printable
 
---804EFD494F9.1430395780/mail107.syd.optusnet.com.au
-Content-Description: Notification
-Content-Type: text/plain; charset=us-ascii
+[http://products.office.com/en-us/CMSImages/Office365Logo_Orange.png?versio=
+n=3Db8d100a9-0a8b-8e6a-88e1-ef488fee0470]
+Your message to rswiderskin-pDz3VWC6uHo0n/F98K4Iww@public.gmane.org couldn't be delivered.
 
-This is the mail system at host mail107.syd.optusnet.com.au.
+rswiderskin wasn't found at infotech.com.au
 
-I'm sorry to have to inform you that your message could not
-be delivered to one or more recipients. It's attached below.
+containers      Office 365      rswiderskin
+Action Required                 Recipient
+[http://products.office.com/en-us/CMSImages/email_StatusGraphic_1.png?versi=
+on=3D6ab6cc2f-330e-0c93-6ee7-96c969ab92d8]
+Unknown TO address
 
-For further assistance, please send mail to postmaster.
 
-If you do so, please include this problem report. You can
-delete your own text from the attached returned message.
+How to Fix It
+The address may be misspelled or may not exist. Try the following:
 
-                   The mail system
+  *   Retype the email address then resend the message.
+  *   Clear the recipient Autocomplete cache in Outlook or Outlook Web App =
+by following the steps in this article: Error code 5.1.10 in Exchange Onlin=
+e and Office 365<http://go.microsoft.com/fwlink/?LinkId=3D389363>.
+  *   Contact the recipient (by phone or instant messaging, for example) to=
+ check that the address is correct.
+  *   The recipient may have set up mail forwarding to an incorrect address=
+. Ask them to check that any forwarding they've set up is working correctly=
+.
 
-<jeddamissyq-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org> (expanded from <jeddamissyq-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org>):
-    user unknown
 
---804EFD494F9.1430395780/mail107.syd.optusnet.com.au
-Content-Description: Delivery report
+If the problem continues, forward this message to your email admin.
+
+
+Was this helpful? Send feedback<http://go.microsoft.com/fwlink/?LinkId=3D52=
+5921>.
+________________________________
+
+
+More Info for Email Admins
+This error occurs because the sender sent a message to someone whose mailbo=
+x is hosted by Office 365 and the email address is incorrect. The error is =
+reported by the recipient's email system, but most often it must be fixed b=
+y the sender. An example is when the recipient changes their email address =
+but the sender selects the person from the recipient AutoComplete list, whi=
+ch has the out-of-date email address information.
+
+Sometimes it needs to be fixed by the recipient or the recipient's email ad=
+min, for example, when the recipient has created a mail forwarding rule to =
+an incorrect address, or if there's a problem with their email address dire=
+ctory. If the sender is using the correct recipient address, and it's still=
+ not working, send a test message from another user mailbox to see if it's =
+an issue unique to this sender. If you reproduce the problem sending from a=
+nother user account, ask the recipient or the recipient's email admin to co=
+nfirm that the recipient address exists, is correct, and is working. Sugges=
+t they check for misbehaving forwarding rules or possible email address dir=
+ectory issues (such as directory synchronization issues).
+
+For more information, see Error code 5.1.10 in Exchange Online and Office 3=
+65<http://go.microsoft.com/fwlink/?LinkId=3D389363>.
+
+
+Original Message Details
+Created Date:   4/30/2015 4:07:33 PM
+Sender Address: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Recipient Address:      rswiderskin-pDz3VWC6uHo0n/F98K4Iww@public.gmane.org
+Subject:        Delivery information - 2979620850.
+
+
+Error Details
+Reported error: 550 5.1.10 RESOLVER.ADR.RecipientNotFound; Recipient not fo=
+und by SMTP address lookup
+DSN generated by:       SG2PR06MB0902.apcprd06.prod.outlook.com
+
+
+Message Hops
+HOP     TIME (UTC)      FROM    TO      WITH    RELAY TIME
+1       4/30/2015
+4:07:33 PM      [185.25.150.143]        d110.netdc.pl   SMTP    *
+2       4/30/2015
+4:07:33 PM      d110.netdc.pl   DB3FFO11FD054.mail.protection.outlook.com  =
+     Microsoft SMTP Server   *
+3       4/30/2015
+4:07:34 PM      DB3FFO11FD054.protection.gbl    HKXPR06CA003.outlook.office=
+365.com      Microsoft SMTP Server (TLS)     1 sec
+4       4/30/2015
+4:07:35 PM      HKXPR06CA003.apcprd06.prod.outlook.com  SG2PR06MB0902.apcpr=
+d06.prod.outlook.com Microsoft SMTP Server (TLS)     1 sec
+
+Original Message Headers
+
+Received: from HKXPR06CA003.apcprd06.prod.outlook.com (10.242.96.43) by
+ SG2PR06MB0902.apcprd06.prod.outlook.com (25.162.204.15) with Microsoft SMT=
+P
+ Server (TLS) id 15.1.154.19; Thu, 30 Apr 2015 16:07:35 +0000
+Received: from DB3FFO11FD054.protection.gbl (2a01:111:f400:7e04::182) by
+ HKXPR06CA003.outlook.office365.com (2a01:111:e400:1c00::43) with Microsoft
+ SMTP Server (TLS) id 15.1.154.19 via Frontend Transport; Thu, 30 Apr 2015
+ 16:07:34 +0000
+Authentication-Results: spf=3Dfail (sender IP is 185.25.150.143)
+ smtp.mailfrom=3Dlists.linux-foundation.org; infotech.com.au; dkim=3Dnone (=
+message
+ not signed) header.d=3Dnone;infotech.com.au; dmarc=3Dnone action=3Dnone
+ header.from=3Dlists.linux-foundation.org;
+Received-SPF: Fail (protection.outlook.com: domain of
+ lists.linux-foundation.org does not designate 185.25.150.143 as permitted
+ sender) receiver=3Dprotection.outlook.com; client-ip=3D185.25.150.143;
+ helo=3Dd110.netdc.pl;
+Received: from d110.netdc.pl (185.25.150.143) by
+ DB3FFO11FD054.mail.protection.outlook.com (10.47.217.126) with Microsoft S=
+MTP
+ Server id 15.1.160.8 via Frontend Transport; Thu, 30 Apr 2015 16:07:33 +00=
+00
+Received: from [185.25.150.143] by d110.netdc.pl id XOFKhVhm9vzi with SMTP;=
+ Thu, 30 Apr 2015 18:07:33 +0200
+Date: Thu, 30 Apr 2015 18:07:33 +0200
+From: Giolla <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v2.07.1) Business
+X-Priority: 3 (Normal)
+Message-ID: <6502293226.55698963644641-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
+To: <rswiderskin-pDz3VWC6uHo0n/F98K4Iww@public.gmane.org>
+Subject: Delivery information - 2979620850.
+MIME-Version: 1.0
+Content-Type: text/html; charset=3D"utf-8"
+Content-Transfer-Encoding: quoted-printable
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-EOPAttributedMessage: 0
+X-Forefront-Antispam-Report: CIP:185.25.150.143;CTRY:EU;IPV:NLI;EFV:NLI;
+X-Microsoft-Antispam: UriScan:;BCL:0;PCL:0;RULEID:;SRVR:SG2PR06MB0902;
+
+
+--23208f92-5e41-4774-a88c-32ab02cea1b0
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns; mail107.syd.optusnet.com.au
-X-Postfix-Queue-ID: 804EFD494F9
-X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Arrival-Date: Thu, 30 Apr 2015 22:09:37 +1000 (AEST)
+Reporting-MTA: dns;SG2PR06MB0902.apcprd06.prod.outlook.com
+Received-From-MTA: dns;d110.netdc.pl
+Arrival-Date: Thu, 30 Apr 2015 16:07:35 +0000
 
-Final-Recipient: rfc822; jeddamissyq-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org
-Original-Recipient: rfc822;jeddamissyq-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org
+Final-Recipient: rfc822;rswiderskin-pDz3VWC6uHo0n/F98K4Iww@public.gmane.org
 Action: failed
-Status: 5.1.1
-Diagnostic-Code: x-unix; user unknown
+Status: 5.1.10
+Diagnostic-Code: smtp;550 5.1.10 RESOLVER.ADR.RecipientNotFound; Recipient not found by SMTP address lookup
 
---804EFD494F9.1430395780/mail107.syd.optusnet.com.au
-Content-Description: Undelivered Message
+
+--23208f92-5e41-4774-a88c-32ab02cea1b0
 Content-Type: message/rfc822
 
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from d110.netdc.pl (d126.netdc.pl [185.25.150.143])
-	by mail107.syd.optusnet.com.au (Postfix) with ESMTP id 804EFD494F9
-	for <jeddamissyq-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org>; Thu, 30 Apr 2015 22:09:37 +1000 (AEST)
-Received: from [185.25.150.143] by d110.netdc.pl id I9tpzpAtkdLb; Thu, 30 Apr 2015 14:09:37 +0200
-Message-ID: <008601d0833e$849f7c80$0200a8c0-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
-From: "Virginia" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <jeddamissyq-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org>
-Subject: Postal label | 5412878
-Date: Thu, 30 Apr 2015 14:09:37 +0200
-X-Optus-CM-Spam: spam
-X-Optus-CM-Score: 100
-X-Optus-CM-Analysis: v=2.1 cv=A5NVYcmG c=1 sm=1 tr=0 p=raVNdyfLAAAA:8
-	p=zgnJOb04AAAA:8 p=RCWggRnki3PrRcFHEU8A:9 a=fqJDePL7El6NGSup7DAnIw==:117
-	a=fqJDePL7El6NGSup7DAnIw==:17 a=IkcTkHD0fZMA:10 a=Z4Rwk6OoAAAA:8
-	a=e9J7MTPGsLIA:10 a=SSmOFEACAAAA:8 a=lojdg71KAAAA:8 a=p8B5KR36ga0BJ5qA:21
-	a=me16aYdbOVFFIb5C:21 a=3XpBRfKhQE6Y8Yhp:21 a=QEXdDO2ut3YA:10
-	a=_W_S_7VecoQA:10 a=oINdn6PuXmsA:10
+Received: from HKXPR06CA003.apcprd06.prod.outlook.com (10.242.96.43) by
+ SG2PR06MB0902.apcprd06.prod.outlook.com (25.162.204.15) with Microsoft SMTP
+ Server (TLS) id 15.1.154.19; Thu, 30 Apr 2015 16:07:35 +0000
+Received: from DB3FFO11FD054.protection.gbl (2a01:111:f400:7e04::182) by
+ HKXPR06CA003.outlook.office365.com (2a01:111:e400:1c00::43) with Microsoft
+ SMTP Server (TLS) id 15.1.154.19 via Frontend Transport; Thu, 30 Apr 2015
+ 16:07:34 +0000
+Authentication-Results: spf=fail (sender IP is 185.25.150.143)
+ smtp.mailfrom=lists.linux-foundation.org; infotech.com.au; dkim=none (message
+ not signed) header.d=none;infotech.com.au; dmarc=none action=none
+ header.from=lists.linux-foundation.org;
+Received-SPF: Fail (protection.outlook.com: domain of
+ lists.linux-foundation.org does not designate 185.25.150.143 as permitted
+ sender) receiver=protection.outlook.com; client-ip=185.25.150.143;
+ helo=d110.netdc.pl;
+Received: from d110.netdc.pl (185.25.150.143) by
+ DB3FFO11FD054.mail.protection.outlook.com (10.47.217.126) with Microsoft SMTP
+ Server id 15.1.160.8 via Frontend Transport; Thu, 30 Apr 2015 16:07:33 +0000
+Received: from [185.25.150.143] by d110.netdc.pl id XOFKhVhm9vzi with SMTP; Thu, 30 Apr 2015 18:07:33 +0200
+Date: Thu, 30 Apr 2015 18:07:33 +0200
+From: Giolla <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v2.07.1) Business
+X-Priority: 3 (Normal)
+Message-ID: <6502293226.55698963644641-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
+To: <rswiderskin-pDz3VWC6uHo0n/F98K4Iww@public.gmane.org>
+Subject: Delivery information - 2979620850.
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-EOPAttributedMessage: 0
+X-Forefront-Antispam-Report: CIP:185.25.150.143;CTRY:EU;IPV:NLI;EFV:NLI;
+X-Microsoft-Antispam: UriScan:;BCL:0;PCL:0;RULEID:;SRVR:SG2PR06MB0902;
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 
@@ -94,7 +215,7 @@ Content-Type: text/plain; charset="utf-8"
 
    Important information! If the parcel isn't received within 30 working
    days our company will have the right to claim compensation from you for
-   it's keeping in the amount of $8.07 for each day of keeping of it.
+   it's keeping in the amount of $8.42 for each day of keeping of it.
 
 Delivery Information
      __________________________________________________________________
@@ -106,8 +227,6 @@ Delivery Information
    Freight articles of every kind, especially parcels/satchels, must be
    prepared and made up to:
 
-   O Prevent injury to any person handling the freight
-
    O Prevent the contents escaping and causing damage to other freight
    articles
 
@@ -117,13 +236,16 @@ Delivery Information
    stresses and pressure to which the freight is unavoidably subject to
    during freight carriage
 
+   O Protect the contents from the effects of climate, extreme
+   temperatures.
+
 References
 
-   1. http://hc1.crowdmonster.ru/i/s50lv.php?o5tn
+   1. http://top-soveti.ru/i/u4gn4.php?pEWVYCy1
 
---804EFD494F9.1430395780/mail107.syd.optusnet.com.au--
+--23208f92-5e41-4774-a88c-32ab02cea1b0--
 
---===============5027405741327051396==
+--===============6538836415679405691==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -133,4 +255,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============5027405741327051396==--
+--===============6538836415679405691==--
