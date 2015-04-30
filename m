@@ -1,13 +1,10 @@
-From: <postmaster-PpQBR0/s8wRtFtFawtkaSg@public.gmane.org>
-Subject: Undeliverable: Delivery information id:059167227
-Date: Thu, 30 Apr 2015 10:54:24 +0000
-Message-ID: <ce4602ce-9227-4ef6-99e4-f53d3006084b@SYXPR01MB0189.ausprd01.prod.outlook.com>
-References: <00c301d08334$02aa5600$01000a0a@d110.netdc.pl>
+From: MAILER-DAEMON-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Thu, 30 Apr 2015 22:09:40 +1000 (AEST)
+Message-ID: <20150430120940.100A9D4953B@mail107.syd.optusnet.com.au>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5245758952118025130=="
+Content-Type: multipart/mixed; boundary="===============5027405741327051396=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-US
-In-Reply-To: <00c301d08334$02aa5600$01000a0a-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,117 +17,70 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============5245758952118025130==
+This is a MIME-encapsulated message.
+
+--===============5027405741327051396==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="632a3b99-18c0-4b73-b3e5-f70911d5bbe3"
-Content-Language: en-US
+	boundary="804EFD494F9.1430395780/mail107.syd.optusnet.com.au"
 
---632a3b99-18c0-4b73-b3e5-f70911d5bbe3
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+This is a MIME-encapsulated message.
 
-Delivery has failed to these recipients or groups:
+--804EFD494F9.1430395780/mail107.syd.optusnet.com.au
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-nnkq-PpQBR0/s8wRtFtFawtkaSg@public.gmane.org<mailto:nnkq-PpQBR0/s8wRtFtFawtkaSg@public.gmane.org>
-The email address wasn't found at the destination domain. It might be missp=
-elled or it might not exist any longer. Try retyping the address and resend=
-ing the message.
+This is the mail system at host mail107.syd.optusnet.com.au.
 
-If that doesn't work, contact the recipient (by phone or instant messaging,=
- for example) to check that the address is correct. If the problem continue=
-s, forward this message to your email admin.
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
 
-For Email Administrators
-For more tips to help fix this issue, see DSN 5.1.10 Errors in Exchange Onl=
-ine and Office 365<http://go.microsoft.com/fwlink/?LinkId=3D389363>.
+For further assistance, please send mail to postmaster.
 
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
 
+                   The mail system
 
+<jeddamissyq-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org> (expanded from <jeddamissyq-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org>):
+    user unknown
 
-
-
-
-
-Diagnostic information for administrators:
-
-Generating server: SYXPR01MB0189.ausprd01.prod.outlook.com
-
-nnkq-PpQBR0/s8wRtFtFawtkaSg@public.gmane.org
-Remote Server returned '550 5.1.10 RESOLVER.ADR.RecipientNotFound; Recipien=
-t not found by SMTP address lookup'
-
-Original message headers:
-
-Authentication-Results: proximity.com.au; dkim=3Dnone (message not signed)
- header.d=3Dnone;
-Received: from MEXPR01CA0059.ausprd01.prod.outlook.com (25.164.161.26) by
- SYXPR01MB0189.ausprd01.prod.outlook.com (25.162.71.19) with Microsoft SMTP
- Server (TLS) id 15.1.154.19; Thu, 30 Apr 2015 10:54:24 +0000
-Received: from ME1AUS01FT007.eop-AUS01.prod.protection.outlook.com
- (2a01:111:f400:7eb4::202) by MEXPR01CA0059.outlook.office365.com
- (2a01:111:e400:5a6a::26) with Microsoft SMTP Server (TLS) id 15.1.148.16 v=
-ia
- Frontend Transport; Thu, 30 Apr 2015 10:54:24 +0000
-Received: from d110.netdc.pl (185.25.150.143) by
- ME1AUS01FT007.mail.protection.outlook.com (25.152.232.100) with Microsoft
- SMTP Server id 15.1.136.16 via Frontend Transport; Thu, 30 Apr 2015 10:54:=
-22
- +0000
-Received: from [185.25.150.143] by d110.netdc.pl id XnkExfVUol95s; Thu, 30 =
-Apr 2015 12:54:23 +0200
-Message-ID: <00c301d08334$02aa5600$01000a0a-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
-From: Carmelina <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <nnkq-PpQBR0/s8wRtFtFawtkaSg@public.gmane.org>
-Subject: Delivery information id:059167227
-Date: Thu, 30 Apr 2015 12:54:23 +0200
-MIME-Version: 1.0
-Content-Type: text/html; charset=3D"utf-8"
-Content-Transfer-Encoding: quoted-printable
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-EOPAttributedMessage: 0
-X-Forefront-Antispam-Report: CIP:185.25.150.143;CTRY:EU;IPV:NLI;EFV:NLI;
-X-Microsoft-Antispam: UriScan:;BCL:0;PCL:0;RULEID:;SRVR:SYXPR01MB0189;
-
-
---632a3b99-18c0-4b73-b3e5-f70911d5bbe3
+--804EFD494F9.1430395780/mail107.syd.optusnet.com.au
+Content-Description: Delivery report
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns;SYXPR01MB0189.ausprd01.prod.outlook.com
-Received-From-MTA: dns;d110.netdc.pl
-Arrival-Date: Thu, 30 Apr 2015 10:54:24 +0000
+Reporting-MTA: dns; mail107.syd.optusnet.com.au
+X-Postfix-Queue-ID: 804EFD494F9
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Thu, 30 Apr 2015 22:09:37 +1000 (AEST)
 
-Final-Recipient: rfc822;nnkq-PpQBR0/s8wRtFtFawtkaSg@public.gmane.org
+Final-Recipient: rfc822; jeddamissyq-sFbbPxZDHXw0n/F98K4Iww@public.gmane.org
+Original-Recipient: rfc822;jeddamissyq-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org
 Action: failed
-Status: 5.1.10
-Diagnostic-Code: smtp;550 5.1.10 RESOLVER.ADR.RecipientNotFound; Recipient not found by SMTP address lookup
+Status: 5.1.1
+Diagnostic-Code: x-unix; user unknown
 
-
---632a3b99-18c0-4b73-b3e5-f70911d5bbe3
+--804EFD494F9.1430395780/mail107.syd.optusnet.com.au
+Content-Description: Undelivered Message
 Content-Type: message/rfc822
 
-Authentication-Results: proximity.com.au; dkim=none (message not signed)
- header.d=none;
-Received: from MEXPR01CA0059.ausprd01.prod.outlook.com (25.164.161.26) by
- SYXPR01MB0189.ausprd01.prod.outlook.com (25.162.71.19) with Microsoft SMTP
- Server (TLS) id 15.1.154.19; Thu, 30 Apr 2015 10:54:24 +0000
-Received: from ME1AUS01FT007.eop-AUS01.prod.protection.outlook.com
- (2a01:111:f400:7eb4::202) by MEXPR01CA0059.outlook.office365.com
- (2a01:111:e400:5a6a::26) with Microsoft SMTP Server (TLS) id 15.1.148.16 via
- Frontend Transport; Thu, 30 Apr 2015 10:54:24 +0000
-Received: from d110.netdc.pl (185.25.150.143) by
- ME1AUS01FT007.mail.protection.outlook.com (25.152.232.100) with Microsoft
- SMTP Server id 15.1.136.16 via Frontend Transport; Thu, 30 Apr 2015 10:54:22
- +0000
-Received: from [185.25.150.143] by d110.netdc.pl id XnkExfVUol95s; Thu, 30 Apr 2015 12:54:23 +0200
-Message-ID: <00c301d08334$02aa5600$01000a0a-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
-From: Carmelina <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <nnkq-PpQBR0/s8wRtFtFawtkaSg@public.gmane.org>
-Subject: Delivery information id:059167227
-Date: Thu, 30 Apr 2015 12:54:23 +0200
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-EOPAttributedMessage: 0
-X-Forefront-Antispam-Report: CIP:185.25.150.143;CTRY:EU;IPV:NLI;EFV:NLI;
-X-Microsoft-Antispam: UriScan:;BCL:0;PCL:0;RULEID:;SRVR:SYXPR01MB0189;
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from d110.netdc.pl (d126.netdc.pl [185.25.150.143])
+	by mail107.syd.optusnet.com.au (Postfix) with ESMTP id 804EFD494F9
+	for <jeddamissyq-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org>; Thu, 30 Apr 2015 22:09:37 +1000 (AEST)
+Received: from [185.25.150.143] by d110.netdc.pl id I9tpzpAtkdLb; Thu, 30 Apr 2015 14:09:37 +0200
+Message-ID: <008601d0833e$849f7c80$0200a8c0-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
+From: "Virginia" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <jeddamissyq-NMDoqBMVL6oJY7gZg3T8ig@public.gmane.org>
+Subject: Postal label | 5412878
+Date: Thu, 30 Apr 2015 14:09:37 +0200
+X-Optus-CM-Spam: spam
+X-Optus-CM-Score: 100
+X-Optus-CM-Analysis: v=2.1 cv=A5NVYcmG c=1 sm=1 tr=0 p=raVNdyfLAAAA:8
+	p=zgnJOb04AAAA:8 p=RCWggRnki3PrRcFHEU8A:9 a=fqJDePL7El6NGSup7DAnIw==:117
+	a=fqJDePL7El6NGSup7DAnIw==:17 a=IkcTkHD0fZMA:10 a=Z4Rwk6OoAAAA:8
+	a=e9J7MTPGsLIA:10 a=SSmOFEACAAAA:8 a=lojdg71KAAAA:8 a=p8B5KR36ga0BJ5qA:21
+	a=me16aYdbOVFFIb5C:21 a=3XpBRfKhQE6Y8Yhp:21 a=QEXdDO2ut3YA:10
+	a=_W_S_7VecoQA:10 a=oINdn6PuXmsA:10
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 
@@ -144,7 +94,7 @@ Content-Type: text/plain; charset="utf-8"
 
    Important information! If the parcel isn't received within 30 working
    days our company will have the right to claim compensation from you for
-   it's keeping in the amount of $8.94 for each day of keeping of it.
+   it's keeping in the amount of $8.07 for each day of keeping of it.
 
 Delivery Information
      __________________________________________________________________
@@ -167,16 +117,13 @@ Delivery Information
    stresses and pressure to which the freight is unavoidably subject to
    during freight carriage
 
-   O Protect the contents from the effects of climate, extreme
-   temperatures.
-
 References
 
-   1. http://autopravo.su/i/20e8g.php
+   1. http://hc1.crowdmonster.ru/i/s50lv.php?o5tn
 
---632a3b99-18c0-4b73-b3e5-f70911d5bbe3--
+--804EFD494F9.1430395780/mail107.syd.optusnet.com.au--
 
---===============5245758952118025130==
+--===============5027405741327051396==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -186,4 +133,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============5245758952118025130==--
+--===============5027405741327051396==--
