@@ -1,13 +1,14 @@
-From: <postmaster-j6IZ1hkWFFwQrrorzV6ljw@public.gmane.org>
-Subject: Undeliverable: Postal label | 5352894976
-Date: Fri, 1 May 2015 09:37:37 +0000
-Message-ID: <9d1e88fc-2e6a-4859-be0f-707500e6604d@BLUPR02MB065.namprd02.prod.outlook.com>
-References: <5410711390.53585906348001@d110.netdc.pl>
+From: <postmaster-54L5ROPhKJYQrrorzV6ljw@public.gmane.org>
+Subject: Undeliverable: Your package 74194182
+Date: Fri, 1 May 2015 21:24:53 +1000
+Message-ID: <c4b12013-b1a2-4cad-88c6-b7ccc1ae3561@agl.com.au>
+References: <009401d08401$6d759300$14000a0a@d110.netdc.pl>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5245912336851208750=="
+Content-Type: multipart/mixed;
+	boundary="_d523f69e-47e8-430b-ad14-215f07d3da3d_"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-US
-In-Reply-To: <5410711390.53585906348001-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
+Content-Language: en-AU
+In-Reply-To: <009401d08401$6d759300$14000a0a-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,191 +21,337 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============5245912336851208750==
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="744d5ad5-d421-484b-bf9b-547ca2385851"
-Content-Language: en-US
-
---744d5ad5-d421-484b-bf9b-547ca2385851
-Content-Type: text/plain; charset="Windows-1252"
+--_d523f69e-47e8-430b-ad14-215f07d3da3d_
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: quoted-printable
 
-[http://products.office.com/en-us/CMSImages/Office365Logo_Orange.png?versio=
-n=3Db8d100a9-0a8b-8e6a-88e1-ef488fee0470]
-Your message to ne.sandersondd-pogihsD1AJqjyR4gvpKvKKnaux6l2rmY327pM2HQVvs@public.gmane.org couldn't be del=
-ivered.
 
-ne.sandersondd wasn't found at studentmail.newcastle.edu.au
+***********************************************************************
+This email is intended solely for the use of the addressee
+and may contain information that is confidential or privileged.
+If you receive this email in error please notify the sender and
+delete the email immediately.
+***********************************************************************
 
-containers      Office 365      ne.sandersondd
-Action Required                 Recipient
-[http://products.office.com/en-us/CMSImages/email_StatusGraphic_1.png?versi=
-on=3D6ab6cc2f-330e-0c93-6ee7-96c969ab92d8]
-Unknown TO address
+--_d523f69e-47e8-430b-ad14-215f07d3da3d_
+Content-Type: message/rfc822
+
+Received: from TY1PR0201CA0023.apcprd02.prod.outlook.com (25.164.90.161) by
+ TY1PR0201MB0975.apcprd02.prod.outlook.com (25.164.97.15) with Microsoft SMTP
+ Server (TLS) id 15.1.148.16; Fri, 1 May 2015 11:25:01 +0000
+Received: from DB3FFO11FD034.protection.gbl (2a01:111:f400:7e04::185) by
+ TY1PR0201CA0023.outlook.office365.com (2a01:111:e400:5971::33) with Microsoft
+ SMTP Server (TLS) id 15.1.154.19 via Frontend Transport; Fri, 1 May 2015
+ 11:25:00 +0000
+Authentication-Results: spf=none (sender IP is 146.178.95.186)
+ smtp.helo=mail1.agl.com.au; lists.linux-foundation.org; dkim=none (message
+ not signed) header.d=none;
+Received-SPF: None (protection.outlook.com: mail1.agl.com.au does not
+ designate permitted sender hosts)
+Received: from mail1.agl.com.au (146.178.95.186) by
+ DB3FFO11FD034.mail.protection.outlook.com (10.47.217.65) with Microsoft SMTP
+ Server (TLS) id 15.1.160.8 via Frontend Transport; Fri, 1 May 2015 11:24:58
+ +0000
+MIME-Version: 1.0
+From: <postmaster-54L5ROPhKJYQrrorzV6ljw@public.gmane.org>
+To: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Date: Fri, 1 May 2015 21:24:53 +1000
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="ac6133da-b1a6-4bdd-8520-76091e90ddca"
+Content-Language: en-AU
+Message-ID: <c4b12013-b1a2-4cad-88c6-b7ccc1ae3561-54L5ROPhKJYQrrorzV6ljw@public.gmane.org>
+In-Reply-To: <009401d08401$6d759300$14000a0a-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
+References: <009401d08401$6d759300$14000a0a-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
+Subject: Undeliverable: Your package 74194182
+Return-Path: <>
+X-MS-Exchange-Organization-OriginalArrivalTime: 01 May 2015 11:24:58.7942
+ (UTC)
+X-MS-Exchange-Organization-Network-Message-Id: e199dc30-2977-435e-be79-08d25218980f
+X-MS-Exchange-Organization-OriginalClientIPAddress: 146.178.95.186
+X-MS-Exchange-Organization-OriginalServerIPAddress: 10.47.217.65
+X-EOPAttributedMessage: 0
+X-MS-Exchange-Organization-MessageDirectionality: Originating
+X-MS-Exchange-Organization-Id: 123913b9-915d-4d67-aaf9-ce327e8fc59f
+X-MS-Exchange-Organization-MessageInboundConnectorType: OnPremises
+X-MS-Exchange-Organization-OriginalAttributedTenantConnectingIp: TenantId=123913b9-915d-4d67-aaf9-ce327e8fc59f;Ip=[146.178.95.186];Helo=[mail1.agl.com.au]
+X-MS-Exchange-Organization-TargetResourceForest: apcprd02.prod.outlook.com
+X-MS-Exchange-Organization-P1P2RecipientMismatch: True
+X-MS-Exchange-Organization-MxPointsToUs: false
+X-MS-Exchange-Organization-P1P2-SenderDomain-Results: Mismatched
+X-MS-Exchange-Organization-OriginalEnvelopeRecipients: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-Forefront-Antispam-Report: CIP:146.178.95.186;CTRY:AU;IPV:CAL;IPV:NLI;EFV:NLI;
+X-MS-Exchange-Organization-Scanned-By-IP-Filter: true
+X-MS-Exchange-Organization-Originating-Country: AU
+X-MS-Exchange-Organization-Cross-Premises-Headers-Processed: DB3FFO11FD034.protection.gbl
+X-MS-Exchange-Organization-OrderedPrecisionLatencyInProgress: LSRV=TY1PR0201CA0023.apcprd02.prod.outlook.com:TOTAL-FE=0.375|SMR=0.365(SMRPI=0.133(SMRPI-FrontendProxyAgent=0.133));2015-05-01T11:25:01.139Z
+X-MS-Exchange-Organization-ProcessedByConnectionValidationAgent: apcprd02.prod.outlook.com
+X-MS-Exchange-Organization-RoutedUsingDagSelector: 
+X-MS-Exchange-Organization-MessageLatency: SRV=DB3FFO11FD034.protection.gbl:TOTAL-FE=1.970|SMR=1.402(SMRRC=0.002(SMRRC-Protocol
+ Filter
+ Agent=0.001)|SMREH=0.545(SMREH-TenantAttributionAndInboundConnectorAgent=0.005
+ |SMREH-Protocol Filter Agent=0.539))|SMS=0.566
+X-MS-Exchange-Organization-MessageLatency: SRV=TY1PR0201CA0023.apcprd02.prod.outlook.com:TOTAL-FE=0.375|SMR=0.365(SMRPI=0.133(SMRPI-FrontendProxyAgent=0.133))
+X-MS-Exchange-Forest-ArrivalHubServer: TY1PR0201MB0975.apcprd02.prod.outlook.com
+X-MS-Exchange-Organization-AuthSource: DB3FFO11FD034.protection.gbl
+X-MS-Exchange-Organization-AuthAs: Anonymous
+X-MS-Exchange-Organization-FromEntityHeader: HybridOnPrem
+X-MS-Exchange-Organization-OriginatorOrganization: AGLEnergy.onmicrosoft.com
+X-OriginatorOrg: AGLEnergy.onmicrosoft.com
+X-Microsoft-Antispam: UriScan:;BCL:0;PCL:0;RULEID:;SRVR:TY1PR0201MB0975;
+X-MS-Exchange-Organization-Cross-Session-Cache: 00SL=1;EMSL=1;SCL=0;BL=0;RL=1;PID=0;PL=0;EXPID=;EIPC0=2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2017,2015,2000,2001,3000,2003,1001,2002,2004,2016,1000,1002,1003,54,80,110,70,71,90,82,83,115,51,50,81,52,112,111,92,91,84,114,113,53;MIPC0=;REP=01,1,20\;01,2,69\;01,3,16222\;01,4,2275\;01,5,182\;01,6,60\;01,7,448\;01,8,69\;01,9,20646\;01,10,2825\;01,11,182\;01,12,69;SAUTHOP=1;A=01;MX=01;PTR=07;SPF=052BD0E4E1E-A74D-413A-9322-CA4C8E014A86-hoi+MLjhVxgNrcW7o2iNDw@public.gmane.org;DKIM=;DMARC=02postmaster-54L5ROPhKJYQrrorzV6ljw@public.gmane.org\;
+X-MS-Exchange-Organization-OriginalSize: 19211
+X-MS-Exchange-Organization-HygienePolicy: Premium
+X-MS-Exchange-Organization-AttachmentDetails: 0:fY6r99dU5KoZhrHUZs6qsrtQzCs++pe4Nf35Ia+qzP0=:U:Text:ATT00001::#;1:prkVg0hE4QrpitWM11oAKYpko8qxykrdDnpNPA47MWg=:U:Mime|Text:Your
+ package 74194182::#
+X-MS-Exchange-Organization-AVStamp-Service: 1.0
+X-MS-Exchange-Organization-Recipient-Limit-Verified: True
+X-MS-Exchange-Organization-TotalRecipientCount: 1
+X-MS-Exchange-Organization-Transport-Properties: DeliveryPriority=Normal
+X-MS-Exchange-Organization-Prioritization: 1
+X-MS-Exchange-Organization-Rules-Execution-History: TransportVersioned.Block
+ External emails of AES
+ Reports%%%a8768246-7225-4319-8c3a-1ecdd0f74217%%%TransportVersioned.Block
+ internal Email of AES
+ Reports%%%d4799087-3000-4061-bacd-418f9942f099%%%TransportVersioned.Block
+ Internal Email of
+ AGLworkoverrig1%%%567b5e03-a6f0-47d6-aa1a-6b47c0c041cb%%%TransportVersioned.Block
+ External Email  AGLworkoverrig1%%%7acff1de-fb67-4e55-b074-4a010b11e9ee
+
+--ac6133da-b1a6-4bdd-8520-76091e90ddca
+Content-Type: multipart/alternative; differences=Content-Type;
+	boundary="655c538e-c9a5-4a90-83a7-b3539465464e"
+
+--655c538e-c9a5-4a90-83a7-b3539465464e
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+
+Delivery has failed to these recipients or groups:
+
+a.w.williams.b9qk-54L5ROPhKJYQrrorzV6ljw@public.gmane.org<mailto:a.w.williams.b9qk-54L5ROPhKJYQrrorzV6ljw@public.gmane.org>
+The e-mail address you entered couldn't be found. Please check the recipien=
+t's e-mail address and try to resend the message. If the problem continues,=
+ please contact your helpdesk.
 
 
-How to Fix It
-The address may be misspelled or may not exist. Try the following:
-
-  *   Retype the email address then resend the message.
-  *   Clear the recipient Autocomplete cache in Outlook or Outlook Web App =
-by following the steps in this article: Error code 5.1.10 in Exchange Onlin=
-e and Office 365<http://go.microsoft.com/fwlink/?LinkId=3D389363>.
-  *   Contact the recipient (by phone or instant messaging, for example) to=
- check that the address is correct.
-  *   The recipient may have set up mail forwarding to an incorrect address=
-. Ask them to check that any forwarding they've set up is working correctly=
-.
 
 
-If the problem continues, forward this message to your email admin.
 
 
-Was this helpful? Send feedback<http://go.microsoft.com/fwlink/?LinkId=3D52=
-5921>.
-________________________________
 
+Diagnostic information for administrators:
 
-More Info for Email Admins
-This error occurs because the sender sent a message to someone whose mailbo=
-x is hosted by Office 365 and the email address is incorrect. The error is =
-reported by the recipient's email system, but most often it must be fixed b=
-y the sender. An example is when the recipient changes their email address =
-but the sender selects the person from the recipient AutoComplete list, whi=
-ch has the out-of-date email address information.
+Generating server: agl.com.au
 
-Sometimes it needs to be fixed by the recipient or the recipient's email ad=
-min, for example, when the recipient has created a mail forwarding rule to =
-an incorrect address, or if there's a problem with their email address dire=
-ctory. If the sender is using the correct recipient address, and it's still=
- not working, send a test message from another user mailbox to see if it's =
-an issue unique to this sender. If you reproduce the problem sending from a=
-nother user account, ask the recipient or the recipient's email admin to co=
-nfirm that the recipient address exists, is correct, and is working. Sugges=
-t they check for misbehaving forwarding rules or possible email address dir=
-ectory issues (such as directory synchronization issues).
+a.w.williams.b9qk-54L5ROPhKJYQrrorzV6ljw@public.gmane.org
+#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
 
-For more information, see Error code 5.1.10 in Exchange Online and Office 3=
-65<http://go.microsoft.com/fwlink/?LinkId=3D389363>.
+Original message headers:
 
-
-Original Message Details
-Created Date:   5/1/2015 9:37:36 AM
-Sender Address: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Recipient Address:      ne.sandersondd-pogihsD1AJqjyR4gvpKvKKnaux6l2rmY327pM2HQVvs@public.gmane.org
-Subject:        Postal label | 5352894976
-
-
-Error Details
-Reported error: 550 5.1.10 RESOLVER.ADR.RecipientNotFound; Recipient not fo=
-und by SMTP address lookup
-DSN generated by:       BLUPR02MB065.namprd02.prod.outlook.com
-
-
-Message Hops
-HOP     TIME (UTC)      FROM    TO      WITH    RELAY TIME
-1       5/1/2015
-9:37:36 AM      [185.25.150.143]        d110.netdc.pl   SMTP    *
-2       5/1/2015
-9:37:34 AM      d110.netdc.pl   BY2FFO11FD032.mail.protection.outlook.com  =
-     Microsoft SMTP Server   *
-3       5/1/2015
-9:37:35 AM      BY2FFO11FD032.protection.gbl    BY1PR0201CA0032.outlook.off=
-ice365.com   Microsoft SMTP Server (TLS)     1 sec
-4       5/1/2015
-9:37:36 AM      BY1PR0201CA0032.namprd02.prod.outlook.com       BLUPR02MB06=
-5.namprd02.prod.outlook.com  Microsoft SMTP Server (TLS)     1 sec
-
-Original Message Headers
-
-Received: from BY1PR0201CA0032.namprd02.prod.outlook.com (25.160.191.170) b=
-y
- BLUPR02MB065.namprd02.prod.outlook.com (10.242.187.144) with Microsoft SMT=
-P
- Server (TLS) id 15.1.148.16; Fri, 1 May 2015 09:37:36 +0000
-Received: from BY2FFO11FD032.protection.gbl (2a01:111:f400:7c0c::141) by
- BY1PR0201CA0032.outlook.office365.com (2a01:111:e400:4814::42) with Micros=
+Received: from APAC01-HK1-obe.outbound.protection.outlook.com (207.46.51.11=
+7)
+ by mail1.agl.com.au (10.216.9.80) with Microsoft SMTP Server (TLS) id
+ 14.3.123.3; Fri, 1 May 2015 21:24:52 +1000
+Received: from HK2PR0201CA0012.apcprd02.prod.outlook.com (25.162.206.22) by
+ SIXPR0201MB0972.apcprd02.prod.outlook.com (25.162.178.151) with Microsoft
+ SMTP Server (TLS) id 15.1.148.16; Fri, 1 May 2015 11:24:48 +0000
+Received: from AM1FFO11OLC001.protection.gbl (2a01:111:f400:7e00::191) by
+ HK2PR0201CA0012.outlook.office365.com (2a01:111:e400:5217::22) with Micros=
 oft
  SMTP Server (TLS) id 15.1.154.19 via Frontend Transport; Fri, 1 May 2015
- 09:37:35 +0000
+ 11:24:48 +0000
 Authentication-Results: spf=3Dfail (sender IP is 185.25.150.143)
- smtp.mailfrom=3Dlists.linux-foundation.org; studentmail.newcastle.edu.au;
- dkim=3Dnone (message not signed) header.d=3Dnone;studentmail.newcastle.edu=
-.au;
- dmarc=3Dnone action=3Dnone header.from=3Dlists.linux-foundation.org;
+ smtp.mailfrom=3Dlists.linux-foundation.org; agl.com.au; dkim=3Dnone (messa=
+ge not
+ signed) header.d=3Dnone;agl.com.au; dmarc=3Dnone action=3Dnone
+ header.from=3Dlists.linux-foundation.org;
 Received-SPF: Fail (protection.outlook.com: domain of
  lists.linux-foundation.org does not designate 185.25.150.143 as permitted
  sender) receiver=3Dprotection.outlook.com; client-ip=3D185.25.150.143;
  helo=3Dd110.netdc.pl;
 Received: from d110.netdc.pl (185.25.150.143) by
- BY2FFO11FD032.mail.protection.outlook.com (10.1.14.210) with Microsoft SMT=
-P
- Server id 15.1.160.8 via Frontend Transport; Fri, 1 May 2015 09:37:34 +000=
+ AM1FFO11OLC001.mail.protection.outlook.com (10.174.65.76) with Microsoft S=
+MTP
+ Server id 15.1.160.8 via Frontend Transport; Fri, 1 May 2015 11:24:46 +000=
 0
-Received: from [185.25.150.143] by d110.netdc.pl id GLJCJ97ST8eY with SMTP;=
- Fri, 01 May 2015 11:37:36 +0200
-Date: Fri, 1 May 2015 11:37:36 +0200
-From: Cira <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.4.12.9) Personal
-X-Priority: 3 (Normal)
-Message-ID: <5410711390.53585906348001-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
-To: <ne.sandersondd-pogihsD1AJqjyR4gvpKvKKnaux6l2rmY327pM2HQVvs@public.gmane.org>
-Subject: Postal label | 5352894976
+Received: from [185.25.150.143] by d110.netdc.pl id oQDCYcte7rEE; Fri, 01 M=
+ay
+ 2015 13:24:48 +0200
+Message-ID: <009401d08401$6d759300$14000a0a-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
+From: Donnie <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <a.w.williams.b9qk-54L5ROPhKJYQrrorzV6ljw@public.gmane.org>
+Subject: Your package 74194182
+Date: Fri, 1 May 2015 13:24:48 +0200
 MIME-Version: 1.0
 Content-Type: text/html; charset=3D"utf-8"
 Content-Transfer-Encoding: quoted-printable
 Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 X-EOPAttributedMessage: 0
-X-Forefront-Antispam-Report: CIP:185.25.150.143;CTRY:EU;IPV:NLI;EFV:NLI;
-X-Microsoft-Antispam: UriScan:;BCL:0;PCL:0;RULEID:;SRVR:BLUPR02MB065;
+X-Forefront-Antispam-Report: CIP:185.25.150.143;CTRY:EU;IPV:NLI;EFV:NLI;SFV=
+:SPM;SFS:(6009001)(339900001)(489007)(189002)(6262002)(199003)(4477795004)(=
+46102003)(106466001)(105606002)(16799955002)(1456003)(33646002)(85426001)(2=
+3846002)(18206015028)(19580395003)(44736004)(62966003)(86362001)(87836001)(=
+2351001)(54356999)(50986999)(450100001)(77156002)(121206001)(92566002)(5046=
+6002)(104016003)(1556002)(19580405001)(5001970100001)(229853001)(110136002)=
+(23676002)(116806002)(107886002)(50929005);DIR:INB;SFP:;SCL:5;SRVR:SIXPR020=
+1MB0972;H:d110.netdc.pl;FPR:;SPF:Fail;MLV:ovrspm;MX:1;A:1;PTR:d126.netdc.pl=
+;LANG:en;
+X-Microsoft-Antispam: UriScan:;BCL:0;PCL:0;RULEID:;SRVR:SIXPR0201MB0972;
+X-Exchange-Antispam-Report-Test: UriScan:(262757254260003)(229438765285032)=
+;
+X-Exchange-Antispam-Report-CFA-Test: BCL:0;PCL:0;RULEID:(601004)(3002001)(2=
+001001)(2002001)(2003001);SRVR:SIXPR0201MB0972;BCL:0;PCL:0;RULEID:;SRVR:SIX=
+PR0201MB0972;
+X-FOSE-spam: This message appears to be spam.
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 01 May 2015 11:24:46.7984
+ (UTC)
+X-MS-Exchange-CrossTenant-Id: 123913b9-915d-4d67-aaf9-ce327e8fc59f
+X-MS-Exchange-CrossTenant-FromEntityHeader: Internet
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SIXPR0201MB0972
+X-OrganizationHeadersPreserved: SIXPR0201MB0972.apcprd02.prod.outlook.com
+X-OriginatorOrg: AGLEnergy.onmicrosoft.com
+X-CrossPremisesHeadersFiltered: GLBWI416.agl.int
 
 
---744d5ad5-d421-484b-bf9b-547ca2385851
-Content-Type: message/delivery-status
+--655c538e-c9a5-4a90-83a7-b3539465464e
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 
-Reporting-MTA: dns;BLUPR02MB065.namprd02.prod.outlook.com
-Received-From-MTA: dns;d110.netdc.pl
-Arrival-Date: Fri, 1 May 2015 09:37:36 +0000
+   Delivery has failed to these recipients or groups:
 
-Final-Recipient: rfc822;ne.sandersondd-pogihsD1AJqjyR4gvpKvKKnaux6l2rmY327pM2HQVvs@public.gmane.org
-Action: failed
-Status: 5.1.10
-Diagnostic-Code: smtp;550 5.1.10 RESOLVER.ADR.RecipientNotFound; Recipient not found by SMTP address lookup
+   [1]a.w.williams.b9qk-54L5ROPhKJYQrrorzV6ljw@public.gmane.org
+   The e-mail address you entered couldn't be found. Please check the
+   recipient's e-mail address and try to resend the message. If the
+   problem continues, please contact your helpdesk.
 
+   Diagnostic information for administrators:
 
---744d5ad5-d421-484b-bf9b-547ca2385851
-Content-Type: message/rfc822
+   Generating server: agl.com.au
 
-Received: from BY1PR0201CA0032.namprd02.prod.outlook.com (25.160.191.170) by
- BLUPR02MB065.namprd02.prod.outlook.com (10.242.187.144) with Microsoft SMTP
- Server (TLS) id 15.1.148.16; Fri, 1 May 2015 09:37:36 +0000
-Received: from BY2FFO11FD032.protection.gbl (2a01:111:f400:7c0c::141) by
- BY1PR0201CA0032.outlook.office365.com (2a01:111:e400:4814::42) with Microsoft
+   a.w.williams.b9qk-54L5ROPhKJYQrrorzV6ljw@public.gmane.org
+   #550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
+
+   Original message headers:
+Received: from APAC01-HK1-obe.outbound.protection.outlook.com (207.46.51.117)
+ by mail1.agl.com.au (10.216.9.80) with Microsoft SMTP Server (TLS) id
+ 14.3.123.3; Fri, 1 May 2015 21:24:52 +1000
+Received: from HK2PR0201CA0012.apcprd02.prod.outlook.com (25.162.206.22) by
+ SIXPR0201MB0972.apcprd02.prod.outlook.com (25.162.178.151) with Microsoft
+ SMTP Server (TLS) id 15.1.148.16; Fri, 1 May 2015 11:24:48 +0000
+Received: from AM1FFO11OLC001.protection.gbl (2a01:111:f400:7e00::191) by
+ HK2PR0201CA0012.outlook.office365.com (2a01:111:e400:5217::22) with Microsoft
  SMTP Server (TLS) id 15.1.154.19 via Frontend Transport; Fri, 1 May 2015
- 09:37:35 +0000
+ 11:24:48 +0000
 Authentication-Results: spf=fail (sender IP is 185.25.150.143)
- smtp.mailfrom=lists.linux-foundation.org; studentmail.newcastle.edu.au;
- dkim=none (message not signed) header.d=none;studentmail.newcastle.edu.au;
- dmarc=none action=none header.from=lists.linux-foundation.org;
+ smtp.mailfrom=lists.linux-foundation.org; agl.com.au; dkim=none (message not
+ signed) header.d=none;agl.com.au; dmarc=none action=none
+ header.from=lists.linux-foundation.org;
 Received-SPF: Fail (protection.outlook.com: domain of
  lists.linux-foundation.org does not designate 185.25.150.143 as permitted
  sender) receiver=protection.outlook.com; client-ip=185.25.150.143;
  helo=d110.netdc.pl;
 Received: from d110.netdc.pl (185.25.150.143) by
- BY2FFO11FD032.mail.protection.outlook.com (10.1.14.210) with Microsoft SMTP
- Server id 15.1.160.8 via Frontend Transport; Fri, 1 May 2015 09:37:34 +0000
-Received: from [185.25.150.143] by d110.netdc.pl id GLJCJ97ST8eY with SMTP; Fri, 01 May 2015 11:37:36 +0200
-Date: Fri, 1 May 2015 11:37:36 +0200
-From: Cira <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.4.12.9) Personal
-X-Priority: 3 (Normal)
-Message-ID: <5410711390.53585906348001-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
-To: <ne.sandersondd-pogihsD1AJqjyR4gvpKvKKnaux6l2rmY327pM2HQVvs@public.gmane.org>
-Subject: Postal label | 5352894976
+ AM1FFO11OLC001.mail.protection.outlook.com (10.174.65.76) with Microsoft SMTP
+ Server id 15.1.160.8 via Frontend Transport; Fri, 1 May 2015 11:24:46 +0000
+Received: from [185.25.150.143] by d110.netdc.pl id oQDCYcte7rEE; Fri, 01 May
+ 2015 13:24:48 +0200
+Message-ID: <009401d08401$6d759300$14000a0a-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
+From: Donnie <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <a.w.williams.b9qk-54L5ROPhKJYQrrorzV6ljw@public.gmane.org>
+Subject: Your package 74194182
+Date: Fri, 1 May 2015 13:24:48 +0200
+MIME-Version: 1.0
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
 Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 X-EOPAttributedMessage: 0
-X-Forefront-Antispam-Report: CIP:185.25.150.143;CTRY:EU;IPV:NLI;EFV:NLI;
-X-Microsoft-Antispam: UriScan:;BCL:0;PCL:0;RULEID:;SRVR:BLUPR02MB065;
+X-Forefront-Antispam-Report: CIP:185.25.150.143;CTRY:EU;IPV:NLI;EFV:NLI;SFV:SPM
+;SFS:(6009001)(339900001)(489007)(189002)(6262002)(199003)(4477795004)(46102003
+)(106466001)(105606002)(16799955002)(1456003)(33646002)(85426001)(23846002)(182
+06015028)(19580395003)(44736004)(62966003)(86362001)(87836001)(2351001)(5435699
+9)(50986999)(450100001)(77156002)(121206001)(92566002)(50466002)(104016003)(155
+6002)(19580405001)(5001970100001)(229853001)(110136002)(23676002)(116806002)(10
+7886002)(50929005);DIR:INB;SFP:;SCL:5;SRVR:SIXPR0201MB0972;H:d110.netdc.pl;FPR:
+;SPF:Fail;MLV:ovrspm;MX:1;A:1;PTR:d126.netdc.pl;LANG:en;
+X-Microsoft-Antispam: UriScan:;BCL:0;PCL:0;RULEID:;SRVR:SIXPR0201MB0972;
+X-Exchange-Antispam-Report-Test: UriScan:(262757254260003)(229438765285032);
+X-Exchange-Antispam-Report-CFA-Test: BCL:0;PCL:0;RULEID:(601004)(3002001)(20010
+01)(2002001)(2003001);SRVR:SIXPR0201MB0972;BCL:0;PCL:0;RULEID:;SRVR:SIXPR0201MB
+0972;
+X-FOSE-spam: This message appears to be spam.
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 01 May 2015 11:24:46.7984
+ (UTC)
+X-MS-Exchange-CrossTenant-Id: 123913b9-915d-4d67-aaf9-ce327e8fc59f
+X-MS-Exchange-CrossTenant-FromEntityHeader: Internet
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SIXPR0201MB0972
+X-OrganizationHeadersPreserved: SIXPR0201MB0972.apcprd02.prod.outlook.com
+X-OriginatorOrg: AGLEnergy.onmicrosoft.com
+X-CrossPremisesHeadersFiltered: GLBWI416.agl.int
+
+References
+
+   1. mailto:a.w.williams.b9qk-54L5ROPhKJYQrrorzV6ljw@public.gmane.org
+
+--655c538e-c9a5-4a90-83a7-b3539465464e--
+
+--ac6133da-b1a6-4bdd-8520-76091e90ddca
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;agl.com.au
+Received-From-MTA: dns;APAC01-HK1-obe.outbound.protection.outlook.com
+Arrival-Date: Fri, 1 May 2015 11:24:52 +0000
+
+Final-Recipient: rfc822;a.w.williams.b9qk-54L5ROPhKJYQrrorzV6ljw@public.gmane.org
+Action: failed
+Status: 5.1.1
+Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
+
+
+--ac6133da-b1a6-4bdd-8520-76091e90ddca
+Content-Type: message/rfc822
+
+Received: from APAC01-HK1-obe.outbound.protection.outlook.com (207.46.51.117)
+ by mail1.agl.com.au (10.216.9.80) with Microsoft SMTP Server (TLS) id
+ 14.3.123.3; Fri, 1 May 2015 21:24:52 +1000
+Received: from HK2PR0201CA0012.apcprd02.prod.outlook.com (25.162.206.22) by
+ SIXPR0201MB0972.apcprd02.prod.outlook.com (25.162.178.151) with Microsoft
+ SMTP Server (TLS) id 15.1.148.16; Fri, 1 May 2015 11:24:48 +0000
+Received: from AM1FFO11OLC001.protection.gbl (2a01:111:f400:7e00::191) by
+ HK2PR0201CA0012.outlook.office365.com (2a01:111:e400:5217::22) with Microsoft
+ SMTP Server (TLS) id 15.1.154.19 via Frontend Transport; Fri, 1 May 2015
+ 11:24:48 +0000
+Authentication-Results: spf=fail (sender IP is 185.25.150.143)
+ smtp.mailfrom=lists.linux-foundation.org; agl.com.au; dkim=none (message not
+ signed) header.d=none;agl.com.au; dmarc=none action=none
+ header.from=lists.linux-foundation.org;
+Received-SPF: Fail (protection.outlook.com: domain of
+ lists.linux-foundation.org does not designate 185.25.150.143 as permitted
+ sender) receiver=protection.outlook.com; client-ip=185.25.150.143;
+ helo=d110.netdc.pl;
+Received: from d110.netdc.pl (185.25.150.143) by
+ AM1FFO11OLC001.mail.protection.outlook.com (10.174.65.76) with Microsoft SMTP
+ Server id 15.1.160.8 via Frontend Transport; Fri, 1 May 2015 11:24:46 +0000
+Received: from [185.25.150.143] by d110.netdc.pl id oQDCYcte7rEE; Fri, 01 May
+ 2015 13:24:48 +0200
+Message-ID: <009401d08401$6d759300$14000a0a-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
+From: Donnie <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <a.w.williams.b9qk-54L5ROPhKJYQrrorzV6ljw@public.gmane.org>
+Subject: Your package 74194182
+Date: Fri, 1 May 2015 13:24:48 +0200
+Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-EOPAttributedMessage: 0
+X-Forefront-Antispam-Report: CIP:185.25.150.143;CTRY:EU;IPV:NLI;EFV:NLI;SFV:SPM;SFS:(6009001)(339900001)(489007)(189002)(6262002)(199003)(4477795004)(46102003)(106466001)(105606002)(16799955002)(1456003)(33646002)(85426001)(23846002)(18206015028)(19580395003)(44736004)(62966003)(86362001)(87836001)(2351001)(54356999)(50986999)(450100001)(77156002)(121206001)(92566002)(50466002)(104016003)(1556002)(19580405001)(5001970100001)(229853001)(110136002)(23676002)(116806002)(107886002)(50929005);DIR:INB;SFP:;SCL:5;SRVR:SIXPR0201MB0972;H:d110.netdc.pl;FPR:;SPF:Fail;MLV:ovrspm;MX:1;A:1;PTR:d126.netdc.pl;LANG:en;
+X-Microsoft-Antispam: UriScan:;BCL:0;PCL:0;RULEID:;SRVR:SIXPR0201MB0972;
+X-Exchange-Antispam-Report-Test: UriScan:(262757254260003)(229438765285032);
+X-Exchange-Antispam-Report-CFA-Test: BCL:0;PCL:0;RULEID:(601004)(3002001)(2001001)(2002001)(2003001);SRVR:SIXPR0201MB0972;BCL:0;PCL:0;RULEID:;SRVR:SIXPR0201MB0972;
+X-FOSE-spam: This message appears to be spam.
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 01 May 2015 11:24:46.7984
+ (UTC)
+X-MS-Exchange-CrossTenant-Id: 123913b9-915d-4d67-aaf9-ce327e8fc59f
+X-MS-Exchange-CrossTenant-FromEntityHeader: Internet
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SIXPR0201MB0972
+X-OrganizationHeadersPreserved: SIXPR0201MB0972.apcprd02.prod.outlook.com
+X-OriginatorOrg: AGLEnergy.onmicrosoft.com
+X-CrossPremisesHeadersFiltered: GLBWI416.agl.int
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 
@@ -218,7 +365,7 @@ Content-Type: text/plain; charset="utf-8"
 
    Important information! If the parcel isn't received within 30 working
    days our company will have the right to claim compensation from you for
-   it's keeping in the amount of $8.28 for each day of keeping of it.
+   it's keeping in the amount of $8.83 for each day of keeping of it.
 
 Delivery Information
      __________________________________________________________________
@@ -230,10 +377,10 @@ Delivery Information
    Freight articles of every kind, especially parcels/satchels, must be
    prepared and made up to:
 
-   O Prevent injury to any person handling the freight
-
    O Prevent the contents escaping and causing damage to other freight
    articles
+
+   O Prevent injury to any person handling the freight
 
    O Prevent damage to equipment and vehicles, during carriage
 
@@ -246,11 +393,11 @@ Delivery Information
 
 References
 
-   1. http://ds-woman.ru/i/qfesi.php?05q0lCUZEXhT
+   1. http://profinformer.ru/i/6buak.php?4XmgR
 
---744d5ad5-d421-484b-bf9b-547ca2385851--
+--ac6133da-b1a6-4bdd-8520-76091e90ddca--
 
---===============5245912336851208750==
+--_d523f69e-47e8-430b-ad14-215f07d3da3d_
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -260,4 +407,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============5245912336851208750==--
+--_d523f69e-47e8-430b-ad14-215f07d3da3d_--
