@@ -1,13 +1,13 @@
-From: <postmaster-W1K1aaV0InJDiKS8+eU1oBCuuivNXqWP@public.gmane.org>
-Subject: Undeliverable: Postal label | yg8j
-Date: Fri, 1 May 2015 08:57:45 +1000
-Message-ID: <c5a90b3f-5d3a-46fc-89d0-c427b8c1bfe0@elitesports.com.au>
-References: <1874782908.20985257943477@d110.netdc.pl>
+From: <postmaster-PpQBR0/s8wRtFtFawtkaSg@public.gmane.org>
+Subject: Undeliverable: Postal label - gtPULejTE
+Date: Fri, 1 May 2015 01:04:41 +0000
+Message-ID: <47d311a4-3710-47a4-8bfc-e110c2590728@SYXPR01MB0110.ausprd01.prod.outlook.com>
+References: <221575892.15090996726004@d110.netdc.pl>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============2052539896844979789=="
+Content-Type: multipart/mixed; boundary="===============2188567252310578395=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-AU
-In-Reply-To: <1874782908.20985257943477-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
+Content-Language: en-US
+In-Reply-To: <221575892.15090996726004-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,21 +20,30 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============2052539896844979789==
+--===============2188567252310578395==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="8895001d-3ce5-4fa2-9f11-5e1ba5e4a665"
-Content-Language: en-AU
+	boundary="2cf681c9-a58f-44d6-a8b4-c08a24453ecb"
+Content-Language: en-US
 
---8895001d-3ce5-4fa2-9f11-5e1ba5e4a665
+--2cf681c9-a58f-44d6-a8b4-c08a24453ecb
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: quoted-printable
 
 Delivery has failed to these recipients or groups:
 
-needler-W1K1aaV0InJDiKS8+eU1oBCuuivNXqWP@public.gmane.org<mailto:needler-W1K1aaV0InJDiKS8+eU1oBCuuivNXqWP@public.gmane.org>
-The e-mail address you entered couldn't be found. Please check the recipien=
-t's e-mail address and try to resend the message. If the problem continues,=
- please contact your helpdesk.
+izxk-PpQBR0/s8wRtFtFawtkaSg@public.gmane.org<mailto:izxk-PpQBR0/s8wRtFtFawtkaSg@public.gmane.org>
+The email address wasn't found at the destination domain. It might be missp=
+elled or it might not exist any longer. Try retyping the address and resend=
+ing the message.
+
+If that doesn't work, contact the recipient (by phone or instant messaging,=
+ for example) to check that the address is correct. If the problem continue=
+s, forward this message to your email admin.
+
+For Email Administrators
+For more tips to help fix this issue, see DSN 5.1.10 Errors in Exchange Onl=
+ine and Office 365<http://go.microsoft.com/fwlink/?LinkId=3D389363>.
+
 
 
 
@@ -44,85 +53,89 @@ t's e-mail address and try to resend the message. If the problem continues,=
 
 Diagnostic information for administrators:
 
-Generating server: elitesports.com.au
+Generating server: SYXPR01MB0110.ausprd01.prod.outlook.com
 
-needler-W1K1aaV0InJDiKS8+eU1oBCuuivNXqWP@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
+izxk-PpQBR0/s8wRtFtFawtkaSg@public.gmane.org
+Remote Server returned '550 5.1.10 RESOLVER.ADR.RecipientNotFound; Recipien=
+t not found by SMTP address lookup'
 
 Original message headers:
 
-Received: from elitesports.com.au (10.51.9.129) by ESP-Exchange.ESP.local
- (10.51.9.12) with Microsoft SMTP Server (TLS) id 14.1.218.12; Fri, 1 May 2=
-015
- 08:57:45 +1000
-Received: from d126.netdc.pl ([185.25.150.143] helo=3Dd110.netdc.pl)      b=
-y
- elitesports.com.au stage1 with esmtp   (Exim MailCleaner)      id 1YnxOl-0=
-002xl-Vx
-        for <needler-W1K1aaV0InJDiKS8+eU1oBCuuivNXqWP@public.gmane.org>        from
- <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>; Fri, 01 May 2015 08:57:41 +1000
-Received: from [185.25.150.143] by d110.netdc.pl id bbXJgEdsYZJM with SMTP;
- Fri, 01 May 2015 00:57:38 +0200
-X-MailCleaner-SPF: fail
-Date: Fri, 1 May 2015 00:57:38 +0200
-From: Byanca <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v2.09.2) Personal
+Authentication-Results: proximity.com.au; dkim=3Dnone (message not signed)
+ header.d=3Dnone;
+Received: from SY3PR01CA0007.ausprd01.prod.outlook.com (25.162.55.145) by
+ SYXPR01MB0110.ausprd01.prod.outlook.com (25.162.71.142) with Microsoft SMT=
+P
+ Server (TLS) id 15.1.154.19; Fri, 1 May 2015 01:04:41 +0000
+Received: from ME1AUS01FT008.eop-AUS01.prod.protection.outlook.com
+ (2a01:111:f400:7eb4::203) by SY3PR01CA0007.outlook.office365.com
+ (2a01:111:e400:5c00::17) with Microsoft SMTP Server (TLS) id 15.1.154.19 v=
+ia
+ Frontend Transport; Fri, 1 May 2015 01:04:41 +0000
+Received: from d110.netdc.pl (185.25.150.143) by
+ ME1AUS01FT008.mail.protection.outlook.com (25.152.232.117) with Microsoft
+ SMTP Server id 15.1.136.16 via Frontend Transport; Fri, 1 May 2015 01:04:3=
+9
+ +0000
+Received: from [185.25.150.143] by d110.netdc.pl id nTsvdpHzFmmg with SMTP;=
+ Fri, 01 May 2015 03:04:40 +0200
+Date: Fri, 1 May 2015 03:04:40 +0200
+From: Lorenza <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v2.07.8) Business
 X-Priority: 3 (Normal)
-Message-ID: <1874782908.20985257943477-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
-To: <needler-W1K1aaV0InJDiKS8+eU1oBCuuivNXqWP@public.gmane.org>
-Subject: Postal label | yg8j
+Message-ID: <221575892.15090996726004-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
+To: <izxk-PpQBR0/s8wRtFtFawtkaSg@public.gmane.org>
+Subject: Postal label - gtPULejTE
 MIME-Version: 1.0
 Content-Type: text/html; charset=3D"utf-8"
 Content-Transfer-Encoding: quoted-printable
-X-NiceBayes: disabled (no database ?)
-X-MailCleaner-Information: Please contact  for more information
-X-MailCleaner-ID: 1YnxOn-0002xp-58
-X-MailCleaner: Found to be clean
-X-MailCleaner-SpamCheck: not spam, AHBL, SORBS, SPAMCOP
-X-MailCleaner-ReportURL: https://TLAESP-antispam/rs.php
 Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-EOPAttributedMessage: 0
+X-Forefront-Antispam-Report: CIP:185.25.150.143;CTRY:EU;IPV:NLI;EFV:NLI;
+X-Microsoft-Antispam: UriScan:;BCL:0;PCL:0;RULEID:;SRVR:SYXPR01MB0110;
 
 
---8895001d-3ce5-4fa2-9f11-5e1ba5e4a665
+--2cf681c9-a58f-44d6-a8b4-c08a24453ecb
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns;elitesports.com.au
-Received-From-MTA: dns;elitesports.com.au
-Arrival-Date: Thu, 30 Apr 2015 22:57:45 +0000
+Reporting-MTA: dns;SYXPR01MB0110.ausprd01.prod.outlook.com
+Received-From-MTA: dns;d110.netdc.pl
+Arrival-Date: Fri, 1 May 2015 01:04:41 +0000
 
-Final-Recipient: rfc822;needler-W1K1aaV0InJDiKS8+eU1oBCuuivNXqWP@public.gmane.org
+Final-Recipient: rfc822;izxk-PpQBR0/s8wRtFtFawtkaSg@public.gmane.org
 Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
+Status: 5.1.10
+Diagnostic-Code: smtp;550 5.1.10 RESOLVER.ADR.RecipientNotFound; Recipient not found by SMTP address lookup
 
 
---8895001d-3ce5-4fa2-9f11-5e1ba5e4a665
+--2cf681c9-a58f-44d6-a8b4-c08a24453ecb
 Content-Type: message/rfc822
 
-Received: from elitesports.com.au (10.51.9.129) by ESP-Exchange.ESP.local
- (10.51.9.12) with Microsoft SMTP Server (TLS) id 14.1.218.12; Fri, 1 May 2015
- 08:57:45 +1000
-Received: from d126.netdc.pl ([185.25.150.143] helo=d110.netdc.pl)	by
- elitesports.com.au stage1 with esmtp 	(Exim MailCleaner) 	id 1YnxOl-0002xl-Vx
- 	for <needler-W1K1aaV0InJDiKS8+eU1oBCuuivNXqWP@public.gmane.org> 	from
- <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>; Fri, 01 May 2015 08:57:41 +1000
-Received: from [185.25.150.143] by d110.netdc.pl id bbXJgEdsYZJM with SMTP;
- Fri, 01 May 2015 00:57:38 +0200
-X-MailCleaner-SPF: fail
-Date: Fri, 1 May 2015 00:57:38 +0200
-From: Byanca <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v2.09.2) Personal
+Authentication-Results: proximity.com.au; dkim=none (message not signed)
+ header.d=none;
+Received: from SY3PR01CA0007.ausprd01.prod.outlook.com (25.162.55.145) by
+ SYXPR01MB0110.ausprd01.prod.outlook.com (25.162.71.142) with Microsoft SMTP
+ Server (TLS) id 15.1.154.19; Fri, 1 May 2015 01:04:41 +0000
+Received: from ME1AUS01FT008.eop-AUS01.prod.protection.outlook.com
+ (2a01:111:f400:7eb4::203) by SY3PR01CA0007.outlook.office365.com
+ (2a01:111:e400:5c00::17) with Microsoft SMTP Server (TLS) id 15.1.154.19 via
+ Frontend Transport; Fri, 1 May 2015 01:04:41 +0000
+Received: from d110.netdc.pl (185.25.150.143) by
+ ME1AUS01FT008.mail.protection.outlook.com (25.152.232.117) with Microsoft
+ SMTP Server id 15.1.136.16 via Frontend Transport; Fri, 1 May 2015 01:04:39
+ +0000
+Received: from [185.25.150.143] by d110.netdc.pl id nTsvdpHzFmmg with SMTP; Fri, 01 May 2015 03:04:40 +0200
+Date: Fri, 1 May 2015 03:04:40 +0200
+From: Lorenza <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v2.07.8) Business
 X-Priority: 3 (Normal)
-Message-ID: <1874782908.20985257943477-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
-To: <needler-W1K1aaV0InJDiKS8+eU1oBCuuivNXqWP@public.gmane.org>
-Subject: Postal label | yg8j
-X-NiceBayes: disabled (no database ?)
-X-MailCleaner-Information: Please contact  for more information
-X-MailCleaner-ID: 1YnxOn-0002xp-58
-X-MailCleaner: Found to be clean
-X-MailCleaner-SpamCheck: not spam, AHBL, SORBS, SPAMCOP
-X-MailCleaner-ReportURL: https://TLAESP-antispam/rs.php
+Message-ID: <221575892.15090996726004-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
+To: <izxk-PpQBR0/s8wRtFtFawtkaSg@public.gmane.org>
+Subject: Postal label - gtPULejTE
 Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-EOPAttributedMessage: 0
+X-Forefront-Antispam-Report: CIP:185.25.150.143;CTRY:EU;IPV:NLI;EFV:NLI;
+X-Microsoft-Antispam: UriScan:;BCL:0;PCL:0;RULEID:;SRVR:SYXPR01MB0110;
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 
@@ -136,7 +149,7 @@ Content-Type: text/plain; charset="utf-8"
 
    Important information! If the parcel isn't received within 30 working
    days our company will have the right to claim compensation from you for
-   it's keeping in the amount of $8.61 for each day of keeping of it.
+   it's keeping in the amount of $8.36 for each day of keeping of it.
 
 Delivery Information
      __________________________________________________________________
@@ -148,7 +161,8 @@ Delivery Information
    Freight articles of every kind, especially parcels/satchels, must be
    prepared and made up to:
 
-   O Prevent injury to any person handling the freight
+   O Prevent the contents escaping and causing damage to other freight
+   articles
 
    O Prevent damage to equipment and vehicles, during carriage
 
@@ -161,11 +175,11 @@ Delivery Information
 
 References
 
-   1. http://cadcr.cn/i/i45x0.php?UN0mNyguE
+   1. http://alshifahomeopathic.co.uk/i/kt452.php
 
---8895001d-3ce5-4fa2-9f11-5e1ba5e4a665--
+--2cf681c9-a58f-44d6-a8b4-c08a24453ecb--
 
---===============2052539896844979789==
+--===============2188567252310578395==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -175,4 +189,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============2052539896844979789==--
+--===============2188567252310578395==--
