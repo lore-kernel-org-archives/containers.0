@@ -1,14 +1,15 @@
-From: <postmaster-54L5ROPhKJYQrrorzV6ljw@public.gmane.org>
-Subject: Undeliverable: Your package 74194182
-Date: Fri, 1 May 2015 21:24:53 +1000
-Message-ID: <c4b12013-b1a2-4cad-88c6-b7ccc1ae3561@agl.com.au>
-References: <009401d08401$6d759300$14000a0a@d110.netdc.pl>
+From: Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH V6 05/10] audit: log creation and deletion of namespace
+	instances
+Date: Tue, 05 May 2015 10:22:32 -0400
+Message-ID: <2487286.y6vyJ9A3er@x2>
+References: <cover.1429252659.git.rgb@redhat.com>
+	<11270b0b1afd0a25b108915673e1e1b38dfeeafa.1429252659.git.rgb@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
-	boundary="_d523f69e-47e8-430b-ad14-215f07d3da3d_"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-AU
-In-Reply-To: <009401d08401$6d759300$14000a0a-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
+In-Reply-To: <11270b0b1afd0a25b108915673e1e1b38dfeeafa.1429252659.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,393 +19,500 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---_d523f69e-47e8-430b-ad14-215f07d3da3d_
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+Hello,
 
+I think there needs to be some more discussion around this. It seems like this 
+is not exactly recording things that are useful for audit.
 
-***********************************************************************
-This email is intended solely for the use of the addressee
-and may contain information that is confidential or privileged.
-If you receive this email in error please notify the sender and
-delete the email immediately.
-***********************************************************************
+On Friday, April 17, 2015 03:35:52 AM Richard Guy Briggs wrote:
+> Log the creation and deletion of namespace instances in all 6 types of
+> namespaces.
+> 
+> Twelve new audit message types have been introduced:
+> AUDIT_NS_INIT_MNT       1330    /* Record mount namespace instance creation
+> */ AUDIT_NS_INIT_UTS       1331    /* Record UTS namespace instance
+> creation */ AUDIT_NS_INIT_IPC       1332    /* Record IPC namespace
+> instance creation */ AUDIT_NS_INIT_USER      1333    /* Record USER
+> namespace instance creation */ AUDIT_NS_INIT_PID       1334    /* Record
+> PID namespace instance creation */ AUDIT_NS_INIT_NET       1335    /*
+> Record NET namespace instance creation */ AUDIT_NS_DEL_MNT        1336   
+> /* Record mount namespace instance deletion */ AUDIT_NS_DEL_UTS        1337
+>    /* Record UTS namespace instance deletion */ AUDIT_NS_DEL_IPC       
+> 1338    /* Record IPC namespace instance deletion */ AUDIT_NS_DEL_USER     
+>  1339    /* Record USER namespace instance deletion */ AUDIT_NS_DEL_PID    
+>    1340    /* Record PID namespace instance deletion */ AUDIT_NS_DEL_NET   
+>     1341    /* Record NET namespace instance deletion */
 
---_d523f69e-47e8-430b-ad14-215f07d3da3d_
-Content-Type: message/rfc822
+The requirements for auditing of containers should be derived from VPP. In it, 
+it asks for selectable auditing, selective audit, and selective audit review. 
+What this means is that we need the container and all its children to have one 
+identifier that is inserted into all the events that are associated with the 
+container.
 
-Received: from TY1PR0201CA0023.apcprd02.prod.outlook.com (25.164.90.161) by
- TY1PR0201MB0975.apcprd02.prod.outlook.com (25.164.97.15) with Microsoft SMTP
- Server (TLS) id 15.1.148.16; Fri, 1 May 2015 11:25:01 +0000
-Received: from DB3FFO11FD034.protection.gbl (2a01:111:f400:7e04::185) by
- TY1PR0201CA0023.outlook.office365.com (2a01:111:e400:5971::33) with Microsoft
- SMTP Server (TLS) id 15.1.154.19 via Frontend Transport; Fri, 1 May 2015
- 11:25:00 +0000
-Authentication-Results: spf=none (sender IP is 146.178.95.186)
- smtp.helo=mail1.agl.com.au; lists.linux-foundation.org; dkim=none (message
- not signed) header.d=none;
-Received-SPF: None (protection.outlook.com: mail1.agl.com.au does not
- designate permitted sender hosts)
-Received: from mail1.agl.com.au (146.178.95.186) by
- DB3FFO11FD034.mail.protection.outlook.com (10.47.217.65) with Microsoft SMTP
- Server (TLS) id 15.1.160.8 via Frontend Transport; Fri, 1 May 2015 11:24:58
- +0000
-MIME-Version: 1.0
-From: <postmaster-54L5ROPhKJYQrrorzV6ljw@public.gmane.org>
-To: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Date: Fri, 1 May 2015 21:24:53 +1000
-Content-Type: multipart/report; report-type=delivery-status;
-	boundary="ac6133da-b1a6-4bdd-8520-76091e90ddca"
-Content-Language: en-AU
-Message-ID: <c4b12013-b1a2-4cad-88c6-b7ccc1ae3561-54L5ROPhKJYQrrorzV6ljw@public.gmane.org>
-In-Reply-To: <009401d08401$6d759300$14000a0a-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
-References: <009401d08401$6d759300$14000a0a-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
-Subject: Undeliverable: Your package 74194182
-Return-Path: <>
-X-MS-Exchange-Organization-OriginalArrivalTime: 01 May 2015 11:24:58.7942
- (UTC)
-X-MS-Exchange-Organization-Network-Message-Id: e199dc30-2977-435e-be79-08d25218980f
-X-MS-Exchange-Organization-OriginalClientIPAddress: 146.178.95.186
-X-MS-Exchange-Organization-OriginalServerIPAddress: 10.47.217.65
-X-EOPAttributedMessage: 0
-X-MS-Exchange-Organization-MessageDirectionality: Originating
-X-MS-Exchange-Organization-Id: 123913b9-915d-4d67-aaf9-ce327e8fc59f
-X-MS-Exchange-Organization-MessageInboundConnectorType: OnPremises
-X-MS-Exchange-Organization-OriginalAttributedTenantConnectingIp: TenantId=123913b9-915d-4d67-aaf9-ce327e8fc59f;Ip=[146.178.95.186];Helo=[mail1.agl.com.au]
-X-MS-Exchange-Organization-TargetResourceForest: apcprd02.prod.outlook.com
-X-MS-Exchange-Organization-P1P2RecipientMismatch: True
-X-MS-Exchange-Organization-MxPointsToUs: false
-X-MS-Exchange-Organization-P1P2-SenderDomain-Results: Mismatched
-X-MS-Exchange-Organization-OriginalEnvelopeRecipients: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-Forefront-Antispam-Report: CIP:146.178.95.186;CTRY:AU;IPV:CAL;IPV:NLI;EFV:NLI;
-X-MS-Exchange-Organization-Scanned-By-IP-Filter: true
-X-MS-Exchange-Organization-Originating-Country: AU
-X-MS-Exchange-Organization-Cross-Premises-Headers-Processed: DB3FFO11FD034.protection.gbl
-X-MS-Exchange-Organization-OrderedPrecisionLatencyInProgress: LSRV=TY1PR0201CA0023.apcprd02.prod.outlook.com:TOTAL-FE=0.375|SMR=0.365(SMRPI=0.133(SMRPI-FrontendProxyAgent=0.133));2015-05-01T11:25:01.139Z
-X-MS-Exchange-Organization-ProcessedByConnectionValidationAgent: apcprd02.prod.outlook.com
-X-MS-Exchange-Organization-RoutedUsingDagSelector: 
-X-MS-Exchange-Organization-MessageLatency: SRV=DB3FFO11FD034.protection.gbl:TOTAL-FE=1.970|SMR=1.402(SMRRC=0.002(SMRRC-Protocol
- Filter
- Agent=0.001)|SMREH=0.545(SMREH-TenantAttributionAndInboundConnectorAgent=0.005
- |SMREH-Protocol Filter Agent=0.539))|SMS=0.566
-X-MS-Exchange-Organization-MessageLatency: SRV=TY1PR0201CA0023.apcprd02.prod.outlook.com:TOTAL-FE=0.375|SMR=0.365(SMRPI=0.133(SMRPI-FrontendProxyAgent=0.133))
-X-MS-Exchange-Forest-ArrivalHubServer: TY1PR0201MB0975.apcprd02.prod.outlook.com
-X-MS-Exchange-Organization-AuthSource: DB3FFO11FD034.protection.gbl
-X-MS-Exchange-Organization-AuthAs: Anonymous
-X-MS-Exchange-Organization-FromEntityHeader: HybridOnPrem
-X-MS-Exchange-Organization-OriginatorOrganization: AGLEnergy.onmicrosoft.com
-X-OriginatorOrg: AGLEnergy.onmicrosoft.com
-X-Microsoft-Antispam: UriScan:;BCL:0;PCL:0;RULEID:;SRVR:TY1PR0201MB0975;
-X-MS-Exchange-Organization-Cross-Session-Cache: 00SL=1;EMSL=1;SCL=0;BL=0;RL=1;PID=0;PL=0;EXPID=;EIPC0=2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2017,2015,2000,2001,3000,2003,1001,2002,2004,2016,1000,1002,1003,54,80,110,70,71,90,82,83,115,51,50,81,52,112,111,92,91,84,114,113,53;MIPC0=;REP=01,1,20\;01,2,69\;01,3,16222\;01,4,2275\;01,5,182\;01,6,60\;01,7,448\;01,8,69\;01,9,20646\;01,10,2825\;01,11,182\;01,12,69;SAUTHOP=1;A=01;MX=01;PTR=07;SPF=052BD0E4E1E-A74D-413A-9322-CA4C8E014A86-hoi+MLjhVxgNrcW7o2iNDw@public.gmane.org;DKIM=;DMARC=02postmaster-54L5ROPhKJYQrrorzV6ljw@public.gmane.org\;
-X-MS-Exchange-Organization-OriginalSize: 19211
-X-MS-Exchange-Organization-HygienePolicy: Premium
-X-MS-Exchange-Organization-AttachmentDetails: 0:fY6r99dU5KoZhrHUZs6qsrtQzCs++pe4Nf35Ia+qzP0=:U:Text:ATT00001::#;1:prkVg0hE4QrpitWM11oAKYpko8qxykrdDnpNPA47MWg=:U:Mime|Text:Your
- package 74194182::#
-X-MS-Exchange-Organization-AVStamp-Service: 1.0
-X-MS-Exchange-Organization-Recipient-Limit-Verified: True
-X-MS-Exchange-Organization-TotalRecipientCount: 1
-X-MS-Exchange-Organization-Transport-Properties: DeliveryPriority=Normal
-X-MS-Exchange-Organization-Prioritization: 1
-X-MS-Exchange-Organization-Rules-Execution-History: TransportVersioned.Block
- External emails of AES
- Reports%%%a8768246-7225-4319-8c3a-1ecdd0f74217%%%TransportVersioned.Block
- internal Email of AES
- Reports%%%d4799087-3000-4061-bacd-418f9942f099%%%TransportVersioned.Block
- Internal Email of
- AGLworkoverrig1%%%567b5e03-a6f0-47d6-aa1a-6b47c0c041cb%%%TransportVersioned.Block
- External Email  AGLworkoverrig1%%%7acff1de-fb67-4e55-b074-4a010b11e9ee
+With this, its possible to do a search for all events related to a container. 
+Its possible to exclude events from a container. Its possible to not get any 
+events.
 
---ac6133da-b1a6-4bdd-8520-76091e90ddca
-Content-Type: multipart/alternative; differences=Content-Type;
-	boundary="655c538e-c9a5-4a90-83a7-b3539465464e"
+The requirements also call out for the identification of the subject. This 
+means that the event should be bound to a syscall such as clone, setns, or 
+unshare.
 
---655c538e-c9a5-4a90-83a7-b3539465464e
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+Also, any user space events originating inside the container needs to have the 
+container ID added to the user space event - just like auid and session id.
 
-Delivery has failed to these recipients or groups:
+Recording each instance of a name space is giving me something that I cannot 
+use to do queries required by the security target. Given these events, how do 
+I locate a web server event where it accesses a watched file? That 
+authentication failed? That an update within the container failed?
 
-a.w.williams.b9qk-54L5ROPhKJYQrrorzV6ljw@public.gmane.org<mailto:a.w.williams.b9qk-54L5ROPhKJYQrrorzV6ljw@public.gmane.org>
-The e-mail address you entered couldn't be found. Please check the recipien=
-t's e-mail address and try to resend the message. If the problem continues,=
- please contact your helpdesk.
+The requirements are that we have to log the creation, suspension, migration, 
+and termination of a container. The requirements are not on the individual 
+name space.
 
+Maybe I'm missing how these events give me that. But I'd like to hear how I 
+would be able to meet requirements with these 12 events.
 
+-Steve
 
-
-
-
-
-Diagnostic information for administrators:
-
-Generating server: agl.com.au
-
-a.w.williams.b9qk-54L5ROPhKJYQrrorzV6ljw@public.gmane.org
-#550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
-
-Original message headers:
-
-Received: from APAC01-HK1-obe.outbound.protection.outlook.com (207.46.51.11=
-7)
- by mail1.agl.com.au (10.216.9.80) with Microsoft SMTP Server (TLS) id
- 14.3.123.3; Fri, 1 May 2015 21:24:52 +1000
-Received: from HK2PR0201CA0012.apcprd02.prod.outlook.com (25.162.206.22) by
- SIXPR0201MB0972.apcprd02.prod.outlook.com (25.162.178.151) with Microsoft
- SMTP Server (TLS) id 15.1.148.16; Fri, 1 May 2015 11:24:48 +0000
-Received: from AM1FFO11OLC001.protection.gbl (2a01:111:f400:7e00::191) by
- HK2PR0201CA0012.outlook.office365.com (2a01:111:e400:5217::22) with Micros=
-oft
- SMTP Server (TLS) id 15.1.154.19 via Frontend Transport; Fri, 1 May 2015
- 11:24:48 +0000
-Authentication-Results: spf=3Dfail (sender IP is 185.25.150.143)
- smtp.mailfrom=3Dlists.linux-foundation.org; agl.com.au; dkim=3Dnone (messa=
-ge not
- signed) header.d=3Dnone;agl.com.au; dmarc=3Dnone action=3Dnone
- header.from=3Dlists.linux-foundation.org;
-Received-SPF: Fail (protection.outlook.com: domain of
- lists.linux-foundation.org does not designate 185.25.150.143 as permitted
- sender) receiver=3Dprotection.outlook.com; client-ip=3D185.25.150.143;
- helo=3Dd110.netdc.pl;
-Received: from d110.netdc.pl (185.25.150.143) by
- AM1FFO11OLC001.mail.protection.outlook.com (10.174.65.76) with Microsoft S=
-MTP
- Server id 15.1.160.8 via Frontend Transport; Fri, 1 May 2015 11:24:46 +000=
-0
-Received: from [185.25.150.143] by d110.netdc.pl id oQDCYcte7rEE; Fri, 01 M=
-ay
- 2015 13:24:48 +0200
-Message-ID: <009401d08401$6d759300$14000a0a-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
-From: Donnie <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <a.w.williams.b9qk-54L5ROPhKJYQrrorzV6ljw@public.gmane.org>
-Subject: Your package 74194182
-Date: Fri, 1 May 2015 13:24:48 +0200
-MIME-Version: 1.0
-Content-Type: text/html; charset=3D"utf-8"
-Content-Transfer-Encoding: quoted-printable
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-EOPAttributedMessage: 0
-X-Forefront-Antispam-Report: CIP:185.25.150.143;CTRY:EU;IPV:NLI;EFV:NLI;SFV=
-:SPM;SFS:(6009001)(339900001)(489007)(189002)(6262002)(199003)(4477795004)(=
-46102003)(106466001)(105606002)(16799955002)(1456003)(33646002)(85426001)(2=
-3846002)(18206015028)(19580395003)(44736004)(62966003)(86362001)(87836001)(=
-2351001)(54356999)(50986999)(450100001)(77156002)(121206001)(92566002)(5046=
-6002)(104016003)(1556002)(19580405001)(5001970100001)(229853001)(110136002)=
-(23676002)(116806002)(107886002)(50929005);DIR:INB;SFP:;SCL:5;SRVR:SIXPR020=
-1MB0972;H:d110.netdc.pl;FPR:;SPF:Fail;MLV:ovrspm;MX:1;A:1;PTR:d126.netdc.pl=
-;LANG:en;
-X-Microsoft-Antispam: UriScan:;BCL:0;PCL:0;RULEID:;SRVR:SIXPR0201MB0972;
-X-Exchange-Antispam-Report-Test: UriScan:(262757254260003)(229438765285032)=
-;
-X-Exchange-Antispam-Report-CFA-Test: BCL:0;PCL:0;RULEID:(601004)(3002001)(2=
-001001)(2002001)(2003001);SRVR:SIXPR0201MB0972;BCL:0;PCL:0;RULEID:;SRVR:SIX=
-PR0201MB0972;
-X-FOSE-spam: This message appears to be spam.
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 01 May 2015 11:24:46.7984
- (UTC)
-X-MS-Exchange-CrossTenant-Id: 123913b9-915d-4d67-aaf9-ce327e8fc59f
-X-MS-Exchange-CrossTenant-FromEntityHeader: Internet
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SIXPR0201MB0972
-X-OrganizationHeadersPreserved: SIXPR0201MB0972.apcprd02.prod.outlook.com
-X-OriginatorOrg: AGLEnergy.onmicrosoft.com
-X-CrossPremisesHeadersFiltered: GLBWI416.agl.int
-
-
---655c538e-c9a5-4a90-83a7-b3539465464e
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-
-   Delivery has failed to these recipients or groups:
-
-   [1]a.w.williams.b9qk-54L5ROPhKJYQrrorzV6ljw@public.gmane.org
-   The e-mail address you entered couldn't be found. Please check the
-   recipient's e-mail address and try to resend the message. If the
-   problem continues, please contact your helpdesk.
-
-   Diagnostic information for administrators:
-
-   Generating server: agl.com.au
-
-   a.w.williams.b9qk-54L5ROPhKJYQrrorzV6ljw@public.gmane.org
-   #550 5.1.1 RESOLVER.ADR.RecipNotFound; not found ##
-
-   Original message headers:
-Received: from APAC01-HK1-obe.outbound.protection.outlook.com (207.46.51.117)
- by mail1.agl.com.au (10.216.9.80) with Microsoft SMTP Server (TLS) id
- 14.3.123.3; Fri, 1 May 2015 21:24:52 +1000
-Received: from HK2PR0201CA0012.apcprd02.prod.outlook.com (25.162.206.22) by
- SIXPR0201MB0972.apcprd02.prod.outlook.com (25.162.178.151) with Microsoft
- SMTP Server (TLS) id 15.1.148.16; Fri, 1 May 2015 11:24:48 +0000
-Received: from AM1FFO11OLC001.protection.gbl (2a01:111:f400:7e00::191) by
- HK2PR0201CA0012.outlook.office365.com (2a01:111:e400:5217::22) with Microsoft
- SMTP Server (TLS) id 15.1.154.19 via Frontend Transport; Fri, 1 May 2015
- 11:24:48 +0000
-Authentication-Results: spf=fail (sender IP is 185.25.150.143)
- smtp.mailfrom=lists.linux-foundation.org; agl.com.au; dkim=none (message not
- signed) header.d=none;agl.com.au; dmarc=none action=none
- header.from=lists.linux-foundation.org;
-Received-SPF: Fail (protection.outlook.com: domain of
- lists.linux-foundation.org does not designate 185.25.150.143 as permitted
- sender) receiver=protection.outlook.com; client-ip=185.25.150.143;
- helo=d110.netdc.pl;
-Received: from d110.netdc.pl (185.25.150.143) by
- AM1FFO11OLC001.mail.protection.outlook.com (10.174.65.76) with Microsoft SMTP
- Server id 15.1.160.8 via Frontend Transport; Fri, 1 May 2015 11:24:46 +0000
-Received: from [185.25.150.143] by d110.netdc.pl id oQDCYcte7rEE; Fri, 01 May
- 2015 13:24:48 +0200
-Message-ID: <009401d08401$6d759300$14000a0a-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
-From: Donnie <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <a.w.williams.b9qk-54L5ROPhKJYQrrorzV6ljw@public.gmane.org>
-Subject: Your package 74194182
-Date: Fri, 1 May 2015 13:24:48 +0200
-MIME-Version: 1.0
-Content-Type: text/html; charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-EOPAttributedMessage: 0
-X-Forefront-Antispam-Report: CIP:185.25.150.143;CTRY:EU;IPV:NLI;EFV:NLI;SFV:SPM
-;SFS:(6009001)(339900001)(489007)(189002)(6262002)(199003)(4477795004)(46102003
-)(106466001)(105606002)(16799955002)(1456003)(33646002)(85426001)(23846002)(182
-06015028)(19580395003)(44736004)(62966003)(86362001)(87836001)(2351001)(5435699
-9)(50986999)(450100001)(77156002)(121206001)(92566002)(50466002)(104016003)(155
-6002)(19580405001)(5001970100001)(229853001)(110136002)(23676002)(116806002)(10
-7886002)(50929005);DIR:INB;SFP:;SCL:5;SRVR:SIXPR0201MB0972;H:d110.netdc.pl;FPR:
-;SPF:Fail;MLV:ovrspm;MX:1;A:1;PTR:d126.netdc.pl;LANG:en;
-X-Microsoft-Antispam: UriScan:;BCL:0;PCL:0;RULEID:;SRVR:SIXPR0201MB0972;
-X-Exchange-Antispam-Report-Test: UriScan:(262757254260003)(229438765285032);
-X-Exchange-Antispam-Report-CFA-Test: BCL:0;PCL:0;RULEID:(601004)(3002001)(20010
-01)(2002001)(2003001);SRVR:SIXPR0201MB0972;BCL:0;PCL:0;RULEID:;SRVR:SIXPR0201MB
-0972;
-X-FOSE-spam: This message appears to be spam.
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 01 May 2015 11:24:46.7984
- (UTC)
-X-MS-Exchange-CrossTenant-Id: 123913b9-915d-4d67-aaf9-ce327e8fc59f
-X-MS-Exchange-CrossTenant-FromEntityHeader: Internet
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SIXPR0201MB0972
-X-OrganizationHeadersPreserved: SIXPR0201MB0972.apcprd02.prod.outlook.com
-X-OriginatorOrg: AGLEnergy.onmicrosoft.com
-X-CrossPremisesHeadersFiltered: GLBWI416.agl.int
-
-References
-
-   1. mailto:a.w.williams.b9qk-54L5ROPhKJYQrrorzV6ljw@public.gmane.org
-
---655c538e-c9a5-4a90-83a7-b3539465464e--
-
---ac6133da-b1a6-4bdd-8520-76091e90ddca
-Content-Type: message/delivery-status
-
-Reporting-MTA: dns;agl.com.au
-Received-From-MTA: dns;APAC01-HK1-obe.outbound.protection.outlook.com
-Arrival-Date: Fri, 1 May 2015 11:24:52 +0000
-
-Final-Recipient: rfc822;a.w.williams.b9qk-54L5ROPhKJYQrrorzV6ljw@public.gmane.org
-Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
-
-
---ac6133da-b1a6-4bdd-8520-76091e90ddca
-Content-Type: message/rfc822
-
-Received: from APAC01-HK1-obe.outbound.protection.outlook.com (207.46.51.117)
- by mail1.agl.com.au (10.216.9.80) with Microsoft SMTP Server (TLS) id
- 14.3.123.3; Fri, 1 May 2015 21:24:52 +1000
-Received: from HK2PR0201CA0012.apcprd02.prod.outlook.com (25.162.206.22) by
- SIXPR0201MB0972.apcprd02.prod.outlook.com (25.162.178.151) with Microsoft
- SMTP Server (TLS) id 15.1.148.16; Fri, 1 May 2015 11:24:48 +0000
-Received: from AM1FFO11OLC001.protection.gbl (2a01:111:f400:7e00::191) by
- HK2PR0201CA0012.outlook.office365.com (2a01:111:e400:5217::22) with Microsoft
- SMTP Server (TLS) id 15.1.154.19 via Frontend Transport; Fri, 1 May 2015
- 11:24:48 +0000
-Authentication-Results: spf=fail (sender IP is 185.25.150.143)
- smtp.mailfrom=lists.linux-foundation.org; agl.com.au; dkim=none (message not
- signed) header.d=none;agl.com.au; dmarc=none action=none
- header.from=lists.linux-foundation.org;
-Received-SPF: Fail (protection.outlook.com: domain of
- lists.linux-foundation.org does not designate 185.25.150.143 as permitted
- sender) receiver=protection.outlook.com; client-ip=185.25.150.143;
- helo=d110.netdc.pl;
-Received: from d110.netdc.pl (185.25.150.143) by
- AM1FFO11OLC001.mail.protection.outlook.com (10.174.65.76) with Microsoft SMTP
- Server id 15.1.160.8 via Frontend Transport; Fri, 1 May 2015 11:24:46 +0000
-Received: from [185.25.150.143] by d110.netdc.pl id oQDCYcte7rEE; Fri, 01 May
- 2015 13:24:48 +0200
-Message-ID: <009401d08401$6d759300$14000a0a-fdlNZucA2fUI3quFi6fKwA@public.gmane.org>
-From: Donnie <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <a.w.williams.b9qk-54L5ROPhKJYQrrorzV6ljw@public.gmane.org>
-Subject: Your package 74194182
-Date: Fri, 1 May 2015 13:24:48 +0200
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-X-EOPAttributedMessage: 0
-X-Forefront-Antispam-Report: CIP:185.25.150.143;CTRY:EU;IPV:NLI;EFV:NLI;SFV:SPM;SFS:(6009001)(339900001)(489007)(189002)(6262002)(199003)(4477795004)(46102003)(106466001)(105606002)(16799955002)(1456003)(33646002)(85426001)(23846002)(18206015028)(19580395003)(44736004)(62966003)(86362001)(87836001)(2351001)(54356999)(50986999)(450100001)(77156002)(121206001)(92566002)(50466002)(104016003)(1556002)(19580405001)(5001970100001)(229853001)(110136002)(23676002)(116806002)(107886002)(50929005);DIR:INB;SFP:;SCL:5;SRVR:SIXPR0201MB0972;H:d110.netdc.pl;FPR:;SPF:Fail;MLV:ovrspm;MX:1;A:1;PTR:d126.netdc.pl;LANG:en;
-X-Microsoft-Antispam: UriScan:;BCL:0;PCL:0;RULEID:;SRVR:SIXPR0201MB0972;
-X-Exchange-Antispam-Report-Test: UriScan:(262757254260003)(229438765285032);
-X-Exchange-Antispam-Report-CFA-Test: BCL:0;PCL:0;RULEID:(601004)(3002001)(2001001)(2002001)(2003001);SRVR:SIXPR0201MB0972;BCL:0;PCL:0;RULEID:;SRVR:SIXPR0201MB0972;
-X-FOSE-spam: This message appears to be spam.
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 01 May 2015 11:24:46.7984
- (UTC)
-X-MS-Exchange-CrossTenant-Id: 123913b9-915d-4d67-aaf9-ce327e8fc59f
-X-MS-Exchange-CrossTenant-FromEntityHeader: Internet
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SIXPR0201MB0972
-X-OrganizationHeadersPreserved: SIXPR0201MB0972.apcprd02.prod.outlook.com
-X-OriginatorOrg: AGLEnergy.onmicrosoft.com
-X-CrossPremisesHeadersFiltered: GLBWI416.agl.int
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-
-    COURIER
-
-   Dear Sir/Madam,
-   Unfortunately we were not able to deliver postal package you sent on
-   April the 28 st in time because the recipient's address is not correct.
-
-   [1]Download shipping label
-
-   Important information! If the parcel isn't received within 30 working
-   days our company will have the right to claim compensation from you for
-   it's keeping in the amount of $8.83 for each day of keeping of it.
-
-Delivery Information
-     __________________________________________________________________
-
-   Freight Profile Guide
-
-   General Principles
-
-   Freight articles of every kind, especially parcels/satchels, must be
-   prepared and made up to:
-
-   O Prevent the contents escaping and causing damage to other freight
-   articles
-
-   O Prevent injury to any person handling the freight
-
-   O Prevent damage to equipment and vehicles, during carriage
-
-   O Protect the contents from loss or damage arising from handling
-   stresses and pressure to which the freight is unavoidably subject to
-   during freight carriage
-
-   O Protect the contents from the effects of climate, extreme
-   temperatures.
-
-References
-
-   1. http://profinformer.ru/i/6buak.php?4XmgR
-
---ac6133da-b1a6-4bdd-8520-76091e90ddca--
-
---_d523f69e-47e8-430b-ad14-215f07d3da3d_
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---_d523f69e-47e8-430b-ad14-215f07d3da3d_--
+ 
+> As suggested by Eric Paris, there are 12 message types, one for each of
+> creation and deletion, one for each type of namespace so that text searches
+> are easier in conjunction with the AUDIT_NS_INFO message type, being able
+> to search for all records such as "netns=4 " and to avoid fields
+> disappearing per message type to make ausearch more efficient.
+> 
+> A typical startup would look roughly like:
+> 
+> 	type=AUDIT_NS_INIT_UTS msg=audit(1408577534.868:5): pid=1 uid=0
+> auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_utsns=(none)
+> utsns=-2 res=1 type=AUDIT_NS_INIT_USER msg=audit(1408577534.868:6): pid=1
+> uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03
+> old_userns=(none) userns=-3 res=1 type=AUDIT_NS_INIT_PID
+> msg=audit(1408577534.868:7): pid=1 uid=0 auid=4294967295 ses=4294967295
+> subj=kernel dev=00:03 old_pidns=(none) pidns=-4 res=1
+> type=AUDIT_NS_INIT_MNT msg=audit(1408577534.868:8): pid=1 uid=0
+> auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_mntns=(none)
+> mntns=0 res=1 type=AUDIT_NS_INIT_IPC msg=audit(1408577534.868:9): pid=1
+> uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_ipcns=(none)
+> ipcns=-1 res=1 type=AUDIT_NS_INIT_NET msg=audit(1408577533.500:10): pid=1
+> uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_netns=(none)
+> netns=2 res=1
+> 
+> And a CLONE action would result in:
+> 	type=type=AUDIT_NS_INIT_NET msg=audit(1408577535.306:81): pid=481 uid=0
+> auid=4294967295 ses=4294967295 subj=system_u:system_r:init_t:s0 dev=00:03
+> old_netns=2 netns=3 res=1
+> 
+> While deleting a namespace would result in:
+> 	type=type=AUDIT_NS_DEL_MNT msg=audit(1408577552.221:85): pid=481 uid=0
+> auid=4294967295 ses=4294967295 subj=system_u:system_r:init_t:s0 dev=00:03
+> mntns=4 res=1
+> 
+> If not "(none)", old_XXXns lists the namespace from which it was cloned.
+> 
+> Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> ---
+>  fs/namespace.c             |   13 +++++++++
+>  include/linux/audit.h      |    8 +++++
+>  include/uapi/linux/audit.h |   12 ++++++++
+>  ipc/namespace.c            |   12 ++++++++
+>  kernel/audit.c             |   64
+> ++++++++++++++++++++++++++++++++++++++++++++ kernel/pid_namespace.c     |  
+> 13 +++++++++
+>  kernel/user_namespace.c    |   13 +++++++++
+>  kernel/utsname.c           |   12 ++++++++
+>  net/core/net_namespace.c   |   12 ++++++++
+>  9 files changed, 159 insertions(+), 0 deletions(-)
+> 
+> diff --git a/fs/namespace.c b/fs/namespace.c
+> index 182bc41..7b62543 100644
+> --- a/fs/namespace.c
+> +++ b/fs/namespace.c
+> @@ -24,6 +24,7 @@
+>  #include <linux/proc_ns.h>
+>  #include <linux/magic.h>
+>  #include <linux/bootmem.h>
+> +#include <linux/audit.h>
+>  #include "pnode.h"
+>  #include "internal.h"
+> 
+> @@ -2459,6 +2460,7 @@ dput_out:
+> 
+>  static void free_mnt_ns(struct mnt_namespace *ns)
+>  {
+> +	audit_log_ns_del(AUDIT_NS_DEL_MNT, ns->proc_inum);
+>  	proc_free_inum(ns->proc_inum);
+>  	put_user_ns(ns->user_ns);
+>  	kfree(ns);
+> @@ -2518,6 +2520,7 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags,
+> struct mnt_namespace *ns, new_ns = alloc_mnt_ns(user_ns);
+>  	if (IS_ERR(new_ns))
+>  		return new_ns;
+> +	audit_log_ns_init(AUDIT_NS_INIT_MNT, ns->proc_inum, new_ns->proc_inum);
+> 
+>  	namespace_lock();
+>  	/* First pass: copy the tree topology */
+> @@ -2830,6 +2833,16 @@ static void __init init_mount_tree(void)
+>  	set_fs_root(current->fs, &root);
+>  }
+> 
+> +/* log the ID of init mnt namespace after audit service starts */
+> +static int __init mnt_ns_init_log(void)
+> +{
+> +	struct mnt_namespace *init_mnt_ns = init_task.nsproxy->mnt_ns;
+> +
+> +	audit_log_ns_init(AUDIT_NS_INIT_MNT, 0, init_mnt_ns->proc_inum);
+> +	return 0;
+> +}
+> +late_initcall(mnt_ns_init_log);
+> +
+>  void __init mnt_init(void)
+>  {
+>  	unsigned u;
+> diff --git a/include/linux/audit.h b/include/linux/audit.h
+> index 71698ec..b28dfb0 100644
+> --- a/include/linux/audit.h
+> +++ b/include/linux/audit.h
+> @@ -484,6 +484,9 @@ extern void		    audit_log_ns_info(struct 
+task_struct
+> *tsk); static inline void	    audit_log_ns_info(struct task_struct *tsk) {
+> }
+>  #endif
+> +extern void		    audit_log_ns_init(int type, unsigned int old_inum,
+> +					      unsigned int inum);
+> +extern void		    audit_log_ns_del(int type, unsigned int inum);
+> 
+>  extern int		    audit_update_lsm_rules(void);
+> 
+> @@ -542,6 +545,11 @@ static inline void audit_log_task_info(struct
+> audit_buffer *ab, { }
+>  static inline void audit_log_ns_info(struct task_struct *tsk)
+>  { }
+> +static inline int audit_log_ns_init(int type, unsigned int old_inum,
+> +				    unsigned int inum)
+> +{ }
+> +static inline int audit_log_ns_del(int type, unsigned int inum)
+> +{ }
+>  #define audit_enabled 0
+>  #endif /* CONFIG_AUDIT */
+>  static inline void audit_log_string(struct audit_buffer *ab, const char
+> *buf) diff --git a/include/uapi/linux/audit.h b/include/uapi/linux/audit.h
+> index 1ffb151..487cad6 100644
+> --- a/include/uapi/linux/audit.h
+> +++ b/include/uapi/linux/audit.h
+> @@ -111,6 +111,18 @@
+>  #define AUDIT_PROCTITLE		1327	/* Proctitle emit event */
+>  #define AUDIT_FEATURE_CHANGE	1328	/* audit log listing feature changes 
+*/
+>  #define AUDIT_NS_INFO		1329	/* Record process namespace IDs */
+> +#define AUDIT_NS_INIT_MNT	1330	/* Record mount namespace instance 
+creation
+> */ +#define AUDIT_NS_INIT_UTS	1331	/* Record UTS namespace instance
+> creation */ +#define AUDIT_NS_INIT_IPC	1332	/* Record IPC namespace
+> instance creation */ +#define AUDIT_NS_INIT_USER	1333	/* Record USER
+> namespace instance creation */ +#define AUDIT_NS_INIT_PID	1334	/* Record
+> PID namespace instance creation */ +#define AUDIT_NS_INIT_NET	1335	/*
+> Record NET namespace instance creation */ +#define AUDIT_NS_DEL_MNT	1336	
+/*
+> Record mount namespace instance deletion */ +#define
+> AUDIT_NS_DEL_UTS	1337	/* Record UTS namespace instance deletion */ 
++#define
+> AUDIT_NS_DEL_IPC	1338	/* Record IPC namespace instance deletion */ 
++#define
+> AUDIT_NS_DEL_USER	1339	/* Record USER namespace instance deletion */
+> +#define AUDIT_NS_DEL_PID	1340	/* Record PID namespace instance 
+deletion */
+> +#define AUDIT_NS_DEL_NET	1341	/* Record NET namespace instance deletion 
+*/
+> 
+>  #define AUDIT_AVC		1400	/* SE Linux avc denial or grant */
+>  #define AUDIT_SELINUX_ERR	1401	/* Internal SE Linux Errors */
+> diff --git a/ipc/namespace.c b/ipc/namespace.c
+> index 59451c1..73727ce 100644
+> --- a/ipc/namespace.c
+> +++ b/ipc/namespace.c
+> @@ -13,6 +13,7 @@
+>  #include <linux/mount.h>
+>  #include <linux/user_namespace.h>
+>  #include <linux/proc_ns.h>
+> +#include <linux/audit.h>
+> 
+>  #include "util.h"
+> 
+> @@ -41,6 +42,8 @@ static struct ipc_namespace *create_ipc_ns(struct
+> user_namespace *user_ns, }
+>  	atomic_inc(&nr_ipc_ns);
+> 
+> +	audit_log_ns_init(AUDIT_NS_INIT_IPC, old_ns->proc_inum, ns->proc_inum);
+> +
+>  	sem_init_ns(ns);
+>  	msg_init_ns(ns);
+>  	shm_init_ns(ns);
+> @@ -119,6 +122,7 @@ static void free_ipc_ns(struct ipc_namespace *ns)
+>  	 */
+>  	ipcns_notify(IPCNS_REMOVED);
+>  	put_user_ns(ns->user_ns);
+> +	audit_log_ns_del(AUDIT_NS_DEL_IPC, ns->proc_inum);
+>  	proc_free_inum(ns->proc_inum);
+>  	kfree(ns);
+>  }
+> @@ -197,3 +201,11 @@ const struct proc_ns_operations ipcns_operations = {
+>  	.install	= ipcns_install,
+>  	.inum		= ipcns_inum,
+>  };
+> +
+> +/* log the ID of init IPC namespace after audit service starts */
+> +static int __init ipc_namespaces_init(void)
+> +{
+> +	audit_log_ns_init(AUDIT_NS_INIT_IPC, 0, init_ipc_ns.proc_inum);
+> +	return 0;
+> +}
+> +late_initcall(ipc_namespaces_init);
+> diff --git a/kernel/audit.c b/kernel/audit.c
+> index 63f32f4..e6230c4 100644
+> --- a/kernel/audit.c
+> +++ b/kernel/audit.c
+> @@ -1978,6 +1978,70 @@ out:
+>  	kfree(name);
+>  }
+> 
+> +#ifdef CONFIG_NAMESPACES
+> +static char *ns_name[] = {
+> +	"mnt",
+> +	"uts",
+> +	"ipc",
+> +	"user",
+> +	"pid",
+> +	"net",
+> +};
+> +
+> +/**
+> + * audit_log_ns_init - report a namespace instance creation
+> + * @type: type of audit namespace instance created message
+> + * @old_inum: the ID number of the cloned namespace instance
+> + * @inum: the ID number of the new namespace instance
+> + */
+> +void  audit_log_ns_init(int type, unsigned int old_inum, unsigned int inum)
+> +{
+> +	struct audit_buffer *ab;
+> +	char *audit_ns_name = ns_name[type - AUDIT_NS_INIT_MNT];
+> +	struct vfsmount *mnt = task_active_pid_ns(current)->proc_mnt;
+> +	struct super_block *sb = mnt->mnt_sb;
+> +	char old_ns[16];
+> +
+> +	if (type < AUDIT_NS_INIT_MNT || type > AUDIT_NS_INIT_NET) {
+> +		WARN(1, "audit_log_ns_init: type:%d out of range", type);
+> +		return;
+> +	}
+> +	if (!old_inum)
+> +		sprintf(old_ns, "(none)");
+> +	else
+> +		sprintf(old_ns, "%d", old_inum - PROC_DYNAMIC_FIRST);
+> +	audit_log_common_recv_msg(&ab, type);
+> +	audit_log_format(ab, " dev=%02x:%02x old_%sns=%s %sns=%d res=1",
+> +			 MAJOR(sb->s_dev), MINOR(sb->s_dev),
+> +			 audit_ns_name, old_ns,
+> +			 audit_ns_name, inum - PROC_DYNAMIC_FIRST);
+> +	audit_log_end(ab);
+> +}
+> +
+> +/**
+> + * audit_log_ns_del - report a namespace instance deleted
+> + * @type: type of audit namespace instance deleted message
+> + * @inum: the ID number of the namespace instance
+> + */
+> +void audit_log_ns_del(int type, unsigned int inum)
+> +{
+> +	struct audit_buffer *ab;
+> +	char *audit_ns_name = ns_name[type - AUDIT_NS_DEL_MNT];
+> +	struct vfsmount *mnt = task_active_pid_ns(current)->proc_mnt;
+> +	struct super_block *sb = mnt->mnt_sb;
+> +
+> +	if (type < AUDIT_NS_DEL_MNT || type > AUDIT_NS_DEL_NET) {
+> +		WARN(1, "audit_log_ns_del: type:%d out of range", type);
+> +		return;
+> +	}
+> +	audit_log_common_recv_msg(&ab, type);
+> +	audit_log_format(ab, " dev=%02x:%02x %sns=%d res=1",
+> +			 MAJOR(sb->s_dev), MINOR(sb->s_dev), audit_ns_name,
+> +			 inum - PROC_DYNAMIC_FIRST);
+> +	audit_log_end(ab);
+> +}
+> +#endif /* CONFIG_NAMESPACES */
+> +
+>  /**
+>   * audit_log_end - end one audit record
+>   * @ab: the audit_buffer
+> diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
+> index db95d8e..d28fd14 100644
+> --- a/kernel/pid_namespace.c
+> +++ b/kernel/pid_namespace.c
+> @@ -18,6 +18,7 @@
+>  #include <linux/proc_ns.h>
+>  #include <linux/reboot.h>
+>  #include <linux/export.h>
+> +#include <linux/audit.h>
+> 
+>  struct pid_cache {
+>  	int nr_ids;
+> @@ -109,6 +110,9 @@ static struct pid_namespace *create_pid_namespace(struct
+> user_namespace *user_ns if (err)
+>  		goto out_free_map;
+> 
+> +	audit_log_ns_init(AUDIT_NS_INIT_PID, parent_pid_ns->proc_inum,
+> +			  ns->proc_inum);
+> +
+>  	kref_init(&ns->kref);
+>  	ns->level = level;
+>  	ns->parent = get_pid_ns(parent_pid_ns);
+> @@ -142,6 +146,7 @@ static void destroy_pid_namespace(struct pid_namespace
+> *ns) {
+>  	int i;
+> 
+> +	audit_log_ns_del(AUDIT_NS_DEL_PID, ns->proc_inum);
+>  	proc_free_inum(ns->proc_inum);
+>  	for (i = 0; i < PIDMAP_ENTRIES; i++)
+>  		kfree(ns->pidmap[i].page);
+> @@ -388,3 +393,11 @@ static __init int pid_namespaces_init(void)
+>  }
+> 
+>  __initcall(pid_namespaces_init);
+> +
+> +/* log the ID of init PID namespace after audit service starts */
+> +static __init int pid_namespaces_late_init(void)
+> +{
+> +	audit_log_ns_init(AUDIT_NS_INIT_PID, 0, init_pid_ns.proc_inum);
+> +	return 0;
+> +}
+> +late_initcall(pid_namespaces_late_init);
+> diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+> index fcc0256..89c2517 100644
+> --- a/kernel/user_namespace.c
+> +++ b/kernel/user_namespace.c
+> @@ -22,6 +22,7 @@
+>  #include <linux/ctype.h>
+>  #include <linux/projid.h>
+>  #include <linux/fs_struct.h>
+> +#include <linux/audit.h>
+> 
+>  static struct kmem_cache *user_ns_cachep __read_mostly;
+> 
+> @@ -92,6 +93,9 @@ int create_user_ns(struct cred *new)
+>  		return ret;
+>  	}
+> 
+> +	audit_log_ns_init(AUDIT_NS_INIT_USER, parent_ns->proc_inum,
+> +			  ns->proc_inum);
+> +
+>  	atomic_set(&ns->count, 1);
+>  	/* Leave the new->user_ns reference with the new user namespace. */
+>  	ns->parent = parent_ns;
+> @@ -136,6 +140,7 @@ void free_user_ns(struct user_namespace *ns)
+>  #ifdef CONFIG_PERSISTENT_KEYRINGS
+>  		key_put(ns->persistent_keyring_register);
+>  #endif
+> +		audit_log_ns_del(AUDIT_NS_DEL_USER, ns->proc_inum);
+>  		proc_free_inum(ns->proc_inum);
+>  		kmem_cache_free(user_ns_cachep, ns);
+>  		ns = parent;
+> @@ -909,3 +914,11 @@ static __init int user_namespaces_init(void)
+>  	return 0;
+>  }
+>  subsys_initcall(user_namespaces_init);
+> +
+> +/* log the ID of init user namespace after audit service starts */
+> +static __init int user_namespaces_late_init(void)
+> +{
+> +	audit_log_ns_init(AUDIT_NS_INIT_USER, 0, init_user_ns.proc_inum);
+> +	return 0;
+> +}
+> +late_initcall(user_namespaces_late_init);
+> diff --git a/kernel/utsname.c b/kernel/utsname.c
+> index fd39312..fa21e8d 100644
+> --- a/kernel/utsname.c
+> +++ b/kernel/utsname.c
+> @@ -16,6 +16,7 @@
+>  #include <linux/slab.h>
+>  #include <linux/user_namespace.h>
+>  #include <linux/proc_ns.h>
+> +#include <linux/audit.h>
+> 
+>  static struct uts_namespace *create_uts_ns(void)
+>  {
+> @@ -48,6 +49,8 @@ static struct uts_namespace *clone_uts_ns(struct
+> user_namespace *user_ns, return ERR_PTR(err);
+>  	}
+> 
+> +	audit_log_ns_init(AUDIT_NS_INIT_UTS, old_ns->proc_inum, ns->proc_inum);
+> +
+>  	down_read(&uts_sem);
+>  	memcpy(&ns->name, &old_ns->name, sizeof(ns->name));
+>  	ns->user_ns = get_user_ns(user_ns);
+> @@ -84,6 +87,7 @@ void free_uts_ns(struct kref *kref)
+> 
+>  	ns = container_of(kref, struct uts_namespace, kref);
+>  	put_user_ns(ns->user_ns);
+> +	audit_log_ns_del(AUDIT_NS_DEL_UTS, ns->proc_inum);
+>  	proc_free_inum(ns->proc_inum);
+>  	kfree(ns);
+>  }
+> @@ -138,3 +142,11 @@ const struct proc_ns_operations utsns_operations = {
+>  	.install	= utsns_install,
+>  	.inum		= utsns_inum,
+>  };
+> +
+> +/* log the ID of init UTS namespace after audit service starts */
+> +static int __init uts_namespaces_init(void)
+> +{
+> +	audit_log_ns_init(AUDIT_NS_INIT_UTS, 0, init_uts_ns.proc_inum);
+> +	return 0;
+> +}
+> +late_initcall(uts_namespaces_init);
+> diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
+> index 85b6269..562eb85 100644
+> --- a/net/core/net_namespace.c
+> +++ b/net/core/net_namespace.c
+> @@ -17,6 +17,7 @@
+>  #include <linux/user_namespace.h>
+>  #include <net/net_namespace.h>
+>  #include <net/netns/generic.h>
+> +#include <linux/audit.h>
+> 
+>  /*
+>   *	Our network namespace constructor/destructor lists
+> @@ -253,6 +254,8 @@ struct net *copy_net_ns(unsigned long flags,
+>  	mutex_lock(&net_mutex);
+>  	rv = setup_net(net, user_ns);
+>  	if (rv == 0) {
+> +		audit_log_ns_init(AUDIT_NS_INIT_NET, old_net->proc_inum,
+> +				  net->proc_inum);
+>  		rtnl_lock();
+>  		list_add_tail_rcu(&net->list, &net_namespace_list);
+>  		rtnl_unlock();
+> @@ -389,6 +392,7 @@ static __net_init int net_ns_net_init(struct net *net)
+> 
+>  static __net_exit void net_ns_net_exit(struct net *net)
+>  {
+> +	audit_log_ns_del(AUDIT_NS_DEL_NET, net->proc_inum);
+>  	proc_free_inum(net->proc_inum);
+>  }
+> 
+> @@ -435,6 +439,14 @@ static int __init net_ns_init(void)
+> 
+>  pure_initcall(net_ns_init);
+> 
+> +/* log the ID of init_net namespace after audit service starts */
+> +static int __init net_ns_init_log(void)
+> +{
+> +	audit_log_ns_init(AUDIT_NS_INIT_NET, 0, init_net.proc_inum);
+> +	return 0;
+> +}
+> +late_initcall(net_ns_init_log);
+> +
+>  #ifdef CONFIG_NET_NS
+>  static int __register_pernet_operations(struct list_head *list,
+>  					struct pernet_operations *ops)
