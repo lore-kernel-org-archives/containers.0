@@ -1,20 +1,17 @@
-From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH V6 00/10] namespaces: log namespaces per task
-Date: Fri, 8 May 2015 10:42:50 -0400
-Message-ID: <20150508144250.GE20713__8523.81636291302$1431096189$gmane$org@madcap2.tricolour.ca>
-References: <cover.1429252659.git.rgb@redhat.com>
-	<87vbgqw163.fsf@x220.int.ebiederm.org>
-	<20150423030751.GA6712@madcap2.tricolour.ca>
-	<20150423204429.GA25794@madcap2.tricolour.ca>
-	<87bnid9v4f.fsf@x220.int.ebiederm.org>
-	<20150428020555.GB20713@madcap2.tricolour.ca>
-	<87zj5tgfpb.fsf@x220.int.ebiederm.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: [GIT PULL] userns: proc and sysfs mount fix
+Date: Sat, 09 May 2015 15:54:13 -0500
+Message-ID: <877fshtqtm.fsf_-___2679.36640088937$1431205149$gmane$org@x220.int.ebiederm.org>
+References: <CAFmghwxWtf53ES1ZL8pZsncEPjY0awPTrja2Hct8zJQU8hXMOQ@mail.gmail.com>
+	<87k2wi4urh.fsf@x220.int.ebiederm.org>
+	<CAFmghwzv2TOJfDt0u4K3+m-nVBPHgbTqR65kJ3cZ++MzpYb-Vw@mail.gmail.com>
+	<CAFmghwwYC+QaoHHHLwoVY6U1jSLFDuNtxvHULFFzQkc-wUGFOw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87zj5tgfpb.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <CAFmghwwYC+QaoHHHLwoVY6U1jSLFDuNtxvHULFFzQkc-wUGFOw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Eric Windisch's message of "Fri, 8 May 2015 18:44:05 -0400")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,85 +21,64 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, security-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 15/04/27, Eric W. Biederman wrote:
-> Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
-> > On 15/04/24, Eric W. Biederman wrote:
-> >> Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
-> >> > On 15/04/22, Richard Guy Briggs wrote:
-> >> >> On 15/04/20, Eric W. Biederman wrote:
-> >> >> > Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
-> >> > Do I even need to report the device number anymore since I am concluding
-> >> > s_dev is never set (or always zero) in the nsfs filesystem by
-> >> > mount_pseudo() and isn't even mountable? 
-> >> 
-> >> We still need the dev. We do have a device number get_anon_bdev fills it in.
-> >
-> > Fine, it has a device number.  There appears to be only one of these
-> > allocated per kernel.  I can get it from &nsfs->fs_supers (and take the
-> > first instance given by hlist_for_each_entry and verify there are no
-> > others).  Why do I need it, again?
-> 
-> Because if we have to preserve the inode number over a migration event I
-> want to preserve the fact that we are talking about inode numbers from a
-> superblock with a device number.
-> 
-> Otherwise known as I am allergic to kernel global identifiers, because
-> they can be major pains.  I don't want to have to go back and implement
-> a namespace for namespaces.
 
-Alright, I'll change the device over to that...  We can figure out how
-to select the correct device number of nsfs instances if it increases
-beyond one.
+Linus,
 
-> >> >> They are all covered:
-> >> >> sys_unshare > unshare_userns > create_user_ns
-> >> >> sys_unshare > unshare_nsproxy_namespaces > create_new_namespaces > copy_mnt_ns
-> >> >> sys_unshare > unshare_nsproxy_namespaces > create_new_namespaces > copy_utsname > clone_uts_ns
-> >> >> sys_unshare > unshare_nsproxy_namespaces > create_new_namespaces > copy_ipcs > get_ipc_ns
-> >> >> sys_unshare > unshare_nsproxy_namespaces > create_new_namespaces > copy_pid_ns > create_pid_namespace
-> >> >> sys_unshare > unshare_nsproxy_namespaces > create_new_namespaces > copy_net_ns
-> >> 
-> >> Then why the special change to fork?  That was not reflected on
-> >> the unshare path as far as I could see.
-> >
-> > Fork can specify more than one CLONE flag at once, so collecting them
-> > all in one statementn seemed helpful.  setns can only set one at a time.
-> 
-> unshare can also specify more than one CLONE flag at once.
-> I just pointed that out becase that seemed really unsymmetrical.
+Please pull the for-linus branch from the git tree:
 
-Ah sorry, my mistake, I was thinking setns...  I've added a call in
-sys_unshare().
+   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
 
-> > Ok, understood, we can't just punt this one to a higher layer...
-> >
-> > So this comes back to a question above, which is how do we determine
-> > which device it is from?  Sounds like we need something added to
-> > ns_common or one of the 6 namespace types structs.
-> 
-> Or we can just hard code reading it off of the appropriate magic
-> filesystem.  Probably what we want is a well named helper function that
-> does the job.
+   HEAD: 7e96c1b0e0f495c5a7450dc4aa7c9a24ba4305bd mnt: Fix fs_fully_visible to verify the root directory is visible
 
-There is a bit of overhead to read that, so I've added a dev_t member to
-ns_common.  Simplest way I found was to call iterate_supers() since
-struct file_system_type *nsfs isn't exposed.
+Eric Windish recently reported a really bug that allows mounting fresh
+copies of proc and sysfs when it really should not be allowed.  The code
+attempted to verify that proc and sysfs were fully visible but there is
+a test missing to ensure that the root of the filesystem is visible.
+Doh!
 
-> I just care that when we talk about these things we are talking about
-> inode numbers from a superblock that is associated with a given device
-> number.  That way I don't have nightmares about dealing with a namespace
-> for namespaces.
-> 
-> Eric
+The following patch fixes that.
 
-- RGB
+This fixes a containment issue that the docker folks are seeing.
 
---
-Richard Guy Briggs <rbriggs-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Senior Software Engineer, Kernel Security, AMER ENG Base Operating Systems, Red Hat
-Remote, Ottawa, Canada
-Voice: +1.647.777.2635, Internal: (81) 32635, Alt: +1.613.693.0684x3545
+I see one or two more issues that I would like to correct in the check
+for mounting proc and sysfs but those look like they have a non-trivial
+chance of breaking working user space so they are going to need more
+review and testing before I send them your way.
+
+commit 7e96c1b0e0f495c5a7450dc4aa7c9a24ba4305bd
+Author: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Date:   Fri May 8 16:36:50 2015 -0500
+
+    mnt: Fix fs_fully_visible to verify the root directory is visible
+    
+    This fixes a dumb bug in fs_fully_visible that allows proc or sys to
+    be mounted if there is a bind mount of part of /proc/ or /sys/ visible.
+    
+    Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+    Reported-by: Eric Windisch <ewindisch-FCduhRhOUaTQT0dZR+AlfA@public.gmane.org>
+    Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ fs/namespace.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 1f4f9dac6e5a..1b9e11167bae 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -3179,6 +3179,12 @@ bool fs_fully_visible(struct file_system_type *type)
+                if (mnt->mnt.mnt_sb->s_type != type)
+                        continue;
+ 
++               /* This mount is not fully visible if it's root directory
++                * is not the root directory of the filesystem.
++                */
++               if (mnt->mnt.mnt_root != mnt->mnt.mnt_sb->s_root)
++                       continue;
++
+                /* This mount is not fully visible if there are any child mounts
+                 * that cover anything except for empty directories.
+                 */
