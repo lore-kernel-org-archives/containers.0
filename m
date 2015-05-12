@@ -1,7 +1,8 @@
 From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH V7 01/10] namespaces: expose ns_entries
-Date: Tue, 12 May 2015 16:02:38 -0400
-Message-ID: <00e0c69e2816e9a8af95f243ef4a0c9ab8eaee6a.1431451547.git.rgb__36315.3972583406$1431461065$gmane$org@redhat.com>
+Subject: [PATCH V7 07/10] audit: dump namespace IDs for pid on receipt of
+	AUDIT_NS_INFO
+Date: Tue, 12 May 2015 16:02:44 -0400
+Message-ID: <6bd612846bbc9bf0730e59240150186785c055bd.1431451547.git.rgb@redhat.com>
 References: <cover.1431451547.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,39 +24,49 @@ To: linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29T
 Cc: pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Expose ns_entries so subsystems other than proc can use this set of namespace
-operations.
+When a task with CAP_AUDIT_CONTROL sends a NETLINK_AUDIT message of type
+UDIT_NS_INFO with a PID of interest formatted as pid_t as the first and only
+data, dump the namespace IDs of that task to the audit log.
 
 Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- fs/proc/namespaces.c    |    2 +-
- include/linux/proc_ns.h |    1 +
- 2 files changed, 2 insertions(+), 1 deletions(-)
+ kernel/audit.c |   17 +++++++++++++++++
+ 1 files changed, 17 insertions(+), 0 deletions(-)
 
-diff --git a/fs/proc/namespaces.c b/fs/proc/namespaces.c
-index c9eac45..41da5f1 100644
---- a/fs/proc/namespaces.c
-+++ b/fs/proc/namespaces.c
-@@ -11,7 +11,7 @@
- #include "internal.h"
- 
- 
--static const struct proc_ns_operations *ns_entries[] = {
-+const struct proc_ns_operations *ns_entries[] = {
- #ifdef CONFIG_NET_NS
- 	&netns_operations,
- #endif
-diff --git a/include/linux/proc_ns.h b/include/linux/proc_ns.h
-index 42dfc61..2654550 100644
---- a/include/linux/proc_ns.h
-+++ b/include/linux/proc_ns.h
-@@ -24,6 +24,7 @@ extern const struct proc_ns_operations ipcns_operations;
- extern const struct proc_ns_operations pidns_operations;
- extern const struct proc_ns_operations userns_operations;
- extern const struct proc_ns_operations mntns_operations;
-+extern const struct proc_ns_operations *ns_entries[];
- 
- /*
-  * We always define these enumerators
+diff --git a/kernel/audit.c b/kernel/audit.c
+index 229fd5a..af143b5 100644
+--- a/kernel/audit.c
++++ b/kernel/audit.c
+@@ -662,6 +662,7 @@ static int audit_netlink_ok(struct sk_buff *skb, u16 msg_type)
+ 	case AUDIT_TTY_SET:
+ 	case AUDIT_TRIM:
+ 	case AUDIT_MAKE_EQUIV:
++	case AUDIT_NS_INFO:
+ 		/* Only support auditd and auditctl in initial pid namespace
+ 		 * for now. */
+ 		if ((task_active_pid_ns(current) != &init_pid_ns))
+@@ -1057,6 +1058,22 @@ static int audit_receive_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 		audit_log_end(ab);
+ 		break;
+ 	}
++	case AUDIT_NS_INFO:
++#ifdef CONFIG_NAMESPACES
++	{
++		struct task_struct *tsk;
++
++		rcu_read_lock();
++		tsk = find_task_by_vpid(*(pid_t *)data);
++		rcu_read_unlock();
++		if (tsk)
++			audit_log_ns_info(tsk);
++		else
++			err = -EINVAL;
++	}
++#else /* CONFIG_NAMESPACES */
++		err = -EOPNOTSUPP;
++#endif /* CONFIG_NAMESPACES */
+ 	default:
+ 		err = -EINVAL;
+ 		break;
 -- 
 1.7.1
