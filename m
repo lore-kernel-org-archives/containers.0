@@ -1,14 +1,17 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [stable] Locked mount and loopback mount fixes
-Date: Mon, 11 May 2015 09:04:52 -0500
-Message-ID: <871tinrz0b.fsf__5069.85740871659$1431353393$gmane$org@x220.int.ebiederm.org>
-References: <1431280791.2233.50.camel@decadent.org.uk>
+From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH V6 05/10] audit: log creation and deletion of namespace
+	instances
+Date: Tue, 12 May 2015 15:57:59 -0400
+Message-ID: <20150512195759.GA9832__31768.7650946484$1431460699$gmane$org@madcap2.tricolour.ca>
+References: <cover.1429252659.git.rgb@redhat.com>
+	<11270b0b1afd0a25b108915673e1e1b38dfeeafa.1429252659.git.rgb@redhat.com>
+	<2487286.y6vyJ9A3er@x2>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1431280791.2233.50.camel-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org> (Ben Hutchings's
-	message of "Sun, 10 May 2015 18:59:51 +0100")
+Content-Disposition: inline
+In-Reply-To: <2487286.y6vyJ9A3er@x2>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,151 +21,560 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org>
-Cc: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Konstantin Khlebnikov <koct9i-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, stable <stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Ben Hutchings <ben-/+tVBieCtBitmTQ+vhA3Yw@public.gmane.org> writes:
+On 15/05/05, Steve Grubb wrote:
+> Hello,
+> 
+> I think there needs to be some more discussion around this. It seems like this 
+> is not exactly recording things that are useful for audit.
 
-> Why were these not cc'd to stable?  Was this an oversight, or are they
-> simply not needed for fixing any known bugs?
->
-> commit cd4a40174b71acd021877341684d8bb1dc8ea4ae
-> Author: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> Date:   Wed Jan 7 14:28:26 2015 -0600
->
->     mnt: Fail collect_mounts when applied to unmounted mounts
->
-> commit 820f9f147dcce2602eefd9b575bbbd9ea14f0953
-> Author: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> Date:   Thu Apr 2 16:35:48 2015 -0500
->
->     fs_pin: Allow for the possibility that m_list or s_list go unused.
+It seems to me that either audit has to assemble that information, or
+the kernel has to do so.  The kernel doesn't know about containers
+(yet?).
 
+> On Friday, April 17, 2015 03:35:52 AM Richard Guy Briggs wrote:
+> > Log the creation and deletion of namespace instances in all 6 types of
+> > namespaces.
+> > 
+> > Twelve new audit message types have been introduced:
+> > AUDIT_NS_INIT_MNT       1330    /* Record mount namespace instance creation
+> > */ AUDIT_NS_INIT_UTS       1331    /* Record UTS namespace instance
+> > creation */ AUDIT_NS_INIT_IPC       1332    /* Record IPC namespace
+> > instance creation */ AUDIT_NS_INIT_USER      1333    /* Record USER
+> > namespace instance creation */ AUDIT_NS_INIT_PID       1334    /* Record
+> > PID namespace instance creation */ AUDIT_NS_INIT_NET       1335    /*
+> > Record NET namespace instance creation */ AUDIT_NS_DEL_MNT        1336   
+> > /* Record mount namespace instance deletion */ AUDIT_NS_DEL_UTS        1337
+> >    /* Record UTS namespace instance deletion */ AUDIT_NS_DEL_IPC       
+> > 1338    /* Record IPC namespace instance deletion */ AUDIT_NS_DEL_USER     
+> >  1339    /* Record USER namespace instance deletion */ AUDIT_NS_DEL_PID    
+> >    1340    /* Record PID namespace instance deletion */ AUDIT_NS_DEL_NET   
+> >     1341    /* Record NET namespace instance deletion */
+> 
+> The requirements for auditing of containers should be derived from VPP. In it, 
+> it asks for selectable auditing, selective audit, and selective audit review. 
+> What this means is that we need the container and all its children to have one 
+> identifier that is inserted into all the events that are associated with the 
+> container.
 
-And because I forgot to mark those two patches for stable we are getting
-failures like the below in 4.0.2.  My apologies.
+Is that requirement for the records that are sent from the kernel, or
+for the records stored by auditd, or by another facility that delivers
+those records to a final consumer?
 
-Please treat them as if they were marked for stable.
+> With this, its possible to do a search for all events related to a container. 
+> Its possible to exclude events from a container. Its possible to not get any 
+> events.
+> 
+> The requirements also call out for the identification of the subject. This 
+> means that the event should be bound to a syscall such as clone, setns, or 
+> unshare.
 
-Konstantin Khlebnikov <koct9i-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
+Is it useful to have a reference of the init namespace set from which
+all others are spawned?
 
-> I've seen crash in 4.0.2 while played with namespaces. This patch helped.
-> So, it should be queued into stable@ for sure, but I don't know how
-> many kernel versions are affected.
->
->
-> [29221.493301] BUG: unable to handle kernel NULL pointer dereference
-> at           (null)
-> [29221.493396] IP: [<ffffffff811d4ad8>] pin_remove+0x58/0xc0
-> [29221.493456] PGD 0
-> [29221.493481] Oops: 0002 [#1] SMP
-> [29221.493521] Modules linked in: iwldvm iwlwifi nfsd auth_rpcgss
-> oid_registry nfs_acl nfs lockd grace sunrpc ipt_MASQUERADE
-> nf_nat_masquerade_ipv4 iptable_nat bridge stp llc vfat fat fuse
-> snd_hda_codec_hdmi snd_hda_codec_conexant snd_hda_codec_generic
-> iTCO_wdt intel_powerclamp coretemp kvm_intel uvcvideo kvm
-> videobuf2_vmalloc videobuf2_memops videobuf2_core v4l2_common
-> snd_hda_intel videodev snd_hda_controller snd_hda_codec snd_hwdep
-> snd_pcm i915 lpc_ich mfd_core thinkpad_acpi snd_timer wmi snd
-> soundcore drm_kms_helper sdhci_pci sdhci e1000e
-> [29221.494197] CPU: 2 PID: 30219 Comm: ct.sh Not tainted 4.0.2-zurg+ #167
-> [29221.494291] Hardware name: LENOVO 4291QY6/4291QY6, BIOS 8DET51WW
-> (1.21 ) 08/02/2011
-> [29221.494392] task: ffff8803cb3e3bf0 ti: ffff8803ebf00000 task.ti:
-> ffff8803ebf00000
-> [29221.494514] RIP: 0010:[<ffffffff811d4ad8>]  [<ffffffff811d4ad8>]
-> pin_remove+0x58/0xc0
-> [29221.494655] RSP: 0018:ffff8803ebf03da8  EFLAGS: 00010246
-> [29221.494746] RAX: 0000000000000000 RBX: ffff88040ad33620 RCX: 000000000000000d
-> [29221.494854] RDX: 0000000000000000 RSI: 0000000000000003 RDI: ffffffff81ed92f0
-> [29221.494969] RBP: ffff8803ebf03db8 R08: ffffffff81cf9fa8 R09: 0000000000000246
-> [29221.495081] R10: 000000000001e001 R11: 0000000000000000 R12: ffff8803ebf03e08
-> [29221.495178] R13: ffff8803cb3e42e0 R14: ffff8803cb3e3bf0 R15: ffff88040a37cd68
-> [29221.495260] FS:  00007f02da4f8700(0000) GS:ffff88041e280000(0000)
-> knlGS:0000000000000000
-> [29221.495343] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> [29221.495395] CR2: 0000000000000000 CR3: 0000000002c0d000 CR4: 00000000000407e0
-> [29221.495456] Stack:
-> [29221.495477]  ffff8803cb3e3bf0 ffff88040ad33620 ffff8803ebf03dd8
-> ffffffff811c2f82
-> [29221.495554]  ffff8803ebf03df8 ffff88040ad33620 ffff8803ebf03e38
-> ffffffff811d4c54
-> [29221.495630]  ffffffff81c65b40 ffff880300000000 ffff8803cb3e3bf0
-> ffffffff810be600
-> [29221.495707] Call Trace:
-> [29221.495739]  [<ffffffff811c2f82>] drop_mountpoint+0x22/0x40
-> [29221.495773]  [<ffffffff811d4c54>] pin_kill+0x64/0xf0
-> [29221.495790]  [<ffffffff810be600>] ? wait_woken+0x90/0x90
-> [29221.495806]  [<ffffffff811d4d09>] mnt_pin_kill+0x29/0x40
-> [29221.495822]  [<ffffffff811c2410>] cleanup_mnt+0x90/0xa0
-> [29221.495838]  [<ffffffff811c2472>] __cleanup_mnt+0x12/0x20
-> [29221.495855]  [<ffffffff810a2d67>] task_work_run+0xb7/0xf0
-> [29221.495873]  [<ffffffff81089332>] do_exit+0x2d2/0xac0
-> [29221.495890]  [<ffffffff811a39d8>] ? __vfs_read+0x18/0x50
-> [29221.495905]  [<ffffffff811a3a9a>] ? vfs_read+0x8a/0x120
-> [29221.495921]  [<ffffffff8108a887>] do_group_exit+0x47/0xc0
-> [29221.495937]  [<ffffffff8108a914>] SyS_exit_group+0x14/0x20
-> [29221.495961]  [<ffffffff816da20d>] system_call_fastpath+0x16/0x1b
-> [29221.495978] Code: 48 89 50 08 48 b8 00 01 10 00 00 00 ad de 48 8b
-> 53 28 48 89 43 30 48 b8 00 02 20 00 00 00 ad de 48 89 43 38 48 8b 43
-> 20 48 85 c0 <48> 89 02 74 04 48 89 50 08 48 b8 00 01 10 00 00 00 ad de
-> 48 89
-> [29221.496108] RIP  [<ffffffff811d4ad8>] pin_remove+0x58/0xc0
-> [29221.496126]  RSP <ffff8803ebf03da8>
-> [29221.496136] CR2: 0000000000000000
->
-> On Fri, Apr 3, 2015 at 4:56 AM, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->> This is needed to support lazily umounting locked mounts.  Because the
->> entire unmounted subtree needs to stay together until there are no
->> users with references to any part of the subtree.
->>
->> To support this guarantee that the fs_pin m_list and s_list nodes
->> are initialized by initializing them in init_fs_pin allowing
->> for the possibility that pin_insert_group does not touch them.
->>
->> Further use hlist_del_init in pin_remove so that there is
->> a hlist_unhashed test before the list we attempt to update
->> the previous list item.
->>
->> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
->> ---
->>  fs/fs_pin.c            | 4 ++--
->>  include/linux/fs_pin.h | 2 ++
->>  2 files changed, 4 insertions(+), 2 deletions(-)
->>
->> diff --git a/fs/fs_pin.c b/fs/fs_pin.c
->> index b06c98796afb..611b5408f6ec 100644
->> --- a/fs/fs_pin.c
->> +++ b/fs/fs_pin.c
->> @@ -9,8 +9,8 @@ static DEFINE_SPINLOCK(pin_lock);
->>  void pin_remove(struct fs_pin *pin)
->>  {
->>         spin_lock(&pin_lock);
->> -       hlist_del(&pin->m_list);
->> -       hlist_del(&pin->s_list);
->> +       hlist_del_init(&pin->m_list);
->> +       hlist_del_init(&pin->s_list);
->>         spin_unlock(&pin_lock);
->>         spin_lock_irq(&pin->wait.lock);
->>         pin->done = 1;
->> diff --git a/include/linux/fs_pin.h b/include/linux/fs_pin.h
->> index 9dc4e0384bfb..3886b3bffd7f 100644
->> --- a/include/linux/fs_pin.h
->> +++ b/include/linux/fs_pin.h
->> @@ -13,6 +13,8 @@ struct vfsmount;
->>  static inline void init_fs_pin(struct fs_pin *p, void (*kill)(struct fs_pin *))
->>  {
->>         init_waitqueue_head(&p->wait);
->> +       INIT_HLIST_NODE(&p->s_list);
->> +       INIT_HLIST_NODE(&p->m_list);
->>         p->kill = kill;
->>  }
->>
->> --
->> 2.2.1
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
->> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+If it isn't bound, I assume the subject should be added to the message
+format?  I'm thinking of messages without an audit_context such as audit
+user messages (such as AUDIT_NS_INFO and AUDIT_VIRT_CONTROL).
+
+For now, we should not need to log namespaces with AUDIT_FEATURE_CHANGE
+or AUDIT_CONFIG_CHANGE messages since only initial user namespace with
+initial pid namespace has permission to do so.  This will need to be
+addressed by having non-init config changes be limited to that container
+or set of namespaces and possibly its children.  The other possibility
+is to add the subject to the stand-alone message.
+
+> Also, any user space events originating inside the container needs to have the 
+> container ID added to the user space event - just like auid and session id.
+
+This sounds like every task needs to record a container ID since that
+information is otherwise unknown by the kernel except by what might be
+provided by an audit user message such as AUDIT_VIRT_CONTROL or possibly
+the new AUDIT_NS_INFO request.  It could be stored in struct task_struct
+or in struct audit_context.  I don't have a suggestion on how to get
+that information securely into the kernel.
+
+> Recording each instance of a name space is giving me something that I cannot 
+> use to do queries required by the security target. Given these events, how do 
+> I locate a web server event where it accesses a watched file? That 
+> authentication failed? That an update within the container failed?
+> 
+> The requirements are that we have to log the creation, suspension, migration, 
+> and termination of a container. The requirements are not on the individual 
+> name space.
+
+Ok.  Do we have a robust definition of a container?  Where is that
+definition managed?  If it is a userspace concept, then I think either
+userspace should be assembling this information, or providing that
+information to the entity that will be expected to know about and
+provide it.
+
+> Maybe I'm missing how these events give me that. But I'd like to hear how I 
+> would be able to meet requirements with these 12 events.
+
+Adding the infrastructure to give each of those 12 events an audit
+context to be able to give meaningful subject fields in audit records
+appears to require adding a struct task_struct argument to calls to
+copy_mnt_ns(), copy_utsname(), copy_ipcs(), copy_pid_ns(),
+copy_net_ns(), create_user_ns() unless I use current.  I think we must
+use current since the userns is created before the spawned process is
+mature or has an audit context in the case of clone.
+
+Either that, or I have mis-understood and I should be stashing this
+namespace ID information in an audit_aux_data structure or a more
+permanent part of struct audit_context to be printed when required on
+syscall exit.  I'm trying to think through if it is needed in any
+non-syscall audit messages.
+
+Another RFC patch set coming...
+
+> -Steve
+>  
+> > As suggested by Eric Paris, there are 12 message types, one for each of
+> > creation and deletion, one for each type of namespace so that text searches
+> > are easier in conjunction with the AUDIT_NS_INFO message type, being able
+> > to search for all records such as "netns=4 " and to avoid fields
+> > disappearing per message type to make ausearch more efficient.
+> > 
+> > A typical startup would look roughly like:
+> > 
+> > 	type=AUDIT_NS_INIT_UTS msg=audit(1408577534.868:5): pid=1 uid=0
+> > auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_utsns=(none)
+> > utsns=-2 res=1 type=AUDIT_NS_INIT_USER msg=audit(1408577534.868:6): pid=1
+> > uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03
+> > old_userns=(none) userns=-3 res=1 type=AUDIT_NS_INIT_PID
+> > msg=audit(1408577534.868:7): pid=1 uid=0 auid=4294967295 ses=4294967295
+> > subj=kernel dev=00:03 old_pidns=(none) pidns=-4 res=1
+> > type=AUDIT_NS_INIT_MNT msg=audit(1408577534.868:8): pid=1 uid=0
+> > auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_mntns=(none)
+> > mntns=0 res=1 type=AUDIT_NS_INIT_IPC msg=audit(1408577534.868:9): pid=1
+> > uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_ipcns=(none)
+> > ipcns=-1 res=1 type=AUDIT_NS_INIT_NET msg=audit(1408577533.500:10): pid=1
+> > uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_netns=(none)
+> > netns=2 res=1
+> > 
+> > And a CLONE action would result in:
+> > 	type=type=AUDIT_NS_INIT_NET msg=audit(1408577535.306:81): pid=481 uid=0
+> > auid=4294967295 ses=4294967295 subj=system_u:system_r:init_t:s0 dev=00:03
+> > old_netns=2 netns=3 res=1
+> > 
+> > While deleting a namespace would result in:
+> > 	type=type=AUDIT_NS_DEL_MNT msg=audit(1408577552.221:85): pid=481 uid=0
+> > auid=4294967295 ses=4294967295 subj=system_u:system_r:init_t:s0 dev=00:03
+> > mntns=4 res=1
+> > 
+> > If not "(none)", old_XXXns lists the namespace from which it was cloned.
+> > 
+> > Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> > ---
+> >  fs/namespace.c             |   13 +++++++++
+> >  include/linux/audit.h      |    8 +++++
+> >  include/uapi/linux/audit.h |   12 ++++++++
+> >  ipc/namespace.c            |   12 ++++++++
+> >  kernel/audit.c             |   64
+> > ++++++++++++++++++++++++++++++++++++++++++++ kernel/pid_namespace.c     |  
+> > 13 +++++++++
+> >  kernel/user_namespace.c    |   13 +++++++++
+> >  kernel/utsname.c           |   12 ++++++++
+> >  net/core/net_namespace.c   |   12 ++++++++
+> >  9 files changed, 159 insertions(+), 0 deletions(-)
+> > 
+> > diff --git a/fs/namespace.c b/fs/namespace.c
+> > index 182bc41..7b62543 100644
+> > --- a/fs/namespace.c
+> > +++ b/fs/namespace.c
+> > @@ -24,6 +24,7 @@
+> >  #include <linux/proc_ns.h>
+> >  #include <linux/magic.h>
+> >  #include <linux/bootmem.h>
+> > +#include <linux/audit.h>
+> >  #include "pnode.h"
+> >  #include "internal.h"
+> > 
+> > @@ -2459,6 +2460,7 @@ dput_out:
+> > 
+> >  static void free_mnt_ns(struct mnt_namespace *ns)
+> >  {
+> > +	audit_log_ns_del(AUDIT_NS_DEL_MNT, ns->proc_inum);
+> >  	proc_free_inum(ns->proc_inum);
+> >  	put_user_ns(ns->user_ns);
+> >  	kfree(ns);
+> > @@ -2518,6 +2520,7 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags,
+> > struct mnt_namespace *ns, new_ns = alloc_mnt_ns(user_ns);
+> >  	if (IS_ERR(new_ns))
+> >  		return new_ns;
+> > +	audit_log_ns_init(AUDIT_NS_INIT_MNT, ns->proc_inum, new_ns->proc_inum);
+> > 
+> >  	namespace_lock();
+> >  	/* First pass: copy the tree topology */
+> > @@ -2830,6 +2833,16 @@ static void __init init_mount_tree(void)
+> >  	set_fs_root(current->fs, &root);
+> >  }
+> > 
+> > +/* log the ID of init mnt namespace after audit service starts */
+> > +static int __init mnt_ns_init_log(void)
+> > +{
+> > +	struct mnt_namespace *init_mnt_ns = init_task.nsproxy->mnt_ns;
+> > +
+> > +	audit_log_ns_init(AUDIT_NS_INIT_MNT, 0, init_mnt_ns->proc_inum);
+> > +	return 0;
+> > +}
+> > +late_initcall(mnt_ns_init_log);
+> > +
+> >  void __init mnt_init(void)
+> >  {
+> >  	unsigned u;
+> > diff --git a/include/linux/audit.h b/include/linux/audit.h
+> > index 71698ec..b28dfb0 100644
+> > --- a/include/linux/audit.h
+> > +++ b/include/linux/audit.h
+> > @@ -484,6 +484,9 @@ extern void		    audit_log_ns_info(struct 
+> task_struct
+> > *tsk); static inline void	    audit_log_ns_info(struct task_struct *tsk) {
+> > }
+> >  #endif
+> > +extern void		    audit_log_ns_init(int type, unsigned int old_inum,
+> > +					      unsigned int inum);
+> > +extern void		    audit_log_ns_del(int type, unsigned int inum);
+> > 
+> >  extern int		    audit_update_lsm_rules(void);
+> > 
+> > @@ -542,6 +545,11 @@ static inline void audit_log_task_info(struct
+> > audit_buffer *ab, { }
+> >  static inline void audit_log_ns_info(struct task_struct *tsk)
+> >  { }
+> > +static inline int audit_log_ns_init(int type, unsigned int old_inum,
+> > +				    unsigned int inum)
+> > +{ }
+> > +static inline int audit_log_ns_del(int type, unsigned int inum)
+> > +{ }
+> >  #define audit_enabled 0
+> >  #endif /* CONFIG_AUDIT */
+> >  static inline void audit_log_string(struct audit_buffer *ab, const char
+> > *buf) diff --git a/include/uapi/linux/audit.h b/include/uapi/linux/audit.h
+> > index 1ffb151..487cad6 100644
+> > --- a/include/uapi/linux/audit.h
+> > +++ b/include/uapi/linux/audit.h
+> > @@ -111,6 +111,18 @@
+> >  #define AUDIT_PROCTITLE		1327	/* Proctitle emit event */
+> >  #define AUDIT_FEATURE_CHANGE	1328	/* audit log listing feature changes 
+> */
+> >  #define AUDIT_NS_INFO		1329	/* Record process namespace IDs */
+> > +#define AUDIT_NS_INIT_MNT	1330	/* Record mount namespace instance 
+> creation
+> > */ +#define AUDIT_NS_INIT_UTS	1331	/* Record UTS namespace instance
+> > creation */ +#define AUDIT_NS_INIT_IPC	1332	/* Record IPC namespace
+> > instance creation */ +#define AUDIT_NS_INIT_USER	1333	/* Record USER
+> > namespace instance creation */ +#define AUDIT_NS_INIT_PID	1334	/* Record
+> > PID namespace instance creation */ +#define AUDIT_NS_INIT_NET	1335	/*
+> > Record NET namespace instance creation */ +#define AUDIT_NS_DEL_MNT	1336	
+> /*
+> > Record mount namespace instance deletion */ +#define
+> > AUDIT_NS_DEL_UTS	1337	/* Record UTS namespace instance deletion */ 
+> +#define
+> > AUDIT_NS_DEL_IPC	1338	/* Record IPC namespace instance deletion */ 
+> +#define
+> > AUDIT_NS_DEL_USER	1339	/* Record USER namespace instance deletion */
+> > +#define AUDIT_NS_DEL_PID	1340	/* Record PID namespace instance 
+> deletion */
+> > +#define AUDIT_NS_DEL_NET	1341	/* Record NET namespace instance deletion 
+> */
+> > 
+> >  #define AUDIT_AVC		1400	/* SE Linux avc denial or grant */
+> >  #define AUDIT_SELINUX_ERR	1401	/* Internal SE Linux Errors */
+> > diff --git a/ipc/namespace.c b/ipc/namespace.c
+> > index 59451c1..73727ce 100644
+> > --- a/ipc/namespace.c
+> > +++ b/ipc/namespace.c
+> > @@ -13,6 +13,7 @@
+> >  #include <linux/mount.h>
+> >  #include <linux/user_namespace.h>
+> >  #include <linux/proc_ns.h>
+> > +#include <linux/audit.h>
+> > 
+> >  #include "util.h"
+> > 
+> > @@ -41,6 +42,8 @@ static struct ipc_namespace *create_ipc_ns(struct
+> > user_namespace *user_ns, }
+> >  	atomic_inc(&nr_ipc_ns);
+> > 
+> > +	audit_log_ns_init(AUDIT_NS_INIT_IPC, old_ns->proc_inum, ns->proc_inum);
+> > +
+> >  	sem_init_ns(ns);
+> >  	msg_init_ns(ns);
+> >  	shm_init_ns(ns);
+> > @@ -119,6 +122,7 @@ static void free_ipc_ns(struct ipc_namespace *ns)
+> >  	 */
+> >  	ipcns_notify(IPCNS_REMOVED);
+> >  	put_user_ns(ns->user_ns);
+> > +	audit_log_ns_del(AUDIT_NS_DEL_IPC, ns->proc_inum);
+> >  	proc_free_inum(ns->proc_inum);
+> >  	kfree(ns);
+> >  }
+> > @@ -197,3 +201,11 @@ const struct proc_ns_operations ipcns_operations = {
+> >  	.install	= ipcns_install,
+> >  	.inum		= ipcns_inum,
+> >  };
+> > +
+> > +/* log the ID of init IPC namespace after audit service starts */
+> > +static int __init ipc_namespaces_init(void)
+> > +{
+> > +	audit_log_ns_init(AUDIT_NS_INIT_IPC, 0, init_ipc_ns.proc_inum);
+> > +	return 0;
+> > +}
+> > +late_initcall(ipc_namespaces_init);
+> > diff --git a/kernel/audit.c b/kernel/audit.c
+> > index 63f32f4..e6230c4 100644
+> > --- a/kernel/audit.c
+> > +++ b/kernel/audit.c
+> > @@ -1978,6 +1978,70 @@ out:
+> >  	kfree(name);
+> >  }
+> > 
+> > +#ifdef CONFIG_NAMESPACES
+> > +static char *ns_name[] = {
+> > +	"mnt",
+> > +	"uts",
+> > +	"ipc",
+> > +	"user",
+> > +	"pid",
+> > +	"net",
+> > +};
+> > +
+> > +/**
+> > + * audit_log_ns_init - report a namespace instance creation
+> > + * @type: type of audit namespace instance created message
+> > + * @old_inum: the ID number of the cloned namespace instance
+> > + * @inum: the ID number of the new namespace instance
+> > + */
+> > +void  audit_log_ns_init(int type, unsigned int old_inum, unsigned int inum)
+> > +{
+> > +	struct audit_buffer *ab;
+> > +	char *audit_ns_name = ns_name[type - AUDIT_NS_INIT_MNT];
+> > +	struct vfsmount *mnt = task_active_pid_ns(current)->proc_mnt;
+> > +	struct super_block *sb = mnt->mnt_sb;
+> > +	char old_ns[16];
+> > +
+> > +	if (type < AUDIT_NS_INIT_MNT || type > AUDIT_NS_INIT_NET) {
+> > +		WARN(1, "audit_log_ns_init: type:%d out of range", type);
+> > +		return;
+> > +	}
+> > +	if (!old_inum)
+> > +		sprintf(old_ns, "(none)");
+> > +	else
+> > +		sprintf(old_ns, "%d", old_inum - PROC_DYNAMIC_FIRST);
+> > +	audit_log_common_recv_msg(&ab, type);
+> > +	audit_log_format(ab, " dev=%02x:%02x old_%sns=%s %sns=%d res=1",
+> > +			 MAJOR(sb->s_dev), MINOR(sb->s_dev),
+> > +			 audit_ns_name, old_ns,
+> > +			 audit_ns_name, inum - PROC_DYNAMIC_FIRST);
+> > +	audit_log_end(ab);
+> > +}
+> > +
+> > +/**
+> > + * audit_log_ns_del - report a namespace instance deleted
+> > + * @type: type of audit namespace instance deleted message
+> > + * @inum: the ID number of the namespace instance
+> > + */
+> > +void audit_log_ns_del(int type, unsigned int inum)
+> > +{
+> > +	struct audit_buffer *ab;
+> > +	char *audit_ns_name = ns_name[type - AUDIT_NS_DEL_MNT];
+> > +	struct vfsmount *mnt = task_active_pid_ns(current)->proc_mnt;
+> > +	struct super_block *sb = mnt->mnt_sb;
+> > +
+> > +	if (type < AUDIT_NS_DEL_MNT || type > AUDIT_NS_DEL_NET) {
+> > +		WARN(1, "audit_log_ns_del: type:%d out of range", type);
+> > +		return;
+> > +	}
+> > +	audit_log_common_recv_msg(&ab, type);
+> > +	audit_log_format(ab, " dev=%02x:%02x %sns=%d res=1",
+> > +			 MAJOR(sb->s_dev), MINOR(sb->s_dev), audit_ns_name,
+> > +			 inum - PROC_DYNAMIC_FIRST);
+> > +	audit_log_end(ab);
+> > +}
+> > +#endif /* CONFIG_NAMESPACES */
+> > +
+> >  /**
+> >   * audit_log_end - end one audit record
+> >   * @ab: the audit_buffer
+> > diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
+> > index db95d8e..d28fd14 100644
+> > --- a/kernel/pid_namespace.c
+> > +++ b/kernel/pid_namespace.c
+> > @@ -18,6 +18,7 @@
+> >  #include <linux/proc_ns.h>
+> >  #include <linux/reboot.h>
+> >  #include <linux/export.h>
+> > +#include <linux/audit.h>
+> > 
+> >  struct pid_cache {
+> >  	int nr_ids;
+> > @@ -109,6 +110,9 @@ static struct pid_namespace *create_pid_namespace(struct
+> > user_namespace *user_ns if (err)
+> >  		goto out_free_map;
+> > 
+> > +	audit_log_ns_init(AUDIT_NS_INIT_PID, parent_pid_ns->proc_inum,
+> > +			  ns->proc_inum);
+> > +
+> >  	kref_init(&ns->kref);
+> >  	ns->level = level;
+> >  	ns->parent = get_pid_ns(parent_pid_ns);
+> > @@ -142,6 +146,7 @@ static void destroy_pid_namespace(struct pid_namespace
+> > *ns) {
+> >  	int i;
+> > 
+> > +	audit_log_ns_del(AUDIT_NS_DEL_PID, ns->proc_inum);
+> >  	proc_free_inum(ns->proc_inum);
+> >  	for (i = 0; i < PIDMAP_ENTRIES; i++)
+> >  		kfree(ns->pidmap[i].page);
+> > @@ -388,3 +393,11 @@ static __init int pid_namespaces_init(void)
+> >  }
+> > 
+> >  __initcall(pid_namespaces_init);
+> > +
+> > +/* log the ID of init PID namespace after audit service starts */
+> > +static __init int pid_namespaces_late_init(void)
+> > +{
+> > +	audit_log_ns_init(AUDIT_NS_INIT_PID, 0, init_pid_ns.proc_inum);
+> > +	return 0;
+> > +}
+> > +late_initcall(pid_namespaces_late_init);
+> > diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+> > index fcc0256..89c2517 100644
+> > --- a/kernel/user_namespace.c
+> > +++ b/kernel/user_namespace.c
+> > @@ -22,6 +22,7 @@
+> >  #include <linux/ctype.h>
+> >  #include <linux/projid.h>
+> >  #include <linux/fs_struct.h>
+> > +#include <linux/audit.h>
+> > 
+> >  static struct kmem_cache *user_ns_cachep __read_mostly;
+> > 
+> > @@ -92,6 +93,9 @@ int create_user_ns(struct cred *new)
+> >  		return ret;
+> >  	}
+> > 
+> > +	audit_log_ns_init(AUDIT_NS_INIT_USER, parent_ns->proc_inum,
+> > +			  ns->proc_inum);
+> > +
+> >  	atomic_set(&ns->count, 1);
+> >  	/* Leave the new->user_ns reference with the new user namespace. */
+> >  	ns->parent = parent_ns;
+> > @@ -136,6 +140,7 @@ void free_user_ns(struct user_namespace *ns)
+> >  #ifdef CONFIG_PERSISTENT_KEYRINGS
+> >  		key_put(ns->persistent_keyring_register);
+> >  #endif
+> > +		audit_log_ns_del(AUDIT_NS_DEL_USER, ns->proc_inum);
+> >  		proc_free_inum(ns->proc_inum);
+> >  		kmem_cache_free(user_ns_cachep, ns);
+> >  		ns = parent;
+> > @@ -909,3 +914,11 @@ static __init int user_namespaces_init(void)
+> >  	return 0;
+> >  }
+> >  subsys_initcall(user_namespaces_init);
+> > +
+> > +/* log the ID of init user namespace after audit service starts */
+> > +static __init int user_namespaces_late_init(void)
+> > +{
+> > +	audit_log_ns_init(AUDIT_NS_INIT_USER, 0, init_user_ns.proc_inum);
+> > +	return 0;
+> > +}
+> > +late_initcall(user_namespaces_late_init);
+> > diff --git a/kernel/utsname.c b/kernel/utsname.c
+> > index fd39312..fa21e8d 100644
+> > --- a/kernel/utsname.c
+> > +++ b/kernel/utsname.c
+> > @@ -16,6 +16,7 @@
+> >  #include <linux/slab.h>
+> >  #include <linux/user_namespace.h>
+> >  #include <linux/proc_ns.h>
+> > +#include <linux/audit.h>
+> > 
+> >  static struct uts_namespace *create_uts_ns(void)
+> >  {
+> > @@ -48,6 +49,8 @@ static struct uts_namespace *clone_uts_ns(struct
+> > user_namespace *user_ns, return ERR_PTR(err);
+> >  	}
+> > 
+> > +	audit_log_ns_init(AUDIT_NS_INIT_UTS, old_ns->proc_inum, ns->proc_inum);
+> > +
+> >  	down_read(&uts_sem);
+> >  	memcpy(&ns->name, &old_ns->name, sizeof(ns->name));
+> >  	ns->user_ns = get_user_ns(user_ns);
+> > @@ -84,6 +87,7 @@ void free_uts_ns(struct kref *kref)
+> > 
+> >  	ns = container_of(kref, struct uts_namespace, kref);
+> >  	put_user_ns(ns->user_ns);
+> > +	audit_log_ns_del(AUDIT_NS_DEL_UTS, ns->proc_inum);
+> >  	proc_free_inum(ns->proc_inum);
+> >  	kfree(ns);
+> >  }
+> > @@ -138,3 +142,11 @@ const struct proc_ns_operations utsns_operations = {
+> >  	.install	= utsns_install,
+> >  	.inum		= utsns_inum,
+> >  };
+> > +
+> > +/* log the ID of init UTS namespace after audit service starts */
+> > +static int __init uts_namespaces_init(void)
+> > +{
+> > +	audit_log_ns_init(AUDIT_NS_INIT_UTS, 0, init_uts_ns.proc_inum);
+> > +	return 0;
+> > +}
+> > +late_initcall(uts_namespaces_init);
+> > diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
+> > index 85b6269..562eb85 100644
+> > --- a/net/core/net_namespace.c
+> > +++ b/net/core/net_namespace.c
+> > @@ -17,6 +17,7 @@
+> >  #include <linux/user_namespace.h>
+> >  #include <net/net_namespace.h>
+> >  #include <net/netns/generic.h>
+> > +#include <linux/audit.h>
+> > 
+> >  /*
+> >   *	Our network namespace constructor/destructor lists
+> > @@ -253,6 +254,8 @@ struct net *copy_net_ns(unsigned long flags,
+> >  	mutex_lock(&net_mutex);
+> >  	rv = setup_net(net, user_ns);
+> >  	if (rv == 0) {
+> > +		audit_log_ns_init(AUDIT_NS_INIT_NET, old_net->proc_inum,
+> > +				  net->proc_inum);
+> >  		rtnl_lock();
+> >  		list_add_tail_rcu(&net->list, &net_namespace_list);
+> >  		rtnl_unlock();
+> > @@ -389,6 +392,7 @@ static __net_init int net_ns_net_init(struct net *net)
+> > 
+> >  static __net_exit void net_ns_net_exit(struct net *net)
+> >  {
+> > +	audit_log_ns_del(AUDIT_NS_DEL_NET, net->proc_inum);
+> >  	proc_free_inum(net->proc_inum);
+> >  }
+> > 
+> > @@ -435,6 +439,14 @@ static int __init net_ns_init(void)
+> > 
+> >  pure_initcall(net_ns_init);
+> > 
+> > +/* log the ID of init_net namespace after audit service starts */
+> > +static int __init net_ns_init_log(void)
+> > +{
+> > +	audit_log_ns_init(AUDIT_NS_INIT_NET, 0, init_net.proc_inum);
+> > +	return 0;
+> > +}
+> > +late_initcall(net_ns_init_log);
+> > +
+> >  #ifdef CONFIG_NET_NS
+> >  static int __register_pernet_operations(struct list_head *list,
+> >  					struct pernet_operations *ops)
+> 
+
+- RGB
+
+--
+Richard Guy Briggs <rbriggs-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Senior Software Engineer, Kernel Security, AMER ENG Base Operating Systems, Red Hat
+Remote, Ottawa, Canada
+Voice: +1.647.777.2635, Internal: (81) 32635, Alt: +1.613.693.0684x3545
