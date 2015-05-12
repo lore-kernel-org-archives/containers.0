@@ -1,17 +1,11 @@
 From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH V6 05/10] audit: log creation and deletion of namespace
-	instances
-Date: Tue, 12 May 2015 15:57:59 -0400
-Message-ID: <20150512195759.GA9832__31768.7650946484$1431460699$gmane$org@madcap2.tricolour.ca>
-References: <cover.1429252659.git.rgb@redhat.com>
-	<11270b0b1afd0a25b108915673e1e1b38dfeeafa.1429252659.git.rgb@redhat.com>
-	<2487286.y6vyJ9A3er@x2>
+Subject: [PATCH V7 00/10] namespaces: log namespaces per task
+Date: Tue, 12 May 2015 16:02:37 -0400
+Message-ID: <cover.1431451547.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <2487286.y6vyJ9A3er@x2>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,560 +15,173 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 15/05/05, Steve Grubb wrote:
-> Hello,
-> 
-> I think there needs to be some more discussion around this. It seems like this 
-> is not exactly recording things that are useful for audit.
+The purpose is to track namespace instances in use by logged processes from the
+perspective of init_*_ns by logging the namespace IDs (namespace device ID and
+namespace inode).
 
-It seems to me that either audit has to assemble that information, or
-the kernel has to do so.  The kernel doesn't know about containers
-(yet?).
 
-> On Friday, April 17, 2015 03:35:52 AM Richard Guy Briggs wrote:
-> > Log the creation and deletion of namespace instances in all 6 types of
-> > namespaces.
-> > 
-> > Twelve new audit message types have been introduced:
-> > AUDIT_NS_INIT_MNT       1330    /* Record mount namespace instance creation
-> > */ AUDIT_NS_INIT_UTS       1331    /* Record UTS namespace instance
-> > creation */ AUDIT_NS_INIT_IPC       1332    /* Record IPC namespace
-> > instance creation */ AUDIT_NS_INIT_USER      1333    /* Record USER
-> > namespace instance creation */ AUDIT_NS_INIT_PID       1334    /* Record
-> > PID namespace instance creation */ AUDIT_NS_INIT_NET       1335    /*
-> > Record NET namespace instance creation */ AUDIT_NS_DEL_MNT        1336   
-> > /* Record mount namespace instance deletion */ AUDIT_NS_DEL_UTS        1337
-> >    /* Record UTS namespace instance deletion */ AUDIT_NS_DEL_IPC       
-> > 1338    /* Record IPC namespace instance deletion */ AUDIT_NS_DEL_USER     
-> >  1339    /* Record USER namespace instance deletion */ AUDIT_NS_DEL_PID    
-> >    1340    /* Record PID namespace instance deletion */ AUDIT_NS_DEL_NET   
-> >     1341    /* Record NET namespace instance deletion */
-> 
-> The requirements for auditing of containers should be derived from VPP. In it, 
-> it asks for selectable auditing, selective audit, and selective audit review. 
-> What this means is that we need the container and all its children to have one 
-> identifier that is inserted into all the events that are associated with the 
-> container.
+1/10 exposes proc's ns entries structure which lists a number of useful
+operations per namespace type for other subsystems to use.
 
-Is that requirement for the records that are sent from the kernel, or
-for the records stored by auditd, or by another facility that delivers
-those records to a final consumer?
+2/10 creates and switches to a dedicated inode pool for the namespace
+filesystem.
 
-> With this, its possible to do a search for all events related to a container. 
-> Its possible to exclude events from a container. Its possible to not get any 
-> events.
-> 
-> The requirements also call out for the identification of the subject. This 
-> means that the event should be bound to a syscall such as clone, setns, or 
-> unshare.
+3/10 add the nsfs device ID to ns_common for each namespace instance for quick
+access.
 
-Is it useful to have a reference of the init namespace set from which
-all others are spawned?
+4/10 provides an example of usage for audit_log_task_info() which is used by
+syscall audits, among others.
 
-If it isn't bound, I assume the subject should be added to the message
-format?  I'm thinking of messages without an audit_context such as audit
-user messages (such as AUDIT_NS_INFO and AUDIT_VIRT_CONTROL).
+Proposed output format:
+This differs slightly from Aristeu's patch because of the label conflict with
+"pid=" due to including it in existing records rather than it being a seperate
+record.  "pid=" here is the target pid for a potentially unactivated task for
+which the nsproxy has been created.  It has now returned to being a seperate
+record.  The nsfs device major/minor are listed in hexadecimal and namespace
+IDs are the ns inode.
+	type=NS_INFO msg=audit(1408577535.306:82): pid=310 dev=00:03 netns=7 utsns=3 ipcns=4 pidns=1 userns=2 mntns=5
 
-For now, we should not need to log namespaces with AUDIT_FEATURE_CHANGE
-or AUDIT_CONFIG_CHANGE messages since only initial user namespace with
-initial pid namespace has permission to do so.  This will need to be
-addressed by having non-init config changes be limited to that container
-or set of namespaces and possibly its children.  The other possibility
-is to add the subject to the stand-alone message.
+5/10 change audit startup from __initcall to subsys_initcall to get it started
+earlier to be able to receive initial namespace log messages.
 
-> Also, any user space events originating inside the container needs to have the 
-> container ID added to the user space event - just like auid and session id.
+6/10 tracks the creation and deletion of namespaces, listing the type of
+namespace instance, nsfs device ID, related namespace id if there is one and
+the newly minted namespace ID.
 
-This sounds like every task needs to record a container ID since that
-information is otherwise unknown by the kernel except by what might be
-provided by an audit user message such as AUDIT_VIRT_CONTROL or possibly
-the new AUDIT_NS_INFO request.  It could be stored in struct task_struct
-or in struct audit_context.  I don't have a suggestion on how to get
-that information securely into the kernel.
+Proposed output format for initial namespace creation:
+	type=AUDIT_NS_INIT_UTS msg=audit(1431115986.147:5): dev=00:03 old_utsns=(none) utsns=2 res=1
+	type=AUDIT_NS_INIT_USER msg=audit(1431115986.148:6): dev=00:03 old_userns=(none) userns=3 res=1
+	type=AUDIT_NS_INIT_PID msg=audit(1431115986.149:7): dev=00:03 old_pidns=(none) pidns=4 res=1
+	type=AUDIT_NS_INIT_MNT msg=audit(1431115986.150:8): dev=00:00 old_mntns=(none) mntns=5 res=1
+	type=AUDIT_NS_INIT_IPC msg=audit(1431115986.151:9): dev=00:03 old_ipcns=(none) ipcns=1 res=1
+	type=AUDIT_NS_INIT_NET msg=audit(1431115985.500:10): dev=00:03 old_netns=(none) netns=7 res=1
 
-> Recording each instance of a name space is giving me something that I cannot 
-> use to do queries required by the security target. Given these events, how do 
-> I locate a web server event where it accesses a watched file? That 
-> authentication failed? That an update within the container failed?
-> 
-> The requirements are that we have to log the creation, suspension, migration, 
-> and termination of a container. The requirements are not on the individual 
-> name space.
+And a CLONE action would result in:
+	type=AUDIT_NS_INIT_NET msg=audit(1408577535.306:81): dev=00:03 old_netns=7 netns=8 res=1
 
-Ok.  Do we have a robust definition of a container?  Where is that
-definition managed?  If it is a userspace concept, then I think either
-userspace should be assembling this information, or providing that
-information to the entity that will be expected to know about and
-provide it.
+While deleting a namespace would result in:
+	type=AUDIT_NS_DEL_MNT msg=audit(1431116003.205:534): dev=00:03 mntns=8 res=1
 
-> Maybe I'm missing how these events give me that. But I'd like to hear how I 
-> would be able to meet requirements with these 12 events.
+7/10 accepts a PID from userspace and requests logging an AUDIT_NS_INFO record
+type (CAP_AUDIT_CONTROL required).
 
-Adding the infrastructure to give each of those 12 events an audit
-context to be able to give meaningful subject fields in audit records
-appears to require adding a struct task_struct argument to calls to
-copy_mnt_ns(), copy_utsname(), copy_ipcs(), copy_pid_ns(),
-copy_net_ns(), create_user_ns() unless I use current.  I think we must
-use current since the userns is created before the spawned process is
-mature or has an audit context in the case of clone.
+8/10 adds auditing on creation of namespace(s) in fork for unshare(2) and
+clone(2), adding the CLONE_NEW_*ALL macro.
 
-Either that, or I have mis-understood and I should be stashing this
-namespace ID information in an audit_aux_data structure or a more
-permanent part of struct audit_context to be printed when required on
-syscall exit.  I'm trying to think through if it is needed in any
-non-syscall audit messages.
+9/10 adds auditing a change of namespace on setns(2).
+	type=AUDIT_NS_SET_NET msg=audit(1408577535.306:81): dev=00:03 old_netns=7 netns=8 res=1
 
-Another RFC patch set coming...
+10/10 attaches a AUDIT_NS_INFO record to AUDIT_VIRT_CONTROL records
+(CAP_AUDIT_WRITE required).
 
-> -Steve
->  
-> > As suggested by Eric Paris, there are 12 message types, one for each of
-> > creation and deletion, one for each type of namespace so that text searches
-> > are easier in conjunction with the AUDIT_NS_INFO message type, being able
-> > to search for all records such as "netns=4 " and to avoid fields
-> > disappearing per message type to make ausearch more efficient.
-> > 
-> > A typical startup would look roughly like:
-> > 
-> > 	type=AUDIT_NS_INIT_UTS msg=audit(1408577534.868:5): pid=1 uid=0
-> > auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_utsns=(none)
-> > utsns=-2 res=1 type=AUDIT_NS_INIT_USER msg=audit(1408577534.868:6): pid=1
-> > uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03
-> > old_userns=(none) userns=-3 res=1 type=AUDIT_NS_INIT_PID
-> > msg=audit(1408577534.868:7): pid=1 uid=0 auid=4294967295 ses=4294967295
-> > subj=kernel dev=00:03 old_pidns=(none) pidns=-4 res=1
-> > type=AUDIT_NS_INIT_MNT msg=audit(1408577534.868:8): pid=1 uid=0
-> > auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_mntns=(none)
-> > mntns=0 res=1 type=AUDIT_NS_INIT_IPC msg=audit(1408577534.868:9): pid=1
-> > uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_ipcns=(none)
-> > ipcns=-1 res=1 type=AUDIT_NS_INIT_NET msg=audit(1408577533.500:10): pid=1
-> > uid=0 auid=4294967295 ses=4294967295 subj=kernel dev=00:03 old_netns=(none)
-> > netns=2 res=1
-> > 
-> > And a CLONE action would result in:
-> > 	type=type=AUDIT_NS_INIT_NET msg=audit(1408577535.306:81): pid=481 uid=0
-> > auid=4294967295 ses=4294967295 subj=system_u:system_r:init_t:s0 dev=00:03
-> > old_netns=2 netns=3 res=1
-> > 
-> > While deleting a namespace would result in:
-> > 	type=type=AUDIT_NS_DEL_MNT msg=audit(1408577552.221:85): pid=481 uid=0
-> > auid=4294967295 ses=4294967295 subj=system_u:system_r:init_t:s0 dev=00:03
-> > mntns=4 res=1
-> > 
-> > If not "(none)", old_XXXns lists the namespace from which it was cloned.
-> > 
-> > Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> > ---
-> >  fs/namespace.c             |   13 +++++++++
-> >  include/linux/audit.h      |    8 +++++
-> >  include/uapi/linux/audit.h |   12 ++++++++
-> >  ipc/namespace.c            |   12 ++++++++
-> >  kernel/audit.c             |   64
-> > ++++++++++++++++++++++++++++++++++++++++++++ kernel/pid_namespace.c     |  
-> > 13 +++++++++
-> >  kernel/user_namespace.c    |   13 +++++++++
-> >  kernel/utsname.c           |   12 ++++++++
-> >  net/core/net_namespace.c   |   12 ++++++++
-> >  9 files changed, 159 insertions(+), 0 deletions(-)
-> > 
-> > diff --git a/fs/namespace.c b/fs/namespace.c
-> > index 182bc41..7b62543 100644
-> > --- a/fs/namespace.c
-> > +++ b/fs/namespace.c
-> > @@ -24,6 +24,7 @@
-> >  #include <linux/proc_ns.h>
-> >  #include <linux/magic.h>
-> >  #include <linux/bootmem.h>
-> > +#include <linux/audit.h>
-> >  #include "pnode.h"
-> >  #include "internal.h"
-> > 
-> > @@ -2459,6 +2460,7 @@ dput_out:
-> > 
-> >  static void free_mnt_ns(struct mnt_namespace *ns)
-> >  {
-> > +	audit_log_ns_del(AUDIT_NS_DEL_MNT, ns->proc_inum);
-> >  	proc_free_inum(ns->proc_inum);
-> >  	put_user_ns(ns->user_ns);
-> >  	kfree(ns);
-> > @@ -2518,6 +2520,7 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags,
-> > struct mnt_namespace *ns, new_ns = alloc_mnt_ns(user_ns);
-> >  	if (IS_ERR(new_ns))
-> >  		return new_ns;
-> > +	audit_log_ns_init(AUDIT_NS_INIT_MNT, ns->proc_inum, new_ns->proc_inum);
-> > 
-> >  	namespace_lock();
-> >  	/* First pass: copy the tree topology */
-> > @@ -2830,6 +2833,16 @@ static void __init init_mount_tree(void)
-> >  	set_fs_root(current->fs, &root);
-> >  }
-> > 
-> > +/* log the ID of init mnt namespace after audit service starts */
-> > +static int __init mnt_ns_init_log(void)
-> > +{
-> > +	struct mnt_namespace *init_mnt_ns = init_task.nsproxy->mnt_ns;
-> > +
-> > +	audit_log_ns_init(AUDIT_NS_INIT_MNT, 0, init_mnt_ns->proc_inum);
-> > +	return 0;
-> > +}
-> > +late_initcall(mnt_ns_init_log);
-> > +
-> >  void __init mnt_init(void)
-> >  {
-> >  	unsigned u;
-> > diff --git a/include/linux/audit.h b/include/linux/audit.h
-> > index 71698ec..b28dfb0 100644
-> > --- a/include/linux/audit.h
-> > +++ b/include/linux/audit.h
-> > @@ -484,6 +484,9 @@ extern void		    audit_log_ns_info(struct 
-> task_struct
-> > *tsk); static inline void	    audit_log_ns_info(struct task_struct *tsk) {
-> > }
-> >  #endif
-> > +extern void		    audit_log_ns_init(int type, unsigned int old_inum,
-> > +					      unsigned int inum);
-> > +extern void		    audit_log_ns_del(int type, unsigned int inum);
-> > 
-> >  extern int		    audit_update_lsm_rules(void);
-> > 
-> > @@ -542,6 +545,11 @@ static inline void audit_log_task_info(struct
-> > audit_buffer *ab, { }
-> >  static inline void audit_log_ns_info(struct task_struct *tsk)
-> >  { }
-> > +static inline int audit_log_ns_init(int type, unsigned int old_inum,
-> > +				    unsigned int inum)
-> > +{ }
-> > +static inline int audit_log_ns_del(int type, unsigned int inum)
-> > +{ }
-> >  #define audit_enabled 0
-> >  #endif /* CONFIG_AUDIT */
-> >  static inline void audit_log_string(struct audit_buffer *ab, const char
-> > *buf) diff --git a/include/uapi/linux/audit.h b/include/uapi/linux/audit.h
-> > index 1ffb151..487cad6 100644
-> > --- a/include/uapi/linux/audit.h
-> > +++ b/include/uapi/linux/audit.h
-> > @@ -111,6 +111,18 @@
-> >  #define AUDIT_PROCTITLE		1327	/* Proctitle emit event */
-> >  #define AUDIT_FEATURE_CHANGE	1328	/* audit log listing feature changes 
-> */
-> >  #define AUDIT_NS_INFO		1329	/* Record process namespace IDs */
-> > +#define AUDIT_NS_INIT_MNT	1330	/* Record mount namespace instance 
-> creation
-> > */ +#define AUDIT_NS_INIT_UTS	1331	/* Record UTS namespace instance
-> > creation */ +#define AUDIT_NS_INIT_IPC	1332	/* Record IPC namespace
-> > instance creation */ +#define AUDIT_NS_INIT_USER	1333	/* Record USER
-> > namespace instance creation */ +#define AUDIT_NS_INIT_PID	1334	/* Record
-> > PID namespace instance creation */ +#define AUDIT_NS_INIT_NET	1335	/*
-> > Record NET namespace instance creation */ +#define AUDIT_NS_DEL_MNT	1336	
-> /*
-> > Record mount namespace instance deletion */ +#define
-> > AUDIT_NS_DEL_UTS	1337	/* Record UTS namespace instance deletion */ 
-> +#define
-> > AUDIT_NS_DEL_IPC	1338	/* Record IPC namespace instance deletion */ 
-> +#define
-> > AUDIT_NS_DEL_USER	1339	/* Record USER namespace instance deletion */
-> > +#define AUDIT_NS_DEL_PID	1340	/* Record PID namespace instance 
-> deletion */
-> > +#define AUDIT_NS_DEL_NET	1341	/* Record NET namespace instance deletion 
-> */
-> > 
-> >  #define AUDIT_AVC		1400	/* SE Linux avc denial or grant */
-> >  #define AUDIT_SELINUX_ERR	1401	/* Internal SE Linux Errors */
-> > diff --git a/ipc/namespace.c b/ipc/namespace.c
-> > index 59451c1..73727ce 100644
-> > --- a/ipc/namespace.c
-> > +++ b/ipc/namespace.c
-> > @@ -13,6 +13,7 @@
-> >  #include <linux/mount.h>
-> >  #include <linux/user_namespace.h>
-> >  #include <linux/proc_ns.h>
-> > +#include <linux/audit.h>
-> > 
-> >  #include "util.h"
-> > 
-> > @@ -41,6 +42,8 @@ static struct ipc_namespace *create_ipc_ns(struct
-> > user_namespace *user_ns, }
-> >  	atomic_inc(&nr_ipc_ns);
-> > 
-> > +	audit_log_ns_init(AUDIT_NS_INIT_IPC, old_ns->proc_inum, ns->proc_inum);
-> > +
-> >  	sem_init_ns(ns);
-> >  	msg_init_ns(ns);
-> >  	shm_init_ns(ns);
-> > @@ -119,6 +122,7 @@ static void free_ipc_ns(struct ipc_namespace *ns)
-> >  	 */
-> >  	ipcns_notify(IPCNS_REMOVED);
-> >  	put_user_ns(ns->user_ns);
-> > +	audit_log_ns_del(AUDIT_NS_DEL_IPC, ns->proc_inum);
-> >  	proc_free_inum(ns->proc_inum);
-> >  	kfree(ns);
-> >  }
-> > @@ -197,3 +201,11 @@ const struct proc_ns_operations ipcns_operations = {
-> >  	.install	= ipcns_install,
-> >  	.inum		= ipcns_inum,
-> >  };
-> > +
-> > +/* log the ID of init IPC namespace after audit service starts */
-> > +static int __init ipc_namespaces_init(void)
-> > +{
-> > +	audit_log_ns_init(AUDIT_NS_INIT_IPC, 0, init_ipc_ns.proc_inum);
-> > +	return 0;
-> > +}
-> > +late_initcall(ipc_namespaces_init);
-> > diff --git a/kernel/audit.c b/kernel/audit.c
-> > index 63f32f4..e6230c4 100644
-> > --- a/kernel/audit.c
-> > +++ b/kernel/audit.c
-> > @@ -1978,6 +1978,70 @@ out:
-> >  	kfree(name);
-> >  }
-> > 
-> > +#ifdef CONFIG_NAMESPACES
-> > +static char *ns_name[] = {
-> > +	"mnt",
-> > +	"uts",
-> > +	"ipc",
-> > +	"user",
-> > +	"pid",
-> > +	"net",
-> > +};
-> > +
-> > +/**
-> > + * audit_log_ns_init - report a namespace instance creation
-> > + * @type: type of audit namespace instance created message
-> > + * @old_inum: the ID number of the cloned namespace instance
-> > + * @inum: the ID number of the new namespace instance
-> > + */
-> > +void  audit_log_ns_init(int type, unsigned int old_inum, unsigned int inum)
-> > +{
-> > +	struct audit_buffer *ab;
-> > +	char *audit_ns_name = ns_name[type - AUDIT_NS_INIT_MNT];
-> > +	struct vfsmount *mnt = task_active_pid_ns(current)->proc_mnt;
-> > +	struct super_block *sb = mnt->mnt_sb;
-> > +	char old_ns[16];
-> > +
-> > +	if (type < AUDIT_NS_INIT_MNT || type > AUDIT_NS_INIT_NET) {
-> > +		WARN(1, "audit_log_ns_init: type:%d out of range", type);
-> > +		return;
-> > +	}
-> > +	if (!old_inum)
-> > +		sprintf(old_ns, "(none)");
-> > +	else
-> > +		sprintf(old_ns, "%d", old_inum - PROC_DYNAMIC_FIRST);
-> > +	audit_log_common_recv_msg(&ab, type);
-> > +	audit_log_format(ab, " dev=%02x:%02x old_%sns=%s %sns=%d res=1",
-> > +			 MAJOR(sb->s_dev), MINOR(sb->s_dev),
-> > +			 audit_ns_name, old_ns,
-> > +			 audit_ns_name, inum - PROC_DYNAMIC_FIRST);
-> > +	audit_log_end(ab);
-> > +}
-> > +
-> > +/**
-> > + * audit_log_ns_del - report a namespace instance deleted
-> > + * @type: type of audit namespace instance deleted message
-> > + * @inum: the ID number of the namespace instance
-> > + */
-> > +void audit_log_ns_del(int type, unsigned int inum)
-> > +{
-> > +	struct audit_buffer *ab;
-> > +	char *audit_ns_name = ns_name[type - AUDIT_NS_DEL_MNT];
-> > +	struct vfsmount *mnt = task_active_pid_ns(current)->proc_mnt;
-> > +	struct super_block *sb = mnt->mnt_sb;
-> > +
-> > +	if (type < AUDIT_NS_DEL_MNT || type > AUDIT_NS_DEL_NET) {
-> > +		WARN(1, "audit_log_ns_del: type:%d out of range", type);
-> > +		return;
-> > +	}
-> > +	audit_log_common_recv_msg(&ab, type);
-> > +	audit_log_format(ab, " dev=%02x:%02x %sns=%d res=1",
-> > +			 MAJOR(sb->s_dev), MINOR(sb->s_dev), audit_ns_name,
-> > +			 inum - PROC_DYNAMIC_FIRST);
-> > +	audit_log_end(ab);
-> > +}
-> > +#endif /* CONFIG_NAMESPACES */
-> > +
-> >  /**
-> >   * audit_log_end - end one audit record
-> >   * @ab: the audit_buffer
-> > diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
-> > index db95d8e..d28fd14 100644
-> > --- a/kernel/pid_namespace.c
-> > +++ b/kernel/pid_namespace.c
-> > @@ -18,6 +18,7 @@
-> >  #include <linux/proc_ns.h>
-> >  #include <linux/reboot.h>
-> >  #include <linux/export.h>
-> > +#include <linux/audit.h>
-> > 
-> >  struct pid_cache {
-> >  	int nr_ids;
-> > @@ -109,6 +110,9 @@ static struct pid_namespace *create_pid_namespace(struct
-> > user_namespace *user_ns if (err)
-> >  		goto out_free_map;
-> > 
-> > +	audit_log_ns_init(AUDIT_NS_INIT_PID, parent_pid_ns->proc_inum,
-> > +			  ns->proc_inum);
-> > +
-> >  	kref_init(&ns->kref);
-> >  	ns->level = level;
-> >  	ns->parent = get_pid_ns(parent_pid_ns);
-> > @@ -142,6 +146,7 @@ static void destroy_pid_namespace(struct pid_namespace
-> > *ns) {
-> >  	int i;
-> > 
-> > +	audit_log_ns_del(AUDIT_NS_DEL_PID, ns->proc_inum);
-> >  	proc_free_inum(ns->proc_inum);
-> >  	for (i = 0; i < PIDMAP_ENTRIES; i++)
-> >  		kfree(ns->pidmap[i].page);
-> > @@ -388,3 +393,11 @@ static __init int pid_namespaces_init(void)
-> >  }
-> > 
-> >  __initcall(pid_namespaces_init);
-> > +
-> > +/* log the ID of init PID namespace after audit service starts */
-> > +static __init int pid_namespaces_late_init(void)
-> > +{
-> > +	audit_log_ns_init(AUDIT_NS_INIT_PID, 0, init_pid_ns.proc_inum);
-> > +	return 0;
-> > +}
-> > +late_initcall(pid_namespaces_late_init);
-> > diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-> > index fcc0256..89c2517 100644
-> > --- a/kernel/user_namespace.c
-> > +++ b/kernel/user_namespace.c
-> > @@ -22,6 +22,7 @@
-> >  #include <linux/ctype.h>
-> >  #include <linux/projid.h>
-> >  #include <linux/fs_struct.h>
-> > +#include <linux/audit.h>
-> > 
-> >  static struct kmem_cache *user_ns_cachep __read_mostly;
-> > 
-> > @@ -92,6 +93,9 @@ int create_user_ns(struct cred *new)
-> >  		return ret;
-> >  	}
-> > 
-> > +	audit_log_ns_init(AUDIT_NS_INIT_USER, parent_ns->proc_inum,
-> > +			  ns->proc_inum);
-> > +
-> >  	atomic_set(&ns->count, 1);
-> >  	/* Leave the new->user_ns reference with the new user namespace. */
-> >  	ns->parent = parent_ns;
-> > @@ -136,6 +140,7 @@ void free_user_ns(struct user_namespace *ns)
-> >  #ifdef CONFIG_PERSISTENT_KEYRINGS
-> >  		key_put(ns->persistent_keyring_register);
-> >  #endif
-> > +		audit_log_ns_del(AUDIT_NS_DEL_USER, ns->proc_inum);
-> >  		proc_free_inum(ns->proc_inum);
-> >  		kmem_cache_free(user_ns_cachep, ns);
-> >  		ns = parent;
-> > @@ -909,3 +914,11 @@ static __init int user_namespaces_init(void)
-> >  	return 0;
-> >  }
-> >  subsys_initcall(user_namespaces_init);
-> > +
-> > +/* log the ID of init user namespace after audit service starts */
-> > +static __init int user_namespaces_late_init(void)
-> > +{
-> > +	audit_log_ns_init(AUDIT_NS_INIT_USER, 0, init_user_ns.proc_inum);
-> > +	return 0;
-> > +}
-> > +late_initcall(user_namespaces_late_init);
-> > diff --git a/kernel/utsname.c b/kernel/utsname.c
-> > index fd39312..fa21e8d 100644
-> > --- a/kernel/utsname.c
-> > +++ b/kernel/utsname.c
-> > @@ -16,6 +16,7 @@
-> >  #include <linux/slab.h>
-> >  #include <linux/user_namespace.h>
-> >  #include <linux/proc_ns.h>
-> > +#include <linux/audit.h>
-> > 
-> >  static struct uts_namespace *create_uts_ns(void)
-> >  {
-> > @@ -48,6 +49,8 @@ static struct uts_namespace *clone_uts_ns(struct
-> > user_namespace *user_ns, return ERR_PTR(err);
-> >  	}
-> > 
-> > +	audit_log_ns_init(AUDIT_NS_INIT_UTS, old_ns->proc_inum, ns->proc_inum);
-> > +
-> >  	down_read(&uts_sem);
-> >  	memcpy(&ns->name, &old_ns->name, sizeof(ns->name));
-> >  	ns->user_ns = get_user_ns(user_ns);
-> > @@ -84,6 +87,7 @@ void free_uts_ns(struct kref *kref)
-> > 
-> >  	ns = container_of(kref, struct uts_namespace, kref);
-> >  	put_user_ns(ns->user_ns);
-> > +	audit_log_ns_del(AUDIT_NS_DEL_UTS, ns->proc_inum);
-> >  	proc_free_inum(ns->proc_inum);
-> >  	kfree(ns);
-> >  }
-> > @@ -138,3 +142,11 @@ const struct proc_ns_operations utsns_operations = {
-> >  	.install	= utsns_install,
-> >  	.inum		= utsns_inum,
-> >  };
-> > +
-> > +/* log the ID of init UTS namespace after audit service starts */
-> > +static int __init uts_namespaces_init(void)
-> > +{
-> > +	audit_log_ns_init(AUDIT_NS_INIT_UTS, 0, init_uts_ns.proc_inum);
-> > +	return 0;
-> > +}
-> > +late_initcall(uts_namespaces_init);
-> > diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
-> > index 85b6269..562eb85 100644
-> > --- a/net/core/net_namespace.c
-> > +++ b/net/core/net_namespace.c
-> > @@ -17,6 +17,7 @@
-> >  #include <linux/user_namespace.h>
-> >  #include <net/net_namespace.h>
-> >  #include <net/netns/generic.h>
-> > +#include <linux/audit.h>
-> > 
-> >  /*
-> >   *	Our network namespace constructor/destructor lists
-> > @@ -253,6 +254,8 @@ struct net *copy_net_ns(unsigned long flags,
-> >  	mutex_lock(&net_mutex);
-> >  	rv = setup_net(net, user_ns);
-> >  	if (rv == 0) {
-> > +		audit_log_ns_init(AUDIT_NS_INIT_NET, old_net->proc_inum,
-> > +				  net->proc_inum);
-> >  		rtnl_lock();
-> >  		list_add_tail_rcu(&net->list, &net_namespace_list);
-> >  		rtnl_unlock();
-> > @@ -389,6 +392,7 @@ static __net_init int net_ns_net_init(struct net *net)
-> > 
-> >  static __net_exit void net_ns_net_exit(struct net *net)
-> >  {
-> > +	audit_log_ns_del(AUDIT_NS_DEL_NET, net->proc_inum);
-> >  	proc_free_inum(net->proc_inum);
-> >  }
-> > 
-> > @@ -435,6 +439,14 @@ static int __init net_ns_init(void)
-> > 
-> >  pure_initcall(net_ns_init);
-> > 
-> > +/* log the ID of init_net namespace after audit service starts */
-> > +static int __init net_ns_init_log(void)
-> > +{
-> > +	audit_log_ns_init(AUDIT_NS_INIT_NET, 0, init_net.proc_inum);
-> > +	return 0;
-> > +}
-> > +late_initcall(net_ns_init_log);
-> > +
-> >  #ifdef CONFIG_NET_NS
-> >  static int __register_pernet_operations(struct list_head *list,
-> >  					struct pernet_operations *ops)
-> 
 
-- RGB
+v6 -> v7:
+	Added sys_unshare to the sys_clone patch.
+	Combined the CLONE_NEW_*_ALL macro and audit clone and unshare patches.
+	Rebased on Al Viro's NSFS from v3.19-rc1 adding nsfs device ID to ns_common.
+	Create and switch to an nsfs inode db.
+	Switch AUDIT_NS_{INIT,DEL,SET}_* to auxiliary records.
+	Fix NULL dereference bug in AUDIT_NS_INFO call from AUDIT_VIRT_CONTROL type.
+	Remove call for audit_log_common_recv_msg.
+	Only emit info, init, del, set messages on audit_enabled.
 
---
-Richard Guy Briggs <rbriggs-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Senior Software Engineer, Kernel Security, AMER ENG Base Operating Systems, Red Hat
-Remote, Ottawa, Canada
-Voice: +1.647.777.2635, Internal: (81) 32635, Alt: +1.613.693.0684x3545
+v5 -> v6:
+	Switch to using namespace ID based on namespace proc inode minus base offset
+	Added proc device ID to qualify proc inode reference
+	Eliminate exposed /proc interface
+
+v4 -> v5:
+	Clean up prototypes for dependencies on CONFIG_NAMESPACES.
+	Add AUDIT_NS_INFO record type to AUDIT_VIRT_CONTROL record.
+	Log AUDIT_NS_INFO with PID.
+	Move /proc/<pid>/ns_* patches to end of patchset to deprecate them.
+	Log on changing ns (setns).
+	Log on creating new namespaces when forking.
+	Added a macro for CLONE_NEW*.
+
+v3 -> v4:
+	Seperate out the NS_INFO message from the SYSCALL message.
+	Moved audit_log_namespace_info() out of audit_log_task_info().
+	Use a seperate message type per namespace type for each of INIT/DEL.
+	Make ns= easier to search across NS_INFO and NS_INIT/DEL_XXX msg types.
+	Add /proc/<pid>/ns/ documentation.
+	Fix dynamic initial ns logging.
+
+v2 -> v3:
+	Use atomic64_t in ns_serial to simplify it.
+	Avoid funciton duplication in proc, keying on dentry.
+	Squash down audit patch to avoid rcu sleep issues.
+	Add tracking for creation and deletion of namespace instances.
+
+v1 -> v2:
+	Avoid rollover by switching from an int to a long long.
+	Change rollover behaviour from simply avoiding zero to raising a BUG.
+	Expose serial numbers in /proc/<pid>/ns/*_snum.
+	Expose ns_entries and use it in audit.
+
+
+Notes:
+As for CAP_AUDIT_READ, a patchset has been accepted upstream to check
+capabilities of userspace processes that try to join netlink broadcast groups.
+
+This set does not try to solve the non-init namespace audit messages and
+auditd problem yet.  That will come later, likely with additional auditd
+instances running in another namespace with a limited ability to influence the
+master auditd.  I echo Eric B's idea that messages destined for different
+namespaces would have to be tailored for that namespace with references that
+make sense (such as the right pid number reported to that pid namespace, and
+not leaking info about parents or peers).
+
+Questions:
+Is there a way to link serial numbers of namespaces involved in migration of a
+container to another kernel?  It sounds like what is needed is a part of a
+mangement application that is able to pull the audit records from constituent
+hosts to build an audit trail of a container.
+
+Do any additional events need this information?
+
+Does this present any problematic information leaks?  Only CAP_AUDIT_CONTROL
+(and now CAP_AUDIT_READ) in init_user_ns can get to this information in
+the init namespace at the moment from audit.
+
+
+Richard Guy Briggs (10):
+  namespaces: expose ns_entries
+  nsfs: switch to dedicated inode pool
+  nsfs: add nsfs device ID to ns_common
+  audit: log namespace ID numbers
+  audit: initialize at subsystem time rather than device time
+  audit: log creation and deletion of namespace instances
+  audit: dump namespace IDs for pid on receipt of AUDIT_NS_INFO
+  fork: audit on creation of new namespace(s) with clone and unshare
+  audit: log on switching namespace (setns)
+  audit: emit AUDIT_NS_INFO record with AUDIT_VIRT_CONTROL record
+
+ fs/namespace.c                   |   15 +++
+ fs/nsfs.c                        |   65 ++++++++++++++
+ fs/proc/internal.h               |    2 +
+ fs/proc/namespaces.c             |    2 +-
+ include/linux/audit.h            |   27 ++++++
+ include/linux/ns_common.h        |    1 +
+ include/linux/proc_ns.h          |   22 ++---
+ include/uapi/linux/audit.h       |   21 +++++
+ include/uapi/linux/sched.h       |    6 ++
+ init/version.c                   |    2 +-
+ ipc/msgutil.c                    |    2 +-
+ ipc/namespace.c                  |   13 +++
+ kernel/audit.c                   |  180 +++++++++++++++++++++++++++++++++++++-
+ kernel/auditsc.c                 |    2 +
+ kernel/fork.c                    |   13 ++-
+ kernel/nsproxy.c                 |    2 +
+ kernel/pid.c                     |    2 +-
+ kernel/pid_namespace.c           |   13 +++
+ kernel/user.c                    |    2 +-
+ kernel/user_namespace.c          |   13 +++
+ kernel/utsname.c                 |   12 +++
+ net/core/net_namespace.c         |   13 +++
+ security/integrity/ima/ima_api.c |    2 +
+ 23 files changed, 410 insertions(+), 22 deletions(-)
