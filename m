@@ -1,7 +1,7 @@
 From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH V7 02/10] nsfs: switch to dedicated inode pool
-Date: Tue, 12 May 2015 16:02:39 -0400
-Message-ID: <c1f994224f850483c563903af1219575e7e08785.1431451547.git.rgb__15992.095883894$1431461030$gmane$org@redhat.com>
+Subject: [PATCH V7 04/10] audit: log namespace ID numbers
+Date: Tue, 12 May 2015 16:02:41 -0400
+Message-ID: <55f3ba81d5e86e2e16ea412d812fdbcebb5dcdc2.1431451547.git.rgb@redhat.com>
 References: <cover.1431451547.git.rgb@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,174 +23,150 @@ To: linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29T
 Cc: pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Instead of borrowing proc's inode pool and starting at a custom offset, give
-nsfs its own dedicated inode pool without an offset.
+Log the namespace identifiers (nsfs device ID and inode) of a task in a new
+record type (1329) (usually accompanies audit_log_task_info() type=SYSCALL
+record) which is used by syscall audits, among others..
 
+Idea first presented:
+	https://www.redhat.com/archives/linux-audit/2013-March/msg00020.html
+
+Typical output format would look something like:
+	type=NS_INFO msg=audit(1408577535.306:82): pid=374 dev=00:03 netns=7 utsns=2 ipcns=1 pidns=4 userns=3 mntns=5
+
+Suggested-by: Aristeu Rozanski <arozansk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 ---
- fs/nsfs.c               |   44 ++++++++++++++++++++++++++++++++++++++++++++
- fs/proc/internal.h      |    2 ++
- include/linux/proc_ns.h |   20 ++++++++------------
- init/version.c          |    2 +-
- ipc/msgutil.c           |    2 +-
- kernel/pid.c            |    2 +-
- kernel/user.c           |    2 +-
- 7 files changed, 58 insertions(+), 16 deletions(-)
+ include/linux/audit.h            |    8 ++++++++
+ include/uapi/linux/audit.h       |    1 +
+ kernel/audit.c                   |   35 +++++++++++++++++++++++++++++++++++
+ kernel/auditsc.c                 |    2 ++
+ security/integrity/ima/ima_api.c |    2 ++
+ 5 files changed, 48 insertions(+), 0 deletions(-)
 
-diff --git a/fs/nsfs.c b/fs/nsfs.c
-index af1b24f..1fcd529 100644
---- a/fs/nsfs.c
-+++ b/fs/nsfs.c
-@@ -159,3 +159,47 @@ void __init nsfs_init(void)
- 		panic("can't set nsfs up\n");
- 	nsfs_mnt->mnt_sb->s_flags &= ~MS_NOUSER;
+diff --git a/include/linux/audit.h b/include/linux/audit.h
+index c2e7e3a..acc4685 100644
+--- a/include/linux/audit.h
++++ b/include/linux/audit.h
+@@ -484,6 +484,12 @@ static inline void	    audit_log_secctx(struct audit_buffer *ab, u32 secid)
+ extern int audit_log_task_context(struct audit_buffer *ab);
+ extern void audit_log_task_info(struct audit_buffer *ab,
+ 				struct task_struct *tsk);
++#ifdef CONFIG_NAMESPACES
++extern void		    audit_log_ns_info(struct task_struct *tsk);
++#else
++static inline void	    audit_log_ns_info(struct task_struct *tsk)
++{ }
++#endif
+ 
+ extern int		    audit_update_lsm_rules(void);
+ 
+@@ -540,6 +546,8 @@ static inline int audit_log_task_context(struct audit_buffer *ab)
+ static inline void audit_log_task_info(struct audit_buffer *ab,
+ 				       struct task_struct *tsk)
+ { }
++static inline void audit_log_ns_info(struct task_struct *tsk)
++{ }
+ #define audit_enabled 0
+ #endif /* CONFIG_AUDIT */
+ static inline void audit_log_string(struct audit_buffer *ab, const char *buf)
+diff --git a/include/uapi/linux/audit.h b/include/uapi/linux/audit.h
+index d3475e1..8eca5ae 100644
+--- a/include/uapi/linux/audit.h
++++ b/include/uapi/linux/audit.h
+@@ -110,6 +110,7 @@
+ #define AUDIT_SECCOMP		1326	/* Secure Computing event */
+ #define AUDIT_PROCTITLE		1327	/* Proctitle emit event */
+ #define AUDIT_FEATURE_CHANGE	1328	/* audit log listing feature changes */
++#define AUDIT_NS_INFO		1329	/* Record process namespace IDs */
+ 
+ #define AUDIT_AVC		1400	/* SE Linux avc denial or grant */
+ #define AUDIT_SELINUX_ERR	1401	/* Internal SE Linux Errors */
+diff --git a/kernel/audit.c b/kernel/audit.c
+index 72ab759..25d6719 100644
+--- a/kernel/audit.c
++++ b/kernel/audit.c
+@@ -65,6 +65,7 @@
+ #include <linux/freezer.h>
+ #include <linux/tty.h>
+ #include <linux/pid_namespace.h>
++#include <linux/proc_ns.h>
+ #include <net/netns/generic.h>
+ 
+ #include "audit.h"
+@@ -1642,6 +1643,38 @@ void audit_log_session_info(struct audit_buffer *ab)
+ 	audit_log_format(ab, " auid=%u ses=%u", auid, sessionid);
  }
-+
-+static DEFINE_IDA(ns_inum_ida);
-+static DEFINE_SPINLOCK(ns_inum_lock); /* protects the above */
-+
-+/*
-+ * Return an inode number between PROC_DYNAMIC_FIRST and
-+ * 0xffffffff, or zero on failure.
-+ */
-+int ns_alloc_inum(struct ns_common *ns)
+ 
++#ifdef CONFIG_NAMESPACES
++void audit_log_ns_info(struct task_struct *tsk)
 +{
-+	unsigned int i;
-+	int error;
++	const struct proc_ns_operations **entry;
++	bool end = false;
++	struct audit_buffer *ab;
++	int devprinted = 0;
 +
-+	atomic_long_set(&ns->stashed, 0);
-+retry:
-+	if (!ida_pre_get(&ns_inum_ida, GFP_KERNEL))
-+		return -ENOMEM;
++	if (!audit_enabled || !tsk)
++		return;
++	ab = audit_log_start(current->audit_context, GFP_KERNEL,
++			     AUDIT_NS_INFO);
++	if (!ab)
++		return;
++	audit_log_format(ab, "pid=%d", task_pid_nr(tsk));
++	for (entry = ns_entries; !end; entry++) {
++		struct ns_common *ns = (*entry)->get(tsk);
 +
-+	spin_lock_irq(&ns_inum_lock);
-+	error = ida_get_new(&ns_inum_ida, &i);
-+	spin_unlock_irq(&ns_inum_lock);
-+	if (error == -EAGAIN)
-+		goto retry;
-+	else if (error)
-+		return error;
-+
-+	if (i > UINT_MAX) {
-+		spin_lock_irq(&ns_inum_lock);
-+		ida_remove(&ns_inum_ida, i);
-+		spin_unlock_irq(&ns_inum_lock);
-+		return -ENOSPC;
++		if (!devprinted) {
++			audit_log_format(ab, " dev=%02x:%02x", MAJOR(ns->dev),
++					 MINOR(ns->dev));
++			devprinted = 1;
++		}
++		audit_log_format(ab, " %sns=%d", (*entry)->name,
++				 ns->inum);
++		(*entry)->put(ns);
++		end = (*entry)->type == CLONE_NEWNS;
 +	}
-+	ns->inum = NS_DYNAMIC_FIRST + i;
-+	return 0;
++	audit_log_end(ab);
 +}
++#endif /* CONFIG_NAMESPACES */
 +
-+void ns_free_inum(struct ns_common *ns)
-+{
-+	unsigned long flags;
-+	spin_lock_irqsave(&ns_inum_lock, flags);
-+	ida_remove(&ns_inum_ida, ns->inum - NS_DYNAMIC_FIRST);
-+	spin_unlock_irqrestore(&ns_inum_lock, flags);
-+}
+ void audit_log_key(struct audit_buffer *ab, char *key)
+ {
+ 	audit_log_format(ab, " key=");
+@@ -1913,6 +1946,8 @@ void audit_log_link_denied(const char *operation, struct path *link)
+ 	audit_log_format(ab, " res=0");
+ 	audit_log_end(ab);
+ 
++	audit_log_ns_info(current);
 +
-diff --git a/fs/proc/internal.h b/fs/proc/internal.h
-index c835b94..8f89cbb 100644
---- a/fs/proc/internal.h
-+++ b/fs/proc/internal.h
-@@ -18,6 +18,8 @@
- struct ctl_table_header;
- struct mempolicy;
+ 	/* Generate AUDIT_PATH record with object. */
+ 	name->type = AUDIT_TYPE_NORMAL;
+ 	audit_copy_inode(name, link->dentry, link->dentry->d_inode);
+diff --git a/kernel/auditsc.c b/kernel/auditsc.c
+index dc4ae70..dae61fe 100644
+--- a/kernel/auditsc.c
++++ b/kernel/auditsc.c
+@@ -1355,6 +1355,8 @@ static void audit_log_exit(struct audit_context *context, struct task_struct *ts
+ 	audit_log_key(ab, context->filterkey);
+ 	audit_log_end(ab);
  
-+#define PROC_ROOT_INO 1
++	audit_log_ns_info(tsk);
 +
- /*
-  * This is not completely implemented yet. The idea is to
-  * create an in-memory tree (like the actual /proc filesystem
-diff --git a/include/linux/proc_ns.h b/include/linux/proc_ns.h
-index 2654550..721d0e2 100644
---- a/include/linux/proc_ns.h
-+++ b/include/linux/proc_ns.h
-@@ -30,11 +30,12 @@ extern const struct proc_ns_operations *ns_entries[];
-  * We always define these enumerators
-  */
- enum {
--	PROC_ROOT_INO		= 1,
--	PROC_IPC_INIT_INO	= 0xEFFFFFFFU,
--	PROC_UTS_INIT_INO	= 0xEFFFFFFEU,
--	PROC_USER_INIT_INO	= 0xEFFFFFFDU,
--	PROC_PID_INIT_INO	= 0xEFFFFFFCU,
-+	NS_NULL_INIT_INO,
-+	NS_IPC_INIT_INO,
-+	NS_UTS_INIT_INO,
-+	NS_USER_INIT_INO,
-+	NS_PID_INIT_INO,
-+	NS_DYNAMIC_FIRST,
- };
+ 	for (aux = context->aux; aux; aux = aux->next) {
  
- #ifdef CONFIG_PROC_FS
-@@ -58,13 +59,8 @@ static inline void proc_free_inum(unsigned int inum) {}
+ 		ab = audit_log_start(context, GFP_KERNEL, aux->type);
+diff --git a/security/integrity/ima/ima_api.c b/security/integrity/ima/ima_api.c
+index b8a27c5..1fde0bf 100644
+--- a/security/integrity/ima/ima_api.c
++++ b/security/integrity/ima/ima_api.c
+@@ -317,6 +317,8 @@ void ima_audit_measurement(struct integrity_iint_cache *iint,
+ 	audit_log_task_info(ab, current);
+ 	audit_log_end(ab);
  
- #endif /* CONFIG_PROC_FS */
++	audit_log_ns_info(current);
++
+ 	iint->flags |= IMA_AUDITED;
+ }
  
--static inline int ns_alloc_inum(struct ns_common *ns)
--{
--	atomic_long_set(&ns->stashed, 0);
--	return proc_alloc_inum(&ns->inum);
--}
--
--#define ns_free_inum(ns) proc_free_inum((ns)->inum)
-+extern int ns_alloc_inum(struct ns_common *ns);
-+extern void ns_free_inum(struct ns_common *ns);
- 
- extern struct file *proc_ns_fget(int fd);
- #define get_proc_ns(inode) ((struct ns_common *)(inode)->i_private)
-diff --git a/init/version.c b/init/version.c
-index fe41a63..050dda0 100644
---- a/init/version.c
-+++ b/init/version.c
-@@ -35,7 +35,7 @@ struct uts_namespace init_uts_ns = {
- 		.domainname	= UTS_DOMAINNAME,
- 	},
- 	.user_ns = &init_user_ns,
--	.ns.inum = PROC_UTS_INIT_INO,
-+	.ns.inum = NS_UTS_INIT_INO,
- #ifdef CONFIG_UTS_NS
- 	.ns.ops = &utsns_operations,
- #endif
-diff --git a/ipc/msgutil.c b/ipc/msgutil.c
-index 2b49159..aca24bb 100644
---- a/ipc/msgutil.c
-+++ b/ipc/msgutil.c
-@@ -31,7 +31,7 @@ DEFINE_SPINLOCK(mq_lock);
- struct ipc_namespace init_ipc_ns = {
- 	.count		= ATOMIC_INIT(1),
- 	.user_ns = &init_user_ns,
--	.ns.inum = PROC_IPC_INIT_INO,
-+	.ns.inum = NS_IPC_INIT_INO,
- #ifdef CONFIG_IPC_NS
- 	.ns.ops = &ipcns_operations,
- #endif
-diff --git a/kernel/pid.c b/kernel/pid.c
-index cd36a5e..a06abc2 100644
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -79,7 +79,7 @@ struct pid_namespace init_pid_ns = {
- 	.level = 0,
- 	.child_reaper = &init_task,
- 	.user_ns = &init_user_ns,
--	.ns.inum = PROC_PID_INIT_INO,
-+	.ns.inum = NS_PID_INIT_INO,
- #ifdef CONFIG_PID_NS
- 	.ns.ops = &pidns_operations,
- #endif
-diff --git a/kernel/user.c b/kernel/user.c
-index b069ccb..deaf107 100644
---- a/kernel/user.c
-+++ b/kernel/user.c
-@@ -50,7 +50,7 @@ struct user_namespace init_user_ns = {
- 	.count = ATOMIC_INIT(3),
- 	.owner = GLOBAL_ROOT_UID,
- 	.group = GLOBAL_ROOT_GID,
--	.ns.inum = PROC_USER_INIT_INO,
-+	.ns.inum = NS_USER_INIT_INO,
- #ifdef CONFIG_USER_NS
- 	.ns.ops = &userns_operations,
- #endif
 -- 
 1.7.1
