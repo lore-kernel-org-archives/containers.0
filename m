@@ -1,15 +1,16 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [CFT][PATCH 10/10] mnt: Update fs_fully_visible to test for
-	permanently empty directories
-Date: Thu, 14 May 2015 12:37:02 -0500
-Message-ID: <87382zhxhd.fsf__43148.2569584206$1431625352$gmane$org@x220.int.ebiederm.org>
-References: <87pp63jcca.fsf@x220.int.ebiederm.org>
+From: Paul Moore <pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH V6 05/10] audit: log creation and deletion of namespace
+	instances
+Date: Thu, 14 May 2015 15:19:33 -0400
+Message-ID: <12675437.ssZNCck7zG__25986.9007546969$1431631195$gmane$org@sifl>
+References: <cover.1429252659.git.rgb@redhat.com>
+	<20150512195759.GA9832@madcap2.tricolour.ca>
+	<2918460.dpKocsKt4o@x2>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87pp63jcca.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org> (Eric W. Biederman's
-	message of "Thu, 14 May 2015 12:30:45 -0500")
+In-Reply-To: <2918460.dpKocsKt4o@x2>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,52 +20,70 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+On Thursday, May 14, 2015 10:57:14 AM Steve Grubb wrote:
+> On Tuesday, May 12, 2015 03:57:59 PM Richard Guy Briggs wrote:
+> > On 15/05/05, Steve Grubb wrote:
+> > > I think there needs to be some more discussion around this. It seems
+> > > like this is not exactly recording things that are useful for audit.
+> > 
+> > It seems to me that either audit has to assemble that information, or
+> > the kernel has to do so.  The kernel doesn't know about containers
+> > (yet?).
+> 
+> Auditing is something that has a lot of requirements imposed on it by
+> security standards. There was no requirement to have an auid until audit
+> came along and said that uid is not good enough to know who is issuing
+> commands because of su or sudo. There was no requirement for sessionid
+> until we had to track each action back to a login so we could see if the
+> login came from the expected place.
+> 
+> What I am saying is we have the same situation. Audit needs to track a
+> container and we need an ID. The information that is being logged is not
+> useful for auditing. Maybe someone wants that info in syslog, but I doubt
+> it. The audit trail's purpose is to allow a security officer to reconstruct
+> the events to determine what happened during some security incident.
 
-fs_fully_visible attempts to make fresh mounts of proc and sysfs give
-the mounter no more access to proc and sysfs than if they could have
-by creating a bind mount.  One aspect of proc and sysfs that makes
-this particularly tricky is that there are other filesystems that
-typically mount on top of proc and sysfs.  As those filesystems are
-mounted on empty directories in practice it is safe to ignore them.
-However testing to ensure filesystems are mounted on empty directories
-has not been something the in kernel data structures have supported so
-the current test for an empty directory which checks to see
-if nlink <= 2 is a bit lacking.
+As Eric, and others, have stated, the container concept is a userspace idea, 
+not a kernel idea; the kernel only knows, and cares about, namespaces.  This 
+is unlikely to change.
 
-proc and sysfs have recently been modified to use the new empty_dir
-infrastructure to create all of their dedicated mount points.  Instead
-of testing for S_ISDIR(inode->i_mode) && i_nlink <= 2 to see if a
-directory is empty, test for is_empty_dir_inode(inode).  That small
-change guaranteess mounts found on proc and sysfs really are safe to
-ignore, because the directories are not only empty but nothing can
-ever be added to them.  This guarantees there is nothing to worry
-about when mounting proc and sysfs.
+However, as Steve points out, there is precedence for the kernel to record 
+userspace tokens for the sake of audit.  Personally I'm not a big fan of this 
+in general, but I do recognize that it does satisfy a legitimate need.  Think 
+of things like auid and the sessionid as necessary evils; audit is already 
+chock full of evilness I doubt one more will doom us all to hell.
 
-Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- fs/namespace.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+Moving forward, I'd like to see the following:
 
-diff --git a/fs/namespace.c b/fs/namespace.c
-index 3ede0669b8d2..eccd925c6e82 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -3220,9 +3220,8 @@ static bool fs_fully_visible(struct file_system_type *type, int *new_mnt_flags)
- 			/* Only worry about locked mounts */
- 			if (!(mnt->mnt.mnt_flags & MNT_LOCKED))
- 				continue;
--			if (!S_ISDIR(inode->i_mode))
--				goto next;
--			if (inode->i_nlink > 2)
-+			/* Is the directory permanetly empty? */
-+			if (!is_empty_dir_inode(inode))
- 				goto next;
- 		}
- 		/* Preserve the locked attributes */
+* Record the creation/removal/mgmt of the individual namespaces as Richard's 
+patchset currently does.  However, I'd suggest using an explicit namespace 
+value for the init namespace instead of the "unset" value in the V6 patchset 
+(my apologies if you've already changed this Richard, I haven't looked at V7 
+yet).
+
+* Create a container ID token (unsigned 32-bit integer?), similar to 
+auid/sessionid, that is set by userspace and carried by the kernel to be used 
+in audit records.  I'd like to see some discussion on how we manage this, e.g. 
+how do handle container ID inheritance, how do we handle nested containers 
+(setting the containerid when it is already set), do we care if multiple 
+different containers share the same namespace config, etc.?
+
+* When userspace sets the container ID, emit a new audit record with the 
+associated namespace tokens and the container ID.
+
+* Look at our existing audit records to determine which records should have 
+namespace and container ID tokens added.  We may only want to add the 
+additional fields in the case where the namespace/container ID tokens are not 
+the init namespace.
+
+Can we all live with this?  If not, please suggest some alternate ideas; 
+simply shouting "IT'S ALL CRAP!" isn't helpful for anyone ... it may be true, 
+but it doesn't help us solve the problem ;)
+
 -- 
-2.2.1
+paul moore
+security @ redhat
