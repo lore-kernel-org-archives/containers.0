@@ -1,15 +1,17 @@
-From: Nicolas Iooss <nicolas.iooss_linux-oWGTIYur0i8@public.gmane.org>
-Subject: [PATCH v2 2/2] coredump: add __printf attribute to cn_*printf
-	functions
-Date: Fri, 15 May 2015 10:29:35 +0800
-Message-ID: <1431656975-3563-2-git-send-email-nicolas.iooss_linux__18380.2226245918$1431657608$gmane$org@m4x.org>
-References: <554A0684.2000400@m4x.org>
-	<1431656975-3563-1-git-send-email-nicolas.iooss_linux@m4x.org>
+From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Subject: Re: [PATCH V6 05/10] audit: log creation and deletion of namespace
+	instances
+Date: Thu, 14 May 2015 23:23:09 -0700
+Message-ID: <CALCETrWzM4+Vs8OVJWBcWJfbR_DRSb+e7SmUyy6CS4sHQaTkRw__10594.0673886382$1431671025$gmane$org@mail.gmail.com>
+References: <cover.1429252659.git.rgb@redhat.com>
+	<20150512195759.GA9832@madcap2.tricolour.ca>
+	<2918460.dpKocsKt4o@x2> <12675437.ssZNCck7zG@sifl>
+	<20150515023221.GC965@madcap2.tricolour.ca>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1431656975-3563-1-git-send-email-nicolas.iooss_linux-oWGTIYur0i8@public.gmane.org>
+In-Reply-To: <20150515023221.GC965-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,66 +21,28 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Nicolas Iooss <nicolas.iooss_linux-oWGTIYur0i8@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Paul Moore <pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This allows detecting improper format string at build time, like:
+On Thu, May 14, 2015 at 7:32 PM, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> On 15/05/14, Paul Moore wrote:
+>> * Look at our existing audit records to determine which records should have
+>> namespace and container ID tokens added.  We may only want to add the
+>> additional fields in the case where the namespace/container ID tokens are not
+>> the init namespace.
+>
+> If we have a record that ties a set of namespace IDs with a container
+> ID, then I expect we only need to list the containerID along with auid
+> and sessionID.
 
-  fs/coredump.c:225:5: warning: format '%ld' expects argument of type
-  'long int', but argument 3 has type 'int' [-Wformat=]
-       err = cn_printf(cn, "%ld", cprm->siginfo->si_signo);
-       ^
+The problem here is that the kernel has no concept of a "container", and I
+don't think it makes any sense to add one just for audit.  "Container" is a
+marketing term used by some userspace tools.
 
-As si_signo is always an int, the format should be %d here.
+I can imagine that both audit could benefit from a concept of a
+namespace *path* that understands nesting (e.g. root/2/5/1 or
+something along those lines).  Mapping these to "containers" belongs
+in userspace, I think.
 
-Signed-off-by: Nicolas Iooss <nicolas.iooss_linux-oWGTIYur0i8@public.gmane.org>
----
- fs/coredump.c | 11 +++++++----
- 1 file changed, 7 insertions(+), 4 deletions(-)
-
-diff --git a/fs/coredump.c b/fs/coredump.c
-index 833a57bc856c..e52e0064feac 100644
---- a/fs/coredump.c
-+++ b/fs/coredump.c
-@@ -70,7 +70,8 @@ static int expand_corename(struct core_name *cn, int size)
- 	return 0;
- }
- 
--static int cn_vprintf(struct core_name *cn, const char *fmt, va_list arg)
-+static __printf(2, 0) int cn_vprintf(struct core_name *cn, const char *fmt,
-+				     va_list arg)
- {
- 	int free, need;
- 	va_list arg_copy;
-@@ -93,7 +94,7 @@ again:
- 	return -ENOMEM;
- }
- 
--static int cn_printf(struct core_name *cn, const char *fmt, ...)
-+static __printf(2, 3) int cn_printf(struct core_name *cn, const char *fmt, ...)
- {
- 	va_list arg;
- 	int ret;
-@@ -105,7 +106,8 @@ static int cn_printf(struct core_name *cn, const char *fmt, ...)
- 	return ret;
- }
- 
--static int cn_esc_printf(struct core_name *cn, const char *fmt, ...)
-+static __printf(2, 3)
-+int cn_esc_printf(struct core_name *cn, const char *fmt, ...)
- {
- 	int cur = cn->used;
- 	va_list arg;
-@@ -225,7 +227,8 @@ static int format_corename(struct core_name *cn, struct coredump_params *cprm)
- 				break;
- 			/* signal that caused the coredump */
- 			case 's':
--				err = cn_printf(cn, "%ld", cprm->siginfo->si_signo);
-+				err = cn_printf(cn, "%d",
-+						cprm->siginfo->si_signo);
- 				break;
- 			/* UNIX time of coredump */
- 			case 't': {
--- 
-2.4.0
+--Andy
