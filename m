@@ -1,18 +1,16 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [CFT][PATCH 0/10] Making new mounts of proc and sysfs as safe as
-	bind mounts
-Date: Fri, 15 May 2015 01:55:38 -0500
-Message-ID: <87617u1g9h.fsf__16394.4991691553$1431673246$gmane$org@x220.int.ebiederm.org>
-References: <87pp63jcca.fsf@x220.int.ebiederm.org>
-	<20150514202951.GA16416@kroah.com>
-	<87oalmg90j.fsf@x220.int.ebiederm.org>
-	<CALCETrU1yxcDfv4YV3wVpWMAdiOOsSUFOPUpFAN-mVA4M-OxdQ@mail.gmail.com>
+From: Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH V6 05/10] audit: log creation and deletion of namespace
+	instances
+Date: Fri, 15 May 2015 08:38:04 -0400
+Message-ID: <4153072.0EnVzNaVVH@x2>
+References: <cover.1429252659.git.rgb@redhat.com>
+	<20150515023221.GC965@madcap2.tricolour.ca>
+	<CALCETrWzM4+Vs8OVJWBcWJfbR_DRSb+e7SmUyy6CS4sHQaTkRw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CALCETrU1yxcDfv4YV3wVpWMAdiOOsSUFOPUpFAN-mVA4M-OxdQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Andy Lutomirski's message of "Thu, 14 May 2015 23:26:48 -0700")
+In-Reply-To: <CALCETrWzM4+Vs8OVJWBcWJfbR_DRSb+e7SmUyy6CS4sHQaTkRw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,35 +21,39 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Cc: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Paul Moore <pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> writes:
+On Thursday, May 14, 2015 11:23:09 PM Andy Lutomirski wrote:
+> On Thu, May 14, 2015 at 7:32 PM, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> > On 15/05/14, Paul Moore wrote:
+> >> * Look at our existing audit records to determine which records should
+> >> have
+> >> namespace and container ID tokens added.  We may only want to add the
+> >> additional fields in the case where the namespace/container ID tokens are
+> >> not the init namespace.
+> > 
+> > If we have a record that ties a set of namespace IDs with a container
+> > ID, then I expect we only need to list the containerID along with auid
+> > and sessionID.
+> 
+> The problem here is that the kernel has no concept of a "container", and I
+> don't think it makes any sense to add one just for audit.  "Container" is a
+> marketing term used by some userspace tools.
 
-> Can we please just get rid of this implicit nodev thing once and for all?  If it
-> breaks some really weird /proc use case, then I think the right fix is to
-> stop enforcing the nodev lock for the proc fully visible check.  After
-> all, /proc doesn't contain useful device nodes anyway.
+No, its a real thing just like a login. Does the kernel have any concept of a 
+login? Yet it happens. And it causes us to generate events describing who, 
+where from, role, success, and time of day. :-)
 
-On second look I don't think that will actually cause issues in this
-case.
 
-I actually have a fix for the implicit nodev weirdness in my development
-qeueue but it requires figuring out how to add s_user_ns to superblocks.
-My last round of testing told me I was doing that wrong.
+> I can imagine that both audit could benefit from a concept of a
+> namespace *path* that understands nesting (e.g. root/2/5/1 or
+> something along those lines).  Mapping these to "containers" belongs
+> in userspace, I think.
 
-But if the implicit nodev is actually a problem I will definitely delay
-this until I have that change ready to go as well.
+I don't doubt that just as user space sequences the actions that are a login. 
+I just need the kernel to do some book keeping and associate the necessary 
+attributes in the event record to be able to reconstruct what is actually 
+happening.
 
-> Other than that, the code here looks okay to me on brief inspection.
-
-At a practical level I am concerned that enforcing things like noexec
-and nosuid from the original normal global proc might cause problems for
-things like sandstorm, lxc, and possibly libvirt-lxc.  So I would really
-appreciate if people associated with those projects could test this and
-tell me if I break things.
-
-Other than my stupid refactor in my code for /proc/fs/nfsd that causes
-the kernel to oops :(  Doh!
-
-Eric
+-Steve
