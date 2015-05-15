@@ -1,17 +1,13 @@
-From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH V6 05/10] audit: log creation and deletion of namespace
-	instances
-Date: Thu, 14 May 2015 22:32:21 -0400
-Message-ID: <20150515023221.GC965__35224.3594396443$1431657163$gmane$org@madcap2.tricolour.ca>
-References: <cover.1429252659.git.rgb@redhat.com>
-	<20150512195759.GA9832@madcap2.tricolour.ca>
-	<2918460.dpKocsKt4o@x2> <12675437.ssZNCck7zG@sifl>
+From: Nicolas Iooss <nicolas.iooss_linux-oWGTIYur0i8@public.gmane.org>
+Subject: [PATCH v2 1/2] coredump: use from_kuid/kgid when formatting corename
+Date: Fri, 15 May 2015 10:29:34 +0800
+Message-ID: <1431656975-3563-1-git-send-email-nicolas.iooss_linux__3238.92311794243$1431657605$gmane$org@m4x.org>
+References: <554A0684.2000400@m4x.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <12675437.ssZNCck7zG@sifl>
+In-Reply-To: <554A0684.2000400-oWGTIYur0i8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,92 +17,74 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Moore <pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Nicolas Iooss <nicolas.iooss_linux-oWGTIYur0i8@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 15/05/14, Paul Moore wrote:
-> On Thursday, May 14, 2015 10:57:14 AM Steve Grubb wrote:
-> > On Tuesday, May 12, 2015 03:57:59 PM Richard Guy Briggs wrote:
-> > > On 15/05/05, Steve Grubb wrote:
-> > > > I think there needs to be some more discussion around this. It seems
-> > > > like this is not exactly recording things that are useful for audit.
-> > > 
-> > > It seems to me that either audit has to assemble that information, or
-> > > the kernel has to do so.  The kernel doesn't know about containers
-> > > (yet?).
-> > 
-> > Auditing is something that has a lot of requirements imposed on it by
-> > security standards. There was no requirement to have an auid until audit
-> > came along and said that uid is not good enough to know who is issuing
-> > commands because of su or sudo. There was no requirement for sessionid
-> > until we had to track each action back to a login so we could see if the
-> > login came from the expected place.
-> > 
-> > What I am saying is we have the same situation. Audit needs to track a
-> > container and we need an ID. The information that is being logged is not
-> > useful for auditing. Maybe someone wants that info in syslog, but I doubt
-> > it. The audit trail's purpose is to allow a security officer to reconstruct
-> > the events to determine what happened during some security incident.
-> 
-> As Eric, and others, have stated, the container concept is a userspace idea, 
-> not a kernel idea; the kernel only knows, and cares about, namespaces.  This 
-> is unlikely to change.
-> 
-> However, as Steve points out, there is precedence for the kernel to record 
-> userspace tokens for the sake of audit.  Personally I'm not a big fan of this 
-> in general, but I do recognize that it does satisfy a legitimate need.  Think 
-> of things like auid and the sessionid as necessary evils; audit is already 
-> chock full of evilness I doubt one more will doom us all to hell.
-> 
-> Moving forward, I'd like to see the following:
-> 
-> * Record the creation/removal/mgmt of the individual namespaces as Richard's 
-> patchset currently does.  However, I'd suggest using an explicit namespace 
-> value for the init namespace instead of the "unset" value in the V6 patchset 
-> (my apologies if you've already changed this Richard, I haven't looked at V7 
-> yet).
+When adding __printf attribute to cn_printf, gcc reports some issues:
 
-The "unset" (none) value is only there before the first namespaces have
-been created.  After that, any new ones are created relative to the init
-namespace of that type.
+  fs/coredump.c:213:5: warning: format '%d' expects argument of type
+  'int', but argument 3 has type 'kuid_t' [-Wformat=]
+       err = cn_printf(cn, "%d", cred->uid);
+       ^
+  fs/coredump.c:217:5: warning: format '%d' expects argument of type
+  'int', but argument 3 has type 'kgid_t' [-Wformat=]
+       err = cn_printf(cn, "%d", cred->gid);
+       ^
 
-> * Create a container ID token (unsigned 32-bit integer?), similar to 
-> auid/sessionid, that is set by userspace and carried by the kernel to be used 
-> in audit records.  I'd like to see some discussion on how we manage this, e.g. 
-> how do handle container ID inheritance, how do we handle nested containers 
-> (setting the containerid when it is already set), do we care if multiple 
-> different containers share the same namespace config, etc.?
+These warnings come from the fact that the value of uid/gid needs to be
+extracted from the kuid_t/kgid_t structure before being used as an
+integer.  More precisely, cred->uid and cred->gid need to be converted
+to either user-namespace uid/gid or to init_user_ns uid/gid.
 
-(Addressed in another reply.)  Nested will need some careful thought...
+Use init_user_ns in order not to break existing ABI, and document this
+in Documentation/sysctl/kernel.txt.
 
-> * When userspace sets the container ID, emit a new audit record with the 
-> associated namespace tokens and the container ID.
+While at it, format uid and gid values with %u instead of %d because
+uid_t/__kernel_uid32_t and gid_t/__kernel_gid32_t are unsigned int.
 
-That was the goal of AUDIT_VIRT_CONTROL or AUDIT_NS_INFO messages from
-userspace into the kernel.
+Signed-off-by: Nicolas Iooss <nicolas.iooss_linux-oWGTIYur0i8@public.gmane.org>
+---
+ Documentation/sysctl/kernel.txt | 4 ++--
+ fs/coredump.c                   | 8 ++++++--
+ 2 files changed, 8 insertions(+), 4 deletions(-)
 
-> * Look at our existing audit records to determine which records should have 
-> namespace and container ID tokens added.  We may only want to add the 
-> additional fields in the case where the namespace/container ID tokens are not 
-> the init namespace.
-
-If we have a record that ties a set of namespace IDs with a container
-ID, then I expect we only need to list the containerID along with auid
-and sessionID.
-
-> Can we all live with this?  If not, please suggest some alternate ideas; 
-> simply shouting "IT'S ALL CRAP!" isn't helpful for anyone ... it may be true, 
-> but it doesn't help us solve the problem ;)
-
-Thanks Paul.
-
-> paul moore
-
-- RGB
-
---
-Richard Guy Briggs <rbriggs-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Senior Software Engineer, Kernel Security, AMER ENG Base Operating Systems, Red Hat
-Remote, Ottawa, Canada
-Voice: +1.647.777.2635, Internal: (81) 32635, Alt: +1.613.693.0684x3545
+diff --git a/Documentation/sysctl/kernel.txt b/Documentation/sysctl/kernel.txt
+index c831001c45f1..e1913f78f21e 100644
+--- a/Documentation/sysctl/kernel.txt
++++ b/Documentation/sysctl/kernel.txt
+@@ -197,8 +197,8 @@ core_pattern is used to specify a core dumpfile pattern name.
+ 	%P	global pid (init PID namespace)
+ 	%i	tid
+ 	%I	global tid (init PID namespace)
+-	%u	uid
+-	%g	gid
++	%u	uid (in initial user namespace)
++	%g	gid (in initial user namespace)
+ 	%d	dump mode, matches PR_SET_DUMPABLE and
+ 		/proc/sys/fs/suid_dumpable
+ 	%s	signal number
+diff --git a/fs/coredump.c b/fs/coredump.c
+index bbbe139ab280..833a57bc856c 100644
+--- a/fs/coredump.c
++++ b/fs/coredump.c
+@@ -209,11 +209,15 @@ static int format_corename(struct core_name *cn, struct coredump_params *cprm)
+ 				break;
+ 			/* uid */
+ 			case 'u':
+-				err = cn_printf(cn, "%d", cred->uid);
++				err = cn_printf(cn, "%u",
++						from_kuid(&init_user_ns,
++							  cred->uid));
+ 				break;
+ 			/* gid */
+ 			case 'g':
+-				err = cn_printf(cn, "%d", cred->gid);
++				err = cn_printf(cn, "%u",
++						from_kgid(&init_user_ns,
++							  cred->gid));
+ 				break;
+ 			case 'd':
+ 				err = cn_printf(cn, "%d",
+-- 
+2.4.0
