@@ -1,16 +1,15 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [CFT][PATCH 10/10] mnt: Update fs_fully_visible to test for
-	permanently empty directories
-Date: Fri, 15 May 2015 21:11:20 -0500
-Message-ID: <874mndtgon.fsf_-___43323.8585050733$1431742585$gmane$org@x220.int.ebiederm.org>
-References: <87pp63jcca.fsf@x220.int.ebiederm.org>
-	<87siaxuvik.fsf@x220.int.ebiederm.org>
+From: Daniel J Walsh <dwalsh-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH V6 05/10] audit: log creation and deletion of namespace
+	instances
+Date: Sat, 16 May 2015 05:46:34 -0400
+Message-ID: <555711FA.50703@redhat.com>
+References: <cover.1429252659.git.rgb@redhat.com>	<20150515023221.GC965@madcap2.tricolour.ca>	<CALCETrWzM4+Vs8OVJWBcWJfbR_DRSb+e7SmUyy6CS4sHQaTkRw@mail.gmail.com>
+	<9125391.7ZiCneo6Xn@sifl>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87siaxuvik.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org> (Eric W. Biederman's
-	message of "Fri, 15 May 2015 21:05:39 -0500")
+In-Reply-To: <9125391.7ZiCneo6Xn@sifl>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,52 +19,49 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: Paul Moore <pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-fs_fully_visible attempts to make fresh mounts of proc and sysfs give
-the mounter no more access to proc and sysfs than if they could have
-by creating a bind mount.  One aspect of proc and sysfs that makes
-this particularly tricky is that there are other filesystems that
-typically mount on top of proc and sysfs.  As those filesystems are
-mounted on empty directories in practice it is safe to ignore them.
-However testing to ensure filesystems are mounted on empty directories
-has not been something the in kernel data structures have supported so
-the current test for an empty directory which checks to see
-if nlink <= 2 is a bit lacking.
 
-proc and sysfs have recently been modified to use the new empty_dir
-infrastructure to create all of their dedicated mount points.  Instead
-of testing for S_ISDIR(inode->i_mode) && i_nlink <= 2 to see if a
-directory is empty, test for is_empty_dir_inode(inode).  That small
-change guaranteess mounts found on proc and sysfs really are safe to
-ignore, because the directories are not only empty but nothing can
-ever be added to them.  This guarantees there is nothing to worry
-about when mounting proc and sysfs.
+On 05/15/2015 05:05 PM, Paul Moore wrote:
+> On Thursday, May 14, 2015 11:23:09 PM Andy Lutomirski wrote:
+>> On Thu, May 14, 2015 at 7:32 PM, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+>>> On 15/05/14, Paul Moore wrote:
+>>>> * Look at our existing audit records to determine which records should
+>>>> have
+>>>> namespace and container ID tokens added.  We may only want to add the
+>>>> additional fields in the case where the namespace/container ID tokens are
+>>>> not the init namespace.
+>>> If we have a record that ties a set of namespace IDs with a container
+>>> ID, then I expect we only need to list the containerID along with auid
+>>> and sessionID.
+>> The problem here is that the kernel has no concept of a "container", and I
+>> don't think it makes any sense to add one just for audit.  "Container" is a
+>> marketing term used by some userspace tools.
+>>
+>> I can imagine that both audit could benefit from a concept of a
+>> namespace *path* that understands nesting (e.g. root/2/5/1 or
+>> something along those lines).  Mapping these to "containers" belongs
+>> in userspace, I think.
+> It might be helpful to climb up a few levels in this thread ...
+>
+> I think we all agree that containers are not a kernel construct.  I further 
+> believe that the kernel has no business generating container IDs, those should 
+> come from userspace and will likely be different depending on how you define 
+> "container".  However, what is less clear to me at this point is how the 
+> kernel should handle the setting, reporting, and general management of this 
+> container ID token.
+>
+Wouldn't the easiest thing be to just treat add a containerid to the
+process context like auid.  Then
+make it a privileged operation to set it.  Then tools that care about
+auditing like docker can set the ID
+and remove the Capability from it sub processes if it cares.  All
+processes adopt parent processes containerid.
+Now containers can be audited and as long as userspace is written
+correctly nested containers can either override the containerid or not
+depending on what the audit rules are.
 
-Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- fs/namespace.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
-
-diff --git a/fs/namespace.c b/fs/namespace.c
-index 3ede0669b8d2..eccd925c6e82 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -3220,9 +3220,8 @@ static bool fs_fully_visible(struct file_system_type *type, int *new_mnt_flags)
- 			/* Only worry about locked mounts */
- 			if (!(mnt->mnt.mnt_flags & MNT_LOCKED))
- 				continue;
--			if (!S_ISDIR(inode->i_mode))
--				goto next;
--			if (inode->i_nlink > 2)
-+			/* Is the directory permanetly empty? */
-+			if (!is_empty_dir_inode(inode))
- 				goto next;
- 		}
- 		/* Preserve the locked attributes */
--- 
-2.2.1
+No special handling inside of namespaces.
