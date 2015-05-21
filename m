@@ -1,8 +1,7 @@
 From: Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH 1/8] kernel/exit.c: make sure current's nsproxy != NULL while
-	checking caps
-Date: Thu, 21 May 2015 13:53:35 +0200
-Message-ID: <1432209222-8479-2-git-send-email-l.pawelczyk__35533.3695690662$1432209273$gmane$org@samsung.com>
+Subject: [PATCH 3/8] smack: extend capability functions and fix 2 checks
+Date: Thu, 21 May 2015 13:53:37 +0200
+Message-ID: <1432209222-8479-4-git-send-email-l.pawelczyk@samsung.com>
 References: <1432209222-8479-1-git-send-email-l.pawelczyk@samsung.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,76 +21,142 @@ To: "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, "Eric W. 
 Cc: Lukasz Pawelczyk <havner-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-There is a rare case where current's nsproxy might be NULL but we are
-required to check for credentials and capabilities. It sometimes happens
-during an exit_group() syscall while destroying user's session (logging
-out).
+This patch extends smack capability functions to a full list to those
+equivalent in the kernel
 
-My understanding is that while we have to lock the task to get task's
-nsproxy and check whether it's NULL, for the 'current' we don't have to
-and it's expected not to be NULL. There is a code in the kernel
-currently that does current->nsproxy->user_ns without any checks.
-And include/linux/nsproxy.h confirms that:
+has_ns_capability -> smack_has_ns_privilege
+has_capability    -> smack_has_privilege
+ns_capable        -> smack_ns_privileged
+capable           -> smack_privileged
 
-2. when accessing (i.e. reading) current task's namespaces - no
-   precautions should be taken - just dereference the pointers
+It also puts the smack related part to a common function:
+smack_capability_allowed()
 
-There seem to be no crash currently because of this, but with accessing
-nsproxy from LSM hooks there is. This is the backtrace:
+Those functions will be needed for capability checks in the upcoming
+Smack namespace patches.
 
-0  smk_tskacc (task=0xffff88003b0b92e0, obj_known=0x2 <irq_stack_union+2>, mode=2, a=0xffff88003be53dd8) at security/smack/smack_access.c:261
-1  0xffffffff8130e2aa in smk_curacc (obj_known=<optimized out>, mode=<optimized out>, a=<optimized out>) at security/smack/smack_access.c:318
-2  0xffffffff8130a50d in smack_task_kill (p=0xffff88003b0b92e0, info=<optimized out>, sig=<optimized out>, secid=<optimized out>) at security/smack/smack_lsm.c:2071
-3  0xffffffff812ea4f6 in security_task_kill (p=<optimized out>, info=<optimized out>, sig=<optimized out>, secid=<optimized out>) at security/security.c:952
-4  0xffffffff8109ac80 in check_kill_permission (sig=15, info=0x0 <irq_stack_union>, t=0xffff88003b0b8000) at kernel/signal.c:796
-5  0xffffffff8109d3ab in group_send_sig_info (sig=15, info=0x0 <irq_stack_union>, p=0xffff88003b0b8000) at kernel/signal.c:1296
-6  0xffffffff8108e527 in forget_original_parent (father=<optimized out>) at kernel/exit.c:575
-7  exit_notify (group_dead=<optimized out>, tsk=<optimized out>) at kernel/exit.c:606
-8  do_exit (code=<optimized out>) at kernel/exit.c:775
-9  0xffffffff8108ec0f in do_group_exit (exit_code=0) at kernel/exit.c:891
-10 0xffffffff8108ec84 in SYSC_exit_group (error_code=<optimized out>) at kernel/exit.c:902
-11 SyS_exit_group (error_code=<optimized out>) at kernel/exit.c:900
+Additionally there were 2 smack capability checks that used generic
+capability functions instead of specific Smack ones effectively ignoring
+the onlycap rule. This has been fixed now with the introduction of those
+new functions.
 
-This backtrace clearly shows that there is an LSM hook task_kill() that
-happens during an exit_group() syscall and that this happens after
-exit_task_namespaces(). LSM hooks with namespaces might need nsproxy to
-be able to check for capabilities. At this point this is impossible. The
-current's nsproxy is already NULL/destroyed.
-
-This is the case because exit_task_namespaces() is called before the
-exit_notify() where all of the above happens. This patch changes their
-order.
+This has implications on the Smack namespace as well as the additional
+Smack checks in smack_capability_allowed() will be extended beyond the
+onlycap rule. Not using Smack specific checks in those 2 places could
+mean breaking the Smack label namespace separation.
 
 Signed-off-by: Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
 ---
- kernel/exit.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ security/smack/smack.h     | 63 +++++++++++++++++++++++++++++++++++++++++++---
+ security/smack/smack_lsm.c |  4 +--
+ 2 files changed, 61 insertions(+), 6 deletions(-)
 
-diff --git a/kernel/exit.c b/kernel/exit.c
-index 22fcc05..da1bb18 100644
---- a/kernel/exit.c
-+++ b/kernel/exit.c
-@@ -742,7 +742,6 @@ void do_exit(long code)
- 	exit_fs(tsk);
- 	if (group_dead)
- 		disassociate_ctty(1);
--	exit_task_namespaces(tsk);
- 	exit_task_work(tsk);
- 	exit_thread();
+diff --git a/security/smack/smack.h b/security/smack/smack.h
+index b8c1a86..fa8fa87 100644
+--- a/security/smack/smack.h
++++ b/security/smack/smack.h
+@@ -332,21 +332,76 @@ static inline struct smack_known *smk_of_current(void)
+ }
  
-@@ -763,6 +762,13 @@ void do_exit(long code)
+ /*
++ * Internal smack capability check complimentary to the
++ * set of kernel capable() and has_capability() functions
++ *
++ * For a capability in smack related checks to be effective it needs to:
++ * - have empty onlycap or the current label be the same as onlycap
++ * - be in the initial user ns
++ */
++static inline int smack_capability_allowed(struct smack_known *skp,
++					   struct user_namespace *user_ns)
++{
++	if (user_ns != &init_user_ns)
++		return 0;
++
++	if (smack_onlycap != NULL && smack_onlycap != skp)
++		return 0;
++
++	return 1;
++}
++
++/*
++ * Is the task privileged in a namespace and allowed to be privileged
++ * by additional smack rules.
++ */
++static inline int smack_has_ns_privilege(struct task_struct *task,
++					 struct user_namespace *user_ns,
++					 int cap)
++{
++	struct smack_known *skp = smk_of_task_struct(task);
++
++	if (!has_ns_capability(task, user_ns, cap))
++		return 0;
++	if (smack_capability_allowed(skp, user_ns))
++		return 1;
++	return 0;
++}
++
++/*
+  * Is the task privileged and allowed to be privileged
+- * by the onlycap rule.
++ * by additional smack rules.
+  */
+-static inline int smack_privileged(int cap)
++static inline int smack_has_privilege(struct task_struct *task, int cap)
++{
++	return smack_has_ns_privilege(task, &init_user_ns, cap);
++}
++
++/*
++ * Is the current task privileged in a namespace and allowed to be privileged
++ * by additional smack rules.
++ */
++static inline int smack_ns_privileged(struct user_namespace *user_ns, int cap)
+ {
+ 	struct smack_known *skp = smk_of_current();
  
- 	TASKS_RCU(tasks_rcu_i = __srcu_read_lock(&tasks_rcu_exit_srcu));
- 	exit_notify(tsk, group_dead);
+-	if (!capable(cap))
++	if (!ns_capable(user_ns, cap))
+ 		return 0;
+-	if (smack_onlycap == NULL || smack_onlycap == skp)
++	if (smack_capability_allowed(skp, user_ns))
+ 		return 1;
+ 	return 0;
+ }
+ 
+ /*
++ * Is the current task privileged and allowed to be privileged
++ * by additional smack rules.
++ */
++static inline int smack_privileged(int cap)
++{
++	return smack_ns_privileged(&init_user_ns, cap);
++}
 +
-+	/*
-+	 * This should be after all things that potentially require
-+	 * process's namespaces (e.g. capability checks).
-+	 */
-+	exit_task_namespaces(tsk);
-+
- 	proc_exit_connector(tsk);
- #ifdef CONFIG_NUMA
- 	task_lock(tsk);
++/*
+  * logging functions
+  */
+ #define SMACK_AUDIT_DENIED 0x1
+diff --git a/security/smack/smack_lsm.c b/security/smack/smack_lsm.c
+index a143328..ee7bb63 100644
+--- a/security/smack/smack_lsm.c
++++ b/security/smack/smack_lsm.c
+@@ -403,7 +403,7 @@ static int smk_ptrace_rule_check(struct task_struct *tracer,
+ 			rc = 0;
+ 		else if (smack_ptrace_rule == SMACK_PTRACE_DRACONIAN)
+ 			rc = -EACCES;
+-		else if (capable(CAP_SYS_PTRACE))
++		else if (smack_has_privilege(tracer, CAP_SYS_PTRACE))
+ 			rc = 0;
+ 		else
+ 			rc = -EACCES;
+@@ -1646,7 +1646,7 @@ static int smack_file_send_sigiotask(struct task_struct *tsk,
+ 	skp = file->f_security;
+ 	rc = smk_access(skp, tkp, MAY_WRITE, NULL);
+ 	rc = smk_bu_note("sigiotask", skp, tkp, MAY_WRITE, rc);
+-	if (rc != 0 && has_capability(tsk, CAP_MAC_OVERRIDE))
++	if (rc != 0 && smack_has_privilege(tsk, CAP_MAC_OVERRIDE))
+ 		rc = 0;
+ 
+ 	smk_ad_init(&ad, __func__, LSM_AUDIT_DATA_TASK);
 -- 
 2.1.0
