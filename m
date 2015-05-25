@@ -1,13 +1,14 @@
 From: Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH v2 0/7] Smack namespace
-Date: Mon, 25 May 2015 14:32:35 +0200
-Message-ID: <1432557162-19123-1-git-send-email-l.pawelczyk__18004.652291029$1432557210$gmane$org@samsung.com>
+Subject: [PATCH v2 1/7] user_ns: 3 new hooks for user namespace operations
+Date: Mon, 25 May 2015 14:32:36 +0200
+Message-ID: <1432557162-19123-2-git-send-email-l.pawelczyk@samsung.com>
 References: <1432209222-8479-1-git-send-email-l.pawelczyk@samsung.com>
+	<1432557162-19123-1-git-send-email-l.pawelczyk@samsung.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-reply-to: <1432209222-8479-1-git-send-email-l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
+In-reply-to: <1432557162-19123-1-git-send-email-l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,268 +22,247 @@ To: "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, "Eric W. 
 Cc: Lukasz Pawelczyk <havner-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello,
+This commit implements 3 new LSM hooks that provide the means for LSMs
+to embed their own security context within user namespace, effectively
+creating some sort of a user_ns related security namespace.
 
-Some time ago I sent a Smack namespace documentation and a preliminary
-LSM namespace for RFC. I've been suggested that there shouldn't be a
-separate LSM namespace and that it should live within user namespace.
-And this version does. This is a complete set of patches required for
-Smack namespace.
+The first one to take advantage of this mechanism is Smack.
 
-This was designed with a collaboration of Smack maintainer Casey
-Schaufler.
+The hooks has been documented in the in the security.h below.
 
-Smack namespace have been implemented using user namespace hooks added
-by one of the patches. To put some context to it I paste here a
-documentation on what Smack namespace wants to achieve.
+Signed-off-by: Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
+---
+ include/linux/lsm_hooks.h      | 28 ++++++++++++++++++++++++++++
+ include/linux/security.h       | 23 +++++++++++++++++++++++
+ include/linux/user_namespace.h |  4 ++++
+ kernel/user.c                  |  3 +++
+ kernel/user_namespace.c        | 18 ++++++++++++++++++
+ security/security.c            | 28 ++++++++++++++++++++++++++++
+ 6 files changed, 104 insertions(+)
 
-LSM hooks themselves are documented in the security.h file inside the
-patch.
-
-The patches are based on:
-https://github.com/cschaufler/smack-next/tree/smack-for-4.2-stacked
-
-The tree with them is avaiable here:
-https://github.com/Havner/smack-namespace/tree/smack-namespace-for-4.2-stacked-v2
-
-Changes from v1:
- - "kernel/exit.c: make sure current's nsproxy != NULL while checking
-   caps" patch has been dropped
- - fixed the title of the user_ns operations patch
-
-
-===================================================================
-
---- What is a Smack namespace ---
-
-Smack namespace was developed to make it possible for Smack to work
-nicely with Linux containers where there is a full operating system
-with its own init inside the namespace. Such a system working with
-Smack expects to have at least partially working SMACK_MAC_ADMIN to be
-able to change labels of processes and files. This is required to be
-able to securely start applications under the control of Smack and
-manage their access rights.
-
-It was implemented using new LSM hooks added to the user namespace
-that were developed together with Smack namespace.
-
-
---- Design ideas ---
-
-"Smack namespace" is rather "Smack labels namespace" as not the whole
-MAC is namespaced, only the labels. There is a great analogy between
-Smack labels namespace and the user namespace part that remaps UIDs.
-
-The idea is to create a map of labels for a namespace so the namespace
-is only allowed to use those labels. Smack rules are always the same
-as in the init namespace (limited only by what labels are mapped) and
-cannot be manipulated from the child namespace. The map is actually
-only for labels' names. The underlying structures for labels remain
-the same. The filesystem also stores the "unmapped" labels from the
-init namespace.
-
-Let's say we have those labels in the init namespace:
-label1
-label2
-label3
-
-and those rules:
-label1 label2 rwx
-label1 label3 rwx
-label2 label3 rwx
-
-We create a map for a namespace:
-label1 -> mapped1
-label2 -> mapped2
-
-This means that 'label3' is completely invisible in the namespace. As if
-it didn't exist. All the rules that include it are ignored.
-
-Effectively in the namespace we have only one rule:
-mapped1 mapped2 rwx
-
-Which in reality is:
-label1 label2 rwx
-
-All requests to access an object with a 'label3' will be denied. If it
-ever comes to a situation where 'label3' would have to be printed
-(e.g. reading an exec or mmap label from a file to which we have
-access) then huh sign '?' will be printed instead.
-
-All the operations in the namespace on the remaining labels will have
-to be performed using their mapped names. Things like changing own
-process's label, changing filesystem label. Labels will also be
-printed with their mapped names.
-
-You cannot import new labels in a namespace. Every operation that
-would do so in an init namespace will return an error in the child
-namespace. You cannot assign an unmapped or not existing label to an
-object. You can only operate on labels that have been explicitly
-mapped.
-
-
---- Capabilities ---
-
-Enabling Smack related capabilities (CAP_MAC_ADMIN and
-CAP_MAC_OVERRIDE) is main goal of Smack namespace, so it can work
-properly in the container. And those capabilities do work to some
-extent. In several places where capabilities are checked compatibility
-with Smack namespace has been introduced. Capabilities are of course
-limited to operate only on mapped labels.
-
-CAP_MAC_OVERRIDE works fully, will allow you to ignore Smack access
-rules, but only between objects that have labels mapped. So in the
-example above having this CAP will allow e.g. label2 to write to
-label1, but will not allow any access to label3.
-
-With CAP_MAC_ADMIN the following operations has been allowed inside
-the namespace:
-- setting and removing xattr on files, including the security.* ones
-- setting process's own label (/proc/self/attr/current)
-- mounting in a privileged Smack mode, which means one can specify
-  additional mount options like: smackfsdef, smackfsfloor etc.
-
-Again this is also allowed only on the mapped labels. Labels on the
-filesystem will be stored in unmapped form so they are preserved
-through reboots.
-
-Such a namespace construct allows e.g. systemd (with Smack support)
-working in a container to assign labels properly to daemons and other
-processes.
-
-
---- Usage ---
-
-Smack namespace is written using LSM hooks inside user namespace. That
-means it's connected to it.
-
-To create a new Smack namespace you need to unshare() user namespace
-as usual. If that is all you do though, than there is no difference to
-what is now. To activate the Smack namespace you need to fill the
-labels' map. It is in a file /proc/$PID/smack_map.
-
-By default the map is empty and Smack namespaces are inactive (labels
-are taken directly from a parent namespace). It also means that the
-Smack capabilities will be inactive. After you fill the map it starts
-to take effect in the namespace and Smack capabilities (only on mapped
-labels) start to work.
-
-Due to the way Smack works only CAP_MAC_ADMIN from the parent
-namespace (init_user_ns for now, see the "Current limitations" below)
-is allowed to fill the map. That means that an unprivileged user is
-still allowed to create the user namespace but it will not be able to
-fill the labels' map (activate Smack namespace). An administrator
-intervention is required.
-
-The attr_map write format is:
-unmapped_label mapped_label
-
-When reading the file it shows an active map for a namespace the
-process in question is in in the format:
-unmapped_label -> mapped_label
-
-If the smack_map file is empty it means the namespace is not mapped
-and Smack namespace is inactive (no mappings, MAC related capabilities
-behave as they did before, meaning they are active only in
-init_user_ns). For init_user_ns the map will always be empty.
-
-Writing to the map file is not disabled after the first write as it is
-in uid_map. For Smack we have no means to map ranges of labels, hence
-it can really be advantageous to be able to expand the map later
-on. But you can only add to the map. You cannot remove already mapped
-labels. You cannot change the already existing mappings. Also mappings
-has to be 1-1. All requests to create a map where either the unmapped
-or the mapped label already exists in the map will be denied.
-
-setns() with Smack namespace active has an additional check that the
-label of a process that is calling setns() has to be already mapped in
-the target Smack namespace for the call to succeed.
-
-
---- Special labels ---
-
-Smack is using some special labels that have built-in rules. Things
-like floor '_', dash '^', star '*', etc. Those labels are not
-automatically mapped to the namespace. Moreover, you can choose to map
-a different label from the init namespace to behave e.g. like floor
-inside the namespace.
-
-Let's say we have no rules and those labels in the init namespace:
-_
-floor_to_be
-label
-
-Both 'label' and 'floor_to_be' can read objects with '_'. But they
-have no access rights to each other.
-
-Now let's create a map like this:
-_             ordinary_label
-floor_to_be   _
-label         mapped
-
-Right now label 'mapped' can read label '_' which means that
-effectively inside this namespace label 'label' has gained read access
-to the 'floor_to_be'. The label 'ordinary_label' is exactly it, an
-ordinary label that the built-in rules no longer apply to inside the
-namespace.
-
-To sum up, special labels in the namespace behave the same as in the
-init namespace. Not the original special labels though, but the ones
-we map to specials. This is the only case where a namespace can have
-access rights the init namespace does not have (like the 'label' to
-'floor_to_be' in the example above).
-
-Of course mappings like these are perfectly legal:
-_   _
-*   *
-^   ^
-
-
---- Current limitations ---
-
-The Smack namespace is not hierarchical yet. It is currently not
-possible to fill a smack_map of a nested user namespace (you can still
-create nested user namespace, it will just inherit its parent's map
-and won't have active Smack capabilities). When hierarchy will be
-implemented the process creating another namespace will be allowed to
-map only labels that it has permission to itself (those that it has in
-its own map).
-
-Special files inside the virtual smackfs needs to be reviewed whether
-it's beneficial to have some of their functionality namespaced as well
-(e.g. onlycap, syslog. ambient, etc). This would increase
-CAP_MAC_ADMIN privileges inside the namespace.
-
-
-Lukasz Pawelczyk (7):
-  user_ns: 3 new hooks for user namespace operations
-  smack: extend capability functions and fix 2 checks
-  smack: abstraction layer for 2 common Smack operations
-  smack: misc cleanups in preparation for a namespace patch
-  smack: namespace groundwork
-  smack: namespace implementation
-  smack: documentation for the Smack namespace
-
- Documentation/security/00-INDEX            |   2 +
- Documentation/security/Smack-namespace.txt | 231 +++++++++++++
- MAINTAINERS                                |   1 +
- fs/proc/base.c                             |  57 +++
- include/linux/lsm_hooks.h                  |  28 ++
- include/linux/security.h                   |  23 ++
- include/linux/user_namespace.h             |   9 +
- kernel/user.c                              |   3 +
- kernel/user_namespace.c                    |  18 +
- security/security.c                        |  28 ++
- security/smack/Kconfig                     |  12 +
- security/smack/Makefile                    |   1 +
- security/smack/smack.h                     | 187 +++++++++-
- security/smack/smack_access.c              | 191 ++++++++--
- security/smack/smack_lsm.c                 | 536 ++++++++++++++++++++---------
- security/smack/smack_ns.c                  | 471 +++++++++++++++++++++++++
- security/smack/smackfs.c                   | 154 +++++----
- 17 files changed, 1702 insertions(+), 250 deletions(-)
- create mode 100644 Documentation/security/Smack-namespace.txt
- create mode 100644 security/smack/smack_ns.c
-
+diff --git a/include/linux/lsm_hooks.h b/include/linux/lsm_hooks.h
+index f014f25..b6e0c3d 100644
+--- a/include/linux/lsm_hooks.h
++++ b/include/linux/lsm_hooks.h
+@@ -1260,6 +1260,23 @@
+  *	audit_rule_init.
+  *	@rule contains the allocated rule
+  *
++ * @userns_create:
++ *	Allocates and fills the security part of a new user namespace.
++ *	@ns points to a newly created user namespace.
++ *	Returns 0 or an error code.
++ *
++ * @userns_free:
++ *	Deallocates the security part of a user namespace.
++ *	@ns points to a user namespace about to be destroyed.
++ *
++ * @userns_setns:
++ *	Run during a setns syscall to add a process to an already existing
++ *	user namespace. Returning failure here will block the operation
++ *	requested from userspace (setns() with CLONE_NEWUSER).
++ *	@nsproxy contains a nsproxy to which the user namespace will be assigned.
++ *	@ns contains user namespace that is to be incorporated to the nsproxy.
++ *	Returns 0 or an error code.
++ *
+  * @inode_notifysecctx:
+  *	Notify the security module of what the security context of an inode
+  *	should be.  Initializes the incore security context managed by the
+@@ -1611,6 +1628,12 @@ union security_list_options {
+ 				struct audit_context *actx);
+ 	void (*audit_rule_free)(void *lsmrule);
+ #endif /* CONFIG_AUDIT */
++
++#ifdef CONFIG_SECURITY
++	int (*userns_create)(struct user_namespace *ns);
++	void (*userns_free)(struct user_namespace *ns);
++	int (*userns_setns)(struct nsproxy *nsproxy, struct user_namespace *ns);
++#endif /* CONFIG_SECURITY */
+ };
+ 
+ struct security_hook_heads {
+@@ -1822,6 +1845,11 @@ struct security_hook_heads {
+ 	struct list_head audit_rule_match;
+ 	struct list_head audit_rule_free;
+ #endif /* CONFIG_AUDIT */
++#ifdef CONFIG_SECURITY
++	struct list_head userns_create;
++	struct list_head userns_free;
++	struct list_head userns_setns;
++#endif /* CONFIG_SECURITY */
+ };
+ 
+ /*
+diff --git a/include/linux/security.h b/include/linux/security.h
+index 8c8175d..ec17ae1 100644
+--- a/include/linux/security.h
++++ b/include/linux/security.h
+@@ -1583,6 +1583,29 @@ static inline void security_audit_rule_free(void *lsmrule)
+ #endif /* CONFIG_SECURITY */
+ #endif /* CONFIG_AUDIT */
+ 
++#ifdef CONFIG_SECURITY
++int security_userns_create(struct user_namespace *ns);
++void security_userns_free(struct user_namespace *ns);
++int security_userns_setns(struct nsproxy *nsproxy, struct user_namespace *ns);
++
++#else
++
++static inline int security_userns_create(struct user_namespace *ns)
++{
++	return 0;
++}
++
++static inline void security_userns_free(struct user_namespace *ns)
++{ }
++
++static inline int security_userns_setns(struct nsproxy *nsproxy,
++					struct user_namespace *ns)
++{
++	return 0;
++}
++
++#endif /* CONFIG_SECURITY */
++
+ #ifdef CONFIG_SECURITYFS
+ 
+ extern struct dentry *securityfs_create_file(const char *name, umode_t mode,
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index 8297e5b..a9400cc 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -39,6 +39,10 @@ struct user_namespace {
+ 	struct key		*persistent_keyring_register;
+ 	struct rw_semaphore	persistent_keyring_register_sem;
+ #endif
++
++#ifdef CONFIG_SECURITY
++	void *security;
++#endif
+ };
+ 
+ extern struct user_namespace init_user_ns;
+diff --git a/kernel/user.c b/kernel/user.c
+index b069ccb..ce5419e 100644
+--- a/kernel/user.c
++++ b/kernel/user.c
+@@ -59,6 +59,9 @@ struct user_namespace init_user_ns = {
+ 	.persistent_keyring_register_sem =
+ 	__RWSEM_INITIALIZER(init_user_ns.persistent_keyring_register_sem),
+ #endif
++#ifdef CONFIG_SECURITY
++	.security = NULL,
++#endif
+ };
+ EXPORT_SYMBOL_GPL(init_user_ns);
+ 
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 4109f83..cadffb6 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -22,6 +22,7 @@
+ #include <linux/ctype.h>
+ #include <linux/projid.h>
+ #include <linux/fs_struct.h>
++#include <linux/security.h>
+ 
+ static struct kmem_cache *user_ns_cachep __read_mostly;
+ static DEFINE_MUTEX(userns_state_mutex);
+@@ -108,6 +109,15 @@ int create_user_ns(struct cred *new)
+ 
+ 	set_cred_user_ns(new, ns);
+ 
++#ifdef CONFIG_SECURITY
++	ret = security_userns_create(ns);
++	if (ret) {
++		ns_free_inum(&ns->ns);
++		kmem_cache_free(user_ns_cachep, ns);
++		return ret;
++	}
++#endif
++
+ #ifdef CONFIG_PERSISTENT_KEYRINGS
+ 	init_rwsem(&ns->persistent_keyring_register_sem);
+ #endif
+@@ -143,6 +153,9 @@ void free_user_ns(struct user_namespace *ns)
+ #ifdef CONFIG_PERSISTENT_KEYRINGS
+ 		key_put(ns->persistent_keyring_register);
+ #endif
++#ifdef CONFIG_SECURITY
++		security_userns_free(ns);
++#endif
+ 		ns_free_inum(&ns->ns);
+ 		kmem_cache_free(user_ns_cachep, ns);
+ 		ns = parent;
+@@ -969,6 +982,7 @@ static int userns_install(struct nsproxy *nsproxy, struct ns_common *ns)
+ {
+ 	struct user_namespace *user_ns = to_user_ns(ns);
+ 	struct cred *cred;
++	int err;
+ 
+ 	/* Don't allow gaining capabilities by reentering
+ 	 * the same user namespace.
+@@ -986,6 +1000,10 @@ static int userns_install(struct nsproxy *nsproxy, struct ns_common *ns)
+ 	if (!ns_capable(user_ns, CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
++	err = security_userns_setns(nsproxy, user_ns);
++	if (err)
++		return err;
++
+ 	cred = prepare_creds();
+ 	if (!cred)
+ 		return -ENOMEM;
+diff --git a/security/security.c b/security/security.c
+index bd4c5f6..e902f3b 100644
+--- a/security/security.c
++++ b/security/security.c
+@@ -25,6 +25,7 @@
+ #include <linux/mount.h>
+ #include <linux/personality.h>
+ #include <linux/backing-dev.h>
++#include <linux/user_namespace.h>
+ #include <net/flow.h>
+ 
+ #define MAX_LSM_EVM_XATTR	2
+@@ -1541,6 +1542,25 @@ int security_audit_rule_match(u32 secid, u32 field, u32 op, void *lsmrule,
+ }
+ #endif /* CONFIG_AUDIT */
+ 
++#ifdef CONFIG_SECURITY
++
++int security_userns_create(struct user_namespace *ns)
++{
++	return call_int_hook(userns_create, 0, ns);
++}
++
++void security_userns_free(struct user_namespace *ns)
++{
++	call_void_hook(userns_free, ns);
++}
++
++int security_userns_setns(struct nsproxy *nsproxy, struct user_namespace *ns)
++{
++	return call_int_hook(userns_setns, 0, nsproxy, ns);
++}
++
++#endif /* CONFIG_SECURITY */
++
+ struct security_hook_heads security_hook_heads = {
+ 	.binder_set_context_mgr =
+ 		LIST_HEAD_INIT(security_hook_heads.binder_set_context_mgr),
+@@ -1885,4 +1905,12 @@ struct security_hook_heads security_hook_heads = {
+ 	.audit_rule_free =
+ 		LIST_HEAD_INIT(security_hook_heads.audit_rule_free),
+ #endif /* CONFIG_AUDIT */
++#ifdef CONFIG_SECURITY
++	.userns_create =
++		LIST_HEAD_INIT(security_hook_heads.userns_create),
++	.userns_free =
++		LIST_HEAD_INIT(security_hook_heads.userns_free),
++	.userns_setns =
++		LIST_HEAD_INIT(security_hook_heads.userns_setns),
++#endif /* CONFIG_SECURITY */
+ };
 -- 
 2.1.0
