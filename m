@@ -1,12 +1,14 @@
-From: Alexander Larsson <alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Kernel panic with user namespaces
-Date: Tue, 26 May 2015 14:19:25 +0200
-Message-ID: <1432642765.19400.2.camel@redhat.com>
-References: <1431959951.5030.2.camel@redhat.com>
+From: Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
+Subject: Re: [PATCH v2 0/7] Smack namespace
+Date: Tue, 26 May 2015 10:35:41 -0400
+Message-ID: <556484BD.2060004__17187.3810970739$1432651039$gmane$org@tycho.nsa.gov>
+References: <1432209222-8479-1-git-send-email-l.pawelczyk@samsung.com>
+	<1432557162-19123-1-git-send-email-l.pawelczyk@samsung.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="=-nBoMK7OiCIoH0Wl/gJCd"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1431959951.5030.2.camel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1432557162-19123-1-git-send-email-l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,369 +18,60 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Fabian Frederick <fabf-AgBVmzD5pcezQB+pC5nmwQ@public.gmane.org>, Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, James Morris <james.l.morris-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Jeff Layton <jlayton-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org>, Jingoo Han <jg1.han-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, Joe Perches <joe-6d6DIl74uiNBDgjK7y7TUQ@public.gmane.org>, John Johansen <john.johansen-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Mauro Carvalho Chehab <mchehab-JPH+aEBZ4P+UEJcrhfAQsw@public.gmane.org>, Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>, Oleg
+Cc: Lukasz Pawelczyk <havner-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On 05/25/2015 08:32 AM, Lukasz Pawelczyk wrote:
+> --- Design ideas ---
+> 
+> "Smack namespace" is rather "Smack labels namespace" as not the whole
+> MAC is namespaced, only the labels. There is a great analogy between
+> Smack labels namespace and the user namespace part that remaps UIDs.
+> 
+> The idea is to create a map of labels for a namespace so the namespace
+> is only allowed to use those labels. Smack rules are always the same
+> as in the init namespace (limited only by what labels are mapped) and
+> cannot be manipulated from the child namespace. The map is actually
+> only for labels' names. The underlying structures for labels remain
+> the same. The filesystem also stores the "unmapped" labels from the
+> init namespace.
 
---=-nBoMK7OiCIoH0Wl/gJCd
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+How do you achieve that without introducing additional hooks or
+reworking the current hooks in the setxattr code path?  At present, the
+security module is allowed to rewrite getxattr requests on the
+security.* namespace but it isn't allowed to do that for setxattr, so if
+the process invokes setxattr with a mapped label, then it will be the
+mapped label that gets passed to the filesystem implementation, not the
+unmapped label.  The security module may internally store it in unmapped
+form and may even return that upon getxattr() calls, but if you then
+reboot the system and later fetch from the filesystem, it will get the
+mapped label value.
 
-On m=C3=A5n, 2015-05-18 at 16:39 +0200, Alexander Larsson wrote:
+> --- Usage ---
+> 
+> Smack namespace is written using LSM hooks inside user namespace. That
+> means it's connected to it.
+> 
+> To create a new Smack namespace you need to unshare() user namespace
+> as usual. If that is all you do though, than there is no difference to
+> what is now. To activate the Smack namespace you need to fill the
+> labels' map. It is in a file /proc/$PID/smack_map.
 
-Didn't get any replies to the below kernel panic (testcase attached),
-which seems rather important to fix. Reposting to a wider audience.
+This should be /proc/$PID/attr/label_map or similar, modeled after the
+existing /proc/$PID/attr/current and similar nodes.  Then it isn't
+module-specific and can be reused for other modules.
 
-> If I build and run the attached break-kernel.c as a user i get this
-> kernel panic on the fedora 4.0.3 kernel:
->=20
-> maj 18 16:33:36 nano kernel: BUG: unable to handle kernel NULL pointer =
-dereference at           (null)
-> maj 18 16:33:36 nano kernel: IP: [<ffffffff81250288>] pin_remove+0x58/0=
-xc0
-> maj 18 16:33:36 nano kernel: PGD 1cc973067 PUD 1d727b067 PMD 0=20
-> maj 18 16:33:36 nano kernel: Oops: 0002 [#1] SMP=20
-> maj 18 16:33:36 nano kernel: Modules linked in: rfcomm fuse ccm xt_CHEC=
-KSUM ipt_MASQUERADE nf_nat_masquerade_ipv4 nf_conntrack_netbios_ns nf_con=
-ntrack_broadcast ip6t_rpfilter ip6t_REJECT nf_reject_ipv6 xt_conntrack eb=
-table_nat ebtable_broute bridge stp llc ebtable_filter ebtables ip6table_=
-nat nf_conntrack_ipv6 nf_defrag_ipv6 nf_nat_ipv6 ip6table_mangle ip6table=
-_security ip6table_raw ip6table_filter ip6_tables iptable_nat nf_conntrac=
-k_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack iptable_mangle ipta=
-ble_security iptable_raw bnep arc4 intel_rapl iosf_mbi x86_pkg_temp_therm=
-al coretemp kvm iwlmvm snd_hda_codec_realtek mac80211 snd_hda_codec_hdmi =
-snd_hda_codec_generic vfat fat iTCO_wdt iTCO_vendor_support snd_hda_intel=
- snd_hda_controller snd_hda_codec crct10dif_pclmul snd_hwdep crc32_pclmul=
- snd_seq iwlwifi crc32c_intel
-> maj 18 16:33:36 nano kernel:  snd_seq_device uvcvideo ghash_clmulni_int=
-el videobuf2_vmalloc snd_pcm videobuf2_core cfg80211 videobuf2_memops v4l=
-2_common videodev thinkpad_acpi snd_timer serio_raw btusb media hid_multi=
-touch bluetooth snd lpc_ich mfd_core i2c_i801 mei_me cdc_acm tpm_tis shpc=
-hp mei tpm soundcore wmi rfkill i2c_designware_platform i2c_designware_co=
-re nfsd auth_rpcgss nfs_acl lockd grace sunrpc cdc_mbim cdc_wdm cdc_ncm u=
-sbnet mii i915 i2c_algo_bit drm_kms_helper e1000e drm ptp pps_core video
-> maj 18 16:33:36 nano kernel: CPU: 2 PID: 2662 Comm: break-kernel Not ta=
-inted 4.0.3-201.fc21.x86_64 #1
-> maj 18 16:33:36 nano kernel: Hardware name: LENOVO 20A7005RUK/20A7005RU=
-K, BIOS GRET42WW (1.19 ) 11/20/2014
-> maj 18 16:33:36 nano kernel: task: ffff8800a1a893e0 ti: ffff8801cafb400=
-0 task.ti: ffff8801cafb4000
-> maj 18 16:33:36 nano kernel: RIP: 0010:[<ffffffff81250288>]  [<ffffffff=
-81250288>] pin_remove+0x58/0xc0
-> maj 18 16:33:36 nano kernel: RSP: 0018:ffff8801cafb7e08  EFLAGS: 000102=
-46
-> maj 18 16:33:36 nano kernel: RAX: 0000000000000000 RBX: ffff880212b09f2=
-0 RCX: 000000000000011a
-> maj 18 16:33:36 nano kernel: RDX: 0000000000000000 RSI: 000000000000000=
-5 RDI: ffffffff82004a70
-> maj 18 16:33:36 nano kernel: RBP: ffff8801cafb7e18 R08: ffffffff81d2554=
-0 R09: ffff8800a6f73a28
-> maj 18 16:33:36 nano kernel: R10: 0000000000000000 R11: 000000000000020=
-6 R12: ffff8801cafb7e70
-> maj 18 16:33:36 nano kernel: R13: ffff8800a1a893e0 R14: ffff8800a1a893e=
-0 R15: 0000000000000000
-> maj 18 16:33:36 nano kernel: FS:  00007fab3d3fa700(0000) GS:ffff88021e2=
-80000(0000) knlGS:0000000000000000
-> maj 18 16:33:36 nano kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 000000008=
-0050033
-> maj 18 16:33:36 nano kernel: CR2: 0000000000000000 CR3: 00000001d70b600=
-0 CR4: 00000000001407e0
-> maj 18 16:33:36 nano kernel: Stack:
-> maj 18 16:33:36 nano kernel:  ffff8800a1a893e0 ffff880212b09f20 ffff880=
-1cafb7e38 ffffffff8123d7c2
-> maj 18 16:33:36 nano kernel:  ffff8801cafb7e20 ffff880212b09f20 ffff880=
-1cafb7ea8 ffffffff81250414
-> maj 18 16:33:36 nano kernel:  ffff880212b08da0 ffff88003f41b000 ffff880=
-100000000 ffff8800a1a893e0
-> maj 18 16:33:36 nano kernel: Call Trace:
-> maj 18 16:33:36 nano kernel:  [<ffffffff8123d7c2>] drop_mountpoint+0x22=
-/0x40
-> maj 18 16:33:36 nano kernel:  [<ffffffff81250414>] pin_kill+0x74/0x100
-> maj 18 16:33:36 nano kernel:  [<ffffffff810dfbb0>] ? wait_woken+0x90/0x=
-90
-> maj 18 16:33:36 nano kernel:  [<ffffffff812504c9>] mnt_pin_kill+0x29/0x=
-40
-> maj 18 16:33:36 nano kernel:  [<ffffffff8123cbe0>] cleanup_mnt+0x90/0xa=
-0
-> maj 18 16:33:36 nano kernel:  [<ffffffff8123cc42>] __cleanup_mnt+0x12/0=
-x20
-> maj 18 16:33:36 nano kernel:  [<ffffffff810ba607>] task_work_run+0xb7/0=
-xf0
-> maj 18 16:33:36 nano kernel:  [<ffffffff81014cdd>] do_notify_resume+0x8=
-d/0xa0
-> maj 18 16:33:36 nano kernel:  [<ffffffff817835e3>] int_signal+0x12/0x17
-> maj 18 16:33:36 nano kernel: Code: 48 89 50 08 48 b8 00 01 10 00 00 00 =
-ad de 48 8b 53 28 48 89 43 30 48 b8 00 02 20 00 00 00 ad de 48 89 43 38 4=
-8 8b 43 20 48 85 c0 <48> 89 02 74 04 48 89 50 08 48 b8 00 01 10 00 00 00 =
-ad de 48 89=20
-> maj 18 16:33:36 nano kernel: RIP  [<ffffffff81250288>] pin_remove+0x58/=
-0xc0
-> maj 18 16:33:36 nano kernel:  RSP <ffff8801cafb7e08>
-> maj 18 16:33:36 nano kernel: CR2: 0000000000000000
-> maj 18 16:33:36 nano kernel: ---[ end trace e025319273fa36f8 ]---
->=20
-> I get no such crash with the previous (3.19.7) kernel.
->=20
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+> Writing to the map file is not disabled after the first write as it is
+> in uid_map. For Smack we have no means to map ranges of labels, hence
+> it can really be advantageous to be able to expand the map later
+> on. But you can only add to the map. You cannot remove already mapped
+> labels. You cannot change the already existing mappings. Also mappings
+> has to be 1-1. All requests to create a map where either the unmapped
+> or the mapped label already exists in the map will be denied.
 
---=20
-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D=
--=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=3D-=
-=3D
- Alexander Larsson                                            Red Hat, In=
-c=20
-       alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org            alexander.larsson-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org=20
-He's a hate-fuelled arachnophobic jungle king possessed of the uncanny=20
-powers of an insect. She's a mentally unstable snooty vampire from the=20
-wrong side of the tracks. They fight crime!=20
-
---=-nBoMK7OiCIoH0Wl/gJCd
-Content-Disposition: attachment; filename="break-kernel.c"
-Content-Type: text/x-csrc; name="break-kernel.c"; charset="UTF-8"
-Content-Transfer-Encoding: base64
-
-I2RlZmluZSBfR05VX1NPVVJDRSAvKiBSZXF1aXJlZCBmb3IgQ0xPTkVfTkVXTlMgKi8KI2luY2x1
-ZGUgPGFzc2VydC5oPgojaW5jbHVkZSA8YXJwYS9pbmV0Lmg+CiNpbmNsdWRlIDxkaXJlbnQuaD4K
-I2luY2x1ZGUgPGVycm5vLmg+CiNpbmNsdWRlIDxmY250bC5oPgojaW5jbHVkZSA8Z2V0b3B0Lmg+
-CiNpbmNsdWRlIDxsaW51eC9sb29wLmg+CiNpbmNsdWRlIDxsaW51eC9uZXRsaW5rLmg+CiNpbmNs
-dWRlIDxsaW51eC9ydG5ldGxpbmsuaD4KI2luY2x1ZGUgPG5ldC9pZi5oPgojaW5jbHVkZSA8bmV0
-aW5ldC9pbi5oPgojaW5jbHVkZSA8c2NoZWQuaD4KI2luY2x1ZGUgPHNpZ25hbC5oPgojaW5jbHVk
-ZSA8cG9sbC5oPgojaW5jbHVkZSA8c3RkYXJnLmg+CiNpbmNsdWRlIDxzdGRpby5oPgojaW5jbHVk
-ZSA8c3RkbGliLmg+CiNpbmNsdWRlIDxzdHJpbmcuaD4KI2luY2x1ZGUgPHN5cy9tb3VudC5oPgoj
-aW5jbHVkZSA8c3lzL3NvY2tldC5oPgojaW5jbHVkZSA8c3lzL3N0YXQuaD4KI2luY2x1ZGUgPHN5
-cy9zeXNjYWxsLmg+CiNpbmNsdWRlIDxzeXMvdHlwZXMuaD4KI2luY2x1ZGUgPHN5cy93YWl0Lmg+
-CiNpbmNsdWRlIDxzeXMvZXZlbnRmZC5oPgojaW5jbHVkZSA8c3lzL3NpZ25hbGZkLmg+CiNpbmNs
-dWRlIDxzeXMvY2FwYWJpbGl0eS5oPgojaW5jbHVkZSA8c3lzL3ByY3RsLmg+CiNpbmNsdWRlIDx1
-bmlzdGQuaD4KCiNpZiAwCiNkZWZpbmUgX19kZWJ1Z19fKHgpIHByaW50ZiB4CiNlbHNlCiNkZWZp
-bmUgX19kZWJ1Z19fKHgpCiNlbmRpZgoKI2RlZmluZSBOX0VMRU1FTlRTKGFycikJCShzaXplb2Yg
-KGFycikgLyBzaXplb2YgKChhcnIpWzBdKSkKCiNkZWZpbmUgVFJVRSAxCiNkZWZpbmUgRkFMU0Ug
-MAp0eXBlZGVmIGludCBib29sOwoKI2RlZmluZSBSRUFEX0VORCAwCiNkZWZpbmUgV1JJVEVfRU5E
-IDEKCnN0YXRpYyB2b2lkCmRpZV93aXRoX2Vycm9yIChjb25zdCBjaGFyICpmb3JtYXQsIC4uLikK
-ewogIHZhX2xpc3QgYXJnczsKICBpbnQgZXJyc3Y7CgogIGVycnN2ID0gZXJybm87CgogIHZhX3N0
-YXJ0IChhcmdzLCBmb3JtYXQpOwogIHZmcHJpbnRmIChzdGRlcnIsIGZvcm1hdCwgYXJncyk7CiAg
-dmFfZW5kIChhcmdzKTsKCiAgZnByaW50ZiAoc3RkZXJyLCAiOiAlc1xuIiwgc3RyZXJyb3IgKGVy
-cnN2KSk7CgogIGV4aXQgKDEpOwp9CgpzdGF0aWMgdm9pZApkaWUgKGNvbnN0IGNoYXIgKmZvcm1h
-dCwgLi4uKQp7CiAgdmFfbGlzdCBhcmdzOwoKICB2YV9zdGFydCAoYXJncywgZm9ybWF0KTsKICB2
-ZnByaW50ZiAoc3RkZXJyLCBmb3JtYXQsIGFyZ3MpOwogIHZhX2VuZCAoYXJncyk7CgogIGZwcmlu
-dGYgKHN0ZGVyciwgIlxuIik7CgogIGV4aXQgKDEpOwp9CgpzdGF0aWMgdm9pZCAqCnhtYWxsb2Mg
-KHNpemVfdCBzaXplKQp7CiAgdm9pZCAqcmVzID0gbWFsbG9jIChzaXplKTsKICBpZiAocmVzID09
-IE5VTEwpCiAgICBkaWUgKCJvb20iKTsKICByZXR1cm4gcmVzOwp9CgpjaGFyICoKc3RyY29uY2F0
-IChjb25zdCBjaGFyICpzMSwKICAgICAgICAgICBjb25zdCBjaGFyICpzMikKewogIHNpemVfdCBs
-ZW4gPSAwOwogIGNoYXIgKnJlczsKCiAgaWYgKHMxKQogICAgbGVuICs9IHN0cmxlbiAoczEpOwog
-IGlmIChzMikKICAgIGxlbiArPSBzdHJsZW4gKHMyKTsKCiAgcmVzID0geG1hbGxvYyAobGVuICsg
-MSk7CiAgKnJlcyA9IDA7CiAgaWYgKHMxKQogICAgc3RyY2F0IChyZXMsIHMxKTsKICBpZiAoczIp
-CiAgICBzdHJjYXQgKHJlcywgczIpOwoKICByZXR1cm4gcmVzOwp9CgpjaGFyICoKc3RyY29uY2F0
-MyAoY29uc3QgY2hhciAqczEsCgkgICAgY29uc3QgY2hhciAqczIsCgkgICAgY29uc3QgY2hhciAq
-czMpCnsKICBzaXplX3QgbGVuID0gMDsKICBjaGFyICpyZXM7CgogIGlmIChzMSkKICAgIGxlbiAr
-PSBzdHJsZW4gKHMxKTsKICBpZiAoczIpCiAgICBsZW4gKz0gc3RybGVuIChzMik7CiAgaWYgKHMz
-KQogICAgbGVuICs9IHN0cmxlbiAoczMpOwoKICByZXMgPSB4bWFsbG9jIChsZW4gKyAxKTsKICAq
-cmVzID0gMDsKICBpZiAoczEpCiAgICBzdHJjYXQgKHJlcywgczEpOwogIGlmIChzMikKICAgIHN0
-cmNhdCAocmVzLCBzMik7CiAgaWYgKHMzKQogICAgc3RyY2F0IChyZXMsIHMzKTsKCiAgcmV0dXJu
-IHJlczsKfQoKY2hhciAqCnN0cmNvbmNhdF9sZW4gKGNvbnN0IGNoYXIgKnMxLAogICAgICAgICAg
-ICAgICBjb25zdCBjaGFyICpzMiwKICAgICAgICAgICAgICAgc2l6ZV90IHMyX2xlbikKewogIHNp
-emVfdCBsZW4gPSAwOwogIGNoYXIgKnJlczsKCiAgaWYgKHMxKQogICAgbGVuICs9IHN0cmxlbiAo
-czEpOwogIGlmIChzMikKICAgIGxlbiArPSBzMl9sZW47CgogIHJlcyA9IHhtYWxsb2MgKGxlbiAr
-IDEpOwogICpyZXMgPSAwOwogIGlmIChzMSkKICAgIHN0cmNhdCAocmVzLCBzMSk7CiAgaWYgKHMy
-KQogICAgc3RybmNhdCAocmVzLCBzMiwgczJfbGVuKTsKCiAgcmV0dXJuIHJlczsKfQoKY2hhcioK
-c3RyZHVwX3ByaW50ZiAoY29uc3QgY2hhciAqZm9ybWF0LAogICAgICAgICAgICAgICAuLi4pCnsK
-ICBjaGFyICpidWZmZXIgPSBOVUxMOwogIHZhX2xpc3QgYXJnczsKCiAgdmFfc3RhcnQgKGFyZ3Ms
-IGZvcm1hdCk7CiAgdmFzcHJpbnRmICgmYnVmZmVyLCBmb3JtYXQsIGFyZ3MpOwogIHZhX2VuZCAo
-YXJncyk7CgogIGlmIChidWZmZXIgPT0gTlVMTCkKICAgIGRpZSAoIm9vbSIpOwoKICByZXR1cm4g
-YnVmZmVyOwp9CgpzdGF0aWMgaW5saW5lIGludCByYXdfY2xvbmUodW5zaWduZWQgbG9uZyBmbGFn
-cywgdm9pZCAqY2hpbGRfc3RhY2spIHsKI2lmIGRlZmluZWQoX19zMzkwX18pIHx8IGRlZmluZWQo
-X19DUklTX18pCiAgICAgICAgLyogT24gczM5MCBhbmQgY3JpcyB0aGUgb3JkZXIgb2YgdGhlIGZp
-cnN0IGFuZCBzZWNvbmQgYXJndW1lbnRzCiAgICAgICAgICogb2YgdGhlIHJhdyBjbG9uZSgpIHN5
-c3RlbSBjYWxsIGlzIHJldmVyc2VkLiAqLwogICAgICAgIHJldHVybiAoaW50KSBzeXNjYWxsKF9f
-TlJfY2xvbmUsIGNoaWxkX3N0YWNrLCBmbGFncyk7CiNlbHNlCiAgICAgICAgcmV0dXJuIChpbnQp
-IHN5c2NhbGwoX19OUl9jbG9uZSwgZmxhZ3MsIGNoaWxkX3N0YWNrKTsKI2VuZGlmCn0KCnN0YXRp
-YyBpbnQKcGl2b3Rfcm9vdCAoY29uc3QgY2hhciAqIG5ld19yb290LCBjb25zdCBjaGFyICogcHV0
-X29sZCkKewojaWZkZWYgX19OUl9waXZvdF9yb290CiAgcmV0dXJuIHN5c2NhbGwoX19OUl9waXZv
-dF9yb290LCBuZXdfcm9vdCwgcHV0X29sZCk7CiNlbHNlCiAgZXJybm8gPSBFTk9TWVM7CiAgcmV0
-dXJuIC0xOwojZW5kaWYKfQoKdHlwZWRlZiBlbnVtIHsKICBGSUxFX1RZUEVfUkVHVUxBUiwKICBG
-SUxFX1RZUEVfRElSLAogIEZJTEVfVFlQRV9TWU1MSU5LLAogIEZJTEVfVFlQRV9TWVNURU1fU1lN
-TElOSywKICBGSUxFX1RZUEVfQklORCwKICBGSUxFX1RZUEVfQklORF9STywKICBGSUxFX1RZUEVf
-TU9VTlQsCiAgRklMRV9UWVBFX1JFTU9VTlQsCiAgRklMRV9UWVBFX0RFVklDRSwKfSBmaWxlX3R5
-cGVfdDsKCnR5cGVkZWYgZW51bSB7CiAgRklMRV9GTEFHU19OT05FID0gMCwKICBGSUxFX0ZMQUdT
-X05PTl9GQVRBTCA9IDEgPDwgMCwKICBGSUxFX0ZMQUdTX0lGX0xBU1RfRkFJTEVEID0gMSA8PCAx
-LAogIEZJTEVfRkxBR1NfREVWSUNFUyA9IDEgPDwgMiwKICBGSUxFX0ZMQUdTX05PUkVNT1VOVCA9
-IDEgPDwgMywKfSBmaWxlX2ZsYWdzX3Q7Cgp0eXBlZGVmIHN0cnVjdCB7CiAgZmlsZV90eXBlX3Qg
-dHlwZTsKICBjb25zdCBjaGFyICpuYW1lOwogIG1vZGVfdCBtb2RlOwogIGNvbnN0IGNoYXIgKmRh
-dGE7CiAgZmlsZV9mbGFnc190IGZsYWdzOwogIGludCAqb3B0aW9uOwp9IGNyZWF0ZV90YWJsZV90
-OwoKdHlwZWRlZiBzdHJ1Y3QgewogIGNvbnN0IGNoYXIgKndoYXQ7CiAgY29uc3QgY2hhciAqd2hl
-cmU7CiAgY29uc3QgY2hhciAqdHlwZTsKICBjb25zdCBjaGFyICpvcHRpb25zOwogIHVuc2lnbmVk
-IGxvbmcgZmxhZ3M7Cn0gbW91bnRfdGFibGVfdDsKCmludAphc2NpaV9pc2RpZ2l0IChjaGFyIGMp
-CnsKICByZXR1cm4gYyA+PSAnMCcgJiYgYyA8PSAnOSc7Cn0KCnN0YXRpYyBjb25zdCBjcmVhdGVf
-dGFibGVfdCBjcmVhdGVbXSA9IHsKICB7IEZJTEVfVFlQRV9ESVIsICIub2xkcm9vdCIsIDA3NTUg
-fSwKICB7IEZJTEVfVFlQRV9ESVIsICJ1c3IiLCAwNzU1IH0sCiAgeyBGSUxFX1RZUEVfQklORF9S
-TywgInVzciIsIDA3NTUsICIvdXNyIn0sCiAgeyBGSUxFX1RZUEVfRElSLCAidG1wIiwgMDE3Nzcg
-fSwKICB7IEZJTEVfVFlQRV9ESVIsICJydW4iLCAwNzU1fSwKICB7IEZJTEVfVFlQRV9ESVIsICJ2
-YXIiLCAwNzU1fSwKICB7IEZJTEVfVFlQRV9TWU1MSU5LLCAidmFyL3RtcCIsIDA3NTUsICIvdG1w
-In0sCiAgeyBGSUxFX1RZUEVfU1lNTElOSywgInZhci9ydW4iLCAwNzU1LCAiL3J1biJ9LAogIHsg
-RklMRV9UWVBFX1NZU1RFTV9TWU1MSU5LLCAibGliMzIiLCAwNzU1LCAidXNyL2xpYjMyIn0sCiAg
-eyBGSUxFX1RZUEVfU1lTVEVNX1NZTUxJTkssICJsaWI2NCIsIDA3NTUsICJ1c3IvbGliNjQifSwK
-ICB7IEZJTEVfVFlQRV9TWVNURU1fU1lNTElOSywgImxpYiIsIDA3NTUsICJ1c3IvbGliIn0sCiAg
-eyBGSUxFX1RZUEVfU1lTVEVNX1NZTUxJTkssICJiaW4iLCAwNzU1LCAidXNyL2JpbiIgfSwKICB7
-IEZJTEVfVFlQRV9TWVNURU1fU1lNTElOSywgInNiaW4iLCAwNzU1LCAidXNyL3NiaW4ifSwKICB7
-IEZJTEVfVFlQRV9ESVIsICJldGMiLCAwNzU1LCBOVUxMLCAwfSwKICB7IEZJTEVfVFlQRV9CSU5E
-LCAiZXRjIiwgMDc1NSwgIi9ldGMiLCBGSUxFX0ZMQUdTX05PUkVNT1VOVH0sCiAgeyBGSUxFX1RZ
-UEVfRElSLCAicHJvYyIsIDA3NTV9LAogIHsgRklMRV9UWVBFX01PVU5ULCAicHJvYyJ9LAogIHsg
-RklMRV9UWVBFX0RJUiwgImRldiIsIDA3NTV9LAogIHsgRklMRV9UWVBFX01PVU5ULCAiZGV2In0s
-CiAgeyBGSUxFX1RZUEVfRElSLCAiZGV2L3NobSIsIDA3NTV9LAogIHsgRklMRV9UWVBFX01PVU5U
-LCAiZGV2L3NobSJ9LAogIHsgRklMRV9UWVBFX0RFVklDRSwgImRldi9udWxsIiwgMDY2Nn0sCiAg
-eyBGSUxFX1RZUEVfREVWSUNFLCAiZGV2L3plcm8iLCAwNjY2fSwKICB7IEZJTEVfVFlQRV9ERVZJ
-Q0UsICJkZXYvZnVsbCIsIDA2NjZ9LAogIHsgRklMRV9UWVBFX0RFVklDRSwgImRldi9yYW5kb20i
-LCAwNjY2fSwKICB7IEZJTEVfVFlQRV9ERVZJQ0UsICJkZXYvdXJhbmRvbSIsIDA2NjZ9LAogIHsg
-RklMRV9UWVBFX0RFVklDRSwgImRldi90dHkiLCAwNjY2fSwKfTsKCnN0YXRpYyBtb3VudF90YWJs
-ZV90IG1vdW50X3RhYmxlW10gPSB7CiAgeyAicHJvYyIsICAgICAgInByb2MiLCAgICAgInByb2Mi
-LCAgTlVMTCwgICAgICAgIE1TX05PU1VJRHxNU19OT0VYRUN8TVNfTk9ERVYgICAgICAgICAgIH0s
-CiAgeyAidG1wZnMiLCAgICAgImRldiIsICAgICAgInRtcGZzIiwgIm1vZGU9NzU1IiwgIE1TX05P
-U1VJRHxNU19TVFJJQ1RBVElNRSAgICAgICAgICAgICAgIH0sCiAgeyAidG1wZnMiLCAgICAgImRl
-di9zaG0iLCAgInRtcGZzIiwgIm1vZGU9MTc3NyIsIE1TX05PU1VJRHxNU19OT0RFVnxNU19TVFJJ
-Q1RBVElNRSAgICAgIH0sCn07Cgp0eXBlZGVmIGVudW0gewogIEJJTkRfUkVBRE9OTFkgPSAoMTw8
-MCksCiAgQklORF9QUklWQVRFID0gKDE8PDEpLAogIEJJTkRfREVWSUNFUyA9ICgxPDwyKSwKICBC
-SU5EX1JFQ1VSU0lWRSA9ICgxPDwzKSwKICBCSU5EX05PUkVNT1VOVCA9ICgxPDw0KSwKfSBiaW5k
-X29wdGlvbl90OwoKc3RhdGljIGludApiaW5kX21vdW50IChjb25zdCBjaGFyICpzcmMsIGNvbnN0
-IGNoYXIgKmRlc3QsIGJpbmRfb3B0aW9uX3Qgb3B0aW9ucykKewogIGJvb2wgcmVhZG9ubHkgPSAo
-b3B0aW9ucyAmIEJJTkRfUkVBRE9OTFkpICE9IDA7CiAgYm9vbCBwcml2YXRlID0gKG9wdGlvbnMg
-JiBCSU5EX1BSSVZBVEUpICE9IDA7CiAgYm9vbCBkZXZpY2VzID0gKG9wdGlvbnMgJiBCSU5EX0RF
-VklDRVMpICE9IDA7CiAgYm9vbCBub3JlbW91bnQgPSAob3B0aW9ucyAmIEJJTkRfTk9SRU1PVU5U
-KSAhPSAwOwogIGJvb2wgcmVjdXJzaXZlID0gKG9wdGlvbnMgJiBCSU5EX1JFQ1VSU0lWRSkgIT0g
-MDsKCiAgaWYgKG1vdW50IChzcmMsIGRlc3QsIE5VTEwsIE1TX01HQ19WQUx8TVNfQklORHwocmVj
-dXJzaXZlP01TX1JFQzowKSwgTlVMTCkgIT0gMCkKICAgIHJldHVybiAxOwoKICBpZiAocHJpdmF0
-ZSkKICAgIHsKICAgICAgaWYgKG1vdW50ICgibm9uZSIsIGRlc3QsCiAgICAgICAgICAgICAgICAg
-TlVMTCwgTVNfUkVDfE1TX1BSSVZBVEUsIE5VTEwpICE9IDApCiAgICAgICAgcmV0dXJuIDI7CiAg
-ICB9CgogIGlmICghbm9yZW1vdW50KQogICAgewogICAgICBpZiAobW91bnQgKCJub25lIiwgZGVz
-dCwKCQkgTlVMTCwgTVNfTUdDX1ZBTHxNU19CSU5EfE1TX1JFTU9VTlR8KGRldmljZXM/MDpNU19O
-T0RFVil8TVNfTk9TVUlEfChyZWFkb25seT9NU19SRE9OTFk6MCksIE5VTEwpICE9IDApCglyZXR1
-cm4gMzsKICAgIH0KCiAgcmV0dXJuIDA7Cn0KCgpzdGF0aWMgaW50CndyaXRlX3RvX2ZpbGUgKGlu
-dCBmZCwgY29uc3QgY2hhciAqY29udGVudCkKewogIHNzaXplX3QgbGVuID0gc3RybGVuIChjb250
-ZW50KTsKICBzc2l6ZV90IHJlczsKCiAgd2hpbGUgKGxlbiA+IDApCiAgICB7CiAgICAgIHJlcyA9
-IHdyaXRlIChmZCwgY29udGVudCwgbGVuKTsKICAgICAgaWYgKHJlcyA8IDAgJiYgZXJybm8gPT0g
-RUlOVFIpCgljb250aW51ZTsKICAgICAgaWYgKHJlcyA8PSAwKQoJcmV0dXJuIC0xOwogICAgICBs
-ZW4gLT0gcmVzOwogICAgICBjb250ZW50ICs9IHJlczsKICAgIH0KCiAgcmV0dXJuIDA7Cn0KCnN0
-YXRpYyBpbnQKd3JpdGVfZmlsZSAoY29uc3QgY2hhciAqcGF0aCwgY29uc3QgY2hhciAqY29udGVu
-dCkKewogIGludCBmZDsKICBpbnQgcmVzOwoKICBmZCA9IG9wZW4gKHBhdGgsIE9fUkRXUiB8IE9f
-Q0xPRVhFQywgMCk7CiAgaWYgKGZkID09IC0xKQogICAgcmV0dXJuIC0xOwoKICByZXMgPSAwOwog
-IGlmIChjb250ZW50KQogICAgcmVzID0gd3JpdGVfdG9fZmlsZSAoZmQsIGNvbnRlbnQpOwoKICBj
-bG9zZSAoZmQpOwoKICByZXR1cm4gcmVzOwp9CgpzdGF0aWMgaW50CmNyZWF0ZV9maWxlIChjb25z
-dCBjaGFyICpwYXRoLCBtb2RlX3QgbW9kZSwgY29uc3QgY2hhciAqY29udGVudCkKewogIGludCBm
-ZDsKICBpbnQgcmVzOwoKICBmZCA9IGNyZWF0IChwYXRoLCBtb2RlKTsKICBpZiAoZmQgPT0gLTEp
-CiAgICByZXR1cm4gLTE7CgogIHJlcyA9IDA7CiAgaWYgKGNvbnRlbnQpCiAgICByZXMgPSB3cml0
-ZV90b19maWxlIChmZCwgY29udGVudCk7CgogIGNsb3NlIChmZCk7CgogIHJldHVybiByZXM7Cn0K
-CnN0YXRpYyB2b2lkCmNyZWF0ZV9maWxlcyAoY29uc3QgY3JlYXRlX3RhYmxlX3QgKmNyZWF0ZSwg
-aW50IG5fY3JlYXRlKQp7CiAgYm9vbCBsYXN0X2ZhaWxlZCA9IEZBTFNFOwogIGludCBpOwoKICBm
-b3IgKGkgPSAwOyBpIDwgbl9jcmVhdGU7IGkrKykKICAgIHsKICAgICAgY2hhciAqbmFtZTsKICAg
-ICAgY2hhciAqZGF0YSA9IE5VTEw7CiAgICAgIG1vZGVfdCBtb2RlID0gY3JlYXRlW2ldLm1vZGU7
-CiAgICAgIGZpbGVfZmxhZ3NfdCBmbGFncyA9IGNyZWF0ZVtpXS5mbGFnczsKICAgICAgaW50ICpv
-cHRpb24gPSBjcmVhdGVbaV0ub3B0aW9uOwogICAgICBjaGFyICppbl9yb290OwogICAgICBpbnQg
-azsKICAgICAgYm9vbCBmb3VuZDsKICAgICAgaW50IHJlczsKCiAgICAgIGlmICgoZmxhZ3MgJiBG
-SUxFX0ZMQUdTX0lGX0xBU1RfRkFJTEVEKSAmJgogICAgICAgICAgIWxhc3RfZmFpbGVkKQogICAg
-ICAgIGNvbnRpbnVlOwoKICAgICAgaWYgKG9wdGlvbiAmJiAhKm9wdGlvbikKCWNvbnRpbnVlOwoK
-ICAgICAgbmFtZSA9IHN0cmR1cF9wcmludGYgKGNyZWF0ZVtpXS5uYW1lLCBnZXR1aWQoKSk7CiAg
-ICAgIGlmIChjcmVhdGVbaV0uZGF0YSkKCWRhdGEgPSBzdHJkdXBfcHJpbnRmIChjcmVhdGVbaV0u
-ZGF0YSwgZ2V0dWlkKCkpOwoKICAgICAgbGFzdF9mYWlsZWQgPSBGQUxTRTsKCiAgICAgIHN3aXRj
-aCAoY3JlYXRlW2ldLnR5cGUpCiAgICAgICAgewogICAgICAgIGNhc2UgRklMRV9UWVBFX0RJUjoK
-ICAgICAgICAgIGlmIChta2RpciAobmFtZSwgbW9kZSkgIT0gMCkKICAgICAgICAgICAgZGllX3dp
-dGhfZXJyb3IgKCJjcmVhdGluZyBkaXIgJXMiLCBuYW1lKTsKICAgICAgICAgIGJyZWFrOwoKICAg
-ICAgICBjYXNlIEZJTEVfVFlQRV9SRUdVTEFSOgogICAgICAgICAgaWYgKGNyZWF0ZV9maWxlIChu
-YW1lLCBtb2RlLCBOVUxMKSkKICAgICAgICAgICAgZGllX3dpdGhfZXJyb3IgKCJjcmVhdGluZyBm
-aWxlICVzIiwgbmFtZSk7CiAgICAgICAgICBicmVhazsKCiAgICAgICAgY2FzZSBGSUxFX1RZUEVf
-U1lTVEVNX1NZTUxJTks6CgkgIHsKCSAgICBzdHJ1Y3Qgc3RhdCBidWY7CgkgICAgaW5fcm9vdCA9
-IHN0cmNvbmNhdCAoIi8iLCBuYW1lKTsKCSAgICBpZiAoc3RhdCAoaW5fcm9vdCwgJmJ1ZikgPT0g
-IDApCgkgICAgICB7CgkJaWYgKG1rZGlyIChuYW1lLCBtb2RlKSAhPSAwKQoJCSAgZGllX3dpdGhf
-ZXJyb3IgKCJjcmVhdGluZyBkaXIgJXMiLCBuYW1lKTsKCgkJaWYgKGJpbmRfbW91bnQgKGluX3Jv
-b3QsIG5hbWUsIEJJTkRfUFJJVkFURSB8IEJJTkRfUkVBRE9OTFkpKQoJCSAgZGllX3dpdGhfZXJy
-b3IgKCJtb3VudCAlcyIsIG5hbWUpOwoJICAgICAgfQoKCSAgICBmcmVlIChpbl9yb290KTsKCgkg
-ICAgYnJlYWs7CgkgIH0KCiAgICAgICAgY2FzZSBGSUxFX1RZUEVfU1lNTElOSzoKICAgICAgICAg
-IGlmIChzeW1saW5rIChkYXRhLCBuYW1lKSAhPSAwKQogICAgICAgICAgICBkaWVfd2l0aF9lcnJv
-ciAoImNyZWF0aW5nIHN5bWxpbmsgJXMiLCBuYW1lKTsKICAgICAgICAgIGJyZWFrOwoKICAgICAg
-ICBjYXNlIEZJTEVfVFlQRV9CSU5EOgogICAgICAgIGNhc2UgRklMRV9UWVBFX0JJTkRfUk86CiAg
-ICAgICAgICBpZiAoKHJlcyA9IGJpbmRfbW91bnQgKGRhdGEsIG5hbWUsCiAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgIDAgfAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAo
-KGNyZWF0ZVtpXS50eXBlID09IEZJTEVfVFlQRV9CSU5EX1JPKSA/IEJJTkRfUkVBRE9OTFkgOiAw
-KSB8CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICgoZmxhZ3MgJiBGSUxFX0ZMQUdT
-X0RFVklDRVMpID8gQklORF9ERVZJQ0VTIDogMCkgfAogICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAoKGZsYWdzICYgRklMRV9GTEFHU19OT1JFTU9VTlQpID8gQklORF9OT1JFTU9VTlQg
-OiAwKQoJCQkJICkpKQogICAgICAgICAgICB7CiAgICAgICAgICAgICAgaWYgKHJlcyA+IDEgfHwg
-KGZsYWdzICYgRklMRV9GTEFHU19OT05fRkFUQUwpID09IDApCiAgICAgICAgICAgICAgICBkaWVf
-d2l0aF9lcnJvciAoIm1vdW50aW5nIGJpbmRtb3VudCAlcyIsIG5hbWUpOwogICAgICAgICAgICAg
-IGxhc3RfZmFpbGVkID0gVFJVRTsKICAgICAgICAgICAgfQoKICAgICAgICAgIGJyZWFrOwoKICAg
-ICAgICBjYXNlIEZJTEVfVFlQRV9NT1VOVDoKICAgICAgICAgIGZvdW5kID0gRkFMU0U7CiAgICAg
-ICAgICBmb3IgKGsgPSAwOyBrIDwgTl9FTEVNRU5UUyhtb3VudF90YWJsZSk7IGsrKykKICAgICAg
-ICAgICAgewogICAgICAgICAgICAgIGlmIChzdHJjbXAgKG1vdW50X3RhYmxlW2tdLndoZXJlLCBu
-YW1lKSA9PSAwKQogICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgICBpZiAobW91bnQo
-bW91bnRfdGFibGVba10ud2hhdCwKICAgICAgICAgICAgICAgICAgICAgICAgICAgIG1vdW50X3Rh
-YmxlW2tdLndoZXJlLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgbW91bnRfdGFibGVba10u
-dHlwZSwKICAgICAgICAgICAgICAgICAgICAgICAgICAgIG1vdW50X3RhYmxlW2tdLmZsYWdzLAog
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgbW91bnRfdGFibGVba10ub3B0aW9ucykgPCAwKQog
-ICAgICAgICAgICAgICAgICAgIGRpZV93aXRoX2Vycm9yICgiTW91bnRpbmcgJXMiLCBuYW1lKTsK
-ICAgICAgICAgICAgICAgICAgZm91bmQgPSBUUlVFOwogICAgICAgICAgICAgICAgfQogICAgICAg
-ICAgICB9CgogICAgICAgICAgaWYgKCFmb3VuZCkKICAgICAgICAgICAgZGllICgiVW5hYmxlIHRv
-IGZpbmQgbW91bnQgJXNcbiIsIG5hbWUpOwoKICAgICAgICAgIGJyZWFrOwoKICAgICAgICBjYXNl
-IEZJTEVfVFlQRV9SRU1PVU5UOgogICAgICAgICAgaWYgKG1vdW50ICgibm9uZSIsIG5hbWUsCiAg
-ICAgICAgICAgICAgICAgICAgIE5VTEwsIE1TX01HQ19WQUx8TVNfUkVNT1VOVHxtb2RlLCBOVUxM
-KSAhPSAwKQogICAgICAgICAgICBkaWVfd2l0aF9lcnJvciAoIlVuYWJsZSB0byByZW1vdW50ICVz
-XG4iLCBuYW1lKTsKCiAgICAgICAgICBicmVhazsKCiAgICAgICAgY2FzZSBGSUxFX1RZUEVfREVW
-SUNFOgogICAgICAgICAgaWYgKGNyZWF0ZV9maWxlIChuYW1lLCBtb2RlLCBOVUxMKSkKICAgICAg
-ICAgICAgZGllX3dpdGhfZXJyb3IgKCJjcmVhdGluZyBmaWxlICVzIiwgbmFtZSk7CgoJICBpbl9y
-b290ID0gc3RyY29uY2F0ICgiLyIsIG5hbWUpOwogICAgICAgICAgaWYgKChyZXMgPSBiaW5kX21v
-dW50IChpbl9yb290LCBuYW1lLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBCSU5E
-X0RFVklDRVMpKSkKICAgICAgICAgICAgewogICAgICAgICAgICAgIGlmIChyZXMgPiAxIHx8IChm
-bGFncyAmIEZJTEVfRkxBR1NfTk9OX0ZBVEFMKSA9PSAwKQogICAgICAgICAgICAgICAgZGllX3dp
-dGhfZXJyb3IgKCJiaW5kaW5nIGRldmljZSAlcyIsIG5hbWUpOwogICAgICAgICAgICB9CgkgIGZy
-ZWUgKGluX3Jvb3QpOwoKICAgICAgICAgIGJyZWFrOwoKICAgICAgICBkZWZhdWx0OgogICAgICAg
-ICAgZGllICgiVW5rbm93biBjcmVhdGUgdHlwZSAlZFxuIiwgY3JlYXRlW2ldLnR5cGUpOwogICAg
-ICAgIH0KCiAgICAgIGZyZWUgKG5hbWUpOwogICAgICBmcmVlIChkYXRhKTsKICAgIH0KfQoKaW50
-Cm1haW4gKGludCBhcmdjLAogICAgICBjaGFyICoqYXJndikKewogIG1vZGVfdCBvbGRfdW1hc2s7
-CiAgY2hhciAqbmV3cm9vdDsKICBjaGFyICphcmdzW10gPSB7InNoIiwgTlVMTH07CiAgY2hhciBv
-bGRfY3dkWzI1Nl07CiAgY2hhciAqdWlkX21hcCwgKmdpZF9tYXA7CiAgaW50IHVpZCwgZ2lkOwog
-IHBpZF90IHBpZDsKCiAgbmV3cm9vdCA9ICIvdG1wLy54ZGctYXBwLXJvb3QiOwogIGlmIChta2Rp
-ciAobmV3cm9vdCwgMDc1NSkgJiYgZXJybm8gIT0gRUVYSVNUKQogICAgZGllX3dpdGhfZXJyb3Ig
-KCJDcmVhdGluZyB4ZGctYXBwLXJvb3QgZmFpbGVkIik7CgogIF9fZGVidWdfXygoImNyZWF0aW5n
-IG5ldyBuYW1lc3BhY2VcbiIpKTsKCiAgdWlkID0gZ2V0dWlkICgpOwogIGdpZCA9IGdldGdpZCAo
-KTsKCiAgcGlkID0gcmF3X2Nsb25lIChTSUdDSExEIHwgQ0xPTkVfTkVXTlMgfCBDTE9ORV9ORVdQ
-SUQgfCBDTE9ORV9ORVdVU0VSLAoJCSAgIE5VTEwpOwogIGlmIChwaWQgPT0gLTEpCiAgICBkaWVf
-d2l0aF9lcnJvciAoIkNyZWF0aW5nIG5ldyBuYW1lc3BhY2UgZmFpbGVkIik7CgogIGlmIChwaWQg
-IT0gMCkKICAgIGV4aXQgKDApOwoKICB1aWRfbWFwID0gc3RyZHVwX3ByaW50ZiAoIiVkICVkIDFc
-biIsIHVpZCwgdWlkKTsKICBpZiAod3JpdGVfZmlsZSAoIi9wcm9jL3NlbGYvdWlkX21hcCIsIHVp
-ZF9tYXApIDwgMCkKICAgIGRpZV93aXRoX2Vycm9yICgic2V0dGluZyB1cCB1aWQgbWFwIik7CiAg
-ZnJlZSAodWlkX21hcCk7CgogIGlmICh3cml0ZV9maWxlKCIvcHJvYy9zZWxmL3NldGdyb3VwcyIs
-ICJkZW55XG4iKSA8IDApCiAgICBkaWVfd2l0aF9lcnJvciAoImVycm9yIHdyaXRpbmcgdG8gc2V0
-Z3JvdXBzIik7CgogIGdpZF9tYXAgPSBzdHJkdXBfcHJpbnRmICgiJWQgJWQgMVxuIiwgZ2lkLCBn
-aWQpOwogIGlmICh3cml0ZV9maWxlICgiL3Byb2Mvc2VsZi9naWRfbWFwIiwgZ2lkX21hcCkgPCAw
-KQogICAgZGllX3dpdGhfZXJyb3IgKCJzZXR0aW5nIHVwIGdpZCBtYXAiKTsKICBmcmVlIChnaWRf
-bWFwKTsKCiAgb2xkX3VtYXNrID0gdW1hc2sgKDApOwoKICBpZiAobW91bnQgKE5VTEwsICIvIiwg
-TlVMTCwgTVNfU0xBVkV8TVNfUkVDLCBOVUxMKSA8IDApCiAgICBkaWVfd2l0aF9lcnJvciAoIkZh
-aWxlZCB0byBtYWtlIC8gc2xhdmUiKTsKCiAgaWYgKG1vdW50ICgiIiwgbmV3cm9vdCwgInRtcGZz
-IiwgTVNfTk9ERVZ8TVNfTk9FWEVDfE1TX05PU1VJRCwgTlVMTCkgIT0gMCkKICAgIGRpZV93aXRo
-X2Vycm9yICgiRmFpbGVkIHRvIG1vdW50IHRtcGZzIik7CgogIGdldGN3ZCAob2xkX2N3ZCwgc2l6
-ZW9mIChvbGRfY3dkKSk7CgogIGlmIChjaGRpciAobmV3cm9vdCkgIT0gMCkKICAgICAgZGllX3dp
-dGhfZXJyb3IgKCJjaGRpciIpOwoKICBjcmVhdGVfZmlsZXMgKGNyZWF0ZSwgTl9FTEVNRU5UUyAo
-Y3JlYXRlKSk7CgogIGlmIChwaXZvdF9yb290IChuZXdyb290LCAiLm9sZHJvb3QiKSkKICAgIGRp
-ZV93aXRoX2Vycm9yICgicGl2b3Rfcm9vdCIpOwoKICBjaGRpciAoIi8iKTsKCiAgLyogVGhlIG9s
-ZCByb290IGJldHRlciBiZSBycHJpdmF0ZSBvciB3ZSB3aWxsIHNlbmQgdW5tb3VudCBldmVudHMg
-dG8gdGhlIHBhcmVudCBuYW1lc3BhY2UgKi8KICBpZiAobW91bnQgKCIub2xkcm9vdCIsICIub2xk
-cm9vdCIsIE5VTEwsIE1TX1JFQ3xNU19QUklWQVRFLCBOVUxMKSAhPSAwKQogICAgZGllX3dpdGhf
-ZXJyb3IgKCJGYWlsZWQgdG8gbWFrZSBvbGQgcm9vdCBycHJpdmF0ZSIpOwoKICBpZiAodW1vdW50
-MiAoIi5vbGRyb290IiwgTU5UX0RFVEFDSCkpCiAgICBkaWVfd2l0aF9lcnJvciAoInVubW91bnQg
-b2xkcm9vdCIpOwoKICB1bWFzayAob2xkX3VtYXNrKTsKCiAgY2hkaXIgKG9sZF9jd2QpOwoKICBf
-X2RlYnVnX18oKCJmb3JraW5nIGZvciBjaGlsZFxuIikpOwoKICBpZiAoZXhlY3ZwIChhcmdzWzBd
-LCBhcmdzKSA9PSAtMSkKICAgIGRpZV93aXRoX2Vycm9yICgiZXhlY3ZwICVzIiwgYXJnc1swXSk7
-CgogIHJldHVybiAwOwp9Cm==
-
-
---=-nBoMK7OiCIoH0Wl/gJCd
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---=-nBoMK7OiCIoH0Wl/gJCd--
+Isn't it a concern that I can then add additional labels to the mapping
+for which I am not authorized?  Or is this mitigated by the fact that I
+cannot alter the rules?  What about the situation for the predefined
+labels in Smack - are you assuming that they will always be mapped up
+front in the mapping file?
