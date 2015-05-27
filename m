@@ -1,16 +1,15 @@
-From: Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
-Subject: Re: [PATCH v2 0/7] Smack namespace
-Date: Wed, 27 May 2015 09:33:25 -0400
-Message-ID: <5565C7A5.4060802__10568.1208814078$1432733705$gmane$org@tycho.nsa.gov>
-References: <1432209222-8479-1-git-send-email-l.pawelczyk@samsung.com>
-	<1432557162-19123-1-git-send-email-l.pawelczyk@samsung.com>
-	<556484BD.2060004@tycho.nsa.gov>
-	<1432719372.1784.4.camel@samsung.com>
+From: Josh Boyer <jwboyer-rxtnV0ftBwyoClj4AeEUq9i2O/JbrIOy@public.gmane.org>
+Subject: Re: Kernel panic with user namespaces
+Date: Wed, 27 May 2015 10:06:53 -0400
+Message-ID: <CA+5PVA7wpFwMSHkAQoVzthYSrxJXfpZo5vLGKYAHggN+ujJyow__45493.3277368129$1432735632$gmane$org@mail.gmail.com>
+References: <1431959951.5030.2.camel@redhat.com>
+	<1432642765.19400.2.camel@redhat.com>
+	<87vbff1es3.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1432719372.1784.4.camel-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <87vbff1es3.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,32 +19,24 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
-Cc: Lukasz Pawelczyk <havner-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tetsuo Handa <penguin-kernel-JPay3/Yim36HaxMnTkn67Xf5DAMn2ifp@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, Jingoo Han <jg1.han-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, Jeff Layton <jlayton-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Mauro Carvalho Chehab <mchehab-JPH+aEBZ4P+UEJcrhfAQsw@public.gmane.org>, Fabian Frederick <fabf-AgBVmzD5pcezQB+pC5nmwQ@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, James Morris <james.l.morris-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>, John Johansen <john.johansen-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Rafal Krypa <r.krypa-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Linux-Kernel@Vger. Kernel. Org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 05/27/2015 05:36 AM, Lukasz Pawelczyk wrote:
-> On wto, 2015-05-26 at 10:35 -0400, Stephen Smalley wrote:
->> On 05/25/2015 08:32 AM, Lukasz Pawelczyk wrote:
->>> --- Usage ---
->>>
->>> Smack namespace is written using LSM hooks inside user namespace. That
->>> means it's connected to it.
->>>
->>> To create a new Smack namespace you need to unshare() user namespace
->>> as usual. If that is all you do though, than there is no difference to
->>> what is now. To activate the Smack namespace you need to fill the
->>> labels' map. It is in a file /proc/$PID/smack_map.
+On Tue, May 26, 2015 at 12:31 PM, Eric W. Biederman
+<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+> Alexander Larsson <alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+>
+>> On m=E5n, 2015-05-18 at 16:39 +0200, Alexander Larsson wrote:
 >>
->> This should be /proc/$PID/attr/label_map or similar, modeled after the
->> existing /proc/$PID/attr/current and similar nodes.  Then it isn't
->> module-specific and can be reused for other modules.
-> 
-> To make this generic I'll have to introduce new LSH hooks to handle this
-> file (much like /proc/$PID/attr/current).
-> I take this is what you had in mind.
+>> Didn't get any replies to the below kernel panic (testcase attached),
+>> which seems rather important to fix. Reposting to a wider audience.
+>
+> Buggered backport greg already has the fix somewhere in his queue.
 
-We don't have separate hooks for the
-/proc/self/attr/{current,exec,fscreate,keycreate,socketcreate,prev}
-nodes.  Just one hook that passes the attribute name, and then the
-security hook implementation can distinguish on that.
+Is it fs_pin-allow-for-the-possibility-that-m_list-or-s_list-go-unused.patch
+or mnt-fail-collect_mounts-when-applied-to-unmounted-mounts.patch ?
+(Or both I guess.)  Those are the only 2 patches queued for 4.0 stable
+right now.
+
+josh
