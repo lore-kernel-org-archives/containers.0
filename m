@@ -1,7 +1,7 @@
-From: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [PATCH v2 0/7] Smack namespace
-Date: Tue, 26 May 2015 18:04:35 -0700
-Message-ID: <55651823.10304__38970.9626477726$1432688698$gmane$org@schaufler-ca.com>
+Date: Tue, 26 May 2015 22:13:34 -0500
+Message-ID: <87h9qyww4h.fsf@x220.int.ebiederm.org>
 References: <1432209222-8479-1-git-send-email-l.pawelczyk@samsung.com>
 	<1432557162-19123-1-git-send-email-l.pawelczyk@samsung.com>
 Mime-Version: 1.0
@@ -9,6 +9,7 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <1432557162-19123-1-git-send-email-l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
+	(Lukasz Pawelczyk's message of "Mon, 25 May 2015 14:32:35 +0200")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,11 +19,12 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Fabian Frederick <fabf-AgBVmzD5pcezQB+pC5nmwQ@public.gmane.org>, Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, James Morris <james.l.morris-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Jeff Layton <jlayton-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org>, Jingoo Han <jg1.han-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, Joe Perches <joe-6d6DIl74uiNBDgjK7y7TUQ@public.gmane.org>, John Johansen <john.johansen-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Mauro Carvalho Chehab <mchehab-JPH+aEBZ4P+UEJcrhfAQsw@public.gmane.org>, Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Paul Moore <paul@pau>
-Cc: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Lukasz Pawelczyk <havner-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
+Cc: Lukasz Pawelczyk <havner-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Tetsuo Handa <penguin-kernel-JPay3/Yim36HaxMnTkn67Xf5DAMn2ifp@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, Jingoo Han <jg1.han-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, Jeff Layton <jlayton-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org>, Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Mauro Carvalho Chehab <mchehab-JPH+aEBZ4P+UEJcrhfAQsw@public.gmane.org>, Fabian Frederick <fabf-AgBVmzD5pcezQB+pC5nmwQ@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, James Morris <james.l.morris-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, "Kirill A. Shutemov" <kirill-oKw7cIdHH8eLwutG50LtGA@public.gmane.org>, John Johansen <john.johansen-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Rafal Krypa <r.krypa-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>, Oleg
 List-Id: containers.vger.kernel.org
 
-On 5/25/2015 5:32 AM, Lukasz Pawelczyk wrote:
+Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org> writes:
+
 > Hello,
 >
 > Some time ago I sent a Smack namespace documentation and a preliminary
@@ -51,8 +53,55 @@ On 5/25/2015 5:32 AM, Lukasz Pawelczyk wrote:
 >  - "kernel/exit.c: make sure current's nsproxy != NULL while checking
 >    caps" patch has been dropped
 >  - fixed the title of the user_ns operations patch
->
->
+
+A have not completed a review I don't understand smack well enough to
+answer some questions but I don't think I like the approach this patch
+takes to get things done.
+
+I am flattered that you are using a mapping as I did with uid map and
+gid map.  Unfortunately I do not believe your mapping achieves what my
+mapping of uids and gids achieved.
+
+A technical goal is to give people the tools so that a sysadmin can set
+up a system, can grant people subids and subgids, and then the user can
+proceed to do what they need to do.  In particular there should be
+little to no need to keep pestering the system administrator for more
+identifiers.
+
+The flip side of that was that the mapping would ensure all of the
+existing permissions checks would work as expected, and the checks in
+the kernel could be converted without much trouble.
+
+Ranges of ids were choosen because they allow for a lot of possible ways
+of using uids and gids in containers, are comparitively easy to
+administer, are very fast to use, and don't need large data structures.
+
+With a discreet mapping of labels I have the premonition that we now
+have a large data structure that, is not as flexible in to use,
+is comparatively slow and appears to require an interaction with the
+system administrator for every label you use in a container.
+
+As part of that there is added a void *security pointer in the user
+namespace to apparently hang off anything anyone would like to use.
+Connected to that are hooks that have failure codes (presumably memory
+allocation failures), but the semantics are not clear.  My gut feel is
+that I would rather extend struct user_namespace to hold the smack label
+mapping table and remove all of the error codes because they would then
+be unnecessary.
+
+I am also concerned that several of the operations assume that setns
+and the like are normally privileged operations and so require the
+ability to perform other privileged operations.  Given that in the right
+circumstances setns is not privileged that seems like a semantics
+mismatch.
+
+Or in short my gut feel says the semantics of this change are close to
+something that would be very useful, but the details make this patchset
+far less useful, usable and comprehensible than it should be.
+
+Eric
+
+
 > ===================================================================
 >
 > --- What is a Smack namespace ---
@@ -200,7 +249,6 @@ On 5/25/2015 5:32 AM, Lukasz Pawelczyk wrote:
 > label of a process that is calling setns() has to be already mapped in
 > the target Smack namespace for the call to succeed.
 >
->
 > --- Special labels ---
 >
 > Smack is using some special labels that have built-in rules. Things
@@ -249,7 +297,7 @@ On 5/25/2015 5:32 AM, Lukasz Pawelczyk wrote:
 > implemented the process creating another namespace will be allowed to
 > map only labels that it has permission to itself (those that it has in
 > its own map).
->
+
 > Special files inside the virtual smackfs needs to be reviewed whether
 > it's beneficial to have some of their functionality namespaced as well
 > (e.g. onlycap, syslog. ambient, etc). This would increase
@@ -285,9 +333,3 @@ On 5/25/2015 5:32 AM, Lukasz Pawelczyk wrote:
 >  17 files changed, 1702 insertions(+), 250 deletions(-)
 >  create mode 100644 Documentation/security/Smack-namespace.txt
 >  create mode 100644 security/smack/smack_ns.c
->
-
-I have reviewed these patches (again!) and don't have
-any issues. I see that Mr. Smalley has some insightful
-suggestions, and once those are addressed I think that
-we should be lined up to sell it to the infrastructure.
