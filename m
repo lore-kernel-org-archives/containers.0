@@ -1,19 +1,33 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: [CFT][PATCH 00/10] Making new mounts of proc and sysfs as safe as
-	bind mounts (take 2)
-Date: Thu, 28 May 2015 10:33:29 -0700
-Message-ID: <CALCETrXXax28s9kMTQ-zDx0MttQWG4rg2y-oz3bSGiumSL=3sg__1013.66619715026$1432834452$gmane$org@mail.gmail.com>
-References: <87pp63jcca.fsf@x220.int.ebiederm.org>
-	<87siaxuvik.fsf@x220.int.ebiederm.org>
-	<87wq004im1.fsf@x220.int.ebiederm.org>
-	<CALCETrUhXBR5WQ6gXr9KzGc4=7tph7kzopY29Hug4g+FhOzEKg@mail.gmail.com>
-	<20150528140839.GD28842@ubuntumail>
-	<87lhg8pwvz.fsf@x220.int.ebiederm.org>
+From: Alexander Larsson <alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] devpts: Add ptmx_uid and ptmx_gid options
+Date: Thu, 28 May 2015 19:35:19 +0200
+Message-ID: <1432834519.21304.7.camel__380.51128290153$1432834538$gmane$org@redhat.com>
+References: <b321c0c2729d1c2a72aea319b077dce7afd79698.1424480579.git.luto@amacapital.net>
+	<CALCETrVtGE8LdBCFTe1_cqpLf=SxPNX5iCe5wa-hZ0pe8ps_jA@mail.gmail.com>
+	<1427447013.2250.9.camel@HansenPartnership.com>
+	<1427788642.4411.12.camel@redhat.com>
+	<1427807248.2117.117.camel@HansenPartnership.com>
+	<CALCETrWKA4ZdHfdLuW0_W5xxJOSCJdt_fiRWs6vDk+8ZQ9n9iA@mail.gmail.com>
+	<1427808184.2117.122.camel@HansenPartnership.com>
+	<CALCETrW8v1NFa7fcJbyJKXk9Msudht5BJ7Zy1Rg7ZC_TS-2Y-Q@mail.gmail.com>
+	<1427810118.2117.126.camel@HansenPartnership.com>
+	<CALCETrU1vKf3fXPt8nS-ABDgfp8NxrFjHwTc68rA0rtvg2Lufg@mail.gmail.com>
+	<1427810886.2117.129.camel@HansenPartnership.com>
+	<1427811444.4411.20.camel@redhat.com>
+	<1427969525.3559.120.camel@HansenPartnership.com>
+	<CALCETrWyUYgHY53O451AdJUs9Mcjsqmr4fUzoNmYsTP1HLq+VA@mail.gmail.com>
+	<1427984969.13651.11.camel@redhat.com>
+	<CALCETrWYit+WiAM6DFm0enGeJN==uWNC63zXp_zRSsSJg2YGPg@mail.gmail.com>
+	<87zj6qs7v8.fsf@x220.int.ebiederm.org>
+	<CALCETrVGcCA2SMiDT8JN=AWiSFCXWSaMeKBQmkbKynKfiPJCwA@mail.gmail.com>
+	<87oal4odne.fsf@x220.int.ebiederm.org>
+	<1432832511.21304.6.camel@redhat.com>
+	<87mw0omxp0.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87lhg8pwvz.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <87mw0omxp0.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,53 +38,258 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: gnome-os-list-rDKQcyrBJuzYtjvyW6yDsg@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, mclasen-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, May 28, 2015 at 8:03 AM, Eric W. Biederman
-<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
-> Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> writes:
->
->> Quoting Andy Lutomirski (luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org):
->>> On Fri, May 22, 2015 at 10:39 AM, Eric W. Biederman
->>> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->>> > I had hoped to get some Tested-By's on that patch series.
->>>
->>> Sorry, I've been totally swamped.
->>>
->>> I suspect that Sandstorm is okay, but I haven't had a chance to test
->>> it for real.  Sandstorm makes only limited use of proc and sysfs in
->>> containers, but I'll see if I can test it for real this weekend.
->>
->> Testing this with unprivileged containers, I get
->>
->> lxc-start: conf.c: lxc_mount_auto_mounts: 808 Operation not permitted
->> - error mounting sysfs on
->> /usr/lib/x86_64-linux-gnu/lxc/sys/devices/virtual/net flags 0
->
-> Grr..  I was afraid this would break something. :(
->
-> Looking at my system I see that sysfs is currently mounted
-> "nosuid,nodev,noexec"
->
-> Looking at the lxc-start code I don't see it as including any of those
-> mount options.  In practice for sysfs I think those options are
-> meaningless (as there should be no devices and nothing executable in
-> sysfs) but I can understand the past concerns with chmod on virtual
-> filesystems that would incline people to use them, so I think the
-> failure is reporting a legitimate security issue in the lxc userspace
-> code where the the unprivileged code is currently attempting to give
-> greater access to sysfs than was given by the original mount of sysfs.
->
-> As nosuid,nodev,noexec should not impair the operation of sysfs
-> operation it looks like you can always specify those options and just
-> make this concern go away.
+On Thu, 2015-05-28 at 12:14 -0500, Eric W. Biederman wrote:
+> Alexander Larsson <alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+> 
+> > On Thu, 2015-05-28 at 11:44 -0500, Eric W. Biederman wrote:
+> > > Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> writes:
+> > > 
+> > > > On Thu, Apr 2, 2015 at 11:27 AM, Eric W. Biederman
+> > > > <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+> > > > > Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> writes:
+> > > > > 
+> > > > > > On Thu, Apr 2, 2015 at 7:29 AM, Alexander Larsson <
+> > > > > > alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> > > > > > > On Thu, 2015-04-02 at 07:06 -0700, Andy Lutomirski wrote:
+> > > > > > > > On Thu, Apr 2, 2015 at 3:12 AM, James Bottomley
+> > > > > > > > <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org> wrote:
+> > > > > > > > > On Tue, 2015-03-31 at 16:17 +0200, Alexander Larsson 
+> > > > > > > > > wrote:
+> > > > > > > > > > On tis, 2015-03-31 at 17:08 +0300, James Bottomley 
+> > > > > > > > > > wrote:
+> > > > > > > > > > > On Tue, 2015-03-31 at 06:59 -0700, Andy 
+> > > > > > > > > > > Lutomirski 
+> > > > > > > > > > > wrote:
+> > > > > > > > > > > > 
+> > > > > > > > > > > > I don't think that this is correct.  That user 
+> > > > > > > > > > > > can 
+> > > > > > > > > > > > already create a
+> > > > > > > > > > > > nested userns and map themselves as 0 inside 
+> > > > > > > > > > > > it. 
+> > > > > > > > > > > >  Then they can mount
+> > > > > > > > > > > > devpts.
+> > > > > > > > > > > 
+> > > > > > > > > > > I don't mind if they create a container and 
+> > > > > > > > > > > control 
+> > > > > > > > > > > the isolated ttys in
+> > > > > > > > > > > that sub container in the VPS; that's fine.  I do 
+> > > > > > > > > > > 
+> > > > > > > > > > > mind if they get
+> > > > > > > > > > > access to the ttys in the VPS.
+> > > > > > > > > > > 
+> > > > > > > > > > > If you can convince me (and the rest of Linux) 
+> > > > > > > > > > > that 
+> > > > > > > > > > > the tty subsystem
+> > > > > > > > > > > should be mountable by an unprivileged user 
+> > > > > > > > > > > generally, then what you
+> > > > > > > > > > > propose is OK.
+> > > > > > > > > > 
+> > > > > > > > > > That is controlled by the general rights to mount 
+> > > > > > > > > > stuff. I.e. unless you
+> > > > > > > > > > have CAP_SYS_ADMIN in the VPS container you will 
+> > > > > > > > > > not be 
+> > > > > > > > > > able to mount
+> > > > > > > > > > devpts there. You can only do it in a subcontainer 
+> > > > > > > > > > where you got
+> > > > > > > > > > permissions to mount via using user namespaces.
+> > > > > > > > > 
+> > > > > > > > > OK let me try again.  Fine, if you want to speak 
+> > > > > > > > > capabilities, you've
+> > > > > > > > > given a non-root user an unexpected capability (the 
+> > > > > > > > > capability of
+> > > > > > > > > creating a ptmx device).  But you haven't used a 
+> > > > > > > > > capability separation
+> > > > > > > > > to do this, you've just hard coded it via a mount 
+> > > > > > > > > parameter mechanism.
+> > > > > > > > > 
+> > > > > > > > > If you want to do this thing, do it properly, so it's 
+> > > > > > > > > 
+> > > > > > > > > acceptable to the
+> > > > > > > > > whole of Linux, not a special corner case for one 
+> > > > > > > > > particular type of
+> > > > > > > > > container.
+> > > > > > > > > 
+> > > > > > > > > Security breaches are created when people code in 
+> > > > > > > > > special, little used,
+> > > > > > > > > corner cases because they don't get as thoroughly 
+> > > > > > > > > tested 
+> > > > > > > > > and inspected
+> > > > > > > > > as generally applicable mechanisms.
+> > > > > > > > > 
+> > > > > > > > > What you want is to be able to use the tty subsystem 
+> > > > > > > > > as a 
+> > > > > > > > > non root user:
+> > > > > > > > > fine, but set that up globally, don't hide it in 
+> > > > > > > > > containers so a lot
+> > > > > > > > > fewer people care.
+> > > > > > > > 
+> > > > > > > > I tend to agree, and not just for the tty subsystem. 
+> > > > > > > >  This 
+> > > > > > > > is an
+> > > > > > > > attack surface issue.  With unprivileged user 
+> > > > > > > > namespaces, 
+> > > > > > > > unprivileged
+> > > > > > > > users can create mount namespaces (probably a good 
+> > > > > > > > thing 
+> > > > > > > > for bind
+> > > > > > > > mounts, etc), network namespaces (reasonably safe by 
+> > > > > > > > themselves),
+> > > > > > > > network interfaces and iptables rules (scary), fresh
+> > > > > > > > instances/superblocks of some filesystems (scariness 
+> > > > > > > > depends on the fs
+> > > > > > > > -- tmpfs is probably fine), and more.
+> > > > > > > > 
+> > > > > > > > I think we should have real controls for this, and this 
+> > > > > > > > is 
+> > > > > > > > mostly
+> > > > > > > > Eric's domain.  Eric?  A silly issue that sometimes 
+> > > > > > > > prevents devpts
+> > > > > > > > from being mountable isn't a real control, though.
+> > > > > 
+> > > > > I thought the controls for limiting how much of the userspace 
+> > > > > API
+> > > > > an application could use were called seccomp and seccomp2.
+> > > > > 
+> > > > > Do we need something like a PAM module so that we can set up 
+> > > > > these
+> > > > > controls during login?
+> > > > > 
+> > > > > > > I'm honestly surprised that non-root is allowed to mount 
+> > > > > > > things in
+> > > > > > > general with user namespaces. This was long disabled use 
+> > > > > > > for 
+> > > > > > > non-root in
+> > > > > > > Fedora, but it is now enabled.
+> > > > > > > 
+> > > > > > > For instance, using loopback mounted files you could 
+> > > > > > > probably 
+> > > > > > > attack
+> > > > > > > some of the less well tested filesystem implementations 
+> > > > > > > by 
+> > > > > > > feeding them
+> > > > > > > fuzzed data.
+> > > > > > > 
+> > > > > > 
+> > > > > > You actually can't do that right now.  Filesystems have to 
+> > > > > > opt 
+> > > > > > in to
+> > > > > > being mounted in unprivileged user namespaces, and no 
+> > > > > > filesystems with
+> > > > > > backing stores have opted in.  devpts has, but it's buggy 
+> > > > > > without this
+> > > > > > patch IMO.
+> > > > > 
+> > > > > Arguably you should use two user namespaces.  The first to do 
+> > > > > 
+> > > > > what you
+> > > > > want to as root the second to run as the uid you want to run 
+> > > > > as.
+> > > > > 
+> > > > > > > Anyway, I don't see how this affects devpts though. If 
+> > > > > > > you're 
+> > > > > > > running in
+> > > > > > > a container (or uncontained), as a regular users with no 
+> > > > > > > mount
+> > > > > > > capabilities you can already mount a devpts filesystem if 
+> > > > > > > you 
+> > > > > > > create a
+> > > > > > > subbcontainer with user namespaces and map your uid to 0 
+> > > > > > > in 
+> > > > > > > the
+> > > > > > > subcontainer. Then you get a new ptmx device that you can 
+> > > > > > > do 
+> > > > > > > whatever
+> > > > > > > you want with. The mount option would let you do the 
+> > > > > > > same, 
+> > > > > > > except be
+> > > > > > > your regular uid in the subcontainer.
+> > > > > > > 
+> > > > > > > The only difference outside of the subcontainer is that 
+> > > > > > > if 
+> > > > > > > the outer
+> > > > > > > container has no uid 0 mapped, yet the user has 
+> > > > > > > CAP_SYSADMIN 
+> > > > > > > rights in
+> > > > > > > that container. Then he can mount devpts in the outer 
+> > > > > > > container where he
+> > > > > > > before could only mount it in an inner container.
+> > > > > > > 
+> > > > > > 
+> > > > > > Agreed.  Also, devpts doesn't seem scary at all to me from 
+> > > > > > a 
+> > > > > > userns
+> > > > > > perspective.  Regular users on normal systems can already 
+> > > > > > use 
+> > > > > > ptmx,
+> > > > > > and AFAICS basically all of the attack surface is already 
+> > > > > > available
+> > > > > > through the normal /dev/ptmx node.
+> > > > > 
+> > > > > My only real take is that there are a lot more places that 
+> > > > > you 
+> > > > > need to
+> > > > > tweak beyond devpts.  So this patch seemed lacking and 
+> > > > > boring.
+> > > > > 
+> > > > > Beyond that until I get the mount namespace sorted out things 
+> > > > > are 
+> > > > > pretty
+> > > > > much in a feature freeze because I can't multitask well 
+> > > > > enough to 
+> > > > > do
+> > > > > complicated patches and take feature patches.
+> > > > > 
+> > > > 
+> > > > Eric, do you think you have time now to take a look at this 
+> > > > patch?
+> > > 
+> > > I am much closer.  Escaping bind mounts is still not yet fixed 
+> > > but I
+> > > have code that almost works.
+> > > 
+> > > My gut feel still says that two user namespaces one where your 0 
+> > > is
+> > > mapped to your uid and a second where your uid is identity mapped 
+> > > is 
+> > > the
+> > > preferrable configuration, and makes this patch unnecessary.
+> > 
+> > I don't really understand this. My usecase is that I want a desktop 
+> > app
+> > sandbox, it should run as the actual user that is running the 
+> > graphical
+> > session mapped to its real uid. In this namespace i want a /dev/pts 
+> > so
+> > that i can e.g. shell out to ssh and feed it a password on the tty
+> > prompt or similar. And i don't want to bind-mount in the host 
+> > /dev/pts,
+> > because then the sandbox can read from the ttys of other apps.
+> > 
+> > Where does the second namespace enter into this? 
+> 
+> Step a.  Create create a user namespace where uid 0 is mapped to your
+> real uid, and set up your sandbox (aka mount /dev/pts and everything
+> else).
+> 
+> Step b.  Create a nested user namespace where your uid is identity
+> mapped and run your desktop application.  You can even drop all caps 
+> in
+> your namespace.
+> 
+> Or basically:
+>     unshare(CLONE_NEWUSER)
+>     
+>     map 0 to real_uid
+>     set things up.
+>     
+>     unshare(CLONE_NEWUSER)
+>     map real_uid to 0 (Because I am assuming we are
+>                       single threaded in the nested context)
+>     
+>     drop caps
+>     exec /path/to/my/sandboxed/application
 
-Linus is pretty strict about not breaking the ABI, and this definitely
-counts as breaking the ABI.  There's an exception for security issues,
-but is there really a security issue here?  That is, do we lose
-anything important if we just drop the offending part of the patch
-set?  As you've said, there shouldn't be sensitive device nodes,
-executables, or setuid files in proc or sysfs in the first place.
-
---Andy
+Thanks. I'll try that.
