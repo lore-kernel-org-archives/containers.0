@@ -1,14 +1,18 @@
-From: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
-Subject: Re: Kernel panic with user namespaces
-Date: Thu, 28 May 2015 10:03:32 +0300
-Message-ID: <5566BDC4.4020909__12673.0676078752$1432798312$gmane$org@kyup.com>
-References: <1431959951.5030.2.camel@redhat.com>	<1432642765.19400.2.camel@redhat.com>	<87vbff1es3.fsf@x220.int.ebiederm.org>	<CA+5PVA7wpFwMSHkAQoVzthYSrxJXfpZo5vLGKYAHggN+ujJyow@mail.gmail.com>
-	<87pp5mqce9.fsf@x220.int.ebiederm.org>
+From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [CFT][PATCH 00/10] Making new mounts of proc and sysfs as safe
+	as bind mounts (take 2)
+Date: Thu, 28 May 2015 14:08:39 +0000
+Message-ID: <20150528140839.GD28842__11033.4352976226$1432822150$gmane$org@ubuntumail>
+References: <87pp63jcca.fsf@x220.int.ebiederm.org>
+	<87siaxuvik.fsf@x220.int.ebiederm.org>
+	<87wq004im1.fsf@x220.int.ebiederm.org>
+	<CALCETrUhXBR5WQ6gXr9KzGc4=7tph7kzopY29Hug4g+FhOzEKg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87pp5mqce9.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <CALCETrUhXBR5WQ6gXr9KzGc4=7tph7kzopY29Hug4g+FhOzEKg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,37 +22,39 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Josh Boyer <jwboyer-rxtnV0ftBwyoClj4AeEUq9i2O/JbrIOy@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Linux-Kernel@Vger. Kernel. Org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-SGksCgoKSSd2ZSBydW4gdGhlIGF0dGFjaGVkIHRlc3QgY2FzZSBvbiBhIGNsZWFuIDQuMCBhbmQg
-NC4wICsgdGhlIHBhdGNoIHlvdQpyZWZlcmVuY2VkIGJ1dCBpbiBuZWl0aGVyIGNhc2VzIGNvdWxk
-IEkgY3Jhc2ggdGhlIGtlcm5lbC4gQWxsIHRoYXQgd2FzCmhhcHBlbmluZyB3YXMgZm9yIGEgbmV3
-IG5hbWVzcGFjZSB0byBiZSBjcmVhdGVkIGFuZCBiYXNoIGV4ZWN1dGVkIGluIGl0CmFuZCBhZnRl
-ciBzb21lIHNlY29uZHMgSSBnZXQgbG9nZ2VkIG91dCBvZiB0aGUgbWFjaGluZS4gQnV0IHRoZW4g
-SSBjYW4KbG9nLWluIGJhY2sgYW5kIHRoZSBrZXJuZWwgaGFzbid0IGNyYXNoZWQuCgpSZWdhcmRz
-LApOaWtvbGF5CgoKT24gMDUvMjcvMjAxNSAwNjoxNiBQTSwgRXJpYyBXLiBCaWVkZXJtYW4gd3Jv
-dGU6Cj4gSm9zaCBCb3llciA8andib3llckBmZWRvcmFwcm9qZWN0Lm9yZz4gd3JpdGVzOgo+IAo+
-PiBPbiBUdWUsIE1heSAyNiwgMjAxNSBhdCAxMjozMSBQTSwgRXJpYyBXLiBCaWVkZXJtYW4KPj4g
-PGViaWVkZXJtQHhtaXNzaW9uLmNvbT4gd3JvdGU6Cj4+PiBBbGV4YW5kZXIgTGFyc3NvbiA8YWxl
-eGxAcmVkaGF0LmNvbT4gd3JpdGVzOgo+Pj4KPj4+PiBPbiBtw6VuLCAyMDE1LTA1LTE4IGF0IDE2
-OjM5ICswMjAwLCBBbGV4YW5kZXIgTGFyc3NvbiB3cm90ZToKPj4+Pgo+Pj4+IERpZG4ndCBnZXQg
-YW55IHJlcGxpZXMgdG8gdGhlIGJlbG93IGtlcm5lbCBwYW5pYyAodGVzdGNhc2UgYXR0YWNoZWQp
-LAo+Pj4+IHdoaWNoIHNlZW1zIHJhdGhlciBpbXBvcnRhbnQgdG8gZml4LiBSZXBvc3RpbmcgdG8g
-YSB3aWRlciBhdWRpZW5jZS4KPj4+Cj4+PiBCdWdnZXJlZCBiYWNrcG9ydCBncmVnIGFscmVhZHkg
-aGFzIHRoZSBmaXggc29tZXdoZXJlIGluIGhpcyBxdWV1ZS4KPj4KPj4gSXMgaXQgZnNfcGluLWFs
-bG93LWZvci10aGUtcG9zc2liaWxpdHktdGhhdC1tX2xpc3Qtb3Itc19saXN0LWdvLXVudXNlZC5w
-YXRjaAo+PiBvciBtbnQtZmFpbC1jb2xsZWN0X21vdW50cy13aGVuLWFwcGxpZWQtdG8tdW5tb3Vu
-dGVkLW1vdW50cy5wYXRjaCA/Cj4+IChPciBib3RoIEkgZ3Vlc3MuKSAgVGhvc2UgYXJlIHRoZSBv
-bmx5IDIgcGF0Y2hlcyBxdWV1ZWQgZm9yIDQuMCBzdGFibGUKPj4gcmlnaHQgbm93Lgo+IAo+IEJv
-dGggZml4IHRoZSBidWdnZXJlZCBiYWNrcG9ydC4KPiAKPiBmc19waW4tYWxsb3ctZm9yLXRoZS1w
-b3NzaWJpbGl0eS10aGF0LW1fbGlzdC1vci1zX2xpc3QtZ28tdW51c2VkLnBhdGNoCj4gZml4ZXMg
-dGhlIGNyYXNoLgo+IAo+IEVyaWMKPiAtLQo+IFRvIHVuc3Vic2NyaWJlIGZyb20gdGhpcyBsaXN0
-OiBzZW5kIHRoZSBsaW5lICJ1bnN1YnNjcmliZSBsaW51eC1rZXJuZWwiIGluCj4gdGhlIGJvZHkg
-b2YgYSBtZXNzYWdlIHRvIG1ham9yZG9tb0B2Z2VyLmtlcm5lbC5vcmcKPiBNb3JlIG1ham9yZG9t
-byBpbmZvIGF0ICBodHRwOi8vdmdlci5rZXJuZWwub3JnL21ham9yZG9tby1pbmZvLmh0bWwKPiBQ
-bGVhc2UgcmVhZCB0aGUgRkFRIGF0ICBodHRwOi8vd3d3LnR1eC5vcmcvbGttbC8KPiAKX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWls
-aW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xp
-c3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Quoting Andy Lutomirski (luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org):
+> On Fri, May 22, 2015 at 10:39 AM, Eric W. Biederman
+> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+> > I had hoped to get some Tested-By's on that patch series.
+> 
+> Sorry, I've been totally swamped.
+> 
+> I suspect that Sandstorm is okay, but I haven't had a chance to test
+> it for real.  Sandstorm makes only limited use of proc and sysfs in
+> containers, but I'll see if I can test it for real this weekend.
+
+Testing this with unprivileged containers, I get
+
+lxc-start: conf.c: lxc_mount_auto_mounts: 808 Operation not permitted - error mounting sysfs on /usr/lib/x86_64-linux-gnu/lxc/sys/devices/virtual/net flags 0
+
+> > Oh well.  The fundamentals seem sound, and my biggest concern the
+> > implicit nodev does not apply so I will put this patchset in linux-next
+> > and aim at merging it in the next merge window.  Hopefully that will
+> > leave enough time catch problems.
+> >
+> > Eric
+> >
+> 
+> 
+> 
+> -- 
+> Andy Lutomirski
+> AMA Capital Management, LLC
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linuxfoundation.org/mailman/listinfo/containers
