@@ -1,29 +1,14 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: [PATCH] devpts: Add ptmx_uid and ptmx_gid options
-Date: Wed, 27 May 2015 14:32:43 -0700
-Message-ID: <CALCETrVGcCA2SMiDT8JN=AWiSFCXWSaMeKBQmkbKynKfiPJCwA__46089.6970158958$1432762400$gmane$org@mail.gmail.com>
-References: <b321c0c2729d1c2a72aea319b077dce7afd79698.1424480579.git.luto@amacapital.net>
-	<CALCETrVtGE8LdBCFTe1_cqpLf=SxPNX5iCe5wa-hZ0pe8ps_jA@mail.gmail.com>
-	<1427447013.2250.9.camel@HansenPartnership.com>
-	<1427788642.4411.12.camel@redhat.com>
-	<1427807248.2117.117.camel@HansenPartnership.com>
-	<CALCETrWKA4ZdHfdLuW0_W5xxJOSCJdt_fiRWs6vDk+8ZQ9n9iA@mail.gmail.com>
-	<1427808184.2117.122.camel@HansenPartnership.com>
-	<CALCETrW8v1NFa7fcJbyJKXk9Msudht5BJ7Zy1Rg7ZC_TS-2Y-Q@mail.gmail.com>
-	<1427810118.2117.126.camel@HansenPartnership.com>
-	<CALCETrU1vKf3fXPt8nS-ABDgfp8NxrFjHwTc68rA0rtvg2Lufg@mail.gmail.com>
-	<1427810886.2117.129.camel@HansenPartnership.com>
-	<1427811444.4411.20.camel@redhat.com>
-	<1427969525.3559.120.camel@HansenPartnership.com>
-	<CALCETrWyUYgHY53O451AdJUs9Mcjsqmr4fUzoNmYsTP1HLq+VA@mail.gmail.com>
-	<1427984969.13651.11.camel@redhat.com>
-	<CALCETrWYit+WiAM6DFm0enGeJN==uWNC63zXp_zRSsSJg2YGPg@mail.gmail.com>
-	<87zj6qs7v8.fsf@x220.int.ebiederm.org>
+From: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+Subject: Re: Kernel panic with user namespaces
+Date: Thu, 28 May 2015 10:03:32 +0300
+Message-ID: <5566BDC4.4020909__12673.0676078752$1432798312$gmane$org@kyup.com>
+References: <1431959951.5030.2.camel@redhat.com>	<1432642765.19400.2.camel@redhat.com>	<87vbff1es3.fsf@x220.int.ebiederm.org>	<CA+5PVA7wpFwMSHkAQoVzthYSrxJXfpZo5vLGKYAHggN+ujJyow@mail.gmail.com>
+	<87pp5mqce9.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87zj6qs7v8.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <87pp5mqce9.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -33,118 +18,37 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: gnome-os-list-rDKQcyrBJuzYtjvyW6yDsg@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, mclasen-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Josh Boyer <jwboyer-rxtnV0ftBwyoClj4AeEUq9i2O/JbrIOy@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Linux-Kernel@Vger. Kernel. Org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Apr 2, 2015 at 11:27 AM, Eric W. Biederman
-<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
-> Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> writes:
->
->> On Thu, Apr 2, 2015 at 7:29 AM, Alexander Larsson <alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
->>> On Thu, 2015-04-02 at 07:06 -0700, Andy Lutomirski wrote:
->>>> On Thu, Apr 2, 2015 at 3:12 AM, James Bottomley
->>>> <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org> wrote:
->>>> > On Tue, 2015-03-31 at 16:17 +0200, Alexander Larsson wrote:
->>>> >> On tis, 2015-03-31 at 17:08 +0300, James Bottomley wrote:
->>>> >> > On Tue, 2015-03-31 at 06:59 -0700, Andy Lutomirski wrote:
->>>> >> > >
->>>> >> > > I don't think that this is correct.  That user can already create a
->>>> >> > > nested userns and map themselves as 0 inside it.  Then they can mount
->>>> >> > > devpts.
->>>> >> >
->>>> >> > I don't mind if they create a container and control the isolated ttys in
->>>> >> > that sub container in the VPS; that's fine.  I do mind if they get
->>>> >> > access to the ttys in the VPS.
->>>> >> >
->>>> >> > If you can convince me (and the rest of Linux) that the tty subsystem
->>>> >> > should be mountable by an unprivileged user generally, then what you
->>>> >> > propose is OK.
->>>> >>
->>>> >> That is controlled by the general rights to mount stuff. I.e. unless you
->>>> >> have CAP_SYS_ADMIN in the VPS container you will not be able to mount
->>>> >> devpts there. You can only do it in a subcontainer where you got
->>>> >> permissions to mount via using user namespaces.
->>>> >
->>>> > OK let me try again.  Fine, if you want to speak capabilities, you've
->>>> > given a non-root user an unexpected capability (the capability of
->>>> > creating a ptmx device).  But you haven't used a capability separation
->>>> > to do this, you've just hard coded it via a mount parameter mechanism.
->>>> >
->>>> > If you want to do this thing, do it properly, so it's acceptable to the
->>>> > whole of Linux, not a special corner case for one particular type of
->>>> > container.
->>>> >
->>>> > Security breaches are created when people code in special, little used,
->>>> > corner cases because they don't get as thoroughly tested and inspected
->>>> > as generally applicable mechanisms.
->>>> >
->>>> > What you want is to be able to use the tty subsystem as a non root user:
->>>> > fine, but set that up globally, don't hide it in containers so a lot
->>>> > fewer people care.
->>>>
->>>> I tend to agree, and not just for the tty subsystem.  This is an
->>>> attack surface issue.  With unprivileged user namespaces, unprivileged
->>>> users can create mount namespaces (probably a good thing for bind
->>>> mounts, etc), network namespaces (reasonably safe by themselves),
->>>> network interfaces and iptables rules (scary), fresh
->>>> instances/superblocks of some filesystems (scariness depends on the fs
->>>> -- tmpfs is probably fine), and more.
->>>>
->>>> I think we should have real controls for this, and this is mostly
->>>> Eric's domain.  Eric?  A silly issue that sometimes prevents devpts
->>>> from being mountable isn't a real control, though.
->
-> I thought the controls for limiting how much of the userspace API
-> an application could use were called seccomp and seccomp2.
->
-> Do we need something like a PAM module so that we can set up these
-> controls during login?
->
->>> I'm honestly surprised that non-root is allowed to mount things in
->>> general with user namespaces. This was long disabled use for non-root in
->>> Fedora, but it is now enabled.
->>>
->>> For instance, using loopback mounted files you could probably attack
->>> some of the less well tested filesystem implementations by feeding them
->>> fuzzed data.
->>>
->>
->> You actually can't do that right now.  Filesystems have to opt in to
->> being mounted in unprivileged user namespaces, and no filesystems with
->> backing stores have opted in.  devpts has, but it's buggy without this
->> patch IMO.
->
-> Arguably you should use two user namespaces.  The first to do what you
-> want to as root the second to run as the uid you want to run as.
->
->>> Anyway, I don't see how this affects devpts though. If you're running in
->>> a container (or uncontained), as a regular users with no mount
->>> capabilities you can already mount a devpts filesystem if you create a
->>> subbcontainer with user namespaces and map your uid to 0 in the
->>> subcontainer. Then you get a new ptmx device that you can do whatever
->>> you want with. The mount option would let you do the same, except be
->>> your regular uid in the subcontainer.
->>>
->>> The only difference outside of the subcontainer is that if the outer
->>> container has no uid 0 mapped, yet the user has CAP_SYSADMIN rights in
->>> that container. Then he can mount devpts in the outer container where he
->>> before could only mount it in an inner container.
->>>
->>
->> Agreed.  Also, devpts doesn't seem scary at all to me from a userns
->> perspective.  Regular users on normal systems can already use ptmx,
->> and AFAICS basically all of the attack surface is already available
->> through the normal /dev/ptmx node.
->
-> My only real take is that there are a lot more places that you need to
-> tweak beyond devpts.  So this patch seemed lacking and boring.
->
-> Beyond that until I get the mount namespace sorted out things are pretty
-> much in a feature freeze because I can't multitask well enough to do
-> complicated patches and take feature patches.
->
-
-Eric, do you think you have time now to take a look at this patch?
-
---Andy
+SGksCgoKSSd2ZSBydW4gdGhlIGF0dGFjaGVkIHRlc3QgY2FzZSBvbiBhIGNsZWFuIDQuMCBhbmQg
+NC4wICsgdGhlIHBhdGNoIHlvdQpyZWZlcmVuY2VkIGJ1dCBpbiBuZWl0aGVyIGNhc2VzIGNvdWxk
+IEkgY3Jhc2ggdGhlIGtlcm5lbC4gQWxsIHRoYXQgd2FzCmhhcHBlbmluZyB3YXMgZm9yIGEgbmV3
+IG5hbWVzcGFjZSB0byBiZSBjcmVhdGVkIGFuZCBiYXNoIGV4ZWN1dGVkIGluIGl0CmFuZCBhZnRl
+ciBzb21lIHNlY29uZHMgSSBnZXQgbG9nZ2VkIG91dCBvZiB0aGUgbWFjaGluZS4gQnV0IHRoZW4g
+SSBjYW4KbG9nLWluIGJhY2sgYW5kIHRoZSBrZXJuZWwgaGFzbid0IGNyYXNoZWQuCgpSZWdhcmRz
+LApOaWtvbGF5CgoKT24gMDUvMjcvMjAxNSAwNjoxNiBQTSwgRXJpYyBXLiBCaWVkZXJtYW4gd3Jv
+dGU6Cj4gSm9zaCBCb3llciA8andib3llckBmZWRvcmFwcm9qZWN0Lm9yZz4gd3JpdGVzOgo+IAo+
+PiBPbiBUdWUsIE1heSAyNiwgMjAxNSBhdCAxMjozMSBQTSwgRXJpYyBXLiBCaWVkZXJtYW4KPj4g
+PGViaWVkZXJtQHhtaXNzaW9uLmNvbT4gd3JvdGU6Cj4+PiBBbGV4YW5kZXIgTGFyc3NvbiA8YWxl
+eGxAcmVkaGF0LmNvbT4gd3JpdGVzOgo+Pj4KPj4+PiBPbiBtw6VuLCAyMDE1LTA1LTE4IGF0IDE2
+OjM5ICswMjAwLCBBbGV4YW5kZXIgTGFyc3NvbiB3cm90ZToKPj4+Pgo+Pj4+IERpZG4ndCBnZXQg
+YW55IHJlcGxpZXMgdG8gdGhlIGJlbG93IGtlcm5lbCBwYW5pYyAodGVzdGNhc2UgYXR0YWNoZWQp
+LAo+Pj4+IHdoaWNoIHNlZW1zIHJhdGhlciBpbXBvcnRhbnQgdG8gZml4LiBSZXBvc3RpbmcgdG8g
+YSB3aWRlciBhdWRpZW5jZS4KPj4+Cj4+PiBCdWdnZXJlZCBiYWNrcG9ydCBncmVnIGFscmVhZHkg
+aGFzIHRoZSBmaXggc29tZXdoZXJlIGluIGhpcyBxdWV1ZS4KPj4KPj4gSXMgaXQgZnNfcGluLWFs
+bG93LWZvci10aGUtcG9zc2liaWxpdHktdGhhdC1tX2xpc3Qtb3Itc19saXN0LWdvLXVudXNlZC5w
+YXRjaAo+PiBvciBtbnQtZmFpbC1jb2xsZWN0X21vdW50cy13aGVuLWFwcGxpZWQtdG8tdW5tb3Vu
+dGVkLW1vdW50cy5wYXRjaCA/Cj4+IChPciBib3RoIEkgZ3Vlc3MuKSAgVGhvc2UgYXJlIHRoZSBv
+bmx5IDIgcGF0Y2hlcyBxdWV1ZWQgZm9yIDQuMCBzdGFibGUKPj4gcmlnaHQgbm93Lgo+IAo+IEJv
+dGggZml4IHRoZSBidWdnZXJlZCBiYWNrcG9ydC4KPiAKPiBmc19waW4tYWxsb3ctZm9yLXRoZS1w
+b3NzaWJpbGl0eS10aGF0LW1fbGlzdC1vci1zX2xpc3QtZ28tdW51c2VkLnBhdGNoCj4gZml4ZXMg
+dGhlIGNyYXNoLgo+IAo+IEVyaWMKPiAtLQo+IFRvIHVuc3Vic2NyaWJlIGZyb20gdGhpcyBsaXN0
+OiBzZW5kIHRoZSBsaW5lICJ1bnN1YnNjcmliZSBsaW51eC1rZXJuZWwiIGluCj4gdGhlIGJvZHkg
+b2YgYSBtZXNzYWdlIHRvIG1ham9yZG9tb0B2Z2VyLmtlcm5lbC5vcmcKPiBNb3JlIG1ham9yZG9t
+byBpbmZvIGF0ICBodHRwOi8vdmdlci5rZXJuZWwub3JnL21ham9yZG9tby1pbmZvLmh0bWwKPiBQ
+bGVhc2UgcmVhZCB0aGUgRkFRIGF0ICBodHRwOi8vd3d3LnR1eC5vcmcvbGttbC8KPiAKX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWls
+aW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xp
+c3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
