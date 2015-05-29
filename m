@@ -1,34 +1,22 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH] devpts: Add ptmx_uid and ptmx_gid options
-Date: Thu, 28 May 2015 16:50:37 -0500
-Message-ID: <87oal4e5hu.fsf@x220.int.ebiederm.org>
-References: <b321c0c2729d1c2a72aea319b077dce7afd79698.1424480579.git.luto@amacapital.net>
-	<1427788642.4411.12.camel@redhat.com>
-	<1427807248.2117.117.camel@HansenPartnership.com>
-	<CALCETrWKA4ZdHfdLuW0_W5xxJOSCJdt_fiRWs6vDk+8ZQ9n9iA@mail.gmail.com>
-	<1427808184.2117.122.camel@HansenPartnership.com>
-	<CALCETrW8v1NFa7fcJbyJKXk9Msudht5BJ7Zy1Rg7ZC_TS-2Y-Q@mail.gmail.com>
-	<1427810118.2117.126.camel@HansenPartnership.com>
-	<CALCETrU1vKf3fXPt8nS-ABDgfp8NxrFjHwTc68rA0rtvg2Lufg@mail.gmail.com>
-	<1427810886.2117.129.camel@HansenPartnership.com>
-	<1427811444.4411.20.camel@redhat.com>
-	<1427969525.3559.120.camel@HansenPartnership.com>
-	<CALCETrWyUYgHY53O451AdJUs9Mcjsqmr4fUzoNmYsTP1HLq+VA@mail.gmail.com>
-	<1427984969.13651.11.camel@redhat.com>
-	<CALCETrWYit+WiAM6DFm0enGeJN==uWNC63zXp_zRSsSJg2YGPg@mail.gmail.com>
-	<87zj6qs7v8.fsf@x220.int.ebiederm.org>
-	<CALCETrVGcCA2SMiDT8JN=AWiSFCXWSaMeKBQmkbKynKfiPJCwA@mail.gmail.com>
-	<87oal4odne.fsf@x220.int.ebiederm.org>
-	<1432832511.21304.6.camel@redhat.com>
-	<87mw0omxp0.fsf@x220.int.ebiederm.org>
-	<1432843577.9873.1.camel@redhat.com>
-	<CAOP=4wggpXOC4qLWgNAdw7Ws4vtYR=hscNYzDCfby+-VUxhoQg@mail.gmail.com>
+From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Subject: Re: [CFT][PATCH 00/10] Making new mounts of proc and sysfs as safe as
+	bind mounts (take 2)
+Date: Thu, 28 May 2015 17:30:55 -0700
+Message-ID: <CALCETrV4csiHBrLRrtfOvjqwUtOQnGCg8EMw9mfigDDRGchheQ@mail.gmail.com>
+References: <87pp63jcca.fsf@x220.int.ebiederm.org>
+	<87siaxuvik.fsf@x220.int.ebiederm.org>
+	<87wq004im1.fsf@x220.int.ebiederm.org>
+	<CALCETrUhXBR5WQ6gXr9KzGc4=7tph7kzopY29Hug4g+FhOzEKg@mail.gmail.com>
+	<20150528140839.GD28842@ubuntumail>
+	<87lhg8pwvz.fsf@x220.int.ebiederm.org>
+	<CALCETrXXax28s9kMTQ-zDx0MttQWG4rg2y-oz3bSGiumSL=3sg@mail.gmail.com>
+	<CAOP=4wid+N_80iyPpiVMN96_fuHZZRGtYQ6AOPn-HFBj2H6Vgg@mail.gmail.com>
+	<87fv6gikfn.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAOP=4wggpXOC4qLWgNAdw7Ws4vtYR=hscNYzDCfby+-VUxhoQg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Kenton Varda's message of "Thu, 28 May 2015 13:17:30 -0700")
+In-Reply-To: <87fv6gikfn.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -38,44 +26,102 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>
-Cc: gnome-os-list-rDKQcyrBJuzYtjvyW6yDsg@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, mclasen-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org> writes:
-
-> On Thu, May 28, 2015 at 1:06 PM, Alexander Larsson <alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
->> On Thu, 2015-05-28 at 12:14 -0500, Eric W. Biederman wrote:
->>>
->>> > Where does the second namespace enter into this?
->>>
->>> Step a.  Create create a user namespace where uid 0 is mapped to your
->>> real uid, and set up your sandbox (aka mount /dev/pts and everything
->>> else).
->>>
->>> Step b.  Create a nested user namespace where your uid is identity
->>> mapped and run your desktop application.  You can even drop all caps
->>> in
->>> your namespace.
->>
->> Just tried this. Its not the nicest, and it doubles the number of
->> namespaces in action for each sandbox, but it does work.
+On May 28, 2015 12:19 PM, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
 >
-> How much overhead is involved in each user namespace?
+> Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org> writes:
+>
+> > On Thu, May 28, 2015 at 10:33 AM, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+wrote:
+> >> On Thu, May 28, 2015 at 8:03 AM, Eric W. Biederman
+> >> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+> >>> Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> writes:
+> >>>
+> >>>> Quoting Andy Lutomirski (luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org):
+> >>>>> On Fri, May 22, 2015 at 10:39 AM, Eric W. Biederman
+> >>>>> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+> >>>>> > I had hoped to get some Tested-By's on that patch series.
+> >>>>>
+> >>>>> Sorry, I've been totally swamped.
+> >>>>>
+> >>>>> I suspect that Sandstorm is okay, but I haven't had a chance to test
+> >>>>> it for real.  Sandstorm makes only limited use of proc and sysfs in
+> >>>>> containers, but I'll see if I can test it for real this weekend.
+> >>>>
+> >>>> Testing this with unprivileged containers, I get
+> >>>>
+> >>>> lxc-start: conf.c: lxc_mount_auto_mounts: 808 Operation not permitted
+> >>>> - error mounting sysfs on
+> >>>> /usr/lib/x86_64-linux-gnu/lxc/sys/devices/virtual/net flags 0
+> >>>
+> >>> Grr..  I was afraid this would break something. :(
+> >>>
+> >>> Looking at my system I see that sysfs is currently mounted
+> >>> "nosuid,nodev,noexec"
+> >>>
+> >>> Looking at the lxc-start code I don't see it as including any of those
+> >>> mount options.  In practice for sysfs I think those options are
+> >>> meaningless (as there should be no devices and nothing executable in
+> >>> sysfs) but I can understand the past concerns with chmod on virtual
+> >>> filesystems that would incline people to use them, so I think the
+> >>> failure is reporting a legitimate security issue in the lxc userspace
+> >>> code where the the unprivileged code is currently attempting to give
+> >>> greater access to sysfs than was given by the original mount of sysfs.
+> >>>
+> >>> As nosuid,nodev,noexec should not impair the operation of sysfs
+> >>> operation it looks like you can always specify those options and just
+> >>> make this concern go away.
+> >>
+> >> Linus is pretty strict about not breaking the ABI, and this definitely
+> >> counts as breaking the ABI.  There's an exception for security issues,
+> >> but is there really a security issue here?  That is, do we lose
+> >> anything important if we just drop the offending part of the patch
+> >> set?  As you've said, there shouldn't be sensitive device nodes,
+> >> executables, or setuid files in proc or sysfs in the first place.
+>
+> We do need to enforce retaining the existing mount flags one way or
+> another.  Where this really matters is with MS_RDONLY.  We don't want
+> any old user to be able to mount /proc read-write when root mounted it
+> read-only.  There is a very real attack vector there.  That attack
+> almost works in docker container today and is avoided simply because
+> docker mounts over a few files on proc.
 
-sizeof(struct user_namespace).
+You could drop the nosuid, noexec, and nodev changes and keep just the ro
+part.  The ro part is probably not an ABI break in the sense of something
+that actually breaks real programs.
 
-> Is there any system-wide limit on total namespaces, other than RAM? 
+>
+> Which leads to the second side of the reason for these changes.   I am
+> fixing a very small but long standing ABI break.   That is in some small
+> ways I broke some sandboxes and when I realized they were broken I could
+> not imagine think how to fix the code until now.
+>
+> It is the goal that user namespaces don't introduce anything for people
+> to worry about security wise more than simply the ability to execute
+> more kernel code.  So at least when the kernel implementation is correct
+> developers of existing applications simply do not need care.  Sadly we are
+> not quite there yet.
+>
+> > Speaking as a user of the mount() interfaces, I really think it would
+> > be less confusing overall if mount() simply ignored the requested
+> > flags when the caller doesn't have a choice. That is, in cases where
+> > mount() currently fails with EPERM when not given, say, MS_NOSUID, it
+> > should instead just pretend the caller actually set MS_NOSUID and go
+> > ahead with a nosuid mount. Or put another way, the absence of
+> > MS_NOSUID should not be interpreted as "remove the nosuid bit" but
+> > rather "don't set the nosuid bit if not required".
+>
+> I am conflicted.  Implicits are nice but confusing.  If we can do
+> something reliable and robust and maintainable here that is truly worth
+> the cost I am all for it.
+>
+> If I mount proc read-write I likely want to be able to write to proc
+> files, and I will be much happier if the mount fails than if a bazillion
+> syscalls later something else fails when it tries to write to proc.
 
-There is a system-wide maximum depth, but not count.
+I agree.  I don't like the implicit thing.
 
->  Is there
-> (non-negligible) CPU overhead for each syscall seeking permissions in
-> the namespace?
-
-ns_capable(ns, X) in some cases can walk up the from a starting user
-namespace to the initial user.  (The only non-constant operation I am
-aware of).  However unless the user namespace depth is deep it should
-still take a negligible amount of time.
-
-Eric
+--Andy
