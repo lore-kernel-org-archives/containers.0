@@ -1,8 +1,8 @@
 From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 Subject: Re: [CFT][PATCH 00/10] Making new mounts of proc and sysfs as safe as
 	bind mounts (take 2)
-Date: Thu, 28 May 2015 17:30:55 -0700
-Message-ID: <CALCETrV4csiHBrLRrtfOvjqwUtOQnGCg8EMw9mfigDDRGchheQ@mail.gmail.com>
+Date: Thu, 28 May 2015 17:35:03 -0700
+Message-ID: <CALCETrXO21Y7PR=pKqaqJb1YZArNyjAv7Z-J44O53FcfLM_0Tw__3292.86387791417$1432859742$gmane$org@mail.gmail.com>
 References: <87pp63jcca.fsf@x220.int.ebiederm.org>
 	<87siaxuvik.fsf@x220.int.ebiederm.org>
 	<87wq004im1.fsf@x220.int.ebiederm.org>
@@ -27,15 +27,17 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
+
+[resend due to HTML. Sorry.]
+
 
 On May 28, 2015 12:19 PM, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
 >
 > Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org> writes:
 >
-> > On Thu, May 28, 2015 at 10:33 AM, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-wrote:
+> > On Thu, May 28, 2015 at 10:33 AM, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> wrote:
 > >> On Thu, May 28, 2015 at 8:03 AM, Eric W. Biederman
 > >> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
 > >>> Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> writes:
@@ -89,9 +91,9 @@ wrote:
 > almost works in docker container today and is avoided simply because
 > docker mounts over a few files on proc.
 
-You could drop the nosuid, noexec, and nodev changes and keep just the ro
-part.  The ro part is probably not an ABI break in the sense of something
-that actually breaks real programs.
+You could drop the nosuid, noexec, and nodev changes and keep just the
+ro part.  The ro part is probably not an ABI break in the sense of
+something that actually breaks real programs.
 
 >
 > Which leads to the second side of the reason for these changes.   I am
@@ -123,5 +125,3 @@ that actually breaks real programs.
 > syscalls later something else fails when it tries to write to proc.
 
 I agree.  I don't like the implicit thing.
-
---Andy
