@@ -1,27 +1,12 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: [CFT][PATCH 11/10] mnt: Avoid unnecessary regressions in
-	fs_fully_visible
-Date: Thu, 4 Jun 2015 17:46:35 -0700
-Message-ID: <CALCETrWwtFaiaYGLoq4EPkrgcq9nEA2GseVfP3iBkbYZ8NfGPg__18331.246605567$1433465245$gmane$org@mail.gmail.com>
-References: <87pp63jcca.fsf@x220.int.ebiederm.org>
-	<87siaxuvik.fsf@x220.int.ebiederm.org>
-	<87wq004im1.fsf@x220.int.ebiederm.org>
-	<CALCETrUhXBR5WQ6gXr9KzGc4=7tph7kzopY29Hug4g+FhOzEKg@mail.gmail.com>
-	<20150528140839.GD28842@ubuntumail>
-	<87lhg8pwvz.fsf@x220.int.ebiederm.org>
-	<CALCETrXXax28s9kMTQ-zDx0MttQWG4rg2y-oz3bSGiumSL=3sg@mail.gmail.com>
-	<CAOP=4wid+N_80iyPpiVMN96_fuHZZRGtYQ6AOPn-HFBj2H6Vgg@mail.gmail.com>
-	<87fv6gikfn.fsf@x220.int.ebiederm.org>
-	<CALCETrXO21Y7PR=pKqaqJb1YZArNyjAv7Z-J44O53FcfLM_0Tw@mail.gmail.com>
-	<87fv6g80g7.fsf@x220.int.ebiederm.org>
-	<CALCETrVEA0Ug+3aj5rjupqZub-1tPLw+szzbs4kTyEyVvNs7qg@mail.gmail.com>
-	<87k2vkebri.fsf@x220.int.ebiederm.org>
-	<87eglseboh.fsf_-_@x220.int.ebiederm.org>
+From: "cherry" <cherry_yiwerder-GveOkT2v/s5BDgjK7y7TUQ@public.gmane.org>
+Subject: Re: Mobile power bank contact from cherry
+Date: Fri, 5 Jun 2015 22:12:52 +0800
+Message-ID: <201506052212521919124@a.meiij.com>
+Reply-To: cherry_yiwerder-GveOkT2v/s5BDgjK7y7TUQ@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87eglseboh.fsf_-_-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -31,28 +16,58 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Jun 3, 2015 at 2:15 PM, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->
-> Not allowing programs to clear nosuid, nodev, and noexec on new mounts
-> of sysfs or proc will cause lxc and libvirt-lxc to fail to start (a
-> regression).  There are no device nodes or executables on sysfs or
-> proc today which means clearing these flags is harmless today.
->
-> Instead of failing the fresh mounts of sysfs and proc emit a warning
-> when these flags are improprely cleared.  We only reach this point
-> because lxc and libvirt-lxc clear flags they mount flags had not
-> intended to.
->
-> In a couple of kernel releases when lxc and libvirt-lxc have been
-> fixed we can start failing fresh mounts proc and sysfs that clear
-> nosuid, nodev and noexec.  Userspace clearly means to enforce those
-> attributes and historically they have avoided bugs.
+   Dear valued friend,
 
-At the very least, I think this should be folded in so that the ABI
-doesn't break in the middle of the series.
 
---Andy
+   Good day!
+
+
+   We are glad to write to you, and glad to introduce us as a power bank
+   supplier from shenzhen, china.
+
+
+   If you are purchasing electronic gifts from china,we will be a new
+   choice for you. our factory mainly supply power bank and usb flash, we
+   have rich models and we provide fast service, stable products quality.
+   Our factory features:
+   1. We supply power bank range from 1500mAh to 20000mAh, they are full
+   capacity and new A grade batteries only, available for all mobile
+   devices.
+   2. We have strict quality check on the products, 100% quality check
+   before delivery.
+   3. We accept small order, we can print your brand on the products and
+   do customized package.
+   4. We update new models every month, suitable for gift promotion.
+   5. Fast leadtime to match your delivery.
+   6. Competitive price with good service.
+   For more information, please go to visit our website:
+   [1]http://www.mobileportablepowerbank.com and feel free to contact us,
+   the latest quotation will send to you soon when we get your earlier
+   reply.
+
+
+
+   Best regards!
+
+
+   Cherry
+
+
+   Shenzhen Yiwerder Electronic Technology Co., Ltd.
+   YIWERDER INDUSTRY LIMITED
+   Website: [2]http://www.mobileportablepowerbank.com/
+   Mobile:86-134 2428 9492(WhatsApp)
+   OFFICE TEL: 86- 755- 3312 7895
+   MAIL: [3]cherry_yiwerder-GveOkT2v/s5BDgjK7y7TUQ@public.gmane.org
+   SKYPE: cherry-elec
+   WE CHAT: CherryYiwerder
+   QQ: 2837713043
+
+References
+
+   1. http://www.mobileportablepowerbank.com/
+   2. http://www.mobileportablepowerbank.com/
+   3. mailto:cherry_yiwerder-GveOkT2v/s5BDgjK7y7TUQ@public.gmane.org
