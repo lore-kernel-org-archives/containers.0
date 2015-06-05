@@ -1,10 +1,27 @@
-From: =?iso-8859-1?Q?St=E9phane?= Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Container mini-summit at Linux Plumbers 2015
-Date: Thu, 4 Jun 2015 12:13:37 -0400
-Message-ID: <20150604161337.GH30928__37594.276344362$1433435236$gmane$org@dakara>
+From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Subject: Re: [CFT][PATCH 11/10] mnt: Avoid unnecessary regressions in
+	fs_fully_visible
+Date: Thu, 4 Jun 2015 17:46:35 -0700
+Message-ID: <CALCETrWwtFaiaYGLoq4EPkrgcq9nEA2GseVfP3iBkbYZ8NfGPg__18331.246605567$1433465245$gmane$org@mail.gmail.com>
+References: <87pp63jcca.fsf@x220.int.ebiederm.org>
+	<87siaxuvik.fsf@x220.int.ebiederm.org>
+	<87wq004im1.fsf@x220.int.ebiederm.org>
+	<CALCETrUhXBR5WQ6gXr9KzGc4=7tph7kzopY29Hug4g+FhOzEKg@mail.gmail.com>
+	<20150528140839.GD28842@ubuntumail>
+	<87lhg8pwvz.fsf@x220.int.ebiederm.org>
+	<CALCETrXXax28s9kMTQ-zDx0MttQWG4rg2y-oz3bSGiumSL=3sg@mail.gmail.com>
+	<CAOP=4wid+N_80iyPpiVMN96_fuHZZRGtYQ6AOPn-HFBj2H6Vgg@mail.gmail.com>
+	<87fv6gikfn.fsf@x220.int.ebiederm.org>
+	<CALCETrXO21Y7PR=pKqaqJb1YZArNyjAv7Z-J44O53FcfLM_0Tw@mail.gmail.com>
+	<87fv6g80g7.fsf@x220.int.ebiederm.org>
+	<CALCETrVEA0Ug+3aj5rjupqZub-1tPLw+szzbs4kTyEyVvNs7qg@mail.gmail.com>
+	<87k2vkebri.fsf@x220.int.ebiederm.org>
+	<87eglseboh.fsf_-_@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============2810985078506832121=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <87eglseboh.fsf_-_-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,107 +31,28 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs98uUxBSJOaYoYkZiVZrdSR2LY78lusg7I@public.gmane.org, lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, lxc-users-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org
-Cc: kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, brandon.philips-JW9irJGTvgXQT0dZR+AlfA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On Wed, Jun 3, 2015 at 2:15 PM, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+>
+> Not allowing programs to clear nosuid, nodev, and noexec on new mounts
+> of sysfs or proc will cause lxc and libvirt-lxc to fail to start (a
+> regression).  There are no device nodes or executables on sysfs or
+> proc today which means clearing these flags is harmless today.
+>
+> Instead of failing the fresh mounts of sysfs and proc emit a warning
+> when these flags are improprely cleared.  We only reach this point
+> because lxc and libvirt-lxc clear flags they mount flags had not
+> intended to.
+>
+> In a couple of kernel releases when lxc and libvirt-lxc have been
+> fixed we can start failing fresh mounts proc and sysfs that clear
+> nosuid, nodev and noexec.  Userspace clearly means to enforce those
+> attributes and historically they have avoided bugs.
 
---===============2810985078506832121==
-Content-Type: multipart/signed; micalg=pgp-sha512;
-	protocol="application/pgp-signature"; boundary="4LwthZj+AV2mq5CX"
-Content-Disposition: inline
+At the very least, I think this should be folded in so that the ABI
+doesn't break in the middle of the series.
 
-
---4LwthZj+AV2mq5CX
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-Hello everyone,
-
-As usual, there will be a containers mini-summit this year at the Linux
-Plumbers Conference.
-
-LPC 2015 will be happening from Aug 19th to Aug 21st in Seattle, WA.
-
-More details on LPC can be found at: http://linuxplumbersconf.org/2015/
-
-
-We're currently looking for speakers for the mini-summit, so if you'll
-be attending Plumbers and have something to show or discuss that's
-container related, please send a talk proposal!
-
-Form: http://www.linuxplumbersconf.org/2015/ocw/events/LPC2015/proposals/new
-
-Topics of interest for this year include:
- - Status updates on the various container projects, what you've been up
-   to, what you're busy working on, ...
- - Container security
- - Cooperation on things like image format
- - Device passthrough/namespacing
-
-Note that checkpoint/restore has a dedicated mini-summit this year, so
-you may want to attend it and submit stuff there too.
-
-The mini-summit only lasts a few hours, so we tend to prefer short
-presentations, ideally demos with time left for questions and
-discussions. The standard time allocation is 10 minutes for your
-talk/demo and 5 minutes of question. More time can be requested and will
-be allowed if we're short on speakers.
-
-
-Note that LPC DOES NOT provide free attendance to all mini-conferences
-speakers, we have a limited number of passes (3) which we can hand over
-to attendees who can't get their LPC registration to be paid by their
-employer.
-
-For those of you who are planning to attend anyway, note that early bird
-prices end TODAY, so hurry up to save on registration prices.
-
-
-Please forward this e-mail to your respective projects mailing-list and
-don't hesitate to contact us (Brandon Philips, Kirill Kolyshkin and myself)
-if you have any question.
-
-Looking forward to seeing a bunch of you in Seattle!
-
---=20
-St=E9phane Graber
-Ubuntu developer
-http://www.ubuntu.com
-
---4LwthZj+AV2mq5CX
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBCgAGBQJVcHkxAAoJEMY4l01keS1n8ycQALBK6GNicG8RCg45oU7ev4Nd
-aGn1UF6Rvnln233/T0T6uni3Pjqd6/hVGae2TUexnByCeBOFgYkdEUdDcq5+ORkP
-cZr94OXhoy29owm+a+upUmDz6dMclh6KpYOfbXtX5XmIkGsfP7ltrfJ2fFvlFjSN
-qCsEyXKSzLC1CRblbfelDvKd6mAYvpO+3SRHppFhpbh5EQvrWXsCIm+jByMEYDBx
-o9721LToEqal6rZ7k4KSdAgKIowVuiARxaOX3H5TNdYbBf8qFuo4xSkjXOvjpd9+
-dOui+tgb9KNL7H0eW9R+vfkfYbKpuZbKG5dv95Nfiqn3E7VQbfj2Wlkt8f7tm7qj
-2xDQ5gjxMtOYOBVqixiaxFzcN0JB/pA3aCOsDnx8fVmuMgezDa98ruHkAJSGTfee
-DcbtDFKZoZLa8kJ9BjC0H3vQjaS7wTAQSH58yqhxb+d4Dw9t5lGPr6LsKh2v4EPC
-bDztLW5xedL1ggij8SjC+Kk+AXqKyZd582W/pRrOqaNtZpx0wHhAyeZvM94g1Uxn
-a8OW1JaqO1Ys9MOAEVyW6EmPJ6ydevWNLQD+iQ+nQybqAML6m971BcX5m0E0eKsJ
-lAp/HVNTN2NybYmrwQIBw2poRK+NfE/wyChDQObL4f6TeJeMmB9sT45nGnuSQJ1l
-mR1MMCmWRC0FRABoekIZ
-=n49K
------END PGP SIGNATURE-----
-
---4LwthZj+AV2mq5CX--
-
---===============2810985078506832121==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============2810985078506832121==--
+--Andy
