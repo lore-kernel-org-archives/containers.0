@@ -1,29 +1,14 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [CFT][PATCH 11/10] mnt: Avoid unnecessary regressions in
-	fs_fully_visible
-Date: Sat, 06 Jun 2015 14:14:36 -0500
-Message-ID: <87a8wcy7hf.fsf__3761.24909748814$1433618439$gmane$org@x220.int.ebiederm.org>
-References: <87pp63jcca.fsf@x220.int.ebiederm.org>
-	<87siaxuvik.fsf@x220.int.ebiederm.org>
-	<87wq004im1.fsf@x220.int.ebiederm.org>
-	<CALCETrUhXBR5WQ6gXr9KzGc4=7tph7kzopY29Hug4g+FhOzEKg@mail.gmail.com>
-	<20150528140839.GD28842@ubuntumail>
-	<87lhg8pwvz.fsf@x220.int.ebiederm.org>
-	<CALCETrXXax28s9kMTQ-zDx0MttQWG4rg2y-oz3bSGiumSL=3sg@mail.gmail.com>
-	<CAOP=4wid+N_80iyPpiVMN96_fuHZZRGtYQ6AOPn-HFBj2H6Vgg@mail.gmail.com>
-	<87fv6gikfn.fsf@x220.int.ebiederm.org>
-	<CALCETrXO21Y7PR=pKqaqJb1YZArNyjAv7Z-J44O53FcfLM_0Tw@mail.gmail.com>
-	<87fv6g80g7.fsf@x220.int.ebiederm.org>
-	<CALCETrVEA0Ug+3aj5rjupqZub-1tPLw+szzbs4kTyEyVvNs7qg@mail.gmail.com>
-	<87k2vkebri.fsf@x220.int.ebiederm.org>
-	<87eglseboh.fsf_-_@x220.int.ebiederm.org>
-	<CALCETrWwtFaiaYGLoq4EPkrgcq9nEA2GseVfP3iBkbYZ8NfGPg@mail.gmail.com>
+From: =?windows-1251?B?1eDq6Ozu4g==?= <os-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: =?windows-1251?B?wvDl7P8g7+Xw5ezl7SDv8Oj46+4gLSDn4PXu?=
+	=?windows-1251?B?5Ogg6CDn4PDg4eDy++Lg6SEgKNTo6+js7vjo?=
+	=?windows-1251?B?7Sk=?=
+Date: Wed, 10 Jun 2015 17:36:33 +0400
+Message-ID: <595CEAB9B2664BC8141158CA2ED52555@ovzkn>
+Reply-To: =?windows-1251?B?1eDq6Ozu4g==?= <xpv-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1251"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CALCETrWwtFaiaYGLoq4EPkrgcq9nEA2GseVfP3iBkbYZ8NfGPg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Andy Lutomirski's message of "Thu, 4 Jun 2015 17:46:35 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -33,63 +18,12 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: enquiries-ucusJnaclaBB8lwBuCT6PFS17kGxyM5U@public.gmane.org, aleksandr.golodyagin-P9pckmvnLduHXe+LvDLADg@public.gmane.org, info-3oJcDg/IAI4@public.gmane.org, help-i1vI33dpifRgCTlBFr0RJFaTQe2KTcn/@public.gmane.org, hom00-bLZ4KaLgPEcS+FvcfC7Uqw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, biznesplus86-o+MxOtu4lMCHXe+LvDLADg@public.gmane.org, btwmaiju-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, handyizmail-JGs/UdohzUI@public.gmane.org, www.krochik007-o+MxOtu4lMCHXe+LvDLADg@public.gmane.org, fridaay-torg-ZnjIhglymulDNl0EGqpvCQ@public.gmane.org, secondary.garcia-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, travel-sales-Re3zyqJcm0A3kg3OcSgS+hWjrnT+Wfq7@public.gmane.org, chinawonderfultour-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org, payment-Re3zyqJcm0A3kg3OcSgS+hWjrnT+Wfq7@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> writes:
-
-> On Wed, Jun 3, 2015 at 2:15 PM, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->>
->> Not allowing programs to clear nosuid, nodev, and noexec on new mounts
->> of sysfs or proc will cause lxc and libvirt-lxc to fail to start (a
->> regression).  There are no device nodes or executables on sysfs or
->> proc today which means clearing these flags is harmless today.
->>
->> Instead of failing the fresh mounts of sysfs and proc emit a warning
->> when these flags are improprely cleared.  We only reach this point
->> because lxc and libvirt-lxc clear flags they mount flags had not
->> intended to.
->>
->> In a couple of kernel releases when lxc and libvirt-lxc have been
->> fixed we can start failing fresh mounts proc and sysfs that clear
->> nosuid, nodev and noexec.  Userspace clearly means to enforce those
->> attributes and historically they have avoided bugs.
->
-> At the very least, I think this should be folded in so that the ABI
-> doesn't break in the middle of the series.
-
-Nothing in any of these patches has ever broken the ABI.  The bits have
-always been interpreted with the same meaning.
-
-I have been going back and forth on exactly the best way to handle this
-because I don't like breaking working executables even for valid
-reasons.
-
-I think I have finally reach my personal peace on this issue.
-
-Not requiring the presence of nosuid and noexec on a fresh mount of proc
-and sysfs if the original mount has nosuid or noexec is a security issue
-as what proc and sysfs implement in the future can not be known.
-
-The one possible way to remedy this is to implicity add nosuid and
-noexec as appropriate unfortunately that would break the ABI as it
-changes the interpretation of the bits in the userspace interface, and
-the day proc or sysfs changes and we honest to truly want to enable suid
-exectuables on proc or sysfs we would not be able to. :( So implicitly
-adding attributes is out.
-
-As the current implementation of proc and sysfs are known I agree
-it does not make sense to backport the enforcement of nosuid and
-noexec.   So I have split the patch.  See my for-testing branch
-and shortly my for-next branch.
-
-It only takes two or three line patches in the affected userspace
-executables, and a 5 minute test.  So a warning printk does not actually
-make sense.
-
-If the authors of lxc and libvirt-lxc have not taken the time to fix
-their code by the time this code lands in a stable release (in 2 months
-or so) no amount of other warnings are going to be enough.
-
-Eric
+W2l3b2p0dHBuXSAKaHR0cDovL3Rpbnl1cmwuY29tL25sYTZwOXhbNjEyNSQgx+Dw4OHu8u7qIO3g
+IOHo7eDw7fv1IO7v9uju7eD1IOfgIDEzIOzo7fPyLi4uIF0gClt1b3VlcmddW2Jwb2R1XSAKW3lz
+amNuaGR6XSAKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18K
+Q29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9u
+Lm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9j
+b250YWluZXJz
