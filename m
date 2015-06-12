@@ -1,13 +1,10 @@
-From: <postmaster-qQ9UhFcfn1C1Qrn1Bg8BZw@public.gmane.org>
-Subject: Undeliverable: Order
-Date: Thu, 11 Jun 2015 22:11:59 +0100
-Message-ID: <6998c1bd-c135-4e9f-9bee-d147468b2272@EXCHSRVR.RAS-1.local>
-References: <4015885116.48114084534796@server.snizzer.com>
+From: MAILER-DAEMON-4hgchnhDXfknea5/+GHfZd10k2aWwXN4@public.gmane.org (Mail Delivery System)
+Subject: Undelivered Mail Returned to Sender
+Date: Fri, 12 Jun 2015 14:21:31 +0200 (CEST)
+Message-ID: <20150612122131.AAEFEB101FB@ipx14362.ipxserver.de>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1760582523692669629=="
+Content-Type: multipart/mixed; boundary="===============1895780743153325561=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-GB
-In-Reply-To: <4015885116.48114084534796-lR5eUM3zjJB9m0g/xOFi3dBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,116 +17,100 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============1760582523692669629==
+This is a MIME-encapsulated message.
+
+--===============1895780743153325561==
 Content-Type: multipart/report; report-type=delivery-status;
-	boundary="644af885-43ce-4099-bcf6-022415a277a5"
-Content-Language: en-GB
+	boundary="9BB54330337.1434111691/ipx14362.ipxserver.de"
+Content-Transfer-Encoding: 7bit
 
---644af885-43ce-4099-bcf6-022415a277a5
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+This is a MIME-encapsulated message.
 
-Delivery has failed to these recipients or groups:
+--9BB54330337.1434111691/ipx14362.ipxserver.de
+Content-Description: Notification
+Content-Type: text/plain; charset=us-ascii
 
-mic-qQ9UhFcfn1C1Qrn1Bg8BZw@public.gmane.org<mailto:mic-qQ9UhFcfn1C1Qrn1Bg8BZw@public.gmane.org>
-The email address you entered couldn't be found. Please check the recipient=
-'s email address and try to resend the message. If the problem continues, p=
-lease contact your helpdesk.
+This is the mail system at host ipx14362.ipxserver.de.
 
+I'm sorry to have to inform you that your message could not
+be delivered to one or more recipients. It's attached below.
 
+For further assistance, please send mail to postmaster.
 
+If you do so, please include this problem report. You can
+delete your own text from the attached returned message.
 
+                   The mail system
 
+<wolfbloody-uAjRD0nVeow@public.gmane.org>: host mx4.hotmail.com[65.55.37.104] said: 550 SC-001
+    (COL004-MC3F6) Unfortunately, messages from 80.190.246.202 weren't sent.
+    Please contact your Internet service provider since part of their network
+    is on our block list. You can also refer your provider to
+    http://mail.live.com/mail/troubleshooting.aspx#errors. (in reply to MAIL
+    FROM command)
 
-
-Diagnostic information for administrators:
-
-Generating server: EXCHSRVR.RAS-1.local
-
-mic-qQ9UhFcfn1C1Qrn1Bg8BZw@public.gmane.org
-Remote Server returned '550 5.1.1 RESOLVER.ADR.RecipNotFound; not found'
-
-Original message headers:
-
-Received: from EXCHSRVR.RAS-1.local (10.0.0.3) by EXCHSRVR.RAS-1.local
- (10.0.0.3) with Microsoft SMTP Server (TLS) id 15.0.847.32; Thu, 11 Jun 20=
-15
- 22:11:58 +0100
-Received: from server.snizzer.com (75.102.36.56) by EXCHSRVR.RAS-1.local
- (10.0.0.3) with Microsoft SMTP Server id 15.0.847.32 via Frontend Transpor=
-t;
- Thu, 11 Jun 2015 22:11:58 +0100
-Received: from [75.102.36.56] by server.snizzer.com id AQjXshzYV3Ca with SM=
-TP;
- Thu, 11 Jun 2015 23:11:58 +0200
-Date: Thu, 11 Jun 2015 23:11:58 +0200
-From: CFX Group. <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.2.95.5) Home
-X-Priority: 3 (Normal)
-Message-ID: <4015885116.48114084534796-lR5eUM3zjJB9m0g/xOFi3dBPR1lH4CV8@public.gmane.org>
-To: <mic-qQ9UhFcfn1C1Qrn1Bg8BZw@public.gmane.org>
-Subject: Order
-MIME-Version: 1.0
-Content-Type: text/plain; charset=3D"windows-1252"
-Content-Transfer-Encoding: 8bit
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-
-
---644af885-43ce-4099-bcf6-022415a277a5
+--9BB54330337.1434111691/ipx14362.ipxserver.de
+Content-Description: Delivery report
 Content-Type: message/delivery-status
 
-Reporting-MTA: dns;EXCHSRVR.RAS-1.local
-Received-From-MTA: dns;server.snizzer.com
-Arrival-Date: Thu, 11 Jun 2015 21:11:58 +0000
+Reporting-MTA: dns; ipx14362.ipxserver.de
+X-Postfix-Queue-ID: 9BB54330337
+X-Postfix-Sender: rfc822; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Arrival-Date: Fri, 12 Jun 2015 14:21:30 +0200 (CEST)
 
-Final-Recipient: rfc822;mic-qQ9UhFcfn1C1Qrn1Bg8BZw@public.gmane.org
+Final-Recipient: rfc822; wolfbloody-uAjRD0nVeow@public.gmane.org
+Original-Recipient: rfc822;wolfbloody-uAjRD0nVeow@public.gmane.org
 Action: failed
-Status: 5.1.1
-Diagnostic-Code: smtp;550 5.1.1 RESOLVER.ADR.RecipNotFound; not found
+Status: 5.0.0
+Remote-MTA: dns; mx4.hotmail.com
+Diagnostic-Code: smtp; 550 SC-001 (COL004-MC3F6) Unfortunately, messages from
+    80.190.246.202 weren't sent. Please contact your Internet service provider
+    since part of their network is on our block list. You can also refer your
+    provider to http://mail.live.com/mail/troubleshooting.aspx#errors.
 
-
---644af885-43ce-4099-bcf6-022415a277a5
+--9BB54330337.1434111691/ipx14362.ipxserver.de
+Content-Description: Undelivered Message
 Content-Type: message/rfc822
+Content-Transfer-Encoding: 7bit
 
-Received: from EXCHSRVR.RAS-1.local (10.0.0.3) by EXCHSRVR.RAS-1.local
- (10.0.0.3) with Microsoft SMTP Server (TLS) id 15.0.847.32; Thu, 11 Jun 2015
- 22:11:58 +0100
-Received: from server.snizzer.com (75.102.36.56) by EXCHSRVR.RAS-1.local
- (10.0.0.3) with Microsoft SMTP Server id 15.0.847.32 via Frontend Transport;
- Thu, 11 Jun 2015 22:11:58 +0100
-Received: from [75.102.36.56] by server.snizzer.com id AQjXshzYV3Ca with SMTP;
- Thu, 11 Jun 2015 23:11:58 +0200
-Date: Thu, 11 Jun 2015 23:11:58 +0200
-From: CFX Group. <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-X-Mailer: The Bat! (v4.2.95.5) Home
-X-Priority: 3 (Normal)
-Message-ID: <4015885116.48114084534796-lR5eUM3zjJB9m0g/xOFi3dBPR1lH4CV8@public.gmane.org>
-To: <mic-qQ9UhFcfn1C1Qrn1Bg8BZw@public.gmane.org>
-Subject: Order
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from server.snizzer.com (unknown [75.102.36.56])
+	by ipx14362.ipxserver.de (Postfix) with ESMTPA id 9BB54330337
+	for <wolfbloody-uAjRD0nVeow@public.gmane.org>; Fri, 12 Jun 2015 14:21:30 +0200 (CEST)
+Received: from [75.102.36.56] by server.snizzer.com id cfQ06zsMJ9xC; Fri, 12 Jun 2015 14:18:04 +0200
+Message-ID: <000101d0a509$d32d6280$14000a0a-lR5eUM3zjJB9m0g/xOFi3dBPR1lH4CV8@public.gmane.org>
+From: "robo" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: <wolfbloody-uAjRD0nVeow@public.gmane.org>
+Subject: Your order reference is 728309731.
+Date: Fri, 12 Jun 2015 14:18:04 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
+Content-Type: text/plain;
+	charset="windows-1252"
 Content-Transfer-Encoding: quoted-printable
-Return-Path: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 
 
 
 
 Dear client,=20
 
-Update your account information.
+Thank you for the order,=20
+id: 557222232.
 
-http://radioatletico.nl/invoicen110645323.zip
+Your credit card will be charged for 195 dollars.
+
+Information about the order and delivery located at:
+
+http://allesinenomhethuis.nl/order938091023.zip
+
+____________________________
+Best regards, ticket service.
+Tel. / Fax.:  (672) 905 33 338.             =20
 
 
-=3D=3D
-Best regards,
-Tel./Fax.: (530) 885 97 619
 
+--9BB54330337.1434111691/ipx14362.ipxserver.de--
 
-
---644af885-43ce-4099-bcf6-022415a277a5--
-
---===============1760582523692669629==
+--===============1895780743153325561==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -139,4 +120,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1760582523692669629==--
+--===============1895780743153325561==--
