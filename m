@@ -1,21 +1,11 @@
-From: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>
-Subject: Re: [CFT][PATCH 00/10] Making new mounts of proc and sysfs as safe
-	as bind mounts (take 2)
-Date: Tue, 16 Jun 2015 14:46:07 +0200
-Message-ID: <55801A8F.5010503__29085.4666302495$1434458797$gmane$org@nod.at>
-References: <87siaxuvik.fsf@x220.int.ebiederm.org>
-	<87wq004im1.fsf@x220.int.ebiederm.org>
-	<CALCETrUhXBR5WQ6gXr9KzGc4=7tph7kzopY29Hug4g+FhOzEKg@mail.gmail.com>
-	<20150528140839.GD28842@ubuntumail> <55676E32.3050006@nod.at>
-	<87382gh3uo.fsf@x220.int.ebiederm.org> <55677AEF.1090809@nod.at>
-	<87iobcfkwx.fsf@x220.int.ebiederm.org> <556831CF.9040600@nod.at>
-	<87mw0c1x8p.fsf@x220.int.ebiederm.org>
-	<20150616123148.GB18689@redhat.com>
+From: =?UTF-8?Q?Iago_L=c3=b3pez_Galeiras?= <iago-973cpzSjLbNWk0Htik3J/w@public.gmane.org>
+Subject: How we use cgroups in rkt
+Date: Wed, 17 Jun 2015 13:09:10 +0200
+Message-ID: <55815556.4030304@endocode.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20150616123148.GB18689-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,13 +15,51 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, "libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org" <libvir-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cedric Bosdonnat <cbosdonnat-IBi9RG/b67k@public.gmane.org>
+To: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Am 16.06.2015 um 14:31 schrieb Daniel P. Berrange:
-> Thanks Richard / Eric for the suggested patches. I'll apply Eric's
-> simplified patch to libvirt now, and backport it to our stable
-> libvirt branches.
-
-Thank you Daniel!
+SGkgZXZlcnlvbmUsCgpXZSBhcmUgd29ya2luZyBvbiBya3RbMV0gYW5kIHdlIHdhbnQgdG8gYXNr
+IGZvciBmZWVkYmFjayBhYm91dCB0aGUgd2F5IHdlIHVzZQpjZ3JvdXBzIHRvIGltcGxlbWVudCBp
+c29sYXRpb24gaW4gY29udGFpbmVycy4gcmt0IHVzZXMgc3lzdGVtZC1uc3Bhd24gaW50ZXJuYWxs
+eQpzbyBJIGd1ZXNzIHRoZSBiZXN0IHdheSB0byBzdGFydCBpcyBleHBsYWluaW5nIGhvdyB0aGlz
+IGlzIGhhbmRsZWQgaW4Kc3lzdGVtZC1uc3Bhd24uCgpUaGUgYXBwcm9hY2ggdGFrZW4gYnkgbnNw
+YXduIGlzIG1vdW50aW5nIHRoZSBjZ3JvdXAgY29udHJvbGxlcnMgcmVhZC1vbmx5IGluc2lkZQp0
+aGUgY29udGFpbmVyIGV4Y2VwdCB0aGUgcGFydCB0aGF0IGNvcnJlc3BvbmRzIHRvIGl0IGluc2lk
+ZSB0aGUgc3lzdGVtZApjb250cm9sbGVyLiBJdCBpcyBkb25lIHRoaXMgd2F5IGJlY2F1c2UgYWxs
+b3dpbmcgdGhlIGNvbnRhaW5lciB0byBtb2RpZnkgdGhlCm90aGVyIGNvbnRyb2xsZXJzIGlzIGNv
+bnNpZGVyZWQgdW5zYWZlWzJdLgoKVGhpcyBpcyBob3cgYmluZCBtb3VudHMgbG9vayBsaWtlOgoK
+L3N5cy9mcy9jZ3JvdXAvZGV2aWNlcyBSTwpbLi4uXQovc3lzL2ZzL2Nncm91cC9tZW1vcnkgUk8K
+L3N5cy9mcy9jZ3JvdXAvc3lzdGVtZCBSTwovc3lzL2ZzL2Nncm91cC9zeXN0ZW1kL21hY2hpbmUu
+c2xpY2UvbWFjaGluZS1hLnNjb3BlIFJXCgpJbiBya3Qgd2UgaGF2ZSBhIGNvbmNlcHQgY2FsbGVk
+IHBvZFszXSB3aGljaCBpcyBhIGxpc3Qgb2YgYXBwcyB0aGF0IHJ1biBpbnNpZGUgYQpjb250YWlu
+ZXIsIGVhY2ggcnVubmluZyBpbiBpdHMgb3duIGNocm9vdC4gVG8gaW1wbGVtZW50IHRoaXMgY29u
+Y2VwdCwgd2Ugc3RhcnQgYQpzeXN0ZW1kLW5zcGF3biBjb250YWluZXIgd2l0aCBhIG1pbmltYWwg
+c3lzdGVtZCBpbnN0YWxsYXRpb24gdGhhdCBzdGFydHMgZWFjaAphcHAgYXMgYSBzZXJ2aWNlLgoK
+V2Ugd2FudCB0byBiZSBhYmxlIHRvIGFwcGx5IGRpZmZlcmVudCByZXN0cmljdGlvbnMgdG8gZWFj
+aCBhcHAgb2YgYSBwb2QgdXNpbmcKY2dyb3VwcyBhbmQgdGhlIHN0cmFpZ2h0Zm9yd2FyZCB3YXkg
+d2UgdGhvdWdodCB3YXMgZGVsZWdhdGluZyB0byBzeXN0ZW1kIGluc2lkZQp0aGUgY29udGFpbmVy
+LiBJbml0aWFsbHksIHRoaXMgZGlkbid0IHdvcmsgYmVjYXVzZSwgYXMgbWVudGlvbmVkIGVhcmxp
+ZXIsIHRoZQpjZ3JvdXAgY29udHJvbGxlcnMgYXJlIG1vdW50ZWQgcmVhZC1vbmx5LgoKVGhlIHdh
+eSB3ZSBzb2x2ZWQgdGhpcyBwcm9ibGVtIHdhcyBtb3VudGluZyB0aGUgY2dyb3VwIGhpZXJhcmNo
+eSAod2l0aCB0aGUKZGlyZWN0b3JpZXMgZXhwZWN0ZWQgYnkgc3lzdGVtZCkgb3V0c2lkZSB0aGUg
+Y29udGFpbmVyLiBUaGUgZGlmZmVyZW5jZSB3aXRoCnN5c3RlbWQtbnNwYXdu4oCZcyBhcHByb2Fj
+aCBpcyB0aGF0IHdlIGRvbuKAmXQgbW91bnQgZXZlcnl0aGluZyByZWFkLW9ubHk7IGluc3RlYWQs
+CndlIGxlYXZlIHRoZSBrbm9icyB3ZSBuZWVkIGluIGVhY2ggb2YgdGhlIGFwcGxpY2F0aW9u4oCZ
+cyBzdWJjZ3JvdXBzIHJlYWQtd3JpdGUuCgpGb3IgZXhhbXBsZSwgaWYgd2Ugd2FudCB0byByZXN0
+cmljdCB0aGUgbWVtb3J5IHVzYWdlIG9mIGFuIGFwcGxpY2F0aW9uIHdlIGxlYXZlCi9zeXMvZnMv
+Y2dyb3VwL21lbW9yeS9tYWNoaW5lL21hY2hpbmUuc2xpY2UvbWFjaGluZS1ya3QteHh4eHgvc3lz
+dGVtLnNsaWNlL3NoYTUxMi14eHh4L3ttZW1vcnkubGltaXRfaW5fYnl0ZXMsY2dyb3VwLnByb2Nz
+fQpyZWFkLXdyaXRlIHNvIHN5c3RlbWQgaW5zaWRlIHRoZSBjb250YWluZXIgY2FuIHNldCB0aGUg
+YXBwcm9wcmlhdGUgcmVzdHJpY3Rpb25zCmJ1dCB0aGUgcmVzdCBvZiAvc3lzL2ZzL2Nncm91cC9t
+ZW1vcnkvIGlzIHN0aWxsIHJlYWQtb25seS4KCldlIGtub3cgdGhpcyBkb2VzbuKAmXQgcHJvdmlk
+ZSBwZXJmZWN0IGlzb2xhdGlvbiBidXQgd2UgYXNzdW1lIG5vbi1tYWxpY2lvdXMKYXBwbGljYXRp
+b25zLiBXZSBhbHNvIGtub3cgd2XigJlsbCBoYXZlIHRvIHJld29yayB0aGlzIHdoZW4gc3lzdGVt
+ZCBzdGFydHMgdXNpbmcKdGhlIHVuaWZpZWQgaGllcmFyY2h5LgoKV2hhdCBkbyB5b3UgdGhpbmsg
+YWJvdXQgb3VyIGFwcHJvYWNoPwoKQ2hlZXJzLgoKWzFdOiBodHRwczovL2dpdGh1Yi5jb20vY29y
+ZW9zL3JrdApbMl06IGh0dHA6Ly9saXN0cy5mcmVlZGVza3RvcC5vcmcvYXJjaGl2ZXMvc3lzdGVt
+ZC1kZXZlbC8yMDE1LUFwcmlsLzAzMTE5MS5odG1sClszXTogaHR0cHM6Ly9naXRodWIuY29tL2Fw
+cGMvc3BlYy9ibG9iL21hc3Rlci9zcGVjL3BvZHMubWQKCi0tIAoKSWFnbyBMw7NwZXogR2FsZWly
+YXMKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFp
+bmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpo
+dHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWlu
+ZXJz
