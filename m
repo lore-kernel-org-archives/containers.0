@@ -1,15 +1,11 @@
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: How we use cgroups in rkt
-Date: Thu, 18 Jun 2015 14:40:24 +0000
-Message-ID: <20150618144024.GB18426__33825.6536321298$1434638457$gmane$org@ubuntumail>
-References: <55815556.4030304@endocode.com> <20150617203024.GI10949@ubuntumail>
-	<CALdWxcsxWCyLyH9H+BrAYW4gY-oAyNrp_Rf726tFtbHPy2_M9Q@mail.gmail.com>
+From: Mail Delivery Subsystem <mailer-daemon-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
+Subject: Delivery Status Notification (Failure)
+Date: Fri, 19 Jun 2015 04:39:07 +0000
+Message-ID: <089e013d1d9c2e417b0518d78113@google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <CALdWxcsxWCyLyH9H+BrAYW4gY-oAyNrp_Rf726tFtbHPy2_M9Q-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,94 +15,277 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alban Crequy <alban-973cpzSjLbNWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-UXVvdGluZyBBbGJhbiBDcmVxdXkgKGFsYmFuQGVuZG9jb2RlLmNvbSk6Cj4gT24gV2VkLCBKdW4g
-MTcsIDIwMTUgYXQgMTA6MzAgUE0sIFNlcmdlIEhhbGx5biA8c2VyZ2UuaGFsbHluQHVidW50dS5j
-b20+IHdyb3RlOgo+ID4gUXVvdGluZyBJYWdvIEzDs3BleiBHYWxlaXJhcyAoaWFnb0BlbmRvY29k
-ZS5jb20pOgo+ID4+IEhpIGV2ZXJ5b25lLAo+ID4+Cj4gPj4gV2UgYXJlIHdvcmtpbmcgb24gcmt0
-WzFdIGFuZCB3ZSB3YW50IHRvIGFzayBmb3IgZmVlZGJhY2sgYWJvdXQgdGhlIHdheSB3ZSB1c2UK
-PiA+PiBjZ3JvdXBzIHRvIGltcGxlbWVudCBpc29sYXRpb24gaW4gY29udGFpbmVycy4gcmt0IHVz
-ZXMgc3lzdGVtZC1uc3Bhd24gaW50ZXJuYWxseQo+ID4+IHNvIEkgZ3Vlc3MgdGhlIGJlc3Qgd2F5
-IHRvIHN0YXJ0IGlzIGV4cGxhaW5pbmcgaG93IHRoaXMgaXMgaGFuZGxlZCBpbgo+ID4+IHN5c3Rl
-bWQtbnNwYXduLgo+ID4+Cj4gPj4gVGhlIGFwcHJvYWNoIHRha2VuIGJ5IG5zcGF3biBpcyBtb3Vu
-dGluZyB0aGUgY2dyb3VwIGNvbnRyb2xsZXJzIHJlYWQtb25seSBpbnNpZGUKPiA+PiB0aGUgY29u
-dGFpbmVyIGV4Y2VwdCB0aGUgcGFydCB0aGF0IGNvcnJlc3BvbmRzIHRvIGl0IGluc2lkZSB0aGUg
-c3lzdGVtZAo+ID4+IGNvbnRyb2xsZXIuIEl0IGlzIGRvbmUgdGhpcyB3YXkgYmVjYXVzZSBhbGxv
-d2luZyB0aGUgY29udGFpbmVyIHRvIG1vZGlmeSB0aGUKPiA+PiBvdGhlciBjb250cm9sbGVycyBp
-cyBjb25zaWRlcmVkIHVuc2FmZVsyXS4KPiA+Pgo+ID4+IFRoaXMgaXMgaG93IGJpbmQgbW91bnRz
-IGxvb2sgbGlrZToKPiA+Pgo+ID4+IC9zeXMvZnMvY2dyb3VwL2RldmljZXMgUk8KPiA+PiBbLi4u
-XQo+ID4+IC9zeXMvZnMvY2dyb3VwL21lbW9yeSBSTwo+ID4+IC9zeXMvZnMvY2dyb3VwL3N5c3Rl
-bWQgUk8KPiA+PiAvc3lzL2ZzL2Nncm91cC9zeXN0ZW1kL21hY2hpbmUuc2xpY2UvbWFjaGluZS1h
-LnNjb3BlIFJXCj4gPj4KPiA+PiBJbiBya3Qgd2UgaGF2ZSBhIGNvbmNlcHQgY2FsbGVkIHBvZFsz
-XSB3aGljaCBpcyBhIGxpc3Qgb2YgYXBwcyB0aGF0IHJ1biBpbnNpZGUgYQo+ID4+IGNvbnRhaW5l
-ciwgZWFjaCBydW5uaW5nIGluIGl0cyBvd24gY2hyb290LiBUbyBpbXBsZW1lbnQgdGhpcyBjb25j
-ZXB0LCB3ZSBzdGFydCBhCj4gPj4gc3lzdGVtZC1uc3Bhd24gY29udGFpbmVyIHdpdGggYSBtaW5p
-bWFsIHN5c3RlbWQgaW5zdGFsbGF0aW9uIHRoYXQgc3RhcnRzIGVhY2gKPiA+PiBhcHAgYXMgYSBz
-ZXJ2aWNlLgo+ID4+Cj4gPj4gV2Ugd2FudCB0byBiZSBhYmxlIHRvIGFwcGx5IGRpZmZlcmVudCBy
-ZXN0cmljdGlvbnMgdG8gZWFjaCBhcHAgb2YgYSBwb2QgdXNpbmcKPiA+PiBjZ3JvdXBzIGFuZCB0
-aGUgc3RyYWlnaHRmb3J3YXJkIHdheSB3ZSB0aG91Z2h0IHdhcyBkZWxlZ2F0aW5nIHRvIHN5c3Rl
-bWQgaW5zaWRlCj4gPj4gdGhlIGNvbnRhaW5lci4gSW5pdGlhbGx5LCB0aGlzIGRpZG4ndCB3b3Jr
-IGJlY2F1c2UsIGFzIG1lbnRpb25lZCBlYXJsaWVyLCB0aGUKPiA+PiBjZ3JvdXAgY29udHJvbGxl
-cnMgYXJlIG1vdW50ZWQgcmVhZC1vbmx5Lgo+ID4+Cj4gPj4gVGhlIHdheSB3ZSBzb2x2ZWQgdGhp
-cyBwcm9ibGVtIHdhcyBtb3VudGluZyB0aGUgY2dyb3VwIGhpZXJhcmNoeSAod2l0aCB0aGUKPiA+
-PiBkaXJlY3RvcmllcyBleHBlY3RlZCBieSBzeXN0ZW1kKSBvdXRzaWRlIHRoZSBjb250YWluZXIu
-IFRoZSBkaWZmZXJlbmNlIHdpdGgKPiA+PiBzeXN0ZW1kLW5zcGF3buKAmXMgYXBwcm9hY2ggaXMg
-dGhhdCB3ZSBkb27igJl0IG1vdW50IGV2ZXJ5dGhpbmcgcmVhZC1vbmx5OyBpbnN0ZWFkLAo+ID4+
-IHdlIGxlYXZlIHRoZSBrbm9icyB3ZSBuZWVkIGluIGVhY2ggb2YgdGhlIGFwcGxpY2F0aW9u4oCZ
-cyBzdWJjZ3JvdXBzIHJlYWQtd3JpdGUuCj4gPj4KPiA+PiBGb3IgZXhhbXBsZSwgaWYgd2Ugd2Fu
-dCB0byByZXN0cmljdCB0aGUgbWVtb3J5IHVzYWdlIG9mIGFuIGFwcGxpY2F0aW9uIHdlIGxlYXZl
-Cj4gPj4gL3N5cy9mcy9jZ3JvdXAvbWVtb3J5L21hY2hpbmUvbWFjaGluZS5zbGljZS9tYWNoaW5l
-LXJrdC14eHh4eC9zeXN0ZW0uc2xpY2Uvc2hhNTEyLXh4eHgve21lbW9yeS5saW1pdF9pbl9ieXRl
-cyxjZ3JvdXAucHJvY3N9Cj4gPgo+ID4gV2hvIGV4YWN0bHkgZG9lcyB0aGUgd3JpdGluZyB0byB0
-aG9zZSBmaWxlcz8KPiAKPiBGaXJzdCwgcmt0IHByZXBhcmVzIHN5c3RlbWQgYSAuc2VydmljZSBm
-aWxlIGZvciBlYWNoIGFwcGxpY2F0aW9uIGluCj4gdGhlIGNvbnRhaW5lciB3aXRoICJDUFVRdW90
-YT0iIGFuZCAiTWVtb3J5TGltaXQ9Ii4gVGhlIC5zZXJ2aWNlIGZpbGVzCj4gYXJlIG5vdCB1c2Vk
-IGJ5IHN5c3RlbWQgb3V0c2lkZSB0aGUgY29udGFpbmVyLiBUaGVuLCBya3QgdXNlcwo+IHN5c3Rl
-bWQtbnNwYXduIHRvIHN0YXJ0IHN5c3RlbWQgYXMgcGlkIDEgaW4gdGhlIGNvbnRhaW5lci4gRmlu
-YWxseSwKPiBzeXN0ZW1kIGluc2lkZSB0aGUgY29udGFpbmVyIHdyaXRlcyB0byB0aGUgY2dyb3Vw
-IGZpbGVzCj4ge21lbW9yeS5saW1pdF9pbl9ieXRlcyxjZ3JvdXAucHJvY3N9Lgo+IAo+IFdlIGNh
-bGwgdGhvc2UgbGltaXRzIHRoZSAicGVyLWFwcCBpc29sYXRvcnMiLiBJdCdzIG5vdCBhIHNlY3Vy
-aXR5Cj4gYm91bmRhcnkgYmVjYXVzZSBhbGwgdGhlIGFwcHMgcnVuIGluIHRoZSBzYW1lIGNvbnRh
-aW5lciAoaW4gdGhlIHNhbWUKPiBwaWQvbW91bnQvbmV0IG5hbWVzcGFjZXMpLiBUaGUgYXBwcyBy
-dW4gaW4gZGlmZmVyZW50IGNocm9vdHMsIGJ1dAo+IHRoYXQncyBlYXNpbHkgZXNjYXBhYmxlLgo+
-IAo+ID4gRG8gdGhlIGFwcGxpY2F0aW9ucyB3YW50IHRvIGNoYW5nZSB0aGVtLCBvciBvbmx5IHJr
-dCBpdHNlbGY/Cj4gCj4gQXQgdGhlIG1vbWVudCwgdGhlIGxpbWl0cyBhcmUgc3RhdGljYWxseSBk
-ZWZpbmVkIGluIHRoZSBhcHAgY29udGFpbmVyCj4gaW1hZ2UsIHNvIG5laXRoZXIgcmt0IG9yIHRo
-ZSBhcHBzIGluc2lkZSB0aGUgY29udGFpbmVyIGNoYW5nZSB0aGVtLiBJCj4gZG9uJ3Qga25vdyBv
-ZiBhIHVzZSBjYXNlIHdoZXJlIHdlIHdvdWxkIG5lZWQgdG8gY2hhbmdlIHRoZW0KPiBkeW5hbWlj
-YWxseS4KPiAKPiA+ICBJZiBya3QsIHRoZW4gaXQgc2VlbXMgbGlrZSB5b3Ugc2hvdWxkIGJlCj4g
-PiBhYmxlIHRvIHVzZSBhIHN5c3RlbWQgYXBpIHRvIHVwZGF0ZSB0aGUgdmFsdWVzIChvdmVyIGRi
-dXMpLCByaWdodD8KPiA+IHN5c3RlbWN0bCBzZXQtcHJvcGVydHkgbWFjaGluZS1hLXNjb3BlIE1l
-bW9yeUxpbWl0PTFHIG9yIHNvbWV0aGluZy4KPiAKPiBJbiBhZGRpdGlvbiB0byB0aGUgInBlci1h
-cHAgaXNvbGF0b3JzIiBkZXNjcmliZWQgYWJvdmUsIHJrdCBjYW4gaGF2ZQo+ICJwb2QtbGV2ZWwg
-aXNvbGF0b3JzIiB0aGF0IGFyZSBhcHBsaWVkIG9uIHRoZSBtYWNoaW5lIHNsaWNlICh0aGUKPiBj
-Z3JvdXAgcGFyZW50IGRpcmVjdG9yeSkgcmF0aGVyIHRoYW4gYXQgdGhlIGxlYXZlcyBvZiB0aGUg
-Y2dyb3VwIHRyZWUuCj4gVGhleSBhcmUgZGVmaW5lZCB3aGVuIHJrdCBpdHNlbGYgaXMgc3RhcnRl
-ZCBieSBhIHN5c3RlbWQgLnNlcnZpY2UKPiBmaWxlLCBhbmQgYXBwbGllZCBieSBzeXN0ZW1kIG91
-dHNpZGUgb2YgdGhlIGNvbnRhaW5lci4gRS5nLgo+IAo+IFtTZXJ2aWNlXQo+IENQVVNoYXJlcz01
-MTIKPiBNZW1vcnlMaW1pdD0xRwo+IEV4ZWNTdGFydD0vdXNyL2Jpbi9ya3QgcnVuIG15YXBwLmNv
-bS9teWFwcC0xLjMuNAo+IAo+IFVwZGF0aW5nIHRoZSBwb2QtbGV2ZWwgaXNvbGF0b3JzIHdpdGgg
-c3lzdGVtY3RsIG9uIHRoZSBob3N0IHNob3VsZCB3b3JrLgo+IAo+IEJ1dCBzeXN0ZW1kIGluc2lk
-ZSB0aGUgY29udGFpbmVyIG9yIHRoZSBhcHBzIGRvbid0IGhhdmUgYWNjZXNzIHRvIHRoZQo+IHJl
-cXVpcmVkIGNncm91cCBrbm9iIGZpbGVzOiB0aGV5IGFyZSBtb3VudGVkIHJlYWQtb25seS4KPiAK
-PiA+IE5vdyBJJ20gcHJldHR5IHN1cmUgdGhhdCBzeXN0ZW1kIGRvZXNuJ3QgeWV0IHN1cHBvcnQg
-YmVpbmcgYWJsZSB0byBkbwo+ID4gdGhpcyBmcm9tIGluc2lkZSB0aGUgY29udGFpbmVyIGluIGEg
-ZGVsZWdhdGVkIHdheS4KPiAKPiBJbmRlZWQgYnkgZGVmYXVsdCBuc3Bhd24vc3lzdGVtZCBkb2Vz
-IG5vdCBzdXBwb3J0IGRlbGVnYXRpbmcgdGhhdC4gSXQKPiBvbmx5IHdvcmtzIGJlY2F1c2Ugcmt0
-IHByZXBhcmVkIHRoZSBjZ3JvdXAgYmluZCBtb3VudHMgZm9yIHRoZQo+IGNvbnRhaW5lci4KPiAK
-PiA+IFRoYXQgd2FzIGNnbWFuYWdlcidzCj4gPiByZWFzb24gZm9yIGJlaW5nLCBhbmQgSSdtIGlu
-dGVyZXN0ZWQgaW4gd29ya2luZyBvbiBhIHByb3BlciBBUEkgZm9yIHRoYXQKPiA+IGZvciBzeXN0
-ZW1kLgo+IAo+IERvIHlvdSBtZWFuIHBhdGNoaW5nIHN5c3RlbWQgc28gaXQgZG9lcyBub3Qgd3Jp
-dGUgdG8gdGhlIGNncm91cAo+IGZpbGVzeXN0ZW0gZGlyZWN0bHkgYnV0IHRhbGsgdG8gdGhlIGNn
-bWFuYWdlci9jZ3Byb3h5IHNvY2tldCBpbnN0ZWFkPwoKTW9yZSBsaWtlbHksIHBhdGNoIGl0IHNv
-IGl0IGNhbiB0YWxrIHRvIGEgc3lzdGVtZC1vd25lZCB1bml4IHNvY2tldApiaW5kLW1vdW50ZWQg
-aW50byB0aGUgY29udGFpbmVyLiAgU28gc3lzdGVtZCB3b3VsZCBuZWVkIHRvIGJlIHBhdGNoZWQK
-YXQgYm90aCBlbmRzLiAgQnV0IHRoYXQncyBzb21ldGhpbmcgSSB3YXMgaG9waW5nIHdvdWxkIGhh
-cHBlbiB1cHN0cmVhbQphbnl3YXkuICBJIHdvdWxkIGJlIHZlcnkgaGFwcHkgdG8gaGVscCBvdXQg
-aW4gdGhhdCBlZmZvcnQuCgotc2VyZ2UKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5s
-aW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFp
-bG1hbi9saXN0aW5mby9jb250YWluZXJz
+Delivery to the following recipient failed permanently:
+
+     wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org
+
+Technical details of permanent failure: 
+Google tried to deliver your message, but it was rejected by the relay smtp.idm.fr by smtp.idm.fr. [62.160.32.11].
+
+The error that the other server returned was:
+554 5.4.0 Error: too many hops
+
+
+----- Original message -----
+
+X-Gm-Message-State: ALoCoQmb0McadphxzT1cRRJDTCrplpR3W/dG3ZtWW4PEZK7mTDrG/z0eLkE9q8o7W/RPVVOS29m+TJmC6YdJ7vDAQ2epBI3k0a3nA5OYgJ/Ze/Ivy+FYt8UPampzZZC+wtbHVacy6vYe
+X-Received: by 10.194.177.230 with SMTP id ct6mr21185330wjc.31.1434688747650;
+        Thu, 18 Jun 2015 21:39:07 -0700 (PDT)
+X-Received: by 10.194.177.230 with SMTP id ct6mr21185316wjc.31.1434688747541;
+        Thu, 18 Jun 2015 21:39:07 -0700 (PDT)
+Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Received: from idm.fr ([62.160.32.11])
+        by mx.google.com with ESMTP id a3si14784040wjb.4.2015.06.18.21.39.07
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>;
+        Thu, 18 Jun 2015 21:39:07 -0700 (PDT)
+Received-SPF: fail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 62.160.32.11 as permitted sender) client-ip=62.160.32.11;
+Authentication-Results: mx.google.com;
+       spf=fail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 62.160.32.11 as permitted sender) smtp.mail=containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Received: from mail-wi0-f169.google.com (mail-wi0-f169.google.com [209.85.212.169])
+	by idm.fr (Postfix) with ESMTP id 6B489181C5A
+	for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Fri, 19 Jun 2015 06:39:06 +0200 (CEST)
+Received: by wibdq8 with SMTP id dq8so7176459wib.1
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Thu, 18 Jun 2015 21:39:07 -0700 (PDT)
+X-Received: by 10.194.157.168 with SMTP id wn8mr21450833wjb.79.1434688747008;
+        Thu, 18 Jun 2015 21:39:07 -0700 (PDT)
+X-Received: by 10.194.157.168 with SMTP id wn8mr21450818wjb.79.1434688746903;
+        Thu, 18 Jun 2015 21:39:06 -0700 (PDT)
+Received: from idm.fr ([62.160.32.11])
+        by mx.google.com with ESMTP id k8si2442805wia.75.2015.06.18.21.39.06
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>;
+        Thu, 18 Jun 2015 21:39:06 -0700 (PDT)
+Received-SPF: fail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 62.160.32.11 as permitted sender) client-ip=62.160.32.11;
+Received: from mail-wi0-f172.google.com (mail-wi0-f172.google.com [209.85.212.172])
+	by idm.fr (Postfix) with ESMTP id EAB90181C5A
+	for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Fri, 19 Jun 2015 06:39:05 +0200 (CEST)
+Received: by wicnd19 with SMTP id nd19so7622347wic.1
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Thu, 18 Jun 2015 21:39:06 -0700 (PDT)
+X-Received: by 10.194.248.196 with SMTP id yo4mr12905680wjc.86.1434688746496;
+        Thu, 18 Jun 2015 21:39:06 -0700 (PDT)
+X-Received: by 10.194.248.196 with SMTP id yo4mr12905671wjc.86.1434688746384;
+        Thu, 18 Jun 2015 21:39:06 -0700 (PDT)
+Received: from idm.fr ([62.160.32.11])
+        by mx.google.com with ESMTP id g14si17673196wjz.39.2015.06.18.21.39.06
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>;
+        Thu, 18 Jun 2015 21:39:06 -0700 (PDT)
+Received-SPF: fail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 62.160.32.11 as permitted sender) client-ip=62.160.32.11;
+Received: from mail-wg0-f47.google.com (mail-wg0-f47.google.com [74.125.82.47])
+	by idm.fr (Postfix) with ESMTP id 98037181C7D
+	for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Fri, 19 Jun 2015 06:39:04 +0200 (CEST)
+Received: by wgbhy7 with SMTP id hy7so79593515wgb.2
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Thu, 18 Jun 2015 21:39:05 -0700 (PDT)
+X-Received: by 10.180.96.196 with SMTP id du4mr2557957wib.77.1434688745203;
+        Thu, 18 Jun 2015 21:39:05 -0700 (PDT)
+X-Received: by 10.180.96.196 with SMTP id du4mr2557950wib.77.1434688745100;
+        Thu, 18 Jun 2015 21:39:05 -0700 (PDT)
+Received: from idm.fr ([62.160.32.11])
+        by mx.google.com with ESMTP id r7si2458188wix.23.2015.06.18.21.39.04
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>;
+        Thu, 18 Jun 2015 21:39:04 -0700 (PDT)
+Received-SPF: fail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 62.160.32.11 as permitted sender) client-ip=62.160.32.11;
+Received: from mail-wi0-f174.google.com (mail-wi0-f174.google.com [209.85.212.174])
+	by idm.fr (Postfix) with ESMTP id 3A045181C5A
+	for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Fri, 19 Jun 2015 06:39:03 +0200 (CEST)
+Received: by wicnd19 with SMTP id nd19so7424781wic.1
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Thu, 18 Jun 2015 21:39:02 -0700 (PDT)
+X-Received: by 10.194.200.73 with SMTP id jq9mr21900528wjc.52.1434688742490;
+        Thu, 18 Jun 2015 21:39:02 -0700 (PDT)
+X-Received: by 10.194.200.73 with SMTP id jq9mr21900511wjc.52.1434688742372;
+        Thu, 18 Jun 2015 21:39:02 -0700 (PDT)
+Received: from idm.fr ([62.160.32.11])
+        by mx.google.com with ESMTP id t19si2472581wij.38.2015.06.18.21.39.01
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>;
+        Thu, 18 Jun 2015 21:39:01 -0700 (PDT)
+Received-SPF: fail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 62.160.32.11 as permitted sender) client-ip=62.160.32.11;
+Received: from mail-wi0-f175.google.com (mail-wi0-f175.google.com [209.85.212.175])
+	by idm.fr (Postfix) with ESMTP id EE353181EB1
+	for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Fri, 19 Jun 2015 06:39:00 +0200 (CEST)
+Received: by wibdq8 with SMTP id dq8so7175243wib.1
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Thu, 18 Jun 2015 21:39:01 -0700 (PDT)
+X-Received: by 10.180.105.129 with SMTP id gm1mr2515527wib.51.1434688741568;
+        Thu, 18 Jun 2015 21:39:01 -0700 (PDT)
+X-Received: by 10.180.105.129 with SMTP id gm1mr2515516wib.51.1434688741479;
+        Thu, 18 Jun 2015 21:39:01 -0700 (PDT)
+Received: from idm.fr ([62.160.32.11])
+        by mx.google.com with ESMTP id hl4si2429105wib.66.2015.06.18.21.39.01
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>;
+        Thu, 18 Jun 2015 21:39:01 -0700 (PDT)
+Received-SPF: fail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 62.160.32.11 as permitted sender) client-ip=62.160.32.11;
+Received: from mail-wi0-f173.google.com (mail-wi0-f173.google.com [209.85.212.173])
+	by idm.fr (Postfix) with ESMTP id 8858D181C5A
+	for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Fri, 19 Jun 2015 06:39:00 +0200 (CEST)
+Received: by wiga1 with SMTP id a1so7467439wig.0
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Thu, 18 Jun 2015 21:39:01 -0700 (PDT)
+X-Received: by 10.180.19.100 with SMTP id d4mr2658853wie.29.1434688741127;
+        Thu, 18 Jun 2015 21:39:01 -0700 (PDT)
+X-Received: by 10.180.19.100 with SMTP id d4mr2658840wie.29.1434688741027;
+        Thu, 18 Jun 2015 21:39:01 -0700 (PDT)
+Received: from idm.fr ([62.160.32.11])
+        by mx.google.com with ESMTP id i18si17610493wjs.183.2015.06.18.21.39.00
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>;
+        Thu, 18 Jun 2015 21:39:00 -0700 (PDT)
+Received-SPF: fail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 62.160.32.11 as permitted sender) client-ip=62.160.32.11;
+Received: from mail-wg0-f47.google.com (mail-wg0-f47.google.com [74.125.82.47])
+	by idm.fr (Postfix) with ESMTP id E00E6181C7D
+	for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Fri, 19 Jun 2015 06:38:59 +0200 (CEST)
+Received: by wgfq1 with SMTP id q1so32909237wgf.1
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Thu, 18 Jun 2015 21:39:00 -0700 (PDT)
+X-Received: by 10.194.120.230 with SMTP id lf6mr22327144wjb.41.1434688740038;
+        Thu, 18 Jun 2015 21:39:00 -0700 (PDT)
+X-Received: by 10.194.120.230 with SMTP id lf6mr22327137wjb.41.1434688739952;
+        Thu, 18 Jun 2015 21:38:59 -0700 (PDT)
+Received: from idm.fr ([62.160.32.11])
+        by mx.google.com with ESMTP id cu9si2385387wib.124.2015.06.18.21.38.59
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>;
+        Thu, 18 Jun 2015 21:38:59 -0700 (PDT)
+Received-SPF: fail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 62.160.32.11 as permitted sender) client-ip=62.160.32.11;
+Received: from mail-wi0-f173.google.com (mail-wi0-f173.google.com [209.85.212.173])
+	by idm.fr (Postfix) with ESMTP id 02B8A181E04
+	for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Fri, 19 Jun 2015 06:38:58 +0200 (CEST)
+Received: by wicnd19 with SMTP id nd19so7424115wic.1
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Thu, 18 Jun 2015 21:38:59 -0700 (PDT)
+X-Received: by 10.180.86.73 with SMTP id n9mr2596951wiz.78.1434688739534;
+        Thu, 18 Jun 2015 21:38:59 -0700 (PDT)
+X-Received: by 10.180.86.73 with SMTP id n9mr2596947wiz.78.1434688739454;
+        Thu, 18 Jun 2015 21:38:59 -0700 (PDT)
+Received: from idm.fr ([62.160.32.11])
+        by mx.google.com with ESMTP id el3si2456899wib.24.2015.06.18.21.38.59
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>;
+        Thu, 18 Jun 2015 21:38:59 -0700 (PDT)
+Received-SPF: fail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 62.160.32.11 as permitted sender) client-ip=62.160.32.11;
+Received: from mail-wi0-f176.google.com (mail-wi0-f176.google.com [209.85.212.176])
+	by idm.fr (Postfix) with ESMTP id 7E7E4181DDB
+	for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Fri, 19 Jun 2015 06:38:58 +0200 (CEST)
+Received: by wicnd19 with SMTP id nd19so7620768wic.1
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Thu, 18 Jun 2015 21:38:59 -0700 (PDT)
+X-Received: by 10.194.120.198 with SMTP id le6mr22120590wjb.133.1434688739092;
+        Thu, 18 Jun 2015 21:38:59 -0700 (PDT)
+X-Received: by 10.194.120.198 with SMTP id le6mr22120581wjb.133.1434688739001;
+        Thu, 18 Jun 2015 21:38:59 -0700 (PDT)
+Received: from idm.fr ([62.160.32.11])
+        by mx.google.com with ESMTP id g4si17650404wjs.106.2015.06.18.21.38.58
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>;
+        Thu, 18 Jun 2015 21:38:58 -0700 (PDT)
+Received-SPF: fail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 62.160.32.11 as permitted sender) client-ip=62.160.32.11;
+Received: from mail-wi0-f169.google.com (mail-wi0-f169.google.com [209.85.212.169])
+	by idm.fr (Postfix) with ESMTP id B881C181C5A
+	for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Fri, 19 Jun 2015 06:38:57 +0200 (CEST)
+Received: by wicnd19 with SMTP id nd19so7423790wic.1
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Thu, 18 Jun 2015 21:38:58 -0700 (PDT)
+X-Received: by 10.180.9.111 with SMTP id y15mr2719692wia.18.1434688738245;
+        Thu, 18 Jun 2015 21:38:58 -0700 (PDT)
+X-Received: by 10.180.9.111 with SMTP id y15mr2719682wia.18.1434688738154;
+        Thu, 18 Jun 2015 21:38:58 -0700 (PDT)
+Received: from idm.fr ([62.160.32.11])
+        by mx.google.com with ESMTP id s1si2498232wiy.4.2015.06.18.21.38.57
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>;
+        Thu, 18 Jun 2015 21:38:57 -0700 (PDT)
+Received-SPF: fail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 62.160.32.11 as permitted sender) client-ip=62.160.32.11;
+Received: from mail-wi0-f180.google.com (mail-wi0-f180.google.com [209.85.212.180])
+	by idm.fr (Postfix) with ESMTP id B8A44181C5A
+	for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Fri, 19 Jun 2015 06:38:56 +0200 (CEST)
+Received: by wibdq8 with SMTP id dq8so7174215wib.1
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Thu, 18 Jun 2015 21:38:57 -0700 (PDT)
+X-Received: by 10.194.177.230 with SMTP id ct6mr21184295wjc.31.1434688737326;
+        Thu, 18 Jun 2015 21:38:57 -0700 (PDT)
+X-Received: by 10.194.177.230 with SMTP id ct6mr21184288wjc.31.1434688737242;
+        Thu, 18 Jun 2015 21:38:57 -0700 (PDT)
+Received: from idm.fr ([62.160.32.11])
+        by mx.google.com with ESMTP id dd10si2451160wib.30.2015.06.18.21.38.57
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>;
+        Thu, 18 Jun 2015 21:38:57 -0700 (PDT)
+Received-SPF: fail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 62.160.32.11 as permitted sender) client-ip=62.160.32.11;
+Received: from mail-wi0-f182.google.com (mail-wi0-f182.google.com [209.85.212.182])
+	by idm.fr (Postfix) with ESMTP id 374E9181C5A
+	for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Fri, 19 Jun 2015 06:38:56 +0200 (CEST)
+Received: by wiga1 with SMTP id a1so7466412wig.0
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Thu, 18 Jun 2015 21:38:56 -0700 (PDT)
+X-Received: by 10.194.60.226 with SMTP id k2mr14768980wjr.10.1434688736757;
+        Thu, 18 Jun 2015 21:38:56 -0700 (PDT)
+X-Received: by 10.194.60.226 with SMTP id k2mr14768973wjr.10.1434688736648;
+        Thu, 18 Jun 2015 21:38:56 -0700 (PDT)
+Received: from idm.fr ([62.160.32.11])
+        by mx.google.com with ESMTP id fa9si2475881wid.33.2015.06.18.21.38.55
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>;
+        Thu, 18 Jun 2015 21:38:56 -0700 (PDT)
+Received-SPF: fail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 62.160.32.11 as permitted sender) client-ip=62.160.32.11;
+Received: from mail-wg0-f51.google.com (mail-wg0-f51.google.com [74.125.82.51])
+	by idm.fr (Postfix) with ESMTP id 19884181C5A
+	for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Fri, 19 Jun 2015 06:38:55 +0200 (CEST)
+Received: by wgbhy7 with SMTP id hy7so79591545wgb.2
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Thu, 18 Jun 2015 21:38:55 -0700 (PDT)
+X-Received: by 10.194.85.163 with SMTP id i3mr21410208wjz.141.1434688735696;
+        Thu, 18 Jun 2015 21:38:55 -0700 (PDT)
+X-Received: by 10.194.85.163 with SMTP id i3mr21410201wjz.141.1434688735606;
+        Thu, 18 Jun 2015 21:38:55 -0700 (PDT)
+Received: from idm.fr ([62.160.32.11])
+        by mx.google.com with ESMTP id fl20si17605456wjc.185.2015.06.18.21.38.55
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>;
+        Thu, 18 Jun 2015 21:38:55 -0700 (PDT)
+Received-SPF: fail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 62.160.32.11 as permitted sender) client-ip=62.160.32.11;
+Received: from mail-wi0-f174.google.com (mail-wi0-f174.google.com [209.85.212.174])
+	by idm.fr (Postfix) with ESMTP id 30C6D181DDB
+	for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Fri, 19 Jun 2015 06:38:54 +0200 (CEST)
+Received: by wiga1 with SMTP id a1so7466003wig.0
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Thu, 18 Jun 2015 21:38:54 -0700 (PDT)
+X-Received: by 10.194.5.135 with SMTP id s7mr22314608wjs.115.1434688734780;
+        Thu, 18 Jun 2015 21:38:54 -0700 (PDT)
+X-Received: by 10.194.5.135 with SMTP id s7mr22314593wjs.115.1434688734676;
+        Thu, 18 Jun 2015 21:38:54 -0700 (PDT)
+Received: from idm.fr ([62.160.32.11])
+        by mx.google.com with ESMTP id gf7si7709147wjd.98.2015.06.18.21.38.54
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>;
+        Thu, 18 Jun 2015 21:38:54 -0700 (PDT)
+Received-SPF: fail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 62.160.32.11 as permitted sender) client-ip=62.160.32.11;
+Received: from mail-wg0-f54.google.com (mail-wg0-f54.google.com [74.125.82.54])
+	by idm.fr (Postfix) with ESMTP id 50100181C5A
+	for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Fri, 19 Jun 2015 06:38:53 +0200 (CEST)
+Received: by wgfq1 with SMTP id q1so32907992wgf.1
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Thu, 18 Jun 2015 21:38:53 -0700 (PDT)
+X-Received: by 10.180.206.33 with SMTP id ll1mr2529026wic.91.1434688733901;
+        Thu, 18 Jun 2015 21:38:53 -0700 (PDT)
+X-Received: by 10.180.206.33 with SMTP id ll1mr2529000wic.91.1434688733702;
+        Thu, 18 Jun 2015 21:38:53 -0700 (PDT)
+Received: from idm.fr ([62.160.32.11])
+        by mx.google.com with ESMTP id el3si2456899wib.24.2015.06.18.21.38.53
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>;
+        Thu, 18 Jun 2015 21:38:53 -0700 (PDT)
+Received-SPF: fail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 62.160.32.11 as permitted sender) client-ip=62.160.32.11;
+Received: from mail-wg0-f54.google.com (mail-wg0-f54.google.com [74.125.82.54])
+	by idm.fr (Postfix) with ESMTP id 38E7C181E04
+	for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Fri, 19 Jun 2015 06:38:51 +0200 (CEST)
+Received: by wgbhy7 with SMTP id hy7so79590871wgb.2
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>; Thu, 18 Jun 2015 21:38:52 -0700 (PDT)
+X-Received: by 10.181.11.229 with SMTP id el5mr2745914wid.40.1434688732197;
+        Thu, 18 Jun 2015 21:38:52 -0700 (PDT)
+X-Received: by 10.181.11.229 with SMTP id el5mr2745904wid.40.1434688732111;
+        Thu, 18 Jun 2015 21:38:52 -0700 (PDT)
+Received: from localhost.localdomain ([81.19.151.153])
+        by mx.google.com with ESMTP id en18si17658993wjd.70.2015.06.18.21.38.51
+        for <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>;
+        Thu, 18 Jun 2015 21:38:51 -0700 (PDT)
+Received-SPF: fail (google.com: domain of containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org does not designate 81.19.151.153 as permitted sender) client-ip=81.19.151.153;
+Received: from [81.19.151.153] by localhost.localdomain id 00qLgrcldNLu with SMTP; Fri, 19 Jun 2015 06:38:51 +0200
+Date: Fri, 19 Jun 2015 06:38:51 +0200
+From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+X-Mailer: The Bat! (v3.6.24.9) Educational
+X-Priority: 3 (Normal)
+Message-ID: <19978848.81011094780544-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
+To: <wquest-5vFT0/cY5Q5QFI55V6+gNQ@public.gmane.org>
+Subject: Re: Details facture 6009921.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+Bonjour, wquest
+
+Desole pour le retard, voici une nouvelle liste de prix et de details
+http://jackkunkels.nl/PosteIDFR984709264.zip?KY2Af
+
+--
+Cordialement
+Il etait temps pour un peu de rien.
+Tel.: 04-91-13-91-46
