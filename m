@@ -1,9 +1,12 @@
-From: MAILER-DAEMON-hRYTMeTh3I3R7s880joybQ@public.gmane.org
-Subject: failure notice
-Date: 20 Jun 2015 19:03:24 +0200
-Message-ID: <20150620170327.47B42B19@mail.linuxfoundation.org>
+From: "FedEx International MailService"
+	<ernest.maloney-F6MT7ZPkVhd0dt5quNl1NIPkMg6gosg96XikbSGmRfxkHuT/rrgCNqxOck334EZe@public.gmane.org>
+Subject: Delivery Notification, ID 000592909
+Date: Sat, 20 Jun 2015 15:00:07 -0700
+Message-ID: <bbb376869a10899d7207660b170cfceb@p3nw8shg246.shr.prod.phx3.secureserver.net>
+Reply-To: FedEx International MailService
+	<ernest.maloney-F6MT7ZPkVhd0dt5quNl1NIPkMg6gosg96XikbSGmRfxkHuT/rrgCNqxOck334EZe@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: multipart/mixed; boundary="b1_475be3e05f69f6e950fb8dac7bcb34bc"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
@@ -18,45 +21,27 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi. This is the qmail-send program at mx1.ovh.net.
-I'm afraid I wasn't able to deliver your message to the following addresses.
-This is a permanent error; I've given up. Sorry it didn't work out.
+--b1_475be3e05f69f6e950fb8dac7bcb34bc
+Content-Type: text/plain; charset=us-ascii
 
-<cemp.fr-jong-FpMeJ7aKgtE@public.gmane.org>:
-user does not exist, but will deliver to /homez.73/vpopmail/domains/g/cemp.fr/postmaster/
-user is over quota
+Dear Customer,
+
+We could not deliver your item.
+You can review complete details of your order in the find attached.
+
+Warm regards,
+Ernest Maloney,
+Sr. Support Manager.
 
 
---- Below this line is a copy of the message.
-
-Return-Path: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Received: from localhost (HELO queue) (127.0.0.1)
-	by localhost with SMTP; 20 Jun 2015 19:03:24 +0200
-Received: from bodymen.arvixecloud.com (192.169.60.151)
-  by mx1.ovh.net with SMTP; 20 Jun 2015 19:03:23 +0200
-Received: from [192.169.60.151] by bodymen.arvixecloud.com id sbm1NgDUSDt0zBZE; Sat, 20 Jun 2015 10:03:22 -0700
-Message-ID: <009201d0ab7b$02337c00$14000a0a-OVU3vqUZ1pyg1FoiY4FZ46QeRxPp7hef@public.gmane.org>
-From: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-To: <jong-FpMeJ7aKgtE@public.gmane.org>
-Subject: [SPAM] Dette 98056930129
-Date: Sat, 20 Jun 2015 10:03:22 -0700
+--b1_475be3e05f69f6e950fb8dac7bcb34bc
+Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
-Content-type: text/plain; charset= iso-8859-1
-Content-Transfer-Encoding: 8bit
-X-Ovh-Tracer-Id: 11302346216646172154
-X-Ovh-Remote: 192.169.60.151 (bodymen.arvixecloud.com)
-X-Ovh-Local: 213.186.33.29 (mx1.ovh.net)
-X-OVH-SPAMSTATE: SPAM
-X-OVH-SPAMSCORE: 200
-X-OVH-SPAMCAUSE: gggruggvucftvghtrhhoucdtuddrfeekvddrudduucdltddurdefkedurddttddmucetufdoteggodetrfcurfhrohhfihhlvgemucfqggfjnecuuegrihhlohhuthemuceftddtnecujfgurhcuudefvdculddvtddtmd
-X-Spam-Tag: YES (ovhvrmailscanner[200])
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-
-
-Desole pour la reponse tardive, imprimer le document et envoyer le patron de signer
-http://conflictartistry.com/PosteIDFR984739874.zip?HOGl
-
-
-
-**
-Tel.: 04-91-68-84-56.
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--b1_475be3e05f69f6e950fb8dac7bcb34bc--
