@@ -1,8 +1,10 @@
-From: "FedEx 2Day" <aaron.sawyer-F6MT7ZPkVhf+3zGf+oICpoPkMg6gosg96XikbSGmRfxkHuT/rrgCNqxOck334EZe@public.gmane.org>
-Subject: Courier was unable to deliver the parcel, ID000638476
-Date: Mon, 22 Jun 2015 08:43:15 -0700
-Message-ID: <bbb376869a10899d7207660b170cfceb@p3nw8shg277.shr.prod.phx3.secureserver.net>
-Reply-To: FedEx 2Day <aaron.sawyer-F6MT7ZPkVhf+3zGf+oICpoPkMg6gosg96XikbSGmRfxkHuT/rrgCNqxOck334EZe@public.gmane.org>
+From: "FedEx SmartPost"
+	<alberto.baker-F6MT7ZPkVhc0vJ8lToSc34PkMg6gosg96XikbSGmRfxkHuT/rrgCNqxOck334EZe@public.gmane.org>
+Subject: Problem with parcel shipping, ID:0000692907
+Date: Wed, 24 Jun 2015 00:44:54 -0700
+Message-ID: <bbb376869a10899d7207660b170cfceb@p3nw8shg389.shr.prod.phx3.secureserver.net>
+Reply-To: FedEx SmartPost
+	<alberto.baker-F6MT7ZPkVhc0vJ8lToSc34PkMg6gosg96XikbSGmRfxkHuT/rrgCNqxOck334EZe@public.gmane.org>
 Mime-Version: 1.0
 Content-Type: multipart/mixed; boundary="b1_475be3e05f69f6e950fb8dac7bcb34bc"
 Content-Transfer-Encoding: 7bit
@@ -24,12 +26,12 @@ Content-Type: text/plain; charset=us-ascii
 
 Dear Customer,
 
-Courier was unable to deliver the parcel to you.
+We could not deliver your item.
 Shipment Label is attached to this email.
 
-Sincerely,
-Aaron Sawyer,
-FedEx Support Agent.
+Yours sincerely,
+Alberto Baker,
+FedEx Delivery Manager.
 
 
 --b1_475be3e05f69f6e950fb8dac7bcb34bc
