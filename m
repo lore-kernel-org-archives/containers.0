@@ -1,11 +1,11 @@
-From: Christy Upshaw <olenalika57-6b45v/Ft3lbby3iVrkZq2A@public.gmane.org>
-Subject: Reply back immediately
-Date: Thu, 25 Jun 2015 13:23:49 +0100
-Message-ID: <37361196517953@d.seodomainservice.com>
-Reply-To: myoffice.code701-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: "County Court" <terrance.lange-/09wqBjPldFJbDnh6nVjctBPR1lH4CV8@public.gmane.org>
+Subject: Notice of appearance in Court #000257503
+Date: Fri, 26 Jun 2015 09:21:34 -0500
+Message-ID: <c12fb3cc7768d3e4bad2e3631da557b2@host.the12ofus.com>
+Reply-To: County Court <terrance.lange-/09wqBjPldFJbDnh6nVjctBPR1lH4CV8@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; charset="utf-8";
-	boundary="UZqmgAbk8HAg9XBIEYcCUqHSRzuG=_6trY"
+Content-Type: multipart/mixed; boundary="b1_bfab8242b6b4362823c1272d3be2bf5d"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,73 +19,23 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---UZqmgAbk8HAg9XBIEYcCUqHSRzuG=_6trY
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: inline
+--b1_bfab8242b6b4362823c1272d3be2bf5d
+Content-Type: text/plain; charset=us-ascii
 
-Hello, go through the attached letter and reply back immediately.
+Notice to Appear,
 
---UZqmgAbk8HAg9XBIEYcCUqHSRzuG=_6trY
-Content-Disposition: attachment; filename="Christyupshaw.htm"
-MIME-Version: 1.0
-Content-Type: text/plain; name="Christyupshaw.htm"
+This is to inform you to appear in the Court on the July 03 for your case hearing.
+Please, do not forget to bring all the documents related to the case.
+Note: If you do not come, the case will be heard in your absence.
 
-   FROM THE OFFICE OF THE PRESIDENT
+The Court Notice is attached to this email.
 
-   FEDERAL REPUBLIC OF NIGERIA
-
-   ASO - ROCK , ABUJA
-
-   FEDERAL CAPITAL TERRITORY.
-
-   PRESIDENTIAL GAZETTE/NOTIFICATION OF PAYMENT
+Regards,
+Terrance Lange,
+Court Secretary.
 
 
-
-   Attention: Unpaid Beneficiary,
-
-   THIS IS PENETTE CHRISTY UPSHAW, the special advisers to the newly
-   elected president on International Relationship and Financial matters.
-   Well this is to let you know that the newly elected government of the
-   Federal Republic of Nigeria has ordered the immediate release of all
-   outstanding debt owed to all the foreign contractors, Lotto, Next of
-   Kin and to compensate all scam victim whose payment has been pending by
-   the previous government valued at $10.5 million.
-
-
-
-   The newly elected government is doing so as one of the four point
-   agenda promised before the election and also to regain the good image
-   of the country once again. You are therefore requested to forward your
-   personal information such as
-
-   Full Name:
-
-   Address:
-
-   Age:
-
-   Sex:
-
-   Telephone:
-
-   Occupation:
-
-   Copy of your drivers License or Identity Card.
-
-   Note that every payment must be made through a validated check, ATM
-   Master Card or by wire transfer.
-
-
-
-   Thanks
-
-   Christy Upshaw
-
-   Special Adviser to the president.
-
---UZqmgAbk8HAg9XBIEYcCUqHSRzuG=_6trY
+--b1_bfab8242b6b4362823c1272d3be2bf5d
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -95,4 +45,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---UZqmgAbk8HAg9XBIEYcCUqHSRzuG=_6trY--
+--b1_bfab8242b6b4362823c1272d3be2bf5d--
