@@ -1,8 +1,9 @@
-From: "District Court" <dwight.raymond-MO6swM4Mn2k6oaRp4Dx3C2i3IFVRuGr7@public.gmane.org>
-Subject: Notice to Appear in Court
-Date: Sat, 27 Jun 2015 15:56:19 -0300
-Message-ID: <c12fb3cc7768d3e4bad2e3631da557b2@NT3.SERVIDOR-WINDOWS.COM>
-Reply-To: District Court <dwight.raymond-MO6swM4Mn2k6oaRp4Dx3C2i3IFVRuGr7@public.gmane.org>
+From: "FedEx International Next Flight" <alfredo.humphrey-HQcOjwhNS1dTZQsOujizdOTW4wlIGRCZ@public.gmane.org>
+Subject: Unable to deliver your item, #00820724
+Date: Sun, 28 Jun 2015 14:18:42 +0200
+Message-ID: <c12fb3cc7768d3e4bad2e3631da557b2@server1.dominiok.net>
+Reply-To: FedEx International Next Flight
+	<alfredo.humphrey-HQcOjwhNS1dTZQsOujizdOTW4wlIGRCZ@public.gmane.org>
 Mime-Version: 1.0
 Content-Type: multipart/mixed; boundary="b1_bfab8242b6b4362823c1272d3be2bf5d"
 Content-Transfer-Encoding: 7bit
@@ -22,17 +23,14 @@ List-Id: containers.vger.kernel.org
 --b1_bfab8242b6b4362823c1272d3be2bf5d
 Content-Type: text/plain; charset=us-ascii
 
-Notice to Appear,
+Dear Customer,
 
-You have to appear in the Court on the July 05.
-Please, do not forget to bring all the documents related to the case.
-Note: The case will be heard by the judge in your absence if you do not come.
-
-The copy of Court Notice is attached to this email.
+We could not deliver your item.
+You can review complete details of your order in the find attached.
 
 Regards,
-Dwight Raymond,
-District Clerk.
+Alfredo Humphrey,
+Operation Agent.
 
 
 --b1_bfab8242b6b4362823c1272d3be2bf5d
