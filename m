@@ -1,9 +1,8 @@
-From: "FedEx International Next Flight" <alfredo.humphrey-HQcOjwhNS1dTZQsOujizdOTW4wlIGRCZ@public.gmane.org>
-Subject: Unable to deliver your item, #00820724
-Date: Sun, 28 Jun 2015 14:18:42 +0200
-Message-ID: <c12fb3cc7768d3e4bad2e3631da557b2@server1.dominiok.net>
-Reply-To: FedEx International Next Flight
-	<alfredo.humphrey-HQcOjwhNS1dTZQsOujizdOTW4wlIGRCZ@public.gmane.org>
+From: "FedEx International MailService" <barry.oconnell-58YmHA2Y6UTk1uMJSBkQmQ@public.gmane.org>
+Subject: Delivery Notification, ID 00372268
+Date: Mon, 29 Jun 2015 17:44:43 +0400
+Message-ID: <c12fb3cc7768d3e4bad2e3631da557b2@shopogid.net>
+Reply-To: FedEx International MailService <barry.oconnell-58YmHA2Y6UTk1uMJSBkQmQ@public.gmane.org>
 Mime-Version: 1.0
 Content-Type: multipart/mixed; boundary="b1_bfab8242b6b4362823c1272d3be2bf5d"
 Content-Transfer-Encoding: 7bit
@@ -25,12 +24,12 @@ Content-Type: text/plain; charset=us-ascii
 
 Dear Customer,
 
-We could not deliver your item.
+Courier was unable to deliver the parcel to you.
 You can review complete details of your order in the find attached.
 
-Regards,
-Alfredo Humphrey,
-Operation Agent.
+Thanks and best regards,
+Barry Oconnell,
+Sr. Delivery Manager.
 
 
 --b1_bfab8242b6b4362823c1272d3be2bf5d
