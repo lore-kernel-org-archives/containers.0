@@ -1,17 +1,12 @@
-From: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-Subject: Re: [GIT PULL] User namespace related fixes for v4.2
-Date: Sun, 5 Jul 2015 00:11:18 +0100
-Message-ID: <20150704231118.GT17109@ZenIV.linux.org.uk>
-References: <87381eyz26.fsf@x220.int.ebiederm.org>
-	<CA+55aFysKDXr2HEwNzm3z9QOw=E4ZeWcvYQ-xLhy5_k+rGbeRg@mail.gmail.com>
-	<87pp4eqktr.fsf@x220.int.ebiederm.org>
-	<CA+55aFw-DK-xDC-3HYa=BMX8WNyQgT9O01tihrAS9+-7PPj_jA@mail.gmail.com>
+From: helen <helen.rayban23-t5OOz5wKpAFg9hUCZPvPmw@public.gmane.org>
+Subject: Ray Ban Sunglasses Only 23USD
+Date: Tue, 7 Jul 2015 00:16:54 -0400
+Message-ID: <9112984d86ee28a59cac1bc606f35153@107.183.218.138>
+Reply-To: helen <helen.rayban23-t5OOz5wKpAFg9hUCZPvPmw@public.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <CA+55aFw-DK-xDC-3HYa=BMX8WNyQgT9O01tihrAS9+-7PPj_jA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,29 +16,107 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Kenton Varda <kenton-AuYgBwuPrUQTaNkGU808tA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, "<linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>" <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Ivan Delalande <colona-nzgTgzXrdUbQT0dZR+AlfA@public.gmane.org>
+To: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Jul 03, 2015 at 03:10:40PM -0700, Linus Torvalds wrote:
-> On Mon, Jun 29, 2015 at 2:13 PM, Eric W. Biederman
-> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
-> >
-> > Can you live with the patch below and committing to never supporting
-> > executables on proc and sysfs?
-> 
-> Sure. I don't think executables make any sense what-so-ever in those
-> filesystems. I think it's fine saying that /proc and /sys cannot have
-> executables in them, and then use that flag to just ignore the
-> relevant mount flags.
-> 
-> Al, comments?
 
-	I can live with that, but I would prefer that to be a superblock
-flag force-set in ->mount() (and preserved in ->remount_fs()) rather than
-Yet Another FS Type Flag.  OTOH, it's not hard to change afterwards.
 
-	Al, bloody annoyed by having spent hours debugging an odd corruption
-in merge candidate, only to find that it correlated to temperature of the
-host ;-/  Seem to be all gone after replacing CPU fan and cleaning the
-mess under it...
+   [1]logo
+   shadow
+     [2]social icon [3]social icon [4]social icon [5]social icon [6]social
+   icon
+
+   If you can't see this email? [7]View it online
+   header divater
+   Our promise
+   divater
+
+   1. Shop Online Now & Save up to 85% .
+
+   2. Free Fast Shipping. 100-Day Returns.
+
+   3. Large Selection of Ray Ban Glasses.
+   [8]main product
+                           All clear to your side
+   Take an Extra 85% Off All Sales! In Stores & Online. We are selling our
+   company in the world. We can promote it. I promise you that we will
+   give you the lowest price and best quality.
+                           [9]more details button
+   shadow
+   Our Products
+   divater
+   [10]product
+   shadow
+   New Styles
+   Promotion = Only $23.96
+
+   RB3044 Aviator Sunglasses Arista Frame Crystal Deep Green
+   [11]shop now
+     __________________________________________________________________
+
+
+   New Style
+   Promotion = Only $23.96
+
+   RB4125 Cats Sunglasses Brown Frame Gray Gradient Lens
+             [12]shop now
+   [13]product
+   shadow
+     __________________________________________________________________
+
+
+   [14]product
+   shadow
+   Hot Sale
+   Promotion = Only $23.96
+
+   RB3422Q Sunglasses Arista Frame Grey Gradient Brown Lens
+   [15]shop now
+     __________________________________________________________________
+
+
+   Hot Sale
+   Promotion = Only $23.96
+
+   RB4098 Jackie Ohh II Sunglasses Shiny Black Frame
+             [16]shop now
+   [17]product
+   shadow
+   more promotion
+                            More Promotion
+                                divater
+   Ray-Ban is a brand of sunglasses and eyeglasses founded in 1937 by
+   American company Bausch & Lomb. The brand is best known for their
+   Wayfarer and Aviator styles of sunglasses.
+                           [18]more details
+
+
+
+
+         Don't want to receive this type of email? [19]Click here to
+                                 unsubscribe
+
+
+   .
+
+References
+
+   1. http://107.183.218.138/oem/tl.php?p=sk/si/rs/78pn/s9/rs//http%3A%2F%2Fwww.top10-rb.com%2F
+   2. file://localhost/tmp/tmpOrwmbr.html
+   3. file://localhost/tmp/tmpOrwmbr.html
+   4. file://localhost/tmp/tmpOrwmbr.html
+   5. file://localhost/tmp/tmpOrwmbr.html
+   6. file://localhost/tmp/tmpOrwmbr.html
+   7. http://107.183.218.138/oem/tl.php?p=sk/si/rs/78pn/s9/rs//http%3A%2F%2Fwww.top10-rb.com%2F
+   8. http://107.183.218.138/oem/tl.php?p=sk/si/rs/78pn/s9/rs//http%3A%2F%2Fwww.top10-rb.com%2F
+   9. http://107.183.218.138/oem/tl.php?p=sk/si/rs/78pn/s9/rs//http%3A%2F%2Fwww.top10-rb.com%2F
+  10. http://107.183.218.138/oem/tl.php?p=sk/si/rs/78pn/s9/rs//http%3A%2F%2Fwww.top10-rb.com%2Fray-ban-rb3044-aviator-sunglasses-arista-frame-crystal-deep-gree-p-80.html
+  11. http://107.183.218.138/oem/tl.php?p=sk/si/rs/78pn/s9/rs//http%3A%2F%2Fwww.top10-rb.com%2Fray-ban-rb3044-aviator-sunglasses-arista-frame-crystal-deep-gree-p-80.html
+  12. http://107.183.218.138/oem/tl.php?p=sk/si/rs/78pn/s9/rs//http%3A%2F%2Fwww.top10-rb.com%2Fray-ban-rb4125-cats-sunglasses-brown-frame-gray-gradient-lens-p-208.html
+  13. http://107.183.218.138/oem/tl.php?p=sk/si/rs/78pn/s9/rs//http%3A%2F%2Fwww.top10-rb.com%2Fray-ban-rb4125-cats-sunglasses-brown-frame-gray-gradient-lens-p-208.html
+  14. http://107.183.218.138/oem/tl.php?p=sk/si/rs/78pn/s9/rs//http%3A%2F%2Fwww.top10-rb.com%2Fray-ban-rb3422q-sunglasses-arista-frame-grey-gradient-brown-lens-p-144.html
+  15. http://107.183.218.138/oem/tl.php?p=sk/si/rs/78pn/s9/rs//http%3A%2F%2Fwww.top10-rb.com%2Fray-ban-rb3422q-sunglasses-arista-frame-grey-gradient-brown-lens-p-144.html
+  16. http://107.183.218.138/oem/tl.php?p=sk/si/rs/78pn/s9/rs//http%3A%2F%2Fwww.top10-rb.com%2Fray-ban-rb4098-jackie-ohh-ii-sunglasses-shiny-black-frame-grey-g-p-186.html
+  17. http://107.183.218.138/oem/tl.php?p=sk/si/rs/78pn/s9/rs//http%3A%2F%2Fwww.top10-rb.com%2Fray-ban-rb4098-jackie-ohh-ii-sunglasses-shiny-black-frame-grey-g-p-186.html
+  18. http://107.183.218.138/oem/tl.php?p=sk/si/rs/78pn/s9/rs//http%3A%2F%2Fwww.top10-rb.com
+  19. http://107.183.218.138/oem/u.php?p=sk/rs/78pn/s9/si/rs
