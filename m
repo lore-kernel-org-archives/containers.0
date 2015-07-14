@@ -1,11 +1,10 @@
-From: HQ-Canadian-Meds <noreply-LmLKWc79cO2hF7+lieKJHJowlv4uC7bZ@public.gmane.org>
-Subject: We know how to ensure your ultimate health and optimism! Visit our
-	trusted pharmacy!
-Date: Sun, 12 Jul 2015 15:06:47 +0500
-Message-ID: <op.t731027ab3a18e@crea-carlosmartin.com>
+From: Phil <phil-R4tev3LJr+YFHQQy/6e8+GGXanvQGlWp@public.gmane.org>
+Subject: =?utf-8?B?RG8gVEhJUyBGb3IgMjEgRGF5cyBhbmQgWW914oCZcmUgU2V0IEZPUiBMSUZFIQ==?=
+Date: Tue, 14 Jul 2015 08:05:11 -0400
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@abrasivenews.info>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"; DelSp="yes"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -16,195 +15,35 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: openais-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lf_carrier-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, fastboot-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lf_desktop-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-   
-
-		Peculiarly virulent and elderly need. Trnas, and guard on muffin
-tops, front cultural. Franchise program, jo mortons little of
-carpaccio, prawn dumplings, rocket to eaten. 
-
-		Me
-		ds
-		7f
-		or
-		8M
-		en
-
-Vi
-Ci
-Ci
-Le
-Pr
- ag
-al
-al
-vi
-op
- ra
-is
-is
-tr
-ec
-
- S
-a 
-ia
-
-of
-
-t 
-
-Ta
-
-bs
-
- $0
-$1
-$2
-$2
-$0
- .9
-.6
-.5
-.5
-.4
- 9
-5
-0
-0
-5
-
-		Me
-		ds
-		2f
-		or
-		5W
-		om
-		en
-
-Ac
-Cl
-De
-Fe
-Fe
- om
-om
-fl
-ma
-ma
- pl
-id
-uc
-le
-le
- ia
-
-an
- C
- V
-
-ia
-ia
-
-li
-gr
-
-s 
-a 
-
- $1
-$0
-$1
-$1
-$0
- .7
-.4
-.2
-.1
-.7
- 5
-5
-5
-1
-2
-
- Vi
-24
-An
-Fa sa
-/7
-on
-st ,M
- c
-ym
- w as
-us
-ou
-or te
-to
-s 
-ld rc
-me
-de
-wi ar
-r 
-li
-de d,
-su
-ve
- s Ec
-pp
-ry
-hi he
-or
-
-pp ck
-t 
-
-in  
-
-g   
-
-   O
- S
- 1
- N nl
-pe
-00
-o  y 
-ci
-% 
-pr re
-al
-Au
-es li
- i
-th
-cr ab
-nt
-en
-ip le
-er
-ti
-ti  s
-ne
-c 
-on up
-t 
-Me
- r pl
-pr
-ds
-eq ie
-ic
-
-ui rs
-es
-
-re  
-
-d 
-
-		>> Enter Here 
+SGV5LAoKTHVja3kgdXNlcnMgb2YgTmljayBQYXJr4oCZcyBuZXcgMjEgRGF5cyB0byBSaWNoZXMg
+cHJvZ3JhbSBhcmUgc3RpbGwgc2hha2luZyB0aGVpciBoZWFkcy4KCuKAnEnigJltIGEgYmVsaWV2
+ZXIgbm93IGFuZCBJ4oCZdmUgZ290IHRoZSBtb25leSB0byBwcm92ZSBpdCHigJ0KCuKAnFNvIG9u
+IERheSAyMSBJIGNhbGxlZCBteSBib3NzIGFuZCB0b2xkIGhpbSBJIHdhcyBkb25l4oCdCgrigJxU
+aGVuIG9uIHRoZSA3dGggZGF5IEkgd2VudCB0byB3b3JrIGFuZCBnYXZlIG5vdGljZS7igJ0KCjE1
+LTIwIG1pbnV0ZXMgYSBkYXkgZm9yIGp1c3QgMjEgZGF5cz8KCll1cCwgWU9VIFRPTyBjb3VsZCBi
+ZSBraXNzaW5nIHlvdXIgam9iIOKAnGdvb2RieWXigJ0gd2l0aCAyMSBEYXlzIFRvIFJpY2hlcyEK
+ClRha2UgYSBsb29rIGF0IHRoaXMgLSA9PT4gaHR0cDovL2NsaWNrLmFicmFzaXZlbmV3cy5pbmZv
+L2luZGV4LnBocD9pZD03MTg4ODk3JmE9NDEyNjAmYj04NTAwJmM9MTY2CgpXaXRoIGNpdmlsIHVu
+cmVzdCwgY29sbGFwc2luZyBlY29ub21pZXMgYW5kIHBvbGl0aWNhbCB1cGhlYXZhbCBsaWtlIHdl
+4oCZcmUgd2l0bmVzc2luZyBsYXRlbHnigKYKCkNBU0ggSVMgS0lORyEKCkFuZCAyMSBEYXlzIFRv
+IFJpY2hlcyB1c2VycyBhcmUgUk9MTElORyBpbiBpdCEKCldpbGwgeW91IGJlIHJlYWR5IGlmIGFu
+ZCB3aGVuIGl0IOKAnGhpdHMgdGhlIGZhbj/igJ0KCklmIHlvdSBjYW4gc3BlbmQgMTUtMjAgbWlu
+dXRlcyBhIGRheSBvbiB5b3VyIFBDIGZvciBvbmx5IDIxIGRheXMgeW91IHdpbGwgYmUhCgpSZWFs
+bHksIGNoZWNrIHRoaXMgb3V0IHJpZ2h0IG5vdyAtID09PiBodHRwOi8vY2xpY2suYWJyYXNpdmVu
+ZXdzLmluZm8vaW5kZXgucGhwP2lkPTcxODg4OTcmYT00MTI2MCZiPTg1MDAmYz0xNjYKClJlbGF4
+OyB0aGVyZeKAmXMgbm90aGluZyB0byBidXksIG5vIHNjYW1zIHRvIHdvcnJ5IGFib3V0IGFuZCBu
+byBsb25nLXRlcm0g4oCcc2lnbiB5b3VyIGxpZmUgYXdheeKAnSBvYmxpZ2F0aW9ucy4KCkNoZWNr
+IG91dCAyMSBEYXlzIFRvIFJpY2hlcyBOT1chCgpEb27igJl0IG1pc3MgdGhpcyBvbmUhIC0gPT0+
+IGh0dHA6Ly9jbGljay5hYnJhc2l2ZW5ld3MuaW5mby9pbmRleC5waHA/aWQ9NzE4ODg5NyZhPTQx
+MjYwJmI9ODUwMCZjPTE2NgoKIAoKUGhpbAoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoK
+T3VyIGFkZHJlc3MgaXMgUGFjaWZpYyBSLjE1MTIsIEJyaXRpc2ggVmlyZ2luIElzbGFuZHMsIApJ
+ZiB5b3UgZG8gbm90IHdpc2ggdG8gcmVjZWl2ZSBmdXR1cmUgZW1haWwsIGNsaWNrIGhlcmUuCmh0
+dHA6Ly9jbGljay5hYnJhc2l2ZW5ld3MuaW5mby9pbmRleC5waHA/bz0yJmE9NDEyNjAmYj04NTAw
+JmM9MTY2CihZb3UgY2FuIGFsc28gc2VuZCB5b3VyIHJlcXVlc3QgdG8gQ3VzdG9tZXIgQ2FyZSBh
+dCB0aGUgc3RyZWV0IGFkZHJlc3MgYWJvdmUuKSAKX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0Bs
+aXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5v
+cmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
