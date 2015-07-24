@@ -1,11 +1,18 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [GIT PULL] namespace: Infinite loop bugfixes for 4.2-rc4
-Date: Thu, 23 Jul 2015 11:52:48 -0500
-Message-ID: <87r3nyak9r.fsf@x220.int.ebiederm.org>
+Subject: Re: [PATCH review 0/4] Loopback mount escape fixes
+Date: Fri, 24 Jul 2015 15:39:02 -0500
+Message-ID: <87wpxp70k9.fsf__39995.8499162041$1437770770$gmane$org@x220.int.ebiederm.org>
+References: <871tncuaf6.fsf@x220.int.ebiederm.org>
+	<87mw5xq7lt.fsf@x220.int.ebiederm.org>
+	<87a8yqou41.fsf_-_@x220.int.ebiederm.org>
+	<874moq9oyb.fsf_-_@x220.int.ebiederm.org>
+	<CAELBmZBCCC1dspo4rPkFfh3c6RZBUYAZpz0tbUSukcf9att7Cw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <CAELBmZBCCC1dspo4rPkFfh3c6RZBUYAZpz0tbUSukcf9att7Cw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Miklos Szeredi's message of "Mon, 13 Apr 2015 14:18:40 +0200")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,110 +22,76 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+To: Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>
+Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Willy Tarreau <w@1wt.eu>
 List-Id: containers.vger.kernel.org
 
+Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org> writes:
 
-Linus,
+> On Thu, Apr 9, 2015 at 1:31 AM, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+>>
+>> After the last round of feedback I sat down and played with my fix
+>> for the fact that a strategically placed rename, ".." on bind mounts
+>> go up past the root of the bind mount.
+>>
+>> The code better handles the escaped directory returning into it's bind
+>> mount, and is now roughly a constant factor cost in all cases from what
+>> the code costs without the fix.
+>>
+>> So I think I have found a better tradeoff between fixing this bug and
+>> not slowing down path name lookups in the common case.
+>
+> Maybe I'm missing something, but I see a much simpler fix:
+>
+>  - When following ".." first just check against the dentry being equal
+> to the root dentry.
+>
+>  - If so, then check mount being equal to root mount.
+>
+>  - If so, then we are fine, found the root.
+>
+>  - If mount is not root mount, then we either have a bind mount or the
+> escape scenario. So have a peek at the mount tree to see if we have a
+> chance of reaching root or not.
+>
+>   - If yes, then we are fine, continue upward.
+>
+>   - Otherwise stop here and act like we found root.
 
-Please pull the for-linus branch from the git tree:
+In concrete terms I think you are suggesting something like this patch
+to follow_dot_dot.
 
-   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
+diff --git a/fs/namei.c b/fs/namei.c
+index ae4e4c18b2ac..56a8562899a1 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -1409,6 +1409,11 @@ static void follow_dotdot(struct nameidata *nd)
+                        break;
+                }
+                if (nd->path.dentry != nd->path.mnt->mnt_root) {
++                       /* Escaped path? */
++                       if ((nd->path.mnt->mnt_root != nd->path.mnt->mnt_sb->s_root) &&
++                           d_ancestor(nd->path.mnt->mnt_root, nd->path.dentry))
++                               break;
++                       }
+                        /* rare case of legitimate dget_parent()... */
+                        nd->path.dentry = dget_parent(nd->path.dentry);
+                        dput(old);
 
-   HEAD: fe78fcc85a2046c51f1535710996860557eeec20 mnt: In detach_mounts detach the appropriate unmounted mount
+> This doesn't have to hook into d_move() and will only trigger the
+> "violated" mode on an very specific and rare case.
 
-While reading through the code of detach_mounts I realized the code was
-a slightly off.  Testing it revealed two buggy corner cases that can send
-the code of detach_mounts into an infinite loop.  Fixing the code to do
-the right thing removes the possibility of these user triggered infinite
-loops in the code.
+Am I misunderstanding you?  I don't think .. on a bind mount is a very
+specific rare case.
 
-Eric W. Biederman (2):
-      mnt: Clarify and correct the disconnect logic in umount_tree
-      mnt: In detach_mounts detach the appropriate unmounted mount
+Operations such as following ../../../../../../../../../.. would go from
+a cost of O(10) to a cost of O((10*(10 + P + 1))/2) aka
+from O(N) to O(N^2+N*P). Where P is the depth of the path below 10
+directories up.
 
- fs/namespace.c | 42 +++++++++++++++++++++++++++++++++---------
- fs/pnode.h     |  2 --
- 2 files changed, 33 insertions(+), 11 deletions(-)
+Given that in cases like containers bind mounts are frequently the root
+mount point of a filesystem I don't think we want that expense, if we
+can possibly avoid it.  As that is a DOS attack and messes up
+performance for cases that are not afflicected with an escape.
 
-diff --git a/fs/namespace.c b/fs/namespace.c
-index c7cb8a526c05..2b8aa15fd6df 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -1361,6 +1361,36 @@ enum umount_tree_flags {
- 	UMOUNT_PROPAGATE = 2,
- 	UMOUNT_CONNECTED = 4,
- };
-+
-+static bool disconnect_mount(struct mount *mnt, enum umount_tree_flags how)
-+{
-+	/* Leaving mounts connected is only valid for lazy umounts */
-+	if (how & UMOUNT_SYNC)
-+		return true;
-+
-+	/* A mount without a parent has nothing to be connected to */
-+	if (!mnt_has_parent(mnt))
-+		return true;
-+
-+	/* Because the reference counting rules change when mounts are
-+	 * unmounted and connected, umounted mounts may not be
-+	 * connected to mounted mounts.
-+	 */
-+	if (!(mnt->mnt_parent->mnt.mnt_flags & MNT_UMOUNT))
-+		return true;
-+
-+	/* Has it been requested that the mount remain connected? */
-+	if (how & UMOUNT_CONNECTED)
-+		return false;
-+
-+	/* Is the mount locked such that it needs to remain connected? */
-+	if (IS_MNT_LOCKED(mnt))
-+		return false;
-+
-+	/* By default disconnect the mount */
-+	return true;
-+}
-+
- /*
-  * mount_lock must be held
-  * namespace_sem must be held for write
-@@ -1398,10 +1428,7 @@ static void umount_tree(struct mount *mnt, enum umount_tree_flags how)
- 		if (how & UMOUNT_SYNC)
- 			p->mnt.mnt_flags |= MNT_SYNC_UMOUNT;
- 
--		disconnect = !(((how & UMOUNT_CONNECTED) &&
--				mnt_has_parent(p) &&
--				(p->mnt_parent->mnt.mnt_flags & MNT_UMOUNT)) ||
--			       IS_MNT_LOCKED_AND_LAZY(p));
-+		disconnect = disconnect_mount(p, how);
- 
- 		pin_insert_group(&p->mnt_umount, &p->mnt_parent->mnt,
- 				 disconnect ? &unmounted : NULL);
-@@ -1538,11 +1565,8 @@ void __detach_mounts(struct dentry *dentry)
- 	while (!hlist_empty(&mp->m_list)) {
- 		mnt = hlist_entry(mp->m_list.first, struct mount, mnt_mp_list);
- 		if (mnt->mnt.mnt_flags & MNT_UMOUNT) {
--			struct mount *p, *tmp;
--			list_for_each_entry_safe(p, tmp, &mnt->mnt_mounts,  mnt_child) {
--				hlist_add_head(&p->mnt_umount.s_list, &unmounted);
--				umount_mnt(p);
--			}
-+			hlist_add_head(&mnt->mnt_umount.s_list, &unmounted);
-+			umount_mnt(mnt);
- 		}
- 		else umount_tree(mnt, UMOUNT_CONNECTED);
- 	}
-diff --git a/fs/pnode.h b/fs/pnode.h
-index 7114ce6e6b9e..0fcdbe7ca648 100644
---- a/fs/pnode.h
-+++ b/fs/pnode.h
-@@ -20,8 +20,6 @@
- #define SET_MNT_MARK(m) ((m)->mnt.mnt_flags |= MNT_MARKED)
- #define CLEAR_MNT_MARK(m) ((m)->mnt.mnt_flags &= ~MNT_MARKED)
- #define IS_MNT_LOCKED(m) ((m)->mnt.mnt_flags & MNT_LOCKED)
--#define IS_MNT_LOCKED_AND_LAZY(m) \
--	(((m)->mnt.mnt_flags & (MNT_LOCKED|MNT_SYNC_UMOUNT)) == MNT_LOCKED)
- 
- #define CL_EXPIRE    		0x01
- #define CL_SLAVE     		0x02
+Eric
