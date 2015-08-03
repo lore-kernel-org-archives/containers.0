@@ -1,7 +1,7 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH review 2/6] dcache: Handle escaped paths in prepend_path
-Date: Mon, 03 Aug 2015 16:26:34 -0500
-Message-ID: <87pp349i7p.fsf_-_@x220.int.ebiederm.org>
+Subject: [PATCH review 3/6] dcache: Implement d_common_ancestor
+Date: Mon, 03 Aug 2015 16:27:03 -0500
+Message-ID: <87k2tc9i6w.fsf_-_@x220.int.ebiederm.org>
 References: <871tncuaf6.fsf@x220.int.ebiederm.org>
 	<87mw5xq7lt.fsf@x220.int.ebiederm.org>
 	<87a8yqou41.fsf_-_@x220.int.ebiederm.org>
@@ -27,59 +27,76 @@ Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Miklos Szered
 List-Id: containers.vger.kernel.org
 
 
-A rename can result in a dentry that by walking up d_parent
-will never reach it's mnt_root.  For lack of a better term
-I call this an escaped path.
+If possible find the common ancestor of two dentries.
 
-prepend_path is called by four different functions __d_path,
-d_absolute_path, d_path, and getcwd.
-
-__d_path only wants to see paths are connected to the root it passes
-in.  So __d_path needs prepend_path to return an error.
-
-d_absolute_path similarly wants to see paths that are connected to
-some root.  Escaped paths are not connected to any mnt_root so
-d_absolute_path needs prepend_path to return an error greater
-than 1.  So escaped paths will be treated like paths on lazily
-unmounted mounts.
-
-getcwd needs to prepend "(unreachable)" so getcwd also needs
-prepend_path to return an error.
-
-d_path is the interesting hold out.  d_path just wants to print
-something, and does not care about the weird cases.  Which raises
-the question what should be printed?
-
-Given that <escaped_path>/<anything> should result in -ENOENT I
-believe it is desirable for escaped paths to be printed as empty
-paths.  As there are not really any meaninful path components when
-considered from the perspective of a mount tree.
-
-So tweak prepend_path to return an empty path with an new error
-code of 3 when it encounters an escaped path.
+This is necessary infrastructure for better handling the case
+when a dentry is moved out from under the root of a bind mount.
 
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/dcache.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+ fs/dcache.c            | 37 +++++++++++++++++++++++++++++++++++++
+ include/linux/dcache.h |  1 +
+ 2 files changed, 38 insertions(+)
 
 diff --git a/fs/dcache.c b/fs/dcache.c
-index 5c8ea15e73a5..d7fe995dd32d 100644
+index d7fe995dd32d..9f4de1007a8d 100644
 --- a/fs/dcache.c
 +++ b/fs/dcache.c
-@@ -2926,6 +2926,13 @@ restart:
+@@ -2472,6 +2472,43 @@ void dentry_update_name_case(struct dentry *dentry, struct qstr *name)
+ }
+ EXPORT_SYMBOL(dentry_update_name_case);
  
- 		if (dentry == vfsmnt->mnt_root || IS_ROOT(dentry)) {
- 			struct mount *parent = ACCESS_ONCE(mnt->mnt_parent);
-+			/* Escaped? */
-+			if (dentry != vfsmnt->mnt_root) {
-+				bptr = *buffer;
-+				blen = *buflen;
-+				error = 3;
-+				break;
-+			}
- 			/* Global root? */
- 			if (mnt != parent) {
- 				dentry = ACCESS_ONCE(mnt->mnt_mountpoint);
++static unsigned long d_depth(const struct dentry *dentry)
++{
++	unsigned long depth = 0;
++
++	while (!IS_ROOT(dentry)) {
++		dentry = dentry->d_parent;
++		depth++;
++	}
++	return depth;
++}
++
++const struct dentry *d_common_ancestor(const struct dentry *left,
++				       const struct dentry *right)
++{
++	unsigned long ldepth = d_depth(left);
++	unsigned long rdepth = d_depth(right);
++
++	while (ldepth > rdepth) {
++		left = left->d_parent;
++		ldepth--;
++	}
++
++	while (rdepth > ldepth) {
++		right = right->d_parent;
++		rdepth--;
++	}
++
++	while (left != right) {
++		if (IS_ROOT(left))
++			return NULL;
++		left = left->d_parent;
++		right = right->d_parent;
++	}
++
++	return left;
++}
++
+ static void swap_names(struct dentry *dentry, struct dentry *target)
+ {
+ 	if (unlikely(dname_external(target))) {
+diff --git a/include/linux/dcache.h b/include/linux/dcache.h
+index 52a5e6915f58..56de8288cdee 100644
+--- a/include/linux/dcache.h
++++ b/include/linux/dcache.h
+@@ -313,6 +313,7 @@ extern void dentry_update_name_case(struct dentry *, struct qstr *);
+ extern void d_move(struct dentry *, struct dentry *);
+ extern void d_exchange(struct dentry *, struct dentry *);
+ extern struct dentry *d_ancestor(struct dentry *, struct dentry *);
++extern const struct dentry *d_common_ancestor(const struct dentry *, const struct dentry *);
+ 
+ /* appendix may either be NULL or be used for transname suffixes */
+ extern struct dentry *d_lookup(const struct dentry *, const struct qstr *);
 -- 
 2.2.1
