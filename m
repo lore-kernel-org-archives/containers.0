@@ -1,8 +1,7 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH review 5/6] vfs: Test for and handle paths that are
-	unreachable from their mnt_root
-Date: Mon, 03 Aug 2015 16:30:22 -0500
-Message-ID: <878u9s9i1d.fsf_-___36061.9564693936$1438637841$gmane$org@x220.int.ebiederm.org>
+Subject: [PATCH review 6/6] vfs: Cache the results of path_connected
+Date: Mon, 03 Aug 2015 16:30:54 -0500
+Message-ID: <8738009i0h.fsf_-___42905.7960435331$1438637887$gmane$org@x220.int.ebiederm.org>
 References: <871tncuaf6.fsf@x220.int.ebiederm.org>
 	<87mw5xq7lt.fsf@x220.int.ebiederm.org>
 	<87a8yqou41.fsf_-_@x220.int.ebiederm.org>
@@ -28,111 +27,162 @@ Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Miklos Szered
 List-Id: containers.vger.kernel.org
 
 
-In rare cases a directory can be renamed out from under a bind mount.
-In those cases without special handling it becomes possible to walk up
-the directory tree to the root dentry of the filesystem and down
-from the root dentry to every other file or directory on the filesystem.
+Add a new field mnt_escape_count in nameidata, initialize it to 0 and
+cache the value of read_mnt_escape_count in nd->mnt_escape_count.
 
-Like division by zero .. from an unconnected path can not be given
-a useful semantic as there is no predicting at which path component
-the code will realize it is unconnected.  We certainly can not match
-the current behavior as the current behavior is a security hole.
+This allows a single check in path_connected in the common case where
+either the mount has had no escapes (mnt_escape_count == 0) or there
+has been an escape and it has been validated that the current path
+does not escape.
 
-Therefore when encounting .. when following an unconnected path
-return -ENOENT.
+To keep the cache valid nd->mnt_escape_count must be set to 0 whenever
+the nd->path.mnt changes or when nd->path.dentry changes such that
+the connectedness of the previous value of nd->path.dentry does
+not imply the connected of the new value of nd->path.dentry.
 
-- Add a function path_connected to verify nd->path.dentry is reachable
-  from nd->path.mnt.mnt_root.  AKA to validate that rename did not do
-  something nasty to the bind mount.
-
-  To avoid races path_connected must be called after following a path
-  component to it's next path component.
+Various locations in fs/namei.c are updated to set
+nd->mnt_escape_count to 0 as necessary.
 
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/namei.c | 35 ++++++++++++++++++++++++++++++++---
- 1 file changed, 32 insertions(+), 3 deletions(-)
+ fs/namei.c | 26 +++++++++++++++++++++++---
+ 1 file changed, 23 insertions(+), 3 deletions(-)
 
 diff --git a/fs/namei.c b/fs/namei.c
-index ae4e4c18b2ac..bccd3810ff60 100644
+index bccd3810ff60..79a5dca073f5 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
-@@ -560,6 +560,27 @@ static int __nd_alloc_stack(struct nameidata *nd)
- 	return 0;
+@@ -514,6 +514,7 @@ struct nameidata {
+ 	struct nameidata *saved;
+ 	unsigned	root_seq;
+ 	int		dfd;
++	unsigned	mnt_escape_count;
+ };
+ 
+ static void set_nameidata(struct nameidata *p, int dfd, struct filename *name)
+@@ -572,12 +573,13 @@ static bool path_connected(struct nameidata *nd)
+ 	struct vfsmount *mnt = nd->path.mnt;
+ 	unsigned escape_count = read_mnt_escape_count(mnt);
+ 
+-	if (likely(escape_count == 0))
++	if (likely(escape_count == nd->mnt_escape_count))
+ 		return true;
+ 
+ 	if (!is_subdir(nd->path.dentry, mnt->mnt_root))
+ 		return false;
+ 
++	cache_mnt_escape_count(&nd->mnt_escape_count, escape_count);
+ 	return true;
  }
  
-+/**
-+ * path_connected - Verify that a nd->path.dentry is below nd->path.mnt->mnt.mnt_root
-+ * @nd: nameidate to verify
-+ *
-+ * Rename can sometimes move a file or directory outside of a bind
-+ * mount, path_connected allows those cases to be detected.
-+ */
-+static bool path_connected(struct nameidata *nd)
-+{
-+	struct vfsmount *mnt = nd->path.mnt;
-+	unsigned escape_count = read_mnt_escape_count(mnt);
-+
-+	if (likely(escape_count == 0))
-+		return true;
-+
-+	if (!is_subdir(nd->path.dentry, mnt->mnt_root))
-+		return false;
-+
-+	return true;
-+}
-+
- static inline int nd_alloc_stack(struct nameidata *nd)
- {
- 	if (likely(nd->depth != EMBEDDED_LEVELS))
-@@ -1294,6 +1315,8 @@ static int follow_dotdot_rcu(struct nameidata *nd)
- 			seq = read_seqcount_begin(&parent->d_seq);
- 			if (unlikely(read_seqcount_retry(&old->d_seq, nd->seq)))
- 				return -ECHILD;
-+			if (unlikely(!path_connected(nd)))
-+				return -ENOENT;
- 			nd->path.dentry = parent;
- 			nd->seq = seq;
- 			break;
-@@ -1396,7 +1419,7 @@ static void follow_mount(struct path *path)
+@@ -840,6 +842,9 @@ static inline void path_to_nameidata(const struct path *path,
+ 		if (nd->path.mnt != path->mnt)
+ 			mntput(nd->path.mnt);
  	}
++	if (unlikely((nd->path.mnt != path->mnt) ||
++		     (nd->path.dentry != path->dentry->d_parent)))
++		nd->mnt_escape_count = 0;
+ 	nd->path.mnt = path->mnt;
+ 	nd->path.dentry = path->dentry;
  }
- 
--static void follow_dotdot(struct nameidata *nd)
-+static int follow_dotdot(struct nameidata *nd)
- {
- 	if (!nd->root.mnt)
- 		set_root(nd);
-@@ -1410,7 +1433,12 @@ static void follow_dotdot(struct nameidata *nd)
- 		}
- 		if (nd->path.dentry != nd->path.mnt->mnt_root) {
- 			/* rare case of legitimate dget_parent()... */
--			nd->path.dentry = dget_parent(nd->path.dentry);
-+			struct dentry *parent = dget_parent(nd->path.dentry);
-+			if (unlikely(!path_connected(nd))) {
-+				dput(parent);
-+				return -ENOENT;
-+			}
-+			nd->path.dentry = parent;
- 			dput(old);
- 			break;
- 		}
-@@ -1419,6 +1447,7 @@ static void follow_dotdot(struct nameidata *nd)
- 	}
- 	follow_mount(&nd->path);
+@@ -856,6 +861,7 @@ void nd_jump_link(struct path *path)
+ 	nd->path = *path;
  	nd->inode = nd->path.dentry->d_inode;
-+	return 0;
+ 	nd->flags |= LOOKUP_JUMPED;
++	nd->mnt_escape_count = 0;
  }
  
- /*
-@@ -1634,7 +1663,7 @@ static inline int handle_dots(struct nameidata *nd, int type)
- 		if (nd->flags & LOOKUP_RCU) {
- 			return follow_dotdot_rcu(nd);
- 		} else
--			follow_dotdot(nd);
-+			return follow_dotdot(nd);
+ static inline void put_link(struct nameidata *nd)
+@@ -1040,6 +1046,7 @@ const char *get_link(struct nameidata *nd)
+ 			nd->inode = nd->path.dentry->d_inode;
+ 		}
+ 		nd->flags |= LOOKUP_JUMPED;
++		nd->mnt_escape_count = 0;
+ 		while (unlikely(*++res == '/'))
+ 			;
  	}
+@@ -1335,6 +1342,7 @@ static int follow_dotdot_rcu(struct nameidata *nd)
+ 			nd->path.mnt = &mparent->mnt;
+ 			inode = inode2;
+ 			nd->seq = seq;
++			nd->mnt_escape_count = 0;
+ 		}
+ 	}
+ 	while (unlikely(d_mountpoint(nd->path.dentry))) {
+@@ -1348,6 +1356,7 @@ static int follow_dotdot_rcu(struct nameidata *nd)
+ 		nd->path.dentry = mounted->mnt.mnt_root;
+ 		inode = nd->path.dentry->d_inode;
+ 		nd->seq = read_seqcount_begin(&nd->path.dentry->d_seq);
++		nd->mnt_escape_count = 0;
+ 	}
+ 	nd->inode = inode;
+ 	return 0;
+@@ -1406,8 +1415,9 @@ EXPORT_SYMBOL(follow_down);
+ /*
+  * Skip to top of mountpoint pile in refwalk mode for follow_dotdot()
+  */
+-static void follow_mount(struct path *path)
++static bool follow_mount(struct path *path)
+ {
++	bool followed = false;
+ 	while (d_mountpoint(path->dentry)) {
+ 		struct vfsmount *mounted = lookup_mnt(path);
+ 		if (!mounted)
+@@ -1416,7 +1426,9 @@ static void follow_mount(struct path *path)
+ 		mntput(path->mnt);
+ 		path->mnt = mounted;
+ 		path->dentry = dget(mounted->mnt_root);
++		followed = true;
+ 	}
++	return followed;
+ }
+ 
+ static int follow_dotdot(struct nameidata *nd)
+@@ -1444,8 +1456,10 @@ static int follow_dotdot(struct nameidata *nd)
+ 		}
+ 		if (!follow_up(&nd->path))
+ 			break;
++		nd->mnt_escape_count = 0;
+ 	}
+-	follow_mount(&nd->path);
++	if (follow_mount(&nd->path))
++		nd->mnt_escape_count = 0;
+ 	nd->inode = nd->path.dentry->d_inode;
  	return 0;
  }
+@@ -1997,6 +2011,7 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
+ 	nd->flags = flags | LOOKUP_JUMPED | LOOKUP_PARENT;
+ 	nd->depth = 0;
+ 	nd->total_link_count = 0;
++	nd->mnt_escape_count = 0;
+ 	if (flags & LOOKUP_ROOT) {
+ 		struct dentry *root = nd->root.dentry;
+ 		struct inode *inode = root->d_inode;
+@@ -3026,6 +3041,7 @@ static int do_last(struct nameidata *nd,
+ 	unsigned seq;
+ 	struct inode *inode;
+ 	struct path save_parent = { .dentry = NULL, .mnt = NULL };
++	unsigned save_parent_escape_count = 0;
+ 	struct path path;
+ 	bool retried = false;
+ 	int error;
+@@ -3155,6 +3171,9 @@ finish_lookup:
+ 	} else {
+ 		save_parent.dentry = nd->path.dentry;
+ 		save_parent.mnt = mntget(path.mnt);
++		save_parent_escape_count = nd->mnt_escape_count;
++		if (nd->path.dentry != path.dentry->d_parent)
++			nd->mnt_escape_count = 0;
+ 		nd->path.dentry = path.dentry;
+ 
+ 	}
+@@ -3227,6 +3246,7 @@ stale_open:
+ 
+ 	BUG_ON(save_parent.dentry != dir);
+ 	path_put(&nd->path);
++	nd->mnt_escape_count = save_parent_escape_count;
+ 	nd->path = save_parent;
+ 	nd->inode = dir->d_inode;
+ 	save_parent.mnt = NULL;
 -- 
 2.2.1
