@@ -1,13 +1,11 @@
-From: "FedEx SmartPost"
-	<glen.patterson-AXMy6u3xQhJD0lhpkiT2Up00w2YrHl5Gmc2sgnjOBLtkHuT/rrgCNqxOck334EZe@public.gmane.org>
-Subject: Problems with item delivery, n.0000797576
-Date: Mon, 3 Aug 2015 16:19:30 -0700
-Message-ID: <e429407edc591c4709f04a8fdc9cb9de@n1nw8shg125.shr.prod.ams1.secureserver.net>
-Reply-To: FedEx SmartPost
-	<glen.patterson-AXMy6u3xQhJD0lhpkiT2Up00w2YrHl5Gmc2sgnjOBLtkHuT/rrgCNqxOck334EZe@public.gmane.org>
+From: "Neopost" <info-eRCmHyJw7RVBDgjK7y7TUQ@public.gmane.org>
+Subject: =?UTF-8?B?UHJvdmEgbOKAmWltYnVzdGF0cmljZSBlIHJpc3Bhcm1pYSB0ZW1wbyE=?=
+Date: Tue, 04 Aug 2015 13:09:12 +0300
+Message-ID: <bde5df8a164380667d9c5578f36a7208@topreff.com>
+Reply-To: support-eRCmHyJw7RVBDgjK7y7TUQ@public.gmane.org
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="b1_d9ab4da1a0d2b3250da50f117344ae0f"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -21,27 +19,17 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---b1_d9ab4da1a0d2b3250da50f117344ae0f
-Content-Type: text/plain; charset=us-ascii
-
-Dear Customer,
-
-This is to confirm that one or more of your parcels has been shipped.
-Please, open email attachment to print shipment label.
-
-Regards,
-Glen Patterson,
-Delivery Manager.
-
-
---b1_d9ab4da1a0d2b3250da50f117344ae0f
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---b1_d9ab4da1a0d2b3250da50f117344ae0f--
+TmVvcG9zdCBJdGFsaWEKClByb3ZhIGzigJlJbWJ1c3RhdHJpY2UgZSByaXNwYXJtaWEgdGVtcG8g
+IQoKTOKAmWltYnVzdGF0cmljZSBzaSBvY2N1cGEgZGkgdHV0dG8gIQoKTWFnZ2lvcmkgaW5mb3Jt
+YXppb25pOgpodHRwOi8vdG9wcmVmZi5jb20vbGluay5waHA/TT0yODg5OTImTj0yMzAmTD0xNTEm
+Rj1UCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fXwpRdWVzdG8gbWVzc2FnZ2lvIHZpZW5lIGludmlh
+dG8gdmlhIExlYWRzTGVhZGVyLiBDIGEgbiBjIGUgbCBsIGEgdCBpIGRhbGxhCmxpc3RhOiBodHRw
+Oi8vdG9wcmVmZi5jb20vbGluay5waHA/TT0yODg5OTImTj0yMzAmTD0yJkY9VApfX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fXwoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3Vu
+ZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0
+aW5mby9jb250YWluZXJz
