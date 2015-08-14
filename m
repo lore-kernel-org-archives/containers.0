@@ -1,7 +1,7 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH review 5/8] dcache: Implement d_common_ancestor
-Date: Thu, 13 Aug 2015 23:33:45 -0500
-Message-ID: <874mk2jxp2.fsf_-_@x220.int.ebiederm.org>
+Subject: [PATCH review 6/8] dcache: Only read d_flags once is d_is_dir
+Date: Thu, 13 Aug 2015 23:34:40 -0500
+Message-ID: <87y4heij33.fsf_-_@x220.int.ebiederm.org>
 References: <871tncuaf6.fsf@x220.int.ebiederm.org>
 	<87mw5xq7lt.fsf@x220.int.ebiederm.org>
 	<87a8yqou41.fsf_-_@x220.int.ebiederm.org>
@@ -31,76 +31,49 @@ Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Miklos Szered
 List-Id: containers.vger.kernel.org
 
 
-If possible find the common ancestor of two dentries.
+Cache the value of __d_entry_type in d_is_dir and test if it equal to
+DCACHE_DIRECTORY_TYPE or DCACHE_AUTODIR_TYPE.
 
-This is necessary infrastructure for better handling the case
-when a dentry is moved out from under the root of a bind mount.
+The generated assembly goes from:
+	movl	(%rdi), %eax  # MEM[(volatile __u32 *)dentry_3(D)], tmp73
+	andl	$7340032, %eax  #, tmp73
+	cmpl	$2097152, %eax  #, tmp73
+	je	.L1091	#,
+	movl	(%rdi), %eax	# MEM[(volatile __u32 *)dentry_3(D)], tmp74
+	andl	$7340032, %eax	#, tmp74
+	cmpl	$3145728, %eax	#, tmp74
+	je	.L1091	#,
+to:
+	movl	(%rdi), %eax	# MEM[(volatile __u32 *)dentry_3(D)], tmp71
+	andl	$6291456, %eax	#, tmp71
+	cmpl	$2097152, %eax	#, tmp71
+	jne	.L1091	  #,
+
+Which with only one read of d_flags, one comparison and one jump is
+dramatically better code.
+
+As __d_entry_type is not written to allow the compiler to optimize
+away anything that it does, when it is possible and reasonable to
+optimize things away the optimization needs to be performend manually.
 
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/dcache.c            | 37 +++++++++++++++++++++++++++++++++++++
- include/linux/dcache.h |  1 +
- 2 files changed, 38 insertions(+)
+ include/linux/dcache.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/fs/dcache.c b/fs/dcache.c
-index c1eece74621f..1f2f51055515 100644
---- a/fs/dcache.c
-+++ b/fs/dcache.c
-@@ -2469,6 +2469,43 @@ void dentry_update_name_case(struct dentry *dentry, struct qstr *name)
- }
- EXPORT_SYMBOL(dentry_update_name_case);
- 
-+static unsigned long d_depth(const struct dentry *dentry)
-+{
-+	unsigned long depth = 0;
-+
-+	while (!IS_ROOT(dentry)) {
-+		dentry = dentry->d_parent;
-+		depth++;
-+	}
-+	return depth;
-+}
-+
-+const struct dentry *d_common_ancestor(const struct dentry *left,
-+				       const struct dentry *right)
-+{
-+	unsigned long ldepth = d_depth(left);
-+	unsigned long rdepth = d_depth(right);
-+
-+	while (ldepth > rdepth) {
-+		left = left->d_parent;
-+		ldepth--;
-+	}
-+
-+	while (rdepth > ldepth) {
-+		right = right->d_parent;
-+		rdepth--;
-+	}
-+
-+	while (left != right) {
-+		if (IS_ROOT(left))
-+			return NULL;
-+		left = left->d_parent;
-+		right = right->d_parent;
-+	}
-+
-+	return left;
-+}
-+
- static void swap_names(struct dentry *dentry, struct dentry *target)
- {
- 	if (unlikely(dname_external(target))) {
 diff --git a/include/linux/dcache.h b/include/linux/dcache.h
-index 06bed2a1053c..5b69856b45a2 100644
+index 5b69856b45a2..82eb50aaf446 100644
 --- a/include/linux/dcache.h
 +++ b/include/linux/dcache.h
-@@ -313,6 +313,7 @@ extern void dentry_update_name_case(struct dentry *, struct qstr *);
- extern void d_move(struct dentry *, struct dentry *);
- extern void d_exchange(struct dentry *, struct dentry *);
- extern struct dentry *d_ancestor(struct dentry *, struct dentry *);
-+extern const struct dentry *d_common_ancestor(const struct dentry *, const struct dentry *);
+@@ -443,7 +443,8 @@ static inline bool d_is_autodir(const struct dentry *dentry)
  
- /* appendix may either be NULL or be used for transname suffixes */
- extern struct dentry *d_lookup(const struct dentry *, const struct qstr *);
+ static inline bool d_is_dir(const struct dentry *dentry)
+ {
+-	return d_can_lookup(dentry) || d_is_autodir(dentry);
++	unsigned type = __d_entry_type(dentry);
++	return (type == DCACHE_DIRECTORY_TYPE) || (type == DCACHE_AUTODIR_TYPE);
+ }
+ 
+ static inline bool d_is_symlink(const struct dentry *dentry)
 -- 
 2.2.1
