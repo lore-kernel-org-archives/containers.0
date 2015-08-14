@@ -1,7 +1,8 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH review 1/8] dcache: Handle escaped paths in prepend_path
-Date: Thu, 13 Aug 2015 23:30:16 -0500
-Message-ID: <87r3n6jxuv.fsf_-___27034.6351703212$1439527051$gmane$org@x220.int.ebiederm.org>
+Subject: [PATCH review 2/8] dcache: Reduce the scope of i_lock in
+	d_splice_alias
+Date: Thu, 13 Aug 2015 23:30:48 -0500
+Message-ID: <87lhdejxtz.fsf_-___36205.147059127$1439527080$gmane$org@x220.int.ebiederm.org>
 References: <871tncuaf6.fsf@x220.int.ebiederm.org>
 	<87mw5xq7lt.fsf@x220.int.ebiederm.org>
 	<87a8yqou41.fsf_-_@x220.int.ebiederm.org>
@@ -31,59 +32,66 @@ Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Miklos Szered
 List-Id: containers.vger.kernel.org
 
 
-A rename can result in a dentry that by walking up d_parent
-will never reach it's mnt_root.  For lack of a better term
-I call this an escaped path.
+i_lock is only needed until __d_find_any_alias calls dget on the alias
+dentry.  After that the reference to new ensures that dentry_kill and
+d_delete will not remove the inode from the dentry, and remove the
+dentry from the inode->d_entry list.
 
-prepend_path is called by four different functions __d_path,
-d_absolute_path, d_path, and getcwd.
+The inode i_lock came to be held over the the __d_move calls in
+d_splice_alias through a series of introduction of locks with
+increasing smaller scope.  First it was the dcache_lock, then
+it was the dcache_inode_lock, and finally inode->i_lock.
 
-__d_path only wants to see paths are connected to the root it passes
-in.  So __d_path needs prepend_path to return an error.
-
-d_absolute_path similarly wants to see paths that are connected to
-some root.  Escaped paths are not connected to any mnt_root so
-d_absolute_path needs prepend_path to return an error greater
-than 1.  So escaped paths will be treated like paths on lazily
-unmounted mounts.
-
-getcwd needs to prepend "(unreachable)" so getcwd also needs
-prepend_path to return an error.
-
-d_path is the interesting hold out.  d_path just wants to print
-something, and does not care about the weird cases.  Which raises
-the question what should be printed?
-
-Given that <escaped_path>/<anything> should result in -ENOENT I
-believe it is desirable for escaped paths to be printed as empty
-paths.  As there are not really any meaninful path components when
-considered from the perspective of a mount tree.
-
-So tweak prepend_path to return an empty path with an new error
-code of 3 when it encounters an escaped path.
+Furthermore inode->i_lock is not held over any other calls
+to d_move or __d_move so it can not provide any meaningful
+rename protection.
 
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/dcache.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+ fs/dcache.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
 diff --git a/fs/dcache.c b/fs/dcache.c
-index 7a3f3e5f9cea..f762e76e85cc 100644
+index f762e76e85cc..53b7f1e63beb 100644
 --- a/fs/dcache.c
 +++ b/fs/dcache.c
-@@ -2923,6 +2923,13 @@ restart:
- 
- 		if (dentry == vfsmnt->mnt_root || IS_ROOT(dentry)) {
- 			struct mount *parent = ACCESS_ONCE(mnt->mnt_parent);
-+			/* Escaped? */
-+			if (dentry != vfsmnt->mnt_root) {
-+				bptr = *buffer;
-+				blen = *buflen;
-+				error = 3;
-+				break;
-+			}
- 			/* Global root? */
- 			if (mnt != parent) {
- 				dentry = ACCESS_ONCE(mnt->mnt_mountpoint);
+@@ -2715,7 +2715,7 @@ struct dentry *d_ancestor(struct dentry *p1, struct dentry *p2)
+  * This helper attempts to cope with remotely renamed directories
+  *
+  * It assumes that the caller is already holding
+- * dentry->d_parent->d_inode->i_mutex, inode->i_lock and rename_lock
++ * dentry->d_parent->d_inode->i_mutex, and rename_lock
+  *
+  * Note: If ever the locking in lock_rename() changes, then please
+  * remember to update this too...
+@@ -2741,7 +2741,6 @@ out_unalias:
+ 	__d_move(alias, dentry, false);
+ 	ret = 0;
+ out_err:
+-	spin_unlock(&inode->i_lock);
+ 	if (m2)
+ 		mutex_unlock(m2);
+ 	if (m1)
+@@ -2787,10 +2786,11 @@ struct dentry *d_splice_alias(struct inode *inode, struct dentry *dentry)
+ 	if (S_ISDIR(inode->i_mode)) {
+ 		struct dentry *new = __d_find_any_alias(inode);
+ 		if (unlikely(new)) {
++			/* The reference to new ensures it remains an alias */
++			spin_unlock(&inode->i_lock);
+ 			write_seqlock(&rename_lock);
+ 			if (unlikely(d_ancestor(new, dentry))) {
+ 				write_sequnlock(&rename_lock);
+-				spin_unlock(&inode->i_lock);
+ 				dput(new);
+ 				new = ERR_PTR(-ELOOP);
+ 				pr_warn_ratelimited(
+@@ -2809,7 +2809,6 @@ struct dentry *d_splice_alias(struct inode *inode, struct dentry *dentry)
+ 			} else {
+ 				__d_move(new, dentry, false);
+ 				write_sequnlock(&rename_lock);
+-				spin_unlock(&inode->i_lock);
+ 				security_d_instantiate(new, inode);
+ 			}
+ 			iput(inode);
 -- 
 2.2.1
