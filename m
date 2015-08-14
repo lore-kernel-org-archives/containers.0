@@ -1,7 +1,8 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH review 7/8] mnt: Track when a directory escapes a bind mount
-Date: Thu, 13 Aug 2015 23:35:24 -0500
-Message-ID: <87si7mij1v.fsf_-_@x220.int.ebiederm.org>
+Subject: [PATCH review 8/8] vfs: Test for and handle paths that are
+	unreachable from their mnt_root
+Date: Thu, 13 Aug 2015 23:36:19 -0500
+Message-ID: <87mvxuij0c.fsf_-_@x220.int.ebiederm.org>
 References: <871tncuaf6.fsf@x220.int.ebiederm.org>
 	<87mw5xq7lt.fsf@x220.int.ebiederm.org>
 	<87a8yqou41.fsf_-_@x220.int.ebiederm.org>
@@ -31,177 +32,102 @@ Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Miklos Szered
 List-Id: containers.vger.kernel.org
 
 
-When bind mounts are in use, and there is another path to the
-filesystem it is possible to rename files or directories from a path
-underneath the root of the bind mount to a path that is not underneath
-the root of the bind mount.
+In rare cases a directory can be renamed out from under a bind mount.
+In those cases without special handling it becomes possible to walk up
+the directory tree to the root dentry of the filesystem and down
+from the root dentry to every other file or directory on the filesystem.
 
-When a directory is moved out from under the root of a bind mount path
-name lookups that go up the directory tree potentially allow accessing
-the entire dentry tree of the filesystem.  This is not expected, not
-what is desired and winds up being a secruity problem for userspace.
+Like division by zero .. from an unconnected path can not be given
+a useful semantic as there is no predicting at which path component
+the code will realize it is unconnected.  We certainly can not match
+the current behavior as the current behavior is a security hole.
 
-Augment d_move, d_exchange to call d_common_ancestor and
-handle_possible_mount_escapes to mark any mount points that
-directories escape from.
+Therefore when encounting .. when following an unconnected path
+return -ENOENT.
 
-A few notes on the implementation:
+- Add a function path_connected to verify nd->path.dentry is reachable
+  from nd->path.mnt.mnt_root.  AKA to validate that rename did not do
+  something nasty to the bind mount.
 
-- d_splice_alias does not need to be touched as the only case that
-  can result in a directory escaping calls d_move.
-
-- Only directory escapes are recorded as only those are relevant to
-  new pathname lookup.  Escaped files are handled in prepend_path.
-
-- A lock either namespace_sem or mount_lock needs to be held across
-  the duration of renames where a directory could be escaping to
-  ensure that a mount is not added, escaped, and missed during the
-  rename.
-
-- The mount_lock is used as it does not sleep.  I have audited all of
-  thecallers of d_move and d_exchange and in every instance it appears
-  safe for d_move and d_exchange to start sleeping.  But there is
-  no point in adding sleeping behavior if that is unncessary.
-
-- The locking order must be mount_lock outside of rename_lock
-  as prepend_path already takes the locks in this order.
+  To avoid races path_connected must be called after following a path
+  component to it's next path component.
 
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/dcache.c           | 33 +++++++++++++++++++++++++++++++++
- fs/mount.h            |  2 ++
- fs/namespace.c        | 32 ++++++++++++++++++++++++++++++++
- include/linux/mount.h |  1 +
- 4 files changed, 68 insertions(+)
+ fs/namei.c | 26 ++++++++++++++++++++++++--
+ 1 file changed, 24 insertions(+), 2 deletions(-)
 
-diff --git a/fs/dcache.c b/fs/dcache.c
-index 1f2f51055515..7927c1fbdb93 100644
---- a/fs/dcache.c
-+++ b/fs/dcache.c
-@@ -2704,9 +2704,23 @@ static void __d_move(struct dentry *dentry, struct dentry *target,
-  */
- void d_move(struct dentry *dentry, struct dentry *target)
- {
-+	bool unlock = false;
-+
-+	if (d_is_dir(dentry) && (dentry->d_parent != target->d_parent)) {
-+		const struct dentry *ancestor;
-+
-+		ancestor = d_common_ancestor(dentry, target);
-+		read_seqlock_excl(&mount_lock);
-+		unlock = true;
-+		handle_possible_mount_escapee(ancestor, dentry);
-+	}
-+
- 	write_seqlock(&rename_lock);
- 	__d_move(dentry, target, false);
- 	write_sequnlock(&rename_lock);
-+	if (unlock)
-+		read_sequnlock_excl(&mount_lock);
-+
- }
- EXPORT_SYMBOL(d_move);
- 
-@@ -2717,6 +2731,23 @@ EXPORT_SYMBOL(d_move);
-  */
- void d_exchange(struct dentry *dentry1, struct dentry *dentry2)
- {
-+	bool d1_is_dir = d_is_dir(dentry1);
-+	bool d2_is_dir = d_is_dir(dentry2);
-+	bool unlock = false;
-+
-+	if ((d1_is_dir || d2_is_dir) &&
-+	    (dentry1->d_parent != dentry2->d_parent)) {
-+		const struct dentry *ancestor;
-+
-+		ancestor = d_common_ancestor(dentry1, dentry2);
-+		read_seqlock_excl(&mount_lock);
-+		unlock = true;
-+		if (d1_is_dir)
-+			handle_possible_mount_escapee(ancestor, dentry1);
-+		if (d2_is_dir)
-+			handle_possible_mount_escapee(ancestor, dentry2);
-+	}
-+
- 	write_seqlock(&rename_lock);
- 
- 	WARN_ON(!dentry1->d_inode);
-@@ -2727,6 +2758,8 @@ void d_exchange(struct dentry *dentry1, struct dentry *dentry2)
- 	__d_move(dentry1, dentry2, true);
- 
- 	write_sequnlock(&rename_lock);
-+	if (unlock)
-+		read_sequnlock_excl(&mount_lock);
+diff --git a/fs/namei.c b/fs/namei.c
+index ae4e4c18b2ac..de3549a6c696 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -560,6 +560,23 @@ static int __nd_alloc_stack(struct nameidata *nd)
+ 	return 0;
  }
  
- /**
-diff --git a/fs/mount.h b/fs/mount.h
-index e8f22970fe59..ad91963c83ac 100644
---- a/fs/mount.h
-+++ b/fs/mount.h
-@@ -107,6 +107,8 @@ static inline void detach_mounts(struct dentry *dentry)
- 	__detach_mounts(dentry);
- }
- 
-+extern void handle_possible_mount_escapee(const struct dentry *, struct dentry *);
-+
- static inline void get_mnt_ns(struct mnt_namespace *ns)
- {
- 	atomic_inc(&ns->count);
-diff --git a/fs/namespace.c b/fs/namespace.c
-index af6abf476394..ddcd0b61a448 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -1657,6 +1657,38 @@ out_unlock:
- 	namespace_unlock();
- }
- 
-+static void mark_escaped_mounts(struct dentry *root)
++/**
++ * path_connected - Verify that a nd->path.dentry is below nd->path.mnt->mnt.mnt_root
++ * @nd: nameidate to verify
++ *
++ * Rename can sometimes move a file or directory outside of a bind
++ * mount, path_connected allows those cases to be detected.
++ */
++static bool path_connected(const struct path *path)
 +{
-+	/* Must be called with mount_lock held */
-+	struct mountroot *mr;
-+	struct mount *mnt;
++	struct vfsmount *mnt = path->mnt;
 +
-+	mr = lookup_mountroot(root);
-+	if (mr) {
-+		/* Mark each mount from which a directory is escaping.
-+		 */
-+		hlist_for_each_entry(mnt, &mr->r_list, mnt_mr_list)
-+			mnt->mnt.mnt_flags |= MNT_DIR_ESCAPED;
-+	}
++	if (likely(!(mnt->mnt_flags & MNT_DIR_ESCAPED)))
++		return true;
++
++	return is_subdir(path->dentry, mnt->mnt_root);
 +}
 +
-+void handle_possible_mount_escapee(const struct dentry *ancestor,
-+				   struct dentry *escapee)
-+{
-+	struct dentry *dentry;
-+
-+	for (dentry = escapee->d_parent; dentry != ancestor;
-+	     dentry = dentry->d_parent) {
-+
-+		if (d_mountroot(dentry))
-+			mark_escaped_mounts(dentry);
-+
-+		/* In case there is no common ancestor */
-+		if (IS_ROOT(dentry))
-+			break;
-+	}
-+}
-+
- /* 
-  * Is the caller allowed to modify his namespace?
-  */
-diff --git a/include/linux/mount.h b/include/linux/mount.h
-index f822c3c11377..e58bc12b19aa 100644
---- a/include/linux/mount.h
-+++ b/include/linux/mount.h
-@@ -62,6 +62,7 @@ struct mnt_namespace;
- #define MNT_SYNC_UMOUNT		0x2000000
- #define MNT_MARKED		0x4000000
- #define MNT_UMOUNT		0x8000000
-+#define MNT_DIR_ESCAPED		0x10000000
+ static inline int nd_alloc_stack(struct nameidata *nd)
+ {
+ 	if (likely(nd->depth != EMBEDDED_LEVELS))
+@@ -1296,6 +1313,8 @@ static int follow_dotdot_rcu(struct nameidata *nd)
+ 				return -ECHILD;
+ 			nd->path.dentry = parent;
+ 			nd->seq = seq;
++			if (unlikely(!path_connected(&nd->path)))
++				return -ENOENT;
+ 			break;
+ 		} else {
+ 			struct mount *mnt = real_mount(nd->path.mnt);
+@@ -1396,7 +1415,7 @@ static void follow_mount(struct path *path)
+ 	}
+ }
  
- struct vfsmount {
- 	struct dentry *mnt_root;	/* root of the mounted tree */
+-static void follow_dotdot(struct nameidata *nd)
++static int follow_dotdot(struct nameidata *nd)
+ {
+ 	if (!nd->root.mnt)
+ 		set_root(nd);
+@@ -1412,6 +1431,8 @@ static void follow_dotdot(struct nameidata *nd)
+ 			/* rare case of legitimate dget_parent()... */
+ 			nd->path.dentry = dget_parent(nd->path.dentry);
+ 			dput(old);
++			if (unlikely(!path_connected(&nd->path)))
++				return -ENOENT;
+ 			break;
+ 		}
+ 		if (!follow_up(&nd->path))
+@@ -1419,6 +1440,7 @@ static void follow_dotdot(struct nameidata *nd)
+ 	}
+ 	follow_mount(&nd->path);
+ 	nd->inode = nd->path.dentry->d_inode;
++	return 0;
+ }
+ 
+ /*
+@@ -1634,7 +1656,7 @@ static inline int handle_dots(struct nameidata *nd, int type)
+ 		if (nd->flags & LOOKUP_RCU) {
+ 			return follow_dotdot_rcu(nd);
+ 		} else
+-			follow_dotdot(nd);
++			return follow_dotdot(nd);
+ 	}
+ 	return 0;
+ }
 -- 
 2.2.1
