@@ -1,8 +1,7 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH review 3/8] dcache: Clearly separate the two directory rename
-	cases in d_splice_alias
-Date: Thu, 13 Aug 2015 23:31:47 -0500
-Message-ID: <87fv3mjxsc.fsf_-___25441.8045668446$1439527141$gmane$org@x220.int.ebiederm.org>
+Subject: [PATCH review 4/8] mnt: Track which mounts use a dentry as root.
+Date: Thu, 13 Aug 2015 23:32:31 -0500
+Message-ID: <87a8tujxr4.fsf_-_@x220.int.ebiederm.org>
 References: <871tncuaf6.fsf@x220.int.ebiederm.org>
 	<87mw5xq7lt.fsf@x220.int.ebiederm.org>
 	<87a8yqou41.fsf_-_@x220.int.ebiederm.org>
@@ -32,219 +31,281 @@ Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Miklos Szered
 List-Id: containers.vger.kernel.org
 
 
-There are two scenarios that can result in an alias being found in
-d_splice_alias.  The first scenario is a disconnected dentry being
-looked up and reconnected (common with nfs file handles, and
-open_by_handle_at).  The second scenario is a lookup on a directory
-lazily discovering that it was renamed on the remote filesystem.
-
-The locking challenge for handling these two scenarios is that
-the instance of lookup calling d_splice_alias has already
-taken the dentry->d_parent->d_inode->i_mutex.
-
-If the mutex was not held the locking we could just do:
-	rename_mutex = &inode->i_sb->s_vfs_rename_mutex;
-	mutex_lock(rename_mutex);
-	if (d_ancestor(alias, dentry)) {
-		mutex_unlock(rename_mutex);
-		pr_warn_ratelimited(...);
-		return -ELOOP;
-	}
-	m1 = &dentry->d_parent->d_inode->i_mutex;
-	mutex_lock_nested(m1, I_MUTEX_PARENT);
-	if (!IS_ROOT(alias) && (alias->d_parent != dentry->d_parent)) {
-		m2 = &alias->d_parent->d_inode->i_mutex;
-		mutex_lock_nested(m2, I_MUTEX_PARENT2);
-	}
-	d_move(alias, dentry);
-	if (m2)
-		mutex_unlock(m2);
-	mutex_unlock(m1);
-	mutex_unlock(rename_mutex);
-
-Which is essentially lock_rename and unlock_reaname with added
-handling of the IS_ROOT case.
-
-The problem is that as the lookup locking stands today grabbing the
-s_vfs_rename_mutex must use mutex_trylock which can fail, so for reliability
-reasons we need to avoid using the rename_mutex as much as possible.
-
-For the case where a disconnected dentry is being connected (aka the
-IS_ROOT case) the d_ancestor test can be placed under the rename_lock
-removing any chance that taking locks will cause a failure.
-
-For the lazy rename case things are trickier because when
-dentry->d_parent and alias->d_parent are not equal the code need to
-take the s_vfs_rename_mutex, or risk the d_ancestor call in
-lock_rename being inaccurate.  As s_vfs_rename_mutex is take first
-there are no locking ordering issues with taking
-alias->d_parent->d_inode->i_mutex.  Furthermore as games with
-rename_lock are unnecessary d_move instead of __d_move can be called.
-
-Sleeping in d_splice_alias is not something new as
-security_d_instantiate is a sleeping function.
-
-Compared to the current implementation this change introduces a
-function for each case __d_rename_alias and __d_connect_alias and
-moves the acquisition of rename_lock down into those functions.
-
-In the case of __d_rename_alias which was __d_unalias this allows the
-existing lock ordering rules to be followed much more closely removing
-the need for a trylock when acquiring
-alias->d_parent->d_inode->i_mutex, and allowing the use of d_move.
-
-A common helper that prints the warning message when a loop is
-detected is factored out into d_alias_is_ancestor so that code does not
-need to be duplicated in both cases.
+This is needed infrastructure for better handling of when files
+or directories are moved out from under the root of a bind mount.
 
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/dcache.c | 111 ++++++++++++++++++++++++++++++++++++------------------------
- 1 file changed, 67 insertions(+), 44 deletions(-)
+ fs/mount.h             |   7 +++
+ fs/namespace.c         | 120 +++++++++++++++++++++++++++++++++++++++++++++++--
+ include/linux/dcache.h |   7 +++
+ 3 files changed, 130 insertions(+), 4 deletions(-)
 
-diff --git a/fs/dcache.c b/fs/dcache.c
-index 53b7f1e63beb..c1eece74621f 100644
---- a/fs/dcache.c
-+++ b/fs/dcache.c
-@@ -2711,41 +2711,77 @@ struct dentry *d_ancestor(struct dentry *p1, struct dentry *p2)
- 	return NULL;
+diff --git a/fs/mount.h b/fs/mount.h
+index 14db05d424f7..e8f22970fe59 100644
+--- a/fs/mount.h
++++ b/fs/mount.h
+@@ -27,6 +27,12 @@ struct mountpoint {
+ 	int m_count;
+ };
+ 
++struct mountroot {
++	struct hlist_node r_hash;
++	struct dentry *r_dentry;
++	struct hlist_head r_list;
++};
++
+ struct mount {
+ 	struct hlist_node mnt_hash;
+ 	struct mount *mnt_parent;
+@@ -55,6 +61,7 @@ struct mount {
+ 	struct mnt_namespace *mnt_ns;	/* containing namespace */
+ 	struct mountpoint *mnt_mp;	/* where is it mounted */
+ 	struct hlist_node mnt_mp_list;	/* list mounts with the same mountpoint */
++	struct hlist_node mnt_mr_list;	/* list mounts with the same mountroot */
+ #ifdef CONFIG_FSNOTIFY
+ 	struct hlist_head mnt_fsnotify_marks;
+ 	__u32 mnt_fsnotify_mask;
+diff --git a/fs/namespace.c b/fs/namespace.c
+index c7cb8a526c05..af6abf476394 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -31,6 +31,8 @@ static unsigned int m_hash_mask __read_mostly;
+ static unsigned int m_hash_shift __read_mostly;
+ static unsigned int mp_hash_mask __read_mostly;
+ static unsigned int mp_hash_shift __read_mostly;
++static unsigned int mr_hash_mask __read_mostly;
++static unsigned int mr_hash_shift __read_mostly;
+ 
+ static __initdata unsigned long mhash_entries;
+ static int __init set_mhash_entries(char *str)
+@@ -52,6 +54,16 @@ static int __init set_mphash_entries(char *str)
+ }
+ __setup("mphash_entries=", set_mphash_entries);
+ 
++static __initdata unsigned long mrhash_entries;
++static int __init set_mrhash_entries(char *str)
++{
++	if (!str)
++		return 0;
++	mrhash_entries = simple_strtoul(str, &str, 0);
++	return 1;
++}
++__setup("mrhash_entries=", set_mrhash_entries);
++
+ static u64 event;
+ static DEFINE_IDA(mnt_id_ida);
+ static DEFINE_IDA(mnt_group_ida);
+@@ -61,6 +73,7 @@ static int mnt_group_start = 1;
+ 
+ static struct hlist_head *mount_hashtable __read_mostly;
+ static struct hlist_head *mountpoint_hashtable __read_mostly;
++static struct hlist_head *mountroot_hashtable __read_mostly;
+ static struct kmem_cache *mnt_cache __read_mostly;
+ static DECLARE_RWSEM(namespace_sem);
+ 
+@@ -93,6 +106,13 @@ static inline struct hlist_head *mp_hash(struct dentry *dentry)
+ 	return &mountpoint_hashtable[tmp & mp_hash_mask];
  }
  
-+static struct dentry *d_alias_is_ancestor(struct dentry *alias,
-+					  struct dentry *dentry)
++static inline struct hlist_head *mr_hash(struct dentry *dentry)
 +{
-+	struct dentry *ancestor = d_ancestor(alias, dentry);
-+	if (ancestor) {
-+		pr_warn_ratelimited(
-+			"VFS: Lookup of '%s' in %s %s would have caused loop\n",
-+			dentry->d_name.name,
-+			dentry->d_sb->s_type->name,
-+			dentry->d_sb->s_id);
-+	}
-+	return ancestor;
++	unsigned long tmp = ((unsigned long)dentry / L1_CACHE_BYTES);
++	tmp = tmp + (tmp >> mr_hash_shift);
++	return &mountroot_hashtable[tmp & mr_hash_mask];
 +}
 +
  /*
-  * This helper attempts to cope with remotely renamed directories
-  *
-  * It assumes that the caller is already holding
-- * dentry->d_parent->d_inode->i_mutex, and rename_lock
-+ * dentry->d_parent->d_inode->i_mutex
-  *
-  * Note: If ever the locking in lock_rename() changes, then please
-  * remember to update this too...
-  */
--static int __d_unalias(struct inode *inode,
--		struct dentry *dentry, struct dentry *alias)
-+static int __d_rename_alias(struct dentry *alias, struct dentry *dentry)
- {
--	struct mutex *m1 = NULL, *m2 = NULL;
--	int ret = -ESTALE;
-+	struct mutex *rename_mutex = NULL, *parent_mutex = NULL;
- 
--	/* If alias and dentry share a parent, then no extra locks required */
--	if (alias->d_parent == dentry->d_parent)
--		goto out_unalias;
-+	/* Holding dentry->d_parent->d_inode->i_mutex guarantees this
-+	 * that the equality or inequality alias->d_parent and
-+	 * dentry->d_parent remains stable.
-+	 */
-+	if (alias->d_parent != dentry->d_parent) {
-+		/* See lock_rename() */
-+		rename_mutex = &dentry->d_sb->s_vfs_rename_mutex;
-+		if (!mutex_trylock(rename_mutex))
-+			return -ESTALE;
-+
-+		if (d_alias_is_ancestor(alias, dentry)) {
-+			mutex_unlock(rename_mutex);
-+			return -ELOOP;
-+		}
-+		parent_mutex = &alias->d_parent->d_inode->i_mutex;
-+		mutex_lock_nested(parent_mutex, I_MUTEX_PARENT2);
-+	}
-+	d_move(alias, dentry);
-+	if (parent_mutex) {
-+		mutex_unlock(parent_mutex);
-+		mutex_unlock(rename_mutex);
-+	}
-+	return 0;
-+}
- 
--	/* See lock_rename() */
--	if (!mutex_trylock(&dentry->d_sb->s_vfs_rename_mutex))
--		goto out_err;
--	m1 = &dentry->d_sb->s_vfs_rename_mutex;
--	if (!mutex_trylock(&alias->d_parent->d_inode->i_mutex))
--		goto out_err;
--	m2 = &alias->d_parent->d_inode->i_mutex;
--out_unalias:
-+/*
-+ * This helper connects disconnected dentries.
-+ *
-+ * It assumes that the caller is already holding
-+ * dentry->d_parent->d_inode->i_mutex
-+ *
-+ */
-+static int __d_connect_alias(struct inode *inode,
-+			     struct dentry *alias, struct dentry *dentry)
-+{
-+	write_seqlock(&rename_lock);
-+	if (unlikely(d_alias_is_ancestor(alias, dentry))) {
-+		write_sequnlock(&rename_lock);
-+		return -ELOOP;
-+	}
- 	__d_move(alias, dentry, false);
--	ret = 0;
--out_err:
--	if (m2)
--		mutex_unlock(m2);
--	if (m1)
--		mutex_unlock(m1);
--	return ret;
-+	write_sequnlock(&rename_lock);
-+	security_d_instantiate(alias, inode);
-+	return 0;
+  * allocation is serialized by namespace_sem, but we need the spinlock to
+  * serialize with freeing.
+@@ -234,6 +254,7 @@ static struct mount *alloc_vfsmnt(const char *name)
+ 		INIT_LIST_HEAD(&mnt->mnt_slave_list);
+ 		INIT_LIST_HEAD(&mnt->mnt_slave);
+ 		INIT_HLIST_NODE(&mnt->mnt_mp_list);
++		INIT_HLIST_NODE(&mnt->mnt_mr_list);
+ #ifdef CONFIG_FSNOTIFY
+ 		INIT_HLIST_HEAD(&mnt->mnt_fsnotify_marks);
+ #endif
+@@ -779,6 +800,77 @@ static void put_mountpoint(struct mountpoint *mp)
+ 	}
  }
  
- /**
-@@ -2786,30 +2822,17 @@ struct dentry *d_splice_alias(struct inode *inode, struct dentry *dentry)
- 	if (S_ISDIR(inode->i_mode)) {
- 		struct dentry *new = __d_find_any_alias(inode);
- 		if (unlikely(new)) {
-+			int err;
- 			/* The reference to new ensures it remains an alias */
- 			spin_unlock(&inode->i_lock);
--			write_seqlock(&rename_lock);
--			if (unlikely(d_ancestor(new, dentry))) {
--				write_sequnlock(&rename_lock);
++static struct mountroot *lookup_mountroot(struct dentry *dentry)
++{
++	struct hlist_head *chain = mr_hash(dentry);
++	struct mountroot *mr;
 +
-+			if (!IS_ROOT(new))
-+				err = __d_rename_alias(new, dentry);
-+			else
-+				err = __d_connect_alias(inode, new, dentry);
-+			if (err) {
- 				dput(new);
--				new = ERR_PTR(-ELOOP);
--				pr_warn_ratelimited(
--					"VFS: Lookup of '%s' in %s %s"
--					" would have caused loop\n",
--					dentry->d_name.name,
--					inode->i_sb->s_type->name,
--					inode->i_sb->s_id);
--			} else if (!IS_ROOT(new)) {
--				int err = __d_unalias(inode, dentry, new);
--				write_sequnlock(&rename_lock);
--				if (err) {
--					dput(new);
--					new = ERR_PTR(err);
--				}
--			} else {
--				__d_move(new, dentry, false);
--				write_sequnlock(&rename_lock);
--				security_d_instantiate(new, inode);
-+				new = ERR_PTR(err);
- 			}
- 			iput(inode);
- 			return new;
++	hlist_for_each_entry(mr, chain, r_hash) {
++		if (mr->r_dentry == dentry)
++			return mr;
++	}
++	return NULL;
++}
++
++static int mnt_set_root(struct mount *mnt, struct dentry *root)
++{
++	struct mountroot *mr = NULL;
++
++	read_seqlock_excl(&mount_lock);
++	if (d_mountroot(root))
++		mr = lookup_mountroot(root);
++	if (!mr) {
++		struct mountroot *new;
++		read_sequnlock_excl(&mount_lock);
++
++		new = kmalloc(sizeof(struct mountroot), GFP_KERNEL);
++		if (!new)
++			return -ENOMEM;
++
++		read_seqlock_excl(&mount_lock);
++		mr = lookup_mountroot(root);
++		if (mr) {
++			kfree(new);
++		} else {
++			struct hlist_head *chain = mr_hash(root);
++
++			mr = new;
++			mr->r_dentry = root;
++			INIT_HLIST_HEAD(&mr->r_list);
++			hlist_add_head(&mr->r_hash, chain);
++
++			spin_lock(&root->d_lock);
++			root->d_flags |= DCACHE_MOUNTROOT;
++			spin_unlock(&root->d_lock);
++		}
++	}
++	mnt->mnt.mnt_root = root;
++	hlist_add_head(&mnt->mnt_mr_list, &mr->r_list);
++	read_sequnlock_excl(&mount_lock);
++
++	return 0;
++}
++
++static void mnt_put_root(struct mount *mnt)
++{
++	struct dentry *root = mnt->mnt.mnt_root;
++	struct mountroot *mr;
++
++	read_seqlock_excl(&mount_lock);
++	mr = lookup_mountroot(root);
++	BUG_ON(!mr);
++	hlist_del(&mnt->mnt_mr_list);
++	if (hlist_empty(&mr->r_list)) {
++		hlist_del(&mr->r_hash);
++		spin_lock(&root->d_lock);
++		root->d_flags &= ~DCACHE_MOUNTROOT;
++		spin_unlock(&root->d_lock);
++		kfree(mr);
++	}
++	read_sequnlock_excl(&mount_lock);
++	dput(root);
++}
++
+ static inline int check_mnt(struct mount *mnt)
+ {
+ 	return mnt->mnt_ns == current->nsproxy->mnt_ns;
+@@ -934,6 +1026,7 @@ vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void
+ {
+ 	struct mount *mnt;
+ 	struct dentry *root;
++	int err;
+ 
+ 	if (!type)
+ 		return ERR_PTR(-ENODEV);
+@@ -952,8 +1045,16 @@ vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void
+ 		return ERR_CAST(root);
+ 	}
+ 
+-	mnt->mnt.mnt_root = root;
+ 	mnt->mnt.mnt_sb = root->d_sb;
++	err = mnt_set_root(mnt, root);
++	if (err) {
++		dput(root);
++		deactivate_super(mnt->mnt.mnt_sb);
++		mnt_free_id(mnt);
++		free_vfsmnt(mnt);
++		return ERR_PTR(err);
++	}
++
+ 	mnt->mnt_mountpoint = mnt->mnt.mnt_root;
+ 	mnt->mnt_parent = mnt;
+ 	lock_mount_hash();
+@@ -985,6 +1086,10 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
+ 			goto out_free;
+ 	}
+ 
++	err = mnt_set_root(mnt, root);
++	if (err)
++		goto out_free;
++
+ 	mnt->mnt.mnt_flags = old->mnt.mnt_flags & ~(MNT_WRITE_HOLD|MNT_MARKED);
+ 	/* Don't allow unprivileged users to change mount flags */
+ 	if (flag & CL_UNPRIVILEGED) {
+@@ -1010,7 +1115,7 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
+ 
+ 	atomic_inc(&sb->s_active);
+ 	mnt->mnt.mnt_sb = sb;
+-	mnt->mnt.mnt_root = dget(root);
++	dget(root);
+ 	mnt->mnt_mountpoint = mnt->mnt.mnt_root;
+ 	mnt->mnt_parent = mnt;
+ 	lock_mount_hash();
+@@ -1063,7 +1168,7 @@ static void cleanup_mnt(struct mount *mnt)
+ 	if (unlikely(mnt->mnt_pins.first))
+ 		mnt_pin_kill(mnt);
+ 	fsnotify_vfsmount_delete(&mnt->mnt);
+-	dput(mnt->mnt.mnt_root);
++	mnt_put_root(mnt);
+ 	deactivate_super(mnt->mnt.mnt_sb);
+ 	mnt_free_id(mnt);
+ 	call_rcu(&mnt->mnt_rcu, delayed_free_vfsmnt);
+@@ -3096,14 +3201,21 @@ void __init mnt_init(void)
+ 				mphash_entries, 19,
+ 				0,
+ 				&mp_hash_shift, &mp_hash_mask, 0, 0);
++	mountroot_hashtable = alloc_large_system_hash("Mountroot-cache",
++				sizeof(struct hlist_head),
++				mrhash_entries, 19,
++				0,
++				&mr_hash_shift, &mr_hash_mask, 0, 0);
+ 
+-	if (!mount_hashtable || !mountpoint_hashtable)
++	if (!mount_hashtable || !mountpoint_hashtable || !mountroot_hashtable)
+ 		panic("Failed to allocate mount hash table\n");
+ 
+ 	for (u = 0; u <= m_hash_mask; u++)
+ 		INIT_HLIST_HEAD(&mount_hashtable[u]);
+ 	for (u = 0; u <= mp_hash_mask; u++)
+ 		INIT_HLIST_HEAD(&mountpoint_hashtable[u]);
++	for (u = 0; u <= mr_hash_mask; u++)
++		INIT_HLIST_HEAD(&mountroot_hashtable[u]);
+ 
+ 	kernfs_init();
+ 
+diff --git a/include/linux/dcache.h b/include/linux/dcache.h
+index d2d50249b7b2..06bed2a1053c 100644
+--- a/include/linux/dcache.h
++++ b/include/linux/dcache.h
+@@ -228,6 +228,8 @@ struct dentry_operations {
+ #define DCACHE_FALLTHRU			0x01000000 /* Fall through to lower layer */
+ #define DCACHE_OP_SELECT_INODE		0x02000000 /* Unioned entry: dcache op selects inode */
+ 
++#define DCACHE_MOUNTROOT		0x04000000 /* Root of a vfsmount */
++
+ extern seqlock_t rename_lock;
+ 
+ /*
+@@ -403,6 +405,11 @@ static inline bool d_mountpoint(const struct dentry *dentry)
+ 	return dentry->d_flags & DCACHE_MOUNTED;
+ }
+ 
++static inline bool d_mountroot(const struct dentry *dentry)
++{
++	return dentry->d_flags & DCACHE_MOUNTROOT;
++}
++
+ /*
+  * Directory cache entry type accessor functions.
+  */
 -- 
 2.2.1
