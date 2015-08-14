@@ -1,7 +1,7 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH review 0/8] Bind mount escape fixes
-Date: Thu, 13 Aug 2015 23:29:23 -0500
-Message-ID: <87wpwyjxwc.fsf_-_@x220.int.ebiederm.org>
+Subject: [PATCH review 1/8] dcache: Handle escaped paths in prepend_path
+Date: Thu, 13 Aug 2015 23:30:16 -0500
+Message-ID: <87r3n6jxuv.fsf_-___27034.6351703212$1439527051$gmane$org@x220.int.ebiederm.org>
 References: <871tncuaf6.fsf@x220.int.ebiederm.org>
 	<87mw5xq7lt.fsf@x220.int.ebiederm.org>
 	<87a8yqou41.fsf_-_@x220.int.ebiederm.org>
@@ -10,12 +10,13 @@ References: <871tncuaf6.fsf@x220.int.ebiederm.org>
 	<87egjk9i61.fsf_-_@x220.int.ebiederm.org>
 	<20150810043637.GC14139@ZenIV.linux.org.uk>
 	<877foymrwt.fsf@x220.int.ebiederm.org>
+	<87wpwyjxwc.fsf_-_@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <877foymrwt.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org> (Eric W. Biederman's
-	message of "Thu, 13 Aug 2015 23:10:26 -0500")
+In-Reply-To: <87wpwyjxwc.fsf_-_-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org> (Eric W. Biederman's
+	message of "Thu, 13 Aug 2015 23:29:23 -0500")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -30,88 +31,59 @@ Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Miklos Szered
 List-Id: containers.vger.kernel.org
 
 
-It is possible in some situations to rename a file or directory through
-one mount point such that it can start out inside of a bind mount and
-after the rename wind up outside of the bind mount.  Unfortunately with
-user namespaces these conditions can be trivially created by creating a
-bind mount under an existing bind mount.
+A rename can result in a dentry that by walking up d_parent
+will never reach it's mnt_root.  For lack of a better term
+I call this an escaped path.
 
-I have identified four situations in which this may be a problem.
-- __d_path and d_absolute_path need to error on disconnected paths
-  that can not reach some root directory or lsm path based security
-  checks can incorrectly succeed.
+prepend_path is called by four different functions __d_path,
+d_absolute_path, d_path, and getcwd.
 
-- Normal path name resolution following .. can lead to a directory
-  that is outside of the original loopback mount.
+__d_path only wants to see paths are connected to the root it passes
+in.  So __d_path needs prepend_path to return an error.
 
-- file handle reconsititution aka exportfs_decode_fh can yield a dentry
-  from which d_parent can be followed up to mnt->sb->s_root, but
-  d_parent can not be followed up to mnt->mnt_root.
+d_absolute_path similarly wants to see paths that are connected to
+some root.  Escaped paths are not connected to any mnt_root so
+d_absolute_path needs prepend_path to return an error greater
+than 1.  So escaped paths will be treated like paths on lazily
+unmounted mounts.
 
-- Mounts on a path that has been renamed outside of a loopback mount
-  become unreachable, as there is no possible path that can be passed
-  to umount to unmount them.
+getcwd needs to prepend "(unreachable)" so getcwd also needs
+prepend_path to return an error.
 
-My strategy:
+d_path is the interesting hold out.  d_path just wants to print
+something, and does not care about the weird cases.  Which raises
+the question what should be printed?
 
-o File handle reconsitituion problems can be prevented by enabling
-  the nfsd subtree checks for nfs exports, and open_by_handle_at
-  requires capable(CAP_DAC_READ_SEARCH) so is only usable by the global
-  root.  This makes any problems difficult if not impossible to exploit
-  in practice so I have not yet written code to address that issue.
+Given that <escaped_path>/<anything> should result in -ENOENT I
+believe it is desirable for escaped paths to be printed as empty
+paths.  As there are not really any meaninful path components when
+considered from the perspective of a mount tree.
 
-o The functions __d_path and d_absolute_path are agumented so that the
-  security modules will not be fed a problematic path to work with.
+So tweak prepend_path to return an empty path with an new error
+code of 3 when it encounters an escaped path.
 
-o Following of .. has been agumented to test that after d_parent has
-  been resolved the original  directory is connected, and if not
-  an error of -ENOENT is returned.
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ fs/dcache.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-o I do not worry about mounts that are disconnected from their bind
-  mount as these mounts can always be freed by either umount -l on
-  the bind mount they have escaped from, or by freeing the mount
-  namespace.  So I do not believe there is an actual problem.
-
-Pathname resolution is a common fast path and most of the code in this
-patchset to support keeping .. from becoming expensive in the common
-case.
-
-After hearing the Al's feedback and running some numbers I have given
-up attempting to keeping the number of d_ancestor calls during pathname
-resolution to an absolute minimum.  It appears that simply preventing
-calls d_ancestor unless a directory has escaped is good enough.  This
-change in approach has significantly simplified the code.
-
-The big implementation change to note is that I have rewritten
-d_splice_alias and made some significant progress in cleaning up how the
-locks are dealt with.  The only limitation now is that
-dentry->d_parent->d_inode->i_mutex is taken in lookup held when
-d_splice_alias is called.    If that ever goes away my new
-d_splice_alias can easily take all of the locks it needs to rename
-a directory in the proper order.
-
-Does anyone see anything significant that I have missed?
-
-These changes are all against v4.2-rc1. 
-
-For those who like to see everything in a single tree the code is at:
-
-     git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-testing
-
-Eric W. Biederman (8):
-      dcache: Handle escaped paths in prepend_path
-      dcache: Reduce the scope of i_lock in d_splice_alias
-      dcache: Clearly separate the two directory rename cases in d_splice_alias
-      mnt: Track which mounts use a dentry as root.
-      dcache: Implement d_common_ancestor
-      dcache: Only read d_flags once is d_is_dir
-      mnt: Track when a directory escapes a bind mount
-      vfs: Test for and handle paths that are unreachable from their mnt_root
-
- fs/dcache.c            | 193 +++++++++++++++++++++++++++++++++++++------------
- fs/mount.h             |   9 +++
- fs/namei.c             |  26 ++++++-
- fs/namespace.c         | 152 +++++++++++++++++++++++++++++++++++++-
- include/linux/dcache.h |  11 ++-
- include/linux/mount.h  |   1 +
- 6 files changed, 338 insertions(+), 54 deletions(-)
+diff --git a/fs/dcache.c b/fs/dcache.c
+index 7a3f3e5f9cea..f762e76e85cc 100644
+--- a/fs/dcache.c
++++ b/fs/dcache.c
+@@ -2923,6 +2923,13 @@ restart:
+ 
+ 		if (dentry == vfsmnt->mnt_root || IS_ROOT(dentry)) {
+ 			struct mount *parent = ACCESS_ONCE(mnt->mnt_parent);
++			/* Escaped? */
++			if (dentry != vfsmnt->mnt_root) {
++				bptr = *buffer;
++				blen = *buflen;
++				error = 3;
++				break;
++			}
+ 			/* Global root? */
+ 			if (mnt != parent) {
+ 				dentry = ACCESS_ONCE(mnt->mnt_mountpoint);
+-- 
+2.2.1
