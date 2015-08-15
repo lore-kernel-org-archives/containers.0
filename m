@@ -1,8 +1,7 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH review 7/7] vfs: Test for and handle paths that are
-	unreachable from their mnt_root
-Date: Sat, 15 Aug 2015 13:39:50 -0500
-Message-ID: <8737zk5rbd.fsf_-___47754.4975853108$1439664419$gmane$org@x220.int.ebiederm.org>
+From: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: [PATCH review 0/7] Bind mount escape fixes
+Date: Sat, 15 Aug 2015 12:36:41 -0700
+Message-ID: <CA+55aFzMuCn33yK71HoKnj1hr8=ac_Y-vfE5mM8h4f3YJeGKvg__17723.445982165$1439667419$gmane$org@mail.gmail.com>
 References: <871tncuaf6.fsf@x220.int.ebiederm.org>
 	<87mw5xq7lt.fsf@x220.int.ebiederm.org>
 	<87a8yqou41.fsf_-_@x220.int.ebiederm.org>
@@ -15,12 +14,12 @@ References: <871tncuaf6.fsf@x220.int.ebiederm.org>
 	<87fv3mjxsc.fsf_-_@x220.int.ebiederm.org>
 	<20150815061617.GG14139@ZenIV.linux.org.uk>
 	<874mk08l3g.fsf@x220.int.ebiederm.org>
+	<87a8ts763c.fsf_-_@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <874mk08l3g.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org> (Eric W. Biederman's
-	message of "Sat, 15 Aug 2015 13:25:55 -0500")
+In-Reply-To: <87a8ts763c.fsf_-_-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -30,107 +29,46 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Willy Tarreau <w@1wt.eu>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Willy Tarreau <w@1wt.eu>
 List-Id: containers.vger.kernel.org
 
+On Sat, Aug 15, 2015 at 11:35 AM, Eric W. Biederman
+<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+>
+> The implementation change this round is I have dropped my patch cleaning
+> up d_splice_alias.  Al Viro found a race that makes the technique I was
+> using fundamentally racy.  I now have d_splice_alias taking mount_lock
+> around rename_lock.  Since I don't have to sleep in d_splice_alias
+> change is minimal and sufficient for this purpose.
 
-In rare cases a directory can be renamed out from under a bind mount.
-In those cases without special handling it becomes possible to walk up
-the directory tree to the root dentry of the filesystem and down
-from the root dentry to every other file or directory on the filesystem.
+Quite frankly, I hate this series.
 
-Like division by zero .. from an unconnected path can not be given
-a useful semantic as there is no predicting at which path component
-the code will realize it is unconnected.  We certainly can not match
-the current behavior as the current behavior is a security hole.
+Not all of it. Patches 1,2 and 5 look fine to me. But 3,4,6 and 7 I'm
+not happy with. Particularly patch 6.
 
-Therefore when encounting .. when following an unconnected path
-return -ENOENT.
+It just smells like a bad hack to me. My gut feel says that it's all
+wrong. It doesn't feel clean or right.
 
-- Add a function path_connected to verify path->dentry is reachable
-  from path->mnt.mnt_root.  AKA to validate that rename did not do
-  something nasty to the bind mount.
+I'd much rather make ".." handling more expensive than add and
+maintain that MNT_DIR_ESCAPED flag.  My gut feel is that yes, we
+should look seriously at making ".." much smarter (so I don't object
+to the concept of patch 7/7 at all), but I think we should strive to
+look at that ".." handling *without* adding the crufty odd special
+bind mount crud.
 
-  To avoid races path_connected must be called after following a path
-  component to it's next path component.
+Put another way: the whole "escape bind mount" thing is not at all a
+new issue, it smells very much like the very traditional Unix "escape
+chroot" thing. And I detest how this adds magic rules for bind mounts,
+when it feels like a much more generic issue.
 
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- fs/namei.c | 26 ++++++++++++++++++++++++--
- 1 file changed, 24 insertions(+), 2 deletions(-)
+Ok, so I haven't really thought deeply about this, this literally is
+just a "gut feel" kind of thing.
 
-diff --git a/fs/namei.c b/fs/namei.c
-index ae4e4c18b2ac..18d4884c7e85 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -560,6 +560,23 @@ static int __nd_alloc_stack(struct nameidata *nd)
- 	return 0;
- }
- 
-+/**
-+ * path_connected - Verify that a path->dentry is below path->mnt.mnt_root
-+ * @path: nameidate to verify
-+ *
-+ * Rename can sometimes move a file or directory outside of a bind
-+ * mount, path_connected allows those cases to be detected.
-+ */
-+static bool path_connected(const struct path *path)
-+{
-+	struct vfsmount *mnt = path->mnt;
-+
-+	if (likely(!(mnt->mnt_flags & MNT_DIR_ESCAPED)))
-+		return true;
-+
-+	return is_subdir(path->dentry, mnt->mnt_root);
-+}
-+
- static inline int nd_alloc_stack(struct nameidata *nd)
- {
- 	if (likely(nd->depth != EMBEDDED_LEVELS))
-@@ -1296,6 +1313,8 @@ static int follow_dotdot_rcu(struct nameidata *nd)
- 				return -ECHILD;
- 			nd->path.dentry = parent;
- 			nd->seq = seq;
-+			if (unlikely(!path_connected(&nd->path)))
-+				return -ENOENT;
- 			break;
- 		} else {
- 			struct mount *mnt = real_mount(nd->path.mnt);
-@@ -1396,7 +1415,7 @@ static void follow_mount(struct path *path)
- 	}
- }
- 
--static void follow_dotdot(struct nameidata *nd)
-+static int follow_dotdot(struct nameidata *nd)
- {
- 	if (!nd->root.mnt)
- 		set_root(nd);
-@@ -1412,6 +1431,8 @@ static void follow_dotdot(struct nameidata *nd)
- 			/* rare case of legitimate dget_parent()... */
- 			nd->path.dentry = dget_parent(nd->path.dentry);
- 			dput(old);
-+			if (unlikely(!path_connected(&nd->path)))
-+				return -ENOENT;
- 			break;
- 		}
- 		if (!follow_up(&nd->path))
-@@ -1419,6 +1440,7 @@ static void follow_dotdot(struct nameidata *nd)
- 	}
- 	follow_mount(&nd->path);
- 	nd->inode = nd->path.dentry->d_inode;
-+	return 0;
- }
- 
- /*
-@@ -1634,7 +1656,7 @@ static inline int handle_dots(struct nameidata *nd, int type)
- 		if (nd->flags & LOOKUP_RCU) {
- 			return follow_dotdot_rcu(nd);
- 		} else
--			follow_dotdot(nd);
-+			return follow_dotdot(nd);
- 	}
- 	return 0;
- }
--- 
-2.2.1
+Can we really not validate ".." some clever way _without_ adding all
+those "mount escape" flags? And by "clever" I potentially mean "not
+clever" and in fact just fairly brute force. I'd almost prefer to just
+walk the parent chains all the way to the root and validate the ".."
+that way..
+
+                 Linus
