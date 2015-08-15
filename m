@@ -1,12 +1,24 @@
-From: "=?utf-8?Q?Th=C3=B9y Trang?=" <thuytrang-vdemiqVFETuzA7uQ6Q2P2Q@public.gmane.org>
-Subject: =?utf-8?B?R2nhuqNpIHBow6FwIGtow6FjaCBow6BuZyBjaG8gZG9hbmggbmdoaeG7h3AgLSBUaGnhur90IGvhur8gd2Vic2l0ZSB0aGVvIHnDqnUgY+G6p3UgY2jhu4kgdOG7qyAzLDAwMCwwMDAgdm7EkSAgLSBRdeG6o25nIGPDoW8gZ29vZ2xlIA==?=
-Date: 15 Aug 2015 12:51:36 +0700
-Message-ID: <20150815055135.CDC9E58739B@sv.start.email>
-Reply-To: ngthuytrang2408-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Subject: Re: [PATCH review 3/8] dcache: Clearly separate the two directory
+	rename cases in d_splice_alias
+Date: Sat, 15 Aug 2015 07:16:17 +0100
+Message-ID: <20150815061617.GG14139@ZenIV.linux.org.uk>
+References: <871tncuaf6.fsf@x220.int.ebiederm.org>
+	<87mw5xq7lt.fsf@x220.int.ebiederm.org>
+	<87a8yqou41.fsf_-_@x220.int.ebiederm.org>
+	<874moq9oyb.fsf_-_@x220.int.ebiederm.org>
+	<871tfkawu9.fsf_-_@x220.int.ebiederm.org>
+	<87egjk9i61.fsf_-_@x220.int.ebiederm.org>
+	<20150810043637.GC14139@ZenIV.linux.org.uk>
+	<877foymrwt.fsf@x220.int.ebiederm.org>
+	<87wpwyjxwc.fsf_-_@x220.int.ebiederm.org>
+	<87fv3mjxsc.fsf_-_@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <87fv3mjxsc.fsf_-_-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,51 +28,39 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Willy Tarreau <w@1wt.eu>
 List-Id: containers.vger.kernel.org
 
-WzFdaHR0cDovL3dlYm1hdS52biAtIDA5MDIgODcyIDM4NSBNcyBUcmFuZwoKICAgQsOhwrrCoW4g
-bMODICBtw6HCu3QgZG9hbmggbmdoacOhwrtwLCBiw6HCusKhbiDDhGFuZyB0csOEbiB0csOhwrsg
-bMODIG0gdGjDocK6wr8gbsODIG8gw4TDocK7CiAgIG3DocK7IHLDocK7bmcgw4TDhsKww6HCu8Kj
-YyB0aMOhwrsgdHLDhsKww6HCu25nLiBIw4PCo3kgw4TDocK6wr9uIHbDocK7aSBjaMODwrpuZyB0
-w4PCtGksIHdlYm1hdS52bgogICBzw6HCusK9IG1hbmcgw4TDocK6wr9uIGNobyBiw6HCusKhbiBn
-acOhwrrCo2kgcGjDg8KhcCDDhMOGwrBhIHPDocK6wqNuIHBow6HCusKpbSBjw6HCu8KnYSBiw6HC
-usKhbgogICDDhMOhwrrCv24ga2jDg8KhY2ggaMODIG5nIG3DocK7dCBjw4PCoWNoIG5oYW5oIG5o
-w6HCusKldCwgaGnDocK7dSBxdcOhwrrCoyBuaMOhwrrCpXQsIHRpw6HCusK/dAogICBracOhwrtt
-IGNoaSBwaMODIG5ow6HCusKldC4KCiAgIEzDocK7wqNpIMODY2ggY8OhwrvCp2EgbcOhwrt0IFdl
-YnNpdGU6CgogICAtIEzDgyAgYsOhwrsgbcOhwrrCt3QgY8OhwrvCp2EgRG9hbmggbmdoacOhwrtw
-IG3Dg8KsbmguIFbDocK7aSBtw6HCu3QgV2Vic2l0ZSDDhMOGwrDDocK7wqNjCiAgIHRoacOhwrrC
-v3Qga8OhwrrCvyBzaW5oIMOEw6HCu25nLCBiw6HCusKvdCBtw6HCusKvdCwgbcODIHUgc8OhwrrC
-r2MgaMODIGkgaMODwrJhw6LCpiBOw4PCs2kgbMODwqpuCiAgIG3DocK7dCDDhGnDocK7dSBsw4Mg
-IHPDocK7wrEgY2h1ecODwqpuIG5naGnDocK7cCB2w4MgIGzDocK7biBtw6HCusKhbmgsIHTDocK6
-wqFvIMOEw4bCsMOhwrvCo2Mgc8OhwrvCsQogICB0aW4gY8Ohwrp5IHRyb25nIG3DocK6wq90IGto
-w4PCoWNoIGjDgyBuZwoKICAgLURvYW5oIG5naGnDocK7cCBjw4PCsyB0aMOhwrsgY3VuZyBjw6HC
-usKlcCBjw4PCoWMgdGjDg8K0bmcgdGluIGtodXnDocK6wr9uIG3Dg8KjaSwgaMODwqxuaAogICDD
-ocK6wqNuaCBzw4PCo24gcGjDocK6wqttIGhheSB0aMODwrRuZyBiw4PCoW8gY2hvIGtow4PCoWNo
-IGjDgyBuZyBtw6HCu3QgY8ODwqFjaCBkw6HCuyBkw4MgbmcKICAgdsODICBuaGFuaCBjaMODwrNu
-ZwoKICAgLSBNw6HCuyByw6HCu25nIGNoacOhwrrCv24gZMOhwrtjaCBNYXJrZXRpbmcgdGjDg8K0
-bmcgcXVhIGjDg8KsbmggdGjDocK7wqljIHRpw6HCusK/cCB0aMOhwrsKICAgdHLDocK7wrFjIHR1
-ecOhwrrCv24sIHTDhsKwIHbDocK6wqVuIHRyw6HCu8KxYyB0dXnDocK6wr9uIGdpw4PCunAgY2hv
-IGRvYW5oIG5naGnDocK7cCB0acOhwrrCv3QKICAga2nDocK7bSDDhMOGwrDDocK7wqNjIGNoaSBw
-aMODIHRodcODwqogbcOhwrrCt3QgYsOhwrrCsW5nIHRyw4bCsG5nIGLDgyB5IHPDocK6wqNuIHBo
-w6HCusKpbQoKV2Vic2l0ZSBjaHXDocK6wqluIFNlbyB0aGVvIHnDg8KqdSBjw6HCusKndSBjaMOh
-wrsgdMOhwrvCqyAzIHRyacOhwrt1CgogICAgICogV2Vic2l0ZSDDhMOGwrDDocK7wqNjIGLDocK6
-wqNvIGjDgyBuaCB2w4TCqW5oIHZpw6HCu24KICAgICAqIFTDocK6wrduZyB0w4PCqm4gbWnDocK7
-biBRdcOhwrtjIHTDocK6wr8KICAgICAqIFTDocK6wrduZyBob3N0aW5nIDFHYiwgQsOEbmcgdGjD
-g8K0bmcgNTBHYgogICAgICogRGVzaWduIGdpYW8gZGnDocK7biB0w4NuaCBuw4RuZyB0aGVvIHnD
-g8KqdSBjw6HCusKndQogICAgICogQsOhwrsgbcODwqMgbmd1w6HCu24gY2h1w6HCusKpbiBTZW8K
-ICAgICAqIENhbSBrw6HCusK/dCB0w6HCu2Mgw4TDocK7IHTDocK6wqNpIHdlYiBkw4bCsMOhwrtp
-IDVzCiAgICAgKiBUcmFuZyBxdcOhwrrCo24gdHLDocK7IHRow4PCom4gdGhpw6HCu24gdsOhwrtp
-IG5nw4bCsMOhwrtpIGTDg8K5bmcKICAgICAqIFTDocK6wrduZyAyMCB3ZWJtYWlsCiAgICAgKiBI
-w6HCuyB0csOhwrvCoyBrw6HCu8K5IHRodcOhwrp0IDI0LzcKICAgICAqIEjDocK7IHRyw6HCu8Kj
-IGTDocK7Y2ggdsOhwrvCpSBxdcOhwrrCo25nIGPDg8KhbyBnb29nbGUgdsOhwrtpIGNoaSBwaMOD
-IHRow6HCusKlcCBuaMOhwrrCpXQKCk1TIFRSQU5HCgogICBVeSB0w4NuIC0gVHLDg8KhY2ggbmhp
-w6HCu20KCiAgIFRlbGw6IDA5MDIgODcyIDM4NQoKICAgTWFpbDogWzJddHJhbmdAd2VibWF1LnZu
-CgogICBTa3lwZTogbmd0aHV5dHJhbmcyNDA4CgogICBZaCEgOiBsb3ZlX2xpa2VseTkwCgoKCiAg
-IEPDg8K0bmcgdHkgVE5ISCBUTSBEViDDhFQgVsOhwrrCoW4gUGjDg8K6CgogICDDhMOhwrthIGNo
-w6HCuzogNjUyLzE0QiBDw6HCu25nIEjDg8KyYSwgUGjDhsKww6HCu25nIDEzLCBRdcOhwrpuIFTD
-g8KibiBCw4PCrG5oLCBIw6HCuyBDaMODCiAgIE1pbmgKClJlZmVyZW5jZXMKCiAgIDEuIGh0dHA6
-Ly93ZWJtYXUudm4vCiAgIDIuIG1haWx0bzp0cmFuZ0B3ZWJtYXUudm4KX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QK
-Q29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4
-Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+On Thu, Aug 13, 2015 at 11:31:47PM -0500, Eric W. Biederman wrote:
+
+> The problem is that as the lookup locking stands today grabbing the
+> s_vfs_rename_mutex must use mutex_trylock which can fail, so for reliability
+> reasons we need to avoid using the rename_mutex as much as possible.
+
+I really don't like it.  For one thing, you *still* are taking it - have to,
+really.  So this argument is moot anyway.  ESTALE can happen here.  For
+another, I'm not convinced that this "we don't need no stinkin'
+extra locks for attaching a detached subtree" is correct.  E.g. what's
+to protect that IS_ROOT(new) from changing right under you?
+
+Consider a corrupted filesystem (or a bogus server, or a sufficiently
+unpleasant race with another client, etc.)
+
+You have a detached subtree with lookups from *TWO* directories trying to
+attach its root.  Now what?  ->i_mutex on either prospective parent won't
+give a damn thing - different inodes.  The current tree would've serialized
+those on rename_lock and treated that as attach a detached followed by
+relocate a misplaced.  With your change we get a race in there.
+
+This place is subtle and nasty, and we had rather nasty races there.
+Repeatedly.  Any non-trivial locking changes in that area should go
+separately from everything else and only with an accurate analysis of
+those changes.  It's one of the easiest places to fuck up in.  Been
+there, done that, and so had many other people.
+
+I'm not saying that it wouldn't benefit from cleaner locking - it sure
+as hell would.  But it's in a really incestous relationship with a lot
+of other pieces, both in fs/dcache.c and elsewhere.  Let's not mix that
+into anything else - driveby cleanups in that place are very likely to
+cause serious trouble.
