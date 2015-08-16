@@ -1,12 +1,25 @@
-From: "23234$" <zhangping-uluJPIOOtNrM1kAEIRd3EQ@public.gmane.org>
-Subject: Earning $1000 a day is easy if you use this financial Robot. (ozhxw)
-Date: Sun, 16 Aug 2015 15:13:42 +0400
-Message-ID: <D6D365363DE9C774A8ADE46EAA3E0463@vckl>
-Reply-To: 23234$ <mzx-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH review 0/7] Bind mount escape fixes
+Date: Sun, 16 Aug 2015 06:51:33 -0500
+Message-ID: <87egj3moxm.fsf@x220.int.ebiederm.org>
+References: <877foymrwt.fsf@x220.int.ebiederm.org>
+	<87wpwyjxwc.fsf_-_@x220.int.ebiederm.org>
+	<87fv3mjxsc.fsf_-_@x220.int.ebiederm.org>
+	<20150815061617.GG14139@ZenIV.linux.org.uk>
+	<874mk08l3g.fsf@x220.int.ebiederm.org>
+	<87a8ts763c.fsf_-_@x220.int.ebiederm.org>
+	<CA+55aFzMuCn33yK71HoKnj1hr8=ac_Y-vfE5mM8h4f3YJeGKvg@mail.gmail.com>
+	<CA+55aFyeu-p_3eJQCLM0TDuLYvo10mx379FaCFq7Z103RgKvVA@mail.gmail.com>
+	<E2AECA7F-ED57-4FCD-A4C0-8C7C4B860FB6@xmission.com>
+	<CA+55aFx2s7TrmPKviKnFL0nGRZDHuCajW_UO02EnF+CsJY2-4w@mail.gmail.com>
+	<20150816021209.GI14139@ZenIV.linux.org.uk>
+	<CA+55aFy3pzEY=4dfd_PX-Og_b7fqrG1rDniOqehBfQhXb=Cg9A@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <CA+55aFy3pzEY=4dfd_PX-Og_b7fqrG1rDniOqehBfQhXb=Cg9A-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Linus Torvalds's message of "Sat, 15 Aug 2015 19:25:41 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,13 +29,51 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: alee-6vukLmSqABrsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, tintype-Q0ha168st4JRQ0oMI7lyI3G1qET/BF4J@public.gmane.org, gundhelp-A+k/vr+AkdtAfugRpC6u6w@public.gmane.org, dogblessyou-G77tDssUMWJAfugRpC6u6w@public.gmane.org, enquiries-EhyMeKPx8gwEKtNJ0au1eQ@public.gmane.org, info-/zyZGueZzbQDXYZnReoRVg@public.gmane.org, mark.mulqueen-cQYJ6Jk3AJWRLZ1GYcJQn1pr/1R2p/CL@public.gmane.org, info-8hnSGAMnoX4ph0vh04WvnNi2O/JbrIOy@public.gmane.org, pk-HEXVKBs34G0hI5jyAnUcGg@public.gmane.org, sales-zsNKPWJ8Pib6hrUXjxyGrA@public.gmane.org, varella-MIj0M8MzsWeSyL2BtYuC/A@public.gmane.org, webmaster-T0kAWHsIpgVm57/zwp/SLQ@public.gmane.org, alexandra.fortier-sRCF3Gk3FLx1SFvNfxT1YoH6Mc4MB0Vx@public.gmane.org, gilles-5ePj/ocFP8lg9hUCZPvPmw@public.gmane.org, bartlettsmove-24jMwgp+fRTvnOemgxGiVw@public.gmane.org, s.kavka-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, design-0ugg6BXjqlTpfLxISufcnykBLnlaf3ui@public.gmane.org, info-IbJOREecKtwYmDQhPGgMaEEOCMrvLtNR@public.gmane.org, atouchofgrass-bzGI/hKkdgRBDgjK7y7TUQ@public.gmane.org
+To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Willy Tarreau <w@1wt.eu>
 List-Id: containers.vger.kernel.org
 
-[duorxl] 
-http://tinyurl.com/ohb33pu...>>>[It is the best time to launch the Robot to get more money.] 
+Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> writes:
 
+> On Sat, Aug 15, 2015 at 7:12 PM, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org> wrote:
+>>
+>> I think you are underestimating the frequency of .. traversals.  Any build
+>> process that creates relative symlinks will be hitting it all the time,
+>> for one thing.
+>
+> I suspect you're over-estimating how expensive it is to just walk down
+> to the mount-point. It's just a few pointer traversals.
+>
+> Realistically, we probably do more than that for a *regular* path
+> component lookup, when we follow the hash chains. Following a d_parent
+> chain for ".." isn't that different.
+>
+> Just looking at the last patch Eric sent, that one looks _trivial_. It
+> didn't need *any* preparation or new rules. Compared to the mess with
+> marking things MNT_DIR_ESCAPED etc, I know which approach I'd prefer.
+>
+> But hey, if you think you can simplify it... I just don't think that
+> even totally ignoring the d_splice_alias() things, and totally
+> ignoring any locking around __d_move(), the whole "mark things
+> MNT_DIR_ESCAPED" is a lot more complex.
 
-[pwdwkkle] 
-[rmwjuvl] 
-[qqgesdn] 
+It occurs to me that there is a fairly simple way we can emperically
+test to see how expensive calling is_subdir for every .. on a bind mount
+is in practice.
+
+- Take my last patch
+- run a benchmark outside of a bind mount (perhaps a kernel compile).
+- run the same benchmark inside of a bind mount.
+
+See if the performance differs.
+
+I am going to try to find time to do this, but I am travelling for the
+next couple of days.
+
+If someone who has a bit more time wants to try it and beats me to that
+would be great.
+
+I think having some emperical numbers would be nice in this part of the
+conversation.
+
+Eric
