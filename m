@@ -1,32 +1,12 @@
-From: NeilBrown <neilb-IBi9RG/b67k@public.gmane.org>
-Subject: Re: [PATCH] vfs: Test for and handle paths that are unreachable
-	from their mnt_root
-Date: Mon, 17 Aug 2015 13:56:49 +1000
-Message-ID: <20150817135649.0ed0f4f0__45167.8123827607$1439783848$gmane$org@noble>
-References: <871tncuaf6.fsf@x220.int.ebiederm.org>
-	<87mw5xq7lt.fsf@x220.int.ebiederm.org>
-	<87a8yqou41.fsf_-_@x220.int.ebiederm.org>
-	<874moq9oyb.fsf_-_@x220.int.ebiederm.org>
-	<871tfkawu9.fsf_-_@x220.int.ebiederm.org>
-	<87egjk9i61.fsf_-_@x220.int.ebiederm.org>
-	<20150810043637.GC14139@ZenIV.linux.org.uk>
-	<877foymrwt.fsf@x220.int.ebiederm.org>
-	<87wpwyjxwc.fsf_-_@x220.int.ebiederm.org>
-	<87fv3mjxsc.fsf_-_@x220.int.ebiederm.org>
-	<20150815061617.GG14139@ZenIV.linux.org.uk>
-	<874mk08l3g.fsf@x220.int.ebiederm.org>
-	<87a8ts763c.fsf_-_@x220.int.ebiederm.org>
-	<CA+55aFzMuCn33yK71HoKnj1hr8=ac_Y-vfE5mM8h4f3YJeGKvg@mail.gmail.com>
-	<CA+55aFyeu-p_3eJQCLM0TDuLYvo10mx379FaCFq7Z103RgKvVA@mail.gmail.com>
-	<E2AECA7F-ED57-4FCD-A4C0-8C7C4B860FB6@xmission.com>
-	<CA+55aFx2s7TrmPKviKnFL0nGRZDHuCajW_UO02EnF+CsJY2-4w@mail.gmail.com>
-	<87bne82glg.fsf@x220.int.ebiederm.org>
-	<87tws010r2.fsf_-_@x220.int.ebiederm.org>
+From: Huach Zua <newsletter-aOB5BX39mvUk+I/owrrOrA@public.gmane.org>
+Subject: ALARM: Best Job Ever - Die Panda Tagesklinik (18 Bilder)
+Date: Tue, 18 Aug 2015 08:40:11 +0000
+Message-ID: <6656407a2e9de6c1ecbeb9bf1b848080@huachzua.info>
+Reply-To: newsletter-aOB5BX39mvUk+I/owrrOrA@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87tws010r2.fsf_-_-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -36,146 +16,48 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>, Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "J. Bruce
-	Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Willy Tarreau <w@1wt.eu>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sat, 15 Aug 2015 20:27:13 -0500 ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W.
-Biederman) wrote:
-
-> 
-> In rare cases a directory can be renamed out from under a bind mount.
-> In those cases without special handling it becomes possible to walk up
-> the directory tree to the root dentry of the filesystem and down
-> from the root dentry to every other file or directory on the filesystem.
-> 
-> Like division by zero .. from an unconnected path can not be given
-> a useful semantic as there is no predicting at which path component
-> the code will realize it is unconnected.  We certainly can not match
-> the current behavior as the current behavior is a security hole.
-> 
-> Therefore when encounting .. when following an unconnected path
-> return -ENOENT.
-> 
-> - Add a function path_connected to verify path->dentry is reachable
->   from path->mnt.mnt_root.  AKA to validate that rename did not do
->   something nasty to the bind mount.
-> 
->   To avoid races path_connected must be called after following a path
->   component to it's next path component.
-> 
-> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> ---
-> 
-> This is the simple version that needs no extra vfs support.
-> 
-> My availability is likely to be a bit spotty for the next while
-> as I am travelling to and then attending Linux Plumbers Conference.
-> 
->  fs/namei.c | 27 +++++++++++++++++++++++++--
->  1 file changed, 25 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/namei.c b/fs/namei.c
-> index ae4e4c18b2ac..5303e994f8d6 100644
-> --- a/fs/namei.c
-> +++ b/fs/namei.c
-> @@ -560,6 +560,24 @@ static int __nd_alloc_stack(struct nameidata *nd)
->  	return 0;
->  }
->  
-> +/**
-> + * path_connected - Verify that a path->dentry is below path->mnt.mnt_root
-> + * @path: nameidate to verify
-> + *
-> + * Rename can sometimes move a file or directory outside of a bind
-> + * mount, path_connected allows those cases to be detected.
-
-While it is obviously true that a rename can move a file outside of a
-bind mount, it doesn't seem relevant and so could be confusing.
-This is only ever used for directories, and a file could already be
-outside a bind mount even while it is inside.
-
-I would stick with "Rename can sometimes move a directory outside..."
-
-
-
-> + */
-> +static bool path_connected(const struct path *path)
-> +{
-> +	struct vfsmount *mnt = path->mnt;
-> +
-> +	/* Only bind mounts can have disconnected paths */
-> +	if (mnt->mnt_root == mnt->mnt_sb->s_root)
-> +		return true;
-> +
-> +	return is_subdir(path->dentry, mnt->mnt_root);
-> +}
-> +
->  static inline int nd_alloc_stack(struct nameidata *nd)
->  {
->  	if (likely(nd->depth != EMBEDDED_LEVELS))
-> @@ -1296,6 +1314,8 @@ static int follow_dotdot_rcu(struct nameidata *nd)
->  				return -ECHILD;
->  			nd->path.dentry = parent;
->  			nd->seq = seq;
-> +			if (unlikely(!path_connected(&nd->path)))
-> +				return -ENOENT;
->  			break;
->  		} else {
->  			struct mount *mnt = real_mount(nd->path.mnt);
-> @@ -1396,7 +1416,7 @@ static void follow_mount(struct path *path)
->  	}
->  }
->  
-> -static void follow_dotdot(struct nameidata *nd)
-> +static int follow_dotdot(struct nameidata *nd)
->  {
->  	if (!nd->root.mnt)
->  		set_root(nd);
-> @@ -1412,6 +1432,8 @@ static void follow_dotdot(struct nameidata *nd)
->  			/* rare case of legitimate dget_parent()... */
->  			nd->path.dentry = dget_parent(nd->path.dentry);
->  			dput(old);
-> +			if (unlikely(!path_connected(&nd->path)))
-> +				return -ENOENT;
->  			break;
->  		}
->  		if (!follow_up(&nd->path))
-> @@ -1419,6 +1441,7 @@ static void follow_dotdot(struct nameidata *nd)
->  	}
->  	follow_mount(&nd->path);
->  	nd->inode = nd->path.dentry->d_inode;
-> +	return 0;
->  }
->  
->  /*
-> @@ -1634,7 +1657,7 @@ static inline int handle_dots(struct nameidata *nd, int type)
->  		if (nd->flags & LOOKUP_RCU) {
->  			return follow_dotdot_rcu(nd);
->  		} else
-> -			follow_dotdot(nd);
-> +			return follow_dotdot(nd);
->  	}
->  	return 0;
->  }
-
-
-I really like this patch, particularly from the standpoint of
-backporting to -stable and enterprise kernels.  I suspect that all the
-tracking of which mounts might have been escaped from should be
-classified as premature optimisation, until measurements show otherwise.
-
-path_connected() adds no locks or even atomics.  The path that it walks
-will be well-trodden and so very likely most of it will be in the CPU
-cache.
-
-And I particularly like that follow_dotdot() and follow_dotdot_rcu()
-now both that the same signature :-)  What's not to like?
-
-Reviewed-by: NeilBrown <neilb-IBi9RG/b67k@public.gmane.org>
-
-in case it helps.
-
-
-NeilBrown
+V2ViIFZlcnNpb24gW2h0dHA6Ly9odWFjaHp1YS5pbmZvL215bWFpbC8xNTA4LzE1YmZmOWU1MDYy
+MDZmZWE1ZjAyYTYyYzZjZTI4Zjg2L2FIUjBjRG92TDJoMVlXTm9lblZoTG1sdVptOHZibVYzYzJ4
+bGRIUmxjaTl3WVc1a1lTMTBZV2RsYzJ0c2FXNXBheTB4T0MxaWFXeGtaWEl2XSB8IE5ld3NsZXR0
+ZXIgYWJiZXN0ZWxsZW4gLyBVbnN1YnNjcmliZSBbaHR0cDovL2h1YWNoenVhLmluZm8vbXltYWls
+LzE1MDgvMTViZmY5ZTUwNjIwNmZlYTVmMDJhNjJjNmNlMjhmODYvYUhSMGNEb3ZMMmgxWVdOb2Vu
+VmhMbWx1Wm04dmJtVjNjMnhsZEhSbGNpMXphV2R1ZFhBdmRXNXpkV0p6WTNKcFltVV0gfCBQcm9m
+aWxlIGFrdHVhbGlzaWVyZW4gW2h0dHA6Ly9odWFjaHp1YS5pbmZvL215bWFpbC8xNTA4LzE1YmZm
+OWU1MDYyMDZmZWE1ZjAyYTYyYzZjZTI4Zjg2L2FIUjBjRG92TDJoMVlXTm9lblZoTG1sdVptOHZi
+bVYzYzJ4bGRIUmxjaTF6YVdkdWRYQXZjSEp2Wm1sc1pRXSAKCiAJCcKgCgogCQkgW2h0dHA6Ly9o
+dWFjaHp1YS5pbmZvL215bWFpbC8xNTA4LzE1YmZmOWU1MDYyMDZmZWE1ZjAyYTYyYzZjZTI4Zjg2
+L2FIUjBjRG92TDJoMVlXTm9lblZoTG1sdVptOF0gCgpBTEFSTTogQmVzdCBKb2IgRXZlciAtIERp
+ZSBQYW5kYSBUYWdlc2tsaW5payAoMTggQmlsZGVyKSAKCiAJCcKgCgogCQnCoAoKCQnCoAoKIAkJ
+wqAKCiAJCSBbaHR0cDovL2h1YWNoenVhLmluZm8vbXltYWlsLzE1MDgvMTViZmY5ZTUwNjIwNmZl
+YTVmMDJhNjJjNmNlMjhmODYvYUhSMGNEb3ZMMmgxWVdOb2VuVmhMbWx1Wm04dmNHRnVaR0V0ZEdG
+blpYTnJiR2x1YVdzdl0gCgogCQnCoAoKCQnCoAoKIAkJwqAKCiAJCcKgCgpBTEFSTTogQkVTVCBK
+T0IgRVZFUiAtIERJRSBQQU5EQSBUQUdFU0tMSU5JSyAoMTggQklMREVSKSBbSFRUUDovL0hVQUNI
+WlVBLklORk8vTVlNQUlMLzE1MDgvMTVCRkY5RTUwNjIwNkZFQTVGMDJBNjJDNkNFMjhGODYvQUhS
+MENET1ZMMkgxWVdOT0VOVkhMTUxVWk04VkNHRlVaR0VUREdGTlpYTlJCR0xVQVdTVi8xXQoKSHVh
+Y2ggWnVhISAKCldlbm4gZXMgZGVuIGJlc3RlbiBKb2IgZGVyIFdlbHQgZ2ViZW4gc29sbHRlIG3D
+vHNzdGUgZGllc2VyIHdvaGwgbWluZGVzdGVucyB1bnRlciBkaWUgVG9wMyBmYWxsZW4uIFNpY2gg
+ZGVuIGdhbnplbiBUYWcgdW0ga251ZmZsaWdlIFBhbmRhcyBrw7xtbWVybiB6dSBtw7xzc2VuIGts
+aW5ndMKgbmljaHQgZ2VyYWRlIG5hY2ggQXJiZWl0LiBMZWlkZXIgaXN0IGRpZSBLbGluaWsgenUg
+d2VpdCB3ZWcgOikgCgpXZWl0ZXJlIEJpbGRlciB1bmQgR2FsbGVyaWVuIHp1ciBVbnRlcmhhbHR1
+bmcgZmluZGV0IGlociBhdWYgd3d3Lmh1YWNoenVhLmluZm8gCgoJCVdJTEwgSUNIIFNFSEVOISBb
+aHR0cDovL2h1YWNoenVhLmluZm8vbXltYWlsLzE1MDgvMTViZmY5ZTUwNjIwNmZlYTVmMDJhNjJj
+NmNlMjhmODYvYUhSMGNEb3ZMMmgxWVdOb2VuVmhMbWx1Wm04dmNHRnVaR0V0ZEdGblpYTnJiR2x1
+YVdzdi8yXQoKIAkJwqAKCiAJCcKgCgpTaWUgZXJoYWx0ZW4gZGllc2UgRS1tYWlsIHdlaWwgU2ll
+IG9kZXIgZWluIEZyZXVuZC9CZWthbm50ZShyKSB2b24gSWhuZW4gdW5zZXJlbiBIdWFjaHp1YSBb
+aHR0cDovL2h1YWNoenVhLmluZm8vbXltYWlsLzE1MDgvMTViZmY5ZTUwNjIwNmZlYTVmMDJhNjJj
+NmNlMjhmODYvYUhSMGNEb3ZMMmgxWVdOb2VuVmhMbWx1Wm04LzFdIE5ld3NsZXR0ZXIgYWJvbm5p
+ZXJ0IGhhYmVuIHdlbGNoZXIgU2llIMO8YmVyIG5ldWUgR2FsbGVyaWVuIGF1ZiBkZW0gTGF1ZmVu
+ZGVuIGjDpGx0LgoKU29sbHRlIGRpZXMgZWluIE1pw592ZXJzdMOkbmRuaXMgc2VpbiBiencuIGly
+cnTDvG1saWNoIGFuIFNpZSBnZXNlbmRldCB3b3JkZW4gc2VpbiwgYml0dGVuIHdpciB2aWVsbWFs
+cyB1bSBFbnRzY2h1bGRpZ3VuZy4gCgpNaXQgZGVtIGZvbGdlbmRlbiBMaW5rIGvDtm5uZW4gU2ll
+IGVpbmZhY2ggZGVuIE5ld3NsZXR0ZXIgYWJiZXN0ZWxsZW46CgpOZXdzbGV0dGVyIGFiYmVzdGVs
+bGVuIC8gVW5zdWJzY3JpYmUgW2h0dHA6Ly9odWFjaHp1YS5pbmZvL215bWFpbC8xNTA4LzE1YmZm
+OWU1MDYyMDZmZWE1ZjAyYTYyYzZjZTI4Zjg2L2FIUjBjRG92TDJoMVlXTm9lblZoTG1sdVptOHZi
+bVYzYzJ4bGRIUmxjaTF6YVdkdWRYQXZkVzV6ZFdKelkzSnBZbVUvMV0KCklociBIdWFjaCBadWEg
+VGVhbS4gCsKpIDIwMTUgSHVhY2h6dWEsIEFsbCByaWdodHMgcmVzZXJ2ZWQgCgogCQnCoAoKX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBt
+YWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczov
+L2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
