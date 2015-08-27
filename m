@@ -1,10 +1,9 @@
-From: "E-ZPass Agent" <zachary.drake-J69nOxTCOPy5zXDfpYGnj2Xnswh1EIUO@public.gmane.org>
-Subject: Indebted for driving on toll road #00538223
-Date: Wed, 26 Aug 2015 10:44:32 -0700
-Message-ID: <da5a1b78d68c4b2c35d3d884cbc5b7c7@batul.lunarbreeze.com>
-Reply-To: E-ZPass Agent <zachary.drake-J69nOxTCOPy5zXDfpYGnj2Xnswh1EIUO@public.gmane.org>
+From: Lexi <info-OAhaUWqbFdkP+3IMVm7KfQ@public.gmane.org>
+Subject: Web Designing
+Date: Thu, 27 Aug 2015 12:31:53 +0530
+Message-ID: <Vgy7qJIondS2B9tb8Cz6r56xQmtWSFa6nidSxhH9taQu@webworldlive.biz>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="b1_bc3fc8c852dfb44f994c40e44d5b5fac"
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
@@ -19,29 +18,16 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---b1_bc3fc8c852dfb44f994c40e44d5b5fac
-Content-Type: text/plain; charset=us-ascii
+Hi,
+Hope you are well.
+I am Lexi, Website Development Manager; I was surfing through site from your domain and came across yours URL. Have been observing various changes in trends in the Industry and the types of sites other players in your domain are using. The field has grown since you last updated your website as per available records in Domain tools. There are a lot more advanced and user friendly websites
+Which appeal to the consumer? A website determines the brand of a firm in the online world.
+Do let me know if you are willing to discuss a possible redesigning/redevelopment of your website and I will be happy to explain in greater details.
+If You Are Interested in Then Let Me Know I would Happy to send You Price etc....
+I look forward to your mail.
 
-Notice to Appear,
+Kind Regards
+Lexi
+Website Development Manager,
 
-You have not paid for driving on a toll road. 
-You are kindly asked to service your debt in the shortest time possible.
-
-The invoice is attached to this email.
-
-Sincerely,
-Zachary Drake,
-E-ZPass Agent.
-
-
---b1_bc3fc8c852dfb44f994c40e44d5b5fac
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---b1_bc3fc8c852dfb44f994c40e44d5b5fac--
+Disclaimer: please reply this mail with word "unsubemail55-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org" on & we assure you that you will never get any mail from us.
