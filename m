@@ -1,10 +1,11 @@
-From: Rob Landley <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org>
-Subject: nspawn and rocket.
-Date: Mon, 7 Sep 2015 14:21:44 -0500
-Message-ID: <55EDE3C8.2030704@landley.net>
+From: Huach Zua <newsletter-aOB5BX39mvUk+I/owrrOrA@public.gmane.org>
+Subject: ALARM: Vielleicht den Baumeister wechseln? (20 Bilder)
+Date: Mon, 7 Sep 2015 22:22:46 +0000
+Message-ID: <de9c14ddf6fe42b4bf1b6bef6741ebcf@huachzua.info>
+Reply-To: newsletter-aOB5BX39mvUk+I/owrrOrA@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -15,28 +16,52 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-I'm poking at adding the third layer of container support to toybox, by
-which I mean I have unshare and nsenter, but need something to act as
-the init process in the container to do the early I/O setup (filesystem
-mounts, device import/export, network device setup, etc) that requires
-interacting with the host.
-
-At the plumber's container BOF I got pointed at systemd-nspawn, which is
-apparently what Rocket is built on top of? As in rocket provides a bunch
-of host-side plumbing, but the non-distro code that runs inside the
-container for early bringup is essentially nspawn?
-
-The nspawn webpage says that it's "just for testing" and that there's a
-lot of other stuff you have to do to make it actually secure. Has
-anybody documented what that stuff _is_? (Presumably rocket is layering
-that on top of nspawn, and I want to implement something that rocket can
-use but otherwise stays out of its way. I'd _really_ like it if I can
-avoid having parse json.)
-
-Does it sound like I'm on the right track here? Or should I just fluff
-out nsenter a bit, implement tunctl, and not worry about nspawn?
-
-Rob
+V2ViIFZlcnNpb24gW2h0dHA6Ly9odWFjaHp1YS5pbmZvL215bWFpbC8xNTM5LzE1YmZmOWU1MDYy
+MDZmZWE1ZjAyYTYyYzZjZTI4Zjg2L2FIUjBjRG92TDJoMVlXTm9lblZoTG1sdVptOHZibVYzYzJ4
+bGRIUmxjaTloYkdGeWJTMTJhV1ZzYkdWcFkyaDBMV1JsYmkxaVlYVnRaV2x6ZEdWeUxYZGxZMmh6
+Wld4dUxUSXdMV0pwYkdSbGNpOF0gfCBOZXdzbGV0dGVyIGFiYmVzdGVsbGVuIC8gVW5zdWJzY3Jp
+YmUgW2h0dHA6Ly9odWFjaHp1YS5pbmZvL215bWFpbC8xNTM5LzE1YmZmOWU1MDYyMDZmZWE1ZjAy
+YTYyYzZjZTI4Zjg2L2FIUjBjRG92TDJoMVlXTm9lblZoTG1sdVptOHZibVYzYzJ4bGRIUmxjaTF6
+YVdkdWRYQXZkVzV6ZFdKelkzSnBZbVVdIHwgUHJvZmlsZSBha3R1YWxpc2llcmVuIFtodHRwOi8v
+aHVhY2h6dWEuaW5mby9teW1haWwvMTUzOS8xNWJmZjllNTA2MjA2ZmVhNWYwMmE2MmM2Y2UyOGY4
+Ni9hSFIwY0RvdkwyaDFZV05vZW5WaExtbHVabTh2Ym1WM2MyeGxkSFJsY2kxemFXZHVkWEF2Y0hK
+dlptbHNaUV0gCgogCQnCoAoKIAkJIFtodHRwOi8vaHVhY2h6dWEuaW5mby9teW1haWwvMTUzOS8x
+NWJmZjllNTA2MjA2ZmVhNWYwMmE2MmM2Y2UyOGY4Ni9hSFIwY0RvdkwyaDFZV05vZW5WaExtbHVa
+bThdIAoKQUxBUk06IFZpZWxsZWljaHQgZGVuIEJhdW1laXN0ZXIgd2VjaHNlbG4/ICgyMCBCaWxk
+ZXIpIAoKIAkJwqAKCiAJCcKgCgoJCcKgCgogCQnCoAoKIAkJIFtodHRwOi8vaHVhY2h6dWEuaW5m
+by9teW1haWwvMTUzOS8xNWJmZjllNTA2MjA2ZmVhNWYwMmE2MmM2Y2UyOGY4Ni9hSFIwY0Rvdkwy
+aDFZV05vZW5WaExtbHVabTh2WlhabGJuUjFaV3hzTFdSbGJpMWlZWFZ0WldsemRHVnlMWGRsWTJo
+elpXeHVMVEl3TFdKcGJHUmxjaThdIAoKIAkJwqAKCgkJwqAKCiAJCcKgCgogCQnCoAoKQUxBUk06
+IFZJRUxMRUlDSFQgREVOIEJBVU1FSVNURVIgV0VDSFNFTE4/ICgyMCBCSUxERVIpIFtIVFRQOi8v
+SFVBQ0haVUEuSU5GTy9NWU1BSUwvMTUzOS8xNUJGRjlFNTA2MjA2RkVBNUYwMkE2MkM2Q0UyOEY4
+Ni9BSFIwQ0RPVkwySDFZV05PRU5WSExNTFVaTThWWlhaTEJOUjFaV1hTTFdSTEJJMUlZWFZUWldM
+WkRHVllMWERMWTJIWlpXWFVMVElXTFdKUEJHUkxDSTgvMV0KCkh1YWNoIFp1YSEgCgpQcmluemlw
+aWVsbCBnaWJ0IGVzIGltbWVyIEtsZWluaWdrZWl0ZW4gcnVuZCB1bXMgSGF1cyB1bmQgZGVtIEdl
+YsOkdWRlYmF1IHdlbGNoZSBtYW4gaMOkdHRlIGJlc3NlciBtYWNoZW4ga8O2bm5lbi4gVW5kIGRh
+bm4gZ2lidHMgZGllc2UgQmlsZGVyIHdlbGNoZSBtaWNoIGFuIGRlciBNZW5zY2hoZWl0IHVuZCBk
+ZXJlbiBadWt1bmZ0IHp3ZWlmZWxuIGxhc3Nlbi4gVm9tICJQZnVzY2ggYW0gQmF1IiBrYW5uIGhp
+ZXIga2VpbmUgUmVkZSBzZWluLCBoaWVyIGJlZmluZGVuIHdpcnMgdW5zIGF1ZiBlaW5lbSBnYW56
+IGFuZGVyZW4gTGV2ZWwgZGVyIER1bW1oZWl0LiAKCldlaXRlcmUgQmlsZGVyIHVuZCBHYWxsZXJp
+ZW4genVyIFVudGVyaGFsdHVuZyBmaW5kZXQgaWhyIGF1ZiB3d3cuaHVhY2h6dWEuaW5mbyAKCgkJ
+V0lMTCBJQ0ggU0VIRU4hIFtodHRwOi8vaHVhY2h6dWEuaW5mby9teW1haWwvMTUzOS8xNWJmZjll
+NTA2MjA2ZmVhNWYwMmE2MmM2Y2UyOGY4Ni9hSFIwY0RvdkwyaDFZV05vZW5WaExtbHVabTh2Wlha
+bGJuUjFaV3hzTFdSbGJpMWlZWFZ0WldsemRHVnlMWGRsWTJoelpXeHVMVEl3TFdKcGJHUmxjaTgv
+Ml0KCiAJCcKgCgogCQnCoAoKU2llIGVyaGFsdGVuIGRpZXNlIEUtbWFpbCB3ZWlsIFNpZSBvZGVy
+IGVpbiBGcmV1bmQvQmVrYW5udGUocikgdm9uIElobmVuIHVuc2VyZW4gSHVhY2h6dWEgW2h0dHA6
+Ly9odWFjaHp1YS5pbmZvL215bWFpbC8xNTM5LzE1YmZmOWU1MDYyMDZmZWE1ZjAyYTYyYzZjZTI4
+Zjg2L2FIUjBjRG92TDJoMVlXTm9lblZoTG1sdVptOC8xXSBOZXdzbGV0dGVyIGFib25uaWVydCBo
+YWJlbiB3ZWxjaGVyIFNpZSDDvGJlciBuZXVlIEdhbGxlcmllbiBhdWYgZGVtIExhdWZlbmRlbiBo
+w6RsdC4KClNvbGx0ZSBkaWVzIGVpbiBNacOfdmVyc3TDpG5kbmlzIHNlaW4gYnp3LiBpcnJ0w7xt
+bGljaCBhbiBTaWUgZ2VzZW5kZXQgd29yZGVuIHNlaW4sIGJpdHRlbiB3aXIgdmllbG1hbHMgdW0g
+RW50c2NodWxkaWd1bmcuIAoKTWl0IGRlbSBmb2xnZW5kZW4gTGluayBrw7ZubmVuIFNpZSBlaW5m
+YWNoIGRlbiBOZXdzbGV0dGVyIGFiYmVzdGVsbGVuOgoKTmV3c2xldHRlciBhYmJlc3RlbGxlbiAv
+IFVuc3Vic2NyaWJlIFtodHRwOi8vaHVhY2h6dWEuaW5mby9teW1haWwvMTUzOS8xNWJmZjllNTA2
+MjA2ZmVhNWYwMmE2MmM2Y2UyOGY4Ni9hSFIwY0RvdkwyaDFZV05vZW5WaExtbHVabTh2Ym1WM2My
+eGxkSFJsY2kxemFXZHVkWEF2ZFc1emRXSnpZM0pwWW1VLzFdCgpJaHIgSHVhY2ggWnVhIFRlYW0u
+IArCqSAyMDE1IEh1YWNoenVhLCBBbGwgcmlnaHRzIHJlc2VydmVkIAoKIAkJwqAKCl9fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGlu
+ZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0
+cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
