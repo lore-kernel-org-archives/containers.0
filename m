@@ -1,13 +1,15 @@
-From: "Michael J. Coss" <michael.coss-cfy2TCaE7SFv+uJa97DSA9BPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 3/3] net/udevns: Netlink module to forward uevent to containers
-Date: Wed,  9 Sep 2015 14:53:13 -0400
-Message-ID: <dba3687ebebd6744710cd9a1d6f39b1fa01dfd87.1441762578.git.michael.coss__39085.5799116709$1441824871$gmane$org@alcatel-lucent.com>
+From: Michael J Coss <michael.coss-cfy2TCaE7SFv+uJa97DSA9BPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 2/3] lib/kobject_uevent.c: add uevent forwarding function
+Date: Wed, 9 Sep 2015 15:24:12 -0400
+Message-ID: <55F0875C.6060108@alcatel-lucent.com>
 References: <cover.1441762578.git.michael.coss@alcatel-lucent.com>
+	<3456750fe7a5a5eb709e315618facf5704cc1885.1441762578.git.michael.coss@alcatel-lucent.com>
+	<20150909035527.GB5153@kroah.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <cover.1441762578.git.michael.coss-cfy2TCaE7SFv+uJa97DSA9BPR1lH4CV8@public.gmane.org>
+In-Reply-To: <20150909035527.GB5153-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,259 +19,161 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs98uUxBSJOaYoYkZiVZrdSR2LY78lusg7I@public.gmane.org
-Cc: "Michael J. Coss" <michael.coss-cfy2TCaE7SFv+uJa97DSA9BPR1lH4CV8@public.gmane.org>
+To: Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>
+Cc: serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs98uUxBSJOaYoYkZiVZrdSR2LY78lusg7I@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-New generic netlink module to provide an interface with the new
-forwarding interface for uevent.  The driver allows a user to
-direct a uevent as read from the kernel to a specific network
-namespace by providing the uevent message, and a target process id.
-The uapi header file provides the message format.
+On 9/8/2015 11:55 PM, Greg KH wrote:
+> On Tue, Sep 08, 2015 at 10:10:29PM -0400, Michael J. Coss wrote:
+>> Adds capability to allow userspace programs to forward a given event to
+>> a specific network namespace as determined by the provided pid.  In
+>> addition, support for a per-namespace kobject_sequence counter was
+>> added.  Sysfs was modified to return the correct event counter based on
+>> the current network namespace.
+>>
+>> Signed-off-by: Michael J. Coss <michael.coss-cfy2TCaE7SFv+uJa97DSA9BPR1lH4CV8@public.gmane.org>
+>> ---
+>>  include/linux/kobject.h     |  3 ++
+>>  include/net/net_namespace.h |  3 ++
+>>  kernel/ksysfs.c             | 12 ++++++
+>>  lib/kobject_uevent.c        | 90 +++++++++++++++++++++++++++++++++++++++++++++
+>>  4 files changed, 108 insertions(+)
+>>
+>> diff --git a/include/linux/kobject.h b/include/linux/kobject.h
+>> index 637f670..d1bb509 100644
+>> --- a/include/linux/kobject.h
+>> +++ b/include/linux/kobject.h
+>> @@ -215,6 +215,9 @@ extern struct kobject *firmware_kobj;
+>>  int kobject_uevent(struct kobject *kobj, enum kobject_action action);
+>>  int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
+>>  			char *envp[]);
+>> +#if defined(CONFIG_UDEVNS) || defined(CONFIG_UDEVNS_MODULE)
+>> +int kobject_uevent_forward(char *buf, size_t len, pid_t pid);
+>> +#endif
+>>  
+>>  __printf(2, 3)
+>>  int add_uevent_var(struct kobj_uevent_env *env, const char *format, ...);
+>> diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
+>> index e951453..a4013e5 100644
+>> --- a/include/net/net_namespace.h
+>> +++ b/include/net/net_namespace.h
+>> @@ -134,6 +134,9 @@ struct net {
+>>  #if IS_ENABLED(CONFIG_MPLS)
+>>  	struct netns_mpls	mpls;
+>>  #endif
+>> +#if defined(CONFIG_UDEVNS) || defined(CONFIG_UDEVNS_MODULE)
+>> +	u64				kevent_seqnum;
+>> +#endif
+>>  	struct sock		*diag_nlsk;
+>>  	atomic_t		fnhe_genid;
+>>  };
+>> diff --git a/kernel/ksysfs.c b/kernel/ksysfs.c
+>> index 6683cce..4bc15fd 100644
+>> --- a/kernel/ksysfs.c
+>> +++ b/kernel/ksysfs.c
+>> @@ -21,6 +21,9 @@
+>>  #include <linux/compiler.h>
+>>  
+>>  #include <linux/rcupdate.h>	/* rcu_expedited */
+>> +#if defined(CONFIG_UDEVNS) || defined(CONFIG_UDEVNS_MODULE)
+>> +#include <net/net_namespace.h>
+>> +#endif
+> #if isn't needed here, right?
+>
+>>  
+>>  #define KERNEL_ATTR_RO(_name) \
+>>  static struct kobj_attribute _name##_attr = __ATTR_RO(_name)
+>> @@ -33,6 +36,15 @@ static struct kobj_attribute _name##_attr = \
+>>  static ssize_t uevent_seqnum_show(struct kobject *kobj,
+>>  				  struct kobj_attribute *attr, char *buf)
+>>  {
+>> +#if defined(CONFIG_UDEVNS) || defined(CONFIG_UDEVNS_MODULE)
+>> +	pid_t p = task_pid_vnr(current);
+>> +	struct net *n = get_net_ns_by_pid(p);
+>> +
+>> +	if (n != ERR_PTR(-ESRCH)) {
+>> +		if (!net_eq(n, &init_net))
+>> +			return sprintf(buf, "%llu\n", n->kevent_seqnum);
+>> +	}
+>> +#endif
+>>  	return sprintf(buf, "%llu\n", (unsigned long long)uevent_seqnum);
+>>  }
+>>  KERNEL_ATTR_RO(uevent_seqnum);
+>> diff --git a/lib/kobject_uevent.c b/lib/kobject_uevent.c
+>> index d791e33..7589745 100644
+>> --- a/lib/kobject_uevent.c
+>> +++ b/lib/kobject_uevent.c
+>> @@ -379,6 +379,96 @@ int kobject_uevent(struct kobject *kobj, enum kobject_action action)
+>>  }
+>>  EXPORT_SYMBOL_GPL(kobject_uevent);
+>>  
+>> +#if defined(CONFIG_UDEVNS) || defined(CONFIG_UDEVNS_MODULE)
+>> +/**
+>> + * kobject_uevent_forward - forward event to specified network namespace
+>> + *
+>> + * @buf: event buffer
+>> + * @len: event length
+>> + * @pid: pid of network namespace
+>> + *
+>> + * Returns 0 if kobject_uevent_forward() is completed with success or the
+>> + * corresponding error when it fails.
+>> + */
+>> +int kobject_uevent_forward(char *buf, size_t len, pid_t pid)
+>> +{
+>> +	int retval = 0;
+>> +#if defined(CONFIG_NET)
+>> +	struct uevent_sock *ue_sk;
+>> +	struct net *pns;
+>> +	char *p;
+>> +	u64 num;
+>> +
+>> +	/* grab the network namespace of the provided pid */
+>> +	pns = get_net_ns_by_pid(pid);
+>> +	if (pns == ERR_PTR(-ESRCH))
+>> +		return -ESRCH;
+>> +
+>> +	/* find sequence number in buffer */
+>> +	p = buf;
+>> +	num = 0;
+>> +	while (p < (buf + len)) {
+>> +		if (strncmp(p, "SEQNUM=", 7) == 0) {
+>> +			int r;
+>> +
+>> +			p += 7;
+>> +			r = kstrtoull(p, 10, &num);
+>> +			if (r) {
+>> +				put_net(pns);
+>> +				return r;
+>> +			}
+>> +			break;
+>> +		}
+>> +		p += (strlen(p) + 1);
+>> +	}
+> Ok, that's crazy, replacing an existing sequence number with a sequence
+> number of the namespace?  An interesting hack, yes, but something we
+> want to maintain for the next 20+ years, no.  Surely there's a better
+> way to do this?
+>
+> But again, I'm not sold on this whole idea anyway.
+>
+> greg k-h
+>
+Re: the #if
+The #if is only needed because the new udevns code references a
+structure defined in that header.  Obviously it could be included
+without consequences but I #if it to show it was part of the forwarding
+code.
 
-Signed-off-by: Michael J. Coss <michael.coss-cfy2TCaE7SFv+uJa97DSA9BPR1lH4CV8@public.gmane.org>
----
- include/uapi/linux/Kbuild   |   1 +
- include/uapi/linux/udevns.h |  19 ++++++++
- net/Kconfig                 |   1 +
- net/Makefile                |   1 +
- net/udevns/Kconfig          |   9 ++++
- net/udevns/Makefile         |   5 ++
- net/udevns/udevns.c         | 112 ++++++++++++++++++++++++++++++++++++++++++++
- net/udevns/udevns.h         |  19 ++++++++
- 8 files changed, 167 insertions(+)
- create mode 100644 include/uapi/linux/udevns.h
- create mode 100644 net/udevns/Kconfig
- create mode 100644 net/udevns/Makefile
- create mode 100644 net/udevns/udevns.c
- create mode 100644 net/udevns/udevns.h
+Re: sequence #
+I wanted it as transparent as possible, without this the udevd running
+inside the container has issues with the values of the sequence numbers
+seen, by making it tied to the namespace, udevd could run unchanged. 
+Our goal was to minimize the changes to a linux distro and still be able
+to run a full desktop inside a container.  But even in absence of our
+use case, the first question is should uevents be broadcasts to every
+network namespace?  I don't think that broadcasting is the correct
+action.  And follow on questions are what if anything should be done
+with regards to uevents and containers.
 
-diff --git a/include/uapi/linux/Kbuild b/include/uapi/linux/Kbuild
-index 1ff9942..9fb9c59 100644
---- a/include/uapi/linux/Kbuild
-+++ b/include/uapi/linux/Kbuild
-@@ -404,6 +404,7 @@ header-y += toshiba.h
- header-y += tty_flags.h
- header-y += tty.h
- header-y += types.h
-+header-y += udevns.h
- header-y += udf_fs_i.h
- header-y += udp.h
- header-y += uhid.h
-diff --git a/include/uapi/linux/udevns.h b/include/uapi/linux/udevns.h
-new file mode 100644
-index 0000000..f5702f5
---- /dev/null
-+++ b/include/uapi/linux/udevns.h
-@@ -0,0 +1,19 @@
-+#ifndef _UDEVNS_H_
-+#define _UDEVNS_H_
-+
-+enum udevns_msg_types {
-+	UDEVNS_FORWARD_MSG = 0x1,
-+	UDEVNS_CMD_MAX,
-+};
-+
-+enum udevns_attr {
-+	UDEVNS_UNSPEC,
-+	UDEVNS_PID,
-+	UDEVNS_MSG,
-+	__UDEVNS_ATTR_MAX,
-+};
-+
-+#define UDEVNS_ATTR_MAX (__UDEVNS_ATTR_MAX - 1)
-+#define UDEVNS_VERSION 0x1
-+
-+#endif
-diff --git a/net/Kconfig b/net/Kconfig
-index 57a7c5a..465e288 100644
---- a/net/Kconfig
-+++ b/net/Kconfig
-@@ -54,6 +54,7 @@ source "net/packet/Kconfig"
- source "net/unix/Kconfig"
- source "net/xfrm/Kconfig"
- source "net/iucv/Kconfig"
-+source "net/udevns/Kconfig"
- 
- config INET
- 	bool "TCP/IP networking"
-diff --git a/net/Makefile b/net/Makefile
-index 3995613..bde7775 100644
---- a/net/Makefile
-+++ b/net/Makefile
-@@ -74,3 +74,4 @@ obj-$(CONFIG_HSR)		+= hsr/
- ifneq ($(CONFIG_NET_SWITCHDEV),)
- obj-y				+= switchdev/
- endif
-+obj-$(CONFIG_UDEVNS)	+= udevns/
-diff --git a/net/udevns/Kconfig b/net/udevns/Kconfig
-new file mode 100644
-index 0000000..367e650
---- /dev/null
-+++ b/net/udevns/Kconfig
-@@ -0,0 +1,9 @@
-+config UDEVNS
-+	tristate "UDEV namespace bridge"
-+	depends on SYSFS
-+	default n
-+	help
-+		This option enables support for explicit forwarding of UDEV events to
-+		other network namespaces
-+
-+		If unsure, say N.
-diff --git a/net/udevns/Makefile b/net/udevns/Makefile
-new file mode 100644
-index 0000000..44c6b12
---- /dev/null
-+++ b/net/udevns/Makefile
-@@ -0,0 +1,5 @@
-+#
-+# Makefile for the uevent namespace aware forwarder
-+#
-+#
-+obj-$(CONFIG_UDEVNS) += udevns.o
-diff --git a/net/udevns/udevns.c b/net/udevns/udevns.c
-new file mode 100644
-index 0000000..8b23751
---- /dev/null
-+++ b/net/udevns/udevns.c
-@@ -0,0 +1,112 @@
-+#include <linux/module.h>
-+#include <linux/moduleparam.h>
-+#include <net/sock.h>
-+#include <net/genetlink.h>
-+#include <linux/netlink.h>
-+#include <linux/skbuff.h>
-+#include <linux/fs.h>
-+#include <linux/list.h>
-+#include <linux/slab.h>
-+#include <linux/uaccess.h>
-+#include <linux/kobject.h>
-+#include <linux/sysfs.h>
-+
-+#include "udevns.h"
-+
-+#define DRIVER_AUTHOR "Michael J Coss <michael.coss-cfy2TCaE7SFv+uJa97DSA9BPR1lH4CV8@public.gmane.org>"
-+#define DRIVER_DESC   "new udev namespace bridge"
-+#define DEVICE_NAME   "udevns"
-+
-+#ifdef MODULE
-+#define UDEVNS_NAME (THIS_MODULE->name)
-+#else
-+#define UDEVNS_NAME "udevns"
-+#endif
-+
-+#define UDEVNS_INFO(fmt, args...)                                       \
-+	pr_info("[%s] " fmt, UDEVNS_NAME, ## args)
-+
-+#define UDEVNS_ERROR(fmt, args...)                                      \
-+	pr_err("[ERROR:%s:%s] " fmt, UDEVNS_NAME, __func__, ## args)
-+
-+#define UDEVNS_WARNING(fmt, args...)                                    \
-+	pr_warn("[WARNING:%s:%s] " fmt, UDEVNS_NAME, __func__, ## args)
-+
-+static struct genl_family udevns_genl_family = {
-+	.id      = GENL_ID_GENERATE,
-+	.name    = DEVICE_NAME,
-+	.hdrsize = 0,
-+	.version = UDEVNS_VERSION,
-+	.maxattr = UDEVNS_ATTR_MAX,
-+};
-+
-+static const struct nla_policy udevns_fmsgpolicy[UDEVNS_ATTR_MAX + 1] = {
-+	[UDEVNS_PID] = { .type = NLA_U32 },
-+	[UDEVNS_MSG] = { .type = NLA_STRING, .len =  UEVENT_BUFFER_SIZE},
-+};
-+
-+static int udevns_forwardmsg(struct sk_buff *skb, struct genl_info *info)
-+{
-+	pid_t pid;
-+	char *msg;
-+	int msglen;
-+	int err;
-+
-+	if (!info->attrs[UDEVNS_PID]) {
-+		UDEVNS_WARNING("missing PID from UDEVNS_FORWARD_MSG.\n");
-+		return -EINVAL;
-+	}
-+
-+	if (!info->attrs[UDEVNS_MSG]) {
-+		UDEVNS_WARNING("missing uevent from UDEVNS_FORWARD_MSG.\n");
-+		return -EINVAL;
-+	}
-+
-+	pid = nla_get_u32(info->attrs[UDEVNS_PID]);
-+	msg = nla_data(info->attrs[UDEVNS_MSG]);
-+	msglen = nla_len(info->attrs[UDEVNS_MSG]);
-+
-+	if (msglen < 0) {
-+		UDEVNS_ERROR("Malformed uevent from UDEVNS_FORWARD_MSG.\n");
-+		return -EINVAL;
-+	}
-+
-+	err = kobject_uevent_forward(msg, msglen, pid);
-+	return err;
-+}
-+
-+static struct genl_ops udevns_genl_ops[] = {
-+	{
-+		.cmd    = UDEVNS_FORWARD_MSG,
-+		.flags  = GENL_ADMIN_PERM,
-+		.doit   = udevns_forwardmsg,
-+		.policy = udevns_fmsgpolicy,
-+	},
-+};
-+
-+static int __init udevns_init(void)
-+{
-+	int rc;
-+
-+	UDEVNS_INFO("Starting udevns module\n");
-+	rc = genl_register_family_with_ops(&udevns_genl_family,
-+					   udevns_genl_ops);
-+	if (rc) {
-+		UDEVNS_ERROR("Failed to register netlink interface\n");
-+		return rc;
-+	}
-+	return 0;
-+}
-+
-+static void __exit udevns_exit(void)
-+{
-+	UDEVNS_INFO("Exiting udevns module\n");
-+	genl_unregister_family(&udevns_genl_family);
-+}
-+
-+module_init(udevns_init);
-+module_exit(udevns_exit);
-+
-+MODULE_LICENSE("GPL");
-+MODULE_DESCRIPTION(DRIVER_DESC);
-+MODULE_AUTHOR(DRIVER_AUTHOR);
-diff --git a/net/udevns/udevns.h b/net/udevns/udevns.h
-new file mode 100644
-index 0000000..f5702f5
---- /dev/null
-+++ b/net/udevns/udevns.h
-@@ -0,0 +1,19 @@
-+#ifndef _UDEVNS_H_
-+#define _UDEVNS_H_
-+
-+enum udevns_msg_types {
-+	UDEVNS_FORWARD_MSG = 0x1,
-+	UDEVNS_CMD_MAX,
-+};
-+
-+enum udevns_attr {
-+	UDEVNS_UNSPEC,
-+	UDEVNS_PID,
-+	UDEVNS_MSG,
-+	__UDEVNS_ATTR_MAX,
-+};
-+
-+#define UDEVNS_ATTR_MAX (__UDEVNS_ATTR_MAX - 1)
-+#define UDEVNS_VERSION 0x1
-+
-+#endif
 -- 
-2.4.6
+---Michael J Coss
