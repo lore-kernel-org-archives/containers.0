@@ -1,13 +1,11 @@
-From: Rob Landley <rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org>
-Subject: Re: nspawn and rocket.
-Date: Mon, 14 Sep 2015 22:35:38 -0500
-Message-ID: <55F7920A.9080009@landley.net>
-References: <55EDE3C8.2030704@landley.net> <20150914171143.GU16923@ubuntumail>
+From: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
+Subject: [PATCH RFC] pidns: introduce syscall getvpid
+Date: Tue, 15 Sep 2015 15:09:24 +0300
+Message-ID: <20150915120924.14818.49490.stgit__44982.5880038135$1442319299$gmane$org@buzz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20150914171143.GU16923@ubuntumail>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,55 +15,126 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Yeah, but toybox (like busybox) tries to keep its external dependencies
-to a minimum.
+pid_t getvpid(pid_t pid, pid_t source, pid_t target);
 
-If the only way to have container support was to link to an external
-library, that would put container support out of scope for toybox. (I
-note that https support was out of scope until we found the command line
-"openssl s_client -quiet connect" stuff, despite http without it being
-essentially deprecated.)
+This syscall converts pid from one pid-ns into pid in another pid-ns:
+it takes @pid in namespace of @source task (zero for current) and
+returns related pid in namespace of @target task (zero for current too).
+If pid is unreachable from target pid-ns then it returns zero.
 
-That said, I've cloned the repo and am reading the Documentation file. :)
+Such conversion is required for interaction between processes from
+different pid-namespaces. For example when system service talks with
+client from isolated container via socket about task in container:
 
-Thanks,
+getvpid(pid, client_pid, 0)  -> pid in our pid namespace
+getvpid(pid, 0, client_pid)  -> pid in client pid namespace
 
-Rob
+Also service can get pid of init task and match it with container:
 
-On 09/14/2015 12:11 PM, Serge Hallyn wrote:
-> For what you want you could do worse than to base a simple program
-> based on https://github.com/xemul/libct .  It has helpers for some
-> of the things you want to do (network device and mounts setup).
-> 
-> Quoting Rob Landley (rob-VoJi6FS/r0vR7s880joybQ@public.gmane.org):
->> I'm poking at adding the third layer of container support to toybox, by
->> which I mean I have unshare and nsenter, but need something to act as
->> the init process in the container to do the early I/O setup (filesystem
->> mounts, device import/export, network device setup, etc) that requires
->> interacting with the host.
->>
->> At the plumber's container BOF I got pointed at systemd-nspawn, which is
->> apparently what Rocket is built on top of? As in rocket provides a bunch
->> of host-side plumbing, but the non-distro code that runs inside the
->> container for early bringup is essentially nspawn?
->>
->> The nspawn webpage says that it's "just for testing" and that there's a
->> lot of other stuff you have to do to make it actually secure. Has
->> anybody documented what that stuff _is_? (Presumably rocket is layering
->> that on top of nspawn, and I want to implement something that rocket can
->> use but otherwise stays out of its way. I'd _really_ like it if I can
->> avoid having parse json.)
->>
->> Does it sound like I'm on the right track here? Or should I just fluff
->> out nsenter a bit, implement tunctl, and not worry about nspawn?
->>
->> Rob
->> _______________________________________________
->> Containers mailing list
->> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
->> https://lists.linuxfoundation.org/mailman/listinfo/containers
-> 
+getvpid(1, client_pid, 0)    -> pid of init task for client_pid
+
+Seems like gdb and strace could use this too for converting pids of
+newly forked tasks (IIRR they get pid from %rax) into pid from
+correct namespace for further interaction.
+
+As a bonus syscall getvpid can compare pid namespaces and
+test isolation without mounted procfs:
+
+getvpid(1, 0, pid) == 0      -> pid in our sub-pid-namespace
+getvpid(1, 0, pid) == 1      -> pid in our pid-namespace
+getvpid(1, pid1, pid2) == 0  -> pid1 isolated from pid2
+getvpid(1, pid1, pid2) == 1  -> tasks are in one pid-namespace
+getvpid(1, pid1, pid2) > 1   -> pid1 is in sub-pidns of pid2
+
+Signed-off-by: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
+---
+ arch/x86/entry/syscalls/syscall_32.tbl |    1 +
+ arch/x86/entry/syscalls/syscall_64.tbl |    1 +
+ include/linux/syscalls.h               |    1 +
+ kernel/pid.c                           |   36 ++++++++++++++++++++++++++++++++
+ 4 files changed, 39 insertions(+)
+
+diff --git a/arch/x86/entry/syscalls/syscall_32.tbl b/arch/x86/entry/syscalls/syscall_32.tbl
+index 7663c455b9f6..dadb55d42fc9 100644
+--- a/arch/x86/entry/syscalls/syscall_32.tbl
++++ b/arch/x86/entry/syscalls/syscall_32.tbl
+@@ -382,3 +382,4 @@
+ 373	i386	shutdown		sys_shutdown
+ 374	i386	userfaultfd		sys_userfaultfd
+ 375	i386	membarrier		sys_membarrier
++376	i386	getvpid			sys_getvpid
+diff --git a/arch/x86/entry/syscalls/syscall_64.tbl b/arch/x86/entry/syscalls/syscall_64.tbl
+index 278842fdf1f6..0338f2eb3b7c 100644
+--- a/arch/x86/entry/syscalls/syscall_64.tbl
++++ b/arch/x86/entry/syscalls/syscall_64.tbl
+@@ -331,6 +331,7 @@
+ 322	64	execveat		stub_execveat
+ 323	common	userfaultfd		sys_userfaultfd
+ 324	common	membarrier		sys_membarrier
++325	common	getvpid			sys_getvpid
+ 
+ #
+ # x32-specific system call numbers start at 512 to avoid cache impact
+diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+index a460e2ef2843..3405c30999e3 100644
+--- a/include/linux/syscalls.h
++++ b/include/linux/syscalls.h
+@@ -222,6 +222,7 @@ asmlinkage long sys_nanosleep(struct timespec __user *rqtp, struct timespec __us
+ asmlinkage long sys_alarm(unsigned int seconds);
+ asmlinkage long sys_getpid(void);
+ asmlinkage long sys_getppid(void);
++asmlinkage long sys_getvpid(pid_t pid, pid_t source, pid_t target);
+ asmlinkage long sys_getuid(void);
+ asmlinkage long sys_geteuid(void);
+ asmlinkage long sys_getgid(void);
+diff --git a/kernel/pid.c b/kernel/pid.c
+index ca368793808e..caa676ff7364 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -567,6 +567,42 @@ struct pid *find_ge_pid(int nr, struct pid_namespace *ns)
+ 	return pid;
+ }
+ 
++/**
++ * sys_getvpid - convert pid from one pid-namespace into pid from another
++ *
++ * @pid    - pid of requested task
++ * @source - pid of task in source pid-namespace, zero for current
++ * @target - pid of task in target pid-namespace, zero for current
++ *
++ * Returns pid from target pid-ns or zero if pid is unreachable.
++ * Returns -ESRCH if some of pids are not found.
++ */
++SYSCALL_DEFINE3(getvpid, pid_t, pid, pid_t, source, pid_t, target)
++{
++#ifdef CONFIG_PID_NS
++	struct pid_namespace *current_ns = task_active_pid_ns(current);
++	struct pid_namespace *source_ns = current_ns, *target_ns = current_ns;
++	struct pid *task_pid;
++	pid_t result = -ESRCH;
++
++	rcu_read_lock();
++	if (source)
++		source_ns = ns_of_pid(find_pid_ns(source, current_ns));
++	if (target)
++		target_ns = ns_of_pid(find_pid_ns(target, current_ns));
++	if (source_ns && target_ns) {
++		task_pid = find_pid_ns(pid, source_ns);
++		if (task_pid)
++			result = pid_nr_ns(task_pid, target_ns);
++	}
++	rcu_read_unlock();
++
++	return result;
++#else
++	return pid;
++#endif /* CONFIG_PID_NS */
++}
++
+ /*
+  * The pid hash table is scaled according to the amount of memory in the
+  * machine.  From a minimum of 16 slots up to 4096 slots at one gigabyte or
