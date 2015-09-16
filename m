@@ -1,18 +1,18 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [PATCH RFC] pidns: introduce syscall getvpid
-Date: Wed, 16 Sep 2015 09:39:39 -0500
-Message-ID: <20150916143939.GA32226__46500.1074983322$1442414395$gmane$org@mail.hallyn.com>
+Date: Wed, 16 Sep 2015 09:49:02 -0500
+Message-ID: <87twquzag1.fsf__37503.9639104672$1442415398$gmane$org@x220.int.ebiederm.org>
 References: <20150915120924.14818.49490.stgit@buzz>
 	<87h9mvg3kw.fsf@x220.int.ebiederm.org>
 	<55F832D2.1070605@yandex-team.ru> <20150915151729.GA144242@dakara>
-	<20150915174143.GE4699@ubuntumail>
-	<55F91C3D.1040209@yandex-team.ru>
+	<20150915174143.GE4699@ubuntumail> <55F91C3D.1040209@yandex-team.ru>
+	<20150916143939.GA32226@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <55F91C3D.1040209-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
+In-Reply-To: <20150916143939.GA32226-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
+	message of "Wed, 16 Sep 2015 09:39:39 -0500")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,95 +22,83 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Sep 16, 2015 at 10:37:33AM +0300, Konstantin Khlebnikov wrote:
-> On 15.09.2015 20:41, Serge Hallyn wrote:
-> >Quoting St=E9phane Graber (stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org):
-> >>On Tue, Sep 15, 2015 at 06:01:38PM +0300, Konstantin Khlebnikov wrote:
-> >>>On 15.09.2015 17:27, Eric W. Biederman wrote:
-> >>>>Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org> writes:
-> >>>>
-> >>>>>pid_t getvpid(pid_t pid, pid_t source, pid_t target);
-> >>>>>
-> >>>>>This syscall converts pid from one pid-ns into pid in another pid-ns:
-> >>>>>it takes @pid in namespace of @source task (zero for current) and
-> >>>>>returns related pid in namespace of @target task (zero for current t=
-oo).
-> >>>>>If pid is unreachable from target pid-ns then it returns zero.
-> >>>>
-> >>>>This interface as presented is inherently racy.  It would be better
-> >>>>if source and target were file descriptors referring to the namespaces
-> >>>>you wish to translate between.
-> >>>
-> >>>Yep, it's racy. As well as any operation with non-child pids.
-> >>>With file descriptors for source/target result will be racy anyway.
-> >>>
-> >>>>
-> >>>>>Such conversion is required for interaction between processes from
-> >>>>>different pid-namespaces. For example when system service talks with
-> >>>>>client from isolated container via socket about task in container:
-> >>>>
-> >>>>Sockets are already supported.  At least the metadata of sockets is.
-> >>>>
-> >>>>Maybe we need this but I am not convinced of it's utility.
-> >>>>
-> >>>>What are you trying to do that motivates this?
-> >>>
-> >>>I'm working on hierarchical container management system which
-> >>>allows to create and control nested sub-containers from containers
-> >>>( https://github.com/yandex/porto ). Main server works in host and
-> >>>have to interact with all levels of nested namespaces. This syscall
-> >>>makes some operations much easier: server must remember only pid in
-> >>>host pid namespace and convert it into right vpid on demand.
-> >>
-> >>Note that as Eric said earlier, sending a PID inside a ucred through a
-> >>unix socket will have the pid translated.
-> >>
-> >>So while your solution certainly should be faster, you can already achi=
-eve
-> >>what you want today by doing:
-> >>
-> >>=3D=3D Translate PID in container to PID in host
-> >>  - open a socket
-> >>  - setns to container's pidns
-> >>  - send ucred from that container containing the requested container P=
-ID
-> >>  - host sees the host PID
-> >>
-> >>=3D=3D Translate PID on host to PID in container
-> >>  - open a socket
-> >>  - setns to container's pidns
-> >>  - send ucred from the host containing the request host PID
-> >>    (send will fail if the host PID isn't part of that container)
-> >>  - container sees the container PID
-> >
-> >In addition, since commit e4bc332451 : /proc/PID/status: show all sets o=
-f pid according to ns
-> >we now also have 'NSpid' etc in /proc/$$/status.
-> >
-> =
-
-> As I see this works perfectly only for converting host pid into virtual.
-> =
-
-> Backward conversion is troublesome: we have to scan all pids in host
-> procfs and somehow filter tasks from container and its sub-pid-ns.
-> Or I am missing something trivial?
-
-Ah, no that doesn't help with this.
-
-What St=E9phane describes is what I've done in several projects.
-Getting it right is however actually quite tricky.  I'm not
-convinced it's at the level of "since you can do (sweep hands)
-all this, we don't need a simple syscall to do it."
-
-So I'd encourage you to resend using namespace inode fds for
-source and target as Eric suggested.  We still may decide that
-the syscall isn't needed, but it's a trivial change to your
-patch and removes that race.  And I'm not convinced it's not
-needed.
-
--serge
+IlNlcmdlIEUuIEhhbGx5biIgPHNlcmdlQGhhbGx5bi5jb20+IHdyaXRlczoKCj4gT24gV2VkLCBT
+ZXAgMTYsIDIwMTUgYXQgMTA6Mzc6MzNBTSArMDMwMCwgS29uc3RhbnRpbiBLaGxlYm5pa292IHdy
+b3RlOgo+PiBPbiAxNS4wOS4yMDE1IDIwOjQxLCBTZXJnZSBIYWxseW4gd3JvdGU6Cj4+ID5RdW90
+aW5nIFN0w6lwaGFuZSBHcmFiZXIgKHN0Z3JhYmVyQHVidW50dS5jb20pOgo+PiA+Pk9uIFR1ZSwg
+U2VwIDE1LCAyMDE1IGF0IDA2OjAxOjM4UE0gKzAzMDAsIEtvbnN0YW50aW4gS2hsZWJuaWtvdiB3
+cm90ZToKPj4gPj4+T24gMTUuMDkuMjAxNSAxNzoyNywgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6
+Cj4+ID4+Pj5Lb25zdGFudGluIEtobGVibmlrb3YgPGtobGVibmlrb3ZAeWFuZGV4LXRlYW0ucnU+
+IHdyaXRlczoKPj4gPj4+Pgo+PiA+Pj4+PnBpZF90IGdldHZwaWQocGlkX3QgcGlkLCBwaWRfdCBz
+b3VyY2UsIHBpZF90IHRhcmdldCk7Cj4+ID4+Pj4+Cj4+ID4+Pj4+VGhpcyBzeXNjYWxsIGNvbnZl
+cnRzIHBpZCBmcm9tIG9uZSBwaWQtbnMgaW50byBwaWQgaW4gYW5vdGhlciBwaWQtbnM6Cj4+ID4+
+Pj4+aXQgdGFrZXMgQHBpZCBpbiBuYW1lc3BhY2Ugb2YgQHNvdXJjZSB0YXNrICh6ZXJvIGZvciBj
+dXJyZW50KSBhbmQKPj4gPj4+Pj5yZXR1cm5zIHJlbGF0ZWQgcGlkIGluIG5hbWVzcGFjZSBvZiBA
+dGFyZ2V0IHRhc2sgKHplcm8gZm9yIGN1cnJlbnQgdG9vKS4KPj4gPj4+Pj5JZiBwaWQgaXMgdW5y
+ZWFjaGFibGUgZnJvbSB0YXJnZXQgcGlkLW5zIHRoZW4gaXQgcmV0dXJucyB6ZXJvLgo+PiA+Pj4+
+Cj4+ID4+Pj5UaGlzIGludGVyZmFjZSBhcyBwcmVzZW50ZWQgaXMgaW5oZXJlbnRseSByYWN5LiAg
+SXQgd291bGQgYmUgYmV0dGVyCj4+ID4+Pj5pZiBzb3VyY2UgYW5kIHRhcmdldCB3ZXJlIGZpbGUg
+ZGVzY3JpcHRvcnMgcmVmZXJyaW5nIHRvIHRoZSBuYW1lc3BhY2VzCj4+ID4+Pj55b3Ugd2lzaCB0
+byB0cmFuc2xhdGUgYmV0d2Vlbi4KPj4gPj4+Cj4+ID4+PlllcCwgaXQncyByYWN5LiBBcyB3ZWxs
+IGFzIGFueSBvcGVyYXRpb24gd2l0aCBub24tY2hpbGQgcGlkcy4KPj4gPj4+V2l0aCBmaWxlIGRl
+c2NyaXB0b3JzIGZvciBzb3VyY2UvdGFyZ2V0IHJlc3VsdCB3aWxsIGJlIHJhY3kgYW55d2F5Lgo+
+PiA+Pj4KPj4gPj4+Pgo+PiA+Pj4+PlN1Y2ggY29udmVyc2lvbiBpcyByZXF1aXJlZCBmb3IgaW50
+ZXJhY3Rpb24gYmV0d2VlbiBwcm9jZXNzZXMgZnJvbQo+PiA+Pj4+PmRpZmZlcmVudCBwaWQtbmFt
+ZXNwYWNlcy4gRm9yIGV4YW1wbGUgd2hlbiBzeXN0ZW0gc2VydmljZSB0YWxrcyB3aXRoCj4+ID4+
+Pj4+Y2xpZW50IGZyb20gaXNvbGF0ZWQgY29udGFpbmVyIHZpYSBzb2NrZXQgYWJvdXQgdGFzayBp
+biBjb250YWluZXI6Cj4+ID4+Pj4KPj4gPj4+PlNvY2tldHMgYXJlIGFscmVhZHkgc3VwcG9ydGVk
+LiAgQXQgbGVhc3QgdGhlIG1ldGFkYXRhIG9mIHNvY2tldHMgaXMuCj4+ID4+Pj4KPj4gPj4+Pk1h
+eWJlIHdlIG5lZWQgdGhpcyBidXQgSSBhbSBub3QgY29udmluY2VkIG9mIGl0J3MgdXRpbGl0eS4K
+Pj4gPj4+Pgo+PiA+Pj4+V2hhdCBhcmUgeW91IHRyeWluZyB0byBkbyB0aGF0IG1vdGl2YXRlcyB0
+aGlzPwo+PiA+Pj4KPj4gPj4+SSdtIHdvcmtpbmcgb24gaGllcmFyY2hpY2FsIGNvbnRhaW5lciBt
+YW5hZ2VtZW50IHN5c3RlbSB3aGljaAo+PiA+Pj5hbGxvd3MgdG8gY3JlYXRlIGFuZCBjb250cm9s
+IG5lc3RlZCBzdWItY29udGFpbmVycyBmcm9tIGNvbnRhaW5lcnMKPj4gPj4+KCBodHRwczovL2dp
+dGh1Yi5jb20veWFuZGV4L3BvcnRvICkuIE1haW4gc2VydmVyIHdvcmtzIGluIGhvc3QgYW5kCj4+
+ID4+PmhhdmUgdG8gaW50ZXJhY3Qgd2l0aCBhbGwgbGV2ZWxzIG9mIG5lc3RlZCBuYW1lc3BhY2Vz
+LiBUaGlzIHN5c2NhbGwKPj4gPj4+bWFrZXMgc29tZSBvcGVyYXRpb25zIG11Y2ggZWFzaWVyOiBz
+ZXJ2ZXIgbXVzdCByZW1lbWJlciBvbmx5IHBpZCBpbgo+PiA+Pj5ob3N0IHBpZCBuYW1lc3BhY2Ug
+YW5kIGNvbnZlcnQgaXQgaW50byByaWdodCB2cGlkIG9uIGRlbWFuZC4KPj4gPj4KPj4gPj5Ob3Rl
+IHRoYXQgYXMgRXJpYyBzYWlkIGVhcmxpZXIsIHNlbmRpbmcgYSBQSUQgaW5zaWRlIGEgdWNyZWQg
+dGhyb3VnaCBhCj4+ID4+dW5peCBzb2NrZXQgd2lsbCBoYXZlIHRoZSBwaWQgdHJhbnNsYXRlZC4K
+Pj4gPj4KPj4gPj5TbyB3aGlsZSB5b3VyIHNvbHV0aW9uIGNlcnRhaW5seSBzaG91bGQgYmUgZmFz
+dGVyLCB5b3UgY2FuIGFscmVhZHkgYWNoaWV2ZQo+PiA+PndoYXQgeW91IHdhbnQgdG9kYXkgYnkg
+ZG9pbmc6Cj4+ID4+Cj4+ID4+PT0gVHJhbnNsYXRlIFBJRCBpbiBjb250YWluZXIgdG8gUElEIGlu
+IGhvc3QKPj4gPj4gIC0gb3BlbiBhIHNvY2tldAo+PiA+PiAgLSBzZXRucyB0byBjb250YWluZXIn
+cyBwaWRucwo+PiA+PiAgLSBzZW5kIHVjcmVkIGZyb20gdGhhdCBjb250YWluZXIgY29udGFpbmlu
+ZyB0aGUgcmVxdWVzdGVkIGNvbnRhaW5lciBQSUQKPj4gPj4gIC0gaG9zdCBzZWVzIHRoZSBob3N0
+IFBJRAo+PiA+Pgo+PiA+Pj09IFRyYW5zbGF0ZSBQSUQgb24gaG9zdCB0byBQSUQgaW4gY29udGFp
+bmVyCj4+ID4+ICAtIG9wZW4gYSBzb2NrZXQKPj4gPj4gIC0gc2V0bnMgdG8gY29udGFpbmVyJ3Mg
+cGlkbnMKPj4gPj4gIC0gc2VuZCB1Y3JlZCBmcm9tIHRoZSBob3N0IGNvbnRhaW5pbmcgdGhlIHJl
+cXVlc3QgaG9zdCBQSUQKPj4gPj4gICAgKHNlbmQgd2lsbCBmYWlsIGlmIHRoZSBob3N0IFBJRCBp
+c24ndCBwYXJ0IG9mIHRoYXQgY29udGFpbmVyKQo+PiA+PiAgLSBjb250YWluZXIgc2VlcyB0aGUg
+Y29udGFpbmVyIFBJRAo+PiA+Cj4+ID5JbiBhZGRpdGlvbiwgc2luY2UgY29tbWl0IGU0YmMzMzI0
+NTEgOiAvcHJvYy9QSUQvc3RhdHVzOiBzaG93IGFsbCBzZXRzIG9mIHBpZCBhY2NvcmRpbmcgdG8g
+bnMKPj4gPndlIG5vdyBhbHNvIGhhdmUgJ05TcGlkJyBldGMgaW4gL3Byb2MvJCQvc3RhdHVzLgo+
+PiA+Cj4+IAo+PiBBcyBJIHNlZSB0aGlzIHdvcmtzIHBlcmZlY3RseSBvbmx5IGZvciBjb252ZXJ0
+aW5nIGhvc3QgcGlkIGludG8gdmlydHVhbC4KPj4gCj4+IEJhY2t3YXJkIGNvbnZlcnNpb24gaXMg
+dHJvdWJsZXNvbWU6IHdlIGhhdmUgdG8gc2NhbiBhbGwgcGlkcyBpbiBob3N0Cj4+IHByb2NmcyBh
+bmQgc29tZWhvdyBmaWx0ZXIgdGFza3MgZnJvbSBjb250YWluZXIgYW5kIGl0cyBzdWItcGlkLW5z
+Lgo+PiBPciBJIGFtIG1pc3Npbmcgc29tZXRoaW5nIHRyaXZpYWw/Cj4KPiBBaCwgbm8gdGhhdCBk
+b2Vzbid0IGhlbHAgd2l0aCB0aGlzLgo+Cj4gV2hhdCBTdMOpcGhhbmUgZGVzY3JpYmVzIGlzIHdo
+YXQgSSd2ZSBkb25lIGluIHNldmVyYWwgcHJvamVjdHMuCj4gR2V0dGluZyBpdCByaWdodCBpcyBo
+b3dldmVyIGFjdHVhbGx5IHF1aXRlIHRyaWNreS4gIEknbSBub3QKPiBjb252aW5jZWQgaXQncyBh
+dCB0aGUgbGV2ZWwgb2YgInNpbmNlIHlvdSBjYW4gZG8gKHN3ZWVwIGhhbmRzKQo+IGFsbCB0aGlz
+LCB3ZSBkb24ndCBuZWVkIGEgc2ltcGxlIHN5c2NhbGwgdG8gZG8gaXQuIgo+Cj4gU28gSSdkIGVu
+Y291cmFnZSB5b3UgdG8gcmVzZW5kIHVzaW5nIG5hbWVzcGFjZSBpbm9kZSBmZHMgZm9yCj4gc291
+cmNlIGFuZCB0YXJnZXQgYXMgRXJpYyBzdWdnZXN0ZWQuICBXZSBzdGlsbCBtYXkgZGVjaWRlIHRo
+YXQKPiB0aGUgc3lzY2FsbCBpc24ndCBuZWVkZWQsIGJ1dCBpdCdzIGEgdHJpdmlhbCBjaGFuZ2Ug
+dG8geW91cgo+IHBhdGNoIGFuZCByZW1vdmVzIHRoYXQgcmFjZS4gIEFuZCBJJ20gbm90IGNvbnZp
+bmNlZCBpdCdzIG5vdAo+IG5lZWRlZC4KCkF0IHRoaXMgcG9pbnQgbXkgcHJpbWFyeSBjb25jZXJu
+IGlzIHRoYXQgYSBwYXR0ZXJuIHRoYXQgd291bGQgbmVlZCB0byBiZQpjb252ZXJpbmcgdG8gYW5k
+IGZyb20gcGlkcyBxdWlja2x5IGlzIHBvdGVudGlhbGx5IGZ1bmRhbWVudGFsbHkgcmFjeSB0bwp0
+aGUgcG9pbnQgb2YgYnJva2VuLgoKRXNwZWNpYWxseSB3aXRoIHVuaXggZG9tYWluIHNvY2tldHMg
+cGFzc2luZyBhbmQgY29udmVydGluZyBwaWRzIGluIGEgd2F5CnRoYXQgY292ZXJzIHRoZSBjb21t
+b24gY2FzZS4KCkkgYW0gY2xlYXJseSBtaXNzaW5nIHNvbWUgbnVhbmNlIG9mIHRoaXMgdXNlIGNh
+c2UuCgpFcmljCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+XwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRp
+b24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZv
+L2NvbnRhaW5lcnM=
