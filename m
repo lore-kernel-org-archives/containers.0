@@ -1,16 +1,16 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: User namespace feature freeze lifted
-Date: Tue, 15 Sep 2015 13:44:24 -0500
-Message-ID: <20150915184424.GA21788@mail.hallyn.com>
-References: <87io7bd23x.fsf@x220.int.ebiederm.org>
-	<20150915173633.GD4699@ubuntumail>
-	<874mivd0ct.fsf@x220.int.ebiederm.org>
+From: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
+Subject: Re: [PATCH RFC] pidns: introduce syscall getvpid
+Date: Wed, 16 Sep 2015 10:37:33 +0300
+Message-ID: <55F91C3D.1040209__19450.3257553608$1442389517$gmane$org@yandex-team.ru>
+References: <20150915120924.14818.49490.stgit@buzz>
+	<87h9mvg3kw.fsf@x220.int.ebiederm.org>
+	<55F832D2.1070605@yandex-team.ru>
+	<20150915151729.GA144242@dakara> <20150915174143.GE4699@ubuntumail>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1252"; Format="flowed"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <874mivd0ct.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <20150915174143.GE4699@ubuntumail>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,47 +20,80 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+To: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, =?UTF-8?Q?St=c3=a9phane_Graber?= <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Sep 15, 2015 at 01:05:38PM -0500, Eric W. Biederman wrote:
-> Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> writes:
-> 
-> > Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> >> 
-> >> As of v4.3-rc1 all of the security issues I am aware of with the user
-> >> namespace have been addressed.  If someone knows of something I have
-> >> overlooked please let me know.
-> >> 
-> >> As much as humanly possible I want to avoid security bugs in the future
-> >> so I will endeavour to ensure any future user namespace patches receive
-> >> a close review.
-> >> 
-> >> As for merging features I expect I will likley start with Seth's code
-> >> for associating superblock with user namespaces, and then move on to
-> >> Lukasz's code for figuring out how to add namespace for smack.
-> >
-> > Should there be a User Namespace maintainer?
-> 
-> Do you mean documented in maintainers?
+On 15.09.2015 20:41, Serge Hallyn wrote:
+> Quoting St=E9phane Graber (stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org):
+>> On Tue, Sep 15, 2015 at 06:01:38PM +0300, Konstantin Khlebnikov wrote:
+>>> On 15.09.2015 17:27, Eric W. Biederman wrote:
+>>>> Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org> writes:
+>>>>
+>>>>> pid_t getvpid(pid_t pid, pid_t source, pid_t target);
+>>>>>
+>>>>> This syscall converts pid from one pid-ns into pid in another pid-ns:
+>>>>> it takes @pid in namespace of @source task (zero for current) and
+>>>>> returns related pid in namespace of @target task (zero for current to=
+o).
+>>>>> If pid is unreachable from target pid-ns then it returns zero.
+>>>>
+>>>> This interface as presented is inherently racy.  It would be better
+>>>> if source and target were file descriptors referring to the namespaces
+>>>> you wish to translate between.
+>>>
+>>> Yep, it's racy. As well as any operation with non-child pids.
+>>> With file descriptors for source/target result will be racy anyway.
+>>>
+>>>>
+>>>>> Such conversion is required for interaction between processes from
+>>>>> different pid-namespaces. For example when system service talks with
+>>>>> client from isolated container via socket about task in container:
+>>>>
+>>>> Sockets are already supported.  At least the metadata of sockets is.
+>>>>
+>>>> Maybe we need this but I am not convinced of it's utility.
+>>>>
+>>>> What are you trying to do that motivates this?
+>>>
+>>> I'm working on hierarchical container management system which
+>>> allows to create and control nested sub-containers from containers
+>>> ( https://github.com/yandex/porto ). Main server works in host and
+>>> have to interact with all levels of nested namespaces. This syscall
+>>> makes some operations much easier: server must remember only pid in
+>>> host pid namespace and convert it into right vpid on demand.
+>>
+>> Note that as Eric said earlier, sending a PID inside a ucred through a
+>> unix socket will have the pid translated.
+>>
+>> So while your solution certainly should be faster, you can already achie=
+ve
+>> what you want today by doing:
+>>
+>> =3D=3D Translate PID in container to PID in host
+>>   - open a socket
+>>   - setns to container's pidns
+>>   - send ucred from that container containing the requested container PID
+>>   - host sees the host PID
+>>
+>> =3D=3D Translate PID on host to PID in container
+>>   - open a socket
+>>   - setns to container's pidns
+>>   - send ucred from the host containing the request host PID
+>>     (send will fail if the host PID isn't part of that container)
+>>   - container sees the container PID
+>
+> In addition, since commit e4bc332451 : /proc/PID/status: show all sets of=
+ pid according to ns
+> we now also have 'NSpid' etc in /proc/$$/status.
+>
 
-Yup, to make sure people know to contact you about patches that affect
-it.
+As I see this works perfectly only for converting host pid into virtual.
 
-Maybe it's not needed as you're pretty on top of any changes that affect
-userns.  And while we could document kernel/user{,_namespace}.c as affecting
-it, I don't know how we would describe changes outside of those files that
-would relate to it.
+Backward conversion is troublesome: we have to scan all pids in host
+procfs and somehow filter tasks from container and its sub-pid-ns.
+Or I am missing something trivial?
 
-So nm :)
+-- =
 
->   Last I cheked I am wearing
-> the user namespace maintainer hat.
-> 
-> Eric
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+Konstantin
