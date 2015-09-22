@@ -1,22 +1,10 @@
-From: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
-Subject: Re: [PATCH RFC] pidns: introduce syscall getvpid
-Date: Tue, 22 Sep 2015 10:42:56 +0300
-Message-ID: <56010680.7000301@yandex-team.ru>
-References: <20150915120924.14818.49490.stgit@buzz>
-	<87h9mvg3kw.fsf@x220.int.ebiederm.org>
-	<55F832D2.1070605@yandex-team.ru>
-	<20150915151729.GA144242@dakara> <20150915174143.GE4699@ubuntumail>
-	<55F91C3D.1040209@yandex-team.ru>
-	<20150916143939.GA32226@mail.hallyn.com>
-	<87twquzag1.fsf@x220.int.ebiederm.org>
-	<20150916163123.GA1039@mail.hallyn.com>
-	<55FF7043.5020701@cn.fujitsu.com>
-	<20150921142222.GA24005@mail.hallyn.com>
+From: Mike Frysinger <vapier-aBrp7R+bbdUdnm+yROfE0A@public.gmane.org>
+Subject: handling of supplemental groups with userns
+Date: Tue, 22 Sep 2015 12:21:57 -0400
+Message-ID: <20150922162157.GB27286__39034.9995148883$1442938938$gmane$org@vapier.lan>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"; Format="flowed"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: multipart/mixed; boundary="===============2496019664533644406=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20150921142222.GA24005-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,166 +14,221 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, Chen Fan <chen.fan.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 21.09.2015 17:22, Serge E. Hallyn wrote:
-> On Mon, Sep 21, 2015 at 10:49:39AM +0800, Chen Fan wrote:
->>
->> On 09/17/2015 12:31 AM, Serge E. Hallyn wrote:
->>> On Wed, Sep 16, 2015 at 09:49:02AM -0500, Eric W. Biederman wrote:
->>>> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
->>>>
->>>>> On Wed, Sep 16, 2015 at 10:37:33AM +0300, Konstantin Khlebnikov wrote:
->>>>>> On 15.09.2015 20:41, Serge Hallyn wrote:
->>>>>>> Quoting St=E9phane Graber (stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org):
->>>>>>>> On Tue, Sep 15, 2015 at 06:01:38PM +0300, Konstantin Khlebnikov wr=
-ote:
->>>>>>>>> On 15.09.2015 17:27, Eric W. Biederman wrote:
->>>>>>>>>> Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org> writes:
->>>>>>>>>>
->>>>>>>>>>> pid_t getvpid(pid_t pid, pid_t source, pid_t target);
->>>>>>>>>>>
->>>>>>>>>>> This syscall converts pid from one pid-ns into pid in another p=
-id-ns:
->>>>>>>>>>> it takes @pid in namespace of @source task (zero for current) a=
-nd
->>>>>>>>>>> returns related pid in namespace of @target task (zero for curr=
-ent too).
->>>>>>>>>>> If pid is unreachable from target pid-ns then it returns zero.
->>>>>>>>>> This interface as presented is inherently racy.  It would be bet=
-ter
->>>>>>>>>> if source and target were file descriptors referring to the name=
-spaces
->>>>>>>>>> you wish to translate between.
->>>>>>>>> Yep, it's racy. As well as any operation with non-child pids.
->>>>>>>>> With file descriptors for source/target result will be racy anywa=
-y.
->>>>>>>>>
->>>>>>>>>>> Such conversion is required for interaction between processes f=
-rom
->>>>>>>>>>> different pid-namespaces. For example when system service talks=
- with
->>>>>>>>>>> client from isolated container via socket about task in contain=
-er:
->>>>>>>>>> Sockets are already supported.  At least the metadata of sockets=
- is.
->>>>>>>>>>
->>>>>>>>>> Maybe we need this but I am not convinced of it's utility.
->>>>>>>>>>
->>>>>>>>>> What are you trying to do that motivates this?
->>>>>>>>> I'm working on hierarchical container management system which
->>>>>>>>> allows to create and control nested sub-containers from containers
->>>>>>>>> ( https://github.com/yandex/porto ). Main server works in host and
->>>>>>>>> have to interact with all levels of nested namespaces. This sysca=
-ll
->>>>>>>>> makes some operations much easier: server must remember only pid =
-in
->>>>>>>>> host pid namespace and convert it into right vpid on demand.
->>>>>>>> Note that as Eric said earlier, sending a PID inside a ucred throu=
-gh a
->>>>>>>> unix socket will have the pid translated.
->>>>>>>>
->>>>>>>> So while your solution certainly should be faster, you can already=
- achieve
->>>>>>>> what you want today by doing:
->>>>>>>>
->>>>>>>> =3D=3D Translate PID in container to PID in host
->>>>>>>>   - open a socket
->>>>>>>>   - setns to container's pidns
->>>>>>>>   - send ucred from that container containing the requested contai=
-ner PID
->>>>>>>>   - host sees the host PID
->>>>>>>>
->>>>>>>> =3D=3D Translate PID on host to PID in container
->>>>>>>>   - open a socket
->>>>>>>>   - setns to container's pidns
->>>>>>>>   - send ucred from the host containing the request host PID
->>>>>>>>     (send will fail if the host PID isn't part of that container)
->>>>>>>>   - container sees the container PID
->>>>>>> In addition, since commit e4bc332451 : /proc/PID/status: show all s=
-ets of pid according to ns
->>>>>>> we now also have 'NSpid' etc in /proc/$$/status.
->>>>>>>
->>>>>> As I see this works perfectly only for converting host pid into virt=
-ual.
->>>>>>
->>>>>> Backward conversion is troublesome: we have to scan all pids in host
->>>>>> procfs and somehow filter tasks from container and its sub-pid-ns.
->>>>>> Or I am missing something trivial?
->>>>> Ah, no that doesn't help with this.
->>>>>
->>>>> What St=E9phane describes is what I've done in several projects.
->>>>> Getting it right is however actually quite tricky.  I'm not
->>>>> convinced it's at the level of "since you can do (sweep hands)
->>>>> all this, we don't need a simple syscall to do it."
->>>>>
->>>>> So I'd encourage you to resend using namespace inode fds for
->>>>> source and target as Eric suggested.  We still may decide that
->>>>> the syscall isn't needed, but it's a trivial change to your
->>>>> patch and removes that race.  And I'm not convinced it's not
->>>>> needed.
->>>> At this point my primary concern is that a pattern that would need to =
-be
->>>> convering to and from pids quickly is potentially fundamentally racy to
->>>> the point of broken.
->>> The cgmanager GetTasks and GetTasksRecursive, and reading of the
->>> lxcfs cgroup /tasks files, require converting every pid from the
->>> cgmanager's namespace to the reading task's namespace.
->>>
->>>> Especially with unix domain sockets passing and converting pids in a w=
-ay
->>>> that covers the common case.
->>>>
->>>> I am clearly missing some nuance of this use case.
->>> lxcfs and cgmanager are imo proof that we *can* do without the new
->>> syscall.  However, the git history will show that there are some
->>> complications, and the system load when a few systemds are starting
->>> will show that it does take a performance toll on the host at some
->>> point.  Still as I say it's doable.  The syscall implementation was
->>> very simple, though.
->>
->> Yes, previous email discussed about the implementation of syscall or pro=
-cfs:
->> http://www.gossamer-threads.com/lists/linux/kernel/1971723?search_string=
-=3Dchen%20hanxiao;#1971723
->>
->> but it seems complicated implemented by procfs, the original discussion =
-at:
->> http://www.gossamer-threads.com/lists/linux/kernel/2076440?search_string=
-=3Dchen%20hanxiao;#2076440
->
-> So please implement it, as Eric suggested, using the ns inode fds
-> instead of racy pid_t hints for namespaces.
->
 
-I don't want to loose simple way to use it.
-Sometimes caller cannot prevent races (task its child or
-locked with with ptrace) or it don't care about them.
-
-What about this design:
-
-pid_t getvpid(pid_t pid, pid_t source, pid_t target)
-
-pid > 0 - get vpid of task
-pid =3D 0 - current pid (=3D just for symmetry =3D)
-pid < 0 - get vpid of parent task (ppid of -pid)
-           [ that's really useful for poking isolated pidns ]
-source/target > 0 - pid of source/target task
-source/target =3D 0 - use current as source/target
-source/target < 0 - use pidns fd (1-arg) as source/target
-
-or the same but without =3D0 sugar:
-
-pid > 0 - get vpid of task
-pid < 0 - get vpid of parent task (ppid of -arg)
-source/target > 0  - pid of source/target task
-source/target <=3D 0 - use pidns fd (-arg) as source/target
-
-libc caches current pid, extra getpid shouldn't be a problem.
+--===============2496019664533644406==
+Content-Type: multipart/signed; micalg=pgp-sha256;
+	protocol="application/pgp-signature"; boundary="eHhjakXzOLJAF9wJ"
+Content-Disposition: inline
 
 
--- =
+--eHhjakXzOLJAF9wJ
+Content-Type: multipart/mixed; boundary="mojUlQ0s9EVzWg2t"
+Content-Disposition: inline
 
-Konstantin
+
+--mojUlQ0s9EVzWg2t
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+
+is it possible to map in supplemental groups in a userns when the user
+lacks setgid/etc... capabilities in the parent ns ?  it doesn't seem
+like it's currently possible, but is there a reason to not enable it ?
+
+basically i have a build tool that i want to isolate a bit, but it
+requires access to some of my supplemental groups.  if i map just
+my effective uid/gid, the build will fail when it tries to use the
+chown/chgrp commands (gets back EINVAL).
+
+my scenario boils down to:
+ - normal unprivileged user (uid=8282)
+ - member of multiple groups (gid=100, getgroups={100,16,250,...})
+ - create a new userns (to get access to other ns like mount/pid)
+   but still have access to existing groups where i'm root
+ - use various features that require caps (new pidns/mntns/etc...)
+ - create another userns and map back non-root users/groups
+i.e. i switch from 8282 to 0, do what i need, then switch back to 8282.
+
+i've attached a simple test program to show the issue.  it can map the
+current uid/gid fine, but fails to do so with a supplemental group.
+
+my reading of kernel/user_namespace.c shows that it's not possible:
+(1) if gid_map has any entries, map_write bails early with EPERM
+(2) if gid_map is empty, then writing a single entry (e.g. "0 100 1")
+    works, but then a 2nd write runs into (1)
+(3) if gid_map is empty, then writing multiple entries (e.g.
+    "0 100 1\n250 250 1\n") fails in new_idmap_permitted -- the first
+    check is skipped (since new_map->nr_extents is 2), and the user
+    does not have caps in the parent ns
+
+i'm aware UID_GID_MAP_MAX_EXTENTS is low, so it's not even possible if i
+had the caps to map all the existing supplemental groups, which is why i
+only want to map the few critical groups.  but assuming this use case is
+one we want to support, maybe it makes sense to add a knob to map all of
+the user's supplemental groups ?
+
+in the mean time, a "quick" fix might be to change new_idmap_permitted
+to walk all the extents, and if all the ranges are set to 1, check the
+supplemental groups in addition to the current egid ?
+-mike
+
+--mojUlQ0s9EVzWg2t
+Content-Type: text/x-c; charset=utf-8
+Content-Disposition: attachment; filename="test.c"
+
+/* To compile:
+ *  gcc test.c
+ * To run:
+ *  ./a.out [1|2|3|4|5]
+ *  ./a.out -1 "string to write to gid_map"
+ */
+
+#define _GNU_SOURCE
+#include <assert.h>
+#include <err.h>
+#include <sched.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+
+int main(int argc, char *argv[])
+{
+	int ret;
+
+	FILE *fp;
+
+	int uid = getuid();
+	int gid = getgid();
+	int nuid = 0;
+	int ngid = 0;
+	int suppgid;
+
+	gid_t *groups;
+	size_t i, gsize;
+
+	int group_mode;
+	switch (argc) {
+	case 0:
+	case 1:
+		group_mode = 1;
+	case 2:
+		group_mode = atoi(argv[1]);
+	case 3:
+		group_mode = -1;
+	}
+
+	/* Find one supplemental group */
+	gsize = getgroups(0, NULL);
+	assert(gsize != 0);
+	groups = malloc(sizeof(*groups) * gsize);
+	ret = getgroups(gsize, groups);
+	assert(ret == gsize);
+	for (i = 0; i < gsize; ++i)
+		if (groups[i] != gid) {
+			suppgid = groups[i];
+			break;
+		}
+	if (i == gsize)
+		errx(1, "could not find a supplemental group to test");
+	free(groups);
+
+	/* Create new userns */
+	assert(unshare(CLONE_NEWUSER) == 0);
+
+	/* Map the current uid */
+	fp = fopen("/proc/self/uid_map", "we");
+	assert(fp);
+	setbuf(fp, NULL);
+	fprintf(fp, "%i %i 1", nuid, uid);
+	fclose(fp);
+
+	/* Disable setgroups() */
+	fp = fopen("/proc/self/setgroups", "we");
+	assert(fp);
+	setbuf(fp, NULL);
+	fputs("deny", fp);
+	fclose(fp);
+
+	/* Map the various gids */
+	fp = fopen("/proc/self/gid_map", "we");
+	assert(fp);
+	setbuf(fp, NULL);
+	switch (group_mode) {
+	case 1:	/* This works */
+		fprintf(fp, "%i %i 1\n", ngid, gid);
+		break;
+	case 2:	/* This fails */
+		fprintf(fp, "%i %i 1\n", ngid, gid);
+		fprintf(fp, "%i %i 1\n", suppgid, suppgid);
+		break;
+	case 3:	/* This fails */
+		fprintf(fp, "%i %i 1\n%i %i 1\n", ngid, gid, suppgid, suppgid);
+		break;
+	case 4:	/* This fails */
+		fprintf(fp, "%i %i 1\n", suppgid, suppgid);
+		break;
+	case 5:	/* This fails */
+		fprintf(fp, "0 0 10000\n");
+		break;
+	case -1:
+		fprintf(fp, argv[2]);
+		break;
+	}
+	fclose(fp);
+
+	/* Validate */
+	printf("uid:%i gid:%i\n", getuid(), getgid());
+	gsize = getgroups(0, NULL);
+	assert(gsize != 0);
+	groups = malloc(sizeof(*groups) * gsize);
+	ret = getgroups(gsize, groups);
+	assert(ret == gsize);
+	printf("groups: ");
+	for (i = 0; i < gsize; ++i)
+		printf("%i ", groups[i]);
+	printf("\n");
+	free(groups);
+}
+
+--mojUlQ0s9EVzWg2t--
+
+--eHhjakXzOLJAF9wJ
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBCAAGBQJWAYAlAAoJEEFjO5/oN/WB098P/2zsXLbHhh17a1gTcXIy6IZJ
+HZOTUnnFtc0BHd8BuJ8X0ohUFUXtxAFD7T8kbb6iWvUumEJLy7oiWFA0pUkhMyOj
+YZ+18UmDWUSIpvQklXIX+rTthPf1YFVPOWuPEBZY+8Ty9Ud4/5mdz17nXG2Z6Twk
+d0X8+3BtfdXX/5mB1seXxwJklQJIErIZ2/hHbXrNIqNcR9PCUmT718/kvmsPQm5T
+kcqqvNh91bW+znmXg70UIG9voinGODb7TiN9DiduWOPOvg60JK9LQHdMFaAJoa8n
+eJDTbh/YeFOoHQEO+IIQOfFbwx25x9s+ffLZu4IP6DyxeJiArIoW6OIJT4xBUB6b
+9ul3oJ2NLg/FPC8WpeJzZPgwvrDNJemxbiZoOaPu/RYq0P21Et7Oa5G6kAadtDAP
+/YHjKhO9/dTzRQ2P2242ooylOahTl1cGFfHr1/wPjd012VEfBW3Vceqy3CDFvCoZ
+gOd0fc5jsZli0D10n5ZrG008rfbRiEzpccNtfKrUI2ceYE+BB2Qc8BMbPrhjltFz
+lL+uOklmdb0SeQpURQAo39bsP2e5HMSO97RrS3ko9HBe4xpRNJe1j0tweI7cpRQM
+7DqwXsDoJiU7xsjEvBsDe8xweygIqb4benuGqdBmH7KCJVjLn9VRCUkJNrMud5gB
+njVwL4FekRgZaHSFqMQJ
+=0AuI
+-----END PGP SIGNATURE-----
+
+--eHhjakXzOLJAF9wJ--
+
+--===============2496019664533644406==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============2496019664533644406==--
