@@ -1,18 +1,13 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH] pidns: fix set/getpriority and ioprio_set/get in
-	PRIO_USER mode
-Date: Fri, 25 Sep 2015 00:32:28 -0500
-Message-ID: <87r3lnkqs3.fsf@x220.int.ebiederm.org>
-References: <xm26io7a9lwz.fsf@sword-of-the-dawn.mtv.corp.google.com>
-	<20150917142926.1a68072b19ef0ada47eabe43@linux-foundation.org>
-	<874minis1b.fsf@x220.int.ebiederm.org>
-	<xm268u7zaa1b.fsf@sword-of-the-dawn.mtv.corp.google.com>
+From: Chen Fan <chen.fan.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH RFC v2] pidns: introduce syscall getvpid
+Date: Fri, 25 Sep 2015 16:36:40 +0800
+Message-ID: <56050798.7010503@cn.fujitsu.com>
+References: <20150924135332.27813.21640.stgit@buzz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <xm268u7zaa1b.fsf-JCFbMnKa7cQtD/Kc53dSbQXbjwVhy2X2YJqu5kTmcBRl57MIdRCFDg@public.gmane.org>
-	(bsegall-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org's message of "Mon, 21 Sep 2015 11:42:56 -0700")
+In-Reply-To: <20150924135332.27813.21640.stgit@buzz>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,128 +17,191 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: bsegall-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, ambrose-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-bsegall-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org writes:
 
-> ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) writes:
+On 09/24/2015 09:53 PM, Konstantin Khlebnikov wrote:
+> pid_t getvpid(pid_t pid, int source, int target);
 >
->> Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> writes:
->>
->>> On Wed, 16 Sep 2015 12:58:04 -0700 bsegall-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org wrote:
->>>
->>>> setpriority(PRIO_USER, 0, x) will change the priority of tasks outside
->>>> of the current pid namespace. This is in contrast to both the other
->>>> modes of setpriority and the example of kill(-1). Fix this. getpriority
->>>> and ioprio have the same failure mode, fix them too.
->>>
->>> (cc Eric)
->> (cc Containers)
->>
->> Interesting.  Strictly speaking the current behavior is not wrong.
->> Searching for all threads with a given uid has nothing to do with pids
->> so the pid namespace not limiting them is natural.
->>
->> In practice I don't think anyone cares either way (except people with
->> one color or another of security hat on) so this might be a change we
->> can actually make.
->>
->> In general it is probably better not to share uids and gids between
->> containers.
->>
->> Ben do you have a use case where this actually matters?  Or was this a
->> case of "That looks wrong..."?
->>
->> Eric
+> This syscall converts pid from source pid-namespace into pid in target
+> pid-namespace. Namespaces are defined by file descriptors pointing to
+> namespace entries in proc (/proc/[pid]/ns/pid). If source / target is
+> negative then current pid namespace is used.
 >
-> I believe we generally want this for isolation of a process, without
-> requiring root initially (and a non-trivial uid_map, not to mention
-> creating the extra users, requires root). There are probably other holes
-> in using namespaces like this, but are they intended?
-
-After some more thinking about it this patch sounds justifiable.
-
-My goal with namespaces is not to build perfect isolation mechanisms
-as that can get into ill defined territory, but to build well defined
-mechanisms.  And to handle the corner cases so you can use only
-a single namespace with well defined results.
-
-In this case you have found the two interfaces I am aware of that
-identify processes by uid instead of by pid.  Which quite frankly is
-weird.  Unfortunately the weird unexpected cases are hard to handle
-in the usual way.
-
-I was hoping for a little more information.  Changes like this one we
-have to be careful of because someone might be depending on the current
-behavior.  I don't think they are and I do think this make sense as part
-of the pid namespace.
-
-Acked-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-
-> (Cc the relevant team member at google)
+> If pid is negative then getvpid() returns pid of parent task for -pid.
 >
->>
->>>> Signed-off-by: Ben Segall <bsegall-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
->>>> Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
->>>> Cc: Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
->>>> ---
->>>>  block/ioprio.c | 6 ++++--
->>>>  kernel/sys.c   | 4 ++--
->>>>  2 files changed, 6 insertions(+), 4 deletions(-)
->>>> 
->>>> diff --git a/block/ioprio.c b/block/ioprio.c
->>>> index 31666c9..cc7800e 100644
->>>> --- a/block/ioprio.c
->>>> +++ b/block/ioprio.c
->>>> @@ -123,7 +123,8 @@ SYSCALL_DEFINE3(ioprio_set, int, which, int, who, int, ioprio)
->>>>  				break;
->>>>  
->>>>  			do_each_thread(g, p) {
->>>> -				if (!uid_eq(task_uid(p), uid))
->>>> +				if (!uid_eq(task_uid(p), uid) ||
->>>> +				    !task_pid_vnr(p))
->>>>  					continue;
->>>>  				ret = set_task_ioprio(p, ioprio);
->>>>  				if (ret)
->>>> @@ -220,7 +221,8 @@ SYSCALL_DEFINE2(ioprio_get, int, which, int, who)
->>>>  				break;
->>>>  
->>>>  			do_each_thread(g, p) {
->>>> -				if (!uid_eq(task_uid(p), user->uid))
->>>> +				if (!uid_eq(task_uid(p), user->uid) ||
->>>> +				    !task_pid_vnr(p))
->>>>  					continue;
->>>>  				tmpio = get_task_ioprio(p);
->>>>  				if (tmpio < 0)
->>>> diff --git a/kernel/sys.c b/kernel/sys.c
->>>> index fa2f2f6..6af9212 100644
->>>> --- a/kernel/sys.c
->>>> +++ b/kernel/sys.c
->>>> @@ -222,7 +222,7 @@ SYSCALL_DEFINE3(setpriority, int, which, int, who, int, niceval)
->>>>  				goto out_unlock;	/* No processes for this user */
->>>>  		}
->>>>  		do_each_thread(g, p) {
->>>> -			if (uid_eq(task_uid(p), uid))
->>>> +			if (uid_eq(task_uid(p), uid) && task_pid_vnr(p))
->>>>  				error = set_one_prio(p, niceval, error);
->>>>  		} while_each_thread(g, p);
->>>>  		if (!uid_eq(uid, cred->uid))
->>>> @@ -290,7 +290,7 @@ SYSCALL_DEFINE2(getpriority, int, which, int, who)
->>>>  				goto out_unlock;	/* No processes for this user */
->>>>  		}
->>>>  		do_each_thread(g, p) {
->>>> -			if (uid_eq(task_uid(p), uid)) {
->>>> +			if (uid_eq(task_uid(p), uid) && task_pid_vnr(p)) {
->>>>  				niceval = nice_to_rlimit(task_nice(p));
->>>>  				if (niceval > retval)
->>>>  					retval = niceval;
->>>> -- 
->>>> 2.6.0.rc0.131.gf624c3d
->>>> 
->>>> --
->>>> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
->>>> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
->>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>> Please read the FAQ at  http://www.tux.org/lkml/
+> If pid is unreachable from target namespace then syscall returns zero.
+>
+> Errors:
+> ESRCH    task not found
+> EBADF    closed file descriptor
+> EINVAL   not pid-namespace file descriptor
+>
+> Examples:
+> getvpid(pid, ns, -1)      -> pid in our pid namespace
+> getvpid(pid, -1, ns)      -> pid in container
+> getvpid(1, ns1, ns2) > 0  -> ns1 inside ns2
+> getvpid(1, ns1, ns2) == 0 -> ns1 outside ns2
+> getvpid(1, ns, -1)        -> init task of pid-namespace
+> getvpid(-1, ns, -1)       -> task in parent pid-namespace
+> getvpid(-pid, -1, -1)     -> get ppid by pid
+>
+> Signed-off-by: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
+>
+> ---
+>
+> v2:
+> * use namespace-fd as second/third argument
+> * add -pid for getting parent pid
+> * move code into kernel/sys.c next to getppid
+> * drop ifdef CONFIG_PID_NS
+> * add generic syscall
+> ---
+>   arch/x86/entry/syscalls/syscall_32.tbl |    1 +
+>   arch/x86/entry/syscalls/syscall_64.tbl |    1 +
+>   include/linux/syscalls.h               |    1 +
+>   include/uapi/asm-generic/unistd.h      |    4 ++
+>   kernel/sys.c                           |   63 ++++++++++++++++++++++++++++++++
+>   5 files changed, 69 insertions(+), 1 deletion(-)
+>
+> diff --git a/arch/x86/entry/syscalls/syscall_32.tbl b/arch/x86/entry/syscalls/syscall_32.tbl
+> index 7663c455b9f6..dadb55d42fc9 100644
+> --- a/arch/x86/entry/syscalls/syscall_32.tbl
+> +++ b/arch/x86/entry/syscalls/syscall_32.tbl
+> @@ -382,3 +382,4 @@
+>   373	i386	shutdown		sys_shutdown
+>   374	i386	userfaultfd		sys_userfaultfd
+>   375	i386	membarrier		sys_membarrier
+> +376	i386	getvpid			sys_getvpid
+> diff --git a/arch/x86/entry/syscalls/syscall_64.tbl b/arch/x86/entry/syscalls/syscall_64.tbl
+> index 278842fdf1f6..0338f2eb3b7c 100644
+> --- a/arch/x86/entry/syscalls/syscall_64.tbl
+> +++ b/arch/x86/entry/syscalls/syscall_64.tbl
+> @@ -331,6 +331,7 @@
+>   322	64	execveat		stub_execveat
+>   323	common	userfaultfd		sys_userfaultfd
+>   324	common	membarrier		sys_membarrier
+> +325	common	getvpid			sys_getvpid
+>   
+>   #
+>   # x32-specific system call numbers start at 512 to avoid cache impact
+> diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+> index a460e2ef2843..01ac603c8b5c 100644
+> --- a/include/linux/syscalls.h
+> +++ b/include/linux/syscalls.h
+> @@ -222,6 +222,7 @@ asmlinkage long sys_nanosleep(struct timespec __user *rqtp, struct timespec __us
+>   asmlinkage long sys_alarm(unsigned int seconds);
+>   asmlinkage long sys_getpid(void);
+>   asmlinkage long sys_getppid(void);
+> +asmlinkage long sys_getvpid(pid_t pid, int source, int target);
+>   asmlinkage long sys_getuid(void);
+>   asmlinkage long sys_geteuid(void);
+>   asmlinkage long sys_getgid(void);
+> diff --git a/include/uapi/asm-generic/unistd.h b/include/uapi/asm-generic/unistd.h
+> index 8da542a2874d..163df44b23cf 100644
+> --- a/include/uapi/asm-generic/unistd.h
+> +++ b/include/uapi/asm-generic/unistd.h
+> @@ -711,9 +711,11 @@ __SYSCALL(__NR_bpf, sys_bpf)
+>   __SC_COMP(__NR_execveat, sys_execveat, compat_sys_execveat)
+>   #define __NR_membarrier 282
+>   __SYSCALL(__NR_membarrier, sys_membarrier)
+> +#define __NR_getvpid 283
+> +__SYSCALL(__NR_getvpid, sys_getvpid)
+>   
+>   #undef __NR_syscalls
+> -#define __NR_syscalls 283
+> +#define __NR_syscalls 284
+>   
+>   /*
+>    * All syscalls below here should go away really,
+> diff --git a/kernel/sys.c b/kernel/sys.c
+> index fa2f2f671a5c..fbfe938dd9d7 100644
+> --- a/kernel/sys.c
+> +++ b/kernel/sys.c
+> @@ -46,6 +46,7 @@
+>   #include <linux/syscalls.h>
+>   #include <linux/kprobes.h>
+>   #include <linux/user_namespace.h>
+> +#include <linux/proc_ns.h>
+>   #include <linux/binfmts.h>
+>   
+>   #include <linux/sched.h>
+> @@ -855,6 +856,68 @@ SYSCALL_DEFINE0(getppid)
+>   	return pid;
+>   }
+>   
+> +SYSCALL_DEFINE3(getvpid, pid_t, pid, int, source, int, target)
+> +{
+> +	struct file *source_file = NULL, *target_file = NULL;
+> +	struct pid_namespace *source_ns, *target_ns;
+> +	struct pid *struct_pid;
+> +	struct ns_common *ns;
+> +	pid_t result;
+> +
+> +	if (source >= 0) {
+> +		source_file = proc_ns_fget(source);
+> +		result = PTR_ERR(source_file);
+> +		if (IS_ERR(source_file))
+> +			goto out;
+> +		ns = get_proc_ns(file_inode(source_file));
+> +		result = -EINVAL;
+> +		if (ns->ops->type != CLONE_NEWPID)
+> +			goto out;
+> +		source_ns = container_of(ns, struct pid_namespace, ns);
+> +	} else
+> +		source_ns = task_active_pid_ns(current);
+> +
+> +	if (target >= 0) {
+> +		target_file = proc_ns_fget(target);
+> +		result = PTR_ERR(target_file);
+> +		if (IS_ERR(target_file))
+> +			goto out;
+> +		ns = get_proc_ns(file_inode(target_file));
+> +		result = -EINVAL;
+> +		if (ns->ops->type != CLONE_NEWPID)
+> +			goto out;
+> +		target_ns = container_of(ns, struct pid_namespace, ns);
+> +	} else
+> +		target_ns = task_active_pid_ns(current);
+> +
+the source ns and target ns translation looks the same, why not extract
+a new method to do the job.
+
+Thanks,
+Chen
+> +	rcu_read_lock();
+> +	struct_pid = find_pid_ns(abs(pid), source_ns);
+> +
+> +	if (struct_pid && pid < 0) {
+> +		struct task_struct *task;
+> +
+> +		task = pid_task(struct_pid, PIDTYPE_PID);
+> +		if (task)
+> +			task = rcu_dereference(task->real_parent);
+> +		struct_pid = task ? task_pid(task) : NULL;
+> +	}
+> +
+> +	if (struct_pid)
+> +		result = pid_nr_ns(struct_pid, target_ns);
+> +	else
+> +		result = -ESRCH;
+> +	rcu_read_unlock();
+> +
+> +out:
+> +	if (!IS_ERR_OR_NULL(target_file))
+> +		fput(target_file);
+> +
+> +	if (!IS_ERR_OR_NULL(source_file))
+> +		fput(source_file);
+> +
+> +	return result;
+> +}
+> +
+>   SYSCALL_DEFINE0(getuid)
+>   {
+>   	/* Only we change this so SMP safe */
+>
+> .
+>
