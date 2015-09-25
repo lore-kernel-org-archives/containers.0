@@ -1,13 +1,11 @@
-From: Chen Fan <chen.fan.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH RFC v2] pidns: introduce syscall getvpid
-Date: Fri, 25 Sep 2015 16:36:40 +0800
-Message-ID: <56050798.7010503@cn.fujitsu.com>
-References: <20150924135332.27813.21640.stgit@buzz>
+From: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
+Subject: [PATCH RFC v3 1/2] nsfs: replace proc_ns_fget() with proc_ns_fdget()
+Date: Fri, 25 Sep 2015 16:52:46 +0300
+Message-ID: <20150925135246.27620.97496.stgit__27468.2962139652$1443189199$gmane$org@buzz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20150924135332.27813.21640.stgit@buzz>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,191 +15,147 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Roman Gushchin <klamm-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Chen Fan <chen.fan.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+New helper function returns pointer to struct ns_common, can check
+namespace type and uses struct fd for returning file reference:
+this saves couple atomic operations for single-threaded applications.
 
-On 09/24/2015 09:53 PM, Konstantin Khlebnikov wrote:
-> pid_t getvpid(pid_t pid, int source, int target);
->
-> This syscall converts pid from source pid-namespace into pid in target
-> pid-namespace. Namespaces are defined by file descriptors pointing to
-> namespace entries in proc (/proc/[pid]/ns/pid). If source / target is
-> negative then current pid namespace is used.
->
-> If pid is negative then getvpid() returns pid of parent task for -pid.
->
-> If pid is unreachable from target namespace then syscall returns zero.
->
-> Errors:
-> ESRCH    task not found
-> EBADF    closed file descriptor
-> EINVAL   not pid-namespace file descriptor
->
-> Examples:
-> getvpid(pid, ns, -1)      -> pid in our pid namespace
-> getvpid(pid, -1, ns)      -> pid in container
-> getvpid(1, ns1, ns2) > 0  -> ns1 inside ns2
-> getvpid(1, ns1, ns2) == 0 -> ns1 outside ns2
-> getvpid(1, ns, -1)        -> init task of pid-namespace
-> getvpid(-1, ns, -1)       -> task in parent pid-namespace
-> getvpid(-pid, -1, -1)     -> get ppid by pid
->
-> Signed-off-by: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
->
-> ---
->
-> v2:
-> * use namespace-fd as second/third argument
-> * add -pid for getting parent pid
-> * move code into kernel/sys.c next to getppid
-> * drop ifdef CONFIG_PID_NS
-> * add generic syscall
-> ---
->   arch/x86/entry/syscalls/syscall_32.tbl |    1 +
->   arch/x86/entry/syscalls/syscall_64.tbl |    1 +
->   include/linux/syscalls.h               |    1 +
->   include/uapi/asm-generic/unistd.h      |    4 ++
->   kernel/sys.c                           |   63 ++++++++++++++++++++++++++++++++
->   5 files changed, 69 insertions(+), 1 deletion(-)
->
-> diff --git a/arch/x86/entry/syscalls/syscall_32.tbl b/arch/x86/entry/syscalls/syscall_32.tbl
-> index 7663c455b9f6..dadb55d42fc9 100644
-> --- a/arch/x86/entry/syscalls/syscall_32.tbl
-> +++ b/arch/x86/entry/syscalls/syscall_32.tbl
-> @@ -382,3 +382,4 @@
->   373	i386	shutdown		sys_shutdown
->   374	i386	userfaultfd		sys_userfaultfd
->   375	i386	membarrier		sys_membarrier
-> +376	i386	getvpid			sys_getvpid
-> diff --git a/arch/x86/entry/syscalls/syscall_64.tbl b/arch/x86/entry/syscalls/syscall_64.tbl
-> index 278842fdf1f6..0338f2eb3b7c 100644
-> --- a/arch/x86/entry/syscalls/syscall_64.tbl
-> +++ b/arch/x86/entry/syscalls/syscall_64.tbl
-> @@ -331,6 +331,7 @@
->   322	64	execveat		stub_execveat
->   323	common	userfaultfd		sys_userfaultfd
->   324	common	membarrier		sys_membarrier
-> +325	common	getvpid			sys_getvpid
->   
->   #
->   # x32-specific system call numbers start at 512 to avoid cache impact
-> diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
-> index a460e2ef2843..01ac603c8b5c 100644
-> --- a/include/linux/syscalls.h
-> +++ b/include/linux/syscalls.h
-> @@ -222,6 +222,7 @@ asmlinkage long sys_nanosleep(struct timespec __user *rqtp, struct timespec __us
->   asmlinkage long sys_alarm(unsigned int seconds);
->   asmlinkage long sys_getpid(void);
->   asmlinkage long sys_getppid(void);
-> +asmlinkage long sys_getvpid(pid_t pid, int source, int target);
->   asmlinkage long sys_getuid(void);
->   asmlinkage long sys_geteuid(void);
->   asmlinkage long sys_getgid(void);
-> diff --git a/include/uapi/asm-generic/unistd.h b/include/uapi/asm-generic/unistd.h
-> index 8da542a2874d..163df44b23cf 100644
-> --- a/include/uapi/asm-generic/unistd.h
-> +++ b/include/uapi/asm-generic/unistd.h
-> @@ -711,9 +711,11 @@ __SYSCALL(__NR_bpf, sys_bpf)
->   __SC_COMP(__NR_execveat, sys_execveat, compat_sys_execveat)
->   #define __NR_membarrier 282
->   __SYSCALL(__NR_membarrier, sys_membarrier)
-> +#define __NR_getvpid 283
-> +__SYSCALL(__NR_getvpid, sys_getvpid)
->   
->   #undef __NR_syscalls
-> -#define __NR_syscalls 283
-> +#define __NR_syscalls 284
->   
->   /*
->    * All syscalls below here should go away really,
-> diff --git a/kernel/sys.c b/kernel/sys.c
-> index fa2f2f671a5c..fbfe938dd9d7 100644
-> --- a/kernel/sys.c
-> +++ b/kernel/sys.c
-> @@ -46,6 +46,7 @@
->   #include <linux/syscalls.h>
->   #include <linux/kprobes.h>
->   #include <linux/user_namespace.h>
-> +#include <linux/proc_ns.h>
->   #include <linux/binfmts.h>
->   
->   #include <linux/sched.h>
-> @@ -855,6 +856,68 @@ SYSCALL_DEFINE0(getppid)
->   	return pid;
->   }
->   
-> +SYSCALL_DEFINE3(getvpid, pid_t, pid, int, source, int, target)
-> +{
-> +	struct file *source_file = NULL, *target_file = NULL;
-> +	struct pid_namespace *source_ns, *target_ns;
-> +	struct pid *struct_pid;
-> +	struct ns_common *ns;
-> +	pid_t result;
-> +
-> +	if (source >= 0) {
-> +		source_file = proc_ns_fget(source);
-> +		result = PTR_ERR(source_file);
-> +		if (IS_ERR(source_file))
-> +			goto out;
-> +		ns = get_proc_ns(file_inode(source_file));
-> +		result = -EINVAL;
-> +		if (ns->ops->type != CLONE_NEWPID)
-> +			goto out;
-> +		source_ns = container_of(ns, struct pid_namespace, ns);
-> +	} else
-> +		source_ns = task_active_pid_ns(current);
-> +
-> +	if (target >= 0) {
-> +		target_file = proc_ns_fget(target);
-> +		result = PTR_ERR(target_file);
-> +		if (IS_ERR(target_file))
-> +			goto out;
-> +		ns = get_proc_ns(file_inode(target_file));
-> +		result = -EINVAL;
-> +		if (ns->ops->type != CLONE_NEWPID)
-> +			goto out;
-> +		target_ns = container_of(ns, struct pid_namespace, ns);
-> +	} else
-> +		target_ns = task_active_pid_ns(current);
-> +
-the source ns and target ns translation looks the same, why not extract
-a new method to do the job.
+Signed-off-by: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
+---
+ fs/nsfs.c                |   20 +++++++++++++-------
+ include/linux/proc_ns.h  |    4 +++-
+ kernel/nsproxy.c         |   15 +++++----------
+ net/core/net_namespace.c |   18 ++++++------------
+ 4 files changed, 27 insertions(+), 30 deletions(-)
 
-Thanks,
-Chen
-> +	rcu_read_lock();
-> +	struct_pid = find_pid_ns(abs(pid), source_ns);
-> +
-> +	if (struct_pid && pid < 0) {
-> +		struct task_struct *task;
-> +
-> +		task = pid_task(struct_pid, PIDTYPE_PID);
-> +		if (task)
-> +			task = rcu_dereference(task->real_parent);
-> +		struct_pid = task ? task_pid(task) : NULL;
-> +	}
-> +
-> +	if (struct_pid)
-> +		result = pid_nr_ns(struct_pid, target_ns);
-> +	else
-> +		result = -ESRCH;
-> +	rcu_read_unlock();
-> +
-> +out:
-> +	if (!IS_ERR_OR_NULL(target_file))
-> +		fput(target_file);
-> +
-> +	if (!IS_ERR_OR_NULL(source_file))
-> +		fput(source_file);
-> +
-> +	return result;
-> +}
-> +
->   SYSCALL_DEFINE0(getuid)
->   {
->   	/* Only we change this so SMP safe */
->
-> .
->
+diff --git a/fs/nsfs.c b/fs/nsfs.c
+index 8f20d6016e20..a2e803c97960 100644
+--- a/fs/nsfs.c
++++ b/fs/nsfs.c
+@@ -119,21 +119,27 @@ int ns_get_name(char *buf, size_t size, struct task_struct *task,
+ 	return res;
+ }
+ 
+-struct file *proc_ns_fget(int fd)
++struct ns_common *proc_ns_fdget(int fd, int nstype, struct fd *fd_ref)
+ {
+-	struct file *file;
++	struct ns_common *ns;
++	struct fd f;
+ 
+-	file = fget(fd);
+-	if (!file)
++	f = fdget(fd);
++	if (!f.file)
+ 		return ERR_PTR(-EBADF);
+ 
+-	if (file->f_op != &ns_file_operations)
++	if (f.file->f_op != &ns_file_operations)
++		goto out_invalid;
++
++	ns = get_proc_ns(file_inode(f.file));
++	if (nstype && (ns->ops->type != nstype))
+ 		goto out_invalid;
+ 
+-	return file;
++	*fd_ref = f;
++	return ns;
+ 
+ out_invalid:
+-	fput(file);
++	fdput(f);
+ 	return ERR_PTR(-EINVAL);
+ }
+ 
+diff --git a/include/linux/proc_ns.h b/include/linux/proc_ns.h
+index 42dfc615dbf8..406ea4617606 100644
+--- a/include/linux/proc_ns.h
++++ b/include/linux/proc_ns.h
+@@ -9,6 +9,7 @@
+ struct pid_namespace;
+ struct nsproxy;
+ struct path;
++struct fd;
+ 
+ struct proc_ns_operations {
+ 	const char *name;
+@@ -65,7 +66,8 @@ static inline int ns_alloc_inum(struct ns_common *ns)
+ 
+ #define ns_free_inum(ns) proc_free_inum((ns)->inum)
+ 
+-extern struct file *proc_ns_fget(int fd);
++extern struct ns_common *proc_ns_fdget(int fd, int nstype, struct fd *fd_ref);
++
+ #define get_proc_ns(inode) ((struct ns_common *)(inode)->i_private)
+ extern void *ns_get_path(struct path *path, struct task_struct *task,
+ 			const struct proc_ns_operations *ns_ops);
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index 49746c81ad8d..689b929a0fcb 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -222,18 +222,13 @@ SYSCALL_DEFINE2(setns, int, fd, int, nstype)
+ {
+ 	struct task_struct *tsk = current;
+ 	struct nsproxy *new_nsproxy;
+-	struct file *file;
++	struct fd fd_ref;
+ 	struct ns_common *ns;
+ 	int err;
+ 
+-	file = proc_ns_fget(fd);
+-	if (IS_ERR(file))
+-		return PTR_ERR(file);
+-
+-	err = -EINVAL;
+-	ns = get_proc_ns(file_inode(file));
+-	if (nstype && (ns->ops->type != nstype))
+-		goto out;
++	ns = proc_ns_fdget(fd, nstype, &fd_ref);
++	if (IS_ERR(ns))
++		return PTR_ERR(ns);
+ 
+ 	new_nsproxy = create_new_namespaces(0, tsk, current_user_ns(), tsk->fs);
+ 	if (IS_ERR(new_nsproxy)) {
+@@ -248,7 +243,7 @@ SYSCALL_DEFINE2(setns, int, fd, int, nstype)
+ 	}
+ 	switch_task_namespaces(tsk, new_nsproxy);
+ out:
+-	fput(file);
++	fdput(fd_ref);
+ 	return err;
+ }
+ 
+diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
+index 2c2eb1b629b1..ffc5e6df86dc 100644
+--- a/net/core/net_namespace.c
++++ b/net/core/net_namespace.c
+@@ -465,21 +465,15 @@ EXPORT_SYMBOL_GPL(__put_net);
+ 
+ struct net *get_net_ns_by_fd(int fd)
+ {
+-	struct file *file;
+ 	struct ns_common *ns;
++	struct fd fd_ref;
+ 	struct net *net;
+ 
+-	file = proc_ns_fget(fd);
+-	if (IS_ERR(file))
+-		return ERR_CAST(file);
+-
+-	ns = get_proc_ns(file_inode(file));
+-	if (ns->ops == &netns_operations)
+-		net = get_net(container_of(ns, struct net, ns));
+-	else
+-		net = ERR_PTR(-EINVAL);
+-
+-	fput(file);
++	ns = proc_ns_fdget(fd, CLONE_NEWNET, &fd_ref);
++	if (IS_ERR(ns))
++		return ERR_CAST(ns);
++	net = get_net(container_of(ns, struct net, ns));
++	fdput(fd_ref);
+ 	return net;
+ }
