@@ -1,16 +1,18 @@
-From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH RFC v2] pidns: introduce syscall getvpid
-Date: Thu, 24 Sep 2015 19:34:30 +0200
-Message-ID: <20150924173430.GA31073__14672.5202248946$1443116272$gmane$org@redhat.com>
-References: <20150924135332.27813.21640.stgit@buzz>
-	<20150924145647.GA24151@redhat.com>
-	<CALYGNiPCVFNLi=1iL1gOf411iU6tT+DbVx1JuGG+f73Rpvx3dw@mail.gmail.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH] pidns: fix set/getpriority and ioprio_set/get in
+	PRIO_USER mode
+Date: Fri, 25 Sep 2015 00:32:28 -0500
+Message-ID: <87r3lnkqs3.fsf@x220.int.ebiederm.org>
+References: <xm26io7a9lwz.fsf@sword-of-the-dawn.mtv.corp.google.com>
+	<20150917142926.1a68072b19ef0ada47eabe43@linux-foundation.org>
+	<874minis1b.fsf@x220.int.ebiederm.org>
+	<xm268u7zaa1b.fsf@sword-of-the-dawn.mtv.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <CALYGNiPCVFNLi=1iL1gOf411iU6tT+DbVx1JuGG+f73Rpvx3dw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <xm268u7zaa1b.fsf-JCFbMnKa7cQtD/Kc53dSbQXbjwVhy2X2YJqu5kTmcBRl57MIdRCFDg@public.gmane.org>
+	(bsegall-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org's message of "Mon, 21 Sep 2015 11:42:56 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,66 +22,128 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Konstantin Khlebnikov <koct9i-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Chen Fan <chen.fan.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: bsegall-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, ambrose-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 09/24, Konstantin Khlebnikov wrote:
+bsegall-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org writes:
+
+> ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) writes:
 >
-> On Thu, Sep 24, 2015 at 5:56 PM, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> > On 09/24, Konstantin Khlebnikov wrote:
-> >>
-> >> +SYSCALL_DEFINE3(getvpid, pid_t, pid, int, source, int, target)
-> >> +{
-> >> +     struct file *source_file = NULL, *target_file = NULL;
-> >> +     struct pid_namespace *source_ns, *target_ns;
-> >> +     struct pid *struct_pid;
-> >> +     struct ns_common *ns;
-> >> +     pid_t result;
-> >> +
-> >> +     if (source >= 0) {
-> >> +             source_file = proc_ns_fget(source);
-> >> +             result = PTR_ERR(source_file);
-> >> +             if (IS_ERR(source_file))
-> >> +                     goto out;
-> >> +             ns = get_proc_ns(file_inode(source_file));
-> >> +             result = -EINVAL;
-> >> +             if (ns->ops->type != CLONE_NEWPID)
-> >> +                     goto out;
-> >> +             source_ns = container_of(ns, struct pid_namespace, ns);
-> >> +     } else
-> >> +             source_ns = task_active_pid_ns(current);
-> >> +
-> >> +     if (target >= 0) {
-> >> +             target_file = proc_ns_fget(target);
-> >> +             result = PTR_ERR(target_file);
-> >> +             if (IS_ERR(target_file))
-> >> +                     goto out;
-> >> +             ns = get_proc_ns(file_inode(target_file));
-> >> +             result = -EINVAL;
-> >> +             if (ns->ops->type != CLONE_NEWPID)
-> >> +                     goto out;
-> >> +             target_ns = container_of(ns, struct pid_namespace, ns);
-> >> +     } else
-> >> +             target_ns = task_active_pid_ns(current);
-> >> +
-> >
-> > Hmm. Eric, Konstantin, how about (uncompiled/untested) patch below
-> > in a preparation? The code above doesn't look very readable.
+>> Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> writes:
+>>
+>>> On Wed, 16 Sep 2015 12:58:04 -0700 bsegall-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org wrote:
+>>>
+>>>> setpriority(PRIO_USER, 0, x) will change the priority of tasks outside
+>>>> of the current pid namespace. This is in contrast to both the other
+>>>> modes of setpriority and the example of kill(-1). Fix this. getpriority
+>>>> and ioprio have the same failure mode, fix them too.
+>>>
+>>> (cc Eric)
+>> (cc Containers)
+>>
+>> Interesting.  Strictly speaking the current behavior is not wrong.
+>> Searching for all threads with a given uid has nothing to do with pids
+>> so the pid namespace not limiting them is natural.
+>>
+>> In practice I don't think anyone cares either way (except people with
+>> one color or another of security hat on) so this might be a change we
+>> can actually make.
+>>
+>> In general it is probably better not to share uids and gids between
+>> containers.
+>>
+>> Ben do you have a use case where this actually matters?  Or was this a
+>> case of "That looks wrong..."?
+>>
+>> Eric
 >
-> I've tried to do something like that but that comes too far so send patch as is.
+> I believe we generally want this for isolation of a process, without
+> requiring root initially (and a non-trivial uid_map, not to mention
+> creating the extra users, requires root). There are probably other holes
+> in using namespaces like this, but are they intended?
 
-OK, I won't insist.
+After some more thinking about it this patch sounds justifiable.
 
-The code above asks for cleanup/factorization, but we can do this
-later.
+My goal with namespaces is not to build perfect isolation mechanisms
+as that can get into ill defined territory, but to build well defined
+mechanisms.  And to handle the corner cases so you can use only
+a single namespace with well defined results.
 
-> Actually we can go deeper and replace struct file* with struct fd: this saves
-> couple atomic ops for singlethreaded task.
+In this case you have found the two interfaces I am aware of that
+identify processes by uid instead of by pid.  Which quite frankly is
+weird.  Unfortunately the weird unexpected cases are hard to handle
+in the usual way.
 
-it's not about performance...
+I was hoping for a little more information.  Changes like this one we
+have to be careful of because someone might be depending on the current
+behavior.  I don't think they are and I do think this make sense as part
+of the pid namespace.
 
-But yes, we can do more and create get_pid_ns_by_fd() similar to
-get_net_ns_by_fd(). We do not need file at all, we need pid_ns.
+Acked-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Oleg.
+> (Cc the relevant team member at google)
+>
+>>
+>>>> Signed-off-by: Ben Segall <bsegall-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+>>>> Cc: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+>>>> Cc: Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+>>>> ---
+>>>>  block/ioprio.c | 6 ++++--
+>>>>  kernel/sys.c   | 4 ++--
+>>>>  2 files changed, 6 insertions(+), 4 deletions(-)
+>>>> 
+>>>> diff --git a/block/ioprio.c b/block/ioprio.c
+>>>> index 31666c9..cc7800e 100644
+>>>> --- a/block/ioprio.c
+>>>> +++ b/block/ioprio.c
+>>>> @@ -123,7 +123,8 @@ SYSCALL_DEFINE3(ioprio_set, int, which, int, who, int, ioprio)
+>>>>  				break;
+>>>>  
+>>>>  			do_each_thread(g, p) {
+>>>> -				if (!uid_eq(task_uid(p), uid))
+>>>> +				if (!uid_eq(task_uid(p), uid) ||
+>>>> +				    !task_pid_vnr(p))
+>>>>  					continue;
+>>>>  				ret = set_task_ioprio(p, ioprio);
+>>>>  				if (ret)
+>>>> @@ -220,7 +221,8 @@ SYSCALL_DEFINE2(ioprio_get, int, which, int, who)
+>>>>  				break;
+>>>>  
+>>>>  			do_each_thread(g, p) {
+>>>> -				if (!uid_eq(task_uid(p), user->uid))
+>>>> +				if (!uid_eq(task_uid(p), user->uid) ||
+>>>> +				    !task_pid_vnr(p))
+>>>>  					continue;
+>>>>  				tmpio = get_task_ioprio(p);
+>>>>  				if (tmpio < 0)
+>>>> diff --git a/kernel/sys.c b/kernel/sys.c
+>>>> index fa2f2f6..6af9212 100644
+>>>> --- a/kernel/sys.c
+>>>> +++ b/kernel/sys.c
+>>>> @@ -222,7 +222,7 @@ SYSCALL_DEFINE3(setpriority, int, which, int, who, int, niceval)
+>>>>  				goto out_unlock;	/* No processes for this user */
+>>>>  		}
+>>>>  		do_each_thread(g, p) {
+>>>> -			if (uid_eq(task_uid(p), uid))
+>>>> +			if (uid_eq(task_uid(p), uid) && task_pid_vnr(p))
+>>>>  				error = set_one_prio(p, niceval, error);
+>>>>  		} while_each_thread(g, p);
+>>>>  		if (!uid_eq(uid, cred->uid))
+>>>> @@ -290,7 +290,7 @@ SYSCALL_DEFINE2(getpriority, int, which, int, who)
+>>>>  				goto out_unlock;	/* No processes for this user */
+>>>>  		}
+>>>>  		do_each_thread(g, p) {
+>>>> -			if (uid_eq(task_uid(p), uid)) {
+>>>> +			if (uid_eq(task_uid(p), uid) && task_pid_vnr(p)) {
+>>>>  				niceval = nice_to_rlimit(task_nice(p));
+>>>>  				if (niceval > retval)
+>>>>  					retval = niceval;
+>>>> -- 
+>>>> 2.6.0.rc0.131.gf624c3d
+>>>> 
+>>>> --
+>>>> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+>>>> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>> Please read the FAQ at  http://www.tux.org/lkml/
