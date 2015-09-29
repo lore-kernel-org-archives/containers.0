@@ -1,18 +1,14 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [PATCH] pidns: fix set/getpriority and ioprio_set/get in
-	PRIO_USER mode
-Date: Mon, 28 Sep 2015 16:00:09 -0700
-Message-ID: <20150928160009.3a44a8a23a6bbdca2a0b9a57@linux-foundation.org>
-References: <xm26io7a9lwz.fsf@sword-of-the-dawn.mtv.corp.google.com>
-	<20150917142926.1a68072b19ef0ada47eabe43@linux-foundation.org>
-	<874minis1b.fsf@x220.int.ebiederm.org>
-	<xm268u7zaa1b.fsf@sword-of-the-dawn.mtv.corp.google.com>
-	<87r3lnkqs3.fsf@x220.int.ebiederm.org>
+From: Mike Frysinger <vapier-aBrp7R+bbdUdnm+yROfE0A@public.gmane.org>
+Subject: Re: handling of supplemental groups with userns
+Date: Mon, 28 Sep 2015 23:06:13 -0400
+Message-ID: <20150929030613.GA28210__8995.58739406547$1443495988$gmane$org@vapier.lan>
+References: <20150922162157.GB27286@vapier.lan>
+	<87d1xafdk8.fsf@x220.int.ebiederm.org>
+	<20150922215215.GE27286@vapier.lan>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============4761039438884670325=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87r3lnkqs3.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <20150922215215.GE27286-UgUKS2FnFs9+urZeOPWqwQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,67 +18,93 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, ambrose-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, bsegall-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 25 Sep 2015 00:32:28 -0500 ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) wrote:
 
-> bsegall-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org writes:
-> 
-> > ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) writes:
-> >
-> >> Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> writes:
-> >>
-> >>> On Wed, 16 Sep 2015 12:58:04 -0700 bsegall-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org wrote:
-> >>>
-> >>>> setpriority(PRIO_USER, 0, x) will change the priority of tasks outside
-> >>>> of the current pid namespace. This is in contrast to both the other
-> >>>> modes of setpriority and the example of kill(-1). Fix this. getpriority
-> >>>> and ioprio have the same failure mode, fix them too.
-> >>>
-> >>> (cc Eric)
-> >> (cc Containers)
-> >>
-> >> Interesting.  Strictly speaking the current behavior is not wrong.
-> >> Searching for all threads with a given uid has nothing to do with pids
-> >> so the pid namespace not limiting them is natural.
-> >>
-> >> In practice I don't think anyone cares either way (except people with
-> >> one color or another of security hat on) so this might be a change we
-> >> can actually make.
-> >>
-> >> In general it is probably better not to share uids and gids between
-> >> containers.
-> >>
-> >> Ben do you have a use case where this actually matters?  Or was this a
-> >> case of "That looks wrong..."?
-> >>
-> >> Eric
-> >
-> > I believe we generally want this for isolation of a process, without
-> > requiring root initially (and a non-trivial uid_map, not to mention
-> > creating the extra users, requires root). There are probably other holes
-> > in using namespaces like this, but are they intended?
-> 
-> After some more thinking about it this patch sounds justifiable.
-> 
-> My goal with namespaces is not to build perfect isolation mechanisms
-> as that can get into ill defined territory, but to build well defined
-> mechanisms.  And to handle the corner cases so you can use only
-> a single namespace with well defined results.
-> 
-> In this case you have found the two interfaces I am aware of that
-> identify processes by uid instead of by pid.  Which quite frankly is
-> weird.  Unfortunately the weird unexpected cases are hard to handle
-> in the usual way.
-> 
-> I was hoping for a little more information.  Changes like this one we
-> have to be careful of because someone might be depending on the current
-> behavior.  I don't think they are and I do think this make sense as part
-> of the pid namespace.
-> 
-> Acked-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+--===============4761039438884670325==
+Content-Type: multipart/signed; micalg=pgp-sha256;
+	protocol="application/pgp-signature"; boundary="jRHKVT23PllUwdXP"
+Content-Disposition: inline
 
-My copy of the getpriority/setpriority manpage doesn't mention
-interaction with namespaces at all.  Should it do so?
+
+--jRHKVT23PllUwdXP
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+On 22 Sep 2015 17:52, Mike Frysinger wrote:
+> On 22 Sep 2015 14:40, Eric W. Biederman wrote:
+> > Mike Frysinger writes:
+> > > in the mean time, a "quick" fix might be to change new_idmap_permitted
+> > > to walk all the extents, and if all the ranges are set to 1, check the
+> > > supplemental groups in addition to the current egid ?
+> >=20
+> > That allows dropping groups that you could not drop normally and so we
+> > can't allow it, by default.
+>=20
+> if setgroups is set to deny, then it's not possible for me to drop any
+> groups, and therefore allowing me to map supplemental groups wouldn't be
+> a problem right ?
+
+so this does open up a permission people do not have today by themselves.
+since there's no requirement that the current gid be in the supplemental
+groups, they could drop a single group by changing to a supp one.
+
+for example, if it looked like:
+	getuid() =3D 1000
+	getgid() =3D 1000
+	getgroups() =3D {100, 250}
+
+then if 1000/100/250 were mapped in, they could do:
+	setgid(100)
+	getgid() =3D 100
+	getgroups() =3D {100, 250}
+and thus group 1000 has been dropped.
+
+the reason this doesn't happen today is that writes to gid_map is permitted
+only if the writer has CAP_SETGID in the parent userns and the gid has been
+mapped there.  normal users don't start out with that cap, and any setuid
+helper has to make sure to drop caps & setuid/setgid before execing the next
+layer (i.e. do the standard stuff).
+
+so the only way to permit this behavior is if the knobs were extended and we
+had a parallel USERNS_SETGID_ALLOWED.  or we updated setgid to check the bit
+USERNS_SETGROUPS_ALLOWED since it seems in spirit to cover that.
+-mike
+
+--jRHKVT23PllUwdXP
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBCAAGBQJWCgAlAAoJEEFjO5/oN/WBnm0QANIXE9oBP4NgcjquqL/oEzus
+XGQoZb6QNnGlX5wCnwCv6HJ8ATRWOFJiRA2y1EOPErQjI4MgS1x2H/L9n32f3Che
+e+fmIFEAAUSTIC7rPvbhgUhWc19pEPOs0x3j/mTg66MRnt0aWYJppZp1TLNw/XHK
+X/Oq6Lfi+nwpoVYF/GQeDu/FSh3u1f82eMeIsuGQn8K/tz8iGe57tW9Qz9FTyEsc
+jFfv82lqw24SI8/mXV+IiscrK9EyDvj60Y43KxZYT2OehFMWzabBwXnyxv6skZFI
+FpnDSbWJs4OuCveK9o6B/Sun8Vu+gBMuZkz+lJl4+pQwMsBzT02zYENSHyhOLgYI
+Ge0k4cCczBXikGxQTR2oq2bswhqNvU3upfkpasKlkeXhoES/NlKKqseRRj8cW4TU
+791FbUeaYe96/npqukZgBpAy33Tm9jW9LsesIPkVp7VlZtn3X4CYpZ8ROeM7ohnq
+FuZSl3hWNkNCxiRSi6UzvugDbDZeNUiGANFWvVYLAiloAkwmUhlGTdvzCH0WIxgs
+YVrLLRtqszrQxNrDQlZBWOEPToh8GS37pqlUAzimMSscKiu7rJJ8EE07iUDK0AOh
+L+AuSni1R+VtgpWx4w1S+DeuDzg46xJnjXADfmi8/J62wwjl7xmShhe6OT6nE0fp
+y2KnHib40EAiBaHGyzd0
+=Y0q4
+-----END PGP SIGNATURE-----
+
+--jRHKVT23PllUwdXP--
+
+--===============4761039438884670325==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============4761039438884670325==--
