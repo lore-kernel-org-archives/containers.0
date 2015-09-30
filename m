@@ -1,14 +1,12 @@
-From: Chen Fan <chen.fan.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 0/1] ns: introduce proc_get_ns_by_fd()
-Date: Wed, 30 Sep 2015 10:54:01 +0800
-Message-ID: <560B4EC9.9060801__9276.91952460936$1443581985$gmane$org@cn.fujitsu.com>
-References: <20150925135246.27620.97496.stgit@buzz>	<20150925175654.GA12504@redhat.com>
-	<871tdi8pqj.fsf@x220.int.ebiederm.org>
+From: Ray Ban <jana-5h1lgCLqA0QbaP84lPbjGdBPR1lH4CV8@public.gmane.org>
+Subject: Up to 95% Off All Sunglasses Now! 2016 Styles.
+Date: Wed, 30 Sep 2015 15:06:08 +0200
+Message-ID: <233490e86bc488c82e76250f8fa30e0e@31.14.131.144>
+Reply-To: Ray Ban <jana-5h1lgCLqA0QbaP84lPbjGdBPR1lH4CV8@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <871tdi8pqj.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,130 +16,24 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Roman Gushchin <klamm-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>, Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-On 09/29/2015 12:37 AM, Eric W. Biederman wrote:
-> Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
->
->> On 09/25, Konstantin Khlebnikov wrote:
->>> +struct ns_common *proc_ns_fdget(int fd, int nstype, struct fd *fd_ref)
->>>   {
->>> -	struct file *file;
->>> +	struct ns_common *ns;
->>> +	struct fd f;
->>>   
->>> -	file = fget(fd);
->>> -	if (!file)
->>> +	f = fdget(fd);
->>> +	if (!f.file)
->>>   		return ERR_PTR(-EBADF);
->>>   
->>> -	if (file->f_op != &ns_file_operations)
->>> +	if (f.file->f_op != &ns_file_operations)
->>> +		goto out_invalid;
->>> +
->>> +	ns = get_proc_ns(file_inode(f.file));
->>> +	if (nstype && (ns->ops->type != nstype))
->>>   		goto out_invalid;
->>>   
->>> -	return file;
->>> +	*fd_ref = f;
->>> +	return ns;
->>>   
->>>   out_invalid:
->>> -	fput(file);
->>> +	fdput(f);
->>>   	return ERR_PTR(-EINVAL);
->>>   }
->> Well yes, fdget() makes sense but this is minor.
->>
->> Honestly, I do not really like the new helper... I understand this
->> is subjective, so I won't insist. But how about 1/1? We do not need
->> fd/file at all. With this patch your sys_getvpid() can just use
->> proc_get_ns_by_fd(fd, CLONE_NEWPID) and put_pid_ns().
->>
->> Eric, what do you think?
-> At some level I don't care this is not exposed to userspace.
->
-> However since we are going several rounds with this.
->
-> Of the existing uses several of them sleep, which unfortunately means we
-> can not use rcu locking for everything.  The network namespace ones wind
-> up taking a reference to struct net because the have the legacy pid case
-> to deal with.  Which makes we can not use fdget for all callers either.
->
-> For this translate_pid rcu locking is sufficient, rcu locking is easy
-> and doing any more than rcu locking just seems silly.  So let me
-> respectfully suggest.
->
-> struct ns_common *ns_by_fd_rcu(int fd, int type)
-> {
-> 	struct files_struct *files = current->files;
-> 	struct file *file;
-> 	struct ns_common *ns;
-> 	void *ret;
-pointer files seems no more useful. we can
-use fcheck(fd) instead.
-
-Thanks,
-
->
-> 	file = fcheck_files(files, fd);
->          if (!file)
-> 		return ERR_PTR(-EBADF);
->
-> 	if (file->f_mode & FMODE_PATH)
-> 		return ERR_PTR(-EINVAL);
->
-> 	if (file->f_op != &ns_file_operations)
->          	return ERR_PTR(-EINVAL);
->
-> 	ns = get_proc_ns(file_inode(file));
-> 	if (ns->ops->type != type)
-> 		return ERR_PTR(-EINVAL);
->
-> 	return ns;
-> }
->
-> struct pid_namespace *pidns_by_fd_rcu(int fd)
-> {
-> 	struct ns_common *ns = ns_by_fd_rcu(fd, CLONE_NEWPID);
->          if (IS_ERR(ns))
-> 		return ERR_CAST(ns);
-> 	return container_of(ns, struct pid_namespace, ns);
-> }
->
-> SYSCALL_DEFINE3(translate_pid, pid_t, pid_nr, int, sourcefd, int, targetfd)
-> {
-> 	struct pid_namespace *source, *target;
-> 	struct pid *pid;
-> 	pid_t result;
->
-> 	rcu_read_lock();
->
-> 	if (sourcefd >= 0)
->          	source = pidns_by_fd_rcu(sourcefd);
-> 	else
-> 		source = task_active_pid_ns(current);
->
-> 	if (targetfd >= 0)
->          	target = pidns_by_fd_rcu(targetfd);
-> 	else
-> 		target = task_active_pid_ns(current);
->
-> 	pid = find_pid_ns(pid_nr, source);
->          result = pid_nr_ns(pid, target);
->          if (result == 0)
-> 		result = -ESRCH;
->
-> 	rcu_read_unlock();
->
-> 	return result;
-> }
->
-> Eric
-> .
->
+CgoKICAgICAgICAgICAgICAgICAgICAgICAgICAgICBbMV1WaWV3IGluIGJyb3dzZXIKCiAgIFsy
+XVtpbWFnZV92aWV3ZXIucGhwP3A9VFdWa2FXRkpSRDB4Zkh4OGZGVnpaWEpKUkQweF0KCiAgIEhv
+dyBhYm91dCBhIGNsYXNzaWM/CgogICBOZXcgaW46IEZhbGwvV2ludGVyIDIwMTUtMjAxNi4gVGFr
+ZSBhbiBFeHRyYSA4NSUgT2ZmIEFsbCBTYWxlIeKAjwogICBIb3R0ZXN0IFN0eWxlcy4gNTYwMCsg
+TmV3IFN0eWxlcy4KICAgRnJlZSBEZWxpdmVyeSBPbiBPcmRlciAzUGFpcnMuCgogICBbM11TaG9w
+IE9ubGluZSBOb3cKCgogICBZb3UgcmVjZWl2ZWQgdGhpcyBlbWFpbCBiZWNhdXNlIHlvdSBhcmUg
+cmVnaXN0ZXJlZCB3aXRoIFJheSBCYW4KCiAgIFs0XUNsaWNrIGhlcmUgdG8gdW5zdWJzY3JpYmUK
+CgoKCiAgIMKpIDIwMTUgUmF5IEJhbgoKCiAgIC4KClJlZmVyZW5jZXMKCiAgIDEuIGh0dHA6Ly9l
+c3RkLmh1cnJpY2FuZXNuYWlsLm1lL29lbS90bC5waHA/cD1ydC9ydC9ycy9ycHAvcnQvcnMvL2h0
+dHAlM0ElMkYlMkZ3d3cuMjAxNWhvdHRlc3RzdHlsZXMuY29tJTJGCiAgIDIuIGh0dHA6Ly9lc3Rk
+Lmh1cnJpY2FuZXNuYWlsLm1lL29lbS90bC5waHA/cD1ydC9ydC9ycy9ycHAvcnQvcnMvL2h0dHAl
+M0ElMkYlMkZ3d3cuMjAxNWhvdHRlc3RzdHlsZXMuY29tJTJGCiAgIDMuIGh0dHA6Ly9lc3RkLmh1
+cnJpY2FuZXNuYWlsLm1lL29lbS90bC5waHA/cD1ydC9ydC9ycy9ycHAvcnQvcnMvL2h0dHAlM0El
+MkYlMkZ3d3cuMjAxNWhvdHRlc3RzdHlsZXMuY29tJTJGCiAgIDQuIGh0dHA6Ly9lc3RkLmh1cnJp
+Y2FuZXNuYWlsLm1lL29lbS91LnBocD9wPXJ0L3JzL3JwcC9ydC9ydC9ycwpfX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlz
+dApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGlu
+dXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
