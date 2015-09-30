@@ -1,13 +1,14 @@
-From: "BANCO SABADELL UK" <info-ZQXit0v34+g@public.gmane.org>
-Subject: ATM CARD DISPATCH
-Date: Wed, 30 Sep 2015 03:17:10 +0200
-Message-ID: <20150930011711.9333B49721@smtpin01.cluster.nxs.nl>
-Reply-To: claimsinfo2-YDxpq3io04c@public.gmane.org
+From: Chen Fan <chen.fan.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 0/1] ns: introduce proc_get_ns_by_fd()
+Date: Wed, 30 Sep 2015 10:54:01 +0800
+Message-ID: <560B4EC9.9060801__9276.91952460936$1443581985$gmane$org@cn.fujitsu.com>
+References: <20150925135246.27620.97496.stgit@buzz>	<20150925175654.GA12504@redhat.com>
+	<871tdi8pqj.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Description: Mail message body
+In-Reply-To: <871tdi8pqj.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,37 +18,130 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Roman Gushchin <klamm-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>, Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-IEJBTkNPIFNBQkFERUxMIFVLLiAKIFNBQkFERUxMIEhPVVNFLDEyMCBQQUxMIE1BTEwsCiBDSEFS
-SU5HIENST1NTLCBMT05ET04KIFNXMVkgNUVBCiBMT05ET04gRU5HTEFORC4gCiAKIFRISVMgSVMg
-VE8gQlJJTkcgVE8gWU9VUiBOT1RJQ0UgVEhBVCBZT1VSIEFUTSBERUJJVCBDQVJEIEhBUyBCRUVO
-IElTU1VFRCAKIEFORCBGT1JXQVJERUQgVE8gTVkgREVTSyBGT1IgT05XQVJEIERFTElWRVJZIFRP
-IFlPVVIgREVTSUdOQVRFRCBBRERSRVNTLiBJVCAKIElTIElNUE9SVEFOVCBUSEFUIFdFIE5PVElG
-WSBZT1UgQUJPVVQgVEhFIERJU1BBVENIIENIQVJHRSBBTkQgCiBBRE1JTklTVFJBVElWRSBDSEFS
-R0VTIE9GIFlPVVIgVklTQSBERUJJVCBDQVJELiBUSEUgRElTUEFUQ0ggQ09TVCBWSUEgCiBDT1VS
-SUVSIFNFUlZJQ0UgSVMgwqMyNTAgV0hJTEUgVEhFIEFETUlOSVNUUkFUSVZFIENIQVJHRVMgSVMg
-wqMxMDAuIFRPVEFMIAogwqMzNTAoUE9VTkRTKS4gVEhFIENIRUFQRVNUIE1FQU5TIE9GIENPVVJJ
-RVIgSVMgREhMLiBUSEVZIFJFIFJFU1BPTlNJQkxFIEZPUgogVEhFIERFTElWRVJZIC4gCiAKUkVD
-T05GSVJNIFlPVVIgQUREUkVTUyBBTkQgUEhPTkUgTlVNQkVSIEJFTE9XOgpOQU1FIEFTIERFU0lH
-TkVEIE9OIENBUkQ6IApBRERSRVNTIDrigKbigKYuLgpQSE9ORSBOVU1CRVI64oCm4oCmLi4KIApB
-UyBTT09OIEFTIFlPVSBTRU5EIFRIRSBNT05FWSwgIEZPUldBUkQgUEFZTUVOVCBJTkZPUk1BVElP
-TiBUTyBBUyBGT0xMT1c6CkZVTEwgTkFNRSAKQUREUkVTUyBPRiBTRU5ERVIsCkNJVFkgTU9ORVkg
-V0FTIFNFTlQgRlJPTSAKTU9ORVkgVFJBTlNGRVIgQ09OVFJPTCBOVU1CRVIgRk9SIE9GRklDSUFM
-IFBJQ0sgVVAuIAoKQkVBUiBJTiBNSU5EIFRIQVQgWU9VUiBWSVNBIENBUkQgV0lMTCBCRSBTRU5U
-IFRPIFRIRSBBRERSRVNTIFlPVSBTVUJNSVRURUQgClRPIFVTIFZJQSBTUEVDSUFMIERFTElWRVJZ
-IFNFUlZJQ0UsICBBTkQgQkVDQVVTRSBPRiBUSEUgSElHSCBWQUxVRSBPRiBUSEUgQ0FSRApBTkQg
-SVRTIFNBRkVUWSwgV0UgV09VTEQgTElLRSBGT1IgWU9VIFRPIElORk9STSBVUyBPTiBUSU1FIElG
-IFRIRVJFIEhBUyAKQkVFTiBBTlkgQ0hBTkdFUyBJTiBZT1VSIEFERFJFU1MsICBLSU5ETFkgSU5G
-T1JNIFVTIFRPICBBVk9JRCBBIFdST05HIERFTElWRVJZLiAKIApZT1VSIERFQklUIENBUkQgV0lM
-TCBCRSBWQUxJRCBGT1IgVFdPIFlFQVJTIEFORCBZT1UgQ0FOIERPV04gTE9BRCBUTyBDSEVDSyAK
-WU9VUiBBQ0NPVU5UIEJBTEFOQ0UgRlJPTSBBTlkgQVRNIE1BQ0hJTkUgVVNJTkcgWU9VUiBQSU4g
-TlVNQkVSLiBJTiAKQ09OQ0xVU0lPTiwgWU9VUiBWSVNBIERFQklUIENBUkQgV09VTEQgQkUgU0VO
-VCBUTyBZT1UgVVBPTiBUSEUgUkVDRUlQVCBPRiAKWU9VUiBESVNQQVRDSCBGRUUuIAogCk5PVEU6
-IFlPVVIgTElNSVQgT0YgV0lUSERSQVdBTCBJUyDCoyA4MDAuMDAgUEVSIERBWS5UT1RBTCBBTU9V
-TlQgT04gVEhFIApDQVJEIElTIMKjIDIsODAwLDAwMC4wMCAKIAogCiAgVEhBTksgWU9VLiAKIE1F
-S0VSRUwgU0tZRQpGT1JFSUdOIERJU1BBVENIIERFUEFSVE1FTlQKX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29u
-dGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91
-bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+
+On 09/29/2015 12:37 AM, Eric W. Biederman wrote:
+> Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+>
+>> On 09/25, Konstantin Khlebnikov wrote:
+>>> +struct ns_common *proc_ns_fdget(int fd, int nstype, struct fd *fd_ref)
+>>>   {
+>>> -	struct file *file;
+>>> +	struct ns_common *ns;
+>>> +	struct fd f;
+>>>   
+>>> -	file = fget(fd);
+>>> -	if (!file)
+>>> +	f = fdget(fd);
+>>> +	if (!f.file)
+>>>   		return ERR_PTR(-EBADF);
+>>>   
+>>> -	if (file->f_op != &ns_file_operations)
+>>> +	if (f.file->f_op != &ns_file_operations)
+>>> +		goto out_invalid;
+>>> +
+>>> +	ns = get_proc_ns(file_inode(f.file));
+>>> +	if (nstype && (ns->ops->type != nstype))
+>>>   		goto out_invalid;
+>>>   
+>>> -	return file;
+>>> +	*fd_ref = f;
+>>> +	return ns;
+>>>   
+>>>   out_invalid:
+>>> -	fput(file);
+>>> +	fdput(f);
+>>>   	return ERR_PTR(-EINVAL);
+>>>   }
+>> Well yes, fdget() makes sense but this is minor.
+>>
+>> Honestly, I do not really like the new helper... I understand this
+>> is subjective, so I won't insist. But how about 1/1? We do not need
+>> fd/file at all. With this patch your sys_getvpid() can just use
+>> proc_get_ns_by_fd(fd, CLONE_NEWPID) and put_pid_ns().
+>>
+>> Eric, what do you think?
+> At some level I don't care this is not exposed to userspace.
+>
+> However since we are going several rounds with this.
+>
+> Of the existing uses several of them sleep, which unfortunately means we
+> can not use rcu locking for everything.  The network namespace ones wind
+> up taking a reference to struct net because the have the legacy pid case
+> to deal with.  Which makes we can not use fdget for all callers either.
+>
+> For this translate_pid rcu locking is sufficient, rcu locking is easy
+> and doing any more than rcu locking just seems silly.  So let me
+> respectfully suggest.
+>
+> struct ns_common *ns_by_fd_rcu(int fd, int type)
+> {
+> 	struct files_struct *files = current->files;
+> 	struct file *file;
+> 	struct ns_common *ns;
+> 	void *ret;
+pointer files seems no more useful. we can
+use fcheck(fd) instead.
+
+Thanks,
+
+>
+> 	file = fcheck_files(files, fd);
+>          if (!file)
+> 		return ERR_PTR(-EBADF);
+>
+> 	if (file->f_mode & FMODE_PATH)
+> 		return ERR_PTR(-EINVAL);
+>
+> 	if (file->f_op != &ns_file_operations)
+>          	return ERR_PTR(-EINVAL);
+>
+> 	ns = get_proc_ns(file_inode(file));
+> 	if (ns->ops->type != type)
+> 		return ERR_PTR(-EINVAL);
+>
+> 	return ns;
+> }
+>
+> struct pid_namespace *pidns_by_fd_rcu(int fd)
+> {
+> 	struct ns_common *ns = ns_by_fd_rcu(fd, CLONE_NEWPID);
+>          if (IS_ERR(ns))
+> 		return ERR_CAST(ns);
+> 	return container_of(ns, struct pid_namespace, ns);
+> }
+>
+> SYSCALL_DEFINE3(translate_pid, pid_t, pid_nr, int, sourcefd, int, targetfd)
+> {
+> 	struct pid_namespace *source, *target;
+> 	struct pid *pid;
+> 	pid_t result;
+>
+> 	rcu_read_lock();
+>
+> 	if (sourcefd >= 0)
+>          	source = pidns_by_fd_rcu(sourcefd);
+> 	else
+> 		source = task_active_pid_ns(current);
+>
+> 	if (targetfd >= 0)
+>          	target = pidns_by_fd_rcu(targetfd);
+> 	else
+> 		target = task_active_pid_ns(current);
+>
+> 	pid = find_pid_ns(pid_nr, source);
+>          result = pid_nr_ns(pid, target);
+>          if (result == 0)
+> 		result = -ESRCH;
+>
+> 	rcu_read_unlock();
+>
+> 	return result;
+> }
+>
+> Eric
+> .
+>
