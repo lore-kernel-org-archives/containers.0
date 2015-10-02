@@ -1,15 +1,14 @@
 From: Oren Laadan <orenl-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 1/3] lib/kobject_uevent.c: disable broadcast of uevents to
-	other namespaces
-Date: Fri, 2 Oct 2015 13:40:58 -0400
-Message-ID: <CAA4jN2bQu8T5_RwLJDcA1oNGZOfKxufaL4JBjyPB+8GT7n4+XQ@mail.gmail.com>
+Subject: Re: [PATCH 2/3] lib/kobject_uevent.c: add uevent forwarding function
+Date: Fri, 2 Oct 2015 14:00:45 -0400
+Message-ID: <CAA4jN2br76atf9UuOhJVcoQPZ6GMN91Mk1GsoXcVFC-eFvFafA@mail.gmail.com>
 References: <cover.1441762578.git.michael.coss@alcatel-lucent.com>
-	<51c185b6fa89f0b8e9e7dcaffb3c21c975c84302.1441762578.git.michael.coss@alcatel-lucent.com>
+	<3456750fe7a5a5eb709e315618facf5704cc1885.1441762578.git.michael.coss@alcatel-lucent.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <51c185b6fa89f0b8e9e7dcaffb3c21c975c84302.1441762578.git.michael.coss-cfy2TCaE7SFv+uJa97DSA9BPR1lH4CV8@public.gmane.org>
+In-Reply-To: <3456750fe7a5a5eb709e315618facf5704cc1885.1441762578.git.michael.coss-cfy2TCaE7SFv+uJa97DSA9BPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,86 +19,197 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Michael J. Coss" <michael.coss-cfy2TCaE7SFv+uJa97DSA9BPR1lH4CV8@public.gmane.org>
-Cc: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs98uUxBSJOaYoYkZiVZrdSR2LY78lusg7I@public.gmane.org, Eric Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: containers-cunTk1MwBs98uUxBSJOaYoYkZiVZrdSR2LY78lusg7I@public.gmane.org
 List-Id: containers.vger.kernel.org
-
-Hi Michael,
-
-While experimenting with your patches, I discovered a couple of issues:
-
-1) One problem is that the test to disable broadcast has an undesired
-side-effect: it silently drops kernel uevents designated to specific net
-namespace(s). For example, uevents related to the "net" subsystem are now
-gone.
-
-More specifically, kobject_uevent_env() eventually calls
-netlink_broadcast_filtered() with "kobj_bcast_filter()" as the @filter
-argument; This filter is invoked by the netlink delivery code  (for each
-target socket): if the respective kobject has a valid "struct
-kobj_ns_type_operations ops" then it will use the ops->netlink_ns() as the
-target network namespace, and only post to sockets that belong to that
-target network namespace.
-
-To remedy this, I suggest to move the test into "kobj_bcast_filter()", by
-replacing the final "return 0;" with "return !net_eq(sock_net(dsk),
-&init_net);".
-
-2) Another problem is that when a task writes to the special file "uevent"
-in /sys/..., e.g. "/sys/devices/virtual/block/dm-0/uevent", it should
-ideally expect to see the resulting uevent in the network namespace to
-which it belongs, and only there. With broadcast disabled it will instead
-reach only the init network namespace (while before the patch it would
-reach all network namespaces).
-
-This could be fixed by having the userspace daemon that listens in the init
-network namespace forward such uevents to the "origin" network namespace
-(i.e. where the task belongs). However, I couldn't figure out a way for
-userspace to tell whether a particular uevent was "task made" via the
-respective "uevent" file and if so, in which network namespace - or by
-which task/pid - it was done.
-
-So I can't think of another solution but to do it in the kernel: handle
-writes to "uevent" in a way that only posts them in the network namespace
-of the writer task.
-
-Do you see a better option?
-
-
-Thanks,
-
-Oren.
-
 
 On Wed, Sep 9, 2015 at 2:53 PM, Michael J. Coss <
 michael.coss-cfy2TCaE7SFv+uJa97DSA9BPR1lH4CV8@public.gmane.org> wrote:
 
-> Restrict sending uevents to only those listeners operating in the same
-> network namespace as the system init process.  This is the first step
-> toward allowing policy control of the forwarding of events to other
-> namespaces in userspace.
+> Adds capability to allow userspace programs to forward a given event to
+> a specific network namespace as determined by the provided pid.  In
+> addition, support for a per-namespace kobject_sequence counter was
+> added.  Sysfs was modified to return the correct event counter based on
+> the current network namespace.
 >
 > Signed-off-by: Michael J. Coss <michael.coss-cfy2TCaE7SFv+uJa97DSA9BPR1lH4CV8@public.gmane.org>
 > ---
->  lib/kobject_uevent.c | 4 ++++
->  1 file changed, 4 insertions(+)
+>  include/linux/kobject.h     |  3 ++
+>  include/net/net_namespace.h |  3 ++
+>  kernel/ksysfs.c             | 12 ++++++
+>  lib/kobject_uevent.c        | 90
+> +++++++++++++++++++++++++++++++++++++++++++++
+>  4 files changed, 108 insertions(+)
 >
+> diff --git a/include/linux/kobject.h b/include/linux/kobject.h
+> index 637f670..d1bb509 100644
+> --- a/include/linux/kobject.h
+> +++ b/include/linux/kobject.h
+> @@ -215,6 +215,9 @@ extern struct kobject *firmware_kobj;
+>  int kobject_uevent(struct kobject *kobj, enum kobject_action action);
+>  int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
+>                         char *envp[]);
+> +#if defined(CONFIG_UDEVNS) || defined(CONFIG_UDEVNS_MODULE)
+> +int kobject_uevent_forward(char *buf, size_t len, pid_t pid);
+> +#endif
+>
+>  __printf(2, 3)
+>  int add_uevent_var(struct kobj_uevent_env *env, const char *format, ...);
+> diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
+> index e951453..a4013e5 100644
+> --- a/include/net/net_namespace.h
+> +++ b/include/net/net_namespace.h
+> @@ -134,6 +134,9 @@ struct net {
+>  #if IS_ENABLED(CONFIG_MPLS)
+>         struct netns_mpls       mpls;
+>  #endif
+> +#if defined(CONFIG_UDEVNS) || defined(CONFIG_UDEVNS_MODULE)
+> +       u64                             kevent_seqnum;
+> +#endif
+>         struct sock             *diag_nlsk;
+>         atomic_t                fnhe_genid;
+>  };
+> diff --git a/kernel/ksysfs.c b/kernel/ksysfs.c
+> index 6683cce..4bc15fd 100644
+> --- a/kernel/ksysfs.c
+> +++ b/kernel/ksysfs.c
+> @@ -21,6 +21,9 @@
+>  #include <linux/compiler.h>
+>
+>  #include <linux/rcupdate.h>    /* rcu_expedited */
+> +#if defined(CONFIG_UDEVNS) || defined(CONFIG_UDEVNS_MODULE)
+> +#include <net/net_namespace.h>
+> +#endif
+>
+>  #define KERNEL_ATTR_RO(_name) \
+>  static struct kobj_attribute _name##_attr = __ATTR_RO(_name)
+> @@ -33,6 +36,15 @@ static struct kobj_attribute _name##_attr = \
+>  static ssize_t uevent_seqnum_show(struct kobject *kobj,
+>                                   struct kobj_attribute *attr, char *buf)
+>  {
+> +#if defined(CONFIG_UDEVNS) || defined(CONFIG_UDEVNS_MODULE)
+> +       pid_t p = task_pid_vnr(current);
+> +       struct net *n = get_net_ns_by_pid(p);
+> +
+> +       if (n != ERR_PTR(-ESRCH)) {
+> +               if (!net_eq(n, &init_net))
+> +                       return sprintf(buf, "%llu\n", n->kevent_seqnum);
+> +       }
+> +#endif
+>         return sprintf(buf, "%llu\n", (unsigned long long)uevent_seqnum);
+>  }
+>  KERNEL_ATTR_RO(uevent_seqnum);
 > diff --git a/lib/kobject_uevent.c b/lib/kobject_uevent.c
-> index f6c2c1e..d791e33 100644
+> index d791e33..7589745 100644
 > --- a/lib/kobject_uevent.c
 > +++ b/lib/kobject_uevent.c
-> @@ -295,6 +295,10 @@ int kobject_uevent_env(struct kobject *kobj, enum
-> kobject_action action,
->                 if (!netlink_has_listeners(uevent_sock, 1))
->                         continue;
+> @@ -379,6 +379,96 @@ int kobject_uevent(struct kobject *kobj, enum
+> kobject_action action)
+>  }
+>  EXPORT_SYMBOL_GPL(kobject_uevent);
 >
-> +               /* forward event only to the host systems network
-> namespaces */
-> +               if (!net_eq(sock_net(uevent_sock), &init_net))
+> +#if defined(CONFIG_UDEVNS) || defined(CONFIG_UDEVNS_MODULE)
+> +/**
+> + * kobject_uevent_forward - forward event to specified network namespace
+> + *
+> + * @buf: event buffer
+> + * @len: event length
+> + * @pid: pid of network namespace
+> + *
+> + * Returns 0 if kobject_uevent_forward() is completed with success or the
+> + * corresponding error when it fails.
+> + */
+> +int kobject_uevent_forward(char *buf, size_t len, pid_t pid)
+> +{
+> +       int retval = 0;
+> +#if defined(CONFIG_NET)
+> +       struct uevent_sock *ue_sk;
+> +       struct net *pns;
+> +       char *p;
+> +       u64 num;
+> +
+> +       /* grab the network namespace of the provided pid */
+> +       pns = get_net_ns_by_pid(pid);
+> +       if (pns == ERR_PTR(-ESRCH))
+> +               return -ESRCH;
+> +
+> +       /* find sequence number in buffer */
+> +       p = buf;
+> +       num = 0;
+> +       while (p < (buf + len)) {
+> +               if (strncmp(p, "SEQNUM=", 7) == 0) {
+> +                       int r;
+> +
+> +                       p += 7;
+> +                       r = kstrtoull(p, 10, &num);
+> +                       if (r) {
+> +                               put_net(pns);
+> +                               return r;
+> +                       }
+> +                       break;
+> +               }
+> +               p += (strlen(p) + 1);
+> +       }
+> +
+> +       /* if we didn't see a valid seqnum, or none was present, return
+> error */
+> +       if (num == 0) {
+> +               put_net(pns);
+> +               return -EINVAL;
+> +       }
+> +       /* update per namespace sequence number as needed */
+> +       if (pns->kevent_seqnum < num)
+> +               pns->kevent_seqnum = num;
+> +
+> +       list_for_each_entry(ue_sk, &uevent_sock_list, list) {
+> +               struct sock *uevent_sock = ue_sk->sk;
+> +               struct sk_buff *skb;
+> +
+> +               if (!netlink_has_listeners(uevent_sock, 1))
+> +                       continue;
+> +               /*
+> +                * only send to sockets share the same network namespace
+> +                * as the passed pid
+> +                */
+> +               if (!net_eq(sock_net(uevent_sock), pns))
 > +                       continue;
 > +
->                 /* allocate message with the maximum possible size */
->                 len = strlen(action_string) + strlen(devpath) + 2;
->                 skb = alloc_skb(len + env->buflen, GFP_KERNEL);
+> +               /* allocate message with the maximum possible size */
+> +               skb = alloc_skb(len, GFP_KERNEL);
+> +               if (skb) {
+> +                       char *p;
+> +
+> +                       p = skb_put(skb, len);
+> +                       memcpy(p, buf, len);
+> +                       NETLINK_CB(skb).dst_group = 1;
+> +                       retval = netlink_broadcast(uevent_sock, skb, 0, 1,
+> +                                                  GFP_KERNEL);
+> +
+> +                       /* ENOBUFS should be handled in userspace */
+> +                       if (retval == -ENOBUFS || retval == -ESRCH)
+> +                               retval = 0;
+>
+
+This may mask an error from an earlier send (to a distinct listener
+socket). Instead, we should retain and report either the first error seen
+or some error seen.
+
+
+
+> +               } else {
+> +                       retval = -ENOMEM;
+> +               }
+> +       }
+> +       put_net(pns);
+> +#endif
+> +       return retval;
+>
++}
+> +EXPORT_SYMBOL_GPL(kobject_uevent_forward);
+> +#endif
+> +
+>  /**
+>   * add_uevent_var - add key value string to the environment buffer
+>   * @env: environment buffer structure
 > --
 > 2.4.6
 >
