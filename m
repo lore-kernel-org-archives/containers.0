@@ -1,8 +1,8 @@
 From: Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH v4 01/11] user_ns: 3 new LSM hooks for user namespace
-	operations
-Date: Wed, 14 Oct 2015 14:41:55 +0200
-Message-ID: <1444826525-9758-2-git-send-email-l.pawelczyk@samsung.com>
+Subject: [PATCH v4 03/11] lsm: add file opener's cred to a setprocattr
+	arguments
+Date: Wed, 14 Oct 2015 14:41:57 +0200
+Message-ID: <1444826525-9758-4-git-send-email-l.pawelczyk@samsung.com>
 References: <1444826525-9758-1-git-send-email-l.pawelczyk@samsung.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,249 +22,159 @@ To: "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, "Eric W. 
 Cc: Lukasz Pawelczyk <havner-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This commit implements 3 new LSM hooks that provide the means for LSMs
-to embed their own security context within user namespace, effectively
-creating some sort of a user_ns related security namespace.
+setprocattr hook for Smack's label_map attribute needs to know the
+capabilities of file opener. Add those credentials to the hook's
+arguments.
 
-The first one to take advantage of this mechanism is Smack.
-
-The hooks has been documented in the in the security.h below.
+While at it add documentation on get/setprocattr hooks.
 
 Signed-off-by: Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
-Reviewed-by: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
-Acked-by: Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>
+Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 ---
- include/linux/lsm_hooks.h      | 28 ++++++++++++++++++++++++++++
- include/linux/security.h       | 23 +++++++++++++++++++++++
- include/linux/user_namespace.h |  4 ++++
- kernel/user.c                  |  3 +++
- kernel/user_namespace.c        | 18 ++++++++++++++++++
- security/security.c            | 28 ++++++++++++++++++++++++++++
- 6 files changed, 104 insertions(+)
+ fs/proc/base.c             |  2 +-
+ include/linux/lsm_hooks.h  | 18 ++++++++++++++++--
+ include/linux/security.h   |  7 +++++--
+ security/apparmor/lsm.c    |  5 +++--
+ security/security.c        |  6 ++++--
+ security/selinux/hooks.c   |  2 +-
+ security/smack/smack_lsm.c |  4 ++--
+ 7 files changed, 32 insertions(+), 12 deletions(-)
 
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index 9ec88b8..2b38969 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -2447,7 +2447,7 @@ static ssize_t proc_pid_attr_write(struct file * file, const char __user * buf,
+ 	if (length < 0)
+ 		goto out_free;
+ 
+-	length = security_setprocattr(task,
++	length = security_setprocattr(task, file->f_cred,
+ 				      (char*)file->f_path.dentry->d_name.name,
+ 				      (void*)page, count);
+ 	mutex_unlock(&task->signal->cred_guard_mutex);
 diff --git a/include/linux/lsm_hooks.h b/include/linux/lsm_hooks.h
-index ec3a6ba..18c9160 100644
+index 7049db0..4f16640 100644
 --- a/include/linux/lsm_hooks.h
 +++ b/include/linux/lsm_hooks.h
-@@ -1261,6 +1261,23 @@
-  *	audit_rule_init.
-  *	@rule contains the allocated rule
+@@ -1220,6 +1220,20 @@
+  *	Return 0 if @name is to be handled by seq, EOPNOTSUPP if getprocattr()
+  *	should be used. Other errors will be passed to user-space.
   *
-+ * @userns_create:
-+ *	Allocates and fills the security part of a new user namespace.
-+ *	@ns points to a newly created user namespace.
-+ *	Returns 0 or an error code.
++ * @getprocattr:
++ *	Get a value of a proc security attribute in /proc/$PID/attr/.
++ *	@p a task associated with the proc file.
++ *	@name a name of the file in question.
++ *	@value a pointer where to return the attribute's value.
 + *
-+ * @userns_free:
-+ *	Deallocates the security part of a user namespace.
-+ *	@ns points to a user namespace about to be destroyed.
++ * @setprocattr:
++ *	Set a value of a proc security attribute in /proc/$PID/attr/.
++ *	@p a task associated with the proc file.
++ *	@f_cred credentials of a file's opener.
++ *	@name a name of the file in question.
++ *	@value a pointer where a value to set is kept.
++ *	@size a number of bytes to read from the @value pointer.
 + *
-+ * @userns_setns:
-+ *	Run during a setns syscall to add a process to an already existing
-+ *	user namespace. Returning failure here will block the operation
-+ *	requested from userspace (setns() with CLONE_NEWUSER).
-+ *	@nsproxy contains nsproxy to which the user namespace will be assigned.
-+ *	@ns contains user namespace that is to be incorporated to the nsproxy.
-+ *	Returns 0 or an error code.
-+ *
-  * @inode_notifysecctx:
-  *	Notify the security module of what the security context of an inode
-  *	should be.  Initializes the incore security context managed by the
-@@ -1613,6 +1630,12 @@ union security_list_options {
- 				struct audit_context *actx);
- 	void (*audit_rule_free)(void *lsmrule);
- #endif /* CONFIG_AUDIT */
-+
-+#ifdef CONFIG_USER_NS
-+	int (*userns_create)(struct user_namespace *ns);
-+	void (*userns_free)(struct user_namespace *ns);
-+	int (*userns_setns)(struct nsproxy *nsproxy, struct user_namespace *ns);
-+#endif /* CONFIG_USER_NS */
- };
- 
- struct security_hook_heads {
-@@ -1824,6 +1847,11 @@ struct security_hook_heads {
- 	struct list_head audit_rule_match;
- 	struct list_head audit_rule_free;
- #endif /* CONFIG_AUDIT */
-+#ifdef CONFIG_USER_NS
-+	struct list_head userns_create;
-+	struct list_head userns_free;
-+	struct list_head userns_setns;
-+#endif /* CONFIG_USER_NS */
- };
- 
- /*
+  * @secid_to_secctx:
+  *	Convert secid to security context.  If secdata is NULL the length of
+  *	the result will be returned in seclen, but no secdata will be returned.
+@@ -1540,8 +1554,8 @@ union security_list_options {
+ 	int (*getprocattr_seq)(struct task_struct *p, const char *name,
+ 			       const struct seq_operations **ops);
+ 	int (*getprocattr)(struct task_struct *p, char *name, char **value);
+-	int (*setprocattr)(struct task_struct *p, char *name, void *value,
+-				size_t size);
++	int (*setprocattr)(struct task_struct *p, const struct cred *f_cred,
++			   char *name, void *value, size_t size);
+ 	int (*ismaclabel)(const char *name);
+ 	int (*secid_to_secctx)(u32 secid, char **secdata, u32 *seclen);
+ 	int (*secctx_to_secid)(const char *secdata, u32 seclen, u32 *secid);
 diff --git a/include/linux/security.h b/include/linux/security.h
-index 2f4c1f7..91ffba2 100644
+index dddea2f..12bd011 100644
 --- a/include/linux/security.h
 +++ b/include/linux/security.h
-@@ -1584,6 +1584,29 @@ static inline void security_audit_rule_free(void *lsmrule)
- #endif /* CONFIG_SECURITY */
- #endif /* CONFIG_AUDIT */
+@@ -348,7 +348,8 @@ void security_d_instantiate(struct dentry *dentry, struct inode *inode);
+ int security_getprocattr_seq(struct task_struct *p, const char *name,
+ 			     const struct seq_operations **ops);
+ int security_getprocattr(struct task_struct *p, char *name, char **value);
+-int security_setprocattr(struct task_struct *p, char *name, void *value, size_t size);
++int security_setprocattr(struct task_struct *p, const struct cred *f_cred,
++			 char *name, void *value, size_t size);
+ int security_netlink_send(struct sock *sk, struct sk_buff *skb);
+ int security_ismaclabel(const char *name);
+ int security_secid_to_secctx(u32 secid, char **secdata, u32 *seclen);
+@@ -1071,7 +1072,9 @@ static inline int security_getprocattr(struct task_struct *p, char *name, char *
+ 	return -EINVAL;
+ }
  
-+#ifdef CONFIG_USER_NS
-+int security_userns_create(struct user_namespace *ns);
-+void security_userns_free(struct user_namespace *ns);
-+int security_userns_setns(struct nsproxy *nsproxy, struct user_namespace *ns);
-+
-+#else
-+
-+static inline int security_userns_create(struct user_namespace *ns)
-+{
-+	return 0;
-+}
-+
-+static inline void security_userns_free(struct user_namespace *ns)
-+{ }
-+
-+static inline int security_userns_setns(struct nsproxy *nsproxy,
-+					struct user_namespace *ns)
-+{
-+	return 0;
-+}
-+
-+#endif /* CONFIG_USER_NS */
-+
- #ifdef CONFIG_SECURITYFS
- 
- extern struct dentry *securityfs_create_file(const char *name, umode_t mode,
-diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index 8297e5b..a9400cc 100644
---- a/include/linux/user_namespace.h
-+++ b/include/linux/user_namespace.h
-@@ -39,6 +39,10 @@ struct user_namespace {
- 	struct key		*persistent_keyring_register;
- 	struct rw_semaphore	persistent_keyring_register_sem;
- #endif
-+
-+#ifdef CONFIG_SECURITY
-+	void *security;
-+#endif
- };
- 
- extern struct user_namespace init_user_ns;
-diff --git a/kernel/user.c b/kernel/user.c
-index b069ccb..ce5419e 100644
---- a/kernel/user.c
-+++ b/kernel/user.c
-@@ -59,6 +59,9 @@ struct user_namespace init_user_ns = {
- 	.persistent_keyring_register_sem =
- 	__RWSEM_INITIALIZER(init_user_ns.persistent_keyring_register_sem),
- #endif
-+#ifdef CONFIG_SECURITY
-+	.security = NULL,
-+#endif
- };
- EXPORT_SYMBOL_GPL(init_user_ns);
- 
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 88fefa6..daef188 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -22,6 +22,7 @@
- #include <linux/ctype.h>
- #include <linux/projid.h>
- #include <linux/fs_struct.h>
-+#include <linux/security.h>
- 
- static struct kmem_cache *user_ns_cachep __read_mostly;
- static DEFINE_MUTEX(userns_state_mutex);
-@@ -109,6 +110,15 @@ int create_user_ns(struct cred *new)
- 
- 	set_cred_user_ns(new, ns);
- 
-+#ifdef CONFIG_SECURITY
-+	ret = security_userns_create(ns);
-+	if (ret) {
-+		ns_free_inum(&ns->ns);
-+		kmem_cache_free(user_ns_cachep, ns);
-+		return ret;
-+	}
-+#endif
-+
- #ifdef CONFIG_PERSISTENT_KEYRINGS
- 	init_rwsem(&ns->persistent_keyring_register_sem);
- #endif
-@@ -144,6 +154,9 @@ void free_user_ns(struct user_namespace *ns)
- #ifdef CONFIG_PERSISTENT_KEYRINGS
- 		key_put(ns->persistent_keyring_register);
- #endif
-+#ifdef CONFIG_SECURITY
-+		security_userns_free(ns);
-+#endif
- 		ns_free_inum(&ns->ns);
- 		kmem_cache_free(user_ns_cachep, ns);
- 		ns = parent;
-@@ -970,6 +983,7 @@ static int userns_install(struct nsproxy *nsproxy, struct ns_common *ns)
+-static inline int security_setprocattr(struct task_struct *p, char *name, void *value, size_t size)
++static inline int security_setprocattr(struct task_struct *p,
++				       const struct cred *f_cred,
++				       char *name, void *value, size_t size)
  {
- 	struct user_namespace *user_ns = to_user_ns(ns);
- 	struct cred *cred;
-+	int err;
+ 	return -EINVAL;
+ }
+diff --git a/security/apparmor/lsm.c b/security/apparmor/lsm.c
+index dec607c..1212927 100644
+--- a/security/apparmor/lsm.c
++++ b/security/apparmor/lsm.c
+@@ -518,8 +518,9 @@ static int apparmor_getprocattr(struct task_struct *task, char *name,
+ 	return error;
+ }
  
- 	/* Don't allow gaining capabilities by reentering
- 	 * the same user namespace.
-@@ -987,6 +1001,10 @@ static int userns_install(struct nsproxy *nsproxy, struct ns_common *ns)
- 	if (!ns_capable(user_ns, CAP_SYS_ADMIN))
- 		return -EPERM;
- 
-+	err = security_userns_setns(nsproxy, user_ns);
-+	if (err)
-+		return err;
-+
- 	cred = prepare_creds();
- 	if (!cred)
- 		return -ENOMEM;
+-static int apparmor_setprocattr(struct task_struct *task, char *name,
+-				void *value, size_t size)
++static int apparmor_setprocattr(struct task_struct *task,
++				const struct cred *f_cred,
++				char *name, void *value, size_t size)
+ {
+ 	struct common_audit_data sa;
+ 	struct apparmor_audit_data aad = {0,};
 diff --git a/security/security.c b/security/security.c
-index 46f405c..e571127 100644
+index da2bcd4..abfc207 100644
 --- a/security/security.c
 +++ b/security/security.c
-@@ -25,6 +25,7 @@
- #include <linux/mount.h>
- #include <linux/personality.h>
- #include <linux/backing-dev.h>
-+#include <linux/user_namespace.h>
- #include <net/flow.h>
- 
- #define MAX_LSM_EVM_XATTR	2
-@@ -1538,6 +1539,25 @@ int security_audit_rule_match(u32 secid, u32 field, u32 op, void *lsmrule,
+@@ -1132,9 +1132,11 @@ int security_getprocattr(struct task_struct *p, char *name, char **value)
+ 	return call_int_hook(getprocattr, -EINVAL, p, name, value);
  }
- #endif /* CONFIG_AUDIT */
  
-+#ifdef CONFIG_USER_NS
-+
-+int security_userns_create(struct user_namespace *ns)
-+{
-+	return call_int_hook(userns_create, 0, ns);
-+}
-+
-+void security_userns_free(struct user_namespace *ns)
-+{
-+	call_void_hook(userns_free, ns);
-+}
-+
-+int security_userns_setns(struct nsproxy *nsproxy, struct user_namespace *ns)
-+{
-+	return call_int_hook(userns_setns, 0, nsproxy, ns);
-+}
-+
-+#endif /* CONFIG_USER_NS */
-+
- struct security_hook_heads security_hook_heads = {
- 	.binder_set_context_mgr =
- 		LIST_HEAD_INIT(security_hook_heads.binder_set_context_mgr),
-@@ -1882,4 +1902,12 @@ struct security_hook_heads security_hook_heads = {
- 	.audit_rule_free =
- 		LIST_HEAD_INIT(security_hook_heads.audit_rule_free),
- #endif /* CONFIG_AUDIT */
-+#ifdef CONFIG_USER_NS
-+	.userns_create =
-+		LIST_HEAD_INIT(security_hook_heads.userns_create),
-+	.userns_free =
-+		LIST_HEAD_INIT(security_hook_heads.userns_free),
-+	.userns_setns =
-+		LIST_HEAD_INIT(security_hook_heads.userns_setns),
-+#endif /* CONFIG_USER_NS */
- };
+-int security_setprocattr(struct task_struct *p, char *name, void *value, size_t size)
++int security_setprocattr(struct task_struct *p, const struct cred *f_cred,
++			 char *name, void *value, size_t size)
+ {
+-	return call_int_hook(setprocattr, -EINVAL, p, name, value, size);
++	return call_int_hook(setprocattr, -EINVAL, p, f_cred,
++			     name, value, size);
+ }
+ 
+ int security_netlink_send(struct sock *sk, struct sk_buff *skb)
+diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
+index e4369d8..470eff8 100644
+--- a/security/selinux/hooks.c
++++ b/security/selinux/hooks.c
+@@ -5603,7 +5603,7 @@ invalid:
+ 	return -EINVAL;
+ }
+ 
+-static int selinux_setprocattr(struct task_struct *p,
++static int selinux_setprocattr(struct task_struct *p, const struct cred *f_cred,
+ 			       char *name, void *value, size_t size)
+ {
+ 	struct task_security_struct *tsec;
+diff --git a/security/smack/smack_lsm.c b/security/smack/smack_lsm.c
+index c2d66ca..c439370 100644
+--- a/security/smack/smack_lsm.c
++++ b/security/smack/smack_lsm.c
+@@ -3549,8 +3549,8 @@ static int smack_getprocattr(struct task_struct *p, char *name, char **value)
+  *
+  * Returns the length of the smack label or an error code
+  */
+-static int smack_setprocattr(struct task_struct *p, char *name,
+-			     void *value, size_t size)
++static int smack_setprocattr(struct task_struct *p, const struct cred *f_cred,
++			     char *name, void *value, size_t size)
+ {
+ 	struct task_smack *tsp;
+ 	struct cred *new;
 -- 
 2.4.3
