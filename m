@@ -1,8 +1,7 @@
 From: Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH v4 02/11] lsm: /proc/$PID/attr/label_map file and
-	getprocattr_seq hook
-Date: Wed, 14 Oct 2015 14:41:56 +0200
-Message-ID: <1444826525-9758-3-git-send-email-l.pawelczyk@samsung.com>
+Subject: [PATCH v4 04/11] lsm: inode_pre_setxattr hook
+Date: Wed, 14 Oct 2015 14:41:58 +0200
+Message-ID: <1444826525-9758-5-git-send-email-l.pawelczyk__34711.8960381069$1444826610$gmane$org@samsung.com>
 References: <1444826525-9758-1-git-send-email-l.pawelczyk@samsung.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,244 +21,138 @@ To: "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, "Eric W. 
 Cc: Lukasz Pawelczyk <havner-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This commit adds a new proc attribute, label_map that is required by an
-upcoming Smack namespace. In general it can be used to hold a map of
-labels, e.g. to be used in namespaces.
-
-Due to the nature of this file, the standard getprocattr hook might not
-be enough to handle it. The map's output can in principle be greater
-than page size to which the aforementioned hook is limited.
-To handle this properly a getprocattr_seq LSM hook has been added that
-makes it possible to handle any chosen proc attr by seq operations.
-
-See the documentation in the patch below for the details about how to
-use the hook.
+Add a new LSM hook called before inode's setxattr. It is required for
+LSM to be able to reliably replace the xattr's value to be set to
+filesystem in __vfs_setxattr_noperm(). Useful for mapped values, like in
+the upcoming Smack namespace patches.
 
 Signed-off-by: Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 ---
- fs/proc/base.c            | 81 +++++++++++++++++++++++++++++++++++++++++++----
- include/linux/lsm_hooks.h | 15 +++++++++
- include/linux/security.h  |  9 ++++++
- security/security.c       |  8 +++++
- 4 files changed, 107 insertions(+), 6 deletions(-)
+ fs/xattr.c                | 10 ++++++++++
+ include/linux/lsm_hooks.h |  9 +++++++++
+ include/linux/security.h  | 10 ++++++++++
+ security/security.c       | 12 ++++++++++++
+ 4 files changed, 41 insertions(+)
 
-diff --git a/fs/proc/base.c b/fs/proc/base.c
-index b25eee4..9ec88b8 100644
---- a/fs/proc/base.c
-+++ b/fs/proc/base.c
-@@ -2327,20 +2327,77 @@ out:
- }
- 
- #ifdef CONFIG_SECURITY
-+static int proc_pid_attr_open(struct inode *inode, struct file *file)
-+{
-+	const char *name = file->f_path.dentry->d_name.name;
-+	const struct seq_operations *ops;
-+	struct task_struct *task;
-+	struct seq_file *seq;
-+	int ret;
+diff --git a/fs/xattr.c b/fs/xattr.c
+index 072fee1..cbc8d19 100644
+--- a/fs/xattr.c
++++ b/fs/xattr.c
+@@ -100,12 +100,22 @@ int __vfs_setxattr_noperm(struct dentry *dentry, const char *name,
+ 	if (issec)
+ 		inode->i_flags &= ~S_NOSEC;
+ 	if (inode->i_op->setxattr) {
++		bool alloc = false;
 +
-+	file->private_data = NULL;
++		error = security_inode_pre_setxattr(dentry, name, &value,
++						    &size, flags, &alloc);
++		if (error)
++			return error;
 +
-+	task = get_proc_task(inode);
-+	if (!task)
-+		return -ESRCH;
+ 		error = inode->i_op->setxattr(dentry, name, value, size, flags);
+ 		if (!error) {
+ 			fsnotify_xattr(dentry);
+ 			security_inode_post_setxattr(dentry, name, value,
+ 						     size, flags);
+ 		}
 +
-+	/* don't use seq_ops if they are not provided by LSM */
-+	ret = security_getprocattr_seq(task, name, &ops);
-+	if (ret == -EOPNOTSUPP) {
-+		ret = 0;
-+		goto put_task;
-+	}
-+	if (ret)
-+		goto put_task;
-+
-+	ret = seq_open(file, ops);
-+	if (ret)
-+		goto put_task;
-+
-+	seq = file->private_data;
-+	seq->private = task;
-+
-+	return 0;
-+
-+put_task:
-+	put_task_struct(task);
-+	return ret;
-+}
-+
-+static int proc_pid_attr_release(struct inode *inode, struct file *file)
-+{
-+	struct seq_file *seq;
-+	struct task_struct *task;
-+
-+	/* don't use seq_ops if they were not provided by LSM */
-+	if (file->private_data == NULL)
-+		return 0;
-+
-+	seq = file->private_data;
-+	task = seq->private;
-+	put_task_struct(task);
-+
-+	return seq_release(inode, file);
-+}
-+
- static ssize_t proc_pid_attr_read(struct file * file, char __user * buf,
- 				  size_t count, loff_t *ppos)
- {
--	struct inode * inode = file_inode(file);
-+	struct inode *inode = file_inode(file);
-+	const char *name = file->f_path.dentry->d_name.name;
- 	char *p = NULL;
- 	ssize_t length;
--	struct task_struct *task = get_proc_task(inode);
-+	struct task_struct *task;
- 
-+	/* use seq_ops if they were provided by LSM */
-+	if (file->private_data)
-+		return seq_read(file, buf, count, ppos);
-+
-+	task = get_proc_task(inode);
- 	if (!task)
- 		return -ESRCH;
- 
--	length = security_getprocattr(task,
--				      (char*)file->f_path.dentry->d_name.name,
--				      &p);
-+	length = security_getprocattr(task, (char *)name, &p);
- 	put_task_struct(task);
- 	if (length > 0)
- 		length = simple_read_from_buffer(buf, count, ppos, p, length);
-@@ -2348,6 +2405,15 @@ static ssize_t proc_pid_attr_read(struct file * file, char __user * buf,
- 	return length;
- }
- 
-+static loff_t proc_pid_attr_lseek(struct file *file, loff_t offset, int whence)
-+{
-+	/* use seq_ops if they were provided by LSM */
-+	if (file->private_data)
-+		return seq_lseek(file, offset, whence);
-+
-+	return generic_file_llseek(file, offset, whence);
-+}
-+
- static ssize_t proc_pid_attr_write(struct file * file, const char __user * buf,
- 				   size_t count, loff_t *ppos)
- {
-@@ -2394,9 +2460,11 @@ out_no_task:
- }
- 
- static const struct file_operations proc_pid_attr_operations = {
-+	.open		= proc_pid_attr_open,
-+	.release	= proc_pid_attr_release,
- 	.read		= proc_pid_attr_read,
-+	.llseek		= proc_pid_attr_lseek,
- 	.write		= proc_pid_attr_write,
--	.llseek		= generic_file_llseek,
- };
- 
- static const struct pid_entry attr_dir_stuff[] = {
-@@ -2406,6 +2474,7 @@ static const struct pid_entry attr_dir_stuff[] = {
- 	REG("fscreate",   S_IRUGO|S_IWUGO, proc_pid_attr_operations),
- 	REG("keycreate",  S_IRUGO|S_IWUGO, proc_pid_attr_operations),
- 	REG("sockcreate", S_IRUGO|S_IWUGO, proc_pid_attr_operations),
-+	REG("label_map",  S_IRUGO|S_IWUGO, proc_pid_attr_operations),
- };
- 
- static int proc_attr_dir_readdir(struct file *file, struct dir_context *ctx)
++		if (alloc)
++			kfree(value);
+ 	} else if (issec) {
+ 		const char *suffix = name + XATTR_SECURITY_PREFIX_LEN;
+ 		error = security_inode_setsecurity(inode, suffix, value,
 diff --git a/include/linux/lsm_hooks.h b/include/linux/lsm_hooks.h
-index 18c9160..7049db0 100644
+index 4f16640..85bfdde 100644
 --- a/include/linux/lsm_hooks.h
 +++ b/include/linux/lsm_hooks.h
-@@ -1208,6 +1208,18 @@
-  *	@name full extended attribute name to check against
-  *	LSM as a MAC label.
-  *
-+ * @getprocattr_seq:
-+ *	An alternative to the getprocattr, that makes it possible for an attr
-+ *	file to be handled by seq operations. If this function returns valid
-+ *	@ops for a specific @name, those operations will be used and
-+ *	getprocattr will not be called.
-+ *	A proper task for the file is then passed in seq_file->private.
-+ *	@p a task associated with the proc file.
-+ *	@name name of the attr file under /proc/$PID/attr/ to be handled.
-+ *	@ops (out) seq_operations to be used for @name.
-+ *	Return 0 if @name is to be handled by seq, EOPNOTSUPP if getprocattr()
-+ *	should be used. Other errors will be passed to user-space.
-+ *
-  * @secid_to_secctx:
-  *	Convert secid to security context.  If secdata is NULL the length of
-  *	the result will be returned in seclen, but no secdata will be returned.
-@@ -1525,6 +1537,8 @@ union security_list_options {
- 
- 	void (*d_instantiate)(struct dentry *dentry, struct inode *inode);
- 
-+	int (*getprocattr_seq)(struct task_struct *p, const char *name,
-+			       const struct seq_operations **ops);
- 	int (*getprocattr)(struct task_struct *p, char *name, char **value);
- 	int (*setprocattr)(struct task_struct *p, char *name, void *value,
- 				size_t size);
-@@ -1774,6 +1788,7 @@ struct security_hook_heads {
- 	struct list_head sem_semop;
- 	struct list_head netlink_send;
- 	struct list_head d_instantiate;
-+	struct list_head getprocattr_seq;
- 	struct list_head getprocattr;
- 	struct list_head setprocattr;
- 	struct list_head ismaclabel;
+@@ -349,6 +349,11 @@
+  *	Check permission before setting the extended attributes
+  *	@value identified by @name for @dentry.
+  *	Return 0 if permission is granted.
++ * @inode_pre_setxattr:
++ *	Be able to do some operation before setting the @value identified
++ *	by @name on the filesystem. Replacing the @value and its @size is
++ *	possible. Useful for mapped values. Set @alloc to true if @value
++ *	needs to be kfreed afterwards.
+  * @inode_post_setxattr:
+  *	Update inode security field after successful setxattr operation.
+  *	@value identified by @name for @dentry.
+@@ -1448,6 +1453,9 @@ union security_list_options {
+ 	int (*inode_getattr)(const struct path *path);
+ 	int (*inode_setxattr)(struct dentry *dentry, const char *name,
+ 				const void *value, size_t size, int flags);
++	int (*inode_pre_setxattr)(struct dentry *dentry, const char *name,
++				  const void **value, size_t *size,
++				  int flags, bool *alloc);
+ 	void (*inode_post_setxattr)(struct dentry *dentry, const char *name,
+ 					const void *value, size_t size,
+ 					int flags);
+@@ -1730,6 +1738,7 @@ struct security_hook_heads {
+ 	struct list_head inode_setattr;
+ 	struct list_head inode_getattr;
+ 	struct list_head inode_setxattr;
++	struct list_head inode_pre_setxattr;
+ 	struct list_head inode_post_setxattr;
+ 	struct list_head inode_getxattr;
+ 	struct list_head inode_listxattr;
 diff --git a/include/linux/security.h b/include/linux/security.h
-index 91ffba2..dddea2f 100644
+index 12bd011..4de4865 100644
 --- a/include/linux/security.h
 +++ b/include/linux/security.h
-@@ -345,6 +345,8 @@ int security_sem_semctl(struct sem_array *sma, int cmd);
- int security_sem_semop(struct sem_array *sma, struct sembuf *sops,
- 			unsigned nsops, int alter);
- void security_d_instantiate(struct dentry *dentry, struct inode *inode);
-+int security_getprocattr_seq(struct task_struct *p, const char *name,
-+			     const struct seq_operations **ops);
- int security_getprocattr(struct task_struct *p, char *name, char **value);
- int security_setprocattr(struct task_struct *p, char *name, void *value, size_t size);
- int security_netlink_send(struct sock *sk, struct sk_buff *skb);
-@@ -1057,6 +1059,13 @@ static inline int security_sem_semop(struct sem_array *sma,
- static inline void security_d_instantiate(struct dentry *dentry, struct inode *inode)
- { }
+@@ -263,6 +263,9 @@ int security_inode_setattr(struct dentry *dentry, struct iattr *attr);
+ int security_inode_getattr(const struct path *path);
+ int security_inode_setxattr(struct dentry *dentry, const char *name,
+ 			    const void *value, size_t size, int flags);
++int security_inode_pre_setxattr(struct dentry *dentry, const char *name,
++				const void **value, size_t *size, int flags,
++				bool *alloc);
+ void security_inode_post_setxattr(struct dentry *dentry, const char *name,
+ 				  const void *value, size_t size, int flags);
+ int security_inode_getxattr(struct dentry *dentry, const char *name);
+@@ -691,6 +694,13 @@ static inline int security_inode_setxattr(struct dentry *dentry,
+ 	return cap_inode_setxattr(dentry, name, value, size, flags);
+ }
  
-+static inline int security_getprocattr_seq(struct task_struct *p,
-+					   const char *name,
-+					   const struct seq_operations **ops)
++static inline int security_inode_pre_setxattr(struct dentry *dentry,
++				const char *name, const void **value,
++				size_t *size, int flags, bool *alloc)
 +{
-+	return -EOPNOTSUPP;
++	return 0;
 +}
 +
- static inline int security_getprocattr(struct task_struct *p, char *name, char **value)
- {
- 	return -EINVAL;
+ static inline void security_inode_post_setxattr(struct dentry *dentry,
+ 		const char *name, const void *value, size_t size, int flags)
+ { }
 diff --git a/security/security.c b/security/security.c
-index e571127..da2bcd4 100644
+index abfc207..75d46b6 100644
 --- a/security/security.c
 +++ b/security/security.c
-@@ -1121,6 +1121,12 @@ void security_d_instantiate(struct dentry *dentry, struct inode *inode)
+@@ -644,6 +644,16 @@ int security_inode_setxattr(struct dentry *dentry, const char *name,
+ 	return evm_inode_setxattr(dentry, name, value, size);
  }
- EXPORT_SYMBOL(security_d_instantiate);
  
-+int security_getprocattr_seq(struct task_struct *p, const char *name,
-+			     const struct seq_operations **ops)
++int security_inode_pre_setxattr(struct dentry *dentry, const char *name,
++				const void **value, size_t *size, int flags,
++				bool *alloc)
 +{
-+	return call_int_hook(getprocattr_seq, -EOPNOTSUPP, p, name, ops);
++	if (unlikely(IS_PRIVATE(d_backing_inode(dentry))))
++		return 0;
++	return call_int_hook(inode_pre_setxattr, 0, dentry, name, value, size,
++			     flags, alloc);
 +}
 +
- int security_getprocattr(struct task_struct *p, char *name, char **value)
+ void security_inode_post_setxattr(struct dentry *dentry, const char *name,
+ 				  const void *value, size_t size, int flags)
  {
- 	return call_int_hook(getprocattr, -EINVAL, p, name, value);
-@@ -1774,6 +1780,8 @@ struct security_hook_heads security_hook_heads = {
- 	.netlink_send =	LIST_HEAD_INIT(security_hook_heads.netlink_send),
- 	.d_instantiate =
- 		LIST_HEAD_INIT(security_hook_heads.d_instantiate),
-+	.getprocattr_seq =
-+		LIST_HEAD_INIT(security_hook_heads.getprocattr_seq),
- 	.getprocattr =	LIST_HEAD_INIT(security_hook_heads.getprocattr),
- 	.setprocattr =	LIST_HEAD_INIT(security_hook_heads.setprocattr),
- 	.ismaclabel =	LIST_HEAD_INIT(security_hook_heads.ismaclabel),
+@@ -1662,6 +1672,8 @@ struct security_hook_heads security_hook_heads = {
+ 		LIST_HEAD_INIT(security_hook_heads.inode_getattr),
+ 	.inode_setxattr =
+ 		LIST_HEAD_INIT(security_hook_heads.inode_setxattr),
++	.inode_pre_setxattr =
++		LIST_HEAD_INIT(security_hook_heads.inode_pre_setxattr),
+ 	.inode_post_setxattr =
+ 		LIST_HEAD_INIT(security_hook_heads.inode_post_setxattr),
+ 	.inode_getxattr =
 -- 
 2.4.3
