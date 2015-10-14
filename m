@@ -1,11 +1,14 @@
 From: Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
-Subject: [PATCH v4 00/11] Smack namespace
-Date: Wed, 14 Oct 2015 14:41:54 +0200
-Message-ID: <1444826525-9758-1-git-send-email-l.pawelczyk@samsung.com>
+Subject: [PATCH v4 01/11] user_ns: 3 new LSM hooks for user namespace
+	operations
+Date: Wed, 14 Oct 2015 14:41:55 +0200
+Message-ID: <1444826525-9758-2-git-send-email-l.pawelczyk@samsung.com>
+References: <1444826525-9758-1-git-send-email-l.pawelczyk@samsung.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-reply-to: <1444826525-9758-1-git-send-email-l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,127 +22,249 @@ To: "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, "Eric W. 
 Cc: Lukasz Pawelczyk <havner-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Fourth version of Smack namespace. Rebased for smack-for-4.4 with some
-minor cosmetic changes.
+This commit implements 3 new LSM hooks that provide the means for LSMs
+to embed their own security context within user namespace, effectively
+creating some sort of a user_ns related security namespace.
 
-Readme from v3 as there were the most significant changes:
+The first one to take advantage of this mechanism is Smack.
 
-https://www.mail-archive.com/linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org/msg899383.html
-https://www.mail-archive.com/linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org/msg898638.html
+The hooks has been documented in the in the security.h below.
 
-1. the label map should be in /proc/.../attr/label_map and be handled
-   generically.
-2. The proper file system label (unmapped) should be written only once
-   to remove a state where an incorrect label is on the filesystem.
+Signed-off-by: Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
+Reviewed-by: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
+Acked-by: Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>
+---
+ include/linux/lsm_hooks.h      | 28 ++++++++++++++++++++++++++++
+ include/linux/security.h       | 23 +++++++++++++++++++++++
+ include/linux/user_namespace.h |  4 ++++
+ kernel/user.c                  |  3 +++
+ kernel/user_namespace.c        | 18 ++++++++++++++++++
+ security/security.c            | 28 ++++++++++++++++++++++++++++
+ 6 files changed, 104 insertions(+)
 
-Ad 1: Contrary to what Stephen said this unfortunately required LSM
-modifications.
-
-For reading: the map can be long, in principle longer than PAGE_SIZE to
-which normal getprocattr hook is limited. So I invented a way for
-getprocattr to be handled by seq operations. I think it is generic and
-can be reused nicely by other LSMs. Also it doesn't break current LSM
-code in any way. This created a new patch.
-
-For writing: the default setprocattr arguments were not enough for me
-to securely decide if the write access should be granted. To be in
-parallel with user namespace I also needed credentials of the process
-that actually opened the map (in addition to current). So I added a new
-argument. This is also a new patch.
-
-Ad 2: I really tried to make it work without introducing a new LSM
-hook but changing a little semantics behind the current ones. Finally
-I just added a simple inode_pre_setxattr hook that can swap the label
-before it is written to the filesystem.  Hopefully this is ok. I
-couldn't do this in inode_setxattr hook as Stephen suggested as this
-hook is called before __vfs_setxattr_noperm which is an exported
-symbol and is used sometimes without setxattr hence the logic had to
-be inside that one. This is also a new patch.
-
-I also added a new patch that "fixes" smackfs/syslog. I've noticed that
-inside a namespace when I cat the file it shows "*". Even when I
-remapped the star. After looking at the code it had it implicitly
-displayed when it's not set. There were few problems with it:
-
-1. In a namespace we can see a label that is not mapped.
-2. There was no way to actually reset the value to default (NULL)
-3. It was inconsistent from user space point of view:
-
-# cat /smack/syslog
-*
-
-After the reboot the syslog hook doesn't limit anything, the
-smack_syslog_label is NULL, but it displays star.
-
-# echo '*' > /smack/syslog
-# cat /smack/syslog
-*
-
-From user space POV this is the same, file has star inside, but now for
-the hook to pass the current needs to be star as well. And there is no
-way to reset it back to NULL. So I treated syslog file the same way
-unconfined and onlycap are handled. If it's empty, there is no label
-set, hook doesn't limit anything (except for the cap). When it's filled
-current needs to be equal for the hook to pass (as was before). But now
-it can be reset back to NULL by writing EINVAL value (e.g. -syslog).
-The syslog hook itself was not modified, only the file handling.
-
-Changes from v3:
-- rebased to the latest smack branch (smack-for-4.4)
-- cosmetics in second patch reported by Paul Moore
-- Acks from Paul Moore and Serge E. Hallyn on selected patches
-
-Changes from v2:
-- fix for config ifdefs in user_ns LSM hooks patch (CONFIG_USER_NS
-  should've been used instead of CONFIG_SECURITY in several places)
-- new patch for "smack_map" -> "attr/label_map" and new related
-  getprocattr_seq lsm hook. With this change the code in further
-  patches for handling smack_map has been moved to this new method
-- new patch for setprocattr hook new argument, file's opener creds
-- new patch for inode_pre_setxattr LSM hook
-- new patch related to handling smackfs/syslog
-
-Changes from v1:
-- "kernel/exit.c: make sure current's nsproxy != NULL while checking
-  caps" patch has been dropped
-- fixed the title of the user_ns operations patch
-
-Lukasz Pawelczyk (11):
-  user_ns: 3 new LSM hooks for user namespace operations
-  lsm: /proc/$PID/attr/label_map file and getprocattr_seq hook
-  lsm: add file opener's cred to a setprocattr arguments
-  lsm: inode_pre_setxattr hook
-  smack: extend capability functions and fix 2 checks
-  smack: don't use implicit star to display smackfs/syslog
-  smack: abstraction layer for 2 common Smack operations
-  smack: misc cleanups in preparation for a namespace patch
-  smack: namespace groundwork
-  smack: namespace implementation
-  smack: documentation for the Smack namespace
-
- Documentation/security/00-INDEX            |   2 +
- Documentation/security/Smack-namespace.txt | 231 +++++++++++
- MAINTAINERS                                |   1 +
- fs/proc/base.c                             |  83 +++-
- fs/xattr.c                                 |  10 +
- include/linux/lsm_hooks.h                  |  70 +++-
- include/linux/security.h                   |  49 ++-
- include/linux/user_namespace.h             |   4 +
- kernel/user.c                              |   3 +
- kernel/user_namespace.c                    |  18 +
- security/apparmor/lsm.c                    |   5 +-
- security/security.c                        |  54 ++-
- security/selinux/hooks.c                   |   2 +-
- security/smack/Kconfig                     |  12 +
- security/smack/Makefile                    |   1 +
- security/smack/smack.h                     | 124 +++++-
- security/smack/smack_access.c              | 263 ++++++++++--
- security/smack/smack_lsm.c                 | 626 +++++++++++++++++++++--------
- security/smack/smack_ns.c                  | 443 ++++++++++++++++++++
- security/smack/smackfs.c                   | 206 ++++++----
- 20 files changed, 1912 insertions(+), 295 deletions(-)
- create mode 100644 Documentation/security/Smack-namespace.txt
- create mode 100644 security/smack/smack_ns.c
-
+diff --git a/include/linux/lsm_hooks.h b/include/linux/lsm_hooks.h
+index ec3a6ba..18c9160 100644
+--- a/include/linux/lsm_hooks.h
++++ b/include/linux/lsm_hooks.h
+@@ -1261,6 +1261,23 @@
+  *	audit_rule_init.
+  *	@rule contains the allocated rule
+  *
++ * @userns_create:
++ *	Allocates and fills the security part of a new user namespace.
++ *	@ns points to a newly created user namespace.
++ *	Returns 0 or an error code.
++ *
++ * @userns_free:
++ *	Deallocates the security part of a user namespace.
++ *	@ns points to a user namespace about to be destroyed.
++ *
++ * @userns_setns:
++ *	Run during a setns syscall to add a process to an already existing
++ *	user namespace. Returning failure here will block the operation
++ *	requested from userspace (setns() with CLONE_NEWUSER).
++ *	@nsproxy contains nsproxy to which the user namespace will be assigned.
++ *	@ns contains user namespace that is to be incorporated to the nsproxy.
++ *	Returns 0 or an error code.
++ *
+  * @inode_notifysecctx:
+  *	Notify the security module of what the security context of an inode
+  *	should be.  Initializes the incore security context managed by the
+@@ -1613,6 +1630,12 @@ union security_list_options {
+ 				struct audit_context *actx);
+ 	void (*audit_rule_free)(void *lsmrule);
+ #endif /* CONFIG_AUDIT */
++
++#ifdef CONFIG_USER_NS
++	int (*userns_create)(struct user_namespace *ns);
++	void (*userns_free)(struct user_namespace *ns);
++	int (*userns_setns)(struct nsproxy *nsproxy, struct user_namespace *ns);
++#endif /* CONFIG_USER_NS */
+ };
+ 
+ struct security_hook_heads {
+@@ -1824,6 +1847,11 @@ struct security_hook_heads {
+ 	struct list_head audit_rule_match;
+ 	struct list_head audit_rule_free;
+ #endif /* CONFIG_AUDIT */
++#ifdef CONFIG_USER_NS
++	struct list_head userns_create;
++	struct list_head userns_free;
++	struct list_head userns_setns;
++#endif /* CONFIG_USER_NS */
+ };
+ 
+ /*
+diff --git a/include/linux/security.h b/include/linux/security.h
+index 2f4c1f7..91ffba2 100644
+--- a/include/linux/security.h
++++ b/include/linux/security.h
+@@ -1584,6 +1584,29 @@ static inline void security_audit_rule_free(void *lsmrule)
+ #endif /* CONFIG_SECURITY */
+ #endif /* CONFIG_AUDIT */
+ 
++#ifdef CONFIG_USER_NS
++int security_userns_create(struct user_namespace *ns);
++void security_userns_free(struct user_namespace *ns);
++int security_userns_setns(struct nsproxy *nsproxy, struct user_namespace *ns);
++
++#else
++
++static inline int security_userns_create(struct user_namespace *ns)
++{
++	return 0;
++}
++
++static inline void security_userns_free(struct user_namespace *ns)
++{ }
++
++static inline int security_userns_setns(struct nsproxy *nsproxy,
++					struct user_namespace *ns)
++{
++	return 0;
++}
++
++#endif /* CONFIG_USER_NS */
++
+ #ifdef CONFIG_SECURITYFS
+ 
+ extern struct dentry *securityfs_create_file(const char *name, umode_t mode,
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index 8297e5b..a9400cc 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -39,6 +39,10 @@ struct user_namespace {
+ 	struct key		*persistent_keyring_register;
+ 	struct rw_semaphore	persistent_keyring_register_sem;
+ #endif
++
++#ifdef CONFIG_SECURITY
++	void *security;
++#endif
+ };
+ 
+ extern struct user_namespace init_user_ns;
+diff --git a/kernel/user.c b/kernel/user.c
+index b069ccb..ce5419e 100644
+--- a/kernel/user.c
++++ b/kernel/user.c
+@@ -59,6 +59,9 @@ struct user_namespace init_user_ns = {
+ 	.persistent_keyring_register_sem =
+ 	__RWSEM_INITIALIZER(init_user_ns.persistent_keyring_register_sem),
+ #endif
++#ifdef CONFIG_SECURITY
++	.security = NULL,
++#endif
+ };
+ EXPORT_SYMBOL_GPL(init_user_ns);
+ 
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 88fefa6..daef188 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -22,6 +22,7 @@
+ #include <linux/ctype.h>
+ #include <linux/projid.h>
+ #include <linux/fs_struct.h>
++#include <linux/security.h>
+ 
+ static struct kmem_cache *user_ns_cachep __read_mostly;
+ static DEFINE_MUTEX(userns_state_mutex);
+@@ -109,6 +110,15 @@ int create_user_ns(struct cred *new)
+ 
+ 	set_cred_user_ns(new, ns);
+ 
++#ifdef CONFIG_SECURITY
++	ret = security_userns_create(ns);
++	if (ret) {
++		ns_free_inum(&ns->ns);
++		kmem_cache_free(user_ns_cachep, ns);
++		return ret;
++	}
++#endif
++
+ #ifdef CONFIG_PERSISTENT_KEYRINGS
+ 	init_rwsem(&ns->persistent_keyring_register_sem);
+ #endif
+@@ -144,6 +154,9 @@ void free_user_ns(struct user_namespace *ns)
+ #ifdef CONFIG_PERSISTENT_KEYRINGS
+ 		key_put(ns->persistent_keyring_register);
+ #endif
++#ifdef CONFIG_SECURITY
++		security_userns_free(ns);
++#endif
+ 		ns_free_inum(&ns->ns);
+ 		kmem_cache_free(user_ns_cachep, ns);
+ 		ns = parent;
+@@ -970,6 +983,7 @@ static int userns_install(struct nsproxy *nsproxy, struct ns_common *ns)
+ {
+ 	struct user_namespace *user_ns = to_user_ns(ns);
+ 	struct cred *cred;
++	int err;
+ 
+ 	/* Don't allow gaining capabilities by reentering
+ 	 * the same user namespace.
+@@ -987,6 +1001,10 @@ static int userns_install(struct nsproxy *nsproxy, struct ns_common *ns)
+ 	if (!ns_capable(user_ns, CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
++	err = security_userns_setns(nsproxy, user_ns);
++	if (err)
++		return err;
++
+ 	cred = prepare_creds();
+ 	if (!cred)
+ 		return -ENOMEM;
+diff --git a/security/security.c b/security/security.c
+index 46f405c..e571127 100644
+--- a/security/security.c
++++ b/security/security.c
+@@ -25,6 +25,7 @@
+ #include <linux/mount.h>
+ #include <linux/personality.h>
+ #include <linux/backing-dev.h>
++#include <linux/user_namespace.h>
+ #include <net/flow.h>
+ 
+ #define MAX_LSM_EVM_XATTR	2
+@@ -1538,6 +1539,25 @@ int security_audit_rule_match(u32 secid, u32 field, u32 op, void *lsmrule,
+ }
+ #endif /* CONFIG_AUDIT */
+ 
++#ifdef CONFIG_USER_NS
++
++int security_userns_create(struct user_namespace *ns)
++{
++	return call_int_hook(userns_create, 0, ns);
++}
++
++void security_userns_free(struct user_namespace *ns)
++{
++	call_void_hook(userns_free, ns);
++}
++
++int security_userns_setns(struct nsproxy *nsproxy, struct user_namespace *ns)
++{
++	return call_int_hook(userns_setns, 0, nsproxy, ns);
++}
++
++#endif /* CONFIG_USER_NS */
++
+ struct security_hook_heads security_hook_heads = {
+ 	.binder_set_context_mgr =
+ 		LIST_HEAD_INIT(security_hook_heads.binder_set_context_mgr),
+@@ -1882,4 +1902,12 @@ struct security_hook_heads security_hook_heads = {
+ 	.audit_rule_free =
+ 		LIST_HEAD_INIT(security_hook_heads.audit_rule_free),
+ #endif /* CONFIG_AUDIT */
++#ifdef CONFIG_USER_NS
++	.userns_create =
++		LIST_HEAD_INIT(security_hook_heads.userns_create),
++	.userns_free =
++		LIST_HEAD_INIT(security_hook_heads.userns_free),
++	.userns_setns =
++		LIST_HEAD_INIT(security_hook_heads.userns_setns),
++#endif /* CONFIG_USER_NS */
+ };
 -- 
 2.4.3
