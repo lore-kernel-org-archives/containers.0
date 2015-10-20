@@ -1,12 +1,15 @@
-From: "lex25" <lex25-bdywXnLJjgMmnvkBusLcMw@public.gmane.org>
-Subject: =?GB2312?B?zeLDs7/Nu6fL0cv3v6q3osjtvP6jrL21tc3N4sOzv827p7+qt6LNttfKw8W8?=
-	=?GB2312?B?97qjzeK1xL/Nu6fV5rXExMfDtMTRv6q3osLwo78=?=
-Date: Thu, 15 Oct 2015 03:13:32 +0800
-Message-ID: <201510150313323754956@meitanbank.net>
-Reply-To: 562624923-9uewiaClKEY@public.gmane.org
+From: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
+Subject: Re: [PATCH RFC v3 2/2] pidns: introduce syscall getvpid
+Date: Tue, 20 Oct 2015 13:04:23 +0300
+Message-ID: <562611A7.7070606__47455.2542240874$1445335507$gmane$org@yandex-team.ru>
+References: <20150925135246.27620.97496.stgit@buzz>
+	<20150925135247.27620.37109.stgit@buzz>
+	<87d1x25vng.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============3310628227011682411=="
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <87d1x25vng.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,72 +19,92 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Roman Gushchin <klamm-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Chen Fan <chen.fan.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
---===============3310628227011682411==
-Content-Type: text/plain; charset="GB2312"
+On 28.09.2015 19:57, Eric W. Biederman wrote:
+> Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org> writes:
+>
+>> If pid is negative then getvpid() returns pid of parent task for -pid.
+>
+> Now that I am noticing this.  I don't think I have seen any discussion
+> about justifying a syscall getting another processes parent pid.  My
+> apologies if I just missed it.
+>
 
-   be3uBV7LwE3AoHo35
+Sorry for late response. This completely fell out of my mind after LinuxCon.
 
-   您好： 经过我司几年研究和实践，我们发现很多外贸企业目前遇到几大难题：
+> Why do we want the the parent pid?  We can we usefully do with it?
+> Is proc really that bad of an interface?
+>
+> Fetching a parent pid feels like a separate logical operation
+> from pid translation.  Which makes me a bit uneasy about this
+> part of the conversation.
 
+Yep proc interface is bad. /proc/$pid/stat is almost impossible to
+parse without flaws because task could set second field "comm" into
+any string and fake ppid  - for example ") Z 1". /proc/$pid/status
+is better but it has more information and thus slower.
 
+This trick for distant getppid looks cheap useful:
+in this interface space of negative pids is free for use.
 
-   国外客户越来越了解市场，开发客户越来越难？范围太窄？
+>
+>> Examples:
+>> getvpid(pid, ns, -1)      - get pid in our pid namespace
+>> getvpid(pid, -1, ns)      - get pid in container
+>> getvpid(pid, -1, ns) > 0  - is pid is reachable from container?
+>> getvpid(1, ns1, ns2) > 0  - is ns1 inside ns2?
+>> getvpid(1, ns1, ns2) == 0 - is ns1 outside ns2?
+>> getvpid(1, ns, -1)        - get init task of pid-namespace
+>> getvpid(-1, ns, -1)       - get reaper of init task in parent pid-namespace
+>> getvpid(-pid, -1, -1)     - get ppid by pid
+>
+> As I step back and pay attention to this case I am half wondering if
+> perhaps what would be most useful is a file descriptor that refers
+> to a pid and an updated set of system calls that takes pid file
+> descriptors instead of pids.
 
+Fd which pins pids isn't a good idea.
 
+I think it's better to refer (but not hold) task rather than pid.
+For example inode of taskfd will hold small buffer for task exit
+status: task holds reference to its own taskfd inode and populates
+status when exits. Here will be no zombies and delayed reaping.
 
-   还不断忙碌于参展，做不同B2B平台吗？花费大量精力开发客户，一天忙碌到晚客户资源依旧不多？
+Something like:
 
-   F692wp3G3gEEX4Lz6vCV
+task_fd = clonefd()
+                      ...
+select(...)
+                      exit(...)
+pread(task_fd, &status_rusage_etc, sizeof, 0);
+close(task_fd);
 
-   全球客源您挖掘开发了多少呢？您为查找效率低，量小，找不到目标客户而烦恼吗？
+Task pid also could be part of structure in that fd. Potentially it
+could provide the same information as /proc/$pid/... in effective
+binary format: we can read only required fields of structure and
+kernel can skip unneeded calculations.
 
+>
+> Something like:
+>
+>      getpidfd(int pidnsfd, pid_t pid);
+>
+>      waitfd(int pidfd, int *status, int options, struct rusage *rusage);
+>
+>      killfd(int pidfd, int sig);
+>
+>      clonefd(...);
+>
+> And perhaps:
+>      pid_nr_ns(int pidnsfd, int pidfd);
+>
+>      parentfd(int pidfd);
+>
+> Eric
+>
 
-
-   您是否有考虑启用新的方式，融入互联网这个宝藏呢？开发属于自己企业的客户开发方案呢？
-
-
-
-   轻松帮您解决以上问题，成为您开拓海外客户的好帮手！解放您的双手，充分利用您的时间，将有限精力和时间优质客户询盘上。
-
-   NgACj4N2D7Bi2N9hEfjx
-
-   利用你们的产品的“关键字”搜索出你们行业的所有的经销商，进口商，OEM商等所有的联系方式，直击终端客户。
-
-
-
-   完全避开B2B的价格战，展会的成本高，把握谷歌千百万客户资源，极大效率，主动出击迅速找到真正对你们产品感兴趣的客户。
-
-
-
-   我们为您提供专业客户开发解决方案服务，让全球对贵司产品感兴趣的客户轻松联系到您，让您产品遍布全球！
-
-   8NzLB8sQe76HmHFy304G
-
-   详细软件信息请咨询
-
-
-
-   咨询QQ: 562624923
-
-   SFZ3sa3M9xda8K4w
-
-   电话：13410395337
-
-   myI95nhsze8RFf0QzkUZ
-
-   加QQ后可在线利用贵司产品关键词，直接演示搜索效果
-
---===============3310628227011682411==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============3310628227011682411==--
+-- 
+Konstantin
