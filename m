@@ -1,15 +1,11 @@
 From: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
-Subject: Re: [PATCH RFC v3 2/2] pidns: introduce syscall getvpid
-Date: Tue, 20 Oct 2015 13:04:23 +0300
-Message-ID: <562611A7.7070606__47455.2542240874$1445335507$gmane$org@yandex-team.ru>
-References: <20150925135246.27620.97496.stgit@buzz>
-	<20150925135247.27620.37109.stgit@buzz>
-	<87d1x25vng.fsf@x220.int.ebiederm.org>
+Subject: [PATCH] TTY, devpts: document pty count limiting
+Date: Wed, 21 Oct 2015 13:08:54 +0300
+Message-ID: <20151021100854.7888.90252.stgit@buzz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87d1x25vng.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,92 +15,61 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Roman Gushchin <klamm-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Chen Fan <chen.fan.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: linux-doc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Greg Kroah-Hartman <gregkh-l3A5Bk7waGM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 28.09.2015 19:57, Eric W. Biederman wrote:
-> Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org> writes:
->
->> If pid is negative then getvpid() returns pid of parent task for -pid.
->
-> Now that I am noticing this.  I don't think I have seen any discussion
-> about justifying a syscall getting another processes parent pid.  My
-> apologies if I just missed it.
->
+Logic was changed in kernel 3.4 by commit e9aba5158a80 ("tty: rework pty
+count limiting") but still isn't documented. Better late than never.
 
-Sorry for late response. This completely fell out of my mind after LinuxCon.
+Signed-off-by: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
+---
+ Documentation/filesystems/devpts.txt |    9 +++++++++
+ Documentation/sysctl/kernel.txt      |    7 +++++++
+ 2 files changed, 16 insertions(+)
 
-> Why do we want the the parent pid?  We can we usefully do with it?
-> Is proc really that bad of an interface?
->
-> Fetching a parent pid feels like a separate logical operation
-> from pid translation.  Which makes me a bit uneasy about this
-> part of the conversation.
-
-Yep proc interface is bad. /proc/$pid/stat is almost impossible to
-parse without flaws because task could set second field "comm" into
-any string and fake ppid  - for example ") Z 1". /proc/$pid/status
-is better but it has more information and thus slower.
-
-This trick for distant getppid looks cheap useful:
-in this interface space of negative pids is free for use.
-
->
->> Examples:
->> getvpid(pid, ns, -1)      - get pid in our pid namespace
->> getvpid(pid, -1, ns)      - get pid in container
->> getvpid(pid, -1, ns) > 0  - is pid is reachable from container?
->> getvpid(1, ns1, ns2) > 0  - is ns1 inside ns2?
->> getvpid(1, ns1, ns2) == 0 - is ns1 outside ns2?
->> getvpid(1, ns, -1)        - get init task of pid-namespace
->> getvpid(-1, ns, -1)       - get reaper of init task in parent pid-namespace
->> getvpid(-pid, -1, -1)     - get ppid by pid
->
-> As I step back and pay attention to this case I am half wondering if
-> perhaps what would be most useful is a file descriptor that refers
-> to a pid and an updated set of system calls that takes pid file
-> descriptors instead of pids.
-
-Fd which pins pids isn't a good idea.
-
-I think it's better to refer (but not hold) task rather than pid.
-For example inode of taskfd will hold small buffer for task exit
-status: task holds reference to its own taskfd inode and populates
-status when exits. Here will be no zombies and delayed reaping.
-
-Something like:
-
-task_fd = clonefd()
-                      ...
-select(...)
-                      exit(...)
-pread(task_fd, &status_rusage_etc, sizeof, 0);
-close(task_fd);
-
-Task pid also could be part of structure in that fd. Potentially it
-could provide the same information as /proc/$pid/... in effective
-binary format: we can read only required fields of structure and
-kernel can skip unneeded calculations.
-
->
-> Something like:
->
->      getpidfd(int pidnsfd, pid_t pid);
->
->      waitfd(int pidfd, int *status, int options, struct rusage *rusage);
->
->      killfd(int pidfd, int sig);
->
->      clonefd(...);
->
-> And perhaps:
->      pid_nr_ns(int pidnsfd, int pidfd);
->
->      parentfd(int pidfd);
->
-> Eric
->
-
--- 
-Konstantin
+diff --git a/Documentation/filesystems/devpts.txt b/Documentation/filesystems/devpts.txt
+index 68dffd87f9b7..30d2fcb32f72 100644
+--- a/Documentation/filesystems/devpts.txt
++++ b/Documentation/filesystems/devpts.txt
+@@ -51,6 +51,15 @@ where 'ns_exec -cm /bin/bash' calls clone() with CLONE_NEWNS flag and execs
+ /bin/bash in the child process.  A pty created by the sshd is not visible in
+ the original mount of /dev/pts.
+ 
++Total count of pty pairs in all instances is limited by sysctls:
++kernel.pty.max = 4096		- global limit
++kernel.pty.reserve = 1024	- reserve for initial instance
++kernel.pty.nr			- current count of ptys
++
++Per-instance limit could be set by adding mount option "max=<count>".
++This feature was added in kernel 3.4 together with sysctl kernel.pty.reserve.
++In kernels older than 3.4 sysctl kernel.pty.max works as per-instance limit.
++
+ User-space changes
+ ------------------
+ 
+diff --git a/Documentation/sysctl/kernel.txt b/Documentation/sysctl/kernel.txt
+index 6fccb69c03e7..01a42021c2e5 100644
+--- a/Documentation/sysctl/kernel.txt
++++ b/Documentation/sysctl/kernel.txt
+@@ -63,6 +63,7 @@ show up in /proc/sys/kernel:
+ - printk_delay
+ - printk_ratelimit
+ - printk_ratelimit_burst
++- pty/
+ - randomize_va_space
+ - real-root-dev               ==> Documentation/initrd.txt
+ - reboot-cmd                  [ SPARC only ]
+@@ -683,6 +684,12 @@ send before ratelimiting kicks in.
+ 
+ ==============================================================
+ 
++pty/:
++
++See Documentation/filesystems/devpts.txt.
++
++==============================================================
++
+ randomize_va_space:
+ 
+ This option can be used to select the type of process address
