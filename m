@@ -1,15 +1,15 @@
 From: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
-Subject: Re: [PATCH v4 07/11] smack: abstraction layer for 2 common Smack
-	operations
-Date: Thu, 29 Oct 2015 15:51:15 -0700
-Message-ID: <5632A2E3.7050504@schaufler-ca.com>
+Subject: Re: [PATCH v4 08/11] smack: misc cleanups in preparation for a
+	namespace patch
+Date: Thu, 29 Oct 2015 15:51:30 -0700
+Message-ID: <5632A2F2.1090000@schaufler-ca.com>
 References: <1444826525-9758-1-git-send-email-l.pawelczyk@samsung.com>
-	<1444826525-9758-8-git-send-email-l.pawelczyk@samsung.com>
+	<1444826525-9758-9-git-send-email-l.pawelczyk@samsung.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1444826525-9758-8-git-send-email-l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <1444826525-9758-9-git-send-email-l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,23 +24,17 @@ Cc: Lukasz Pawelczyk <havner-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 On 10/14/2015 5:42 AM, Lukasz Pawelczyk wrote:
-> This patch adds two new functions that provide an abstraction layer for
-> two common internal Smack operations:
+> This patch does some small miscellaneous cleanups and additions that
+> should not change the code behaviour in any way. Its only purpose is to
+> shape the code in a way that the smack namespace patches would be
+> smaller and easier to understand.
 >
-> smk_find_label_name() - returns a label name (char*) from a struct
->                         smack_known pointer
-> smk_get_label()       - either finds or imports a label from a raw label
->                         name (char*) and returns struct smack_known
->                         pointer
+> Changes:
+> - four small helper functions added
+> - minor code reformatting in several places for readability
+> - unnecessarily increasing string size has been fixed
 >
-> This patch also simplifies some pieces of code due to addition of those
-> 2 functions (e.g. smack_inode_post_setxattr, smk_fill_rule,
-> smk_write_revoke_subj).
->
-> It is meant as a preparation for namespaces patches. Those 2 functions
-> will serve as entry points for namespace operations.
->
-> This patch should not change the Smack behaviour in any way.
+> This patch should not change the behaviour of the Smack in any way.
 >
 > Signed-off-by: Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
 > Reviewed-by: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
@@ -49,574 +43,338 @@ Acked-by: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
 
 
 > ---
->  security/smack/smack.h        |   2 +
->  security/smack/smack_access.c |  41 ++++++++++++
->  security/smack/smack_lsm.c    |  78 +++++++++++-----------
->  security/smack/smackfs.c      | 147 +++++++++++++++++++++++-------------------
->  4 files changed, 166 insertions(+), 102 deletions(-)
+>  security/smack/smack.h        | 47 ++++++++++++++++++++++++++++++++++-
+>  security/smack/smack_access.c | 18 +++++++++-----
+>  security/smack/smack_lsm.c    | 58 ++++++++++++++++---------------------------
+>  security/smack/smackfs.c      |  4 +--
+>  4 files changed, 81 insertions(+), 46 deletions(-)
 >
 > diff --git a/security/smack/smack.h b/security/smack/smack.h
-> index ca8fb7c..091efc2 100644
+> index 091efc2..98bb676 100644
 > --- a/security/smack/smack.h
 > +++ b/security/smack/smack.h
-> @@ -306,6 +306,8 @@ int smack_has_ns_privilege(struct task_struct *task,
->  int smack_has_privilege(struct task_struct *task, int cap);
->  int smack_ns_privileged(struct user_namespace *user_ns, int cap);
->  int smack_privileged(int cap);
-> +char *smk_find_label_name(struct smack_known *skp);
-> +struct smack_known *smk_get_label(const char *string, int len, bool import);
+> @@ -291,7 +291,7 @@ struct smk_audit_info {
+>  int smk_access_entry(char *, char *, struct list_head *);
+>  int smk_access(struct smack_known *, struct smack_known *,
+>  	       int, struct smk_audit_info *);
+> -int smk_tskacc(struct task_smack *, struct smack_known *,
+> +int smk_tskacc(struct task_struct *, struct smack_known *,
+>  	       u32, struct smk_audit_info *);
+>  int smk_curacc(struct smack_known *, u32, struct smk_audit_info *);
+>  struct smack_known *smack_from_secid(const u32);
+> @@ -348,6 +348,7 @@ extern struct hlist_head smack_known_hash[SMACK_HASH_SLOTS];
+>  static inline int smk_inode_transmutable(const struct inode *isp)
+>  {
+>  	struct inode_smack *sip = isp->i_security;
+> +
+>  	return (sip->smk_flags & SMK_INODE_TRANSMUTE) != 0;
+>  }
+>  
+> @@ -357,10 +358,31 @@ static inline int smk_inode_transmutable(const struct inode *isp)
+>  static inline struct smack_known *smk_of_inode(const struct inode *isp)
+>  {
+>  	struct inode_smack *sip = isp->i_security;
+> +
+>  	return sip->smk_inode;
+>  }
 >  
 >  /*
->   * Shared data.
+> + * Present a pointer to the smack label entry in an inode blob for an exec.
+> + */
+> +static inline struct smack_known *smk_of_exec(const struct inode *isp)
+> +{
+> +	struct inode_smack *sip = isp->i_security;
+> +
+> +	return sip->smk_task;
+> +}
+> +
+> +/*
+> + * Present a pointer to the smack label entry in an inode blob for an mmap.
+> + */
+> +static inline struct smack_known *smk_of_mmap(const struct inode *isp)
+> +{
+> +	struct inode_smack *sip = isp->i_security;
+> +
+> +	return sip->smk_mmap;
+> +}
+> +
+> +/*
+>   * Present a pointer to the smack label entry in an task blob.
+>   */
+>  static inline struct smack_known *smk_of_task(const struct task_smack *tsp)
+> @@ -395,6 +417,29 @@ static inline struct smack_known *smk_of_current(void)
+>  }
+>  
+>  /*
+> + * Present a pointer to the user namespace entry in an task blob.
+> + */
+> +static inline
+> +struct user_namespace *ns_of_task_struct(const struct task_struct *t)
+> +{
+> +	struct user_namespace *ns;
+> +
+> +	rcu_read_lock();
+> +	ns = __task_cred(t)->user_ns;
+> +	rcu_read_unlock();
+> +
+> +	return ns;
+> +}
+> +
+> +/*
+> + * Present a pointer to the user namespace entry in the current task blob.
+> + */
+> +static inline struct user_namespace *ns_of_current(void)
+> +{
+> +	return current_user_ns();
+> +}
+> +
+> +/*
+>   * logging functions
+>   */
+>  #define SMACK_AUDIT_DENIED 0x1
 > diff --git a/security/smack/smack_access.c b/security/smack/smack_access.c
-> index 72f848e..131c742 100644
+> index 131c742..750aa9c 100644
 > --- a/security/smack/smack_access.c
 > +++ b/security/smack/smack_access.c
-> @@ -716,3 +716,44 @@ int smack_privileged(int cap)
+> @@ -167,6 +167,7 @@ int smk_access(struct smack_known *subject, struct smack_known *object,
+>  		if (subject == &smack_known_hat)
+>  			goto out_audit;
+>  	}
+> +
+>  	/*
+>  	 * Beyond here an explicit relationship is required.
+>  	 * If the requested access is contained in the available
+> @@ -183,6 +184,7 @@ int smk_access(struct smack_known *subject, struct smack_known *object,
+>  		rc = -EACCES;
+>  		goto out_audit;
+>  	}
+> +
+>  #ifdef CONFIG_SECURITY_SMACK_BRINGUP
+>  	/*
+>  	 * Return a positive value if using bringup mode.
+> @@ -225,10 +227,10 @@ out_audit:
+>   * non zero otherwise. It allows that the task may have the capability
+>   * to override the rules.
+>   */
+> -int smk_tskacc(struct task_smack *tsp, struct smack_known *obj_known,
+> +int smk_tskacc(struct task_struct *task, struct smack_known *obj_known,
+>  	       u32 mode, struct smk_audit_info *a)
 >  {
->  	return smack_ns_privileged(&init_user_ns, cap);
+> -	struct smack_known *sbj_known = smk_of_task(tsp);
+> +	struct smack_known *sbj_known = smk_of_task_struct(task);
+>  	int may;
+>  	int rc;
+>  
+> @@ -237,13 +239,19 @@ int smk_tskacc(struct task_smack *tsp, struct smack_known *obj_known,
+>  	 */
+>  	rc = smk_access(sbj_known, obj_known, mode, NULL);
+>  	if (rc >= 0) {
+> +		struct task_smack *tsp;
+> +
+>  		/*
+>  		 * If there is an entry in the task's rule list
+>  		 * it can further restrict access.
+>  		 */
+> +		rcu_read_lock();
+> +		tsp = __task_cred(task)->security;
+>  		may = smk_access_entry(sbj_known->smk_known,
+>  				       obj_known->smk_known,
+>  				       &tsp->smk_rules);
+> +		rcu_read_unlock();
+> +
+>  		if (may < 0)
+>  			goto out_audit;
+>  		if ((mode & may) == mode)
+> @@ -280,9 +288,7 @@ out_audit:
+>  int smk_curacc(struct smack_known *obj_known,
+>  	       u32 mode, struct smk_audit_info *a)
+>  {
+> -	struct task_smack *tsp = current_security();
+> -
+> -	return smk_tskacc(tsp, obj_known, mode, a);
+> +	return smk_tskacc(current, obj_known, mode, a);
 >  }
-> +
-> +/**
-> + * smk_find_label_name - A helper to get a string value of a label
-> + * @skp: a label we want a string value from
-> + *
-> + * Returns a pointer to a label name or NULL if label name not found.
-> + */
-> +char *smk_find_label_name(struct smack_known *skp)
-> +{
-> +	return skp->smk_known;
-> +}
-> +
-> +/**
-> + * smk_get_label - A helper to get the smack_known value from a string using
-> + *                 either import or find functions if it already exists
-> + * @string: a name of a label we look for or want to import
-> + * @len: the string size, or zero if it is NULL terminated
-> + * @import: whether we should import the label if not found
-> + *
-> + * Returns a smack_known label that is either imported or found.
-> + * NULL if label not found (only when import == false).
-> + * Error code otherwise.
-> + */
-> +struct smack_known *smk_get_label(const char *string, int len, bool import)
-> +{
-> +	struct smack_known *skp;
-> +	char *cp;
-> +
-> +	if (import) {
-> +		skp = smk_import_entry(string, len);
-> +	} else {
-> +		cp = smk_parse_smack(string, len);
-> +		if (IS_ERR(cp))
-> +			return ERR_CAST(cp);
-> +
-> +		skp = smk_find_entry(cp);
-> +		kfree(cp);
-> +	}
-> +
-> +	return skp;
-> +}
+>  
+>  #ifdef CONFIG_AUDIT
+> @@ -456,7 +462,7 @@ char *smk_parse_smack(const char *string, int len)
+>  	int i;
+>  
+>  	if (len <= 0)
+> -		len = strlen(string) + 1;
+> +		len = strlen(string);
+>  
+>  	/*
+>  	 * Reserve a leading '-' as an indicator that
 > diff --git a/security/smack/smack_lsm.c b/security/smack/smack_lsm.c
-> index 198d3d6..7303c37 100644
+> index 7303c37..5a59836 100644
 > --- a/security/smack/smack_lsm.c
 > +++ b/security/smack/smack_lsm.c
-> @@ -746,31 +746,31 @@ static int smack_set_mnt_opts(struct super_block *sb,
->  	for (i = 0; i < num_opts; i++) {
->  		switch (opts->mnt_opts_flags[i]) {
->  		case FSDEFAULT_MNT:
-> -			skp = smk_import_entry(opts->mnt_opts[i], 0);
-> +			skp = smk_get_label(opts->mnt_opts[i], 0, true);
->  			if (IS_ERR(skp))
->  				return PTR_ERR(skp);
->  			sp->smk_default = skp;
->  			break;
->  		case FSFLOOR_MNT:
-> -			skp = smk_import_entry(opts->mnt_opts[i], 0);
-> +			skp = smk_get_label(opts->mnt_opts[i], 0, true);
->  			if (IS_ERR(skp))
->  				return PTR_ERR(skp);
->  			sp->smk_floor = skp;
->  			break;
->  		case FSHAT_MNT:
-> -			skp = smk_import_entry(opts->mnt_opts[i], 0);
-> +			skp = smk_get_label(opts->mnt_opts[i], 0, true);
->  			if (IS_ERR(skp))
->  				return PTR_ERR(skp);
->  			sp->smk_hat = skp;
->  			break;
->  		case FSROOT_MNT:
-> -			skp = smk_import_entry(opts->mnt_opts[i], 0);
-> +			skp = smk_get_label(opts->mnt_opts[i], 0, true);
->  			if (IS_ERR(skp))
->  				return PTR_ERR(skp);
->  			sp->smk_root = skp;
->  			break;
->  		case FSTRANS_MNT:
-> -			skp = smk_import_entry(opts->mnt_opts[i], 0);
-> +			skp = smk_get_label(opts->mnt_opts[i], 0, true);
->  			if (IS_ERR(skp))
->  				return PTR_ERR(skp);
->  			sp->smk_root = skp;
-> @@ -1288,7 +1288,7 @@ static int smack_inode_setxattr(struct dentry *dentry, const char *name,
->  		rc = -EPERM;
->  
->  	if (rc == 0 && check_import) {
-> -		skp = size ? smk_import_entry(value, size) : NULL;
-> +		skp = size ? smk_get_label(value, size, true) : NULL;
->  		if (IS_ERR(skp))
->  			rc = PTR_ERR(skp);
->  		else if (skp == NULL || (check_star &&
-> @@ -1322,6 +1322,7 @@ static void smack_inode_post_setxattr(struct dentry *dentry, const char *name,
->  				      const void *value, size_t size, int flags)
+> @@ -393,8 +393,6 @@ static int smk_ptrace_rule_check(struct task_struct *tracer,
 >  {
->  	struct smack_known *skp;
-> +	struct smack_known **skpp = NULL;
->  	struct inode_smack *isp = d_backing_inode(dentry)->i_security;
+>  	int rc;
+>  	struct smk_audit_info ad, *saip = NULL;
+> -	struct task_smack *tsp;
+> -	struct smack_known *tracer_known;
 >  
->  	if (strcmp(name, XATTR_NAME_SMACKTRANSMUTE) == 0) {
-> @@ -1329,27 +1330,21 @@ static void smack_inode_post_setxattr(struct dentry *dentry, const char *name,
->  		return;
+>  	if ((mode & PTRACE_MODE_NOAUDIT) == 0) {
+>  		smk_ad_init(&ad, func, LSM_AUDIT_DATA_TASK);
+> @@ -402,13 +400,12 @@ static int smk_ptrace_rule_check(struct task_struct *tracer,
+>  		saip = &ad;
 >  	}
 >  
-> -	if (strcmp(name, XATTR_NAME_SMACK) == 0) {
-> -		skp = smk_import_entry(value, size);
-> -		if (!IS_ERR(skp))
-> -			isp->smk_inode = skp;
-> -		else
-> -			isp->smk_inode = &smack_known_invalid;
-> -	} else if (strcmp(name, XATTR_NAME_SMACKEXEC) == 0) {
-> -		skp = smk_import_entry(value, size);
-> -		if (!IS_ERR(skp))
-> -			isp->smk_task = skp;
-> -		else
-> -			isp->smk_task = &smack_known_invalid;
-> -	} else if (strcmp(name, XATTR_NAME_SMACKMMAP) == 0) {
-> -		skp = smk_import_entry(value, size);
-> +	if (strcmp(name, XATTR_NAME_SMACK) == 0)
-> +		skpp = &isp->smk_inode;
-> +	else if (strcmp(name, XATTR_NAME_SMACKEXEC) == 0)
-> +		skpp = &isp->smk_task;
-> +	else if (strcmp(name, XATTR_NAME_SMACKMMAP) == 0)
-> +		skpp = &isp->smk_mmap;
+> -	rcu_read_lock();
+> -	tsp = __task_cred(tracer)->security;
+> -	tracer_known = smk_of_task(tsp);
+>  
+>  	if ((mode & PTRACE_MODE_ATTACH) &&
+>  	    (smack_ptrace_rule == SMACK_PTRACE_EXACT ||
+>  	     smack_ptrace_rule == SMACK_PTRACE_DRACONIAN)) {
+> +		struct smack_known *tracer_known = smk_of_task_struct(tracer);
 > +
-> +	if (skpp) {
-> +		skp = smk_get_label(value, size, true);
-> +
->  		if (!IS_ERR(skp))
-> -			isp->smk_mmap = skp;
-> +			*skpp = skp;
+>  		if (tracer_known->smk_known == tracee_known->smk_known)
+>  			rc = 0;
+>  		else if (smack_ptrace_rule == SMACK_PTRACE_DRACONIAN)
+> @@ -416,22 +413,18 @@ static int smk_ptrace_rule_check(struct task_struct *tracer,
+>  		else if (smack_has_privilege(tracer, CAP_SYS_PTRACE))
+>  			rc = 0;
 >  		else
-> -			isp->smk_mmap = &smack_known_invalid;
-> +			*skpp = &smack_known_invalid;
+> -			rc = -EACCES;
+> +			rc = -EPERM;
+>  
+>  		if (saip)
+>  			smack_log(tracer_known->smk_known,
+>  				  tracee_known->smk_known,
+>  				  0, rc, saip);
+>  
+> -		rcu_read_unlock();
+>  		return rc;
 >  	}
+>  
+>  	/* In case of rule==SMACK_PTRACE_DEFAULT or mode==PTRACE_MODE_READ */
+> -	rc = smk_tskacc(tsp, tracee_known, smk_ptrace_mode(mode), saip);
 > -
-> -	return;
+> -	rcu_read_unlock();
+> -	return rc;
+> +	return smk_tskacc(tracer, tracee_known, smk_ptrace_mode(mode), saip);
+>  }
+>  
+>  /*
+> @@ -450,9 +443,7 @@ static int smk_ptrace_rule_check(struct task_struct *tracer,
+>   */
+>  static int smack_ptrace_access_check(struct task_struct *ctp, unsigned int mode)
+>  {
+> -	struct smack_known *skp;
+> -
+> -	skp = smk_of_task_struct(ctp);
+> +	struct smack_known *skp = smk_of_task_struct(ctp);
+>  
+>  	return smk_ptrace_rule_check(current, skp, mode, __func__);
+>  }
+> @@ -467,13 +458,9 @@ static int smack_ptrace_access_check(struct task_struct *ctp, unsigned int mode)
+>   */
+>  static int smack_ptrace_traceme(struct task_struct *ptp)
+>  {
+> -	int rc;
+> -	struct smack_known *skp;
+> -
+> -	skp = smk_of_task(current_security());
+> +	struct smack_known *skp = smk_of_current();
+>  
+> -	rc = smk_ptrace_rule_check(ptp, skp, PTRACE_MODE_ATTACH, __func__);
+> -	return rc;
+> +	return smk_ptrace_rule_check(ptp, skp, PTRACE_MODE_ATTACH, __func__);
 >  }
 >  
 >  /**
-> @@ -1443,15 +1438,17 @@ static int smack_inode_getsecurity(const struct inode *inode,
->  	struct socket *sock;
->  	struct super_block *sbp;
->  	struct inode *ip = (struct inode *)inode;
-> -	struct smack_known *isp;
-> -	int ilen;
-> +	struct smack_known *isp = NULL;
->  	int rc = 0;
+> @@ -1692,13 +1679,14 @@ static int smack_mmap_file(struct file *file,
+>  	if (file == NULL)
+>  		return 0;
 >  
-> -	if (strcmp(name, XATTR_SMACK_SUFFIX) == 0) {
-> +	if (strcmp(name, XATTR_SMACK_SUFFIX) == 0)
->  		isp = smk_of_inode(inode);
-> -		ilen = strlen(isp->smk_known);
-> -		*buffer = isp->smk_known;
-> -		return ilen;
+> +	tsp = current_security();
+> +	skp = smk_of_task(tsp);
+>  	isp = file_inode(file)->i_security;
+> -	if (isp->smk_mmap == NULL)
+> -		return 0;
+>  	mkp = isp->smk_mmap;
+>  
+> -	tsp = current_security();
+> -	skp = smk_of_current();
+> +	if (mkp == NULL)
+> +		return 0;
 > +
-> +	if (isp) {
-> +		*buffer = smk_find_label_name(isp);
-> +		if (*buffer == NULL)
-> +			*buffer = smack_known_huh.smk_known;
-> +		return strlen(*buffer);
+>  	rc = 0;
+>  
+>  	rcu_read_lock();
+> @@ -3606,11 +3594,13 @@ static int smack_setprocattr(struct task_struct *p, const struct cred *f_cred,
+>  static int smack_unix_stream_connect(struct sock *sock,
+>  				     struct sock *other, struct sock *newsk)
+>  {
+> -	struct smack_known *skp;
+> -	struct smack_known *okp;
+>  	struct socket_smack *ssp = sock->sk_security;
+>  	struct socket_smack *osp = other->sk_security;
+>  	struct socket_smack *nsp = newsk->sk_security;
+> +	struct smack_known *skp_out = ssp->smk_out;
+> +	struct smack_known *okp_out = osp->smk_out;
+> +	struct smack_known *skp_in = ssp->smk_in;
+> +	struct smack_known *okp_in = osp->smk_in;
+>  	struct smk_audit_info ad;
+>  	int rc = 0;
+>  #ifdef CONFIG_AUDIT
+> @@ -3618,19 +3608,15 @@ static int smack_unix_stream_connect(struct sock *sock,
+>  #endif
+>  
+>  	if (!smack_privileged(CAP_MAC_OVERRIDE)) {
+> -		skp = ssp->smk_out;
+> -		okp = osp->smk_in;
+>  #ifdef CONFIG_AUDIT
+>  		smk_ad_init_net(&ad, __func__, LSM_AUDIT_DATA_NET, &net);
+>  		smk_ad_setfield_u_net_sk(&ad, other);
+>  #endif
+> -		rc = smk_access(skp, okp, MAY_WRITE, &ad);
+> -		rc = smk_bu_note("UDS connect", skp, okp, MAY_WRITE, rc);
+> +		rc = smk_access(skp_out, okp_in, MAY_WRITE, &ad);
+> +		rc = smk_bu_note("UDS connect", skp_out, okp_in, MAY_WRITE, rc);
+>  		if (rc == 0) {
+> -			okp = osp->smk_out;
+> -			skp = ssp->smk_in;
+> -			rc = smk_access(okp, skp, MAY_WRITE, &ad);
+> -			rc = smk_bu_note("UDS connect", okp, skp,
+> +			rc = smk_access(okp_out, skp_in, MAY_WRITE, &ad);
+> +			rc = smk_bu_note("UDS connect", okp_out, skp_in,
+>  						MAY_WRITE, rc);
+>  		}
 >  	}
->  
->  	/*
-> @@ -1474,10 +1471,11 @@ static int smack_inode_getsecurity(const struct inode *inode,
->  	else
->  		return -EOPNOTSUPP;
->  
-> -	ilen = strlen(isp->smk_known);
+> @@ -3639,8 +3625,8 @@ static int smack_unix_stream_connect(struct sock *sock,
+>  	 * Cross reference the peer labels for SO_PEERSEC.
+>  	 */
 >  	if (rc == 0) {
-> -		*buffer = isp->smk_known;
-> -		rc = ilen;
-> +		*buffer = smk_find_label_name(isp);
-> +		if (*buffer == NULL)
-> +			*buffer = smack_known_huh.smk_known;
-> +		rc = strlen(*buffer);
+> -		nsp->smk_packet = ssp->smk_out;
+> -		ssp->smk_packet = osp->smk_out;
+> +		nsp->smk_packet = skp_out;
+> +		ssp->smk_packet = okp_out;
 >  	}
 >  
 >  	return rc;
-> @@ -2658,7 +2656,7 @@ static int smack_inode_setsecurity(struct inode *inode, const char *name,
->  	if (value == NULL || size > SMK_LONGLABEL || size == 0)
->  		return -EINVAL;
->  
-> -	skp = smk_import_entry(value, size);
-> +	skp = smk_get_label(value, size, true);
->  	if (IS_ERR(skp))
->  		return PTR_ERR(skp);
->  
-> @@ -3528,7 +3526,10 @@ static int smack_getprocattr(struct task_struct *p, char *name, char **value)
->  	if (strcmp(name, "current") != 0)
->  		return -EINVAL;
->  
-> -	cp = kstrdup(skp->smk_known, GFP_KERNEL);
-> +	cp = smk_find_label_name(skp);
-> +	if (cp == NULL)
-> +		cp = smack_known_huh.smk_known;
-> +	cp = kstrdup(cp, GFP_KERNEL);
->  	if (cp == NULL)
->  		return -ENOMEM;
->  
-> @@ -3572,7 +3573,7 @@ static int smack_setprocattr(struct task_struct *p, const struct cred *f_cred,
->  	if (strcmp(name, "current") != 0)
->  		return -EINVAL;
->  
-> -	skp = smk_import_entry(value, size);
-> +	skp = smk_get_label(value, size, true);
->  	if (IS_ERR(skp))
->  		return PTR_ERR(skp);
->  
-> @@ -4311,7 +4312,10 @@ static int smack_key_getsecurity(struct key *key, char **_buffer)
->  		return 0;
->  	}
->  
-> -	copy = kstrdup(skp->smk_known, GFP_KERNEL);
-> +	copy = smk_find_label_name(skp);
-> +	if (copy == NULL)
-> +		copy = smack_known_huh.smk_known;
-> +	copy = kstrdup(copy, GFP_KERNEL);
->  	if (copy == NULL)
->  		return -ENOMEM;
->  	length = strlen(copy) + 1;
 > diff --git a/security/smack/smackfs.c b/security/smack/smackfs.c
-> index 05e09ee2..e5fb555 100644
+> index e5fb555..3149ec0 100644
 > --- a/security/smack/smackfs.c
 > +++ b/security/smack/smackfs.c
-> @@ -340,36 +340,17 @@ static int smk_fill_rule(const char *subject, const char *object,
->  				struct smack_parsed_rule *rule, int import,
->  				int len)
->  {
-> -	const char *cp;
-> -	struct smack_known *skp;
-> -
-> -	if (import) {
-> -		rule->smk_subject = smk_import_entry(subject, len);
-> -		if (IS_ERR(rule->smk_subject))
-> -			return PTR_ERR(rule->smk_subject);
-> -
-> -		rule->smk_object = smk_import_entry(object, len);
-> -		if (IS_ERR(rule->smk_object))
-> -			return PTR_ERR(rule->smk_object);
-> -	} else {
-> -		cp = smk_parse_smack(subject, len);
-> -		if (IS_ERR(cp))
-> -			return PTR_ERR(cp);
-> -		skp = smk_find_entry(cp);
-> -		kfree(cp);
-> -		if (skp == NULL)
-> -			return -ENOENT;
-> -		rule->smk_subject = skp;
-> -
-> -		cp = smk_parse_smack(object, len);
-> -		if (IS_ERR(cp))
-> -			return PTR_ERR(cp);
-> -		skp = smk_find_entry(cp);
-> -		kfree(cp);
-> -		if (skp == NULL)
-> -			return -ENOENT;
-> -		rule->smk_object = skp;
-> -	}
-> +	rule->smk_subject = smk_get_label(subject, len, import);
-> +	if (IS_ERR(rule->smk_subject))
-> +		return PTR_ERR(rule->smk_subject);
-> +	if (rule->smk_subject == NULL)
-> +		return -ENOENT;
-> +
-> +	rule->smk_object = smk_get_label(object, len, import);
-> +	if (IS_ERR(rule->smk_object))
-> +		return PTR_ERR(rule->smk_object);
-> +	if (rule->smk_object == NULL)
-> +		return -ENOENT;
->  
->  	rule->smk_access1 = smk_perm_from_str(access1);
->  	if (access2)
-> @@ -592,6 +573,9 @@ static void smk_seq_stop(struct seq_file *s, void *v)
->  
->  static void smk_rule_show(struct seq_file *s, struct smack_rule *srp, int max)
->  {
-> +	char *sbj;
-> +	char *obj;
-> +
->  	/*
->  	 * Don't show any rules with label names too long for
->  	 * interface file (/smack/load or /smack/load2)
-> @@ -605,9 +589,13 @@ static void smk_rule_show(struct seq_file *s, struct smack_rule *srp, int max)
->  	if (srp->smk_access == 0)
->  		return;
->  
-> -	seq_printf(s, "%s %s",
-> -		   srp->smk_subject->smk_known,
-> -		   srp->smk_object->smk_known);
-> +	sbj = smk_find_label_name(srp->smk_subject);
-> +	obj = smk_find_label_name(srp->smk_object);
-> +
-> +	if (sbj == NULL || obj == NULL)
-> +		return;
-> +
-> +	seq_printf(s, "%s %s", sbj, obj);
->  
->  	seq_putc(s, ' ');
->  
-> @@ -798,6 +786,7 @@ static int cipso_seq_show(struct seq_file *s, void *v)
->  		list_entry_rcu(list, struct smack_known, list);
->  	struct netlbl_lsm_catmap *cmp = skp->smk_netlabel.attr.mls.cat;
->  	char sep = '/';
-> +	char *cp;
->  	int i;
->  
->  	/*
-> @@ -811,7 +800,11 @@ static int cipso_seq_show(struct seq_file *s, void *v)
->  	if (strlen(skp->smk_known) >= SMK_LABELLEN)
->  		return 0;
->  
-> -	seq_printf(s, "%s %3d", skp->smk_known, skp->smk_netlabel.attr.mls.lvl);
-> +	cp = smk_find_label_name(skp);
-> +	if (cp == NULL)
-> +		return 0;
-> +
-> +	seq_printf(s, "%s %3d", cp, skp->smk_netlabel.attr.mls.lvl);
->  
->  	for (i = netlbl_catmap_walk(cmp, 0); i >= 0;
->  	     i = netlbl_catmap_walk(cmp, i + 1)) {
-> @@ -900,7 +893,7 @@ static ssize_t smk_set_cipso(struct file *file, const char __user *buf,
->  	 */
->  	mutex_lock(&smack_cipso_lock);
->  
-> -	skp = smk_import_entry(rule, 0);
-> +	skp = smk_get_label(rule, 0, true);
->  	if (IS_ERR(skp)) {
->  		rc = PTR_ERR(skp);
->  		goto out;
-> @@ -989,9 +982,14 @@ static int cipso2_seq_show(struct seq_file *s, void *v)
->  		list_entry_rcu(list, struct smack_known, list);
->  	struct netlbl_lsm_catmap *cmp = skp->smk_netlabel.attr.mls.cat;
->  	char sep = '/';
-> +	char *cp;
->  	int i;
->  
-> -	seq_printf(s, "%s %3d", skp->smk_known, skp->smk_netlabel.attr.mls.lvl);
-> +	cp = smk_find_label_name(skp);
-> +	if (cp == NULL)
-> +		return 0;
-> +
-> +	seq_printf(s, "%s %3d", cp, skp->smk_netlabel.attr.mls.lvl);
->  
->  	for (i = netlbl_catmap_walk(cmp, 0); i >= 0;
->  	     i = netlbl_catmap_walk(cmp, i + 1)) {
-> @@ -1072,8 +1070,12 @@ static int net4addr_seq_show(struct seq_file *s, void *v)
->  			list_entry_rcu(list, struct smk_net4addr, list);
->  	char *kp = SMACK_CIPSO_OPTION;
->  
-> -	if (skp->smk_label != NULL)
-> -		kp = skp->smk_label->smk_known;
-> +	if (skp->smk_label != NULL) {
-> +		kp = smk_find_label_name(skp->smk_label);
-> +		if (kp == NULL)
-> +			kp = smack_known_huh.smk_known;
-> +	}
-> +
->  	seq_printf(s, "%pI4/%d %s\n", &skp->smk_host.s_addr,
->  			skp->smk_masks, kp);
->  
-> @@ -1224,7 +1226,7 @@ static ssize_t smk_write_net4addr(struct file *file, const char __user *buf,
->  	 * If smack begins with '-', it is an option, don't import it
->  	 */
->  	if (smack[0] != '-') {
-> -		skp = smk_import_entry(smack, 0);
-> +		skp = smk_get_label(smack, 0, true);
->  		if (IS_ERR(skp)) {
->  			rc = PTR_ERR(skp);
->  			goto free_out;
-> @@ -1343,10 +1345,16 @@ static int net6addr_seq_show(struct seq_file *s, void *v)
->  	struct list_head *list = v;
->  	struct smk_net6addr *skp =
->  			 list_entry(list, struct smk_net6addr, list);
-> +	char *kp;
->  
-> -	if (skp->smk_label != NULL)
-> -		seq_printf(s, "%pI6/%d %s\n", &skp->smk_host, skp->smk_masks,
-> -				skp->smk_label->smk_known);
-> +	if (skp->smk_label != NULL) {
-> +		kp = smk_find_label_name(skp->smk_label);
-> +		if (kp == NULL)
-> +			kp = smack_known_huh.smk_known;
-> +
-> +		seq_printf(s, "%pI6/%d %s\n", &skp->smk_host,
-> +				skp->smk_masks, kp);
-> +	}
->  
->  	return 0;
->  }
-> @@ -1500,7 +1508,7 @@ static ssize_t smk_write_net6addr(struct file *file, const char __user *buf,
->  	 * If smack begins with '-', it is an option, don't import it
->  	 */
->  	if (smack[0] != '-') {
-> -		skp = smk_import_entry(smack, 0);
-> +		skp = smk_get_label(smack, 0, true);
->  		if (IS_ERR(skp)) {
->  			rc = PTR_ERR(skp);
->  			goto free_out;
-> @@ -1820,6 +1828,7 @@ static ssize_t smk_read_ambient(struct file *filp, char __user *buf,
+> @@ -1827,7 +1827,7 @@ static const struct file_operations smk_mapped_ops = {
+>  static ssize_t smk_read_ambient(struct file *filp, char __user *buf,
 >  				size_t cn, loff_t *ppos)
 >  {
->  	ssize_t rc;
-> +	char *cp;
+> -	ssize_t rc;
+> +	ssize_t rc = -EINVAL;
+>  	char *cp;
 >  	int asize;
 >  
->  	if (*ppos != 0)
-> @@ -1830,12 +1839,14 @@ static ssize_t smk_read_ambient(struct file *filp, char __user *buf,
->  	 */
->  	mutex_lock(&smack_ambient_lock);
->  
-> -	asize = strlen(smack_net_ambient->smk_known) + 1;
-> +	cp = smk_find_label_name(smack_net_ambient);
-> +	if (cp == NULL)
-> +		cp = smack_known_huh.smk_known;
-> +
-> +	asize = strlen(cp) + 1;
+> @@ -1847,8 +1847,6 @@ static ssize_t smk_read_ambient(struct file *filp, char __user *buf,
 >  
 >  	if (cn >= asize)
-> -		rc = simple_read_from_buffer(buf, cn, ppos,
-> -					     smack_net_ambient->smk_known,
-> -					     asize);
-> +		rc = simple_read_from_buffer(buf, cn, ppos, cp, asize);
->  	else
->  		rc = -EINVAL;
+>  		rc = simple_read_from_buffer(buf, cn, ppos, cp, asize);
+> -	else
+> -		rc = -EINVAL;
 >  
-> @@ -1873,7 +1884,7 @@ static ssize_t smk_write_ambient(struct file *file, const char __user *buf,
->  		goto out;
->  	}
+>  	mutex_unlock(&smack_ambient_lock);
 >  
-> -	skp = smk_import_entry(data, count);
-> +	skp = smk_get_label(data, count, true);
->  	if (IS_ERR(skp)) {
->  		rc = PTR_ERR(skp);
->  		goto out;
-> @@ -1913,11 +1924,16 @@ static void *onlycap_seq_next(struct seq_file *s, void *v, loff_t *pos)
->  
->  static int onlycap_seq_show(struct seq_file *s, void *v)
->  {
-> +	char *smack;
->  	struct list_head *list = v;
->  	struct smack_onlycap *sop =
->  		list_entry_rcu(list, struct smack_onlycap, list);
->  
-> -	seq_puts(s, sop->smk_label->smk_known);
-> +	smack = smk_find_label_name(sop->smk_label);
-> +	if (smack == NULL)
-> +		smack = smack_known_huh.smk_known;
-> +
-> +	seq_puts(s, smack);
->  	seq_putc(s, ' ');
->  
->  	return 0;
-> @@ -2011,7 +2027,7 @@ static ssize_t smk_write_onlycap(struct file *file, const char __user *buf,
->  		if (!*tok)
->  			continue;
->  
-> -		skp = smk_import_entry(tok, 0);
-> +		skp = smk_get_label(tok, 0, true);
->  		if (IS_ERR(skp)) {
->  			rc = PTR_ERR(skp);
->  			break;
-> @@ -2081,8 +2097,11 @@ static ssize_t smk_read_unconfined(struct file *filp, char __user *buf,
->  	if (*ppos != 0)
->  		return 0;
->  
-> -	if (smack_unconfined != NULL)
-> -		smack = smack_unconfined->smk_known;
-> +	if (smack_unconfined != NULL) {
-> +		smack = smk_find_label_name(smack_unconfined);
-> +		if (smack == NULL)
-> +			smack = smack_known_huh.smk_known;
-> +	}
->  
->  	asize = strlen(smack) + 1;
->  
-> @@ -2129,7 +2148,7 @@ static ssize_t smk_write_unconfined(struct file *file, const char __user *buf,
->  	 *
->  	 * But do so only on invalid label, not on system errors.
->  	 */
-> -	skp = smk_import_entry(data, count);
-> +	skp = smk_get_label(data, count, true);
->  	if (PTR_ERR(skp) == -EINVAL)
->  		skp = NULL;
->  	else if (IS_ERR(skp)) {
-> @@ -2526,7 +2545,6 @@ static ssize_t smk_write_revoke_subj(struct file *file, const char __user *buf,
->  				size_t count, loff_t *ppos)
->  {
->  	char *data;
-> -	const char *cp;
->  	struct smack_known *skp;
->  	struct smack_rule *sp;
->  	struct list_head *rule_list;
-> @@ -2551,15 +2569,13 @@ static ssize_t smk_write_revoke_subj(struct file *file, const char __user *buf,
->  		goto out_data;
->  	}
->  
-> -	cp = smk_parse_smack(data, count);
-> -	if (IS_ERR(cp)) {
-> -		rc = PTR_ERR(cp);
-> +	skp = smk_get_label(data, count, false);
-> +	if (IS_ERR(skp)) {
-> +		rc = PTR_ERR(skp);
->  		goto out_data;
->  	}
-> -
-> -	skp = smk_find_entry(cp);
->  	if (skp == NULL)
-> -		goto out_cp;
-> +		goto out_data;
->  
->  	rule_list = &skp->smk_rules;
->  	rule_lock = &skp->smk_rules_lock;
-> @@ -2571,8 +2587,6 @@ static ssize_t smk_write_revoke_subj(struct file *file, const char __user *buf,
->  
->  	mutex_unlock(rule_lock);
->  
-> -out_cp:
-> -	kfree(cp);
->  out_data:
->  	kfree(data);
->  
-> @@ -2641,8 +2655,11 @@ static ssize_t smk_read_syslog(struct file *filp, char __user *buf,
->  	if (*ppos != 0)
->  		return 0;
->  
-> -	if (smack_syslog_label != NULL)
-> -		smack = smack_syslog_label->smk_known;
-> +	if (smack_syslog_label != NULL) {
-> +		smack = smk_find_label_name(smack_syslog_label);
-> +		if (smack == NULL)
-> +			smack = smack_known_huh.smk_known;
-> +	}
->  
->  	asize = strlen(smack) + 1;
->  
-> @@ -2689,7 +2706,7 @@ static ssize_t smk_write_syslog(struct file *file, const char __user *buf,
->  	 *
->  	 * But do so only on invalid label, not on system errors.
->  	 */
-> -	skp = smk_import_entry(data, count);
-> +	skp = smk_get_label(data, count, true);
->  	if (PTR_ERR(skp) == -EINVAL)
->  		skp = NULL;
->  	else if (IS_ERR(skp)) {
