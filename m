@@ -1,14 +1,13 @@
-From: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
-Subject: Re: [PATCH v4 11/11] smack: documentation for the Smack namespace
-Date: Thu, 29 Oct 2015 15:52:20 -0700
-Message-ID: <5632A324.7000802@schaufler-ca.com>
-References: <1444826525-9758-1-git-send-email-l.pawelczyk@samsung.com>
-	<1444826525-9758-12-git-send-email-l.pawelczyk@samsung.com>
+From: Richard Weinberger <richard.weinberger-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: piping core dump to a program escapes container
+Date: Sun, 1 Nov 2015 21:25:40 +0100
+Message-ID: <CAFLxGvz=d=4u7LZ_ZPES_MqfO0kWGxyWE9SPUuONjH9aM=dxFg__47235.0237811499$1446409555$gmane$org@mail.gmail.com>
+References: <CABAubTgj8+xngrvc7sNbYS_Hq+-rGAYCz0y433ByiZ45dZuT0w@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1444826525-9758-12-git-send-email-l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
+In-Reply-To: <CABAubTgj8+xngrvc7sNbYS_Hq+-rGAYCz0y433ByiZ45dZuT0w-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,297 +17,51 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Calvin Owens <calvinowens-b10kYP2dOMg@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Eric Dumazet <edumazet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, James Morris <james.l.morris-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Jiri Slaby <jslaby-IBi9RG/b67k@public.gmane.org>, Joe Perches <joe-6d6DIl74uiNBDgjK7y7TUQ@public.gmane.org>, John Johansen <john.johansen-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Mauro Carvalho Chehab <mchehab-JPH+aEBZ4P+UEJcrhfAQsw@public.gmane.org>, NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>, Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>Serge
-Cc: Lukasz Pawelczyk <havner-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Shayan Pooya <shayan-UQzSddOuLosdnm+yROfE0A@public.gmane.org>
+Cc: cgroups mailinglist <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 10/14/2015 5:42 AM, Lukasz Pawelczyk wrote:
-> Adds Documentation/smack-namespace.txt.
+On Sat, Oct 24, 2015 at 11:54 PM, Shayan Pooya <shayan-UQzSddOuLosdnm+yROfE0A@public.gmane.org> wrote:
+> I noticed the following core_pattern behavior in my linux box while
+> running docker containers. I am not sure if it is bug, but it is
+> inconsistent and not documented.
 >
-> Signed-off-by: Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
-> Reviewed-by: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
-
-Acked-by: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
-
-
-> ---
->  Documentation/security/00-INDEX            |   2 +
->  Documentation/security/Smack-namespace.txt | 231 +++++++++++++++++++++++++++++
->  MAINTAINERS                                |   1 +
->  security/smack/Kconfig                     |   2 +
->  4 files changed, 236 insertions(+)
->  create mode 100644 Documentation/security/Smack-namespace.txt
+> If the core_pattern is set on the host, the containers will observe
+> and use the pattern for dumping cores (there is no per cgroup
+> core_pattern). According to core(5) for setting core_pattern one can:
 >
-> diff --git a/Documentation/security/00-INDEX b/Documentation/security/00-INDEX
-> index 45c82fd..c03a220 100644
-> --- a/Documentation/security/00-INDEX
-> +++ b/Documentation/security/00-INDEX
-> @@ -6,6 +6,8 @@ SELinux.txt
->  	- how to get started with the SELinux security enhancement.
->  Smack.txt
->  	- documentation on the Smack Linux Security Module.
-> +Smack-namespace.txt
-> +	- documentation on the Smack namespace implementation.
->  Yama.txt
->  	- documentation on the Yama Linux Security Module.
->  apparmor.txt
-> diff --git a/Documentation/security/Smack-namespace.txt b/Documentation/security/Smack-namespace.txt
-> new file mode 100644
-> index 0000000..5304355
-> --- /dev/null
-> +++ b/Documentation/security/Smack-namespace.txt
-> @@ -0,0 +1,231 @@
-> +
-> +                                      "Quis custodiet ipsos custodes?"
-> +                                                 - Satires of Juvenal
-> +
-> +
-> +--- What is a Smack namespace ---
-> +
-> +Smack namespace was developed to make it possible for Smack to work
-> +nicely with Linux containers where there is a full operating system
-> +with its own init inside the namespace. Such a system working with
-> +Smack expects to have at least partially working SMACK_MAC_ADMIN to be
-> +able to change labels of processes and files. This is required to be
-> +able to securely start applications under the control of Smack and
-> +manage their access rights.
-> +
-> +It was implemented using new LSM hooks added to the user namespace
-> +that were developed together with Smack namespace.
-> +
-> +
-> +--- Design ideas ---
-> +
-> +"Smack namespace" is rather "Smack labels namespace" as not the whole
-> +MAC is namespaced, only the labels. There is a great analogy between
-> +Smack labels namespace and the user namespace part that remaps UIDs.
-> +
-> +The idea is to create a map of labels for a namespace so the namespace
-> +is only allowed to use those labels. Smack rules are always the same
-> +as in the init namespace (limited only by what labels are mapped) and
-> +cannot be manipulated from the child namespace. The map is actually
-> +only for labels' names. The underlying structures for labels remain
-> +the same. The filesystem also stores the "unmapped" labels from the
-> +init namespace.
-> +
-> +Let's say we have those labels in the init namespace:
-> +label1
-> +label2
-> +label3
-> +
-> +and those rules:
-> +label1 label2 rwx
-> +label1 label3 rwx
-> +label2 label3 rwx
-> +
-> +We create a map for a namespace:
-> +label1 -> mapped1
-> +label2 -> mapped2
-> +
-> +This means that 'label3' is completely invisible in the namespace. As if
-> +it didn't exist. All the rules that include it are ignored.
-> +
-> +Effectively in the namespace we have only one rule:
-> +mapped1 mapped2 rwx
-> +
-> +Which in reality is:
-> +label1 label2 rwx
-> +
-> +All requests to access an object with a 'label3' will be denied. If it
-> +ever comes to a situation where 'label3' would have to be printed
-> +(e.g. reading an exec or mmap label from a file to which we have
-> +access) then huh sign '?' will be printed instead.
-> +
-> +All the operations in the namespace on the remaining labels will have
-> +to be performed using their mapped names. Things like changing own
-> +process's label, changing filesystem label. Labels will also be
-> +printed with their mapped names.
-> +
-> +You cannot import new labels in a namespace. Every operation that
-> +would do so in an init namespace will return an error in the child
-> +namespace. You cannot assign an unmapped or not existing label to an
-> +object. You can only operate on labels that have been explicitly
-> +mapped.
-> +
-> +
-> +--- Capabilities ---
-> +
-> +Enabling Smack related capabilities (CAP_MAC_ADMIN and
-> +CAP_MAC_OVERRIDE) is main goal of Smack namespace, so it can work
-> +properly in the container. And those capabilities do work to some
-> +extent. In several places where capabilities are checked compatibility
-> +with Smack namespace has been introduced. Capabilities are of course
-> +limited to operate only on mapped labels.
-> +
-> +CAP_MAC_OVERRIDE works fully, will allow you to ignore Smack access
-> +rules, but only between objects that have labels mapped. So in the
-> +example above having this CAP will allow e.g. label2 to write to
-> +label1, but will not allow any access to label3.
-> +
-> +With CAP_MAC_ADMIN the following operations has been allowed inside
-> +the namespace:
-> +- setting and removing xattr on files, including the security.* ones
-> +- setting process's own label (/proc/self/attr/current)
-> +- mounting in a privileged Smack mode, which means one can specify
-> +  additional mount options like: smackfsdef, smackfsfloor etc.
-> +
-> +Again this is also allowed only on the mapped labels. Labels on the
-> +filesystem will be stored in unmapped form so they are preserved
-> +through reboots.
-> +
-> +Such a namespace construct allows e.g. systemd (with Smack support)
-> +working in a container to assign labels properly to daemons and other
-> +processes.
-> +
-> +
-> +--- Usage ---
-> +
-> +Smack namespace is written using LSM hooks inside user namespace. That
-> +means it's connected to it.
-> +
-> +To create a new Smack namespace you need to unshare() user namespace
-> +as usual. If that is all you do though, than there is no difference to
-> +what is now. To activate the Smack namespace you need to fill the
-> +labels' map. It is in a file /proc/$PID/attr/label_map.
-> +
-> +By default the map is empty and Smack namespaces are inactive (labels
-> +are taken directly from a parent namespace). It also means that the
-> +Smack capabilities will be inactive. After you fill the map it starts
-> +to take effect in the namespace and Smack capabilities (only on mapped
-> +labels) start to work.
-> +
-> +Due to the way Smack works only CAP_MAC_ADMIN from the parent
-> +namespace (init_user_ns for now, see the "Current limitations" below)
-> +is allowed to fill the map. That means that an unprivileged user is
-> +still allowed to create the user namespace but it will not be able to
-> +fill the labels' map (activate Smack namespace). An administrator
-> +intervention is required.
-> +
-> +The attr_map write format is:
-> +unmapped_label mapped_label
-> +
-> +When reading the file it shows an active map for a namespace the
-> +process in question is in in the format:
-> +unmapped_label -> mapped_label
-> +
-> +If the label_map file is empty it means the namespace is not mapped
-> +and Smack namespace is inactive (no mappings, MAC related capabilities
-> +behave as they did before, meaning they are active only in
-> +init_user_ns). For init_user_ns the map will always be empty.
-> +
-> +Writing to the map file is not disabled after the first write as it is
-> +in uid_map. For Smack we have no means to map ranges of labels, hence
-> +it can really be advantageous to be able to expand the map later
-> +on. But you can only add to the map. You cannot remove already mapped
-> +labels. You cannot change the already existing mappings. Also mappings
-> +has to be 1-1. All requests to create a map where either the unmapped
-> +or the mapped label already exists in the map will be denied.
-> +
-> +setns() with Smack namespace active has an additional check that the
-> +label of a process that is calling setns() has to be already mapped in
-> +the target Smack namespace for the call to succeed.
-> +
-> +
-> +--- Special labels ---
-> +
-> +Smack is using some special labels that have built-in rules. Things
-> +like floor '_', dash '^', star '*', etc. Those labels are not
-> +automatically mapped to the namespace. Moreover, you can choose to map
-> +a different label from the init namespace to behave e.g. like floor
-> +inside the namespace.
-> +
-> +Let's say we have no rules and those labels in the init namespace:
-> +_
-> +floor_to_be
-> +label
-> +
-> +Both 'label' and 'floor_to_be' can read objects with '_'. But they
-> +have no access rights to each other.
-> +
-> +Now let's create a map like this:
-> +_             ordinary_label
-> +floor_to_be   _
-> +label         mapped
-> +
-> +Right now label 'mapped' can read label '_' which means that
-> +effectively inside this namespace label 'label' has gained read access
-> +to the 'floor_to_be'. The label 'ordinary_label' is exactly it, an
-> +ordinary label that the built-in rules no longer apply to inside the
-> +namespace.
-> +
-> +To sum up, special labels in the namespace behave the same as in the
-> +init namespace. Not the original special labels though, but the ones
-> +we map to specials. This is the only case where a namespace can have
-> +access rights the init namespace does not have (like the 'label' to
-> +'floor_to_be' in the example above).
-> +
-> +Of course mappings like these are perfectly legal:
-> +_   _
-> +*   *
-> +^   ^
-> +
-> +
-> +--- Current limitations ---
-> +
-> +The Smack namespace is not hierarchical yet. It is currently not
-> +possible to fill a label_map of a nested user namespace (you can still
-> +create nested user namespace, it will just inherit its parent's map
-> +and won't have active Smack capabilities). When hierarchy will be
-> +implemented the process creating another namespace will be allowed to
-> +map only labels that it has permission to itself (those that it has in
-> +its own map).
-> +
-> +Special files inside the virtual smackfs needs to be reviewed whether
-> +it's beneficial to have some of their functionality namespaced as well
-> +(e.g. onlycap, syslog. ambient, etc). This would increase
-> +CAP_MAC_ADMIN privileges inside the namespace.
-> +
-> +
-> +--- Error codes ---
-> +
-> +While working in the namespace patches the error codes has been made
-> +to propagate properly from a place they occurred. New error codes has
-> +also been introduced for Smack in the context of namespace usage. This
-> +is a complete summary of error codes used throughout the Smack now:
-> +
-> +ENOMEM      and other system errors that might come from low level
-> +            kernel functions like memory allocations
-> +EOPNOTSUPP  means the underlying system operation is not
-> +            supported (eg. getxattr)
-> +EINVAL      means invalid syntax (e.g. empty label or one starting
-> +            with '-')
-> +EEXIST      when creating map means that a label is already mapped
-> +EBADR       is used for wrong namespace usage:
-> +            - trying to import a label inside a namespace (like trying
-> +              to use an unmapped label that would otherwise be imported)
-> +            - trying to create a Smack label map in the init namespace
-> +ENOENT      when failed to find a label we expected to exist (will not
-> +            be propagated to user-space)
-> +EPERM       means no permission to operate on an object, e.g. due to
-> +            insufficient capabilities or simply because the object
-> +            cannot be operated on in the current context
-> +EACCESS     when access has been denied due to Smack access checks
-> +            (including object being outside of a namespace)
-> diff --git a/MAINTAINERS b/MAINTAINERS
-> index 797236b..c77be5a 100644
-> --- a/MAINTAINERS
-> +++ b/MAINTAINERS
-> @@ -9590,6 +9590,7 @@ W:	http://schaufler-ca.com
->  T:	git git://git.gitorious.org/smack-next/kernel.git
->  S:	Maintained
->  F:	Documentation/security/Smack.txt
-> +F:	Documentation/security/Smack-namespace.txt
->  F:	security/smack/
->  
->  DRIVERS FOR ADAPTIVE VOLTAGE SCALING (AVS)
-> diff --git a/security/smack/Kconfig b/security/smack/Kconfig
-> index b19a7fb..a6e0f3f 100644
-> --- a/security/smack/Kconfig
-> +++ b/security/smack/Kconfig
-> @@ -49,4 +49,6 @@ config SECURITY_SMACK_NS
->  	  This enables Smack namespace that makes it possible to map
->  	  specific labels within user namespace (analogously to mapping
->  	  UIDs) and to gain MAC capabilities over them.
-> +	  Documentation is availabile here:
-> +	  Documentation/security/Smack-namespace.txt
->  	  If you are unsure how to answer this question, answer N.
+> 1. echo "/tmp/cores/core.%e.%p" > /proc/sys/kernel/core_pattern
+> 2. echo "|/bin/custom_core /tmp/cores/ %e %p " > /proc/sys/kernel/core_pattern
+>
+> The former pattern evaluates the /tmp/cores path in the container's
+> filesystem namespace. Which means, the host does not see a core file
+> in /tmp/cores.
+>
+> However, the latter evaluates the /bin/custom_core path in the global
+> filesystem namespace. Moreover, if /bin/core decides to write the core
+> to a path (/tmp/cores in this case as shown by the arg to
+> custom_core), the path will be evaluated in the global filesystem
+> namespace as well.
+>
+> The latter behaviour is counter-intuitive and error-prone as the
+> container can fill up the core-file directory which it does not have
+> direct access to (which means the core is also not accessible for
+> debugging if someone only has access to the container).
+>
+> Currently, I work around this issue by detecting that the process is
+> crashing from a container (by comparing the namespace pid to the
+> global pid) and refuse to dump the core if it is from a container.
+
+IMHO this is another example of the question whether a container should
+be a full blown Linux system or not.
+In your opinion containers should own core_pattern and be able to install
+their own dump helpers.
+Currently this is not the case as this is setting is only writable by
+the global root.
+Others might argue that containers are not a full virtual Linux with
+all features and
+an administrator may want to collect cores from all containers.
+
+-- 
+Thanks,
+//richard
