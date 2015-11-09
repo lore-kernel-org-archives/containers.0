@@ -1,11 +1,13 @@
-From: leonardo-8LjiHMaD0LGcY/UQPYk7rw@public.gmane.org
-Subject: =?Cp1252?Q?Re:_ACQUAMATIC_DO_BRASIL_-_MAIS?=
-	=?Cp1252?Q?_UM_PRODUTO_EXCLUSIVO_PARA_VOC=CA=0A?=
-Date: Sun, 08 Nov 2015 18:05:54 -0800 (PST)
-Message-ID: <563fff82.92d7370a.c81f5.346a@mx.google.com>
+From: Lukasz Pawelczyk <l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH v4 00/11] Smack namespace
+Date: Mon, 09 Nov 2015 16:40:24 +0100
+Message-ID: <1447083624.2216.14.camel@samsung.com>
+References: <1444826525-9758-1-git-send-email-l.pawelczyk@samsung.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============2577767288574941274=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-reply-to: <1444826525-9758-1-git-send-email-l.pawelczyk-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,42 +17,48 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Calvin Owens <calvinowens-b10kYP2dOMg@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Eric Dumazet <edumazet-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, James Morris <james.l.morris-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Jiri Slaby <jslaby-IBi9RG/b67k@public.gmane.org>, Joe Perches <joe-6d6DIl74uiNBDgjK7y7TUQ@public.gmane.org>, John Johansen <john.johansen-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Mauro Carvalho Chehab <mchehab-JPH+aEBZ4P+UEJcrhfAQsw@public.gmane.org>, NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>, Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>Serge
+Cc: Lukasz Pawelczyk <havner-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
---===============2577767288574941274==
-Content-Type: text/plain; charset="Cp1252"
+If I understand correctly the security window for 4.4 has been closed
+now (as changes went to next).
 
-                           VASO SANITÁRIO EM ABS
- ACIONA COM APENAS 2 LITROS DE ÁGUANunca Entope, Nunca QuebraRevolucionou o
-                        conceito de Vaso Sanitário!
+Anyway, I updated the series to the latest smack-for-4.4 branch.
+Including the new relabel-self interface that received namespace
+treatment as well. Also the RCU fix reported on the list has been
+included.
 
-   [1]Saiba Mais...
+The latest version is available here:
+https://github.com/Havner/smack-namespace/tree/smack-namespace-current
 
-                       [2]Para Comprar, Clique Aqui...
+Also I've uploaded our Linux Test Project branch I use for Smack and
+Smack namespace testing (including regressions):
+https://github.com/Havner/ltp
 
-   Os nossos informativos são enviados de acordo com o guia de boas
-   maneiras da ABNT
-   Se você não deseja receber mais nossos informativos, favor retornar
-   e-mail
-   com a palavra "REMOVER" para: [3]vendas-8LjiHMaD0LFe7tkIG91yX1/I71DsQ//L@public.gmane.org
+It has the basic smack tests rewritten to C. The ones that were scripts
+before. They are integrated with LTP framework.
 
-   Número de controle: fcdcd5b19bdd01c640efdead660cd21a
+Inside testcases/kernel/security/smack/ns is a separate set of tests
+that share some common functions with the former, but are not otherwise
+integrated with LTP (yet). In this regard this is very much WIP.
 
-References
+Those tests have an advantage though that they run a common set of
+tests in 6 Smack environments: no namespace, user namespace, user
+namespace + smack map. Each in a privileged and non-privileged
+scenario.
 
-   1. http://www.aguanossadecadadia.com/
-   2. http://www.aguanossadecadadia.com/
-   3. mailto:vendas-8LjiHMaD0LFe7tkIG91yX1/I71DsQ//L@public.gmane.org
+To run them do the following:
+cd testcases/kernel/security/smack/ns
+make
+./smack_ns_run.sh
 
---===============2577767288574941274==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+smackfs has to be mounted in /smack (following the regular tests). 
+mount -o bind /sys/fs/smackfs /smack
+is enough.
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============2577767288574941274==--
+
+-- 
+Lukasz Pawelczyk
+Samsung R&D Institute Poland
+Samsung Electronics
