@@ -1,11 +1,10 @@
-From: Eliza via Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: Quick Question
-Date: Thu, 05 Nov 2015 11:34:26 +0100
-Message-ID: <3d0804242ddbfc602ecf97849c93ac8d@stainmaster.com>
-Reply-To: skoamslin-/E1597aS9LQAvxtiuMwx3w@public.gmane.org
+From: leonardo-8LjiHMaD0LGcY/UQPYk7rw@public.gmane.org
+Subject: =?Cp1252?Q?Re:_ACQUAMATIC_DO_BRASIL_-_MAIS?=
+	=?Cp1252?Q?_UM_PRODUTO_EXCLUSIVO_PARA_VOC=CA=0A?=
+Date: Sun, 08 Nov 2015 18:05:54 -0800 (PST)
+Message-ID: <563fff82.92d7370a.c81f5.346a@mx.google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============2577767288574941274=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,36 +18,39 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-www.tinyurl.com/ntxqn6e
+--===============2577767288574941274==
+Content-Type: text/plain; charset="Cp1252"
 
-Hi,
+                           VASO SANITÁRIO EM ABS
+ ACIONA COM APENAS 2 LITROS DE ÁGUANunca Entope, Nunca QuebraRevolucionou o
+                        conceito de Vaso Sanitário!
 
-I don't want to take up too much of your time but I'm looking for people to
-join me in a unique,
-100% online based business opportunity that is totally FREE of charge to
-check out.
+   [1]Saiba Mais...
 
-If you are tired of working hard for pennies this might be what you've been
-looking for.
-You can actually start making money just by signing up.
+                       [2]Para Comprar, Clique Aqui...
 
-All you need to do is to register, check it out and decide if you want to
-join.
-Please use my link below to check out the videos about the business and get
-going and you can thank me later.
+   Os nossos informativos são enviados de acordo com o guia de boas
+   maneiras da ABNT
+   Se você não deseja receber mais nossos informativos, favor retornar
+   e-mail
+   com a palavra "REMOVER" para: [3]vendas-8LjiHMaD0LFe7tkIG91yX1/I71DsQ//L@public.gmane.org
 
-www.tinyurl.com/ntxqn6e
+   Número de controle: fcdcd5b19bdd01c640efdead660cd21a
 
-There's also this amazing competition that started right now on november
-1st where you can get amazing prizes just by participating.
-They're also giving away iPad PRO's to 10 lucky people if you check out
-their facebook page for more information.
+References
 
-DO NOT MISS this opportunity to check this out for FREE. NO strings
-attached.
+   1. http://www.aguanossadecadadia.com/
+   2. http://www.aguanossadecadadia.com/
+   3. mailto:vendas-8LjiHMaD0LFe7tkIG91yX1/I71DsQ//L@public.gmane.org
 
-Yours truly,
+--===============2577767288574941274==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-Eliza
-
-www.tinyurl.com/ntxqn6e
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============2577767288574941274==--
