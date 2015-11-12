@@ -1,12 +1,15 @@
-From: tnui04855903-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Subject: =?GB2312?B?sdy/qtbKwb+y7rXE0a/FzL+qt6K/zbun?=
-Date: Thu, 12 Nov 2015 08:13:17 +0000
-Message-ID: <001a1130c356e5f5d405245383a9@google.com>
-Reply-To: tnui04855903-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Subject: Re: Fuse in userns
+Date: Thu, 12 Nov 2015 07:39:25 -0600
+Message-ID: <20151112133925.GA60370@ubuntu-hedt>
+References: <CAJFSNy5ur4=PKiQC3_h9eL96vQcmtH3A=3bGujHS5ndnNC+ROQ@mail.gmail.com>
+	<8737wcwlku.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="gb2312"; Format="flowed"; DelSp="yes"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <8737wcwlku.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,17 +19,58 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Nikolay Borisov <n.borisov-/eCPMmvKun9pLGFMi4vTTA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, SiteGround Operations <operations-/eCPMmvKun9pLGFMi4vTTA@public.gmane.org>, Marian Marinov <mm-108MBtLGafw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-yOe98bCiwO/Jz7XE09DQp9GvxczUvcC01L3J2aOs1bm74bXEvNt+uPHUvcC01L2436OsxPrKx7fx
-0rK+9bXDtKvNs7XEDQpCMkLVubvh1L3AtNS90NCyu82ooaMNCs7Sw8fKx7zMQjJCINW5u+G1xLXa
-yP3W1tb3wfe1xL/Nu6e/qreit73KvaGjyMPE+sO/zOzK1bW9wLTX1Mirx/K497n6x7HU2g0Kv827
-p7XE0ru21NK709DQp9Gvxcyhow0KDQrR+8frxPrD4rfRzOXR6cT6svrGt7K70rvR+bXE0Ke5+w0K
-xvO27LrFUSAzNDMwODYxODQNCg0KDQoNCg0KSSd2ZSBpbnZpdGVkIHlvdSB0byBmaWxsIG91dCB0
-aGUgZm9ybSDXo8T6yfrS4tDLwqGjrLeitPOyxqGjLiBUbyBmaWxsDQppdCBvdXQsIHZpc2l0Og0K
-aHR0cHM6Ly9kb2NzLmdvb2dsZS5jb20vZm9ybXMvZC8xdEpjQVhIbjdndWNmMWMtNEVwXzNTV2w0
-cDl2SlIwbUh6X0dRWnBkNXRWby92aWV3Zm9ybT9jPTAmdz0xJnVzcD1tYWlsX2Zvcm1fbGluaw0K
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVy
-cyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRw
-czovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+On Wed, Nov 11, 2015 at 10:24:33AM -0600, Eric W. Biederman wrote:
+> Nikolay Borisov <n.borisov-/eCPMmvKun9pLGFMi4vTTA@public.gmane.org> writes:
+> 
+> > Hello Eric,
+> >
+> > I'd like to ask you what it would take to have proper support of Fuse
+> > inside usernamespaces. I've looked through the code of fuse and I can
+> > see some things are specifically coded to prevent creating a mount
+> > inside userns. E.g. hard-coded usage of init_user_ns or the check
+> > inside fuse_fill_super to make sure the fd is obtained from the
+> > init_user_ns. I have also read your argument here:
+> > https://lkml.org/lkml/2012/11/12/591
+> >
+> > So I'm interested in knowing the following:
+> >  * Are you still actively working on making fuse mountable in non-root
+> > userns, if not is the partial patch available somewhere? I might be
+> > able to do some work on that and hopefully make it upstreamable.
+> 
+> Yes.
+> 
+> > * If the code is not available can you explain what are the main
+> > hurdles in getting this to work? In my experiments I;ve hacked fuse
+> > and I'm able to mount glusterfs inside an LXC container but I suspect
+> > I might have broken some subtle security aspect :)
+> 
+> The subtle security aspect is definitely where things get tricky.
+> 
+> fuse is unique compared to the existing filesystems that we can mount in
+> a user namespace in that it has an untrusted backing store.  Dealing
+> with an untrusted backing store raises some new challenges with respect
+> to the vfs, etc.
+> 
+> The current plan is to deal with all of the weird tricky generic issues
+> in the vfs, and then add support for fuse.  Solving the backing store
+> issues generically instead of a fuse specific way pushes the
+> conversation to the right places and with the appropriate people.
+> 
+> Seth Forshe has put in a lot of work to make this happen, and his
+> changes are almost there.  I had hoped to just do a quick review of his
+> work and merge the code this last kernel development cycle.
+> Unfortunately the issues are vast enough and subtle enough that it is
+> easy to drop a detail or two.  So I figure a very close review of what
+> Seth has done is needed so that we do not introduce new issues.
+> 
+> Hopefully colds etc won't preven that from happening this cycle.
+
+Here's where you can find that code:
+
+ git://kernel.ubuntu.com/sforshee/linux.git userns-mounts
+
+Seth
