@@ -1,12 +1,9 @@
-From: "Tim Williams" <massosi-O5WfVfzUwx8@public.gmane.org>
-Subject: Are you seeking assistance for Mobile Application Development: Swift,
-	Android, ionic, PhoneGap?
-Date: Fri, 13 Nov 2015 03:51:14 +0100
-Message-ID: <cc38b2507823ec6728603eb9c3daf921@aloyoga.com>
-Reply-To: behiny-k+cT0dCbe1g@public.gmane.org
+From: leonardo-8LjiHMaD0LGcY/UQPYk7rw@public.gmane.org
+Subject: =?Cp1252?Q?Re:_ACQUAMATIC_-_EXCLUSIVO_VASO_SANITARIO_USA_S=D3_2_LITROS=0A?=
+Date: Fri, 13 Nov 2015 07:55:16 -0800 (PST)
+Message-ID: <564607e4.4aed8c0a.865f0.109a@mx.google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============0337108181866783489=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -20,37 +17,51 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Are you seeking assistance for developing a mobile application, or need
-help in identifying the apt technology and platform for launching your
-idea?
-We have a global clientele and extensive repertoire since 2011 in mobile
-application development on all major platforms.
+--===============0337108181866783489==
+Content-Type: text/plain; charset="Cp1252"
 
-We've have to our credit Native and Hybrid mobile apps for small to big
-size businesses and deliver mobile solutions that work. '
-Top enterprises and start-ups choose SA developers to accomplish their
-dream projects. It is your turn.
+                           VASO SANITÁRIO EM ABS
 
-A team with more than 90 tech experts will help you to setup a dedicated
-team that will perfectly match your needs.
+                     ACIONA COM APENAS 2 LITROS DE ÁGUA
 
-1. Android Application Development: Material Design, Marshmallow
-2. Cross Platform: PhoneGap
-3. iOS Application Development : iOS Swift, iBeacon
-4. Hybrid Mobile App Development Framework- ionic
+                         Nunca Entope, Nunca Quebra
 
-Honest Numbers that will swing your mind to start working with us:
+                 Revolucionou o conceito de Vaso Sanitário!
 
-1. 5+ years experience
-2. 7+ Android & iOS SDK
-3. 187+ Apps delivered so far
-4. 100% quality assurance
-5. 42+ Testing Devices
-6. 90+ Professional Developers and Designers
+   [1]Saiba Mais...
 
-Looking forward to your response and addressing your business needs. We are
-ready to deliver you best tech solutions .
+                       [2]Para Comprar, Clique Aqui...
 
-Best Regards,
-Tim Williams
-Contact: jusmilter-WVlzvzqoTvw@public.gmane.org
+   Os nossos informativos são enviados de acordo com o guia de boas
+   maneiras da ABNT
+   Se você não deseja receber mais nossos informativos, favor retornar
+   e-mail
+   com a palavra "REMOVER" para: [3]vendas-8LjiHMaD0LFe7tkIG91yX1/I71DsQ//L@public.gmane.org
+
+   Número de controle: fcdcd5b19bdd01c640efdead660cd21a
+     __________________________________________________________________
+
+   [4]Avast logo
+
+   Este email foi escaneado pelo Avast antivirus.
+   [5]www.avast.com
+
+References
+
+   1. http://www.aguanossadecadadia.com/
+   2. http://www.aguanossadecadadia.com/
+   3. mailto:vendas-8LjiHMaD0LFe7tkIG91yX1/I71DsQ//L@public.gmane.org
+   4. https://www.avast.com/antivirus
+   5. https://www.avast.com/antivirus
+
+--===============0337108181866783489==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============0337108181866783489==--
