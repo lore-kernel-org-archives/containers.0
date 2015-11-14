@@ -1,9 +1,11 @@
-From: leonardo-8LjiHMaD0LGcY/UQPYk7rw@public.gmane.org
-Subject: =?Cp1252?Q?Re:_ACQUAMATIC_-_EXCLUSIVO_VASO_SANITARIO_USA_S=D3_2_LITROS=0A?=
-Date: Fri, 13 Nov 2015 07:55:16 -0800 (PST)
-Message-ID: <564607e4.4aed8c0a.865f0.109a@mx.google.com>
+From: Interfax Service via Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: You have new fax, document 0000225905
+Date: Sat, 14 Nov 2015 12:17:58 +0100
+Message-ID: <08244c6d8949cd18e2206818cca4685b@aceitesoliba.com>
+Reply-To: Interfax Service <incoming-wwpBGFb64evk1uMJSBkQmQ@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============0337108181866783489=="
+Content-Type: multipart/mixed; boundary="b1_b5893b90a8206fa762b0800bf030f0b2"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,44 +19,25 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============0337108181866783489==
-Content-Type: text/plain; charset="Cp1252"
+--b1_b5893b90a8206fa762b0800bf030f0b2
+Content-Type: text/plain; charset=us-ascii
 
-                           VASO SANITÁRIO EM ABS
+A new fax document for you.
 
-                     ACIONA COM APENAS 2 LITROS DE ÁGUA
+You can find your fax document in the attachment.
 
-                         Nunca Entope, Nunca Quebra
+Document name:    task-0000225905.doc
+Author:           Lewis Hensley
+Pages scanned:    9
+Scan time:        53 seconds
+Date:             Sat, 14 Nov 2015 02:15:34 +0300
+File size:        106 Kb
+Quality:          200 DPI
 
-                 Revolucionou o conceito de Vaso Sanitário!
+Thank you for using Interfax!
 
-   [1]Saiba Mais...
 
-                       [2]Para Comprar, Clique Aqui...
-
-   Os nossos informativos são enviados de acordo com o guia de boas
-   maneiras da ABNT
-   Se você não deseja receber mais nossos informativos, favor retornar
-   e-mail
-   com a palavra "REMOVER" para: [3]vendas-8LjiHMaD0LFe7tkIG91yX1/I71DsQ//L@public.gmane.org
-
-   Número de controle: fcdcd5b19bdd01c640efdead660cd21a
-     __________________________________________________________________
-
-   [4]Avast logo
-
-   Este email foi escaneado pelo Avast antivirus.
-   [5]www.avast.com
-
-References
-
-   1. http://www.aguanossadecadadia.com/
-   2. http://www.aguanossadecadadia.com/
-   3. mailto:vendas-8LjiHMaD0LFe7tkIG91yX1/I71DsQ//L@public.gmane.org
-   4. https://www.avast.com/antivirus
-   5. https://www.avast.com/antivirus
-
---===============0337108181866783489==
+--b1_b5893b90a8206fa762b0800bf030f0b2
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -64,4 +47,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============0337108181866783489==--
+--b1_b5893b90a8206fa762b0800bf030f0b2--
