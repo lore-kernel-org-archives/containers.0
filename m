@@ -1,7 +1,7 @@
 From: serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 2/8] sched: new clone flag CLONE_NEWCGROUP for cgroup namespace
-Date: Mon, 16 Nov 2015 13:51:39 -0600
-Message-ID: <1447703505-29672-3-git-send-email-serge__43366.7184705429$1447703546$gmane$org@hallyn.com>
+Subject: [PATCH 3/8] cgroup: add function to get task's cgroup
+Date: Mon, 16 Nov 2015 13:51:40 -0600
+Message-ID: <1447703505-29672-4-git-send-email-serge@hallyn.com>
 References: <1447703505-29672-1-git-send-email-serge@hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,27 +23,63 @@ List-Id: containers.vger.kernel.org
 
 From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
-CLONE_NEWCGROUP will be used to create new cgroup namespace.
+get_task_cgroup() returns the (reference counted) cgroup of the
+given task.
 
 Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 ---
- include/uapi/linux/sched.h |    3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ include/linux/cgroup.h |    1 +
+ kernel/cgroup.c        |   25 +++++++++++++++++++++++++
+ 2 files changed, 26 insertions(+)
 
-diff --git a/include/uapi/linux/sched.h b/include/uapi/linux/sched.h
-index cc89dde..5f0fe01 100644
---- a/include/uapi/linux/sched.h
-+++ b/include/uapi/linux/sched.h
-@@ -21,8 +21,7 @@
- #define CLONE_DETACHED		0x00400000	/* Unused, ignored */
- #define CLONE_UNTRACED		0x00800000	/* set if the tracing process can't force CLONE_PTRACE on this clone */
- #define CLONE_CHILD_SETTID	0x01000000	/* set the TID in the child */
--/* 0x02000000 was previously the unused CLONE_STOPPED (Start in stopped state)
--   and is now available for re-use. */
-+#define CLONE_NEWCGROUP		0x02000000	/* New cgroup namespace */
- #define CLONE_NEWUTS		0x04000000	/* New utsname namespace */
- #define CLONE_NEWIPC		0x08000000	/* New ipc namespace */
- #define CLONE_NEWUSER		0x10000000	/* New user namespace */
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 22e3754..29f0b02 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -326,6 +326,7 @@ static inline bool css_tryget_online(struct cgroup_subsys_state *css)
+ 		return percpu_ref_tryget_live(&css->refcnt);
+ 	return true;
+ }
++struct cgroup *get_task_cgroup(struct task_struct *task);
+ 
+ /**
+  * css_put - put a css reference
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index f1603c1..e29c346 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -2210,6 +2210,31 @@ char *task_cgroup_path(struct task_struct *task, char *buf, size_t buflen)
+ }
+ EXPORT_SYMBOL_GPL(task_cgroup_path);
+ 
++/*
++ * get_task_cgroup - returns the cgroup of the task in the default cgroup
++ * hierarchy.
++ *
++ * @task: target task
++ * This function returns the @task's cgroup on the default cgroup hierarchy. The
++ * returned cgroup has its reference incremented (by calling cgroup_get()). So
++ * the caller must cgroup_put() the obtained reference once it is done with it.
++ */
++struct cgroup *get_task_cgroup(struct task_struct *task)
++{
++	struct cgroup *cgrp;
++
++	mutex_lock(&cgroup_mutex);
++	spin_lock_bh(&css_set_lock);
++
++	cgrp = task_cgroup_from_root(task, &cgrp_dfl_root);
++	cgroup_get(cgrp);
++
++	spin_unlock_bh(&css_set_lock);
++	mutex_unlock(&cgroup_mutex);
++	return cgrp;
++}
++EXPORT_SYMBOL_GPL(get_task_cgroup);
++
+ /* used to track tasks and other necessary states during migration */
+ struct cgroup_taskset {
+ 	/* the src and dst cset list running through cset->mg_node */
 -- 
 1.7.9.5
