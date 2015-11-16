@@ -1,7 +1,7 @@
 From: serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 4/8] cgroup: export cgroup_get() and cgroup_put()
-Date: Mon, 16 Nov 2015 13:51:41 -0600
-Message-ID: <1447703505-29672-5-git-send-email-serge__47509.0681612075$1447703570$gmane$org@hallyn.com>
+Subject: [PATCH 6/8] cgroup: cgroup namespace setns support
+Date: Mon, 16 Nov 2015 13:51:43 -0600
+Message-ID: <1447703505-29672-7-git-send-email-serge@hallyn.com>
 References: <1447703505-29672-1-git-send-email-serge@hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,80 +23,53 @@ List-Id: containers.vger.kernel.org
 
 From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
-move cgroup_get() and cgroup_put() into cgroup.h so that
-they can be called from other places.
+setns on a cgroup namespace is allowed only if
+task has CAP_SYS_ADMIN in its current user-namespace and
+over the user-namespace associated with target cgroupns.
+No implicit cgroup changes happen with attaching to another
+cgroupns. It is expected that the somone moves the attaching
+process under the target cgroupns-root.
 
 Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Acked-by: Serge E. Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/cgroup.h |   21 +++++++++++++++++++++
- kernel/cgroup.c        |   22 ----------------------
- 2 files changed, 21 insertions(+), 22 deletions(-)
+ kernel/cgroup_namespace.c |   23 ++++++++++++++++++++---
+ 1 file changed, 20 insertions(+), 3 deletions(-)
 
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 29f0b02..99096be 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -231,6 +231,27 @@ void css_task_iter_end(struct css_task_iter *it);
- #define css_for_each_descendant_post(pos, css)				\
- 	for ((pos) = css_next_descendant_post(NULL, (css)); (pos);	\
- 	     (pos) = css_next_descendant_post((pos), (css)))
-+/* convenient tests for these bits */
-+static inline bool cgroup_is_dead(const struct cgroup *cgrp)
-+{
-+	return !(cgrp->self.flags & CSS_ONLINE);
-+}
-+
-+static inline void cgroup_get(struct cgroup *cgrp)
-+{
-+	WARN_ON_ONCE(cgroup_is_dead(cgrp));
-+	css_get(&cgrp->self);
-+}
-+
-+static inline bool cgroup_tryget(struct cgroup *cgrp)
-+{
-+	return css_tryget(&cgrp->self);
-+}
-+
-+static inline void cgroup_put(struct cgroup *cgrp)
-+{
-+	css_put(&cgrp->self);
-+}
- 
- /**
-  * cgroup_taskset_for_each - iterate cgroup_taskset
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index e29c346..e972259 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -417,28 +417,6 @@ out_unlock:
- 	return css;
+diff --git a/kernel/cgroup_namespace.c b/kernel/cgroup_namespace.c
+index ef20777..9651478 100644
+--- a/kernel/cgroup_namespace.c
++++ b/kernel/cgroup_namespace.c
+@@ -85,10 +85,27 @@ err_out:
+ 	return ERR_PTR(err);
  }
  
--/* convenient tests for these bits */
--static inline bool cgroup_is_dead(const struct cgroup *cgrp)
--{
--	return !(cgrp->self.flags & CSS_ONLINE);
--}
--
--static void cgroup_get(struct cgroup *cgrp)
--{
--	WARN_ON_ONCE(cgroup_is_dead(cgrp));
--	css_get(&cgrp->self);
--}
--
--static bool cgroup_tryget(struct cgroup *cgrp)
--{
--	return css_tryget(&cgrp->self);
--}
--
--static void cgroup_put(struct cgroup *cgrp)
--{
--	css_put(&cgrp->self);
--}
--
- struct cgroup_subsys_state *of_css(struct kernfs_open_file *of)
+-static int cgroupns_install(struct nsproxy *nsproxy, void *ns)
++static inline struct cgroup_namespace *to_cg_ns(struct ns_common *ns) {
++	return container_of(ns, struct cgroup_namespace, ns);
++}
++
++static int cgroupns_install(struct nsproxy *nsproxy, struct ns_common *ns)
  {
- 	struct cgroup *cgrp = of->kn->parent->priv;
+-	pr_info("setns not supported for cgroup namespace");
+-	return -EINVAL;
++	struct cgroup_namespace *cgroup_ns = to_cg_ns(ns);
++
++	if (!ns_capable(current_user_ns(), CAP_SYS_ADMIN) ||
++	    !ns_capable(cgroup_ns->user_ns, CAP_SYS_ADMIN))
++		return -EPERM;
++
++	/* Don't need to do anything if we are attaching to our own cgroupns. */
++	if (cgroup_ns == nsproxy->cgroup_ns)
++		return 0;
++
++	get_cgroup_ns(cgroup_ns);
++	put_cgroup_ns(nsproxy->cgroup_ns);
++	nsproxy->cgroup_ns = cgroup_ns;
++
++	return 0;
+ }
+ 
+ static struct ns_common *cgroupns_get(struct task_struct *task)
 -- 
 1.7.9.5
