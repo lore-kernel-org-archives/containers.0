@@ -1,12 +1,18 @@
-From: Interfax Service via Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: You have 1 new fax, document 0000873595
-Date: Wed, 18 Nov 2015 01:13:48 +0300
-Message-ID: <c1a13f350622fac4d27de3ebce8ee29b@pensionobserver.ru>
-Reply-To: Interfax Service <incoming-wwpBGFb64evk1uMJSBkQmQ@public.gmane.org>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: CGroup Namespaces (v4)
+Date: Tue, 17 Nov 2015 20:30:22 -0600
+Message-ID: <20151118023022.GA17501@mail.hallyn.com>
+References: <1447703505-29672-1-git-send-email-serge@hallyn.com>
+	<CAFLxGvzVmbZHrpaTmXUAK03hsnVPwEs3SJGNFNXfthh3NL8EDg@mail.gmail.com>
+	<20151116204606.GA30681@mail.hallyn.com> <564A41AF.4040208@nod.at>
+	<20151116205452.GA30975@mail.hallyn.com>
+	<87y4dxh9b8.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="b1_7f18a430c07b103194e0f2114397a16c"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <87y4dxh9b8.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,35 +22,17 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LXC development mailing-list <lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org>, "open list:ABI/API" <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups mailinglist <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
---b1_7f18a430c07b103194e0f2114397a16c
-Content-Type: text/plain; charset=us-ascii
+On Mon, Nov 16, 2015 at 04:24:27PM -0600, Eric W. Biederman wrote:
+> Similary have you considered what it required to be able to safely set
+> FS_USERNS_MOUNT?
 
-A new fax document for you.
+I pushed the one patch which I feel is needed to my branch (it's also
+included in another reply).  Aditya had already added FS_USERNS_MOUNT to
+the cgroup fs flags, so I think we're now all set.  I can start
+unprivileged containers which mount cgroupfs (which make systemd happy).
 
-Please, download fax document attached to this email.
-
-Sender:                Hugh Roberson
-Processed in:          42 seconds
-Scanned:               Tue, 17 Nov 2015 13:36:13 +0300
-File size:             282 Kb
-Scan quality:          600 DPI
-Pages sent:            5
-Document name:         scan-0000873595.doc
-
-Thank you for using Interfax!
-
-
---b1_7f18a430c07b103194e0f2114397a16c
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---b1_7f18a430c07b103194e0f2114397a16c--
+-serge
