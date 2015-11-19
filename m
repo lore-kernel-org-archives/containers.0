@@ -1,20 +1,10 @@
-From: "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: CGroup Namespaces (v4)
-Date: Wed, 18 Nov 2015 09:43:06 -0600
-Message-ID: <20151118154306.GA24719@mail.hallyn.com>
-References: <1447703505-29672-1-git-send-email-serge@hallyn.com>
-	<CAFLxGvzVmbZHrpaTmXUAK03hsnVPwEs3SJGNFNXfthh3NL8EDg@mail.gmail.com>
-	<20151116204606.GA30681@mail.hallyn.com> <564A41AF.4040208@nod.at>
-	<20151116205452.GA30975@mail.hallyn.com>
-	<87y4dxh9b8.fsf@x220.int.ebiederm.org>
-	<20151118023022.GA17501@mail.hallyn.com>
-	<87r3jnfyx7.fsf@x220.int.ebiederm.org>
+From: leonardo-8LjiHMaD0LGcY/UQPYk7rw@public.gmane.org
+Subject: =?Cp1252?Q?Re:_ACQUAMATIC_-_EXCLUSIVO_VASO_SANITARIO_USA_S=D3_2_LITROS=0A?=
+Date: Thu, 19 Nov 2015 12:08:43 -0800 (PST)
+Message-ID: <564e2c4b.c91d8c0a.fa91d.fffff895@mx.google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============5634762916458709397=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87r3jnfyx7.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,27 +14,54 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Richard Weinberger <richard-/L3Ra7n9ekc@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LXC development mailing-list <lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org>, "open list:ABI/API" <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups mailinglist <cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Nov 18, 2015 at 03:18:44AM -0600, Eric W. Biederman wrote:
-> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
-> 
-> > On Mon, Nov 16, 2015 at 04:24:27PM -0600, Eric W. Biederman wrote:
-> >> Similary have you considered what it required to be able to safely set
-> >> FS_USERNS_MOUNT?
-> >
-> > I pushed the one patch which I feel is needed to my branch (it's also
-> > included in another reply).  Aditya had already added FS_USERNS_MOUNT to
-> > the cgroup fs flags, so I think we're now all set.  I can start
-> > unprivileged containers which mount cgroupfs (which make systemd happy).
-> 
-> In principle that sounds very good, and I am glad to see that.
-> 
-> Let's hold off on merging the unprivileged part until everything else is
-> reviewed and merged and we have performed an extra hard look at the
-> security implications as it can be easy to overlook something when
-> relaxing the permissions.
+--===============5634762916458709397==
+Content-Type: text/plain; charset="Cp1252"
 
-I'll break out the FS_USERNS_MOUNT flag into the very last patch.
+                           VASO SANITÁRIO EM ABS
+
+                     ACIONA COM APENAS 2 LITROS DE ÁGUA
+
+                         Nunca Entope, Nunca Quebra
+
+                 Revolucionou o conceito de Vaso Sanitário!
+
+   [1]Saiba Mais...
+
+                       [2]Para Comprar, Clique Aqui...
+
+   Os nossos informativos são enviados de acordo com o guia de boas
+   maneiras da ABNT
+   Se você não deseja receber mais nossos informativos, favor retornar
+   e-mail
+   com a palavra "REMOVER" para: [3]vendas-8LjiHMaD0LFe7tkIG91yX1/I71DsQ//L@public.gmane.org
+
+   Número de controle: fcdcd5b19bdd01c640efdead660cd21a
+     __________________________________________________________________
+
+   [4]Avast logo
+
+   Este email foi escaneado pelo Avast antivirus.
+   [5]www.avast.com
+
+References
+
+   1. http://www.aguanossadecadadia.com/
+   2. http://www.aguanossadecadadia.com/
+   3. mailto:vendas-8LjiHMaD0LFe7tkIG91yX1/I71DsQ//L@public.gmane.org
+   4. https://www.avast.com/antivirus
+   5. https://www.avast.com/antivirus
+
+--===============5634762916458709397==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============5634762916458709397==--
