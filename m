@@ -1,16 +1,10 @@
-From: "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/8] kernfs: Add API to generate relative kernfs path
-Date: Thu, 26 Nov 2015 23:25:11 -0600
-Message-ID: <20151127052511.GA25490__12593.2898409248$1448601922$gmane$org@mail.hallyn.com>
-References: <1447703505-29672-1-git-send-email-serge@hallyn.com>
-	<1447703505-29672-2-git-send-email-serge@hallyn.com>
-	<20151124161630.GL17033@mtj.duckdns.org>
+From: leonardo-8LjiHMaD0LGcY/UQPYk7rw@public.gmane.org
+Subject: =?Cp1252?Q?Re:_ACQUAMATIC_-_EXCLUSIVO_VASO_SANITARIO_USA_S=D3_2_LITROS=0A?=
+Date: Fri, 27 Nov 2015 06:17:03 -0800 (PST)
+Message-ID: <565865df.971b8c0a.97763.ffff8235@mx.google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============8504007549998925149=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20151124161630.GL17033-qYNAdHglDFBN0TnZuCh8vA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,30 +14,54 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Nov 24, 2015 at 11:16:30AM -0500, Tejun Heo wrote:
-> Hello,
-> 
-> On Mon, Nov 16, 2015 at 01:51:38PM -0600, serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org wrote:
-> > +static char * __must_check kernfs_path_from_node_locked(
+--===============8504007549998925149==
+Content-Type: text/plain; charset="Cp1252"
 
-(Note I've rewritten this to find a common ancestor and walk back to
-and from that, as you suggested later in this email)
+                           VASO SANITÁRIO EM ABS
 
-> > +	/* Short-circuit the easy case - kn_to is the root node. */
-> > +	if ((kn_from == kn_to) || (!kn_from && !kn_to->parent)) {
-> > +		*p = '/';
-> > +		*(p + 1) = '\0';
-> 
-> Hmm... so if kn_from == kn_to, the output is "/"?
+                     ACIONA COM APENAS 2 LITROS DE ÁGUA
 
-Yes, that's what seems to make the most sense for cgroup namespaces.  I
-could see a case for '.' being used instead in general, but for cgroup
-namespaces I think we'd have to convert those back to '/'.  Otherwise
-we'll fail in being able to run legacy software, which would get
-confused.
+                         Nunca Entope, Nunca Quebra
 
--serge
+                 Revolucionou o conceito de Vaso Sanitário!
+
+   [1]Saiba Mais...
+
+                       [2]Para Comprar, Clique Aqui...
+
+   Os nossos informativos são enviados de acordo com o guia de boas
+   maneiras da ABNT
+   Se você não deseja receber mais nossos informativos, favor retornar
+   e-mail
+   com a palavra "REMOVER" para: [3]vendas-8LjiHMaD0LFe7tkIG91yX1/I71DsQ//L@public.gmane.org
+
+   Número de controle: fcdcd5b19bdd01c640efdead660cd21a
+     __________________________________________________________________
+
+   [4]Avast logo
+
+   Este email foi escaneado pelo Avast antivirus.
+   [5]www.avast.com
+
+References
+
+   1. http://www.aguanossadecadadia.com/
+   2. http://www.aguanossadecadadia.com/
+   3. mailto:vendas-8LjiHMaD0LFe7tkIG91yX1/I71DsQ//L@public.gmane.org
+   4. https://www.avast.com/antivirus
+   5. https://www.avast.com/antivirus
+
+--===============8504007549998925149==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============8504007549998925149==--
