@@ -1,13 +1,15 @@
-From: serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 4/8] cgroup: cgroup namespace setns support
-Date: Wed,  9 Dec 2015 13:28:57 -0600
-Message-ID: <1449689341-28742-5-git-send-email-serge.hallyn__20790.2963542894$1449689428$gmane$org@ubuntu.com>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 1/8] kernfs: Add API to generate relative kernfs path
+Date: Wed, 9 Dec 2015 16:38:06 -0500
+Message-ID: <20151209213806.GP30240__49224.942996125$1449697104$gmane$org@mtj.duckdns.org>
 References: <1449689341-28742-1-git-send-email-serge.hallyn@ubuntu.com>
+	<1449689341-28742-2-git-send-email-serge.hallyn@ubuntu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1449689341-28742-1-git-send-email-serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1449689341-28742-2-git-send-email-serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,60 +19,44 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Hello, Serge.
 
-setns on a cgroup namespace is allowed only if
-task has CAP_SYS_ADMIN in its current user-namespace and
-over the user-namespace associated with target cgroupns.
-No implicit cgroup changes happen with attaching to another
-cgroupns. It is expected that the somone moves the attaching
-process under the target cgroupns-root.
+On Wed, Dec 09, 2015 at 01:28:54PM -0600, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org wrote:
+> +/* kernfs_node_depth - compute depth from @from to @to */
+> +static size_t kernfs_depth(struct kernfs_node *from, struct kernfs_node *to)
+...
+> +char *kernfs_path(struct kernfs_node *kn, char *buf, size_t buflen)
+> +{
+> +	return kernfs_path_from_node(NULL, kn, buf, buflen);
+> +}
+...
+> diff --git a/include/linux/kernfs.h b/include/linux/kernfs.h
+> index 5d4e9c4..d025ebd 100644
+> --- a/include/linux/kernfs.h
+> +++ b/include/linux/kernfs.h
+> @@ -267,6 +267,9 @@ static inline bool kernfs_ns_enabled(struct kernfs_node *kn)
+>  
+>  int kernfs_name(struct kernfs_node *kn, char *buf, size_t buflen);
+>  size_t kernfs_path_len(struct kernfs_node *kn);
+> +char * __must_check kernfs_path_from_node(struct kernfs_node *root_kn,
+> +					  struct kernfs_node *kn, char *buf,
+> +					  size_t buflen);
 
-Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
----
- kernel/cgroup.c |   24 +++++++++++++++++++++---
- 1 file changed, 21 insertions(+), 3 deletions(-)
+I think I commented on the same thing before, but I think it'd make
+more sense to put @from after @to and the prototype is using @root_kn
+which is a bit confusing.  Was converting the path functions to return
+length too much work?  If so, that's fine but please explain what
+decisions were made.
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 92db64c..f34551a 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -5904,10 +5904,28 @@ err_out:
- 	return ERR_PTR(err);
- }
- 
--static int cgroupns_install(struct nsproxy *nsproxy, void *ns)
-+static inline struct cgroup_namespace *to_cg_ns(struct ns_common *ns)
- {
--	pr_info("setns not supported for cgroup namespace");
--	return -EINVAL;
-+	return container_of(ns, struct cgroup_namespace, ns);
-+}
-+
-+static int cgroupns_install(struct nsproxy *nsproxy, struct ns_common *ns)
-+{
-+	struct cgroup_namespace *cgroup_ns = to_cg_ns(ns);
-+
-+	if (!ns_capable(current_user_ns(), CAP_SYS_ADMIN) ||
-+	    !ns_capable(cgroup_ns->user_ns, CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	/* Don't need to do anything if we are attaching to our own cgroupns. */
-+	if (cgroup_ns == nsproxy->cgroup_ns)
-+		return 0;
-+
-+	get_cgroup_ns(cgroup_ns);
-+	put_cgroup_ns(nsproxy->cgroup_ns);
-+	nsproxy->cgroup_ns = cgroup_ns;
-+
-+	return 0;
- }
- 
- static struct ns_common *cgroupns_get(struct task_struct *task)
+I skimmed through the series and spotted several other review points
+which didn't get addressed.  Can you please go over the previous
+review cycle and address the review points?
+
+Thanks.
+
 -- 
-1.7.9.5
+tejun
