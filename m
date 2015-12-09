@@ -1,7 +1,7 @@
 From: serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 7/8] cgroup: Add documentation for cgroup namespaces
-Date: Wed,  9 Dec 2015 13:29:00 -0600
-Message-ID: <1449689341-28742-8-git-send-email-serge.hallyn__32953.7077960142$1449689426$gmane$org@ubuntu.com>
+Subject: [PATCH 4/8] cgroup: cgroup namespace setns support
+Date: Wed,  9 Dec 2015 13:28:57 -0600
+Message-ID: <1449689341-28742-5-git-send-email-serge.hallyn__20790.2963542894$1449689428$gmane$org@ubuntu.com>
 References: <1449689341-28742-1-git-send-email-serge.hallyn@ubuntu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,175 +23,54 @@ List-Id: containers.vger.kernel.org
 
 From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
-Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
----
-Changelog (2015-12-08): Merge into Documentation/cgroup.txt
----
- Documentation/cgroup.txt |  144 ++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 144 insertions(+)
+setns on a cgroup namespace is allowed only if
+task has CAP_SYS_ADMIN in its current user-namespace and
+over the user-namespace associated with target cgroupns.
+No implicit cgroup changes happen with attaching to another
+cgroupns. It is expected that the somone moves the attaching
+process under the target cgroupns-root.
 
-diff --git a/Documentation/cgroup.txt b/Documentation/cgroup.txt
-index 31d1f7b..ca42df4 100644
---- a/Documentation/cgroup.txt
-+++ b/Documentation/cgroup.txt
-@@ -47,6 +47,7 @@ CONTENTS
-   5-3. IO
-     5-3-1. IO Interface Files
-     5-3-2. Writeback
-+6. Namespaces
- P. Information on Kernel Programming
-   P-1. Filesystem Support for Writeback
- D. Deprecated v1 Core Features
-@@ -1013,6 +1014,149 @@ writeback as follows.
- 	vm.dirty[_background]_ratio.
+Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+---
+ kernel/cgroup.c |   24 +++++++++++++++++++++---
+ 1 file changed, 21 insertions(+), 3 deletions(-)
+
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 92db64c..f34551a 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -5904,10 +5904,28 @@ err_out:
+ 	return ERR_PTR(err);
+ }
  
+-static int cgroupns_install(struct nsproxy *nsproxy, void *ns)
++static inline struct cgroup_namespace *to_cg_ns(struct ns_common *ns)
+ {
+-	pr_info("setns not supported for cgroup namespace");
+-	return -EINVAL;
++	return container_of(ns, struct cgroup_namespace, ns);
++}
++
++static int cgroupns_install(struct nsproxy *nsproxy, struct ns_common *ns)
++{
++	struct cgroup_namespace *cgroup_ns = to_cg_ns(ns);
++
++	if (!ns_capable(current_user_ns(), CAP_SYS_ADMIN) ||
++	    !ns_capable(cgroup_ns->user_ns, CAP_SYS_ADMIN))
++		return -EPERM;
++
++	/* Don't need to do anything if we are attaching to our own cgroupns. */
++	if (cgroup_ns == nsproxy->cgroup_ns)
++		return 0;
++
++	get_cgroup_ns(cgroup_ns);
++	put_cgroup_ns(nsproxy->cgroup_ns);
++	nsproxy->cgroup_ns = cgroup_ns;
++
++	return 0;
+ }
  
-+6. CGroup Namespaces
-+
-+CGroup Namespace provides a mechanism to virtualize the view of the
-+/proc/<pid>/cgroup file. The CLONE_NEWCGROUP clone-flag can be used with
-+clone() and unshare() syscalls to create a new cgroup namespace.
-+The process running inside the cgroup namespace will have its /proc/<pid>/cgroup
-+output restricted to cgroupns-root. cgroupns-root is the cgroup of the process
-+at the time of creation of the cgroup namespace.
-+
-+Prior to CGroup Namespace, the /proc/<pid>/cgroup file used to show complete
-+path of the cgroup of a process. In a container setup (where a set of cgroups
-+and namespaces are intended to isolate processes), the /proc/<pid>/cgroup file
-+may leak potential system level information to the isolated processes.
-+
-+For Example:
-+  $ cat /proc/self/cgroup
-+  0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/batchjobs/container_id1
-+
-+The path '/batchjobs/container_id1' can generally be considered as system-data
-+and its desirable to not expose it to the isolated process.
-+
-+CGroup Namespaces can be used to restrict visibility of this path.
-+For Example:
-+  # Before creating cgroup namespace
-+  $ ls -l /proc/self/ns/cgroup
-+  lrwxrwxrwx 1 root root 0 2014-07-15 10:37 /proc/self/ns/cgroup -> cgroup:[4026531835]
-+  $ cat /proc/self/cgroup
-+  0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/batchjobs/container_id1
-+
-+  # unshare(CLONE_NEWCGROUP) and exec /bin/bash
-+  $ ~/unshare -c
-+  [ns]$ ls -l /proc/self/ns/cgroup
-+  lrwxrwxrwx 1 root root 0 2014-07-15 10:35 /proc/self/ns/cgroup -> cgroup:[4026532183]
-+  # From within new cgroupns, process sees that its in the root cgroup
-+  [ns]$ cat /proc/self/cgroup
-+  0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/
-+
-+  # From global cgroupns:
-+  $ cat /proc/<pid>/cgroup
-+  0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/batchjobs/container_id1
-+
-+  # Unshare cgroupns along with userns and mountns
-+  # Following calls unshare(CLONE_NEWCGROUP|CLONE_NEWUSER|CLONE_NEWNS), then
-+  # sets up uid/gid map and execs /bin/bash
-+  $ ~/unshare -c -u -m
-+  # Originally, we were in /batchjobs/container_id1 cgroup. Mount our own cgroup
-+  # hierarchy.
-+  [ns]$ mount -t cgroup cgroup /tmp/cgroup
-+  [ns]$ ls -l /tmp/cgroup
-+  total 0
-+  -r--r--r-- 1 root root 0 2014-10-13 09:32 cgroup.controllers
-+  -r--r--r-- 1 root root 0 2014-10-13 09:32 cgroup.populated
-+  -rw-r--r-- 1 root root 0 2014-10-13 09:25 cgroup.procs
-+  -rw-r--r-- 1 root root 0 2014-10-13 09:32 cgroup.subtree_control
-+
-+The cgroupns-root (/batchjobs/container_id1 in above example) becomes the
-+filesystem root for the namespace specific cgroupfs mount.
-+
-+The virtualization of /proc/self/cgroup file combined with restricting
-+the view of cgroup hierarchy by namespace-private cgroupfs mount
-+should provide a completely isolated cgroup view inside the container.
-+
-+In its current form, the cgroup namespaces patcheset provides following
-+behavior:
-+
-+(1) The 'cgroupns-root' for a cgroup namespace is the cgroup in which
-+    the process calling unshare is running.
-+    For ex. if a process in /batchjobs/container_id1 cgroup calls unshare,
-+    cgroup /batchjobs/container_id1 becomes the cgroupns-root.
-+    For the init_cgroup_ns, this is the real root ('/') cgroup
-+    (identified in code as cgrp_dfl_root.cgrp).
-+
-+(2) The cgroupns-root cgroup does not change even if the namespace
-+    creator process later moves to a different cgroup.
-+    $ ~/unshare -c # unshare cgroupns in some cgroup
-+    [ns]$ cat /proc/self/cgroup
-+    0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/
-+    [ns]$ mkdir sub_cgrp_1
-+    [ns]$ echo 0 > sub_cgrp_1/cgroup.procs
-+    [ns]$ cat /proc/self/cgroup
-+    0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/sub_cgrp_1
-+
-+(3) Each process gets its CGROUPNS specific view of /proc/<pid>/cgroup
-+(a) Processes running inside the cgroup namespace will be able to see
-+    cgroup paths (in /proc/self/cgroup) only inside their root cgroup
-+    [ns]$ sleep 100000 &  # From within unshared cgroupns
-+    [1] 7353
-+    [ns]$ echo 7353 > sub_cgrp_1/cgroup.procs
-+    [ns]$ cat /proc/7353/cgroup
-+    0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/sub_cgrp_1
-+
-+(b) From global cgroupns, the real cgroup path will be visible:
-+    $ cat /proc/7353/cgroup
-+    0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/batchjobs/container_id1/sub_cgrp_1
-+
-+(c) From a sibling cgroupns (cgroupns root-ed at a different cgroup), cgroup
-+    path relative to its own cgroupns-root will be shown:
-+    # ns2's cgroupns-root is at '/batchjobs/container_id2'
-+    [ns2]$ cat /proc/7353/cgroup
-+    0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/../container_id2/sub_cgrp_1
-+
-+    Note that the relative path always starts with '/' to indicate that its
-+    relative to the cgroupns-root of the caller.
-+
-+(4) Processes inside a cgroupns can move in-and-out of the cgroupns-root
-+    (if they have proper access to external cgroups).
-+    # From inside cgroupns (with cgroupns-root at /batchjobs/container_id1), and
-+    # assuming that the global hierarchy is still accessible inside cgroupns:
-+    $ cat /proc/7353/cgroup
-+    0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/sub_cgrp_1
-+    $ echo 7353 > batchjobs/container_id2/cgroup.procs
-+    $ cat /proc/7353/cgroup
-+    0:cpuset,cpu,cpuacct,memory,devices,freezer,hugetlb:/../container_id2
-+
-+    Note that this kind of setup is not encouraged. A task inside cgroupns
-+    should only be exposed to its own cgroupns hierarchy. Otherwise it makes
-+    the virtualization of /proc/<pid>/cgroup less useful.
-+
-+(5) Setns to another cgroup namespace is allowed when:
-+    (a) the process has CAP_SYS_ADMIN in its current userns
-+    (b) the process has CAP_SYS_ADMIN in the target cgroupns' userns
-+    No implicit cgroup changes happen with attaching to another cgroupns. It
-+    is expected that the somone moves the attaching process under the target
-+    cgroupns-root.
-+
-+(6) When some thread from a multi-threaded process unshares its
-+    cgroup-namespace, the new cgroupns gets applied to the entire process (all
-+    the threads). For the unified-hierarchy this is expected as it only allows
-+    process-level containerization.  For the legacy hierarchies this may be
-+    unexpected.  So all the threads in the process will have the same cgroup.
-+
-+(7) The cgroup namespace is alive as long as there is atleast 1
-+    process inside it. When the last process exits, the cgroup
-+    namespace is destroyed. The cgroupns-root and the actual cgroups
-+    remain though.
-+
-+(8) Namespace specific cgroup hierarchy can be mounted by a process running
-+    inside cgroupns:
-+    $ mount -t cgroup -o __DEVEL__sane_behavior cgroup $MOUNT_POINT
-+
-+    This will mount the unified cgroup hierarchy with cgroupns-root as the
-+    filesystem root. The process needs CAP_SYS_ADMIN in its userns and mntns.
-+
- P. Information on Kernel Programming
- 
- This section contains kernel programming information in the areas
+ static struct ns_common *cgroupns_get(struct task_struct *task)
 -- 
 1.7.9.5
