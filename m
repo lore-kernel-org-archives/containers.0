@@ -1,10 +1,9 @@
-From: Interfax Service via Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: You have new fax, document 00000815162
-Date: Thu, 10 Dec 2015 11:33:35 -0600
-Message-ID: <81e21a4f2c3e8562b191f881b923fa09@blackhoundconsulting.com>
-Reply-To: Interfax Service <incoming-wwpBGFb64evk1uMJSBkQmQ@public.gmane.org>
+From: <info-OnaJov3B4jrzs492ZWNkEA@public.gmane.org>
+Subject: Re:Web Designing
+Date: Fri, 11 Dec 2015 11:38:39 +0530
+Message-ID: <612CDA918AE145B398BF96C2180EF6E3.MAI@webtee.biz>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="b1_7527d60f8a8c283679609f2fcaa35da8"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
@@ -19,32 +18,40 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---b1_7527d60f8a8c283679609f2fcaa35da8
-Content-Type: text/plain; charset=us-ascii
+Hi There,
+I was sent you an mail regarding Web Designing hope you are found it. This
+is an follow-up email for you, Interested in our proposal or not?
 
-New incoming fax document.
+Let us know if you are interested, I am waiting here your valuable reply.
 
-Please, download fax document attached to this email.
+Kind Regards
 
-Sender:             Alvin Cramer
-Scan duration:      5 seconds
-Pages scanned:      9
-Fax name:           task_00000815162.doc
-File size:          262 Kb
-Scan date:          Thu, 10 Dec 2015 19:02:37 +0300
-Resolution:         300 DPI
+Nancy
 
-Thanks for using Interfax service!
+  _____  
 
+From: info-OnaJov3B4jrzs492ZWNkEA@public.gmane.org [mailto:info-OnaJov3B4jrzs492ZWNkEA@public.gmane.org] 
+Sent: Thursday, December 10, 2015 9:53 AM
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Subject: Web Designing
 
---b1_7527d60f8a8c283679609f2fcaa35da8
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+ 
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---b1_7527d60f8a8c283679609f2fcaa35da8--
+Hi,
+
+We are a Responsive web design company here. Responsive website design
+automatically changes the website layout to optimize to a desktop screen,
+tablet, or any smart phone on the planet. This is amazing for business
+owners because responsive design eliminates the need for multiple versions
+of your site. Create one web site that formats for all mobile devices.  If
+you already have a main site and just want it mobile optimized, we can build
+that too. Let us quote your next project. You'll get high quality work at
+low cost. 
+
+Is this something we can discuss?
+
+ 
+
+Kind Regards
+
+Nancy
