@@ -1,13 +1,11 @@
-From: Kamezawa Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+From: Dongsheng Yang <yangds.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [Propose] Isolate core_pattern in mnt namespace.
-Date: Mon, 21 Dec 2015 08:58:50 +0900
-Message-ID: <567740BA.9070307__47598.9702310928$1450655989$gmane$org@jp.fujitsu.com>
-References: <56729B3D.1040502@cn.fujitsu.com> <56760F05.3020308@cn.fujitsu.com>
-	<20151220023712.GT20997@ZenIV.linux.org.uk>
-	<567616D6.6060202@cn.fujitsu.com>
+Date: Mon, 21 Dec 2015 14:15:08 +0800
+Message-ID: <567798EC.1040304__13060.2097990506$1450679945$gmane$org@cn.fujitsu.com>
+References: <56729B3D.1040502@cn.fujitsu.com>	<56760F05.3020308@cn.fujitsu.com>	<20151220023712.GT20997@ZenIV.linux.org.uk>	<567616D6.6060202@cn.fujitsu.com>
 	<87fuyx1mfn.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <87fuyx1mfn.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
@@ -20,13 +18,13 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Dongsheng Yang <yangds.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 2015/12/20 18:47, Eric W. Biederman wrote:
+On 12/20/2015 05:47 PM, Eric W. Biederman wrote:
 > Dongsheng Yang <yangds.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> writes:
-> 
+>
 >> On 12/20/2015 10:37 AM, Al Viro wrote:
 >>> On Sun, Dec 20, 2015 at 10:14:29AM +0800, Dongsheng Yang wrote:
 >>>> On 12/17/2015 07:23 PM, Dongsheng Yang wrote:
@@ -63,26 +61,34 @@ On 2015/12/20 18:47, Eric W. Biederman wrote:
 >> we can implement more sysctls as per-mnt if necessary, I think.
 >>
 >> Al, what do you think about this idea?
-> 
+>
 > The hard part is not the sysctl.  The hard part is starting the usermode
 > helper, in an environment that it can deal with.  The mount namespace
 > really provides you with no help there.
-> 
-Let me ask. I think user-mode-helper shouldn be found in container's namespace.
-Or Do you mean running user-mode-helper out of a container ?
 
-I think if a user need to send cores to outside of a container, a file descriptor
-or a network end point should be able to be passed to sysctl. 
+Do you mean the core dump helper? But I think I don't want to touch it
+in my development. I think I can use non-pipe way to get what I want,
+Let me try to explain what I want here.
 
-Thanks,
--Kame
+(1). introduce a --core-path option in docker run command to specify the
+path in host to store core file in one container.
+E.g: docker run --core-path=/core/test --name=test IMAGE
 
+(2). When the container starting, docker attach a volume to it, similar
+with "-v /core/test:/var/lib/docker/coredump". That means, the path of
+/var/lib/docker/coredump in container is a link to /core/test in host.
 
+(3). Set the /proc/sys/kernel/core_pattern in container as
+"/var/lib/docker/coredump". But that should not affect the core_pattern
+in host or other containers.
 
+Then I think I can collect the core files from each container and save
+them in the paths where I want.
+
+Thanx
+Yang
+>
 > Eric
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
-> 
+>
+>
+>
