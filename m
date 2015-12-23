@@ -1,14 +1,19 @@
 From: Dongsheng Yang <yangds.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [Propose] Isolate core_pattern in mnt namespace.
-Date: Wed, 23 Dec 2015 11:12:32 +0800
-Message-ID: <567A1120.3070204@cn.fujitsu.com>
-References: <56729B3D.1040502@cn.fujitsu.com>	<56760F05.3020308@cn.fujitsu.com>	<20151220023712.GT20997@ZenIV.linux.org.uk>	<567616D6.6060202@cn.fujitsu.com>	<87fuyx1mfn.fsf@x220.int.ebiederm.org>	<567798EC.1040304@cn.fujitsu.com>
+Date: Wed, 23 Dec 2015 11:13:47 +0800
+Message-ID: <567A116B.6050805__45734.6791321926$1450840905$gmane$org@cn.fujitsu.com>
+References: <56729B3D.1040502@cn.fujitsu.com> <56760F05.3020308@cn.fujitsu.com>
+	<20151220023712.GT20997@ZenIV.linux.org.uk>
+	<567616D6.6060202@cn.fujitsu.com>
+	<87fuyx1mfn.fsf@x220.int.ebiederm.org>
+	<567798EC.1040304@cn.fujitsu.com>
 	<87twnbzcz8.fsf@x220.int.ebiederm.org>
+	<5678BFA3.9090608@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; Format="flowed"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87twnbzcz8.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <5678BFA3.9090608-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,87 +23,108 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Kamezawa Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gMTIvMjIvMjAxNSAwNTo1MiBBTSwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4gRG9uZ3No
-ZW5nIFlhbmcgPHlhbmdkcy5mbnN0QGNuLmZ1aml0c3UuY29tPiB3cml0ZXM6Cj4KPj4gT24gMTIv
-MjAvMjAxNSAwNTo0NyBQTSwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4+PiBEb25nc2hlbmcg
-WWFuZyA8eWFuZ2RzLmZuc3RAY24uZnVqaXRzdS5jb20+IHdyaXRlczoKPj4+Cj4+Pj4gT24gMTIv
-MjAvMjAxNSAxMDozNyBBTSwgQWwgVmlybyB3cm90ZToKPj4+Pj4gT24gU3VuLCBEZWMgMjAsIDIw
-MTUgYXQgMTA6MTQ6MjlBTSArMDgwMCwgRG9uZ3NoZW5nIFlhbmcgd3JvdGU6Cj4+Pj4+PiBPbiAx
-Mi8xNy8yMDE1IDA3OjIzIFBNLCBEb25nc2hlbmcgWWFuZyB3cm90ZToKPj4+Pj4+PiBIaSBndXlz
-LAo+Pj4+Pj4+ICAgICAgICBXZSBhcmUgd29ya2luZyBvbiBtYWtpbmcgY29yZSBkdW1wIGJlaGF2
-aW91ciBpc29sYXRlZCBpbgo+Pj4+Pj4+IGNvbnRhaW5lci4gQnV0IHRoZSBwcm9ibGVtIGlzLCB0
-aGUgL3Byb2Mvc3lzL2tlcm5lbC9jb3JlX3BhdHRlcm4KPj4+Pj4+PiBpcyBhIGtlcm5lbCB3aWRl
-IHNldHRpbmcsIG5vdCBiZWxvbmdzIHRvIGEgY29udGFpbmVyLgo+Pj4+Pj4+Cj4+Pj4+Pj4gICAg
-ICAgIFNvIHdlIHdhbnQgdG8gYWRkIGNvcmVfcGF0dGVybiBpbnRvIG1udCBuYW1lc3BhY2UuIFdo
-YXQKPj4+Pj4+PiBkbyB5b3UgdGhpbmsgYWJvdXQgaXQ/Cj4+Pj4+Pgo+Pj4+Pj4gSGkgRXJpYywK
-Pj4+Pj4+IAlJIGZvdW5kIHlvdXIgcGF0Y2ggYWJvdXQgIm5ldDogSW1wbGVtZW50IHRoZSBwZXIg
-bmV0d29yayBuYW1lc3BhY2UKPj4+Pj4+IHN5c2N0bCBpbmZyYXN0cnVjdHVyZSIsIEkgd2FudCB0
-byBkbyB0aGUgc2ltaWxhciB0aGluZwo+Pj4+Pj4gaW4gbW50IG5hbWVzcGFjZS4gSXMgdGhhdCBz
-dWdnZXN0ZWQgd2F5Pwo+Pj4+Pgo+Pj4+PiBXaHkgbW50IG5hbWVzcGFjZSBhbmQgbm90IHNvbWV0
-aGluZyBlbHNlPwo+Pj4+Cj4+Pj4gSGkgQWwsCj4+Pj4KPj4+PiBXZWxsLCBiZWNhdXNlIGNvcmVf
-cGF0dGVybiBpbmRpY2F0ZXMgdGhlIHBhdGggdG8gc3RvcmUgY29yZSBmaWxlLgo+Pj4+IEluIGRp
-ZmZlcmVudCBtbnQgbmFtZXNwYWNlLCB3ZSB3b3VsZCBsaWtlIHRvIGNoYW5nZSB0aGUgcGF0aCB3
-aXRoCj4+Pj4gZGlmZmVyZW50IHZhbHVlLgo+Pj4+Cj4+Pj4gSW4gYWRkaXRpb24sIExldCdzIGNv
-bnNpZGVyaW5nIG90aGVyIG5hbWVzcGFjZXM6Cj4+Pj4gVVRTIG5zOiBjb250YWlucyBpbmZvcm1h
-dGlvbnMgb2Yga2VybmVsIGFuZCBhcmNoLCBub3QgcHJvcGVyIGZvciBjb3JlX3BhdHRlcm4uCj4+
-Pj4gSVBDIG5zOiBjb21tdW5pY2F0aW9uIGluZm9ybWF0aW9ucywgbm90IHByb3BlciBmb3IgY29y
-ZV9wYXR0ZXJuCj4+Pj4gUElEIG5zOiBjb3JlX3BhdHRlcm4gaXMgbm90IHJlbGF0ZWQgd2l0aCBw
-aWQKPj4+PiBuZXQgbnM6IG9idmlvdXNlbHkgbm8uCj4+Pj4gdXNlciBuczogbm90IHByb3BlciB0
-b28uCj4+Pj4KPj4+PiBUaGVuIEkgYmVsaWV2ZSBpdCdzIGJldHRlciB0byBkbyB0aGlzIGluIG1u
-dCBuYW1lc3BhY2UuIG9mIGNvdXJzZSwKPj4+PiBjb3JlX3BhdHRlcm4gaXMganVzdCBvbmUgZXhh
-bXBsZS4gQWZ0ZXIgdGhpcyBpbmZyYXN0cnVjdHVyZSBmaW5pc2hlZCwKPj4+PiB3ZSBjYW4gaW1w
-bGVtZW50IG1vcmUgc3lzY3RscyBhcyBwZXItbW50IGlmIG5lY2Vzc2FyeSwgSSB0aGluay4KPj4+
-Pgo+Pj4+IEFsLCB3aGF0IGRvIHlvdSB0aGluayBhYm91dCB0aGlzIGlkZWE/Cj4+Pgo+Pj4gVGhl
-IGhhcmQgcGFydCBpcyBub3QgdGhlIHN5c2N0bC4gIFRoZSBoYXJkIHBhcnQgaXMgc3RhcnRpbmcg
-dGhlIHVzZXJtb2RlCj4+PiBoZWxwZXIsIGluIGFuIGVudmlyb25tZW50IHRoYXQgaXQgY2FuIGRl
-YWwgd2l0aC4gIFRoZSBtb3VudCBuYW1lc3BhY2UKPj4+IHJlYWxseSBwcm92aWRlcyB5b3Ugd2l0
-aCBubyBoZWxwIHRoZXJlLgo+Pgo+PiBEbyB5b3UgbWVhbiB0aGUgY29yZSBkdW1wIGhlbHBlcj8g
-QnV0IEkgdGhpbmsgSSBkb24ndCB3YW50IHRvIHRvdWNoIGl0Cj4+IGluIG15IGRldmVsb3BtZW50
-LiBJIHRoaW5rIEkgY2FuIHVzZSBub24tcGlwZSB3YXkgdG8gZ2V0IHdoYXQgSSB3YW50LAo+PiBM
-ZXQgbWUgdHJ5IHRvIGV4cGxhaW4gd2hhdCBJIHdhbnQgaGVyZS4KPj4KPj4gKDEpLiBpbnRyb2R1
-Y2UgYSAtLWNvcmUtcGF0aCBvcHRpb24gaW4gZG9ja2VyIHJ1biBjb21tYW5kIHRvIHNwZWNpZnkg
-dGhlCj4+IHBhdGggaW4gaG9zdCB0byBzdG9yZSBjb3JlIGZpbGUgaW4gb25lIGNvbnRhaW5lci4K
-Pj4gRS5nOiBkb2NrZXIgcnVuIC0tY29yZS1wYXRoPS9jb3JlL3Rlc3QgLS1uYW1lPXRlc3QgSU1B
-R0UKPj4KPj4gKDIpLiBXaGVuIHRoZSBjb250YWluZXIgc3RhcnRpbmcsIGRvY2tlciBhdHRhY2gg
-YSB2b2x1bWUgdG8gaXQsIHNpbWlsYXIKPj4gd2l0aCAiLXYgL2NvcmUvdGVzdDovdmFyL2xpYi9k
-b2NrZXIvY29yZWR1bXAiLiBUaGF0IG1lYW5zLCB0aGUgcGF0aCBvZgo+PiAvdmFyL2xpYi9kb2Nr
-ZXIvY29yZWR1bXAgaW4gY29udGFpbmVyIGlzIGEgbGluayB0byAvY29yZS90ZXN0IGluIGhvc3Qu
-Cj4+Cj4+ICgzKS4gU2V0IHRoZSAvcHJvYy9zeXMva2VybmVsL2NvcmVfcGF0dGVybiBpbiBjb250
-YWluZXIgYXMKPj4gIi92YXIvbGliL2RvY2tlci9jb3JlZHVtcCIuIEJ1dCB0aGF0IHNob3VsZCBu
-b3QgYWZmZWN0IHRoZSBjb3JlX3BhdHRlcm4KPj4gaW4gaG9zdCBvciBvdGhlciBjb250YWluZXJz
-Lgo+Pgo+PiBUaGVuIEkgdGhpbmsgSSBjYW4gY29sbGVjdCB0aGUgY29yZSBmaWxlcyBmcm9tIGVh
-Y2ggY29udGFpbmVyIGFuZCBzYXZlCj4+IHRoZW0gaW4gdGhlIHBhdGhzIHdoZXJlIEkgd2FudC4K
-Pgo+IEZvciB5b3VyIGNhc2UgdGhhdCBzb3VuZHMgbGlrZSBpdCB3b3VsZCB3b3JrLiAgVW5mb3J0
-dW5hdGVseSBmb3IgdGhpcyB0bwo+IGJlIGdlbmVyYWxseSBhcHBsaWNhYmxlIGFuZCB0byBsZXQg
-dGhlIE9TIGluIHRoZSBjb250aWFuZXIgY29udHJvbCBpdCdzCj4gZmF0ZSB0aGUgY29yZSBkdW1w
-IHBhdHRlcm4gbmVlZHMgdG8gYmUgc3VwcG9ydGVkLgo+Cj4gT3RoZXJ3aXNlIHNvbWV0aGluZyBj
-bGV2ZXIgaW4gdXNlcnNwYWNlIHRoYXQgY2FuIGJlIHdyaXR0ZW4gbm93IHNob3VsZAo+IGJlIHN1
-ZmZpY2llbnQgdG8gZmlsbCB0aGUgZ2FwLiAgVGhlcmUgaXMgZW5vdWdoIGluZm9ybWF0aW9uIGZv
-ciB0aGUgdXNlcgo+IG1vZGUgaGVscGVyIHRvIGltcGxlbWVudCB0aGUgcG9saWN5IHlvdSB3b3Vs
-ZCBsaWtlIHRvZGF5LgoKSGkgRXJpYywKClRvIG1ha2Ugc3VyZSBJIHVuZGVyc3RhbmQgeW91ciBw
-b2ludCBjb3JyZWN0bHnvvJoKCURvIHlvdSBtZWFuIHdlIGNhbiB3cml0ZSBhIHVzZXJzcGFjZSBo
-ZWxwZXIgaW4gaG9zdCBzdWNoIGFzCi91c3IvbGliZXhlYy9kb2NrZXItcGlwZSB0byBnZXQgd2hh
-dCBJIHdhbnQ/CgpZZXMsIEkgd291bGQgc2F5LCBmb3IgbXkgY2FzZSwgaXQgd291bGQgd29yay4g
-VGhpcyBoZWxwZXIgY2FuIGdldCB0aGUKZHVtcCBkYXRhIGZyb20gY29udGFpbmVycyBhbmQgZGlz
-cGF0Y2ggdGhlbSB0byBkaWZmZXJlbnQgcGF0aCBzdWNoCmFzIC92YXIvbGliL2RvY2tlci9jb3Jl
-cy88Q29udGFpbmVySUQ+Ly4KCkJ1dCB0aGVyZSB3b3VsZCBiZSB0d28gcHJvYmxlbXMgaW4gdGhp
-cyBzb2x1dGlvbi4KKDEpLiBJdCBtYXkgYWZmZWN0IGNvcmUgZHVtcCBvbiBob3N0LiBOb3JtYWxs
-eSwgb3RoZXIgcHJvY2Vzc2VzIGluCiAgaG9zdCB3b3VsZCBub3QgYmUgaGFwcHkgdG8gdXNlIGEg
-aGVscGVyIG9mIGRvY2tlci1waXBlIGZvciB0aGVtc2VsdmVzLgogIEJ1dCBob3N0IGhhdmUgdG8g
-c2hhcmUgdGhlIGNvcmVfcGF0dGVybiB3aXRoIGNvbnRhaW5lcnMsIGNhbid0IGNvbmZpZwogIGl0
-IGJ5IGl0c2VsZi4KCigyKS4gSWYgdGhlcmUgYXJlIHNvbWUgY29udGFpbmVycyBkb24ndCB3YW50
-IHRvIHBhc3MgdGhlIGNvcmUgZmlsZXMKdG8gaG9zdCwgdGhleSBjYW4ndCBzZXQgdGhlIGNvcmVf
-cGF0dGVybiBpbiB0aGlzIHNvbHV0aW9uLgoKSU1PLCB3ZSBjYW4gZ2V0IGNvcmUgZmlsZXMgb24g
-aG9zdCBjdXJyZW50bHksIGJ5IGVpdGhlciBub24tcGlwZSB3YXkgSQpkZXNjcmliZWQgYWJvdmUg
-b3IgdGhlIHBpcGUgd2F5IHlvdSBzdWdnZXN0ZWQuIEJ1dCB0aGUgcHJvYmxlbSBpcyBib3RoCm9m
-IHRoZXNlIG1ldGhvZHMgd291bGQgYWZmZWN0IHRoZSBjb3JlX3BhdHRlcm4gb24gaG9zdCBhbmQg
-b3RoZXIKY29udGFpbmVycy4KClNvLCBJIHRoaW5rIHRoZSBrZXkgcG9pbnQgaGVyZSBpcyBqdXN0
-IGlzb2xhdGluZyB0aGUgY29yZSBkdW1wIHJlbGF0ZWQKc3lzY3RsIGluIG1udCBuYW1lc3BhY2Uu
-CgpUaGFueApZYW5nCj4KPiBFcmljCj4KPgo+IC4KPgoKCgpfX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWlu
-ZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0
-aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+On 12/22/2015 11:12 AM, Kamezawa Hiroyuki wrote:
+> On 2015/12/22 6:52, Eric W. Biederman wrote:
+>> Dongsheng Yang <yangds.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> writes:
+>>
+>>> On 12/20/2015 05:47 PM, Eric W. Biederman wrote:
+>>>> Dongsheng Yang <yangds.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> writes:
+>>>>
+>>>>> On 12/20/2015 10:37 AM, Al Viro wrote:
+>>>>>> On Sun, Dec 20, 2015 at 10:14:29AM +0800, Dongsheng Yang wrote:
+>>>>>>> On 12/17/2015 07:23 PM, Dongsheng Yang wrote:
+>>>>>>>> Hi guys,
+>>>>>>>>         We are working on making core dump behaviour isolated in
+>>>>>>>> container. But the problem is, the /proc/sys/kernel/core_pattern
+>>>>>>>> is a kernel wide setting, not belongs to a container.
+>>>>>>>>
+>>>>>>>>         So we want to add core_pattern into mnt namespace. What
+>>>>>>>> do you think about it?
+>>>>>>>
+>>>>>>> Hi Eric,
+>>>>>>> 	I found your patch about "net: Implement the per network namespace
+>>>>>>> sysctl infrastructure", I want to do the similar thing
+>>>>>>> in mnt namespace. Is that suggested way?
+>>>>>>
+>>>>>> Why mnt namespace and not something else?
+>>>>>
+>>>>> Hi Al,
+>>>>>
+>>>>> Well, because core_pattern indicates the path to store core file.
+>>>>> In different mnt namespace, we would like to change the path with
+>>>>> different value.
+>>>>>
+>>>>> In addition, Let's considering other namespaces:
+>>>>> UTS ns: contains informations of kernel and arch, not proper for core_pattern.
+>>>>> IPC ns: communication informations, not proper for core_pattern
+>>>>> PID ns: core_pattern is not related with pid
+>>>>> net ns: obviousely no.
+>>>>> user ns: not proper too.
+>>>>>
+>>>>> Then I believe it's better to do this in mnt namespace. of course,
+>>>>> core_pattern is just one example. After this infrastructure finished,
+>>>>> we can implement more sysctls as per-mnt if necessary, I think.
+>>>>>
+>>>>> Al, what do you think about this idea?
+>>>>
+>>>> The hard part is not the sysctl.  The hard part is starting the usermode
+>>>> helper, in an environment that it can deal with.  The mount namespace
+>>>> really provides you with no help there.
+>>>
+>>> Do you mean the core dump helper? But I think I don't want to touch it
+>>> in my development. I think I can use non-pipe way to get what I want,
+>>> Let me try to explain what I want here.
+>>>
+>>> (1). introduce a --core-path option in docker run command to specify the
+>>> path in host to store core file in one container.
+>>> E.g: docker run --core-path=/core/test --name=test IMAGE
+>>>
+>>> (2). When the container starting, docker attach a volume to it, similar
+>>> with "-v /core/test:/var/lib/docker/coredump". That means, the path of
+>>> /var/lib/docker/coredump in container is a link to /core/test in host.
+>>>
+>>> (3). Set the /proc/sys/kernel/core_pattern in container as
+>>> "/var/lib/docker/coredump". But that should not affect the core_pattern
+>>> in host or other containers.
+>>>
+>>> Then I think I can collect the core files from each container and save
+>>> them in the paths where I want.
+>>
+>> For your case that sounds like it would work.  Unfortunately for this to
+>> be generally applicable and to let the OS in the contianer control it's
+>> fate the core dump pattern needs to be supported.
+>>
+>> Otherwise something clever in userspace that can be written now should
+>> be sufficient to fill the gap.  There is enough information for the user
+>> mode helper to implement the policy you would like today.
+>>
+> Let me clarify my understanding.
+> 
+> 1) running user-mode-helper in a container.
+>     It's not supported by the kernel. user-mode-helper always works on a host.
+> 
+> 2) running user mode helper in a host.
+>    It's supported in the newest distro(FC23). (abrt supports container.)
+>    Summary is here. https://github.com/abrt/abrt/wiki/Containers-and-chroots
+> 
+> If a guest user doesn't want to pass a core to the host owner, core_pattern
+> should be configurable but it can't.
+
+Agreed, then we have to make the core_pattern namespace-ed in mnt
+namespace.
+
+Thanx
+Yang
+> 
+> Thanks,
+> -Kame
+> 
+> 
+> 
+> 
+> .
+> 
