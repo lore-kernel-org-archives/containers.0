@@ -1,14 +1,14 @@
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] [RFC] selftests/cgroupns: new test for cgroup namespaces
-Date: Wed, 23 Dec 2015 00:36:37 +0000
-Message-ID: <20151223003637.GA5091__15749.1152444438$1450831028$gmane$org@ubuntumail>
-References: <1450530333-20479-1-git-send-email-alban@kinvolk.io>
+From: Dongsheng Yang <yangds.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [Propose] Isolate core_pattern in mnt namespace.
+Date: Wed, 23 Dec 2015 11:12:32 +0800
+Message-ID: <567A1120.3070204@cn.fujitsu.com>
+References: <56729B3D.1040502@cn.fujitsu.com>	<56760F05.3020308@cn.fujitsu.com>	<20151220023712.GT20997@ZenIV.linux.org.uk>	<567616D6.6060202@cn.fujitsu.com>	<87fuyx1mfn.fsf@x220.int.ebiederm.org>	<567798EC.1040304@cn.fujitsu.com>
+	<87twnbzcz8.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1450530333-20479-1-git-send-email-alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
+In-Reply-To: <87twnbzcz8.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,495 +18,87 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alban Crequy <alban.crequy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: iago-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Alban Crequy (alban.crequy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> From: Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
-> 
-> This adds the selftest "cgroupns_test" in order to test the CGroup
-> Namespace patchset.
-> 
-> cgroupns_test creates two child processes. They perform a list of
-> actions defined by the array cgroupns_test. This array can easily be
-> extended to more scenarios without adding much code. They are
-> synchronized with eventfds to ensure only one action is performed at a
-> time.
-> 
-> The memory is shared between the processes (CLONE_VM) so each child
-> process can know the pid of their siblings without extra IPC.
-> 
-> The output explains the scenario being played. Short extract:
-> 
-> > current cgroup: /user.slice/user-0.slice/session-1.scope
-> > child process #0: check that process #self (pid=482) has cgroup /user.slice/user-0.slice/session-1.scope
-> > child process #0: unshare cgroupns
-> > child process #0: move process #self (pid=482) to cgroup cgroup-a/subcgroup-a
-> > child process #0: join parent cgroupns
-> 
-> The test does not change the mount namespace and does not mount any
-> new cgroup2 filesystem. Therefore this does not test that the cgroup2
-> mount is correctly rooted to the cgroupns root at mount time.
-> 
-> Signed-off-by: Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
-> 
-> ---
-> 
-> This patch is available in the cgroupns.v7-tests branch of
-> https://github.com/kinvolk/linux.git
-> It is based on top of Serge Hallyn's cgroupns.v7 branch of
-> https://git.kernel.org/cgit/linux/kernel/git/sergeh/linux-security.git/
-> 
-> I see Linux does not have a lot of selftests and there are more Linux
-> container tests in Linux Test Project:
-> https://github.com/linux-test-project/ltp/tree/master/testcases/kernel/containers
-> 
-> Is it better to send this test here or to LTP?
-> ---
->  tools/testing/selftests/Makefile                 |   1 +
->  tools/testing/selftests/cgroupns/Makefile        |  11 +
->  tools/testing/selftests/cgroupns/cgroupns_test.c | 378 +++++++++++++++++++++++
->  3 files changed, 390 insertions(+)
->  create mode 100644 tools/testing/selftests/cgroupns/Makefile
->  create mode 100644 tools/testing/selftests/cgroupns/cgroupns_test.c
-> 
-> diff --git a/tools/testing/selftests/Makefile b/tools/testing/selftests/Makefile
-> index c8edff6..694325a 100644
-> --- a/tools/testing/selftests/Makefile
-> +++ b/tools/testing/selftests/Makefile
-> @@ -1,4 +1,5 @@
->  TARGETS = breakpoints
-> +TARGETS += cgroupns
->  TARGETS += cpu-hotplug
->  TARGETS += efivarfs
->  TARGETS += exec
-> diff --git a/tools/testing/selftests/cgroupns/Makefile b/tools/testing/selftests/cgroupns/Makefile
-> new file mode 100644
-> index 0000000..0fdbe0a
-> --- /dev/null
-> +++ b/tools/testing/selftests/cgroupns/Makefile
-> @@ -0,0 +1,11 @@
-> +CFLAGS += -I../../../../usr/include/
-> +CFLAGS += -I../../../../include/uapi/
-> +
-> +all: cgroupns_test
-> +
-> +TEST_PROGS := cgroupns_test
-> +
-> +include ../lib.mk
-> +
-> +clean:
-> +	$(RM) cgroupns_test
-> diff --git a/tools/testing/selftests/cgroupns/cgroupns_test.c b/tools/testing/selftests/cgroupns/cgroupns_test.c
-> new file mode 100644
-> index 0000000..d45017c
-> --- /dev/null
-> +++ b/tools/testing/selftests/cgroupns/cgroupns_test.c
-> @@ -0,0 +1,378 @@
-> +#define _GNU_SOURCE
-> +
-> +#include <stdio.h>
-> +#include <stdlib.h>
-> +#include <unistd.h>
-> +#include <string.h>
-> +#include <sys/statfs.h>
-> +#include <inttypes.h>
-> +#include <sched.h>
-> +#include <sys/types.h>
-> +#include <sys/stat.h>
-> +#include <sys/socket.h>
-> +#include <sys/wait.h>
-> +#include <sys/eventfd.h>
-> +#include <signal.h>
-> +#include <fcntl.h>
-> +
-> +#include <linux/magic.h>
-> +#include <linux/sched.h>
-> +
-> +#include "../kselftest.h"
-> +
-> +#define STACK_SIZE 65536
-> +
-> +static char root_cgroup[4096];
-> +
-> +#define CHILDREN_COUNT 2
-> +typedef struct {
-> +	int pid;
-> +	uint8_t *stack;
-> +	int start_semfd;
-> +	int end_semfd;
-> +} cgroupns_child_t;
-> +cgroupns_child_t children[CHILDREN_COUNT];
-> +
-> +typedef enum {
-> +	UNSHARE_CGROUPNS,
-> +	JOIN_CGROUPNS,
-> +	CHECK_CGROUP,
-> +	CHECK_CGROUP_WITH_ROOT_PREFIX,
-> +	MOVE_CGROUP,
-> +	MOVE_CGROUP_WITH_ROOT_PREFIX,
-> +} cgroupns_action_t;
-> +
-> +static const struct {
-> +	int actor_pid;
-> +	cgroupns_action_t action;
-> +	int target_pid;
-> +	char *path;
-> +} cgroupns_tests[] = {
-> +	{ 0, CHECK_CGROUP_WITH_ROOT_PREFIX, -1, ""},
-> +	{ 0, CHECK_CGROUP_WITH_ROOT_PREFIX, 0, ""},
-> +	{ 0, CHECK_CGROUP_WITH_ROOT_PREFIX, 1, ""},
-> +	{ 1, CHECK_CGROUP_WITH_ROOT_PREFIX, -1, ""},
-> +	{ 1, CHECK_CGROUP_WITH_ROOT_PREFIX, 0, ""},
-> +	{ 1, CHECK_CGROUP_WITH_ROOT_PREFIX, 1, ""},
-> +
-> +	{ 0, UNSHARE_CGROUPNS, -1, NULL},
-> +
-> +	{ 0, CHECK_CGROUP, -1, "/"},
-> +	{ 0, CHECK_CGROUP, 0, "/"},
-> +	{ 0, CHECK_CGROUP, 1, "/"},
-> +	{ 1, CHECK_CGROUP_WITH_ROOT_PREFIX, -1, ""},
-> +	{ 1, CHECK_CGROUP_WITH_ROOT_PREFIX, 0, ""},
-> +	{ 1, CHECK_CGROUP_WITH_ROOT_PREFIX, 1, ""},
-> +
-> +	{ 1, UNSHARE_CGROUPNS, -1, NULL},
-> +
-> +	{ 0, CHECK_CGROUP, -1, "/"},
-> +	{ 0, CHECK_CGROUP, 0, "/"},
-> +	{ 0, CHECK_CGROUP, 1, "/"},
-> +	{ 1, CHECK_CGROUP, -1, "/"},
-> +	{ 1, CHECK_CGROUP, 0, "/"},
-> +	{ 1, CHECK_CGROUP, 1, "/"},
-> +
-> +	{ 0, MOVE_CGROUP_WITH_ROOT_PREFIX, -1, "cgroup-a"},
-> +	{ 1, MOVE_CGROUP_WITH_ROOT_PREFIX, -1, "cgroup-b"},
-> +
-> +	{ 0, CHECK_CGROUP, -1, "/cgroup-a"},
-> +	{ 0, CHECK_CGROUP, 0, "/cgroup-a"},
-> +	{ 0, CHECK_CGROUP, 1, "/cgroup-b"},
-> +	{ 1, CHECK_CGROUP, -1, "/cgroup-b"},
-> +	{ 1, CHECK_CGROUP, 0, "/cgroup-a"},
-> +	{ 1, CHECK_CGROUP, 1, "/cgroup-b"},
-> +
-> +	{ 0, UNSHARE_CGROUPNS, -1, NULL},
-> +	{ 1, UNSHARE_CGROUPNS, -1, NULL},
-> +
-> +	{ 0, CHECK_CGROUP, -1, "/"},
-> +	{ 0, CHECK_CGROUP, 0, "/"},
-> +	{ 0, CHECK_CGROUP, 1, "/../cgroup-b"},
-> +	{ 1, CHECK_CGROUP, -1, "/"},
-> +	{ 1, CHECK_CGROUP, 0, "/../cgroup-a"},
-> +	{ 1, CHECK_CGROUP, 1, "/"},
-> +
-> +	{ 0, MOVE_CGROUP_WITH_ROOT_PREFIX, -1, "cgroup-a/sub1-a"},
-> +	{ 1, MOVE_CGROUP_WITH_ROOT_PREFIX, -1, "cgroup-b/sub1-b"},
-> +
-> +	{ 0, CHECK_CGROUP, 0, "/sub1-a"},
-> +	{ 0, CHECK_CGROUP, 1, "/../cgroup-b/sub1-b"},
-> +	{ 1, CHECK_CGROUP, 0, "/../cgroup-a/sub1-a"},
-> +	{ 1, CHECK_CGROUP, 1, "/sub1-b"},
-> +
-> +	{ 0, MOVE_CGROUP_WITH_ROOT_PREFIX, -1, "cgroup-a/sub1-a/sub2-a"},
-> +	{ 1, CHECK_CGROUP, 0, "/../cgroup-a/sub1-a/sub2-a"},
-> +	{ 0, CHECK_CGROUP, 1, "/../cgroup-b/sub1-b"},
-> +	{ 0, MOVE_CGROUP_WITH_ROOT_PREFIX, -1, "cgroup-a/sub1-a/sub2-a/sub3-a"},
-> +	{ 1, CHECK_CGROUP, 0, "/../cgroup-a/sub1-a/sub2-a/sub3-a"},
-> +	{ 0, CHECK_CGROUP, 1, "/../cgroup-b/sub1-b"},
-> +	{ 0, MOVE_CGROUP_WITH_ROOT_PREFIX, -1, "cgroup-a/sub1-a/sub2-a/sub3-a/sub4-a"},
-> +	{ 1, CHECK_CGROUP, 0, "/../cgroup-a/sub1-a/sub2-a/sub3-a/sub4-a"},
-> +	{ 0, CHECK_CGROUP, 1, "/../cgroup-b/sub1-b"},
-> +
-> +	{ 1, UNSHARE_CGROUPNS, -1, NULL},
-> +	{ 1, CHECK_CGROUP, 0, "/../../cgroup-a/sub1-a/sub2-a/sub3-a/sub4-a"},
-> +	{ 0, UNSHARE_CGROUPNS, -1, NULL},
-> +	{ 0, CHECK_CGROUP, 1, "/../../../../../cgroup-b/sub1-b"},
-> +
-> +	{ 0, JOIN_CGROUPNS, -1, NULL},
-> +	{ 1, JOIN_CGROUPNS, -1, NULL},
-> +
-> +	{ 0, CHECK_CGROUP_WITH_ROOT_PREFIX, 0, "/cgroup-a/sub1-a/sub2-a/sub3-a/sub4-a"},
-> +	{ 0, CHECK_CGROUP_WITH_ROOT_PREFIX, 1, "/cgroup-b/sub1-b"},
-> +	{ 1, CHECK_CGROUP_WITH_ROOT_PREFIX, 0, "/cgroup-a/sub1-a/sub2-a/sub3-a/sub4-a"},
-> +	{ 1, CHECK_CGROUP_WITH_ROOT_PREFIX, 1, "/cgroup-b/sub1-b"},
-> +};
-> +#define cgroupns_tests_len (sizeof(cgroupns_tests) / sizeof(cgroupns_tests[0]))
-> +
-> +static void
-> +get_cgroup(pid_t pid, char *path, size_t len)
-> +{
-> +	char proc_path[4096];
-> +	char *line;
-> +	FILE *f;
-> +
-> +	if (pid > 0) {
-> +		sprintf(proc_path, "/proc/%d/cgroup", pid);
-> +	} else {
-> +		sprintf(proc_path, "/proc/self/cgroup");
-> +	}
-> +
-> +	f = fopen(proc_path, "r");
-> +	if (!f) {
-> +		printf("FAIL: cannot open %s\n", proc_path);
-> +		ksft_exit_fail();
-> +	}
-> +	line = malloc(4096);
-> +	line = fgets(line, 4096, f);
-> +	if (!line) {
-> +		printf("FAIL: %s empty\n", proc_path);
-> +		ksft_exit_fail();
-> +	}
-> +	line[strcspn(line, "\n")] = 0;
-> +	if (strncmp(line, "0::", 3) != 0) {
-> +		printf("FAIL: cannot parse %s\n", proc_path);
-> +		ksft_exit_fail();
-
-This seems too limiting.  I think requiring cgroup2 is probably ok
-for the tests, but if I mount it after systemd has mounted cgroup1,
-then in my /proc/self/cgroup the 0:: ends up as last line.  So I
-can't trivially run these tests.
-
-> +	}
-> +	strncpy(path, line+3, len);
-> +
-> +	free(line);
-> +	fclose(f);
-> +}
-> +
-> +static void
-> +move_cgroup(pid_t target_pid, int prefix, char *cgroup)
-> +{
-> +	char knob_dir[4096];
-> +	char knob_path[4096];
-> +	char buf[128];
-> +	FILE *f;
-> +	int ret;
-> +
-> +	if (prefix) {
-> +		sprintf(knob_dir, "/sys/fs/cgroup/%s/%s", root_cgroup, cgroup);
-> +		sprintf(knob_path, "/sys/fs/cgroup/%s/%s/cgroup.procs", root_cgroup, cgroup);
-> +	} else {
-> +		sprintf(knob_dir, "/sys/fs/cgroup/%s", cgroup);
-> +		sprintf(knob_path, "/sys/fs/cgroup/%s/cgroup.procs", cgroup);
-> +	}
-> +
-> +	mkdir(knob_dir, 0755);
-> +
-> +	sprintf(buf, "%d\n", target_pid);
-> +
-> +	f = fopen(knob_path, "w");
-> +	ret = fwrite(buf, strlen(buf), 1, f);
-> +	if (ret != 1) {
-> +		printf("FAIL: cannot write to %s (ret=%d)\n", knob_path, ret);
-> +		ksft_exit_fail();
-> +	}
-> +	fclose(f);
-> +}
-> +
-> +static int
-> +child_func(void *arg)
-> +{
-> +	uintptr_t id = (uintptr_t) arg;
-> +	char child_cgroup[4096];
-> +	char expected_cgroup[4096];
-> +	char process_name[128];
-> +	char proc_path[128];
-> +	int step;
-> +	int ret;
-> +	int nsfd;
-> +
-> +	for (step = 0; step < cgroupns_tests_len; step++) {
-> +		uint64_t counter = 0;
-> +		int target_pid;
-> +
-> +		/* wait a signal from the parent process before starting this step */
-> +		ret = read(children[id].start_semfd, &counter, sizeof(counter));
-> +		if (ret != sizeof(counter)) {
-> +			printf("FAIL: cannot read semaphore\n");
-> +			ksft_exit_fail();
-> +		}
-> +
-> +		/* only one process will do this step */
-> +		if (cgroupns_tests[step].actor_pid == id)
-
-i think more normal coding style would be
-
-	if () {
-		switch () {
-		case 1:
-			foo;
-		default:
-			bar;
-		}
-	}
-
-> +		switch (cgroupns_tests[step].action) {
-> +			case UNSHARE_CGROUPNS:
-> +				printf("child process #%d: unshare cgroupns\n", id);
-
-This needs to be %lu (and same 3 more times below)
-
-> +				ret = unshare(CLONE_NEWCGROUP);
-> +				if (ret != 0) {
-> +					printf("FAIL: cannot unshare cgroupns\n");
-> +					ksft_exit_fail();
-> +				}
-> +				break;
-> +
-> +			case JOIN_CGROUPNS:
-> +				printf("child process #%d: join parent cgroupns\n", id);
-> +
-> +				sprintf(proc_path, "/proc/%d/ns/cgroup", getppid());
-> +				nsfd = open(proc_path, 0);
-> +				ret = setns(nsfd, CLONE_NEWCGROUP);
-> +				if (ret != 0) {
-> +					printf("FAIL: cannot join cgroupns\n");
-> +					ksft_exit_fail();
-> +				}
-> +				close(nsfd);
-> +				break;
-> +
-> +			case CHECK_CGROUP:
-> +			case CHECK_CGROUP_WITH_ROOT_PREFIX:
-> +				if (cgroupns_tests[step].action == CHECK_CGROUP)
-> +					sprintf(expected_cgroup, "%s", cgroupns_tests[step].path);
-> +				else
-> +					sprintf(expected_cgroup, "%s%s", root_cgroup, cgroupns_tests[step].path);
-> +
-> +				if (cgroupns_tests[step].target_pid >= 0) {
-> +					target_pid = children[cgroupns_tests[step].target_pid].pid;
-> +					sprintf(process_name, "#%d (pid=%d)",
-> +					        cgroupns_tests[step].target_pid, target_pid);
-> +				} else {
-> +					target_pid = 0;
-> +					sprintf(process_name, "#self (pid=%d)", getpid());
-> +				}
-> +
-> +				printf("child process #%d: check that process %s has cgroup %s\n",
-> +				       id, process_name, expected_cgroup);
-> +
-> +				get_cgroup(target_pid, child_cgroup, sizeof(child_cgroup));
-> +
-> +				if (strcmp(child_cgroup, expected_cgroup) != 0) {
-> +					printf("FAIL: child has cgroup %s\n", child_cgroup);
-> +					ksft_exit_fail();
-> +				}
-> +
-> +				break;
-> +
-> +			case MOVE_CGROUP:
-> +			case MOVE_CGROUP_WITH_ROOT_PREFIX:
-> +				if (cgroupns_tests[step].target_pid >= 0) {
-> +					target_pid = children[cgroupns_tests[step].target_pid].pid;
-> +					sprintf(process_name, "#%d (pid=%d)",
-> +					        cgroupns_tests[step].target_pid, target_pid);
-> +				} else {
-> +					target_pid = getpid();
-> +					sprintf(process_name, "#self (pid=%d)", getpid());
-> +				}
-> +
-> +				printf("child process #%d: move process %s to cgroup %s\n",
-> +				       id, process_name, cgroupns_tests[step].path);
-> +
-> +				move_cgroup(target_pid,
-> +				            cgroupns_tests[step].action == MOVE_CGROUP_WITH_ROOT_PREFIX,
-> +				            cgroupns_tests[step].path);
-> +				break;
-> +
-> +			default:
-> +				printf("FAIL: invalid action\n");
-> +				ksft_exit_fail();
-> +		}
-> +
-> +
-> +		/* signal the parent process we've finished this step */
-> +		counter = 1;
-> +		ret = write(children[id].end_semfd, &counter, sizeof(counter));
-> +		if (ret != sizeof(counter)) {
-> +			printf("FAIL: cannot write semaphore\n");
-> +			ksft_exit_fail();
-> +		}
-> +	}
-> +
-> +	return 0;
-> +}
-> +
-> +int
-> +main(int argc, char **argv)
-> +{
-> +	struct statfs fs;
-> +	char child_cgroup[4096];
-> +	int ret;
-> +	int status;
-> +	uintptr_t i;
-> +	int step;
-> +
-> +	if (statfs("/sys/fs/cgroup/", &fs) < 0) {
-> +		printf("FAIL: statfs\n");
-> +		ksft_exit_fail();
-> +	}
-> +
-> +	if (fs.f_type != (typeof(fs.f_type)) CGROUP2_SUPER_MAGIC) {
-> +		printf("FAIL: this test is for Linux >= 4.4 with cgroup2 mounted\n");
-> +		ksft_exit_fail();
-> +	}
-> +
-> +	get_cgroup(0, root_cgroup, sizeof(root_cgroup));
-> +	printf("current cgroup: %s\n", root_cgroup);
-> +
-> +	for (i = 0; i < CHILDREN_COUNT; i++) {
-> +		children[i].start_semfd = eventfd(0, EFD_SEMAPHORE);
-> +		children[i].end_semfd = eventfd(0, EFD_SEMAPHORE);
-> +
-> +		children[i].stack = malloc(STACK_SIZE);
-> +		if (!children[i].stack) {
-> +			printf("FAIL: cannot allocate stack\n");
-> +			ksft_exit_fail();
-> +		}
-> +	}
-> +
-> +	for (i = 0; i < CHILDREN_COUNT; i++) {
-> +		children[i].pid = clone(child_func, children[i].stack + STACK_SIZE,
-> +		                        SIGCHLD|CLONE_VM|CLONE_FILES, (void *)i);
-> +	}
-> +
-> +	for (step = 0; step < cgroupns_tests_len; step++) {
-> +		uint64_t counter = 1;
-> +
-> +		/* signal the child processes they can start the current step */
-> +		for (i = 0; i < CHILDREN_COUNT; i++) {
-> +			ret = write(children[i].start_semfd, &counter, sizeof(counter));
-> +			if (ret != sizeof(counter)) {
-> +				printf("FAIL: cannot write semaphore\n");
-> +				ksft_exit_fail();
-> +			}
-> +		}
-> +
-> +		/* wait until all child processes finished the current step */
-> +		for (i = 0; i < CHILDREN_COUNT; i++) {
-> +			ret = read(children[i].end_semfd, &counter, sizeof(counter));
-> +			if (ret != sizeof(counter)) {
-> +				printf("FAIL: cannot read semaphore\n");
-> +				ksft_exit_fail();
-> +			}
-> +		}
-> +	}
-> +
-> +	for (i = 0; i < CHILDREN_COUNT; i++) {
-> +		ret = wait(&status);
-> +		if (ret == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-> +			printf("FAIL: cannot wait child\n");
-> +			ksft_exit_fail();
-> +		}
-> +	}
-> +
-> +	printf("SUCCESS\n");
-> +	return ksft_exit_pass();
-> +}
-> -- 
-> 2.5.0
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+T24gMTIvMjIvMjAxNSAwNTo1MiBBTSwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4gRG9uZ3No
+ZW5nIFlhbmcgPHlhbmdkcy5mbnN0QGNuLmZ1aml0c3UuY29tPiB3cml0ZXM6Cj4KPj4gT24gMTIv
+MjAvMjAxNSAwNTo0NyBQTSwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4+PiBEb25nc2hlbmcg
+WWFuZyA8eWFuZ2RzLmZuc3RAY24uZnVqaXRzdS5jb20+IHdyaXRlczoKPj4+Cj4+Pj4gT24gMTIv
+MjAvMjAxNSAxMDozNyBBTSwgQWwgVmlybyB3cm90ZToKPj4+Pj4gT24gU3VuLCBEZWMgMjAsIDIw
+MTUgYXQgMTA6MTQ6MjlBTSArMDgwMCwgRG9uZ3NoZW5nIFlhbmcgd3JvdGU6Cj4+Pj4+PiBPbiAx
+Mi8xNy8yMDE1IDA3OjIzIFBNLCBEb25nc2hlbmcgWWFuZyB3cm90ZToKPj4+Pj4+PiBIaSBndXlz
+LAo+Pj4+Pj4+ICAgICAgICBXZSBhcmUgd29ya2luZyBvbiBtYWtpbmcgY29yZSBkdW1wIGJlaGF2
+aW91ciBpc29sYXRlZCBpbgo+Pj4+Pj4+IGNvbnRhaW5lci4gQnV0IHRoZSBwcm9ibGVtIGlzLCB0
+aGUgL3Byb2Mvc3lzL2tlcm5lbC9jb3JlX3BhdHRlcm4KPj4+Pj4+PiBpcyBhIGtlcm5lbCB3aWRl
+IHNldHRpbmcsIG5vdCBiZWxvbmdzIHRvIGEgY29udGFpbmVyLgo+Pj4+Pj4+Cj4+Pj4+Pj4gICAg
+ICAgIFNvIHdlIHdhbnQgdG8gYWRkIGNvcmVfcGF0dGVybiBpbnRvIG1udCBuYW1lc3BhY2UuIFdo
+YXQKPj4+Pj4+PiBkbyB5b3UgdGhpbmsgYWJvdXQgaXQ/Cj4+Pj4+Pgo+Pj4+Pj4gSGkgRXJpYywK
+Pj4+Pj4+IAlJIGZvdW5kIHlvdXIgcGF0Y2ggYWJvdXQgIm5ldDogSW1wbGVtZW50IHRoZSBwZXIg
+bmV0d29yayBuYW1lc3BhY2UKPj4+Pj4+IHN5c2N0bCBpbmZyYXN0cnVjdHVyZSIsIEkgd2FudCB0
+byBkbyB0aGUgc2ltaWxhciB0aGluZwo+Pj4+Pj4gaW4gbW50IG5hbWVzcGFjZS4gSXMgdGhhdCBz
+dWdnZXN0ZWQgd2F5Pwo+Pj4+Pgo+Pj4+PiBXaHkgbW50IG5hbWVzcGFjZSBhbmQgbm90IHNvbWV0
+aGluZyBlbHNlPwo+Pj4+Cj4+Pj4gSGkgQWwsCj4+Pj4KPj4+PiBXZWxsLCBiZWNhdXNlIGNvcmVf
+cGF0dGVybiBpbmRpY2F0ZXMgdGhlIHBhdGggdG8gc3RvcmUgY29yZSBmaWxlLgo+Pj4+IEluIGRp
+ZmZlcmVudCBtbnQgbmFtZXNwYWNlLCB3ZSB3b3VsZCBsaWtlIHRvIGNoYW5nZSB0aGUgcGF0aCB3
+aXRoCj4+Pj4gZGlmZmVyZW50IHZhbHVlLgo+Pj4+Cj4+Pj4gSW4gYWRkaXRpb24sIExldCdzIGNv
+bnNpZGVyaW5nIG90aGVyIG5hbWVzcGFjZXM6Cj4+Pj4gVVRTIG5zOiBjb250YWlucyBpbmZvcm1h
+dGlvbnMgb2Yga2VybmVsIGFuZCBhcmNoLCBub3QgcHJvcGVyIGZvciBjb3JlX3BhdHRlcm4uCj4+
+Pj4gSVBDIG5zOiBjb21tdW5pY2F0aW9uIGluZm9ybWF0aW9ucywgbm90IHByb3BlciBmb3IgY29y
+ZV9wYXR0ZXJuCj4+Pj4gUElEIG5zOiBjb3JlX3BhdHRlcm4gaXMgbm90IHJlbGF0ZWQgd2l0aCBw
+aWQKPj4+PiBuZXQgbnM6IG9idmlvdXNlbHkgbm8uCj4+Pj4gdXNlciBuczogbm90IHByb3BlciB0
+b28uCj4+Pj4KPj4+PiBUaGVuIEkgYmVsaWV2ZSBpdCdzIGJldHRlciB0byBkbyB0aGlzIGluIG1u
+dCBuYW1lc3BhY2UuIG9mIGNvdXJzZSwKPj4+PiBjb3JlX3BhdHRlcm4gaXMganVzdCBvbmUgZXhh
+bXBsZS4gQWZ0ZXIgdGhpcyBpbmZyYXN0cnVjdHVyZSBmaW5pc2hlZCwKPj4+PiB3ZSBjYW4gaW1w
+bGVtZW50IG1vcmUgc3lzY3RscyBhcyBwZXItbW50IGlmIG5lY2Vzc2FyeSwgSSB0aGluay4KPj4+
+Pgo+Pj4+IEFsLCB3aGF0IGRvIHlvdSB0aGluayBhYm91dCB0aGlzIGlkZWE/Cj4+Pgo+Pj4gVGhl
+IGhhcmQgcGFydCBpcyBub3QgdGhlIHN5c2N0bC4gIFRoZSBoYXJkIHBhcnQgaXMgc3RhcnRpbmcg
+dGhlIHVzZXJtb2RlCj4+PiBoZWxwZXIsIGluIGFuIGVudmlyb25tZW50IHRoYXQgaXQgY2FuIGRl
+YWwgd2l0aC4gIFRoZSBtb3VudCBuYW1lc3BhY2UKPj4+IHJlYWxseSBwcm92aWRlcyB5b3Ugd2l0
+aCBubyBoZWxwIHRoZXJlLgo+Pgo+PiBEbyB5b3UgbWVhbiB0aGUgY29yZSBkdW1wIGhlbHBlcj8g
+QnV0IEkgdGhpbmsgSSBkb24ndCB3YW50IHRvIHRvdWNoIGl0Cj4+IGluIG15IGRldmVsb3BtZW50
+LiBJIHRoaW5rIEkgY2FuIHVzZSBub24tcGlwZSB3YXkgdG8gZ2V0IHdoYXQgSSB3YW50LAo+PiBM
+ZXQgbWUgdHJ5IHRvIGV4cGxhaW4gd2hhdCBJIHdhbnQgaGVyZS4KPj4KPj4gKDEpLiBpbnRyb2R1
+Y2UgYSAtLWNvcmUtcGF0aCBvcHRpb24gaW4gZG9ja2VyIHJ1biBjb21tYW5kIHRvIHNwZWNpZnkg
+dGhlCj4+IHBhdGggaW4gaG9zdCB0byBzdG9yZSBjb3JlIGZpbGUgaW4gb25lIGNvbnRhaW5lci4K
+Pj4gRS5nOiBkb2NrZXIgcnVuIC0tY29yZS1wYXRoPS9jb3JlL3Rlc3QgLS1uYW1lPXRlc3QgSU1B
+R0UKPj4KPj4gKDIpLiBXaGVuIHRoZSBjb250YWluZXIgc3RhcnRpbmcsIGRvY2tlciBhdHRhY2gg
+YSB2b2x1bWUgdG8gaXQsIHNpbWlsYXIKPj4gd2l0aCAiLXYgL2NvcmUvdGVzdDovdmFyL2xpYi9k
+b2NrZXIvY29yZWR1bXAiLiBUaGF0IG1lYW5zLCB0aGUgcGF0aCBvZgo+PiAvdmFyL2xpYi9kb2Nr
+ZXIvY29yZWR1bXAgaW4gY29udGFpbmVyIGlzIGEgbGluayB0byAvY29yZS90ZXN0IGluIGhvc3Qu
+Cj4+Cj4+ICgzKS4gU2V0IHRoZSAvcHJvYy9zeXMva2VybmVsL2NvcmVfcGF0dGVybiBpbiBjb250
+YWluZXIgYXMKPj4gIi92YXIvbGliL2RvY2tlci9jb3JlZHVtcCIuIEJ1dCB0aGF0IHNob3VsZCBu
+b3QgYWZmZWN0IHRoZSBjb3JlX3BhdHRlcm4KPj4gaW4gaG9zdCBvciBvdGhlciBjb250YWluZXJz
+Lgo+Pgo+PiBUaGVuIEkgdGhpbmsgSSBjYW4gY29sbGVjdCB0aGUgY29yZSBmaWxlcyBmcm9tIGVh
+Y2ggY29udGFpbmVyIGFuZCBzYXZlCj4+IHRoZW0gaW4gdGhlIHBhdGhzIHdoZXJlIEkgd2FudC4K
+Pgo+IEZvciB5b3VyIGNhc2UgdGhhdCBzb3VuZHMgbGlrZSBpdCB3b3VsZCB3b3JrLiAgVW5mb3J0
+dW5hdGVseSBmb3IgdGhpcyB0bwo+IGJlIGdlbmVyYWxseSBhcHBsaWNhYmxlIGFuZCB0byBsZXQg
+dGhlIE9TIGluIHRoZSBjb250aWFuZXIgY29udHJvbCBpdCdzCj4gZmF0ZSB0aGUgY29yZSBkdW1w
+IHBhdHRlcm4gbmVlZHMgdG8gYmUgc3VwcG9ydGVkLgo+Cj4gT3RoZXJ3aXNlIHNvbWV0aGluZyBj
+bGV2ZXIgaW4gdXNlcnNwYWNlIHRoYXQgY2FuIGJlIHdyaXR0ZW4gbm93IHNob3VsZAo+IGJlIHN1
+ZmZpY2llbnQgdG8gZmlsbCB0aGUgZ2FwLiAgVGhlcmUgaXMgZW5vdWdoIGluZm9ybWF0aW9uIGZv
+ciB0aGUgdXNlcgo+IG1vZGUgaGVscGVyIHRvIGltcGxlbWVudCB0aGUgcG9saWN5IHlvdSB3b3Vs
+ZCBsaWtlIHRvZGF5LgoKSGkgRXJpYywKClRvIG1ha2Ugc3VyZSBJIHVuZGVyc3RhbmQgeW91ciBw
+b2ludCBjb3JyZWN0bHnvvJoKCURvIHlvdSBtZWFuIHdlIGNhbiB3cml0ZSBhIHVzZXJzcGFjZSBo
+ZWxwZXIgaW4gaG9zdCBzdWNoIGFzCi91c3IvbGliZXhlYy9kb2NrZXItcGlwZSB0byBnZXQgd2hh
+dCBJIHdhbnQ/CgpZZXMsIEkgd291bGQgc2F5LCBmb3IgbXkgY2FzZSwgaXQgd291bGQgd29yay4g
+VGhpcyBoZWxwZXIgY2FuIGdldCB0aGUKZHVtcCBkYXRhIGZyb20gY29udGFpbmVycyBhbmQgZGlz
+cGF0Y2ggdGhlbSB0byBkaWZmZXJlbnQgcGF0aCBzdWNoCmFzIC92YXIvbGliL2RvY2tlci9jb3Jl
+cy88Q29udGFpbmVySUQ+Ly4KCkJ1dCB0aGVyZSB3b3VsZCBiZSB0d28gcHJvYmxlbXMgaW4gdGhp
+cyBzb2x1dGlvbi4KKDEpLiBJdCBtYXkgYWZmZWN0IGNvcmUgZHVtcCBvbiBob3N0LiBOb3JtYWxs
+eSwgb3RoZXIgcHJvY2Vzc2VzIGluCiAgaG9zdCB3b3VsZCBub3QgYmUgaGFwcHkgdG8gdXNlIGEg
+aGVscGVyIG9mIGRvY2tlci1waXBlIGZvciB0aGVtc2VsdmVzLgogIEJ1dCBob3N0IGhhdmUgdG8g
+c2hhcmUgdGhlIGNvcmVfcGF0dGVybiB3aXRoIGNvbnRhaW5lcnMsIGNhbid0IGNvbmZpZwogIGl0
+IGJ5IGl0c2VsZi4KCigyKS4gSWYgdGhlcmUgYXJlIHNvbWUgY29udGFpbmVycyBkb24ndCB3YW50
+IHRvIHBhc3MgdGhlIGNvcmUgZmlsZXMKdG8gaG9zdCwgdGhleSBjYW4ndCBzZXQgdGhlIGNvcmVf
+cGF0dGVybiBpbiB0aGlzIHNvbHV0aW9uLgoKSU1PLCB3ZSBjYW4gZ2V0IGNvcmUgZmlsZXMgb24g
+aG9zdCBjdXJyZW50bHksIGJ5IGVpdGhlciBub24tcGlwZSB3YXkgSQpkZXNjcmliZWQgYWJvdmUg
+b3IgdGhlIHBpcGUgd2F5IHlvdSBzdWdnZXN0ZWQuIEJ1dCB0aGUgcHJvYmxlbSBpcyBib3RoCm9m
+IHRoZXNlIG1ldGhvZHMgd291bGQgYWZmZWN0IHRoZSBjb3JlX3BhdHRlcm4gb24gaG9zdCBhbmQg
+b3RoZXIKY29udGFpbmVycy4KClNvLCBJIHRoaW5rIHRoZSBrZXkgcG9pbnQgaGVyZSBpcyBqdXN0
+IGlzb2xhdGluZyB0aGUgY29yZSBkdW1wIHJlbGF0ZWQKc3lzY3RsIGluIG1udCBuYW1lc3BhY2Uu
+CgpUaGFueApZYW5nCj4KPiBFcmljCj4KPgo+IC4KPgoKCgpfX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWlu
+ZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0
+aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
