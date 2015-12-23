@@ -1,7 +1,7 @@
 From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] [RFC] selftests/cgroupns: new test for cgroup namespaces
-Date: Tue, 22 Dec 2015 16:59:50 +0000
-Message-ID: <20151222165950.GA13126__11485.1098078818$1450803620$gmane$org@ubuntumail>
+Date: Wed, 23 Dec 2015 00:36:37 +0000
+Message-ID: <20151223003637.GA5091__15749.1152444438$1450831028$gmane$org@ubuntumail>
 References: <1450530333-20479-1-git-send-email-alban@kinvolk.io>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -63,9 +63,6 @@ Quoting Alban Crequy (alban.crequy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
 > https://github.com/linux-test-project/ltp/tree/master/testcases/kernel/containers
 > 
 > Is it better to send this test here or to LTP?
-
-Thanks, I'm working on the next iteration today, will give this a shot too.
-
 > ---
 >  tools/testing/selftests/Makefile                 |   1 +
 >  tools/testing/selftests/cgroupns/Makefile        |  11 +
@@ -263,6 +260,12 @@ Thanks, I'm working on the next iteration today, will give this a shot too.
 > +	if (strncmp(line, "0::", 3) != 0) {
 > +		printf("FAIL: cannot parse %s\n", proc_path);
 > +		ksft_exit_fail();
+
+This seems too limiting.  I think requiring cgroup2 is probably ok
+for the tests, but if I mount it after systemd has mounted cgroup1,
+then in my /proc/self/cgroup the 0:: ends up as last line.  So I
+can't trivially run these tests.
+
 > +	}
 > +	strncpy(path, line+3, len);
 > +
@@ -325,9 +328,24 @@ Thanks, I'm working on the next iteration today, will give this a shot too.
 > +
 > +		/* only one process will do this step */
 > +		if (cgroupns_tests[step].actor_pid == id)
+
+i think more normal coding style would be
+
+	if () {
+		switch () {
+		case 1:
+			foo;
+		default:
+			bar;
+		}
+	}
+
 > +		switch (cgroupns_tests[step].action) {
 > +			case UNSHARE_CGROUPNS:
 > +				printf("child process #%d: unshare cgroupns\n", id);
+
+This needs to be %lu (and same 3 more times below)
+
 > +				ret = unshare(CLONE_NEWCGROUP);
 > +				if (ret != 0) {
 > +					printf("FAIL: cannot unshare cgroupns\n");
