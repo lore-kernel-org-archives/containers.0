@@ -1,20 +1,16 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [Propose] Isolate core_pattern in mnt namespace.
-Date: Wed, 23 Dec 2015 10:36:45 -0600
-Message-ID: <8760zpxgte.fsf@x220.int.ebiederm.org>
-References: <56729B3D.1040502@cn.fujitsu.com> <56760F05.3020308@cn.fujitsu.com>
-	<20151220023712.GT20997@ZenIV.linux.org.uk>
-	<567616D6.6060202@cn.fujitsu.com>
-	<87fuyx1mfn.fsf@x220.int.ebiederm.org>
-	<567798EC.1040304@cn.fujitsu.com>
-	<87twnbzcz8.fsf@x220.int.ebiederm.org>
-	<567A1120.3070204@cn.fujitsu.com>
+From: Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>
+Subject: Re: [PATCH 5/8] kernfs: define kernfs_node_dentry
+Date: Wed, 23 Dec 2015 08:51:06 -0800
+Message-ID: <20151223165106.GB1145@kroah.com>
+References: <1450844609-9194-1-git-send-email-serge.hallyn@ubuntu.com>
+	<1450844609-9194-6-git-send-email-serge.hallyn@ubuntu.com>
+	<20151223162515.GI5003@mtj.duckdns.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <567A1120.3070204-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> (Dongsheng Yang's message of
-	"Wed, 23 Dec 2015 11:12:32 +0800")
+Content-Disposition: inline
+In-Reply-To: <20151223162515.GI5003-qYNAdHglDFBN0TnZuCh8vA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,51 +20,23 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dongsheng Yang <yangds.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-RG9uZ3NoZW5nIFlhbmcgPHlhbmdkcy5mbnN0QGNuLmZ1aml0c3UuY29tPiB3cml0ZXM6Cgo+IE9u
-IDEyLzIyLzIwMTUgMDU6NTIgQU0sIEVyaWMgVy4gQmllZGVybWFuIHdyb3RlOgo+PiBGb3IgeW91
-ciBjYXNlIHRoYXQgc291bmRzIGxpa2UgaXQgd291bGQgd29yay4gIFVuZm9ydHVuYXRlbHkgZm9y
-IHRoaXMgdG8KPj4gYmUgZ2VuZXJhbGx5IGFwcGxpY2FibGUgYW5kIHRvIGxldCB0aGUgT1MgaW4g
-dGhlIGNvbnRpYW5lciBjb250cm9sIGl0J3MKPj4gZmF0ZSB0aGUgY29yZSBkdW1wIHBhdHRlcm4g
-bmVlZHMgdG8gYmUgc3VwcG9ydGVkLgo+Pgo+PiBPdGhlcndpc2Ugc29tZXRoaW5nIGNsZXZlciBp
-biB1c2Vyc3BhY2UgdGhhdCBjYW4gYmUgd3JpdHRlbiBub3cgc2hvdWxkCj4+IGJlIHN1ZmZpY2ll
-bnQgdG8gZmlsbCB0aGUgZ2FwLiAgVGhlcmUgaXMgZW5vdWdoIGluZm9ybWF0aW9uIGZvciB0aGUg
-dXNlcgo+PiBtb2RlIGhlbHBlciB0byBpbXBsZW1lbnQgdGhlIHBvbGljeSB5b3Ugd291bGQgbGlr
-ZSB0b2RheS4KPgo+IEhpIEVyaWMsCj4KPiBUbyBtYWtlIHN1cmUgSSB1bmRlcnN0YW5kIHlvdXIg
-cG9pbnQgY29ycmVjdGx577yaCj4gCURvIHlvdSBtZWFuIHdlIGNhbiB3cml0ZSBhIHVzZXJzcGFj
-ZSBoZWxwZXIgaW4gaG9zdCBzdWNoIGFzCj4gL3Vzci9saWJleGVjL2RvY2tlci1waXBlIHRvIGdl
-dCB3aGF0IEkgd2FudD8KPgo+IFllcywgSSB3b3VsZCBzYXksIGZvciBteSBjYXNlLCBpdCB3b3Vs
-ZCB3b3JrLiBUaGlzIGhlbHBlciBjYW4gZ2V0IHRoZQo+IGR1bXAgZGF0YSBmcm9tIGNvbnRhaW5l
-cnMgYW5kIGRpc3BhdGNoIHRoZW0gdG8gZGlmZmVyZW50IHBhdGggc3VjaAo+IGFzIC92YXIvbGli
-L2RvY2tlci9jb3Jlcy88Q29udGFpbmVySUQ+Ly4KClllcy4gIEFuZCB0aGVyZSBpcyBlbm91Z2gg
-aW5mb3JtYXRpb24gcHJlc2VudCBhdCB0aGF0IHRpbWUgaXQgY2FuCnNhdmUgdGhlIGNvcmUgZHVt
-cGVzIGluc2lkZSB0aGUgY29udGFpbmVyIHRoZSBhcHBsaWNhdGlvbiB3YXMKcnVubmluZyBpbi4K
-Cj4gQnV0IHRoZXJlIHdvdWxkIGJlIHR3byBwcm9ibGVtcyBpbiB0aGlzIHNvbHV0aW9uLgo+ICgx
-KS4gSXQgbWF5IGFmZmVjdCBjb3JlIGR1bXAgb24gaG9zdC4gTm9ybWFsbHksIG90aGVyIHByb2Nl
-c3NlcyBpbgo+ICBob3N0IHdvdWxkIG5vdCBiZSBoYXBweSB0byB1c2UgYSBoZWxwZXIgb2YgZG9j
-a2VyLXBpcGUgZm9yIHRoZW1zZWx2ZXMuCj4gIEJ1dCBob3N0IGhhdmUgdG8gc2hhcmUgdGhlIGNv
-cmVfcGF0dGVybiB3aXRoIGNvbnRhaW5lcnMsIGNhbid0IGNvbmZpZwo+ICBpdCBieSBpdHNlbGYu
-CgpTbyBmYXIgZmlndXJpbmcgb3V0IGhvdyB0byBzaGFyZSB0aGUgY29yZSBkdW1wIGhlbHBlciBh
-cHBlYXJzIHNpbXBsZXIKdGhhbiBmaXhpbmcgdXNlciBtb2RlIGhlbHBlci4KCj4gKDIpLiBJZiB0
-aGVyZSBhcmUgc29tZSBjb250YWluZXJzIGRvbid0IHdhbnQgdG8gcGFzcyB0aGUgY29yZSBmaWxl
-cwo+IHRvIGhvc3QsIHRoZXkgY2FuJ3Qgc2V0IHRoZSBjb3JlX3BhdHRlcm4gaW4gdGhpcyBzb2x1
-dGlvbi4KCkFnYWluIHNvIGZhciBmaXhpbmcgdGhhdCBpbiB1c2VyIHNwYWNlIGFwcGVhcnMgdG8g
-YmUgbW9yZSB0cmFjdGFibGUKYW5kIGVhc2llciB0aGFuIGFueXRoaW5nIHRoYXQgaGFzIGJlZW4g
-cHJvcG9zZWQga2VybmVsIHNpZGUuCgo+IElNTywgd2UgY2FuIGdldCBjb3JlIGZpbGVzIG9uIGhv
-c3QgY3VycmVudGx5LCBieSBlaXRoZXIgbm9uLXBpcGUgd2F5IEkKPiBkZXNjcmliZWQgYWJvdmUg
-b3IgdGhlIHBpcGUgd2F5IHlvdSBzdWdnZXN0ZWQuIEJ1dCB0aGUgcHJvYmxlbSBpcyBib3RoCj4g
-b2YgdGhlc2UgbWV0aG9kcyB3b3VsZCBhZmZlY3QgdGhlIGNvcmVfcGF0dGVybiBvbiBob3N0IGFu
-ZCBvdGhlcgo+IGNvbnRhaW5lcnMuCj4KPiBTbywgSSB0aGluayB0aGUga2V5IHBvaW50IGhlcmUg
-aXMganVzdCBpc29sYXRpbmcgdGhlIGNvcmUgZHVtcCByZWxhdGVkCj4gc3lzY3RsIGluIG1udCBu
-YW1lc3BhY2UuCgpZb3UgZG9uJ3QgaGF2ZSB0byBjb252aW5jZSBtZSBpdCB3b3VsZCBiZSBuaWNl
-IHRvIGRvLiAgWW91IGhhdmUgdG8KY29udmluY2UgbWUgaXQgaXMgcHJhY3RpY2FsIHRvIGltcGxl
-bWVudC4gIFdoaWNoIGlzIGFuIGVudGlyZWx5CmRpZmZlcmVudCBwcm9ibGVtLgoKR2l2ZW4gdGhl
-IG90aGVyIGNvbnN0cmFpbnRzIG9uIGFuIGltcGxlbWVudGF0aW9uIHRoZSBwaWQgbmFtZXNwYWNl
-IGxvb2tzCmJ5IGZhciB0aGUgb25lIGJlc3Qgc3VpdGVkIHRvIGhvc3Qgc3VjaCBhIHN5c2N0bCBp
-ZiBpdCBpcyBwb3NzaWJsZSB0bwppbXBsZW1lbnQgc2FmZWx5LgoKRXJpYwpfX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlz
-dApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGlu
-dXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+On Wed, Dec 23, 2015 at 11:25:15AM -0500, Tejun Heo wrote:
+> On Tue, Dec 22, 2015 at 10:23:26PM -0600, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org wrote:
+> > From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> > 
+> > Add a new kernfs api is added to lookup the dentry for a particular
+> > kernfs path.
+> > 
+> > Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> > Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> 
+> Greg, this is the other kernfs change in the series.  Can I route this
+> through the cgroup tree with other changes?
+
+Yes, please do.
+
+Acked-by: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>
