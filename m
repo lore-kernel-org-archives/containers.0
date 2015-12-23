@@ -1,19 +1,13 @@
-From: Dongsheng Yang <yangds.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [Propose] Isolate core_pattern in mnt namespace.
-Date: Wed, 23 Dec 2015 11:13:47 +0800
-Message-ID: <567A116B.6050805__45734.6791321926$1450840905$gmane$org@cn.fujitsu.com>
-References: <56729B3D.1040502@cn.fujitsu.com> <56760F05.3020308@cn.fujitsu.com>
-	<20151220023712.GT20997@ZenIV.linux.org.uk>
-	<567616D6.6060202@cn.fujitsu.com>
-	<87fuyx1mfn.fsf@x220.int.ebiederm.org>
-	<567798EC.1040304@cn.fujitsu.com>
-	<87twnbzcz8.fsf@x220.int.ebiederm.org>
-	<5678BFA3.9090608@jp.fujitsu.com>
+From: serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org
+Subject: [PATCH 1/8] kernfs: Add API to generate relative kernfs path
+Date: Tue, 22 Dec 2015 22:23:22 -0600
+Message-ID: <1450844609-9194-2-git-send-email-serge.hallyn@ubuntu.com>
+References: <1450844609-9194-1-git-send-email-serge.hallyn@ubuntu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <5678BFA3.9090608-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <1450844609-9194-1-git-send-email-serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,108 +17,321 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Kamezawa Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 12/22/2015 11:12 AM, Kamezawa Hiroyuki wrote:
-> On 2015/12/22 6:52, Eric W. Biederman wrote:
->> Dongsheng Yang <yangds.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> writes:
->>
->>> On 12/20/2015 05:47 PM, Eric W. Biederman wrote:
->>>> Dongsheng Yang <yangds.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> writes:
->>>>
->>>>> On 12/20/2015 10:37 AM, Al Viro wrote:
->>>>>> On Sun, Dec 20, 2015 at 10:14:29AM +0800, Dongsheng Yang wrote:
->>>>>>> On 12/17/2015 07:23 PM, Dongsheng Yang wrote:
->>>>>>>> Hi guys,
->>>>>>>>         We are working on making core dump behaviour isolated in
->>>>>>>> container. But the problem is, the /proc/sys/kernel/core_pattern
->>>>>>>> is a kernel wide setting, not belongs to a container.
->>>>>>>>
->>>>>>>>         So we want to add core_pattern into mnt namespace. What
->>>>>>>> do you think about it?
->>>>>>>
->>>>>>> Hi Eric,
->>>>>>> 	I found your patch about "net: Implement the per network namespace
->>>>>>> sysctl infrastructure", I want to do the similar thing
->>>>>>> in mnt namespace. Is that suggested way?
->>>>>>
->>>>>> Why mnt namespace and not something else?
->>>>>
->>>>> Hi Al,
->>>>>
->>>>> Well, because core_pattern indicates the path to store core file.
->>>>> In different mnt namespace, we would like to change the path with
->>>>> different value.
->>>>>
->>>>> In addition, Let's considering other namespaces:
->>>>> UTS ns: contains informations of kernel and arch, not proper for core_pattern.
->>>>> IPC ns: communication informations, not proper for core_pattern
->>>>> PID ns: core_pattern is not related with pid
->>>>> net ns: obviousely no.
->>>>> user ns: not proper too.
->>>>>
->>>>> Then I believe it's better to do this in mnt namespace. of course,
->>>>> core_pattern is just one example. After this infrastructure finished,
->>>>> we can implement more sysctls as per-mnt if necessary, I think.
->>>>>
->>>>> Al, what do you think about this idea?
->>>>
->>>> The hard part is not the sysctl.  The hard part is starting the usermode
->>>> helper, in an environment that it can deal with.  The mount namespace
->>>> really provides you with no help there.
->>>
->>> Do you mean the core dump helper? But I think I don't want to touch it
->>> in my development. I think I can use non-pipe way to get what I want,
->>> Let me try to explain what I want here.
->>>
->>> (1). introduce a --core-path option in docker run command to specify the
->>> path in host to store core file in one container.
->>> E.g: docker run --core-path=/core/test --name=test IMAGE
->>>
->>> (2). When the container starting, docker attach a volume to it, similar
->>> with "-v /core/test:/var/lib/docker/coredump". That means, the path of
->>> /var/lib/docker/coredump in container is a link to /core/test in host.
->>>
->>> (3). Set the /proc/sys/kernel/core_pattern in container as
->>> "/var/lib/docker/coredump". But that should not affect the core_pattern
->>> in host or other containers.
->>>
->>> Then I think I can collect the core files from each container and save
->>> them in the paths where I want.
->>
->> For your case that sounds like it would work.  Unfortunately for this to
->> be generally applicable and to let the OS in the contianer control it's
->> fate the core dump pattern needs to be supported.
->>
->> Otherwise something clever in userspace that can be written now should
->> be sufficient to fill the gap.  There is enough information for the user
->> mode helper to implement the policy you would like today.
->>
-> Let me clarify my understanding.
-> 
-> 1) running user-mode-helper in a container.
->     It's not supported by the kernel. user-mode-helper always works on a host.
-> 
-> 2) running user mode helper in a host.
->    It's supported in the newest distro(FC23). (abrt supports container.)
->    Summary is here. https://github.com/abrt/abrt/wiki/Containers-and-chroots
-> 
-> If a guest user doesn't want to pass a core to the host owner, core_pattern
-> should be configurable but it can't.
+From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
-Agreed, then we have to make the core_pattern namespace-ed in mnt
-namespace.
+The new function kernfs_path_from_node() generates and returns kernfs
+path of a given kernfs_node relative to a given parent kernfs_node.
 
-Thanx
-Yang
-> 
-> Thanks,
-> -Kame
-> 
-> 
-> 
-> 
-> .
-> 
+Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+---
+Changelog 20151125:
+  - Fully-wing multilinecomments
+  - Rework kernfs_path_from_node_locked() logic
+  - Replace BUG_ONs with returning NULL
+  - Use a const char* for /.. and precalculate its size
+Changelog 20151130:
+  - Update kernfs_path_from_node_locked comment
+Changelog 20151208:
+  - kernfs_node_distance:
+    * Remove BUG_ON(NULL)s
+    * Rename kernfs_node_distance to kernfs_depth
+  - kernfs_common-ancestor:
+    * Remove useless checks for depth == 0
+    * Add check to ensure nodes are from same root
+  - kernfs_path_from_node_locked:
+    * Remove needless __must_check
+    * Put p;len on its own decl line.
+    * Fix wrong WARN_ONCE usage
+Changelog 20151209:
+  - kernfs_path_from_node: change arguments to 'to' and 'from', and
+    change their order.
+Changelog 20151222:
+  - kernfs_path_from_node{,_locked}: return the string length.
+    kernfs_path is gpl-exported, so changing their return value seemed
+    ill-advised, but if noone minds I can update it too.
+---
+ fs/kernfs/dir.c        |  205 ++++++++++++++++++++++++++++++++++++++++--------
+ include/linux/kernfs.h |    9 ++-
+ 2 files changed, 179 insertions(+), 35 deletions(-)
+
+diff --git a/fs/kernfs/dir.c b/fs/kernfs/dir.c
+index 742bf4a..e82b9a1 100644
+--- a/fs/kernfs/dir.c
++++ b/fs/kernfs/dir.c
+@@ -44,28 +44,123 @@ static int kernfs_name_locked(struct kernfs_node *kn, char *buf, size_t buflen)
+ 	return strlcpy(buf, kn->parent ? kn->name : "/", buflen);
+ }
+ 
+-static char * __must_check kernfs_path_locked(struct kernfs_node *kn, char *buf,
+-					      size_t buflen)
++/* kernfs_node_depth - compute depth from @from to @to */
++static size_t kernfs_depth(struct kernfs_node *from, struct kernfs_node *to)
+ {
+-	char *p = buf + buflen;
+-	int len;
++	size_t depth = 0;
+ 
+-	*--p = '\0';
++	while (to->parent && to != from) {
++		depth++;
++		to = to->parent;
++	}
++	return depth;
++}
+ 
+-	do {
+-		len = strlen(kn->name);
+-		if (p - buf < len + 1) {
+-			buf[0] = '\0';
+-			p = NULL;
+-			break;
+-		}
+-		p -= len;
+-		memcpy(p, kn->name, len);
+-		*--p = '/';
+-		kn = kn->parent;
+-	} while (kn && kn->parent);
++static struct kernfs_node *kernfs_common_ancestor(struct kernfs_node *a,
++						  struct kernfs_node *b)
++{
++	size_t da, db;
++	struct kernfs_root *ra = kernfs_root(a), *rb = kernfs_root(b);
++
++	if (ra != rb)
++		return NULL;
++
++	da = kernfs_depth(ra->kn, a);
++	db = kernfs_depth(rb->kn, b);
++
++	while (da > db) {
++		a = a->parent;
++		da--;
++	}
++	while (db > da) {
++		b = b->parent;
++		db--;
++	}
++
++	/* worst case b and a will be the same at root */
++	while (b != a) {
++		b = b->parent;
++		a = a->parent;
++	}
++
++	return a;
++}
++
++/**
++ * kernfs_path_from_node_locked - find a pseudo-absolute path to @kn_to,
++ * where kn_from is treated as root of the path.
++ * @kn_from: kernfs node which should be treated as root for the path
++ * @kn_to: kernfs node to which path is needed
++ * @buf: buffer to copy the path into
++ * @buflen: size of @buf
++ *
++ * We need to handle couple of scenarios here:
++ * [1] when @kn_from is an ancestor of @kn_to at some level
++ * kn_from: /n1/n2/n3
++ * kn_to:   /n1/n2/n3/n4/n5
++ * result:  /n4/n5
++ *
++ * [2] when @kn_from is on a different hierarchy and we need to find common
++ * ancestor between @kn_from and @kn_to.
++ * kn_from: /n1/n2/n3/n4
++ * kn_to:   /n1/n2/n5
++ * result:  /../../n5
++ * OR
++ * kn_from: /n1/n2/n3/n4/n5   [depth=5]
++ * kn_to:   /n1/n2/n3         [depth=3]
++ * result:  /../..
++ *
++ * return value: length of the string.  If greater than buflen,
++ * then contents of buf are undefined.  On error, -1 is returned.
++ */
++static int
++kernfs_path_from_node_locked(struct kernfs_node *kn_to,
++			     struct kernfs_node *kn_from, char *buf,
++			     size_t buflen)
++{
++	struct kernfs_node *kn, *common;
++	const char parent_str[] = "/..";
++	size_t depth_from, depth_to, len = 0, nlen = 0;
++	char *p;
++	int i;
++
++	if (!kn_from)
++		kn_from = kernfs_root(kn_to)->kn;
++
++	if (kn_from == kn_to)
++		return strlcpy(buf, "/", buflen);
++
++	common = kernfs_common_ancestor(kn_from, kn_to);
++	if (WARN_ON(!common))
++		return -1;
++
++	depth_to = kernfs_depth(common, kn_to);
++	depth_from = kernfs_depth(common, kn_from);
++
++	if (buf)
++		buf[0] = '\0';
++
++	for (i = 0; i < depth_from; i++)
++		len += strlcpy(buf + len, parent_str,
++			       len < buflen ? buflen - len : 0);
++
++	/* Calculate how many bytes we need for the rest */
++	for (kn = kn_to; kn != common; kn = kn->parent)
++		nlen += strlen(kn->name) + 1;
+ 
+-	return p;
++	if (len + nlen >= buflen)
++		return len + nlen;
++
++	p = buf + len + nlen;
++	*p = '\0';
++	for (kn = kn_to; kn != common; kn = kn->parent) {
++		nlen = strlen(kn->name);
++		p -= nlen;
++		memcpy(p, kn->name, nlen);
++		*(--p) = '/';
++	}
++
++	return len + nlen;
+ }
+ 
+ /**
+@@ -115,6 +210,34 @@ size_t kernfs_path_len(struct kernfs_node *kn)
+ }
+ 
+ /**
++ * kernfs_path_from_node - build path of node @to relative to @from.
++ * @from: parent kernfs_node relative to which we need to build the path
++ * @to: kernfs_node of interest
++ * @buf: buffer to copy @to's path into
++ * @buflen: size of @buf
++ *
++ * Builds @to's path relative to @from in @buf. @from and @to must
++ * be on the same kernfs-root. If @from is not parent of @to, then a relative
++ * path (which includes '..'s) as needed to reach from @from to @to is
++ * returned.
++ * 
++ * If @buf isn't long enough, the return value will be greater than @buflen
++ * and @buf contents are undefined.
++ */
++int kernfs_path_from_node(struct kernfs_node *to, struct kernfs_node *from,
++			  char *buf, size_t buflen)
++{
++	unsigned long flags;
++	int ret;
++
++	spin_lock_irqsave(&kernfs_rename_lock, flags);
++	ret = kernfs_path_from_node_locked(to, from, buf, buflen);
++	spin_unlock_irqrestore(&kernfs_rename_lock, flags);
++	return ret;
++}
++EXPORT_SYMBOL_GPL(kernfs_path_from_node);
++
++/**
+  * kernfs_path - build full path of a given node
+  * @kn: kernfs_node of interest
+  * @buf: buffer to copy @kn's name into
+@@ -127,13 +250,12 @@ size_t kernfs_path_len(struct kernfs_node *kn)
+  */
+ char *kernfs_path(struct kernfs_node *kn, char *buf, size_t buflen)
+ {
+-	unsigned long flags;
+-	char *p;
++	int ret;
+ 
+-	spin_lock_irqsave(&kernfs_rename_lock, flags);
+-	p = kernfs_path_locked(kn, buf, buflen);
+-	spin_unlock_irqrestore(&kernfs_rename_lock, flags);
+-	return p;
++	ret = kernfs_path_from_node(kn, NULL, buf, buflen);
++	if (ret < 0 || ret >= buflen)
++		return NULL;
++	return buf;
+ }
+ EXPORT_SYMBOL_GPL(kernfs_path);
+ 
+@@ -164,18 +286,39 @@ void pr_cont_kernfs_name(struct kernfs_node *kn)
+ void pr_cont_kernfs_path(struct kernfs_node *kn)
+ {
+ 	unsigned long flags;
+-	char *p;
++	char *p = NULL;
++	int sz1, sz2;
+ 
+ 	spin_lock_irqsave(&kernfs_rename_lock, flags);
+ 
+-	p = kernfs_path_locked(kn, kernfs_pr_cont_buf,
+-			       sizeof(kernfs_pr_cont_buf));
+-	if (p)
+-		pr_cont("%s", p);
+-	else
+-		pr_cont("<name too long>");
++	sz1 = kernfs_path_from_node_locked(kn, NULL, kernfs_pr_cont_buf,
++					   sizeof(kernfs_pr_cont_buf));
++	if (sz1 < 0) {
++		pr_cont("(error)");
++		goto out;
++	}
++
++	if (sz1 < sizeof(kernfs_pr_cont_buf)) {
++		pr_cont("%s", kernfs_pr_cont_buf);
++		goto out;
++	}
++
++	p = kmalloc(sz1 + 1, GFP_NOFS);
++	if (!p) {
++		pr_cont("(out of memory)");
++		goto out;
++	}
++	sz2 = kernfs_path_from_node_locked(kn, NULL, p, sz1 + 1);
++	if (sz2 > sz1 || sz2 < 0) {
++		pr_cont("(error)");
++		goto out;
++	}
++
++	pr_cont("%s", p);
+ 
++out:
+ 	spin_unlock_irqrestore(&kernfs_rename_lock, flags);
++	kfree(p);
+ }
+ 
+ /**
+diff --git a/include/linux/kernfs.h b/include/linux/kernfs.h
+index af51df3..716bfde 100644
+--- a/include/linux/kernfs.h
++++ b/include/linux/kernfs.h
+@@ -267,8 +267,9 @@ static inline bool kernfs_ns_enabled(struct kernfs_node *kn)
+ 
+ int kernfs_name(struct kernfs_node *kn, char *buf, size_t buflen);
+ size_t kernfs_path_len(struct kernfs_node *kn);
+-char * __must_check kernfs_path(struct kernfs_node *kn, char *buf,
+-				size_t buflen);
++int kernfs_path_from_node(struct kernfs_node *root_kn, struct kernfs_node *kn,
++			  char *buf, size_t buflen);
++char *kernfs_path(struct kernfs_node *kn, char *buf, size_t buflen);
+ void pr_cont_kernfs_name(struct kernfs_node *kn);
+ void pr_cont_kernfs_path(struct kernfs_node *kn);
+ struct kernfs_node *kernfs_get_parent(struct kernfs_node *kn);
+@@ -338,8 +339,8 @@ static inline int kernfs_name(struct kernfs_node *kn, char *buf, size_t buflen)
+ static inline size_t kernfs_path_len(struct kernfs_node *kn)
+ { return 0; }
+ 
+-static inline char * __must_check kernfs_path(struct kernfs_node *kn, char *buf,
+-					      size_t buflen)
++static inline char *kernfs_path(struct kernfs_node *kn, char *buf,
++				size_t buflen)
+ { return NULL; }
+ 
+ static inline void pr_cont_kernfs_name(struct kernfs_node *kn) { }
+-- 
+1.7.9.5
