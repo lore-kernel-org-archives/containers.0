@@ -1,17 +1,17 @@
-From: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 7/8] cgroup: Add documentation for cgroup namespaces
-Date: Mon, 28 Dec 2015 13:13:02 -0800
-Message-ID: <1451337182.3374.34.camel__21850.9835926399$1451337574$gmane$org@Nokia-N900>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: [PATCH] cgroup: Add documentation for cgroup namespaces
+Date: Mon, 28 Dec 2015 16:48:07 -0500
+Message-ID: <20151228214807.GD30165__19931.2810240828$1451339303$gmane$org@mtj.duckdns.org>
 References: <1450844609-9194-1-git-send-email-serge.hallyn@ubuntu.com>
 	<1450844609-9194-8-git-send-email-serge.hallyn@ubuntu.com>
 	<20151228174735.GB30165@mtj.duckdns.org>
-Reply-To: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+	<1451337182.3374.34.camel@Nokia-N900>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20151228174735.GB30165-qYNAdHglDFBN0TnZuCh8vA@public.gmane.org>
-Content-ID: <1451337181.3374.33.camel@Nokia-N900>
+Content-Disposition: inline
+In-Reply-To: <1451337182.3374.34.camel@Nokia-N900>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,143 +21,195 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gTW9uIERlYyAyOCAyMDE1IDA5OjQ3OjM1IEFNIFBTVCwgVGVqdW4gSGVvIDx0akBrZXJuZWwu
-b3JnPiB3cm90ZToKCj4gSGVsbG8sCj4gCj4gSSBkaWQgc29tZSBoZWF2eSBlZGl0aW5nIG9mIHRo
-ZSBkb2N1bWVudGF0aW9uLsKgwqDCoMKgICBIb3cgZG9lcyB0aGlzIGxvb2s/CgpUaGFua3MgVGVq
-dW4sIGp1c3QgdGhyZWUgdGhpbmdzICh3aGljaCBjb21lIGZyb20gbXkgdmVyc2lvbik6Cgo+IERp
-ZCBJIG1pc3MgYW55dGhpbmc/Cj4gCj4gVGhhbmtzLgo+IC0tLQo+wqDCoMKgwqAgIERvY3VtZW50
-YXRpb24vY2dyb3VwLnR4dCB8wqDCoMKgwqAgIDE0Ngo+ICsrKysrKysrKysrKysrKysrKysrKysr
-KysrKysrKysrKysrKysrKysrKysrKysrIDEgZmlsZSBjaGFuZ2VkLCAxNDYKPiBpbnNlcnRpb25z
-KCspCj4gCj4gLS0tIGEvRG9jdW1lbnRhdGlvbi9jZ3JvdXAudHh0Cj4gKysrIGIvRG9jdW1lbnRh
-dGlvbi9jZ3JvdXAudHh0Cj4gQEAgLTQ3LDYgKzQ3LDExIEBAIENPTlRFTlRTCj7CoCDCoCDCoMKg
-wqDCoCAgNS0zLiBJTwo+wqAgwqAgwqAgwqAgwqDCoMKgwqAgIDUtMy0xLiBJTyBJbnRlcmZhY2Ug
-RmlsZXMKPsKgIMKgIMKgIMKgIMKgwqDCoMKgICA1LTMtMi4gV3JpdGViYWNrCj4gKzYuIE5hbWVz
-cGFjZQo+ICvCoMKgwqDCoCAgNi0xLiBCYXNpY3MKPiArwqDCoMKgwqAgIDYtMi4gVGhlIFJvb3Qg
-YW5kIFZpZXdzCj4gK8KgwqDCoMKgICA2LTMuIE1pZ3JhdGlvbiBhbmQgc2V0bnMoMikKPiArwqDC
-oMKgwqAgIDYtNC4gSW50ZXJhY3Rpb24gd2l0aCBPdGhlciBOYW1lc3BhY2VzCj7CoMKgwqDCoCAg
-UC4gSW5mb3JtYXRpb24gb24gS2VybmVsIFByb2dyYW1taW5nCj7CoCDCoCDCoMKgwqDCoCAgUC0x
-LiBGaWxlc3lzdGVtIFN1cHBvcnQgZm9yIFdyaXRlYmFjawo+wqDCoMKgwqAgIEQuIERlcHJlY2F0
-ZWQgdjEgQ29yZSBGZWF0dXJlcwo+IEBAIC0xMDEzLDYgKzEwMTgsMTQ3IEBAIHdyaXRlYmFjayBh
-cyBmb2xsb3dzLgo+wqDCoMKgwqAgIMKgwqDCoCB2bS5kaXJ0eVtfYmFja2dyb3VuZF1fcmF0aW8u
-Cj7CoMKgwqDCoCAgCj7CoMKgwqDCoCAgCj4gKzYuIE5hbWVzcGFjZQo+ICsKPiArNi0xLiBCYXNp
-Y3MKPiArCj4gK2Nncm91cCBuYW1lc3BhY2UgcHJvdmlkZXMgYSBtZWNoYW5pc20gdG8gdmlydHVh
-bGl6ZSB0aGUgdmlldyBvZiB0aGUKPiArIi9wcm9jLyRQSUQvY2dyb3VwIiBmaWxlCgphbmQgY2dy
-b3VwIG1vdW50cwoKPi7CoMKgwqDCoCAgVGhlIENMT05FX05FV0NHUk9VUCBjbG9uZSBmbGFnIGNh
-biBiZSB1c2VkCj4gK3dpdGggY2xvbmUoMikgYW5kIHVuc2hhcmUoMikgdG8gY3JlYXRlIGEgbmV3
-IGNncm91cCBuYW1lc3BhY2UuwqDCoMKgwqAgIFRoZQo+ICtwcm9jZXNzIHJ1bm5pbmcgaW5zaWRl
-IHRoZSBjZ3JvdXAgbmFtZXNwYWNlIHdpbGwgaGF2ZSBpdHMKPiArIi9wcm9jLyRQSUQvY2dyb3Vw
-IiBvdXRwdXQgcmVzdHJpY3RlZCB0byBjZ3JvdXBucyByb290LsKgwqDCoMKgICBUaGUgY2dyb3Vw
-bnMKPiArcm9vdCBpcyB0aGUgY2dyb3VwIG9mIHRoZSBwcm9jZXNzIGF0IHRoZSB0aW1lIG9mIGNy
-ZWF0aW9uIG9mIHRoZQo+ICtjZ3JvdXAgbmFtZXNwYWNlLgo+ICsKPiArV2l0aG91dCBjZ3JvdXAg
-bmFtZXNwYWNlLCB0aGUgIi9wcm9jLyRQSUQvY2dyb3VwIiBmaWxlIHNob3dzIHRoZQo+ICtjb21w
-bGV0ZSBwYXRoIG9mIHRoZSBjZ3JvdXAgb2YgYSBwcm9jZXNzLsKgwqDCoMKgICBJbiBhIGNvbnRh
-aW5lciBzZXR1cCB3aGVyZQo+ICthIHNldCBvZiBjZ3JvdXBzIGFuZCBuYW1lc3BhY2VzIGFyZSBp
-bnRlbmRlZCB0byBpc29sYXRlIHByb2Nlc3NlcyB0aGUKPiArIi9wcm9jLyRQSUQvY2dyb3VwIiBm
-aWxlIG1heSBsZWFrIHBvdGVudGlhbCBzeXN0ZW0gbGV2ZWwgaW5mb3JtYXRpb24KPiArdG8gdGhl
-IGlzb2xhdGVkIHByb2Nlc3Nlcy7CoMKgwqDCoCAgRm9yIEV4YW1wbGU6Cj4gKwo+ICvCoMKgwqDC
-oCAgIyBjYXQgL3Byb2Mvc2VsZi9jZ3JvdXAKPiArwqDCoMKgwqAgIDA6Oi9iYXRjaGpvYnMvY29u
-dGFpbmVyX2lkMQo+ICsKPiArVGhlIHBhdGggJy9iYXRjaGpvYnMvY29udGFpbmVyX2lkMScgY2Fu
-IGJlIGNvbnNpZGVyZWQgYXMgc3lzdGVtLWRhdGEKPiArYW5kIHVuZGVzaXJhYmxlIHRvIGV4cG9z
-ZSB0byB0aGUgaXNvbGF0ZWQgcHJvY2Vzc2VzLsKgwqDCoMKgICBjZ3JvdXAgbmFtZXNwYWNlCj4g
-K2NhbiBiZSB1c2VkIHRvIHJlc3RyaWN0IHZpc2liaWxpdHkgb2YgdGhpcyBwYXRoLsKgwqDCoMKg
-ICBGb3IgZXhhbXBsZSwgYmVmb3JlCj4gK2NyZWF0aW5nIGEgY2dyb3VwIG5hbWVzcGFjZSwgb25l
-IHdvdWxkIHNlZToKPiArCj4gK8KgwqDCoMKgICAjIGxzIC1sIC9wcm9jL3NlbGYvbnMvY2dyb3Vw
-Cj4gK8KgwqDCoMKgICBscnd4cnd4cnd4IDEgcm9vdCByb290IDAgMjAxNC0wNy0xNSAxMDozNyAv
-cHJvYy9zZWxmL25zL2Nncm91cCAtPgo+IGNncm91cDpbNDAyNjUzMTgzNV0gK8KgwqDCoMKgICAj
-IGNhdCAvcHJvYy9zZWxmL2Nncm91cAo+ICvCoMKgwqDCoCAgMDo6L2JhdGNoam9icy9jb250YWlu
-ZXJfaWQxCj4gKwo+ICtBZnRlciB1bnNoYXJpbmcgYSBuZXcgbmFtZXNwYWNlLCB0aGUgdmlldyBj
-aGFuZ2VzLgo+ICsKPiArwqDCoMKgwqAgICMgbHMgLWwgL3Byb2Mvc2VsZi9ucy9jZ3JvdXAKPiAr
-wqDCoMKgwqAgIGxyd3hyd3hyd3ggMSByb290IHJvb3QgMCAyMDE0LTA3LTE1IDEwOjM1IC9wcm9j
-L3NlbGYvbnMvY2dyb3VwIC0+Cj4gY2dyb3VwOls0MDI2NTMyMTgzXSArwqDCoMKgwqAgICMgY2F0
-IC9wcm9jL3NlbGYvY2dyb3VwCj4gK8KgwqDCoMKgICAwOjovCj4gKwo+ICtXaGVuIHNvbWUgdGhy
-ZWFkIGZyb20gYSBtdWx0aS10aHJlYWRlZCBwcm9jZXNzIHVuc2hhcmVzIGl0cyBjZ3JvdXAKPiAr
-bmFtZXNwYWNlLCB0aGUgbmV3IGNncm91cG5zIGdldHMgYXBwbGllZCB0byB0aGUgZW50aXJlIHBy
-b2Nlc3MgKGFsbAo+ICt0aGUgdGhyZWFkcykuwqDCoMKgwqAgIFRoaXMgaXMgbmF0dXJhbCBmb3Ig
-dGhlIHYyIGhpZXJhcmNoeTsgaG93ZXZlciwgZm9yIHRoZQo+ICtsZWdhY3kgaGllcmFyY2hpZXMs
-IHRoaXMgbWF5IGJlIHVuZXhwZWN0ZWQuCj4gKwo+ICtBIGNncm91cCBuYW1lc3BhY2UgaXMgYWxp
-dmUgYXMgbG9uZyBhcyB0aGVyZSBhcmUgcHJvY2Vzc2VzIGluc2lkZSBpdC4KCk9yIG1vdW50cyBw
-aW5uaW5nIGl0LgoKPiArV2hlbiB0aGUgbGFzdCBwcm9jZXNzIGV4aXRzCgpvciB0aGUgbGFzdCBt
-b3VudCBpcyB1bW91bnRlZCwKCj4sIHRoZSBjZ3JvdXAgbmFtZXNwYWNlIGlzIGRlc3Ryb3llZC7C
-oMKgwqDCoCAgVGhlCj4gK2Nncm91cG5zIHJvb3QgYW5kIHRoZSBhY3R1YWwgY2dyb3VwcyByZW1h
-aW4uCj4gKwo+ICsKPiArNi0yLiBUaGUgUm9vdCBhbmQgVmlld3MKPiArCj4gK1RoZSAnY2dyb3Vw
-bnMgcm9vdCcgZm9yIGEgY2dyb3VwIG5hbWVzcGFjZSBpcyB0aGUgY2dyb3VwIGluIHdoaWNoIHRo
-ZQo+ICtwcm9jZXNzIGNhbGxpbmcgdW5zaGFyZSgyKSBpcyBydW5uaW5nLsKgwqDCoMKgICBGb3Ig
-ZXhhbXBsZSwgaWYgYSBwcm9jZXNzIGluCj4gKy9iYXRjaGpvYnMvY29udGFpbmVyX2lkMSBjZ3Jv
-dXAgY2FsbHMgdW5zaGFyZSwgY2dyb3VwCj4gKy9iYXRjaGpvYnMvY29udGFpbmVyX2lkMSBiZWNv
-bWVzIHRoZSBjZ3JvdXBucyByb290LsKgwqDCoMKgICBGb3IgdGhlCj4gK2luaXRfY2dyb3VwX25z
-LCB0aGlzIGlzIHRoZSByZWFsIHJvb3QgKCcvJykgY2dyb3VwLgo+ICsKPiArVGhlIGNncm91cG5z
-IHJvb3QgY2dyb3VwIGRvZXMgbm90IGNoYW5nZSBldmVuIGlmIHRoZSBuYW1lc3BhY2UgY3JlYXRv
-cgo+ICtwcm9jZXNzIGxhdGVyIG1vdmVzIHRvIGEgZGlmZmVyZW50IGNncm91cC4KPiArCj4gK8Kg
-wqDCoMKgICAjIH4vdW5zaGFyZSAtYyAjIHVuc2hhcmUgY2dyb3VwbnMgaW4gc29tZSBjZ3JvdXAK
-PiArwqDCoMKgwqAgICMgY2F0IC9wcm9jL3NlbGYvY2dyb3VwCj4gK8KgwqDCoMKgICAwOjovCj4g
-K8KgwqDCoMKgICAjIG1rZGlyIHN1Yl9jZ3JwXzEKPiArwqDCoMKgwqAgICMgZWNobyAwID4gc3Vi
-X2NncnBfMS9jZ3JvdXAucHJvY3MKPiArwqDCoMKgwqAgICMgY2F0IC9wcm9jL3NlbGYvY2dyb3Vw
-Cj4gK8KgwqDCoMKgICAwOjovc3ViX2NncnBfMQo+ICsKPiArRWFjaCBwcm9jZXNzIGdldHMgaXRz
-IG5hbWVzcGFjZS1zcGVjaWZpYyB2aWV3IG9mICIvcHJvYy8kUElEL2Nncm91cCIKPiArCj4gK1By
-b2Nlc3NlcyBydW5uaW5nIGluc2lkZSB0aGUgY2dyb3VwIG5hbWVzcGFjZSB3aWxsIGJlIGFibGUg
-dG8gc2VlCj4gK2Nncm91cCBwYXRocyAoaW4gL3Byb2Mvc2VsZi9jZ3JvdXApIG9ubHkgaW5zaWRl
-IHRoZWlyIHJvb3QgY2dyb3VwLgo+ICtGcm9tIHdpdGhpbiBhbiB1bnNoYXJlZCBjZ3JvdXBuczoK
-PiArCj4gK8KgwqDCoMKgICAjIHNsZWVwIDEwMDAwMCAmCj4gK8KgwqDCoMKgICBbMV0gNzM1Mwo+
-ICvCoMKgwqDCoCAgIyBlY2hvIDczNTMgPiBzdWJfY2dycF8xL2Nncm91cC5wcm9jcwo+ICvCoMKg
-wqDCoCAgIyBjYXQgL3Byb2MvNzM1My9jZ3JvdXAKPiArwqDCoMKgwqAgIDA6Oi9zdWJfY2dycF8x
-Cj4gKwo+ICtGcm9tIHRoZSBpbml0aWFsIGNncm91cCBuYW1lc3BhY2UsIHRoZSByZWFsIGNncm91
-cCBwYXRoIHdpbGwgYmUKPiArdmlzaWJsZToKPiArCj4gK8KgwqDCoMKgICAkIGNhdCAvcHJvYy83
-MzUzL2Nncm91cAo+ICvCoMKgwqDCoCAgMDo6L2JhdGNoam9icy9jb250YWluZXJfaWQxL3N1Yl9j
-Z3JwXzEKPiArCj4gK0Zyb20gYSBzaWJsaW5nIGNncm91cCBuYW1lc3BhY2UgKHRoYXQgaXMsIGEg
-bmFtZXNwYWNlIHJvb3RlZCBhdCBhCj4gK2RpZmZlcmVudCBjZ3JvdXApLCB0aGUgY2dyb3VwIHBh
-dGggcmVsYXRpdmUgdG8gaXRzIG93biBjZ3JvdXAKPiArbmFtZXNwYWNlIHJvb3Qgd2lsbCBiZSBz
-aG93bi7CoMKgwqDCoCAgRm9yIGluc3RhbmNlLCBpZiBQSUQgNzM1MydzIGNncm91cAo+ICtuYW1l
-c3BhY2Ugcm9vdCBpcyBhdCAnL2JhdGNoam9icy9jb250YWluZXJfaWQyJywgdGhlbiBpdCB3aWxs
-IHNlZQo+ICsKPiArwqDCoMKgwqAgICMgY2F0IC9wcm9jLzczNTMvY2dyb3VwCj4gK8KgwqDCoMKg
-ICAwOjovLi4vY29udGFpbmVyX2lkMi9zdWJfY2dycF8xCj4gKwo+ICtOb3RlIHRoYXQgdGhlIHJl
-bGF0aXZlIHBhdGggYWx3YXlzIHN0YXJ0cyB3aXRoICcvJyB0byBpbmRpY2F0ZSB0aGF0Cj4gK2l0
-cyByZWxhdGl2ZSB0byB0aGUgY2dyb3VwIG5hbWVzcGFjZSByb290IG9mIHRoZSBjYWxsZXIuCj4g
-Kwo+ICsKPiArNi0zLiBNaWdyYXRpb24gYW5kIHNldG5zKDIpCj4gKwo+ICtQcm9jZXNzZXMgaW5z
-aWRlIGEgY2dyb3VwIG5hbWVzcGFjZSBjYW4gbW92ZSBpbnRvIGFuZCBvdXQgb2YgdGhlCj4gK25h
-bWVzcGFjZSByb290IGlmIHRoZXkgaGF2ZSBwcm9wZXIgYWNjZXNzIHRvIGV4dGVybmFsIGNncm91
-cHMKCnRoaXMgcmVhbGx5IG1lYW5zIHR3byB0aGluZ3MgLSB3cml0ZSBEQUMgYWNjZXNzIHRvIHRo
-ZSBjZ3JvdXBmcyBmaWxlcywgYW5kIGFjY2VzcyB0byB0aGUgZGlyZWN0b3JpZXMgdGhyb3VnaCBh
-IGNncm91cGZzIG1vdW50LsKgwqAgIE5vdCBzdXJlIGlmIHRoYXQgc2hvdWxkIGJlIHNwZWxsZWQg
-b3V0LgoKPi7CoMKgwqDCoCAgRm9yCj4gK2V4YW1wbGUsIGZyb20gaW5zaWRlIGEgbmFtZXNwYWNl
-IHdpdGggY2dyb3VwbnMgcm9vdCBhdAo+ICsvYmF0Y2hqb2JzL2NvbnRhaW5lcl9pZDEsIGFuZCBh
-c3N1bWluZyB0aGF0IHRoZSBnbG9iYWwgaGllcmFyY2h5IGlzCj4gK3N0aWxsIGFjY2Vzc2libGUg
-aW5zaWRlIGNncm91cG5zOgo+ICsKPiArwqDCoMKgwqAgICMgY2F0IC9wcm9jLzczNTMvY2dyb3Vw
-Cj4gK8KgwqDCoMKgICAwOjovc3ViX2NncnBfMQo+ICvCoMKgwqDCoCAgIyBlY2hvIDczNTMgPiBi
-YXRjaGpvYnMvY29udGFpbmVyX2lkMi9jZ3JvdXAucHJvY3MKPiArwqDCoMKgwqAgICMgY2F0IC9w
-cm9jLzczNTMvY2dyb3VwCj4gK8KgwqDCoMKgICAwOjovLi4vY29udGFpbmVyX2lkMgo+ICsKPiAr
-Tm90ZSB0aGF0IHRoaXMga2luZCBvZiBzZXR1cCBpcyBub3QgZW5jb3VyYWdlZC7CoMKgwqDCoCAg
-QSB0YXNrIGluc2lkZSBjZ3JvdXAKPiArbmFtZXNwYWNlIHNob3VsZCBvbmx5IGJlIGV4cG9zZWQg
-dG8gaXRzIG93biBjZ3JvdXBucyBoaWVyYXJjaHkuCj4gKwo+ICtzZXRucygyKSB0byBhbm90aGVy
-IGNncm91cCBuYW1lc3BhY2UgaXMgYWxsb3dlZCB3aGVuOgo+ICsKPiArKGEpIHRoZSBwcm9jZXNz
-IGhhcyBDQVBfU1lTX0FETUlOIGFnYWluc3QgaXRzIGN1cnJlbnQgdXNlciBuYW1lc3BhY2UKPiAr
-KGIpIHRoZSBwcm9jZXNzIGhhcyBDQVBfU1lTX0FETUlOIGFnYWluc3QgdGhlIHRhcmdldCBjZ3Jv
-dXAKPiArwqAgwqAgwqDCoMKgwqAgIG5hbWVzcGFjZSdzIHVzZXJucwo+ICsKPiArTm8gaW1wbGlj
-aXQgY2dyb3VwIGNoYW5nZXMgaGFwcGVuIHdpdGggYXR0YWNoaW5nIHRvIGFub3RoZXIgY2dyb3Vw
-Cj4gK25hbWVzcGFjZS7CoMKgwqDCoCAgSXQgaXMgZXhwZWN0ZWQgdGhhdCB0aGUgc29tZW9uZSBt
-b3ZlcyB0aGUgYXR0YWNoaW5nCj4gK3Byb2Nlc3MgdW5kZXIgdGhlIHRhcmdldCBjZ3JvdXAgbmFt
-ZXNwYWNlIHJvb3QuCj4gKwo+ICsKPiArNi00LiBJbnRlcmFjdGlvbiB3aXRoIE90aGVyIE5hbWVz
-cGFjZXMKPiArCj4gK05hbWVzcGFjZSBzcGVjaWZpYyBjZ3JvdXAgaGllcmFyY2h5IGNhbiBiZSBt
-b3VudGVkIGJ5IGEgcHJvY2Vzcwo+ICtydW5uaW5nIGluc2lkZSBhIG5vbi1pbml0IGNncm91cCBu
-YW1lc3BhY2UuCj4gKwo+ICvCoMKgwqDCoCAgIyBtb3VudCAtdCBjZ3JvdXAyIG5vbmUgJE1PVU5U
-X1BPSU5UCj4gKwo+ICtUaGlzIHdpbGwgbW91bnQgdGhlIHVuaWZpZWQgY2dyb3VwIGhpZXJhcmNo
-eSB3aXRoIGNncm91cG5zIHJvb3QgYXMgdGhlCj4gK2ZpbGVzeXN0ZW0gcm9vdC7CoMKgwqDCoCAg
-VGhlIHByb2Nlc3MgbmVlZHMgQ0FQX1NZU19BRE1JTiBhZ2FpbnN0IGl0cyB1c2VyIGFuZAo+ICtt
-b3VudCBuYW1lc3BhY2VzLgo+ICsKPiArVGhlIHZpcnR1YWxpemF0aW9uIG9mIC9wcm9jL3NlbGYv
-Y2dyb3VwIGZpbGUgY29tYmluZWQgd2l0aCByZXN0cmljdGluZwo+ICt0aGUgdmlldyBvZiBjZ3Jv
-dXAgaGllcmFyY2h5IGJ5IG5hbWVzcGFjZS1wcml2YXRlIGNncm91cGZzIG1vdW50Cj4gK3Byb3Zp
-ZGVzIGEgcHJvcGVybHkgaXNvbGF0ZWQgY2dyb3VwIHZpZXcgaW5zaWRlIHRoZSBjb250YWluZXIu
-Cj4gKwo+ICsKPsKgwqDCoMKgICBQLiBJbmZvcm1hdGlvbiBvbiBLZXJuZWwgUHJvZ3JhbW1pbmcK
-PsKgwqDCoMKgICAKPsKgwqDCoMKgICBUaGlzIHNlY3Rpb24gY29udGFpbnMga2VybmVsIHByb2dy
-YW1taW5nIGluZm9ybWF0aW9uIGluIHRoZSBhcmVhcwo+IC0tCj4gVG8gdW5zdWJzY3JpYmUgZnJv
-bSB0aGlzIGxpc3Q6IHNlbmQgdGhlIGxpbmUgInVuc3Vic2NyaWJlIGxpbnV4LWtlcm5lbCIKPiBp
-biB0aGUgYm9keSBvZiBhIG1lc3NhZ2UgdG8gbWFqb3Jkb21vQHZnZXIua2VybmVsLm9yZwo+IE1v
-cmUgbWFqb3Jkb21vIGluZm8gYXTCoMKgwqDCoCAgaHR0cDovL3ZnZXIua2VybmVsLm9yZy9tYWpv
-cmRvbW8taW5mby5odG1sCj4gUGxlYXNlIHJlYWQgdGhlIEZBUSBhdMKgwqDCoMKgICBodHRwOi8v
-d3d3LnR1eC5vcmcvbGttbC8KCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgt
-Zm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4v
-bGlzdGluZm8vY29udGFpbmVycw==
+Hello, Serge.
+
+I applied your suggestions and applied the following to
+cgroup/for-4.5.  Let's improve it from here.
+
+Thanks!
+
+------ 8< ------
+From 5dddabce1171af2990160e1cb90f69a1440dcfb7 Mon Sep 17 00:00:00 2001
+From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Date: Tue, 22 Dec 2015 22:23:28 -0600
+
+tj: Reorganized to better fit the documentation.
+
+Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+---
+ Documentation/cgroup.txt | 147 +++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 147 insertions(+)
+
+diff --git a/Documentation/cgroup.txt b/Documentation/cgroup.txt
+index 31d1f7b..983ba63 100644
+--- a/Documentation/cgroup.txt
++++ b/Documentation/cgroup.txt
+@@ -47,6 +47,11 @@ CONTENTS
+   5-3. IO
+     5-3-1. IO Interface Files
+     5-3-2. Writeback
++6. Namespace
++  6-1. Basics
++  6-2. The Root and Views
++  6-3. Migration and setns(2)
++  6-4. Interaction with Other Namespaces
+ P. Information on Kernel Programming
+   P-1. Filesystem Support for Writeback
+ D. Deprecated v1 Core Features
+@@ -1013,6 +1018,148 @@ writeback as follows.
+ 	vm.dirty[_background]_ratio.
+ 
+ 
++6. Namespace
++
++6-1. Basics
++
++cgroup namespace provides a mechanism to virtualize the view of the
++"/proc/$PID/cgroup" file and cgroup mounts.  The CLONE_NEWCGROUP clone
++flag can be used with clone(2) and unshare(2) to create a new cgroup
++namespace.  The process running inside the cgroup namespace will have
++its "/proc/$PID/cgroup" output restricted to cgroupns root.  The
++cgroupns root is the cgroup of the process at the time of creation of
++the cgroup namespace.
++
++Without cgroup namespace, the "/proc/$PID/cgroup" file shows the
++complete path of the cgroup of a process.  In a container setup where
++a set of cgroups and namespaces are intended to isolate processes the
++"/proc/$PID/cgroup" file may leak potential system level information
++to the isolated processes.  For Example:
++
++  # cat /proc/self/cgroup
++  0::/batchjobs/container_id1
++
++The path '/batchjobs/container_id1' can be considered as system-data
++and undesirable to expose to the isolated processes.  cgroup namespace
++can be used to restrict visibility of this path.  For example, before
++creating a cgroup namespace, one would see:
++
++  # ls -l /proc/self/ns/cgroup
++  lrwxrwxrwx 1 root root 0 2014-07-15 10:37 /proc/self/ns/cgroup -> cgroup:[4026531835]
++  # cat /proc/self/cgroup
++  0::/batchjobs/container_id1
++
++After unsharing a new namespace, the view changes.
++
++  # ls -l /proc/self/ns/cgroup
++  lrwxrwxrwx 1 root root 0 2014-07-15 10:35 /proc/self/ns/cgroup -> cgroup:[4026532183]
++  # cat /proc/self/cgroup
++  0::/
++
++When some thread from a multi-threaded process unshares its cgroup
++namespace, the new cgroupns gets applied to the entire process (all
++the threads).  This is natural for the v2 hierarchy; however, for the
++legacy hierarchies, this may be unexpected.
++
++A cgroup namespace is alive as long as there are processes inside or
++mounts pinning it.  When the last usage goes away, the cgroup
++namespace is destroyed.  The cgroupns root and the actual cgroups
++remain.
++
++
++6-2. The Root and Views
++
++The 'cgroupns root' for a cgroup namespace is the cgroup in which the
++process calling unshare(2) is running.  For example, if a process in
++/batchjobs/container_id1 cgroup calls unshare, cgroup
++/batchjobs/container_id1 becomes the cgroupns root.  For the
++init_cgroup_ns, this is the real root ('/') cgroup.
++
++The cgroupns root cgroup does not change even if the namespace creator
++process later moves to a different cgroup.
++
++  # ~/unshare -c # unshare cgroupns in some cgroup
++  # cat /proc/self/cgroup
++  0::/
++  # mkdir sub_cgrp_1
++  # echo 0 > sub_cgrp_1/cgroup.procs
++  # cat /proc/self/cgroup
++  0::/sub_cgrp_1
++
++Each process gets its namespace-specific view of "/proc/$PID/cgroup"
++
++Processes running inside the cgroup namespace will be able to see
++cgroup paths (in /proc/self/cgroup) only inside their root cgroup.
++From within an unshared cgroupns:
++
++  # sleep 100000 &
++  [1] 7353
++  # echo 7353 > sub_cgrp_1/cgroup.procs
++  # cat /proc/7353/cgroup
++  0::/sub_cgrp_1
++
++From the initial cgroup namespace, the real cgroup path will be
++visible:
++
++  $ cat /proc/7353/cgroup
++  0::/batchjobs/container_id1/sub_cgrp_1
++
++From a sibling cgroup namespace (that is, a namespace rooted at a
++different cgroup), the cgroup path relative to its own cgroup
++namespace root will be shown.  For instance, if PID 7353's cgroup
++namespace root is at '/batchjobs/container_id2', then it will see
++
++  # cat /proc/7353/cgroup
++  0::/../container_id2/sub_cgrp_1
++
++Note that the relative path always starts with '/' to indicate that
++its relative to the cgroup namespace root of the caller.
++
++
++6-3. Migration and setns(2)
++
++Processes inside a cgroup namespace can move into and out of the
++namespace root if they have proper access to external cgroups.  For
++example, from inside a namespace with cgroupns root at
++/batchjobs/container_id1, and assuming that the global hierarchy is
++still accessible inside cgroupns:
++
++  # cat /proc/7353/cgroup
++  0::/sub_cgrp_1
++  # echo 7353 > batchjobs/container_id2/cgroup.procs
++  # cat /proc/7353/cgroup
++  0::/../container_id2
++
++Note that this kind of setup is not encouraged.  A task inside cgroup
++namespace should only be exposed to its own cgroupns hierarchy.
++
++setns(2) to another cgroup namespace is allowed when:
++
++(a) the process has CAP_SYS_ADMIN against its current user namespace
++(b) the process has CAP_SYS_ADMIN against the target cgroup
++    namespace's userns
++
++No implicit cgroup changes happen with attaching to another cgroup
++namespace.  It is expected that the someone moves the attaching
++process under the target cgroup namespace root.
++
++
++6-4. Interaction with Other Namespaces
++
++Namespace specific cgroup hierarchy can be mounted by a process
++running inside a non-init cgroup namespace.
++
++  # mount -t cgroup2 none $MOUNT_POINT
++
++This will mount the unified cgroup hierarchy with cgroupns root as the
++filesystem root.  The process needs CAP_SYS_ADMIN against its user and
++mount namespaces.
++
++The virtualization of /proc/self/cgroup file combined with restricting
++the view of cgroup hierarchy by namespace-private cgroupfs mount
++provides a properly isolated cgroup view inside the container.
++
++
+ P. Information on Kernel Programming
+ 
+ This section contains kernel programming information in the areas
+-- 
+2.5.0
