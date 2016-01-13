@@ -1,12 +1,10 @@
-From: HQ-Canadian-Meds <noreply-stfhch0jnm/o1u/Aerc39aBKnGwkPULj@public.gmane.org>
-Subject: Welcome to one of the premier online marketplaces to find best drugs
-	at unbelievable prices!
-Date: Wed, 6 Jan 2016 13:42:40 +0000
-Message-ID: <201601065525.hD091BnV428i@jasconstructionco.com>
-References: <201601060202.rlf11I48c2F0@jasconstructionco.com>
+From: Adam Richter <AdamRichter-7c7zpH73MZpBDgjK7y7TUQ@public.gmane.org>
+Subject: re:
+Date: Tue, 13 Jan 2016 12:46:39 +0000
+Message-ID: <9c684f1c8f5a$6d8d4004$6b5d3ab4$@mmsorge.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"; DelSp="yes"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,193 +15,14 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: lf_desktop-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, briefing-book-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, fsg-test-list-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux.com.users-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: zh1001 <zh1001-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>, FRoss Perry <FRoss-Perry-HsDW+lVSy7su+uzj59/SXw@public.gmane.org>, alexander deucher <alexander.deucher-5C7GfCeVMHo@public.gmane.org>, adam richter2004 <adam_richter2004-/E1597aS9LQAvxtiuMwx3w@public.gmane.org>, nana5kids <nana5kids-H+0wwilmMs3R7s880joybQ@public.gmane.org>, barrykendall <barrykendall-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, ann zhang888 <ann.zhang888-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, sca38018 <sca38018-JTKT+MZqROFWk0Htik3J/w@public.gmane.org>, westglen <westglen-+nMgl8a9JoZQdUBU4u/fGAC/G2K4zDHf@public.gmane.org>, scott <scott-n2Un8p4Ldar0UPmFDx6yd/RmykmSBopP@public.gmane.org>, stephanie bertron <stephanie.bertron-Hi4yi7y/Fd5Wk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-   
-
-		Suits your belongings in rivers and platform. Wars myspace graphics
-acronyms iatflame spread. 
-
-		Me
-		ds
-		8f
-		or
-		7M
-		en
-
-Vi
-Ci
-Ci
-Le
-Pr
- ag
-al
-al
-vi
-op
- ra
-is
-is
-tr
-ec
-
- S
-a 
-ia
-
-of
-
-t 
-
-Ta
-
-bs
-
- $0
-$1
-$2
-$2
-$0
- .9
-.6
-.5
-.5
-.4
- 9
-5
-0
-0
-5
-
-		Me
-		ds
-		1f
-		or
-		6W
-		om
-		en
-
-Ac
-Cl
-De
-Fe
-Fe
- om
-om
-fl
-ma
-ma
- pl
-id
-uc
-le
-le
- ia
-
-an
- C
- V
-
-ia
-ia
-
-li
-gr
-
-s 
-a 
-
- $1
-$0
-$1
-$1
-$0
- .7
-.4
-.2
-.1
-.7
- 5
-5
-5
-1
-2
-
- Vi
-Fa
-24
-10 sa
-st
-/7
-0% ,M
- w
- c
- A as
-or
-us
-ut te
-ld
-to
-he rc
-wi
-me
-nt ar
-de
-r 
-ic d,
- s
-su
- M Ec
-hi
-pp
-ed he
-pp
-or
-s  ck
-in
-t 
-
-g 
-
-   S
- O
- A
- N pe
-nl
-no
-o  ci
-y 
-ny
-pr al
-re
-mo
-es  i
-li
-us
-cr nt
-ab
- d
-ip er
-le
-el
-ti ne
- s
-iv
-on t 
-up
-er
- r pr
-pl
-y 
-eq ic
-ie
-
-ui es
-rs
-
-re  
-
-d 
-
-		>> Enter Here 
+IGJsb2NrcXVvdGUsIGRpdi55YWhvb19xdW90ZWQgeyBtYXJnaW4tbGVmdDogMCAhaW1wb3J0YW50
+OyBib3JkZXItbGVmdDoxcHggIzcxNUZGQSBzb2xpZCAhaW1wb3J0YW50OyAgcGFkZGluZy1sZWZ0
+OjFleCAhaW1wb3J0YW50OyBiYWNrZ3JvdW5kLWNvbG9yOndoaXRlICFpbXBvcnRhbnQ7IH0gwqAg
+wqBodHRwOi8vcnVzcGFydG5lci5zdS9uZXh0LnBocMKgIMKgQWRhbSBSaWNodGVyClNlbnQgZnJv
+bSBZYWhvbyBNYWlsIGZvciBpUGhvbmUKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5s
+aW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFp
+bG1hbi9saXN0aW5mby9jb250YWluZXJz
