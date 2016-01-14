@@ -1,7 +1,7 @@
-From: Danik <Danik-GqWNf/uwYfoFHQQy/6e8+GGXanvQGlWp@public.gmane.org>
-Subject: =?utf-8?B?WW91ciBvcmRlciBoYXMgYmVlbiBzdWNjZXNzZnVsbHkgcHJvY2Vzc2Vk?=
-Date: Wed, 13 Jan 2016 10:30:14 -0500
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@woodwardnews.info>
+From: Brian <Danik-5bNpb5ovJ9p+xPeBQ9Deuw@public.gmane.org>
+Subject: =?utf-8?B?QXJlIHlvdSBhdmFpbGFibGU/IEh1cnJ5Lg==?=
+Date: Thu, 14 Jan 2016 16:11:10 -0500
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@ellishnews.info>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,19 +18,107 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, 
+Two quick questions. Need you to answer NOW.
 
-Your order has been successfully processed and is Pending Setup. 
+1. Are you available to make $500 to $1,000 in the next 10 minutes?
 
-*Click Here For Updates 
+2. Can you text and use a mobile phone?
 
-==> http://click.woodwardnews.info/index.php?id=6321377&a=41260&b=1259&c=166
+If you can spend 10 minutes and send a text message, 
+you can get paid $500 RIGHT NOW.
 
-Once setup is complete you will be automatically transferred to your new online system. 
+Go here in the next 10 minutes and get paid:
 
-Thank you, 
+==> http://click.ellishnews.info/index.php?id=3770342&a=41260&b=1288&c=166
 
-Danik
+As the video explains, this works right now
+simply by turning on your phone and texting. 
+
+This works RIGHT NOW. so you need to act fast.
+
+==> http://click.ellishnews.info/index.php?id=3770342&a=41260&b=1288&c=166
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -102,5 +190,5 @@ Danik
 
 Our address is Providence 1512, British Virgin Islands, 
 If you do not wish to receive future email, click here.
-http://click.woodwardnews.info/index.php?o=2&a=41260&b=1259&c=166
+http://click.ellishnews.info/index.php?o=2&a=41260&b=1288&c=166
 (You can also send your request to Customer Care at the street address above.) 
