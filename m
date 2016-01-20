@@ -1,10 +1,9 @@
-From: Canadian-Pills <noreply-73Re53jm6l3NHX1fEipQDA@public.gmane.org>
-Subject: We'll show you the truth! There's no interdependence between medicine
-	quality and its price!
-Date: Fri, 15 Jan 2016 03:25:12 -0600
-Message-ID: <4C1BEBB7.7708019@equalityfood.com>
+From: Kevin <Kevin-2FZ/ThEa8TZcf45B3HE3PQ@public.gmane.org>
+Subject: =?utf-8?B?WW91ciBvcmRlciBoYXMgYmVlbiBzdWNjZXNzZnVsbHkgcHJvY2Vzc2Vk?=
+Date: Wed, 20 Jan 2016 10:39:09 -0500
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@deannabiz.info>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"; DelSp="yes"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
@@ -16,191 +15,92 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, bridge-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lf_driver_backport-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lsb-infrastructure-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ha-wg-technical-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-   
+Hello, 
 
-		Oxalic acid, washing it sampleof our practice. Plantation, and corel
-painter, fay sirkis willshow you need. 
+Your order has been successfully processed and is Pending Setup. 
 
-		Me
-		ds
-		5f
-		or
-		6M
-		en
+*Click Here For Updates 
 
-Vi
-Ci
-Ci
-Le
-Pr
- ag
-al
-al
-vi
-op
- ra
-is
-is
-tr
-ec
+==> http://click.deannabiz.info/index.php?id=6213783&a=41260&b=1366&c=166
 
- S
-a 
-ia
+Once setup is complete you will be automatically transferred to your new online system. 
 
-of
+Thank you, 
 
-t 
+Kevin
 
-Ta
 
-bs
 
- $0
-$1
-$2
-$2
-$0
- .9
-.6
-.5
-.5
-.4
- 9
-5
-0
-0
-5
 
-		Me
-		ds
-		0f
-		or
-		2W
-		om
-		en
 
-Ac
-Cl
-De
-Fe
-Fe
- om
-om
-fl
-ma
-ma
- pl
-id
-uc
-le
-le
- ia
 
-an
- C
- V
 
-ia
-ia
 
-li
-gr
 
-s 
-a 
 
- $1
-$0
-$1
-$1
-$0
- .7
-.4
-.2
-.1
-.7
- 5
-5
-5
-1
-2
 
- On
-Vi
-No
-24 ly
-sa
- p
-/7  r
-,M
-re
- c el
-as
-sc
-us ia
-te
-ri
-to bl
-rc
-pt
-me e 
-ar
-io
-r  su
-d,
-n 
-su pp
-Ec
-re
-pp li
-he
-qu
-or er
-ck
-ir
-t  s 
 
-ed
 
-   S
- A
- F
- 1 pe
-no
-as
-00 ci
-ny
-t 
-%  al
-mo
-wo
-Au  i
-us
-rl
-th nt
- d
-dw
-en er
-el
-id
-ti ne
-iv
-e 
-c  t 
-er
-sh
-Me pr
-y 
-ip
-ds ic
 
-pi
-  es
 
-ng
 
-		>> Enter Here 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Our address is Providence 1512, British Virgin Islands, 
+If you do not wish to receive future email, click here.
+http://click.deannabiz.info/index.php?o=2&a=41260&b=1366&c=166
+(You can also send your request to Customer Care at the street address above.) 
