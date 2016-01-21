@@ -1,10 +1,11 @@
-From: Kevin <Kevin-2FZ/ThEa8TZcf45B3HE3PQ@public.gmane.org>
-Subject: =?utf-8?B?WW91ciBvcmRlciBoYXMgYmVlbiBzdWNjZXNzZnVsbHkgcHJvY2Vzc2Vk?=
-Date: Wed, 20 Jan 2016 10:39:09 -0500
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@deannabiz.info>
+From: Heizungsbau Franke via Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: =?UTF-8?B?SWhyZSBuZXVlIEhlaXp1bmc6IGtvc3RlbmxvcyBkYW5rIHN0YWF0bGljaGVyIEbDtnJkZXJ1bmc=?=
+Date: Thu, 21 Jan 2016 14:45:34 +0100
+Message-ID: <ff2c7273d414be07f920ad62b0a352c4@glassesusa.com>
+Reply-To: chandnond-/E1597aS9LQAvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,89 +19,16 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, 
-
-Your order has been successfully processed and is Pending Setup. 
-
-*Click Here For Updates 
-
-==> http://click.deannabiz.info/index.php?id=6213783&a=41260&b=1366&c=166
-
-Once setup is complete you will be automatically transferred to your new online system. 
-
-Thank you, 
-
-Kevin
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Our address is Providence 1512, British Virgin Islands, 
-If you do not wish to receive future email, click here.
-http://click.deannabiz.info/index.php?o=2&a=41260&b=1366&c=166
-(You can also send your request to Customer Care at the street address above.) 
+R3V0ZW4gVGFnLAoKbcO2Y2h0ZW4gU2llIElocmUgSGVpenVuZyBlcm5ldWVybiwga29zdGVubG9z
+IGRhbmsgc3RhYXRsaWNoZXIgRsO2cmRlcnVuZz8KCkRpZSBCdW5kZXNyZWdpZXJ1bmcgdW50ZXJz
+dMO8dHp0IGRlbiBFcndlcmIgdm9uIG5ldWVuLCDDtmtvbG9naXNjaGVuCkhlaXp1bmdlbiDigJMg
+ZGFzIHNvbGx0ZW4gU2llIG51dHplbiEKCklocmUgSGVpenVuZyB3aXJkIGtvc3RlbmxvcyBlcm5l
+dWVydCAtClNpZSBiZWtvbW1lbiB6dXPDpHR6bGljaCBlaW5lIHN0YWF0bGljaGUgRsO2cmRlcnVu
+ZyB2b24gYmlzIHp1IDExLjAwMCBFdXJvCnp1ciBmcmVpZW4gVmVyZsO8Z3VuZy4KCkRpZXNlIEFr
+dGlvbiBpc3QgZsO8ciBTaWUgdm9sbGtvbW1lbiBrb3N0ZW5sb3MgdW5kIHVudmVyYmluZGxpY2gg
+4oCTIGF1Y2gKd2lyIHdlcmRlbiBhdXMgRsO2cmRlcm1pdHRlbG4gYmV6YWhsdC4KCkJpdHRlIGlu
+Zm9ybWllcmVuIFNpZSBzaWNoIGhpZXI6CgpoZWl6dW5nc2FrdGlvbi5jb20KCgpNaXQgZnJldW5k
+bGljaGVuIEdyw7zDn2VuLAoKSGVpenVuZ3NiYXUgRnJhbmtlCgpfX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250
+YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3Vu
+ZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
