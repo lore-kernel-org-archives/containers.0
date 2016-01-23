@@ -1,7 +1,7 @@
-From: Danik <Brian-an37S4LS0jS9RC+f8J1Yzg@public.gmane.org>
+From: Brian <Paul-Xj+hpSN74Z1CPWQmNIN3aQ@public.gmane.org>
 Subject: =?utf-8?B?WW91ciBvcmRlciBoYXMgYmVlbiBzdWNjZXNzZnVsbHkgcHJvY2Vzc2Vk?=
-Date: Fri, 22 Jan 2016 17:14:18 -0500
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@huggingnews.info>
+Date: Fri, 22 Jan 2016 19:34:42 -0500
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@matednews.info>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -24,13 +24,13 @@ Your order has been successfully processed and is Pending Setup.
 
 *Click Here For Updates 
 
-==> http://click.huggingnews.info/index.php?id=5689403&a=41260&b=1438&c=166
+==> http://click.matednews.info/index.php?id=5411341&a=41260&b=1450&c=166
 
 Once setup is complete you will be automatically transferred to your new online system. 
 
 Thank you, 
 
-Danik
+Brian
 
 
 
@@ -102,5 +102,5 @@ Danik
 
 Our address is Providence 1512, British Virgin Islands, 
 If you do not wish to receive future email, click here.
-http://click.huggingnews.info/index.php?o=2&a=41260&b=1438&c=166
+http://click.matednews.info/index.php?o=2&a=41260&b=1450&c=166
 (You can also send your request to Customer Care at the street address above.) 
