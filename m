@@ -1,9 +1,8 @@
-From: Canadian-Drugs <noreply-n4b46tocKyCo8HZwdTOyrdBPR1lH4CV8@public.gmane.org>
-Subject: If you are still hesitating whether to buy medications at our
-	pharmacy, read our testimonials!
-Date: Sun, 24 Jan 2016 19:47:35 -0300
-Message-ID: <E13y4Wx-000E5l-2F@Kfom>
-References: <E1KB50C-000108-0d@JF341rcH>
+From: "Jan Franklin" <yenslinor-O5WfVfzUwx8@public.gmane.org>
+Subject: Website and Mobile App Development for your business
+Date: Mon, 25 Jan 2016 17:36:32 +0100
+Message-ID: <5155afd5048fe8d687a759aa57f89e11@chezpim.com>
+Reply-To: shonswee-Dw/NWeUnuQfQT0dZR+AlfA@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
@@ -17,189 +16,57 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: briefing-book-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, accessibility-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, accessibility-ia2-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, printing-driver-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-   
+Hi,
 
-		Struckp proponents of noticed that bionic eye and support. Kitchento
-put inducted to such to configure. 
+Hope this email finds you well.
 
-		Me
-		ds
-		3f
-		or
-		0M
-		en
+I am writing today on behalf of Solution Analysts to discuss the Mobile App
+and Website requirement for your business.
+We are the leading experts in desgin and development of Mobile Apps and
+Responsive Website.
 
-Vi
-Ci
-Ci
-Le
-Pr
- ag
-al
-al
-vi
-op
- ra
-is
-is
-tr
-ec
+Our Mobile and Web Development solutions help the business to grow and
+generate revenue by providing a great user experience to customers.
 
- S
-a 
-ia
+Web, eCommerce & Mobile App Development offerings:
 
-of
+1.	Mobile App For Native Platforms: iOS, iPhone, Swift, Android
+2.	Mobile Apps for Cross Platform: ionic, PhoneGap
+3.	Website Development Services: PHP, Laravel, Wordpress , Codeigniter.
+4.	eCommerce/ Online Store Development: Magento, Prestashop, Drupal,
+WooCommerce, Bigcommerce
 
-t 
+Now we have expertise in iBeacon App Development for retailers, curators,
+event organizers and
+business owners to share news, information, stories, or interactive events
+with target consumers nearby.
 
-Ta
+A Short Brief about our experience, solutions delivered and global
+presence:
 
-bs
+-	Delivering Web & Mobile Apps Since 2011
+-	287+ Web & Mobile Apps Delivered
+-	100% quality assurance & satisfaction
+-	Team of 90+ Professional Developers, Designers & Experts
+-	Agile methods for speed to market
+-	24x7 Customer support
+-	Flexible pricing packages
 
- $0
-$1
-$2
-$2
-$0
- .9
-.6
-.5
-.5
-.4
- 9
-5
-0
-0
-5
+If you want to create a new website or mobile application, or refurbish an
+existing website or application,
+we have expertise of the latest technologies and can advise you for the
+best solutions for your business.
 
-		Me
-		ds
-		9f
-		or
-		6W
-		om
-		en
+Our team of developers and programmers have latest updates on technologies
+and the IT best practices.
+We will design customized solutions that will render optimum ROI to your
+business.
 
-Ac
-Cl
-De
-Fe
-Fe
- om
-om
-fl
-ma
-ma
- pl
-id
-uc
-le
-le
- ia
+Awaiting  your quick response.
 
-an
- C
- V
-
-ia
-ia
-
-li
-gr
-
-s 
-a 
-
- $1
-$0
-$1
-$1
-$0
- .7
-.4
-.2
-.1
-.7
- 5
-5
-5
-1
-2
-
- An
-Vi
-24
-10 on
-sa
-/7
-0% ym
-,M
- c
- A ou
-as
-us
-ut s 
-te
-to
-he de
-rc
-me
-nt li
-ar
-r 
-ic ve
-d,
-su
- M ry
-Ec
-pp
-ed  
-he
-or
-s   
-ck
-t 
-
-   N
- O
- F
- S o 
-nl
-as
-pe pr
-y 
-t 
-ci es
-re
-wo
-al cr
-li
-rl
- i ip
-ab
-dw
-nt ti
-le
-id
-er on
- s
-e 
-ne  r
-up
-sh
-t  eq
-pl
-ip
-pr ui
-ie
-pi
-ic re
-rs
-ng
-es d
-
-		>> Enter Here 
+Sincerely,
+Jan Franklin
+Contact: paddypo-k+cT0dCbe1g@public.gmane.org
