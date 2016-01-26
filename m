@@ -1,11 +1,10 @@
-From: "Jan Franklin" <yenslinor-O5WfVfzUwx8@public.gmane.org>
-Subject: Website and Mobile App Development for your business
-Date: Mon, 25 Jan 2016 17:36:32 +0100
-Message-ID: <5155afd5048fe8d687a759aa57f89e11@chezpim.com>
-Reply-To: shonswee-Dw/NWeUnuQfQT0dZR+AlfA@public.gmane.org
+From: Carl <Peter-pXxnvgB1ebWZuzBka8ofvg@public.gmane.org>
+Subject: =?utf-8?B?Tm93IHlvdSBjYW4gaGF2ZSB0aGUgaGFpciBvZiBhIEhvbGx5d29vZCBzdGFyIQ==?=
+Date: Mon, 25 Jan 2016 19:46:34 -0500
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@angobiz.info>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,54 +18,19 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
-
-Hope this email finds you well.
-
-I am writing today on behalf of Solution Analysts to discuss the Mobile App
-and Website requirement for your business.
-We are the leading experts in desgin and development of Mobile Apps and
-Responsive Website.
-
-Our Mobile and Web Development solutions help the business to grow and
-generate revenue by providing a great user experience to customers.
-
-Web, eCommerce & Mobile App Development offerings:
-
-1.	Mobile App For Native Platforms: iOS, iPhone, Swift, Android
-2.	Mobile Apps for Cross Platform: ionic, PhoneGap
-3.	Website Development Services: PHP, Laravel, Wordpress , Codeigniter.
-4.	eCommerce/ Online Store Development: Magento, Prestashop, Drupal,
-WooCommerce, Bigcommerce
-
-Now we have expertise in iBeacon App Development for retailers, curators,
-event organizers and
-business owners to share news, information, stories, or interactive events
-with target consumers nearby.
-
-A Short Brief about our experience, solutions delivered and global
-presence:
-
--	Delivering Web & Mobile Apps Since 2011
--	287+ Web & Mobile Apps Delivered
--	100% quality assurance & satisfaction
--	Team of 90+ Professional Developers, Designers & Experts
--	Agile methods for speed to market
--	24x7 Customer support
--	Flexible pricing packages
-
-If you want to create a new website or mobile application, or refurbish an
-existing website or application,
-we have expertise of the latest technologies and can advise you for the
-best solutions for your business.
-
-Our team of developers and programmers have latest updates on technologies
-and the IT best practices.
-We will design customized solutions that will render optimum ROI to your
-business.
-
-Awaiting  your quick response.
-
-Sincerely,
-Jan Franklin
-Contact: paddypo-k+cT0dCbe1g@public.gmane.org
+SGF2ZSB5b3UgZXZlciB3b25kZXIgaG93IHlvdSBjYW4gb2J0YWluIHRoZSBzYW1lIApmYW50YXN0
+aWMgaGFpciB3ZSBzZWUgYXQgdGhvc2UgSG9sbHl3b29kIHN0YXJzPwoKPT0+IGh0dHA6Ly9jbGlj
+ay5hbmdvYml6LmluZm8vaW5kZXgucGhwP2lkPTg4NjkwNjcmYT00MTI2MCZiPTE1MDYmYz0xNjYK
+Ckl04oCZcyBub3QgYSBzZWNyZXQgYW5kIGl0cyBhY3R1YWxseSB1c2VkIGJ5IHBlb3BsZSBhcm91
+bmQgdGhlIHdvcmxkLiAKWW91IGNhbiByZWdhaW4gdGhlIGhlYWx0aHkgaGFpciB5b3UgaGFkIGJl
+Zm9yZS4gCgpTZWUgaGVyZSB0aGUgc2VjcmV0ISAKCj09PiBodHRwOi8vY2xpY2suYW5nb2Jpei5p
+bmZvL2luZGV4LnBocD9pZD04ODY5MDY3JmE9NDEyNjAmYj0xNTA2JmM9MTY2CgoKCgoKCgoKCgoK
+CgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCk91ciBh
+ZGRyZXNzIGlzIFByb3ZpZGVuY2UgMTUxMiwgQnJpdGlzaCBWaXJnaW4gSXNsYW5kcywgCklmIHlv
+dSBkbyBub3Qgd2lzaCB0byByZWNlaXZlIGZ1dHVyZSBlbWFpbCwgY2xpY2sgaGVyZS4KaHR0cDov
+L2NsaWNrLmFuZ29iaXouaW5mby9pbmRleC5waHA/bz0yJmE9NDEyNjAmYj0xNTA2JmM9MTY2CihZ
+b3UgY2FuIGFsc28gc2VuZCB5b3VyIHJlcXVlc3QgdG8gQ3VzdG9tZXIgQ2FyZSBhdCB0aGUgc3Ry
+ZWV0IGFkZHJlc3MgYWJvdmUuKSAKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51
+eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1h
+bi9saXN0aW5mby9jb250YWluZXJz
