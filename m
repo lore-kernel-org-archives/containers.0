@@ -1,10 +1,11 @@
-From: Carl <Peter-pXxnvgB1ebWZuzBka8ofvg@public.gmane.org>
-Subject: =?utf-8?B?Tm93IHlvdSBjYW4gaGF2ZSB0aGUgaGFpciBvZiBhIEhvbGx5d29vZCBzdGFyIQ==?=
-Date: Mon, 25 Jan 2016 19:46:34 -0500
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@angobiz.info>
+From: Interfax Online via Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: You have received a new fax, document 0000762836
+Date: Thu, 28 Jan 2016 13:40:11 +0100
+Message-ID: <eb1aeaa0e42990a394b6c0e2e4908914@interfax.net>
+Reply-To: Interfax Online <incoming-wwpBGFb64evk1uMJSBkQmQ@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: multipart/mixed; boundary="b1_5ed47ea03bd4cd611c93ba6016a8682f"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,19 +19,32 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SGF2ZSB5b3UgZXZlciB3b25kZXIgaG93IHlvdSBjYW4gb2J0YWluIHRoZSBzYW1lIApmYW50YXN0
-aWMgaGFpciB3ZSBzZWUgYXQgdGhvc2UgSG9sbHl3b29kIHN0YXJzPwoKPT0+IGh0dHA6Ly9jbGlj
-ay5hbmdvYml6LmluZm8vaW5kZXgucGhwP2lkPTg4NjkwNjcmYT00MTI2MCZiPTE1MDYmYz0xNjYK
-Ckl04oCZcyBub3QgYSBzZWNyZXQgYW5kIGl0cyBhY3R1YWxseSB1c2VkIGJ5IHBlb3BsZSBhcm91
-bmQgdGhlIHdvcmxkLiAKWW91IGNhbiByZWdhaW4gdGhlIGhlYWx0aHkgaGFpciB5b3UgaGFkIGJl
-Zm9yZS4gCgpTZWUgaGVyZSB0aGUgc2VjcmV0ISAKCj09PiBodHRwOi8vY2xpY2suYW5nb2Jpei5p
-bmZvL2luZGV4LnBocD9pZD04ODY5MDY3JmE9NDEyNjAmYj0xNTA2JmM9MTY2CgoKCgoKCgoKCgoK
-CgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCk91ciBh
-ZGRyZXNzIGlzIFByb3ZpZGVuY2UgMTUxMiwgQnJpdGlzaCBWaXJnaW4gSXNsYW5kcywgCklmIHlv
-dSBkbyBub3Qgd2lzaCB0byByZWNlaXZlIGZ1dHVyZSBlbWFpbCwgY2xpY2sgaGVyZS4KaHR0cDov
-L2NsaWNrLmFuZ29iaXouaW5mby9pbmRleC5waHA/bz0yJmE9NDEyNjAmYj0xNTA2JmM9MTY2CihZ
-b3UgY2FuIGFsc28gc2VuZCB5b3VyIHJlcXVlc3QgdG8gQ3VzdG9tZXIgQ2FyZSBhdCB0aGUgc3Ry
-ZWV0IGFkZHJlc3MgYWJvdmUuKSAKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51
-eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1h
-bi9saXN0aW5mby9jb250YWluZXJz
+--b1_5ed47ea03bd4cd611c93ba6016a8682f
+Content-Type: text/plain; charset=us-ascii
+
+New incoming fax document.
+
+Scanned fax document is attached to this email.
+
+Scan time:       19 seconds
+Fax name:        fax.0000762836.doc
+Scanned by:      Johnny Garner
+File size:       124 Kb
+Scanned at:      Thu, 28 Jan 2016 09:39:35 +0300
+Scan quality:    500 DPI
+Pages number:    12
+
+Thank you for using Interfax!
+
+
+--b1_5ed47ea03bd4cd611c93ba6016a8682f
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--b1_5ed47ea03bd4cd611c93ba6016a8682f--
