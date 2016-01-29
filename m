@@ -1,7 +1,7 @@
 From: serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 2/8] sched: new clone flag CLONE_NEWCGROUP for cgroup namespace
-Date: Fri, 29 Jan 2016 02:54:05 -0600
-Message-ID: <1454057651-23959-3-git-send-email-serge.hallyn__36771.5553068139$1454057670$gmane$org@ubuntu.com>
+Subject: [PATCH 4/8] cgroup: cgroup namespace setns support
+Date: Fri, 29 Jan 2016 02:54:07 -0600
+Message-ID: <1454057651-23959-5-git-send-email-serge.hallyn@ubuntu.com>
 References: <1454057651-23959-1-git-send-email-serge.hallyn@ubuntu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,27 +23,49 @@ List-Id: containers.vger.kernel.org
 
 From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
-CLONE_NEWCGROUP will be used to create new cgroup namespace.
+setns on a cgroup namespace is allowed only if
+task has CAP_SYS_ADMIN in its current user-namespace and
+over the user-namespace associated with target cgroupns.
+No implicit cgroup changes happen with attaching to another
+cgroupns. It is expected that the somone moves the attaching
+process under the target cgroupns-root.
 
 Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 ---
- include/uapi/linux/sched.h |    3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ kernel/cgroup.c |   19 ++++++++++++++++---
+ 1 file changed, 16 insertions(+), 3 deletions(-)
 
-diff --git a/include/uapi/linux/sched.h b/include/uapi/linux/sched.h
-index cc89dde..5f0fe01 100644
---- a/include/uapi/linux/sched.h
-+++ b/include/uapi/linux/sched.h
-@@ -21,8 +21,7 @@
- #define CLONE_DETACHED		0x00400000	/* Unused, ignored */
- #define CLONE_UNTRACED		0x00800000	/* set if the tracing process can't force CLONE_PTRACE on this clone */
- #define CLONE_CHILD_SETTID	0x01000000	/* set the TID in the child */
--/* 0x02000000 was previously the unused CLONE_STOPPED (Start in stopped state)
--   and is now available for re-use. */
-+#define CLONE_NEWCGROUP		0x02000000	/* New cgroup namespace */
- #define CLONE_NEWUTS		0x04000000	/* New utsname namespace */
- #define CLONE_NEWIPC		0x08000000	/* New ipc namespace */
- #define CLONE_NEWUSER		0x10000000	/* New user namespace */
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index d828e1f..96e3dab 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -6004,10 +6004,23 @@ static inline struct cgroup_namespace *to_cg_ns(struct ns_common *ns)
+ 	return container_of(ns, struct cgroup_namespace, ns);
+ }
+ 
+-static int cgroupns_install(struct nsproxy *nsproxy, void *ns)
++static int cgroupns_install(struct nsproxy *nsproxy, struct ns_common *ns)
+ {
+-	pr_info("setns not supported for cgroup namespace");
+-	return -EINVAL;
++	struct cgroup_namespace *cgroup_ns = to_cg_ns(ns);
++
++	if (!ns_capable(current_user_ns(), CAP_SYS_ADMIN) ||
++	    !ns_capable(cgroup_ns->user_ns, CAP_SYS_ADMIN))
++		return -EPERM;
++
++	/* Don't need to do anything if we are attaching to our own cgroupns. */
++	if (cgroup_ns == nsproxy->cgroup_ns)
++		return 0;
++
++	get_cgroup_ns(cgroup_ns);
++	put_cgroup_ns(nsproxy->cgroup_ns);
++	nsproxy->cgroup_ns = cgroup_ns;
++
++	return 0;
+ }
+ 
+ static struct ns_common *cgroupns_get(struct task_struct *task)
 -- 
 1.7.9.5
