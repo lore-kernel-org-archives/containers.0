@@ -1,7 +1,7 @@
 From: serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 1/8] kernfs: Add API to generate relative kernfs path
-Date: Fri, 29 Jan 2016 02:54:04 -0600
-Message-ID: <1454057651-23959-2-git-send-email-serge.hallyn__3065.92849451608$1454057688$gmane$org@ubuntu.com>
+Subject: [PATCH 3/8] cgroup: introduce cgroup namespaces
+Date: Fri, 29 Jan 2016 02:54:06 -0600
+Message-ID: <1454057651-23959-4-git-send-email-serge.hallyn__13180.1067189828$1454057690$gmane$org@ubuntu.com>
 References: <1454057651-23959-1-git-send-email-serge.hallyn@ubuntu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,304 +23,536 @@ List-Id: containers.vger.kernel.org
 
 From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
-The new function kernfs_path_from_node() generates and returns kernfs
-path of a given kernfs_node relative to a given parent kernfs_node.
+Introduce the ability to create new cgroup namespace. The newly created
+cgroup namespace remembers the cgroup of the process at the point
+of creation of the cgroup namespace (referred as cgroupns-root).
+The main purpose of cgroup namespace is to virtualize the contents
+of /proc/self/cgroup file. Processes inside a cgroup namespace
+are only able to see paths relative to their namespace root
+(unless they are moved outside of their cgroupns-root, at which point
+ they will see a relative path from their cgroupns-root).
+For a correctly setup container this enables container-tools
+(like libcontainer, lxc, lmctfy, etc.) to create completely virtualized
+containers without leaking system level cgroup hierarchy to the task.
+This patch only implements the 'unshare' part of the cgroupns.
 
 Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Serge E. Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Acked-by: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>
+Signed-off-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 ---
-Changelog 20151125:
-  - Fully-wing multilinecomments
-  - Rework kernfs_path_from_node_locked() logic
-  - Replace BUG_ONs with returning NULL
-  - Use a const char* for /.. and precalculate its size
-Changelog 20151130:
-  - Update kernfs_path_from_node_locked comment
-Changelog 20151208:
-  - kernfs_node_distance:
-    * Remove BUG_ON(NULL)s
-    * Rename kernfs_node_distance to kernfs_depth
-  - kernfs_common-ancestor:
-    * Remove useless checks for depth == 0
-    * Add check to ensure nodes are from same root
-  - kernfs_path_from_node_locked:
-    * Remove needless __must_check
-    * Put p;len on its own decl line.
-    * Fix wrong WARN_ONCE usage
-Changelog 20151209:
-  - kernfs_path_from_node: change arguments to 'to' and 'from', and
-    change their order.
-Changelog 20151222:
-  - kernfs_path_from_node{,_locked}: return the string length.
-    kernfs_path is gpl-exported, so changing their return value seemed
-    ill-advised, but if noone minds I can update it too.
-Changelog 20151223:
-  - don't allocate memory pr_cont_kernfs_path() under spinlock
+Changelog: 2015-11-24
+	- move cgroup_namespace.c into cgroup.c (and .h)
+	- reformatting
+	- make get_cgroup_ns return void
+	- rename ns->root_cgrps to root_cset.
+Changelog: 2015-12-08
+	- Move init_cgroup_ns to other variable declarations
+	- Remove accidental conversion of put-css_set to inline
+	- Drop BUG_ON(NULL)
+	- Remove unneeded pre declaration of struct cgroupns_operations.
+	- cgroup.h: collect common ns declerations
+Changelog: 2015-12-09
+	- cgroup.h: move ns declarations to bottom
+	- cgroup.c: undo all accidental conversions to inline
+Changelog: 2015-12-22
+	- update for new kernfs_path_from_node() return value.  Since
+	  cgroup_path was already gpl-exported, I abstained from updating
+	  its return value.
+Changelog: 2015-12-23
+	- cgroup_path(): use init_cgroup_ns when in interupt context.
+Changelog: 2015-01-02
+	- move to_cg_ns definition forward in patch series
+	- cgroup_release_agent: grab css_set_lock around cgroup_path()
+	- leave cgroup_path non-namespaced, use cgroup_path_ns when
+	  namespaced path is desired.
+Changelog: 2015-01-04
+	- cgroup_path: continue to use kernfs_path.  Since cgroup_path is
+	  non-namespaced, use the old version.
+	- make cgroup_path_ns_locked() static.
+Changelog: 2015-01-05
+	- don't namespace the path printed in debugfs.
+Changelog: 2015-01-27
+	- remove unneeded NULL check before put_cgroup_ns()
+Changelog: 2015-01-28
+	- lock around task_css_set in copy_cgroup_ns, and don't
+	  take rcu lock arounc copy_cgroup_ns call in cpuset.
 ---
- fs/kernfs/dir.c        |  192 ++++++++++++++++++++++++++++++++++++++++--------
- include/linux/kernfs.h |    9 ++-
- 2 files changed, 166 insertions(+), 35 deletions(-)
+ fs/proc/namespaces.c    |    3 +
+ include/linux/cgroup.h  |   49 +++++++++++++
+ include/linux/nsproxy.h |    2 +
+ include/linux/proc_ns.h |    4 ++
+ kernel/cgroup.c         |  176 ++++++++++++++++++++++++++++++++++++++++++++++-
+ kernel/cpuset.c         |    8 +--
+ kernel/fork.c           |    2 +-
+ kernel/nsproxy.c        |   19 ++++-
+ 8 files changed, 253 insertions(+), 10 deletions(-)
 
-diff --git a/fs/kernfs/dir.c b/fs/kernfs/dir.c
-index 996b774..38fa03a 100644
---- a/fs/kernfs/dir.c
-+++ b/fs/kernfs/dir.c
-@@ -44,28 +44,123 @@ static int kernfs_name_locked(struct kernfs_node *kn, char *buf, size_t buflen)
- 	return strlcpy(buf, kn->parent ? kn->name : "/", buflen);
- }
+diff --git a/fs/proc/namespaces.c b/fs/proc/namespaces.c
+index 276f124..72cb26f 100644
+--- a/fs/proc/namespaces.c
++++ b/fs/proc/namespaces.c
+@@ -28,6 +28,9 @@ static const struct proc_ns_operations *ns_entries[] = {
+ 	&userns_operations,
+ #endif
+ 	&mntns_operations,
++#ifdef CONFIG_CGROUPS
++	&cgroupns_operations,
++#endif
+ };
  
--static char * __must_check kernfs_path_locked(struct kernfs_node *kn, char *buf,
--					      size_t buflen)
-+/* kernfs_node_depth - compute depth from @from to @to */
-+static size_t kernfs_depth(struct kernfs_node *from, struct kernfs_node *to)
- {
--	char *p = buf + buflen;
--	int len;
-+	size_t depth = 0;
+ static const char *proc_ns_get_link(struct dentry *dentry,
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 2162dca..1773af0 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -17,6 +17,11 @@
+ #include <linux/seq_file.h>
+ #include <linux/kernfs.h>
+ #include <linux/jump_label.h>
++#include <linux/nsproxy.h>
++#include <linux/types.h>
++#include <linux/ns_common.h>
++#include <linux/nsproxy.h>
++#include <linux/user_namespace.h>
  
--	*--p = '\0';
-+	while (to->parent && to != from) {
-+		depth++;
-+		to = to->parent;
-+	}
-+	return depth;
-+}
+ #include <linux/cgroup-defs.h>
  
--	do {
--		len = strlen(kn->name);
--		if (p - buf < len + 1) {
--			buf[0] = '\0';
--			p = NULL;
--			break;
--		}
--		p -= len;
--		memcpy(p, kn->name, len);
--		*--p = '/';
--		kn = kn->parent;
--	} while (kn && kn->parent);
-+static struct kernfs_node *kernfs_common_ancestor(struct kernfs_node *a,
-+						  struct kernfs_node *b)
+@@ -611,4 +616,48 @@ static inline void cgroup_sk_free(struct sock_cgroup_data *skcd) {}
+ 
+ #endif	/* CONFIG_CGROUP_DATA */
+ 
++struct cgroup_namespace {
++	atomic_t		count;
++	struct ns_common	ns;
++	struct user_namespace	*user_ns;
++	struct css_set          *root_cset;
++};
++
++extern struct cgroup_namespace init_cgroup_ns;
++
++#ifdef CONFIG_CGROUPS
++
++void free_cgroup_ns(struct cgroup_namespace *ns);
++
++struct cgroup_namespace *
++copy_cgroup_ns(unsigned long flags, struct user_namespace *user_ns,
++	       struct cgroup_namespace *old_ns);
++
++char *cgroup_path_ns(struct cgroup *cgrp, char *buf, size_t buflen,
++		     struct cgroup_namespace *ns);
++
++#else /* !CONFIG_CGROUPS */
++
++static inline void free_cgroup_ns(struct cgroup_namespace *ns) { }
++static inline struct cgroup_namespace *
++copy_cgroup_ns(unsigned long flags, struct user_namespace *user_ns,
++	       struct cgroup_namespace *old_ns)
 +{
-+	size_t da, db;
-+	struct kernfs_root *ra = kernfs_root(a), *rb = kernfs_root(b);
- 
--	return p;
-+	if (ra != rb)
-+		return NULL;
-+
-+	da = kernfs_depth(ra->kn, a);
-+	db = kernfs_depth(rb->kn, b);
-+
-+	while (da > db) {
-+		a = a->parent;
-+		da--;
-+	}
-+	while (db > da) {
-+		b = b->parent;
-+		db--;
-+	}
-+
-+	/* worst case b and a will be the same at root */
-+	while (b != a) {
-+		b = b->parent;
-+		a = a->parent;
-+	}
-+
-+	return a;
++	return old_ns;
 +}
 +
-+/**
-+ * kernfs_path_from_node_locked - find a pseudo-absolute path to @kn_to,
-+ * where kn_from is treated as root of the path.
-+ * @kn_from: kernfs node which should be treated as root for the path
-+ * @kn_to: kernfs node to which path is needed
-+ * @buf: buffer to copy the path into
-+ * @buflen: size of @buf
-+ *
-+ * We need to handle couple of scenarios here:
-+ * [1] when @kn_from is an ancestor of @kn_to at some level
-+ * kn_from: /n1/n2/n3
-+ * kn_to:   /n1/n2/n3/n4/n5
-+ * result:  /n4/n5
-+ *
-+ * [2] when @kn_from is on a different hierarchy and we need to find common
-+ * ancestor between @kn_from and @kn_to.
-+ * kn_from: /n1/n2/n3/n4
-+ * kn_to:   /n1/n2/n5
-+ * result:  /../../n5
-+ * OR
-+ * kn_from: /n1/n2/n3/n4/n5   [depth=5]
-+ * kn_to:   /n1/n2/n3         [depth=3]
-+ * result:  /../..
-+ *
-+ * return value: length of the string.  If greater than buflen,
-+ * then contents of buf are undefined.  On error, -1 is returned.
-+ */
-+static int
-+kernfs_path_from_node_locked(struct kernfs_node *kn_to,
-+			     struct kernfs_node *kn_from, char *buf,
-+			     size_t buflen)
++#endif /* !CONFIG_CGROUPS */
++
++static inline void get_cgroup_ns(struct cgroup_namespace *ns)
 +{
-+	struct kernfs_node *kn, *common;
-+	const char parent_str[] = "/..";
-+	size_t depth_from, depth_to, len = 0, nlen = 0;
-+	char *p;
-+	int i;
++	if (ns)
++		atomic_inc(&ns->count);
++}
 +
-+	if (!kn_from)
-+		kn_from = kernfs_root(kn_to)->kn;
-+
-+	if (kn_from == kn_to)
-+		return strlcpy(buf, "/", buflen);
-+
-+	common = kernfs_common_ancestor(kn_from, kn_to);
-+	if (WARN_ON(!common))
-+		return -1;
-+
-+	depth_to = kernfs_depth(common, kn_to);
-+	depth_from = kernfs_depth(common, kn_from);
-+
-+	if (buf)
-+		buf[0] = '\0';
-+
-+	for (i = 0; i < depth_from; i++)
-+		len += strlcpy(buf + len, parent_str,
-+			       len < buflen ? buflen - len : 0);
-+
-+	/* Calculate how many bytes we need for the rest */
-+	for (kn = kn_to; kn != common; kn = kn->parent)
-+		nlen += strlen(kn->name) + 1;
-+
-+	if (len + nlen >= buflen)
-+		return len + nlen;
-+
-+	p = buf + len + nlen;
-+	*p = '\0';
-+	for (kn = kn_to; kn != common; kn = kn->parent) {
-+		nlen = strlen(kn->name);
-+		p -= nlen;
-+		memcpy(p, kn->name, nlen);
-+		*(--p) = '/';
-+	}
-+
-+	return len + nlen;
- }
- 
- /**
-@@ -115,6 +210,34 @@ size_t kernfs_path_len(struct kernfs_node *kn)
- }
- 
- /**
-+ * kernfs_path_from_node - build path of node @to relative to @from.
-+ * @from: parent kernfs_node relative to which we need to build the path
-+ * @to: kernfs_node of interest
-+ * @buf: buffer to copy @to's path into
-+ * @buflen: size of @buf
-+ *
-+ * Builds @to's path relative to @from in @buf. @from and @to must
-+ * be on the same kernfs-root. If @from is not parent of @to, then a relative
-+ * path (which includes '..'s) as needed to reach from @from to @to is
-+ * returned.
-+ *
-+ * If @buf isn't long enough, the return value will be greater than @buflen
-+ * and @buf contents are undefined.
-+ */
-+int kernfs_path_from_node(struct kernfs_node *to, struct kernfs_node *from,
-+			  char *buf, size_t buflen)
++static inline void put_cgroup_ns(struct cgroup_namespace *ns)
 +{
-+	unsigned long flags;
++	if (ns && atomic_dec_and_test(&ns->count))
++		free_cgroup_ns(ns);
++}
++
+ #endif /* _LINUX_CGROUP_H */
+diff --git a/include/linux/nsproxy.h b/include/linux/nsproxy.h
+index 35fa08f..ac0d65b 100644
+--- a/include/linux/nsproxy.h
++++ b/include/linux/nsproxy.h
+@@ -8,6 +8,7 @@ struct mnt_namespace;
+ struct uts_namespace;
+ struct ipc_namespace;
+ struct pid_namespace;
++struct cgroup_namespace;
+ struct fs_struct;
+ 
+ /*
+@@ -33,6 +34,7 @@ struct nsproxy {
+ 	struct mnt_namespace *mnt_ns;
+ 	struct pid_namespace *pid_ns_for_children;
+ 	struct net 	     *net_ns;
++	struct cgroup_namespace *cgroup_ns;
+ };
+ extern struct nsproxy init_nsproxy;
+ 
+diff --git a/include/linux/proc_ns.h b/include/linux/proc_ns.h
+index 42dfc61..de0e771 100644
+--- a/include/linux/proc_ns.h
++++ b/include/linux/proc_ns.h
+@@ -9,6 +9,8 @@
+ struct pid_namespace;
+ struct nsproxy;
+ struct path;
++struct task_struct;
++struct inode;
+ 
+ struct proc_ns_operations {
+ 	const char *name;
+@@ -24,6 +26,7 @@ extern const struct proc_ns_operations ipcns_operations;
+ extern const struct proc_ns_operations pidns_operations;
+ extern const struct proc_ns_operations userns_operations;
+ extern const struct proc_ns_operations mntns_operations;
++extern const struct proc_ns_operations cgroupns_operations;
+ 
+ /*
+  * We always define these enumerators
+@@ -34,6 +37,7 @@ enum {
+ 	PROC_UTS_INIT_INO	= 0xEFFFFFFEU,
+ 	PROC_USER_INIT_INO	= 0xEFFFFFFDU,
+ 	PROC_PID_INIT_INO	= 0xEFFFFFFCU,
++	PROC_CGROUP_INIT_INO	= 0xEFFFFFFBU,
+ };
+ 
+ #ifdef CONFIG_PROC_FS
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index c03a640..d828e1f 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -58,6 +58,9 @@
+ #include <linux/kthread.h>
+ #include <linux/delay.h>
+ #include <linux/atomic.h>
++#include <linux/proc_ns.h>
++#include <linux/nsproxy.h>
++#include <linux/proc_ns.h>
+ #include <net/sock.h>
+ 
+ /*
+@@ -208,6 +211,15 @@ static unsigned long have_fork_callback __read_mostly;
+ static unsigned long have_exit_callback __read_mostly;
+ static unsigned long have_free_callback __read_mostly;
+ 
++/* Cgroup namespace for init task */
++struct cgroup_namespace init_cgroup_ns = {
++	.count		= { .counter = 2, },
++	.user_ns	= &init_user_ns,
++	.ns.ops		= &cgroupns_operations,
++	.ns.inum	= PROC_CGROUP_INIT_INO,
++	.root_cset	= &init_css_set,
++};
++
+ /* Ditto for the can_fork callback. */
+ static unsigned long have_canfork_callback __read_mostly;
+ 
+@@ -2166,6 +2178,36 @@ static struct file_system_type cgroup2_fs_type = {
+ 	.kill_sb = cgroup_kill_sb,
+ };
+ 
++static char *
++cgroup_path_ns_locked(struct cgroup *cgrp, char *buf, size_t buflen,
++		      struct cgroup_namespace *ns)
++{
 +	int ret;
++	struct cgroup *root = cset_cgroup_from_root(ns->root_cset, cgrp->root);
 +
-+	spin_lock_irqsave(&kernfs_rename_lock, flags);
-+	ret = kernfs_path_from_node_locked(to, from, buf, buflen);
-+	spin_unlock_irqrestore(&kernfs_rename_lock, flags);
-+	return ret;
-+}
-+EXPORT_SYMBOL_GPL(kernfs_path_from_node);
-+
-+/**
-  * kernfs_path - build full path of a given node
-  * @kn: kernfs_node of interest
-  * @buf: buffer to copy @kn's name into
-@@ -127,13 +250,12 @@ size_t kernfs_path_len(struct kernfs_node *kn)
-  */
- char *kernfs_path(struct kernfs_node *kn, char *buf, size_t buflen)
- {
--	unsigned long flags;
--	char *p;
-+	int ret;
- 
--	spin_lock_irqsave(&kernfs_rename_lock, flags);
--	p = kernfs_path_locked(kn, buf, buflen);
--	spin_unlock_irqrestore(&kernfs_rename_lock, flags);
--	return p;
-+	ret = kernfs_path_from_node(kn, NULL, buf, buflen);
++	ret = kernfs_path_from_node(cgrp->kn, root->kn, buf, buflen);
 +	if (ret < 0 || ret >= buflen)
 +		return NULL;
 +	return buf;
- }
- EXPORT_SYMBOL_GPL(kernfs_path);
++}
++
++char *cgroup_path_ns(struct cgroup *cgrp, char *buf, size_t buflen,
++		     struct cgroup_namespace *ns)
++{
++	char *ret;
++
++	mutex_lock(&cgroup_mutex);
++	spin_lock_bh(&css_set_lock);
++
++	ret = cgroup_path_ns_locked(cgrp, buf, buflen, ns);
++
++	spin_unlock_bh(&css_set_lock);
++	mutex_unlock(&cgroup_mutex);
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(cgroup_path_ns);
++
+ /**
+  * task_cgroup_path - cgroup path of a task in the first cgroup hierarchy
+  * @task: target task
+@@ -2193,7 +2235,8 @@ char *task_cgroup_path(struct task_struct *task, char *buf, size_t buflen)
  
-@@ -164,17 +286,25 @@ void pr_cont_kernfs_name(struct kernfs_node *kn)
- void pr_cont_kernfs_path(struct kernfs_node *kn)
- {
- 	unsigned long flags;
--	char *p;
-+	int sz;
+ 	if (root) {
+ 		cgrp = task_cgroup_from_root(task, root);
+-		path = cgroup_path(cgrp, buf, buflen);
++		path = cgroup_path_ns_locked(cgrp, buf, buflen,
++					     &init_cgroup_ns);
+ 	} else {
+ 		/* if no hierarchy exists, everyone is in "/" */
+ 		if (strlcpy(buf, "/", buflen) < buflen)
+@@ -5272,6 +5315,8 @@ int __init cgroup_init(void)
+ 	BUG_ON(cgroup_init_cftypes(NULL, cgroup_dfl_base_files));
+ 	BUG_ON(cgroup_init_cftypes(NULL, cgroup_legacy_base_files));
  
- 	spin_lock_irqsave(&kernfs_rename_lock, flags);
++	get_user_ns(init_cgroup_ns.user_ns);
++
+ 	mutex_lock(&cgroup_mutex);
  
--	p = kernfs_path_locked(kn, kernfs_pr_cont_buf,
--			       sizeof(kernfs_pr_cont_buf));
--	if (p)
--		pr_cont("%s", p);
--	else
--		pr_cont("<name too long>");
-+	sz = kernfs_path_from_node_locked(kn, NULL, kernfs_pr_cont_buf,
-+					  sizeof(kernfs_pr_cont_buf));
-+	if (sz < 0) {
-+		pr_cont("(error)");
-+		goto out;
+ 	/* Add init_css_set to the hash table */
+@@ -5409,7 +5454,8 @@ int proc_cgroup_show(struct seq_file *m, struct pid_namespace *ns,
+ 		 * " (deleted)" is appended to the cgroup path.
+ 		 */
+ 		if (cgroup_on_dfl(cgrp) || !(tsk->flags & PF_EXITING)) {
+-			path = cgroup_path(cgrp, buf, PATH_MAX);
++			path = cgroup_path_ns_locked(cgrp, buf, PATH_MAX,
++						     current->nsproxy->cgroup_ns);
+ 			if (!path) {
+ 				retval = -ENAMETOOLONG;
+ 				goto out_unlock;
+@@ -5691,7 +5737,10 @@ static void cgroup_release_agent(struct work_struct *work)
+ 	if (!pathbuf || !agentbuf)
+ 		goto out;
+ 
+-	path = cgroup_path(cgrp, pathbuf, PATH_MAX);
++	spin_lock_bh(&css_set_lock);
++	path = cgroup_path_ns_locked(cgrp, pathbuf, PATH_MAX,
++				     &init_cgroup_ns);
++	spin_unlock_bh(&css_set_lock);
+ 	if (!path)
+ 		goto out;
+ 
+@@ -5875,6 +5924,127 @@ void cgroup_sk_free(struct sock_cgroup_data *skcd)
+ 
+ #endif	/* CONFIG_SOCK_CGROUP_DATA */
+ 
++/* cgroup namespaces */
++
++static struct cgroup_namespace *alloc_cgroup_ns(void)
++{
++	struct cgroup_namespace *new_ns;
++	int ret;
++
++	new_ns = kzalloc(sizeof(struct cgroup_namespace), GFP_KERNEL);
++	if (!new_ns)
++		return ERR_PTR(-ENOMEM);
++	ret = ns_alloc_inum(&new_ns->ns);
++	if (ret) {
++		kfree(new_ns);
++		return ERR_PTR(ret);
++	}
++	atomic_set(&new_ns->count, 1);
++	new_ns->ns.ops = &cgroupns_operations;
++	return new_ns;
++}
++
++void free_cgroup_ns(struct cgroup_namespace *ns)
++{
++	put_css_set(ns->root_cset);
++	put_user_ns(ns->user_ns);
++	ns_free_inum(&ns->ns);
++	kfree(ns);
++}
++EXPORT_SYMBOL(free_cgroup_ns);
++
++struct cgroup_namespace *
++copy_cgroup_ns(unsigned long flags, struct user_namespace *user_ns,
++	       struct cgroup_namespace *old_ns)
++{
++	struct cgroup_namespace *new_ns = NULL;
++	struct css_set *cset = NULL;
++	int err;
++
++	BUG_ON(!old_ns);
++
++	if (!(flags & CLONE_NEWCGROUP)) {
++		get_cgroup_ns(old_ns);
++		return old_ns;
 +	}
 +
-+	if (sz >= sizeof(kernfs_pr_cont_buf)) {
-+		pr_cont("(name too long)");
-+		goto out;
++	/* Allow only sysadmin to create cgroup namespace. */
++	err = -EPERM;
++	if (!ns_capable(user_ns, CAP_SYS_ADMIN))
++		goto err_out;
++
++	mutex_lock(&cgroup_mutex);
++	spin_lock_bh(&css_set_lock);
++
++	cset = task_css_set(current);
++	get_css_set(cset);
++
++	spin_unlock_bh(&css_set_lock);
++	mutex_unlock(&cgroup_mutex);
++
++	err = -ENOMEM;
++	new_ns = alloc_cgroup_ns();
++	if (!new_ns)
++		goto err_out;
++
++	new_ns->user_ns = get_user_ns(user_ns);
++	new_ns->root_cset = cset;
++
++	return new_ns;
++
++err_out:
++	if (cset)
++		put_css_set(cset);
++	kfree(new_ns);
++	return ERR_PTR(err);
++}
++
++static inline struct cgroup_namespace *to_cg_ns(struct ns_common *ns)
++{
++	return container_of(ns, struct cgroup_namespace, ns);
++}
++
++static int cgroupns_install(struct nsproxy *nsproxy, void *ns)
++{
++	pr_info("setns not supported for cgroup namespace");
++	return -EINVAL;
++}
++
++static struct ns_common *cgroupns_get(struct task_struct *task)
++{
++	struct cgroup_namespace *ns = NULL;
++	struct nsproxy *nsproxy;
++
++	task_lock(task);
++	nsproxy = task->nsproxy;
++	if (nsproxy) {
++		ns = nsproxy->cgroup_ns;
++		get_cgroup_ns(ns);
++	}
++	task_unlock(task);
++
++	return ns ? &ns->ns : NULL;
++}
++
++static void cgroupns_put(struct ns_common *ns)
++{
++	put_cgroup_ns(to_cg_ns(ns));
++}
++
++const struct proc_ns_operations cgroupns_operations = {
++	.name		= "cgroup",
++	.type		= CLONE_NEWCGROUP,
++	.get		= cgroupns_get,
++	.put		= cgroupns_put,
++	.install	= cgroupns_install,
++};
++
++static __init int cgroup_namespaces_init(void)
++{
++	return 0;
++}
++subsys_initcall(cgroup_namespaces_init);
++
+ #ifdef CONFIG_CGROUP_DEBUG
+ static struct cgroup_subsys_state *
+ debug_css_alloc(struct cgroup_subsys_state *parent_css)
+diff --git a/kernel/cpuset.c b/kernel/cpuset.c
+index 3e945fc..62d6108 100644
+--- a/kernel/cpuset.c
++++ b/kernel/cpuset.c
+@@ -2687,10 +2687,10 @@ int proc_cpuset_show(struct seq_file *m, struct pid_namespace *ns,
+ 		goto out;
+ 
+ 	retval = -ENAMETOOLONG;
+-	rcu_read_lock();
+-	css = task_css(tsk, cpuset_cgrp_id);
+-	p = cgroup_path(css->cgroup, buf, PATH_MAX);
+-	rcu_read_unlock();
++	css = task_get_css(tsk, cpuset_cgrp_id);
++	p = cgroup_path_ns(css->cgroup, buf, PATH_MAX,
++			   current->nsproxy->cgroup_ns);
++	css_put(css);
+ 	if (!p)
+ 		goto out_free;
+ 	seq_puts(m, p);
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 2e391c7..6611a62 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -1884,7 +1884,7 @@ static int check_unshare_flags(unsigned long unshare_flags)
+ 	if (unshare_flags & ~(CLONE_THREAD|CLONE_FS|CLONE_NEWNS|CLONE_SIGHAND|
+ 				CLONE_VM|CLONE_FILES|CLONE_SYSVSEM|
+ 				CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWNET|
+-				CLONE_NEWUSER|CLONE_NEWPID))
++				CLONE_NEWUSER|CLONE_NEWPID|CLONE_NEWCGROUP))
+ 		return -EINVAL;
+ 	/*
+ 	 * Not implemented, but pretend it works if there is nothing
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index 49746c8..782102e 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -25,6 +25,7 @@
+ #include <linux/proc_ns.h>
+ #include <linux/file.h>
+ #include <linux/syscalls.h>
++#include <linux/cgroup.h>
+ 
+ static struct kmem_cache *nsproxy_cachep;
+ 
+@@ -39,6 +40,9 @@ struct nsproxy init_nsproxy = {
+ #ifdef CONFIG_NET
+ 	.net_ns			= &init_net,
+ #endif
++#ifdef CONFIG_CGROUPS
++	.cgroup_ns		= &init_cgroup_ns,
++#endif
+ };
+ 
+ static inline struct nsproxy *create_nsproxy(void)
+@@ -92,6 +96,13 @@ static struct nsproxy *create_new_namespaces(unsigned long flags,
+ 		goto out_pid;
+ 	}
+ 
++	new_nsp->cgroup_ns = copy_cgroup_ns(flags, user_ns,
++					    tsk->nsproxy->cgroup_ns);
++	if (IS_ERR(new_nsp->cgroup_ns)) {
++		err = PTR_ERR(new_nsp->cgroup_ns);
++		goto out_cgroup;
 +	}
 +
-+	pr_cont("%s", kernfs_pr_cont_buf);
+ 	new_nsp->net_ns = copy_net_ns(flags, user_ns, tsk->nsproxy->net_ns);
+ 	if (IS_ERR(new_nsp->net_ns)) {
+ 		err = PTR_ERR(new_nsp->net_ns);
+@@ -101,6 +112,8 @@ static struct nsproxy *create_new_namespaces(unsigned long flags,
+ 	return new_nsp;
  
-+out:
- 	spin_unlock_irqrestore(&kernfs_rename_lock, flags);
+ out_net:
++	put_cgroup_ns(new_nsp->cgroup_ns);
++out_cgroup:
+ 	if (new_nsp->pid_ns_for_children)
+ 		put_pid_ns(new_nsp->pid_ns_for_children);
+ out_pid:
+@@ -128,7 +141,8 @@ int copy_namespaces(unsigned long flags, struct task_struct *tsk)
+ 	struct nsproxy *new_ns;
+ 
+ 	if (likely(!(flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
+-			      CLONE_NEWPID | CLONE_NEWNET)))) {
++			      CLONE_NEWPID | CLONE_NEWNET |
++			      CLONE_NEWCGROUP)))) {
+ 		get_nsproxy(old_ns);
+ 		return 0;
+ 	}
+@@ -165,6 +179,7 @@ void free_nsproxy(struct nsproxy *ns)
+ 		put_ipc_ns(ns->ipc_ns);
+ 	if (ns->pid_ns_for_children)
+ 		put_pid_ns(ns->pid_ns_for_children);
++	put_cgroup_ns(ns->cgroup_ns);
+ 	put_net(ns->net_ns);
+ 	kmem_cache_free(nsproxy_cachep, ns);
  }
+@@ -180,7 +195,7 @@ int unshare_nsproxy_namespaces(unsigned long unshare_flags,
+ 	int err = 0;
  
-diff --git a/include/linux/kernfs.h b/include/linux/kernfs.h
-index af51df3..716bfde 100644
---- a/include/linux/kernfs.h
-+++ b/include/linux/kernfs.h
-@@ -267,8 +267,9 @@ static inline bool kernfs_ns_enabled(struct kernfs_node *kn)
+ 	if (!(unshare_flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
+-			       CLONE_NEWNET | CLONE_NEWPID)))
++			       CLONE_NEWNET | CLONE_NEWPID | CLONE_NEWCGROUP)))
+ 		return 0;
  
- int kernfs_name(struct kernfs_node *kn, char *buf, size_t buflen);
- size_t kernfs_path_len(struct kernfs_node *kn);
--char * __must_check kernfs_path(struct kernfs_node *kn, char *buf,
--				size_t buflen);
-+int kernfs_path_from_node(struct kernfs_node *root_kn, struct kernfs_node *kn,
-+			  char *buf, size_t buflen);
-+char *kernfs_path(struct kernfs_node *kn, char *buf, size_t buflen);
- void pr_cont_kernfs_name(struct kernfs_node *kn);
- void pr_cont_kernfs_path(struct kernfs_node *kn);
- struct kernfs_node *kernfs_get_parent(struct kernfs_node *kn);
-@@ -338,8 +339,8 @@ static inline int kernfs_name(struct kernfs_node *kn, char *buf, size_t buflen)
- static inline size_t kernfs_path_len(struct kernfs_node *kn)
- { return 0; }
- 
--static inline char * __must_check kernfs_path(struct kernfs_node *kn, char *buf,
--					      size_t buflen)
-+static inline char *kernfs_path(struct kernfs_node *kn, char *buf,
-+				size_t buflen)
- { return NULL; }
- 
- static inline void pr_cont_kernfs_name(struct kernfs_node *kn) { }
+ 	user_ns = new_cred ? new_cred->user_ns : current_user_ns();
 -- 
 1.7.9.5
