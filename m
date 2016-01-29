@@ -1,7 +1,7 @@
 From: serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 8/8] Add FS_USERNS_FLAG to cgroup fs
-Date: Fri, 29 Jan 2016 02:54:11 -0600
-Message-ID: <1454057651-23959-9-git-send-email-serge.hallyn__31907.2703634903$1454057715$gmane$org@ubuntu.com>
+Subject: [PATCH 7/8] cgroup: Add documentation for cgroup namespaces
+Date: Fri, 29 Jan 2016 02:54:10 -0600
+Message-ID: <1454057651-23959-8-git-send-email-serge.hallyn__14115.1713709862$1454057726$gmane$org@ubuntu.com>
 References: <1454057651-23959-1-git-send-email-serge.hallyn@ubuntu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,40 +23,185 @@ List-Id: containers.vger.kernel.org
 
 From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 
-allowing root in a non-init user namespace to mount it.  This should
-now be safe, because
-
-1. non-init-root cannot mount a previously unbound subsystem
-2. the task doing the mount must be privileged with respect to the
-   user namespace owning the cgroup namespace
-3. the mounted subsystem will have its current cgroup as the root dentry.
-   the permissions will be unchanged, so tasks will receive no new
-   privilege over the cgroups which they did not have on the original
-   mounts.
-
+Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
----
- kernel/cgroup.c |    2 ++
- 1 file changed, 2 insertions(+)
+Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 3e04df0..7a58749 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -2216,12 +2216,14 @@ static struct file_system_type cgroup_fs_type = {
- 	.name = "cgroup",
- 	.mount = cgroup_mount,
- 	.kill_sb = cgroup_kill_sb,
-+	.fs_flags = FS_USERNS_MOUNT,
- };
+---
+Changelog (2015-12-08):
+  Merge into Documentation/cgroup.txt
+Changelog (2015-12-22):
+  Reformat to try to follow the style of the rest of the cgroup.txt file.
+Changelog (2015-12-22):
+  tj: Reorganized to better fit the documentation.
+---
+ Documentation/cgroup-v2.txt |  147 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 147 insertions(+)
+
+diff --git a/Documentation/cgroup-v2.txt b/Documentation/cgroup-v2.txt
+index 65b3eac..eee9012 100644
+--- a/Documentation/cgroup-v2.txt
++++ b/Documentation/cgroup-v2.txt
+@@ -47,6 +47,11 @@ CONTENTS
+   5-3. IO
+     5-3-1. IO Interface Files
+     5-3-2. Writeback
++6. Namespace
++  6-1. Basics
++  6-2. The Root and Views
++  6-3. Migration and setns(2)
++  6-4. Interaction with Other Namespaces
+ P. Information on Kernel Programming
+   P-1. Filesystem Support for Writeback
+ D. Deprecated v1 Core Features
+@@ -1085,6 +1090,148 @@ writeback as follows.
+ 	vm.dirty[_background]_ratio.
  
- static struct file_system_type cgroup2_fs_type = {
- 	.name = "cgroup2",
- 	.mount = cgroup_mount,
- 	.kill_sb = cgroup_kill_sb,
-+	.fs_flags = FS_USERNS_MOUNT,
- };
  
- static char *
++6. Namespace
++
++6-1. Basics
++
++cgroup namespace provides a mechanism to virtualize the view of the
++"/proc/$PID/cgroup" file and cgroup mounts.  The CLONE_NEWCGROUP clone
++flag can be used with clone(2) and unshare(2) to create a new cgroup
++namespace.  The process running inside the cgroup namespace will have
++its "/proc/$PID/cgroup" output restricted to cgroupns root.  The
++cgroupns root is the cgroup of the process at the time of creation of
++the cgroup namespace.
++
++Without cgroup namespace, the "/proc/$PID/cgroup" file shows the
++complete path of the cgroup of a process.  In a container setup where
++a set of cgroups and namespaces are intended to isolate processes the
++"/proc/$PID/cgroup" file may leak potential system level information
++to the isolated processes.  For Example:
++
++  # cat /proc/self/cgroup
++  0::/batchjobs/container_id1
++
++The path '/batchjobs/container_id1' can be considered as system-data
++and undesirable to expose to the isolated processes.  cgroup namespace
++can be used to restrict visibility of this path.  For example, before
++creating a cgroup namespace, one would see:
++
++  # ls -l /proc/self/ns/cgroup
++  lrwxrwxrwx 1 root root 0 2014-07-15 10:37 /proc/self/ns/cgroup -> cgroup:[4026531835]
++  # cat /proc/self/cgroup
++  0::/batchjobs/container_id1
++
++After unsharing a new namespace, the view changes.
++
++  # ls -l /proc/self/ns/cgroup
++  lrwxrwxrwx 1 root root 0 2014-07-15 10:35 /proc/self/ns/cgroup -> cgroup:[4026532183]
++  # cat /proc/self/cgroup
++  0::/
++
++When some thread from a multi-threaded process unshares its cgroup
++namespace, the new cgroupns gets applied to the entire process (all
++the threads).  This is natural for the v2 hierarchy; however, for the
++legacy hierarchies, this may be unexpected.
++
++A cgroup namespace is alive as long as there are processes inside or
++mounts pinning it.  When the last usage goes away, the cgroup
++namespace is destroyed.  The cgroupns root and the actual cgroups
++remain.
++
++
++6-2. The Root and Views
++
++The 'cgroupns root' for a cgroup namespace is the cgroup in which the
++process calling unshare(2) is running.  For example, if a process in
++/batchjobs/container_id1 cgroup calls unshare, cgroup
++/batchjobs/container_id1 becomes the cgroupns root.  For the
++init_cgroup_ns, this is the real root ('/') cgroup.
++
++The cgroupns root cgroup does not change even if the namespace creator
++process later moves to a different cgroup.
++
++  # ~/unshare -c # unshare cgroupns in some cgroup
++  # cat /proc/self/cgroup
++  0::/
++  # mkdir sub_cgrp_1
++  # echo 0 > sub_cgrp_1/cgroup.procs
++  # cat /proc/self/cgroup
++  0::/sub_cgrp_1
++
++Each process gets its namespace-specific view of "/proc/$PID/cgroup"
++
++Processes running inside the cgroup namespace will be able to see
++cgroup paths (in /proc/self/cgroup) only inside their root cgroup.
++From within an unshared cgroupns:
++
++  # sleep 100000 &
++  [1] 7353
++  # echo 7353 > sub_cgrp_1/cgroup.procs
++  # cat /proc/7353/cgroup
++  0::/sub_cgrp_1
++
++From the initial cgroup namespace, the real cgroup path will be
++visible:
++
++  $ cat /proc/7353/cgroup
++  0::/batchjobs/container_id1/sub_cgrp_1
++
++From a sibling cgroup namespace (that is, a namespace rooted at a
++different cgroup), the cgroup path relative to its own cgroup
++namespace root will be shown.  For instance, if PID 7353's cgroup
++namespace root is at '/batchjobs/container_id2', then it will see
++
++  # cat /proc/7353/cgroup
++  0::/../container_id2/sub_cgrp_1
++
++Note that the relative path always starts with '/' to indicate that
++its relative to the cgroup namespace root of the caller.
++
++
++6-3. Migration and setns(2)
++
++Processes inside a cgroup namespace can move into and out of the
++namespace root if they have proper access to external cgroups.  For
++example, from inside a namespace with cgroupns root at
++/batchjobs/container_id1, and assuming that the global hierarchy is
++still accessible inside cgroupns:
++
++  # cat /proc/7353/cgroup
++  0::/sub_cgrp_1
++  # echo 7353 > batchjobs/container_id2/cgroup.procs
++  # cat /proc/7353/cgroup
++  0::/../container_id2
++
++Note that this kind of setup is not encouraged.  A task inside cgroup
++namespace should only be exposed to its own cgroupns hierarchy.
++
++setns(2) to another cgroup namespace is allowed when:
++
++(a) the process has CAP_SYS_ADMIN against its current user namespace
++(b) the process has CAP_SYS_ADMIN against the target cgroup
++    namespace's userns
++
++No implicit cgroup changes happen with attaching to another cgroup
++namespace.  It is expected that the someone moves the attaching
++process under the target cgroup namespace root.
++
++
++6-4. Interaction with Other Namespaces
++
++Namespace specific cgroup hierarchy can be mounted by a process
++running inside a non-init cgroup namespace.
++
++  # mount -t cgroup2 none $MOUNT_POINT
++
++This will mount the unified cgroup hierarchy with cgroupns root as the
++filesystem root.  The process needs CAP_SYS_ADMIN against its user and
++mount namespaces.
++
++The virtualization of /proc/self/cgroup file combined with restricting
++the view of cgroup hierarchy by namespace-private cgroupfs mount
++provides a properly isolated cgroup view inside the container.
++
++
+ P. Information on Kernel Programming
+ 
+ This section contains kernel programming information in the areas
 -- 
 1.7.9.5
