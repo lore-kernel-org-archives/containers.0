@@ -1,13 +1,11 @@
-From: serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 7/8] cgroup: Add documentation for cgroup namespaces
-Date: Fri, 29 Jan 2016 02:54:10 -0600
-Message-ID: <1454057651-23959-8-git-send-email-serge.hallyn__14115.1713709862$1454057726$gmane$org@ubuntu.com>
-References: <1454057651-23959-1-git-send-email-serge.hallyn@ubuntu.com>
+From: Tycho Andersen <tycho.andersen-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Subject: [PATCH] openvswitch: allow management from inside user namespaces
+Date: Fri, 29 Jan 2016 14:00:33 +0100
+Message-ID: <1454072433-20137-1-git-send-email-tycho.andersen__40113.8202673339$1454072565$gmane$org@canonical.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1454057651-23959-1-git-send-email-serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,191 +15,251 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Pravin Shelar <pshelar-LZ6Gd1LRuIk@public.gmane.org>, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Eric Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Justin Pettit <jpettit-l0M0P4e3n4LQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Operations with the GENL_ADMIN_PERM flag fail permissions checks because
+this flag means we call netlink_capable, which uses the init user ns.
 
-Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Signed-off-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Instead, let's do permissions checks in each function, but use the netlink
+socket's user ns instead of the initial one, to allow management of
+openvswitch resources from inside a user ns.
 
+The motivation for this is to be able to run openvswitch in unprivileged
+containers. I've tested this and it seems to work, but I really have no
+idea about the security consequences of this patch, so thoughts would be
+much appreciated.
+
+Reported-by: James Page <james.page-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Signed-off-by: Tycho Andersen <tycho.andersen-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+CC: Eric Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+CC: Pravin Shelar <pshelar-LZ6Gd1LRuIk@public.gmane.org>
+CC: Justin Pettit <jpettit-l0M0P4e3n4LQT0dZR+AlfA@public.gmane.org>
+CC: "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 ---
-Changelog (2015-12-08):
-  Merge into Documentation/cgroup.txt
-Changelog (2015-12-22):
-  Reformat to try to follow the style of the rest of the cgroup.txt file.
-Changelog (2015-12-22):
-  tj: Reorganized to better fit the documentation.
----
- Documentation/cgroup-v2.txt |  147 +++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 147 insertions(+)
+ net/openvswitch/datapath.c | 63 ++++++++++++++++++++++++++++++++++++++--------
+ 1 file changed, 53 insertions(+), 10 deletions(-)
 
-diff --git a/Documentation/cgroup-v2.txt b/Documentation/cgroup-v2.txt
-index 65b3eac..eee9012 100644
---- a/Documentation/cgroup-v2.txt
-+++ b/Documentation/cgroup-v2.txt
-@@ -47,6 +47,11 @@ CONTENTS
-   5-3. IO
-     5-3-1. IO Interface Files
-     5-3-2. Writeback
-+6. Namespace
-+  6-1. Basics
-+  6-2. The Root and Views
-+  6-3. Migration and setns(2)
-+  6-4. Interaction with Other Namespaces
- P. Information on Kernel Programming
-   P-1. Filesystem Support for Writeback
- D. Deprecated v1 Core Features
-@@ -1085,6 +1090,148 @@ writeback as follows.
- 	vm.dirty[_background]_ratio.
+diff --git a/net/openvswitch/datapath.c b/net/openvswitch/datapath.c
+index deadfda..aacfb11 100644
+--- a/net/openvswitch/datapath.c
++++ b/net/openvswitch/datapath.c
+@@ -557,6 +557,10 @@ static int ovs_packet_cmd_execute(struct sk_buff *skb, struct genl_info *info)
+ 	int err;
+ 	bool log = !a[OVS_PACKET_ATTR_PROBE];
  
++	err = -EPERM;
++	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
++		goto err;
++
+ 	err = -EINVAL;
+ 	if (!a[OVS_PACKET_ATTR_PACKET] || !a[OVS_PACKET_ATTR_KEY] ||
+ 	    !a[OVS_PACKET_ATTR_ACTIONS])
+@@ -654,7 +658,7 @@ static const struct nla_policy packet_policy[OVS_PACKET_ATTR_MAX + 1] = {
  
-+6. Namespace
-+
-+6-1. Basics
-+
-+cgroup namespace provides a mechanism to virtualize the view of the
-+"/proc/$PID/cgroup" file and cgroup mounts.  The CLONE_NEWCGROUP clone
-+flag can be used with clone(2) and unshare(2) to create a new cgroup
-+namespace.  The process running inside the cgroup namespace will have
-+its "/proc/$PID/cgroup" output restricted to cgroupns root.  The
-+cgroupns root is the cgroup of the process at the time of creation of
-+the cgroup namespace.
-+
-+Without cgroup namespace, the "/proc/$PID/cgroup" file shows the
-+complete path of the cgroup of a process.  In a container setup where
-+a set of cgroups and namespaces are intended to isolate processes the
-+"/proc/$PID/cgroup" file may leak potential system level information
-+to the isolated processes.  For Example:
-+
-+  # cat /proc/self/cgroup
-+  0::/batchjobs/container_id1
-+
-+The path '/batchjobs/container_id1' can be considered as system-data
-+and undesirable to expose to the isolated processes.  cgroup namespace
-+can be used to restrict visibility of this path.  For example, before
-+creating a cgroup namespace, one would see:
-+
-+  # ls -l /proc/self/ns/cgroup
-+  lrwxrwxrwx 1 root root 0 2014-07-15 10:37 /proc/self/ns/cgroup -> cgroup:[4026531835]
-+  # cat /proc/self/cgroup
-+  0::/batchjobs/container_id1
-+
-+After unsharing a new namespace, the view changes.
-+
-+  # ls -l /proc/self/ns/cgroup
-+  lrwxrwxrwx 1 root root 0 2014-07-15 10:35 /proc/self/ns/cgroup -> cgroup:[4026532183]
-+  # cat /proc/self/cgroup
-+  0::/
-+
-+When some thread from a multi-threaded process unshares its cgroup
-+namespace, the new cgroupns gets applied to the entire process (all
-+the threads).  This is natural for the v2 hierarchy; however, for the
-+legacy hierarchies, this may be unexpected.
-+
-+A cgroup namespace is alive as long as there are processes inside or
-+mounts pinning it.  When the last usage goes away, the cgroup
-+namespace is destroyed.  The cgroupns root and the actual cgroups
-+remain.
-+
-+
-+6-2. The Root and Views
-+
-+The 'cgroupns root' for a cgroup namespace is the cgroup in which the
-+process calling unshare(2) is running.  For example, if a process in
-+/batchjobs/container_id1 cgroup calls unshare, cgroup
-+/batchjobs/container_id1 becomes the cgroupns root.  For the
-+init_cgroup_ns, this is the real root ('/') cgroup.
-+
-+The cgroupns root cgroup does not change even if the namespace creator
-+process later moves to a different cgroup.
-+
-+  # ~/unshare -c # unshare cgroupns in some cgroup
-+  # cat /proc/self/cgroup
-+  0::/
-+  # mkdir sub_cgrp_1
-+  # echo 0 > sub_cgrp_1/cgroup.procs
-+  # cat /proc/self/cgroup
-+  0::/sub_cgrp_1
-+
-+Each process gets its namespace-specific view of "/proc/$PID/cgroup"
-+
-+Processes running inside the cgroup namespace will be able to see
-+cgroup paths (in /proc/self/cgroup) only inside their root cgroup.
-+From within an unshared cgroupns:
-+
-+  # sleep 100000 &
-+  [1] 7353
-+  # echo 7353 > sub_cgrp_1/cgroup.procs
-+  # cat /proc/7353/cgroup
-+  0::/sub_cgrp_1
-+
-+From the initial cgroup namespace, the real cgroup path will be
-+visible:
-+
-+  $ cat /proc/7353/cgroup
-+  0::/batchjobs/container_id1/sub_cgrp_1
-+
-+From a sibling cgroup namespace (that is, a namespace rooted at a
-+different cgroup), the cgroup path relative to its own cgroup
-+namespace root will be shown.  For instance, if PID 7353's cgroup
-+namespace root is at '/batchjobs/container_id2', then it will see
-+
-+  # cat /proc/7353/cgroup
-+  0::/../container_id2/sub_cgrp_1
-+
-+Note that the relative path always starts with '/' to indicate that
-+its relative to the cgroup namespace root of the caller.
-+
-+
-+6-3. Migration and setns(2)
-+
-+Processes inside a cgroup namespace can move into and out of the
-+namespace root if they have proper access to external cgroups.  For
-+example, from inside a namespace with cgroupns root at
-+/batchjobs/container_id1, and assuming that the global hierarchy is
-+still accessible inside cgroupns:
-+
-+  # cat /proc/7353/cgroup
-+  0::/sub_cgrp_1
-+  # echo 7353 > batchjobs/container_id2/cgroup.procs
-+  # cat /proc/7353/cgroup
-+  0::/../container_id2
-+
-+Note that this kind of setup is not encouraged.  A task inside cgroup
-+namespace should only be exposed to its own cgroupns hierarchy.
-+
-+setns(2) to another cgroup namespace is allowed when:
-+
-+(a) the process has CAP_SYS_ADMIN against its current user namespace
-+(b) the process has CAP_SYS_ADMIN against the target cgroup
-+    namespace's userns
-+
-+No implicit cgroup changes happen with attaching to another cgroup
-+namespace.  It is expected that the someone moves the attaching
-+process under the target cgroup namespace root.
-+
-+
-+6-4. Interaction with Other Namespaces
-+
-+Namespace specific cgroup hierarchy can be mounted by a process
-+running inside a non-init cgroup namespace.
-+
-+  # mount -t cgroup2 none $MOUNT_POINT
-+
-+This will mount the unified cgroup hierarchy with cgroupns root as the
-+filesystem root.  The process needs CAP_SYS_ADMIN against its user and
-+mount namespaces.
-+
-+The virtualization of /proc/self/cgroup file combined with restricting
-+the view of cgroup hierarchy by namespace-private cgroupfs mount
-+provides a properly isolated cgroup view inside the container.
-+
-+
- P. Information on Kernel Programming
+ static const struct genl_ops dp_packet_genl_ops[] = {
+ 	{ .cmd = OVS_PACKET_CMD_EXECUTE,
+-	  .flags = GENL_ADMIN_PERM, /* Requires CAP_NET_ADMIN privilege. */
++	  .flags = 0,
+ 	  .policy = packet_policy,
+ 	  .doit = ovs_packet_cmd_execute
+ 	}
+@@ -920,6 +924,10 @@ static int ovs_flow_cmd_new(struct sk_buff *skb, struct genl_info *info)
+ 	int error;
+ 	bool log = !a[OVS_FLOW_ATTR_PROBE];
  
- This section contains kernel programming information in the areas
++	error = -EPERM;
++	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
++		goto error;
++
+ 	/* Must have key and actions. */
+ 	error = -EINVAL;
+ 	if (!a[OVS_FLOW_ATTR_KEY]) {
+@@ -1104,6 +1112,10 @@ static int ovs_flow_cmd_set(struct sk_buff *skb, struct genl_info *info)
+ 	bool log = !a[OVS_FLOW_ATTR_PROBE];
+ 	bool ufid_present;
+ 
++	error = -EPERM;
++	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
++		goto error;
++
+ 	/* Extract key. */
+ 	error = -EINVAL;
+ 	if (!a[OVS_FLOW_ATTR_KEY]) {
+@@ -1274,6 +1286,9 @@ static int ovs_flow_cmd_del(struct sk_buff *skb, struct genl_info *info)
+ 	bool log = !a[OVS_FLOW_ATTR_PROBE];
+ 	bool ufid_present;
+ 
++	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
++		return -EPERM;
++
+ 	ufid_present = ovs_nla_get_ufid(&ufid, a[OVS_FLOW_ATTR_UFID], log);
+ 	if (a[OVS_FLOW_ATTR_KEY]) {
+ 		ovs_match_init(&match, &key, NULL);
+@@ -1391,12 +1406,12 @@ static const struct nla_policy flow_policy[OVS_FLOW_ATTR_MAX + 1] = {
+ 
+ static const struct genl_ops dp_flow_genl_ops[] = {
+ 	{ .cmd = OVS_FLOW_CMD_NEW,
+-	  .flags = GENL_ADMIN_PERM, /* Requires CAP_NET_ADMIN privilege. */
++	  .flags = 0,
+ 	  .policy = flow_policy,
+ 	  .doit = ovs_flow_cmd_new
+ 	},
+ 	{ .cmd = OVS_FLOW_CMD_DEL,
+-	  .flags = GENL_ADMIN_PERM, /* Requires CAP_NET_ADMIN privilege. */
++	  .flags = 0,
+ 	  .policy = flow_policy,
+ 	  .doit = ovs_flow_cmd_del
+ 	},
+@@ -1407,7 +1422,7 @@ static const struct genl_ops dp_flow_genl_ops[] = {
+ 	  .dumpit = ovs_flow_cmd_dump
+ 	},
+ 	{ .cmd = OVS_FLOW_CMD_SET,
+-	  .flags = GENL_ADMIN_PERM, /* Requires CAP_NET_ADMIN privilege. */
++	  .flags = 0,
+ 	  .policy = flow_policy,
+ 	  .doit = ovs_flow_cmd_set,
+ 	},
+@@ -1530,8 +1545,12 @@ static int ovs_dp_cmd_new(struct sk_buff *skb, struct genl_info *info)
+ 	struct datapath *dp;
+ 	struct vport *vport;
+ 	struct ovs_net *ovs_net;
++	struct net *net = sock_net(skb->sk);
+ 	int err, i;
+ 
++	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
++		return -EPERM;
++
+ 	err = -EINVAL;
+ 	if (!a[OVS_DP_ATTR_NAME] || !a[OVS_DP_ATTR_UPCALL_PID])
+ 		goto err;
+@@ -1655,8 +1674,12 @@ static int ovs_dp_cmd_del(struct sk_buff *skb, struct genl_info *info)
+ {
+ 	struct sk_buff *reply;
+ 	struct datapath *dp;
++	struct net *net = sock_net(skb->sk);
+ 	int err;
+ 
++	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
++		return -EPERM;
++
+ 	reply = ovs_dp_cmd_alloc_info(info);
+ 	if (!reply)
+ 		return -ENOMEM;
+@@ -1688,8 +1711,12 @@ static int ovs_dp_cmd_set(struct sk_buff *skb, struct genl_info *info)
+ {
+ 	struct sk_buff *reply;
+ 	struct datapath *dp;
++	struct net *net = sock_net(skb->sk);
+ 	int err;
+ 
++	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
++		return -EPERM;
++
+ 	reply = ovs_dp_cmd_alloc_info(info);
+ 	if (!reply)
+ 		return -ENOMEM;
+@@ -1721,8 +1748,12 @@ static int ovs_dp_cmd_get(struct sk_buff *skb, struct genl_info *info)
+ {
+ 	struct sk_buff *reply;
+ 	struct datapath *dp;
++	struct net *net = sock_net(skb->sk);
+ 	int err;
+ 
++	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
++		return -EPERM;
++
+ 	reply = ovs_dp_cmd_alloc_info(info);
+ 	if (!reply)
+ 		return -ENOMEM;
+@@ -1777,12 +1808,12 @@ static const struct nla_policy datapath_policy[OVS_DP_ATTR_MAX + 1] = {
+ 
+ static const struct genl_ops dp_datapath_genl_ops[] = {
+ 	{ .cmd = OVS_DP_CMD_NEW,
+-	  .flags = GENL_ADMIN_PERM, /* Requires CAP_NET_ADMIN privilege. */
++	  .flags = 0,
+ 	  .policy = datapath_policy,
+ 	  .doit = ovs_dp_cmd_new
+ 	},
+ 	{ .cmd = OVS_DP_CMD_DEL,
+-	  .flags = GENL_ADMIN_PERM, /* Requires CAP_NET_ADMIN privilege. */
++	  .flags = 0,
+ 	  .policy = datapath_policy,
+ 	  .doit = ovs_dp_cmd_del
+ 	},
+@@ -1793,7 +1824,7 @@ static const struct genl_ops dp_datapath_genl_ops[] = {
+ 	  .dumpit = ovs_dp_cmd_dump
+ 	},
+ 	{ .cmd = OVS_DP_CMD_SET,
+-	  .flags = GENL_ADMIN_PERM, /* Requires CAP_NET_ADMIN privilege. */
++	  .flags = 0,
+ 	  .policy = datapath_policy,
+ 	  .doit = ovs_dp_cmd_set,
+ 	},
+@@ -1920,9 +1951,13 @@ static int ovs_vport_cmd_new(struct sk_buff *skb, struct genl_info *info)
+ 	struct sk_buff *reply;
+ 	struct vport *vport;
+ 	struct datapath *dp;
++	struct net *net = sock_net(skb->sk);
+ 	u32 port_no;
+ 	int err;
+ 
++	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
++		return -EPERM;
++
+ 	if (!a[OVS_VPORT_ATTR_NAME] || !a[OVS_VPORT_ATTR_TYPE] ||
+ 	    !a[OVS_VPORT_ATTR_UPCALL_PID])
+ 		return -EINVAL;
+@@ -1994,8 +2029,12 @@ static int ovs_vport_cmd_set(struct sk_buff *skb, struct genl_info *info)
+ 	struct nlattr **a = info->attrs;
+ 	struct sk_buff *reply;
+ 	struct vport *vport;
++	struct net *net = sock_net(skb->sk);
+ 	int err;
+ 
++	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
++		return -EPERM;
++
+ 	reply = ovs_vport_cmd_alloc_info();
+ 	if (!reply)
+ 		return -ENOMEM;
+@@ -2046,8 +2085,12 @@ static int ovs_vport_cmd_del(struct sk_buff *skb, struct genl_info *info)
+ 	struct nlattr **a = info->attrs;
+ 	struct sk_buff *reply;
+ 	struct vport *vport;
++	struct net *net = sock_net(skb->sk);
+ 	int err;
+ 
++	if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
++		return -EPERM;
++
+ 	reply = ovs_vport_cmd_alloc_info();
+ 	if (!reply)
+ 		return -ENOMEM;
+@@ -2158,12 +2201,12 @@ static const struct nla_policy vport_policy[OVS_VPORT_ATTR_MAX + 1] = {
+ 
+ static const struct genl_ops dp_vport_genl_ops[] = {
+ 	{ .cmd = OVS_VPORT_CMD_NEW,
+-	  .flags = GENL_ADMIN_PERM, /* Requires CAP_NET_ADMIN privilege. */
++	  .flags = 0,
+ 	  .policy = vport_policy,
+ 	  .doit = ovs_vport_cmd_new
+ 	},
+ 	{ .cmd = OVS_VPORT_CMD_DEL,
+-	  .flags = GENL_ADMIN_PERM, /* Requires CAP_NET_ADMIN privilege. */
++	  .flags = 0,
+ 	  .policy = vport_policy,
+ 	  .doit = ovs_vport_cmd_del
+ 	},
+@@ -2174,7 +2217,7 @@ static const struct genl_ops dp_vport_genl_ops[] = {
+ 	  .dumpit = ovs_vport_cmd_dump
+ 	},
+ 	{ .cmd = OVS_VPORT_CMD_SET,
+-	  .flags = GENL_ADMIN_PERM, /* Requires CAP_NET_ADMIN privilege. */
++	  .flags = 0,
+ 	  .policy = vport_policy,
+ 	  .doit = ovs_vport_cmd_set,
+ 	},
 -- 
-1.7.9.5
+2.5.0
