@@ -1,12 +1,13 @@
-From: Interfax Online via Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: You have received a new fax, document 0000762836
-Date: Thu, 28 Jan 2016 13:40:11 +0100
-Message-ID: <eb1aeaa0e42990a394b6c0e2e4908914@interfax.net>
-Reply-To: Interfax Online <incoming-wwpBGFb64evk1uMJSBkQmQ@public.gmane.org>
+From: serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org
+Subject: [PATCH 2/8] sched: new clone flag CLONE_NEWCGROUP for cgroup namespace
+Date: Fri, 29 Jan 2016 02:54:05 -0600
+Message-ID: <1454057651-23959-3-git-send-email-serge.hallyn__36771.5553068139$1454057670$gmane$org@ubuntu.com>
+References: <1454057651-23959-1-git-send-email-serge.hallyn@ubuntu.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="b1_5ed47ea03bd4cd611c93ba6016a8682f"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1454057651-23959-1-git-send-email-serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,35 +17,33 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---b1_5ed47ea03bd4cd611c93ba6016a8682f
-Content-Type: text/plain; charset=us-ascii
+From: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
-New incoming fax document.
+CLONE_NEWCGROUP will be used to create new cgroup namespace.
 
-Scanned fax document is attached to this email.
+Signed-off-by: Aditya Kali <adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+---
+ include/uapi/linux/sched.h |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-Scan time:       19 seconds
-Fax name:        fax.0000762836.doc
-Scanned by:      Johnny Garner
-File size:       124 Kb
-Scanned at:      Thu, 28 Jan 2016 09:39:35 +0300
-Scan quality:    500 DPI
-Pages number:    12
-
-Thank you for using Interfax!
-
-
---b1_5ed47ea03bd4cd611c93ba6016a8682f
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---b1_5ed47ea03bd4cd611c93ba6016a8682f--
+diff --git a/include/uapi/linux/sched.h b/include/uapi/linux/sched.h
+index cc89dde..5f0fe01 100644
+--- a/include/uapi/linux/sched.h
++++ b/include/uapi/linux/sched.h
+@@ -21,8 +21,7 @@
+ #define CLONE_DETACHED		0x00400000	/* Unused, ignored */
+ #define CLONE_UNTRACED		0x00800000	/* set if the tracing process can't force CLONE_PTRACE on this clone */
+ #define CLONE_CHILD_SETTID	0x01000000	/* set the TID in the child */
+-/* 0x02000000 was previously the unused CLONE_STOPPED (Start in stopped state)
+-   and is now available for re-use. */
++#define CLONE_NEWCGROUP		0x02000000	/* New cgroup namespace */
+ #define CLONE_NEWUTS		0x04000000	/* New utsname namespace */
+ #define CLONE_NEWIPC		0x08000000	/* New ipc namespace */
+ #define CLONE_NEWUSER		0x10000000	/* New user namespace */
+-- 
+1.7.9.5
