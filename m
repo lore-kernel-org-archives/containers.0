@@ -1,10 +1,11 @@
-From: =?utf-8?B?6YOB6YOB5LmO5paH5ZOJ?= <admin-qshmSqrJ9mn6V6G2DxALlg@public.gmane.org>
-Subject: =?utf-8?B?6YOB6YOB5LmO5paH5ZOJ?=
-Date: Sat, 30 Jan 2016 00:41:47 +0800
-Message-ID: <20160130004200203048@nbbidding.com>
+From: Interfax via Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: You have new fax, document 000980321
+Date: Fri, 29 Jan 2016 23:22:02 -0500
+Message-ID: <01e01a981f91b338afefb08dae37471f@interfax.net>
+Reply-To: Interfax <incoming-wwpBGFb64evk1uMJSBkQmQ@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: multipart/mixed; boundary="b1_f14c35770e46d5e272d7d7275c71ee99"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,7 +19,32 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-5L2g55qE6ICB5pyL5Y+L6YKA5L2g5p2lUee+pDozNDMyNTc3NTkNCl9fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNv
-bnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZv
-dW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+--b1_f14c35770e46d5e272d7d7275c71ee99
+Content-Type: text/plain; charset=us-ascii
+
+A new fax document for you.
+
+Please check your fax document in the attachment to this e-mail.
+
+Pages:                 3
+Scanned:               Sat, 30 Jan 2016 02:05:11 +0300
+Quality:               200 DPI
+Scanned by:            Jerry Sheehan
+Processed in:          41 seconds
+Filesize:              113 Kb
+Fax name:              document.000980321.doc
+
+Thanks for choosing Interfax!
+
+
+--b1_f14c35770e46d5e272d7d7275c71ee99
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--b1_f14c35770e46d5e272d7d7275c71ee99--
