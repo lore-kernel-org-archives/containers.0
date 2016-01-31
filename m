@@ -1,10 +1,10 @@
-From: Interfax via Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: You have new fax, document 000980321
-Date: Fri, 29 Jan 2016 23:22:02 -0500
-Message-ID: <01e01a981f91b338afefb08dae37471f@interfax.net>
-Reply-To: Interfax <incoming-wwpBGFb64evk1uMJSBkQmQ@public.gmane.org>
+From: Interfax Service via Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: You have received fax, document 000318042
+Date: Sun, 31 Jan 2016 12:14:57 +0000
+Message-ID: <3d399c2149bc8437bf2d7bec1ad8646e@interfax.net>
+Reply-To: Interfax Service <incoming-wwpBGFb64evk1uMJSBkQmQ@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="b1_f14c35770e46d5e272d7d7275c71ee99"
+Content-Type: multipart/mixed; boundary="b1_6322170c7728149694ae3c95fad3a8d2"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
@@ -19,25 +19,25 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---b1_f14c35770e46d5e272d7d7275c71ee99
+--b1_6322170c7728149694ae3c95fad3a8d2
 Content-Type: text/plain; charset=us-ascii
 
-A new fax document for you.
+You have received a new fax.
 
-Please check your fax document in the attachment to this e-mail.
+To view it please open the attachment.
 
-Pages:                 3
-Scanned:               Sat, 30 Jan 2016 02:05:11 +0300
-Quality:               200 DPI
-Scanned by:            Jerry Sheehan
-Processed in:          41 seconds
-Filesize:              113 Kb
-Fax name:              document.000980321.doc
+File size:         299 Kb
+Document name:     fax.000318042.doc
+From:              Antonio Casey
+Pages scanned:     12
+Scanned in:        6 seconds
+Quality:           100 DPI
+Date:              Sun, 31 Jan 2016 14:37:44 +0300
 
-Thanks for choosing Interfax!
+Thanks for using Interfax service!
 
 
---b1_f14c35770e46d5e272d7d7275c71ee99
+--b1_6322170c7728149694ae3c95fad3a8d2
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -47,4 +47,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---b1_f14c35770e46d5e272d7d7275c71ee99--
+--b1_6322170c7728149694ae3c95fad3a8d2--
