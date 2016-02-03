@@ -1,7 +1,8 @@
-From: Paul <Kyle-xZgYVHQVvZBCPWQmNIN3aQ@public.gmane.org>
-Subject: =?utf-8?B?WW91ciBDb25maWRlbnRpYWwgUmVxdWVzdCAtIEFwcHJvdmVkISAgSGV5LA==?=
-Date: Tue, 2 Feb 2016 13:26:09 -0500
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@testanews.info>
+From: Sussan <Paul-fIqAq9gGAEwk+I/owrrOrA@public.gmane.org>
+Subject: =?utf-8?B?IEpvYiBBdmFpbGFibGUgLSBTdGFydCBBU0FQ?=
+Date: Wed, 3 Feb 2016 18:04:59 -0500
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@romanbiz.info>
+Reply-To: bounce-41260-fIqAq9gGAEwk+I/owrrOrA@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,17 +19,22 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hey there,
+All it takes is 1 click
+and you will make life changing
+sums of money.
 
-We need to verify your account for
-you to start receiving commissions:
+Your first click starts here
+==>>http://click.romanbiz.info/index.php?id=1813529&a=41260&b=1812&c=166<<==
 
-Verify Your Account ASAP
-http://click.testanews.info/index.php?id=7944463&a=41260&b=1757&c=166
+Thank me later,
+Sussan
 
-Congratulations on this opportunity!
 
--Paul
+
+
+
+
+
 
 
 
@@ -110,5 +116,5 @@ Congratulations on this opportunity!
 
 Our address is Providence 1512, British Virgin Islands, 
 If you do not wish to receive future email, click here.
-http://click.testanews.info/index.php?o=2&a=41260&b=1757&c=166
+http://click.romanbiz.info/index.php?o=2&a=41260&b=1812&c=166
 (You can also send your request to Customer Care at the street address above.) 
