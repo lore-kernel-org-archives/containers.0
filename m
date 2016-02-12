@@ -1,15 +1,16 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [lxc-devel] CGroup Namespaces (v10)
-Date: Fri, 12 Feb 2016 11:09:06 -0500
-Message-ID: <20160212160906.GG3741@mtj.duckdns.org>
+Date: Fri, 12 Feb 2016 17:22:21 -0600
+Message-ID: <20160212232221.GA31062__760.956834028725$1455319360$gmane$org@mail.hallyn.com>
 References: <1454057651-23959-1-git-send-email-serge.hallyn@ubuntu.com>
 	<CAMXgnP6eSQjsuPXdrbaHytujVSkizPd4cJJQwQcuSCLAgVcYJw@mail.gmail.com>
+	<20160212160906.GG3741@mtj.duckdns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <CAMXgnP6eSQjsuPXdrbaHytujVSkizPd4cJJQwQcuSCLAgVcYJw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20160212160906.GG3741-qYNAdHglDFBN0TnZuCh8vA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,23 +20,27 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alban Crequy <alban.crequy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LXC development mailing-list <lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Alban Crequy <alban.crequy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, LXC development mailing-list <lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello,
+On Fri, Feb 12, 2016 at 11:09:06AM -0500, Tejun Heo wrote:
+> Hello,
+> 
+> On Fri, Feb 12, 2016 at 12:18:28AM +0100, Alban Crequy wrote:
+> > I just noticed commit c38c4597e4bf ("netfilter: implement xt_cgroup
+> > cgroup2 path match") which, as far as I understand, introduces a new
+> > userland facing API containing the full cgroup path. Does it mean that
+> > the cgroupns patchset should include cgroup path translation in
+> > xt_cgroup?
+> 
+> I don't think so.  None of netfilter configuration is namespaced in
+> any way.  They're system-global by nature.
 
-On Fri, Feb 12, 2016 at 12:18:28AM +0100, Alban Crequy wrote:
-> I just noticed commit c38c4597e4bf ("netfilter: implement xt_cgroup
-> cgroup2 path match") which, as far as I understand, introduces a new
-> userland facing API containing the full cgroup path. Does it mean that
-> the cgroupns patchset should include cgroup path translation in
-> xt_cgroup?
+I assume at some point you'll want the set ported onto for-4.6 or
+linux-next?  My 2016-02-03/cgns set still cherrypick cleanly onto
+for-4.6 at the moment, but I haven't tried linux-next, and I haven't
+done build+test since 4.5-rc1 came out.
 
-I don't think so.  None of netfilter configuration is namespaced in
-any way.  They're system-global by nature.
-
-Thanks.
-
--- 
-tejun
+thanks,
+-serge
