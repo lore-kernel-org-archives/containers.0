@@ -1,17 +1,18 @@
 From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 Subject: Re: [lxc-devel] CGroup Namespaces (v10)
-Date: Mon, 15 Feb 2016 16:17:05 -0500
-Message-ID: <20160215211705.GQ3965__31134.7066810869$1455571047$gmane$org@htj.duckdns.org>
+Date: Mon, 15 Feb 2016 16:20:36 -0500
+Message-ID: <20160215212036.GR3965__44405.2120125436$1455571264$gmane$org@htj.duckdns.org>
 References: <1454057651-23959-1-git-send-email-serge.hallyn@ubuntu.com>
 	<CAMXgnP6eSQjsuPXdrbaHytujVSkizPd4cJJQwQcuSCLAgVcYJw@mail.gmail.com>
 	<20160212160906.GG3741@mtj.duckdns.org>
 	<20160212232221.GA31062@mail.hallyn.com>
+	<20160215211705.GQ3965@htj.duckdns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20160212232221.GA31062-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+In-Reply-To: <20160215211705.GQ3965-piEFEHQLUPpN0TnZuCh8vA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,27 +26,13 @@ To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Cc: gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Alban Crequy <alban.crequy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, LXC development mailing-list <lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gRnJpLCBGZWIgMTIsIDIwMTYgYXQgMDU6MjI6MjFQTSAtMDYwMCwgU2VyZ2UgRS4gSGFsbHlu
-IHdyb3RlOgo+IE9uIEZyaSwgRmViIDEyLCAyMDE2IGF0IDExOjA5OjA2QU0gLTA1MDAsIFRlanVu
-IEhlbyB3cm90ZToKPiA+IEhlbGxvLAo+ID4gCj4gPiBPbiBGcmksIEZlYiAxMiwgMjAxNiBhdCAx
-MjoxODoyOEFNICswMTAwLCBBbGJhbiBDcmVxdXkgd3JvdGU6Cj4gPiA+IEkganVzdCBub3RpY2Vk
-IGNvbW1pdCBjMzhjNDU5N2U0YmYgKCJuZXRmaWx0ZXI6IGltcGxlbWVudCB4dF9jZ3JvdXAKPiA+
-ID4gY2dyb3VwMiBwYXRoIG1hdGNoIikgd2hpY2gsIGFzIGZhciBhcyBJIHVuZGVyc3RhbmQsIGlu
-dHJvZHVjZXMgYSBuZXcKPiA+ID4gdXNlcmxhbmQgZmFjaW5nIEFQSSBjb250YWluaW5nIHRoZSBm
-dWxsIGNncm91cCBwYXRoLiBEb2VzIGl0IG1lYW4gdGhhdAo+ID4gPiB0aGUgY2dyb3VwbnMgcGF0
-Y2hzZXQgc2hvdWxkIGluY2x1ZGUgY2dyb3VwIHBhdGggdHJhbnNsYXRpb24gaW4KPiA+ID4geHRf
-Y2dyb3VwPwo+ID4gCj4gPiBJIGRvbid0IHRoaW5rIHNvLiAgTm9uZSBvZiBuZXRmaWx0ZXIgY29u
-ZmlndXJhdGlvbiBpcyBuYW1lc3BhY2VkIGluCj4gPiBhbnkgd2F5LiAgVGhleSdyZSBzeXN0ZW0t
-Z2xvYmFsIGJ5IG5hdHVyZS4KPiAKPiBJIGFzc3VtZSBhdCBzb21lIHBvaW50IHlvdSdsbCB3YW50
-IHRoZSBzZXQgcG9ydGVkIG9udG8gZm9yLTQuNiBvcgo+IGxpbnV4LW5leHQ/ICBNeSAyMDE2LTAy
-LTAzL2NnbnMgc2V0IHN0aWxsIGNoZXJyeXBpY2sgY2xlYW5seSBvbnRvCj4gZm9yLTQuNiBhdCB0
-aGUgbW9tZW50LCBidXQgSSBoYXZlbid0IHRyaWVkIGxpbnV4LW5leHQsIGFuZCBJIGhhdmVuJ3QK
-PiBkb25lIGJ1aWxkK3Rlc3Qgc2luY2UgNC41LXJjMSBjYW1lIG91dC4KCkknbSBnZXR0aW5nIHRo
-ZSBmb2xsb3dpbmcgb24gdG9wIG9mIHRoZSBjdXJyZW50IGZvci00LjYuICBDYW4geW91CnBsZWFz
-ZSBsb29rIGludG8gaXQ/Cgpba2VybmVsL2Nncm91cC5jOjIxOToxMzogZXJyb3I6IOKAmGNncm91
-cG5zX29wZXJhdGlvbnPigJkgdW5kZWNsYXJlZCBoZXJlIChub3QgaW4gYSBmdW5jdGlvbikKICAu
-bnMub3BzICA9ICZjZ3JvdXBuc19vcGVyYXRpb25zLAogICAgICAgICAgICAgICBeCgpUaGFua3Mu
-CgotLSAKdGVqdW4KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0
-aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5m
-by9jb250YWluZXJz
+T24gTW9uLCBGZWIgMTUsIDIwMTYgYXQgMDQ6MTc6MDVQTSAtMDUwMCwgVGVqdW4gSGVvIHdyb3Rl
+Ogo+IEknbSBnZXR0aW5nIHRoZSBmb2xsb3dpbmcgb24gdG9wIG9mIHRoZSBjdXJyZW50IGZvci00
+LjYuICBDYW4geW91Cj4gcGxlYXNlIGxvb2sgaW50byBpdD8KPiAKPiBba2VybmVsL2Nncm91cC5j
+OjIxOToxMzogZXJyb3I6IOKAmGNncm91cG5zX29wZXJhdGlvbnPigJkgdW5kZWNsYXJlZCBoZXJl
+IChub3QgaW4gYSBmdW5jdGlvbikKPiAgIC5ucy5vcHMgID0gJmNncm91cG5zX29wZXJhdGlvbnMs
+Cj4gICAgICAgICAgICAgICAgXgoKTmV2ZXIgbWluZC4gIFRoYXQgd2FzIG1lIGJlaW5nIHN0dXBp
+ZCB3aXRoIHRyaXZpYWwgY29uZmxpY3QKcmVzb2x1dGlvbi4KClRoYW5rcy4KCi0tIAp0ZWp1bgpf
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJz
+IG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBz
+Oi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
