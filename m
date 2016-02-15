@@ -1,18 +1,14 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [lxc-devel] CGroup Namespaces (v10)
-Date: Mon, 15 Feb 2016 16:20:36 -0500
-Message-ID: <20160215212036.GR3965__44405.2120125436$1455571264$gmane$org@htj.duckdns.org>
-References: <1454057651-23959-1-git-send-email-serge.hallyn@ubuntu.com>
-	<CAMXgnP6eSQjsuPXdrbaHytujVSkizPd4cJJQwQcuSCLAgVcYJw@mail.gmail.com>
-	<20160212160906.GG3741@mtj.duckdns.org>
-	<20160212232221.GA31062@mail.hallyn.com>
-	<20160215211705.GQ3965@htj.duckdns.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: IPv4/IPv6 sysctl defaults in new namespace
+Date: Mon, 15 Feb 2016 15:26:07 -0600
+Message-ID: <87k2m57jio.fsf@x220.int.ebiederm.org>
+References: <CALYGNiNJ=LCyo4v7B1BUZH-27bc22ap-RQKpPQN7m0V3kBjkPw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20160215211705.GQ3965-piEFEHQLUPpN0TnZuCh8vA@public.gmane.org>
+In-Reply-To: <CALYGNiNJ=LCyo4v7B1BUZH-27bc22ap-RQKpPQN7m0V3kBjkPw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Konstantin Khlebnikov's message of "Mon, 15 Feb 2016 13:49:18 +0300")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,17 +18,41 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Alban Crequy <alban.crequy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, LXC development mailing-list <lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Konstantin Khlebnikov <koct9i-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Linux Kernel Network Developers <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Vasily Averin <vvs-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Pavel Emelyanov <xemul-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gTW9uLCBGZWIgMTUsIDIwMTYgYXQgMDQ6MTc6MDVQTSAtMDUwMCwgVGVqdW4gSGVvIHdyb3Rl
-Ogo+IEknbSBnZXR0aW5nIHRoZSBmb2xsb3dpbmcgb24gdG9wIG9mIHRoZSBjdXJyZW50IGZvci00
-LjYuICBDYW4geW91Cj4gcGxlYXNlIGxvb2sgaW50byBpdD8KPiAKPiBba2VybmVsL2Nncm91cC5j
-OjIxOToxMzogZXJyb3I6IOKAmGNncm91cG5zX29wZXJhdGlvbnPigJkgdW5kZWNsYXJlZCBoZXJl
-IChub3QgaW4gYSBmdW5jdGlvbikKPiAgIC5ucy5vcHMgID0gJmNncm91cG5zX29wZXJhdGlvbnMs
-Cj4gICAgICAgICAgICAgICAgXgoKTmV2ZXIgbWluZC4gIFRoYXQgd2FzIG1lIGJlaW5nIHN0dXBp
-ZCB3aXRoIHRyaXZpYWwgY29uZmxpY3QKcmVzb2x1dGlvbi4KClRoYW5rcy4KCi0tIAp0ZWp1bgpf
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJz
-IG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBz
-Oi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+Konstantin Khlebnikov <koct9i-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
+
+> IPv6 initialized with default. That's ok.
+> IPv4 makes a copy from init_net. Looks like a bug, here
+> v2.6.24-2577-g752d14dc6aa9
+>
+> root@zurg:~# sysctl net.ipv4.conf.all.forwarding=0
+> net.ipv6.conf.all.forwarding=0
+> net.ipv4.conf.all.forwarding = 0
+> net.ipv6.conf.all.forwarding = 0
+> root@zurg:~# unshare -n sysctl net.ipv4.conf.all.forwarding
+> net.ipv6.conf.all.forwarding
+> net.ipv4.conf.all.forwarding = 0
+> net.ipv6.conf.all.forwarding = 0
+> root@zurg:~# sysctl net.ipv4.conf.all.forwarding=1
+> net.ipv6.conf.all.forwarding=1
+> net.ipv4.conf.all.forwarding = 1
+> net.ipv6.conf.all.forwarding = 1
+> root@zurg:~# unshare -n sysctl net.ipv4.conf.all.forwarding
+> net.ipv6.conf.all.forwarding
+> net.ipv4.conf.all.forwarding = 1
+> net.ipv6.conf.all.forwarding = 0
+>
+> This is nasty. Could we fix this or this bug set in stone?
+
+The test is do we break anyone, and the initial network namespace
+is arbitrary enough I don't think anyone can depend upon a specific
+value when creating a new network namespace.  So if someone is willing
+to do the work we can fix this.
+
+Of course the fixes would have to made against a recent kernel not
+something as ancient as 2.6.24.
+
+Eric
