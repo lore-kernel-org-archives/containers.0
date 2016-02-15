@@ -1,7 +1,7 @@
-From: Konstantin Khlebnikov <koct9i-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: IPv4/IPv6 sysctl defaults in new namespace
-Date: Mon, 15 Feb 2016 13:49:18 +0300
-Message-ID: <CALYGNiNJ=LCyo4v7B1BUZH-27bc22ap-RQKpPQN7m0V3kBjkPw__25305.5897927426$1455533377$gmane$org@mail.gmail.com>
+From: Philipp Wendler <ml-PRuqubkS1MrCxoAYUeDZubNAH6kLmebB@public.gmane.org>
+Subject: Using overlayfs in (unprivileged) namespace
+Date: Mon, 15 Feb 2016 12:04:38 +0100
+Message-ID: <56C1B0C6.6080806@philippwendler.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,29 +15,55 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Kernel Network Developers <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: Vasily Averin <vvs-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Pavel Emelyanov <xemul-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-IPv6 initialized with default. That's ok.
-IPv4 makes a copy from init_net. Looks like a bug, here
-v2.6.24-2577-g752d14dc6aa9
+Hello all,
 
-root@zurg:~# sysctl net.ipv4.conf.all.forwarding=0
-net.ipv6.conf.all.forwarding=0
-net.ipv4.conf.all.forwarding = 0
-net.ipv6.conf.all.forwarding = 0
-root@zurg:~# unshare -n sysctl net.ipv4.conf.all.forwarding
-net.ipv6.conf.all.forwarding
-net.ipv4.conf.all.forwarding = 0
-net.ipv6.conf.all.forwarding = 0
-root@zurg:~# sysctl net.ipv4.conf.all.forwarding=1
-net.ipv6.conf.all.forwarding=1
-net.ipv4.conf.all.forwarding = 1
-net.ipv6.conf.all.forwarding = 1
-root@zurg:~# unshare -n sysctl net.ipv4.conf.all.forwarding
-net.ipv6.conf.all.forwarding
-net.ipv4.conf.all.forwarding = 1
-net.ipv6.conf.all.forwarding = 0
+I would like to mount an overlayfs inside unprivileged user and mount
+namespaces (i.e., the user creating the namespaces is a regular user
+with no special privileges).
+This works mostly fine, but it fails as soon as I try to delete a file
+which exists in the "lower" directory of the overlay,
+because overlayfs then needs to create a "whiteout" file,
+for which it uses a device node with 0/0 device number
+(https://www.kernel.org/doc/Documentation/filesystems/overlayfs.txt),
+but I do not have the permission to create device nodes.
 
-This is nasty. Could we fix this or this bug set in stone?
+Is there any way to make overlayfs work fully in my situation,
+without requiring additional privileges?
+If not, is this something that could be made work in the future?
+Of course, creating arbitrary devices nodes is something that cannot be
+granted to an unprivileged user, but in this case it is only a specific
+device node with device numbers 0/0, and it is a kernel module creating
+the device node on behalf of me.
+
+I am currently using Linux 4.2. To reproduce the problem,
+you can use the following steps:
+Create the mount and user namespaces with the example program from the
+user_namespaces man page
+(http://man7.org/linux/man-pages/man7/user_namespaces.7.html),
+mapping the user root inside the namespace to my user:
+
+$ ./userns_child_exec -m -U -z bash
+
+Then execute the following commands:
+
+mkdir /tmp/namespace-overlay
+cd /tmp/namespace-overlay
+mkdir mount lower upper work
+touch lower/test
+mount -t overlayfs n -o lowerdir=lower,upperdir=upper,workdir=work mount
+rm mount/test
+
+The last command gives:
+> rm: cannot remove 'mount/test': Operation not permitted
+
+This fails even if /tmp does not have "nodev" set (with "nodev" it would
+be expected to fail of course).
+Interestingly, it even fails if I start userns_child_exec as root,
+not sure why.
+Outside namespaces everything works as expected.
+
+Kind regards,
+Philipp
