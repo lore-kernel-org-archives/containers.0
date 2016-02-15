@@ -1,14 +1,17 @@
-From: Philipp Wendler <ml-PRuqubkS1MrCxoAYUeDZubNAH6kLmebB@public.gmane.org>
-Subject: Re: Using overlayfs in (unprivileged) namespace
-Date: Mon, 15 Feb 2016 19:47:49 +0100
-Message-ID: <56C21D55.7080102@philippwendler.de>
-References: <56C1B0C6.6080806@philippwendler.de>
-	<20160215181817.GA23391@ubuntumail>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [lxc-devel] CGroup Namespaces (v10)
+Date: Mon, 15 Feb 2016 16:17:05 -0500
+Message-ID: <20160215211705.GQ3965__31134.7066810869$1455571047$gmane$org@htj.duckdns.org>
+References: <1454057651-23959-1-git-send-email-serge.hallyn@ubuntu.com>
+	<CAMXgnP6eSQjsuPXdrbaHytujVSkizPd4cJJQwQcuSCLAgVcYJw@mail.gmail.com>
+	<20160212160906.GG3741@mtj.duckdns.org>
+	<20160212232221.GA31062@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20160215181817.GA23391@ubuntumail>
+Content-Disposition: inline
+In-Reply-To: <20160212232221.GA31062-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,42 +21,31 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Alban Crequy <alban.crequy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, LXC development mailing-list <lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello Serge,
-
-Am 15.02.2016 um 19:18 schrieb Serge Hallyn:
-> Quoting Philipp Wendler (ml-PRuqubkS1MrCxoAYUeDZubNAH6kLmebB@public.gmane.org):
->> I would like to mount an overlayfs inside unprivileged user and mount
->> namespaces (i.e., the user creating the namespaces is a regular user
->> with no special privileges).
->> This works mostly fine, but it fails as soon as I try to delete a file
->> which exists in the "lower" directory of the overlay,
->> because overlayfs then needs to create a "whiteout" file,
->> for which it uses a device node with 0/0 device number
->> (https://www.kernel.org/doc/Documentation/filesystems/overlayfs.txt),
->> but I do not have the permission to create device nodes.
->>
->> Is there any way to make overlayfs work fully in my situation,
->> without requiring additional privileges?
->> If not, is this something that could be made work in the future?
->> Of course, creating arbitrary devices nodes is something that cannot be
->> granted to an unprivileged user, but in this case it is only a specific
->> device node with device numbers 0/0, and it is a kernel module creating
->> the device node on behalf of me.
->>
->> I am currently using Linux 4.2. To reproduce the problem,
-> 
-> Exactly what version from where?
-> 
-> It sounds to me like you're hitting
-> 
-> https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1531747
-
-Thank you for pointing this out!
-This bug is different from my original problem, but now that that one is
-solved I tried to reproduce this Ubuntu bug, and indeed I am hitting it,
-too.
-
-Greetings, Philipp
+T24gRnJpLCBGZWIgMTIsIDIwMTYgYXQgMDU6MjI6MjFQTSAtMDYwMCwgU2VyZ2UgRS4gSGFsbHlu
+IHdyb3RlOgo+IE9uIEZyaSwgRmViIDEyLCAyMDE2IGF0IDExOjA5OjA2QU0gLTA1MDAsIFRlanVu
+IEhlbyB3cm90ZToKPiA+IEhlbGxvLAo+ID4gCj4gPiBPbiBGcmksIEZlYiAxMiwgMjAxNiBhdCAx
+MjoxODoyOEFNICswMTAwLCBBbGJhbiBDcmVxdXkgd3JvdGU6Cj4gPiA+IEkganVzdCBub3RpY2Vk
+IGNvbW1pdCBjMzhjNDU5N2U0YmYgKCJuZXRmaWx0ZXI6IGltcGxlbWVudCB4dF9jZ3JvdXAKPiA+
+ID4gY2dyb3VwMiBwYXRoIG1hdGNoIikgd2hpY2gsIGFzIGZhciBhcyBJIHVuZGVyc3RhbmQsIGlu
+dHJvZHVjZXMgYSBuZXcKPiA+ID4gdXNlcmxhbmQgZmFjaW5nIEFQSSBjb250YWluaW5nIHRoZSBm
+dWxsIGNncm91cCBwYXRoLiBEb2VzIGl0IG1lYW4gdGhhdAo+ID4gPiB0aGUgY2dyb3VwbnMgcGF0
+Y2hzZXQgc2hvdWxkIGluY2x1ZGUgY2dyb3VwIHBhdGggdHJhbnNsYXRpb24gaW4KPiA+ID4geHRf
+Y2dyb3VwPwo+ID4gCj4gPiBJIGRvbid0IHRoaW5rIHNvLiAgTm9uZSBvZiBuZXRmaWx0ZXIgY29u
+ZmlndXJhdGlvbiBpcyBuYW1lc3BhY2VkIGluCj4gPiBhbnkgd2F5LiAgVGhleSdyZSBzeXN0ZW0t
+Z2xvYmFsIGJ5IG5hdHVyZS4KPiAKPiBJIGFzc3VtZSBhdCBzb21lIHBvaW50IHlvdSdsbCB3YW50
+IHRoZSBzZXQgcG9ydGVkIG9udG8gZm9yLTQuNiBvcgo+IGxpbnV4LW5leHQ/ICBNeSAyMDE2LTAy
+LTAzL2NnbnMgc2V0IHN0aWxsIGNoZXJyeXBpY2sgY2xlYW5seSBvbnRvCj4gZm9yLTQuNiBhdCB0
+aGUgbW9tZW50LCBidXQgSSBoYXZlbid0IHRyaWVkIGxpbnV4LW5leHQsIGFuZCBJIGhhdmVuJ3QK
+PiBkb25lIGJ1aWxkK3Rlc3Qgc2luY2UgNC41LXJjMSBjYW1lIG91dC4KCkknbSBnZXR0aW5nIHRo
+ZSBmb2xsb3dpbmcgb24gdG9wIG9mIHRoZSBjdXJyZW50IGZvci00LjYuICBDYW4geW91CnBsZWFz
+ZSBsb29rIGludG8gaXQ/Cgpba2VybmVsL2Nncm91cC5jOjIxOToxMzogZXJyb3I6IOKAmGNncm91
+cG5zX29wZXJhdGlvbnPigJkgdW5kZWNsYXJlZCBoZXJlIChub3QgaW4gYSBmdW5jdGlvbikKICAu
+bnMub3BzICA9ICZjZ3JvdXBuc19vcGVyYXRpb25zLAogICAgICAgICAgICAgICBeCgpUaGFua3Mu
+CgotLSAKdGVqdW4KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0
+aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5m
+by9jb250YWluZXJz
