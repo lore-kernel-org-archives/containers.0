@@ -1,15 +1,14 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 8/8] Add FS_USERNS_FLAG to cgroup fs
-Date: Tue, 16 Feb 2016 13:05:51 -0500
-Message-ID: <20160216180551.GN3741__24746.5607747019$1455645967$gmane$org@mtj.duckdns.org>
-References: <1454057651-23959-1-git-send-email-serge.hallyn@ubuntu.com>
-	<1454057651-23959-9-git-send-email-serge.hallyn@ubuntu.com>
+From: "kathy" <kathy-Ul9Lf3GqV0QPhl885A6vO9NOtI698pE8mpATvIKMPHk@public.gmane.org>
+Subject: Business Performance Management Software Users list
+Date: Tue, 16 Feb 2016 15:49:02 -0500
+Message-ID: <!&!AAAAAAAAAAAYAAAAAAAAAFmDMbxjM8hGoc0yv8aDOW3CgAAAEAAAABn/o3dyzkBHhhLIAFofG6oBAAAAAA==@prospectsinsight-boosters.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1454057651-23959-9-git-send-email-serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+References: 
+In-Reply-To: 
+Content-Language: en-us
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,29 +18,48 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Jan 29, 2016 at 02:54:11AM -0600, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org wrote:
-> From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-> 
-> allowing root in a non-init user namespace to mount it.  This should
-> now be safe, because
-> 
-> 1. non-init-root cannot mount a previously unbound subsystem
-> 2. the task doing the mount must be privileged with respect to the
->    user namespace owning the cgroup namespace
-> 3. the mounted subsystem will have its current cgroup as the root dentry.
->    the permissions will be unchanged, so tasks will receive no new
->    privilege over the cgroups which they did not have on the original
->    mounts.
-> 
-> Signed-off-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Hi,
 
-Applied 1-8 to cgroup/for-4.6-ns w/ trivial stylistic updates.
+ 
 
-Thanks.
+I am writing to you in regards to our recent list release, and check if you
+would be interested in acquiring recently verified Business Performance
+Management Software Users list. Every contact from this database has
+completed verification on the 2nd FEB 2016 to give you 95%+ accuracy and
+ensure your message reaches the right contact from the right company.
 
--- 
-tejun
+ 
+
+If your target audience is not mentioned above, kindly let me know.
+
+ 
+
+Please send me your target audience and geographical area, so that I can
+send few sample records, which will be at no cost.
+
+ 
+
+Target Technology: _____________; Target Geography: ______________ ; Target
+Job Title: _________________
+
+ 
+
+Request for sample data based on your market. Based on your request, we'll
+deliver 10 records as sample.
+
+ 
+
+Thanks for your time and we look forward to hearing from you.
+
+ 
+
+  
+
+Best Regards,
+
+Kathy Eickhoff
+
+Marketing & Lead Specialist
