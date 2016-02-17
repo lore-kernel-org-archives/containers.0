@@ -1,13 +1,11 @@
-From: "kathy" <kathy-Ul9Lf3GqV0QPhl885A6vO9NOtI698pE8mpATvIKMPHk@public.gmane.org>
-Subject: Business Performance Management Software Users list
-Date: Tue, 16 Feb 2016 15:49:02 -0500
-Message-ID: <!&!AAAAAAAAAAAYAAAAAAAAAFmDMbxjM8hGoc0yv8aDOW3CgAAAEAAAABn/o3dyzkBHhhLIAFofG6oBAAAAAA==@prospectsinsight-boosters.com>
+From: "alison obrien" <alison.obrien-DDeMadYSONylvEq7d74qNA@public.gmane.org>
+Subject: SonicWall Users
+Date: Wed, 17 Feb 2016 11:42:38 -0600
+Message-ID: <!&!AAAAAAAAAAAYAAAAAAAAAExvWePeanhCoBroJQbm8G7CgAAAEAAAAIzNpWo0jm5Iq5TXbU92jcQBAAAAAA==@itengagement.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-References: 
-In-Reply-To: 
 Content-Language: en-us
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -25,41 +23,94 @@ Hi,
 
  
 
-I am writing to you in regards to our recent list release, and check if you
-would be interested in acquiring recently verified Business Performance
-Management Software Users list. Every contact from this database has
-completed verification on the 2nd FEB 2016 to give you 95%+ accuracy and
-ensure your message reaches the right contact from the right company.
+Would you be interested in Cybersecurity Users, you can approach the
+Information Security Decision Makers from Technology & Security industry.
 
  
 
-If your target audience is not mentioned above, kindly let me know.
+Our leads database contains information like First and Last name, Phone
+number, Email Address, Company Name, Job Title, Address, City, State, Zip,
+SIC code/Industry, Revenue and Company Size. The leads can also be further
+customized as per requirements.
 
  
 
-Please send me your target audience and geographical area, so that I can
-send few sample records, which will be at no cost.
+Cybersecurity Sectors: Network Visibility & Security Intelligence,
+Intelligence Driven Security, Enterprise IT Security Solutions, Risk
+Management and Compliance, Server, Cloud, and Content Security, Security &
+Risk Management Solutions, Big Data Security and many more.
 
  
 
-Target Technology: _____________; Target Geography: ______________ ; Target
-Job Title: _________________
+We provide 100% accurate data of the Companies who are using the mentioned
+security system:
 
  
 
-Request for sample data based on your market. Based on your request, we'll
-deliver 10 records as sample.
+*         Juniper
+
+*         Cyren
+
+*         CheckPoint
+
+*         Bloxx
+
+*         Fortinet
+
+*         Symantec
+
+*         Trend Micro
+
+*         McAfee
+
+*         FireEye
+
+*         WatchGuard
+
+*         Sophos
+
+*         Cisco and many more...
 
  
 
-Thanks for your time and we look forward to hearing from you.
+We also have other Technology Users like - SAP, Oracle, Salesforce and
+Microsoft etc.
 
  
 
-  
+Please review and let me know if you are interested in any of the technology
+users or different contact list for your campaigns and I will provide more
+information for the same.
 
-Best Regards,
+ 
 
-Kathy Eickhoff
+Appreciate your time and look forward to hear from you.
 
-Marketing & Lead Specialist
+ 
+
+Thanks,
+
+Alison Obrien
+
+Database Coordinator
+
+ 
+
+If you are not the right person, feel free to forward this email to the
+right person in your organization.
+
+ 
+
+ 
+
+To Opt Out, please respond "Leave Out" in the Subject line
+
+ 
+
+ 
+
+
+
+---
+This email has been checked for viruses by Avast antivirus software.
+https://www.avast.com/antivirus
