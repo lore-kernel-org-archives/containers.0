@@ -1,21 +1,21 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: call_usermodehelper in containers
-Date: Wed, 17 Feb 2016 20:57:48 -0600
-Message-ID: <8737sq4teb.fsf@x220.int.ebiederm.org>
+Date: Wed, 17 Feb 2016 21:17:21 -0600
+Message-ID: <874md63dxa.fsf@x220.int.ebiederm.org>
 References: <20131111071825.62da01d1@tlielax.poochiereds.net>
 	<20131112004703.GB15377@kroah.com>
 	<20131112061201.04cf25ab@tlielax.poochiereds.net>
 	<528226EC.4050701@parallels.com>
 	<20131112083043.0ab78e67@tlielax.poochiereds.net>
 	<5285FA0A.2080802@parallels.com> <871u2incyo.fsf@xmission.com>
-	<20131118172844.GA10005@redhat.com>
-	<1455149857.2903.9.camel@themaw.net>
+	<52860B6D.4090208@parallels.com> <1455320373.2890.5.camel@themaw.net>
+	<56BF5511.6050606@virtuozzo.com> <1455495082.2941.32.camel@themaw.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1455149857.2903.9.camel-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org> (Ian Kent's message of "Thu,
-	11 Feb 2016 08:17:37 +0800")
+In-Reply-To: <1455495082.2941.32.camel-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org> (Ian Kent's message of
+	"Mon, 15 Feb 2016 08:11:22 +0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,56 +26,60 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Ian Kent <raven-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org>
-Cc: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Jeff Layton <jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org, bharrosh-C4P08NqkoRlBDgjK7y7TUQ@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Cc: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Jeff Layton <jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, skinsbursky-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org, bharrosh-C4P08NqkoRlBDgjK7y7TUQ@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
-
-
-Ccing The containers list because a related discussion is happening there
-and somehow this thread has never made it there.
 
 Ian Kent <raven-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org> writes:
 
-> On Mon, 2013-11-18 at 18:28 +0100, Oleg Nesterov wrote:
->> On 11/15, Eric W. Biederman wrote:
->> > 
->> > I don't understand that one.  Having a preforked thread with the
->> > proper
->> > environment that can act like kthreadd in terms of spawning user
->> > mode
->> > helpers works and is simple.
+> AFAICS kernel/kmod.c used to use create_singlethread_workqueue() and
+>  queue_work() to perform umh calls, now it uses only queue_work() and
+> the system_unbound_wq workqueue.
 >
-> Forgive me replying to such an old thread but ...
+> Looking at the workqueue sub system there doesn't appear to be a way to
+> create a workqueue with a thread runner thread, created within the
+> process context at the time of workqueue creation, that then waits to
+> run work. So there's no way to create a workqueue to run umh calls
+> within a specific process context, such as that of a container, by using
+> the workqueue subsystem as it is now.
 >
-> After realizing workqueues can't be used to pre-create threads to run
-> usermode helpers I've returned to look at this.
-
-If someone can wind up with a good implementation I will be happy.
-
->> Can't we ask ->child_reaper to create the non-daemonized kernel thread
->> with the "right" ->nsproxy, ->fs, etc?
+> The problem being that the process context of the caller requesting umh
+> isn't necessarily (and shouldn't be used because it could allow the
+> caller to hijack the environment) the process context that needs to be
+> used for the request.
 >
-> Eric, do you think this approach would be sufficient too?
+> It looks like the reply to this thread from Oleg that demonstrates using
+> child_reaper for the run context could be used though. Capturing the
+> struct pid of child_reaper and then using that to locate the appropriate
+> task context later (if it still exists) at request time could be used.
 >
-> Probably wouldn't be quite right for user namespaces but should provide
-> what's needed for other cases?
->
-> It certainly has the advantage of not having to maintain a plague of
-> processes waiting around to execute helpers.
+> That doesn't take care of working out when this should be captured or
+> where to put it so it can be obtained at request time (which seems
+> difficult in itself).
 
-That certainly sounds attractive.  Especially for the case of everyone
-who wants to set a core pattern in a container.
+It would be really really nice if the user namespace could be used
+for the where do we look at case.  As every other namespace already
+has a pointer to the user namespace, and fundamentally the user
+namespace is the permission boundary (from a namespace perspective).
 
-I am fuzzy on all of the details right now, but what I do remember is
-that in the kernel the user mode helper concepts when they attempted to
-scrub a processes environment were quite error prone until we managed to
-get kthreadd(pid 2) on the scene which always had a clean environment.
+So for the equivalent of kthreadd in a user namespace we need a thread
+that has a full set of namespaces owned by the user namespaces.
 
-If we are going to tie this kind of thing to the pid namespace I
-recommend simplying denying it if you are in a user namespace without
-an approrpriate pid namespace.  AKA simply not allowing thigns to be setup
-if current->pid_ns->user_ns != current->user_ns.
+On one side this is very easy to obtain if we look at the process that
+sets core_pattern or mounts one of the nfs filesystems (such as the
+filesystem that when mounted starts nfsd), and just fork a kernel thread
+from it.
 
-That still leaves things a little hand-wavy but I hope that helps
-conceptually.
+On another side perhaps what we want is a syscall call it start_umhd
+that says repurpose the caller of this thread to handle future user mode
+helper calls.  That we could tie to a user namespace quite easily.
+
+This definitely does not play particularly nice with queue work and
+friends, but that is just infrastructure and we can update user mode
+helper to use something else reasonable as long as we have a solid
+design.
+
+Perhaps there is a combination of the two ideas that could work.
+Instead of a syscall use the invocation of a service that needs a user
+mode helper as a trigger to create such a launcher thread.
 
 Eric
