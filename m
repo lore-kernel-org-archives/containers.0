@@ -1,14 +1,21 @@
-From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Subject: [Patch 2/2] binfmt_misc: add persistently opened binary handler for
-	containers
-Date: Wed, 17 Feb 2016 17:05:25 -0800
-Message-ID: <1455757525.7664.11.camel__7811.14844508028$1455757542$gmane$org@HansenPartnership.com>
-References: <1455757372.7664.7.camel@HansenPartnership.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: call_usermodehelper in containers
+Date: Wed, 17 Feb 2016 20:57:48 -0600
+Message-ID: <8737sq4teb.fsf@x220.int.ebiederm.org>
+References: <20131111071825.62da01d1@tlielax.poochiereds.net>
+	<20131112004703.GB15377@kroah.com>
+	<20131112061201.04cf25ab@tlielax.poochiereds.net>
+	<528226EC.4050701@parallels.com>
+	<20131112083043.0ab78e67@tlielax.poochiereds.net>
+	<5285FA0A.2080802@parallels.com> <871u2incyo.fsf@xmission.com>
+	<20131118172844.GA10005@redhat.com>
+	<1455149857.2903.9.camel@themaw.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1455757372.7664.7.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+In-Reply-To: <1455149857.2903.9.camel-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org> (Ian Kent's message of "Thu,
+	11 Feb 2016 08:17:37 +0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,131 +25,57 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Ian Kent <raven-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org>
+Cc: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Jeff Layton <jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org, bharrosh-C4P08NqkoRlBDgjK7y7TUQ@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch adds a new flag 'F' to the binfmt handlers.  If you pass in
-'F' the binary that runs the emulation will be opened immediately and
-in future, will be cloned from the open file.
 
-The net effect is that the handler survives both changeroots and mount
-namespace changes, making it easy to work with foreign architecture
-containers without contaminating the container image with the
-emulator.
+Ccing The containers list because a related discussion is happening there
+and somehow this thread has never made it there.
 
-Signed-off-by: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
----
- fs/binfmt_misc.c | 42 ++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 40 insertions(+), 2 deletions(-)
+Ian Kent <raven-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org> writes:
 
-diff --git a/fs/binfmt_misc.c b/fs/binfmt_misc.c
-index 3a3ced7..c61ade2 100644
---- a/fs/binfmt_misc.c
-+++ b/fs/binfmt_misc.c
-@@ -26,6 +26,8 @@
- #include <linux/fs.h>
- #include <linux/uaccess.h>
- 
-+#include "internal.h"
-+
- #ifdef DEBUG
- # define USE_DEBUG 1
- #else
-@@ -43,6 +45,7 @@ enum {Enabled, Magic};
- #define MISC_FMT_PRESERVE_ARGV0 (1 << 31)
- #define MISC_FMT_OPEN_BINARY (1 << 30)
- #define MISC_FMT_CREDENTIALS (1 << 29)
-+#define MISC_FMT_OPEN_FILE (1 << 28)
- 
- typedef struct {
- 	struct list_head list;
-@@ -54,6 +57,7 @@ typedef struct {
- 	char *interpreter;		/* filename of interpreter */
- 	char *name;
- 	struct dentry *dentry;
-+	struct file *interp_file;
- } Node;
- 
- static DEFINE_RWLOCK(entries_lock);
-@@ -201,7 +205,13 @@ static int load_misc_binary(struct linux_binprm *bprm)
- 	if (retval < 0)
- 		goto error;
- 
--	interp_file = open_exec(iname);
-+	if (fmt->flags & MISC_FMT_OPEN_FILE && fmt->interp_file) {
-+		interp_file = filp_clone_open(fmt->interp_file);
-+		if (!IS_ERR(interp_file))
-+			deny_write_access(interp_file);
-+	} else {
-+		interp_file = open_exec(iname);
-+	}
- 	retval = PTR_ERR(interp_file);
- 	if (IS_ERR(interp_file))
- 		goto error;
-@@ -285,6 +295,11 @@ static char *check_special_flags(char *sfs, Node *e)
- 			e->flags |= (MISC_FMT_CREDENTIALS |
- 					MISC_FMT_OPEN_BINARY);
- 			break;
-+		case 'F':
-+			pr_debug("register: flag: F: open interpreter file now\n");
-+			p++;
-+			e->flags |= MISC_FMT_OPEN_FILE;
-+			break;
- 		default:
- 			cont = 0;
- 		}
-@@ -543,6 +558,8 @@ static void entry_status(Node *e, char *page)
- 		*dp++ = 'O';
- 	if (e->flags & MISC_FMT_CREDENTIALS)
- 		*dp++ = 'C';
-+	if (e->flags & MISC_FMT_OPEN_FILE)
-+		*dp++ = 'F';
- 	*dp++ = '\n';
- 
- 	if (!test_bit(Magic, &e->flags)) {
-@@ -590,6 +607,12 @@ static void kill_node(Node *e)
- 	}
- 	write_unlock(&entries_lock);
- 
-+	if ((e->flags & MISC_FMT_OPEN_FILE) && e->interp_file) {
-+		filp_close(e->interp_file, NULL);
-+		fput(e->interp_file);
-+		e->interp_file = NULL;
-+	}
-+
- 	if (dentry) {
- 		drop_nlink(d_inode(dentry));
- 		d_drop(dentry);
-@@ -698,6 +721,21 @@ static ssize_t bm_register_write(struct file *file, const char __user *buffer,
- 		goto out2;
- 	}
- 
-+	if (e->flags & MISC_FMT_OPEN_FILE) {
-+		struct file *f;
-+
-+		f = open_exec(e->interpreter);
-+		if (IS_ERR(f)) {
-+			err = PTR_ERR(f);
-+			pr_notice("register: failed to install interpreter file %s\n", e->interpreter);
-+			simple_release_fs(&bm_mnt, &entry_count);
-+			iput(inode);
-+			inode = NULL;
-+			goto out2;
-+		}
-+		e->interp_file = f;
-+	}
-+
- 	e->dentry = dget(dentry);
- 	inode->i_private = e;
- 	inode->i_fop = &bm_entry_operations;
-@@ -716,7 +754,7 @@ out:
- 
- 	if (err) {
- 		kfree(e);
--		return -EINVAL;
-+		return err;
- 	}
- 	return count;
- }
--- 
-2.6.2
+> On Mon, 2013-11-18 at 18:28 +0100, Oleg Nesterov wrote:
+>> On 11/15, Eric W. Biederman wrote:
+>> > 
+>> > I don't understand that one.  Having a preforked thread with the
+>> > proper
+>> > environment that can act like kthreadd in terms of spawning user
+>> > mode
+>> > helpers works and is simple.
+>
+> Forgive me replying to such an old thread but ...
+>
+> After realizing workqueues can't be used to pre-create threads to run
+> usermode helpers I've returned to look at this.
+
+If someone can wind up with a good implementation I will be happy.
+
+>> Can't we ask ->child_reaper to create the non-daemonized kernel thread
+>> with the "right" ->nsproxy, ->fs, etc?
+>
+> Eric, do you think this approach would be sufficient too?
+>
+> Probably wouldn't be quite right for user namespaces but should provide
+> what's needed for other cases?
+>
+> It certainly has the advantage of not having to maintain a plague of
+> processes waiting around to execute helpers.
+
+That certainly sounds attractive.  Especially for the case of everyone
+who wants to set a core pattern in a container.
+
+I am fuzzy on all of the details right now, but what I do remember is
+that in the kernel the user mode helper concepts when they attempted to
+scrub a processes environment were quite error prone until we managed to
+get kthreadd(pid 2) on the scene which always had a clean environment.
+
+If we are going to tie this kind of thing to the pid namespace I
+recommend simplying denying it if you are in a user namespace without
+an approrpriate pid namespace.  AKA simply not allowing thigns to be setup
+if current->pid_ns->user_ns != current->user_ns.
+
+That still leaves things a little hand-wavy but I hope that helps
+conceptually.
+
+Eric
