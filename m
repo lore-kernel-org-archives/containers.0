@@ -1,16 +1,27 @@
-From: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: RE: [PATCH] Make core_pattern support namespace
-Date: Fri, 19 Feb 2016 18:24:21 +0800
-Message-ID: <00b401d16aff$b299e590$17cdb0b0$@cn.fujitsu.com>
-References: <ce9a21e42a846150a2a482278f5b5a5e0ea27839.1454588184.git.zhaolei@cn.fujitsu.com>	<20160216142608.GA16757@mguzik>
-	<87k2m33xgj.fsf@x220.int.ebiederm.org>	<20160217205407.GD16757@mguzik>	<009601d16a43$de01fb80$9a05f280$@cn.fujitsu.com>
-	<877fi122o4.fsf@x220.int.ebiederm.org>
+From: Ian Kent <raven-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org>
+Subject: Re: call_usermodehelper in containers
+Date: Sat, 20 Feb 2016 11:28:41 +0800
+Message-ID: <1455938921.3787.52.camel@themaw.net>
+References: <20131111071825.62da01d1@tlielax.poochiereds.net>
+	<20131112004703.GB15377@kroah.com>
+	<20131112061201.04cf25ab@tlielax.poochiereds.net>
+	<528226EC.4050701@parallels.com>
+	<20131112083043.0ab78e67@tlielax.poochiereds.net>
+	<5285FA0A.2080802@parallels.com> <871u2incyo.fsf@xmission.com>
+	<20131118172844.GA10005@redhat.com>
+	<1455149857.2903.9.camel@themaw.net>
+	<8737sq4teb.fsf@x220.int.ebiederm.org>
+	<56C53DE3.1070108@jp.fujitsu.com>
+	<1455777387.3188.24.camel@themaw.net>
+	<1455781033.2908.5.camel@themaw.net>
+	<87r3g9ychc.fsf@x220.int.ebiederm.org>
+	<56C68714.2000900@jp.fujitsu.com>
+	<1455860260.3356.31.camel@themaw.net> <56C6E0A8.3010806@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <877fi122o4.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
-Content-Language: zh-cn
+In-Reply-To: <56C6E0A8.3010806-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,149 +31,153 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "'Eric W. Biederman'" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Kamezawa Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Jeff Layton <jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org, bharrosh-C4P08NqkoRlBDgjK7y7TUQ@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi, Biederman
-
-> -----Original Message-----
-> From: Eric W. Biederman [mailto:ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org]
-> Sent: Friday, February 19, 2016 4:18 AM
-> To: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> Cc: 'Mateusz Guzik' <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>;
-> containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org; linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> Subject: Re: [PATCH] Make core_pattern support namespace
+On Fri, 2016-02-19 at 18:30 +0900, Kamezawa Hiroyuki wrote:
+> On 2016/02/19 14:37, Ian Kent wrote:
+> > On Fri, 2016-02-19 at 12:08 +0900, Kamezawa Hiroyuki wrote:
+> > > On 2016/02/19 5:45, Eric W. Biederman wrote:
+> > > > Personally I am a fan of the don't be clever and capture a
+> > > > kernel
+> > > > thread
+> > > > approach as it is very easy to see you what if any exploitation
+> > > > opportunities there are.  The justifications for something more
+> > > > clever
+> > > > is trickier.  Of course we do something that from this
+> > > > perspective
+> > > > would
+> > > > be considered ``clever'' today with kthreadd and user mode
+> > > > helpers.
+> > > > 
+> > > 
+> > > I read old discussion....let me allow clarification  to create a
+> > > helper kernel thread
+> > > to run usermodehelper with using kthreadd.
+> > > 
+> > > 0) define a trigger to create an independent usermodehelper
+> > > environment for a container.
+> > >     Option A) at creating some namespace (pid, uid, etc...)
+> > >     Option B) at creating a new nsproxy
+> > >     Option C).at a new systemcall is called or some sysctl,
+> > > make_private_usermode_helper() or some,
+> > > 
+> > >    It's expected this should be triggered by init process of a
+> > > container with some capability.
+> > >    And scope of the effect should be defined. pid namespace ?
+> > > nsporxy ?
+> > > or new namespace ?
+> > > 
+> > > 1) create a helper thread.
+> > >     task = kthread_create(kthread_work_fn, ?, ?, "usermodehelper")
+> > >     switch task's nsproxy to current.(swtich_task_namespaces())
+> > >     switch task's cgroups to current (cgroup_attach_task_all())
+> > >     switch task's cred to current.
+> > >     copy task's capability from current
+> > >     (and any other ?)
+> > >     wake_up_process()
+> > > 
+> > >     And create a link between kthread_wq and container.
+> > 
+> > Not sure I quite understand this but I thought the difficulty with
+> > this
+> > approach previously (even though the approach was very much
+> > incomplete)
+> > was knowing that all the "moving parts" would not allow
+> > vulnerabilities.
+> > 
+> Ok, that was discussed.
 > 
-> Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> writes:
+> > And it looks like this would require a kernel thread for each
+> > instance.
+> > So for a thousand containers that each mount an NFS mount that
+> > means, at
+> > least, 1000 additional kernel threads. Might be able to sell that,
+> > if we
+> > were lucky, but from an system administration POV it's horrible.
+> > 
+> I agree.
 > 
-> > Hi, Mateusz Guzik
-> >
-> >> -----Original Message-----
-> >> From: Mateusz Guzik [mailto:mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org]
-> >> Sent: Thursday, February 18, 2016 4:54 AM
-> >> To: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> >> Cc: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>;
-> containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org;
-> >> linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> >> Subject: Re: [PATCH] Make core_pattern support namespace
-> >>
-> >> On Wed, Feb 17, 2016 at 02:15:24PM -0600, Eric W. Biederman wrote:
-> >> > Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
-> >> > > On Tue, Feb 16, 2016 at 07:33:39PM +0800, Zhao Lei wrote:
-> >> > >> For container based on namespace design, it is good to allow
-> >> > >> each container keeping their own coredump setting.
-> >> > >
-> >> > > Sorry if this is a false alarm, I don't have easy means to test it, but
-> >> > > is not this an immediate privilege escalation?
-> >> >
-> >> > It is.  This is why we do not currently have a per namespace setting.
-> >> >
-> >>
-> >> Thanks for confimation.
-> >>
-> >> > Solving the user mode helper problem is technically a fair amount of
-> >> > work, if not theoretically challenging.
-> >> >
-> >>
-> >> Well, I would say custom core_patterns without pipe support are still
-> >> better than none.
-> >>
-> > +1.
+> > There's also the question of existence (aka. lifetime) to deal with
+> > since the thread above needs to be created at a time other than the
+> > usermode helper callback.
+> > 
+> > What happens for SIGKILL on a container?
+> > 
+
+First understand that the fork and workqueue code is not something I've
+needed to look at in the past so it's still quite new to me even now.
+
+> It depends on how the helper kthread is tied to a container related
+> object.
+> If kthread is linked with some namespace, we can kill it when a
+> namespace
+> goes away.
+
+I don't know how to do that so without knowing any better I assume it
+could be difficult and complicated but, of course, I don't know.
+
 > 
-> -1.
+> So, with your opinion,
+>   - a helper thread should be spawned on demand
+>   - the lifetime of it should be clear. It will be good to have as
+> same life time as the container.
+
+This was always what I believed to be the best way to do it but ...
+
+Not sure you've seen the other threads on this by me so let me provide
+some history.
+
+I started out posting a series (totally untested, an RFC only) in the
+hope of finding a way to do this.
+
+After a few iterations that lead to the conclusion that a kernel thread
+would need to be created to provide context for subsequent helper
+execution (for every distinct context), much the same as we have here,
+and that the init process of the required context would probably be
+sufficient for this, required as the environment of the thread
+requesting helper execution itself could be used subvert execution.
+
+I ended up accepting that even if I could work out what needed to be
+captured and work out what needed to be done to switch to the
+namspace(s) and other bits that would be high maintenance as it would be
+fairly complicated and subsystems may be added or changed over time.
+
+Also I had assumed a singlethread workqueue would create a single thread
+for helper execution which was wrong.
+
+After realizing what I had was far from what's needed I went back and
+started reviewing the previous threads.
+
+That lead me to following a link Oleg had posted to this thread where I
+finally saw his suggestion about using ->child_reaper as the execution
+template.
+
+That really got my attention because of its simplicity and that's why I
+want to give that a try now and see where it leads. However user
+namespaces do sound like a problem even with this.
+
+Having finally got a simple test scenario I see now that the palaces I
+use to capture the information used to run the helper is also wrong but
+that's less important than getting an execution method that works, is
+safe, and is as simple as it can be. 
+
 > 
-> The problem is solvable.  It is just a matter of effort to build the
-> necessary infrastructure and make certain everything works correctly.
-> 
-Writting a pipe for both host and container have some limit:
-1: All host who wantting to run container can not custom core_patterns
-   to other value, it is to say, core_patterns will turn to be a const
-   value in linux release with container support.
-2: If a host support 2 types of container manager, for example,
-   lxc and docker, each manager will try to modify host's core_patterns
-   to its internal pipe program, and cause competition.
-3: container can not modify core_patterns for its need, it is not like
-   a real system.
+> I wonder there is no solution for "moving part" problem other than
+> calling
+> do_fork() or copy_process() with container's init process context if
+> we do all in the kernel.
 
-> >> Say one would ensure a stable core_pattern (i.e. that it cannot be
-> >> modified as it is being parsed) and a restricted set of allowed
-> >> characters in the pattern (which would not include the pipe), validated
-> >> when one attempts to set the pattern.
-> >>
-> >> Does this sound acceptable? If so, and there are no counter ideas from
-> >> Lei, I can get around to that.
-> >>
-> > If we can let kernel select pipe_program in vm's filesystem, and run
-> > pipe_program with vm's filesystem, set a pipe for core_patterm in vm
-> > will be safe.
-> > What is your opinion on above solution?
-> 
-> Please see the other thread about user mode helpers that is current
-> active on the container mailling list.
-> 
-User mode helpers is discussed in other threads, but we hadn't get a
-conclusion to answer is user mode helpers better than letting kernel
-support core_pattern in namespace, just as our discussing in this thread.
+Not sure I understand this but I believe that ultimately there will be
+the equivalent of a fork (perhaps two) and exec (we need to exec the
+helper anyway) no matter how this is done.
 
-> > If above way is not acceptable, or impossible to realize, I also
-> > agree your solution of limit vm setting pipe.
-> 
-> I honestly think have a fully capable system that we have now that is
-> capable of using setns and entering a containers context is better than
-> something half baked.  The solution either needs to support everything
-> core_pattern does today but correctly in a container environment.
-> 
-If we can fix problem of "the pipe dumping data to host filesystem",
-both host and container will able to support full core_pattern.
+For example, IIUC, a fork must be done to change pid namespace but a
+template like the container init process would already have that pid
+namespace in cases other than possibly user namespaces.
 
-> To make the case that something does not need to be supported, a
-> convincing argument needs to be presented and tested that no one ever
-> does that.  Without such an argument you will be breaking userspace
-> in a different way.  Not actually fixing things.
-> 
-It is same problem with above.
-When we fixed it, all container can be free to set core_pattern without
-breaking host env, and the every container manager don't need to add
-special argument for setting core_pattern.
+I hope I understood what you were asking and haven't needlessly rambled
+on,  ;)
 
-> My baseline reference implementation of all of this is that it is
-> possible when a sufficiently privileged process writes to core_pattern
-> to fork a child with the same environment and context as the writer.
-> That forked child could then become a kernel thread and fork any
-> additional children needed as user mode helpers.
-> 
-Thanks for detailed explanation.
-I'll investigate it is possible to write piped dump data to container's
-filesystem.
-
-We still have "container-write-to-host" problem even if we don't use this
-patch, in current kernel, if we run a container with privilege,
-1: container can modify core_pattern of host and other container
-2: container can set core_pattern to pipe, then dump data to host filesystem
-3: container can use this way to do more bad thing
-Each of them are not accessable.
-
-In summary:
-+-------------+----------------+-------------+--------------------------+
-|             | CURRENT_KERNEL | AFTER_PATCH | AFTER_MORE_WORK_ON_PATCH |
-|-------------+----------------+-------------+--------------------------+
-| WITHOUT     | SAFE           | SAFE        | SAFE                     |
-| PRIVILEGE   |                |             |                          |
-|-------------+----------------+-------------+--------------------------+
-| PRIVILEGE   | DANGEROUS      | SAFE        | SAFE                     |
-| DUMPTO FILE |                |             |                          |
-|-------------+----------------+-------------+--------------------------+
-| PRIVILEGE   | DANGEROUS      | DANGEROUS   | SAFE                     |
-| DUMPTO PIPE |                |             |                          |
-+-------------+----------------+-------------+--------------------------+
-
-So letting ns support core_pattern is also a bug fix for above case.
-
-What is your opinion?
-Any suggestions are welcome.
-
-Thanks
-Zhaolei
-
-> Eric
+Ian
