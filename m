@@ -1,14 +1,8 @@
-From: Ian Kent <raven-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org>
+From: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
 Subject: Re: call_usermodehelper in containers
-Date: Tue, 23 Feb 2016 10:55:30 +0800
-Message-ID: <1456196130.2911.10.camel__43391.4108238698$1456196161$gmane$org@themaw.net>
-References: <20131111071825.62da01d1@tlielax.poochiereds.net>
-	<20131112004703.GB15377@kroah.com>
-	<20131112061201.04cf25ab@tlielax.poochiereds.net>
-	<528226EC.4050701@parallels.com>
-	<20131112083043.0ab78e67@tlielax.poochiereds.net>
-	<5285FA0A.2080802@parallels.com> <871u2incyo.fsf@xmission.com>
-	<20131118172844.GA10005@redhat.com>
+Date: Tue, 23 Feb 2016 09:36:27 -0500
+Message-ID: <20160223143627.GB31951__31265.3530193076$1456238536$gmane$org@fieldses.org>
+References: <871u2incyo.fsf@xmission.com> <20131118172844.GA10005@redhat.com>
 	<1455149857.2903.9.camel@themaw.net>
 	<8737sq4teb.fsf@x220.int.ebiederm.org>
 	<56C53DE3.1070108@jp.fujitsu.com>
@@ -16,11 +10,13 @@ References: <20131111071825.62da01d1@tlielax.poochiereds.net>
 	<1455781033.2908.5.camel@themaw.net>
 	<87r3g9ychc.fsf@x220.int.ebiederm.org>
 	<1455858850.3356.19.camel@themaw.net>
+	<1456196130.2911.10.camel@themaw.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1455858850.3356.19.camel-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1456196130.2911.10.camel-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -30,249 +26,33 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Jeff Layton <jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org, devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, bharrosh-C4P08NqkoRlBDgjK7y7TUQ@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Ian Kent <raven-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org>
+Cc: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Jeff Layton <jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, bharrosh-C4P08NqkoRlBDgjK7y7TUQ@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 2016-02-19 at 13:14 +0800, Ian Kent wrote:
-> On Thu, 2016-02-18 at 14:45 -0600, Eric W. Biederman wrote:
-> > Ian Kent <raven-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org> writes:
-> > 
-> > > On Thu, 2016-02-18 at 14:36 +0800, Ian Kent wrote:
-> > > > On Thu, 2016-02-18 at 12:43 +0900, Kamezawa Hiroyuki wrote:
-> > > > > On 2016/02/18 11:57, Eric W. Biederman wrote:
-> > > > > > 
-> > > > > > Ccing The containers list because a related discussion is
-> > > > > > happening
-> > > > > > there
-> > > > > > and somehow this thread has never made it there.
-> > > > > > 
-> > > > > > Ian Kent <raven-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org> writes:
-> > > > > > 
-> > > > > > > On Mon, 2013-11-18 at 18:28 +0100, Oleg Nesterov wrote:
-> > > > > > > > On 11/15, Eric W. Biederman wrote:
-> > > > > > > > > 
-> > > > > > > > > I don't understand that one.  Having a preforked
-> > > > > > > > > thread
-> > > > > > > > > with
-> > > > > > > > > the
-> > > > > > > > > proper
-> > > > > > > > > environment that can act like kthreadd in terms of
-> > > > > > > > > spawning
-> > > > > > > > > user
-> > > > > > > > > mode
-> > > > > > > > > helpers works and is simple.
-> > > > > > > 
-> > > > > > > Forgive me replying to such an old thread but ...
-> > > > > > > 
-> > > > > > > After realizing workqueues can't be used to pre-create
-> > > > > > > threads
-> > > > > > > to
-> > > > > > > run
-> > > > > > > usermode helpers I've returned to look at this.
-> > > > > > 
-> > > > > > If someone can wind up with a good implementation I will be
-> > > > > > happy.
-> > > > > > 
-> > > > > > > > Can't we ask ->child_reaper to create the non-daemonized
-> > > > > > > > kernel
-> > > > > > > > thread
-> > > > > > > > with the "right" ->nsproxy, ->fs, etc?
-> > > > > > > 
-> > > > > > > Eric, do you think this approach would be sufficient too?
-> > > > > > > 
-> > > > > > > Probably wouldn't be quite right for user namespaces but
-> > > > > > > should
-> > > > > > > provide
-> > > > > > > what's needed for other cases?
-> > > > > > > 
-> > > > > > > It certainly has the advantage of not having to maintain a
-> > > > > > > plague
-> > > > > > > of
-> > > > > > > processes waiting around to execute helpers.
-> > > > > > 
-> > > > > > That certainly sounds attractive.  Especially for the case
-> > > > > > of
-> > > > > > everyone
-> > > > > > who wants to set a core pattern in a container.
-> > > > > > 
-> > > > > > I am fuzzy on all of the details right now, but what I do
-> > > > > > remember
-> > > > > > is
-> > > > > > that in the kernel the user mode helper concepts when they
-> > > > > > attempted
-> > > > > > to
-> > > > > > scrub a processes environment were quite error prone until
-> > > > > > we
-> > > > > > managed to
-> > > > > > get kthreadd(pid 2) on the scene which always had a clean
-> > > > > > environment.
-> > > > > > 
-> > > > > > If we are going to tie this kind of thing to the pid
-> > > > > > namespace
-> > > > > > I
-> > > > > > recommend simplying denying it if you are in a user
-> > > > > > namespace
-> > > > > > without
-> > > > > > an approrpriate pid namespace.  AKA simply not allowing
-> > > > > > thigns
-> > > > > > to
-> > > > > > be
-> > > > > > setup
-> > > > > > if current->pid_ns->user_ns != current->user_ns.
-> > > > > > 
-> > > > > Can't be handled by simple capability like
-> > > > > CAP_SYS_USERMODEHELPER ?
-> > 
-> > I wasn't talking about a capability I was talking about how to
-> > identify
-> > where the user mode helper lives.
-> > 
-> > > > > User_ns check seems not to allow core-dump-cather in host will
-> > > > > not
-> > > > > work if user_ns is used.
-> > 
-> > The bottom line is all of this approaches non-sense if user
-> > namespaces
-> > are not used.  If you just have a pid namespace or a mount namespace
-> > (or
-> > perhaps both) and your fire off a new fangled user mode helper you
-> > get
-> > a
-> > deep problem.  The user space process started to handle your core
-> > dump
-> > or
-> > your nfs callback will have a full set of capabilities (because it
-> > is
-> > still in the root user namespace).  With a full set of capabilities
-> > and perhaps a little luck there is no containment.
-> > 
-> > The imperfect solution that currently exists for the core dump
-> > helper
-> > is to provide enough information to the user space application that
-> > it can query and find out the context of the core dumping
-> > application
-> > and keep everything in that application sandbox if it so desires.
-> > I expect something similar could be done for other user mode helper
-> > style callbacks.
-> > 
-> > To make starting the user space application other than how we do
-> > today
-> > needs a good argument that you are you can allow a lesser privileged
-> > process set things up and that it can be exploited to gain
-> > privielge.
-> > 
-> > > > I don't think so but I'm not sure.
-> > > > 
-> > > > The approach I was talking about assumes the init process of the
-> > > > caller
-> > > > (say within a container, corresponding to ->child_reaper) is an
-> > > > appropriate template for umh thread execution.
-> > > > 
-> > > > But I don't think that covers the case where unshare has created
-> > > > different namespaces, like a mount namespace for example.
-> > > > 
-> > > > The current workqueue sub system can't be used to pre-create a
-> > > > thread
-> > > > to
-> > > > be used for umh execution so, either is needs changes or yet
-> > > > another
-> > > > mechanism needs to be implemented.
-> > > > 
-> > > > For uses other than core dumping capturing a reference to the
-> > > > struct
-> > > > pid
-> > > > of the environment init process and using that as an execution
-> > > > template
-> > > > should be sufficient and takes care of environment existence
-> > > > problems
-> > > > with some extra checks, not to mention eliminating the need for
-> > > > a
-> > > > potentially huge number of kernel threads needing to be created
-> > > > to
-> > > > provide execution templates.
-> > > > 
-> > > > Where to store this and how to access it when needed is another
-> > > > problem.
-> > > > 
-> > > > Not sure a usermode helper capability is the right thing either
-> > > > as
-> > > > I
-> > > > thought one important use of user namespaces was to allow
-> > > > unprivileged
-> > > > users to perform operations they otherwise can't.
-> > > > 
-> > > > Maybe a CAP_SYS_USERNSCOREDUMP or similar would be sensible ....
-> > > > 
-> > > > Still an appropriate execution template would be needed and IIUC
-> > > > we
-> > > > can't trust getting that from within a user created namespace
-> > > > environment.
-> > > 
-> > > Perhaps, if a struct cred could be captured at some appropriate
-> > > time
-> > > that could be used to cater for user namespaces.
-> > > 
-> > > Eric, do you think that would be possible to do without allowing
-> > > users
-> > > to circumvent security?
-> > 
-> > The general problem with capturing less than a full process is that
-> > we always mess it up and forget to capture something important.
-> > 
-> > In a lot of ways this is a very simpilar problem to setting up an at
-> > job
-> > or a cron job.  You build a script you test it then you tell at to
-> > run
-> > it at a certain time and it fails, because your working environment
-> > did
-> > not include something important that was in your actuall
-> > environment.
-> > 
-> > Unfortunately in this case the failures we are talking about are
-> > container escapes and privilege escalation, so we do need to tread
-> > carefully.
-> > 
-> > We might be able to safely define the context as the context of the
-> > currently running init process (Which we can identifiy with a struct
-> > pid).  Justifying that looks a little trickier but doable.
+On Tue, Feb 23, 2016 at 10:55:30AM +0800, Ian Kent wrote:
+> You know, wrt. the mechanism Oleg suggested, I've been wondering if it's
+> even necessary to capture process template information for execution.
 > 
-> Right, that seems like a fairly straight forward thing to implement
-> based on Olegs' example patch.
+> Isn't the main issue the execution of unknown arbitrary objects getting
+> access to a privileged context?
 > 
-> I'll put together a series based on that approach.
+> Then perhaps it is sufficient to require registration of an SHA hash (of
+> some sort) for these objects by a suitably privileged process and only
+> allow helper execution of valid objects.
+
+That executable probably also depends on libraries, services, and tons
+of other miscellaneous stuff in its environment.  The NFSv4 client
+idmapper, for example, may be doing ldap calls.  Unless the helper is
+created with incredible care, I don't think that it's enough just to
+verify that you're executing the correct helper.
+
+--b.
+
 > 
-> Keep in mind that the patches in my previous posts for sub-system
-> usage
-> are definitely wrong but I can use them (and they will be only an
-> initial example of how to use the mechanism) to verify that contained
-> execution happens. They will need to change.
+> If that is sufficient then helper execution from within a container or
+> user namespace could just use the callers environment itself.
 > 
-> I was thinking that also capturing a struct cred (although I need to
-> look more at the relationship between the process cred, and the
-> nsproxy
-> locations) at a particular time combined with a double fork and exec
-> could allow inclusion of user namespace.
+> What else do we need to be wary of, any thoughts Eric?
 > 
-> Perhaps at only one level deep, ie. only allowing the first user
-> namesapec created from init or from container and not user namespaces
-> created from within a user namespace (if I can work out how to
-> identify
-> that case).
-
-You know, wrt. the mechanism Oleg suggested, I've been wondering if it's
-even necessary to capture process template information for execution.
-
-Isn't the main issue the execution of unknown arbitrary objects getting
-access to a privileged context?
-
-Then perhaps it is sufficient to require registration of an SHA hash (of
-some sort) for these objects by a suitably privileged process and only
-allow helper execution of valid objects.
-
-If that is sufficient then helper execution from within a container or
-user namespace could just use the callers environment itself.
-
-What else do we need to be wary of, any thoughts Eric?
-
-Ian
+> Ian
