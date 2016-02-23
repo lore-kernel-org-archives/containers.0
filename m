@@ -1,22 +1,14 @@
-From: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
-Subject: Re: call_usermodehelper in containers
-Date: Tue, 23 Feb 2016 09:36:27 -0500
-Message-ID: <20160223143627.GB31951__31265.3530193076$1456238536$gmane$org@fieldses.org>
-References: <871u2incyo.fsf@xmission.com> <20131118172844.GA10005@redhat.com>
-	<1455149857.2903.9.camel@themaw.net>
-	<8737sq4teb.fsf@x220.int.ebiederm.org>
-	<56C53DE3.1070108@jp.fujitsu.com>
-	<1455777387.3188.24.camel@themaw.net>
-	<1455781033.2908.5.camel@themaw.net>
-	<87r3g9ychc.fsf@x220.int.ebiederm.org>
-	<1455858850.3356.19.camel@themaw.net>
-	<1456196130.2911.10.camel@themaw.net>
+From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Subject: Re: [PATCH] ipv4: in new netns initialize sysctls in
+	net.ipv4.conf.* with defaults
+Date: Tue, 23 Feb 2016 18:21:21 -0500 (EST)
+Message-ID: <20160223.182121.2101846699151527296.davem@davemloft.net>
+References: <20160221071102.9686.63148.stgit@buzz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1456196130.2911.10.camel-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org>
+In-Reply-To: <20160221071102.9686.63148.stgit@buzz>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,33 +18,31 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ian Kent <raven-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org>
-Cc: linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Stanislav Kinsbursky <skinsbursky-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, Jeff Layton <jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, bharrosh-C4P08NqkoRlBDgjK7y7TUQ@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, vvs-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Feb 23, 2016 at 10:55:30AM +0800, Ian Kent wrote:
-> You know, wrt. the mechanism Oleg suggested, I've been wondering if it's
-> even necessary to capture process template information for execution.
-> 
-> Isn't the main issue the execution of unknown arbitrary objects getting
-> access to a privileged context?
-> 
-> Then perhaps it is sufficient to require registration of an SHA hash (of
-> some sort) for these objects by a suitably privileged process and only
-> allow helper execution of valid objects.
+From: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
+Date: Sun, 21 Feb 2016 10:11:02 +0300
 
-That executable probably also depends on libraries, services, and tons
-of other miscellaneous stuff in its environment.  The NFSv4 client
-idmapper, for example, may be doing ldap calls.  Unless the helper is
-created with incredible care, I don't think that it's enough just to
-verify that you're executing the correct helper.
+> Currently initial net.ipv4.conf.all.* and net.ipv4.conf.default.* are
+> copied from init network namespace because static structures are used
+> for init_net. This makes no sense because new netns might be created
+> from any netns. This patch makes private copy also for init netns if
+> network namespaces are enabled. Other sysctls in net.ipv4 and net.ipv6
+> already initialized with default values at namespace creation.
+> 
+> Signed-off-by: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
+> Fixes: 752d14dc6aa9 ("[IPV4]: Move the devinet pointers on the struct net")
 
---b.
+The horse has long left the stable on this.  We cannot change this now
+without breaking things.
 
-> 
-> If that is sufficient then helper execution from within a container or
-> user namespace could just use the callers environment itself.
-> 
-> What else do we need to be wary of, any thoughts Eric?
-> 
-> Ian
+Imagine someone who intentionally sets up init_net with a certain set
+of settings and expects them to propagate into every created namespace.
+
+We'll break things for them and given the behavior existed for so long
+what the administrator is doing is very reasonable.
+
+I'm not applying this sorry, we are stuck with the current behavior
+whether we like it or not.
