@@ -1,15 +1,12 @@
-From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Subject: Re: [PATCH] ipv4: in new netns initialize sysctls in
-	net.ipv4.conf.* with defaults
-Date: Thu, 25 Feb 2016 11:43:43 -0500 (EST)
-Message-ID: <20160225.114343.1977846344387184355.davem@davemloft.net>
-References: <20160223.182121.2101846699151527296.davem@davemloft.net>
-	<87y4a9ix2h.fsf@x220.int.ebiederm.org> <56CF0DC0.7030003@6wind.com>
+From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+Subject: [Patch v2 0/3] allow the creation of architecture emulation
+	containers where the emulator binary is outside the container
+Date: Thu, 25 Feb 2016 11:34:50 -0800
+Message-ID: <1456428890.2377.2.camel__30545.407968066$1456428909$gmane$org@HansenPartnership.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <56CF0DC0.7030003-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,35 +16,64 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org
-Cc: khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, vvs-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Nicolas Dichtel <nicolas.dichtel-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>
-Date: Thu, 25 Feb 2016 15:20:48 +0100
+Changes since v2:
 
-> Le 24/02/2016 23:05, Eric W. Biederman a =E9crit :
-> [snip]
->> In the general case the current behavior is random and not something
->> applications can count on, and we would do well to fix it so it is
->> less
->> random.  In particular consider the case of an application in a
->> non-initial network namespace creating a new network namespace.  It is
->> not even possible to predict what values they will get for sysctls
->> today.
-> +1
+ * Use oldfile f_creds for the vfs_open credentials in
+   filp_clone_open()
+ * remove spurious fput() after filp_close()
+ * Add documentation for the F option
 
-But there is a counter argument to this.
+Original cover letter:
 
-The admin set up the initial namespace so that any namespace
-instantiated by a user (even non-initial namespaces) starts with a
-specific set of sysctl values.  So the admin "knows", he set it up
-intentionally this way, and it's a valid model.
+I've recently been playing a lot with architecture emulation containers
+using qemu, mainly so I can build and test the arm secure boot
+toolchain on my x86 laptop (not having any arm server hardware).
 
-This behavior is anything but random.  Rather, it is very predictable
-and controllable.
+The process for bringing up architecture emulation containers using
+qemu-user is very cumbersome because the emulation has to be installed
+within the container.  This is bad for several reasons, firstly because
+it contaminates the container image to have an emulator sitting inside
+it.  Secondly it means that all orchestration systems have to be
+explicitly modified to work with non-native architectures and thirdly
+it means that the consumer of the container can accidentally destroy
+the emulation and thus permanently crash the container.
 
-Do you really want to find out who you're going to break out there with
-so many installations in the world right now?
+The fix for this is to add a mode to binfmt_misc where the emulation
+can be permanently installed from the current mount namespace and where
+it survives both chroot and changes of mount namespace, effectively
+allowing the container to run using the emulator, but where the
+emulator itself isn't present within the container.
 
-I do not.
+There are a couple of downsides to this, firstly the mapping of the
+interpreter is accessible inside the container even if the actual file
+isn't (I don't think this is really a security problem) and secondly,
+to update the emulator package, you now have to remove the emulation
+update and reinstall it, but this should be easy to do with packaging
+scripts.  Finally, the emulator must be static otherwise the container
+would crash when the elf binary format attempted to run the elf
+interpreter.
+
+I'm not really a regular FS developer, so I'd appreciate FS people
+taking a look at the new filp_clone_open() API and whether I got
+everything correct.
+
+Thanks,
+
+James
+
+---
+
+James Bottomley (3):
+  fs: add filp_clone_open API
+  binfmt_misc: add persistent opened binary handler for containers
+  binfmt_misc: add F option description to documentation
+
+ Documentation/binfmt_misc.txt |  7 +++++++
+ fs/binfmt_misc.c              | 41 +++++++++++++++++++++++++++++++++++++++--
+ fs/internal.h                 |  1 +
+ fs/open.c                     | 20 ++++++++++++++++++++
+ 4 files changed, 67 insertions(+), 2 deletions(-)
