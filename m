@@ -1,7 +1,8 @@
 From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Subject: [Patch v2 1/3] fs: add filp_clone_open API
-Date: Thu, 25 Feb 2016 11:36:48 -0800
-Message-ID: <1456429008.2377.4.camel__17217.8925168284$1456429026$gmane$org@HansenPartnership.com>
+Subject: [Patch v2 2/3] binfmt_misc: add persistent opened binary handler
+	for containers
+Date: Thu, 25 Feb 2016 11:37:51 -0800
+Message-ID: <1456429071.2377.5.camel__23346.7810707682$1456429088$gmane$org@HansenPartnership.com>
 References: <1456428890.2377.2.camel@HansenPartnership.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,59 +22,127 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lin
 Cc: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-I need an API that allows me to obtain a clone of the current file
-pointer to pass in to an exec handler.  I've labelled this as an
-internal API because I can't see how it would be useful outside of the
-fs subsystem.  The use case will be a persistent binfmt_misc handler.
+This patch adds a new flag 'F' to the binfmt handlers.  If you pass in
+'F' the binary that runs the emulation will be opened immediately and
+in future, will be cloned from the open file.
+
+The net effect is that the handler survives both changeroots and mount
+namespace changes, making it easy to work with foreign architecture
+containers without contaminating the container image with the
+emulator.
 
 Signed-off-by: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
 ---
- fs/internal.h |  1 +
- fs/open.c     | 20 ++++++++++++++++++++
- 2 files changed, 21 insertions(+)
+ fs/binfmt_misc.c | 41 +++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 39 insertions(+), 2 deletions(-)
 
-diff --git a/fs/internal.h b/fs/internal.h
-index b71deee..c8ca0c9 100644
---- a/fs/internal.h
-+++ b/fs/internal.h
-@@ -108,6 +108,7 @@ extern long do_handle_open(int mountdirfd,
- 			   struct file_handle __user *ufh, int open_flag);
- extern int open_check_o_direct(struct file *f);
- extern int vfs_open(const struct path *, struct file *, const struct cred *);
-+extern struct file *filp_clone_open(struct file *);
+diff --git a/fs/binfmt_misc.c b/fs/binfmt_misc.c
+index 3a3ced7..8a108c4 100644
+--- a/fs/binfmt_misc.c
++++ b/fs/binfmt_misc.c
+@@ -26,6 +26,8 @@
+ #include <linux/fs.h>
+ #include <linux/uaccess.h>
  
- /*
-  * inode.c
-diff --git a/fs/open.c b/fs/open.c
-index 55bdc75..bb7ffd6 100644
---- a/fs/open.c
-+++ b/fs/open.c
-@@ -1004,6 +1004,26 @@ struct file *file_open_root(struct dentry *dentry, struct vfsmount *mnt,
- }
- EXPORT_SYMBOL(file_open_root);
++#include "internal.h"
++
+ #ifdef DEBUG
+ # define USE_DEBUG 1
+ #else
+@@ -43,6 +45,7 @@ enum {Enabled, Magic};
+ #define MISC_FMT_PRESERVE_ARGV0 (1 << 31)
+ #define MISC_FMT_OPEN_BINARY (1 << 30)
+ #define MISC_FMT_CREDENTIALS (1 << 29)
++#define MISC_FMT_OPEN_FILE (1 << 28)
  
-+struct file *filp_clone_open(struct file *oldfile)
-+{
-+	struct file *file;
-+	int retval;
-+
-+	file = get_empty_filp();
-+	if (IS_ERR(file))
-+		return file;
-+
-+	file->f_flags = oldfile->f_flags;
-+	retval = vfs_open(&oldfile->f_path, file, oldfile->f_cred);
-+	if (retval) {
-+		fput(file);
-+		return ERR_PTR(retval);
+ typedef struct {
+ 	struct list_head list;
+@@ -54,6 +57,7 @@ typedef struct {
+ 	char *interpreter;		/* filename of interpreter */
+ 	char *name;
+ 	struct dentry *dentry;
++	struct file *interp_file;
+ } Node;
+ 
+ static DEFINE_RWLOCK(entries_lock);
+@@ -201,7 +205,13 @@ static int load_misc_binary(struct linux_binprm *bprm)
+ 	if (retval < 0)
+ 		goto error;
+ 
+-	interp_file = open_exec(iname);
++	if (fmt->flags & MISC_FMT_OPEN_FILE && fmt->interp_file) {
++		interp_file = filp_clone_open(fmt->interp_file);
++		if (!IS_ERR(interp_file))
++			deny_write_access(interp_file);
++	} else {
++		interp_file = open_exec(iname);
++	}
+ 	retval = PTR_ERR(interp_file);
+ 	if (IS_ERR(interp_file))
+ 		goto error;
+@@ -285,6 +295,11 @@ static char *check_special_flags(char *sfs, Node *e)
+ 			e->flags |= (MISC_FMT_CREDENTIALS |
+ 					MISC_FMT_OPEN_BINARY);
+ 			break;
++		case 'F':
++			pr_debug("register: flag: F: open interpreter file now\n");
++			p++;
++			e->flags |= MISC_FMT_OPEN_FILE;
++			break;
+ 		default:
+ 			cont = 0;
+ 		}
+@@ -543,6 +558,8 @@ static void entry_status(Node *e, char *page)
+ 		*dp++ = 'O';
+ 	if (e->flags & MISC_FMT_CREDENTIALS)
+ 		*dp++ = 'C';
++	if (e->flags & MISC_FMT_OPEN_FILE)
++		*dp++ = 'F';
+ 	*dp++ = '\n';
+ 
+ 	if (!test_bit(Magic, &e->flags)) {
+@@ -590,6 +607,11 @@ static void kill_node(Node *e)
+ 	}
+ 	write_unlock(&entries_lock);
+ 
++	if ((e->flags & MISC_FMT_OPEN_FILE) && e->interp_file) {
++		filp_close(e->interp_file, NULL);
++		e->interp_file = NULL;
 +	}
 +
-+	return file;
-+}
-+EXPORT_SYMBOL(filp_clone_open);
+ 	if (dentry) {
+ 		drop_nlink(d_inode(dentry));
+ 		d_drop(dentry);
+@@ -698,6 +720,21 @@ static ssize_t bm_register_write(struct file *file, const char __user *buffer,
+ 		goto out2;
+ 	}
+ 
++	if (e->flags & MISC_FMT_OPEN_FILE) {
++		struct file *f;
 +
- long do_sys_open(int dfd, const char __user *filename, int flags, umode_t mode)
- {
- 	struct open_flags op;
++		f = open_exec(e->interpreter);
++		if (IS_ERR(f)) {
++			err = PTR_ERR(f);
++			pr_notice("register: failed to install interpreter file %s\n", e->interpreter);
++			simple_release_fs(&bm_mnt, &entry_count);
++			iput(inode);
++			inode = NULL;
++			goto out2;
++		}
++		e->interp_file = f;
++	}
++
+ 	e->dentry = dget(dentry);
+ 	inode->i_private = e;
+ 	inode->i_fop = &bm_entry_operations;
+@@ -716,7 +753,7 @@ out:
+ 
+ 	if (err) {
+ 		kfree(e);
+-		return -EINVAL;
++		return err;
+ 	}
+ 	return count;
+ }
 -- 
 2.6.2
