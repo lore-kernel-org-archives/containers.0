@@ -1,13 +1,13 @@
-From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Subject: [Patch v2 3/3] binfmt_misc: add F option description to documentation
-Date: Thu, 25 Feb 2016 11:38:56 -0800
-Message-ID: <1456429136.2377.7.camel@HansenPartnership.com>
-References: <1456428890.2377.2.camel@HansenPartnership.com>
+From: Alban Crequy <alban.crequy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [lxc-devel] CGroup Namespaces (v10)
+Date: Fri, 26 Feb 2016 14:18:23 +0100
+Message-ID: <CAMXgnP4Wss0ctx7mHzD0WHL4+-fC59iLZNkYONE5pAeHYr18+A__6322.80573850057$1456492742$gmane$org@mail.gmail.com>
+References: <1454057651-23959-1-git-send-email-serge.hallyn@ubuntu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1456428890.2377.2.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+In-Reply-To: <1454057651-23959-1-git-send-email-serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,32 +17,28 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Cc: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: LXC development mailing-list <lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org>
+Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Signed-off-by: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
----
- Documentation/binfmt_misc.txt | 7 +++++++
- 1 file changed, 7 insertions(+)
+Hi,
 
-diff --git a/Documentation/binfmt_misc.txt b/Documentation/binfmt_misc.txt
-index 6b1de70..a22eb69 100644
---- a/Documentation/binfmt_misc.txt
-+++ b/Documentation/binfmt_misc.txt
-@@ -66,6 +66,13 @@ Here is what the fields mean:
-             This feature should be used with care as the interpreter
-             will run with root permissions when a setuid binary owned by root
-             is run with binfmt_misc.
-+      'F' - fix binary.  The usual behaviour of binfmt_misc is to spawn the
-+      	    binary lazily when the misc format file is invoked.  However,
-+	    this doesn't work very well in the face of mount namespaces and
-+	    changeroots, so the F mode opens the binary as soon as the
-+	    emultation is installed and uses the opened image to spawn the
-+	    emulator, meaning it is always available once installed,
-+	    regardless of how the environment changes.
- 
- 
- There are some restrictions:
--- 
-2.6.2
+On 29 January 2016 at 09:54,  <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> wrote:
+> Hi,
+>
+> following is a revised set of the CGroup Namespace patchset which Aditya
+> Kali has previously sent.  The code can also be found in the cgroupns.v10
+> branch of
+>
+> https://git.kernel.org/cgit/linux/kernel/git/sergeh/linux-security.git/
+>
+> To summarize the semantics:
+>
+> 1. CLONE_NEWCGROUP re-uses 0x02000000, which was previously CLONE_STOPPED
+
+What's the best way for a userspace application to test at run-time
+whether the kernel supports cgroup namespaces? Would you recommend to
+test if the file /proc/self/ns/cgroup exists?
+
+Thanks!
+Alban
