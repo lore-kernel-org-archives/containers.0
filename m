@@ -1,15 +1,13 @@
-From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [lxc-devel] CGroup Namespaces (v10)
-Date: Fri, 26 Feb 2016 22:47:27 +0000
-Message-ID: <20160226224727.GB24680__27288.4573591456$1456526877$gmane$org@ubuntumail>
-References: <1454057651-23959-1-git-send-email-serge.hallyn@ubuntu.com>
-	<CAMXgnP4Wss0ctx7mHzD0WHL4+-fC59iLZNkYONE5pAeHYr18+A@mail.gmail.com>
+From: Canadian-Meds <noreply-U03QN4kKR+iaMJb+Lgu22Q@public.gmane.org>
+Subject: We sell medications at their cost price only without any additional
+	fees! Try it out now!
+Date: Sat, 27 Feb 2016 05:42:25 -0200
+Message-ID: <4C150E4A.4485968@zhiverden.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"; DelSp="yes"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <CAMXgnP4Wss0ctx7mHzD0WHL4+-fC59iLZNkYONE5pAeHYr18+A-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Language: en
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,28 +17,190 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alban Crequy <alban.crequy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Johannes Weiner <hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LXC development mailing-list <lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org>, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: accessibility-ia2-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lf_driver_backport-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, accessibility-atspi-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lsb-infrastructure-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Alban Crequy (alban.crequy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> Hi,
-> 
-> On 29 January 2016 at 09:54,  <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> wrote:
-> > Hi,
-> >
-> > following is a revised set of the CGroup Namespace patchset which Aditya
-> > Kali has previously sent.  The code can also be found in the cgroupns.v10
-> > branch of
-> >
-> > https://git.kernel.org/cgit/linux/kernel/git/sergeh/linux-security.git/
-> >
-> > To summarize the semantics:
-> >
-> > 1. CLONE_NEWCGROUP re-uses 0x02000000, which was previously CLONE_STOPPED
-> 
-> What's the best way for a userspace application to test at run-time
-> whether the kernel supports cgroup namespaces? Would you recommend to
-> test if the file /proc/self/ns/cgroup exists?
+   
 
-Yup.
+		Resize the counterweights bertrandjoined medimmune in all, it
+newspaper accounts. Dayfor two weekends as integrated into date. 
+
+		Me
+		ds
+		2f
+		or
+		9M
+		en
+
+Vi
+Ci
+Ci
+Le
+Pr
+ ag
+al
+al
+vi
+op
+ ra
+is
+is
+tr
+ec
+
+ S
+a 
+ia
+
+of
+
+t 
+
+Ta
+
+bs
+
+ $0
+$1
+$2
+$2
+$0
+ .9
+.6
+.5
+.5
+.4
+ 9
+5
+0
+0
+5
+
+		Me
+		ds
+		5f
+		or
+		6W
+		om
+		en
+
+Ac
+Cl
+De
+Fe
+Fe
+ om
+om
+fl
+ma
+ma
+ pl
+id
+uc
+le
+le
+ ia
+
+an
+ C
+ V
+
+ia
+ia
+
+li
+gr
+
+s 
+a 
+
+ $1
+$0
+$1
+$1
+$0
+ .7
+.4
+.2
+.1
+.7
+ 5
+5
+5
+1
+2
+
+ Sp
+No
+10
+Vi ec
+ p
+0%
+sa ia
+re
+ A
+,M l 
+sc
+ut
+as in
+ri
+he
+te te
+pt
+nt
+rc rn
+io
+ic
+ar et
+n 
+ M
+d,  p
+re
+ed
+Ec ri
+qu
+s 
+he ce
+ir
+
+ck s 
+ed
+
+   A
+ F
+ O
+ 2 no
+as
+nl
+4/ ny
+t 
+y 
+7  mo
+wo
+re
+cu us
+rl
+li
+st  d
+dw
+ab
+om el
+id
+le
+er iv
+e 
+ s
+ s er
+sh
+up
+up y 
+ip
+pl
+po  
+pi
+ie
+rt  
+ng
+rs
+
+		>> Enter Here 
