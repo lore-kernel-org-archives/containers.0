@@ -1,12 +1,15 @@
-From: "Mr James Bullington" <bulldealshome97-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: BOOKING
-Date: Sun, 28 Feb 2016 14:51:03 +0000
-Message-ID: <50044365570001915@smtp.orange.fr>
-Reply-To: bulldealshome97-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: Randy Dunlap <rdunlap-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Subject: Re: [Patch v2 3/3] binfmt_misc: add F option description to
+	documentation
+Date: Sun, 28 Feb 2016 21:32:26 -0800
+Message-ID: <56D3D7EA.2090602__16661.5107133568$1456725071$gmane$org@infradead.org>
+References: <1456428890.2377.2.camel@HansenPartnership.com>
+	<1456429136.2377.7.camel@HansenPartnership.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1456429136.2377.7.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,29 +19,39 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Good Day,
+On 02/25/16 11:38, James Bottomley wrote:
+> Signed-off-by: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+> ---
+>  Documentation/binfmt_misc.txt | 7 +++++++
+>  1 file changed, 7 insertions(+)
+> 
+> diff --git a/Documentation/binfmt_misc.txt b/Documentation/binfmt_misc.txt
+> index 6b1de70..a22eb69 100644
+> --- a/Documentation/binfmt_misc.txt
+> +++ b/Documentation/binfmt_misc.txt
+> @@ -66,6 +66,13 @@ Here is what the fields mean:
+>              This feature should be used with care as the interpreter
+>              will run with root permissions when a setuid binary owned by root
+>              is run with binfmt_misc.
+> +      'F' - fix binary.  The usual behaviour of binfmt_misc is to spawn the
+> +      	    binary lazily when the misc format file is invoked.  However,
+> +	    this doesn't work very well in the face of mount namespaces and
+> +	    changeroots, so the F mode opens the binary as soon as the
+> +	    emultation is installed and uses the opened image to spawn the
+
+	    emulation
+
+> +	    emulator, meaning it is always available once installed,
+> +	    regardless of how the environment changes.
+>  
+>  
+>  There are some restrictions:
+> 
 
 
-we require 1double room and 2 Single room for four adult at your hotel.
-
-Arrival Date :14/03/2016
-
-Departure Date:31/03/2016
-
-Gust Name: 
-
-
-Mr & Mrs  Bullington
-
-Mr Billy Bullington
-
-Mrs Susan Bullington
-
-Kindly send the total  quotes for the stay as to forward my credit card for the full charges only.
-
-Thanks
-
-Mr J Bullington
+-- 
+~Randy
