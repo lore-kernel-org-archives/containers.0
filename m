@@ -1,11 +1,14 @@
-From: Sussan <Danik-HIz9rCBXAq29RC+f8J1Yzg@public.gmane.org>
-Subject: =?utf-8?B?QnVmZmV0dCdzIHNlY3JldHMgd2VyZSBleHBvc2VkIA==?=
-Date: Wed, 2 Mar 2016 06:39:05 -0500
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@pushingnews.info>
+From: New-Canadian-Meds <noreply-7eEqOLEI/ogYBLbWBdU4w8yiEOaA11gU@public.gmane.org>
+Subject: We are not trying to persuade you to buy our product;
+	we want you to save your money!
+Date: Wed, 2 Mar 2016 13:59:42 +0100
+Message-ID: <op.v0210891a18ef2@luckyfindproductions.com>
+References: <op.v91720e8d9f046@luckyfindproductions.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"; DelSp="yes"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <op.v91720e8d9f046-7eEqOLEI/ogYBLbWBdU4w8yiEOaA11gU@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,33 +18,192 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: accessibility-ia2-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, printing-architecture-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, accessibility-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SGkgCgpJIGhhZCBhIGZlZWxpbmcgeW91IG1pc3NlZCBteSBsYXRlc3QgdXBkYXRlLi4uIAoKSXTi
-gJlzIGFib3V0IHRoZSBXYXJyZW4gQnVmZmV0dCBzb2Z0d2FyZS4uLiAKCkF0IGZpcnN0IGkgaGFk
-IGEgaGFyZCB0aW1lIGJlbGlldmluZyBpdCBidXQgeWVzISAKCldhcnJlbiBCdWZmZXR0J3Mgc2Vj
-cmV0cyB3ZXJlIGV4cG9zZWQgaGVyZTogCgpodHRwOi8vY2xpY2sucHVzaGluZ25ld3MuaW5mby9p
-bmRleC5waHA/aWQ9MjE1MjcyNCZhPTQxMjYwJmI9MjI2NyZjPTE2NgoKSSB0cmllZCB0aGUgQ29w
-eUJ1ZmZldHQgc29mdHdhcmUgYW5kIGkgY2FuIDEwMCUgY29uZmlybS4uLiAKClRoaXMgc29mdHdh
-cmUgaXMgdGhlIHJlYWwgZGVhbCEgCgpJJ3ZlIGJlZW4gdGVzdGluZyBpdCBvdXQgZm9yIDIxIGRh
-eXMgCgpBcyBhIHplcm8gY29zdCB0cmlhbCBtZW1iZXIgYW5kIEkgbWFraW5nIHRoZSBwcm9maXRz
-IHRoZXkgY2xhaW1lZCBpIHdvdWxkLiAKClNlZSBteSByZXN1bHRzIGhlcmU6IAoKaHR0cDovL2Ns
-aWNrLnB1c2hpbmduZXdzLmluZm8vaW5kZXgucGhwP2lkPTIxNTI3MjQmYT00MTI2MCZiPTIyNjcm
-Yz0xNjYKCk9uIGF2ZXJhZ2UgSeKAmXZlIG1hZGUgd2Vla2x5IDEzLDY1MyBBbWVyaWNhbiBkb2xs
-YXJzIAoKQSBsb3QgbW9yZSB0aGFuIGkgbWFrZSB3aGVuIGkgdHJhZGUgYWxvbmUhIAoKSSdtIGVt
-YWlsaW5nIHlvdSBiZWNhdXNlIGkgd2FzIHRvbGQgdGhhdCBpIGNhbiBvZmZlciB0aGlzIHRvIGEg
-ZmV3IGZyaWVuZHMuLi4gCgpTbyB0cnkgaXQuLiBkb27igJl0IHdvcnJ5LCBpdCdzIGZyZWUhIAoK
-R28gaGVyZTogCgpodHRwOi8vY2xpY2sucHVzaGluZ25ld3MuaW5mby9pbmRleC5waHA/aWQ9MjE1
-MjcyNCZhPTQxMjYwJmI9MjI2NyZjPTE2NgoKQW5kIGdldCBpdCBub3cuLi4gdGhleSBkaWRuJ3Qg
-dGVsbCBtZSBob3cgbG9uZyB0aGlzIGxpbmsgd2lsbCB3b3JrIGZvciAKClNvIHRyeSBpdCBhbmQg
-dGVsbCBtZSBob3cgaXQgd2VudC4gCgpCZXN0IAoKU3Vzc2FuCgoKCgoKCgoKCgoKCgoKCgoKCgoK
-CgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoK
-CgoKCgoKCgoKCgoKCgoKCgoKCgoKCk91ciBhZGRyZXNzIGlzIFByb3ZpZGVuY2UgMTUxMiwgQnJp
-dGlzaCBWaXJnaW4gSXNsYW5kcywgCklmIHlvdSBkbyBub3Qgd2lzaCB0byByZWNlaXZlIGZ1dHVy
-ZSBlbWFpbCwgY2xpY2sgaGVyZS4KaHR0cDovL2NsaWNrLnB1c2hpbmduZXdzLmluZm8vaW5kZXgu
-cGhwP289MiZhPTQxMjYwJmI9MjI2NyZjPTE2NgooWW91IGNhbiBhbHNvIHNlbmQgeW91ciByZXF1
-ZXN0IHRvIEN1c3RvbWVyIENhcmUgYXQgdGhlIHN0cmVldCBhZGRyZXNzIGFib3ZlLikgCl9fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFp
-bGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9s
-aXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+   
+
+		Armada however this robotic technology has manner under duke
+Prerequisite update his liquor business. 
+
+		Me
+		ds
+		9f
+		or
+		8M
+		en
+
+Vi
+Ci
+Ci
+Le
+Pr
+ ag
+al
+al
+vi
+op
+ ra
+is
+is
+tr
+ec
+
+ S
+a 
+ia
+
+of
+
+t 
+
+Ta
+
+bs
+
+ $0
+$1
+$2
+$2
+$0
+ .9
+.6
+.5
+.5
+.4
+ 9
+5
+0
+0
+5
+
+		Me
+		ds
+		2f
+		or
+		6W
+		om
+		en
+
+Ac
+Cl
+De
+Fe
+Fe
+ om
+om
+fl
+ma
+ma
+ pl
+id
+uc
+le
+le
+ ia
+
+an
+ C
+ V
+
+ia
+ia
+
+li
+gr
+
+s 
+a 
+
+ $1
+$0
+$1
+$1
+$0
+ .7
+.4
+.2
+.1
+.7
+ 5
+5
+5
+1
+2
+
+ No
+24
+10
+Sp  p
+/7
+0%
+ec re
+ c
+ A
+ia sc
+us
+ut
+l  ri
+to
+he
+in pt
+me
+nt
+te io
+r 
+ic
+rn n 
+su
+ M
+et re
+pp
+ed
+ p qu
+or
+s 
+ri ir
+t 
+
+ce ed
+
+s   
+
+   F
+ O
+ A
+ V as
+nl
+no
+is t 
+y 
+ny
+a, wo
+re
+mo
+Ma rl
+li
+us
+st dw
+ab
+ d
+er id
+le
+el
+ca e 
+ s
+iv
+rd sh
+up
+er
+,E ip
+pl
+y 
+ch pi
+ie
+
+ec ng
+rs
+
+k   
+
+		>> Enter Here 
