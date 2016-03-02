@@ -1,10 +1,10 @@
-From: Kevin <Paul-GUe7RzSbkddCPWQmNIN3aQ@public.gmane.org>
-Subject: =?utf-8?B?QnVmZmV0dCBsZWFrcyBoaXMgdHJhZGluZyBzZWNyZXRz4oCmIA==?=
-Date: Mon, 29 Feb 2016 07:33:40 -0500
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@disennews.info>
+From: Jason <Jason-JI7qdvDnOChCPWQmNIN3aQ@public.gmane.org>
+Subject: =?utf-8?B?R2V0IFBhaWQgd2l0aCAxIENsaWNr?=
+Date: Tue, 1 Mar 2016 20:57:09 -0500
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@panelnews.info>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,24 +18,108 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SnVzdCBhIGZldyBkYXlzIGFnbyBteSBhY2NvdW50YW50IHNob3dlZCBtZSB0aGlzOiAKCkJ1ZmZl
-dHTigJlzIHRyYWRpbmcgc2VjcmV0czogaHR0cDovL2NsaWNrLmRpc2VubmV3cy5pbmZvL2luZGV4
-LnBocD9pZD0yNDE4NzYwJmE9NDEyNjAmYj0yMTkzJmM9MTY2CgpBcHBhcmVudGx5IGl0IHNlZW1z
-IHRvIGJlIHNvbWUgc29ydCBvZiBuZXcgCgpJbnNpZGUgaW5mb3JtYXRpb24gaGltIGFuZCBoaXMg
-ZnJpZW5kcyBoYWTigKYgCgpTbyBoZSBnYXZlIG1lIHRoaXMgbGluayB0byB0cnkgaXQgb3V0OiAK
-Cmh0dHA6Ly9jbGljay5kaXNlbm5ld3MuaW5mby9pbmRleC5waHA/aWQ9MjQxODc2MCZhPTQxMjYw
-JmI9MjE5MyZjPTE2NgoKT24gYSBkYWlseSBhdmVyYWdlIEnigJl2ZSBiZWVuIG1ha2luZyAkMTky
-NyEgCgpDcmF6eSByaWdodD8/PyBJdOKAmXMgbm90IGFsbCBnb29kIG5ld3MgCgpTaW5jZSBoZSBp
-bmNyZWFzZWQgaGlzIGNvbW1pc3Npb25zIHNpbmNlIHRoZW4gaGFoYWhhIAoKQnV0IDEwMCUgd29y
-dGggaXQhIAoKVHJ5IGl0IGhlcmU6IAoKaHR0cDovL2NsaWNrLmRpc2VubmV3cy5pbmZvL2luZGV4
-LnBocD9pZD0yNDE4NzYwJmE9NDEyNjAmYj0yMTkzJmM9MTY2CgpBbmQgdXBkYXRlIG1lIG9uIHlv
-dXIgcHJvZ3Jlc3PigKYgCgpCZXN0IHJlZ2FyZHMuIAoKS2V2aW4KCgoKCgoKCgoKCgoKCgoKCgoK
-CgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoK
-CgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKT3VyIGFkZHJlc3MgaXMgUHJvdmlkZW5jZSAxNTEyLCBC
-cml0aXNoIFZpcmdpbiBJc2xhbmRzLCAKSWYgeW91IGRvIG5vdCB3aXNoIHRvIHJlY2VpdmUgZnV0
-dXJlIGVtYWlsLCBjbGljayBoZXJlLgpodHRwOi8vY2xpY2suZGlzZW5uZXdzLmluZm8vaW5kZXgu
-cGhwP289MiZhPTQxMjYwJmI9MjE5MyZjPTE2NgooWW91IGNhbiBhbHNvIHNlbmQgeW91ciByZXF1
-ZXN0IHRvIEN1c3RvbWVyIENhcmUgYXQgdGhlIHN0cmVldCBhZGRyZXNzIGFib3ZlLikgCl9fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFp
-bGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9s
-aXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+What if I told you , that making $20,000 a week 
+was as easy as pushing one button? 
+
+>> All you have to do is click here 
+
+>> http://click.panelnews.info/index.php?id=2358949&a=41260&b=2254&c=166
+
+Your fate lies behind that link.. 
+
+-Jason
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Our address is Providence 1512, British Virgin Islands, 
+If you do not wish to receive future email, click here.
+http://click.panelnews.info/index.php?o=2&a=41260&b=2254&c=166
+(You can also send your request to Customer Care at the street address above.) 
