@@ -1,10 +1,10 @@
-From: Brian <Brian-RTJfXr6NIUu9RC+f8J1Yzg@public.gmane.org>
-Subject: =?utf-8?B?QnVmZmV0dCdzIHNlY3JldHMgd2VyZSBleHBvc2VkIA==?=
-Date: Thu, 3 Mar 2016 12:08:01 -0500
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@roomingnews.info>
+From: Jason <John-tSLUF3AFrk69RC+f8J1Yzg@public.gmane.org>
+Subject: =?utf-8?B?QUxMIERvbmUgZm9yIHlvdS4u?=
+Date: Thu, 3 Mar 2016 19:28:02 -0500
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@waywardnews.info>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,30 +18,122 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SGkgCgpJIGhhZCBhIGZlZWxpbmcgeW91IG1pc3NlZCBteSBsYXRlc3QgdXBkYXRlLi4uIAoKSXTi
-gJlzIGFib3V0IHRoZSBXYXJyZW4gQnVmZmV0dCBzb2Z0d2FyZS4uLiAKCkF0IGZpcnN0IGkgaGFk
-IGEgaGFyZCB0aW1lIGJlbGlldmluZyBpdCBidXQgeWVzISAKCldhcnJlbiBCdWZmZXR0J3Mgc2Vj
-cmV0cyB3ZXJlIGV4cG9zZWQgaGVyZTogCgpodHRwOi8vY2xpY2sucm9vbWluZ25ld3MuaW5mby9p
-bmRleC5waHA/aWQ9OTA5MDY4OCZhPTQxMjYwJmI9MjI5NSZjPTE2NgoKSSB0cmllZCB0aGUgQ29w
-eUJ1ZmZldHQgc29mdHdhcmUgYW5kIGkgY2FuIDEwMCUgY29uZmlybS4uLiAKClRoaXMgc29mdHdh
-cmUgaXMgdGhlIHJlYWwgZGVhbCEgCgpJJ3ZlIGJlZW4gdGVzdGluZyBpdCBvdXQgZm9yIDIxIGRh
-eXMgCgpBcyBhIHplcm8gY29zdCB0cmlhbCBtZW1iZXIgYW5kIEkgbWFraW5nIHRoZSBwcm9maXRz
-IHRoZXkgY2xhaW1lZCBpIHdvdWxkLiAKClNlZSBteSByZXN1bHRzIGhlcmU6IAoKaHR0cDovL2Ns
-aWNrLnJvb21pbmduZXdzLmluZm8vaW5kZXgucGhwP2lkPTkwOTA2ODgmYT00MTI2MCZiPTIyOTUm
-Yz0xNjYKCk9uIGF2ZXJhZ2UgSeKAmXZlIG1hZGUgd2Vla2x5IDEzLDY1MyBBbWVyaWNhbiBkb2xs
-YXJzIAoKQSBsb3QgbW9yZSB0aGFuIGkgbWFrZSB3aGVuIGkgdHJhZGUgYWxvbmUhIAoKSSdtIGVt
-YWlsaW5nIHlvdSBiZWNhdXNlIGkgd2FzIHRvbGQgdGhhdCBpIGNhbiBvZmZlciB0aGlzIHRvIGEg
-ZmV3IGZyaWVuZHMuLi4gCgpTbyB0cnkgaXQuLiBkb27igJl0IHdvcnJ5LCBpdCdzIGZyZWUhIAoK
-R28gaGVyZTogCgpodHRwOi8vY2xpY2sucm9vbWluZ25ld3MuaW5mby9pbmRleC5waHA/aWQ9OTA5
-MDY4OCZhPTQxMjYwJmI9MjI5NSZjPTE2NgoKQW5kIGdldCBpdCBub3cuLi4gdGhleSBkaWRuJ3Qg
-dGVsbCBtZSBob3cgbG9uZyB0aGlzIGxpbmsgd2lsbCB3b3JrIGZvciAKClNvIHRyeSBpdCBhbmQg
-dGVsbCBtZSBob3cgaXQgd2VudC4gCgpCZXN0IAoKQnJpYW4KCgoKCgoKCgoKCgoKCgoKCgoKCgoK
-CgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoK
-CgoKCgoKCgoKCgoKCgoKCgoKCgoKT3VyIGFkZHJlc3MgaXMgUHJvdmlkZW5jZSAxNTEyLCBCcml0
-aXNoIFZpcmdpbiBJc2xhbmRzLCAKSWYgeW91IGRvIG5vdCB3aXNoIHRvIHJlY2VpdmUgZnV0dXJl
-IGVtYWlsLCBjbGljayBoZXJlLgpodHRwOi8vY2xpY2sucm9vbWluZ25ld3MuaW5mby9pbmRleC5w
-aHA/bz0yJmE9NDEyNjAmYj0yMjk1JmM9MTY2CihZb3UgY2FuIGFsc28gc2VuZCB5b3VyIHJlcXVl
-c3QgdG8gQ3VzdG9tZXIgQ2FyZSBhdCB0aGUgc3RyZWV0IGFkZHJlc3MgYWJvdmUuKSAKX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWls
-aW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xp
-c3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Do you want a fully automated system
+that's *guaranteed* to generate 1k per day? 
+
+Heard it all before ? Then delete this email
+and I wish you good luck! 
+
+Still here then HIT THIS: 
+
+==> http://click.waywardnews.info/index.php?id=1527201&a=41260&b=2308&c=166
+
+My team have done absolutely EVERYTHING for YOU. 
+
+NO Experience Required 
+
+NO Tech Skills 
+
+ALL SET UP and Ready to GO with the FULL support
+of my 24/7 Team 
+
+==> http://click.waywardnews.info/index.php?id=1527201&a=41260&b=2308&c=166
+
+Limited Spaces , Don't Delay 
+
+-Jason
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Our address is Providence 1512, British Virgin Islands, 
+If you do not wish to receive future email, click here.
+http://click.waywardnews.info/index.php?o=2&a=41260&b=2308&c=166
+(You can also send your request to Customer Care at the street address above.) 
