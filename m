@@ -1,35 +1,15 @@
-From: Alexander Larsson <alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] devpts: Add ptmx_uid and ptmx_gid options
-Date: Tue, 08 Mar 2016 10:16:31 +0100
-Message-ID: <1457428591.27353.55.camel__34497.0414917499$1457428622$gmane$org@redhat.com>
-References: <b321c0c2729d1c2a72aea319b077dce7afd79698.1424480579.git.luto@amacapital.net>
-	<CALCETrVtGE8LdBCFTe1_cqpLf=SxPNX5iCe5wa-hZ0pe8ps_jA@mail.gmail.com>
-	<1427447013.2250.9.camel@HansenPartnership.com>
-	<1427788642.4411.12.camel@redhat.com>
-	<1427807248.2117.117.camel@HansenPartnership.com>
-	<CALCETrWKA4ZdHfdLuW0_W5xxJOSCJdt_fiRWs6vDk+8ZQ9n9iA@mail.gmail.com>
-	<1427808184.2117.122.camel@HansenPartnership.com>
-	<CALCETrW8v1NFa7fcJbyJKXk9Msudht5BJ7Zy1Rg7ZC_TS-2Y-Q@mail.gmail.com>
-	<1427810118.2117.126.camel@HansenPartnership.com>
-	<CALCETrU1vKf3fXPt8nS-ABDgfp8NxrFjHwTc68rA0rtvg2Lufg@mail.gmail.com>
-	<1427810886.2117.129.camel@HansenPartnership.com>
-	<1427811444.4411.20.camel@redhat.com>
-	<1427969525.3559.120.camel@HansenPartnership.com>
-	<CALCETrWyUYgHY53O451AdJUs9Mcjsqmr4fUzoNmYsTP1HLq+VA@mail.gmail.com>
-	<1427984969.13651.11.camel@redhat.com>
-	<CALCETrWYit+WiAM6DFm0enGeJN==uWNC63zXp_zRSsSJg2YGPg@mail.gmail.com>
-	<87zj6qs7v8.fsf@x220.int.ebiederm.org>
-	<CALCETrVGcCA2SMiDT8JN=AWiSFCXWSaMeKBQmkbKynKfiPJCwA@mail.gmail.com>
-	<87oal4odne.fsf@x220.int.ebiederm.org>
-	<1432832511.21304.6.camel@redhat.com>
-	<CALCETrUueGomqFG0DSpt5Ern-XW6DE+rAEkd=3Y2ekV+gOwLAA@mail.gmail.com>
-	<87siagh4kh.fsf@x220.int.ebiederm.org>
-	<CALCETrXNyyG-LZ8ds5ALbWs_Tfonev4+Ci=XZwWFqsSeszes8g@mail.gmail.com>
+From: Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Patch v2 1/3] fs: add filp_clone_open API
+Date: Tue, 8 Mar 2016 10:17:07 +0100
+Message-ID: <20160308091705.GB2189@mguzik>
+References: <1456428890.2377.2.camel@HansenPartnership.com>
+	<1456429008.2377.4.camel@HansenPartnership.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CALCETrXNyyG-LZ8ds5ALbWs_Tfonev4+Ci=XZwWFqsSeszes8g-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1456429008.2377.4.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -39,38 +19,75 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: gnome-os-list-rDKQcyrBJuzYtjvyW6yDsg@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, mclasen-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+Cc: linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gbcOlbiwgMjAxNi0wMy0wNyBhdCAyMDo1OSAtMDgwMCwgQW5keSBMdXRvbWlyc2tpIHdyb3Rl
-Ogo+IE9uIFRodSwgTWF5IDI4LCAyMDE1IGF0IDEyOjQyIFBNLCBFcmljIFcuIEJpZWRlcm1hbgo+
-IDxlYmllZGVybUB4bWlzc2lvbi5jb20+IHdyb3RlOgo+ID4gQW5keSBMdXRvbWlyc2tpIDxsdXRv
-QGFtYWNhcGl0YWwubmV0PiB3cml0ZXM6Cj4gPsKgCj4gQXBwYXJlbnRseSBhbGV4bCBpcyBlbmNv
-dW50ZXJpbmcgc29tZSBhbm5veWFuY2VzIHJlbGF0ZWQgdG8gdGhlCj4gY3VycmVudCB3b3JrYXJv
-dW5kLCBhbmQgdGhlIHdvcmthcm91bmQgaXMgY2VydGFpbmx5IHVnbHkuCgpJdCB3b3JrcywgYnV0
-IGl0IGludHJvZHVjZXMgYW4gZXh0cmEgbmFtZXNwYWNlIHRoYXQgZ2V0cyBleHBvc2VkIHRvIHRo
-ZQp3b3JsZCwgd2hpY2ggaXMgcHJldHR5IHVnbHkuIEZvciBpbnN0YW5jZSwgZW50ZXJpbmcgdGhl
-IG5hbWVzcGFjZQpiZWNvbWVzIGhhcmQuIEkgY2FuIHNldG5zKCkgaW50byB0aGUgaW50ZXJtZWRp
-YXRlIHVzZXIrbW91bnQgbmFtZXNwYWNlCndpdGhvdXQgcHJvYmxlbXMsIGJ1dCBpZiBpIHRyeSB0
-byBzZXRucyBpbnRvIHRoZSBmaW5hbCB1c2VyK21vdW50IG5zCihpdCBnZXRzIGl0cyBvd24gaW1w
-bGljaXQgbW91bnQgbnMpIGkgZ2V0IEVQRVJNLiBJJ20gbm90IHN1cmUgZXhhY3RseQp3aHkgdGhv
-dWdoLi4uCgo+IFlvdXIgcHJvcG9zYWwgc2VlbXMgbGlrZSBpdCBjb3VsZCBicmVhayBzb21lIHVz
-ZSBjYXNlcyBpbnZvbHZpbmcKPiBmc2NhcHMgb24gYSBtb3VudCBvciBtb3VudC1saWtlIGJpbmFy
-eS4KPiAKPiBXaGF0IGlmIHdlIGNoYW5nZSBpdCB0byB1c2UgdGhlIG93bmVyIG9mIHRoZSB1c2Vy
-bnMgdGhhdCBvd25zIHRoZQo+IGN1cnJlbnQgbW91bnQgbnM/wqDCoEZvciBhbnl0aGluZyB0aGF0
-IGRvZXNuJ3QgZXhwbGljaXRseSB1c2UKPiBuYW1lc3BhY2VzLCB0aGlzIHdpbGwgYmUgemVyby7C
-oMKgRm9yIG5hbWVzcGFjZSB1c2VycywgaXQgc2hvdWxkIGRvIHRoZQo+IHJpZ2h0IHRoaW5nLgoK
-QW55IG9mIHRoZXNlIGlzIGZpbmUgd2l0aCBtZS4gT25lIG5pY2UgdGhpbmcgd291bGQgaWYgaSBj
-b3VsZCBzb21laG93CmRldGVjdCB3aGV0aGVyIHRoaXMgd2FzIHN1cHBvcnRlZCBvciBub3Qgc28g
-dGhhdCBpIGNhbiBmYWxsIGJhY2sgb24gdGhlCm9sZCB3b3JrYXJvdW5kLgoKLS0gCj0tPS09LT0t
-PS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09
-LT0tPS09LT0tPQogQWxleGFuZGVyIExhcnNzb24gICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgIFJlZCBIYXQsIEluYyAKICAgICAgIGFsZXhsQHJlZGhhdC5jb20gICAg
-ICAgICAgICBhbGV4YW5kZXIubGFyc3NvbkBnbWFpbC5jb20gCkhlJ3MgYW4gYWxsLUFtZXJpY2Fu
-IGd1aXRhci1zdHJ1bW1pbmcgaG91c2VodXNiYW5kIHdpdGggbm8gbmFtZS4gU2hlJ3MgYSAKc2Nh
-bnRpbHkgY2xhZCBpbXBldHVvdXMgZm9ybWVyIGZpcnN0IGxhZHkgd2hvIGRvbid0IHRha2Ugbm8g
-c2hpdCBmcm9tIApub2JvZHkuIFRoZXkgZmlnaHQgY3JpbWUhIAoKCl9fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNv
-bnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZv
-dW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On Thu, Feb 25, 2016 at 11:36:48AM -0800, James Bottomley wrote:
+> I need an API that allows me to obtain a clone of the current file
+> pointer to pass in to an exec handler.  I've labelled this as an
+> internal API because I can't see how it would be useful outside of the
+> fs subsystem.  The use case will be a persistent binfmt_misc handler.
+> 
+> Signed-off-by: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+> ---
+>  fs/internal.h |  1 +
+>  fs/open.c     | 20 ++++++++++++++++++++
+>  2 files changed, 21 insertions(+)
+> 
+> diff --git a/fs/internal.h b/fs/internal.h
+> index b71deee..c8ca0c9 100644
+> --- a/fs/internal.h
+> +++ b/fs/internal.h
+> @@ -108,6 +108,7 @@ extern long do_handle_open(int mountdirfd,
+>  			   struct file_handle __user *ufh, int open_flag);
+>  extern int open_check_o_direct(struct file *f);
+>  extern int vfs_open(const struct path *, struct file *, const struct cred *);
+> +extern struct file *filp_clone_open(struct file *);
+>  
+>  /*
+>   * inode.c
+> diff --git a/fs/open.c b/fs/open.c
+> index 55bdc75..bb7ffd6 100644
+> --- a/fs/open.c
+> +++ b/fs/open.c
+> @@ -1004,6 +1004,26 @@ struct file *file_open_root(struct dentry *dentry, struct vfsmount *mnt,
+>  }
+>  EXPORT_SYMBOL(file_open_root);
+>  
+> +struct file *filp_clone_open(struct file *oldfile)
+> +{
+> +	struct file *file;
+> +	int retval;
+> +
+> +	file = get_empty_filp();
+> +	if (IS_ERR(file))
+> +		return file;
+> +
+> +	file->f_flags = oldfile->f_flags;
+> +	retval = vfs_open(&oldfile->f_path, file, oldfile->f_cred);
+> +	if (retval) {
+> +		fput(file);
+
+You likely want put_file instead, although if I read it right this is
+only cosmetics for consistency with dentry_open.
+
+Also vast majority of the file uses 'error' instead of 'retval'. Any
+reason to deviate here?
+
+> +		return ERR_PTR(retval);
+> +	}
+> +
+> +	return file;
+> +}
+> +EXPORT_SYMBOL(filp_clone_open);
+> +
+>  long do_sys_open(int dfd, const char __user *filename, int flags, umode_t mode)
+>  {
+>  	struct open_flags op;
+> -- 
+> 2.6.2
+> 
+
+-- 
+Mateusz Guzik
