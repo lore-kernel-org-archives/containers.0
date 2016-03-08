@@ -1,13 +1,15 @@
-From: Alexander Larsson <alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Thoughts on tightening up user namespace creation
-Date: Tue, 08 Mar 2016 11:05:30 +0100
-Message-ID: <1457431530.27353.90.camel@redhat.com>
-References: <CALCETrU4+zTKABz1foEA=an3XYbe_UXxn_w9=1GjVzMe5DXXPw@mail.gmail.com>
+From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+Subject: Re: [Patch v2 1/3] fs: add filp_clone_open API
+Date: Tue, 08 Mar 2016 06:19:35 -0500
+Message-ID: <1457435975.632.39.camel__35443.2009779432$1457435995$gmane$org@HansenPartnership.com>
+References: <1456428890.2377.2.camel@HansenPartnership.com>
+	<1456429008.2377.4.camel@HansenPartnership.com>
+	<20160308091705.GB2189@mguzik>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CALCETrU4+zTKABz1foEA=an3XYbe_UXxn_w9=1GjVzMe5DXXPw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20160308091705.GB2189@mguzik>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,109 +19,91 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Colin Walters <walters-gPq2gbYjIk8dnm+yROfE0A@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Stephane Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+To: Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gbcOlbiwgMjAxNi0wMy0wNyBhdCAyMToxNSAtMDgwMCwgQW5keSBMdXRvbWlyc2tpIHdyb3Rl
-Ogo+IEhpIGFsbC0KPiAKPiBJIHRoaW5rIHRoZXJlIGFyZSB0aHJlZSBtYWluIHR5cGVzIG9mIGNv
-bmNlcm5zLsKgwqBGaXJzdCwgdGhlcmUgbWlnaHQKPiBiZQo+IHNvbWUgYXMteWV0LXVua25vd24g
-c2VtYW50aWMgaXNzdWVzIHRoYXQgd291bGQgYWxsb3cgcHJpdmlsZWdlCj4gZXNjYWxhdGlvbiBi
-eSB1c2VycyB3aG8gY3JlYXRlIHVzZXIgbmFtZXNwYWNlcyBhbmQgdGhlbiBjb25mdXNlCj4gc29t
-ZXRoaW5nIGVsc2UgaW4gdGhlIHN5c3RlbS7CoMKgU2Vjb25kLCBlbmFibGluZyB1c2VyIG5hbWVz
-cGFjZXMKPiBleHBvc2VzIGEgbG90IG9mIGF0dGFjayBzdXJmYWNlIHRvIHVucHJpdmlsZWdlZCB1
-c2Vycy7CoMKgVGhpcmQsCj4gYWxsb3dpbmcgdGFza3MgdG8gY3JlYXRlIHVzZXIgbmFtZXNwYWNl
-cyBleHBvc2VzIHRoZSBrZXJuZWwgdG8KPiB2YXJpb3VzCj4gcmVzb3VyY2UgZXhoYXVzdGlvbiBh
-dHRhY2tzIHRoYXQgd291bGRuJ3QgYmUgcG9zc2libGUgb3RoZXJ3aXNlLgoKSW4gbXkgd29yayBv
-biB4ZGctYXBwIGkndmUgc2VlbiBzb21lIGlzc3VlcyB0aGF0IEknZCBpZGVhbGx5IHdvdWxkIGxp
-a2UKdG8gc2VlIGEgc29sdXRpb24gdG8uIFRoZXkgYXJlIG5vdCBuZWNlc3NhcmlseSBzZWN1cml0
-eQp2dWxuZXJhYmlsaXRpZXMsIGJ1dCBzdGlsbCBwcm9ibGVtczoKCmRldnB0cyBpcyBvbmx5IG1v
-dW50YWJsZSBpbiBhIHVzZXIgbmFtZXNwYWNlIGlmIHRoZSByb290IHVzZXIgaXMKbWFwcGVkLiBQ
-b3NzaWJsZSB0byB3b3JrIGFyb3VuZCwgYnV0IHVnbHkuCgpUaGVyZSBpcyBubyB3YXkgdG8gcmVj
-dXJzaXZlbHkgYXBwbHkgbW91bnQgZmxhZ3MuIEZvciBleGFtcGxlLCBJIG9mdGVuCndhbnQgdG8g
-cmVjdXJzaXZlbHkgYmluZCBtb3VudCBzb21lIGRpcmVjdG9yeSBmcm9tIHRoZSBob3N0IGJ1dCB3
-aXRoCk1TX1JFQURPTkxZfE1TX05PREVWLiDCoEkgY2Fubm90IGFwcGx5IHRoZSBmbGFncyBpbiB0
-aGUgTVNfQklORHxNU19SRUMKbW91bnQsIHNvIGluc3RlYWQgaSBoYXZlIHRvIGZpcnN0IGJpbmQg
-bW91bnQgYW5kIHRoZW4gcmVtb3VudC4gSG93ZXZlciwKdGhlIHJlbW91bnQgaXMgbm90IHJlY3Vy
-c2l2ZSwgc28gaSBoYXZlIHRvIG1hbnVhbGx5IHBhcnNlCi9wcm9jL3NlbGYvbW91bnRpbmZvIGFu
-ZCBmaWd1cmUgb3V0IGFsbCB0aGUgc3VibW91bnRzIHRoYXQgd2VyZSBhZGRlZC4KQWxzbywgSSBo
-YXZlIHRvIG1hbnVhbGx5IGF2b2lkIHRyeWluZyB0byByZW1vdW50IGNvdmVyZWQgbW91bnRzLApi
-ZWNhdXNlIEkgY2FuJ3QgcmVhY2ggdGhvc2UsIGFuZCBmb3IgZWFjaCByZW1vdW50IEkgaGF2ZSB0
-byBwYXJzZSBvdXQKaXRzIGN1cnJlbnQgZmxhZ3Mgc28gaSBkb24ndCBhY2NpZGVudGFsbHkgdW5z
-ZXQgc29tZSBzZXQgZmxhZywgY2F1c2luZwpFUEVSTS7CoAoKCk1vdW50IGZsYWdzIGFyZSBub3Qg
-YXBwbGllZCBvbiBwcm9wYWdhdGVkIG1vdW50cy4gRXZlbiBpZiBJIGRvIGFsbCB0aGUKc3R1ZmYg
-YWJvdmUsIGlmIGkgZ2V0IGEgKm5ldyogbW91bnQgcHJvcGFnYXRlZCBpbnRvIG15IG5hbWVzcGFj
-ZSwgb3IgaWYKYSBwYXJlbnQgdW5tb3VudCBpcyBwcm9wYWdhdGVkIHVuY292ZXJpbmcgYW4gbW91
-bnQgaW4gbXkgbmFtZXNwYWNlLAp0aGVuIHRoaXMgbmV3IG1vdW50cG9pbnQgaXMgbm90IHJlYWQt
-b25seS4gVGhpcyBoYXMgbm8gd29ya2Fyb3VuZCB0aGF0CkknbSBjdXJyZW50bHkgYXdhcmUgb2Yu
-CgpBYnN0cmFjdCB1bml4IGRvbWFpbiBzb2NrZXRzIGFyZSB0aWVkIHRvIHRoZSBuZXR3b3JrIG5h
-bWVzcGFjZS4gSQp1bmRlcnN0YW5kIHdoZXJlIHRoaXMgY29tZXMgZnJvbSwgc29ja2V0IHN5c2Nh
-bGxzIGFyZSAibmV0d29ya2lzaCIuCkhvd2V2ZXIsIHRoZSBub24tYWJzdHJhY3QgdW5peCBkb21h
-aW4gc29ja2V0cyBhcmUgdW5kZXIgdGhlIGNvbnRyb2wgb2YKdGhlIGZpbGVzeXN0ZW0gbmFtZXNw
-YWNlLCBhbmQgSSBjYW4gZnVsbHkgY29udHJvbCB0aGVtIHdoZW4gc2V0dGluZyB1cAp0aGUgc2Fu
-ZGJveC4gQnV0LCBhcyBsb25nIGFzIHRoZSBzYW5kYm94IHNoYXJlIHRoZSBuZXR3b3JrIG5hbWVz
-cGFjZQp3aXRoIHRoZSBob3N0ICh3aGljaCBpcyBsaWtlbHkgZm9yIGRlc2t0b3AgYXBwcykgaXQg
-d2lsbCBoYXZlIGZ1bGwKYWNjZXNzIHRvIGFsbCBzZXJ2aWNlcyBsaXN0ZW5pbmcgb24gYWJzdHJh
-Y3Qgc29ja2V0cyBvbiB0aGUgaG9zdC4gVGhpcwppcyBwYXJ0aWN1bGFybHkgcHJvYmxlbWF0aWMg
-YmVjYXVzZSAxKSBhYnN0cmFjdCBzb2NrZXRzIGhhdmUgbm8gZmlsZQpwZXJtaXNzaW9ucywgc28g
-YW55IFhzZXJ2ZXIgcnVubmluZyBvbiB0aGUgaG9zdCBpcyB3aWRlIG9wZW4sIDIpCldoZXRoZXIg
-YSBjb25uZWN0IGNhbGwgdXNlcyBhYnN0cmFjdCBzb2NrZXRzIGlzIG5vdCBkZXRlY3RhYmxlIHZp
-YQpzZWNjb21wLCBzbyB3ZSBjYW4ndCBmaWx0ZXIgaXQgaW4gYW55IG90aGVyIHdheS4gSSBkb24n
-dCBrbm93IGhvdyBzZXZlcgp0aGlzIGlzLCBhcyBpdCBkZXBlbmRzIG9uIGhvdyB0cnVzdHkgdGhl
-IGluZGl2aWR1YWwgc2VydmljZXMgYXJlIGJ1dCBhdApsZWFzdCBvbiBteSBzeXN0ZW0gImdyZXAg
-QCAvcHJvYy9uZXQvdW5peCIgbGlzdHMgc2Vzc2lvbiBkYnVzCmluc3RhbmNlcywgWCBzZXJ2ZXIs
-IGFuZCBzb21lIGlTQ1NJIHRoaW5nLgoKL3Byb2MgKGV2ZW4gdGhlIGxpbWl0ZWQgcGlkIG5hbWVz
-cGFjZSBvbmUpIGNvbnRhaW5zIGEgbG90IG9mIG9sZCBjcnVmdAp0aGF0IGF0IGEgbWluaW11bSBs
-ZWFrcyBoYXJkd2FyZSBpbmZvIHRvIHRoZSBzYW5kYm94LCBhbmQgY291bGQKcG90ZW50aWFsbHkg
-ZG8gd29yc2UgKC9wcm9jL3N5c3JxLXRyaWdnZXIgYW55b25lPykuIEknZCBsaWtlIHRvIGJlIGFi
-bGUKdG8gbW91bnQgYSAiY2xlYW4iIC9wcm9jIHRoYXQgaGFzIG9ubHkgdGhlIHByb2Nlc3MtcmVs
-YXRlZCBzdHVmZi4KCj4gKysrIFdoYXQgZG9lcyB0aGUgcHJpdmlsZWdlIG9mIGNyZWF0aW5nIGEg
-dXNlciBuYW1lc3BhY2UgZW50YWlsPyArKysKPiAKPsKgCj4gSXQgbWlnaHQgYmUgbW9yZSBpbnRl
-cmVzdGluZyB0byBhbGxvdyBhIHRhc2sgdG8gdW5zaGFyZSBhbGwKPiBuYW1lc3BhY2VzLCBob2xk
-IGFsbCBjYXBhYmlsaXRpZXMgaW4gdGhlbSwgYnV0IHRvIHN0aWxsIGJlIHVuYWJsZSB0bwo+IHVz
-ZSBjZXJ0YWluIHByaXZpbGVnZWQgZmFjaWxpdGllcy7CoMKgRm9yIGV4YW1wbGUsIG1heWJlIGRl
-bnlpbmcKPiBhZG1pbmlzdHJhdGl2ZSBjb250cm9sIG92ZXIgaXB0YWJsZXMsIGNyZWF0aW9uIG9m
-IGV4b3RpYyBuZXR3b3JrCj4gaW50ZXJmYWNlIHR5cGVzLCBvciBzaW1pbGFyIHdvdWxkIG1ha2Ug
-c2Vuc2UuwqDCoAoKPiBJIGRvbid0IGtub3cgaG93IHdlJ2Qgc3BlY2lmeSB0aGlzIHR5cGUgb2Yg
-Y29uc3RyYWludC4KCkkgdGhpbmsgdGhpcyBwYXJ0aWN1bGFyIGlzc3VlIGlzIHRoZSBtYWluIHBy
-b2JsZW0gaGVyZS4gVW5sZXNzIHdlIGFkZApzb21lIHZlcnkgY291cnNlIGJpdC1mbGFncyB0aGF0
-IHNwZWNpZnkgdGhlIGNvbnN0cmFpbnRzIGl0IGlzIGdvaW5nIHRvCmJlIGEgdmVyeSBjb21wbGV4
-IEFQSSB0byBzZXQgdXAgc3VjaCBjb25zdHJhaW50cy4gQWRkaW5nIGNvdXJzZSBiaXQtCmZsYWdz
-IGVzc2VudGlhbGx5IG1lYW5zIGFkZGluZyBuZXcgY2FwYWJpbGl0aWVzIChtYXliZSBzdWJzZXR0
-aW5nCmV4aXN0aW5nIG9uZXMpLiBHaXZlbiBob3cgaGFyZCBpdCBpcyB0byB1bmRlcnN0YW5kIGhv
-dyBhbGwgdGhlIGN1cnJlbnQKY2FwYWJpbGl0aWVzIGludGVyYWN0IGFuZCBob3cgdGhleSBjYW4g
-YmUgZXhwbG9pdGVkIEknbSBub3Qgc3VyZSB0aGlzCmlzIGEgZ3JlYXQgaWRlYS4KCk1heWJlIHdl
-IGNhbiB1c2UgdGhlIExTTSBmcmFtZXdvcmsgdG8gbW9kZWwgdGhlIGNvbnN0cmFpbnRzPyBGb3IK
-aW5zdGFuY2UsIHRoZSB1c2VyIGNvdWxkIGJlIGFsbG93ZWQgdG8gY3JlYXRlIHVzZXIgbmFtZXNw
-YWNlcywgYnV0IHRoZXkKcHJvY2Vzc2VzIGluIGl0IGF1dG9tYXRpY2FsbHkgZ2V0IHNvbWUgc2Vs
-aW51eCBjb250ZXh0IGFwcGxpZWQuIFRoZW4KdGhhdCBzZWxpbnV4IGNvbnRleHQgY291bGQgYmUg
-Y29uZmlndXJlZCB0byBsaW1pdCBhY2Nlc3MgdG8gY2VydGFpbgpvcGVyYXRpb25zLgoKPiArKysg
-V2hvIGNhbiBjcmVhdGUgdXNlciBuYW1lc3BhY2VzIChwb3NzaWJseSB3aXRoIHJlc3RyaWN0aW9u
-cyk/ICsrKwo+IAo+IEkgY2FuIHRoaW5rIG9mIGEgZmV3IGZvcm11bGF0aW9ucy4KPiAKPiBBIHNp
-bXBsZXIgYXBwcm9hY2ggd291bGQgYmUgdG8gYWRkIGEgcGVyLW5hbWVzcGFjZSBzZXR0aW5nIGxp
-c3RpbmcKPiB1c2VycyBhbmQvb3IgZ3JvdXBzIHRoYXQgY2FuIHVuc2hhcmUgdGhlaXIgdXNlcm5z
-LsKgwqBBIHVzZXJucyBzdGFydHMKPiBvdXQgYWxsb3dpbmcgZXZlcnlvbmUgdG8gdW5zaGFyZSB1
-c2VybnMsIGFuZCBhbnlvbmUgd2l0aAo+IENBUF9TWVNfQURNSU4KPiBjYW4gY2hhbmdlIHRoZSBz
-ZXR0aW5nLgoKVGhpcyBzb3VuZHMgbGlrZSBhIGNncm91cCBjb250cm9sbGVyIHRvIG1lLiBJdCBt
-YWtlcyBzZW5zZSBmb3IgbXkKdXNlY2FzZSAoaS5lLiBzYW5kYm94ZWQgZGVza3RvcCBhcHBzKS4g
-WW91IHdhbnQgdG8gZ2l2ZSBhbGwgcHJvY2Vzc2VzCmluIHRoZSB1c2VycyBsb2dpbiBzZXNzaW9u
-IGFjY2VzcyB0byB1c2VyIG5hbWVzcGFjZXMsIGJ1dCBub3QgbmVjZXNzYXJ5CnRvIGUuZy4gYSBz
-ZXJ2aWNlIG9yIGJhY2tncm91bmQgcHJvY2VzcyBvciBhIGNyb24gam9iIHJ1bm5pbmcgYXMgdGhh
-dAp1c2VyLgoKPiBBIGZhbmNpZXIgYXBwcm9hY2ggd291bGQgYmUgdG8gaGF2ZSBhbiBmZCB0aGF0
-IHJlcHJlc2VudHMgdGhlIHJpZ2h0Cj4gdG8KPiB1bnNoYXJlIHlvdXIgdXNlcm5zLsKgwqBTb21l
-IHByaXZpbGVnZSBicm9rZXIgY291bGQgZ2l2ZSBvdXQgdGhvc2UgZmRzCj4gdG8gYXBwcyB0aGF0
-IG5lZWQgdGhlbSBhbmQgbWVldCB3aGF0ZXZlciBjcml0ZXJpYSBhcmUgc2V0LsKgwqBJZiB5b3UK
-PiB0cnkKPiB0byB1bnNoYXJlIHlvdXIgdXNlcm5zIHdpdGhvdXQgdGhlIGZkLCBpdCBmYWxscyBi
-YWNrIHRvIHNvbWUgc2ltcGxlcgo+IHBvbGljeS4KCkluIHByYWN0aWNlIHRob3VnaCwgaG93IHdv
-dWxkIHRoZSBwcml2aWxlZ2UgYnJva2VuIGtub3cgYW5kIGFwcGx5IHRoZQpjcml0ZXJpYS4gSXRz
-IG5vdCBldmVuIGdvdCB0aGUgaW5mb3JtYXRpb24gdGhlIGtlcm5lbCBoYXMgKHN1Y2ggYXMKcmFj
-ZS1mcmVlIGFjY2VzcyB0byB0aGUgcGVlciBjZ3JvdXApLgoKLS0gCj0tPS09LT0tPS09LT0tPS09
-LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0t
-PQogQWxleGFuZGVyIExhcnNzb24gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgIFJlZCBIYXQsIEluYyAKICAgICAgIGFsZXhsQHJlZGhhdC5jb20gICAgICAgICAgICBh
-bGV4YW5kZXIubGFyc3NvbkBnbWFpbC5jb20gCkhlJ3MgYW4gdW5nb2RseSBkZXZpb3VzIHBhcmFt
-ZWRpYyBvbiBoaXMgbGFzdCBkYXkgaW4gdGhlIGpvYi4gU2hlJ3MgYSAKc2hhcnAtc2hvb3Rpbmcg
-Y2lnYXItY2hvbXBpbmcgYXJjaGFlb2xvZ2lzdCBtYXJyaWVkIHRvIHRoZSBNb2IuIFRoZXkgCmZp
-Z2h0IGNyaW1lISAKCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5k
-YXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3Rp
-bmZvL2NvbnRhaW5lcnM=
+On Tue, 2016-03-08 at 10:17 +0100, Mateusz Guzik wrote:
+> On Thu, Feb 25, 2016 at 11:36:48AM -0800, James Bottomley wrote:
+> > I need an API that allows me to obtain a clone of the current file
+> > pointer to pass in to an exec handler.  I've labelled this as an
+> > internal API because I can't see how it would be useful outside of
+> > the
+> > fs subsystem.  The use case will be a persistent binfmt_misc
+> > handler.
+> > 
+> > Signed-off-by: James Bottomley <
+> > James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+> > ---
+> >  fs/internal.h |  1 +
+> >  fs/open.c     | 20 ++++++++++++++++++++
+> >  2 files changed, 21 insertions(+)
+> > 
+> > diff --git a/fs/internal.h b/fs/internal.h
+> > index b71deee..c8ca0c9 100644
+> > --- a/fs/internal.h
+> > +++ b/fs/internal.h
+> > @@ -108,6 +108,7 @@ extern long do_handle_open(int mountdirfd,
+> >  			   struct file_handle __user *ufh, int
+> > open_flag);
+> >  extern int open_check_o_direct(struct file *f);
+> >  extern int vfs_open(const struct path *, struct file *, const
+> > struct cred *);
+> > +extern struct file *filp_clone_open(struct file *);
+> >  
+> >  /*
+> >   * inode.c
+> > diff --git a/fs/open.c b/fs/open.c
+> > index 55bdc75..bb7ffd6 100644
+> > --- a/fs/open.c
+> > +++ b/fs/open.c
+> > @@ -1004,6 +1004,26 @@ struct file *file_open_root(struct dentry
+> > *dentry, struct vfsmount *mnt,
+> >  }
+> >  EXPORT_SYMBOL(file_open_root);
+> >  
+> > +struct file *filp_clone_open(struct file *oldfile)
+> > +{
+> > +	struct file *file;
+> > +	int retval;
+> > +
+> > +	file = get_empty_filp();
+> > +	if (IS_ERR(file))
+> > +		return file;
+> > +
+> > +	file->f_flags = oldfile->f_flags;
+> > +	retval = vfs_open(&oldfile->f_path, file, oldfile
+> > ->f_cred);
+> > +	if (retval) {
+> > +		fput(file);
+> 
+> You likely want put_file instead, although if I read it right this is
+> only cosmetics for consistency with dentry_open.
+
+get_empty_filp() is always paired with fput().  There isn't a
+put_file(); there's a put_files_struct() but that's for something
+different.
+
+> Also vast majority of the file uses 'error' instead of 'retval'. Any
+> reason to deviate here?
+
+it mirrors the close routines which also use retval.
+
+James
+
+
+> > +		return ERR_PTR(retval);
+> > +	}
+> > +
+> > +	return file;
+> > +}
+> > +EXPORT_SYMBOL(filp_clone_open);
+> > +
+> >  long do_sys_open(int dfd, const char __user *filename, int flags,
+> > umode_t mode)
+> >  {
+> >  	struct open_flags op;
+> > -- 
+> > 2.6.2
+> > 
+> 
