@@ -1,16 +1,35 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Patch v2 2/3] binfmt_misc: add persistent opened binary handler
-	for containers
-Date: Tue, 8 Mar 2016 02:10:27 -0600
-Message-ID: <20160308081027.GC3565__17947.3691773184$1457424657$gmane$org@mail.hallyn.com>
-References: <1456428890.2377.2.camel@HansenPartnership.com>
-	<1456429071.2377.5.camel@HansenPartnership.com>
+From: Alexander Larsson <alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] devpts: Add ptmx_uid and ptmx_gid options
+Date: Tue, 08 Mar 2016 10:16:31 +0100
+Message-ID: <1457428591.27353.55.camel__34497.0414917499$1457428622$gmane$org@redhat.com>
+References: <b321c0c2729d1c2a72aea319b077dce7afd79698.1424480579.git.luto@amacapital.net>
+	<CALCETrVtGE8LdBCFTe1_cqpLf=SxPNX5iCe5wa-hZ0pe8ps_jA@mail.gmail.com>
+	<1427447013.2250.9.camel@HansenPartnership.com>
+	<1427788642.4411.12.camel@redhat.com>
+	<1427807248.2117.117.camel@HansenPartnership.com>
+	<CALCETrWKA4ZdHfdLuW0_W5xxJOSCJdt_fiRWs6vDk+8ZQ9n9iA@mail.gmail.com>
+	<1427808184.2117.122.camel@HansenPartnership.com>
+	<CALCETrW8v1NFa7fcJbyJKXk9Msudht5BJ7Zy1Rg7ZC_TS-2Y-Q@mail.gmail.com>
+	<1427810118.2117.126.camel@HansenPartnership.com>
+	<CALCETrU1vKf3fXPt8nS-ABDgfp8NxrFjHwTc68rA0rtvg2Lufg@mail.gmail.com>
+	<1427810886.2117.129.camel@HansenPartnership.com>
+	<1427811444.4411.20.camel@redhat.com>
+	<1427969525.3559.120.camel@HansenPartnership.com>
+	<CALCETrWyUYgHY53O451AdJUs9Mcjsqmr4fUzoNmYsTP1HLq+VA@mail.gmail.com>
+	<1427984969.13651.11.camel@redhat.com>
+	<CALCETrWYit+WiAM6DFm0enGeJN==uWNC63zXp_zRSsSJg2YGPg@mail.gmail.com>
+	<87zj6qs7v8.fsf@x220.int.ebiederm.org>
+	<CALCETrVGcCA2SMiDT8JN=AWiSFCXWSaMeKBQmkbKynKfiPJCwA@mail.gmail.com>
+	<87oal4odne.fsf@x220.int.ebiederm.org>
+	<1432832511.21304.6.camel@redhat.com>
+	<CALCETrUueGomqFG0DSpt5Ern-XW6DE+rAEkd=3Y2ekV+gOwLAA@mail.gmail.com>
+	<87siagh4kh.fsf@x220.int.ebiederm.org>
+	<CALCETrXNyyG-LZ8ds5ALbWs_Tfonev4+Ci=XZwWFqsSeszes8g@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1456429071.2377.5.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+In-Reply-To: <CALCETrXNyyG-LZ8ds5ALbWs_Tfonev4+Ci=XZwWFqsSeszes8g-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,140 +39,38 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Cc: linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: gnome-os-list-rDKQcyrBJuzYtjvyW6yDsg@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, mclasen-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Feb 25, 2016 at 11:37:51AM -0800, James Bottomley wrote:
-> This patch adds a new flag 'F' to the binfmt handlers.  If you pass in
-> 'F' the binary that runs the emulation will be opened immediately and
-> in future, will be cloned from the open file.
-> 
-> The net effect is that the handler survives both changeroots and mount
-> namespace changes, making it easy to work with foreign architecture
-> containers without contaminating the container image with the
-> emulator.
-> 
-> Signed-off-by: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-
-Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-
-> ---
->  fs/binfmt_misc.c | 41 +++++++++++++++++++++++++++++++++++++++--
->  1 file changed, 39 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/binfmt_misc.c b/fs/binfmt_misc.c
-> index 3a3ced7..8a108c4 100644
-> --- a/fs/binfmt_misc.c
-> +++ b/fs/binfmt_misc.c
-> @@ -26,6 +26,8 @@
->  #include <linux/fs.h>
->  #include <linux/uaccess.h>
->  
-> +#include "internal.h"
-> +
->  #ifdef DEBUG
->  # define USE_DEBUG 1
->  #else
-> @@ -43,6 +45,7 @@ enum {Enabled, Magic};
->  #define MISC_FMT_PRESERVE_ARGV0 (1 << 31)
->  #define MISC_FMT_OPEN_BINARY (1 << 30)
->  #define MISC_FMT_CREDENTIALS (1 << 29)
-> +#define MISC_FMT_OPEN_FILE (1 << 28)
->  
->  typedef struct {
->  	struct list_head list;
-> @@ -54,6 +57,7 @@ typedef struct {
->  	char *interpreter;		/* filename of interpreter */
->  	char *name;
->  	struct dentry *dentry;
-> +	struct file *interp_file;
->  } Node;
->  
->  static DEFINE_RWLOCK(entries_lock);
-> @@ -201,7 +205,13 @@ static int load_misc_binary(struct linux_binprm *bprm)
->  	if (retval < 0)
->  		goto error;
->  
-> -	interp_file = open_exec(iname);
-> +	if (fmt->flags & MISC_FMT_OPEN_FILE && fmt->interp_file) {
-> +		interp_file = filp_clone_open(fmt->interp_file);
-> +		if (!IS_ERR(interp_file))
-> +			deny_write_access(interp_file);
-> +	} else {
-> +		interp_file = open_exec(iname);
-> +	}
->  	retval = PTR_ERR(interp_file);
->  	if (IS_ERR(interp_file))
->  		goto error;
-> @@ -285,6 +295,11 @@ static char *check_special_flags(char *sfs, Node *e)
->  			e->flags |= (MISC_FMT_CREDENTIALS |
->  					MISC_FMT_OPEN_BINARY);
->  			break;
-> +		case 'F':
-> +			pr_debug("register: flag: F: open interpreter file now\n");
-> +			p++;
-> +			e->flags |= MISC_FMT_OPEN_FILE;
-> +			break;
->  		default:
->  			cont = 0;
->  		}
-> @@ -543,6 +558,8 @@ static void entry_status(Node *e, char *page)
->  		*dp++ = 'O';
->  	if (e->flags & MISC_FMT_CREDENTIALS)
->  		*dp++ = 'C';
-> +	if (e->flags & MISC_FMT_OPEN_FILE)
-> +		*dp++ = 'F';
->  	*dp++ = '\n';
->  
->  	if (!test_bit(Magic, &e->flags)) {
-> @@ -590,6 +607,11 @@ static void kill_node(Node *e)
->  	}
->  	write_unlock(&entries_lock);
->  
-> +	if ((e->flags & MISC_FMT_OPEN_FILE) && e->interp_file) {
-> +		filp_close(e->interp_file, NULL);
-> +		e->interp_file = NULL;
-> +	}
-> +
->  	if (dentry) {
->  		drop_nlink(d_inode(dentry));
->  		d_drop(dentry);
-> @@ -698,6 +720,21 @@ static ssize_t bm_register_write(struct file *file, const char __user *buffer,
->  		goto out2;
->  	}
->  
-> +	if (e->flags & MISC_FMT_OPEN_FILE) {
-> +		struct file *f;
-> +
-> +		f = open_exec(e->interpreter);
-> +		if (IS_ERR(f)) {
-> +			err = PTR_ERR(f);
-> +			pr_notice("register: failed to install interpreter file %s\n", e->interpreter);
-> +			simple_release_fs(&bm_mnt, &entry_count);
-> +			iput(inode);
-> +			inode = NULL;
-> +			goto out2;
-> +		}
-> +		e->interp_file = f;
-> +	}
-> +
->  	e->dentry = dget(dentry);
->  	inode->i_private = e;
->  	inode->i_fop = &bm_entry_operations;
-> @@ -716,7 +753,7 @@ out:
->  
->  	if (err) {
->  		kfree(e);
-> -		return -EINVAL;
-> +		return err;
->  	}
->  	return count;
->  }
-> -- 
-> 2.6.2
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+T24gbcOlbiwgMjAxNi0wMy0wNyBhdCAyMDo1OSAtMDgwMCwgQW5keSBMdXRvbWlyc2tpIHdyb3Rl
+Ogo+IE9uIFRodSwgTWF5IDI4LCAyMDE1IGF0IDEyOjQyIFBNLCBFcmljIFcuIEJpZWRlcm1hbgo+
+IDxlYmllZGVybUB4bWlzc2lvbi5jb20+IHdyb3RlOgo+ID4gQW5keSBMdXRvbWlyc2tpIDxsdXRv
+QGFtYWNhcGl0YWwubmV0PiB3cml0ZXM6Cj4gPsKgCj4gQXBwYXJlbnRseSBhbGV4bCBpcyBlbmNv
+dW50ZXJpbmcgc29tZSBhbm5veWFuY2VzIHJlbGF0ZWQgdG8gdGhlCj4gY3VycmVudCB3b3JrYXJv
+dW5kLCBhbmQgdGhlIHdvcmthcm91bmQgaXMgY2VydGFpbmx5IHVnbHkuCgpJdCB3b3JrcywgYnV0
+IGl0IGludHJvZHVjZXMgYW4gZXh0cmEgbmFtZXNwYWNlIHRoYXQgZ2V0cyBleHBvc2VkIHRvIHRo
+ZQp3b3JsZCwgd2hpY2ggaXMgcHJldHR5IHVnbHkuIEZvciBpbnN0YW5jZSwgZW50ZXJpbmcgdGhl
+IG5hbWVzcGFjZQpiZWNvbWVzIGhhcmQuIEkgY2FuIHNldG5zKCkgaW50byB0aGUgaW50ZXJtZWRp
+YXRlIHVzZXIrbW91bnQgbmFtZXNwYWNlCndpdGhvdXQgcHJvYmxlbXMsIGJ1dCBpZiBpIHRyeSB0
+byBzZXRucyBpbnRvIHRoZSBmaW5hbCB1c2VyK21vdW50IG5zCihpdCBnZXRzIGl0cyBvd24gaW1w
+bGljaXQgbW91bnQgbnMpIGkgZ2V0IEVQRVJNLiBJJ20gbm90IHN1cmUgZXhhY3RseQp3aHkgdGhv
+dWdoLi4uCgo+IFlvdXIgcHJvcG9zYWwgc2VlbXMgbGlrZSBpdCBjb3VsZCBicmVhayBzb21lIHVz
+ZSBjYXNlcyBpbnZvbHZpbmcKPiBmc2NhcHMgb24gYSBtb3VudCBvciBtb3VudC1saWtlIGJpbmFy
+eS4KPiAKPiBXaGF0IGlmIHdlIGNoYW5nZSBpdCB0byB1c2UgdGhlIG93bmVyIG9mIHRoZSB1c2Vy
+bnMgdGhhdCBvd25zIHRoZQo+IGN1cnJlbnQgbW91bnQgbnM/wqDCoEZvciBhbnl0aGluZyB0aGF0
+IGRvZXNuJ3QgZXhwbGljaXRseSB1c2UKPiBuYW1lc3BhY2VzLCB0aGlzIHdpbGwgYmUgemVyby7C
+oMKgRm9yIG5hbWVzcGFjZSB1c2VycywgaXQgc2hvdWxkIGRvIHRoZQo+IHJpZ2h0IHRoaW5nLgoK
+QW55IG9mIHRoZXNlIGlzIGZpbmUgd2l0aCBtZS4gT25lIG5pY2UgdGhpbmcgd291bGQgaWYgaSBj
+b3VsZCBzb21laG93CmRldGVjdCB3aGV0aGVyIHRoaXMgd2FzIHN1cHBvcnRlZCBvciBub3Qgc28g
+dGhhdCBpIGNhbiBmYWxsIGJhY2sgb24gdGhlCm9sZCB3b3JrYXJvdW5kLgoKLS0gCj0tPS09LT0t
+PS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09
+LT0tPS09LT0tPQogQWxleGFuZGVyIExhcnNzb24gICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgIFJlZCBIYXQsIEluYyAKICAgICAgIGFsZXhsQHJlZGhhdC5jb20gICAg
+ICAgICAgICBhbGV4YW5kZXIubGFyc3NvbkBnbWFpbC5jb20gCkhlJ3MgYW4gYWxsLUFtZXJpY2Fu
+IGd1aXRhci1zdHJ1bW1pbmcgaG91c2VodXNiYW5kIHdpdGggbm8gbmFtZS4gU2hlJ3MgYSAKc2Nh
+bnRpbHkgY2xhZCBpbXBldHVvdXMgZm9ybWVyIGZpcnN0IGxhZHkgd2hvIGRvbid0IHRha2Ugbm8g
+c2hpdCBmcm9tIApub2JvZHkuIFRoZXkgZmlnaHQgY3JpbWUhIAoKCl9fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNv
+bnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZv
+dW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
