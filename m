@@ -1,10 +1,10 @@
-From: =?utf-8?B?57uT5p6E5p2A5Lq6?= <bw-W9GV0CVvHR7MFIMGWPqnnw@public.gmane.org>
-Subject: =?utf-8?B?57uT5p6E5p2A5Lq6?=
-Date: Thu, 10 Mar 2016 17:51:36 +0800
-Message-ID: <20160310175145025118@caifutong.net>
+From: John <Jack-1TCXYCO988p+xPeBQ9Deuw@public.gmane.org>
+Subject: =?utf-8?B?VGhlIGVhc2llc3Qgd2F5IHRvIGxvc2Ugd2VpZ2h0ISA=?=
+Date: Thu, 10 Mar 2016 09:56:08 -0500
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@dimmernews.info>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,7 +18,100 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-5L2g55qE6ICB5pyL5Y+L6YKA5L2g5p2lUee+pDozNDMyNTc3NTkNCl9fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNv
-bnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZv
-dW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+
+Amazing new discovery! http://click.dimmernews.info/index.php?id=8912869&a=41260&b=2462&c=166
+
+>>>SUITABLE FOR MEN & WOMEN
+>>>NATURAL SUPPLEMENT FOR FAST RESULTS
+>>>60% HCA
+
+This product is designed for those who want to lose weight quickly, easily and efficiently.
+
+==> Click for complete details <==
+http://click.dimmernews.info/index.php?id=8912869&a=41260&b=2462&c=166
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Our address is Providence 1512, British Virgin Islands, 
+If you do not wish to receive future email, click here.
+http://click.dimmernews.info/index.php?o=2&a=41260&b=2462&c=166
+(You can also send your request to Customer Care at the street address above.) 
