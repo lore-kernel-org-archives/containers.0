@@ -1,87 +1,117 @@
-From: yumkam@gmail.com (Yuriy M. Kaminskiy)
-Subject: Re: userns, netns, and quick physical memory consumption by unprivileged user
-Date: Sat, 12 Mar 2016 16:35:55 +0300
-Message-ID: <m3io0riucg.fsf@gmail.com>
-References: <m3d1rclioc.fsf@gmail.com> <m3r3fhhx4c.fsf@gmail.com>
-	<20160311153406.GB6620@breakpoint.cc>
+From: Sussan <Paul-TLu5EIc6X/FCPWQmNIN3aQ@public.gmane.org>
+Subject: =?utf-8?B?QSBSZXZvbHV0aW9uIGluIHRyYWRpbmcgdGVjaG5vbG9neQ==?=
+Date: Sat, 12 Mar 2016 10:51:21 -0500
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@utternews.info>
 Mime-Version: 1.0
-Content-Type: text/plain
-Return-path: <netdev-owner@vger.kernel.org>
-Sender: netdev-owner@vger.kernel.org
-To: netdev@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, containers@lists.osdl.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 03/11/16 18:34 , Florian Westphal wrote:
-> Yuriy M. Kaminskiy <yumkam@gmail.com> wrote:
->> BTW, all those hash/conntrack/etc default sizes was calculated from
->> physical memory size in assumption there will be only *one* instance of
->> those tables. Obviously, introduction of network namespaces (and
->> especially unprivileged user-ns) thrown this assumption in the window
->> (and here comes that "falling back to vmalloc" message again; in pre-netns
->> world, those tables were allocated *once* on early system startup, with
->> typically plenty of free and unfragmented memory).
->
-> No idea how to fix this expect by removing conntrack support in net
-> namespaces completely.
+We all know it, we all use it, we all NEED it, 
+..but not all of us making money with it!
 
-Well, it is not *only* conntrack. Conntrack eats big chunks at once, but
-there are other things that eat kernel memory too: *any* iptables
-rules, 'ip address', 'ip link' (at very least, 'type dummy' and
-/dev/net/tun are available inside unprivileged userns/netns), 'ip
-tunnel', 'ip rule', 'ip route', etc.
+GOOGLE!
 
-Just add *a lot* of them (and over several netns to avoid potential
-O(n^2) behaviour on adding), and it will be painful, regardless of
-memcg/ulimits/free swap/etc.
+Learn how to make Google pay you TODAY:
+==>>http://click.utternews.info/index.php?id=9640851&a=41260&b=2527&c=166<<==
 
-E.g. something like
+There's a new software that developed by a team of the GREATEST
+wall streets analysts and programmers that works with Google Search Engine.
+It's called - GoogleTrader!
+ 
+Now,
+The most important part is that the average user of the software
+makes between $1,800 to $4,300 in profits every single day!
 
-  unshare -rn sh -c 'setsid sleep inf & for i in 1 1024; do
-  ip li add d$i type dummy; ip li set d$i up;done'
-
-eats ~40M kernel memory each (unswappable and not curbed by memcg),
-that's way more than conntrack hashtables alone.
+You must check it out as soon as possible!
+==>>http://click.utternews.info/index.php?id=9640851&a=41260&b=2527&c=166<<==
 
 
-At *very minimum*, all that must be limited by memcg (it is not
-currently!). And maybe by ulimits too (of process that created userns?
-well, natural choice of RLIMIT_MEMLOCK practically forbids netns, no
-chance it will fit in 64k).
+
+Thank you, 
+
+Sussan
 
 
-Specifically with conntrack, separate limits on hash size/entries for
-non-initns won't harm, but that's more of "flexibility to avoid
-senseless waste of memory" (in case specific container won't use many
-connection or won't use conntrack at all) than protection against abuse.
 
 
-By the way, there are unrestrained kernel memory consumption in *other*
-namespace types too. E.g., let's look at mount  namespace; it looks like
-tmpfs contents is at least curbed by memcg [but *not* curbed by
-ulimits!], however *mounts itself* are not; e.g.
 
-  unshare -rm sh -c 'while :; do seq -f /tmp/foo%g 1 1024|
-  while read d; do mkdir -p $d; mount --bind $d $d;done'
 
-is a bit slower [try with several instances?], but end result
-would be same).
 
-> I'd disallow all write accesses to skb->nfct (NAT, CONNMARK,
-> CONNSECMARK, ...) and then no longer clear skb->nfct when forwarding
-> packet from init_ns to container.
->
-> Containers could then still test conntrack as seen from init namespace pov
-> in PREROUTING/FORWARD/INPUT (but not OUTPUT, obviously).
->
-> [ OUTPUT *might* be doable as well by allowing NEW creation in output
->   but skipping nat and deferring the confirmation/commit of the new
->   entry to the table until skb leaves initns ]
->
-> We could key conntrack entries to initns conntrack table
-> instead of adding one new table per netns, but seems like this only
-> replaces one problem with a new one (filling/blocking initns table from
-> another netns).
->
-> Maybe we could go with a compromise and skip/disallow conntrack in
-> unpriv userns only?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Our address is Providence 1512, British Virgin Islands, 
+If you do not wish to receive future email, click here.
+http://click.utternews.info/index.php?o=2&a=41260&b=2527&c=166
+(You can also send your request to Customer Care at the street address above.) 
