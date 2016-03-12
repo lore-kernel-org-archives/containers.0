@@ -1,47 +1,148 @@
-From: Florian Westphal <fw@strlen.de>
-Subject: Re: userns, netns, and quick physical memory consumption by
- unprivileged user
-Date: Fri, 11 Mar 2016 16:34:06 +0100
-Message-ID: <20160311153406.GB6620@breakpoint.cc>
-References: <m3d1rclioc.fsf@gmail.com>
- <m3r3fhhx4c.fsf@gmail.com>
+From: Danik <Paul-j2piVMGS6l8FHQQy/6e8+GGXanvQGlWp@public.gmane.org>
+Subject: =?utf-8?B?Q2FuIHdlIHRhbGsgdG9kYXkgKEltcG9ydGFudCk/?=
+Date: Fri, 11 Mar 2016 19:40:25 -0500
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@twentiesnews.info>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <m3r3fhhx4c.fsf@gmail.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Yuriy M. Kaminskiy" <yumkam@gmail.com>
-Cc: netdev@vger.kernel.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Yuriy M. Kaminskiy <yumkam@gmail.com> wrote:
-> BTW, all those hash/conntrack/etc default sizes was calculated from
-> physical memory size in assumption there will be only *one* instance of
-> those tables. Obviously, introduction of network namespaces (and
-> especially unprivileged user-ns) thrown this assumption in the window
-> (and here comes that "falling back to vmalloc" message again; in pre-netns
-> world, those tables were allocated *once* on early system startup, with
-> typically plenty of free and unfragmented memory).
+I've just been given a heads up that you recently provided your email and details on one of our partners websites.
 
-No idea how to fix this expect by removing conntrack support in net
-namespaces completely.
+See the website here:
 
-I'd disallow all write accesses to skb->nfct (NAT, CONNMARK,
-CONNSECMARK, ...) and then no longer clear skb->nfct when forwarding
-packet from init_ns to container.
+==> http://click.twentiesnews.info/index.php?id=9722303&a=41260&b=2524&c=166
 
-Containers could then still test conntrack as seen from init namespace pov
-in PREROUTING/FORWARD/INPUT (but not OUTPUT, obviously).
+Well the GREAT NEWS is you have been given a $1000 deposit bonus
 
-[ OUTPUT *might* be doable as well by allowing NEW creation in output
-  but skipping nat and deferring the confirmation/commit of the new
-  entry to the table until skb leaves initns ]
+Click Here to claim yours:
 
-We could key conntrack entries to initns conntrack table
-instead of adding one new table per netns, but seems like this only
-replaces one problem with a new one (filling/blocking initns table from
-another netns).
+==> http://click.twentiesnews.info/index.php?id=9722303&a=41260&b=2524&c=166
 
-Maybe we could go with a compromise and skip/disallow conntrack in
-unpriv userns only?
+If you can do this for me it would be awesome because they have kindly given us a limited number of spaces.
+
+All you need to do to start receiving $1000 plus per day is register at the end of the short video.
+
+Click Here to register for your $1000:
+
+==> http://click.twentiesnews.info/index.php?id=9722303&a=41260&b=2524&c=166
+
+This is totally brand new and the results have been nothing short of miraculous.
+
+So do that for me and we'll see you on the next page.
+
+Danik
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Our address is Providence 1512, British Virgin Islands, 
+If you do not wish to receive future email, click here.
+http://click.twentiesnews.info/index.php?o=2&a=41260&b=2524&c=166
+(You can also send your request to Customer Care at the street address above.) 
