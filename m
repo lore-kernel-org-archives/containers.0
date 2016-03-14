@@ -1,47 +1,123 @@
-From: yumkam@gmail.com (Yuriy M. Kaminskiy)
-Subject: Re: userns, netns, and quick physical memory consumption by unprivileged user
-Date: Mon, 14 Mar 2016 18:12:53 +0300
-Message-ID: <m3vb4pgkju.fsf@gmail.com>
-References: <m3d1rclioc.fsf@gmail.com> <m3r3fhhx4c.fsf@gmail.com>
-	<20160314091417.GA11400@dhcp22.suse.cz>
+From: John <Jason-RkbdjLDfP8K9RC+f8J1Yzg@public.gmane.org>
+Subject: =?utf-8?B?Q29uZ3JhdHVsYXRpb25zISBZb3UganVzdCBlYXJuZWQgYSBjb21taXNzaW9uIGZyb20gQ2VudHVtZW50?=
+Date: Mon, 14 Mar 2016 10:56:33 -0400
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@bladdernews.info>
 Mime-Version: 1.0
-Content-Type: text/plain
-Return-path: <netdev-owner@vger.kernel.org>
-Sender: netdev-owner@vger.kernel.org
-To: netdev@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org, containers@lists.osdl.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 03/14/16 12:14 , Michal Hocko wrote:
-> On Fri 11-03-16 18:06:59, Yuriy M. Kaminskiy wrote:
-> [...]
->> And also tried with memcg:
->>   t=/sys/fs/cgroup/memory/test1;mkdir $t;echo 0 >$t/tasks;
->>   echo 48M >$t/memory.limit_in_bytes; su testuser [...]
->> and it has not helped at all (rather opposite, it ended up with killed
->> init and kernel panic; well, later is pure (un)luck; but point is, memcg
->> apparently *CANNOT* curb net/ns allocations).
->
-> It seems you were using memcg v1 here. This didn't have the kernel
-> memory accounting enabled by default. With the v2 you get both user and
+For real-time details about your commissions 
+please log into your members area.
+http://click.bladdernews.info/index.php?id=3767012&a=41260&b=2544&c=166
 
-Hrr. Indeed. And used (distro) kernel compiled without MEMCG_KMEM, so
-this test was useless. (However, as distro kernel lacks MEMCG_KMEM, it
-means most users won't be able to use it as well[*], so unpriv userns are
-unsafe to use for all of them and should be disabled).
+Reminder: You must have activated your
+account to receive any pending commissions
 
-That said, not sure if it would have helped in kernels <= 4.4 (would
-those allocation be called in context that allows them to be
-accounted by [correct] memcg?), but it looks like with upcoming change to
-whitelisting (explicit GPF_ACCOUNT), it won't (as almost nothing in
-net/* uses it).
+>> VIEW YOUR COMMISSIONS <<
+http://click.bladdernews.info/index.php?id=3767012&a=41260&b=2544&c=166
 
-> kernel (well some subset of it) accounting enabled. Whether we account
-> also netns related data structures sufficiently is a question. I haven't
+Thank you,
+-John
 
-Except for conntrack tables, it is not exactly tied to netnes, it's
-regular CAP_NET_ADMIN things (routing, addresses, links, iptables, etc
-that can be added via netlink messages). Just userns+netns gives right
-to tweak with them to regular user.
 
-> checked.  But it would be worth trying and fix.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Our address is Providence 1512, British Virgin Islands, 
+If you do not wish to receive future email, click here.
+http://click.bladdernews.info/index.php?o=2&a=41260&b=2544&c=166
+(You can also send your request to Customer Care at the street address above.) 
