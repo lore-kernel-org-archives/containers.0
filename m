@@ -1,11 +1,14 @@
-From: John <Jason-RkbdjLDfP8K9RC+f8J1Yzg@public.gmane.org>
-Subject: =?utf-8?B?Q29uZ3JhdHVsYXRpb25zISBZb3UganVzdCBlYXJuZWQgYSBjb21taXNzaW9uIGZyb20gQ2VudHVtZW50?=
-Date: Mon, 14 Mar 2016 10:56:33 -0400
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@bladdernews.info>
+From: Alexander Larsson <alexl-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] devpts: Make ptmx be owned by the userns owner instead
+	of userns-local 0
+Date: Mon, 14 Mar 2016 16:42:55 +0100
+Message-ID: <1457970175.30497.1.camel@redhat.com>
+References: <fd99f5e7144be5de87c88e069cd5edb36136eefd.1457931898.git.luto@kernel.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <fd99f5e7144be5de87c88e069cd5edb36136eefd.1457931898.git.luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,109 +18,35 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W.
+	Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, gnome-os-list-rDKQcyrBJuzYtjvyW6yDsg@public.gmane.org, mclasen-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-For real-time details about your commissions 
-please log into your members area.
-http://click.bladdernews.info/index.php?id=3767012&a=41260&b=2544&c=166
-
-Reminder: You must have activated your
-account to receive any pending commissions
-
->> VIEW YOUR COMMISSIONS <<
-http://click.bladdernews.info/index.php?id=3767012&a=41260&b=2544&c=166
-
-Thank you,
--John
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Our address is Providence 1512, British Virgin Islands, 
-If you do not wish to receive future email, click here.
-http://click.bladdernews.info/index.php?o=2&a=41260&b=2544&c=166
-(You can also send your request to Customer Care at the street address above.) 
+T24gc8O2biwgMjAxNi0wMy0xMyBhdCAyMjowNiAtMDcwMCwgQW5keSBMdXRvbWlyc2tpIHdyb3Rl
+Ogo+IFdlIHVzZWQgdG8gaGF2ZSBwdG14IGJlIG93bmVkIGJ5IHRoZSBpbm5lciB1aWQgYW5kIGdp
+ZCAwLsKgwqBDaGFuZ2UKPiB0aGlzOiBpZiB0aGUgb3duZXIgYW5kIGdyb3VwIGFyZSBib3RoIG1h
+cHBlZCBidXQgYXJlIG5vdCBib3RoIDAsCj4gdGhlbiB1c2UgdGhlIG93bmVyIGluc3RlYWQuCj4g
+Cj4gRm9yIGNvbnRhaW5lci1zdHlsZSBuYW1lc3BhY2VzIChMWEMsIGV0YyksIHRoaXMgc2hvdWxk
+IGhhdmUgbm8KPiBlZmZlY3QgLS0gVUlEIDAgaXMgd2lsbCBlaXRoZXIgYmUgdGhlIG93bmVyIG9y
+IHdpbGwgYmUgdW5tYXBwZWQuCj4gCj4gVGhlIGltcG9ydGFudCBiZWhhdmlvciBjaGFuZ2UgaXMg
+Zm9yIHNhbmRib3hlczogbWFueSBzYW5kYm94ZXMKPiBpbnRlbnRpb25hbGx5IGRvIG5vdCBjcmVh
+dGUgYW4gaW5uZXIgdWlkIDAuwqDCoFdpdGhvdXQgdGhpcyBwYXRjaCwKPiBtb3VudGluZyBkZXZw
+dHMgaW4gc3VjaCBhIHNhbmRib3ggaXMgYXdrd2FyZC7CoMKgV2l0aCB0aGlzIHBhdGNoLCBpdAo+
+IHdpbGwganVzdCB3b3JrIGFuZCBwdG14IHdpbGwgYmUgb3duZWQgYnkgdGhlIG5hbWVzcGFjZSBv
+d25lci4KPiAKPiBDYzogQWxleGFuZGVyIExhcnNzb24gPGFsZXhsQHJlZGhhdC5jb20+Cj4gQ2M6
+IG1jbGFzZW5AcmVkaGF0LmNvbQo+IENjOiAiRXJpYyBXLiBCaWVkZXJtYW4iIDxlYmllZGVybUB4
+bWlzc2lvbi5jb20+Cj4gQ2M6IExpbnV4IENvbnRhaW5lcnMgPGNvbnRhaW5lcnNAbGlzdHMubGlu
+dXgtZm91bmRhdGlvbi5vcmc+Cj4gU2lnbmVkLW9mZi1ieTogQW5keSBMdXRvbWlyc2tpIDxsdXRv
+QGtlcm5lbC5vcmc+CgpUZXN0ZWQtYnk6IEFsZXhhbmRlciBMYXJzc29uIDxhbGV4bEByZWRoYXQu
+Y29tPgoKU2VlbXMgdG8gd29yayBmaW5lIGZvciBtZSEgVGhhbmtzIQoKLS0gCj0tPS09LT0tPS09
+LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0tPS09LT0t
+PS09LT0tPQogQWxleGFuZGVyIExhcnNzb24gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgIFJlZCBIYXQsIEluYyAKICAgICAgIGFsZXhsQHJlZGhhdC5jb20gICAgICAg
+ICAgICBhbGV4YW5kZXIubGFyc3NvbkBnbWFpbC5jb20gCkhlJ3MgYW4gdW5jb250cm9sbGFibGUg
+dm9vZG9vIGxpYnJhcmlhbiB3aXRoIGEgcm9ib3QgYnVkZHkgbmFtZWQgU3Bhcmt5LiAKU2hlJ3Mg
+YSBjeW5pY2FsIHdpbmdlZCBqb3VybmFsaXN0IGZyb20gdGhlIHdyb25nIHNpZGUgb2YgdGhlIHRy
+YWNrcy4gVGhleSAKZmlnaHQgY3JpbWUhIAoKCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlz
+dHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3Jn
+L21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
