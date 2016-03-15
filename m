@@ -1,10 +1,10 @@
-From: Amanda <Brian-0xJBrcxzKGxCPWQmNIN3aQ@public.gmane.org>
-Subject: =?utf-8?B?WW91ciBwcml2YXRlIGludml0YXRpb24uLi4=?=
-Date: Mon, 14 Mar 2016 21:06:53 -0400
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@fliernews.info>
+From: Kevin <Danik-NQfSPIm9a8l+xPeBQ9Deuw@public.gmane.org>
+Subject: =?utf-8?B?WW91ciBvcmRlciBoYXMgYmVlbiBzdWNjZXNzZnVsbHkgcHJvY2Vzc2Vk?=
+Date: Tue, 15 Mar 2016 09:47:25 -0400
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@focatenews.info>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,28 +18,89 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SeKAmXZlIGdvdCBzb21lIGdyZWF0IG5ld3MuLi4KCkkgaGFkIGEgbG9vb29uZyB0YWxrIHdpdGgg
-TWFyayBsYXN0IG5pZ2h04oCmCgpBbmQgYWZ0ZXIgY2FsbGluZyBpbiBhIGZldyBmYXZvcnMgZnJv
-bSBoaW0gYW5kIHNvbWUg4oCcZnJpZW5kbHnigJ0KYXJtLXR3aXN0aW5nLCBJIHdhcyBhYmxlIHRv
-IHNlY3VyZSBhIGZldyAoZnJlZSkgYWNjb3VudHMgZm9yCmhpcyBleGNsdXNpdmUgTWlkYXMgVG91
-Y2ggQXBwLgoKVGhlIGFwcCBoYXMgYWxyZWFkeSB0dXJuZWQgbW9yZSB0aGFuIDEwMCBvcmRpbmFy
-eSBmb2xrcwpmcm9tIGFsbCB3YWxrcyBvZiBsaWZlIGludG8gY2VydGlmaWVkIG1pbGxpb25haXJl
-cy4KCkhlcmXigJlzIHByb29mOgpodHRwOi8vY2xpY2suZmxpZXJuZXdzLmluZm8vaW5kZXgucGhw
-P2lkPTc4MTg5NjImYT00MTI2MCZiPTI1NjUmYz0xNjYKCkl04oCZcyBub3QgZXZlcnlkYXkgYSB3
-aW5kb3cgdG8gdHJ1ZSB3ZWFsdGggb3BlbnMgdXAgbGlrZSB0aGlzLApzbyBpZiB0aGVyZSBhcmUg
-c3RpbGwgc3BvdHMgbGVmdCB3aGVuIHlvdSBjbGljayB0aGlzIGxpbmssIHlvdQpNVVNUIGp1bXAg
-b24gaXQgYXMgZmFzdCBhcyBodW1hbmx5IHBvc3NpYmxlOgoKaHR0cDovL2NsaWNrLmZsaWVybmV3
-cy5pbmZvL2luZGV4LnBocD9pZD03ODE4OTYyJmE9NDEyNjAmYj0yNTY1JmM9MTY2CgpOT1RFOgpU
-aGlzIG9wcG9ydHVuaXR5IHdpbGwgbm90IHByZXNlbnQgaXRzZWxmIHR3aWNlLiBTbyBmb3IgeW91
-ciBvd24KYW5kIHlvdXIgZmFtaWx54oCZcyBzYWtlLCBkbyBOT1QgbGV0IGl0IHBhc3MgeW91IGJ5
-LgpodHRwOi8vY2xpY2suZmxpZXJuZXdzLmluZm8vaW5kZXgucGhwP2lkPTc4MTg5NjImYT00MTI2
-MCZiPTI1NjUmYz0xNjYKCkFsbCB0aGUgYmVzdCwKQW1hbmRhCgoKCgoKCgoKCgoKCgoKCgoKCgoK
-CgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoK
-CgpPdXIgYWRkcmVzcyBpcyBQcm92aWRlbmNlIDE1MTIsIEJyaXRpc2ggVmlyZ2luIElzbGFuZHMs
-IApJZiB5b3UgZG8gbm90IHdpc2ggdG8gcmVjZWl2ZSBmdXR1cmUgZW1haWwsIGNsaWNrIGhlcmUu
-Cmh0dHA6Ly9jbGljay5mbGllcm5ld3MuaW5mby9pbmRleC5waHA/bz0yJmE9NDEyNjAmYj0yNTY1
-JmM9MTY2CihZb3UgY2FuIGFsc28gc2VuZCB5b3VyIHJlcXVlc3QgdG8gQ3VzdG9tZXIgQ2FyZSBh
-dCB0aGUgc3RyZWV0IGFkZHJlc3MgYWJvdmUuKSAKICAgICAgICAgICAgICAgICAgICAKX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWls
-aW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xp
-c3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Hello, 
+
+Your order has been successfully processed and is Pending Setup. 
+
+*Click Here For Updates 
+
+==> http://click.focatenews.info/index.php?id=5741544&a=41260&b=2569&c=166
+
+Once setup is complete you will be automatically transferred to your new online system. 
+
+Thank you, 
+
+Kevin
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Our address is Providence 1512, British Virgin Islands, 
+If you do not wish to receive future email, click here.
+http://click.focatenews.info/index.php?o=2&a=41260&b=2569&c=166
+(You can also send your request to Customer Care at the street address above.) 
