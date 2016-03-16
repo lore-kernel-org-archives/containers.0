@@ -1,7 +1,7 @@
 From: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 2/2] Make core_pattern support namespace
-Date: Wed, 16 Mar 2016 17:23:19 +0800
-Message-ID: <9ef58745a19adc568c438f0c9368afddb186d113.1458119582.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 1/2] Run dump pipe in container's namespace
+Date: Wed, 16 Mar 2016 17:23:18 +0800
+Message-ID: <f27cec06b90060f2c32691c432f624584f95d251.1458119582.git.zhaolei@cn.fujitsu.com>
 References: <cover.1458119582.git.zhaolei@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,206 +21,353 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mateusz Guzik <mguzik-
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Currently, each container shared one copy of coredump setting
-with the host system, if host system changed the setting, each
-running containers will be affected.
+In current system, when we set core_pattern to a pipe, both pipe program
+and program's output are in host's filesystem.
 
-Moreover, it is not easy to let each container keeping their own
-coredump setting.
+For example, when we set following core_pattern:
+ # echo "|/my_dump_pipe %s %c %p %u %g %t e" >/proc/sys/kernel/core_pattern
+and trigger a segment fault in a container, my_dump_pipe is searched from
+host's filesystem, and it will write coredump into host's filesystem too.
 
-We can use some workaround as pipe program to make the second
-requirement possible, but it is not simple, and both host and
-container are limited to set to fixed pipe program.
-In one word, for host running contailer, we can't change core_pattern
-anymore.
-To make the problem more hard, if a host running more than one
-container product, each product will try to snatch the global
-coredump setting to fit their own requirement.
+In a privileged container, user can crush host system by following command:
+ # # In a container
+ # echo "|/bin/dd of=/boot/vmlinuz" >/proc/sys/kernel/core_pattern
+ # make_dump
 
-For container based on namespace design, it is good to allow
-each container keeping their own coredump setting.
+Actually, all operation in a container should not change host's
+environment, the container should use core_pattern as its private setting.
+In detail, in core dump action:
+1: Search pipe program in container's fs namespace.
+2: Run pipe program in container's fs namespace to write coredump to it.
 
-It will bring us following benefit:
-1: Each container can change their own coredump setting
-   based on operation on /proc/sys/kernel/core_pattern
-2: Coredump setting changed in host will not affect
-   running containers.
-3: Support both case of "putting coredump in guest" and
-   "putting curedump in host".
+This patch fixed above problem running pipe program in user process's
+context instead of kthread.
 
-Each namespace-based software(lxc, docker, ..) can use this function
-to custom their dump setting.
-
-And this function makes each continer working as separate system,
-it fit for design goal of namespace.
-
-Test(in lxc):
- # In the host
- # ----------------
- # echo host_core >/proc/sys/kernel/core_pattern
- # cat /proc/sys/kernel/core_pattern
- host_core
+Test:
+ # ################
+ # # In host's system
+ # ################
+ #
  # ulimit -c 1024000
+ # echo "|/dump_pipe" >/proc/sys/kernel/core_pattern
+ # cat /dump_pipe
+ #!/bin/sh
+ cat >/tmp/host_dump_$1_$2_$3_$4_$5_$6
+ # rm -f /tmp/*dump*
  # ./make_dump
  Segmentation fault (core dumped)
- # ls -l
- -rw------- 1 root root 331776 Feb  4 18:02 host_core.2175
- -rwxr-xr-x 1 root root 759731 Feb  4 18:01 make_dump
+ # ls -l /tmp/*dump*
+ -rw-r--r-- 1 root root 331776 Mar 16 16:57 /tmp/host_dump______
  #
-
- # In the container
- # ----------------
- # cat /proc/sys/kernel/core_pattern
- host_core
- # echo container_core >/proc/sys/kernel/core_pattern
- # ./make_dump
- Segmentation fault (core dumped)
- # ls -l
- -rwxr-xr-x    1 root     root       759731 Feb  4 10:45 make_dump
- -rw-------    1 root     root       331776 Feb  4 10:45 container_core.16
+ # lxc-start -n vm01
  #
-
- # Return to host
- # ----------------
+ # ################
+ # # In guest's system:
+ # ################
+ #
  # cat /proc/sys/kernel/core_pattern
- host_core
- # ls
- host_core.2175  make_dump  make_dump.c
- # rm -f host_core.2175
+ |/dump_pipe
+ # cat /dump_pipe
+ #!/bin/sh
+ cat >/tmp/guest_dump_$1_$2_$3_$4_$5_$6
+ # rm -f /tmp/*dump*
  # ./make_dump
  Segmentation fault (core dumped)
- # ls -l
- -rw------- 1 root root 331776 Feb  4 18:49 host_core.2351
- -rwxr-xr-x 1 root root 759731 Feb  4 18:01 make_dump
+ # ls -l /tmp/*dump*
+ -rw-r--r--    1 root     root       331776 Mar 16 09:02 /tmp/guest_dump______
  #
 
 Signed-off-by: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- fs/coredump.c                 |  3 +--
- include/linux/pid_namespace.h |  2 ++
- kernel/pid.c                  |  1 +
- kernel/pid_namespace.c        |  3 +++
- kernel/sysctl.c               | 22 ++++++++++++++++------
- 5 files changed, 23 insertions(+), 8 deletions(-)
+ arch/x86/kernel/process_32.c |  5 +--
+ arch/x86/kernel/process_64.c |  5 +--
+ fs/coredump.c                | 76 +++++++++++++++++++++++++++-----------------
+ include/linux/sched.h        |  5 +--
+ kernel/fork.c                | 24 ++++++++------
+ 5 files changed, 69 insertions(+), 46 deletions(-)
 
+diff --git a/arch/x86/kernel/process_32.c b/arch/x86/kernel/process_32.c
+index 9f95091..2b1862e 100644
+--- a/arch/x86/kernel/process_32.c
++++ b/arch/x86/kernel/process_32.c
+@@ -130,7 +130,8 @@ void release_thread(struct task_struct *dead_task)
+ }
+ 
+ int copy_thread_tls(unsigned long clone_flags, unsigned long sp,
+-	unsigned long arg, struct task_struct *p, unsigned long tls)
++	unsigned long arg, struct task_struct *p, unsigned long tls,
++	int return_to_kernel)
+ {
+ 	struct pt_regs *childregs = task_pt_regs(p);
+ 	struct task_struct *tsk;
+@@ -140,7 +141,7 @@ int copy_thread_tls(unsigned long clone_flags, unsigned long sp,
+ 	p->thread.sp0 = (unsigned long) (childregs+1);
+ 	memset(p->thread.ptrace_bps, 0, sizeof(p->thread.ptrace_bps));
+ 
+-	if (unlikely(p->flags & PF_KTHREAD)) {
++	if (unlikely(p->flags & PF_KTHREAD) || return_to_kernel) {
+ 		/* kernel thread */
+ 		memset(childregs, 0, sizeof(struct pt_regs));
+ 		p->thread.ip = (unsigned long) ret_from_kernel_thread;
+diff --git a/arch/x86/kernel/process_64.c b/arch/x86/kernel/process_64.c
+index b9d99e0..de05bc0 100644
+--- a/arch/x86/kernel/process_64.c
++++ b/arch/x86/kernel/process_64.c
+@@ -153,7 +153,8 @@ static inline u32 read_32bit_tls(struct task_struct *t, int tls)
+ }
+ 
+ int copy_thread_tls(unsigned long clone_flags, unsigned long sp,
+-		unsigned long arg, struct task_struct *p, unsigned long tls)
++		unsigned long arg, struct task_struct *p, unsigned long tls,
++		int return_to_kernel)
+ {
+ 	int err;
+ 	struct pt_regs *childregs;
+@@ -173,7 +174,7 @@ int copy_thread_tls(unsigned long clone_flags, unsigned long sp,
+ 	savesegment(ds, p->thread.ds);
+ 	memset(p->thread.ptrace_bps, 0, sizeof(p->thread.ptrace_bps));
+ 
+-	if (unlikely(p->flags & PF_KTHREAD)) {
++	if (unlikely(p->flags & PF_KTHREAD) || return_to_kernel) {
+ 		/* kernel thread */
+ 		memset(childregs, 0, sizeof(struct pt_regs));
+ 		childregs->sp = (unsigned long)childregs;
 diff --git a/fs/coredump.c b/fs/coredump.c
-index 6287f00..301f2ae 100644
+index 9ea87e9..6287f00 100644
 --- a/fs/coredump.c
 +++ b/fs/coredump.c
-@@ -46,7 +46,6 @@
+@@ -496,33 +496,50 @@ static void wait_for_dump_helpers(struct file *file)
+ 	pipe_unlock(pipe);
+ }
  
- int core_uses_pid;
- unsigned int core_pipe_limit;
--char core_pattern[CORENAME_MAX_SIZE] = "core";
- static int core_name_size = CORENAME_MAX_SIZE;
- 
- struct core_name {
-@@ -183,7 +182,7 @@ put_exe_file:
- static int format_corename(struct core_name *cn, struct coredump_params *cprm)
- {
- 	const struct cred *cred = current_cred();
--	const char *pat_ptr = core_pattern;
-+	const char *pat_ptr = current->nsproxy->pid_ns_for_children->core_pattern;
- 	int ispipe = (*pat_ptr == '|');
- 	int pid_in_pattern = 0;
- 	int err = 0;
-diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
-index 918b117..a5af1e9 100644
---- a/include/linux/pid_namespace.h
-+++ b/include/linux/pid_namespace.h
-@@ -9,6 +9,7 @@
- #include <linux/nsproxy.h>
- #include <linux/kref.h>
- #include <linux/ns_common.h>
-+#include <linux/binfmts.h>
- 
- struct pidmap {
-        atomic_t nr_free;
-@@ -45,6 +46,7 @@ struct pid_namespace {
- 	int hide_pid;
- 	int reboot;	/* group exit code if this pidns was rebooted */
- 	struct ns_common ns;
-+	char core_pattern[CORENAME_MAX_SIZE];
- };
- 
- extern struct pid_namespace init_pid_ns;
-diff --git a/kernel/pid.c b/kernel/pid.c
-index 4d73a83..c79c1d5 100644
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -83,6 +83,7 @@ struct pid_namespace init_pid_ns = {
- #ifdef CONFIG_PID_NS
- 	.ns.ops = &pidns_operations,
- #endif
-+	.core_pattern = "core",
- };
- EXPORT_SYMBOL_GPL(init_pid_ns);
- 
-diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
-index a65ba13..16d6d21 100644
---- a/kernel/pid_namespace.c
-+++ b/kernel/pid_namespace.c
-@@ -123,6 +123,9 @@ static struct pid_namespace *create_pid_namespace(struct user_namespace *user_ns
- 	for (i = 1; i < PIDMAP_ENTRIES; i++)
- 		atomic_set(&ns->pidmap[i].nr_free, BITS_PER_PAGE);
- 
-+	strncpy(ns->core_pattern, parent_pid_ns->core_pattern,
-+		sizeof(ns->core_pattern));
+-/*
+- * umh_pipe_setup
+- * helper function to customize the process used
+- * to collect the core in userspace.  Specifically
+- * it sets up a pipe and installs it as fd 0 (stdin)
+- * for the process.  Returns 0 on success, or
+- * PTR_ERR on failure.
+- * Note that it also sets the core limit to 1.  This
+- * is a special value that we use to trap recursive
+- * core dumps
+- */
+-static int umh_pipe_setup(struct subprocess_info *info, struct cred *new)
++struct pipeprg_data {
++	char **argv;
++	struct coredump_params *cp;
++};
 +
- 	return ns;
- 
- out_free_map:
-diff --git a/kernel/sysctl.c b/kernel/sysctl.c
-index 97715fd..70f8af5 100644
---- a/kernel/sysctl.c
-+++ b/kernel/sysctl.c
-@@ -100,7 +100,6 @@
- extern int suid_dumpable;
- #ifdef CONFIG_COREDUMP
- extern int core_uses_pid;
--extern char core_pattern[];
- extern unsigned int core_pipe_limit;
- #endif
- extern int pid_max;
-@@ -469,7 +468,7 @@ static struct ctl_table kern_table[] = {
- 	},
- 	{
- 		.procname	= "core_pattern",
--		.data		= core_pattern,
-+		.data		= NULL,
- 		.maxlen		= CORENAME_MAX_SIZE,
- 		.mode		= 0644,
- 		.proc_handler	= proc_dostring_coredump,
-@@ -2301,6 +2300,8 @@ int proc_dointvec_minmax(struct ctl_table *table, int write,
- static void validate_coredump_safety(void)
++static int fork_callback(void *data)
  {
- #ifdef CONFIG_COREDUMP
-+	char *core_pattern = current->nsproxy->pid_ns_for_children->core_pattern;
-+
- 	if (suid_dumpable == SUID_DUMP_ROOT &&
- 	    core_pattern[0] != '/' && core_pattern[0] != '|') {
- 		printk(KERN_WARNING "Unsafe core_pattern used with "\
-@@ -2323,10 +2324,19 @@ static int proc_dointvec_minmax_coredump(struct ctl_table *table, int write,
- static int proc_dostring_coredump(struct ctl_table *table, int write,
- 		  void __user *buffer, size_t *lenp, loff_t *ppos)
- {
--	int error = proc_dostring(table, write, buffer, lenp, ppos);
--	if (!error)
--		validate_coredump_safety();
--	return error;
++	struct pipeprg_data *ppd = (struct pipeprg_data *)data;
+ 	struct file *files[2];
+-	struct coredump_params *cp = (struct coredump_params *)info->data;
+-	int err = create_pipe_files(files, 0);
+-	if (err)
+-		return err;
 +	int ret;
 +
-+	if (write && *ppos && sysctl_writes_strict == SYSCTL_WRITES_WARN)
-+		warn_sysctl_write(table);
-+
-+	ret = _proc_do_string(current->nsproxy->pid_ns_for_children->core_pattern,
-+			      table->maxlen, write,
-+			      (char __user *)buffer, lenp, ppos);
++	/*
++	 * Sets up a pipe and installs it as fd 0 (stdin)
++	 * for the process.
++	 */
++	ret = create_pipe_files(files, 0);
 +	if (ret)
-+		return ret;
++		do_exit(0);
+ 
+-	cp->file = files[1];
++	ppd->cp->file = files[1];
+ 
+-	err = replace_fd(0, files[0], 0);
++	ret = replace_fd(0, files[0], 0);
+ 	fput(files[0]);
+-	/* and disallow core files too */
++	if (ret < 0)
++		do_exit(0);
 +
-+	validate_coredump_safety();
-+	return 0;
++	/*
++	 * Sets the core limit to 1.  This
++	 * is a special value that we use to trap recursive
++	 * core dumps
++	 */
+ 	current->signal->rlim[RLIMIT_CORE] = (struct rlimit){1, 1};
+ 
+-	return err;
++	set_fs(KERNEL_DS);
++	ret = do_execve(getname_kernel(ppd->argv[0]),
++			(const char __user *const __user *)ppd->argv,
++			(const char __user *const __user *)NULL);
++	if (ret) {
++		printk(KERN_WARNING "execute pipe program failed: %s ret=%d\n",
++		       ppd->argv[0], ret);
++		do_exit(0);
++	}
++
++	return ret;
+ }
+ 
+ void do_coredump(const siginfo_t *siginfo)
+@@ -551,6 +568,8 @@ void do_coredump(const siginfo_t *siginfo)
+ 		 */
+ 		.mm_flags = mm->flags,
+ 	};
++	struct pipeprg_data ppd;
++	pid_t pid;
+ 
+ 	audit_core_dumps(siginfo->si_signo);
+ 
+@@ -586,7 +605,6 @@ void do_coredump(const siginfo_t *siginfo)
+ 	if (ispipe) {
+ 		int dump_count;
+ 		char **helper_argv;
+-		struct subprocess_info *sub_info;
+ 
+ 		if (ispipe < 0) {
+ 			printk(KERN_WARNING "format_corename failed\n");
+@@ -633,19 +651,17 @@ void do_coredump(const siginfo_t *siginfo)
+ 			goto fail_dropcount;
+ 		}
+ 
+-		retval = -ENOMEM;
+-		sub_info = call_usermodehelper_setup(helper_argv[0],
+-						helper_argv, NULL, GFP_KERNEL,
+-						umh_pipe_setup, NULL, &cprm);
+-		if (sub_info)
+-			retval = call_usermodehelper_exec(sub_info,
+-							  UMH_WAIT_EXEC);
++		ppd.argv = helper_argv;
++		ppd.cp = &cprm;
+ 
++		pid = _do_fork(CLONE_VFORK, (unsigned long)fork_callback,
++			       (unsigned long)&ppd, NULL, NULL, 0, 1);
+ 		argv_free(helper_argv);
+-		if (retval) {
++		if (pid < 0) {
+ 			printk(KERN_INFO "Core dump to |%s pipe failed\n",
+ 			       cn.corename);
+-			goto close_fail;
++			retval = pid;
++			goto fail_dropcount;
+ 		}
+ 	} else {
+ 		struct inode *inode;
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index a10494a..1647319 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -2612,7 +2612,7 @@ extern void mm_release(struct task_struct *, struct mm_struct *);
+ 
+ #ifdef CONFIG_HAVE_COPY_THREAD_TLS
+ extern int copy_thread_tls(unsigned long, unsigned long, unsigned long,
+-			struct task_struct *, unsigned long);
++			struct task_struct *, unsigned long, int);
+ #else
+ extern int copy_thread(unsigned long, unsigned long, unsigned long,
+ 			struct task_struct *);
+@@ -2644,7 +2644,8 @@ extern int do_execveat(int, struct filename *,
+ 		       const char __user * const __user *,
+ 		       const char __user * const __user *,
+ 		       int);
+-extern long _do_fork(unsigned long, unsigned long, unsigned long, int __user *, int __user *, unsigned long);
++extern long _do_fork(unsigned long, unsigned long, unsigned long, int __user *,
++		     int __user *, unsigned long, int);
+ extern long do_fork(unsigned long, unsigned long, unsigned long, int __user *, int __user *);
+ struct task_struct *fork_idle(int);
+ extern pid_t kernel_thread(int (*fn)(void *), void *arg, unsigned long flags);
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 2e391c7..643a09b 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -1245,7 +1245,8 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 					int __user *child_tidptr,
+ 					struct pid *pid,
+ 					int trace,
+-					unsigned long tls)
++					unsigned long tls,
++					int return_to_kernel)
+ {
+ 	int retval;
+ 	struct task_struct *p;
+@@ -1451,7 +1452,8 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 	retval = copy_io(clone_flags, p);
+ 	if (retval)
+ 		goto bad_fork_cleanup_namespaces;
+-	retval = copy_thread_tls(clone_flags, stack_start, stack_size, p, tls);
++	retval = copy_thread_tls(clone_flags, stack_start, stack_size, p, tls,
++				 return_to_kernel);
+ 	if (retval)
+ 		goto bad_fork_cleanup_io;
+ 
+@@ -1673,7 +1675,7 @@ static inline void init_idle_pids(struct pid_link *links)
+ struct task_struct *fork_idle(int cpu)
+ {
+ 	struct task_struct *task;
+-	task = copy_process(CLONE_VM, 0, 0, NULL, &init_struct_pid, 0, 0);
++	task = copy_process(CLONE_VM, 0, 0, NULL, &init_struct_pid, 0, 0, 0);
+ 	if (!IS_ERR(task)) {
+ 		init_idle_pids(task->pids);
+ 		init_idle(task, cpu);
+@@ -1693,7 +1695,8 @@ long _do_fork(unsigned long clone_flags,
+ 	      unsigned long stack_size,
+ 	      int __user *parent_tidptr,
+ 	      int __user *child_tidptr,
+-	      unsigned long tls)
++	      unsigned long tls,
++	      int return_to_kernel)
+ {
+ 	struct task_struct *p;
+ 	int trace = 0;
+@@ -1718,7 +1721,7 @@ long _do_fork(unsigned long clone_flags,
+ 	}
+ 
+ 	p = copy_process(clone_flags, stack_start, stack_size,
+-			 child_tidptr, NULL, trace, tls);
++			 child_tidptr, NULL, trace, tls, return_to_kernel);
+ 	/*
+ 	 * Do this prior waking up the new thread - the thread pointer
+ 	 * might get invalid after that point, if the thread exits quickly.
+@@ -1769,7 +1772,7 @@ long do_fork(unsigned long clone_flags,
+ 	      int __user *child_tidptr)
+ {
+ 	return _do_fork(clone_flags, stack_start, stack_size,
+-			parent_tidptr, child_tidptr, 0);
++			parent_tidptr, child_tidptr, 0, 0);
+ }
+ #endif
+ 
+@@ -1779,14 +1782,14 @@ long do_fork(unsigned long clone_flags,
+ pid_t kernel_thread(int (*fn)(void *), void *arg, unsigned long flags)
+ {
+ 	return _do_fork(flags|CLONE_VM|CLONE_UNTRACED, (unsigned long)fn,
+-		(unsigned long)arg, NULL, NULL, 0);
++		(unsigned long)arg, NULL, NULL, 0, 0);
+ }
+ 
+ #ifdef __ARCH_WANT_SYS_FORK
+ SYSCALL_DEFINE0(fork)
+ {
+ #ifdef CONFIG_MMU
+-	return _do_fork(SIGCHLD, 0, 0, NULL, NULL, 0);
++	return _do_fork(SIGCHLD, 0, 0, NULL, NULL, 0, 0);
+ #else
+ 	/* can not support in nommu mode */
+ 	return -EINVAL;
+@@ -1798,7 +1801,7 @@ SYSCALL_DEFINE0(fork)
+ SYSCALL_DEFINE0(vfork)
+ {
+ 	return _do_fork(CLONE_VFORK | CLONE_VM | SIGCHLD, 0,
+-			0, NULL, NULL, 0);
++			0, NULL, NULL, 0, 0);
+ }
+ #endif
+ 
+@@ -1826,7 +1829,8 @@ SYSCALL_DEFINE5(clone, unsigned long, clone_flags, unsigned long, newsp,
+ 		 unsigned long, tls)
+ #endif
+ {
+-	return _do_fork(clone_flags, newsp, 0, parent_tidptr, child_tidptr, tls);
++	return _do_fork(clone_flags, newsp, 0, parent_tidptr, child_tidptr,
++			tls, 0);
  }
  #endif
  
