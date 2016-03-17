@@ -1,11 +1,13 @@
-From: Brian <Sussan-eotv5ImlKuC9RC+f8J1Yzg@public.gmane.org>
-Subject: =?utf-8?B?QXJlIHlvdSBhbG9uZT8=?=
-Date: Wed, 16 Mar 2016 19:55:08 -0400
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@huffmannews.info>
+From: Kamezawa Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 0/2] Make core_pattern support namespace
+Date: Thu, 17 Mar 2016 09:57:32 +0900
+Message-ID: <56EA00FC.3030800@jp.fujitsu.com>
+References: <cover.1458119582.git.zhaolei@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <cover.1458119582.git.zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,135 +17,35 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hey,
-
-Listen I tried to reach you on
-your mobile but I think I have
-the wrong number..
-
-Did you change it?
-
-Anywho, remember the millionaire
-I was telling you about?
-
-Well I just found this video from her
-and she's just handing out free money.
-
-WATCH VIDEO HERE
-http://click.huffmannews.info/index.php?id=1866316&a=41260&b=2615&c=166
-
-Seriously, I just made $1,500 in like 20 minutes.
-
-
->> START BY CLICKING HERE NOW <<
-http://click.huffmannews.info/index.php?id=1866316&a=41260&b=2615&c=166
-
-Thank you, 
-
-Brian
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Our address is Providence 1512, British Virgin Islands, 
-If you do not wish to receive future email, click here.
-http://click.huffmannews.info/index.php?o=2&a=41260&b=2615&c=166
-(You can also send your request to Customer Care at the street address above.) 
+On 2016/03/16 18:23, Zhao Lei wrote:
+> We discussed patch titled:
+>   [PATCH] Make core_pattern support namespace
+> before.
+> 
+> Above patch can solve half problem of custom core_dump pattern
+> in container, but there are also another problem that limit
+> custom core_pattern in container, it is the pipe-type core_pattern
+> will write core dump into host's filesystem.
+> (See discussion of that patch for detail)
+> 
+> Now we can solve the second problem by [PATCH 1/2], I send
+> the origional patch with it.
+> 
+
+Let me know your design...
+
+This patch does using fork+execve() rather than calling UMH in pipe-coredump pass.
+And coredump-pipe process is run as a child of get-dumped process.
+Right ?
+
+Doesn't this break existing solution actually used in distro ?
+
+BTW, it's first time for me to see that _do_fork() is called outside from fork.c.
+Isn't it better to add a new func in fork.c if we really need this ?
+
+Thanks,
+-Kame
