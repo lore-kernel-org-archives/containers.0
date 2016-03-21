@@ -1,12 +1,15 @@
-From: =?utf-8?B?U01BUlRzbGlt?= <info-K1hF/X/VzQVBDgjK7y7TUQ@public.gmane.org>
-Subject: =?utf-8?B?U2NobGFuayB2b24gS29wZiBiaXMgRnXDnyE=?=
-Date: 18 Mar 2016 20:12:47 -0700
-Message-ID: <20160319043734.B8CEDCD7@mail.linuxfoundation.org>
-Reply-To: =?utf-8?B?U01BUlRzbGlt?= <info-K1hF/X/VzQVBDgjK7y7TUQ@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH v2 3/3] Make core_pattern support namespace
+Date: Mon, 21 Mar 2016 01:00:27 -0500
+Message-ID: <87twk0tlok.fsf@x220.int.ebiederm.org>
+References: <cover.1458305141.git.zhaolei@cn.fujitsu.com>
+	<77053bb2bdd21489e09b6ef362044d283e1ba12b.1458305141.git.zhaolei@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <77053bb2bdd21489e09b6ef362044d283e1ba12b.1458305141.git.zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+	(Zhao Lei's message of "Fri, 18 Mar 2016 20:48:35 +0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,88 +19,125 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-U2NobGFuayB2b24gS29wZiBiaXMgRnXDnyEgPCEtLSBEZWZpbmUgQ2hhcnNldCAtLT4NCiA8IS0t
-IFJlc3BvbnNpdmUgTWV0YSBUYWcgLS0+DQogYm9keXsNCiAgICAgICAgICAgIHdpZHRoOiAxMDAl
-OyANCiAgICAgICAgICAgIGJhY2tncm91bmQtY29sb3I6ICNGRkZGRkY7IA0KICAgICAgICAgICAg
-bWFyZ2luOjA7IA0KICAgICAgICAgICAgcGFkZGluZzowOyANCiAgICAgICAgICAgIC13ZWJraXQt
-Zm9udC1zbW9vdGhpbmc6IGFudGlhbGlhc2VkOw0KCQkJLXdlYmtpdC10ZXh0LXNpemUtYWRqdXN0
-Om5vbmU7DQogICAgICAgICAgICBtc28tbWFyZ2luLXRvcC1hbHQ6MHB4OyBtc28tbWFyZ2luLWJv
-dHRvbS1hbHQ6MHB4OyBtc28tcGFkZGluZy1hbHQ6IDBweCAwcHggMHB4IDBweDsNCiAgICAgICAg
-fQ0KICAgICAgICANCiAgICAgICAgcCxoMSxoMixoMyxoNHsNCgkgICAgICAgIG1hcmdpbi10b3A6
-MDsNCgkJCW1hcmdpbi1ib3R0b206MDsNCgkJCXBhZGRpbmctdG9wOjA7DQoJCQlwYWRkaW5nLWJv
-dHRvbTowOw0KICAgICAgICB9DQogICAgICAgIA0KICAgICAgICANCiAgICAgICAgaHRtbHsNCiAg
-ICAgICAgICAgIHdpZHRoOiAxMDAlOyANCiAgICAgICAgfQ0KICAgICAgICANCiAgICAgICANCiAg
-ICAgICAgLyogLS0tLS0tLS0tLS0gcmVzcG9uc2l2aXR5IC0tLS0tLS0tLS0tICovDQoJCQ0KICAg
-ICAgICBAbWVkaWEgb25seSBzY3JlZW4gYW5kIChtYXgtd2lkdGg6IDY0MHB4KXsNCgkJCQ0KCQkJ
-LyotLS0tLSBtYWluIGltYWdlIC0tLS0tLS0qLw0KCQkJKltjbGFzcz1pbWFnZTc1MF0gaW1ne3dp
-ZHRoOiAxMDAlICFpbXBvcnRhbnQ7IGhlaWdodDogYXV0byAhaW1wb3J0YW50O30NCgkJCQ0KCQkJ
-LyotLS0tLS0tLSBDb250YWluZXIgLS0tLS0tLS0qLwkJCQ0KCQkJKltjbGFzcz1jb250YWluZXI3
-NjBdIHt3aWR0aDogOTIlICFpbXBvcnRhbnQ7IG1heC13aWR0aDogNDQwcHggIWltcG9ydGFudH0N
-CgkJCSpbY2xhc3M9Y29udGFpbmVyNzUwXSB7d2lkdGg6IDEwMCUgIWltcG9ydGFudH0NCgkJCSpb
-Y2xhc3M9bWluX3dpZHRoXSB7bWluLXdpZHRoOiAxMDAlICFpbXBvcnRhbnR9DQoJCQkNCgkJfQ0K
-IERJRSBBQk5FSE0tUkVWT0xVVElPTiEgU29sbHRlIGRpZXNlciBOZXdzbGV0dGVyIG5pY2h0IGtv
-cnJla3QgZGFyZ2VzdGVsbHQgd2VyZGVuLCBrbGlja2VuIFNpZSBiaXR0ZSAgaGllciANCgkJCQkJ
-CQkJCQkJCQkNCgkJCQkJCQkJCQkJCQkuICAgSE9STU9ORSANCgkJCQkJCQkJCQkJCQkNCgkJCQkJ
-CQkJCQkJCQkgICAgREVUT1ggDQoJCQkJCQkJCQkJCQkJDQoJCQkJCQkJCQkJCQkJICAgIFNFWFVB
-TElUJkF1bWw7VCANCgkJCQkJCQkJCQkJCQkNCgkJCQkJCQkJCQkJCQkgICAgV09ITEJFRklOREVO
-IA0KCQkJCQkJCQkJCQkJCQ0KCQkJCQkJCQkJCQkJCSAgICBTVFJFU1NMSU5ERVJVTkcgDQoJCQkJ
-CQkJCQkJCQkJDQoJCQkJCQkJCQkJCQkJICAgIEFCTkVITUVOIA0KCQkJCQkJCQkJCQkJCQ0KCQkJ
-CQkJCQkJCQkJCSAgICBWRVJEQVVVTkcgDQoJCQkJCQkJCQkJCQkJDQoJCQkJCQkJCQkJCQkJICAg
-IEZJVE5FU1MgRGVyIFNNQVJUIFNsaW0gRFVPIFBBQ0sgbCZhdW1sO3NzdCBJaHJlIFBmdW5kZSBn
-YW56IG5hdCZ1dW1sO3JsaWNoIHNjaG1lbHplbiEgRGVyIFNNQVJUIFNsaW0gRFVPIFBBQ0sgd2ly
-a3QgMi1mYWNoOiANCgkJCQkJCQkJCQkJCQkNCgkJCQkJCQkJCQkJCQkNCgkJCQkJCQkJCSZidWxs
-OyBFaW4gZWluemlnYXJ0aWdlciwgMTAwICUgbmF0JnV1bWw7cmxpY2hlciBXaXJra29tcGxleCBt
-aXQgZ2V6aWVsdGVyIFp1c2FtbWVuc2V0enVuZyBsJmF1bWw7c3N0IElocmUgUGZ1bmRlIHB1cnpl
-bG4sIHNjaG1pbHp0IElociBGZXR0IHVuZCBiZXNlaXRpZ3QgV2Fzc2VyZWlubGFnZXJ1bmdlbi4g
-DQoJCQkJCQkJCQkJCQkJDQoJCQkJCQkJCQkJCQkJDQoJCQkJCQkJCQkmYnVsbDsgRWluIFBmbGFz
-dGVyIG1pdCBrb256ZW50cmllcnRlbSBFeHRyYWt0IGF1cyBCbGFzZW50YW5nIGJlc2NobGV1bmln
-dCBkYXMgQWJuZWhtZW4gZG9ydCwgd28gU2llIGVzIGFtIG1laXN0ZW4gYnJhdWNoZW4uLiBXaWUg
-ZnVua3Rpb25pZXJ0IFNNQVJUIFNsaW0/IA0KCQkJCQkJCQkJCQkJCQ0KCQkJCQkJCQkJCQkJCQ0K
-CQkJCQkJCQkJRGVyIFdpcmtzdG9mZmtvbXBsZXggbCZhdW1sO3NzdCBTaWUgZ2FueiBhdXRvbWF0
-aXNjaCBhYm5laG1lbiwgaW5kZW0gZXIgYXVmIGFsbGVuIEViZW5lbiB3aXJrdDogSHVuZ2VyZ2Vm
-JnV1bWw7aGwsIERlcG90ZmV0dCwgV2Fzc2VyZWlubGFnZXJ1bmdlbiwgR3J1bmR1bXNhdHouIEVp
-biBCZXV0ZWwgdCZhdW1sO2dsaWNoIG1pdHRhZ3MsIHVuZCBkZXIgRXJmb2xnIGlzdCBJaG5lbiBn
-YXJhbnRpZXJ0ISANCgkJCQkJCQkJCQkJCQkNCgkJCQkJCQkJCQkJCQkNCgkJCQkJCQkJCVNNQVJU
-IFNsaW0gZnVua3Rpb25pZXJ0IG9obmUgamVnbGljaGUgR2VmYWhyLCBkZW5uIGVzIGJlc3RlaHQg
-YXVzc2NobGllJnN6bGlnO2xpY2ggYXVzIHBmbCBhbnpsaWNoZW4gV2lya3N0b2ZmZW4sIGRpZSBz
-aWNoIGRhbmsgaWhyZXIgRG9zaWVydW5nIHBlcmZla3QgZXJnJmF1bWw7bnplbi4gU01BUlQgU2xp
-bSBsJmF1bWw7c3N0IFNpZSBkYXVlcmhhZnQgYWJuZWhtZW4sIG9obmUgZGFzcyBTaWUgJnV1bWw7
-YmVyaGF1cHQgZGFyYW4gZGVua2VuLiANCgkJCQkJCQkJCQkJCQkNCgkJCQkJCQkJCQkJCQkNCgkJ
-CQkJCQkJCUtlaW5lIEVudGJlaHJ1bmdlbiwga2VpbiBIdW5nZXJuICZuZGFzaDsgU2llIGVzc2Vu
-IGdhbnogbm9ybWFsLiBNaXQgU01BUlQgU2xpbSBoYWJlbiBlaW5pZ2UgbWVpbmVyIFBhdGllbnRl
-biBpbiB3ZW5pZ2VyIGFscyA2IE1vbmF0ZW4gbWVociBhbHMgMjUgS2lsbyBhYmdlbm9tbWVuISBN
-YW4gayZvdW1sO25udGUgc2FnZW4sIFNNQVJUIFNsaW0gZnVua3Rpb25pZXJ0IHdpZSB2b24gc2Vs
-YnN0ISANCgkJCQkJCQkJCQkJCQkNCgkJCQkJCQkJCQkJCQkNCgkJCQkJCQkJCSANCgkJCQkJCQkJ
-CSAxMDAgJSBuYXQmdXVtbDtybGljaCAxMDAgJSB3aXJrc2FtIDEwMCAlIEdld2ljaHRzYWJuYWht
-ZSAxMDAgJSBGZXR0YWJiYXUgMTAwICUgZ2FyYW50aWVydCAxMDAgJSBkYXVlcmhhZnQgICBTTUFS
-VCBTbGltICJEVU8gUEFDSyIgVmVycGFja3VuZ3NlaW5oZWl0OiAgDQoJCQkJCQkJCQkJCQkJCQkJ
-CQ0KCQkJCQkJCQkJCQkJCQkJCQkzMCBCZXV0ZWwgKyAzMCBQZmxhc3RlciBBbndlbmR1bmc6IEJl
-dXRlbDogDQoJCQkJCQkJCQkJCQkJCQkJCQ0KCQkJCQkJCQkJCQkJCQkJCQkgMS4gU2NoJnV1bWw7
-dHRlbiBTaWUgZGVuIEluaGFsdCBkZXMgQmV1dGVscyBpbiBlaW4gR2xhcy4gMi4gVHJpbmtlbiBT
-aWUgZGllIEwmb3VtbDtzdW5nIHB1ciBvZGVyIHZlcmQmdXVtbDtubnQgbWl0IGVpbmVyIGtsZWlu
-ZW4gTWVuZ2UgZWluZXMgR2V0ciZhdW1sO25rcyAoV2Fzc2VyLCBNaWxjaCwgVGVlLi4uKSB2b3Ig
-ZGVtIE1pdHRhZ2Vzc2VuLiBQbGFzdGVyOiANCgkJCQkJCQkJCQkJCQkJCQkJDQoJCQkJCQkJCQkJ
-CQkJCQkJCSBFaW4gUGZsYXN0ZXIgYmVpIHZvbGxrb21tZW4gc2F1YmVyZXIgdW5kIHRyb2NrZW5l
-ciBIYXV0IGF1ZiBkYXMgU2NodWx0ZXJibGF0dCBrbGViZW4uIEF1ZiBzYXViZXJlIHVuZCB0cm9j
-a2VuZSBIJmF1bWw7bmRlIGFjaHRlbiwgdW0gZGFzIEhhZnR2ZXJtJm91bWw7Z2VuIGRlcyBQcm9k
-dWt0ZXMgbmljaHQgenUgYmVlaW50ciZhdW1sO2NodGlnZW4uIEVpbiBQZmxhc3RlciBwcm8gVGFn
-IGFud2VuZGVuLiBRdWFsaXQmYXVtbDt0c2dhcmFudGllOiANCgkJCQkJCQkJCQkJCQkJCQkJDQoJ
-CQkJCQkJCQkJCQkJCQkJCSBVbSBkaWUgUXVhbGl0JmF1bWw7dCB1bmQgV2lya3NhbWtlaXQgdW5z
-ZXJlciBOYWhydW5nc2VyZyZhdW1sO256dW5nc21pdHRlbCB6dSBnYXJhbnRpZXJlbiwgZW50d2lj
-a2VsdCBBWiBWaXRhbWlucyBzZWluZSBQcm9kdWt0ZSBuYWNoIGRlbiBha3R1ZWxsZW4gTm9ybWVu
-IHVuZCBuZXVlc3RlbiB3aXNzZW5zY2hhZnRsaWNoZW4gU3RhbmRhcmRzLCBzb3dpZSBhbXRsaWNo
-ZW4gR2VuZWhtaWd1bmdlbiAmdXVtbDtiZXIgSGVyc3RlbGx1bmcgdW5kIFZlcnBhY2t1bmcgdm9u
-IE5haHJ1bmdzZXJnJmF1bWw7bnp1bmdzbWl0dGVsbi4gR3V0IGlzdCB1bnMgaGFsdCBuaWNodCBn
-dXQgZ2VudWcuIERpZXNlbiBWb3JzYXR6IGJlYWNodGVuIHdpciBhdWNoIGJlaSBkZXIgQXVzd2Fo
-bCB2b24gUHJvZHVrdGVuIHVuZCBIZXJzdGVsbGVybiwgZGllIG5lYmVuIGRlbiBBWiBQcm9kdWt0
-ZW4gaW0gU2hvcCBnZWYmdXVtbDtocnQgd2VyZGVuLiB3d3cuYXotdml0YW1pbnMuY29tIFZvbSBO
-ZXdzbGV0dGVyIGFibWVsZGVuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgIA0KCQkJICBJZiB5b3Ugd291bGQgbGlrZSB0byBtb2RpZnkg
-eW91ciBlbWFpbCBzZXR0aW5ncyBvciB1bnN1YnNjcmliZSAsIHZpc2l0DQoJCQkgDQoJCQloZXJl
-DQoJCQkgCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNv
-bnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5v
-cmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29u
-dGFpbmVycw==
+Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> writes:
+
+> Currently, each container shared one copy of coredump setting
+> with the host system, if host system changed the setting, each
+> running containers will be affected.
+>
+> Moreover, it is not easy to let each container keeping their own
+> coredump setting.
+>
+> We can use some workaround as pipe program to make the second
+> requirement possible, but it is not simple, and both host and
+> container are limited to set to fixed pipe program.
+> In one word, for host running contailer, we can't change core_pattern
+> anymore.
+> To make the problem more hard, if a host running more than one
+> container product, each product will try to snatch the global
+> coredump setting to fit their own requirement.
+>
+> For container based on namespace design, it is good to allow
+> each container keeping their own coredump setting.
+>
+> It will bring us following benefit:
+> 1: Each container can change their own coredump setting
+>    based on operation on /proc/sys/kernel/core_pattern
+> 2: Coredump setting changed in host will not affect
+>    running containers.
+> 3: Support both case of "putting coredump in guest" and
+>    "putting curedump in host".
+>
+> Each namespace-based software(lxc, docker, ..) can use this function
+> to custom their dump setting.
+>
+> And this function makes each continer working as separate system,
+> it fit for design goal of namespace
+
+There are a lot of questionable things with this patchset.
+
+> @@ -183,7 +182,7 @@ put_exe_file:
+>  static int format_corename(struct core_name *cn, struct coredump_params *cprm)
+>  {
+>  	const struct cred *cred = current_cred();
+> -	const char *pat_ptr = core_pattern;
+> +	const char *pat_ptr = current->nsproxy->pid_ns_for_children->core_pattern;
+
+current->nsproxy->pid_ns_for_children as the name implies is completely
+inappropriate for getting the pid namespace of the current task.
+
+This should use task_active_pid_namespace.
+
+>  	int ispipe = (*pat_ptr == '|');
+>  	int pid_in_pattern = 0;
+>  	int err = 0;
+> diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
+> index 918b117..a5af1e9 100644
+> --- a/include/linux/pid_namespace.h
+> +++ b/include/linux/pid_namespace.h
+> @@ -9,6 +9,7 @@
+>  #include <linux/nsproxy.h>
+>  #include <linux/kref.h>
+>  #include <linux/ns_common.h>
+> +#include <linux/binfmts.h>
+>  
+>  struct pidmap {
+>         atomic_t nr_free;
+> @@ -45,6 +46,7 @@ struct pid_namespace {
+>  	int hide_pid;
+>  	int reboot;	/* group exit code if this pidns was rebooted */
+>  	struct ns_common ns;
+> +	char core_pattern[CORENAME_MAX_SIZE];
+>  };
+>  
+>  extern struct pid_namespace init_pid_ns;
+> diff --git a/kernel/pid.c b/kernel/pid.c
+> index 4d73a83..c79c1d5 100644
+> --- a/kernel/pid.c
+> +++ b/kernel/pid.c
+> @@ -83,6 +83,7 @@ struct pid_namespace init_pid_ns = {
+>  #ifdef CONFIG_PID_NS
+>  	.ns.ops = &pidns_operations,
+>  #endif
+> +	.core_pattern = "core",
+>  };
+>  EXPORT_SYMBOL_GPL(init_pid_ns);
+>  
+> diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
+> index a65ba13..16d6d21 100644
+> --- a/kernel/pid_namespace.c
+> +++ b/kernel/pid_namespace.c
+> @@ -123,6 +123,9 @@ static struct pid_namespace *create_pid_namespace(struct user_namespace *user_ns
+>  	for (i = 1; i < PIDMAP_ENTRIES; i++)
+>  		atomic_set(&ns->pidmap[i].nr_free, BITS_PER_PAGE);
+>  
+> +	strncpy(ns->core_pattern, parent_pid_ns->core_pattern,
+> +		sizeof(ns->core_pattern));
+> +
+
+This is pretty horrible.  You are giving unprivileged processes the
+ability to run an already specified core dump helper in a pid namespace
+of their choosing.
+
+That is not backwards compatible, and it is possible this can lead to
+privilege escalation by triciking a privileged dump process to do
+something silly because it is running in the wrong pid namespace.
+
+Similarly the entire concept of forking from the program dumping core
+suffers from the same problem but for all other namespaces.
+
+I was hoping that I would see a justification somewhere in the patch
+descriptions describing why this set of decisions could be safe.  I do
+not and so I assume this case was not considered.
+
+If you had managed to fork for the child_reaper of the pid_namespace
+that set the core pattern (as has been suggested) there would be some
+chance that things would work correctly.    As you are forking from the
+program actually dumping core I see no chance that this patchset is
+either safe or backwards compatible as currently written.
+
+Eric
