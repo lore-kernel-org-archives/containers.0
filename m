@@ -1,72 +1,113 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH v2 3/3] Make core_pattern support namespace
-Date: Mon, 21 Mar 2016 16:24:33 -0500
-Message-ID: <878u1bo772.fsf@x220.int.ebiederm.org>
-References: <cover.1458305141.git.zhaolei@cn.fujitsu.com>
-	<77053bb2bdd21489e09b6ef362044d283e1ba12b.1458305141.git.zhaolei@cn.fujitsu.com>
-	<87twk0tlok.fsf@x220.int.ebiederm.org>
-	<00fa01d18341$986e1880$c94a4980$@cn.fujitsu.com>
-	<87shzkqmc8.fsf@x220.int.ebiederm.org>
-	<00fb01d18359$b99df580$2cd9e080$@cn.fujitsu.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: [RFC PATCH] cgroup namespaces: add a 'nsroot=' mountinfo field
+Date: Mon, 21 Mar 2016 18:41:33 -0500
+Message-ID: <20160321234133.GA22463@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <00fb01d18359$b99df580$2cd9e080$@cn.fujitsu.com> (Zhao Lei's
-	message of "Mon, 21 Mar 2016 18:09:15 +0800")
-List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-api-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
+Sender: linux-api-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> writes:
+One practical problem I've found with cgroup namespaces is that there
+is no way to disambiguate between a cgroupfs mount which was done in
+a cgroup namespace, and a bind mount of a cgroupfs directory.  So
+whether I do
 
-> Hi, Eric
->
->> -----Original Message-----
->> From: Eric W. Biederman [mailto:ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org]
+unshare --cgroup -- bash -c "mount -t cgroup -o freezer f /mnt; cat /proc/self/mountinfo"
 
-> Let me make a summarize:
-> You think this way is not acceptable, because the pipe program is running
-> in the panic-process's namespace context.
+or whether I just
 
-Actually my view is that your patchset is not acceptable because it
-is implemented in a way that is not backwards compatible (AKA it can
-break existing configurations that remain unchanged) and your
-implementation does not appear in the least safe from malicious users.
+mount --bind /sys/fs/cgroup/freezer/$(awk -F: '/freezer/ { print $3 }' /proc/self/cgroup) /mnt
 
-There is also a problem that your patchset is simply buggy for what it
-tries to implement, as using pid_ns_for_children and the multiple kbuild
-robot emails testifies.
+'mount root' field (field 3) in /proc/self/mountinfo will show the
+same thing, the result of awk -F: '/freezer/ { print $3 }' /proc/self/cgroup.
 
-> And in my view, a pipe program in the host's top level namespace is also
-> a problem.
->
-> Let us think a container, to make it act as a real machine, when a program
-> panic, linux kernel should dump it into the container's filesystem.
->
-> For the kernel, to keep the current way of forking pipe program by kthread,
-> just let the pipe thread running in the container's namespace, instead the host,
-> may solve the problem in current kernel.
->
-> What is your opinion?
->
-> Btw, this patch is trying to solve the problem descripted in thread named:
-> "piping core dump to a program escapes container" in
-> http://lists.linuxfoundation.org/pipermail/containers/2015-December/036476.html
-> Maybe using a userspace tool can make container dump to anywhere,
-> but for kernel ifself, it is better to solve above problem if we can.
+This patch adds a 'nsroot=' field to cgroup mountinfo entries, so that
+userspace can distinguish a mount made in a cgroup namespace from a bind
+mount from a cgroup subdirectory.
 
-I think it would be great to find a way to run a core dump helper and
-otherwise allow setting the core dump pattern in a container in a way
-that is safe from malicious users and does not break existing setups.
+Signed-off-by: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+---
+ fs/kernfs/mount.c      |  2 +-
+ include/linux/kernfs.h |  3 ++-
+ kernel/cgroup.c        | 29 ++++++++++++++++++++++++++++-
+ 3 files changed, 31 insertions(+), 3 deletions(-)
 
-Eric
+diff --git a/fs/kernfs/mount.c b/fs/kernfs/mount.c
+index b67dbcc..58f59fd 100644
+--- a/fs/kernfs/mount.c
++++ b/fs/kernfs/mount.c
+@@ -36,7 +36,7 @@ static int kernfs_sop_show_options(struct seq_file *sf, struct dentry *dentry)
+ 	struct kernfs_syscall_ops *scops = root->syscall_ops;
+ 
+ 	if (scops && scops->show_options)
+-		return scops->show_options(sf, root);
++		return scops->show_options(sf, dentry, root);
+ 	return 0;
+ }
+ 
+diff --git a/include/linux/kernfs.h b/include/linux/kernfs.h
+index c06c442..3124b91 100644
+--- a/include/linux/kernfs.h
++++ b/include/linux/kernfs.h
+@@ -145,7 +145,8 @@ struct kernfs_node {
+  */
+ struct kernfs_syscall_ops {
+ 	int (*remount_fs)(struct kernfs_root *root, int *flags, char *data);
+-	int (*show_options)(struct seq_file *sf, struct kernfs_root *root);
++	int (*show_options)(struct seq_file *sf, struct dentry *dentry,
++			    struct kernfs_root *root);
+ 
+ 	int (*mkdir)(struct kernfs_node *parent, const char *name,
+ 		     umode_t mode);
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 671dc05..806d1e7 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1593,7 +1593,32 @@ static int rebind_subsystems(struct cgroup_root *dst_root, u16 ss_mask)
+ 	return 0;
+ }
+ 
+-static int cgroup_show_options(struct seq_file *seq,
++static void cgroup_show_nsroot(struct seq_file *seq, struct dentry *dentry,
++			       struct kernfs_root *kf_root)
++{
++	struct kernfs_node *d_kn = dentry->d_fsdata;
++	char *nsroot;
++	int len, ret;
++
++	if (!kf_root)
++		return;
++	len = kernfs_path_from_node(d_kn, kf_root->kn, NULL, 0);
++	if (len <= 0)
++		return;
++	nsroot = kzalloc(len + 1, GFP_ATOMIC);
++	if (!nsroot)
++		return;
++	ret = kernfs_path_from_node(d_kn, kf_root->kn, nsroot, len + 1);
++	if (ret <= 0 || ret > len)
++		goto out;
++
++	seq_show_option(seq, "nsroot", nsroot);
++
++out:
++	kfree(nsroot);
++}
++
++static int cgroup_show_options(struct seq_file *seq, struct dentry *dentry,
+ 			       struct kernfs_root *kf_root)
+ {
+ 	struct cgroup_root *root = cgroup_root_from_kf(kf_root);
+@@ -1619,6 +1644,8 @@ static int cgroup_show_options(struct seq_file *seq,
+ 		seq_puts(seq, ",clone_children");
+ 	if (strlen(root->name))
+ 		seq_show_option(seq, "name", root->name);
++	cgroup_show_nsroot(seq, dentry, kf_root);
++
+ 	return 0;
+ }
+ 
+-- 
+2.7.3
