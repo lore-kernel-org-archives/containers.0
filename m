@@ -1,10 +1,12 @@
-From: Danik <Luke-MWuZG4tNNCd+xPeBQ9Deuw@public.gmane.org>
-Subject: =?utf-8?B?QnVmZmV0dCBsZWFrcyBoaXMgdHJhZGluZyBzZWNyZXRz4oCmIA==?=
-Date: Wed, 23 Mar 2016 21:34:03 -0400
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@halternews.info>
+From: "Kanika Shah"
+ <kanika.s-hwRmzunk84cYf6nkLry/qA@public.gmane.org>
+Subject: E-mail Campaign Platform?
+Date: 24 Mar 2016 15:20:41 +0530
+Message-ID: <20160324095101.72089282@mail.linuxfoundation.org>
+Reply-To: Kanika Shah <yash.t-hwRmzunk84cYf6nkLry/qA@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,24 +20,32 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SnVzdCBhIGZldyBkYXlzIGFnbyBteSBhY2NvdW50YW50IHNob3dlZCBtZSB0aGlzOiAKCkJ1ZmZl
-dHTigJlzIHRyYWRpbmcgc2VjcmV0czogaHR0cDovL2NsaWNrLmhhbHRlcm5ld3MuaW5mby9pbmRl
-eC5waHA/aWQ9MTkzNDM0MSZhPTQxMjYwJmI9MjcwNSZjPTE2NgoKQXBwYXJlbnRseSBpdCBzZWVt
-cyB0byBiZSBzb21lIHNvcnQgb2YgbmV3IAoKSW5zaWRlIGluZm9ybWF0aW9uIGhpbSBhbmQgaGlz
-IGZyaWVuZHMgaGFk4oCmIAoKU28gaGUgZ2F2ZSBtZSB0aGlzIGxpbmsgdG8gdHJ5IGl0IG91dDog
-CgpodHRwOi8vY2xpY2suaGFsdGVybmV3cy5pbmZvL2luZGV4LnBocD9pZD0xOTM0MzQxJmE9NDEy
-NjAmYj0yNzA1JmM9MTY2CgpPbiBhIGRhaWx5IGF2ZXJhZ2UgSeKAmXZlIGJlZW4gbWFraW5nICQx
-OTI3ISAKCkNyYXp5IHJpZ2h0Pz8/IEl04oCZcyBub3QgYWxsIGdvb2QgbmV3cyAKClNpbmNlIGhl
-IGluY3JlYXNlZCBoaXMgY29tbWlzc2lvbnMgc2luY2UgdGhlbiBoYWhhaGEgCgpCdXQgMTAwJSB3
-b3J0aCBpdCEgCgpUcnkgaXQgaGVyZTogCgpodHRwOi8vY2xpY2suaGFsdGVybmV3cy5pbmZvL2lu
-ZGV4LnBocD9pZD0xOTM0MzQxJmE9NDEyNjAmYj0yNzA1JmM9MTY2CgpBbmQgdXBkYXRlIG1lIG9u
-IHlvdXIgcHJvZ3Jlc3PigKYgCgpCZXN0IHJlZ2FyZHMuIAoKRGFuaWsKCgoKCgoKCgoKCgoKCgoK
-CgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoK
-CgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKT3VyIGFkZHJlc3MgaXMgUHJvdmlkZW5jZSAxNTEy
-LCBCcml0aXNoIFZpcmdpbiBJc2xhbmRzLCAKSWYgeW91IGRvIG5vdCB3aXNoIHRvIHJlY2VpdmUg
-ZnV0dXJlIGVtYWlsLCBjbGljayBoZXJlLgpodHRwOi8vY2xpY2suaGFsdGVybmV3cy5pbmZvL2lu
-ZGV4LnBocD9vPTImYT00MTI2MCZiPTI3MDUmYz0xNjYKKFlvdSBjYW4gYWxzbyBzZW5kIHlvdXIg
-cmVxdWVzdCB0byBDdXN0b21lciBDYXJlIGF0IHRoZSBzdHJlZXQgYWRkcmVzcyBhYm92ZS4pIApf
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJz
-IG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBz
-Oi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+   Hi,
+
+   I tried understanding your target market to see if we can help your
+   organization in generating leads via email, be it International or
+   Domestic.
+
+   We have been catering companies across United States, India and
+   European countries. Our services have help companies prevent up to 30%
+   of the cost on custom marketing projects.
+
+   Let us know your target audience/market, for us to do a sample test. Or
+   suggest us a time to get on a call to see if we can replicate the same
+   success, the way we did for our clients.
+
+   Regards,
+
+   Kanika Shah
+
+   Marketing Executive
+
+                                                     If you do not wish to
+   hear from us again, please respond back with "REMOVE" and we will honor
+   your request.
+
+
+   Disclaimer: If you have received this electronic mail by error or if
+   you're not the right person to speak with in this regard, I'd
+   appreciate if you would be so kind as to forward this email to the
+   right person or the person in charg
