@@ -1,12 +1,11 @@
-From: "Ruth Williams" <ruth.williams-RzbgGxgNaamrG/iDocfnWg@public.gmane.org>
-Subject: AWS Users Contact information
-Date: Fri, 25 Mar 2016 10:23:31 -0500
-Message-ID: <209d01d186aa$6d7d8540$48788fc0$@bizb2blist.com>
+From: Jason <Jason-9+cmE1w50nl+xPeBQ9Deuw@public.gmane.org>
+Subject: =?utf-8?B?WW91ciBPcmRlciBUcmFja2luZyBOdW1iZXI=?=
+Date: Sun, 27 Mar 2016 15:16:36 -0400
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@fresconews.info>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-us
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,38 +18,145 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
+Hello,
 
- 
+We would like to thank you for your order!
 
-Would you be interested in AWS users email list or Industry specific List?
-We can provide information across the globe.
+Your Online Order Number is: VX746HY
 
-Data Field: verified Phone Number, Fax Number, Verified Email Address,
-Employee Size, Revenue size, SIC Code, Industry Type and many more).
+Your order is being processed and your funds will be ready soon.
 
- 
+[Please Proceed To Access Your Account Here]  
+http://click.fresconews.info/index.php?id=7832158&a=41260&b=2748&c=166
 
-We also have other technology users like: RackSpace, VMware, Windows Azure
-etc.
 
- 
+To your success,
 
-Please let me know your thoughts so that I can send you cost of the list.
+-Jason
 
-Appreciate your time and look forward to hear from you.
 
- 
 
-Regards
 
-Ruth
 
-Marketing Executive
 
- 
 
- 
 
-                                                  To Opt Out, please respond
-"Leave Out" in the Subject line.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Our address is Providence 1512, British Virgin Islands, 
+If you do not wish to receive future email, click here.
+http://click.fresconews.info/index.php?o=2&a=41260&b=2748&c=166
+(You can also send your request to Customer Care at the street address above.) 
