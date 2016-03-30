@@ -1,36 +1,44 @@
-From: Paul <Luke-9ZjyzO/64WN+xPeBQ9Deuw@public.gmane.org>
-Subject: =?utf-8?B?R29vZ2xlIFNlbGVjdGVkIFlvdSAh?=
-Date: Tue, 29 Mar 2016 17:13:48 -0400
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@ashingnews.info>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] cgroup mount: ignore nsroot=
+Date: Wed, 30 Mar 2016 12:21:00 -0500
+Message-ID: <20160330172100.GA11373@mail.hallyn.com>
+References: <20160321234133.GA22463@mail.hallyn.com>
+ <20160329135851.GN8544@smitten>
+ <20160329200018.GA21908@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-api-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20160329200018.GA21908-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+Sender: linux-api-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: Tycho Andersen <tycho.andersen-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-SGV5LAoKWW91IGFyZSBzdWNjZXNzZnVsbHkgc2VsZWN0ZWQgZm9yIEdvb2dsZSBUcmFkZXIgU3lz
-dGVtLi4KUGxlYXNlIEdldCBZb3VyIEZyZWUgQWNjZXNzIE5vdyAKCj09Pj4gaHR0cDovL2NsaWNr
-LmFzaGluZ25ld3MuaW5mby9pbmRleC5waHA/aWQ9NTg3NzQwNyZhPTQxMjYwJmI9Mjc2NCZjPTE2
-NiA8PD09CgpQLlMuIFBsZWFzZSBkb27igJl0IHNoYXJlIHRoaXMgbGluayB3aXRoIGFueSBvbmUs
-IEl04oCZcyBvbmx5IHByaXZhdGUgdG8geW91IAoKR2V0IEFjY2VzcyBOb3cgPT0+PiBodHRwOi8v
-Y2xpY2suYXNoaW5nbmV3cy5pbmZvL2luZGV4LnBocD9pZD01ODc3NDA3JmE9NDEyNjAmYj0yNzY0
-JmM9MTY2IDw8PT0KClRhbGtzIHNvb24sClBhdWwKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoK
-CgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCk91ciBhZGRyZXNzIGlzIFByb3ZpZGVu
-Y2UgMTUxMiwgQnJpdGlzaCBWaXJnaW4gSXNsYW5kcywgCklmIHlvdSBkbyBub3Qgd2lzaCB0byBy
-ZWNlaXZlIGZ1dHVyZSBlbWFpbCwgY2xpY2sgaGVyZS4KaHR0cDovL2NsaWNrLmFzaGluZ25ld3Mu
-aW5mby9pbmRleC5waHA/bz0yJmE9NDEyNjAmYj0yNzY0JmM9MTY2CihZb3UgY2FuIGFsc28gc2Vu
-ZCB5b3VyIHJlcXVlc3QgdG8gQ3VzdG9tZXIgQ2FyZSBhdCB0aGUgc3RyZWV0IGFkZHJlc3MgYWJv
-dmUuKSAKCgoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18K
-Q29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9u
-Lm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9j
-b250YWluZXJz
+As of the patch "cgroup namespaces: add a 'nsroot=' mountinfo field", 
+cgroupfs mountinfo output shows 'nsroot='.  If userspace like criu
+copy/pastes mount options from there into a new mount command, we should
+ignore it.
+
+Signed-off-by: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+---
+ kernel/cgroup.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index ef0c25d..69fb112 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1680,6 +1680,10 @@ static int parse_cgroupfs_options(char *data, struct cgroup_sb_opts *opts)
+ 			opts->none = true;
+ 			continue;
+ 		}
++		if (!strncmp(token, "nsroot=", 7)) {
++			/* ignore nsroot= copied from mountinfo */
++			continue;
++		}
+ 		if (!strcmp(token, "all")) {
+ 			/* Mutually exclusive option 'all' + subsystem name */
+ 			if (one_ss)
+-- 
+2.7.0
