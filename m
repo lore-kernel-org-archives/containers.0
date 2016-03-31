@@ -1,48 +1,87 @@
-From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [RFC PATCH] cgroup namespaces: add a 'nsroot=' mountinfo field
-Date: Wed, 30 Mar 2016 14:58:24 -0400
-Message-ID: <20160330185824.GR7822@mtj.duckdns.org>
-References: <20160321234133.GA22463@mail.hallyn.com>
- <20160329011203.GA8974@mail.hallyn.com>
+From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+Subject: [Patch v3 0/3] allow the creation of architecture emulation
+	containers where the emulator binary is outside the container
+Date: Thu, 31 Mar 2016 07:54:06 -0700
+Message-ID: <1459436046.2958.21.camel@HansenPartnership.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-api-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20160329011203.GA8974-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
-Sender: linux-api-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello, Serge.
+Changes in v3:
+ * Collected acks from Jan Kara and Serge Hallyn
+ * Fixed doc spelling errors
+ * fput -> put_filp in error path
 
-On Mon, Mar 28, 2016 at 08:12:03PM -0500, Serge E. Hallyn wrote:
-> Quoting Serge E. Hallyn (serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org):
-> > One practical problem I've found with cgroup namespaces is that there
-> > is no way to disambiguate between a cgroupfs mount which was done in
-> > a cgroup namespace, and a bind mount of a cgroupfs directory.  So
-> > whether I do
-> > 
-> > unshare --cgroup -- bash -c "mount -t cgroup -o freezer f /mnt; cat /proc/self/mountinfo"
-> > 
-> > or whether I just
-> > 
-> > mount --bind /sys/fs/cgroup/freezer/$(awk -F: '/freezer/ { print $3 }' /proc/self/cgroup) /mnt
-> > 
-> > 'mount root' field (field 3) in /proc/self/mountinfo will show the
-> > same thing, the result of awk -F: '/freezer/ { print $3 }' /proc/self/cgroup.
-> > 
-> > This patch adds a 'nsroot=' field to cgroup mountinfo entries, so that
-> > userspace can distinguish a mount made in a cgroup namespace from a bind
-> > mount from a cgroup subdirectory.
-> 
-> no rush on the patch itself, I don't mind if i have to rewrite it from
-> scratch, but I'd like to get the patch into docker/libcontainer using it,
-> so can we decide on whether the syntax as shown here is ok?
+Changes in v2:
 
-Yeah, I think the syntax is fine.
+ * Use oldfile f_creds for the vfs_open credentials in
+   filp_clone_open()
+ * remove spurious fput() after filp_close()
+ * Add documentation for the F option
 
-Thanks.
+There's also now a git tree at
 
--- 
-tejun
+https://git.kernel.org/cgit/linux/kernel/git/jejb/binfmt_misc.git
+
+Original cover letter:
+
+I've recently been playing a lot with architecture emulation containers
+using qemu, mainly so I can build and test the arm secure boot
+toolchain on my x86 laptop (not having any arm server hardware).
+
+The process for bringing up architecture emulation containers using
+qemu-user is very cumbersome because the emulation has to be installed
+within the container.  This is bad for several reasons, firstly because
+it contaminates the container image to have an emulator sitting inside
+it.  Secondly it means that all orchestration systems have to be
+explicitly modified to work with non-native architectures and thirdly
+it means that the consumer of the container can accidentally destroy
+the emulation and thus permanently crash the container.
+
+The fix for this is to add a mode to binfmt_misc where the emulation
+can be permanently installed from the current mount namespace and where
+it survives both chroot and changes of mount namespace, effectively
+allowing the container to run using the emulator, but where the
+emulator itself isn't present within the container.
+
+There are a couple of downsides to this, firstly the mapping of the
+interpreter is accessible inside the container even if the actual file
+isn't (I don't think this is really a security problem) and secondly,
+to update the emulator package, you now have to remove the emulation
+update and reinstall it, but this should be easy to do with packaging
+scripts.  Finally, the emulator must be static otherwise the container
+would crash when the elf binary format attempted to run the elf
+interpreter.
+
+I'm not really a regular FS developer, so I'd appreciate FS people
+taking a look at the new filp_clone_open() API and whether I got
+everything correct.
+
+Thanks,
+
+James
+
+---
+James Bottomley (3):
+  fs: add filp_clone_open API
+  binfmt_misc: add persistent opened binary handler for containers
+  binfmt_misc: add F option description to documentation
+
+ Documentation/binfmt_misc.txt |  7 +++++++
+ fs/binfmt_misc.c              | 41 +++++++++++++++++++++++++++++++++++++++--
+ fs/internal.h                 |  1 +
+ fs/open.c                     | 20 ++++++++++++++++++++
+ 4 files changed, 67 insertions(+), 2 deletions(-)
