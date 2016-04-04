@@ -1,14 +1,12 @@
-From: HQ-Canadian-Meds <noreply-Hgtv45jQVPLwvR0lvYjcXw@public.gmane.org>
-Subject: We want our pharmacy to become even better so that we could provide
-	more quality drugs!
-Date: Fri, 1 Apr 2016 05:38:30 -0400
-Message-ID: <E1l4inJ-0003as-10@322s>
-References: <E10o376-0008iG-0c@pv99BA27>
+From: =?utf-8?B?S3VuZGVuc2VydmljZQ==?= <info-+jEP01YFpPtWk0Htik3J/w@public.gmane.org>
+Subject: =?utf-8?B?V2ljaHRpZ2UgTWl0dGVpbHVuZyBmwrhyIGNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc=?=
+Date: 4 Apr 2016 07:10:40 -0700
+Message-ID: <20160404145235.677EEC2B@mail.linuxfoundation.org>
+Reply-To: =?utf-8?B?S3VuZGVuc2VydmljZQ==?= <info-+jEP01YFpPtWk0Htik3J/w@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <E10o376-0008iG-0c@pv99BA27>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,193 +16,36 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lf_carrier-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lf_desktop-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, bridge-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, printing-architecture-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-   
-
-		Rider thought are extremely controversial issue with. Saves you
-expressing himself was violated by attribute exchange market women. 
-
-		Me
-		ds
-		7f
-		or
-		0M
-		en
-
-Vi
-Ci
-Ci
-Le
-Pr
- ag
-al
-al
-vi
-op
- ra
-is
-is
-tr
-ec
-
- S
-a 
-ia
-
-of
-
-t 
-
-Ta
-
-bs
-
- $0
-$1
-$2
-$2
-$0
- .9
-.6
-.5
-.5
-.4
- 9
-5
-0
-0
-5
-
-		Me
-		ds
-		9f
-		or
-		6W
-		om
-		en
-
-Ac
-Cl
-De
-Fe
-Fe
- om
-om
-fl
-ma
-ma
- pl
-id
-uc
-le
-le
- ia
-
-an
- C
- V
-
-ia
-ia
-
-li
-gr
-
-s 
-a 
-
- $1
-$0
-$1
-$1
-$0
- .7
-.4
-.2
-.1
-.7
- 5
-5
-5
-1
-2
-
- 10
-An
-Sp
-Vi 0%
-on
-ec
-sa  A
-ym
-ia
-,M ut
-ou
-l 
-as he
-s 
-in
-te nt
-de
-te
-rc ic
-li
-rn
-ar  M
-ve
-et
-d, ed
-ry
- p
-Ec s 
-
-ri
-he  
-
-ce
-ck  
-
-s 
-
-   F
- N
- 2
- O as
-o 
-4/
-nl t 
-pr
-7 
-y  wo
-es
-cu
-re rl
-cr
-st
-li dw
-ip
-om
-ab id
-ti
-er
-le e 
-on
- s
- s sh
- r
-up
-up ip
-eq
-po
-pl pi
-ui
-rt
-ie ng
-re
-
-rs  
-d
-
-		>> Enter Here 
+V2ljaHRpZ2UgTWl0dGVpbHVuZyBmwrhyICMjZW1haWwjIyBib2R5ew0KICAgICAgICAgICAgd2lk
+dGg6IDEwMCU7IA0KICAgICAgICAgICAgYmFja2dyb3VuZC1jb2xvcjogI0ZGRkZGRjsgDQogICAg
+ICAgICAgICBtYXJnaW46MDsgDQogICAgICAgICAgICBwYWRkaW5nOjA7IA0KICAgICAgICAgICAg
+bXNvLW1hcmdpbi10b3AtYWx0OjBweDsgbXNvLW1hcmdpbi1ib3R0b20tYWx0OjBweDsgbXNvLXBh
+ZGRpbmctYWx0OiAwcHggMHB4IDBweCAwcHg7DQogICAgICAgIH0NCiAgICAgICAgDQogICAgICAg
+IHAsaDEsaDIsaDMsaDR7DQoJICAgICAgICBtYXJnaW4tdG9wOjA7DQoJCQltYXJnaW4tYm90dG9t
+OjA7DQoJCQlwYWRkaW5nLXRvcDowOw0KCQkJcGFkZGluZy1ib3R0b206MDsNCiAgICAgICAgfQ0K
+ICAgICAgICANCiAgICAgICAgaHRtbHsNCiAgICAgICAgICAgIHdpZHRoOiAxMDAlOyANCiAgICAg
+ICAgfQ0KICAgICAgICANCiAgICAgICANCiAgICAgICAgLyogLS0tLS0tLS0tLS0gcmVzcG9uc2l2
+aXR5IC0tLS0tLS0tLS0tICovDQogICAgICAgIEBtZWRpYSBvbmx5IHNjcmVlbiBhbmQgKG1heC13
+aWR0aDogNTkwcHgpew0KCQkJDQoJCQkvKi0tLS0tIG1haW4gaW1hZ2UgLS0tLS0tLSovDQoJCQkj
+bG9nbyB7d2lkdGg6IDEwMCUgIWltcG9ydGFudDsgaGVpZ2h0OiBhdXRvICFpbXBvcnRhbnQ7fQ0K
+DQoJCQkvKi0tLS0tLS0tIGNvbnRhaW5lciAtLS0tLS0tLSovCQkJDQoJCQl0YWJsZXt3aWR0aDo5
+MCUgIWltcG9ydGFudH0NCiAgICAgICAgICAgDQoJCX0NCiBIYWxsbyBjb250YWluZXJzQGxpc3Rz
+LmxpbnV4LWZvdW5kYXRpb24ub3JnLCBmJnV1bWw7ciB1bnNlcmUgbmV1ZSBTdHVkaWUgc3VjaGVu
+IHdpciAgVGVzdGVyIA0KCQkJCQkJDQoJCQkJCQkgLCBkaWUgZWluICBCZWF1dHkgQmFnIHZvbiBO
+aXZlYSBrb3N0ZW5sb3MgdGVzdGVuIA0KCQkJCQkJDQoJCQkJCQkgdW5kIHVucyBpaHJlIEVyZmFo
+cnVuZ2VuIGJlcmljaHRlbi4gU2llLCBjb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24u
+b3JnLCB3dXJkZW4gYWxzIGVpbiBtJm91bWw7Z2xpY2hlciBLYW5kaWRhdCBhdXNnZXcmYXVtbDto
+bHQhIA0KCQkJCQkJDQoJCQkJCQkNCgkJCUFsbGUgVGVzdGVyLCBkaWUgYW4gZGVyIFN0dWRpZSB0
+ZWlsbmVobWVuIGQmdXVtbDtyZmVuLCBiZWtvbW1lbiBpaHIgIEJlYXV0eSBCYWcgenVtIERhbmsg
+Z2VzY2hlbmt0IA0KCQkJCQkJDQoJCQkJCQkgISANCgkJCQkJCQ0KCQkJCQkJDQoJCQlBbHNvICBi
+ZXdlcmJlbiBTaWUgc2ljaCBqZXR6dCANCgkJCQkJCQ0KCQkJCQkJIHVuZCBudXR6ZW4gU2llIGlu
+IEsmdXVtbDtyemUgIGtvc3RlbmxvcyANCgkJCQkJCQ0KCQkJCQkJIGRpZSAgVG9wcHJvZHVrdGUg
+dm9uIE5pdmVhIA0KCQkJCQkJDQoJCQkJCQkgISAgICAgDQoJCQkgIElmIHlvdSB3b3VsZCBsaWtl
+IHRvIG1vZGlmeSB5b3VyIGVtYWlsIHNldHRpbmdzIG9yIHVuc3Vic2NyaWJlICwgdmlzaXQNCgkJ
+CSANCgkJCWhlcmUNCgkJCSAKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1m
+b3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9s
+aXN0aW5mby9jb250YWluZXJz
