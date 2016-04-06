@@ -1,11 +1,9 @@
-From: =?utf-8?B?S3VuZGVuc2VydmljZQ==?= <info-+jEP01YFpPtWk0Htik3J/w@public.gmane.org>
-Subject: =?utf-8?B?V2ljaHRpZ2UgTWl0dGVpbHVuZyBmwrhyIGNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc=?=
-Date: 4 Apr 2016 07:10:40 -0700
-Message-ID: <20160404145235.677EEC2B@mail.linuxfoundation.org>
-Reply-To: =?utf-8?B?S3VuZGVuc2VydmljZQ==?= <info-+jEP01YFpPtWk0Htik3J/w@public.gmane.org>
+From: =?iso-8859-1?Q?St=E9phane?= Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: LXC 2.0 has been released!
+Date: Wed, 6 Apr 2016 14:19:58 -0400
+Message-ID: <20160406181958.GE29817__9213.41587459228$1459967187$gmane$org@dakara>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: multipart/mixed; boundary="===============4863999101143272696=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -16,36 +14,101 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, lxc-users-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-V2ljaHRpZ2UgTWl0dGVpbHVuZyBmwrhyICMjZW1haWwjIyBib2R5ew0KICAgICAgICAgICAgd2lk
-dGg6IDEwMCU7IA0KICAgICAgICAgICAgYmFja2dyb3VuZC1jb2xvcjogI0ZGRkZGRjsgDQogICAg
-ICAgICAgICBtYXJnaW46MDsgDQogICAgICAgICAgICBwYWRkaW5nOjA7IA0KICAgICAgICAgICAg
-bXNvLW1hcmdpbi10b3AtYWx0OjBweDsgbXNvLW1hcmdpbi1ib3R0b20tYWx0OjBweDsgbXNvLXBh
-ZGRpbmctYWx0OiAwcHggMHB4IDBweCAwcHg7DQogICAgICAgIH0NCiAgICAgICAgDQogICAgICAg
-IHAsaDEsaDIsaDMsaDR7DQoJICAgICAgICBtYXJnaW4tdG9wOjA7DQoJCQltYXJnaW4tYm90dG9t
-OjA7DQoJCQlwYWRkaW5nLXRvcDowOw0KCQkJcGFkZGluZy1ib3R0b206MDsNCiAgICAgICAgfQ0K
-ICAgICAgICANCiAgICAgICAgaHRtbHsNCiAgICAgICAgICAgIHdpZHRoOiAxMDAlOyANCiAgICAg
-ICAgfQ0KICAgICAgICANCiAgICAgICANCiAgICAgICAgLyogLS0tLS0tLS0tLS0gcmVzcG9uc2l2
-aXR5IC0tLS0tLS0tLS0tICovDQogICAgICAgIEBtZWRpYSBvbmx5IHNjcmVlbiBhbmQgKG1heC13
-aWR0aDogNTkwcHgpew0KCQkJDQoJCQkvKi0tLS0tIG1haW4gaW1hZ2UgLS0tLS0tLSovDQoJCQkj
-bG9nbyB7d2lkdGg6IDEwMCUgIWltcG9ydGFudDsgaGVpZ2h0OiBhdXRvICFpbXBvcnRhbnQ7fQ0K
-DQoJCQkvKi0tLS0tLS0tIGNvbnRhaW5lciAtLS0tLS0tLSovCQkJDQoJCQl0YWJsZXt3aWR0aDo5
-MCUgIWltcG9ydGFudH0NCiAgICAgICAgICAgDQoJCX0NCiBIYWxsbyBjb250YWluZXJzQGxpc3Rz
-LmxpbnV4LWZvdW5kYXRpb24ub3JnLCBmJnV1bWw7ciB1bnNlcmUgbmV1ZSBTdHVkaWUgc3VjaGVu
-IHdpciAgVGVzdGVyIA0KCQkJCQkJDQoJCQkJCQkgLCBkaWUgZWluICBCZWF1dHkgQmFnIHZvbiBO
-aXZlYSBrb3N0ZW5sb3MgdGVzdGVuIA0KCQkJCQkJDQoJCQkJCQkgdW5kIHVucyBpaHJlIEVyZmFo
-cnVuZ2VuIGJlcmljaHRlbi4gU2llLCBjb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24u
-b3JnLCB3dXJkZW4gYWxzIGVpbiBtJm91bWw7Z2xpY2hlciBLYW5kaWRhdCBhdXNnZXcmYXVtbDto
-bHQhIA0KCQkJCQkJDQoJCQkJCQkNCgkJCUFsbGUgVGVzdGVyLCBkaWUgYW4gZGVyIFN0dWRpZSB0
-ZWlsbmVobWVuIGQmdXVtbDtyZmVuLCBiZWtvbW1lbiBpaHIgIEJlYXV0eSBCYWcgenVtIERhbmsg
-Z2VzY2hlbmt0IA0KCQkJCQkJDQoJCQkJCQkgISANCgkJCQkJCQ0KCQkJCQkJDQoJCQlBbHNvICBi
-ZXdlcmJlbiBTaWUgc2ljaCBqZXR6dCANCgkJCQkJCQ0KCQkJCQkJIHVuZCBudXR6ZW4gU2llIGlu
-IEsmdXVtbDtyemUgIGtvc3RlbmxvcyANCgkJCQkJCQ0KCQkJCQkJIGRpZSAgVG9wcHJvZHVrdGUg
-dm9uIE5pdmVhIA0KCQkJCQkJDQoJCQkJCQkgISAgICAgDQoJCQkgIElmIHlvdSB3b3VsZCBsaWtl
-IHRvIG1vZGlmeSB5b3VyIGVtYWlsIHNldHRpbmdzIG9yIHVuc3Vic2NyaWJlICwgdmlzaXQNCgkJ
-CSANCgkJCWhlcmUNCgkJCSAKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1m
-b3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9s
-aXN0aW5mby9jb250YWluZXJz
+
+--===============4863999101143272696==
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="zhtSGe8h3+lMyY1M"
+Content-Disposition: inline
+
+
+--zhtSGe8h3+lMyY1M
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+Hello everyone,
+
+It's with great pleasure that the LXC development team is announcing
+the release of LXC 2.0!
+
+This is the result of over a year of work from upstream LXC and was made
+of over 700 commits by over 90 contributors!
+
+It also joins LXCFS which got its own 2.0 release last week and will
+very soon be joined by LXD 2.0. Those three combined make for a new,
+completely reworked, user experience while still keeping full backward
+compatibility for our existing users who do not wish to upgrade to LXD.
+
+
+All our Long Term Support releases benefit from a 5 years support
+commitment which for the 2.0 means until the 1st of June 2021.
+During those 5 years we will be publishing occasional bugfix and
+security releases made from backported fixes from our development
+branch.
+
+
+LXC 2.0 includes a cleaner user experience, more reliable
+checkpoint/restore of containers, improved cgroup handling and a lot of
+bugfixes.
+
+It is also worth noting that the liblxc library shipped in 2.0 is still
+fully backward compatible with that released in LXC 1.0 two years ago.
+
+
+A detailed release announcement may be found here:
+https://linuxcontainers.org/news
+
+The release tarballs may be found at https://linuxcontainers.org/downloads
+or you may just wait a few days for your favorite distribution to
+package this new LXC release.
+
+Our git repository and bug tracker are on Github: https://github.com/lxc/lxc
+
+Additional information on LXC itself may be found on our website:
+https://linuxcontainers.org
+
+And we have mailing-lists for user questions and for development (patches):
+https://lists.linuxcontainers.org
+
+We hope you'll enjoy this new release as much as we do!
+
+St=E9phane Graber
+On behalf of the LXC development team
+
+--zhtSGe8h3+lMyY1M
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCgAGBQJXBVNOAAoJEMY4l01keS1ngLoP/2iPilQ7aV0mcHKyFFloiHPd
+cF4UYud8RDvDvCwsDGfEftBiiaoKE0PMIqm57oY1ypHhoTXagXcY4EbIwUjCxPNM
+399O2DTUhuuPWKXAGpE37Peght4ok23uMAcC+9EGY6GmAqwGSMFHxhgUwtyzhp3X
+yld5CK1x7lLX7m/UPKRkA/iPkla5DtVxo7tORJURcINVvWV0OueMl6ciD7UwQgCa
+QPBw2gUHkpH6vPnctnrPVl4aI+F/B/meE9tyrNgLfC731ur5v2fXHzrgRjyebKqJ
+Ia7Wxmv/YVqrxa+lgEMyXq5GL0D+zZQh5wo4c5Ad0hhbrlOEh24Gy/zRYB/XVoUG
+gkXsA5yrCPaLJF4zyzGvvE8DgnAb+3oumXMvDesoPgNLg2r2RIvirO02WeDwbjgH
+RnMgQP6KnJ9CJupuihlfTrRqVqhbCb+iWO2h22zLo1TVr7xFj8Fg4XPBjAOdIMp7
+DOXMGpRVjN6Fhio2y0qOXZ9n12W9OnLXccYnhFDllTr2YiIEyIUFYNx+YBPlv045
+coQVOFvVx3GUxUTGekOQWNAVon6w82KLtgqbj7RloWiaQyyxCFSQyRmnuNb7fDfD
+JGrCJV1ULEgLVrHdOCt6PAO1Ao9mFlfq+CitQUsXAPXaHS4Y6fXaU8UIIndo571Y
+SptOzSJ+swS6u6zMvrHw
+=h522
+-----END PGP SIGNATURE-----
+
+--zhtSGe8h3+lMyY1M--
+
+--===============4863999101143272696==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============4863999101143272696==--
