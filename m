@@ -1,9 +1,11 @@
-From: =?iso-8859-1?Q?St=E9phane?= Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: LXC 2.0 has been released!
-Date: Wed, 6 Apr 2016 14:19:58 -0400
-Message-ID: <20160406181958.GE29817__9213.41587459228$1459967187$gmane$org@dakara>
+From: Canadian-Meds <noreply-5WFoe6AMH8WovDFt+AQlJdBPR1lH4CV8@public.gmane.org>
+Subject: Use our month of unbelievable discounts to keep yourself and your
+	family healthy and happy!
+Date: Fri, 8 Apr 2016 22:20:48 +0500
+Message-ID: <4C15E505.2920796@okinawa-design.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============4863999101143272696=="
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"; DelSp="yes"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -14,101 +16,193 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, lxc-users-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: lf_carrier-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, bridge-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ha-wg-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+   
 
---===============4863999101143272696==
-Content-Type: multipart/signed; micalg=pgp-sha512;
-	protocol="application/pgp-signature"; boundary="zhtSGe8h3+lMyY1M"
-Content-Disposition: inline
+		Requirements, you displayed on pistol when interacting with. Violent
+fashion to mystery to finance. 
 
+		Me
+		ds
+		7f
+		or
+		3M
+		en
 
---zhtSGe8h3+lMyY1M
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Vi
+Ci
+Ci
+Le
+Pr
+ ag
+al
+al
+vi
+op
+ ra
+is
+is
+tr
+ec
 
-Hello everyone,
+ S
+a 
+ia
 
-It's with great pleasure that the LXC development team is announcing
-the release of LXC 2.0!
+of
 
-This is the result of over a year of work from upstream LXC and was made
-of over 700 commits by over 90 contributors!
+t 
 
-It also joins LXCFS which got its own 2.0 release last week and will
-very soon be joined by LXD 2.0. Those three combined make for a new,
-completely reworked, user experience while still keeping full backward
-compatibility for our existing users who do not wish to upgrade to LXD.
+Ta
 
+bs
 
-All our Long Term Support releases benefit from a 5 years support
-commitment which for the 2.0 means until the 1st of June 2021.
-During those 5 years we will be publishing occasional bugfix and
-security releases made from backported fixes from our development
-branch.
+ $0
+$1
+$2
+$2
+$0
+ .9
+.6
+.5
+.5
+.4
+ 9
+5
+0
+0
+5
 
+		Me
+		ds
+		1f
+		or
+		9W
+		om
+		en
 
-LXC 2.0 includes a cleaner user experience, more reliable
-checkpoint/restore of containers, improved cgroup handling and a lot of
-bugfixes.
+Ac
+Cl
+De
+Fe
+Fe
+ om
+om
+fl
+ma
+ma
+ pl
+id
+uc
+le
+le
+ ia
 
-It is also worth noting that the liblxc library shipped in 2.0 is still
-fully backward compatible with that released in LXC 1.0 two years ago.
+an
+ C
+ V
 
+ia
+ia
 
-A detailed release announcement may be found here:
-https://linuxcontainers.org/news
+li
+gr
 
-The release tarballs may be found at https://linuxcontainers.org/downloads
-or you may just wait a few days for your favorite distribution to
-package this new LXC release.
+s 
+a 
 
-Our git repository and bug tracker are on Github: https://github.com/lxc/lxc
+ $1
+$0
+$1
+$1
+$0
+ .7
+.4
+.2
+.1
+.7
+ 5
+5
+5
+1
+2
 
-Additional information on LXC itself may be found on our website:
-https://linuxcontainers.org
+ An
+Fa
+24
+Sp on
+st
+/7
+ec ym
+ w
+ c
+ia ou
+or
+us
+l  s 
+ld
+to
+in de
+wi
+me
+te li
+de
+r 
+rn ve
+ s
+su
+et ry
+hi
+pp
+ p  
+pp
+or
+ri  
+in
+t 
+ce  
+g 
 
-And we have mailing-lists for user questions and for development (patches):
-https://lists.linuxcontainers.org
+s   
 
-We hope you'll enjoy this new release as much as we do!
+   N
+ 1
+ V
+ O o 
+00
+is
+nl pr
+% 
+a,
+y  es
+Au
+Ma
+re cr
+th
+st
+li ip
+en
+er
+ab ti
+ti
+ca
+le on
+c 
+rd
+ s  r
+Me
+,E
+up eq
+ds
+ch
+pl ui
 
-St=E9phane Graber
-On behalf of the LXC development team
+ec
+ie re
 
---zhtSGe8h3+lMyY1M
-Content-Type: application/pgp-signature; name="signature.asc"
+k 
+rs d
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBCgAGBQJXBVNOAAoJEMY4l01keS1ngLoP/2iPilQ7aV0mcHKyFFloiHPd
-cF4UYud8RDvDvCwsDGfEftBiiaoKE0PMIqm57oY1ypHhoTXagXcY4EbIwUjCxPNM
-399O2DTUhuuPWKXAGpE37Peght4ok23uMAcC+9EGY6GmAqwGSMFHxhgUwtyzhp3X
-yld5CK1x7lLX7m/UPKRkA/iPkla5DtVxo7tORJURcINVvWV0OueMl6ciD7UwQgCa
-QPBw2gUHkpH6vPnctnrPVl4aI+F/B/meE9tyrNgLfC731ur5v2fXHzrgRjyebKqJ
-Ia7Wxmv/YVqrxa+lgEMyXq5GL0D+zZQh5wo4c5Ad0hhbrlOEh24Gy/zRYB/XVoUG
-gkXsA5yrCPaLJF4zyzGvvE8DgnAb+3oumXMvDesoPgNLg2r2RIvirO02WeDwbjgH
-RnMgQP6KnJ9CJupuihlfTrRqVqhbCb+iWO2h22zLo1TVr7xFj8Fg4XPBjAOdIMp7
-DOXMGpRVjN6Fhio2y0qOXZ9n12W9OnLXccYnhFDllTr2YiIEyIUFYNx+YBPlv045
-coQVOFvVx3GUxUTGekOQWNAVon6w82KLtgqbj7RloWiaQyyxCFSQyRmnuNb7fDfD
-JGrCJV1ULEgLVrHdOCt6PAO1Ao9mFlfq+CitQUsXAPXaHS4Y6fXaU8UIIndo571Y
-SptOzSJ+swS6u6zMvrHw
-=h522
------END PGP SIGNATURE-----
-
---zhtSGe8h3+lMyY1M--
-
---===============4863999101143272696==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============4863999101143272696==--
+		>> Enter Here 
