@@ -1,11 +1,10 @@
-From: Canadian-Meds <noreply-5WFoe6AMH8WovDFt+AQlJdBPR1lH4CV8@public.gmane.org>
-Subject: Use our month of unbelievable discounts to keep yourself and your
-	family healthy and happy!
-Date: Fri, 8 Apr 2016 22:20:48 +0500
-Message-ID: <4C15E505.2920796@okinawa-design.com>
+From: John <Luke-zR+FPLSpj/t+xPeBQ9Deuw@public.gmane.org>
+Subject: =?utf-8?B?WW91ciBwcml2YXRlIGludml0YXRpb24uLi4=?=
+Date: Fri, 8 Apr 2016 22:11:32 -0400
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@aristonews.info>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"; DelSp="yes"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -16,193 +15,31 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: lf_carrier-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, bridge-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ha-wg-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-   
-
-		Requirements, you displayed on pistol when interacting with. Violent
-fashion to mystery to finance. 
-
-		Me
-		ds
-		7f
-		or
-		3M
-		en
-
-Vi
-Ci
-Ci
-Le
-Pr
- ag
-al
-al
-vi
-op
- ra
-is
-is
-tr
-ec
-
- S
-a 
-ia
-
-of
-
-t 
-
-Ta
-
-bs
-
- $0
-$1
-$2
-$2
-$0
- .9
-.6
-.5
-.5
-.4
- 9
-5
-0
-0
-5
-
-		Me
-		ds
-		1f
-		or
-		9W
-		om
-		en
-
-Ac
-Cl
-De
-Fe
-Fe
- om
-om
-fl
-ma
-ma
- pl
-id
-uc
-le
-le
- ia
-
-an
- C
- V
-
-ia
-ia
-
-li
-gr
-
-s 
-a 
-
- $1
-$0
-$1
-$1
-$0
- .7
-.4
-.2
-.1
-.7
- 5
-5
-5
-1
-2
-
- An
-Fa
-24
-Sp on
-st
-/7
-ec ym
- w
- c
-ia ou
-or
-us
-l  s 
-ld
-to
-in de
-wi
-me
-te li
-de
-r 
-rn ve
- s
-su
-et ry
-hi
-pp
- p  
-pp
-or
-ri  
-in
-t 
-ce  
-g 
-
-s   
-
-   N
- 1
- V
- O o 
-00
-is
-nl pr
-% 
-a,
-y  es
-Au
-Ma
-re cr
-th
-st
-li ip
-en
-er
-ab ti
-ti
-ca
-le on
-c 
-rd
- s  r
-Me
-,E
-up eq
-ds
-ch
-pl ui
-
-ec
-ie re
-
-k 
-rs d
-
-		>> Enter Here 
+SeKAmXZlIGdvdCBzb21lIGdyZWF0IG5ld3MuLi4KCkkgaGFkIGEgbG9vb29uZyB0YWxrIHdpdGgg
+TWFyayBsYXN0IG5pZ2h04oCmCgpBbmQgYWZ0ZXIgY2FsbGluZyBpbiBhIGZldyBmYXZvcnMgZnJv
+bSBoaW0gYW5kIHNvbWUg4oCcZnJpZW5kbHnigJ0KYXJtLXR3aXN0aW5nLCBJIHdhcyBhYmxlIHRv
+IHNlY3VyZSBhIGZldyAoZnJlZSkgYWNjb3VudHMgZm9yCmhpcyBleGNsdXNpdmUgTWlkYXMgVG91
+Y2ggQXBwLgoKVGhlIGFwcCBoYXMgYWxyZWFkeSB0dXJuZWQgbW9yZSB0aGFuIDEwMCBvcmRpbmFy
+eSBmb2xrcwpmcm9tIGFsbCB3YWxrcyBvZiBsaWZlIGludG8gY2VydGlmaWVkIG1pbGxpb25haXJl
+cy4KCkhlcmXigJlzIHByb29mOgpodHRwOi8vY2xpY2suYXJpc3RvbmV3cy5pbmZvL2luZGV4LnBo
+cD9pZD00MDQ1MTA4JmE9NDEyNjAmYj0yODk2JmM9MTY2CgpJdOKAmXMgbm90IGV2ZXJ5ZGF5IGEg
+d2luZG93IHRvIHRydWUgd2VhbHRoIG9wZW5zIHVwIGxpa2UgdGhpcywKc28gaWYgdGhlcmUgYXJl
+IHN0aWxsIHNwb3RzIGxlZnQgd2hlbiB5b3UgY2xpY2sgdGhpcyBsaW5rLCB5b3UKTVVTVCBqdW1w
+IG9uIGl0IGFzIGZhc3QgYXMgaHVtYW5seSBwb3NzaWJsZToKCmh0dHA6Ly9jbGljay5hcmlzdG9u
+ZXdzLmluZm8vaW5kZXgucGhwP2lkPTQwNDUxMDgmYT00MTI2MCZiPTI4OTYmYz0xNjYKCk5PVEU6
+ClRoaXMgb3Bwb3J0dW5pdHkgd2lsbCBub3QgcHJlc2VudCBpdHNlbGYgdHdpY2UuIFNvIGZvciB5
+b3VyIG93bgphbmQgeW91ciBmYW1pbHnigJlzIHNha2UsIGRvIE5PVCBsZXQgaXQgcGFzcyB5b3Ug
+YnkuCmh0dHA6Ly9jbGljay5hcmlzdG9uZXdzLmluZm8vaW5kZXgucGhwP2lkPTQwNDUxMDgmYT00
+MTI2MCZiPTI4OTYmYz0xNjYKCkFsbCB0aGUgYmVzdCwKSm9obgoKCgoKCgoKCgoKCgoKCgoKCgoK
+CgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoK
+CgoKT3VyIGFkZHJlc3MgaXMgUHJvdmlkZW5jZSAxNTEyLCBCcml0aXNoIFZpcmdpbiBJc2xhbmRz
+LCAKSWYgeW91IGRvIG5vdCB3aXNoIHRvIHJlY2VpdmUgZnV0dXJlIGVtYWlsLCBjbGljayBoZXJl
+LgpodHRwOi8vY2xpY2suYXJpc3RvbmV3cy5pbmZvL2luZGV4LnBocD9vPTImYT00MTI2MCZiPTI4
+OTYmYz0xNjYKKFlvdSBjYW4gYWxzbyBzZW5kIHlvdXIgcmVxdWVzdCB0byBDdXN0b21lciBDYXJl
+IGF0IHRoZSBzdHJlZXQgYWRkcmVzcyBhYm92ZS4pIAogICAgICAgICAgICAgICAgICAgIApfX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1h
+aWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8v
+bGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
