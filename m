@@ -1,34 +1,56 @@
-From: =?utf-8?B?QmluZ28=?= <info-+jEP01YFpPtWk0Htik3J/w@public.gmane.org>
-Subject: =?utf-8?B?SmV0enQgNTAw4oKsIEVkZWthIEd1dHNjaGVpbiBnZXdpbm5lbg==?=
-Date: 11 Apr 2016 21:43:51 -0700
-Message-ID: <20160412044356.1FC2BFDC@mail.linuxfoundation.org>
-Reply-To: =?utf-8?B?QmluZ28=?= <info-+jEP01YFpPtWk0Htik3J/w@public.gmane.org>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [RFC PATCH] cgroup namespaces: add a 'nsroot=' mountinfo field
+Date: Wed, 13 Apr 2016 13:57:36 -0400
+Message-ID: <20160413175736.GC3676@htj.duckdns.org>
+References: <20160321234133.GA22463@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <cgroups-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20160321234133.GA22463-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+Sender: cgroups-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, adityakali-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-SmV0enQgNTAw4oKsIEVkZWthIEd1dHNjaGVpbiBnZXdpbm5lbiBIYWxsbywgaGV1dGUgaXN0IElo
-ciBHbCZ1dW1sO2Nrc3RhZy4gU3BpZWxlbiBzaWUgbm9jaCBoZXV0ZSBCaW5nbyB1bmQgZ2V3aW5u
-ZW4gU2llIGVpbmVuIDUwMCZldXJvOyBFREVLQSBHdXRzY2hlaW4uIEVzIGlzdCBnYW56IGVpbmZh
-Y2ghIFNpZSwgIGNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcgDQoJCQkJCQkJ
-CQ0KCQkJCQkJCQkg4oCLLCB3JmF1bWw7aGxlbiBJaHJlIEdsJnV1bWw7Y2tzemFobCBhdXMgdW5k
-IGVyZmFocmVuIGRpcmVrdCBpbSBBbnNjaGx1c3MsIG9iIFNpZSBlaW4gQmluZ28gaGFiZW4uIA0K
-CQkJCQkJCQ0KCQkJCQkJCQ0KCQkJQWxzbyB3YXJ0ZW4gU2llIG5pY2h0IGwmYXVtbDtuZ2VyIHVu
-ZCBnZWhlbiBTaWUgYmFsZCBzY2hvbiBrb3N0ZW5mcmVpIGVpbmthdWZlbi4gICAgICMgDQoJCQkg
-IElmIHlvdSB3b3VsZCBsaWtlIHRvIG1vZGlmeSB5b3VyIGVtYWlsIHNldHRpbmdzIG9yIHVuc3Vi
-c2NyaWJlICwgdmlzaXQNCgkJCSANCgkJCWhlcmUNCgkJCSAKX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFp
-bmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRh
-dGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Hello, Serge.
+
+Sorry about the delay.
+
+On Mon, Mar 21, 2016 at 06:41:33PM -0500, Serge E. Hallyn wrote:
+>  struct kernfs_syscall_ops {
+>  	int (*remount_fs)(struct kernfs_root *root, int *flags, char *data);
+> -	int (*show_options)(struct seq_file *sf, struct kernfs_root *root);
+> +	int (*show_options)(struct seq_file *sf, struct dentry *dentry,
+> +			    struct kernfs_root *root);
+
+Wouldn't it make more sense to pass in kernfs_node pointer instead of
+dentry pointer?
+
+> +static void cgroup_show_nsroot(struct seq_file *seq, struct dentry *dentry,
+> +			       struct kernfs_root *kf_root)
+> +{
+> +	struct kernfs_node *d_kn = dentry->d_fsdata;
+> +	char *nsroot;
+> +	int len, ret;
+> +
+> +	if (!kf_root)
+> +		return;
+> +	len = kernfs_path_from_node(d_kn, kf_root->kn, NULL, 0);
+> +	if (len <= 0)
+> +		return;
+> +	nsroot = kzalloc(len + 1, GFP_ATOMIC);
+> +	if (!nsroot)
+> +		return;
+> +	ret = kernfs_path_from_node(d_kn, kf_root->kn, nsroot, len + 1);
+> +	if (ret <= 0 || ret > len)
+> +		goto out;
+
+Hmmm.... does this mean that someone inside cgroup ns would be able to
+find out the absolute cgroup path of the ns root from inside?  If so,
+wouldn't that be an unnecessary information leak?
+
+Thanks.
+
+-- 
+tejun
