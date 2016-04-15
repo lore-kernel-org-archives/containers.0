@@ -1,12 +1,13 @@
 From: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 0/3] [RFC] Write dump into container's filesystem for
-	pipe_type core_pattern
-Date: Fri, 15 Apr 2016 18:47:10 +0800
-Message-ID: <cover.1460716336.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 1/3] [RFC] Save dump_root into pid_namespace
+Date: Fri, 15 Apr 2016 18:47:11 +0800
+Message-ID: <b1e0bda36bae96297cc4dedfa3bfff85388e05ad.1460716337.git.zhaolei@cn.fujitsu.com>
+References: <cover.1460716336.git.zhaolei@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <cover.1460716336.git.zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,59 +26,126 @@ and program's output are in host's filesystem.
 But when we set core_pattern to a file, the container will write dump
 into container's filesystem.
 
-For example, when we set following core_pattern:
- # echo "|/my_dump_pipe %s %c %p %u %g %t e" >/proc/sys/kernel/core_pattern
-and trigger a segment fault in a container, my_dump_pipe is searched from
-host's filesystem, and it will write coredump into host's filesystem too.
+Reason of above different is:
+In pipe_mode dump_pattern setting, the process who write the dumpfile
+is a kernel thread, whose fs_root always point to host's root fs.
 
-In a privileged container, user can destroy host system by following
-command:
- # # In a container
- # echo "|/bin/dd of=/boot/vmlinuz" >/proc/sys/kernel/core_pattern
- # make_dump
+This patch save the dump_root into pid_namespace, and when a crach
+happened in container, this dump_root can be used as fs_root of
+dump_writter_thread.
 
-Actually, all operation in a container should not change host's
-environment, the container should use core_pattern as its private setting.
-In detail, in core dump action:
-1: Search pipe program in container's fs namespace.
-2: Run pipe program in container's fs namespace to write coredump to it.
-
-I rewrited this patch from origional:
-  http://www.gossamer-threads.com/lists/linux/kernel/2395715?do=post_view_flat
-and changed the impliment way and function detail discussed in:
-  http://www.gossamer-threads.com/lists/linux/kernel/2397602?nohighlight=1#2397602
-
-Changes against previous impliment:
-1: Avoid forking thread from the crach process.
-   Suggested-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-2: To keep compatibility with current code, if user hadn't change
-   core_pattern in container, the dump file will still write to
-   the host filesystem.
-   Suggested-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-
-Zhao Lei (3):
-  [RFC] Save dump_root into pid_namespace
-  [RFC] Make dump_pipe thread possilbe to select the rootfs
-  [RFC] Write dump into container's filesystem for pipe_type
-    core_pattern
-
- fs/coredump.c                 | 19 ++++++++++++++++++-
- fs/fs_struct.c                | 25 ++++++++++++++++---------
- include/linux/fs_struct.h     |  3 ++-
- include/linux/kmod.h          |  4 +++-
+Signed-off-by: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
  include/linux/pid_namespace.h |  3 +++
- include/linux/sched.h         |  5 +++--
- init/do_mounts_initrd.c       |  3 ++-
- init/main.c                   |  4 ++--
- kernel/fork.c                 | 34 ++++++++++++++++++++--------------
- kernel/kmod.c                 | 13 ++++++++-----
- kernel/kthread.c              |  3 ++-
  kernel/pid.c                  |  1 +
  kernel/pid_namespace.c        |  6 ++++++
  kernel/sysctl.c               | 30 ++++++++++++++++++++++++++----
- lib/kobject_uevent.c          |  3 ++-
- security/keys/request_key.c   |  2 +-
- 16 files changed, 115 insertions(+), 43 deletions(-)
+ 4 files changed, 36 insertions(+), 4 deletions(-)
 
+diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
+index 918b117..535a532 100644
+--- a/include/linux/pid_namespace.h
++++ b/include/linux/pid_namespace.h
+@@ -9,6 +9,7 @@
+ #include <linux/nsproxy.h>
+ #include <linux/kref.h>
+ #include <linux/ns_common.h>
++#include <linux/path.h>
+ 
+ struct pidmap {
+        atomic_t nr_free;
+@@ -45,6 +46,8 @@ struct pid_namespace {
+ 	int hide_pid;
+ 	int reboot;	/* group exit code if this pidns was rebooted */
+ 	struct ns_common ns;
++	spinlock_t root_for_dump_lock;
++	struct path root_for_dump;
+ };
+ 
+ extern struct pid_namespace init_pid_ns;
+diff --git a/kernel/pid.c b/kernel/pid.c
+index 4d73a83..7207184 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -83,6 +83,7 @@ struct pid_namespace init_pid_ns = {
+ #ifdef CONFIG_PID_NS
+ 	.ns.ops = &pidns_operations,
+ #endif
++	.root_for_dump_lock = __SPIN_LOCK_UNLOCKED(init_pid_ns.root_for_dump_lock),
+ };
+ EXPORT_SYMBOL_GPL(init_pid_ns);
+ 
+diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
+index a65ba13..3d0eced 100644
+--- a/kernel/pid_namespace.c
++++ b/kernel/pid_namespace.c
+@@ -123,6 +123,8 @@ static struct pid_namespace *create_pid_namespace(struct user_namespace *user_ns
+ 	for (i = 1; i < PIDMAP_ENTRIES; i++)
+ 		atomic_set(&ns->pidmap[i].nr_free, BITS_PER_PAGE);
+ 
++	spin_lock_init(&ns->root_for_dump_lock);
++
+ 	return ns;
+ 
+ out_free_map:
+@@ -147,6 +149,10 @@ static void destroy_pid_namespace(struct pid_namespace *ns)
+ 	for (i = 0; i < PIDMAP_ENTRIES; i++)
+ 		kfree(ns->pidmap[i].page);
+ 	put_user_ns(ns->user_ns);
++
++	if (ns->root_for_dump.mnt)
++		path_put(&ns->root_for_dump);
++
+ 	call_rcu(&ns->rcu, delayed_free_pidns);
+ }
+ 
+diff --git a/kernel/sysctl.c b/kernel/sysctl.c
+index 725587f..5e0af77 100644
+--- a/kernel/sysctl.c
++++ b/kernel/sysctl.c
+@@ -65,6 +65,7 @@
+ #include <linux/sched/sysctl.h>
+ #include <linux/kexec.h>
+ #include <linux/bpf.h>
++#include <linux/fs_struct.h>
+ 
+ #include <asm/uaccess.h>
+ #include <asm/processor.h>
+@@ -2344,10 +2345,31 @@ static int proc_dointvec_minmax_coredump(struct ctl_table *table, int write,
+ static int proc_dostring_coredump(struct ctl_table *table, int write,
+ 		  void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+-	int error = proc_dostring(table, write, buffer, lenp, ppos);
+-	if (!error)
+-		validate_coredump_safety();
+-	return error;
++	struct pid_namespace *pid_ns;
++	int error;
++
++	error = proc_dostring(table, write, buffer, lenp, ppos);
++	if (error)
++		return error;
++
++	pid_ns = task_active_pid_ns(current);
++	if (WARN_ON(!pid_ns))
++		return -EINVAL;
++
++	spin_lock(&pid_ns->root_for_dump_lock);
++
++	if (pid_ns->root_for_dump.mnt)
++		path_put(&pid_ns->root_for_dump);
++
++	spin_lock(&current->fs->lock);
++	pid_ns->root_for_dump = current->fs->root;
++	path_get(&pid_ns->root_for_dump);
++	spin_unlock(&current->fs->lock);
++
++	spin_unlock(&pid_ns->root_for_dump_lock);
++
++	validate_coredump_safety();
++	return 0;
+ }
+ #endif
+ 
 -- 
 1.8.5.1
