@@ -1,138 +1,174 @@
-From: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 3/3] [RFC] Write dump into container's filesystem for
-	pipe_type core_pattern
-Date: Fri, 15 Apr 2016 18:47:13 +0800
-Message-ID: <055d5a9b9ad5aedc35b7b81797b4e8a82ebd3bd7.1460716337.git.zhaolei@cn.fujitsu.com>
-References: <cover.1460716336.git.zhaolei@cn.fujitsu.com>
+From: Aditya Kali <adityakali@google.com>
+Subject: Re: [PATCH] cgroup namespaces: add a 'nsroot=' mountinfo field
+Date: Fri, 15 Apr 2016 08:50:31 -0700
+Message-ID: <CAGr1F2EZtts38SPDc9cuH1prc6NfUJiwUQmqyRp-RpNYM5UzxA@mail.gmail.com>
+References: <20160321234133.GA22463@mail.hallyn.com> <20160413175736.GC3676@htj.duckdns.org>
+ <20160414040436.GA3739@mail.hallyn.com> <87oa9c6ymf.fsf@x220.int.ebiederm.org>
+ <20160414152747.GA12700@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <cover.1460716336.git.zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Content-Type: text/plain; charset=UTF-8
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20160414152747.GA12700@mail.hallyn.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serge@hallyn.com>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Tejun Heo <tj@kernel.org>, Linux API <linux-api@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, cgroups mailinglist <cgroups@vger.kernel.org>, lkml <linux-kernel@vger.kernel.org>
 List-Id: containers.vger.kernel.org
 
-In current system, when we set core_pattern to a pipe, both pipe program
-and program's output are in host's filesystem.
-But when we set core_pattern to a file, the container will write dump
-into container's filesystem.
+On Thu, Apr 14, 2016 at 8:27 AM, Serge E. Hallyn <serge@hallyn.com> wrote:
+> Quoting Eric W. Biederman (ebiederm@xmission.com):
+>> "Serge E. Hallyn" <serge@hallyn.com> writes:
+>>
+>> > This is so that userspace can distinguish a mount made in a cgroup
+>> > namespace from a bind mount from a cgroup subdirectory.
+>>
+>> To do that do you need to print the path, or is an extra option that
+>> reveals nothing except that it was a cgroup mount sufficient?
+>>
+>> Is there any practical difference between a mount in a namespace and a
+>> bind mount?
+>>
+>> Given the way the conversation has been going I think it would be good
+>> to see the answers to these questions.  Perhaps I missed it but I
+>> haven't seen the answers to those questions.
+>
+> Yup, I tried to answer those in my last email, let me try again.
+>
+> Let's say I start a container using cgroup namespaces, /lxc/x1.  It mounts
+> freezer at /sys/fs/cgroup so it has field three of mountinfo as /lxc/x1,
+> and /sys/fs/cgroup/ is the path to the container's cgroup (/lxc/x1).  In
+> that container, I start another container x1, not using cgroup namespaces.
+> It also wants a cgroup mount, and a common way to handle that (to prevent
+> container rewriting its limits) is to mount a tmpfs at /sys/fs/cgroup,
+> create /sysfs/cgroup/lxc/x1, and bind mount /sys/fs/cgroup/lxc/x1 from
+> the parent container onto /sys/fs/cgroup/lxc/x1 in the child container.
+> Now for that bind mount, the mountinfo field 3 will show /lxc/x1/lxc/x1,
+> with mount target /sys/fs/cgroup/lxc/x1, while /proc/self/cgroup for a task
+> in that container will show '/lxc/x1'.  Unless it has been moved into
+> /lxc/x1/lxc/x1 in the container (/lxc/x1/lxc/x1/lxc/x1 on the host)...
+> Every time I've thought "maybe we can just..." I've found a case where it
+> wouldn't work.
+>
+> At first in lxc we simply said if /proc/self/ns/cgroup exists assume that
+> the cgroupfs mounts are not bind mounts.  However, old userspace (and
+> container drivers) on new kernels is certainly possible, especially an
+> older distro in a container on a newer distro on the host.  That completely
+> breaks with this approach.
+>
 
-For example, when we set following core_pattern:
- # echo "|/my_dump_pipe %s %c %p %u %g %t e" >/proc/sys/kernel/core_pattern
-and trigger a segment fault in a container, my_dump_pipe is searched from
-host's filesystem, and it will write coredump into host's filesystem too.
+My main concern regarding making this a new kernel API is that its too
+generic and exposes information about all system cgroups to every
+process on the system, not just the container or the process inside it
+that needs it. Not all containers need this information and not all
+processes running inside the container needs this. I haven't spent too
+much thought into it, but it seems you will still need to update the
+container userspace to read this extra mount option. So seems like a
+simpler approach where the host "cgroup manager" provides this
+information to specific container cgroup manager via other user-space
+channels (a config file, command-line args, environment vars, proper
+container mounts, etc.) may also work, right?
 
-In a privileged container, user can destroy host system by following
-command:
- # # In a container
- # echo "|/bin/dd of=/boot/vmlinuz" >/proc/sys/kernel/core_pattern
- # make_dump
+> I also personally think there *is* value in letting a task know its
+> place on the system, so hiding the full cgroup path is imo not only not
+> a valid goal, it's counter-productive.  Part of making for better
+> virtualization is to give userspace all the info it needs about its
+> current limits.  Consider that with the unified hierarchy, you cannot
+> have tasks in a cgroup that also has child cgroups - except for the
+> root.  Cgroup namespaces do not make an exception for this, so knowing
+> that you are not in the absolute cgroup root actually can prevent you
+> from trying something that cannot work.  Or, I suppose, at least
+> understanding why you're unable to do what you're trying to do (namely
+> your container manager messed up).  I point this out because finding
+> a way to only show the namespaced root in field 3 of mountinfo would
+> fix the base problem, but at the cost of hiding useful information
+> from a container.
+>
+>> Eric
+>>
+>>
+>> >
+>> > Signed-off-by: Serge Hallyn <serge.hallyn@ubuntu.com>
+>> > ---
+>> > Changelog: 2016-04-13: pass kernfs_node rather than dentry to show_options
+>> > ---
+>> >  fs/kernfs/mount.c      |  2 +-
+>> >  include/linux/kernfs.h |  3 ++-
+>> >  kernel/cgroup.c        | 28 +++++++++++++++++++++++++++-
+>> >  3 files changed, 30 insertions(+), 3 deletions(-)
+>> >
+>> > diff --git a/fs/kernfs/mount.c b/fs/kernfs/mount.c
+>> > index f73541f..58e8a86 100644
+>> > --- a/fs/kernfs/mount.c
+>> > +++ b/fs/kernfs/mount.c
+>> > @@ -36,7 +36,7 @@ static int kernfs_sop_show_options(struct seq_file *sf, struct dentry *dentry)
+>> >     struct kernfs_syscall_ops *scops = root->syscall_ops;
+>> >
+>> >     if (scops && scops->show_options)
+>> > -           return scops->show_options(sf, root);
+>> > +           return scops->show_options(sf, dentry->d_fsdata, root);
+>> >     return 0;
+>> >  }
+>> >
+>> > diff --git a/include/linux/kernfs.h b/include/linux/kernfs.h
+>> > index c06c442..72b4081 100644
+>> > --- a/include/linux/kernfs.h
+>> > +++ b/include/linux/kernfs.h
+>> > @@ -145,7 +145,8 @@ struct kernfs_node {
+>> >   */
+>> >  struct kernfs_syscall_ops {
+>> >     int (*remount_fs)(struct kernfs_root *root, int *flags, char *data);
+>> > -   int (*show_options)(struct seq_file *sf, struct kernfs_root *root);
+>> > +   int (*show_options)(struct seq_file *sf, struct kernfs_node *kn,
+>> > +                       struct kernfs_root *root);
+>> >
+>> >     int (*mkdir)(struct kernfs_node *parent, const char *name,
+>> >                  umode_t mode);
+>> > diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+>> > index 671dc05..4d26d07 100644
+>> > --- a/kernel/cgroup.c
+>> > +++ b/kernel/cgroup.c
+>> > @@ -1593,7 +1593,31 @@ static int rebind_subsystems(struct cgroup_root *dst_root, u16 ss_mask)
+>> >     return 0;
+>> >  }
+>> >
+>> > -static int cgroup_show_options(struct seq_file *seq,
+>> > +static void cgroup_show_nsroot(struct seq_file *seq, struct kernfs_node *knode,
+>> > +                          struct kernfs_root *kroot)
+>> > +{
+>> > +   char *nsroot;
+>> > +   int len, ret;
+>> > +
+>> > +   if (!kroot)
+>> > +           return;
+>> > +   len = kernfs_path_from_node(knode, kroot->kn, NULL, 0);
+>> > +   if (len <= 0)
+>> > +           return;
+>> > +   nsroot = kzalloc(len + 1, GFP_ATOMIC);
+>> > +   if (!nsroot)
+>> > +           return;
+>> > +   ret = kernfs_path_from_node(knode, kroot->kn, nsroot, len + 1);
+>> > +   if (ret <= 0 || ret > len)
+>> > +           goto out;
+>> > +
+>> > +   seq_show_option(seq, "nsroot", nsroot);
+>> > +
+>> > +out:
+>> > +   kfree(nsroot);
+>> > +}
+>> > +
+>> > +static int cgroup_show_options(struct seq_file *seq, struct kernfs_node *kn,
+>> >                            struct kernfs_root *kf_root)
+>> >  {
+>> >     struct cgroup_root *root = cgroup_root_from_kf(kf_root);
+>> > @@ -1619,6 +1643,8 @@ static int cgroup_show_options(struct seq_file *seq,
+>> >             seq_puts(seq, ",clone_children");
+>> >     if (strlen(root->name))
+>> >             seq_show_option(seq, "name", root->name);
+>> > +   cgroup_show_nsroot(seq, kn, kf_root);
+>> > +
+>> >     return 0;
+>> >  }
 
-Actually, all operation in a container should not change host's
-environment, the container should use core_pattern as its private setting.
-In detail, in core dump action:
-1: Search pipe program in container's fs namespace.
-2: Run pipe program in container's fs namespace to write coredump to it.
 
-This patch fixed above problem by running pipe program with container's
-fs_root.
 
-Test:
- 1: do dump in host
-    should have same action with current code.
-    [HOST] # ulimit -c 1024000
-    [HOST] # rm -f /tmp/*dump*
-    [HOST] # echo "|/dump_pipe %s %c %p %u %g %t e" >/proc/sys/kernel/core_pattern
-    [HOST] # ./make_dump
-    [HOST] Segmentation fault (core dumped)
-    [HOST] # ls -l /tmp/*dump*  # Should see host_dump_*.
-    [HOST] -rw-r--r-- 1 root root 331776 Apr 15 18:01 /tmp/host_dump_11_1048576000_2356_0_0_1460714470
- 2: do dump after change core_pattern in container
-    the container should write dump into its filesystem.
-    [HOST] # rm -f /tmp/*dump*
-    [HOST] # echo "|/dump_pipe %s %c %p %u %g %t e" >/proc/sys/kernel/core_pattern
-    [HOST] # lxc-start -n vm_dumptest
-    [GUEST]Please press Enter to activate this console.
-    [GUEST]# ulimit -c 1024000
-    [GUEST]# rm -f /tmp/*dump*
-    [GUEST]# echo "|/dump_pipe %s %c %p %u %g %t e" >/proc/sys/kernel/core_pattern
-    [GUEST]# ./make_dump
-    [GUEST]Segmentation fault (core dumped)
-    [GUEST]# ls -l /tmp/*dump*  # Should see guest_dump_*
-    [GUEST]-rw-r--r--    1 root     root       331776 Apr 15 10:01 /tmp/guest_dump_11_524288000_12_0_0_1460714482
- 3: do dump without change core_pattern in container
-    the container should write dump into host's filesystem to keep compatibility.
-    [HOST] # rm -f /tmp/*dump*
-    [HOST] # echo "|/dump_pipe %s %c %p %u %g %t e" >/proc/sys/kernel/core_pattern
-    [HOST] # lxc-start -n vm_dumptest
-    [GUEST]Please press Enter to activate this console.
-    [GUEST]# ulimit -c 1024000
-    [GUEST]# rm -f /tmp/*dump*
-    [GUEST]# ./make_dump
-    [GUEST]Segmentation fault (core dumped)
-    [GUEST]# ls -l /tmp/*dump*  # Should not see dump file
-    [GUEST]ls: /tmp/*dump*: No such file or directory
-    [HOST] # ls -l /tmp/*dump*  # Should see dump file
-    [HOST] -rw-r--r-- 1 root root 331776 Apr 15 18:01 /tmp/host_dump_11_524288000_12_0_0_1460714516
-
-Signed-off-by: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- fs/coredump.c | 18 +++++++++++++++++-
- 1 file changed, 17 insertions(+), 1 deletion(-)
-
-diff --git a/fs/coredump.c b/fs/coredump.c
-index 9fc74fb..62f21d74 100644
---- a/fs/coredump.c
-+++ b/fs/coredump.c
-@@ -590,6 +590,8 @@ void do_coredump(const siginfo_t *siginfo)
- 		int dump_count;
- 		char **helper_argv;
- 		struct subprocess_info *sub_info;
-+		struct pid_namespace *pid_ns;
-+		struct path root_fs;
- 
- 		if (ispipe < 0) {
- 			printk(KERN_WARNING "format_corename failed\n");
-@@ -636,15 +638,29 @@ void do_coredump(const siginfo_t *siginfo)
- 			goto fail_dropcount;
- 		}
- 
-+		pid_ns = task_active_pid_ns(current);
-+		spin_lock(&pid_ns->root_for_dump_lock);
-+		while (pid_ns != &init_pid_ns) {
-+			if (pid_ns->root_for_dump.mnt)
-+				break;
-+			spin_unlock(&pid_ns->root_for_dump_lock);
-+			pid_ns = pid_ns->parent,
-+			spin_lock(&pid_ns->root_for_dump_lock);
-+		}
-+		root_fs = pid_ns->root_for_dump;
-+		path_get(&root_fs);
-+		spin_unlock(&pid_ns->root_for_dump_lock);
-+
- 		retval = -ENOMEM;
- 		sub_info = call_usermodehelper_setup(helper_argv[0],
- 						helper_argv, NULL, GFP_KERNEL,
- 						umh_pipe_setup, NULL, &cprm,
--						NULL);
-+						&root_fs);
- 		if (sub_info)
- 			retval = call_usermodehelper_exec(sub_info,
- 							  UMH_WAIT_EXEC);
- 
-+		path_put(&root_fs);
- 		argv_free(helper_argv);
- 		if (retval) {
- 			printk(KERN_INFO "Core dump to |%s pipe failed\n",
 -- 
-1.8.5.1
+Aditya
