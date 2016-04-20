@@ -1,13 +1,15 @@
-From: "Tanvi Shah"
- <tanvi.s-PajUWWvyYoOjLvNnpEJgDA@public.gmane.org>
-Subject: E-mail Campaign Platform?
-Date: 20 Apr 2016 14:38:53 +0530
-Message-ID: <20160420091616.BC012102C@mail.linuxfoundation.org>
-Reply-To: Tanvi Shah <sanjay.g-PajUWWvyYoOjLvNnpEJgDA@public.gmane.org>
+From: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 1/2] kernfs_path_from_node_locked: don't overwrite nlen
+Date: Wed, 20 Apr 2016 15:43:13 -0400
+Message-ID: <20160420194313.GA4775@htj.duckdns.org>
+References: <1460923472-29370-1-git-send-email-serge.hallyn@ubuntu.com>
+	<1460923472-29370-2-git-send-email-serge.hallyn@ubuntu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1460923472-29370-2-git-send-email-serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,35 +19,33 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-   Hi,
+On Sun, Apr 17, 2016 at 03:04:31PM -0500, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org wrote:
+> From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+> 
+> We've calculated @len to be the bytes we need for '/..' entries from
+> @kn_from to the common ancestor, and calculated @nlen to be the extra
+> bytes we need to get from the common ancestor to @kn_to.  We use them
+> as such at the end.  But in the loop copying the actual entries, we
+> overwrite @nlen.  Use a temporary variable for that instead.
+> 
+> Without this, the return length, when the buffer is large enough, is
+> wrong.  (When the buffer is NULL or too small, the returned value is
+> correct. The buffer contents are also correct.)
+> 
+> Interestingly, no callers of this function are affected by this as of
+> yet.  However the upcoming cgroup_show_path() will be.
+> 
+> Signed-off-by: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 
-   I tried understanding your target market to see if we can help your
-   organization in generating leads via email, be it International or
-   Domestic.
+Acked-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 
-   We have been catering companies across United States, India and
-   European countries. Our services have help companies prevent up to 30%
-   of the cost on custom marketing projects.
+Greg, can you please pick this one up for v4.6?
 
-   Let us know your target audience/market, for us to do a sample test. Or
-   suggest us a time to get on a call to see if we can replicate the same
-   success, the way we did for our clients.
+Thanks.
 
-   Regards,
-
-   Tanvi Shah
-
-   Marketing Executive
-
-                                                     If you do not wish to
-   hear from us again, please respond back with "REMOVE" and we will honor
-   your request.
-
-
-   Disclaimer: If you have received this electronic mail by error or if
-   you're not the right person to speak with in this regard, I'd
-   appreciate if you would be so kind as to forward this email to the
-   right person or the person in charg
+-- 
+tejun
