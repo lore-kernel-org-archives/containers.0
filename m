@@ -1,11 +1,10 @@
-From: =?utf-8?B?S3VuZGVuc2VydmljZQ==?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
-Subject: =?utf-8?B?V2ljaHRpZ2UgTWl0dGVpbHVuZyBmwrhyIGNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc=?=
-Date: 22 Apr 2016 09:23:12 -0700
-Message-ID: <20160422162317.D6F55F75@mail.linuxfoundation.org>
-Reply-To: =?utf-8?B?S3VuZGVuc2VydmljZQ==?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
+From: serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org
+Subject: namespaced file capabilities
+Date: Fri, 22 Apr 2016 12:26:32 -0500
+Message-ID: <1461345993-17526-1-git-send-email-serge.hallyn__48085.2323853925$1461346022$gmane$org@ubuntu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -16,36 +15,54 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-V2ljaHRpZ2UgTWl0dGVpbHVuZyBmwrhyICMjZW1haWwjIyBib2R5ew0KICAgICAgICAgICAgd2lk
-dGg6IDEwMCU7IA0KICAgICAgICAgICAgYmFja2dyb3VuZC1jb2xvcjogI0ZGRkZGRjsgDQogICAg
-ICAgICAgICBtYXJnaW46MDsgDQogICAgICAgICAgICBwYWRkaW5nOjA7IA0KICAgICAgICAgICAg
-bXNvLW1hcmdpbi10b3AtYWx0OjBweDsgbXNvLW1hcmdpbi1ib3R0b20tYWx0OjBweDsgbXNvLXBh
-ZGRpbmctYWx0OiAwcHggMHB4IDBweCAwcHg7DQogICAgICAgIH0NCiAgICAgICAgDQogICAgICAg
-IHAsaDEsaDIsaDMsaDR7DQoJICAgICAgICBtYXJnaW4tdG9wOjA7DQoJCQltYXJnaW4tYm90dG9t
-OjA7DQoJCQlwYWRkaW5nLXRvcDowOw0KCQkJcGFkZGluZy1ib3R0b206MDsNCiAgICAgICAgfQ0K
-ICAgICAgICANCiAgICAgICAgaHRtbHsNCiAgICAgICAgICAgIHdpZHRoOiAxMDAlOyANCiAgICAg
-ICAgfQ0KICAgICAgICANCiAgICAgICANCiAgICAgICAgLyogLS0tLS0tLS0tLS0gcmVzcG9uc2l2
-aXR5IC0tLS0tLS0tLS0tICovDQogICAgICAgIEBtZWRpYSBvbmx5IHNjcmVlbiBhbmQgKG1heC13
-aWR0aDogNTkwcHgpew0KCQkJDQoJCQkvKi0tLS0tIG1haW4gaW1hZ2UgLS0tLS0tLSovDQoJCQkj
-bG9nbyB7d2lkdGg6IDEwMCUgIWltcG9ydGFudDsgaGVpZ2h0OiBhdXRvICFpbXBvcnRhbnQ7fQ0K
-DQoJCQkvKi0tLS0tLS0tIGNvbnRhaW5lciAtLS0tLS0tLSovCQkJDQoJCQl0YWJsZXt3aWR0aDo5
-MCUgIWltcG9ydGFudH0NCiAgICAgICAgICAgDQoJCX0NCiBIYWxsbyBjb250YWluZXJzQGxpc3Rz
-LmxpbnV4LWZvdW5kYXRpb24ub3JnLCBmJnV1bWw7ciB1bnNlcmUgbmV1ZSBTdHVkaWUgc3VjaGVu
-IHdpciAgVGVzdGVyIA0KCQkJCQkJDQoJCQkJCQkgLCBkaWUgZWluICBCZWF1dHkgQmFnIHZvbiBO
-aXZlYSBrb3N0ZW5sb3MgdGVzdGVuIA0KCQkJCQkJDQoJCQkJCQkgdW5kIHVucyBpaHJlIEVyZmFo
-cnVuZ2VuIGJlcmljaHRlbi4gU2llLCBjb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24u
-b3JnLCB3dXJkZW4gYWxzIGVpbiBtJm91bWw7Z2xpY2hlciBLYW5kaWRhdCBhdXNnZXcmYXVtbDto
-bHQhIA0KCQkJCQkJDQoJCQkJCQkNCgkJCUFsbGUgVGVzdGVyLCBkaWUgYW4gZGVyIFN0dWRpZSB0
-ZWlsbmVobWVuIGQmdXVtbDtyZmVuLCBiZWtvbW1lbiBpaHIgIEJlYXV0eSBCYWcgenVtIERhbmsg
-Z2VzY2hlbmt0IA0KCQkJCQkJDQoJCQkJCQkgISANCgkJCQkJCQ0KCQkJCQkJDQoJCQlBbHNvICBi
-ZXdlcmJlbiBTaWUgc2ljaCBqZXR6dCANCgkJCQkJCQ0KCQkJCQkJIHVuZCBudXR6ZW4gU2llIGlu
-IEsmdXVtbDtyemUgIGtvc3RlbmxvcyANCgkJCQkJCQ0KCQkJCQkJIGRpZSAgVG9wcHJvZHVrdGUg
-dm9uIE5pdmVhIA0KCQkJCQkJDQoJCQkJCQkgISAgICAgDQoJCQkgIElmIHlvdSB3b3VsZCBsaWtl
-IHRvIG1vZGlmeSB5b3VyIGVtYWlsIHNldHRpbmdzIG9yIHVuc3Vic2NyaWJlICwgdmlzaXQNCgkJ
-CSANCgkJCWhlcmUNCgkJCSAKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1m
-b3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9s
-aXN0aW5mby9jb250YWluZXJz
+Hi,
+
+I've sent a few patches and emails over the past months about supporting
+file capabilities in user namespace confined containers.  A few of the
+requirements as I see them are:
+
+1. Root in a user namespace should be able to set file capabilities on a binary
+for use by any user mapped into his namespace.
+
+2. Any uid not mapped into the user namespace whose root user set file
+capabilities should not gain privileges when running an executable which only
+has file capabilities set by this root user.
+
+3. Existing calls to cap_set_file(3) and cap_get_file(3) as well as
+setcap(8) and getcap(8) should transparently work.  This would allow
+package managers to simply set file capabilities in postinst.
+
+Below is a kernel patch which implements a new security.nscapability
+extended attribute.  Setting this xattr on a file requires cap_setfcap
+against the current user namespace, and for the file to be owned by
+a uid and gid mapped into that namespace.  When found on a file,
+the capabilities will take effect only if the file is owned by the
+root uid in the caller's namespace, or the root uid in any ancestor
+namespace.
+
+While this design supports nested namespaces, it does not support
+use of file capabilities by users in unrelated namespaces.  So if
+the same file is linked into two namespaces N1 and N2 which do not
+share the same root kuid, then the only way for N1 and N2 to both
+execute the file while respecting security.nscapability is to have
+a common ancestor namespace write the capability.  The only reasonable
+way we could handle this case would be to use a securityfs interface
+to set file capabilities.  The capability.ko module could then
+do the work of keeping a list of uid ranges for which file capabilities
+should be honored.  I don't think that flexibility is really called
+for.
+ 
+The kernel patch follows, and can be found at
+https://git.kernel.org/cgit/linux/kernel/git/sergeh/linux-security.git/log/?h=2016-04-22/nsfscaps
+
+The libcap patch can be found at
+https://git.kernel.org/cgit/linux/kernel/git/sergeh/libcap.git/log/?h=2016-04-22/nscaps
+
+Comments/conversation/suggestions greatly appreciated.
+
+thanks,
+-serge
