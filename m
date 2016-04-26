@@ -1,7 +1,7 @@
-From: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 2/2] mountinfo: implement show_path for kernfs and cgroup
-Date: Tue, 26 Apr 2016 12:29:25 +0200
-Message-ID: <20160426102925.vkydkjtrsnibuc7c__31487.3281903148$1461666590$gmane$org@ws.net.home>
+Date: Tue, 26 Apr 2016 09:36:23 -0500
+Message-ID: <20160426143622.GA11021__2104.60515595532$1461681403$gmane$org@mail.hallyn.com>
 References: <1460923472-29370-1-git-send-email-serge.hallyn@ubuntu.com>
 	<1460923472-29370-3-git-send-email-serge.hallyn@ubuntu.com>
 	<20160418041126.GA424@mail.hallyn.com>
@@ -9,12 +9,13 @@ References: <1460923472-29370-1-git-send-email-serge.hallyn@ubuntu.com>
 	<20160419014419.GA19080@mail.hallyn.com>
 	<20160419040546.GA20350@mail.hallyn.com>
 	<20160426024207.GA2783@mail.hallyn.com>
+	<20160426102925.vkydkjtrsnibuc7c@ws.net.home>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20160426024207.GA2783-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+In-Reply-To: <20160426102925.vkydkjtrsnibuc7c-xkT7n84Rsxv/9pzu0YdTqQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,32 +25,41 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+To: Karel Zak <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Cc: gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Apr 25, 2016 at 09:42:07PM -0500, Serge E. Hallyn wrote:
-> > Looking at it another way...  The value we're talking about shows us
-> > the path of the root dentry of a cgroup mount.  If a task in cgns2
-> > rooted at /a/b/c mounts a cgroupfs, it will see '/' as the root dentry.
-> > If a task in cgns1 rooted at /a/b looks at that mountinfo, '/' would
-> > be misleading.  It really should be '/c'.
+On Tue, Apr 26, 2016 at 12:29:25PM +0200, Karel Zak wrote:
+> On Mon, Apr 25, 2016 at 09:42:07PM -0500, Serge E. Hallyn wrote:
+> > > Looking at it another way...  The value we're talking about shows us
+> > > the path of the root dentry of a cgroup mount.  If a task in cgns2
+> > > rooted at /a/b/c mounts a cgroupfs, it will see '/' as the root dentry.
+> > > If a task in cgns1 rooted at /a/b looks at that mountinfo, '/' would
+> > > be misleading.  It really should be '/c'.
+> > 
+> > So I think that for cgroup mount entries in mountinfo to be useful (i.e.
+> > to criu) we either need the root dentry path to be given as relative to
+> > the reader's cgroup namespace (as I have it in this patchset), or else
+> > we need to add another piece of information in the mountinfo entry, such
+> > as the nsfd inode number of the cgroup namespace in which it was
+> > mounted.
 > 
-> So I think that for cgroup mount entries in mountinfo to be useful (i.e.
-> to criu) we either need the root dentry path to be given as relative to
-> the reader's cgroup namespace (as I have it in this patchset), or else
-> we need to add another piece of information in the mountinfo entry, such
-> as the nsfd inode number of the cgroup namespace in which it was
-> mounted.
+> In the ideal world there is no mountinfo file, but /proc/self/mountinfo/<id>/
+> directory with individual files, so every subsystem and filesystem has 
+> absolute freedom to store there all relevant information. The result will 
+> be also lucky kernel that does not have to always generate entire huge 
+> mountinfo file for all mountpoins... etc. :-)
 
-In the ideal world there is no mountinfo file, but /proc/self/mountinfo/<id>/
-directory with individual files, so every subsystem and filesystem has 
-absolute freedom to store there all relevant information. The result will 
-be also lucky kernel that does not have to always generate entire huge 
-mountinfo file for all mountpoins... etc. :-)
+Yeah mountinfo does seem like a big stick to swing around every time I want
+one little piece of information.  Also mght be good to have per-fstype
+directories so we can just look under /proc/self/mountsdir/cgroupfs/ for
+only cgroupfs <id>s.
 
-    Karel
+There we might also find open fds for source and mountdir, kinda fitting
+in with previous discussions of separating bdev_open() and mountat().
 
--- 
- Karel Zak  <kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
- http://karelzak.blogspot.com
+BTW, assuming this would in fact report source and mountpoint location
+with fds, these would really (through realpath) be reported relative to
+the reader's namespace, as I'm doing and advocating here.
+
+-serge
