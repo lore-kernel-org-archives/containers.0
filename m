@@ -1,8 +1,7 @@
-From: =?utf-8?B?Um9zd2l0aGEgUGV0ZXJz?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
-Subject: =?utf-8?B?SWNoIHplaWdlIElobmVuLCB3aWUgU2llIDMgS2lsbyBwcm8gV29jaGUgYWJuZWhtZW4=?=
-Date: 28 Apr 2016 03:58:12 -0700
-Message-ID: <20160428105817.773C7483@mail.linuxfoundation.org>
-Reply-To: =?utf-8?B?Um9zd2l0aGEgUGV0ZXJz?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
+From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+Subject: Unprivileged containers and co-ordinating user namespaces
+Date: Thu, 28 Apr 2016 15:02:08 -0700
+Message-ID: <1461880928.2307.48.camel@HansenPartnership.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,29 +15,53 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, util-linux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Ich zeige Ihnen, wie Sie 3 Kilo pro Woche abnehmen 3 Kilo pro Woche abnehmen! Ohne zus&auml;tzlichen Sport oder eine Di&auml;t! Erfahren Sie hier wie auch Sie abnehmen k&ouml;nnen! Hallo, 
-							
-							
-			mein Name ist Roswitha Peters, ich bin Gesundheits-Beraterin. Und das seit &uuml;ber 20 Jahren. In meiner langen Karriere habe ich wirklich schon vieles erlebt. Aber diese Entdeckung von Prof. Dr. Schreiber (Wien/Miami) stellt alles in den Schatten, was ich in Sachen &bdquo;Schnell Abnehmen&ldquo; je erlebt oder erfahren habe! 
-							
-							
-			Mir ergeht es da ein wenig so wie Ulrike (Foto oben), die es immer noch nicht fassen kann.  Sie hat in nur 3 Wochen und 4 Tagen &uuml;ber 16 Kilo an Gewicht verloren (16,3 Kilo, um genau zu sein). Und ihre Waage wandert immer noch weiter nach unten! 
-							
-							
-			Dabei liest sich Ulrikes Geschichte auf den ersten Blick nicht viel anders als die von vielen, vielen anderen M&auml;nnern und Frauen, die schon alles probiert haben, um endlich ihre &uuml;berfl&uuml;ssigen Kilos loszuwerden &ndash; und die am Ende doch gescheitert sind. Aber jetzt ist alles anders: Nun kann JEDER abnehmen &ndash; so viel er nur will! 
-							
-							
-			Herrlich einfach &ndash; und blitzschnell! Starten Sie Ihr neues, schlankes Leben JETZT! 
-						
-						
-			  
-						
-						
-			  
-			  If you would like to modify your email settings or unsubscribe , visit
-			 
-			here
-			 
+It's always been annoying to me that we never co-ordinate our use of
+namespace resources, but it's never really mattered until the user
+namespace came along because namespaces didn't overlap and the only
+annoyance was not being able to use existing tools to manipulate other
+containers (mainly not being able to us ip netns).
+
+However, with the user namespace, it's become necessary to co-ordinate
+if you're giving users a range of uids beyond their own because you
+don't want to have two separate container users owning overlapping uid
+numbers (especially if they're unprivileged) because that will lead to
+all sorts of security issues.  I think we need two things: a file
+describing this for other things (like container orchestration systems
+that want to know) and a mechanism for delegating the alloted uids to
+the user.  One possible way of doing this would be to have the init
+system set up the correctly owned user namespace at boot time.  It's
+appealing to have the user sort out their own administration by simply
+spawning new child user namespaces, but it adds the complexity that we
+have to know what we're mapping to inside the namespace, whereas all
+the administrator really cares about is what exterior uid range is
+allocated (and that it remain that same range between reboots, because
+these are the uids that's going to appear on disk).
+
+Assuming everyone agrees it's a file and a utility, I'd propose the
+file be
+
+/etc/usernamespaces
+
+and the format be <user>:<start>:<length>:<flags>
+
+For the allocated uids.  <user>,<start> and <length> are obvious but
+<flags> would be used for things like deny setgroups and possibly other
+privilege reductions.
+
+Then we need a utility, say userns that has cap_setuid+cap_setgid and
+takes as an argument the raw uid_map, gid_map the user wants to install
+plus similar arguments to unshare.  It then validates that the exterior
+range are allowed by /etc/usernamespaces and sets up the usernamespace
+with that range owned by the invoking user.
+
+Container orchestration systems can either register their (probably
+huge) ranges in the file, or simply use the file to know what ranges to
+avoid.
+
+If this sounds OK to people, I can code up a utility that does this,
+which should probably belong in util-linux.
+
+James
