@@ -1,15 +1,18 @@
-From: "W. Trevor King" <wking-vJI2gpByivqcqzYg7KEe8g@public.gmane.org>
-Subject: Re: Unprivileged containers and co-ordinating user namespaces
-Date: Fri, 29 Apr 2016 11:34:05 -0700
-Message-ID: <20160429183404.GE22888@odin.tremily.us>
-References: <1461880928.2307.48.camel@HansenPartnership.com>
-	<20160428230045.GS22888@odin.tremily.us>
-	<1461944328.2311.10.camel@HansenPartnership.com>
-	<20160429155303.GA8900@mail.hallyn.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 3/2] cgroup_show_path: use a new helper to get current
+	cgns css_set
+Date: Fri, 29 Apr 2016 16:42:54 -0500
+Message-ID: <20160429214254.GA13615__9597.174000419$1461966191$gmane$org@mail.hallyn.com>
+References: <1460923472-29370-1-git-send-email-serge.hallyn@ubuntu.com>
+	<1460923472-29370-3-git-send-email-serge.hallyn@ubuntu.com>
+	<20160418041126.GA424@mail.hallyn.com>
+	<20160418052905.GA3848@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============3891087660691269030=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20160429155303.GA8900-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20160418052905.GA3848-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,79 +23,91 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, util-linux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+[ I'm sorry, apparently I had sent the wrong version of this patch.  Here
+is the correct one from
+https://git.kernel.org/cgit/linux/kernel/git/sergeh/linux-security.git/commit/?h=2016-04-17/kernfs.show&id=79f784037098fddae92258579ef494537a12f1b2
+Thanks Michael for pointing that out
+]
 
---===============3891087660691269030==
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="ayEWcOB1VvXmLrn2"
-Content-Disposition: inline
+Since we're getting current's cgroup namespace info, and are
+not modifying it, we don't need the cgroup_mutex.
 
+Signed-off-by: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+---
+ kernel/cgroup.c | 40 ++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 36 insertions(+), 4 deletions(-)
 
---ayEWcOB1VvXmLrn2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Fri, Apr 29, 2016 at 10:53:03AM -0500, Serge E. Hallyn wrote:
-> Quoting James Bottomley:
-> > I think that mostly works.  No-one's packaging it yet, which is why I
->=20
-> https://packages.debian.org/jessie/uidmap
-> https://launchpad.net/ubuntu/yakkety/+package/uidmap
-> http://rpm.pbone.net/index.php3/stat/45/idpl/28763248/numer/1/nazwa/newui=
-dmap
-
-On the other hand, Gentoo is waiting on a clean release tarball [1].
-It looks like 4.3-1 was missing a clean autoreconf [2]?  Has anything
-been pushed since?
-
-Cheers,
-Trevor
-
-[1]: https://bugs.gentoo.org/show_bug.cgi?id=3D580432#c3
-[2]: https://lists.alioth.debian.org/pipermail/pkg-shadow-devel/2016-March/=
-010924.html
-     Subject: [Pkg-shadow-devel] new shadow release candidate
-     Date: Tue Mar 22 18:58:55 UTC 2016
-
---=20
-This email may be signed or encrypted with GnuPG (http://www.gnupg.org).
-For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
-
---ayEWcOB1VvXmLrn2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAEBAgAGBQJXI6kaAAoJEAPqygegUbGszy4P/1IvQ91zflgU1SYT9qbKP2pj
-XddYYpW+mqsnJY4WVsVxRzVrSxcEbns4kdGvoKiu92MEsoYtZzYIufY4uR/Ef5+L
-tDwyjx3bHGBq4yDUHUsxjLF6Z7GHNrnu1X+71rL12Rh13PoNZhZq8BS9t9nVGB7F
-gW80obPL401pI9WKVsaK3IAY9VrSN3WKCm6dK6ZuYVsajFEoq8S8hJETAg5LfpIQ
-4jyzziSHaf5nLrV7V+D01ATDyrR2nTRJP31lLXGQNP2ox+qm1WU6jUdruLcoOvTP
-XHOHzfBoUCnOMVcxYlhIAggXz+OGeCBV7dnnOurcUiqsD8A9YOBLdFWcrKPE7QPw
-IommBAHsB2qHQeZRvHypnhDISQTn5gAKd7tgh/EqYoWCrwlnIVRKL0fLlcER2/XJ
-mtENIHmnCYI1I97yo4QZZ06PAqm1/fjvLludCOO0dCT+3LKsrDtYegvrN1RFjnz3
-+Zb61VgpaVOjNfUBIwFwKGjPgEVI03iPvtHqhckVklssXDM4jfsuwp7aP0u02IGe
-XUmv0ibNZSa6xS69na9fUJlstIr1sjJv+h0Au6BoD2SVmvgc1Tlkrd42wnML1IHW
-vqtE9KeMWFXBs+c1XuRqa/vpxsu5/UZsVPuWhWGwX8mQ05eiHPve7ynO79pGuKQV
-NjvgyZ6CH9XA/srqqkv0
-=Xr/4
------END PGP SIGNATURE-----
-
---ayEWcOB1VvXmLrn2--
-
---===============3891087660691269030==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============3891087660691269030==--
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 9a0d7b3..1243e3e 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1215,6 +1215,41 @@ static void cgroup_destroy_root(struct cgroup_root *root)
+ 	cgroup_free_root(root);
+ }
+ 
++/*
++ * look up cgroup associated with current task's cgroup namespace on the
++ * specified hierarchy
++ */
++static struct cgroup *
++current_cgns_cgroup_from_root(struct cgroup_root *root)
++{
++	struct cgroup *res = NULL;
++	struct css_set *cset;
++
++	lockdep_assert_held(&css_set_lock);
++
++	rcu_read_lock();
++
++	cset = current->nsproxy->cgroup_ns->root_cset;
++	if (cset == &init_css_set) {
++		res = &root->cgrp;
++	} else {
++		struct cgrp_cset_link *link;
++
++		list_for_each_entry(link, &cset->cgrp_links, cgrp_link) {
++			struct cgroup *c = link->cgrp;
++
++			if (c->root == root) {
++				res = c;
++				break;
++			}
++		}
++	}
++	rcu_read_unlock();
++
++	BUG_ON(!res);
++	return res;
++}
++
+ /* look up cgroup associated with given css_set on the specified hierarchy */
+ static struct cgroup *cset_cgroup_from_root(struct css_set *cset,
+ 					    struct cgroup_root *root)
+@@ -1598,13 +1633,11 @@ static int cgroup_show_path(struct seq_file *sf, struct kernfs_node *kf_node,
+ {
+ 	int len = 0, ret = 0;
+ 	char *buf = NULL;
+-	struct cgroup_namespace *ns = current->nsproxy->cgroup_ns;
+ 	struct cgroup_root *kf_cgroot = cgroup_root_from_kf(kf_root);
+ 	struct cgroup *ns_cgroup;
+ 
+-	mutex_lock(&cgroup_mutex);
+ 	spin_lock_bh(&css_set_lock);
+-	ns_cgroup = cset_cgroup_from_root(ns->root_cset, kf_cgroot);
++	ns_cgroup = current_cgns_cgroup_from_root(kf_cgroot);
+ 	len = kernfs_path_from_node(kf_node, ns_cgroup->kn, NULL, 0);
+ 	if (len > 0)
+ 		buf = kmalloc(len + 1, GFP_ATOMIC);
+@@ -1612,7 +1645,6 @@ static int cgroup_show_path(struct seq_file *sf, struct kernfs_node *kf_node,
+ 		ret = kernfs_path_from_node(kf_node, ns_cgroup->kn, buf, len + 1);
+ 
+ 	spin_unlock_bh(&css_set_lock);
+-	mutex_unlock(&cgroup_mutex);
+ 
+ 	if (len <= 0)
+ 		return len;
+-- 
+2.7.4
