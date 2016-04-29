@@ -1,16 +1,14 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Unprivileged containers and co-ordinating user namespaces
-Date: Fri, 29 Apr 2016 10:53:03 -0500
-Message-ID: <20160429155303.GA8900__21612.5371902764$1461945209$gmane$org@mail.hallyn.com>
-References: <1461880928.2307.48.camel@HansenPartnership.com>
-	<20160428230045.GS22888@odin.tremily.us>
-	<1461944328.2311.10.camel@HansenPartnership.com>
+From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Subject: Re: [PATCH v2] devpts: Make ptmx be owned by the userns owner as a
+	fallback
+Date: Fri, 29 Apr 2016 09:22:24 -0700
+Message-ID: <CALCETrUJFgOHE5S2Drg1TiXjJFCNC2CKWerSEj_wk9Rrdv1JFg@mail.gmail.com>
+References: <820e57306e342ca310414ed0f58e75ac99731871.1458072215.git.luto@kernel.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1461944328.2311.10.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+In-Reply-To: <820e57306e342ca310414ed0f58e75ac99731871.1458072215.git.luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,38 +18,29 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Cc: systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, util-linux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: gnome-os-list-rDKQcyrBJuzYtjvyW6yDsg@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, mclasen-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-UXVvdGluZyBKYW1lcyBCb3R0b21sZXkgKEphbWVzLkJvdHRvbWxleUBIYW5zZW5QYXJ0bmVyc2hp
-cC5jb20pOgo+IE9uIFRodSwgMjAxNi0wNC0yOCBhdCAxNjowMCAtMDcwMCwgVy4gVHJldm9yIEtp
-bmcgd3JvdGU6Cj4gPiBPbiBUaHUsIEFwciAyOCwgMjAxNiBhdCAwMzowMjowOFBNIC0wNzAwLCBK
-YW1lcyBCb3R0b21sZXkgd3JvdGU6Cj4gPiA+IC9ldGMvdXNlcm5hbWVzcGFjZXMKPiA+ID4gCj4g
-PiA+IGFuZCB0aGUgZm9ybWF0IGJlIDo6Ogo+ID4gPiAKPiA+ID4g4oCmCj4gPiA+IAo+ID4gPiBJ
-ZiB0aGlzIHNvdW5kcyBPSyB0byBwZW9wbGUsIEkgY2FuIGNvZGUgdXAgYSB1dGlsaXR5IHRoYXQg
-ZG9lcyB0aGlzLAo+ID4gPiB3aGljaCBzaG91bGQgcHJvYmFibHkgYmVsb25nIGluIHV0aWwtbGlu
-dXguCj4gPiAKPiA+IFRoaXMgc291bmRzIGEgbG90IGxpa2Ugc2hhZG93J3MgbmV3dWlkbWFwIGFu
-ZCBuZXdnaWRtYXAgWzEsMiwzXS4KPiA+IAo+ID4gQ2hlZXJzLAo+ID4gVHJldm9yCj4gPiAKPiA+
-IFsxXTogaHR0cHM6Ly9naXRodWIuY29tL3NoYWRvdy1tYWludC9zaGFkb3cvY29tbWl0LzY3M2My
-YTZmOWFhNmM2OTU4OGY0YzFiZTA4NTg5YjhkMzQ3NWE1MjAKPiA+IFsyXTogaHR0cDovL21hbjcu
-b3JnL2xpbnV4L21hbi1wYWdlcy9tYW4xL25ld3VpZG1hcC4xLmh0bWwKPiA+IFszXTogaHR0cDov
-L21hbjcub3JnL2xpbnV4L21hbi1wYWdlcy9tYW41L3N1YnVpZC41Lmh0bWwKPiAKPiBJIHRoaW5r
-IHRoYXQgbW9zdGx5IHdvcmtzLiAgTm8tb25lJ3MgcGFja2FnaW5nIGl0IHlldCwgd2hpY2ggaXMg
-d2h5IEkKCmh0dHBzOi8vcGFja2FnZXMuZGViaWFuLm9yZy9qZXNzaWUvdWlkbWFwCmh0dHBzOi8v
-bGF1bmNocGFkLm5ldC91YnVudHUveWFra2V0eS8rcGFja2FnZS91aWRtYXAKaHR0cDovL3JwbS5w
-Ym9uZS5uZXQvaW5kZXgucGhwMy9zdGF0LzQ1L2lkcGwvMjg3NjMyNDgvbnVtZXIvMS9uYXp3YS9u
-ZXd1aWRtYXAKCj4gZGlkbid0IG5vdGljZS4gIEl0IGFsc28gbG9va3MgbGlrZSB0aGUgYnVpbGQg
-ZGVwZW5kZW5jaWVzIGhhdmUgdmFzdGx5Cj4gZXhwYW5kZWQsIHNvIEkgY2FuJ3QgZ2V0IGl0IHRv
-IGJ1aWxkIGluIHRoZSBidWlsZCBzZXJ2aWNlIHlldC4KPiAKPiBJdCBsb29rcyBsaWtlIHRoZSBv
-bmx5IGFkZGl0aW9uIGl0IG5lZWRzIGlzIHRoZSBzZXRncm91cHMgZmxhZyBmb3IKPiBuZXdnaWRt
-YXAsIHdoaWNoIHRoZSBzZWN1cml0eSBwZW9wbGUgd2lsbCBuZWVkLCBzbyBJIGNhbiBwYXRjaCB0
-aGF0LiAKPiAgUGx1cyBpdCdzIHRyeWluZyB0byBpbnN0YWxsIG5ld2dpZG1hcC9uZXd1aWRtYXAg
-YXMgc2V0dWlkIHJvb3QgcmF0aGVyCj4gdGhhbiBjYXBfc2V0dWlkL2NhcF9zZXRnaWQsIGJ1dCB0
-aGF0J3MgZml4YWJsZSBpbiB0aGUgc3BlYyBmaWxlLgoKVGhhdCB3b3VsZCBwcmV2ZW50IGl0IGJl
-aW5nIGluc3RhbGxlZCBpbnNpZGUgdXNlciBuYW1lc3BhY2VzLCB1bnRpbAp0aGUgdXNlciBuYW1l
-c3BhY2VkIGZpbGUgY2FwYWJpbGl0aWVzIChzZWUgc2VwYXJhdGUgdGhyZWFkIDopIGhpdC4KCi1z
-ZXJnZQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250
-YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3Jn
-Cmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRh
-aW5lcnM=
+On Tue, Mar 15, 2016 at 1:05 PM, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> wrote:
+> New devpts instances have ptmx owned by the inner uid and gid 0.
+>
+> For container-style namespaces (LXC, etc), this should have no
+> effect, this is fine.
+>
+> For sandbox-style namespaces (xdg-app and similar), this is
+> problematic -- there may not be an inner 0:0.  If that happens,
+> devpts mounts will fail.
+>
+> Fix it by adding a fallback: if 0:0 is not mapped but the userns
+> owner and group are mapped, then ptmx will be owned by the namespace
+> owner.
+>
+> This won't change behavior except in cases where mount would
+> currently return -EINVAL.
+
+Eric, this patch is straightforward, fixes a real problem, and is
+mostly orthogonal to the devpts stuff you're working on.  Could you
+apply it for 4.7?
+
+--Andy
