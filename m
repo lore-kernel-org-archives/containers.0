@@ -1,12 +1,18 @@
-From: =?utf-8?B?TGlkbA==?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
-Subject: =?utf-8?B?RXhjbHVzaXYgZsO8ciBMaWRsIEt1bmRlbiAtIDUwMOKCrCBHdXRzY2hlaW4gZsO8ciBTaWU=?=
-Date: 2 May 2016 10:55:19 -0700
-Message-ID: <20160502175524.2760F884@mail.linuxfoundation.org>
-Reply-To: =?utf-8?B?TGlkbA==?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
+From: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 1/1] simplified security.nscapability xattr
+Date: Mon, 2 May 2016 20:31:41 +0200
+Message-ID: <1dfc8e3c-0c8c-0b85-df6f-960442b63a1e@gmail.com>
+References: <1461345993-17526-1-git-send-email-serge.hallyn@ubuntu.com>
+	<1461345993-17526-2-git-send-email-serge.hallyn@ubuntu.com>
+	<CAGXu5jKFNQs8oxq+yD6_Q8HcNyf+GouSHFzkxT9u9BkK=ZLQ7Q@mail.gmail.com>
+	<20160426222627.GA19307@mail.hallyn.com>
+	<CAGXu5jJbmSKst_RiM84-7OaX=2XettzpTh34uFFoevvoPRO76Q@mail.gmail.com>
+	<20160502035452.GA31837@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20160502035452.GA31837-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,41 +22,76 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, "Andrew G. Morgan" <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-RXhjbHVzaXYgZsO8ciBMaWRsIEt1bmRlbiAtIDUwMOKCrCBHdXRzY2hlaW4gZsO8ciBTaWUgSGFs
-bG8gIGNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcgDQoJCQkJCQkJCQkJCQkJ
-CQkJCQkJCQkNCgkJCQkJCQkJCQkJCQkJCQkJCQkJCSAsIGluIGRpZXNlbSBNb25hdCBmZWllcnQg
-TGlkbCBzZWluZW4gODUuIEdlYnVydHN0YWchIA0KCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQ0KCQkJ
-CQkJCQkJCQkJCQkJCQkJCQkJCQ0KCQkJCQkJCQkJCQkJQXVzIGRpZXNlbSBHcnVuZCBtJm91bWw7
-Y2h0ZW4gd2lyIGFsbGVuIEt1bmRlbiB2b24gTGlkbCBlaW5lIGJlc29uZGVyZSBHZWxlZ2VuaGVp
-dCBiaWV0ZW4gdW5kIHcmYXVtbDtobGVuIGplZGUgV29jaGUgMTAwIEt1bmRlbiBhdXMgdmVyc2No
-aWVkZW5lbiBkZXV0c2NoZW4gU3QmYXVtbDtkdGVuIGF1cy4gRGFzIGJlZGV1dGV0LCBkYXNzIDQw
-MCBLdW5kZW4gZWluZW4gdm9uIHZpZWxlbiBQcmVpc2VuIGVyaGFsdGVuIHdlcmRlbiwgZGVuIHdp
-ciB2ZXJsb3Nlbi4gSW4gZGllc2VyIFdvY2hlIHNpbmQgU2llIGFuIFJlaWhlISBIYXVwdHByZWlz
-ICZldXJvOyA1MDAsLSBHdXRzY2hlaW4gMi4gUHJlaXMgJmV1cm87IDE1MCwtIEd1dHNjaGVpbiAz
-LiBQcmVpcyAmZXVybzsgNTAsLSBHdXRzY2hlaW4gNC4gUHJlaXMgJmV1cm87IDUsLSBHdXRzY2hl
-aW4gSGVyemxpY2hlbiBHbCZ1dW1sO2Nrd3Vuc2NoICBjb250YWluZXJzQGxpc3RzLmxpbnV4LWZv
-dW5kYXRpb24ub3JnIA0KCQkJCQkJCQkJCQkJCQkJCQkJCQkJDQoJCQkJCQkJCQkJCQkJCQkJCQkJ
-CQkgLCBJaHJlIFBMWiB3dXJkZSBkaWVzZSBXb2NoZSBnZW1laW5zYW0gbWl0IDEwIGFuZGVyZW4g
-aW4gRGV1dHNjaGxhbmQgYXVzZ2V3JmF1bWw7aGx0LiAgR2ViZW4gU2llIElocmUgUExaIHVuZCBT
-dHJhJnN6bGlnO2UgYXVmIGRlciBmb2xnZW5kZW4gU2VpdGUgZWluIHVuZCBrb250cm9sbGllcmVu
-IFNpZSwgd2VsY2hlbiBQcmVpcyBTaWUgZ2V3b25uZW4gaGFiZW4uICBJaHJlIFBMWiBTaWUgdW5k
-ICAoMTApICBhbmRlcmUgUGVyc29uZW4gd3VyZGVuIGF1c2dldyZhdW1sO2hsdCBTSU5EIFNJRSBI
-RVVURSBERVIgR0wmVXVtbDtDS0xJQ0hFIEdFV0lOTkVSPyBISUVSIEtMSUNLRU4gMDI2ODEgQ2Fs
-bGVuYmVyZyAgKDgpICBQZXJzb25lbiB3dXJkZW4gYXVzZ2V3JmF1bWw7aGx0IDM4Njg1IExhbmdl
-bHNoZWltICAoMTEpICBQZXJzb25lbiB3dXJkZW4gYXVzZ2V3JmF1bWw7aGx0IDQwNzIzIEhpbGRl
-biAgKDYpICBQZXJzb25lbiB3dXJkZW4gYXVzZ2V3JmF1bWw7aGx0IDQwNTkzIEQmdXVtbDtzc2Vs
-ZG9yZiBVcmRlbmJhY2ggICgxMCkgIFBlcnNvbmVuIHd1cmRlbiBhdXNnZXcmYXVtbDtobHQgOTcw
-ODAgVyZ1dW1sO3J6YnVyZyAgKDEzKSAgUGVyc29uZW4gd3VyZGVuIGF1c2dldyZhdW1sO2hsdCA4
-MTU0MSBNJnV1bWw7bmNoZW4gICgxMCkgIFBlcnNvbmVuIHd1cmRlbiBhdXNnZXcmYXVtbDtobHQg
-MjczODYgSGVtc2ImdXVtbDtuZGUgICgxMikgIFBlcnNvbmVuIHd1cmRlbiBhdXNnZXcmYXVtbDto
-bHQgNTQ1MTggUGxhdHRlbiAgKDEwKSAgUGVyc29uZW4gd3VyZGVuIGF1c2dldyZhdW1sO2hsdCAz
-NTExOSBSb3NlbnRoYWwgICgxMCkgIFBlcnNvbmVuIHd1cmRlbiBhdXNnZXcmYXVtbDtobHQgS0xJ
-Q0tFTiBTSUUgSElFUiBVTSBERU4gUFJFSVMgWlUgU0VIRU4gDQoJCQkgIElmIHlvdSB3b3VsZCBs
-aWtlIHRvIG1vZGlmeSB5b3VyIGVtYWlsIHNldHRpbmdzIG9yIHVuc3Vic2NyaWJlICwgdmlzaXQN
-CgkJCSANCgkJCWhlcmUNCgkJCSAKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51
-eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1h
-bi9saXN0aW5mby9jb250YWluZXJz
+On 05/02/2016 05:54 AM, Serge E. Hallyn wrote:
+> On Tue, Apr 26, 2016 at 03:39:54PM -0700, Kees Cook wrote:
+>> On Tue, Apr 26, 2016 at 3:26 PM, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
+>>> Quoting Kees Cook (keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org):
+>>>> On Fri, Apr 22, 2016 at 10:26 AM,  <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> wrote:
+>>>>> From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+> ...
+>>>> This looks like userspace must knowingly be aware that it is in a
+>>>> namespace and to DTRT instead of it being translated by the kernel
+>>>> when setxattr is called under !init_user_ns?
+>>>
+>>> Yes - my libcap2 patch checks /proc/self/uid_map to decide that.  If that
+>>> shows you are in init_user_ns then it uses security.capability, otherwise
+>>> it uses security.nscapability.
+>>>
+>>> I've occasionally considered having the xattr code do the quiet
+>>> substitution if need be.
+>>>
+>>> In fact, much of this structure comes from when I was still trying to
+>>> do multiple values per xattr.  Given what we're doing here, we could
+>>> keep the xattr contents exactly the same, just changing the name.
+>>> So userspace could just get and set security.capability;  if you are
+>>> in a non-init user_ns, if security.capability is set then you cannot
+>>> set it;  if security.capability is not set, then the kernel writes
+>>> security.nscapability instead and returns success.
+>>>
+>>> I don't like magic, but this might be just straightforward enough
+>>> to not be offensive.  Thoughts?
+>>
+>> Yeah, I think it might be better to have the magic in this case, since
+>> it seems weird to just reject setxattr if a tool didn't realize it was
+>> in a namespace. I'm not sure -- it is also nice to have an explicit
+>> API here.
+>>
+>> I would defer to Eric or Michael on that. I keep going back and forth,
+>> though I suspect it's probably best to do what you already have
+>> (explicit API).
+> 
+> Michael, Eric, what do you think?  The choice we're making here is
+> whether we should
+> 
+> 1. Keep a nice simple separate pair of xattrs, the pre-existing
+> security.capability which can only be written from init_user_ns,
+> and the new (in this patch) security.nscapability which you can
+> write to any file where you are privileged wrt the file.
+> 
+> 2. Make security.capability somewhat 'magic' - if someone in a
+> non-initial user ns tries to write it and has privilege wrt the
+> file, then the kernel silently writes security.nscapability instead.
+> 
+> The biggest drawback of (1) would be any tar-like program trying
+> to restore a file which had security.capability, needing to know
+> to detect its userns and write the security.nscapability instead.
+> The drawback of (2) is ~\o/~ magic.
+
+I have only (minor) thoughts from the interface perspective.
+(1) Sounds the source of possibly unpleasant surprises.
+(2) Is a little surprising, but less so if it's well documented,
+and it saves us the surprises of (1). So, (2) sounds better.
+
+Cheers,
+
+Michael
+
+
+-- 
+Michael Kerrisk
+Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
+Linux/UNIX System Programming Training: http://man7.org/training/
