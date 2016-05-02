@@ -1,17 +1,12 @@
-From: Greg KH <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>
-Subject: Re: [PATCH 1/2] kernfs_path_from_node_locked: don't overwrite nlen
-Date: Mon, 2 May 2016 09:41:17 -0700
-Message-ID: <20160502164117.GA32449@kroah.com>
-References: <1460923472-29370-1-git-send-email-serge.hallyn@ubuntu.com>
-	<1460923472-29370-2-git-send-email-serge.hallyn@ubuntu.com>
-	<20160420194313.GA4775@htj.duckdns.org>
-	<20160502163256.GT7822@mtj.duckdns.org>
+From: =?utf-8?B?TGlkbA==?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
+Subject: =?utf-8?B?RXhjbHVzaXYgZsO8ciBMaWRsIEt1bmRlbiAtIDUwMOKCrCBHdXRzY2hlaW4gZsO8ciBTaWU=?=
+Date: 2 May 2016 10:55:19 -0700
+Message-ID: <20160502175524.2760F884@mail.linuxfoundation.org>
+Reply-To: =?utf-8?B?TGlkbA==?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20160502163256.GT7822-qYNAdHglDFBN0TnZuCh8vA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,35 +16,41 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, May 02, 2016 at 12:32:56PM -0400, Tejun Heo wrote:
-> On Wed, Apr 20, 2016 at 03:43:13PM -0400, Tejun Heo wrote:
-> > On Sun, Apr 17, 2016 at 03:04:31PM -0500, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org wrote:
-> > > From: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-> > > 
-> > > We've calculated @len to be the bytes we need for '/..' entries from
-> > > @kn_from to the common ancestor, and calculated @nlen to be the extra
-> > > bytes we need to get from the common ancestor to @kn_to.  We use them
-> > > as such at the end.  But in the loop copying the actual entries, we
-> > > overwrite @nlen.  Use a temporary variable for that instead.
-> > > 
-> > > Without this, the return length, when the buffer is large enough, is
-> > > wrong.  (When the buffer is NULL or too small, the returned value is
-> > > correct. The buffer contents are also correct.)
-> > > 
-> > > Interestingly, no callers of this function are affected by this as of
-> > > yet.  However the upcoming cgroup_show_path() will be.
-> > > 
-> > > Signed-off-by: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-> > 
-> > Acked-by: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-> > 
-> > Greg, can you please pick this one up for v4.6?
-> 
-> Looks like Greg missed this one.  Greg, I'll route this through
-> cgroup/for-4.6-fixes.
-
-Please do, sorry, it's not in my queue anymore :(
+RXhjbHVzaXYgZsO8ciBMaWRsIEt1bmRlbiAtIDUwMOKCrCBHdXRzY2hlaW4gZsO8ciBTaWUgSGFs
+bG8gIGNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcgDQoJCQkJCQkJCQkJCQkJ
+CQkJCQkJCQkNCgkJCQkJCQkJCQkJCQkJCQkJCQkJCSAsIGluIGRpZXNlbSBNb25hdCBmZWllcnQg
+TGlkbCBzZWluZW4gODUuIEdlYnVydHN0YWchIA0KCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQ0KCQkJ
+CQkJCQkJCQkJCQkJCQkJCQkJCQ0KCQkJCQkJCQkJCQkJQXVzIGRpZXNlbSBHcnVuZCBtJm91bWw7
+Y2h0ZW4gd2lyIGFsbGVuIEt1bmRlbiB2b24gTGlkbCBlaW5lIGJlc29uZGVyZSBHZWxlZ2VuaGVp
+dCBiaWV0ZW4gdW5kIHcmYXVtbDtobGVuIGplZGUgV29jaGUgMTAwIEt1bmRlbiBhdXMgdmVyc2No
+aWVkZW5lbiBkZXV0c2NoZW4gU3QmYXVtbDtkdGVuIGF1cy4gRGFzIGJlZGV1dGV0LCBkYXNzIDQw
+MCBLdW5kZW4gZWluZW4gdm9uIHZpZWxlbiBQcmVpc2VuIGVyaGFsdGVuIHdlcmRlbiwgZGVuIHdp
+ciB2ZXJsb3Nlbi4gSW4gZGllc2VyIFdvY2hlIHNpbmQgU2llIGFuIFJlaWhlISBIYXVwdHByZWlz
+ICZldXJvOyA1MDAsLSBHdXRzY2hlaW4gMi4gUHJlaXMgJmV1cm87IDE1MCwtIEd1dHNjaGVpbiAz
+LiBQcmVpcyAmZXVybzsgNTAsLSBHdXRzY2hlaW4gNC4gUHJlaXMgJmV1cm87IDUsLSBHdXRzY2hl
+aW4gSGVyemxpY2hlbiBHbCZ1dW1sO2Nrd3Vuc2NoICBjb250YWluZXJzQGxpc3RzLmxpbnV4LWZv
+dW5kYXRpb24ub3JnIA0KCQkJCQkJCQkJCQkJCQkJCQkJCQkJDQoJCQkJCQkJCQkJCQkJCQkJCQkJ
+CQkgLCBJaHJlIFBMWiB3dXJkZSBkaWVzZSBXb2NoZSBnZW1laW5zYW0gbWl0IDEwIGFuZGVyZW4g
+aW4gRGV1dHNjaGxhbmQgYXVzZ2V3JmF1bWw7aGx0LiAgR2ViZW4gU2llIElocmUgUExaIHVuZCBT
+dHJhJnN6bGlnO2UgYXVmIGRlciBmb2xnZW5kZW4gU2VpdGUgZWluIHVuZCBrb250cm9sbGllcmVu
+IFNpZSwgd2VsY2hlbiBQcmVpcyBTaWUgZ2V3b25uZW4gaGFiZW4uICBJaHJlIFBMWiBTaWUgdW5k
+ICAoMTApICBhbmRlcmUgUGVyc29uZW4gd3VyZGVuIGF1c2dldyZhdW1sO2hsdCBTSU5EIFNJRSBI
+RVVURSBERVIgR0wmVXVtbDtDS0xJQ0hFIEdFV0lOTkVSPyBISUVSIEtMSUNLRU4gMDI2ODEgQ2Fs
+bGVuYmVyZyAgKDgpICBQZXJzb25lbiB3dXJkZW4gYXVzZ2V3JmF1bWw7aGx0IDM4Njg1IExhbmdl
+bHNoZWltICAoMTEpICBQZXJzb25lbiB3dXJkZW4gYXVzZ2V3JmF1bWw7aGx0IDQwNzIzIEhpbGRl
+biAgKDYpICBQZXJzb25lbiB3dXJkZW4gYXVzZ2V3JmF1bWw7aGx0IDQwNTkzIEQmdXVtbDtzc2Vs
+ZG9yZiBVcmRlbmJhY2ggICgxMCkgIFBlcnNvbmVuIHd1cmRlbiBhdXNnZXcmYXVtbDtobHQgOTcw
+ODAgVyZ1dW1sO3J6YnVyZyAgKDEzKSAgUGVyc29uZW4gd3VyZGVuIGF1c2dldyZhdW1sO2hsdCA4
+MTU0MSBNJnV1bWw7bmNoZW4gICgxMCkgIFBlcnNvbmVuIHd1cmRlbiBhdXNnZXcmYXVtbDtobHQg
+MjczODYgSGVtc2ImdXVtbDtuZGUgICgxMikgIFBlcnNvbmVuIHd1cmRlbiBhdXNnZXcmYXVtbDto
+bHQgNTQ1MTggUGxhdHRlbiAgKDEwKSAgUGVyc29uZW4gd3VyZGVuIGF1c2dldyZhdW1sO2hsdCAz
+NTExOSBSb3NlbnRoYWwgICgxMCkgIFBlcnNvbmVuIHd1cmRlbiBhdXNnZXcmYXVtbDtobHQgS0xJ
+Q0tFTiBTSUUgSElFUiBVTSBERU4gUFJFSVMgWlUgU0VIRU4gDQoJCQkgIElmIHlvdSB3b3VsZCBs
+aWtlIHRvIG1vZGlmeSB5b3VyIGVtYWlsIHNldHRpbmdzIG9yIHVuc3Vic2NyaWJlICwgdmlzaXQN
+CgkJCSANCgkJCWhlcmUNCgkJCSAKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51
+eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1h
+bi9saXN0aW5mby9jb250YWluZXJz
