@@ -1,14 +1,16 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: bind mounting namespace inodes for unprivileged users
-Date: Wed, 04 May 2016 09:38:03 -0500
-Message-ID: <87oa8lc2ic.fsf@x220.int.ebiederm.org>
-References: <1462299656.16133.51.camel@HansenPartnership.com>
+Subject: Re: Unprivileged containers and co-ordinating user namespaces
+Date: Wed, 04 May 2016 10:02:45 -0500
+Message-ID: <87wpn9988a.fsf__49759.8085123629$1462374846$gmane$org@x220.int.ebiederm.org>
+References: <1461880928.2307.48.camel@HansenPartnership.com>
+	<20160428230045.GS22888@odin.tremily.us>
+	<1461944328.2311.10.camel@HansenPartnership.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1462299656.16133.51.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org> (James
-	Bottomley's message of "Tue, 03 May 2016 14:20:56 -0400")
+In-Reply-To: <1461944328.2311.10.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org> (James
+	Bottomley's message of "Fri, 29 Apr 2016 08:38:48 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,40 +21,47 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, util-linux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, util-linux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org> writes:
-
-> Right at the moment, unprivileged users cannot call mount --bind to
-> create a permanent copy of any of their namespaces.  This is annoying
-> because it means that for entry to long running containers you have to
-> spawn an undying process and use nsenter via the /proc/<pid>/ns files.
->
-> The first question is:  assuming we restrict it to bind mounting only
-> nsfs inodes, is there any reason an unprivileged user shouldn't be able
-> to bind a namespace they've created to a file they own in the initial
-> mount namespace?
-
-Own, have read/write and unlink privileges.
-
-My big concern would be the fact that a bind mount today makes a file
-immune from unlink.  So it would mess up rm -rf.
-
-That might not be worse than what a setuid fuse mount binary allows
-today.
-
-I wonder if there might is a way to setup a
-user namespace and mount namespace combination so users could manage
-mounts in their own login shells, just like is allowed in plan 9.
-Long term I think that would be more satisfactory.
-
-
-> So, does anyone have any strong (or even weak) opinions about this
-> before I start coding patches?
-
-The mount namespace is complex and getting it right is a pain in the
-rear.  So adding yet another path and piece in to the existing
-complexity makes me cringe a little.
-
-Eric
+SmFtZXMgQm90dG9tbGV5IDxKYW1lcy5Cb3R0b21sZXlASGFuc2VuUGFydG5lcnNoaXAuY29tPiB3
+cml0ZXM6Cgo+IE9uIFRodSwgMjAxNi0wNC0yOCBhdCAxNjowMCAtMDcwMCwgVy4gVHJldm9yIEtp
+bmcgd3JvdGU6Cj4+IE9uIFRodSwgQXByIDI4LCAyMDE2IGF0IDAzOjAyOjA4UE0gLTA3MDAsIEph
+bWVzIEJvdHRvbWxleSB3cm90ZToKPj4gPiAvZXRjL3VzZXJuYW1lc3BhY2VzCj4+ID4gCj4+ID4g
+YW5kIHRoZSBmb3JtYXQgYmUgOjo6Cj4+ID4gCj4+ID4g4oCmCj4+ID4gCj4+ID4gSWYgdGhpcyBz
+b3VuZHMgT0sgdG8gcGVvcGxlLCBJIGNhbiBjb2RlIHVwIGEgdXRpbGl0eSB0aGF0IGRvZXMgdGhp
+cywKPj4gPiB3aGljaCBzaG91bGQgcHJvYmFibHkgYmVsb25nIGluIHV0aWwtbGludXguCj4+IAo+
+PiBUaGlzIHNvdW5kcyBhIGxvdCBsaWtlIHNoYWRvdydzIG5ld3VpZG1hcCBhbmQgbmV3Z2lkbWFw
+IFsxLDIsM10uCj4+IAo+PiBDaGVlcnMsCj4+IFRyZXZvcgo+PiAKPj4gWzFdOiBodHRwczovL2dp
+dGh1Yi5jb20vc2hhZG93LW1haW50L3NoYWRvdy9jb21taXQvNjczYzJhNmY5YWE2YzY5NTg4ZjRj
+MWJlMDg1ODliOGQzNDc1YTUyMAo+PiBbMl06IGh0dHA6Ly9tYW43Lm9yZy9saW51eC9tYW4tcGFn
+ZXMvbWFuMS9uZXd1aWRtYXAuMS5odG1sCj4+IFszXTogaHR0cDovL21hbjcub3JnL2xpbnV4L21h
+bi1wYWdlcy9tYW41L3N1YnVpZC41Lmh0bWwKPgo+IEkgdGhpbmsgdGhhdCBtb3N0bHkgd29ya3Mu
+ICBOby1vbmUncyBwYWNrYWdpbmcgaXQgeWV0LCB3aGljaCBpcyB3aHkgSQo+IGRpZG4ndCBub3Rp
+Y2UuICBJdCBhbHNvIGxvb2tzIGxpa2UgdGhlIGJ1aWxkIGRlcGVuZGVuY2llcyBoYXZlIHZhc3Rs
+eQo+IGV4cGFuZGVkLCBzbyBJIGNhbid0IGdldCBpdCB0byBidWlsZCBpbiB0aGUgYnVpbGQgc2Vy
+dmljZSB5ZXQuCgpCb3RoIEZlZG9yYSBhbmQgVWJ1bnR1IHNob3VsZCBiZSBwYWNrYWdpbmcgaXQu
+ICBGdXJ0aGVyIERvY2tlciBzaG91bGQKYWxyZWFkeSBiZSB1c2luZyB0aGVzZSBmaWxlcy4KCj4g
+SXQgbG9va3MgbGlrZSB0aGUgb25seSBhZGRpdGlvbiBpdCBuZWVkcyBpcyB0aGUgc2V0Z3JvdXBz
+IGZsYWcgZm9yCj4gbmV3Z2lkbWFwLCB3aGljaCB0aGUgc2VjdXJpdHkgcGVvcGxlIHdpbGwgbmVl
+ZCwgc28gSSBjYW4gcGF0Y2ggdGhhdC4gCj4gIFBsdXMgaXQncyB0cnlpbmcgdG8gaW5zdGFsbCBu
+ZXdnaWRtYXAvbmV3dWlkbWFwIGFzIHNldHVpZCByb290IHJhdGhlcgo+IHRoYW4gY2FwX3NldHVp
+ZC9jYXBfc2V0Z2lkLCBidXQgdGhhdCdzIGZpeGFibGUgaW4gdGhlIHNwZWMgZmlsZS4KCkkgcmVh
+ZCB0aGUgcmVzdCBvZiB0aGlzIHRocmVhZCBhbmQgSSBkb24ndCB1bmRlcnN0YW5kIHRoZSBzZXRn
+cm91cHMgZmxhZwp0aGF0IHlvdSBkZXNpcmUuICBJdCBzb3VuZHMgbGlrZSBzb21lb25lIHdpdGgg
+YW4gaW5jb21wbGV0ZSBncmFzcCBvbiB0aGUKc2l0dXRhdGlvbiBiZWluZyBjYXV0aW91cy4KCkFz
+IGZhciBhcyBJIGNhbiB0ZWxsIHRoZSB1c2UgY2FzZXMgZm9yIGNvbnRhaW5lcnMgbm90IHN1cHBv
+cnRpbmcKc2V0Z3JvdXBzIGlzIHZlcnkgbGltaXRlZC4gIEJhc2ljYWxseSBqdXN0IHVzaW5nIHVz
+ZXIgbmFtZXNwYWNlcyB0bwpkcm9wIHByaXZpbGVnZXMsIGFuZCBtYXBwaW5nIHRoZSBleGlzdGlu
+ZyB1aWRzIGFuZCBnaWRzIHRvIDAuCgpJIGRvbid0IHRoaW5rIGl0IGFjdHVhbGx5IG1ha2VzIHNl
+bnNlIHRvIGhhdmUgYSBrbm9iLiAgRnJvbSBhIHByYWN0aWNhbApzdGFuZHBvaW50IGVudGVyaW5n
+IGFueSBzdWJvcmRpbmF0ZSBpZHMgaW50byB0aGUgc3ViZ2lkIGZpbGUgZm9yIGEgdXNlcgppcyBh
+IHBlcm1pc3Npb24gdG8gdXNlIGdyb3VwcyBpbiBzdWNoIGEgd2F5IHRoYXQgY2FuIG5vdCB1c2Ug
+dGhlbSBhcyBhCm5lZ2F0aXZlIGFjbCAoYmVjYXVzZSB3ZSBhbGxvdyB0aGVtIHRvIGJlIGRyb3Bw
+ZWQpLgoKQ2VydGFpbmx5IGl0IGhhcyBiZWVuIHRoYXQgd2F5IGZvciBxdWl0ZSBhIHdoaWxlIG5v
+dy4KCkV4Y2VwdCBmb3IgdGhlIG5lZ2F0aXZlIGFjbCBhc3BlY3QgdGhlcmUgYXJlIG5vIGlzc3Vl
+cyB3aXRoIGRyb3BwaW5nCmdyb3VwcywgYXMgc2V0Z3JvdXBzIHdpbGwgbGltaXQgeW91IHRvIHRo
+ZSBncm91cHMgYWxsb3dlZCBpbiB5b3VyIHVzZXIKbmFtZXNwYWNlLgoKRXJpYwoKX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5n
+IGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3Rz
+LmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
