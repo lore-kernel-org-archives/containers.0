@@ -1,16 +1,17 @@
 From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
 Subject: Re: Unprivileged containers and co-ordinating user namespaces
-Date: Wed, 04 May 2016 14:17:56 -0400
-Message-ID: <1462385876.14310.90.camel__11816.8083754883$1462385901$gmane$org@HansenPartnership.com>
+Date: Wed, 04 May 2016 14:21:33 -0400
+Message-ID: <1462386093.14310.93.camel__2853.46618989042$1462386112$gmane$org@HansenPartnership.com>
 References: <1461880928.2307.48.camel@HansenPartnership.com>
 	<20160428230045.GS22888@odin.tremily.us>
 	<1461944328.2311.10.camel@HansenPartnership.com>
 	<87wpn9988a.fsf@x220.int.ebiederm.org>
+	<1462385876.14310.90.camel@HansenPartnership.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87wpn9988a.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <1462385876.14310.90.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,71 +25,42 @@ To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, systemd-devel-PD4FTy7X32lNgt0PjOBp9y5qC8QIuHrW@public.gmane.org, util-linux-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gV2VkLCAyMDE2LTA1LTA0IGF0IDEwOjAyIC0wNTAwLCBFcmljIFcuIEJpZWRlcm1hbiB3cm90
-ZToKPiBKYW1lcyBCb3R0b21sZXkgPEphbWVzLkJvdHRvbWxleUBIYW5zZW5QYXJ0bmVyc2hpcC5j
-b20+IHdyaXRlczoKPiAKPiA+IE9uIFRodSwgMjAxNi0wNC0yOCBhdCAxNjowMCAtMDcwMCwgVy4g
-VHJldm9yIEtpbmcgd3JvdGU6Cj4gPiA+IE9uIFRodSwgQXByIDI4LCAyMDE2IGF0IDAzOjAyOjA4
-UE0gLTA3MDAsIEphbWVzIEJvdHRvbWxleSB3cm90ZToKPiA+ID4gPiAvZXRjL3VzZXJuYW1lc3Bh
-Y2VzCj4gPiA+ID4gCj4gPiA+ID4gYW5kIHRoZSBmb3JtYXQgYmUgOjo6Cj4gPiA+ID4gCj4gPiA+
-ID4g4oCmCj4gPiA+ID4gCj4gPiA+ID4gSWYgdGhpcyBzb3VuZHMgT0sgdG8gcGVvcGxlLCBJIGNh
-biBjb2RlIHVwIGEgdXRpbGl0eSB0aGF0IGRvZXMgCj4gPiA+ID4gdGhpcywgd2hpY2ggc2hvdWxk
-IHByb2JhYmx5IGJlbG9uZyBpbiB1dGlsLWxpbnV4Lgo+ID4gPiAKPiA+ID4gVGhpcyBzb3VuZHMg
-YSBsb3QgbGlrZSBzaGFkb3cncyBuZXd1aWRtYXAgYW5kIG5ld2dpZG1hcCBbMSwyLDNdLgo+ID4g
-PiAKPiA+ID4gQ2hlZXJzLAo+ID4gPiBUcmV2b3IKPiA+ID4gCj4gPiA+IFsxXTogaHR0cHM6Ly9n
-aXRodWIuY29tL3NoYWRvdy1tYWludC9zaGFkb3cvY29tbWl0LzY3M2MyYTZmOWFhNmM2Cj4gPiA+
-IDk1ODhmNGMxYmUwODU4OWI4ZDM0NzVhNTIwCj4gPiA+IFsyXTogaHR0cDovL21hbjcub3JnL2xp
-bnV4L21hbi1wYWdlcy9tYW4xL25ld3VpZG1hcC4xLmh0bWwKPiA+ID4gWzNdOiBodHRwOi8vbWFu
-Ny5vcmcvbGludXgvbWFuLXBhZ2VzL21hbjUvc3VidWlkLjUuaHRtbAo+ID4gCj4gPiBJIHRoaW5r
-IHRoYXQgbW9zdGx5IHdvcmtzLiAgTm8tb25lJ3MgcGFja2FnaW5nIGl0IHlldCwgd2hpY2ggaXMg
-d2h5IAo+ID4gSSBkaWRuJ3Qgbm90aWNlLiAgSXQgYWxzbyBsb29rcyBsaWtlIHRoZSBidWlsZCBk
-ZXBlbmRlbmNpZXMgaGF2ZQo+ID4gdmFzdGx5IGV4cGFuZGVkLCBzbyBJIGNhbid0IGdldCBpdCB0
-byBidWlsZCBpbiB0aGUgYnVpbGQgc2VydmljZQo+ID4geWV0Lgo+IAo+IEJvdGggRmVkb3JhIGFu
-ZCBVYnVudHUgc2hvdWxkIGJlIHBhY2thZ2luZyBpdC4gIEZ1cnRoZXIgRG9ja2VyIHNob3VsZAo+
-IGFscmVhZHkgYmUgdXNpbmcgdGhlc2UgZmlsZXMuCj4gCj4gPiBJdCBsb29rcyBsaWtlIHRoZSBv
-bmx5IGFkZGl0aW9uIGl0IG5lZWRzIGlzIHRoZSBzZXRncm91cHMgZmxhZyBmb3IKPiA+IG5ld2dp
-ZG1hcCwgd2hpY2ggdGhlIHNlY3VyaXR5IHBlb3BsZSB3aWxsIG5lZWQsIHNvIEkgY2FuIHBhdGNo
-IAo+ID4gdGhhdC4gIFBsdXMgaXQncyB0cnlpbmcgdG8gaW5zdGFsbCBuZXdnaWRtYXAvbmV3dWlk
-bWFwIGFzIHNldHVpZCAKPiA+IHJvb3QgcmF0aGVyIHRoYW4gY2FwX3NldHVpZC9jYXBfc2V0Z2lk
-LCBidXQgdGhhdCdzIGZpeGFibGUgaW4gdGhlIAo+ID4gc3BlYyBmaWxlLgo+IAo+IEkgcmVhZCB0
-aGUgcmVzdCBvZiB0aGlzIHRocmVhZCBhbmQgSSBkb24ndCB1bmRlcnN0YW5kIHRoZSBzZXRncm91
-cHMgCj4gZmxhZyB0aGF0IHlvdSBkZXNpcmUuICBJdCBzb3VuZHMgbGlrZSBzb21lb25lIHdpdGgg
-YW4gaW5jb21wbGV0ZSAKPiBncmFzcCBvbiB0aGUgc2l0dXRhdGlvbiBiZWluZyBjYXV0aW91cy4K
-PiAKPiBBcyBmYXIgYXMgSSBjYW4gdGVsbCB0aGUgdXNlIGNhc2VzIGZvciBjb250YWluZXJzIG5v
-dCBzdXBwb3J0aW5nCj4gc2V0Z3JvdXBzIGlzIHZlcnkgbGltaXRlZC4gIEJhc2ljYWxseSBqdXN0
-IHVzaW5nIHVzZXIgbmFtZXNwYWNlcyB0bwo+IGRyb3AgcHJpdmlsZWdlcywgYW5kIG1hcHBpbmcg
-dGhlIGV4aXN0aW5nIHVpZHMgYW5kIGdpZHMgdG8gMC4KPiAKPiBJIGRvbid0IHRoaW5rIGl0IGFj
-dHVhbGx5IG1ha2VzIHNlbnNlIHRvIGhhdmUgYSBrbm9iLiAgRnJvbSBhIAo+IHByYWN0aWNhbCBz
-dGFuZHBvaW50IGVudGVyaW5nIGFueSBzdWJvcmRpbmF0ZSBpZHMgaW50byB0aGUgc3ViZ2lkIAo+
-IGZpbGUgZm9yIGEgdXNlciBpcyBhIHBlcm1pc3Npb24gdG8gdXNlIGdyb3VwcyBpbiBzdWNoIGEg
-d2F5IHRoYXQgY2FuIAo+IG5vdCB1c2UgdGhlbSBhcyBhIG5lZ2F0aXZlIGFjbCAoYmVjYXVzZSB3
-ZSBhbGxvdyB0aGVtIHRvIGJlIGRyb3BwZWQpLgo+IAo+IENlcnRhaW5seSBpdCBoYXMgYmVlbiB0
-aGF0IHdheSBmb3IgcXVpdGUgYSB3aGlsZSBub3cuCgpJIGRvbid0IHF1aXRlIGdldCB0aGlzLiAg
-SWYgc2V0Z3JvdXBzIGlzIHNldCB0byBkZW55IGFuZCBJIGhhdmUgYSBzZXQKb2YgZ3JvdXAgbWFw
-cGluZ3MsIEkgc3RpbGwgY2FuJ3QgZ2V0IHJpZCBvZiB0aGUgbmVnYXRpdmUgYWNsIGdyb3VwLiAg
-SQpjYW4gbWFwIGl0IHRvIGEgZGlmZmVyZW50IGdpZCBpbnNpZGUgbXkgY29udGFpbmVyLCBvciBJ
-IGNhbiBub3QgbWFwIGl0CmF0IGFsbCwgYnV0IGluIGVpdGhlciBjYXNlIEkgc3RpbGwgY2FuJ3Qg
-Z2V0IGFjY2VzcyB0byBhbnl0aGluZyB3aXRoCnRoZSBuZWdhdGl2ZSBhY2wgZ3JvdXAgbWFya2Vy
-IGJlY2F1c2UgdGhlIGdyb3VwIHBlcm1pc3Npb24gY2hlY2tzCm9jY3VycyB3aXRoIHRoZSBrZ3Vp
-ZF90IHNldCB3aGljaCBpbmNsdWRlcyBteSBtYXBwZWQgb3IgdW5tYXBwZWQgZ3JvdXAuCiBUaGUg
-b25seSB3YXkgSSBjYW4gbG9zZSBpdCBpcyB0byBjYWxsIHN5c19zZXRncm91cHMoKS4KCkl0J3Mg
-YSBiaXQgdWdseSBiZWNhdXNlIEkgaGF2ZSB0byBlbnRlciB0aGUgY29udGFpbmVyIHdpdGggLS1w
-cmVzZXJ2ZQotY3JlZGVudGlhbHMgYW5kIEkgY2FuJ3Qgc3UgdG8gbXlzZWxmIGlmIEkgZW50ZXIg
-YXMgcm9vdCAoLVMgMCksIEkgaGF2ZQp0byByZS1lbnRlciBhcyBteXNlbGYgaW5zdGVhZCwgYnV0
-IGl0IHdvcmtzLgoKPiBFeGNlcHQgZm9yIHRoZSBuZWdhdGl2ZSBhY2wgYXNwZWN0IHRoZXJlIGFy
-ZSBubyBpc3N1ZXMgd2l0aCBkcm9wcGluZwo+IGdyb3VwcywgYXMgc2V0Z3JvdXBzIHdpbGwgbGlt
-aXQgeW91IHRvIHRoZSBncm91cHMgYWxsb3dlZCBpbiB5b3VyIAo+IHVzZXIgbmFtZXNwYWNlLgoK
-V2VsbCwgbm90d2l0aHN0YW5kaW5nIHRoZSBtZXJpdHMgb2YgbmVnYXRpdmUgYWNscywgd2hpY2gg
-SSBkb24ndCB3YW50CnRvIGRlYmF0ZSBiZWNhdXNlIEkgZG9uJ3QgdGhpbmsgdGhleSdyZSB0aGF0
-IHVzZWZ1bCwgdGhlIHVzZSBjYXNlIG1pZ2h0CmJlIHRoYXQgYSB1c2VyIHBvc3Nlc3NpbmcgYSBu
-ZWdhdGl2ZSBhY2wgc3RpbGwgd2FudHMgdG8gdXNlIGFuCmFyY2hpdGVjdHVyZSBlbXVsYXRpb24g
-Y29udGFpbmVyIGZvciBidWlsZGluZy4gIEluc3RhbGxpbmcgc3VjaCBhCmNvbnRhaW5lciByZXF1
-aXJlcyBiZWluZyBhYmxlIHRvIHNldCBhIHNldCBvZiBncm91cHMgYW5kIHVpZHMgKHJlcXVpcmVk
-CmJ5IHRoZSBpbnN0YWxsZXIpLCBidXQgaXQgZG9lc24ndCByZXF1aXJlIHRoZSBzeXNfc2V0Z3Jv
-dXBzKCkgc3lzdGVtCmNhbGwsIHNvIHRoZXkgY291bGQgcmVhc29uYWJseSBiZSBnaXZlbiB0aGUg
-YWJpbGl0eSB0byBzZXQgb25lIHVwIHdpdGgKdGhlIG5vc2V0Z3JvdXBzIGZsYWcgYW5kIGEgcmFu
-Z2Ugb2YgZ2lkcyBhbGxvY2F0ZWQgaW4gc3ViZ2lkIHRvIGVuc3VyZQp0aGV5IHN0aWxsIGNhbid0
-IGdldCBhY2Nlc3MgdG8gcmVzb3VyY2VzIGRlbmllZCBieSB0aGUgbmVnYXRpdmUgYWNsCmdyb3Vw
-LgoKSmFtZXMKCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-CkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlv
-bi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8v
-Y29udGFpbmVycw==
+On Wed, 2016-05-04 at 14:17 -0400, James Bottomley wrote:
+> > Certainly it has been that way for quite a while now.
+> 
+> I don't quite get this.  If setgroups is set to deny and I have a set
+> of group mappings, I still can't get rid of the negative acl group. 
+>  I can map it to a different gid inside my container, or I can not 
+> map  it at all, but in either case I still can't get access to 
+> anything with the negative acl group marker because the group 
+> permission checks occurs with the kguid_t set which includes my 
+> mapped or unmapped group.  The only way I can lose it is to call
+> sys_setgroups().
+
+Sorry, this next bit should be at the end of the email (I was playing
+and typing at the same time):
+
+> It's a bit ugly because I have to enter the container with --preserve
+> -credentials and I can't su to myself if I enter as root (-S 0), I 
+> have to re-enter as myself instead, but it works.
+> 
+> > Except for the negative acl aspect there are no issues with 
+> > dropping groups, as setgroups will limit you to the groups allowed 
+> > in your user namespace.
+> 
+> Well, notwithstanding the merits of negative acls, which I don't want
+> to debate because I don't think they're that useful, the use case 
+> might be that a user possessing a negative acl still wants to use an
+> architecture emulation container for building.  Installing such a
+> container requires being able to set a set of groups and uids 
+> (required by the installer), but it doesn't require the 
+> sys_setgroups() system call, so they could reasonably be given the 
+> ability to set one up with the nosetgroups flag and a range of gids 
+> allocated in subgid to ensure they still can't get access to 
+> resources denied by the negative acl group.
+
+It's a bit ugly because I have to enter the container with --preserve
+-credentials and I can't su to myself if I enter as root (-S 0), I have
+to re-enter as myself instead, but it works.
+
+James
