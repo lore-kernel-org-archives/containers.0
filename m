@@ -1,21 +1,12 @@
-From: Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>
-Subject: Re: [PATCH 1/1] simplified security.nscapability xattr
-Date: Sun, 8 May 2016 01:10:12 +0200
-Message-ID: <20160507231012.GA11076@pc.thejh.net>
-References: <1461345993-17526-1-git-send-email-serge.hallyn@ubuntu.com>
-	<1461345993-17526-2-git-send-email-serge.hallyn@ubuntu.com>
-	<CAGXu5jKFNQs8oxq+yD6_Q8HcNyf+GouSHFzkxT9u9BkK=ZLQ7Q@mail.gmail.com>
-	<20160426222627.GA19307@mail.hallyn.com>
-	<CAGXu5jJbmSKst_RiM84-7OaX=2XettzpTh34uFFoevvoPRO76Q@mail.gmail.com>
-	<20160502035452.GA31837@mail.hallyn.com>
-	<87h9egp2oq.fsf@x220.int.ebiederm.org>
-	<CALQRfL7mfpyudWs4Z8W5Zi8CTG-9O0OvrCnRU7pk0MXtsLBd0A@mail.gmail.com>
-	<20160503051921.GA31551@mail.hallyn.com>
-	<87bn4nhejj.fsf@x220.int.ebiederm.org>
+From: "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] mountinfo: implement show_path for kernfs and cgroup
+Date: Mon, 9 May 2016 09:59:55 -0500
+Message-ID: <20160509145955.GA12316__46866.2519161173$1462806031$gmane$org@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============7338456091538793204=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87bn4nhejj.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,95 +16,301 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "Andrew G. Morgan" <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, hannes-druUgvl0LCNAfugRpC6u6w@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Patch summary:
 
---===============7338456091538793204==
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="KsGdsel6WgEHnImy"
-Content-Disposition: inline
+When showing a cgroupfs entry in mountinfo, show the path of the mount
+root dentry relative to the reader's cgroup namespace root.
 
+Short explanation (courtesy of mkerrisk):
 
---KsGdsel6WgEHnImy
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+If we create a new cgroup namespace, then we want both /proc/self/cgroup
+and /proc/self/mountinfo to show cgroup paths that are correctly
+virtualized with respect to the cgroup mount point.  Previous to this
+patch, /proc/self/cgroup shows the right info, but /proc/self/mountinfo
+does not.
 
-On Tue, May 03, 2016 at 12:54:40AM -0500, Eric W. Biederman wrote:
-> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
->=20
-> > Quoting Andrew G. Morgan (morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org):
-> >>=20
-> >> I guess I'm confused how we have strayed so far that this isn't an obv=
-ious
-> >> requirement. Uid=3D0 as being the root of privilege was the basic prob=
-lem
-> >> that capabilities were designed to change.
-> >
-> > The task executing the file can be any uid mapped into the namespace.  =
-The
-> > file only has to be owned by the root of the user_ns.  Which I agree is
-> > unfortunate.  We can work around it by putting the root uid into the xa=
-ttr
-> > itself (which still isn't orthogonal but allows the file to at least by
-> > owned by non-root), but the problem then is that a task needs to know i=
-ts
-> > global root k_uid just to write the xattr.
->=20
-> The root kuid is just make_kuids(user_ns, 0) so it is easy to find.
->=20
-> It might be a hair better to use the userns->owner instead of the root
-> uid.  That would allow user namespaces without a mapped root to still
-> use file capabilities.
+Long version:
 
-Please don't do that. A user might want to create multiple containers with
-isolated security properties, and in that case, it would be bad if binaries
-that are capable in one container are also automatically valid in the user's
-other containers.
-Also, this would mean that in an owner!=3Droot scenario, container root can=
-'t
-setcap executables and needs to ask the administrator of the surrounding sy=
-stem
-to do it.
-(Of course, this could be worked around using a dummy userns layer between =
-the
-init ns and the container, but I don't like seeing new reasons for such a h=
-ack.)
+When a uid 0 task which is in freezer cgroup /a/b, unshares a new cgroup
+namespace, and then mounts a new instance of the freezer cgroup, the new
+mount will be rooted at /a/b.  The root dentry field of the mountinfo
+entry will show '/a/b'.
 
---KsGdsel6WgEHnImy
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+ cat > /tmp/do1 << EOF
+ mount -t cgroup -o freezer freezer /mnt
+ grep freezer /proc/self/mountinfo
+ EOF
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+ unshare -Gm  bash /tmp/do1
+ > 330 160 0:34 / /sys/fs/cgroup/freezer rw,nosuid,nodev,noexec,relatime - cgroup cgroup rw,freezer
+ > 355 133 0:34 /a/b /mnt rw,relatime - cgroup freezer rw,freezer
 
-iQIcBAEBAgAGBQJXLnXUAAoJED4KNFJOeCOo68MP/ipr/RvktHG1aRne99x1Urqc
-0fkutryX8S7ZBBF/rYlhjc9Mw/cSQNQ4h04SXXyKcenH1Iqx/gFZ7pwPyGLZABU/
-gmGGY6325LjTcWFuu/QwoQcMGxvtA7qmhFr/okSzNlP8zygxWNbMqX31GToxQJA3
-1LFSLehtzXtrEzH6eOX7Lb62kK9HodYbwywP2NYrQfgDFhsrR13h91TwsCmMPG1W
-dBqjq+R81tey66KN42fTOpgRlC6l8m0BEsTW5fgFnM/Qi6q1szprUpZYjiAg7BnM
-VaoTqCOPw84BaGHbG5LAi3X4vYjZzxDx1jqHjTnzMf0hWlJFhg6NuR6pcQk4tBfA
-BIjGZPYGD1IFsu6mt/OY++YxCbZCewiFdtrUSsW4EgpLEJ/d2FpYbYrI0CoVB+/w
-zHY8f5l2pgFwGm7Fy/d5gDop7KGjWotxrbPsDAhpRMgssrJU5Jl7Ysvacxwrx7TI
-Votx/g3chYKxSlLXucFMQd34sS6sSiH5qVB3MuDERnLMOJpNSIMBAB+5zGhvHc1O
-Wn77P8ToP3N4EiwXio1OOzg3XR7HkNLIdoixc8b+XfiFO9EAW59CTVA8rmnnKcl7
-337MiZ2m4b3d9brDDSY2w4tw7LjJMrER9q7px/t4xyLQzx60EOeflm2WwSeyYKw5
-7Jwu/qjCc+NnsKUAMCiP
-=p1ko
------END PGP SIGNATURE-----
+The task's freezer cgroup entry in /proc/self/cgroup will simply show
+'/':
 
---KsGdsel6WgEHnImy--
+ grep freezer /proc/self/cgroup
+ 9:freezer:/
 
---===============7338456091538793204==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+If instead the same task simply bind mounts the /a/b cgroup directory,
+the resulting mountinfo entry will again show /a/b for the dentry root.
+However in this case the task will find its own cgroup at /mnt/a/b,
+not at /mnt:
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============7338456091538793204==--
+ mount --bind /sys/fs/cgroup/freezer/a/b /mnt
+ 130 25 0:34 /a/b /mnt rw,nosuid,nodev,noexec,relatime shared:21 - cgroup cgroup rw,freezer
+
+In other words, there is no way for the task to know, based on what is
+in mountinfo, which cgroup directory is its own.
+
+Example (by mkerrisk):
+
+First, a little script to save some typing and verbiage:
+
+# cat cgroup_info.sh
+#!/bin/sh
+echo -e "\t/proc/self/cgroup:\t$(cat /proc/self/cgroup | grep freezer)"
+cat /proc/self/mountinfo | grep freezer |
+        awk '{print "\tmountinfo:\t\t" $4 "\t" $5}'
+#
+
+Create cgroup, place this shell into the cgroup, and look at the state
+of the /proc files:
+
+# mkdir -p /sys/fs/cgroup/freezer/a/b
+# echo $$ > /sys/fs/cgroup/freezer/a/b/cgroup.procs
+# echo $$
+2653
+# cat /sys/fs/cgroup/freezer/a/b/cgroup.procs
+2653                         # Our shell
+14254                        # cat(1)
+# ./cgroup_info.sh
+        /proc/self/cgroup:      10:freezer:/a/b
+        mountinfo:              /       /sys/fs/cgroup/freezer
+
+Create a shell in new cgroup and mount namespaces. The act of creating
+a new cgroup namespace causes the process's current cgroups directories
+to become its cgroup root directories. (Here, I'm using my own version
+of the "unshare" utility, which takes the same options as the util-linux
+version):
+
+# ~mtk/tlpi/code/ns/unshare -Cm bash
+
+Look at the state of the /proc files:
+
+# ./cgroup_info.sh
+        /proc/self/cgroup:      10:freezer:/
+        mountinfo:              /       /sys/fs/cgroup/freezer
+
+The third entry in /proc/self/cgroup (the pathname of the cgroup inside
+the hierarchy) is correctly virtualized w.r.t. the cgroup namespace, which
+is rooted at /a/b in the outer namespace.
+
+However, the info in /proc/self/mountinfo is not for this cgroup
+namespace, since we are seeing a duplicate of the mount from the
+old mount namespace, and the info there does not correspond to the
+new cgroup namespace. However, trying to create a new mount still
+doesn't show us the right information in mountinfo:
+
+# mount --make-rslave /               # Prevent our mount operations
+                                      # propagating to other mountns
+# mkdir -p /mnt/freezer               # Create a new mount point
+# umount /sys/fs/cgroup/freezer       # Discard old mount
+# mount -t cgroup -o freezer freezer /mnt/freezer/
+# ./cgroup_info.sh
+        /proc/self/cgroup:      7:freezer:/
+        mountinfo:              /a/b    /mnt/freezer
+
+The act of creating a new cgroup namespace caused the process's
+current freezer directory, "/a/b", to become its cgroup freezer root
+directory. In other words, the pathname directory of the directory
+within the newly mounted cgroup filesystem should be "/",
+but mountinfo wrongly shows us "/a/b". The consequence of this is
+that the process in the cgroup namespace cannot correctly construct
+the pathname of its cgroup root directory from the information in
+/proc/PID/mountinfo.
+
+With this patch, the dentry root field in mountinfo is shown relative
+to the reader's cgroup namespace.  So the same steps as above:
+
+# mkdir -p /sys/fs/cgroup/freezer/a/b
+# echo $$ > /sys/fs/cgroup/freezer/a/b/cgroup.procs
+# ./cgroup_info.sh
+        /proc/self/cgroup:      10:freezer:/a/b
+        mountinfo:              /       /sys/fs/cgroup/freezer
+# ~mtk/tlpi/code/ns/unshare -Cm bash
+# ./cgroup_info.sh
+        /proc/self/cgroup:      10:freezer:/
+        mountinfo:              /../..  /sys/fs/cgroup/freezer
+# mount --make-rslave /
+# mkdir -p /mnt/freezer
+# umount /sys/fs/cgroup/freezer
+# mount -t cgroup -o freezer freezer /mnt/freezer/
+# ./cgroup_info.sh
+        /proc/self/cgroup:      10:freezer:/
+        mountinfo:              /       /mnt/freezer
+
+# ls /mnt/freezer/
+cgroup.clone_children  freezer.parent_freezing  freezer.state      tasks
+cgroup.procs           freezer.self_freezing    notify_on_release
+# echo $$
+3164
+# cat /mnt/freezer/cgroup.procs
+2653                   # First shell that placed in this cgroup
+3164                   # Shell started by 'unshare'
+14197                  # cat(1)
+
+Signed-off-by: Serge Hallyn <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Tested-by: Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Acked-by: Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+ fs/kernfs/mount.c      | 14 +++++++++++
+ include/linux/kernfs.h |  2 ++
+ kernel/cgroup.c        | 63 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 79 insertions(+)
+
+diff --git a/fs/kernfs/mount.c b/fs/kernfs/mount.c
+index f73541f..3b78724 100644
+--- a/fs/kernfs/mount.c
++++ b/fs/kernfs/mount.c
+@@ -15,6 +15,7 @@
+ #include <linux/slab.h>
+ #include <linux/pagemap.h>
+ #include <linux/namei.h>
++#include <linux/seq_file.h>
+ 
+ #include "kernfs-internal.h"
+ 
+@@ -40,6 +41,18 @@ static int kernfs_sop_show_options(struct seq_file *sf, struct dentry *dentry)
+ 	return 0;
+ }
+ 
++static int kernfs_sop_show_path(struct seq_file *sf, struct dentry *dentry)
++{
++	struct kernfs_node *node = dentry->d_fsdata;
++	struct kernfs_root *root = kernfs_root(node);
++	struct kernfs_syscall_ops *scops = root->syscall_ops;
++
++	if (scops && scops->show_path)
++		return scops->show_path(sf, node, root);
++
++	return seq_dentry(sf, dentry, " \t\n\\");
++}
++
+ const struct super_operations kernfs_sops = {
+ 	.statfs		= simple_statfs,
+ 	.drop_inode	= generic_delete_inode,
+@@ -47,6 +60,7 @@ const struct super_operations kernfs_sops = {
+ 
+ 	.remount_fs	= kernfs_sop_remount_fs,
+ 	.show_options	= kernfs_sop_show_options,
++	.show_path	= kernfs_sop_show_path,
+ };
+ 
+ /**
+diff --git a/include/linux/kernfs.h b/include/linux/kernfs.h
+index c06c442..30f089e 100644
+--- a/include/linux/kernfs.h
++++ b/include/linux/kernfs.h
+@@ -152,6 +152,8 @@ struct kernfs_syscall_ops {
+ 	int (*rmdir)(struct kernfs_node *kn);
+ 	int (*rename)(struct kernfs_node *kn, struct kernfs_node *new_parent,
+ 		      const char *new_name);
++	int (*show_path)(struct seq_file *sf, struct kernfs_node *kn,
++			 struct kernfs_root *root);
+ };
+ 
+ struct kernfs_root {
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 909a7d3..afea39e 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1215,6 +1215,41 @@ static void cgroup_destroy_root(struct cgroup_root *root)
+ 	cgroup_free_root(root);
+ }
+ 
++/*
++ * look up cgroup associated with current task's cgroup namespace on the
++ * specified hierarchy
++ */
++static struct cgroup *
++current_cgns_cgroup_from_root(struct cgroup_root *root)
++{
++	struct cgroup *res = NULL;
++	struct css_set *cset;
++
++	lockdep_assert_held(&css_set_lock);
++
++	rcu_read_lock();
++
++	cset = current->nsproxy->cgroup_ns->root_cset;
++	if (cset == &init_css_set) {
++		res = &root->cgrp;
++	} else {
++		struct cgrp_cset_link *link;
++
++		list_for_each_entry(link, &cset->cgrp_links, cgrp_link) {
++			struct cgroup *c = link->cgrp;
++
++			if (c->root == root) {
++				res = c;
++				break;
++			}
++		}
++	}
++	rcu_read_unlock();
++
++	BUG_ON(!res);
++	return res;
++}
++
+ /* look up cgroup associated with given css_set on the specified hierarchy */
+ static struct cgroup *cset_cgroup_from_root(struct css_set *cset,
+ 					    struct cgroup_root *root)
+@@ -1593,6 +1628,33 @@ static int rebind_subsystems(struct cgroup_root *dst_root, u16 ss_mask)
+ 	return 0;
+ }
+ 
++static int cgroup_show_path(struct seq_file *sf, struct kernfs_node *kf_node,
++			    struct kernfs_root *kf_root)
++{
++	int len = 0, ret = 0;
++	char *buf = NULL;
++	struct cgroup_root *kf_cgroot = cgroup_root_from_kf(kf_root);
++	struct cgroup *ns_cgroup;
++
++	buf = kmalloc(PATH_MAX, GFP_KERNEL);
++	if (!buf)
++		return -ENOMEM;
++
++	spin_lock_bh(&css_set_lock);
++	ns_cgroup = current_cgns_cgroup_from_root(kf_cgroot);
++	len = kernfs_path_from_node(kf_node, ns_cgroup->kn, buf, PATH_MAX);
++	spin_unlock_bh(&css_set_lock);
++
++	if (len >= PATH_MAX)
++		len = -ERANGE;
++	else if (len > 0) {
++		seq_escape(sf, buf, " \t\n\\");
++		len = 0;
++	}
++	kfree(buf);
++	return len;
++}
++
+ static int cgroup_show_options(struct seq_file *seq,
+ 			       struct kernfs_root *kf_root)
+ {
+@@ -5433,6 +5495,7 @@ static struct kernfs_syscall_ops cgroup_kf_syscall_ops = {
+ 	.mkdir			= cgroup_mkdir,
+ 	.rmdir			= cgroup_rmdir,
+ 	.rename			= cgroup_rename,
++	.show_path		= cgroup_show_path,
+ };
+ 
+ static void __init cgroup_init_subsys(struct cgroup_subsys *ss, bool early)
+-- 
+2.7.4
