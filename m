@@ -1,10 +1,10 @@
-From: Brian <Brian-bJX1JL5K8jIFHQQy/6e8+GGXanvQGlWp@public.gmane.org>
-Subject: =?utf-8?B?VVJHRU5UIOKAkyB5b3VyIGFjY291bnQgZGV0YWlscw==?=
-Date: Wed, 11 May 2016 17:13:19 -0400
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@blobbingnews.info>
+From: Brian <Amanda-0QBbdyaCP6q9RC+f8J1Yzg@public.gmane.org>
+Subject: =?utf-8?B?WW91ciBwcml2YXRlIGludml0YXRpb24uLi4=?=
+Date: Fri, 13 May 2016 13:10:49 -0400
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@bullishnews.info>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,87 +18,28 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi [FIRST NAME]
-
-Your member account is about to be upgraded.
-
-=>> http://click.blobbingnews.info/index.php?id=7687801&a=41260&b=3387&c=166
-
-Check out this video for details:
-
-=>> http://click.blobbingnews.info/index.php?id=7687801&a=41260&b=3387&c=166
-
-Have fun earning money with your new account!
-
-Who would have thought?
-
-Brian
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Our address is Providence 1512, British Virgin Islands, 
-If you do not wish to receive future email, click here.
-http://click.blobbingnews.info/index.php?o=2&a=41260&b=3387&c=166
-(You can also send your request to Customer Care at the street address above.) 
+SeKAmXZlIGdvdCBzb21lIGdyZWF0IG5ld3MuLi4KCkkgaGFkIGEgbG9vb29uZyB0YWxrIHdpdGgg
+TWFyayBsYXN0IG5pZ2h04oCmCgpBbmQgYWZ0ZXIgY2FsbGluZyBpbiBhIGZldyBmYXZvcnMgZnJv
+bSBoaW0gYW5kIHNvbWUg4oCcZnJpZW5kbHnigJ0KYXJtLXR3aXN0aW5nLCBJIHdhcyBhYmxlIHRv
+IHNlY3VyZSBhIGZldyAoZnJlZSkgYWNjb3VudHMgZm9yCmhpcyBleGNsdXNpdmUgTWlkYXMgVG91
+Y2ggQXBwLgoKVGhlIGFwcCBoYXMgYWxyZWFkeSB0dXJuZWQgbW9yZSB0aGFuIDEwMCBvcmRpbmFy
+eSBmb2xrcwpmcm9tIGFsbCB3YWxrcyBvZiBsaWZlIGludG8gY2VydGlmaWVkIG1pbGxpb25haXJl
+cy4KCkhlcmXigJlzIHByb29mOgpodHRwOi8vY2xpY2suYnVsbGlzaG5ld3MuaW5mby9pbmRleC5w
+aHA/aWQ9NTM1NTI5JmE9NDEyNjAmYj0zNDMwJmM9MTY2CgpJdOKAmXMgbm90IGV2ZXJ5ZGF5IGEg
+d2luZG93IHRvIHRydWUgd2VhbHRoIG9wZW5zIHVwIGxpa2UgdGhpcywKc28gaWYgdGhlcmUgYXJl
+IHN0aWxsIHNwb3RzIGxlZnQgd2hlbiB5b3UgY2xpY2sgdGhpcyBsaW5rLCB5b3UKTVVTVCBqdW1w
+IG9uIGl0IGFzIGZhc3QgYXMgaHVtYW5seSBwb3NzaWJsZToKCmh0dHA6Ly9jbGljay5idWxsaXNo
+bmV3cy5pbmZvL2luZGV4LnBocD9pZD01MzU1MjkmYT00MTI2MCZiPTM0MzAmYz0xNjYKCk5PVEU6
+ClRoaXMgb3Bwb3J0dW5pdHkgd2lsbCBub3QgcHJlc2VudCBpdHNlbGYgdHdpY2UuIFNvIGZvciB5
+b3VyIG93bgphbmQgeW91ciBmYW1pbHnigJlzIHNha2UsIGRvIE5PVCBsZXQgaXQgcGFzcyB5b3Ug
+YnkuCmh0dHA6Ly9jbGljay5idWxsaXNobmV3cy5pbmZvL2luZGV4LnBocD9pZD01MzU1MjkmYT00
+MTI2MCZiPTM0MzAmYz0xNjYKCkFsbCB0aGUgYmVzdCwKQnJpYW4KCgoKCgoKCgoKCgoKCgoKCgoK
+CgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoK
+CgoKCk91ciBhZGRyZXNzIGlzIFByb3ZpZGVuY2UgMTUxMiwgQnJpdGlzaCBWaXJnaW4gSXNsYW5k
+cywgCklmIHlvdSBkbyBub3Qgd2lzaCB0byByZWNlaXZlIGZ1dHVyZSBlbWFpbCwgY2xpY2sgaGVy
+ZS4KaHR0cDovL2NsaWNrLmJ1bGxpc2huZXdzLmluZm8vaW5kZXgucGhwP289MiZhPTQxMjYwJmI9
+MzQzMCZjPTE2NgooWW91IGNhbiBhbHNvIHNlbmQgeW91ciByZXF1ZXN0IHRvIEN1c3RvbWVyIENh
+cmUgYXQgdGhlIHN0cmVldCBhZGRyZXNzIGFib3ZlLikgCiAgICAgICAgICAgICAgICAgICAgCl9f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMg
+bWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6
+Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
