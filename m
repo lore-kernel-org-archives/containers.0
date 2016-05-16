@@ -1,16 +1,11 @@
-From: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Subject: Re: [PATCH RFC 0/3] sched/fair: cpu time reserves for cgroups
-Date: Mon, 16 May 2016 14:26:45 +0200
-Message-ID: <20160516122645.GO3193__13139.2352087007$1463401646$gmane$org@twins.programming.kicks-ass.net>
-References: <146339085068.25295.7687045977863852568.stgit@buzz>
-	<20160516111849.GN3193@twins.programming.kicks-ass.net>
-	<5739BB7E.8010902@yandex-team.ru>
+From: Luke <Luke-A8p8K49wb4K9RC+f8J1Yzg@public.gmane.org>
+Subject: =?utf-8?B?WW91ciBwcml2YXRlIGludml0YXRpb24uLi4=?=
+Date: Mon, 16 May 2016 16:00:37 -0400
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@loggingnews.info>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <5739BB7E.8010902-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,26 +15,31 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Konstantin Khlebnikov <khlebnikov-XoJtRXgx1JseBXzfvpsJ4g@public.gmane.org>
-Cc: Tejun Heo <tj-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, May 16, 2016 at 03:22:22PM +0300, Konstantin Khlebnikov wrote:
-
-> >You forgot to explain why I should care about this.
->
-> As I told this works as low-limit or high-limit which allow to
-> control cpu time distribution without hard limits and throttling.
-
-That's what it does; I get that. However nothing tells me why I should
-care about it. IOW, its a solution without a problem, and I tend to
-ignore those -- saves a lot of time on my end.
-
-> Present quota/hard limit has well known problems when it throttle task
-> inside kernel where it holds mutexes. Also it's too strict and doesn't
-> allow utilization of unused cpu time.
-
-See; now you're starting to make sense. You cannot have a patch if you
-don't have a problem. And this series didn't have a problem to solve.
-
-As for the latter; that's a feature for many people I'm told.
+SeKAmXZlIGdvdCBzb21lIGdyZWF0IG5ld3MuLi4KCkkgaGFkIGEgbG9vb29uZyB0YWxrIHdpdGgg
+TWFyayBsYXN0IG5pZ2h04oCmCgpBbmQgYWZ0ZXIgY2FsbGluZyBpbiBhIGZldyBmYXZvcnMgZnJv
+bSBoaW0gYW5kIHNvbWUg4oCcZnJpZW5kbHnigJ0KYXJtLXR3aXN0aW5nLCBJIHdhcyBhYmxlIHRv
+IHNlY3VyZSBhIGZldyAoZnJlZSkgYWNjb3VudHMgZm9yCmhpcyBleGNsdXNpdmUgTWlkYXMgVG91
+Y2ggQXBwLgoKVGhlIGFwcCBoYXMgYWxyZWFkeSB0dXJuZWQgbW9yZSB0aGFuIDEwMCBvcmRpbmFy
+eSBmb2xrcwpmcm9tIGFsbCB3YWxrcyBvZiBsaWZlIGludG8gY2VydGlmaWVkIG1pbGxpb25haXJl
+cy4KCkhlcmXigJlzIHByb29mOgpodHRwOi8vY2xpY2subG9nZ2luZ25ld3MuaW5mby9pbmRleC5w
+aHA/aWQ9NzExMTQ4NCZhPTQxMjYwJmI9MzQ1MCZjPTE2NgoKSXTigJlzIG5vdCBldmVyeWRheSBh
+IHdpbmRvdyB0byB0cnVlIHdlYWx0aCBvcGVucyB1cCBsaWtlIHRoaXMsCnNvIGlmIHRoZXJlIGFy
+ZSBzdGlsbCBzcG90cyBsZWZ0IHdoZW4geW91IGNsaWNrIHRoaXMgbGluaywgeW91Ck1VU1QganVt
+cCBvbiBpdCBhcyBmYXN0IGFzIGh1bWFubHkgcG9zc2libGU6CgpodHRwOi8vY2xpY2subG9nZ2lu
+Z25ld3MuaW5mby9pbmRleC5waHA/aWQ9NzExMTQ4NCZhPTQxMjYwJmI9MzQ1MCZjPTE2NgoKTk9U
+RToKVGhpcyBvcHBvcnR1bml0eSB3aWxsIG5vdCBwcmVzZW50IGl0c2VsZiB0d2ljZS4gU28gZm9y
+IHlvdXIgb3duCmFuZCB5b3VyIGZhbWlseeKAmXMgc2FrZSwgZG8gTk9UIGxldCBpdCBwYXNzIHlv
+dSBieS4KaHR0cDovL2NsaWNrLmxvZ2dpbmduZXdzLmluZm8vaW5kZXgucGhwP2lkPTcxMTE0ODQm
+YT00MTI2MCZiPTM0NTAmYz0xNjYKCkFsbCB0aGUgYmVzdCwKTHVrZQoKCgoKCgoKCgoKCgoKCgoK
+CgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoK
+CgoKCgoKT3VyIGFkZHJlc3MgaXMgUHJvdmlkZW5jZSAxNTEyLCBCcml0aXNoIFZpcmdpbiBJc2xh
+bmRzLCAKSWYgeW91IGRvIG5vdCB3aXNoIHRvIHJlY2VpdmUgZnV0dXJlIGVtYWlsLCBjbGljayBo
+ZXJlLgpodHRwOi8vY2xpY2subG9nZ2luZ25ld3MuaW5mby9pbmRleC5waHA/bz0yJmE9NDEyNjAm
+Yj0zNDUwJmM9MTY2CihZb3UgY2FuIGFsc28gc2VuZCB5b3VyIHJlcXVlc3QgdG8gQ3VzdG9tZXIg
+Q2FyZSBhdCB0aGUgc3RyZWV0IGFkZHJlc3MgYWJvdmUuKSAKICAgICAgICAgICAgICAgICAgICAK
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVy
+cyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRw
+czovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
