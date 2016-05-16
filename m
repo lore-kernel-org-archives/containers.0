@@ -1,11 +1,23 @@
-From: Luke <Luke-A8p8K49wb4K9RC+f8J1Yzg@public.gmane.org>
-Subject: =?utf-8?B?WW91ciBwcml2YXRlIGludml0YXRpb24uLi4=?=
-Date: Mon, 16 May 2016 16:00:37 -0400
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@loggingnews.info>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/1] simplified security.nscapability xattr
+Date: Mon, 16 May 2016 16:15:23 -0500
+Message-ID: <20160516211523.GA5282__43502.1313991912$1463433343$gmane$org@mail.hallyn.com>
+References: <CAGXu5jKFNQs8oxq+yD6_Q8HcNyf+GouSHFzkxT9u9BkK=ZLQ7Q@mail.gmail.com>
+	<20160426222627.GA19307@mail.hallyn.com>
+	<CAGXu5jJbmSKst_RiM84-7OaX=2XettzpTh34uFFoevvoPRO76Q@mail.gmail.com>
+	<20160502035452.GA31837@mail.hallyn.com>
+	<87h9egp2oq.fsf@x220.int.ebiederm.org>
+	<CALQRfL7mfpyudWs4Z8W5Zi8CTG-9O0OvrCnRU7pk0MXtsLBd0A@mail.gmail.com>
+	<20160503051921.GA31551@mail.hallyn.com>
+	<87bn4nhejj.fsf@x220.int.ebiederm.org>
+	<20160507231012.GA11076@pc.thejh.net>
+	<20160511210221.GA24015@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20160511210221.GA24015-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,31 +27,67 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, "Andrew G. Morgan" <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-SeKAmXZlIGdvdCBzb21lIGdyZWF0IG5ld3MuLi4KCkkgaGFkIGEgbG9vb29uZyB0YWxrIHdpdGgg
-TWFyayBsYXN0IG5pZ2h04oCmCgpBbmQgYWZ0ZXIgY2FsbGluZyBpbiBhIGZldyBmYXZvcnMgZnJv
-bSBoaW0gYW5kIHNvbWUg4oCcZnJpZW5kbHnigJ0KYXJtLXR3aXN0aW5nLCBJIHdhcyBhYmxlIHRv
-IHNlY3VyZSBhIGZldyAoZnJlZSkgYWNjb3VudHMgZm9yCmhpcyBleGNsdXNpdmUgTWlkYXMgVG91
-Y2ggQXBwLgoKVGhlIGFwcCBoYXMgYWxyZWFkeSB0dXJuZWQgbW9yZSB0aGFuIDEwMCBvcmRpbmFy
-eSBmb2xrcwpmcm9tIGFsbCB3YWxrcyBvZiBsaWZlIGludG8gY2VydGlmaWVkIG1pbGxpb25haXJl
-cy4KCkhlcmXigJlzIHByb29mOgpodHRwOi8vY2xpY2subG9nZ2luZ25ld3MuaW5mby9pbmRleC5w
-aHA/aWQ9NzExMTQ4NCZhPTQxMjYwJmI9MzQ1MCZjPTE2NgoKSXTigJlzIG5vdCBldmVyeWRheSBh
-IHdpbmRvdyB0byB0cnVlIHdlYWx0aCBvcGVucyB1cCBsaWtlIHRoaXMsCnNvIGlmIHRoZXJlIGFy
-ZSBzdGlsbCBzcG90cyBsZWZ0IHdoZW4geW91IGNsaWNrIHRoaXMgbGluaywgeW91Ck1VU1QganVt
-cCBvbiBpdCBhcyBmYXN0IGFzIGh1bWFubHkgcG9zc2libGU6CgpodHRwOi8vY2xpY2subG9nZ2lu
-Z25ld3MuaW5mby9pbmRleC5waHA/aWQ9NzExMTQ4NCZhPTQxMjYwJmI9MzQ1MCZjPTE2NgoKTk9U
-RToKVGhpcyBvcHBvcnR1bml0eSB3aWxsIG5vdCBwcmVzZW50IGl0c2VsZiB0d2ljZS4gU28gZm9y
-IHlvdXIgb3duCmFuZCB5b3VyIGZhbWlseeKAmXMgc2FrZSwgZG8gTk9UIGxldCBpdCBwYXNzIHlv
-dSBieS4KaHR0cDovL2NsaWNrLmxvZ2dpbmduZXdzLmluZm8vaW5kZXgucGhwP2lkPTcxMTE0ODQm
-YT00MTI2MCZiPTM0NTAmYz0xNjYKCkFsbCB0aGUgYmVzdCwKTHVrZQoKCgoKCgoKCgoKCgoKCgoK
-CgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoK
-CgoKCgoKT3VyIGFkZHJlc3MgaXMgUHJvdmlkZW5jZSAxNTEyLCBCcml0aXNoIFZpcmdpbiBJc2xh
-bmRzLCAKSWYgeW91IGRvIG5vdCB3aXNoIHRvIHJlY2VpdmUgZnV0dXJlIGVtYWlsLCBjbGljayBo
-ZXJlLgpodHRwOi8vY2xpY2subG9nZ2luZ25ld3MuaW5mby9pbmRleC5waHA/bz0yJmE9NDEyNjAm
-Yj0zNDUwJmM9MTY2CihZb3UgY2FuIGFsc28gc2VuZCB5b3VyIHJlcXVlc3QgdG8gQ3VzdG9tZXIg
-Q2FyZSBhdCB0aGUgc3RyZWV0IGFkZHJlc3MgYWJvdmUuKSAKICAgICAgICAgICAgICAgICAgICAK
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVy
-cyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRw
-czovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Quoting Serge E. Hallyn (serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org):
+...
+> There's a problem though.  The above suffices to prevent an unprivileged user
+> in a user_ns from unsharing a user_ns to write a file capability and exploit
+> that capability in the ns where he is unprivileged.  With one exception, which
+> is the case where the unprivileged user is mapped to the same kuid which
+> created the namespace.  So if uid 1000 on the host creates a namespace
+> where uid 1000 maps to 1000 in the namespace, then 1000 in the namespace
+> can create a new user_ns, write the xattr, and exploit it from the
+> parent namespace.  This is not an uncommon case.  I'm not sure what to do about
+> it.
+
+Ok I think I've convinced myself that requiring a kuid 0 in the container
+and storing that in the security.nscapability is best solution.  The DAC
+objection is imo not really valid - we don't have to give uid 0 in the
+container any special privilege, we just require that the ns have a uid 0
+mapping.  I have not been able to think of any other reliable way to verify
+that the writer of the capability is authorized to grant privilege to the
+file when executed by current.
+
+I'm going to proceed with another POC based on the following design:
+
+1. no new syscalls at the moment.  You can choose to set/query
+security.nscapability, but can also just set security.capability from
+a user_ns and have the kernel transparently set a security.nscapability
+entry for you.
+
+2. For now just a single security.nscapability entry, but in a format
+that turning it into an array will be a trivial change
+
+3. When running file foo which has a security.nscapability for kuid 100000,
+then any namespace where kuid 100000 is root - or which has an ancestor ns where
+that is the case - will run the file with the listed capabilities.
+
+4. When doing getxattr of security.capability from a user_ns, if there is a
+security.capability entry, that will be returned;  else if there is a valid
+security.nscapability for your ns, that will be returned.
+
+5. when doing a setxattr of security.capability from a user_ns, if there is
+a security.nscapability entry, you get EBUSY;  else a security.nscapability 
+with your root kuid will be written provided that (a) you are privileged
+over your namespace, (b) you are privileged over your root uid, (c) the
+file owner maps into your namespace.
+
+6. when doing a getxattr of security.nscapability, the entry will be shown
+with kuid mapped into your namespace or -1 if the uid does not map into
+your ns.
+
+7. when doing a setxattr of security.nscapability, if an entry exists, you
+get -EBUSY;  if you are not privileged over your ns, your root uid, and
+the file owner, then you get -EPERM;  the xattr includes a uid field, which
+must be either 0 or a value valid in your ns.  The value will be converted
+to a kuid and stored on disk.  (Seth, I'm not sure offhand how that should
+mesh with your patches, we can talk about it after I send the next patch,
+which I'm quite certain will handle it wrongly)
+
+8. If a security.capability exists, it will override any security.nscapability
+at execve() (so, inverse of my previous two patches).
+
+-serge
