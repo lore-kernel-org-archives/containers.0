@@ -1,23 +1,10 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/1] simplified security.nscapability xattr
-Date: Mon, 16 May 2016 16:48:04 -0500
-Message-ID: <20160516214804.GA5926@mail.hallyn.com>
-References: <20160426222627.GA19307@mail.hallyn.com>
-	<CAGXu5jJbmSKst_RiM84-7OaX=2XettzpTh34uFFoevvoPRO76Q@mail.gmail.com>
-	<20160502035452.GA31837@mail.hallyn.com>
-	<87h9egp2oq.fsf@x220.int.ebiederm.org>
-	<CALQRfL7mfpyudWs4Z8W5Zi8CTG-9O0OvrCnRU7pk0MXtsLBd0A@mail.gmail.com>
-	<20160503051921.GA31551@mail.hallyn.com>
-	<87bn4nhejj.fsf@x220.int.ebiederm.org>
-	<20160507231012.GA11076@pc.thejh.net>
-	<20160511210221.GA24015@mail.hallyn.com>
-	<20160516211523.GA5282@mail.hallyn.com>
+From: =?iso-8859-1?Q?St=E9phane?= Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: LXC, LXCFS and LXD 2.0.1 have been released!
+Date: Mon, 16 May 2016 18:09:05 -0400
+Message-ID: <20160516220905.GB12046__4119.85393516279$1463437069$gmane$org@dakara>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: multipart/mixed; boundary="===============3892557598765366602=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20160516211523.GA5282-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,97 +14,75 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, "Andrew G. Morgan" <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, lxc-users-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, May 16, 2016 at 04:15:23PM -0500, Serge E. Hallyn wrote:
-> Quoting Serge E. Hallyn (serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org):
-> ...
-> > There's a problem though.  The above suffices to prevent an unprivilege=
-d user
-> > in a user_ns from unsharing a user_ns to write a file capability and ex=
-ploit
-> > that capability in the ns where he is unprivileged.  With one exception=
-, which
-> > is the case where the unprivileged user is mapped to the same kuid which
-> > created the namespace.  So if uid 1000 on the host creates a namespace
-> > where uid 1000 maps to 1000 in the namespace, then 1000 in the namespace
-> > can create a new user_ns, write the xattr, and exploit it from the
-> > parent namespace.  This is not an uncommon case.  I'm not sure what to =
-do about
-> > it.
-> =
 
-> Ok I think I've convinced myself that requiring a kuid 0 in the container
-> and storing that in the security.nscapability is best solution.  The DAC
-> objection is imo not really valid - we don't have to give uid 0 in the
-> container any special privilege, we just require that the ns have a uid 0
-> mapping.  I have not been able to think of any other reliable way to veri=
-fy
-> that the writer of the capability is authorized to grant privilege to the
-> file when executed by current.
-> =
+--===============3892557598765366602==
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="WhfpMioaduB5tiZL"
+Content-Disposition: inline
 
-> I'm going to proceed with another POC based on the following design:
-> =
 
-> 1. no new syscalls at the moment.  You can choose to set/query
-> security.nscapability, but can also just set security.capability from
-> a user_ns and have the kernel transparently set a security.nscapability
-> entry for you.
-> =
+--WhfpMioaduB5tiZL
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-> 2. For now just a single security.nscapability entry, but in a format
-> that turning it into an array will be a trivial change
-> =
+Hello everyone,
 
-> 3. When running file foo which has a security.nscapability for kuid 10000=
-0,
-> then any namespace where kuid 100000 is root - or which has an ancestor n=
-s where
-> that is the case - will run the file with the listed capabilities.
-> =
+Today we're publishing the first bugfix release of all 3 LXC projects,
+LXC, LXCFS and LXD.
 
-> 4. When doing getxattr of security.capability from a user_ns, if there is=
- a
-> security.capability entry, that will be returned;  else if there is a val=
-id
-> security.nscapability for your ns, that will be returned.
-> =
+They each contain the accumulated bugfixes since we released our 2.0
+long term support releases a bit over a month ago.
 
-> 5. when doing a setxattr of security.capability from a user_ns, if there =
-is
-> a security.nscapability entry, you get EBUSY;  else a security.nscapabili=
-ty =
+Detailed changelog can be found at:
+ - https://linuxcontainers.org/lxc/news/
+ - https://linuxcontainers.org/lxcfs/news/
+ - https://linuxcontainers.org/lxd/news/
 
-> with your root kuid will be written provided that (a) you are privileged
-> over your namespace, (b) you are privileged over your root uid, (c) the
-> file owner maps into your namespace.
+As a reminder, the 2.0 series of all of those is supported for bugfix
+and security updates up until June 2021.
 
-St=E9phane pointed out this isn't quite right.  The EBUSY will happen if
-a security.nscapability is defined with a kuid over which the writer is
-not privileged - else it will overwrite.  It will also happen if
-security.capbility is set.
+Thanks to everyone who contributed to those projects and helped make
+this possible!
 
-> 6. when doing a getxattr of security.nscapability, the entry will be shown
-> with kuid mapped into your namespace or -1 if the uid does not map into
-> your ns.
-> =
 
-> 7. when doing a setxattr of security.nscapability, if an entry exists, you
-> get -EBUSY;  if you are not privileged over your ns, your root uid, and
-> the file owner, then you get -EPERM;  the xattr includes a uid field, whi=
-ch
-> must be either 0 or a value valid in your ns.  The value will be converted
-> to a kuid and stored on disk.  (Seth, I'm not sure offhand how that should
-> mesh with your patches, we can talk about it after I send the next patch,
-> which I'm quite certain will handle it wrongly)
-> =
+St=E9phane Graber
+On behalf of the LXC, LXCFS and LXD development teams
 
-> 8. If a security.capability exists, it will override any security.nscapab=
-ility
-> at execve() (so, inverse of my previous two patches).
-> =
+--WhfpMioaduB5tiZL
+Content-Type: application/pgp-signature; name="signature.asc"
 
-> -serge
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCgAGBQJXOkUBAAoJEMY4l01keS1n+RUP/AphibJ7eMDVva+azbI2s3XL
+JEEFsJOPivQUHr5UmcaglzvqPyh92mo2gZHQvvE677mvtDPQbO5LzHE6xda468Oo
+E796KssKZxuZIXnIQq0RTvJRY5KiseINlB7P3t7PLD9nnVEEF5eQUEuqOdj1Hjn5
+6HAWssI4DuChlRGx9Y6b2SLADM632gNeLrEKZFxVDK9hW6oTzBeGEOqCeMOrNzJG
+tLze5+TN+jwCfYvnAnPjZpOjrbRU8dXRjCj/jrkD/bjyRbkER+tVWB2yvDJ2UzH2
+xZU+Hi5Jtst7szV8Rum29W2z7dutFE3jxe4ED+tBfi5LCLrpskcGxzv53m0OzIbr
+opCpryS/w/Nm2PFhjRXzpuhWBX/WYXBRDPRnEscQaHpoCpfHOZSd/WbJZFvf30mm
+Sh58hAucDINQhnMjscahFSyC73y2HOr/nLIPA6qrT98sF7t1vR9cFU/jAn0b8aVk
+6FtMg0f6ateUy0x1Aj3v7vgrvP6qfYYr+QppGM7percOrKDFDUNftj6fiR54Yye2
+5aPsq2SHCScXGeWlDHDiruK+GcrNzEUlKhAs1O3Nsu3STo00CjI9HnbPV7JpBlcL
+jn80C2tcSvUylPfp6F5LIAennTlDnzH35aRYVFEj8LFqbTMmjiglNLAdcF+5vKJX
+uOaC4pWpLpW2QPtO+wcd
+=41sV
+-----END PGP SIGNATURE-----
+
+--WhfpMioaduB5tiZL--
+
+--===============3892557598765366602==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============3892557598765366602==--
