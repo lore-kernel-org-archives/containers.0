@@ -1,7 +1,8 @@
-From: Kevin <Paul-62Ar2rEmtbq9RC+f8J1Yzg@public.gmane.org>
-Subject: =?utf-8?B?IFBheW1lbnQgSGFzIEJlZW4gU2VudA==?=
-Date: Tue, 17 May 2016 11:36:17 -0400
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@mendingnews.info>
+From: "Robert" <info-1kvab3hEqBwXCZK2GYN5SA@public.gmane.org>
+Subject: Bitcoin
+Date: Wed, 18 May 2016 16:07:03 +0200
+Message-ID: <4888a8cddca91191f396c48b9a27c053@2kprogram.biz>
+Reply-To: info-1kvab3hEqBwXCZK2GYN5SA@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,78 +19,36 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Great news! 
+   [c1.gif] [c2.gif]
 
-Our systems show that you have qualified to start making commissions immediately: 
 
->> Private Login | Click Here Now 
-http://click.mendingnews.info/index.php?id=6776844&a=41260&b=3458&c=166
+[1]CoinMAMA
 
 
-All the best, 
+   coinamam-review.jpg
 
-Kevin
+[2]CoinMAMA
 
+The easiest way to take virtual currency. Take Bitcoins with your credit card
+or cash here! Register toCoinmama and get your Bitcoins today.
 
+No more  unsafe traders or problems with their transactions. From now on you
+can take your Bitcoins 100 % safe way.
 
+   CoinMama is revolution in bitcoin buying and it is first provider in
+   bitcoin network which allow you to take your bitcoins instantly.
 
+   [3]Learn More
 
+   [4]To stop receiving these emails please unsubscribe.
+   Type your Company Name, Address and Contact Details
+   [c3.gif] [c4.gif]
 
+   [open.php?M=10650&L=6&N=6&F=H&image=.jpg]
 
+References
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Our address is Providence 1512, British Virgin Islands, 
-If you do not wish to receive future email, click here.
-http://click.mendingnews.info/index.php?o=2&a=41260&b=3458&c=166
-(You can also send your request to Customer Care at the street address above.) 
+   1. http://2kprogram.biz/link.php?M=10650&N=6&L=3&F=H
+   2. http://2kprogram.biz/link.php?M=10650&N=6&L=3&F=H
+   3. http://2kprogram.biz/link.php?M=10650&N=6&L=3&F=H
+   4. http://2kprogram.biz/unsubscribe.php?M=10650&C=9199f518fcc55bb5aee17d4df68bc28a&L=6&N=6
