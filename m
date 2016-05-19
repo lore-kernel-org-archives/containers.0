@@ -1,10 +1,10 @@
-From: Sussan <Luke-8YjXmr18LWx+xPeBQ9Deuw@public.gmane.org>
-Subject: =?utf-8?B?IERpc2NvdmVyIGEgc2VjcmV0IHRvIGJlIGhhcHB5?=
-Date: Thu, 19 May 2016 11:41:31 -0400
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@seeingnews.info>
+From: Kevin <Brian-DgEaMqb5t5K9RC+f8J1Yzg@public.gmane.org>
+Subject: =?utf-8?B?TWFrZSBNb25leSB3aXRoIFBheSBQZXIgQ2xpY2sgQWRz?=
+Date: Thu, 19 May 2016 12:33:21 -0400
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@sealingnews.info>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,98 +18,22 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hands down the easiest way to make money online is here! No risk,no deposit to be made no credit card involved!
-
-More details here....http://click.seeingnews.info/index.php?id=2208819&a=41260&b=3504&c=166
-
-You have nothing to lose.. 10 minutes of carefully reading this can change your life!
-
-
-http://click.seeingnews.info/index.php?id=2208819&a=41260&b=3504&c=166
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Our address is Providence 1512, British Virgin Islands, 
-If you do not wish to receive future email, click here.
-http://click.seeingnews.info/index.php?o=2&a=41260&b=3504&c=166
-(You can also send your request to Customer Care at the street address above.) 
+VGhlcmUgYXJlIHBsZW50eSBvZiB3YXlzIHRvIG1ha2UgbW9uZXkgd2l0aCBza2lsbHMgYW5kIGlu
+dGVyZXN0cyB0aGF0IHlvdSBhbHJlYWR5IGhhdmUg4oCTIHlvdSBqdXN0IG5lZWQgdG8ga25vdyB3
+aGVyZSB0byBsb29rIQoKTm93IHlvdSBjYW4gZXhwbG9yZSB3YXlzIHRvIGVhcm4gZXh0cmEgbW9u
+ZXkgb24geW91ciBmcmVlIHRpbWUhIEhvdz8gTWF5YmUgeW91J3ZlIGhlYXJkIGFib3V0IFBQQyhw
+YXktcGVyLWNsaWNrKSwgaXQgaXMgdmVyeSBlYXN5ISAKCkVhcm4gbW9uZXkgZnJvbSB0aGUgY29t
+cG9ydCBvZiB5b3VyIGhvbWUhIFRoZXJlIGlzIG5vIG5lZWQgZm9yIGFueSBkZXBvc2l0IGFuZCB5
+b3Ugb25seSBuZWVkIDEwIG1pbnV0ZXMgYSBkYXkgdG8gcmVhZCB0aGUgZGV0YWlscyBpbiB0aGUg
+ZW1haWxzIHlvdSB3aWxsIHJlY2VpdmVzCgo9PT4gRm9yIG1vcmUgZGV0YWlscyBjbGljayBoZXJl
+PD09CgpodHRwOi8vY2xpY2suc2VhbGluZ25ld3MuaW5mby9pbmRleC5waHA/aWQ9OTA3ODEwNyZh
+PTQxMjYwJmI9MzUxMCZjPTE2NgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoK
+CgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgpPdXIgYWRk
+cmVzcyBpcyBQcm92aWRlbmNlIDE1MTIsIEJyaXRpc2ggVmlyZ2luIElzbGFuZHMsIApJZiB5b3Ug
+ZG8gbm90IHdpc2ggdG8gcmVjZWl2ZSBmdXR1cmUgZW1haWwsIGNsaWNrIGhlcmUuCmh0dHA6Ly9j
+bGljay5zZWFsaW5nbmV3cy5pbmZvL2luZGV4LnBocD9vPTImYT00MTI2MCZiPTM1MTAmYz0xNjYK
+KFlvdSBjYW4gYWxzbyBzZW5kIHlvdXIgcmVxdWVzdCB0byBDdXN0b21lciBDYXJlIGF0IHRoZSBz
+dHJlZXQgYWRkcmVzcyBhYm92ZS4pIApfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxp
+bnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWls
+bWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
