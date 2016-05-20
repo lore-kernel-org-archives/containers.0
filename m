@@ -1,11 +1,24 @@
-From: Paul <Danik-Igz0P+MD0Dh+xPeBQ9Deuw@public.gmane.org>
-Subject: =?utf-8?B?TWFrZSBNb25leSB3aXRoIFBheSBQZXIgQ2xpY2sgQWRz?=
-Date: Fri, 20 May 2016 00:07:44 -0400
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@ravishnews.info>
+From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH RFC] user-namespaced file capabilities - now with more
+	magic
+Date: Fri, 20 May 2016 07:19:10 -0400
+Message-ID: <1463743150.2465.100.camel@linux.vnet.ibm.com>
+References: <87h9egp2oq.fsf@x220.int.ebiederm.org>
+	<CALQRfL7mfpyudWs4Z8W5Zi8CTG-9O0OvrCnRU7pk0MXtsLBd0A@mail.gmail.com>
+	<20160503051921.GA31551@mail.hallyn.com>
+	<87bn4nhejj.fsf@x220.int.ebiederm.org>
+	<20160507231012.GA11076@pc.thejh.net>
+	<20160511210221.GA24015@mail.hallyn.com>
+	<20160516211523.GA5282@mail.hallyn.com>
+	<20160516214804.GA5926@mail.hallyn.com>
+	<20160518215752.GA9187@mail.hallyn.com>
+	<1463691236.2465.74.camel@linux.vnet.ibm.com>
+	<20160520034048.GA31216@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20160520034048.GA31216-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,25 +28,72 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric
+	W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, "Andrew G. Morgan" <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-VGhlcmUgYXJlIHBsZW50eSBvZiB3YXlzIHRvIG1ha2UgbW9uZXkgd2l0aCBza2lsbHMgYW5kIGlu
-dGVyZXN0cyB0aGF0IHlvdSBhbHJlYWR5IGhhdmUg4oCTIHlvdSBqdXN0IG5lZWQgdG8ga25vdyB3
-aGVyZSB0byBsb29rIQoKTm93IHlvdSBjYW4gZXhwbG9yZSB3YXlzIHRvIGVhcm4gZXh0cmEgbW9u
-ZXkgb24geW91ciBmcmVlIHRpbWUhIEhvdz8gTWF5YmUgeW91J3ZlIGhlYXJkIGFib3V0IFBQQyhw
-YXktcGVyLWNsaWNrKSwgaXQgaXMgdmVyeSBlYXN5ISAKCkVhcm4gbW9uZXkgZnJvbSB0aGUgY29t
-cG9ydCBvZiB5b3VyIGhvbWUhIFRoZXJlIGlzIG5vIG5lZWQgZm9yIGFueSBkZXBvc2l0IGFuZCB5
-b3Ugb25seSBuZWVkIDEwIG1pbnV0ZXMgYSBkYXkgdG8gcmVhZCB0aGUgZGV0YWlscyBpbiB0aGUg
-ZW1haWxzIHlvdSB3aWxsIHJlY2VpdmVzCgo9PT4gRm9yIG1vcmUgZGV0YWlscyBjbGljayBoZXJl
-PD09CgpodHRwOi8vY2xpY2sucmF2aXNobmV3cy5pbmZvL2luZGV4LnBocD9pZD0yMTQ3MDAxJmE9
-NDEyNjAmYj0zNTI3JmM9MTY2CgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoK
-CgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCk91ciBhZGRy
-ZXNzIGlzIFByb3ZpZGVuY2UgMTUxMiwgQnJpdGlzaCBWaXJnaW4gSXNsYW5kcywgCklmIHlvdSBk
-byBub3Qgd2lzaCB0byByZWNlaXZlIGZ1dHVyZSBlbWFpbCwgY2xpY2sgaGVyZS4KaHR0cDovL2Ns
-aWNrLnJhdmlzaG5ld3MuaW5mby9pbmRleC5waHA/bz0yJmE9NDEyNjAmYj0zNTI3JmM9MTY2CihZ
-b3UgY2FuIGFsc28gc2VuZCB5b3VyIHJlcXVlc3QgdG8gQ3VzdG9tZXIgQ2FyZSBhdCB0aGUgc3Ry
-ZWV0IGFkZHJlc3MgYWJvdmUuKSAKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51
-eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1h
-bi9saXN0aW5mby9jb250YWluZXJz
+On Thu, 2016-05-19 at 22:40 -0500, Serge E. Hallyn wrote:
+> Quoting Mimi Zohar (zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> > On Wed, 2016-05-18 at 16:57 -0500, Serge E. Hallyn wrote:
+
+> > > diff --git a/fs/xattr.c b/fs/xattr.c
+> > > index 4861322..5c0e7ae 100644
+> > > --- a/fs/xattr.c
+> > > +++ b/fs/xattr.c
+> > > @@ -94,11 +94,26 @@ int __vfs_setxattr_noperm(struct dentry *dentry, const char *name,
+> > >  {
+> > >  	struct inode *inode = dentry->d_inode;
+> > >  	int error = -EOPNOTSUPP;
+> > > +	void *wvalue = NULL;
+> > > +	size_t wsize = 0;
+> > >  	int issec = !strncmp(name, XATTR_SECURITY_PREFIX,
+> > >  				   XATTR_SECURITY_PREFIX_LEN);
+> > > 
+> > > -	if (issec)
+> > > +	if (issec) {
+> > >  		inode->i_flags &= ~S_NOSEC;
+> > > +		/* if root in a non-init user_ns tries to set
+> > > +		 * security.capability, write a security.nscapability
+> > > +		 * in its place */
+> > > +		if (!strcmp(name, "security.capability") &&
+> > > +				current_user_ns() != &init_user_ns) {
+> > > +			cap_setxattr_make_nscap(dentry, value, size, &wvalue, &wsize);
+> > > +			if (!wvalue)
+> > > +				return -EPERM;
+> > > +			value = wvalue;
+> > > +			size = wsize;
+> > > +			name = "security.nscapability";
+> > > +		}
+> > 
+> > The call to capable_wrt_inode_uidgid() is hidden behind
+> > cap_setxattr_make_nscap().  Does it make sense to call it here instead,
+> > before the security.capability test?  This would lay the foundation for
+> > doing something similar for IMA.
+> 
+> Might make sense to move that.  Though looking at it with fresh eyes I wonder
+> whether adding less code here at __vfs_setxattr_noperm(), i.e.
+> 
+> 		if (!cap_setxattr_makenscap(dentry, &value, &size, &name))
+> 			return -EPERM;
+> 
+> would be cleaner.
+
+Yes, it would be cleaner,  but I'm suggesting you do all the hard work
+making it generic.  Then the rest of us can follow your lead.  Its more
+likely that you'll get it right.  At a high level, it might look like:
+
+               /* Permit root in a non-init user_ns to modify the security
+                 * namespace xattr equivalents (eg. nscapability, ns_ima, etc). 
+                 */
+                if ((current_user_ns() != &init_user_ns) &&
+                        capable_wrt_inode_uidgid(inode, CAP_SETFCAP)) {
+
+			if  security..capability
+				call capability  /* set nscapability? */
+
+			else if security.ima 
+				call ima 	/* set ns_ima? */
+		}
+
+Mimi
