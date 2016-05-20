@@ -1,12 +1,9 @@
-From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH RFC] user-namespaced file capabilities - now with more
 	magic
-Date: Fri, 20 May 2016 15:09:04 -0400
-Message-ID: <1463771344.2763.58.camel@linux.vnet.ibm.com>
-References: <87h9egp2oq.fsf@x220.int.ebiederm.org>
-	<CALQRfL7mfpyudWs4Z8W5Zi8CTG-9O0OvrCnRU7pk0MXtsLBd0A@mail.gmail.com>
-	<20160503051921.GA31551@mail.hallyn.com>
-	<87bn4nhejj.fsf@x220.int.ebiederm.org>
+Date: Fri, 20 May 2016 14:26:07 -0500
+Message-ID: <20160520192607.GA11601@mail.hallyn.com>
+References: <87bn4nhejj.fsf@x220.int.ebiederm.org>
 	<20160507231012.GA11076@pc.thejh.net>
 	<20160511210221.GA24015@mail.hallyn.com>
 	<20160516211523.GA5282@mail.hallyn.com>
@@ -20,6 +17,7 @@ Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 In-Reply-To: <87mvnklh20.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -31,10 +29,10 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, "Andrew G. Morgan" <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Serge E. Hallyn" <serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, LSM <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "Andrew G. Morgan" <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 2016-05-20 at 13:28 -0500, Eric W. Biederman wrote:
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
 > Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
 > 
 > > On Thu, 2016-05-19 at 22:40 -0500, Serge E. Hallyn wrote:
@@ -105,36 +103,8 @@ On Fri, 2016-05-20 at 13:28 -0500, Eric W. Biederman wrote:
 > I don't understand the capability vs nscapability distinction.  It seems
 > to add complexity without benefit.
 
-Only real root can write security xattrs, which prevents root in a
-namespace from writing the included security xattrs in a tar package
-from being installed.  Nobody is suggesting changing this behavior.
-Serge's solution is to allow an equivalent xattr to be written.  For
-capabilities, it would be ns_capability.   Similarly, IMA would write
-security.ns_ima.  (I'm not sure about SELinux or Smack.)
+...  Well, yes, we could simply make a new version of security.capability
+xattr, and make rootid == 0 mean it was written by the init_user_ns.  Is
+that what you mean?
 
-> If I am in a nested user namespace and I try to write a capability on a
-> file and it has nscapability I can't be allowed to (as a more privileged
-> user namespace already wrote it).
-> 
-> Not rewriting an existing attribute seems to be the only benefit I can
-> see to have both a capability and a nscapability attribute vs having
-> a new version of the capability attribute.
-> 
-> Am I missing something here?
-
-Only real root in the namespace can write the equivalent security xattr.
-I'm hoping this can be done without having to modify userspace apps.  (I
-hope that answers your question.)
-
-> Mimi as for generalizing the code for handling IMA I expect it makes
-> sense to refactor the code to have shared library functions (or whatever
-> it takes to generalize the code) when you are ready to implement this
-> kind of IMA attribute.  That way in the first implementation we can
-> concentrate on getting the code clean and the sematics correct.
-> 
-> That alone seems to be taking a while.
-
-There should be a generic solution that works for security xattrs, not
-just capabilities.
-
-Mimi
+-serge
