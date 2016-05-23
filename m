@@ -1,12 +1,11 @@
-From: <giorchit-FE4wSJlJn3A@public.gmane.org>
-Subject: just a note
-Date: Mon, 23 May 2016 02:25:17 +0300
-Message-ID: <0000a7238212$8747c129$00c8eca0$@quipo.it>
+From: Nikolay Borisov <n.borisov.lkml-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH] userns: Allow init_user_ns to be used from non-gpl modules
+Date: Mon, 23 May 2016 15:00:08 +0300
+Message-ID: <1464004808-21214-1-git-send-email-n.borisov.lkml__19297.0514683568$1464004871$gmane$org@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-us
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,9 +15,31 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: clyde jack <k.jacobsen-kJrvpyo8emUAvxtiuMwx3w@public.gmane.org>, comcalimera <comcalimera-ahx2L5XxhlA@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "cristina.borini" <cristina.borini-swJAVGV/nWzk1uMJSBkQmQ@public.gmane.org>, crysantellocco <crysantellocco-VGgt2q2+T+FeoWH0uzbU5w@public.gmane.org>
+To: ebiederman-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hey, I've read a really useful article recently, you may like it too, please read it <http://pyspongepu.wpthemeselect.com/aeonh>
+This patch changes the export attributes of the init_user_ns from
+GPL-only to any modules. This needed so that non-gpl modules, such as
+ZFS, utilize functions like i_(uid|gid)_(read|write).
 
-Yours, giorchit-FE4wSJlJn3A@public.gmane.org
+Signed-off-by: Nikolay Borisov <n.borisov.lkml-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+ kernel/user.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/kernel/user.c b/kernel/user.c
+index b069ccbfb0b0..8bbd4e628b6e 100644
+--- a/kernel/user.c
++++ b/kernel/user.c
+@@ -60,7 +60,7 @@ struct user_namespace init_user_ns = {
+ 	__RWSEM_INITIALIZER(init_user_ns.persistent_keyring_register_sem),
+ #endif
+ };
+-EXPORT_SYMBOL_GPL(init_user_ns);
++EXPORT_SYMBOL(init_user_ns);
+ 
+ /*
+  * UID task count cache, to get fast user lookup in "alloc_uid"
+-- 
+2.7.4
