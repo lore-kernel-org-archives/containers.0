@@ -1,11 +1,11 @@
-From: =?utf-8?B?RWlubGFkdW5n?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
-Subject: =?utf-8?B?TkVVOiBHcmF0aXMgTml2ZWEtUHJvZHVrdGUgdGVzdGVu?=
-Date: 25 May 2016 08:31:38 -0700
-Message-ID: <20160525153742.2BDAD938@mail.linuxfoundation.org>
-Reply-To: =?utf-8?B?RWlubGFkdW5n?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
+From: Kevin <Paul-k7Hefy7yaX9+xPeBQ9Deuw@public.gmane.org>
+Subject: =?utf-8?B?WW91IGFyZSBuZXh0IGluIGxpbmU=?=
+Date: Wed, 25 May 2016 11:23:05 -0400
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@meringnews.info>
+Reply-To: bounce-41260-k7Hefy7yaX9+xPeBQ9Deuw@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,56 +19,19 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-NEU: Gratis Nivea-Produkte testen body{
-            width: 100%; 
-            background-color: #FFFFFF; 
-            margin:0; 
-            padding:0; 
-            mso-margin-top-alt:0px; mso-margin-bottom-alt:0px; mso-padding-alt: 0px 0px 0px 0px;
-        }
-        
-        p,h1,h2,h3,h4{
-	        margin-top:0;
-			margin-bottom:0;
-			padding-top:0;
-			padding-bottom:0;
-        }
-        
-        html{
-            width: 100%; 
-        }
-        
-       
-        /* ----------- responsivity ----------- */
-        @media only screen and (max-width: 590px){
-			
-			/*----- main image -------*/
-			#logo {width: 100% !important; height: auto !important;}
-
-			/*-------- container --------*/			
-			table{width:90% !important}
-           
-		}
- Hallo containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, f&uuml;r unsere neue Studie suchen wir  Tester 
-						
-						 , die ein  Beauty Bag von Nivea kostenlos testen 
-						
-						 und uns ihre Erfahrungen berichten. Sie, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, wurden als ein m&ouml;glicher Kandidat ausgew&auml;hlt! 
-						
-						
-			Alle Tester, die an der Studie teilnehmen d&uuml;rfen, bekommen ihr  Beauty Bag zum Dank geschenkt 
-						
-						 ! 
-						
-						
-			Also  bewerben Sie sich jetzt 
-						
-						 und nutzen Sie in K&uuml;rze  kostenlos 
-						
-						 die  Topprodukte von Nivea 
-						
-						 !     
-			  If you would like to modify your email settings or unsubscribe , visit
-			 
-			here
-			 
+SW4gdGhlIHBhc3QgMyBtb250aHMgSSBtYWRlIDI3IHJhbmRvbSAKcGVvcGxlIE1pbGxpb25haXJl
+cwoKVHdlbnR5IFNldmVuIQoKUmFuZG9tIFBlb3BsZSEKCk1pbGxpb25haXJlcyEKCllvdeKAmXJl
+IHVwIG5leHQKaHR0cDovL2NsaWNrLm1lcmluZ25ld3MuaW5mby9pbmRleC5waHA/aWQ9MTUwMjA2
+MiZhPTQxMjYwJmI9NDAzJmM9MTY2CgpUaGluayBhYm91dCB0aGF0IGZvciBhIHNlY29uZCwgMjcg
+UGVvcGxlCih3aG8gSSBkaWRu4oCZdCBrbm93IDMgbW9udGhzIGFnbykgYXJlCk5PVyBtaWxsaW9u
+YWlyZXMhISEKCkFuZCByaWdodCBub3csIGl04oCZcyBZT1VSIHR1cm4uLi4KClNvIGxldCBtZSBh
+c2sgeW91IHRoaXMuLi4KCkRvIHlvdSB3YW50IHRvIHN0YXJ0IG1ha2luZyBvdmVyICQ4NTAgCnBl
+ciBob3VyIHN0YXJ0aW5nIE5PVz8KCkhpdCB0aGlzIGxpbmsgYW5kIGJlY29tZSBudW1iZXIgMjgK
+aHR0cDovL2NsaWNrLm1lcmluZ25ld3MuaW5mby9pbmRleC5waHA/aWQ9MTUwMjA2MiZhPTQxMjYw
+JmI9NDAzJmM9MTY2CgpCZXN0IHdpc2hlcwoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoK
+CgoKCgoKCgoKCgoKCgoKCgoKCkJWSSwgVG9ydG9sYSwgRHJha2UgQ2hhbWJlcnMgUE8gMzMyMQpV
+bnN1YnNjcmliZTogaHR0cDovL2NsaWNrLm1lcmluZ25ld3MuaW5mby9pbmRleC5waHA/bz0yJmE9
+NDEyNjAmYj00MDMmYz0xNjYKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1m
+b3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9s
+aXN0aW5mby9jb250YWluZXJz
