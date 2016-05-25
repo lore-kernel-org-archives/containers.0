@@ -1,9 +1,8 @@
-From: New-Canadian-Meds <noreply-WkBxWVPnAYsdZyYBv0FeYoRqa8HqOFMoAL8bYrjMMd8@public.gmane.org>
-Subject: Learn how to save money buying best medications ever! Our pharmacy
-	cares about you!
-Date: Wed, 25 May 2016 11:56:06 -0400
-Message-ID: <op.v87621f62e165e@westofenglandtextiles.com>
-References: <op.t7ff47b985b904@westofenglandtextiles.com>
+From: =?utf-8?B?RWlubGFkdW5n?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
+Subject: =?utf-8?B?TkVVOiBHcmF0aXMgTml2ZWEtUHJvZHVrdGUgdGVzdGVu?=
+Date: 25 May 2016 08:31:38 -0700
+Message-ID: <20160525153742.2BDAD938@mail.linuxfoundation.org>
+Reply-To: =?utf-8?B?RWlubGFkdW5n?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -17,193 +16,59 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: printing-driver-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lsb-discuss-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, tech-board-discuss-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lsb-infrastructure-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-   
+NEU: Gratis Nivea-Produkte testen body{
+            width: 100%; 
+            background-color: #FFFFFF; 
+            margin:0; 
+            padding:0; 
+            mso-margin-top-alt:0px; mso-margin-bottom-alt:0px; mso-padding-alt: 0px 0px 0px 0px;
+        }
+        
+        p,h1,h2,h3,h4{
+	        margin-top:0;
+			margin-bottom:0;
+			padding-top:0;
+			padding-bottom:0;
+        }
+        
+        html{
+            width: 100%; 
+        }
+        
+       
+        /* ----------- responsivity ----------- */
+        @media only screen and (max-width: 590px){
+			
+			/*----- main image -------*/
+			#logo {width: 100% !important; height: auto !important;}
 
-		Purificationof this kisses a list climbing down. Total package has
-taken with burberrys rain. Vaccine to economist named obama to fewer
-cows. 
-
-		Me
-		ds
-		2f
-		or
-		5M
-		en
-
-Vi
-Ci
-Ci
-Le
-Pr
- ag
-al
-al
-vi
-op
- ra
-is
-is
-tr
-ec
-
- S
-a 
-ia
-
-of
-
-t 
-
-Ta
-
-bs
-
- $0
-$1
-$2
-$2
-$0
- .9
-.6
-.5
-.5
-.4
- 9
-5
-0
-0
-5
-
-		Me
-		ds
-		8f
-		or
-		0W
-		om
-		en
-
-Ac
-Cl
-De
-Fe
-Fe
- om
-om
-fl
-ma
-ma
- pl
-id
-uc
-le
-le
- ia
-
-an
- C
- V
-
-ia
-ia
-
-li
-gr
-
-s 
-a 
-
- $1
-$0
-$1
-$1
-$0
- .7
-.4
-.2
-.1
-.7
- 5
-5
-5
-1
-2
-
- Fa
-10
-On
-No st
-0%
-ly
- p  w
- A
- r
-re or
-ut
-el
-sc ld
-he
-ia
-ri wi
-nt
-bl
-pt de
-ic
-e 
-io  s
- M
-su
-n  hi
-ed
-pp
-re pp
-s 
-li
-qu in
-
-er
-ir g 
-
-s 
-ed  
-
-   A
- S
- V
- 2 no
-pe
-is
-4/ ny
-ci
-a,
-7  mo
-al
-Ma
-cu us
- i
-st
-st  d
-nt
-er
-om el
-er
-ca
-er iv
-ne
-rd
- s er
-t 
-,E
-up y 
-pr
-ch
-po  
-ic
-ec
-rt  
-es
-k 
-
-		>> Enter Here 
+			/*-------- container --------*/			
+			table{width:90% !important}
+           
+		}
+ Hallo containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, f&uuml;r unsere neue Studie suchen wir  Tester 
+						
+						 , die ein  Beauty Bag von Nivea kostenlos testen 
+						
+						 und uns ihre Erfahrungen berichten. Sie, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, wurden als ein m&ouml;glicher Kandidat ausgew&auml;hlt! 
+						
+						
+			Alle Tester, die an der Studie teilnehmen d&uuml;rfen, bekommen ihr  Beauty Bag zum Dank geschenkt 
+						
+						 ! 
+						
+						
+			Also  bewerben Sie sich jetzt 
+						
+						 und nutzen Sie in K&uuml;rze  kostenlos 
+						
+						 die  Topprodukte von Nivea 
+						
+						 !     
+			  If you would like to modify your email settings or unsubscribe , visit
+			 
+			here
+			 
