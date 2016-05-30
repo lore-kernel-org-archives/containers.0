@@ -1,8 +1,8 @@
-From: =?utf-8?B?Um9zd2l0aGEgUGV0ZXJz?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
-Subject: =?utf-8?B?SWNoIHplaWdlIElobmVuLCB3aWUgU2llIDMgS2lsbyBwcm8gV29jaGUgYWJuZWhtZW4=?=
-Date: 30 May 2016 09:27:47 -0700
-Message-ID: <20160530163037.76C2392@mail.linuxfoundation.org>
-Reply-To: =?utf-8?B?Um9zd2l0aGEgUGV0ZXJz?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
+From: CINDY LIU via Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: Respond for immediate verification
+Date: Mon, 30 May 2016 13:17:03 -0700
+Message-ID: <395239933754720@smtp.aol.com>
+Reply-To: adasuki22-fMVlBex6FRc@public.gmane.org, CINDY LIU <ar.aaaahhh-fMVlBex6FRc@public.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,23 +19,9 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Ich zeige Ihnen, wie Sie 3 Kilo pro Woche abnehmen 3 Kilo pro Woche abnehmen! Ohne zus&auml;tzlichen Sport oder eine Di&auml;t! Erfahren Sie hier wie auch Sie abnehmen k&ouml;nnen! Hallo, 
-							
-							
-			mein Name ist Roswitha Peters, ich bin Gesundheits-Beraterin. Und das seit &uuml;ber 20 Jahren. In meiner langen Karriere habe ich wirklich schon vieles erlebt. Aber diese Entdeckung von Prof. Dr. Schreiber (Wien/Miami) stellt alles in den Schatten, was ich in Sachen &bdquo;Schnell Abnehmen&ldquo; je erlebt oder erfahren habe! 
-							
-							
-			Mir ergeht es da ein wenig so wie Ulrike (Foto oben), die es immer noch nicht fassen kann.  Sie hat in nur 3 Wochen und 4 Tagen &uuml;ber 16 Kilo an Gewicht verloren (16,3 Kilo, um genau zu sein). Und ihre Waage wandert immer noch weiter nach unten! 
-							
-							
-			Dabei liest sich Ulrikes Geschichte auf den ersten Blick nicht viel anders als die von vielen, vielen anderen M&auml;nnern und Frauen, die schon alles probiert haben, um endlich ihre &uuml;berfl&uuml;ssigen Kilos loszuwerden &ndash; und die am Ende doch gescheitert sind. Aber jetzt ist alles anders: Nun kann JEDER abnehmen &ndash; so viel er nur will! 
-							
-							
-			Herrlich einfach &ndash; und blitzschnell! Starten Sie Ihr neues, schlankes Leben JETZT! 
-						
-						
-			  
-			  If you would like to modify your email settings or unsubscribe , visit
-			 
-			here
-			 
+Hello,
+
+This is to inform you that an ATM Card has been accredited in your favor. The ATM Card Value is US$830,000.00.
+You are to send :  Your Name, Address,Phone and Occupation for verification.
+
+Cindy Liu
