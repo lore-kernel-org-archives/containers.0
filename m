@@ -1,9 +1,11 @@
-From: =?iso-8859-1?Q?St=E9phane?= Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: LXD 2.0.2 has been released (security update)!
-Date: Tue, 31 May 2016 14:16:56 -0400
-Message-ID: <20160531181656.GD26506__35546.2293061011$1464718642$gmane$org@castiana>
+From: =?utf-8?B?S3VuZGVuc2VydmljZQ==?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
+Subject: =?utf-8?B?V2ljaHRpZ2UgTWl0dGVpbHVuZyBmwrhyIGNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc=?=
+Date: 31 May 2016 13:46:28 -0700
+Message-ID: <20160531204940.1C42E932@mail.linuxfoundation.org>
+Reply-To: =?utf-8?B?S3VuZGVuc2VydmljZQ==?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============3041017994574663158=="
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -14,117 +16,36 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, lxc-users-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
---===============3041017994574663158==
-Content-Type: multipart/signed; micalg=pgp-sha512;
-	protocol="application/pgp-signature"; boundary="oj4kGyHlBMXGt3Le"
-Content-Disposition: inline
-
-
---oj4kGyHlBMXGt3Le
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-Hello everyone,
-
-Today we're releasing LXD 2.0.2 as a security release for two recent CVEs.
-
-The main announcement can be found at: https://linuxcontainers.org/lxd/news/
-
-
-=3D=3D CVE-2016-1581 =3D=3D
-Robie Basak noticed that after setting up a loop based ZFS pool through
-"lxd init" the resulting file (/var/lib/lxd/zfs.img) was world readable.
-
-This would allow any user on the system, and a potential attacker to
-copy and then read the data of any LXD container, regardless of file
-permissions inside the container.
-
-LXD 2.0.2 fixes the "lxd init" logic to always set the mode of zfs.img to 0=
-600.
-
-Additionally a one-time upgrade step will trigger on first run and reset
-any existing zfs.img mode to be 0600.
-
-If you manage an affected system and suspect an unauthorized user may
-have accessed the zfs.img file, you should consider replacing any secret
-that was stored in the affected containers (private keys and similar
-credentials).
-
-
-=3D=3D CVE-2016-1582 =3D=3D
-Robie Basak noticed that when switching an unprivileged container
-(default, security.privileged=3Dfalse) into privileged mode (by setting
-security.privileged to true), the container rootfs is properly remapped
-but the container directory itself (/var/lib/lxd/containers/XYZ) remains
-at 0755.
-
-This is a problem because it allows an unprivileged user on the host to
-access any world readable path under /var/lib/lxd/containers/XYZ which
-may include setuid binaries.
-
-Such setuid binaries could then be used on the host to access otherwise
-unaccessible data or to escalate one's privileges.
-
-LXD 2.0.2 fixes this behavior by making sure all privileged containers
-are always root-owned and have their mode set to 0700 to prevent
-traversal by unprivileged users.
-
-Additionally a one-time upgrade step will trigger on first run and reset
-any existing privileged containers' ownership and mode to root:root 0700
-
-
-We recommend everyone update to LXD 2.0.2 as soon as possible.
-Especially if you are a user of loop-mounted ZFS or privileged
-containers!
-
-
-Thanks to the Ubuntu Security team for coordinating the disclosure of
-those two CVEs with other Linux distributions.
-
-
-As a reminder, the 2.0 series is supported for bugfix and security
-updates up until June 2021.
-
-
-St=E9phane Graber
-On behalf of the LXD development team
-
---oj4kGyHlBMXGt3Le
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBCgAGBQJXTdUYAAoJEMY4l01keS1nx5gQAIAiygxH/Mcl4zWLGRbUN50Q
-Qb7aiqpTkSyVmX4Z8hS3aoXWJgCHAw813RC3Jg8bQX0vAXv4NEUtOdAfncCgtcez
-VaWoKbFdqMkd5MyDFz9t1huSpLLMPHPtwfo1F79OINZjiDN3cpZZ+mh7sHnboKQn
-EJSU9fSHc2ldfOWLaZQMlFca54hVoL2UcR4/p5oqfh7XLQmD9tR80AerB/2TyKiN
-Bhms3PltHlv78ogkF1IkaNSVAZaaC/g4UJkZnuUSyDcL0hD4st/YbUX8srxnGBvc
-O0p2OyQ884V6KWQ+pLqfEW5Zm+tPB1RjMw5ISOlItLCMUHQeP0R0yPBJ7+dQNYmB
-kBZEoXn50pIy7mTzRTHBLrjwBZRTEZ9aIL0DJc0Up8XwGsO4cjcbAbA4iFVhyuHW
-Nc/mTAvvq6BMnbnKCpWJPgN5YFayY5HLYTfo1KPkO1lLzLOnKdnQVIDSUStU4621
-rHOloDa2VQvGvXj7LlG177JbkCAvfPPy1r7sl2Ms8sBjP7D4lHg1/5fPTFk0ICh7
-Hmt2NdcJlJJ7+OoUh5vDugWuKCKGRYoarGUQQ8zEgLrSn+HOJzL0Dhdlv5LdpK3D
-Q0vpqcERyC6HBJ/EDh1E9SQv762lhzSvQNpUaDGM4JLdJqr2bmZ/WGuNawmaK7J+
-1Rdxta7M0J0tf8eomi6v
-=XzHk
------END PGP SIGNATURE-----
-
---oj4kGyHlBMXGt3Le--
-
---===============3041017994574663158==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============3041017994574663158==--
+V2ljaHRpZ2UgTWl0dGVpbHVuZyBmwrhyICMjZW1haWwjIyBib2R5ew0KICAgICAgICAgICAgd2lk
+dGg6IDEwMCU7IA0KICAgICAgICAgICAgYmFja2dyb3VuZC1jb2xvcjogI0ZGRkZGRjsgDQogICAg
+ICAgICAgICBtYXJnaW46MDsgDQogICAgICAgICAgICBwYWRkaW5nOjA7IA0KICAgICAgICAgICAg
+bXNvLW1hcmdpbi10b3AtYWx0OjBweDsgbXNvLW1hcmdpbi1ib3R0b20tYWx0OjBweDsgbXNvLXBh
+ZGRpbmctYWx0OiAwcHggMHB4IDBweCAwcHg7DQogICAgICAgIH0NCiAgICAgICAgDQogICAgICAg
+IHAsaDEsaDIsaDMsaDR7DQoJICAgICAgICBtYXJnaW4tdG9wOjA7DQoJCQltYXJnaW4tYm90dG9t
+OjA7DQoJCQlwYWRkaW5nLXRvcDowOw0KCQkJcGFkZGluZy1ib3R0b206MDsNCiAgICAgICAgfQ0K
+ICAgICAgICANCiAgICAgICAgaHRtbHsNCiAgICAgICAgICAgIHdpZHRoOiAxMDAlOyANCiAgICAg
+ICAgfQ0KICAgICAgICANCiAgICAgICANCiAgICAgICAgLyogLS0tLS0tLS0tLS0gcmVzcG9uc2l2
+aXR5IC0tLS0tLS0tLS0tICovDQogICAgICAgIEBtZWRpYSBvbmx5IHNjcmVlbiBhbmQgKG1heC13
+aWR0aDogNTkwcHgpew0KCQkJDQoJCQkvKi0tLS0tIG1haW4gaW1hZ2UgLS0tLS0tLSovDQoJCQkj
+bG9nbyB7d2lkdGg6IDEwMCUgIWltcG9ydGFudDsgaGVpZ2h0OiBhdXRvICFpbXBvcnRhbnQ7fQ0K
+DQoJCQkvKi0tLS0tLS0tIGNvbnRhaW5lciAtLS0tLS0tLSovCQkJDQoJCQl0YWJsZXt3aWR0aDo5
+MCUgIWltcG9ydGFudH0NCiAgICAgICAgICAgDQoJCX0NCiBIYWxsbyBjb250YWluZXJzQGxpc3Rz
+LmxpbnV4LWZvdW5kYXRpb24ub3JnLCBmJnV1bWw7ciB1bnNlcmUgbmV1ZSBTdHVkaWUgc3VjaGVu
+IHdpciAgVGVzdGVyIA0KCQkJCQkJDQoJCQkJCQkgLCBkaWUgZWluICBCZWF1dHkgQmFnIHZvbiBO
+aXZlYSBrb3N0ZW5sb3MgdGVzdGVuIA0KCQkJCQkJDQoJCQkJCQkgdW5kIHVucyBpaHJlIEVyZmFo
+cnVuZ2VuIGJlcmljaHRlbi4gU2llLCBjb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24u
+b3JnLCB3dXJkZW4gYWxzIGVpbiBtJm91bWw7Z2xpY2hlciBLYW5kaWRhdCBhdXNnZXcmYXVtbDto
+bHQhIA0KCQkJCQkJDQoJCQkJCQkNCgkJCUFsbGUgVGVzdGVyLCBkaWUgYW4gZGVyIFN0dWRpZSB0
+ZWlsbmVobWVuIGQmdXVtbDtyZmVuLCBiZWtvbW1lbiBpaHIgIEJlYXV0eSBCYWcgenVtIERhbmsg
+Z2VzY2hlbmt0IA0KCQkJCQkJDQoJCQkJCQkgISANCgkJCQkJCQ0KCQkJCQkJDQoJCQlBbHNvICBi
+ZXdlcmJlbiBTaWUgc2ljaCBqZXR6dCANCgkJCQkJCQ0KCQkJCQkJIHVuZCBudXR6ZW4gU2llIGlu
+IEsmdXVtbDtyemUgIGtvc3RlbmxvcyANCgkJCQkJCQ0KCQkJCQkJIGRpZSAgVG9wcHJvZHVrdGUg
+dm9uIE5pdmVhIA0KCQkJCQkJDQoJCQkJCQkgISAgICAgDQoJCQkgIElmIHlvdSB3b3VsZCBsaWtl
+IHRvIG1vZGlmeSB5b3VyIGVtYWlsIHNldHRpbmdzIG9yIHVuc3Vic2NyaWJlICwgdmlzaXQNCgkJ
+CSANCgkJCWhlcmUNCgkJCSAKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1m
+b3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9s
+aXN0aW5mby9jb250YWluZXJz
