@@ -1,11 +1,11 @@
-From: =?utf-8?B?S3VuZGVuc2VydmljZQ==?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
-Subject: =?utf-8?B?V2ljaHRpZ2UgTWl0dGVpbHVuZyBmwrhyIGNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc=?=
-Date: 31 May 2016 13:46:28 -0700
-Message-ID: <20160531204940.1C42E932@mail.linuxfoundation.org>
-Reply-To: =?utf-8?B?S3VuZGVuc2VydmljZQ==?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
+From: =?utf-8?B?RG1pIFNSSw==?= <info-K1hF/X/VzQVBDgjK7y7TUQ@public.gmane.org>
+Subject: =?utf-8?B?Rlc6IEFjY291bnQgU3RhdHVzICgxKSBOaWNodCBiZWFuc3BydWNodGVyIEVpbmthdWZzZ3V0c2NoZWlu?=
+Date: 31 May 2016 21:42:36 -0700
+Message-ID: <20160601044240.1088B81@mail.linuxfoundation.org>
+Reply-To: =?utf-8?B?RG1pIFNSSw==?= <info-K1hF/X/VzQVBDgjK7y7TUQ@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,33 +19,34 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-V2ljaHRpZ2UgTWl0dGVpbHVuZyBmwrhyICMjZW1haWwjIyBib2R5ew0KICAgICAgICAgICAgd2lk
-dGg6IDEwMCU7IA0KICAgICAgICAgICAgYmFja2dyb3VuZC1jb2xvcjogI0ZGRkZGRjsgDQogICAg
-ICAgICAgICBtYXJnaW46MDsgDQogICAgICAgICAgICBwYWRkaW5nOjA7IA0KICAgICAgICAgICAg
-bXNvLW1hcmdpbi10b3AtYWx0OjBweDsgbXNvLW1hcmdpbi1ib3R0b20tYWx0OjBweDsgbXNvLXBh
-ZGRpbmctYWx0OiAwcHggMHB4IDBweCAwcHg7DQogICAgICAgIH0NCiAgICAgICAgDQogICAgICAg
-IHAsaDEsaDIsaDMsaDR7DQoJICAgICAgICBtYXJnaW4tdG9wOjA7DQoJCQltYXJnaW4tYm90dG9t
-OjA7DQoJCQlwYWRkaW5nLXRvcDowOw0KCQkJcGFkZGluZy1ib3R0b206MDsNCiAgICAgICAgfQ0K
-ICAgICAgICANCiAgICAgICAgaHRtbHsNCiAgICAgICAgICAgIHdpZHRoOiAxMDAlOyANCiAgICAg
-ICAgfQ0KICAgICAgICANCiAgICAgICANCiAgICAgICAgLyogLS0tLS0tLS0tLS0gcmVzcG9uc2l2
-aXR5IC0tLS0tLS0tLS0tICovDQogICAgICAgIEBtZWRpYSBvbmx5IHNjcmVlbiBhbmQgKG1heC13
-aWR0aDogNTkwcHgpew0KCQkJDQoJCQkvKi0tLS0tIG1haW4gaW1hZ2UgLS0tLS0tLSovDQoJCQkj
-bG9nbyB7d2lkdGg6IDEwMCUgIWltcG9ydGFudDsgaGVpZ2h0OiBhdXRvICFpbXBvcnRhbnQ7fQ0K
-DQoJCQkvKi0tLS0tLS0tIGNvbnRhaW5lciAtLS0tLS0tLSovCQkJDQoJCQl0YWJsZXt3aWR0aDo5
-MCUgIWltcG9ydGFudH0NCiAgICAgICAgICAgDQoJCX0NCiBIYWxsbyBjb250YWluZXJzQGxpc3Rz
-LmxpbnV4LWZvdW5kYXRpb24ub3JnLCBmJnV1bWw7ciB1bnNlcmUgbmV1ZSBTdHVkaWUgc3VjaGVu
-IHdpciAgVGVzdGVyIA0KCQkJCQkJDQoJCQkJCQkgLCBkaWUgZWluICBCZWF1dHkgQmFnIHZvbiBO
-aXZlYSBrb3N0ZW5sb3MgdGVzdGVuIA0KCQkJCQkJDQoJCQkJCQkgdW5kIHVucyBpaHJlIEVyZmFo
-cnVuZ2VuIGJlcmljaHRlbi4gU2llLCBjb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24u
-b3JnLCB3dXJkZW4gYWxzIGVpbiBtJm91bWw7Z2xpY2hlciBLYW5kaWRhdCBhdXNnZXcmYXVtbDto
-bHQhIA0KCQkJCQkJDQoJCQkJCQkNCgkJCUFsbGUgVGVzdGVyLCBkaWUgYW4gZGVyIFN0dWRpZSB0
-ZWlsbmVobWVuIGQmdXVtbDtyZmVuLCBiZWtvbW1lbiBpaHIgIEJlYXV0eSBCYWcgenVtIERhbmsg
-Z2VzY2hlbmt0IA0KCQkJCQkJDQoJCQkJCQkgISANCgkJCQkJCQ0KCQkJCQkJDQoJCQlBbHNvICBi
-ZXdlcmJlbiBTaWUgc2ljaCBqZXR6dCANCgkJCQkJCQ0KCQkJCQkJIHVuZCBudXR6ZW4gU2llIGlu
-IEsmdXVtbDtyemUgIGtvc3RlbmxvcyANCgkJCQkJCQ0KCQkJCQkJIGRpZSAgVG9wcHJvZHVrdGUg
-dm9uIE5pdmVhIA0KCQkJCQkJDQoJCQkJCQkgISAgICAgDQoJCQkgIElmIHlvdSB3b3VsZCBsaWtl
-IHRvIG1vZGlmeSB5b3VyIGVtYWlsIHNldHRpbmdzIG9yIHVuc3Vic2NyaWJlICwgdmlzaXQNCgkJ
-CSANCgkJCWhlcmUNCgkJCSAKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1m
-b3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9s
-aXN0aW5mby9jb250YWluZXJz
+FW: Account Status (1) Nicht beanspruchter Einkaufsgutschein 
+					
+					
+			Hallo  containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org 
+					
+					
+			Herzlichen Gl&uuml;ckwunsch, Sie sind unser m&ouml;glicher Exklusiv-Gewinner. 
+					
+					
+			Daher freuen wir uns Ihnen mitzuteilen, dass Sie unter den Auserw&auml;hlten f&uuml;r die Endauslosung eines  500,- Euro Supermarkt-Gutscheins f&uuml;r Edeka24, Penny Markt oder Netto  
+					
+					 sind:  JETZT HIER KLICKEN 
+					
+					
+			1. elsa.reinhard-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org 
+					
+					
+			2.  containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org 
+					
+					
+			3. thomas.hampel-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org
+			   Nehmen Sie teil und sichern Sie sich jetzt die Chance auf einen 500,- Euro Supermarkt-Gutschein f&uuml;r Edeka24, Penny Markt oder Netto: JETZT HIER KLICKEN 
+						
+						
+			Anmeldem&ouml;glichkeit f&uuml;r ausgew&auml;hlte m&ouml;gliche Gewinner nur m&ouml;glich bis 05 .06.2016 23:59 Uhr 
+						
+						 . Viel Spa&szlig; und viel Erfolg! Ihr Gewinner Team 
+			  If you would like to modify your email settings or unsubscribe , visit
+			 
+			here
+			 
