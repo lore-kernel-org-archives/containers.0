@@ -1,18 +1,12 @@
-From: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
-Subject: Re: [RFC PATCH 0/4] Make inotify instance/watches be accounted per
-	userns
-Date: Mon, 6 Jun 2016 09:41:20 +0300
-Message-ID: <57551B10.6080505@kyup.com>
-References: <1464767580-22732-1-git-send-email-kernel@kyup.com>
-	<8737ow7vcp.fsf@x220.int.ebiederm.org>
-	<20160602074920.GG19636@quack2.suse.cz>
-	<87bn3jy1cd.fsf@x220.int.ebiederm.org> <5751667D.7010207@kyup.com>
-	<87inxqovho.fsf@x220.int.ebiederm.org>
+From: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH 0/3] Write dump into container's filesystem for pipe_type
+	core_pattern
+Date: Mon, 6 Jun 2016 20:02:07 +0800
+Message-ID: <cover.1465214472.git.zhaolei@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87inxqovho.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,104 +16,71 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, operations-/eCPMmvKun9pLGFMi4vTTA@public.gmane.org, gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, john-jueV0HHMeujJJrXXpGQQMAC/G2K4zDHf@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+In current system, when we set core_pattern to a pipe, both pipe program
+and program's output are in host's filesystem.
+But when we set core_pattern to a file, the container will write dump
+into container's filesystem.
 
+For example, when we set following core_pattern:
+ # echo "|/my_dump_pipe %s %c %p %u %g %t e" >/proc/sys/kernel/core_pattern
+and trigger a segment fault in a container, my_dump_pipe is searched from
+host's filesystem, and it will write coredump into host's filesystem too.
 
-On 06/03/2016 11:41 PM, Eric W. Biederman wrote:
-> Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org> writes:
-> 
->> On 06/02/2016 07:58 PM, Eric W. Biederman wrote:
->>>
->>> Nikolay please see my question for you at the end.
-> [snip] 
->>> All of that said there is definitely a practical question that needs to
->>> be asked.  Nikolay how did you get into this situation?  A typical user
->>> namespace configuration will set up uid and gid maps with the help of a
->>> privileged program and not map the uid of the user who created the user
->>> namespace.  Thus avoiding exhausting the limits of the user who created
->>> the container.
->>
->> Right but imagine having multiple containers with identical uid/gid maps
->> for LXC-based setups imagine this:
->>
->> lxc.id_map = u 0 1337 65536
-> 
-> So I am only moderately concerned when the containers have overlapping
-> ids.  Because at some level overlapping ids means they are the same
-> user.  This is certainly true for file permissions and for other
-> permissions.  To isolate one container from another it fundamentally
-> needs to have separate uids and gids on the host system.
-> 
->> Now all processes which are running with the same user on different
->> containers will actually share the underlying user_struct thus the
->> inotify limits. In such cases even running multiple instances of 'tail'
->> in one container will eventually use all allowed inotify/mark instances.
->> For this to happen you needn't also have complete overlap of the uid
->> map, it's enough to have at least one UID between 2 containers overlap.
->>
->>
->> So the risk of exhaustion doesn't apply to the privileged user that
->> created the container and the uid mapping, but rather the users under
->> which the various processes in the container are running. Does that make
->> it clear?
-> 
-> Yes.  That is clear.
-> 
->>> Which makes me personally more worried about escaping the existing
->>> limits than exhausting the limits of a particular user.
->>
->> So I thought bit about it and I guess a solution can be concocted which
->> utilize the hierarchical nature of page counter, and the inotify limits
->> are set per namespace if you have capable(CAP_SYS_ADMIN). That way the
->> admin can set one fairly large on the init_user_ns and then in every
->> namespace created one can set smaller limits. That way for a branch in
->> the tree (in the nomenclature you used in your previous reply to me) you
->> will really be upper-bound to the limit set in the namespace which have
->> ->level = 1. For the width of the tree, you will be bound by the
->> "global" init_user_ns limits. How does that sound?
-> 
-> As a addendum to that design.  I think there should be an additional
-> sysctl or two that specifies how much the limit decreases when creating
-> a new user namespace and when creating a new user in that user
-> namespace.  That way with a good selection of limits and a limit
-> decrease people can use the kernel defaults without needing to change
-> them.
+In a privileged container, user can destroy host system by following
+command:
+ # # In a container
+ # echo "|/bin/dd of=/boot/vmlinuz" >/proc/sys/kernel/core_pattern
+ # make_dump
 
-I agree that a sysctl which controls how the limits are set for new
-namespaces is a good idea. I think it's best if this is in % rather than
-some absolute value. Also I'm not sure about the sysctl when a user is
-added in a namespace since just adding a new user should fall under the
-limits of the current userns.
+Actually, all operation in a container should not change host's
+environment, the container should use core_pattern as its private setting.
+In detail, in core dump action:
+1: Search pipe program in container's fs namespace.
+2: Run pipe program in container's fs namespace to write coredump to it.
 
-Also should those sysctls be global or should they be per-namespace? At
-this point I'm more inclined to have global sysctl and maybe refine it
-in the future if the need arises?
+I rewrited this patch from origional:
+  http://www.gossamer-threads.com/lists/linux/kernel/2395715?do=post_view_flat
+and changed the impliment way and function detail discussed in:
+  http://www.gossamer-threads.com/lists/linux/kernel/2397602?nohighlight=1#2397602
 
+Changelog RFC->v1:
+1: RFC->v1
+2: Rebase on top of v4.7-rc2
 
-> 
-> Having default settings that are good enough 99% of the time and that
-> people don't need to tune, would be my biggest requirement (aside from
-> being light-weight) for merging something like this.
-> 
-> If things are set and forget and even the continer case does not need to
-> be aware then I think we have a design sufficiently robust and different
-> from what cgroups is doing to make it worth while to have a userns based
-> solution.
+Changes against previous impliment:
+1: Avoid forking thread from the crach process.
+   Suggested-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+2: To keep compatibility with current code, if user hadn't change
+   core_pattern in container, the dump file will still write to
+   the host filesystem.
+   Suggested-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Provided that we agree on the overall design, so far it seems we just
-need to iron out the details with the sysctl I'll be happy to implement
-this.
+Zhao Lei (3):
+  Save dump_root into pid_namespace
+  Make dump_pipe thread possilbe to select the rootfs
+  Write dump into container's filesystem for pipe_type core_pattern
 
+ fs/coredump.c                 | 19 ++++++++++++++++++-
+ fs/fs_struct.c                | 25 ++++++++++++++++---------
+ include/linux/fs_struct.h     |  3 ++-
+ include/linux/kmod.h          |  4 +++-
+ include/linux/pid_namespace.h |  3 +++
+ include/linux/sched.h         |  5 +++--
+ init/do_mounts_initrd.c       |  3 ++-
+ init/main.c                   |  4 ++--
+ kernel/fork.c                 | 34 ++++++++++++++++++++--------------
+ kernel/kmod.c                 | 13 ++++++++-----
+ kernel/kthread.c              |  3 ++-
+ kernel/pid.c                  |  1 +
+ kernel/pid_namespace.c        |  6 ++++++
+ kernel/sysctl.c               | 30 ++++++++++++++++++++++++++----
+ lib/kobject_uevent.c          |  3 ++-
+ security/keys/request_key.c   |  2 +-
+ 16 files changed, 115 insertions(+), 43 deletions(-)
 
-> 
-> I can see a lot of different limits implemented this way.
-> 
-> Eric
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
-> 
+-- 
+1.8.5.1
