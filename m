@@ -1,14 +1,16 @@
-From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Subject: Re: Deploy specific iptables ruleset for each container...
-Date: Tue, 07 Jun 2016 08:30:02 -0700
-Message-ID: <1465313402.2310.5.camel@HansenPartnership.com>
-References: <1037489545.134365.1465266607461.JavaMail.yahoo.ref@mail.yahoo.com>
-	<1037489545.134365.1465266607461.JavaMail.yahoo@mail.yahoo.com>
+From: Mateusz Guzik <mguzik-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH v2 3/3] Write dump into container's filesystem for
+	pipe_type core_pattern
+Date: Tue, 7 Jun 2016 21:09:42 +0200
+Message-ID: <20160607190941.d4hfqehvwxylon4l@mguzik>
+References: <cover.1465293010.git.zhaolei@cn.fujitsu.com>
+	<9d61a9a95ca4c323adc182abf32714b46e963405.1465293010.git.zhaolei@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1037489545.134365.1465266607461.JavaMail.yahoo-sAHhhX/85wgbqTNvkayDYw@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <9d61a9a95ca4c323adc182abf32714b46e963405.1465293010.git.zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,23 +20,46 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: =?ISO-8859-1?Q?Sebasti=E1n?= Maruca <seba-iesXmtczecS4Tu3zPC53fQ@public.gmane.org>, =?ISO-8859-1?Q?Sebasti=E1n?= Maruca <juanperiz-/E1597aS9LQMlKAeRRkD2Q@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gVHVlLCAyMDE2LTA2LTA3IGF0IDAyOjMwICswMDAwLCBTZWJhc3Rpw6FuIE1hcnVjYSB2aWEg
-Q29udGFpbmVycwp3cm90ZToKPiBIaSB0byBldmVyeW9uZSEKPiBJcyBpdCBwb3NzaWJsZSB0byBk
-ZXBsb3kgYSAiY2VudHJhbCIgaXB0YWJsZXMgcnVsZXNldCBhdCBhIEhvc3QsYW5kCj4gdGhlbiwg
-ZGVwbG95IHNldmVyYWwgImlzb2xhdGVkIiBpcHRhYmxlcyBydWxlc2V0cywgb25lIGZvciBlYWNo
-Cj4gY29udGFpbmVyPwo+IEknZCBsaWtlIHRvIGhhdmUgYSB0aGlzICJjZW50cmFsIiBpcHRhYmxl
-cyB0byBjaGFpbiBiYXNpYyBydWxlcyxhbmQgCj4gZWFjaCBvbmUgb2YgdGhlbSBoYXZlIHRyaXZp
-YWwgcnVsZXNldHMsIHNvIGFzIHRvIHNwZWFrIG9mIGEibXVsdGkKPiAtdGVuYW50IiBJUFRhYmxl
-cy4KCkl0IGRlcGVuZHMgd2hhdCB5b3UgbWVhbiBieSAiZGVwbG95Ii4gIEZpcmV3YWxsIHJ1bGUg
-c2V0cyBhcmUgMToxIHdpdGgKbmV0d29yayBuYW1lc3BhY2VzLCBzbyBpdCBpc24ndCBwb3NzaWJs
-ZSB0byAiaW5oZXJpdCIgcnVsZXMgZnJvbSB0aGUKcGFyZW50IG5ldG5zLiAgSXQgaXMsIGhvd2V2
-ZXIsIHBlcmZlY3RseSBwb3NzaWJsZSB0byBydW4gYSB2ZXRoIHBhaXIKYmV0d2VlbiB0d28gZGlm
-ZmVyZW50IG5ldG5zIGFuZCBhcHBseSBkaWZmZXJlbnQgZmlyZXdhbGwgcnVsZXMgb24gZWFjaApl
-bmQgd2l0aCBlYWNoIHJ1bGUgc2V0IGJlaW5nIGluIGl0cyBvd24gbmV0bnMuICBJdCBzb3VuZHMg
-bGlrZSB0aGlzCmNvdWxkIGNvdmVyIHlvdXIgdXNlIGNhc2UuCgpKYW1lcwoKCl9fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBs
-aXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5s
-aW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On Tue, Jun 07, 2016 at 07:29:37PM +0800, Zhao Lei wrote:
+> In current system, when we set core_pattern to a pipe, both pipe program
+> and program's output are in host's filesystem.
+> But when we set core_pattern to a file, the container will write dump
+> into container's filesystem.
+> 
+> For example, when we set following core_pattern:
+>  # echo "|/my_dump_pipe %s %c %p %u %g %t e" >/proc/sys/kernel/core_pattern
+> and trigger a segment fault in a container, my_dump_pipe is searched from
+> host's filesystem, and it will write coredump into host's filesystem too.
+> 
+> In a privileged container, user can destroy host system by following
+> command:
+>  # # In a container
+>  # echo "|/bin/dd of=/boot/vmlinuz" >/proc/sys/kernel/core_pattern
+>  # make_dump
+> 
+> Actually, all operation in a container should not change host's
+> environment, the container should use core_pattern as its private setting.
+> In detail, in core dump action:
+> 1: Search pipe program in container's fs namespace.
+> 2: Run pipe program in container's fs namespace to write coredump to it.
+> 
+> This patch fixed above problem by running pipe program with container's
+> fs_root.
+> 
+
+This does not look sufficient, but I can't easily verify.
+
+For instance, is the spawned process able to attach itself with ptrace
+to processes outside of the original container? Even if not, can it
+mount procfs and use /proc/pid/root of processes outside of said
+container?
+
+The spawned process should be subject to all limitations imposed on the
+container (which may mean it just must be in the container).
+
+-- 
+Mateusz Guzik
