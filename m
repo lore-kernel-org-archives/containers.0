@@ -1,8 +1,7 @@
 From: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH v2 3/3] Write dump into container's filesystem for pipe_type
-	core_pattern
-Date: Tue, 7 Jun 2016 19:29:37 +0800
-Message-ID: <9d61a9a95ca4c323adc182abf32714b46e963405.1465293010.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH v2 1/3] Save dump_root into pid_namespace
+Date: Tue, 7 Jun 2016 19:29:35 +0800
+Message-ID: <2c239efa286e79a732e912fe2eed690a68fa9d3e.1465293010.git.zhaolei@cn.fujitsu.com>
 References: <cover.1465293010.git.zhaolei@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -27,112 +26,129 @@ and program's output are in host's filesystem.
 But when we set core_pattern to a file, the container will write dump
 into container's filesystem.
 
-For example, when we set following core_pattern:
- # echo "|/my_dump_pipe %s %c %p %u %g %t e" >/proc/sys/kernel/core_pattern
-and trigger a segment fault in a container, my_dump_pipe is searched from
-host's filesystem, and it will write coredump into host's filesystem too.
+Reason of above different is:
+In pipe_mode dump_pattern setting, the process who write the dumpfile
+is a kernel thread, whose fs_root always point to host's root fs.
 
-In a privileged container, user can destroy host system by following
-command:
- # # In a container
- # echo "|/bin/dd of=/boot/vmlinuz" >/proc/sys/kernel/core_pattern
- # make_dump
-
-Actually, all operation in a container should not change host's
-environment, the container should use core_pattern as its private setting.
-In detail, in core dump action:
-1: Search pipe program in container's fs namespace.
-2: Run pipe program in container's fs namespace to write coredump to it.
-
-This patch fixed above problem by running pipe program with container's
-fs_root.
-
-Test:
- 1: do dump in host
-    should have same action with current code.
-    [HOST] # ulimit -c 1024000
-    [HOST] # rm -f /tmp/*dump*
-    [HOST] # echo "|/dump_pipe %s %c %p %u %g %t e" >/proc/sys/kernel/core_pattern
-    [HOST] # ./make_dump
-    [HOST] Segmentation fault (core dumped)
-    [HOST] # ls -l /tmp/*dump*  # Should see host_dump_*.
-    [HOST] -rw-r--r-- 1 root root 331776 Apr 15 18:01 /tmp/host_dump_11_1048576000_2356_0_0_1460714470
- 2: do dump after change core_pattern in container
-    the container should write dump into its filesystem.
-    [HOST] # rm -f /tmp/*dump*
-    [HOST] # echo "|/dump_pipe %s %c %p %u %g %t e" >/proc/sys/kernel/core_pattern
-    [HOST] # lxc-start -n vm_dumptest
-    [GUEST]Please press Enter to activate this console.
-    [GUEST]# ulimit -c 1024000
-    [GUEST]# rm -f /tmp/*dump*
-    [GUEST]# echo "|/dump_pipe %s %c %p %u %g %t e" >/proc/sys/kernel/core_pattern
-    [GUEST]# ./make_dump
-    [GUEST]Segmentation fault (core dumped)
-    [GUEST]# ls -l /tmp/*dump*  # Should see guest_dump_*
-    [GUEST]-rw-r--r--    1 root     root       331776 Apr 15 10:01 /tmp/guest_dump_11_524288000_12_0_0_1460714482
- 3: do dump without change core_pattern in container
-    the container should write dump into host's filesystem to keep compatibility.
-    [HOST] # rm -f /tmp/*dump*
-    [HOST] # echo "|/dump_pipe %s %c %p %u %g %t e" >/proc/sys/kernel/core_pattern
-    [HOST] # lxc-start -n vm_dumptest
-    [GUEST]Please press Enter to activate this console.
-    [GUEST]# ulimit -c 1024000
-    [GUEST]# rm -f /tmp/*dump*
-    [GUEST]# ./make_dump
-    [GUEST]Segmentation fault (core dumped)
-    [GUEST]# ls -l /tmp/*dump*  # Should not see dump file
-    [GUEST]ls: /tmp/*dump*: No such file or directory
-    [HOST] # ls -l /tmp/*dump*  # Should see dump file
-    [HOST] -rw-r--r-- 1 root root 331776 Apr 15 18:01 /tmp/host_dump_11_524288000_12_0_0_1460714516
+This patch save the dump_root into pid_namespace, and when a crach
+happened in container, this dump_root can be used as fs_root of
+dump_writter_thread.
 
 Signed-off-by: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- fs/coredump.c | 18 +++++++++++++++++-
- 1 file changed, 17 insertions(+), 1 deletion(-)
+ include/linux/pid_namespace.h |  3 +++
+ kernel/pid.c                  |  1 +
+ kernel/pid_namespace.c        |  6 ++++++
+ kernel/sysctl.c               | 33 +++++++++++++++++++++++++++++----
+ 4 files changed, 39 insertions(+), 4 deletions(-)
 
-diff --git a/fs/coredump.c b/fs/coredump.c
-index 864985e..4616a25 100644
---- a/fs/coredump.c
-+++ b/fs/coredump.c
-@@ -592,6 +592,8 @@ void do_coredump(const siginfo_t *siginfo)
- 		int dump_count;
- 		char **helper_argv;
- 		struct subprocess_info *sub_info;
-+		struct pid_namespace *pid_ns;
-+		struct path root_fs;
+diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
+index 918b117..535a532 100644
+--- a/include/linux/pid_namespace.h
++++ b/include/linux/pid_namespace.h
+@@ -9,6 +9,7 @@
+ #include <linux/nsproxy.h>
+ #include <linux/kref.h>
+ #include <linux/ns_common.h>
++#include <linux/path.h>
  
- 		if (ispipe < 0) {
- 			printk(KERN_WARNING "format_corename failed\n");
-@@ -638,15 +640,29 @@ void do_coredump(const siginfo_t *siginfo)
- 			goto fail_dropcount;
- 		}
+ struct pidmap {
+        atomic_t nr_free;
+@@ -45,6 +46,8 @@ struct pid_namespace {
+ 	int hide_pid;
+ 	int reboot;	/* group exit code if this pidns was rebooted */
+ 	struct ns_common ns;
++	spinlock_t root_for_dump_lock;
++	struct path root_for_dump;
+ };
  
-+		pid_ns = task_active_pid_ns(current);
-+		spin_lock(&pid_ns->root_for_dump_lock);
-+		while (pid_ns != &init_pid_ns) {
-+			if (pid_ns->root_for_dump.mnt)
-+				break;
-+			spin_unlock(&pid_ns->root_for_dump_lock);
-+			pid_ns = pid_ns->parent,
-+			spin_lock(&pid_ns->root_for_dump_lock);
-+		}
-+		root_fs = pid_ns->root_for_dump;
-+		path_get(&root_fs);
-+		spin_unlock(&pid_ns->root_for_dump_lock);
+ extern struct pid_namespace init_pid_ns;
+diff --git a/kernel/pid.c b/kernel/pid.c
+index f66162f..ef4cd85 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -83,6 +83,7 @@ struct pid_namespace init_pid_ns = {
+ #ifdef CONFIG_PID_NS
+ 	.ns.ops = &pidns_operations,
+ #endif
++	.root_for_dump_lock = __SPIN_LOCK_UNLOCKED(init_pid_ns.root_for_dump_lock),
+ };
+ EXPORT_SYMBOL_GPL(init_pid_ns);
+ 
+diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
+index a65ba13..3d0eced 100644
+--- a/kernel/pid_namespace.c
++++ b/kernel/pid_namespace.c
+@@ -123,6 +123,8 @@ static struct pid_namespace *create_pid_namespace(struct user_namespace *user_ns
+ 	for (i = 1; i < PIDMAP_ENTRIES; i++)
+ 		atomic_set(&ns->pidmap[i].nr_free, BITS_PER_PAGE);
+ 
++	spin_lock_init(&ns->root_for_dump_lock);
 +
- 		retval = -ENOMEM;
- 		sub_info = call_usermodehelper_setup(helper_argv[0],
- 						helper_argv, NULL, GFP_KERNEL,
- 						umh_pipe_setup, NULL, &cprm,
--						NULL);
-+						&root_fs);
- 		if (sub_info)
- 			retval = call_usermodehelper_exec(sub_info,
- 							  UMH_WAIT_EXEC);
+ 	return ns;
  
-+		path_put(&root_fs);
- 		argv_free(helper_argv);
- 		if (retval) {
- 			printk(KERN_INFO "Core dump to |%s pipe failed\n",
+ out_free_map:
+@@ -147,6 +149,10 @@ static void destroy_pid_namespace(struct pid_namespace *ns)
+ 	for (i = 0; i < PIDMAP_ENTRIES; i++)
+ 		kfree(ns->pidmap[i].page);
+ 	put_user_ns(ns->user_ns);
++
++	if (ns->root_for_dump.mnt)
++		path_put(&ns->root_for_dump);
++
+ 	call_rcu(&ns->rcu, delayed_free_pidns);
+ }
+ 
+diff --git a/kernel/sysctl.c b/kernel/sysctl.c
+index 87b2fc3..0e82b2f 100644
+--- a/kernel/sysctl.c
++++ b/kernel/sysctl.c
+@@ -65,6 +65,7 @@
+ #include <linux/sched/sysctl.h>
+ #include <linux/kexec.h>
+ #include <linux/bpf.h>
++#include <linux/fs_struct.h>
+ 
+ #include <asm/uaccess.h>
+ #include <asm/processor.h>
+@@ -2372,10 +2373,34 @@ static int proc_dointvec_minmax_coredump(struct ctl_table *table, int write,
+ static int proc_dostring_coredump(struct ctl_table *table, int write,
+ 		  void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+-	int error = proc_dostring(table, write, buffer, lenp, ppos);
+-	if (!error)
+-		validate_coredump_safety();
+-	return error;
++	struct pid_namespace *pid_ns;
++	struct path old_path;
++	int error;
++
++	error = proc_dostring(table, write, buffer, lenp, ppos);
++	if (error)
++		return error;
++
++	pid_ns = task_active_pid_ns(current);
++	if (WARN_ON(!pid_ns))
++		return -EINVAL;
++
++	spin_lock(&pid_ns->root_for_dump_lock);
++
++	old_path = pid_ns->root_for_dump;
++
++	spin_lock(&current->fs->lock);
++	pid_ns->root_for_dump = current->fs->root;
++	path_get(&pid_ns->root_for_dump);
++	spin_unlock(&current->fs->lock);
++
++	spin_unlock(&pid_ns->root_for_dump_lock);
++
++	if (old_path.mnt)
++		path_put(&old_path);
++
++	validate_coredump_safety();
++	return 0;
+ }
+ #endif
+ 
 -- 
 1.8.5.1
