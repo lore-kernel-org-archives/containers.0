@@ -1,12 +1,14 @@
 From: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH v2 0/3] Write dump into container's filesystem for pipe_type
+Subject: [PATCH v2 3/3] Write dump into container's filesystem for pipe_type
 	core_pattern
-Date: Tue, 7 Jun 2016 17:52:54 +0800
-Message-ID: <cover.1465293010.git.zhaolei@cn.fujitsu.com>
+Date: Tue, 7 Jun 2016 19:29:37 +0800
+Message-ID: <9d61a9a95ca4c323adc182abf32714b46e963405.1465293010.git.zhaolei@cn.fujitsu.com>
+References: <cover.1465293010.git.zhaolei@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <cover.1465293010.git.zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -42,49 +44,95 @@ In detail, in core dump action:
 1: Search pipe program in container's fs namespace.
 2: Run pipe program in container's fs namespace to write coredump to it.
 
-I rewrited this patch from origional:
-  http://www.gossamer-threads.com/lists/linux/kernel/2395715?do=post_view_flat
-and changed the impliment way and function detail discussed in:
-  http://www.gossamer-threads.com/lists/linux/kernel/2397602?nohighlight=1#2397602
+This patch fixed above problem by running pipe program with container's
+fs_root.
 
-Changelog v1->v2:
-1: Move path_put() out of spin_lock, suggested by:
-   Al Viro <viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org>
+Test:
+ 1: do dump in host
+    should have same action with current code.
+    [HOST] # ulimit -c 1024000
+    [HOST] # rm -f /tmp/*dump*
+    [HOST] # echo "|/dump_pipe %s %c %p %u %g %t e" >/proc/sys/kernel/core_pattern
+    [HOST] # ./make_dump
+    [HOST] Segmentation fault (core dumped)
+    [HOST] # ls -l /tmp/*dump*  # Should see host_dump_*.
+    [HOST] -rw-r--r-- 1 root root 331776 Apr 15 18:01 /tmp/host_dump_11_1048576000_2356_0_0_1460714470
+ 2: do dump after change core_pattern in container
+    the container should write dump into its filesystem.
+    [HOST] # rm -f /tmp/*dump*
+    [HOST] # echo "|/dump_pipe %s %c %p %u %g %t e" >/proc/sys/kernel/core_pattern
+    [HOST] # lxc-start -n vm_dumptest
+    [GUEST]Please press Enter to activate this console.
+    [GUEST]# ulimit -c 1024000
+    [GUEST]# rm -f /tmp/*dump*
+    [GUEST]# echo "|/dump_pipe %s %c %p %u %g %t e" >/proc/sys/kernel/core_pattern
+    [GUEST]# ./make_dump
+    [GUEST]Segmentation fault (core dumped)
+    [GUEST]# ls -l /tmp/*dump*  # Should see guest_dump_*
+    [GUEST]-rw-r--r--    1 root     root       331776 Apr 15 10:01 /tmp/guest_dump_11_524288000_12_0_0_1460714482
+ 3: do dump without change core_pattern in container
+    the container should write dump into host's filesystem to keep compatibility.
+    [HOST] # rm -f /tmp/*dump*
+    [HOST] # echo "|/dump_pipe %s %c %p %u %g %t e" >/proc/sys/kernel/core_pattern
+    [HOST] # lxc-start -n vm_dumptest
+    [GUEST]Please press Enter to activate this console.
+    [GUEST]# ulimit -c 1024000
+    [GUEST]# rm -f /tmp/*dump*
+    [GUEST]# ./make_dump
+    [GUEST]Segmentation fault (core dumped)
+    [GUEST]# ls -l /tmp/*dump*  # Should not see dump file
+    [GUEST]ls: /tmp/*dump*: No such file or directory
+    [HOST] # ls -l /tmp/*dump*  # Should see dump file
+    [HOST] -rw-r--r-- 1 root root 331776 Apr 15 18:01 /tmp/host_dump_11_524288000_12_0_0_1460714516
 
-Changelog RFC->v1:
-1: RFC->v1
-2: Rebase on top of v4.7-rc2
+Signed-off-by: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
+ fs/coredump.c | 18 +++++++++++++++++-
+ 1 file changed, 17 insertions(+), 1 deletion(-)
 
-Changes against previous impliment:
-1: Avoid forking thread from the crach process.
-   Suggested-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-2: To keep compatibility with current code, if user hadn't change
-   core_pattern in container, the dump file will still write to
-   the host filesystem.
-   Suggested-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-
-Zhao Lei (3):
-  Save dump_root into pid_namespace
-  Make dump_pipe thread possilbe to select the rootfs
-  Write dump into container's filesystem for pipe_type core_pattern
-
- fs/coredump.c                 | 19 ++++++++++++++++++-
- fs/fs_struct.c                | 25 ++++++++++++++++---------
- include/linux/fs_struct.h     |  3 ++-
- include/linux/kmod.h          |  4 +++-
- include/linux/pid_namespace.h |  3 +++
- include/linux/sched.h         |  5 +++--
- init/do_mounts_initrd.c       |  3 ++-
- init/main.c                   |  4 ++--
- kernel/fork.c                 | 34 ++++++++++++++++++++--------------
- kernel/kmod.c                 | 13 ++++++++-----
- kernel/kthread.c              |  3 ++-
- kernel/pid.c                  |  1 +
- kernel/pid_namespace.c        |  6 ++++++
- kernel/sysctl.c               | 33 +++++++++++++++++++++++++++++----
- lib/kobject_uevent.c          |  3 ++-
- security/keys/request_key.c   |  2 +-
- 16 files changed, 118 insertions(+), 43 deletions(-)
-
+diff --git a/fs/coredump.c b/fs/coredump.c
+index 864985e..4616a25 100644
+--- a/fs/coredump.c
++++ b/fs/coredump.c
+@@ -592,6 +592,8 @@ void do_coredump(const siginfo_t *siginfo)
+ 		int dump_count;
+ 		char **helper_argv;
+ 		struct subprocess_info *sub_info;
++		struct pid_namespace *pid_ns;
++		struct path root_fs;
+ 
+ 		if (ispipe < 0) {
+ 			printk(KERN_WARNING "format_corename failed\n");
+@@ -638,15 +640,29 @@ void do_coredump(const siginfo_t *siginfo)
+ 			goto fail_dropcount;
+ 		}
+ 
++		pid_ns = task_active_pid_ns(current);
++		spin_lock(&pid_ns->root_for_dump_lock);
++		while (pid_ns != &init_pid_ns) {
++			if (pid_ns->root_for_dump.mnt)
++				break;
++			spin_unlock(&pid_ns->root_for_dump_lock);
++			pid_ns = pid_ns->parent,
++			spin_lock(&pid_ns->root_for_dump_lock);
++		}
++		root_fs = pid_ns->root_for_dump;
++		path_get(&root_fs);
++		spin_unlock(&pid_ns->root_for_dump_lock);
++
+ 		retval = -ENOMEM;
+ 		sub_info = call_usermodehelper_setup(helper_argv[0],
+ 						helper_argv, NULL, GFP_KERNEL,
+ 						umh_pipe_setup, NULL, &cprm,
+-						NULL);
++						&root_fs);
+ 		if (sub_info)
+ 			retval = call_usermodehelper_exec(sub_info,
+ 							  UMH_WAIT_EXEC);
+ 
++		path_put(&root_fs);
+ 		argv_free(helper_argv);
+ 		if (retval) {
+ 			printk(KERN_INFO "Core dump to |%s pipe failed\n",
 -- 
 1.8.5.1
