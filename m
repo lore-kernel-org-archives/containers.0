@@ -1,12 +1,11 @@
-From: "amanda fox" <amanda.fox-Q59N0+57GnjW+xusV0iaPLfOX0fSgVTm@public.gmane.org>
+From: Zoe Ruby <zoerubyus-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Open Stack Users
-Date: Fri, 10 Jun 2016 00:31:50 +0530
-Message-ID: <!&!AAAAAAAAAAAYAAAAAAAAAMhi5k06W2VLglzBXsCUWP7CgAAAEAAAABfMhfZ8WxBGhyqZYdVpJjEBAAAAAA==@allanalyticsprobook.com>
+Date: Fri, 10 Jun 2016 14:31:02 +0000
+Message-ID: <001a113ff1f05780b00534ed639f@google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"; Format="flowed"; DelSp="yes"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-us
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,63 +18,24 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi, Good Day 
-
- 
-
-Would you be interested in Open Stack Users list for your marketing
-campaigns? 
-
- 
-
-We can provide you Database Specifically from North America, Latin America,
-EMEA, and APAC.
-
- 
-
-Information Fields - Name, Title, Email, Phone Numbers, Company Name, and
-Company Details like Physical Address, Web Address, Revenue Size, Employee
-Size and industry.
-
-     
-
-You can also acquire companies using: 
-
- 
-
-*  AWS
-
-*  VMware
-
-*  Cloud Stack
-
-*  Red Hat and many more.
-
- 
-
-We can provide you with contacts from all divisions. 
-
- 
-
-Please review and let me know if you are interested and I will get back to
-you with more information for the same.
-
- 
-
-Regards
-
-Amanda Fox
-
-Marketing Executive
-
- 
-
- 
-
-| List acquisition | Technology Lists | Email/Data Appending | Search Engine
-Optimization |
-
- 
-
-If you don't want to include yourself in our mailing list, please reply back
-"RE: Leave Out" in a subject line
+DQoNCkhpLCBHb29kIERheQ0KDQoNCg0KV291bGQgeW91IGJlIGludGVyZXN0ZWQgaW4gKk9wZW4g
+U3RhY2sgVXNlcnMgKmxpc3QgZm9yIHlvdXIgbWFya2V0aW5nDQpjYW1wYWlnbnM/DQoNCg0KDQpX
+ZSBjYW4gcHJvdmlkZSB5b3UgRGF0YWJhc2UgU3BlY2lmaWNhbGx5IGZyb20gTm9ydGggQW1lcmlj
+YSwgTGF0aW4gQW1lcmljYSwNCkVNRUEsIGFuZCBBUEFDLg0KDQoNCg0KKkluZm9ybWF0aW9uIEZp
+ZWxkcyog4oCTIE5hbWUsIFRpdGxlLCBFbWFpbCwgUGhvbmUgTnVtYmVycywgQ29tcGFueSBOYW1l
+LCBhbmQNCkNvbXBhbnkgRGV0YWlscyBsaWtlIFBoeXNpY2FsIEFkZHJlc3MsIFdlYiBBZGRyZXNz
+LCBSZXZlbnVlIFNpemUsIEVtcGxveWVlDQpTaXplIGFuZCBpbmR1c3RyeS4NCg0KDQoNCipZb3Ug
+Y2FuIGFsc28gYWNxdWlyZSBjb21wYW5pZXMgdXNpbmc6ICoNCg0KDQoNCsK3ICAgICAgICAgQVdT
+DQoNCsK3ICAgICAgICAgVk13YXJlDQoNCsK3ICAgICAgICAgQ2xvdWQgU3RhY2sNCg0KwrcgICAg
+ICAgICBSZWQgSGF0ICphbmQgbWFueSBtb3JlLioNCg0KDQoNCldlIGNhbiBwcm92aWRlIHlvdSB3
+aXRoIGNvbnRhY3RzIGZyb20gYWxsIGRpdmlzaW9ucy4NCg0KDQoNClBsZWFzZSByZXZpZXcgYW5k
+IGxldCBtZSBrbm93IGlmIHlvdSBhcmUgaW50ZXJlc3RlZCBhbmQgSSB3aWxsIGdldCBiYWNrIHRv
+DQp5b3Ugd2l0aCBtb3JlIGluZm9ybWF0aW9uIGZvciB0aGUgc2FtZS4NCg0KDQoNCipSZWdhcmRz
+Kg0KDQoqWm9lIFJ1YnkqDQoNCipNYXJrZXRpbmcgRXhlY3V0aXZlKg0KDQoNCg0KDQoNCnwgTGlz
+dCBhY3F1aXNpdGlvbiB8IFRlY2hub2xvZ3kgTGlzdHMgfCBFbWFpbC9EYXRhIEFwcGVuZGluZyB8
+IFNlYXJjaA0KRW5naW5lIE9wdGltaXphdGlvbiB8DQoNCg0KDQpJZiB5b3UgZG9uJ3Qgd2FudCB0
+byBpbmNsdWRlIHlvdXJzZWxmIGluIG91ciBtYWlsaW5nIGxpc3QsIHBsZWFzZSByZXBseQ0KYmFj
+ayAiUkU6IExlYXZlIE91dCIgaW4gYSBzdWJqZWN0IGxpbmUNCg0KDQoNCg0KX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxp
+c3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxp
+bnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
