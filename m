@@ -1,11 +1,15 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH review 0/13] Adding a userns owner to struct super_block
-Date: Mon, 20 Jun 2016 12:09:43 -0500
-Message-ID: <87fus77pns.fsf@x220.int.ebiederm.org>
+From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Subject: [PATCH review 02/13] mnt: Refactor fs_fully_visible into
+	mount_too_revealing
+Date: Mon, 20 Jun 2016 12:21:19 -0500
+Message-ID: <20160620172130.15712-2-ebiederm@xmission.com>
+References: <87fus77pns.fsf@x220.int.ebiederm.org>
+	<20160620172130.15712-1-ebiederm@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20160620172130.15712-1-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,76 +23,184 @@ To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 Cc: Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Djalal Harouni <tixxdz-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Replace the call of fs_fully_visible in do_new_mount from before the
+new superblock is allocated with a call of mount_too_revealing after
+the superblock is allocated.   This winds up being a much better location
+for maintainability of the code.
 
-Available from git at:
+The first change this enables is the replacement of FS_USERNS_VISIBLE
+with SB_I_USERNS_VISIBLE.  Moving the flag from struct filesystem_type
+to sb_iflags on the superblock.
 
-    git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-testing
+Unfortunately mount_too_revealing fundamentally needs to touch
+mnt_flags adding several MNT_LOCKED_XXX flags at the appropriate
+times.  If the mnt_flags did not need to be touched the code
+could be easily moved into the filesystem specific mount code.
 
-This changeset is part of ongoing work by Seth Forshee and myself to
-update the VFS to allow ordinary users to mount filesystems with a
-backing store.  The primary target is the fuse filesystem but there
-are other filesystems such as shiftfs that will benefit.
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ fs/namespace.c     | 38 +++++++++++++++++++++++++-------------
+ fs/proc/inode.c    |  1 +
+ fs/proc/root.c     |  2 +-
+ fs/sysfs/mount.c   |  4 ++--
+ include/linux/fs.h |  4 +++-
+ 5 files changed, 32 insertions(+), 17 deletions(-)
 
-The high level idea is to:
-
-- Assign filesystems a owning user namespace (s_user_ns).
-
-- Update permission checks (such as the one in remount) to use s_user_ns.
-
-- Interpret uids/gids from outside the kernels control as coming
-  from inside s_user_ns.
-
-- Handle vfs uid and gid fields containing INVALID_UID and INVALID_GID
-  indicating there is no mapping from the filesystem uids and gids into
-  the kernel representation.
-
-This changeset addresses the first step in this process mounting
-filesystems, and adding a s_user_ns field to struct super_block and
-populating it appropriately.
-
-The goal is to keep everything that is not filesystem specific at the
-VFS layer and to ensure the VFS and security module issues are properly
-handled before updating adding support for filesystems with backing
-store external to the kernel such as fuse.
-
-The bulk of this changeset is spent in the weird corner cases that exist
-for the existing filesystems we allow mounting with just user namespace
-permissions.  Cleaning up and reorganizing that code and handling the
-generic mount options nodeve, noexec and nosuid.  The s_iflags flag
-SB_I_NODEV is added to mark filesystems that may never contain devices
-(which is everything except devpts that is mounted with just user
- namespace permissions).
-
-Eric W. Biederman (13):
-      mnt: Account for MS_RDONLY in fs_fully_visible
-      mnt: Refactor fs_fully_visible into mount_too_revealing
-      ipc: Initialize ipc_namespace->user_ns early.
-      vfs: Pass data, ns, and ns->userns to mount_ns
-      proc: Convert proc_mount to use mount_ns.
-      fs: Add user namespace member to struct super_block
-      mnt: Move the FS_USERNS_MOUNT check into sget_userns
-      kernfs: The cgroup filesystem also benefits from SB_I_NOEXEC
-      ipc/mqueue: The mqueue filesystem should never contain executables
-      vfs: Generalize filesystem nodev handling.
-      mnt: Simplify mount_too_revealing
-      userns: Remove implicit MNT_NODEV fragility.
-      userns: Remove the now unnecessary FS_USERNS_DEV_MOUNT flag
-
- fs/block_dev.c        |  2 +-
- fs/devpts/inode.c     |  3 +-
- fs/kernfs/mount.c     |  5 ++-
- fs/namei.c            |  8 ++++-
- fs/namespace.c        | 90 ++++++++++++++++++++++-----------------------------
- fs/nfsd/nfsctl.c      | 13 +++-----
- fs/proc/inode.c       |  8 ++++-
- fs/proc/internal.h    |  3 +-
- fs/proc/root.c        | 54 +++----------------------------
- fs/super.c            | 69 ++++++++++++++++++++++++++++++++++-----
- fs/sysfs/mount.c      |  5 ++-
- include/linux/fs.h    | 24 +++++++++++---
- ipc/mqueue.c          | 20 ++++++------
- ipc/namespace.c       |  5 +--
- net/sunrpc/rpc_pipe.c |  8 ++---
- 15 files changed, 169 insertions(+), 148 deletions(-)
-
-Eric
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 783004af5707..1a69aa786975 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -2375,7 +2375,7 @@ unlock:
+ 	return err;
+ }
+ 
+-static bool fs_fully_visible(struct file_system_type *fs_type, int *new_mnt_flags);
++static bool mount_too_revealing(struct vfsmount *mnt, int *new_mnt_flags);
+ 
+ /*
+  * create a new mount for userspace and request it to be added into the
+@@ -2408,12 +2408,6 @@ static int do_new_mount(struct path *path, const char *fstype, int flags,
+ 			flags |= MS_NODEV;
+ 			mnt_flags |= MNT_NODEV | MNT_LOCK_NODEV;
+ 		}
+-		if (type->fs_flags & FS_USERNS_VISIBLE) {
+-			if (!fs_fully_visible(type, &mnt_flags)) {
+-				put_filesystem(type);
+-				return -EPERM;
+-			}
+-		}
+ 	}
+ 
+ 	mnt = vfs_kern_mount(type, flags, name, data);
+@@ -2425,6 +2419,11 @@ static int do_new_mount(struct path *path, const char *fstype, int flags,
+ 	if (IS_ERR(mnt))
+ 		return PTR_ERR(mnt);
+ 
++	if (mount_too_revealing(mnt, &mnt_flags)) {
++		mntput(mnt);
++		return -EPERM;
++	}
++
+ 	err = do_add_mount(real_mount(mnt), path, mnt_flags);
+ 	if (err)
+ 		mntput(mnt);
+@@ -3216,22 +3215,19 @@ bool current_chrooted(void)
+ 	return chrooted;
+ }
+ 
+-static bool fs_fully_visible(struct file_system_type *type, int *new_mnt_flags)
++static bool mnt_already_visible(struct mnt_namespace *ns, struct vfsmount *new,
++				int *new_mnt_flags)
+ {
+-	struct mnt_namespace *ns = current->nsproxy->mnt_ns;
+ 	int new_flags = *new_mnt_flags;
+ 	struct mount *mnt;
+ 	bool visible = false;
+ 
+-	if (unlikely(!ns))
+-		return false;
+-
+ 	down_read(&namespace_sem);
+ 	list_for_each_entry(mnt, &ns->list, mnt_list) {
+ 		struct mount *child;
+ 		int mnt_flags;
+ 
+-		if (mnt->mnt.mnt_sb->s_type != type)
++		if (mnt->mnt.mnt_sb->s_type != new->mnt_sb->s_type)
+ 			continue;
+ 
+ 		/* This mount is not fully visible if it's root directory
+@@ -3298,6 +3294,22 @@ found:
+ 	return visible;
+ }
+ 
++static bool mount_too_revealing(struct vfsmount *mnt, int *new_mnt_flags)
++{
++	struct mnt_namespace *ns = current->nsproxy->mnt_ns;
++	unsigned long s_iflags;
++
++	if (ns->user_ns == &init_user_ns)
++		return false;
++
++	/* Can this filesystem be too revealing? */
++	s_iflags = mnt->mnt_sb->s_iflags;
++	if (!(s_iflags & SB_I_USERNS_VISIBLE))
++		return false;
++
++	return !mnt_already_visible(ns, mnt, new_mnt_flags);
++}
++
+ static struct ns_common *mntns_get(struct task_struct *task)
+ {
+ 	struct ns_common *ns = NULL;
+diff --git a/fs/proc/inode.c b/fs/proc/inode.c
+index 42305ddcbaa0..78fa452d65ed 100644
+--- a/fs/proc/inode.c
++++ b/fs/proc/inode.c
+@@ -462,6 +462,7 @@ int proc_fill_super(struct super_block *s)
+ 	struct inode *root_inode;
+ 	int ret;
+ 
++	s->s_iflags |= SB_I_USERNS_VISIBLE;
+ 	s->s_flags |= MS_NODIRATIME | MS_NOSUID | MS_NOEXEC;
+ 	s->s_blocksize = 1024;
+ 	s->s_blocksize_bits = 10;
+diff --git a/fs/proc/root.c b/fs/proc/root.c
+index 55bc7d6c8aac..a1b2860fec62 100644
+--- a/fs/proc/root.c
++++ b/fs/proc/root.c
+@@ -158,7 +158,7 @@ static struct file_system_type proc_fs_type = {
+ 	.name		= "proc",
+ 	.mount		= proc_mount,
+ 	.kill_sb	= proc_kill_sb,
+-	.fs_flags	= FS_USERNS_VISIBLE | FS_USERNS_MOUNT,
++	.fs_flags	= FS_USERNS_MOUNT,
+ };
+ 
+ void __init proc_root_init(void)
+diff --git a/fs/sysfs/mount.c b/fs/sysfs/mount.c
+index f3db82071cfb..f31e36994dfb 100644
+--- a/fs/sysfs/mount.c
++++ b/fs/sysfs/mount.c
+@@ -42,7 +42,7 @@ static struct dentry *sysfs_mount(struct file_system_type *fs_type,
+ 		kobj_ns_drop(KOBJ_NS_TYPE_NET, ns);
+ 	else if (new_sb)
+ 		/* Userspace would break if executables appear on sysfs */
+-		root->d_sb->s_iflags |= SB_I_NOEXEC;
++		root->d_sb->s_iflags |= SB_I_USERNS_VISIBLE | SB_I_NOEXEC;
+ 
+ 	return root;
+ }
+@@ -59,7 +59,7 @@ static struct file_system_type sysfs_fs_type = {
+ 	.name		= "sysfs",
+ 	.mount		= sysfs_mount,
+ 	.kill_sb	= sysfs_kill_sb,
+-	.fs_flags	= FS_USERNS_VISIBLE | FS_USERNS_MOUNT,
++	.fs_flags	= FS_USERNS_MOUNT,
+ };
+ 
+ int __init sysfs_init(void)
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index dd288148a6b1..71988dd3af95 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1328,6 +1328,9 @@ struct mm_struct;
+ #define SB_I_CGROUPWB	0x00000001	/* cgroup-aware writeback enabled */
+ #define SB_I_NOEXEC	0x00000002	/* Ignore executables on this fs */
+ 
++/* sb->s_iflags to limit user namespace mounts */
++#define SB_I_USERNS_VISIBLE		0x00000010 /* fstype already mounted */
++
+ /* Possible states of 'frozen' field */
+ enum {
+ 	SB_UNFROZEN = 0,		/* FS is unfrozen */
+@@ -2011,7 +2014,6 @@ struct file_system_type {
+ #define FS_HAS_SUBTYPE		4
+ #define FS_USERNS_MOUNT		8	/* Can be mounted by userns root */
+ #define FS_USERNS_DEV_MOUNT	16 /* A userns mount does not imply MNT_NODEV */
+-#define FS_USERNS_VISIBLE	32	/* FS must already be visible */
+ #define FS_RENAME_DOES_D_MOVE	32768	/* FS will handle d_move() during rename() internally. */
+ 	struct dentry *(*mount) (struct file_system_type *, int,
+ 		       const char *, void *);
+-- 
+2.8.3
