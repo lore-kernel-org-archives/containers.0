@@ -1,15 +1,15 @@
 From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: [PATCH review 10/13] vfs: Generalize filesystem nodev handling.
-Date: Mon, 20 Jun 2016 15:57:09 -0700
-Message-ID: <CALCETrUWsnRgjyRyb+_0u0PYubx9gg=hUAso=073yjJY+m205g@mail.gmail.com>
+Subject: Re: [PATCH review 12/13] userns: Remove implicit MNT_NODEV fragility.
+Date: Mon, 20 Jun 2016 15:58:41 -0700
+Message-ID: <CALCETrUsJ-r5bfD2Ynq-SKGsB6oDNqCndiX90cBUqumfeMWsTQ@mail.gmail.com>
 References: <87fus77pns.fsf@x220.int.ebiederm.org>
 	<20160620172130.15712-1-ebiederm@xmission.com>
-	<20160620172130.15712-10-ebiederm@xmission.com>
+	<20160620172130.15712-12-ebiederm@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20160620172130.15712-10-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <20160620172130.15712-12-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,9 +25,9 @@ List-Id: containers.vger.kernel.org
 
 On Mon, Jun 20, 2016 at 10:21 AM, Eric W. Biederman
 <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
-> Introduce a function may_open_dev that tests MNT_NODEV and a new
-> superblock flab SB_I_NODEV.  Use this new function in all of the
-> places where MNT_NODEV was previously tested.
+> Replace the implict setting of MNT_NODEV on mounts that happen with
+> just user namespace permissions with an implicit setting of SB_I_NODEV
+> in s_iflags.  The visibility of the implicit MNT_NODEV has caused
+> problems in the past.
 
-This would be nicer as two patches: one to refactor the check and the
-second to change the condition.
+I like this!
