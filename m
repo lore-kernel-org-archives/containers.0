@@ -1,7 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 04/13] vfs: Pass data, ns, and ns->userns to mount_ns
-Date: Mon, 20 Jun 2016 12:21:21 -0500
-Message-ID: <20160620172130.15712-4-ebiederm@xmission.com>
+Subject: [PATCH review 05/13] proc: Convert proc_mount to use mount_ns.
+Date: Mon, 20 Jun 2016 12:21:22 -0500
+Message-ID: <20160620172130.15712-5-ebiederm@xmission.com>
 References: <87fus77pns.fsf@x220.int.ebiederm.org>
 	<20160620172130.15712-1-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -22,190 +22,149 @@ To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 Cc: Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Djalal Harouni <tixxdz-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Today what is normally called data (the mount options) is not passed
-to fill_super through mount_ns.
+Move the call of get_pid_ns, the call of proc_parse_options, and
+the setting of s_iflags into proc_fill_super so that mount_ns
+can be used.
 
-Pass the mount options and the namespace separately to mount_ns so
-that filesystems such as proc that have mount options, can use
-mount_ns.
-
-Pass the user namespace to mount_ns so that the standard permission
-check that verifies the mounter has permissions over the namespace can
-be performed in mount_ns instead of in each filesystems .mount method.
-Thus removing the duplication between mqueuefs and proc in terms of
-permission checks.  The extra permission check does not currently
-affect the rpc_pipefs filesystem and the nfsd filesystem as those
-filesystems do not currently allow unprivileged mounts.  Without
-unpvileged mounts it is guaranteed that the caller has already passed
-capable(CAP_SYS_ADMIN) which guarantees extra permission check will
-pass.
-
-Update rpc_pipefs and the nfsd filesystem to ensure that the network
-namespace reference is always taken in fill_super and always put in kill_sb
-so that the logic is simpler and so that errors originating inside of
-fill_super do not cause a network namespace leak.
+Convert proc_mount to call mount_ns and remove the now unnecessary
+code.
 
 Acked-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/nfsd/nfsctl.c      | 13 ++++---------
- fs/super.c            | 13 ++++++++++---
- include/linux/fs.h    |  5 +++--
- ipc/mqueue.c          | 19 ++++++++-----------
- net/sunrpc/rpc_pipe.c |  8 ++++----
- 5 files changed, 29 insertions(+), 29 deletions(-)
+ fs/proc/inode.c    |  9 +++++++--
+ fs/proc/internal.h |  3 ++-
+ fs/proc/root.c     | 52 ++++------------------------------------------------
+ 3 files changed, 13 insertions(+), 51 deletions(-)
 
-diff --git a/fs/nfsd/nfsctl.c b/fs/nfsd/nfsctl.c
-index 9690cb4dd588..5a6ae2522266 100644
---- a/fs/nfsd/nfsctl.c
-+++ b/fs/nfsd/nfsctl.c
-@@ -1154,20 +1154,15 @@ static int nfsd_fill_super(struct super_block * sb, void * data, int silent)
- #endif
- 		/* last one */ {""}
- 	};
--	struct net *net = data;
--	int ret;
--
--	ret = simple_fill_super(sb, 0x6e667364, nfsd_files);
--	if (ret)
--		return ret;
--	sb->s_fs_info = get_net(net);
--	return 0;
-+	get_net(sb->s_fs_info);
-+	return simple_fill_super(sb, 0x6e667364, nfsd_files);
+diff --git a/fs/proc/inode.c b/fs/proc/inode.c
+index 78fa452d65ed..f4817efb25a6 100644
+--- a/fs/proc/inode.c
++++ b/fs/proc/inode.c
+@@ -457,12 +457,17 @@ struct inode *proc_get_inode(struct super_block *sb, struct proc_dir_entry *de)
+ 	return inode;
  }
  
- static struct dentry *nfsd_mount(struct file_system_type *fs_type,
+-int proc_fill_super(struct super_block *s)
++int proc_fill_super(struct super_block *s, void *data, int silent)
+ {
++	struct pid_namespace *ns = get_pid_ns(s->s_fs_info);
+ 	struct inode *root_inode;
+ 	int ret;
+ 
+-	s->s_iflags |= SB_I_USERNS_VISIBLE;
++	if (!proc_parse_options(data, ns))
++		return -EINVAL;
++
++	/* User space would break if executables appear on proc */
++	s->s_iflags |= SB_I_USERNS_VISIBLE | SB_I_NOEXEC;
+ 	s->s_flags |= MS_NODIRATIME | MS_NOSUID | MS_NOEXEC;
+ 	s->s_blocksize = 1024;
+ 	s->s_blocksize_bits = 10;
+diff --git a/fs/proc/internal.h b/fs/proc/internal.h
+index aa2781095bd1..7931c558c192 100644
+--- a/fs/proc/internal.h
++++ b/fs/proc/internal.h
+@@ -212,7 +212,7 @@ extern const struct inode_operations proc_pid_link_inode_operations;
+ 
+ extern void proc_init_inodecache(void);
+ extern struct inode *proc_get_inode(struct super_block *, struct proc_dir_entry *);
+-extern int proc_fill_super(struct super_block *);
++extern int proc_fill_super(struct super_block *, void *data, int flags);
+ extern void proc_entry_rundown(struct proc_dir_entry *);
+ 
+ /*
+@@ -268,6 +268,7 @@ static inline void proc_tty_init(void) {}
+  * root.c
+  */
+ extern struct proc_dir_entry proc_root;
++extern int proc_parse_options(char *options, struct pid_namespace *pid);
+ 
+ extern void proc_self_init(void);
+ extern int proc_remount(struct super_block *, int *, char *);
+diff --git a/fs/proc/root.c b/fs/proc/root.c
+index a1b2860fec62..8d3e484055a6 100644
+--- a/fs/proc/root.c
++++ b/fs/proc/root.c
+@@ -23,21 +23,6 @@
+ 
+ #include "internal.h"
+ 
+-static int proc_test_super(struct super_block *sb, void *data)
+-{
+-	return sb->s_fs_info == data;
+-}
+-
+-static int proc_set_super(struct super_block *sb, void *data)
+-{
+-	int err = set_anon_super(sb, NULL);
+-	if (!err) {
+-		struct pid_namespace *ns = (struct pid_namespace *)data;
+-		sb->s_fs_info = get_pid_ns(ns);
+-	}
+-	return err;
+-}
+-
+ enum {
+ 	Opt_gid, Opt_hidepid, Opt_err,
+ };
+@@ -48,7 +33,7 @@ static const match_table_t tokens = {
+ 	{Opt_err, NULL},
+ };
+ 
+-static int proc_parse_options(char *options, struct pid_namespace *pid)
++int proc_parse_options(char *options, struct pid_namespace *pid)
+ {
+ 	char *p;
+ 	substring_t args[MAX_OPT_ARGS];
+@@ -100,45 +85,16 @@ int proc_remount(struct super_block *sb, int *flags, char *data)
+ static struct dentry *proc_mount(struct file_system_type *fs_type,
  	int flags, const char *dev_name, void *data)
  {
--	return mount_ns(fs_type, flags, current->nsproxy->net_ns, nfsd_fill_super);
-+	struct net *net = current->nsproxy->net_ns;
-+	return mount_ns(fs_type, flags, data, net, net->user_ns, nfsd_fill_super);
- }
+-	int err;
+-	struct super_block *sb;
+ 	struct pid_namespace *ns;
+-	char *options;
  
- static void nfsd_umount(struct super_block *sb)
-diff --git a/fs/super.c b/fs/super.c
-index d78b9847e6cb..fd65667832e5 100644
---- a/fs/super.c
-+++ b/fs/super.c
-@@ -918,12 +918,19 @@ static int ns_set_super(struct super_block *sb, void *data)
- 	return set_anon_super(sb, NULL);
- }
- 
--struct dentry *mount_ns(struct file_system_type *fs_type, int flags,
--	void *data, int (*fill_super)(struct super_block *, void *, int))
-+struct dentry *mount_ns(struct file_system_type *fs_type,
-+	int flags, void *data, void *ns, struct user_namespace *user_ns,
-+	int (*fill_super)(struct super_block *, void *, int))
- {
- 	struct super_block *sb;
- 
--	sb = sget(fs_type, ns_test_super, ns_set_super, flags, data);
-+	/* Don't allow mounting unless the caller has CAP_SYS_ADMIN
-+	 * over the namespace.
-+	 */
-+	if (!(flags & MS_KERNMOUNT) && !ns_capable(user_ns, CAP_SYS_ADMIN))
-+		return ERR_PTR(-EPERM);
-+
-+	sb = sget(fs_type, ns_test_super, ns_set_super, flags, ns);
- 	if (IS_ERR(sb))
- 		return ERR_CAST(sb);
- 
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 71988dd3af95..1ce006a24f49 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -2034,8 +2034,9 @@ struct file_system_type {
- 
- #define MODULE_ALIAS_FS(NAME) MODULE_ALIAS("fs-" NAME)
- 
--extern struct dentry *mount_ns(struct file_system_type *fs_type, int flags,
--	void *data, int (*fill_super)(struct super_block *, void *, int));
-+extern struct dentry *mount_ns(struct file_system_type *fs_type,
-+	int flags, void *data, void *ns, struct user_namespace *user_ns,
-+	int (*fill_super)(struct super_block *, void *, int));
- extern struct dentry *mount_bdev(struct file_system_type *fs_type,
- 	int flags, const char *dev_name, void *data,
- 	int (*fill_super)(struct super_block *, void *, int));
-diff --git a/ipc/mqueue.c b/ipc/mqueue.c
-index ade739f67f1d..60d97082f4dc 100644
---- a/ipc/mqueue.c
-+++ b/ipc/mqueue.c
-@@ -305,7 +305,7 @@ err:
- static int mqueue_fill_super(struct super_block *sb, void *data, int silent)
- {
- 	struct inode *inode;
--	struct ipc_namespace *ns = data;
-+	struct ipc_namespace *ns = sb->s_fs_info;
- 
- 	sb->s_blocksize = PAGE_SIZE;
- 	sb->s_blocksize_bits = PAGE_SHIFT;
-@@ -326,17 +326,14 @@ static struct dentry *mqueue_mount(struct file_system_type *fs_type,
- 			 int flags, const char *dev_name,
- 			 void *data)
- {
--	if (!(flags & MS_KERNMOUNT)) {
--		struct ipc_namespace *ns = current->nsproxy->ipc_ns;
--		/* Don't allow mounting unless the caller has CAP_SYS_ADMIN
--		 * over the ipc namespace.
--		 */
--		if (!ns_capable(ns->user_ns, CAP_SYS_ADMIN))
--			return ERR_PTR(-EPERM);
--
--		data = ns;
-+	struct ipc_namespace *ns;
-+	if (flags & MS_KERNMOUNT) {
+ 	if (flags & MS_KERNMOUNT) {
+-		ns = (struct pid_namespace *)data;
+-		options = NULL;
 +		ns = data;
 +		data = NULL;
-+	} else {
-+		ns = current->nsproxy->ipc_ns;
+ 	} else {
+ 		ns = task_active_pid_ns(current);
+-		options = data;
+-
+-		/* Does the mounter have privilege over the pid namespace? */
+-		if (!ns_capable(ns->user_ns, CAP_SYS_ADMIN))
+-			return ERR_PTR(-EPERM);
+-	}
+-
+-	sb = sget(fs_type, proc_test_super, proc_set_super, flags, ns);
+-	if (IS_ERR(sb))
+-		return ERR_CAST(sb);
+-
+-	if (!proc_parse_options(options, ns)) {
+-		deactivate_locked_super(sb);
+-		return ERR_PTR(-EINVAL);
+-	}
+-
+-	if (!sb->s_root) {
+-		err = proc_fill_super(sb);
+-		if (err) {
+-			deactivate_locked_super(sb);
+-			return ERR_PTR(err);
+-		}
+-
+-		sb->s_flags |= MS_ACTIVE;
+-		/* User space would break if executables appear on proc */
+-		sb->s_iflags |= SB_I_NOEXEC;
  	}
--	return mount_ns(fs_type, flags, data, mqueue_fill_super);
-+	return mount_ns(fs_type, flags, data, ns, ns->user_ns, mqueue_fill_super);
+ 
+-	return dget(sb->s_root);
++	return mount_ns(fs_type, flags, data, ns, ns->user_ns, proc_fill_super);
  }
  
- static void init_once(void *foo)
-diff --git a/net/sunrpc/rpc_pipe.c b/net/sunrpc/rpc_pipe.c
-index fc48eca21fd2..84f98cbe31c3 100644
---- a/net/sunrpc/rpc_pipe.c
-+++ b/net/sunrpc/rpc_pipe.c
-@@ -1386,7 +1386,7 @@ rpc_fill_super(struct super_block *sb, void *data, int silent)
- {
- 	struct inode *inode;
- 	struct dentry *root, *gssd_dentry;
--	struct net *net = data;
-+	struct net *net = get_net(sb->s_fs_info);
- 	struct sunrpc_net *sn = net_generic(net, sunrpc_net_id);
- 	int err;
- 
-@@ -1419,7 +1419,6 @@ rpc_fill_super(struct super_block *sb, void *data, int silent)
- 					   sb);
- 	if (err)
- 		goto err_depopulate;
--	sb->s_fs_info = get_net(net);
- 	mutex_unlock(&sn->pipefs_sb_lock);
- 	return 0;
- 
-@@ -1448,7 +1447,8 @@ static struct dentry *
- rpc_mount(struct file_system_type *fs_type,
- 		int flags, const char *dev_name, void *data)
- {
--	return mount_ns(fs_type, flags, current->nsproxy->net_ns, rpc_fill_super);
-+	struct net *net = current->nsproxy->net_ns;
-+	return mount_ns(fs_type, flags, data, net, net->user_ns, rpc_fill_super);
- }
- 
- static void rpc_kill_sb(struct super_block *sb)
-@@ -1468,9 +1468,9 @@ static void rpc_kill_sb(struct super_block *sb)
- 					   RPC_PIPEFS_UMOUNT,
- 					   sb);
- 	mutex_unlock(&sn->pipefs_sb_lock);
--	put_net(net);
- out:
- 	kill_litter_super(sb);
-+	put_net(net);
- }
- 
- static struct file_system_type rpc_pipe_fs_type = {
+ static void proc_kill_sb(struct super_block *sb)
 -- 
 2.8.3
