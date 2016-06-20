@@ -1,13 +1,14 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 01/13] mnt: Account for MS_RDONLY in fs_fully_visible
-Date: Mon, 20 Jun 2016 12:21:18 -0500
-Message-ID: <20160620172130.15712-1-ebiederm@xmission.com>
+Subject: [PATCH review 03/13] ipc: Initialize ipc_namespace->user_ns early.
+Date: Mon, 20 Jun 2016 12:21:20 -0500
+Message-ID: <20160620172130.15712-3-ebiederm@xmission.com>
 References: <87fus77pns.fsf@x220.int.ebiederm.org>
+	<20160620172130.15712-1-ebiederm@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87fus77pns.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <20160620172130.15712-1-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,42 +22,44 @@ To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 Cc: Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Djalal Harouni <tixxdz-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-In rare cases it is possible for s_flags & MS_RDONLY to be set but
-MNT_READONLY to be clear.  This starting combination can cause
-fs_fully_visible to fail to ensure that the new mount is readonly.
-Therefore force MNT_LOCK_READONLY in the new mount if MS_RDONLY
-is set on the source filesystem of the mount.
+Allow the ipc namespace initialization code to depend on ns->user_ns
+being set during initialization.
 
-In general both MS_RDONLY and MNT_READONLY are set at the same for
-mounts so I don't expect any programs to care.  Nor do I expect
-MS_RDONLY to be set on proc or sysfs in the initial user namespace,
-which further decreases the likelyhood of problems.
+In particular this allows mq_init_ns to use ns->user_ns for permission
+checks and initializating s_user_ns while the the mq filesystem is
+being mounted.
 
-Which means this change should only affect system configurations by
-paranoid sysadmins who should welcome the additional protection
-as it keeps people from wriggling out of their policies.
-
-Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Fixes: 8c6cf9cc829f ("mnt: Modify fs_fully_visible to deal with locked ro nodev and atime")
+Acked-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Suggested-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/namespace.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ ipc/namespace.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/fs/namespace.c b/fs/namespace.c
-index a7ec92c051f5..783004af5707 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -3247,6 +3247,10 @@ static bool fs_fully_visible(struct file_system_type *type, int *new_mnt_flags)
- 		if (mnt->mnt.mnt_sb->s_iflags & SB_I_NOEXEC)
- 			mnt_flags &= ~(MNT_LOCK_NOSUID | MNT_LOCK_NOEXEC);
+diff --git a/ipc/namespace.c b/ipc/namespace.c
+index 068caf18d565..04cb07eb81f1 100644
+--- a/ipc/namespace.c
++++ b/ipc/namespace.c
+@@ -34,8 +34,11 @@ static struct ipc_namespace *create_ipc_ns(struct user_namespace *user_ns,
+ 	ns->ns.ops = &ipcns_operations;
  
-+		/* Don't miss readonly hidden in the superblock flags */
-+		if (mnt->mnt.mnt_sb->s_flags & MS_RDONLY)
-+			mnt_flags |= MNT_LOCK_READONLY;
+ 	atomic_set(&ns->count, 1);
++	ns->user_ns = get_user_ns(user_ns);
 +
- 		/* Verify the mount flags are equal to or more permissive
- 		 * than the proposed new mount.
- 		 */
+ 	err = mq_init_ns(ns);
+ 	if (err) {
++		put_user_ns(ns->user_ns);
+ 		ns_free_inum(&ns->ns);
+ 		kfree(ns);
+ 		return ERR_PTR(err);
+@@ -46,8 +49,6 @@ static struct ipc_namespace *create_ipc_ns(struct user_namespace *user_ns,
+ 	msg_init_ns(ns);
+ 	shm_init_ns(ns);
+ 
+-	ns->user_ns = get_user_ns(user_ns);
+-
+ 	return ns;
+ }
+ 
 -- 
 2.8.3
