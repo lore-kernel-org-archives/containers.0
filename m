@@ -1,12 +1,18 @@
-From: =?utf-8?B?S3VuZGVuc2VydmljZQ==?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
-Subject: =?utf-8?B?V2ljaHRpZ2UgTWl0dGVpbHVuZyBmwrhyIGNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmc=?=
-Date: 21 Jun 2016 09:11:26 -0700
-Message-ID: <20160621161130.B2808958@mail.linuxfoundation.org>
-Reply-To: =?utf-8?B?S3VuZGVuc2VydmljZQ==?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH review 02/13] mnt: Refactor fs_fully_visible into
+	mount_too_revealing
+Date: Tue, 21 Jun 2016 13:54:21 -0500
+Message-ID: <874m8m4bky.fsf@x220.int.ebiederm.org>
+References: <87fus77pns.fsf@x220.int.ebiederm.org>
+	<20160620172130.15712-1-ebiederm@xmission.com>
+	<20160620172130.15712-2-ebiederm@xmission.com>
+	<CALCETrXv2aeP38AmUaRVMC+O-oeWKwDcy8fPfsOCu1f8mncZEA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <CALCETrXv2aeP38AmUaRVMC+O-oeWKwDcy8fPfsOCu1f8mncZEA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Andy Lutomirski's message of "Mon, 20 Jun 2016 15:53:58 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,29 +22,43 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+Cc: Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Djalal Harouni <tixxdz-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-V2ljaHRpZ2UgTWl0dGVpbHVuZyBmwrhyICMjZW1haWwjIyBTZWhyIGdlZWhydGVyIEt1bmRlLCBh
-bSAxMC42LjIwMTYgaGFiZW4gd2lyIElobmVuIG1pdGdldGVpbHQsIGRhc3Mgd2lyIElobmVuIGVp
-bmVuIG0mb3VtbDtnbGljaGVuIEFtYXpvbiBFaW5rYXVmc2d1dHNjaGVpbiBpbSBXZXJ0IHZvbiA1
-MDAsLSBFdXJvIA0KCQkJCQkNCgkJCQkJIHp1c2VuZGVuIGsmb3VtbDtubnRlbi4gDQoJCQkJCQ0K
-CQkJCQkNCgkJCUJpc2hlciBoYWJlbiBTaWUgZGVuIEd1dHNjaGVpbiBuaWNodCBhbmdlZm9yZGVy
-dC4gQmVzdGVodCBJaHJlcnNlaXRzIGtlaW4gSW50ZXJlc3NlIG1laHI/IFRlaWxuYWhtZSBoaWVy
-IGFic2NobGllJnN6bGlnO2VuIA0KCQkJCQkNCgkJCQkJDQoJCQlJaHJlIFZvcnRlaWxlOiANCgkJ
-CQkJDQoJCQkJCQ0KCQkJLSBzb2ZvcnQsIGVpbmZhY2ggdW5kIHVudmVyYmluZGxpY2ggDQoJCQkJ
-CQ0KCQkJCQkNCgkJCS0gMTAwJSBrb3N0ZW5sb3MgDQoJCQkJCQ0KCQkJCQkNCgkJCS0gc29mb3J0
-IG9ubGluZSBlaW5sJm91bWw7c2JhciANCgkJCQkJDQoJCQkJCQ0KCQkJRmFsbHMgU2llIGRlbiBt
-Jm91bWw7Z2xpY2hlbiBBbWF6b24gR3V0c2NoZWluIG5pY2h0IGFicnVmZW4gd29sbGVuLCBiaXR0
-ZSBpY2ggdW0ga3VyemUgSW5mbywgZGFtaXQgd2lyIGRpZSBWZXJsb3N1bmcgZiZ1dW1sO3IgamVt
-YW5kIGFuZGVyZW4gZnJlaWdlYmVuIGsmb3VtbDtubmVuLiBLbGlja2VuIFNpZSBoaWVyIHVtIHNp
-Y2ggbm9jaCByZWNodHplaXRpZyBhbnp1bWVsZGVuOiAgaGllciBhbm1lbGRlbiANCgkJCQkJDQoJ
-CQkJCQ0KCQkJSWNoIGhvZmZlLCBpY2gga29ubnRlIElobmVuIG1pdCBtZWluZXIgTmFjaHJpY2h0
-IGVpbmUga2xlaW5lIEZyZXVkZSBtYWNoZW4hIDstKSANCgkJCQkJDQoJCQkJCQ0KCQkJTWl0IGZy
-ZXVuZGxpY2hlbiBHciZ1dW1sOyZzemxpZztlbiwgDQoJCQkJCQ0KCQkJCQkNCgkJCUlociBHdXRz
-Y2hlaW4gS3VuZGVuc2VydmljZS1UZWFtIDwhLS1jb3VudHBpeGVsLS0+ICA8IS0tY291bnRwaXhl
-bC0tPiANCgkJCSAgSWYgeW91IHdvdWxkIGxpa2UgdG8gbW9kaWZ5IHlvdXIgZW1haWwgc2V0dGlu
-Z3Mgb3IgdW5zdWJzY3JpYmUgLCB2aXNpdA0KCQkJIA0KCQkJaGVyZQ0KCQkJIApfX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcg
-bGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMu
-bGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> writes:
+
+> On Mon, Jun 20, 2016 at 10:21 AM, Eric W. Biederman
+> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+>> Replace the call of fs_fully_visible in do_new_mount from before the
+>> new superblock is allocated with a call of mount_too_revealing after
+>> the superblock is allocated.   This winds up being a much better location
+>> for maintainability of the code.
+>>
+>> The first change this enables is the replacement of FS_USERNS_VISIBLE
+>> with SB_I_USERNS_VISIBLE.  Moving the flag from struct filesystem_type
+>> to sb_iflags on the superblock.
+>
+> Why is this useful?
+
+A couple of reasons.
+- It helps clean up do_new_mount which is currently so overloaded by
+  special cases that it is difficult to see the core logic.
+
+- It makes the check about the actual superblock that is being mounted
+  rather than the superblock that might be mounted.
+
+- The practical place where being about the actual superblock that is
+  being mounted helps is that in "11/13 mnt: Simplify mount_too_revealing"
+  that removes the MNT_LOCK_NOSUID MNT_LOCK_NOEXEC and MNT_LOCK_NODEV
+  tests from the code, while verify that those tests are not needed
+  because the sb_iflags contains SB_I_NOEXEC and SB_I_NODEV.
+
+- The conceptual change of testing once the superblock has been
+  generated makes changes like the one above much more sensible
+  and it helps untangle mount namespace versus superblock concerns.
+
+That last is a big part of what this patchset is about.  When do we care
+about the superblock and when do we care about the mount namespace.
+
+Eric
