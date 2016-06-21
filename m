@@ -1,18 +1,17 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH review 02/13] mnt: Refactor fs_fully_visible into
-	mount_too_revealing
-Date: Tue, 21 Jun 2016 13:54:21 -0500
-Message-ID: <874m8m4bky.fsf@x220.int.ebiederm.org>
+Subject: Re: [PATCH review 10/13] vfs: Generalize filesystem nodev handling.
+Date: Tue, 21 Jun 2016 14:09:58 -0500
+Message-ID: <87k2hi1hq1.fsf@x220.int.ebiederm.org>
 References: <87fus77pns.fsf@x220.int.ebiederm.org>
 	<20160620172130.15712-1-ebiederm@xmission.com>
-	<20160620172130.15712-2-ebiederm@xmission.com>
-	<CALCETrXv2aeP38AmUaRVMC+O-oeWKwDcy8fPfsOCu1f8mncZEA@mail.gmail.com>
+	<20160620172130.15712-10-ebiederm@xmission.com>
+	<CALCETrUWsnRgjyRyb+_0u0PYubx9gg=hUAso=073yjJY+m205g@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CALCETrXv2aeP38AmUaRVMC+O-oeWKwDcy8fPfsOCu1f8mncZEA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Andy Lutomirski's message of "Mon, 20 Jun 2016 15:53:58 -0700")
+In-Reply-To: <CALCETrUWsnRgjyRyb+_0u0PYubx9gg=hUAso=073yjJY+m205g-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Andy Lutomirski's message of "Mon, 20 Jun 2016 15:57:09 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -30,35 +29,25 @@ Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> writes:
 
 > On Mon, Jun 20, 2016 at 10:21 AM, Eric W. Biederman
 > <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->> Replace the call of fs_fully_visible in do_new_mount from before the
->> new superblock is allocated with a call of mount_too_revealing after
->> the superblock is allocated.   This winds up being a much better location
->> for maintainability of the code.
->>
->> The first change this enables is the replacement of FS_USERNS_VISIBLE
->> with SB_I_USERNS_VISIBLE.  Moving the flag from struct filesystem_type
->> to sb_iflags on the superblock.
+>> Introduce a function may_open_dev that tests MNT_NODEV and a new
+>> superblock flab SB_I_NODEV.  Use this new function in all of the
+>> places where MNT_NODEV was previously tested.
 >
-> Why is this useful?
+> This would be nicer as two patches: one to refactor the check and the
+> second to change the condition.
 
-A couple of reasons.
-- It helps clean up do_new_mount which is currently so overloaded by
-  special cases that it is difficult to see the core logic.
+I can see where introducing may_open_dev before changing the conditions
+in may_open_dev might have been a a hair more readable.   At the same
+time that approaches the ridiculously small patches, and this change
+is one clear focused change (introduce and test SB_I_NODEV) and the
+change is small enough I don't see anything getting lost in the noise.
 
-- It makes the check about the actual superblock that is being mounted
-  rather than the superblock that might be mounted.
+I did very deliberately separate this from
+"12/13 userns: Remove implicit MNT_NODEV fragility."
+As a combination there would have been very confusing.
 
-- The practical place where being about the actual superblock that is
-  being mounted helps is that in "11/13 mnt: Simplify mount_too_revealing"
-  that removes the MNT_LOCK_NOSUID MNT_LOCK_NOEXEC and MNT_LOCK_NODEV
-  tests from the code, while verify that those tests are not needed
-  because the sb_iflags contains SB_I_NOEXEC and SB_I_NODEV.
-
-- The conceptual change of testing once the superblock has been
-  generated makes changes like the one above much more sensible
-  and it helps untangle mount namespace versus superblock concerns.
-
-That last is a big part of what this patchset is about.  When do we care
-about the superblock and when do we care about the mount namespace.
+Which is the really interesting result as it removes that stupid
+unnecessary difference between mounts inside and outside of user
+namespaces.
 
 Eric
