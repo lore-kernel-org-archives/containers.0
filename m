@@ -1,15 +1,18 @@
 From: Djalal Harouni <tixxdz-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH review 05/13] proc: Convert proc_mount to use mount_ns.
-Date: Thu, 23 Jun 2016 13:50:08 +0200
-Message-ID: <CAEiveUcBm94bRy2+Cs1pZqaBWiLMfgpNRu9Ro6Y_BKWMJM92Lw__47404.5651303188$1466682639$gmane$org@mail.gmail.com>
+Subject: Re: [PATCH review 02/13] mnt: Refactor fs_fully_visible into
+	mount_too_revealing
+Date: Thu, 23 Jun 2016 23:23:12 +0200
+Message-ID: <CAEiveUf=fnJwVGXLoVeau1_v1gMA1n_FjdjfDAPP47O+C6RkTA@mail.gmail.com>
 References: <87fus77pns.fsf@x220.int.ebiederm.org>
 	<20160620172130.15712-1-ebiederm@xmission.com>
-	<20160620172130.15712-5-ebiederm@xmission.com>
+	<20160620172130.15712-2-ebiederm@xmission.com>
+	<CALCETrXv2aeP38AmUaRVMC+O-oeWKwDcy8fPfsOCu1f8mncZEA@mail.gmail.com>
+	<874m8m4bky.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20160620172130.15712-5-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <874m8m4bky.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,160 +26,60 @@ To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Jun 20, 2016 at 7:21 PM, Eric W. Biederman
+On Tue, Jun 21, 2016 at 8:54 PM, Eric W. Biederman
 <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
-> Move the call of get_pid_ns, the call of proc_parse_options, and
-> the setting of s_iflags into proc_fill_super so that mount_ns
-> can be used.
+> Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> writes:
 >
-> Convert proc_mount to call mount_ns and remove the now unnecessary
-> code.
+>> On Mon, Jun 20, 2016 at 10:21 AM, Eric W. Biederman
+>> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+>>> Replace the call of fs_fully_visible in do_new_mount from before the
+>>> new superblock is allocated with a call of mount_too_revealing after
+>>> the superblock is allocated.   This winds up being a much better location
+>>> for maintainability of the code.
+>>>
+>>> The first change this enables is the replacement of FS_USERNS_VISIBLE
+>>> with SB_I_USERNS_VISIBLE.  Moving the flag from struct filesystem_type
+>>> to sb_iflags on the superblock.
+>>
+>> Why is this useful?
 >
-> Acked-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> A couple of reasons.
+> - It helps clean up do_new_mount which is currently so overloaded by
+>   special cases that it is difficult to see the core logic.
+>
+> - It makes the check about the actual superblock that is being mounted
+>   rather than the superblock that might be mounted.
+>
+> - The practical place where being about the actual superblock that is
+>   being mounted helps is that in "11/13 mnt: Simplify mount_too_revealing"
+>   that removes the MNT_LOCK_NOSUID MNT_LOCK_NOEXEC and MNT_LOCK_NODEV
+>   tests from the code, while verify that those tests are not needed
+>   because the sb_iflags contains SB_I_NOEXEC and SB_I_NODEV.
 
-Reviewed-by: Djalal Harouni <tixxdz-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Yes, but it seems in that patch 11/13 the SB_I_NOEXEC and SB_I_NODEV
+flags are only enforced and checked in case 'user_ns != init_user_ns' so for
+init_user_ns we don't enforce it. Even if we set the flags and things
+are correct
+now, but as you have noted in your previous patches related to this we try to
+commit to never exec on procfs and sysfs... so maybe take that check on its
+own and move it before the init_user_ns one ?
 
+> - The conceptual change of testing once the superblock has been
+>   generated makes changes like the one above much more sensible
+>   and it helps untangle mount namespace versus superblock concerns.
+>
+> That last is a big part of what this patchset is about.  When do we care
+> about the superblock and when do we care about the mount namespace.
 
-> ---
->  fs/proc/inode.c    |  9 +++++++--
->  fs/proc/internal.h |  3 ++-
->  fs/proc/root.c     | 52 ++++------------------------------------------------
->  3 files changed, 13 insertions(+), 51 deletions(-)
->
-> diff --git a/fs/proc/inode.c b/fs/proc/inode.c
-> index 78fa452d65ed..f4817efb25a6 100644
-> --- a/fs/proc/inode.c
-> +++ b/fs/proc/inode.c
-> @@ -457,12 +457,17 @@ struct inode *proc_get_inode(struct super_block *sb, struct proc_dir_entry *de)
->         return inode;
->  }
->
-> -int proc_fill_super(struct super_block *s)
-> +int proc_fill_super(struct super_block *s, void *data, int silent)
->  {
-> +       struct pid_namespace *ns = get_pid_ns(s->s_fs_info);
->         struct inode *root_inode;
->         int ret;
->
-> -       s->s_iflags |= SB_I_USERNS_VISIBLE;
-> +       if (!proc_parse_options(data, ns))
-> +               return -EINVAL;
-> +
-> +       /* User space would break if executables appear on proc */
-> +       s->s_iflags |= SB_I_USERNS_VISIBLE | SB_I_NOEXEC;
->         s->s_flags |= MS_NODIRATIME | MS_NOSUID | MS_NOEXEC;
->         s->s_blocksize = 1024;
->         s->s_blocksize_bits = 10;
-> diff --git a/fs/proc/internal.h b/fs/proc/internal.h
-> index aa2781095bd1..7931c558c192 100644
-> --- a/fs/proc/internal.h
-> +++ b/fs/proc/internal.h
-> @@ -212,7 +212,7 @@ extern const struct inode_operations proc_pid_link_inode_operations;
->
->  extern void proc_init_inodecache(void);
->  extern struct inode *proc_get_inode(struct super_block *, struct proc_dir_entry *);
-> -extern int proc_fill_super(struct super_block *);
-> +extern int proc_fill_super(struct super_block *, void *data, int flags);
->  extern void proc_entry_rundown(struct proc_dir_entry *);
->
->  /*
-> @@ -268,6 +268,7 @@ static inline void proc_tty_init(void) {}
->   * root.c
->   */
->  extern struct proc_dir_entry proc_root;
-> +extern int proc_parse_options(char *options, struct pid_namespace *pid);
->
->  extern void proc_self_init(void);
->  extern int proc_remount(struct super_block *, int *, char *);
-> diff --git a/fs/proc/root.c b/fs/proc/root.c
-> index a1b2860fec62..8d3e484055a6 100644
-> --- a/fs/proc/root.c
-> +++ b/fs/proc/root.c
-> @@ -23,21 +23,6 @@
->
->  #include "internal.h"
->
-> -static int proc_test_super(struct super_block *sb, void *data)
-> -{
-> -       return sb->s_fs_info == data;
-> -}
-> -
-> -static int proc_set_super(struct super_block *sb, void *data)
-> -{
-> -       int err = set_anon_super(sb, NULL);
-> -       if (!err) {
-> -               struct pid_namespace *ns = (struct pid_namespace *)data;
-> -               sb->s_fs_info = get_pid_ns(ns);
-> -       }
-> -       return err;
-> -}
-> -
->  enum {
->         Opt_gid, Opt_hidepid, Opt_err,
->  };
-> @@ -48,7 +33,7 @@ static const match_table_t tokens = {
->         {Opt_err, NULL},
->  };
->
-> -static int proc_parse_options(char *options, struct pid_namespace *pid)
-> +int proc_parse_options(char *options, struct pid_namespace *pid)
->  {
->         char *p;
->         substring_t args[MAX_OPT_ARGS];
-> @@ -100,45 +85,16 @@ int proc_remount(struct super_block *sb, int *flags, char *data)
->  static struct dentry *proc_mount(struct file_system_type *fs_type,
->         int flags, const char *dev_name, void *data)
->  {
-> -       int err;
-> -       struct super_block *sb;
->         struct pid_namespace *ns;
-> -       char *options;
->
->         if (flags & MS_KERNMOUNT) {
-> -               ns = (struct pid_namespace *)data;
-> -               options = NULL;
-> +               ns = data;
-> +               data = NULL;
->         } else {
->                 ns = task_active_pid_ns(current);
-> -               options = data;
-> -
-> -               /* Does the mounter have privilege over the pid namespace? */
-> -               if (!ns_capable(ns->user_ns, CAP_SYS_ADMIN))
-> -                       return ERR_PTR(-EPERM);
-> -       }
-> -
-> -       sb = sget(fs_type, proc_test_super, proc_set_super, flags, ns);
-> -       if (IS_ERR(sb))
-> -               return ERR_CAST(sb);
-> -
-> -       if (!proc_parse_options(options, ns)) {
-> -               deactivate_locked_super(sb);
-> -               return ERR_PTR(-EINVAL);
-> -       }
-> -
-> -       if (!sb->s_root) {
-> -               err = proc_fill_super(sb);
-> -               if (err) {
-> -                       deactivate_locked_super(sb);
-> -                       return ERR_PTR(err);
-> -               }
-> -
-> -               sb->s_flags |= MS_ACTIVE;
-> -               /* User space would break if executables appear on proc */
-> -               sb->s_iflags |= SB_I_NOEXEC;
->         }
->
-> -       return dget(sb->s_root);
-> +       return mount_ns(fs_type, flags, data, ns, ns->user_ns, proc_fill_super);
->  }
->
->  static void proc_kill_sb(struct super_block *sb)
-> --
-> 2.8.3
+Historically fs_fully_visible() or mount_too_revealing() now gathered lot of
+security checks... so one may wonder about the implication of moving it
+after !?... yes having a clear context about superblocks and mount
+namespaces matters... but I'm not sure about the order.
+
+> Eric
 >
 
+Thank you!
 
 -- 
 tixxdz
