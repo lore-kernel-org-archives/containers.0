@@ -1,12 +1,12 @@
-From: lxc-users <Jens.Stomber-Mmb7MZpHnFY@public.gmane.org>
-Subject: a question
-Date: Sat, 25 Jun 2016 10:01:57 +0300
-Message-ID: <0000656a5bf3$1fa2b212$e52ac174$@gmx.de>
+From: =?utf-8?B?S3VuZGVuc2VydmljZQ==?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
+Subject: =?utf-8?B?RXhrbHVzaXZlIEluZm8gZsK4ciBjb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3Jn?=
+Date: 25 Jun 2016 22:40:29 +0300
+Message-ID: <20160625194033.1AF6225A@mail.linuxfoundation.org>
+Reply-To: =?utf-8?B?S3VuZGVuc2VydmljZQ==?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-us
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,11 +16,36 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: cheneydeng <cheneydeng-9uewiaClKEY@public.gmane.org>, containers <containers-cunTk1MwBs98uUxBSJOaYoYkZiVZrdSR2LY78lusg7I@public.gmane.org>, janjaapbos <janjaapbos-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "joris.michaux" <joris.michaux-sXdZ+JZvWsqzaeCD+hi3gg@public.gmane.org>, juju <juju-nLRlyDuq1AZFpShjVBNYrg@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello,
-
-I've got a question regarding that stuff we discussed recently, please read it here <http://sheltebave.fmsrep.com/aerhfce>
-
-Warmest, lxc-users
+RXhrbHVzaXZlIEluZm8gZsK4ciAjI2VtYWlsIyMgYm9keXsNCiAgICAgICAgICAgIHdpZHRoOiAx
+MDAlOyANCiAgICAgICAgICAgIGJhY2tncm91bmQtY29sb3I6ICNGRkZGRkY7IA0KICAgICAgICAg
+ICAgbWFyZ2luOjA7IA0KICAgICAgICAgICAgcGFkZGluZzowOyANCiAgICAgICAgICAgIG1zby1t
+YXJnaW4tdG9wLWFsdDowcHg7IG1zby1tYXJnaW4tYm90dG9tLWFsdDowcHg7IG1zby1wYWRkaW5n
+LWFsdDogMHB4IDBweCAwcHggMHB4Ow0KICAgICAgICB9DQogICAgICAgIA0KICAgICAgICBwLGgx
+LGgyLGgzLGg0ew0KCSAgICAgICAgbWFyZ2luLXRvcDowOw0KCQkJbWFyZ2luLWJvdHRvbTowOw0K
+CQkJcGFkZGluZy10b3A6MDsNCgkJCXBhZGRpbmctYm90dG9tOjA7DQogICAgICAgIH0NCiAgICAg
+ICAgDQogICAgICAgIGh0bWx7DQogICAgICAgICAgICB3aWR0aDogMTAwJTsgDQogICAgICAgIH0N
+CiAgICAgICAgDQogICAgICAgDQogICAgICAgIC8qIC0tLS0tLS0tLS0tIHJlc3BvbnNpdml0eSAt
+LS0tLS0tLS0tLSAqLw0KICAgICAgICBAbWVkaWEgb25seSBzY3JlZW4gYW5kIChtYXgtd2lkdGg6
+IDU5MHB4KXsNCgkJCQ0KCQkJLyotLS0tLSBtYWluIGltYWdlIC0tLS0tLS0qLw0KCQkJI2xvZ28g
+e3dpZHRoOiAxMDAlICFpbXBvcnRhbnQ7IGhlaWdodDogYXV0byAhaW1wb3J0YW50O30NCg0KCQkJ
+LyotLS0tLS0tLSBjb250YWluZXIgLS0tLS0tLS0qLwkJCQ0KCQkJdGFibGV7d2lkdGg6OTAlICFp
+bXBvcnRhbnR9DQogICAgICAgICAgIA0KCQl9DQogSGFsbG8gY29udGFpbmVyc0BsaXN0cy5saW51
+eC1mb3VuZGF0aW9uLm9yZywgZiZ1dW1sO3IgdW5zZXJlIG5ldWUgU3R1ZGllIHN1Y2hlbiB3aXIg
+IFRlc3RlciANCgkJCQkJCQ0KCQkJCQkJICwgZGllIGVpbiAgQmVhdXR5IEJhZyB2b24gTml2ZWEg
+a29zdGVubG9zIHRlc3RlbiANCgkJCQkJCQ0KCQkJCQkJIHVuZCB1bnMgaWhyZSBFcmZhaHJ1bmdl
+biBiZXJpY2h0ZW4uIFNpZSwgY29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZywg
+d3VyZGVuIGFscyBlaW4gbSZvdW1sO2dsaWNoZXIgS2FuZGlkYXQgYXVzZ2V3JmF1bWw7aGx0ISAN
+CgkJCQkJCQ0KCQkJCQkJDQoJCQlBbGxlIFRlc3RlciwgZGllIGFuIGRlciBTdHVkaWUgdGVpbG5l
+aG1lbiBkJnV1bWw7cmZlbiwgYmVrb21tZW4gaWhyICBCZWF1dHkgQmFnIHp1bSBEYW5rIGdlc2No
+ZW5rdCANCgkJCQkJCQ0KCQkJCQkJICEgDQoJCQkJCQkNCgkJCQkJCQ0KCQkJQWxzbyAgYmV3ZXJi
+ZW4gU2llIHNpY2ggamV0enQgDQoJCQkJCQkNCgkJCQkJCSB1bmQgbnV0emVuIFNpZSBpbiBLJnV1
+bWw7cnplICBrb3N0ZW5sb3MgDQoJCQkJCQkNCgkJCQkJCSBkaWUgIFRvcHByb2R1a3RlIHZvbiBO
+aXZlYSANCgkJCQkJCQ0KCQkJCQkJICEgICAgIA0KCQkJICBJZiB5b3Ugd291bGQgbGlrZSB0byBt
+b2RpZnkgeW91ciBlbWFpbCBzZXR0aW5ncyBvciB1bnN1YnNjcmliZSAsIHZpc2l0DQoJCQkgDQoJ
+CQloZXJlDQoJCQkgCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRh
+dGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGlu
+Zm8vY29udGFpbmVycw==
