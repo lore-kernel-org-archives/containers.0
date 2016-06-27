@@ -1,12 +1,16 @@
-From: =?utf-8?B?S3VuZGVuc2VydmljZQ==?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
-Subject: =?utf-8?B?RXhrbHVzaXZlIEluZm8gZsK4ciBjb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3Jn?=
-Date: 25 Jun 2016 22:40:29 +0300
-Message-ID: <20160625194033.1AF6225A@mail.linuxfoundation.org>
-Reply-To: =?utf-8?B?S3VuZGVuc2VydmljZQ==?= <info-eM49DVqkl41Wk0Htik3J/w@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH v2 2/2] namespaces: add transparent user namespaces
+Date: Mon, 27 Jun 2016 10:09:42 -0500
+Message-ID: <87mvm6y8g9.fsf@x220.int.ebiederm.org>
+References: <CAG48ez3ELMSsWhe9X_uq_3M7TjJxq=SnAr09g72nTkCRQY008g@mail.gmail.com>
+	<1466814210-3778-1-git-send-email-jannh@google.com>
+	<1466814210-3778-2-git-send-email-jannh@google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1466814210-3778-2-git-send-email-jannh-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> (Jann Horn's
+	message of "Sat, 25 Jun 2016 02:23:30 +0200")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,36 +20,53 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Jann Horn <jannh-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Christoph Lameter <cl-vYTEC60ixJUAvxtiuMwx3w@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Calvin Owens <calvinowens-b10kYP2dOMg@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, John Stultz <john.stultz-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Janis Danisevskis <jdanis-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-RXhrbHVzaXZlIEluZm8gZsK4ciAjI2VtYWlsIyMgYm9keXsNCiAgICAgICAgICAgIHdpZHRoOiAx
-MDAlOyANCiAgICAgICAgICAgIGJhY2tncm91bmQtY29sb3I6ICNGRkZGRkY7IA0KICAgICAgICAg
-ICAgbWFyZ2luOjA7IA0KICAgICAgICAgICAgcGFkZGluZzowOyANCiAgICAgICAgICAgIG1zby1t
-YXJnaW4tdG9wLWFsdDowcHg7IG1zby1tYXJnaW4tYm90dG9tLWFsdDowcHg7IG1zby1wYWRkaW5n
-LWFsdDogMHB4IDBweCAwcHggMHB4Ow0KICAgICAgICB9DQogICAgICAgIA0KICAgICAgICBwLGgx
-LGgyLGgzLGg0ew0KCSAgICAgICAgbWFyZ2luLXRvcDowOw0KCQkJbWFyZ2luLWJvdHRvbTowOw0K
-CQkJcGFkZGluZy10b3A6MDsNCgkJCXBhZGRpbmctYm90dG9tOjA7DQogICAgICAgIH0NCiAgICAg
-ICAgDQogICAgICAgIGh0bWx7DQogICAgICAgICAgICB3aWR0aDogMTAwJTsgDQogICAgICAgIH0N
-CiAgICAgICAgDQogICAgICAgDQogICAgICAgIC8qIC0tLS0tLS0tLS0tIHJlc3BvbnNpdml0eSAt
-LS0tLS0tLS0tLSAqLw0KICAgICAgICBAbWVkaWEgb25seSBzY3JlZW4gYW5kIChtYXgtd2lkdGg6
-IDU5MHB4KXsNCgkJCQ0KCQkJLyotLS0tLSBtYWluIGltYWdlIC0tLS0tLS0qLw0KCQkJI2xvZ28g
-e3dpZHRoOiAxMDAlICFpbXBvcnRhbnQ7IGhlaWdodDogYXV0byAhaW1wb3J0YW50O30NCg0KCQkJ
-LyotLS0tLS0tLSBjb250YWluZXIgLS0tLS0tLS0qLwkJCQ0KCQkJdGFibGV7d2lkdGg6OTAlICFp
-bXBvcnRhbnR9DQogICAgICAgICAgIA0KCQl9DQogSGFsbG8gY29udGFpbmVyc0BsaXN0cy5saW51
-eC1mb3VuZGF0aW9uLm9yZywgZiZ1dW1sO3IgdW5zZXJlIG5ldWUgU3R1ZGllIHN1Y2hlbiB3aXIg
-IFRlc3RlciANCgkJCQkJCQ0KCQkJCQkJICwgZGllIGVpbiAgQmVhdXR5IEJhZyB2b24gTml2ZWEg
-a29zdGVubG9zIHRlc3RlbiANCgkJCQkJCQ0KCQkJCQkJIHVuZCB1bnMgaWhyZSBFcmZhaHJ1bmdl
-biBiZXJpY2h0ZW4uIFNpZSwgY29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZywg
-d3VyZGVuIGFscyBlaW4gbSZvdW1sO2dsaWNoZXIgS2FuZGlkYXQgYXVzZ2V3JmF1bWw7aGx0ISAN
-CgkJCQkJCQ0KCQkJCQkJDQoJCQlBbGxlIFRlc3RlciwgZGllIGFuIGRlciBTdHVkaWUgdGVpbG5l
-aG1lbiBkJnV1bWw7cmZlbiwgYmVrb21tZW4gaWhyICBCZWF1dHkgQmFnIHp1bSBEYW5rIGdlc2No
-ZW5rdCANCgkJCQkJCQ0KCQkJCQkJICEgDQoJCQkJCQkNCgkJCQkJCQ0KCQkJQWxzbyAgYmV3ZXJi
-ZW4gU2llIHNpY2ggamV0enQgDQoJCQkJCQkNCgkJCQkJCSB1bmQgbnV0emVuIFNpZSBpbiBLJnV1
-bWw7cnplICBrb3N0ZW5sb3MgDQoJCQkJCQkNCgkJCQkJCSBkaWUgIFRvcHByb2R1a3RlIHZvbiBO
-aXZlYSANCgkJCQkJCQ0KCQkJCQkJICEgICAgIA0KCQkJICBJZiB5b3Ugd291bGQgbGlrZSB0byBt
-b2RpZnkgeW91ciBlbWFpbCBzZXR0aW5ncyBvciB1bnN1YnNjcmliZSAsIHZpc2l0DQoJCQkgDQoJ
-CQloZXJlDQoJCQkgCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRh
-dGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGlu
-Zm8vY29udGFpbmVycw==
+
+Added a few more relevant cc's.
+
+Jann Horn <jannh-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> writes:
+
+> This allows the admin of a user namespace to mark the namespace as
+> transparent. All other namespaces, by default, are opaque.
+
+
+I have just skimmed through this and at a high level this doesn't seem
+too scary.  Having an identity mapped user namespace that just limits
+you to using a subset of uids and gids while allowing displaying the
+full range of uids and gids.
+
+I don't quite get the use case and I would like to a little better
+but in the long term this shouldn't cause any significant maintenance
+issues, so I don't have any objects.
+
+At the same time this isn't quite the time to merge this.  I am in the
+process of slowly going through Seth's vfs changes to support things
+such as truly unprivileged fuse support.  Those changes alter which
+places can always be assumed to be init_user_ns (many fewer), and also
+slightly change the set of from_kuid calls being made.
+
+The changes that have made it through my review currently reside at:
+
+    git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-next
+
+Those vfs changes make it conceivable and simple from an infrastructure
+standpoint to transition fileystems to unprivileged user namespace
+mounts, with perhaps as little work as just setting FS_USER_NS.  At the
+same time that won't be recommend because of the difficulty verifying
+evil filesystem contents can't cause fs implementations to do bad things
+is difficult.
+
+That change means your first patch that just zaps all from_kuid_munged
+users in init_user_ns isn't a particularly good idea.  I don't think it
+is a good idea to have one set of rules for things that will always be
+init_user_ns and another set of rules for code that will change.
+
+The long and short of this is I am asking you to wait a week or so and
+rebase this on my for-next branch so that we can confirm this change
+interacts nicely will all of the other on-going work.
+
+Thank you,
+Eric Biederman
