@@ -1,14 +1,13 @@
-From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Subject: Re: Can you add the binfmt_misc tree to linux-next?
-Date: Mon, 27 Jun 2016 16:57:50 -0700
-Message-ID: <1467071870.2264.55.camel__18037.3025512838$1467071888$gmane$org@HansenPartnership.com>
-References: <1467044198.2264.19.camel@HansenPartnership.com>
-	<20160628092914.7ab1b37e@canb.auug.org.au>
+From: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: [PATCH 1/3] namei: add LOOKUP_DFD_ROOT to use dfd as root
+Date: Tue, 28 Jun 2016 10:38:28 -0700
+Message-ID: <1467135510-2564-2-git-send-email-avagin@openvz.org>
+References: <1467135510-2564-1-git-send-email-avagin@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20160628092914.7ab1b37e-3FnU+UHB4dNDw9hX6IcOSA@public.gmane.org>
+In-Reply-To: <1467135510-2564-1-git-send-email-avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,55 +17,75 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stephen Rothwell <sfr-3FnU+UHB4dNDw9hX6IcOSA@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-next-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "J. Bruce Fields" <bfields-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Shuah Khan <shuahkh-JPH+aEBZ4P+UEJcrhfAQsw@public.gmane.org>, criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 2016-06-28 at 09:29 +1000, Stephen Rothwell wrote:
-> Hi James,
-> 
-> On Mon, 27 Jun 2016 09:16:38 -0700 James Bottomley <
-> James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org> wrote:
-> > 
-> > Since I'd effectively become binfmt_misc maintainer when these 
-> > patches get merged on the last person to touch it owns it 
-> > principle, it makes sense to begin now more formally.  The tree is
-> > at
-> > 
-> > git://git.kernel.org/pub/scm/linux/kernel/git/jejb/binfmt_misc.git
-> > for-next
-> > 
-> > It currently contains four patches adding the container emulation
-> > infrastructure from the persistent-handlers branch.
-> 
-> Added from today.  I only found 3 patches, though:
-> 
-> 4af75df6a410 binfmt_misc: add F option description to documentation
-> 948b701a607f binfmt_misc: add persistent opened binary handler for
-> containers
-> 9a08c352d053 fs: add filp_clone_open API
+The problem is that a pathname can contain absolute symlinks and now
+they are resolved relative to the current root.
 
-Yes, that's right, sorry, I can't count.
+If we want to open a file in another mount namespaces and we have a file
+descriptor to its root directory, we probably want to resolve pathname
+in the target mount namespace. For this we add this new flag.
 
-> Thanks for adding your subsystem tree as a participant of linux-next.
->   As you may know, this is not a judgement of your code.  The purpose 
-> of linux-next is for integration testing and to lower the impact of
-> conflicts between subsystems in the next merge window. 
-> 
-> You will need to ensure that the patches/commits in your tree/series
-> have
-> been:
->      * submitted under GPL v2 (or later) and include the 
-> Contributor's Signed-off-by,
->      * posted to the relevant mailing list,
->      * reviewed by you (or another maintainer of your subsystem
-> tree),
->      * successfully unit tested, and 
->      * destined for the current or next Linux merge window.
-> 
-> Basically, this should be just what you would send to Linus (or ask 
-> him to fetch).  It is allowed to be rebased if you deem it necessary.
+If LOOKUP_DFD_ROOT is set, path_init() initializes nd->root and nd->path
+to the same value.
 
-Thanks,
+Signed-off-by: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+---
+ fs/namei.c            | 12 +++++++++++-
+ include/linux/namei.h |  2 ++
+ 2 files changed, 13 insertions(+), 1 deletion(-)
 
-James
+diff --git a/fs/namei.c b/fs/namei.c
+index 70580ab..5f08b69 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -2148,7 +2148,7 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
+ 	nd->path.dentry = NULL;
+ 
+ 	nd->m_seq = read_seqbegin(&mount_lock);
+-	if (*s == '/') {
++	if (*s == '/' && !(flags & LOOKUP_DFD_ROOT)) {
+ 		if (flags & LOOKUP_RCU)
+ 			rcu_read_lock();
+ 		set_root(nd);
+@@ -2174,6 +2174,11 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
+ 			get_fs_pwd(current->fs, &nd->path);
+ 			nd->inode = nd->path.dentry->d_inode;
+ 		}
++		if (flags & LOOKUP_DFD_ROOT) {
++			nd->root = nd->path;
++			if (!(flags & LOOKUP_RCU))
++				path_get(&nd->root);
++		}
+ 		return s;
+ 	} else {
+ 		/* Caller must check execute permissions on the starting path component */
+@@ -2202,6 +2207,11 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
+ 			nd->inode = nd->path.dentry->d_inode;
+ 		}
+ 		fdput(f);
++		if (flags & LOOKUP_DFD_ROOT) {
++			nd->root = nd->path;
++			if (!(flags & LOOKUP_RCU))
++				path_get(&nd->root);
++		}
+ 		return s;
+ 	}
+ }
+diff --git a/include/linux/namei.h b/include/linux/namei.h
+index d3d0398..ca2ea13 100644
+--- a/include/linux/namei.h
++++ b/include/linux/namei.h
+@@ -45,6 +45,8 @@ enum {LAST_NORM, LAST_ROOT, LAST_DOT, LAST_DOTDOT, LAST_BIND};
+ #define LOOKUP_ROOT		0x2000
+ #define LOOKUP_EMPTY		0x4000
+ 
++#define LOOKUP_DFD_ROOT		0x8000
++
+ extern int path_pts(struct path *path);
+ 
+ extern int user_path_at_empty(int, const char __user *, unsigned, struct path *, int *empty);
+-- 
+2.5.5
