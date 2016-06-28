@@ -1,13 +1,10 @@
-From: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 3/3] selftests: check O_ATROOT and AT_FDROOT flags
-Date: Tue, 28 Jun 2016 10:38:30 -0700
-Message-ID: <1467135510-2564-4-git-send-email-avagin@openvz.org>
-References: <1467135510-2564-1-git-send-email-avagin@openvz.org>
+From: =?iso-8859-1?Q?St=E9phane?= Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: LXC 2.0.2 & 2.0.3, LXCFS 2.0.2 and LXD 2.0.3 have been released!
+Date: Tue, 28 Jun 2016 19:27:12 -0400
+Message-ID: <20160628232650.GA11902@castiana>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============5967508022616098634=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1467135510-2564-1-git-send-email-avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,161 +14,82 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "J. Bruce Fields" <bfields-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Shuah Khan <shuahkh-JPH+aEBZ4P+UEJcrhfAQsw@public.gmane.org>, criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, lxc-users-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-These flags mean that the first argument "dirfd" of *at syscall-s set as
-root for the current operation.
 
-With these flags absolute symlinks have to be resolved relative to
-dirfd.
+--===============5967508022616098634==
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="ZoaI/ZTpAVc4A5k6"
+Content-Disposition: inline
 
-This test create a file and an absolute symlink on it, which can be
-resoled only if a proper root is set.
 
-Signed-off-by: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
----
- tools/testing/selftests/Makefile                |  1 +
- tools/testing/selftests/lookup/.gitignore       |  1 +
- tools/testing/selftests/lookup/Makefile         |  8 +++
- tools/testing/selftests/lookup/lookup_at_root.c | 71 +++++++++++++++++++++++++
- tools/testing/selftests/lookup/run.sh           | 14 +++++
- 5 files changed, 95 insertions(+)
- create mode 100644 tools/testing/selftests/lookup/.gitignore
- create mode 100644 tools/testing/selftests/lookup/Makefile
- create mode 100644 tools/testing/selftests/lookup/lookup_at_root.c
- create mode 100755 tools/testing/selftests/lookup/run.sh
+--ZoaI/ZTpAVc4A5k6
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-diff --git a/tools/testing/selftests/Makefile b/tools/testing/selftests/Makefile
-index ff9e5f2..72555c8 100644
---- a/tools/testing/selftests/Makefile
-+++ b/tools/testing/selftests/Makefile
-@@ -9,6 +9,7 @@ TARGETS += futex
- TARGETS += ipc
- TARGETS += kcmp
- TARGETS += lib
-+TARGETS += lookup
- TARGETS += membarrier
- TARGETS += memfd
- TARGETS += memory-hotplug
-diff --git a/tools/testing/selftests/lookup/.gitignore b/tools/testing/selftests/lookup/.gitignore
-new file mode 100644
-index 0000000..c9a963f
---- /dev/null
-+++ b/tools/testing/selftests/lookup/.gitignore
-@@ -0,0 +1 @@
-+lookup_at_root
-diff --git a/tools/testing/selftests/lookup/Makefile b/tools/testing/selftests/lookup/Makefile
-new file mode 100644
-index 0000000..042b26f
---- /dev/null
-+++ b/tools/testing/selftests/lookup/Makefile
-@@ -0,0 +1,8 @@
-+TEST_PROGS := run.sh
-+
-+all: lookup_at_root
-+
-+clean:
-+	$(RM) lookup_at_root
-+include ../lib.mk
-+
-diff --git a/tools/testing/selftests/lookup/lookup_at_root.c b/tools/testing/selftests/lookup/lookup_at_root.c
-new file mode 100644
-index 0000000..6723dc8
---- /dev/null
-+++ b/tools/testing/selftests/lookup/lookup_at_root.c
-@@ -0,0 +1,71 @@
-+#include <unistd.h>
-+#include <stdio.h>
-+#include <sys/types.h>
-+#include <sys/stat.h>
-+#include <fcntl.h>
-+#include <signal.h>
-+#include <sys/prctl.h>
-+#include <linux/limits.h>
-+
-+#define pr_err(fmt, ...) \
-+		({ \
-+			fprintf(stderr, "%s:%d:" fmt ": %m\n", \
-+				__func__, __LINE__, ##__VA_ARGS__); \
-+			1; \
-+		})
-+
-+#ifndef O_ATROOT
-+#define O_ATROOT       040000000        /* dfd is a root */
-+#endif
-+#ifndef AT_FDROOT
-+#define AT_FDROOT      0x2000		/* Resolve a path as if dirfd is root */
-+#endif
-+
-+int main(int argc, char **argv)
-+{
-+	struct stat st;
-+	int fd, dfd;
-+	char path[PATH_MAX];
-+
-+	dfd = open(argv[1], O_RDONLY);
-+	if (dfd < 0)
-+		return pr_err("open");
-+
-+	snprintf(path, sizeof(path), "%s/test", argv[1]);
-+	if (mkdir(path, 755))
-+		return pr_err("mkdir");
-+
-+	if (symlinkat("/test", dfd, "./test.link"))
-+		return pr_err("symlinkat");
-+
-+	fd = openat(dfd, "test.link", O_RDONLY | O_ATROOT);
-+	if (fd < 0)
-+		return pr_err("open");
-+
-+	if (fchdir(dfd))
-+		return pr_err("fchdir");
-+
-+	fd = openat(AT_FDCWD, "test.link", O_RDONLY | O_ATROOT);
-+	if (fd < 0)
-+		return pr_err("open");
-+	close(fd);
-+
-+	fd = openat(AT_FDCWD, "/test.link", O_RDONLY | O_ATROOT);
-+	if (fd < 0)
-+		return pr_err("open");
-+	close(fd);
-+
-+	if (fstatat(AT_FDCWD, "test.link", &st, AT_FDROOT))
-+		return pr_err("fstatat");
-+	if (fstatat(dfd, "test.link", &st, AT_FDROOT))
-+		return pr_err("fstatat");
-+	if (mknodat(dfd, "./test/test.file", 0644 | S_IFREG, 0))
-+		return pr_err("mknod");
-+	if (linkat(dfd, "./test.link/test.file",
-+			dfd, "./test.link/test.file.link", AT_FDROOT))
-+		return pr_err("linkat");
-+	if (unlinkat(dfd, "./test.link/test.file.link", AT_FDROOT))
-+		return pr_err("unlinkat");
-+
-+	return 0;
-+}
-diff --git a/tools/testing/selftests/lookup/run.sh b/tools/testing/selftests/lookup/run.sh
-new file mode 100755
-index 0000000..86cc51b
---- /dev/null
-+++ b/tools/testing/selftests/lookup/run.sh
-@@ -0,0 +1,14 @@
-+#!/bin/sh
-+
-+set -e
-+
-+test_dir=`mktemp -d /tmp/lookup_test.XXXXXX`
-+mount -t tmpfs lookup_at_root $test_dir
-+
-+ret=0
-+./lookup_at_root $test_dir || ret=$?
-+
-+umount $test_dir
-+rmdir $test_dir
-+
-+exit $ret
--- 
-2.5.5
+Hello everyone,
+
+Today the LXC project is pleased to announce the release of:
+ - LXC 2.0.2 & 2.0.3
+ - LXD 2.0.3
+ - LXCFS 2.0.2
+
+We had to release two LXC bugfix releases due to a problem in the
+apparmor profile which was included in 2.0.2. Fixing the apparmor
+profile is the only change in 2.0.3.
+
+
+They each contain the accumulated bugfixes since the previous round of
+bugfix releases a bit over a month ago.
+
+The detailed changelogs can be found at:
+ - https://linuxcontainers.org/lxc/news/
+ - https://linuxcontainers.org/lxcfs/news/
+ - https://linuxcontainers.org/lxd/news/
+
+As a reminder, the 2.0 series of all of those is supported for bugfix
+and security updates up until June 2021.
+
+Thanks to everyone who contributed to those projects and helped make
+this possible!
+
+
+St=E9phane Graber
+On behalf of the LXC, LXCFS and LXD development teams
+
+--ZoaI/ZTpAVc4A5k6
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCgAGBQJXcwfQAAoJEMY4l01keS1n0T0P/3k9X/2K2cw3YtdBd35/aWsN
+PSsJ64rCT/xJ6LmnyIViIB6Und0/Q7/q1MW0Mv6z1ntsUEueCFAEdHnXLbEW2mk+
+mcT3j650rComRdLnene250y7c7BtaTq03d73DpWD/jEK9BHGqPNZtgWAEwoG+RFV
+jHNGT/7JixFAUSPs49hs9sQcc4FdS8tN7/wbGnqTvnT64ztPJYyNqhhahOep8cVI
+epTXUsDXIpAoaPHYPT5n7HdZ1fJ2oMS4d32MFMdxrwyLnqg0uNr9Wk5AbIAnhq+6
+4vZ6Bey/3+LHS+PF0i++w0FimqWa+37sdaDQNzlxvWWfHeaUciR8Cm8fKekCEAJs
+el6VcOXWcgRIKSAEuVii6Ah7MBUQ7b2VKB1MdhpeqNT/z2EGb6/4bUQYaFYEoA00
+Zj/lddSe6KO3pBaDhTJhHk63T+NAnBW9mfyVbtpPSDZg+fKFtn5of3JIdYkc/ZcM
+AwcqHxT8BJ1Eqwk60ti9KnSgNbdW7GNgURPuyCevTUpKQvVg1Vhm4mIoaULvnA19
+vA9kW9Uww7aqr37njw3KDbenA/mYMCySiJQgNnwJeKhMt1fzl8/5+2FoA4Jb4rZW
+DQbJb5O+t55pbfGRSMzGdqWPtoA1rBEVf94kUVVUeKqO1S30ySacwe3YzVLnfvJO
+mF5R50lfHy/wvbKT9xVu
+=jKb+
+-----END PGP SIGNATURE-----
+
+--ZoaI/ZTpAVc4A5k6--
+
+--===============5967508022616098634==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============5967508022616098634==--
