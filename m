@@ -1,15 +1,11 @@
-From: Omar Sandoval <osandov-nWWhXC5lh1RBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 1/3] namei: add LOOKUP_DFD_ROOT to use dfd as root
-Date: Fri, 1 Jul 2016 17:55:25 -0700
-Message-ID: <20160702005525.GA28451@vader.dhcp.thefacebook.com>
-References: <1467135510-2564-1-git-send-email-avagin@openvz.org>
-	<1467135510-2564-2-git-send-email-avagin@openvz.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: [PATCH review 0/11] General unprivileged mount support
+Date: Sat, 02 Jul 2016 12:18:08 -0500
+Message-ID: <87ziq03qnj.fsf__14993.7086775482$1467480663$gmane$org@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1467135510-2564-2-git-send-email-avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,105 +15,91 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "J. Bruce Fields" <bfields-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Shuah Khan <shuahkh-JPH+aEBZ4P+UEJcrhfAQsw@public.gmane.org>, criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, Jann Horn <jannh-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Djalal Harouni <tixxdz-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Jun 28, 2016 at 10:38:28AM -0700, Andrey Vagin wrote:
-> The problem is that a pathname can contain absolute symlinks and now
-> they are resolved relative to the current root.
-> 
-> If we want to open a file in another mount namespaces and we have a file
-> descriptor to its root directory, we probably want to resolve pathname
-> in the target mount namespace. For this we add this new flag.
-> 
-> If LOOKUP_DFD_ROOT is set, path_init() initializes nd->root and nd->path
-> to the same value.
-> 
-> Signed-off-by: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
-Hi, Andrey,
+As well as in these patches the code is also available from:
+git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-testing
 
-Seems like a useful feature. Make sure to cc linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-for new userspace interfaces. One comment on the implementation below.
+It has been a long time in coming but recently in the userns tree the
+superblock has been expanded with a s_user_ns field indicating the user
+namespace that owns a superblock.
 
-> ---
->  fs/namei.c            | 12 +++++++++++-
->  include/linux/namei.h |  2 ++
->  2 files changed, 13 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/namei.c b/fs/namei.c
-> index 70580ab..5f08b69 100644
-> --- a/fs/namei.c
-> +++ b/fs/namei.c
-> @@ -2148,7 +2148,7 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
->  	nd->path.dentry = NULL;
->  
->  	nd->m_seq = read_seqbegin(&mount_lock);
-> -	if (*s == '/') {
-> +	if (*s == '/' && !(flags & LOOKUP_DFD_ROOT)) {
->  		if (flags & LOOKUP_RCU)
->  			rcu_read_lock();
->  		set_root(nd);
-> @@ -2174,6 +2174,11 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
->  			get_fs_pwd(current->fs, &nd->path);
->  			nd->inode = nd->path.dentry->d_inode;
->  		}
-> +		if (flags & LOOKUP_DFD_ROOT) {
-> +			nd->root = nd->path;
-> +			if (!(flags & LOOKUP_RCU))
-> +				path_get(&nd->root);
+The s_user_ns owner of a superblock has three implications.
+- Only kuids and kgids that map into s_user_ns are allowed to be sent to a
+ filesystem from the vfs.
+- If the uid or gid on the filesystem does not map into s_user_ns i_uid
+  is set to INVALID_UID and i_gid is set to INVALID_GID.
+- The scope of permission checks can be changed from global to a
+  capabilitiy check in s_user_ns.
 
-You're not initializing nd->root_seq here. That means that if we end up
-going through unlazy_walk(), we're going to call legitimize_path() (and
-thus read_seqcount_retry()) with stack garbage, get a spurious ECHILD,
-and do an unnecessary restart of the path lookup instead of dropping
-into ref-walk mode.
+The overall strategy is to handle as much of this as possible in the VFS
+so that what is happening is consistent between filesystems and has
+widespread review, and so that individual filesystems don't need to
+duplicate code.
 
-> +		}
->  		return s;
->  	} else {
->  		/* Caller must check execute permissions on the starting path component */
-> @@ -2202,6 +2207,11 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
->  			nd->inode = nd->path.dentry->d_inode;
->  		}
->  		fdput(f);
-> +		if (flags & LOOKUP_DFD_ROOT) {
-> +			nd->root = nd->path;
-> +			if (!(flags & LOOKUP_RCU))
-> +				path_get(&nd->root);
-> +		}
+This set of patches inserts checks to ensure only kuids and kgids that
+map into s_user_ns are sent to filesystems.
 
-Same here.
+This set of patches updates the vfs to deal with potentially unmapped
+uids and gids in the i_uid and i_gid fields.  The strategy adopted is to
+deny any activity that causes inodes with unmapped uids or gid to be
+written to disk except for a chown that causes makes i_uid and i_gid
+to map into s_user_ns.
 
-The following should do the trick:
+Relaxing of the capability checks and adding new filesystems that would
+benefit from the changes is held off until the vfs support is complete.
 
-diff --git a/fs/namei.c b/fs/namei.c
-index 9958b605e822..101d1fb8d3cb 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -2176,7 +2176,9 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
- 		}
- 		if (flags & LOOKUP_DFD_ROOT) {
- 			nd->root = nd->path;
--			if (!(flags & LOOKUP_RCU))
-+			if (flags & LOOKUP_RCU)
-+				nd->root_seq = nd->seq;
-+			else
- 				path_get(&nd->root);
- 		}
- 		return s;
-@@ -2209,7 +2211,9 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
- 		fdput(f);
- 		if (flags & LOOKUP_DFD_ROOT) {
- 			nd->root = nd->path;
--			if (!(flags & LOOKUP_RCU))
-+			if (flags & LOOKUP_RCU)
-+				nd->root_seq = nd->seq;
-+			else
- 				path_get(&nd->root);
- 		}
- 		return s;
+I believe this work is complete so if there anything questionable you
+see please let me know.
 
--- 
-Omar
+I have included linux-api because several system calls get new failure
+modes mostly -EOVERFLOW, and that may need separate documenation and
+review.
+
+The target for this work is to enable fully unprivileged fuse mounts
+and whichever filesystem results from the uid shifting work.  These
+vfs changes should support all kinds of filesystems, but in practice
+it is an open problem if it is possible to modify a block based
+filesystem to be safe from people manipulating filesystem images in an
+attempt to get the kernel to malfunction so only a very limited set of
+additional filesystems is ever expected to be enabled by this work.
+
+Eric W. Biederman (6):
+      userns: Handle -1 in k[ug]id_has_mapping when !CONFIG_USER_NS
+      vfs: Verify acls are valid within superblock's s_user_ns.
+      vfs: Don't modify inodes with a uid or gid unknown to the vfs
+      vfs: Don't create inodes with a uid or gid unknown to the vfs
+      quota: Ensure qids map to the filesystem
+      quota: Handle quota data stored in s_user_ns.
+
+Seth Forshee (5):
+      fs: Refuse uid/gid changes which don't map into s_user_ns
+      fs: Check for invalid i_uid in may_follow_link()
+      cred: Reject inodes with invalid ids in set_create_file_as()
+      evm: Translate user/group ids relative to s_user_ns when computing HMAC
+      fs: Update i_[ug]id_(read|write) to translate relative to s_user_ns
+
+ drivers/staging/lustre/lustre/mdc/mdc_request.c |  2 +-
+ fs/9p/acl.c                                     |  2 +-
+ fs/attr.c                                       | 19 +++++++++
+ fs/inode.c                                      |  7 ++++
+ fs/namei.c                                      | 40 ++++++++++++++----
+ fs/posix_acl.c                                  |  8 ++--
+ fs/quota/dquot.c                                |  7 +++-
+ fs/quota/quota.c                                | 14 +++----
+ fs/quota/quota_tree.c                           | 23 +++++++----
+ fs/quota/quota_v1.c                             |  6 ++-
+ fs/quota/quota_v2.c                             | 10 +++--
+ fs/xattr.c                                      |  7 ++++
+ include/linux/fs.h                              | 55 ++++++++++++++-----------
+ include/linux/posix_acl.h                       |  2 +-
+ include/linux/quota.h                           | 10 +++++
+ include/linux/uidgid.h                          |  4 +-
+ kernel/cred.c                                   |  2 +
+ security/integrity/evm/evm_crypto.c             |  4 +-
+ 18 files changed, 154 insertions(+), 68 deletions(-)
+
+Eric
