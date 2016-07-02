@@ -1,12 +1,15 @@
-From: =?utf-8?B?S3VuZGVuZGllbnN0?= <reply-ByT1rwkDqEQN7k7aoAFwaQ@public.gmane.org>
-Subject: =?utf-8?B?V3Vzc3RlbiBTaWUsIGRhc3MgSWhuZW4gZWluIHVuZ2xhdWJsaWNoZXMgV2lsbGtvbW1lbnBha2V0IHp1c3RlaHQ/ISA=?=
-Date: 2 Jul 2016 03:30:39 +0300
-Message-ID: <20160702003543.7FBA0722@mail.linuxfoundation.org>
-Reply-To: =?utf-8?B?S3VuZGVuZGllbnN0?= <reply-ByT1rwkDqEQN7k7aoAFwaQ@public.gmane.org>
+From: Omar Sandoval <osandov-nWWhXC5lh1RBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH 1/3] namei: add LOOKUP_DFD_ROOT to use dfd as root
+Date: Fri, 1 Jul 2016 17:55:25 -0700
+Message-ID: <20160702005525.GA28451@vader.dhcp.thefacebook.com>
+References: <1467135510-2564-1-git-send-email-avagin@openvz.org>
+	<1467135510-2564-2-git-send-email-avagin@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1467135510-2564-2-git-send-email-avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,61 +19,105 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "J. Bruce Fields" <bfields-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Shuah Khan <shuahkh-JPH+aEBZ4P+UEJcrhfAQsw@public.gmane.org>, criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Wussten Sie, dass Ihnen ein unglaubliches Willkommenpaket zusteht?!  .appleLinksBlack a { color: #444444 !important; text-decoration: none; }
-.call { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 12px; color: #444444; }
-.call a { color: #444444; text-decoration: none; }
-#outlook a { padding: 0; }
-div, p, a, li, td { -webkit-text-size-adjust: none; }
-.ReadMsgBody { width: 100%; background-color: #ffffff; }
-.ExternalClass { width: 100%; background-color: #ffffff; }
-.ExternalClass, .ExternalClass p, .ExternalClass span, .ExternalClass font, .ExternalClass td, .ExternalClass div { line-height: 100%; }
-body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-img { -ms-interpolation-mode: bicubic; }
-img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-table { border-collapse: collapse !important; }
-.appleBody a { color: #68440a; text-decoration: none; }
-.appleFooter a { color: #999999; text-decoration: none; }
-body { height: 100% !important; margin: 0; padding: 0; width: 100% !important; overflow-x: hidden; width: 100%; background-color: #ffffff; -webkit-font-smoothing: antialiased; text-align: left; font-family: Arial, Helvetica, sans-serif !important; }
-html { width: 100%; background-color: #ffffff; overflow-x: hidden; }
-img { border: 0px; outline: none; text-decoration: none; display: block; }
-a:link { text-decoration: none !important; }
-a:hover { text-decoration: none !important; }
-td[class="headercell"] img { width: 100%; display: block !important; }
-td[class="footercell"] img { width: 100%; display: block !important; }
-.container { clear: both !important; display: block !important; margin: 0 auto !important; max-width: 600px !important; }
+On Tue, Jun 28, 2016 at 10:38:28AM -0700, Andrey Vagin wrote:
+> The problem is that a pathname can contain absolute symlinks and now
+> they are resolved relative to the current root.
+> 
+> If we want to open a file in another mount namespaces and we have a file
+> descriptor to its root directory, we probably want to resolve pathname
+> in the target mount namespace. For this we add this new flag.
+> 
+> If LOOKUP_DFD_ROOT is set, path_init() initializes nd->root and nd->path
+> to the same value.
+> 
+> Signed-off-by: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
-@media(max-width:599px) {
-td[class="headercell"] img { width: 100%; display: block !important; }
-td[class="footercell"] img { width: 100%; display: block !important; }
-a[href^="tel"], a[href^="sms"] { text-decoration: none; color: #888888; pointer-events: none; cursor: default; }
-.mobile_link a[href^="tel"], .mobile_link a[href^="sms"] { text-decoration: default; color: #888888 !important; pointer-events: auto; cursor: default; }
-.call { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 12px; color: #444444; }
-.call a { color: #444444; text-decoration: none; }
-}
-     100% Bonus und 20 Gratisdrehungen 
-																		
-																		
-												f&uuml;r Jimi Hendrix! Jetzt holen!   
-									 Hallo, 
-																		
-																		
-												Wir freuen uns, Sie zu einem unvergesslichen Abenteuer - auf hoher See - mit Casino Cruise einladen zu k&ouml;nnen. Wussten Sie, dass Ihnen ein unglaubliches Willkommenpaket zusteht?! Um anzufangen, melden Sie sich an & machen Sie Ihre erste Einzahlung und geniessen Sie einen fantastischen 100% Matchbonus bis zu 200&euro; + 120 Gratisdrehungen  So einfach geht&#39;s: 
-																		
-																		
-												1. Anmelden & 20 Gratisdrehungen erhalten 
-																		
-																		
-												2. Einzahlen 
-																		
-																		
-												3. 100% bis zu 200&euro; + 100 Gratisdrehungen erhalten  Melden Sie sich heute f&uuml;r dieses tolle Paket an!  Klicken Sie hier um sich jetzt abzumelden. Finden Sie hier weitere Informationen &uuml;ber diese  Angebote  
-																		
-																		 Das Angebot gilt f&uuml;r eine begrentze Zeit, es k&ouml;nnen &auml;nderungen unterliegen.  
-			  If you would like to modify your email settings or unsubscribe , visit
-			 
-			here
-			 
+Hi, Andrey,
+
+Seems like a useful feature. Make sure to cc linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+for new userspace interfaces. One comment on the implementation below.
+
+> ---
+>  fs/namei.c            | 12 +++++++++++-
+>  include/linux/namei.h |  2 ++
+>  2 files changed, 13 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/namei.c b/fs/namei.c
+> index 70580ab..5f08b69 100644
+> --- a/fs/namei.c
+> +++ b/fs/namei.c
+> @@ -2148,7 +2148,7 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
+>  	nd->path.dentry = NULL;
+>  
+>  	nd->m_seq = read_seqbegin(&mount_lock);
+> -	if (*s == '/') {
+> +	if (*s == '/' && !(flags & LOOKUP_DFD_ROOT)) {
+>  		if (flags & LOOKUP_RCU)
+>  			rcu_read_lock();
+>  		set_root(nd);
+> @@ -2174,6 +2174,11 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
+>  			get_fs_pwd(current->fs, &nd->path);
+>  			nd->inode = nd->path.dentry->d_inode;
+>  		}
+> +		if (flags & LOOKUP_DFD_ROOT) {
+> +			nd->root = nd->path;
+> +			if (!(flags & LOOKUP_RCU))
+> +				path_get(&nd->root);
+
+You're not initializing nd->root_seq here. That means that if we end up
+going through unlazy_walk(), we're going to call legitimize_path() (and
+thus read_seqcount_retry()) with stack garbage, get a spurious ECHILD,
+and do an unnecessary restart of the path lookup instead of dropping
+into ref-walk mode.
+
+> +		}
+>  		return s;
+>  	} else {
+>  		/* Caller must check execute permissions on the starting path component */
+> @@ -2202,6 +2207,11 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
+>  			nd->inode = nd->path.dentry->d_inode;
+>  		}
+>  		fdput(f);
+> +		if (flags & LOOKUP_DFD_ROOT) {
+> +			nd->root = nd->path;
+> +			if (!(flags & LOOKUP_RCU))
+> +				path_get(&nd->root);
+> +		}
+
+Same here.
+
+The following should do the trick:
+
+diff --git a/fs/namei.c b/fs/namei.c
+index 9958b605e822..101d1fb8d3cb 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -2176,7 +2176,9 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
+ 		}
+ 		if (flags & LOOKUP_DFD_ROOT) {
+ 			nd->root = nd->path;
+-			if (!(flags & LOOKUP_RCU))
++			if (flags & LOOKUP_RCU)
++				nd->root_seq = nd->seq;
++			else
+ 				path_get(&nd->root);
+ 		}
+ 		return s;
+@@ -2209,7 +2211,9 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
+ 		fdput(f);
+ 		if (flags & LOOKUP_DFD_ROOT) {
+ 			nd->root = nd->path;
+-			if (!(flags & LOOKUP_RCU))
++			if (flags & LOOKUP_RCU)
++				nd->root_seq = nd->seq;
++			else
+ 				path_get(&nd->root);
+ 		}
+ 		return s;
+
+-- 
+Omar
