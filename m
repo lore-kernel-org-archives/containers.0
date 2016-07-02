@@ -1,8 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 05/11] cred: Reject inodes with invalid ids in
-	set_create_file_as()
-Date: Sat,  2 Jul 2016 12:20:29 -0500
-Message-ID: <20160702172035.19568-5-ebiederm__32711.2240520821$1467480869$gmane$org@xmission.com>
+Subject: [PATCH review 04/11] fs: Check for invalid i_uid in may_follow_link()
+Date: Sat,  2 Jul 2016 12:20:28 -0500
+Message-ID: <20160702172035.19568-4-ebiederm__37986.7303222001$1467480869$gmane$org@xmission.com>
 References: <87ziq03qnj.fsf@x220.int.ebiederm.org>
 	<20160702172035.19568-1-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -25,29 +24,41 @@ List-Id: containers.vger.kernel.org
 
 From: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
-Using INVALID_[UG]ID for the LSM file creation context doesn't
-make sense, so return an error if the inode passed to
-set_create_file_as() has an invalid id.
+Filesystem uids which don't map into a user namespace may result
+in inode->i_uid being INVALID_UID. A symlink and its parent
+could have different owners in the filesystem can both get
+mapped to INVALID_UID, which may result in following a symlink
+when this would not have otherwise been permitted when protected
+symlinks are enabled.
 
 Signed-off-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Acked-by: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- kernel/cred.c | 2 ++
- 1 file changed, 2 insertions(+)
+ fs/namei.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/kernel/cred.c b/kernel/cred.c
-index 0c0cd8a62285..5f264fb5737d 100644
---- a/kernel/cred.c
-+++ b/kernel/cred.c
-@@ -689,6 +689,8 @@ EXPORT_SYMBOL(set_security_override_from_ctx);
-  */
- int set_create_files_as(struct cred *new, struct inode *inode)
+diff --git a/fs/namei.c b/fs/namei.c
+index 757a32725d92..8701bd9a5270 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -901,6 +901,7 @@ static inline int may_follow_link(struct nameidata *nd)
  {
-+	if (!uid_valid(inode->i_uid) || !gid_valid(inode->i_gid))
-+		return -EINVAL;
- 	new->fsuid = inode->i_uid;
- 	new->fsgid = inode->i_gid;
- 	return security_kernel_create_files_as(new, inode);
+ 	const struct inode *inode;
+ 	const struct inode *parent;
++	kuid_t puid;
+ 
+ 	if (!sysctl_protected_symlinks)
+ 		return 0;
+@@ -916,7 +917,8 @@ static inline int may_follow_link(struct nameidata *nd)
+ 		return 0;
+ 
+ 	/* Allowed if parent directory and link owner match. */
+-	if (uid_eq(parent->i_uid, inode->i_uid))
++	puid = parent->i_uid;
++	if (uid_valid(puid) && uid_eq(puid, inode->i_uid))
+ 		return 0;
+ 
+ 	if (nd->flags & LOOKUP_RCU)
 -- 
 2.8.3
