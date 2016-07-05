@@ -1,11 +1,11 @@
-From: "FedEx International Next Flight" <oscar.peterson-NY0/1dnek45hl2p70BpVqQ@public.gmane.org>
-Subject: We could not deliver your parcel, #00394405
-Date: Tue, 5 Jul 2016 04:16:58 +0200
-Message-ID: <133df286c884b8f2fc5cc24b0d0e0b7e@rmsk.info>
-Reply-To: FedEx International Next Flight <oscar.peterson-NY0/1dnek45hl2p70BpVqQ@public.gmane.org>
+From: =?utf-8?B?TGlkbA==?= <reply-ByT1rwkDqEQN7k7aoAFwaQ@public.gmane.org>
+Subject: =?utf-8?B?TGlkbCBoYXQgZWluZSDDnGJlcnJhc2NodW5nIGbDvHIgU2llIC0gS29zdGVubG9zZXIgR3V0c2NoZWluIHZvbiBMaWRs?=
+Date: 5 Jul 2016 09:38:56 +0300
+Message-ID: <20160705063900.20E949D@mail.linuxfoundation.org>
+Reply-To: =?utf-8?B?TGlkbA==?= <reply-ByT1rwkDqEQN7k7aoAFwaQ@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="b1_36de2054e521dce4ba7b2060dd6189b8"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,27 +19,37 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---b1_36de2054e521dce4ba7b2060dd6189b8
-Content-Type: text/plain; charset=us-ascii
-
-Dear Customer,
-
-Your parcel has arrived at July 01. Courier was unable to deliver the parcel to you.
-Shipment Label is attached to email.
-
-Yours sincerely,
-Oscar Peterson,
-Delivery Manager.
-
-
---b1_36de2054e521dce4ba7b2060dd6189b8
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---b1_36de2054e521dce4ba7b2060dd6189b8--
+TGlkbCBoYXQgZWluZSDDnGJlcnJhc2NodW5nIGbDvHIgU2llIC0gS29zdGVubG9zZXIgR3V0c2No
+ZWluIHZvbiBMaWRsIEhhbGxvICBjb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3Jn
+IA0KCQkJCQkJCQkJCQkJCQkJCQkJCQkJDQoJCQkJCQkJCQkJCQkJCQkJCQkJCQkgLCBpbiBkaWVz
+ZW0gTW9uYXQgZmVpZXJ0IExpZGwgc2VpbmVuIDg1LiBHZWJ1cnRzdGFnISANCgkJCQkJCQkJCQkJ
+CQkJCQkJCQkJCQkNCgkJCQkJCQkJCQkJCQkJCQkJCQkJCQkNCgkJCQkJCQkJCQkJCUF1cyBkaWVz
+ZW0gR3J1bmQgbSZvdW1sO2NodGVuIHdpciBhbGxlbiBLdW5kZW4gdm9uIExpZGwgZWluZSBiZXNv
+bmRlcmUgR2VsZWdlbmhlaXQgYmlldGVuIHVuZCB3JmF1bWw7aGxlbiBqZWRlIFdvY2hlIDEwMCBL
+dW5kZW4gYXVzIHZlcnNjaGllZGVuZW4gZGV1dHNjaGVuIFN0JmF1bWw7ZHRlbiBhdXMuIERhcyBi
+ZWRldXRldCwgZGFzcyA0MDAgS3VuZGVuIGVpbmVuIHZvbiB2aWVsZW4gUHJlaXNlbiBlcmhhbHRl
+biB3ZXJkZW4sIGRlbiB3aXIgdmVybG9zZW4uIEluIGRpZXNlciBXb2NoZSBzaW5kIFNpZSBhbiBS
+ZWloZSEgSGF1cHRwcmVpcyAmZXVybzsgNTAwLC0gR3V0c2NoZWluIDIuIFByZWlzICZldXJvOyAx
+NTAsLSBHdXRzY2hlaW4gMy4gUHJlaXMgJmV1cm87IDUwLC0gR3V0c2NoZWluIDQuIFByZWlzICZl
+dXJvOyA1LC0gR3V0c2NoZWluIEhlcnpsaWNoZW4gR2wmdXVtbDtja3d1bnNjaCAqRmlyc3RuYW1l
+KiwgSWhyZSBQTFogd3VyZGUgZGllc2UgV29jaGUgZ2VtZWluc2FtIG1pdCAxMCBhbmRlcmVuIGlu
+IERldXRzY2hsYW5kIGF1c2dldyZhdW1sO2hsdC4gIEdlYmVuIFNpZSBJaHJlIFBMWiB1bmQgU3Ry
+YSZzemxpZztlIGF1ZiBkZXIgZm9sZ2VuZGVuIFNlaXRlIGVpbiB1bmQga29udHJvbGxpZXJlbiBT
+aWUsIHdlbGNoZW4gUHJlaXMgU2llIGdld29ubmVuIGhhYmVuLiAgSWhyZSBQTFogU2llIHVuZCAg
+KDEwKSAgYW5kZXJlIFBlcnNvbmVuIHd1cmRlbiBhdXNnZXcmYXVtbDtobHQgU0lORCBTSUUgSEVV
+VEUgREVSIEdMJlV1bWw7Q0tMSUNIRSBHRVdJTk5FUj8gSElFUiBLTElDS0VOIDAyNjgxIENhbGxl
+bmJlcmcgICg4KSAgUGVyc29uZW4gd3VyZGVuIGF1c2dldyZhdW1sO2hsdCAzODY4NSBMYW5nZWxz
+aGVpbSAgKDExKSAgUGVyc29uZW4gd3VyZGVuIGF1c2dldyZhdW1sO2hsdCA0MDcyMyBIaWxkZW4g
+ICg2KSAgUGVyc29uZW4gd3VyZGVuIGF1c2dldyZhdW1sO2hsdCA0MDU5MyBEJnV1bWw7c3NlbGRv
+cmYgVXJkZW5iYWNoICAoMTApICBQZXJzb25lbiB3dXJkZW4gYXVzZ2V3JmF1bWw7aGx0IDk3MDgw
+IFcmdXVtbDtyemJ1cmcgICgxMykgIFBlcnNvbmVuIHd1cmRlbiBhdXNnZXcmYXVtbDtobHQgODE1
+NDEgTSZ1dW1sO25jaGVuICAoMTApICBQZXJzb25lbiB3dXJkZW4gYXVzZ2V3JmF1bWw7aGx0IDI3
+Mzg2IEhlbXNiJnV1bWw7bmRlICAoMTIpICBQZXJzb25lbiB3dXJkZW4gYXVzZ2V3JmF1bWw7aGx0
+IDU0NTE4IFBsYXR0ZW4gICgxMCkgIFBlcnNvbmVuIHd1cmRlbiBhdXNnZXcmYXVtbDtobHQgMzUx
+MTkgUm9zZW50aGFsICAoMTApICBQZXJzb25lbiB3dXJkZW4gYXVzZ2V3JmF1bWw7aGx0IEtMSUNL
+RU4gU0lFIEhJRVIgVU0gREVOIFBSRUlTIFpVIFNFSEVOIA0KCQkJICBJZiB5b3Ugd291bGQgbGlr
+ZSB0byBtb2RpZnkgeW91ciBlbWFpbCBzZXR0aW5ncyBvciB1bnN1YnNjcmliZSAsIHZpc2l0DQoJ
+CQkgDQoJCQloZXJlDQoJCQkgCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgt
+Zm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4v
+bGlzdGluZm8vY29udGFpbmVycw==
