@@ -1,15 +1,21 @@
-From: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 1/3] namei: add LOOKUP_DFD_ROOT to use dfd as root
-Date: Tue, 5 Jul 2016 14:36:54 -0700
-Message-ID: <CANaxB-zR78medVn6SWgFi6gLn9942E7BjkgvvTi0XeFp9iMtPg@mail.gmail.com>
-References: <1467135510-2564-1-git-send-email-avagin@openvz.org>
-	<1467135510-2564-2-git-send-email-avagin@openvz.org>
-	<20160702005525.GA28451@vader.dhcp.thefacebook.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH v2 review 09/11] quota: Handle quota data stored in
+	s_user_ns.
+Date: Tue, 05 Jul 2016 16:28:53 -0500
+Message-ID: <8737nnrcyy.fsf__24104.2848131203$1467754897$gmane$org@x220.int.ebiederm.org>
+References: <87ziq03qnj.fsf@x220.int.ebiederm.org>
+	<20160702172035.19568-1-ebiederm@xmission.com>
+	<20160702172035.19568-9-ebiederm@xmission.com>
+	<87mvm03pxy.fsf_-_@x220.int.ebiederm.org>
+	<20160704091100.GD5200@quack2.suse.cz>
+	<87d1msumhy.fsf@x220.int.ebiederm.org>
+	<20160705205721.GG27480@dastard>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20160702005525.GA28451-VOCez//ZDM7jzTBT5J8yX/MCgOUTN/qS0E9HWUfgJXw@public.gmane.org>
+In-Reply-To: <20160705205721.GG27480@dastard> (Dave Chinner's message of "Wed,
+	6 Jul 2016 06:57:21 +1000")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,120 +25,61 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Omar Sandoval <osandov-nWWhXC5lh1RBDgjK7y7TUQ@public.gmane.org>
-Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "J. Bruce Fields" <bfields-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, NeilBrown <neilb-l3A5Bk7waGM@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Shuah Khan <shuahkh-JPH+aEBZ4P+UEJcrhfAQsw@public.gmane.org>, "criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org" <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
+Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, Jann Horn <jannh-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Djalal Harouni <tixxdz-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Jul 1, 2016 at 5:55 PM, Omar Sandoval <osandov-nWWhXC5lh1RBDgjK7y7TUQ@public.gmane.org> wrote:
-> On Tue, Jun 28, 2016 at 10:38:28AM -0700, Andrey Vagin wrote:
->> The problem is that a pathname can contain absolute symlinks and now
->> they are resolved relative to the current root.
->>
->> If we want to open a file in another mount namespaces and we have a file
->> descriptor to its root directory, we probably want to resolve pathname
->> in the target mount namespace. For this we add this new flag.
->>
->> If LOOKUP_DFD_ROOT is set, path_init() initializes nd->root and nd->path
->> to the same value.
->>
->> Signed-off-by: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
->
-> Hi, Andrey,
->
-> Seems like a useful feature. Make sure to cc linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> for new userspace interfaces. One comment on the implementation below.
+Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org> writes:
 
-Hi Omar,
+> On Tue, Jul 05, 2016 at 10:34:49AM -0500, Eric W. Biederman wrote:
+>> The more I think of it the more I think that sounds like wisdom.
+>> Dropping this patch and replacing it by one that just does:
+>> 
+>> diff --git a/fs/quota/dquot.c b/fs/quota/dquot.c
+>> index d8fb0fd3ff6f..9c9890fe18b7 100644
+>> --- a/fs/quota/dquot.c
+>> +++ b/fs/quota/dquot.c
+>> @@ -2273,6 +2273,11 @@ static int vfs_load_quota_inode(struct inode *inode, int type, int format_id,
+>>                 error = -EINVAL;
+>>                 goto out_fmt;
+>>         }
+>> +       /* Filesystems outside of init_user_ns not yet supported */
+>> +       if (sb->s_user_ns != &init_user_ns) {
+>> +               error = -EINVAL;
+>> +               goto out_fmt;
+>> +       }
+>>         /* Usage always has to be set... */
+>>         if (!(flags & DQUOT_USAGE_ENABLED)) {
+>>                 error = -EINVAL;
+>> 
+>> 
+>> seems a lot more appropriate at this point.  That is enough to give a
+>> great big hint there is something that needs to be done but won't
+>> embrittle the code with untested corner cases.
+>
+> You'll need to propagate that to all filesystems that have their own
+> quota implemenation, too.
 
-Thank you for the patch. I have sent a new version with your changes.
-If there will not be other comments in a few days, I will resent a
-whole seires with linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org in CC.
+All of the filesytems that have their own quota implementations omit the
+flag FS_USERNS_MOUNT in fs_flags in struct filesystem so they are
+protected.
 
-Thanks,
-Andrew
+The above change is extending to the generic implementation of quota
+files the same protection that is already enjoyed by filesystems in
+general.  Recognition that being attacked by malicious users is a
+difficult thing to defend against, and not enabling the code until there
+is a reasonable certainty the code is robust against maliciuos attack
+and everyone involved with maintaining the code is comfortable about the
+situtation.
 
->
->> ---
->>  fs/namei.c            | 12 +++++++++++-
->>  include/linux/namei.h |  2 ++
->>  2 files changed, 13 insertions(+), 1 deletion(-)
->>
->> diff --git a/fs/namei.c b/fs/namei.c
->> index 70580ab..5f08b69 100644
->> --- a/fs/namei.c
->> +++ b/fs/namei.c
->> @@ -2148,7 +2148,7 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
->>       nd->path.dentry = NULL;
->>
->>       nd->m_seq = read_seqbegin(&mount_lock);
->> -     if (*s == '/') {
->> +     if (*s == '/' && !(flags & LOOKUP_DFD_ROOT)) {
->>               if (flags & LOOKUP_RCU)
->>                       rcu_read_lock();
->>               set_root(nd);
->> @@ -2174,6 +2174,11 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
->>                       get_fs_pwd(current->fs, &nd->path);
->>                       nd->inode = nd->path.dentry->d_inode;
->>               }
->> +             if (flags & LOOKUP_DFD_ROOT) {
->> +                     nd->root = nd->path;
->> +                     if (!(flags & LOOKUP_RCU))
->> +                             path_get(&nd->root);
->
-> You're not initializing nd->root_seq here. That means that if we end up
-> going through unlazy_walk(), we're going to call legitimize_path() (and
-> thus read_seqcount_retry()) with stack garbage, get a spurious ECHILD,
-> and do an unnecessary restart of the path lookup instead of dropping
-> into ref-walk mode.
->
->> +             }
->>               return s;
->>       } else {
->>               /* Caller must check execute permissions on the starting path component */
->> @@ -2202,6 +2207,11 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
->>                       nd->inode = nd->path.dentry->d_inode;
->>               }
->>               fdput(f);
->> +             if (flags & LOOKUP_DFD_ROOT) {
->> +                     nd->root = nd->path;
->> +                     if (!(flags & LOOKUP_RCU))
->> +                             path_get(&nd->root);
->> +             }
->
-> Same here.
->
-> The following should do the trick:
->
-> diff --git a/fs/namei.c b/fs/namei.c
-> index 9958b605e822..101d1fb8d3cb 100644
-> --- a/fs/namei.c
-> +++ b/fs/namei.c
-> @@ -2176,7 +2176,9 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
->                 }
->                 if (flags & LOOKUP_DFD_ROOT) {
->                         nd->root = nd->path;
-> -                       if (!(flags & LOOKUP_RCU))
-> +                       if (flags & LOOKUP_RCU)
-> +                               nd->root_seq = nd->seq;
-> +                       else
->                                 path_get(&nd->root);
->                 }
->                 return s;
-> @@ -2209,7 +2211,9 @@ static const char *path_init(struct nameidata *nd, unsigned flags)
->                 fdput(f);
->                 if (flags & LOOKUP_DFD_ROOT) {
->                         nd->root = nd->path;
-> -                       if (!(flags & LOOKUP_RCU))
-> +                       if (flags & LOOKUP_RCU)
-> +                               nd->root_seq = nd->seq;
-> +                       else
->                                 path_get(&nd->root);
->                 }
->                 return s;
->
-> --
-> Omar
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+I have every intention of keeping all of the changes to the generic
+parts of the quota layer so that filesystems who wish to implement
+unprivileged mounts and implement quotas may proceed if they so desire.
+
+Eric
+
+p.s.  I  expect the the generic quota implementation is simple enough
+that it is not particularly suseptible to problems caused by malicious
+data.  But I don't currently care enough to verify and test that
+assumption so this is very much the wrong time for me to be enabling the
+feature.
