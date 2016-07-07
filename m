@@ -1,15 +1,17 @@
-From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH review 12/12] fs: Update i_[ug]id_(read|write) to translate
-	relative to s_user_ns
-Date: Wed,  6 Jul 2016 13:12:12 -0500
-Message-ID: <20160706181212.16267-12-ebiederm__20350.4487326883$1467829620$gmane$org@xmission.com>
-References: <874m82bptc.fsf@x220.int.ebiederm.org>
-	<20160706181212.16267-1-ebiederm@xmission.com>
+From: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: Introspecting userns relationships to other namespaces?
+Date: Thu, 7 Jul 2016 10:15:20 +0200
+Message-ID: <CAKgNAkhtQNg0mVv6ei_JigNz3njo_G3opE+rzd4OtKpa2hQe9g@mail.gmail.com>
+References: <c2a26220-69f2-f2f5-491a-e43abd9a6f92@gmail.com>
+	<87r3b7pxja.fsf@x220.int.ebiederm.org>
+	<CAKgNAkgQbxLH-B3N3Xti3LLis+1Y-SJD2h1DEaXao7zTDA7pug@mail.gmail.com>
+	<20160706141348.GB20728@mail.hallyn.com>
+Reply-To: mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20160706181212.16267-1-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <20160706141348.GB20728-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,96 +21,60 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Djalal Harouni <tixxdz-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Hi Serge,
 
-For filesystems mounted from a user namespace on-disk ids should
-be translated relative to s_users_ns rather than init_user_ns.
+On 6 July 2016 at 16:13, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
+> On Wed, Jul 06, 2016 at 10:41:48AM +0200, Michael Kerrisk (man-pages) wrote:
+>> [Rats! Doing now what I should have down to start with. Looping some
+>> lists and CRIU and other possibly relevant people into this
+>> conversation]
+>>
+>> Hi Eric,
+>>
+>> On 5 July 2016 at 23:47, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+>> > "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
+>> >
+>> >> Hi Eric,
+>> >>
+>> >> I have a question. Is there any way currently to discover which
+>> >> user namespace a particular nonuser namespace is governed by?
+>> >> Maybe I am missing something, but there does not seem to be a
+>> >> way to do this. Also, can one discover which userns is the
+>> >> parent of a given userns? Again, I can't see a way to do this.
+>> >>
+>> >> The point here is introspecting so that a process might determine
+>> >> what its capabilities are when operating on some resource governed
+>> >> by a (nonuser) namespace.
+>> >
+>> > To the best of my knowledge that there is not an interface to get that
+>> > information.  It would be good to have such an interface for no other
+>> > reason than the CRIU folks are going to need it at some point.  I am a
+>> > bit surprised they have not complained yet.
+>
+> I don't think they need it.  They do in fact have what they need.  Assume
+> you have tasks T1, T2, T1_1 and T2_1;  T1 and T2 are in init_user_ns;  T1
+> spawned T1_1 in a new userns;  T2 spawned T2_1 which setns()d to T1_1's ns.
+> There's some {handwave} uid mapping, does not matter.
+>
+> At restart, it doesn't matter which task originally created the new userns.
+> criu knows T1_1 and T2_1 are in the same userns;  it creates the userns, sets
+> up the mapping, and T1_1 and T2_1 setns() to it.
 
-When an id in the filesystem doesn't exist in s_user_ns the
-associated id in the inode will be set to INVALID_[UG]ID, which
-turns these into de facto "nobody" ids. This actually maps pretty
-well into the way most code already works, and those places where
-it didn't were fixed in previous patches. Moving forward vfs code
-needs to be careful to handle instances where ids in inodes may
-be invalid.
+I'm missing something here. How does the parental relationships
+between the user namespaces get reconstructed? Those relationships
+will govern what capabilities a process will have in various user
+namespaces.
 
-Signed-off-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- include/linux/fs.h | 50 +++++++++++++++++++++++++-------------------------
- 1 file changed, 25 insertions(+), 25 deletions(-)
+Cheers,
 
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index cb25ceb6d1ef..8aa9b72e0bc5 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -831,31 +831,6 @@ static inline void i_size_write(struct inode *inode, loff_t i_size)
- #endif
- }
- 
--/* Helper functions so that in most cases filesystems will
-- * not need to deal directly with kuid_t and kgid_t and can
-- * instead deal with the raw numeric values that are stored
-- * in the filesystem.
-- */
--static inline uid_t i_uid_read(const struct inode *inode)
--{
--	return from_kuid(&init_user_ns, inode->i_uid);
--}
--
--static inline gid_t i_gid_read(const struct inode *inode)
--{
--	return from_kgid(&init_user_ns, inode->i_gid);
--}
--
--static inline void i_uid_write(struct inode *inode, uid_t uid)
--{
--	inode->i_uid = make_kuid(&init_user_ns, uid);
--}
--
--static inline void i_gid_write(struct inode *inode, gid_t gid)
--{
--	inode->i_gid = make_kgid(&init_user_ns, gid);
--}
--
- static inline unsigned iminor(const struct inode *inode)
- {
- 	return MINOR(inode->i_rdev);
-@@ -1461,6 +1436,31 @@ struct super_block {
- 	struct list_head	s_inodes;	/* all inodes */
- };
- 
-+/* Helper functions so that in most cases filesystems will
-+ * not need to deal directly with kuid_t and kgid_t and can
-+ * instead deal with the raw numeric values that are stored
-+ * in the filesystem.
-+ */
-+static inline uid_t i_uid_read(const struct inode *inode)
-+{
-+	return from_kuid(inode->i_sb->s_user_ns, inode->i_uid);
-+}
-+
-+static inline gid_t i_gid_read(const struct inode *inode)
-+{
-+	return from_kgid(inode->i_sb->s_user_ns, inode->i_gid);
-+}
-+
-+static inline void i_uid_write(struct inode *inode, uid_t uid)
-+{
-+	inode->i_uid = make_kuid(inode->i_sb->s_user_ns, uid);
-+}
-+
-+static inline void i_gid_write(struct inode *inode, gid_t gid)
-+{
-+	inode->i_gid = make_kgid(inode->i_sb->s_user_ns, gid);
-+}
-+
- extern struct timespec current_fs_time(struct super_block *sb);
- 
- /*
+Michael
+
+
 -- 
-2.8.3
+Michael Kerrisk
+Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
+Linux/UNIX System Programming Training: http://man7.org/training/
