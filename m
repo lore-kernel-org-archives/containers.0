@@ -1,18 +1,16 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Introspecting userns relationships to other namespaces?
-Date: Thu, 7 Jul 2016 08:36:31 -0500
-Message-ID: <20160707133631.GA2994@mail.hallyn.com>
-References: <c2a26220-69f2-f2f5-491a-e43abd9a6f92@gmail.com>
-	<87r3b7pxja.fsf@x220.int.ebiederm.org>
-	<CAKgNAkgQbxLH-B3N3Xti3LLis+1Y-SJD2h1DEaXao7zTDA7pug@mail.gmail.com>
-	<20160706141348.GB20728@mail.hallyn.com>
-	<CAKgNAkhtQNg0mVv6ei_JigNz3njo_G3opE+rzd4OtKpa2hQe9g@mail.gmail.com>
+From: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+Subject: Re: [PATCH 3/4] userns/inotify: Initial implementation of inotify
+	per-userns
+Date: Thu, 7 Jul 2016 16:40:18 +0300
+Message-ID: <577E5BC2.1000208@kyup.com>
+References: <1467207425-22072-1-git-send-email-kernel@kyup.com>
+	<1467207425-22072-4-git-send-email-kernel@kyup.com>
+	<87mvluekun.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <CAKgNAkhtQNg0mVv6ei_JigNz3njo_G3opE+rzd4OtKpa2hQe9g-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <87mvluekun.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,58 +20,105 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: jack-AlSwsSmVLrQ@public.gmane.org, avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, serge.hallyn-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, operations-/eCPMmvKun9pLGFMi4vTTA@public.gmane.org, gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Michael Kerrisk (man-pages) (mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
-> Hi Serge,
-> 
-> On 6 July 2016 at 16:13, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
-> > On Wed, Jul 06, 2016 at 10:41:48AM +0200, Michael Kerrisk (man-pages) wrote:
-> >> [Rats! Doing now what I should have down to start with. Looping some
-> >> lists and CRIU and other possibly relevant people into this
-> >> conversation]
-> >>
-> >> Hi Eric,
-> >>
-> >> On 5 July 2016 at 23:47, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
-> >> > "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
-> >> >
-> >> >> Hi Eric,
-> >> >>
-> >> >> I have a question. Is there any way currently to discover which
-> >> >> user namespace a particular nonuser namespace is governed by?
-> >> >> Maybe I am missing something, but there does not seem to be a
-> >> >> way to do this. Also, can one discover which userns is the
-> >> >> parent of a given userns? Again, I can't see a way to do this.
-> >> >>
-> >> >> The point here is introspecting so that a process might determine
-> >> >> what its capabilities are when operating on some resource governed
-> >> >> by a (nonuser) namespace.
-> >> >
-> >> > To the best of my knowledge that there is not an interface to get that
-> >> > information.  It would be good to have such an interface for no other
-> >> > reason than the CRIU folks are going to need it at some point.  I am a
-> >> > bit surprised they have not complained yet.
-> >
-> > I don't think they need it.  They do in fact have what they need.  Assume
-> > you have tasks T1, T2, T1_1 and T2_1;  T1 and T2 are in init_user_ns;  T1
-> > spawned T1_1 in a new userns;  T2 spawned T2_1 which setns()d to T1_1's ns.
-> > There's some {handwave} uid mapping, does not matter.
-> >
-> > At restart, it doesn't matter which task originally created the new userns.
-> > criu knows T1_1 and T2_1 are in the same userns;  it creates the userns, sets
-> > up the mapping, and T1_1 and T2_1 setns() to it.
-> 
-> I'm missing something here. How does the parental relationships
-> between the user namespaces get reconstructed? Those relationships
-> will govern what capabilities a process will have in various user
-> namespaces.
 
-Hm.  Probably best-effort based on the process hierarchy.  So yeah you
-could probably get a tree into a state that would be wrongly recreated.
-Create a new netns, bind mount it, exit;  Have another task create a
-new user_ns, bind mount it, exit;  Third task setns()s first to the new
-netns then to the new user_ns.  I suspect criu will recreate that
-wrongly.
+
+On 07/06/2016 08:29 PM, Eric W. Biederman wrote:
+> Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org> writes:
+> 
+>> This is still very much a WIP and there are certain things which need 
+>> to be addressed: 
+>>
+>> Changes include:
+>>
+>>  * Added 2 new sysctls:
+>>     - inotify_reserved_user_instances and inotify_reserved_user_watches 
+>>     these essentially     control the distribution of instances/watches 
+>>     down the hierarchy. For example if we have instances/watches limit of 
+>>     1024/256 and reserved instances/watches are set to 128/32 then at every 
+>>     level of the hierarchy instances/watches are going to be reduced by 128/32, 
+>>     so at userns level of 1 (e.g. init_user_ns->level_1_user_ns) each user would
+>>     have 896/224 respectively. Currently the defaults are calculated so that at 
+>>     least 8 levels of indirection are allowed. Those can be set only by global 
+>>     root user.
+>>
+>>  * When a user inside a NS creates an inotify context for the first time, 
+>>  the code locks the whole namespace hierarchy up to the parent of the last 
+>>  namespace which has a mapping for a user. And then proceeds to create all 
+>>  the intermediary levels. And then unlocks them, this is a bit cumbersome 
+>>  IMO but at least ensures that no hard-to-trace races occur.
+>>
+>> There are also some things which need to be considered:
+>>
+>>  * One problem currently not resovled is the cleanup of the intermediary
+>>  state in namespaces. E.g. if we have a hierarchy of 4 namespaces and an 
+>>  inotify instance is created in the bottom-most namespace, and later is 
+>>  destroyed this guarantees that only the state in the bottom-most ns is 
+>>  freed and not in the intermediary nodes. I guess some sort of hierarchical
+>>  mechanism is needed to connect several inotify_state structs. I'm very
+>>  much open to discussing how to fix this. Also due to the way locks are 
+>>  acquired lockdep prints a splat, but it is a false-positive. 
+>>
+>>  * Another thing which I think needs serious consideration is the semantic
+>>  of the reserved sysctls. What should happen when they are changed - should
+>>  those changes propagate to existing counter or shouldn't they? Depending
+>>  on the outcome of that decision it's possible to blow the complexity of the
+>>  solution through the roof.
+> 
+> With respect to semantics complexity wise I like how the memory cgroup
+> did their hierarchy.  That is changes only take affect at the top most
+> level, and nested parts of the hierarchy can theoretically have higher
+> limits but you hit the limits at the top of the hierarchy first.
+> 
+> Definitely a work in progress.
+> 
+> A couple of comments.
+> - See below about permission checks in sysctls.
+> - Use kuid_t not uid_t.  Anything else is buggy and hurts my head.
+> - The maintenance of the per userns per user information can be handled
+>   in kernel/user_namespace.c and simplified such that whenever we create
+>   a user namespace it refers to the per userns per user information of
+>   the creator of the namespace.  This means at most you need to create
+>   a leaf structure at any one point in time, which should greatly
+>   simplify things.
+
+I was thinking about that in the beginning but wasn't sure whether this
+would be percieved as conflating userns with the inotify intricacies.
+However, knowing that you are happy with such an approach I have started
+re-implementing this logic such that indeed the userns code is
+responsible for managing the nsuser_state struct. And in this struct
+there can be arbitrary number of hierarchical counters, each relating to
+a different subsystem? What would you say about such an approach? E.g.
+in the posted series it was inotify which was freeing the inotify_state
+when the last inotify instance was freed in inotify_free_group_priv in
+Patch 4/4. Whereas in my second version I intend to move this logic to
+the userns code. This will greatly simplify the code.
+
+Also can you explain how is the invariant that a parent ns cannot die
+before its children namespace enforced? I didn't see get_user_ns being
+called in the ns creation path? In my current code I'd like to rely on
+this invariant.
+
+
+> 
+>   The hash table for inotify_state should either be global or be a
+>   rhashtable (which is capable of expanding upon use).  Global is
+>   arguably easier.  And of course inotify_state should be renamed
+>   something like nsuser_state.
+
+For now I have opted for a global hastable, once we have something
+working it would be easier to iterate on that.
+
+> 
+> 
+> I will come back to this but I think that is enough feedback to absorb
+> for one round.
+
+Many thanks for the useful feedback.
+
+> 
+> Eric
+[SNIP]
