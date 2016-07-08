@@ -1,9 +1,8 @@
-From: Andrew Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
+From: "W. Trevor King" <wking-vJI2gpByivqcqzYg7KEe8g@public.gmane.org>
 Subject: Re: Introspecting userns relationships to other namespaces?
-Date: Thu, 7 Jul 2016 23:54:54 -0700
-Message-ID: <20160708065453.GB14391@outlook.office365.com>
-References: <20160706141348.GB20728@mail.hallyn.com>
-	<CAKgNAkhtQNg0mVv6ei_JigNz3njo_G3opE+rzd4OtKpa2hQe9g@mail.gmail.com>
+Date: Fri, 8 Jul 2016 00:18:53 -0700
+Message-ID: <20160708071853.GN4916__25004.1143772707$1467962354$gmane$org@odin.tremily.us>
+References: <CAKgNAkhtQNg0mVv6ei_JigNz3njo_G3opE+rzd4OtKpa2hQe9g@mail.gmail.com>
 	<20160707133631.GA2994@mail.hallyn.com>
 	<1467903712.2347.16.camel@HansenPartnership.com>
 	<CAKgNAkg+OiBngdFsdVR0gsSnVhMppuH2DxMBLCNAx8in5C0-zQ@mail.gmail.com>
@@ -12,12 +11,11 @@ References: <20160706141348.GB20728@mail.hallyn.com>
 	<20160708030055.GC10512@outlook.office365.com>
 	<1467948407.2322.88.camel@HansenPartnership.com>
 	<20160708052650.GM4916@odin.tremily.us>
+	<20160708065453.GB14391@outlook.office365.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: multipart/mixed; boundary="===============4856088270952097474=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20160708052650.GM4916-q4NCUed9G3sTnwFZoN752g@public.gmane.org>
+In-Reply-To: <20160708065453.GB14391-1ViLX0X+lBJGNQ1M2rI3KwRV3xvJKrda@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,98 +25,128 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "W. Trevor King" <wking-vJI2gpByivqcqzYg7KEe8g@public.gmane.org>
+To: Andrew Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
 Cc: criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gVGh1LCBKdWwgMDcsIDIwMTYgYXQgMTA6MjY6NTBQTSAtMDcwMCwgVy4gVHJldm9yIEtpbmcg
-d3JvdGU6Cj4gT24gVGh1LCBKdWwgMDcsIDIwMTYgYXQgMDg6MjY6NDdQTSAtMDcwMCwgSmFtZXMg
-Qm90dG9tbGV5IHdyb3RlOgo+ID4gT24gVGh1LCAyMDE2LTA3LTA3IGF0IDIwOjAwIC0wNzAwLCBB
-bmRyZXcgVmFnaW4gd3JvdGU6Cj4gPiA+IE9uIFRodSwgSnVsIDA3LCAyMDE2IGF0IDA3OjE2OjE4
-UE0gLTA3MDAsIEFuZHJldyBWYWdpbiB3cm90ZToKPiA+ID4gPiBJIHRoaW5rIHdlIGNhbiBzaG93
-IGFsbCByZXF1aXJlZCBpbmZvcm1hdGlvbiBpbiBmZGluZm8uIFdlIG9wZW4KPiA+ID4gPiBhIG5h
-bWVzcGFjZXMgZmlsZSAoL3Byb2MvcGlkL25zL04pIGFuZCB0aGVuIHJlYWQKPiA+ID4gPiAvcHJv
-Yy9waWQvZmRpbmZvL1ggZm9yIGl0Lgo+ID4gPiAKPiA+ID4gSGVyZSBpcyBhIHByb29mLW9mLWNv
-bmNlcHQgcGF0Y2guCj4gPiA+IOKApgo+ID4gPiBJbiBbMl06IGZkID0gb3Mub3BlbigiL3Byb2Mv
-c2VsZi9ucy9waWQiLCBvcy5PX1JET05MWSkKPiA+ID4gCj4gPiA+IEluIFszXTogcHJpbnQgb3Bl
-bigiL3Byb2Mvc2VsZi9mZGluZm8vJWQiICUgZmQpLnJlYWQoKQo+ID4gPiBwb3M6CTAKPiA+ID4g
-ZmxhZ3M6CTAxMDAwMDAKPiA+ID4gbW50X2lkOgkyCj4gPiA+IHVzZXJuczogNDAyNjUzMTgzNwo+
-ID4gPiAKPiA+ID4gSW4gWzRdOiBwcmludCAiL3Byb2Mvc2VsZi9ucy91c2VyIC0+ICVzIiAlCj4g
-PiA+IG9zLnJlYWRsaW5rKCIvcHJvYy9zZWxmL25zL3VzZXIiKQo+ID4gPiAvcHJvYy9zZWxmL25z
-L3VzZXIgLT4gdXNlcjpbNDAyNjUzMTgzN10KPiA+IAo+ID4gY2FuJ3QgeW91IGp1c3QgZG8KPiA+
-IAo+ID4gcmVhZGxpbmsgL3Byb2Mvc2VsZi9ucy91c2VyIHwgc2VkICdzLy4qXFtcKC4qXClcXS9c
-MS8nCj4gCj4gV2l0aCBBbmRyZXcncyBmZGluZm8gYXBwcm9hY2ggeW91IGtub3cgdGhlIHVzZXIg
-bmFtZXNwYWNlIG93bmluZwo+IC9wcm9jL3NlbGYvbnMvcGlkIGlzIDQwMjY1MzE4MzcuICBUaGF0
-IGhhcHBlbnMgdG8gYmUKPiAvcHJvYy9zZWxmL25zL3VzZXIgaW4gdGhpcyBjYXNlLCBidXQgZG9l
-c24ndCBoYXZlIHRvIGJlIGluIGdlbmVyYWwuCj4gCj4gPiBCdXQgd2hhdCBNaWNoYWVsIHdhcyBh
-c2tpbmcgYWJvdXQgd2FzIHRoZSBwYXJlbnQgdXNlcl9ucyBvZiBhbGwgdGhlCj4gPiBvdGhlciBu
-YW1lc3BhY2VzIC4uLiBJIGRvbid0IHRoaW5rIHRoZXJlJ3MgYW55IHdheSB3ZSBjYW4gZ2V0IHRo
-YXQKPiA+IG91dCBvZiBhbnkgaW5mb3JtYXRpb24gaW4gL3Byb2Mvc2VsZi8KPiAKPiBJZiBmZGlu
-Zm8gb25seSBzaG93cyBpbW1lZGlhdGUgcGFyZW50cywgeW91J2QgbmVlZCB0byB3YWxrIHRoZSB0
-cmVlIHRvCj4gZ2V0IGJhY2sgdG8gdGhlIHJvb3QuICBBbmQgYXQgZWFjaCBsYXllciBvZiB0aGUg
-UElEIG5hbWVzcGFjZSB0cmVlCj4gdGhlcmUgd2lsbCBiZSBhbm90aGVyIHVzZXItbmFtZXNwYWNl
-IHBhcmVudCBicmFuY2hpbmcgb2ZmKS4gIFdpdGggYQo+IHRyZWUgbGlrZToKPiAKPiAgIE5hbWVz
-cGFjZSAgICAgICAgIHwgUGFyZW50ICAgICAgIHwgT3duaW5nIHVzZXJucwo+ICAtLS0tLS0tLS0t
-LS0tLS0tLS0tKy0tLS0tLS0tLS0tLS0tKy0tLS0tLS0tLS0tLS0tLS0tLS0KPiAgIFJvb3QgdXNl
-cm5zICAgICAgIHwgLSAgICAgICAgICAgIHwgLQo+ICAgUm9vdCBQSUQgbnMgICAgICAgfCAtICAg
-ICAgICAgICAgfCBSb290IHVzZXJucwo+ICAgQ2hpbGQgdXNlcm5zICAgICAgfCBSb290IHVzZW5z
-ICAgfCBSb290IHVzZXJucwo+ICAgQ2hpbGQgUElEIG5zICAgICAgfCBSb290IFBJRCBucyAgfCBS
-b290IHVzZXJucwo+ICAgR3JhbmRjaGlsZCB1c2VybnMgfCBDaGlsZCB1c2VybnMgfCBDaGlsZCB1
-c2VybnMKPiAgIEdyYW5kY2hpbGQgUElEIG5zIHwgQ2hpbGQgUElEIG5zIHwgR3JhbmRjaGlsZCB1
-c2VybnMKPiAKPiBXYWxraW5nIGZyb20gdGhlIGdyYW5jaGlsZCBQSUQgbmFtZXNwYWNlIHdvdWxk
-IGdpdmUgeW91Ogo+IAo+ICAgR3JhbmRjaGlsZCBQSUQgbnMKPiAgIHwtLSBDaGlsZCBQSUQgbnMK
-PiAgIHwgICB8LS0gUm9vdCBQSUQgbnMKPiAgIHwgICBgLS0gUm9vdCB1c2VybnMgCj4gICBgLS0g
-R3JhbmNoaWxkIHVzZXJucwo+ICAgICAgIGAtLSBDaGlsZCB1c2VybnMKPiAgICAgICAgICAgYC0t
-IFJvb3QgdXNlcm5zCj4gCj4gSWYgeW91IG9ubHkgcHV0IG9uZSBsZXZlbCBpbiBmZGluZm8sIHlv
-dSdyZSBzdHVjayBpZiBvbmUgb2YgdGhlCj4gbmFtZXNwYWNlcyBpbnZvbHZlZCBoYXMgbmVpdGhl
-ciBiaW5kIG1vdW50cyBub3IgYSBQSUQgdG8gZ2l2ZSB5b3UKPiBoYW5kbGUgb24gaXQgWzFdLiAg
-QW5kIGlmIHlvdSB3YW50IHRvIHB1dCB0aGF0IHdob2xlIGFuY2VzdG9yIHRyZWUgaW4KPiBmZGlu
-Zm8sIHlvdSBoYXZlIHRvIGNvbWUgdXAgd2l0aCBzb21lIHdheSB0byBoYW5kbGUgdGhlIHR3by1w
-YXJlbnQKPiBicmFuY2hpbmcuCgpJIHRoaW5rIGl0J3MgYSBiYWQgaWRlYSB0byBkcmF3IGEgdHJl
-ZSBpbiBmZGluZm8uIFdoeSBkbyB3ZSB3YW50IHRvIGtub3cKdGhpcyBoaWVyYXJjaHk/IFByb2Jh
-Ymx5IHdlIHdpbGwgd2FudCB0byBhY2Nlc3MgdGhlc2UgbmFtZXNwYWNlcyAoc2V0bnMpLAppbiB0
-aGlzIGNhc2Ugd2UgbmVlZCB0byBoYXZlIGEgd2F5IHRvIG9wZW4gdGhlbS4KCk1heWJlIHdlIG5l
-ZWQgdG8gZXh0ZW5kIGZ1bmN0aW9uYWxpdHkgb2YgdGhlIG5zZnMgZmlsZXN5c3RlbQooc29tZXRo
-aW5rIGxpa2UgL3Byb2MvUElEIGZvciBuYW1lc3BhY2VzKT8KCj4gCj4gSSdtIGFsc28gbm90IHN1
-cmUgaG93IGV4cG9zaW5nIG5zZnMgaW5mb3JtYXRpb24gWzJdIHdvdWxkIGhhbmRsZQo+IG5hbWVz
-cGFjZXMgdGhhdCBoYWQgbmVpdGhlciBhIHN1cnZpdmluZyBiaW5kIG1vdW50IG5vciBhIGRpcmVj
-dAo+IHByb2Nlc3MuCj4gCj4gSWYgYWxsIHRoZSBpbmZvcm1hdGlvbiBpcyBhdmFpbGFibGUgKHBv
-c3NpYmxlIGFmdGVyIGEgbWVjaGFuaWNhbCBwYXRjaAo+IFszXSBtYWtlcyBpdCBtb3JlIGFjY2Vz
-c2libGUpLCB0aGVuIGl0IHNlZW1zIGVhc2llciB0byBwdXQgaXQgaW4gYQo+IHNlcGFyYXRlIC9w
-cm9jIG9yIC9zeXMgZmlsZS4gIFRoZXJlIHdhcyBhIHN0YWIgYXQgdGhpcyBmb3IgUElECj4gbmFt
-ZXNwYWNlcyBpbiBbNF0gKHRoZSBzYW1lIHNlcmllcyB0aGF0IGxhbmRlZCBOU3RnaWQsIGV0Yy4p
-IHdpdGgKPiBhZGRpdGlvbmFsIGJhY2tncm91bmQgYW5kIGFsdGVybmF0aXZlIGFwcHJvYWNoZXMg
-aW4gWzVdLiAgVGhlcmUgd2VyZQo+IHByb2JsZW1zIHdpdGggdGhhdCBwYXRjaCAoYW5kIGl0IHdh
-cyB0cnlpbmcgdG8gZG8gbW9yZSBieSBhbHNvIGxpc3RpbmcKPiBhIHByb2Nlc3MncyBJRCBpbiBl
-YWNoIFBJRCBuYW1lc3BhY2UpLCBidXQgdGhlIOKAnGxldCdzIHB1dCB0aGUgd2hvbGUKPiB0cmVl
-IGluIGEgbmV3IGZpbGXigJ0gYXBwcm9hY2ggc2VlbXMgc291bmQgdG8gbWUuCj4gCj4gQ2hlZXJz
-LAo+IFRyZXZvcgo+IAo+IFsxXTogaHR0cDovL3RocmVhZC5nbWFuZS5vcmcvZ21hbmUubGludXgu
-a2VybmVsLmNvbnRhaW5lcnMvMzA0NTYvZm9jdXM9MjA1MzYKPiAgICAgIFN1YmplY3Q6IFJlOiBJ
-bnRyb3NwZWN0aW5nIHVzZXJucyByZWxhdGlvbnNoaXBzIHRvIG90aGVyIG5hbWVzcGFjZXM/Cj4g
-ICAgICBEYXRlOiBUaHUsIDcgSnVsIDIwMTYgMTM6MjQ6NDIgLTA1MDAKPiAgICAgIE1lc3NhZ2Ut
-SUQ6IDwyMDE2MDcwNzE4MjQ0Mi5HQTY0MDJAbWFpbC5oYWxseW4uY29tPgo+IFsyXTogaHR0cDov
-L3RocmVhZC5nbWFuZS5vcmcvZ21hbmUubGludXgua2VybmVsLmNvbnRhaW5lcnMvMzA0NTYvZm9j
-dXM9MzA0OTkKPiAgICAgIFN1YmplY3Q6IFJlOiBbQ1JJVV0gSW50cm9zcGVjdGluZyB1c2VybnMg
-cmVsYXRpb25zaGlwcyB0byBvdGhlciBuYW1lc3BhY2VzPwo+ICAgICAgRGF0ZTogVGh1LCAwNyBK
-dWwgMjAxNiAyMDoyMDowNSAtMDcwMAo+ICAgICAgTWVzc2FnZS1JRDogPDE0Njc5NDgwMDUuMjMy
-Mi44NC5jYW1lbEBIYW5zZW5QYXJ0bmVyc2hpcC5jb20+Cj4gWzNdOiBodHRwOi8vdGhyZWFkLmdt
-YW5lLm9yZy9nbWFuZS5saW51eC5rZXJuZWwuY29udGFpbmVycy8zMDQ1Ni9mb2N1cz0yMDUzNwo+
-ICAgICAgU3ViamVjdDogUmU6IEludHJvc3BlY3RpbmcgdXNlcm5zIHJlbGF0aW9uc2hpcHMgdG8g
-b3RoZXIgbmFtZXNwYWNlcz8KPiAgICAgIE1lc3NhZ2UtSUQ6IDwxNDY3OTAzNzEyLjIzNDcuMTYu
-Y2FtZWxASGFuc2VuUGFydG5lcnNoaXAuY29tPgo+ICAgICAgRGF0ZTogVGh1LCAwNyBKdWwgMjAx
-NiAwODowMTo1MiAtMDcwMAo+IFs0XTogaHR0cDovL3RocmVhZC5nbWFuZS5vcmcvZ21hbmUubGlu
-dXgua2VybmVsLmNvbnRhaW5lcnMvMjg5MjUvZm9jdXM9Mjg5MjgKPiAgICAgIFN1YmplY3Q6IFty
-ZXNlbmRdW1BBVENIIHY5IDEvM10gcHJvY2ZzOiBzaG93IGhpZXJhcmNoeSBvZiBwaWQgbmFtZXNw
-YWNlCj4gICAgICBEYXRlOiBUdWUsIDIzIERlYyAyMDE0IDE4OjIwOjM3ICswODAwCj4gICAgICBN
-ZXNzYWdlLUlEOiA8MTQxOTMzMDAzOS0yOTIwNy0yLWdpdC1zZW5kLWVtYWlsLWNoZW5oYW54aWFv
-QGNuLmZ1aml0c3UuY29tPgo+IFs1XTogaHR0cDovL3RocmVhZC5nbWFuZS5vcmcvZ21hbmUubGlu
-dXgua2VybmVsLmNvbnRhaW5lcnMvMjgxMDUKPiAgICAgIFN1YmplY3Q6IFtSRkNdUGlkIGNvbnZl
-cnNpb24gYmV0d2VlbiBwaWQgbmFtZXNwYWNlCj4gICAgICBEYXRlOiBUaHUsIDMgSnVsIDIwMTQg
-MTI6MTg6MzMgKzAwMDAKPiAgICAgIE1lc3NhZ2UtSUQ6IDw1ODcxNDk1NjMzRjM4OTQ5OTAwRDJC
-RjJEQzA0ODgzRTU1QzM3NEBHMDhDTkVYTUJQRUtEMDIuZzA4LmZ1aml0c3UubG9jYWw+Cj4gCj4g
-LS0gCj4gVGhpcyBlbWFpbCBtYXkgYmUgc2lnbmVkIG9yIGVuY3J5cHRlZCB3aXRoIEdudVBHICho
-dHRwOi8vd3d3LmdudXBnLm9yZykuCj4gRm9yIG1vcmUgaW5mb3JtYXRpb24sIHNlZSBodHRwOi8v
-ZW4ud2lraXBlZGlhLm9yZy93aWtpL1ByZXR0eV9Hb29kX1ByaXZhY3kKCgpfX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlz
-dApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGlu
-dXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+
+--===============4856088270952097474==
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="CSGWCrCVWDYEEUXI"
+Content-Disposition: inline
+
+
+--CSGWCrCVWDYEEUXI
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+On Thu, Jul 07, 2016 at 11:54:54PM -0700, Andrew Vagin wrote:
+> On Thu, Jul 07, 2016 at 10:26:50PM -0700, W. Trevor King wrote:
+> > On Thu, Jul 07, 2016 at 08:26:47PM -0700, James Bottomley wrote:
+> > > On Thu, 2016-07-07 at 20:00 -0700, Andrew Vagin wrote:
+> > > > On Thu, Jul 07, 2016 at 07:16:18PM -0700, Andrew Vagin wrote:
+> > > > > I think we can show all required information in fdinfo. We open
+> > > > > a namespaces file (/proc/pid/ns/N) and then read
+> > > > > /proc/pid/fdinfo/X for it.
+> > > >=20
+> > > > Here is a proof-of-concept patch.
+> > > > =E2=80=A6
+> > > > In [2]: fd =3D os.open("/proc/self/ns/pid", os.O_RDONLY)
+> > > >=20
+> > > > In [3]: print open("/proc/self/fdinfo/%d" % fd).read()
+> > > > pos:	0
+> > > > flags:	0100000
+> > > > mnt_id:	2
+> > > > userns: 4026531837
+> > > >=20
+> > > > In [4]: print "/proc/self/ns/user -> %s" %
+> > > > os.readlink("/proc/self/ns/user")
+> > > > /proc/self/ns/user -> user:[4026531837]
+> > >=20
+> > > can't you just do
+> > >=20
+> > > readlink /proc/self/ns/user | sed 's/.*\[\(.*\)\]/\1/'
+> > =E2=80=A6
+> > If you only put one level in fdinfo, you're stuck if one of the
+> > namespaces involved has neither bind mounts nor a PID to give you
+> > handle on it [1].  And if you want to put that whole ancestor tree in
+> > fdinfo, you have to come up with some way to handle the two-parent
+> > branching.
+>=20
+> I think it's a bad idea to draw a tree in fdinfo. Why do we want to know
+> this hierarchy? Probably we will want to access these namespaces (setns),
+> in this case we need to have a way to open them.
+>=20
+> Maybe we need to extend functionality of the nsfs filesystem
+> (somethink like /proc/PID for namespaces)?
+
+A similar idea came up during the PID-translation brainstorming [1],
+but I'm not sure if anything ever came of that.  Once you're dealing
+with a separate pseudo-filesystem, it seems easier to decouple it from
+proc and just make a mountable namespace-hierarchy filesystem (like we
+have mountable cgroup hierarchy filesystems).  That also gets you an
+opt-in playground while the details of the nsfs filesystem view are
+worked out.  Are you imagining something like:
+
+  $ tree .
+  .
+  =E2=94=9C=E2=94=80=E2=94=80 mnt{inum}
+  =E2=94=82=C2=A0=C2=A0 =E2=94=94=E2=94=80=E2=94=80 user -> ../user{inum}
+  =E2=94=9C=E2=94=80=E2=94=80 pid{inum}
+  =E2=94=82=C2=A0=C2=A0 =E2=94=9C=E2=94=80=E2=94=80 pid{inum}
+  =E2=94=82=C2=A0=C2=A0 =E2=94=82=C2=A0=C2=A0 =E2=94=94=E2=94=80=E2=94=80 u=
+ser -> ../../user{inum}/user{inum}
+  =E2=94=82=C2=A0=C2=A0 =E2=94=94=E2=94=80=E2=94=80 user -> ../user{inum}
+  =E2=94=94=E2=94=80=E2=94=80 user{inum}
+      =E2=94=94=E2=94=80=E2=94=80 user{inum}
+
+Cheers,
+Trevor
+
+[1]: http://thread.gmane.org/gmane.linux.kernel.containers/28105/focus=3D28=
+164
+     Subject: RE: [RFC]Pid conversion between pid namespace
+     Date: Fri, 25 Jul 2014 10:01:45 +0000
+     Message-ID: <5871495633F38949900D2BF2DC04883E56C7A2-ZEd+hNNJ6a5ZYpXjqAkB5h1MG4Scf5jO@public.gmane.org=
+8.fujitsu.local>
+
+--=20
+This email may be signed or encrypted with GnuPG (http://www.gnupg.org).
+For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
+
+--CSGWCrCVWDYEEUXI
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBAgAGBQJXf1PZAAoJEBBpoQVgXJg1M9QQAJU1E9CCFgOk+C1FrNclvRXf
+8dCxoFjl4KNe92UxxoElnLTkmsg3x6tiWui9y+8GRUaD6SzjieOVDUzLuqCPbejI
+W+7ePc6jC5flPqtpu3Hy3PeggcuIbgCO9Vq7/tzY1wZMO1wBup/NH4qAb69d18Dt
+MAvObxsNe0AhqPw79ccXKywcoleaK9Q1G5AgmMiqOfXgbgQ8Qc4KgEsqr2YsDNfC
+mMIhIKlAblydoAKpoyZNMLPnP2EMe5OnPCPobcnu/JRzSayY4pEUm+a016ENz8Np
+UIyZ7iFMqYSp0sHZHgOZcOlItBJjkb7h3ZEJ7NdCfG+bBvuPeULDfmxM78aYsTIB
+NI//bYgHzQNdsWmKnUnD59Mbf8c3wcYafLmBopGl2agzFFKTiFYLUPCeYbOTG/Ab
+bhetzn9klvS6K4HNozEJ1gY9Lvj05BL1bofzlEnwVYh00KMdNsrwkzh2DUmL8H2x
+rG2+Wk1o4Kegd9/yD9yea0Pmr2eAmIaGwQXNF/C8Sanq/ClbZTleMoAynS084+Wo
+C3OIMuhD7neJ0LgPPggOyabFhUlBhvA9ElhfbXGSlCH5jfG2OpUQJIL5EW/Lm07r
+wuYpbFDZhmaB5ghpz8CNDmpnf4j8kIcgsaDieG6DOH/79IY0U1PqyO4NJCfNhET+
+mw/cODQCNVblLTPXK04q
+=yY0b
+-----END PGP SIGNATURE-----
+
+--CSGWCrCVWDYEEUXI--
+
+--===============4856088270952097474==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============4856088270952097474==--
