@@ -1,13 +1,21 @@
-From: =?iso-8859-1?Q?St=E9phane?= Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] [RFC] Limit dump_pipe program's permission to init for
-	container
-Date: Fri, 8 Jul 2016 11:26:10 -0400
-Message-ID: <20160708152610.GC19948@castiana>
-References: <ebe572465ba7c6d12004b62ed752cc5804bf13b4.1467975799.git.zhaolei@cn.fujitsu.com>
+From: Andrew Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
+Subject: Re: [CRIU] Introspecting userns relationships to other namespaces?
+Date: Fri, 8 Jul 2016 13:38:19 -0700
+Message-ID: <20160708203818.GA2602@outlook.office365.com>
+References: <c2a26220-69f2-f2f5-491a-e43abd9a6f92@gmail.com>
+	<87r3b7pxja.fsf@x220.int.ebiederm.org>
+	<CAKgNAkgQbxLH-B3N3Xti3LLis+1Y-SJD2h1DEaXao7zTDA7pug@mail.gmail.com>
+	<20160706141348.GB20728@mail.hallyn.com>
+	<871t36kbvq.fsf@x220.int.ebiederm.org>
+	<20160708015758.GA10512@outlook.office365.com>
+	<87vb0gy3nr.fsf@x220.int.ebiederm.org>
+	<1467988533.2322.118.camel@HansenPartnership.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============3162983518665435426=="
+Content-Type: text/plain; charset="koi8-r"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <ebe572465ba7c6d12004b62ed752cc5804bf13b4.1467975799.git.zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1467988533.2322.118.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,292 +25,120 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
---===============3162983518665435426==
-Content-Type: multipart/signed; micalg=pgp-sha512;
-	protocol="application/pgp-signature"; boundary="zCKi3GIZzVBPywwA"
-Content-Disposition: inline
-
-
---zCKi3GIZzVBPywwA
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Fri, Jul 08, 2016 at 07:08:10PM +0800, Zhao Lei wrote:
-> Currently when we set core_pattern to a pipe, the pipe program is
-> forked by kthread running with root's permission, and write dumpfile
-> into host's filesystem.
-> Same thing happened for container, the dumper and dumpfile are also
-> in host(not in container).
->=20
-> It have following program:
-> 1: Not consistent with file_type core_pattern
->    When we set core_pattern to a file, the container will write dump
->    into container's filesystem instead of host.
-> 2: Not safe for privileged container
->    In a privileged container, user can destroy host system by following
->    command:
->    # # In a container
->    # echo "|/bin/dd of=3D/boot/vmlinuz" >/proc/sys/kernel/core_pattern
->    # make_dump
->=20
-> This patch switch dumper program's permission to init task, it is to say,
-> for container, dumper program have same permission with init task in
-> container, which make dumper program put in container's filesystem, and
-> write coredump into container's filesystem.
-> The dumper's permission is also limited into subset of container's init
-> process.
->=20
-> See following discussion for detail:
-> http://www.gossamer-threads.com/lists/linux/kernel/2455363
-> http://www.gossamer-threads.com/lists/linux/kernel/2397602
->=20
-> Todo:
-> 1: Set different core_pattern to host and each container.
-> 2: Keep compatibility with current design
-> All above are done in previous version of this patch,
-> need some restruct.
->=20
-> Any suggestion is welcome for this patch.
-
-
-Ok, so those two todo items are I think absolute musts before we can
-consider any of this.
-
-Changing the default behavior that we have had ever since pipe in
-core_pattern and namespaces have existed would cause serious problem for
-existing users.
-
-
-Speaking for myself, LXC does setup limitations on privileged containers
-which prevent them from changing the core_pattern so that it can't be
-abused for privileged containers.
-The core_pattern on Ubuntu then sends all crashes to apport, as root, on
-the host. Apport is then container aware and handles forwarding the
-crash (through a unix socket) to the apport process inside the
-container.
-
-Your suggested change would likely make this all fail as apport on the
-host must be called as root to be able to access the container's
-filesystem (through /proc/<PID>/root).
-
-
-With namespacing in place, then we wouldn't need the apport relay trick
-on the host, so that'd be fine.
-
-And otherwise, making this behavior optional (different pattern or
-something) would be fine too (not breaking existing users).
-
->=20
-> Suggested-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> Suggested-by: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
->=20
-> Signed-off-by: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> ---
->  fs/coredump.c           | 84 +++++++++++++++++++++++++++++++++++++++++++=
-+++++-
->  include/linux/binfmts.h |  1 +
->  2 files changed, 84 insertions(+), 1 deletion(-)
->=20
-> diff --git a/fs/coredump.c b/fs/coredump.c
-> index 281b768..92dc343 100644
-> --- a/fs/coredump.c
-> +++ b/fs/coredump.c
-> @@ -516,6 +516,8 @@ static int umh_pipe_setup(struct subprocess_info *inf=
-o, struct cred *new)
->  {
->  	struct file *files[2];
->  	struct coredump_params *cp =3D (struct coredump_params *)info->data;
-> +	struct task_struct *base_task;
-> +
->  	int err =3D create_pipe_files(files, 0);
->  	if (err)
->  		return err;
-> @@ -524,10 +526,78 @@ static int umh_pipe_setup(struct subprocess_info *i=
-nfo, struct cred *new)
-> =20
->  	err =3D replace_fd(0, files[0], 0);
->  	fput(files[0]);
-> +	if (err)
-> +		return err;
-> +
->  	/* and disallow core files too */
->  	current->signal->rlim[RLIMIT_CORE] =3D (struct rlimit){1, 1};
-> =20
-> -	return err;
-> +	base_task =3D cp->base_task;
-> +	if (base_task) {
-> +		const struct cred *base_cred;
-> +
-> +		/* Set fs_root to base_task */
-> +		spin_lock(&base_task->fs->lock);
-> +		set_fs_root(current->fs, &base_task->fs->root);
-> +		spin_unlock(&base_task->fs->lock);
-> +
-> +		/* Set namespaces to base_task */
-> +		switch_task_namespaces(current, base_task->nsproxy);
-> +
-> +		/* Set cgroup to base_task */
-> +		current->flags &=3D ~PF_NO_SETAFFINITY;
-> +		err =3D cgroup_attach_task_all(base_task, current);
-> +		if (err < 0)
-> +			return err;
-> +
-> +		/* Set cred to base_task */
-> +		base_cred =3D get_task_cred(base_task);
-> +
-> +		new->uid   =3D base_cred->uid;
-> +		new->gid   =3D base_cred->gid;
-> +		new->suid  =3D base_cred->suid;
-> +		new->sgid  =3D base_cred->sgid;
-> +		new->euid  =3D base_cred->euid;
-> +		new->egid  =3D base_cred->egid;
-> +		new->fsuid =3D base_cred->fsuid;
-> +		new->fsgid =3D base_cred->fsgid;
-> +
-> +		new->securebits =3D base_cred->securebits;
-> +
-> +		new->cap_inheritable =3D base_cred->cap_inheritable;
-> +		new->cap_permitted   =3D base_cred->cap_permitted;
-> +		new->cap_effective   =3D base_cred->cap_effective;
-> +		new->cap_bset        =3D base_cred->cap_bset;
-> +		new->cap_ambient     =3D base_cred->cap_ambient;
-> +
-> +		security_cred_free(new);
-> +#ifdef CONFIG_SECURITY
-> +		new->security =3D NULL;
-> +#endif
-> +		err =3D security_prepare_creds(new, base_cred, GFP_KERNEL);
-> +		if (err < 0) {
-> +			put_cred(base_cred);
-> +			return err;
-> +		}
-> +
-> +		free_uid(new->user);
-> +		new->user =3D base_cred->user;
-> +		get_uid(new->user);
-> +
-> +		put_user_ns(new->user_ns);
-> +		new->user_ns =3D base_cred->user_ns;
-> +		get_user_ns(new->user_ns);
-> +
-> +		put_group_info(new->group_info);
-> +		new->group_info =3D base_cred->group_info;
-> +		get_group_info(new->group_info);
-> +
-> +		put_cred(base_cred);
-> +
-> +		validate_creds(new);
-> +	}
-> +
-> +	return 0;
->  }
-> =20
->  void do_coredump(const siginfo_t *siginfo)
-> @@ -590,6 +660,7 @@ void do_coredump(const siginfo_t *siginfo)
-> =20
->  	if (ispipe) {
->  		int dump_count;
-> +		struct task_struct *vinit_task;
->  		char **helper_argv;
->  		struct subprocess_info *sub_info;
-> =20
-> @@ -631,6 +702,12 @@ void do_coredump(const siginfo_t *siginfo)
->  			goto fail_dropcount;
->  		}
-> =20
-> +		vinit_task =3D find_task_by_vpid(1);
-> +		if (!vinit_task) {
-> +			printk(KERN_WARNING "failed getting init task info, skipping core dum=
-p\n");
-> +			goto fail_dropcount;
-> +		}
-> +
->  		helper_argv =3D argv_split(GFP_KERNEL, cn.corename, NULL);
->  		if (!helper_argv) {
->  			printk(KERN_WARNING "%s failed to allocate memory\n",
-> @@ -638,6 +715,10 @@ void do_coredump(const siginfo_t *siginfo)
->  			goto fail_dropcount;
->  		}
-> =20
-> +		get_task_struct(vinit_task);
-> +
-> +		cprm.base_task =3D vinit_task;
-> +
->  		retval =3D -ENOMEM;
->  		sub_info =3D call_usermodehelper_setup(helper_argv[0],
->  						helper_argv, NULL, GFP_KERNEL,
-> @@ -646,6 +727,7 @@ void do_coredump(const siginfo_t *siginfo)
->  			retval =3D call_usermodehelper_exec(sub_info,
->  							  UMH_WAIT_EXEC);
-> =20
-> +		put_task_struct(vinit_task);
->  		argv_free(helper_argv);
->  		if (retval) {
->  			printk(KERN_INFO "Core dump to |%s pipe failed\n",
-> diff --git a/include/linux/binfmts.h b/include/linux/binfmts.h
-> index 314b3ca..0c9a72c 100644
-> --- a/include/linux/binfmts.h
-> +++ b/include/linux/binfmts.h
-> @@ -59,6 +59,7 @@ struct linux_binprm {
-> =20
->  /* Function parameter for binfmt->coredump */
->  struct coredump_params {
-> +	struct task_struct *base_task;
->  	const siginfo_t *siginfo;
->  	struct pt_regs *regs;
->  	struct file *file;
-> --=20
-> 1.8.5.1
->=20
->=20
->=20
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
-
---=20
-St=E9phane Graber
-Ubuntu developer
-http://www.ubuntu.com
-
---zCKi3GIZzVBPywwA
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBCgAGBQJXf8YSAAoJEMY4l01keS1nxG8P/RUxpCohb+JlqsfXMqOrkddF
-JcfJS2jUsL2nILCeq0LRMOY7ghKlDds6EZXn+I12Amv2GrtgrkdipgIgluQIC4QM
-1Eg31idP0g9P9z9ZUuRHrwiPbDf9puMXE8MwOjEVKgQdWMv82C3CCqOASB1Of9Ls
-7BYXGaDs/HOOzoDFmefE5cC3CNKhFD7upX+05fgPPsBgIIrEUlU2kjrl3fyLn7TA
-DBE+D5Bj77zNedai4dYGmynhz6DiYen2xBX6YG/ayywFOaY6cH2LaqzNULhWjepP
-Fk90QLygB5GBz9xm4uPcu+lvvUqFJFMsSXKp4yj8X5raY/1fTzdmDNmX7GomJnzj
-1O6A7vFHbxSqAfTM/yXDMxTTp5dQ47Td+imqJbvS0QyaNw6WwHaRJeHEZtCj+UZ0
-kNH2XLHh+XTtxk0R9LjrY9ABX8BiQ9RscY9GI1q/jwm1Ywym1WdnxlIw5tLxwUGN
-tQDBqKbeCyqj3ISlmzILNHm3HQVceMy+w/9OB0ahEQBblix8WsI3r3DQ5WDq7aGB
-ObztBN7Zw484ap9LUeu/0mLR8U4Hz6PKbld+8xuWGV7l+OZ6ml3+eZYyUrvb/CcY
-CL3F611l7t8Du524le0lm5HHLFhtXnxcI1wXPP1QJfnIWJ6So26mKs0WiNiLREK4
-RLnVz3GzRZxevuLtbAnO
-=WaPY
------END PGP SIGNATURE-----
-
---zCKi3GIZzVBPywwA--
-
---===============3162983518665435426==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============3162983518665435426==--
+T24gRnJpLCBKdWwgMDgsIDIwMTYgYXQgMDc6MzU6MzNBTSAtMDcwMCwgSmFtZXMgQm90dG9tbGV5
+IHdyb3RlOgo+IE9uIEZyaSwgMjAxNi0wNy0wOCBhdCAwMjo0NCAtMDUwMCwgRXJpYyBXLiBCaWVk
+ZXJtYW4gd3JvdGU6Cj4gPiBBbmRyZXcgVmFnaW4gPGF2YWdpbkB2aXJ0dW96em8uY29tPiB3cml0
+ZXM6Cj4gPiAKPiA+ID4gT24gV2VkLCBKdWwgMDYsIDIwMTYgYXQgMTA6NDY6MzNBTSAtMDUwMCwg
+RXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4gPiA+ID4gIlNlcmdlIEUuIEhhbGx5biIgPHNlcmdl
+QGhhbGx5bi5jb20+IHdyaXRlczoKPiA+ID4gPiAKPiA+ID4gPiA+IE9uIFdlZCwgSnVsIDA2LCAy
+MDE2IGF0IDEwOjQxOjQ4QU0gKzAyMDAsIE1pY2hhZWwgS2VycmlzayAobWFuCj4gPiA+ID4gPiAt
+cGFnZXMpIHdyb3RlOgo+ID4gPiA+ID4gPiBbUmF0cyEgRG9pbmcgbm93IHdoYXQgSSBzaG91bGQg
+aGF2ZSBkb3duIHRvIHN0YXJ0IHdpdGguCj4gPiA+ID4gPiA+IExvb3Bpbmcgc29tZQo+ID4gPiA+
+ID4gPiBsaXN0cyBhbmQgQ1JJVSBhbmQgb3RoZXIgcG9zc2libHkgcmVsZXZhbnQgcGVvcGxlIGlu
+dG8gdGhpcwo+ID4gPiA+ID4gPiBjb252ZXJzYXRpb25dCj4gPiA+ID4gPiA+IAo+ID4gPiA+ID4g
+PiBIaSBFcmljLAo+ID4gPiA+ID4gPiAKPiA+ID4gPiA+ID4gT24gNSBKdWx5IDIwMTYgYXQgMjM6
+NDcsIEVyaWMgVy4gQmllZGVybWFuIDwKPiA+ID4gPiA+ID4gZWJpZWRlcm1AeG1pc3Npb24uY29t
+PiB3cm90ZToKPiA+ID4gPiA+ID4gPiAiTWljaGFlbCBLZXJyaXNrIChtYW4tcGFnZXMpIiA8bXRr
+Lm1hbnBhZ2VzQGdtYWlsLmNvbT4KPiA+ID4gPiA+ID4gPiB3cml0ZXM6Cj4gPiA+ID4gPiA+ID4g
+Cj4gPiA+ID4gPiA+ID4gPiBIaSBFcmljLAo+ID4gPiA+ID4gPiA+ID4gCj4gPiA+ID4gPiA+ID4g
+PiBJIGhhdmUgYSBxdWVzdGlvbi4gSXMgdGhlcmUgYW55IHdheSBjdXJyZW50bHkgdG8gZGlzY292
+ZXIgCj4gPiA+ID4gPiA+ID4gPiB3aGljaCB1c2VyIG5hbWVzcGFjZSBhIHBhcnRpY3VsYXIgbm9u
+dXNlciBuYW1lc3BhY2UgaXMgCj4gPiA+ID4gPiA+ID4gPiBnb3Zlcm5lZCBieT8gTWF5YmUgSSBh
+bSBtaXNzaW5nIHNvbWV0aGluZywgYnV0IHRoZXJlIGRvZXMgCj4gPiA+ID4gPiA+ID4gPiBub3Qg
+c2VlbSB0byBiZSBhIHdheSB0byBkbyB0aGlzLiBBbHNvLCBjYW4gb25lIGRpc2NvdmVyIAo+ID4g
+PiA+ID4gPiA+ID4gd2hpY2ggdXNlcm5zIGlzIHRoZSBwYXJlbnQgb2YgYSBnaXZlbiB1c2VybnM/
+IEFnYWluLCBJIAo+ID4gPiA+ID4gPiA+ID4gY2FuJ3Qgc2VlIGEgd2F5IHRvIGRvIHRoaXMuCj4g
+PiA+ID4gPiA+ID4gPiAKPiA+ID4gPiA+ID4gPiA+IFRoZSBwb2ludCBoZXJlIGlzIGludHJvc3Bl
+Y3Rpbmcgc28gdGhhdCBhIHByb2Nlc3MgbWlnaHQgCj4gPiA+ID4gPiA+ID4gPiBkZXRlcm1pbmUg
+d2hhdCBpdHMgY2FwYWJpbGl0aWVzIGFyZSB3aGVuIG9wZXJhdGluZyBvbiAKPiA+ID4gPiA+ID4g
+PiA+IHNvbWUgcmVzb3VyY2UgZ292ZXJuZWQgYnkgYSAobm9udXNlcikgbmFtZXNwYWNlLgo+ID4g
+PiA+ID4gPiA+IAo+ID4gPiA+ID4gPiA+IFRvIHRoZSBiZXN0IG9mIG15IGtub3dsZWRnZSB0aGF0
+IHRoZXJlIGlzIG5vdCBhbiBpbnRlcmZhY2UgCj4gPiA+ID4gPiA+ID4gdG8gZ2V0IHRoYXQgaW5m
+b3JtYXRpb24uICBJdCB3b3VsZCBiZSBnb29kIHRvIGhhdmUgc3VjaCBhbiAKPiA+ID4gPiA+ID4g
+PiBpbnRlcmZhY2UgZm9yIG5vIG90aGVyIHJlYXNvbiB0aGFuIHRoZSBDUklVIGZvbGtzIGFyZSBn
+b2luZyAKPiA+ID4gPiA+ID4gPiB0byBuZWVkIGl0IGF0IHNvbWUgcG9pbnQuICBJIGFtIGEgYml0
+IHN1cnByaXNlZCB0aGV5IGhhdmUKPiA+ID4gPiA+ID4gPiBub3QgY29tcGxhaW5lZCB5ZXQuCj4g
+PiA+ID4gPiAKPiA+ID4gPiA+IEkgZG9uJ3QgdGhpbmsgdGhleSBuZWVkIGl0LiAgVGhleSBkbyBp
+biBmYWN0IGhhdmUgd2hhdCB0aGV5IAo+ID4gPiA+ID4gbmVlZC4gIEFzc3VtZSB5b3UgaGF2ZSB0
+YXNrcyBUMSwgVDIsIFQxXzEgYW5kIFQyXzE7ICBUMSBhbmQgVDIgCj4gPiA+ID4gPiBhcmUgaW4g
+aW5pdF91c2VyX25zOyAgVDEgc3Bhd25lZCBUMV8xIGluIGEgbmV3IHVzZXJuczsgIFQyIAo+ID4g
+PiA+ID4gc3Bhd25lZCBUMl8xIHdoaWNoIHNldG5zKClkIHRvIFQxXzEncyBucy4gVGhlcmUncyBz
+b21lCj4gPiA+ID4gPiB7aGFuZHdhdmV9IHVpZCBtYXBwaW5nLCBkb2VzIG5vdCBtYXR0ZXIuCj4g
+PiA+ID4gPiAKPiA+ID4gPiA+IEF0IHJlc3RhcnQsIGl0IGRvZXNuJ3QgbWF0dGVyIHdoaWNoIHRh
+c2sgb3JpZ2luYWxseSBjcmVhdGVkIHRoZSAKPiA+ID4gPiA+IG5ldyB1c2VybnMuIGNyaXUga25v
+d3MgVDFfMSBhbmQgVDJfMSBhcmUgaW4gdGhlIHNhbWUgdXNlcm5zOyAKPiA+ID4gPiA+ICBpdCBj
+cmVhdGVzIHRoZSB1c2VybnMsIHNldHMgdXAgdGhlIG1hcHBpbmcsIGFuZCBUMV8xIGFuZCBUMl8x
+Cj4gPiA+ID4gPiBzZXRucygpIHRvIGl0Lgo+ID4gPiA+IAo+ID4gPiA+IEdpdmVuIHRoYXQgdGhl
+IHNpbXBsZSBjYXNlcyBhcmUgc28gZWFzeSBpdCBwcm9iYWJseSBkb2Vzbid0IAo+ID4gPiA+IG1h
+dHRlciBpbiB0aGF0IHNlbnNlLgo+ID4gPiA+IAo+ID4gPiA+IEhvd2V2ZXIgd2Ugbm93IGhhdmUg
+dGhlIGNhc2Ugd2hlcmUgdXNlciBuYW1lc3BhY2VzIG93biBwaWQgCj4gPiA+ID4gbmFtZXNwYWNl
+cywgYW5kIHV0cyBuYW1lc3BhY2VzLCBhbmQgbmV0d29yayBuYW1lc3BhY2VzLCBhbmQgaXBjIAo+
+ID4gPiA+IG5hbWVzcGFjZXMsIGFuZCBmaWxlc3lzdGVtcy4gIFRocm93IGluIHNvbWUgbW91bnQg
+cHJvcGFnYXRpb24gYW5kIAo+ID4gPiA+IHVzZSBvZiBzZXRucyBhbmQgdGhpbmdzIGNvdWxkIGdl
+dCBjb25mdXNpbmcuICAgSXQgaXMgc29tZXRoaW5nIAo+ID4gPiA+IHRoYXQgd2lsbCBuZWVkIHRv
+IGJlIGZpZ3VyZWQgb3V0IGlmIENSSVUgaXMgZ29pbmcgdG8gcHJvcGVybHkgCj4gPiA+ID4gY2hl
+Y2twb2ludCBjb250YWluZXJzIGNvbnRhaW5pbmcgY29udGFpbmVycyBjb250YWluaW5nIGNvbnRh
+aW5lcnMgCj4gPiA+ID4gY29udGFpbmluZyBjb250YWluZXJzLgo+ID4gPiAKPiA+ID4gSXQgaXNu
+J3QgYSBqb2tlOikuIFdlIGhhdmUgYSBmZXcgcmVxdWVzdHMgdG8gc3VwcG9ydCBDUiBvZiAKPiA+
+ID4gY29udGFpbmVycyB3aXRoIERvY2tlciBjb250YWluZXJzIGluc2lkZS4gQW5kIHdlIGFyZSBn
+b2luZyB0byBzdGFydCAKPiA+ID4gdGhpcyB0YXNrIGluIGEgbmVhciBmdXR1cmUsIHNvIHdlIHdv
+dWxkIGxpa2UgdG8gaGF2ZSBpbnRlcmZhY2UgdG8gCj4gPiA+IGdldCBkZXBlbmRlbmNpZXMgYmV0
+d2VlbiBuYW1lc3BhY2VzIHRvby4KPiA+ID4gCj4gPiA+IEJUVzogQ1JJVSBhbHJlYWR5IHN1cHBv
+cnRzIG5lc3RlZCBtb3VudCBuYW1lc3BhY2VzLCBiZWNhdXNlIHN5c3RlbWQKPiA+ID4gY3JlYXRl
+cyB0aGVtIGZvciBzZXJ2aWNlcy4KPiA+IAo+ID4gVGhlIHRyaWNreSBwYXJ0IGFib3V0IHRoaXMg
+YW5kIHdoYXQgbWVzc2VzIHVwIEphbWVzIHByb3Bvc2VkIHBsYW4gaXMKPiA+IHRoYXQgdGhlIGlu
+dGVyZmFjZSBuZWVkcyB0byBiZSBzb21ldGhpbmcgdGhhdCByZXR1cm5zIGEgbmFtZXNwYWNlIAo+
+ID4gZmlsZSBkZXNjcmlwdG9yLiAgU28gd2UgY2FuJ3QgcHJpbnQgc29tZXRoaW5nIG91dCBpbiBh
+IHNpbXBsZSB0ZXh0Cj4gPiBmaWxlLgo+IAo+IEkgYWN0dWFsbHkgZGVzY3JpYmVkIHR3byBwcm9i
+bGVtczogdGhlIGZpcnN0IHdhcyBob3cgd2UgZ2V0IHRoZQo+IGluZm9ybWF0aW9uIGluIHRoZSBm
+aXJzdCBwbGFjZS4gIEN1cnJlbnRseSB0aGUgb3duaW5nIG9yIHBhcmVudCB1c2VyX25zCj4gaXMg
+dHVja2VkIGluc2lkZSBhbiBvcGFxdWUgc3RydWN0dXJlLiAgSSB0aGluayB3ZSBuZWVkIHRvIG1v
+dmUgdGhhdCB0bwo+IG5zX2NvbW1vbiB3aGVyZSBpdCB3b3VsZCBiZSB0aGUgb3duaW5nIHVzZXJu
+cyBmb3IgYWxsIG5vbi11c2VyCj4gbmFtZXNwYWNlcyBhbmQgdGhlIHBhcmVudCBmb3IgdGhlIHVz
+ZXJucy4KCkknbSBhZ3JlZSB3aXRoIHRoaXMuCgo+IAo+IE9uY2Ugd2UgYWN0dWFsbHkgaGF2ZSB0
+aGUgaW5mb3JtYXRpb24sIHdlIGNhbiBhbHNvIGFkZCBhIHNldCBvZiBwcm9jCj4gbGlua3MsIHNh
+eSBlaXRoZXIKPiAKPiAvcHJvYy88cGlkPi9ucy9YLXVzZXJucwo+IAo+IFdoaWNoIG1pZ2h0IGJl
+IGEgYml0IG1lc3N5IHNpbmNlIGl0IGRvdWJsZXMgdGhlIG51bWJlciBvZiBmaWxlcywgb3IKPiBw
+ZXJoYXBzIGluIGEgc2ltcGxlIGRpcmVjdG9yeS4KCkluIHRoaXMgY2FzZSB3ZSB3aWxsIG5lZWQg
+dG8gZW50ZXIgaW50byBlYWNoIG5hbWVzcGFjZSB0byBidWlsZCBhIGZ1bGwKY2hhaW4gb2YgZGVw
+ZW5kZW5jaWVzLgoKSXQncyB0cmlja3ksIGJlY2F1c2UgaWYgd2UgZW50ZXIgaW50byBhIGNoaWxk
+IHVzZXJucywgd2UgY2FuJ3QgdG8gZW50ZXIKaW50byBhIHBhcmVudCB1c2VybnMgZnJvbSB0aGUg
+c2FtZSBwcm9jZXNzLCBzbyB0byBnZXQgdGhlIG5leHQgYnJhbmNoLAp3ZSB3aWxsIG5lZWQgdG8g
+Y3JlYXRlIGEgbmV3IHByb2Nlc3MuCgoJCQkJICAgIHByb2Nlc3MgQQoJCQkJCXwKaW5pdF91c2Vy
+X25zLT5jaGlsZF91c2VyX25zXzEtPmNoaWxkX3VzZXJuc18yCgpmb3JrKCkgLT4gQgogIEI6IHNl
+dG5zKC9wcm9jL0EvbnMvdXNlcm5zLXBhcmVudCkKcmVhZGxpbmsoL3Byb2MvQi9ucy91c2VybnMp
+Cgpmb3JrKCkgLT4gQwogIEM6IHNldG5zKC9wcm9jL0IvbnMvdXNlcm5zLXBhcmVudCkKcmVhZGxp
+bmsoL3Byb2MvQy9ucy91c2VybnMpCgoKPiAKPiA+IFdlbGwgSSBzdXBwb3NlIHdlIGNvdWxkIHBy
+aW50IGFuIGRldmljZSBudW1iZXIgYW5kIGlub2RlIG51bWJlciBwYWlyLgo+ID4gQnV0IHRoZW4g
+c29tZW9uZSB3b3VsZCBzdGlsbCBoYXZlIHRvIHNjb3VyIHByb2Nlc3NlcyBsb29raW5nIGZvciBh
+IAo+ID4gdXNlciBuYW1lc3BhY2Ugc28gdGhhdCBpcyBsaWtlbHkgbGVzcyB0aGFuIGlkZWFsLgo+
+IAo+IFRoZXJlJ3Mgbm8gcmVhc29uIGFueSBvZiB0aGUgcHJvcG9zZWQgbWV0aG9kcyBzbyBmYXIg
+aGF2ZSB0byBiZQo+IGV4Y2x1c2l2ZTogbnNmcy5jIGhhcyBhIGxvdCBvZiBmbGV4aWJpbGl0eS4K
+CgpXaGF0IGRvIHlvdSB0aGluayBhYm91dCB0aGUgaWRlYSB0byBtb3VudCBuc2ZzIGFuZCBiZSBh
+YmxlIHRvIGxvb2sgdXAKYW55IGFsaXZlIG5hbWVzcGFjZSBieSBpbnVtOgoKICAkIHRyZWUgLgog
+IC4KICCGgIAgbW50e2ludW19CiAggSAgIISAgCB1c2VyIC0+IC4uL3VzZXJ7aW51bX0KICCGgIAg
+cGlke2ludW19CiAggSAgIIaAgCBwaWR7aW51bX0KICCBICAggSAgIISAgCB1c2VyIC0+IC4uLy4u
+L3VzZXJ7aW51bX0vdXNlcntpbnVtfQogIIEgICCEgIAgdXNlciAtPiAuLi91c2Vye2ludW19CiAg
+hICAIHVzZXJ7aW51bX0KICAgICAghICAIHVzZXJ7aW51bX0KCmh0dHBzOi8vbGttbC5vcmcvbGtt
+bC8yMDE2LzcvOC81OQoKSSB0aGluayBpdCBzb2x2ZXMgYWxsIHJlcXVpcmVtZW50cyB3aGljaCB3
+ZXJlIG1lbnRpb25lZCBpbiB0aGlzIHRocmVhZC4KCj4gCj4gPiBTdGFydGluZyB3aXRoIDQuOCB3
+ZSBhcmUgYWxzbyBnb2luZyB0byBuZWVkIHRvIGJlIGFibGUgdG8gcmV0cmlldmUgCj4gPiB0aGUg
+dXNlciBuYW1lc3BhY2Ugb3duZXIgb2YgZmlsZXN5c3RlbXMuICBUaGF0IHdpbGwgYmUgYW4gaW50
+ZXJlc3RpbmcKPiA+IG1peC4KPiAKPiBUaGlzIGlzIHBlciBtb3VudCBwb2ludCwgaXNuJ3QgaXQ/
+IHNvIGl0IGNhbid0IGJlIGluIC9wcm9jL2ZzLyBhbmQgaXQKPiB3b3VsZCBoYXZlIHRvIGJlIHBl
+ciBsb2NhbCBtb3VudCB0cmVlLiAgWWVzLCB0aGF0IGlzIGEgYml0IG5hc3R5LiAKPiAgU291bmRz
+IGxpa2Ugd2UgbWlnaHQgbmVlZCB0byB1bmZvbGQgbW91bnQgb3IgbW91bnRpbmZvIGludG8gc29t
+ZXRoaW5nCj4gdGhhdCBoYXMgb25lIGRpcmVjdG9yeSBwZXIgZW50cnk/CgpJZiB3ZSB3aWxsIGJl
+IGFibGUgdG8gbG9vayB1cCBuYW1lc3BhY2VzIGluIG5zZnMgYnkgaW51bSwgd2UgY2FuIHByaW50
+CmFuIHVzZXJucyBpbnVtIGluIG1vdW50aW5mby4KCj4gCj4gSmFtZXMKPiAKPiA+IEVyaWMKPiA+
+IAo+ID4gX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KPiA+
+IENvbnRhaW5lcnMgbWFpbGluZyBsaXN0Cj4gPiBDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5k
+YXRpb24ub3JnCj4gPiBodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9s
+aXN0aW5mby9jb250YWluZXJzCj4gPiAKPiAKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0
+cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcv
+bWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
