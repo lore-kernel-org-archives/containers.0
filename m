@@ -1,12 +1,24 @@
-From: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH] [RFC] Limit dump_pipe program's permission to init for
-	container
-Date: Fri, 8 Jul 2016 19:08:10 +0800
-Message-ID: <ebe572465ba7c6d12004b62ed752cc5804bf13b4.1467975799.git.zhaolei@cn.fujitsu.com>
+From: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [CRIU] Introspecting userns relationships to other namespaces?
+Date: Fri, 8 Jul 2016 13:17:55 +0200
+Message-ID: <5c5223ab-4a5d-11bf-e1e2-c2c79525ce96@gmail.com>
+References: <c2a26220-69f2-f2f5-491a-e43abd9a6f92@gmail.com>
+	<87r3b7pxja.fsf@x220.int.ebiederm.org>
+	<CAKgNAkgQbxLH-B3N3Xti3LLis+1Y-SJD2h1DEaXao7zTDA7pug@mail.gmail.com>
+	<20160706141348.GB20728@mail.hallyn.com>
+	<CAKgNAkhtQNg0mVv6ei_JigNz3njo_G3opE+rzd4OtKpa2hQe9g@mail.gmail.com>
+	<20160707133631.GA2994@mail.hallyn.com>
+	<1467903712.2347.16.camel@HansenPartnership.com>
+	<CAKgNAkg+OiBngdFsdVR0gsSnVhMppuH2DxMBLCNAx8in5C0-zQ@mail.gmail.com>
+	<1467919055.2322.36.camel@HansenPartnership.com>
+	<20160708021617.GB10512@outlook.office365.com>
+	<20160708030055.GC10512@outlook.office365.com>
+	<1467948407.2322.88.camel@HansenPartnership.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1467948407.2322.88.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,199 +28,138 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Andrew Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
+Cc: criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Currently when we set core_pattern to a pipe, the pipe program is
-forked by kthread running with root's permission, and write dumpfile
-into host's filesystem.
-Same thing happened for container, the dumper and dumpfile are also
-in host(not in container).
+On 07/08/2016 05:26 AM, James Bottomley wrote:
+> On Thu, 2016-07-07 at 20:00 -0700, Andrew Vagin wrote:
+>> On Thu, Jul 07, 2016 at 07:16:18PM -0700, Andrew Vagin wrote:
+>>> On Thu, Jul 07, 2016 at 12:17:35PM -0700, James Bottomley wrote:
+>>>> On Thu, 2016-07-07 at 20:21 +0200, Michael Kerrisk (man-pages)
+>>>> wrote:
+>>>>> On 7 July 2016 at 17:01, James Bottomley
+>>>>> <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org> wrote:
+>>>> [Serge already answered the parenting issue]
+>>>>>> On Thu, 2016-07-07 at 08:36 -0500, Serge E. Hallyn wrote:
+>>>>>>> Hm.  Probably best-effort based on the process hierarchy.
+>>>>>>>  So
+>>>>>>> yeah you could probably get a tree into a state that would
+>>>>>>> be
+>>>>>>> wrongly recreated. Create a new netns, bind mount it, exit;
+>>>>>>>   Have
+>>>>>>> another task create a new user_ns, bind mount it, exit;
+>>>>>>>  Third
+>>>>>>> task setns()s first to the new netns then to the new
+>>>>>>> user_ns.  I
+>>>>>>> suspect criu will recreate that wrongly.
+>>>>>>
+>>>>>> This is a bit pathological, and you have to be root to do it:
+>>>>>> so
+>>>>>> root can set up a nesting hierarchy, bind it and destroy the
+>>>>>> pids
+>>>>>> but I know of no current orchestration system which does
+>>>>>> this.
+>>>>>>
+>>>>>> Actually, I have to back pedal a bit: the way I currently set
+>>>>>> up
+>>>>>> architecture emulation containers does precisely this: I set
+>>>>>> up the
+>>>>>> namespaces unprivileged with child mount namespaces, but then
+>>>>>> I ask
+>>>>>> root to bind the userns and kill the process that created it
+>>>>>> so I
+>>>>>> have a permanent handle to enter the namespace by, so I
+>>>>>> suspect
+>>>>>> that when our current orchestration systems get more
+>>>>>> sophisticated,
+>>>>>> they might eventually want to do something like this as well.
+>>>>>>
+>>>>>> In theory, we could get nsfs to show this information as an
+>>>>>> option
+>>>>>> (just add a show_options entry to the superblock ops), but
+>>>>>> the
+>>>>>> problem is that although each namespace has a parent user_ns,
+>>>>>> there's no way to get it without digging in the namespace
+>>>>>> specific
+>>>>>> structure.  Probably we should restructure to move it into
+>>>>>> ns_common, then we could display it (and enforce all
+>>>>>> namespaces
+>>>>>> having owning user_ns) but it would be a
+>>>>>
+>>>>> I'm missing something here. Is it not already the case that all
+>>>>> namespaces have an owning user_ns?
+>>>>
+>>>> Um, yes, I don't believe I said they don't.  The problem I
+>>>> thought you
+>>>> were having is that there's no way of seeing what it is.
+>>>>
+>>>> nsfs is the Namespace fileystem where bound namespaces appear to
+>>>> a cat
+>>>> of /proc/self/mounts.  It can display any information that's in
+>>>> ns_common (the common core of namespaces) but the owning user_ns
+>>>> pointer currently isn't in this structure.  Every user namespace
+>>>> has a
+>>>> pointer to it, but they're all privately embedded in the
+>>>> individual
+>>>> namespace specific structures.  What I was proposing was that
+>>>> since
+>>>> every current namespace has a pointer somewhere to the owning
+>>>> user
+>>>> namespace, we could abstract this out into ns_common so it's now
+>>>> accessible to be displayed by nsfs, probably as a mount option.
+>>>
+>>> James, I am not sure that I understood you correctly. We have one
+>>> file system for all namespace files, how we can show per-file
+>>> properties
+>>> in mount options. I think we can show all required information in
+>>> fdinfo. We open a namespaces file (/proc/pid/ns/N) and then read
+>>> /proc/pid/fdinfo/X for it.
+>>
+>> Here is a proof-of-concept patch.
+>>
+>> How it works:
+>>
+>> In [1]: import os
+>>
+>> In [2]: fd = os.open("/proc/self/ns/pid", os.O_RDONLY)
+>>
+>> In [3]: print open("/proc/self/fdinfo/%d" % fd).read()
+>> pos:	0
+>> flags:	0100000
+>> mnt_id:	2
+>> userns: 4026531837
+>>
+>> In [4]: print "/proc/self/ns/user -> %s" %
+>> os.readlink("/proc/self/ns/user")
+>> /proc/self/ns/user -> user:[4026531837]
+>
+> can't you just do
+>
+> readlink /proc/self/ns/user | sed 's/.*\[\(.*\)\]/\1/'
+>
+> ?
+>
+> But what Michael was asking about was the parent user_ns of all the
+> other namespaces ...
 
-It have following program:
-1: Not consistent with file_type core_pattern
-   When we set core_pattern to a file, the container will write dump
-   into container's filesystem instead of host.
-2: Not safe for privileged container
-   In a privileged container, user can destroy host system by following
-   command:
-   # # In a container
-   # echo "|/bin/dd of=/boot/vmlinuz" >/proc/sys/kernel/core_pattern
-   # make_dump
+Just to reiterate, what I'm interested in is the introspection use
+case (but there's clearly several other interesting use cases here).
+The idea is to be able to answer these questions
 
-This patch switch dumper program's permission to init task, it is to say,
-for container, dumper program have same permission with init task in
-container, which make dumper program put in container's filesystem, and
-write coredump into container's filesystem.
-The dumper's permission is also limited into subset of container's init
-process.
+1. For each userns, what is the parent of that userns?
 
-See following discussion for detail:
-http://www.gossamer-threads.com/lists/linux/kernel/2455363
-http://www.gossamer-threads.com/lists/linux/kernel/2397602
+2. For each non-user namespace, what is the owning userns?
 
-Todo:
-1: Set different core_pattern to host and each container.
-2: Keep compatibility with current design
-All above are done in previous version of this patch,
-need some restruct.
+This enables us to understand the userns hierarchy, which
+matters in terms of answering the question: what capabilities
+does process X have in namespace Y?
+    
+Cheers,
 
-Any suggestion is welcome for this patch.
+Michael
 
-Suggested-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Suggested-by: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-
-Signed-off-by: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- fs/coredump.c           | 84 ++++++++++++++++++++++++++++++++++++++++++++++++-
- include/linux/binfmts.h |  1 +
- 2 files changed, 84 insertions(+), 1 deletion(-)
-
-diff --git a/fs/coredump.c b/fs/coredump.c
-index 281b768..92dc343 100644
---- a/fs/coredump.c
-+++ b/fs/coredump.c
-@@ -516,6 +516,8 @@ static int umh_pipe_setup(struct subprocess_info *info, struct cred *new)
- {
- 	struct file *files[2];
- 	struct coredump_params *cp = (struct coredump_params *)info->data;
-+	struct task_struct *base_task;
-+
- 	int err = create_pipe_files(files, 0);
- 	if (err)
- 		return err;
-@@ -524,10 +526,78 @@ static int umh_pipe_setup(struct subprocess_info *info, struct cred *new)
- 
- 	err = replace_fd(0, files[0], 0);
- 	fput(files[0]);
-+	if (err)
-+		return err;
-+
- 	/* and disallow core files too */
- 	current->signal->rlim[RLIMIT_CORE] = (struct rlimit){1, 1};
- 
--	return err;
-+	base_task = cp->base_task;
-+	if (base_task) {
-+		const struct cred *base_cred;
-+
-+		/* Set fs_root to base_task */
-+		spin_lock(&base_task->fs->lock);
-+		set_fs_root(current->fs, &base_task->fs->root);
-+		spin_unlock(&base_task->fs->lock);
-+
-+		/* Set namespaces to base_task */
-+		switch_task_namespaces(current, base_task->nsproxy);
-+
-+		/* Set cgroup to base_task */
-+		current->flags &= ~PF_NO_SETAFFINITY;
-+		err = cgroup_attach_task_all(base_task, current);
-+		if (err < 0)
-+			return err;
-+
-+		/* Set cred to base_task */
-+		base_cred = get_task_cred(base_task);
-+
-+		new->uid   = base_cred->uid;
-+		new->gid   = base_cred->gid;
-+		new->suid  = base_cred->suid;
-+		new->sgid  = base_cred->sgid;
-+		new->euid  = base_cred->euid;
-+		new->egid  = base_cred->egid;
-+		new->fsuid = base_cred->fsuid;
-+		new->fsgid = base_cred->fsgid;
-+
-+		new->securebits = base_cred->securebits;
-+
-+		new->cap_inheritable = base_cred->cap_inheritable;
-+		new->cap_permitted   = base_cred->cap_permitted;
-+		new->cap_effective   = base_cred->cap_effective;
-+		new->cap_bset        = base_cred->cap_bset;
-+		new->cap_ambient     = base_cred->cap_ambient;
-+
-+		security_cred_free(new);
-+#ifdef CONFIG_SECURITY
-+		new->security = NULL;
-+#endif
-+		err = security_prepare_creds(new, base_cred, GFP_KERNEL);
-+		if (err < 0) {
-+			put_cred(base_cred);
-+			return err;
-+		}
-+
-+		free_uid(new->user);
-+		new->user = base_cred->user;
-+		get_uid(new->user);
-+
-+		put_user_ns(new->user_ns);
-+		new->user_ns = base_cred->user_ns;
-+		get_user_ns(new->user_ns);
-+
-+		put_group_info(new->group_info);
-+		new->group_info = base_cred->group_info;
-+		get_group_info(new->group_info);
-+
-+		put_cred(base_cred);
-+
-+		validate_creds(new);
-+	}
-+
-+	return 0;
- }
- 
- void do_coredump(const siginfo_t *siginfo)
-@@ -590,6 +660,7 @@ void do_coredump(const siginfo_t *siginfo)
- 
- 	if (ispipe) {
- 		int dump_count;
-+		struct task_struct *vinit_task;
- 		char **helper_argv;
- 		struct subprocess_info *sub_info;
- 
-@@ -631,6 +702,12 @@ void do_coredump(const siginfo_t *siginfo)
- 			goto fail_dropcount;
- 		}
- 
-+		vinit_task = find_task_by_vpid(1);
-+		if (!vinit_task) {
-+			printk(KERN_WARNING "failed getting init task info, skipping core dump\n");
-+			goto fail_dropcount;
-+		}
-+
- 		helper_argv = argv_split(GFP_KERNEL, cn.corename, NULL);
- 		if (!helper_argv) {
- 			printk(KERN_WARNING "%s failed to allocate memory\n",
-@@ -638,6 +715,10 @@ void do_coredump(const siginfo_t *siginfo)
- 			goto fail_dropcount;
- 		}
- 
-+		get_task_struct(vinit_task);
-+
-+		cprm.base_task = vinit_task;
-+
- 		retval = -ENOMEM;
- 		sub_info = call_usermodehelper_setup(helper_argv[0],
- 						helper_argv, NULL, GFP_KERNEL,
-@@ -646,6 +727,7 @@ void do_coredump(const siginfo_t *siginfo)
- 			retval = call_usermodehelper_exec(sub_info,
- 							  UMH_WAIT_EXEC);
- 
-+		put_task_struct(vinit_task);
- 		argv_free(helper_argv);
- 		if (retval) {
- 			printk(KERN_INFO "Core dump to |%s pipe failed\n",
-diff --git a/include/linux/binfmts.h b/include/linux/binfmts.h
-index 314b3ca..0c9a72c 100644
---- a/include/linux/binfmts.h
-+++ b/include/linux/binfmts.h
-@@ -59,6 +59,7 @@ struct linux_binprm {
- 
- /* Function parameter for binfmt->coredump */
- struct coredump_params {
-+	struct task_struct *base_task;
- 	const siginfo_t *siginfo;
- 	struct pt_regs *regs;
- 	struct file *file;
 -- 
-1.8.5.1
+Michael Kerrisk
+Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
+Linux/UNIX System Programming Training: http://man7.org/training/
