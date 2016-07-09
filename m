@@ -1,25 +1,12 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [CRIU] Introspecting userns relationships to other namespaces?
-Date: Sat, 09 Jul 2016 13:29:20 -0500
-Message-ID: <871t32ll6n.fsf@x220.int.ebiederm.org>
-References: <20160706141348.GB20728@mail.hallyn.com>
-	<871t36kbvq.fsf@x220.int.ebiederm.org>
-	<20160708015758.GA10512@outlook.office365.com>
-	<87vb0gy3nr.fsf@x220.int.ebiederm.org>
-	<1467988533.2322.118.camel@HansenPartnership.com>
-	<20160708203818.GA2602@outlook.office365.com>
-	<5e4cc802-f0e0-4f4c-a2f7-585aaaa8feec@email.android.com>
-	<87wpkvpu1i.fsf@x220.int.ebiederm.org>
-	<1468023332.2390.10.camel@HansenPartnership.com>
-	<87bn27o6j5.fsf@x220.int.ebiederm.org>
-	<20160709072627.GA7480@outlook.office365.com>
-	<87eg72llu0.fsf@x220.int.ebiederm.org>
+From: giorchit <tousaki-YFrQF80EYT9L9jVzuh4AOg@public.gmane.org>
+Subject: enjoyable experience
+Date: Sun, 10 Jul 2016 01:05:12 +0300
+Message-ID: <00001ae38a55$82853dfa$7be5ed70$@quipo.it>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87eg72llu0.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org> (Eric W. Biederman's
-	message of "Sat, 09 Jul 2016 13:15:19 -0500")
+Content-Language: en-us
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -29,57 +16,9 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
-Cc: criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "cristina.borini" <cristina.borini-swJAVGV/nWzk1uMJSBkQmQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) writes:
-
-> Andrew Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org> writes:
->
->> All these thoughts about security make me thinking that kcmp is what we
->> should use here. It's maybe something like this:
->>
->> kcmp(pid1, pid2, KCMP_NS_USERNS, fd1, fd2)
->>
->> - to check if userns of the fd1 namepsace is equal to the fd2 userns
->>
->> kcmp(pid1, pid2, KCMP_NS_PARENT, fd1, fd2)
->>
->> - to check if a parent namespace of the fd1 pidns is equal to fd pidns.
->>
->> fd1 and fd2 is file descriptors to namespace files.
->>
->> So if we want to build a hierarchy, we need to collect all namespaces
->> and then enumerate them to check dependencies with help of kcmp.
->
-> That is certainly one way to go.
->
-> There is a funny case where we would want to compare a user namespace
-> file descriptor to a parent user namespace file descriptor.
->
->
-> Grumble, Grumble.  I think this may actually a case for creating ioctls
-> for these two cases.  Now that random nsfs file descriptors are bind
-> mountable the original reason for using proc files is not as pressing.
->
-> One ioctl for the user namespace that owns a file descriptor.
-> One ioctl for the parent namespace of a namespace file descriptor.
->
-> We also need some way to get a command file descriptor for a file system
-> super block.  Al Viro has a pet project for cleaning up the mount API
-> and this might be the idea excuse to start looking at that.
->
-> (In principle we might be able to run commands through the namespace
->  file descriptor and using an ioctl feels dirty.  But an ioctl that
->  only uses the fd and request argument does not suffer from the same
->  problems that ioctls that have to pass additional arguments suffer
->  from.)
-
-Of course it should be an error perhaps -EINVAL to get a user
-namespace owner or parent namespace that is outside of a processes
-current user namespace or pid namespace.  That way thing stay bounded
-within the current namespaces the process is in.  Which prevents any
-leak possibilities, and keeps CRIU working.
-
-Eric
+Hello,
+I've had a highly enjoyable experience working with that information, you can find more interesting stuff here <http://ropynyca.ella-sorenson.com/oxumdw>
+Thanks for your consideration, giorchit-FE4wSJlJn3A@public.gmane.org
