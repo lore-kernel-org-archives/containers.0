@@ -1,7 +1,7 @@
 From: James Bottomley <James.Bottomley-RxcU5blhW6jCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
 Subject: Re: [CRIU] Introspecting userns relationships to other namespaces?
-Date: Sat, 09 Jul 2016 19:32:04 +0900
-Message-ID: <e3fe9c3c-ecae-4795-8dbc-72362f4606a5@email.android.com>
+Date: Sat, 09 Jul 2016 19:31:58 +0900
+Message-ID: <49926d9a-bdb1-4f1d-8d5e-ec1a41cb156a__25737.9061462872$1468060472$gmane$org@email.android.com>
 References: <20160706141348.GB20728@mail.hallyn.com>
 	<871t36kbvq.fsf@x220.int.ebiederm.org>
 	<20160708015758.GA10512@outlook.office365.com>
