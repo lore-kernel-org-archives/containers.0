@@ -1,23 +1,17 @@
-From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Subject: Re: [CRIU] Introspecting userns relationships to other namespaces?
-Date: Mon, 11 Jul 2016 06:06:48 +0900
-Message-ID: <1468184808.19833.30.camel@HansenPartnership.com>
-References: <c2a26220-69f2-f2f5-491a-e43abd9a6f92@gmail.com>
-	<87r3b7pxja.fsf@x220.int.ebiederm.org>
-	<CAKgNAkgQbxLH-B3N3Xti3LLis+1Y-SJD2h1DEaXao7zTDA7pug@mail.gmail.com>
-	<20160706141348.GB20728@mail.hallyn.com>
-	<CAKgNAkhtQNg0mVv6ei_JigNz3njo_G3opE+rzd4OtKpa2hQe9g@mail.gmail.com>
-	<20160707133631.GA2994@mail.hallyn.com>
-	<1467903712.2347.16.camel@HansenPartnership.com>
-	<20160709031528.GA25507@odin.tremily.us>
-	<87ziprmrln.fsf@x220.int.ebiederm.org>
-	<20160710053609.GB4868@outlook.office365.com>
-	<87furhjkxw.fsf@x220.int.ebiederm.org>
+From: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
+Subject: Re: [PATCH review 10/12] dquot: For now explicitly don't support
+	filesystems outside of init_user_ns
+Date: Mon, 11 Jul 2016 12:09:23 +0200
+Message-ID: <20160711100923.GG12410__44038.9679316015$1468231787$gmane$org@quack2.suse.cz>
+References: <874m82bptc.fsf@x220.int.ebiederm.org>
+	<20160706181212.16267-1-ebiederm@xmission.com>
+	<20160706181212.16267-10-ebiederm@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87furhjkxw.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20160706181212.16267-10-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,86 +21,51 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
-Cc: criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Michael Kerrisk
-	(man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Djalal Harouni <tixxdz-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sun, 2016-07-10 at 15:29 -0500, Eric W. Biederman wrote:
-> Andrew Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org> writes:
+On Wed 06-07-16 13:12:10, Eric W. Biederman wrote:
+> Mostly supporting filesystems outside of init_user_ns is
+> s/&init_usre_ns/dquot->dq_sb->s_user_ns/.  An actual need for
+> supporting quotas on filesystems outside of s_user_ns is quite a ways
+> away and to be done responsibily needs an audit on what can happen
+> with hostile quota files.  Until that audit is complete don't attempt
+> to support quota files on filesystems outside of s_user_ns.
 > 
-> > On Fri, Jul 08, 2016 at 10:13:08PM -0500, Eric W. Biederman wrote:
-> > > "W. Trevor King" <wking-vJI2gpByivqcqzYg7KEe8g@public.gmane.org> writes:
-> > > 
-> > > > On Thu, Jul 07, 2016 at 08:01:52AM -0700, James Bottomley
-> > > > wrote:
-> > > > > In theory, we could get nsfs to show this information as an
-> > > > > option
-> > > > > (just add a show_options entry to the superblock ops), but
-> > > > > the
-> > > > > problem is that although each namespace has a parent user_ns,
-> > > > > there's no way to get it without digging in the namespace
-> > > > > specific
-> > > > > structure.  Probably we should restructure to move it into
-> > > > > ns_common, then we could display it (and enforce all
-> > > > > namespaces
-> > > > > having owning user_ns) but it would be a reasonably large
-> > > > > (but
-> > > > > mechanical) change.
-> > > > 
-> > > > It sounds like everyone is either positive or or neutral on
-> > > > this
-> > > > groundwork, even if we haven't decided if/how to expose the
-> > > > information to userspace.  I'm happy to work up a patch while
-> > > > the rest
-> > > > of the discussion continues.  I'm also happy to let someone
-> > > > else work
-> > > > up the patch, if anyone else is chomping at the bit ;).
-> > > 
-> > > I am dubious on moving all of the user namespace members into
-> > > ns_common.
-> > > 
-> > > I would happy to be proved wrong but I suspect in the cases where
-> > > we
-> > > actually use that user namespace the code will become uglier. 
-> > >  Making
-> > > the ordinary uses uglier to make a rare corner case nicer is the
-> > > wrong
-> > > trade off.
-> > > 
-> > > But feel free to try it is certainly worth doing if it doesn't
-> > > make the
-> > > code that uses the user namespaces uglier.
-> > 
-> > If it's interesting for someone, I have this patch in my tree
-> > https://github.com/avagin/linux-task-diag/commit/63b32df68ae8d3a384
-> > 2bae42bbcae3468db76d85
-> > 
-> > I can't say that it makes something uglier.
+> Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
+> Acked-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+
+Looks good. You can add:
+
+Acked-by: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
+
+								Honza
+
+> ---
+>  fs/quota/dquot.c | 5 +++++
+>  1 file changed, 5 insertions(+)
 > 
-> I have only skimmed things but overall it looks better than I had
-> feared.
-
-It looks about as messy as I feared, but since someone else has done
-all the hard work, I'm happy.
-
-> At the same time I really really don't like losing the parent pointer 
-> in the user namespace case.  That is seriously obfuscating.
-
-Because it has a slightly different meaning from all other namespaces? 
- If I assume that's what you mean, I think looking at it in a different
-way can solve the problem:  The pointer in ns_common is always to the
-owning user_ns, so we can label it as such.  Even for a child user_ns,
-the owning user_ns is simply the parent.  I think it makes logical
-sense to think of all user_ns to namespace relationships as
-owning/owned rather than most as owning/owned and some as parent/child.
-
-James
-
-> Eric
+> diff --git a/fs/quota/dquot.c b/fs/quota/dquot.c
+> index 74706b6aa747..87197d13cc76 100644
+> --- a/fs/quota/dquot.c
+> +++ b/fs/quota/dquot.c
+> @@ -2271,6 +2271,11 @@ static int vfs_load_quota_inode(struct inode *inode, int type, int format_id,
+>  		error = -EINVAL;
+>  		goto out_fmt;
+>  	}
+> +	/* Filesystems outside of init_user_ns not yet supported */
+> +	if (sb->s_user_ns != &init_user_ns) {
+> +		error = -EINVAL;
+> +		goto out_fmt;
+> +	}
+>  	/* Usage always has to be set... */
+>  	if (!(flags & DQUOT_USAGE_ENABLED)) {
+>  		error = -EINVAL;
+> -- 
+> 2.8.3
 > 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
-> 
+-- 
+Jan Kara <jack-IBi9RG/b67k@public.gmane.org>
+SUSE Labs, CR
