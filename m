@@ -1,7 +1,8 @@
 From: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
-Subject: [PATCH 2/4] misc: Rename the HASH_SIZE macro
-Date: Wed, 13 Jul 2016 15:14:11 +0300
-Message-ID: <1468412053-30130-3-git-send-email-kernel@kyup.com>
+Subject: [PATCH 3/4] userns/inotify: Initial implementation of inotify
+	per-userns
+Date: Wed, 13 Jul 2016 15:14:12 +0300
+Message-ID: <1468412053-30130-4-git-send-email-kernel@kyup.com>
 References: <1468412053-30130-1-git-send-email-kernel@kyup.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,329 +22,438 @@ To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, operations-/eCPMmvKun9pLGFMi4vTTA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This change is required since the inotify-per-namespace code added
-hashtable.h to the include list of sched.h. This in turn causes
-compiler warnings since HASH_SIZE is being defined in multiple
-locations
+So here is the first version of the hierarchical inotify limits. Changes
+include:
+ * Added 2 new sysctls:
+    - inotify_reserved_user_instances and inotify_reserved_user_watches these essentially
+    control the distribution of instances/watches down the hierarchy. For example if we
+    have instances/watches limit of 1024/256 and reserved instances/watches are set to
+    128/32 then at every level of the hierarchy instances/watches are going to be reduced
+    by 128/32, so at userns level of 1 (e.g. init_user_ns->level_1_user_ns) each user would
+    have 896/224 respectively. Currently the defaults are calculated so that at least 8 levels
+    of indirection are allowed. Those can be set only by global root user.
+
+ * Changed core userns code to support adding per-userns/per-user counters, this
+ is happening in the nsuser_state structure.
+
+ * Add necessary functionality to inotify to make use of the newly added
+ userns infrastructure.
+
+ * Moved the initialization of the inotify_max_user_instances/watches to
+ user_namespaces_init so that it's initialised by the time inotify is
+ bootstrapped.
 
 Signed-off-by: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
-Acked-by: David S. Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 ---
- fs/logfs/dir.c                           |  6 +++---
- net/ipv6/ip6_gre.c                       |  8 ++++----
- net/ipv6/ip6_tunnel.c                    | 10 +++++-----
- net/ipv6/ip6_vti.c                       | 10 +++++-----
- net/ipv6/sit.c                           | 10 +++++-----
- security/keys/encrypted-keys/encrypted.c | 32 ++++++++++++++++----------------
- 6 files changed, 38 insertions(+), 38 deletions(-)
+ fs/notify/inotify/inotify.h      |   2 +
+ fs/notify/inotify/inotify_user.c |  93 +++++++++++++++++++++++++++++++++-
+ include/linux/fsnotify_backend.h |   3 ++
+ include/linux/user_namespace.h   |  45 +++++++++++++++++
+ kernel/user_namespace.c          | 106 ++++++++++++++++++++++++++++++++++++++-
+ 5 files changed, 246 insertions(+), 3 deletions(-)
 
-diff --git a/fs/logfs/dir.c b/fs/logfs/dir.c
-index 2d5336bd4efd..bcd754d216bd 100644
---- a/fs/logfs/dir.c
-+++ b/fs/logfs/dir.c
-@@ -95,7 +95,7 @@ static int beyond_eof(struct inode *inode, loff_t bix)
-  * of each character and pick a prime nearby, preferably a bit-sparse
-  * one.
-  */
--static u32 hash_32(const char *s, int len, u32 seed)
-+static u32 logfs_hash_32(const char *s, int len, u32 seed)
- {
- 	u32 hash = seed;
- 	int i;
-@@ -159,7 +159,7 @@ static struct page *logfs_get_dd_page(struct inode *dir, struct dentry *dentry)
- 	struct qstr *name = &dentry->d_name;
- 	struct page *page;
- 	struct logfs_disk_dentry *dd;
--	u32 hash = hash_32(name->name, name->len, 0);
-+	u32 hash = logfs_hash_32(name->name, name->len, 0);
- 	pgoff_t index;
- 	int round;
+diff --git a/fs/notify/inotify/inotify.h b/fs/notify/inotify/inotify.h
+index ed855ef6f077..8ead0a1a3cdb 100644
+--- a/fs/notify/inotify/inotify.h
++++ b/fs/notify/inotify/inotify.h
+@@ -1,6 +1,8 @@
+ #include <linux/fsnotify_backend.h>
+ #include <linux/inotify.h>
+ #include <linux/slab.h> /* struct kmem_cache */
++#include <linux/page_counter.h>
++#include <linux/user_namespace.h>
  
-@@ -370,7 +370,7 @@ static int logfs_write_dir(struct inode *dir, struct dentry *dentry,
- {
- 	struct page *page;
- 	struct logfs_disk_dentry *dd;
--	u32 hash = hash_32(dentry->d_name.name, dentry->d_name.len, 0);
-+	u32 hash = logfs_hash_32(dentry->d_name.name, dentry->d_name.len, 0);
- 	pgoff_t index;
- 	int round, err;
+ struct inotify_event_info {
+ 	struct fsnotify_event fse;
+diff --git a/fs/notify/inotify/inotify_user.c b/fs/notify/inotify/inotify_user.c
+index b8d08d0d0a4d..076a9990eff4 100644
+--- a/fs/notify/inotify/inotify_user.c
++++ b/fs/notify/inotify/inotify_user.c
+@@ -48,6 +48,8 @@
+ static int inotify_max_user_instances __read_mostly;
+ static int inotify_max_queued_events __read_mostly;
+ static int inotify_max_user_watches __read_mostly;
++int inotify_reserved_user_instances __read_mostly;
++int inotify_reserved_user_watches   __read_mostly;
  
-diff --git a/net/ipv6/ip6_gre.c b/net/ipv6/ip6_gre.c
-index fdc9de276ab1..56bb4df088cd 100644
---- a/net/ipv6/ip6_gre.c
-+++ b/net/ipv6/ip6_gre.c
-@@ -62,11 +62,11 @@ module_param(log_ecn_error, bool, 0644);
- MODULE_PARM_DESC(log_ecn_error, "Log packets received with corrupted ECN");
+ static struct kmem_cache *inotify_inode_mark_cachep __read_mostly;
  
- #define HASH_SIZE_SHIFT  5
--#define HASH_SIZE (1 << HASH_SIZE_SHIFT)
-+#define IP6G_HASH_SIZE (1 << HASH_SIZE_SHIFT)
- 
- static int ip6gre_net_id __read_mostly;
- struct ip6gre_net {
--	struct ip6_tnl __rcu *tunnels[4][HASH_SIZE];
-+	struct ip6_tnl __rcu *tunnels[4][IP6G_HASH_SIZE];
- 
- 	struct net_device *fb_tunnel_dev;
+@@ -82,10 +84,96 @@ struct ctl_table inotify_table[] = {
+ 		.proc_handler	= proc_dointvec_minmax,
+ 		.extra1		= &zero
+ 	},
++	{
++		.procname	= "reserved_user_instances",
++		.data		= &inotify_reserved_user_instances,
++		.maxlen		= sizeof(int),
++		.mode		= 0644,
++		.proc_handler	= proc_dointvec_minmax,
++		.extra1		= &zero,
++	},
++	{
++		.procname	= "reserved_user_watches",
++		.data		= &inotify_reserved_user_watches,
++		.maxlen		= sizeof(int),
++		.mode		= 0644,
++		.proc_handler	= proc_dointvec_minmax,
++		.extra1		= &zero,
++	},
+ 	{ }
  };
-@@ -96,7 +96,7 @@ static void ip6gre_tnl_link_config(struct ip6_tnl *t, int set_mtu);
-    will match fallback tunnel.
-  */
+ #endif /* CONFIG_SYSCTL */
  
--#define HASH_KEY(key) (((__force u32)key^((__force u32)key>>4))&(HASH_SIZE - 1))
-+#define HASH_KEY(key) (((__force u32)key^((__force u32)key>>4))&(IP6G_HASH_SIZE - 1))
- static u32 HASH_ADDR(const struct in6_addr *addr)
++static inline void __init_counters(struct nsuser_state *state,
++				   struct nsuser_state *parent,
++				   struct user_namespace *ns)
++{
++	if (ns == &init_user_ns) {
++		page_counter_init(&state->inotify_watches, NULL);
++		page_counter_init(&state->inotify_instances, NULL);
++		page_counter_limit(&state->inotify_watches,
++				   init_user_ns.inotify_max_user_watches);
++		page_counter_limit(&state->inotify_instances,
++				   init_user_ns.inotify_max_user_instances);
++	} else {
++		page_counter_init(&state->inotify_watches,
++				  &parent->inotify_watches);
++		page_counter_init(&state->inotify_instances,
++				  &parent->inotify_instances);
++		page_counter_limit(&state->inotify_watches, ns->inotify_max_user_watches);
++		page_counter_limit(&state->inotify_instances, ns->inotify_max_user_instances);
++	}
++}
++
++static noinline int inotify_init_state(struct user_namespace *ns, kuid_t uid)
++{
++	struct nsuser_state *state;
++	struct page_counter *cnt;
++
++	/* We can work with the data without the lock held, since liveliness
++	 * of data is guaranteed as long as the namespace is alive
++	 */
++	spin_lock_bh(&nsuser_state_lock);
++	state = get_nsuser_state(ns, uid);
++	spin_unlock_bh(&nsuser_state_lock);
++
++	if (!state) {
++
++		state = kzalloc(sizeof(struct nsuser_state), GFP_KERNEL);
++		if (!state)
++			return -ENOMEM;
++
++		state->uid = uid;
++		state->ns = ns;
++
++		if (ns == &init_user_ns)
++			__init_counters(state, NULL, ns);
++		else {
++			struct nsuser_state *parent_state;
++
++			spin_lock_bh(&nsuser_state_lock);
++			parent_state = get_nsuser_state(ns->parent, ns->owner);
++			spin_unlock_bh(&nsuser_state_lock);
++
++			BUG_ON(!parent_state);
++
++			__init_counters(state, parent_state, ns);
++		}
++
++		page_counter_charge(&state->inotify_instances, 1);
++
++		spin_lock_bh(&nsuser_state_lock);
++		hash_add(nsstate_hash, &state->node, __kuid_val(uid));
++		spin_unlock_bh(&nsuser_state_lock);
++	} else {
++		if (!page_counter_try_charge(&state->inotify_instances, 1, &cnt))
++			return -EMFILE;
++	}
++
++	return 0;
++}
++
++
+ static inline __u32 inotify_arg_to_mask(u32 arg)
  {
- 	u32 hash = ipv6_addr_hash(addr);
-@@ -1089,7 +1089,7 @@ static void ip6gre_destroy_tunnels(struct net *net, struct list_head *head)
+ 	__u32 mask;
+@@ -819,8 +907,9 @@ static int __init inotify_user_setup(void)
+ 	inotify_inode_mark_cachep = KMEM_CACHE(inotify_inode_mark, SLAB_PANIC);
  
- 	for (prio = 0; prio < 4; prio++) {
- 		int h;
--		for (h = 0; h < HASH_SIZE; h++) {
-+		for (h = 0; h < IP6G_HASH_SIZE; h++) {
- 			struct ip6_tnl *t;
+ 	inotify_max_queued_events = 16384;
+-	inotify_max_user_instances = 128;
+-	inotify_max_user_watches = 8192;
++	/* These reserves should allow for 8 levels of nesting in userns */
++	inotify_reserved_user_instances = 32;
++	inotify_reserved_user_watches = 1024;
  
- 			t = rtnl_dereference(ign->tunnels[prio][h]);
-diff --git a/net/ipv6/ip6_tunnel.c b/net/ipv6/ip6_tunnel.c
-index 7b0481e3738f..50b57a435f05 100644
---- a/net/ipv6/ip6_tunnel.c
-+++ b/net/ipv6/ip6_tunnel.c
-@@ -64,8 +64,8 @@ MODULE_LICENSE("GPL");
- MODULE_ALIAS_RTNL_LINK("ip6tnl");
- MODULE_ALIAS_NETDEV("ip6tnl0");
- 
--#define HASH_SIZE_SHIFT  5
--#define HASH_SIZE (1 << HASH_SIZE_SHIFT)
-+#define IP6_HASH_SIZE_SHIFT  5
-+#define IP6_HASH_SIZE (1 << IP6_HASH_SIZE_SHIFT)
- 
- static bool log_ecn_error = true;
- module_param(log_ecn_error, bool, 0644);
-@@ -75,7 +75,7 @@ static u32 HASH(const struct in6_addr *addr1, const struct in6_addr *addr2)
- {
- 	u32 hash = ipv6_addr_hash(addr1) ^ ipv6_addr_hash(addr2);
- 
--	return hash_32(hash, HASH_SIZE_SHIFT);
-+	return hash_32(hash, IP6_HASH_SIZE_SHIFT);
+ 	return 0;
  }
+diff --git a/include/linux/fsnotify_backend.h b/include/linux/fsnotify_backend.h
+index 29f917517299..eb83a10afac7 100644
+--- a/include/linux/fsnotify_backend.h
++++ b/include/linux/fsnotify_backend.h
+@@ -170,6 +170,9 @@ struct fsnotify_group {
+ 			spinlock_t	idr_lock;
+ 			struct idr      idr;
+ 			struct user_struct      *user;
++			struct user_namespace *userns;
++			kuid_t uid; /* id in the userns this group is
++				      associated with */
+ 		} inotify_data;
+ #endif
+ #ifdef CONFIG_FANOTIFY
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index 8297e5b341d8..3116a2df1cee 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -6,6 +6,9 @@
+ #include <linux/ns_common.h>
+ #include <linux/sched.h>
+ #include <linux/err.h>
++#include <linux/hashtable.h>
++#include <linux/spinlock.h>
++#include <linux/page_counter.h>
  
- static int ip6_tnl_dev_init(struct net_device *dev);
-@@ -87,7 +87,7 @@ struct ip6_tnl_net {
- 	/* the IPv6 tunnel fallback device */
- 	struct net_device *fb_tnl_dev;
- 	/* lists for storing tunnels in use */
--	struct ip6_tnl __rcu *tnls_r_l[HASH_SIZE];
-+	struct ip6_tnl __rcu *tnls_r_l[IP6_HASH_SIZE];
- 	struct ip6_tnl __rcu *tnls_wc[1];
- 	struct ip6_tnl __rcu **tnls[2];
+ #define UID_GID_MAP_MAX_EXTENTS 5
+ 
+@@ -22,6 +25,21 @@ struct uid_gid_map {	/* 64 bytes -- 1 cache line */
+ 
+ #define USERNS_INIT_FLAGS USERNS_SETGROUPS_ALLOWED
+ 
++#define NSSTATE_HASHTABLE_BITS 10
++extern DECLARE_HASHTABLE(nsstate_hash, NSSTATE_HASHTABLE_BITS);
++extern spinlock_t nsuser_state_lock;
++
++/* Generic struct to hold various peruser/perns state */
++struct nsuser_state {
++	struct hlist_node node; /* keyed at nstate_hash */
++	void *ns; /* ns in which uid is valid */
++	kuid_t uid;
++#ifdef CONFIG_INOTIFY_USER
++	struct page_counter inotify_watches; /* How many inotify watches does this user */
++	struct page_counter inotify_instances; /* How many inotify devs does this user have opened? */
++#endif
++};
++
+ struct user_namespace {
+ 	struct uid_gid_map	uid_map;
+ 	struct uid_gid_map	gid_map;
+@@ -39,11 +57,28 @@ struct user_namespace {
+ 	struct key		*persistent_keyring_register;
+ 	struct rw_semaphore	persistent_keyring_register_sem;
+ #endif
++
++#ifdef CONFIG_INOTIFY_USER
++	int inotify_max_user_instances;
++	int inotify_max_user_watches;
++#endif
  };
-@@ -2031,7 +2031,7 @@ static void __net_exit ip6_tnl_destroy_tunnels(struct net *net)
- 		if (dev->rtnl_link_ops == &ip6_link_ops)
- 			unregister_netdevice_queue(dev, &list);
  
--	for (h = 0; h < HASH_SIZE; h++) {
-+	for (h = 0; h < IP6_HASH_SIZE; h++) {
- 		t = rtnl_dereference(ip6n->tnls_r_l[h]);
- 		while (t) {
- 			/* If dev is in the same netns, it has already
-diff --git a/net/ipv6/ip6_vti.c b/net/ipv6/ip6_vti.c
-index d90a11f14040..30e242140909 100644
---- a/net/ipv6/ip6_vti.c
-+++ b/net/ipv6/ip6_vti.c
-@@ -50,14 +50,14 @@
- #include <net/net_namespace.h>
- #include <net/netns/generic.h>
+ extern struct user_namespace init_user_ns;
  
--#define HASH_SIZE_SHIFT  5
--#define HASH_SIZE (1 << HASH_SIZE_SHIFT)
-+#define VTI_HASH_SIZE_SHIFT  5
-+#define VTI_HASH_SIZE (1 << VTI_HASH_SIZE_SHIFT)
+ #ifdef CONFIG_USER_NS
++static inline struct nsuser_state *get_nsuser_state(struct user_namespace *ns,
++						    kuid_t uid)
++{
++       struct nsuser_state *state;
++
++       WARN_ON(!spin_is_locked(&nsuser_state_lock));
++
++       hash_for_each_possible(nsstate_hash, state, node, __kuid_val(uid))
++               if (state->ns == ns && uid_eq(state->uid, uid))
++                       return state;
++       return NULL;
++}
  
- static u32 HASH(const struct in6_addr *addr1, const struct in6_addr *addr2)
+ static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
  {
- 	u32 hash = ipv6_addr_hash(addr1) ^ ipv6_addr_hash(addr2);
+@@ -74,6 +109,16 @@ extern int proc_setgroups_show(struct seq_file *m, void *v);
+ extern bool userns_may_setgroups(const struct user_namespace *ns);
+ #else
  
--	return hash_32(hash, HASH_SIZE_SHIFT);
-+	return hash_32(hash, VTI_HASH_SIZE_SHIFT);
- }
- 
- static int vti6_dev_init(struct net_device *dev);
-@@ -69,7 +69,7 @@ struct vti6_net {
- 	/* the vti6 tunnel fallback device */
- 	struct net_device *fb_tnl_dev;
- 	/* lists for storing tunnels in use */
--	struct ip6_tnl __rcu *tnls_r_l[HASH_SIZE];
-+	struct ip6_tnl __rcu *tnls_r_l[VTI_HASH_SIZE];
- 	struct ip6_tnl __rcu *tnls_wc[1];
- 	struct ip6_tnl __rcu **tnls[2];
- };
-@@ -1040,7 +1040,7 @@ static void __net_exit vti6_destroy_tunnels(struct vti6_net *ip6n)
- 	struct ip6_tnl *t;
- 	LIST_HEAD(list);
- 
--	for (h = 0; h < HASH_SIZE; h++) {
-+	for (h = 0; h < VTI_HASH_SIZE; h++) {
- 		t = rtnl_dereference(ip6n->tnls_r_l[h]);
- 		while (t) {
- 			unregister_netdevice_queue(t->dev, &list);
-diff --git a/net/ipv6/sit.c b/net/ipv6/sit.c
-index 0a5a255277e5..757ec087ce01 100644
---- a/net/ipv6/sit.c
-+++ b/net/ipv6/sit.c
-@@ -62,7 +62,7 @@
-    For comments look at net/ipv4/ip_gre.c --ANK
-  */
- 
--#define HASH_SIZE  16
-+#define SIT_HASH_SIZE  16
- #define HASH(addr) (((__force u32)addr^((__force u32)addr>>4))&0xF)
- 
- static bool log_ecn_error = true;
-@@ -78,9 +78,9 @@ static struct rtnl_link_ops sit_link_ops __read_mostly;
- 
- static int sit_net_id __read_mostly;
- struct sit_net {
--	struct ip_tunnel __rcu *tunnels_r_l[HASH_SIZE];
--	struct ip_tunnel __rcu *tunnels_r[HASH_SIZE];
--	struct ip_tunnel __rcu *tunnels_l[HASH_SIZE];
-+	struct ip_tunnel __rcu *tunnels_r_l[SIT_HASH_SIZE];
-+	struct ip_tunnel __rcu *tunnels_r[SIT_HASH_SIZE];
-+	struct ip_tunnel __rcu *tunnels_l[SIT_HASH_SIZE];
- 	struct ip_tunnel __rcu *tunnels_wc[1];
- 	struct ip_tunnel __rcu **tunnels[4];
- 
-@@ -1773,7 +1773,7 @@ static void __net_exit sit_destroy_tunnels(struct net *net,
- 
- 	for (prio = 1; prio < 4; prio++) {
- 		int h;
--		for (h = 0; h < HASH_SIZE; h++) {
-+		for (h = 0; h < SIT_HASH_SIZE; h++) {
- 			struct ip_tunnel *t;
- 
- 			t = rtnl_dereference(sitn->tunnels[prio][h]);
-diff --git a/security/keys/encrypted-keys/encrypted.c b/security/keys/encrypted-keys/encrypted.c
-index 5adbfc32242f..1c2271db2918 100644
---- a/security/keys/encrypted-keys/encrypted.c
-+++ b/security/keys/encrypted-keys/encrypted.c
-@@ -49,7 +49,7 @@ static int blksize;
- #define KEY_TRUSTED_PREFIX_LEN (sizeof (KEY_TRUSTED_PREFIX) - 1)
- #define KEY_USER_PREFIX_LEN (sizeof (KEY_USER_PREFIX) - 1)
- #define KEY_ECRYPTFS_DESC_LEN 16
--#define HASH_SIZE SHA256_DIGEST_SIZE
-+#define E_HASH_SIZE SHA256_DIGEST_SIZE
- #define MAX_DATA_SIZE 4096
- #define MIN_DATA_SIZE  20
- 
-@@ -380,8 +380,8 @@ static int get_derived_key(u8 *derived_key, enum derived_key_type key_type,
- 	int ret;
- 
- 	derived_buf_len = strlen("AUTH_KEY") + 1 + master_keylen;
--	if (derived_buf_len < HASH_SIZE)
--		derived_buf_len = HASH_SIZE;
-+	if (derived_buf_len < E_HASH_SIZE)
-+		derived_buf_len = E_HASH_SIZE;
- 
- 	derived_buf = kzalloc(derived_buf_len, GFP_KERNEL);
- 	if (!derived_buf) {
-@@ -517,7 +517,7 @@ out:
- static int datablob_hmac_append(struct encrypted_key_payload *epayload,
- 				const u8 *master_key, size_t master_keylen)
++static inline struct nsuser_state *get_nsuser_state(struct user_namespace *ns,
++						    kuid_t uid)
++{
++       struct nsuser_state *state;
++       hash_for_each_possible(nsstate_hash, state, node, &init_user_ns)
++               if (uid_eq(uid, state->uid) && state->ns == ns);
++                       return state;
++       return NULL;
++}
++
+ static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
  {
--	u8 derived_key[HASH_SIZE];
-+	u8 derived_key[E_HASH_SIZE];
- 	u8 *digest;
- 	int ret;
+ 	return &init_user_ns;
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 9bafc211930c..cb51e3607d2d 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -22,10 +22,20 @@
+ #include <linux/ctype.h>
+ #include <linux/projid.h>
+ #include <linux/fs_struct.h>
++#include <linux/spinlock.h>
++#include <linux/kernel.h>
  
-@@ -529,7 +529,7 @@ static int datablob_hmac_append(struct encrypted_key_payload *epayload,
- 	ret = calc_hmac(digest, derived_key, sizeof derived_key,
- 			epayload->format, epayload->datablob_len);
- 	if (!ret)
--		dump_hmac(NULL, digest, HASH_SIZE);
-+		dump_hmac(NULL, digest, E_HASH_SIZE);
- out:
- 	return ret;
- }
-@@ -539,8 +539,8 @@ static int datablob_hmac_verify(struct encrypted_key_payload *epayload,
- 				const u8 *format, const u8 *master_key,
- 				size_t master_keylen)
+ static struct kmem_cache *user_ns_cachep __read_mostly;
+ static DEFINE_MUTEX(userns_state_mutex);
+ 
++DEFINE_HASHTABLE(nsstate_hash, NSSTATE_HASHTABLE_BITS);
++DEFINE_SPINLOCK(nsuser_state_lock);
++
++#ifdef CONFIG_INOTIFY_USER
++extern int inotify_reserved_user_instances;
++extern int inotify_reserved_user_watches;
++#endif
++
+ static bool new_idmap_permitted(const struct file *file,
+ 				struct user_namespace *ns, int cap_setid,
+ 				struct uid_gid_map *map);
+@@ -60,10 +70,13 @@ static void set_cred_user_ns(struct cred *cred, struct user_namespace *user_ns)
+ int create_user_ns(struct cred *new)
  {
--	u8 derived_key[HASH_SIZE];
--	u8 digest[HASH_SIZE];
-+	u8 derived_key[E_HASH_SIZE];
-+	u8 digest[E_HASH_SIZE];
+ 	struct user_namespace *ns, *parent_ns = new->user_ns;
++	struct nsuser_state *state, *parent_state;
+ 	kuid_t owner = new->euid;
+ 	kgid_t group = new->egid;
  	int ret;
- 	char *p;
- 	unsigned short len;
-@@ -565,8 +565,8 @@ static int datablob_hmac_verify(struct encrypted_key_payload *epayload,
- 		ret = -EINVAL;
- 		dump_hmac("datablob",
- 			  epayload->format + epayload->datablob_len,
--			  HASH_SIZE);
--		dump_hmac("calc", digest, HASH_SIZE);
-+			  E_HASH_SIZE);
-+		dump_hmac("calc", digest, E_HASH_SIZE);
+-
++#ifdef CONFIG_INOTIFY_USER
++	int tmp;
++#endif
+ 	if (parent_ns->level > 32)
+ 		return -EUSERS;
+ 
+@@ -88,9 +101,16 @@ int create_user_ns(struct cred *new)
+ 	if (!ns)
+ 		return -ENOMEM;
+ 
++	state = kmalloc(sizeof(struct nsuser_state), GFP_KERNEL);
++	if (!state) {
++		kmem_cache_free(user_ns_cachep, ns);
++		return -ENOMEM;
++	}
++
+ 	ret = ns_alloc_inum(&ns->ns);
+ 	if (ret) {
+ 		kmem_cache_free(user_ns_cachep, ns);
++		kfree(state);
+ 		return ret;
  	}
- out:
- 	return ret;
-@@ -651,12 +651,12 @@ static struct encrypted_key_payload *encrypted_key_alloc(struct key *key,
- 	    + strlen(datalen) + 1 + ivsize + 1 + encrypted_datalen;
+ 	ns->ns.ops = &userns_operations;
+@@ -101,6 +121,13 @@ int create_user_ns(struct cred *new)
+ 	ns->level = parent_ns->level + 1;
+ 	ns->owner = owner;
+ 	ns->group = group;
++#ifdef CONFIG_INOTIFY_USER
++	tmp = parent_ns->inotify_max_user_instances - inotify_reserved_user_instances;
++	ns->inotify_max_user_instances = max(0, tmp);
++
++	tmp = parent_ns->inotify_max_user_watches - inotify_reserved_user_watches;
++	ns->inotify_max_user_watches = max(0, tmp);
++#endif
  
- 	ret = key_payload_reserve(key, payload_datalen + datablob_len
--				  + HASH_SIZE + 1);
-+				  + E_HASH_SIZE + 1);
- 	if (ret < 0)
- 		return ERR_PTR(ret);
+ 	/* Inherit USERNS_SETGROUPS_ALLOWED from our parent */
+ 	mutex_lock(&userns_state_mutex);
+@@ -112,8 +139,63 @@ int create_user_ns(struct cred *new)
+ #ifdef CONFIG_PERSISTENT_KEYRINGS
+ 	init_rwsem(&ns->persistent_keyring_register_sem);
+ #endif
++
++	spin_lock_bh(&nsuser_state_lock);
++	parent_state = get_nsuser_state(parent_ns, owner);
++	spin_unlock_bh(&nsuser_state_lock);
++	if (!parent_state) {
++		struct nsuser_state *grandfather_state;
++
++		spin_lock_bh(&nsuser_state_lock);
++		/* init_user_ns doesn't have a parent */
++		if (parent_ns == &init_user_ns)
++			grandfather_state = get_nsuser_state(parent_ns, parent_ns->owner);
++		else
++			grandfather_state = get_nsuser_state(parent_ns->parent, parent_ns->owner);
++		spin_unlock_bh(&nsuser_state_lock);
++
++		state->uid = owner;
++		state->ns = parent_ns;
++
++#ifdef CONFIG_INOTIFY_USER
++		page_counter_init(&state->inotify_watches,
++				  &grandfather_state->inotify_watches);
++		page_counter_init(&state->inotify_instances,
++				  &grandfather_state->inotify_instances);
++		page_counter_limit(&state->inotify_watches,
++				   parent_ns->inotify_max_user_watches);
++		page_counter_limit(&state->inotify_instances,
++				   parent_ns->inotify_max_user_instances);
++#endif
++
++		spin_lock_bh(&nsuser_state_lock);
++		hash_add(nsstate_hash, &state->node, __kuid_val(owner));
++		spin_unlock_bh(&nsuser_state_lock);
++	}
++
+ 	return 0;
+ }
++/* Delete all state related to a user ns. All processes of a
++ * namespace should be dead by this time and no references
++ * to the peruser/perns state variables should be live.As such
++ * we can be modifying the hashtable without holding the lock
++ */
++static void free_nsuser_state(struct user_namespace *ns)
++{
++	int bkt;
++	struct hlist_node *tmp;
++	struct nsuser_state *state;
++
++	hash_for_each_safe(nsstate_hash, bkt, tmp, state, node) {
++		if (state->ns == ns) {
++			BUG_ON(page_counter_read(&state->inotify_instances));
++			BUG_ON(page_counter_read(&state->inotify_watches));
++
++			hash_del(&state->node);
++			kfree(state);
++		}
++	}
++}
  
- 	epayload = kzalloc(sizeof(*epayload) + payload_datalen +
--			   datablob_len + HASH_SIZE + 1, GFP_KERNEL);
-+			   datablob_len + E_HASH_SIZE + 1, GFP_KERNEL);
- 	if (!epayload)
- 		return ERR_PTR(-ENOMEM);
- 
-@@ -670,7 +670,7 @@ static int encrypted_key_decrypt(struct encrypted_key_payload *epayload,
- 				 const char *format, const char *hex_encoded_iv)
+ int unshare_userns(unsigned long unshare_flags, struct cred **new_cred)
  {
- 	struct key *mkey;
--	u8 derived_key[HASH_SIZE];
-+	u8 derived_key[E_HASH_SIZE];
- 	const u8 *master_key;
- 	u8 *hmac;
- 	const char *hex_encoded_data;
-@@ -680,7 +680,7 @@ static int encrypted_key_decrypt(struct encrypted_key_payload *epayload,
- 	int ret;
+@@ -141,6 +223,10 @@ void free_user_ns(struct user_namespace *ns)
  
- 	encrypted_datalen = roundup(epayload->decrypted_datalen, blksize);
--	asciilen = (ivsize + 1 + encrypted_datalen + HASH_SIZE) * 2;
-+	asciilen = (ivsize + 1 + encrypted_datalen + E_HASH_SIZE) * 2;
- 	if (strlen(hex_encoded_iv) != asciilen)
- 		return -EINVAL;
+ 	do {
+ 		parent = ns->parent;
++
++		spin_lock_bh(&nsuser_state_lock);
++		free_nsuser_state(ns);
++		spin_unlock_bh(&nsuser_state_lock);
+ #ifdef CONFIG_PERSISTENT_KEYRINGS
+ 		key_put(ns->persistent_keyring_register);
+ #endif
+@@ -1000,7 +1086,25 @@ const struct proc_ns_operations userns_operations = {
  
-@@ -695,7 +695,7 @@ static int encrypted_key_decrypt(struct encrypted_key_payload *epayload,
- 
- 	hmac = epayload->format + epayload->datablob_len;
- 	ret = hex2bin(hmac, hex_encoded_data + (encrypted_datalen * 2),
--		      HASH_SIZE);
-+		      E_HASH_SIZE);
- 	if (ret < 0)
- 		return -EINVAL;
- 
-@@ -918,7 +918,7 @@ static long encrypted_read(const struct key *key, char __user *buffer,
- 	struct key *mkey;
- 	const u8 *master_key;
- 	size_t master_keylen;
--	char derived_key[HASH_SIZE];
-+	char derived_key[E_HASH_SIZE];
- 	char *ascii_buf;
- 	size_t asciiblob_len;
- 	int ret;
-@@ -928,7 +928,7 @@ static long encrypted_read(const struct key *key, char __user *buffer,
- 	/* returns the hex encoded iv, encrypted-data, and hmac as ascii */
- 	asciiblob_len = epayload->datablob_len + ivsize + 1
- 	    + roundup(epayload->decrypted_datalen, blksize)
--	    + (HASH_SIZE * 2);
-+	    + (E_HASH_SIZE * 2);
- 
- 	if (!buffer || buflen < asciiblob_len)
- 		return asciiblob_len;
+ static __init int user_namespaces_init(void)
+ {
++	struct nsuser_state *root_state = kmalloc(sizeof(struct nsuser_state),
++						  GFP_KERNEL);
++
++	init_user_ns.inotify_max_user_instances = 256;
++	init_user_ns.inotify_max_user_watches = 8192;
++
++#ifdef CONFIG_INOTIFY_USE
++	page_counter_init(&root_state->inotify_watches, NULL);
++	page_counter_init(&root_state->inotify_instances, NULL);
++	page_counter_limit(&root_state->inotify_watches,
++			   init_user_ns.inotify_max_user_watches);
++	page_counter_limit(&root_state->inotify_instances,
++					   init_user_ns.inotify_max_user_instances);
++#endif
++	root_state->uid = GLOBAL_ROOT_UID;
++	root_state->ns = &init_user_ns;
++	hash_add(nsstate_hash, &root_state->node, __kuid_val(GLOBAL_ROOT_UID));
+ 	user_ns_cachep = KMEM_CACHE(user_namespace, SLAB_PANIC);
++
+ 	return 0;
+ }
+ subsys_initcall(user_namespaces_init);
 -- 
 2.5.0
