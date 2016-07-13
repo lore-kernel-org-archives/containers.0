@@ -1,18 +1,23 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH v2 2/2] namespaces: add transparent user namespaces
-Date: Tue, 12 Jul 2016 17:32:22 -0500
-Message-ID: <87k2gqxzbd.fsf@x220.int.ebiederm.org>
-References: <CAG48ez3ELMSsWhe9X_uq_3M7TjJxq=SnAr09g72nTkCRQY008g@mail.gmail.com>
-	<1466814210-3778-1-git-send-email-jannh@google.com>
-	<1466814210-3778-2-git-send-email-jannh@google.com>
-	<87mvm6y8g9.fsf@x220.int.ebiederm.org> <57854EE5.1030707@digikod.net>
+From: Andrew Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
+Subject: Re: [CRIU] Introspecting userns relationships to other namespaces?
+Date: Tue, 12 Jul 2016 17:08:43 -0700
+Message-ID: <20160713000842.GC5818@outlook.office365.com>
+References: <87vb0gy3nr.fsf@x220.int.ebiederm.org>
+	<1467988533.2322.118.camel@HansenPartnership.com>
+	<20160708203818.GA2602@outlook.office365.com>
+	<5e4cc802-f0e0-4f4c-a2f7-585aaaa8feec@email.android.com>
+	<87wpkvpu1i.fsf@x220.int.ebiederm.org>
+	<1468023332.2390.10.camel@HansenPartnership.com>
+	<87bn27o6j5.fsf@x220.int.ebiederm.org>
+	<20160709072627.GA7480@outlook.office365.com>
+	<87eg72llu0.fsf@x220.int.ebiederm.org>
+	<871t32ll6n.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <57854EE5.1030707-WFhQfpSGs3bR7s880joybQ@public.gmane.org> (=?utf-8?Q?=22Micka=C3=ABl_Sal?=
-	=?utf-8?Q?a=C3=BCn=22's?= message of
-	"Tue, 12 Jul 2016 22:11:17 +0200")
+Content-Disposition: inline
+In-Reply-To: <871t32ll6n.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,71 +27,74 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: =?utf-8?Q?Micka=C3=ABl_Sala=C3=BCn?= <mic-WFhQfpSGs3bR7s880joybQ@public.gmane.org>
-Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Calvin Owens <calvinowens-b10kYP2dOMg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, John Stultz <john.stultz-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Janis Danisevskis <jdanis-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Christoph Lameter <cl-vYTEC60ixJUAvxtiuMwx3w@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, "W. Trevor King" <wking-vJI2gpByivqcqzYg7KEe8g@public.gmane.org>, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-TWlja2HDq2wgU2FsYcO8biA8bWljQGRpZ2lrb2QubmV0PiB3cml0ZXM6Cj4KIEhpLAo+Cj4gSSBo
-YXZlIGJlZW4gbG9va2luZyBmb3IgdGhpcyBraW5kIG9mIGZlYXR1cmUgZm9yIFN0ZW1KYWlsIFsx
-XS4gT25lIG9mCj4gdGhlIG1haW4gaWRlYSBpcyB0byBiZWluZyBhYmxlIHRvIGNyZWF0ZSBtb3Vu
-dCBwb2ludHMgaW5zaWRlIGEgamFpbCBhcwo+IGFuIHVucHJpdmlsZWdlZCB1c2VyIGJ1dCB0byBr
-ZWVwIGFzIG11Y2ggYXMgcG9zc2libGUgdGhlIHNhbWUKPiBlbnZpcm9ubWVudCBmcm9tIG91dHNp
-ZGUgdGhlIGphaWwuIEZvciBub3csIEkgY2FuIG9ubHkgY3JlYXRlIGEKPiBtYXBwaW5nIGZvciB0
-aGUgY3VycmVudCB1c2VyLCBzbyB3aGVuIGEgcHJvY2VzcyBsaXN0IGFueSBmaWxlcwo+IGJlbG9u
-Z2luZyB0byBhbm90aGVyIHVzZXIvZ3JvdXAgaXQgZ2V0ICJub2JvZHkiLCB3aGljaCBzZWVtcyB3
-ZWlyZAo+IGZyb20gYSB1c2VyIHBvaW50IG9mIHZpZXcgOikKCldlaXJkIGJ1dCBJIGhhdmUgbmV2
-ZXIgZm91bmQgaXQgaGFybWZ1bC4KClRoZSBiaWcgdGhyYXNoaW5nIGFib3V0IHdpdGggYWRkaW5n
-IHNfdXNlcl9ucyBpcyBjb21wbGV0ZSBpbiBteSB0cmVlIHNvCkkgY2FuIGFjY2VwdCBhIHJlYXNv
-bmFibGUgcGF0Y2gsIGFuZCB0cmFuc3BhcmVudCB1c2VyIG5hbWVzcGFjZXMgaXMgb24KdGhlIGVk
-Z2UuCgpJZiB0cmFuc3BhcmVudCB1c2VyIG5hbWVzcGFjZXMgc29sdmUgYW55dGhpbmcgZXhjZXB0
-IGZvciB3ZWlyZC4gIFRoZXkKYXJlIHNpbXBsZSBlbm91Z2ggdGhhdCBnaXZlbiBhIGdvb2QgcXVh
-bGl0eSBwYXRjaCBJIHdpbGwgbWVyZ2UgdGhlbS4KClN0aWxsIEkgd2FudCB0byBtYWtlIGNlcnRh
-aW4gdGhleSBzb2x2ZSBzb21ldGhpbmcgcmVhbCBvciBlbHNlIEkgYW0gbm90CmNlcnRhaW4gdGhl
-IGFkZGVkIGNvbXBsZXhpdHkgaXMgd29ydGggdGhlIG1haW50ZW5hbmNlIGJ1cmRlbi4KRXNwZWNp
-YWxseSBpbiBhIHBhcnQgb2YgdGhlIGNvZGUgd2hlcmUgZ2V0dGluZyBjb25mdXNlZCBhbmQgbWFr
-aW5nIHNtYWxsCm1pc3Rha2VzIHJlc3VsdHMgaW4gc2VjdXJpdHkgaXNzdWVzLgoKT24gdGhlIGZs
-aXAgc2lkZSBpdCBpc24ndCB0aGF0IG11Y2ggd2VpcmRlciB0aGFuIGZyb21fa3VpZF9tdW5nZWQg
-dG9kYXkKc28gaXQgbWF5IG5vdCBiZSBhbnkga2luZCBvZiBwcm9ibGVtIGF0IGFsbC4KCj4KPiBS
-ZWdhcmRzLAo+IE1pY2thw6tsCj4KPgo+IDEuIGh0dHBzOi8vZ2l0aHViLmNvbS9zdGVtamFpbC9z
-dGVtamFpbAo+Cj4KPiBPbiAyNy8wNi8yMDE2IDE3OjA5LCBFcmljIFcuIEJpZWRlcm1hbiB3cm90
-ZToKPj4gCj4+IEFkZGVkIGEgZmV3IG1vcmUgcmVsZXZhbnQgY2Mncy4KPj4gCj4+IEphbm4gSG9y
-biA8amFubmhAZ29vZ2xlLmNvbT4gd3JpdGVzOgo+PiAKPj4+IFRoaXMgYWxsb3dzIHRoZSBhZG1p
-biBvZiBhIHVzZXIgbmFtZXNwYWNlIHRvIG1hcmsgdGhlIG5hbWVzcGFjZSBhcwo+Pj4gdHJhbnNw
-YXJlbnQuIEFsbCBvdGhlciBuYW1lc3BhY2VzLCBieSBkZWZhdWx0LCBhcmUgb3BhcXVlLgo+PiAK
-Pj4gCj4+IEkgaGF2ZSBqdXN0IHNraW1tZWQgdGhyb3VnaCB0aGlzIGFuZCBhdCBhIGhpZ2ggbGV2
-ZWwgdGhpcyBkb2Vzbid0IHNlZW0KPj4gdG9vIHNjYXJ5LiAgSGF2aW5nIGFuIGlkZW50aXR5IG1h
-cHBlZCB1c2VyIG5hbWVzcGFjZSB0aGF0IGp1c3QgbGltaXRzCj4+IHlvdSB0byB1c2luZyBhIHN1
-YnNldCBvZiB1aWRzIGFuZCBnaWRzIHdoaWxlIGFsbG93aW5nIGRpc3BsYXlpbmcgdGhlCj4+IGZ1
-bGwgcmFuZ2Ugb2YgdWlkcyBhbmQgZ2lkcy4KPj4gCj4+IEkgZG9uJ3QgcXVpdGUgZ2V0IHRoZSB1
-c2UgY2FzZSBhbmQgSSB3b3VsZCBsaWtlIHRvIGEgbGl0dGxlIGJldHRlcgo+PiBidXQgaW4gdGhl
-IGxvbmcgdGVybSB0aGlzIHNob3VsZG4ndCBjYXVzZSBhbnkgc2lnbmlmaWNhbnQgbWFpbnRlbmFu
-Y2UKPj4gaXNzdWVzLCBzbyBJIGRvbid0IGhhdmUgYW55IG9iamVjdHMuCj4+IAo+PiBBdCB0aGUg
-c2FtZSB0aW1lIHRoaXMgaXNuJ3QgcXVpdGUgdGhlIHRpbWUgdG8gbWVyZ2UgdGhpcy4gIEkgYW0g
-aW4gdGhlCj4+IHByb2Nlc3Mgb2Ygc2xvd2x5IGdvaW5nIHRocm91Z2ggU2V0aCdzIHZmcyBjaGFu
-Z2VzIHRvIHN1cHBvcnQgdGhpbmdzCj4+IHN1Y2ggYXMgdHJ1bHkgdW5wcml2aWxlZ2VkIGZ1c2Ug
-c3VwcG9ydC4gIFRob3NlIGNoYW5nZXMgYWx0ZXIgd2hpY2gKPj4gcGxhY2VzIGNhbiBhbHdheXMg
-YmUgYXNzdW1lZCB0byBiZSBpbml0X3VzZXJfbnMgKG1hbnkgZmV3ZXIpLCBhbmQgYWxzbwo+PiBz
-bGlnaHRseSBjaGFuZ2UgdGhlIHNldCBvZiBmcm9tX2t1aWQgY2FsbHMgYmVpbmcgbWFkZS4KPj4g
-Cj4+IFRoZSBjaGFuZ2VzIHRoYXQgaGF2ZSBtYWRlIGl0IHRocm91Z2ggbXkgcmV2aWV3IGN1cnJl
-bnRseSByZXNpZGUgYXQ6Cj4+IAo+PiAgICAgZ2l0Oi8vZ2l0Lmtlcm5lbC5vcmcvcHViL3NjbS9s
-aW51eC9rZXJuZWwvZ2l0L2ViaWVkZXJtL3VzZXItbmFtZXNwYWNlLmdpdCBmb3ItbmV4dAo+PiAK
-Pj4gVGhvc2UgdmZzIGNoYW5nZXMgbWFrZSBpdCBjb25jZWl2YWJsZSBhbmQgc2ltcGxlIGZyb20g
-YW4gaW5mcmFzdHJ1Y3R1cmUKPj4gc3RhbmRwb2ludCB0byB0cmFuc2l0aW9uIGZpbGV5c3RlbXMg
-dG8gdW5wcml2aWxlZ2VkIHVzZXIgbmFtZXNwYWNlCj4+IG1vdW50cywgd2l0aCBwZXJoYXBzIGFz
-IGxpdHRsZSB3b3JrIGFzIGp1c3Qgc2V0dGluZyBGU19VU0VSX05TLiAgQXQgdGhlCj4+IHNhbWUg
-dGltZSB0aGF0IHdvbid0IGJlIHJlY29tbWVuZCBiZWNhdXNlIG9mIHRoZSBkaWZmaWN1bHR5IHZl
-cmlmeWluZwo+PiBldmlsIGZpbGVzeXN0ZW0gY29udGVudHMgY2FuJ3QgY2F1c2UgZnMgaW1wbGVt
-ZW50YXRpb25zIHRvIGRvIGJhZCB0aGluZ3MKPj4gaXMgZGlmZmljdWx0Lgo+PiAKPj4gVGhhdCBj
-aGFuZ2UgbWVhbnMgeW91ciBmaXJzdCBwYXRjaCB0aGF0IGp1c3QgemFwcyBhbGwgZnJvbV9rdWlk
-X211bmdlZAo+PiB1c2VycyBpbiBpbml0X3VzZXJfbnMgaXNuJ3QgYSBwYXJ0aWN1bGFybHkgZ29v
-ZCBpZGVhLiAgSSBkb24ndCB0aGluayBpdAo+PiBpcyBhIGdvb2QgaWRlYSB0byBoYXZlIG9uZSBz
-ZXQgb2YgcnVsZXMgZm9yIHRoaW5ncyB0aGF0IHdpbGwgYWx3YXlzIGJlCj4+IGluaXRfdXNlcl9u
-cyBhbmQgYW5vdGhlciBzZXQgb2YgcnVsZXMgZm9yIGNvZGUgdGhhdCB3aWxsIGNoYW5nZS4KPj4g
-Cj4+IFRoZSBsb25nIGFuZCBzaG9ydCBvZiB0aGlzIGlzIEkgYW0gYXNraW5nIHlvdSB0byB3YWl0
-IGEgd2VlayBvciBzbyBhbmQKPj4gcmViYXNlIHRoaXMgb24gbXkgZm9yLW5leHQgYnJhbmNoIHNv
-IHRoYXQgd2UgY2FuIGNvbmZpcm0gdGhpcyBjaGFuZ2UKPj4gaW50ZXJhY3RzIG5pY2VseSB3aWxs
-IGFsbCBvZiB0aGUgb3RoZXIgb24tZ29pbmcgd29yay4KPj4gCj4+IFRoYW5rIHlvdSwKPj4gRXJp
-YyBCaWVkZXJtYW4KCkVyaWMKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1m
-b3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9s
-aXN0aW5mby9jb250YWluZXJz
+On Sat, Jul 09, 2016 at 01:29:20PM -0500, Eric W. Biederman wrote:
+> ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) writes:
+> 
+> > Andrew Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org> writes:
+> >
+> >> All these thoughts about security make me thinking that kcmp is what we
+> >> should use here. It's maybe something like this:
+> >>
+> >> kcmp(pid1, pid2, KCMP_NS_USERNS, fd1, fd2)
+> >>
+> >> - to check if userns of the fd1 namepsace is equal to the fd2 userns
+> >>
+> >> kcmp(pid1, pid2, KCMP_NS_PARENT, fd1, fd2)
+> >>
+> >> - to check if a parent namespace of the fd1 pidns is equal to fd pidns.
+> >>
+> >> fd1 and fd2 is file descriptors to namespace files.
+> >>
+> >> So if we want to build a hierarchy, we need to collect all namespaces
+> >> and then enumerate them to check dependencies with help of kcmp.
+> >
+> > That is certainly one way to go.
+> >
+> > There is a funny case where we would want to compare a user namespace
+> > file descriptor to a parent user namespace file descriptor.
+> >
+> >
+> > Grumble, Grumble.  I think this may actually a case for creating ioctls
+> > for these two cases.  Now that random nsfs file descriptors are bind
+> > mountable the original reason for using proc files is not as pressing.
+> >
+> > One ioctl for the user namespace that owns a file descriptor.
+> > One ioctl for the parent namespace of a namespace file descriptor.
+> >
+> > We also need some way to get a command file descriptor for a file system
+> > super block.  Al Viro has a pet project for cleaning up the mount API
+> > and this might be the idea excuse to start looking at that.
+> >
+> > (In principle we might be able to run commands through the namespace
+> >  file descriptor and using an ioctl feels dirty.  But an ioctl that
+> >  only uses the fd and request argument does not suffer from the same
+> >  problems that ioctls that have to pass additional arguments suffer
+> >  from.)
+> 
+> Of course it should be an error perhaps -EINVAL to get a user
+> namespace owner or parent namespace that is outside of a processes
+> current user namespace or pid namespace.  That way thing stay bounded
+> within the current namespaces the process is in.  Which prevents any
+> leak possibilities, and keeps CRIU working.
+
+I prepared patches with ioctl-s to understand how it looks like.
+
+Here is a whole series:
+https://github.com/avagin/linux-task-diag/commits/namespaces
+
+Here is a patch to get an owning user namespace:
+https://github.com/avagin/linux-task-diag/commit/7fad8ff3fc4110bebf0920cec2388390b3bd2238
+https://github.com/avagin/linux-task-diag/commit/2663bc803d324785e328261f3c07a0fef37d2088
+
+Here is an example how it looks from user-space:
+https://github.com/avagin/linux-task-diag/blob/namespaces/tools/testing/selftests/nsfs/owner.c#L49
+
+I like the idea with ioctl-s. James, Michael, Trevor, what is your
+opinion about this?
+
+> 
+> Eric
