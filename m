@@ -1,13 +1,11 @@
 From: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
-Subject: [PATCH 1/4] hashtable: Add __HASHTABLE_INITIALIZER
-Date: Wed, 13 Jul 2016 15:14:10 +0300
-Message-ID: <1468412053-30130-2-git-send-email-kernel@kyup.com>
-References: <1468412053-30130-1-git-send-email-kernel@kyup.com>
+Subject: [RFC PATCH 0/4 v3] Inotify limits per usernamespace
+Date: Wed, 13 Jul 2016 15:14:09 +0300
+Message-ID: <1468412053-30130-1-git-send-email-kernel@kyup.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1468412053-30130-1-git-send-email-kernel-6AxghH7DbtA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,27 +19,50 @@ To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, operations-/eCPMmvKun9pLGFMi4vTTA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is used so that one can initialize a hashtbale declared in a
-struct.
+Hello Eric, 
 
-Signed-off-by: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
----
- include/linux/hashtable.h | 3 +++
- 1 file changed, 3 insertions(+)
+Another day, another version...
 
-diff --git a/include/linux/hashtable.h b/include/linux/hashtable.h
-index 661e5c2a8e2a..92d6a791b218 100644
---- a/include/linux/hashtable.h
-+++ b/include/linux/hashtable.h
-@@ -23,6 +23,9 @@
- #define DECLARE_HASHTABLE(name, bits)                                   	\
- 	struct hlist_head name[1 << (bits)]
- 
-+#define __HASHTABLE_INITIALIZER(bits)						\
-+	{ [0 ... (( 1 << bits)) - 1] = HLIST_HEAD_INIT }
-+
- #define HASH_SIZE(name) (ARRAY_SIZE(name))
- #define HASH_BITS(name) ilog2(HASH_SIZE(name))
- 
+So this is version 3 of the patches initially posted at [1]. 
+Version 2 can be fount at [2]
+
+So I reworked the way the state for namespaces are created and
+the code is indeed a lot cleaner and easier to understand. I've 
+also moved from using uid and instead always work with kuids. 
+Finally I reworked the hashtable to be a global one and indexed by 
+the kuid value. With this I believe I have adressed all your points 
+in your previous review. 
+
+I still haven't tackled the issue with the semantics of the sysctls. 
+But judging from your last reply about being content with just setting
+the limit at the top-level I believe the way to fix this would be 
+make a custom proc handler that writes to the variable in the 
+current userns. Opinions?
+
+[1] http://thread.gmane.org/gmane.linux.kernel/2232000
+[2] https://lists.linuxfoundation.org/pipermail/containers/2016-June/037019.html
+
+Nikolay Borisov (4):
+  hashtable: Add __HASHTABLE_INITIALIZER
+  misc: Rename the HASH_SIZE macro
+  userns/inotify: Initial implementation of inotify per-userns
+  inotify: Convert to using new userns infrastructure
+
+ fs/logfs/dir.c                           |   6 +-
+ fs/notify/inotify/inotify.h              |   2 +
+ fs/notify/inotify/inotify_fsnotify.c     |  14 +++-
+ fs/notify/inotify/inotify_user.c         | 136 +++++++++++++++++++++++++++----
+ include/linux/fsnotify_backend.h         |   4 +-
+ include/linux/hashtable.h                |   3 +
+ include/linux/sched.h                    |   4 -
+ include/linux/user_namespace.h           |  45 ++++++++++
+ kernel/user_namespace.c                  | 106 +++++++++++++++++++++++-
+ net/ipv6/ip6_gre.c                       |   8 +-
+ net/ipv6/ip6_tunnel.c                    |  10 +--
+ net/ipv6/ip6_vti.c                       |  10 +--
+ net/ipv6/sit.c                           |  10 +--
+ security/keys/encrypted-keys/encrypted.c |  32 ++++----
+ 14 files changed, 327 insertions(+), 63 deletions(-)
+
 -- 
 2.5.0
