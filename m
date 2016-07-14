@@ -1,19 +1,14 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH review 08/12] quota: Ensure qids map to the filesystem
-Date: Thu, 14 Jul 2016 12:03:19 -0500
-Message-ID: <87oa60cfu0.fsf__12255.6824157529$1468516605$gmane$org@x220.int.ebiederm.org>
-References: <874m82bptc.fsf@x220.int.ebiederm.org>
-	<20160706181212.16267-1-ebiederm@xmission.com>
-	<20160706181212.16267-8-ebiederm@xmission.com>
-	<20160711101424.GH12410@quack2.suse.cz>
-	<878tx8dowu.fsf@x220.int.ebiederm.org> <20160713013436.GM1922@dastard>
-	<20160713054358.GB28635@pc.thejh.net>
+From: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: [PATCH 2/5] kernel: add a helper to get an owning user namespace for
+	a namespace
+Date: Thu, 14 Jul 2016 11:20:16 -0700
+Message-ID: <1468520419-28220-3-git-send-email-avagin@openvz.org>
+References: <1468520419-28220-1-git-send-email-avagin@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20160713054358.GB28635-J1fxOzX/cBvk1uMJSBkQmQ@public.gmane.org> (Jann Horn's message of
-	"Wed, 13 Jul 2016 07:43:59 +0200")
+In-Reply-To: <1468520419-28220-1-git-send-email-avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,100 +18,78 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>
-Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Djalal Harouni <tixxdz-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org> writes:
+Return -EPERM if an owning user namespace is outside of a process
+current user namespace.
 
-> On Wed, Jul 13, 2016 at 11:34:36AM +1000, Dave Chinner wrote:
->> On Mon, Jul 11, 2016 at 01:12:49PM -0500, Eric W. Biederman wrote:
->> > The place where I am concerned about thorough review and testing is
->> > someone poisoning quota files and then the kernel trying to use them.
->> > In the preliminary work we have done in other places in the kernel and
->> > for other filesystems there almost always winds up being some way to
->> > confuse the kernel and get it to misbave if you can poison the disk
->> > based inputs.  As poison disk based inputs is not something filesystems
->> > are stronlgy concerned about.  In most cases the disk the filesystem
->> > resides on is in the box and therefore under control of the OS at all
->> > times.  Dave Chinner has even said he will never consider handling
->> > poisoned disk based inputs for XFS as the run time cost is too high.
->> 
->> I didn't say that. I said that comprehensive checks to catch all
->> possible malicious inputs is too expensive to consider a viable
->> solution for allowing user-mounts of arbitrary filesystem images
->> through the kernel.
+Signed-off-by: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+---
+ include/linux/user_namespace.h |  7 +++++++
+ kernel/user_namespace.c        | 24 ++++++++++++++++++++++++
+ 2 files changed, 31 insertions(+)
 
-Dave you said that speaking as the XFS maintainer.  So I take that to be
-your position and to refer to XFS.
-
-> [...]
->> 
->> To bring this back to quota files, the only way to validate that a
->> quota file has not been tampered with is to run a quotacheck on the
->> filesystem once it has been mounted. This requires visiting every
->> inode in the filesystem, so it an expensive operation. Only XFS has
->> this functionality in kernel, so for untrusted mounts we could
->> simply run it on every mount that has quotas enabled. Of course,
->> users won't care that mounting their filesystem now takes several
->> minutes (hours, even, when we have millions of inodes in the fs)
->> while these checks are run...
->>
->> Detecting malicious corruptions that specifically manipulate the
->> on-disk structure within the bounds of format validity are difficult
->> to detect and costly to protect against. We'd need to move large
->> parts of fsck into the kernel and run it to validate every piece of
->> metadata read into the kernel. Then we've got a much larger attack
->> surface in the kernel (all the validity checking code needs to be
->> robust against invalid structures, too!), a lot more complexity
->> (more bugs!) and a lot of additional runtime overhead (slow
->> filesystem = unhappy users!). It's just not a practical solution to
->> the problem.
-
-This critiqute as I read it confuses data integrity and safety from
-privilege escalation.  If a filesystem image or it's backing store are
-malicious there is no need to be concerned about data integrity.
-
-> And ideally, you'd want to also guard against an evil disk that
-> suddenly changes its contents after you've run fsck on it, and you
-> can't easily do that without making things complicated.
-
-I agree an evil disk definitely should be part of any threat analysis.
-
-I also agree that anything that is complicated is not a practical
-as complicated means lots of code, and bugs are in general a function
-of the amount of code.
-
-At the same time my only concern when analyzing something for safety
-against a malicious filesystem is can the malicious data cause the
-kernel to misbehave.  This includes things like stack overflows,
-and memory corruption.
-
-In the specific case of a quota file, if there is a quota file that has
-little to no resemblence to reality but the kernel doesn't misbehave, I
-don't think that is a problem from an unprivileged mount perspective.
-On the flip side if a malicious quota file allows an in kernel quota
-variable to go negative and that causes the kernel to misbehave that is
-a show stopper for allowing an unprivileged mount.
-
-Personally I see the quantity of code in current filesystems as making
-it hard to have a low enough probability of problems to allow
-unprivileged mounts.
-
-Changes for all of the weird cases a backing store for unprivileged
-mounts brings with it have been added to the VFS because that is the
-right place to implement them.  Working at a filesystem independent
-level allows all of the right people involved in the review, and it
-allows clean and general solutions to the weird cases that come up
-with a uid or gid does not map into the kernel.
-
-
-All of that said the only filesystem with backing store that I see as a
-reasonable target to support right now is fuse.  As fuse was designed
-from the get go to support filesystems from unprivileged users.
-
-Will fuse someday support quotas?  I don't know.  But the there is no
-extra cost to support that case in fs/quota/quota.c so I have added the
-necessary code.
-
-Eric
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index a941b44..e416b76 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -76,6 +76,8 @@ extern ssize_t proc_projid_map_write(struct file *, const char __user *, size_t,
+ extern ssize_t proc_setgroups_write(struct file *, const char __user *, size_t, loff_t *);
+ extern int proc_setgroups_show(struct seq_file *m, void *v);
+ extern bool userns_may_setgroups(const struct user_namespace *ns);
++
++struct ns_common *ns_get_owner(struct ns_common *ns);
+ #else
+ 
+ static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
+@@ -104,6 +106,11 @@ static inline bool userns_may_setgroups(const struct user_namespace *ns)
+ {
+ 	return true;
+ }
++
++static inline struct ns_common *ns_get_owner(struct ns_common *ns)
++{
++	return ERR_PTR(-ENOENT);
++}
+ #endif
+ 
+ #endif /* _LINUX_USER_H */
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index a5bc78c..6382e5e 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -994,6 +994,30 @@ static int userns_install(struct nsproxy *nsproxy, struct ns_common *ns)
+ 	return commit_creds(cred);
+ }
+ 
++struct ns_common *ns_get_owner(struct ns_common *ns)
++{
++	const struct cred *cred = current_cred();
++	struct user_namespace *user_ns, *p;
++
++	user_ns = p = ns->user_ns;
++	if (user_ns == NULL) { /* ns is init_user_ns */
++		/* Unprivileged user should not know that it's init_user_ns. */
++		if (capable(CAP_SYS_ADMIN))
++			return ERR_PTR(-ENOENT);
++		return ERR_PTR(-EPERM);
++	}
++
++	for (;;) {
++		if (p == cred->user_ns)
++			break;
++		if (p == &init_user_ns)
++			return ERR_PTR(-EPERM);
++		p = p->parent;
++	}
++
++	return &get_user_ns(user_ns)->ns;
++}
++
+ const struct proc_ns_operations userns_operations = {
+ 	.name		= "user",
+ 	.type		= CLONE_NEWUSER,
+-- 
+2.5.5
