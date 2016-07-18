@@ -1,10 +1,12 @@
-From: sofie Patterson <sofie-o8QV+NG877ve8DfnSWZdbuqUGfbH9hYC@public.gmane.org>
-Subject: Amazon Web Services Users
-Date: Mon, 18 Jul 2016 07:55:29 -0700
-Message-ID: <CACOTWav3f4ZH-dorn-fpE4pL+XXMn8mbWvjjjMPAAoQRcOwRcQ@mail.gmail.com>
+From: "Anajali Sharma"
+ <anjalis-xKvJc6bnLwv1P9xLtpHBDw@public.gmane.org>
+Subject: Scheduled Call
+Date: 18 Jul 2016 08:46:41 -0700
+Message-ID: <20160718154651.C46BC892@mail.linuxfoundation.org>
+Reply-To: Anajali Sharma <shivamd-hwRmzunk84cYf6nkLry/qA@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,23 +20,47 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SGksCgoKCkhvcGUgbXkgZW1haWwgZmluZHMgeW91IHdlbGwuCgoKCkFyZSB5b3UgbG9va2luZyBv
-dXQgdG8gYWNxdWlyZSB0aGUgbGlzdCBvZiBjdXN0b21lcnMgb3IgY29tcGFuaWVzIHVzaW5nICpB
-bWF6b24KV2ViIFNlcnZpY2VzIChBV1MpICpCdXNpbmVzcyBsZWFkcz8KCldlIGVuZG93IHRoZSBE
-YXRhYmFzZSBhY3Jvc3MgTm9ydGggQW1lcmljYSwgRU1FQSwgQVBBQyBhbmQgTGF0aW4gQW1lcmlj
-YS4KCgoKKldlIHByb3ZpZGUgY29tcGxldGUgSW5mb3JtYXRpb24gRmllbGRzKiBsaWtlIOKAkyBO
-YW1lLCBUaXRsZSwgRW1haWwgYWRkcmVzcywKUGhvbmUgTnVtYmVycywgQ29tcGFueSBOYW1lLCBh
-bmQgQ29tcGFueSBEZXRhaWxzIGxpa2UsIFBoeXNpY2FsIEFkZHJlc3MsCldlYiBBZGRyZXNzLCBS
-ZXZlbnVlIFNpemUsIEVtcGxveWVlIFNpemUgYW5kIGluZHVzdHJ5LgoKCgpXZSBoYXZlIGxpc3Qg
-b2YgQW1hem9uIFByb2R1Y3RzIHdoaWNoIHlvdSBtYXkgYmUgaW50ZXJlc3RlZCBpbjoKCgoKwrcg
-ICAgICAgICBBbWF6b24gUmVkc2hpZnQKCsK3ICAgICAgICAgQW1hem9uIFJEUwoKwrcgICAgICAg
-ICBBbWF6b24gUGF5bWVudHMKCsK3ICAgICAgICAgQW1hem9uIFZQQwoKwrcgICAgICAgICBBbWF6
-b24gS2luZXNpcyBhbmQgc28gb24uCgoKClBsZWFzZSByZXZpZXcgYW5kIGxldCBtZSBrbm93IHdo
-YXQgdGVjaG5vbG9neSB1c2VycyB5b3UgYXJlIGludGVyZXN0ZWQgaW4KYW5kIEkgd2lsbCBnZXQg
-YmFjayB0byB5b3Ugd2l0aCBtb3JlIGluZm9ybWF0aW9uIGZvciB0aGUgc2FtZS4KCgoKSSBhd2Fp
-dCB5b3VyIHJlc3BvbnNlIHdpdGggaW50ZXJlc3QhCgoKClJlZ2FyZHMsCgpTb2ZpZQoKQ2xvdWQg
-Q29uc3VsdGFudAoKCgoKCklmIHlvdSB3aXNoIG5vdCB0byByZWNlaXZlIHRoZXNlIGVtYWlscywg
-cGxlYXNlIHJlcGx5IOKAnExlYXZlIE91dOKAnSBpbiB0aGUKc3ViamVjdCBsaW5lLgpfX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxp
-bmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlz
-dHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+   Hi,
+
+   I am writing today to get on a call to discuss about the web app and
+   mobile app that is designed and not tested immaculately to hold the
+   user traffic. We recently helped an organization based of Atlanta GA
+   solve this issue. Now the web and mobile app are able to handle over
+   million user at a time.
+
+
+   I will call you at 1:30pm this Thursday for no obligation testing and
+   help you identify the loop holes of the app that can increase not only
+   revenue but also the client base.
+
+
+   Regards,
+
+   Anjali Sharma
+
+   Support App Testing
+
+   Skype: sid.nyinfo
+
+
+   If you do not wish to hear from us again, please respond back with
+   "REMOVE" and we will honor your request.  Disclaimer: If you have
+   received this electronic mail by error or if you're not the right
+   person to speak with in this regard, I'd appreciate if you would be so
+   kind as to forward this email to the right person or the person in
+   charge.
+
+
+
+     __________________________________________________________________
+
+   Re [1]Subscribe me for regular updates!     [2]Unsubscribe
+   [3]Report Spam
+   [ot.aspx?email=containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org&userid=4821]
+     __________________________________________________________________
+
+References
+
+   1. http://activation.asalnews.com/sub.aspx?email=containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org&userid=4821
+   2. http://activation.asalnews.com/unsub.aspx?email=containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org&userid=4821
+   3. http://activation.asalnews.com/Report-Spam.aspx?email=containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org&userid=4821
