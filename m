@@ -1,7 +1,7 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+From: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
 Subject: Re: [PATCH 02/10] userns: Add per user namespace sysctls.
-Date: Wed, 20 Jul 2016 00:12:26 -0500
-Message-ID: <20160720051226.GC16885@mail.hallyn.com>
+Date: Wed, 20 Jul 2016 09:28:16 +0300
+Message-ID: <578F1A00.6030701@kyup.com>
 References: <8737n5dscy.fsf@x220.int.ebiederm.org>
 	<20160720012138.7894-1-ebiederm@xmission.com>
 	<20160720012138.7894-2-ebiederm@xmission.com>
@@ -9,7 +9,6 @@ Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 In-Reply-To: <20160720012138.7894-2-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -20,11 +19,13 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+Just a couple of nits.
+
+On 07/20/2016 04:21 AM, Eric W. Biederman wrote:
 > Limit per userns sysctls to only be opened for write by a holder
 > of CAP_SYS_RESOURCE.
 > 
@@ -65,11 +66,15 @@ Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
 > +set_lookup(struct ctl_table_root *root)
 > +{
 > +	return &current->cred->user_ns->set;
+Why not current_user_ns()->set?
+
 > +}
 > +
 > +static int set_is_seen(struct ctl_table_set *set)
 > +{
 > +	return &current->cred->user_ns->set == set;
+DITTO
+
 > +}
 > +
 > +static int set_permissions(struct ctl_table_header *head,
@@ -80,9 +85,7 @@ Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
 > +	int mode;
 > +
 > +	/* Allow users with CAP_SYS_ADMIN unrestrainted access */
-
-nit 1 - s/unrestrainted/unrestrained/
-nit 2 - you say CAP_SYS_ADMIN but check for CAP_SYS_RESOURCE
+Just a minor nit: The comment and following code don't match.
 
 > +	if (ns_capable(user_ns, CAP_SYS_RESOURCE))
 > +		mode = (table->mode & S_IRWXU) >> 6;
@@ -111,10 +114,6 @@ nit 2 - you say CAP_SYS_ADMIN but check for CAP_SYS_RESOURCE
 > +	if (tbl) {
 > +		ns->sysctls = __register_sysctl_table(&ns->set, "userns", tbl);
 > +	}
-
-What happens if tbl is null due to oom?  Would it be better to just
-return false in that case here?
-
 > +	if (!ns->sysctls) {
 > +		kfree(tbl);
 > +		retire_sysctl_set(&ns->set);
@@ -184,12 +183,18 @@ return false in that case here?
 > +	 * "/proc/sys/userns" as an empty directory not in a network
 > +	 * namespace.
 > +	 */
+The comment is not very clear to someone who is not intimately familiar
+with the sysctl infrastructure, perhaps you can make it a bit more verbose?
+
 > +	userns_header = register_sysctl("userns", empty);
 > +	BUG_ON(!userns_header);
 > +#endif
 > +	BUG_ON(!setup_userns_sysctls(&init_user_ns));
+Do we really want the extra code the BUG_ON adds even in the
+!CONFIG_SYSCTL case, possibly the compiler could eliminate it but I
+can't help it but wonder.
+
 >  	return 0;
 >  }
 >  subsys_initcall(user_namespaces_init);
-> -- 
-> 2.8.3
+> 
