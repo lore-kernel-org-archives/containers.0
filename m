@@ -1,7 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 05/10] pidns: Add a limit on the number of pid namespaces
-Date: Tue, 19 Jul 2016 20:21:33 -0500
-Message-ID: <20160720012138.7894-5-ebiederm@xmission.com>
+Subject: [PATCH 06/10] utsns: Add a limit on the number of uts namespaces
+Date: Tue, 19 Jul 2016 20:21:34 -0500
+Message-ID: <20160720012138.7894-6-ebiederm@xmission.com>
 References: <8737n5dscy.fsf@x220.int.ebiederm.org>
 	<20160720012138.7894-1-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -25,92 +25,100 @@ List-Id: containers.vger.kernel.org
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
  include/linux/user_namespace.h |  1 +
- kernel/pid_namespace.c         | 22 ++++++++++++++++++----
  kernel/user_namespace.c        |  1 +
- 3 files changed, 20 insertions(+), 4 deletions(-)
+ kernel/utsname.c               | 31 ++++++++++++++++++++++++++-----
+ 3 files changed, 28 insertions(+), 5 deletions(-)
 
 diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index 6fbb2cb6e55c..80e7e5084f7d 100644
+index 80e7e5084f7d..10bb012a71d7 100644
 --- a/include/linux/user_namespace.h
 +++ b/include/linux/user_namespace.h
-@@ -24,6 +24,7 @@ struct uid_gid_map {	/* 64 bytes -- 1 cache line */
- 
+@@ -25,6 +25,7 @@ struct uid_gid_map {	/* 64 bytes -- 1 cache line */
  enum ucounts {
  	UCOUNT_USER_NAMESPACES,
-+	UCOUNT_PID_NAMESPACES,
+ 	UCOUNT_PID_NAMESPACES,
++	UCOUNT_UTS_NAMESPACES,
  	UCOUNT_MAX,
  };
  
-diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
-index a65ba137fd15..049cc14ae37a 100644
---- a/kernel/pid_namespace.c
-+++ b/kernel/pid_namespace.c
-@@ -79,6 +79,16 @@ static void proc_cleanup_work(struct work_struct *work)
- /* MAX_PID_NS_LEVEL is needed for limiting size of 'struct pid' */
- #define MAX_PID_NS_LEVEL 32
- 
-+static bool inc_pid_namespaces(struct user_namespace *ns)
-+{
-+	return inc_ucount(ns, UCOUNT_PID_NAMESPACES);
-+}
-+
-+static void dec_pid_namespaces(struct user_namespace *ns)
-+{
-+	dec_ucount(ns, UCOUNT_PID_NAMESPACES);
-+}
-+
- static struct pid_namespace *create_pid_namespace(struct user_namespace *user_ns,
- 	struct pid_namespace *parent_pid_ns)
- {
-@@ -87,15 +97,16 @@ static struct pid_namespace *create_pid_namespace(struct user_namespace *user_ns
- 	int i;
- 	int err;
- 
--	if (level > MAX_PID_NS_LEVEL) {
--		err = -EINVAL;
-+	err = -EINVAL;
-+	if (level > MAX_PID_NS_LEVEL)
-+		goto out;
-+	if (!inc_pid_namespaces(user_ns))
- 		goto out;
--	}
- 
- 	err = -ENOMEM;
- 	ns = kmem_cache_zalloc(pid_ns_cachep, GFP_KERNEL);
- 	if (ns == NULL)
--		goto out;
-+		goto out_dec;
- 
- 	ns->pidmap[0].page = kzalloc(PAGE_SIZE, GFP_KERNEL);
- 	if (!ns->pidmap[0].page)
-@@ -129,6 +140,8 @@ out_free_map:
- 	kfree(ns->pidmap[0].page);
- out_free:
- 	kmem_cache_free(pid_ns_cachep, ns);
-+out_dec:
-+	dec_pid_namespaces(user_ns);
- out:
- 	return ERR_PTR(err);
- }
-@@ -146,6 +159,7 @@ static void destroy_pid_namespace(struct pid_namespace *ns)
- 	ns_free_inum(&ns->ns);
- 	for (i = 0; i < PIDMAP_ENTRIES; i++)
- 		kfree(ns->pidmap[i].page);
-+	dec_pid_namespaces(ns->user_ns);
- 	put_user_ns(ns->user_ns);
- 	call_rcu(&ns->rcu, delayed_free_pidns);
- }
 diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 8b5e66fba8bf..d9c3275278f5 100644
+index d9c3275278f5..4e019620f297 100644
 --- a/kernel/user_namespace.c
 +++ b/kernel/user_namespace.c
-@@ -77,6 +77,7 @@ static int max = INT_MAX - 1;
- 
+@@ -78,6 +78,7 @@ static int max = INT_MAX - 1;
  static struct ctl_table userns_table[] = {
  	UCOUNT_ENTRY("max_user_namespaces"),
-+	UCOUNT_ENTRY("max_pid_namespaces"),
+ 	UCOUNT_ENTRY("max_pid_namespaces"),
++	UCOUNT_ENTRY("max_uts_namespaces"),
  	{ }
  };
  #endif /* CONFIG_SYSCTL */
+diff --git a/kernel/utsname.c b/kernel/utsname.c
+index 831ea7108232..4f13c0419d64 100644
+--- a/kernel/utsname.c
++++ b/kernel/utsname.c
+@@ -17,6 +17,16 @@
+ #include <linux/user_namespace.h>
+ #include <linux/proc_ns.h>
+ 
++static bool inc_uts_namespaces(struct user_namespace *ns)
++{
++	return inc_ucount(ns, UCOUNT_UTS_NAMESPACES);
++}
++
++static void dec_uts_namespaces(struct user_namespace *ns)
++{
++	dec_ucount(ns, UCOUNT_UTS_NAMESPACES);
++}
++
+ static struct uts_namespace *create_uts_ns(void)
+ {
+ 	struct uts_namespace *uts_ns;
+@@ -38,15 +48,18 @@ static struct uts_namespace *clone_uts_ns(struct user_namespace *user_ns,
+ 	struct uts_namespace *ns;
+ 	int err;
+ 
++	err = -ENFILE;
++	if (!inc_uts_namespaces(user_ns))
++		goto fail;
++
++	err = -ENOMEM;
+ 	ns = create_uts_ns();
+ 	if (!ns)
+-		return ERR_PTR(-ENOMEM);
++		goto fail_dec;
+ 
+ 	err = ns_alloc_inum(&ns->ns);
+-	if (err) {
+-		kfree(ns);
+-		return ERR_PTR(err);
+-	}
++	if (err)
++		goto fail_free;
+ 
+ 	ns->ns.ops = &utsns_operations;
+ 
+@@ -55,6 +68,13 @@ static struct uts_namespace *clone_uts_ns(struct user_namespace *user_ns,
+ 	ns->user_ns = get_user_ns(user_ns);
+ 	up_read(&uts_sem);
+ 	return ns;
++
++fail_free:
++	kfree(ns);
++fail_dec:
++	dec_uts_namespaces(user_ns);
++fail:
++	return ERR_PTR(err);
+ }
+ 
+ /*
+@@ -85,6 +105,7 @@ void free_uts_ns(struct kref *kref)
+ 	struct uts_namespace *ns;
+ 
+ 	ns = container_of(kref, struct uts_namespace, kref);
++	dec_uts_namespaces(ns->user_ns);
+ 	put_user_ns(ns->user_ns);
+ 	ns_free_inum(&ns->ns);
+ 	kfree(ns);
 -- 
 2.8.3
