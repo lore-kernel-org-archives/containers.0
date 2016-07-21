@@ -1,17 +1,17 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 03/10] userns: Add a limit on the number of user namespaces
-Date: Thu, 21 Jul 2016 10:23:27 -0500
-Message-ID: <878twv6mmo.fsf@x220.int.ebiederm.org>
+Subject: Re: [PATCH 02/10] userns: Add per user namespace sysctls.
+Date: Thu, 21 Jul 2016 10:37:20 -0500
+Message-ID: <87vazz57f3.fsf@x220.int.ebiederm.org>
 References: <8737n5dscy.fsf@x220.int.ebiederm.org>
 	<20160720012138.7894-1-ebiederm@xmission.com>
-	<20160720012138.7894-3-ebiederm@xmission.com>
-	<578F2233.2040708@kyup.com>
+	<20160720012138.7894-2-ebiederm@xmission.com>
+	<578F1A00.6030701@kyup.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <578F2233.2040708-6AxghH7DbtA@public.gmane.org> (Nikolay Borisov's message of "Wed,
-	20 Jul 2016 10:03:15 +0300")
+In-Reply-To: <578F1A00.6030701-6AxghH7DbtA@public.gmane.org> (Nikolay Borisov's message of "Wed,
+	20 Jul 2016 09:28:16 +0300")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,117 +27,185 @@ List-Id: containers.vger.kernel.org
 
 Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org> writes:
 
+> Just a couple of nits.
+>
 > On 07/20/2016 04:21 AM, Eric W. Biederman wrote:
-[snip]
->> +static bool inc_user_namespaces(struct user_namespace *ns)
->> +{
->> +	struct user_namespace *pos, *bad;
->> +	for (pos = ns; pos; pos = pos->parent) {
->> +		int max = READ_ONCE(pos->max_user_namespaces);
->> +		int sum = atomic_inc_return(&pos->user_namespaces);
->> +		if (sum > max)
->> +			goto fail;
->> +	}
->> +	return true;
->> +fail:
->> +	bad = pos;
->> +	atomic_dec(&pos->user_namespaces);
->> +	for (pos = ns; pos != bad; pos = pos->parent)
->> +		atomic_dec(&pos->user_namespaces);
->> +
->> +	return false;
->> +}
->> +
->> +static void dec_user_namespaces(struct user_namespace *ns)
->> +{
->> +	struct user_namespace *pos;
->> +	for (pos = ns; pos; pos = pos->parent) {
->> +		int dec = atomic_dec_if_positive(&pos->user_namespaces);
->> +		WARN_ON_ONCE(dec < 0);
->> +	}
->> +}
->
-> Here you are essentially duplicating the logic of
-> page_counter_try_charge and page_counter_uncharge. Perhaps the code of
-> the page_counter can be moved away from mm/ and into kernel and the
-> renamed to something more generic? E.g. the removed resource_counters or
-> maybe "hierarchical counters"? If more namespaces are added in the
-> future we certainly wouldn't want proliferation of pairs of such
-> hierarchical inc/dec functions.
-
-
-There are a couple of issues with using the logic of
-page_counter_try_charge.  
-
-- It is a maintenance issue.  AKA it ties the fate of two things that
-  otherwise should be independent.
-
-- Inc/dec is much easier to protect against interger underflow/overflow
-  than a counter that adds/removes arbitrary charges.  While a great
-  inspiration when I looked at page_counter_xxx I believe I saw
-  issues with the handling of large charges that could cause problems
-  in the general case.
-
-- Where we can reuse the logic I actually do in the next patch.
-
-- Having looked at some of the counter cases for things like this aiming
-  for general reuse at this point is actually an anti-pattern.  The
-  fundamental question is what is a reasonable number of instances for
-  this resource and as such how do we know when an application is
-  broken.  That really depends on the resource and inotify resources are
-  very very different from these name space counters for example.  Which
-  means there is no one size fits all design.  As such I oppose code
-  that suggests that a one size fits all design is the way to go.
-
-So I think the way this needs to go is for hierarchical resources to
-have their own paired functions for readability if nothing else, and if
-there is a common pattern we can abstract it out as it is observed.
-Which limits the changes to those paired functions.
-
->> +
->>  /*
->>   * Create a new user namespace, deriving the creator from the user in the
->>   * passed credentials, and replacing that user with the new root user for the
->> @@ -128,8 +169,12 @@ int create_user_ns(struct cred *new)
->>  	kgid_t group = new->egid;
->>  	int ret;
+>> Limit per userns sysctls to only be opened for write by a holder
+>> of CAP_SYS_RESOURCE.
+>> 
+>> Add all of the necessary boilerplate for having per user namespace
+>> sysctls.
+>> 
+>> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>> ---
+>>  include/linux/user_namespace.h |  4 ++
+>>  kernel/user_namespace.c        | 92 +++++++++++++++++++++++++++++++++++++++++-
+>>  2 files changed, 94 insertions(+), 2 deletions(-)
+>> 
+>> diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+>> index 9217169c64cb..7d59af1f08f1 100644
+>> --- a/include/linux/user_namespace.h
+>> +++ b/include/linux/user_namespace.h
+>> @@ -39,6 +39,10 @@ struct user_namespace {
+>>  	struct key		*persistent_keyring_register;
+>>  	struct rw_semaphore	persistent_keyring_register_sem;
+>>  #endif
+>> +#ifdef CONFIG_SYSCTL
+>> +	struct ctl_table_set	set;
+>> +	struct ctl_table_header *sysctls;
+>> +#endif
+>>  };
 >>  
->> +	ret = -EUSERS;
->>  	if (parent_ns->level > 32)
->> -		return -EUSERS;
->> +		goto fail;
+>>  extern struct user_namespace init_user_ns;
+>> diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+>> index 68f594212759..b5b5cbb8fe92 100644
+>> --- a/kernel/user_namespace.c
+>> +++ b/kernel/user_namespace.c
+>> @@ -30,6 +30,70 @@ static bool new_idmap_permitted(const struct file *file,
+>>  				struct user_namespace *ns, int cap_setid,
+>>  				struct uid_gid_map *map);
+>>  
+>> +#ifdef CONFIG_SYSCTL
+>> +static struct ctl_table_set *
+>> +set_lookup(struct ctl_table_root *root)
+>> +{
+>> +	return &current->cred->user_ns->set;
+> Why not current_user_ns()->set?
+>
+>> +}
 >> +
->> +	if (!inc_user_namespaces(parent_ns))
->> +		goto fail;
+>> +static int set_is_seen(struct ctl_table_set *set)
+>> +{
+>> +	return &current->cred->user_ns->set == set;
+> DITTO
 >
-> I think it would be better if the simple "return -EUSERS" semantics is
-> saved and the "fail" label entirely nuked. In this case you only leave
-> the more complex error handling.
-
-I wrote it my preference. And this is all bike shedding.
-
-[snip]
->> @@ -165,6 +211,7 @@ int create_user_ns(struct cred *new)
->>  	ns->level = parent_ns->level + 1;
->>  	ns->owner = owner;
->>  	ns->group = group;
->> +	ns->max_user_namespaces = INT_MAX - 1;
+>> +}
+>> +
+>> +static int set_permissions(struct ctl_table_header *head,
+>> +				  struct ctl_table *table)
+>> +{
+>> +	struct user_namespace *user_ns =
+>> +		container_of(head->set, struct user_namespace, set);
+>> +	int mode;
+>> +
+>> +	/* Allow users with CAP_SYS_ADMIN unrestrainted access */
+> Just a minor nit: The comment and following code don't match.
 >
-> Do we want an INT_MAX -1 default initialization or inheritance from
-> parent's value?
+>> +	if (ns_capable(user_ns, CAP_SYS_RESOURCE))
+>> +		mode = (table->mode & S_IRWXU) >> 6;
+>> +	else
+>> +	/* Allow all others at most read-only access */
+>> +		mode = table->mode & S_IROTH;
+>> +	return (mode << 6) | (mode << 3) | mode;
+>> +}
+>> +
+>> +static struct ctl_table_root set_root = {
+>> +	.lookup = set_lookup,
+>> +	.permissions = set_permissions,
+>> +};
+>> +
+>> +static struct ctl_table userns_table[] = {
+>> +	{ }
+>> +};
+>> +#endif /* CONFIG_SYSCTL */
+>> +
+>> +static bool setup_userns_sysctls(struct user_namespace *ns)
+>> +{
+>> +#ifdef CONFIG_SYSCTL
+>> +	struct ctl_table *tbl;
+>> +	setup_sysctl_set(&ns->set, &set_root, set_is_seen);
+>> +	tbl = kmemdup(userns_table, sizeof(userns_table), GFP_KERNEL);
+>> +	if (tbl) {
+>> +		ns->sysctls = __register_sysctl_table(&ns->set, "userns", tbl);
+>> +	}
+>> +	if (!ns->sysctls) {
+>> +		kfree(tbl);
+>> +		retire_sysctl_set(&ns->set);
+>> +		return false;
+>> +	}
+>> +#endif
+>> +	return true;
+>> +}
+>> +
+>> +static void retire_userns_sysctls(struct user_namespace *ns)
+>> +{
+>> +#ifdef CONFIG_SYSCTL
+>> +	unregister_sysctl_table(ns->sysctls);
+>> +	retire_sysctl_set(&ns->set);
+>> +#endif
+>> +}
+>> +
+>>  static void set_cred_user_ns(struct cred *cred, struct user_namespace *user_ns)
+>>  {
+>>  	/* Start with the same capabilities as init but useless for doing
+>> @@ -107,12 +171,22 @@ int create_user_ns(struct cred *new)
+>>  	ns->flags = parent_ns->flags;
+>>  	mutex_unlock(&userns_state_mutex);
+>>  
+>> -	set_cred_user_ns(new, ns);
+>> -
+>>  #ifdef CONFIG_PERSISTENT_KEYRINGS
+>>  	init_rwsem(&ns->persistent_keyring_register_sem);
+>>  #endif
+>> +	ret = -ENOMEM;
+>> +	if (!setup_userns_sysctls(ns))
+>> +		goto fail_keyring;
+>> +
+>> +	set_cred_user_ns(new, ns);
+>>  	return 0;
+>> +fail_keyring:
+>> +#ifdef CONFIG_PERSISTENT_KEYRINGS
+>> +	key_put(ns->persistent_keyring_register);
+>> +#endif
+>> +	ns_free_inum(&ns->ns);
+>> +	kmem_cache_free(user_ns_cachep, ns);
+>> +	return ret;
+>>  }
+>>  
+>>  int unshare_userns(unsigned long unshare_flags, struct cred **new_cred)
+>> @@ -141,6 +215,7 @@ void free_user_ns(struct user_namespace *ns)
+>>  
+>>  	do {
+>>  		parent = ns->parent;
+>> +		retire_userns_sysctls(ns);
+>>  #ifdef CONFIG_PERSISTENT_KEYRINGS
+>>  		key_put(ns->persistent_keyring_register);
+>>  #endif
+>> @@ -1012,9 +1087,22 @@ const struct proc_ns_operations userns_operations = {
+>>  	.install	= userns_install,
+>>  };
+>>  
+>> +static struct ctl_table_header *userns_header;
+>>  static __init int user_namespaces_init(void)
+>>  {
+>> +	static struct ctl_table empty[1];
+>>  	user_ns_cachep = KMEM_CACHE(user_namespace, SLAB_PANIC);
+>> +
+>> +#ifdef CONFIG_SYSCTL
+>> +	/*
+>> +	 * Avoid limits in the sysctl limitation by registering
+>> +	 * "/proc/sys/userns" as an empty directory not in a network
+>> +	 * namespace.
+>> +	 */
+> The comment is not very clear to someone who is not intimately familiar
+> with the sysctl infrastructure, perhaps you can make it a bit more
+> verbose?
 
-I like (INT_MAX -1) because that is effectively a value meaning unlimited
-and as such that is the simplest possible thing to implement.  When you
-can set the value to anything in your namespace a default doesn't do
-anything and showing that your level of the hierarchy isn't limiting
-things but another level of the hiearchy is seems meaninful to me.
+Good point.  I don't think I can say meaningfully say much more than
+this is necessary, but I will see if I can improve the comment a little.
 
-I admit I have argued for other behavior in the past but when I sat down
-and looked at all of the alternatives I could not see a benefit from
-other behavior.
+>> +	userns_header = register_sysctl("userns", empty);
+>> +	BUG_ON(!userns_header);
+>> +#endif
+>> +	BUG_ON(!setup_userns_sysctls(&init_user_ns));
+> Do we really want the extra code the BUG_ON adds even in the
+> !CONFIG_SYSCTL case, possibly the compiler could eliminate it but I
+> can't help it but wonder.
 
-That said I'm not opposed to evolving how things work and make things
-work better.  This just looked like the best baseline to start the
-design from that I could see.
+BUG_ON is about two instructions so I am not too concerned.  When
+possible it is generally preferable to not have code in #ifdef XXX as
+then weird cases come up in maintenance.  In this case I am reworking
+things to do a bit better so that the code doesn't throw warnings when
+!CONFIG_SYSCTL.  Unnecessary warnings are the larger problem.
 
 Eric
