@@ -1,14 +1,19 @@
-From: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 0/5 RFC] Add an interface to discover relationships
-	between namespaces
-Date: Thu, 21 Jul 2016 16:41:12 +0200
-Message-ID: <c9bdaf3d-ec93-d754-81ac-9f524a0d0954__36726.840659003$1469112097$gmane$org@gmail.com>
-References: <1468520419-28220-1-git-send-email-avagin@openvz.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 02/10] userns: Add per user namespace sysctls.
+Date: Thu, 21 Jul 2016 09:41:12 -0500
+Message-ID: <87invz9hpz.fsf@x220.int.ebiederm.org>
+References: <8737n5dscy.fsf@x220.int.ebiederm.org>
+	<20160720012138.7894-1-ebiederm@xmission.com>
+	<20160720012138.7894-2-ebiederm@xmission.com>
+	<20160720051226.GC16885@mail.hallyn.com>
+	<87shv49ud0.fsf@x220.int.ebiederm.org>
+	<20160720164347.GA24378@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1468520419-28220-1-git-send-email-avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <20160720164347.GA24378-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
+	message of "Wed, 20 Jul 2016 11:43:47 -0500")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,67 +23,43 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Andrey,
+"Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
 
-On 07/14/2016 08:20 PM, Andrey Vagin wrote:
-> Each namespace has an owning user namespace and now there is not way
-> to discover these relationships.
+> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+>> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
+>> 
+>> > Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+>> >> +static bool setup_userns_sysctls(struct user_namespace *ns)
+>> >> +{
+>> >> +#ifdef CONFIG_SYSCTL
+>> >> +	struct ctl_table *tbl;
+>> >> +	setup_sysctl_set(&ns->set, &set_root, set_is_seen);
+>> >> +	tbl = kmemdup(userns_table, sizeof(userns_table), GFP_KERNEL);
+>> >> +	if (tbl) {
+>> >> +		ns->sysctls = __register_sysctl_table(&ns->set, "userns", tbl);
+>> >> +	}
+>> >
+>> > What happens if tbl is null due to oom?  Would it be better to just
+>> > return false in that case here?
+>> 
+>> ns->sysctls is initialized to NULL and kfree(NULL) is a noop.
+>> So I don't see any problems.
+>> 
+>> I admit it isn't a usual pattern for error handling.
 >
-> Pid and user namepaces are hierarchical. There is no way to discover
-> parent-child relationships too.
->
-> Why we may want to know relationships between namespaces?
->
-> One use would be visualization, in order to understand the running system.
-> Another would be to answer the question: what capability does process X have to
-> perform operations on a resource governed by namespace Y?
->
-> One more use-case (which usually called abnormal) is checkpoint/restart.
-> In CRIU we age going to dump and restore nested namespaces.
->
-> There [1] was a discussion about which interface to choose to determing
-> relationships between namespaces.
->
-> Eric suggested to add two ioctl-s [2]:
->> Grumble, Grumble.  I think this may actually a case for creating ioctls
->> for these two cases.  Now that random nsfs file descriptors are bind
->> mountable the original reason for using proc files is not as pressing.
->>
->> One ioctl for the user namespace that owns a file descriptor.
->> One ioctl for the parent namespace of a namespace file descriptor.
->
-> Here is an implementaions of these ioctl-s.
+> Right I didn't mean that - I meant, is there a way that a namespace
+> could end up escaping its limits as a result?  I think not, since
+> either it has hierarchical limits which will still be enforced, or
+> the admin tries to set a new limit and that step will fail visibly,
+> which suffices.
 
-Could you add here an of the API in detail: what do these FDs refer to,
-and how do you use them to solve the use case? And could you you add
-that info to the commit messages please.
-
-Thanks,
-
-Michael
+And what I meant is that we do actually return false in the case you are
+worrying about.  And if we return false we don't even create the user
+namespace.
 
 
-> [1] https://lkml.org/lkml/2016/7/6/158
-> [2] https://lkml.org/lkml/2016/7/9/101
->
-> Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> Cc: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-> Cc: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> Cc: "W. Trevor King" <wking-vJI2gpByivqcqzYg7KEe8g@public.gmane.org>
-> Cc: Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-> Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
->
-> --
-> 2.5.5
->
->
-
-
--- 
-Michael Kerrisk
-Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
-Linux/UNIX System Programming Training: http://man7.org/training/
+Eric
