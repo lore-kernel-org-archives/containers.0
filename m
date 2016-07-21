@@ -1,19 +1,15 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 02/10] userns: Add per user namespace sysctls.
-Date: Thu, 21 Jul 2016 09:41:12 -0500
-Message-ID: <87invz9hpz.fsf@x220.int.ebiederm.org>
+Subject: Re: [PATCH 0/10] userns: sysctl limits for namespaces
+Date: Thu, 21 Jul 2016 09:49:20 -0500
+Message-ID: <8760rz9hcf.fsf@x220.int.ebiederm.org>
 References: <8737n5dscy.fsf@x220.int.ebiederm.org>
-	<20160720012138.7894-1-ebiederm@xmission.com>
-	<20160720012138.7894-2-ebiederm@xmission.com>
-	<20160720051226.GC16885@mail.hallyn.com>
-	<87shv49ud0.fsf@x220.int.ebiederm.org>
-	<20160720164347.GA24378@mail.hallyn.com>
+	<CAGXu5jKWjHKxtPSGuogjR+XE+SbNWiUp2bOxugpD+hUex9QeZA@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20160720164347.GA24378-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
-	message of "Wed, 20 Jul 2016 11:43:47 -0500")
+In-Reply-To: <CAGXu5jKWjHKxtPSGuogjR+XE+SbNWiUp2bOxugpD+hUex9QeZA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Kees Cook's message of "Tue, 19 Jul 2016 21:02:48 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,43 +19,41 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>
+To: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
+Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org> writes:
 
-> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
->> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
->> 
->> > Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
->> >> +static bool setup_userns_sysctls(struct user_namespace *ns)
->> >> +{
->> >> +#ifdef CONFIG_SYSCTL
->> >> +	struct ctl_table *tbl;
->> >> +	setup_sysctl_set(&ns->set, &set_root, set_is_seen);
->> >> +	tbl = kmemdup(userns_table, sizeof(userns_table), GFP_KERNEL);
->> >> +	if (tbl) {
->> >> +		ns->sysctls = __register_sysctl_table(&ns->set, "userns", tbl);
->> >> +	}
->> >
->> > What happens if tbl is null due to oom?  Would it be better to just
->> > return false in that case here?
->> 
->> ns->sysctls is initialized to NULL and kfree(NULL) is a noop.
->> So I don't see any problems.
->> 
->> I admit it isn't a usual pattern for error handling.
+> On Tue, Jul 19, 2016 at 6:13 PM, Eric W. Biederman
+> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+>>
+>> This patchset addresses two use cases:
+>> - Implement a sane upper bound on the number of namespaces.
+>> - Provide a way for sandboxes to limit the attack surface from
+>>   namespaces.
+>>
+>> The maximum sane case I can imagine is if every process is a fat
+>> process, so I set the maximum number of namespaces to the maximum
+>> number of threads.
+>>
+>> I make these limits recursive and per user namespace so that a
+>> usernamespace root can reduce the limits further.  If a user namespace
+>> root raises the limit the limit in the parent namespace will be honored.
+>>
+>> I have cut this implementation to the bare minimum needed to achieve
+>> these objections.
+>>
+>> Assuming nothing problematic shows up in the review I will add these to
+>> my user namespace tree.
 >
-> Right I didn't mean that - I meant, is there a way that a namespace
-> could end up escaping its limits as a result?  I think not, since
-> either it has hierarchical limits which will still be enforced, or
-> the admin tries to set a new limit and that step will fail visibly,
-> which suffices.
+> This looks great; thank you! I think the design is effective. One
+> thought that pops to mind is how does an admin query the current
+> number of active namespaces of a given type? (It's likely this is
+> already exposed somewhere and I just don't know where to look...)
 
-And what I meant is that we do actually return false in the case you are
-worrying about.  And if we return false we don't even create the user
-namespace.
-
+The current way would be to look at /proc/<pid>/ns/... and count
+unique inodes that show up.  Which isn't very awesome but it is what
+exists today.
 
 Eric
