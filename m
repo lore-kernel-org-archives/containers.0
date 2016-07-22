@@ -1,14 +1,14 @@
-From: Colin Walters <walters-gPq2gbYjIk8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH v2 00/10] userns: sysctl limits for namespaces
-Date: Fri, 22 Jul 2016 09:33:19 -0400
-Message-ID: <1469194399.3817016.673814953.7581706C__32379.2670890272$1469194783$gmane$org@webmail.messagingengine.com>
-References: <8737n5dscy.fsf@x220.int.ebiederm.org>
-	<87d1m754jc.fsf@x220.int.ebiederm.org>
+From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+Subject: Re: [Ksummit-discuss] [TECH TOPIC] Containerisation, namespaces and
+	keyrings
+Date: Fri, 22 Jul 2016 07:51:05 -0700
+Message-ID: <1469199065.2382.21.camel@HansenPartnership.com>
+References: <15842.1469185302@warthog.procyon.org.uk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87d1m754jc.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <15842.1469185302-S6HVgzuS8uM4Awkfq6JHfwNdhmdF6hFW@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,31 +18,65 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>
+To: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, ksummit-discuss-cunTk1MwBs98uUxBSJOaYoYkZiVZrdSR2LY78lusg7I@public.gmane.org
+Cc: ikent-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Jul 21, 2016, at 12:39 PM, Eric W. Biederman wrote:
+On Fri, 2016-07-22 at 12:01 +0100, David Howells wrote:
+> I'm not sure this is the right venue for this, but keyrings will need 
+> to be namespaced/containerised at some point.
+
+There are various unvirtualised subsystems within Linux.  There has
+been discussion on the containers mailing list about how:
+
+http://thread.gmane.org/gmane.linux.kernel.containers/30371
+
+So far Eric has advocated for making things like this properties of the
+user namespace; I'm more inclined to a separate namespace for
+delegates, but nothing's been decided.
+
+Proposing on the containers list should be your first step (I've added
+the list to the cc).
+
+> The problem is that it's an icky problem given that different key 
+> types really want to live in different namespaces, and upcalls may 
+> want to done in different containers, depending on the key type.
+
+Surely if you virtualize, you'll have a namespace label per key (or
+keyring) so they'll be in one and only one namespace.
+
+The upcall problem sounds like it might be similar to the nfsd one,
+which is nasty.  Describing it on the list would help people
+understand.
+
+> For example, DNS resolver keys - should they be in the network, the 
+> filesystem namespace or neither?  Should the upcall be in the current 
+> container or the root container?
+
+Depends what the upcall does.
+
+> Authentication keys, such as used by kafs and AF_RXRPC - should they 
+> be in the filesystem namespace (kafs is an fs), the network namespace 
+> (AF_RXRPC is a net protocol) or the user namespace?
+
+I'm sort of starting to see Eric's point now, since every namespace has
+an owning user namespace, if they were in that the question is
+naturally answered.
+
+> Should crypto keys, such as the asymmetric key type, be in the user 
+> namespace? What about use by module signing?  Should key operations 
+> in the current container have access to a blacklist in the root 
+> container?  Should key verification in the current container have 
+> access to system keyrings?   The TPM?
 > 
-> This patchset addresses two use cases:
-> - Implement a sane upper bound on the number of namespaces.
-> - Provide a way for sandboxes to limit the attack surface from
->   namespaces.
+> This might actually be right for a hallway track.
 
-Perhaps this is obvious, but since you didn't quite explicitly state it;
-do you see this as obsoleting the existing downstream patches
-mentioned in:
-https://lwn.net/Articles/673597/
-It seems conceptually similar to Kees' original approach, right?
+Actually, I really think this isn't a KS issue, it should be proposed
+for the Plumbers Containers MC:
 
-The high level makes sense to me...most interesting is
-per-userns sysctls.  I'll note most current container managers
-mount /proc/sys read-only, and Docker specifically drops
-CAP_SYS_RESOURCE by default, so they'd likely need to learn
-how to undo that if one wanted to support recursive container usage.
-We'd probably need to evaluate the safety of having /proc/sys
-writable generally.  (Also it's rather common to filter out CLONE_NEWUSER
-via seccomp, but that's easy to undo)
+http://www.linuxplumbersconf.org/2016/ocw/events/LPC2016/tracks/519
 
-But that's the flip side - if we're aiming primarily for an upstreamable
-way to *limit* namespace usage, it seems sane to me.
+You have all the correct people in that session.  At KS you'll have 50%
+bored, 48% hostile because they hate cgroups and 2% interested.
+
+James
