@@ -1,16 +1,16 @@
-From: Andrew Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
+From: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: [PATCH 0/5 RFC] Add an interface to discover relationships
 	between namespaces
-Date: Thu, 21 Jul 2016 14:06:50 -0700
-Message-ID: <20160721210650.GA10989@outlook.office365.com>
+Date: Fri, 22 Jul 2016 08:48:03 +0200
+Message-ID: <1515f5f2-5a49-fcab-61f4-8b627d3ba3e2@gmail.com>
 References: <1468520419-28220-1-git-send-email-avagin@openvz.org>
 	<c9bdaf3d-ec93-d754-81ac-9f524a0d0954@gmail.com>
+	<20160721210650.GA10989@outlook.office365.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="GvXjxJ+pjyke8COw"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <c9bdaf3d-ec93-d754-81ac-9f524a0d0954-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <20160721210650.GA10989-1ViLX0X+lBJGNQ1M2rI3KwRV3xvJKrda@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,174 +20,53 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: Andrew Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
+Cc: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
---GvXjxJ+pjyke8COw
-Content-Type: text/plain; charset="utf-8"
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Thu, Jul 21, 2016 at 04:41:12PM +0200, Michael Kerrisk (man-pages) wro=
-te:
-> Hi Andrey,
->=20
-> On 07/14/2016 08:20 PM, Andrey Vagin wrote:
-
-<snip>
-
->=20
-> Could you add here an of the API in detail: what do these FDs refer to,
-> and how do you use them to solve the use case? And could you you add
-> that info to the commit messages please.
-
-Hi Michael,
-
-A patch for man-pages is attached. It adds the following text to
-namespaces(7).
-
-Since  Linux 4.X, the following ioctl(2) calls are supported for names=E2=
-=80=90
-pace file descriptors.  The correct syntax is:
-
-      fd =3D ioctl(ns_fd, ioctl_type);
-
-where ioctl_type is one of the following:
-
-NS_GET_USERNS
-      Returns a file descriptor that refers to an owning  user  names=E2=80=
-=90
-      pace.
-
-NS_GET_PARENT
-      Returns  a  file  descriptor  that refers to a parent namespace.
-      This ioctl(2) can be used for pid and user namespaces. For  user
-      namespaces,  NS_GET_PARENT and NS_GET_USERNS have the same mean=E2=80=
-=90
-      ing.
-
-In addition to generic ioctl(2) errors, the following specific ones can
-occur:
-
-EINVAL NS_GET_PARENT was called for a nonhierarchical namespace.
-
-EPERM  The  requested  namespace  is  outside  of the current namespace
-      scope.
-
-ENOENT ns_fd refers to the init namespace.
-
-Thanks,
-Andrew
-
->=20
-> Thanks,
->=20
-> Michael
->=20
->=20
-> > [1] https://lkml.org/lkml/2016/7/6/158
-> > [2] https://lkml.org/lkml/2016/7/9/101
-> >=20
-> > Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> > Cc: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-> > Cc: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> > Cc: "W. Trevor King" <wking-vJI2gpByivqcqzYg7KEe8g@public.gmane.org>
-> > Cc: Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-> > Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-> >=20
-> > --
-> > 2.5.5
-> >=20
-> >=20
->=20
->=20
-> --=20
-> Michael Kerrisk
-> Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
-> Linux/UNIX System Programming Training: http://man7.org/training/
-
---GvXjxJ+pjyke8COw
-Content-Type: text/plain; charset="koi8-r"
-Content-Disposition: attachment;
-	filename="0001-namespace.7-descirbe-NS_GET_USERNS-and-NS_GET-PARENT.patch"
-
-From 4b9194026f901c2247150bb3038c41658700f6dd Mon Sep 17 00:00:00 2001
-From: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Date: Thu, 21 Jul 2016 13:58:06 -0700
-Subject: [PATCH] namespace.7: descirbe NS_GET_USERNS and NS_GET-PARENT ioctl-s
-
-Signed-off-by: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
----
- man7/namespaces.7 | 43 +++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 43 insertions(+)
-
-diff --git a/man7/namespaces.7 b/man7/namespaces.7
-index 98ed3e5..207e4a5 100644
---- a/man7/namespaces.7
-+++ b/man7/namespaces.7
-@@ -149,6 +149,49 @@ even if all processes in the namespace terminate.
- The file descriptor can be passed to
- .BR setns (2).
- 
-+Since Linux 4.X, the following
-+.BR ioctl (2)
-+calls are supported for namespace file descriptors.
-+The correct syntax is:
-+.PP
-+.RS
-+.nf
-+.IB fd " = ioctl(" ns_fd ", " ioctl_type ");"
-+.fi
-+.RE
-+.PP
-+where
-+.I ioctl_type
-+is one of the following:
-+.TP
-+.B NS_GET_USERNS
-+Returns a file descriptor that refers to an owning user namespace.
-+.TP
-+.B NS_GET_PARENT
-+Returns a file descriptor that refers to a parent namespace. This
-+.BR ioctl (2)
-+can be used for pid and user namespaces. For user namespaces,
-+.B NS_GET_PARENT
-+and
-+.B NS_GET_USERNS
-+have the same meaning.
-+.PP
-+In addition to generic
-+.BR ioctl (2)
-+errors, the following specific ones can occur:
-+.PP
-+.TP
-+.B EINVAL
-+.B NS_GET_PARENT
-+was called for a nonhierarchical namespace.
-+.TP
-+.B EPERM
-+The requested namespace is outside of the current namespace scope.
-+.TP
-+.B ENOENT
-+.IB ns_fd
-+refers to the init namespace.
-+.PP
- In Linux 3.7 and earlier, these files were visible as hard links.
- Since Linux 3.8, they appear as symbolic links.
- If two processes are in the same namespace, then the inode numbers of their
--- 
-2.5.5
-
-
---GvXjxJ+pjyke8COw
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---GvXjxJ+pjyke8COw--
+SGkgQW5kcmV5LAoKT24gMDcvMjEvMjAxNiAxMTowNiBQTSwgQW5kcmV3IFZhZ2luIHdyb3RlOgo+
+IE9uIFRodSwgSnVsIDIxLCAyMDE2IGF0IDA0OjQxOjEyUE0gKzAyMDAsIE1pY2hhZWwgS2Vycmlz
+ayAobWFuLXBhZ2VzKSB3cm90ZToKPj4gSGkgQW5kcmV5LAo+Pgo+PiBPbiAwNy8xNC8yMDE2IDA4
+OjIwIFBNLCBBbmRyZXkgVmFnaW4gd3JvdGU6Cj4KPiA8c25pcD4KPgo+Pgo+PiBDb3VsZCB5b3Ug
+YWRkIGhlcmUgYW4gb2YgdGhlIEFQSSBpbiBkZXRhaWw6IHdoYXQgZG8gdGhlc2UgRkRzIHJlZmVy
+IHRvLAo+PiBhbmQgaG93IGRvIHlvdSB1c2UgdGhlbSB0byBzb2x2ZSB0aGUgdXNlIGNhc2U/IEFu
+ZCBjb3VsZCB5b3UgeW91IGFkZAo+PiB0aGF0IGluZm8gdG8gdGhlIGNvbW1pdCBtZXNzYWdlcyBw
+bGVhc2UuCj4KPiBIaSBNaWNoYWVsLAo+Cj4gQSBwYXRjaCBmb3IgbWFuLXBhZ2VzIGlzIGF0dGFj
+aGVkLiBJdCBhZGRzIHRoZSBmb2xsb3dpbmcgdGV4dCB0bwo+IG5hbWVzcGFjZXMoNykuCj4KPiBT
+aW5jZSAgTGludXggNC5YLCB0aGUgZm9sbG93aW5nIGlvY3RsKDIpIGNhbGxzIGFyZSBzdXBwb3J0
+ZWQgZm9yIG5hbWVz4oCQCj4gcGFjZSBmaWxlIGRlc2NyaXB0b3JzLiAgVGhlIGNvcnJlY3Qgc3lu
+dGF4IGlzOgo+Cj4gICAgICAgZmQgPSBpb2N0bChuc19mZCwgaW9jdGxfdHlwZSk7Cj4KPiB3aGVy
+ZSBpb2N0bF90eXBlIGlzIG9uZSBvZiB0aGUgZm9sbG93aW5nOgo+Cj4gTlNfR0VUX1VTRVJOUwo+
+ICAgICAgIFJldHVybnMgYSBmaWxlIGRlc2NyaXB0b3IgdGhhdCByZWZlcnMgdG8gYW4gb3duaW5n
+ICB1c2VyICBuYW1lc+KAkAo+ICAgICAgIHBhY2UuCj4KPiBOU19HRVRfUEFSRU5UCj4gICAgICAg
+UmV0dXJucyAgYSAgZmlsZSAgZGVzY3JpcHRvciAgdGhhdCByZWZlcnMgdG8gYSBwYXJlbnQgbmFt
+ZXNwYWNlLgo+ICAgICAgIFRoaXMgaW9jdGwoMikgY2FuIGJlIHVzZWQgZm9yIHBpZCBhbmQgdXNl
+ciBuYW1lc3BhY2VzLiBGb3IgIHVzZXIKPiAgICAgICBuYW1lc3BhY2VzLCAgTlNfR0VUX1BBUkVO
+VCBhbmQgTlNfR0VUX1VTRVJOUyBoYXZlIHRoZSBzYW1lIG1lYW7igJAKPiAgICAgICBpbmcuCj4K
+PiBJbiBhZGRpdGlvbiB0byBnZW5lcmljIGlvY3RsKDIpIGVycm9ycywgdGhlIGZvbGxvd2luZyBz
+cGVjaWZpYyBvbmVzIGNhbgo+IG9jY3VyOgo+Cj4gRUlOVkFMIE5TX0dFVF9QQVJFTlQgd2FzIGNh
+bGxlZCBmb3IgYSBub25oaWVyYXJjaGljYWwgbmFtZXNwYWNlLgo+Cj4gRVBFUk0gIFRoZSAgcmVx
+dWVzdGVkICBuYW1lc3BhY2UgIGlzICBvdXRzaWRlICBvZiB0aGUgY3VycmVudCBuYW1lc3BhY2UK
+PiAgICAgICBzY29wZS4KPgo+IEVOT0VOVCBuc19mZCByZWZlcnMgdG8gdGhlIGluaXQgbmFtZXNw
+YWNlLgoKVGhhbmtzIGZvciB0aGlzLiBCdXQgc3RpbGwgcGFydCBvZiB0aGUgcXVlc3Rpb24gcmVt
+YWlucyB1bmFuc3dlcmVkLgpIb3cgZG8gd2UgKGluIHVzZXItc3BhY2UpIHVzZSB0aGUgZmlsZSBk
+ZXNjcmlwdG9ycyB0byBhbnN3ZXIgYW55IG9mCnRoZSBxdWVzdGlvbnMgdGhhdCB0aGlzIHBhdGNo
+IHNlcmllcyB3YXMgZGVzaWduZWQgdG8gc29sdmU/IChUaGlzCmluZm8gc2hvdWxkIGJlIGluIHRo
+ZSBjb21taXQgbWVzc2FnZSBhbmQgdGhlIG1hbi1wYWdlcyBwYXRjaC4pCgpUaGFua3MsCgpNaWNo
+YWVsCgoKPj4+IFsxXSBodHRwczovL2xrbWwub3JnL2xrbWwvMjAxNi83LzYvMTU4Cj4+PiBbMl0g
+aHR0cHM6Ly9sa21sLm9yZy9sa21sLzIwMTYvNy85LzEwMQo+Pj4KPj4+IENjOiAiRXJpYyBXLiBC
+aWVkZXJtYW4iIDxlYmllZGVybUB4bWlzc2lvbi5jb20+Cj4+PiBDYzogSmFtZXMgQm90dG9tbGV5
+IDxKYW1lcy5Cb3R0b21sZXlASGFuc2VuUGFydG5lcnNoaXAuY29tPgo+Pj4gQ2M6ICJNaWNoYWVs
+IEtlcnJpc2sgKG1hbi1wYWdlcykiIDxtdGsubWFucGFnZXNAZ21haWwuY29tPgo+Pj4gQ2M6ICJX
+LiBUcmV2b3IgS2luZyIgPHdraW5nQHRyZW1pbHkudXM+Cj4+PiBDYzogQWxleGFuZGVyIFZpcm8g
+PHZpcm9AemVuaXYubGludXgub3JnLnVrPgo+Pj4gQ2M6IFNlcmdlIEhhbGx5biA8c2VyZ2UuaGFs
+bHluQGNhbm9uaWNhbC5jb20+Cj4+Pgo+Pj4gLS0KPj4+IDIuNS41Cj4+Pgo+Pj4KPj4KPj4KPj4g
+LS0KPj4gTWljaGFlbCBLZXJyaXNrCj4+IExpbnV4IG1hbi1wYWdlcyBtYWludGFpbmVyOyBodHRw
+Oi8vd3d3Lmtlcm5lbC5vcmcvZG9jL21hbi1wYWdlcy8KPj4gTGludXgvVU5JWCBTeXN0ZW0gUHJv
+Z3JhbW1pbmcgVHJhaW5pbmc6IGh0dHA6Ly9tYW43Lm9yZy90cmFpbmluZy8KCgotLSAKTWljaGFl
+bCBLZXJyaXNrCkxpbnV4IG1hbi1wYWdlcyBtYWludGFpbmVyOyBodHRwOi8vd3d3Lmtlcm5lbC5v
+cmcvZG9jL21hbi1wYWdlcy8KTGludXgvVU5JWCBTeXN0ZW0gUHJvZ3JhbW1pbmcgVHJhaW5pbmc6
+IGh0dHA6Ly9tYW43Lm9yZy90cmFpbmluZy8KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0
+cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcv
+bWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
