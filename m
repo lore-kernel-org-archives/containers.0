@@ -1,14 +1,18 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [fs]  54cc07a761: BUG: kernel test crashed
-Date: Sat, 23 Jul 2016 16:52:48 -0500
-Message-ID: <87y44snhsf.fsf@x220.int.ebiederm.org>
-References: <5793dfa5.mvXPj4LJOS0dlz3i%xiaolong.ye@intel.com>
+Subject: Re: [PATCH 0/5 RFC] Add an interface to discover relationships
+	between namespaces
+Date: Sat, 23 Jul 2016 16:56:44 -0500
+Message-ID: <87mvl8nhlv.fsf__48180.1269263544$1469311818$gmane$org@x220.int.ebiederm.org>
+References: <1468520419-28220-1-git-send-email-avagin@openvz.org>
+	<20160723211414.GA25371@odin.tremily.us>
+	<1469309936.2332.35.camel@HansenPartnership.com>
+	<20160723215802.GO24913@odin.tremily.us>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <5793dfa5.mvXPj4LJOS0dlz3i%xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org> (kernel test
-	robot's message of "Sun, 24 Jul 2016 05:20:37 +0800")
+In-Reply-To: <20160723215802.GO24913-q4NCUed9G3sTnwFZoN752g@public.gmane.org> (W. Trevor King's
+	message of "Sat, 23 Jul 2016 14:58:02 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,39 +22,58 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: kernel test robot <xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkp-JC7UmRfGjtg@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "W. Trevor King" <wking-vJI2gpByivqcqzYg7KEe8g@public.gmane.org>
+Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-kernel test robot <xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org> writes:
+"W. Trevor King" <wking-vJI2gpByivqcqzYg7KEe8g@public.gmane.org> writes:
 
-> FYI, we noticed the following commit:
+2> On Sat, Jul 23, 2016 at 02:38:56PM -0700, James Bottomley wrote:
+>> On Sat, 2016-07-23 at 14:14 -0700, W. Trevor King wrote:
+>> > namespaces(7) and clone(2) both have:
+>> > 
+>> >   When a network namespace is freed (i.e., when the last process
+>> >   in the namespace terminates), its physical network devices are
+>> >   moved back to the initial network namespace (not to the parent
+>> >   of the process).
+>> > 
+>> > So the initial network namespace (the head of net_namespace_list?)
+>> > is special [1].  To understand how physical network devices will
+>> > be handled, it seems like we want to treat network devices as a
+>> > depth-1 tree, with all non-initial net namespaces as children of
+>> > the initial net namespace.  Can we extend this series'
+>> > NS_GET_PARENT to return:
+>> > 
+>> > * EPERM for an unprivileged caller (like this series currently does
+>> >   for PID namespaces),
+>> > * ENOENT when called on net_namespace_list, and
+>> > * net_namespace_list when called on any other net namespace.
+>> 
+>> What's the practical application of this?  independent net
+>> namespaces are managed by the ip netns command.  It pins them by a
+>> bind mount in a flat fashion; if we make them hierarchical the tool
+>> would probably need updating to reflect this, so we're going to need
+>> a reason to give the network people.  Just having the interfaces not
+>> go back to root when you do an ip netns delete doesn't seem very
+>> compelling.
 >
-> https://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-testing
-> commit 54cc07a761deb38318aca64ddf07fc45157c85e0 ("fs: Call d_automount with the filesystems creds")
+> I'm not suggesting we add support for deeper nesting, I'm suggesting
+> we use NS_GET_PARENT to allow sufficiently privileged users to
+> determine if a given net namespace is the initial net namespace.  You
+> could do this already with something like:
 >
-> in testcase: boot
+> 1. Create a new net namespace.
+> 2. Add a physical network device to that namespace.
+> 3. Delete that namespace.
+> 4. See if the physical network device shows up in your
+>    initial-net-namespace candidate.
+> 5. Delete the physical network device (hopefully it ended up somewhere
+>    you can find it ;).
 >
-> on test machine: 1 threads qemu-system-x86_64 -enable-kvm -cpu Westmere with 320M memory
->
-> caused below changes:
->
->
-> +-------------------------+------------+------------+
-> |                         | 8175435777 | 54cc07a761 |
-> +-------------------------+------------+------------+
-> | boot_successes          | 102        | 16         |
-> | boot_failures           | 0          | 3          |
-> | BUG:kernel_test_crashed | 0          | 3          |
-> | timestamp.last          | 0          | 54.951425  |
-> +-------------------------+------------+------------+
+> But using an NS_GET_PARENT call seems much safer and easier.
 
-The problem here seems to be the line: "BUG: kernel test crashed"
-Can someone give me some clarity on what that refers to?
-
-My experience in the last week indicates I can't trust the commit the
-test bot tells me is the problem commit on these tests.  So if there is
-an issue I need something more to track it down with than a line of
-output I don't have the source to.
+Have you had the problem in practice where you can't tell which network
+namespace is the initial network namespace.  This all seems like a
+theoretical problem rather than a real one.
 
 Eric
