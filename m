@@ -1,18 +1,18 @@
-From: "W. Trevor King" <wking-vJI2gpByivqcqzYg7KEe8g@public.gmane.org>
-Subject: Re: [PATCH 2/5] kernel: add a helper to get an owning user namespace
-	for a namespace
-Date: Sun, 24 Jul 2016 10:05:32 -0700
-Message-ID: <20160724170532.GB5395@odin.tremily.us>
-References: <CANaxB-xw_xBUq=0uT14ANv-jfg2NsGaPy=jyDO9=yF03_7toSw@mail.gmail.com>
-	<1468548742-32136-1-git-send-email-avagin@openvz.org>
-	<1468548742-32136-2-git-send-email-avagin@openvz.org>
-	<878twrmxu2.fsf@x220.int.ebiederm.org>
-	<20160724063728.GA17810@outlook.office365.com>
-	<87shuzglck.fsf@x220.int.ebiederm.org>
+From: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 0/5 RFC] Add an interface to discover relationships
+	between namespaces
+Date: Mon, 25 Jul 2016 13:47:51 +0200
+Message-ID: <e2811bf1-4b86-e115-bcdb-301d6f2546eb__23134.8604000688$1469447308$gmane$org@gmail.com>
+References: <1468520419-28220-1-git-send-email-avagin@openvz.org>
+	<c9bdaf3d-ec93-d754-81ac-9f524a0d0954@gmail.com>
+	<20160721210650.GA10989@outlook.office365.com>
+	<1515f5f2-5a49-fcab-61f4-8b627d3ba3e2@gmail.com>
+	<CANaxB-w8H8Wo8FmtmBBZTpJX-ZDGRQx0rbm9E5c9WbduQ_Ukmw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1329455667146002281=="
+Content-Type: text/plain; charset="utf-8"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87shuzglck.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <CANaxB-w8H8Wo8FmtmBBZTpJX-ZDGRQx0rbm9E5c9WbduQ_Ukmw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,78 +22,107 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Andrew Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, "criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org" <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
---===============1329455667146002281==
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="8GpibOaaTibBMecb"
-Content-Disposition: inline
-
-
---8GpibOaaTibBMecb
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Sun, Jul 24, 2016 at 09:30:03AM -0500, Eric W. Biederman wrote:
-> I am not at all certain it makes sense to return -ENOENT.
->=20
-> Without the -ENOENT check the code is much cleaner, and clearer.
-
-This is fine with me, and makes even more sense for owner (user)
-namespaces than it does for net namespaces [1].  At least, I can't
-think of a reason why the root user namespace would have special
-userspace-visible behavior ;).
-
-Cheers,
-Trevor
-
-[1]: http://thread.gmane.org/gmane.linux.kernel.api/20626/focus=3D30639
-     Subject: Re: [PATCH 0/5 RFC] Add an interface to discover relationship=
-s between namespaces                                                       =
-                      =20
-     Date: Sat, 23 Jul 2016 23:51:07 -0500
-     Message-ID: <877fcboczo.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
-
---=20
-This email may be signed or encrypted with GnuPG (http://www.gnupg.org).
-For more information, see http://en.wikipedia.org/wiki/Pretty_Good_Privacy
-
---8GpibOaaTibBMecb
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAEBAgAGBQJXlPVZAAoJEBBpoQVgXJg1XCkQANGRgEyhZ9c9t2ldpi+2LrAN
-jCSJLSHQuokriRtIXOXWlITMovM2b+p5+xOCPdthpjeQ8WdueNfPJ6c+IdThKZeU
-O6fts0JIIiwGvmTI1Stn6/4/mi5WjN4jlws1/ovWwT/hB1dxIy0+QEYcrYkxF3l9
-eZ8qiUGBi4Zto746MXRMVp1rnYU4Rf+Eu99temIGWYYoOQ2brWL/+7GKgr2E8ZYl
-iaIhDqGVi1r/FKC34RnxWDPZfh8Rlt0wEjTS01xgzIYulWuuh//rA/u/eULN0P4w
-GH2IqU39VKwmcbt+6e9NgjmtkKvtg441NR9iFIA0zzMzHKdFQQq3gNt5JUgyIhOw
-gbzqA21DATlcAJa2e4SAiVDCiQlXnplC0rBXspIYhRF7VlC9JJsXXx6AQq6GBJGf
-jViaAYLRk/jIocUzKmLUEdvCttFKOi22YyMvlFKPDnACQaHnxPMZB2eVU7FIlarT
-TMsWwAX6NPVkFmB1XrYRYq7OwP9Pkn9S9mSBS1b6My1KWVSiUxL/kkgO6uOORSA/
-xeIQRwaRN4JnOqgQ7I5k5fjxyFDj2tw77SjhOMCWcQoEilp4Y2tFq92/FcyGNNNh
-WZE4+rRueTQSDYPi/UhGuiOPZK02+J7OvvjBXwSyBXI+yQPn0no5K6EJQVYyGL4h
-GT7T947dEQeYNBrrj7HR
-=KO98
------END PGP SIGNATURE-----
-
---8GpibOaaTibBMecb--
-
---===============1329455667146002281==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============1329455667146002281==--
+SGkgQW5kcmV5LAoKT24gMDcvMjIvMjAxNiAwODoyNSBQTSwgQW5kcmV5IFZhZ2luIHdyb3RlOgo+
+IE9uIFRodSwgSnVsIDIxLCAyMDE2IGF0IDExOjQ4IFBNLCBNaWNoYWVsIEtlcnJpc2sgKG1hbi1w
+YWdlcykKPiA8bXRrLm1hbnBhZ2VzQGdtYWlsLmNvbT4gd3JvdGU6Cj4+IEhpIEFuZHJleSwKPj4K
+Pj4KPj4gT24gMDcvMjEvMjAxNiAxMTowNiBQTSwgQW5kcmV3IFZhZ2luIHdyb3RlOgo+Pj4KPj4+
+IE9uIFRodSwgSnVsIDIxLCAyMDE2IGF0IDA0OjQxOjEyUE0gKzAyMDAsIE1pY2hhZWwgS2Vycmlz
+ayAobWFuLXBhZ2VzKQo+Pj4gd3JvdGU6Cj4+Pj4KPj4+PiBIaSBBbmRyZXksCj4+Pj4KPj4+PiBP
+biAwNy8xNC8yMDE2IDA4OjIwIFBNLCBBbmRyZXkgVmFnaW4gd3JvdGU6Cj4+Pgo+Pj4KPj4+IDxz
+bmlwPgo+Pj4KPj4+Pgo+Pj4+IENvdWxkIHlvdSBhZGQgaGVyZSBhbiBvZiB0aGUgQVBJIGluIGRl
+dGFpbDogd2hhdCBkbyB0aGVzZSBGRHMgcmVmZXIgdG8sCj4+Pj4gYW5kIGhvdyBkbyB5b3UgdXNl
+IHRoZW0gdG8gc29sdmUgdGhlIHVzZSBjYXNlPyBBbmQgY291bGQgeW91IHlvdSBhZGQKPj4+PiB0
+aGF0IGluZm8gdG8gdGhlIGNvbW1pdCBtZXNzYWdlcyBwbGVhc2UuCj4+Pgo+Pj4KPj4+IEhpIE1p
+Y2hhZWwsCj4+Pgo+Pj4gQSBwYXRjaCBmb3IgbWFuLXBhZ2VzIGlzIGF0dGFjaGVkLiBJdCBhZGRz
+IHRoZSBmb2xsb3dpbmcgdGV4dCB0bwo+Pj4gbmFtZXNwYWNlcyg3KS4KPj4+Cj4+PiBTaW5jZSAg
+TGludXggNC5YLCB0aGUgZm9sbG93aW5nIGlvY3RsKDIpIGNhbGxzIGFyZSBzdXBwb3J0ZWQgZm9y
+IG5hbWVz4oCQCj4+PiBwYWNlIGZpbGUgZGVzY3JpcHRvcnMuICBUaGUgY29ycmVjdCBzeW50YXgg
+aXM6Cj4+Pgo+Pj4gICAgICAgZmQgPSBpb2N0bChuc19mZCwgaW9jdGxfdHlwZSk7Cj4+Pgo+Pj4g
+d2hlcmUgaW9jdGxfdHlwZSBpcyBvbmUgb2YgdGhlIGZvbGxvd2luZzoKPj4+Cj4+PiBOU19HRVRf
+VVNFUk5TCj4+PiAgICAgICBSZXR1cm5zIGEgZmlsZSBkZXNjcmlwdG9yIHRoYXQgcmVmZXJzIHRv
+IGFuIG93bmluZyAgdXNlciAgbmFtZXPigJAKPj4+ICAgICAgIHBhY2UuCj4+Pgo+Pj4gTlNfR0VU
+X1BBUkVOVAo+Pj4gICAgICAgUmV0dXJucyAgYSAgZmlsZSAgZGVzY3JpcHRvciAgdGhhdCByZWZl
+cnMgdG8gYSBwYXJlbnQgbmFtZXNwYWNlLgo+Pj4gICAgICAgVGhpcyBpb2N0bCgyKSBjYW4gYmUg
+dXNlZCBmb3IgcGlkIGFuZCB1c2VyIG5hbWVzcGFjZXMuIEZvciAgdXNlcgo+Pj4gICAgICAgbmFt
+ZXNwYWNlcywgIE5TX0dFVF9QQVJFTlQgYW5kIE5TX0dFVF9VU0VSTlMgaGF2ZSB0aGUgc2FtZSBt
+ZWFu4oCQCj4+PiAgICAgICBpbmcuCgpGb3IgZWFjaCBvZiB0aGUgYWJvdmUsIEkgdGhpbmsgaXQg
+aXMgd29ydGggbWVudGlvbmluZyB0aGF0IHRoZQpjbG9zZS1vbi1leGVjIGZsYWcgaXMgc2V0IGZv
+ciB0aGUgcmV0dXJuZWQgZmlsZSBkZXNjcmlwdG9yLgoKPj4+Cj4+PiBJbiBhZGRpdGlvbiB0byBn
+ZW5lcmljIGlvY3RsKDIpIGVycm9ycywgdGhlIGZvbGxvd2luZyBzcGVjaWZpYyBvbmVzIGNhbgo+
+Pj4gb2NjdXI6Cj4+Pgo+Pj4gRUlOVkFMIE5TX0dFVF9QQVJFTlQgd2FzIGNhbGxlZCBmb3IgYSBu
+b25oaWVyYXJjaGljYWwgbmFtZXNwYWNlLgo+Pj4KPj4+IEVQRVJNICBUaGUgIHJlcXVlc3RlZCAg
+bmFtZXNwYWNlICBpcyAgb3V0c2lkZSAgb2YgdGhlIGN1cnJlbnQgbmFtZXNwYWNlCj4+PiAgICAg
+ICBzY29wZS4KClBlcmhhcHMgYWRkICJhbmQgdGhlIGNhbGxlciBkb2VzIG5vdCBoYXZlIENBUF9T
+WVNfQURNSU4iIGluIHRoZSBpbml0aWFsCnVzZXIgbmFtZXNwYWNlIj8KCj4+Pgo+Pj4gRU5PRU5U
+IG5zX2ZkIHJlZmVycyB0byB0aGUgaW5pdCBuYW1lc3BhY2UuCj4+Cj4+Cj4+IFRoYW5rcyBmb3Ig
+dGhpcy4gQnV0IHN0aWxsIHBhcnQgb2YgdGhlIHF1ZXN0aW9uIHJlbWFpbnMgdW5hbnN3ZXJlZC4K
+Pj4gSG93IGRvIHdlIChpbiB1c2VyLXNwYWNlKSB1c2UgdGhlIGZpbGUgZGVzY3JpcHRvcnMgdG8g
+YW5zd2VyIGFueSBvZgo+PiB0aGUgcXVlc3Rpb25zIHRoYXQgdGhpcyBwYXRjaCBzZXJpZXMgd2Fz
+IGRlc2lnbmVkIHRvIHNvbHZlPyAoVGhpcwo+PiBpbmZvIHNob3VsZCBiZSBpbiB0aGUgY29tbWl0
+IG1lc3NhZ2UgYW5kIHRoZSBtYW4tcGFnZXMgcGF0Y2guKQo+Cj4gSSdtIHNvcnJ5LCBidXQgSSBh
+bSBub3Qgc3VyZSB0aGF0IEkgdW5kZXJzdGFuZCB3aGF0IHlvdSBhc2suCj4KPiBIZXJlIGFyZSB0
+aGUgb3JpZ2luIHF1ZXN0aW9uczoKPiBTb21lb25lIGVsc2UgdGhlbiBhc2tlZCBtZSBhIHF1ZXN0
+aW9uIHRoYXQgbGVkIG1lIHRvIHdvbmRlciBhYm91dAo+IGdlbmVyYWxseSBpbnRyb3NwZWN0aW5n
+IG9uIHRoZSBwYXJlbnRhbCByZWxhdGlvbnNoaXBzIGJldHdlZW4gdXNlcgo+IG5hbWVzcGFjZXMg
+YW5kIHRoZSBhc3NvY2lhdGlvbiBvZiBvdGhlciBuYW1lc3BhY2VzIHR5cGVzIHdpdGggdXNlcgo+
+IG5hbWVzcGFjZXMuIE9uZSB1c2Ugd291bGQgYmUgdmlzdWFsaXphdGlvbiwgaW4gb3JkZXIgdG8g
+dW5kZXJzdGFuZCB0aGUKPiBydW5uaW5nIHN5c3RlbS4gQW5vdGhlciB3b3VsZCBiZSB0byBhbnN3
+ZXIgdGhlIHF1ZXN0aW9uIEkgYWxyZWFkeQo+IG1lbnRpb25lZDogd2hhdCBjYXBhYmlsaXR5IGRv
+ZXMgcHJvY2VzcyBYIGhhdmUgdG8gcGVyZm9ybSBvcGVyYXRpb25zCj4gb24gYSByZXNvdXJjZSBn
+b3Zlcm5lZCBieSBuYW1lc3BhY2UgWT8KPgo+IEhlcmUgaXMgYW4gZXhhbXBsZSB3aGljaCBzaG93
+cyBob3cgd2UgY2FuIGdldCB0aGUgb3duaW5nIG5hbWVzcGFjZQo+IGlub2RlIG51bWJlciBieSB1
+c2luZyB0aGVzZSBpb2N0bC1zLgo+Cj4gJCBscyAtbCAvcHJvYy8xMzkyOS9ucy9waWQKPiBscnd4
+cnd4cnd4IDEgcm9vdCByb290IDAgSnVsIDIyIDIxOjAzIC9wcm9jLzEzOTI5L25zL3BpZCAtPiAn
+cGlkOls0MDI2NTMyMjI4XScKPgo+ICQgLi9uc293bmVyIC9wcm9jLzEzOTI5L25zL3BpZAo+IHVz
+ZXI6WzQwMjY1MzIyMjddCj4KPiBUaGUgb3duaW5nIHVzZXIgbmFtZXNwYWNlIGZvciBwaWQ6WzQw
+MjY1MzIyMjhdIGlzIHVzZXI6WzQwMjY1MzIyMjddLgo+Cj4gVGhlIG5zb3duZXIgIHRvb2wgaXMg
+Y2ltcGlsZWQgZnJvbSB0aGlzIGNvZGU6Cj4KPiBpbnQgbWFpbihpbnQgYXJnYywgY2hhciAqYXJn
+dltdKQo+IHsKPiAgICAgICAgIGNoYXIgYnVmWzEyOF0sIHBhdGhbXSA9ICIvcHJvYy9zZWxmL2Zk
+LzAxMjM0NTY3ODkiOwo+ICAgICAgICAgaW50IG5zLCB1bnMsIHJldDsKPgo+ICAgICAgICAgbnMg
+PSBvcGVuKGFyZ3ZbMV0sIE9fUkRPTkxZKTsKPiAgICAgICAgIGlmIChucyA8IDApCj4gICAgICAg
+ICAgICAgICAgIHJldHVybiAxOwo+Cj4gICAgICAgICB1bnMgPSBpb2N0bChucywgTlNfR0VUX1VT
+RVJOUyk7Cj4gICAgICAgICBpZiAodW5zIDwgMCkKPiAgICAgICAgICAgICAgICAgcmV0dXJuIDE7
+Cj4KPiAgICAgICAgIHNucHJpbnRmKHBhdGgsIHNpemVvZihwYXRoKSwgIi9wcm9jL3NlbGYvZmQv
+JWQiLCB1bnMpOwo+ICAgICAgICAgcmV0ID0gcmVhZGxpbmsocGF0aCwgYnVmLCBzaXplb2YoYnVm
+KSAtIDEpOwo+ICAgICAgICAgaWYgKHJldCA8IDApCj4gICAgICAgICAgICAgICAgIHJldHVybiAx
+Owo+ICAgICAgICAgYnVmW3JldF0gPSAwOwo+Cj4gICAgICAgICBwcmludGYoIiVzXG4iLCBidWYp
+Owo+Cj4gICAgICAgICByZXR1cm4gMDsKPiB9CgpTbywgZnJvbSBteSBwb2ludCBvZiB2aWV3LCB0
+aGUgaW1wb3J0YW50IHBpZWNlIHRoYXQgd2FzIG1pc3NpbmcgZnJvbQp5b3VyIGNvbW1pdCBtZXNz
+YWdlIHdhcyB0aGUgbm90ZSB0byB1c2UgcmVhZGxpbmsoIi9wcm9jL3NlbGYvZmQvJWQiKQpvbiB0
+aGUgcmV0dXJuZWQgRkRzLiBJIHRoaW5rIHRoYXQgZGV0YWlsIG5lZWRzIHRvIGJlIHBhcnQgb2Yg
+dGhlCmNvbW1pdCBtZXNzYWdlIChhbmQgYWxzbyB0aGUgbWFuIHBhZ2UgdGV4dCkuIEkgdGhpbmsg
+aXQgZXZlbiBiZQpoZWxwZnVsIHRvIGluY2x1ZGUgdGhlIGFib3ZlIHByb2dyYW0gYXMgcGFydCBv
+ZiB0aGUgY29tbWl0IG1lc3NhZ2U6Cml0IGhlbHBzIHBlb3BsZSBtb3JlIHF1aWNrbHkgZ3Jhc3Ag
+dGhlIEFQSS4KCj4gRG9lcyB0aGlzIGV4YW1wbGUgYW5zd2VyIHRvIHRoZSBvcmlnaW4gcXVlc3Rp
+b24/CgpZZXMuCgo+SWYgaXQgaXNuJ3QsIGNvdWxkCj4geW91IGVsb2JvcmF0ZSB3aGF0IHlvdSBl
+eHBlY3QgdG8gc2VlIGhlcmUuCj4KPiBBbmQgSSB3cm90ZSBvbmUgbW9yZSBleGFtcGxlIHdoaWNo
+IHNob3cgYWxsIHJlbGF0aW9uc2hpcHMgYmV0d2Vlbgo+IG5hbWVzcGFjZXMuIEl0IGVudW1pcmF0
+ZXMgYWxsIHByb2Nlc3NlcyBpbiBhIHN5c3RlbSwgY29sbGVjdHMgYWxsCj4gbmFtZXNwYWNlcyBh
+bmQgZGV0ZXJtaW5zIHBhcmVudCBhbmQgb3duaW5nIG5hbWVzcGFjZXMgZm9yIGVhY2ggb2YKPiB0
+aGVtLCB0aGVuIGl0IGNvbnN0cnVjdHMgYSBuYW1lc3BhY2UgdHJlZSBhbmQgc2hvd3MgaXQuCj4K
+PiBIZXJlIGlzIGEgY29kZTogaHR0cHM6Ly9naXN0LmdpdGh1Yi5jb20vYXZhZ2luL2RiODA1Zjk1
+ZTE1ZmZiMGFmN2U1NTlkYmI4ZGU0NDE4CgpUaGF0J3MgZ3JlYXQhIFRoYW5rcyEKICAKPiBIZXJl
+IGlzIGFuIGV4YW1wbGUgb2Ygb3V0cHV0IGZvciBteSB0ZXN0IHN5c3RlbToKPiBbcm9vdEBmYzI0
+IG5zZnNdIyAuL25zdHJlZQo+IHVzZXI6WzQwMjY1MzE4MzddCj4gIFxfXyAgbW50Ols0MDI2NTMy
+MjAzXQo+ICBcX18gIGlwYzpbNDAyNjUzMTgzOV0KPiAgXF9fICB1c2VyOls0MDI2NTMyMjI0XQo+
+ICAgICAgXF9fICB1c2VyOls0MDI2NTMyMjI2XQo+ICAgICAgICAgIFxfXyAgdXNlcjpbNDAyNjUz
+MjIyN10KPiAgICAgICAgICAgICAgXF9fICBwaWQ6WzQwMjY1MzIyMjhdCj4gICAgICBcX18gIHBp
+ZDpbNDAyNjUzMjIyNV0KPiAgICAgICAgICBcX18gIHBpZDpbNDAyNjUzMjIyOF0KPiAgXF9fICB1
+c2VyOls0MDI2NTMyMjIxXQo+ICAgICAgXF9fICBwaWQ6WzQwMjY1MzIyMjJdCj4gICAgICBcX18g
+IHVzZXI6WzQwMjY1MzIyMjNdCj4gIFxfXyAgbW50Ols0MDI2NTMyMjExXQo+ICBcX18gIHV0czpb
+NDAyNjUzMTgzOF0KPiAgXF9fICBjZ3JvdXA6WzQwMjY1MzE4MzVdCj4gIFxfXyAgcGlkOls0MDI2
+NTMxODM2XQo+ICAgICAgXF9fICBwaWQ6WzQwMjY1MzIyMjVdCj4gICAgICAgICAgXF9fICBwaWQ6
+WzQwMjY1MzIyMjhdCj4gICAgICBcX18gIHBpZDpbNDAyNjUzMjIyMl0KPiAgXF9fICBtbnQ6WzQw
+MjY1MzE4NTddCj4gIFxfXyAgbW50Ols0MDI2NTMxODQwXQo+ICBcX18gIG5ldDpbNDAyNjUzMTk1
+N10KCkNoZWVycywKCk1pY2hhZWwKCj4+Pj4+IFsxXSBodHRwczovL2xrbWwub3JnL2xrbWwvMjAx
+Ni83LzYvMTU4Cj4+Pj4+IFsyXSBodHRwczovL2xrbWwub3JnL2xrbWwvMjAxNi83LzkvMTAxCgot
+LSAKTWljaGFlbCBLZXJyaXNrCkxpbnV4IG1hbi1wYWdlcyBtYWludGFpbmVyOyBodHRwOi8vd3d3
+Lmtlcm5lbC5vcmcvZG9jL21hbi1wYWdlcy8KTGludXgvVU5JWCBTeXN0ZW0gUHJvZ3JhbW1pbmcg
+VHJhaW5pbmc6IGh0dHA6Ly9tYW43Lm9yZy90cmFpbmluZy8KX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFp
+bmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRh
+dGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
