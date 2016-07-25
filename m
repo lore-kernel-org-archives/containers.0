@@ -1,23 +1,14 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 0/5 RFC] Add an interface to discover relationships
-	between namespaces
-Date: Mon, 25 Jul 2016 10:17:15 -0500
-Message-ID: <87y44pd9xg.fsf__13972.4501678304$1469460677$gmane$org@x220.int.ebiederm.org>
-References: <1468520419-28220-1-git-send-email-avagin@openvz.org>
-	<c9bdaf3d-ec93-d754-81ac-9f524a0d0954@gmail.com>
-	<20160721210650.GA10989@outlook.office365.com>
-	<1515f5f2-5a49-fcab-61f4-8b627d3ba3e2@gmail.com>
-	<CANaxB-w8H8Wo8FmtmBBZTpJX-ZDGRQx0rbm9E5c9WbduQ_Ukmw@mail.gmail.com>
-	<e2811bf1-4b86-e115-bcdb-301d6f2546eb@gmail.com>
-	<87lh0pg8jx.fsf@x220.int.ebiederm.org>
-	<44ca0e41-dc92-45b1-2a6c-c41a048a072d@gmail.com>
-	<20160725145445.GA19879@mail.hallyn.com>
+Subject: More information please. Re: [fs] 54cc07a761: BUG: kernel test crashed
+Date: Mon, 25 Jul 2016 13:57:00 -0500
+Message-ID: <877fc9a6mb.fsf@x220.int.ebiederm.org>
+References: <5793dfa5.mvXPj4LJOS0dlz3i%xiaolong.ye@intel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20160725145445.GA19879-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
-	message of "Mon, 25 Jul 2016 09:54:45 -0500")
+In-Reply-To: <5793dfa5.mvXPj4LJOS0dlz3i%xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org> (kernel test
+	robot's message of "Sun, 24 Jul 2016 05:20:37 +0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,40 +18,50 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Andrew Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org" <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: kernel test robot <xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkp-JC7UmRfGjtg@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
+kernel test robot <xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org> writes:
 
-> Quoting Michael Kerrisk (man-pages) (mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
->> Hi Eric,
->> 
->> On 07/25/2016 03:18 PM, Eric W. Biederman wrote:
->> >"Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
->> >
->> >>Hi Andrey,
->> >>
->> >>On 07/22/2016 08:25 PM, Andrey Vagin wrote:
->> >>Perhaps add "and the caller does not have CAP_SYS_ADMIN" in the initial
->> >>user namespace"?
->> >
->> >Having looked at that bit of code I don't think capabilities really
->> >have a role to play.
->> 
->> Yes, I caught up with that now. I await to see how this plays out
->> in the next patch version.
+> FYI, we noticed the following commit:
 >
-> Thanks - that had caught my eye but I hadn't had time to look into the
-> justification for this.  Hiding this kind of thing indeed seems wrong to
-> me, unless there is a really good justification for it, i.e. a way
-> to use that info in an exploit.
+> https://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-testing
+> commit 54cc07a761deb38318aca64ddf07fc45157c85e0 ("fs: Call d_automount with the filesystems creds")
+>
+> in testcase: boot
+>
+> on test machine: 1 threads qemu-system-x86_64 -enable-kvm -cpu Westmere with 320M memory
+>
+> caused below changes:
+>
+>
+> +-------------------------+------------+------------+
+> |                         | 8175435777 | 54cc07a761 |
+> +-------------------------+------------+------------+
+> | boot_successes          | 102        | 16         |
+> | boot_failures           | 0          | 3          |
+> | BUG:kernel_test_crashed | 0          | 3          |
+> | timestamp.last          | 0          | 54.951425  |
+> +-------------------------+------------+------------+
+>
+>
+>
+> [   19.206454] VFS: Warning: trinity-c0 using old stat() call. Recompile your binary.
+>
+> Elapsed time: 70
+> BUG: kernel test crashed
 
-To avoid breaking checkpoint/restart we need to limit information to the
-namespaces the caller is a member of for the user and pid namespaces.
+What application generated the line "BUG: kernel test crashed."
+What flavor of crash was this?
 
-This roughly duplicates the parentage checks in ns_capable.
+Given the last boot test failure that was reported to me was about 10
+commits after the problem commit I unfortunately can't take it at face
+value that the appropriate commit has been pinpointed.
 
-Conceptually this is the same as limiting .. in a chroot environment.
+If you could give me enough information to dig into this that would
+be great.  Otherwise I am going to have to proceed forward on the basis
+that this is a testing robot failure, and that the people who maintain
+the testing robot don't care enough to look after it.
 
 Eric
