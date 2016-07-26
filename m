@@ -1,18 +1,19 @@
-From: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Subject: Re: [PATCH v2 00/10] userns: sysctl limits for namespaces
-Date: Tue, 26 Jul 2016 13:44:21 -0700
-Message-ID: <CAGXu5jJiSwjTYpPbCUmKGDUNGvXt4GxML6T0b5sNeT03dvjNrg__30910.8531954282$1469565886$gmane$org@mail.gmail.com>
-References: <8737n5dscy.fsf@x220.int.ebiederm.org>
-	<87d1m754jc.fsf@x220.int.ebiederm.org>
-	<6be70177-a81d-7ed8-d2c9-a596d4d6a165@gmail.com>
-	<87shuwtp4c.fsf@x220.int.ebiederm.org>
-	<CAGXu5j+ZtZAFpW0ajnnBTRZk17ez6XYF=meEJY_rF7wwgyZB5Q@mail.gmail.com>
-	<CAKgNAkhCvb-WkBbwebbBw6cfhg0FJ-SSbvK=aS1WK+BQ55eO5Q@mail.gmail.com>
+From: Dave Jones <davej-rdkfGonbjUTCLXcRTR1eJlpr/1R2p/CL@public.gmane.org>
+Subject: Re: [LKP] More information please. Re: [fs] 54cc07a761: BUG: kernel
+	test crashed
+Date: Tue, 26 Jul 2016 17:15:16 -0400
+Message-ID: <20160726211516.GA9577__18910.8447674245$1469569823$gmane$org@codemonkey.org.uk>
+References: <5793dfa5.mvXPj4LJOS0dlz3i%xiaolong.ye@intel.com>
+	<877fc9a6mb.fsf@x220.int.ebiederm.org>
+	<20160726143545.GA23656@wfg-t540p.sh.intel.com>
+	<87vazsv4cn.fsf@x220.int.ebiederm.org>
+	<20160726151344.GB8811@wfg-t540p.sh.intel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAKgNAkhCvb-WkBbwebbBw6cfhg0FJ-SSbvK=aS1WK+BQ55eO5Q-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20160726151344.GB8811-q6ZYBFIlbFFi0tQiZxhdj1DQ4js95KgL@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,51 +23,29 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Michael Kerrisk-manpages <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>
+To: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkp-JC7UmRfGjtg@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Jul 26, 2016 at 10:29 AM, Michael Kerrisk (man-pages)
-<mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
-> On 26 July 2016 at 18:52, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org> wrote:
->> On Tue, Jul 26, 2016 at 8:06 AM, Eric W. Biederman
->> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->>> "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
->>>
->>>> Hello Eric,
->>>>
->>>> I realized I had a question after the last mail.
->>>>
->>>> On 07/21/2016 06:39 PM, Eric W. Biederman wrote:
->>>>>
->>>>> This patchset addresses two use cases:
->>>>> - Implement a sane upper bound on the number of namespaces.
->>>>> - Provide a way for sandboxes to limit the attack surface from
->>>>>   namespaces.
->>>>
->>>> Can you say more about the second point? What exactly is the
->>>> problem that is being addressed, and how does the patch series
->>>> address it? (It would be good to have those details in the
->>>> revised commit message...)
->>>
->>> At some point it was reported that seccomp was not sufficient to disable
->>> namespace creation.  I need to go back and look at that claim to see
->>> which set of circumstances that was referring to.  Seccomp doesn't stack
->>> so I can see why it is an issue.
->>
->> seccomp does stack. The trouble usually comes from a perception that
->> seccomp overhead is not trivial, so setting a system-wide policy is a
->> bit of a large hammer for such a limitiation. Also, at the time,
->> seccomp could be bypasses with ptrace, but this (as of v4.8) is no
->> longer true.
->
-> Sounds like someone needs to send me a patch for the seccomp.2 man page?
+On Tue, Jul 26, 2016 at 11:13:44PM +0800, Fengguang Wu wrote:
+ 
+ > >> The "BUG: kernel test crashed" means the VM reboots by itself while
+ > >> the trinity test is running. If the error message is "BUG: kernel boot
+ > >> crashed" it'd mean VM abnormally reboots before any test is launched.
+ > >
+ > >Is it possible to include a url pointing to a page of documentation
+ > >holding this information in your emails or alternatively a url pointing
+ > >to some source code.  Just so other people don't have to ask you this
+ > >question.
+ > 
+ > Yes that's the right directions to follow. We'll make the reports more
+ > understandable and the test/bisects more reliable.
+ > 
+ > In particular, I suspect this false report might be related to QEMU
+ > watchdog. The wild guess is, if trinity touches the watchdog device by
+ > accident, it may result in the VM reset w/o any symptom.
+ 
+See ignore_files() in pathnames.c
+Adding an entry to the blacklist there is easy enough to prove/disprove this.
 
-It's on my TODO list, no worries. :) I'm waiting for it to land in
-Linus's tree first. It's only been in -next so far.
-
--Kees
-
--- 
-Kees Cook
-Chrome OS & Brillo Security
+	Dave
