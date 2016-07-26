@@ -1,18 +1,16 @@
-From: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [LKP] More information please. Re: [fs] 54cc07a761: BUG: kernel
-	test crashed
-Date: Tue, 26 Jul 2016 23:13:44 +0800
-Message-ID: <20160726151344.GB8811@wfg-t540p.sh.intel.com>
-References: <5793dfa5.mvXPj4LJOS0dlz3i%xiaolong.ye@intel.com>
-	<877fc9a6mb.fsf@x220.int.ebiederm.org>
-	<20160726143545.GA23656@wfg-t540p.sh.intel.com>
-	<87vazsv4cn.fsf@x220.int.ebiederm.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH v2 00/10] userns: sysctl limits for namespaces
+Date: Tue, 26 Jul 2016 10:06:59 -0500
+Message-ID: <87shuwtp4c.fsf__48963.3597004742$1469546498$gmane$org@x220.int.ebiederm.org>
+References: <8737n5dscy.fsf@x220.int.ebiederm.org>
+	<87d1m754jc.fsf@x220.int.ebiederm.org>
+	<6be70177-a81d-7ed8-d2c9-a596d4d6a165@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87vazsv4cn.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <6be70177-a81d-7ed8-d2c9-a596d4d6a165-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> (Michael
+	Kerrisk's message of "Tue, 26 Jul 2016 12:30:10 +0200")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,67 +20,43 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkp-JC7UmRfGjtg@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Jul 26, 2016 at 09:52:40AM -0500, Eric W. Biederman wrote:
->Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org> writes:
->> On Mon, Jul 25, 2016 at 01:57:00PM -0500, Eric W. Biederman wrote:
->>>kernel test robot <xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org> writes:
->[snip]
->>>>
->>>> [   19.206454] VFS: Warning: trinity-c0 using old stat() call. Recompile your binary.
->>>>
->>>> Elapsed time: 70
->>>> BUG: kernel test crashed
->>>
->>>What application generated the line "BUG: kernel test crashed."
->>>What flavor of crash was this?
->>
->> It's a simple boot test with a quick trinity run. So there will be
->> some randomness in this test.
->>
->> The "BUG: kernel test crashed" means the VM reboots by itself while
->> the trinity test is running. If the error message is "BUG: kernel boot
->> crashed" it'd mean VM abnormally reboots before any test is launched.
+"Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
+
+> Hello Eric,
 >
->Is it possible to include a url pointing to a page of documentation
->holding this information in your emails or alternatively a url pointing
->to some source code.  Just so other people don't have to ask you this
->question.
-
-Yes that's the right directions to follow. We'll make the reports more
-understandable and the test/bisects more reliable.
-
-In particular, I suspect this false report might be related to QEMU
-watchdog. The wild guess is, if trinity touches the watchdog device by
-accident, it may result in the VM reset w/o any symptom.
-
->>>Given the last boot test failure that was reported to me was about 10
->>>commits after the problem commit I unfortunately can't take it at face
->>>value that the appropriate commit has been pinpointed.
->>>
->>>If you could give me enough information to dig into this that would
->>>be great.  Otherwise I am going to have to proceed forward on the basis
->>>that this is a testing robot failure, and that the people who maintain
->>>the testing robot don't care enough to look after it.
->>
->> I queued more tests in various KVM instances and find the kernel test
->> crashes can also happen in the parent commit. So it looks like a false
->> report. Sorry for the noise!
->>
->> 81754357770ebd90  aeaa4a79ff6a5ed912b7362f20
->> ----------------  --------------------------
->>       fail:runs  %reproduction    fail:runs
->>           |             |             |
->>          5:100          0%           5:100   dmesg.BUG:kernel_test_crashed
->>           :100          1%           1:100   dmesg.Mem-Info
->>           :100          1%           1:100   dmesg.invoked_oom-killer:gfp_mask=0x
+> I realized I had a question after the last mail.
 >
->Thank you for verifying this.
+> On 07/21/2016 06:39 PM, Eric W. Biederman wrote:
+>>
+>> This patchset addresses two use cases:
+>> - Implement a sane upper bound on the number of namespaces.
+>> - Provide a way for sandboxes to limit the attack surface from
+>>   namespaces.
+>
+> Can you say more about the second point? What exactly is the
+> problem that is being addressed, and how does the patch series
+> address it? (It would be good to have those details in the
+> revised commit message...)
 
-You are welcome!
+At some point it was reported that seccomp was not sufficient to disable
+namespace creation.  I need to go back and look at that claim to see
+which set of circumstances that was referring to.  Seccomp doesn't stack
+so I can see why it is an issue.
 
-Thanks,
-Fengguang
+The general problem is that namespaces by their nature (and especially
+in combination with the user namespaces) allow unprivileged users to use
+more of the kernel than a user would have access to without them.  This
+in turn allows malicious users more kernel calls they can use in attempt
+to find an exploitable bug.
+
+So if you are building a sandbox/chroot jail/chromium tab or anything
+like that and you know you won't be needing a kernel feature having an
+easy way to disable the feature is useful for making the kernel
+marginally more secure, as certain attack vectors are no longer
+possible.
+
+Eric
