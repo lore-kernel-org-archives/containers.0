@@ -1,24 +1,19 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 0/5 RFC] Add an interface to discover relationships
-	between namespaces
-Date: Tue, 26 Jul 2016 14:38:28 -0500
-Message-ID: <87fuqwqjez.fsf@x220.int.ebiederm.org>
-References: <1468520419-28220-1-git-send-email-avagin@openvz.org>
-	<c9bdaf3d-ec93-d754-81ac-9f524a0d0954@gmail.com>
-	<20160721210650.GA10989@outlook.office365.com>
-	<1515f5f2-5a49-fcab-61f4-8b627d3ba3e2@gmail.com>
-	<CANaxB-w8H8Wo8FmtmBBZTpJX-ZDGRQx0rbm9E5c9WbduQ_Ukmw@mail.gmail.com>
-	<e2811bf1-4b86-e115-bcdb-301d6f2546eb@gmail.com>
-	<87lh0pg8jx.fsf@x220.int.ebiederm.org>
-	<44ca0e41-dc92-45b1-2a6c-c41a048a072d@gmail.com>
-	<87r3ahepb4.fsf@x220.int.ebiederm.org>
-	<20160726025455.GC26206@outlook.office365.com>
+Subject: Re: [LKP] More information please. Re: [fs] 54cc07a761: BUG: kernel
+	test crashed
+Date: Tue, 26 Jul 2016 14:50:58 -0500
+Message-ID: <87wpk8p49p.fsf@x220.int.ebiederm.org>
+References: <5793dfa5.mvXPj4LJOS0dlz3i%xiaolong.ye@intel.com>
+	<877fc9a6mb.fsf@x220.int.ebiederm.org>
+	<20160726143545.GA23656@wfg-t540p.sh.intel.com>
+	<87vazsv4cn.fsf@x220.int.ebiederm.org>
+	<20160726151344.GB8811@wfg-t540p.sh.intel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20160726025455.GC26206-1ViLX0X+lBJGNQ1M2rI3KwRV3xvJKrda@public.gmane.org> (Andrew Vagin's
-	message of "Mon, 25 Jul 2016 19:54:56 -0700")
+In-Reply-To: <20160726151344.GB8811-q6ZYBFIlbFFi0tQiZxhdj1DQ4js95KgL@public.gmane.org> (Fengguang Wu's
+	message of "Tue, 26 Jul 2016 23:13:44 +0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -28,64 +23,59 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
-Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org" <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkp-JC7UmRfGjtg@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Andrew Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org> writes:
+Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org> writes:
 
-> On Mon, Jul 25, 2016 at 09:59:43AM -0500, Eric W. Biederman wrote:
->> "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
+> On Tue, Jul 26, 2016 at 09:52:40AM -0500, Eric W. Biederman wrote:
+>>Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org> writes:
+>>> On Mon, Jul 25, 2016 at 01:57:00PM -0500, Eric W. Biederman wrote:
+>>>>kernel test robot <xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org> writes:
+>>[snip]
+>>>>>
+>>>>> [   19.206454] VFS: Warning: trinity-c0 using old stat() call. Recompile your binary.
+>>>>>
+>>>>> Elapsed time: 70
+>>>>> BUG: kernel test crashed
+>>>>
+>>>>What application generated the line "BUG: kernel test crashed."
+>>>>What flavor of crash was this?
+>>>
+>>> It's a simple boot test with a quick trinity run. So there will be
+>>> some randomness in this test.
+>>>
+>>> The "BUG: kernel test crashed" means the VM reboots by itself while
+>>> the trinity test is running. If the error message is "BUG: kernel boot
+>>> crashed" it'd mean VM abnormally reboots before any test is launched.
+>>
+>>Is it possible to include a url pointing to a page of documentation
+>>holding this information in your emails or alternatively a url pointing
+>>to some source code.  Just so other people don't have to ask you this
+>>question.
 >
-> [snip]
->
->> [snip]
->> >>> So, from my point of view, the important piece that was missing from
->> >>> your commit message was the note to use readlink("/proc/self/fd/%d")
->> >>> on the returned FDs. I think that detail needs to be part of the
->> >>> commit message (and also the man page text). I think it even be
->> >>> helpful to include the above program as part of the commit message:
->> >>> it helps people more quickly grasp the API.
->> >>
->> >> Please, please make the standard way to compare these things fstat.
->> >> That is much less magic than a symlink, and a little more future proof.
->> >> Possibly even kcmp.
->
-> I like the idea to use kcmp to compare namespaces. I am going to add this
-> functionality to kcmp and describe all these in the man page.
->
->> >
->> > As in fstat() to get the st_ino field, right?
->> 
->> Both the st_ino and st_dev fields.
->> 
->> The most likely change to support checkpoint/restart in the future is to
->> preserve st_ino across migrations and instantiate a different instance
->> of nsfs to hold the inode numbers from the previous machine.
->
-> It sounds tricky. BTW: Actually this is not only one places where we have
-> this sort of problem. For example, now mount id-s are not preserved when
-> a container is migrated. The same problem is applied to tmpfs, where
-> inode numbers are not preserved for files.
+> Yes that's the right directions to follow. We'll make the reports more
+> understandable and the test/bisects more reliable.
 
-Agreed.
+Thanks.  Does trinity have a random seed it can export/import to rerun
+the same tests?  I ask because there was a failure these tests caught
+that if the right kernel options was enabled was 100% reliable and it
+blamed a commit 10 patches down from the indicated commit.  The problem
+being 100% reproducible it wasn't an issue that the indicated commit
+was wrong.  But a 100% reliable failure being misattributed suggest
+a way attribution could become more reliable.
 
-Interesting. Interesting. Interesting.
+> In particular, I suspect this false report might be related to QEMU
+> watchdog. The wild guess is, if trinity touches the watchdog device by
+> accident, it may result in the VM reset w/o any symptom.
 
-I am not completely convinced that improving kcmp solves it for
-everything but improving kcmp sounds good enough to be very interesting
-and enough to solve a practical case (migration in migration).  Plus
-improving kcmp is cheap and easy.
-
-I would propose:
-
-KCMP_OBJECT
-    Check whether a file descriptor idx1 in the process pid1 refers to
-    the same underlying object as file descriptor idx2 in the process
-    pid2.
-
-The default case would be checking to see if to file descriptors refer
-to the same inode.  But for weird cases (like proc pid directories, or
-sysfs files) the comparison could look deeper.
+Interesting.  I hope it is the watchdog.  I know some qemu versions +
+some kernel versions have race conditions that are observable during
+boot.  I don't know if those happen in your test harness but it may be
+worth a look.  I tend to get grumpy when I see those and work on
+stabalizing a magic kernel config that likes qemu, but I keep finding
+issues when I try other peoples configurations for reproducing problems
+like this one.
 
 Eric
