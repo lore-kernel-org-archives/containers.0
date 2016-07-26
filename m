@@ -1,19 +1,18 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [LKP] More information please. Re: [fs] 54cc07a761: BUG: kernel
-	test crashed
-Date: Tue, 26 Jul 2016 14:50:58 -0500
-Message-ID: <87wpk8p49p.fsf@x220.int.ebiederm.org>
-References: <5793dfa5.mvXPj4LJOS0dlz3i%xiaolong.ye@intel.com>
-	<877fc9a6mb.fsf@x220.int.ebiederm.org>
-	<20160726143545.GA23656@wfg-t540p.sh.intel.com>
-	<87vazsv4cn.fsf@x220.int.ebiederm.org>
-	<20160726151344.GB8811@wfg-t540p.sh.intel.com>
+Subject: Re: [PATCH v2 09/10] netns: Add a limit on the number of net
+	namespaces
+Date: Tue, 26 Jul 2016 15:00:05 -0500
+Message-ID: <87d1m0p3ui.fsf@x220.int.ebiederm.org>
+References: <87d1m754jc.fsf@x220.int.ebiederm.org>
+	<20160721164014.17534-1-ebiederm@xmission.com>
+	<20160721164014.17534-9-ebiederm@xmission.com>
+	<CANaxB-zfkvu9XYkuYB47tYFGLeVnWBhpgEUaSrGD4+-O8ThcNw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20160726151344.GB8811-q6ZYBFIlbFFi0tQiZxhdj1DQ4js95KgL@public.gmane.org> (Fengguang Wu's
-	message of "Tue, 26 Jul 2016 23:13:44 +0800")
+In-Reply-To: <CANaxB-zfkvu9XYkuYB47tYFGLeVnWBhpgEUaSrGD4+-O8ThcNw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(Andrei Vagin's message of "Mon, 25 Jul 2016 23:01:19 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,59 +22,58 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkp-JC7UmRfGjtg@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Andrei Vagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org> writes:
+Andrei Vagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
 
-> On Tue, Jul 26, 2016 at 09:52:40AM -0500, Eric W. Biederman wrote:
->>Fengguang Wu <fengguang.wu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org> writes:
->>> On Mon, Jul 25, 2016 at 01:57:00PM -0500, Eric W. Biederman wrote:
->>>>kernel test robot <xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org> writes:
->>[snip]
->>>>>
->>>>> [   19.206454] VFS: Warning: trinity-c0 using old stat() call. Recompile your binary.
->>>>>
->>>>> Elapsed time: 70
->>>>> BUG: kernel test crashed
->>>>
->>>>What application generated the line "BUG: kernel test crashed."
->>>>What flavor of crash was this?
->>>
->>> It's a simple boot test with a quick trinity run. So there will be
->>> some randomness in this test.
->>>
->>> The "BUG: kernel test crashed" means the VM reboots by itself while
->>> the trinity test is running. If the error message is "BUG: kernel boot
->>> crashed" it'd mean VM abnormally reboots before any test is launched.
+> On Thu, Jul 21, 2016 at 9:40 AM, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+>> index 2c2eb1b629b1..a489f192d619 100644
+>> --- a/net/core/net_namespace.c
+>> +++ b/net/core/net_namespace.c
+>> @@ -266,6 +266,16 @@ struct net *get_net_ns_by_id(struct net *net, int id)
+>>         return peer;
+>>  }
 >>
->>Is it possible to include a url pointing to a page of documentation
->>holding this information in your emails or alternatively a url pointing
->>to some source code.  Just so other people don't have to ask you this
->>question.
+>> +static bool inc_net_namespaces(struct user_namespace *ns)
+>> +{
+>> +       return inc_ucount(ns, UCOUNT_NET_NAMESPACES);
+>> +}
+>> +
+>> +static void dec_net_namespaces(struct user_namespace *ns)
+>> +{
+>> +       dec_ucount(ns, UCOUNT_NET_NAMESPACES);
+>> +}
+>> +
+>>  /*
+>>   * setup_net runs the initializers for the network namespace object.
+>>   */
+>> @@ -276,6 +286,9 @@ static __net_init int setup_net(struct net *net, struct user_namespace *user_ns)
+>>         int error = 0;
+>>         LIST_HEAD(net_exit_list);
+>>
+>> +       if (!inc_net_namespaces(user_ns))
+>> +               return -ENFILE;
 >
-> Yes that's the right directions to follow. We'll make the reports more
-> understandable and the test/bisects more reliable.
+> I think you need to move this check after initilizing  net->passive.
+> When setup_net returns an error, net_drop_ns is called:
+>
+Good point.  Ouch!
 
-Thanks.  Does trinity have a random seed it can export/import to rerun
-the same tests?  I ask because there was a failure these tests caught
-that if the right kernel options was enabled was 100% reliable and it
-blamed a commit 10 patches down from the indicated commit.  The problem
-being 100% reproducible it wasn't an issue that the indicated commit
-was wrong.  But a 100% reliable failure being misattributed suggest
-a way attribution could become more reliable.
+> void net_drop_ns(void *p)
+> {
+>         struct net *ns = p;
+>         if (ns && atomic_dec_and_test(&ns->passive))
+>                 net_free(ns);
+> }
+>
+> Actually, I think it would be better to make this check before
+> net_alloc().
 
-> In particular, I suspect this false report might be related to QEMU
-> watchdog. The wild guess is, if trinity touches the watchdog device by
-> accident, it may result in the VM reset w/o any symptom.
-
-Interesting.  I hope it is the watchdog.  I know some qemu versions +
-some kernel versions have race conditions that are observable during
-boot.  I don't know if those happen in your test harness but it may be
-worth a look.  I tend to get grumpy when I see those and work on
-stabalizing a magic kernel config that likes qemu, but I keep finding
-issues when I try other peoples configurations for reproducing problems
-like this one.
+You are probably right.  I seem to be trying to be entirely too clever
+putting that in setup_net so I can cover the initial network namespace.
+Which really does not need to be counted.  As clearly I also goofed up
+the decrement on error case as well.
 
 Eric
