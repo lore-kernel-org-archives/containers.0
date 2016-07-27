@@ -1,12 +1,13 @@
-From: Madhukrishna G <Madhukrishna.G-068NM081eCxBDgjK7y7TUQ@public.gmane.org>
-Subject: sysctl variables are not available to newly created namespace
-Date: Wed, 27 Jul 2016 11:13:29 +0000
-Message-ID: <43CB8A4DE9C2424AA6598497DD8046CB4686C833@SRVBAN19MBXPH02.corp.mphasis.com>
+From: Canadian-Drugs <noreply-HyEKVixEh8wP7C3xziwOQw@public.gmane.org>
+Subject: Free shipping and unbelievable discounts - this is what we offer to
+	our regular customers!
+Date: Wed, 27 Jul 2016 15:05:59 +0100
+Message-ID: <20160727015043.IjO2clZ92P@mlgadvisors.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-US
+Content-Language: en
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,60 +17,192 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
+  
 
-In my current linux 3.2.71 stable version , I have created a network namespace  and when I listed sysctl variables in  following directory " /proc/sys/net/core/" am able to see net.core.xfrm* variables only, i.e only CONFIG_SYSCTL related variables, even though I have enabled CONFIG_NET as well as CONFIG_NET_NS I am not able to see any sysctl variables related to ne.core(rmem_max, wmem_max, rmem_default and wmem_default).
+		FOUL ICHOR, IT SENSIBILITIES THANK YOU RISE TO FEWINDIVIDUAL HUNTERS
+THESE CONTINUITY. 
 
+		Me
+		ds
+		6f
+		or
+		0M
+		en
 
-# ip netns exec gmk1 ls -l /proc/sys/net/core/
-total 0
--rw-r--r-- 1 root root 0 Jul 25 03:01 somaxconn
--rw-r--r-- 1 root root 0 Jul 25 03:01 xfrm_acq_expires
--rw-r--r-- 1 root root 0 Jul 25 03:01 xfrm_aevent_etime
--rw-r--r-- 1 root root 0 Jul 25 03:01 xfrm_aevent_rseqth
--rw-r--r-- 1 root root 0 Jul 25 03:01 xfrm_larval_drop
+Vi
+Ci
+Ci
+Le
+Pr
+ ag
+al
+al
+vi
+op
+ ra
+is
+is
+tr
+ec
 
+ S
+a 
+ia
 
-Where as in my older kernel version, it will show all sysctl variables.
-# ls -l /proc/sys/net/core/
-total 0
--rw-r--r-- 1 root root 0 Jul 20 05:40 busy_poll
--rw-r--r-- 1 root root 0 Jul 20 05:40 busy_read
--rw-r--r-- 1 root root 0 Jul 20 05:40 default_qdisc
--rw-r--r-- 1 root root 0 Jul 20 05:40 dev_weight
--rw-r--r-- 1 root root 0 Jul 20 05:40 flow_limit_cpu_bitmap
--rw-r--r-- 1 root root 0 Jul 20 05:40 flow_limit_table_len
--rw-r--r-- 1 root root 0 Jul 20 05:40 message_burst
--rw-r--r-- 1 root root 0 Jul 20 05:40 message_cost
--rw-r--r-- 1 root root 0 Jul 20 05:40 netdev_budget
--rw-r--r-- 1 root root 0 Jul 20 05:40 netdev_max_backlog
--rw-r--r-- 1 root root 0 Jul 20 05:40 netdev_tstamp_prequeue
--rw-r--r-- 1 root root 0 Jul 20 05:40 optmem_max
--rw-r--r-- 1 root root 0 Jul 20 05:40 rmem_default
--rw-r--r-- 1 root root 0 Jul 20 05:40 rmem_max
--rw-r--r-- 1 root root 0 Jul 20 05:40 rps_sock_flow_entries
--rw-r--r-- 1 root root 0 Jul 20 05:40 somaxconn
--rw-r--r-- 1 root root 0 Jul 20 05:40 warnings
--rw-r--r-- 1 root root 0 Jul 20 05:40 wmem_default
--rw-r--r-- 1 root root 0 Jul 20 05:40 wmem_max
--rw-r--r-- 1 root root 0 Jul 20 05:40 xfrm_acq_expires
--rw-r--r-- 1 root root 0 Jul 20 05:40 xfrm_aevent_etime
--rw-r--r-- 1 root root 0 Jul 20 05:40 xfrm_aevent_rseqth
--rw-r--r-- 1 root root 0 Jul 20 05:40 xfrm_larval_drop
+of
 
+t 
 
-Please furnish me how I can avoid such things.
+Ta
 
-Thanks in Advance.
+bs
 
-Regards
-25krishna
+ $0
+$1
+$2
+$2
+$0
+ .9
+.6
+.5
+.5
+.4
+ 9
+5
+0
+0
+5
 
-Information transmitted by this e-mail is proprietary to Mphasis, its associated companies and/ or its customers and is intended 
-for use only by the individual or entity to which it is addressed, and may contain information that is privileged, confidential or 
-exempt from disclosure under applicable law. If you are not the intended recipient or it appears that this mail has been forwarded 
-to you without proper authority, you are notified that any use or dissemination of this information in any manner is strictly 
-prohibited. In such cases, please notify us immediately at mailmaster-068NM081eCxBDgjK7y7TUQ@public.gmane.org and delete this mail from your records.
+		Me
+		ds
+		6f
+		or
+		1W
+		om
+		en
+
+Ac
+Cl
+De
+Fe
+Fe
+ om
+om
+fl
+ma
+ma
+ pl
+id
+uc
+le
+le
+ ia
+
+an
+ C
+ V
+
+ia
+ia
+
+li
+gr
+
+s 
+a 
+
+ $1
+$0
+$1
+$1
+$0
+ .7
+.4
+.2
+.1
+.7
+ 5
+5
+5
+1
+2
+
+ On
+No
+Fa
+Sp ly
+ p
+st
+ec  r
+re
+ w
+ia el
+sc
+or
+l  ia
+ri
+ld
+in bl
+pt
+wi
+te e 
+io
+de
+rn su
+n 
+ s
+et pp
+re
+hi
+ p li
+qu
+pp
+ri er
+ir
+in
+ce s 
+ed
+g 
+s   
+
+   A
+ 1
+ V
+ 2 no
+00
+is
+4/ ny
+% 
+a,
+7  mo
+Au
+Ma
+cu us
+th
+st
+st  d
+en
+er
+om el
+ti
+ca
+er iv
+c 
+rd
+ s er
+Me
+,E
+up y 
+ds
+ch
+po  
+
+ec
+rt  
+
+k 
+
+		>> Enter Here 
