@@ -1,13 +1,11 @@
-From: Canadian-Drugs <noreply-HyEKVixEh8wP7C3xziwOQw@public.gmane.org>
-Subject: Free shipping and unbelievable discounts - this is what we offer to
-	our regular customers!
-Date: Wed, 27 Jul 2016 15:05:59 +0100
-Message-ID: <20160727015043.IjO2clZ92P@mlgadvisors.com>
+From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+Subject: [GIT PULL] binfmt_misc updates for 4.7+ merge window
+Date: Wed, 27 Jul 2016 22:31:46 -0400
+Message-ID: <1469673106.3565.9.camel@HansenPartnership.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,192 +15,43 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-  
+First off, the intention of this pull is to declare that I'll be the
+binfmt_misc maintainer (mainly on the grounds of you touched it last,
+it's yours).  There's no MAINTAINERS entry, but get_maintainers.pl will
+now finger me.
 
-		FOUL ICHOR, IT SENSIBILITIES THANK YOU RISE TO FEWINDIVIDUAL HUNTERS
-THESE CONTINUITY. 
+The update itself is to allow architecture emulation containers to
+function such that the emulation binary can be housed outside the
+container itself.  The container and fs parts both have acks from
+relevant experts.
 
-		Me
-		ds
-		6f
-		or
-		0M
-		en
+The change is user visible. To use the new feature you have to add an F
+option to your binfmt_misc configuration.  However, the existing tools,
+like systemd-binfmt work with this without modification.
 
-Vi
-Ci
-Ci
-Le
-Pr
- ag
-al
-al
-vi
-op
- ra
-is
-is
-tr
-ec
+It's also all been incubated in linux-next for over a month.
 
- S
-a 
-ia
+The update is available here:
 
-of
+git://git.kernel.org/pub/scm/linux/kernel/git/jejb/binfmt_misc.git binfmt-for-linus
 
-t 
+The short changelog is:
 
-Ta
+James Bottomley (3):
+      binfmt_misc: add F option description to documentation
+      binfmt_misc: add persistent opened binary handler for containers
+      fs: add filp_clone_open API
 
-bs
+And the diffstat:
 
- $0
-$1
-$2
-$2
-$0
- .9
-.6
-.5
-.5
-.4
- 9
-5
-0
-0
-5
+ Documentation/binfmt_misc.txt |  7 +++++++
+ fs/binfmt_misc.c              | 41 +++++++++++++++++++++++++++++++++++++++--
+ fs/internal.h                 |  1 +
+ fs/open.c                     | 20 ++++++++++++++++++++
+ 4 files changed, 67 insertions(+), 2 deletions(-)
 
-		Me
-		ds
-		6f
-		or
-		1W
-		om
-		en
-
-Ac
-Cl
-De
-Fe
-Fe
- om
-om
-fl
-ma
-ma
- pl
-id
-uc
-le
-le
- ia
-
-an
- C
- V
-
-ia
-ia
-
-li
-gr
-
-s 
-a 
-
- $1
-$0
-$1
-$1
-$0
- .7
-.4
-.2
-.1
-.7
- 5
-5
-5
-1
-2
-
- On
-No
-Fa
-Sp ly
- p
-st
-ec  r
-re
- w
-ia el
-sc
-or
-l  ia
-ri
-ld
-in bl
-pt
-wi
-te e 
-io
-de
-rn su
-n 
- s
-et pp
-re
-hi
- p li
-qu
-pp
-ri er
-ir
-in
-ce s 
-ed
-g 
-s   
-
-   A
- 1
- V
- 2 no
-00
-is
-4/ ny
-% 
-a,
-7  mo
-Au
-Ma
-cu us
-th
-st
-st  d
-en
-er
-om el
-ti
-ca
-er iv
-c 
-rd
- s er
-Me
-,E
-up y 
-ds
-ch
-po  
-
-ec
-rt  
-
-k 
-
-		>> Enter Here 
+James
