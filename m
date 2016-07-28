@@ -1,26 +1,14 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 0/5 RFC] Add an interface to discover relationships
-	between namespaces
-Date: Thu, 28 Jul 2016 07:56:42 -0500
-Message-ID: <87popxkjjp.fsf@x220.int.ebiederm.org>
-References: <1515f5f2-5a49-fcab-61f4-8b627d3ba3e2@gmail.com>
-	<CANaxB-w8H8Wo8FmtmBBZTpJX-ZDGRQx0rbm9E5c9WbduQ_Ukmw@mail.gmail.com>
-	<e2811bf1-4b86-e115-bcdb-301d6f2546eb@gmail.com>
-	<87lh0pg8jx.fsf@x220.int.ebiederm.org>
-	<44ca0e41-dc92-45b1-2a6c-c41a048a072d@gmail.com>
-	<87r3ahepb4.fsf@x220.int.ebiederm.org>
-	<20160726025455.GC26206@outlook.office365.com>
-	<3390535b-0660-757f-aeba-c03d936b3485@gmail.com>
-	<20160726182524.GA328@outlook.office365.com>
-	<CAKgNAkjmOu+vfiMDyeYQkkf7wQBH9PVmJ4nH2CTg43GrN-k7eA@mail.gmail.com>
-	<20160726203955.GA9415@outlook.office365.com>
-	<ca0787a3-b270-e962-46d1-7e63c9335a55@gmail.com>
+Subject: Re: sysctl variables are not available to newly created namespace
+Date: Thu, 28 Jul 2016 08:22:00 -0500
+Message-ID: <877fc5kidj.fsf@x220.int.ebiederm.org>
+References: <8FAD92B89CFCF442A932848BE6809DD30A1277@G4W3221.americas.hpqcorp.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <ca0787a3-b270-e962-46d1-7e63c9335a55-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> (Michael
-	Kerrisk's message of "Thu, 28 Jul 2016 12:45:12 +0200")
+In-Reply-To: <8FAD92B89CFCF442A932848BE6809DD30A1277-oqutU3L0SekSZAcGdq5asR6epYMZPwEe5NbjCUgZEJk@public.gmane.org>
+	(Madhukrishna G.'s message of "Wed, 27 Jul 2016 11:10:36 +0000")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -30,37 +18,63 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Andrew Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org" <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: "G, Madhukrishna" <madhukrishna.g-ZPxbGqLxI0U@public.gmane.org>
+Cc: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-"Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
+"G, Madhukrishna" <madhukrishna.g-ZPxbGqLxI0U@public.gmane.org> writes:
 
-> On 07/26/2016 10:39 PM, Andrew Vagin wrote:
->> On Tue, Jul 26, 2016 at 09:17:31PM +0200, Michael Kerrisk (man-pages) wrote:
-
->> If we want to compare two file descriptors of the current process,
->> it is one of cases for which kcmp can be used. We can call kcmp to
->> compare two namespaces which are opened in other processes.
+> Hi,
 >
-> Is there really a use case there? I assume we're talking about the
-> scenario where a process in one namespace opens a /proc/PID/ns/*
-> file descriptor and passes that FD to another process via a UNIX
-> domain socket. Is that correct?
+> In my current linux 3.2.71 stable version , I have created a network
+> namespace  and when I listed sysctl variables in  following directory
+> " /proc/sys/net/core/" am able to see net.core.xfrm* variables only,
+> i.e only CONFIG_SYSCTL related variables, even though I have enabled
+> CONFIG_NET as well as CONFIG_NET_NS I am not able to see any sysctl
+> variables related to ne.core(rmem_max, wmem_max, rmem_default and
+> wmem_default).
 >
-> So, supposing that we want to build a map of the relationships
-> between namespaces using the proposed kcmp() API, and there are
-> say N namespaces? Does this mena we make (N * (N-1) / 2) calls
-> to kcmp()?
 
-Potentially.  The numbers are small enough O(N^2) isn't fatal.
+The only networking sysctls that are shown are the networking sysctls
+that are local to your network namespace (unless you are in the
+initial network namespace).
 
-Where kcmp shines is that it allows migration to happen.  Inode numbers
-to change (which they very much will today), and still have things work.
+> #<mailto:root@ned4g8:/home/gmadhuk/linux-3.16-clim-3.16.7-clim#> ip netns exec gmk1 ls -l /proc/sys/net/core/
+> total 0
+> -rw-r--r-- 1 root root 0 Jul 25 03:01 somaxconn
+> -rw-r--r-- 1 root root 0 Jul 25 03:01 xfrm_acq_expires
+> -rw-r--r-- 1 root root 0 Jul 25 03:01 xfrm_aevent_etime
+> -rw-r--r-- 1 root root 0 Jul 25 03:01 xfrm_aevent_rseqth
+> -rw-r--r-- 1 root root 0 Jul 25 03:01 xfrm_larval_drop
+>
+>
+> Where as in my older kernel version, it will show all sysctl variables.
+> # ls -l /proc/sys/net/core/
+> total 0
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 busy_poll
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 busy_read
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 default_qdisc
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 dev_weight
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 flow_limit_cpu_bitmap
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 flow_limit_table_len
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 message_burst
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 message_cost
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 netdev_budget
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 netdev_max_backlog
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 netdev_tstamp_prequeue
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 optmem_max
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 rmem_default
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 rmem_max
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 rps_sock_flow_entries
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 somaxconn
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 warnings
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 wmem_default
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 wmem_max
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 xfrm_acq_expires
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 xfrm_aevent_etime
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 xfrm_aevent_rseqth
+> -rw-r--r-- 1 root root 0 Jul 20 05:40 xfrm_larval_drop
 
-We can keep it O(Nlog(N)) by taking advantage of not just the equality
-but the ordering relationship.  Although Ugh.  One disadvantage of
-kcmp currently is that the way the ordering relationship is defined
-the order is not preserved over migration :(
+Yep.  That was a bug, now fixed.
 
 Eric
