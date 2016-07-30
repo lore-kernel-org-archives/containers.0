@@ -1,10 +1,11 @@
-From: Enrico Mioso <nanci67-y7mWNqJcIDpfJ/NunPodnw@public.gmane.org>
-Subject: =?utf-8?B?dXNlZnVsIGluZm9ybWF0aW9u?=
-Date: Sat, 30 Jul 2016 14:51:53 +0300
-Message-ID: <0000f3364091$38232510$074a5ac7$@yandex.ru>
+From: "FedEx SmartPost" <daryl.christopher-QbtX7t0kJ3hCBu1DeFptC7pzq4S04n8Q@public.gmane.org>
+Subject: Delivery Notification, ID 00000337042
+Date: Sat, 30 Jul 2016 16:06:37 +0000
+Message-ID: <6562f1e3ebb4ef5c7957bb70a1e95165@texasvanpark.com.au>
+Reply-To: FedEx SmartPost <daryl.christopher-QbtX7t0kJ3hCBu1DeFptC7pzq4S04n8Q@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="b1_6c782fa7245080bb8e055fa65849ff11"
+Content-Transfer-Encoding: 8bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -15,11 +16,30 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Guillaume Gaudonville <guillaume.gaudonville-pdR9zngts4EAvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Matthias Schniedermeyer <ms-QGhoYOTWWTg@public.gmane.org>, Petr Tesarik <ptesarik-AlSwsSmVLrQ@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello friend, 
+--b1_6c782fa7245080bb8e055fa65849ff11
+Content-Type: text/plain; charset=us-ascii
 
-I thought this information  regarding my favourite stuff may  be  usefull for  you  too, just take a look here <http://try.miamiphotoclub.net/lnorhpfb>
+Dear Customer,
 
-My best to you, Enrico Mioso
+We could not deliver your item.
+Shipment Label is attached to email.
+
+Kind regards,
+Daryl Christopher,
+Sr. Operation Manager.
+
+
+--b1_6c782fa7245080bb8e055fa65849ff11
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--b1_6c782fa7245080bb8e055fa65849ff11--
