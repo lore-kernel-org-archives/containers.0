@@ -1,12 +1,14 @@
-From: "=?utf-8?Q?Donald=20Stuart?=" <donald-Er1/in1eyFVZr0oskzd7CvU/3Eu2kcEP@public.gmane.org>
-Subject: =?utf-8?Q?Corporate=20Investment=2E?=
-Date: Mon, 01 Aug 2016 13:55:19 +0200
-Message-ID: <W2K8TEMPALTE80a1c98906e14bd2873feaf5a615c247@W2K8TEMPALTE>
-Reply-To: donstuartds-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: Alban Crequy <alban.crequy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 0/5 RFC] Add an interface to discover relationships
+	between namespaces
+Date: Mon, 1 Aug 2016 20:20:27 +0200
+Message-ID: <CAMXgnP6j+rTeb5XJgoPV20y8puGyVm=9O9gdg9Sah4DuF5qm9w@mail.gmail.com>
+References: <1468520419-28220-1-git-send-email-avagin@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1468520419-28220-1-git-send-email-avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,43 +18,88 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, iago-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-TXIgRG9uYWxkIFN0dWFydA0KTGliZXJ0eSBIb3VzZSwgMjI0IFJlZ2VudCBTdHJlZXQsDQpMb25k
-b24uDQpXMUIgNVRSDQoNCkRhdGU6IDFzdCBBdWd1c3QsIDIwMTYuDQoNCkdvb2QgRGF5LA0KDQpD
-T1JQT1JBVEUgSU5WRVNUTUVOVC4NCg0KTXkgbmFtZSBpcyBNci4gRG9uYWxkIFN0dWFydCwgYSBy
-ZWdpc3RlcmVkIEZvcmV4IEJyb2tlciB3aXRoIEVUWCBDYXBpdGFsLiBJIGFtIFNvbGljaXRpbmcg
-T24tQmVoYWxmIG9mIGEgcHJpdmF0ZSBDbGllbnQgb2YgYSByZXB1dGFibGUgZmluYW5jaWFsIGlu
-c3RpdHV0aW9uLCB3aG8gaGVsZCBhIEdvdmVybm1lbnQgUG9zaXRpb24gaW4gaGlzIENvdW50cnkg
-YW5kIHdpc2hlcyB0byBpbnZlc3Qgc29tZSByZWFzb25hYmxlIHN1bSBvZiBtb25leSBpbnRvIGEg
-c3BlY2lmaWVkIGludmVzdG1lbnQgZmllbGQgc3VjaCBhcyBNZWRpY2FsICYgTGFib3JhdG9yeSBl
-cXVpcG1lbnQgYXMgdGhlIENsaWVudCBoYXMgcHJpbWFyeSBhbmQgYmFja2dyb3VuZCBrbm93bGVk
-Z2UgaW4gdGhlIGFib3ZlIG1lbnRpb25lZCBmaWVsZCBhbmQgaGFzIHN1cHBvcnRpbmcgZG9jdW1l
-bnRzIGZyb20gdGhlIFVuaXRlZCBOYXRpb25zIERlcGFydG1lbnQgb2YgSGVhbHRoIHRoYXQgd2ls
-bCBiZSBwcmVzZW50ZWQgZm9yIHRoZSBTb3VyY2Ugb2YgRnVuZHMgd2hpY2ggcmVsYXRlcyB0byB0
-aGUgYWJvdmUgc3RhdGVkLg0KDQpJIHdhcyBnaXZlbiB0aGUgbWFuZGF0ZSB0byBwZXJmb3JtIGlu
-IHRoaXMgcHJvamVjdCB3aXRoIHRhcmdldCBhbmQgY3JpdGVyaWEgb2YgZGVhbGluZ3MsIGhlbmNl
-IEkgY2FycmllZCBvdXQgYSBwcml2YXRlIHNlYXJjaCBhbmQgY2FtZSBhY3Jvc3MgeW91ciBkYXRh
-IC4gSSB3YW50IHRvIGtub3cgaWYgeW91IGhhdmUgdGhlIGFiaWxpdHksIGludGVyZXN0LCB3b3Jr
-Zm9yY2UgYW5kIHN0cmVuZ3RoIHRvIHBhcnRuZXIgd2l0aCBteSBzdWJtaXNzaW9uIG9uIGFueSBj
-YXBhY2l0eSwgYmUgaXQgYXMgYW4gaW5kZXBlbmRlbnQgY2xpZW50IG9yIEpvaW50IFZlbnR1cmUg
-LyBwYXJ0bmVyc2hpcCBhcyB0aGUgbWFpbiBwcmlvcml0eSBvZiBteSBjbGllbnQgaXMgdG8gcmUt
-cHJvZmlsZSBhbmQgc2FmZS1ndWFyZCBoaXMgZnVuZHMuDQoNCk15IENsaWVudCBpcyB3aWxsaW5n
-IHRvIG5lZ290aWF0ZSBNYW5hZ2VtZW50IFNoYXJpbmcgUGVyY2VudGFnZSB1cG9uIGhlYXJpbmcg
-YmFjayBmcm9tIHlvdS4gSSBzaGFsbCBtYWtlIGF2YWlsYWJsZSB0byB5b3UgYWxsIG5lY2Vzc2Fy
-eSBkb2N1bWVudGF0aW9ucywgZGlyZWN0aXZlcyBhbmQgcG9zc2libHkgYXJyYW5nZSBhIG1lZXRp
-bmcgcHJpb3IgdG8gdGhlIGNvbW1lbmNlbWVudCBvZiB0aGUgdHJhbnNhY3Rpb24gd2l0aCBteSBj
-bGllbnQgZm9yIHlvdXIgcmUtYXNzdXJhbmNlIHRoYXQgeW91IGFyZSBkZWFsaW5nIHdpdGggc29t
-ZW9uZSB3aXRoIGhpZ2ggcmVwdXRhdGlvbi4gSWYgeW91IGFyZSBpbnRlcmVzdGVkIGluIG15IGJ1
-c2luZXNzIHByb3Bvc2FsIGFuZCB3aXNoIHRvIGRpc2N1c3MgZnVydGhlciwga2luZGx5IHJlc3Bv
-bmQgYmFjayB0byBteSBwcml2YXRlIGVtYWlsIG1lc3NhZ2Ugd2l0aCB0aGUgYmVzdCBjb250YWN0
-IG51bWJlciB0byByZWFjaCB5b3UgZm9yIGEgYnJpZWYgb3JhbCBkaXNjdXNzaW9uLg0KDQpEdWUg
-dG8gbXkgY2xpZW504oCZcyByZXB1dGF0aW9uLCBJIHdpbGwgYXBwcmVjaWF0ZSBpZiB5b3UgdHJl
-YXQgdGhpcyBsZXR0ZXIgYW5kIGl0cyBjb250ZW50IGFzIHRvcCBjb25maWRlbnRpYWwgdG8gZW5z
-dXJlIG1heGltdW0gcHJvdGVjdGlvbiBvZiBhbGwgcGFydGllcyBpbnZvbHZlZCwgd2hpbGUgSSBz
-aGFsbCBiZSBleHBlY3RpbmcgdG8gaGVhcmluZyBmcm9tIHlvdSBvbiByZWNlaXB0IG9mIHRoaXMg
-bWVzc2FnZS4NCg0KWW91cnMgZmFpdGhmdWxseSwNCg0KTXIgRG9uYWxkIFN0dWFydC4KX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWls
-aW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xp
-c3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Hi,
+
+On 14 July 2016 at 20:20, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
+> Each namespace has an owning user namespace and now there is not way
+> to discover these relationships.
+>
+> Pid and user namepaces are hierarchical. There is no way to discover
+> parent-child relationships too.
+>
+> Why we may want to know relationships between namespaces?
+>
+> One use would be visualization, in order to understand the running system.
+
+This looks interesting to me because I am interested in representing
+in a graphical way the relationship between different mounts in
+different mount namespaces (showing the ID, the parent-children
+relationships, mount peer groups, the master-slave relationships etc),
+specially for containers. The first idea was to take both
+/proc/1/mountinfo and /proc/$OTHER_PID/mountinfo and I can correlate
+the "shared:" and "master:" fields in the mountinfo files.
+
+But I cannot read the /proc/$pid/mountinfo of mount namespaces when
+there are no processes in those mount namespaces. For example, if
+those mount namespaces stay alive only because they contain
+"shared&slave" mounts between master mounts and slave mounts that I
+can see in /proc/$pid/mountinfo. Fictional example:
+
+# mntns 1, mountinfo 1 (visible via /proc/1/mountinfo)
+61 0 253:1 / / rw shared:1
+
+# mntns 2, mountinfo 2 (not visible via any /proc/$pid/mountinfo)
+731 569 0:75 / / rw master:1 shared:42
+
+# mntns 3, mountinfo 3 (not visible via any /proc/${container_pid}/mountinfo)
+762 597 0:82 / / rw master:42 shared:76
+
+As far as I understand, I cannot get a reference to the mntns2 fd
+because mnt namespaces are not hierarchical, and I cannot get its
+/proc/???/mountinfo because no processes live inside.
+
+Is there a way around it? Should this use case be handled together?
+
+Thanks!
+Alban
+
+> Another would be to answer the question: what capability does process X have to
+> perform operations on a resource governed by namespace Y?
+>
+> One more use-case (which usually called abnormal) is checkpoint/restart.
+> In CRIU we age going to dump and restore nested namespaces.
+>
+> There [1] was a discussion about which interface to choose to determing
+> relationships between namespaces.
+>
+> Eric suggested to add two ioctl-s [2]:
+>> Grumble, Grumble.  I think this may actually a case for creating ioctls
+>> for these two cases.  Now that random nsfs file descriptors are bind
+>> mountable the original reason for using proc files is not as pressing.
+>>
+>> One ioctl for the user namespace that owns a file descriptor.
+>> One ioctl for the parent namespace of a namespace file descriptor.
+>
+> Here is an implementaions of these ioctl-s.
+>
+> [1] https://lkml.org/lkml/2016/7/6/158
+> [2] https://lkml.org/lkml/2016/7/9/101
+>
+> Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> Cc: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+> Cc: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> Cc: "W. Trevor King" <wking-vJI2gpByivqcqzYg7KEe8g@public.gmane.org>
+> Cc: Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+> Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+>
+> --
+> 2.5.5
+>
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linuxfoundation.org/mailman/listinfo/containers
