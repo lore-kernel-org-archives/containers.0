@@ -1,28 +1,12 @@
-From: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 0/5 RFC] Add an interface to discover relationships
-	between namespaces
-Date: Sun, 31 Jul 2016 23:31:44 +0200
-Message-ID: <e2527d9a-58e4-9784-7e75-f08e6aa61930@gmail.com>
-References: <1515f5f2-5a49-fcab-61f4-8b627d3ba3e2@gmail.com>
-	<CANaxB-w8H8Wo8FmtmBBZTpJX-ZDGRQx0rbm9E5c9WbduQ_Ukmw@mail.gmail.com>
-	<e2811bf1-4b86-e115-bcdb-301d6f2546eb@gmail.com>
-	<87lh0pg8jx.fsf@x220.int.ebiederm.org>
-	<44ca0e41-dc92-45b1-2a6c-c41a048a072d@gmail.com>
-	<87r3ahepb4.fsf@x220.int.ebiederm.org>
-	<20160726025455.GC26206@outlook.office365.com>
-	<3390535b-0660-757f-aeba-c03d936b3485@gmail.com>
-	<20160726182524.GA328@outlook.office365.com>
-	<CAKgNAkjmOu+vfiMDyeYQkkf7wQBH9PVmJ4nH2CTg43GrN-k7eA@mail.gmail.com>
-	<20160726203955.GA9415@outlook.office365.com>
-	<ca0787a3-b270-e962-46d1-7e63c9335a55@gmail.com>
-	<87popxkjjp.fsf@x220.int.ebiederm.org>
-	<40e35f1a-10e6-b7a5-936e-a09f008be0d0@gmail.com>
-	<87h9b8e2v7.fsf@x220.int.ebiederm.org>
+From: "=?utf-8?Q?Donald=20Stuart?=" <donald-Er1/in1eyFVZr0oskzd7CvU/3Eu2kcEP@public.gmane.org>
+Subject: =?utf-8?Q?Corporate=20Investment=2E?=
+Date: Mon, 01 Aug 2016 13:55:19 +0200
+Message-ID: <W2K8TEMPALTE80a1c98906e14bd2873feaf5a615c247@W2K8TEMPALTE>
+Reply-To: donstuartds-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87h9b8e2v7.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -32,128 +16,43 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org" <criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Eric,
-
-On 07/29/2016 08:05 PM, Eric W. Biederman wrote:
-> "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
->
->> Hi Eric,
->>
->> On 07/28/2016 02:56 PM, Eric W. Biederman wrote:
->>> "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
->>>
->>>> On 07/26/2016 10:39 PM, Andrew Vagin wrote:
->>>>> On Tue, Jul 26, 2016 at 09:17:31PM +0200, Michael Kerrisk (man-pages) wrote:
->>>
->>>>> If we want to compare two file descriptors of the current process,
->>>>> it is one of cases for which kcmp can be used. We can call kcmp to
->>>>> compare two namespaces which are opened in other processes.
->>>>
->>>> Is there really a use case there? I assume we're talking about the
->>>> scenario where a process in one namespace opens a /proc/PID/ns/*
->>>> file descriptor and passes that FD to another process via a UNIX
->>>> domain socket. Is that correct?
->>>>
->>>> So, supposing that we want to build a map of the relationships
->>>> between namespaces using the proposed kcmp() API, and there are
->>>> say N namespaces? Does this mena we make (N * (N-1) / 2) calls
->>>> to kcmp()?
->>>
->>> Potentially.  The numbers are small enough O(N^2) isn't fatal.
->>
->> Define "small", please.
->>
->> O(N^2) makes me nervous about what other use cases lurk out
->> there that may get bitten by this.
->
-> Worst case for N (One namespace per thread) is about 60k.
-
-I'm getting an education here: where does the 60k number come from?
-
-> A typical heavy use case may be 1000 namespaces of any type.
-> So we are talking about O(N^2) that rarely happens and should be done in
-> a couple of seconds.
-
-I don't know whether that's acceptable for the migration use case,
-but seems quite bad for the visualization use case.
-
->>> Where kcmp shines is that it allows migration to happen.  Inode numbers
->>> to change (which they very much will today), and still have things work.
->>
->>
->>> We can keep it O(Nlog(N)) by taking advantage of not just the equality
->>> but the ordering relationship.  Although Ugh.
->>
->> Yes, that sounds pretty ugly...
->
-> Actually having thought about this a little more if kcmp returns an
-> ordering by inode and migration preserves the relative order of
-> the inodes (which should just be a creation order) it should be quite
-> solvable.
->
-> Switch from an order by inode number to an order by object creation
-> time, and guarantee that all creations are have an order (which with
-> task_list_lock we practically already have) and it should be even easier
-> to create.  (A 64bit nanosecond resolution timestamp is good for 544
-> years of uptime).  A 64bit number that increments each time an object is
-> created should have an even better lifespan.
->
-> I don't know if we can find a way to give that guarantee for other kcmp
-> comparisons but it is worth a thought.
-
-Okay. So, this is a pathway to O(Nlog(N)) at least then?
-
->>> One disadvantage of
->>> kcmp currently is that the way the ordering relationship is defined
->>> the order is not preserved over migration :(
->>
->> So, does kcmp() fully solve the proble(s) at hand? It sounds like
->> not, if I understand your last point correctly.
->
-> There are 3 possibilities I see for migration in migration, ordered
-> in order of implementation difficulty.
-> 1) Have a clear signal that migration happened and a nested migration
->    needs to restart.
-> 2) Use kcmp so that only the relative order needs to be preserved.
-> 3) Preserve the device number and inode numbers.
->
-> At a practical level I think (2) may actually in net be the simplest.
-> It requires a little more care to implement and you have to opt in,
-> but it should not require any rolling back of activity (merely careful
-> ordering of object creation).
->
-> I definititely like kcmp knowing how to compare things by inode
-> (aka st_dev, st_inode) because then even if you have to restart
-> the comparisons after a migration the exact details you are comparing
-> are hidden and so it is easier to support and harder to get wrong.
->
-> I can imagine how to preserve inode numbers by creating a new instance
-> of nsfs instance and using the old inode numbers upon restore.  I don't
-> currently see how we could possibly preserve st_dev over migration short of
-> a device number namespace.
->
-> So if we are going to continue with making device numbers be a legacy
-> attribute applications should not care about we need a way to compare
-> things by not looking at st_dev.  Which brings us back to kcmp.
->
-> Hmm.  Hotplugging as disk and plugging it back likely will change the
-> device number and give the same kind of challenge with st_dev (although
-> you can't keep a file descriptor open across that kind of event).  So
-> certainly a hotplug event on a device should be enough to say don't care
-> about the device number.
-
-Okay.
-
-Thanks,
-
-Michael
-
-
--- 
-Michael Kerrisk
-Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
-Linux/UNIX System Programming Training: http://man7.org/training/
+TXIgRG9uYWxkIFN0dWFydA0KTGliZXJ0eSBIb3VzZSwgMjI0IFJlZ2VudCBTdHJlZXQsDQpMb25k
+b24uDQpXMUIgNVRSDQoNCkRhdGU6IDFzdCBBdWd1c3QsIDIwMTYuDQoNCkdvb2QgRGF5LA0KDQpD
+T1JQT1JBVEUgSU5WRVNUTUVOVC4NCg0KTXkgbmFtZSBpcyBNci4gRG9uYWxkIFN0dWFydCwgYSBy
+ZWdpc3RlcmVkIEZvcmV4IEJyb2tlciB3aXRoIEVUWCBDYXBpdGFsLiBJIGFtIFNvbGljaXRpbmcg
+T24tQmVoYWxmIG9mIGEgcHJpdmF0ZSBDbGllbnQgb2YgYSByZXB1dGFibGUgZmluYW5jaWFsIGlu
+c3RpdHV0aW9uLCB3aG8gaGVsZCBhIEdvdmVybm1lbnQgUG9zaXRpb24gaW4gaGlzIENvdW50cnkg
+YW5kIHdpc2hlcyB0byBpbnZlc3Qgc29tZSByZWFzb25hYmxlIHN1bSBvZiBtb25leSBpbnRvIGEg
+c3BlY2lmaWVkIGludmVzdG1lbnQgZmllbGQgc3VjaCBhcyBNZWRpY2FsICYgTGFib3JhdG9yeSBl
+cXVpcG1lbnQgYXMgdGhlIENsaWVudCBoYXMgcHJpbWFyeSBhbmQgYmFja2dyb3VuZCBrbm93bGVk
+Z2UgaW4gdGhlIGFib3ZlIG1lbnRpb25lZCBmaWVsZCBhbmQgaGFzIHN1cHBvcnRpbmcgZG9jdW1l
+bnRzIGZyb20gdGhlIFVuaXRlZCBOYXRpb25zIERlcGFydG1lbnQgb2YgSGVhbHRoIHRoYXQgd2ls
+bCBiZSBwcmVzZW50ZWQgZm9yIHRoZSBTb3VyY2Ugb2YgRnVuZHMgd2hpY2ggcmVsYXRlcyB0byB0
+aGUgYWJvdmUgc3RhdGVkLg0KDQpJIHdhcyBnaXZlbiB0aGUgbWFuZGF0ZSB0byBwZXJmb3JtIGlu
+IHRoaXMgcHJvamVjdCB3aXRoIHRhcmdldCBhbmQgY3JpdGVyaWEgb2YgZGVhbGluZ3MsIGhlbmNl
+IEkgY2FycmllZCBvdXQgYSBwcml2YXRlIHNlYXJjaCBhbmQgY2FtZSBhY3Jvc3MgeW91ciBkYXRh
+IC4gSSB3YW50IHRvIGtub3cgaWYgeW91IGhhdmUgdGhlIGFiaWxpdHksIGludGVyZXN0LCB3b3Jr
+Zm9yY2UgYW5kIHN0cmVuZ3RoIHRvIHBhcnRuZXIgd2l0aCBteSBzdWJtaXNzaW9uIG9uIGFueSBj
+YXBhY2l0eSwgYmUgaXQgYXMgYW4gaW5kZXBlbmRlbnQgY2xpZW50IG9yIEpvaW50IFZlbnR1cmUg
+LyBwYXJ0bmVyc2hpcCBhcyB0aGUgbWFpbiBwcmlvcml0eSBvZiBteSBjbGllbnQgaXMgdG8gcmUt
+cHJvZmlsZSBhbmQgc2FmZS1ndWFyZCBoaXMgZnVuZHMuDQoNCk15IENsaWVudCBpcyB3aWxsaW5n
+IHRvIG5lZ290aWF0ZSBNYW5hZ2VtZW50IFNoYXJpbmcgUGVyY2VudGFnZSB1cG9uIGhlYXJpbmcg
+YmFjayBmcm9tIHlvdS4gSSBzaGFsbCBtYWtlIGF2YWlsYWJsZSB0byB5b3UgYWxsIG5lY2Vzc2Fy
+eSBkb2N1bWVudGF0aW9ucywgZGlyZWN0aXZlcyBhbmQgcG9zc2libHkgYXJyYW5nZSBhIG1lZXRp
+bmcgcHJpb3IgdG8gdGhlIGNvbW1lbmNlbWVudCBvZiB0aGUgdHJhbnNhY3Rpb24gd2l0aCBteSBj
+bGllbnQgZm9yIHlvdXIgcmUtYXNzdXJhbmNlIHRoYXQgeW91IGFyZSBkZWFsaW5nIHdpdGggc29t
+ZW9uZSB3aXRoIGhpZ2ggcmVwdXRhdGlvbi4gSWYgeW91IGFyZSBpbnRlcmVzdGVkIGluIG15IGJ1
+c2luZXNzIHByb3Bvc2FsIGFuZCB3aXNoIHRvIGRpc2N1c3MgZnVydGhlciwga2luZGx5IHJlc3Bv
+bmQgYmFjayB0byBteSBwcml2YXRlIGVtYWlsIG1lc3NhZ2Ugd2l0aCB0aGUgYmVzdCBjb250YWN0
+IG51bWJlciB0byByZWFjaCB5b3UgZm9yIGEgYnJpZWYgb3JhbCBkaXNjdXNzaW9uLg0KDQpEdWUg
+dG8gbXkgY2xpZW504oCZcyByZXB1dGF0aW9uLCBJIHdpbGwgYXBwcmVjaWF0ZSBpZiB5b3UgdHJl
+YXQgdGhpcyBsZXR0ZXIgYW5kIGl0cyBjb250ZW50IGFzIHRvcCBjb25maWRlbnRpYWwgdG8gZW5z
+dXJlIG1heGltdW0gcHJvdGVjdGlvbiBvZiBhbGwgcGFydGllcyBpbnZvbHZlZCwgd2hpbGUgSSBz
+aGFsbCBiZSBleHBlY3RpbmcgdG8gaGVhcmluZyBmcm9tIHlvdSBvbiByZWNlaXB0IG9mIHRoaXMg
+bWVzc2FnZS4NCg0KWW91cnMgZmFpdGhmdWxseSwNCg0KTXIgRG9uYWxkIFN0dWFydC4KX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWls
+aW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xp
+c3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
