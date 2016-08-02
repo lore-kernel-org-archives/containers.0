@@ -1,11 +1,11 @@
-From: "Alex Rubens" <mixmand-ytc+IHgoah0@public.gmane.org>
-Subject: Mobile Application Development: Swift, Android, ionic, PhoneGap
-Date: Tue, 02 Aug 2016 13:43:38 +0200
-Message-ID: <5f6c747cfda5d1e6f3eafa268b0626e4@smallbiztrends.com>
-Reply-To: yuiyangs-k+cT0dCbe1g@public.gmane.org
+From: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+Subject: [RFC PATCH] locks: Show only file_locks created in the same pidns as
+	current process
+Date: Tue,  2 Aug 2016 17:42:23 +0300
+Message-ID: <1470148943-21835-1-git-send-email-kernel@kyup.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; Format="flowed"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -16,29 +16,44 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
+Cc: serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SGVsbG8sCgpBcmUgeW91IHNlZWtpbmcgYXNzaXN0YW5jZSBmb3IgZGV2ZWxvcGluZyBhIG1vYmls
-ZSBhcHBsaWNhdGlvbj8KT3IgbmVlZCBhbnkgaGVscCBpbiBpZGVudGlmeWluZyB0aGUgcmlnaHQg
-dGVjaG5vbG9neS8gcGxhdGZvcm0gZm9yCmxhdW5jaGluZyB5b3VyIGlkZWE/CgpXZSBoYXZlIGEg
-Z2xvYmFsIGNsaWVudGVsZSBhbmQgZXh0ZW5zaXZlIHJlcGVydG9pcmUgc2luY2UgMjAxMSBpbgpk
-ZWxpdmVyaW5nIE1vYmlsZSBBcHAgU29sdXRpb25zLgpUb3AgZW50ZXJwcmlzZXMgYW5kIHN0YXJ0
-LXVwcyBjaG9vc2UgU29sdXRpb24gQW5hbHlzdHMgYXMgdGhlaXIgcHJlZmVycmVkCnZlbmRvciBm
-b3IgdGhlaXIgZHJlYW0gcHJvamVjdHMuIEl04oCZcyB5b3VyIHR1cm4gbm93LgoKV2UgYXJlIGJh
-c2VkIGluIEluZGlhLgoKT3VyIGh1bWFuIHJlc291cmNlIGJhc2UgY29tcHJpc2VzIG9mIG1vcmUg
-dGhhbiA5MCB0ZWNoIGV4cGVydHMgd2hvIHdpbGwKaGVscCB5b3Ugc2V0IHVwIGEKZGVkaWNhdGVk
-IHRlYW0gdGhhdCB3aWxsIGRlbGl2ZXIgeW91ciBzb2x1dGlvbiBleGFjdGx5IHRvIHRoZSBicmll
-Zi4KCk91ciBBcHAgRGV2ZWxvcG1lbnQgb2ZmZXJpbmdzIGFyZToK4oCiCWlPUyBBcHAgRGV2ZWxv
-cG1lbnQgb24gU3dpZnQK4oCiCUFuZHJvaWQgQXBwIGRldmVsb3BtZW50CuKAoglDcm9zcyBQbGF0
-Zm9ybSBBcHAgRGV2ZWxvcG1lbnQ6IElvbmljLCBSZWFjdCBOYXRpdmUsIFBob25lR2FwCkhvbmVz
-dCBOdW1iZXJzIHRoYXQgd2lsbCBzd2luZyB5b3VyIG9waW5pb24gdG8gc3RhcnQgd29ya2luZyB3
-aXRoIHVzOgrigKIJNSsgeWVhcnMgZXhwZXJpZW5jZQrigKIJMTg3KyBNb2JpbGUgYXBwcyBkZWxp
-dmVyZWQK4oCiCTcrIEFuZHJvaWQgJiBpT1MgU0RLIGRldmVsb3BlZArigKIJMTAwJSBxdWFsaXR5
-IGFzc3VyYW5jZQrigKIJODUrIFRlc3RpbmcgRGV2aWNlcwrigKIJOTArIFByb2Zlc3Npb25hbCBE
-ZXZlbG9wZXJzIGFuZCBEZXNpZ25lcnMKV2UgYXJlIHJlYWR5IHRvIGRlbGl2ZXIgeW91IGF3ZXNv
-bWUgbW9iaWxlIGFwcHMuIExvb2tpbmcgZm9yd2FyZCB0byB5b3VyCnJlc3BvbnNlIGFuZCBhZGRy
-ZXNzaW5nCnlvdXIgYnVzaW5lc3MgbmVlZHMuCgoKU2luY2VyZWx5LApBbGV4IFJ1YmVucwoKX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBt
-YWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczov
-L2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Currently when /proc/locks is read it will show all the file locks
+which are currently created on the machine. On containers, hosted
+on busy servers this means that doing lsof can be very slow. I
+observed up to 5 seconds stalls reading 50k locks, while the container
+itself had only a small number of relevant entries. Fix it by
+filtering the locks listed by the pidns of the current process
+and the process which created the lock.
+
+Signed-off-by: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+---
+ fs/locks.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/fs/locks.c b/fs/locks.c
+index 6333263b7bc8..53e96df4c583 100644
+--- a/fs/locks.c
++++ b/fs/locks.c
+@@ -2615,9 +2615,17 @@ static int locks_show(struct seq_file *f, void *v)
+ {
+ 	struct locks_iterator *iter = f->private;
+ 	struct file_lock *fl, *bfl;
++	struct pid_namespace *pid_ns = task_active_pid_ns(current);
++
+ 
+ 	fl = hlist_entry(v, struct file_lock, fl_link);
+ 
++	pr_info ("Current pid_ns: %p init_pid_ns: %p, fl->fl_nspid: %p nspidof:%p\n", pid_ns, &init_pid_ns,
++		 fl->fl_nspid, ns_of_pid(fl->fl_nspid));
++	if ((pid_ns != &init_pid_ns) && fl->fl_nspid &&
++		(pid_ns != ns_of_pid(fl->fl_nspid)))
++		    return 0;
++
+ 	lock_get_status(f, fl, iter->li_pos, "");
+ 
+ 	list_for_each_entry(bfl, &fl->fl_block, fl_block)
+-- 
+2.5.0
