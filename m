@@ -1,18 +1,19 @@
-From: Jeff Layton <jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org>
-Subject: Re: [RFC PATCH] locks: Show only file_locks created in the same
-	pidns as current process
-Date: Tue, 02 Aug 2016 16:01:22 -0400
-Message-ID: <1470168082.15226.14.camel@poochiereds.net>
+From: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+Subject: Re: [RFC PATCH] locks: Show only file_locks created in the same pidns
+	as current process
+Date: Tue, 2 Aug 2016 23:11:04 +0300
+Message-ID: <CAJFSNy6H+sTBgj0p36XyfCJ-bbn8fE+vuuo4aDEQn+-iufM8+w@mail.gmail.com>
 References: <1470148943-21835-1-git-send-email-kernel@kyup.com>
 	<87r3a7qhy0.fsf@x220.int.ebiederm.org>
 	<20160802174003.GD11767@fieldses.org>
 	<87invjq97h.fsf@x220.int.ebiederm.org>
 	<20160802194437.GD15324@fieldses.org>
+	<1470168082.15226.14.camel@poochiereds.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20160802194437.GD15324-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
+In-Reply-To: <1470168082.15226.14.camel-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,63 +23,87 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Jeff Layton <jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org>
+Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gVHVlLCAyMDE2LTA4LTAyIGF0IDE1OjQ0IC0wNDAwLCBKLiBCcnVjZSBGaWVsZHMgd3JvdGU6
-Cj4gT24gVHVlLCBBdWcgMDIsIDIwMTYgYXQgMDI6MDk6MjJQTSAtMDUwMCwgRXJpYyBXLiBCaWVk
-ZXJtYW4gd3JvdGU6Cj4gPiAKPiA+ID4gPiAiSi4gQnJ1Y2UgRmllbGRzIiA8YmZpZWxkc0BmaWVs
-ZHNlcy5vcmc+IHdyaXRlczoKPiA+IAo+ID4gPiAKPiA+ID4gT24gVHVlLCBBdWcgMDIsIDIwMTYg
-YXQgMTE6MDA6MzlBTSAtMDUwMCwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4gPiA+ID4gCj4g
-PiA+ID4gPiA+ID4gPiBOaWtvbGF5IEJvcmlzb3YgPGtlcm5lbEBreXVwLmNvbT4gd3JpdGVzOgo+
-ID4gPiA+IAo+ID4gPiA+ID4gCj4gPiA+ID4gPiBDdXJyZW50bHkgd2hlbiAvcHJvYy9sb2NrcyBp
-cyByZWFkIGl0IHdpbGwgc2hvdyBhbGwgdGhlIGZpbGUgbG9ja3MKPiA+ID4gPiA+IHdoaWNoIGFy
-ZSBjdXJyZW50bHkgY3JlYXRlZCBvbiB0aGUgbWFjaGluZS4gT24gY29udGFpbmVycywgaG9zdGVk
-Cj4gPiA+ID4gPiBvbiBidXN5IHNlcnZlcnMgdGhpcyBtZWFucyB0aGF0IGRvaW5nIGxzb2YgY2Fu
-IGJlIHZlcnkgc2xvdy4gSQo+ID4gPiA+ID4gb2JzZXJ2ZWQgdXAgdG8gNSBzZWNvbmRzIHN0YWxs
-cyByZWFkaW5nIDUwayBsb2Nrcywgd2hpbGUgdGhlIGNvbnRhaW5lcgo+ID4gPiA+ID4gaXRzZWxm
-IGhhZCBvbmx5IGEgc21hbGwgbnVtYmVyIG9mIHJlbGV2YW50IGVudHJpZXMuIEZpeCBpdCBieQo+
-ID4gPiA+ID4gZmlsdGVyaW5nIHRoZSBsb2NrcyBsaXN0ZWQgYnkgdGhlIHBpZG5zIG9mIHRoZSBj
-dXJyZW50IHByb2Nlc3MKPiA+ID4gPiA+IGFuZCB0aGUgcHJvY2VzcyB3aGljaCBjcmVhdGVkIHRo
-ZSBsb2NrLgo+ID4gPiA+IAo+ID4gPiA+IFRoZSBsb2NrcyBhbHdheXMgY29uZnVzZSBtZSBzbyBJ
-IGFtIG5vdCAxMDAlIGNvbm5lY3RpbmcgbG9ja3MKPiA+ID4gPiB0byBhIHBpZCBuYW1lc3BhY2Ug
-aXMgYXBwcm9wcmlhdGUuCj4gPiA+ID4gCj4gPiA+ID4gVGhhdCBzYWlkIGlmIHlvdSBhcmUgZ29p
-bmcgdG8gZmlsdGVyIGJ5IHBpZCBuYW1lc3BhY2UgcGxlYXNlIHVzZSB0aGUgcGlkCj4gPiA+ID4g
-bmFtZXNwYWNlIG9mIHByb2MsIG5vdCB0aGUgcGlkIG5hbWVzcGFjZSBvZiB0aGUgcHJvY2VzcyBy
-ZWFkaW5nIHRoZQo+ID4gPiA+IGZpbGUuCj4gPiA+IAo+ID4gPiBPaCwgdGhhdCBtYWtlcyBzZW5z
-ZSwgdGhhbmtzLgo+ID4gPiAKPiA+ID4gV2hhdCBkb2VzIC9wcm9jL21vdW50cyB1c2UsIG91dCBv
-ZiBjdXJpb3NpdHk/wqDCoFRoZSBtb3VudCBuYW1lc3BhY2UgdGhhdAo+ID4gPiAvcHJvYyB3YXMg
-b3JpZ2luYWxseSBtb3VudGVkIGluPwo+ID4gCj4gPiAvcHJvYy9tb3VudHMgLT4gL3Byb2Mvc2Vs
-Zi9tb3VudHMKPiAKPiBEJ29oLCBJIGtuZXcgdGhhdC4KPiAKPiA+IAo+ID4gL3Byb2MvW3BpZF0v
-bW91bnRzIGxpc3RzIG1vdW50cyBmcm9tIHRoZSBtb3VudCBuYW1lc3BhY2Ugb2YgdGhlCj4gPiBh
-cHByb3ByaWF0ZSBwcm9jZXNzLgo+ID4gCj4gPiBUaGF0IGlzIGFub3RoZXIgd2F5IHRvIGdvIGJ1
-dCBpdCBpcyBhIHRyZWFkIGNhcmVmdWxseSB0aGluZyBhcyBjaGFuZ2luZwo+ID4gdGhpbmdzIHRo
-YXQgd2F5IGl0IGlzIGVhc3kgdG8gc3VycHJpc2UgYXBwYXJtb3Igb3Igc2VsaW51eCBydWxlcyBh
-bmQgYmUKPiA+IHN1cnByaXNlZCB5b3UgYnJva2Ugc29tZW9uZXMgdXNlcnNwYWNlIGluIGEgd2F5
-IHRoYXQgcHJldmVudHMgYm9vdGluZy4KPiA+IEFsdGhvdWdoIEkgc3VzcGVjdCAvcHJvYy9sb2Nr
-cyBpc24ndCB0b28gYmFkLgo+IAo+IE9LLCB0aGFua3MuCj4gCj4gL3Byb2MvW3BpZF0vbG9ja3Mg
-bWlnaHQgYmUgY29uZnVzaW5nLsKgwqBJJ2QgZXhwZWN0IGl0IHRvIGJlICJhbGwgdGhlCj4gbG9j
-a3Mgb3duZWQgYnkgdGhpcyB0YXNrIiwgcmF0aGVyIHRoYW4gImFsbCB0aGUgbG9ja3Mgb3duZWQg
-YnkgcGlkJ3MgaW4KPiB0aGUgc2FtZSBwaWQgbmFtZXNwYWNlIiwgb3Igd2hhdGV2ZXIgY3JpdGVy
-aW9uIHdlIGNob29zZS4KPiAKPiBVaCwgSSdtIHN0aWxsIHRyeWluZyB0byB0aGluayBvZiB0aGUg
-T2J2aW91c2x5IFJpZ2h0IHNvbHV0aW9uIGhlcmUsIGFuZAo+IGl0J3Mgbm90IGNvbWluZy4KPiAK
-PiAtLWIuCgoKSSdtIGEgbGl0dGxlIGxlZXJ5IG9mIGNoYW5naW5nIGhvdyB0aGlzIHdvcmtzLiBJ
-dCBoYXMgYWx3YXlzIGJlZW4KbWFpbnRhaW5lZCBhcyBhIGxlZ2FjeSBpbnRlcmZhY2UsIHNvIGRv
-IHdlIHJ1biB0aGUgcmlzayBvZiBicmVha2luZwpzb21ldGhpbmcgaWYgd2UgdHVybiBpdCBpbnRv
-IGEgcGVyLW5hbWVzcGFjZSB0aGluZz8gVGhpcyBhbHNvIGRvZXNuJ3QKc29sdmUgdGhlIHByb2Js
-ZW0gb2Ygc2xvdyB0cmF2ZXJzYWwgaW4gdGhlIGluaXRfcGlkX25zIC0tIG9ubHkgaW4gYQpjb250
-YWluZXIuCgpJIGFsc28gY2FuJ3QgaGVscCBidXQgZmVlbCB0aGF0IC9wcm9jL2xvY2tzIGlzIGp1
-c3Qgc2hvd2luZyBpdHMgYWdlLiBJdAp3YXMgZmluZSBpbiB0aGUgbGF0ZSA5MCdzLCBidXQgaXRz
-IGxpbWl0YXRpb25zIGFyZSBqdXN0IGJlY29taW5nIG1vcmUKYXBwYXJlbnQgYXMgdGhpbmdzIGdl
-dCBtb3JlIGNvbXBsZXguIEl0IHdhcyBuZXZlciBkZXNpZ25lZCBmb3IKcGVyZm9ybWFuY2UgYXMg
-eW91IGVuZCB1cCB0aHJhc2hpbmcgc2V2ZXJhbCBzcGlubG9ja3Mgd2hlbiByZWFkaW5nIGl0LgoK
-TWF5YmUgaXQncyB0aW1lIHRvIHRoaW5rIGFib3V0IHByZXNlbnRpbmcgdGhpcyBpbmZvIGluIGFu
-b3RoZXIgd2F5PyBBCmdsb2JhbCB2aWV3IG9mIGFsbCBsb2NrcyBvbiB0aGUgc3lzdGVtIGlzIGlu
-dGVyZXN0aW5nIGJ1dCBtYXliZSBpdAp3b3VsZCBiZSBiZXR0ZXIgdG8gcHJlc2VudCBpdCBtb3Jl
-IGdyYW51bGFybHkgc29tZWhvdz8KCkkgZ3Vlc3MgSSBzaG91bGQgZ28gbG9vayBhdCB3aGF0IGxz
-b2YgYWN0dWFsbHkgZG9lcyB3aXRoIHRoaXMgaW5mby4uLgoKLS0gCkplZmYgTGF5dG9uIDxqbGF5
-dG9uQHBvb2NoaWVyZWRzLm5ldD4KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51
-eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1h
-bi9saXN0aW5mby9jb250YWluZXJz
+On Tue, Aug 2, 2016 at 11:01 PM, Jeff Layton <jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org> wrote:
+> On Tue, 2016-08-02 at 15:44 -0400, J. Bruce Fields wrote:
+>> On Tue, Aug 02, 2016 at 02:09:22PM -0500, Eric W. Biederman wrote:
+>> >
+>> > > > "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org> writes:
+>> >
+>> > >
+>> > > On Tue, Aug 02, 2016 at 11:00:39AM -0500, Eric W. Biederman wrote:
+>> > > >
+>> > > > > > > > Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org> writes:
+>> > > >
+>> > > > >
+>> > > > > Currently when /proc/locks is read it will show all the file locks
+>> > > > > which are currently created on the machine. On containers, hosted
+>> > > > > on busy servers this means that doing lsof can be very slow. I
+>> > > > > observed up to 5 seconds stalls reading 50k locks, while the container
+>> > > > > itself had only a small number of relevant entries. Fix it by
+>> > > > > filtering the locks listed by the pidns of the current process
+>> > > > > and the process which created the lock.
+>> > > >
+>> > > > The locks always confuse me so I am not 100% connecting locks
+>> > > > to a pid namespace is appropriate.
+>> > > >
+>> > > > That said if you are going to filter by pid namespace please use the pid
+>> > > > namespace of proc, not the pid namespace of the process reading the
+>> > > > file.
+>> > >
+>> > > Oh, that makes sense, thanks.
+>> > >
+>> > > What does /proc/mounts use, out of curiosity?  The mount namespace that
+>> > > /proc was originally mounted in?
+>> >
+>> > /proc/mounts -> /proc/self/mounts
+>>
+>> D'oh, I knew that.
+>>
+>> >
+>> > /proc/[pid]/mounts lists mounts from the mount namespace of the
+>> > appropriate process.
+>> >
+>> > That is another way to go but it is a tread carefully thing as changing
+>> > things that way it is easy to surprise apparmor or selinux rules and be
+>> > surprised you broke someones userspace in a way that prevents booting.
+>> > Although I suspect /proc/locks isn't too bad.
+>>
+>> OK, thanks.
+>>
+>> /proc/[pid]/locks might be confusing.  I'd expect it to be "all the
+>> locks owned by this task", rather than "all the locks owned by pid's in
+>> the same pid namespace", or whatever criterion we choose.
+>>
+>> Uh, I'm still trying to think of the Obviously Right solution here, and
+>> it's not coming.
+>>
+>> --b.
+>
+>
+> I'm a little leery of changing how this works. It has always been
+> maintained as a legacy interface, so do we run the risk of breaking
+> something if we turn it into a per-namespace thing? This also doesn't
+> solve the problem of slow traversal in the init_pid_ns -- only in a
+> container.
+>
+> I also can't help but feel that /proc/locks is just showing its age. It
+> was fine in the late 90's, but its limitations are just becoming more
+> apparent as things get more complex. It was never designed for
+> performance as you end up thrashing several spinlocks when reading it.
+
+I believe it's also used by CRIU, though in this case you'd be doing
+that from the init ns so I guess it's not that big of a problem there.
+
+>
+> Maybe it's time to think about presenting this info in another way? A
+> global view of all locks on the system is interesting but maybe it
+> would be better to present it more granularly somehow?
+>
+> I guess I should go look at what lsof actually does with this info...
+>
+> --
+> Jeff Layton <jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org>
