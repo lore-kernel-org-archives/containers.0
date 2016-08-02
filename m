@@ -1,13 +1,14 @@
-From: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
-Subject: Re: [RFC PATCH] locks: Show only file_locks created in the same pidns
-	as current process
-Date: Tue, 2 Aug 2016 17:45:03 +0300
-Message-ID: <57A0B1EF.7000603@kyup.com>
+From: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
+Subject: Re: [RFC PATCH] locks: Show only file_locks created in the same
+	pidns as current process
+Date: Tue, 2 Aug 2016 11:05:21 -0400
+Message-ID: <20160802150521.GB11767__10387.8025235192$1470150845$gmane$org@fieldses.org>
 References: <1470148943-21835-1-git-send-email-kernel@kyup.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 In-Reply-To: <1470148943-21835-1-git-send-email-kernel-6AxghH7DbtA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,20 +19,38 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
-Cc: serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+Cc: serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
-
-On 08/02/2016 05:42 PM, Nikolay Borisov wrote:
+On Tue, Aug 02, 2016 at 05:42:23PM +0300, Nikolay Borisov wrote:
 > Currently when /proc/locks is read it will show all the file locks
 > which are currently created on the machine. On containers, hosted
 > on busy servers this means that doing lsof can be very slow. I
-> observed up to 5 seconds stalls reading 50k locks, while the container
+> observed up to 5 seconds stalls reading 50k locks,
+
+Do you mean just that the reading process itself was blocked, or that
+others were getting stuck on blocked_lock_lock?
+
+(And what process was actually reading /proc/locks, out of curiosity?)
+
+> while the container
 > itself had only a small number of relevant entries. Fix it by
 > filtering the locks listed by the pidns of the current process
 > and the process which created the lock.
+
+Thanks, that's interesting.  So you show a lock if it was created by
+someone in the current pid namespace.  With a special exception for the
+init namespace so that 
+
+If a filesystem is shared between containers that means you won't
+necessarily be able to figure out from within a container which lock is
+conflicting with your lock.  (I don't know if that's really a problem.
+I'm unfortunately short on evidence aobut what people actually use
+/proc/locks for....)
+
+--b.
+
 > 
 > Signed-off-by: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
 > ---
@@ -53,9 +72,6 @@ On 08/02/2016 05:42 PM, Nikolay Borisov wrote:
 >  
 > +	pr_info ("Current pid_ns: %p init_pid_ns: %p, fl->fl_nspid: %p nspidof:%p\n", pid_ns, &init_pid_ns,
 > +		 fl->fl_nspid, ns_of_pid(fl->fl_nspid));
-
-Obviously I don't intend on including that in the final submission.
-
 > +	if ((pid_ns != &init_pid_ns) && fl->fl_nspid &&
 > +		(pid_ns != ns_of_pid(fl->fl_nspid)))
 > +		    return 0;
@@ -63,4 +79,5 @@ Obviously I don't intend on including that in the final submission.
 >  	lock_get_status(f, fl, iter->li_pos, "");
 >  
 >  	list_for_each_entry(bfl, &fl->fl_block, fl_block)
-> 
+> -- 
+> 2.5.0
