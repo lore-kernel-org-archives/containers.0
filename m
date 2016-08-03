@@ -1,11 +1,15 @@
-From: Laura <Brian-2Yfyjzcmb6RCPWQmNIN3aQ@public.gmane.org>
-Subject: =?utf-8?B?QlJFWElUID0gWW91ciBHb2xkZW4gVGlja2V0?=
-Date: Wed, 3 Aug 2016 17:55:08 -0400
-Message-ID: <da532c73f74cbc2b092e51b99ad61349@worrynews.info>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCHv3] locks: Filter /proc/locks output on proc pid ns
+Date: Wed, 03 Aug 2016 11:23:17 -0500
+Message-ID: <87k2fxom8a.fsf@x220.int.ebiederm.org>
+References: <1470148943-21835-1-git-send-email-kernel@kyup.com>
+	<1470236078-2389-1-git-send-email-kernel@kyup.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1470236078-2389-1-git-send-email-kernel-6AxghH7DbtA@public.gmane.org> (Nikolay
+	Borisov's message of "Wed, 3 Aug 2016 17:54:38 +0300")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,60 +19,52 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+Cc: bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org, jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org, xemul-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Man, this is literally like receiving a GOLDEN TICKET...
+Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org> writes:
 
-This is the worlds only BREXIT optimised profit app.
+> On busy container servers reading /proc/locks shows all the locks
+> created by all clients. This can cause large latency spikes. In my
+> case I observed lsof taking up to 5-10 seconds while processing around
+> 50k locks. Fix this by limiting the locks shown only to those created
+> in the same pidns as the one the proc fs was mounted in. When reading
+> /proc/locks from the init_pid_ns proc instance then perform no
+> filtering
 
-Yes, you read that right -- Brexit ready, and fully guaranteed.
+If we are going to do this, this should be a recrusive belonging test
+(because pid namespaces are recursive).
 
-Get the full scoop here >>
+Right now the test looks like it will filter out child pid namespaces.
 
->> http://lp1.worrynews.info/index.php?id=5966548&a=41260&b=1294&c=166
+Special casing the init_pid_ns should be an optimization not something
+that is necessary for correctness. (as it appears here).
 
-Enjoy,
-
-Laura
-
-ps. Access your account holding page HERE
-
-
-
-
-
-
+Eric
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Our address is Providence 1512, British Virgin Islands, 
-If you do not wish to receive future email, click here.
-http://click.worrynews.info/index.php?o=2&a=41260&b=1294&c=166
-(You can also send your request to Customer Care at the street address above.) 
+> Signed-off-by: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+> ---
+>  fs/locks.c | 5 +++++
+>  1 file changed, 5 insertions(+)
+>
+> diff --git a/fs/locks.c b/fs/locks.c
+> index ee1b15f6fc13..65e75810a836 100644
+> --- a/fs/locks.c
+> +++ b/fs/locks.c
+> @@ -2648,9 +2648,14 @@ static int locks_show(struct seq_file *f, void *v)
+>  {
+>  	struct locks_iterator *iter = f->private;
+>  	struct file_lock *fl, *bfl;
+> +	struct pid_namespace *proc_pidns = file_inode(f->file)->i_sb->s_fs_info;
+>  
+>  	fl = hlist_entry(v, struct file_lock, fl_link);
+>  
+> +	if ((proc_pidns != &init_pid_ns) && fl->fl_nspid
+> +	    && (proc_pidns != ns_of_pid(fl->fl_nspid)))
+> +		return 0;
+> +
+>  	lock_get_status(f, fl, iter->li_pos, "");
+>  
+>  	list_for_each_entry(bfl, &fl->fl_block, fl_block)
