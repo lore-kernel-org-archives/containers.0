@@ -1,14 +1,11 @@
-From: Jeff Layton <jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org>
-Subject: Re: [PATCHv3] locks: Filter /proc/locks output on proc pid ns
-Date: Wed, 03 Aug 2016 11:24:50 -0400
-Message-ID: <1470237890.13804.2.camel@poochiereds.net>
-References: <1470148943-21835-1-git-send-email-kernel@kyup.com>
-	<1470236078-2389-1-git-send-email-kernel@kyup.com>
+From: Laura <Brian-2Yfyjzcmb6RCPWQmNIN3aQ@public.gmane.org>
+Subject: =?utf-8?B?QlJFWElUID0gWW91ciBHb2xkZW4gVGlja2V0?=
+Date: Wed, 3 Aug 2016 17:55:08 -0400
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@worrynews.info>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1470236078-2389-1-git-send-email-kernel-6AxghH7DbtA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,36 +15,60 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xemul-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org, avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gV2VkLCAyMDE2LTA4LTAzIGF0IDE3OjU0ICswMzAwLCBOaWtvbGF5IEJvcmlzb3Ygd3JvdGU6
-Cj4gT24gYnVzeSBjb250YWluZXIgc2VydmVycyByZWFkaW5nIC9wcm9jL2xvY2tzIHNob3dzIGFs
-bCB0aGUgbG9ja3MKPiBjcmVhdGVkIGJ5IGFsbCBjbGllbnRzLiBUaGlzIGNhbiBjYXVzZSBsYXJn
-ZSBsYXRlbmN5IHNwaWtlcy4gSW4gbXkKPiBjYXNlIEkgb2JzZXJ2ZWQgbHNvZiB0YWtpbmcgdXAg
-dG8gNS0xMCBzZWNvbmRzIHdoaWxlIHByb2Nlc3NpbmcgYXJvdW5kCj4gNTBrIGxvY2tzLiBGaXgg
-dGhpcyBieSBsaW1pdGluZyB0aGUgbG9ja3Mgc2hvd24gb25seSB0byB0aG9zZSBjcmVhdGVkCj4g
-aW4gdGhlIHNhbWUgcGlkbnMgYXMgdGhlIG9uZSB0aGUgcHJvYyBmcyB3YXMgbW91bnRlZCBpbi4g
-V2hlbiByZWFkaW5nCj4gL3Byb2MvbG9ja3MgZnJvbSB0aGUgaW5pdF9waWRfbnMgcHJvYyBpbnN0
-YW5jZSB0aGVuIHBlcmZvcm0gbm8KPiBmaWx0ZXJpbmcKPiAKPiA+IFNpZ25lZC1vZmYtYnk6IE5p
-a29sYXkgQm9yaXNvdiA8a2VybmVsQGt5dXAuY29tPgo+IC0tLQo+IMKgZnMvbG9ja3MuYyB8IDUg
-KysrKysKPiDCoDEgZmlsZSBjaGFuZ2VkLCA1IGluc2VydGlvbnMoKykKPiAKPiBkaWZmIC0tZ2l0
-IGEvZnMvbG9ja3MuYyBiL2ZzL2xvY2tzLmMKPiBpbmRleCBlZTFiMTVmNmZjMTMuLjY1ZTc1ODEw
-YTgzNiAxMDA2NDQKPiAtLS0gYS9mcy9sb2Nrcy5jCj4gKysrIGIvZnMvbG9ja3MuYwo+IEBAIC0y
-NjQ4LDkgKzI2NDgsMTQgQEAgc3RhdGljIGludCBsb2Nrc19zaG93KHN0cnVjdCBzZXFfZmlsZSAq
-Ziwgdm9pZCAqdikKPiDCoHsKPiA+IMKgCXN0cnVjdCBsb2Nrc19pdGVyYXRvciAqaXRlciA9IGYt
-PnByaXZhdGU7Cj4gPiDCoAlzdHJ1Y3QgZmlsZV9sb2NrICpmbCwgKmJmbDsKPiA+ICsJc3RydWN0
-IHBpZF9uYW1lc3BhY2UgKnByb2NfcGlkbnMgPSBmaWxlX2lub2RlKGYtPmZpbGUpLT5pX3NiLT5z
-X2ZzX2luZm87Cj4gwqAKPiA+IMKgCWZsID0gaGxpc3RfZW50cnkodiwgc3RydWN0IGZpbGVfbG9j
-aywgZmxfbGluayk7Cj4gwqAKPiA+ICsJaWYgKChwcm9jX3BpZG5zICE9ICZpbml0X3BpZF9ucykg
-JiYgZmwtPmZsX25zcGlkCj4gPiArCcKgwqDCoMKgJiYgKHByb2NfcGlkbnMgIT0gbnNfb2ZfcGlk
-KGZsLT5mbF9uc3BpZCkpKQo+ID4gKwkJcmV0dXJuIDA7Cj4gKwo+ID4gwqAJbG9ja19nZXRfc3Rh
-dHVzKGYsIGZsLCBpdGVyLT5saV9wb3MsICIiKTsKPiDCoAo+ID4gwqAJbGlzdF9mb3JfZWFjaF9l
-bnRyeShiZmwsICZmbC0+ZmxfYmxvY2ssIGZsX2Jsb2NrKQoKClllYWgsIHRoYXQgbWFrZXMgbXVj
-aCBtb3JlIHNlbnNlIHRvIG1lLiBJJ2xsIHBsYW4gdG8gbWVyZ2UgdGhpcyBmb3IKdjQuOSB1bmxl
-c3MgdGhlcmUgYXJlIG9iamVjdGlvbnMgYmV0d2VlbiBub3cgYW5kIHRoZSBuZXh0IG1lcmdlIHdp
-bmRvdy4KClRoYW5rcywKLS0gCkplZmYgTGF5dG9uIDxqbGF5dG9uQHBvb2NoaWVyZWRzLm5ldD4K
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVy
-cyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRw
-czovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Man, this is literally like receiving a GOLDEN TICKET...
+
+This is the worlds only BREXIT optimised profit app.
+
+Yes, you read that right -- Brexit ready, and fully guaranteed.
+
+Get the full scoop here >>
+
+>> http://lp1.worrynews.info/index.php?id=5966548&a=41260&b=1294&c=166
+
+Enjoy,
+
+Laura
+
+ps. Access your account holding page HERE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Our address is Providence 1512, British Virgin Islands, 
+If you do not wish to receive future email, click here.
+http://click.worrynews.info/index.php?o=2&a=41260&b=1294&c=166
+(You can also send your request to Customer Care at the street address above.) 
