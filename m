@@ -1,20 +1,13 @@
-From: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
-Subject: Re: [RFC PATCH] locks: Show only file_locks created in the same
-	pidns as current process
-Date: Tue, 2 Aug 2016 16:34:06 -0400
-Message-ID: <20160802203406.GE15324@fieldses.org>
+From: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+Subject: [PATCH v2] locks: Filter /proc/locks output on proc pid ns
+Date: Wed,  3 Aug 2016 10:35:10 +0300
+Message-ID: <1470209710-30022-1-git-send-email-kernel@kyup.com>
 References: <1470148943-21835-1-git-send-email-kernel@kyup.com>
-	<87r3a7qhy0.fsf@x220.int.ebiederm.org>
-	<20160802174003.GD11767@fieldses.org>
-	<87invjq97h.fsf@x220.int.ebiederm.org>
-	<20160802194437.GD15324@fieldses.org>
-	<1470168082.15226.14.camel@poochiereds.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1470168082.15226.14.camel-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org>
+In-Reply-To: <1470148943-21835-1-git-send-email-kernel-6AxghH7DbtA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,78 +17,41 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jeff Layton <jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org>
-Cc: serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
+To: jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org, bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gVHVlLCBBdWcgMDIsIDIwMTYgYXQgMDQ6MDE6MjJQTSAtMDQwMCwgSmVmZiBMYXl0b24gd3Jv
-dGU6Cj4gT24gVHVlLCAyMDE2LTA4LTAyIGF0IDE1OjQ0IC0wNDAwLCBKLiBCcnVjZSBGaWVsZHMg
-d3JvdGU6Cj4gPiBPbiBUdWUsIEF1ZyAwMiwgMjAxNiBhdCAwMjowOToyMlBNIC0wNTAwLCBFcmlj
-IFcuIEJpZWRlcm1hbiB3cm90ZToKPiA+ID4gCj4gPiA+ID4gPiAiSi4gQnJ1Y2UgRmllbGRzIiA8
-YmZpZWxkc0BmaWVsZHNlcy5vcmc+IHdyaXRlczoKPiA+ID4gCj4gPiA+ID4gCj4gPiA+ID4gT24g
-VHVlLCBBdWcgMDIsIDIwMTYgYXQgMTE6MDA6MzlBTSAtMDUwMCwgRXJpYyBXLiBCaWVkZXJtYW4g
-d3JvdGU6Cj4gPiA+ID4gPiAKPiA+ID4gPiA+ID4gPiA+ID4gTmlrb2xheSBCb3Jpc292IDxrZXJu
-ZWxAa3l1cC5jb20+IHdyaXRlczoKPiA+ID4gPiA+IAo+ID4gPiA+ID4gPiAKPiA+ID4gPiA+ID4g
-Q3VycmVudGx5IHdoZW4gL3Byb2MvbG9ja3MgaXMgcmVhZCBpdCB3aWxsIHNob3cgYWxsIHRoZSBm
-aWxlIGxvY2tzCj4gPiA+ID4gPiA+IHdoaWNoIGFyZSBjdXJyZW50bHkgY3JlYXRlZCBvbiB0aGUg
-bWFjaGluZS4gT24gY29udGFpbmVycywgaG9zdGVkCj4gPiA+ID4gPiA+IG9uIGJ1c3kgc2VydmVy
-cyB0aGlzIG1lYW5zIHRoYXQgZG9pbmcgbHNvZiBjYW4gYmUgdmVyeSBzbG93LiBJCj4gPiA+ID4g
-PiA+IG9ic2VydmVkIHVwIHRvIDUgc2Vjb25kcyBzdGFsbHMgcmVhZGluZyA1MGsgbG9ja3MsIHdo
-aWxlIHRoZSBjb250YWluZXIKPiA+ID4gPiA+ID4gaXRzZWxmIGhhZCBvbmx5IGEgc21hbGwgbnVt
-YmVyIG9mIHJlbGV2YW50IGVudHJpZXMuIEZpeCBpdCBieQo+ID4gPiA+ID4gPiBmaWx0ZXJpbmcg
-dGhlIGxvY2tzIGxpc3RlZCBieSB0aGUgcGlkbnMgb2YgdGhlIGN1cnJlbnQgcHJvY2Vzcwo+ID4g
-PiA+ID4gPiBhbmQgdGhlIHByb2Nlc3Mgd2hpY2ggY3JlYXRlZCB0aGUgbG9jay4KPiA+ID4gPiA+
-IAo+ID4gPiA+ID4gVGhlIGxvY2tzIGFsd2F5cyBjb25mdXNlIG1lIHNvIEkgYW0gbm90IDEwMCUg
-Y29ubmVjdGluZyBsb2Nrcwo+ID4gPiA+ID4gdG8gYSBwaWQgbmFtZXNwYWNlIGlzIGFwcHJvcHJp
-YXRlLgo+ID4gPiA+ID4gCj4gPiA+ID4gPiBUaGF0IHNhaWQgaWYgeW91IGFyZSBnb2luZyB0byBm
-aWx0ZXIgYnkgcGlkIG5hbWVzcGFjZSBwbGVhc2UgdXNlIHRoZSBwaWQKPiA+ID4gPiA+IG5hbWVz
-cGFjZSBvZiBwcm9jLCBub3QgdGhlIHBpZCBuYW1lc3BhY2Ugb2YgdGhlIHByb2Nlc3MgcmVhZGlu
-ZyB0aGUKPiA+ID4gPiA+IGZpbGUuCj4gPiA+ID4gCj4gPiA+ID4gT2gsIHRoYXQgbWFrZXMgc2Vu
-c2UsIHRoYW5rcy4KPiA+ID4gPiAKPiA+ID4gPiBXaGF0IGRvZXMgL3Byb2MvbW91bnRzIHVzZSwg
-b3V0IG9mIGN1cmlvc2l0eT/CoMKgVGhlIG1vdW50IG5hbWVzcGFjZSB0aGF0Cj4gPiA+ID4gL3By
-b2Mgd2FzIG9yaWdpbmFsbHkgbW91bnRlZCBpbj8KPiA+ID4gCj4gPiA+IC9wcm9jL21vdW50cyAt
-PiAvcHJvYy9zZWxmL21vdW50cwo+ID4gCj4gPiBEJ29oLCBJIGtuZXcgdGhhdC4KPiA+IAo+ID4g
-PiAKPiA+ID4gL3Byb2MvW3BpZF0vbW91bnRzIGxpc3RzIG1vdW50cyBmcm9tIHRoZSBtb3VudCBu
-YW1lc3BhY2Ugb2YgdGhlCj4gPiA+IGFwcHJvcHJpYXRlIHByb2Nlc3MuCj4gPiA+IAo+ID4gPiBU
-aGF0IGlzIGFub3RoZXIgd2F5IHRvIGdvIGJ1dCBpdCBpcyBhIHRyZWFkIGNhcmVmdWxseSB0aGlu
-ZyBhcyBjaGFuZ2luZwo+ID4gPiB0aGluZ3MgdGhhdCB3YXkgaXQgaXMgZWFzeSB0byBzdXJwcmlz
-ZSBhcHBhcm1vciBvciBzZWxpbnV4IHJ1bGVzIGFuZCBiZQo+ID4gPiBzdXJwcmlzZWQgeW91IGJy
-b2tlIHNvbWVvbmVzIHVzZXJzcGFjZSBpbiBhIHdheSB0aGF0IHByZXZlbnRzIGJvb3RpbmcuCj4g
-PiA+IEFsdGhvdWdoIEkgc3VzcGVjdCAvcHJvYy9sb2NrcyBpc24ndCB0b28gYmFkLgo+ID4gCj4g
-PiBPSywgdGhhbmtzLgo+ID4gCj4gPiAvcHJvYy9bcGlkXS9sb2NrcyBtaWdodCBiZSBjb25mdXNp
-bmcuwqDCoEknZCBleHBlY3QgaXQgdG8gYmUgImFsbCB0aGUKPiA+IGxvY2tzIG93bmVkIGJ5IHRo
-aXMgdGFzayIsIHJhdGhlciB0aGFuICJhbGwgdGhlIGxvY2tzIG93bmVkIGJ5IHBpZCdzIGluCj4g
-PiB0aGUgc2FtZSBwaWQgbmFtZXNwYWNlIiwgb3Igd2hhdGV2ZXIgY3JpdGVyaW9uIHdlIGNob29z
-ZS4KPiA+IAo+ID4gVWgsIEknbSBzdGlsbCB0cnlpbmcgdG8gdGhpbmsgb2YgdGhlIE9idmlvdXNs
-eSBSaWdodCBzb2x1dGlvbiBoZXJlLCBhbmQKPiA+IGl0J3Mgbm90IGNvbWluZy4KPiA+IAo+ID4g
-LS1iLgo+IAo+IAo+IEknbSBhIGxpdHRsZSBsZWVyeSBvZiBjaGFuZ2luZyBob3cgdGhpcyB3b3Jr
-cy4gSXQgaGFzIGFsd2F5cyBiZWVuCj4gbWFpbnRhaW5lZCBhcyBhIGxlZ2FjeSBpbnRlcmZhY2Us
-IHNvIGRvIHdlIHJ1biB0aGUgcmlzayBvZiBicmVha2luZwo+IHNvbWV0aGluZyBpZiB3ZSB0dXJu
-IGl0IGludG8gYSBwZXItbmFtZXNwYWNlIHRoaW5nPwoKVGhlIG5hbWVzcGFjZSB3b3JrIGlzIGFs
-bCBhYm91dCBtYWtpbmcgaW50ZXJmYWNlcyBwZXItbmFtZXNwYWNlLiAgSQpndWVzcyBpdCB3b3Jr
-cyBhcyBsb25nIGFzIGl0IGNvbnRyaWJ1dGVzIHRvIHRoZSBpbGx1c2lvbiB0aGF0IGVhY2gKY29u
-dGFpbmVyIGlzIGl0cyBvd24gbWFjaGluZS4KClRoaW5raW5nIGFib3V0IGl0LCBJIG1pZ2h0IGJl
-IHNvbGQgb24gdGhlIHBlci1waWRucyBhcHByb2FjaCAod2l0aApFcmljJ3MgbW9kaWZpY2F0aW9u
-IHRvIHVzZSB0aGUgcGlkbnMgb2YgL3Byb2Mgbm90IHRoZSByZWFkZXIpLgoKTXkgY29tcGxhaW50
-IGFib3V0IG5vdCBiZWluZyBhYmxlIHRvIHNlZSBjb25mbGljdGluZyBsb2NrcyB3b3VsZCBhcHBs
-eQpqdXN0IGFzIHdlbGwgdG8gY29uZmxpY3RzIGZyb20gbmZzIGxvY2tzIGhlbGQgYnkgb3RoZXIg
-Y2xpZW50cy4gIEEgZGlzawpmaWxlc3lzdGVtIHNoYXJlZCBhY3Jvc3MgbXVsdGlwbGUgY29udGFp
-bmVycyBpcyBhIGxpdHRsZSBsaWtlIGFuIG5mcwpmaWxlc3lzdGVtIHNoYXJlZCBiZXR3ZWVuIG5m
-cyBjbGllbnRzLgoKVGhhdCdkIHNvbHZlIHRoaXMgaW1tZWRpYXRlIHByb2JsZW0gd2l0aG91dCBy
-ZXF1aXJpbmcgYW4gbHNvZiB1cGdyYWRlIGFzCndlbGwuCgo+IFRoaXMgYWxzbyBkb2Vzbid0Cj4g
-c29sdmUgdGhlIHByb2JsZW0gb2Ygc2xvdyB0cmF2ZXJzYWwgaW4gdGhlIGluaXRfcGlkX25zIC0t
-IG9ubHkgaW4gYQo+IGNvbnRhaW5lci4KPiAKPiBJIGFsc28gY2FuJ3QgaGVscCBidXQgZmVlbCB0
-aGF0IC9wcm9jL2xvY2tzIGlzIGp1c3Qgc2hvd2luZyBpdHMgYWdlLiBJdAo+IHdhcyBmaW5lIGlu
-IHRoZSBsYXRlIDkwJ3MsIGJ1dCBpdHMgbGltaXRhdGlvbnMgYXJlIGp1c3QgYmVjb21pbmcgbW9y
-ZQo+IGFwcGFyZW50IGFzIHRoaW5ncyBnZXQgbW9yZSBjb21wbGV4LiBJdCB3YXMgbmV2ZXIgZGVz
-aWduZWQgZm9yCj4gcGVyZm9ybWFuY2UgYXMgeW91IGVuZCB1cCB0aHJhc2hpbmcgc2V2ZXJhbCBz
-cGlubG9ja3Mgd2hlbiByZWFkaW5nIGl0Lgo+IAo+IE1heWJlIGl0J3MgdGltZSB0byB0aGluayBh
-Ym91dCBwcmVzZW50aW5nIHRoaXMgaW5mbyBpbiBhbm90aGVyIHdheT8gQQo+IGdsb2JhbCB2aWV3
-IG9mIGFsbCBsb2NrcyBvbiB0aGUgc3lzdGVtIGlzIGludGVyZXN0aW5nIGJ1dCBtYXliZSBpdAo+
-IHdvdWxkIGJlIGJldHRlciB0byBwcmVzZW50IGl0IG1vcmUgZ3JhbnVsYXJseSBzb21laG93PwoK
-QnV0LCB5ZXMsIHRoYXQgbWlnaHQgYmUgYSBnb29kIGlkZWEuCgotLWIuCgo+IAo+IEkgZ3Vlc3Mg
-SSBzaG91bGQgZ28gbG9vayBhdCB3aGF0IGxzb2YgYWN0dWFsbHkgZG9lcyB3aXRoIHRoaXMgaW5m
-by4uLgo+IAo+IC0tIAo+IEplZmYgTGF5dG9uIDxqbGF5dG9uQHBvb2NoaWVyZWRzLm5ldD4KX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBt
-YWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczov
-L2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+On busy container servers reading /proc/locks shows all the locks
+created by all clients. This can cause large latency spikes. In my
+case I observed lsof taking up to 5-10 seconds while processing around
+50k locks. Fix this by limiting the locks shown only to those created
+in the same pidns as the one the proc was mounted in. When reading
+/proc/locks from the init_pid_ns show everything.
+
+Signed-off-by: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+---
+ fs/locks.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/fs/locks.c b/fs/locks.c
+index ee1b15f6fc13..751673d7f7fc 100644
+--- a/fs/locks.c
++++ b/fs/locks.c
+@@ -2648,9 +2648,15 @@ static int locks_show(struct seq_file *f, void *v)
+ {
+ 	struct locks_iterator *iter = f->private;
+ 	struct file_lock *fl, *bfl;
++	struct pid_namespace *proc_pidns = file_inode(f->file)->i_sb->s_fs_info;
++	struct pid_namespace *current_pidns = task_active_pid_ns(current);
+ 
+ 	fl = hlist_entry(v, struct file_lock, fl_link);
+ 
++	if ((current_pidns != &init_pid_ns) && fl->fl_nspid
++	    && (proc_pidns != ns_of_pid(fl->fl_nspid)))
++		return 0;
++
+ 	lock_get_status(f, fl, iter->li_pos, "");
+ 
+ 	list_for_each_entry(bfl, &fl->fl_block, fl_block)
+-- 
+2.5.0
