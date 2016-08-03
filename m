@@ -1,11 +1,14 @@
-From: cool linux <linux.cool.hot-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: why this behavior in 3.16 kernel ?
-Date: Wed, 3 Aug 2016 16:38:25 +0530
-Message-ID: <CAJ5w2CmDcXzOKppojwN2F5H-mFu_OM-XUoTWnTuLKrdoPG9iQg@mail.gmail.com>
+From: Jeff Layton <jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org>
+Subject: Re: [PATCH v2] locks: Filter /proc/locks output on proc pid ns
+Date: Wed, 03 Aug 2016 09:46:52 -0400
+Message-ID: <1470232012.18285.4.camel@poochiereds.net>
+References: <1470148943-21835-1-git-send-email-kernel@kyup.com>
+	<1470209710-30022-1-git-send-email-kernel@kyup.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1470209710-30022-1-git-send-email-kernel-6AxghH7DbtA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,27 +18,40 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
-
-I have executed below script on 3.16 kernel and it took to finish almost
-1.30sec to 2 minutes, where as in my older kernel(3.2.30) it took only 3
-secs.
-
-================================================
-date
-
-for (( i=1; i <= 2000; i++ ))
-do
- ip netns exec gmk ip link show > /dev/null
-done
-
-date
-================================================
-
-Please guide me why this behavior in 3.16 kernel ?
-
-Regards,
-Madhu
+T24gV2VkLCAyMDE2LTA4LTAzIGF0IDEwOjM1ICswMzAwLCBOaWtvbGF5IEJvcmlzb3Ygd3JvdGU6
+Cj4gT24gYnVzeSBjb250YWluZXIgc2VydmVycyByZWFkaW5nIC9wcm9jL2xvY2tzIHNob3dzIGFs
+bCB0aGUgbG9ja3MKPiBjcmVhdGVkIGJ5IGFsbCBjbGllbnRzLiBUaGlzIGNhbiBjYXVzZSBsYXJn
+ZSBsYXRlbmN5IHNwaWtlcy4gSW4gbXkKPiBjYXNlIEkgb2JzZXJ2ZWQgbHNvZiB0YWtpbmcgdXAg
+dG8gNS0xMCBzZWNvbmRzIHdoaWxlIHByb2Nlc3NpbmcgYXJvdW5kCj4gNTBrIGxvY2tzLiBGaXgg
+dGhpcyBieSBsaW1pdGluZyB0aGUgbG9ja3Mgc2hvd24gb25seSB0byB0aG9zZSBjcmVhdGVkCj4g
+aW4gdGhlIHNhbWUgcGlkbnMgYXMgdGhlIG9uZSB0aGUgcHJvYyB3YXMgbW91bnRlZCBpbi4gV2hl
+biByZWFkaW5nCj4gL3Byb2MvbG9ja3MgZnJvbSB0aGUgaW5pdF9waWRfbnMgc2hvdyBldmVyeXRo
+aW5nLgo+IAo+ID4gU2lnbmVkLW9mZi1ieTogTmlrb2xheSBCb3Jpc292IDxrZXJuZWxAa3l1cC5j
+b20+Cj4gLS0tCj4gwqBmcy9sb2Nrcy5jIHwgNiArKysrKysKPiDCoDEgZmlsZSBjaGFuZ2VkLCA2
+IGluc2VydGlvbnMoKykKPiAKPiBkaWZmIC0tZ2l0IGEvZnMvbG9ja3MuYyBiL2ZzL2xvY2tzLmMK
+PiBpbmRleCBlZTFiMTVmNmZjMTMuLjc1MTY3M2Q3ZjdmYyAxMDA2NDQKPiAtLS0gYS9mcy9sb2Nr
+cy5jCj4gKysrIGIvZnMvbG9ja3MuYwo+IEBAIC0yNjQ4LDkgKzI2NDgsMTUgQEAgc3RhdGljIGlu
+dCBsb2Nrc19zaG93KHN0cnVjdCBzZXFfZmlsZSAqZiwgdm9pZCAqdikKPiDCoHsKPiA+IMKgCXN0
+cnVjdCBsb2Nrc19pdGVyYXRvciAqaXRlciA9IGYtPnByaXZhdGU7Cj4gPiDCoAlzdHJ1Y3QgZmls
+ZV9sb2NrICpmbCwgKmJmbDsKPiA+ICsJc3RydWN0IHBpZF9uYW1lc3BhY2UgKnByb2NfcGlkbnMg
+PSBmaWxlX2lub2RlKGYtPmZpbGUpLT5pX3NiLT5zX2ZzX2luZm87Cj4gPiArCXN0cnVjdCBwaWRf
+bmFtZXNwYWNlICpjdXJyZW50X3BpZG5zID0gdGFza19hY3RpdmVfcGlkX25zKGN1cnJlbnQpOwo+
+IMKgCj4gPiDCoAlmbCA9IGhsaXN0X2VudHJ5KHYsIHN0cnVjdCBmaWxlX2xvY2ssIGZsX2xpbmsp
+Owo+IMKgCj4gPiA+ICsJaWYgKChjdXJyZW50X3BpZG5zICE9ICZpbml0X3BpZF9ucykgJiYgZmwt
+PmZsX25zcGlkCgpPaywgc28gd2hlbiB5b3UgcmVhZCBmcm9tIGEgcHJvY2VzcyB0aGF0J3MgaW4g
+dGhlIGluaXRfcGlkX25zCm5hbWVzcGFjZSwgdGhlbiB5b3UnbGwgZ2V0IHRoZSB3aG9sZSBwaWxl
+IG9mIGxvY2tzLCBldmVuIHdoZW4gcmVhZGluZwp0aGlzIGZyb20gYSBmaWxlc3lzdGVtIHRoYXQg
+d2FzIG1vdW50ZWQgaW4gYSBkaWZmZXJlbnQgcGlkX25zPwoKVGhhdCBzZWVtcyBvZGQgdG8gbWUg
+aWYgc28uIEFueSByZWFzb24gbm90IHRvIGp1c3QgdW5pZm9ybWx5IHVzZSB0aGUKcHJvY19waWRu
+cyBoZXJlPwoKPiA+ID4gKwnCoMKgwqDCoCYmIChwcm9jX3BpZG5zICE9IG5zX29mX3BpZChmbC0+
+ZmxfbnNwaWQpKSkKPiA+ICsJCXJldHVybiAwOwo+ICsKPiA+IMKgCWxvY2tfZ2V0X3N0YXR1cyhm
+LCBmbCwgaXRlci0+bGlfcG9zLCAiIik7Cj4gwqAKPiA+IMKgCWxpc3RfZm9yX2VhY2hfZW50cnko
+YmZsLCAmZmwtPmZsX2Jsb2NrLCBmbF9ibG9jaykKCi0tIApKZWZmIExheXRvbiA8amxheXRvbkBw
+b29jaGllcmVkcy5uZXQ+Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91
+bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlz
+dGluZm8vY29udGFpbmVycw==
