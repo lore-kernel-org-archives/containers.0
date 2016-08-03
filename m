@@ -1,14 +1,15 @@
-From: Jeff Layton <jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org>
+From: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
 Subject: Re: [PATCH v2] locks: Filter /proc/locks output on proc pid ns
-Date: Wed, 03 Aug 2016 09:46:52 -0400
-Message-ID: <1470232012.18285.4.camel@poochiereds.net>
+Date: Wed, 3 Aug 2016 17:17:09 +0300
+Message-ID: <57A1FCE5.3040206@kyup.com>
 References: <1470148943-21835-1-git-send-email-kernel@kyup.com>
 	<1470209710-30022-1-git-send-email-kernel@kyup.com>
+	<1470232012.18285.4.camel@poochiereds.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1470209710-30022-1-git-send-email-kernel-6AxghH7DbtA@public.gmane.org>
+In-Reply-To: <1470232012.18285.4.camel-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,40 +19,61 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Jeff Layton <jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org>, bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org
+Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, xemul-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gV2VkLCAyMDE2LTA4LTAzIGF0IDEwOjM1ICswMzAwLCBOaWtvbGF5IEJvcmlzb3Ygd3JvdGU6
-Cj4gT24gYnVzeSBjb250YWluZXIgc2VydmVycyByZWFkaW5nIC9wcm9jL2xvY2tzIHNob3dzIGFs
-bCB0aGUgbG9ja3MKPiBjcmVhdGVkIGJ5IGFsbCBjbGllbnRzLiBUaGlzIGNhbiBjYXVzZSBsYXJn
-ZSBsYXRlbmN5IHNwaWtlcy4gSW4gbXkKPiBjYXNlIEkgb2JzZXJ2ZWQgbHNvZiB0YWtpbmcgdXAg
-dG8gNS0xMCBzZWNvbmRzIHdoaWxlIHByb2Nlc3NpbmcgYXJvdW5kCj4gNTBrIGxvY2tzLiBGaXgg
-dGhpcyBieSBsaW1pdGluZyB0aGUgbG9ja3Mgc2hvd24gb25seSB0byB0aG9zZSBjcmVhdGVkCj4g
-aW4gdGhlIHNhbWUgcGlkbnMgYXMgdGhlIG9uZSB0aGUgcHJvYyB3YXMgbW91bnRlZCBpbi4gV2hl
-biByZWFkaW5nCj4gL3Byb2MvbG9ja3MgZnJvbSB0aGUgaW5pdF9waWRfbnMgc2hvdyBldmVyeXRo
-aW5nLgo+IAo+ID4gU2lnbmVkLW9mZi1ieTogTmlrb2xheSBCb3Jpc292IDxrZXJuZWxAa3l1cC5j
-b20+Cj4gLS0tCj4gwqBmcy9sb2Nrcy5jIHwgNiArKysrKysKPiDCoDEgZmlsZSBjaGFuZ2VkLCA2
-IGluc2VydGlvbnMoKykKPiAKPiBkaWZmIC0tZ2l0IGEvZnMvbG9ja3MuYyBiL2ZzL2xvY2tzLmMK
-PiBpbmRleCBlZTFiMTVmNmZjMTMuLjc1MTY3M2Q3ZjdmYyAxMDA2NDQKPiAtLS0gYS9mcy9sb2Nr
-cy5jCj4gKysrIGIvZnMvbG9ja3MuYwo+IEBAIC0yNjQ4LDkgKzI2NDgsMTUgQEAgc3RhdGljIGlu
-dCBsb2Nrc19zaG93KHN0cnVjdCBzZXFfZmlsZSAqZiwgdm9pZCAqdikKPiDCoHsKPiA+IMKgCXN0
-cnVjdCBsb2Nrc19pdGVyYXRvciAqaXRlciA9IGYtPnByaXZhdGU7Cj4gPiDCoAlzdHJ1Y3QgZmls
-ZV9sb2NrICpmbCwgKmJmbDsKPiA+ICsJc3RydWN0IHBpZF9uYW1lc3BhY2UgKnByb2NfcGlkbnMg
-PSBmaWxlX2lub2RlKGYtPmZpbGUpLT5pX3NiLT5zX2ZzX2luZm87Cj4gPiArCXN0cnVjdCBwaWRf
-bmFtZXNwYWNlICpjdXJyZW50X3BpZG5zID0gdGFza19hY3RpdmVfcGlkX25zKGN1cnJlbnQpOwo+
-IMKgCj4gPiDCoAlmbCA9IGhsaXN0X2VudHJ5KHYsIHN0cnVjdCBmaWxlX2xvY2ssIGZsX2xpbmsp
-Owo+IMKgCj4gPiA+ICsJaWYgKChjdXJyZW50X3BpZG5zICE9ICZpbml0X3BpZF9ucykgJiYgZmwt
-PmZsX25zcGlkCgpPaywgc28gd2hlbiB5b3UgcmVhZCBmcm9tIGEgcHJvY2VzcyB0aGF0J3MgaW4g
-dGhlIGluaXRfcGlkX25zCm5hbWVzcGFjZSwgdGhlbiB5b3UnbGwgZ2V0IHRoZSB3aG9sZSBwaWxl
-IG9mIGxvY2tzLCBldmVuIHdoZW4gcmVhZGluZwp0aGlzIGZyb20gYSBmaWxlc3lzdGVtIHRoYXQg
-d2FzIG1vdW50ZWQgaW4gYSBkaWZmZXJlbnQgcGlkX25zPwoKVGhhdCBzZWVtcyBvZGQgdG8gbWUg
-aWYgc28uIEFueSByZWFzb24gbm90IHRvIGp1c3QgdW5pZm9ybWx5IHVzZSB0aGUKcHJvY19waWRu
-cyBoZXJlPwoKPiA+ID4gKwnCoMKgwqDCoCYmIChwcm9jX3BpZG5zICE9IG5zX29mX3BpZChmbC0+
-ZmxfbnNwaWQpKSkKPiA+ICsJCXJldHVybiAwOwo+ICsKPiA+IMKgCWxvY2tfZ2V0X3N0YXR1cyhm
-LCBmbCwgaXRlci0+bGlfcG9zLCAiIik7Cj4gwqAKPiA+IMKgCWxpc3RfZm9yX2VhY2hfZW50cnko
-YmZsLCAmZmwtPmZsX2Jsb2NrLCBmbF9ibG9jaykKCi0tIApKZWZmIExheXRvbiA8amxheXRvbkBw
-b29jaGllcmVkcy5uZXQ+Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91
-bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlz
-dGluZm8vY29udGFpbmVycw==
+
+
+On 08/03/2016 04:46 PM, Jeff Layton wrote:
+> On Wed, 2016-08-03 at 10:35 +0300, Nikolay Borisov wrote:
+>> On busy container servers reading /proc/locks shows all the locks
+>> created by all clients. This can cause large latency spikes. In my
+>> case I observed lsof taking up to 5-10 seconds while processing around
+>> 50k locks. Fix this by limiting the locks shown only to those created
+>> in the same pidns as the one the proc was mounted in. When reading
+>> /proc/locks from the init_pid_ns show everything.
+>>
+>>> Signed-off-by: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+>> ---
+>>  fs/locks.c | 6 ++++++
+>>  1 file changed, 6 insertions(+)
+>>
+>> diff --git a/fs/locks.c b/fs/locks.c
+>> index ee1b15f6fc13..751673d7f7fc 100644
+>> --- a/fs/locks.c
+>> +++ b/fs/locks.c
+>> @@ -2648,9 +2648,15 @@ static int locks_show(struct seq_file *f, void *v)
+>>  {
+>>>  	struct locks_iterator *iter = f->private;
+>>>  	struct file_lock *fl, *bfl;
+>>> +	struct pid_namespace *proc_pidns = file_inode(f->file)->i_sb->s_fs_info;
+>>> +	struct pid_namespace *current_pidns = task_active_pid_ns(current);
+>>  
+>>>  	fl = hlist_entry(v, struct file_lock, fl_link);
+>>  
+>>>> +	if ((current_pidns != &init_pid_ns) && fl->fl_nspid
+> 
+> Ok, so when you read from a process that's in the init_pid_ns
+> namespace, then you'll get the whole pile of locks, even when reading
+> this from a filesystem that was mounted in a different pid_ns?
+> 
+> That seems odd to me if so. Any reason not to just uniformly use the
+> proc_pidns here?
+
+[CCing some people from openvz/CRIU]
+
+My train of thought was "we should have means which would be the one
+universal truth about everything and this would be a process in the
+init_pid_ns". I don't have strong preference as long as I'm not breaking
+userspace. As I said before - I think the CRIU guys might be using that
+interface.
+
+> 
+>>>> +	    && (proc_pidns != ns_of_pid(fl->fl_nspid)))
+>>> +		return 0;
+>> +
+>>>  	lock_get_status(f, fl, iter->li_pos, "");
+>>  
+>>>  	list_for_each_entry(bfl, &fl->fl_block, fl_block)
+> 
