@@ -1,16 +1,13 @@
-From: cool linux <linux.cool.hot-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: why this behavior in 3.16 kernel ?
-Date: Thu, 4 Aug 2016 12:49:36 +0530
-Message-ID: <CAJ5w2C=u_sNP4-ZHm1HH=stU-8ngbPDFuY7JimWqYPesPajkMg@mail.gmail.com>
-References: <CAJ5w2CmDcXzOKppojwN2F5H-mFu_OM-XUoTWnTuLKrdoPG9iQg@mail.gmail.com>
-	<877fbxhhfi.fsf@x220.int.ebiederm.org>
-	<20160804011401.GA20044@gmail.com>
-	<20160804062150.GB14503@gmail.com>
+From: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+Subject: [PATCHv4] locks: Filter /proc/locks output on proc pid ns
+Date: Thu,  4 Aug 2016 10:26:28 +0300
+Message-ID: <1470295588-9803-1-git-send-email-kernel@kyup.com>
+References: <1470148943-21835-1-git-send-email-kernel@kyup.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20160804062150.GB14503-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1470148943-21835-1-git-send-email-kernel-6AxghH7DbtA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,88 +17,40 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Vagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org
+Cc: bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Eric/Andrew,
+On busy container servers reading /proc/locks shows all the locks
+created by all clients. This can cause large latency spikes. In my
+case I observed lsof taking up to 5-10 seconds while processing around
+50k locks. Fix this by limiting the locks shown only to those created
+in the same pidns as the one the proc fs was mounted in. When reading
+/proc/locks from the init_pid_ns proc instance then perform no
+filtering
 
-Thanks for your response.
+Signed-off-by: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+---
+ fs/locks.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-I have commented out the synchronize_rcu()  in namespace_unlock() which is
-located in /fs/namespace.c namespace_unlock()
-
-now am able to see the result in fraction of seconds.
-
-Regards
-Madhu
-
-On Thu, Aug 4, 2016 at 11:51 AM, Andrew Vagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
-
-> On Wed, Aug 03, 2016 at 06:14:02PM -0700, Andrew Vagin wrote:
-> > On Wed, Aug 03, 2016 at 12:48:49PM -0500, Eric W. Biederman wrote:
-> > > cool linux <linux.cool.hot-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
-> > >
-> > > > Hi,
-> > > >
-> > > > I have executed below script on 3.16 kernel and it took to finish
-> almost
-> > > > 1.30sec to 2 minutes, where as in my older kernel(3.2.30) it took
-> only 3
-> > > > secs.
-> > > >
-> > > > ================================================
-> > > > date
-> > > >
-> > > > for (( i=1; i <= 2000; i++ ))
-> > > > do
-> > > >  ip netns exec gmk ip link show > /dev/null
-> > > > done
-> > > >
-> > > > date
-> > > > ================================================
-> > > >
-> > > > Please guide me why this behavior in 3.16 kernel ?
-> > >
-> > > Good question.  What happens on a modern kernel? 4.7 is the most recent
-> > > release, 3.16 was released two years ago.  My hunch is that you just
-> > > started using systemd and it has changed the defaults with all of the
-> > > mounts.  But shrug.  I don't recall how all of those relevant kernel
-> > > pieces operated two years ago.
-> >
->
-> [snip]
->
-> > [ ~]# time for i in `seq 2000`; do ip netns exec gmk ip
-> > link show; done > /dev/null
-> >
-> > real  0m40.129s
-> > user  0m1.272s
-> > sys   0m3.898s
-> >
-> > Then I boot the kernel with maxcpus=1. Surprise! Surprise! It works
-> > fast.
-> >
-> > [ ~]# ip netns add gmk
-> > [ ~]# time for i in `seq 2000`; do ip netns exec gmk ip
-> > link show; done > /dev/null
-> >
-> > real  0m2.445s
-> > user  0m0.604s
-> > sys   0m1.778s
->
-> This degradations is due to synchronize_rcu() in namespace_unlock(),
-> which was added in 48a066e72d9 ("RCU'd vfsmounts").
->
-> Here is timings for all calls during sys_unshare():
-> https://gist.github.com/avagin/3811fbbb553795a78fc6ae602f86866a
->
-> >
-> >
-> > >
-> > > Eric
-> > > _______________________________________________
-> > > Containers mailing list
-> > > Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> > > https://lists.linuxfoundation.org/mailman/listinfo/containers
->
+diff --git a/fs/locks.c b/fs/locks.c
+index ee1b15f6fc13..df038c27b19f 100644
+--- a/fs/locks.c
++++ b/fs/locks.c
+@@ -2648,9 +2648,13 @@ static int locks_show(struct seq_file *f, void *v)
+ {
+ 	struct locks_iterator *iter = f->private;
+ 	struct file_lock *fl, *bfl;
++	struct pid_namespace *proc_pidns = file_inode(f->file)->i_sb->s_fs_info;
+ 
+ 	fl = hlist_entry(v, struct file_lock, fl_link);
+ 
++	if (fl->fl_nspid && !pid_nr_ns(fl->fl_nspid, proc_pidns))
++		return 0;
++
+ 	lock_get_status(f, fl, iter->li_pos, "");
+ 
+ 	list_for_each_entry(bfl, &fl->fl_block, fl_block)
+-- 
+2.5.0
