@@ -1,13 +1,14 @@
-From: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
-Subject: [PATCHv4] locks: Filter /proc/locks output on proc pid ns
-Date: Thu,  4 Aug 2016 10:26:28 +0300
-Message-ID: <1470295588-9803-1-git-send-email-kernel@kyup.com>
+From: Jeff Layton <jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org>
+Subject: Re: [PATCHv4] locks: Filter /proc/locks output on proc pid ns
+Date: Thu, 04 Aug 2016 07:29:35 -0400
+Message-ID: <1470310175.22052.3.camel@poochiereds.net>
 References: <1470148943-21835-1-git-send-email-kernel@kyup.com>
+	<1470295588-9803-1-git-send-email-kernel@kyup.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1470148943-21835-1-git-send-email-kernel-6AxghH7DbtA@public.gmane.org>
+In-Reply-To: <1470295588-9803-1-git-send-email-kernel-6AxghH7DbtA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,40 +18,35 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org
-Cc: bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+To: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On busy container servers reading /proc/locks shows all the locks
-created by all clients. This can cause large latency spikes. In my
-case I observed lsof taking up to 5-10 seconds while processing around
-50k locks. Fix this by limiting the locks shown only to those created
-in the same pidns as the one the proc fs was mounted in. When reading
-/proc/locks from the init_pid_ns proc instance then perform no
-filtering
-
-Signed-off-by: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
----
- fs/locks.c | 4 ++++
- 1 file changed, 4 insertions(+)
-
-diff --git a/fs/locks.c b/fs/locks.c
-index ee1b15f6fc13..df038c27b19f 100644
---- a/fs/locks.c
-+++ b/fs/locks.c
-@@ -2648,9 +2648,13 @@ static int locks_show(struct seq_file *f, void *v)
- {
- 	struct locks_iterator *iter = f->private;
- 	struct file_lock *fl, *bfl;
-+	struct pid_namespace *proc_pidns = file_inode(f->file)->i_sb->s_fs_info;
- 
- 	fl = hlist_entry(v, struct file_lock, fl_link);
- 
-+	if (fl->fl_nspid && !pid_nr_ns(fl->fl_nspid, proc_pidns))
-+		return 0;
-+
- 	lock_get_status(f, fl, iter->li_pos, "");
- 
- 	list_for_each_entry(bfl, &fl->fl_block, fl_block)
--- 
-2.5.0
+T24gVGh1LCAyMDE2LTA4LTA0IGF0IDEwOjI2ICswMzAwLCBOaWtvbGF5IEJvcmlzb3Ygd3JvdGU6
+Cj4gT24gYnVzeSBjb250YWluZXIgc2VydmVycyByZWFkaW5nIC9wcm9jL2xvY2tzIHNob3dzIGFs
+bCB0aGUgbG9ja3MKPiBjcmVhdGVkIGJ5IGFsbCBjbGllbnRzLiBUaGlzIGNhbiBjYXVzZSBsYXJn
+ZSBsYXRlbmN5IHNwaWtlcy4gSW4gbXkKPiBjYXNlIEkgb2JzZXJ2ZWQgbHNvZiB0YWtpbmcgdXAg
+dG8gNS0xMCBzZWNvbmRzIHdoaWxlIHByb2Nlc3NpbmcgYXJvdW5kCj4gNTBrIGxvY2tzLiBGaXgg
+dGhpcyBieSBsaW1pdGluZyB0aGUgbG9ja3Mgc2hvd24gb25seSB0byB0aG9zZSBjcmVhdGVkCj4g
+aW4gdGhlIHNhbWUgcGlkbnMgYXMgdGhlIG9uZSB0aGUgcHJvYyBmcyB3YXMgbW91bnRlZCBpbi4g
+V2hlbiByZWFkaW5nCj4gL3Byb2MvbG9ja3MgZnJvbSB0aGUgaW5pdF9waWRfbnMgcHJvYyBpbnN0
+YW5jZSB0aGVuIHBlcmZvcm0gbm8KPiBmaWx0ZXJpbmcKPiAKPiA+IFNpZ25lZC1vZmYtYnk6IE5p
+a29sYXkgQm9yaXNvdiA8a2VybmVsQGt5dXAuY29tPgo+IC0tLQo+IMKgZnMvbG9ja3MuYyB8IDQg
+KysrKwo+IMKgMSBmaWxlIGNoYW5nZWQsIDQgaW5zZXJ0aW9ucygrKQo+IAo+IGRpZmYgLS1naXQg
+YS9mcy9sb2Nrcy5jIGIvZnMvbG9ja3MuYwo+IGluZGV4IGVlMWIxNWY2ZmMxMy4uZGYwMzhjMjdi
+MTlmIDEwMDY0NAo+IC0tLSBhL2ZzL2xvY2tzLmMKPiArKysgYi9mcy9sb2Nrcy5jCj4gQEAgLTI2
+NDgsOSArMjY0OCwxMyBAQCBzdGF0aWMgaW50IGxvY2tzX3Nob3coc3RydWN0IHNlcV9maWxlICpm
+LCB2b2lkICp2KQo+IMKgewo+ID4gwqAJc3RydWN0IGxvY2tzX2l0ZXJhdG9yICppdGVyID0gZi0+
+cHJpdmF0ZTsKPiA+IMKgCXN0cnVjdCBmaWxlX2xvY2sgKmZsLCAqYmZsOwo+ID4gKwlzdHJ1Y3Qg
+cGlkX25hbWVzcGFjZSAqcHJvY19waWRucyA9IGZpbGVfaW5vZGUoZi0+ZmlsZSktPmlfc2ItPnNf
+ZnNfaW5mbzsKPiDCoAo+ID4gwqAJZmwgPSBobGlzdF9lbnRyeSh2LCBzdHJ1Y3QgZmlsZV9sb2Nr
+LCBmbF9saW5rKTsKPiDCoAo+ID4gKwlpZiAoZmwtPmZsX25zcGlkICYmICFwaWRfbnJfbnMoZmwt
+PmZsX25zcGlkLCBwcm9jX3BpZG5zKSkKPiA+ICsJCXJldHVybiAwOwo+ICsKPiA+IMKgCWxvY2tf
+Z2V0X3N0YXR1cyhmLCBmbCwgaXRlci0+bGlfcG9zLCAiIik7Cj4gwqAKPiA+IMKgCWxpc3RfZm9y
+X2VhY2hfZW50cnkoYmZsLCAmZmwtPmZsX2Jsb2NrLCBmbF9ibG9jaykKCkxvb2tzIHJlYXNvbmFi
+bGUgdG8gbWUuIEVyaWMsIGFueSBjb21tZW50cz8gSWYgdGhpcyBsb29rcyBhbHJpZ2h0IEknbGwK
+Z28gYWhlYWQgYW5kIG1lcmdlIGludG8gbXkgLW5leHQgYnJhbmNoIGZvciB2NC45LgoKVGhhbmtz
+LAotLSAKSmVmZiBMYXl0b24gPGpsYXl0b25AcG9vY2hpZXJlZHMubmV0PgpfX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlz
+dApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGlu
+dXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
