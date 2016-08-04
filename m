@@ -1,16 +1,17 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCHv4] locks: Filter /proc/locks output on proc pid ns
-Date: Thu, 04 Aug 2016 09:09:57 -0500
-Message-ID: <874m707hhm.fsf@x220.int.ebiederm.org>
-References: <1470148943-21835-1-git-send-email-kernel@kyup.com>
-	<1470295588-9803-1-git-send-email-kernel@kyup.com>
-	<1470310175.22052.3.camel@poochiereds.net>
+Subject: Re: why this behavior in 3.16 kernel ?
+Date: Thu, 04 Aug 2016 09:15:29 -0500
+Message-ID: <87h9b062ny.fsf@x220.int.ebiederm.org>
+References: <CAJ5w2CmDcXzOKppojwN2F5H-mFu_OM-XUoTWnTuLKrdoPG9iQg@mail.gmail.com>
+	<877fbxhhfi.fsf@x220.int.ebiederm.org>
+	<20160804011401.GA20044@gmail.com> <20160804062150.GB14503@gmail.com>
+	<CAJ5w2C=u_sNP4-ZHm1HH=stU-8ngbPDFuY7JimWqYPesPajkMg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1470310175.22052.3.camel-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org> (Jeff Layton's message
-	of "Thu, 04 Aug 2016 07:29:35 -0400")
+In-Reply-To: <CAJ5w2C=u_sNP4-ZHm1HH=stU-8ngbPDFuY7JimWqYPesPajkMg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	(cool linux's message of "Thu, 4 Aug 2016 12:49:36 +0530")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,47 +21,27 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jeff Layton <jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org>
-Cc: bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+To: cool linux <linux.cool.hot-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SmVmZiBMYXl0b24gPGpsYXl0b25AcG9vY2hpZXJlZHMubmV0PiB3cml0ZXM6Cgo+IE9uIFRodSwg
-MjAxNi0wOC0wNCBhdCAxMDoyNiArMDMwMCwgTmlrb2xheSBCb3Jpc292IHdyb3RlOgo+PiBPbiBi
-dXN5IGNvbnRhaW5lciBzZXJ2ZXJzIHJlYWRpbmcgL3Byb2MvbG9ja3Mgc2hvd3MgYWxsIHRoZSBs
-b2Nrcwo+PiBjcmVhdGVkIGJ5IGFsbCBjbGllbnRzLiBUaGlzIGNhbiBjYXVzZSBsYXJnZSBsYXRl
-bmN5IHNwaWtlcy4gSW4gbXkKPj4gY2FzZSBJIG9ic2VydmVkIGxzb2YgdGFraW5nIHVwIHRvIDUt
-MTAgc2Vjb25kcyB3aGlsZSBwcm9jZXNzaW5nIGFyb3VuZAo+PiA1MGsgbG9ja3MuIEZpeCB0aGlz
-IGJ5IGxpbWl0aW5nIHRoZSBsb2NrcyBzaG93biBvbmx5IHRvIHRob3NlIGNyZWF0ZWQKPj4gaW4g
-dGhlIHNhbWUgcGlkbnMgYXMgdGhlIG9uZSB0aGUgcHJvYyBmcyB3YXMgbW91bnRlZCBpbi4gV2hl
-biByZWFkaW5nCj4+IC9wcm9jL2xvY2tzIGZyb20gdGhlIGluaXRfcGlkX25zIHByb2MgaW5zdGFu
-Y2UgdGhlbiBwZXJmb3JtIG5vCj4+IGZpbHRlcmluZwo+PiAKPj4gPiBTaWduZWQtb2ZmLWJ5OiBO
-aWtvbGF5IEJvcmlzb3YgPGtlcm5lbEBreXVwLmNvbT4KPj4gLS0tCj4+IMKgZnMvbG9ja3MuYyB8
-IDQgKysrKwo+PiDCoDEgZmlsZSBjaGFuZ2VkLCA0IGluc2VydGlvbnMoKykKPj4gCj4+IGRpZmYg
-LS1naXQgYS9mcy9sb2Nrcy5jIGIvZnMvbG9ja3MuYwo+PiBpbmRleCBlZTFiMTVmNmZjMTMuLmRm
-MDM4YzI3YjE5ZiAxMDA2NDQKPj4gLS0tIGEvZnMvbG9ja3MuYwo+PiArKysgYi9mcy9sb2Nrcy5j
-Cj4+IEBAIC0yNjQ4LDkgKzI2NDgsMTMgQEAgc3RhdGljIGludCBsb2Nrc19zaG93KHN0cnVjdCBz
-ZXFfZmlsZSAqZiwgdm9pZCAqdikKPj4gwqB7Cj4+ID4gwqAJc3RydWN0IGxvY2tzX2l0ZXJhdG9y
-ICppdGVyID0gZi0+cHJpdmF0ZTsKPj4gPiDCoAlzdHJ1Y3QgZmlsZV9sb2NrICpmbCwgKmJmbDsK
-Pj4gPiArCXN0cnVjdCBwaWRfbmFtZXNwYWNlICpwcm9jX3BpZG5zID0gZmlsZV9pbm9kZShmLT5m
-aWxlKS0+aV9zYi0+c19mc19pbmZvOwo+PiDCoAo+PiA+IMKgCWZsID0gaGxpc3RfZW50cnkodiwg
-c3RydWN0IGZpbGVfbG9jaywgZmxfbGluayk7Cj4+IMKgCj4+ID4gKwlpZiAoZmwtPmZsX25zcGlk
-ICYmICFwaWRfbnJfbnMoZmwtPmZsX25zcGlkLCBwcm9jX3BpZG5zKSkKPj4gPiArCQlyZXR1cm4g
-MDsKPj4gKwo+PiA+IMKgCWxvY2tfZ2V0X3N0YXR1cyhmLCBmbCwgaXRlci0+bGlfcG9zLCAiIik7
-Cj4+IMKgCj4+ID4gwqAJbGlzdF9mb3JfZWFjaF9lbnRyeShiZmwsICZmbC0+ZmxfYmxvY2ssIGZs
-X2Jsb2NrKQo+Cj4gTG9va3MgcmVhc29uYWJsZSB0byBtZS4gRXJpYywgYW55IGNvbW1lbnRzPyBJ
-ZiB0aGlzIGxvb2tzIGFscmlnaHQgSSdsbAo+IGdvIGFoZWFkIGFuZCBtZXJnZSBpbnRvIG15IC1u
-ZXh0IGJyYW5jaCBmb3IgdjQuOS4KCkdlbmVyYWxseSB0aGlzIGxvb2tzIGdvb2QgdG8gbWUuCgpT
-b21lIHJlbGF0ZWQgbml0cy4KLSBXZSBhcmUgbm90IGZpbHRlcmluZyB0aGUgcHJvY2Vzc2VzIHRo
-YXQgYXJlIGJsb2NrZWQgd2FpdGluZyBvbiB0aGUKICBsb2NrLgoKLSBUaGUgc2FtZSBpc3N1ZSBz
-aG93cyB1cCBpbiBzaG93X2ZkX2xvY2tzLgoKLSBJbiBsb2NrX2dldF9zdGF0dXMgdGhlIGNvZGUg
-c2hvdWxkIHNheToKICBpZiAoZmwtPmZsX25zcGlkKSB7CiAgCS8qIERvbid0IGxldCBmbF9waWQg
-Y2hhbmdlIGRlcGVuZGluZyBvbiB3aG8gaXMgcmVhZGluZyB0aGUgZmlsZSAqLwogIAlmbF9waWQg
-PSBwaWRfbnJfbnMoZmwtPmZsX25zcGlkLCBwcm9jX3BpZG5zKTsKICAgICAgICAvKiBJZiB0aGVy
-ZSBpc24ndCBhIGZsX3BpZCBkb24ndCBkaXNwbGF5IHdobyBpcyB3YWl0aW5nIG9uIHRoZSBsb2Nr
-ICovCiAgICAgICAgaWYgKGZsX3BpZCA9PSAwKQogICAgICAgICAgIHJldHVybjsKICB9IGVsc2Ug
-ewogIAlmbF9waWQgPSBmbC0+ZmxfcGlkOwogIH0KCiAgQWxsIG9mIHdoaWNoIGltcGxpZXMgdGhh
-dCBsb2NrX2dldF9zdGF0dXMgbmVlZHMgdG8gdGFrZSBwcm9jX3BpZG5zCiAgZnJvbSBpdCdzIGNh
-bGxlciwgb3IgZGVyaXZlIHByb2NfcGlkbnMgZnJvbSB0aGUgc2VxX2ZpbGUuCiAgCkVyaWMKX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBt
-YWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczov
-L2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+cool linux <linux.cool.hot-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
+
+> Hi Eric/Andrew,
+>
+> Thanks for your response.
+>
+> I have commented out the synchronize_rcu() in namespace_unlock() which is
+> located in /fs/namespace.c namespace_unlock() 
+>
+> now am able to see the result in fraction of seconds.
+
+Interesting.   So it is just the fact you are serializing things in the
+loop that makes things slow.
+
+I would recommend syncrhonize_rcu_expidited but in this case since we
+aren't holding a lock this is a case that looks like it will only show
+up when testing (because things are needlessly serialized) and not in
+the real world.
+
+Eric
