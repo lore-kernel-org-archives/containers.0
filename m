@@ -1,14 +1,16 @@
-From: Jeff Layton <jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org>
+From: "J. Bruce Fields" <bfields-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCHv5] locks: Filter /proc/locks output on proc pid ns
-Date: Fri, 05 Aug 2016 06:47:16 -0400
-Message-ID: <1470394036.8100.2.camel@poochiereds.net>
+Date: Fri, 5 Aug 2016 10:58:11 -0400
+Message-ID: <20160805145811.GA31396@pad>
 References: <1470148943-21835-1-git-send-email-kernel@kyup.com>
 	<1470382204-21480-1-git-send-email-kernel@kyup.com>
+	<1470394036.8100.2.camel@poochiereds.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1470382204-21480-1-git-send-email-kernel-6AxghH7DbtA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1470394036.8100.2.camel-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,52 +20,78 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "J. Bruce
-	Fields" <bfields-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: Jeff Layton <jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gRnJpLCAyMDE2LTA4LTA1IGF0IDEwOjMwICswMzAwLCBOaWtvbGF5IEJvcmlzb3Ygd3JvdGU6
-Cj4gT24gYnVzeSBjb250YWluZXIgc2VydmVycyByZWFkaW5nIC9wcm9jL2xvY2tzIHNob3dzIGFs
-bCB0aGUgbG9ja3MKPiBjcmVhdGVkIGJ5IGFsbCBjbGllbnRzLiBUaGlzIGNhbiBjYXVzZSBsYXJn
-ZSBsYXRlbmN5IHNwaWtlcy4gSW4gbXkKPiBjYXNlIEkgb2JzZXJ2ZWQgbHNvZiB0YWtpbmcgdXAg
-dG8gNS0xMCBzZWNvbmRzIHdoaWxlIHByb2Nlc3NpbmcgYXJvdW5kCj4gNTBrIGxvY2tzLiBGaXgg
-dGhpcyBieSBsaW1pdGluZyB0aGUgbG9ja3Mgc2hvd24gb25seSB0byB0aG9zZSBjcmVhdGVkCj4g
-aW4gdGhlIHNhbWUgcGlkbnMgYXMgdGhlIG9uZSB0aGUgcHJvYyBmcyB3YXMgbW91bnRlZCBpbi4g
-V2hlbiByZWFkaW5nCj4gL3Byb2MvbG9ja3MgZnJvbSB0aGUgaW5pdF9waWRfbnMgcHJvYyBpbnN0
-YW5jZSB0aGVuIHBlcmZvcm0gbm8KPiBmaWx0ZXJpbmcKPiAKPiA+IFNpZ25lZC1vZmYtYnk6IE5p
-a29sYXkgQm9yaXNvdiA8a2VybmVsQGt5dXAuY29tPgo+ID4gU3VnZ2VzdGVkLWJ5OiBFcmljIFcu
-IEJpZWRlcm1hbiA8ZWJpZWRlcm1AeG1pc3Npb24uY29tPgo+IC0tLQo+IMKgZnMvbG9ja3MuYyB8
-IDIwICsrKysrKysrKysrKysrKysrLS0tCj4gwqAxIGZpbGUgY2hhbmdlZCwgMTcgaW5zZXJ0aW9u
-cygrKSwgMyBkZWxldGlvbnMoLSkKPiAKPiBkaWZmIC0tZ2l0IGEvZnMvbG9ja3MuYyBiL2ZzL2xv
-Y2tzLmMKPiBpbmRleCBlZTFiMTVmNmZjMTMuLjQ4NGI3ZTEwNjA3NiAxMDA2NDQKPiAtLS0gYS9m
-cy9sb2Nrcy5jCj4gKysrIGIvZnMvbG9ja3MuYwo+IEBAIC0yNTc0LDkgKzI1NzQsMTkgQEAgc3Rh
-dGljIHZvaWQgbG9ja19nZXRfc3RhdHVzKHN0cnVjdCBzZXFfZmlsZSAqZiwgc3RydWN0IGZpbGVf
-bG9jayAqZmwsCj4gPiDCoAlzdHJ1Y3QgaW5vZGUgKmlub2RlID0gTlVMTDsKPiA+IMKgCXVuc2ln
-bmVkIGludCBmbF9waWQ7Cj4gwqAKPiA+IC0JaWYgKGZsLT5mbF9uc3BpZCkKPiA+IC0JCWZsX3Bp
-ZCA9IHBpZF92bnIoZmwtPmZsX25zcGlkKTsKPiA+IC0JZWxzZQo+ID4gKwlpZiAoZmwtPmZsX25z
-cGlkKSB7Cj4gPiArCQlzdHJ1Y3QgcGlkX25hbWVzcGFjZSAqcHJvY19waWRucyA9IGZpbGVfaW5v
-ZGUoZi0+ZmlsZSktPmlfc2ItPnNfZnNfaW5mbzsKPiArCj4gPiArCQkvKiBEb24ndCBsZXQgZmxf
-cGlkIGNoYW5nZSBkZXBlbmRpbmcgb24gd2hvIGlzIHJlYWRpbmcgdGhlIGZpbGUgKi8KPiA+ICsJ
-CWZsX3BpZCA9IHBpZF9ucl9ucyhmbC0+ZmxfbnNwaWQsIHByb2NfcGlkbnMpOwo+ICsKPiA+ICsJ
-CS8qIElmIHRoZXJlIGlzbid0IGEgZmxfcGlkIGRvbid0IGRpc3BsYXkgd2hvIGlzIHdhaXRpbmcg
-b24gdGhlIGxvY2sKPiA+ICsJCcKgKiBpZiB3ZSBhcmUgY2FsbGVkIGZyb20gbG9ja3Nfc2hvdywg
-b3IgaWYgd2UgYXJlIGNhbGxlZCBmcm9tCj4gPiArCQnCoCogX19zaG93X2ZkX2luZm8gLSBza2lw
-IGxvY2sgZW50aXJlbHkKPiA+ICsJCcKgKi8KPiA+ICsJCWlmIChmbF9waWQgPT0gMCkKPiA+ICsJ
-CQlyZXR1cm47Cj4gPiArCX0gZWxzZQo+ID4gwqAJCWZsX3BpZCA9IGZsLT5mbF9waWQ7Cj4gwqAK
-PiA+IMKgCWlmIChmbC0+ZmxfZmlsZSAhPSBOVUxMKQo+IEBAIC0yNjQ4LDkgKzI2NTgsMTMgQEAg
-c3RhdGljIGludCBsb2Nrc19zaG93KHN0cnVjdCBzZXFfZmlsZSAqZiwgdm9pZCAqdikKPiDCoHsK
-PiA+IMKgCXN0cnVjdCBsb2Nrc19pdGVyYXRvciAqaXRlciA9IGYtPnByaXZhdGU7Cj4gPiDCoAlz
-dHJ1Y3QgZmlsZV9sb2NrICpmbCwgKmJmbDsKPiA+ICsJc3RydWN0IHBpZF9uYW1lc3BhY2UgKnBy
-b2NfcGlkbnMgPSBmaWxlX2lub2RlKGYtPmZpbGUpLT5pX3NiLT5zX2ZzX2luZm87Cj4gwqAKPiA+
-IMKgCWZsID0gaGxpc3RfZW50cnkodiwgc3RydWN0IGZpbGVfbG9jaywgZmxfbGluayk7Cj4gwqAK
-PiA+ICsJaWYgKGZsLT5mbF9uc3BpZCAmJiAhcGlkX25yX25zKGZsLT5mbF9uc3BpZCwgcHJvY19w
-aWRucykpCj4gPiArCQlyZXR1cm4gMDsKPiArCj4gPiDCoAlsb2NrX2dldF9zdGF0dXMoZiwgZmws
-IGl0ZXItPmxpX3BvcywgIiIpOwo+IMKgCj4gPiDCoAlsaXN0X2Zvcl9lYWNoX2VudHJ5KGJmbCwg
-JmZsLT5mbF9ibG9jaywgZmxfYmxvY2spCgpMb29rcyBnb29kIHRvIG1lLiBJJ2xsIGdvIGFoZWFk
-IGFuZCBtZXJnZSB0aGlzIGludG8gbXkgbG9ja3MgYnJhbmNoIGZvcgp2NC45IGFuZCBnZXQgaXQg
-aW50byAtbmV4dC4KClRoYW5rcyEKLS0gCkplZmYgTGF5dG9uIDxqbGF5dG9uQHBvb2NoaWVyZWRz
-Lm5ldD4KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29u
-dGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9y
-ZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250
-YWluZXJz
+On Fri, Aug 05, 2016 at 06:47:16AM -0400, Jeff Layton wrote:
+> On Fri, 2016-08-05 at 10:30 +0300, Nikolay Borisov wrote:
+> > On busy container servers reading /proc/locks shows all the locks
+> > created by all clients. This can cause large latency spikes. In my
+> > case I observed lsof taking up to 5-10 seconds while processing around
+> > 50k locks. Fix this by limiting the locks shown only to those created
+> > in the same pidns as the one the proc fs was mounted in. When reading
+> > /proc/locks from the init_pid_ns proc instance then perform no
+> > filtering
+> > =
+
+> > > Signed-off-by: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+> > > Suggested-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> > ---
+> > =A0fs/locks.c | 20 +++++++++++++++++---
+> > =A01 file changed, 17 insertions(+), 3 deletions(-)
+> > =
+
+> > diff --git a/fs/locks.c b/fs/locks.c
+> > index ee1b15f6fc13..484b7e106076 100644
+> > --- a/fs/locks.c
+> > +++ b/fs/locks.c
+> > @@ -2574,9 +2574,19 @@ static void lock_get_status(struct seq_file *f, =
+struct file_lock *fl,
+> > > =A0	struct inode *inode =3D NULL;
+> > > =A0	unsigned int fl_pid;
+> > =A0
+> > > -	if (fl->fl_nspid)
+> > > -		fl_pid =3D pid_vnr(fl->fl_nspid);
+> > > -	else
+> > > +	if (fl->fl_nspid) {
+> > > +		struct pid_namespace *proc_pidns =3D file_inode(f->file)->i_sb->s_=
+fs_info;
+> > +
+> > > +		/* Don't let fl_pid change depending on who is reading the file */
+> > > +		fl_pid =3D pid_nr_ns(fl->fl_nspid, proc_pidns);
+> > +
+> > > +		/* If there isn't a fl_pid don't display who is waiting on the lock
+> > > +		=A0* if we are called from locks_show, or if we are called from
+> > > +		=A0* __show_fd_info - skip lock entirely
+> > > +		=A0*/
+> > > +		if (fl_pid =3D=3D 0)
+> > > +			return;
+> > > +	} else
+> > > =A0		fl_pid =3D fl->fl_pid;
+> > =A0
+> > > =A0	if (fl->fl_file !=3D NULL)
+> > @@ -2648,9 +2658,13 @@ static int locks_show(struct seq_file *f, void *=
+v)
+> > =A0{
+> > > =A0	struct locks_iterator *iter =3D f->private;
+> > > =A0	struct file_lock *fl, *bfl;
+> > > +	struct pid_namespace *proc_pidns =3D file_inode(f->file)->i_sb->s_f=
+s_info;
+> > =A0
+> > > =A0	fl =3D hlist_entry(v, struct file_lock, fl_link);
+> > =A0
+> > > +	if (fl->fl_nspid && !pid_nr_ns(fl->fl_nspid, proc_pidns))
+> > > +		return 0;
+> > +
+> > > =A0	lock_get_status(f, fl, iter->li_pos, "");
+> > =A0
+> > > =A0	list_for_each_entry(bfl, &fl->fl_block, fl_block)
+> =
+
+> Looks good to me. I'll go ahead and merge this into my locks branch for
+> v4.9 and get it into -next.
+
+Makes sense to me.  Thanks also to Eric for the help.
+
+--b.
