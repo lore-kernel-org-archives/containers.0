@@ -1,15 +1,13 @@
-From: Andrei Vagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH v2 1/2] Limit dump_pipe program's permission to init for
-	container
-Date: Thu, 4 Aug 2016 23:32:17 -0700
-Message-ID: <CANaxB-yz2AbjQYLLfXF03A-H=b5FV6+Dc8egorFFydbtZO-9Mg@mail.gmail.com>
-References: <cover.1470128571.git.zhaolei@cn.fujitsu.com>
-	<c7d8e45aa76a414c73082d22d325cd5a13979773.1470128572.git.zhaolei@cn.fujitsu.com>
+From: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+Subject: [PATCHv5] locks: Filter /proc/locks output on proc pid ns
+Date: Fri,  5 Aug 2016 10:30:04 +0300
+Message-ID: <1470382204-21480-1-git-send-email-kernel@kyup.com>
+References: <1470148943-21835-1-git-send-email-kernel@kyup.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <c7d8e45aa76a414c73082d22d325cd5a13979773.1470128572.git.zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <1470148943-21835-1-git-send-email-kernel-6AxghH7DbtA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,231 +17,64 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: jlayton-vpEMnDpepFuMZCB2o+C8xQ@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Aug 2, 2016 at 2:08 AM, Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
-> Currently when we set core_pattern to a pipe, the pipe program is
-> forked by kthread running with root's permission, and write dumpfile
-> into host's filesystem.
-> Same thing happened for container, the dumper and dumpfile are also
-> in host(not in container).
->
-> It have following program:
-> 1: Not consistent with file_type core_pattern
->    When we set core_pattern to a file, the container will write dump
->    into container's filesystem instead of host.
-> 2: Not safe for privileged container
->    In a privileged container, user can destroy host system by following
->    command:
->    # # In a container
->    # echo "|/bin/dd of=/boot/vmlinuz" >/proc/sys/kernel/core_pattern
->    # make_dump
->
-> This patch switch dumper program's environment to init task, so, for
-> container, dumper program have same environment with init task in
-> container, which make dumper program put in container's filesystem, and
-> write coredump into container's filesystem.
-> The dumper's permission is also limited into subset of container's init
-> process.
+On busy container servers reading /proc/locks shows all the locks
+created by all clients. This can cause large latency spikes. In my
+case I observed lsof taking up to 5-10 seconds while processing around
+50k locks. Fix this by limiting the locks shown only to those created
+in the same pidns as the one the proc fs was mounted in. When reading
+/proc/locks from the init_pid_ns proc instance then perform no
+filtering
 
-Does it change the current behavior? A pid namespace may be used for
-sandboxes. For example, chrome uses it. In this case, we probably want
-to collect core dumps from a root pid namespace.
+Signed-off-by: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+Suggested-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ fs/locks.c | 20 +++++++++++++++++---
+ 1 file changed, 17 insertions(+), 3 deletions(-)
 
-If we are going to virtualize core_pattern relative to the pid
-namespace, maybe it's better to make it optional for a pid namespace.
-I mean it core_pattern is not set for the current pid namespace, we
-can check a parent pid namespace and so on. A helper will be executed
-in a pid namespace, where core_pattern is set.
-
-After reading these patches, I think it may be a good idea to add one
-more mode to handle core files, when a core file is sent to an
-existing process instead of executing a usermode helpers. This mode
-will cover of use-cases where the pipe mode is used now. And it looks
-more secure, because in this case we control namespaces and credential
-for the abort daemon (a process which handles core files).u
-
-How it can be done. An abort daemon creates an abstract listening unix
-socket and writes its name into /proc/sys/kernel/core_pattern. The
-kernel saves this name and the network namespace. Then when any
-process is crashed, the kernel creates a new unix socket and connect
-it to the socket of the abort daemon and streams a core file into this
-socket.
-
->
-> Suggested-by: Eric W. Biederman <ebieyderm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> Suggested-by: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
->
-> Signed-off-by: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> ---
->  fs/coredump.c           | 87 ++++++++++++++++++++++++++++++++++++++++++++++++-
->  include/linux/binfmts.h |  1 +
->  2 files changed, 87 insertions(+), 1 deletion(-)
->
-> diff --git a/fs/coredump.c b/fs/coredump.c
-> index 281b768..8511267 100644
-> --- a/fs/coredump.c
-> +++ b/fs/coredump.c
-> @@ -516,6 +516,8 @@ static int umh_pipe_setup(struct subprocess_info *info, struct cred *new)
->  {
->         struct file *files[2];
->         struct coredump_params *cp = (struct coredump_params *)info->data;
-> +       struct task_struct *base_task;
-> +
->         int err = create_pipe_files(files, 0);
->         if (err)
->                 return err;
-> @@ -524,10 +526,79 @@ static int umh_pipe_setup(struct subprocess_info *info, struct cred *new)
->
->         err = replace_fd(0, files[0], 0);
->         fput(files[0]);
-> +       if (err)
-> +               return err;
-> +
->         /* and disallow core files too */
->         current->signal->rlim[RLIMIT_CORE] = (struct rlimit){1, 1};
->
-> -       return err;
-> +       base_task = cp->base_task;
-> +       if (base_task) {
-> +               const struct cred *base_cred;
-> +
-> +               /* Set fs_root to base_task */
-> +               spin_lock(&base_task->fs->lock);
-> +               set_fs_root(current->fs, &base_task->fs->root);
-> +               spin_unlock(&base_task->fs->lock);
-> +
-> +               /* Set namespaces to base_task */
-> +               get_nsproxy(base_task->nsproxy);
-> +               switch_task_namespaces(current, base_task->nsproxy);
-
-This task will continue running in the current pid namespace, because
-switch_task_namespaces doesn't change a pid for the task. Ussualy, we
-need to make setns+fork to switch a pid namespace.
-
-> +
-> +               /* Set cgroup to base_task */
-> +               current->flags &= ~PF_NO_SETAFFINITY;
-> +               err = cgroup_attach_task_all(base_task, current);
-> +               if (err < 0)
-> +                       return err;
-> +
-> +               /* Set cred to base_task */
-> +               base_cred = get_task_cred(base_task);
-> +
-
-I think you can use prepare_kernel_cred here
-
-> +               new->uid   = base_cred->uid;
-> +               new->gid   = base_cred->gid;
-> +               new->suid  = base_cred->suid;
-> +               new->sgid  = base_cred->sgid;
-> +               new->euid  = base_cred->euid;
-> +               new->egid  = base_cred->egid;
-> +               new->fsuid = base_cred->fsuid;
-> +               new->fsgid = base_cred->fsgid;
-> +
-> +               new->securebits = base_cred->securebits;
-> +
-> +               new->cap_inheritable = base_cred->cap_inheritable;
-> +               new->cap_permitted   = base_cred->cap_permitted;
-> +               new->cap_effective   = base_cred->cap_effective;
-> +               new->cap_bset        = base_cred->cap_bset;
-> +               new->cap_ambient     = base_cred->cap_ambient;
-> +
-> +               security_cred_free(new);
-> +#ifdef CONFIG_SECURITY
-> +               new->security = NULL;
-> +#endif
-> +               err = security_prepare_creds(new, base_cred, GFP_KERNEL);
-> +               if (err < 0) {
-> +                       put_cred(base_cred);
-> +                       return err;
-> +               }
-> +
-> +               free_uid(new->user);
-> +               new->user = base_cred->user;
-> +               get_uid(new->user);
-> +
-> +               put_user_ns(new->user_ns);
-> +               new->user_ns = base_cred->user_ns;
-> +               get_user_ns(new->user_ns);
-> +
-> +               put_group_info(new->group_info);
-> +               new->group_info = base_cred->group_info;
-> +               get_group_info(new->group_info);
-> +
-> +               put_cred(base_cred);
-> +
-> +               validate_creds(new);
-> +       }
-> +
-> +       return 0;
->  }
->
->  void do_coredump(const siginfo_t *siginfo)
-> @@ -590,6 +661,7 @@ void do_coredump(const siginfo_t *siginfo)
->
->         if (ispipe) {
->                 int dump_count;
-> +               struct task_struct *vinit_task;
->                 char **helper_argv;
->                 struct subprocess_info *sub_info;
->
-> @@ -631,6 +703,14 @@ void do_coredump(const siginfo_t *siginfo)
->                         goto fail_dropcount;
->                 }
->
-> +               rcu_read_lock();
-> +               vinit_task = find_task_by_vpid(1);
-> +               rcu_read_unlock();
-> +               if (!vinit_task) {
-> +                       printk(KERN_WARNING "failed getting init task info, skipping core dump\n");
-> +                       goto fail_dropcount;
-> +               }
-> +
->                 helper_argv = argv_split(GFP_KERNEL, cn.corename, NULL);
->                 if (!helper_argv) {
->                         printk(KERN_WARNING "%s failed to allocate memory\n",
-> @@ -638,6 +718,10 @@ void do_coredump(const siginfo_t *siginfo)
->                         goto fail_dropcount;
->                 }
->
-> +               get_task_struct(vinit_task);
-> +
-> +               cprm.base_task = vinit_task;
-> +
->                 retval = -ENOMEM;
->                 sub_info = call_usermodehelper_setup(helper_argv[0],
->                                                 helper_argv, NULL, GFP_KERNEL,
-> @@ -646,6 +730,7 @@ void do_coredump(const siginfo_t *siginfo)
->                         retval = call_usermodehelper_exec(sub_info,
->                                                           UMH_WAIT_EXEC);
->
-> +               put_task_struct(vinit_task);
->                 argv_free(helper_argv);
->                 if (retval) {
->                         printk(KERN_INFO "Core dump to |%s pipe failed\n",
-> diff --git a/include/linux/binfmts.h b/include/linux/binfmts.h
-> index 314b3ca..0c9a72c 100644
-> --- a/include/linux/binfmts.h
-> +++ b/include/linux/binfmts.h
-> @@ -59,6 +59,7 @@ struct linux_binprm {
->
->  /* Function parameter for binfmt->coredump */
->  struct coredump_params {
-> +       struct task_struct *base_task;
->         const siginfo_t *siginfo;
->         struct pt_regs *regs;
->         struct file *file;
-> --
-> 1.8.5.1
->
->
->
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+diff --git a/fs/locks.c b/fs/locks.c
+index ee1b15f6fc13..484b7e106076 100644
+--- a/fs/locks.c
++++ b/fs/locks.c
+@@ -2574,9 +2574,19 @@ static void lock_get_status(struct seq_file *f, struct file_lock *fl,
+ 	struct inode *inode = NULL;
+ 	unsigned int fl_pid;
+ 
+-	if (fl->fl_nspid)
+-		fl_pid = pid_vnr(fl->fl_nspid);
+-	else
++	if (fl->fl_nspid) {
++		struct pid_namespace *proc_pidns = file_inode(f->file)->i_sb->s_fs_info;
++
++		/* Don't let fl_pid change depending on who is reading the file */
++		fl_pid = pid_nr_ns(fl->fl_nspid, proc_pidns);
++
++		/* If there isn't a fl_pid don't display who is waiting on the lock
++		 * if we are called from locks_show, or if we are called from
++		 * __show_fd_info - skip lock entirely
++		 */
++		if (fl_pid == 0)
++			return;
++	} else
+ 		fl_pid = fl->fl_pid;
+ 
+ 	if (fl->fl_file != NULL)
+@@ -2648,9 +2658,13 @@ static int locks_show(struct seq_file *f, void *v)
+ {
+ 	struct locks_iterator *iter = f->private;
+ 	struct file_lock *fl, *bfl;
++	struct pid_namespace *proc_pidns = file_inode(f->file)->i_sb->s_fs_info;
+ 
+ 	fl = hlist_entry(v, struct file_lock, fl_link);
+ 
++	if (fl->fl_nspid && !pid_nr_ns(fl->fl_nspid, proc_pidns))
++		return 0;
++
+ 	lock_get_status(f, fl, iter->li_pos, "");
+ 
+ 	list_for_each_entry(bfl, &fl->fl_block, fl_block)
+-- 
+2.5.0
