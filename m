@@ -1,12 +1,11 @@
-From: lxc-users <Jens.Stomber-Mmb7MZpHnFY@public.gmane.org>
-Subject: an interesting article
-Date: Tue, 9 Aug 2016 22:08:41 +0300
-Message-ID: <00009508cdeb$8a303342$d9b7fe88$@gmx.de>
+From: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: [PATCH] [userns/for-testing] set ucounts for mount namespaces
+Date: Wed, 10 Aug 2016 11:55:45 -0700
+Message-ID: <1470855345-17274-1-git-send-email-avagin@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: de
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,11 +15,29 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers <containers-cunTk1MwBs98uUxBSJOaYoYkZiVZrdSR2LY78lusg7I@public.gmane.org>, Dilvan Moreira <dilvan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, lxc-devel-owner <lxc-devel-owner-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org>, Eax Melanhovich <afiskon-kDYi1C3HT9yHXe+LvDLADg@public.gmane.org>, Rajasekar Darapuram <raj-3WkaJmdq5nMlJZD/S0VCNg@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello, 
+It is used in free_mnt_ns():
+        dec_mnt_namespaces(ns->ucounts);
 
-I've just  found that arcticle  and thought it might  be really helpful to you, you may find it here <http://note.pepperchastain.org/aehhgxmy>
+Signed-off-by: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+---
+ fs/namespace.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-See you soon, lxc-users
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 0873371..491b8f3 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -2775,6 +2775,7 @@ static struct mnt_namespace *alloc_mnt_ns(struct user_namespace *user_ns)
+ 	init_waitqueue_head(&new_ns->poll);
+ 	new_ns->event = 0;
+ 	new_ns->user_ns = get_user_ns(user_ns);
++	new_ns->ucounts = ucounts;
+ 	return new_ns;
+ }
+ 
+-- 
+2.5.5
