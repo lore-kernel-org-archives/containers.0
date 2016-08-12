@@ -1,19 +1,132 @@
-From: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: RE: [PATCH v2 1/2] Limit dump_pipe program's permission to init for
-	container
-Date: Fri, 12 Aug 2016 10:11:36 +0800
-Message-ID: <01af01d1f43e$db1289f0$91379dd0$@cn.fujitsu.com>
-References: <cover.1470128571.git.zhaolei@cn.fujitsu.com>
-	<c7d8e45aa76a414c73082d22d325cd5a13979773.1470128572.git.zhaolei@cn.fujitsu.com>
-	<CANaxB-yz2AbjQYLLfXF03A-H=b5FV6+Dc8egorFFydbtZO-9Mg@mail.gmail.com>
-	<012701d1eeee$4ec38a80$ec4a9f80$@cn.fujitsu.com>
-	<20160805171339.GA19853@gmail.com>
+From: Danik <Sussan-FyFaVs7VFoRCPWQmNIN3aQ@public.gmane.org>
+Subject: =?utf-8?B?VGhpcyBoYXMgbmV2ZXIgbG9zdA==?=
+Date: Fri, 12 Aug 2016 14:05:22 -0400
+Message-ID: <da532c73f74cbc2b092e51b99ad61349@ovulanews.info>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="----------=_57ADC298.A46BBCCD"
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+List-Id: containers.vger.kernel.org
+
+This is a multi-part message in MIME format.
+
+------------=_57ADC298.A46BBCCD
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+
+Spam detection software, running on the system "blaine.gmane.org",
+has identified this incoming email as possible spam.  The original
+message has been attached to this so you can view it or label
+similar future email.  If you have any questions, see
+@@CONTACT_ADDRESS@@ for details.
+
+Content preview:  There's a brand new program that's getting a lot of coverage
+   within the industry circles for one shocking reason: IT NEVER LOSES! Yes,
+   even after thousands of transactions its' yet to post a single loss. That's
+   because the algorithms that are programmed make it damn near impossible to
+   lose! [...] 
+
+Content analysis details:   (5.9 points, 5.0 required)
+
+ pts rule name              description
+---- ---------------------- --------------------------------------------------
+ 1.7 URIBL_BLACK            Contains an URL listed in the URIBL blacklist
+                            [URIs: ovulanews.info]
+-0.0 RCVD_IN_MSPIKE_H3      RBL: Good reputation (+3)
+                            [140.211.169.12 listed in wl.mailspike.net]
+-2.3 RCVD_IN_DNSWL_MED      RBL: Sender listed at http://www.dnswl.org/, medium
+                             trust
+                            [140.211.169.12 listed in list.dnswl.org]
+-0.0 SPF_HELO_PASS          SPF: HELO matches SPF record
+ 3.0 DATE_IN_FUTURE_03_06   Date: is 3 to 6 hours after Received: date
+ 0.0 T_HEADER_FROM_DIFFERENT_DOMAINS From and EnvelopeFrom 2nd level mail
+                            domains are different
+-0.0 SPF_PASS               SPF: sender matches SPF record
+ 2.1 URI_NO_WWW_INFO_CGI    URI: CGI in .info TLD other than third-level
+                            "www"
+-1.9 BAYES_00               BODY: Bayes spam probability is 0 to 1%
+                            [score: 0.0000]
+ 0.5 RAZOR2_CF_RANGE_51_100 Razor2 gives confidence level above 50%
+                            [cf: 100]
+ 1.9 RAZOR2_CF_RANGE_E8_51_100 Razor2 gives engine 8 confidence level
+                            above 50%
+                            [cf: 100]
+ 0.9 RAZOR2_CHECK           Listed in Razor2 (http://razor.sf.net/)
+-0.0 RCVD_IN_MSPIKE_WL      Mailspike good senders
+ 0.0 T_DKIM_INVALID         DKIM-Signature header exists but is not valid
+
+
+
+------------=_57ADC298.A46BBCCD
+Content-Type: message/rfc822; x-spam-type=original
+Content-Description: original message before SpamAssassin
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20160805171339.GA19853-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Content-Language: zh-cn
+Envelope-to: glc-containers-Uylq5CNFT+jYtjvyW6yDsg@public.gmane.org
+Received: from mail.linuxfoundation.org ([140.211.169.12])
+	by blaine.gmane.org with esmtp (Exim 4.84_2)
+	(envelope-from <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>)
+	id 1bYBgP-0005Zk-Mi
+	for glc-containers-Uylq5CNFT+jYtjvyW6yDsg@public.gmane.org; Fri, 12 Aug 2016 14:35:30 +0200
+Received: from mail.linux-foundation.org (localhost [127.0.0.1])
+	by mail.linuxfoundation.org (Postfix) with ESMTP id 211D9725;
+	Fri, 12 Aug 2016 12:35:29 +0000 (UTC)
+X-Original-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Delivered-To: containers-i9wRM+HIrmnmtl4Z8vJ8Kg761KYD1DLY@public.gmane.org
+Received: from smtp1.linuxfoundation.org (smtp1.linux-foundation.org
+	[172.17.192.35])
+	by mail.linuxfoundation.org (Postfix) with ESMTPS id 9853F724
+	for <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>;
+	Fri, 12 Aug 2016 12:35:27 +0000 (UTC)
+X-Greylist: delayed 00:10:01 by SQLgrey-1.7.6
+Received: from mail.ovulanews.info (m.ovulanews.info [188.240.221.72])
+	by smtp1.linuxfoundation.org (Postfix) with ESMTP id E3BB21D5
+	for <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>;
+	Fri, 12 Aug 2016 12:35:26 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha1; c=relaxed/relaxed; s=dkim; d=ovulanews.info;
+	h=Mime-Version:Content-Type:Date:From:Subject:Message-ID:To;
+	i=Sussan-FyFaVs7VFoRCPWQmNIN3aQ@public.gmane.org; bh=Dj0FtVqVTxBKWFSReYJ2b3lD0k0=;
+	b=ghz707ZvhDOJJD4L8oP3IoPmcaCB/ifShTJIsuzvVREClKy2njWhxsnBG06ZXLkjYAcx/X1N0xfZ
+	KAZkrE7nXY5y/4bT+nlgJ3KmQqNG4cJsTKMkwdrsrmEobBV5yWmDqamdFbq2LIWbWMhzO/INe9Ov
+	KrMqahdnN8tH4LqU2DA=
+DomainKey-Signature: a=rsa-sha1; c=nofws; q=dns; s=dkim; d=ovulanews.info;
+	b=cx2TbfeSufe1Q4KAORBpHy1BgrJdaM5/4DWiwXCFehUBlJZMzVm0EypnAjvrMzm9eBwGre3PN7ft
+	JakbyPn8ozPO/h+BOYpEK1ZgpFAYsRO9fpkrfKOJ3wg2GzW9ZzK/+DLZAzKuRri5Q8hhEfg/oCX2
+	22ZOr5Hzk2giRgkGjZM=;
+Mime-Version: 1.0
+Date: Fri, 12 Aug 2016 14:05:22 -0400
+From: Danik <Sussan-FyFaVs7VFoRCPWQmNIN3aQ@public.gmane.org>
+Subject: =?utf-8?B?VGhpcyBoYXMgbmV2ZXIgbG9zdA==?=
+Message-ID: <da532c73f74cbc2b092e51b99ad61349-FyFaVs7VFoRCPWQmNIN3aQ@public.gmane.org>
+To: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org> 
+X-Spam-Flag: YES
+X-Spam-Status: Yes, score=7.1 required=5.0 tests=BAYES_50, DATE_IN_FUTURE_03_06,
+	DKIM_SIGNED, DKIM_VALID, DKIM_VALID_AU, HTML_MESSAGE, RP_MATCHES_RCVD,
+	URIBL_BLACK, URI_NO_WWW_INFO_CGI autolearn=no version=3.3.1
+X-Spam-Report: * -0.4 RP_MATCHES_RCVD Envelope sender domain matches handover
+	relay domain
+	* 3.0 DATE_IN_FUTURE_03_06 Date: is 3 to 6 hours after Received: date
+	* 2.1 URI_NO_WWW_INFO_CGI URI: CGI in .info TLD other than third-level
+	*      "www" *  0.0 HTML_MESSAGE BODY: HTML included in message
+	*  0.8 BAYES_50 BODY: Bayes spam probability is 40 to 60%
+	*      [score: 0.5066]
+	* -0.1 DKIM_VALID_AU Message has a valid DKIM or DK signature from
+	author's *       domain
+	*  0.1 DKIM_SIGNED Message has a DKIM or DK signature, not necessarily
+	*      valid
+	* -0.1 DKIM_VALID Message has at least one valid DKIM or DK signature
+	*  1.7 URIBL_BLACK Contains an URL listed in the URIBL blacklist
+	*      [URIs: ovulanews.info]
+X-Spam-Level: *******
+X-Spam-Checker-Version: SpamAssassin 3.3.1 (2010-03-16) on
+	smtp1.linux-foundation.org
+X-Content-Filtered-By: Mailman/MimeDel 2.1.12
+X-BeenThere: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: Linux Containers <containers.lists.linux-foundation.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,400 +134,92 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: 'Andrei Vagin' <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: 'Linux Containers' <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, 'LKML' <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "'Eric W. Biederman'" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-List-Id: containers.vger.kernel.org
 
-Hi, Andrei Vagin
+There's a brand new program that's getting a lot of coverage within the industry circles for one shocking reason: 
 
-> -----Original Message-----
-> From: 'Andrei Vagin' [mailto:avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org]
-> Sent: Saturday, August 06, 2016 1:14 AM
-> To: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> Cc: 'LKML' <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>; 'Linux Containers'
-> <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>; 'Eric W. Biederman'
-> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> Subject: Re: [PATCH v2 1/2] Limit dump_pipe program's permission to init for
-> container
-> 
-> On Fri, Aug 05, 2016 at 03:52:25PM +0800, Zhao Lei wrote:
-> > Hi, Andrei Vagin
-> >
-> > Thanks for your detailed review and suggestion.
-> >
-> > > -----Original Message-----
-> > > From: Andrei Vagin [mailto:avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org]
-> > > Sent: Friday, August 05, 2016 2:32 PM
-> > > To: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> > > Cc: LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>; Linux Containers
-> > > <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>; Eric W. Biederman
-> > > <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> > > Subject: Re: [PATCH v2 1/2] Limit dump_pipe program's permission to init
-> for
-> > > container
-> > >
-> > > On Tue, Aug 2, 2016 at 2:08 AM, Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
-> > > > Currently when we set core_pattern to a pipe, the pipe program is
-> > > > forked by kthread running with root's permission, and write dumpfile
-> > > > into host's filesystem.
-> > > > Same thing happened for container, the dumper and dumpfile are also
-> > > > in host(not in container).
-> > > >
-> > > > It have following program:
-> > > > 1: Not consistent with file_type core_pattern
-> > > >    When we set core_pattern to a file, the container will write dump
-> > > >    into container's filesystem instead of host.
-> > > > 2: Not safe for privileged container
-> > > >    In a privileged container, user can destroy host system by following
-> > > >    command:
-> > > >    # # In a container
-> > > >    # echo "|/bin/dd of=/boot/vmlinuz" >/proc/sys/kernel/core_pattern
-> > > >    # make_dump
-> > > >
-> > > > This patch switch dumper program's environment to init task, so, for
-> > > > container, dumper program have same environment with init task in
-> > > > container, which make dumper program put in container's filesystem, and
-> > > > write coredump into container's filesystem.
-> > > > The dumper's permission is also limited into subset of container's init
-> > > > process.
-> > >
-> > > Does it change the current behavior? A pid namespace may be used for
-> > > sandboxes. For example, chrome uses it. In this case, we probably want
-> > > to collect core dumps from a root pid namespace.
-> > >
-> > > If we are going to virtualize core_pattern relative to the pid
-> > > namespace, maybe it's better to make it optional for a pid namespace.
-> > > I mean it core_pattern is not set for the current pid namespace, we
-> > > can check a parent pid namespace and so on. A helper will be executed
-> > > in a pid namespace, where core_pattern is set.
-> > >
-> > Is it means, we don't want to always gather dump from the container ifself,
-> > wnd we want to custom which level of the container can gather dump
-> > information?
-> >
-> > If it is exact, current patch have similar function as above.
-> >
-> > If user had not set core_pattern in a namespace, the dump setting in
-> > the parent namespace will be used.
-> > For example,
-> > HOST        change core_pattern
-> > Container1  no change
-> > Container2  change core_pattern
-> > Container3  no change
-> > Container4  no change
-> >
-> > If code dump happened in container 2, 3 and 4, the dumper's environment
-> > is same as container2.
-> > And if dump happened in container 1 and HOST, the dumper's environment
-> > will be same as HOST.
-> >
-> > So,
-> > 1: if a container want to make the custom core dump,
-> >   it can set core_pattern in container, and the gathered information
-> >   will be limited in this container.
-> > 2: If the host(or some top level container) want to gather dump information
-> >   more than a container internal, the host(or some top level container)
-> >   can set core_pattern, and not change core_pattern in the container,
-> >   then the pipe program will be run in same environment as the host,
-> >   and gather information from host's env.
-> 
-> The behavior which you described is the same with what I'm thinking
-> about.
-> 
-> But I don't understand how you implement it in a code.
-> I see that you call find_task_by_vpid(1) to get a base task, so the base
-> that is always the init task of the current pid namespace. I think we
-> need to get the init task from a pid namespace where core_pattern is
-> set, don't we?
-> 
-> pidns1 task1 (core_pattern is set)
-> \_pidns2 task2 (core_pattern isn't set)
->  \_pidns2 ...
->   \_pidns2 taskX (crashed and call do_coredump())
-> 
-> find_task_by_vpid(1) is called from do_coredump() and will return task2,
-> but if I understand you correctly, the base_task has to be task1 in this
-> case.
-> 
-find_task_by_vpid(1) is changed in [PATCH 2/2].
+IT NEVER LOSES! 
 
-It changed core_pattern to per-ns instead of global one, and save pid_ns of
-the task who changed core_pattern, and use above pid_ns for find_task_by_vpid().
+Yes, even after thousands of transactions its' yet to post a single loss. 
+That's because the algorithms that are programmed make it damn near impossible to lose!
+	
+Which means you consistently win and consistently PROFIT. 
 
-In above pid tree, the pidns2 taskX crashed, then get core_pattern and pid_ns from
-pidns1's struct, so we can run pipe_program in pidns1.
+Why don't you have a look at just how advanced it is by clicking below now:
 
-> >
-> > > After reading these patches, I think it may be a good idea to add one
-> > > more mode to handle core files, when a core file is sent to an
-> > > existing process instead of executing a usermode helpers. This mode
-> > > will cover of use-cases where the pipe mode is used now. And it looks
-> > > more secure, because in this case we control namespaces and credential
-> > > for the abort daemon (a process which handles core files).u
-> > >
-> > > How it can be done. An abort daemon creates an abstract listening unix
-> > > socket and writes its name into /proc/sys/kernel/core_pattern. The
-> > > kernel saves this name and the network namespace. Then when any
-> > > process is crashed, the kernel creates a new unix socket and connect
-> > > it to the socket of the abort daemon and streams a core file into this
-> > > socket.
-> > >
-> > Good idea.
-> >
-> > And do it means if we want to custom core_pattern for each container,
-> > we can create more than one abort daemon for it?
-> 
-> Yes.
-> 
-> > If the abort daemon is running in the host, the dump file will be write
-> > into host's env, and if abort daemon is running in container, the dump
-> > file will be write into container's fs.
-> 
-> Yes. An abort daemon handles core files in its namespaces. The abort
-> daemon knows a pid of a crashed process, so it has access to namespaces of
-> the crashed task via /proc/pid/ns/* and can work with them. I want to say
-> that this daemon can decided in which context to handle a core file.
-> 
-> I don't like the idea to play with namespaces, credentials, an security
-> context for user helpers.
-> 
-Thanks for your detained explanation, I think it should be a useful function
-for core dump.
+=>	CLICK HERE => http://lp1.ovulanews.info/index.php?id=233090&a=41260&b=1459&c=166
 
-Thanks
-Zhaolei
+You'll be amazed at how simple it is to use and get started. 
 
-> >
-> > > >
-> > > > Suggested-by: Eric W. Biederman <ebieyderm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> > > > Suggested-by: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-> > > >
-> > > > Signed-off-by: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> > > > ---
-> > > >  fs/coredump.c           | 87
-> > > ++++++++++++++++++++++++++++++++++++++++++++++++-
-> > > >  include/linux/binfmts.h |  1 +
-> > > >  2 files changed, 87 insertions(+), 1 deletion(-)
-> > > >
-> > > > diff --git a/fs/coredump.c b/fs/coredump.c
-> > > > index 281b768..8511267 100644
-> > > > --- a/fs/coredump.c
-> > > > +++ b/fs/coredump.c
-> > > > @@ -516,6 +516,8 @@ static int umh_pipe_setup(struct
-> subprocess_info
-> > > *info, struct cred *new)
-> > > >  {
-> > > >         struct file *files[2];
-> > > >         struct coredump_params *cp = (struct coredump_params
-> > > *)info->data;
-> > > > +       struct task_struct *base_task;
-> > > > +
-> > > >         int err = create_pipe_files(files, 0);
-> > > >         if (err)
-> > > >                 return err;
-> > > > @@ -524,10 +526,79 @@ static int umh_pipe_setup(struct
-> subprocess_info
-> > > *info, struct cred *new)
-> > > >
-> > > >         err = replace_fd(0, files[0], 0);
-> > > >         fput(files[0]);
-> > > > +       if (err)
-> > > > +               return err;
-> > > > +
-> > > >         /* and disallow core files too */
-> > > >         current->signal->rlim[RLIMIT_CORE] = (struct rlimit){1, 1};
-> > > >
-> > > > -       return err;
-> > > > +       base_task = cp->base_task;
-> > > > +       if (base_task) {
-> > > > +               const struct cred *base_cred;
-> > > > +
-> > > > +               /* Set fs_root to base_task */
-> > > > +               spin_lock(&base_task->fs->lock);
-> > > > +               set_fs_root(current->fs, &base_task->fs->root);
-> > > > +               spin_unlock(&base_task->fs->lock);
-> > > > +
-> > > > +               /* Set namespaces to base_task */
-> > > > +               get_nsproxy(base_task->nsproxy);
-> > > > +               switch_task_namespaces(current,
-> base_task->nsproxy);
-> > >
-> > > This task will continue running in the current pid namespace, because
-> > > switch_task_namespaces doesn't change a pid for the task. Ussualy, we
-> > > need to make setns+fork to switch a pid namespace.
-> > >
-> > Yes.
-> > Now I known why I had not find this problem in my test,
-> > I output pids by a shell command, and the shell command is already got
-> forked.
-> >
-> > Seems need double fork(make code complex...) to do it.
-> >
-> > > > +
-> > > > +               /* Set cgroup to base_task */
-> > > > +               current->flags &= ~PF_NO_SETAFFINITY;
-> > > > +               err = cgroup_attach_task_all(base_task, current);
-> > > > +               if (err < 0)
-> > > > +                       return err;
-> > > > +
-> > > > +               /* Set cred to base_task */
-> > > > +               base_cred = get_task_cred(base_task);
-> > > > +
-> > >
-> > > I think you can use prepare_kernel_cred here
-> > >
-> > prepare_kernel_cred() is called by caller of this
-> function(call_usermodehelper_exec_async()),
-> > and this function is a hook, which can set additional cred property like:
-> > call_usermodehelper_exec_async()
-> > {
-> >     prepare_kernel_cred()
-> >     this_function()
-> >     {
-> >         custom_cred struct
-> >     }
-> >     commit_creds(new);
-> > }
-> >
-> > So we can only change cred's container here.
-> >
-> > But seems we need rewrite this code when we move to above "double fork".
-> >
-> > Before rewrite, could you give me some suggestion, if current code
-> > already can custom to dump information of "container internal" and "parent
-> level container",
-> > is this meet your request?
-> >
-> > Thanks
-> > Zhaolei
-> >
-> > > > +               new->uid   = base_cred->uid;
-> > > > +               new->gid   = base_cred->gid;
-> > > > +               new->suid  = base_cred->suid;
-> > > > +               new->sgid  = base_cred->sgid;
-> > > > +               new->euid  = base_cred->euid;
-> > > > +               new->egid  = base_cred->egid;
-> > > > +               new->fsuid = base_cred->fsuid;
-> > > > +               new->fsgid = base_cred->fsgid;
-> > > > +
-> > > > +               new->securebits = base_cred->securebits;
-> > > > +
-> > > > +               new->cap_inheritable = base_cred->cap_inheritable;
-> > > > +               new->cap_permitted   =
-> base_cred->cap_permitted;
-> > > > +               new->cap_effective   = base_cred->cap_effective;
-> > > > +               new->cap_bset        = base_cred->cap_bset;
-> > > > +               new->cap_ambient     = base_cred->cap_ambient;
-> > > > +
-> > > > +               security_cred_free(new);
-> > > > +#ifdef CONFIG_SECURITY
-> > > > +               new->security = NULL;
-> > > > +#endif
-> > > > +               err = security_prepare_creds(new, base_cred,
-> > > GFP_KERNEL);
-> > > > +               if (err < 0) {
-> > > > +                       put_cred(base_cred);
-> > > > +                       return err;
-> > > > +               }
-> > > > +
-> > > > +               free_uid(new->user);
-> > > > +               new->user = base_cred->user;
-> > > > +               get_uid(new->user);
-> > > > +
-> > > > +               put_user_ns(new->user_ns);
-> > > > +               new->user_ns = base_cred->user_ns;
-> > > > +               get_user_ns(new->user_ns);
-> > > > +
-> > > > +               put_group_info(new->group_info);
-> > > > +               new->group_info = base_cred->group_info;
-> > > > +               get_group_info(new->group_info);
-> > > > +
-> > > > +               put_cred(base_cred);
-> > > > +
-> > > > +               validate_creds(new);
-> > > > +       }
-> > > > +
-> > > > +       return 0;
-> > > >  }
-> > > >
-> > > >  void do_coredump(const siginfo_t *siginfo)
-> > > > @@ -590,6 +661,7 @@ void do_coredump(const siginfo_t *siginfo)
-> > > >
-> > > >         if (ispipe) {
-> > > >                 int dump_count;
-> > > > +               struct task_struct *vinit_task;
-> > > >                 char **helper_argv;
-> > > >                 struct subprocess_info *sub_info;
-> > > >
-> > > > @@ -631,6 +703,14 @@ void do_coredump(const siginfo_t *siginfo)
-> > > >                         goto fail_dropcount;
-> > > >                 }
-> > > >
-> > > > +               rcu_read_lock();
-> > > > +               vinit_task = find_task_by_vpid(1);
-> > > > +               rcu_read_unlock();
-> > > > +               if (!vinit_task) {
-> > > > +                       printk(KERN_WARNING "failed getting init
-> task
-> > > info, skipping core dump\n");
-> > > > +                       goto fail_dropcount;
-> > > > +               }
-> > > > +
-> > > >                 helper_argv = argv_split(GFP_KERNEL, cn.corename,
-> > > NULL);
-> > > >                 if (!helper_argv) {
-> > > >                         printk(KERN_WARNING "%s failed to
-> allocate
-> > > memory\n",
-> > > > @@ -638,6 +718,10 @@ void do_coredump(const siginfo_t *siginfo)
-> > > >                         goto fail_dropcount;
-> > > >                 }
-> > > >
-> > > > +               get_task_struct(vinit_task);
-> > > > +
-> > > > +               cprm.base_task = vinit_task;
-> > > > +
-> > > >                 retval = -ENOMEM;
-> > > >                 sub_info =
-> call_usermodehelper_setup(helper_argv[0],
-> > > >                                                 helper_argv,
-> > > NULL, GFP_KERNEL,
-> > > > @@ -646,6 +730,7 @@ void do_coredump(const siginfo_t *siginfo)
-> > > >                         retval =
-> call_usermodehelper_exec(sub_info,
-> > > >
-> > > UMH_WAIT_EXEC);
-> > > >
-> > > > +               put_task_struct(vinit_task);
-> > > >                 argv_free(helper_argv);
-> > > >                 if (retval) {
-> > > >                         printk(KERN_INFO "Core dump to |%s pipe
-> > > failed\n",
-> > > > diff --git a/include/linux/binfmts.h b/include/linux/binfmts.h
-> > > > index 314b3ca..0c9a72c 100644
-> > > > --- a/include/linux/binfmts.h
-> > > > +++ b/include/linux/binfmts.h
-> > > > @@ -59,6 +59,7 @@ struct linux_binprm {
-> > > >
-> > > >  /* Function parameter for binfmt->coredump */
-> > > >  struct coredump_params {
-> > > > +       struct task_struct *base_task;
-> > > >         const siginfo_t *siginfo;
-> > > >         struct pt_regs *regs;
-> > > >         struct file *file;
-> > > > --
-> > > > 1.8.5.1
-> > > >
-> > > >
-> > > >
-> > > > _______________________________________________
-> > > > Containers mailing list
-> > > > Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> > > > https://lists.linuxfoundation.org/mailman/listinfo/containers
-> > >
-> >
-> >
-> >
-> >
+He's offering something else too but you've gotta check it out for yourself:
+
+=>	CLICK NOW TO SEE WHAT ELSE HE'S OFFERING
+
+=> http://lp1.ovulanews.info/index.php?id=233090&a=41260&b=1459&c=166
+
+Enjoy your day!
+
+Danik
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+BVI, Tortola, Drake Chambers PO 3321
+Unsubscribe: http://lp1.ovulanews.info/index.php?o=2&a=41260&b=1459&c=166
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+
+
+------------=_57ADC298.A46BBCCD--
