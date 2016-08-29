@@ -1,11 +1,14 @@
 From: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH v3 0/3] Make core_pattern support namespace
-Date: Mon, 29 Aug 2016 20:06:38 +0800
-Message-ID: <cover.1472471585.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH v3 2/3] Limit dump_pipe program's permission to init for
+	container
+Date: Mon, 29 Aug 2016 20:06:40 +0800
+Message-ID: <f8d04e263bfba9bbed1d11b0f7dd780efb937cc2.1472471586.git.zhaolei@cn.fujitsu.com>
+References: <cover.1472471585.git.zhaolei@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <cover.1472471585.git.zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,80 +22,209 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patchset includes following function points:
-1: Let usermodehelper function possible to set pid namespace
-   done by: [PATCH v3 1/3] Make call_usermodehelper_exec possible
-   to set pid namespace.
-2: Let pipe_type core_pattern write dump into container's rootfs
-   done by: [PATCH v3 2/3] Limit dump_pipe program's permission to
-   init for container.
-2: Make separate core_pattern setting for each container
-   done by: [PATCH v3 3/3] Make core_pattern support namespace
-3: Compatibility with current system
-   also included in: [PATCH v3 3/3] Make core_pattern support namespace
-   If container hadn't change core_pattern setting, it will keep
-   same setting with host.
+Currently when we set core_pattern to a pipe, the pipe program is
+forked by kthread running with root's permission, and write dumpfile
+into host's filesystem.
+Same thing happened for container, the dumper and dumpfile are also
+in host(not in container).
 
-Test:
-1: Pass a test script for each function of this patchset
-   ## TEST IN HOST ##
-   [root@kerneldev dumptest]# ./test_host
-   Set file core_pattern: OK
-   ./test_host: line 41:  2366 Segmentation fault      (core dumped) "$SCRIPT_BASE_DIR"/make_dump
-   Checking dumpfile: OK
-   Set file core_pattern: OK
-   ./test_host: line 41:  2369 Segmentation fault      (core dumped) "$SCRIPT_BASE_DIR"/make_dump
-   Checking dump_pipe triggered: OK
-   Checking rootfs: OK
-   Checking dumpfile: OK
-   Checking namespace: OK
-   Checking process list: OK
-   Checking capabilities: OK
+It have following program:
+1: Not consistent with file_type core_pattern
+   When we set core_pattern to a file, the container will write dump
+   into container's filesystem instead of host.
+2: Not safe for privileged container
+   In a privileged container, user can destroy host system by following
+   command:
+   # # In a container
+   # echo "|/bin/dd of=/boot/vmlinuz" >/proc/sys/kernel/core_pattern
+   # make_dump
 
-   ## TEST IN GUEST ##
-   # ./test
-   Segmentation fault (core dumped)
-   Checking dump_pipe triggered: OK
-   Checking rootfs: OK
-   Checking dumpfile: OK
-   Checking namespace: OK
-   Checking process list: OK
-   Checking cg pids: OK
-   Checking capabilities: OK
-   [   64.940734] make_dump[2432]: segfault at 0 ip 000000000040049d sp 00007ffc4af025f0 error 6 in make_dump[400000+a6000]
-   #
-2: Pass other test(which is not easy to do in script) by hand.
-
-Changelog v2->v3:
-1: Fix problem of setting pid namespace, pointed out by:
-   Andrei Vagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-
-Changelog v1(RFC)->v2:
-1: Add [PATCH 2/2] which was todo in [RFC v1].
-2: Pass a test script for each function.
-3: Rebase on top of v4.7.
+This patch switch dumper program's environment to init task, so, for
+container, dumper program have same environment with init task in
+container, which make dumper program put in container's filesystem, and
+write coredump into container's filesystem.
+The dumper's permission is also limited into subset of container's init
+process.
 
 Suggested-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Suggested-by: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+
 Signed-off-by: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
+ fs/coredump.c           | 102 +++++++++++++++++++++++++++++++++++++++++++++++-
+ include/linux/binfmts.h |   1 +
+ 2 files changed, 101 insertions(+), 2 deletions(-)
 
-Zhao Lei (3):
-  Make call_usermodehelper_exec possible to set pid namespace
-  Limit dump_pipe program's permission to init for container
-  Make core_pattern support namespace
-
- fs/coredump.c                 | 126 ++++++++++++++++++++++++++++++++++++---
- include/linux/binfmts.h       |   1 +
- include/linux/kmod.h          |   2 +
- include/linux/pid_namespace.h |   3 +
- init/do_mounts_initrd.c       |   3 +-
- kernel/kmod.c                 | 133 +++++++++++++++++++++++++++++++++++++-----
- kernel/pid.c                  |   2 +
- kernel/pid_namespace.c        |   2 +
- kernel/sysctl.c               |  50 ++++++++++++++--
- lib/kobject_uevent.c          |   3 +-
- security/keys/request_key.c   |   4 +-
- 11 files changed, 296 insertions(+), 33 deletions(-)
-
+diff --git a/fs/coredump.c b/fs/coredump.c
+index ceb0ee8..205ce33 100644
+--- a/fs/coredump.c
++++ b/fs/coredump.c
+@@ -501,6 +501,23 @@ static void wait_for_dump_helpers(struct file *file)
+ 	pipe_unlock(pipe);
+ }
+ 
++static int umh_ns_setup(struct subprocess_info *info)
++{
++	struct coredump_params *cp = (struct coredump_params *)info->data;
++	struct task_struct *base_task = cp->base_task;
++
++	if (base_task) {
++		/* Set namespaces to base_task */
++		get_nsproxy(base_task->nsproxy);
++		switch_task_namespaces(current, base_task->nsproxy);
++
++		/* Return -EAGAIN to notice caller to refork */
++		return -EAGAIN;
++	}
++
++	return 0;
++}
++
+ /*
+  * umh_pipe_setup
+  * helper function to customize the process used
+@@ -516,6 +533,8 @@ static int umh_pipe_setup(struct subprocess_info *info, struct cred *new)
+ {
+ 	struct file *files[2];
+ 	struct coredump_params *cp = (struct coredump_params *)info->data;
++	struct task_struct *base_task;
++
+ 	int err = create_pipe_files(files, 0);
+ 	if (err)
+ 		return err;
+@@ -524,10 +543,75 @@ static int umh_pipe_setup(struct subprocess_info *info, struct cred *new)
+ 
+ 	err = replace_fd(0, files[0], 0);
+ 	fput(files[0]);
++	if (err)
++		return err;
++
+ 	/* and disallow core files too */
+ 	current->signal->rlim[RLIMIT_CORE] = (struct rlimit){1, 1};
+ 
+-	return err;
++	base_task = cp->base_task;
++	if (base_task) {
++		const struct cred *base_cred;
++
++		/* Set fs_root to base_task */
++		spin_lock(&base_task->fs->lock);
++		set_fs_root(current->fs, &base_task->fs->root);
++		spin_unlock(&base_task->fs->lock);
++
++		/* Set cgroup to base_task */
++		current->flags &= ~PF_NO_SETAFFINITY;
++		err = cgroup_attach_task_all(base_task, current);
++		if (err < 0)
++			return err;
++
++		/* Set cred to base_task */
++		base_cred = get_task_cred(base_task);
++
++		new->uid   = base_cred->uid;
++		new->gid   = base_cred->gid;
++		new->suid  = base_cred->suid;
++		new->sgid  = base_cred->sgid;
++		new->euid  = base_cred->euid;
++		new->egid  = base_cred->egid;
++		new->fsuid = base_cred->fsuid;
++		new->fsgid = base_cred->fsgid;
++
++		new->securebits = base_cred->securebits;
++
++		new->cap_inheritable = base_cred->cap_inheritable;
++		new->cap_permitted   = base_cred->cap_permitted;
++		new->cap_effective   = base_cred->cap_effective;
++		new->cap_bset        = base_cred->cap_bset;
++		new->cap_ambient     = base_cred->cap_ambient;
++
++		security_cred_free(new);
++#ifdef CONFIG_SECURITY
++		new->security = NULL;
++#endif
++		err = security_prepare_creds(new, base_cred, GFP_KERNEL);
++		if (err < 0) {
++			put_cred(base_cred);
++			return err;
++		}
++
++		free_uid(new->user);
++		new->user = base_cred->user;
++		get_uid(new->user);
++
++		put_user_ns(new->user_ns);
++		new->user_ns = base_cred->user_ns;
++		get_user_ns(new->user_ns);
++
++		put_group_info(new->group_info);
++		new->group_info = base_cred->group_info;
++		get_group_info(new->group_info);
++
++		put_cred(base_cred);
++
++		validate_creds(new);
++	}
++
++	return 0;
+ }
+ 
+ void do_coredump(const siginfo_t *siginfo)
+@@ -590,6 +674,7 @@ void do_coredump(const siginfo_t *siginfo)
+ 
+ 	if (ispipe) {
+ 		int dump_count;
++		struct task_struct *vinit_task;
+ 		char **helper_argv;
+ 		struct subprocess_info *sub_info;
+ 
+@@ -631,6 +716,14 @@ void do_coredump(const siginfo_t *siginfo)
+ 			goto fail_dropcount;
+ 		}
+ 
++		rcu_read_lock();
++		vinit_task = find_task_by_vpid(1);
++		rcu_read_unlock();
++		if (!vinit_task) {
++			printk(KERN_WARNING "failed getting init task info, skipping core dump\n");
++			goto fail_dropcount;
++		}
++
+ 		helper_argv = argv_split(GFP_KERNEL, cn.corename, NULL);
+ 		if (!helper_argv) {
+ 			printk(KERN_WARNING "%s failed to allocate memory\n",
+@@ -638,15 +731,20 @@ void do_coredump(const siginfo_t *siginfo)
+ 			goto fail_dropcount;
+ 		}
+ 
++		get_task_struct(vinit_task);
++
++		cprm.base_task = vinit_task;
++
+ 		retval = -ENOMEM;
+ 		sub_info = call_usermodehelper_setup(helper_argv[0],
+ 						helper_argv, NULL, GFP_KERNEL,
+-						NULL, umh_pipe_setup,
++						umh_ns_setup, umh_pipe_setup,
+ 						NULL, &cprm);
+ 		if (sub_info)
+ 			retval = call_usermodehelper_exec(sub_info,
+ 							  UMH_WAIT_EXEC);
+ 
++		put_task_struct(vinit_task);
+ 		argv_free(helper_argv);
+ 		if (retval) {
+ 			printk(KERN_INFO "Core dump to |%s pipe failed\n",
+diff --git a/include/linux/binfmts.h b/include/linux/binfmts.h
+index 314b3ca..0c9a72c 100644
+--- a/include/linux/binfmts.h
++++ b/include/linux/binfmts.h
+@@ -59,6 +59,7 @@ struct linux_binprm {
+ 
+ /* Function parameter for binfmt->coredump */
+ struct coredump_params {
++	struct task_struct *base_task;
+ 	const siginfo_t *siginfo;
+ 	struct pt_regs *regs;
+ 	struct file *file;
 -- 
 1.8.5.1
