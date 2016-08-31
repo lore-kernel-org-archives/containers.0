@@ -1,16 +1,14 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/4] kernel: add a helper to get an owning user namespace
-	for a namespace
-Date: Tue, 30 Aug 2016 21:56:05 -0500
-Message-ID: <20160831025605.GA21788@mail.hallyn.com>
-References: <1472252891-4963-1-git-send-email-avagin@openvz.org>
-	<1472252891-4963-2-git-send-email-avagin@openvz.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH] [userns/for-testing] set ucounts for mount namespaces
+Date: Wed, 31 Aug 2016 07:43:40 -0500
+Message-ID: <87twe1nm6b.fsf@x220.int.ebiederm.org>
+References: <1470855345-17274-1-git-send-email-avagin@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1472252891-4963-2-git-send-email-avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1470855345-17274-1-git-send-email-avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> (Andrei
+	Vagin's message of "Wed, 10 Aug 2016 11:55:45 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,27 +19,34 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Aug 26, 2016 at 04:08:08PM -0700, Andrei Vagin wrote:
-> +struct ns_common *ns_get_owner(struct ns_common *ns)
-> +{
-> +	struct user_namespace *my_user_ns = current_user_ns();
-> +	struct user_namespace *owner, *p;
-> +
-> +	/* See if the owner is in the current user namespace */
-> +	owner = p = ns->ops->get_owner(ns);
-> +	for (;;) {
-> +		if (!p)
-> +			return ERR_PTR(-EPERM);
-> +		if (p == my_user_ns)
-> +			break;
-> +		p = p->parent;
-> +	}
-> +
-> +	return &get_user_ns(owner)->ns;
+Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
 
-get_user_ns() bumps the owner's refcount.  I don't see where
-this is being dropped, especially when ns_ioctl() uses it in
-the next patch.
+> It is used in free_mnt_ns():
+>         dec_mnt_namespaces(ns->ucounts);
+
+Doh!
+
+Thank you for catching this.
+
+Eric
+
+
+> Signed-off-by: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+> ---
+>  fs/namespace.c | 1 +
+>  1 file changed, 1 insertion(+)
+>
+> diff --git a/fs/namespace.c b/fs/namespace.c
+> index 0873371..491b8f3 100644
+> --- a/fs/namespace.c
+> +++ b/fs/namespace.c
+> @@ -2775,6 +2775,7 @@ static struct mnt_namespace *alloc_mnt_ns(struct user_namespace *user_ns)
+>  	init_waitqueue_head(&new_ns->poll);
+>  	new_ns->event = 0;
+>  	new_ns->user_ns = get_user_ns(user_ns);
+> +	new_ns->ucounts = ucounts;
+>  	return new_ns;
+>  }
