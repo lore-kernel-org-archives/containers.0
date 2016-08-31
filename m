@@ -1,16 +1,15 @@
 From: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 Subject: Re: [PATCH 1/4] kernel: add a helper to get an owning user namespace
 	for a namespace
-Date: Wed, 31 Aug 2016 13:38:35 -0700
-Message-ID: <CANaxB-zz=tnCSFMsHuGbmhiHa20DGbybWo=xdeeiDwJyoMxmYQ__32624.2159390405$1472675929$gmane$org@mail.gmail.com>
+Date: Wed, 31 Aug 2016 14:12:49 -0700
+Message-ID: <CANaxB-zmWL7GDRSfVoTdb--sbQ_BtPrZrDrccADYbHKp6qKSgw@mail.gmail.com>
 References: <1472252891-4963-1-git-send-email-avagin@openvz.org>
 	<1472252891-4963-2-git-send-email-avagin@openvz.org>
-	<20160831025605.GA21788@mail.hallyn.com>
+	<20160831024146.GB21475@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary=94eb2c08b1fc4ab635053b648fe3
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20160831025605.GA21788-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+In-Reply-To: <20160831024146.GB21475-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,60 +20,199 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Aug 30, 2016 at 7:56 PM, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
+--94eb2c08b1fc4ab635053b648fe3
+Content-Type: text/plain; charset=UTF-8
+
+On Tue, Aug 30, 2016 at 7:41 PM, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
 > On Fri, Aug 26, 2016 at 04:08:08PM -0700, Andrei Vagin wrote:
->> +struct ns_common *ns_get_owner(struct ns_common *ns)
+>> From: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+>>
+>> Return -EPERM if an owning user namespace is outside of a process
+>> current user namespace.
+>>
+>> v2: In a first version ns_get_owner returned ENOENT for init_user_ns.
+>>     This special cases was removed from this version. There is nothing
+>>     outside of init_user_ns, so we can return EPERM.
+>>
+>> Signed-off-by: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+>> ---
+>>  fs/namespace.c                 |  6 ++++++
+>>  include/linux/proc_ns.h        |  1 +
+>>  include/linux/user_namespace.h |  7 +++++++
+>>  ipc/namespace.c                |  6 ++++++
+>>  kernel/cgroup.c                |  6 ++++++
+>>  kernel/pid_namespace.c         |  6 ++++++
+>>  kernel/user_namespace.c        | 24 ++++++++++++++++++++++++
+>>  kernel/utsname.c               |  6 ++++++
+>>  net/core/net_namespace.c       |  6 ++++++
+>>  9 files changed, 68 insertions(+)
+>>
+>> diff --git a/fs/namespace.c b/fs/namespace.c
+>> index 491b8f3..f985817 100644
+>> --- a/fs/namespace.c
+>> +++ b/fs/namespace.c
+>> @@ -3368,10 +3368,16 @@ static int mntns_install(struct nsproxy *nsproxy, struct ns_common *ns)
+>>       return 0;
+>>  }
+>>
+>> +static struct user_namespace *mntns_get_owner(struct ns_common *ns)
 >> +{
->> +     struct user_namespace *my_user_ns = current_user_ns();
->> +     struct user_namespace *owner, *p;
->> +
->> +     /* See if the owner is in the current user namespace */
->> +     owner = p = ns->ops->get_owner(ns);
->> +     for (;;) {
->> +             if (!p)
->> +                     return ERR_PTR(-EPERM);
->> +             if (p == my_user_ns)
->> +                     break;
->> +             p = p->parent;
->> +     }
->> +
->> +     return &get_user_ns(owner)->ns;
+>> +     return to_mnt_ns(ns)->user_ns;
 >
-> get_user_ns() bumps the owner's refcount.  I don't see where
-> this is being dropped, especially when ns_ioctl() uses it in
-> the next patch.
+> Hi - sorry to be pedantic here, but *_get_owner makes me think
+> it will grab a reference too.  A bit unfortunate, maybe it doesn't
+> matter, but would mntns_owner(), netns_owner(), etc be better?
 
-It is dropped in __ns_get_path if a namespace has a dentry, otherwise
-it is dropped from nsfs_evict.
+Actually it looks reasonable. Especially, when we have get_parent()
+which grabs a reference.
 
-static void *__ns_get_path(struct path *path, struct ns_common *ns)
-        |                return -EPERM;
-...
-        ns->ops->put(ns);                                                      |
-got_it:
-        |        /* See if the owner is in the current user namespace
-*/
-        path->mnt = mnt;
-        |        owner = p = ns->ops->get_owner(ns);
-        path->dentry = dentry;
-        |        for (;;) {
-        return NULL;
-...
+Serge, could you look at the attached patch? I will need to rebase
+other patches, if we accept this patch.
 
-static void nsfs_evict(struct inode *inode)                                    |
-{
-        |        if (!ns_capable(user_ns, CAP_SYS_ADMIN))
-        struct ns_common *ns = inode->i_private;
-        |                return -EPERM;
-        clear_inode(inode);                                                    |
-        ns->ops->put(ns);
-        |        cred = prepare_creds();
-}
+Thanks,
+Andrei
 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linuxfoundation.org/mailman/listinfo/containers
+--94eb2c08b1fc4ab635053b648fe3
+Content-Type: text/x-patch; charset=US-ASCII;
+	name="0001-kernel-add-a-helper-to-get-an-owning-user-namespace-.patch"
+Content-Disposition: attachment;
+	filename="0001-kernel-add-a-helper-to-get-an-owning-user-namespace-.patch"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_isjedmpi0
+
+RnJvbSA0MjNiMjIyNmRjOWJjZmVmY2NiZWMyMTY2M2U5Mjg3YWRkZDY3ZTBmIE1vbiBTZXAgMTcg
+MDA6MDA6MDAgMjAwMQpGcm9tOiBBbmRyZXkgVmFnaW4gPGF2YWdpbkBvcGVudnoub3JnPgpEYXRl
+OiBUdWUsIDEyIEp1bCAyMDE2IDE1OjMyOjM2IC0wNzAwClN1YmplY3Q6IFtQQVRDSF0ga2VybmVs
+OiBhZGQgYSBoZWxwZXIgdG8gZ2V0IGFuIG93bmluZyB1c2VyIG5hbWVzcGFjZSBmb3IgYQogbmFt
+ZXNwYWNlCgpSZXR1cm4gLUVQRVJNIGlmIGFuIG93bmluZyB1c2VyIG5hbWVzcGFjZSBpcyBvdXRz
+aWRlIG9mIGEgcHJvY2VzcwpjdXJyZW50IHVzZXIgbmFtZXNwYWNlLgoKdjI6IEluIGEgZmlyc3Qg
+dmVyc2lvbiBuc19nZXRfb3duZXIgcmV0dXJuZWQgRU5PRU5UIGZvciBpbml0X3VzZXJfbnMuCiAg
+ICBUaGlzIHNwZWNpYWwgY2FzZXMgd2FzIHJlbW92ZWQgZnJvbSB0aGlzIHZlcnNpb24uIFRoZXJl
+IGlzIG5vdGhpbmcKICAgIG91dHNpZGUgb2YgaW5pdF91c2VyX25zLCBzbyB3ZSBjYW4gcmV0dXJu
+IEVQRVJNLgp2MzogcmVuYW1lIG5zLT5nZXRfb3duZXIoKSB0byBucy0+b3duZXIoKS4gZ2V0Xyog
+dXN1YWxseSBtZWFucyB0aGF0IGl0CmdyYWJzIGEgcmVmZXJlbmNlLgoKU2lnbmVkLW9mZi1ieTog
+QW5kcmVpIFZhZ2luIDxhdmFnaW5Ab3BlbnZ6Lm9yZz4KLS0tCiBmcy9uYW1lc3BhY2UuYyAgICAg
+ICAgICAgICAgICAgfCAgNiArKysrKysKIGluY2x1ZGUvbGludXgvcHJvY19ucy5oICAgICAgICB8
+ICAxICsKIGluY2x1ZGUvbGludXgvdXNlcl9uYW1lc3BhY2UuaCB8ICA3ICsrKysrKysKIGlwYy9u
+YW1lc3BhY2UuYyAgICAgICAgICAgICAgICB8ICA2ICsrKysrKwoga2VybmVsL2Nncm91cC5jICAg
+ICAgICAgICAgICAgIHwgIDYgKysrKysrCiBrZXJuZWwvcGlkX25hbWVzcGFjZS5jICAgICAgICAg
+fCAgNiArKysrKysKIGtlcm5lbC91c2VyX25hbWVzcGFjZS5jICAgICAgICB8IDI0ICsrKysrKysr
+KysrKysrKysrKysrKysrKwoga2VybmVsL3V0c25hbWUuYyAgICAgICAgICAgICAgIHwgIDYgKysr
+KysrCiBuZXQvY29yZS9uZXRfbmFtZXNwYWNlLmMgICAgICAgfCAgNiArKysrKysKIDkgZmlsZXMg
+Y2hhbmdlZCwgNjggaW5zZXJ0aW9ucygrKQoKZGlmZiAtLWdpdCBhL2ZzL25hbWVzcGFjZS5jIGIv
+ZnMvbmFtZXNwYWNlLmMKaW5kZXggNDkxYjhmMy4uZGQyN2NlNCAxMDA2NDQKLS0tIGEvZnMvbmFt
+ZXNwYWNlLmMKKysrIGIvZnMvbmFtZXNwYWNlLmMKQEAgLTMzNjgsMTAgKzMzNjgsMTYgQEAgc3Rh
+dGljIGludCBtbnRuc19pbnN0YWxsKHN0cnVjdCBuc3Byb3h5ICpuc3Byb3h5LCBzdHJ1Y3QgbnNf
+Y29tbW9uICpucykKIAlyZXR1cm4gMDsKIH0KIAorc3RhdGljIHN0cnVjdCB1c2VyX25hbWVzcGFj
+ZSAqbW50bnNfb3duZXIoc3RydWN0IG5zX2NvbW1vbiAqbnMpCit7CisJcmV0dXJuIHRvX21udF9u
+cyhucyktPnVzZXJfbnM7Cit9CisKIGNvbnN0IHN0cnVjdCBwcm9jX25zX29wZXJhdGlvbnMgbW50
+bnNfb3BlcmF0aW9ucyA9IHsKIAkubmFtZQkJPSAibW50IiwKIAkudHlwZQkJPSBDTE9ORV9ORVdO
+UywKIAkuZ2V0CQk9IG1udG5zX2dldCwKIAkucHV0CQk9IG1udG5zX3B1dCwKIAkuaW5zdGFsbAk9
+IG1udG5zX2luc3RhbGwsCisJLm93bmVyCQk9IG1udG5zX293bmVyLAogfTsKZGlmZiAtLWdpdCBh
+L2luY2x1ZGUvbGludXgvcHJvY19ucy5oIGIvaW5jbHVkZS9saW51eC9wcm9jX25zLmgKaW5kZXgg
+ZGUwZTc3MS4uY2E4NWE0MyAxMDA2NDQKLS0tIGEvaW5jbHVkZS9saW51eC9wcm9jX25zLmgKKysr
+IGIvaW5jbHVkZS9saW51eC9wcm9jX25zLmgKQEAgLTE4LDYgKzE4LDcgQEAgc3RydWN0IHByb2Nf
+bnNfb3BlcmF0aW9ucyB7CiAJc3RydWN0IG5zX2NvbW1vbiAqKCpnZXQpKHN0cnVjdCB0YXNrX3N0
+cnVjdCAqdGFzayk7CiAJdm9pZCAoKnB1dCkoc3RydWN0IG5zX2NvbW1vbiAqbnMpOwogCWludCAo
+Kmluc3RhbGwpKHN0cnVjdCBuc3Byb3h5ICpuc3Byb3h5LCBzdHJ1Y3QgbnNfY29tbW9uICpucyk7
+CisJc3RydWN0IHVzZXJfbmFtZXNwYWNlICooKm93bmVyKShzdHJ1Y3QgbnNfY29tbW9uICpucyk7
+CiB9OwogCiBleHRlcm4gY29uc3Qgc3RydWN0IHByb2NfbnNfb3BlcmF0aW9ucyBuZXRuc19vcGVy
+YXRpb25zOwpkaWZmIC0tZ2l0IGEvaW5jbHVkZS9saW51eC91c2VyX25hbWVzcGFjZS5oIGIvaW5j
+bHVkZS9saW51eC91c2VyX25hbWVzcGFjZS5oCmluZGV4IDMwZmZlMTAuLmViMjA5ZDQgMTAwNjQ0
+Ci0tLSBhL2luY2x1ZGUvbGludXgvdXNlcl9uYW1lc3BhY2UuaAorKysgYi9pbmNsdWRlL2xpbnV4
+L3VzZXJfbmFtZXNwYWNlLmgKQEAgLTEwNiw2ICsxMDYsOCBAQCBleHRlcm4gc3NpemVfdCBwcm9j
+X3NldGdyb3Vwc193cml0ZShzdHJ1Y3QgZmlsZSAqLCBjb25zdCBjaGFyIF9fdXNlciAqLCBzaXpl
+X3QsCiBleHRlcm4gaW50IHByb2Nfc2V0Z3JvdXBzX3Nob3coc3RydWN0IHNlcV9maWxlICptLCB2
+b2lkICp2KTsKIGV4dGVybiBib29sIHVzZXJuc19tYXlfc2V0Z3JvdXBzKGNvbnN0IHN0cnVjdCB1
+c2VyX25hbWVzcGFjZSAqbnMpOwogZXh0ZXJuIGJvb2wgY3VycmVudF9pbl91c2VybnMoY29uc3Qg
+c3RydWN0IHVzZXJfbmFtZXNwYWNlICp0YXJnZXRfbnMpOworCitzdHJ1Y3QgbnNfY29tbW9uICpu
+c19nZXRfb3duZXIoc3RydWN0IG5zX2NvbW1vbiAqbnMpOwogI2Vsc2UKIAogc3RhdGljIGlubGlu
+ZSBzdHJ1Y3QgdXNlcl9uYW1lc3BhY2UgKmdldF91c2VyX25zKHN0cnVjdCB1c2VyX25hbWVzcGFj
+ZSAqbnMpCkBAIC0xMzksNiArMTQxLDExIEBAIHN0YXRpYyBpbmxpbmUgYm9vbCBjdXJyZW50X2lu
+X3VzZXJucyhjb25zdCBzdHJ1Y3QgdXNlcl9uYW1lc3BhY2UgKnRhcmdldF9ucykKIHsKIAlyZXR1
+cm4gdHJ1ZTsKIH0KKworc3RhdGljIGlubGluZSBzdHJ1Y3QgbnNfY29tbW9uICpuc19nZXRfb3du
+ZXIoc3RydWN0IG5zX2NvbW1vbiAqbnMpCit7CisJcmV0dXJuIEVSUl9QVFIoLUVQRVJNKTsKK30K
+ICNlbmRpZgogCiAjZW5kaWYgLyogX0xJTlVYX1VTRVJfSCAqLwpkaWZmIC0tZ2l0IGEvaXBjL25h
+bWVzcGFjZS5jIGIvaXBjL25hbWVzcGFjZS5jCmluZGV4IDczMDkxNDIuLjQ2NWM5ODEgMTAwNjQ0
+Ci0tLSBhL2lwYy9uYW1lc3BhY2UuYworKysgYi9pcGMvbmFtZXNwYWNlLmMKQEAgLTE4OCwxMCAr
+MTg4LDE2IEBAIHN0YXRpYyBpbnQgaXBjbnNfaW5zdGFsbChzdHJ1Y3QgbnNwcm94eSAqbnNwcm94
+eSwgc3RydWN0IG5zX2NvbW1vbiAqbmV3KQogCXJldHVybiAwOwogfQogCitzdGF0aWMgc3RydWN0
+IHVzZXJfbmFtZXNwYWNlICppcGNuc19vd25lcihzdHJ1Y3QgbnNfY29tbW9uICpucykKK3sKKwly
+ZXR1cm4gdG9faXBjX25zKG5zKS0+dXNlcl9uczsKK30KKwogY29uc3Qgc3RydWN0IHByb2NfbnNf
+b3BlcmF0aW9ucyBpcGNuc19vcGVyYXRpb25zID0gewogCS5uYW1lCQk9ICJpcGMiLAogCS50eXBl
+CQk9IENMT05FX05FV0lQQywKIAkuZ2V0CQk9IGlwY25zX2dldCwKIAkucHV0CQk9IGlwY25zX3B1
+dCwKIAkuaW5zdGFsbAk9IGlwY25zX2luc3RhbGwsCisJLm93bmVyCQk9IGlwY25zX293bmVyLAog
+fTsKZGlmZiAtLWdpdCBhL2tlcm5lbC9jZ3JvdXAuYyBiL2tlcm5lbC9jZ3JvdXAuYwppbmRleCBl
+OWU0NDI3Li4yNjY1YjU4IDEwMDY0NAotLS0gYS9rZXJuZWwvY2dyb3VwLmMKKysrIGIva2VybmVs
+L2Nncm91cC5jCkBAIC02NDIxLDEyICs2NDIxLDE4IEBAIHN0YXRpYyB2b2lkIGNncm91cG5zX3B1
+dChzdHJ1Y3QgbnNfY29tbW9uICpucykKIAlwdXRfY2dyb3VwX25zKHRvX2NnX25zKG5zKSk7CiB9
+CiAKK3N0YXRpYyBzdHJ1Y3QgdXNlcl9uYW1lc3BhY2UgKmNncm91cG5zX293bmVyKHN0cnVjdCBu
+c19jb21tb24gKm5zKQoreworCXJldHVybiB0b19jZ19ucyhucyktPnVzZXJfbnM7Cit9CisKIGNv
+bnN0IHN0cnVjdCBwcm9jX25zX29wZXJhdGlvbnMgY2dyb3VwbnNfb3BlcmF0aW9ucyA9IHsKIAku
+bmFtZQkJPSAiY2dyb3VwIiwKIAkudHlwZQkJPSBDTE9ORV9ORVdDR1JPVVAsCiAJLmdldAkJPSBj
+Z3JvdXBuc19nZXQsCiAJLnB1dAkJPSBjZ3JvdXBuc19wdXQsCiAJLmluc3RhbGwJPSBjZ3JvdXBu
+c19pbnN0YWxsLAorCS5vd25lcgkJPSBjZ3JvdXBuc19vd25lciwKIH07CiAKIHN0YXRpYyBfX2lu
+aXQgaW50IGNncm91cF9uYW1lc3BhY2VzX2luaXQodm9pZCkKZGlmZiAtLWdpdCBhL2tlcm5lbC9w
+aWRfbmFtZXNwYWNlLmMgYi9rZXJuZWwvcGlkX25hbWVzcGFjZS5jCmluZGV4IDMwYTdmMzMuLmMx
+OGYwZjRmIDEwMDY0NAotLS0gYS9rZXJuZWwvcGlkX25hbWVzcGFjZS5jCisrKyBiL2tlcm5lbC9w
+aWRfbmFtZXNwYWNlLmMKQEAgLTQwNSwxMiArNDA1LDE4IEBAIHN0YXRpYyBpbnQgcGlkbnNfaW5z
+dGFsbChzdHJ1Y3QgbnNwcm94eSAqbnNwcm94eSwgc3RydWN0IG5zX2NvbW1vbiAqbnMpCiAJcmV0
+dXJuIDA7CiB9CiAKK3N0YXRpYyBzdHJ1Y3QgdXNlcl9uYW1lc3BhY2UgKnBpZG5zX293bmVyKHN0
+cnVjdCBuc19jb21tb24gKm5zKQoreworCXJldHVybiB0b19waWRfbnMobnMpLT51c2VyX25zOwor
+fQorCiBjb25zdCBzdHJ1Y3QgcHJvY19uc19vcGVyYXRpb25zIHBpZG5zX29wZXJhdGlvbnMgPSB7
+CiAJLm5hbWUJCT0gInBpZCIsCiAJLnR5cGUJCT0gQ0xPTkVfTkVXUElELAogCS5nZXQJCT0gcGlk
+bnNfZ2V0LAogCS5wdXQJCT0gcGlkbnNfcHV0LAogCS5pbnN0YWxsCT0gcGlkbnNfaW5zdGFsbCwK
+Kwkub3duZXIJCT0gcGlkbnNfb3duZXIsCiB9OwogCiBzdGF0aWMgX19pbml0IGludCBwaWRfbmFt
+ZXNwYWNlc19pbml0KHZvaWQpCmRpZmYgLS1naXQgYS9rZXJuZWwvdXNlcl9uYW1lc3BhY2UuYyBi
+L2tlcm5lbC91c2VyX25hbWVzcGFjZS5jCmluZGV4IDBlZGFmZTMuLjQyYTY0ZDUgMTAwNjQ0Ci0t
+LSBhL2tlcm5lbC91c2VyX25hbWVzcGFjZS5jCisrKyBiL2tlcm5lbC91c2VyX25hbWVzcGFjZS5j
+CkBAIC0xMDUwLDEyICsxMDUwLDM2IEBAIHN0YXRpYyBpbnQgdXNlcm5zX2luc3RhbGwoc3RydWN0
+IG5zcHJveHkgKm5zcHJveHksIHN0cnVjdCBuc19jb21tb24gKm5zKQogCXJldHVybiBjb21taXRf
+Y3JlZHMoY3JlZCk7CiB9CiAKK3N0cnVjdCBuc19jb21tb24gKm5zX2dldF9vd25lcihzdHJ1Y3Qg
+bnNfY29tbW9uICpucykKK3sKKwlzdHJ1Y3QgdXNlcl9uYW1lc3BhY2UgKm15X3VzZXJfbnMgPSBj
+dXJyZW50X3VzZXJfbnMoKTsKKwlzdHJ1Y3QgdXNlcl9uYW1lc3BhY2UgKm93bmVyLCAqcDsKKwor
+CS8qIFNlZSBpZiB0aGUgb3duZXIgaXMgaW4gdGhlIGN1cnJlbnQgdXNlciBuYW1lc3BhY2UgKi8K
+Kwlvd25lciA9IHAgPSBucy0+b3BzLT5vd25lcihucyk7CisJZm9yICg7OykgeworCQlpZiAoIXAp
+CisJCQlyZXR1cm4gRVJSX1BUUigtRVBFUk0pOworCQlpZiAocCA9PSBteV91c2VyX25zKQorCQkJ
+YnJlYWs7CisJCXAgPSBwLT5wYXJlbnQ7CisJfQorCisJcmV0dXJuICZnZXRfdXNlcl9ucyhvd25l
+ciktPm5zOworfQorCitzdGF0aWMgc3RydWN0IHVzZXJfbmFtZXNwYWNlICp1c2VybnNfb3duZXIo
+c3RydWN0IG5zX2NvbW1vbiAqbnMpCit7CisJcmV0dXJuIHRvX3VzZXJfbnMobnMpLT5wYXJlbnQ7
+Cit9CisKIGNvbnN0IHN0cnVjdCBwcm9jX25zX29wZXJhdGlvbnMgdXNlcm5zX29wZXJhdGlvbnMg
+PSB7CiAJLm5hbWUJCT0gInVzZXIiLAogCS50eXBlCQk9IENMT05FX05FV1VTRVIsCiAJLmdldAkJ
+PSB1c2VybnNfZ2V0LAogCS5wdXQJCT0gdXNlcm5zX3B1dCwKIAkuaW5zdGFsbAk9IHVzZXJuc19p
+bnN0YWxsLAorCS5vd25lcgkJPSB1c2VybnNfb3duZXIsCiB9OwogCiBzdGF0aWMgX19pbml0IGlu
+dCB1c2VyX25hbWVzcGFjZXNfaW5pdCh2b2lkKQpkaWZmIC0tZ2l0IGEva2VybmVsL3V0c25hbWUu
+YyBiL2tlcm5lbC91dHNuYW1lLmMKaW5kZXggZjNiMGJiNC4uMDc5NWU5NyAxMDA2NDQKLS0tIGEv
+a2VybmVsL3V0c25hbWUuYworKysgYi9rZXJuZWwvdXRzbmFtZS5jCkBAIC0xNTQsMTAgKzE1NCwx
+NiBAQCBzdGF0aWMgaW50IHV0c25zX2luc3RhbGwoc3RydWN0IG5zcHJveHkgKm5zcHJveHksIHN0
+cnVjdCBuc19jb21tb24gKm5ldykKIAlyZXR1cm4gMDsKIH0KIAorc3RhdGljIHN0cnVjdCB1c2Vy
+X25hbWVzcGFjZSAqdXRzbnNfb3duZXIoc3RydWN0IG5zX2NvbW1vbiAqbnMpCit7CisJcmV0dXJu
+IHRvX3V0c19ucyhucyktPnVzZXJfbnM7Cit9CisKIGNvbnN0IHN0cnVjdCBwcm9jX25zX29wZXJh
+dGlvbnMgdXRzbnNfb3BlcmF0aW9ucyA9IHsKIAkubmFtZQkJPSAidXRzIiwKIAkudHlwZQkJPSBD
+TE9ORV9ORVdVVFMsCiAJLmdldAkJPSB1dHNuc19nZXQsCiAJLnB1dAkJPSB1dHNuc19wdXQsCiAJ
+Lmluc3RhbGwJPSB1dHNuc19pbnN0YWxsLAorCS5vd25lcgkJPSB1dHNuc19vd25lciwKIH07CmRp
+ZmYgLS1naXQgYS9uZXQvY29yZS9uZXRfbmFtZXNwYWNlLmMgYi9uZXQvY29yZS9uZXRfbmFtZXNw
+YWNlLmMKaW5kZXggM2UyODEyYS4uODYxOWU4OSAxMDA2NDQKLS0tIGEvbmV0L2NvcmUvbmV0X25h
+bWVzcGFjZS5jCisrKyBiL25ldC9jb3JlL25ldF9uYW1lc3BhY2UuYwpAQCAtMTAxNiwxMSArMTAx
+NiwxNyBAQCBzdGF0aWMgaW50IG5ldG5zX2luc3RhbGwoc3RydWN0IG5zcHJveHkgKm5zcHJveHks
+IHN0cnVjdCBuc19jb21tb24gKm5zKQogCXJldHVybiAwOwogfQogCitzdGF0aWMgc3RydWN0IHVz
+ZXJfbmFtZXNwYWNlICpuZXRuc19vd25lcihzdHJ1Y3QgbnNfY29tbW9uICpucykKK3sKKwlyZXR1
+cm4gdG9fbmV0X25zKG5zKS0+dXNlcl9uczsKK30KKwogY29uc3Qgc3RydWN0IHByb2NfbnNfb3Bl
+cmF0aW9ucyBuZXRuc19vcGVyYXRpb25zID0gewogCS5uYW1lCQk9ICJuZXQiLAogCS50eXBlCQk9
+IENMT05FX05FV05FVCwKIAkuZ2V0CQk9IG5ldG5zX2dldCwKIAkucHV0CQk9IG5ldG5zX3B1dCwK
+IAkuaW5zdGFsbAk9IG5ldG5zX2luc3RhbGwsCisJLm93bmVyCQk9IG5ldG5zX293bmVyLAogfTsK
+ICNlbmRpZgotLSAKMi41LjUKCg==
+--94eb2c08b1fc4ab635053b648fe3
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--94eb2c08b1fc4ab635053b648fe3--
