@@ -1,16 +1,17 @@
-From: Andrei Vagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH v3 1/3] Make call_usermodehelper_exec possible to set pid
+From: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: RE: [PATCH v3 1/3] Make call_usermodehelper_exec possible to set pid
 	namespace
-Date: Tue, 6 Sep 2016 02:11:30 -0700
-Message-ID: <20160906091129.GA3917@gmail.com>
+Date: Tue, 6 Sep 2016 17:35:44 +0800
+Message-ID: <005f01d20822$0ae53730$20afa590$@cn.fujitsu.com>
 References: <cover.1472471585.git.zhaolei@cn.fujitsu.com>
 	<94bf69d92a3204491862b8c72111f4e046bf5f9e.1472471586.git.zhaolei@cn.fujitsu.com>
+	<20160906091129.GA3917@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <94bf69d92a3204491862b8c72111f4e046bf5f9e.1472471586.git.zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20160906091129.GA3917-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Language: zh-cn
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,317 +21,218 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: 'Andrei Vagin' <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "'Eric W. Biederman'" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Aug 29, 2016 at 08:06:39PM +0800, Zhao Lei wrote:
-> Current call_usermodehelper_exec() can not set pid namespace for
-> the executed program, because we need addition fork to make pid
-> namespace active.
-> 
-> This patch add above function for call_usermodehelper_exec().
-> When init_intermediate callback return -EAGAIN, the usermodehelper
-> will fork again to make pid namespace active, and run program
-> in the child process.
-
-I am not sure that we need to make this extra fork(). When I commented
-the previous patches, I said that we need to make fork() after
-setns(CLONE_NEWPID). But we alread have one fork(), why we can't set a
-required pidns before kernel_thread(call_usermodehelper_exec_async) and
-then switch back into the origin pidns.
-
-> 
-> This function is helpful for coredump to run pipe_program in
-> specific container environment.
-> 
-> Signed-off-by: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> ---
->  fs/coredump.c               |   3 +-
->  include/linux/kmod.h        |   2 +
->  init/do_mounts_initrd.c     |   3 +-
->  kernel/kmod.c               | 133 ++++++++++++++++++++++++++++++++++++++------
->  lib/kobject_uevent.c        |   3 +-
->  security/keys/request_key.c |   4 +-
->  6 files changed, 127 insertions(+), 21 deletions(-)
-> 
-> diff --git a/fs/coredump.c b/fs/coredump.c
-> index 281b768..ceb0ee8 100644
-> --- a/fs/coredump.c
-> +++ b/fs/coredump.c
-> @@ -641,7 +641,8 @@ void do_coredump(const siginfo_t *siginfo)
->  		retval = -ENOMEM;
->  		sub_info = call_usermodehelper_setup(helper_argv[0],
->  						helper_argv, NULL, GFP_KERNEL,
-> -						umh_pipe_setup, NULL, &cprm);
-> +						NULL, umh_pipe_setup,
-> +						NULL, &cprm);
->  		if (sub_info)
->  			retval = call_usermodehelper_exec(sub_info,
->  							  UMH_WAIT_EXEC);
-> diff --git a/include/linux/kmod.h b/include/linux/kmod.h
-> index fcfd2bf..8fb8c0e 100644
-> --- a/include/linux/kmod.h
-> +++ b/include/linux/kmod.h
-> @@ -61,6 +61,7 @@ struct subprocess_info {
->  	char **envp;
->  	int wait;
->  	int retval;
-> +	int (*init_intermediate)(struct subprocess_info *info);
->  	int (*init)(struct subprocess_info *info, struct cred *new);
->  	void (*cleanup)(struct subprocess_info *info);
->  	void *data;
-> @@ -71,6 +72,7 @@ call_usermodehelper(char *path, char **argv, char **envp, int wait);
->  
->  extern struct subprocess_info *
->  call_usermodehelper_setup(char *path, char **argv, char **envp, gfp_t gfp_mask,
-> +			  int (*init_intermediate)(struct subprocess_info *info),
->  			  int (*init)(struct subprocess_info *info, struct cred *new),
->  			  void (*cleanup)(struct subprocess_info *), void *data);
->  
-> diff --git a/init/do_mounts_initrd.c b/init/do_mounts_initrd.c
-> index a1000ca..bb5dce5 100644
-> --- a/init/do_mounts_initrd.c
-> +++ b/init/do_mounts_initrd.c
-> @@ -72,7 +72,8 @@ static void __init handle_initrd(void)
->  	current->flags |= PF_FREEZER_SKIP;
->  
->  	info = call_usermodehelper_setup("/linuxrc", argv, envp_init,
-> -					 GFP_KERNEL, init_linuxrc, NULL, NULL);
-> +					 GFP_KERNEL, NULL, init_linuxrc, NULL,
-> +					 NULL);
->  	if (!info)
->  		return;
->  	call_usermodehelper_exec(info, UMH_WAIT_PROC);
-> diff --git a/kernel/kmod.c b/kernel/kmod.c
-> index 0277d12..30a5802 100644
-> --- a/kernel/kmod.c
-> +++ b/kernel/kmod.c
-> @@ -91,7 +91,7 @@ static int call_modprobe(char *module_name, int wait)
->  	argv[4] = NULL;
->  
->  	info = call_usermodehelper_setup(modprobe_path, argv, envp, GFP_KERNEL,
-> -					 NULL, free_modprobe_argv, NULL);
-> +					 NULL, NULL, free_modprobe_argv, NULL);
->  	if (!info)
->  		goto free_module_name;
->  
-> @@ -209,14 +209,11 @@ static void umh_complete(struct subprocess_info *sub_info)
->  		call_usermodehelper_freeinfo(sub_info);
->  }
->  
-> -/*
-> - * This is the task which runs the usermode application
-> - */
-> -static int call_usermodehelper_exec_async(void *data)
-> +static int __call_usermodehelper_exec_doexec(void *data)
->  {
->  	struct subprocess_info *sub_info = data;
->  	struct cred *new;
-> -	int retval;
-> +	int retval = 0;
->  
->  	spin_lock_irq(&current->sighand->siglock);
->  	flush_signal_handlers(current, 1);
-> @@ -228,10 +225,11 @@ static int call_usermodehelper_exec_async(void *data)
->  	 */
->  	set_user_nice(current, 0);
->  
-> -	retval = -ENOMEM;
->  	new = prepare_kernel_cred(current);
-> -	if (!new)
-> +	if (!new) {
-> +		retval = -ENOMEM;
->  		goto out;
-> +	}
->  
->  	spin_lock(&umh_sysctl_lock);
->  	new->cap_bset = cap_intersect(usermodehelper_bset, new->cap_bset);
-> @@ -248,20 +246,121 @@ static int call_usermodehelper_exec_async(void *data)
->  	}
->  
->  	commit_creds(new);
-> -
->  	retval = do_execve(getname_kernel(sub_info->path),
-> -			   (const char __user *const __user *)sub_info->argv,
-> -			   (const char __user *const __user *)sub_info->envp);
-> +		   (const char __user *const __user *)sub_info->argv,
-> +		   (const char __user *const __user *)sub_info->envp);
-> +
->  out:
-> -	sub_info->retval = retval;
-> +	return retval;
-> +}
-> +
-> +static int call_usermodehelper_exec_doexec(void *data)
-> +{
-> +	struct subprocess_info *sub_info = data;
-> +	int ret = __call_usermodehelper_exec_doexec(data);
-> +
->  	/*
-> -	 * call_usermodehelper_exec_sync() will call umh_complete
-> -	 * if UHM_WAIT_PROC.
-> +	 * If it is called in non-sync mode:
-> +	 * On fail:
-> +	 *   should set sub_info->retval, call umh_complete and exit process.
-> +	 * On success:
-> +	 *   should set sub_info->retval, call umh_complete and return to
-> +	 *   user-mode program.
-> +	 * It it is called in sync mode:
-> +	 * On fail:
-> +	 *   should set sub_info->retval and exit process, the parent process
-> +	 *   will wait and call umh_complete()
-> +	 * On success:
-> +	 *   should return to user-mode program, the parent process will wait
-> +	 *   and get program's ret from wait(), and call umh_complete().
->  	 */
-> +	sub_info->retval = ret;
-> +
->  	if (!(sub_info->wait & UMH_WAIT_PROC))
->  		umh_complete(sub_info);
-> -	if (!retval)
-> +
-> +	if (!ret)
->  		return 0;
-> +
-> +	/*
-> +	 * see comment in call_usermodehelper_exec_sync() before change
-> +	 * it to do_exit(ret).
-> +	 */
-> +	do_exit(0);
-> +}
-> +
-> +/*
-> + * This is the task which runs the usermode application
-> + */
-> +static int call_usermodehelper_exec_async(void *data)
-> +{
-> +	struct subprocess_info *sub_info = data;
-> +	int ret = 0;
-> +	int refork = 0;
-> +
-> +	if (sub_info->init_intermediate) {
-> +		ret = sub_info->init_intermediate(sub_info);
-> +		switch (ret) {
-> +		case 0:
-> +			break;
-> +		case -EAGAIN:
-> +			/*
-> +			 * if pid namespace is changed,
-> +			 * we need refork to make it active.
-> +			 */
-> +			ret = 0;
-> +			refork = 1;
-> +			break;
-> +		default:
-> +			goto out;
-> +		}
-> +	}
-> +
-> +	if (refork) {
-> +		/*
-> +		 * Code copyed from call_usermodehelper_exec_work() and
-> +		 * call_usermodehelper_exec_sync(), see comments in these
-> +		 * functions for detail.
-> +		 */
-> +		pid_t pid;
-> +
-> +		if (sub_info->wait & UMH_WAIT_PROC) {
-> +			kernel_sigaction(SIGCHLD, SIG_DFL);
-> +			pid = kernel_thread(call_usermodehelper_exec_doexec,
-> +					    sub_info, SIGCHLD);
-> +			if (pid < 0) {
-> +				ret = pid;
-> +			} else {
-> +				ret = -ECHILD;
-> +				sys_wait4(pid, (int __user *)&ret, 0, NULL);
-> +			}
-> +			kernel_sigaction(SIGCHLD, SIG_IGN);
-> +
-> +			sub_info->retval = ret;
-> +		} else {
-> +			pid = kernel_thread(call_usermodehelper_exec_doexec,
-> +					    sub_info, SIGCHLD);
-> +			if (pid < 0) {
-> +				sub_info->retval = pid;
-> +				umh_complete(sub_info);
-> +			}
-> +		}
-> +	} else {
-> +		ret = __call_usermodehelper_exec_doexec(data);
-> +
-> +out:
-> +		/*
-> +		 * see comment in call_usermodehelper_exec_doexec() for detail
-> +		 */
-> +		sub_info->retval = ret;
-> +
-> +		if (!(sub_info->wait & UMH_WAIT_PROC))
-> +			umh_complete(sub_info);
-> +
-> +		if (!ret)
-> +			return 0;
-> +	}
-> +
->  	do_exit(0);
->  }
->  
-> @@ -518,6 +617,7 @@ static void helper_unlock(void)
->   */
->  struct subprocess_info *call_usermodehelper_setup(char *path, char **argv,
->  		char **envp, gfp_t gfp_mask,
-> +		int (*init_intermediate)(struct subprocess_info *info),
->  		int (*init)(struct subprocess_info *info, struct cred *new),
->  		void (*cleanup)(struct subprocess_info *info),
->  		void *data)
-> @@ -533,6 +633,7 @@ struct subprocess_info *call_usermodehelper_setup(char *path, char **argv,
->  	sub_info->envp = envp;
->  
->  	sub_info->cleanup = cleanup;
-> +	sub_info->init_intermediate = init_intermediate;
->  	sub_info->init = init;
->  	sub_info->data = data;
->    out:
-> @@ -619,7 +720,7 @@ int call_usermodehelper(char *path, char **argv, char **envp, int wait)
->  	gfp_t gfp_mask = (wait == UMH_NO_WAIT) ? GFP_ATOMIC : GFP_KERNEL;
->  
->  	info = call_usermodehelper_setup(path, argv, envp, gfp_mask,
-> -					 NULL, NULL, NULL);
-> +					 NULL, NULL, NULL, NULL);
->  	if (info == NULL)
->  		return -ENOMEM;
->  
-> diff --git a/lib/kobject_uevent.c b/lib/kobject_uevent.c
-> index f6c2c1e..7e571f0 100644
-> --- a/lib/kobject_uevent.c
-> +++ b/lib/kobject_uevent.c
-> @@ -345,7 +345,8 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
->  		retval = -ENOMEM;
->  		info = call_usermodehelper_setup(env->argv[0], env->argv,
->  						 env->envp, GFP_KERNEL,
-> -						 NULL, cleanup_uevent_env, env);
-> +						 NULL, NULL, cleanup_uevent_env,
-> +						 env);
->  		if (info) {
->  			retval = call_usermodehelper_exec(info, UMH_NO_WAIT);
->  			env = NULL;	/* freed by cleanup_uevent_env */
-> diff --git a/security/keys/request_key.c b/security/keys/request_key.c
-> index a29e355..087c11d 100644
-> --- a/security/keys/request_key.c
-> +++ b/security/keys/request_key.c
-> @@ -78,8 +78,8 @@ static int call_usermodehelper_keys(char *path, char **argv, char **envp,
->  	struct subprocess_info *info;
->  
->  	info = call_usermodehelper_setup(path, argv, envp, GFP_KERNEL,
-> -					  umh_keys_init, umh_keys_cleanup,
-> -					  session_keyring);
-> +					 NULL, umh_keys_init, umh_keys_cleanup,
-> +					 session_keyring);
->  	if (!info)
->  		return -ENOMEM;
->  
-> -- 
-> 1.8.5.1
-> 
-> 
-> 
+SGksIEFuZHJlaSBWYWdpbgoKVGhhbmtzIGZvciByZXZpZXcuCgo+IC0tLS0tT3JpZ2luYWwgTWVz
+c2FnZS0tLS0tCj4gRnJvbTogQW5kcmVpIFZhZ2luIFttYWlsdG86YXZhZ2luQGdtYWlsLmNvbV0K
+PiBTZW50OiBUdWVzZGF5LCBTZXB0ZW1iZXIgMDYsIDIwMTYgNToxMiBQTQo+IFRvOiBaaGFvIExl
+aSA8emhhb2xlaUBjbi5mdWppdHN1LmNvbT4KPiBDYzogbGludXgta2VybmVsQHZnZXIua2VybmVs
+Lm9yZzsgY29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZzsgRXJpYyBXLgo+IEJp
+ZWRlcm1hbiA8ZWJpZWRlcm1AeG1pc3Npb24uY29tPjsgTWF0ZXVzeiBHdXppawo+IDxtZ3V6aWtA
+cmVkaGF0LmNvbT47IEthbWV6YXdhIEhpcm95dWtpCj4gPGthbWV6YXdhLmhpcm95dUBqcC5mdWpp
+dHN1LmNvbT47IFN0w6lwaGFuZSBHcmFiZXIgPHN0Z3JhYmVyQHVidW50dS5jb20+Cj4gU3ViamVj
+dDogUmU6IFtQQVRDSCB2MyAxLzNdIE1ha2UgY2FsbF91c2VybW9kZWhlbHBlcl9leGVjIHBvc3Np
+YmxlIHRvIHNldCBwaWQKPiBuYW1lc3BhY2UKPiAKPiBPbiBNb24sIEF1ZyAyOSwgMjAxNiBhdCAw
+ODowNjozOVBNICswODAwLCBaaGFvIExlaSB3cm90ZToKPiA+IEN1cnJlbnQgY2FsbF91c2VybW9k
+ZWhlbHBlcl9leGVjKCkgY2FuIG5vdCBzZXQgcGlkIG5hbWVzcGFjZSBmb3IKPiA+IHRoZSBleGVj
+dXRlZCBwcm9ncmFtLCBiZWNhdXNlIHdlIG5lZWQgYWRkaXRpb24gZm9yayB0byBtYWtlIHBpZAo+
+ID4gbmFtZXNwYWNlIGFjdGl2ZS4KPiA+Cj4gPiBUaGlzIHBhdGNoIGFkZCBhYm92ZSBmdW5jdGlv
+biBmb3IgY2FsbF91c2VybW9kZWhlbHBlcl9leGVjKCkuCj4gPiBXaGVuIGluaXRfaW50ZXJtZWRp
+YXRlIGNhbGxiYWNrIHJldHVybiAtRUFHQUlOLCB0aGUgdXNlcm1vZGVoZWxwZXIKPiA+IHdpbGwg
+Zm9yayBhZ2FpbiB0byBtYWtlIHBpZCBuYW1lc3BhY2UgYWN0aXZlLCBhbmQgcnVuIHByb2dyYW0K
+PiA+IGluIHRoZSBjaGlsZCBwcm9jZXNzLgo+IAo+IEkgYW0gbm90IHN1cmUgdGhhdCB3ZSBuZWVk
+IHRvIG1ha2UgdGhpcyBleHRyYSBmb3JrKCkuIFdoZW4gSSBjb21tZW50ZWQKPiB0aGUgcHJldmlv
+dXMgcGF0Y2hlcywgSSBzYWlkIHRoYXQgd2UgbmVlZCB0byBtYWtlIGZvcmsoKSBhZnRlcgo+IHNl
+dG5zKENMT05FX05FV1BJRCkuIEJ1dCB3ZSBhbHJlYWQgaGF2ZSBvbmUgZm9yaygpLCB3aHkgd2Ug
+Y2FuJ3Qgc2V0IGEKPiByZXF1aXJlZCBwaWRucyBiZWZvcmUga2VybmVsX3RocmVhZChjYWxsX3Vz
+ZXJtb2RlaGVscGVyX2V4ZWNfYXN5bmMpIGFuZAo+IHRoZW4gc3dpdGNoIGJhY2sgaW50byB0aGUg
+b3JpZ2luIHBpZG5zLgo+IApZZXMgd2UgY2FuIGF2b2lkIGV4dHJhIGZvcmsoKSBpbiBhYm92ZSB3
+YXksIGJ1dCBJIHRoaW5rIGl0IGlzIGJldHRlciBub3Qgb25seQpzZXR0aW5nIHBpZCBucyBiZWZv
+cmUgZm9yaywgYnV0IHNldHRpbmcgYWxsIG5zIGJlZm9yZSBmb3JrLgoKSWYgd2Ugc2V0IHBpZCBu
+cyBiZWZvcmUgZm9yayBhbmQgc2V0IG90aGVyIG5zIGFmdGVyIGZvcmssIHRoZSBzZXR0aW5nIG9m
+IG5zIGNvZGUKd2lsbCBiZSBzZXBhcmF0ZWQgaW50byB0d28gcGFydHMsIGFuZCBiZWNhdXNlIGl0
+IGlzIGEgY2FsbGVyJ3MgaG9vaywgaXQgd2lsbCBtYWtlCnRoZSBjYWxsZXIgY29kZSBjb21wbGV4
+LgoKSWYgd2Ugc2V0IGFsbCBucyBiZWZvcmUgZm9yaywgYm90aCBjYWxsZXIncyBjb2RlIGFuZCB0
+aGUgZnVuY3Rpb24gd2lsbCBiZSBzaW1wbGUsCnRoZSBrdGhyZWFkIHdpbGwgc3dpdGNoIGFsbCBu
+cyBiZWZvcmUgZm9yaywgZG8gZm9yaywgYW5kIHN3aXRjaCBiYWNrLCB0aGUgY2hpbGQKcHJvY2Vz
+cyB3aWxsIGluaGVyaXQgYWxsIG5zIGZyb20ga3RocmVhZChleGNlcHQgZm9yIG5zX2Zvcl9jaGls
+ZCkuCgpBYm92ZSB3YXkgc2VlbXMgaGF2aW5nIG5vIHByb2JsZW0sIGJ1dCBJIGhhdmUgc21hbGwg
+d29ycnkgdGhhdCB3ZSB0b3VjaGVkCm5zIG9mIGEga3RocmVhZCwgcGxlYXNlIHRlbGwgbWUgaWYg
+SSBsb3N0ZWQgc29tZXRoaW5nLgoKV2hhdCBpcyB5b3VyIG9waW5pb24/CgpUaGFua3MKWmhhb2xl
+aQoKPiA+IFRoaXMgZnVuY3Rpb24gaXMgaGVscGZ1bCBmb3IgY29yZWR1bXAgdG8gcnVuIHBpcGVf
+cHJvZ3JhbSBpbgo+ID4gc3BlY2lmaWMgY29udGFpbmVyIGVudmlyb25tZW50Lgo+ID4KPiA+IFNp
+Z25lZC1vZmYtYnk6IFpoYW8gTGVpIDx6aGFvbGVpQGNuLmZ1aml0c3UuY29tPgo+ID4gLS0tCj4g
+PiAgZnMvY29yZWR1bXAuYyAgICAgICAgICAgICAgIHwgICAzICstCj4gPiAgaW5jbHVkZS9saW51
+eC9rbW9kLmggICAgICAgIHwgICAyICsKPiA+ICBpbml0L2RvX21vdW50c19pbml0cmQuYyAgICAg
+fCAgIDMgKy0KPiA+ICBrZXJuZWwva21vZC5jICAgICAgICAgICAgICAgfCAxMzMKPiArKysrKysr
+KysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKy0tLS0tLQo+ID4gIGxpYi9rb2JqZWN0X3Vl
+dmVudC5jICAgICAgICB8ICAgMyArLQo+ID4gIHNlY3VyaXR5L2tleXMvcmVxdWVzdF9rZXkuYyB8
+ICAgNCArLQo+ID4gIDYgZmlsZXMgY2hhbmdlZCwgMTI3IGluc2VydGlvbnMoKyksIDIxIGRlbGV0
+aW9ucygtKQo+ID4KPiA+IGRpZmYgLS1naXQgYS9mcy9jb3JlZHVtcC5jIGIvZnMvY29yZWR1bXAu
+Ywo+ID4gaW5kZXggMjgxYjc2OC4uY2ViMGVlOCAxMDA2NDQKPiA+IC0tLSBhL2ZzL2NvcmVkdW1w
+LmMKPiA+ICsrKyBiL2ZzL2NvcmVkdW1wLmMKPiA+IEBAIC02NDEsNyArNjQxLDggQEAgdm9pZCBk
+b19jb3JlZHVtcChjb25zdCBzaWdpbmZvX3QgKnNpZ2luZm8pCj4gPiAgCQlyZXR2YWwgPSAtRU5P
+TUVNOwo+ID4gIAkJc3ViX2luZm8gPSBjYWxsX3VzZXJtb2RlaGVscGVyX3NldHVwKGhlbHBlcl9h
+cmd2WzBdLAo+ID4gIAkJCQkJCWhlbHBlcl9hcmd2LCBOVUxMLCBHRlBfS0VSTkVMLAo+ID4gLQkJ
+CQkJCXVtaF9waXBlX3NldHVwLCBOVUxMLCAmY3BybSk7Cj4gPiArCQkJCQkJTlVMTCwgdW1oX3Bp
+cGVfc2V0dXAsCj4gPiArCQkJCQkJTlVMTCwgJmNwcm0pOwo+ID4gIAkJaWYgKHN1Yl9pbmZvKQo+
+ID4gIAkJCXJldHZhbCA9IGNhbGxfdXNlcm1vZGVoZWxwZXJfZXhlYyhzdWJfaW5mbywKPiA+ICAJ
+CQkJCQkJICBVTUhfV0FJVF9FWEVDKTsKPiA+IGRpZmYgLS1naXQgYS9pbmNsdWRlL2xpbnV4L2tt
+b2QuaCBiL2luY2x1ZGUvbGludXgva21vZC5oCj4gPiBpbmRleCBmY2ZkMmJmLi44ZmI4YzBlIDEw
+MDY0NAo+ID4gLS0tIGEvaW5jbHVkZS9saW51eC9rbW9kLmgKPiA+ICsrKyBiL2luY2x1ZGUvbGlu
+dXgva21vZC5oCj4gPiBAQCAtNjEsNiArNjEsNyBAQCBzdHJ1Y3Qgc3VicHJvY2Vzc19pbmZvIHsK
+PiA+ICAJY2hhciAqKmVudnA7Cj4gPiAgCWludCB3YWl0Owo+ID4gIAlpbnQgcmV0dmFsOwo+ID4g
+KwlpbnQgKCppbml0X2ludGVybWVkaWF0ZSkoc3RydWN0IHN1YnByb2Nlc3NfaW5mbyAqaW5mbyk7
+Cj4gPiAgCWludCAoKmluaXQpKHN0cnVjdCBzdWJwcm9jZXNzX2luZm8gKmluZm8sIHN0cnVjdCBj
+cmVkICpuZXcpOwo+ID4gIAl2b2lkICgqY2xlYW51cCkoc3RydWN0IHN1YnByb2Nlc3NfaW5mbyAq
+aW5mbyk7Cj4gPiAgCXZvaWQgKmRhdGE7Cj4gPiBAQCAtNzEsNiArNzIsNyBAQCBjYWxsX3VzZXJt
+b2RlaGVscGVyKGNoYXIgKnBhdGgsIGNoYXIgKiphcmd2LCBjaGFyCj4gKiplbnZwLCBpbnQgd2Fp
+dCk7Cj4gPgo+ID4gIGV4dGVybiBzdHJ1Y3Qgc3VicHJvY2Vzc19pbmZvICoKPiA+ICBjYWxsX3Vz
+ZXJtb2RlaGVscGVyX3NldHVwKGNoYXIgKnBhdGgsIGNoYXIgKiphcmd2LCBjaGFyICoqZW52cCwg
+Z2ZwX3QKPiBnZnBfbWFzaywKPiA+ICsJCQkgIGludCAoKmluaXRfaW50ZXJtZWRpYXRlKShzdHJ1
+Y3Qgc3VicHJvY2Vzc19pbmZvICppbmZvKSwKPiA+ICAJCQkgIGludCAoKmluaXQpKHN0cnVjdCBz
+dWJwcm9jZXNzX2luZm8gKmluZm8sIHN0cnVjdCBjcmVkICpuZXcpLAo+ID4gIAkJCSAgdm9pZCAo
+KmNsZWFudXApKHN0cnVjdCBzdWJwcm9jZXNzX2luZm8gKiksIHZvaWQgKmRhdGEpOwo+ID4KPiA+
+IGRpZmYgLS1naXQgYS9pbml0L2RvX21vdW50c19pbml0cmQuYyBiL2luaXQvZG9fbW91bnRzX2lu
+aXRyZC5jCj4gPiBpbmRleCBhMTAwMGNhLi5iYjVkY2U1IDEwMDY0NAo+ID4gLS0tIGEvaW5pdC9k
+b19tb3VudHNfaW5pdHJkLmMKPiA+ICsrKyBiL2luaXQvZG9fbW91bnRzX2luaXRyZC5jCj4gPiBA
+QCAtNzIsNyArNzIsOCBAQCBzdGF0aWMgdm9pZCBfX2luaXQgaGFuZGxlX2luaXRyZCh2b2lkKQo+
+ID4gIAljdXJyZW50LT5mbGFncyB8PSBQRl9GUkVFWkVSX1NLSVA7Cj4gPgo+ID4gIAlpbmZvID0g
+Y2FsbF91c2VybW9kZWhlbHBlcl9zZXR1cCgiL2xpbnV4cmMiLCBhcmd2LCBlbnZwX2luaXQsCj4g
+PiAtCQkJCQkgR0ZQX0tFUk5FTCwgaW5pdF9saW51eHJjLCBOVUxMLCBOVUxMKTsKPiA+ICsJCQkJ
+CSBHRlBfS0VSTkVMLCBOVUxMLCBpbml0X2xpbnV4cmMsIE5VTEwsCj4gPiArCQkJCQkgTlVMTCk7
+Cj4gPiAgCWlmICghaW5mbykKPiA+ICAJCXJldHVybjsKPiA+ICAJY2FsbF91c2VybW9kZWhlbHBl
+cl9leGVjKGluZm8sIFVNSF9XQUlUX1BST0MpOwo+ID4gZGlmZiAtLWdpdCBhL2tlcm5lbC9rbW9k
+LmMgYi9rZXJuZWwva21vZC5jCj4gPiBpbmRleCAwMjc3ZDEyLi4zMGE1ODAyIDEwMDY0NAo+ID4g
+LS0tIGEva2VybmVsL2ttb2QuYwo+ID4gKysrIGIva2VybmVsL2ttb2QuYwo+ID4gQEAgLTkxLDcg
+KzkxLDcgQEAgc3RhdGljIGludCBjYWxsX21vZHByb2JlKGNoYXIgKm1vZHVsZV9uYW1lLCBpbnQg
+d2FpdCkKPiA+ICAJYXJndls0XSA9IE5VTEw7Cj4gPgo+ID4gIAlpbmZvID0gY2FsbF91c2VybW9k
+ZWhlbHBlcl9zZXR1cChtb2Rwcm9iZV9wYXRoLCBhcmd2LCBlbnZwLAo+IEdGUF9LRVJORUwsCj4g
+PiAtCQkJCQkgTlVMTCwgZnJlZV9tb2Rwcm9iZV9hcmd2LCBOVUxMKTsKPiA+ICsJCQkJCSBOVUxM
+LCBOVUxMLCBmcmVlX21vZHByb2JlX2FyZ3YsIE5VTEwpOwo+ID4gIAlpZiAoIWluZm8pCj4gPiAg
+CQlnb3RvIGZyZWVfbW9kdWxlX25hbWU7Cj4gPgo+ID4gQEAgLTIwOSwxNCArMjA5LDExIEBAIHN0
+YXRpYyB2b2lkIHVtaF9jb21wbGV0ZShzdHJ1Y3Qgc3VicHJvY2Vzc19pbmZvCj4gKnN1Yl9pbmZv
+KQo+ID4gIAkJY2FsbF91c2VybW9kZWhlbHBlcl9mcmVlaW5mbyhzdWJfaW5mbyk7Cj4gPiAgfQo+
+ID4KPiA+IC0vKgo+ID4gLSAqIFRoaXMgaXMgdGhlIHRhc2sgd2hpY2ggcnVucyB0aGUgdXNlcm1v
+ZGUgYXBwbGljYXRpb24KPiA+IC0gKi8KPiA+IC1zdGF0aWMgaW50IGNhbGxfdXNlcm1vZGVoZWxw
+ZXJfZXhlY19hc3luYyh2b2lkICpkYXRhKQo+ID4gK3N0YXRpYyBpbnQgX19jYWxsX3VzZXJtb2Rl
+aGVscGVyX2V4ZWNfZG9leGVjKHZvaWQgKmRhdGEpCj4gPiAgewo+ID4gIAlzdHJ1Y3Qgc3VicHJv
+Y2Vzc19pbmZvICpzdWJfaW5mbyA9IGRhdGE7Cj4gPiAgCXN0cnVjdCBjcmVkICpuZXc7Cj4gPiAt
+CWludCByZXR2YWw7Cj4gPiArCWludCByZXR2YWwgPSAwOwo+ID4KPiA+ICAJc3Bpbl9sb2NrX2ly
+cSgmY3VycmVudC0+c2lnaGFuZC0+c2lnbG9jayk7Cj4gPiAgCWZsdXNoX3NpZ25hbF9oYW5kbGVy
+cyhjdXJyZW50LCAxKTsKPiA+IEBAIC0yMjgsMTAgKzIyNSwxMSBAQCBzdGF0aWMgaW50IGNhbGxf
+dXNlcm1vZGVoZWxwZXJfZXhlY19hc3luYyh2b2lkCj4gKmRhdGEpCj4gPiAgCSAqLwo+ID4gIAlz
+ZXRfdXNlcl9uaWNlKGN1cnJlbnQsIDApOwo+ID4KPiA+IC0JcmV0dmFsID0gLUVOT01FTTsKPiA+
+ICAJbmV3ID0gcHJlcGFyZV9rZXJuZWxfY3JlZChjdXJyZW50KTsKPiA+IC0JaWYgKCFuZXcpCj4g
+PiArCWlmICghbmV3KSB7Cj4gPiArCQlyZXR2YWwgPSAtRU5PTUVNOwo+ID4gIAkJZ290byBvdXQ7
+Cj4gPiArCX0KPiA+Cj4gPiAgCXNwaW5fbG9jaygmdW1oX3N5c2N0bF9sb2NrKTsKPiA+ICAJbmV3
+LT5jYXBfYnNldCA9IGNhcF9pbnRlcnNlY3QodXNlcm1vZGVoZWxwZXJfYnNldCwgbmV3LT5jYXBf
+YnNldCk7Cj4gPiBAQCAtMjQ4LDIwICsyNDYsMTIxIEBAIHN0YXRpYyBpbnQgY2FsbF91c2VybW9k
+ZWhlbHBlcl9leGVjX2FzeW5jKHZvaWQKPiAqZGF0YSkKPiA+ICAJfQo+ID4KPiA+ICAJY29tbWl0
+X2NyZWRzKG5ldyk7Cj4gPiAtCj4gPiAgCXJldHZhbCA9IGRvX2V4ZWN2ZShnZXRuYW1lX2tlcm5l
+bChzdWJfaW5mby0+cGF0aCksCj4gPiAtCQkJICAgKGNvbnN0IGNoYXIgX191c2VyICpjb25zdCBf
+X3VzZXIgKilzdWJfaW5mby0+YXJndiwKPiA+IC0JCQkgICAoY29uc3QgY2hhciBfX3VzZXIgKmNv
+bnN0IF9fdXNlciAqKXN1Yl9pbmZvLT5lbnZwKTsKPiA+ICsJCSAgIChjb25zdCBjaGFyIF9fdXNl
+ciAqY29uc3QgX191c2VyICopc3ViX2luZm8tPmFyZ3YsCj4gPiArCQkgICAoY29uc3QgY2hhciBf
+X3VzZXIgKmNvbnN0IF9fdXNlciAqKXN1Yl9pbmZvLT5lbnZwKTsKPiA+ICsKPiA+ICBvdXQ6Cj4g
+PiAtCXN1Yl9pbmZvLT5yZXR2YWwgPSByZXR2YWw7Cj4gPiArCXJldHVybiByZXR2YWw7Cj4gPiAr
+fQo+ID4gKwo+ID4gK3N0YXRpYyBpbnQgY2FsbF91c2VybW9kZWhlbHBlcl9leGVjX2RvZXhlYyh2
+b2lkICpkYXRhKQo+ID4gK3sKPiA+ICsJc3RydWN0IHN1YnByb2Nlc3NfaW5mbyAqc3ViX2luZm8g
+PSBkYXRhOwo+ID4gKwlpbnQgcmV0ID0gX19jYWxsX3VzZXJtb2RlaGVscGVyX2V4ZWNfZG9leGVj
+KGRhdGEpOwo+ID4gKwo+ID4gIAkvKgo+ID4gLQkgKiBjYWxsX3VzZXJtb2RlaGVscGVyX2V4ZWNf
+c3luYygpIHdpbGwgY2FsbCB1bWhfY29tcGxldGUKPiA+IC0JICogaWYgVUhNX1dBSVRfUFJPQy4K
+PiA+ICsJICogSWYgaXQgaXMgY2FsbGVkIGluIG5vbi1zeW5jIG1vZGU6Cj4gPiArCSAqIE9uIGZh
+aWw6Cj4gPiArCSAqICAgc2hvdWxkIHNldCBzdWJfaW5mby0+cmV0dmFsLCBjYWxsIHVtaF9jb21w
+bGV0ZSBhbmQgZXhpdCBwcm9jZXNzLgo+ID4gKwkgKiBPbiBzdWNjZXNzOgo+ID4gKwkgKiAgIHNo
+b3VsZCBzZXQgc3ViX2luZm8tPnJldHZhbCwgY2FsbCB1bWhfY29tcGxldGUgYW5kIHJldHVybiB0
+bwo+ID4gKwkgKiAgIHVzZXItbW9kZSBwcm9ncmFtLgo+ID4gKwkgKiBJdCBpdCBpcyBjYWxsZWQg
+aW4gc3luYyBtb2RlOgo+ID4gKwkgKiBPbiBmYWlsOgo+ID4gKwkgKiAgIHNob3VsZCBzZXQgc3Vi
+X2luZm8tPnJldHZhbCBhbmQgZXhpdCBwcm9jZXNzLCB0aGUgcGFyZW50IHByb2Nlc3MKPiA+ICsJ
+ICogICB3aWxsIHdhaXQgYW5kIGNhbGwgdW1oX2NvbXBsZXRlKCkKPiA+ICsJICogT24gc3VjY2Vz
+czoKPiA+ICsJICogICBzaG91bGQgcmV0dXJuIHRvIHVzZXItbW9kZSBwcm9ncmFtLCB0aGUgcGFy
+ZW50IHByb2Nlc3Mgd2lsbCB3YWl0Cj4gPiArCSAqICAgYW5kIGdldCBwcm9ncmFtJ3MgcmV0IGZy
+b20gd2FpdCgpLCBhbmQgY2FsbCB1bWhfY29tcGxldGUoKS4KPiA+ICAJICovCj4gPiArCXN1Yl9p
+bmZvLT5yZXR2YWwgPSByZXQ7Cj4gPiArCj4gPiAgCWlmICghKHN1Yl9pbmZvLT53YWl0ICYgVU1I
+X1dBSVRfUFJPQykpCj4gPiAgCQl1bWhfY29tcGxldGUoc3ViX2luZm8pOwo+ID4gLQlpZiAoIXJl
+dHZhbCkKPiA+ICsKPiA+ICsJaWYgKCFyZXQpCj4gPiAgCQlyZXR1cm4gMDsKPiA+ICsKPiA+ICsJ
+LyoKPiA+ICsJICogc2VlIGNvbW1lbnQgaW4gY2FsbF91c2VybW9kZWhlbHBlcl9leGVjX3N5bmMo
+KSBiZWZvcmUgY2hhbmdlCj4gPiArCSAqIGl0IHRvIGRvX2V4aXQocmV0KS4KPiA+ICsJICovCj4g
+PiArCWRvX2V4aXQoMCk7Cj4gPiArfQo+ID4gKwo+ID4gKy8qCj4gPiArICogVGhpcyBpcyB0aGUg
+dGFzayB3aGljaCBydW5zIHRoZSB1c2VybW9kZSBhcHBsaWNhdGlvbgo+ID4gKyAqLwo+ID4gK3N0
+YXRpYyBpbnQgY2FsbF91c2VybW9kZWhlbHBlcl9leGVjX2FzeW5jKHZvaWQgKmRhdGEpCj4gPiAr
+ewo+ID4gKwlzdHJ1Y3Qgc3VicHJvY2Vzc19pbmZvICpzdWJfaW5mbyA9IGRhdGE7Cj4gPiArCWlu
+dCByZXQgPSAwOwo+ID4gKwlpbnQgcmVmb3JrID0gMDsKPiA+ICsKPiA+ICsJaWYgKHN1Yl9pbmZv
+LT5pbml0X2ludGVybWVkaWF0ZSkgewo+ID4gKwkJcmV0ID0gc3ViX2luZm8tPmluaXRfaW50ZXJt
+ZWRpYXRlKHN1Yl9pbmZvKTsKPiA+ICsJCXN3aXRjaCAocmV0KSB7Cj4gPiArCQljYXNlIDA6Cj4g
+PiArCQkJYnJlYWs7Cj4gPiArCQljYXNlIC1FQUdBSU46Cj4gPiArCQkJLyoKPiA+ICsJCQkgKiBp
+ZiBwaWQgbmFtZXNwYWNlIGlzIGNoYW5nZWQsCj4gPiArCQkJICogd2UgbmVlZCByZWZvcmsgdG8g
+bWFrZSBpdCBhY3RpdmUuCj4gPiArCQkJICovCj4gPiArCQkJcmV0ID0gMDsKPiA+ICsJCQlyZWZv
+cmsgPSAxOwo+ID4gKwkJCWJyZWFrOwo+ID4gKwkJZGVmYXVsdDoKPiA+ICsJCQlnb3RvIG91dDsK
+PiA+ICsJCX0KPiA+ICsJfQo+ID4gKwo+ID4gKwlpZiAocmVmb3JrKSB7Cj4gPiArCQkvKgo+ID4g
+KwkJICogQ29kZSBjb3B5ZWQgZnJvbSBjYWxsX3VzZXJtb2RlaGVscGVyX2V4ZWNfd29yaygpIGFu
+ZAo+ID4gKwkJICogY2FsbF91c2VybW9kZWhlbHBlcl9leGVjX3N5bmMoKSwgc2VlIGNvbW1lbnRz
+IGluIHRoZXNlCj4gPiArCQkgKiBmdW5jdGlvbnMgZm9yIGRldGFpbC4KPiA+ICsJCSAqLwo+ID4g
+KwkJcGlkX3QgcGlkOwo+ID4gKwo+ID4gKwkJaWYgKHN1Yl9pbmZvLT53YWl0ICYgVU1IX1dBSVRf
+UFJPQykgewo+ID4gKwkJCWtlcm5lbF9zaWdhY3Rpb24oU0lHQ0hMRCwgU0lHX0RGTCk7Cj4gPiAr
+CQkJcGlkID0ga2VybmVsX3RocmVhZChjYWxsX3VzZXJtb2RlaGVscGVyX2V4ZWNfZG9leGVjLAo+
+ID4gKwkJCQkJICAgIHN1Yl9pbmZvLCBTSUdDSExEKTsKPiA+ICsJCQlpZiAocGlkIDwgMCkgewo+
+ID4gKwkJCQlyZXQgPSBwaWQ7Cj4gPiArCQkJfSBlbHNlIHsKPiA+ICsJCQkJcmV0ID0gLUVDSElM
+RDsKPiA+ICsJCQkJc3lzX3dhaXQ0KHBpZCwgKGludCBfX3VzZXIgKikmcmV0LCAwLCBOVUxMKTsK
+PiA+ICsJCQl9Cj4gPiArCQkJa2VybmVsX3NpZ2FjdGlvbihTSUdDSExELCBTSUdfSUdOKTsKPiA+
+ICsKPiA+ICsJCQlzdWJfaW5mby0+cmV0dmFsID0gcmV0Owo+ID4gKwkJfSBlbHNlIHsKPiA+ICsJ
+CQlwaWQgPSBrZXJuZWxfdGhyZWFkKGNhbGxfdXNlcm1vZGVoZWxwZXJfZXhlY19kb2V4ZWMsCj4g
+PiArCQkJCQkgICAgc3ViX2luZm8sIFNJR0NITEQpOwo+ID4gKwkJCWlmIChwaWQgPCAwKSB7Cj4g
+PiArCQkJCXN1Yl9pbmZvLT5yZXR2YWwgPSBwaWQ7Cj4gPiArCQkJCXVtaF9jb21wbGV0ZShzdWJf
+aW5mbyk7Cj4gPiArCQkJfQo+ID4gKwkJfQo+ID4gKwl9IGVsc2Ugewo+ID4gKwkJcmV0ID0gX19j
+YWxsX3VzZXJtb2RlaGVscGVyX2V4ZWNfZG9leGVjKGRhdGEpOwo+ID4gKwo+ID4gK291dDoKPiA+
+ICsJCS8qCj4gPiArCQkgKiBzZWUgY29tbWVudCBpbiBjYWxsX3VzZXJtb2RlaGVscGVyX2V4ZWNf
+ZG9leGVjKCkgZm9yIGRldGFpbAo+ID4gKwkJICovCj4gPiArCQlzdWJfaW5mby0+cmV0dmFsID0g
+cmV0Owo+ID4gKwo+ID4gKwkJaWYgKCEoc3ViX2luZm8tPndhaXQgJiBVTUhfV0FJVF9QUk9DKSkK
+PiA+ICsJCQl1bWhfY29tcGxldGUoc3ViX2luZm8pOwo+ID4gKwo+ID4gKwkJaWYgKCFyZXQpCj4g
+PiArCQkJcmV0dXJuIDA7Cj4gPiArCX0KPiA+ICsKPiA+ICAJZG9fZXhpdCgwKTsKPiA+ICB9Cj4g
+Pgo+ID4gQEAgLTUxOCw2ICs2MTcsNyBAQCBzdGF0aWMgdm9pZCBoZWxwZXJfdW5sb2NrKHZvaWQp
+Cj4gPiAgICovCj4gPiAgc3RydWN0IHN1YnByb2Nlc3NfaW5mbyAqY2FsbF91c2VybW9kZWhlbHBl
+cl9zZXR1cChjaGFyICpwYXRoLCBjaGFyCj4gKiphcmd2LAo+ID4gIAkJY2hhciAqKmVudnAsIGdm
+cF90IGdmcF9tYXNrLAo+ID4gKwkJaW50ICgqaW5pdF9pbnRlcm1lZGlhdGUpKHN0cnVjdCBzdWJw
+cm9jZXNzX2luZm8gKmluZm8pLAo+ID4gIAkJaW50ICgqaW5pdCkoc3RydWN0IHN1YnByb2Nlc3Nf
+aW5mbyAqaW5mbywgc3RydWN0IGNyZWQgKm5ldyksCj4gPiAgCQl2b2lkICgqY2xlYW51cCkoc3Ry
+dWN0IHN1YnByb2Nlc3NfaW5mbyAqaW5mbyksCj4gPiAgCQl2b2lkICpkYXRhKQo+ID4gQEAgLTUz
+Myw2ICs2MzMsNyBAQCBzdHJ1Y3Qgc3VicHJvY2Vzc19pbmZvCj4gKmNhbGxfdXNlcm1vZGVoZWxw
+ZXJfc2V0dXAoY2hhciAqcGF0aCwgY2hhciAqKmFyZ3YsCj4gPiAgCXN1Yl9pbmZvLT5lbnZwID0g
+ZW52cDsKPiA+Cj4gPiAgCXN1Yl9pbmZvLT5jbGVhbnVwID0gY2xlYW51cDsKPiA+ICsJc3ViX2lu
+Zm8tPmluaXRfaW50ZXJtZWRpYXRlID0gaW5pdF9pbnRlcm1lZGlhdGU7Cj4gPiAgCXN1Yl9pbmZv
+LT5pbml0ID0gaW5pdDsKPiA+ICAJc3ViX2luZm8tPmRhdGEgPSBkYXRhOwo+ID4gICAgb3V0Ogo+
+ID4gQEAgLTYxOSw3ICs3MjAsNyBAQCBpbnQgY2FsbF91c2VybW9kZWhlbHBlcihjaGFyICpwYXRo
+LCBjaGFyICoqYXJndiwKPiBjaGFyICoqZW52cCwgaW50IHdhaXQpCj4gPiAgCWdmcF90IGdmcF9t
+YXNrID0gKHdhaXQgPT0gVU1IX05PX1dBSVQpID8gR0ZQX0FUT01JQyA6Cj4gR0ZQX0tFUk5FTDsK
+PiA+Cj4gPiAgCWluZm8gPSBjYWxsX3VzZXJtb2RlaGVscGVyX3NldHVwKHBhdGgsIGFyZ3YsIGVu
+dnAsIGdmcF9tYXNrLAo+ID4gLQkJCQkJIE5VTEwsIE5VTEwsIE5VTEwpOwo+ID4gKwkJCQkJIE5V
+TEwsIE5VTEwsIE5VTEwsIE5VTEwpOwo+ID4gIAlpZiAoaW5mbyA9PSBOVUxMKQo+ID4gIAkJcmV0
+dXJuIC1FTk9NRU07Cj4gPgo+ID4gZGlmZiAtLWdpdCBhL2xpYi9rb2JqZWN0X3VldmVudC5jIGIv
+bGliL2tvYmplY3RfdWV2ZW50LmMKPiA+IGluZGV4IGY2YzJjMWUuLjdlNTcxZjAgMTAwNjQ0Cj4g
+PiAtLS0gYS9saWIva29iamVjdF91ZXZlbnQuYwo+ID4gKysrIGIvbGliL2tvYmplY3RfdWV2ZW50
+LmMKPiA+IEBAIC0zNDUsNyArMzQ1LDggQEAgaW50IGtvYmplY3RfdWV2ZW50X2VudihzdHJ1Y3Qg
+a29iamVjdCAqa29iaiwgZW51bQo+IGtvYmplY3RfYWN0aW9uIGFjdGlvbiwKPiA+ICAJCXJldHZh
+bCA9IC1FTk9NRU07Cj4gPiAgCQlpbmZvID0gY2FsbF91c2VybW9kZWhlbHBlcl9zZXR1cChlbnYt
+PmFyZ3ZbMF0sIGVudi0+YXJndiwKPiA+ICAJCQkJCQkgZW52LT5lbnZwLCBHRlBfS0VSTkVMLAo+
+ID4gLQkJCQkJCSBOVUxMLCBjbGVhbnVwX3VldmVudF9lbnYsIGVudik7Cj4gPiArCQkJCQkJIE5V
+TEwsIE5VTEwsIGNsZWFudXBfdWV2ZW50X2VudiwKPiA+ICsJCQkJCQkgZW52KTsKPiA+ICAJCWlm
+IChpbmZvKSB7Cj4gPiAgCQkJcmV0dmFsID0gY2FsbF91c2VybW9kZWhlbHBlcl9leGVjKGluZm8s
+IFVNSF9OT19XQUlUKTsKPiA+ICAJCQllbnYgPSBOVUxMOwkvKiBmcmVlZCBieSBjbGVhbnVwX3Vl
+dmVudF9lbnYgKi8KPiA+IGRpZmYgLS1naXQgYS9zZWN1cml0eS9rZXlzL3JlcXVlc3Rfa2V5LmMg
+Yi9zZWN1cml0eS9rZXlzL3JlcXVlc3Rfa2V5LmMKPiA+IGluZGV4IGEyOWUzNTUuLjA4N2MxMWQg
+MTAwNjQ0Cj4gPiAtLS0gYS9zZWN1cml0eS9rZXlzL3JlcXVlc3Rfa2V5LmMKPiA+ICsrKyBiL3Nl
+Y3VyaXR5L2tleXMvcmVxdWVzdF9rZXkuYwo+ID4gQEAgLTc4LDggKzc4LDggQEAgc3RhdGljIGlu
+dCBjYWxsX3VzZXJtb2RlaGVscGVyX2tleXMoY2hhciAqcGF0aCwgY2hhcgo+ICoqYXJndiwgY2hh
+ciAqKmVudnAsCj4gPiAgCXN0cnVjdCBzdWJwcm9jZXNzX2luZm8gKmluZm87Cj4gPgo+ID4gIAlp
+bmZvID0gY2FsbF91c2VybW9kZWhlbHBlcl9zZXR1cChwYXRoLCBhcmd2LCBlbnZwLCBHRlBfS0VS
+TkVMLAo+ID4gLQkJCQkJICB1bWhfa2V5c19pbml0LCB1bWhfa2V5c19jbGVhbnVwLAo+ID4gLQkJ
+CQkJICBzZXNzaW9uX2tleXJpbmcpOwo+ID4gKwkJCQkJIE5VTEwsIHVtaF9rZXlzX2luaXQsIHVt
+aF9rZXlzX2NsZWFudXAsCj4gPiArCQkJCQkgc2Vzc2lvbl9rZXlyaW5nKTsKPiA+ICAJaWYgKCFp
+bmZvKQo+ID4gIAkJcmV0dXJuIC1FTk9NRU07Cj4gPgo+ID4gLS0KPiA+IDEuOC41LjEKPiA+Cj4g
+Pgo+ID4KPiAKCgoKCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRh
+dGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGlu
+Zm8vY29udGFpbmVycw==
