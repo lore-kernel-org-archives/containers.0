@@ -1,13 +1,16 @@
-From: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 4/4] tools/testing: add a test to check nsfs ioctl-s
-Date: Tue,  6 Sep 2016 00:47:16 -0700
-Message-ID: <1473148036-32630-5-git-send-email-avagin@openvz.org>
-References: <1473148036-32630-1-git-send-email-avagin@openvz.org>
+From: Andrei Vagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH v3 1/3] Make call_usermodehelper_exec possible to set pid
+	namespace
+Date: Tue, 6 Sep 2016 02:11:30 -0700
+Message-ID: <20160906091129.GA3917@gmail.com>
+References: <cover.1472471585.git.zhaolei@cn.fujitsu.com>
+	<94bf69d92a3204491862b8c72111f4e046bf5f9e.1472471586.git.zhaolei@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1473148036-32630-1-git-send-email-avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <94bf69d92a3204491862b8c72111f4e046bf5f9e.1472471586.git.zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,240 +20,317 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+On Mon, Aug 29, 2016 at 08:06:39PM +0800, Zhao Lei wrote:
+> Current call_usermodehelper_exec() can not set pid namespace for
+> the executed program, because we need addition fork to make pid
+> namespace active.
+> 
+> This patch add above function for call_usermodehelper_exec().
+> When init_intermediate callback return -EAGAIN, the usermodehelper
+> will fork again to make pid namespace active, and run program
+> in the child process.
 
-There are two new ioctl-s:
-One ioctl for the user namespace that owns a file descriptor.
-One ioctl for the parent namespace of a namespace file descriptor.
+I am not sure that we need to make this extra fork(). When I commented
+the previous patches, I said that we need to make fork() after
+setns(CLONE_NEWPID). But we alread have one fork(), why we can't set a
+required pidns before kernel_thread(call_usermodehelper_exec_async) and
+then switch back into the origin pidns.
 
-The test checks that these ioctl-s works and that they handle a case
-when a target namespace is outside of the current process namespace.
-
-Signed-off-by: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
----
- tools/testing/selftests/Makefile      |  1 +
- tools/testing/selftests/nsfs/Makefile | 12 +++++
- tools/testing/selftests/nsfs/owner.c  | 91 +++++++++++++++++++++++++++++++++++
- tools/testing/selftests/nsfs/pidns.c  | 78 ++++++++++++++++++++++++++++++
- 4 files changed, 182 insertions(+)
- create mode 100644 tools/testing/selftests/nsfs/Makefile
- create mode 100644 tools/testing/selftests/nsfs/owner.c
- create mode 100644 tools/testing/selftests/nsfs/pidns.c
-
-diff --git a/tools/testing/selftests/Makefile b/tools/testing/selftests/Makefile
-index ff9e5f2..f770dba 100644
---- a/tools/testing/selftests/Makefile
-+++ b/tools/testing/selftests/Makefile
-@@ -15,6 +15,7 @@ TARGETS += memory-hotplug
- TARGETS += mount
- TARGETS += mqueue
- TARGETS += net
-+TARGETS += nsfs
- TARGETS += powerpc
- TARGETS += pstore
- TARGETS += ptrace
-diff --git a/tools/testing/selftests/nsfs/Makefile b/tools/testing/selftests/nsfs/Makefile
-new file mode 100644
-index 0000000..2306054
---- /dev/null
-+++ b/tools/testing/selftests/nsfs/Makefile
-@@ -0,0 +1,12 @@
-+TEST_PROGS := owner pidns
-+
-+CFLAGS := -Wall -Werror
-+
-+all: owner pidns
-+owner: owner.c
-+pidns: pidns.c
-+
-+clean:
-+	$(RM) owner pidns
-+
-+include ../lib.mk
-diff --git a/tools/testing/selftests/nsfs/owner.c b/tools/testing/selftests/nsfs/owner.c
-new file mode 100644
-index 0000000..437205f
---- /dev/null
-+++ b/tools/testing/selftests/nsfs/owner.c
-@@ -0,0 +1,91 @@
-+#define _GNU_SOURCE
-+#include <sched.h>
-+#include <unistd.h>
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <signal.h>
-+#include <errno.h>
-+#include <sys/types.h>
-+#include <sys/stat.h>
-+#include <fcntl.h>
-+#include <sys/ioctl.h>
-+#include <sys/prctl.h>
-+#include <sys/wait.h>
-+
-+#define NSIO    0xb7
-+#define NS_GET_USERNS   _IO(NSIO, 0x1)
-+
-+#define pr_err(fmt, ...) \
-+		({ \
-+			fprintf(stderr, "%s:%d:" fmt ": %m\n", \
-+				__func__, __LINE__, ##__VA_ARGS__); \
-+			1; \
-+		})
-+
-+int main(int argc, char *argvp[])
-+{
-+	int pfd[2], ns, uns, init_uns;
-+	struct stat st1, st2;
-+	char path[128];
-+	pid_t pid;
-+	char c;
-+
-+	if (pipe(pfd))
-+		return 1;
-+
-+	pid = fork();
-+	if (pid < 0)
-+		return pr_err("fork");
-+	if (pid == 0) {
-+		prctl(PR_SET_PDEATHSIG, SIGKILL);
-+		if (unshare(CLONE_NEWUTS | CLONE_NEWUSER))
-+			return pr_err("unshare");
-+		close(pfd[0]);
-+		close(pfd[1]);
-+		while (1)
-+			sleep(1);
-+		return 0;
-+	}
-+	close(pfd[1]);
-+	if (read(pfd[0], &c, 1) != 0)
-+		return pr_err("Unable to read from pipe");
-+	close(pfd[0]);
-+
-+	snprintf(path, sizeof(path), "/proc/%d/ns/uts", pid);
-+	ns = open(path, O_RDONLY);
-+	if (ns < 0)
-+		return pr_err("Unable to open %s", path);
-+
-+	uns = ioctl(ns, NS_GET_USERNS);
-+	if (uns < 0)
-+		return pr_err("Unable to get an owning user namespace");
-+
-+	if (fstat(uns, &st1))
-+		return pr_err("fstat");
-+
-+	snprintf(path, sizeof(path), "/proc/%d/ns/user", pid);
-+	if (stat(path, &st2))
-+		return pr_err("stat");
-+
-+	if (st1.st_ino != st2.st_ino)
-+		return pr_err("NS_GET_USERNS returned a wrong namespace");
-+
-+	init_uns = ioctl(uns, NS_GET_USERNS);
-+	if (uns < 0)
-+		return pr_err("Unable to get an owning user namespace");
-+
-+	if (ioctl(init_uns, NS_GET_USERNS) >= 0 || errno != EPERM)
-+		return pr_err("Don't get EPERM");
-+
-+	if (unshare(CLONE_NEWUSER))
-+		return pr_err("unshare");
-+
-+	if (ioctl(ns, NS_GET_USERNS) >= 0 || errno != EPERM)
-+		return pr_err("Don't get EPERM");
-+	if (ioctl(init_uns, NS_GET_USERNS) >= 0 || errno != EPERM)
-+		return pr_err("Don't get EPERM");
-+
-+	kill(pid, SIGKILL);
-+	wait(NULL);
-+	return 0;
-+}
-diff --git a/tools/testing/selftests/nsfs/pidns.c b/tools/testing/selftests/nsfs/pidns.c
-new file mode 100644
-index 0000000..ae3a0d6
---- /dev/null
-+++ b/tools/testing/selftests/nsfs/pidns.c
-@@ -0,0 +1,78 @@
-+#define _GNU_SOURCE
-+#include <sched.h>
-+#include <unistd.h>
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <signal.h>
-+#include <errno.h>
-+#include <sys/types.h>
-+#include <sys/stat.h>
-+#include <fcntl.h>
-+#include <sys/ioctl.h>
-+#include <sys/prctl.h>
-+#include <sys/wait.h>
-+
-+#define pr_err(fmt, ...) \
-+		({ \
-+			fprintf(stderr, "%s:%d:" fmt ": %m\n", \
-+				__func__, __LINE__, ##__VA_ARGS__); \
-+			1; \
-+		})
-+
-+#define NSIO	0xb7
-+#define NS_GET_USERNS   _IO(NSIO, 0x1)
-+#define NS_GET_PARENT   _IO(NSIO, 0x2)
-+
-+#define __stack_aligned__	__attribute__((aligned(16)))
-+struct cr_clone_arg {
-+	char stack[128] __stack_aligned__;
-+	char stack_ptr[0];
-+};
-+
-+static int child(void *args)
-+{
-+	prctl(PR_SET_PDEATHSIG, SIGKILL);
-+	while (1)
-+		sleep(1);
-+	exit(0);
-+}
-+
-+int main(int argc, char *argv[])
-+{
-+	char *ns_strs[] = {"pid", "user"};
-+	char path[] = "/proc/0123456789/ns/pid";
-+	struct cr_clone_arg ca;
-+	struct stat st1, st2;
-+	int ns, pns, i;
-+	pid_t pid;
-+
-+	pid = clone(child, ca.stack_ptr, CLONE_NEWUSER | CLONE_NEWPID | SIGCHLD, NULL);
-+	if (pid < 0)
-+		return pr_err("clone");
-+
-+	for (i = 0; i < 2; i++) {
-+		snprintf(path, sizeof(path), "/proc/%d/ns/%s", pid, ns_strs[i]);
-+		ns = open(path, O_RDONLY);
-+		if (ns < 0)
-+			return pr_err("Unable to open %s", path);
-+
-+		pns = ioctl(ns, NS_GET_PARENT);
-+		if (pns < 0)
-+			return pr_err("Unable to get a parent pidns");
-+
-+		snprintf(path, sizeof(path), "/proc/self/ns/%s", ns_strs[i]);
-+		if (stat(path, &st2))
-+			return pr_err("Unable to stat %s", path);
-+		if (fstat(pns, &st1))
-+			return pr_err("Unable to stat the parent pidns");
-+		if (st1.st_ino != st2.st_ino)
-+			return pr_err("NS_GET_PARENT returned a wrong namespace");
-+
-+		if (ioctl(pns, NS_GET_PARENT) >= 0 || errno != EPERM)
-+			return pr_err("Don't get EPERM");;
-+	}
-+
-+	kill(pid, SIGKILL);
-+	wait(NULL);
-+	return 0;
-+}
--- 
-2.5.5
+> 
+> This function is helpful for coredump to run pipe_program in
+> specific container environment.
+> 
+> Signed-off-by: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> ---
+>  fs/coredump.c               |   3 +-
+>  include/linux/kmod.h        |   2 +
+>  init/do_mounts_initrd.c     |   3 +-
+>  kernel/kmod.c               | 133 ++++++++++++++++++++++++++++++++++++++------
+>  lib/kobject_uevent.c        |   3 +-
+>  security/keys/request_key.c |   4 +-
+>  6 files changed, 127 insertions(+), 21 deletions(-)
+> 
+> diff --git a/fs/coredump.c b/fs/coredump.c
+> index 281b768..ceb0ee8 100644
+> --- a/fs/coredump.c
+> +++ b/fs/coredump.c
+> @@ -641,7 +641,8 @@ void do_coredump(const siginfo_t *siginfo)
+>  		retval = -ENOMEM;
+>  		sub_info = call_usermodehelper_setup(helper_argv[0],
+>  						helper_argv, NULL, GFP_KERNEL,
+> -						umh_pipe_setup, NULL, &cprm);
+> +						NULL, umh_pipe_setup,
+> +						NULL, &cprm);
+>  		if (sub_info)
+>  			retval = call_usermodehelper_exec(sub_info,
+>  							  UMH_WAIT_EXEC);
+> diff --git a/include/linux/kmod.h b/include/linux/kmod.h
+> index fcfd2bf..8fb8c0e 100644
+> --- a/include/linux/kmod.h
+> +++ b/include/linux/kmod.h
+> @@ -61,6 +61,7 @@ struct subprocess_info {
+>  	char **envp;
+>  	int wait;
+>  	int retval;
+> +	int (*init_intermediate)(struct subprocess_info *info);
+>  	int (*init)(struct subprocess_info *info, struct cred *new);
+>  	void (*cleanup)(struct subprocess_info *info);
+>  	void *data;
+> @@ -71,6 +72,7 @@ call_usermodehelper(char *path, char **argv, char **envp, int wait);
+>  
+>  extern struct subprocess_info *
+>  call_usermodehelper_setup(char *path, char **argv, char **envp, gfp_t gfp_mask,
+> +			  int (*init_intermediate)(struct subprocess_info *info),
+>  			  int (*init)(struct subprocess_info *info, struct cred *new),
+>  			  void (*cleanup)(struct subprocess_info *), void *data);
+>  
+> diff --git a/init/do_mounts_initrd.c b/init/do_mounts_initrd.c
+> index a1000ca..bb5dce5 100644
+> --- a/init/do_mounts_initrd.c
+> +++ b/init/do_mounts_initrd.c
+> @@ -72,7 +72,8 @@ static void __init handle_initrd(void)
+>  	current->flags |= PF_FREEZER_SKIP;
+>  
+>  	info = call_usermodehelper_setup("/linuxrc", argv, envp_init,
+> -					 GFP_KERNEL, init_linuxrc, NULL, NULL);
+> +					 GFP_KERNEL, NULL, init_linuxrc, NULL,
+> +					 NULL);
+>  	if (!info)
+>  		return;
+>  	call_usermodehelper_exec(info, UMH_WAIT_PROC);
+> diff --git a/kernel/kmod.c b/kernel/kmod.c
+> index 0277d12..30a5802 100644
+> --- a/kernel/kmod.c
+> +++ b/kernel/kmod.c
+> @@ -91,7 +91,7 @@ static int call_modprobe(char *module_name, int wait)
+>  	argv[4] = NULL;
+>  
+>  	info = call_usermodehelper_setup(modprobe_path, argv, envp, GFP_KERNEL,
+> -					 NULL, free_modprobe_argv, NULL);
+> +					 NULL, NULL, free_modprobe_argv, NULL);
+>  	if (!info)
+>  		goto free_module_name;
+>  
+> @@ -209,14 +209,11 @@ static void umh_complete(struct subprocess_info *sub_info)
+>  		call_usermodehelper_freeinfo(sub_info);
+>  }
+>  
+> -/*
+> - * This is the task which runs the usermode application
+> - */
+> -static int call_usermodehelper_exec_async(void *data)
+> +static int __call_usermodehelper_exec_doexec(void *data)
+>  {
+>  	struct subprocess_info *sub_info = data;
+>  	struct cred *new;
+> -	int retval;
+> +	int retval = 0;
+>  
+>  	spin_lock_irq(&current->sighand->siglock);
+>  	flush_signal_handlers(current, 1);
+> @@ -228,10 +225,11 @@ static int call_usermodehelper_exec_async(void *data)
+>  	 */
+>  	set_user_nice(current, 0);
+>  
+> -	retval = -ENOMEM;
+>  	new = prepare_kernel_cred(current);
+> -	if (!new)
+> +	if (!new) {
+> +		retval = -ENOMEM;
+>  		goto out;
+> +	}
+>  
+>  	spin_lock(&umh_sysctl_lock);
+>  	new->cap_bset = cap_intersect(usermodehelper_bset, new->cap_bset);
+> @@ -248,20 +246,121 @@ static int call_usermodehelper_exec_async(void *data)
+>  	}
+>  
+>  	commit_creds(new);
+> -
+>  	retval = do_execve(getname_kernel(sub_info->path),
+> -			   (const char __user *const __user *)sub_info->argv,
+> -			   (const char __user *const __user *)sub_info->envp);
+> +		   (const char __user *const __user *)sub_info->argv,
+> +		   (const char __user *const __user *)sub_info->envp);
+> +
+>  out:
+> -	sub_info->retval = retval;
+> +	return retval;
+> +}
+> +
+> +static int call_usermodehelper_exec_doexec(void *data)
+> +{
+> +	struct subprocess_info *sub_info = data;
+> +	int ret = __call_usermodehelper_exec_doexec(data);
+> +
+>  	/*
+> -	 * call_usermodehelper_exec_sync() will call umh_complete
+> -	 * if UHM_WAIT_PROC.
+> +	 * If it is called in non-sync mode:
+> +	 * On fail:
+> +	 *   should set sub_info->retval, call umh_complete and exit process.
+> +	 * On success:
+> +	 *   should set sub_info->retval, call umh_complete and return to
+> +	 *   user-mode program.
+> +	 * It it is called in sync mode:
+> +	 * On fail:
+> +	 *   should set sub_info->retval and exit process, the parent process
+> +	 *   will wait and call umh_complete()
+> +	 * On success:
+> +	 *   should return to user-mode program, the parent process will wait
+> +	 *   and get program's ret from wait(), and call umh_complete().
+>  	 */
+> +	sub_info->retval = ret;
+> +
+>  	if (!(sub_info->wait & UMH_WAIT_PROC))
+>  		umh_complete(sub_info);
+> -	if (!retval)
+> +
+> +	if (!ret)
+>  		return 0;
+> +
+> +	/*
+> +	 * see comment in call_usermodehelper_exec_sync() before change
+> +	 * it to do_exit(ret).
+> +	 */
+> +	do_exit(0);
+> +}
+> +
+> +/*
+> + * This is the task which runs the usermode application
+> + */
+> +static int call_usermodehelper_exec_async(void *data)
+> +{
+> +	struct subprocess_info *sub_info = data;
+> +	int ret = 0;
+> +	int refork = 0;
+> +
+> +	if (sub_info->init_intermediate) {
+> +		ret = sub_info->init_intermediate(sub_info);
+> +		switch (ret) {
+> +		case 0:
+> +			break;
+> +		case -EAGAIN:
+> +			/*
+> +			 * if pid namespace is changed,
+> +			 * we need refork to make it active.
+> +			 */
+> +			ret = 0;
+> +			refork = 1;
+> +			break;
+> +		default:
+> +			goto out;
+> +		}
+> +	}
+> +
+> +	if (refork) {
+> +		/*
+> +		 * Code copyed from call_usermodehelper_exec_work() and
+> +		 * call_usermodehelper_exec_sync(), see comments in these
+> +		 * functions for detail.
+> +		 */
+> +		pid_t pid;
+> +
+> +		if (sub_info->wait & UMH_WAIT_PROC) {
+> +			kernel_sigaction(SIGCHLD, SIG_DFL);
+> +			pid = kernel_thread(call_usermodehelper_exec_doexec,
+> +					    sub_info, SIGCHLD);
+> +			if (pid < 0) {
+> +				ret = pid;
+> +			} else {
+> +				ret = -ECHILD;
+> +				sys_wait4(pid, (int __user *)&ret, 0, NULL);
+> +			}
+> +			kernel_sigaction(SIGCHLD, SIG_IGN);
+> +
+> +			sub_info->retval = ret;
+> +		} else {
+> +			pid = kernel_thread(call_usermodehelper_exec_doexec,
+> +					    sub_info, SIGCHLD);
+> +			if (pid < 0) {
+> +				sub_info->retval = pid;
+> +				umh_complete(sub_info);
+> +			}
+> +		}
+> +	} else {
+> +		ret = __call_usermodehelper_exec_doexec(data);
+> +
+> +out:
+> +		/*
+> +		 * see comment in call_usermodehelper_exec_doexec() for detail
+> +		 */
+> +		sub_info->retval = ret;
+> +
+> +		if (!(sub_info->wait & UMH_WAIT_PROC))
+> +			umh_complete(sub_info);
+> +
+> +		if (!ret)
+> +			return 0;
+> +	}
+> +
+>  	do_exit(0);
+>  }
+>  
+> @@ -518,6 +617,7 @@ static void helper_unlock(void)
+>   */
+>  struct subprocess_info *call_usermodehelper_setup(char *path, char **argv,
+>  		char **envp, gfp_t gfp_mask,
+> +		int (*init_intermediate)(struct subprocess_info *info),
+>  		int (*init)(struct subprocess_info *info, struct cred *new),
+>  		void (*cleanup)(struct subprocess_info *info),
+>  		void *data)
+> @@ -533,6 +633,7 @@ struct subprocess_info *call_usermodehelper_setup(char *path, char **argv,
+>  	sub_info->envp = envp;
+>  
+>  	sub_info->cleanup = cleanup;
+> +	sub_info->init_intermediate = init_intermediate;
+>  	sub_info->init = init;
+>  	sub_info->data = data;
+>    out:
+> @@ -619,7 +720,7 @@ int call_usermodehelper(char *path, char **argv, char **envp, int wait)
+>  	gfp_t gfp_mask = (wait == UMH_NO_WAIT) ? GFP_ATOMIC : GFP_KERNEL;
+>  
+>  	info = call_usermodehelper_setup(path, argv, envp, gfp_mask,
+> -					 NULL, NULL, NULL);
+> +					 NULL, NULL, NULL, NULL);
+>  	if (info == NULL)
+>  		return -ENOMEM;
+>  
+> diff --git a/lib/kobject_uevent.c b/lib/kobject_uevent.c
+> index f6c2c1e..7e571f0 100644
+> --- a/lib/kobject_uevent.c
+> +++ b/lib/kobject_uevent.c
+> @@ -345,7 +345,8 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
+>  		retval = -ENOMEM;
+>  		info = call_usermodehelper_setup(env->argv[0], env->argv,
+>  						 env->envp, GFP_KERNEL,
+> -						 NULL, cleanup_uevent_env, env);
+> +						 NULL, NULL, cleanup_uevent_env,
+> +						 env);
+>  		if (info) {
+>  			retval = call_usermodehelper_exec(info, UMH_NO_WAIT);
+>  			env = NULL;	/* freed by cleanup_uevent_env */
+> diff --git a/security/keys/request_key.c b/security/keys/request_key.c
+> index a29e355..087c11d 100644
+> --- a/security/keys/request_key.c
+> +++ b/security/keys/request_key.c
+> @@ -78,8 +78,8 @@ static int call_usermodehelper_keys(char *path, char **argv, char **envp,
+>  	struct subprocess_info *info;
+>  
+>  	info = call_usermodehelper_setup(path, argv, envp, GFP_KERNEL,
+> -					  umh_keys_init, umh_keys_cleanup,
+> -					  session_keyring);
+> +					 NULL, umh_keys_init, umh_keys_cleanup,
+> +					 session_keyring);
+>  	if (!info)
+>  		return -ENOMEM;
+>  
+> -- 
+> 1.8.5.1
+> 
+> 
+> 
