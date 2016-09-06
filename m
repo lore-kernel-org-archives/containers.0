@@ -1,12 +1,14 @@
-From: =?iso-8859-1?Q?St=E9phane?= Graber <stgraber-/Ni+VN9Krahg9hUCZPvPmw@public.gmane.org>
-Subject: Re: CFP for containers micro-conference at LPC 2016
-Date: Fri, 2 Sep 2016 16:16:06 -0400
-Message-ID: <20160902201606.GH10529__26621.0413458341$1472847846$gmane$org@dakara>
-References: <20160902170345.GE15622@castiana>
+From: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: RE: [PATCH v3 0/3] Make core_pattern support namespace
+Date: Tue, 6 Sep 2016 11:45:30 +0800
+Message-ID: <004d01d207f1$1f33d8d0$5d9b8a70$@cn.fujitsu.com>
+References: <cover.1472471585.git.zhaolei@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============8543899702740250914=="
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20160902170345.GE15622@castiana>
+In-Reply-To: <cover.1472471585.git.zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Language: zh-cn
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,112 +18,73 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "'Eric W. Biederman'" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
---===============8543899702740250914==
-Content-Type: multipart/signed; micalg=pgp-sha512;
-	protocol="application/pgp-signature"; boundary="r4QXMf6/kyF/FvJJ"
-Content-Disposition: inline
-
-
---r4QXMf6/kyF/FvJJ
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-Forgot one pretty important detail in there.
-
-I intend to close the CFP and work on the final schedule on the 16th of
-September, this gives you folks two weeks to send anything you'd like to
-talk about there.
-
-St=E9phane
-
-On Fri, Sep 02, 2016 at 01:03:45PM -0400, St=E9phane Graber wrote:
-> Hello there,
->=20
-> So we are now two months away from the 2016 edition of the Linux
-> Plumbers Conference (LPC). This year co-located with the Linux Kernel
-> Summit in Santa Fe, NM from the 1 to 4th of November.
->=20
-> As usual, we'll be having a Containers micro-conference over there. It's
-> a 2 to 3 hours event where we can chat about the state of containers,
-> both userspace and kernel space, demo the new cool stuff we've been
-> working on and have some discussions around common issues.
->=20
->=20
-> The format for this year is going to be:
->  - 1/3rd project updates (10min slots + 5min questions)
->  - 1/3rd presentation/demo (10min slots + 5min questions)
->  - 1/3rd open discussions around a number of topics
->=20
->=20
-> If you wish to give an update on your container runtime or present what
-> you've been working on lately, please submit a talk proposal here:
->=20
->     http://www.linuxplumbersconf.org/2016/ocw/events/LPC2016/proposals/new
->=20
-> I'm also looking for discussion topics for that last part of the
-> micro-conference. If you have any suggestions, please e-mail me
-> directly.
->=20
->=20
->=20
-> As usual, LPC is already basically sold out. There are a very limited
-> number of tickets that will be made available on October 1st but it's
-> not sometihng you can really rely on.
->=20
-> As a micro-conference, I do have a few speaker tickets to give away but
-> nowhere near enough to cover all speaking slots. So priority will be
-> given to people who are already registered for the event.
->=20
->=20
-> When submitting a proposal at the link above, please include in the
-> notes whether you're registered or not, that will make planning things a
-> bit easier.
->=20
->=20
-> Thanks in see you all in New Mexico!
->=20
->=20
-> --=20
-> St=E9phane Graber
-> Ubuntu developer
-> http://www.ubuntu.com
-
---r4QXMf6/kyF/FvJJ
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIcBAEBCgAGBQJXyd4GAAoJEMY4l01keS1nHj4P/3dbIbGG4cIDVcmkmfaRfL5V
-9QwHolKdSYfw0tj1zR7aFLk/B6tPuPvi/xIOQ/dEgZP9k50aYxpadlVt3zy4KlCW
-Zyp9GJTGANpMXt6joD+cNAXxhmPhmXI+TcOAY6qoWmR6l4ZY5o2aDrbTCj5ccB59
-9Bv+bcaHR/rStEwogQQ7UhHCwjRnXJYrV01vj5RDJixBITlCystpatBASOPhKcEE
-VaDbZSFKOLBYCl26DE7wssp/KTK1Hc1d1dlL7CZuSCFn513VL/vAfVLt96nvUFrw
-kS3++8c76qVL5OZEfqgcqWHD2nRMpqi2BrHDmxlkplgh83Piot3AR1IMyZc2q9Wx
-YniHjLVG+Dge6M/m3q+EfhDbcCz143WAEY1ZwXr2zPw4p1acWpH1u8jqW1WutBHu
-3Q6VJptcgvBLMarjFv+Hmg6mzE4WjQnBepe/93lUhAuiaew0GdAKKLUnYaiiLf8C
-s12658a61m7nZ5RS6WzsoIEEb9szgFnQWDDu/95UNrL6P0UL6yJLQpbyBkspM5pi
-R7oru8PYji84dDxB+NVeKU8m1Nyv4GTCmqRwQhxFju44SQBKJ/oQjKX3oz41he97
-jnsUoyPTIOoY3IdsaYQFGb0UbEm4FDgfb8C+K+b4D3oGRSeIVZ7LEhyMeQDhkmP/
-i379dfHwOsXbrkjVJ3X0
-=Pb6N
------END PGP SIGNATURE-----
-
---r4QXMf6/kyF/FvJJ--
-
---===============8543899702740250914==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============8543899702740250914==--
+UGluZwoKPiAtLS0tLU9yaWdpbmFsIE1lc3NhZ2UtLS0tLQo+IEZyb206IFpoYW8gTGVpIFttYWls
+dG86emhhb2xlaUBjbi5mdWppdHN1LmNvbV0KPiBTZW50OiBNb25kYXksIEF1Z3VzdCAyOSwgMjAx
+NiA4OjA3IFBNCj4gVG86IGxpbnV4LWtlcm5lbEB2Z2VyLmtlcm5lbC5vcmcKPiBDYzogY29udGFp
+bmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZzsgRXJpYyBXLiBCaWVkZXJtYW4KPiA8ZWJp
+ZWRlcm1AeG1pc3Npb24uY29tPjsgTWF0ZXVzeiBHdXppayA8bWd1emlrQHJlZGhhdC5jb20+Owo+
+IEthbWV6YXdhIEhpcm95dWtpIDxrYW1lemF3YS5oaXJveXVAanAuZnVqaXRzdS5jb20+OyBTdMOp
+cGhhbmUgR3JhYmVyCj4gPHN0Z3JhYmVyQHVidW50dS5jb20+OyBBbmRyZWkgVmFnaW4gPGF2YWdp
+bkBnbWFpbC5jb20+OyBaaGFvIExlaQo+IDx6aGFvbGVpQGNuLmZ1aml0c3UuY29tPgo+IFN1Ympl
+Y3Q6IFtQQVRDSCB2MyAwLzNdIE1ha2UgY29yZV9wYXR0ZXJuIHN1cHBvcnQgbmFtZXNwYWNlCj4g
+Cj4gVGhpcyBwYXRjaHNldCBpbmNsdWRlcyBmb2xsb3dpbmcgZnVuY3Rpb24gcG9pbnRzOgo+IDE6
+IExldCB1c2VybW9kZWhlbHBlciBmdW5jdGlvbiBwb3NzaWJsZSB0byBzZXQgcGlkIG5hbWVzcGFj
+ZQo+ICAgIGRvbmUgYnk6IFtQQVRDSCB2MyAxLzNdIE1ha2UgY2FsbF91c2VybW9kZWhlbHBlcl9l
+eGVjIHBvc3NpYmxlCj4gICAgdG8gc2V0IHBpZCBuYW1lc3BhY2UuCj4gMjogTGV0IHBpcGVfdHlw
+ZSBjb3JlX3BhdHRlcm4gd3JpdGUgZHVtcCBpbnRvIGNvbnRhaW5lcidzIHJvb3Rmcwo+ICAgIGRv
+bmUgYnk6IFtQQVRDSCB2MyAyLzNdIExpbWl0IGR1bXBfcGlwZSBwcm9ncmFtJ3MgcGVybWlzc2lv
+biB0bwo+ICAgIGluaXQgZm9yIGNvbnRhaW5lci4KPiAyOiBNYWtlIHNlcGFyYXRlIGNvcmVfcGF0
+dGVybiBzZXR0aW5nIGZvciBlYWNoIGNvbnRhaW5lcgo+ICAgIGRvbmUgYnk6IFtQQVRDSCB2MyAz
+LzNdIE1ha2UgY29yZV9wYXR0ZXJuIHN1cHBvcnQgbmFtZXNwYWNlCj4gMzogQ29tcGF0aWJpbGl0
+eSB3aXRoIGN1cnJlbnQgc3lzdGVtCj4gICAgYWxzbyBpbmNsdWRlZCBpbjogW1BBVENIIHYzIDMv
+M10gTWFrZSBjb3JlX3BhdHRlcm4gc3VwcG9ydCBuYW1lc3BhY2UKPiAgICBJZiBjb250YWluZXIg
+aGFkbid0IGNoYW5nZSBjb3JlX3BhdHRlcm4gc2V0dGluZywgaXQgd2lsbCBrZWVwCj4gICAgc2Ft
+ZSBzZXR0aW5nIHdpdGggaG9zdC4KPiAKPiBUZXN0Ogo+IDE6IFBhc3MgYSB0ZXN0IHNjcmlwdCBm
+b3IgZWFjaCBmdW5jdGlvbiBvZiB0aGlzIHBhdGNoc2V0Cj4gICAgIyMgVEVTVCBJTiBIT1NUICMj
+Cj4gICAgW3Jvb3RAa2VybmVsZGV2IGR1bXB0ZXN0XSMgLi90ZXN0X2hvc3QKPiAgICBTZXQgZmls
+ZSBjb3JlX3BhdHRlcm46IE9LCj4gICAgLi90ZXN0X2hvc3Q6IGxpbmUgNDE6ICAyMzY2IFNlZ21l
+bnRhdGlvbiBmYXVsdCAgICAgIChjb3JlIGR1bXBlZCkKPiAiJFNDUklQVF9CQVNFX0RJUiIvbWFr
+ZV9kdW1wCj4gICAgQ2hlY2tpbmcgZHVtcGZpbGU6IE9LCj4gICAgU2V0IGZpbGUgY29yZV9wYXR0
+ZXJuOiBPSwo+ICAgIC4vdGVzdF9ob3N0OiBsaW5lIDQxOiAgMjM2OSBTZWdtZW50YXRpb24gZmF1
+bHQgICAgICAoY29yZSBkdW1wZWQpCj4gIiRTQ1JJUFRfQkFTRV9ESVIiL21ha2VfZHVtcAo+ICAg
+IENoZWNraW5nIGR1bXBfcGlwZSB0cmlnZ2VyZWQ6IE9LCj4gICAgQ2hlY2tpbmcgcm9vdGZzOiBP
+Swo+ICAgIENoZWNraW5nIGR1bXBmaWxlOiBPSwo+ICAgIENoZWNraW5nIG5hbWVzcGFjZTogT0sK
+PiAgICBDaGVja2luZyBwcm9jZXNzIGxpc3Q6IE9LCj4gICAgQ2hlY2tpbmcgY2FwYWJpbGl0aWVz
+OiBPSwo+IAo+ICAgICMjIFRFU1QgSU4gR1VFU1QgIyMKPiAgICAjIC4vdGVzdAo+ICAgIFNlZ21l
+bnRhdGlvbiBmYXVsdCAoY29yZSBkdW1wZWQpCj4gICAgQ2hlY2tpbmcgZHVtcF9waXBlIHRyaWdn
+ZXJlZDogT0sKPiAgICBDaGVja2luZyByb290ZnM6IE9LCj4gICAgQ2hlY2tpbmcgZHVtcGZpbGU6
+IE9LCj4gICAgQ2hlY2tpbmcgbmFtZXNwYWNlOiBPSwo+ICAgIENoZWNraW5nIHByb2Nlc3MgbGlz
+dDogT0sKPiAgICBDaGVja2luZyBjZyBwaWRzOiBPSwo+ICAgIENoZWNraW5nIGNhcGFiaWxpdGll
+czogT0sKPiAgICBbICAgNjQuOTQwNzM0XSBtYWtlX2R1bXBbMjQzMl06IHNlZ2ZhdWx0IGF0IDAg
+aXAgMDAwMDAwMDAwMDQwMDQ5ZCBzcAo+IDAwMDA3ZmZjNGFmMDI1ZjAgZXJyb3IgNiBpbiBtYWtl
+X2R1bXBbNDAwMDAwK2E2MDAwXQo+ICAgICMKPiAyOiBQYXNzIG90aGVyIHRlc3Qod2hpY2ggaXMg
+bm90IGVhc3kgdG8gZG8gaW4gc2NyaXB0KSBieSBoYW5kLgo+IAo+IENoYW5nZWxvZyB2Mi0+djM6
+Cj4gMTogRml4IHByb2JsZW0gb2Ygc2V0dGluZyBwaWQgbmFtZXNwYWNlLCBwb2ludGVkIG91dCBi
+eToKPiAgICBBbmRyZWkgVmFnaW4gPGF2YWdpbkBnbWFpbC5jb20+Cj4gCj4gQ2hhbmdlbG9nIHYx
+KFJGQyktPnYyOgo+IDE6IEFkZCBbUEFUQ0ggMi8yXSB3aGljaCB3YXMgdG9kbyBpbiBbUkZDIHYx
+XS4KPiAyOiBQYXNzIGEgdGVzdCBzY3JpcHQgZm9yIGVhY2ggZnVuY3Rpb24uCj4gMzogUmViYXNl
+IG9uIHRvcCBvZiB2NC43Lgo+IAo+IFN1Z2dlc3RlZC1ieTogRXJpYyBXLiBCaWVkZXJtYW4gPGVi
+aWVkZXJtQHhtaXNzaW9uLmNvbT4KPiBTdWdnZXN0ZWQtYnk6IEtPU0FLSSBNb3RvaGlybyA8a29z
+YWtpLm1vdG9oaXJvQGpwLmZ1aml0c3UuY29tPgo+IFNpZ25lZC1vZmYtYnk6IFpoYW8gTGVpIDx6
+aGFvbGVpQGNuLmZ1aml0c3UuY29tPgo+IAo+IFpoYW8gTGVpICgzKToKPiAgIE1ha2UgY2FsbF91
+c2VybW9kZWhlbHBlcl9leGVjIHBvc3NpYmxlIHRvIHNldCBwaWQgbmFtZXNwYWNlCj4gICBMaW1p
+dCBkdW1wX3BpcGUgcHJvZ3JhbSdzIHBlcm1pc3Npb24gdG8gaW5pdCBmb3IgY29udGFpbmVyCj4g
+ICBNYWtlIGNvcmVfcGF0dGVybiBzdXBwb3J0IG5hbWVzcGFjZQo+IAo+ICBmcy9jb3JlZHVtcC5j
+ICAgICAgICAgICAgICAgICB8IDEyNgo+ICsrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysr
+KysrKy0tLQo+ICBpbmNsdWRlL2xpbnV4L2JpbmZtdHMuaCAgICAgICB8ICAgMSArCj4gIGluY2x1
+ZGUvbGludXgva21vZC5oICAgICAgICAgIHwgICAyICsKPiAgaW5jbHVkZS9saW51eC9waWRfbmFt
+ZXNwYWNlLmggfCAgIDMgKwo+ICBpbml0L2RvX21vdW50c19pbml0cmQuYyAgICAgICB8ICAgMyAr
+LQo+ICBrZXJuZWwva21vZC5jICAgICAgICAgICAgICAgICB8IDEzMwo+ICsrKysrKysrKysrKysr
+KysrKysrKysrKysrKysrKysrKysrKystLS0tLQo+ICBrZXJuZWwvcGlkLmMgICAgICAgICAgICAg
+ICAgICB8ICAgMiArCj4gIGtlcm5lbC9waWRfbmFtZXNwYWNlLmMgICAgICAgIHwgICAyICsKPiAg
+a2VybmVsL3N5c2N0bC5jICAgICAgICAgICAgICAgfCAgNTAgKysrKysrKysrKysrKystLQo+ICBs
+aWIva29iamVjdF91ZXZlbnQuYyAgICAgICAgICB8ICAgMyArLQo+ICBzZWN1cml0eS9rZXlzL3Jl
+cXVlc3Rfa2V5LmMgICB8ICAgNCArLQo+ICAxMSBmaWxlcyBjaGFuZ2VkLCAyOTYgaW5zZXJ0aW9u
+cygrKSwgMzMgZGVsZXRpb25zKC0pCj4gCj4gLS0KPiAxLjguNS4xCgoKCl9fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0
+CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51
+eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
