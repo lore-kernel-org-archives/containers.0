@@ -1,7 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH tty-next 4/6] devpts: Make devpts_kill_sb safe if fsi is NULL
-Date: Wed, 14 Sep 2016 13:53:36 -0500
-Message-ID: <20160914185338.15126-4-ebiederm@xmission.com>
+Subject: [PATCH tty-next 5/6] devpts: Remove sync_filesystems
+Date: Wed, 14 Sep 2016 13:53:37 -0500
+Message-ID: <20160914185338.15126-5-ebiederm@xmission.com>
 References: <87sht25n73.fsf@x220.int.ebiederm.org>
 	<20160914185338.15126-1-ebiederm@xmission.com>
 Mime-Version: 1.0
@@ -22,24 +22,25 @@ To: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+devpts does not and never will have anything to sync
+so don't bother calling sync_filesystems on remount.
+
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/devpts/inode.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/devpts/inode.c | 1 -
+ 1 file changed, 1 deletion(-)
 
 diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
-index a48b40b0bd1e..e058ec677207 100644
+index e058ec677207..17593d3fcdbe 100644
 --- a/fs/devpts/inode.c
 +++ b/fs/devpts/inode.c
-@@ -458,7 +458,8 @@ static void devpts_kill_sb(struct super_block *sb)
- {
+@@ -336,7 +336,6 @@ static int devpts_remount(struct super_block *sb, int *flags, char *data)
  	struct pts_fs_info *fsi = DEVPTS_SB(sb);
+ 	struct pts_mount_opts *opts = &fsi->mount_opts;
  
--	ida_destroy(&fsi->allocated_ptys);
-+	if (fsi)
-+		ida_destroy(&fsi->allocated_ptys);
- 	kfree(fsi);
- 	kill_litter_super(sb);
- }
+-	sync_filesystem(sb);
+ 	err = parse_mount_options(data, PARSE_REMOUNT, opts);
+ 
+ 	/*
 -- 
 2.8.3
