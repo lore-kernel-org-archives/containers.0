@@ -1,7 +1,7 @@
 From: Gandalf Corvotempesta <gandalf.corvotempesta-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: Escape from a bind mount
-Date: Thu, 22 Sep 2016 15:57:26 +0200
-Message-ID: <CAJH6TXjU1cFRa_-mnE1Yv5g3uH+3sNPUMafuzMRXMTR2VKfehA@mail.gmail.com>
+Date: Thu, 22 Sep 2016 16:23:11 +0200
+Message-ID: <CAJH6TXi=G90x24ThdZAfZMhVRN86B0LS5R-WuCn+OtGsFNjm8Q@mail.gmail.com>
 References: <CAJH6TXhzy4XAQKaKjrK5Yqzg0sxtPjU9D=X3AHZZ76N3Cpwkwg@mail.gmail.com>
 	<20160922130253.GB20504@pc.thejh.net>
 	<CAJH6TXje-Zb54scg8-UTchZEa2RCOGVdaB0DQ_ipbJtNEAPPGA@mail.gmail.com>
@@ -29,7 +29,5 @@ List-Id: containers.vger.kernel.org
 > bug, and it was fixed.
 > Where do the docs mention this? We should probably ask them to fix that.
 
-Here:
-https://docs.docker.com/engine/tutorials/dockervolumes/
-
-But I've opened an issue to let them fix.
+Is this also backported to older kernel versions? From which kernel
+version is fixed ?
