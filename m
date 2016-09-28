@@ -1,10 +1,10 @@
-From: "FedEx Ground" <mitchell.stark-88y9QxHnq7JaP0f+8Gpiu04l8skOPoB9@public.gmane.org>
-Subject: Shipment delivery problem #00000264259
-Date: Mon, 26 Sep 2016 01:37:19 +0000
-Message-ID: <234c893b89fae0549d5c631d1cfd487d@shkollainformatika.com>
-Reply-To: FedEx Ground <mitchell.stark-88y9QxHnq7JaP0f+8Gpiu04l8skOPoB9@public.gmane.org>
+From: "FedEx International Next Flight" <jeff.dalton-v78UfzRKL+aBq2LTdbxNCInh5Q2U4q7d@public.gmane.org>
+Subject: Shipment delivery problem #00966488
+Date: Wed, 28 Sep 2016 11:39:11 -0400
+Message-ID: <085e28d4938446219323b53da46f8b62@mozart.zhiying.com.sg>
+Reply-To: FedEx International Next Flight <jeff.dalton-v78UfzRKL+aBq2LTdbxNCInh5Q2U4q7d@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="b1_27d528057bc3b3233d1a6e57ff5e4bb7"
+Content-Type: multipart/mixed; boundary="b1_f913ecd263f4bf63e645cb3721907dbe"
 Content-Transfer-Encoding: 8bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
@@ -19,20 +19,20 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---b1_27d528057bc3b3233d1a6e57ff5e4bb7
+--b1_f913ecd263f4bf63e645cb3721907dbe
 Content-Type: text/plain; charset=us-ascii
 
 Dear Customer,
 
-Courier was unable to deliver the parcel to you.
-Shipment Label is attached to this email.
+We could not deliver your parcel.
+Delivery Label is attached to this email.
 
-Yours sincerely,
-Mitchell Stark,
-FedEx Operation Manager.
+Yours trully,
+Jeff Dalton,
+Support Manager.
 
 
---b1_27d528057bc3b3233d1a6e57ff5e4bb7
+--b1_f913ecd263f4bf63e645cb3721907dbe
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -42,4 +42,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---b1_27d528057bc3b3233d1a6e57ff5e4bb7--
+--b1_f913ecd263f4bf63e645cb3721907dbe--
