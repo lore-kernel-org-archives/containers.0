@@ -1,10 +1,10 @@
-From: "FedEx International Next Flight" <jeff.dalton-v78UfzRKL+aBq2LTdbxNCInh5Q2U4q7d@public.gmane.org>
-Subject: Shipment delivery problem #00966488
-Date: Wed, 28 Sep 2016 11:39:11 -0400
-Message-ID: <085e28d4938446219323b53da46f8b62@mozart.zhiying.com.sg>
-Reply-To: FedEx International Next Flight <jeff.dalton-v78UfzRKL+aBq2LTdbxNCInh5Q2U4q7d@public.gmane.org>
+From: "FedEx 2Day A.M." <albert.price-BOigW0iW8LgSk0l68qnNZFaTQe2KTcn/@public.gmane.org>
+Subject: Unable to deliver your item, #0000191644
+Date: Sat, 1 Oct 2016 00:21:40 +0000
+Message-ID: <bdb5b8d648090b0260ca96df370d204d@mycoastalcomfort.com>
+Reply-To: "FedEx 2Day A.M." <albert.price-BOigW0iW8LgSk0l68qnNZFaTQe2KTcn/@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="b1_f913ecd263f4bf63e645cb3721907dbe"
+Content-Type: multipart/mixed; boundary="b1_f41e95d0a87efd626e0e745c03548c24"
 Content-Transfer-Encoding: 8bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
@@ -19,20 +19,20 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---b1_f913ecd263f4bf63e645cb3721907dbe
+--b1_f41e95d0a87efd626e0e745c03548c24
 Content-Type: text/plain; charset=us-ascii
 
 Dear Customer,
 
-We could not deliver your parcel.
-Delivery Label is attached to this email.
+Courier was unable to deliver the parcel to you.
+You can review complete details of your order in the find attached.
 
-Yours trully,
-Jeff Dalton,
-Support Manager.
+Warm regards,
+Albert Price,
+Sr. Operation Agent.
 
 
---b1_f913ecd263f4bf63e645cb3721907dbe
+--b1_f41e95d0a87efd626e0e745c03548c24
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -42,4 +42,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linuxfoundation.org/mailman/listinfo/containers
---b1_f913ecd263f4bf63e645cb3721907dbe--
+--b1_f41e95d0a87efd626e0e745c03548c24--
