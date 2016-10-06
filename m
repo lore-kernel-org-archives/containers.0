@@ -1,7 +1,8 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [GIT PULL] namespace related changes for 4.9-rc1
-Date: Wed, 05 Oct 2016 12:52:49 -0500
-Message-ID: <877f9mfzta.fsf@x220.int.ebiederm.org>
+From: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: [PATCH v2] mount: dont execute propagate_umount() many times for same
+	mounts
+Date: Thu,  6 Oct 2016 09:49:24 -0700
+Message-ID: <1475772564-25627-1-git-send-email-avagin__30204.0089191452$1475772598$gmane$org@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,140 +16,169 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+The reason of this optimization is that umount() can hold namespace_sem
+for a long time, this semaphore is global, so it affects all users.
+Recently Eric W. Biederman added a per mount namespace limit on the
+number of mounts. The default number of mounts allowed per mount
+namespace at 100,000. Currently this value is allowed to construct a tree
+which requires hours to be umounted.
 
-Linus,
+In a worse case the current complexity of umount_tree() is O(n^3).
+* Enumirate all mounts in a target tree (propagate_umount)
+* Enumirate mounts to find where these changes have to
+  be propagated (mark_umount_candidates)
+* Enumirate mounts to find a requered mount by parent and dentry
+  (__lookup_mnt_lat)
 
-Please pull the for-linus branch from the git tree:
+The worse case is when all mounts from the tree live in the same shared
+group. In this case we have to enumirate all mounts on each step.
 
-   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
+Here we can optimize the second step. We don't need to make it for
+mounts which we already met when we did this step for previous mounts.
+It reduces the complexity of umount_tree() to O(n^2).
 
-   HEAD: 069d5ac9ae0d271903cc4607890616418118379a autofs:  Fix automounts by using current_real_cred()->uid
+Here is a script to generate such mount tree:
+$ cat run.sh
+mount -t tmpfs xxx /mnt
+mount --make-shared /mnt
+for i in `seq $1`; do
+	mount --bind /mnt `mktemp -d /mnt/test.XXXXXX`
+done
+time umount -l /mnt
+$ for i in `seq 10 16`; do echo $i; unshare -Urm bash ./run.sh $i; done
 
-This set of changes is a number of smaller things that have been
-overlooked in other development cycles focused on more fundamental
-change.  The devpts changes are small things that were a distraction
-until we managed to kill off DEVPTS_MULTPLE_INSTANCES.  There is an
-trivial regression fix to autofs for the unprivileged mount changes that
-went in last cycle.  A pair of ioctls has been added by Andrey Vagin
-making it is possible to discover the relationships between namespaces
-when referring to them through file descriptors.
+Here is performance measurements with and without this patch:
 
-The big user visible change is starting to add simple resource limits to
-catch programs that misbehave.  With namespaces in general and user
-namespaces in particular allowing users to use more kinds of resources,
-it has become important to have something to limit errant programs.
-Because the purpose of these limits is to catch errant programs the code
-needs to be inexpensive to use as it always on, and the default limits
-need to be high enough that well behaved programs on well behaved
-systems don't encounter them.
+mounts | after  | before (sec)
+---------------------
+1024   | 0.024  | 0.084
+2048   | 0.041  | 0.39
+4096   | 0.059  | 3.198
+8192   | 0.227  | 50.794
+16384  | 1.015  | 810
 
-To this end, after some review I have implemented per user per user
-namespace limits, and use them to limit the number of namespaces.  The
-limits being per user mean that one user can not exhause the limits of
-another user.  The limits being per user namespace allow contexts where
-the limit is 0 and security conscious folks can remove from their threat
-anlysis the code used to manage namespaces (as they have historically
-done as it root only).  At the same time the limits being per user
-namespace allow other parts of the system to use namespaces.
+This patch is a second step to fix CVE-2016-6213.
 
-Namespaces are increasingly being used in application sand boxing
-scenarios so an all or nothing disable for the entire system for the
-security conscious folks makes increasing use of these sandboxes
-impossible.
+v2: fix mark_umount_candidates() to not change the existing behaviour.
+Signed-off-by: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+---
+ fs/mount.h     |  2 ++
+ fs/namespace.c | 19 ++++++++++++++++---
+ fs/pnode.c     | 25 ++++++++++++++++++++++---
+ 3 files changed, 40 insertions(+), 6 deletions(-)
 
-There is also added a limit on the maximum number of mounts present in a
-single mount namespace.  It is nontrivial to guess what a reasonable
-system wide limit on the number of mount structure in the kernel would
-be, especially as it various based on how a system is using containers.
-A limit on the number of mounts in a mount namespace however is much
-easier to understand and set.  In most cases in practice only about 1000
-mounts are used.  Given that some autofs scenarious have the potential
-to be 30,000 to 50,000 mounts I have set the default limit for the
-number of mounts at 100,000 which is well above every known set of users
-but low enough that the mount hash tables don't degrade unreaonsably.
-
-These limits are a start.  I expect this estabilishes a pattern that
-other limits for resources that namespaces use will follow.  There has
-been interest in making inotify event limits per user per user namespace
-as well as interest expressed in making details about what is going on
-in the kernel more visible.
-
-Eric
-
-Andrey Vagin (4):
-      kernel: add a helper to get an owning user namespace for a namespace
-      nsfs: add ioctl to get an owning user namespace for ns file descriptor
-      nsfs: add ioctl to get a parent namespace
-      tools/testing: add a test to check nsfs ioctl-s
-
-Arnd Bergmann (1):
-      netns: move {inc,dec}_net_namespaces into #ifdef
-
-Eric W. Biederman (24):
-      sysctl: Stop implicitly passing current into sysctl_table_root.lookup
-      userns: Free user namespaces in process context
-      userns: Add per user namespace sysctls.
-      userns: Add a limit on the number of user namespaces
-      userns: Make the count of user namespaces per user
-      userns: Generalize the user namespace count into ucount
-      pidns: Add a limit on the number of pid namespaces
-      utsns: Add a limit on the number of uts namespaces
-      ipcns: Add a  limit on the number of ipc namespaces
-      cgroupns: Add a limit on the number of cgroup namespaces
-      netns: Add a limit on the number of net namespaces
-      mntns: Add a limit on the number of mount namespaces.
-      userns; Document per user per user namespace limits.
-      userns: When the per user per user namespace limit is reached return ENOSPC
-      devpts: Move parse_mount_options into fill_super
-      devpts: Move the creation of /dev/pts/ptmx into fill_super
-      devpts: Simplify devpts_mount by using mount_nodev
-      devpts: Make devpts_kill_sb safe if fsi is NULL
-      devpts: Remove sync_filesystems
-      devpts: Change the owner of /dev/pts/ptmx to the mounter of /dev/pts
-      Merge branch 'nsfs-ioctls' into HEAD
-      nsfs: Simplify __ns_get_path
-      mnt: Add a per mount namespace limit on the number of mounts
-      autofs:  Fix automounts by using current_real_cred()->uid
-
-
- Documentation/sysctl/README           |   1 +
- Documentation/sysctl/fs.txt           |   7 +
- Documentation/sysctl/user.txt         |  66 ++++++++++
- fs/autofs4/waitq.c                    |   4 +-
- fs/devpts/inode.c                     |  71 ++++------
- fs/mount.h                            |   3 +
- fs/namespace.c                        |  77 ++++++++++-
- fs/nsfs.c                             | 105 ++++++++++++---
- fs/pnode.c                            |   2 +-
- fs/pnode.h                            |   1 +
- fs/proc/proc_sysctl.c                 |  14 +-
- include/linux/cgroup.h                |   1 +
- include/linux/ipc_namespace.h         |   1 +
- include/linux/mount.h                 |   2 +
- include/linux/pid_namespace.h         |   1 +
- include/linux/proc_ns.h               |   2 +
- include/linux/sysctl.h                |   3 +-
- include/linux/user_namespace.h        |  44 ++++++-
- include/linux/utsname.h               |   1 +
- include/net/net_namespace.h           |   1 +
- include/uapi/linux/nsfs.h             |  13 ++
- ipc/namespace.c                       |  51 ++++++--
- kernel/Makefile                       |   2 +-
- kernel/cgroup.c                       |  24 ++++
- kernel/fork.c                         |   5 +
- kernel/pid_namespace.c                |  50 +++++++-
- kernel/sysctl.c                       |   9 ++
- kernel/ucount.c                       | 235 ++++++++++++++++++++++++++++++++++
- kernel/user_namespace.c               |  99 ++++++++++++--
- kernel/utsname.c                      |  40 +++++-
- net/core/net_namespace.c              |  28 +++-
- net/sysctl_net.c                      |   4 +-
- tools/testing/selftests/Makefile      |   1 +
- tools/testing/selftests/nsfs/Makefile |  12 ++
- tools/testing/selftests/nsfs/owner.c  |  91 +++++++++++++
- tools/testing/selftests/nsfs/pidns.c  |  78 +++++++++++
- 36 files changed, 1033 insertions(+), 116 deletions(-)
+diff --git a/fs/mount.h b/fs/mount.h
+index 14db05d..b5631bd 100644
+--- a/fs/mount.h
++++ b/fs/mount.h
+@@ -87,6 +87,8 @@ static inline int is_mounted(struct vfsmount *mnt)
+ 
+ extern struct mount *__lookup_mnt(struct vfsmount *, struct dentry *);
+ extern struct mount *__lookup_mnt_last(struct vfsmount *, struct dentry *);
++extern struct mount *__lookup_mnt_cont(struct mount *,
++					struct vfsmount *, struct dentry *);
+ 
+ extern int __legitimize_mnt(struct vfsmount *, unsigned);
+ extern bool legitimize_mnt(struct vfsmount *, unsigned);
+diff --git a/fs/namespace.c b/fs/namespace.c
+index dcd9afe..0af8d01 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -649,9 +649,7 @@ struct mount *__lookup_mnt_last(struct vfsmount *mnt, struct dentry *dentry)
+ 		goto out;
+ 	if (!(p->mnt.mnt_flags & MNT_UMOUNT))
+ 		res = p;
+-	hlist_for_each_entry_continue(p, mnt_hash) {
+-		if (&p->mnt_parent->mnt != mnt || p->mnt_mountpoint != dentry)
+-			break;
++	for (; p != NULL; p = __lookup_mnt_cont(p, mnt, dentry)) {
+ 		if (!(p->mnt.mnt_flags & MNT_UMOUNT))
+ 			res = p;
+ 	}
+@@ -659,6 +657,21 @@ out:
+ 	return res;
+ }
+ 
++struct mount *__lookup_mnt_cont(struct mount *p,
++				struct vfsmount *mnt, struct dentry *dentry)
++{
++	struct hlist_node *node = p->mnt_hash.next;
++
++	if (!node)
++		return NULL;
++
++	p = hlist_entry(node, struct mount, mnt_hash);
++	if (&p->mnt_parent->mnt != mnt || p->mnt_mountpoint != dentry)
++		return NULL;
++
++	return p;
++}
++
+ /*
+  * lookup_mnt - Return the first child mount mounted at path
+  *
+diff --git a/fs/pnode.c b/fs/pnode.c
+index 9989970..8b3c1be 100644
+--- a/fs/pnode.c
++++ b/fs/pnode.c
+@@ -399,10 +399,24 @@ static void mark_umount_candidates(struct mount *mnt)
+ 
+ 	BUG_ON(parent == mnt);
+ 
++	if (IS_MNT_MARKED(mnt))
++		return;
++
+ 	for (m = propagation_next(parent, parent); m;
+ 			m = propagation_next(m, parent)) {
+-		struct mount *child = __lookup_mnt_last(&m->mnt,
+-						mnt->mnt_mountpoint);
++		struct mount *child = NULL, *p;
++
++		for (p = __lookup_mnt(&m->mnt, mnt->mnt_mountpoint); p;
++		     p = __lookup_mnt_cont(p, &m->mnt, mnt->mnt_mountpoint)) {
++			/*
++			 * Mark umounted mounts to not call
++			 * __propagate_umount for them again.
++			 */
++			SET_MNT_MARK(p);
++			if (!(p->mnt.mnt_flags & MNT_UMOUNT))
++				child = p;
++		}
++
+ 		if (child && (!IS_MNT_LOCKED(child) || IS_MNT_MARKED(m))) {
+ 			SET_MNT_MARK(child);
+ 		}
+@@ -420,6 +434,9 @@ static void __propagate_umount(struct mount *mnt)
+ 
+ 	BUG_ON(parent == mnt);
+ 
++	if (IS_MNT_MARKED(mnt))
++		return;
++
+ 	for (m = propagation_next(parent, parent); m;
+ 			m = propagation_next(m, parent)) {
+ 
+@@ -431,6 +448,8 @@ static void __propagate_umount(struct mount *mnt)
+ 		 */
+ 		if (!child || !IS_MNT_MARKED(child))
+ 			continue;
++		if (child->mnt.mnt_flags & MNT_UMOUNT)
++			continue;
+ 		CLEAR_MNT_MARK(child);
+ 		if (list_empty(&child->mnt_mounts)) {
+ 			list_del_init(&child->mnt_child);
+@@ -454,7 +473,7 @@ int propagate_umount(struct list_head *list)
+ 	list_for_each_entry_reverse(mnt, list, mnt_list)
+ 		mark_umount_candidates(mnt);
+ 
+-	list_for_each_entry(mnt, list, mnt_list)
++	list_for_each_entry_reverse(mnt, list, mnt_list)
+ 		__propagate_umount(mnt);
+ 	return 0;
+ }
+-- 
+2.5.5
