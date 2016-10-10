@@ -1,14 +1,17 @@
-From: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
-Subject: Re: [PATCH] inotify: Convert to using per-namespace limits
-Date: Mon, 10 Oct 2016 09:44:19 +0300
-Message-ID: <57FB38C3.9090803@kyup.com>
-References: <1475837161-4626-1-git-send-email-kernel@kyup.com>
-	<8737k86n7q.fsf@x220.int.ebiederm.org>
+From: Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
+Subject: Re: [PATCH 0/2 v2] userns: show current values of user namespace
+	counters
+Date: Mon, 10 Oct 2016 09:22:03 -0700
+Message-ID: <20161010162202.GA31628@outlook.office365.com>
+References: <1471291822-539-1-git-send-email-avagin@openvz.org>
+	<20161006175146.GA25935@outlook.office365.com>
+	<87wphlclwe.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <8737k86n7q.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <87wphlclwe.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,52 +22,97 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: jack-AlSwsSmVLrQ@public.gmane.org, avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, john-jueV0HHMeujJJrXXpGQQMAC/G2K4zDHf@public.gmane.org
+Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
-
-On 10/07/2016 09:14 PM, Eric W. Biederman wrote:
-> Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org> writes:
+On Thu, Oct 06, 2016 at 02:33:53PM -0500, Eric W. Biederman wrote:
+> Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org> writes:
 > 
->> This patchset converts inotify to using the newly introduced
->> per-userns sysctl infrastructure.
->>
->> Currently the inotify instances/watches are being accounted in the
->> user_struct structure. This means that in setups where multiple
->> users in unprivileged containers map to the same underlying
->> real user (i.e. pointing to the same user_struct) the inotify limits
->> are going to be shared as well, allowing one user(or application) to exhaust
->> all others limits.
->>
->> Fix this by switching the inotify sysctls to using the
->> per-namespace/per-user limits. This will allow the server admin to
->> set sensible global limits, which can further be tuned inside every
->> individual user namespace.
->>
->> Signed-off-by: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
->> ---
->> Hello Eric, 
->>
->> I saw you've finally sent your pull request for 4.9 and it 
->> includes your implementatino of the ucount infrastructure. So 
->> here is my respin of the inotify patches using that.
+> > Hello Eric,
+> >
+> > What do you think about this series? It should be useful to know current
+> > usage for user counters.
 > 
-> Thanks.  I will take a good hard look at this after -rc1 when things are
-> stable enough that I can start a new development branch.
-> 
-> I am a little concerned that the old sysctls have gone away.  If no one
-> cares it is fine, but if someone depends on them existing that may count
-> as an unnecessary userspace regression.  But otherwise skimming through
-> this code it looks good.
+> I am in favor of knowing the values.  Unless there is a good reason not
+> to we should export the values with a read-only sysctl.  I believe that
+> is what other similar limits do.
 
-So this indeed this is real issue and I meant to write something about
-it. Anyway, in order to preserve those sysctl what can be done is to
-hook them up with a custom sysctl handler taking the ns from the proc
-mount and the euid of current? I think this is a good approach, but
-let's wait and see if anyone will have objections to completely
-eliminating those sysctls.
-
+I want to have a place where I will be able to get limits for all
+users. I can't imagine how to do this with a sysctl. It will looks like
+multiline sysct-s, what doesn't look good. I will think. If you will
+have any ideas let me know. Thanks.
 
 > 
-[SNIP]
+> As for having per process knowledge I think that is probably something
+> we want to solve for these sysctls as well.
+> 
+> I don't think I saw anyone looking at this code from the perspective of
+> information leaks.  I think we need to ask that question, as similar
+> interfaces have been problematic from an information leak point of view.
+
+It's a good question.
+
+> 
+> In short I what you are trying to do here is valuable, I just want
+> to make certain we have a maintainable pattern when we export these.
+> 
+> Eric
+> 
+> >
+> > Thanks,
+> > Andrei
+> >
+> > On Mon, Aug 15, 2016 at 01:10:20PM -0700, Andrei Vagin wrote:
+> >> Recently Eric added user namespace counters.  User namespace counters is
+> >> a feature that allows to limit the number of various kernel objects a
+> >> user can create. These limits are set via /proc/sys/user/ sysctls on a
+> >> per user namespace basis and are applicable to all users in that
+> >> namespace.
+> >> 
+> >> User namespace counters are not in the upstream tree yet,
+> >> you can find them in Eric's tree:
+> >> https://git.kernel.org/cgit/linux/kernel/git/ebiederm/user-namespace.git/log/?h=for-testing
+> >> 
+> >> This patch adds /proc/<pid>/userns_counts files to provide current usage
+> >> of user namespace counters.
+> >> 
+> >>   > cat /proc/813/userns_counts
+> >>   user_namespaces          101000               1
+> >>   pid_namespaces           101000               1
+> >>   ipc_namespaces           101000               4
+> >>   net_namespaces           101000               2
+> >>   mnt_namespaces           101000               5
+> >>   mnt_namespaces           100000               1
+> >> 
+> >> The meanings of the columns are as follows, from left to right:
+> >> 
+> >>   Name         Object name
+> >>   UID          User ID
+> >>   Usage        Current usage
+> >> 
+> >> The full documentation is in the second patch.
+> >> 
+> >> v2: - describe this file in Documentation/filesystems/proc.txt
+> >>     - move and rename into /proc/<pid>/userns_counts
+> >> 
+> >> Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+> >> Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+> >> Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> >> Signed-off-by: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+> >> 
+> >> Andrei Vagin (1):
+> >>   kernel: show current values of user namespace counters
+> >> 
+> >> Kirill Kolyshkin (1):
+> >>   Documentation: describe /proc/<pid>/userns_counts
+> >> 
+> >>  Documentation/filesystems/proc.txt |  30 +++++++++++
+> >>  fs/proc/array.c                    |  55 ++++++++++++++++++++
+> >>  fs/proc/base.c                     |   1 +
+> >>  fs/proc/internal.h                 |   1 +
+> >>  include/linux/user_namespace.h     |   8 +++
+> >>  kernel/ucount.c                    | 102 +++++++++++++++++++++++++++++++++++++
+> >>  6 files changed, 197 insertions(+)
+> >> 
+> >> -- 
+> >> 2.5.5
