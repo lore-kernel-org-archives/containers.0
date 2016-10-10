@@ -1,18 +1,12 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH] inotify: Convert to using per-namespace limits
-Date: Mon, 10 Oct 2016 17:39:07 -0500
-Message-ID: <87r37n25is.fsf@x220.int.ebiederm.org>
-References: <1475837161-4626-1-git-send-email-kernel@kyup.com>
-	<8737k86n7q.fsf@x220.int.ebiederm.org> <57FB38C3.9090803@kyup.com>
-	<20161010164046.GG24081@quack2.suse.cz>
-	<87eg3o3p6l.fsf@x220.int.ebiederm.org>
-	<CAJFSNy7q39M_=fZ2nOzPEhLcQ3o6B6ELFE-jsbkRuxsst1G1JQ@mail.gmail.com>
+From: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: [PATCH] [v3] mount: dont execute propagate_umount() many times for
+	same mounts
+Date: Mon, 10 Oct 2016 16:26:05 -0700
+Message-ID: <1476141965-21429-1-git-send-email-avagin@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAJFSNy7q39M_=fZ2nOzPEhLcQ3o6B6ELFE-jsbkRuxsst1G1JQ-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Nikolay Borisov's message of "Tue, 11 Oct 2016 00:54:04 +0300")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,83 +16,189 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
-Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, John McCutchan <john-jueV0HHMeujJJrXXpGQQMAC/G2K4zDHf@public.gmane.org>
+To: Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org> writes:
+The reason of this optimization is that umount() can hold namespace_sem
+for a long time, this semaphore is global, so it affects all users.
+Recently Eric W. Biederman added a per mount namespace limit on the
+number of mounts. The default number of mounts allowed per mount
+namespace at 100,000. Currently this value is allowed to construct a tree
+which requires hours to be umounted.
 
-> On Mon, Oct 10, 2016 at 11:49 PM, Eric W. Biederman
-> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->> Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org> writes:
->>
->>> On Mon 10-10-16 09:44:19, Nikolay Borisov wrote:
->>>> On 10/07/2016 09:14 PM, Eric W. Biederman wrote:
->>>> > Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org> writes:
->>>> >
->>>> >> This patchset converts inotify to using the newly introduced
->>>> >> per-userns sysctl infrastructure.
->>>> >>
->>>> >> Currently the inotify instances/watches are being accounted in the
->>>> >> user_struct structure. This means that in setups where multiple
->>>> >> users in unprivileged containers map to the same underlying
->>>> >> real user (i.e. pointing to the same user_struct) the inotify limits
->>>> >> are going to be shared as well, allowing one user(or application) to exhaust
->>>> >> all others limits.
->>>> >>
->>>> >> Fix this by switching the inotify sysctls to using the
->>>> >> per-namespace/per-user limits. This will allow the server admin to
->>>> >> set sensible global limits, which can further be tuned inside every
->>>> >> individual user namespace.
->>>> >>
->>>> >> Signed-off-by: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
->>>> >> ---
->>>> >> Hello Eric,
->>>> >>
->>>> >> I saw you've finally sent your pull request for 4.9 and it
->>>> >> includes your implementatino of the ucount infrastructure. So
->>>> >> here is my respin of the inotify patches using that.
->>>> >
->>>> > Thanks.  I will take a good hard look at this after -rc1 when things are
->>>> > stable enough that I can start a new development branch.
->>>> >
->>>> > I am a little concerned that the old sysctls have gone away.  If no one
->>>> > cares it is fine, but if someone depends on them existing that may count
->>>> > as an unnecessary userspace regression.  But otherwise skimming through
->>>> > this code it looks good.
->>>>
->>>> So this indeed this is real issue and I meant to write something about
->>>> it. Anyway, in order to preserve those sysctl what can be done is to
->>>> hook them up with a custom sysctl handler taking the ns from the proc
->>>> mount and the euid of current? I think this is a good approach, but
->>>> let's wait and see if anyone will have objections to completely
->>>> eliminating those sysctls.
->>>
->>> Well, I believe just discarding those sysctls is not an option - I'm pretty
->>> sure there are scripts out there which tune these sysctls and those would
->>> stop working. IMO not acceptable regression.
->>
->> Nikolay there is your objection.
->>
->> So since it should be straight forward let's preserve the existing
->> sysctls.  Then this change doesn't need to prove there are no scripts
->> that tweak those sysctls.
->>
->> We are just talking changing the values in the initial user namespace so
->> it should be completely compatible and straight forward to implement
->> unless I am missing something.
->
-> Well I'm not so sure about this. Let's say those sysctls are going to
-> modify the ucount values in the init_user_ns. That's fine, however for
-> which particular user should they do this ? Should it be hardcoded for
-> kuid 0? or current_euid? I personally think they should be changing
-> the values for the current_euid.
+In a worse case the current complexity of umount_tree() is O(n^3).
+* Enumirate all mounts in a target tree (propagate_umount)
+* Enumirate mounts to find where these changes have to
+  be propagated (mark_umount_candidates)
+* Enumirate mounts to find a requered mount by parent and dentry
+  (__lookup_mnt_lat)
 
-Unless I have missed something the limits are per user namespace.  The
-counts are per user in that namespace.  Certainly that is what the rest
-of the ucount infrastructure is doing.
+The worse case is when all mounts from the tree live in the same shared
+group. In this case we have to enumirate all mounts on each step.
 
-At which point having the existing sysctls simply update the limit in
-the initial user namespace should result in no change.
+Here we can optimize the second step. We don't need to make it for
+mounts which we already met when we did this step for previous mounts.
+It reduces the complexity of umount_tree() to O(n^2).
 
-Eric
+Here is a script to generate such mount tree:
+$ cat run.sh
+mount -t tmpfs xxx /mnt
+mount --make-shared /mnt
+for i in `seq $1`; do
+	mount --bind /mnt `mktemp -d /mnt/test.XXXXXX`
+done
+time umount -l /mnt
+$ for i in `seq 10 16`; do echo $i; unshare -Urm bash ./run.sh $i; done
+
+Here is performance measurements with and without this patch:
+
+mounts | before	| after (sec)
+-----------------------------
+1024   |  0.07  |
+2048   |  0.23  |
+4096   |  1.0   |
+8912   |  8.7   | 0.11
+16384  | 75     | 0.26
+32768  |        | 0.75
+65536  |        | 3.0
+131072 |        | 13.7
+
+This patch is a second step to fix CVE-2016-6213.
+
+v2: fix mark_umount_candidates() to not change the existing behaviour.
+v3: mark umounted mounts in mark_umount_candidates() and
+__propagate_umount() separately, because they enumerate mounts in
+oposite directions.
+
+Cc: Eric W Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Signed-off-by: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+---
+ fs/mount.h     |  2 ++
+ fs/namespace.c | 19 ++++++++++++++++---
+ fs/pnode.c     | 48 ++++++++++++++++++++++++++++++++++++++++++++----
+ 3 files changed, 62 insertions(+), 7 deletions(-)
+
+diff --git a/fs/mount.h b/fs/mount.h
+index d2e25d7..741c8a7 100644
+--- a/fs/mount.h
++++ b/fs/mount.h
+@@ -90,6 +90,8 @@ static inline int is_mounted(struct vfsmount *mnt)
+ 
+ extern struct mount *__lookup_mnt(struct vfsmount *, struct dentry *);
+ extern struct mount *__lookup_mnt_last(struct vfsmount *, struct dentry *);
++extern struct mount *__lookup_mnt_cont(struct mount *,
++					struct vfsmount *, struct dentry *);
+ 
+ extern int __legitimize_mnt(struct vfsmount *, unsigned);
+ extern bool legitimize_mnt(struct vfsmount *, unsigned);
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 704a1fe..b454660 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -652,9 +652,7 @@ struct mount *__lookup_mnt_last(struct vfsmount *mnt, struct dentry *dentry)
+ 		goto out;
+ 	if (!(p->mnt.mnt_flags & MNT_UMOUNT))
+ 		res = p;
+-	hlist_for_each_entry_continue(p, mnt_hash) {
+-		if (&p->mnt_parent->mnt != mnt || p->mnt_mountpoint != dentry)
+-			break;
++	for (; p != NULL; p = __lookup_mnt_cont(p, mnt, dentry)) {
+ 		if (!(p->mnt.mnt_flags & MNT_UMOUNT))
+ 			res = p;
+ 	}
+@@ -662,6 +660,21 @@ struct mount *__lookup_mnt_last(struct vfsmount *mnt, struct dentry *dentry)
+ 	return res;
+ }
+ 
++struct mount *__lookup_mnt_cont(struct mount *p,
++				struct vfsmount *mnt, struct dentry *dentry)
++{
++	struct hlist_node *node = p->mnt_hash.next;
++
++	if (!node)
++		return NULL;
++
++	p = hlist_entry(node, struct mount, mnt_hash);
++	if (&p->mnt_parent->mnt != mnt || p->mnt_mountpoint != dentry)
++		return NULL;
++
++	return p;
++}
++
+ /*
+  * lookup_mnt - Return the first child mount mounted at path
+  *
+diff --git a/fs/pnode.c b/fs/pnode.c
+index 234a9ac..b28f4fd 100644
+--- a/fs/pnode.c
++++ b/fs/pnode.c
+@@ -399,10 +399,28 @@ static void mark_umount_candidates(struct mount *mnt)
+ 
+ 	BUG_ON(parent == mnt);
+ 
++	if (IS_MNT_MARKED(mnt))
++		return;
++
++	SET_MNT_MARK(mnt);
++
+ 	for (m = propagation_next(parent, parent); m;
+ 			m = propagation_next(m, parent)) {
+-		struct mount *child = __lookup_mnt_last(&m->mnt,
+-						mnt->mnt_mountpoint);
++		struct mount *child = NULL, *p;
++
++		for (p = __lookup_mnt(&m->mnt, mnt->mnt_mountpoint); p;
++		     p = __lookup_mnt_cont(p, &m->mnt, mnt->mnt_mountpoint)) {
++			/*
++			 * Do this work only once for mounts from
++			 * the same propagation chain.
++			 */
++			if (p->mnt.mnt_flags & MNT_UMOUNT) {
++				SET_MNT_MARK(p);
++				continue;
++			}
++			child = p;
++		}
++
+ 		if (child && (!IS_MNT_LOCKED(child) || IS_MNT_MARKED(m))) {
+ 			SET_MNT_MARK(child);
+ 		}
+@@ -420,11 +438,33 @@ static void __propagate_umount(struct mount *mnt)
+ 
+ 	BUG_ON(parent == mnt);
+ 
++	/*
++	 * All mounts has been marked in mark_umount_candidates(), so
++	 * here the absence of the mark means that it has been handled
++	 * already.
++	 */
++	if (!IS_MNT_MARKED(mnt))
++		return;
++
++	CLEAR_MNT_MARK(mnt);
++
+ 	for (m = propagation_next(parent, parent); m;
+ 			m = propagation_next(m, parent)) {
+ 
+-		struct mount *child = __lookup_mnt_last(&m->mnt,
+-						mnt->mnt_mountpoint);
++		struct mount *child = NULL, *p;
++
++		for (p = __lookup_mnt(&m->mnt, mnt->mnt_mountpoint); p;
++		     p = __lookup_mnt_cont(p, &m->mnt, mnt->mnt_mountpoint)) {
++			/*
++			 * Do this work only once for mounts from
++			 * the same propagation chain.
++			 */
++			if (p->mnt.mnt_flags & MNT_UMOUNT) {
++				CLEAR_MNT_MARK(p);
++				continue;
++			}
++			child = p;
++		}
+ 		/*
+ 		 * umount the child only if the child has no children
+ 		 * and the child is marked safe to unmount.
+-- 
+2.5.5
