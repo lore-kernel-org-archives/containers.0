@@ -1,18 +1,16 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 0/2 v2] userns: show current values of user namespace
-	counters
-Date: Mon, 10 Oct 2016 15:44:09 -0500
-Message-ID: <871szo53za.fsf@x220.int.ebiederm.org>
-References: <1471291822-539-1-git-send-email-avagin@openvz.org>
-	<20161006175146.GA25935@outlook.office365.com>
-	<87wphlclwe.fsf@x220.int.ebiederm.org>
-	<20161010162202.GA31628@outlook.office365.com>
+Subject: Re: [PATCH] inotify: Convert to using per-namespace limits
+Date: Mon, 10 Oct 2016 15:49:06 -0500
+Message-ID: <87eg3o3p6l.fsf@x220.int.ebiederm.org>
+References: <1475837161-4626-1-git-send-email-kernel@kyup.com>
+	<8737k86n7q.fsf@x220.int.ebiederm.org> <57FB38C3.9090803@kyup.com>
+	<20161010164046.GG24081@quack2.suse.cz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20161010162202.GA31628-1ViLX0X+lBJGNQ1M2rI3KwRV3xvJKrda@public.gmane.org> (Andrei Vagin's
-	message of "Mon, 10 Oct 2016 09:22:03 -0700")
+In-Reply-To: <20161010164046.GG24081-4I4JzKEfoa/jFM9bn6wA6Q@public.gmane.org> (Jan Kara's message of
+	"Mon, 10 Oct 2016 18:40:46 +0200")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,55 +20,66 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
-Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
+Cc: avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org, john-jueV0HHMeujJJrXXpGQQMAC/G2K4zDHf@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org> writes:
+Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org> writes:
 
-> On Thu, Oct 06, 2016 at 02:33:53PM -0500, Eric W. Biederman wrote:
->> Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org> writes:
+> On Mon 10-10-16 09:44:19, Nikolay Borisov wrote:
+>> On 10/07/2016 09:14 PM, Eric W. Biederman wrote:
+>> > Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org> writes:
+>> > 
+>> >> This patchset converts inotify to using the newly introduced
+>> >> per-userns sysctl infrastructure.
+>> >>
+>> >> Currently the inotify instances/watches are being accounted in the
+>> >> user_struct structure. This means that in setups where multiple
+>> >> users in unprivileged containers map to the same underlying
+>> >> real user (i.e. pointing to the same user_struct) the inotify limits
+>> >> are going to be shared as well, allowing one user(or application) to exhaust
+>> >> all others limits.
+>> >>
+>> >> Fix this by switching the inotify sysctls to using the
+>> >> per-namespace/per-user limits. This will allow the server admin to
+>> >> set sensible global limits, which can further be tuned inside every
+>> >> individual user namespace.
+>> >>
+>> >> Signed-off-by: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+>> >> ---
+>> >> Hello Eric, 
+>> >>
+>> >> I saw you've finally sent your pull request for 4.9 and it 
+>> >> includes your implementatino of the ucount infrastructure. So 
+>> >> here is my respin of the inotify patches using that.
+>> > 
+>> > Thanks.  I will take a good hard look at this after -rc1 when things are
+>> > stable enough that I can start a new development branch.
+>> > 
+>> > I am a little concerned that the old sysctls have gone away.  If no one
+>> > cares it is fine, but if someone depends on them existing that may count
+>> > as an unnecessary userspace regression.  But otherwise skimming through
+>> > this code it looks good.
 >> 
->> > Hello Eric,
->> >
->> > What do you think about this series? It should be useful to know current
->> > usage for user counters.
->> 
->> I am in favor of knowing the values.  Unless there is a good reason not
->> to we should export the values with a read-only sysctl.  I believe that
->> is what other similar limits do.
+>> So this indeed this is real issue and I meant to write something about
+>> it. Anyway, in order to preserve those sysctl what can be done is to
+>> hook them up with a custom sysctl handler taking the ns from the proc
+>> mount and the euid of current? I think this is a good approach, but
+>> let's wait and see if anyone will have objections to completely
+>> eliminating those sysctls.
 >
-> I want to have a place where I will be able to get limits for all
-> users. I can't imagine how to do this with a sysctl. It will looks like
-> multiline sysct-s, what doesn't look good. I will think. If you will
-> have any ideas let me know. Thanks.
+> Well, I believe just discarding those sysctls is not an option - I'm pretty
+> sure there are scripts out there which tune these sysctls and those would
+> stop working. IMO not acceptable regression.
 
-Something that has been on my wish list for a while has been to modify
-/proc/sys/... to also show up under /proc/<pid>/sys/... for the
-non-global values.  Now it might make sense to show these things in an
-alternate filesystem.
+Nikolay there is your objection.
 
-At the same time I am a little leary of the desire.  Changing these
-limits and watching them in a per-process / per-user sense is fine.
-However their fundamental purpose is to be set and forget limits and
-that only rarely should anyone need to mess with.  Which makes the
-primary purpose of looking at them debugging and verifying that the
-limits are set to reasonable values.
+So since it should be straight forward let's preserve the existing
+sysctls.  Then this change doesn't need to prove there are no scripts
+that tweak those sysctls.
 
-Active management if someone wants to go there is possible but it will
-never be the primary purpose of these limits.
-
->> As for having per process knowledge I think that is probably something
->> we want to solve for these sysctls as well.
->> 
->> I don't think I saw anyone looking at this code from the perspective of
->> information leaks.  I think we need to ask that question, as similar
->> interfaces have been problematic from an information leak point of view.
->
-> It's a good question.
-
-I expect that we don't actually care.  The kernel tends to leak a lot of
-this kind of information.  But I figure we should at least be able to
-say we thought about it and we don't care.
+We are just talking changing the values in the initial user namespace so
+it should be completely compatible and straight forward to implement
+unless I am missing something.
 
 Eric
