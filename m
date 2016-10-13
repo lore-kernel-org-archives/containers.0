@@ -1,15 +1,15 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH] net: limit a number of namespaces which can be cleaned up
-	concurrently
-Date: Thu, 13 Oct 2016 10:49:38 -0500
-Message-ID: <871szk9rl9.fsf@x220.int.ebiederm.org>
-References: <1476293579-28582-1-git-send-email-avagin@openvz.org>
+Subject: Re: [PATCH] [v3] mount: dont execute propagate_umount() many times
+	for same mounts
+Date: Thu, 13 Oct 2016 12:14:55 -0500
+Message-ID: <877f9c6ui8.fsf__19428.090847987$1476391307$gmane$org@x220.int.ebiederm.org>
+References: <1476141965-21429-1-git-send-email-avagin@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1476293579-28582-1-git-send-email-avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> (Andrei
-	Vagin's message of "Wed, 12 Oct 2016 10:32:59 -0700")
+In-Reply-To: <1476141965-21429-1-git-send-email-avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> (Andrei
+	Vagin's message of "Mon, 10 Oct 2016 16:26:05 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,82 +20,130 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
 
-> From: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+> The reason of this optimization is that umount() can hold namespace_sem
+> for a long time, this semaphore is global, so it affects all users.
+> Recently Eric W. Biederman added a per mount namespace limit on the
+> number of mounts. The default number of mounts allowed per mount
+> namespace at 100,000. Currently this value is allowed to construct a tree
+> which requires hours to be umounted.
 >
-> The operation of destroying netns is heavy and it is executed under
-> net_mutex. If many namespaces are destroyed concurrently, net_mutex can
-> be locked for a long time. It is impossible to create a new netns during
-> this period of time.
-
-This may be the right approach or at least the right approach to bound
-net_mutex hold times but I have to take exception to calling network
-namespace cleanup heavy.
-
-The only particularly time consuming operation I have ever found are calls to
-synchronize_rcu/sycrhonize_sched/synchronize_net.
-
-Ideally we can search those out calls in the network namespace cleanup
-operations and figuroue out how to eliminate those operations or how to
-stack them.
-
-> In our days when userns allows to create network namespaces to
-> unprivilaged users, it may be a real problem.
-
-Sorting out syncrhonize_rcu calls will be a much larger
-and much more effective improvement than your patch here.
-
-> On my laptop (fedora 24, i5-5200U, 12GB) 1000 namespaces requires about
-> 300MB of RAM and are being destroyed for 8 seconds.
+> In a worse case the current complexity of umount_tree() is O(n^3).
+> * Enumirate all mounts in a target tree (propagate_umount)
+> * Enumirate mounts to find where these changes have to
+>   be propagated (mark_umount_candidates)
+> * Enumirate mounts to find a requered mount by parent and dentry
+>   (__lookup_mnt_lat)
 >
-> In this patch, a number of namespaces which can be cleaned up
-> concurrently is limited by 32. net_mutex is released after handling each
-> portion of net namespaces and then it is locked again to handle the next
-> one. It allows other users to lock it without waiting for a long
-> time.
+> The worse case is when all mounts from the tree live in the same shared
+> group. In this case we have to enumirate all mounts on each step.
 >
-> I am not sure whether we need to add a sysctl to costomize this limit.
-> Let me know if you think it's required.
+> Here we can optimize the second step. We don't need to make it for
+> mounts which we already met when we did this step for previous mounts.
+> It reduces the complexity of umount_tree() to O(n^2).
 
-We definitely don't need an extra sysctl.
+To O(n) not O(n^2).
+
+A hash table lookup (aka __lookup_mnt() and friends) is O(1) or the hash
+table is malfunctioning.  Please don't call 
+
+Arguably we are getting into sizes where
+the mount hash table fills up and is on the edge of malfunctioning, but
+that is not particularly relevant to this case.
+
+What your patch is aiming to do is to take a O(n^2) algorithm and
+make it O(n).  That is very much worth doing.
+
+However your patch confuses two separate issues.  Marking mounts that
+may be unmounted.  Marking pieces of the propagation tree that have
+already been traversed.
+
+I do not see anything requiring propagation trees to intersect at the
+set of mounts that are unmounted in umount_tree before propagate_umount
+is called.  Which means there are topologies where we can and should do
+better than your patch.
+
+I am also bothered that your patch changes how we look up the mount
+mounted on a mount point  (aka playing with __lookup_mnt_last).  There
+is no reason to do that to solve the problem, and I think it obscures
+what is actually going on.
+
+I am going to see if I can rework your basic concept with explicit
+marking of the propagation tree.  In the meantime for people
+who are want to see what your patch is doing the version below
+essentially does the same thing, without the extra essentially
+meaningless loop.
 
 Eric
 
 
-> Cc: "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-> Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> Signed-off-by: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-> ---
->  net/core/net_namespace.c | 12 +++++++++++-
->  1 file changed, 11 insertions(+), 1 deletion(-)
->
-> diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
-> index 989434f..33dd3b7 100644
-> --- a/net/core/net_namespace.c
-> +++ b/net/core/net_namespace.c
-> @@ -406,10 +406,20 @@ static void cleanup_net(struct work_struct *work)
->  	struct net *net, *tmp;
->  	struct list_head net_kill_list;
->  	LIST_HEAD(net_exit_list);
-> +	int i = 0;
->  
->  	/* Atomically snapshot the list of namespaces to cleanup */
->  	spin_lock_irq(&cleanup_list_lock);
-> -	list_replace_init(&cleanup_list, &net_kill_list);
-> +	list_for_each_entry_safe(net, tmp, &cleanup_list, cleanup_list)
-> +		if (++i == 32)
-> +			break;
-> +	if (i == 32) {
-> +		list_cut_position(&net_kill_list,
-> +				  &cleanup_list, &net->cleanup_list);
-> +		queue_work(netns_wq, work);
-> +	} else {
-> +		list_replace_init(&cleanup_list, &net_kill_list);
-> +	}
->  	spin_unlock_irq(&cleanup_list_lock);
->  
->  	mutex_lock(&net_mutex);
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 8183fba9ab4d..33a76ee1b76b 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -650,13 +650,11 @@ struct mount *__lookup_mnt_last(struct vfsmount *mnt, struct dentry *dentry)
+ 	p = __lookup_mnt(mnt, dentry);
+ 	if (!p)
+ 		goto out;
+-	if (!(p->mnt.mnt_flags & MNT_UMOUNT))
+-		res = p;
++	res = p;
+ 	hlist_for_each_entry_continue(p, mnt_hash) {
+ 		if (&p->mnt_parent->mnt != mnt || p->mnt_mountpoint != dentry)
+ 			break;
+-		if (!(p->mnt.mnt_flags & MNT_UMOUNT))
+-			res = p;
++		res = p;
+ 	}
+ out:
+ 	return res;
+diff --git a/fs/pnode.c b/fs/pnode.c
+index 234a9ac49958..ade5e7d8308c 100644
+--- a/fs/pnode.c
++++ b/fs/pnode.c
+@@ -399,11 +399,18 @@ static void mark_umount_candidates(struct mount *mnt)
+ 
+ 	BUG_ON(parent == mnt);
+ 
++	if (IS_MNT_MARKED(mnt))
++		return;
++
++	SET_MNT_MARK(mnt);
++
+ 	for (m = propagation_next(parent, parent); m;
+ 			m = propagation_next(m, parent)) {
+ 		struct mount *child = __lookup_mnt_last(&m->mnt,
+ 						mnt->mnt_mountpoint);
+-		if (child && (!IS_MNT_LOCKED(child) || IS_MNT_MARKED(m))) {
++		if (child && ((child->mnt.mnt_flags & MNT_UMOUNT) ||
++			      !IS_MNT_LOCKED(child) ||
++			      IS_MNT_MARKED(m))) {
+ 			SET_MNT_MARK(child);
+ 		}
+ 	}
+@@ -420,6 +427,11 @@ static void __propagate_umount(struct mount *mnt)
+ 
+ 	BUG_ON(parent == mnt);
+ 
++	if (!IS_MNT_MARKED(mnt))
++		return;
++
++	CLEAR_MNT_MARK(mnt);
++
+ 	for (m = propagation_next(parent, parent); m;
+ 			m = propagation_next(m, parent)) {
+ 
+@@ -432,7 +444,8 @@ static void __propagate_umount(struct mount *mnt)
+ 		if (!child || !IS_MNT_MARKED(child))
+ 			continue;
+ 		CLEAR_MNT_MARK(child);
+-		if (list_empty(&child->mnt_mounts)) {
++		if (!(child->mnt.mnt_flags & MNT_UMOUNT) &&
++		    list_empty(&child->mnt_mounts)) {
+ 			list_del_init(&child->mnt_child);
+ 			child->mnt.mnt_flags |= MNT_UMOUNT;
+ 			list_move_tail(&child->mnt_list, &mnt->mnt_list);
