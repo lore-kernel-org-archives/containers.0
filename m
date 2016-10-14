@@ -1,19 +1,17 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC][PATCH] mount: In mark_umount_candidates and
-	__propogate_umount visit each mount once
-Date: Thu, 13 Oct 2016 21:45:00 -0500
-Message-ID: <87wphb4pjn.fsf@x220.int.ebiederm.org>
-References: <1476141965-21429-1-git-send-email-avagin@openvz.org>
-	<877f9c6ui8.fsf@x220.int.ebiederm.org>
-	<87pon458l1.fsf_-_@x220.int.ebiederm.org>
-	<20161013214650.GB19836@outlook.office365.com>
-	<CANaxB-xPkgdyeg0z6TvExMfyy4uOC+Nu4Q99WpCscNKMWz8VPg@mail.gmail.com>
+Subject: Re: [PATCH] net: limit a number of namespaces which can be cleaned up
+	concurrently
+Date: Thu, 13 Oct 2016 22:06:28 -0500
+Message-ID: <87k2db39zf.fsf__6914.02237066558$1476414531$gmane$org@x220.int.ebiederm.org>
+References: <1476293579-28582-1-git-send-email-avagin@openvz.org>
+	<871szk9rl9.fsf@x220.int.ebiederm.org>
+	<20161013204405.GA19836@outlook.office365.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CANaxB-xPkgdyeg0z6TvExMfyy4uOC+Nu4Q99WpCscNKMWz8VPg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Andrey Vagin's message of "Thu, 13 Oct 2016 19:31:22 -0700")
+In-Reply-To: <20161013204405.GA19836-1ViLX0X+lBJGNQ1M2rI3KwRV3xvJKrda@public.gmane.org> (Andrei Vagin's
+	message of "Thu, 13 Oct 2016 13:44:06 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,91 +21,142 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
-
-> On Thu, Oct 13, 2016 at 2:46 PM, Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org> wrote:
->> On Thu, Oct 13, 2016 at 02:53:46PM -0500, Eric W. Biederman wrote:
->>>
->>> Adrei Vagin pointed out that time to executue propagate_umount can go
->>> non-linear (and take a ludicrious amount of time) when the mount
->>> propogation trees of the mounts to be unmunted by a lazy unmount
->>> overlap.
->>>
->>> Solve this in the most straight forward way possible, by adding a new
->>> mount flag to mark parts of the mount propagation tree that have been
->>> visited, and use that mark to skip parts of the mount propagation tree
->>> that have already been visited during an unmount.  This guarantees
->>> that each mountpoint in the possibly overlapping mount propagation
->>> trees will be visited exactly once.
->>>
->>> Add the functions propagation_visit_next and propagation_revisit_next
->>> to coordinate setting and clearling the visited mount mark.
->>>
->>> Here is a script to generate such mount tree:
->>> $ cat run.sh
->>> mount -t tmpfs test-mount /mnt
->>> mount --make-shared /mnt
->>> for i in `seq $1`; do
->>>         mkdir /mnt/test.$i
->>>         mount --bind /mnt /mnt/test.$i
->>> done
->>> cat /proc/mounts | grep test-mount | wc -l
->>> time umount -l /mnt
->>> $ for i in `seq 10 16`; do echo $i; unshare -Urm bash ./run.sh $i; done
->>>
->>> Here are the performance numbers with and without the patch:
->>>
->>> mounts | before | after (real sec)
->>> -----------------------------
->>>   1024 |  0.071 | 0.024
->>>   2048 |  0.184 | 0.030
->>>   4096 |  0.604 | 0.040
->>>   8912 |  4.471 | 0.043
->>>  16384 | 34.826 | 0.082
->>>  32768 |        | 0.151
->>>  65536 |        | 0.289
->>> 131072 |        | 0.659
->>>
->>> Andrei Vagin fixing this performance problem is part of the
->>> work to fix CVE-2016-6213.
->>>
->>> Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
->>> Reported-by: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
->>> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
->>> ---
->>>
->>> Andrei can you take a look at this patch and see if you can see any
->>> problems.  My limited testing suggests this approach does a much better
->>> job of solving the problem you were seeing.  With the time looking
->>> almost linear in the number of mounts now.
->>
->> I read this patch and I like the idea.
->>
->> Then I run my tests and one of them doesn't work with this patch.
->> I haven't found a reason yet.
->
->>> +     for (m = propagation_visit_next(parent, parent); m;
->>> +                     m = propagation_visit_next(m, parent)) {
->>>               struct mount *child = __lookup_mnt_last(&m->mnt,
->>>                                               mnt->mnt_mountpoint);
->
-> The reason is that this loop is called for different "mnt", but
-> it is executed only once with this optimization.
->
-> So I think the idea to mark parent will not work, because one parent
-> can have a few children which have to be umounted.
-
-Good catch.  So what needs to be marked is the parent mount and
-mountpoint combination.  Which is effectively the child mount.
-
-I still think replacing the propagation_next and fixing the propagation
-walk is the way to go.   But it sounds like to make things work the
-__lookup_mnt_last needs to be moved into the propagation walk function.
-
-That doesn't feel to hard.  I will have to see what the code looks like.
-
-Eric
+QW5kcmVpIFZhZ2luIDxhdmFnaW5AdmlydHVvenpvLmNvbT4gd3JpdGVzOgoKPiBPbiBUaHUsIE9j
+dCAxMywgMjAxNiBhdCAxMDo0OTozOEFNIC0wNTAwLCBFcmljIFcuIEJpZWRlcm1hbiB3cm90ZToK
+Pj4gQW5kcmVpIFZhZ2luIDxhdmFnaW5Ab3BlbnZ6Lm9yZz4gd3JpdGVzOgo+PiAKPj4gPiBGcm9t
+OiBBbmRyZXkgVmFnaW4gPGF2YWdpbkBvcGVudnoub3JnPgo+PiA+Cj4+ID4gVGhlIG9wZXJhdGlv
+biBvZiBkZXN0cm95aW5nIG5ldG5zIGlzIGhlYXZ5IGFuZCBpdCBpcyBleGVjdXRlZCB1bmRlcgo+
+PiA+IG5ldF9tdXRleC4gSWYgbWFueSBuYW1lc3BhY2VzIGFyZSBkZXN0cm95ZWQgY29uY3VycmVu
+dGx5LCBuZXRfbXV0ZXggY2FuCj4+ID4gYmUgbG9ja2VkIGZvciBhIGxvbmcgdGltZS4gSXQgaXMg
+aW1wb3NzaWJsZSB0byBjcmVhdGUgYSBuZXcgbmV0bnMgZHVyaW5nCj4+ID4gdGhpcyBwZXJpb2Qg
+b2YgdGltZS4KPj4gCj4+IFRoaXMgbWF5IGJlIHRoZSByaWdodCBhcHByb2FjaCBvciBhdCBsZWFz
+dCB0aGUgcmlnaHQgYXBwcm9hY2ggdG8gYm91bmQKPj4gbmV0X211dGV4IGhvbGQgdGltZXMgYnV0
+IEkgaGF2ZSB0byB0YWtlIGV4Y2VwdGlvbiB0byBjYWxsaW5nIG5ldHdvcmsKPj4gbmFtZXNwYWNl
+IGNsZWFudXAgaGVhdnkuCj4+IAo+PiBUaGUgb25seSBwYXJ0aWN1bGFybHkgdGltZSBjb25zdW1p
+bmcgb3BlcmF0aW9uIEkgaGF2ZSBldmVyIGZvdW5kIGFyZSBjYWxscyB0bwo+PiBzeW5jaHJvbml6
+ZV9yY3Uvc3ljcmhvbml6ZV9zY2hlZC9zeW5jaHJvbml6ZV9uZXQuCj4KPiBJIGJvb3RlZCB0aGUg
+a2VybmVsIHdpdGggbWF4Y3B1cz0xLCBpbiB0aGlzIGNhc2UgdGhlc2UgZnVuY3Rpb25zIHdvcmsK
+PiB2ZXJ5IGZhc3QgYW5kIHRoZSBwcm9ibGVtIGlzIHRoZXJlIGFueSB3YXkuCj4KPiBBY2NvZGlu
+ZyB0byBwZXJmLCB3ZSBzcGVuZCBhIGxvdCBvZiB0aW1lIGluIGtvYmplY3RfdWV2ZW50Ogo+Cj4g
+LSAgIDk5Ljk2JSAgICAgMC4wMCUgIGt3b3JrZXIvdTQ6MSAgICAgW2tlcm5lbC5rYWxsc3ltc10g
+IFtrXSB1bnJlZ2lzdGVyX25ldGRldmljZV9tYW55ICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIOKWkgo+ICAgIC0gdW5y
+ZWdpc3Rlcl9uZXRkZXZpY2VfbWFueSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICDil4YKPiAgICAgICAtIDk5Ljk1JSBy
+b2xsYmFja19yZWdpc3RlcmVkX21hbnkgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAg4paSCj4gICAgICAgICAgLSA5OS42NCUgbmV0ZGV2
+X3VucmVnaXN0ZXJfa29iamVjdCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgIOKWkgo+ICAgICAgICAgICAgIC0gMzMuNDMlIG5ldGRldl9xdWV1
+ZV91cGRhdGVfa29iamVjdHMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICDilpIKPiAgICAgICAgICAgICAgICAtIDMzLjQwJSBrb2JqZWN0X3B1dCAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAg4paSCj4gICAgICAgICAgICAgICAgICAgLSBrb2JqZWN0X3JlbGVhc2UgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIOKWkgo+
+ICAgICAgICAgICAgICAgICAgICAgICsgMzMuMzclIGtvYmplY3RfdWV2ZW50ICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICDilpIKPiAgICAgICAg
+ICAgICAgICAgICAgICArIDAuMDMlIGtvYmplY3RfZGVsICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg4paSCj4gICAgICAgICAgICAgICAg
+KyAwLjAzJSBzeXNmc19yZW1vdmVfZ3JvdXAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgIOKWkgo+ICAgICAgICAgICAgIC0gMzMuMTMlIG5l
+dF9yeF9xdWV1ZV91cGRhdGVfa29iamVjdHMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICDilpIKPiAgICAgICAgICAgICAgICAtIGtvYmplY3RfcHV0ICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAg4paSCj4gICAgICAgICAgICAgICAgLSBrb2JqZWN0X3JlbGVhc2UgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgIOKWkgo+ICAgICAgICAgICAgICAgICAgICsgMzMuMTElIGtvYmplY3RfdWV2ZW50ICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICDilpIK
+PiAgICAgICAgICAgICAgICAgICArIDAuMDElIGtvYmplY3RfZGVsICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg4paSCj4gICAgICAg
+ICAgICAgICAgICAgICAwLjAwJSByeF9xdWV1ZV9yZWxlYXNlICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIOKWkgo+ICAgICAgICAgICAgIC0g
+MzMuMDglIGRldmljZV9kZWwgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICDilpIKPiAgICAgICAgICAgICAgICArIDMyLjc1
+JSBrb2JqZWN0X3VldmVudCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAg4paSCj4gICAgICAgICAgICAgICAgKyAwLjE3JSBkZXZpY2Vf
+cmVtb3ZlX2F0dHJzICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgIOKWkgo+ICAgICAgICAgICAgICAgICsgMC4wNyUgZHBtX3N5c2ZzX3JlbW92
+ZSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICDilpIKPiAgICAgICAgICAgICAgICArIDAuMDQlIGRldmljZV9yZW1vdmVfY2xhc3Nfc3lt
+bGlua3MgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg4paS
+Cj4gICAgICAgICAgICAgICAgKyAwLjAxJSBrb2JqZWN0X2RlbCAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIOKWkgo+ICAgICAg
+ICAgICAgICAgICsgMC4wMSUgZGV2aWNlX3BtX3JlbW92ZSAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICDilpIKPiAgICAgICAgICAgICAg
+ICArIDAuMDElIHN5c2ZzX3JlbW92ZV9maWxlX25zICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg4paSCj4gICAgICAgICAgICAgICAgKyAwLjAw
+JSBrbGlzdF9kZWwgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgIOKWkgo+ICAgICAgICAgICAgICAgICsgMC4wMCUgZHJpdmVy
+X2RlZmVycmVkX3Byb2JlX2RlbCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICDilpIKPiAgICAgICAgICAgICAgICAgIDAuMDAlIGNsZWFudXBfZ2x1ZV9k
+aXIuaXNyYS4xNC5wYXJ0LjE1ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAg4paSCj4gICAgICAgICAgICAgICAgICAwLjAwJSB0b19hY3BpX2RldmljZV9ub2RlICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIOKW
+kgo+ICAgICAgICAgICAgICAgICAgMC4wMCUgc3lzZnNfcmVtb3ZlX2dyb3VwICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICDilpIKPiAgICAg
+ICAgICAgICAgIDAuMDAlIGtsaXN0X2RlbCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg4paSCj4gICAgICAgICAgICAg
+ICAwLjAwJSBkZXZpY2VfcmVtb3ZlX2F0dHJzICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIOKWkgo+ICAgICAgICAgICsgMC4yNiUgY2Fs
+bF9uZXRkZXZpY2Vfbm90aWZpZXJzX2luZm8gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICDilpIKPiAgICAgICAgICArIDAuMDQlIHJ0bXNnX2lmaW5m
+b19idWlsZF9za2IgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAg4paSCj4gICAgICAgICAgKyAwLjAxJSBydG1zZ19pZmluZm9fc2VuZCAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgIOKWkgo+ICAgICAgICAgMC4wMCUgZGV2X3VjX2ZsdXNoICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICDi
+lpIKPiAgICAgICAgIDAuMDAlIG5ldGlmX3Jlc2V0X3hwc19xdWV1ZXNfZ3QKPgo+IFNvbWVvbmUg
+Y2FuIGxpc3RlbiB0aGVzZSB1ZXZlbnRzLCBzbyB3ZSBjYW4ndCBzdG9wIHNlbmRpbmcgdGhlbSB3
+aXRob3V0Cj4gYnJlYWtpbmcgYmFja3dhcmQgY29tcGF0aWJpbGl0eS4gV2UgY2FuIHRyeSB0byBv
+cHRpbWl6ZQo+IGtvYmplY3RfdWV2ZW50Li4uCgpPaCB0aGF0IGlzIGEgc3VycHJpc2UuICBXZSBj
+YW4gZGVmaW5pdGVseSBza2lwIGdlbmVuZXJhdGluZyB1ZXZlbnRzIGZvcgpuZXR3b3JrIG5hbWVz
+cGFjZXMgdGhhdCBhcmUgZXhpdGluZyBiZWNhdXNlIGJ5IGRlZmluaXRpb24gbm8gb25lIGNhbiBz
+ZWUKdGhvc2UgbmV0d29yayBuYW1lc3BhY2VzLiAgSWYgYSBzb2NrZXQgZXhpc3RlZCB0aGF0IGNv
+dWxkIHNlZSB0aG9zZQp1ZXZlbnRzIGl0IHdvdWxkIGhvbGQgYSByZWZlcmVuY2UgdG8gdGhlIG5l
+dHdvcmsgbmFtZXNwYWNlIGFuZCBhcyBzdWNoCnRoZSBuZXR3b3JrIG5hbWVzcGFjZSBjb3VsZCBu
+b3QgZXhpdC4KClRoYXQgc291bmRzIGxpa2UgaXQgaXMgd29ydGggaW52ZXN0aWdhdGluZyBhIGxp
+dHRsZSBtb3JlIGRlZXBseS4KCkkgYW0gc3VycHJpc2VkIHRoYXQgYWxsb2NhdGlvbiBhbmQgZnJl
+ZWluZyBpcyBzbyBoZWF2eSB3ZSBhcmUgc3BlbmRpbmcKbG90cyBvZiB0aW1lIGRvaW5nIHRoYXQu
+ICBPbiB0aGUgb3RoZXIgaGFuZCBrb2JqX2JjYXN0X2ZpbHRlciBpcyB2ZXJ5CmR1bWIgYW5kIHZl
+cnkgbGF0ZSBzbyBJIGV4cGVjdCBzb21ldGhpbmcgY2FuIGJlIG1vdmVkIGVhcmxpZXIgYW5kIG1h
+a2UKdGhhdCBjb2RlIGNoZWFwZXIgd2l0aCB0aGUgdGluaWVzdCBiaXQgb2Ygd29yay4KCkVyaWMK
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVy
+cyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRw
+czovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
