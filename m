@@ -1,14 +1,15 @@
-From: Cao Shufeng <caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH v3.1 1/3] Make call_usermodehelper_exec possible to set pid
-	namespace
-Date: Tue, 18 Oct 2016 18:06:35 +0800
-Message-ID: <1476785197-5048-2-git-send-email-caosf.fnst@cn.fujitsu.com>
-References: <1476785197-5048-1-git-send-email-caosf.fnst@cn.fujitsu.com>
+From: Michal Hocko <mhocko-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Subject: Re: [REVIEW][PATCH] mm: Add a user_ns owner to mm_struct and fix
+	ptrace_may_access
+Date: Tue, 18 Oct 2016 15:50:32 +0200
+Message-ID: <20161018135031.GB13117__27349.1907668815$1476798653$gmane$org@dhcp22.suse.cz>
+References: <87twcbq696.fsf@x220.int.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1476785197-5048-1-git-send-email-caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <87twcbq696.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,308 +19,176 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, mashimiao.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+On Mon 17-10-16 11:39:49, Eric W. Biederman wrote:
+> 
+> During exec dumpable is cleared if the file that is being executed is
+> not readable by the user executing the file.  A bug in
+> ptrace_may_access allows reading the file if the executable happens to
+> enter into a subordinate user namespace (aka clone(CLONE_NEWUSER),
+> unshare(CLONE_NEWUSER), or setns(fd, CLONE_NEWUSER).
+> 
+> This problem is fixed with only necessary userspace breakage by adding
+> a user namespace owner to mm_struct, captured at the time of exec,
+> so it is clear in which user namespace CAP_SYS_PTRACE must be present
+> in to be able to safely give read permission to the executable.
+> 
+> The function ptrace_may_access is modified to verify that the ptracer
+> has CAP_SYS_ADMIN in task->mm->user_ns instead of task->cred->user_ns.
+> This ensures that if the task changes it's cred into a subordinate
+> user namespace it does not become ptraceable.
 
-Current call_usermodehelper_exec() can not set pid namespace for
-the executed program, because we need addition fork to make pid
-namespace active.
+I haven't studied your patch too deeply but one thing that immediately 
+raised a red flag was that mm might be shared between processes (aka
+thread groups). What prevents those two to sit in different user
+namespaces?
 
-This patch add above function for call_usermodehelper_exec().
-When init_intermediate callback return -EAGAIN, the usermodehelper
-will fork again to make pid namespace active, and run program
-in the child process.
+I am primarily asking because this generated a lot of headache for the
+memcg handling as those processes might sit in different cgroups while
+there is only one correct memcg for them which can disagree with the
+cgroup associated with one of the processes.
 
-This function is helpful for coredump to run pipe_program in
-specific container environment.
+> Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> Fixes: 8409cca70561 ("userns: allow ptrace from non-init user namespaces")
+> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> ---
+> 
+> It turns out that dumpable needs to be fixed to be user namespace
+> aware to fix this issue.  When this patch is ready I plan to place it in
+> my userns tree and send it to Linus, hopefully for -rc2.
+> 
+>  include/linux/mm_types.h |  1 +
+>  kernel/fork.c            |  9 ++++++---
+>  kernel/ptrace.c          | 17 ++++++-----------
+>  mm/init-mm.c             |  2 ++
+>  4 files changed, 15 insertions(+), 14 deletions(-)
+> 
+> diff --git a/include/linux/mm_types.h b/include/linux/mm_types.h
+> index 4a8acedf4b7d..08d947fc4c59 100644
+> --- a/include/linux/mm_types.h
+> +++ b/include/linux/mm_types.h
+> @@ -473,6 +473,7 @@ struct mm_struct {
+>  	 */
+>  	struct task_struct __rcu *owner;
+>  #endif
+> +	struct user_namespace *user_ns;
+>  
+>  	/* store ref to file /proc/<pid>/exe symlink points to */
+>  	struct file __rcu *exe_file;
+> diff --git a/kernel/fork.c b/kernel/fork.c
+> index 623259fc794d..fd85c68c2791 100644
+> --- a/kernel/fork.c
+> +++ b/kernel/fork.c
+> @@ -742,7 +742,8 @@ static void mm_init_owner(struct mm_struct *mm, struct task_struct *p)
+>  #endif
+>  }
+>  
+> -static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p)
+> +static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p,
+> +	struct user_namespace *user_ns)
+>  {
+>  	mm->mmap = NULL;
+>  	mm->mm_rb = RB_ROOT;
+> @@ -782,6 +783,7 @@ static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p)
+>  	if (init_new_context(p, mm))
+>  		goto fail_nocontext;
+>  
+> +	mm->user_ns = get_user_ns(user_ns);
+>  	return mm;
+>  
+>  fail_nocontext:
+> @@ -827,7 +829,7 @@ struct mm_struct *mm_alloc(void)
+>  		return NULL;
+>  
+>  	memset(mm, 0, sizeof(*mm));
+> -	return mm_init(mm, current);
+> +	return mm_init(mm, current, current_user_ns());
+>  }
+>  
+>  /*
+> @@ -842,6 +844,7 @@ void __mmdrop(struct mm_struct *mm)
+>  	destroy_context(mm);
+>  	mmu_notifier_mm_destroy(mm);
+>  	check_mm(mm);
+> +	put_user_ns(mm->user_ns);
+>  	free_mm(mm);
+>  }
+>  EXPORT_SYMBOL_GPL(__mmdrop);
+> @@ -1123,7 +1126,7 @@ static struct mm_struct *dup_mm(struct task_struct *tsk)
+>  
+>  	memcpy(mm, oldmm, sizeof(*mm));
+>  
+> -	if (!mm_init(mm, tsk))
+> +	if (!mm_init(mm, tsk, mm->user_ns))
+>  		goto fail_nomem;
+>  
+>  	err = dup_mmap(mm, oldmm);
+> diff --git a/kernel/ptrace.c b/kernel/ptrace.c
+> index 2a99027312a6..f2d1b9afb3f8 100644
+> --- a/kernel/ptrace.c
+> +++ b/kernel/ptrace.c
+> @@ -220,7 +220,7 @@ static int ptrace_has_cap(struct user_namespace *ns, unsigned int mode)
+>  static int __ptrace_may_access(struct task_struct *task, unsigned int mode)
+>  {
+>  	const struct cred *cred = current_cred(), *tcred;
+> -	int dumpable = 0;
+> +	struct mm_struct *mm;
+>  	kuid_t caller_uid;
+>  	kgid_t caller_gid;
+>  
+> @@ -271,16 +271,11 @@ static int __ptrace_may_access(struct task_struct *task, unsigned int mode)
+>  	return -EPERM;
+>  ok:
+>  	rcu_read_unlock();
+> -	smp_rmb();
+> -	if (task->mm)
+> -		dumpable = get_dumpable(task->mm);
+> -	rcu_read_lock();
+> -	if (dumpable != SUID_DUMP_USER &&
+> -	    !ptrace_has_cap(__task_cred(task)->user_ns, mode)) {
+> -		rcu_read_unlock();
+> -		return -EPERM;
+> -	}
+> -	rcu_read_unlock();
+> +	mm = task->mm;
+> +	if (!mm ||
+> +	    ((get_dumpable(mm) != SUID_DUMP_USER) &&
+> +	     !ptrace_has_cap(mm->user_ns, mode)))
+> +	    return -EPERM;
+>  
+>  	return security_ptrace_access_check(task, mode);
+>  }
+> diff --git a/mm/init-mm.c b/mm/init-mm.c
+> index a56a851908d2..975e49f00f34 100644
+> --- a/mm/init-mm.c
+> +++ b/mm/init-mm.c
+> @@ -6,6 +6,7 @@
+>  #include <linux/cpumask.h>
+>  
+>  #include <linux/atomic.h>
+> +#include <linux/user_namespace.h>
+>  #include <asm/pgtable.h>
+>  #include <asm/mmu.h>
+>  
+> @@ -21,5 +22,6 @@ struct mm_struct init_mm = {
+>  	.mmap_sem	= __RWSEM_INITIALIZER(init_mm.mmap_sem),
+>  	.page_table_lock =  __SPIN_LOCK_UNLOCKED(init_mm.page_table_lock),
+>  	.mmlist		= LIST_HEAD_INIT(init_mm.mmlist),
+> +	.user_ns	= &init_user_ns,
+>  	INIT_MM_CONTEXT(init_mm)
+>  };
+> -- 
+> 2.8.3
+> 
+> --
+> To unsubscribe, send a message with 'unsubscribe linux-mm' in
+> the body to majordomo-Bw31MaZKKs0EbZ0PF+XxCw@public.gmane.org  For more info on Linux MM,
+> see: http://www.linux-mm.org/ .
+> Don't email: <a href=mailto:"dont-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org"> email-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org </a>
 
-Signed-off-by: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- fs/coredump.c               |   3 +-
- include/linux/kmod.h        |   2 +
- init/do_mounts_initrd.c     |   3 +-
- kernel/kmod.c               | 133 ++++++++++++++++++++++++++++++++++++++------
- lib/kobject_uevent.c        |   3 +-
- security/keys/request_key.c |   4 +-
- 6 files changed, 127 insertions(+), 21 deletions(-)
-
-diff --git a/fs/coredump.c b/fs/coredump.c
-index 281b768..ceb0ee8 100644
---- a/fs/coredump.c
-+++ b/fs/coredump.c
-@@ -641,7 +641,8 @@ void do_coredump(const siginfo_t *siginfo)
- 		retval = -ENOMEM;
- 		sub_info = call_usermodehelper_setup(helper_argv[0],
- 						helper_argv, NULL, GFP_KERNEL,
--						umh_pipe_setup, NULL, &cprm);
-+						NULL, umh_pipe_setup,
-+						NULL, &cprm);
- 		if (sub_info)
- 			retval = call_usermodehelper_exec(sub_info,
- 							  UMH_WAIT_EXEC);
-diff --git a/include/linux/kmod.h b/include/linux/kmod.h
-index fcfd2bf..8fb8c0e 100644
---- a/include/linux/kmod.h
-+++ b/include/linux/kmod.h
-@@ -61,6 +61,7 @@ struct subprocess_info {
- 	char **envp;
- 	int wait;
- 	int retval;
-+	int (*init_intermediate)(struct subprocess_info *info);
- 	int (*init)(struct subprocess_info *info, struct cred *new);
- 	void (*cleanup)(struct subprocess_info *info);
- 	void *data;
-@@ -71,6 +72,7 @@ call_usermodehelper(char *path, char **argv, char **envp, int wait);
- 
- extern struct subprocess_info *
- call_usermodehelper_setup(char *path, char **argv, char **envp, gfp_t gfp_mask,
-+			  int (*init_intermediate)(struct subprocess_info *info),
- 			  int (*init)(struct subprocess_info *info, struct cred *new),
- 			  void (*cleanup)(struct subprocess_info *), void *data);
- 
-diff --git a/init/do_mounts_initrd.c b/init/do_mounts_initrd.c
-index a1000ca..bb5dce5 100644
---- a/init/do_mounts_initrd.c
-+++ b/init/do_mounts_initrd.c
-@@ -72,7 +72,8 @@ static void __init handle_initrd(void)
- 	current->flags |= PF_FREEZER_SKIP;
- 
- 	info = call_usermodehelper_setup("/linuxrc", argv, envp_init,
--					 GFP_KERNEL, init_linuxrc, NULL, NULL);
-+					 GFP_KERNEL, NULL, init_linuxrc, NULL,
-+					 NULL);
- 	if (!info)
- 		return;
- 	call_usermodehelper_exec(info, UMH_WAIT_PROC);
-diff --git a/kernel/kmod.c b/kernel/kmod.c
-index 0277d12..30a5802 100644
---- a/kernel/kmod.c
-+++ b/kernel/kmod.c
-@@ -91,7 +91,7 @@ static int call_modprobe(char *module_name, int wait)
- 	argv[4] = NULL;
- 
- 	info = call_usermodehelper_setup(modprobe_path, argv, envp, GFP_KERNEL,
--					 NULL, free_modprobe_argv, NULL);
-+					 NULL, NULL, free_modprobe_argv, NULL);
- 	if (!info)
- 		goto free_module_name;
- 
-@@ -209,14 +209,11 @@ static void umh_complete(struct subprocess_info *sub_info)
- 		call_usermodehelper_freeinfo(sub_info);
- }
- 
--/*
-- * This is the task which runs the usermode application
-- */
--static int call_usermodehelper_exec_async(void *data)
-+static int __call_usermodehelper_exec_doexec(void *data)
- {
- 	struct subprocess_info *sub_info = data;
- 	struct cred *new;
--	int retval;
-+	int retval = 0;
- 
- 	spin_lock_irq(&current->sighand->siglock);
- 	flush_signal_handlers(current, 1);
-@@ -228,10 +225,11 @@ static int call_usermodehelper_exec_async(void *data)
- 	 */
- 	set_user_nice(current, 0);
- 
--	retval = -ENOMEM;
- 	new = prepare_kernel_cred(current);
--	if (!new)
-+	if (!new) {
-+		retval = -ENOMEM;
- 		goto out;
-+	}
- 
- 	spin_lock(&umh_sysctl_lock);
- 	new->cap_bset = cap_intersect(usermodehelper_bset, new->cap_bset);
-@@ -248,20 +246,121 @@ static int call_usermodehelper_exec_async(void *data)
- 	}
- 
- 	commit_creds(new);
--
- 	retval = do_execve(getname_kernel(sub_info->path),
--			   (const char __user *const __user *)sub_info->argv,
--			   (const char __user *const __user *)sub_info->envp);
-+		   (const char __user *const __user *)sub_info->argv,
-+		   (const char __user *const __user *)sub_info->envp);
-+
- out:
--	sub_info->retval = retval;
-+	return retval;
-+}
-+
-+static int call_usermodehelper_exec_doexec(void *data)
-+{
-+	struct subprocess_info *sub_info = data;
-+	int ret = __call_usermodehelper_exec_doexec(data);
-+
- 	/*
--	 * call_usermodehelper_exec_sync() will call umh_complete
--	 * if UHM_WAIT_PROC.
-+	 * If it is called in non-sync mode:
-+	 * On fail:
-+	 *   should set sub_info->retval, call umh_complete and exit process.
-+	 * On success:
-+	 *   should set sub_info->retval, call umh_complete and return to
-+	 *   user-mode program.
-+	 * It it is called in sync mode:
-+	 * On fail:
-+	 *   should set sub_info->retval and exit process, the parent process
-+	 *   will wait and call umh_complete()
-+	 * On success:
-+	 *   should return to user-mode program, the parent process will wait
-+	 *   and get program's ret from wait(), and call umh_complete().
- 	 */
-+	sub_info->retval = ret;
-+
- 	if (!(sub_info->wait & UMH_WAIT_PROC))
- 		umh_complete(sub_info);
--	if (!retval)
-+
-+	if (!ret)
- 		return 0;
-+
-+	/*
-+	 * see comment in call_usermodehelper_exec_sync() before change
-+	 * it to do_exit(ret).
-+	 */
-+	do_exit(0);
-+}
-+
-+/*
-+ * This is the task which runs the usermode application
-+ */
-+static int call_usermodehelper_exec_async(void *data)
-+{
-+	struct subprocess_info *sub_info = data;
-+	int ret = 0;
-+	int refork = 0;
-+
-+	if (sub_info->init_intermediate) {
-+		ret = sub_info->init_intermediate(sub_info);
-+		switch (ret) {
-+		case 0:
-+			break;
-+		case -EAGAIN:
-+			/*
-+			 * if pid namespace is changed,
-+			 * we need refork to make it active.
-+			 */
-+			ret = 0;
-+			refork = 1;
-+			break;
-+		default:
-+			goto out;
-+		}
-+	}
-+
-+	if (refork) {
-+		/*
-+		 * Code copyed from call_usermodehelper_exec_work() and
-+		 * call_usermodehelper_exec_sync(), see comments in these
-+		 * functions for detail.
-+		 */
-+		pid_t pid;
-+
-+		if (sub_info->wait & UMH_WAIT_PROC) {
-+			kernel_sigaction(SIGCHLD, SIG_DFL);
-+			pid = kernel_thread(call_usermodehelper_exec_doexec,
-+					    sub_info, SIGCHLD);
-+			if (pid < 0) {
-+				ret = pid;
-+			} else {
-+				ret = -ECHILD;
-+				sys_wait4(pid, (int __user *)&ret, 0, NULL);
-+			}
-+			kernel_sigaction(SIGCHLD, SIG_IGN);
-+
-+			sub_info->retval = ret;
-+		} else {
-+			pid = kernel_thread(call_usermodehelper_exec_doexec,
-+					    sub_info, SIGCHLD);
-+			if (pid < 0) {
-+				sub_info->retval = pid;
-+				umh_complete(sub_info);
-+			}
-+		}
-+	} else {
-+		ret = __call_usermodehelper_exec_doexec(data);
-+
-+out:
-+		/*
-+		 * see comment in call_usermodehelper_exec_doexec() for detail
-+		 */
-+		sub_info->retval = ret;
-+
-+		if (!(sub_info->wait & UMH_WAIT_PROC))
-+			umh_complete(sub_info);
-+
-+		if (!ret)
-+			return 0;
-+	}
-+
- 	do_exit(0);
- }
- 
-@@ -518,6 +617,7 @@ static void helper_unlock(void)
-  */
- struct subprocess_info *call_usermodehelper_setup(char *path, char **argv,
- 		char **envp, gfp_t gfp_mask,
-+		int (*init_intermediate)(struct subprocess_info *info),
- 		int (*init)(struct subprocess_info *info, struct cred *new),
- 		void (*cleanup)(struct subprocess_info *info),
- 		void *data)
-@@ -533,6 +633,7 @@ struct subprocess_info *call_usermodehelper_setup(char *path, char **argv,
- 	sub_info->envp = envp;
- 
- 	sub_info->cleanup = cleanup;
-+	sub_info->init_intermediate = init_intermediate;
- 	sub_info->init = init;
- 	sub_info->data = data;
-   out:
-@@ -619,7 +720,7 @@ int call_usermodehelper(char *path, char **argv, char **envp, int wait)
- 	gfp_t gfp_mask = (wait == UMH_NO_WAIT) ? GFP_ATOMIC : GFP_KERNEL;
- 
- 	info = call_usermodehelper_setup(path, argv, envp, gfp_mask,
--					 NULL, NULL, NULL);
-+					 NULL, NULL, NULL, NULL);
- 	if (info == NULL)
- 		return -ENOMEM;
- 
-diff --git a/lib/kobject_uevent.c b/lib/kobject_uevent.c
-index f6c2c1e..7e571f0 100644
---- a/lib/kobject_uevent.c
-+++ b/lib/kobject_uevent.c
-@@ -345,7 +345,8 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
- 		retval = -ENOMEM;
- 		info = call_usermodehelper_setup(env->argv[0], env->argv,
- 						 env->envp, GFP_KERNEL,
--						 NULL, cleanup_uevent_env, env);
-+						 NULL, NULL, cleanup_uevent_env,
-+						 env);
- 		if (info) {
- 			retval = call_usermodehelper_exec(info, UMH_NO_WAIT);
- 			env = NULL;	/* freed by cleanup_uevent_env */
-diff --git a/security/keys/request_key.c b/security/keys/request_key.c
-index 43affcf..3abff78 100644
---- a/security/keys/request_key.c
-+++ b/security/keys/request_key.c
-@@ -78,8 +78,8 @@ static int call_usermodehelper_keys(char *path, char **argv, char **envp,
- 	struct subprocess_info *info;
- 
- 	info = call_usermodehelper_setup(path, argv, envp, GFP_KERNEL,
--					  umh_keys_init, umh_keys_cleanup,
--					  session_keyring);
-+					 NULL, umh_keys_init, umh_keys_cleanup,
-+					 session_keyring);
- 	if (!info)
- 		return -ENOMEM;
- 
 -- 
-2.7.4
+Michal Hocko
+SUSE Labs
