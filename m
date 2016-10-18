@@ -1,22 +1,14 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC][PATCH v2] mount: In mark_umount_candidates and
-	__propogate_umount visit each mount once
-Date: Tue, 18 Oct 2016 01:49:52 -0500
-Message-ID: <87r37e9mnj.fsf@xmission.com>
-References: <1476141965-21429-1-git-send-email-avagin@openvz.org>
-	<877f9c6ui8.fsf@x220.int.ebiederm.org>
-	<87pon458l1.fsf_-_@x220.int.ebiederm.org>
-	<20161013214650.GB19836@outlook.office365.com>
-	<CANaxB-xPkgdyeg0z6TvExMfyy4uOC+Nu4Q99WpCscNKMWz8VPg@mail.gmail.com>
-	<87wphb4pjn.fsf@x220.int.ebiederm.org>
-	<8737jy3htt.fsf_-_@x220.int.ebiederm.org>
-	<20161018024000.GA4901@outlook.office365.com>
+From: Cao Shufeng <caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH v3.1 2/3] Limit dump_pipe program's permission to init for
+	container
+Date: Tue, 18 Oct 2016 18:06:36 +0800
+Message-ID: <1476785197-5048-3-git-send-email-caosf.fnst@cn.fujitsu.com>
+References: <1476785197-5048-1-git-send-email-caosf.fnst@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20161018024000.GA4901-1ViLX0X+lBJGNQ1M2rI3KwRV3xvJKrda@public.gmane.org> (Andrei Vagin's
-	message of "Mon, 17 Oct 2016 19:40:01 -0700")
+In-Reply-To: <1476785197-5048-1-git-send-email-caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,180 +18,217 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
-Cc: linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, mashimiao.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org> writes:
+From: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
-> On Fri, Oct 14, 2016 at 01:29:18PM -0500, Eric W. Biederman wrote:
->> 
->> Adrei Vagin pointed out that time to executue propagate_umount can go
->> non-linear (and take a ludicrious amount of time) when the mount
->> propogation trees of the mounts to be unmunted by a lazy unmount
->> overlap.
->> 
->> Solve this in the most straight forward way possible, by adding a new
->> mount flag to mark parts of the mount propagation tree that have been
->> visited, and use that mark to skip parts of the mount propagation tree
->> that have already been visited during an unmount.  This guarantees
->> that each mountpoint in the possibly overlapping mount propagation
->> trees will be visited exactly once.
->> 
->> Add the functions propagation_visit_next and propagation_revisit_next
->> to coordinate setting and clearling the visited mount mark.
->> 
->> The skipping of already unmounted mounts has been moved from
->> __lookup_mnt_last to mark_umount_candidates, so that the new
->> propagation functions can notice record when the propagation tree
->> passes through the initial set of unmounted mounts.  Except in
->> umount_tree as part of the unmounting process the only place where
->> unmounted mounts should be found are in unmounted subtrees.  All of
->> the other callers of __lookup_mnt_last are from mounted subtrees so
->> the not checking for unmounted mounts should not affect them.
->> 
->> Here is a script to generate such mount tree:
->> $ cat run.sh
->> mount -t tmpfs test-mount /mnt
->> mount --make-shared /mnt
->> for i in `seq $1`; do
->>         mkdir /mnt/test.$i
->>         mount --bind /mnt /mnt/test.$i
->> done
->> cat /proc/mounts | grep test-mount | wc -l
->> time umount -l /mnt
->> $ for i in `seq 10 16`; do echo $i; unshare -Urm bash ./run.sh $i; done
->> 
->> Here are the performance numbers with and without the patch:
->> 
->> mhash  |  8192   |  8192  |  8192       | 131072 | 131072      | 104857 | 104857
->> mounts | before  | after  | after (sys) | after  | after (sys) |  after | after (sys)
->> -------------------------------------------------------------------------------------
->>   1024 |  0.071s | 0.023s | 0.008s      | 0.026s | 0.000s      | 0.024s | 0.008s
->>   2048 |  0.184s | 0.030s | 0.012s      | 0.035s | 0.008s      | 0.030s | 0.012s
->>   4096 |  0.604s | 0.047s | 0.012s      | 0.042s | 0.016s      | 0.032s | 0.016s
->>   8912 |  4.471s | 0.085s | 0.020s      | 0.059s | 0.059s      | 0.050s | 0.036s
->>  16384 | 34.826s | 0.105s | 0.092s      | 0.109s | 0.060s      | 0.087s | 0.068s
->>  32768 |         | 0.245s | 0.168s      | 0.192s | 0.144s      | 0.167s | 0.156s
->>  65536 |         | 0.833s | 0.716s      | 0.485s | 0.276s      | 0.468s | 0.316s
->> 131072 |         | 4.628s | 4.108s      | 0.758s | 0.632s      | 0.736s | 0.612s
->> 
->> Andrei Vagin reports fixing this performance problem is part of the
->> work to fix CVE-2016-6213.
->> 
->> Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
->> Reported-by: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
->> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
->> ---
->> 
->> I think this version is very close.  I had to modify __lookup_mnt_last
->> to not skip MOUNT_UMOUNT or we would never see when the mount
->> propagation trees intersected.
->> 
->> This doesn't look as good as the previous buggy version but it looks
->> good.  When the hash table isn't getting full the times look pretty
->> linear.  So it may be necessary to do some hash table resizing.
->> 
->> That said there remains one issue I need to think about some more.
->> 
->> In mark_umount_candidates I don't mark mounts that are locked to their
->> parent and their parent is not marked as a umount candidate.  Given that
->> we skip processing mounts multiple times this might result in a mount
->> whose parent gets marked as unmountable after the first time we see a
->> mount not getting marked as unmountable later.
+Currently when we set core_pattern to a pipe, the pipe program is
+forked by kthread running with root's permission, and write dumpfile
+into host's filesystem.
+Same thing happened for container, the dumper and dumpfile are also
+in host(not in container).
 
-Unfortunately my fears are born out as demonstrated by the script
-below.
-    $ cat pathology.sh
-    #!/bin/sh
-    set -e
-    set -x
-    
-    mount -t tmpfs base /mnt
-    mount --make-shared /mnt
-    mkdir -p /mnt/b
-    
-    mount -t tmpfs test1 /mnt/b
-    mount --make-shared /mnt/b
-    mkdir -p /mnt/b/10
-    
-    mount -t tmpfs test2 /mnt/b/10
-    mount --make-shared /mnt/b/10
-    mkdir -p /mnt/b/10/20
-    
-    mount --rbind /mnt/b /mnt/b/10/20
-    
-    cat /proc/self/mountinfo
-    ls /mnt /mnt/b /mnt/b/10  /mnt/b/10/20  /mnt/b/10/20/10  /mnt/b/10/20/10/20 || true
-    
-    unshare -Urm --propagation unchanged /bin/bash -c 'cat /proc/self/mountinfo; sleep 5; ls /mnt /mnt/b /mnt/b/10 /mnt/b/10/20 /mnt/b/10/20/10 \
-    /mnt/b/10/20/10/20 || true; cat /proc/self/mountinfo' &
-    sleep 1
-    umount -l /mnt/b/
-    wait %%
-    $ unshare -Urm ./pathology.sh
+It have following program:
+1: Not consistent with file_type core_pattern
+   When we set core_pattern to a file, the container will write dump
+   into container's filesystem instead of host.
+2: Not safe for privileged container
+   In a privileged container, user can destroy host system by following
+   command:
+   # # In a container
+   # echo "|/bin/dd of=/boot/vmlinuz" >/proc/sys/kernel/core_pattern
+   # make_dump
 
+This patch switch dumper program's environment to init task, so, for
+container, dumper program have same environment with init task in
+container, which make dumper program put in container's filesystem, and
+write coredump into container's filesystem.
+The dumper's permission is also limited into subset of container's init
+process.
 
->> Anyway Andrei if you could check this out and see if you can see
->> anything I missed please let me know.
->
-> I've tested this patch today and it works to me. The idea of this patch
-> looks good for me too. Thanks! There is one inline comment.
+Suggested-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Suggested-by: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 
-It is definitely close but there is an ordering problem (see above)
-that needs some more attention.  I have just finished building
-myself a reproducer and am going to go sleep on i.
+Signed-off-by: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Co-Authored-By: Cao ShuFeng<caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+---
+ fs/coredump.c           | 103 +++++++++++++++++++++++++++++++++++++++++++++++-
+ include/linux/binfmts.h |   1 +
+ 2 files changed, 102 insertions(+), 2 deletions(-)
 
-The little script above demonstrates that the locked mount handling
-(of preventing umounts) is too conservative today, and is even worse
-with these changes.
-
-Even worse locked mounts are unnecessary to fail to unmount everything,
-with a single pass through the propagation tree.  My script above
-demonstrates one such topology where there will be problems.
-
-Now that bug already exists today so I don't expect this change makes
-anything practically worse.  But I would really like to know if it is
-possible to do better before we merge this change.
-
->>  fs/namespace.c        |   6 +--
->>  fs/pnode.c            | 147 ++++++++++++++++++++++++++++++++++++++++++++------
->>  fs/pnode.h            |   4 ++
->>  include/linux/mount.h |   2 +
->>  4 files changed, 138 insertions(+), 21 deletions(-)
->> 
->> diff --git a/fs/namespace.c b/fs/namespace.c
->> index db1b5a38864e..1ca99fa2e0f4 100644
->> --- a/fs/namespace.c
->> +++ b/fs/namespace.c
->> @@ -650,13 +650,11 @@ struct mount *__lookup_mnt_last(struct vfsmount *mnt, struct dentry *dentry)
->>  	p = __lookup_mnt(mnt, dentry);
->>  	if (!p)
->>  		goto out;
->> -	if (!(p->mnt.mnt_flags & MNT_UMOUNT))
->> -		res = p;
->> +	res = p;
->>  	hlist_for_each_entry_continue(p, mnt_hash) {
->>  		if (&p->mnt_parent->mnt != mnt || p->mnt_mountpoint != dentry)
->>  			break;
->> -		if (!(p->mnt.mnt_flags & MNT_UMOUNT))
->> -			res = p;
->
-> __lookup_mnt_last is used in propagate_mount_busy and
-> attach_recursive_mnt. Should we do smth to save old
-> behaviour of these functions.
-
-Reasonable question. I am actually reverting __lookup_mnt_last to a
-fairly recent behavior.   I added the MNT_UMOUNT test when I started
-leaving things in the hash table to keep lazy unmounts from having a
-information disclosure issue.
-
-Mounts with MNT_UMOUNT will only be seen connected to mounted mounts
-during propogate_umount.  attach_recursive_mounts has no chance of
-seeing that condition, and propagate_mount_busy is called before
-mount_umount. Similary propagate_umount_lock is also called before any
-mounts get into a visible halfway unmounted state.
-
-So no.  I don't see any reason to preseve the extra MNT_UMOUNT test.
-
-Eric
+diff --git a/fs/coredump.c b/fs/coredump.c
+index ceb0ee8..8ea8bc1 100644
+--- a/fs/coredump.c
++++ b/fs/coredump.c
+@@ -501,6 +501,23 @@ static void wait_for_dump_helpers(struct file *file)
+ 	pipe_unlock(pipe);
+ }
+ 
++static int umh_ns_setup(struct subprocess_info *info)
++{
++	struct coredump_params *cp = (struct coredump_params *)info->data;
++	struct task_struct *base_task = cp->base_task;
++
++	if (base_task) {
++		/* Set namespaces to base_task */
++		get_nsproxy(base_task->nsproxy);
++		switch_task_namespaces(current, base_task->nsproxy);
++
++		/* Return -EAGAIN to notice caller to refork */
++		return -EAGAIN;
++	}
++
++	return 0;
++}
++
+ /*
+  * umh_pipe_setup
+  * helper function to customize the process used
+@@ -516,6 +533,8 @@ static int umh_pipe_setup(struct subprocess_info *info, struct cred *new)
+ {
+ 	struct file *files[2];
+ 	struct coredump_params *cp = (struct coredump_params *)info->data;
++	struct task_struct *base_task;
++
+ 	int err = create_pipe_files(files, 0);
+ 	if (err)
+ 		return err;
+@@ -524,10 +543,76 @@ static int umh_pipe_setup(struct subprocess_info *info, struct cred *new)
+ 
+ 	err = replace_fd(0, files[0], 0);
+ 	fput(files[0]);
++	if (err)
++		return err;
++
+ 	/* and disallow core files too */
+ 	current->signal->rlim[RLIMIT_CORE] = (struct rlimit){1, 1};
+ 
+-	return err;
++	base_task = cp->base_task;
++	if (base_task) {
++		const struct cred *base_cred;
++
++		/* Set fs_root to base_task */
++		spin_lock(&base_task->fs->lock);
++		set_fs_root(current->fs, &base_task->fs->root);
++		set_fs_pwd(current->fs, &base_task->fs->pwd);
++		spin_unlock(&base_task->fs->lock);
++
++		/* Set cgroup to base_task */
++		current->flags &= ~PF_NO_SETAFFINITY;
++		err = cgroup_attach_task_all(base_task, current);
++		if (err < 0)
++			return err;
++
++		/* Set cred to base_task */
++		base_cred = get_task_cred(base_task);
++
++		new->uid   = base_cred->uid;
++		new->gid   = base_cred->gid;
++		new->suid  = base_cred->suid;
++		new->sgid  = base_cred->sgid;
++		new->euid  = base_cred->euid;
++		new->egid  = base_cred->egid;
++		new->fsuid = base_cred->fsuid;
++		new->fsgid = base_cred->fsgid;
++
++		new->securebits = base_cred->securebits;
++
++		new->cap_inheritable = base_cred->cap_inheritable;
++		new->cap_permitted   = base_cred->cap_permitted;
++		new->cap_effective   = base_cred->cap_effective;
++		new->cap_bset        = base_cred->cap_bset;
++		new->cap_ambient     = base_cred->cap_ambient;
++
++		security_cred_free(new);
++#ifdef CONFIG_SECURITY
++		new->security = NULL;
++#endif
++		err = security_prepare_creds(new, base_cred, GFP_KERNEL);
++		if (err < 0) {
++			put_cred(base_cred);
++			return err;
++		}
++
++		free_uid(new->user);
++		new->user = base_cred->user;
++		get_uid(new->user);
++
++		put_user_ns(new->user_ns);
++		new->user_ns = base_cred->user_ns;
++		get_user_ns(new->user_ns);
++
++		put_group_info(new->group_info);
++		new->group_info = base_cred->group_info;
++		get_group_info(new->group_info);
++
++		put_cred(base_cred);
++
++		validate_creds(new);
++	}
++
++	return 0;
+ }
+ 
+ void do_coredump(const siginfo_t *siginfo)
+@@ -590,6 +675,7 @@ void do_coredump(const siginfo_t *siginfo)
+ 
+ 	if (ispipe) {
+ 		int dump_count;
++		struct task_struct *vinit_task;
+ 		char **helper_argv;
+ 		struct subprocess_info *sub_info;
+ 
+@@ -631,6 +717,14 @@ void do_coredump(const siginfo_t *siginfo)
+ 			goto fail_dropcount;
+ 		}
+ 
++		rcu_read_lock();
++		vinit_task = find_task_by_vpid(1);
++		rcu_read_unlock();
++		if (!vinit_task) {
++			printk(KERN_WARNING "failed getting init task info, skipping core dump\n");
++			goto fail_dropcount;
++		}
++
+ 		helper_argv = argv_split(GFP_KERNEL, cn.corename, NULL);
+ 		if (!helper_argv) {
+ 			printk(KERN_WARNING "%s failed to allocate memory\n",
+@@ -638,15 +732,20 @@ void do_coredump(const siginfo_t *siginfo)
+ 			goto fail_dropcount;
+ 		}
+ 
++		get_task_struct(vinit_task);
++
++		cprm.base_task = vinit_task;
++
+ 		retval = -ENOMEM;
+ 		sub_info = call_usermodehelper_setup(helper_argv[0],
+ 						helper_argv, NULL, GFP_KERNEL,
+-						NULL, umh_pipe_setup,
++						umh_ns_setup, umh_pipe_setup,
+ 						NULL, &cprm);
+ 		if (sub_info)
+ 			retval = call_usermodehelper_exec(sub_info,
+ 							  UMH_WAIT_EXEC);
+ 
++		put_task_struct(vinit_task);
+ 		argv_free(helper_argv);
+ 		if (retval) {
+ 			printk(KERN_INFO "Core dump to |%s pipe failed\n",
+diff --git a/include/linux/binfmts.h b/include/linux/binfmts.h
+index 1303b57..193d269 100644
+--- a/include/linux/binfmts.h
++++ b/include/linux/binfmts.h
+@@ -59,6 +59,7 @@ struct linux_binprm {
+ 
+ /* Function parameter for binfmt->coredump */
+ struct coredump_params {
++	struct task_struct *base_task;
+ 	const siginfo_t *siginfo;
+ 	struct pt_regs *regs;
+ 	struct file *file;
+-- 
+2.7.4
