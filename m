@@ -1,15 +1,14 @@
-From: Michal Hocko <mhocko-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+From: Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>
 Subject: Re: [REVIEW][PATCH] mm: Add a user_ns owner to mm_struct and fix
 	ptrace_may_access
-Date: Tue, 18 Oct 2016 15:50:32 +0200
-Message-ID: <20161018135031.GB13117__27349.1907668815$1476798653$gmane$org@dhcp22.suse.cz>
+Date: Tue, 18 Oct 2016 15:57:41 +0200
+Message-ID: <20161018135741.GO14666@pc.thejh.net>
 References: <87twcbq696.fsf@x220.int.ebiederm.org>
+	<20161018135031.GB13117@dhcp22.suse.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============0122895539591663046=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87twcbq696.fsf-JOvCrm2gF+uungPnsOpG7nhyD016LWXt@public.gmane.org>
+In-Reply-To: <20161018135031.GB13117-2MMpYkNvuYDjFM9bn6wA6Q@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,176 +18,90 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Michal Hocko <mhocko-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon 17-10-16 11:39:49, Eric W. Biederman wrote:
-> 
-> During exec dumpable is cleared if the file that is being executed is
-> not readable by the user executing the file.  A bug in
-> ptrace_may_access allows reading the file if the executable happens to
-> enter into a subordinate user namespace (aka clone(CLONE_NEWUSER),
-> unshare(CLONE_NEWUSER), or setns(fd, CLONE_NEWUSER).
-> 
-> This problem is fixed with only necessary userspace breakage by adding
-> a user namespace owner to mm_struct, captured at the time of exec,
-> so it is clear in which user namespace CAP_SYS_PTRACE must be present
-> in to be able to safely give read permission to the executable.
-> 
-> The function ptrace_may_access is modified to verify that the ptracer
-> has CAP_SYS_ADMIN in task->mm->user_ns instead of task->cred->user_ns.
-> This ensures that if the task changes it's cred into a subordinate
-> user namespace it does not become ptraceable.
 
-I haven't studied your patch too deeply but one thing that immediately 
-raised a red flag was that mm might be shared between processes (aka
-thread groups). What prevents those two to sit in different user
-namespaces?
+--===============0122895539591663046==
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="n0t7pLec3q0yZKtb"
+Content-Disposition: inline
 
-I am primarily asking because this generated a lot of headache for the
-memcg handling as those processes might sit in different cgroups while
-there is only one correct memcg for them which can disagree with the
-cgroup associated with one of the processes.
 
-> Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> Fixes: 8409cca70561 ("userns: allow ptrace from non-init user namespaces")
-> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> ---
-> 
-> It turns out that dumpable needs to be fixed to be user namespace
-> aware to fix this issue.  When this patch is ready I plan to place it in
-> my userns tree and send it to Linus, hopefully for -rc2.
-> 
->  include/linux/mm_types.h |  1 +
->  kernel/fork.c            |  9 ++++++---
->  kernel/ptrace.c          | 17 ++++++-----------
->  mm/init-mm.c             |  2 ++
->  4 files changed, 15 insertions(+), 14 deletions(-)
-> 
-> diff --git a/include/linux/mm_types.h b/include/linux/mm_types.h
-> index 4a8acedf4b7d..08d947fc4c59 100644
-> --- a/include/linux/mm_types.h
-> +++ b/include/linux/mm_types.h
-> @@ -473,6 +473,7 @@ struct mm_struct {
->  	 */
->  	struct task_struct __rcu *owner;
->  #endif
-> +	struct user_namespace *user_ns;
->  
->  	/* store ref to file /proc/<pid>/exe symlink points to */
->  	struct file __rcu *exe_file;
-> diff --git a/kernel/fork.c b/kernel/fork.c
-> index 623259fc794d..fd85c68c2791 100644
-> --- a/kernel/fork.c
-> +++ b/kernel/fork.c
-> @@ -742,7 +742,8 @@ static void mm_init_owner(struct mm_struct *mm, struct task_struct *p)
->  #endif
->  }
->  
-> -static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p)
-> +static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p,
-> +	struct user_namespace *user_ns)
->  {
->  	mm->mmap = NULL;
->  	mm->mm_rb = RB_ROOT;
-> @@ -782,6 +783,7 @@ static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p)
->  	if (init_new_context(p, mm))
->  		goto fail_nocontext;
->  
-> +	mm->user_ns = get_user_ns(user_ns);
->  	return mm;
->  
->  fail_nocontext:
-> @@ -827,7 +829,7 @@ struct mm_struct *mm_alloc(void)
->  		return NULL;
->  
->  	memset(mm, 0, sizeof(*mm));
-> -	return mm_init(mm, current);
-> +	return mm_init(mm, current, current_user_ns());
->  }
->  
->  /*
-> @@ -842,6 +844,7 @@ void __mmdrop(struct mm_struct *mm)
->  	destroy_context(mm);
->  	mmu_notifier_mm_destroy(mm);
->  	check_mm(mm);
-> +	put_user_ns(mm->user_ns);
->  	free_mm(mm);
->  }
->  EXPORT_SYMBOL_GPL(__mmdrop);
-> @@ -1123,7 +1126,7 @@ static struct mm_struct *dup_mm(struct task_struct *tsk)
->  
->  	memcpy(mm, oldmm, sizeof(*mm));
->  
-> -	if (!mm_init(mm, tsk))
-> +	if (!mm_init(mm, tsk, mm->user_ns))
->  		goto fail_nomem;
->  
->  	err = dup_mmap(mm, oldmm);
-> diff --git a/kernel/ptrace.c b/kernel/ptrace.c
-> index 2a99027312a6..f2d1b9afb3f8 100644
-> --- a/kernel/ptrace.c
-> +++ b/kernel/ptrace.c
-> @@ -220,7 +220,7 @@ static int ptrace_has_cap(struct user_namespace *ns, unsigned int mode)
->  static int __ptrace_may_access(struct task_struct *task, unsigned int mode)
->  {
->  	const struct cred *cred = current_cred(), *tcred;
-> -	int dumpable = 0;
-> +	struct mm_struct *mm;
->  	kuid_t caller_uid;
->  	kgid_t caller_gid;
->  
-> @@ -271,16 +271,11 @@ static int __ptrace_may_access(struct task_struct *task, unsigned int mode)
->  	return -EPERM;
->  ok:
->  	rcu_read_unlock();
-> -	smp_rmb();
-> -	if (task->mm)
-> -		dumpable = get_dumpable(task->mm);
-> -	rcu_read_lock();
-> -	if (dumpable != SUID_DUMP_USER &&
-> -	    !ptrace_has_cap(__task_cred(task)->user_ns, mode)) {
-> -		rcu_read_unlock();
-> -		return -EPERM;
-> -	}
-> -	rcu_read_unlock();
-> +	mm = task->mm;
-> +	if (!mm ||
-> +	    ((get_dumpable(mm) != SUID_DUMP_USER) &&
-> +	     !ptrace_has_cap(mm->user_ns, mode)))
-> +	    return -EPERM;
->  
->  	return security_ptrace_access_check(task, mode);
->  }
-> diff --git a/mm/init-mm.c b/mm/init-mm.c
-> index a56a851908d2..975e49f00f34 100644
-> --- a/mm/init-mm.c
-> +++ b/mm/init-mm.c
-> @@ -6,6 +6,7 @@
->  #include <linux/cpumask.h>
->  
->  #include <linux/atomic.h>
-> +#include <linux/user_namespace.h>
->  #include <asm/pgtable.h>
->  #include <asm/mmu.h>
->  
-> @@ -21,5 +22,6 @@ struct mm_struct init_mm = {
->  	.mmap_sem	= __RWSEM_INITIALIZER(init_mm.mmap_sem),
->  	.page_table_lock =  __SPIN_LOCK_UNLOCKED(init_mm.page_table_lock),
->  	.mmlist		= LIST_HEAD_INIT(init_mm.mmlist),
-> +	.user_ns	= &init_user_ns,
->  	INIT_MM_CONTEXT(init_mm)
->  };
-> -- 
-> 2.8.3
-> 
-> --
-> To unsubscribe, send a message with 'unsubscribe linux-mm' in
-> the body to majordomo-Bw31MaZKKs0EbZ0PF+XxCw@public.gmane.org  For more info on Linux MM,
-> see: http://www.linux-mm.org/ .
-> Don't email: <a href=mailto:"dont-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org"> email-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org </a>
+--n0t7pLec3q0yZKtb
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
--- 
-Michal Hocko
-SUSE Labs
+On Tue, Oct 18, 2016 at 03:50:32PM +0200, Michal Hocko wrote:
+> On Mon 17-10-16 11:39:49, Eric W. Biederman wrote:
+> >=20
+> > During exec dumpable is cleared if the file that is being executed is
+> > not readable by the user executing the file.  A bug in
+> > ptrace_may_access allows reading the file if the executable happens to
+> > enter into a subordinate user namespace (aka clone(CLONE_NEWUSER),
+> > unshare(CLONE_NEWUSER), or setns(fd, CLONE_NEWUSER).
+> >=20
+> > This problem is fixed with only necessary userspace breakage by adding
+> > a user namespace owner to mm_struct, captured at the time of exec,
+> > so it is clear in which user namespace CAP_SYS_PTRACE must be present
+> > in to be able to safely give read permission to the executable.
+> >=20
+> > The function ptrace_may_access is modified to verify that the ptracer
+> > has CAP_SYS_ADMIN in task->mm->user_ns instead of task->cred->user_ns.
+> > This ensures that if the task changes it's cred into a subordinate
+> > user namespace it does not become ptraceable.
+>=20
+> I haven't studied your patch too deeply but one thing that immediately=20
+> raised a red flag was that mm might be shared between processes (aka
+> thread groups).
+
+You're conflating things. Threads always share memory, but sharing memory
+doesn't imply being part of the same thread group.
+
+> What prevents those two to sit in different user
+> namespaces?
+
+For thread groups: You can't change user namespace in a thread group
+with more than one task.
+
+For shared mm: Yeah, I think that could happen - but it doesn't matter.
+The patch just needs the mm to determine the namespace in which the mm
+was created, and that's always the same for tasks that share mm.
+
+--n0t7pLec3q0yZKtb
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBAgAGBQJYBipVAAoJED4KNFJOeCOoFR8P/1qBdlSDl1nPfVM5mIQAA2I5
+5moy4YtaFZV/UC+uNGxmJiTAW+esWnOA2L+W1KqCtbR/e+mD3lW322iCIXJPYieS
+bZocjcJ3OOSM01Yrzj05OaoCcoAL6Zbz1AgcrYmtHJSbMptZG1YqSLdjrSUfppHU
+MFAhX7nLe2kOtA4OjIGYpVuDOaDn6vF7lKnPHVDvUC5Z1JR0oJ9bRVTUzrUdIbpL
+sGh5Ba52zAqimVjVfLEKW0QIVkrZQd1IXmXvu+c/swm/tWecA0vLaNjTMaz5Mf9J
+WUBeM+ihIyH8Jm1I2CD6y/eKBnyB6pF7Z5EyrKLBjmdg6qoLXkQjQKn0hWujGt4m
+eLuuKjiKpLO5aFhX4dVqcKzLLiSB0GMdIIGR+zQrHudRy5++twmJVo/rgBvpGnwJ
+jq0Z8mJtnpE2yR1rSKVfx39Xn63nByEOQ3ivVi3a9P9xgpLpYfdj8UsK0Sc+kh+v
+VCubq3KvdOvlJoL9C3sNuYnEMZVJP0q24CF15ybYz4Tdghs4XX8ujaYREbS8mtke
+4WEBhu7wbh2/5R0gw/r5szjyHow4iJY1+dXpYswdQEYZ4qtJ7L2yb9iByrLB/LFh
+I4mgRDVae3phBtorxsJ2er5AXGPvz9JyoEK3qayWEwXNRe2JrXEaQKrLaUShSeJ3
+5AW2YqgFrnTP1SX6FIJm
+=BDcU
+-----END PGP SIGNATURE-----
+
+--n0t7pLec3q0yZKtb--
+
+--===============0122895539591663046==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============0122895539591663046==--
