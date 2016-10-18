@@ -1,18 +1,17 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [REVIEW][PATCH] mm: Add a user_ns owner to mm_struct and fix
-	ptrace_may_access
-Date: Tue, 18 Oct 2016 16:07:27 -0500
-Message-ID: <87r37dnz74.fsf__36079.2115367532$1476825007$gmane$org@xmission.com>
+Subject: [REVIEW][PATCH] exec: Don't exec files the userns root can not read.
+Date: Tue, 18 Oct 2016 16:15:20 -0500
+Message-ID: <87k2d5nytz.fsf_-___15578.2842812643$1476825479$gmane$org@xmission.com>
 References: <87twcbq696.fsf@x220.int.ebiederm.org>
 	<20161018135031.GB13117@dhcp22.suse.cz> <8737jt903u.fsf@xmission.com>
 	<20161018150507.GP14666@pc.thejh.net> <87twc9656s.fsf@xmission.com>
-	<20161018191206.GA1210@laptop.thejh.net>
+	<20161018191206.GA1210@laptop.thejh.net> <87r37dnz74.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20161018191206.GA1210-GiL72Q0nGm9Crx9znvW9yA@public.gmane.org> (Jann Horn's message of
-	"Tue, 18 Oct 2016 21:12:06 +0200")
+In-Reply-To: <87r37dnz74.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (Eric W. Biederman's message of
+	"Tue, 18 Oct 2016 16:07:27 -0500")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,113 +25,196 @@ To: Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>
 Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org> writes:
 
-> On Tue, Oct 18, 2016 at 10:35:23AM -0500, Eric W. Biederman wrote:
->> Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org> writes:
->> 
->> > On Tue, Oct 18, 2016 at 09:56:53AM -0500, Eric W. Biederman wrote:
->> >> Michal Hocko <mhocko-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> writes:
->> >> 
->> >> > On Mon 17-10-16 11:39:49, Eric W. Biederman wrote:
->> >> >> 
->> >> >> During exec dumpable is cleared if the file that is being executed is
->> >> >> not readable by the user executing the file.  A bug in
->> >> >> ptrace_may_access allows reading the file if the executable happens to
->> >> >> enter into a subordinate user namespace (aka clone(CLONE_NEWUSER),
->> >> >> unshare(CLONE_NEWUSER), or setns(fd, CLONE_NEWUSER).
->> >> >> 
->> >> >> This problem is fixed with only necessary userspace breakage by adding
->> >> >> a user namespace owner to mm_struct, captured at the time of exec,
->> >> >> so it is clear in which user namespace CAP_SYS_PTRACE must be present
->> >> >> in to be able to safely give read permission to the executable.
->> >> >> 
->> >> >> The function ptrace_may_access is modified to verify that the ptracer
->> >> >> has CAP_SYS_ADMIN in task->mm->user_ns instead of task->cred->user_ns.
->> >> >> This ensures that if the task changes it's cred into a subordinate
->> >> >> user namespace it does not become ptraceable.
->> >> >
->> >> > I haven't studied your patch too deeply but one thing that immediately 
->> >> > raised a red flag was that mm might be shared between processes (aka
->> >> > thread groups). What prevents those two to sit in different user
->> >> > namespaces?
->> >> >
->> >> > I am primarily asking because this generated a lot of headache for the
->> >> > memcg handling as those processes might sit in different cgroups while
->> >> > there is only one correct memcg for them which can disagree with the
->> >> > cgroup associated with one of the processes.
->> >> 
->> >> That is a legitimate concern, but I do not see any of those kinds of
->> >> issues here.
->> >> 
->> >> Part of the memcg pain comes from the fact that control groups are
->> >> process centric, and part of the pain comes from the fact that it is
->> >> possible to change control groups.  What I am doing is making the mm
->> >> owned by a user namespace (at creation time), and I am not allowing
->> >> changes to that ownership. The credentials of the tasks that use that mm
->> >> may be in the same user namespace or descendent user namespaces.
->> >> 
->> >> The core goal is to enforce the unreadability of an mm when an
->> >> non-readable file is executed.  This is a time of mm creation property.
->> >> The enforcement of which fits very well with the security/permission
->> >> checking role of the user namespace.
->> >
->> > How is that going to work? I thought the core goal was better security for
->> > entering containers.
->> 
->> The better security when entering containers came from fixing the the
->> check for unreadable files.  Because that is fundamentally what
->> the mm dumpable settings are for.
->
-> Oh, interesting.
->
->
->> > If I want to dump a non-readable file, afaik, I can just make a new user
->> > namespace, then run the file in there and dump its memory.
->> > I guess you could fix that by entirely prohibiting the execution of a
->> > non-readable file whose owner UID is not mapped. (Adding more dumping
->> > restrictions wouldn't help much because you could still e.g. supply a
->> > malicious dynamic linker if you control the mount namespace.)
->> 
->> That seems to be a part of this puzzle I have incompletely addressed,
->> thank you.
->> 
->> It looks like I need to change either the owning user namespace or
->> fail the exec.  Malicious dynamic linkers are doubly interesting.
->> 
->> As mount name spaces are also owned if I have privileges I can address
->> the possibility of a malicious dynamic linker that way.  AKA who cares
->> about the link if the owner of the mount namespace has permissions to
->> read the file.
->
-> If you just check the owner of the mount namespace, someone could still
-> use a user namespace to chroot() the process. That should also be
-> sufficient to get the evil linker in. I think it really needs to be the
-> user namespace of the executing process that's checked, not the user
-> namespace associated with some mount namespace.
+When the user namespace support was merged the need to prevent
+ptracing an executable that is not readable was overlooked.
 
-Something.  I will just note that this is hard to analyze and
-theoretically possible for now, since I don't intend to pursue
-that solution.
+Correct this oversight by not letting exec succeed if during exec an
+executable is not readable and the current user namespace capabilities
+do not apply to the executable's file.
 
->> I am going to look at failing the exec if the owning user namespace
->> of the mm would not have permissions to read the file.  That should just
->> be a couple of lines of code and easy to maintain.  Plus it does not
->> appear that non-readable executables are particularly common.
->
-> Hm. Yeah, I guess mode 04111 probably isn't sooo common.
-> From a security perspective, I think that should work.
+While it happens that distros install some files setuid and
+non-readable I have not found any executable files just installed
+non-readalbe.  Executables that are setuid to a user not mapped in a
+user namespace are worthless, so I don't expect this to introduce
+any problems in practice.
 
-Well there is at least one common distro that installs sudo
-that way so I would not say uncommon.   But we already ignore
-the suid and sgid bit when executing such executables as without
-having the uid or gid mapping into a user namespace suid and sgid
-can not be supported.
+There may be a way to allow this execution to happen by setting
+mm->user_ns to a more privileged user namespace and watching out for
+the possibility of using dynamic linkers or other shared libraries
+that the kernel loads into the mm to bypass the read-only
+restriction.  But the analysis is more difficult and it would
+require more code churn so I don't think the effort is worth it.
 
-So the only case that could cause a real regression/loss of
-functionality is if there are unreadable executables without the suid or
-sgid bit set.  I can't find any of those.
+Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Reported-by: Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>
+Fixes: 9e4a36ece652 ("userns: Fail exec for suid and sgid binaries with ids outside our user namespace.")
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
 
-Patch for this second bug in a moment.
+Tossing this out for review in case I missed something silly but this
+patch seems pretty trivial.
 
-Eric
+ arch/x86/ia32/ia32_aout.c |  4 +++-
+ fs/binfmt_aout.c          |  4 +++-
+ fs/binfmt_elf.c           |  4 +++-
+ fs/binfmt_elf_fdpic.c     |  4 +++-
+ fs/binfmt_flat.c          |  4 +++-
+ fs/exec.c                 | 19 ++++++++++++++++---
+ include/linux/binfmts.h   |  6 +++++-
+ 7 files changed, 36 insertions(+), 9 deletions(-)
+
+diff --git a/arch/x86/ia32/ia32_aout.c b/arch/x86/ia32/ia32_aout.c
+index cb26f18d43af..7ad20dedd929 100644
+--- a/arch/x86/ia32/ia32_aout.c
++++ b/arch/x86/ia32/ia32_aout.c
+@@ -294,7 +294,9 @@ static int load_aout_binary(struct linux_binprm *bprm)
+ 	set_personality(PER_LINUX);
+ 	set_personality_ia32(false);
+ 
+-	setup_new_exec(bprm);
++	retval = setup_new_exec(bprm);
++	if (retval)
++		return retval;
+ 
+ 	regs->cs = __USER32_CS;
+ 	regs->r8 = regs->r9 = regs->r10 = regs->r11 = regs->r12 =
+diff --git a/fs/binfmt_aout.c b/fs/binfmt_aout.c
+index ae1b5404fced..b7b8aa03ccd0 100644
+--- a/fs/binfmt_aout.c
++++ b/fs/binfmt_aout.c
+@@ -242,7 +242,9 @@ static int load_aout_binary(struct linux_binprm * bprm)
+ #else
+ 	set_personality(PER_LINUX);
+ #endif
+-	setup_new_exec(bprm);
++	retval = setup_new_exec(bprm);
++	if (retval)
++		return retval;
+ 
+ 	current->mm->end_code = ex.a_text +
+ 		(current->mm->start_code = N_TXTADDR(ex));
+diff --git a/fs/binfmt_elf.c b/fs/binfmt_elf.c
+index 2472af2798c7..423fece0b8c4 100644
+--- a/fs/binfmt_elf.c
++++ b/fs/binfmt_elf.c
+@@ -852,7 +852,9 @@ static int load_elf_binary(struct linux_binprm *bprm)
+ 	if (!(current->personality & ADDR_NO_RANDOMIZE) && randomize_va_space)
+ 		current->flags |= PF_RANDOMIZE;
+ 
+-	setup_new_exec(bprm);
++	retval = setup_new_exec(bprm);
++	if (retval)
++		goto out_free_dentry;
+ 	install_exec_creds(bprm);
+ 
+ 	/* Do this so that we can load the interpreter, if need be.  We will
+diff --git a/fs/binfmt_elf_fdpic.c b/fs/binfmt_elf_fdpic.c
+index 464a972e88c1..d3099caff96d 100644
+--- a/fs/binfmt_elf_fdpic.c
++++ b/fs/binfmt_elf_fdpic.c
+@@ -352,7 +352,9 @@ static int load_elf_fdpic_binary(struct linux_binprm *bprm)
+ 	if (elf_read_implies_exec(&exec_params.hdr, executable_stack))
+ 		current->personality |= READ_IMPLIES_EXEC;
+ 
+-	setup_new_exec(bprm);
++	retval = setup_new_exec(bprm);
++	if (retval)
++		goto error;
+ 
+ 	set_binfmt(&elf_fdpic_format);
+ 
+diff --git a/fs/binfmt_flat.c b/fs/binfmt_flat.c
+index 9b2917a30294..25ca68940ad4 100644
+--- a/fs/binfmt_flat.c
++++ b/fs/binfmt_flat.c
+@@ -524,7 +524,9 @@ static int load_flat_file(struct linux_binprm *bprm,
+ 
+ 		/* OK, This is the point of no return */
+ 		set_personality(PER_LINUX_32BIT);
+-		setup_new_exec(bprm);
++		ret = setup_new_exec(bprm);
++		if (ret)
++			goto err;
+ 	}
+ 
+ 	/*
+diff --git a/fs/exec.c b/fs/exec.c
+index 6fcfb3f7b137..f724ed94ba7a 100644
+--- a/fs/exec.c
++++ b/fs/exec.c
+@@ -1270,12 +1270,21 @@ EXPORT_SYMBOL(flush_old_exec);
+ 
+ void would_dump(struct linux_binprm *bprm, struct file *file)
+ {
+-	if (inode_permission(file_inode(file), MAY_READ) < 0)
++	struct inode *inode = file_inode(file);
++	if (inode_permission(inode, MAY_READ) < 0) {
++		struct user_namespace *user_ns = current->mm->user_ns;
+ 		bprm->interp_flags |= BINPRM_FLAGS_ENFORCE_NONDUMP;
++
++		/* May the user_ns root read the executable? */
++		if (!kuid_has_mapping(user_ns, inode->i_uid) ||
++		    !kgid_has_mapping(user_ns, inode->i_gid)) {
++			bprm->interp_flags |= BINPRM_FLAGS_EXEC_INACCESSIBLE;
++		}
++	}
+ }
+ EXPORT_SYMBOL(would_dump);
+ 
+-void setup_new_exec(struct linux_binprm * bprm)
++int setup_new_exec(struct linux_binprm * bprm)
+ {
+ 	arch_pick_mmap_layout(current->mm);
+ 
+@@ -1296,12 +1305,15 @@ void setup_new_exec(struct linux_binprm * bprm)
+ 	 */
+ 	current->mm->task_size = TASK_SIZE;
+ 
++	would_dump(bprm, bprm->file);
++	if (bprm->interp_flags & BINPRM_FLAGS_EXEC_INACCESSIBLE)
++		return -EPERM;
++
+ 	/* install the new credentials */
+ 	if (!uid_eq(bprm->cred->uid, current_euid()) ||
+ 	    !gid_eq(bprm->cred->gid, current_egid())) {
+ 		current->pdeath_signal = 0;
+ 	} else {
+-		would_dump(bprm, bprm->file);
+ 		if (bprm->interp_flags & BINPRM_FLAGS_ENFORCE_NONDUMP)
+ 			set_dumpable(current->mm, suid_dumpable);
+ 	}
+@@ -1311,6 +1323,7 @@ void setup_new_exec(struct linux_binprm * bprm)
+ 	current->self_exec_id++;
+ 	flush_signal_handlers(current, 0);
+ 	do_close_on_exec(current->files);
++	return 0;
+ }
+ EXPORT_SYMBOL(setup_new_exec);
+ 
+diff --git a/include/linux/binfmts.h b/include/linux/binfmts.h
+index 1303b570b18c..8e5fb9eca2ee 100644
+--- a/include/linux/binfmts.h
++++ b/include/linux/binfmts.h
+@@ -57,6 +57,10 @@ struct linux_binprm {
+ #define BINPRM_FLAGS_PATH_INACCESSIBLE_BIT 2
+ #define BINPRM_FLAGS_PATH_INACCESSIBLE (1 << BINPRM_FLAGS_PATH_INACCESSIBLE_BIT)
+ 
++/* executable is inaccessible for performing exec */
++#define BINPRM_FLAGS_EXEC_INACCESSIBLE_BIT 3
++#define BINPRM_FLAGS_EXEC_INACCESSIBLE (1 << BINPRM_FLAGS_EXEC_INACCESSIBLE_BIT)
++
+ /* Function parameter for binfmt->coredump */
+ struct coredump_params {
+ 	const siginfo_t *siginfo;
+@@ -100,7 +104,7 @@ extern int prepare_binprm(struct linux_binprm *);
+ extern int __must_check remove_arg_zero(struct linux_binprm *);
+ extern int search_binary_handler(struct linux_binprm *);
+ extern int flush_old_exec(struct linux_binprm * bprm);
+-extern void setup_new_exec(struct linux_binprm * bprm);
++extern int setup_new_exec(struct linux_binprm * bprm);
+ extern void would_dump(struct linux_binprm *, struct file *);
+ 
+ extern int suid_dumpable;
+-- 
+2.8.3
