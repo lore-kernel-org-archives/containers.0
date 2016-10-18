@@ -1,14 +1,16 @@
-From: Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [REVIEW][PATCH] mm: Add a user_ns owner to mm_struct and fix
 	ptrace_may_access
-Date: Tue, 18 Oct 2016 15:57:41 +0200
-Message-ID: <20161018135741.GO14666@pc.thejh.net>
+Date: Tue, 18 Oct 2016 09:56:53 -0500
+Message-ID: <8737jt903u.fsf@xmission.com>
 References: <87twcbq696.fsf@x220.int.ebiederm.org>
 	<20161018135031.GB13117@dhcp22.suse.cz>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============0122895539591663046=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20161018135031.GB13117-2MMpYkNvuYDjFM9bn6wA6Q@public.gmane.org>
+In-Reply-To: <20161018135031.GB13117-2MMpYkNvuYDjFM9bn6wA6Q@public.gmane.org> (Michal Hocko's message
+	of "Tue, 18 Oct 2016 15:50:32 +0200")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,89 +21,60 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Michal Hocko <mhocko-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Michal Hocko <mhocko-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> writes:
 
---===============0122895539591663046==
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="n0t7pLec3q0yZKtb"
-Content-Disposition: inline
-
-
---n0t7pLec3q0yZKtb
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Tue, Oct 18, 2016 at 03:50:32PM +0200, Michal Hocko wrote:
 > On Mon 17-10-16 11:39:49, Eric W. Biederman wrote:
-> >=20
-> > During exec dumpable is cleared if the file that is being executed is
-> > not readable by the user executing the file.  A bug in
-> > ptrace_may_access allows reading the file if the executable happens to
-> > enter into a subordinate user namespace (aka clone(CLONE_NEWUSER),
-> > unshare(CLONE_NEWUSER), or setns(fd, CLONE_NEWUSER).
-> >=20
-> > This problem is fixed with only necessary userspace breakage by adding
-> > a user namespace owner to mm_struct, captured at the time of exec,
-> > so it is clear in which user namespace CAP_SYS_PTRACE must be present
-> > in to be able to safely give read permission to the executable.
-> >=20
-> > The function ptrace_may_access is modified to verify that the ptracer
-> > has CAP_SYS_ADMIN in task->mm->user_ns instead of task->cred->user_ns.
-> > This ensures that if the task changes it's cred into a subordinate
-> > user namespace it does not become ptraceable.
->=20
-> I haven't studied your patch too deeply but one thing that immediately=20
+>> 
+>> During exec dumpable is cleared if the file that is being executed is
+>> not readable by the user executing the file.  A bug in
+>> ptrace_may_access allows reading the file if the executable happens to
+>> enter into a subordinate user namespace (aka clone(CLONE_NEWUSER),
+>> unshare(CLONE_NEWUSER), or setns(fd, CLONE_NEWUSER).
+>> 
+>> This problem is fixed with only necessary userspace breakage by adding
+>> a user namespace owner to mm_struct, captured at the time of exec,
+>> so it is clear in which user namespace CAP_SYS_PTRACE must be present
+>> in to be able to safely give read permission to the executable.
+>> 
+>> The function ptrace_may_access is modified to verify that the ptracer
+>> has CAP_SYS_ADMIN in task->mm->user_ns instead of task->cred->user_ns.
+>> This ensures that if the task changes it's cred into a subordinate
+>> user namespace it does not become ptraceable.
+>
+> I haven't studied your patch too deeply but one thing that immediately 
 > raised a red flag was that mm might be shared between processes (aka
-> thread groups).
-
-You're conflating things. Threads always share memory, but sharing memory
-doesn't imply being part of the same thread group.
-
-> What prevents those two to sit in different user
+> thread groups). What prevents those two to sit in different user
 > namespaces?
+>
+> I am primarily asking because this generated a lot of headache for the
+> memcg handling as those processes might sit in different cgroups while
+> there is only one correct memcg for them which can disagree with the
+> cgroup associated with one of the processes.
 
-For thread groups: You can't change user namespace in a thread group
-with more than one task.
+That is a legitimate concern, but I do not see any of those kinds of
+issues here.
 
-For shared mm: Yeah, I think that could happen - but it doesn't matter.
-The patch just needs the mm to determine the namespace in which the mm
-was created, and that's always the same for tasks that share mm.
+Part of the memcg pain comes from the fact that control groups are
+process centric, and part of the pain comes from the fact that it is
+possible to change control groups.  What I am doing is making the mm
+owned by a user namespace (at creation time), and I am not allowing
+changes to that ownership. The credentials of the tasks that use that mm
+may be in the same user namespace or descendent user namespaces.
 
---n0t7pLec3q0yZKtb
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+The core goal is to enforce the unreadability of an mm when an
+non-readable file is executed.  This is a time of mm creation property.
+The enforcement of which fits very well with the security/permission
+checking role of the user namespace.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+Could this use of mm->user_ns be extended for some kind of
+accounting/limiting in the future?  Possibly.  I can imagine a limit on
+the total number of page table entries a group of processes are allowed
+to have as being a sane kind of limit in this setting much like
+RLIMIT_AS is sane on a single mm level.  Pages don't belong to mm's so I
+can't imagine anything like the memcg being built on this kind of
+infrastructure.
 
-iQIcBAEBAgAGBQJYBipVAAoJED4KNFJOeCOoFR8P/1qBdlSDl1nPfVM5mIQAA2I5
-5moy4YtaFZV/UC+uNGxmJiTAW+esWnOA2L+W1KqCtbR/e+mD3lW322iCIXJPYieS
-bZocjcJ3OOSM01Yrzj05OaoCcoAL6Zbz1AgcrYmtHJSbMptZG1YqSLdjrSUfppHU
-MFAhX7nLe2kOtA4OjIGYpVuDOaDn6vF7lKnPHVDvUC5Z1JR0oJ9bRVTUzrUdIbpL
-sGh5Ba52zAqimVjVfLEKW0QIVkrZQd1IXmXvu+c/swm/tWecA0vLaNjTMaz5Mf9J
-WUBeM+ihIyH8Jm1I2CD6y/eKBnyB6pF7Z5EyrKLBjmdg6qoLXkQjQKn0hWujGt4m
-eLuuKjiKpLO5aFhX4dVqcKzLLiSB0GMdIIGR+zQrHudRy5++twmJVo/rgBvpGnwJ
-jq0Z8mJtnpE2yR1rSKVfx39Xn63nByEOQ3ivVi3a9P9xgpLpYfdj8UsK0Sc+kh+v
-VCubq3KvdOvlJoL9C3sNuYnEMZVJP0q24CF15ybYz4Tdghs4XX8ujaYREbS8mtke
-4WEBhu7wbh2/5R0gw/r5szjyHow4iJY1+dXpYswdQEYZ4qtJ7L2yb9iByrLB/LFh
-I4mgRDVae3phBtorxsJ2er5AXGPvz9JyoEK3qayWEwXNRe2JrXEaQKrLaUShSeJ3
-5AW2YqgFrnTP1SX6FIJm
-=BDcU
------END PGP SIGNATURE-----
-
---n0t7pLec3q0yZKtb--
-
---===============0122895539591663046==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============0122895539591663046==--
+Eric
