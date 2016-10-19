@@ -1,17 +1,23 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [REVIEW][PATCH] exec: Don't exec files the userns root can not read.
-Date: Tue, 18 Oct 2016 16:15:20 -0500
-Message-ID: <87k2d5nytz.fsf_-___15578.2842812643$1476825479$gmane$org@xmission.com>
-References: <87twcbq696.fsf@x220.int.ebiederm.org>
-	<20161018135031.GB13117@dhcp22.suse.cz> <8737jt903u.fsf@xmission.com>
-	<20161018150507.GP14666@pc.thejh.net> <87twc9656s.fsf@xmission.com>
-	<20161018191206.GA1210@laptop.thejh.net> <87r37dnz74.fsf@xmission.com>
+Subject: [REVIEW][PATCH] mount: In propagate_umount handle overlapping mount
+	propagation trees
+Date: Tue, 18 Oct 2016 22:46:40 -0500
+Message-ID: <877f95ngpr.fsf_-___29996.0404554897$1476848960$gmane$org@xmission.com>
+References: <1476141965-21429-1-git-send-email-avagin@openvz.org>
+	<877f9c6ui8.fsf@x220.int.ebiederm.org>
+	<87pon458l1.fsf_-_@x220.int.ebiederm.org>
+	<20161013214650.GB19836@outlook.office365.com>
+	<CANaxB-xPkgdyeg0z6TvExMfyy4uOC+Nu4Q99WpCscNKMWz8VPg@mail.gmail.com>
+	<87wphb4pjn.fsf@x220.int.ebiederm.org>
+	<8737jy3htt.fsf_-_@x220.int.ebiederm.org>
+	<20161018024000.GA4901@outlook.office365.com>
+	<87r37e9mnj.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87r37dnz74.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (Eric W. Biederman's message of
-	"Tue, 18 Oct 2016 16:07:27 -0500")
+In-Reply-To: <87r37e9mnj.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (Eric W. Biederman's message of
+	"Tue, 18 Oct 2016 01:49:52 -0500")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,200 +27,410 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michal Hocko <mhocko-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
+Cc: linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-When the user namespace support was merged the need to prevent
-ptracing an executable that is not readable was overlooked.
+Adrei Vagin pointed out that time to executue propagate_umount can go
+non-linear (and take a ludicrious amount of time) when the mount
+propogation trees of the mounts to be unmunted by a lazy unmount
+overlap.
 
-Correct this oversight by not letting exec succeed if during exec an
-executable is not readable and the current user namespace capabilities
-do not apply to the executable's file.
+While investigating the horrible performance I realized that in
+the case overlapping mount trees since the addition of locked
+mount support the code has been failing to unmount all of the
+mounts it should have been unmounting.
 
-While it happens that distros install some files setuid and
-non-readable I have not found any executable files just installed
-non-readalbe.  Executables that are setuid to a user not mapped in a
-user namespace are worthless, so I don't expect this to introduce
-any problems in practice.
+Make the walk of the mount propagation trees nearly linear by using
+MNT_MARK to mark pieces of the mount propagation trees that have
+already been visited, allowing subsequent walks to skip over
+subtrees.
 
-There may be a way to allow this execution to happen by setting
-mm->user_ns to a more privileged user namespace and watching out for
-the possibility of using dynamic linkers or other shared libraries
-that the kernel loads into the mm to bypass the read-only
-restriction.  But the analysis is more difficult and it would
-require more code churn so I don't think the effort is worth it.
+Make the processing of mounts order independent by adding a list of
+mount entries that need to be unmounted, and simply adding a mount to
+that list when it becomes apparent the mount can safely be unmounted.
+For mounts that are locked on other mounts but otherwise could be
+unmounted move them from their parnets mnt_mounts to mnt_umounts so
+that if and when their parent becomes unmounted these mounts can be
+added to the list of mounts to unmount.
+
+Add a final pass to clear MNT_MARK and to restore mnt_mounts
+from mnt_umounts for anything that did not get unmounted.
+
+Add the functions propagation_visit_next and propagation_revisit_next
+to coordinate walking of the mount tree and setting and clearing the
+mount mark.
+
+The skipping of already unmounted mounts has been moved from
+__lookup_mnt_last to mark_umount_candidates, so that the new
+propagation functions can notice when the propagation tree passes
+through the initial set of unmounted mounts.  Except in umount_tree as
+part of the unmounting process the only place where unmounted mounts
+should be found are in unmounted subtrees.  All of the other callers
+of __lookup_mnt_last are from mounted subtrees so the not checking for
+unmounted mounts should not affect them.
+
+A script to generate overlapping mount propagation trees:
+$ cat run.sh
+mount -t tmpfs test-mount /mnt
+mount --make-shared /mnt
+for i in `seq $1`; do
+        mkdir /mnt/test.$i
+        mount --bind /mnt /mnt/test.$i
+done
+cat /proc/mounts | grep test-mount | wc -l
+time umount -l /mnt
+$ for i in `seq 10 16`; do echo $i; unshare -Urm bash ./run.sh $i; done
+
+Here are the performance numbers with and without the patch:
+
+mhash  |  8192   |  8192  |  8192       | 131072 | 131072      | 104857 | 104857
+mounts | before  | after  | after (sys) | after  | after (sys) |  after | after (sys)
+-------------------------------------------------------------------------------------
+  1024 |  0.071s | 0.020s | 0.000s      | 0.022s | 0.004s      | 0.020s | 0.004s
+  2048 |  0.184s | 0.022s | 0.004s      | 0.023s | 0.004s      | 0.022s | 0.008s
+  4096 |  0.604s | 0.025s | 0.020s      | 0.029s | 0.008s      | 0.026s | 0.004s
+  8912 |  4.471s | 0.053s | 0.020s      | 0.051s | 0.024s      | 0.047s | 0.016s
+ 16384 | 34.826s | 0.088s | 0.060s      | 0.081s | 0.048s      | 0.082s | 0.052s
+ 32768 |         | 0.216s | 0.172s      | 0.160s | 0.124s      | 0.160s | 0.096s
+ 65536 |         | 0.819s | 0.726s      | 0.330s | 0.260s      | 0.338s | 0.256s
+131072 |         | 4.502s | 4.168s      | 0.707s | 0.580s      | 0.709s | 0.592s
+
+Andrei Vagin reports fixing the performance problem is part of the
+work to fix CVE-2016-6213.
+
+A script for a pathlogical set of mounts:
+
+$ cat pathological.sh
+
+mount -t tmpfs base /mnt
+mount --make-shared /mnt
+mkdir -p /mnt/b
+
+mount -t tmpfs test1 /mnt/b
+mount --make-shared /mnt/b
+mkdir -p /mnt/b/10
+
+mount -t tmpfs test2 /mnt/b/10
+mount --make-shared /mnt/b/10
+mkdir -p /mnt/b/10/20
+
+mount --rbind /mnt/b /mnt/b/10/20
+
+unshare -Urm sleep 2
+umount -l /mnt/b
+wait %%
+
+$ unsahre -Urm pathlogical.sh
 
 Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Reported-by: Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org>
-Fixes: 9e4a36ece652 ("userns: Fail exec for suid and sgid binaries with ids outside our user namespace.")
+Fixes: a05964f3917c ("[PATCH] shared mounts handling: umount")
+Fixes: 0c56fe31420c ("mnt: Don't propagate unmounts to locked mounts")
+Reported-by: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
 
-Tossing this out for review in case I missed something silly but this
-patch seems pretty trivial.
+Barring some stupid mistake this looks like it fixes both the performance
+and the correctness issues I was able to spot earlier.  Andrei if you
+could give this version a look over I would appreciate it.
 
- arch/x86/ia32/ia32_aout.c |  4 +++-
- fs/binfmt_aout.c          |  4 +++-
- fs/binfmt_elf.c           |  4 +++-
- fs/binfmt_elf_fdpic.c     |  4 +++-
- fs/binfmt_flat.c          |  4 +++-
- fs/exec.c                 | 19 ++++++++++++++++---
- include/linux/binfmts.h   |  6 +++++-
- 7 files changed, 36 insertions(+), 9 deletions(-)
+Unless we can find a problem I am going to call this the final version.
 
-diff --git a/arch/x86/ia32/ia32_aout.c b/arch/x86/ia32/ia32_aout.c
-index cb26f18d43af..7ad20dedd929 100644
---- a/arch/x86/ia32/ia32_aout.c
-+++ b/arch/x86/ia32/ia32_aout.c
-@@ -294,7 +294,9 @@ static int load_aout_binary(struct linux_binprm *bprm)
- 	set_personality(PER_LINUX);
- 	set_personality_ia32(false);
- 
--	setup_new_exec(bprm);
-+	retval = setup_new_exec(bprm);
-+	if (retval)
-+		return retval;
- 
- 	regs->cs = __USER32_CS;
- 	regs->r8 = regs->r9 = regs->r10 = regs->r11 = regs->r12 =
-diff --git a/fs/binfmt_aout.c b/fs/binfmt_aout.c
-index ae1b5404fced..b7b8aa03ccd0 100644
---- a/fs/binfmt_aout.c
-+++ b/fs/binfmt_aout.c
-@@ -242,7 +242,9 @@ static int load_aout_binary(struct linux_binprm * bprm)
- #else
- 	set_personality(PER_LINUX);
+ fs/mount.h     |   1 +
+ fs/namespace.c |   7 +-
+ fs/pnode.c     | 198 ++++++++++++++++++++++++++++++++++++++++++++++-----------
+ fs/pnode.h     |   2 +-
+ 4 files changed, 165 insertions(+), 43 deletions(-)
+
+diff --git a/fs/mount.h b/fs/mount.h
+index d2e25d7b64b3..00fe0d1d6ba7 100644
+--- a/fs/mount.h
++++ b/fs/mount.h
+@@ -58,6 +58,7 @@ struct mount {
+ 	struct mnt_namespace *mnt_ns;	/* containing namespace */
+ 	struct mountpoint *mnt_mp;	/* where is it mounted */
+ 	struct hlist_node mnt_mp_list;	/* list mounts with the same mountpoint */
++	struct list_head mnt_umounts;	/* list of children that are being unmounted */
+ #ifdef CONFIG_FSNOTIFY
+ 	struct hlist_head mnt_fsnotify_marks;
+ 	__u32 mnt_fsnotify_mask;
+diff --git a/fs/namespace.c b/fs/namespace.c
+index e6c234b1a645..73801391bb00 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -237,6 +237,7 @@ static struct mount *alloc_vfsmnt(const char *name)
+ 		INIT_LIST_HEAD(&mnt->mnt_slave_list);
+ 		INIT_LIST_HEAD(&mnt->mnt_slave);
+ 		INIT_HLIST_NODE(&mnt->mnt_mp_list);
++		INIT_LIST_HEAD(&mnt->mnt_umounts);
+ #ifdef CONFIG_FSNOTIFY
+ 		INIT_HLIST_HEAD(&mnt->mnt_fsnotify_marks);
  #endif
--	setup_new_exec(bprm);
-+	retval = setup_new_exec(bprm);
-+	if (retval)
-+		return retval;
- 
- 	current->mm->end_code = ex.a_text +
- 		(current->mm->start_code = N_TXTADDR(ex));
-diff --git a/fs/binfmt_elf.c b/fs/binfmt_elf.c
-index 2472af2798c7..423fece0b8c4 100644
---- a/fs/binfmt_elf.c
-+++ b/fs/binfmt_elf.c
-@@ -852,7 +852,9 @@ static int load_elf_binary(struct linux_binprm *bprm)
- 	if (!(current->personality & ADDR_NO_RANDOMIZE) && randomize_va_space)
- 		current->flags |= PF_RANDOMIZE;
- 
--	setup_new_exec(bprm);
-+	retval = setup_new_exec(bprm);
-+	if (retval)
-+		goto out_free_dentry;
- 	install_exec_creds(bprm);
- 
- 	/* Do this so that we can load the interpreter, if need be.  We will
-diff --git a/fs/binfmt_elf_fdpic.c b/fs/binfmt_elf_fdpic.c
-index 464a972e88c1..d3099caff96d 100644
---- a/fs/binfmt_elf_fdpic.c
-+++ b/fs/binfmt_elf_fdpic.c
-@@ -352,7 +352,9 @@ static int load_elf_fdpic_binary(struct linux_binprm *bprm)
- 	if (elf_read_implies_exec(&exec_params.hdr, executable_stack))
- 		current->personality |= READ_IMPLIES_EXEC;
- 
--	setup_new_exec(bprm);
-+	retval = setup_new_exec(bprm);
-+	if (retval)
-+		goto error;
- 
- 	set_binfmt(&elf_fdpic_format);
- 
-diff --git a/fs/binfmt_flat.c b/fs/binfmt_flat.c
-index 9b2917a30294..25ca68940ad4 100644
---- a/fs/binfmt_flat.c
-+++ b/fs/binfmt_flat.c
-@@ -524,7 +524,9 @@ static int load_flat_file(struct linux_binprm *bprm,
- 
- 		/* OK, This is the point of no return */
- 		set_personality(PER_LINUX_32BIT);
--		setup_new_exec(bprm);
-+		ret = setup_new_exec(bprm);
-+		if (ret)
-+			goto err;
+@@ -650,13 +651,11 @@ struct mount *__lookup_mnt_last(struct vfsmount *mnt, struct dentry *dentry)
+ 	p = __lookup_mnt(mnt, dentry);
+ 	if (!p)
+ 		goto out;
+-	if (!(p->mnt.mnt_flags & MNT_UMOUNT))
+-		res = p;
++	res = p;
+ 	hlist_for_each_entry_continue(p, mnt_hash) {
+ 		if (&p->mnt_parent->mnt != mnt || p->mnt_mountpoint != dentry)
+ 			break;
+-		if (!(p->mnt.mnt_flags & MNT_UMOUNT))
+-			res = p;
++		res = p;
  	}
+ out:
+ 	return res;
+diff --git a/fs/pnode.c b/fs/pnode.c
+index 234a9ac49958..15e30e861a14 100644
+--- a/fs/pnode.c
++++ b/fs/pnode.c
+@@ -390,56 +390,153 @@ void propagate_mount_unlock(struct mount *mnt)
+ }
  
- 	/*
-diff --git a/fs/exec.c b/fs/exec.c
-index 6fcfb3f7b137..f724ed94ba7a 100644
---- a/fs/exec.c
-+++ b/fs/exec.c
-@@ -1270,12 +1270,21 @@ EXPORT_SYMBOL(flush_old_exec);
- 
- void would_dump(struct linux_binprm *bprm, struct file *file)
+ /*
+- * Mark all mounts that the MNT_LOCKED logic will allow to be unmounted.
++ * get the next mount in the propagation tree (that has not been visited)
++ * @m: the mount seen last
++ * @origin: the original mount from where the tree walk initiated
++ *
++ * Note that peer groups form contiguous segments of slave lists.
++ * We rely on that in get_source() to be able to find out if
++ * vfsmount found while iterating with propagation_next() is
++ * a peer of one we'd found earlier.
+  */
+-static void mark_umount_candidates(struct mount *mnt)
++static struct mount *propagation_visit_child(struct mount *last_child,
++					    struct mount *origin_child)
  {
--	if (inode_permission(file_inode(file), MAY_READ) < 0)
-+	struct inode *inode = file_inode(file);
-+	if (inode_permission(inode, MAY_READ) < 0) {
-+		struct user_namespace *user_ns = current->mm->user_ns;
- 		bprm->interp_flags |= BINPRM_FLAGS_ENFORCE_NONDUMP;
+-	struct mount *parent = mnt->mnt_parent;
+-	struct mount *m;
++	struct mount *m = last_child->mnt_parent;
++	struct mount *origin = origin_child->mnt_parent;
++	struct dentry *mountpoint = origin_child->mnt_mountpoint;
++	struct mount *child;
+ 
+-	BUG_ON(parent == mnt);
++	/* Has this part of the propgation tree already been visited? */
++	if (IS_MNT_MARKED(last_child))
++		return NULL;
+ 
+-	for (m = propagation_next(parent, parent); m;
+-			m = propagation_next(m, parent)) {
+-		struct mount *child = __lookup_mnt_last(&m->mnt,
+-						mnt->mnt_mountpoint);
+-		if (child && (!IS_MNT_LOCKED(child) || IS_MNT_MARKED(m))) {
+-			SET_MNT_MARK(child);
++	SET_MNT_MARK(last_child);
 +
-+		/* May the user_ns root read the executable? */
-+		if (!kuid_has_mapping(user_ns, inode->i_uid) ||
-+		    !kgid_has_mapping(user_ns, inode->i_gid)) {
-+			bprm->interp_flags |= BINPRM_FLAGS_EXEC_INACCESSIBLE;
-+		}
++	/* are there any slaves of this mount? */
++	if (!list_empty(&m->mnt_slave_list)) {
++		m = first_slave(m);
++		goto check_slave;
 +	}
- }
- EXPORT_SYMBOL(would_dump);
- 
--void setup_new_exec(struct linux_binprm * bprm)
-+int setup_new_exec(struct linux_binprm * bprm)
- {
- 	arch_pick_mmap_layout(current->mm);
- 
-@@ -1296,12 +1305,15 @@ void setup_new_exec(struct linux_binprm * bprm)
- 	 */
- 	current->mm->task_size = TASK_SIZE;
- 
-+	would_dump(bprm, bprm->file);
-+	if (bprm->interp_flags & BINPRM_FLAGS_EXEC_INACCESSIBLE)
-+		return -EPERM;
++	while (1) {
++		struct mount *master = m->mnt_master;
 +
- 	/* install the new credentials */
- 	if (!uid_eq(bprm->cred->uid, current_euid()) ||
- 	    !gid_eq(bprm->cred->gid, current_egid())) {
- 		current->pdeath_signal = 0;
- 	} else {
--		would_dump(bprm, bprm->file);
- 		if (bprm->interp_flags & BINPRM_FLAGS_ENFORCE_NONDUMP)
- 			set_dumpable(current->mm, suid_dumpable);
++		if (master == origin->mnt_master) {
++			struct mount *next = next_peer(m);
++			while (1) {
++				if (next == origin)
++					return NULL;
++				child = __lookup_mnt_last(&next->mnt, mountpoint);
++				if (child && !IS_MNT_MARKED(child))
++					return child;
++				next = next_peer(next);
++			}
++		} else {
++			while (1) {
++				if (m->mnt_slave.next == &master->mnt_slave_list)
++					break;
++				m = next_slave(m);
++			check_slave:
++				child = __lookup_mnt_last(&m->mnt, mountpoint);
++				if (child && !IS_MNT_MARKED(child))
++					return child;
++			}
+ 		}
++
++		/* back at master */
++		m = master;
  	}
-@@ -1311,6 +1323,7 @@ void setup_new_exec(struct linux_binprm * bprm)
- 	current->self_exec_id++;
- 	flush_signal_handlers(current, 0);
- 	do_close_on_exec(current->files);
-+	return 0;
  }
- EXPORT_SYMBOL(setup_new_exec);
  
-diff --git a/include/linux/binfmts.h b/include/linux/binfmts.h
-index 1303b570b18c..8e5fb9eca2ee 100644
---- a/include/linux/binfmts.h
-+++ b/include/linux/binfmts.h
-@@ -57,6 +57,10 @@ struct linux_binprm {
- #define BINPRM_FLAGS_PATH_INACCESSIBLE_BIT 2
- #define BINPRM_FLAGS_PATH_INACCESSIBLE (1 << BINPRM_FLAGS_PATH_INACCESSIBLE_BIT)
+ /*
+- * NOTE: unmounting 'mnt' naturally propagates to all other mounts its
+- * parent propagates to.
++ * get the next mount in the propagation tree (that has not been revisited)
++ * @m: the mount seen last
++ * @origin: the original mount from where the tree walk initiated
++ *
++ * Note that peer groups form contiguous segments of slave lists.
++ * We rely on that in get_source() to be able to find out if
++ * vfsmount found while iterating with propagation_next() is
++ * a peer of one we'd found earlier.
+  */
+-static void __propagate_umount(struct mount *mnt)
++static struct mount *propagation_revisit_child(struct mount *last_child,
++					       struct mount *origin_child)
+ {
+-	struct mount *parent = mnt->mnt_parent;
+-	struct mount *m;
++	struct mount *m = last_child->mnt_parent;
++	struct mount *origin = origin_child->mnt_parent;
++	struct dentry *mountpoint = origin_child->mnt_mountpoint;
++	struct mount *child;
  
-+/* executable is inaccessible for performing exec */
-+#define BINPRM_FLAGS_EXEC_INACCESSIBLE_BIT 3
-+#define BINPRM_FLAGS_EXEC_INACCESSIBLE (1 << BINPRM_FLAGS_EXEC_INACCESSIBLE_BIT)
+-	BUG_ON(parent == mnt);
++	/* Has this part of the propgation tree already been revisited? */
++	if (!IS_MNT_MARKED(last_child))
++		return NULL;
+ 
+-	for (m = propagation_next(parent, parent); m;
+-			m = propagation_next(m, parent)) {
++	CLEAR_MNT_MARK(last_child);
+ 
+-		struct mount *child = __lookup_mnt_last(&m->mnt,
+-						mnt->mnt_mountpoint);
+-		/*
+-		 * umount the child only if the child has no children
+-		 * and the child is marked safe to unmount.
+-		 */
+-		if (!child || !IS_MNT_MARKED(child))
+-			continue;
+-		CLEAR_MNT_MARK(child);
+-		if (list_empty(&child->mnt_mounts)) {
+-			list_del_init(&child->mnt_child);
+-			child->mnt.mnt_flags |= MNT_UMOUNT;
+-			list_move_tail(&child->mnt_list, &mnt->mnt_list);
++	/* are there any slaves of this mount? */
++	if (!list_empty(&m->mnt_slave_list)) {
++		m = first_slave(m);
++		goto check_slave;
++	}
++	while (1) {
++		struct mount *master = m->mnt_master;
 +
- /* Function parameter for binfmt->coredump */
- struct coredump_params {
- 	const siginfo_t *siginfo;
-@@ -100,7 +104,7 @@ extern int prepare_binprm(struct linux_binprm *);
- extern int __must_check remove_arg_zero(struct linux_binprm *);
- extern int search_binary_handler(struct linux_binprm *);
- extern int flush_old_exec(struct linux_binprm * bprm);
--extern void setup_new_exec(struct linux_binprm * bprm);
-+extern int setup_new_exec(struct linux_binprm * bprm);
- extern void would_dump(struct linux_binprm *, struct file *);
++		if (master == origin->mnt_master) {
++			struct mount *next = next_peer(m);
++			while (1) {
++				if (next == origin)
++					return NULL;
++				child = __lookup_mnt_last(&next->mnt, mountpoint);
++				if (child && IS_MNT_MARKED(child))
++					return child;
++				next = next_peer(next);
++			}
++		} else {
++			while (1) {
++				if (m->mnt_slave.next == &master->mnt_slave_list)
++					break;
++				m = next_slave(m);
++			check_slave:
++				child = __lookup_mnt_last(&m->mnt, mountpoint);
++				if (child && IS_MNT_MARKED(child))
++					return child;
++			}
+ 		}
++
++		/* back at master */
++		m = master;
+ 	}
+ }
  
- extern int suid_dumpable;
++static void start_umount_propagation(struct mount *child,
++				     struct list_head *to_umount)
++{
++	do {
++		struct mount *parent = child->mnt_parent;
++
++		if ((child->mnt.mnt_flags & MNT_UMOUNT) ||
++		    !list_empty(&child->mnt_mounts))
++			return;
++
++		if (!IS_MNT_LOCKED(child))
++			list_move_tail(&child->mnt_child, to_umount);
++		else
++			list_move_tail(&child->mnt_child, &parent->mnt_umounts);
++
++		child = NULL;
++		if (IS_MNT_MARKED(parent))
++			child = parent;
++	} while (child);
++}
++
++static void end_umount_propagation(struct mount *child)
++{
++	struct mount *parent = child->mnt_parent;
++
++	if (!list_empty(&parent->mnt_umounts))
++		list_splice_tail_init(&parent->mnt_umounts, &parent->mnt_mounts);
++}
++
++
+ /*
+  * collect all mounts that receive propagation from the mount in @list,
+  * and return these additional mounts in the same list.
+@@ -447,14 +544,39 @@ static void __propagate_umount(struct mount *mnt)
+  *
+  * vfsmount lock must be held for write
+  */
+-int propagate_umount(struct list_head *list)
++void propagate_umount(struct list_head *list)
+ {
+ 	struct mount *mnt;
++	LIST_HEAD(to_umount);
++	LIST_HEAD(tmp_list);
++
++	/* Find candidates for unmounting */
++	list_for_each_entry(mnt, list, mnt_list) {
++		struct mount *child;
++		for (child = propagation_visit_child(mnt, mnt); child;
++		     child = propagation_visit_child(child, mnt))
++			start_umount_propagation(child, &to_umount);
++	}
+ 
+-	list_for_each_entry_reverse(mnt, list, mnt_list)
+-		mark_umount_candidates(mnt);
++	/* Begin unmounting */
++	while (!list_empty(&to_umount)) {
++		mnt = list_first_entry(&to_umount, struct mount, mnt_child);
+ 
+-	list_for_each_entry(mnt, list, mnt_list)
+-		__propagate_umount(mnt);
+-	return 0;
++		list_del_init(&mnt->mnt_child);
++		mnt->mnt.mnt_flags |= MNT_UMOUNT;
++		list_move_tail(&mnt->mnt_list, &tmp_list);
++
++		if (!list_empty(&mnt->mnt_umounts))
++			list_splice_tail_init(&mnt->mnt_umounts, &to_umount);
++	}
++
++	/* Cleanup the mount propagation tree */
++	list_for_each_entry(mnt, list, mnt_list) {
++		struct mount *child;
++		for (child = propagation_revisit_child(mnt, mnt); child;
++		     child = propagation_revisit_child(child, mnt))
++			end_umount_propagation(child);
++	}
++
++	list_splice_tail(&tmp_list, list);
+ }
+diff --git a/fs/pnode.h b/fs/pnode.h
+index 550f5a8b4fcf..38c6cdb96b34 100644
+--- a/fs/pnode.h
++++ b/fs/pnode.h
+@@ -41,7 +41,7 @@ static inline void set_mnt_shared(struct mount *mnt)
+ void change_mnt_propagation(struct mount *, int);
+ int propagate_mnt(struct mount *, struct mountpoint *, struct mount *,
+ 		struct hlist_head *);
+-int propagate_umount(struct list_head *);
++void propagate_umount(struct list_head *);
+ int propagate_mount_busy(struct mount *, int);
+ void propagate_mount_unlock(struct mount *);
+ void mnt_release_group_id(struct mount *);
 -- 
-2.8.3
+2.10.1
