@@ -1,24 +1,16 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [REVIEW][PATCH] mount: In propagate_umount handle overlapping
-	mount propagation trees
-Date: Fri, 21 Oct 2016 14:26:19 -0500
-Message-ID: <87pomtec6c.fsf@xmission.com>
-References: <1476141965-21429-1-git-send-email-avagin@openvz.org>
-	<877f9c6ui8.fsf@x220.int.ebiederm.org>
-	<87pon458l1.fsf_-_@x220.int.ebiederm.org>
-	<20161013214650.GB19836@outlook.office365.com>
-	<CANaxB-xPkgdyeg0z6TvExMfyy4uOC+Nu4Q99WpCscNKMWz8VPg@mail.gmail.com>
-	<87wphb4pjn.fsf@x220.int.ebiederm.org>
-	<8737jy3htt.fsf_-_@x220.int.ebiederm.org>
-	<20161018024000.GA4901@outlook.office365.com>
-	<87r37e9mnj.fsf@xmission.com> <877f95ngpr.fsf_-_@xmission.com>
-	<20161020213052.GA25226@outlook.office365.com>
+From: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH] net: skip genenerating uevents for network namespaces
+	that are exiting
+Date: Sat, 22 Oct 2016 00:37:01 -0700
+Message-ID: <CANaxB-wvJsts7RUEg1pouD0xMLTQAoVMaWaXZ2wLFT9XE1E1Mw__12804.0118412629$1477121852$gmane$org@mail.gmail.com>
+References: <1477017986-18889-1-git-send-email-avagin@openvz.org>
+	<CAM_iQpVA=W3su_a3OUVSD+19A72TMANnCX4dt9UyLOmVoRuBjQ@mail.gmail.com>
+	<CANaxB-zo4YW7o-Ebe08B_L_f8Wyp6tMWc-rBRt8-4sSc1Y=tgg@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20161020213052.GA25226-1ViLX0X+lBJGNQ1M2rI3KwRV3xvJKrda@public.gmane.org> (Andrei Vagin's
-	message of "Thu, 20 Oct 2016 14:30:53 -0700")
+In-Reply-To: <CANaxB-zo4YW7o-Ebe08B_L_f8Wyp6tMWc-rBRt8-4sSc1Y=tgg-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -28,22 +20,39 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
-Cc: linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Linux Kernel Network Developers <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org> writes:
->> Barring some stupid mistake this looks like it fixes both the performance
->> and the correctness issues I was able to spot earlier.  Andrei if you
->> could give this version a look over I would appreciate it.
+Hi Cong,
+
+On Thu, Oct 20, 2016 at 10:25 PM, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
+> On Thu, Oct 20, 2016 at 8:10 PM, Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+>> On Thu, Oct 20, 2016 at 7:46 PM, Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
+>>> No one can see these events, because a network namespace can not be
+>>> destroyed, if it has sockets.
+>>>
+>>
+>> Are you sure? kobject_uevent_env() seems sending uevents to all
+>> network namespaces.
 >
-> Eric, could you try out this script:
-[snip script]
+> kobj_bcast_filter() checks that a kobject namespace is equal to a
+> socket namespace.
 
-> It hangs up on my host with this patch.
+Today I've checked that it really works as I read from the source code.
+I use this tool to read events:
+https://gist.github.com/avagin/430ba431fc2972002df40ebe6a048b36
 
-Ugh.  I am seeing the hang as well digging into it.
+And I see that events from non-network devices are delivered to all sockets,
+but events from network devices are delivered only to sockets from
+a network namespace where a device is operated.
 
-Thanks for keeping me honest.
+Thanks,
+Andrei
 
-Eric
+>
+>
+>> _______________________________________________
+>> Containers mailing list
+>> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+>> https://lists.linuxfoundation.org/mailman/listinfo/containers
