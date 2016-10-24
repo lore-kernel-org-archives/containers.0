@@ -1,13 +1,14 @@
-From: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+From: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
 Subject: Re: [PATCH v2] inotify: Convert to using per-namespace limits
-Date: Mon, 24 Oct 2016 09:47:44 +0300
-Message-ID: <674564a4-ff05-b4d6-4a98-8cfc2e609325@kyup.com>
+Date: Mon, 24 Oct 2016 09:48:20 +0200
+Message-ID: <20161024074820.GB1108@quack2.suse.cz>
 References: <20161010164046.GG24081@quack2.suse.cz>
 	<1476171382-11911-1-git-send-email-kernel@kyup.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 In-Reply-To: <1476171382-11911-1-git-send-email-kernel-6AxghH7DbtA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,13 +19,11 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: jack-AlSwsSmVLrQ@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jack-AlSwsSmVLrQ@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
-
-On 10/11/2016 10:36 AM, Nikolay Borisov wrote:
+On Tue 11-10-16 10:36:22, Nikolay Borisov wrote:
 > This patchset converts inotify to using the newly introduced
 > per-userns sysctl infrastructure.
 > 
@@ -43,14 +42,18 @@ On 10/11/2016 10:36 AM, Nikolay Borisov wrote:
 > modify the values of the initial user namespace.
 > 
 > Signed-off-by: Nikolay Borisov <kernel-6AxghH7DbtA@public.gmane.org>
+
+I cannot really comment on the user-namespaces sanity of this but from fs
+notification framework POV the patch looks fine so feel free to add:
+
+Acked-by: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>
+
+								Honza
+
 > ---
 > 
 > So here is a revised version which retains the existing sysctls,
 > and hooks them to the init_user_ns values. 
-
-Gentle ping, now that rc1 has shipped and Jan's sysctl concern hopefully
-resolved.
-
 > 
 >  fs/notify/inotify/inotify.h          | 17 +++++++++++++++++
 >  fs/notify/inotify/inotify_fsnotify.c |  6 ++----
@@ -278,4 +281,9 @@ resolved.
 >  	{ }
 >  };
 >  #endif /* CONFIG_SYSCTL */
+> -- 
+> 2.5.0
 > 
+-- 
+Jan Kara <jack-IBi9RG/b67k@public.gmane.org>
+SUSE Labs, CR
