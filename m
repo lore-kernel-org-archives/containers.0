@@ -1,8 +1,7 @@
-From: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH v2] net: skip genenerating uevents for network namespaces that
-	are exiting
-Date: Mon, 24 Oct 2016 19:09:53 -0700
-Message-ID: <1477361393-24876-1-git-send-email-avagin__14549.6578225449$1477361421$gmane$org@openvz.org>
+From: Cao Shufeng <caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH v4 0/3] Make core_pattern support namespace
+Date: Tue, 25 Oct 2016 15:28:53 +0800
+Message-ID: <1477380536-3307-1-git-send-email-caosf.fnst@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,96 +15,98 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Cc: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, mashimiao.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-No one can see these events, because a network namespace can not be
-destroyed, if it has sockets.
+This patchset includes following function points:
+1: Let usermodehelper function possible to set pid namespace
+   done by: [PATCH v4 1/3] Make call_usermodehelper_exec possible
+   to set pid namespace.
+2: Let pipe_type core_pattern write dump into container's rootfs
+   done by: [PATCH v4 2/3] Limit dump_pipe program's permission to
+   init for container.
+2: Make separate core_pattern setting for each container
+   done by: [PATCH v4 3/3] Make core_pattern support namespace
+3: Compatibility with current system
+   also included in: [PATCH v4 3/3] Make core_pattern support namespace
+   If container hadn't change core_pattern setting, it will keep
+   same setting with host.
 
-Unlike other devices, uevent-s for network devices are generated
-only inside their network namespaces. They are filtered in
-kobj_bcast_filter()
+Test:
+1: Pass a test script for each function of this patchset
+   ## TEST IN HOST ##
+   [root@kerneldev dumptest]# ./test_host
+   Set file core_pattern: OK
+   ./test_host: line 41:  2366 Segmentation fault      (core dumped) "$SCRI=
+PT_BASE_DIR"/make_dump
+   Checking dumpfile: OK
+   Set file core_pattern: OK
+   ./test_host: line 41:  2369 Segmentation fault      (core dumped) "$SCRI=
+PT_BASE_DIR"/make_dump
+   Checking dump_pipe triggered: OK
+   Checking rootfs: OK
+   Checking dumpfile: OK
+   Checking namespace: OK
+   Checking process list: OK
+   Checking capabilities: OK
 
-My experiments shows that net namespaces are destroyed more 30% faster
-with this optimization.
+   ## TEST IN GUEST ##
+   # ./test
+   Segmentation fault (core dumped)
+   Checking dump_pipe triggered: OK
+   Checking rootfs: OK
+   Checking dumpfile: OK
+   Checking namespace: OK
+   Checking process list: OK
+   Checking cg pids: OK
+   Checking capabilities: OK
+   [   64.940734] make_dump[2432]: segfault at 0 ip 000000000040049d sp 000=
+07ffc4af025f0 error 6 in make_dump[400000+a6000]
+   #
+2: Pass other test(which is not easy to do in script) by hand.
 
-Here is a perf output for destroying network namespaces without this
-patch.
+Changelog v3.1-v4:
+1. remove extra fork pointed out by:
+   Andrei Vagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
--   94.76%     0.02%  kworker/u48:1  [kernel.kallsyms]     [k] cleanup_net
-   - 94.74% cleanup_net
-      - 94.64% ops_exit_list.isra.4
-         - 41.61% default_device_exit_batch
-            - 41.47% unregister_netdevice_many
-               - rollback_registered_many
-                  - 40.36% netdev_unregister_kobject
-                     - 14.55% device_del
-                        + 13.71% kobject_uevent
-                     - 13.04% netdev_queue_update_kobjects
-                        + 12.96% kobject_put
-                     - 12.72% net_rx_queue_update_kobjects
-                          kobject_put
-                        - kobject_release
-                           + 12.69% kobject_uevent
-                  + 0.80% call_netdevice_notifiers_info
-         + 19.57% nfsd_exit_net
-         + 11.15% tcp_net_metrics_exit
-         + 8.25% rpcsec_gss_exit_net
+Changelog v3-v3.1:
+1. Switch "pwd" of pipe program to container's root fs.
+2. Rebase on top of v4.9-rc1
 
-It's very critical to optimize the exit path for network namespaces,
-because they are destroyed under net_mutex and many namespaces can be
-destroyed for one iteration.
+Changelog v2->v3:
+1: Fix problem of setting pid namespace, pointed out by:
+   Andrei Vagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-v2: use dev_set_uevent_suppress()
+Changelog v1(RFC)->v2:
+1: Add [PATCH 2/2] which was todo in [RFC v1].
+2: Pass a test script for each function.
+3: Rebase on top of v4.7.
 
-Cc: Cong Wang <xiyou.wangcong-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Signed-off-by: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
----
- net/core/net-sysfs.c | 14 +++++++++++---
- 1 file changed, 11 insertions(+), 3 deletions(-)
+Suggested-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Suggested-by: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Signed-off-by: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Signed-off-by: Cao Shufeng <caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
-diff --git a/net/core/net-sysfs.c b/net/core/net-sysfs.c
-index 6e4f347..d4fe286 100644
---- a/net/core/net-sysfs.c
-+++ b/net/core/net-sysfs.c
-@@ -950,10 +950,13 @@ net_rx_queue_update_kobjects(struct net_device *dev, int old_num, int new_num)
- 	}
- 
- 	while (--i >= new_num) {
-+		struct kobject *kobj = &dev->_rx[i].kobj;
-+
-+		if (!list_empty(&dev_net(dev)->exit_list))
-+			kobj->uevent_suppress = 1;
- 		if (dev->sysfs_rx_queue_group)
--			sysfs_remove_group(&dev->_rx[i].kobj,
--					   dev->sysfs_rx_queue_group);
--		kobject_put(&dev->_rx[i].kobj);
-+			sysfs_remove_group(kobj, dev->sysfs_rx_queue_group);
-+		kobject_put(kobj);
- 	}
- 
- 	return error;
-@@ -1340,6 +1343,8 @@ netdev_queue_update_kobjects(struct net_device *dev, int old_num, int new_num)
- 	while (--i >= new_num) {
- 		struct netdev_queue *queue = dev->_tx + i;
- 
-+		if (!list_empty(&dev_net(dev)->exit_list))
-+			queue->kobj.uevent_suppress = 1;
- #ifdef CONFIG_BQL
- 		sysfs_remove_group(&queue->kobj, &dql_group);
- #endif
-@@ -1525,6 +1530,9 @@ void netdev_unregister_kobject(struct net_device *ndev)
- {
- 	struct device *dev = &(ndev->dev);
- 
-+	if (!list_empty(&dev_net(ndev)->exit_list))
-+		dev_set_uevent_suppress(dev, 1);
-+
- 	kobject_get(&dev->kobj);
- 
- 	remove_queue_kobjects(ndev);
+Cao Shufeng (2):
+  Make call_usermodehelper_exec possible to set namespaces
+  Limit dump_pipe program's permission to init for container
+
+Zhao Lei (1):
+  Make core_pattern support namespace
+
+ fs/coredump.c                 | 150 +++++++++++++++++++++++++++++++++++++++---
+ include/linux/binfmts.h       |   2 +
+ include/linux/kmod.h          |   4 ++
+ include/linux/pid_namespace.h |   3 +
+ init/do_mounts_initrd.c       |   3 +-
+ kernel/kmod.c                 |  43 +++++++++---
+ kernel/pid.c                  |   2 +
+ kernel/pid_namespace.c        |   2 +
+ kernel/sysctl.c               |  50 ++++++++++++--
+ lib/kobject_uevent.c          |   3 +-
+ security/keys/request_key.c   |   4 +-
+ 11 files changed, 241 insertions(+), 25 deletions(-)
+
 -- 
 2.7.4
