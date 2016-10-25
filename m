@@ -1,7 +1,8 @@
 From: Cao Shufeng <caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH v4 3/3] Make core_pattern support namespace
-Date: Tue, 25 Oct 2016 15:28:56 +0800
-Message-ID: <1477380536-3307-4-git-send-email-caosf.fnst@cn.fujitsu.com>
+Subject: [PATCH v4 2/3] Limit dump_pipe program's permission to init for
+	container
+Date: Tue, 25 Oct 2016 15:28:55 +0800
+Message-ID: <1477380536-3307-3-git-send-email-caosf.fnst@cn.fujitsu.com>
 References: <1477380536-3307-1-git-send-email-caosf.fnst@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,287 +22,234 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, mashimiao.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Currently when we set core_pattern to a pipe, the pipe program is
+forked by kthread running with root's permission, and write dumpfile
+into host's filesystem.
+Same thing happened for container, the dumper and dumpfile are also
+in host(not in container).
 
-Currently, each container shared one copy of coredump setting
-with the host system, if host system changed the setting, each
-running containers will be affected.
-Same story happened when container changed core_pattern, both
-host and other container will be affected.
+It have following program:
+1: Not consistent with file_type core_pattern
+   When we set core_pattern to a file, the container will write dump
+   into container's filesystem instead of host.
+2: Not safe for privileged container
+   In a privileged container, user can destroy host system by following
+   command:
+   # # In a container
+   # echo "|/bin/dd of=/boot/vmlinuz" >/proc/sys/kernel/core_pattern
+   # make_dump
 
-For container based on namespace design, it is good to allow
-each container keeping their own coredump setting.
+This patch switch dumper program's environment to init task, so, for
+container, dumper program have same environment with init task in
+container, which make dumper program put in container's filesystem, and
+write coredump into container's filesystem.
+The dumper's permission is also limited into subset of container's init
+process.
 
-It will bring us following benefit:
-1: Each container can change their own coredump setting
-   based on operation on /proc/sys/kernel/core_pattern
-2: Coredump setting changed in host will not affect
-   running containers.
-3: Support both case of "putting coredump in guest" and
-   "putting curedump in host".
+Suggested-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Suggested-by: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 
-Each namespace-based software(lxc, docker, ..) can use this function
-to custom their dump setting.
-
-And this function makes each continer working as separate system,
-it fit for design goal of namespace.
-
-Test(in lxc):
- # In the host
- # ----------------
- # echo host_core >/proc/sys/kernel/core_pattern
- # cat /proc/sys/kernel/core_pattern
- host_core
- # ulimit -c 1024000
- # ./make_dump
- Segmentation fault (core dumped)
- # ls -l
- -rw------- 1 root root 331776 Feb  4 18:02 host_core.2175
- -rwxr-xr-x 1 root root 759731 Feb  4 18:01 make_dump
- #
-
- # In the container
- # ----------------
- # cat /proc/sys/kernel/core_pattern
- host_core
- # echo container_core >/proc/sys/kernel/core_pattern
- # ./make_dump
- Segmentation fault (core dumped)
- # ls -l
- -rwxr-xr-x    1 root     root       759731 Feb  4 10:45 make_dump
- -rw-------    1 root     root       331776 Feb  4 10:45 container_core.16
- #
-
- # Return to host
- # ----------------
- # cat /proc/sys/kernel/core_pattern
- host_core
- # ls
- host_core.2175  make_dump  make_dump.c
- # rm -f host_core.2175
- # ./make_dump
- Segmentation fault (core dumped)
- # ls -l
- -rw------- 1 root root 331776 Feb  4 18:49 host_core.2351
- -rwxr-xr-x 1 root root 759731 Feb  4 18:01 make_dump
- #
-
-Signed-off-by: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Signed-off-by: Cao ShuFeng<caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- fs/coredump.c                 | 25 ++++++++++++++++------
- include/linux/pid_namespace.h |  3 +++
- kernel/pid.c                  |  2 ++
- kernel/pid_namespace.c        |  2 ++
- kernel/sysctl.c               | 50 ++++++++++++++++++++++++++++++++++++++-----
- 5 files changed, 70 insertions(+), 12 deletions(-)
+ fs/coredump.c           | 126 +++++++++++++++++++++++++++++++++++++++++++++++-
+ include/linux/binfmts.h |   2 +
+ 2 files changed, 126 insertions(+), 2 deletions(-)
 
 diff --git a/fs/coredump.c b/fs/coredump.c
-index aa2ef6c..f97a987 100644
+index 52f2ed6..aa2ef6c 100644
 --- a/fs/coredump.c
 +++ b/fs/coredump.c
-@@ -49,7 +49,6 @@
+@@ -502,6 +502,45 @@ static void wait_for_dump_helpers(struct file *file)
+ }
  
- int core_uses_pid;
- unsigned int core_pipe_limit;
--char core_pattern[CORENAME_MAX_SIZE] = "core";
- static int core_name_size = CORENAME_MAX_SIZE;
- 
- struct core_name {
-@@ -57,8 +56,6 @@ struct core_name {
- 	int used, size;
- };
- 
--/* The maximal length of core_pattern is also specified in sysctl.c */
--
- static int expand_corename(struct core_name *cn, int size)
- {
- 	char *corename = krealloc(cn->corename, size, GFP_KERNEL);
-@@ -183,10 +180,10 @@ static int cn_print_exe_file(struct core_name *cn)
-  * name into corename, which must have space for at least
-  * CORENAME_MAX_SIZE bytes plus one byte for the zero terminator.
-  */
--static int format_corename(struct core_name *cn, struct coredump_params *cprm)
-+static int format_corename(struct core_name *cn, const char *pat_ptr,
-+			   struct coredump_params *cprm)
- {
- 	const struct cred *cred = current_cred();
--	const char *pat_ptr = core_pattern;
- 	int ispipe = (*pat_ptr == '|');
- 	int pid_in_pattern = 0;
- 	int err = 0;
-@@ -663,6 +660,8 @@ void do_coredump(const siginfo_t *siginfo)
- 		 */
- 		.mm_flags = mm->flags,
- 	};
-+	struct pid_namespace *pid_ns;
-+	char core_pattern[CORENAME_MAX_SIZE];
- 
- 	audit_core_dumps(siginfo->si_signo);
- 
-@@ -672,6 +671,18 @@ void do_coredump(const siginfo_t *siginfo)
- 	if (!__get_dumpable(cprm.mm_flags))
- 		goto fail;
- 
-+	pid_ns = task_active_pid_ns(current);
-+	spin_lock(&pid_ns->core_pattern_lock);
-+	while (pid_ns != &init_pid_ns) {
-+		if (pid_ns->core_pattern[0])
-+			break;
-+		spin_unlock(&pid_ns->core_pattern_lock);
-+		pid_ns = pid_ns->parent,
-+		spin_lock(&pid_ns->core_pattern_lock);
-+	}
-+	strcpy(core_pattern, pid_ns->core_pattern);
-+	spin_unlock(&pid_ns->core_pattern_lock);
+ /*
++ * umh_ns_setup
++ * set the namesapces to the bask task of a container.
++ * we need to switch back to the original namespaces
++ * so that the thread of workqueue is not influlenced.
++ *
++ * this method runs in workqueue kernel thread.
++ */
++static void umh_ns_setup(struct subprocess_info *info)
++{
++	struct coredump_params *cp = (struct coredump_params *)info->data;
++	struct task_struct *base_task = cp->base_task;
 +
- 	cred = prepare_creds();
- 	if (!cred)
- 		goto fail;
-@@ -693,7 +704,7 @@ void do_coredump(const siginfo_t *siginfo)
++	if (base_task) {
++		cp->current_task_nsproxy = current->nsproxy;
++		//prevent current namespace from being freed
++		get_nsproxy(current->nsproxy);
++		/* Set namespaces to base_task */
++		get_nsproxy(base_task->nsproxy);
++		switch_task_namespaces(current, base_task->nsproxy);
++	}
++}
++
++/*
++ * umh_ns_cleanup
++ * cleanup what we have done in umh_ns_setup.
++ *
++ * this method runs in workqueue kernel thread.
++ */
++static void umh_ns_cleanup(struct subprocess_info *info)
++{
++	struct coredump_params *cp = (struct coredump_params *)info->data;
++	struct nsproxy *current_task_nsproxy = cp->current_task_nsproxy;
++	if (current_task_nsproxy) {
++		/* switch workqueue's original namespace back */
++		switch_task_namespaces(current, current_task_nsproxy);
++	}
++}
++
++/*
+  * umh_pipe_setup
+  * helper function to customize the process used
+  * to collect the core in userspace.  Specifically
+@@ -516,6 +555,8 @@ static int umh_pipe_setup(struct subprocess_info *info, struct cred *new)
+ {
+ 	struct file *files[2];
+ 	struct coredump_params *cp = (struct coredump_params *)info->data;
++	struct task_struct *base_task;
++
+ 	int err = create_pipe_files(files, 0);
+ 	if (err)
+ 		return err;
+@@ -524,10 +565,76 @@ static int umh_pipe_setup(struct subprocess_info *info, struct cred *new)
  
- 	old_cred = override_creds(cred);
+ 	err = replace_fd(0, files[0], 0);
+ 	fput(files[0]);
++	if (err)
++		return err;
++
+ 	/* and disallow core files too */
+ 	current->signal->rlim[RLIMIT_CORE] = (struct rlimit){1, 1};
  
--	ispipe = format_corename(&cn, &cprm);
-+	ispipe = format_corename(&cn, core_pattern, &cprm);
+-	return err;
++	base_task = cp->base_task;
++	if (base_task) {
++		const struct cred *base_cred;
++
++		/* Set fs_root to base_task */
++		spin_lock(&base_task->fs->lock);
++		set_fs_root(current->fs, &base_task->fs->root);
++		set_fs_pwd(current->fs, &base_task->fs->pwd);
++		spin_unlock(&base_task->fs->lock);
++
++		/* Set cgroup to base_task */
++		current->flags &= ~PF_NO_SETAFFINITY;
++		err = cgroup_attach_task_all(base_task, current);
++		if (err < 0)
++			return err;
++
++		/* Set cred to base_task */
++		base_cred = get_task_cred(base_task);
++
++		new->uid   = base_cred->uid;
++		new->gid   = base_cred->gid;
++		new->suid  = base_cred->suid;
++		new->sgid  = base_cred->sgid;
++		new->euid  = base_cred->euid;
++		new->egid  = base_cred->egid;
++		new->fsuid = base_cred->fsuid;
++		new->fsgid = base_cred->fsgid;
++
++		new->securebits = base_cred->securebits;
++
++		new->cap_inheritable = base_cred->cap_inheritable;
++		new->cap_permitted   = base_cred->cap_permitted;
++		new->cap_effective   = base_cred->cap_effective;
++		new->cap_bset        = base_cred->cap_bset;
++		new->cap_ambient     = base_cred->cap_ambient;
++
++		security_cred_free(new);
++#ifdef CONFIG_SECURITY
++		new->security = NULL;
++#endif
++		err = security_prepare_creds(new, base_cred, GFP_KERNEL);
++		if (err < 0) {
++			put_cred(base_cred);
++			return err;
++		}
++
++		free_uid(new->user);
++		new->user = base_cred->user;
++		get_uid(new->user);
++
++		put_user_ns(new->user_ns);
++		new->user_ns = base_cred->user_ns;
++		get_user_ns(new->user_ns);
++
++		put_group_info(new->group_info);
++		new->group_info = base_cred->group_info;
++		get_group_info(new->group_info);
++
++		put_cred(base_cred);
++
++		validate_creds(new);
++	}
++
++	return 0;
+ }
+ 
+ void do_coredump(const siginfo_t *siginfo)
+@@ -590,6 +697,7 @@ void do_coredump(const siginfo_t *siginfo)
  
  	if (ispipe) {
  		int dump_count;
-@@ -740,7 +751,7 @@ void do_coredump(const siginfo_t *siginfo)
++                struct task_struct *vinit_task;
+ 		char **helper_argv;
+ 		struct subprocess_info *sub_info;
+ 
+@@ -631,6 +739,15 @@ void do_coredump(const siginfo_t *siginfo)
+ 			goto fail_dropcount;
  		}
  
- 		rcu_read_lock();
--		vinit_task = find_task_by_vpid(1);
-+		vinit_task = find_task_by_pid_ns(1, pid_ns);
- 		rcu_read_unlock();
- 		if (!vinit_task) {
- 			printk(KERN_WARNING "failed getting init task info, skipping core dump\n");
-diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
-index 34cce96..f0b0c21 100644
---- a/include/linux/pid_namespace.h
-+++ b/include/linux/pid_namespace.h
-@@ -9,6 +9,7 @@
- #include <linux/nsproxy.h>
- #include <linux/kref.h>
- #include <linux/ns_common.h>
-+#include <linux/binfmts.h>
- 
- struct pidmap {
-        atomic_t nr_free;
-@@ -46,6 +47,8 @@ struct pid_namespace {
- 	int hide_pid;
- 	int reboot;	/* group exit code if this pidns was rebooted */
- 	struct ns_common ns;
-+	spinlock_t core_pattern_lock;
-+	char core_pattern[CORENAME_MAX_SIZE];
- };
- 
- extern struct pid_namespace init_pid_ns;
-diff --git a/kernel/pid.c b/kernel/pid.c
-index f66162f..e7ee122 100644
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -83,6 +83,8 @@ struct pid_namespace init_pid_ns = {
- #ifdef CONFIG_PID_NS
- 	.ns.ops = &pidns_operations,
- #endif
-+	.core_pattern_lock = __SPIN_LOCK_UNLOCKED(init_pid_ns.core_pattern_lock),
-+	.core_pattern = "core",
- };
- EXPORT_SYMBOL_GPL(init_pid_ns);
- 
-diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
-index df9e8e9..c70ca5d 100644
---- a/kernel/pid_namespace.c
-+++ b/kernel/pid_namespace.c
-@@ -137,6 +137,8 @@ static struct pid_namespace *create_pid_namespace(struct user_namespace *user_ns
- 	for (i = 1; i < PIDMAP_ENTRIES; i++)
- 		atomic_set(&ns->pidmap[i].nr_free, BITS_PER_PAGE);
- 
-+	spin_lock_init(&ns->core_pattern_lock);
-+
- 	return ns;
- 
- out_free_map:
-diff --git a/kernel/sysctl.c b/kernel/sysctl.c
-index 706309f..c73ced5 100644
---- a/kernel/sysctl.c
-+++ b/kernel/sysctl.c
-@@ -484,7 +484,7 @@ static struct ctl_table kern_table[] = {
- 	},
- 	{
- 		.procname	= "core_pattern",
--		.data		= core_pattern,
-+		.data		= NULL,
- 		.maxlen		= CORENAME_MAX_SIZE,
- 		.mode		= 0644,
- 		.proc_handler	= proc_dostring_coredump,
-@@ -2401,12 +2401,20 @@ int proc_dointvec_minmax(struct ctl_table *table, int write,
- static void validate_coredump_safety(void)
- {
- #ifdef CONFIG_COREDUMP
-+	struct pid_namespace *pid_ns = task_active_pid_ns(current);
-+	const char *core_pattern;
-+
-+	spin_lock(&pid_ns->core_pattern_lock);
-+	core_pattern = pid_ns->core_pattern;
-+
- 	if (suid_dumpable == SUID_DUMP_ROOT &&
- 	    core_pattern[0] != '/' && core_pattern[0] != '|') {
- 		printk(KERN_WARNING "Unsafe core_pattern used with "\
- 			"suid_dumpable=2. Pipe handler or fully qualified "\
- 			"core dump path required.\n");
- 	}
-+
-+	spin_unlock(&pid_ns->core_pattern_lock);
- #endif
- }
- 
-@@ -2423,10 +2431,42 @@ static int proc_dointvec_minmax_coredump(struct ctl_table *table, int write,
- static int proc_dostring_coredump(struct ctl_table *table, int write,
- 		  void __user *buffer, size_t *lenp, loff_t *ppos)
- {
--	int error = proc_dostring(table, write, buffer, lenp, ppos);
--	if (!error)
--		validate_coredump_safety();
--	return error;
-+	int ret;
-+	char core_pattern[CORENAME_MAX_SIZE];
-+	struct pid_namespace *pid_ns = task_active_pid_ns(current);
-+
-+	if (write) {
-+		if (*ppos && sysctl_writes_strict == SYSCTL_WRITES_WARN)
-+			warn_sysctl_write(table);
-+
-+		ret = _proc_do_string(core_pattern, table->maxlen, write,
-+				      (char __user *)buffer, lenp, ppos);
-+		if (ret)
-+			return ret;
-+
-+		spin_lock(&pid_ns->core_pattern_lock);
-+		strcpy(pid_ns->core_pattern, core_pattern);
-+		spin_unlock(&pid_ns->core_pattern_lock);
-+	} else {
-+		spin_lock(&pid_ns->core_pattern_lock);
-+		while (pid_ns != &init_pid_ns) {
-+			if (pid_ns->core_pattern[0])
-+				break;
-+			spin_unlock(&pid_ns->core_pattern_lock);
-+			pid_ns = pid_ns->parent,
-+			spin_lock(&pid_ns->core_pattern_lock);
++		rcu_read_lock();
++		vinit_task = find_task_by_vpid(1);
++		rcu_read_unlock();
++		if (!vinit_task) {
++			printk(KERN_WARNING "failed getting init task info, skipping core dump\n");
++			goto fail_dropcount;
 +		}
-+		strcpy(core_pattern, pid_ns->core_pattern);
-+		spin_unlock(&pid_ns->core_pattern_lock);
 +
-+		ret = _proc_do_string(core_pattern, table->maxlen, write,
-+				      (char __user *)buffer, lenp, ppos);
-+		if (ret)
-+			return ret;
-+	}
 +
-+	validate_coredump_safety();
-+	return 0;
- }
- #endif
+ 		helper_argv = argv_split(GFP_KERNEL, cn.corename, NULL);
+ 		if (!helper_argv) {
+ 			printk(KERN_WARNING "%s failed to allocate memory\n",
+@@ -638,15 +755,20 @@ void do_coredump(const siginfo_t *siginfo)
+ 			goto fail_dropcount;
+ 		}
  
++		get_task_struct(vinit_task);
++
++		cprm.base_task = vinit_task;
++
+ 		retval = -ENOMEM;
+ 		sub_info = call_usermodehelper_setup(helper_argv[0],
+ 						helper_argv, NULL, GFP_KERNEL,
+-						NULL, NULL, umh_pipe_setup,
++						umh_ns_setup, umh_ns_cleanup, umh_pipe_setup,
+ 						NULL, &cprm);
+ 		if (sub_info)
+ 			retval = call_usermodehelper_exec(sub_info,
+ 							  UMH_WAIT_EXEC);
+ 
++		put_task_struct(vinit_task);
+ 		argv_free(helper_argv);
+ 		if (retval) {
+ 			printk(KERN_INFO "Core dump to |%s pipe failed\n",
+diff --git a/include/linux/binfmts.h b/include/linux/binfmts.h
+index 1303b57..7ba4271 100644
+--- a/include/linux/binfmts.h
++++ b/include/linux/binfmts.h
+@@ -59,6 +59,8 @@ struct linux_binprm {
+ 
+ /* Function parameter for binfmt->coredump */
+ struct coredump_params {
++        struct task_struct *base_task;
++        struct nsproxy *current_task_nsproxy;
+ 	const siginfo_t *siginfo;
+ 	struct pt_regs *regs;
+ 	struct file *file;
 -- 
 2.7.4
