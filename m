@@ -1,17 +1,11 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [ISSUE] mm: Add a user_ns owner to mm_struct and fix
-	ptrace_may_access
-Date: Mon, 24 Oct 2016 18:11:04 -0500
-Message-ID: <8760oh737b.fsf__37152.8541240425$1477350829$gmane$org@xmission.com>
-References: <20161024105959.GQ1847@uranus.lan> <8760oh8tbp.fsf@xmission.com>
-	<20161024202925.GS1847@uranus.lan>
-	<CAGXu5jK4p4bbQU1Bu-p9aM1GJ+CAR-FAHZcXXRH0De_M4VQ3wA@mail.gmail.com>
+From: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: [PATCH net-next] net: add an ioctl to get a socket network namespace
+Date: Mon, 24 Oct 2016 18:29:13 -0700
+Message-ID: <1477358953-3547-1-git-send-email-avagin@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAGXu5jK4p4bbQU1Bu-p9aM1GJ+CAR-FAHZcXXRH0De_M4VQ3wA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Kees Cook's message of "Mon, 24 Oct 2016 14:32:06 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,59 +15,110 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
-Cc: Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Pavel Emelyanov <xemul-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Andrey Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org> writes:
+From: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
-> On Mon, Oct 24, 2016 at 1:29 PM, Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
->> On Mon, Oct 24, 2016 at 02:01:30PM -0500, Eric W. Biederman wrote:
->>> So I am probably going to tweak the !mm case so that instead of failing
->>> we perform the old capable check in that case.  That seems the mot
->>> certain way to avoid regressions.  With that said, why is exit_code
->>> behind a ptrace_may_access permission check?
->>
->> Yes, this would be great! And as to @exit_code I think better ask
->> Kees, CC'ed.
->
-> My concern was that this was an exposure in the sense that it is
-> internal program state that isn't visible through other means (without
-> being the parent, for example). Under the ptrace check, it has an
-> equivalency that seemed correct at the time.
->
-> As already covered, I'd agree: it looks like ce99dd5fd5f6 accidentally
-> added a dependency on task->mm where it didn't before. That section of
-> logic was entirely around dumpability, not an mm existing. It should
-> be "EPERM if mm and dumpable != SUID_DUMP_USER".
->
-> That said, I'd also agree that ptrace against no mm is crazy (though I
-> suppose that should return EINVAL or ESRCH or something), so perhaps a
-> better access control on @exit_code is needed here.
+Each socket operates in a network namespace where it has been created,
+so if we want to dump and restore a socket, we have to know its network
+namespace.
 
-I traced down the original logic of why we had that dumpable
-variable, and it was ancient conservative on my part when we started
-using the ptrace permission checks for proc files.
+We have a socket_diag to get information about sockets, it doesn't
+report sockets which are not bound or connected.
 
-That same conservatism has resulted in the regression under
-discussion.
+This patch introduces a new socket ioctl, which is called SIOCGSKNS
+and used to get a file descriptor for a socket network namespace.
 
-Given that we already have a very full set of permission checks
-separate from dumpable in ptrace_may_access I think it makes sense
-to simply ignore dumpable when there is no mm.
-AKA:
-	mm = task->mm;
-	if (mm &&
-	    ((get_dumpable(mm) != SUID_DUMP_USER) &&
-	     !ptrace_has_cap(mm->user_ns, mode)))
-	    return -EPERM;
+A task must have CAP_NET_ADMIN in a target network namespace to
+use this ioctl.
 
-Because while it has been used for other things dumpable is
-fundamentally about do you have permission to read the mm.
-So there is no real point in permission checks that protect
-the mm if the mm has gone away.
+Cc: "David S. Miller" <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Signed-off-by: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+---
+ fs/nsfs.c                    |  2 +-
+ include/linux/proc_fs.h      |  4 ++++
+ include/uapi/linux/sockios.h |  1 +
+ net/socket.c                 | 13 +++++++++++++
+ 4 files changed, 19 insertions(+), 1 deletion(-)
 
-It also looks like I may need to update the check that sets
-PT_PTRACE_CAP to look at mm->user_ns as well.  
-
-Eric
+diff --git a/fs/nsfs.c b/fs/nsfs.c
+index 8718af8..8c9fb29 100644
+--- a/fs/nsfs.c
++++ b/fs/nsfs.c
+@@ -118,7 +118,7 @@ void *ns_get_path(struct path *path, struct task_struct *task,
+ 	return ret;
+ }
+ 
+-static int open_related_ns(struct ns_common *ns,
++int open_related_ns(struct ns_common *ns,
+ 		   struct ns_common *(*get_ns)(struct ns_common *ns))
+ {
+ 	struct path path = {};
+diff --git a/include/linux/proc_fs.h b/include/linux/proc_fs.h
+index b97bf2e..368c7ad 100644
+--- a/include/linux/proc_fs.h
++++ b/include/linux/proc_fs.h
+@@ -82,4 +82,8 @@ static inline struct proc_dir_entry *proc_net_mkdir(
+ 	return proc_mkdir_data(name, 0, parent, net);
+ }
+ 
++struct ns_common;
++int open_related_ns(struct ns_common *ns,
++		   struct ns_common *(*get_ns)(struct ns_common *ns));
++
+ #endif /* _LINUX_PROC_FS_H */
+diff --git a/include/uapi/linux/sockios.h b/include/uapi/linux/sockios.h
+index 8e7890b..83cc54c 100644
+--- a/include/uapi/linux/sockios.h
++++ b/include/uapi/linux/sockios.h
+@@ -84,6 +84,7 @@
+ #define SIOCWANDEV	0x894A		/* get/set netdev parameters	*/
+ 
+ #define SIOCOUTQNSD	0x894B		/* output queue size (not sent only) */
++#define SIOCGSKNS	0x894C		/* get socket network namespace */
+ 
+ /* ARP cache control calls. */
+ 		    /*  0x8950 - 0x8952  * obsolete calls, don't re-use */
+diff --git a/net/socket.c b/net/socket.c
+index 5a9bf5e..970a7ea 100644
+--- a/net/socket.c
++++ b/net/socket.c
+@@ -877,6 +877,11 @@ static long sock_do_ioctl(struct net *net, struct socket *sock,
+  *	what to do with it - that's up to the protocol still.
+  */
+ 
++static struct ns_common *get_net_ns(struct ns_common *ns)
++{
++	return &get_net(container_of(ns, struct net, ns))->ns;
++}
++
+ static long sock_ioctl(struct file *file, unsigned cmd, unsigned long arg)
+ {
+ 	struct socket *sock;
+@@ -945,6 +950,13 @@ static long sock_ioctl(struct file *file, unsigned cmd, unsigned long arg)
+ 				err = dlci_ioctl_hook(cmd, argp);
+ 			mutex_unlock(&dlci_ioctl_mutex);
+ 			break;
++		case SIOCGSKNS:
++			err = -EPERM;
++			if (!ns_capable(net->user_ns, CAP_NET_ADMIN))
++				break;
++
++			err = open_related_ns(&net->ns, get_net_ns);
++			break;
+ 		default:
+ 			err = sock_do_ioctl(net, sock, cmd, arg);
+ 			break;
+@@ -3093,6 +3105,7 @@ static int compat_sock_ioctl_trans(struct file *file, struct socket *sock,
+ 	case SIOCSIFVLAN:
+ 	case SIOCADDDLCI:
+ 	case SIOCDELDLCI:
++	case SIOCGSKNS:
+ 		return sock_ioctl(file, cmd, arg);
+ 
+ 	case SIOCGIFFLAGS:
+-- 
+2.7.4
