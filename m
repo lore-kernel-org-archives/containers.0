@@ -1,8 +1,7 @@
 From: Cao Shufeng <caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH v4 1/3] Make call_usermodehelper_exec possible to set
-	namespaces
-Date: Tue, 25 Oct 2016 15:28:54 +0800
-Message-ID: <1477380536-3307-2-git-send-email-caosf.fnst@cn.fujitsu.com>
+Subject: [PATCH v4 3/3] Make core_pattern support namespace
+Date: Tue, 25 Oct 2016 15:28:56 +0800
+Message-ID: <1477380536-3307-4-git-send-email-caosf.fnst@cn.fujitsu.com>
 References: <1477380536-3307-1-git-send-email-caosf.fnst@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,219 +21,287 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, mashimiao.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Current call_usermodehelper_work() can not set namespaces for
-the executed program.
+From: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
-This patch add above function for call_usermodehelper_work().
-The init_intermediate is introduced for init works which should
-be done before fork(). So that we get a method to set namespaces
-for children. The cleanup_intermediate is introduced for cleaning
-up what we have done in init_intermediate, like switching back
-the namespace.
+Currently, each container shared one copy of coredump setting
+with the host system, if host system changed the setting, each
+running containers will be affected.
+Same story happened when container changed core_pattern, both
+host and other container will be affected.
 
-This function is helpful for coredump to run pipe_program in
-specific container environment.
+For container based on namespace design, it is good to allow
+each container keeping their own coredump setting.
 
-Signed-off-by: Cao Shufeng <caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Co-author-by: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+It will bring us following benefit:
+1: Each container can change their own coredump setting
+   based on operation on /proc/sys/kernel/core_pattern
+2: Coredump setting changed in host will not affect
+   running containers.
+3: Support both case of "putting coredump in guest" and
+   "putting curedump in host".
+
+Each namespace-based software(lxc, docker, ..) can use this function
+to custom their dump setting.
+
+And this function makes each continer working as separate system,
+it fit for design goal of namespace.
+
+Test(in lxc):
+ # In the host
+ # ----------------
+ # echo host_core >/proc/sys/kernel/core_pattern
+ # cat /proc/sys/kernel/core_pattern
+ host_core
+ # ulimit -c 1024000
+ # ./make_dump
+ Segmentation fault (core dumped)
+ # ls -l
+ -rw------- 1 root root 331776 Feb  4 18:02 host_core.2175
+ -rwxr-xr-x 1 root root 759731 Feb  4 18:01 make_dump
+ #
+
+ # In the container
+ # ----------------
+ # cat /proc/sys/kernel/core_pattern
+ host_core
+ # echo container_core >/proc/sys/kernel/core_pattern
+ # ./make_dump
+ Segmentation fault (core dumped)
+ # ls -l
+ -rwxr-xr-x    1 root     root       759731 Feb  4 10:45 make_dump
+ -rw-------    1 root     root       331776 Feb  4 10:45 container_core.16
+ #
+
+ # Return to host
+ # ----------------
+ # cat /proc/sys/kernel/core_pattern
+ host_core
+ # ls
+ host_core.2175  make_dump  make_dump.c
+ # rm -f host_core.2175
+ # ./make_dump
+ Segmentation fault (core dumped)
+ # ls -l
+ -rw------- 1 root root 331776 Feb  4 18:49 host_core.2351
+ -rwxr-xr-x 1 root root 759731 Feb  4 18:01 make_dump
+ #
+
+Signed-off-by: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- fs/coredump.c               |  3 ++-
- include/linux/kmod.h        |  4 ++++
- init/do_mounts_initrd.c     |  3 ++-
- kernel/kmod.c               | 43 +++++++++++++++++++++++++++++++++++--------
- lib/kobject_uevent.c        |  3 ++-
- security/keys/request_key.c |  4 ++--
- 6 files changed, 47 insertions(+), 13 deletions(-)
+ fs/coredump.c                 | 25 ++++++++++++++++------
+ include/linux/pid_namespace.h |  3 +++
+ kernel/pid.c                  |  2 ++
+ kernel/pid_namespace.c        |  2 ++
+ kernel/sysctl.c               | 50 ++++++++++++++++++++++++++++++++++++++-----
+ 5 files changed, 70 insertions(+), 12 deletions(-)
 
 diff --git a/fs/coredump.c b/fs/coredump.c
-index 281b768..52f2ed6 100644
+index aa2ef6c..f97a987 100644
 --- a/fs/coredump.c
 +++ b/fs/coredump.c
-@@ -641,7 +641,8 @@ void do_coredump(const siginfo_t *siginfo)
- 		retval = -ENOMEM;
- 		sub_info = call_usermodehelper_setup(helper_argv[0],
- 						helper_argv, NULL, GFP_KERNEL,
--						umh_pipe_setup, NULL, &cprm);
-+						NULL, NULL, umh_pipe_setup,
-+						NULL, &cprm);
- 		if (sub_info)
- 			retval = call_usermodehelper_exec(sub_info,
- 							  UMH_WAIT_EXEC);
-diff --git a/include/linux/kmod.h b/include/linux/kmod.h
-index fcfd2bf..994e429 100644
---- a/include/linux/kmod.h
-+++ b/include/linux/kmod.h
-@@ -61,6 +61,8 @@ struct subprocess_info {
- 	char **envp;
- 	int wait;
- 	int retval;
-+	void (*init_intermediate)(struct subprocess_info *info);
-+	void (*cleanup_intermediate)(struct subprocess_info *info);
- 	int (*init)(struct subprocess_info *info, struct cred *new);
- 	void (*cleanup)(struct subprocess_info *info);
- 	void *data;
-@@ -71,6 +73,8 @@ call_usermodehelper(char *path, char **argv, char **envp, int wait);
+@@ -49,7 +49,6 @@
  
- extern struct subprocess_info *
- call_usermodehelper_setup(char *path, char **argv, char **envp, gfp_t gfp_mask,
-+			  void (*init_intermediate)(struct subprocess_info *info),
-+			  void (*cleanup_intermediate)(struct subprocess_info *info),
- 			  int (*init)(struct subprocess_info *info, struct cred *new),
- 			  void (*cleanup)(struct subprocess_info *), void *data);
+ int core_uses_pid;
+ unsigned int core_pipe_limit;
+-char core_pattern[CORENAME_MAX_SIZE] = "core";
+ static int core_name_size = CORENAME_MAX_SIZE;
  
-diff --git a/init/do_mounts_initrd.c b/init/do_mounts_initrd.c
-index a1000ca..59d11c9 100644
---- a/init/do_mounts_initrd.c
-+++ b/init/do_mounts_initrd.c
-@@ -72,7 +72,8 @@ static void __init handle_initrd(void)
- 	current->flags |= PF_FREEZER_SKIP;
+ struct core_name {
+@@ -57,8 +56,6 @@ struct core_name {
+ 	int used, size;
+ };
  
- 	info = call_usermodehelper_setup("/linuxrc", argv, envp_init,
--					 GFP_KERNEL, init_linuxrc, NULL, NULL);
-+					 GFP_KERNEL, NULL, NULL, init_linuxrc,
-+					 NULL, NULL);
- 	if (!info)
- 		return;
- 	call_usermodehelper_exec(info, UMH_WAIT_PROC);
-diff --git a/kernel/kmod.c b/kernel/kmod.c
-index 0277d12..42f5a74 100644
---- a/kernel/kmod.c
-+++ b/kernel/kmod.c
-@@ -91,7 +91,8 @@ static int call_modprobe(char *module_name, int wait)
- 	argv[4] = NULL;
+-/* The maximal length of core_pattern is also specified in sysctl.c */
+-
+ static int expand_corename(struct core_name *cn, int size)
+ {
+ 	char *corename = krealloc(cn->corename, size, GFP_KERNEL);
+@@ -183,10 +180,10 @@ static int cn_print_exe_file(struct core_name *cn)
+  * name into corename, which must have space for at least
+  * CORENAME_MAX_SIZE bytes plus one byte for the zero terminator.
+  */
+-static int format_corename(struct core_name *cn, struct coredump_params *cprm)
++static int format_corename(struct core_name *cn, const char *pat_ptr,
++			   struct coredump_params *cprm)
+ {
+ 	const struct cred *cred = current_cred();
+-	const char *pat_ptr = core_pattern;
+ 	int ispipe = (*pat_ptr == '|');
+ 	int pid_in_pattern = 0;
+ 	int err = 0;
+@@ -663,6 +660,8 @@ void do_coredump(const siginfo_t *siginfo)
+ 		 */
+ 		.mm_flags = mm->flags,
+ 	};
++	struct pid_namespace *pid_ns;
++	char core_pattern[CORENAME_MAX_SIZE];
  
- 	info = call_usermodehelper_setup(modprobe_path, argv, envp, GFP_KERNEL,
--					 NULL, free_modprobe_argv, NULL);
-+					 NULL, NULL, NULL, free_modprobe_argv,
-+                                         NULL);
- 	if (!info)
- 		goto free_module_name;
+ 	audit_core_dumps(siginfo->si_signo);
  
-@@ -301,6 +302,9 @@ static void call_usermodehelper_exec_sync(struct subprocess_info *sub_info)
- 	/* Restore default kernel sig handler */
- 	kernel_sigaction(SIGCHLD, SIG_IGN);
+@@ -672,6 +671,18 @@ void do_coredump(const siginfo_t *siginfo)
+ 	if (!__get_dumpable(cprm.mm_flags))
+ 		goto fail;
  
-+	if(sub_info->cleanup_intermediate) {
-+		sub_info->cleanup_intermediate(sub_info);
++	pid_ns = task_active_pid_ns(current);
++	spin_lock(&pid_ns->core_pattern_lock);
++	while (pid_ns != &init_pid_ns) {
++		if (pid_ns->core_pattern[0])
++			break;
++		spin_unlock(&pid_ns->core_pattern_lock);
++		pid_ns = pid_ns->parent,
++		spin_lock(&pid_ns->core_pattern_lock);
 +	}
- 	umh_complete(sub_info);
++	strcpy(core_pattern, pid_ns->core_pattern);
++	spin_unlock(&pid_ns->core_pattern_lock);
++
+ 	cred = prepare_creds();
+ 	if (!cred)
+ 		goto fail;
+@@ -693,7 +704,7 @@ void do_coredump(const siginfo_t *siginfo)
+ 
+ 	old_cred = override_creds(cred);
+ 
+-	ispipe = format_corename(&cn, &cprm);
++	ispipe = format_corename(&cn, core_pattern, &cprm);
+ 
+ 	if (ispipe) {
+ 		int dump_count;
+@@ -740,7 +751,7 @@ void do_coredump(const siginfo_t *siginfo)
+ 		}
+ 
+ 		rcu_read_lock();
+-		vinit_task = find_task_by_vpid(1);
++		vinit_task = find_task_by_pid_ns(1, pid_ns);
+ 		rcu_read_unlock();
+ 		if (!vinit_task) {
+ 			printk(KERN_WARNING "failed getting init task info, skipping core dump\n");
+diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
+index 34cce96..f0b0c21 100644
+--- a/include/linux/pid_namespace.h
++++ b/include/linux/pid_namespace.h
+@@ -9,6 +9,7 @@
+ #include <linux/nsproxy.h>
+ #include <linux/kref.h>
+ #include <linux/ns_common.h>
++#include <linux/binfmts.h>
+ 
+ struct pidmap {
+        atomic_t nr_free;
+@@ -46,6 +47,8 @@ struct pid_namespace {
+ 	int hide_pid;
+ 	int reboot;	/* group exit code if this pidns was rebooted */
+ 	struct ns_common ns;
++	spinlock_t core_pattern_lock;
++	char core_pattern[CORENAME_MAX_SIZE];
+ };
+ 
+ extern struct pid_namespace init_pid_ns;
+diff --git a/kernel/pid.c b/kernel/pid.c
+index f66162f..e7ee122 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -83,6 +83,8 @@ struct pid_namespace init_pid_ns = {
+ #ifdef CONFIG_PID_NS
+ 	.ns.ops = &pidns_operations,
+ #endif
++	.core_pattern_lock = __SPIN_LOCK_UNLOCKED(init_pid_ns.core_pattern_lock),
++	.core_pattern = "core",
+ };
+ EXPORT_SYMBOL_GPL(init_pid_ns);
+ 
+diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
+index df9e8e9..c70ca5d 100644
+--- a/kernel/pid_namespace.c
++++ b/kernel/pid_namespace.c
+@@ -137,6 +137,8 @@ static struct pid_namespace *create_pid_namespace(struct user_namespace *user_ns
+ 	for (i = 1; i < PIDMAP_ENTRIES; i++)
+ 		atomic_set(&ns->pidmap[i].nr_free, BITS_PER_PAGE);
+ 
++	spin_lock_init(&ns->core_pattern_lock);
++
+ 	return ns;
+ 
+ out_free_map:
+diff --git a/kernel/sysctl.c b/kernel/sysctl.c
+index 706309f..c73ced5 100644
+--- a/kernel/sysctl.c
++++ b/kernel/sysctl.c
+@@ -484,7 +484,7 @@ static struct ctl_table kern_table[] = {
+ 	},
+ 	{
+ 		.procname	= "core_pattern",
+-		.data		= core_pattern,
++		.data		= NULL,
+ 		.maxlen		= CORENAME_MAX_SIZE,
+ 		.mode		= 0644,
+ 		.proc_handler	= proc_dostring_coredump,
+@@ -2401,12 +2401,20 @@ int proc_dointvec_minmax(struct ctl_table *table, int write,
+ static void validate_coredump_safety(void)
+ {
+ #ifdef CONFIG_COREDUMP
++	struct pid_namespace *pid_ns = task_active_pid_ns(current);
++	const char *core_pattern;
++
++	spin_lock(&pid_ns->core_pattern_lock);
++	core_pattern = pid_ns->core_pattern;
++
+ 	if (suid_dumpable == SUID_DUMP_ROOT &&
+ 	    core_pattern[0] != '/' && core_pattern[0] != '|') {
+ 		printk(KERN_WARNING "Unsafe core_pattern used with "\
+ 			"suid_dumpable=2. Pipe handler or fully qualified "\
+ 			"core dump path required.\n");
+ 	}
++
++	spin_unlock(&pid_ns->core_pattern_lock);
+ #endif
  }
  
-@@ -322,6 +326,9 @@ static void call_usermodehelper_exec_work(struct work_struct *work)
+@@ -2423,10 +2431,42 @@ static int proc_dointvec_minmax_coredump(struct ctl_table *table, int write,
+ static int proc_dostring_coredump(struct ctl_table *table, int write,
+ 		  void __user *buffer, size_t *lenp, loff_t *ppos)
  {
- 	struct subprocess_info *sub_info =
- 		container_of(work, struct subprocess_info, work);
-+	if(sub_info->init_intermediate) {
-+		sub_info->init_intermediate(sub_info);
-+	}
- 
- 	if (sub_info->wait & UMH_WAIT_PROC) {
- 		call_usermodehelper_exec_sync(sub_info);
-@@ -334,6 +341,11 @@ static void call_usermodehelper_exec_work(struct work_struct *work)
- 		 */
- 		pid = kernel_thread(call_usermodehelper_exec_async, sub_info,
- 				    CLONE_PARENT | SIGCHLD);
+-	int error = proc_dostring(table, write, buffer, lenp, ppos);
+-	if (!error)
+-		validate_coredump_safety();
+-	return error;
++	int ret;
++	char core_pattern[CORENAME_MAX_SIZE];
++	struct pid_namespace *pid_ns = task_active_pid_ns(current);
 +
-+		if(sub_info->cleanup_intermediate) {
-+			sub_info->cleanup_intermediate(sub_info);
++	if (write) {
++		if (*ppos && sysctl_writes_strict == SYSCTL_WRITES_WARN)
++			warn_sysctl_write(table);
++
++		ret = _proc_do_string(core_pattern, table->maxlen, write,
++				      (char __user *)buffer, lenp, ppos);
++		if (ret)
++			return ret;
++
++		spin_lock(&pid_ns->core_pattern_lock);
++		strcpy(pid_ns->core_pattern, core_pattern);
++		spin_unlock(&pid_ns->core_pattern_lock);
++	} else {
++		spin_lock(&pid_ns->core_pattern_lock);
++		while (pid_ns != &init_pid_ns) {
++			if (pid_ns->core_pattern[0])
++				break;
++			spin_unlock(&pid_ns->core_pattern_lock);
++			pid_ns = pid_ns->parent,
++			spin_lock(&pid_ns->core_pattern_lock);
 +		}
++		strcpy(core_pattern, pid_ns->core_pattern);
++		spin_unlock(&pid_ns->core_pattern_lock);
 +
- 		if (pid < 0) {
- 			sub_info->retval = pid;
- 			umh_complete(sub_info);
-@@ -499,25 +511,38 @@ static void helper_unlock(void)
-  * @argv: arg vector for process
-  * @envp: environment for process
-  * @gfp_mask: gfp mask for memory allocation
-- * @cleanup: a cleanup function
-+ * @init_intermediate: init function which is called in parent task
-+ * @cleanup_intermediate: clean function which is called in parent task
-  * @init: an init function
-+ * @cleanup: a cleanup function
-  * @data: arbitrary context sensitive data
-  *
-  * Returns either %NULL on allocation failure, or a subprocess_info
-  * structure.  This should be passed to call_usermodehelper_exec to
-  * exec the process and free the structure.
-  *
-- * The init function is used to customize the helper process prior to
-- * exec.  A non-zero return code causes the process to error out, exit,
-- * and return the failure to the calling process
-+ * The init_intermediate is called in the parent task of user mode
-+ * helper. It's designed for init works which must be done in
-+ * parent task, like switching the pid_ns_for_children.
-+ *
-+ * The cleanup_intermediate is used when we want to cleanup what
-+ * we have done in init_intermediate, it is also called in parent
-+ * task.
-+ *
-+ * The init function is called after fork. It is used to customize the
-+ * helper process prior to exec.  A non-zero return code causes the
-+ * process to error out, exit, and return the failure to the
-+ * calling process.
-  *
-- * The cleanup function is just before ethe subprocess_info is about to
-+ * The cleanup function is just before the subprocess_info is about to
-  * be freed.  This can be used for freeing the argv and envp.  The
-  * Function must be runnable in either a process context or the
-  * context in which call_usermodehelper_exec is called.
-  */
- struct subprocess_info *call_usermodehelper_setup(char *path, char **argv,
- 		char **envp, gfp_t gfp_mask,
-+		void (*init_intermediate)(struct subprocess_info *info),
-+		void (*cleanup_intermediate)(struct subprocess_info *info),
- 		int (*init)(struct subprocess_info *info, struct cred *new),
- 		void (*cleanup)(struct subprocess_info *info),
- 		void *data)
-@@ -532,8 +557,10 @@ struct subprocess_info *call_usermodehelper_setup(char *path, char **argv,
- 	sub_info->argv = argv;
- 	sub_info->envp = envp;
- 
--	sub_info->cleanup = cleanup;
-+	sub_info->init_intermediate = init_intermediate;
-+	sub_info->cleanup_intermediate = cleanup_intermediate;
- 	sub_info->init = init;
-+	sub_info->cleanup = cleanup;
- 	sub_info->data = data;
-   out:
- 	return sub_info;
-@@ -619,7 +646,7 @@ int call_usermodehelper(char *path, char **argv, char **envp, int wait)
- 	gfp_t gfp_mask = (wait == UMH_NO_WAIT) ? GFP_ATOMIC : GFP_KERNEL;
- 
- 	info = call_usermodehelper_setup(path, argv, envp, gfp_mask,
--					 NULL, NULL, NULL);
-+					 NULL, NULL, NULL, NULL, NULL);
- 	if (info == NULL)
- 		return -ENOMEM;
- 
-diff --git a/lib/kobject_uevent.c b/lib/kobject_uevent.c
-index f6c2c1e..7a7c57a 100644
---- a/lib/kobject_uevent.c
-+++ b/lib/kobject_uevent.c
-@@ -345,7 +345,8 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
- 		retval = -ENOMEM;
- 		info = call_usermodehelper_setup(env->argv[0], env->argv,
- 						 env->envp, GFP_KERNEL,
--						 NULL, cleanup_uevent_env, env);
-+						 NULL, NULL, NULL,
-+						 cleanup_uevent_env, env);
- 		if (info) {
- 			retval = call_usermodehelper_exec(info, UMH_NO_WAIT);
- 			env = NULL;	/* freed by cleanup_uevent_env */
-diff --git a/security/keys/request_key.c b/security/keys/request_key.c
-index 43affcf..51dfb38 100644
---- a/security/keys/request_key.c
-+++ b/security/keys/request_key.c
-@@ -78,8 +78,8 @@ static int call_usermodehelper_keys(char *path, char **argv, char **envp,
- 	struct subprocess_info *info;
- 
- 	info = call_usermodehelper_setup(path, argv, envp, GFP_KERNEL,
--					  umh_keys_init, umh_keys_cleanup,
--					  session_keyring);
-+					 NULL, NULL, umh_keys_init,
-+					 umh_keys_cleanup, session_keyring);
- 	if (!info)
- 		return -ENOMEM;
++		ret = _proc_do_string(core_pattern, table->maxlen, write,
++				      (char __user *)buffer, lenp, ppos);
++		if (ret)
++			return ret;
++	}
++
++	validate_coredump_safety();
++	return 0;
+ }
+ #endif
  
 -- 
 2.7.4
