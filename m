@@ -1,8 +1,8 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+From: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: Keyrings, user namespaces and the user_struct
-Date: Wed, 26 Oct 2016 13:10:20 -0500
-Message-ID: <87mvhrrng3.fsf@xmission.com>
-References: <20161026143856.GL3334@pc.thejh.net>
+Date: Wed, 26 Oct 2016 19:35:25 +0100
+Message-ID: <3677.1477506925__48346.4361670942$1477506974$gmane$org@warthog.procyon.org.uk>
+References: <87mvhrrng3.fsf@xmission.com> <20161026143856.GL3334@pc.thejh.net>
 	<CALCETrU0PqNYmWx70pugkhj-kAD5DSzSi3swhK+v12WMYZYUZA@mail.gmail.com>
 	<17576.1477412418@warthog.procyon.org.uk>
 	<18335.1477414412@warthog.procyon.org.uk>
@@ -16,8 +16,8 @@ Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <9610.1477493338-S6HVgzuS8uM4Awkfq6JHfwNdhmdF6hFW@public.gmane.org> (David Howells's message
-	of "Wed, 26 Oct 2016 15:48:58 +0100")
+In-Reply-To: <87mvhrrng3.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Content-ID: <3675.1477506925.1-S6HVgzuS8uM4Awkfq6JHfwNdhmdF6hFW@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,28 +27,63 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, LSM List <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, keyrings-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, LSM List <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, keyrings-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
 
-> Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org> wrote:
->
->> find_keyring_by_name() checks that the UID of the keyring's owner is mapped into
->> the current user namespace. But that doesn't catch the scenario I described:
->> The keyring is created in an attacker-created namespace and looked up from the
->> init namespace, into which all kuids are mapped.
->
-> Ah - gotcha.
+> > Jann Horn <jann-XZ1E9jl8jIdeoWH0uzbU5w@public.gmane.org> wrote:
+> >
+> >> find_keyring_by_name() checks that the UID of the keyring's owner is
+> >> mapped into the current user namespace. But that doesn't catch the
+> >> scenario I described: The keyring is created in an attacker-created
+> >> namespace and looked up from the init namespace, into which all kuids are
+> >> mapped.
+> >
+> > Ah - gotcha.
+> 
+> Unless I am misreading something it actually gets worse.  You don't even
+> need a user namespace.  You can just call keyctl_join_session_keyring
+> and the named keyring of your choice will be created.
 
-Unless I am misreading something it actually gets worse.  You don't even
-need a user namespace.  You can just call keyctl_join_session_keyring
-and the named keyring of your choice will be created.
+It's meant to do that - assuming a keyring of that name doesn't yet exist or
+isn't accessible by you.
 
-Plus there are various really weird things in their where the keyring
-names of _tid, _pid, _ses, get reused over and over again.
+I should perhaps prohibit the creation of a _uid.N keyring.  However, I think
+that conceptually, it should be possible to join the user-session keyring as
+your session - or I should make it so that the user-session keyring doesn't
+exist (but I'm pretty certain that will break userspace).
 
-So it looks like there are some significant things to fix.
+> Plus there are various really weird things in their where the keyring
+> names of _tid, _pid, _ses, get reused over and over again.
 
-Eric
+True, however per-thread (_tid) and per-process(_pid) keyrings are always
+allocated by key_alloc() and never looked up by name when being created.
+
+Anonymous session (_ses) keyrings are also created by key_alloc() and not
+looked up when created.  It's only when a named session keyring is requested
+that a look up by name is done.
+
+I could make the per-thread, per-process and anon-session keyrings nameless by
+default, or prefix them with '.' and not permit joining of a keyring whose
+name begins with a '.' (you aren't allowed to use add_key() to create a such
+keyrings, so that really ought to be extended to here too).
+
+> So it looks like there are some significant things to fix.
+
+So:
+
+ (1) Make the keyring name list per user_namespace.
+
+ (2) Don't let _uid.N, _tid, _pid and _ses (anonymous session) keyrings be
+     joined.
+
+ (3) Don't let keyrings whose name begins '.' be joined.
+
+ (4) Don't keep the user and user-session keyrings in the user_struct, but
+     rather make them subordinates of the user namespace.
+
+for starters.
+
+David
