@@ -1,14 +1,18 @@
-From: =?ISO-8859-1?Q?Jos=E9?= Bollo <jobol-irWdKjYHErrR7s880joybQ@public.gmane.org>
+From: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: Keyrings, user namespaces and the user_struct
-Date: Wed, 26 Oct 2016 09:18:04 +0200
-Message-ID: <1477466284.1969.9.camel__11832.4875402779$1477466687$gmane$org@nonadev.net>
-References: <17576.1477412418@warthog.procyon.org.uk>
+Date: Wed, 26 Oct 2016 08:37:20 +0100
+Message-ID: <30199.1477467440@warthog.procyon.org.uk>
+References: <87y41bvhui.fsf@xmission.com>
+	<1477414605.3079.40.camel@HansenPartnership.com>
+	<17576.1477412418@warthog.procyon.org.uk>
 	<18335.1477414412@warthog.procyon.org.uk>
+	<18846.1477416621@warthog.procyon.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <18335.1477414412-S6HVgzuS8uM4Awkfq6JHfwNdhmdF6hFW@public.gmane.org>
+In-Reply-To: <87y41bvhui.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Content-ID: <29561.1477467138.1-S6HVgzuS8uM4Awkfq6JHfwNdhmdF6hFW@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,35 +22,35 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org
-Cc: linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, keyrings-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, keyrings-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-TGUgbWFyZGkgMjUgb2N0b2JyZSAyMDE2IMOgIDE3OjUzICswMTAwLCBEYXZpZCBIb3dlbGxzIGEg
-w6ljcml0wqA6Cj4gRGF2aWQgSG93ZWxscyA8ZGhvd2VsbHNAcmVkaGF0LmNvbT4gd3JvdGU6Cj4g
-Cj4gPiAKPiA+IMKgKDIpIElmIGEgcHJvY2VzcydzIHVzZXJfbmFtZXNwYWNlIGRvZXNuJ3QgbWF0
-Y2ggdGhhdCByZWNvcmRlZCBpbiBhCj4gPiBrZXkgdGhlbgo+ID4gwqDCoMKgwqDCoGl0IGdldHMg
-RU5PS0VZIGlmIGl0IHRyaWVzIHRvIHJlZmVyIHRvIGl0IG9yIGFjY2VzcyBpdCBhbmQKPiA+IGNh
-bid0IHNlZSBpdAo+ID4gwqDCoMKgwqDCoGluIC9wcm9jL2tleXMuCj4gCj4gVGhlcmUncyBhbm90
-aGVyIHBvc3NpYmlsaXR5IGhlcmUgLSBzaW5jZSB1c2VyX25hbWVzcGFjZXMgYXJlCj4gaGllcmFy
-Y2hpY2FsLAo+IGRvZXMgaXQgbWFrZSBzZW5zZSB0byBsZXQgYSBwcm9jZXNzIHNlZSBrZXlzIHRo
-YXQgYXJlIGluIGFuIGFuY2VzdHJhbAo+IG5hbWVzcGFjZT8KPgo+wqBEYXZpZAo+wqAtLQoKSGVs
-bG8gYWxsLAoKSSB1c2VkIHRoaXMgYXBwcm9hY2ggZm9yIFBUYWdzLiBMZXQgbWUgZXhwbGFpbiBo
-b3cgaXQgd29ya3MgZm9yIFBUYWdzCmluIGZldyB3b3Jkcy4KCsKgLSBlYWNoIHB0YWdzIGlzIGlu
-IGZhY3QgYSBjb3VwbGUgKHVzZXItbmFtZXNwYWNlLCBwdGFnLW5hbWUsIGZsYWdzKQrCoC0gd2hl
-biBsb29raW5nIHRvIHRhZ3MgaW4gYSBnaXZlbiBuYW1lc3BhY2U6CsKgIMKgbyBlaXRoZXIgaXQg
-aXMgZm91bmQgd2l0aCB0aGUgZ2l2ZW4gY3VycmVudCBuYW1lLXNwYWNlCsKgIMKgbyBvciB0aGUg
-YW5jZXN0b3ItaGllcmFyY2h5IG9mIG5hbWUtc3BhY2VzIGlzIGxvb2tlZCB0byBnZXQgdGhlCsKg
-IMKgIMKgY29udGFpbmluZyBhbmNlc3RvcgrCoC0gaW4gYm90aCBjYXNlIHdoZW4gYSB0YWcgaXMg
-Zm91bmQsIHRoZSBmbGFnIGluZGljYXRlcyBpZiBpdCBpcyBhbGl2ZQrCoCDCoG9yIHdhcyByZW1v
-dmVkIGluIHRoZSBuYW1lc3BhY2UKCkl0IHdvcmtzIHdlbGwgKGZyb20gd2hhdCBJIHNldyA4KQoK
-VGVjaG5pY2FsIGRldGFpbHM6CsKgLSBhc3N1bXB0aW9uIGlzIGRvbmUgdGhhdCBhbmNlc3RvcnMg
-d2FpdCB0aGVpciBjaGlsZHJlbiB0byBkaWUKwqAtIHNoYWRvdy1naG9zdCBwb2ludGVycyBhcmUg
-dXNlZCB0byB3ZWFrbHkgaGFuZGxlIHVzZXIgbmFtZXNwYWNlcwoKQmVzdCByZWdhcmRzCgpKb3PD
-qSBCb2xsbwoKPiBUbyB1bnN1YnNjcmliZSBmcm9tIHRoaXMgbGlzdDogc2VuZCB0aGUgbGluZSAi
-dW5zdWJzY3JpYmUgbGludXgtCj4gc2VjdXJpdHktbW9kdWxlIiBpbgo+IHRoZSBib2R5IG9mIGEg
-bWVzc2FnZSB0byBtYWpvcmRvbW9Admdlci5rZXJuZWwub3JnCj4gTW9yZSBtYWpvcmRvbW8gaW5m
-byBhdMKgwqBodHRwOi8vdmdlci5rZXJuZWwub3JnL21ham9yZG9tby1pbmZvLmh0bWwKX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWls
-aW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xp
-c3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+
+> David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+> 
+> > James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org> wrote:
+> >
+> >> > There's another possibility here - since user_namespaces are 
+> >> > hierarchical, does it make sense to let a process see keys that are 
+> >> > in an ancestral namespace?
+> >> 
+> >> I think that should be the decision of the owner.  If you're creating a
+> >> userns to de-privilege the next user, likely you don't want this, but
+> >> if you're creating a userns to enhance it, then you do.
+> >
+> > Maybe the simplest is to put a 'stop here' flag on a user_namespace.  Then
+> > when we look to see if a key is in the caller's namespace, we go up the tree
+> > until we hit the flag.  If you don't find the key's ns within the caller's
+> > permitted subtree, you don't get to see the key.
+> 
+> Let me just say we already have all of that (in a much nicer format) by
+> limiting the set of keys we can access to the set of users visible in
+> the user namespace.
+
+Except that we don't.  Users outside of a namespace can see any key that
+grants permissions to 'other' - though this is something we don't do by
+default.
+
+David
