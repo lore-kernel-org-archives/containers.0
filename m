@@ -1,22 +1,14 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+From: =?ISO-8859-1?Q?Jos=E9?= Bollo <jobol-irWdKjYHErrR7s880joybQ@public.gmane.org>
 Subject: Re: Keyrings, user namespaces and the user_struct
-Date: Wed, 26 Oct 2016 01:48:59 -0500
-Message-ID: <877f8vtxk4.fsf@xmission.com>
-References: <CALCETrU0PqNYmWx70pugkhj-kAD5DSzSi3swhK+v12WMYZYUZA@mail.gmail.com>
-	<17576.1477412418@warthog.procyon.org.uk>
+Date: Wed, 26 Oct 2016 09:18:04 +0200
+Message-ID: <1477466284.1969.9.camel__11832.4875402779$1477466687$gmane$org@nonadev.net>
+References: <17576.1477412418@warthog.procyon.org.uk>
 	<18335.1477414412@warthog.procyon.org.uk>
-	<1477414605.3079.40.camel@HansenPartnership.com>
-	<20161025170602.GB24481@laptop.thejh.net>
-	<1477418708.3079.52.camel@HansenPartnership.com>
-	<20161025181735.GC24481@laptop.thejh.net>
-	<20947.1477428095@warthog.procyon.org.uk>
-	<87shrju031.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87shrju031.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (Eric W. Biederman's message of
-	"Wed, 26 Oct 2016 00:54:26 -0500")
+In-Reply-To: <18335.1477414412-S6HVgzuS8uM4Awkfq6JHfwNdhmdF6hFW@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,57 +18,35 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>, James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, LSM List <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, keyrings-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org, oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org
+Cc: linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, keyrings-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) writes:
-
-> David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
->
->> Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org> wrote:
->>
->>> ... Perhaps we could simply *remove* the concept of named keys and keyrings.
->>
->> See Linus's dictum about breaking userspace.
->>
->> The problem isn't named keys: keys have to be named - the description is how
->> they're looked up typically.  Further, non-keyring keys can't be looked up
->> directly by name - you have to search for them in a keyring.
->>
->> The issue here is named keyrings and keyctl_join_session_keyring().  It might
->> well have been a bad idea - though I've seen some people arguing for a single
->> session keyring shared across all a user's logins, in which case, we might
->> want this after all (or use the user-default session).
->>
->> One thing we perhaps do want to do, though, is restrict the names of keyrings
->> to the user_namespace in which the keyring was created.
->
-> Grr...
->
-> The first round of user namespace support had actually restricted the
-> description lookup to a single user namespace.  Then I missed a detail
-> and converted the code to it's current form.  Ooops!
->
-> I think the answer for all of the issues raised in this conversation is
-> to just make the keyring names and the keyring name lookup per user
-> namespace.
->
-> Maybe a few small additional tweaks to install_user_keyrings to notice
-> if we have the user keyring from the wrong user namespace.
->
-> Something like the untested patch below.
-
-Ugh but that approach runs into the fact that the uid_keyring lives
-in user_struct.
-
-So in the short term it is probably better to use the uid in the initial
-user namespace in install_user_keyrings.  Then in
-keyctl_join_session_keyring look for names that start with _uid. and
-_uid_ses. and change the strings to have the numbers in the initial user
-namespace instead of the current user namespace.
-
-That would be the smallest change we could make, that would result
-in correct code.
-
-Eric
+TGUgbWFyZGkgMjUgb2N0b2JyZSAyMDE2IMOgIDE3OjUzICswMTAwLCBEYXZpZCBIb3dlbGxzIGEg
+w6ljcml0wqA6Cj4gRGF2aWQgSG93ZWxscyA8ZGhvd2VsbHNAcmVkaGF0LmNvbT4gd3JvdGU6Cj4g
+Cj4gPiAKPiA+IMKgKDIpIElmIGEgcHJvY2VzcydzIHVzZXJfbmFtZXNwYWNlIGRvZXNuJ3QgbWF0
+Y2ggdGhhdCByZWNvcmRlZCBpbiBhCj4gPiBrZXkgdGhlbgo+ID4gwqDCoMKgwqDCoGl0IGdldHMg
+RU5PS0VZIGlmIGl0IHRyaWVzIHRvIHJlZmVyIHRvIGl0IG9yIGFjY2VzcyBpdCBhbmQKPiA+IGNh
+bid0IHNlZSBpdAo+ID4gwqDCoMKgwqDCoGluIC9wcm9jL2tleXMuCj4gCj4gVGhlcmUncyBhbm90
+aGVyIHBvc3NpYmlsaXR5IGhlcmUgLSBzaW5jZSB1c2VyX25hbWVzcGFjZXMgYXJlCj4gaGllcmFy
+Y2hpY2FsLAo+IGRvZXMgaXQgbWFrZSBzZW5zZSB0byBsZXQgYSBwcm9jZXNzIHNlZSBrZXlzIHRo
+YXQgYXJlIGluIGFuIGFuY2VzdHJhbAo+IG5hbWVzcGFjZT8KPgo+wqBEYXZpZAo+wqAtLQoKSGVs
+bG8gYWxsLAoKSSB1c2VkIHRoaXMgYXBwcm9hY2ggZm9yIFBUYWdzLiBMZXQgbWUgZXhwbGFpbiBo
+b3cgaXQgd29ya3MgZm9yIFBUYWdzCmluIGZldyB3b3Jkcy4KCsKgLSBlYWNoIHB0YWdzIGlzIGlu
+IGZhY3QgYSBjb3VwbGUgKHVzZXItbmFtZXNwYWNlLCBwdGFnLW5hbWUsIGZsYWdzKQrCoC0gd2hl
+biBsb29raW5nIHRvIHRhZ3MgaW4gYSBnaXZlbiBuYW1lc3BhY2U6CsKgIMKgbyBlaXRoZXIgaXQg
+aXMgZm91bmQgd2l0aCB0aGUgZ2l2ZW4gY3VycmVudCBuYW1lLXNwYWNlCsKgIMKgbyBvciB0aGUg
+YW5jZXN0b3ItaGllcmFyY2h5IG9mIG5hbWUtc3BhY2VzIGlzIGxvb2tlZCB0byBnZXQgdGhlCsKg
+IMKgIMKgY29udGFpbmluZyBhbmNlc3RvcgrCoC0gaW4gYm90aCBjYXNlIHdoZW4gYSB0YWcgaXMg
+Zm91bmQsIHRoZSBmbGFnIGluZGljYXRlcyBpZiBpdCBpcyBhbGl2ZQrCoCDCoG9yIHdhcyByZW1v
+dmVkIGluIHRoZSBuYW1lc3BhY2UKCkl0IHdvcmtzIHdlbGwgKGZyb20gd2hhdCBJIHNldyA4KQoK
+VGVjaG5pY2FsIGRldGFpbHM6CsKgLSBhc3N1bXB0aW9uIGlzIGRvbmUgdGhhdCBhbmNlc3RvcnMg
+d2FpdCB0aGVpciBjaGlsZHJlbiB0byBkaWUKwqAtIHNoYWRvdy1naG9zdCBwb2ludGVycyBhcmUg
+dXNlZCB0byB3ZWFrbHkgaGFuZGxlIHVzZXIgbmFtZXNwYWNlcwoKQmVzdCByZWdhcmRzCgpKb3PD
+qSBCb2xsbwoKPiBUbyB1bnN1YnNjcmliZSBmcm9tIHRoaXMgbGlzdDogc2VuZCB0aGUgbGluZSAi
+dW5zdWJzY3JpYmUgbGludXgtCj4gc2VjdXJpdHktbW9kdWxlIiBpbgo+IHRoZSBib2R5IG9mIGEg
+bWVzc2FnZSB0byBtYWpvcmRvbW9Admdlci5rZXJuZWwub3JnCj4gTW9yZSBtYWpvcmRvbW8gaW5m
+byBhdMKgwqBodHRwOi8vdmdlci5rZXJuZWwub3JnL21ham9yZG9tby1pbmZvLmh0bWwKX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWls
+aW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xp
+c3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
