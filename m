@@ -1,20 +1,11 @@
-From: Cyrill Gorcunov <gorcunov-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [REVIEW][PATCH v2] mm: Add a user_ns owner to mm_struct and fix
-	ptrace permission checks
-Date: Fri, 28 Oct 2016 10:06:35 +0300
-Message-ID: <20161028070635.GD1922__45724.0972471938$1477638420$gmane$org@uranus.lan>
-References: <8760oh8tbp.fsf@xmission.com> <20161024202925.GS1847@uranus.lan>
-	<CAGXu5jK4p4bbQU1Bu-p9aM1GJ+CAR-FAHZcXXRH0De_M4VQ3wA@mail.gmail.com>
-	<8760oh737b.fsf@xmission.com> <20161025090213.GX1847@uranus.lan>
-	<87d1ilrdmt.fsf_-_@xmission.com> <20161027213918.GA1922@uranus.lan>
-	<20161027223430.GC1922@uranus.lan> <8760odnrf5.fsf@xmission.com>
-	<87pomlm68e.fsf@xmission.com>
+From: "jack1" <jack1-6pn/numoPAYAvxtiuMwx3w@public.gmane.org>
+Subject: =?GB2312?B?yKvH8rXEv827p7XItP3E47+qt6I=?=
+Date: Sun, 30 Oct 2016 03:56:49 +0800
+Message-ID: <201610300356498578999@Lsskx.com>
+Reply-To: 1989283912-9uewiaClKEY@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============7812701762954851691=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <87pomlm68e.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,18 +15,30 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Andrey Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Pavel Emelyanov <xemul-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
+To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Oct 27, 2016 at 11:45:37PM -0500, Eric W. Biederman wrote:
-> 
-> Mind if I add your tested-by?
-> 
-> To see Linus's tree fail with my patch you can apply the patch below.
-> That is the essence of what I changed to fix things.  Just ignoring
-> dumpable when an mm exists.
+--===============7812701762954851691==
+Content-Type: text/plain; charset="GB2312"
 
-Tested-by: Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+   外贸的客户搜索开发，最专业的google你会用吗？怎么去针对一个国家搜索？677888990011122233
 
-Thanks a huge!
+   6778889990011223334
+
+   怎么去过滤无关数据？ 那你应该没有了解过我们，你肯定不知道还可以这样中google90011122333444556667
+
+   33445556667788999
+
+   178181126体验是一种了解企鹅Q号 是否可行只有你知道
+
+--===============7812701762954851691==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============7812701762954851691==--
