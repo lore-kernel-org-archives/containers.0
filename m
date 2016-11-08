@@ -1,12 +1,12 @@
-From: "Tanya Daniel" <tanya.daniel-Q59N0+57Gnis91HqCVoXkUEOCMrvLtNR@public.gmane.org>
-Subject: Amazon Web Services (AWS)
-Date: Tue, 8 Nov 2016 01:43:25 +0530
-Message-ID: <08d901d23933$97bc96c0$c735c440$@allanalyticspro.com>
+From: S5 <s5-5tKIeXnB6D3ihX4fg7KjwA@public.gmane.org>
+Subject: =?utf-8?Q?=5BUnterst=C3=BCtzen?= # HLG-976]: akzeptierte Anfrage
+Date: Tue, 08 Nov 2016 15:05:04 +0000
+Message-ID: <03a2ef58977e931b0d32d82661cf998a@swift.generated>
+Reply-To: S5 <s5-5tKIeXnB6D3ihX4fg7KjwA@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-us
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,71 +19,63 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
-
- 
-
-Hope my email finds you well.
-
- 
-
-Are you looking out to acquire the list of customers or companies using
-Amazon Web Services (AWS) Business leads? 
-
- 
-
-We endow the Database across North America, EMEA, APAC and Latin America.
-
- 
-
-We provide complete Information Fields like - Name, Title, Email address,
-Phone Numbers, Company Name, and Company Details like, Physical Address, Web
-Address, Revenue Size, Employee Size and industry.
-
- 
-
-We have list of Amazon Products which you may be interested in:
-
- 
-
-Amazon S3
-
-Amazon EBS
-
-Amazon Elastic File System
-
-Amazon Glacier
-
-AWS Storage Gateway
-
-Amazon CloudFront and so on. 
-
- 
-
-Please review and let me know what technology users you are interested in
-and I will get back to you with more information for the same.
-
- 
-
-I await your response and look forward to serving you!
-
- 
-
-Regards,
-
-Tanya Daniel
-
-Cloud Consultant
-
- 
-
-If you wish not to receive these emails, please reply LEAVE OUT in the
-subject line.
-
- 
-
-
-
----
-This email has been checked for viruses by Avast antivirus software.
-https://www.avast.com/antivirus
+V2FzIGlzdCBub2NoIGJlc3NlciBhbHMgZWluIEtyZWRpdD8gV2llIGJla29tbWVuIFNpZSBlaW5l
+biBow7ZoZXJlbiBLcmVkaXQ/CgpXaWUgd8OkcmUgZXMsIHdlbm4gU2llIG1laHIgR2VsZCB2ZXJk
+aWVuZW4sIHN0YXR0IGVpbiBLcmVkaXQgYXVmenVuZWhtZW4/IE9kZXIgV29sbGVuIFNpZSBlaW5l
+biBow7ZoZXJlbiBLcmVkaXQgdW0gei5CLiBlaW5lIEltbW9iaWxpZSB6dSBrYXVmZW4/IFdpciBl
+aW5lbiBncsO2w59lcmVuIEtyZWRpdCBiZW7DtnRpZ2VuIFNpZSBhdWNoIGVpbiBow7ZoZXJlcyBF
+aW5rb21tZW4uIERlc2hhbGIgYXJiZWl0ZW4gd2lyIG1pdCBlaW5lbSBQYXJ0bmVyIHp1c2FtbWVu
+LCBkZXIgSWhuZW4gZWluIGjDtmhlcmVzIEVpbmtvbW1lbiBlcm3DtmdsaWNoZW4ga2Fubi4gRGFk
+dXJjaCBnZXfDpGhyZW4gd2lyIElobmVuIGVpbmVuIGdhcmFudGllcnRlbiArIGdyw7bDn2VyZW4g
+S3JlZGl0LiAoU2llIGvDtm5uZW4gZXMgbmF0w7xybGljaCBhdWNoIG51dHplbiwgd2VubiBTaWUg
+a2VpbmVuIEtyZWRpdCBiZW7DtnRpZ2VuKQoKV2lyIGJpZXRlbiBJaG5lbiBhbGxlcyBhbiEKRWlu
+IFBhcnRuZXIgbcO2Y2h0ZSB1bnMgZWluIFN5c3RlbSB2b3JzdGVsbGVuLCB3b21pdCBTaWUgdm9u
+IFp1aGF1c2UgYXVzIGJpcyB6dSA1NDcgRXVybyB0w6RnbGljaCB2ZXJkaWVuZW4ga8O2bm5lbi4K
+V2lyIHdpc3NlbiBzZWxic3QsIGRhc3MgZXMgc2ljaCBzZWhyIHVucmVhbGlzdGlzY2ggYW5ow7Zy
+dCwgZGVzaGFsYiB3YXJlbiB3aXIgYW0gMjYuNy4yMDE2IGljaCBpbiBGcmFua2Z1cnQgYW4gZGVy
+IELDtnJzZS4gRG9ydCBnaWJ0IGVzIG1vbWVudGFuIG51ciBlaW4gVGhlbWEhIERpZXNlIFNvZnR3
+YXJlLCBkaWUgZsO8ciBTaWUgYXJiZWl0ZXQhIFZvbGxhdXRvbWF0aXNjaCEKClNpZSBtw7xzc2Vu
+IG5pY2h0cyB0dW4sIGF1w59lciBkaWVzZSBTb2Z0d2FyZSBlaW5zY2hhbHRlbi4gU2llIGvDtm5u
+ZW4gZXMgdm9yaGVyIGF1Y2ggdGVzdGVuISBOYXTDvHJsaWNoIGlzdCBlcyBhYnNvbHV0IGtvc3Rl
+bmxvcwoKQWNodHVuZzogRXMgZ2lidCBqZXR6dCBlaW5lIFZlcmRpZW5zdGdhcmFudGllIHZvbiBt
+aW5kZXN0ZW5zIDcwIEV1cm8gcHJvIFRhZwoKTGV0enRlcyBXb2NoZW5lbmRlIGdhYiBlcyBlaW4g
+VE9QIFVwZGF0ZSAoVXBkYXRlIDUuMikKCkJhbmtlbiBhdXMgYWxsZXIgV2VsdCB3b2xsZW4gZGll
+c2UgU29mdHdhcmUgZsO8ciBiaXMgenUgMTAwIE1pbGxpb25lbiBFdXJvIGFia2F1ZmVuIQoKU2ll
+IGvDtm5uZW4gZXMgYWJlciBoZXV0ZSBub2NoIGtvc3RlbmxvcyBiZWtvbW1lbiEKCkRpZXNlIFNv
+ZnR3YXJlIGlzdCBhbHMgb2IgU2llIDEyIELDtnJzZW5leHBlcnRlbiBlaW5zdGVsbGVuIHfDvHJk
+ZW4sIGRpZSBmw7xyIFNpZSBhcmJlaXRlbiEKClNjaGF1ZW4gU2llIHNpY2ggZGFzIFZpZGVvIGFu
+OiBbPj4+TElOSzw8PF0oaHR0cDovL3RyYWNrLmludGVsbGlzZW5kLmNvL1RyYWNraW5nLzU4MjFl
+OWEwMGQ1NzEwMmQ4ZjM3ODI0MC9jL3l5Z3BLYkRTMTA5S3pOTkx6emRLenNrdlRkSExMMHJYVDB4
+TGkwLTJ6MDlMU3kyS3oweXhOYkkwVUFNSkFabG1CbVltWUhaeGFaS3RlM0FBQUEpCgpEYXMgbW9t
+ZW50YW4gbWVpc3QtZGlza3V0aWVydGUgU3lzdGVtIHdhciB3aWVkZXIgaW0gVGVzdC5FeHBlcnRl
+biBzaW5kIHNpY2ggc2ljaGVyISBEYXMgaXN0IGRhcyBiZXN0ZSBTeXN0ZW0gYXVmIGRlbSBNYXJr
+dCEKRWluIE5vdGFyIGJlc3TDpHRpZ3RlIGRhcyBMSVZFIGltIGRldXRzY2hlbiBGZXJuc2VoZW4h
+CgpCaXMgenUgMTMwLjIxOSBFdXJvIHBybyBKYWhyIGvDtm5uZW4gU2llIGRhbWl0IHZlcmRpZW5l
+biEgRG9jaCBsZWlkZXIgZ2lidCBlcyBudXIgbm9jaCA0MyBQbMOkdHplIGZyZWkKClNpZSBrw7Zu
+bmVuIGVzIEtPU1RFTkxPUyB0ZXN0ZW4hIFNpZSBoYWJlbiBOSUNIVFMgenUgdmVybGllcmVuIQoK
+T2RlciBnZWhlbiBTaWUgW2RpcmVrdCB6dW0gVmlkZW9dKGh0dHA6Ly90cmFjay5pbnRlbGxpc2Vu
+ZC5jby9UcmFja2luZy81ODIxZTlhMDBkNTcxMDJkOGYzNzgyNDAvYy95eWdwS2JEUzEwOUt6Tk5M
+enpkS3pza3ZUZEhMTDByWFQweExpMC0yejA5TFN5Mkt6MHl4TmJJMFVBTUpBWmxtQm1ZbVlIWnhh
+Wkt0ZTNBQUFBKSB1bmQgcmVnaXN0cmllcmVuIFNpZSBzaWNoIEtPU1RFTkxPUyBhdWY6IFs+Pj5M
+SU5LPDw8XShodHRwOi8vdHJhY2suaW50ZWxsaXNlbmQuY28vVHJhY2tpbmcvNTgyMWU5YTAwZDU3
+MTAyZDhmMzc4MjQwL2MveXlncEtiRFMxMDlLek5OTHp6ZEt6c2t2VGRITEwwclhUMHhMaTAtMnow
+OUxTeTJLejB5eE5iSTBVQU1KQVpsbUJtWW1ZSFp4YVpLdGUzQUFBQSkKClRWOiAiRGFzIGlzdCBk
+aWVzZSBlaW56aWdlIENoYW5jZSBpbSBMZWJlbiwgZGllIG1hbiB2aWVsbGVpY2h0IGJla29tbXQg
+dW0gd29obGhhYmVuZGVyIHp1IHdlcmRlbiIKTm90YXI6ICJBYnNvbHV0IHNlcmnDtnMuIEd1dGUg
+VGFnZXNnZXdpbm5lIG3DtmdsaWNoIgpCw7Zyc2VuZXhwZXJ0ZTog4oCcRGllIG5lZ2F0aXZlbiBN
+ZWludW5nZW4gc2luZCBnYW56IGVpbmZhY2ggenUgZXJrbMOkcmVuISBEYWhpbnRlciBzdGVja2Vu
+IG1laXN0ZW5zIGRpZSBCYW5rZW4sIGRpZSBzb2xjaGUgTcO2Z2xpY2hrZWl0ZW4gdmVydHVzY2hl
+biB3b2xsZW7igJ0KSW52ZXN0bWVudC1NaWxsaW9uw6RyOiAiTnVyIGRpZSBNZW5zY2hlbiBzaW5k
+IHNjaGxhdSwgZGllIHNpY2ggSWhyIGVpZ2VuZXMgQmlsZCBtYWNoZW4gdW5kIG5pY2h0IGFsbGVz
+IGdsYXViZW4gd2FzIG1hbiBJaG5lbiBlcnrDpGhsdCIKCltISUVSIGdlaHQgZXMgenVtIFZpZGVv
+XShodHRwOi8vdHJhY2suaW50ZWxsaXNlbmQuY28vVHJhY2tpbmcvNTgyMWU5YTAwZDU3MTAyZDhm
+Mzc4MjQwL2MveXlncEtiRFMxMDlLek5OTHp6ZEt6c2t2VGRITEwwclhUMHhMaTAtMnowOUxTeTJL
+ejB5eE5iSTBVQU1KQVpsbUJtWW1ZSFp4YVpLdGUzQUFBQSkKClNlbmRlcjogaW50ZWxsaXNlbmQs
+ICBBZGRyZXNzOiAyMjUgVyAzNXRoIFN0LCBOZXcgWW9yaywgTlkgMTAwMDEsIFVuaXRlZCBTdGF0
+ZXMKVW5zdWJzY3JpYmUgZnJvbSBtYWlsaW5nIGxpc3QgLSAgaHR0cDovL3RyYWNrLmludGVsbGlz
+ZW5kLmNvL1RyYWNraW5nLzU4MjFlOWEwMGQ1NzEwMmQ4ZjM3ODI0MC91CklmIHlvdSBzdXNwZWN0
+IHRoaXMgbWVzc2FnZSBhcyBhIHNwYW0sIFBsZWFzZSBpbmZvcm0gdXMgLSBodHRwOi8vdHJhY2su
+aW50ZWxsaXNlbmQuY28vVHJhY2tpbmcvNTgyMWU5YTAwZDU3MTAyZDhmMzc4MjQwL3MKCl9fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFp
+bGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9s
+aXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
