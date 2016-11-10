@@ -1,8 +1,7 @@
 From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] audit: tame initialization warning len_abuf in
-	audit_log_execve_info
-Date: Thu, 10 Nov 2016 01:39:49 -0500
-Message-ID: <55715f3a839b7d38839d02f3d28a90b3476f7046.1478759919.git.rgb__38304.7707764947$1478760052$gmane$org@redhat.com>
+Subject: [PATCH] audit: skip sessionid sentinel value when auto-incrementing
+Date: Thu, 10 Nov 2016 01:41:14 -0500
+Message-ID: <2e99896c655ae31ea481240692a720e9701b0a76.1478758980.git.rgb__34653.0746239752$1478760135$gmane$org@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,28 +19,30 @@ To: linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29T
 Cc: Paul Moore <pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Tame initialization warning of len_abuf in audit_log_execve_info even
-though there isn't presently a bug introduced by commit 43761473c254
-("audit: fix a double fetch in audit_log_single_execve_arg()").  Using
-UNINITIALIZED_VAR instead may mask future bugs.
+The value (unsigned int)-1 is used as a sentinel to indicate the
+sessionID is unset.  Skip this value when the session_id value wraps.
 
 Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- kernel/auditsc.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ kernel/auditsc.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
 
 diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-index e414dfa..d161b17 100644
+index 5abf1dc..e414dfa 100644
 --- a/kernel/auditsc.c
 +++ b/kernel/auditsc.c
-@@ -1000,7 +1000,7 @@ static void audit_log_execve_info(struct audit_context *context,
- 	long len_rem;
- 	long len_full;
- 	long len_buf;
--	long len_abuf;
-+	long len_abuf = 0;
- 	long len_tmp;
- 	bool require_data;
- 	bool encode;
+@@ -2025,8 +2025,11 @@ int audit_set_loginuid(kuid_t loginuid)
+ 		goto out;
+ 
+ 	/* are we setting or clearing? */
+-	if (uid_valid(loginuid))
++	if (uid_valid(loginuid)) {
+ 		sessionid = (unsigned int)atomic_inc_return(&session_id);
++		if (unlikely(sessionid == (unsigned int)-1))
++			sessionid = (unsigned int)atomic_inc_return(&session_id);
++	}
+ 
+ 	task->sessionid = sessionid;
+ 	task->loginuid = loginuid;
 -- 
 1.7.1
