@@ -1,11 +1,12 @@
-From: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] audit: skip sessionid sentinel value when auto-incrementing
-Date: Thu, 10 Nov 2016 01:41:14 -0500
-Message-ID: <2e99896c655ae31ea481240692a720e9701b0a76.1478758980.git.rgb__34653.0746239752$1478760135$gmane$org@redhat.com>
+From: =?iso-2022-jp?B?GyRCP1w6ak0tOS8bKEI=?= <k.suzaki-XSdjUN4cZ6fPDbFq/vQRIQ@public.gmane.org>
+Subject: BMC (Bare-Metal Container) is relased
+Date: Fri, 11 Nov 2016 06:54:13 +0000
+Message-ID: <TYXPR01MB08135B40DAAE84338AC9F7A7BDBB0@TYXPR01MB0813.jpnprd01.prod.outlook.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Language: ja-JP
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,34 +16,33 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Paul Moore <pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: bmc <bmc-XSdjUN4cZ6fPDbFq/vQRIQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The value (unsigned int)-1 is used as a sentinel to indicate the
-sessionID is unset.  Skip this value when the session_id value wraps.
+Hello,
 
-Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
----
- kernel/auditsc.c |    5 ++++-
- 1 files changed, 4 insertions(+), 1 deletions(-)
+We released BMC (Bare-Metal Container) which runs a container (Docker)
+image with a suitable Linux kernel on a remote physical machine.
+BMC allows to change the kernel and its settings for the container
+(Docker) image. As a result, the application extracts the full
+performance of the physical machine.
 
-diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-index 5abf1dc..e414dfa 100644
---- a/kernel/auditsc.c
-+++ b/kernel/auditsc.c
-@@ -2025,8 +2025,11 @@ int audit_set_loginuid(kuid_t loginuid)
- 		goto out;
- 
- 	/* are we setting or clearing? */
--	if (uid_valid(loginuid))
-+	if (uid_valid(loginuid)) {
- 		sessionid = (unsigned int)atomic_inc_return(&session_id);
-+		if (unlikely(sessionid == (unsigned int)-1))
-+			sessionid = (unsigned int)atomic_inc_return(&session_id);
-+	}
- 
- 	task->sessionid = sessionid;
- 	task->loginuid = loginuid;
--- 
-1.7.1
+A pre-built BMC image using DIND (Docker in Docker) technique is
+offered. Users can avid burdensome setting up (ex. Apache CGI, etc).
+We strongly recommend new users to try this pre-built version.
+
+Pre-built BMC Doceker Image https://hub.docker.com/r/baremetalcontainer/bmc/
+Source Code: https://github.com/baremetalcontainer/bmc
+Official HP: http://www.itri.aist.go.jp/cpc/research/bmc/
+
+BMC is exhibited at the Super Computing 2016 (AIST booth 1709) held at
+Salt Lake City next week (Nov/14-17).
+  http://sc16.supercomputing.org
+
+The detail of BMC will be presented at IEEE HPCC (High Performance
+Computing and Communication) 2016 (Dec/12-14) held at Sydney.
+  http://www.swinflow.org/confs/2016/hpcc/
+
+-----------
+Kuni Suzaki
