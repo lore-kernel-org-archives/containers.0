@@ -1,12 +1,13 @@
-From: =?iso-2022-jp?B?GyRCP1w6ak0tOS8bKEI=?= <k.suzaki-XSdjUN4cZ6fPDbFq/vQRIQ@public.gmane.org>
-Subject: BMC (Bare-Metal Container) is relased
-Date: Fri, 11 Nov 2016 06:54:13 +0000
-Message-ID: <TYXPR01MB08135B40DAAE84338AC9F7A7BDBB0@TYXPR01MB0813.jpnprd01.prod.outlook.com>
+From: "Mr. Donald Lucas" <dl322pin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Our last deal
+Date: Sat, 12 Nov 2016 09:40:58 -0600
+Message-ID: <20161112154325.422BD14AF73@mx2.avolo.ro>
+Reply-To: dl321pinn-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: ja-JP
+Content-Description: Mail message body
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,33 +17,29 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: bmc <bmc-XSdjUN4cZ6fPDbFq/vQRIQ@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello,
+Greetings,
 
-We released BMC (Bare-Metal Container) which runs a container (Docker)
-image with a suitable Linux kernel on a remote physical machine.
-BMC allows to change the kernel and its settings for the container
-(Docker) image. As a result, the application extracts the full
-performance of the physical machine.
+I have interest of investing in your country. I am a Fund Management Executive with Prudential Plc Asset Management in the UK.
 
-A pre-built BMC image using DIND (Docker in Docker) technique is
-offered. Users can avid burdensome setting up (ex. Apache CGI, etc).
-We strongly recommend new users to try this pre-built version.
+I am in search of a partner to assist me in the transfer of 36,000,000GBP and subsequent investment in properties and other lucrative businesses in your country.
 
-Pre-built BMC Doceker Image https://hub.docker.com/r/baremetalcontainer/bmc/
-Source Code: https://github.com/baremetalcontainer/bmc
-Official HP: http://www.itri.aist.go.jp/cpc/research/bmc/
+You will be required to.
 
-BMC is exhibited at the Super Computing 2016 (AIST booth 1709) held at
-Salt Lake City next week (Nov/14-17).
-  http://sc16.supercomputing.org
+(1) Assist in the transfer of the said funds.
 
-The detail of BMC will be presented at IEEE HPCC (High Performance
-Computing and Communication) 2016 (Dec/12-14) held at Sydney.
-  http://www.swinflow.org/confs/2016/hpcc/
+(2) Advise on lucrative areas for investment.
 
------------
-Kuni Suzaki
+(3) Assist us in purchase of properties.
+
+If you agree to render your service to me in this regard, 25% of the total sum of 36,000,000 GBP will be for you.
+
+Kindly reply and consent to your continued Interest.
+
+Thank you and God bless, as I wait in anticipation of your reply and co-operation.
+
+
+Best Regards,
+Mr. Donald Lucas
