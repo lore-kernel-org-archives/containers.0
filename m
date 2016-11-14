@@ -1,14 +1,12 @@
-From: Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>
-Subject: Re: [PATCH] audit: skip sessionid sentinel value when
-	auto-incrementing
-Date: Mon, 14 Nov 2016 15:17:40 -0500
-Message-ID: <CAHC9VhS0z8qDRBebkaQAu8p-SdXGak_x1T8XmtS=Ydr=nA5XkQ@mail.gmail.com>
-References: <2e99896c655ae31ea481240692a720e9701b0a76.1478758980.git.rgb@redhat.com>
+From: 5415306259-PhIK+mYhcR9sDcysRhXauQC/G2K4zDHf@public.gmane.org
+Subject: (unknown)
+Date: Mon, 14 Nov 2016 21:31:09 +0000
+Message-ID: <212345919069622633@-212345919069622634>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; type="application/smil";
+	boundary="__CONTENT_64564_PART_BOUNDARY__33243242__"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <2e99896c655ae31ea481240692a720e9701b0a76.1478758980.git.rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: 
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,50 +16,31 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Nov 10, 2016 at 1:41 AM, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> The value (unsigned int)-1 is used as a sentinel to indicate the
-> sessionID is unset.  Skip this value when the session_id value wraps.
->
-> Signed-off-by: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> ---
->  kernel/auditsc.c |    5 ++++-
->  1 files changed, 4 insertions(+), 1 deletions(-)
+--__CONTENT_64564_PART_BOUNDARY__33243242__
+Content-Type: text/plain; charset=utf-8;
+ name="text_1479159022652.txt"
+Content-ID: <text_1479159022652>
+Content-Location: text_1479159022652.txt
 
-Since we haven't merged the session ID kernel patches into audit#next
-yet, why don't you just squash this patch in with the session ID patch
-and resubmit upstream in one nice neat patch.
+(Undeliverable: Who is this?) [http://products.office.com/en-us/CMSImages/Office365Logo_Orange.png?version=b8d100a9-0a8b-8e6a-88e1-ef488fee0470]
+Your
+--__CONTENT_64564_PART_BOUNDARY__33243242__
+Content-Type: text/plain; charset=UTF-8
 
-> diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-> index 5abf1dc..e414dfa 100644
-> --- a/kernel/auditsc.c
-> +++ b/kernel/auditsc.c
-> @@ -2025,8 +2025,11 @@ int audit_set_loginuid(kuid_t loginuid)
->                 goto out;
->
->         /* are we setting or clearing? */
-> -       if (uid_valid(loginuid))
-> +       if (uid_valid(loginuid)) {
->                 sessionid = (unsigned int)atomic_inc_return(&session_id);
-> +               if (unlikely(sessionid == (unsigned int)-1))
-> +                       sessionid = (unsigned int)atomic_inc_return(&session_id);
-> +       }
->
->         task->sessionid = sessionid;
->         task->loginuid = loginuid;
-> --
-> 1.7.1
->
-> --
-> Linux-audit mailing list
-> Linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-> https://www.redhat.com/mailman/listinfo/linux-audit
+This picture message or video message was sent using Multimedia Messaging Service. 
 
+To play video messages sent to email, Apple QuickTime 6.5 or higher is required. Visit www.apple.com/quicktime/download to download the free player or upgrade your existing QuickTime Player. Note: During the download process when asked to choose an installation type (Minimum, Recommended or Custom), select Minimum for faster download.
+--__CONTENT_64564_PART_BOUNDARY__33243242__
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-
--- 
-paul moore
-www.paul-moore.com
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--__CONTENT_64564_PART_BOUNDARY__33243242__--
