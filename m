@@ -1,12 +1,11 @@
-From: 5415306259-PhIK+mYhcR9sDcysRhXauQC/G2K4zDHf@public.gmane.org
-Subject: (unknown)
-Date: Mon, 14 Nov 2016 21:31:09 +0000
-Message-ID: <212345919069622633@-212345919069622634>
+From: =?utf-8?B?5bCP5byg?= <zp-abALa037UpT3oGB3hsPCZA@public.gmane.org>
+Subject: =?utf-8?B?6L2s5Y+R77ya5p2l6Ieq6LWE5rex55qH5Yag57qn5Lmw5a62?=
+Date: Thu, 17 Nov 2016 23:42:07 +0800
+Message-ID: <D3E913C1328F7A5E2EBE7BDDAD7F8B44@dKz.yvn>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; type="application/smil";
-	boundary="__CONTENT_64564_PART_BOUNDARY__33243242__"
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: 
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,28 +18,7 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---__CONTENT_64564_PART_BOUNDARY__33243242__
-Content-Type: text/plain; charset=utf-8;
- name="text_1479159022652.txt"
-Content-ID: <text_1479159022652>
-Content-Location: text_1479159022652.txt
-
-(Undeliverable: Who is this?) [http://products.office.com/en-us/CMSImages/Office365Logo_Orange.png?version=b8d100a9-0a8b-8e6a-88e1-ef488fee0470]
-Your
---__CONTENT_64564_PART_BOUNDARY__33243242__
-Content-Type: text/plain; charset=UTF-8
-
-This picture message or video message was sent using Multimedia Messaging Service. 
-
-To play video messages sent to email, Apple QuickTime 6.5 or higher is required. Visit www.apple.com/quicktime/download to download the free player or upgrade your existing QuickTime Player. Note: During the download process when asked to choose an installation type (Minimum, Recommended or Custom), select Minimum for faster download.
---__CONTENT_64564_PART_BOUNDARY__33243242__
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---__CONTENT_64564_PART_BOUNDARY__33243242__--
+5b+r5p2l5YqgUee+pDU3MjYzNjEyMSDmnInkvaDpnIDopoHnmoTkuJzopb8NCl9fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBs
+aXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5s
+aW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
