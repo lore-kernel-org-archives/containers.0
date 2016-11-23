@@ -1,22 +1,10 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [REVIEW][PATCH 0/3] Fixing ptrace vs exec vs userns interactions
-Date: Sat, 19 Nov 2016 12:44:49 -0600
-Message-ID: <87vavjia1q.fsf__4923.12377687103$1479581255$gmane$org@xmission.com>
-References: <CALCETrU4SZYUEPrv4JkpUpA+0sZ=EirZRftRDp+a5hce5E7HgA@mail.gmail.com>
-	<87y41kjn6l.fsf@xmission.com> <20161019172917.GE1210@laptop.thejh.net>
-	<CALCETrWSY1SRse5oqSwZ=goQ+ZALd2XcTP3SZ8ry49C8rNd98Q@mail.gmail.com>
-	<87pomwi5p2.fsf@xmission.com>
-	<CALCETrUz2oU6OYwQ9K4M-SUg6FeDsd6Q1gf1w-cJRGg2PdmK8g@mail.gmail.com>
-	<87pomwghda.fsf@xmission.com>
-	<CALCETrXA2EnE8X3HzetLG6zS8YSVjJQJrsSumTfvEcGq=r5vsw@mail.gmail.com>
-	<87twb6avk8.fsf_-_@xmission.com> <20161119071700.GA13347@1wt.eu>
-	<20161119092804.GA13553@1wt.eu>
+From: =?iso-8859-1?Q?St=E9phane?= Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: LXC 1.0.9, LXC 2.0.6, LXCFS 2.0.5 and LXD 2.0.6 have been released!
+Date: Wed, 23 Nov 2016 17:08:23 -0500
+Message-ID: <20161123220823.GG3374@dakara>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============7820722998961814464=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20161119092804.GA13553-K+wRfnb2/UA@public.gmane.org> (Willy Tarreau's message of "Sat,
-	19 Nov 2016 10:28:04 +0100")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -26,89 +14,98 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Willy Tarreau <w@1wt.eu>
-Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Michal Hocko <mhocko-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
+To: lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, lxc-users-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Willy Tarreau <w@1wt.eu> writes:
 
-> On Sat, Nov 19, 2016 at 08:17:00AM +0100, Willy Tarreau wrote:
->> Hi Eric,
->> 
->> On Thu, Nov 17, 2016 at 11:02:47AM -0600, Eric W. Biederman wrote:
->> > 
->> > With everyone heading to Kernel Summit and Plumbers I put this set of
->> > patches down temporarily.   Now is the time to take it back up and to
->> > make certain I am not missing something stupid in this set of patches.
->> 
->> I couldn't get your patch set to apply to any of the kernels I tried,
->> I manually adjusted some parts but the second one has too many rejects.
->> What kernel should I apply this to ? Or maybe some preliminary patches
->> are needed ?
->
-> OK I finally managed to get it to work on top of 4.8.9 (required less changes
-> than master). I also had to drop the user_ns changes since there's no such
-> user_ns in mm_struct there.
->
-> I could run a test on it, that looks reasonable :
->
-> FS:
->
-> admin@vm:~$ strace -e trace=fstat,uname,ioctl,open uname
-> open(0x7ffd01bbeeb0, O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
-> open(0x7ffd01bbeeb0, O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
-> open(0x7ffd01bbeeb0, O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
-> open(0x7ffd01bbeeb0, O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
-> open(0x7f3f9a1663e3, O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
-> open(0x7ffd01bbeeb0, O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
-> open(0x7ffd01bbeeb0, O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
-> open(0x7ffd01bbeeb0, O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
-> open(0x7ffd01bbeeb0, O_RDONLY|O_CLOEXEC) = 3
-> fstat(3, {...})                         = 0
-> open(0x7ffd01bbee80, O_RDONLY|O_CLOEXEC) = 3
-> fstat(3, {...})                         = 0
-> uname({...})                            = 0
-> fstat(1, {...})                         = 0
-> ioctl(1, SNDCTL_TMR_TIMEBASE or TCGETS, 0x7ffd01bbf400) = 0
->
-> admin@vm:~$ sudo strace -e trace=fstat,uname,ioctl,open uname
-> open("/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
-> open("/lib64/tls/x86_64/libpthread.so.0", O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
-> open("/lib64/tls/libpthread.so.0", O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
-> open("/lib64/x86_64/libpthread.so.0", O_RDONLY|O_CLOEXEC) = -1 ENOENT (No such file or directory)
-> open("/lib64/libpthread.so.0", O_RDONLY|O_CLOEXEC) = 3
-> fstat(3, {st_mode=S_IFREG|0555, st_size=101312, ...}) = 0
-> open("/lib64/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
-> fstat(3, {st_mode=S_IFREG|0555, st_size=1479016, ...}) = 0
-> uname({sys="Linux", node="vm", ...})    = 0
-> fstat(1, {st_mode=S_IFCHR|0620, st_rdev=makedev(4, 64), ...}) = 0
-> ioctl(1, SNDCTL_TMR_TIMEBASE or TCGETS, {B9600 opost isig icanon echo ...}) = 0
->
-> Network:
->
-> admin@vm:~$ strace -e trace=socket,setsockopt,connect /tmp/nc 198.18.3 22
-> socket(PF_FILE, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 3
-> connect(3, {...}, 110)                  = -1 ENOENT (No such file or directory)
-> socket(PF_FILE, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 3
-> connect(3, {...}, 110)                  = -1 ENOENT (No such file or directory)
-> socket(PF_INET, SOCK_STREAM, IPPROTO_TCP) = 3
-> setsockopt(3, SOL_SOCKET, SO_REUSEADDR, 0x7ffd2c26bdbc, 4) = 0
-> connect(3, {...}, 16)                   = 0
->
-> admin@vm:~$ sudo strace -e trace=socket,setsockopt,connect /tmp/nc 198.18.3 22
-> socket(PF_FILE, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 3
-> connect(3, {sa_family=AF_FILE, path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
-> socket(PF_FILE, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 3
-> connect(3, {sa_family=AF_FILE, path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
-> socket(PF_INET, SOCK_STREAM, IPPROTO_TCP) = 3
-> setsockopt(3, SOL_SOCKET, SO_REUSEADDR, [1], 4) = 0
-> connect(3, {sa_family=AF_INET, sin_port=htons(22), sin_addr=inet_addr("198.18.0.3")}, 16) = 0
->
-> So in short now we can at least see what syscall fails eventhough we can't
-> know why. I think it can be an acceptable trade-off.
-
-Thanks for testing, and thanks for you acceptance even if I didn't make
-it easy for you.
+--===============7820722998961814464==
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="0qt3EE9wi45a2ZFX"
+Content-Disposition: inline
 
 
-Eric
+--0qt3EE9wi45a2ZFX
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+Hello everyone,
+
+Today the LXC project is pleased to announce the release of:
+ - LXC 1.0.9 (includes fix for CVE-2016-8649)
+ - LXC 2.0.6 (includes fix for CVE-2016-8649)
+ - LXD 2.0.6
+ - LXCFS 2.0.5
+
+They each contain the accumulated bugfixes since the previous round of
+bugfix releases. LXC 1.0.9 and LXC 2.0.6 also fix CVE-2016-8649.
+
+
+CVE-2016-8649 was reported by Roman Fiedler from AIT and is a way to
+access the host filesystem and therefore escaping the container through
+an inherited dirfd to the host's /proc.
+
+This issue is possible because the Linux kernel doesn't prevent root in
+the container from attaching (with ptrace) to the lxc-attach process
+then running as real root.
+
+Eric Biederman submitted a set of ptrace fixes to the Linux kernel which
+will prevent this kind of attack from being possible in the future.
+
+The fix we're releasing today, simply stops passing a full dirfd to
+/proc and instead only passes the one file we actually care about,
+reducing the impact from an attacker attaching to the process.
+
+
+The detailed changelogs can be found at:
+ - https://linuxcontainers.org/lxc/news/
+ - https://linuxcontainers.org/lxcfs/news/
+ - https://linuxcontainers.org/lxd/news/
+
+As a reminder, the 2.0 series of all of those is supported for bugfix
+and security updates up until June 2021.
+
+The LXC 1.0.x branch is supported until June 2019 with critical bugfixes
+and security updates only from this point on.
+
+Thanks to everyone who contributed to those projects and helped make
+this possible!
+
+
+St=E9phane Graber
+On behalf of the LXC, LXCFS and LXD development teams
+
+--0qt3EE9wi45a2ZFX
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iQIcBAEBCgAGBQJYNhNXAAoJEMY4l01keS1nzyAP/3A+seeXdyHmz9qArsZbL4Sq
+7h27/ONnpkKqML9ovxUw5IYOeOkmcHi1v5/E9Nx9Be7ZapzVF2Ti+WO+0QIzSsDs
+Y6ObykmbYBblRt3LJurSfK30ekAhhDD8Ct2gUdQATkDaoLtQb4WuatPkPI+0nfLW
+wZ9BO6ev0H9S0hY3Cb4XyIrVNICWtyGijF2X/4FOo2d+sxyK+FeSo7pt3SLWI5WO
+Hof39eaMz/iKA8kcSDf9fxXd0dtSi1bvwZtl2DtCabcbNyK5sDaSAsCm9GO7Pylx
+qCWzAB/3YMwnRTFBZyc3kCZYuqOHaKTOy8/zlYI6pubEazV2I3zW/CuvXSY9ihU6
+hS9B55tlkMR2vRYR7ikht0DWukg/qvU23ajW0vPAXLKaqLNNNCQ9WtepT257jcRB
+B4cJgwxiV00s8XTuftJIe4nth8mjyKnjbndJlrk3P9HDlGQ1WaZ9FlzaZmN/tru+
+4d3gkLeiZpwe6aqZmYIivx2ipRDo1VzOiN3T70tcG5UaJNg1nv/UrGQFTB1lcvy7
+Cr5fEkWbErBVlfxzqXEzY8EZSN1/VN41qVTbUlxEh8CIR2b1HZyny25UffpwPuPo
+v8zEpWreZJrUodCqYNEGeSAInzvxXf0lXK/9Y8aCBjGzvK2W6Dkb+9D9+/A5MckG
+RdK0ZgUva6WBUIgfyuam
+=jy+R
+-----END PGP SIGNATURE-----
+
+--0qt3EE9wi45a2ZFX--
+
+--===============7820722998961814464==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============7820722998961814464==--
