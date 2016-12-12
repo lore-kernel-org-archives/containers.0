@@ -1,15 +1,11 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: Documenting the ioctl interfaces to discover relationships
-	between namespaces
-Date: Mon, 12 Dec 2016 11:30:38 +1300
-Message-ID: <87poky5ca9.fsf@xmission.com>
-References: <CAKgNAkjJACGKJmYZ6v9v3UvPs7Kfri9HPO9QQGbW=NzVErPy8Q@mail.gmail.com>
+Subject: [GIT PULL] namespace related changes for 4.10-rc1
+Date: Mon, 12 Dec 2016 13:27:19 +1300
+Message-ID: <87wpf6t2jc.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAKgNAkjJACGKJmYZ6v9v3UvPs7Kfri9HPO9QQGbW=NzVErPy8Q-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Michael Kerrisk's message of "Sun, 11 Dec 2016 12:54:56 +0100")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,56 +15,68 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Serge Hallyn <serge.hallyn-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Ik1pY2hhZWwgS2VycmlzayAobWFuLXBhZ2VzKSIgPG10ay5tYW5wYWdlc0BnbWFpbC5jb20+IHdy
-aXRlczoKCj4gW3dhczogW1BBVENIIDAvNCB2M10gQWRkIGFuIGludGVyZmFjZSB0byBkaXNjb3Zl
-ciByZWxhdGlvbnNoaXBzCj4gYmV0d2VlbiBuYW1lc3BhY2VzXQoKT25lIHNtYWxsIGNvbW1lbnQg
-YmVsb3cuCgo+Cj4gICAgSW50cm9zcGVjdGluZyBuYW1lc3BhY2UgcmVsYXRpb25zaGlwcwo+ICAg
-ICAgICBTaW5jZSBMaW51eCA0LjksIHR3byBpb2N0bCgyKSBvcGVyYXRpb25zICBhcmUgIHByb3Zp
-ZGVkICB0byAgYWxsb3cKPiAgICAgICAgaW50cm9zcGVjdGlvbiAgb2YgIG5hbWVzcGFjZSByZWxh
-dGlvbnNoaXBzIChzZWUgdXNlcl9uYW1lc3BhY2VzKDcpCj4gICAgICAgIGFuZCBwaWRfbmFtZXNw
-YWNlcyg3KSkuICBUaGUgZm9ybSBvZiB0aGUgY2FsbHMgaXM6Cj4KPiAgICAgICAgICAgIGlvY3Rs
-KGZkLCByZXF1ZXN0KTsKPgo+ICAgICAgICBJbiBlYWNoIGNhc2UsIGZkIHJlZmVycyB0byBhIC9w
-cm9jL1twaWRdL25zLyogZmlsZS4KPgo+ICAgICAgICBOU19HRVRfVVNFUk5TCj4gICAgICAgICAg
-ICAgICBSZXR1cm5zIGEgZmlsZSBkZXNjcmlwdG9yIHRoYXQgcmVmZXJzIHRvICB0aGUgIG93bmlu
-ZyAgdXNlcgo+ICAgICAgICAgICAgICAgbmFtZXNwYWNlIGZvciB0aGUgbmFtZXNwYWNlIHJlZmVy
-cmVkIHRvIGJ5IGZkLgo+Cj4gICAgICAgIE5TX0dFVF9QQVJFTlQKPiAgICAgICAgICAgICAgIFJl
-dHVybnMgIGEgZmlsZSBkZXNjcmlwdG9yIHRoYXQgcmVmZXJzIHRvIHRoZSBwYXJlbnQgbmFtZXPi
-gJAKPiAgICAgICAgICAgICAgIHBhY2Ugb2YgdGhlIG5hbWVzcGFjZSByZWZlcnJlZCB0byBieSBm
-ZC4gIFRoaXMgb3BlcmF0aW9uIGlzCj4gICAgICAgICAgICAgICB2YWxpZCAgb25seSBmb3IgaGll
-cmFyY2hpY2FsIG5hbWVzcGFjZXMgKGkuZS4sIFBJRCBhbmQgdXNlcgo+ICAgICAgICAgICAgICAg
-bmFtZXNwYWNlcykuICBGb3IgdXNlciBuYW1lc3BhY2VzLCBOU19HRVRfUEFSRU5UIGlzIHN5bm9u
-eeKAkAo+ICAgICAgICAgICAgICAgbW91cyB3aXRoIE5TX0dFVF9VU0VSTlMuCj4KPiAgICAgICAg
-SW4gZWFjaCBjYXNlLCB0aGUgcmV0dXJuZWQgZmlsZSBkZXNjcmlwdG9yIGlzIG9wZW5lZCB3aXRo
-IE9fUkRPTkxZCj4gICAgICAgIGFuZCBPX0NMT0VYRUMgKGNsb3NlLW9uLWV4ZWMpLgo+Cj4gICAg
-ICAgIEJ5IGFwcGx5aW5nIGZzdGF0KDIpIHRvIHRoZSByZXR1cm5lZCBmaWxlIGRlc2NyaXB0b3Is
-IG9uZSAgb2J0YWlucwo+ICAgICAgICBhICBzdGF0IHN0cnVjdHVyZSB3aG9zZSBzdF9pbm8gKGlu
-b2RlIG51bWJlcikgZmllbGQgaWRlbnRpZmllcyB0aGUKPiAgICAgICAgb3duaW5nL3BhcmVudCBu
-YW1lc3BhY2UuICBUaGlzIGlub2RlIG51bWJlciBjYW4gIGJlICBtYXRjaGVkICB3aXRoCj4gICAg
-ICAgIHRoZSAgaW5vZGUgIG51bWJlciAgb2YgIGFub3RoZXIgIC9wcm9jL1twaWRdL25zL3twaWQs
-dXNlcn0gZmlsZSB0bwo+ICAgICAgICBkZXRlcm1pbmUgd2hldGhlciB0aGF0IGlzIHRoZSBvd25p
-bmcvcGFyZW50IG5hbWVzcGFjZS4KCkxpa2UgYWxsIGZzdGF0IGlub2RlIGNvbXBhcmlzb25zIHRv
-IGJlIGZ1bGx5IGFjY3VyYXRlIHlvdSBuZWVkIHRvCmNvbXBhcmUgYm90aCB0aGUgc3RfaW5vIGFu
-ZCBzdF9kZXYuICBJIHJlc2VydmUgdGhlIHJpZ2h0IGZvciBzdF9kZXYgdG8KYmUgc2lnbmlmaWNh
-bnQgd2hlbiBjb21wYXJpbmcgbmFtZXNwYWNlcy4gIE90aGVyd2lzZSBJIG1pZ2h0IGhhdmUgdG8K
-Y3JlYXRlIGEgbmFtZXNwYWNlIG9mIG5hbWVzcGFjZXMgc29tZWRheSBhbmQgdGhhdCBpcyB1Z2x5
-LgoKPiAgICAgICAgRWl0aGVyIG9mIHRoZXNlIGlvY3RsKDIpIG9wZXJhdGlvbnMgY2FuIGZhaWwg
-IHdpdGggIHRoZSAgZm9sbG93aW5nCj4gICAgICAgIGVycm9yOgo+Cj4gICAgICAgIEVQRVJNICBU
-aGUgIHJlcXVlc3RlZCAgbmFtZXNwYWNlIGlzIG91dHNpZGUgb2YgdGhlIGNhbGxlcidzIG5hbWVz
-4oCQCj4gICAgICAgICAgICAgICBwYWNlIHNjb3BlLiAgVGhpcyBlcnJvciBjYW4gb2NjdXIgaWYs
-IGZvciBleGFtcGxlLCB0aGUgb3du4oCQCj4gICAgICAgICAgICAgICBpbmcgIHVzZXIgIG5hbWVz
-cGFjZSBpcyBhbiBhbmNlc3RvciBvZiB0aGUgY2FsbGVyJ3MgY3VycmVudAo+ICAgICAgICAgICAg
-ICAgdXNlciBuYW1lc3BhY2UuICBJdCBjYW4gYWxzbyBvY2N1ciBvbiAgYXR0ZW1wdHMgIHRvICBv
-YnRhaW4KPiAgICAgICAgICAgICAgIHRoZSBwYXJlbnQgb2YgdGhlIGluaXRpYWwgdXNlciBvciBQ
-SUQgbmFtZXNwYWNlLgo+Cj4gICAgICAgIEFkZGl0aW9uYWxseSwgIHRoZSAgTlNfR0VUX1BBUkVO
-VCBvcGVyYXRpb24gY2FuIGZhaWwgd2l0aCB0aGUgZm9s4oCQCj4gICAgICAgIGxvd2luZyBlcnJv
-cjoKPgo+ICAgICAgICBFSU5WQUwgZmQgcmVmZXJzIHRvIGEgbm9uaGllcmFyY2hpY2FsIG5hbWVz
-cGFjZS4KPgo+ICAgICAgICBTZWUgdGhlIEVYQU1QTEUgc2VjdGlvbiBmb3IgYW4gZXhhbXBsZSBv
-ZiB0aGUgdXNlIG9mIHRoZXNlICBvcGVyYeKAkAo+ICAgICAgICB0aW9ucy4KPgo+ICAgIFsuLi5d
-CgpFcmljCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNv
-bnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5v
-cmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29u
-dGFpbmVycw==
+
+Linus,
+
+Please pull the for-linus branch from the git tree:
+
+   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
+
+   HEAD: 19339c251607a3defc7f089511ce8561936fee45 Revert "evm: Translate user/group ids relative to s_user_ns when computing HMAC"
+
+
+After a lot of discussion and work we have finally reachanged a basic
+understanding of what is necessary to make unprivileged mounts safe in
+the presence of EVM and IMA xattrs which the last commit in this series
+reflects.  While technically it is a revert the comments it adds are
+important for people not getting confused in the future.  Clearing up
+that confusion allows us to seriously work on unprivileged mounts of
+fuse in the next development cycle.
+
+The rest of the fixes in this set are in the intersection of user
+namespaces, ptrace, and exec.  I started with the first fix which
+started a feedback cycle of finding additional issues during review
+and fixing them.  Culiminating in a fix for a bug that has been present
+since at least Linux v1.0.
+
+Potentially these fixes were candidates during for being merged during
+the rc cycle, and are certainly backport candidates but enough little
+things turned up during review and testing that I decided they should be
+handled as part of the normal development process just to be certain
+there were not any great surprises when it came time to backport some of
+these fixes.
+
+Eric W. Biederman (5):
+      mm: Add a user_ns owner to mm_struct and fix ptrace permission checks
+      ptrace: Capture the ptracer's creds not PT_PTRACE_CAP
+      ptrace: Don't allow accessing an undumpable mm
+      exec: Ensure mm->user_ns contains the execed files
+      Revert "evm: Translate user/group ids relative to s_user_ns when computing HMAC"
+
+
+ arch/alpha/kernel/ptrace.c          |  2 +-
+ arch/blackfin/kernel/ptrace.c       |  4 +--
+ arch/cris/arch-v32/kernel/ptrace.c  |  2 +-
+ arch/ia64/kernel/ptrace.c           |  2 +-
+ arch/mips/kernel/ptrace32.c         |  4 +--
+ arch/powerpc/kernel/ptrace32.c      |  4 +--
+ fs/exec.c                           | 21 +++++++++--
+ include/linux/capability.h          |  2 ++
+ include/linux/mm.h                  |  2 ++
+ include/linux/mm_types.h            |  1 +
+ include/linux/ptrace.h              |  4 ++-
+ include/linux/sched.h               |  1 +
+ kernel/capability.c                 | 36 +++++++++++++++++--
+ kernel/fork.c                       |  9 +++--
+ kernel/ptrace.c                     | 70 ++++++++++++++++++++++++++-----------
+ mm/init-mm.c                        |  2 ++
+ mm/memory.c                         |  2 +-
+ mm/nommu.c                          |  2 +-
+ security/integrity/evm/evm_crypto.c | 12 +++++--
+ 19 files changed, 139 insertions(+), 43 deletions(-)
+
+Eric
