@@ -1,11 +1,15 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [GIT PULL] namespace related changes for 4.10-rc1
-Date: Mon, 12 Dec 2016 13:27:19 +1300
-Message-ID: <87wpf6t2jc.fsf@xmission.com>
+From: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: Documenting the ioctl interfaces to discover relationships
+	between namespaces
+Date: Mon, 12 Dec 2016 07:13:18 +0100
+Message-ID: <3552ea0d-07a8-5fb7-d863-f678901bed09@gmail.com>
+References: <CAKgNAkjJACGKJmYZ6v9v3UvPs7Kfri9HPO9QQGbW=NzVErPy8Q@mail.gmail.com>
+	<87poky5ca9.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <87poky5ca9.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,68 +19,63 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, "linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-Linus,
-
-Please pull the for-linus branch from the git tree:
-
-   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
-
-   HEAD: 19339c251607a3defc7f089511ce8561936fee45 Revert "evm: Translate user/group ids relative to s_user_ns when computing HMAC"
-
-
-After a lot of discussion and work we have finally reachanged a basic
-understanding of what is necessary to make unprivileged mounts safe in
-the presence of EVM and IMA xattrs which the last commit in this series
-reflects.  While technically it is a revert the comments it adds are
-important for people not getting confused in the future.  Clearing up
-that confusion allows us to seriously work on unprivileged mounts of
-fuse in the next development cycle.
-
-The rest of the fixes in this set are in the intersection of user
-namespaces, ptrace, and exec.  I started with the first fix which
-started a feedback cycle of finding additional issues during review
-and fixing them.  Culiminating in a fix for a bug that has been present
-since at least Linux v1.0.
-
-Potentially these fixes were candidates during for being merged during
-the rc cycle, and are certainly backport candidates but enough little
-things turned up during review and testing that I decided they should be
-handled as part of the normal development process just to be certain
-there were not any great surprises when it came time to backport some of
-these fixes.
-
-Eric W. Biederman (5):
-      mm: Add a user_ns owner to mm_struct and fix ptrace permission checks
-      ptrace: Capture the ptracer's creds not PT_PTRACE_CAP
-      ptrace: Don't allow accessing an undumpable mm
-      exec: Ensure mm->user_ns contains the execed files
-      Revert "evm: Translate user/group ids relative to s_user_ns when computing HMAC"
-
-
- arch/alpha/kernel/ptrace.c          |  2 +-
- arch/blackfin/kernel/ptrace.c       |  4 +--
- arch/cris/arch-v32/kernel/ptrace.c  |  2 +-
- arch/ia64/kernel/ptrace.c           |  2 +-
- arch/mips/kernel/ptrace32.c         |  4 +--
- arch/powerpc/kernel/ptrace32.c      |  4 +--
- fs/exec.c                           | 21 +++++++++--
- include/linux/capability.h          |  2 ++
- include/linux/mm.h                  |  2 ++
- include/linux/mm_types.h            |  1 +
- include/linux/ptrace.h              |  4 ++-
- include/linux/sched.h               |  1 +
- kernel/capability.c                 | 36 +++++++++++++++++--
- kernel/fork.c                       |  9 +++--
- kernel/ptrace.c                     | 70 ++++++++++++++++++++++++++-----------
- mm/init-mm.c                        |  2 ++
- mm/memory.c                         |  2 +-
- mm/nommu.c                          |  2 +-
- security/integrity/evm/evm_crypto.c | 12 +++++--
- 19 files changed, 139 insertions(+), 43 deletions(-)
-
-Eric
+W0ZpeGluZyBTZXJnZSdzIGFkZHJlc3MgaW4gbXkgb3JpZ2luYWwgQ0NdCgpPbiAxMi8xMS8yMDE2
+IDExOjMwIFBNLCBFcmljIFcuIEJpZWRlcm1hbiB3cm90ZToKPiAiTWljaGFlbCBLZXJyaXNrICht
+YW4tcGFnZXMpIiA8bXRrLm1hbnBhZ2VzQGdtYWlsLmNvbT4gd3JpdGVzOgo+IAo+PiBbd2FzOiBb
+UEFUQ0ggMC80IHYzXSBBZGQgYW4gaW50ZXJmYWNlIHRvIGRpc2NvdmVyIHJlbGF0aW9uc2hpcHMK
+Pj4gYmV0d2VlbiBuYW1lc3BhY2VzXQo+IAo+IE9uZSBzbWFsbCBjb21tZW50IGJlbG93Lgo+IAo+
+Pgo+PiAgICBJbnRyb3NwZWN0aW5nIG5hbWVzcGFjZSByZWxhdGlvbnNoaXBzCj4+ICAgICAgICBT
+aW5jZSBMaW51eCA0LjksIHR3byBpb2N0bCgyKSBvcGVyYXRpb25zICBhcmUgIHByb3ZpZGVkICB0
+byAgYWxsb3cKPj4gICAgICAgIGludHJvc3BlY3Rpb24gIG9mICBuYW1lc3BhY2UgcmVsYXRpb25z
+aGlwcyAoc2VlIHVzZXJfbmFtZXNwYWNlcyg3KQo+PiAgICAgICAgYW5kIHBpZF9uYW1lc3BhY2Vz
+KDcpKS4gIFRoZSBmb3JtIG9mIHRoZSBjYWxscyBpczoKPj4KPj4gICAgICAgICAgICBpb2N0bChm
+ZCwgcmVxdWVzdCk7Cj4+Cj4+ICAgICAgICBJbiBlYWNoIGNhc2UsIGZkIHJlZmVycyB0byBhIC9w
+cm9jL1twaWRdL25zLyogZmlsZS4KPj4KPj4gICAgICAgIE5TX0dFVF9VU0VSTlMKPj4gICAgICAg
+ICAgICAgICBSZXR1cm5zIGEgZmlsZSBkZXNjcmlwdG9yIHRoYXQgcmVmZXJzIHRvICB0aGUgIG93
+bmluZyAgdXNlcgo+PiAgICAgICAgICAgICAgIG5hbWVzcGFjZSBmb3IgdGhlIG5hbWVzcGFjZSBy
+ZWZlcnJlZCB0byBieSBmZC4KPj4KPj4gICAgICAgIE5TX0dFVF9QQVJFTlQKPj4gICAgICAgICAg
+ICAgICBSZXR1cm5zICBhIGZpbGUgZGVzY3JpcHRvciB0aGF0IHJlZmVycyB0byB0aGUgcGFyZW50
+IG5hbWVz4oCQCj4+ICAgICAgICAgICAgICAgcGFjZSBvZiB0aGUgbmFtZXNwYWNlIHJlZmVycmVk
+IHRvIGJ5IGZkLiAgVGhpcyBvcGVyYXRpb24gaXMKPj4gICAgICAgICAgICAgICB2YWxpZCAgb25s
+eSBmb3IgaGllcmFyY2hpY2FsIG5hbWVzcGFjZXMgKGkuZS4sIFBJRCBhbmQgdXNlcgo+PiAgICAg
+ICAgICAgICAgIG5hbWVzcGFjZXMpLiAgRm9yIHVzZXIgbmFtZXNwYWNlcywgTlNfR0VUX1BBUkVO
+VCBpcyBzeW5vbnnigJAKPj4gICAgICAgICAgICAgICBtb3VzIHdpdGggTlNfR0VUX1VTRVJOUy4K
+Pj4KPj4gICAgICAgIEluIGVhY2ggY2FzZSwgdGhlIHJldHVybmVkIGZpbGUgZGVzY3JpcHRvciBp
+cyBvcGVuZWQgd2l0aCBPX1JET05MWQo+PiAgICAgICAgYW5kIE9fQ0xPRVhFQyAoY2xvc2Utb24t
+ZXhlYykuCj4+Cj4+ICAgICAgICBCeSBhcHBseWluZyBmc3RhdCgyKSB0byB0aGUgcmV0dXJuZWQg
+ZmlsZSBkZXNjcmlwdG9yLCBvbmUgIG9idGFpbnMKPj4gICAgICAgIGEgIHN0YXQgc3RydWN0dXJl
+IHdob3NlIHN0X2lubyAoaW5vZGUgbnVtYmVyKSBmaWVsZCBpZGVudGlmaWVzIHRoZQo+PiAgICAg
+ICAgb3duaW5nL3BhcmVudCBuYW1lc3BhY2UuICBUaGlzIGlub2RlIG51bWJlciBjYW4gIGJlICBt
+YXRjaGVkICB3aXRoCj4+ICAgICAgICB0aGUgIGlub2RlICBudW1iZXIgIG9mICBhbm90aGVyICAv
+cHJvYy9bcGlkXS9ucy97cGlkLHVzZXJ9IGZpbGUgdG8KPj4gICAgICAgIGRldGVybWluZSB3aGV0
+aGVyIHRoYXQgaXMgdGhlIG93bmluZy9wYXJlbnQgbmFtZXNwYWNlLgo+IAo+IExpa2UgYWxsIGZz
+dGF0IGlub2RlIGNvbXBhcmlzb25zIHRvIGJlIGZ1bGx5IGFjY3VyYXRlIHlvdSBuZWVkIHRvCj4g
+Y29tcGFyZSBib3RoIHRoZSBzdF9pbm8gYW5kIHN0X2Rldi4gIEkgcmVzZXJ2ZSB0aGUgcmlnaHQg
+Zm9yIHN0X2RldiB0bwo+IGJlIHNpZ25pZmljYW50IHdoZW4gY29tcGFyaW5nIG5hbWVzcGFjZXMu
+ICBPdGhlcndpc2UgSSBtaWdodCBoYXZlIHRvCj4gY3JlYXRlIGEgbmFtZXNwYWNlIG9mIG5hbWVz
+cGFjZXMgc29tZWRheSBhbmQgdGhhdCBpcyB1Z2x5LgoKQWggeWVzLiBUaGFua3MgZm9yIGNhdGNo
+aW5nIHRoYXQuIEkndmUgYWRqdXN0ZWQgdGhlIHRleHQsCmFuZCB0aGUgZXhhbXBsZSBwcm9ncmFt
+LgoKQ2hlZXJzLAoKTWljaGFlbAoKPj4gICAgICAgIEVpdGhlciBvZiB0aGVzZSBpb2N0bCgyKSBv
+cGVyYXRpb25zIGNhbiBmYWlsICB3aXRoICB0aGUgIGZvbGxvd2luZwo+PiAgICAgICAgZXJyb3I6
+Cj4+Cj4+ICAgICAgICBFUEVSTSAgVGhlICByZXF1ZXN0ZWQgIG5hbWVzcGFjZSBpcyBvdXRzaWRl
+IG9mIHRoZSBjYWxsZXIncyBuYW1lc+KAkAo+PiAgICAgICAgICAgICAgIHBhY2Ugc2NvcGUuICBU
+aGlzIGVycm9yIGNhbiBvY2N1ciBpZiwgZm9yIGV4YW1wbGUsIHRoZSBvd27igJAKPj4gICAgICAg
+ICAgICAgICBpbmcgIHVzZXIgIG5hbWVzcGFjZSBpcyBhbiBhbmNlc3RvciBvZiB0aGUgY2FsbGVy
+J3MgY3VycmVudAo+PiAgICAgICAgICAgICAgIHVzZXIgbmFtZXNwYWNlLiAgSXQgY2FuIGFsc28g
+b2NjdXIgb24gIGF0dGVtcHRzICB0byAgb2J0YWluCj4+ICAgICAgICAgICAgICAgdGhlIHBhcmVu
+dCBvZiB0aGUgaW5pdGlhbCB1c2VyIG9yIFBJRCBuYW1lc3BhY2UuCj4+Cj4+ICAgICAgICBBZGRp
+dGlvbmFsbHksICB0aGUgIE5TX0dFVF9QQVJFTlQgb3BlcmF0aW9uIGNhbiBmYWlsIHdpdGggdGhl
+IGZvbOKAkAo+PiAgICAgICAgbG93aW5nIGVycm9yOgo+Pgo+PiAgICAgICAgRUlOVkFMIGZkIHJl
+ZmVycyB0byBhIG5vbmhpZXJhcmNoaWNhbCBuYW1lc3BhY2UuCj4+Cj4+ICAgICAgICBTZWUgdGhl
+IEVYQU1QTEUgc2VjdGlvbiBmb3IgYW4gZXhhbXBsZSBvZiB0aGUgdXNlIG9mIHRoZXNlICBvcGVy
+YeKAkAo+PiAgICAgICAgdGlvbnMuCj4+Cj4+ICAgIFsuLi5dCj4gCj4gRXJpYwo+IAoKCi0tIApN
+aWNoYWVsIEtlcnJpc2sKTGludXggbWFuLXBhZ2VzIG1haW50YWluZXI7IGh0dHA6Ly93d3cua2Vy
+bmVsLm9yZy9kb2MvbWFuLXBhZ2VzLwpMaW51eC9VTklYIFN5c3RlbSBQcm9ncmFtbWluZyBUcmFp
+bmluZzogaHR0cDovL21hbjcub3JnL3RyYWluaW5nLwpfX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJz
+QGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9u
+Lm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
