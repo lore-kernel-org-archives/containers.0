@@ -1,17 +1,13 @@
-From: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: Documenting the ioctl interfaces to discover relationships
-	between namespaces
-Date: Wed, 14 Dec 2016 08:32:45 +0100
-Message-ID: <154f7f6e-106d-6340-0dcd-e268525f435d@gmail.com>
-References: <CAKgNAkjJACGKJmYZ6v9v3UvPs7Kfri9HPO9QQGbW=NzVErPy8Q@mail.gmail.com>
-	<87poky5ca9.fsf@xmission.com>
-	<6771af94-9847-0277-ec1d-62bc3649a17a@gmail.com>
-	<87r35df1u4.fsf@xmission.com>
+From: Kuniyasu Suzaki <k.suzaki-XSdjUN4cZ6fPDbFq/vQRIQ@public.gmane.org>
+Subject: Re: BMC (Bare-Metal Container) is relased
+Date: Wed, 14 Dec 2016 22:53:01 +0900
+Message-ID: <20161214.225301.410988067.k.suzaki@aist.go.jp>
+References: <TYXPR01MB08135B40DAAE84338AC9F7A7BDBB0@TYXPR01MB0813.jpnprd01.prod.outlook.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-2022-jp"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87r35df1u4.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <TYXPR01MB08135B40DAAE84338AC9F7A7BDBB0-enDngAEzY3pxg4pWkbNFRncolHNk5qUtvxpqHgZTriW3zl9H0oFU5g@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,80 +17,58 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, "linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: bmc-XSdjUN4cZ6fPDbFq/vQRIQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gMTIvMTIvMjAxNiAwNzoxOCBQTSwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4gIk1pY2hh
-ZWwgS2VycmlzayAobWFuLXBhZ2VzKSIgPG10ay5tYW5wYWdlc0BnbWFpbC5jb20+IHdyaXRlczoK
-PiAKPj4gT24gMTIvMTEvMjAxNiAxMTozMCBQTSwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4+
-PiAiTWljaGFlbCBLZXJyaXNrIChtYW4tcGFnZXMpIiA8bXRrLm1hbnBhZ2VzQGdtYWlsLmNvbT4g
-d3JpdGVzOgo+Pj4KPj4+PiBbd2FzOiBbUEFUQ0ggMC80IHYzXSBBZGQgYW4gaW50ZXJmYWNlIHRv
-IGRpc2NvdmVyIHJlbGF0aW9uc2hpcHMKPj4+PiBiZXR3ZWVuIG5hbWVzcGFjZXNdCj4+Pgo+Pj4g
-T25lIHNtYWxsIGNvbW1lbnQgYmVsb3cuCj4+Pgo+Pj4+Cj4+Pj4gICAgSW50cm9zcGVjdGluZyBu
-YW1lc3BhY2UgcmVsYXRpb25zaGlwcwo+Pj4+ICAgICAgICBTaW5jZSBMaW51eCA0LjksIHR3byBp
-b2N0bCgyKSBvcGVyYXRpb25zICBhcmUgIHByb3ZpZGVkICB0byAgYWxsb3cKPj4+PiAgICAgICAg
-aW50cm9zcGVjdGlvbiAgb2YgIG5hbWVzcGFjZSByZWxhdGlvbnNoaXBzIChzZWUgdXNlcl9uYW1l
-c3BhY2VzKDcpCj4+Pj4gICAgICAgIGFuZCBwaWRfbmFtZXNwYWNlcyg3KSkuICBUaGUgZm9ybSBv
-ZiB0aGUgY2FsbHMgaXM6Cj4+Pj4KPj4+PiAgICAgICAgICAgIGlvY3RsKGZkLCByZXF1ZXN0KTsK
-Pj4+Pgo+Pj4+ICAgICAgICBJbiBlYWNoIGNhc2UsIGZkIHJlZmVycyB0byBhIC9wcm9jL1twaWRd
-L25zLyogZmlsZS4KPj4+Pgo+Pj4+ICAgICAgICBOU19HRVRfVVNFUk5TCj4+Pj4gICAgICAgICAg
-ICAgICBSZXR1cm5zIGEgZmlsZSBkZXNjcmlwdG9yIHRoYXQgcmVmZXJzIHRvICB0aGUgIG93bmlu
-ZyAgdXNlcgo+Pj4+ICAgICAgICAgICAgICAgbmFtZXNwYWNlIGZvciB0aGUgbmFtZXNwYWNlIHJl
-ZmVycmVkIHRvIGJ5IGZkLgo+Pj4+Cj4+Pj4gICAgICAgIE5TX0dFVF9QQVJFTlQKPj4+PiAgICAg
-ICAgICAgICAgIFJldHVybnMgIGEgZmlsZSBkZXNjcmlwdG9yIHRoYXQgcmVmZXJzIHRvIHRoZSBw
-YXJlbnQgbmFtZXPigJAKPj4+PiAgICAgICAgICAgICAgIHBhY2Ugb2YgdGhlIG5hbWVzcGFjZSBy
-ZWZlcnJlZCB0byBieSBmZC4gIFRoaXMgb3BlcmF0aW9uIGlzCj4+Pj4gICAgICAgICAgICAgICB2
-YWxpZCAgb25seSBmb3IgaGllcmFyY2hpY2FsIG5hbWVzcGFjZXMgKGkuZS4sIFBJRCBhbmQgdXNl
-cgo+Pj4+ICAgICAgICAgICAgICAgbmFtZXNwYWNlcykuICBGb3IgdXNlciBuYW1lc3BhY2VzLCBO
-U19HRVRfUEFSRU5UIGlzIHN5bm9ueeKAkAo+Pj4+ICAgICAgICAgICAgICAgbW91cyB3aXRoIE5T
-X0dFVF9VU0VSTlMuCj4+Pj4KPj4+PiAgICAgICAgSW4gZWFjaCBjYXNlLCB0aGUgcmV0dXJuZWQg
-ZmlsZSBkZXNjcmlwdG9yIGlzIG9wZW5lZCB3aXRoIE9fUkRPTkxZCj4+Pj4gICAgICAgIGFuZCBP
-X0NMT0VYRUMgKGNsb3NlLW9uLWV4ZWMpLgo+Pj4+Cj4+Pj4gICAgICAgIEJ5IGFwcGx5aW5nIGZz
-dGF0KDIpIHRvIHRoZSByZXR1cm5lZCBmaWxlIGRlc2NyaXB0b3IsIG9uZSAgb2J0YWlucwo+Pj4+
-ICAgICAgICBhICBzdGF0IHN0cnVjdHVyZSB3aG9zZSBzdF9pbm8gKGlub2RlIG51bWJlcikgZmll
-bGQgaWRlbnRpZmllcyB0aGUKPj4+PiAgICAgICAgb3duaW5nL3BhcmVudCBuYW1lc3BhY2UuICBU
-aGlzIGlub2RlIG51bWJlciBjYW4gIGJlICBtYXRjaGVkICB3aXRoCj4+Pj4gICAgICAgIHRoZSAg
-aW5vZGUgIG51bWJlciAgb2YgIGFub3RoZXIgIC9wcm9jL1twaWRdL25zL3twaWQsdXNlcn0gZmls
-ZSB0bwo+Pj4+ICAgICAgICBkZXRlcm1pbmUgd2hldGhlciB0aGF0IGlzIHRoZSBvd25pbmcvcGFy
-ZW50IG5hbWVzcGFjZS4KPj4+Cj4+PiBMaWtlIGFsbCBmc3RhdCBpbm9kZSBjb21wYXJpc29ucyB0
-byBiZSBmdWxseSBhY2N1cmF0ZSB5b3UgbmVlZCB0bwo+Pj4gY29tcGFyZSBib3RoIHRoZSBzdF9p
-bm8gYW5kIHN0X2Rldi4gIEkgcmVzZXJ2ZSB0aGUgcmlnaHQgZm9yIHN0X2RldiB0bwo+Pj4gYmUg
-c2lnbmlmaWNhbnQgd2hlbiBjb21wYXJpbmcgbmFtZXNwYWNlcy4gIE90aGVyd2lzZSBJIG1pZ2h0
-IGhhdmUgdG8KPj4+IGNyZWF0ZSBhIG5hbWVzcGFjZSBvZiBuYW1lc3BhY2VzIHNvbWVkYXkgYW5k
-IHRoYXQgaXMgdWdseS4KPj4+Cj4+Pj4gICAgICAgIEVpdGhlciBvZiB0aGVzZSBpb2N0bCgyKSBv
-cGVyYXRpb25zIGNhbiBmYWlsICB3aXRoICB0aGUgIGZvbGxvd2luZwo+Pj4+ICAgICAgICBlcnJv
-cjoKPj4+Pgo+Pj4+ICAgICAgICBFUEVSTSAgVGhlICByZXF1ZXN0ZWQgIG5hbWVzcGFjZSBpcyBv
-dXRzaWRlIG9mIHRoZSBjYWxsZXIncyBuYW1lc+KAkAo+Pj4+ICAgICAgICAgICAgICAgcGFjZSBz
-Y29wZS4gIFRoaXMgZXJyb3IgY2FuIG9jY3VyIGlmLCBmb3IgZXhhbXBsZSwgdGhlIG93buKAkAo+
-Pj4+ICAgICAgICAgICAgICAgaW5nICB1c2VyICBuYW1lc3BhY2UgaXMgYW4gYW5jZXN0b3Igb2Yg
-dGhlIGNhbGxlcidzIGN1cnJlbnQKPj4+PiAgICAgICAgICAgICAgIHVzZXIgbmFtZXNwYWNlLiAg
-SXQgY2FuIGFsc28gb2NjdXIgb24gIGF0dGVtcHRzICB0byAgb2J0YWluCj4+Pj4gICAgICAgICAg
-ICAgICB0aGUgcGFyZW50IG9mIHRoZSBpbml0aWFsIHVzZXIgb3IgUElEIG5hbWVzcGFjZS4KPj4+
-Pgo+Pj4+ICAgICAgICBBZGRpdGlvbmFsbHksICB0aGUgIE5TX0dFVF9QQVJFTlQgb3BlcmF0aW9u
-IGNhbiBmYWlsIHdpdGggdGhlIGZvbOKAkAo+Pj4+ICAgICAgICBsb3dpbmcgZXJyb3I6Cj4+Pj4K
-Pj4+PiAgICAgICAgRUlOVkFMIGZkIHJlZmVycyB0byBhIG5vbmhpZXJhcmNoaWNhbCBuYW1lc3Bh
-Y2UuCj4+Pj4KPj4+PiAgICAgICAgU2VlIHRoZSBFWEFNUExFIHNlY3Rpb24gZm9yIGFuIGV4YW1w
-bGUgb2YgdGhlIHVzZSBvZiB0aGVzZSAgb3BlcmHigJAKPj4+PiAgICAgICAgdGlvbnMuCj4+Cj4+
-IFNvLCBhZnRlciBwbGF5aW5nIHdpdGggdGhpcyBhIGJpdCwgSSBoYXZlIGEgcXVlc3Rpb24uIAo+
-Pgo+PiBJIGdhdGhlciB0aGF0IGluIG9yZGVyIHRvLCBmb3IgZXhhbXBsZSwgZWxhYm9yYXRlIHRo
-ZSB0cmVlIG9mIHVzZXIKPj4gbmFtZXNwYWNlcyBvbiB0aGUgc3lzdGVtLCBvbmUgd291bGQgdXNl
-IE5TX0dFVF9QQVJFTlQgb24gZWFjaCBvZgo+PiB0aGUgL3Byb2MvKi9ucy91c2VyIGZpbGVzIGFu
-ZCBtYXRjaCB1cCB0aGUgcmVzdWx0cy4gUmlnaHQ/Cj4+IAkgICAKPj4gV2hhdCBoYXBwZW5zIGlm
-IG9uZSBvZiB0aGUgcGFyZW50IHVzZXIgbmFtZXNwYWNlcyBjb250YWlucyBubwo+PiBwcm9jZXNz
-ZXM/IFRoYXQgaXMsIHRoZSBwYXJlbnQgbmFtZXNwYWNlIGV4aXN0cyBieSB2aXJ0dWUgb2YgYmVp
-bmcKPj4gcGlubmVkIGJlY2F1c2UgYSBwcm9jL1BJRC9ucy91c2VyIGZpbGUgaXMgb3BlbiBvciBi
-aW5kIG1vdW50ZWQuCj4+IChDaHJvbWUgc2VlbXMgdG8gZG8gdGhpcyBzb3J0IG9mIGRhbmNlIHdp
-dGggdXNlciBuYW1lc3BhY2VzLCBmb3IKPj4gZXhhbXBsZS4pIEhvdyBkbyB3ZSBmaW5kIHRoZSBh
-bmNlc3RvciBvZiAqdGhhdCogdXNlciBuYW1lc3BhY2U/Cj4gCj4gV2hhdCBpcyByZXR1cm5lZCBm
-cm9tIE5TX0dFVF9VU0VSTlMgYW5kIE5TX0dFVF9QQVJFTlQgaXMgYSBmaWxlCj4gZGVzY3JpcHRv
-ciwgdGhhdCB5b3UgY2FuIGNhbGwgTlNfR0VUX1BBUkVOVCBvbi4KClRoYW5rcywgRXJpYy4gV2hp
-bGUgdHJ5aW5nIHRvIHNvbHZlIHRoZSBzbWFsbCB0YXNrIEkgc2V0IG15c2VsZiwKYW5kIHByb2Jh
-Ymx5IGNvbmZ1c2VkIGJ5IHBhc3QgZGlzY3Vzc2lvbnNbMV0sIEkgd2FzIG92ZXJsb29raW5nCnRo
-ZSBvYnZpb3VzLgoKQ2hlZXJzLAoKTWljaGFlbAoKWzFdIGh0dHBzOi8vbGttbC5vcmcvbGttbC8y
-MDE2LzcvMjgvMzY1CgotLSAKTWljaGFlbCBLZXJyaXNrCkxpbnV4IG1hbi1wYWdlcyBtYWludGFp
-bmVyOyBodHRwOi8vd3d3Lmtlcm5lbC5vcmcvZG9jL21hbi1wYWdlcy8KTGludXgvVU5JWCBTeXN0
-ZW0gUHJvZ3JhbW1pbmcgVHJhaW5pbmc6IGh0dHA6Ly9tYW43Lm9yZy90cmFpbmluZy8KX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWls
-aW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xp
-c3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+
+I made a presentation of BMC at HPCC (IEEE Conference on High Performance Computing and Communications) 2016.
+   http://www.swinflow.org/confs/2016/hpcc/
+The title is "Bare-Metal Container --- Direct execution of a container image on a remote machine with an optimized kernel ---".
+The slide is opened at slideshare.
+   http://www.slideshare.net/suzaki/baremetal-container-presented-at-hpcc2016
+   Original HP: http://www.itri.aist.go.jp/cpc/research/bmc/
+
+BMC is resemble to VMware's "vSphere Integrated Containers" and Joyent's "Triton", but 
+BMC is designed to customize Linux kernel for an application in a Docker image.
+   VMware's "vSphere Integrated Containers"  http://www.vmware.com/products/vsphere/integrated-containers.html
+   Jyoent's "Triton"  https://www.joyent.com/triton
+
+BMC runs a Docker image with a customized kernel on a bare-metal remote machine using remote machine management technology (WakeupOnLan, Intel AMT, or IPMI) and network bootloader "iPXE".
+BMC can solve the container's (Docker's) problem which is caused by Linux kernel.
+
+If you are interesed in, please try.
+
+-----------
+Kuni Suzaki
+
+From: 須崎有康 <k.suzaki-XSdjUN4cZ6fPDbFq/vQRIQ@public.gmane.org>
+Subject: BMC (Bare-Metal Container) is relased
+Date: Fri, 11 Nov 2016 15:54:13 +0900
+
+> Hello,
+> 
+> We released BMC (Bare-Metal Container) which runs a container (Docker)
+> image with a suitable Linux kernel on a remote physical machine.
+> BMC allows to change the kernel and its settings for the container
+> (Docker) image. As a result, the application extracts the full
+> performance of the physical machine.
+> 
+> A pre-built BMC image using DIND (Docker in Docker) technique is
+> offered. Users can avid burdensome setting up (ex. Apache CGI, etc).
+> We strongly recommend new users to try this pre-built version.
+> 
+> Pre-built BMC Doceker Image https://hub.docker.com/r/baremetalcontainer/bmc/
+> Source Code: https://github.com/baremetalcontainer/bmc
+> Official HP: http://www.itri.aist.go.jp/cpc/research/bmc/
+> 
+> BMC is exhibited at the Super Computing 2016 (AIST booth 1709) held at
+> Salt Lake City next week (Nov/14-17).
+>   http://sc16.supercomputing.org
+> 
+> The detail of BMC will be presented at IEEE HPCC (High Performance
+> Computing and Communication) 2016 (Dec/12-14) held at Sydney.
+>   http://www.swinflow.org/confs/2016/hpcc/
+> 
+> -----------
+> Kuni Suzaki
