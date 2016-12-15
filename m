@@ -1,7 +1,7 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [PATCHv3] inotify: Convert to using per-namespace limits
-Date: Thu, 15 Dec 2016 11:29:06 +1300
-Message-ID: <87eg1a2lhp.fsf@xmission.com>
+Date: Thu, 15 Dec 2016 13:37:56 +1300
+Message-ID: <87wpf2t4bf.fsf@xmission.com>
 References: <87oa0fpsqs.fsf@xmission.com>
 	<1481723793-6756-1-git-send-email-n.borisov.lkml@gmail.com>
 Mime-Version: 1.0
@@ -56,7 +56,41 @@ Nikolay Borisov <n.borisov.lkml-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
 > kasan splats even during kernel boot, due to out-of-bound writes. 
 > Let's see how this version fares.
 
-Thank you I will place this in my for-testing branch shortly and see how
-it fares.
+So there is one more thing that needs to be addressed with your patch.
 
-Eric
+In inotify.h the functions need to be marked static inline
+rather than just static or else there a number of new compiler warnings.
+
+I have addressed this for now, but if anything else comes up or if you
+resend this patch I would appreciate it if you add the static inline
+notations in your internal copy of the patch.
+
+Thank you,
+Eric Biederman
+
+
+> diff --git a/fs/notify/inotify/inotify.h b/fs/notify/inotify/inotify.h
+> index ed855ef6f077..b5536f8ad3e0 100644
+> --- a/fs/notify/inotify/inotify.h
+> +++ b/fs/notify/inotify/inotify.h
+> @@ -30,3 +30,20 @@ extern int inotify_handle_event(struct fsnotify_group *group,
+>  				const unsigned char *file_name, u32 cookie);
+>  
+>  extern const struct fsnotify_ops inotify_fsnotify_ops;
+> +
+> +#ifdef CONFIG_INOTIFY_USER
+> +static void dec_inotify_instances(struct ucounts *ucounts)
+> +{
+> +	dec_ucount(ucounts, UCOUNT_INOTIFY_INSTANCES);
+> +}
+> +
+> +static struct ucounts *inc_inotify_watches(struct ucounts *ucounts)
+> +{
+> +	return inc_ucount(ucounts->ns, ucounts->uid, UCOUNT_INOTIFY_WATCHES);
+> +}
+> +
+> +static void dec_inotify_watches(struct ucounts *ucounts)
+> +{
+> +	dec_ucount(ucounts, UCOUNT_INOTIFY_WATCHES);
+> +}
+> +#endif
