@@ -1,14 +1,12 @@
-From: Hari Bathini <hbathini-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH v4 0/3] perf: add support for analyzing events for
-	containers
-Date: Fri, 16 Dec 2016 23:56:40 +0530
-Message-ID: <52383a1b-39aa-c9db-89bc-2dba5369489b@linux.vnet.ibm.com>
-References: <CAMXgnP5o=rVuOAvVa8L43CVpVGHc5nFceOA4128ahNb6awUH8A@mail.gmail.com>
+From: "Afshur Basir" <ashrafbasit2016-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Please Get Back To Me
+Date: Sat, 17 Dec 2016 17:36:14 +0000
+Message-ID: <96a02938dbc06a773b438dbbce4ace65@prestigecorpservices.com>
+Reply-To: abasit-6qQyMdV5D7wES/B23V1ueQC/G2K4zDHf@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAMXgnP5o=rVuOAvVa8L43CVpVGHc5nFceOA4128ahNb6awUH8A-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,46 +16,44 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alban Crequy <alban.crequy-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, ananth-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, daniel-FeC+5ew28dpmcu3hnIyYJQ@public.gmane.org, alexander.shishkin-VuQAYsv1563Yd54FQh9/CA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, kernel-6AxghH7DbtA@public.gmane.org, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, acme-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, mingo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, paulus-eUNUBHrolfbYtjvyW6yDsg@public.gmane.org, rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org, aravinda-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Alban,
+Hello Sir, I know we have not met before or have any prior contact with
+each other but this is very important and I am hoping that you can at least
+take your time to read my message carefully. My name is Ashraf Basit, I am
+contacting you from the crisis torn country of Syria. I am contacting you
+because I have a proposal that I think may interest you. I represent the
+interest of my brother in-law who is a minister in the Syrian Government.
+As you probably know, there is a lot of crisis going on currently in Syria
+and my brother in-law has fallen out with the ruling Government and the
+president because he publicly opposed the war and the irresponsible
+killings of innocent citizens especially children. Now the president and
+his allies and trying to silence anybody opposing his war policies. They
+have been arresting all the poitical leaders in the country that do not
+support this war. Due to this situation, my brother in-law has asked me to
+help him find a foreign investor that can help him secure and invest his
+assets that he has in Europe. He wants to do this privately and discretely
+so that if anything should happen to him, the future of his family can be
+secured. I cannot go through regular channels due to the confidential
+nature of this proposal. I got your contact details from an online business
+directory and I hope you can help us. Please note that this proposal will
+be executed in a legal manner and it will not bring any risk to you or your
+family. My brother in-law has also promised to compensate you handsomely
+for your role in this transaction.
 
+He wants this to be done discretely so I will be acting as his eyes and
+ears during the course of this transaction.
 
-On Friday 16 December 2016 05:44 PM, Alban Crequy wrote:
-> Hi,
->
->> Currently, there is no trivial mechanism to analyze events based on
->> containers. perf -G can be used, but it will not filter events for the
->> containers created after perf is invoked, making it difficult to assess/
->> analyze performance issues of multiple containers at once.
->>
->> This patch-set overcomes this limitation by using cgroup identifier as
->> container unique identifier. A new PERF_RECORD_NAMESPACES event that
->> records namespaces related info is introduced, from which the cgroup
->> namespace's device & inode numbers are used as cgroup identifier. This
->> is based on the assumption that each container is created with it's own
->> cgroup namespace allowing assessment/analysis of multiple containers
->> using cgroup identifier.
->>
->> The first patch introduces PERF_RECORD_NAMESPACES in kernel while the
->> second patch makes the corresponding changes in perf tool to read this
->> PERF_RECORD_NAMESPACES events. The third patch adds a cgroup identifier
->> column in perf report, which contains the cgroup namespace's device and
->> inode numbers.
-> I have a question for the pid namespace: does the new perf event gives
-> the pid namespace of the task, or the pid_ns_for_children from the
-> nsproxy? From my limited understanding, v4 seems to do the former, as
-> opposed to v3.
+I have intentionally left some vital details out of this proposal to
+protect our interest. If you indicate your intetest, I will then be able to
+give you all the necessary details.
 
-Ah! How did I miss that?!
+I hope to hear from you soon and hope we can work together successfully on
+this proposal.
 
-> When synthesizing events from /proc/$PID/ns/pid, it cannot take the
-> pid_ns_for_children, so I wanted to make sure it is consistent.
->
+Reards,
 
-So, eventually this version sounds like the right way of doing it..?
+Ashraf.
 
-Thanks
-Hari
+Powered by Interspire
