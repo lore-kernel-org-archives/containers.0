@@ -1,16 +1,12 @@
-From: Jeremy Eder <jeder-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: BMC (Bare-Metal Container) is relased
-Date: Wed, 21 Dec 2016 07:29:53 -0500
-Message-ID: <CABxNGQb2z5z4nd5kH1aBEKBLpWPqE7QXNBYvVT-6dyffAqyDpg@mail.gmail.com>
-References: <20161220.120334.220534096.k.suzaki@aist.go.jp>
-	<87bmw7fe1f.fsf@xmission.com>
-	<CABxNGQaJBjiYDPJRNNTam1iQmgU0EfvMPR6dbm4qy-ZTwfCLnw@mail.gmail.com>
-	<20161221.103420.65388105.k.suzaki@aist.go.jp>
+From: "FedEx Support" <bruce.hayes-XrMmWaOhlLOZu88xAarnXMyiEOaA11gU@public.gmane.org>
+Subject: Parcel 00000267651 delivery notification, FedEx
+Date: Fri, 23 Dec 2016 01:46:11 -0700
+Message-ID: <a9afbda358fb9cb379ce0c2131f78621@allstarautosolutions.com>
+Reply-To: FedEx Support <bruce.hayes-XrMmWaOhlLOZu88xAarnXMyiEOaA11gU@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: multipart/mixed; boundary="b1_ec1b35907348f924c6bc221e4e93b417"
+Content-Transfer-Encoding: 8bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20161221.103420.65388105.k.suzaki-XSdjUN4cZ6fPDbFq/vQRIQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,47 +16,31 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Kuniyasu Suzaki <k.suzaki-XSdjUN4cZ6fPDbFq/vQRIQ@public.gmane.org>
-Cc: Andrea Arcangeli <aarcange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Doyle,
-	Connor P" <connor.p.doyle-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, bmc-XSdjUN4cZ6fPDbFq/vQRIQ@public.gmane.org, James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Derek Carr <decarr-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gVHVlLCBEZWMgMjAsIDIwMTYgYXQgODozNCBQTSwgS3VuaXlhc3UgU3V6YWtpIDxrLnN1emFr
-aUBhaXN0LmdvLmpwPgp3cm90ZToKCj4KPiBGcm9tOiBKZXJlbXkgRWRlciA8amVkZXJAcmVkaGF0
-LmNvbT4KPiBTdWJqZWN0OiBSZTogQk1DIChCYXJlLU1ldGFsIENvbnRhaW5lcikgaXMgcmVsYXNl
-ZAo+IERhdGU6IFR1ZSwgMjAgRGVjIDIwMTYgMTA6MDQ6MTIgLTA1MDAKPgo+ID4gIEVyaWMgVy4g
-QmllZGVybWFuIDxlYmllZGVybUB4bWlzc2lvbi5jb20+Cj4gPiB3cm90ZToKPiA+Cj4gPj4gSW4g
-dGhlIHBhc3QgSSBoYXZlIGFsd2F5cyBzZWVuIHRoaXMgc29ydCBvZiBwcm9ibGVtIGhhbmRsZWQg
-YXMgYQo+ID4+IHByb3BlcnR5IHRvIHRoZSBzY2hlZHVsZXIsIGFuZCBhIGRlY2xhcmF0aW9uIHRo
-YXQgYSBjZXJ0YWluIGpvYiBuZWVkcwo+ID4+IGNlcnRhaW4gcHJvcGVydGllcy4KPiA+Cj4gPiBJ
-bmRlZWQsIHdlIGhhdmUgZGlzY3Vzc2VkIHRoaXMgYXMgYSBwcm9wZXJ0eSBvZiB0aGUgc2NoZWR1
-bGVyIGluCj4ga3ViZXJuZXRlcy4KPiA+Cj4gPiAtIE5vZGVzIGFyZSBnaXZlbiBhdHRyaWJ1dGVz
-IChpLmUuIFRIUD1uZXZlcikKPiA+IC0gVXNlcnMgZGVjbGFyZSB0aGVpciByZXF1aXJlbWVudHMg
-KGkuZS4gVEhQPW5ldmVyKQo+ID4gLSBVc2VyIHN1Ym1pdHMgam9iLCBzY2hlZHVsZXIgZG9lcyBt
-YXRjaGluZyB0byBub2RlCj4gPiAtIE5vZGUgZXhlY3V0ZXMgam9iCj4gPgo+ID4gVGhpcyBhbGxv
-d3MgZm9yIHNoYXJlZCBjb250cm9sIHBsYW5lLCBzZXJ2aW5nIGRpc3BhcmF0ZSB3b3JrbG9hZHMg
-b24KPiBoeWJyaWQKPiA+IGluZnJhLgo+ID4KPiA+IOKAi1RIUD1uZXZlciBpcyBqdXN0IGFub3Ro
-ZXIgbm9kZSBhdHRyaWJ1dGUsIGFzIGNvdWxkIGJlIHRoaW5ncyBsaWtlCj4gPiAtIERvZXMgYSBE
-UERLLWNhcGFibGUgTklDIG9yIEdQVSBvciBGUEdBIGV4aXN0LCBhbmQgaXMgdW51c2VkCj4gPiAt
-IFdoYXQga2VybmVsIHZlcnNpb24gaXMgaXQgcnVubmluZwo+ID4gLSBJcyB0aGUgbm9kZSB0dW5l
-ZCBjb3JyZWN0bHkKPiA+Cj4gPiAuLi5teXJpYWQgb3RoZXIgcG9zc2liaWxpdGllcywgaW4gYSBy
-YXBpZGx5IGV2b2x2aW5nIHNwYWNlLgo+Cj4gSXQgc291bmRzIGludGVyZXN0aW5nLiBJIGRpZCBu
-b3Qga25vdyB0aGF0IGt1YmVybmV0ZXMgaGFzIHN1Y2ggYSBmdW5jdGlvbi4KPiBJcyB0aGVyZSBI
-UCBvciBwYXBlciB0byBkZXNjcmliZWQgdGhlIGRldGFpbD8gSSB3YW50IHRvIGNvbXBhcmUgdGhl
-Cj4gZnVuY3Rpb24gd2l0aCBvdXIgQk1DIChCYXJlLU1ldGFsIENvbnRhaW5lcikuCj4KCkEgbG90
-IG9mIGl0IGlzIHRoZXJlIG5vdyB1c2luZyB0YWludHMgYW5kIHRvbGVyYXRpb25zLiAgQXJndWFi
-bHkgbmVlZHMgc29tZQplbmQtdG8tZW5kIHBvbGlzaC91c2FiaWxpdHkgaW1wcm92ZW1lbnRzLiAg
-Rm9sa3MgZnJvbSBJbnRlbCBhcmUgd29ya2luZyBvbgphdCBsZWFzdCB0aGUgaGFyZHdhcmUgZGV0
-ZWN0aW9uIHN0dWZmIHRvIGVuYWJsZSB0aGVpciBDUFVzL05JQ3MgaW4gYQpnZW5lcmljIHdheS4K
-Cgo+IEkgZ3Vlc3MgdGhlIGZ1bmN0aW9uIHJlcXVpcmVzIG5vZGVzIHdoaWNoIHR1cm4gb24vb2Zm
-IFRIUC4KPiBPbiB0aGUgb3RoZXIgaGFuZCwgQk1DIGJvb3RzIGEgbm9kZSB3aXRoIHRoZSBMaW51
-eCBrZXJuZWwgd2hpY2ggaXMKPiBzdWl0YWJsZSBmb3IgYW4gYXBwbGljYXRpb24uCj4gQk1DIG5l
-ZWRzIHRoZSBvdmVyaGVhZCB0byBib290IGEgbm9kZSBhbmQgYWxsb3dzIHRvIHNlbGVjdCBhIG5v
-ZGUgd2l0aAo+IGNvbnNpZGVyYXRpb24gb2YgbWFjaGluZSBhcmNoaXRlY3R1cmUsIHBvd2VyIHVz
-YWdlLCBldGMuCgoKVHJ5aW5nIHRvIGF2b2lkIGFuIG9yY2hlc3RyYXRpb24gZGViYXRlIDotKSAg
-SnVzdCBmaWd1cmVkIEknZCArMSBFcmljJ3MKY29tbWVudCBhYm91dCBob3cga25vd2xlZGdlIG9m
-IG5vZGUgcHJvcGVydGllcyB0ZW5kcyB0byBldmVudHVhbGx5IGJlCnJlY29nbml6ZWQgYXQgdGhl
-IHNjaGVkdWxlciBsZXZlbCBhbmQgdXNlIGt1YmUgYXMgYW4gZXhhbXBsZS4KX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxp
-c3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxp
-bnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+--b1_ec1b35907348f924c6bc221e4e93b417
+Content-Type: text/plain; charset=us-ascii
+
+Dear Customer,
+
+We can not deliver your parcel arrived at December 19.
+
+Review the document that is attached to this e-mail!
+
+Thank you for your assistance in this matter,
+Bruce Hayes,
+Chief Delivery Manager.
+
+
+--b1_ec1b35907348f924c6bc221e4e93b417
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--b1_ec1b35907348f924c6bc221e4e93b417--
