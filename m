@@ -1,8 +1,7 @@
-From: "Ashraf Basit" <abasit-AXjwWUhUPh0N+BqQ9rBEUg@public.gmane.org>
-Subject: Please read carefully
-Date: Fri, 6 Jan 2017 16:22:08 +0000
-Message-ID: <22244012135921143830849@moodyac2>
-Reply-To: abasit-6qQyMdV5D7wES/B23V1ueQC/G2K4zDHf@public.gmane.org
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: [GIT PULL] namespace related fixes for 4.10-rc3
+Date: Sat, 07 Jan 2017 18:30:05 +1300
+Message-ID: <87d1fzzbc2.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,19 +15,54 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello Sir, I know we have not met before or have any prior contact with each other but this is very important and I am hoping that you can at least take your time to read my message carefully. My name is Ashraf Basit, I am contacting you from the war torn country of Syria. I am contacting you because I have a proposal that I think may interest you. I represent the interest of my brother in-law who is a minister in the Syrian Government. As you probably know, there is a lot of war crisis going on currently in Syria and my brother in-law has fallen out with the ruling party and the president because he publicly opposed the war and the irresponsible killings of innocent citizens especially children. Now the president and his allies and trying to silence anybody opposing his war policies. They
-  have been arresting all the poitical leaders in the country that do not support this war. Due to this situation, my brother in-law has asked me to help him find a foreign investor that can 
- help him secure and invest his assets that he has in Europe. He wants to do this privately and discretely so that if anything should happen to him, the future of his family can be secured. I cannot go through regular channels due to the confidential nature of this proposal. I got your contact details from an online business directory and I hope you can help us. Please note that this proposal will be executed in a legal manner and it will not bring any risk to you or your family. My brother in-law has also promised to compensate you handsomely for your role in this transaction.
 
-He wants this to be done discretely so I will be acting as his eyes and ears during the course of this transaction.
+Linus,
 
-I have intentionally left some vital details out of this proposal for security reasons. If you indicate your intetest, I will then be able to give you all the necessary details.
+Please pull the for-linus branch from the git tree:
 
-I hope to hear from you soon and hope we can work together successfully on this proposal.
+   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
 
-Reards,
+   HEAD: cd293bfacd57928627ef7da6194e0cbe24db3291 sysctl: Drop reference added by grab_header in proc_sys_readdir
 
-Ashraf.
+This tree contains 5 fixes.
+
+The first is a fix for a race that can causes oopses under the right
+circumstances, and that someone just recently encountered.
+
+The second is a fix that removes the possibility of creating unbounded
+chains in the mount hash table.  After a lot of back and forth this fix
+has finally matured into something mergeable.
+
+Past that are several small trivial correct fixes.  A real issue that
+was blocking development of an out of tree driver, but does not appear
+to have caused any actual problems for in-tree code.  A potential
+deadlock that was reported by lockdep.  And a deadlock people have
+experienced and took the time to track down caused by a cleanup that
+removed the code to drop a reference count.
+
+Andrei Vagin (1):
+      pid: fix lockdep deadlock warning due to ucount_lock
+
+Eric W. Biederman (3):
+      mnt: Protect the mountpoint hashtable with mount_lock
+      mnt: Tuck mounts under others instead of creating shadow/side mounts.
+      libfs: Modify mount_pseudo_xattr to be clear it is not a userspace mount
+
+Zhou Chengming (1):
+      sysctl: Drop reference added by grab_header in proc_sys_readdir
+
+ fs/dcache.c            |   7 +-
+ fs/libfs.c             |   3 +-
+ fs/mount.h             |   1 -
+ fs/namespace.c         | 174 +++++++++++++++++++++++++++++--------------------
+ fs/pnode.c             |  27 ++++++--
+ fs/pnode.h             |   2 +
+ fs/proc/proc_sysctl.c  |   3 +-
+ kernel/pid_namespace.c |  10 +--
+ 8 files changed, 142 insertions(+), 85 deletions(-)
+
+Eric
