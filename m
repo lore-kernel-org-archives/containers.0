@@ -1,16 +1,14 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [GIT PULL] namespace related fixes for 4.10-rc3
-Date: Wed, 11 Jan 2017 12:23:18 +1300
-Message-ID: <87ziiyijo9.fsf@xmission.com>
+Subject: [GIT PULL] namespace related fixes for 4.10-rc4
+Date: Wed, 11 Jan 2017 12:25:55 +1300
+Message-ID: <87mveyijjw.fsf@xmission.com>
 References: <87d1fzzbc2.fsf@xmission.com>
-	<20170107062952.GH1555@ZenIV.linux.org.uk>
-	<20170107064012.GI1555@ZenIV.linux.org.uk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20170107064012.GI1555-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org> (Al Viro's message of
-	"Sat, 7 Jan 2017 06:40:13 +0000")
+In-Reply-To: <87d1fzzbc2.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (Eric W. Biederman's message of
+	"Sat, 07 Jan 2017 18:30:05 +1300")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,37 +18,48 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org> writes:
+Linus,
 
-> On Sat, Jan 07, 2017 at 06:29:52AM +0000, Al Viro wrote:
->> On Sat, Jan 07, 2017 at 06:30:05PM +1300, Eric W. Biederman wrote:
->> 
->> > Eric W. Biederman (3):
->> >       mnt: Protect the mountpoint hashtable with mount_lock
->> ACK
->> 
->> >       mnt: Tuck mounts under others instead of creating shadow/side mounts.
->> 
->> NAK; you have reintroduced put_mountpoint() outside of mount lock in there
->> and you've got seriously confused umount side of the things.
->
-> PS: details are in my reply (admittedly, sent only ~20 minutes
-> before your pull request) to your patch.  Check Message-ID
-> <20170107050644.GA12074-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Please pull the for-linus branch from the git tree:
 
-I suspect that was sent while I was composing my pull request, and the
-locking around put_mountpoint I did fail to catch during my rebase.  I
-will finish our conversation about that before I resend that patch.
+   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
 
-> My apologies for not getting to it yesterday (the patch was posted a couple of
-> days ago, AFAICS) - I'd been off-net since Wednesday, just got back
-> ;-/
+   HEAD: 93362fa47fe98b62e4a34ab408c4a418432e7939 sysctl: Drop reference added by grab_header in proc_sys_readdir
 
-You and Ram Pai had said reasonably pleasant things about a previous
-version of that patch.
+This tree contains 4 fixes.
+
+The first is a fix for a race that can causes oopses under the right
+circumstances, and that someone just recently encountered.
+
+Past that are several small trivial correct fixes.  A real issue that
+was blocking development of an out of tree driver, but does not appear
+to have caused any actual problems for in-tree code.  A potential
+deadlock that was reported by lockdep.  And a deadlock people have
+experienced and took the time to track down caused by a cleanup that
+removed the code to drop a reference count.
+
+I have dropped the mount hash table fix that Al objected to and will
+come back to that when the discussion around that patch is complete.
+
+Andrei Vagin (1):
+      pid: fix lockdep deadlock warning due to ucount_lock
+
+Eric W. Biederman (2):
+      mnt: Protect the mountpoint hashtable with mount_lock
+      libfs: Modify mount_pseudo_xattr to be clear it is not a userspace mount
+
+Zhou Chengming (1):
+      sysctl: Drop reference added by grab_header in proc_sys_readdir
+
+ fs/dcache.c            |  7 ++++--
+ fs/libfs.c             |  3 ++-
+ fs/namespace.c         | 64 +++++++++++++++++++++++++++++++++++---------------
+ fs/proc/proc_sysctl.c  |  3 ++-
+ kernel/pid_namespace.c | 10 ++++----
+ 5 files changed, 60 insertions(+), 27 deletions(-)
 
 Eric
