@@ -1,16 +1,15 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+From: Andrei Vagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: Possible bug: detached mounts difficult to cleanup
-Date: Thu, 12 Jan 2017 21:26:20 +1300
-Message-ID: <87r348y98z.fsf@xmission.com>
+Date: Thu, 12 Jan 2017 16:37:13 -0800
+Message-ID: <CANaxB-zMzS-euqR1_LvZSoEsO-Y6q=_qGNTJZCKZTL5WfFF16g@mail.gmail.com>
 References: <20170111012454.GB2497@templeofstupid.com>
-	<87fukqwcue.fsf@xmission.com> <87shoqtj7z.fsf@xmission.com>
-	<20170112061539.GA2345@templeofstupid.com>
+	<87r34a5p3t.fsf@xmission.com>
+	<20170111030753.GC2497@templeofstupid.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20170112061539.GA2345-6woCzk5+qv5TrMCiz+cRkdBPR1lH4CV8@public.gmane.org> (Krister Johansen's
-	message of "Wed, 11 Jan 2017 22:15:39 -0800")
+In-Reply-To: <20170111030753.GC2497-6woCzk5+qv5TrMCiz+cRkdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,155 +20,96 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Krister Johansen <kjlx-6woCzk5+qv5TrMCiz+cRkdBPR1lH4CV8@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Cc: linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Krister Johansen <kjlx-6woCzk5+qv5TrMCiz+cRkdBPR1lH4CV8@public.gmane.org> writes:
+On Tue, Jan 10, 2017 at 7:07 PM, Krister Johansen
+<kjlx-6woCzk5+qv5TrMCiz+cRkdBPR1lH4CV8@public.gmane.org> wrote:
+> On Wed, Jan 11, 2017 at 03:04:22PM +1300, Eric W. Biederman wrote:
+>> Any chance you have a trivial reproducer script?
+>>
+>> From you description I don't quite see the problem.  I know where to
+>> look but if could give a script that reproduces the conditions you
+>> see that would make it easier for me to dig into, and would certainly
+>> would remove ambiguity.   Ideally such a script would be runnable
+>> under unshare -Urm for easy repeated testing.
+>
+> My apologies.  I don't have something that fits into a shell script, but
+> I can walk you through the simplest test case that I used when I was
+> debugging this.
+>
+> Create net a ns:
+>
+>     $ sudo unshare -n bash
+>     # echo $$
+>     2771
+>
+> In another terminal bind mount that ns onto a file:
+>
+>     # mkdir /run/testns
+>     # touch /run/testns/ns1
+>     # mount --bind /proc/2771/ns/net /run/testns/ns1
+>
+> Back in first terminal, create a new ns, pivot root, and umount detach:
+>
+>     # exit
+>     $ unshare -U -m -n --propagation slave --map-root-user bash
+>     # mkdir binddir
+>     # mount --bind binddir binddir
+>     # cp busybox binddir
+>     # mkdir binddir/old_root
+>     # cd binddir
+>     # pivot_root . old_root
+>     # ./busybox umount -l old_root
 
-> On Wed, Jan 11, 2017 at 03:37:36PM +1300, Eric W. Biederman wrote:
->> ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) writes:
->> > So if the code is working correctly that should already happen.
->> >
->> > The design is for the parent mount to hold a reference to the submounts.
->> > And when the reference on the parent drops to 0.  The references on
->> > all of the submounts will also be dropped.
->> >
->> > I was hoping to read the code and point it out to you quickly, but I am
->> > not seeing it now.  I am wondering if in all of the refactoring of that
->> > code something was dropped/missed :(
->> >
->> > Somewhere there is supposed to be the equivalent of:
->> > 	pin_insert_group(&p->mnt_umount, &p->mnt_parent->mnt, &unmounted);
->> > when we unhash those mounts because the last count has gone away.
->> > Either it is very sophisticated or I am missing it.  Grr....
->> 
->> Ok.  I see the code now, and it should be doing the right thing.
->> 
->> During umount_tree the code calls pin_insert_group(...) with the
->> last paramenter being NULL.  That adds the mount to one or two
->> lists.  The mnt_pins list of the parent mount and the &unmounted
->> hlist.
->> 
->> Then later when the parent's cleanup_mnt is called if the mnt_pins
->> still has entries mnt_pin_kill is called.  For every mount on the
->> mnt_pins list drop_mountpoint is called.  Which calls dput and
->> mntput.
->> 
->> So that is how your references are supposed to be freed.  Which leaves
->> the question why aren't your mounts being freed?  Is a file descriptor
->> perhaps from a mmaped executable holding a mount reference?
->
-> Was that test case of any use?  I'm afraid that I'm still failing to
-> communicate the problem.
+Hi,
 
-I apologize I really haven't had the energy to dig into it, especially
-after I read the code and the only way I could see to get the
-problem you are having is for something to be retaining a reference to
-the mounts.
+But this process still has mappings from "old_root"
+[root@fc24 busybox]# cat /proc/$$/maps
+5607360f1000-5607361e9000 r-xp 00000000 fd:02 1176793
+  /usr/bin/bash
+5607363e8000-5607363ec000 r--p 000f7000 fd:02 1176793
+  /usr/bin/bash
+5607363ec000-5607363f5000 rw-p 000fb000 fd:02 1176793
+  /usr/bin/bash
+...
 
-> The parent's cleanup_mnt isn't getting called
-> for the detached and locked mounts, and I can explain why.  The only
-> time I'm seeing them free'd is via the __detach_mounts() path, which is
-> only invoked for d_invalidate, vfs_rmdir, vfs_unlink, and vfs_rename:
->
-> rm 14633 [013] 29947.047071:         probe:nsfs_evict: (ffffffff81254fb0)
->             7fff81256fb1 nsfs_evict+0x80007f002001 ([kernel.kallsyms])
->             7fff8123e4c6 iput+0x80007f002196 ([kernel.kallsyms])
->             7fff8123944c __dentry_kill+0x80007f00219c ([kernel.kallsyms])
->             7fff81239611 dput+0x80007f002151 ([kernel.kallsyms])
->             7fff81241bb6 cleanup_mnt+0x80007f002036 ([kernel.kallsyms])
->             7fff81242beb mntput_no_expire+0x80007f00212b ([kernel.kallsyms])
->             7fff81242c54 mntput+0x80007f002024 ([kernel.kallsyms])
->             7fff81242c9a drop_mountpoint+0x80007f00202a ([kernel.kallsyms])
->             7fff81256df7 pin_kill+0x80007f002077 ([kernel.kallsyms])
->             7fff81256ede group_pin_kill+0x80007f00201e ([kernel.kallsyms])
->             7fff812416e3 namespace_unlock+0x80007f002073 ([kernel.kallsyms])
->             7fff81243e03 __detach_mounts+0x80007f0020d3 ([kernel.kallsyms])
->             7fff8122f0cd vfs_unlink+0x80007f00217d ([kernel.kallsyms])
->             7fff81231ce3 do_unlinkat+0x80007f002263 ([kernel.kallsyms])
->             7fff812327ab sys_unlinkat+0x80007f00201b ([kernel.kallsyms])
->             7fff81005b12 do_syscall_64+0x80007f002062 ([kernel.kallsyms])
->             7fff81735b21 return_from_SYSCALL_64+0x80007f002000 ([kernel.kallsyms])
->                    e90ed unlinkat+0xffff012b930e800d (/usr/lib64/libc-2.17.so)
->
-> So that's the stack where I see it work, but I never see it go through
-> the cleanup_mnt() path, and here's why.  First, the code to for loop
-> in umount_tree():
->
->         while (!list_empty(&tmp_list)) {
->                 struct mnt_namespace *ns;
->                 bool disconnect;
->                 p = list_first_entry(&tmp_list, struct mount, mnt_list);
->                 list_del_init(&p->mnt_expire);
->                 list_del_init(&p->mnt_list);
->                 ns = p->mnt_ns;
->                 if (ns) {
->                         ns->mounts--;
->                         __touch_mnt_namespace(ns);
->                 }
->                 p->mnt_ns = NULL;
->                 if (how & UMOUNT_SYNC)
->                         p->mnt.mnt_flags |= MNT_SYNC_UMOUNT;
->                         
->   #1 --->       disconnect = disconnect_mount(p, how);
->
->   #2 --->       pin_insert_group(&p->mnt_umount, &p->mnt_parent->mnt,
->                                  disconnect ? &unmounted : NULL);
->                 if (mnt_has_parent(p)) {
->                         mnt_add_count(p->mnt_parent, -1);
->                         if (!disconnect) {
->                                 /* Don't forget about p */
->                                 list_add_tail(&p->mnt_child, &p->mnt_parent->mnt_mounts);
->                         } else {
->                                 umount_mnt(p);
->                         }       
->                 }
->   #3 --->       change_mnt_propagation(p, MS_PRIVATE);
->         }
->
->
-> So at #1 disconnect is false if p has MNT_LOCKED set.
-> At #2 p isn't added to the s_list on 'unmounted' if disconnect is false.
->
-> The mount gets hidden from the host container at #3, but that's not
-> germane to the invocation of pin_kill.
->
-> This is namespace_unlock:
->
->         hlist_move_list(&unmounted, &head);
->
->         up_write(&namespace_sem);
->
->         if (likely(hlist_empty(&head)))
->                 return;
->
->         synchronize_rcu();
->
->         group_pin_kill(&head);
->
-> So unmounted is moved to head, and group_pin_kill is invoked on that.
-> Only the mounts we marked for disconnect go through the cleanup_mnt path
-> that way.
+You have to call "exec ./busybox sh" to release all "old_root" mounts.
+And in this case I see that a net namespace is destroyed:
 
-At which point you have an island of mounts.
+[root@fc24 busybox]# cat /proc/slabinfo | /bin/grep net_name
+net_namespace          5      8   6784    4    8 : tunables    0    0
+  0 : slabdata      2      2      0
+[root@fc24 busybox]# exec /bin/sh
+/ # cat /proc/slabinfo | /bin/grep -- net
+net_namespace          4      8   6784    4    8 : tunables    0    0
+  0 : slabdata      2      2      0
 
-In that island each submount is on it's parent's mnt_pin list.
-When the last reference of a parent is dropped we call
-    umount_mnt on the children from mntput_no_expire
-    drop_mountpoint from mnt_pin_kill from cleanup_mnt indirectly from mntput_no_expire
-
-So all we need is mntput_no_expire on a mount to be called for the
-entire island to be freed.
-
-So the fundamental issue appears to be that nothing is dropping the last
-reference to some part of your island of mounts.
-
-> So that's the fundamental question I'm trying to ask.  If we have a
-> mount tree that's umount(MNT_DETACH)'d immediately after a pivot_root,
-> but it's never getting those mounts cleaned up except when their
-> mountpoints get rm'd or mv'd, is there a better way to clean up this
-> tree?
-
-SIGKILL the process that is holding a reference.
-
-Eric
+>
+> Back in second terminal:
+>
+>     # umount /run/testns/ns1
+> [ watch for ns cleanup -- not seen if mnt is locked ]
+>     # rm /run/testns/ns1
+> [ now we see it ]
+>
+>
+> For the observability stuff, I went back and forth between using 'perf
+> probe' to place a kprobe on nsfs_evict, and using a bcc script to
+> watch events on the same kprobe.  I can send along the script, if you're
+> a bcc user.
+>
+> At least when I debugged this, I found that when the mount was
+> MNT_LOCKED, disconnect_mount() returned false so the actual unmount
+> didn't happen until the mountpoint was rm'd in the host container.
+>
+> I'm not sure if this is actually a bug, or a case where the cleanup is
+> just conservative.  However, it looked like in the case where we call
+> pivot_root, the detached mounts get marked private but otherwise aren't
+> in use in the container's namespace any longer.
+>
+> -K
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linuxfoundation.org/mailman/listinfo/containers
