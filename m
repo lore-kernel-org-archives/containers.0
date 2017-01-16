@@ -1,18 +1,20 @@
 From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Subject: Re: [Lsf-pc] [LSF/MM ATTEND] FS jitter testing, network caching,
+Subject: Re: [Lsf-pc] Authentication Contexts for network file systems and
+	Containers was Re: [LSF/MM ATTEND] FS jitter testing, network caching,
 	Lustre, cluster filesystems.
-Date: Mon, 16 Jan 2017 12:58:50 -0800
-Message-ID: <1484600330.2540.69.camel@HansenPartnership.com>
+Date: Mon, 16 Jan 2017 13:03:25 -0800
+Message-ID: <1484600605.2540.73.camel@HansenPartnership.com>
 References: <D863EDBD-277B-4CC3-854F-D57FF4501542@linuxhacker.ru>
-	<1484587952.2540.42.camel@HansenPartnership.com>
-	<F7FABA22-8B7D-4C77-A360-4454A5571C8F@linuxhacker.ru>
-	<1484590862.2540.51.camel@HansenPartnership.com>
-	<9CA51BCE-7FF9-4212-9C43-B8B3667E7E6D@linuxhacker.ru>
+	<20170116171708.GC2953@fieldses.org>
+	<409e0dcb-0e6e-b37a-d8d1-039f92d466ac@auristor.com>
+	<B992125F-7D3B-460A-9A6A-ACFBEA2607A8@oracle.com>
+	<1484588818.2540.43.camel@HansenPartnership.com>
+	<c663a698-7116-76ac-25ee-c0ea35971a05@auristor.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <9CA51BCE-7FF9-4212-9C43-B8B3667E7E6D-SOTZviwpzew/JUsKyNonYw@public.gmane.org>
+In-Reply-To: <c663a698-7116-76ac-25ee-c0ea35971a05-hRzEac23uH1Wk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,81 +24,73 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Drokin <green-SOTZviwpzew/JUsKyNonYw@public.gmane.org>
+To: Jeffrey Altman <jaltman-hRzEac23uH1Wk0Htik3J/w@public.gmane.org>
 Cc: linux-fsdevel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lsf-pc-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 2017-01-16 at 13:39 -0500, Oleg Drokin wrote:
-> On Jan 16, 2017, at 1:21 PM, James Bottomley wrote:
+On Mon, 2017-01-16 at 15:39 -0500, Jeffrey Altman wrote:
+> 	Error verifying signature: parse error
+> --------------ms000508080908050405010401
+> Content-Type: multipart/mixed;
+>  boundary="------------049F6401F78BABEBFB8F74AC"
 > 
-> > On Mon, 2017-01-16 at 13:02 -0500, Oleg Drokin wrote:
-> > > On Jan 16, 2017, at 12:32 PM, James Bottomley wrote:
-> > > 
-> > > > On Sun, 2017-01-15 at 18:38 -0500, Oleg Drokin wrote:
-> > > > >  A container support from filesystems is also very relevant 
-> > > > > to us since Lustre    is used more and more in such settings.
-> > > > 
-> > > > I've added the containers ML to the cc just in case.  Can you 
-> > > > add more colour to this, please?  What container support for 
-> > > > filesystems do you think we need beyond the user namespace in
-> > > > the superblock?
-> > > 
-> > > Namespace access is necessary, we might need it before the 
-> > > superblock is there too (say during mount we might need kerberos 
-> > > credentials fetched to properly authenticate this mount instance 
-> > > to the server).
+> This is a multi-part message in MIME format.
+> --------------049F6401F78BABEBFB8F74AC
+> Content-Type: text/plain; charset=utf-8
+> Content-Transfer-Encoding: quoted-printable
+> 
+> On 1/16/2017 12:46 PM, James Bottomley wrote:
 > > 
-> > The superblock namespace is mostly for uid/gid changes across the
-> > kernel <-> filesystem boundary.
+> > For identity, doesn't the UTS namespace do this?  If not, what is
+> > missing?
+> > =20
+> > James
 > 
-> That's on the kernel<->filesystem, but inside of the FS there might 
-> be other considerations that you might want to attach there.
-> Say when you are encrypting the traffic to the server you want
-> to use the right keys.
-
-So this is the keyring namespace?  It was mentioned at KS, but, as far
-as I can tell, not discussed in the Containers MC that followed, so
-I've no idea what the status is.
-
-> It's all relatively easy when you have a separate mount there, so
-> you can store the credentials in the superblock, but we lose on the
-> cache sharing, for example (I don't know how important that is).
-
-It depends what you mean by "cache sharing". If you're thinking of the
-page cache, then it all just works, provided the underlying inode
-doesn't change.  If you're in the situation where the container
-orchestration system knows that two files are the same but there's been
-a change of underlying device (fuse passthrough, say) so the inode is
-different (the docker double caching problem) and you need some way of
-forcibly combining them in the page cache, that was discussed a couple
-of years ago, and Virtuozzo people have patches, but I haven't seen
-much upstream agreement.
-
-> > The actual container namespaces will already be set up by the time 
-> > the mount is done (assuming mount within a container), so you have 
-> > them all present.  Usually you get the information for credentials 
-> > from a combination of the UTS namespace (host/domain name) and the 
-> > mount namespace (credentials provisioned to container filesystem).
+> James,
 > 
-> Yes, when mounting from a container it's possible to fetch this info
-> and pass it around, is mounting from outside of the container
-> important too?
-
-mounting from outside the container usually involved entering the
-container and performing the mount.  However the way you enter the
-container can pull stuff in from outside (like file descriptors).
-
-> > Perhaps if you described the actual problem you're seeing rather 
-> > than try to relate it to what I said about superblock namespace 
-> > (which is probably irrelevant), we could figure out what the issue
-> > is.
+> Thanks for posing the question.
 > 
-> Right now the deployments are simple and we do not have any major 
-> issues (other than certain caching overzealousness that throws cgroup 
-> memory accounting off), but learning what other problems are there in 
-> this space and what we should be looking for.
+> Unless I'm missing something, the UTS namespace permits an alternate
+> 'hostname' and NIS 'domainname' to be specified for local visibility 
+> to the processes running in the container.
+> 
+> For an /afs network file system client (kafs, OpenAFS or AuriStorFS) 
+> the kernel module must be able to associate each process with an
+> authentication context.  The AFS family of file systems have 
+> implemented this binding as part of its Process Authentication Group 
+> (PAG) concept. A PAG is a set of processes that share an 
+> authentication context.   The authentication context includes:
+[...]
 
-You might need to canvas the other users to see if there is anything
-viable to discuss.
+OK, so snipping all the details: it's a per process property and
+inherited, I don't even see that it needs anything container specific. 
+ The pid namespace should be sufficient to keep any potential security
+leaks contained and the inheritance model should just work with
+containers.
+
+> While a file system can internally create an association between an
+> authentication content with a file descriptor once it is created and
+> with pages for write-back, I believe there would be benefit from a 
+> more generic method of tracking authentication contexts in file
+> descriptors and pages.  In particular would be better defined 
+> behavior when a file has been opened for "write" from processes 
+> associated with more than one authentication context.
+
+As long as an "authentication" becomes a property of a file descriptor
+(like a token), then I don't see any container problems: fds are
+namespace blind, so they can be passed between containers and your
+authorizations would go with them.  If you need to go back to a process
+as part of the authorization, then there would be problems because
+processes are namespaced.
+
+> For example, the problems that AFS is currently experiencing with
+> systemd. A good description of problem by Jonathan Billings can be
+> found at
+> 
+> 
+> https://docs.google.com/document/d/1P27fP1uj-C8QdxDKMKtI-Qh00c5_9zJa4
+> YHjn=pB6ODM/pub
+
+This is giving me "Sorry, the file you have requested does not exist."
 
 James
