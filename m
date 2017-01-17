@@ -1,8 +1,8 @@
 From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
 Subject: Re: [Lsf-pc] [LSF/MM ATTEND] FS jitter testing, network caching,
 	Lustre, cluster filesystems.
-Date: Tue, 17 Jan 2017 06:26:07 -0800
-Message-ID: <1484663167.2433.8.camel@HansenPartnership.com>
+Date: Tue, 17 Jan 2017 06:56:01 -0800
+Message-ID: <1484664961.2433.29.camel__45590.0513603867$1484665003$gmane$org@HansenPartnership.com>
 References: <D863EDBD-277B-4CC3-854F-D57FF4501542@linuxhacker.ru>
 	<1484587952.2540.42.camel@HansenPartnership.com>
 	<F7FABA22-8B7D-4C77-A360-4454A5571C8F@linuxhacker.ru>
@@ -32,53 +32,26 @@ On Tue, 2017-01-17 at 02:00 -0500, Oleg Drokin wrote:
 > On Jan 16, 2017, at 3:58 PM, James Bottomley wrote:
 > 
 > > On Mon, 2017-01-16 at 13:39 -0500, Oleg Drokin wrote:
-> > > On Jan 16, 2017, at 1:21 PM, James Bottomley wrote:
-> > > 
-> > > > On Mon, 2017-01-16 at 13:02 -0500, Oleg Drokin wrote:
-> > > > > On Jan 16, 2017, at 12:32 PM, James Bottomley wrote:
-> > > > > 
-> > > > > > On Sun, 2017-01-15 at 18:38 -0500, Oleg Drokin wrote:
-> > > > > > > A container support from filesystems is also very 
-> > > > > > > relevant to us since Lustre    is used more and more in 
-> > > > > > > such settings.
-> > > > > > 
-> > > > > > I've added the containers ML to the cc just in case.  Can 
-> > > > > > you add more colour to this, please?  What container 
-> > > > > > support for filesystems do you think we need beyond the 
-> > > > > > user namespace in the superblock?
-> > > > > 
-> > > > > Namespace access is necessary, we might need it before the 
-> > > > > superblock is there too (say during mount we might need 
-> > > > > kerberos credentials fetched to properly authenticate this 
-> > > > > mount instance to the server).
-> > > > 
-> > > > The superblock namespace is mostly for uid/gid changes across 
-> > > > the kernel <-> filesystem boundary.
-> > > 
-> > > That's on the kernel<->filesystem, but inside of the FS there 
-> > > might be other considerations that you might want to attach 
-> > > there. Say when you are encrypting the traffic to the server you 
-> > > want to use the right keys.
+> > > It's all relatively easy when you have a separate mount there, so
+> > > you can store the credentials in the superblock, but we lose on 
+> > > the cache sharing, for example (I don't know how important that
+> > > is).
 > > 
-> > So this is the keyring namespace?  It was mentioned at KS, but, as 
-> > far as I can tell, not discussed in the Containers MC that 
-> > followed, so I've no idea what the status is.
+> > It depends what you mean by "cache sharing". If you're thinking of 
+> > the page cache, then it all just works, provided the underlying 
+> > inode doesn't change.  If you're in the situation where the
+> > container
 > 
-> Could be keyring or other mechanisms.
+> It only "just works" if the superblock is the same, if there's a 
+> separate mount per container with separate superblock, then there's 
+> no sharing at all. Accounting of said "shared" cache might be 
+> interesting too, which of the containers would you account against?
+> All of them?
 
-OK, you need to agree on the mechanism first, then we can discuss if it
-needs OS virtualization.  A large number of mechanisms in the kernel
-actually don't (because the current OS protections are strong enough)
-like file descriptors.  After you understand the mechanism there are
-usually four main ways to do OS virtualization:
-
-   1. Do nothing becuase the object doesn't need it (fd)
-   2. Label Namespace because it needs isolation (network)
-   3. add to user namespace because you need privileged access (setns
-      call)
-   4. add to cgroup because the resource needs to be accounted (mem)
-
-But before we get into that we need to know the properties of the
-mechanism.
+Well, caching is done per address_space, which is can be per inode and 
+ as you found, inodes are usually per superblock.  There are (dirty) tr
+icks you can do to force sharing at the address space level if you know
+it's the same file.  There was also mention of a ksm like mechanism to
+force the sharing.  Like I said, it was the VZ people who had patches.
 
 James
