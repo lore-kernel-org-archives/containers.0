@@ -1,15 +1,12 @@
-From: Michal Hocko <mhocko-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH] procfs: change the owner of non-dumpable and writeable
-	files
-Date: Thu, 19 Jan 2017 10:29:31 +0100
-Message-ID: <20170119092930.GJ30786@dhcp22.suse.cz>
-References: <20170118040159.4751-1-asarai@suse.de>
+From: "info-aDOWlQusgICJIAd+swBSYQ@public.gmane.org" <mail-aDOWlQusgICJIAd+swBSYQ@public.gmane.org>
+Subject: =?UTF-8?B?UG9yIGZhdm9yIGNvbmZpcm1hIHR1IHN1YnNjcmlwY2nDs24=?=
+Date: Wed, 18 Jan 2017 12:15:57 +0000
+Message-ID: <bcbc480222c181a70af63acfc20f28a3@clean-email.com>
+Reply-To: mail-aDOWlQusgICJIAd+swBSYQ@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20170118040159.4751-1-asarai-l3A5Bk7waGM@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,97 +16,78 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
-Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, dev-IGmTWi+3HBZvNhPySn5qfx2eb7JE58TQ@public.gmane.org, John Stultz <john.stultz-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Janis Danisevskis <jdanis-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Cc Eric
-
-On Wed 18-01-17 15:01:59, Aleksa Sarai wrote:
-> In order to protect against ptrace(2) and similar attacks on container
-> runtimes when they join namespaces, many runtimes set mm->dumpable to
-> SUID_DUMP_DISABLE. However, doing this means that attempting to set up
-> an unprivileged user namespace will fail because an unprivileged process
-> can no longer access /proc/self/{setgroups,{uid,gid}_map} for the
-> container process (which is the same uid as the runtime process).
-> 
-> Fix this by changing pid_getattr to *also* change the owner of regular
-> files that have a mode of 0644 (when the process is not dumpable). This
-> ensures that the important /proc/[pid]/... files mentioned above are
-> properly accessible by a container runtime in a rootless container
-> context.
-> 
-> The most blantant issue is that a non-dumpable process in a rootless
-> container context is unable to open /proc/self/setgroups, because it
-> doesn't own the file.
-> 
-> int main(void)
-> {
-> 	prctl(PR_SET_DUMPABLE, 0, 0, 0, 0);
-> 	unshare(CLONE_NEWUSER);
-> 
-> 	/* This will fail. */
-> 	int fd = open("/proc/self/setgroups", O_WRONLY);
-> 	if (fd < 0)
-> 		abort();
-> 
-> 	return 0;
-> }
-
-I do agree that failing to open anything in /proc/self/ is more than
-unexepcted! I cannot judge the patch but my gut feeling tells me that
-the fix should be somewhere in the open handler.
-
-One nit below
-
-> 
-> Cc: dev-IGmTWi+3HBZvNhPySn5qfx2eb7JE58TQ@public.gmane.org
-> Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> Signed-off-by: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
-> ---
->  fs/proc/base.c | 6 ++++--
->  1 file changed, 4 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/proc/base.c b/fs/proc/base.c
-> index ca651ac00660..ebabb12f4536 100644
-> --- a/fs/proc/base.c
-> +++ b/fs/proc/base.c
-> @@ -1729,6 +1729,7 @@ int pid_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *stat)
->  			return -ENOENT;
->  		}
->  		if ((inode->i_mode == (S_IFDIR|S_IRUGO|S_IXUGO)) ||
-> +		    (inode->i_mode == (S_IFREG|S_IRUGO|S_IWUSR)) ||
->  		    task_dumpable(task)) {
->  			cred = __task_cred(task);
->  			stat->uid = cred->euid;
-> @@ -1770,6 +1771,7 @@ int pid_revalidate(struct dentry *dentry, unsigned int flags)
->  
->  	if (task) {
->  		if ((inode->i_mode == (S_IFDIR|S_IRUGO|S_IXUGO)) ||
-> +		    (inode->i_mode == (S_IFREG|S_IRUGO|S_IWUSR)) ||
->  		    task_dumpable(task)) {
->  			rcu_read_lock();
->  			cred = __task_cred(task);
-> @@ -2394,7 +2396,7 @@ static int proc_pident_instantiate(struct inode *dir,
->  	return -ENOENT;
->  }
->  
-> -static struct dentry *proc_pident_lookup(struct inode *dir, 
-> +static struct dentry *proc_pident_lookup(struct inode *dir,
->  					 struct dentry *dentry,
->  					 const struct pid_entry *ents,
->  					 unsigned int nents)
-> @@ -2536,7 +2538,7 @@ static const struct pid_entry attr_dir_stuff[] = {
->  
->  static int proc_attr_dir_readdir(struct file *file, struct dir_context *ctx)
->  {
-> -	return proc_pident_readdir(file, ctx, 
-> +	return proc_pident_readdir(file, ctx,
->  				   attr_dir_stuff, ARRAY_SIZE(attr_dir_stuff));
->  }
-
-this two are just whitespace noise
-
--- 
-Michal Hocko
-SUSE Labs
+SG9sYSwKCkVsIG51ZXZvIFJlZ2xhbWVudG8gR2VuZXJhbCBkZSBQcm90ZWNjacOzbiBkZSBEYXRv
+cyB5YSBlc3TDoSBlbiB2aWdvciB5IHVuYQpkZSBsYXMgbWVkaWRhcyBpbXByZXNjaW5kaWJsZXMg
+cGFyYSBwb2RlciBjdW1wbGlyIGNvbiBsYSBsZXkgZXMgcmVjb2dlciBlbApjb25zZW50aW1pZW50
+byBleHByZXNvIGRlbCByZW1pdGVudGUgYW50ZXMgZGUgcmVhbGl6YXIgbmluZ8O6biB0aXBvIGRl
+CmNvbXVuaWNhY2nDs24gY29tZXJjaWFsLgoKQWN0dWFsbWVudGUgZXN0w6FzIHN1YnNjcml0byBh
+IHVuYSBsaXN0YSBkZSBjb3JyZW9zIHByb3BpZWRhZCBkZSBsYSBlbXByZXNhCldhbGRmb3JkIEhp
+bGxzIEVkaXRpb25zLCBzaW4gZW1iYXJnbyB0b2RhdsOtYSBubyB0aWVuZW4gdHUgdmlzdG8gYnVl
+bm8KZm9ybWFsLgoKTm9zIHBvbmVtb3MgZW4gY29udGFjdG8gY29udGlnbyBlbiBzdSBub21icmUg
+cGFyYSBxdWUgbm9zIGNvbmZpcm1lcyBzaSBsb3MKYXV0b3JpemFzIG8gbm8sIHBhcmEgcXVlIHRl
+IGVudsOtZW4gY29tdW5pY2FjaW9uZXMgY29tZXJjaWFsZXMuCgrCv1F1w6kgZGVjaWRlcz8KCkNv
+cGlhIGVzdGUgbGluayBlbiB0dSBuYXZlZ2Fkb3Igc2kgcXVpZXJlcyByZWNpYmlyIGNvbXVuaWNh
+Y2lvbmVzCmNvbWVyY2lhbGVzIGRlIGxhIGVtcHJlc2EgQmV2ZXJseSBIaWxscyBFZGl0aW9ucwpo
+dHRwOi8vY2xlYW4tZW1haWwuY29tL2xpbmsucGhwP009MjAyODM3OSZOPTkmTD01JkY9VAoKCkNv
+cGlhIGVzdGUgb3RybyBsaW5rIGVuIHR1IG5hdmVnYWRvciBzaSBOTyBxdWllcmVzIHJlY2liaXIg
+Y29tdW5pY2FjaW9uZXMKY29tZXJjaWFsZXMgZGUgbGEgZW1wcmVzYSBCZXZlcmx5IEhpbGxzIEVk
+aXRpb25zCmh0dHA6Ly9jbGVhbi1lbWFpbC5jb20vbGluay5waHA/TT0yMDI4Mzc5Jk49OSZMPTYm
+Rj1UCgoKRkFRCgrCv1NRdcOpIHBhc2Egc2kgZGVjaWRvIGFjZXB0YXI/CgpMYSBlbXByZXNhIFdh
+bGRmb3JkIEhpbGxzIEVkaXRpb25zIHJlY2liaXLDoSB1bmEgY29uZmlybWFjacOzbiBwb3IgbnVl
+c3RyYQpwYXJ0ZSBkZSBxdWUgYWNlcHRhcyBleHByZXNhbWVudGUgcmVjaWJpciBjb211bmljYWNp
+b25lcyBjb21lcmNpYWxlcyBwb3Igc3UKcGFydGUsIGluZGljYW5kbyB0dSBkaXJlY2Npw7NuIGRl
+IGVtYWlsLCB0dSBjb25maXJtYWNpw7NuLCB0dSBkaXJlY2Npw7NuIElQCnkgbGEgZmVjaGEgeSBs
+YSBob3JhIGRlIHR1IHJlc3B1ZXN0YS4KClF1ZSBkZXMgdHUgY29uc2VudGltaWVudG8gbm8gc2ln
+bmlmaWNhIHF1ZSB2YXlhbiBhIGVudmlhcnRlIGNvbXVuaWNhY2lvbmVzCmNvbWVyY2lhbGVzLCBu
+aSB0YW1wb2NvIHNpZ25pZmljYSBxdWUgbm8gcHVlZGFzIGNhbWJpYXIgZGUgb3BpbmnDs24uIExh
+IGxleQp0ZSBwcm90ZWdlIGVuIHRvZG8gY2FzbyB5IHNpIGNhbWJpYXMgZGUgb3BpbmnDs24gc2ll
+bXByZSBwb2Ryw6FzIHBvbmVydGUgZW4KY29udGFjdG8gY29uIGxhIGVtcHJlc2EgV2FsZGZvcmQg
+SGlsbHMgRWRpdGlvbnMgcGFyYSByZWN0aWZpY2FyIHR1Cm9waW5pw7NuLgoKwr9RdcOpIHBhc2Eg
+c2kgZGVjaWRvIG5vIGFjZXB0YXI/CgpMYSBlbXByZXNhIFdhbGRmb3JkIEhpbGxzIEVkaXRpb25z
+IHJlY2liaXLDoSB1bmEgY29uZmlybWFjacOzbiBwb3IgbnVlc3RyYQpwYXJ0ZSBkZSBxdWUgbm8g
+YWNlcHRhcyAgcmVjaWJpciBjb211bmljYWNpb25lcyBjb21lcmNpYWxlcyBwb3Igc3UgcGFydGUs
+CmluZGljYW5kbyB0dSBkaXJlY2Npw7NuIGRlIGVtYWlsLCB0dSByZXNwdWVzdGEgbmVnYXRpdmEs
+IHR1IGRpcmVjY2nDs24gSVAgeQpsYSBmZWNoYSB5IGxhIGhvcmEgZGUgdHUgcmVzcHVlc3RhLiBF
+c3RvIG5vIHNpZ25pZmljYSBxdWUgbcOhcyBhZGVsYW50ZSBubwpsZXMgYXV0b3JpY2VzIGEgaGFj
+ZXJsbyBwb3Igb3RyYSB2w61hLgoKwr9RdcOpIHBhc2Egc2kgbm8gcmVzcG9uZG8gYSBlc3RlIGVt
+YWlsPwoKRXNwZXJhcmVtb3MgdW5vcyBtZXNlcyB5IHRyYXRhcmVtb3MgZGUgZW52aWFydGUgZGUg
+bnVldm8geSBwb3Igw7psdGltYSB2ZXoKdW4gZW1haWwgc2ltaWFyLCBzaSBubyBjb250ZXN0YXMg
+dGFtcG9jbyBlbiBlc3RhIHNlZ3VuZGEgb2Nhc2nDs24gYWwgY2FibwpkZSAxIG1lcyBub3RpZmlj
+YXJlbW9zIGEgbGEgZW1wcmVzYSBXYWxkZm9yZCBIaWxscyBFZGl0aW9ucyBxdWUgbm8gbXVlc3Ry
+YXMKaW50ZXLDqXMgYWxndW5vIGVuIHJlY2liaXIgY29tdW5pY2FjaW9uZXMgY29tZXJjaWFsZXMg
+aW5kaWNhbmRvICBpbmRpY2FuZG8KdHUgZGlyZWNjacOzbiBkZSBlbWFpbCwgdHUgYXVzZW5jaWEg
+ZGUgcmVzcHVlc3RhLCBsYSBmZWNoYSB5IGxhIGhvcmEuIEVuCnRvZG8gY2FzbyB0ZSBwZWRpbW9z
+IHBvciBmYXZvciBxdWUgbm9zIGNvbmZpcm1lcyBxdWUgcHJlZmllcmVzLCBlcyBzw7NsbyB1bgpj
+bGljIDspCgrCv1BvciBxdcOpIGxhIGVtcHJlc2EgV2FsZGZvcmQgSGlsbHMgRWRpdGlvbnMgdGll
+bmUgbWkgZW1haWw/CgpObyBsbyBzYWJlbW9zLiBOb3NvdHJvcyBzw7NsbyB2ZXJpZmljYW1vcyBj
+dWFsIGVzIHR1IGRlY2lzacOzbi4KCkF1bnF1ZSBubyBsbyByZWN1ZXJkZXMgYWhvcmEsIHByb2Jh
+YmxlbWVudGUgdGUgaGF5YXMgcmVnaXN0cmFkbyBlbiBhbGd1bmEKZGUgc3VzIHdlYnMsIG8gcXVp
+esOhcyBoYXlhcyBkZXNjYXJnYWRvIGFsZ3VuYSBkZSBzdXMgYXBsaWNhY2lvbmVzLiBFbgptdWNo
+b3MgY2Fzb3MgbGEgZ2VudGUgaW50cm9kdWNlIGVtYWlscyBmYWxzb3MgYSBsYSBob3JhIGRlIHJl
+bGxlbmFyCmZvcm11bGFyaW9zLCBxdWl6w6FzIGhheWFzIHRlbmlkbyBsYSBtYWxhIHN1ZXJ0ZSBk
+ZSBxdWUgaGFuIHB1ZXN0byBsYQp0dXlhLgoKRW4gb3RyYXMgb2Nhc2lvbmVzIGludGVyY2FtYmlh
+bW9zIHRhcmpldGFzIGRlIHZpc2l0YXMgbyBzb2xpY2l0YW1vcwppbmZvcm1hY2nDs24gZGUgY29u
+dGFjdG8gcG9yIGVtYWlsLiBJbmNsdXNvIGVzIHBvc2libGUgcXVlIG5vIGhheWFzIGxlw61kbwps
+YSBwb2zDrXRpY2EgZGUgcHJpdmFjaWRhZCBvIGxvcyB0w6lybWlub3MgbGVnYWxlcyB5IGhheWFz
+IGNvbnNlbnRpZG8gcXVlCnR1IGRhdG9zIHNlIGNlZGFuIGEgdGVyY2Vyb3MuIFRlIHJlY29taWVu
+ZG8gZW5jYXJlY2lkYW1lbnRlIHF1ZSBzaSBubyBsbwpoYWNlcyB5YSwgbGVhcyBkZXRlbmlkYW1l
+bnRlIGxvcyBjb25kaWNpb25lcyBkZSB1c28gZGUgbG9zIGRhdG9zIHF1ZSBlc3TDoXMKY2VkaWVu
+ZG8uCgrCv0VzdGUgZW1haWwgZXMgc3BhbT8KCk5PLCBlbCBzcGFtIGVzIGNvcnJlbyBlbGVjdHLD
+s25pY28gbm8gc29saWNpdGFkbyBxdWUgc2UgZW52w61hIGEgdW4gZ3Jhbgpuw7ptZXJvIGRlIGRl
+c3RpbmF0YXJpb3MgY29uIGZpbmVzIHB1YmxpY2l0YXJpb3MgbyBjb21lcmNpYWxlcy4gRW4gbmlu
+Z8O6bgpjYXNvIHF1ZXJlbW9zIHZlbmRlcnRlIG5hZGEsIG5pIGhhY2VyIHB1YmxpY2lkYWQgZGUg
+bnVlc3RybyBzZXJ2aWNpby4gRWwKw7puaWNvIG9iamV0aXZvIGRlIGVzdGEgY29tdW5pY2FjacOz
+biBlcyB2ZXJpZmljYXIgcXVlIGF1dG9yaXphcyB5IHF1ZQpxdWllcmVzIHJlY2liaXIgY29tdW5p
+Y2FjaW9uZXMgY29tZXJjaWFsZXMgZGUgbGEgZW1wcmVzYSBXYWxkZm9yZCBIaWxscwpFZGl0aW9u
+cy4KClBvciBsbyB0YW50bywgdGUgcm9nYW1vcyBxdWUgbm8gbWFycXVlcyBlc3RlIGVtYWlsIGNv
+bW8gc3BhbS4gU2kgbm8gcXVpZXJlcwpxdWUgdGUgZW52aWVtb3MgbcOhcyBlbWFpbHMgZGUgdmVy
+aWZpY2FjacOzbiAob3B0LWluKSBjb21vIMOpc3RlCnNpbXBsZW1lbnRlIGhheiBjbGljIGFxdcOt
+LgoKwqFHcmFjaWFzIHBvciB0dSB0aWVtcG8hCgpEb24ndCBsaWtlIHRoZXNlIGVtYWlscz8KaHR0
+cDovL2NsZWFuLWVtYWlsLmNvbS91bnN1YnNjcmliZS5waHA/TT0yMDI4Mzc5JkM9ZDk1Mzg4N2Zm
+ODk5NDE4MzEwOTRkNjU4NWQ5MDY0YWEmTD03Jk49OQpfX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJz
+QGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9u
+Lm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
