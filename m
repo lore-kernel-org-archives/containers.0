@@ -1,10 +1,15 @@
-From: =?iso-8859-1?Q?St=E9phane?= Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Subject: LXC 2.0.7, LXCFS 2.0.6 and LXD 2.0.9 have been released!
-Date: Fri, 27 Jan 2017 15:57:26 -0500
-Message-ID: <20170127205726.6oefo7avcvkh3dg4__47952.9073615142$1485551231$gmane$org@castiana>
+From: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
+Subject: Re: [PATCH] procfs: change the owner of non-dumpable and writeable
+	files
+Date: Fri, 20 Jan 2017 00:08:12 +1100
+Message-ID: <e7137350-b8a8-c7e5-e35d-8218a7df1147@suse.de>
+References: <20170118040159.4751-1-asarai@suse.de>
+	<20170119092930.GJ30786@dhcp22.suse.cz>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============8409673316967951514=="
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20170119092930.GJ30786-2MMpYkNvuYDjFM9bn6wA6Q@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -14,79 +19,58 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, lxc-users-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Michal Hocko <mhocko-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, dev-IGmTWi+3HBZvNhPySn5qfx2eb7JE58TQ@public.gmane.org, John Stultz <john.stultz-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Janis Danisevskis <jdanis-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+>> In order to protect against ptrace(2) and similar attacks on container
+>> runtimes when they join namespaces, many runtimes set mm->dumpable to
+>> SUID_DUMP_DISABLE. However, doing this means that attempting to set up
+>> an unprivileged user namespace will fail because an unprivileged process
+>> can no longer access /proc/self/{setgroups,{uid,gid}_map} for the
+>> container process (which is the same uid as the runtime process).
+>>
+>> Fix this by changing pid_getattr to *also* change the owner of regular
+>> files that have a mode of 0644 (when the process is not dumpable). This
+>> ensures that the important /proc/[pid]/... files mentioned above are
+>> properly accessible by a container runtime in a rootless container
+>> context.
+>>
+>> The most blantant issue is that a non-dumpable process in a rootless
+>> container context is unable to open /proc/self/setgroups, because it
+>> doesn't own the file.
+>>
+>> int main(void)
+>> {
+>> 	prctl(PR_SET_DUMPABLE, 0, 0, 0, 0);
+>> 	unshare(CLONE_NEWUSER);
+>>
+>> 	/* This will fail. */
+>> 	int fd = open("/proc/self/setgroups", O_WRONLY);
+>> 	if (fd < 0)
+>> 		abort();
+>>
+>> 	return 0;
+>> }
+>
+> I do agree that failing to open anything in /proc/self/ is more than
+> unexepcted! I cannot judge the patch but my gut feeling tells me that
+> the fix should be somewhere in the open handler.
 
---===============8409673316967951514==
-Content-Type: multipart/signed; micalg=pgp-sha512;
-	protocol="application/pgp-signature"; boundary="ssq2nerclgwb3vah"
-Content-Disposition: inline
+Maybe that would suffice as a more specific fix (for the special case of 
+/proc/self), but the fact that none of the users and groups are 
+correctly set in /proc/[pid] will cause issues for runC and other 
+container runtimes (because they don't go through /proc/self -- it's 
+accessing /proc/[pid] from another process).
 
+Though I get the feeling that the *correct* fix would be to remove the 
+conditional and *always* change the owner -- maybe I'm missing something 
+but I can't think of the security issue that this code currently fixes 
+(since all of the important permission checks are *in addition* to the 
+generic_permission used for /proc/self/..., which use ptrace_may_access).
 
---ssq2nerclgwb3vah
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-Hello everyone,
-
-Today the LXC project is pleased to announce the release of:
- - LXC 2.0.7
- - LXD 2.0.9
- - LXCFS 2.0.6
-
-They each contain the accumulated bugfixes since the previous round of
-bugfix releases about two months ago.
-
-The detailed changelogs can be found at:
- - https://linuxcontainers.org/lxc/news/
- - https://linuxcontainers.org/lxcfs/news/
- - https://linuxcontainers.org/lxd/news/
-
-As a reminder, the 2.0 series of all of those is supported for bugfix
-and security updates up until June 2021.
-
-The LXC 1.0.x branch is supported until June 2019 with critical bugfixes
-and security updates only, users are recommended to upgrade to 2.0.x.
-
-Thanks to everyone who contributed to those projects and helped make
-this possible!
-
-
-St=E9phane Graber
-On behalf of the LXC, LXCFS and LXD development teams
-
---ssq2nerclgwb3vah
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQIbBAABCgAGBQJYi7QzAAoJEMY4l01keS1n1jQP+PP9sPDtVkvnxNY+EaPzZH1C
-3xTPfQCBq4YvqdOZlvg6wWJ0LjzCjBXW2ECVz4KHlmY1jRFKpEQcIPDRc6bYVGtd
-oTEWL0M0smWd/30ETPwXeDfl4D39LkVhPGHbxIUXiL9nHO7i/J/yEkRMcM8cvieK
-/wG6VPvqzVFUB93NXDe29K4GsnjJMHVpum9ND8D99KjT9Xw/PbcfUpfZVJlqHJsl
-vKTElX/c0HNjXLplOie92MwK10yGPHK+6hQ1rsd057xLlI5HCmlSEGRpwTaXqoLC
-B03rEfHoycJ7X8nNT4KBe9r1UKSLPLPdsl+aD0Wgp1xSZacuJQ05I354zOxrLQhh
-isbOENaxxPOotvatJ+6EneVXQ1mPtpvrR0skIjSrSX2eJWaLFY0rVY1wZ6b+yY9i
-WKD1rk+F9HYjcr09LrY/oM1GMxtcWwRTqxNGdWR33itcaZBMoelHgAOzG1BoBZQc
-SagsaJM+dqmbWPw27ou4ex7K8Dxy9y7nPNN8RNzKO6ZQYjQiyK3sxZw8cXnOOqkT
-HCBRfzFX63yC6piMywyref+iCo4PmB/Ju0+B0tjf6iShyeLbTq4JttCu/pKjspkD
-X0lL9Rd6QiFQe2UzO7s5UI145vy8jWlv/2dVQ884MpOnK1PWD23TxJVkJaGSpo6k
-ZohGixL6Qwr1nrTrDX8=
-=d6Cf
------END PGP SIGNATURE-----
-
---ssq2nerclgwb3vah--
-
---===============8409673316967951514==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linuxfoundation.org/mailman/listinfo/containers
---===============8409673316967951514==--
+-- 
+Aleksa Sarai
+Software Engineer (Containers)
+SUSE Linux GmbH
+https://www.cyphar.com/
