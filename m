@@ -1,11 +1,19 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [GIT PULL] namespace related fixes for 4.10-rc6
-Date: Tue, 24 Jan 2017 13:03:37 +1300
-Message-ID: <87o9yx2ujq.fsf@xmission.com>
+From: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
+Subject: Re: [PATCH] procfs: change the owner of non-dumpable and writeable
+	files
+Date: Wed, 25 Jan 2017 17:43:21 +1100
+Message-ID: <f941dfa7-0398-f6f6-807b-52e528b67ceb@suse.de>
+References: <20170118040159.4751-1-asarai@suse.de>
+	<20170119092930.GJ30786@dhcp22.suse.cz>
+	<e7137350-b8a8-c7e5-e35d-8218a7df1147@suse.de>
+	<87r33yv6gk.fsf@xmission.com>
+	<4025e285-9179-b98a-88c0-905f4f9c3ef8@suse.de>
+	<87wpdqjqkx.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <87wpdqjqkx.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,240 +23,113 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Dmitry Vyukov <dvyukov-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Michal Hocko <mhocko-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, dev-IGmTWi+3HBZvNhPySn5qfx2eb7JE58TQ@public.gmane.org, John Stultz <john.stultz-QSEj5FYQhm4dnm+yROfE0A@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Janis Danisevskis <jdanis-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-Linus,
-
-Please pull the for-linus branch from the git tree:
-
-   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
-
-   HEAD: 880a38547ff08715ce4f1daf9a4bb30c87676e68 userns: Make ucounts lock irq-safe
-
-This branch has a single brown bag fix.  The possible deadlock with
-dec_pid_namespaces that I had thought was fixed earlier turned out only
-to have been moved.  So instead of being cleaver this change takes
-ucounts_lock with irqs disabled.  So dec_ucount can be used from any
-context without fear of deadlock.
-
-The items accounted for dec_ucount and inc_ucount are all comparatively
-heavy weight objects so I don't exepct this will have any measurable
-performance impact.
-
-From: Nikolay Borisov <n.borisov.lkml-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Date: Fri, 20 Jan 2017 15:21:35 +0200
-Subject: [PATCH] userns: Make ucounts lock irq-safe
-
-The ucounts_lock is being used to protect various ucounts lifecycle
-management functionalities. However, those services can also be invoked
-when a pidns is being freed in an RCU callback (e.g. softirq context).
-This can lead to deadlocks. There were already efforts trying to
-prevent similar deadlocks in add7c65ca426 ("pid: fix lockdep deadlock
-warning due to ucount_lock"), however they just moved the context
-from hardirq to softrq. Fix this issue once and for all by explictly
-making the lock disable irqs altogether.
-
-Dmitry Vyukov <dvyukov-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> reported:
-
-> I've got the following deadlock report while running syzkaller fuzzer
-> on eec0d3d065bfcdf9cd5f56dd2a36b94d12d32297 of linux-next (on odroid
-> device if it matters):
+>>> AKA it should be this fix that removes the need for your dumpable setting.
+>>> bfedb589252c ("mm: Add a user_ns owner to mm_struct and fix ptrace permission checks")
+>>
+>> I will check, though from what I recall that patch doesn't fix the
+>> ptrace_may_access checks. Not to mention it won't help if the
+>> container doesn't have it's own user namespace.
 >
-> =================================
-> [ INFO: inconsistent lock state ]
-> 4.10.0-rc3-next-20170112-xc2-dirty #6 Not tainted
-> ---------------------------------
-> inconsistent {SOFTIRQ-ON-W} -> {IN-SOFTIRQ-W} usage.
-> swapper/2/0 [HC0[0]:SC1[1]:HE1:SE0] takes:
->  (ucounts_lock){+.?...}, at: [<     inline     >] spin_lock
-> ./include/linux/spinlock.h:302
->  (ucounts_lock){+.?...}, at: [<ffff2000081678c8>]
-> put_ucounts+0x60/0x138 kernel/ucount.c:162
-> {SOFTIRQ-ON-W} state was registered at:
-> [<ffff2000081c82d8>] mark_lock+0x220/0xb60 kernel/locking/lockdep.c:3054
-> [<     inline     >] mark_irqflags kernel/locking/lockdep.c:2941
-> [<ffff2000081c97a8>] __lock_acquire+0x388/0x3260 kernel/locking/lockdep.c:3295
-> [<ffff2000081cce24>] lock_acquire+0xa4/0x138 kernel/locking/lockdep.c:3753
-> [<     inline     >] __raw_spin_lock ./include/linux/spinlock_api_smp.h:144
-> [<ffff200009798128>] _raw_spin_lock+0x90/0xd0 kernel/locking/spinlock.c:151
-> [<     inline     >] spin_lock ./include/linux/spinlock.h:302
-> [<     inline     >] get_ucounts kernel/ucount.c:131
-> [<ffff200008167c28>] inc_ucount+0x80/0x6c8 kernel/ucount.c:189
-> [<     inline     >] inc_mnt_namespaces fs/namespace.c:2818
-> [<ffff200008481850>] alloc_mnt_ns+0x78/0x3a8 fs/namespace.c:2849
-> [<ffff200008487298>] create_mnt_ns+0x28/0x200 fs/namespace.c:2959
-> [<     inline     >] init_mount_tree fs/namespace.c:3199
-> [<ffff200009bd6674>] mnt_init+0x258/0x384 fs/namespace.c:3251
-> [<ffff200009bd60bc>] vfs_caches_init+0x6c/0x80 fs/dcache.c:3626
-> [<ffff200009bb1114>] start_kernel+0x414/0x460 init/main.c:648
-> [<ffff200009bb01e8>] __primary_switched+0x6c/0x70 arch/arm64/kernel/head.S:456
-> irq event stamp: 2316924
-> hardirqs last  enabled at (2316924): [<     inline     >] rcu_do_batch
-> kernel/rcu/tree.c:2911
-> hardirqs last  enabled at (2316924): [<     inline     >]
-> invoke_rcu_callbacks kernel/rcu/tree.c:3182
-> hardirqs last  enabled at (2316924): [<     inline     >]
-> __rcu_process_callbacks kernel/rcu/tree.c:3149
-> hardirqs last  enabled at (2316924): [<ffff200008210414>]
-> rcu_process_callbacks+0x7a4/0xc28 kernel/rcu/tree.c:3166
-> hardirqs last disabled at (2316923): [<     inline     >] rcu_do_batch
-> kernel/rcu/tree.c:2900
-> hardirqs last disabled at (2316923): [<     inline     >]
-> invoke_rcu_callbacks kernel/rcu/tree.c:3182
-> hardirqs last disabled at (2316923): [<     inline     >]
-> __rcu_process_callbacks kernel/rcu/tree.c:3149
-> hardirqs last disabled at (2316923): [<ffff20000820fe80>]
-> rcu_process_callbacks+0x210/0xc28 kernel/rcu/tree.c:3166
-> softirqs last  enabled at (2316912): [<ffff20000811b4c4>]
-> _local_bh_enable+0x4c/0x80 kernel/softirq.c:155
-> softirqs last disabled at (2316913): [<     inline     >]
-> do_softirq_own_stack ./include/linux/interrupt.h:488
-> softirqs last disabled at (2316913): [<     inline     >]
-> invoke_softirq kernel/softirq.c:371
-> softirqs last disabled at (2316913): [<ffff20000811c994>]
-> irq_exit+0x264/0x308 kernel/softirq.c:405
->
-> other info that might help us debug this:
->  Possible unsafe locking scenario:
->
->        CPU0
->        ----
->   lock(ucounts_lock);
->   <Interrupt>
->     lock(ucounts_lock);
->
->  *** DEADLOCK ***
->
-> 1 lock held by swapper/2/0:
->  #0:  (rcu_callback){......}, at: [<     inline     >] __rcu_reclaim
-> kernel/rcu/rcu.h:108
->  #0:  (rcu_callback){......}, at: [<     inline     >] rcu_do_batch
-> kernel/rcu/tree.c:2919
->  #0:  (rcu_callback){......}, at: [<     inline     >]
-> invoke_rcu_callbacks kernel/rcu/tree.c:3182
->  #0:  (rcu_callback){......}, at: [<     inline     >]
-> __rcu_process_callbacks kernel/rcu/tree.c:3149
->  #0:  (rcu_callback){......}, at: [<ffff200008210390>]
-> rcu_process_callbacks+0x720/0xc28 kernel/rcu/tree.c:3166
->
-> stack backtrace:
-> CPU: 2 PID: 0 Comm: swapper/2 Not tainted 4.10.0-rc3-next-20170112-xc2-dirty #6
-> Hardware name: Hardkernel ODROID-C2 (DT)
-> Call trace:
-> [<ffff20000808fa60>] dump_backtrace+0x0/0x440 arch/arm64/kernel/traps.c:500
-> [<ffff20000808fec0>] show_stack+0x20/0x30 arch/arm64/kernel/traps.c:225
-> [<ffff2000088a99e0>] dump_stack+0x110/0x168
-> [<ffff2000082fa2b4>] print_usage_bug.part.27+0x49c/0x4bc
-> kernel/locking/lockdep.c:2387
-> [<     inline     >] print_usage_bug kernel/locking/lockdep.c:2357
-> [<     inline     >] valid_state kernel/locking/lockdep.c:2400
-> [<     inline     >] mark_lock_irq kernel/locking/lockdep.c:2617
-> [<ffff2000081c89ec>] mark_lock+0x934/0xb60 kernel/locking/lockdep.c:3065
-> [<     inline     >] mark_irqflags kernel/locking/lockdep.c:2923
-> [<ffff2000081c9a60>] __lock_acquire+0x640/0x3260 kernel/locking/lockdep.c:3295
-> [<ffff2000081cce24>] lock_acquire+0xa4/0x138 kernel/locking/lockdep.c:3753
-> [<     inline     >] __raw_spin_lock ./include/linux/spinlock_api_smp.h:144
-> [<ffff200009798128>] _raw_spin_lock+0x90/0xd0 kernel/locking/spinlock.c:151
-> [<     inline     >] spin_lock ./include/linux/spinlock.h:302
-> [<ffff2000081678c8>] put_ucounts+0x60/0x138 kernel/ucount.c:162
-> [<ffff200008168364>] dec_ucount+0xf4/0x158 kernel/ucount.c:214
-> [<     inline     >] dec_pid_namespaces kernel/pid_namespace.c:89
-> [<ffff200008293dc8>] delayed_free_pidns+0x40/0xe0 kernel/pid_namespace.c:156
-> [<     inline     >] __rcu_reclaim kernel/rcu/rcu.h:118
-> [<     inline     >] rcu_do_batch kernel/rcu/tree.c:2919
-> [<     inline     >] invoke_rcu_callbacks kernel/rcu/tree.c:3182
-> [<     inline     >] __rcu_process_callbacks kernel/rcu/tree.c:3149
-> [<ffff2000082103d8>] rcu_process_callbacks+0x768/0xc28 kernel/rcu/tree.c:3166
-> [<ffff2000080821dc>] __do_softirq+0x324/0x6e0 kernel/softirq.c:284
-> [<     inline     >] do_softirq_own_stack ./include/linux/interrupt.h:488
-> [<     inline     >] invoke_softirq kernel/softirq.c:371
-> [<ffff20000811c994>] irq_exit+0x264/0x308 kernel/softirq.c:405
-> [<ffff2000081ecc28>] __handle_domain_irq+0xc0/0x150 kernel/irq/irqdesc.c:636
-> [<ffff200008081c80>] gic_handle_irq+0x68/0xd8
-> Exception stack(0xffff8000648e7dd0 to 0xffff8000648e7f00)
-> 7dc0:                                   ffff8000648d4b3c 0000000000000007
-> 7de0: 0000000000000000 1ffff0000c91a967 1ffff0000c91a967 1ffff0000c91a967
-> 7e00: ffff20000a4b6b68 0000000000000001 0000000000000007 0000000000000001
-> 7e20: 1fffe4000149ae90 ffff200009d35000 0000000000000000 0000000000000002
-> 7e40: 0000000000000000 0000000000000000 0000000002624a1a 0000000000000000
-> 7e60: 0000000000000000 ffff200009cbcd88 000060006d2ed000 0000000000000140
-> 7e80: ffff200009cff000 ffff200009cb6000 ffff200009cc2020 ffff200009d2159d
-> 7ea0: 0000000000000000 ffff8000648d4380 0000000000000000 ffff8000648e7f00
-> 7ec0: ffff20000820a478 ffff8000648e7f00 ffff20000820a47c 0000000010000145
-> 7ee0: 0000000000000140 dfff200000000000 ffffffffffffffff ffff20000820a478
-> [<ffff2000080837f8>] el1_irq+0xb8/0x130 arch/arm64/kernel/entry.S:486
-> [<     inline     >] arch_local_irq_restore
-> ./arch/arm64/include/asm/irqflags.h:81
-> [<ffff20000820a47c>] rcu_idle_exit+0x64/0xa8 kernel/rcu/tree.c:1030
-> [<     inline     >] cpuidle_idle_call kernel/sched/idle.c:200
-> [<ffff2000081bcbfc>] do_idle+0x1dc/0x2d0 kernel/sched/idle.c:243
-> [<ffff2000081bd1cc>] cpu_startup_entry+0x24/0x28 kernel/sched/idle.c:345
-> [<ffff200008099f8c>] secondary_start_kernel+0x2cc/0x358
-> arch/arm64/kernel/smp.c:276
-> [<000000000279f1a4>] 0x279f1a4
+> That change very much is to the ptrace_may_access checks.
 
-Reported-by: Dmitry Vyukov <dvyukov-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Tested-by: Dmitry Vyukov <dvyukov-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Fixes: add7c65ca426 ("pid: fix lockdep deadlock warning due to ucount_lock")
-Fixes: f333c700c610 ("pidns: Add a limit on the number of pid namespaces")
-Cc: stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Link: https://www.spinics.net/lists/kernel/msg2426637.html
-Signed-off-by: Nikolay Borisov <n.borisov.lkml-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- kernel/ucount.c | 14 ++++++++------
- 1 file changed, 8 insertions(+), 6 deletions(-)
+Sorry, you're right. I misremembered the patch.
 
-diff --git a/kernel/ucount.c b/kernel/ucount.c
-index 9d20d5dd298a..4bbd38ec3788 100644
---- a/kernel/ucount.c
-+++ b/kernel/ucount.c
-@@ -128,10 +128,10 @@ static struct ucounts *get_ucounts(struct user_namespace *ns, kuid_t uid)
- 	struct hlist_head *hashent = ucounts_hashentry(ns, uid);
- 	struct ucounts *ucounts, *new;
- 
--	spin_lock(&ucounts_lock);
-+	spin_lock_irq(&ucounts_lock);
- 	ucounts = find_ucounts(ns, uid, hashent);
- 	if (!ucounts) {
--		spin_unlock(&ucounts_lock);
-+		spin_unlock_irq(&ucounts_lock);
- 
- 		new = kzalloc(sizeof(*new), GFP_KERNEL);
- 		if (!new)
-@@ -141,7 +141,7 @@ static struct ucounts *get_ucounts(struct user_namespace *ns, kuid_t uid)
- 		new->uid = uid;
- 		atomic_set(&new->count, 0);
- 
--		spin_lock(&ucounts_lock);
-+		spin_lock_irq(&ucounts_lock);
- 		ucounts = find_ucounts(ns, uid, hashent);
- 		if (ucounts) {
- 			kfree(new);
-@@ -152,16 +152,18 @@ static struct ucounts *get_ucounts(struct user_namespace *ns, kuid_t uid)
- 	}
- 	if (!atomic_add_unless(&ucounts->count, 1, INT_MAX))
- 		ucounts = NULL;
--	spin_unlock(&ucounts_lock);
-+	spin_unlock_irq(&ucounts_lock);
- 	return ucounts;
- }
- 
- static void put_ucounts(struct ucounts *ucounts)
- {
-+	unsigned long flags;
-+
- 	if (atomic_dec_and_test(&ucounts->count)) {
--		spin_lock(&ucounts_lock);
-+		spin_lock_irqsave(&ucounts_lock, flags);
- 		hlist_del_init(&ucounts->node);
--		spin_unlock(&ucounts_lock);
-+		spin_unlock_irqrestore(&ucounts_lock, flags);
- 
- 		kfree(ucounts);
- 	}
+> You are not playing with setgroups if you don't have your own user
+> namespace.  So I don't see how the other cases are relevant.
+
+There's also oom_score_adj and a few others. User namespaces were just 
+the first example that I hit.
+
+> What I think I would do in the situation you describe is to
+> join what you are going to join.  Limit yourself to creating pid
+> namespaces with unshare.
+>
+> If you are joining a user namespace set undumpable.
+> If you are creating a user namespace create it and then set undumpable.
+
+I just tried to implement this, and it works _okay_. Except that 
+oom_scoore_adj also is no longer writeable if the process is not 
+dumpable -- and the "create container" and "modify process" stages in 
+runC are very separate and there's no easy way of reconciling the two.
+
+Ultimately this only affects rootless containers, where security is 
+simply not a major concern. However it is a bit frustrating that a 
+process which is not dumpable cannot even modify _its own_ 
+/proc/self/... files.
+
+My current fix is to just not set dumpable for rootless containers, as 
+it seems there's no proper way of setting dumpable in this context. It 
+appears as though the only way that dumpable works is by just using 
+CAP_DAC_OVERRIDE and completely ignoring the dumpable restrictions.
+
+>>> Clearing dumpable is to help not leak things
+>>> into a container when you call setns on a user namespace.
+>>
+>> It is also to help not leak things into a container when you join
+>> other namespaces. Most notably the PID namespace.
+>
+> Except that you don't strictly join a PID namespace.  You set a context
+> for children to run in a different PID namespace.  So you are safe
+> from PID namespaces as long as you don't call fork.
+
+But you need to fork eventually if you want to set settings on the 
+process which will eventually be the container process (PID 1 in the new 
+container). You can't exec before then, you need to fork first.
+
+>>> +	if (mode != (S_IFDIR|S_IRUGO|S_IXUGO)) {
+>>
+>> I'd just like to draw your attention to this special case -- why is
+>> this special cased? What was the original reasoning behind it? Does it
+>> make sense for a non-dumpable process to allow someone to change the
+>> mode of some random /proc/[pid]/ directories?
+>
+> This has nothing at all to do with changing modes and is all about
+> what uid/gid are set on the proc inode.   Usually it is the uid/gid
+> of the process in question but occassionally for undumpable processes
+> it is root/root to prevent people from accessing the files in question.
+
+My question was "why are o+rx directories set to the process's e[ug]id 
+but other inodes are set to the root [ug]id?". And it's the other way 
+around -- only for two directories on my system is it the case that the 
+process has /proc/pid/... inodes owned by the process's e[ug]id (the 
+rest are owned by root).
+
+And it is about modes, because once you're the owner of a file you can 
+change its mode (allowing other processes to access the inodes). I'm not 
+sure what other purpose changing the ownership *of a directory* serves 
+-- you cannot create new files (or unlink files) under /proc/self/... 
+directories so u+w permissions aren't actually "useful" (as far as I can 
+tell).
+
+
+>> I get the feeling that some of this logic is a bit iffy.
+>
+> It looks like I forgot to carry forward the comment that explains that
+> case in my patch.  Something I need to fix before I merge it.
+>
+> /*
+>  * Before the /proc/pid/status file was created the only way to read
+>  * the effective uid of a /process was to stat /proc/pid.  Reading
+>  * /proc/pid/status is slow enough that procps and other packages
+>  * kept stating /proc/pid.  To keep the rules in /proc simple I have
+>  * made this apply to all per process world readable and executable
+>  * directories.
+>  */
+>
+> Or in short.  I broke ps when I removed all of the special cases, and to
+> fix ps I added the existing special case.  Not that the uid or gid of a
+> directory that the whole world can access matters.
+
+Okay, but why is it being applied to _all_ subdirectories of /proc/pid? 
+Why not make it *only* set the owner of /proc/pid and nothing else? 
+Looks like that was not intended given the reasons you just provided.
+
 -- 
-2.10.1
+Aleksa Sarai
+Software Engineer (Containers)
+SUSE Linux GmbH
+https://www.cyphar.com/
