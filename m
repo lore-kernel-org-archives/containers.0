@@ -1,15 +1,12 @@
-From: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
-Subject: Re: `/sys/fs/cgroup/<subsystem>/tasks` file is empty when setns to
-	another cgroup namespace
-Date: Wed, 8 Feb 2017 23:45:59 +1100
-Message-ID: <5356513e-9f53-6628-39ce-7f0ef43f9f18@suse.de>
-References: <7ad93fd2-f33c-25a3-7da4-4477188d8155@huawei.com>
-	<5a40a5af-0737-4fac-0439-e59356f8bf48@huawei.com>
+From: Cynthia Morgan <cynthia.morgan-Nw4IG5tXArnYB3S1X52NWA@public.gmane.org>
+Subject: Dell Database Provider Info
+Date: Wed, 8 Feb 2017 15:43:25 +0000
+Message-ID: <MA1PR01MB05830461569FCC51C91975C387420@MA1PR01MB0583.INDPRD01.PROD.OUTLOOK.COM>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; Format="flowed"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <5a40a5af-0737-4fac-0439-e59356f8bf48-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
+Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,33 +16,21 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Yuanhong Peng <pengyuanhong-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-PiBJbiBhIHdvcmQsIHRoZSBjb25jbHVzaW9uIGlzIHRoYXQgaWYgYSBwcm9jZXNzIHVzZXMgYHNl
-dG5zKClgIHRvIGpvaW4KPiBhbm90aGVyIHByb2Nlc3PigJlzIGNncm91cCBuYW1lc3BhY2Ugd2l0
-aG91dCBiZWluZyBtb3ZlZCB0byB0aGUgdGFyZ2V0Cj4gY2dyb3VwbnMtcm9vdCwgdGhlbiBhZnRl
-ciB3ZSByZW1vdW50IGNncm91cGZzIGluc2lkZSB0aGUgY2dyb3VwCj4gbmFtZXNwYWNlLCB0aGUg
-c2hhcmVkIHByb2Nlc3PigJlzIGAvc3lzL2ZzL2Nncm91cC88c3Vic3lzdGVtPi90YXNrc2AKPiBm
-aWxlIHdvdWxkIGJlIHRoZSBzYW1lIGFzIHRoZSB0YXJnZXQgcHJvY2Vzc+KAmXMgaWYgdGhlIHR3
-byBwcm9jZXNzIGFyZSBpbgo+IHRoZSBzYW1lIHBpZCBuYW1lc3BhY2UsIHdoaWxlIHRoaXMgZmls
-ZSB3b3VsZCBiZSBlbXB0eSBpZiB0aGUgdHdvCj4gcHJvY2Vzc2VzIGFyZSBpbiBkaWZmZXJlbnQg
-cGlkIG5hbWVzcGFjZXMgKHByb2JhYmx5IGl04oCZcyBiZWNhdXNlIHRoYXQKPiB0aGUgc2hhcmVk
-IHByb2Nlc3MgY2Fubm90IHNlZSB0aGUgcGlkIG9mIHRoZSB0YXJnZXQgcHJvY2VzcykuCgpUaGlz
-IGlzIGV4cGVjdGVkLCBmb3IgdHdvIHJlYXNvbnM6CgoxLiBXaGVuIGRvaW5nIGEgbW91bnQgb2Yg
-Y2dyb3VwZnMsIHRoZSByb290IG9mIHRoZSBtb3VudCBpcyBnb2luZyB0byBiZSAKdGhlIGNncm91
-cCB0aGF0IHRoZSBjZ3JvdXAgbmFtZXNwYWNlIHdhcyBjcmVhdGVkIGluLiBUaGlzIG1lYW5zIHRo
-YXQgaWYgCnlvdXIgcHJvY2VzcyBpcyBub3QgaW4gdGhhdCBjZ3JvdXAsIHlvdSB3b24ndCBzZWUg
-aXQgaW4gdGhlIHRhc2tzIGZpbGUuCgoyLiBZb3UgY2Fubm90IHNlZSBwcm9jZXNzZXMgdGhhdCBh
-cmUgbm90IGluIHlvdXIgcGlkIG5hbWVzcGFjZSBpbnNpZGUgCnRoZSB0YXNrcyBmaWxlLgoKVGh1
-cywgdGhlIGZpbGUgaXMgZW1wdHkgYmVjYXVzZSBubyBwcm9jZXNzIGluc2lkZSB5b3VyIGNvbnRh
-aW5lciBpcyBpbiAKdGhlIGNncm91cCB0aGF0IGlzIHRoZSByb290IG9mIHlvdXIgY2dyb3VwIG5h
-bWVzcGFjZS4KCk92ZXJhbGwsIHRoZSB3YXkgdGhpcyBzaG91bGQgYmUgaGFuZGxlZCBpcyB0aGF0
-IGRvaW5nIAotLWNncm91cD08Y29udGFpbmVyPiBzaG91bGQgYWxzbyBpbnZvbHZlIHNldHRpbmcg
-YGNncm91cHNQYXRoYCBpbiB0aGUgCk9DSSBjb25maWd1cmF0aW9uIHRvIGFsc28gYmUgdGhlIHNh
-bWUgYXMgdGhlIGNncm91cCBhc3NvY2lhdGVkIHdpdGggdGhlIApjZ3JvdXAgbmFtZXNwYWNlLgoK
-LS0gCkFsZWtzYSBTYXJhaQpTb2Z0d2FyZSBFbmdpbmVlciAoQ29udGFpbmVycykKU1VTRSBMaW51
-eCBHbWJICmh0dHBzOi8vd3d3LmN5cGhhci5jb20vCl9fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNA
-bGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24u
-b3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+Hi Good Day,
+
+
+I am reaching out to you regarding Dell users contact information for your sales and marketing campaigns.
+
+Information fields: Contact First Name, Last Name, Job Title, Company, Address, Primary Industry, SIC Code, Employees size, Email Address, Revenue, and web Address.
+
+Let me know if you are looking for any other technology user base or IT decision makers (C, V, D and M level) contact information.
+
+Warm regards,
+Cynthia
+Demand Generation- Technology Database
+
+
+       If see no interest in this, reply "REMOVE" in subject line
