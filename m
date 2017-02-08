@@ -1,13 +1,11 @@
 From: Cao Shufeng <caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH_v4.1_3_3] Make core_pattern support namespace
-Date: Wed, 8 Feb 2017 11:00:57 +0800
-Message-ID: <1486522857-9946-4-git-send-email-caosf.fnst__27960.2668517784$1486523438$gmane$org@cn.fujitsu.com>
-References: <1486522857-9946-1-git-send-email-caosf.fnst@cn.fujitsu.com>
+Subject: [PATCH_v4.1_0_3] Make core_pattern support namespace
+Date: Wed, 8 Feb 2017 11:00:54 +0800
+Message-ID: <1486522857-9946-1-git-send-email-caosf.fnst__45149.1416818046$1486523450$gmane$org@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1486522857-9946-1-git-send-email-caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,287 +19,98 @@ To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, mguzik-H+wXaHxf7aLQT0dZR+A
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkp-JC7UmRfGjtg@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+This patchset includes following function points:
+1: Let usermodehelper function possible to set pid namespace
+   done by: [PATCH v4 1/3] Make call_usermodehelper_exec possible
+   to set pid namespace.
+2: Let pipe_type core_pattern write dump into container's rootfs
+   done by: [PATCH v4 2/3] Limit dump_pipe program's permission to
+   init for container.
+2: Make separate core_pattern setting for each container
+   done by: [PATCH v4 3/3] Make core_pattern support namespace
+3: Compatibility with current system
+   also included in: [PATCH v4 3/3] Make core_pattern support namespace
+   If container hadn't change core_pattern setting, it will keep
+   same setting with host.
 
-Currently, each container shared one copy of coredump setting
-with the host system, if host system changed the setting, each
-running containers will be affected.
-Same story happened when container changed core_pattern, both
-host and other container will be affected.
+Test:
+1: Pass a test script for each function of this patchset
+   ## TEST IN HOST ##
+   [root@kerneldev dumptest]# ./test_host
+   Set file core_pattern: OK
+   ./test_host: line 41:  2366 Segmentation fault      (core dumped) "$SCRI=
+PT_BASE_DIR"/make_dump
+   Checking dumpfile: OK
+   Set file core_pattern: OK
+   ./test_host: line 41:  2369 Segmentation fault      (core dumped) "$SCRI=
+PT_BASE_DIR"/make_dump
+   Checking dump_pipe triggered: OK
+   Checking rootfs: OK
+   Checking dumpfile: OK
+   Checking namespace: OK
+   Checking process list: OK
+   Checking capabilities: OK
 
-For container based on namespace design, it is good to allow
-each container keeping their own coredump setting.
+   ## TEST IN GUEST ##
+   # ./test
+   Segmentation fault (core dumped)
+   Checking dump_pipe triggered: OK
+   Checking rootfs: OK
+   Checking dumpfile: OK
+   Checking namespace: OK
+   Checking process list: OK
+   Checking cg pids: OK
+   Checking capabilities: OK
+   [   64.940734] make_dump[2432]: segfault at 0 ip 000000000040049d sp 000=
+07ffc4af025f0 error 6 in make_dump[400000+a6000]
+   #
+2: Pass other test(which is not easy to do in script) by hand.
 
-It will bring us following benefit:
-1: Each container can change their own coredump setting
-   based on operation on /proc/sys/kernel/core_pattern
-2: Coredump setting changed in host will not affect
-   running containers.
-3: Support both case of "putting coredump in guest" and
-   "putting curedump in host".
+Changelog v4-v4.1:
+1. Fix kernel panic pointed out by:
+   xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org
 
-Each namespace-based software(lxc, docker, ..) can use this function
-to custom their dump setting.
+Changelog v3.1-v4:
+1. remove extra fork pointed out by:
+   Andrei Vagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-And this function makes each continer working as separate system,
-it fit for design goal of namespace.
+Changelog v3-v3.1:
+1. Switch "pwd" of pipe program to container's root fs.
+2. Rebase on top of v4.9-rc1
 
-Test(in lxc):
- # In the host
- # ----------------
- # echo host_core >/proc/sys/kernel/core_pattern
- # cat /proc/sys/kernel/core_pattern
- host_core
- # ulimit -c 1024000
- # ./make_dump
- Segmentation fault (core dumped)
- # ls -l
- -rw------- 1 root root 331776 Feb  4 18:02 host_core.2175
- -rwxr-xr-x 1 root root 759731 Feb  4 18:01 make_dump
- #
+Changelog v2->v3:
+1: Fix problem of setting pid namespace, pointed out by:
+   Andrei Vagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
- # In the container
- # ----------------
- # cat /proc/sys/kernel/core_pattern
- host_core
- # echo container_core >/proc/sys/kernel/core_pattern
- # ./make_dump
- Segmentation fault (core dumped)
- # ls -l
- -rwxr-xr-x    1 root     root       759731 Feb  4 10:45 make_dump
- -rw-------    1 root     root       331776 Feb  4 10:45 container_core.16
- #
+Changelog v1(RFC)->v2:
+1: Add [PATCH 2/2] which was todo in [RFC v1].
+2: Pass a test script for each function.
+3: Rebase on top of v4.7.
 
- # Return to host
- # ----------------
- # cat /proc/sys/kernel/core_pattern
- host_core
- # ls
- host_core.2175  make_dump  make_dump.c
- # rm -f host_core.2175
- # ./make_dump
- Segmentation fault (core dumped)
- # ls -l
- -rw------- 1 root root 331776 Feb  4 18:49 host_core.2351
- -rwxr-xr-x 1 root root 759731 Feb  4 18:01 make_dump
- #
-
+Suggested-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Suggested-by: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Signed-off-by: Zhao Lei <zhaolei-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
----
- fs/coredump.c                 | 25 ++++++++++++++++------
- include/linux/pid_namespace.h |  3 +++
- kernel/pid.c                  |  2 ++
- kernel/pid_namespace.c        |  2 ++
- kernel/sysctl.c               | 50 ++++++++++++++++++++++++++++++++++++++-----
- 5 files changed, 70 insertions(+), 12 deletions(-)
+Signed-off-by: Cao Shufeng <caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
-diff --git a/fs/coredump.c b/fs/coredump.c
-index 83282d7..4bab7bf 100644
---- a/fs/coredump.c
-+++ b/fs/coredump.c
-@@ -50,7 +50,6 @@
- 
- int core_uses_pid;
- unsigned int core_pipe_limit;
--char core_pattern[CORENAME_MAX_SIZE] = "core";
- static int core_name_size = CORENAME_MAX_SIZE;
- 
- struct core_name {
-@@ -58,8 +57,6 @@ struct core_name {
- 	int used, size;
- };
- 
--/* The maximal length of core_pattern is also specified in sysctl.c */
--
- static int expand_corename(struct core_name *cn, int size)
- {
- 	char *corename = krealloc(cn->corename, size, GFP_KERNEL);
-@@ -184,10 +181,10 @@ static int cn_print_exe_file(struct core_name *cn)
-  * name into corename, which must have space for at least
-  * CORENAME_MAX_SIZE bytes plus one byte for the zero terminator.
-  */
--static int format_corename(struct core_name *cn, struct coredump_params *cprm)
-+static int format_corename(struct core_name *cn, const char *pat_ptr,
-+			   struct coredump_params *cprm)
- {
- 	const struct cred *cred = current_cred();
--	const char *pat_ptr = core_pattern;
- 	int ispipe = (*pat_ptr == '|');
- 	int pid_in_pattern = 0;
- 	int err = 0;
-@@ -666,6 +663,8 @@ void do_coredump(const siginfo_t *siginfo)
- 		 */
- 		.mm_flags = mm->flags,
- 	};
-+	struct pid_namespace *pid_ns;
-+	char core_pattern[CORENAME_MAX_SIZE];
- 
- 	audit_core_dumps(siginfo->si_signo);
- 
-@@ -675,6 +674,18 @@ void do_coredump(const siginfo_t *siginfo)
- 	if (!__get_dumpable(cprm.mm_flags))
- 		goto fail;
- 
-+	pid_ns = task_active_pid_ns(current);
-+	spin_lock(&pid_ns->core_pattern_lock);
-+	while (pid_ns != &init_pid_ns) {
-+		if (pid_ns->core_pattern[0])
-+			break;
-+		spin_unlock(&pid_ns->core_pattern_lock);
-+		pid_ns = pid_ns->parent,
-+		spin_lock(&pid_ns->core_pattern_lock);
-+	}
-+	strcpy(core_pattern, pid_ns->core_pattern);
-+	spin_unlock(&pid_ns->core_pattern_lock);
-+
- 	cred = prepare_creds();
- 	if (!cred)
- 		goto fail;
-@@ -696,7 +707,7 @@ void do_coredump(const siginfo_t *siginfo)
- 
- 	old_cred = override_creds(cred);
- 
--	ispipe = format_corename(&cn, &cprm);
-+	ispipe = format_corename(&cn, core_pattern, &cprm);
- 
- 	if (ispipe) {
- 		int dump_count;
-@@ -743,7 +754,7 @@ void do_coredump(const siginfo_t *siginfo)
- 		}
- 
- 		rcu_read_lock();
--		vinit_task = find_task_by_vpid(1);
-+		vinit_task = find_task_by_pid_ns(1, pid_ns);
- 		rcu_read_unlock();
- 		if (!vinit_task) {
- 			printk(KERN_WARNING "failed getting init task info, skipping core dump\n");
-diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
-index 34cce96..f0b0c21 100644
---- a/include/linux/pid_namespace.h
-+++ b/include/linux/pid_namespace.h
-@@ -9,6 +9,7 @@
- #include <linux/nsproxy.h>
- #include <linux/kref.h>
- #include <linux/ns_common.h>
-+#include <linux/binfmts.h>
- 
- struct pidmap {
-        atomic_t nr_free;
-@@ -46,6 +47,8 @@ struct pid_namespace {
- 	int hide_pid;
- 	int reboot;	/* group exit code if this pidns was rebooted */
- 	struct ns_common ns;
-+	spinlock_t core_pattern_lock;
-+	char core_pattern[CORENAME_MAX_SIZE];
- };
- 
- extern struct pid_namespace init_pid_ns;
-diff --git a/kernel/pid.c b/kernel/pid.c
-index f66162f..e7ee122 100644
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -83,6 +83,8 @@ struct pid_namespace init_pid_ns = {
- #ifdef CONFIG_PID_NS
- 	.ns.ops = &pidns_operations,
- #endif
-+	.core_pattern_lock = __SPIN_LOCK_UNLOCKED(init_pid_ns.core_pattern_lock),
-+	.core_pattern = "core",
- };
- EXPORT_SYMBOL_GPL(init_pid_ns);
- 
-diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
-index df9e8e9..c70ca5d 100644
---- a/kernel/pid_namespace.c
-+++ b/kernel/pid_namespace.c
-@@ -137,6 +137,8 @@ static struct pid_namespace *create_pid_namespace(struct user_namespace *user_ns
- 	for (i = 1; i < PIDMAP_ENTRIES; i++)
- 		atomic_set(&ns->pidmap[i].nr_free, BITS_PER_PAGE);
- 
-+	spin_lock_init(&ns->core_pattern_lock);
-+
- 	return ns;
- 
- out_free_map:
-diff --git a/kernel/sysctl.c b/kernel/sysctl.c
-index 706309f..c73ced5 100644
---- a/kernel/sysctl.c
-+++ b/kernel/sysctl.c
-@@ -484,7 +484,7 @@ static struct ctl_table kern_table[] = {
- 	},
- 	{
- 		.procname	= "core_pattern",
--		.data		= core_pattern,
-+		.data		= NULL,
- 		.maxlen		= CORENAME_MAX_SIZE,
- 		.mode		= 0644,
- 		.proc_handler	= proc_dostring_coredump,
-@@ -2401,12 +2401,20 @@ int proc_dointvec_minmax(struct ctl_table *table, int write,
- static void validate_coredump_safety(void)
- {
- #ifdef CONFIG_COREDUMP
-+	struct pid_namespace *pid_ns = task_active_pid_ns(current);
-+	const char *core_pattern;
-+
-+	spin_lock(&pid_ns->core_pattern_lock);
-+	core_pattern = pid_ns->core_pattern;
-+
- 	if (suid_dumpable == SUID_DUMP_ROOT &&
- 	    core_pattern[0] != '/' && core_pattern[0] != '|') {
- 		printk(KERN_WARNING "Unsafe core_pattern used with "\
- 			"suid_dumpable=2. Pipe handler or fully qualified "\
- 			"core dump path required.\n");
- 	}
-+
-+	spin_unlock(&pid_ns->core_pattern_lock);
- #endif
- }
- 
-@@ -2423,10 +2431,42 @@ static int proc_dointvec_minmax_coredump(struct ctl_table *table, int write,
- static int proc_dostring_coredump(struct ctl_table *table, int write,
- 		  void __user *buffer, size_t *lenp, loff_t *ppos)
- {
--	int error = proc_dostring(table, write, buffer, lenp, ppos);
--	if (!error)
--		validate_coredump_safety();
--	return error;
-+	int ret;
-+	char core_pattern[CORENAME_MAX_SIZE];
-+	struct pid_namespace *pid_ns = task_active_pid_ns(current);
-+
-+	if (write) {
-+		if (*ppos && sysctl_writes_strict == SYSCTL_WRITES_WARN)
-+			warn_sysctl_write(table);
-+
-+		ret = _proc_do_string(core_pattern, table->maxlen, write,
-+				      (char __user *)buffer, lenp, ppos);
-+		if (ret)
-+			return ret;
-+
-+		spin_lock(&pid_ns->core_pattern_lock);
-+		strcpy(pid_ns->core_pattern, core_pattern);
-+		spin_unlock(&pid_ns->core_pattern_lock);
-+	} else {
-+		spin_lock(&pid_ns->core_pattern_lock);
-+		while (pid_ns != &init_pid_ns) {
-+			if (pid_ns->core_pattern[0])
-+				break;
-+			spin_unlock(&pid_ns->core_pattern_lock);
-+			pid_ns = pid_ns->parent,
-+			spin_lock(&pid_ns->core_pattern_lock);
-+		}
-+		strcpy(core_pattern, pid_ns->core_pattern);
-+		spin_unlock(&pid_ns->core_pattern_lock);
-+
-+		ret = _proc_do_string(core_pattern, table->maxlen, write,
-+				      (char __user *)buffer, lenp, ppos);
-+		if (ret)
-+			return ret;
-+	}
-+
-+	validate_coredump_safety();
-+	return 0;
- }
- #endif
- 
+Cao Shufeng (2):
+  Make call_usermodehelper_exec possible to set namespaces
+  Limit dump_pipe program's permission to init for container
+
+Zhao Lei (1):
+  Make core_pattern support namespace
+
+ fs/coredump.c                 | 150 +++++++++++++++++++++++++++++++++++++++---
+ include/linux/binfmts.h       |   2 +
+ include/linux/kmod.h          |   5 ++
+ include/linux/pid_namespace.h |   3 +
+ init/do_mounts_initrd.c       |   3 +-
+ kernel/kmod.c                 |  55 +++++++++++++---
+ kernel/pid.c                  |   2 +
+ kernel/pid_namespace.c        |   2 +
+ kernel/sysctl.c               |  50 ++++++++++++--
+ lib/kobject_uevent.c          |   3 +-
+ security/keys/request_key.c   |   4 +-
+ 11 files changed, 253 insertions(+), 26 deletions(-)
+
 -- 
 2.9.3
