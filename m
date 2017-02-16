@@ -1,16 +1,14 @@
-From: Yuanhong Peng <pengyuanhong-hv44wF8Li93QT0dZR+AlfA@public.gmane.org>
-Subject: Re: `/sys/fs/cgroup/<subsystem>/tasks` file is empty when setns to
-	another cgroup namespace
-Date: Thu, 9 Feb 2017 09:18:58 +0800
-Message-ID: <512acd0f-8f65-f25b-77c4-51b01ef5adb2@huawei.com>
-References: <7ad93fd2-f33c-25a3-7da4-4477188d8155@huawei.com>
-	<5a40a5af-0737-4fac-0439-e59356f8bf48@huawei.com>
-	<5356513e-9f53-6628-39ce-7f0ef43f9f18@suse.de>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH] groups: don't return unmapped gids in getgroups(2)
+Date: Fri, 17 Feb 2017 07:19:36 +1300
+Message-ID: <87a89mm213.fsf__49202.7030363262$1487269464$gmane$org@xmission.com>
+References: <20170216174750.4995-1-asarai@suse.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <5356513e-9f53-6628-39ce-7f0ef43f9f18-l3A5Bk7waGM@public.gmane.org>
+In-Reply-To: <20170216174750.4995-1-asarai-l3A5Bk7waGM@public.gmane.org> (Aleksa Sarai's message of
+	"Fri, 17 Feb 2017 04:47:50 +1100")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,34 +18,106 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dev-IGmTWi+3HBZvNhPySn5qfx2eb7JE58TQ@public.gmane.org, cyphar-gVpy/LI/lHzQT0dZR+AlfA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gMjAxNy8yLzggMjA6NDUsIEFsZWtzYSBTYXJhaSB3cm90ZToKPj4gSW4gYSB3b3JkLCB0aGUg
-Y29uY2x1c2lvbiBpcyB0aGF0IGlmIGEgcHJvY2VzcyB1c2VzIGBzZXRucygpYCB0byBqb2luCj4+
-IGFub3RoZXIgcHJvY2Vzc+KAmXMgY2dyb3VwIG5hbWVzcGFjZSB3aXRob3V0IGJlaW5nIG1vdmVk
-IHRvIHRoZSB0YXJnZXQKPj4gY2dyb3VwbnMtcm9vdCwgdGhlbiBhZnRlciB3ZSByZW1vdW50IGNn
-cm91cGZzIGluc2lkZSB0aGUgY2dyb3VwCj4+IG5hbWVzcGFjZSwgdGhlIHNoYXJlZCBwcm9jZXNz
-4oCZcyBgL3N5cy9mcy9jZ3JvdXAvPHN1YnN5c3RlbT4vdGFza3NgCj4+IGZpbGUgd291bGQgYmUg
-dGhlIHNhbWUgYXMgdGhlIHRhcmdldCBwcm9jZXNz4oCZcyBpZiB0aGUgdHdvIHByb2Nlc3MgYXJl
-IGluCj4+IHRoZSBzYW1lIHBpZCBuYW1lc3BhY2UsIHdoaWxlIHRoaXMgZmlsZSB3b3VsZCBiZSBl
-bXB0eSBpZiB0aGUgdHdvCj4+IHByb2Nlc3NlcyBhcmUgaW4gZGlmZmVyZW50IHBpZCBuYW1lc3Bh
-Y2VzIChwcm9iYWJseSBpdOKAmXMgYmVjYXVzZSB0aGF0Cj4+IHRoZSBzaGFyZWQgcHJvY2VzcyBj
-YW5ub3Qgc2VlIHRoZSBwaWQgb2YgdGhlIHRhcmdldCBwcm9jZXNzKS4KPiAKPiBUaGlzIGlzIGV4
-cGVjdGVkLCBmb3IgdHdvIHJlYXNvbnM6Cj4gCj4gMS4gV2hlbiBkb2luZyBhIG1vdW50IG9mIGNn
-cm91cGZzLCB0aGUgcm9vdCBvZiB0aGUgbW91bnQgaXMgZ29pbmcgdG8gYmUKPiB0aGUgY2dyb3Vw
-IHRoYXQgdGhlIGNncm91cCBuYW1lc3BhY2Ugd2FzIGNyZWF0ZWQgaW4uIFRoaXMgbWVhbnMgdGhh
-dCBpZgo+IHlvdXIgcHJvY2VzcyBpcyBub3QgaW4gdGhhdCBjZ3JvdXAsIHlvdSB3b24ndCBzZWUg
-aXQgaW4gdGhlIHRhc2tzIGZpbGUuCj4gCj4gMi4gWW91IGNhbm5vdCBzZWUgcHJvY2Vzc2VzIHRo
-YXQgYXJlIG5vdCBpbiB5b3VyIHBpZCBuYW1lc3BhY2UgaW5zaWRlCj4gdGhlIHRhc2tzIGZpbGUu
-Cj4gCj4gVGh1cywgdGhlIGZpbGUgaXMgZW1wdHkgYmVjYXVzZSBubyBwcm9jZXNzIGluc2lkZSB5
-b3VyIGNvbnRhaW5lciBpcyBpbgo+IHRoZSBjZ3JvdXAgdGhhdCBpcyB0aGUgcm9vdCBvZiB5b3Vy
-IGNncm91cCBuYW1lc3BhY2UuCj4gCj4gT3ZlcmFsbCwgdGhlIHdheSB0aGlzIHNob3VsZCBiZSBo
-YW5kbGVkIGlzIHRoYXQgZG9pbmcKPiAtLWNncm91cD08Y29udGFpbmVyPiBzaG91bGQgYWxzbyBp
-bnZvbHZlIHNldHRpbmcgYGNncm91cHNQYXRoYCBpbiB0aGUKPiBPQ0kgY29uZmlndXJhdGlvbiB0
-byBhbHNvIGJlIHRoZSBzYW1lIGFzIHRoZSBjZ3JvdXAgYXNzb2NpYXRlZCB3aXRoIHRoZQo+IGNn
-cm91cCBuYW1lc3BhY2UuCgpHb3QgaXQhIFRvbnMgb2YgdGhhbmtzIGZvciB5b3VyIHJlcGx5IDop
-CgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWlu
-ZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0
-dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5l
-cnM=
+
+Added a few more relevant mailing-lists to the CC list.
+
+Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org> writes:
+
+> One thing overlooked by commit 9cc46516ddf4 ("userns: Add a knob to
+> disable setgroups on a per user namespace basis") is that because
+> setgroups(2) no longer works in user namespaces it doesn't make any
+> sense to be returning weird group IDs that the process cannot do
+> anything with.
+
+This code works the same weather or not setgroups is enabled.
+
+> This change, along with the other changes made to require unprivileged
+> users to always disable setgroups(2), means that userspace programs such
+> as apt break inside rootless containers. While this change does change
+> the userspace ABI, any userspace program that has to deal with
+> getgroups(2) would have to filter out these "fake" group IDs anyway.
+> This just makes it so that less applications will have to handle this
+> broken API.
+
+Is it broken?  Unless I am mistaken if we have a 16bit getgroups
+call and we 32bit group ids  getgroups it behaves exactly the same way.
+
+The value we is (u16)-2.  The traditional linux group id for this
+purpose.
+
+In all other contexts the best we can do for applications has been to
+return the user id or group id that says the value you are looking for
+does not fit in this context.  Which makes me suspect this is not the
+right solution for getgroups.
+
+I don't know why apt breaks.  You have not described that.  Perhaps apt
+is seeing something misconfigured and complaining properly.
+
+I can be persauded but I need a better argument than this change makes
+one applicaiton work for me.
+
+Eric
+
+
+> Fixes: 9cc46516ddf4 ("userns: Add a knob to disable setgroups on a per user namespace basis")
+> Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> Cc: <dev-IGmTWi+3HBZvNhPySn5qfx2eb7JE58TQ@public.gmane.org>
+> Signed-off-by: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
+> ---
+>  kernel/groups.c | 25 ++++++++++++++++++-------
+>  1 file changed, 18 insertions(+), 7 deletions(-)
+>
+> diff --git a/kernel/groups.c b/kernel/groups.c
+> index 8dd7a61b7115..ebd01fff37d6 100644
+> --- a/kernel/groups.c
+> +++ b/kernel/groups.c
+> @@ -41,16 +41,27 @@ static int groups_to_user(gid_t __user *grouplist,
+>  			  const struct group_info *group_info)
+>  {
+>  	struct user_namespace *user_ns = current_user_ns();
+> -	int i;
+> +	int i, j = 0;
+>  	unsigned int count = group_info->ngroups;
+>  
+>  	for (i = 0; i < count; i++) {
+> +		kgid_t kgid = group_info->gid[i];
+>  		gid_t gid;
+> -		gid = from_kgid_munged(user_ns, group_info->gid[i]);
+> -		if (put_user(gid, grouplist+i))
+> +
+> +		/*
+> +		 * Don't return unmapped gids, since there's nothing userspace
+> +		 * can do about them and they are very confusing -- since
+> +		 * setgroups(2) is disabled in user namespaces.
+> +		 */
+> +		if (!kgid_has_mapping(user_ns, kgid))
+> +			continue;
+> +
+> +		gid = from_kgid(user_ns, kgid);
+> +		if (put_user(gid, grouplist+j))
+>  			return -EFAULT;
+> +		j++;
+>  	}
+> -	return 0;
+> +	return j;
+>  }
+>  
+>  /* fill a group_info from a user-space array - it must be allocated already */
+> @@ -177,10 +188,10 @@ SYSCALL_DEFINE2(getgroups, int, gidsetsize, gid_t __user *, grouplist)
+>  			i = -EINVAL;
+>  			goto out;
+>  		}
+> -		if (groups_to_user(grouplist, cred->group_info)) {
+> -			i = -EFAULT;
+> +
+> +		i = groups_to_user(grouplist, cred->group_info);
+> +		if (i < 0)
+>  			goto out;
+> -		}
+>  	}
+>  out:
+>  	return i;
