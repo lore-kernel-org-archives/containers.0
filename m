@@ -1,15 +1,12 @@
-From: Andy Lutomirski <luto-kltTT9wpgjJwATOyAt5JVQ@public.gmane.org>
-Subject: Re: [GIT PULL] namespaces related fixes for v4.11-rc1
-Date: Wed, 22 Feb 2017 19:06:17 -0800
-Message-ID: <CALCETrU5SbbBq7ujuhVnBvm_8cX530zKNUycx0MiuhBqUgpwUQ@mail.gmail.com>
-References: <8760k29cku.fsf@xmission.com>
-	<84361910-ba16-79ff-09cd-c76b3f66cc85@suse.de>
-	<8737f54rue.fsf@xmission.com>
+From: "sunsesoft7" <sunsesoft7-99ngITUJTB1eoWH0uzbU5w@public.gmane.org>
+Subject: =?GB2312?B?vbW1zc3iw7PStc7x1LG/zbunv6q3osPFvPejrLK7wMu30cqxvOTU2sCsu/jR?=
+	=?GB2312?B?r8XMye3Jzw==?=
+Date: Sat, 25 Feb 2017 18:00:24 +0800
+Message-ID: <201702251800248286789@benpa.net>
+Reply-To: 1352614075-9uewiaClKEY@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============6159349504765904809=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <8737f54rue.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,25 +16,51 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Feb 22, 2017 at 5:29 PM, Eric W. Biederman
-<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
-> Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org> writes:
->
->>> The only known user of this prctl systemd
->>> forks all children after the prctl.  So no userspace regressions will
->>> occur.
->>
->> Note that runC and containerd (and thus Docker) as well as cri-o use the prctl
->> as well -- to be able to collect exit codes from a non-child process (namely to
->> collect the exit code from PID 1 in the container).
->
-> Are any of those affected by the change?  I would not expect so.  As it
-> would require having children or grand children whose exit codes you
-> don't want to collect.
+--===============6159349504765904809==
+Content-Type: text/plain; charset="GB2312"
 
-FWIW, I have private code that uses PR_SET_CHILD_SUBREAPER, too.  I
-don't see why it would be affected by this change.
+   您现在还为开发客户而感到困扰吗？  xukppldybwlfkdryzt
+   双喜外贸客户搜索与开发系统帮住您避开外贸淡季，避开B 2 B谈价询盘和价格战 lzhjgvfikdp
+
+   软件可以利用你们的产品的“关键词”搜索出你们行业的所有的经销商，批发商，OEM商等所有的联系方式yhhwrchfzl
+
+   完全避开B2B的价格战，展会的成本高，主动出击迅速找到真正对你们产品感兴趣的客户。uzwqcilfw
+
+   挖掘出你们对手还没有挖掘到的客户，选择搜索出海量的客户信息来。hprkblqp
+
+
+
+   点击一下鼠标，调出全世界你们行业的目标客户的联系方式。 kqwzwnz h
+
+   点击一下鼠标，让你们的客户都知道你们的产品信息 njajppi w
+
+
+
+   演示Q Q:
+   1352614075{可利用贵司常用的产品关键词，免费在线演示软件的功能和搜索效果}jjjerdiiCHARdsbcdvim%RAN_
+
+   咨询电话：15011847686  nvmtvr
+   i
+
+   英语小笑话，望您开心一笑     uhjbqydbt
+   One day a man was taunting Alexandre Dumas，
+   the greatFrench novelist，with his ancestry．
+   “Why，” snarled the fellow，“you are a quadroon；yourfather was a
+   mulatto，and your grandfather was a negro．” “Yes，”
+    roared Dumas，“and，if you wish to know'mygreatgrandfather was a monkey．
+   In fact， my pedigree beganwhere yours terminates．”
+
+--===============6159349504765904809==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============6159349504765904809==--
