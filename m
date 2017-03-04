@@ -1,7 +1,7 @@
 From: Dmitry Vyukov via Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Subject: Re: ucount: use-after-free read in inc_ucount & dec_ucount
-Date: Sat, 4 Mar 2017 12:57:10 +0100
-Message-ID: <CACT4Y+bsh+9TgDURBdRyR3HeVTjK-TKZ-CKQDqXgJrbXHiu-nA@mail.gmail.com>
+Date: Sat, 4 Mar 2017 13:01:09 +0100
+Message-ID: <CACT4Y+b7YXnoOkdYTjp6D6XH-zuYRx063hMayOVMyJVc735dtQ@mail.gmail.com>
 References: <C4CB953C-4712-43F3-9E75-1A12C14B8A4B@gmail.com>
 	<180fb7dc-790e-8e82-0cc1-c6e15ddcd20b@gmail.com>
 	<87pohy1fx6.fsf@xmission.com>
@@ -28,8 +28,6 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, syz
 List-Id: containers.vger.kernel.org
 
 On Sat, Mar 4, 2017 at 12:50 PM, Dmitry Vyukov <dvyukov-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
-> On Sat, Mar 4, 2017 at 12:44 PM, Dmitry Vyukov <dvyukov-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
->> On Sat, Mar 4, 2017 at 11:58 AM, Nikolay Borisov
 >> <n.borisov.lkml-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
 >>> [Addressing Dmitry Vyukov to ask for syzkaller clarification]
 >>>
@@ -258,103 +256,6 @@ On Sat, Mar 4, 2017 at 12:50 PM, Dmitry Vyukov <dvyukov-hpIqsD4AKlfQT0dZR+AlfA@p
 >                 kfree(ucounts);
 
 
-I was able to reproduce it by adding udelay(100) into put_ucounts
-after the decrement. The workload was just lots of parallel processes
-creating private inotify's.
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 
-
-==================================================================
-BUG: KASAN: use-after-free in atomic_dec_if_positive
-include/linux/compiler.h:254 [inline] at addr ffff88006c86de3c
-BUG: KASAN: use-after-free in dec_ucount+0x1e5/0x210
-kernel/ucount.c:219 at addr ffff88006c86de3c
-Read of size 4 by task udevadm/1644
-CPU: 2 PID: 1644 Comm: udevadm Not tainted 4.10.0+ #278
-Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Bochs 01/01/2011
-Call Trace:
- __dump_stack lib/dump_stack.c:15 [inline]
- dump_stack+0x2ee/0x3ef lib/dump_stack.c:51
- kasan_object_err+0x1c/0x70 mm/kasan/report.c:166
- print_address_description mm/kasan/report.c:204 [inline]
- kasan_report_error mm/kasan/report.c:288 [inline]
- kasan_report.part.2+0x198/0x440 mm/kasan/report.c:310
- kasan_report mm/kasan/report.c:330 [inline]
- __asan_report_load4_noabort+0x29/0x30 mm/kasan/report.c:330
- atomic_dec_if_positive include/linux/compiler.h:254 [inline]
- dec_ucount+0x1e5/0x210 kernel/ucount.c:219
- dec_inotify_instances fs/notify/inotify/inotify.h:37 [inline]
- inotify_free_group_priv+0x6c/0x80 fs/notify/inotify/inotify_fsnotify.c:169
- fsnotify_final_destroy_group fs/notify/group.c:37 [inline]
- fsnotify_put_group+0x73/0xa0 fs/notify/group.c:110
- fsnotify_destroy_group+0xec/0x120 fs/notify/group.c:93
- inotify_release+0x37/0x50 fs/notify/inotify/inotify_user.c:280
- __fput+0x332/0x7f0 fs/file_table.c:208
- ____fput+0x15/0x20 fs/file_table.c:244
- task_work_run+0x18a/0x260 kernel/task_work.c:116
- tracehook_notify_resume include/linux/tracehook.h:191 [inline]
- exit_to_usermode_loop+0x23b/0x2a0 arch/x86/entry/common.c:160
- prepare_exit_to_usermode arch/x86/entry/common.c:190 [inline]
- syscall_return_slowpath+0x4d3/0x570 arch/x86/entry/common.c:259
- entry_SYSCALL_64_fastpath+0xc0/0xc2
-RIP: 0033:0x7f14a12fa2b0
-RSP: 002b:00007ffdeea0a6c8 EFLAGS: 00000246 ORIG_RAX: 0000000000000003
-RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007f14a12fa2b0
-RDX: 0000000000e03000 RSI: 00007f14a15b0e40 RDI: 0000000000000003
-RBP: 0000000000000000 R08: 00007f14a1bf37a0 R09: 0000000000000000
-R10: 1999999999999999 R11: 0000000000000246 R12: 0000000000000078
-R13: 0000000000000000 R14: 431bde82d7b634db R15: 0000000000de2130
-Object at ffff88006c86de00, in cache kmalloc-96 size: 96
-Allocated:
-PID = 0
- save_stack_trace+0x16/0x20 arch/x86/kernel/stacktrace.c:57
- save_stack+0x43/0xd0 mm/kasan/kasan.c:502
- set_track mm/kasan/kasan.c:514 [inline]
- kasan_kmalloc+0xaa/0xd0 mm/kasan/kasan.c:605
- kmem_cache_alloc_trace+0x10b/0x6e0 mm/slab.c:3637
- kmalloc include/linux/slab.h:490 [inline]
- kzalloc include/linux/slab.h:663 [inline]
- get_ucounts kernel/ucount.c:140 [inline]
- inc_ucount+0x482/0x950 kernel/ucount.c:197
- inc_mnt_namespaces fs/namespace.c:2843 [inline]
- alloc_mnt_ns+0xfe/0x560 fs/namespace.c:2874
- create_mnt_ns+0x6e/0x310 fs/namespace.c:2984
- init_mount_tree fs/namespace.c:3224 [inline]
- mnt_init+0x2b8/0x471 fs/namespace.c:3276
- vfs_caches_init+0xaa/0x156 fs/dcache.c:3626
- start_kernel+0x72e/0x7d2 init/main.c:648
- x86_64_start_reservations+0x2a/0x2c arch/x86/kernel/head64.c:195
- x86_64_start_kernel+0x13c/0x149 arch/x86/kernel/head64.c:176
- verify_cpu+0x0/0xfc
-Freed:
-PID = 1644
- save_stack_trace+0x16/0x20 arch/x86/kernel/stacktrace.c:57
- save_stack+0x43/0xd0 mm/kasan/kasan.c:502
- set_track mm/kasan/kasan.c:514 [inline]
- kasan_slab_free+0x6f/0xb0 mm/kasan/kasan.c:578
- __cache_free mm/slab.c:3513 [inline]
- kfree+0xd3/0x250 mm/slab.c:3830
- put_ucounts+0x341/0x3e0 kernel/ucount.c:174
- dec_ucount+0x172/0x210 kernel/ucount.c:222
- dec_inotify_watches fs/notify/inotify/inotify.h:47 [inline]
- inotify_ignored_and_remove_idr+0x80/0x90 fs/notify/inotify/inotify_user.c:501
- inotify_freeing_mark+0x1d/0x30 fs/notify/inotify/inotify_fsnotify.c:125
- __fsnotify_free_mark+0x13c/0x2b0 fs/notify/mark.c:203
- fsnotify_detach_group_marks+0xd2/0x180 fs/notify/mark.c:508
- fsnotify_destroy_group+0x62/0x120 fs/notify/group.c:70
- inotify_release+0x37/0x50 fs/notify/inotify/inotify_user.c:280
- __fput+0x332/0x7f0 fs/file_table.c:208
- ____fput+0x15/0x20 fs/file_table.c:244
- task_work_run+0x18a/0x260 kernel/task_work.c:116
- tracehook_notify_resume include/linux/tracehook.h:191 [inline]
- exit_to_usermode_loop+0x23b/0x2a0 arch/x86/entry/common.c:160
- prepare_exit_to_usermode arch/x86/entry/common.c:190 [inline]
- syscall_return_slowpath+0x4d3/0x570 arch/x86/entry/common.c:259
- entry_SYSCALL_64_fastpath+0xc0/0xc2
-Memory state around the buggy address:
- ffff88006c86dd00: 00 00 00 00 00 00 00 00 00 00 00 fc fc fc fc fc
- ffff88006c86dd80: 00 00 00 00 00 00 00 00 00 00 00 fc fc fc fc fc
->ffff88006c86de00: fb fb fb fb fb fb fb fb fb fb fb fb fc fc fc fc
-                                        ^
- ffff88006c86de80: 00 00 00 00 00 00 00 00 00 00 00 00 fc fc fc fc
- ffff88006c86df00: 00 00 00 00 00 00 00 00 00 00 00 00 fc fc fc fc
-==================================================================
+This is broken per se. Need something more elaborate.
