@@ -1,26 +1,22 @@
-From: Dmitry Vyukov via Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Subject: Re: ucount: use-after-free read in inc_ucount & dec_ucount
-Date: Mon, 6 Mar 2017 19:43:09 +0100
-Message-ID: <CACT4Y+ZapJme2QazeaZm4-R8mmu=_VUXCPJ+ivVCNGJJvM5Wjw@mail.gmail.com>
-References: <C4CB953C-4712-43F3-9E75-1A12C14B8A4B@gmail.com>
-	<180fb7dc-790e-8e82-0cc1-c6e15ddcd20b@gmail.com>
-	<87pohy1fx6.fsf@xmission.com>
-	<1aafd5e9-d9de-e5d9-a77d-cf245c5a5c6a@gmail.com>
-	<CACT4Y+a043_qFN=2uzvYhDFwF4JS9_p3jnOykpMk=RcpqQfKGQ@mail.gmail.com>
+From: Andrei Vagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [REVIEW][PATCH] ucount: Remove the atomicity from ucount->count
+Date: Mon, 6 Mar 2017 12:39:21 -0800
+Message-ID: <20170306203919.GA17874@gmail.com>
+References: <CACT4Y+a043_qFN=2uzvYhDFwF4JS9_p3jnOykpMk=RcpqQfKGQ@mail.gmail.com>
 	<CACT4Y+Yev63VXYm+kZdii5kheV_ACBn2cehFcFdz6LBVam3Q2g@mail.gmail.com>
 	<CACT4Y+b7YXnoOkdYTjp6D6XH-zuYRx063hMayOVMyJVc735dtQ@mail.gmail.com>
 	<c69f8f03-4324-f934-eed2-643c91d703c0@gmail.com>
 	<CACT4Y+avCy8Susvb09DLHkGym0K_15+EeZ8yBH7tcgjvnb3Yhw@mail.gmail.com>
-	<CALRZ7Ut=bAgX+XwS3h8-V-zGqiUFkuSCi_C=j6uN_=OptU-+RQ@mail.gmail.com>
-	<87efybfnh2.fsf@xmission.com>
-	<CACT4Y+aZmSY3rmV7+iC7i6Ov2Of4N5YTpjz5Tk8XCki-CyAY5w@mail.gmail.com>
-	<87a88y4b78.fsf@xmission.com>
-Reply-To: Dmitry Vyukov <dvyukov-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+	<CACT4Y+YWEq66QXbTMR4yGtgc0ULN+TurAnRzcDASaja1z5XNjA@mail.gmail.com>
+	<87shmsoar7.fsf@xmission.com>
+	<CACT4Y+bYAbsxsRWA2o+c7x25f1JPSqZKX-8a8NJq4nab-PyYig@mail.gmail.com>
+	<87y3wjlg6r.fsf@xmission.com> <87tw77csgd.fsf_-_@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87a88y4b78.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <87tw77csgd.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -31,66 +27,100 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: syzkaller <syzkaller-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, =?UTF-8?B?7Kq866W0?= <zzoru007-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, syzkaller <syzkaller-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org>, Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, JongHwan Kim <zzoru007-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Dmitry Vyukov <dvyukov-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gTW9uLCBNYXIgNiwgMjAxNyBhdCA1OjMzIFBNLCBFcmljIFcuIEJpZWRlcm1hbiA8ZWJpZWRl
-cm1AeG1pc3Npb24uY29tPiB3cm90ZToKPiBEbWl0cnkgVnl1a292IDxkdnl1a292QGdvb2dsZS5j
-b20+IHdyaXRlczoKPgo+PiBPbiBTdW4sIE1hciA1LCAyMDE3IGF0IDEwOjAwIFBNLCBFcmljIFcu
-IEJpZWRlcm1hbgo+PiA8ZWJpZWRlcm1AeG1pc3Npb24uY29tPiB3cm90ZToKPj4+IOyqvOultCA8
-enpvcnUwMDdAZ21haWwuY29tPiB3cml0ZXM6Cj4+Pgo+Pj4+IEhpLCBUaGlzIGlzIG15IG5ldyBv
-bmUgcmVwb3J0IGFib3V0IGRlY191Y291bnQ6Cj4+Pj4gcHMuU29ycnkgZm9yIG15IHVuY29tZm9y
-dGFibGUgcmVwb3J0LiBUaGlzIGlzIG15IGZpcnN0IHVzYWdlIG9mIGxrbWwuCj4+Pj4gU3l6a2Fs
-bGVyIGhpdCAnS0FTQU46IHVzZS1hZnRlci1mcmVlIFJlYWQgaW4gZGVjX3Vjb3VudCcgYnVnIG9u
-IGNvbW1pdAo+Pj4+IC4KPj4+Cj4+PiBZb3UgYXJlIGRvaW5nIHdlbGwuICBUaGFuayB5b3UgdmVy
-eSBtdWNoIGZvciB0aGUgcmVwb3J0Lgo+Pj4KPj4+IFRoYW5rIHlvdSBmb3IgdGhlIHJlcHJvZHVj
-ZXIuICBVbmZvcnR1bmF0ZWx5IEkgYW0gbm90IGFibGUgdG8gcmVwcm9kdWNlCj4+PiB0aGUgYnVn
-IHdpdGggd2hhdCB0aGUgY29kZSB5b3UgaGF2ZSBwb3N0ZWQgaGVyZS4KPj4+Cj4+PiBGcm9tIHRo
-ZSBpbml0aWFsIG1haWxpbmcgdGhlIGNvZGUgc2FpZDoKPj4+Cj4+Pj4gU3l6a2FsbGVyIHJlcHJv
-ZHVjZXI6Cj4+Pj4gIyB7VGhyZWFkZWQ6ZmFsc2UgQ29sbGlkZTpmYWxzZSBSZXBlYXQ6dHJ1ZSBQ
-cm9jczo0IFNhbmRib3g6c2V0dWlkCj4+Pj4gUmVwcm86ZmFsc2V9Cj4+Pj4gaW5vdGlmeV9pbml0
-KCkKPj4+Cj4+PiBUaGUgY29kZSB5b3UgcG9zdGVkIHNheXM6Cj4+Pgo+Pj4+IFN5emthbGxlciBy
-ZXByb2R1Y2VyOgo+Pj4+ICMge1RocmVhZGVkOmZhbHNlIENvbGxpZGU6ZmFsc2UgUmVwZWF0OnRy
-dWUgUHJvY3M6MSBTYW5kYm94OnNldHVpZCBSZXBybzpmYWxzZX0KPj4+PiBzZW1nZXQkcHJpdmF0
-ZSgweDAsIDB4NDAwMDAxMDAzLCAweDE4MSkKPj4+Cj4+PiBTbyBJIGV4cGVjdCBzeXprYWxsZXIg
-ZGlkIG5vdCBjcmVhdGUgdGhlIHNhbWUgY29kZSB3aGVuIHlvdSByYW4gaXQKPj4+IGFnYWluLiAg
-U29tZXRoaW5nIGVhc3kgdG8gbWlzcyBpZiB5b3UgaGF2ZW4ndCBydW4gdXNlZCBhIHRvb2wgbGlr
-ZSB0aGF0Cj4+PiBtdWNoLgo+Pj4KPj4+IElmIHNvbWVvbmUga25vd3MgaG93IHRvIGdldCB0aGUg
-Y29kZSB0aGF0IHN5emthbGxlciB3b3VsZCBnZW5lcmF0ZSB0aGF0Cj4+PiBtYXRjaGVzIHRoZSBv
-cmlnaW5hbCByZXByb2R1Y2VyIEkgd291bGQgdmVyeSBtdWNoIGFwcHJlY2lhdGUgaXQgc28gdGhh
-dAo+Pj4gd2UgY2FuIGNvbmZpcm0gdGhlIGJ1ZyB3ZSBoYXZlIHNwb3R0ZWQgaW4gdGhlIGNvZGUg
-aXMgdGhlIGJ1ZyBzeXprYWxsZXIKPj4+IGZvdW5kLgo+Pj4KPj4+IFVudGlsIHRoYXQgcG9pbnQg
-SSBhbSBnb2luZyB0byBmaXggdGhlIG9idmlvdXMgYnVnIGluIHRoZSBjb2RlIGFuZCBob3BlCj4+
-PiB0aGF0IGZpeGVzIHRoZSBwcm9ibGVtLgo+Pgo+Pgo+PiBSZWxpYWJseSByZXByb2R1Y2luZyBz
-dWNoIGJ1Z3MgaXMgbm90IHBvc3NpYmxlIChob3cgd291bGQgeW91IGV4cGVjdAo+PiBpdCB0byBs
-b29rIGxpa2U/KS4gWW91ciBiZXN0IGJldCBpcyB0byB3cml0ZSBhIHN0cmVzcyB0ZXN0IHRoYXQK
-Pj4gcHJvdm9rZXMgdGhlIGJ1ZywgYWRkIHNvbWUgc2xlZXBzIGludG8ga2VybmVsIGNvZGUgYW5k
-IHJ1biBpdCBmb3IgYQo+PiB3aGlsZSB3aXRoIEtBU0FOLiBTaG91bGQgYmUgcmVwcm9kdWNpYmxl
-IHdpdGhpbiBtaW51dGVzLgo+Cj4gSSB3YXMgbm90IGFza2luZyBmb3IgYSByZWxpYWJsZSByZXBy
-b2R1Y2VyLiAgSSB3YXMgYXNraW5nIHdoYXQgY29kZSB3YXMKPiBydW4gdGhhdCB0cmlnZ2VyZWQg
-dGhlIGVycm9yLgo+Cj4gSSBkb24ndCBoYXZlIGEgY2x1ZSB3aGF0IHRoZSByYW5kb21seSBnZW5l
-cmF0ZWQgY29kZSB0aGF0IHByb21wdGVkIHRoZQo+IG9yaWdpbmFsIGtlcm5lbCBlcnJvciBpcyBh
-bmQgaXQgZG9lc24ndCBhcHBlYXIgYW55b25lIGVsc2UgZG9lcyBlaXRoZXIuCj4KPiBUaGUgb25s
-eSBoaW50IEkgaGF2ZSBpczoKPj4+PiBTeXprYWxsZXIgcmVwcm9kdWNlcjoKPj4+PiAjIHtUaHJl
-YWRlZDpmYWxzZSBDb2xsaWRlOmZhbHNlIFJlcGVhdDp0cnVlIFByb2NzOjQgU2FuZGJveDpzZXR1
-aWQKPj4+PiBSZXBybzpmYWxzZX0KPj4+PiBpbm90aWZ5X2luaXQoKQo+Cj4gVGhlIGNvZGUgdGhh
-dCB3YXMgcG9zdGVkIGRpZCBub3QgY2FsbCBpbm90aWZ5X2luaXQgYW5kIHNvIEkgYmVsaWV2ZSB0
-aGF0Cj4gd2FzIGEgY29tcGxldGVseSBkaWZmZXJlbnQgcmFuZG9tIHBpZWNlIG9mIGNvZGUsIHRo
-YXQgaGFzIG5vdGhpbmcgdG8gZG8KPiB3aXRoIHRoaXMgaXNzdWUuCj4KPiBJIGRvbid0IGtub3cg
-c3l6a2FsbGVyIGFuZCBpdCBsb29rcyBub24tdHJpdmlhbCB0byBpbnN0YWxsIG9uIG15IHN5c3Rl
-bQo+IGFuZCBwbGF5IGFyb3VuZCB3aXRoLiAgU28gSSBhbSBnb2luZyB0byBsZWF2ZSBmdXR6aW5n
-IHdpdGggc3l6a2FsbGVyIHRvCj4gcGVvcGxlIHdobyBoYXZlIGJlZW4gYWJsZSB0byBmaWd1cmUg
-aXQgb3V0Lgo+Cj4gVW50aWwgSSBoYXZlIGEgcmVhc29uYWJsZSB1bmRlcnN0YW5kaW5nIG9mIHdo
-YXQgdGhlIGNvZGUgd2FzIGRvaW5nIHRoYXQKPiB0cmlnZ2VyZWQgdGhlIGVycm9yIEkgY2FuJ3Qg
-c2F5IHdpdGggYW55IGNlcnRhaW50eSB0aGF0IHRoZSByZXBvcnRlZCBidWcKPiB3YXMgZml4ZWQu
-Cj4KPiBJIHdvdWxkIGxvdmUgdG8gYmUgYWJsZSB0byBzYXkgdGhhdCBpdCBsb29rcyBsaWtlIHRo
-ZSBidWcgdGhhdCBjYXVzZWQKPiB0aGUgZXJyb3IgcmVwb3J0IHdhcyBmaXhlZC4KCgpIZXJlIGlz
-IGEgQyBhbmFsb2cgb2YgdGhlIHJlcHJvZHVjZXI6Cmh0dHBzOi8vZ2lzdC5naXRodWJ1c2VyY29u
-dGVudC5jb20vZHZ5dWtvdi84MDI5M2U0MzRiMTI3M2M2YTFjZGNlNWM2Yjk3OWFiNi9yYXcvYTFm
-NWZmM2NhYjE3YjVlMzg4MmI1NjA2MGVmYjc5NWI2MzU1YmRmMi9naXN0ZmlsZTEudHh0CnRoYXQg
-Sm9uZ0h3YW4gcHJvdmlkZWQgaGVyZToKaHR0cHM6Ly9ncm91cHMuZ29vZ2xlLmNvbS9kL21zZy9z
-eXprYWxsZXIvY3JIVldmMVFEa1UvRHJBOXVWcXVEd0FKCgpJdCBiYXNpY2FsbHkganVzdCBjYWxs
-cyBpbm90aWZ5X2luaXQgaW4gcGFyYWxsZWwgcHJvY2Vzc2VzLgpfX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250
-YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3Vu
-ZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+On Sun, Mar 05, 2017 at 03:41:06PM -0600, Eric W. Biederman wrote:
+> 
+> Always increment/decrement ucount->count under the ucounts_lock.  The
+> increments are there already and moving the decrements there means the
+> locking logic of the code is simpler.  This simplification in the
+> locking logic fixes a race between put_ucounts and get_ucounts that
+> could result in a use-after-free because the count could go zero then
+> be found by get_ucounts and then be freed by put_ucounts.
+> 
+> A bug presumably this one was found by a combination of syzkaller and
+> KASAN.  JongWhan Kim reported the syzkaller failure and Dmitry Vyukov
+> spotted the race in the code.
+>
+
+Reviewed-by: Andrei Vagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+
+I think we can rework this in a future so that ucount will be rcu
+protected.
+
+
+> Reported-by: JongHwan Kim <zzoru007-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> Reported-by: Dmitry Vyukov <dvyukov-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> ---
+>  include/linux/user_namespace.h |  2 +-
+>  kernel/ucount.c                | 18 +++++++++++-------
+>  2 files changed, 12 insertions(+), 8 deletions(-)
+> 
+> diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+> index 363e0e8082a9..61071b6d2d12 100644
+> --- a/include/linux/user_namespace.h
+> +++ b/include/linux/user_namespace.h
+> @@ -69,7 +69,7 @@ struct ucounts {
+>  	struct hlist_node node;
+>  	struct user_namespace *ns;
+>  	kuid_t uid;
+> -	atomic_t count;
+> +	int count;
+>  	atomic_t ucount[UCOUNT_COUNTS];
+>  };
+>  
+> diff --git a/kernel/ucount.c b/kernel/ucount.c
+> index 68716403b261..73696faa80dd 100644
+> --- a/kernel/ucount.c
+> +++ b/kernel/ucount.c
+> @@ -143,7 +143,7 @@ static struct ucounts *get_ucounts(struct user_namespace *ns, kuid_t uid)
+>  
+>  		new->ns = ns;
+>  		new->uid = uid;
+> -		atomic_set(&new->count, 0);
+> +		new->count = 0;
+>  
+>  		spin_lock_irq(&ucounts_lock);
+>  		ucounts = find_ucounts(ns, uid, hashent);
+> @@ -154,8 +154,10 @@ static struct ucounts *get_ucounts(struct user_namespace *ns, kuid_t uid)
+>  			ucounts = new;
+>  		}
+>  	}
+> -	if (!atomic_add_unless(&ucounts->count, 1, INT_MAX))
+> +	if (ucounts->count == INT_MAX)
+>  		ucounts = NULL;
+> +	else
+> +		ucounts->count += 1;
+>  	spin_unlock_irq(&ucounts_lock);
+>  	return ucounts;
+>  }
+> @@ -164,13 +166,15 @@ static void put_ucounts(struct ucounts *ucounts)
+>  {
+>  	unsigned long flags;
+>  
+> -	if (atomic_dec_and_test(&ucounts->count)) {
+> -		spin_lock_irqsave(&ucounts_lock, flags);
+> +	spin_lock_irqsave(&ucounts_lock, flags);
+> +	ucounts->count -= 1;
+> +	if (!ucounts->count)
+>  		hlist_del_init(&ucounts->node);
+> -		spin_unlock_irqrestore(&ucounts_lock, flags);
+> +	else
+> +		ucounts = NULL;
+> +	spin_unlock_irqrestore(&ucounts_lock, flags);
+>  
+> -		kfree(ucounts);
+> -	}
+> +	kfree(ucounts);
+>  }
+>  
+>  static inline bool atomic_inc_below(atomic_t *v, int u)
+> -- 
+> 2.10.1
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linuxfoundation.org/mailman/listinfo/containers
