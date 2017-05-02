@@ -1,18 +1,19 @@
 From: Kirill Tkhai <ktkhai-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
 Subject: Re: [PATCH] userns,pidns: Verify the userns for new pid namespaces
-Date: Tue, 2 May 2017 13:03:04 +0300
-Message-ID: <d67c8c06-2e6b-9cc0-df81-71d3cf4bb43d__3153.94865251637$1493719404$gmane$org@virtuozzo.com>
+Date: Tue, 2 May 2017 13:04:37 +0300
+Message-ID: <fab323b8-a909-bbce-77d2-afbcd3b0452e__35917.8981547759$1493719492$gmane$org@virtuozzo.com>
 References: <149329634856.21195.14196911999722279118.stgit@localhost.localdomain>
 	<87mvb16fv7.fsf@xmission.com>
 	<12a73543-79ea-4bac-7e96-6ab237534af2@virtuozzo.com>
 	<877f254yx0.fsf@xmission.com>
 	<a9941daf-861b-453c-37b8-e95389a9959b@virtuozzo.com>
 	<8737crt4dz.fsf@xmission.com> <87vapnrp7f.fsf_-_@xmission.com>
+	<d67c8c06-2e6b-9cc0-df81-71d3cf4bb43d@virtuozzo.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87vapnrp7f.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <d67c8c06-2e6b-9cc0-df81-71d3cf4bb43d-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,117 +28,122 @@ Cc: paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org, keescook-F7+t8E8rja9g9hUCZPvPm
 List-Id: containers.vger.kernel.org
 
 
+On 02.05.2017 13:03, Kirill Tkhai wrote:
+> 
+> 
+> On 29.04.2017 22:25, Eric W. Biederman wrote:
+>>
+>> It is pointless and confusing to allow a pid namespace hierarchy and
+>> the user namespace hierarchy to get out of sync.  The owner of a child
+>> pid namespace should be the owner of the parent pid namespace or
+>> a descendant of the owner of the parent pid namespace.
+>>
+>> Otherwise it is possible to construct scenarios where it is legal to
+>> do something in a parent pid namespace but in a child pid namespace.
+>>
+>> It requires use of setns into a pid namespace (but not into a user
+>> namespace) to create such a scenario.
+>>
+>> Add the function in_userns to help in making this determination.
+>>
+>> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>> ---
+>>
+>> While review a patch from Kiril Tkhai I realized we were missing this
+>> sanity check....
+>>
+>>  include/linux/user_namespace.h |  8 +++++++-
+>>  kernel/pid_namespace.c         |  4 ++++
+>>  kernel/user_namespace.c        | 18 ++++++++++++------
+>>  3 files changed, 23 insertions(+), 7 deletions(-)
+>>
+>> diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+>> index 32354b4b4b2b..497ed50004db 100644
+>> --- a/include/linux/user_namespace.h
+>> +++ b/include/linux/user_namespace.h
+>> @@ -112,8 +112,9 @@ extern ssize_t proc_projid_map_write(struct file *, const char __user *, size_t,
+>>  extern ssize_t proc_setgroups_write(struct file *, const char __user *, size_t, loff_t *);
+>>  extern int proc_setgroups_show(struct seq_file *m, void *v);
+>>  extern bool userns_may_setgroups(const struct user_namespace *ns);
+>> +extern bool in_userns(const struct user_namespace *ancestor,
+>> +		       const struct user_namespace *child);
+>>  extern bool current_in_userns(const struct user_namespace *target_ns);
+>> -
+>>  struct ns_common *ns_get_owner(struct ns_common *ns);
+>>  #else
+>>  
+>> @@ -144,6 +145,11 @@ static inline bool userns_may_setgroups(const struct user_namespace *ns)
+>>  	return true;
+>>  }
+>>  
+>> +static inline bool in_userns(const struct user_namespace *target_ns)
+>> +{
+>> +	return true;
+>> +}
+>> +
+>>  static inline bool current_in_userns(const struct user_namespace *target_ns)
+>>  {
+>>  	return true;
+>> diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
+>> index de461aa0bf9a..749147f5a613 100644
+>> --- a/kernel/pid_namespace.c
+>> +++ b/kernel/pid_namespace.c
+>> @@ -101,6 +101,10 @@ static struct pid_namespace *create_pid_namespace(struct user_namespace *user_ns
+>>  	int i;
+>>  	int err;
+>>  
+>> +	err = -EINVAL;
+>> +	if (!in_userns(parent_pid_ns->user_ns, user_ns))
+>> +		goto out;
+>> +
+>>  	err = -ENOSPC;
+>>  	if (level > MAX_PID_NS_LEVEL)
+>>  		goto out;
+>> diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+>> index 2f735cbe05e8..7d8658fbabc8 100644
+>> --- a/kernel/user_namespace.c
+>> +++ b/kernel/user_namespace.c
+>> @@ -986,19 +986,25 @@ bool userns_may_setgroups(const struct user_namespace *ns)
+>>  }
+>>  
+>>  /*
+>> - * Returns true if @ns is the same namespace as or a descendant of
+>> - * @target_ns.
+>> + * Returns true if @child is the same namespace or a descendant of
+>> + * @ancestor.
+>>   */
+>> -bool current_in_userns(const struct user_namespace *target_ns)
+>> +bool in_userns(const struct user_namespace *ancestor,
+>> +	       const struct user_namespace *child)
+>>  {
+>> -	struct user_namespace *ns;
+>> -	for (ns = current_user_ns(); ns; ns = ns->parent) {
+>> -		if (ns == target_ns)
+>> +	const struct user_namespace *ns;
+>> +	for (ns = child; ns; ns = ns->parent) {
+>> +		if (ns == ancestor)
+>>  			return true;
+>>  	}
+>>  	return false;
+>>  }
+> 
+> We have user_namespace::level, so it's possible to stop iterations earlier
+> and save some cpu cycles:
+> 
+> 	for (ns = child; ns->level >= ancestor->level; ns = ns->parent)
 
-On 29.04.2017 22:25, Eric W. Biederman wrote:
-> 
-> It is pointless and confusing to allow a pid namespace hierarchy and
-> the user namespace hierarchy to get out of sync.  The owner of a child
-> pid namespace should be the owner of the parent pid namespace or
-> a descendant of the owner of the parent pid namespace.
-> 
-> Otherwise it is possible to construct scenarios where it is legal to
-> do something in a parent pid namespace but in a child pid namespace.
-> 
-> It requires use of setns into a pid namespace (but not into a user
-> namespace) to create such a scenario.
-> 
-> Add the function in_userns to help in making this determination.
-> 
-> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> ---
-> 
-> While review a patch from Kiril Tkhai I realized we were missing this
-> sanity check....
-> 
->  include/linux/user_namespace.h |  8 +++++++-
->  kernel/pid_namespace.c         |  4 ++++
->  kernel/user_namespace.c        | 18 ++++++++++++------
->  3 files changed, 23 insertions(+), 7 deletions(-)
-> 
-> diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-> index 32354b4b4b2b..497ed50004db 100644
-> --- a/include/linux/user_namespace.h
-> +++ b/include/linux/user_namespace.h
-> @@ -112,8 +112,9 @@ extern ssize_t proc_projid_map_write(struct file *, const char __user *, size_t,
->  extern ssize_t proc_setgroups_write(struct file *, const char __user *, size_t, loff_t *);
->  extern int proc_setgroups_show(struct seq_file *m, void *v);
->  extern bool userns_may_setgroups(const struct user_namespace *ns);
-> +extern bool in_userns(const struct user_namespace *ancestor,
-> +		       const struct user_namespace *child);
->  extern bool current_in_userns(const struct user_namespace *target_ns);
-> -
->  struct ns_common *ns_get_owner(struct ns_common *ns);
->  #else
->  
-> @@ -144,6 +145,11 @@ static inline bool userns_may_setgroups(const struct user_namespace *ns)
->  	return true;
->  }
->  
-> +static inline bool in_userns(const struct user_namespace *target_ns)
-> +{
-> +	return true;
-> +}
-> +
->  static inline bool current_in_userns(const struct user_namespace *target_ns)
->  {
->  	return true;
-> diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
-> index de461aa0bf9a..749147f5a613 100644
-> --- a/kernel/pid_namespace.c
-> +++ b/kernel/pid_namespace.c
-> @@ -101,6 +101,10 @@ static struct pid_namespace *create_pid_namespace(struct user_namespace *user_ns
->  	int i;
->  	int err;
->  
-> +	err = -EINVAL;
-> +	if (!in_userns(parent_pid_ns->user_ns, user_ns))
-> +		goto out;
-> +
->  	err = -ENOSPC;
->  	if (level > MAX_PID_NS_LEVEL)
->  		goto out;
-> diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-> index 2f735cbe05e8..7d8658fbabc8 100644
-> --- a/kernel/user_namespace.c
-> +++ b/kernel/user_namespace.c
-> @@ -986,19 +986,25 @@ bool userns_may_setgroups(const struct user_namespace *ns)
->  }
->  
->  /*
-> - * Returns true if @ns is the same namespace as or a descendant of
-> - * @target_ns.
-> + * Returns true if @child is the same namespace or a descendant of
-> + * @ancestor.
->   */
-> -bool current_in_userns(const struct user_namespace *target_ns)
-> +bool in_userns(const struct user_namespace *ancestor,
-> +	       const struct user_namespace *child)
->  {
-> -	struct user_namespace *ns;
-> -	for (ns = current_user_ns(); ns; ns = ns->parent) {
-> -		if (ns == target_ns)
-> +	const struct user_namespace *ns;
-> +	for (ns = child; ns; ns = ns->parent) {
-> +		if (ns == ancestor)
->  			return true;
->  	}
->  	return false;
->  }
+Just ">" here.
 
-We have user_namespace::level, so it's possible to stop iterations earlier
-and save some cpu cycles:
-
-	for (ns = child; ns->level >= ancestor->level; ns = ns->parent)
-		;
-	return (ns == ancestor);
-
->  
-> +bool current_in_userns(const struct user_namespace *target_ns)
-> +{
-> +	return in_userns(target_ns, current_user_ns());
-> +}
-> +
->  static inline struct user_namespace *to_user_ns(struct ns_common *ns)
->  {
->  	return container_of(ns, struct user_namespace, ns);
+> 		;
+> 	return (ns == ancestor);
 > 
+>>  
+>> +bool current_in_userns(const struct user_namespace *target_ns)
+>> +{
+>> +	return in_userns(target_ns, current_user_ns());
+>> +}
+>> +
+>>  static inline struct user_namespace *to_user_ns(struct ns_common *ns)
+>>  {
+>>  	return container_of(ns, struct user_namespace, ns);
+>>
