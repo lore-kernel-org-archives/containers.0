@@ -1,18 +1,11 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH v4] Introduce v3 namespaced file capabilities
-Date: Tue, 09 May 2017 17:27:03 -0500
-Message-ID: <87mvalu0nc.fsf@xmission.com>
-References: <20170507092105.GA67584@inn.lkp.intel.com>
-	<20170508044408.GA11400@mail.hallyn.com>
-	<CACOXgS9a=avAWZEre1Q1CGjSHeq78Pkq1fYfwPjiyEX-u=B5wQ@mail.gmail.com>
-	<20170508181156.GA23112@mail.hallyn.com> <87a86mvuko.fsf@xmission.com>
-	<20170509203736.GB14900@mail.hallyn.com>
+From: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: [PATCH] fs: add an ioctl to get an owning userns for a superblock
+Date: Tue,  9 May 2017 16:19:38 -0700
+Message-ID: <20170509231938.6467-1-avagin__9670.09162200174$1494371989$gmane$org@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20170509203736.GB14900-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
-	message of "Tue, 9 May 2017 15:37:36 -0500")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,75 +15,95 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkp-JC7UmRfGjtg@public.gmane.org, xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
+The introduced ioctl returns a file descriptor that refers to a owning
+user namespace for a superblock which is associated with a target file
+descriptor.
 
-> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
->> "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
->> > Changelog:
->> [snip]
->> >    May 8, 2017:
->> >       . fix leaking dentry refcount in cap_inode_getsecurity
->> >
->> [snip]
->> > +/*
->> > + * getsecurity: We are called for security.* before any attempt to read the
->> > + * xattr from the inode itself.
->> > + *
->> > + * This gives us a chance to read the on-disk value and convert it.  If we
->> > + * return -EOPNOTSUPP, then vfs_getxattr() will call the i_op handler.
->> > + *
->> > + * Note we are not called by vfs_getxattr_alloc(), but that is only called
->> > + * by the integrity subsystem, which really wants the unconverted values -
->> > + * so that's good.
->> > + */
->> > +int cap_inode_getsecurity(struct inode *inode, const char *name, void **buffer,
->> > +			  bool alloc)
->> > +{
->> > +	int size, ret;
->> > +	kuid_t kroot;
->> > +	uid_t root, mappedroot;
->> > +	char *tmpbuf = NULL;
->> > +	struct vfs_cap_data *cap;
->> > +	struct vfs_ns_cap_data *nscap;
->> > +	struct dentry *dentry;
->> > +	struct user_namespace *fs_ns;
->> > +
->> > +	if (strcmp(name, "capability") != 0)
->> > +		return -EOPNOTSUPP;
->> > +
->> > +	dentry = d_find_alias(inode);
->> > +	if (!dentry)
->> > +		return -EINVAL;
->> > +
->> > +	size = sizeof(struct vfs_ns_cap_data);
->> > +	ret = (int) vfs_getxattr_alloc(dentry, XATTR_NAME_CAPS,
->> > +				 &tmpbuf, size, GFP_NOFS);
->> > +	dput(dentry);
->> 
->> This looks like a good fix but ouch! That interface is wrong.
->> 
->> The dentry is needed because vfs_getxattr_alloc does:
->> 	error = handler->get(handler, dentry, inode, name, NULL, 0);
->> 
->> Which is has no business taking a dentry as xattrs are inode concepts.
->> 
->> I have no issue with your patch but it looks like that handler issue
->> is going to need to be fixed with xattrs.
->
-> True, it's a bit clunky.
->
-> Any reason not to just have the current vfs_getxattr_alloc() become a
-> lightweight wrapper calling inode_getxattr_alloc(dentry->d_inode)?
+EPERM is returned if the current process doesn't have CAP_SYS_ADMIN in
+the returned user namespace.
 
-My deep issue is that handler is functions like posix_acl_xattr_get.
-And all of those functions that vfs_getxattr_alloc calls should not
-take a dentry.
+This information is required to dump and restore mount namespaces. We
+need to know to which user namespace a superblock is belonged to.
 
-So I feel like I have just spotted the tip of an iceberg that needs
-sorting out.
+We already have the SIOCGSKNS ioctl for sockets to get a network
+namespace, so it looks reasonable to use the same interface for
+superblocks too.
 
-Eric
+This functionality can be useful for users in order to understand
+a running system.
+
+Cc: Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Cc: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Signed-off-by: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+---
+ fs/ioctl.c              | 23 +++++++++++++++++++++++
+ include/uapi/linux/fs.h |  2 ++
+ 2 files changed, 25 insertions(+)
+
+diff --git a/fs/ioctl.c b/fs/ioctl.c
+index 569db68..22bbf37 100644
+--- a/fs/ioctl.c
++++ b/fs/ioctl.c
+@@ -16,6 +16,8 @@
+ #include <linux/buffer_head.h>
+ #include <linux/falloc.h>
+ #include <linux/sched/signal.h>
++#include <linux/proc_fs.h>
++#include <linux/user_namespace.h>
+ 
+ #include "internal.h"
+ 
+@@ -614,6 +616,25 @@ static int ioctl_file_dedupe_range(struct file *file, void __user *arg)
+ 	return ret;
+ }
+ 
++static struct ns_common *get_sb_userns(struct ns_common *ns_common)
++{
++	struct user_namespace *ns;
++
++	ns = container_of(ns_common, struct user_namespace, ns);
++
++	return &get_user_ns(ns)->ns;
++}
++
++static int ioctl_fs_sb_userns(struct file *filp)
++{
++	struct super_block *sb = file_inode(filp)->i_sb;
++
++	if (!ns_capable(sb->s_user_ns, CAP_SYS_ADMIN))
++		return -EPERM;
++
++	return open_related_ns(&sb->s_user_ns->ns, get_sb_userns);
++}
++
+ /*
+  * When you add any new common ioctls to the switches above and below
+  * please update compat_sys_ioctl() too.
+@@ -677,6 +698,8 @@ int do_vfs_ioctl(struct file *filp, unsigned int fd, unsigned int cmd,
+ 
+ 	case FIDEDUPERANGE:
+ 		return ioctl_file_dedupe_range(filp, argp);
++	case FS_IOC_SB_USERNS:
++		return ioctl_fs_sb_userns(filp);
+ 
+ 	default:
+ 		if (S_ISREG(inode->i_mode))
+diff --git a/include/uapi/linux/fs.h b/include/uapi/linux/fs.h
+index 33423aa..26ef2d5 100644
+--- a/include/uapi/linux/fs.h
++++ b/include/uapi/linux/fs.h
+@@ -246,6 +246,8 @@ struct fsxattr {
+ #define FICLONE		_IOW(0x94, 9, int)
+ #define FICLONERANGE	_IOW(0x94, 13, struct file_clone_range)
+ #define FIDEDUPERANGE	_IOWR(0x94, 54, struct file_dedupe_range)
++/* Get a file descriptor to an owning userns for a superblock */
++#define FS_IOC_SB_USERNS		_IOR('X', 55, int)
+ 
+ #define	FS_IOC_GETFLAGS			_IOR('f', 1, long)
+ #define	FS_IOC_SETFLAGS			_IOW('f', 2, long)
+-- 
+2.9.3
