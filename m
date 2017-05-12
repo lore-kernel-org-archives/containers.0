@@ -1,16 +1,10 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH] fs: add an ioctl to get an owning userns for a superblock
-Date: Wed, 10 May 2017 20:24:00 -0500
-Message-ID: <87efvwkwy7.fsf@xmission.com>
-References: <20170509231938.6467-1-avagin@openvz.org>
-	<87k25psg7b.fsf@xmission.com>
-	<20170511001526.GA7992@outlook.office365.com>
+From: =?iso-8859-1?Q?St=E9phane?= Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: LXC 1.0.10, LXC 2.0.8, LXCFS 2.0.7 and LXD 2.0.10 have been released!
+Date: Fri, 12 May 2017 00:39:06 -0400
+Message-ID: <20170512043906.ent4zilmmrildzoh__21198.3307767243$1494564460$gmane$org@castiana>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============6070971999758655849=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20170511001526.GA7992-1ViLX0X+lBJGNQ1M2rI3KwRV3xvJKrda@public.gmane.org> (Andrei Vagin's
-	message of "Wed, 10 May 2017 17:15:27 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,45 +14,91 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
-Cc: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, criu-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, lxc-users-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org> writes:
 
-> On Tue, May 09, 2017 at 07:34:00PM -0500, Eric W. Biederman wrote:
->> Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
->> 
->> > The introduced ioctl returns a file descriptor that refers to a owning
->> > user namespace for a superblock which is associated with a target file
->> > descriptor.
->> >
->> > EPERM is returned if the current process doesn't have CAP_SYS_ADMIN in
->> > the returned user namespace.
->> >
->> > This information is required to dump and restore mount namespaces. We
->> > need to know to which user namespace a superblock is belonged to.
->> >
->> > We already have the SIOCGSKNS ioctl for sockets to get a network
->> > namespace, so it looks reasonable to use the same interface for
->> > superblocks too.
->> >
->> > This functionality can be useful for users in order to understand
->> > a running system.
->> 
->> This will probably work.  And the capability check eases any concerns
->> I might have that this would be a trivial information leak.
->> 
->> That said can we hold off just a little bit.  If open_fs work actually
->> turns into a real interface that would seem to be the perfect place
->> to stick this functionality.
->
-> Sure, we can. Do you know any place where to read more information about
-> open_fs? I think I have heared a few times about this idea, but it would be
-> good to get more details.
+--===============6070971999758655849==
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="2eqekquf3xx5ajdf"
+Content-Disposition: inline
 
 
-Look for David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> recent patches on lkml he
-has implemented an initial rfc for it.
+--2eqekquf3xx5ajdf
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Eric
+Hello everyone,
+
+Today the LXC project is pleased to announce the release of:
+ - LXC 1.0.10
+ - LXC 2.0.8
+ - LXD 2.0.10
+ - LXCFS 2.0.7
+
+They each contain the accumulated bugfixes since the previous round of
+bugfix releases about four months ago.
+
+
+This includes the following security fixes for which individual patches
+were made available earlier this year:
+
+ - CVE-2016-10124 (backport of pts/pty isolation to LXC 1.0.x from 2.0.x)
+ - CVE-2017-5985 (lxc-usernic issue for LXC 1.0.x and 2.0.x)
+
+It's also worth noting that LXC templates in 2.0.10 have been modified
+such that no default (insecure) user credentials are set.
+
+
+The detailed changelogs for each project can be found at:
+ - https://linuxcontainers.org/lxc/news/
+ - https://linuxcontainers.org/lxcfs/news/
+ - https://linuxcontainers.org/lxd/news/
+
+As a reminder, the 2.0 series of all of those is supported for bugfix
+and security updates up until June 2021.
+
+The LXC 1.0.x branch is supported until June 2019 with critical bugfixes
+and security updates only, users are recommended to upgrade to 2.0.x.
+
+Thanks to everyone who contributed to those projects and helped make
+this possible!
+
+
+St=E9phane Graber
+On behalf of the LXC, LXCFS and LXD development teams
+
+--2eqekquf3xx5ajdf
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIcBAABCgAGBQJZFTxnAAoJEMY4l01keS1nEtoQAKa2PWr/3ojYYpVgmnbxl+Vb
+wXDRgqauczFRes3SoSpuNqOTytL2LYSgd0CY8EXzcpvxPCH1POsW65Qud35sEBx4
+VUYF+/TfSi9xBAZHXK2FNUYLqJUDgVvn5FT+cQSruWoclI+BAuJj9RkcMDtZqDb5
+55SKxyi0l16pp8Q76FRLO7xk/pDQtX9LvVOnQmtbhrNLaHsKDpzIBEL5MMaloR57
+VdhQBgRoQ/IcdIN91Kgek7r4mf8mn3swS3EXeFl//PIZUkB8M0mUXUCkvjJvSQn5
+qhEPH9RfIfhZ3wYm+9UmUoevMtPtIVqbvAavdHMsUyc7DvE42CjyiW0IPQ2a01Kz
+axADtG91aa/xHqXsMzuCcuHjrMzY6LjcluVWt2ts9O7yIA9uR+lPigjxx959CQw1
+H2tuZ0rzAC4vVMjZgwi2Rf6RZt0EnqVqg1bv2yHGxZ06Cx0o0RUrLVLOq05cr2KO
+bAwXZpYRUEW5P4F0LauIV1VUCJbS8kBRUsxNorxWLUjrPgohpwEql2B2a5VJieOK
+E4LpU/8N13vYfU75paqQfIbxqGpiX/PHDgTYJpfNX/b5LhEN6KYxwxyODwHqVneu
+r+cDZdw9B4g+UgzC8DU6/TXgY26Z8Urvg5DCpyw32PfNqZ+YYx+Lql1ubJ0C09y3
+tMGnmY56nlwLslqNKBgb
+=6hck
+-----END PGP SIGNATURE-----
+
+--2eqekquf3xx5ajdf--
+
+--===============6070971999758655849==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============6070971999758655849==--
