@@ -1,15 +1,16 @@
 From: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFC][PATCH 0/9] Make containers kernel objects
-Date: Tue, 23 May 2017 14:52:09 +0100
-Message-ID: <32556.1495547529__2190.47631039775$1495547539$gmane$org@warthog.procyon.org.uk>
-References: <1495472039.2757.19.camel@HansenPartnership.com>
+Date: Tue, 23 May 2017 15:53:36 +0100
+Message-ID: <2446.1495551216__27088.1503391594$1495551230$gmane$org@warthog.procyon.org.uk>
+References: <f167feeb-e653-12e3-eec8-24162f7f7c07@suse.de>
 	<149547014649.10599.12025037906646164347.stgit@warthog.procyon.org.uk>
+	<1495472039.2757.19.camel@HansenPartnership.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1495472039.2757.19.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Content-ID: <32555.1495547529.1-S6HVgzuS8uM4Awkfq6JHfwNdhmdF6hFW@public.gmane.org>
+In-Reply-To: <f167feeb-e653-12e3-eec8-24162f7f7c07-l3A5Bk7waGM@public.gmane.org>
+Content-ID: <2442.1495551216.1-S6HVgzuS8uM4Awkfq6JHfwNdhmdF6hFW@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,137 +20,51 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Cc: mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
+Cc: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org> wrote:
+Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org> wrote:
 
-> This sounds like a step in the wrong direction: the strength of the
-> current container interfaces in Linux is that people who set up
-> containers don't have to agree what they look like.
-
-It may be a strength, but it is also a problem.
-
-> So I can set up a user namespace without a mount namespace or an
-> architecture emulation container with only a mount namespace.
-
-(I presume you mean with only the mount namespace separate)
-
-Yep.  You can do that with this too.
-
-> But ignoring my fun foibles with containers and to give a concrete
-> example in terms of a popular orchestration system: in kubernetes,
-> where certain namespaces are shared across pods, do you imagine the
-> kernel's view of the "container" to be the pod or what kubernetes
-> thinks of as the container?
-
-Why not both?  If the net_ns is created in the pod container, then probably
-network-related upcalls should be directed there.  Unless instructed
-otherwise, upon creation a container object will inherit the caller's
-namespaces.
-
-> This is important, because half the examples you give below are network
-> related and usually pods share a network namespace.
-
-Yeah - I'm more familiar with upcalls made by NFS, AFS and keyrings.
-
-> >  (1) The DNS resolver.  ...
+> >> The reason I think this is necessary is that the kernel has no idea
+> >> how to direct upcalls to what userspace considers to be a container -
+> >> current Linux practice appears to make a "container" just an
+> >> arbitrarily chosen junction of namespaces, control groups and files,
+> >> which may be changed individually within the "container".
 > 
-> All persistent (written to fs data) has to be mount ns associated;
-> there are no ifs, ands and buts to that.  I agree this implies that if
-> you want to run a separate network namespace, you either take DNS from
-> the parent (a lot of containers do)
-
-My intention is to make the DNS cache per-network namespace within the kernel.
-Currently, there's only one and it's shared between all namespaces, but that
-won't work if you end up with two net namespaces that direct the same
-addresses to different things.
-
-> or you set up a daemon to run within the mount namespace.
-
-That's not currently an option: the DNS service upcalls only, and
-/sbin/request-key is invoked in the init_ns.  This performs the network
-accesses in the wrong network namespace.
-
-> I agree the latter is a slightly fiddly operation you have to get right, but
-> that's why we have orchestration systems.
-
-An orchestration system can use this.  This is not a replacement for
-Kubernetes or Docker or whatever.
-
-> What is it we could do with the above that we cannot do today?
-
-Upcall into an appropriate set of namespaces and keep the results separate by
-network namespace.
-
-> >  (2) NFS ID mapper.  The NFS ID mapping cache should also probably be
-> >      per-network namespace.
+> Just want to point out that if the kernel APIs for containers massively
+> change, then the OCI will have to completely rework how we describe containers
+> (and so will all existing runtimes).
 > 
-> I think this is a view but not the only one:  Right at the moment, NFS
-> ID mapping is used as the one of the ways we can get the user namespace
-> ID mapping writes to file problems fixed ... that makes it a property
-> of the mount namespace for a lot of containers.
+> Not to mention that while I don't like how hard it is (from a runtime
+> perspective) to actually set up a container securely, there are undoubtedly
+> benefits to having namespaces split out. The network namespace being separate
+> means that in certain contexts you actually don't want to create a new network
+> namespace when creating a container.
 
-In some ways it's really a property of the server, and two different servers
-may appear in two separate network namespaces with the same apparent name and
-address.
+Yep, I quite agree.
 
-It's not a property of the mount namespace because mount namespaces share
-superblocks, and this is done at the superblock level.
+However, certain things need to be made per-net namespace that *aren't*.  DNS
+results, for instance.
 
-Possibly it should be done on the vfsmount, as a filter on the interaction
-between userspace and kernel.
+As an example, I could set up a client machine with two ethernet ports, set up
+two DNS+NFS servers, each of which think they're called "foo.bar" and attach
+each server to a different port on the client machine.  Then I could create a
+pair of containers on the client machine and route the network in each
+container to a different port.  Now there's a problem because the names of the
+cached DNS records for each port overlap.
 
-> There are many other instances where they do exactly as you say, but what
-> I'm saying is that we don't want to lose the flexibility we currently have.
+Further, the NFS idmapper needs to be able to direct its calls to the
+appropriate network.
 
-You don't really lose any flexibility; if anything, you gain it.
+> I had some ideas about how you could implement bridging in userspace (as an
+> unprivileged user, for rootless containers) but if you can't join namespaces
+> individually then such a setup is not practically possible.
 
-(Note that in case your objection is that I haven't yet implemented the
-ability to set namespaces arbitrarily in a namespace, that's on list of things
-to do that I included, as is adjusting the control groups.)
+I'm not proposing to take away the ability to arbitrarily set the namespaces
+in a container.  I haven't implemented it yet, but it was on the to-do list:
 
-> All mount namespaces have an owning user namespace, so the data
-> relations are already there in the kernel, is the problem simply
-> finding them?
-
-The superblocks used by the vfsmounts in a mount namespace aren't all
-necessarily in the same user_ns, so none of:
-
-	sb->s_user_ns == current_user_ns()
-	sb->s_user_ns == current->ns->mnt_ns->user_ns
-	current->ns->mnt_ns->user_ns == current_user_ns()
-
-need hold true that I can see.
-
-> > These patches are built on top of the mount context patchset so that
-> > namespaces can be properly propagated over submounts/automounts.
-> 
-> I'll stop here ... you get the idea that I think this is imposing a set
-> of restrictions that will come back to bite us later.
-
-What restrictions am I imposing?
-
-> If this is just for the sake of figuring out how to get keyring upcalls to
-> work, then I'm sure we can come up with something.
-
-No, it's not just for that, though, admittedly, all of the upcall mechanisms I
-outlined use request_key() at the core.
-
-
-Really, a container is an anchor for the resources you need to make an upcall,
-but it can also be used to anchor other things.
-
-One thing I've been asked for by a number of people is a per-container keyring
-for the provision of authentication keys, fs decryption keys and other things
-- but there's no actual container off which this can be hung.
-
-Another thing that could be useful is a list of what device files a container
-may access, so that we can allow limited mounting by the container root user
-within the container.
-
-Now these could be made into their own namespaces or added to one that already
-exists - perhaps the mount namespace being the most logical.
+ (7) Directly set a container's namespaces to allow cross-container
+     sharing.
 
 David
