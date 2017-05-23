@@ -1,16 +1,14 @@
-From: Jeff Layton <jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Ian Kent <raven-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org>
 Subject: Re: [RFC][PATCH 0/9] Make containers kernel objects
-Date: Mon, 22 May 2017 18:14:33 -0400
-Message-ID: <1495491273.25946.1.camel__936.620837501501$1495491289$gmane$org@redhat.com>
+Date: Tue, 23 May 2017 17:38:40 +0800
+Message-ID: <1495532320.2564.1.camel__12334.5786043958$1495532877$gmane$org@themaw.net>
 References: <149547014649.10599.12025037906646164347.stgit@warthog.procyon.org.uk>
 	<1495472039.2757.19.camel@HansenPartnership.com>
-	<1495478092.2816.17.camel@redhat.com>
-	<1495480860.9050.18.camel@HansenPartnership.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1495480860.9050.18.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+In-Reply-To: <1495472039.2757.19.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,182 +19,126 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org
-Cc: mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 2017-05-22 at 12:21 -0700, James Bottomley wrote:
-> On Mon, 2017-05-22 at 14:34 -0400, Jeff Layton wrote:
-> > On Mon, 2017-05-22 at 09:53 -0700, James Bottomley wrote:
-> > > [Added missing cc to containers list]
-> > > On Mon, 2017-05-22 at 17:22 +0100, David Howells wrote:
-> > > > Here are a set of patches to define a container object for the 
-> > > > kernel and to provide some methods to create and manipulate them.
-> > > > 
-> > > > The reason I think this is necessary is that the kernel has no 
-> > > > idea how to direct upcalls to what userspace considers to be a
-> > > > container - current Linux practice appears to make a "container" 
-> > > > just an arbitrarily chosen junction of namespaces, control groups 
-> > > > and files, which may be changed individually within the
-> > > > "container".
-> > > 
-> > > This sounds like a step in the wrong direction: the strength of the
-> > > current container interfaces in Linux is that people who set up
-> > > containers don't have to agree what they look like.  So I can set 
-> > > up a user namespace without a mount namespace or an architecture
-> > > emulation container with only a mount namespace.
-> > > 
-> > 
-> > Does this really mandate what they look like though? AFAICT, you can
-> > still spawn disconnected namespaces to your heart's content. What 
-> > this does is provide a container for several different namespaces so 
-> > that the kernel can actually be aware of the association between 
-> > them.
-> 
-> Yes, because it imposes a view of what is in a container.  As the
-> several replies have pointed out (and indeed as I pointed out below for
-> kubernetes), this isn't something the orchestration systems would find
-> usable.
-> 
-> >  The way you populate the different namespaces looks to be pretty
-> > flexible.
-> 
-> OK, but look at it another way: If we provides a container API no
-> actual consumer of container technologies wants to use just because we
-> think it makes certain tasks easy, is it really a good API?
-> 
-> Containers are multi-layered and complex.  If you're not ready for this
-> as a user, then you should use an orchestration system that prevents
-> you from screwing up.
-> 
-> > > But ignoring my fun foibles with containers and to give a concrete
-> > > example in terms of a popular orchestration system: in kubernetes,
-> > > where certain namespaces are shared across pods, do you imagine the
-> > > kernel's view of the "container" to be the pod or what kubernetes
-> > > thinks of as the container?  This is important, because half the
-> > > examples you give below are network related and usually pods share 
-> > > a network namespace.
-> > > 
-> > > > The kernel upcall mechanism then needs to decide which set of 
-> > > > namespaces, etc., it must exec the appropriate upcall program. 
-> > > >  Examples of this include:
-> > > > 
-> > > >  (1) The DNS resolver.  The DNS cache in the kernel should 
-> > > > probably be per-network namespace, but in userspace the program, 
-> > > > its libraries and its config data are associated with a mount 
-> > > > tree and a user namespace and it gets run in a particular pid
-> > > > namespace.
-> > > 
-> > > All persistent (written to fs data) has to be mount ns associated;
-> > > there are no ifs, ands and buts to that.  I agree this implies that 
-> > > if you want to run a separate network namespace, you either take 
-> > > DNS from the parent (a lot of containers do) or you set up a daemon 
-> > > to run within the mount namespace.  I agree the latter is a 
-> > > slightly fiddly operation you have to get right, but that's why we 
-> > > have orchestration systems.
-> > > 
-> > > What is it we could do with the above that we cannot do today?
-> > > 
-> > 
-> > Spawn a task directly from the kernel, already set up in the correct
-> > namespaces, a'la call_usermodehelper. So far there is no way to do
-> > that,
-> 
-> Today the usermode helper has to be namespace aware.  We spawn it into
-> the root namespace and it jumps into the correct namespace/cgroup
-> combination and re-executes itself or simply performs the requisite
-> task on behalf of the container.  Is this simple, no; does it work,
-> yes, provided the host OS is aware of what the container orchestration
-> system wants it to do.
-> 
-> > and it is something we'd very much desire. Ian Kent has made several
-> > passes at it recently.
-> 
-> Well, every time we try to remove some of the complexity from
-> userspace, we end up wrapping around the axle of what exactly we're
-> trying to achieve, yes.
-> 
-> > > >  (2) NFS ID mapper.  The NFS ID mapping cache should also 
-> > > > probably be per-network namespace.
-> > > 
-> > > I think this is a view but not the only one:  Right at the moment, 
-> > > NFS ID mapping is used as the one of the ways we can get the user
-> > > namespace ID mapping writes to file problems fixed ... that makes 
-> > > it a property of the mount namespace for a lot of containers. 
-> > >  There are many other instances where they do exactly as you say, 
-> > > but what I'm saying is that we don't want to lose the flexibility
-> > > we currently have.
-> > > 
-> > > >  (3) nfsdcltrack.  A way for NFSD to access stable storage for 
-> > > > tracking of persistent state.  Again, network-namespace 
-> > > > dependent, but also perhaps mount-namespace dependent.
-> > 
-> > Definitely mount-namespace dependent.
-> > 
-> > > 
-> > > So again, given we can set this up to work today, this sounds like 
-> > > more a restriction that will bite us than an enhancement that gives 
-> > > us extra features.
-> > > 
-> > 
-> > How do you set this up to work today?
-> 
-> Well, as above, it spawns into the root, you jump it to where it should
-> be and re-execute or simply handle in the host. 
-> 
-> > AFAIK, if you want to run knfsd in a container today, you're out of 
-> > luck for any non-trivial configuration.
-> 
-> Well "running knfsd in a container" is actually different from having a
-> containerised nfs export.  My understanding was that thanks to the work
-> of Stas Kinsbursky, the latter has mostly worked since the 3.9 kernel
-> for v3 and below.  I assume the current issue is that there's a problem
-> with v4?
-> 
-
-Yes -- v3 mostly works because the equivalent state-tracking (rpc.statd)
-is run as a long-running daemon.
-
-nfsdcltrack uses call_usermodehelper, so for that you need to be able to
-determine what mount namespace to run the thing in. All we really know
-in knfsd when we want to do an upcall is the net namespace. We could
-really use a way to associate the two and spawn the thing in the correct
-container (or pass it enough info for it to setns() into the right
-ones).
-
-In principle, we could just ensure that we do all of this sort of thing
-with long-running daemons that are started whenever the container
-starts. But...having to run daemons full-time for infrequently-used
-services sort of sucks and requires it to be setup. UMH helpers just get
-run as long as the binary is in the right place.
-
-I've also been reading over Eric suggestion, and that seems like it
-might work as well though.
-
-> >  The main reason is that most of knfsd is namespace-ized in the
-> > network namespace, but there is no clear way to associate that with a
-> > mount namespace, which is what we need to do this properly inside a
-> > container. I think David's patches would get us there.
-> > 
-> > > >  (4) General request-key upcalls.  Not particularly namespace 
-> > > > dependent, apart from keyrings being somewhat governed by the 
-> > > > user namespace and the upcall being configured by the mount
-> > > > namespace.
-> > > 
-> > > All mount namespaces have an owning user namespace, so the data
-> > > relations are already there in the kernel, is the problem simply
-> > > finding them?
-> > > 
-> > > > These patches are built on top of the mount context patchset so 
-> > > > that namespaces can be properly propagated over
-> > > > submounts/automounts.
-> > > 
-> > > I'll stop here ... you get the idea that I think this is imposing a 
-> > > set of restrictions that will come back to bite us later.  If this 
-> > > is just for the sake of figuring out how to get keyring upcalls to 
-> > > work, then I'm sure we can come up with something.
-> > > 
-> 
-> 
-
--- 
-Jeff Layton <jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+T24gTW9uLCAyMDE3LTA1LTIyIGF0IDA5OjUzIC0wNzAwLCBKYW1lcyBCb3R0b21sZXkgd3JvdGU6
+Cj4gW0FkZGVkIG1pc3NpbmcgY2MgdG8gY29udGFpbmVycyBsaXN0XQo+IE9uIE1vbiwgMjAxNy0w
+NS0yMiBhdCAxNzoyMiArMDEwMCwgRGF2aWQgSG93ZWxscyB3cm90ZToKPiA+IEhlcmUgYXJlIGEg
+c2V0IG9mIHBhdGNoZXMgdG8gZGVmaW5lIGEgY29udGFpbmVyIG9iamVjdCBmb3IgdGhlIGtlcm5l
+bMKgCj4gPiBhbmQgdG8gcHJvdmlkZSBzb21lIG1ldGhvZHMgdG8gY3JlYXRlIGFuZCBtYW5pcHVs
+YXRlIHRoZW0uCj4gPiAKPiA+IFRoZSByZWFzb24gSSB0aGluayB0aGlzIGlzIG5lY2Vzc2FyeSBp
+cyB0aGF0IHRoZSBrZXJuZWwgaGFzIG5vIGlkZWHCoAo+ID4gaG93IHRvIGRpcmVjdCB1cGNhbGxz
+IHRvIHdoYXQgdXNlcnNwYWNlIGNvbnNpZGVycyB0byBiZSBhIGNvbnRhaW5lciAtCj4gPiBjdXJy
+ZW50IExpbnV4IHByYWN0aWNlIGFwcGVhcnMgdG8gbWFrZSBhICJjb250YWluZXIiIGp1c3QgYW7C
+oAo+ID4gYXJiaXRyYXJpbHkgY2hvc2VuIGp1bmN0aW9uIG9mIG5hbWVzcGFjZXMsIGNvbnRyb2wg
+Z3JvdXBzIGFuZCBmaWxlcyzCoAo+ID4gd2hpY2ggbWF5IGJlIGNoYW5nZWQgaW5kaXZpZHVhbGx5
+IHdpdGhpbiB0aGUgImNvbnRhaW5lciIuCj4gCj4gVGhpcyBzb3VuZHMgbGlrZSBhIHN0ZXAgaW4g
+dGhlIHdyb25nIGRpcmVjdGlvbjogdGhlIHN0cmVuZ3RoIG9mIHRoZQo+IGN1cnJlbnQgY29udGFp
+bmVyIGludGVyZmFjZXMgaW4gTGludXggaXMgdGhhdCBwZW9wbGUgd2hvIHNldCB1cAo+IGNvbnRh
+aW5lcnMgZG9uJ3QgaGF2ZSB0byBhZ3JlZSB3aGF0IHRoZXkgbG9vayBsaWtlLsKgwqBTbyBJIGNh
+biBzZXQgdXAgYQo+IHVzZXIgbmFtZXNwYWNlIHdpdGhvdXQgYSBtb3VudCBuYW1lc3BhY2Ugb3Ig
+YW4gYXJjaGl0ZWN0dXJlIGVtdWxhdGlvbgo+IGNvbnRhaW5lciB3aXRoIG9ubHkgYSBtb3VudCBu
+YW1lc3BhY2UuCj4gCj4gQnV0IGlnbm9yaW5nIG15IGZ1biBmb2libGVzIHdpdGggY29udGFpbmVy
+cyBhbmQgdG8gZ2l2ZSBhIGNvbmNyZXRlCj4gZXhhbXBsZSBpbiB0ZXJtcyBvZiBhIHBvcHVsYXIg
+b3JjaGVzdHJhdGlvbiBzeXN0ZW06IGluIGt1YmVybmV0ZXMsCj4gd2hlcmUgY2VydGFpbiBuYW1l
+c3BhY2VzIGFyZSBzaGFyZWQgYWNyb3NzIHBvZHMsIGRvIHlvdSBpbWFnaW5lIHRoZQo+IGtlcm5l
+bCdzIHZpZXcgb2YgdGhlICJjb250YWluZXIiIHRvIGJlIHRoZSBwb2Qgb3Igd2hhdCBrdWJlcm5l
+dGVzCj4gdGhpbmtzIG9mIGFzIHRoZSBjb250YWluZXI/wqDCoFRoaXMgaXMgaW1wb3J0YW50LCBi
+ZWNhdXNlIGhhbGYgdGhlCj4gZXhhbXBsZXMgeW91IGdpdmUgYmVsb3cgYXJlIG5ldHdvcmsgcmVs
+YXRlZCBhbmQgdXN1YWxseSBwb2RzIHNoYXJlIGEKPiBuZXR3b3JrIG5hbWVzcGFjZS4KPiAKPiA+
+IFRoZSBrZXJuZWwgdXBjYWxsIG1lY2hhbmlzbSB0aGVuIG5lZWRzIHRvIGRlY2lkZSB3aGljaCBz
+ZXQgb2bCoAo+ID4gbmFtZXNwYWNlcywgZXRjLiwgaXQgbXVzdCBleGVjIHRoZSBhcHByb3ByaWF0
+ZSB1cGNhbGwgcHJvZ3JhbS7CoAo+ID4gwqBFeGFtcGxlcyBvZiB0aGlzIGluY2x1ZGU6Cj4gPiAK
+PiA+IMKgKDEpIFRoZSBETlMgcmVzb2x2ZXIuwqDCoFRoZSBETlMgY2FjaGUgaW4gdGhlIGtlcm5l
+bCBzaG91bGQgcHJvYmFibHnCoAo+ID4gYmUgcGVyLW5ldHdvcmsgbmFtZXNwYWNlLCBidXQgaW4g
+dXNlcnNwYWNlIHRoZSBwcm9ncmFtLCBpdHMKPiA+IGxpYnJhcmllcyBhbmQgaXRzIGNvbmZpZyBk
+YXRhIGFyZSBhc3NvY2lhdGVkIHdpdGggYSBtb3VudCB0cmVlIGFuZCBhwqAKPiA+IHVzZXIgbmFt
+ZXNwYWNlIGFuZCBpdCBnZXRzIHJ1biBpbiBhIHBhcnRpY3VsYXIgcGlkIG5hbWVzcGFjZS4KPiAK
+PiBBbGwgcGVyc2lzdGVudCAod3JpdHRlbiB0byBmcyBkYXRhKSBoYXMgdG8gYmUgbW91bnQgbnMg
+YXNzb2NpYXRlZDsKPiB0aGVyZSBhcmUgbm8gaWZzLCBhbmRzIGFuZCBidXRzIHRvIHRoYXQuwqDC
+oEkgYWdyZWUgdGhpcyBpbXBsaWVzIHRoYXQgaWYKPiB5b3Ugd2FudCB0byBydW4gYSBzZXBhcmF0
+ZSBuZXR3b3JrIG5hbWVzcGFjZSwgeW91IGVpdGhlciB0YWtlIEROUyBmcm9tCj4gdGhlIHBhcmVu
+dCAoYSBsb3Qgb2YgY29udGFpbmVycyBkbykgb3IgeW91IHNldCB1cCBhIGRhZW1vbiB0byBydW4K
+PiB3aXRoaW4gdGhlIG1vdW50IG5hbWVzcGFjZS7CoMKgSSBhZ3JlZSB0aGUgbGF0dGVyIGlzIGEg
+c2xpZ2h0bHkgZmlkZGx5Cj4gb3BlcmF0aW9uIHlvdSBoYXZlIHRvIGdldCByaWdodCwgYnV0IHRo
+YXQncyB3aHkgd2UgaGF2ZSBvcmNoZXN0cmF0aW9uCj4gc3lzdGVtcy4KPiAKPiBXaGF0IGlzIGl0
+IHdlIGNvdWxkIGRvIHdpdGggdGhlIGFib3ZlIHRoYXQgd2UgY2Fubm90IGRvIHRvZGF5Pwo+IAo+
+ID4gwqAoMikgTkZTIElEIG1hcHBlci7CoMKgVGhlIE5GUyBJRCBtYXBwaW5nIGNhY2hlIHNob3Vs
+ZCBhbHNvIHByb2JhYmx5IGJlCj4gPiDCoMKgwqDCoMKgcGVyLW5ldHdvcmsgbmFtZXNwYWNlLgo+
+IAo+IEkgdGhpbmsgdGhpcyBpcyBhIHZpZXcgYnV0IG5vdCB0aGUgb25seSBvbmU6wqDCoFJpZ2h0
+IGF0IHRoZSBtb21lbnQsIE5GUwo+IElEIG1hcHBpbmcgaXMgdXNlZCBhcyB0aGUgb25lIG9mIHRo
+ZSB3YXlzIHdlIGNhbiBnZXQgdGhlIHVzZXIgbmFtZXNwYWNlCj4gSUQgbWFwcGluZyB3cml0ZXMg
+dG8gZmlsZSBwcm9ibGVtcyBmaXhlZCAuLi4gdGhhdCBtYWtlcyBpdCBhIHByb3BlcnR5Cj4gb2Yg
+dGhlIG1vdW50IG5hbWVzcGFjZSBmb3IgYSBsb3Qgb2YgY29udGFpbmVycy7CoMKgVGhlcmUgYXJl
+IG1hbnkgb3RoZXIKPiBpbnN0YW5jZXMgd2hlcmUgdGhleSBkbyBleGFjdGx5IGFzIHlvdSBzYXks
+IGJ1dCB3aGF0IEknbSBzYXlpbmcgaXMgdGhhdAo+IHdlIGRvbid0IHdhbnQgdG8gbG9zZSB0aGUg
+ZmxleGliaWxpdHkgd2UgY3VycmVudGx5IGhhdmUuCj4gCj4gPiDCoCgzKSBuZnNkY2x0cmFjay7C
+oMKgQSB3YXkgZm9yIE5GU0QgdG8gYWNjZXNzIHN0YWJsZSBzdG9yYWdlIGZvcsKgCj4gPiB0cmFj
+a2luZyBvZiBwZXJzaXN0ZW50IHN0YXRlLsKgwqBBZ2FpbiwgbmV0d29yay1uYW1lc3BhY2UgZGVw
+ZW5kZW50LMKgCj4gPiBidXQgYWxzbyBwZXJoYXBzIG1vdW50LW5hbWVzcGFjZSBkZXBlbmRlbnQu
+Cj4gCj4gU28gYWdhaW4sIGdpdmVuIHdlIGNhbiBzZXQgdGhpcyB1cCB0byB3b3JrIHRvZGF5LCB0
+aGlzIHNvdW5kcyBsaWtlIG1vcmUKPiBhIHJlc3RyaWN0aW9uIHRoYXQgd2lsbCBiaXRlIHVzIHRo
+YW4gYW4gZW5oYW5jZW1lbnQgdGhhdCBnaXZlcyB1cyBleHRyYQo+IGZlYXR1cmVzLgo+IAo+ID4g
+wqAoNCkgR2VuZXJhbCByZXF1ZXN0LWtleSB1cGNhbGxzLsKgwqBOb3QgcGFydGljdWxhcmx5IG5h
+bWVzcGFjZcKgCj4gPiBkZXBlbmRlbnQsIGFwYXJ0IGZyb20ga2V5cmluZ3MgYmVpbmcgc29tZXdo
+YXQgZ292ZXJuZWQgYnkgdGhlIHVzZXIKPiA+IG5hbWVzcGFjZSBhbmQgdGhlIHVwY2FsbCBiZWlu
+ZyBjb25maWd1cmVkIGJ5IHRoZSBtb3VudCBuYW1lc3BhY2UuCj4gCj4gQWxsIG1vdW50IG5hbWVz
+cGFjZXMgaGF2ZSBhbiBvd25pbmcgdXNlciBuYW1lc3BhY2UsIHNvIHRoZSBkYXRhCj4gcmVsYXRp
+b25zIGFyZSBhbHJlYWR5IHRoZXJlIGluIHRoZSBrZXJuZWwsIGlzIHRoZSBwcm9ibGVtIHNpbXBs
+eQo+IGZpbmRpbmcgdGhlbT8KPiAKPiA+IFRoZXNlIHBhdGNoZXMgYXJlIGJ1aWx0IG9uIHRvcCBv
+ZiB0aGUgbW91bnQgY29udGV4dCBwYXRjaHNldCBzbyB0aGF0Cj4gPiBuYW1lc3BhY2VzIGNhbiBi
+ZSBwcm9wZXJseSBwcm9wYWdhdGVkIG92ZXIgc3VibW91bnRzL2F1dG9tb3VudHMuCj4gCj4gSSds
+bCBzdG9wIGhlcmUgLi4uIHlvdSBnZXQgdGhlIGlkZWEgdGhhdCBJIHRoaW5rIHRoaXMgaXMgaW1w
+b3NpbmcgYSBzZXQKPiBvZiByZXN0cmljdGlvbnMgdGhhdCB3aWxsIGNvbWUgYmFjayB0byBiaXRl
+IHVzIGxhdGVyLsKgwqBJZiB0aGlzIGlzIGp1c3QKPiBmb3IgdGhlIHNha2Ugb2YgZmlndXJpbmcg
+b3V0IGhvdyB0byBnZXQga2V5cmluZyB1cGNhbGxzIHRvIHdvcmssIHRoZW4KPiBJJ20gc3VyZSB3
+ZSBjYW4gY29tZSB1cCB3aXRoIHNvbWV0aGluZy4KCllvdSB0YWxrIGFib3V0IGEgbnVtYmVyIG9m
+IHRoaW5ncyBJJ20gc2ltcGx5IG5vdCBhd2FyZSBvZiBzbyBJIGNhbid0IGFuc3dlciB5b3VyCnF1
+ZXN0aW9ucy4gQnV0IHlvdXIgcG9pbnRzIGRvIHNvdW5kIGxpa2UgaXNzdWVzIHRoYXQgbmVlZCB0
+byBiZSBjb3ZlcmVkLgoKSSB0aGluayB5b3UgbWVudGlvbmVkIHVzZXIgc3BhY2UgdXNlZCBORlMg
+SUQgbWFwcGVyIHdvcmtzIGZpbmUuCkkgd29uZGVyLCBjb3VsZCB5b3UgZ2l2ZSBtb3JlIGRldGFp
+bCBvbiB0aGF0IHBsZWFzZS4KClBlcmhhcHMgbnNlbnRlcigxKSBpcyBiZWluZyB1c2VkLCBJIHRy
+aWVkIHRoYXQgYXMgYSBwb3NzaWJsZSB1c2VybW9kZSBoZWxwZXIKc29sdXRpb24gYW5kIGl0IHBy
+b2JhYmx5IGRpZCAid29yayIgaW4gdGhlIHNlbnNlIG9mIGluIGNvbnRhaW5lciBleGVjdXRpb24g
+YnV0Cm5vLW9uZSBsaWtlZCBpdCwgaXQgc2VlbXMga2VybmVsIGZvbGsgZXhwZWN0IHRvIGRvIHRo
+aW5ncywgd2VsbCwgaW4ga2VybmVsLgoKTm90IG9ubHkgdGhhdCB0aGVyZSB3ZXJlIG90aGVyIHBy
+b2JsZW1zLCBwcm9iYWJseSByZXF1ZXN0IGtleSBzdWIgc3lzdGVtIG5vdApiZWluZyBuYW1lc3Bh
+Y2UgYXdhcmUsIG9yIGlkIGNhY2hpbmcgd2l0aGluIG5mcyBvciBzb21ld2hlcmUgZWxzZSwgYW5k
+IHRoZXJlIHdhcwphIHF1ZXN0aW9uIG9mIG5vdCBiZWluZyBhYmxlIHRvIGNhdGVyIGZvciB1c2Vy
+IG5hbWVzcGFjZSB1c2FnZS4KCkFueXdheSBJIGRvIGhhdmUgYSBkaWZmZXJlbnQgdmlldyBmcm9t
+IG15IG93biBleHBlcmllbmNlcy4KCkZpcnN0IHRoZXJlIGFyZSBhIG51bWJlciBvZiBzdWJzeXN0
+ZW1zIGludm9sdmVkIGluIGNyZWF0aW5nIGEgcHJvY2VzcyBmcm9tCndpdGhpbiBhIGNvbnRhaW5l
+ciB0aGF0IGhhcyB0aGUgY29udGFpbmVyIGVudmlyb25tZW50IGFuZCwgQUZBSUNTIChmcm9tIHRo
+ZQp1c2VybW9kZSBoZWxwZXIgZXhwZXJpZW5jZSksIGl0IG5lZWRzIHRvIGJlIGRvbmUgZnJvbSBv
+dXRzaWRlIHRoZSBjb250YWluZXIuIEZvcgpleGFtcGxlIHN1YiBzeXN0ZW1zIHRoYXQgbmVlZCB0
+byBiZSBoYW5kbGVkIHByb3Blcmx5IGFyZSB0aGUgbmFtZXNwYWNlcyAoYW5kIHRoZQpwaWQgbmFt
+ZXNwYWNlIGluIHBhcnRpY3VsYXIgaXMgdHJpY2t5KSwgY3JlZGVudGlhbHMgYW5kIGNncm91cHMs
+IHRvIG5hbWUgdGhvc2UKdGhhdCBjb21lIGltbWVkaWF0ZWx5IHRvIG1pbmQuIEkganVzdCBjb3Vs
+ZG4ndCBnZXQgYWxsIHRoYXQgcmlnaHQgYWZ0ZXIgYSBudW1iZXIKb2YgdHJpZXMuCgpGcm9tIHRo
+aXMgdGhlIHByb2JsZW0gdGhhdCBvY2N1cnJlZCB0byBtZSBpcyB0aGF0IHdlIGhhdmUgYSBjb21w
+cmVoZW5zaXZlCm5hbWVzcGFjZSBpbXBsZW1lbnRhdGlvbiB3aXRoaW4gdGhlIGtlcm5lbCBidXQg
+bm8gY29udGFpbmVyIGltcGxlbWVudGF0aW9uIHRvCmhlbHAgdGhlIGJpbmRpbmcgdG9nZXRoZXIg
+b2YgdGhlIHZhcmlvdXMgc3ViIHN5c3RlbXMgZm9yIGNvbnRhaW5lciB1c2UgY2FzZXMgaW4KYSB3
+YXkgdGhhdCBzYXRpc2ZpZXMgY29udGFpbmVyIChvciBhIHByb2Nlc3Mgd2l0aGluIGFuIGV4aXN0
+aW5nIGNvbnRhaW5lcikKY3JlYXRpb24uCgpUaGUgcmlzayBpcyB0aGF0LCBhcyB0aW1lIHBhc3Nl
+cywgcHJvYmxlbXMgbGlrZSB1c2VybW9kZSBoZWxwZXIgd2lsbCBiZSBzb2x2ZWQKaW4gZGlmZmVy
+ZW50IHBsYWNlcyBpbiBkaWZmZXJlbnQgd2F5cywgbm90IG5lY2Vzc2FyaWx5IHNhdGlzZmFjdG9y
+aWx5IGFuZApwb3RlbnRpYWxseSBoYXJkIHRvIGZpbmQgd2hlbiB0aGVyZSBhcmUgYnVncyBhbmQg
+ZXZlbiBoYXJkZXIgdG8gbWFpbnRhaW4gdGhhbgp0aGUgaW1wbGVtZW50YXRpb24gaGVyZS4KCkF0
+IGxlYXN0IHRoZSBpbnRlcmZhY2UgaGVyZSBwcm92aWRlcyBhICJnb3RvIiBwbGFjZSB0byBkZWZp
+bmUgYW5kIG1haW50YWluIHRoZQpwcm9jZWR1cmVzIHJlcXVpcmVkIHRvIGRvIHRoZXNlIHRoaW5n
+cy4KClllcywgaXQgd291bGQgcmVxdWlyZSBjaGFuZ2UgYnV0IGNoYW5nZSBoYXBwZW5zIGFuZCB0
+aGUgZmlyc3QgcGFzcyBtYXkgbm90IGJlIG9uCmEgcGFyIHdpdGggd2hhdCBpcyBjdXJyZW50bHkg
+ZG9uZSBmcm9tIGEgc2ltcGxpY2l0eSBQT1YuCgpCdXQgd2h5IG5vdCBzZWUgaXQgYXMgc29sdmlu
+ZyBhIGtlcm5lbCBkZXZlbG9wbWVudCBwcm9ibGVtIGFuZCBmb2N1cyBvbiB3aGF0Cm5lZWRzIHRv
+IGJlIGRvbmUgdG8gbWFrZSBpdCBvbiBwYXIgd2l0aCAoYW5kIHBlcmhhcHMgc2ltcGxlcikgdG8g
+Y292ZXIgdGhlCmN1cnJlbnQgdXNhZ2UgLi4uLgoKRXJpYyBCaWVkZXJtYW4ncyBjb21tZW50IGlz
+IGF0dHJhY3RpdmUgaW5kZWVkIGJ1dCBJIGRvbid0IHNlZSBob3cgdGhhdCBzb2x2ZXMKcHJvYmxl
+bSBvZiBoYXZpbmcgYSBjb250YWluZXJzIHN1YiBzeXN0ZW0gaW1wbGVtZW50YXRpb24gd2hpY2gg
+SSB0aGluayBpcwpuZWVkZWQsIGlmIGZvciBubyBvdGhlciByZWFzb24gdGhhbiBhcyBhIGRlZmlu
+aXRpb24gb2YgY29ycmVjdCB1c2FnZSBhbmQKbG9jYWxpemF0aW9uIG9mIHRoYXQgdXNhZ2UgZm9y
+IGVhc2llciAocmlnaHQsIG5vdGhpbmcgaXMgZWFzeSkgYnVnIHJlc29sdXRpb24uCgpJYW4KX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBt
+YWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczov
+L2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
