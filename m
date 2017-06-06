@@ -1,14 +1,13 @@
-From: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
+From: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Subject: Re: [PATCH 00/26] Fixing wait, exit, ptrace, exec, and CLONE_THREAD
-Date: Wed, 7 Jun 2017 05:40:21 +1000
-Message-ID: <dd16b1bb-e99e-69f2-72f4-1be4cb24d18d@suse.de>
+Date: Tue, 6 Jun 2017 13:07:53 -0700
+Message-ID: <CA+55aFze5rR+rGcG6kt=8PtfgAcs02jqQ7Gm-1=1MzkbA7_nqA@mail.gmail.com>
 References: <877f0pym71.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <877f0pym71.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,29 +17,27 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Roland McGrath <roland-/Z5OmTQCD9xF6kxbq+BtvQ@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Roland McGrath <roland-/Z5OmTQCD9xF6kxbq+BtvQ@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-> Another easy entry point is to see that a multi-threaded setuid won't
-> change the credentials on a zombie thread group leader.  Which can allow
-> sending signals to a process that the credential change should forbid.
-> This is in violation of posix and the semantics we attempt to enforce in
-> linux.
+On Tue, Jun 6, 2017 at 12:01 PM, Eric W. Biederman
+<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+>
+> I am posting this patches in the hope of some review of the strategy I
+> am taking and to let the individual patches be reviewed.
 
-I might be completely wrong on this point (and I haven't looked at the 
-patches), but I was under the impression that multi-threaded set[ug]id 
-was implemented in userspace (by glibc's nptl(7) library that uses RT 
-signals internally to get each thread to update their credentials). And 
-given that, I wouldn't be surprised (as a user) that zombie threads will 
-have stale credentials (glibc isn't running in those threads anymore).
+I'm trying to look through these, and finding (as usual) that the
+signal handling and exit code is extremely scary from a correctness
+and security standpoint.
 
-Am I mistaken in that belief?
+I really want Oleg to review/ack these. Oleg?
 
-</off-topic>
+I also would really really want to see the stuff that actually changes
+semantics split out.
 
--- 
-Aleksa Sarai
-Software Engineer (Containers)
-SUSE Linux GmbH
-https://www.cyphar.com/
+For example, I feel much less nervous about things like making the
+tasklist RCU-safe. So I'd like to see changes like that be separated
+out from the much scarier ones. Would that be possible? Hint hint..
+
+                Linus
