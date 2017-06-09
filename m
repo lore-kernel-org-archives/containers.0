@@ -1,15 +1,11 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 00/26] Fixing wait, exit, ptrace, exec, and CLONE_THREAD
-Date: Wed, 07 Jun 2017 10:59:13 -0500
-Message-ID: <87zidjokku.fsf__14027.0982440144$1496851581$gmane$org@xmission.com>
-References: <877f0pym71.fsf@xmission.com>
-	<CA+55aFze5rR+rGcG6kt=8PtfgAcs02jqQ7Gm-1=1MzkbA7_nqA@mail.gmail.com>
+From: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
+Subject: [PATCH] ioctl_tty.2: add TIOCGPTPEER documentation
+Date: Sat, 10 Jun 2017 03:01:47 +1000
+Message-ID: <20170609170147.32311-1-asarai__43661.6363273517$1497027728$gmane$org@suse.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CA+55aFze5rR+rGcG6kt=8PtfgAcs02jqQ7Gm-1=1MzkbA7_nqA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Linus Torvalds's message of "Tue, 6 Jun 2017 13:07:53 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,87 +15,58 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, Roland McGrath <roland-/Z5OmTQCD9xF6kxbq+BtvQ@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Valentin Rothberg <vrothberg-IBi9RG/b67k@public.gmane.org>, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jiri Slaby <jslaby-IBi9RG/b67k@public.gmane.org>, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> writes:
+The feature this patch references has currently only been accepted into
+tty-testing, but Greg told me to kick this down to man-pages. As a
+result, I can't reference upstream commit id's because the code isn't in
+Linus' tree yet -- should I resend this once it lands in tty-next or
+Linus' tree?
 
-> On Tue, Jun 6, 2017 at 12:01 PM, Eric W. Biederman
-> <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->>
->> I am posting this patches in the hope of some review of the strategy I
->> am taking and to let the individual patches be reviewed.
->
-> I'm trying to look through these, and finding (as usual) that the
-> signal handling and exit code is extremely scary from a correctness
-> and security standpoint.
->
-> I really want Oleg to review/ack these. Oleg?
+Also obviously the release version is a bit of a lie.
 
-Definitely.  The more review I can get the better. 
+8<-----------------------------------------------------------------------
 
-> I also would really really want to see the stuff that actually changes
-> semantics split out.
->
-> For example, I feel much less nervous about things like making the
-> tasklist RCU-safe. So I'd like to see changes like that be separated
-> out from the much scarier ones. Would that be possible? Hint hint..
+This is an ioctl(2) recently added by myself, to allow for container
+runtimes and other programs that interact with (potentially hostile)
+Linux namespaces to safely create {master,slave} pseudoterminal pairs
+without needing to open potentially unsafe /dev/pts/... filenames that
+may be malicious mountpoints or similar in an untrusted namespace
+(avoiding the endless issues with ptsname(3) and similar approaches).
 
-The patches that I posted are the ones that I would really like to have
-ready for the 4.13 merge window.  They are supposed to be the least
-scary patches that don't really depend on anything else, and the semantic changes.
+Cc: <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Signed-off-by: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
+---
+ man2/ioctl_tty.2 | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
 
-After a first brush with code review the non-scary patches wind up just
-being these.
-
-[PATCH 01/26] alpha: Remove unused TASK_GROUP_LEADER
-[PATCH 02/26] cgroup: Don't open code tasklist_empty()
-[PATCH 05/26] exit:  Remove the pointless clearing of SIGPENDING in __exit_signal
-[PATCH 07/26] pidns: Improve the error handling in alloc_pid
-[PATCH 08/26] exit: Make the runqueue rcu safe
-
-This turns out to have a dependency I overlooked so I am dropping it for now.
-[PATCH 06/26] rlimit: Remove unnecessary grab of tasklist_lock
-
-There is a small pair of a semantic change and it's dependency:
-[PATCH 03/26] signal: Do not perform permission checks when sending pdeath_signal
-[PATCH 04/26] signal: Make group_send_sig_info static
-
-There is a teeny tiny semantic change:
-[PATCH 09/26] signal: Don't allow sending SIGKILL or SIGSTOP to init
-
-The deeply related scarier changes (+ indicates it includes a semantic change):
- [PATCH 10/26] ptrace: Simplify ptrace_detach & exit_ptrace
-+[PATCH 11/26] wait: Properly implement __WCLONE handling in the presence of exec and ptrace
- [PATCH 12/26] wait: Directly test for the two cases where wait_task_zombie is called
- [PATCH 13/26] wait: Remove unused delay_group_leader
-+[PATCH 14/26] wait: Move changing of ptrace from wait_consider_task into wait_task_stopped
-+[PATCH 15/26] wait: Don't delay !ptrace_reparented leaders
-+[PATCH 16/26] exit: Fix reporting a ptraced !reparented leader has exited
- [PATCH 17/26] exit: Rework the exit states for ptracees
-+[PATCH 18/26] wait: Fix WSTOPPED on a ptraced child
- [PATCH 19/26] wait: Simpler code for clearing notask_error in wait_consider_task
- [PATCH 20/26] wait: Don't pass the list to wait_consider_task
- [PATCH 21/26] wait: Optmize waitpid
-+[PATCH 22/26] exit: Fix auto-wait of ptraced children
-+[PATCH 23/26] signal: Fix SIGCONT before group stop completes.
-+[PATCH 24/26] signal: In ptrace_stop improve identical signal detection
-+[PATCH 25/26] signal: In ptrace_stop use CLD_TRAPPED in all ptrace signals
-+[PATCH 26/26] pidns: Ensure zap_pid_ns_processes always terminates
-
-Out of my 170 or so total changes those are the bulk of the semantic
-changes and definitely the scariest.  Even those above are very
-conservative and are really just about sorting out the weirdness in the
-semantics when we are ptracing our own child which causes wait and the
-siginfo of SIGCHLD to have two sets of meanings.
-
-I am hoping we can just get 1,2,5,7, and 8 reviewed and I can just apply
-them to my for-next branch.
-
-If I need to repost I will respect the split-out I have described above.
-
-At this point I am happy to see that people are not scared when I
-suggest killing the concept of the thread group leader.
-
-Eric
+diff --git a/man2/ioctl_tty.2 b/man2/ioctl_tty.2
+index d280beacf..61e147d99 100644
+--- a/man2/ioctl_tty.2
++++ b/man2/ioctl_tty.2
+@@ -380,6 +380,21 @@ Place the current lock state of the pseudoterminal slave device
+ in the location pointed to by
+ .IR argp
+ (since Linux 3.8).
++.TP
++.BI "TIOCGPTPEER	int " flags
++Opens and returns a new file handle to the pseudoterminal slave
++device with the given
++.BR open (2)-style
++.IR flags ,
++regardless of whether the path is accessible through the calling process's
++mount namespaces.
++
++Security-conscious programs interacting with namespaces may wish to use this
++over
++.BR open (2)
++with the path provided by
++.BR ptsname (3),
++and similar library methods that have insecure APIs (since Linux 4.13).
+ .PP
+ The BSD ioctls
+ .BR TIOCSTOP ,
+-- 
+2.13.1
