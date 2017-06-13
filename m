@@ -1,14 +1,16 @@
-From: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
-Subject: Fwd: patch "tty: add TIOCGPTPEER ioctl" added to tty-next
-Date: Sat, 10 Jun 2017 04:39:39 +1000
-Message-ID: <f4e9333e-246e-036b-bacf-d1eb881b606d@suse.de>
-References: <149703175016723@kroah.com>
+From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH v4] Introduce v3 namespaced file capabilities
+Date: Tue, 13 Jun 2017 11:47:26 -0400
+Message-ID: <9f80188c-df03-066a-5dac-785cc711d064__30253.7428601228$1497368865$gmane$org@linux.vnet.ibm.com>
+References: <20170507092105.GA67584@inn.lkp.intel.com>
+	<20170508044408.GA11400@mail.hallyn.com>
+	<CACOXgS9a=avAWZEre1Q1CGjSHeq78Pkq1fYfwPjiyEX-u=B5wQ@mail.gmail.com>
+	<20170508181156.GA23112@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <149703175016723-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>
-Content-Language: en-US
+In-Reply-To: <20170508181156.GA23112-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,319 +20,563 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: lkp-JC7UmRfGjtg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Just a heads up to any container runtime developers (I forgot to Cc this 
-list), I added a new tty_ioctl that will make it possible for userspace 
-processes to safely avoid the whole "is /dev/ trustworthy" problem when 
-it comes to potentially hostile namespaces.
+On 05/08/2017 02:11 PM, Serge E. Hallyn wrote:
+> Root in a non-initial user ns cannot be trusted to write a traditional
+> security.capability xattr.  If it were allowed to do so, then any
+> unprivileged user on the host could map his own uid to root in a private
+> namespace, write the xattr, and execute the file with privilege on the
+> host.
+>
+> However supporting file capabilities in a user namespace is very
+> desirable.  Not doing so means that any programs designed to run with
+> limited privilege must continue to support other methods of gaining and
+> dropping privilege.  For instance a program installer must detect
+> whether file capabilities can be assigned, and assign them if so but set
+> setuid-root otherwise.  The program in turn must know how to drop
+> partial capabilities, and do so only if setuid-root.
 
-I would recommend using this if you can (and you've implemented pty 
-creation inside the container with nsenter or similar functionality). If 
-any of you are going to Linux Plumbers, Christian Brauner and myself 
-will (likely) be talking about a whole class of similar problems when 
-trying to write a runtime that is secure against hostile containers and 
-how we can work to fix them as well.
-
--------- Forwarded Message --------
-Subject: patch "tty: add TIOCGPTPEER ioctl" added to tty-next
-Date: Fri, 09 Jun 2017 20:09:10 +0200
-From: gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org
-To: asarai-l3A5Bk7waGM@public.gmane.org, christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org, 
-gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, vrothberg-IBi9RG/b67k@public.gmane.org
+Hi Serge,
 
 
-This is a note to let you know that I've just added the patch titled
+   I have been looking at patch below primarily to learn how we could 
+apply a similar technique to security.ima and security.evm for a 
+namespaced IMA. From the paragraphs above I thought that you solved the 
+problem of a shared filesystem where one now can write different 
+security.capability xattrs by effectively supporting for example 
+security.capability[uid=1000] and security.capability[uid=2000] written 
+into the filesystem. Each would then become visible as 
+security.capability if the userns mapping is set appropriately. However, 
+this doesn't seem to be how it is implemented. There seems to be only a 
+single such entry with uid appended to it and, if it was a shared 
+filesystem, the first one to set this attribute blocks everyone else 
+from writing the xattr. Is that how it works? Would that work 
+differently with an overlay filesystem ? I think a similar model could 
+also work for IMA, but maybe you have some thoughts. The only thing I 
+would be concerned about is blocking the parent container's root user 
+from setting an xattr.
 
-     tty: add TIOCGPTPEER ioctl
-
-to my tty git tree which can be found at
-     git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/tty.git
-in the tty-next branch.
-
-The patch will show up in the next release of the linux-next tree
-(usually sometime within the next 24 hours during the week.)
-
-The patch will also be merged in the next major kernel release
-during the merge window.
-
-If you have any questions about this process, please let me know.
-
-
- From 54ebbfb1603415d9953c150535850d30609ef077 Mon Sep 17 00:00:00 2001
-From: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
-Date: Sun, 4 Jun 2017 00:15:15 +1000
-Subject: tty: add TIOCGPTPEER ioctl
-
-When opening the slave end of a PTY, it is not possible for userspace to
-safely ensure that /dev/pts/$num is actually a slave (in cases where the
-mount namespace in which devpts was mounted is controlled by an
-untrusted process). In addition, there are several unresolvable
-race conditions if userspace were to attempt to detect attacks through
-stat(2) and other similar methods [in addition it is not clear how
-userspace could detect attacks involving FUSE].
-
-Resolve this by providing an interface for userpace to safely open the
-"peer" end of a PTY file descriptor by using the dentry cached by
-devpts. Since it is not possible to have an open master PTY without
-having its slave exposed in /dev/pts this interface is safe. This
-interface currently does not provide a way to get the master pty (since
-it is not clear whether such an interface is safe or even useful).
-
-Cc: Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
-Cc: Valentin Rothberg <vrothberg-IBi9RG/b67k@public.gmane.org>
-Signed-off-by: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
-Signed-off-by: Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>
----
-  arch/alpha/include/uapi/asm/ioctls.h   |  1 +
-  arch/mips/include/uapi/asm/ioctls.h    |  1 +
-  arch/parisc/include/uapi/asm/ioctls.h  |  1 +
-  arch/powerpc/include/uapi/asm/ioctls.h |  1 +
-  arch/sh/include/uapi/asm/ioctls.h      |  1 +
-  arch/sparc/include/uapi/asm/ioctls.h   |  3 +-
-  arch/xtensa/include/uapi/asm/ioctls.h  |  1 +
-  drivers/tty/pty.c                      | 71 
-++++++++++++++++++++++++++++++++--
-  include/uapi/asm-generic/ioctls.h      |  1 +
-  9 files changed, 76 insertions(+), 5 deletions(-)
-
-diff --git a/arch/alpha/include/uapi/asm/ioctls.h 
-b/arch/alpha/include/uapi/asm/ioctls.h
-index f30c94ae1bdb..ff67b8373bf7 100644
---- a/arch/alpha/include/uapi/asm/ioctls.h
-+++ b/arch/alpha/include/uapi/asm/ioctls.h
-@@ -100,6 +100,7 @@
-  #define TIOCGPKT	_IOR('T', 0x38, int) /* Get packet mode state */
-  #define TIOCGPTLCK	_IOR('T', 0x39, int) /* Get Pty lock state */
-  #define TIOCGEXCL	_IOR('T', 0x40, int) /* Get exclusive mode state */
-+#define TIOCGPTPEER	_IOR('T', 0x41, int) /* Safely open the slave */
-   #define TIOCSERCONFIG	0x5453
-  #define TIOCSERGWILD	0x5454
-diff --git a/arch/mips/include/uapi/asm/ioctls.h 
-b/arch/mips/include/uapi/asm/ioctls.h
-index 740219c2c894..68e19b689a00 100644
---- a/arch/mips/include/uapi/asm/ioctls.h
-+++ b/arch/mips/include/uapi/asm/ioctls.h
-@@ -91,6 +91,7 @@
-  #define TIOCGPKT	_IOR('T', 0x38, int) /* Get packet mode state */
-  #define TIOCGPTLCK	_IOR('T', 0x39, int) /* Get Pty lock state */
-  #define TIOCGEXCL	_IOR('T', 0x40, int) /* Get exclusive mode state */
-+#define TIOCGPTPEER	_IOR('T', 0x41, int) /* Safely open the slave */
-   /* I hope the range from 0x5480 on is free ... */
-  #define TIOCSCTTY	0x5480		/* become controlling tty */
-diff --git a/arch/parisc/include/uapi/asm/ioctls.h 
-b/arch/parisc/include/uapi/asm/ioctls.h
-index b6572f051b67..674c68a5bbd0 100644
---- a/arch/parisc/include/uapi/asm/ioctls.h
-+++ b/arch/parisc/include/uapi/asm/ioctls.h
-@@ -60,6 +60,7 @@
-  #define TIOCGPKT	_IOR('T', 0x38, int) /* Get packet mode state */
-  #define TIOCGPTLCK	_IOR('T', 0x39, int) /* Get Pty lock state */
-  #define TIOCGEXCL	_IOR('T', 0x40, int) /* Get exclusive mode state */
-+#define TIOCGPTPEER	_IOR('T', 0x41, int) /* Safely open the slave */
-   #define FIONCLEX	0x5450  /* these numbers need to be adjusted. */
-  #define FIOCLEX		0x5451
-diff --git a/arch/powerpc/include/uapi/asm/ioctls.h 
-b/arch/powerpc/include/uapi/asm/ioctls.h
-index 49a25796a61a..bfd609a3e928 100644
---- a/arch/powerpc/include/uapi/asm/ioctls.h
-+++ b/arch/powerpc/include/uapi/asm/ioctls.h
-@@ -100,6 +100,7 @@
-  #define TIOCGPKT	_IOR('T', 0x38, int) /* Get packet mode state */
-  #define TIOCGPTLCK	_IOR('T', 0x39, int) /* Get Pty lock state */
-  #define TIOCGEXCL	_IOR('T', 0x40, int) /* Get exclusive mode state */
-+#define TIOCGPTPEER	_IOR('T', 0x41, int) /* Safely open the slave */
-   #define TIOCSERCONFIG	0x5453
-  #define TIOCSERGWILD	0x5454
-diff --git a/arch/sh/include/uapi/asm/ioctls.h 
-b/arch/sh/include/uapi/asm/ioctls.h
-index c9903e56ccf4..eec7901e9e65 100644
---- a/arch/sh/include/uapi/asm/ioctls.h
-+++ b/arch/sh/include/uapi/asm/ioctls.h
-@@ -93,6 +93,7 @@
-  #define TIOCGPKT	_IOR('T', 0x38, int) /* Get packet mode state */
-  #define TIOCGPTLCK	_IOR('T', 0x39, int) /* Get Pty lock state */
-  #define TIOCGEXCL	_IOR('T', 0x40, int) /* Get exclusive mode state */
-+#define TIOCGPTPEER	_IOR('T', 0x41, int) /* Safely open the slave */
-   #define TIOCSERCONFIG	_IO('T', 83) /* 0x5453 */
-  #define TIOCSERGWILD	_IOR('T', 84,  int) /* 0x5454 */
-diff --git a/arch/sparc/include/uapi/asm/ioctls.h 
-b/arch/sparc/include/uapi/asm/ioctls.h
-index 06b3f6c3bb9a..6d27398632ea 100644
---- a/arch/sparc/include/uapi/asm/ioctls.h
-+++ b/arch/sparc/include/uapi/asm/ioctls.h
-@@ -27,7 +27,7 @@
-  #define TIOCGRS485	_IOR('T', 0x41, struct serial_rs485)
-  #define TIOCSRS485	_IOWR('T', 0x42, struct serial_rs485)
-  -/* Note that all the ioctls that are not available in Linux have a 
-+/* Note that all the ioctls that are not available in Linux have a
-   * double underscore on the front to: a) avoid some programs to
-   * think we support some ioctls under Linux (autoconfiguration stuff)
-   */
-@@ -88,6 +88,7 @@
-  #define TIOCGPTN	_IOR('t', 134, unsigned int) /* Get Pty Number */
-  #define TIOCSPTLCK	_IOW('t', 135, int) /* Lock/unlock PTY */
-  #define TIOCSIG		_IOW('t', 136, int) /* Generate signal on Pty slave */
-+#define TIOCGPTPEER	_IOR('t', 137, int) /* Safely open the slave */
-   /* Little f */
-  #define FIOCLEX		_IO('f', 1)
-diff --git a/arch/xtensa/include/uapi/asm/ioctls.h 
-b/arch/xtensa/include/uapi/asm/ioctls.h
-index 518954e74e6d..98b004e24e85 100644
---- a/arch/xtensa/include/uapi/asm/ioctls.h
-+++ b/arch/xtensa/include/uapi/asm/ioctls.h
-@@ -105,6 +105,7 @@
-  #define TIOCGPKT	_IOR('T', 0x38, int) /* Get packet mode state */
-  #define TIOCGPTLCK	_IOR('T', 0x39, int) /* Get Pty lock state */
-  #define TIOCGEXCL	_IOR('T', 0x40, int) /* Get exclusive mode state */
-+#define TIOCGPTPEER	_IOR('T', 0x41, int) /* Safely open the slave */
-   #define TIOCSERCONFIG	_IO('T', 83)
-  #define TIOCSERGWILD	_IOR('T', 84,  int)
-diff --git a/drivers/tty/pty.c b/drivers/tty/pty.c
-index 2a6bd9ae3f8b..d1399aac05a1 100644
---- a/drivers/tty/pty.c
-+++ b/drivers/tty/pty.c
-@@ -24,6 +24,9 @@
-  #include <linux/slab.h>
-  #include <linux/mutex.h>
-  #include <linux/poll.h>
-+#include <linux/mount.h>
-+#include <linux/file.h>
-+#include <linux/ioctl.h>
-   #undef TTY_DEBUG_HANGUP
-  #ifdef TTY_DEBUG_HANGUP
-@@ -66,8 +69,13 @@ static void pty_close(struct tty_struct *tty, struct 
-file *filp)
-  #ifdef CONFIG_UNIX98_PTYS
-  		if (tty->driver == ptm_driver) {
-  			mutex_lock(&devpts_mutex);
--			if (tty->link->driver_data)
--				devpts_pty_kill(tty->link->driver_data);
-+			if (tty->link->driver_data) {
-+				struct path *path = tty->link->driver_data;
-+
-+				devpts_pty_kill(path->dentry);
-+				path_put(path);
-+				kfree(path);
-+			}
-  			mutex_unlock(&devpts_mutex);
-  		}
-  #endif
-@@ -440,6 +448,48 @@ static int pty_common_install(struct tty_driver 
-*driver, struct tty_struct *tty,
-  	return retval;
-  }
-  +/**
-+ *	pty_open_peer - open the peer of a pty
-+ *	@tty: the peer of the pty being opened
-+ *
-+ *	Open the cached dentry in tty->link, providing a safe way for userspace
-+ *	to get the slave end of a pty (where they have the master fd and cannot
-+ *	access or trust the mount namespace /dev/pts was mounted inside).
-+ */
-+static struct file *pty_open_peer(struct tty_struct *tty, int flags)
-+{
-+	if (tty->driver->subtype != PTY_TYPE_MASTER)
-+		return ERR_PTR(-EIO);
-+	return dentry_open(tty->link->driver_data, flags, current_cred());
-+}
-+
-+static int pty_get_peer(struct tty_struct *tty, int flags)
-+{
-+	int fd = -1;
-+	struct file *filp = NULL;
-+	int retval = -EINVAL;
-+
-+	fd = get_unused_fd_flags(0);
-+	if (fd < 0) {
-+		retval = fd;
-+		goto err;
-+	}
-+
-+	filp = pty_open_peer(tty, flags);
-+	if (IS_ERR(filp)) {
-+		retval = PTR_ERR(filp);
-+		goto err_put;
-+	}
-+
-+	fd_install(fd, filp);
-+	return fd;
-+
-+err_put:
-+	put_unused_fd(fd);
-+err:
-+	return retval;
-+}
-+
-  static void pty_cleanup(struct tty_struct *tty)
-  {
-  	tty_port_put(tty->port);
-@@ -613,6 +663,8 @@ static int pty_unix98_ioctl(struct tty_struct *tty,
-  		return pty_get_pktmode(tty, (int __user *)arg);
-  	case TIOCGPTN: /* Get PT Number */
-  		return put_user(tty->index, (unsigned int __user *)arg);
-+	case TIOCGPTPEER: /* Open the other end */
-+		return pty_get_peer(tty, (int) arg);
-  	case TIOCSIG:    /* Send signal to other side of pty */
-  		return pty_signal(tty, (int) arg);
-  	}
-@@ -740,6 +792,7 @@ static int ptmx_open(struct inode *inode, struct 
-file *filp)
-  {
-  	struct pts_fs_info *fsi;
-  	struct tty_struct *tty;
-+	struct path *pts_path;
-  	struct dentry *dentry;
-  	int retval;
-  	int index;
-@@ -793,16 +846,26 @@ static int ptmx_open(struct inode *inode, struct 
-file *filp)
-  		retval = PTR_ERR(dentry);
-  		goto err_release;
-  	}
--	tty->link->driver_data = dentry;
-+	/* We need to cache a fake path for TIOCGPTPEER. */
-+	pts_path = kmalloc(sizeof(struct path), GFP_KERNEL);
-+	if (!pts_path)
-+		goto err_release;
-+	pts_path->mnt = filp->f_path.mnt;
-+	pts_path->dentry = dentry;
-+	path_get(pts_path);
-+	tty->link->driver_data = pts_path;
-   	retval = ptm_driver->ops->open(tty, filp);
-  	if (retval)
--		goto err_release;
-+		goto err_path_put;
-   	tty_debug_hangup(tty, "opening (count=%d)\n", tty->count);
-   	tty_unlock(tty);
-  	return 0;
-+err_path_put:
-+	path_put(pts_path);
-+	kfree(pts_path);
-  err_release:
-  	tty_unlock(tty);
-  	// This will also put-ref the fsi
-diff --git a/include/uapi/asm-generic/ioctls.h 
-b/include/uapi/asm-generic/ioctls.h
-index 143dacbb7d9a..06d5f7ddf84e 100644
---- a/include/uapi/asm-generic/ioctls.h
-+++ b/include/uapi/asm-generic/ioctls.h
-@@ -77,6 +77,7 @@
-  #define TIOCGPKT	_IOR('T', 0x38, int) /* Get packet mode state */
-  #define TIOCGPTLCK	_IOR('T', 0x39, int) /* Get Pty lock state */
-  #define TIOCGEXCL	_IOR('T', 0x40, int) /* Get exclusive mode state */
-+#define TIOCGPTPEER	_IOR('T', 0x41, int) /* Safely open the slave */
-   #define FIONCLEX	0x5450
-  #define FIOCLEX		0x5451
--- 
-2.13.1
+Regards,
+    Stefan
 
 
-
-
--- 
-Aleksa Sarai
-Software Engineer (Containers)
-SUSE Linux GmbH
-https://www.cyphar.com/
+>
+> This patch introduces v3 of the security.capability xattr.  It builds a
+> vfs_ns_cap_data struct by appending a uid_t rootid to struct
+> vfs_cap_data.  This is the absolute uid_t (that is, the uid_t in user
+> namespace which mounted the filesystem, usually init_user_ns) of the
+> root id in whose namespaces the file capabilities may take effect.
+>
+> When a task asks to write a v2 security.capability xattr, if it is
+> privileged with respect to the userns which mounted the filesystem, then
+> nothing should change.  Otherwise, the kernel will transparently rewrite
+> the xattr as a v3 with the appropriate rootid.  This is done during the
+> execution of setxattr() to catch user-space-initiated capability writes.
+> Subsequently, any task executing the file which has the noted kuid as
+> its root uid, or which is in a descendent user_ns of such a user_ns,
+> will run the file with capabilities.
+>
+> Similarly when asking to read file capabilities, a v3 capability will
+> be presented as v2 if it applies to the caller's namespace.
+>
+> If a task writes a v3 security.capability, then it can provide a uid for
+> the xattr so long as the uid is valid in its own user namespace, and it
+> is privileged with CAP_SETFCAP over its namespace.  The kernel will
+> translate that rootid to an absolute uid, and write that to disk.  After
+> this, a task in the writer's namespace will not be able to use those
+> capabilities (unless rootid was 0), but a task in a namespace where the
+> given uid is root will.
+>
+> Only a single security.capability xattr may exist at a time for a given
+> file.  A task may overwrite an existing xattr so long as it is
+> privileged over the inode.  Note this is a departure from previous
+> semantics, which required privilege to remove a security.capability
+> xattr.  This check can be re-added if deemed useful.
+>
+> This allows a simple setxattr to work, allows tar/untar to work, and
+> allows us to tar in one namespace and untar in another while preserving
+> the capability, without risking leaking privilege into a parent
+> namespace.
+>
+> Example using tar:
+>
+>   $ cp /bin/sleep sleepx
+>   $ mkdir b1 b2
+>   $ lxc-usernsexec -m b:0:100000:1 -m b:1:$(id -u):1 -- chown 0:0 b1
+>   $ lxc-usernsexec -m b:0:100001:1 -m b:1:$(id -u):1 -- chown 0:0 b2
+>   $ lxc-usernsexec -m b:0:100000:1000 -- tar --xattrs-include=security.capability --xattrs -cf b1/sleepx.tar sleepx
+>   $ lxc-usernsexec -m b:0:100001:1000 -- tar --xattrs-include=security.capability --xattrs -C b2 -xf b1/sleepx.tar
+>   $ lxc-usernsexec -m b:0:100001:1000 -- getcap b2/sleepx
+>     b2/sleepx = cap_sys_admin+ep
+>   # /opt/ltp/testcases/bin/getv3xattr b2/sleepx
+>     v3 xattr, rootid is 100001
+>
+> A patch to linux-test-project adding a new set of tests for this
+> functionality is in the nsfscaps branch at github.com/hallyn/ltp
+>
+> Changelog:
+>     Nov 02 2016: fix invalid check at refuse_fcap_overwrite()
+>     Nov 07 2016: convert rootid from and to fs user_ns
+>     (From ebiederm: mar 28 2017)
+>       commoncap.c: fix typos - s/v4/v3
+>       get_vfs_caps_from_disk: clarify the fs_ns root access check
+>       nsfscaps: change the code split for cap_inode_setxattr()
+>     Apr 09 2017:
+>         don't return v3 cap for caps owned by current root.
+>        return a v2 cap for a true v2 cap in non-init ns
+>     Apr 18 2017:
+>        . Change the flow of fscap writing to support s_user_ns writing.
+>        . Remove refuse_fcap_overwrite().  The value of the previous
+>          xattr doesn't matter.
+>     Apr 24 2017:
+>        . incorporate Eric's incremental diff
+>        . move cap_convert_nscap to setxattr and simplify its usage
+>     May 8, 2017:
+>        . fix leaking dentry refcount in cap_inode_getsecurity
+>
+> Signed-off-by: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+> ---
+>   fs/xattr.c                      |   6 +
+>   include/linux/capability.h      |   2 +
+>   include/linux/security.h        |   2 +
+>   include/uapi/linux/capability.h |  22 +++-
+>   security/commoncap.c            | 270 +++++++++++++++++++++++++++++++++++++---
+>   5 files changed, 280 insertions(+), 22 deletions(-)
+>
+> diff --git a/fs/xattr.c b/fs/xattr.c
+> index 7e3317c..0a9dea4 100644
+> --- a/fs/xattr.c
+> +++ b/fs/xattr.c
+> @@ -444,6 +444,12 @@ setxattr(struct dentry *d, const char __user *name, const void __user *value,
+>   		if ((strcmp(kname, XATTR_NAME_POSIX_ACL_ACCESS) == 0) ||
+>   		    (strcmp(kname, XATTR_NAME_POSIX_ACL_DEFAULT) == 0))
+>   			posix_acl_fix_xattr_from_user(kvalue, size);
+> +		else if (strcmp(kname, XATTR_NAME_CAPS) == 0) {
+> +			error = cap_convert_nscap(d, &kvalue, size);
+> +			if (error < 0)
+> +				goto out;
+> +			size = error;
+> +		}
+>   	}
+>
+>   	error = vfs_setxattr(d, kname, kvalue, size, flags);
+> diff --git a/include/linux/capability.h b/include/linux/capability.h
+> index 6ffb67e..b52e278 100644
+> --- a/include/linux/capability.h
+> +++ b/include/linux/capability.h
+> @@ -248,4 +248,6 @@ extern bool ptracer_capable(struct task_struct *tsk, struct user_namespace *ns);
+>   /* audit system wants to get cap info from files as well */
+>   extern int get_vfs_caps_from_disk(const struct dentry *dentry, struct cpu_vfs_cap_data *cpu_caps);
+>
+> +extern int cap_convert_nscap(struct dentry *dentry, void **ivalue, size_t size);
+> +
+>   #endif /* !_LINUX_CAPABILITY_H */
+> diff --git a/include/linux/security.h b/include/linux/security.h
+> index 96899fa..bd49cc1 100644
+> --- a/include/linux/security.h
+> +++ b/include/linux/security.h
+> @@ -86,6 +86,8 @@ extern int cap_inode_setxattr(struct dentry *dentry, const char *name,
+>   extern int cap_inode_removexattr(struct dentry *dentry, const char *name);
+>   extern int cap_inode_need_killpriv(struct dentry *dentry);
+>   extern int cap_inode_killpriv(struct dentry *dentry);
+> +extern int cap_inode_getsecurity(struct inode *inode, const char *name,
+> +				 void **buffer, bool alloc);
+>   extern int cap_mmap_addr(unsigned long addr);
+>   extern int cap_mmap_file(struct file *file, unsigned long reqprot,
+>   			 unsigned long prot, unsigned long flags);
+> diff --git a/include/uapi/linux/capability.h b/include/uapi/linux/capability.h
+> index 49bc062..fd4f87d 100644
+> --- a/include/uapi/linux/capability.h
+> +++ b/include/uapi/linux/capability.h
+> @@ -60,9 +60,13 @@ typedef struct __user_cap_data_struct {
+>   #define VFS_CAP_U32_2           2
+>   #define XATTR_CAPS_SZ_2         (sizeof(__le32)*(1 + 2*VFS_CAP_U32_2))
+>
+> -#define XATTR_CAPS_SZ           XATTR_CAPS_SZ_2
+> -#define VFS_CAP_U32             VFS_CAP_U32_2
+> -#define VFS_CAP_REVISION	VFS_CAP_REVISION_2
+> +#define VFS_CAP_REVISION_3	0x03000000
+> +#define VFS_CAP_U32_3           2
+> +#define XATTR_CAPS_SZ_3         (sizeof(__le32)*(2 + 2*VFS_CAP_U32_3))
+> +
+> +#define XATTR_CAPS_SZ           XATTR_CAPS_SZ_3
+> +#define VFS_CAP_U32             VFS_CAP_U32_3
+> +#define VFS_CAP_REVISION	VFS_CAP_REVISION_3
+>
+>   struct vfs_cap_data {
+>   	__le32 magic_etc;            /* Little endian */
+> @@ -72,6 +76,18 @@ struct vfs_cap_data {
+>   	} data[VFS_CAP_U32];
+>   };
+>
+> +/*
+> + * same as vfs_cap_data but with a rootid at the end
+> + */
+> +struct vfs_ns_cap_data {
+> +	__le32 magic_etc;
+> +	struct {
+> +		__le32 permitted;    /* Little endian */
+> +		__le32 inheritable;  /* Little endian */
+> +	} data[VFS_CAP_U32];
+> +	__le32 rootid;
+> +};
+> +
+>   #ifndef __KERNEL__
+>
+>   /*
+> diff --git a/security/commoncap.c b/security/commoncap.c
+> index 78b3783..c28d126 100644
+> --- a/security/commoncap.c
+> +++ b/security/commoncap.c
+> @@ -332,6 +332,209 @@ int cap_inode_killpriv(struct dentry *dentry)
+>   	return error;
+>   }
+>
+> +static bool rootid_owns_currentns(kuid_t kroot)
+> +{
+> +	struct user_namespace *ns;
+> +
+> +	if (!uid_valid(kroot))
+> +		return false;
+> +
+> +	for (ns = current_user_ns(); ; ns = ns->parent) {
+> +		if (from_kuid(ns, kroot) == 0)
+> +			return true;
+> +		if (ns == &init_user_ns)
+> +			break;
+> +	}
+> +
+> +	return false;
+> +}
+> +
+> +static __u32 sansflags(__u32 m)
+> +{
+> +	return m & ~VFS_CAP_FLAGS_EFFECTIVE;
+> +}
+> +
+> +static bool is_v2header(size_t size, __le32 magic)
+> +{
+> +	__u32 m = le32_to_cpu(magic);
+> +	if (size != XATTR_CAPS_SZ_2)
+> +		return false;
+> +	return sansflags(m) == VFS_CAP_REVISION_2;
+> +}
+> +
+> +static bool is_v3header(size_t size, __le32 magic)
+> +{
+> +	__u32 m = le32_to_cpu(magic);
+> +
+> +	if (size != XATTR_CAPS_SZ_3)
+> +		return false;
+> +	return sansflags(m) == VFS_CAP_REVISION_3;
+> +}
+> +
+> +/*
+> + * getsecurity: We are called for security.* before any attempt to read the
+> + * xattr from the inode itself.
+> + *
+> + * This gives us a chance to read the on-disk value and convert it.  If we
+> + * return -EOPNOTSUPP, then vfs_getxattr() will call the i_op handler.
+> + *
+> + * Note we are not called by vfs_getxattr_alloc(), but that is only called
+> + * by the integrity subsystem, which really wants the unconverted values -
+> + * so that's good.
+> + */
+> +int cap_inode_getsecurity(struct inode *inode, const char *name, void **buffer,
+> +			  bool alloc)
+> +{
+> +	int size, ret;
+> +	kuid_t kroot;
+> +	uid_t root, mappedroot;
+> +	char *tmpbuf = NULL;
+> +	struct vfs_cap_data *cap;
+> +	struct vfs_ns_cap_data *nscap;
+> +	struct dentry *dentry;
+> +	struct user_namespace *fs_ns;
+> +
+> +	if (strcmp(name, "capability") != 0)
+> +		return -EOPNOTSUPP;
+> +
+> +	dentry = d_find_alias(inode);
+> +	if (!dentry)
+> +		return -EINVAL;
+> +
+> +	size = sizeof(struct vfs_ns_cap_data);
+> +	ret = (int) vfs_getxattr_alloc(dentry, XATTR_NAME_CAPS,
+> +				 &tmpbuf, size, GFP_NOFS);
+> +	dput(dentry);
+> +
+> +	if (ret < 0)
+> +		return ret;
+> +
+> +	fs_ns = inode->i_sb->s_user_ns;
+> +	cap = (struct vfs_cap_data *) tmpbuf;
+> +	if (is_v2header((size_t) ret, cap->magic_etc)) {
+> +		/* If this is sizeof(vfs_cap_data) then we're ok with the
+> +		 * on-disk value, so return that.  */
+> +		if (alloc)
+> +			*buffer = tmpbuf;
+> +		else
+> +			kfree(tmpbuf);
+> +		return ret;
+> +	} else if (!is_v3header((size_t) ret, cap->magic_etc)) {
+> +		kfree(tmpbuf);
+> +		return -EINVAL;
+> +	}
+> +
+> +	nscap = (struct vfs_ns_cap_data *) tmpbuf;
+> +	root = le32_to_cpu(nscap->rootid);
+> +	kroot = make_kuid(fs_ns, root);
+> +
+> +	/* If the root kuid maps to a valid uid in current ns, then return
+> +	 * this as a nscap. */
+> +	mappedroot = from_kuid(current_user_ns(), kroot);
+> +	if (mappedroot != (uid_t)-1 && mappedroot != (uid_t)0) {
+> +		if (alloc) {
+> +			*buffer = tmpbuf;
+> +			nscap->rootid = cpu_to_le32(mappedroot);
+> +		} else
+> +			kfree(tmpbuf);
+> +		return size;
+> +	}
+> +
+> +	if (!rootid_owns_currentns(kroot)) {
+> +		kfree(tmpbuf);
+> +		return -EOPNOTSUPP;
+> +	}
+> +
+> +	/* This comes from a parent namespace.  Return as a v2 capability */
+> +	size = sizeof(struct vfs_cap_data);
+> +	if (alloc) {
+> +		*buffer = kmalloc(size, GFP_ATOMIC);
+> +		if (*buffer) {
+> +			struct vfs_cap_data *cap = *buffer;
+> +			__le32 nsmagic, magic;
+> +			magic = VFS_CAP_REVISION_2;
+> +			nsmagic = le32_to_cpu(nscap->magic_etc);
+> +			if (nsmagic & VFS_CAP_FLAGS_EFFECTIVE)
+> +				magic |= VFS_CAP_FLAGS_EFFECTIVE;
+> +			memcpy(&cap->data, &nscap->data, sizeof(__le32) * 2 * VFS_CAP_U32);
+> +			cap->magic_etc = cpu_to_le32(magic);
+> +		}
+> +	}
+> +	kfree(tmpbuf);
+> +	return size;
+> +}
+> +
+> +static kuid_t rootid_from_xattr(const void *value, size_t size,
+> +				struct user_namespace *task_ns)
+> +{
+> +	const struct vfs_ns_cap_data *nscap = value;
+> +	uid_t rootid = 0;
+> +
+> +	if (size == XATTR_CAPS_SZ_3)
+> +		rootid = le32_to_cpu(nscap->rootid);
+> +
+> +	return make_kuid(task_ns, rootid);
+> +}
+> +
+> +static bool validheader(size_t size, __le32 magic)
+> +{
+> +	return is_v2header(size, magic) || is_v3header(size, magic);
+> +}
+> +
+> +/*
+> + * User requested a write of security.capability.  If needed, update the
+> + * xattr to change from v2 to v3, or to fixup the v3 rootid.
+> + *
+> + * If all is ok, we return the new size, on error return < 0.
+> + */
+> +int cap_convert_nscap(struct dentry *dentry, void **ivalue, size_t size)
+> +{
+> +	struct vfs_ns_cap_data *nscap;
+> +	uid_t nsrootid;
+> +	const struct vfs_cap_data *cap = *ivalue;
+> +	__u32 magic, nsmagic;
+> +	struct inode *inode = d_backing_inode(dentry);
+> +	struct user_namespace *task_ns = current_user_ns(),
+> +		*fs_ns = inode->i_sb->s_user_ns;
+> +	kuid_t rootid;
+> +	size_t newsize;
+> +
+> +	if (!*ivalue)
+> +		return -EINVAL;
+> +	if (!validheader(size, cap->magic_etc))
+> +		return -EINVAL;
+> +	if (!capable_wrt_inode_uidgid(inode, CAP_SETFCAP))
+> +		return -EPERM;
+> +	if (size == XATTR_CAPS_SZ_2)
+> +		if (ns_capable(inode->i_sb->s_user_ns, CAP_SETFCAP))
+> +			/* user is privileged, just write the v2 */
+> +			return size;
+> +
+> +	rootid = rootid_from_xattr(*ivalue, size, task_ns);
+> +	if (!uid_valid(rootid))
+> +		return -EINVAL;
+> +
+> +	nsrootid = from_kuid(fs_ns, rootid);
+> +	if (nsrootid == -1)
+> +		return -EINVAL;
+> +
+> +	newsize = sizeof(struct vfs_ns_cap_data);
+> +	nscap = kmalloc(newsize, GFP_ATOMIC);
+> +	if (!nscap)
+> +		return -ENOMEM;
+> +	nscap->rootid = cpu_to_le32(nsrootid);
+> +	nsmagic = VFS_CAP_REVISION_3;
+> +	magic = le32_to_cpu(cap->magic_etc);
+> +	if (magic & VFS_CAP_FLAGS_EFFECTIVE)
+> +		nsmagic |= VFS_CAP_FLAGS_EFFECTIVE;
+> +	nscap->magic_etc = cpu_to_le32(nsmagic);
+> +	memcpy(&nscap->data, &cap->data, sizeof(__le32) * 2 * VFS_CAP_U32);
+> +
+> +	kvfree(*ivalue);
+> +	*ivalue = nscap;
+> +	return newsize;
+> +}
+> +
+>   /*
+>    * Calculate the new process capability sets from the capability sets attached
+>    * to a file.
+> @@ -385,7 +588,10 @@ int get_vfs_caps_from_disk(const struct dentry *dentry, struct cpu_vfs_cap_data
+>   	__u32 magic_etc;
+>   	unsigned tocopy, i;
+>   	int size;
+> -	struct vfs_cap_data caps;
+> +	struct vfs_ns_cap_data data, *nscaps = &data;
+> +	struct vfs_cap_data *caps = (struct vfs_cap_data *) &data;
+> +	kuid_t rootkuid;
+> +	struct user_namespace *fs_ns = inode->i_sb->s_user_ns;
+>
+>   	memset(cpu_caps, 0, sizeof(struct cpu_vfs_cap_data));
+>
+> @@ -393,18 +599,20 @@ int get_vfs_caps_from_disk(const struct dentry *dentry, struct cpu_vfs_cap_data
+>   		return -ENODATA;
+>
+>   	size = __vfs_getxattr((struct dentry *)dentry, inode,
+> -			      XATTR_NAME_CAPS, &caps, XATTR_CAPS_SZ);
+> +			      XATTR_NAME_CAPS, &data, XATTR_CAPS_SZ);
+>   	if (size == -ENODATA || size == -EOPNOTSUPP)
+>   		/* no data, that's ok */
+>   		return -ENODATA;
+> +
+>   	if (size < 0)
+>   		return size;
+>
+>   	if (size < sizeof(magic_etc))
+>   		return -EINVAL;
+>
+> -	cpu_caps->magic_etc = magic_etc = le32_to_cpu(caps.magic_etc);
+> +	cpu_caps->magic_etc = magic_etc = le32_to_cpu(caps->magic_etc);
+>
+> +	rootkuid = make_kuid(fs_ns, 0);
+>   	switch (magic_etc & VFS_CAP_REVISION_MASK) {
+>   	case VFS_CAP_REVISION_1:
+>   		if (size != XATTR_CAPS_SZ_1)
+> @@ -416,15 +624,27 @@ int get_vfs_caps_from_disk(const struct dentry *dentry, struct cpu_vfs_cap_data
+>   			return -EINVAL;
+>   		tocopy = VFS_CAP_U32_2;
+>   		break;
+> +	case VFS_CAP_REVISION_3:
+> +		if (size != XATTR_CAPS_SZ_3)
+> +			return -EINVAL;
+> +		tocopy = VFS_CAP_U32_3;
+> +		rootkuid = make_kuid(fs_ns, le32_to_cpu(nscaps->rootid));
+> +		break;
+> +
+>   	default:
+>   		return -EINVAL;
+>   	}
+> +	/* Limit the caps to the mounter of the filesystem
+> +	 * or the more limited uid specified in the xattr.
+> +	 */
+> +	if (!rootid_owns_currentns(rootkuid))
+> +		return -ENODATA;
+>
+>   	CAP_FOR_EACH_U32(i) {
+>   		if (i >= tocopy)
+>   			break;
+> -		cpu_caps->permitted.cap[i] = le32_to_cpu(caps.data[i].permitted);
+> -		cpu_caps->inheritable.cap[i] = le32_to_cpu(caps.data[i].inheritable);
+> +		cpu_caps->permitted.cap[i] = le32_to_cpu(caps->data[i].permitted);
+> +		cpu_caps->inheritable.cap[i] = le32_to_cpu(caps->data[i].inheritable);
+>   	}
+>
+>   	cpu_caps->permitted.cap[CAP_LAST_U32] &= CAP_LAST_U32_VALID_MASK;
+> @@ -462,8 +682,8 @@ static int get_file_caps(struct linux_binprm *bprm, bool *effective, bool *has_c
+>   	rc = get_vfs_caps_from_disk(bprm->file->f_path.dentry, &vcaps);
+>   	if (rc < 0) {
+>   		if (rc == -EINVAL)
+> -			printk(KERN_NOTICE "%s: get_vfs_caps_from_disk returned %d for %s\n",
+> -				__func__, rc, bprm->filename);
+> +			printk(KERN_NOTICE "Invalid argument reading file caps for %s\n",
+> +					bprm->filename);
+>   		else if (rc == -ENODATA)
+>   			rc = 0;
+>   		goto out;
+> @@ -660,15 +880,19 @@ int cap_bprm_secureexec(struct linux_binprm *bprm)
+>   int cap_inode_setxattr(struct dentry *dentry, const char *name,
+>   		       const void *value, size_t size, int flags)
+>   {
+> -	if (!strcmp(name, XATTR_NAME_CAPS)) {
+> -		if (!capable(CAP_SETFCAP))
+> -			return -EPERM;
+> +	/* Ignore non-security xattrs */
+> +	if (strncmp(name, XATTR_SECURITY_PREFIX,
+> +			sizeof(XATTR_SECURITY_PREFIX) - 1) != 0)
+> +		return 0;
+> +
+> +	/*
+> +	 * For XATTR_NAME_CAPS the check will be done in
+> +	 * cap_convert_nscap(), called by setxattr()
+> +	 */
+> +	if (strcmp(name, XATTR_NAME_CAPS) == 0)
+>   		return 0;
+> -	}
+>
+> -	if (!strncmp(name, XATTR_SECURITY_PREFIX,
+> -		     sizeof(XATTR_SECURITY_PREFIX) - 1) &&
+> -	    !capable(CAP_SYS_ADMIN))
+> +	if (!capable(CAP_SYS_ADMIN))
+>   		return -EPERM;
+>   	return 0;
+>   }
+> @@ -686,15 +910,22 @@ int cap_inode_setxattr(struct dentry *dentry, const char *name,
+>    */
+>   int cap_inode_removexattr(struct dentry *dentry, const char *name)
+>   {
+> -	if (!strcmp(name, XATTR_NAME_CAPS)) {
+> -		if (!capable(CAP_SETFCAP))
+> +	/* Ignore non-security xattrs */
+> +	if (strncmp(name, XATTR_SECURITY_PREFIX,
+> +			sizeof(XATTR_SECURITY_PREFIX) - 1) != 0)
+> +		return 0;
+> +
+> +	if (strcmp(name, XATTR_NAME_CAPS) == 0) {
+> +		/* security.capability gets namespaced */
+> +		struct inode *inode = d_backing_inode(dentry);
+> +		if (!inode)
+> +			return -EINVAL;
+> +		if (!capable_wrt_inode_uidgid(inode, CAP_SETFCAP))
+>   			return -EPERM;
+>   		return 0;
+>   	}
+>
+> -	if (!strncmp(name, XATTR_SECURITY_PREFIX,
+> -		     sizeof(XATTR_SECURITY_PREFIX) - 1) &&
+> -	    !capable(CAP_SYS_ADMIN))
+> +	if (!capable(CAP_SYS_ADMIN))
+>   		return -EPERM;
+>   	return 0;
+>   }
+> @@ -1082,6 +1313,7 @@ struct security_hook_list capability_hooks[] = {
+>   	LSM_HOOK_INIT(bprm_secureexec, cap_bprm_secureexec),
+>   	LSM_HOOK_INIT(inode_need_killpriv, cap_inode_need_killpriv),
+>   	LSM_HOOK_INIT(inode_killpriv, cap_inode_killpriv),
+> +	LSM_HOOK_INIT(inode_getsecurity, cap_inode_getsecurity),
+>   	LSM_HOOK_INIT(mmap_addr, cap_mmap_addr),
+>   	LSM_HOOK_INIT(mmap_file, cap_mmap_file),
+>   	LSM_HOOK_INIT(task_fix_setuid, cap_task_fix_setuid),
