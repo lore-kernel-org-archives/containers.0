@@ -1,20 +1,13 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH v4] Introduce v3 namespaced file capabilities
-Date: Tue, 13 Jun 2017 18:55:21 -0500
-Message-ID: <20170613235521.GC15685__41354.6094707728$1497398133$gmane$org@mail.hallyn.com>
-References: <20170507092105.GA67584@inn.lkp.intel.com>
-	<20170508044408.GA11400@mail.hallyn.com>
-	<CACOXgS9a=avAWZEre1Q1CGjSHeq78Pkq1fYfwPjiyEX-u=B5wQ@mail.gmail.com>
-	<20170508181156.GA23112@mail.hallyn.com>
-	<9f80188c-df03-066a-5dac-785cc711d064@linux.vnet.ibm.com>
-	<20170613171818.GA9070@mail.hallyn.com>
-	<74e490f3-3c47-abfa-86ae-0fa0d1ddb43a@linux.vnet.ibm.com>
+From: Ian Kent <raven-PKsaG3nR2I+sTnJN9+BGXg@public.gmane.org>
+Subject: Re: [PATCH RFC] mnt: umount mounts one by one in umount_tree()
+Date: Wed, 14 Jun 2017 09:53:10 +0800
+Message-ID: <1497405190.2595.3.camel@themaw.net>
+References: <20170512070838.5037-1-avagin@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <74e490f3-3c47-abfa-86ae-0fa0d1ddb43a-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <20170512070838.5037-1-avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,121 +17,120 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, lkp-JC7UmRfGjtg@public.gmane.org
+To: Andrei Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Stefan Berger (stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> On 06/13/2017 01:18 PM, Serge E. Hallyn wrote:
-> >Quoting Stefan Berger (stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> >>On 05/08/2017 02:11 PM, Serge E. Hallyn wrote:
-> >>>Root in a non-initial user ns cannot be trusted to write a traditional
-> >>>security.capability xattr.  If it were allowed to do so, then any
-> >>>unprivileged user on the host could map his own uid to root in a private
-> >>>namespace, write the xattr, and execute the file with privilege on the
-> >>>host.
-> >>>
-> >>>However supporting file capabilities in a user namespace is very
-> >>>desirable.  Not doing so means that any programs designed to run with
-> >>>limited privilege must continue to support other methods of gaining and
-> >>>dropping privilege.  For instance a program installer must detect
-> >>>whether file capabilities can be assigned, and assign them if so but set
-> >>>setuid-root otherwise.  The program in turn must know how to drop
-> >>>partial capabilities, and do so only if setuid-root.
-> >>Hi Serge,
-> >>
-> >>
-> >>   I have been looking at patch below primarily to learn how we could
-> >>apply a similar technique to security.ima and security.evm for a
-> >>namespaced IMA. From the paragraphs above I thought that you solved
-> >>the problem of a shared filesystem where one now can write different
-> >>security.capability xattrs by effectively supporting for example
-> >>security.capability[uid=1000] and security.capability[uid=2000]
-> >>written into the filesystem. Each would then become visible as
-> >>security.capability if the userns mapping is set appropriately.
-> >>However, this doesn't seem to be how it is implemented. There seems
-> >>to be only a single such entry with uid appended to it and, if it
-> >>was a shared filesystem, the first one to set this attribute blocks
-> >>everyone else from writing the xattr. Is that how it works? Would
-> >Yes, that's how this works here.  I'd considered allowing multiple
-> >entries, but I didn't feel that was needed for this case.  In a previous
-> >implementation (which is probably in the lkml archives somewhere) I
-> >supported variable length xattr so that multiple containers could
-> >each write a value tagged with their own userns.rootid.  Instead,
-> >in the final version, if root in any parent container writes an
-> >xattr, it will take effect in child user namespaces.  Which is
-> >sensible - the parent presumbly laid out the filesystem to create
-> >the child container.
-> >
-> >>that work differently with an overlay filesystem ? I think a similar
-> >Certainly an overlay filesystem should be an easy case as the container
-> >can have its own copy of the inode with its own xattr.  Btrfs/zfs
-> >would be nicer as the whole file wouldn't need to be copied.
-> >
-> >>model could also work for IMA, but maybe you have some thoughts. The
-> >>only thing I would be concerned about is blocking the parent
-> >>container's root user from setting an xattr.
-> >So if you have container c1 creating child container c2 on host h1,
-> >then if c1 creates an xattr, can c2 not use that?  And if h1 writes it,
-> >can c1 and c2 use it?
-> 
-> In the case of IMA appraisal the extended attribute security.ima
-> would be a signature. For c1 and c2 to use that file they would all
-> have to have the same key on their (isolated IMA namespace )
-> keyring. I think this type of setup could be arranged.
-
-Ok.  If it's too much of a restriction then certainly we can make
-it more flexible.  I don't think we want to support too many versions
-of magic in this code, so if there's a chance we'll want to make it
-more flexible later, then perhaps we should discuss the other options
-in more detail now.
-
-> Following your attack description in the introduction I would say
-> that we would want to prevent malicious modification of a
-> security.ima extended attribute:
-> 
-> "Root in a non-initial user ns cannot be trusted to write a traditional security.ima xattr. If it were allowed to do so, then any unprivileged user on the host could map his own uid to root in a private namespace, write the signature in the security.ima xattr, and prevent the file from being accessible on the host."
-
-Of course.
-
-The way this is handled with nsfscaps is not by just forbidding the
-write, but by only respecting the xattr if the rootid which was
-written in the xattr (which is translated and enforced by the kernel
-at write time) is root in the caller's user_ns or a parent thereof.
-
-I think that would suffice for ima as well?
-
-> >If they can't, then I guess for IMA multiple xattrs would need to be
-> >supported.
-> 
-> I am not sure about that. I suppose any extended attribute
-> modifications would have to be designed for the case where a shared
-> filesystem is used that also shares the extended attributes, not
-> assuming an overlay filesystem that automatically isolates the
-> extend attributes. With the shared filesystem I'd like to prevent
-> any type of setting of extended attributes by a child container or
-> more generally anyone mounting it as a '2nd consumer', which would
-> make it a shared filesystem. Only the process that mounts a
-> filesystem as the '1st consumer' would be able to set the extended
-> attributes.
-
-Right, again that's currently the case in the nscaps patch.
-
->  I am assuming that using an overlay fs would always make
-> you the '1st consumer' -- I would hope that these conditions could
-> be detected. And probably the process should also write along its
-> host uid as part of writing out the xattr.
-
-I think that's what the rootid in the nscaps xattr is.
-
->  If all extended
-> attributes were to support this model, maybe the 'uid' could be
-> associated with the 'name' of the xattr rather than its 'value' (not
-> sure whether that's possible).
-
-Right, I missed that in your original email when I saw it this morning.
-It's not what my patch does, but it's an interesting idea.  Do you have
-a patch to that effect?  We might even be able to generalize that to
-namespace any security.* xattrs.  Wouldn't be automatically enabled
-for anything but ima and capabilities, but we could make the infrastructure
-generic and re-usable.
+T24gRnJpLCAyMDE3LTA1LTEyIGF0IDAwOjA4IC0wNzAwLCBBbmRyZWkgVmFnaW4gd3JvdGU6Cj4g
+V2l0aCB0aGlzIHBhdGNoLCB3ZSBkb24ndCB0cnkgdG8gdW1vdW50IGFsbCBtb3VudHMgb2YgYSB0
+cmVlIHRvZ2V0aGVyLgo+IEluc3RlYWQgb2YgdGhpcyB3ZSB1bW91bnQgdGhlbSBvbmUgYnkgb25l
+LiBJbiB0aGlzIGNhc2UsIHdlIHNlZSBhIHNpZ25pZmljYW50Cj4gaW1wcm92ZW1lbnQgaW4gcGVy
+Zm9ybWFuY2UgZm9yIHRoZSB3b3Jz0LUgY2FzZS4KCkluZGVlZCwgdW1vdW50IGhhcyBiZWVuIHZl
+cnkgc2xvdyBmb3IgYSB3aGlsZSBub3cuCkV2ZW4gYSBtb2RlcmF0ZWx5IGxhcmdlIG51bWJlciBv
+ZiBtb3VudHMgKH4xMDAwMCkgYmVjb21lIHBhaW5mdWxseSBzbG93LgoKUmUgeW91IHN0aWxsIHBl
+cnVzaW5nIHRoaXM/CkFueXRoaW5nIEkgY2FuIGRvIHRvIGhlbHA/CgpFcmljLCB3aGF0IGFyZSB5
+b3VyIHRob3VnaHRzIG9uIHRoaXMgbGF0ZXN0IGF0dGVtcHQ/Cgo+IAo+IFRoZSByZWFzb24gb2Yg
+dGhpcyBvcHRpbWl6YXRpb24gaXMgdGhhdCB1bW91bnQoKSBjYW4gaG9sZCBuYW1lc3BhY2Vfc2Vt
+Cj4gZm9yIGEgbG9uZyB0aW1lLCB0aGlzIHNlbWFwaG9yZSBpcyBnbG9iYWwsIHNvIGl0IGFmZmVj
+dHMgYWxsIHVzZXJzLgo+IFJlY2VudGx5IEVyaWMgVy4gQmllZGVybWFuIGFkZGVkIGEgcGVyIG1v
+dW50IG5hbWVzcGFjZSBsaW1pdCBvbiB0aGUKPiBudW1iZXIgb2YgbW91bnRzLiBUaGUgZGVmYXVs
+dCBudW1iZXIgb2YgbW91bnRzIGFsbG93ZWQgcGVyIG1vdW50Cj4gbmFtZXNwYWNlIGF0IDEwMCww
+MDAuIEN1cnJlbnRseSB0aGlzIHZhbHVlIGlzIGFsbG93ZWQgdG8gY29uc3RydWN0IGEgdHJlZQo+
+IHdoaWNoIHJlcXVpcmVzIGhvdXJzIHRvIGJlIHVtb3VudGVkLgo+IAo+IEluIGEgd29yc2UgY2Fz
+ZSB0aGUgY3VycmVudCBjb21wbGV4aXR5IG9mIHVtb3VudF90cmVlKCkgaXMgTyhuXjMpLgo+ICog
+RW51bWlyYXRlIGFsbCBtb3VudHMgaW4gYSB0YXJnZXQgdHJlZSAocHJvcGFnYXRlX3Vtb3VudCkK
+PiAqIEVudW1pcmF0ZSBtb3VudHMgdG8gZmluZCB3aGVyZSB0aGVzZSBjaGFuZ2VzIGhhdmUgdG8K
+PiDCoCBiZSBwcm9wYWdhdGVkIChtYXJrX3Vtb3VudF9jYW5kaWRhdGVzKQo+ICogRW51bWlyYXRl
+IG1vdW50cyB0byBmaW5kIGEgcmVxdWVyZWQgbW91bnQgYnkgcGFyZW50IGFuZCBkZW50cnkKPiDC
+oCAoX19sb29rdXBfbW50KS4gX19sb29rdXBfbW50KCkgc2VhcmNoZXMgYSBtb3VudCBpbiBtX2hh
+c2gsIGJ1dAo+IMKgIHRoZSBudW1iZXIgb2YgbW91bnRzIGlzIG11Y2ggYmlnZ2VyIHRoYW4gYSBz
+aXplIG9mIHRoZSBoYXNoLgo+IAo+IFRoZSB3b3JzZSBjYXNlIGlzIHdoZW4gYWxsIG1vdW50cyBm
+cm9tIHRoZSB0cmVlIGxpdmUgaW4gdGhlIHNhbWUgc2hhcmVkCj4gZ3JvdXAuIEluIHRoaXMgY2Fz
+ZSB3ZSBoYXZlIHRvIGVudW1pcmF0ZSBhbGwgbW91bnRzIG9uIGVhY2ggc3RlcC4KPiAKPiBUaGVy
+ZSBpcyBDVkUtMjAxNi02MjEzIGFib3V0IHRoaXMgY2FzZS4KPiAKPiBIZXJlIGFyZSByZXN1bHRz
+IGZvciB0aGUga2VybmVsIHdpdGggdGhpcyBwYXRjaAo+ICQgZm9yIGkgaW4gYHNlcSAxMCAxNWA7
+IGRvwqDCoHVuc2hhcmUgLW0gc2ggLi9ydW4uc2ggJGk7IGRvbmUKPiB1bW91bnQgLWwgL21udC8x
+IC0+wqAJMDowMC4wMAo+IHVtb3VudCAtbCAvbW50LzEgLT7CoAkwOjAwLjAxCj4gdW1vdW50IC1s
+IC9tbnQvMSAtPsKgCTA6MDAuMDEKPiB1bW91bnQgLWwgL21udC8xIC0+wqAJMDowMC4wMwo+IHVt
+b3VudCAtbCAvbW50LzEgLT7CoAkwOjAwLjA3Cj4gdW1vdW50IC1sIC9tbnQvMSAtPsKgCTA6MDAu
+MTQKPiAKPiBIZXJlIGFyZSByZXN1bHRzIGZvciB0aGUga2VybmVsIHdpdGhvdXQgdGhpcyBwYXRj
+aAo+ICQgZm9yIGkgaW4gYHNlcSAxMCAxNWA7IGRvwqDCoHVuc2hhcmUgLW0gc2ggLi9ydW4uc2gg
+JGk7IGRvbmUKPiB1bW91bnQgLWwgL21udC8xIC0+wqAJMDowMC4wNAo+IHVtb3VudCAtbCAvbW50
+LzEgLT7CoAkwOjAwLjE3Cj4gdW1vdW50IC1sIC9tbnQvMSAtPsKgCTA6MDAuNzUKPiB1bW91bnQg
+LWwgL21udC8xIC0+wqAJMDowNS45Ngo+IHVtb3VudCAtbCAvbW50LzEgLT7CoAkwOjM0LjQwCj4g
+dW1vdW50IC1sIC9tbnQvMSAtPsKgCTM6NDYuMjcKPiAKPiBBbmQgaGVyZSBpcyBhIHRlc3Qgc2Ny
+aXB0Ogo+ICQgY2F0IHJ1bi5zaAo+IHNldCAtZSAtbQo+IAo+IG1vdW50IC10IHRtcGZzIHpkdG0g
+L21udAo+IG1rZGlyIC1wIC9tbnQvMSAvbW50LzIKPiBtb3VudCAtdCB0bXBmcyB6ZHRtIC9tbnQv
+MQo+IG1vdW50IC0tbWFrZS1zaGFyZWQgL21udC8xCj4gbWtkaXIgL21udC8xLzEKPiAKPiBmb3Ig
+aSBpbiBgc2VxICQxYDsgZG8KPiAJLi9tb3VudCAtLWJpbmQgL21udC8xLzEgL21udC8xLzEKPiBk
+b25lCj4gCj4gZWNobyAtbiAidW1vdW50IC1sIC9tbnQvMSAtPiAiCj4gL3Vzci9iaW4vdGltZSAt
+ZiAnJUUnIC4vdW1vdW50IC1sIC9tbnQvMQo+IAo+IEFuZCB3ZSBuZWVkIHRoZXNlIHNpbXBsZSBt
+b3VudCBhbmQgdW1vdW50IHRvb2xzLCBiZWNhdXNlIHRoZSBzdGFuZGFyZAo+IG9uZXMgcmVhZCAv
+cHJvYy9zZWxmL21vdW50aW5mbywgYnV0IHRoaXMgaXMgZXh0cmVtZWx5IHNsb3cgd2hlbiB3ZSBo
+YXZlCj4gdGhvdXNhbmRzIG9mIG1vdW50cy4KPiAkIGNhdCBtb3VudC5jCj4gwqAjaW5jbHVkZSA8
+c3lzL21vdW50Lmg+Cj4gwqAjaW5jbHVkZSA8c3RkbGliLmg+Cj4gCj4gwqBpbnQgbWFpbihpbnQg
+YXJnYywgY2hhciAqKmFyZ3YpCj4gwqB7Cj4gwqAJcmV0dXJuIG1vdW50KGFyZ3ZbMl0sIGFyZ3Zb
+M10sIE5VTEwsIE1TX0JJTkQsIE5VTEwpOwo+IMKgfQo+IAo+ICQgY2F0IHVtb3VudC5jCj4gwqAj
+aW5jbHVkZSA8c3lzL21vdW50Lmg+Cj4gCj4gwqBpbnQgbWFpbihpbnQgYXJnYywgY2hhciAqKmFy
+Z3YpCj4gwqB7Cj4gwqAJcmV0dXJuIHVtb3VudDIoYXJndlsyXSwgTU5UX0RFVEFDSCk7Cj4gwqB9
+Cj4gCj4gSGVyZSBpcyBhIHByZXZpb3VzIGF0dGVtcHQgdG8gb3B0aW1pemUgdGhpcyBjb2RlOgo+
+IGh0dHBzOi8vbGttbC5vcmcvbGttbC8yMDE2LzEwLzEwLzQ5NQo+IAo+IFNpZ25lZC1vZmYtYnk6
+IEFuZHJlaSBWYWdpbiA8YXZhZ2luQG9wZW52ei5vcmc+Cj4gLS0tCj4gwqBmcy9uYW1lc3BhY2Uu
+YyB8IDgxICsrKysrKysrKysrKysrKysrKysrKysrKysrKysrKystLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0KPiAtLS0KPiDCoDEgZmlsZSBjaGFuZ2VkLCA0MyBpbnNlcnRpb25zKCspLCAzOCBkZWxl
+dGlvbnMoLSkKPiAKPiBkaWZmIC0tZ2l0IGEvZnMvbmFtZXNwYWNlLmMgYi9mcy9uYW1lc3BhY2Uu
+Ywo+IGluZGV4IDNiZjBjZDIuLjRlNmYyNTggMTAwNjQ0Cj4gLS0tIGEvZnMvbmFtZXNwYWNlLmMK
+PiArKysgYi9mcy9uYW1lc3BhY2UuYwo+IEBAIC0xNDc0LDU2ICsxNDc0LDYxIEBAIHN0YXRpYyBi
+b29sIGRpc2Nvbm5lY3RfbW91bnQoc3RydWN0IG1vdW50ICptbnQsIGVudW0KPiB1bW91bnRfdHJl
+ZV9mbGFncyBob3cpCj4gwqAgKi8KPiDCoHN0YXRpYyB2b2lkIHVtb3VudF90cmVlKHN0cnVjdCBt
+b3VudCAqbW50LCBlbnVtIHVtb3VudF90cmVlX2ZsYWdzIGhvdykKPiDCoHsKPiAtCUxJU1RfSEVB
+RCh0bXBfbGlzdCk7Cj4gwqAJc3RydWN0IG1vdW50ICpwOwo+ICsJaW50IGRvbmUgPSAwOwo+IMKg
+Cj4gwqAJaWYgKGhvdyAmIFVNT1VOVF9QUk9QQUdBVEUpCj4gwqAJCXByb3BhZ2F0ZV9tb3VudF91
+bmxvY2sobW50KTsKPiDCoAo+IMKgCS8qIEdhdGhlciB0aGUgbW91bnRzIHRvIHVtb3VudCAqLwo+
+IC0JZm9yIChwID0gbW50OyBwOyBwID0gbmV4dF9tbnQocCwgbW50KSkgewo+ICsJd2hpbGUgKCFk
+b25lKSB7Cj4gKwkJTElTVF9IRUFEKHRtcF9saXN0KTsKPiArCj4gKwkJcCA9IG1udDsKPiArCQl3
+aGlsZSAoIWxpc3RfZW1wdHkoJnAtPm1udF9tb3VudHMpKQo+ICsJCQlwID0gbGlzdF9lbnRyeShw
+LT5tbnRfbW91bnRzLm5leHQsIHN0cnVjdCBtb3VudCwKPiBtbnRfY2hpbGQpOwo+ICsKPiDCoAkJ
+cC0+bW50Lm1udF9mbGFncyB8PSBNTlRfVU1PVU5UOwo+IMKgCQlsaXN0X21vdmUoJnAtPm1udF9s
+aXN0LCAmdG1wX2xpc3QpOwo+IC0JfQo+IC0KPiAtCS8qIEhpZGUgdGhlIG1vdW50cyBmcm9tIG1u
+dF9tb3VudHMgKi8KPiAtCWxpc3RfZm9yX2VhY2hfZW50cnkocCwgJnRtcF9saXN0LCBtbnRfbGlz
+dCkgewo+IMKgCQlsaXN0X2RlbF9pbml0KCZwLT5tbnRfY2hpbGQpOwo+IC0JfQo+IMKgCj4gLQkv
+KiBBZGQgcHJvcG9nYXRlZCBtb3VudHMgdG8gdGhlIHRtcF9saXN0ICovCj4gLQlpZiAoaG93ICYg
+VU1PVU5UX1BST1BBR0FURSkKPiAtCQlwcm9wYWdhdGVfdW1vdW50KCZ0bXBfbGlzdCk7Cj4gLQo+
+IC0Jd2hpbGUgKCFsaXN0X2VtcHR5KCZ0bXBfbGlzdCkpIHsKPiAtCQlzdHJ1Y3QgbW50X25hbWVz
+cGFjZSAqbnM7Cj4gLQkJYm9vbCBkaXNjb25uZWN0Owo+IC0JCXAgPSBsaXN0X2ZpcnN0X2VudHJ5
+KCZ0bXBfbGlzdCwgc3RydWN0IG1vdW50LCBtbnRfbGlzdCk7Cj4gLQkJbGlzdF9kZWxfaW5pdCgm
+cC0+bW50X2V4cGlyZSk7Cj4gLQkJbGlzdF9kZWxfaW5pdCgmcC0+bW50X2xpc3QpOwo+IC0JCW5z
+ID0gcC0+bW50X25zOwo+IC0JCWlmIChucykgewo+IC0JCQlucy0+bW91bnRzLS07Cj4gLQkJCV9f
+dG91Y2hfbW50X25hbWVzcGFjZShucyk7Cj4gLQkJfQo+IC0JCXAtPm1udF9ucyA9IE5VTEw7Cj4g
+LQkJaWYgKGhvdyAmIFVNT1VOVF9TWU5DKQo+IC0JCQlwLT5tbnQubW50X2ZsYWdzIHw9IE1OVF9T
+WU5DX1VNT1VOVDsKPiAtCj4gLQkJZGlzY29ubmVjdCA9IGRpc2Nvbm5lY3RfbW91bnQocCwgaG93
+KTsKPiAtCj4gLQkJcGluX2luc2VydF9ncm91cCgmcC0+bW50X3Vtb3VudCwgJnAtPm1udF9wYXJl
+bnQtPm1udCwKPiAtCQkJCcKgZGlzY29ubmVjdCA/ICZ1bm1vdW50ZWQgOiBOVUxMKTsKPiAtCQlp
+ZiAobW50X2hhc19wYXJlbnQocCkpIHsKPiAtCQkJbW50X2FkZF9jb3VudChwLT5tbnRfcGFyZW50
+LCAtMSk7Cj4gLQkJCWlmICghZGlzY29ubmVjdCkgewo+IC0JCQkJLyogRG9uJ3QgZm9yZ2V0IGFi
+b3V0IHAgKi8KPiAtCQkJCWxpc3RfYWRkX3RhaWwoJnAtPm1udF9jaGlsZCwgJnAtPm1udF9wYXJl
+bnQtCj4gPm1udF9tb3VudHMpOwo+IC0JCQl9IGVsc2Ugewo+IC0JCQkJdW1vdW50X21udChwKTsK
+PiArCQkvKiBBZGQgcHJvcG9nYXRlZCBtb3VudHMgdG8gdGhlIHRtcF9saXN0ICovCj4gKwkJaWYg
+KGhvdyAmIFVNT1VOVF9QUk9QQUdBVEUpCj4gKwkJCXByb3BhZ2F0ZV91bW91bnQoJnRtcF9saXN0
+KTsKPiArCj4gKwkJaWYgKHAgPT0gbW50KQo+ICsJCQlkb25lID0gMTsKPiArCj4gKwkJd2hpbGUg
+KCFsaXN0X2VtcHR5KCZ0bXBfbGlzdCkpIHsKPiArCQkJc3RydWN0IG1udF9uYW1lc3BhY2UgKm5z
+Owo+ICsJCQlib29sIGRpc2Nvbm5lY3Q7Cj4gKwkJCXAgPSBsaXN0X2ZpcnN0X2VudHJ5KCZ0bXBf
+bGlzdCwgc3RydWN0IG1vdW50LAo+IG1udF9saXN0KTsKPiArCQkJbGlzdF9kZWxfaW5pdCgmcC0+
+bW50X2V4cGlyZSk7Cj4gKwkJCWxpc3RfZGVsX2luaXQoJnAtPm1udF9saXN0KTsKPiArCQkJbnMg
+PSBwLT5tbnRfbnM7Cj4gKwkJCWlmIChucykgewo+ICsJCQkJbnMtPm1vdW50cy0tOwo+ICsJCQkJ
+X190b3VjaF9tbnRfbmFtZXNwYWNlKG5zKTsKPiArCQkJfQo+ICsJCQlwLT5tbnRfbnMgPSBOVUxM
+Owo+ICsJCQlpZiAoaG93ICYgVU1PVU5UX1NZTkMpCj4gKwkJCQlwLT5tbnQubW50X2ZsYWdzIHw9
+IE1OVF9TWU5DX1VNT1VOVDsKPiArCj4gKwkJCWRpc2Nvbm5lY3QgPSBkaXNjb25uZWN0X21vdW50
+KHAsIGhvdyk7Cj4gKwo+ICsJCQlwaW5faW5zZXJ0X2dyb3VwKCZwLT5tbnRfdW1vdW50LCAmcC0+
+bW50X3BhcmVudC0+bW50LAo+ICsJCQkJCcKgZGlzY29ubmVjdCA/ICZ1bm1vdW50ZWQgOiBOVUxM
+KTsKPiArCQkJaWYgKG1udF9oYXNfcGFyZW50KHApKSB7Cj4gKwkJCQltbnRfYWRkX2NvdW50KHAt
+Pm1udF9wYXJlbnQsIC0xKTsKPiArCQkJCWlmICghZGlzY29ubmVjdCkgewo+ICsJCQkJCS8qIERv
+bid0IGZvcmdldCBhYm91dCBwICovCj4gKwkJCQkJbGlzdF9hZGRfdGFpbCgmcC0+bW50X2NoaWxk
+LCAmcC0KPiA+bW50X3BhcmVudC0+bW50X21vdW50cyk7Cj4gKwkJCQl9IGVsc2Ugewo+ICsJCQkJ
+CXVtb3VudF9tbnQocCk7Cj4gKwkJCQl9Cj4gwqAJCQl9Cj4gKwkJCWNoYW5nZV9tbnRfcHJvcGFn
+YXRpb24ocCwgTVNfUFJJVkFURSk7Cj4gwqAJCX0KPiAtCQljaGFuZ2VfbW50X3Byb3BhZ2F0aW9u
+KHAsIE1TX1BSSVZBVEUpOwo+IMKgCX0KPiDCoH0KPiDCoApfX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWlu
+ZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0
+aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
