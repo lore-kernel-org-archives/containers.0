@@ -1,7 +1,7 @@
 From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [PATCH v4] Introduce v3 namespaced file capabilities
-Date: Fri, 16 Jun 2017 18:24:00 -0400
-Message-ID: <6b3431cf-d4cf-f92c-d3c8-073d199fb580@linux.vnet.ibm.com>
+Date: Sat, 17 Jun 2017 16:56:32 -0400
+Message-ID: <f0df1914-bca2-31a0-cdba-df30d85d70b3@linux.vnet.ibm.com>
 References: <20170507092105.GA67584@inn.lkp.intel.com>
 	<20170508044408.GA11400@mail.hallyn.com>
 	<CACOXgS9a=avAWZEre1Q1CGjSHeq78Pkq1fYfwPjiyEX-u=B5wQ@mail.gmail.com>
@@ -49,13 +49,6 @@ On 06/14/2017 11:05 PM, Serge E. Hallyn wrote:
 > xattr, the kernel can check for security.foo[130000] first, then
 > security.foo[100000], then security.foo.  Or, it can do a listxattr
 > and look for those.  Am I overlooking one?
-
-So that sounds like a child would 'inherit' the value of an xattr from 
-the closest parent if it doesn't have one itself. I guess it would 
-depend on the xattr whether that should apply? And removing an xattr 
-becomes difficult then if the parent container's xattr always shines 
-through...
-
 >
 >> So one could try to encode the mapped uid in the name. However, that
 > I thought that's exactly what you were suggesting in your original
@@ -70,19 +63,49 @@ through...
 > copy.  What setups do you know of where multiple containers in different
 > user namespaces mount the same filesystem shared and writeable?
 
-So you think it's a good idea? I am not sure when I would get to it, 
-though...
+I think I have something now that accomodates userns access to 
+security.capability:
+
+https://github.com/stefanberger/linux/commits/xattr_for_userns
+
+Encoding of uid is in the attribute name now as follows: 
+security.foo@uid=<uid>
+
+1) The 'plain' security.capability is only r/w accessible from the host 
+(init_user_ns).
+2) When userns reads/writes 'security.capability' it will read/write 
+security.capability@uid=<uid> instead, with uid being the uid of root , 
+e.g. 1000.
+3) When listing xattrs for userns the host's security.capability is 
+filtered out to avoid read failures iof 'security.capability' if 
+security.capability@uid=<uid> is read but not there. (see 1) and 2))
+4) security.capability* may all be read from anywhere
+5) security.capability@uid=<uid> may be read or written directly from a 
+userns if <uid> matches the uid of root (current_uid())
+6) security.capability@* are 'reserved' and may be read but not written 
+to unless 5) applies.
+
+
+Similat, from the text of one of the functions in the code:
+
++ * In a user namespace we prevent read/write accesses to the _host's_
++ * security.foo to protect these extended attributes.
++ *
++ * Reading: Reading security.foo from a user namespace will read
++ * security.foo@uid=<uid> instead. Reading security.foo@uid=<uid> directly
++ * also works. In general, all security.foo*, except for security.foo 
+of the
++ * host, can be read from a user namespace.
++ *
++ * Writing: Writing security.foo from a user namespace will write
++ * security.foo@uid=<uid> instead. Writing security.foo@uid=<uid> directly
++ * also work.s No other security.foo* attributes, including the 
+security.foo
++ * offthe host, can be written to. All security.foo@* are 'reserved'.
++ *
++ * Removing: The same rules for writing apply to removing of extended
++ * attributes from a user namespace.
+
+
 
     Stefan
-
-
->
->> Otherwise it would be good if the value was wrapped in a data
->> structure use by all xattrs, but that doesn't seem to be the case,
->> either. So I guess we have to go into each type of value structure
->> and add a uid field there.
->>
->>> namespace any security.* xattrs.  Wouldn't be automatically enabled
->>> for anything but ima and capabilities, but we could make the infrastructure
->>> generic and re-usable.
->>>
