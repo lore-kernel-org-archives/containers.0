@@ -1,14 +1,19 @@
-From: Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
-Subject: Re: [PATCH 3/3] Enable security.selinux in user namespaces
-Date: Fri, 23 Jun 2017 16:30:00 -0400
-Message-ID: <1498249800.2063.9.camel@tycho.nsa.gov>
+From: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
+Subject: Re: [PATCH 0/3] Enable namespaced file capabilities
+Date: Fri, 23 Jun 2017 13:30:01 -0700
+Message-ID: <9eba9a52-80d4-8e31-4c2e-2dc601526765@schaufler-ca.com>
 References: <1498157989-11814-1-git-send-email-stefanb@linux.vnet.ibm.com>
-	<1498157989-11814-4-git-send-email-stefanb@linux.vnet.ibm.com>
+	<CAOQ4uxj=_Riih1K+QOYasZU8vZKCSrsg393f=17mJ2O-909e=Q@mail.gmail.com>
+	<20170623160026.GA18257@mail.hallyn.com>
+	<aa62373e-7cd6-39dd-2e38-2b6d6dbe18a8@schaufler-ca.com>
+	<3404c486-c848-3283-50f7-2283cb631e8e@linux.vnet.ibm.com>
+	<20170623183520.GC21137@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1498157989-11814-4-git-send-email-stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <20170623183520.GC21137-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -18,49 +23,66 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>, lkp-JC7UmRfGjtg@public.gmane.org, xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, LSM List <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, lkp-JC7UmRfGjtg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-T24gVGh1LCAyMDE3LTA2LTIyIGF0IDE0OjU5IC0wNDAwLCBTdGVmYW4gQmVyZ2VyIHdyb3RlOgo+
-IEJlZm9yZSB0aGUgY3VycmVudCBtb2RpZmljYXRpb25zLCBTRUxpbnV4IGV4dGVuZGVkIGF0dHJp
-YnV0ZXMgd2VyZQo+IHZpc2libGUgaW5zaWRlIHRoZSB1c2VyIG5hbWVzcGFjZSBidXQgY2hhbmdl
-cyBpbiBwYXRjaCAxIGhpZCB0aGVtLgo+IFRoaXMgcGF0Y2ggZW5hYmxlcyBzZWN1cml0eS5zZWxp
-bnV4IGluIHVzZXIgbmFtZXNwYWNlcyBhbmQgYWxsb3dzCj4gdGhlbSB0byBiZSB3cml0dGVuIHRv
-IGluIHRoZSBzYW1lIHdheSBhcyBzZWN1cml0eS5jYXBhYmlsaXR5Lgo+IAo+IFNpZ25lZC1vZmYt
-Ynk6IFN0ZWZhbiBCZXJnZXIgPHN0ZWZhbmJAbGludXgudm5ldC5pYm0uY29tPgo+IC0tLQo+IMKg
-ZnMveGF0dHIuYyB8IDEgKwo+IMKgMSBmaWxlIGNoYW5nZWQsIDEgaW5zZXJ0aW9uKCspCj4gCj4g
-ZGlmZiAtLWdpdCBhL2ZzL3hhdHRyLmMgYi9mcy94YXR0ci5jCj4gaW5kZXggMDQ1YmU4NS4uMzc2
-ODZlZSAxMDA2NDQKPiAtLS0gYS9mcy94YXR0ci5jCj4gKysrIGIvZnMveGF0dHIuYwo+IEBAIC0x
-MzgsNiArMTM4LDcgQEAgeGF0dHJfcGVybWlzc2lvbihzdHJ1Y3QgaW5vZGUgKmlub2RlLCBjb25z
-dCBjaGFyCj4gKm5hbWUsIGludCBtYXNrKQo+IMKgICovCj4gwqBzdGF0aWMgY29uc3QgY2hhciAq
-Y29uc3QgdXNlcm5zX3hhdHRyc1tdID0gewo+IMKgCVhBVFRSX05BTUVfQ0FQUywKPiArCVhBVFRS
-X05BTUVfU0VMSU5VWCwKPiDCoAlOVUxMCj4gwqB9Owo+IMKgCgooY2MgU0VMaW51eCBtYWludGFp
-bmVycywgY3VyaW91c2x5IG9taXR0ZWQgZnJvbSB0aGVzZSBwYXRjaGVzKQoKSSBkb24ndCB0aGlu
-ayB0aGlzIHdvcmtzIGZvciBTRUxpbnV4LiBZb3UgZG9uJ3QgZGVhbCB3aXRoIGFjdHVhbGx5CnN1
-cHBvcnRpbmcgbXVsdGlwbGUgc2VjdXJpdHkuc2VsaW51eCBhdHRyaWJ1dGVzIHdpdGhpbiBTRUxp
-bnV4IGl0c2VsZgooYW5kIEknbSBub3QgYXNraW5nIHlvdSB0byBkbyBzbyksIGFuZCB3aXRob3V0
-IHN1Y2ggc3VwcG9ydCwgdGhpcyBjYW4ndApvcGVyYXRlIGFzIGludGVuZGVkLiBXaXRoIHRoZXNl
-IHBhdGNoZXMgYXBwbGllZCwgSUlVQywgYSBzZXR4YXR0cigpIG9mCnNlY3VyaXR5LnNlbGludXgg
-d2l0aGluIGEgdXNlcm5zIHdpbGwgZW5kIHVwIHNldHRpbmcgb25seSBzZWN1cml0eS5zZWxpCm51
-eEB1aWQ9MTAwMCBvbiBkaXNrLCBidXQgd2lsbCB0aGVuIHRlbGwgU0VMaW51eCB0byB1cGRhdGUg
-aXRzIGluLWNvcmUKc2VjdXJpdHkgbGFiZWwgdG8gdGhlIG5ldyB2YWx1ZSAodmlhIHNlY3VyaXR5
-X2lub2RlX3Bvc3Rfc2V0eGF0dHIpLgpNZWFud2hpbGUsIG9uIGEgc3Vic2VxdWVudCBnZXR4YXR0
-cigpLCB5b3UnbGwgY2FsbApzZWN1cml0eV9pbm9kZV9nZXRzZWN1cml0eSgpIHdpdGggdGhlIHNl
-Y3VyaXR5LnNlbGludXhAdWlkPTEwMDAgbmFtZSwKd2hpY2ggd2lsbCBhbHdheXMgZmFpbCBiZWNh
-dXNlIFNFTGludXggZG9lc24ndCBrbm93IGFueXRoaW5nIGFib3V0IHlvdXIKbmV3IHNjaGVtZSwg
-YW5kIHRoZW4geW91J2xsIGNhbGwgdGhlIGZpbGVzeXN0ZW0gaGFuZGxlciBhbmQgcmV0dXJucyBp
-dHMKdmFsdWUsIHdoaWNoIGlzIG5vIGxvbmdlciBjb25uZWN0ZWQgaW4gYW55IHdheSB0byB0aGUg
-YWN0dWFsIGxhYmVsCmJlaW5nIHVzZWQgYnkgU0VMaW51eC4gIEFsc28sIFNFTGludXggaXRzZWxm
-IG1ha2VzIGNhbGxzIHRvCl9fdmZzX2dldHhhdHRyKCkgYW5kIF9fdmZzX3NldHhhdHRyX25vcGVy
-bSgpLCBhbmQgSSBkb24ndCB0aGluayB5b3VyCm5hbWUgcmVtYXBwaW5nIGlzIGNvcnJlY3QgaW4g
-dGhvc2UgY2FzZXMuCgpZb3UgYWxzbyBjYW4ndCBoaWRlIHNlY3VyaXR5LnNlbGludXggd2l0aGlu
-IHVzZXIgbmFtZXNwYWNlcy4gIFRvZGF5CnVzZXJzcGFjZSBjYW4gZ2V0IGFuZCBzZXQgc2VjdXJp
-dHkuc2VsaW51eCBhdHRyaWJ1dGVzIHdpdGhpbiB1c2VyCm5hbWVzcGFjZXMgKGlmIGFsbG93ZWQg
-YnkgcG9saWN5KSwgYW5kIGZ1cnRoZXIgY2FuIHNwZWNpZnkgdGhlIGxhYmVsIHRvCnVzZSBmb3Ig
-bmV3IGZpbGVzIHZpYSAvcHJvYy9zZWxmL2F0dHIvZnNjcmVhdGUsIHdoaWNoIHVuc3VycHJpc2lu
-Z2x5Cmlzbid0IGFkZHJlc3NlZCBieSB5b3VyIGNoYW5nZXMuICBDaGFuZ2luZyB0aGF0IHdvdWxk
-IGJlIGEgdXNlcnNwYWNlCmJyZWFrLgoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5s
-aW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFp
-bG1hbi9saXN0aW5mby9jb250YWluZXJz
+On 6/23/2017 11:35 AM, Serge E. Hallyn wrote:
+> Quoting Stefan Berger (stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+>> On 06/23/2017 12:16 PM, Casey Schaufler wrote:
+>>> On 6/23/2017 9:00 AM, Serge E. Hallyn wrote:
+>>>> Quoting Amir Goldstein (amir73il-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+>>>>> On Thu, Jun 22, 2017 at 9:59 PM, Stefan Berger
+>>>>> <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>>>>>> This series of patches primary goal is to enable file capabilities
+>>>>>> in user namespaces without affecting the file capabilities that are
+>>>>>> effective on the host. This is to prevent that any unprivileged user
+>>>>>> on the host maps his own uid to root in a private namespace, writes
+>>>>>> the xattr, and executes the file with privilege on the host.
+>>>>>>
+>>>>>> We achieve this goal by writing extended attributes with a different
+>>>>>> name when a user namespace is used. If for example the root user
+>>>>>> in a user namespace writes the security.capability xattr, the name
+>>>>>> of the xattr that is actually written is encoded as
+>>>>>> security.capability@uid=1000 for root mapped to uid 1000 on the host.
+>>>>>> When listing the xattrs on the host, the existing security.capability
+>>>>>> as well as the security.capability@uid=1000 will be shown. Inside the
+>>>>>> namespace only 'security.capability', with the value of
+>>>>>> security.capability@uid=1000, is visible.
+>>>>>>
+>>>>> Am I the only one who thinks that suffix is perhaps not the best grammar
+>>>>> to use for this namespace?
+>>>> You're the only one to have mentioned it so far.
+>>>>
+>>>>> xattrs are clearly namespaced by prefix, so it seems right to me to keep
+>>>>> it that way - define a new special xattr namespace "ns" and only if that
+>>>>> prefix exists, the @uid suffix will be parsed.
+>>>>> This could be either  ns.security.capability@uid=1000 or
+>>>>> ns@uid=1000.security.capability. The latter seems more correct to me,
+>>>>> because then we will be able to namespace any xattr without having to
+>>>>> protect from "unprivileged xattr injection", i.e.:
+>>>>> setfattr -n "user.whatever.foo@uid=0"
+>>>> I like it for simplifying the parser code.  One concern I have is that,
+>>>> since ns.* is currently not gated, one could write ns.* on an older
+>>>> kernel and then exploit it on a newer one.
+>>> security.ns.capability@uid=1000, then?
+>> Imo, '.ns' is redundant and 'encoded' in the '@'.
+> So how about
+> 	security.@uid=1000@@capability ?
+
+You're back to messing up the final component of the
+attribute name. If you want a namespace component, keep
+it separate. I disagree with the ".ns" being redundant.
+It's descriptive.
+
+	security.ns@uid=1000@@.capability.
+
+looks right to me.
+
+>
+> Maybe it's not worth it.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-security-module" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
