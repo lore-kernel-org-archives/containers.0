@@ -1,15 +1,14 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/3] Enable namespaced file capabilities
-Date: Fri, 23 Jun 2017 15:17:23 -0500
-Message-ID: <20170623201723.GA22857__22950.0457797714$1498249054$gmane$org@mail.hallyn.com>
+From: Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
+Subject: Re: [PATCH 3/3] Enable security.selinux in user namespaces
+Date: Fri, 23 Jun 2017 16:30:00 -0400
+Message-ID: <1498249800.2063.9.camel@tycho.nsa.gov>
 References: <1498157989-11814-1-git-send-email-stefanb@linux.vnet.ibm.com>
-	<20170623200956.GB24779@redhat.com>
+	<1498157989-11814-4-git-send-email-stefanb@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20170623200956.GB24779-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1498157989-11814-4-git-send-email-stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,64 +18,49 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, lkp-JC7UmRfGjtg@public.gmane.org
+To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>, lkp-JC7UmRfGjtg@public.gmane.org, xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Vivek Goyal (vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
-> On Thu, Jun 22, 2017 at 02:59:46PM -0400, Stefan Berger wrote:
-> > This series of patches primary goal is to enable file capabilities
-> > in user namespaces without affecting the file capabilities that are
-> > effective on the host. This is to prevent that any unprivileged user
-> > on the host maps his own uid to root in a private namespace, writes
-> > the xattr, and executes the file with privilege on the host.
-> > 
-> > We achieve this goal by writing extended attributes with a different
-> > name when a user namespace is used. If for example the root user
-> > in a user namespace writes the security.capability xattr, the name
-> > of the xattr that is actually written is encoded as
-> > security.capability@uid=1000 for root mapped to uid 1000 on the host.
-> > When listing the xattrs on the host, the existing security.capability
-> > as well as the security.capability@uid=1000 will be shown. Inside the
-> > namespace only 'security.capability', with the value of
-> > security.capability@uid=1000, is visible.
-> 
-> Hi Stefan,
-> 
-> Got a question. If child usernamespace sets a
-> security.capability@uid=1000, can any of the parent namespace remove it?
-> 
-> IOW, I set capability from usernamespace and tried to remove it from
-> host and that failed. Is that expected.
-> 
-> # Inside usernamespce
-> $setcap cat_net_raw+ep foo.txt
-> 
-> # outside user namespace
-> $listxattr foo.txt
->  xattr: security.capability@uid=1000
->  xattr: security.selinux
-> 
-> # outside user namespace
-> setfattr -x security.capability@uid foo.txt
-> setfattr: foo.txt: Invalid argument
-> 
-> Doing a strace shows removexattr() failed. May this will need fixing?
-> 
-> removexattr("testfile.txt", "security.capability@uid") = -1 EINVAL
-> (Invalid argument)
-
-That's not the right xattr, though, does
-
-	setfattr -x security.capability@uid=1000 foo.txt
-
-work?
-
-If you are in fact uid=1000 then that should work.  If you are uid 1001,
-and 1000 was delegated to you, then you'll need to create a transient
-userns with uid 1000 mapped into it in order to delete it (so that you
-have privilege over the uid).
-
-If that doesn't work, then it's a bug.
-
--serge
+T24gVGh1LCAyMDE3LTA2LTIyIGF0IDE0OjU5IC0wNDAwLCBTdGVmYW4gQmVyZ2VyIHdyb3RlOgo+
+IEJlZm9yZSB0aGUgY3VycmVudCBtb2RpZmljYXRpb25zLCBTRUxpbnV4IGV4dGVuZGVkIGF0dHJp
+YnV0ZXMgd2VyZQo+IHZpc2libGUgaW5zaWRlIHRoZSB1c2VyIG5hbWVzcGFjZSBidXQgY2hhbmdl
+cyBpbiBwYXRjaCAxIGhpZCB0aGVtLgo+IFRoaXMgcGF0Y2ggZW5hYmxlcyBzZWN1cml0eS5zZWxp
+bnV4IGluIHVzZXIgbmFtZXNwYWNlcyBhbmQgYWxsb3dzCj4gdGhlbSB0byBiZSB3cml0dGVuIHRv
+IGluIHRoZSBzYW1lIHdheSBhcyBzZWN1cml0eS5jYXBhYmlsaXR5Lgo+IAo+IFNpZ25lZC1vZmYt
+Ynk6IFN0ZWZhbiBCZXJnZXIgPHN0ZWZhbmJAbGludXgudm5ldC5pYm0uY29tPgo+IC0tLQo+IMKg
+ZnMveGF0dHIuYyB8IDEgKwo+IMKgMSBmaWxlIGNoYW5nZWQsIDEgaW5zZXJ0aW9uKCspCj4gCj4g
+ZGlmZiAtLWdpdCBhL2ZzL3hhdHRyLmMgYi9mcy94YXR0ci5jCj4gaW5kZXggMDQ1YmU4NS4uMzc2
+ODZlZSAxMDA2NDQKPiAtLS0gYS9mcy94YXR0ci5jCj4gKysrIGIvZnMveGF0dHIuYwo+IEBAIC0x
+MzgsNiArMTM4LDcgQEAgeGF0dHJfcGVybWlzc2lvbihzdHJ1Y3QgaW5vZGUgKmlub2RlLCBjb25z
+dCBjaGFyCj4gKm5hbWUsIGludCBtYXNrKQo+IMKgICovCj4gwqBzdGF0aWMgY29uc3QgY2hhciAq
+Y29uc3QgdXNlcm5zX3hhdHRyc1tdID0gewo+IMKgCVhBVFRSX05BTUVfQ0FQUywKPiArCVhBVFRS
+X05BTUVfU0VMSU5VWCwKPiDCoAlOVUxMCj4gwqB9Owo+IMKgCgooY2MgU0VMaW51eCBtYWludGFp
+bmVycywgY3VyaW91c2x5IG9taXR0ZWQgZnJvbSB0aGVzZSBwYXRjaGVzKQoKSSBkb24ndCB0aGlu
+ayB0aGlzIHdvcmtzIGZvciBTRUxpbnV4LiBZb3UgZG9uJ3QgZGVhbCB3aXRoIGFjdHVhbGx5CnN1
+cHBvcnRpbmcgbXVsdGlwbGUgc2VjdXJpdHkuc2VsaW51eCBhdHRyaWJ1dGVzIHdpdGhpbiBTRUxp
+bnV4IGl0c2VsZgooYW5kIEknbSBub3QgYXNraW5nIHlvdSB0byBkbyBzbyksIGFuZCB3aXRob3V0
+IHN1Y2ggc3VwcG9ydCwgdGhpcyBjYW4ndApvcGVyYXRlIGFzIGludGVuZGVkLiBXaXRoIHRoZXNl
+IHBhdGNoZXMgYXBwbGllZCwgSUlVQywgYSBzZXR4YXR0cigpIG9mCnNlY3VyaXR5LnNlbGludXgg
+d2l0aGluIGEgdXNlcm5zIHdpbGwgZW5kIHVwIHNldHRpbmcgb25seSBzZWN1cml0eS5zZWxpCm51
+eEB1aWQ9MTAwMCBvbiBkaXNrLCBidXQgd2lsbCB0aGVuIHRlbGwgU0VMaW51eCB0byB1cGRhdGUg
+aXRzIGluLWNvcmUKc2VjdXJpdHkgbGFiZWwgdG8gdGhlIG5ldyB2YWx1ZSAodmlhIHNlY3VyaXR5
+X2lub2RlX3Bvc3Rfc2V0eGF0dHIpLgpNZWFud2hpbGUsIG9uIGEgc3Vic2VxdWVudCBnZXR4YXR0
+cigpLCB5b3UnbGwgY2FsbApzZWN1cml0eV9pbm9kZV9nZXRzZWN1cml0eSgpIHdpdGggdGhlIHNl
+Y3VyaXR5LnNlbGludXhAdWlkPTEwMDAgbmFtZSwKd2hpY2ggd2lsbCBhbHdheXMgZmFpbCBiZWNh
+dXNlIFNFTGludXggZG9lc24ndCBrbm93IGFueXRoaW5nIGFib3V0IHlvdXIKbmV3IHNjaGVtZSwg
+YW5kIHRoZW4geW91J2xsIGNhbGwgdGhlIGZpbGVzeXN0ZW0gaGFuZGxlciBhbmQgcmV0dXJucyBp
+dHMKdmFsdWUsIHdoaWNoIGlzIG5vIGxvbmdlciBjb25uZWN0ZWQgaW4gYW55IHdheSB0byB0aGUg
+YWN0dWFsIGxhYmVsCmJlaW5nIHVzZWQgYnkgU0VMaW51eC4gIEFsc28sIFNFTGludXggaXRzZWxm
+IG1ha2VzIGNhbGxzIHRvCl9fdmZzX2dldHhhdHRyKCkgYW5kIF9fdmZzX3NldHhhdHRyX25vcGVy
+bSgpLCBhbmQgSSBkb24ndCB0aGluayB5b3VyCm5hbWUgcmVtYXBwaW5nIGlzIGNvcnJlY3QgaW4g
+dGhvc2UgY2FzZXMuCgpZb3UgYWxzbyBjYW4ndCBoaWRlIHNlY3VyaXR5LnNlbGludXggd2l0aGlu
+IHVzZXIgbmFtZXNwYWNlcy4gIFRvZGF5CnVzZXJzcGFjZSBjYW4gZ2V0IGFuZCBzZXQgc2VjdXJp
+dHkuc2VsaW51eCBhdHRyaWJ1dGVzIHdpdGhpbiB1c2VyCm5hbWVzcGFjZXMgKGlmIGFsbG93ZWQg
+YnkgcG9saWN5KSwgYW5kIGZ1cnRoZXIgY2FuIHNwZWNpZnkgdGhlIGxhYmVsIHRvCnVzZSBmb3Ig
+bmV3IGZpbGVzIHZpYSAvcHJvYy9zZWxmL2F0dHIvZnNjcmVhdGUsIHdoaWNoIHVuc3VycHJpc2lu
+Z2x5Cmlzbid0IGFkZHJlc3NlZCBieSB5b3VyIGNoYW5nZXMuICBDaGFuZ2luZyB0aGF0IHdvdWxk
+IGJlIGEgdXNlcnNwYWNlCmJyZWFrLgoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5s
+aW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFp
+bG1hbi9saXN0aW5mby9jb250YWluZXJz
