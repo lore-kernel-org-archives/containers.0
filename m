@@ -1,18 +1,15 @@
 From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 0/3] Enable namespaced file capabilities
-Date: Fri, 23 Jun 2017 19:09:23 -0400
-Message-ID: <da083027-fcd4-bc08-2d88-93034ba1cacc@linux.vnet.ibm.com>
+Subject: Re: [PATCH 3/3] Enable security.selinux in user namespaces
+Date: Fri, 23 Jun 2017 19:41:52 -0400
+Message-ID: <f477e588-a557-65ae-13db-8e8a87955b7f@linux.vnet.ibm.com>
 References: <1498157989-11814-1-git-send-email-stefanb@linux.vnet.ibm.com>
-	<CAOQ4uxj=_Riih1K+QOYasZU8vZKCSrsg393f=17mJ2O-909e=Q@mail.gmail.com>
-	<20170623160026.GA18257@mail.hallyn.com>
-	<aa62373e-7cd6-39dd-2e38-2b6d6dbe18a8@schaufler-ca.com>
-	<3404c486-c848-3283-50f7-2283cb631e8e@linux.vnet.ibm.com>
-	<20170623183520.GC21137@mail.hallyn.com>
+	<1498157989-11814-4-git-send-email-stefanb@linux.vnet.ibm.com>
+	<1498249800.2063.9.camel@tycho.nsa.gov>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"; Format="flowed"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20170623183520.GC21137-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+In-Reply-To: <1498249800.2063.9.camel-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,57 +19,63 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, LSM List <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, lkp-JC7UmRfGjtg@public.gmane.org
+To: Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>, lkp-JC7UmRfGjtg@public.gmane.org, xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 06/23/2017 02:35 PM, Serge E. Hallyn wrote:
-> Quoting Stefan Berger (stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
->> On 06/23/2017 12:16 PM, Casey Schaufler wrote:
->>> On 6/23/2017 9:00 AM, Serge E. Hallyn wrote:
->>>> Quoting Amir Goldstein (amir73il-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
->>>>> On Thu, Jun 22, 2017 at 9:59 PM, Stefan Berger
->>>>> <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
->>>>>> This series of patches primary goal is to enable file capabilities
->>>>>> in user namespaces without affecting the file capabilities that are
->>>>>> effective on the host. This is to prevent that any unprivileged user
->>>>>> on the host maps his own uid to root in a private namespace, writes
->>>>>> the xattr, and executes the file with privilege on the host.
->>>>>>
->>>>>> We achieve this goal by writing extended attributes with a different
->>>>>> name when a user namespace is used. If for example the root user
->>>>>> in a user namespace writes the security.capability xattr, the name
->>>>>> of the xattr that is actually written is encoded as
->>>>>> security.capability@uid=1000 for root mapped to uid 1000 on the host.
->>>>>> When listing the xattrs on the host, the existing security.capability
->>>>>> as well as the security.capability@uid=1000 will be shown. Inside the
->>>>>> namespace only 'security.capability', with the value of
->>>>>> security.capability@uid=1000, is visible.
->>>>>>
->>>>> Am I the only one who thinks that suffix is perhaps not the best grammar
->>>>> to use for this namespace?
->>>> You're the only one to have mentioned it so far.
->>>>
->>>>> xattrs are clearly namespaced by prefix, so it seems right to me to keep
->>>>> it that way - define a new special xattr namespace "ns" and only if that
->>>>> prefix exists, the @uid suffix will be parsed.
->>>>> This could be either  ns.security.capability@uid=1000 or
->>>>> ns@uid=1000.security.capability. The latter seems more correct to me,
->>>>> because then we will be able to namespace any xattr without having to
->>>>> protect from "unprivileged xattr injection", i.e.:
->>>>> setfattr -n "user.whatever.foo@uid=0"
->>>> I like it for simplifying the parser code.  One concern I have is that,
->>>> since ns.* is currently not gated, one could write ns.* on an older
->>>> kernel and then exploit it on a newer one.
->>> security.ns.capability@uid=1000, then?
->> Imo, '.ns' is redundant and 'encoded' in the '@'.
-> So how about
-> 	security.@uid=1000@@capability ?
-Ouch.
-> Maybe it's not worth it.
-
-So the .ns is there to be able to possibly extend it in another 
-dimension in the future, like have '.foo' there at some point?
-
-
+On 06/23/2017 04:30 PM, Stephen Smalley wrote:
+> On Thu, 2017-06-22 at 14:59 -0400, Stefan Berger wrote:
+>> Before the current modifications, SELinux extended attributes were
+>> visible inside the user namespace but changes in patch 1 hid them.
+>> This patch enables security.selinux in user namespaces and allows
+>> them to be written to in the same way as security.capability.
+>>
+>> Signed-off-by: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+>> ---
+>>   fs/xattr.c | 1 +
+>>   1 file changed, 1 insertion(+)
+>>
+>> diff --git a/fs/xattr.c b/fs/xattr.c
+>> index 045be85..37686ee 100644
+>> --- a/fs/xattr.c
+>> +++ b/fs/xattr.c
+>> @@ -138,6 +138,7 @@ xattr_permission(struct inode *inode, const char
+>> *name, int mask)
+>>    */
+>>   static const char *const userns_xattrs[] = {
+>>   	XATTR_NAME_CAPS,
+>> +	XATTR_NAME_SELINUX,
+>>   	NULL
+>>   };
+>>   
+> (cc SELinux maintainers, curiously omitted from these patches)
 >
+> I don't think this works for SELinux. You don't deal with actually
+> supporting multiple security.selinux attributes within SELinux itself
+> (and I'm not asking you to do so), and without such support, this can't
+> operate as intended. With these patches applied, IIUC, a setxattr() of
+> security.selinux within a userns will end up setting only security.seli
+> nux@uid=1000 on disk, but will then tell SELinux to update its in-core
+> security label to the new value (via security_inode_post_setxattr).
+> Meanwhile, on a subsequent getxattr(), you'll call
+> security_inode_getsecurity() with the security.selinux@uid=1000 name,
+> which will always fail because SELinux doesn't know anything about your
+> new scheme, and then you'll call the filesystem handler and returns its
+> value, which is no longer connected in any way to the actual label
+> being used by SELinux.  Also, SELinux itself makes calls to
+> __vfs_getxattr() and __vfs_setxattr_noperm(), and I don't think your
+> name remapping is correct in those cases.
+>
+> You also can't hide security.selinux within user namespaces.  Today
+> userspace can get and set security.selinux attributes within user
+> namespaces (if allowed by policy), and further can specify the label to
+> use for new files via /proc/self/attr/fscreate, which unsurprisingly
+> isn't addressed by your changes.  Changing that would be a userspace
+> break.
+
+I modified the 1st patch now in such a way that only security.capability 
+is rewritten, security.selinux and all other ones remain untouched.
+
+https://github.com/stefanberger/linux/commits/xattr_for_userns.v2
+
+    Stefan
