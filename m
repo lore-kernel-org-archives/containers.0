@@ -1,10 +1,9 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [GIT PULL] mnt namespace updates for v4.13-rc1
-Date: Tue, 04 Jul 2017 16:34:53 -0500
-Message-ID: <87d19fhon6.fsf@xmission.com>
+From: =?iso-8859-1?Q?St=E9phane?= Graber <stgraber-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: Linux Plumbers containers micro-conference CFP
+Date: Wed, 5 Jul 2017 15:30:34 -0400
+Message-ID: <20170705193033.puyhniz7rvoo572f__2985.27847412533$1499283045$gmane$org@castiana>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============0494095332427132249=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -15,52 +14,72 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, lxc-users-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, containers-cunTk1MwBs98uUxBSJOaYoYkZiVZrdSR2LY78lusg7I@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-Linus,
+--===============0494095332427132249==
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="gxwx3645hh4suhxx"
+Content-Disposition: inline
 
-Please pull the for-linus branch from the git tree:
 
-   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
+--gxwx3645hh4suhxx
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-   HEAD: 296990deb389c7da21c78030376ba244dc1badf5 mnt: Make propagate_umount less slow for overlapping mount propagation trees
+Hey there,
 
-A big break through came during this development cycle as a way was
-found to maintain the existing umount -l semantics while allowing for
-optimizations that improve the performance.  That is represented by the
-first change in this series moving the reparenting of mounts into their
-own pass.  This has allowed addressing the horrific performance of
-umount -l on a carefully crafted tree of mounts with locks held (0.06s
-vs 60s in my testing).   What allowed this was not changing where
-umounts propagate to while propgating umounts.
+Linux Plumbers 2017 will be held in Los Angeles, CA between the 13th and
+15th of September 2017 including the usual containers micro-conference.
 
-The next change fixes the case where the order of the mount whose umount
-are being progated visits a tree where the mounts are stacked upon each
-other in another order.  This is weird but not hard to implement.
+This is a great place to catch up with fellow maintainers and users and
+to discuss issues that affect us all.
 
-The final change takes advantage of the unchanging mount propgation tree
-to skip parts of the mount propgation tree that have already been
-visited.  Yielding a very nice speed up in the worst case.
+You can find the more detailed CFP here:
+  https://discuss.linuxcontainers.org/t/containers-micro-conference-at-linu=
+x-plumbers-2017/262
 
-There remains one outstanding question about the semantics of umount -l
-that I am still discussiong with Ram Pai.  In practice that area of the
-semantics was changed by 1064f874abc0 ("mnt: Tuck mounts under others
-instead of creating shadow/side mounts.") and no regressions have been
-reported.  Still I intend to finish talking that out with him to ensure
-there is not something a more intense use of mount propagation in the
-future will not cause to become significant.
+CFP closes on the 4th of August 2017.
 
-Eric W. Biederman (3):
-      mnt: In umount propagation reparent in a separate pass
-      mnt: In propgate_umount handle visiting mounts in any order
-      mnt: Make propagate_umount less slow for overlapping mount propagation trees
+Looking forward to seeing you there!
 
- fs/mount.h     |   1 +
- fs/namespace.c |   1 +
- fs/pnode.c     | 212 ++++++++++++++++++++++++++++++++++++++++++++-------------
- 3 files changed, 165 insertions(+), 49 deletions(-)
+--=20
+St=E9phane Graber
+Ubuntu developer
+http://www.ubuntu.com
 
-Eric
+--gxwx3645hh4suhxx
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIcBAABCgAGBQJZXT5WAAoJEMY4l01keS1njzYQAM7ElYZPox7Ak95V++CMiyeP
+2JfwncT/ARMLAQRvyUTSIuOZlhQQCLuOr+6meGB9LLTUA5oiikkMrioJ//72SAFi
+jcoHkbdcVmm5SjeFU+9tzhhlCNJZzcYrf2J1Z+zDx6lO3l4EVvsVJjto2waKCcQB
+E7w5P1nBNq+gfr8bvM/i2hfLPrZ8tMAf9Y0i1/L6qL+d3oGd/SVNQaVzeHM4s61u
+U4i90dvPeBSJjavMTPNyPCpr3wazxuNEVaqE8vyvOFWHSldZyQn301E6ciQnPpya
+jjefdyX2Mx4gR4JJN8uR9MX9FwhBh2qvPvottINzCPWUEVGp1R4B7J8eo+3UnhNg
+Hk1JyZiSfm6JouSRPSElojR5UU9WtdmSWiP8rDsudqEU9zc6ClH1O+fiPK68hAB5
+V0rOqYo6gBHvNPWoDCBzAJp02R7bCXWZvf0cpzbaa08eEcPsVMtc7V5mgBqnaviP
+I8Gy8WRlti8+lh2wqkoUg8nmWchf4G7invMRHKxcny4FvTZ7Cv8UwRmcEGzVv0Ki
+PjGeJ8KPxuAIdiD2qwi0IGGLqp4UTTs33T4bQqV8U+fknZfEaOyg9pf8y1RO2nBb
+PAXLL0cUF+cT6yFfz+EFKkMOtVvcE5mM4Id9eLj7nvu4G1tPHo5gHs/iYFqOhUT0
+vS2DIogx2GPKWgDnt1J+
+=Nfsn
+-----END PGP SIGNATURE-----
+
+--gxwx3645hh4suhxx--
+
+--===============0494095332427132249==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============0494095332427132249==--
