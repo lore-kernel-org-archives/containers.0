@@ -1,16 +1,16 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 8/8] signal: Remove kernel interal si_code magic
-Date: Wed, 12 Jul 2017 18:08:07 -0500
-Message-ID: <87wp7dgso8.fsf__45168.395250994$1499901381$gmane$org@xmission.com>
-References: <87efu22set.fsf@xmission.com>
-	<20170630123906.8865-8-ebiederm@xmission.com>
-	<20170712223557.GA21885@outlook.office365.com>
+Subject: Re: [PATCH v2] xattr: Enable security.capability in user namespaces
+Date: Wed, 12 Jul 2017 18:13:41 -0500
+Message-ID: <877ezdgsey.fsf@xmission.com>
+References: <1499785511-17192-1-git-send-email-stefanb@linux.vnet.ibm.com>
+	<1499785511-17192-2-git-send-email-stefanb@linux.vnet.ibm.com>
+	<87mv89iy7q.fsf@xmission.com> <20170712170346.GA17974@mail.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20170712223557.GA21885-1ViLX0X+lBJGNQ1M2rI3KwRV3xvJKrda@public.gmane.org> (Andrei Vagin's
-	message of "Wed, 12 Jul 2017 15:36:04 -0700")
+In-Reply-To: <20170712170346.GA17974-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
+	message of "Wed, 12 Jul 2017 12:03:46 -0500")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,24 +20,53 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
-Cc: linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Pavel Emelyanov <xemul-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Willy Tarreau <w@1wt.eu>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: lkp-JC7UmRfGjtg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org> writes:
+"Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
 
->> diff --git a/arch/tile/kernel/traps.c b/arch/tile/kernel/traps.c
->> index 54804866f238..4433d1dc28e6 100644
->> --- a/arch/tile/kernel/traps.c
->> +++ b/arch/tile/kernel/traps.c
->> @@ -188,7 +188,6 @@ static int special_ill(tile_bundle_bits bundle, int *sigp, int *codep)
->>  
->>  	/* Make it the requested signal. */
->>  	*sigp = sig;
->> -	*codep = code | __SI_FAULT;
+> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+>> Stefan Berger <"Stefan Bergerstefanb"@linux.vnet.ibm.com> writes:
+>> > Signed-off-by: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+>> > Signed-off-by: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+>> > Reviewed-by: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+>> 
+>> It doesn't look like this is coming through Serge so I don't see how
+>> the Signed-off-by tag is legtimate.
 >
-> Are you sure that we don't need to set codep here?
+> This is mostly explained by the fact that there have been a *lot* of
+> changes, many of them discussed in private emails.
+>
+>> >From the replies to this it doesn't look like Serge has reviewed this
+>> version either.
+>> 
+>> I am disappointed that all of my concerns about technical feasibility
+>> remain unaddressed.
+>
+> Can you re-state those, or give a link to them?
 
-Looking closely we definitely do.  Good catch.  Thank you.
+Well I only posted about one substantive comment on the last round
+so it should be easy to find that said.
+
+The big question is how does this intereact with filesystems
+xattr implementations?
+
+There is the potential that we create many more security xattrs this
+way.  How does that scale?  With more names etc.
+What happens if we have one xattr per uid for 1000+ uids?
+
+How does this interact with filesystems optimization of xattr names?
+For some filesystems they optmize the xattr names, and don't store the
+entire thing.
+
+> I'd really like to get to a point where unprivileged containers can start
+> using filecaps - at this point if that means having an extra temporary
+> file format based on my earlier patchset while we hash this out, that
+> actually seems worthwhile.  But it would of course be ideal if we could
+> do the name based caps right in the first place.
+
+This whole new version has set my review back to square one
+unfortunately.
 
 Eric
