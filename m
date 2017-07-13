@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH v2] xattr: Enable security.capability in user namespaces
-Date: Thu, 13 Jul 2017 14:41:05 -0500
-Message-ID: <20170713194105.GA4895__27708.4600450054$1499974876$gmane$org@mail.hallyn.com>
+Date: Thu, 13 Jul 2017 14:48:42 -0500
+Message-ID: <20170713194842.GB4895__2282.45532275668$1499975331$gmane$org@mail.hallyn.com>
 References: <87mv89iy7q.fsf@xmission.com>
 	<20170712170346.GA17974@mail.hallyn.com>
 	<877ezdgsey.fsf@xmission.com>
@@ -9,15 +9,15 @@ References: <87mv89iy7q.fsf@xmission.com>
 	<20170713011554.xwmrgkzfwnibvgcu@thunk.org>
 	<87y3rscz9j.fsf@xmission.com>
 	<20170713164012.brj2flnkaaks2oci@thunk.org>
-	<29fdda5e-ed4a-bcda-e3cc-c06ab87973ce@linux.vnet.ibm.com>
-	<8760ew9qyp.fsf@xmission.com>
-	<20170713191429.vfaetqscxd7hniwq@thunk.org>
+	<87k23cb6os.fsf@xmission.com>
+	<847ccb2a-30c0-a94c-df6f-091c8901eaa0@linux.vnet.ibm.com>
+	<87bmoo8bxb.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20170713191429.vfaetqscxd7hniwq-AKGzg7BKzIDYtjvyW6yDsg@public.gmane.org>
+In-Reply-To: <87bmoo8bxb.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,68 +27,99 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkp-JC7UmRfGjtg@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, tycho-FCduhRhOUaTQT0dZR+AlfA@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, christian.brauner-cl+VPiYnx/1AfugRpC6u6w@public.gmane.org, amir73il-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org, lkp-JC7UmRfGjtg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Theodore Ts'o (tytso-3s7WtUTddSA@public.gmane.org):
-> On Thu, Jul 13, 2017 at 12:39:10PM -0500, Eric W. Biederman wrote:
-> > > Can you define what 'scalable' means for you in this context?
-> > > From what I can see sharing a filesystem between multiple containers
-> > > doesn't 'scale well' for virtualizing the xattrs primarily because of
-> > > size limitations of xattrs per file.
-> > 
-> > Worse than that I believe you will find that filesystems are built on
-> > the assumption that there will be a small number of xattrs per file.
-> > So even if the vfs limitations were lifted the filesystem performance
-> > would suffer.
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
 > 
-> That's why I've been pushing here.  If people try to do
-> 
->    security.capable@uid=1000
->    security.capable@uid=2000
->    security.capable@uid=3000
->    security.capable@uid=4000
->    security.capable@uid=5000
->    security.capable@uid=6000
->    security.capable@uid=7000
->    security.capable@uid=8000
->    security.capable@uid=9000
->          .
-> 	 .
-> 	 .
-> 
-> ... where the values of all of these will be the same, this is going
-> to be *awful* even if the file system can support it.
+> > On 07/13/2017 01:14 PM, Eric W. Biederman wrote:
+> >> Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org> writes:
+> >>
+> >>> On Thu, Jul 13, 2017 at 07:11:36AM -0500, Eric W. Biederman wrote:
+> >>>> The concise summary:
+> >>>>
+> >>>> Today we have the xattr security.capable that holds a set of
+> >>>> capabilities that an application gains when executed.  AKA setuid root exec
+> >>>> without actually being setuid root.
+> >>>>
+> >>>> User namespaces have the concept of capabilities that are not global but
+> >>>> are limited to their user namespace.  We do not currently have
+> >>>> filesystem support for this concept.
+> >>> So correct me if I am wrong; in general, there will only be one
+> >>> variant of the form:
+> >>>
+> >>>     security.foo@uid=15000
+> >>>
+> >>> It's not like there will be:
+> >>>
+> >>>     security.foo@uid=1000
+> >>>     security.foo@uid=2000
+> >>>
+> >>> Except.... if you have an Distribution root directory which is shared
+> >>> by many containers, you would need to put the xattrs in the overlay
+> >>> inodes.  Worse, each time you launch a new container, with a new
+> >>> subuid allocation, you will have to iterate over all files with
+> >>> capabilities and do a copy-up operations on the xattrs in overlayfs.
+> >>> So that's actually a bit of a disaster.
+> >>>
+> >>> So for distribution overlays, you will need to do things a different
+> >>> way, which is to map the distro subdirectory so you know that the
+> >>> capability with the global uid 0 should be used for the container
+> >>> "root" uid, right?
+> >>>
+> >>> So this hack of using security.foo@uid=1000 is *only* useful when the
+> >>> subcontainer root wants to create the privileged executable.  You
+> >>> still have to do things the other way.
+> >>>
+> >>> So can we make perhaps the assertion that *either*:
+> >>>
+> >>>     security.foo
+> >>>
+> >>> exists, *or*
+> >>>
+> >>>     security.foo@uid=BAR
+> >>>
+> >>> exists, but never both?  And there BAR is exclusive to only one
+> >>> instances?
+> >>>
+> >>> Otherwise, I suspect that the architecture is going to turn around and
+> >>> bite us in the *ss eventually, because someone will want to do
+> >>> something crazy and the solution will not be scalable.
+> >> Yep.  That is what it looks like from here.
+> >>
+> >> Which is why I asked the question about scalability of the xattr
+> >> implementations.  It looks like trying to accomodate the general
+> >> case just gets us in trouble, and sets unrealistic expectations.
+> >>
+> >> Which strongly suggests that Serge's previous version that
+> >> just reved the format of security.capable so that a uid field could
+> >> be added is likely to be the better approach.
+> >>
+> >> I want to see what Serge and Stefan have to say but the case looks
+> >> pretty clear cut at the moment.
 
-Typically users will be allocated a single range of ids, for instance
-100000-200000.  We might therefore consider putting a range in the uid=,
-i.e. security.capable@uid=100000-200000.  I don't think that's really
-needed, but it's an option.
+I'm fine with that.  Now, we'll be doing the enforcement at xattr
+write time, meaning someone *can* come up with an fs image with >1
+such xattrs.  Which is *fine*, I believe, it won't break anything
+security-wise, and our goal is only to stop users from thinking it
+is legitimate two write multiple such xattrs, so that they don't later
+bug the fs folks like Ted saying "hey why can't I write 1000 of these,
+I think that's a bug."
 
-Consider that the executable will be owned by some kuid+kgid.  If we
-have all the xattrs you list above, then who would we have actually
-owning the file?  If we're chown'ing it anyway (to be root-owned but
-not seutid-root), then this discussion is moot, because we'll have
-to re-write the xattr after the chown.  So for this to matter, we
-would have an fs owned by either uid nobody in the container, or
-by some special user (mapped to 100000 in the container perhaps)
-which is always special-case-mapped into the container.
+So at xattr write time,
 
-> So maybe we are better off if we define an xattr
-> 
->    security.capable@guest-container
-> ... so the property is that it is ignored by the host ("real")
-> container, and in all of the subcontainers, it will be used if the
-> local container root is trying to execute the file.
+	1. if there is already an xattr, and it is either the global
+	non-namespaced xattr, or it has kuid=X where X is the kuid
+	mapped to root in a parent of the container, then we refuse
+	the write
+	2. if there is already an xattr, and it is for a kuid=X where
+	X is mapped into the container, then we overwrite the existing
+	xattr.
 
-In the previous discussion we considered having 'security.capable@uid='
-with no following integer, meaning that it would take effect in all
-user namespaces which do not have kuid 0 as root.
+At read/use time, we use the rules we have now.
 
-This could be useful for cases like docker hosts, but note that writing
-this has to require either global CAP_SETFCAP, or CAP_SETFCAP in a
-user namespace that has every kuid except 0 mapped.  If joe, uid 1000,
-has subuids 100000-20000 delegated to him, then he must not be allowed
-to write something that can affect someone with kuids 300000-400000.
+Does that seem reasonable?
 
 -serge
