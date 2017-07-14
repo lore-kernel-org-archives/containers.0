@@ -1,13 +1,8 @@
-From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+From: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>
 Subject: Re: [PATCH v2] xattr: Enable security.capability in user namespaces
-Date: Fri, 14 Jul 2017 13:39:59 -0700
-Message-ID: <1500064799.2853.36.camel__10388.2817239084$1500064818$gmane$org@HansenPartnership.com>
-References: <87y3rscz9j.fsf@xmission.com>
-	<20170713164012.brj2flnkaaks2oci@thunk.org>
-	<87k23cb6os.fsf@xmission.com>
-	<847ccb2a-30c0-a94c-df6f-091c8901eaa0@linux.vnet.ibm.com>
-	<87bmoo8bxb.fsf@xmission.com>
-	<9a3010e5-ca2b-5e7a-656b-fcc14f7bec4e@linux.vnet.ibm.com>
+Date: Fri, 14 Jul 2017 17:34:49 -0400
+Message-ID: <20170714213449.gtxtkqtxifk5j4wp__28287.673687055$1500068113$gmane$org@thunk.org>
+References: <9a3010e5-ca2b-5e7a-656b-fcc14f7bec4e@linux.vnet.ibm.com>
 	<87h8yf7szd.fsf@xmission.com>
 	<65dbe654-0d99-03fa-c838-5a726b462826@linux.vnet.ibm.com>
 	<20170714133437.GA16737@mail.hallyn.com>
@@ -16,11 +11,13 @@ References: <87y3rscz9j.fsf@xmission.com>
 	<1500058090.3583.28.camel@linux.vnet.ibm.com>
 	<1500058362.2853.28.camel@HansenPartnership.com>
 	<1500062619.3583.71.camel@linux.vnet.ibm.com>
+	<1500064799.2853.36.camel@HansenPartnership.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1500062619.3583.71.camel-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1500064799.2853.36.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -30,43 +27,34 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Mimi Zohar <zohar-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org, lkp-JC7UmRfGjtg@public.gmane.org
+To: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+Cc: Mimi Zohar <zohar-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, lkp-JC7UmRfGjtg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gRnJpLCAyMDE3LTA3LTE0IGF0IDE2OjAzIC0wNDAwLCBNaW1pIFpvaGFyIHdyb3RlOgo+IE9u
-IEZyaSwgMjAxNy0wNy0xNCBhdCAxMTo1MiAtMDcwMCwgSmFtZXMgQm90dG9tbGV5IHdyb3RlOgo+
-ID4gCj4gPiBPbiBGcmksIDIwMTctMDctMTQgYXQgMTQ6NDggLTA0MDAsIE1pbWkgWm9oYXIgd3Jv
-dGU6Cj4gPiA+IAo+ID4gPiBUaGUgY29uY2VybiBpcyB3aXRoIGEgc2hhcmVkIGZpbGVzeXN0ZW1z
-LiDCoEluIHRoYXQgY2FzZSwgZm9yIElNQQo+ID4gPiBpdCB3b3VsZCBtYWtlIHNlbnNlIHRvIHN1
-cHBvcnQgYSBuYXRpdmUgYW5kIGEgbmFtZXNwYWNlIHhhdHRyLgo+ID4gPiDCoElmIGR1ZSB0byB4
-YXR0ciBzcGFjZSBsaW1pdGF0aW9ucyB3ZSBoYXZlIHRvIGxpbWl0IHRoZSBudW1iZXIgb2YKPiA+
-ID4geGF0dHJzLCB0aGVuIHdlIHNob3VsZCBsaW1pdCBpdCB0byB0d28gLSBhIG5hdGl2ZSBhbmQg
-YSBuYW1lc3BhY2UKPiA+ID4gdmVyc2lvbiwgd2l0aCBhICJ1aWQ9IiB0YWcgLSBmaXJzdCBuYW1l
-c3BhY2UgZ2V0cyBwZXJtaXNzaW9uIHRvCj4gPiA+IHdyaXRlIHRoZSBuYW1lc3BhY2UgeGF0dHIu
-IMKgQWdhaW4sIGxpa2UgaW4gdGhlIGxheWVyZWQgY2FzZSwgaWYKPiA+ID4gdGhlIG5hbWVzcGFj
-ZSB4YXR0ciBkb2Vzbid0IGV4aXN0LCBmYWxsIGJhY2sgdG8gdXNpbmcgdGhlIG5hdGl2ZQo+ID4g
-PiB4YXR0ci4KPiA+IAo+ID4gSnVzdCBvbiB0aGlzIHBvaW50OiBpZiB3ZSdyZSByZWFsbHkgY29u
-Y2VybmVkIGFib3V0IHRoZSBuZWVkIG9uCj4gPiBzaGFyZWQgZmlsZXN5c3RlbXMgdG8gaGF2ZSBt
-dWx0aXBsZSBJTUEgc2lnbmF0dXJlcyBwZXIgZmlsZSwgbWlnaHQKPiA+IGl0IG5vdCBtYWtlIHNl
-bnNlIHNpbXBseSB0byBzdXBwb3J0IG11bHRpcGxlIHNpZ25hdHVyZXMgd2l0aGluIHRoZQo+ID4g
-c2VjdXJpdHkuaW1hIHhhdHRyPyBUaGUgcnVsZXMgZm9yIHdyaXRpbmcgc2lnbmF0dXJlIHVwZGF0
-ZXMgd2l0aGluCj4gPiB1c2VyIG5hbWVzcGFjZXMgd291bGQgYmUgc29tZXdoYXQgY29tcGxleCAo
-c2F5IG9ubHkgYWJsZSB0byByZXBsYWNlCj4gPiBhIHNpZ25hdHVyZSBmb3Igd2hpY2ggeW91IGRl
-bW9uc3RyYXRlIHlvdSBwb3NzZXNzIHRoZSBrZXkpIGJ1dCBpdAo+ID4gd291bGQgbGVhZCB0byBh
-biBpbXBsZW1lbnRhdGlvbiB3aGljaCB3b3VsZCB3b3JrIGZvciB0cmFkaXRpb25hbAo+ID4gc2hh
-cmVkIGZpbGVzeXN0ZW1zIChsaWtlIE5GUykgYXMgd2VsbCBhcyBjb250YWluZXJpc2VkIGJpbmQg
-bW91bnRzLgo+IAo+IFdyaXRpbmcgc2VjdXJpdHkuaW1hIHJlcXVpcmVzIGJlaW5nIHJvb3Qgd2l0
-aCBDQVBfU1lTX0FETUlOCj4gcHJpdmlsZWdlcy4gwqBJIHdvdWxkbid0IHdhbnQgdG8gZ2l2ZSBy
-b290IHdpdGhpbiB0aGUgbmFtZXNwYWNlCj4gcGVybWlzc2lvbiB0byBvdmVyIHdyaXRlIG9yIGp1
-c3QgZXh0ZW5kIHRoZSBuYXRpdmUgc2VjdXJpdHkuaW1hLgoKYnV0IHdoeT8gwqBUaGF0J3MgcGFy
-dGx5IHRoZSBwb2ludCBvZiBhbGwgb2YgdGhpczogc29tZSBzZWN1cml0eS4KYXR0cmlidXRlcyBj
-YW4ndCBiZSB3cml0dGVuIGJ5IGNvbnRhaW5lciByb290IHdpdGhvdXQgc29tZSBzdXBlcnZpc2lv
-bgoodGhlIGNhcGFiaWxpdHkgb25lcyBhcmUgdGhlIGh1Z2VseSBwcm9ibGVtYXRpYyBvbmVzIGZy
-b20gdGhpcyBwb2ludCBvZgp2aWV3KSwgYnV0IGZvciBzb21lIHRoZXJlJ3Mgbm8gcmVhc29uIHRo
-ZXkgc2hvdWxkbid0IGJlLiDCoFdoYXQgd291bGQgYmUKdGhlIHJlYXNvbiB0aGF0IHJvb3QgaW4g
-YSBjb250YWluZXIgc2hvdWxkbid0IGJlIGFibGUgdG8gd3JpdGUgdGhlIGltYQp4YXR0ciB0aGUg
-c2FtZSBhcyBob3N0IHJvb3QgY291bGQgb24gaXRzIGZpbGVzeXN0ZW0/CgpKYW1lcwoKX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWls
-aW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xp
-c3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+On Fri, Jul 14, 2017 at 01:39:59PM -0700, James Bottomley wrote:
+> but why? =A0That's partly the point of all of this: some security.
+> attributes can't be written by container root without some supervision
+> (the capability ones are the hugely problematic ones from this point of
+> view), but for some there's no reason they shouldn't be. =A0What would be
+> the reason that root in a container shouldn't be able to write the ima
+> xattr the same as host root could on its filesystem?
+
+So I'm happy to say, "Ix-nay on nested containerization; that way lies
+insanity".  But my understanding is that there will be people who want
+to run containers in containers in containers in containers...  and
+this is what scares me.
+
+What if someone in the Nth layer of containerization wants to allow
+the container root in the (N+1)th layer to set file capabilities that
+will not be honored in the Nth layer of containerization?
+
+Again I think that this is insane, and I'm happy for the answer to be,
+"No, that's not supported".  That the "Host container" can have
+capabilities that it won't honor, but will be honored by all
+subcontainers, but that same thing can't be done between a
+subsubsub-container and its child subsubsubsub-container.
+
+Are we OK with that?  Because how we would encode this in the xattr
+seems to be to be hopelessly not scalable.
+
+					- Ted
