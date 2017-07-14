@@ -1,12 +1,9 @@
-From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [PATCH v2] xattr: Enable security.capability in user namespaces
-Date: Fri, 14 Jul 2017 15:22:45 -0400
-Message-ID: <e123cfe2-cda6-edc5-b7ab-465acef5852e__26462.9262885594$1500060181$gmane$org@linux.vnet.ibm.com>
-References: <74664cc8-bc3e-75d6-5892-f8934404349f@linux.vnet.ibm.com>
-	<20170713011554.xwmrgkzfwnibvgcu@thunk.org>
-	<87y3rscz9j.fsf@xmission.com>
-	<20170713164012.brj2flnkaaks2oci@thunk.org>
-	<87k23cb6os.fsf@xmission.com>
+Date: Fri, 14 Jul 2017 15:26:14 -0400
+Message-ID: <1500060374.3583.57.camel__32577.3774566644$1500060479$gmane$org@linux.vnet.ibm.com>
+References: <87y3rscz9j.fsf@xmission.com>
+	<20170713164012.brj2flnkaaks2oci@thunk.org>	<87k23cb6os.fsf@xmission.com>
 	<847ccb2a-30c0-a94c-df6f-091c8901eaa0@linux.vnet.ibm.com>
 	<87bmoo8bxb.fsf@xmission.com>
 	<9a3010e5-ca2b-5e7a-656b-fcc14f7bec4e@linux.vnet.ibm.com>
@@ -14,12 +11,13 @@ References: <74664cc8-bc3e-75d6-5892-f8934404349f@linux.vnet.ibm.com>
 	<65dbe654-0d99-03fa-c838-5a726b462826@linux.vnet.ibm.com>
 	<20170714133437.GA16737@mail.hallyn.com>
 	<596f808b-e21d-8296-5fef-23c1ce7ab778@linux.vnet.ibm.com>
-	<87pod22a4x.fsf@xmission.com>
+	<20170714173556.GA19669@mail.hallyn.com>
+	<xagsmtp2.20170714182525.6604@vmsdvm4.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87pod22a4x.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <xagsmtp2.20170714182525.6604-SsZeXQfhYdoOFdY8m0e24VaTQe2KTcn/@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -29,75 +27,105 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org, lkp-JC7UmRfGjtg@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, Mimi Zohar <zohar-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org, lkp-JC7UmRfGjtg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 07/14/2017 01:36 PM, Eric W. Biederman wrote:
-> Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
->
->> On 07/14/2017 09:34 AM, Serge E. Hallyn wrote:
->>> Quoting Stefan Berger (stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
->>>> On 07/13/2017 08:38 PM, Eric W. Biederman wrote:
->>>>> Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
->>>>>
->>>>>> On 07/13/2017 01:49 PM, Eric W. Biederman wrote:
->>>>>>
->>>>>>> My big question right now is can you implement Ted's suggested
->>>>>>> restriction.  Only one security.foo or secuirty.foo@... attribute ?
->>>>>> We need to raw-list the xattrs and do the check before writing them. I am fairly sure this can be done.
->>>>>>
->>>>>> So now you want to allow security.foo and one security.foo@uid=<> or just a single one security.foo(@[[:print:]]*)?
->>>>>>
->>>>> The latter.
->>>> That case would prevent a container user from overriding the xattr
->>>> on the host. Is that what we want? For limiting the number of xattrs
->>> Not really.  If the file is owned by a uid mapped into the container,
->>> then the container root can chown the file which will clear the file
->>> capability, after which he can set a new one.  If the file is not
->>> owned by a uid mapped into the container, then container root could
->>> not set a filecap anyway.
->> Let's say I installed a container where all files are signed and thus have
->> security.ima. Now for some reason I want to re-sign some or all files inside
->> that container. How would I do that ? Would I need to get rid of security.ima
->> first, possibly by copying each file, deleting the original file, and renaming
->> the copied file to the original name, or should I just be able to write out a
->> new signature, thus creating security.ima@uid=1000 besides the security.ima ?
-> This gets us into some interesting territory, where the semantics of
-> these attributes matters.
->
-> The implementation of security.capable implements the security killpriv
-> hooks.  Anyone merely by changing the file can cause the security
-> capability to go away.  So it makes sense from the security.capable side
-> that anyone who has the capable_wrt_inode_uidgid(CAP_SETFCAP) will be
-> able to clear and set security.capable.
->
-> The integrity xattrs do not.  Which results in very big semantic
-> difference between these two kinds of attributes.  I am insufficiently
-> familiar with the rules for security.ima and security.evm to understand
-> what those rules should be.
->
-> That may be enough that we can not share code between these two cases.
-
-On the host I can simply overwrite capabilities. I think the same model 
-should apply to the virtualized world. The difference still is that 
-removing an xattr, if written on the host, may only be possible by copy 
-+ file move to original filename.
-
-On IMA, when appending a letter to an executable, the executable doesn't 
-run anymore when appraisal is used, but the signature is still there and 
-needs to be re-written. Though I think this aspect on how they disappear 
-doesn't matter as much if they can simply be overwritten.
-
-Some things could certainly be solved with flags indicating behaviors of 
-xattrs for as long as these flags only affect the reading, listing, and 
-re-writing of the virtualized xattrs, which is what the patch does. For 
-example a flag for security.capability could say that only a single 
-'security.capability(@uid=<uid>)?' may exist while security.ima could 
-have two.
-
-    Stefan
-
->
-> Eric
->
+T24gRnJpLCAyMDE3LTA3LTE0IGF0IDEzOjE3IC0wNTAwLCBFcmljIFcuIEJpZWRlcm1hbiB3cm90
+ZToKPiAiU2VyZ2UgRS4gSGFsbHluIiA8c2VyZ2VAaGFsbHluLmNvbT4gd3JpdGVzOgo+IAo+ID4g
+UXVvdGluZyBTdGVmYW4gQmVyZ2VyIChzdGVmYW5iQGxpbnV4LnZuZXQuaWJtLmNvbSk6Cj4gPj4g
+T24gMDcvMTQvMjAxNyAwOTozNCBBTSwgU2VyZ2UgRS4gSGFsbHluIHdyb3RlOgo+ID4+ID5RdW90
+aW5nIFN0ZWZhbiBCZXJnZXIgKHN0ZWZhbmJAbGludXgudm5ldC5pYm0uY29tKToKPiA+PiA+Pk9u
+IDA3LzEzLzIwMTcgMDg6MzggUE0sIEVyaWMgVy4gQmllZGVybWFuIHdyb3RlOgo+ID4+ID4+PlN0
+ZWZhbiBCZXJnZXIgPHN0ZWZhbmJAbGludXgudm5ldC5pYm0uY29tPiB3cml0ZXM6Cj4gPj4gPj4+
+Cj4gPj4gPj4+Pk9uIDA3LzEzLzIwMTcgMDE6NDkgUE0sIEVyaWMgVy4gQmllZGVybWFuIHdyb3Rl
+Ogo+ID4+ID4+Pj4KPiA+PiA+Pj4+Pk15IGJpZyBxdWVzdGlvbiByaWdodCBub3cgaXMgY2FuIHlv
+dSBpbXBsZW1lbnQgVGVkJ3Mgc3VnZ2VzdGVkCj4gPj4gPj4+Pj5yZXN0cmljdGlvbi4gIE9ubHkg
+b25lIHNlY3VyaXR5LmZvbyBvciBzZWN1aXJ0eS5mb29ALi4uIGF0dHJpYnV0ZSA/Cj4gPj4gPj4+
+PldlIG5lZWQgdG8gcmF3LWxpc3QgdGhlIHhhdHRycyBhbmQgZG8gdGhlIGNoZWNrIGJlZm9yZSB3
+cml0aW5nIHRoZW0uIEkgYW0gZmFpcmx5IHN1cmUgdGhpcyBjYW4gYmUgZG9uZS4KPiA+PiA+Pj4+
+Cj4gPj4gPj4+PlNvIG5vdyB5b3Ugd2FudCB0byBhbGxvdyBzZWN1cml0eS5mb28gYW5kIG9uZSBz
+ZWN1cml0eS5mb29AdWlkPTw+IG9yIGp1c3QgYSBzaW5nbGUgb25lIHNlY3VyaXR5LmZvbyhAW1s6
+cHJpbnQ6XV0qKT8KPiA+PiA+Pj4+Cj4gPj4gPj4+VGhlIGxhdHRlci4KPiA+PiA+PlRoYXQgY2Fz
+ZSB3b3VsZCBwcmV2ZW50IGEgY29udGFpbmVyIHVzZXIgZnJvbSBvdmVycmlkaW5nIHRoZSB4YXR0
+cgo+ID4+ID4+b24gdGhlIGhvc3QuIElzIHRoYXQgd2hhdCB3ZSB3YW50PyBGb3IgbGltaXRpbmcg
+dGhlIG51bWJlciBvZiB4YXR0cnMKPiA+PiA+Tm90IHJlYWxseS4gIElmIHRoZSBmaWxlIGlzIG93
+bmVkIGJ5IGEgdWlkIG1hcHBlZCBpbnRvIHRoZSBjb250YWluZXIsCj4gPj4gPnRoZW4gdGhlIGNv
+bnRhaW5lciByb290IGNhbiBjaG93biB0aGUgZmlsZSB3aGljaCB3aWxsIGNsZWFyIHRoZSBmaWxl
+Cj4gPj4gPmNhcGFiaWxpdHksIGFmdGVyIHdoaWNoIGhlIGNhbiBzZXQgYSBuZXcgb25lLiAgSWYg
+dGhlIGZpbGUgaXMgbm90Cj4gPj4gPm93bmVkIGJ5IGEgdWlkIG1hcHBlZCBpbnRvIHRoZSBjb250
+YWluZXIsIHRoZW4gY29udGFpbmVyIHJvb3QgY291bGQKPiA+PiA+bm90IHNldCBhIGZpbGVjYXAg
+YW55d2F5Lgo+ID4+IAo+ID4+IExldCdzIHNheSBJIGluc3RhbGxlZCBhIGNvbnRhaW5lciB3aGVy
+ZSBhbGwgZmlsZXMgYXJlIHNpZ25lZCBhbmQKPiA+PiB0aHVzIGhhdmUgc2VjdXJpdHkuaW1hLiBO
+b3cgZm9yIHNvbWUgcmVhc29uIEkgd2FudCB0byByZS1zaWduIHNvbWUKPiA+PiBvciBhbGwgZmls
+ZXMgaW5zaWRlIHRoYXQgY29udGFpbmVyLiBIb3cgd291bGQgSSBkbyB0aGF0ID8gV291bGQgSQo+
+ID4+IG5lZWQgdG8gZ2V0IHJpZCBvZiBzZWN1cml0eS5pbWEgZmlyc3QsIHBvc3NpYmx5IGJ5IGNv
+cHlpbmcgZWFjaAo+ID4+IGZpbGUsIGRlbGV0aW5nIHRoZSBvcmlnaW5hbCBmaWxlLCBhbmQgcmVu
+YW1pbmcgdGhlIGNvcGllZCBmaWxlIHRvCj4gPj4gdGhlIG9yaWdpbmFsIG5hbWUsIG9yIHNob3Vs
+ZCBJIGp1c3QgYmUgYWJsZSB0byB3cml0ZSBvdXQgYSBuZXcKPiA+PiBzaWduYXR1cmUsIHRodXMg
+Y3JlYXRpbmcgc2VjdXJpdHkuaW1hQHVpZD0xMDAwIGJlc2lkZXMgdGhlCj4gPj4gc2VjdXJpdHku
+aW1hID8KPiA+PiAKPiA+PiAgICBTdGVmYW4KPiA+Cj4gPiBIaSBNaW1pLAo+ID4KPiA+IHdoYXQg
+ZG8geW91IHRoaW5rIG1ha2VzIG1vc3Qgc2Vuc2UgZm9yIElNQT8KPiAKPiBJIGFtIGdvaW5nIHRv
+IGdpdmUgbXkgdHdvIGNlbnRzIHNpbmNlIEkgaGF2ZSBiZWVuIHRoaW5raW5nIGFib3V0IHRoaXMu
+Cj4gCj4gRmlyc3QgSSB0aGluayB0aGlzIGVudGlyZSBzY2hlbWUgcGxheXMgaG9icyB3aXRoIHRo
+ZSBzZWN1cml0eS5ldm0KPiBhdHRyaWJ1dGUgYXMgc2VjdXJpdHkuZXZtIG5lZWRzIHRvIGtub3cg
+dGhlIG5hbWVzIG9mIHRoZSB4YXR0cnMgdG8KPiBwcm90ZWN0Lgo+IAo+IEkgZm9yZ2V0IHdoaWNo
+IGF0dHJpYnV0ZXMgaGFzIGEgaGFzaCBhbmQgd2hhdCBoYXMgYSBtZXNzYWdlCj4gYXRoZW50aWNh
+dGlvbiBjb2RlLgoKc2VjdXJpdHkuaW1hIGNvbnRhaW5zIGVpdGhlciBhIGZpbGUgaGFzaCBvciBh
+IHNpZ25hdHVyZS4gIChmaWxlIGRhdGEpCnNlY3VyaXR5LmV2bSBjb250YWlucyBlaXRoZXIgYSBz
+aWduYXR1cmUgb3IgYW4gaG1hYyBvZiB0aGUgc2VjdXJpdHkKeGF0dHJzIGFuZCBvdGhlciBmaWxl
+IG1ldGFkYXRhLiAoZmlsZSBtZXRhLWRhdGEpCgpUaGUgc2FtZSBydWxlcyB3b3VsZCBhcHBseSB0
+byBzZWN1cml0eS5ldm0sIGFzIGRlc2NyaWJlZCBpbiBteQpyZXNwb25zZS4gwqBCYXNlZCBvbiBp
+dCdzIHZpZXcgb2YgdGhlIHNlY3VyaXR5IHhhdHRycywgZWl0aGVyIHRoZQpuYXRpdmUgb3IgbmFt
+ZXNwYWNlIHNlY3VyaXR5LmV2bSB3b3VsZCBiZSB1cGRhdGVkLgoKPiBJZiB0aGVyZSBpcyBhbiBh
+dHRyaWJ1dGUgd2l0aCBhIHNpbXBsZSBmaWxlIGhhc2ggSSB0aGluayBpdCBvbmx5IG1ha2UKPiBz
+ZW5zZSBmb3IgdGhlIGtlcm5lbCB0byB0b3VjaCBpdCwgYW5kIEkgZG9uJ3Qgc2VlIGFueSBzZW5z
+ZSBpbiBoYXZpbmcKPiBtdWx0aXBsZXMuCgpPbmx5IGZpbGVzIHRoYXQgYXJlIGluIHRoZSBJTUEt
+YXBwcmFpc2FsIHBvbGljeSBpcyB0aGUgZmlsZSBoYXNoCmNhbGN1bGF0ZWQgYW5kIHdyaXR0ZW4g
+b3V0IGFzIHNlY3VyaXR5LmltYS4gwqBEZXBlbmRpbmcgdGhpcyBwb2xpY3ksCmRvZXMgdGhlIHNl
+Y3VyaXR5LmltYSBleGlzdC4gwqBTbyBpZiB0aGUgZmlsZSBpcyBpbiBwb2xpY3kgZm9yIGJvdGgg
+dGhlCm5hdGl2ZSBhbmQgbmFtZXNwYWNlIHBvbGljaWVzLCBhZ3JlZWQgdGhlIHNhbWUgaGFzaCBk
+b2Vzbid0IG5lZWQgdG8gYmUKd3JpdHRlbiBhcyB0d28gZGlmZmVyZW50IHhhdHRycy4KCj4gSWYg
+dGhlcmUgaXMgYW4gYXR0cmlidXRlIHdpdGggYSBtZXNzYWdlIGF1dGhlbnRpY2F0aW9uIGNvZGUg
+KHJvdWdobHkgYQo+IHNpZ25lZCBoYXNoKSBpdCBtYWtlcyBzZW5zZSB0byBoYXZlIHRoYXQgdG8g
+YmUgdGllZCB0byB0aGUga2VybmVsIGtleQo+IHJpbmcgdGhhdCBjb250cm9sbHMgdGhlIGtleXMu
+ICAoV2hpY2ggcHJvYmFibHkgbWVhbnMgYSBwZXIgdXNlcgo+IG5hbWVzcGFjZSB0aGluZyBhdCBz
+b21lIHBvaW50KS4gIEJ1dCBhZ2FpbiBwcmV0dHkgdW50b3VjaGFibGUgb3RoZXJ3aXNlLgoKUmln
+aHQsIHRoZSBuYW1lc3BhY2Ugd291bGQgcmVxdWlyZSBpdCdzIG93biBFVk0ga2V5LiAKCj4gV2hp
+Y2ggYnJpbmdzIHVzIHRvIHRoZSBzZW1hbnRpYyBxdWVzdGlvbiBvZiB3b3VsZCBpdCBiZSBuaWNl
+IHRvIGhhdmUKPiBzdGFja2VkIElNQS9FVk0gb24gdGhlIHNhbWUgZmlsZS4KPiAKPiBJIHJlYWxs
+eSBkb24ndCB0aGluayB3ZSBkby4gIEkgdGhpbmsgYWxsb3dpbmcgbXVsdGlwbGUga2V5cyBmb3IK
+PiBkaWZmZXJlbnQgcGFydCBvZiB0cnVzdGluZyBmaWxlcyBpcyBlYXN5IGVub3VnaCB0aGF0IHdl
+IHNob3VsZCBoYXZlIG5vCj4gbmVlZCB0byBmaWdodCBvdmVyIHdoaWNoIGtleXMgZG8gd2hpY2gu
+CgpXZSBkZWZpbml0ZWx5IHdhbnQgdG8gc3VwcG9ydCBkaWZmZXJlbnQgcG9saWNpZXMgb24gdGhl
+IG5hdGl2ZSBhbmQgaW4KdGhlIG5hbWVzcGFjZSB3aXRoIGRpZmZlcmVudCBrZXlzIGFuZCBrZXly
+aW5ncy4KClJlZmVyIHRvIE1laG1ldCBLYWF5bGFwJ3MgcmVjZW50IHBvc3QsIHdoaWNoIHJlZmVy
+cyB0byBhIFBvQyB2ZXJzaW9uCm9mIElNQSBuYW1lc3BhY2luZyAtIGtlcm5zZWMub3JnL3BpcGVy
+bWFpbC9saW51eC1zZWN1cml0eS1tb2R1bGUtCmFyY2hpdmUvMjAxNy1KdWx5LzAwMjI4Ni5odG1s
+LgoKPiBMb29raW5nIGF0IGludGVncml0eS5oIEkgc2VlIHNpZ25hdHVyZV92Ml9oZHIgdGhhdCBo
+YXMgYSBrZXlpZC4gIEFueSB1c2UKPiBjYXNlIEkgY2FuIHRoaW5rIG9mIGZvciBkaXN0cmlidXRp
+bmcgYSBkaXN0cmlidXRpb24gaW1hZ2Ugd2l0aCBpbWEvZXZtCj4geGF0dHJzIHdpbGwgbmVlZCB0
+byB1c2UgYXN5bW1ldHJpYyBrZXlzIGFrYSBwdWJsaWMvcHJpdmF0ZSBrZXlwYWlycyBzbwo+IHRo
+YXQgdGhlIG9yaWdpbmF0b3Igb2YgdGhlIGNvbnRlbnQgZG9lcyBub3QgZ2l2ZSBhd2F5IHRoZWly
+IHByaXZhdGUKPiBrZXlzLgoKQWdyZWVkLgoKPiBHaXZlbiB0aGF0IHVzZWZ1bGx5IHdlIGFyZSB0
+YWxraW5nIGFib3V0IGNvbnRlbnQgdGhhdCBzaG91bGQgYmUKPiBjb25uZWN0ZWQgdG8ga2V5cyBp
+biBvbmUgd2F5IG9yIGFub3RoZXIgSSBkb24ndCBiZWxpZXZlIGl0IGV2ZW4gbWFrZXMKPiBzZW5z
+ZSBhdCB0aGlzIHBvaW50IHRvIGF0dGVtcHQgdG8gdXNlIHVpZHMgZm9yIGRlYWxpbmcgd2l0aCBp
+bWEgYW5kCj4gZXZtIGNvbnRlbnQuCgpXZSBuZWVkIHRvIHJlc29sdmUgdGhlIHhhdHRyIGlzc3Vl
+IGluIG9yZGVyIHRvIG5hbWVzcGFjZSBJTUEtCmFwcHJhaXNhbC7CoAoKTWltaQoKPiBGdXJ0aGVy
+IGxvb2tpbmcgU2VyZ2UncyBwcmV2aW91cyBwYXRjaCBpcyAzMDAgbGluZXMgb2YgY29kZSBTZXRm
+YW4ncwo+IHBhdGNoIHRoYXQgcHJvdmlkZXMgdGhlIHBvc3NpYmlsaXR5IG9mIGNvZGUgcmVzdXNl
+IGlzIDUwMCBsaW5lcyBvZiBjb2RlLgo+IAo+IEluY3JlYXNpbmdseSBpdCBpcyBsb29raW5nIHRv
+IG1lIHRoYXQgY29kZSByZXVzZSByYXRoZXIgdGhhbiBjb25jZXB0Cj4gcmV1c2UgaXMgYSBmYWxz
+ZSBlY29ub215LiAgVGhlIGNvZGUgZG9lcyBub3QgZ2V0IHNtYWxsZXIuICBUaGUgc2VtYW50aWMK
+PiBkaWZmZXJlbmNlcyBtYWtlIGl0IHByb2JsZW1hdGljLiAgUG9zc2libHkgdG8gdGhlIHByb2Js
+ZW1hdGljIHRvIHRoZQo+IHBvaW50IHdoZXJlIHNpZ25pZmljYW50IHBpZWNlcyBtYXkgbm90IGJl
+IHJldXNlZC4gIFRoZSBmb3JtYXQgYnJlYWtzCj4gYXNzdW1wdGlvbnMgZm9yIG90aGVyIHBhcnRz
+IG9mIHRoZSBjb2RlIGxpa2Ugc2VjdXJpdHkuZXZtLiAgVGhlIGZvcm1hdAo+IGJ5IG11bHRpcGxl
+IG5hbWVzIGluc3RlYWQgb2YgYSBzaW5nbGUgYXR0cmlidXRlIHJlcXVpcmVzIG1vcmUgZGlzawo+
+IGFjY2VzcyBzbyBpcyBsZXNzIGVmZmljaWVudC4KPiAKPiBJbiBzaG9ydCBJIGFtIHNlZWluZyBt
+b3JlIGNvZGUgdGhhdCBydW5zIHNsb3dlciBhbmQgaXMgaGFyZGVyIHRvCj4gbWFpbnRhaW4uICBQ
+bGVhc2UgcG9pbnQgb3V0IHdoZXJlIEkgYW0gd3JvbmcuCgoKX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFp
+bmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRh
+dGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
