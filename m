@@ -1,8 +1,10 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [PATCH v2] xattr: Enable security.capability in user namespaces
-Date: Fri, 14 Jul 2017 12:35:56 -0500
-Message-ID: <20170714173556.GA19669__10723.8945820884$1500053768$gmane$org@mail.hallyn.com>
-References: <87y3rscz9j.fsf@xmission.com>
+Date: Fri, 14 Jul 2017 12:36:46 -0500
+Message-ID: <87pod22a4x.fsf@xmission.com>
+References: <74664cc8-bc3e-75d6-5892-f8934404349f@linux.vnet.ibm.com>
+	<20170713011554.xwmrgkzfwnibvgcu@thunk.org>
+	<87y3rscz9j.fsf@xmission.com>
 	<20170713164012.brj2flnkaaks2oci@thunk.org>
 	<87k23cb6os.fsf@xmission.com>
 	<847ccb2a-30c0-a94c-df6f-091c8901eaa0@linux.vnet.ibm.com>
@@ -16,8 +18,8 @@ Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <596f808b-e21d-8296-5fef-23c1ce7ab778-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <596f808b-e21d-8296-5fef-23c1ce7ab778-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> (Stefan
+	Berger's message of "Fri, 14 Jul 2017 11:22:28 -0400")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,46 +29,55 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Mimi Zohar <zohar-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org, lkp-JC7UmRfGjtg@public.gmane.org
+To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org, lkp-JC7UmRfGjtg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Stefan Berger (stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
+
 > On 07/14/2017 09:34 AM, Serge E. Hallyn wrote:
-> >Quoting Stefan Berger (stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> >>On 07/13/2017 08:38 PM, Eric W. Biederman wrote:
-> >>>Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
-> >>>
-> >>>>On 07/13/2017 01:49 PM, Eric W. Biederman wrote:
-> >>>>
-> >>>>>My big question right now is can you implement Ted's suggested
-> >>>>>restriction.  Only one security.foo or secuirty.foo@... attribute ?
-> >>>>We need to raw-list the xattrs and do the check before writing them. I am fairly sure this can be done.
-> >>>>
-> >>>>So now you want to allow security.foo and one security.foo@uid=<> or just a single one security.foo(@[[:print:]]*)?
-> >>>>
-> >>>The latter.
-> >>That case would prevent a container user from overriding the xattr
-> >>on the host. Is that what we want? For limiting the number of xattrs
-> >Not really.  If the file is owned by a uid mapped into the container,
-> >then the container root can chown the file which will clear the file
-> >capability, after which he can set a new one.  If the file is not
-> >owned by a uid mapped into the container, then container root could
-> >not set a filecap anyway.
-> 
-> Let's say I installed a container where all files are signed and
-> thus have security.ima. Now for some reason I want to re-sign some
-> or all files inside that container. How would I do that ? Would I
-> need to get rid of security.ima first, possibly by copying each
-> file, deleting the original file, and renaming the copied file to
-> the original name, or should I just be able to write out a new
-> signature, thus creating security.ima@uid=1000 besides the
-> security.ima ?
-> 
->    Stefan
+>> Quoting Stefan Berger (stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+>>> On 07/13/2017 08:38 PM, Eric W. Biederman wrote:
+>>>> Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
+>>>>
+>>>>> On 07/13/2017 01:49 PM, Eric W. Biederman wrote:
+>>>>>
+>>>>>> My big question right now is can you implement Ted's suggested
+>>>>>> restriction.  Only one security.foo or secuirty.foo@... attribute ?
+>>>>> We need to raw-list the xattrs and do the check before writing them. I am fairly sure this can be done.
+>>>>>
+>>>>> So now you want to allow security.foo and one security.foo@uid=<> or just a single one security.foo(@[[:print:]]*)?
+>>>>>
+>>>> The latter.
+>>> That case would prevent a container user from overriding the xattr
+>>> on the host. Is that what we want? For limiting the number of xattrs
+>> Not really.  If the file is owned by a uid mapped into the container,
+>> then the container root can chown the file which will clear the file
+>> capability, after which he can set a new one.  If the file is not
+>> owned by a uid mapped into the container, then container root could
+>> not set a filecap anyway.
+>
+> Let's say I installed a container where all files are signed and thus have
+> security.ima. Now for some reason I want to re-sign some or all files inside
+> that container. How would I do that ? Would I need to get rid of security.ima
+> first, possibly by copying each file, deleting the original file, and renaming
+> the copied file to the original name, or should I just be able to write out a
+> new signature, thus creating security.ima@uid=1000 besides the security.ima ?
 
-Hi Mimi,
+This gets us into some interesting territory, where the semantics of
+these attributes matters.
 
-what do you think makes most sense for IMA?
+The implementation of security.capable implements the security killpriv
+hooks.  Anyone merely by changing the file can cause the security
+capability to go away.  So it makes sense from the security.capable side
+that anyone who has the capable_wrt_inode_uidgid(CAP_SETFCAP) will be
+able to clear and set security.capable.
 
--serge
+The integrity xattrs do not.  Which results in very big semantic
+difference between these two kinds of attributes.  I am insufficiently
+familiar with the rules for security.ima and security.evm to understand
+what those rules should be.
+
+That may be enough that we can not share code between these two cases.
+
+Eric
