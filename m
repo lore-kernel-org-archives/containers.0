@@ -1,7 +1,7 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [PATCH v2] xattr: Enable security.capability in user namespaces
-Date: Fri, 14 Jul 2017 13:17:08 -0500
-Message-ID: <8760euyjbv.fsf__36007.9655809843$1500056720$gmane$org@xmission.com>
+Date: Fri, 14 Jul 2017 14:48:10 -0400
+Message-ID: <1500058090.3583.28.camel__25953.1063879423$1500058112$gmane$org@linux.vnet.ibm.com>
 References: <87y3rscz9j.fsf@xmission.com>
 	<20170713164012.brj2flnkaaks2oci@thunk.org>
 	<87k23cb6os.fsf@xmission.com>
@@ -14,11 +14,10 @@ References: <87y3rscz9j.fsf@xmission.com>
 	<596f808b-e21d-8296-5fef-23c1ce7ab778@linux.vnet.ibm.com>
 	<20170714173556.GA19669@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20170714173556.GA19669-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org> (Serge E. Hallyn's
-	message of "Fri, 14 Jul 2017 12:35:56 -0500")
+In-Reply-To: <20170714173556.GA19669-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -28,98 +27,62 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, Mimi Zohar <zohar-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org, lkp-JC7UmRfGjtg@public.gmane.org
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Mimi Zohar <zohar-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org, Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, lkp-JC7UmRfGjtg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> writes:
-
-> Quoting Stefan Berger (stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
->> On 07/14/2017 09:34 AM, Serge E. Hallyn wrote:
->> >Quoting Stefan Berger (stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
->> >>On 07/13/2017 08:38 PM, Eric W. Biederman wrote:
->> >>>Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
->> >>>
->> >>>>On 07/13/2017 01:49 PM, Eric W. Biederman wrote:
->> >>>>
->> >>>>>My big question right now is can you implement Ted's suggested
->> >>>>>restriction.  Only one security.foo or secuirty.foo@... attribute ?
->> >>>>We need to raw-list the xattrs and do the check before writing them. I am fairly sure this can be done.
->> >>>>
->> >>>>So now you want to allow security.foo and one security.foo@uid=<> or just a single one security.foo(@[[:print:]]*)?
->> >>>>
->> >>>The latter.
->> >>That case would prevent a container user from overriding the xattr
->> >>on the host. Is that what we want? For limiting the number of xattrs
->> >Not really.  If the file is owned by a uid mapped into the container,
->> >then the container root can chown the file which will clear the file
->> >capability, after which he can set a new one.  If the file is not
->> >owned by a uid mapped into the container, then container root could
->> >not set a filecap anyway.
->> 
->> Let's say I installed a container where all files are signed and
->> thus have security.ima. Now for some reason I want to re-sign some
->> or all files inside that container. How would I do that ? Would I
->> need to get rid of security.ima first, possibly by copying each
->> file, deleting the original file, and renaming the copied file to
->> the original name, or should I just be able to write out a new
->> signature, thus creating security.ima@uid=1000 besides the
->> security.ima ?
->> 
->>    Stefan
->
-> Hi Mimi,
->
-> what do you think makes most sense for IMA?
-
-I am going to give my two cents since I have been thinking about this.
-
-First I think this entire scheme plays hobs with the security.evm
-attribute as security.evm needs to know the names of the xattrs to
-protect.
-
-I forget which attributes has a hash and what has a message
-athentication code.
-
-If there is an attribute with a simple file hash I think it only make
-sense for the kernel to touch it, and I don't see any sense in having
-multiples.
-
-If there is an attribute with a message authentication code (roughly a
-signed hash) it makes sense to have that to be tied to the kernel key
-ring that controlls the keys.  (Which probably means a per user
-namespace thing at some point).  But again pretty untouchable otherwise.
-
-Which brings us to the semantic question of would it be nice to have
-stacked IMA/EVM on the same file.
-
-I really don't think we do.  I think allowing multiple keys for
-different part of trusting files is easy enough that we should have no
-need to fight over which keys do which.
-
-Looking at integrity.h I see signature_v2_hdr that has a keyid.  Any use
-case I can think of for distributing a distribution image with ima/evm
-xattrs will need to use asymmetric keys aka public/private keypairs so
-that the originator of the content does not give away their private
-keys.
-
-Given that usefully we are talking about content that should be
-connected to keys in one way or another I don't believe it even makes
-sense at this point to attempt to use uids for dealing with ima and
-evm content.
-
-Further looking Serge's previous patch is 300 lines of code Setfan's
-patch that provides the possibility of code resuse is 500 lines of code.
-
-Increasingly it is looking to me that code reuse rather than concept
-reuse is a false economy.  The code does not get smaller.  The semantic
-differences make it problematic.  Possibly to the problematic to the
-point where significant pieces may not be reused.  The format breaks
-assumptions for other parts of the code like security.evm.  The format
-by multiple names instead of a single attribute requires more disk
-access so is less efficient.
-
-In short I am seeing more code that runs slower and is harder to
-maintain.  Please point out where I am wrong.
-
-Eric
+T24gRnJpLCAyMDE3LTA3LTE0IGF0IDEyOjM1IC0wNTAwLCBTZXJnZSBFLiBIYWxseW4gd3JvdGU6
+Cj4gUXVvdGluZyBTdGVmYW4gQmVyZ2VyIChzdGVmYW5iQGxpbnV4LnZuZXQuaWJtLmNvbSk6Cj4g
+PiBPbiAwNy8xNC8yMDE3IDA5OjM0IEFNLCBTZXJnZSBFLiBIYWxseW4gd3JvdGU6Cj4gPiA+UXVv
+dGluZyBTdGVmYW4gQmVyZ2VyIChzdGVmYW5iQGxpbnV4LnZuZXQuaWJtLmNvbSk6Cj4gPiA+Pk9u
+IDA3LzEzLzIwMTcgMDg6MzggUE0sIEVyaWMgVy4gQmllZGVybWFuIHdyb3RlOgo+ID4gPj4+U3Rl
+ZmFuIEJlcmdlciA8c3RlZmFuYkBsaW51eC52bmV0LmlibS5jb20+IHdyaXRlczoKPiA+ID4+Pgo+
+ID4gPj4+Pk9uIDA3LzEzLzIwMTcgMDE6NDkgUE0sIEVyaWMgVy4gQmllZGVybWFuIHdyb3RlOgo+
+ID4gPj4+Pgo+ID4gPj4+Pj5NeSBiaWcgcXVlc3Rpb24gcmlnaHQgbm93IGlzIGNhbiB5b3UgaW1w
+bGVtZW50IFRlZCdzIHN1Z2dlc3RlZAo+ID4gPj4+Pj5yZXN0cmljdGlvbi4gIE9ubHkgb25lIHNl
+Y3VyaXR5LmZvbyBvciBzZWN1aXJ0eS5mb29ALi4uIGF0dHJpYnV0ZSA/Cj4gPiA+Pj4+V2UgbmVl
+ZCB0byByYXctbGlzdCB0aGUgeGF0dHJzIGFuZCBkbyB0aGUgY2hlY2sgYmVmb3JlIHdyaXRpbmcg
+dGhlbS4gSSBhbSBmYWlybHkgc3VyZSB0aGlzIGNhbiBiZSBkb25lLgo+ID4gPj4+Pgo+ID4gPj4+
+PlNvIG5vdyB5b3Ugd2FudCB0byBhbGxvdyBzZWN1cml0eS5mb28gYW5kIG9uZSBzZWN1cml0eS5m
+b29AdWlkPTw+IG9yIGp1c3QgYSBzaW5nbGUgb25lIHNlY3VyaXR5LmZvbyhAW1s6cHJpbnQ6XV0q
+KT8KPiA+ID4+Pj4KPiA+ID4+PlRoZSBsYXR0ZXIuCj4gPiA+PlRoYXQgY2FzZSB3b3VsZCBwcmV2
+ZW50IGEgY29udGFpbmVyIHVzZXIgZnJvbSBvdmVycmlkaW5nIHRoZSB4YXR0cgo+ID4gPj5vbiB0
+aGUgaG9zdC4gSXMgdGhhdCB3aGF0IHdlIHdhbnQ/IEZvciBsaW1pdGluZyB0aGUgbnVtYmVyIG9m
+IHhhdHRycwo+ID4gPk5vdCByZWFsbHkuICBJZiB0aGUgZmlsZSBpcyBvd25lZCBieSBhIHVpZCBt
+YXBwZWQgaW50byB0aGUgY29udGFpbmVyLAo+ID4gPnRoZW4gdGhlIGNvbnRhaW5lciByb290IGNh
+biBjaG93biB0aGUgZmlsZSB3aGljaCB3aWxsIGNsZWFyIHRoZSBmaWxlCj4gPiA+Y2FwYWJpbGl0
+eSwgYWZ0ZXIgd2hpY2ggaGUgY2FuIHNldCBhIG5ldyBvbmUuICBJZiB0aGUgZmlsZSBpcyBub3QK
+PiA+ID5vd25lZCBieSBhIHVpZCBtYXBwZWQgaW50byB0aGUgY29udGFpbmVyLCB0aGVuIGNvbnRh
+aW5lciByb290IGNvdWxkCj4gPiA+bm90IHNldCBhIGZpbGVjYXAgYW55d2F5Lgo+ID4gCj4gPiBM
+ZXQncyBzYXkgSSBpbnN0YWxsZWQgYSBjb250YWluZXIgd2hlcmUgYWxsIGZpbGVzIGFyZSBzaWdu
+ZWQgYW5kCj4gPiB0aHVzIGhhdmUgc2VjdXJpdHkuaW1hLiBOb3cgZm9yIHNvbWUgcmVhc29uIEkg
+d2FudCB0byByZS1zaWduIHNvbWUKPiA+IG9yIGFsbCBmaWxlcyBpbnNpZGUgdGhhdCBjb250YWlu
+ZXIuIEhvdyB3b3VsZCBJIGRvIHRoYXQgPyBXb3VsZCBJCj4gPiBuZWVkIHRvIGdldCByaWQgb2Yg
+c2VjdXJpdHkuaW1hIGZpcnN0LCBwb3NzaWJseSBieSBjb3B5aW5nIGVhY2gKPiA+IGZpbGUsIGRl
+bGV0aW5nIHRoZSBvcmlnaW5hbCBmaWxlLCBhbmQgcmVuYW1pbmcgdGhlIGNvcGllZCBmaWxlIHRv
+Cj4gPiB0aGUgb3JpZ2luYWwgbmFtZSwgb3Igc2hvdWxkIEkganVzdCBiZSBhYmxlIHRvIHdyaXRl
+IG91dCBhIG5ldwo+ID4gc2lnbmF0dXJlLCB0aHVzIGNyZWF0aW5nIHNlY3VyaXR5LmltYUB1aWQ9
+MTAwMCBiZXNpZGVzIHRoZQo+ID4gc2VjdXJpdHkuaW1hID8KPiA+IAo+ID4gICAgU3RlZmFuCj4g
+Cj4gSGkgTWltaSwKPiAKPiB3aGF0IGRvIHlvdSB0aGluayBtYWtlcyBtb3N0IHNlbnNlIGZvciBJ
+TUE/CgpJZiBJJ20gdW5kZXJzdGFuZGluZyB0aGUgZGlzY3Vzc2lvbiBjb3JyZWN0bHksIHRoaXMg
+aXNuJ3QgYW4gaXNzdWUgZm9yCmxheWVyZWQgY29weSBvbiB3cml0ZSBmaWxlc3lzdGVtcywgYXMg
+ZWFjaCBmcyBsYXllciBjb3VsZCBoYXZlIGl0J3MKb3duIHNldCBvZiB4YXR0cnMuIMKgVGhlIHVu
+ZGVybHlpbmcgYW5kIGxheWVyZWQgeGF0dHJzIHNob3VsZCBiZSBhYmxlCnRvIGNvLWV4aXN0LiDC
+oFVzZSB0aGUgbGF5ZXJlZCB4YXR0ciBpZiBpdCBleGlzdHMsIGJ1dCBmYWxsIGJhY2sgdG8KdXNp
+bmcgdGhlIHVuZGVybHlpbmcgeGF0dHIgaWYgaXQgZG9lc24ndC4KClRoZSBjb25jZXJuIGlzIHdp
+dGggYSBzaGFyZWQgZmlsZXN5c3RlbXMuIMKgSW4gdGhhdCBjYXNlLCBmb3IgSU1BIGl0CndvdWxk
+IG1ha2Ugc2Vuc2UgdG8gc3VwcG9ydCBhIG5hdGl2ZSBhbmQgYSBuYW1lc3BhY2UgeGF0dHIuIMKg
+SWYgZHVlIHRvCnhhdHRyIHNwYWNlIGxpbWl0YXRpb25zIHdlIGhhdmUgdG8gbGltaXQgdGhlIG51
+bWJlciBvZiB4YXR0cnMsIHRoZW4gd2UKc2hvdWxkIGxpbWl0IGl0IHRvIHR3byAtIGEgbmF0aXZl
+IGFuZCBhIG5hbWVzcGFjZSB2ZXJzaW9uLCB3aXRoIGEKInVpZD0iIHRhZyAtIGZpcnN0IG5hbWVz
+cGFjZSBnZXRzIHBlcm1pc3Npb24gdG8gd3JpdGUgdGhlIG5hbWVzcGFjZQp4YXR0ci4gwqBBZ2Fp
+biwgbGlrZSBpbiB0aGUgbGF5ZXJlZCBjYXNlLCBpZiB0aGUgbmFtZXNwYWNlIHhhdHRyCmRvZXNu
+J3QgZXhpc3QsIGZhbGwgYmFjayB0byB1c2luZyB0aGUgbmF0aXZlIHhhdHRyLgoKVGhpcyBhbGxv
+d3MgbW9zdCBmaWxlcyB0byB1c2UgdGhlIHVuZGVybHlpbmcgeGF0dHJzLCBidXQgYWxsb3dzIGEg
+ZmV3CmZpbGVzIHRvIGJlIHJlLXNpZ25lZCBpbnNpZGUgdGhlIG5hbWVzcGFjZSwgYXMgbmVlZGVk
+LiDCoEZvciB0aGUKbGF5ZXJlZCBmaWxlc3lzdGVtIGNhc2UsIHRoaXMgd291bGQgYWxsb3cgbXV0
+YWJsZSBmaWxlIGhhc2hlcyB0byBiZQp3cml0dGVuLiDCoChVbmNsZWFyIGFzIHRvIGhvdyBzaGFy
+ZWQgZmlsZXN5c3RlbXMgd291bGQgd29yayBpbiB0aGlzCmNhc2UuKQoKTWltaQoKX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5n
+IGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3Rz
+LmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
