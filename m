@@ -1,15 +1,28 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [PATCH v2] xattr: Enable security.capability in user namespaces
-Date: Fri, 14 Jul 2017 18:41:39 -0500
-Message-ID: <87d192si18.fsf__35511.1285149634$1500076192$gmane$org@xmission.com>
-References: <1499785511-17192-1-git-send-email-stefanb@linux.vnet.ibm.com>
-	<1499785511-17192-2-git-send-email-stefanb@linux.vnet.ibm.com>
+Date: Fri, 14 Jul 2017 18:53:16 -0500
+Message-ID: <87379yshhv.fsf__30724.5364333086$1500076887$gmane$org@xmission.com>
+References: <87y3rscz9j.fsf@xmission.com>
+	<20170713164012.brj2flnkaaks2oci@thunk.org>
+	<87k23cb6os.fsf@xmission.com>
+	<847ccb2a-30c0-a94c-df6f-091c8901eaa0@linux.vnet.ibm.com>
+	<87bmoo8bxb.fsf@xmission.com>
+	<9a3010e5-ca2b-5e7a-656b-fcc14f7bec4e@linux.vnet.ibm.com>
+	<87h8yf7szd.fsf@xmission.com>
+	<65dbe654-0d99-03fa-c838-5a726b462826@linux.vnet.ibm.com>
+	<20170714133437.GA16737@mail.hallyn.com>
+	<596f808b-e21d-8296-5fef-23c1ce7ab778@linux.vnet.ibm.com>
+	<20170714173556.GA19669@mail.hallyn.com>
+	<1500058090.3583.28.camel@linux.vnet.ibm.com>
+	<1500058362.2853.28.camel@HansenPartnership.com>
+	<1500062619.3583.71.camel@linux.vnet.ibm.com>
+	<1500064799.2853.36.camel@HansenPartnership.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1499785511-17192-2-git-send-email-stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-	(Stefan Berger's message of "Tue, 11 Jul 2017 11:05:11 -0400")
+In-Reply-To: <1500064799.2853.36.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org> (James
+	Bottomley's message of "Fri, 14 Jul 2017 13:39:59 -0700")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,73 +32,52 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: lkp-JC7UmRfGjtg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, Mimi Zohar <zohar-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, lkp-JC7UmRfGjtg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Stefan Berger <"Stefan Bergerstefanb"@linux.vnet.ibm.com> writes:
-
-> From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
->
-> This patch enables security.capability in user namespaces but also
-> takes a more general approach to enabling extended attributes in user
-> namespaces.
->
-> The following rules describe the approach using security.foo as a
-> 'user namespace enabled' extended attribute:
->
-> Reading of extended attributes:
->
-> 1a) Reading security.foo from a user namespace will read
->     security.foo@uid=<uid> of the parent user namespace instead with uid
->     being the mapping of root in that parent user namespace. An
->     exception is if root is mapped to uid 0 on the host, and in this case
->     we will read security.foo directly.
->     --> reading security.foo will read security.foo@uid=1000 for uid
->         mapping of root to 1000.
->
-> 1b) If security.foo@uid=<uid> is not available, the security.foo of the
->     parent namespace is tried to be read. This procedure is repeated up to
->     the init user namespace. This step only applies for reading of extended
->     attributes and provides the same behavior as older system where the
->     host's extended attributes applied to user namespaces.
->
-> 2) All security.foo@uid=<uid> with valid uid mapping in the user namespace
->    can be read. The uid within the user namespace will be mapped to the
->    corresponding uid on the host and that uid will be used in the name of
->    the extended attribute.
->    -> reading security.foo@uid=1 will read security.foo@uid=1001 for uid
->       mapping of root to 1000, size of at least 2.
->
->    All security.foo@uid=<uid> can be read (by root) on the host with values
->    of <uid> also being subject to checking for valid mappings.
->
-> 3) No other security.foo* can be read.
->
-> The same rules for reading apply to writing and removing of user
-> namespace enabled extended attributes.
->
-> When listing extended attributes of a file, only those are presented
-> to the user namespace that have a valid mapping. Besides that, names
-> of the extended attributes are adjusted to represent the mapping.
-> This means that if root is mapped to uid 1000 on the host, the
-> security.foo@uid=1000 will be listed as security.foo in the user
-> namespace, security.foo@uid=1001 becomes security.foo@uid=1 and so on.
->
-> Signed-off-by: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Signed-off-by: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-> Reviewed-by: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-> ---
->  fs/xattr.c               | 509 +++++++++++++++++++++++++++++++++++++++++++++--
->  security/commoncap.c     |  36 +++-
->  security/selinux/hooks.c |   9 +-
->  3 files changed, 523 insertions(+), 31 deletions(-)
-
-I am just going to quickly and publicly point out that as designed this
-patch breaks evm inode metadata signing.  As evm_config_xattrnames is not
-updated.
-
-While not completely insurmountable that seems like a strong limitation of
-this design.
-
-Eric
+SmFtZXMgQm90dG9tbGV5IDxKYW1lcy5Cb3R0b21sZXlASGFuc2VuUGFydG5lcnNoaXAuY29tPiB3
+cml0ZXM6Cgo+IE9uIEZyaSwgMjAxNy0wNy0xNCBhdCAxNjowMyAtMDQwMCwgTWltaSBab2hhciB3
+cm90ZToKPj4gT24gRnJpLCAyMDE3LTA3LTE0IGF0IDExOjUyIC0wNzAwLCBKYW1lcyBCb3R0b21s
+ZXkgd3JvdGU6Cj4+ID4gCj4+ID4gT24gRnJpLCAyMDE3LTA3LTE0IGF0IDE0OjQ4IC0wNDAwLCBN
+aW1pIFpvaGFyIHdyb3RlOgo+PiA+ID4gCj4+ID4gPiBUaGUgY29uY2VybiBpcyB3aXRoIGEgc2hh
+cmVkIGZpbGVzeXN0ZW1zLiDCoEluIHRoYXQgY2FzZSwgZm9yIElNQQo+PiA+ID4gaXQgd291bGQg
+bWFrZSBzZW5zZSB0byBzdXBwb3J0IGEgbmF0aXZlIGFuZCBhIG5hbWVzcGFjZSB4YXR0ci4KPj4g
+PiA+IMKgSWYgZHVlIHRvIHhhdHRyIHNwYWNlIGxpbWl0YXRpb25zIHdlIGhhdmUgdG8gbGltaXQg
+dGhlIG51bWJlciBvZgo+PiA+ID4geGF0dHJzLCB0aGVuIHdlIHNob3VsZCBsaW1pdCBpdCB0byB0
+d28gLSBhIG5hdGl2ZSBhbmQgYSBuYW1lc3BhY2UKPj4gPiA+IHZlcnNpb24sIHdpdGggYSAidWlk
+PSIgdGFnIC0gZmlyc3QgbmFtZXNwYWNlIGdldHMgcGVybWlzc2lvbiB0bwo+PiA+ID4gd3JpdGUg
+dGhlIG5hbWVzcGFjZSB4YXR0ci4gwqBBZ2FpbiwgbGlrZSBpbiB0aGUgbGF5ZXJlZCBjYXNlLCBp
+Zgo+PiA+ID4gdGhlIG5hbWVzcGFjZSB4YXR0ciBkb2Vzbid0IGV4aXN0LCBmYWxsIGJhY2sgdG8g
+dXNpbmcgdGhlIG5hdGl2ZQo+PiA+ID4geGF0dHIuCj4+ID4gCj4+ID4gSnVzdCBvbiB0aGlzIHBv
+aW50OiBpZiB3ZSdyZSByZWFsbHkgY29uY2VybmVkIGFib3V0IHRoZSBuZWVkIG9uCj4+ID4gc2hh
+cmVkIGZpbGVzeXN0ZW1zIHRvIGhhdmUgbXVsdGlwbGUgSU1BIHNpZ25hdHVyZXMgcGVyIGZpbGUs
+IG1pZ2h0Cj4+ID4gaXQgbm90IG1ha2Ugc2Vuc2Ugc2ltcGx5IHRvIHN1cHBvcnQgbXVsdGlwbGUg
+c2lnbmF0dXJlcyB3aXRoaW4gdGhlCj4+ID4gc2VjdXJpdHkuaW1hIHhhdHRyPyBUaGUgcnVsZXMg
+Zm9yIHdyaXRpbmcgc2lnbmF0dXJlIHVwZGF0ZXMgd2l0aGluCj4+ID4gdXNlciBuYW1lc3BhY2Vz
+IHdvdWxkIGJlIHNvbWV3aGF0IGNvbXBsZXggKHNheSBvbmx5IGFibGUgdG8gcmVwbGFjZQo+PiA+
+IGEgc2lnbmF0dXJlIGZvciB3aGljaCB5b3UgZGVtb25zdHJhdGUgeW91IHBvc3Nlc3MgdGhlIGtl
+eSkgYnV0IGl0Cj4+ID4gd291bGQgbGVhZCB0byBhbiBpbXBsZW1lbnRhdGlvbiB3aGljaCB3b3Vs
+ZCB3b3JrIGZvciB0cmFkaXRpb25hbAo+PiA+IHNoYXJlZCBmaWxlc3lzdGVtcyAobGlrZSBORlMp
+IGFzIHdlbGwgYXMgY29udGFpbmVyaXNlZCBiaW5kIG1vdW50cy4KPj4gCj4+IFdyaXRpbmcgc2Vj
+dXJpdHkuaW1hIHJlcXVpcmVzIGJlaW5nIHJvb3Qgd2l0aCBDQVBfU1lTX0FETUlOCj4+IHByaXZp
+bGVnZXMuIMKgSSB3b3VsZG4ndCB3YW50IHRvIGdpdmUgcm9vdCB3aXRoaW4gdGhlIG5hbWVzcGFj
+ZQo+PiBwZXJtaXNzaW9uIHRvIG92ZXIgd3JpdGUgb3IganVzdCBleHRlbmQgdGhlIG5hdGl2ZSBz
+ZWN1cml0eS5pbWEuCj4KPiBidXQgd2h5PyDCoFRoYXQncyBwYXJ0bHkgdGhlIHBvaW50IG9mIGFs
+bCBvZiB0aGlzOiBzb21lIHNlY3VyaXR5Lgo+IGF0dHJpYnV0ZXMgY2FuJ3QgYmUgd3JpdHRlbiBi
+eSBjb250YWluZXIgcm9vdCB3aXRob3V0IHNvbWUgc3VwZXJ2aXNpb24KPiAodGhlIGNhcGFiaWxp
+dHkgb25lcyBhcmUgdGhlIGh1Z2VseSBwcm9ibGVtYXRpYyBvbmVzIGZyb20gdGhpcyBwb2ludCBv
+Zgo+IHZpZXcpLCBidXQgZm9yIHNvbWUgdGhlcmUncyBubyByZWFzb24gdGhleSBzaG91bGRuJ3Qg
+YmUuIMKgV2hhdCB3b3VsZCBiZQo+IHRoZSByZWFzb24gdGhhdCByb290IGluIGEgY29udGFpbmVy
+IHNob3VsZG4ndCBiZSBhYmxlIHRvIHdyaXRlIHRoZSBpbWEKPiB4YXR0ciB0aGUgc2FtZSBhcyBo
+b3N0IHJvb3QgY291bGQgb24gaXRzIGZpbGVzeXN0ZW0/CgpNaW1pIHNhaWQgc2hlIGBgbmF0aXZl
+JycuICBJdCBjb21wZXRlbHkgbWFrZXMgc2Vuc2UgZm9yIHRoZSB0aGluZ3MgdGhhdAp0aGUgY29u
+dGFpbmVyIGRvZXNuJ3QgYGBvd24nJyB0byBub3QgYmUgYWxsb3dlZCB0byBiZSB3cml0dGVuL3Vw
+ZGF0ZWQgYnkKdGhlIGNvbnRhaW5lci4KCkphbWVzIHlvdSBhcmUgbWFraW5nIHRoZSBjYXNlIGhl
+cmUgZm9yIHJvb3QgaW4gdGhlIGNvbnRhaW5lciB0byB3cml0ZQp0byB0aGUgaW1hIGFuZCBldm0g
+YXR0cmlidXRlcyB0aGF0IGFyZSBmb3IgdGhlIGNvbnRhaW5lci4KClNvIEkgZG9uJ3QgYWN0dWFs
+bHkgc2VlIGFueSBkaXNhZ3JlZW1lbnQgaGVyZSBleGNlcHQgcGVyaGFwcyBmb3IKdGVybWlub2xv
+Z3kuCgpFcmljCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+XwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRp
+b24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZv
+L2NvbnRhaW5lcnM=
