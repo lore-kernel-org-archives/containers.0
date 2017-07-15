@@ -1,26 +1,15 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [PATCH v2] xattr: Enable security.capability in user namespaces
-Date: Fri, 14 Jul 2017 19:02:42 -0500
-Message-ID: <871spir2hp.fsf__41235.6765395545$1500077456$gmane$org@xmission.com>
-References: <87y3rscz9j.fsf@xmission.com>
-	<20170713164012.brj2flnkaaks2oci@thunk.org>
-	<87k23cb6os.fsf@xmission.com>
-	<847ccb2a-30c0-a94c-df6f-091c8901eaa0@linux.vnet.ibm.com>
-	<87bmoo8bxb.fsf@xmission.com>
-	<9a3010e5-ca2b-5e7a-656b-fcc14f7bec4e@linux.vnet.ibm.com>
-	<87h8yf7szd.fsf@xmission.com>
-	<65dbe654-0d99-03fa-c838-5a726b462826@linux.vnet.ibm.com>
-	<20170714133437.GA16737@mail.hallyn.com>
-	<596f808b-e21d-8296-5fef-23c1ce7ab778@linux.vnet.ibm.com>
-	<20170714173556.GA19669@mail.hallyn.com>
-	<xagsmtp2.20170714182525.6604@vmsdvm4.vnet.ibm.com>
-	<1500060374.3583.57.camel@linux.vnet.ibm.com>
+Date: Sat, 15 Jul 2017 17:27:22 -0400
+Message-ID: <f1fa83de-1e14-66b2-3872-602230286088__1656.73094238645$1500154058$gmane$org@linux.vnet.ibm.com>
+References: <1499785511-17192-1-git-send-email-stefanb@linux.vnet.ibm.com>
+	<1499785511-17192-2-git-send-email-stefanb@linux.vnet.ibm.com>
+	<87d192si18.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1500060374.3583.57.camel-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> (Mimi Zohar's
-	message of "Fri, 14 Jul 2017 15:26:14 -0400")
+In-Reply-To: <87d192si18.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -30,107 +19,76 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, Mimi Zohar <zohar-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org, lkp-JC7UmRfGjtg@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: lkp-JC7UmRfGjtg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org, zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-TWltaSBab2hhciA8em9oYXJAbGludXgudm5ldC5pYm0uY29tPiB3cml0ZXM6Cgo+IE9uIEZyaSwg
-MjAxNy0wNy0xNCBhdCAxMzoxNyAtMDUwMCwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4+ICJT
-ZXJnZSBFLiBIYWxseW4iIDxzZXJnZUBoYWxseW4uY29tPiB3cml0ZXM6Cj4+IAo+PiA+IFF1b3Rp
-bmcgU3RlZmFuIEJlcmdlciAoc3RlZmFuYkBsaW51eC52bmV0LmlibS5jb20pOgo+PiA+PiBPbiAw
-Ny8xNC8yMDE3IDA5OjM0IEFNLCBTZXJnZSBFLiBIYWxseW4gd3JvdGU6Cj4+ID4+ID5RdW90aW5n
-IFN0ZWZhbiBCZXJnZXIgKHN0ZWZhbmJAbGludXgudm5ldC5pYm0uY29tKToKPj4gPj4gPj5PbiAw
-Ny8xMy8yMDE3IDA4OjM4IFBNLCBFcmljIFcuIEJpZWRlcm1hbiB3cm90ZToKPj4gPj4gPj4+U3Rl
-ZmFuIEJlcmdlciA8c3RlZmFuYkBsaW51eC52bmV0LmlibS5jb20+IHdyaXRlczoKPj4gPj4gPj4+
-Cj4+ID4+ID4+Pj5PbiAwNy8xMy8yMDE3IDAxOjQ5IFBNLCBFcmljIFcuIEJpZWRlcm1hbiB3cm90
-ZToKPj4gPj4gPj4+Pgo+PiA+PiA+Pj4+Pk15IGJpZyBxdWVzdGlvbiByaWdodCBub3cgaXMgY2Fu
-IHlvdSBpbXBsZW1lbnQgVGVkJ3Mgc3VnZ2VzdGVkCj4+ID4+ID4+Pj4+cmVzdHJpY3Rpb24uICBP
-bmx5IG9uZSBzZWN1cml0eS5mb28gb3Igc2VjdWlydHkuZm9vQC4uLiBhdHRyaWJ1dGUgPwo+PiA+
-PiA+Pj4+V2UgbmVlZCB0byByYXctbGlzdCB0aGUgeGF0dHJzIGFuZCBkbyB0aGUgY2hlY2sgYmVm
-b3JlIHdyaXRpbmcgdGhlbS4gSSBhbSBmYWlybHkgc3VyZSB0aGlzIGNhbiBiZSBkb25lLgo+PiA+
-PiA+Pj4+Cj4+ID4+ID4+Pj5TbyBub3cgeW91IHdhbnQgdG8gYWxsb3cgc2VjdXJpdHkuZm9vIGFu
-ZCBvbmUgc2VjdXJpdHkuZm9vQHVpZD08PiBvciBqdXN0IGEgc2luZ2xlIG9uZSBzZWN1cml0eS5m
-b28oQFtbOnByaW50Ol1dKik/Cj4+ID4+ID4+Pj4KPj4gPj4gPj4+VGhlIGxhdHRlci4KPj4gPj4g
-Pj5UaGF0IGNhc2Ugd291bGQgcHJldmVudCBhIGNvbnRhaW5lciB1c2VyIGZyb20gb3ZlcnJpZGlu
-ZyB0aGUgeGF0dHIKPj4gPj4gPj5vbiB0aGUgaG9zdC4gSXMgdGhhdCB3aGF0IHdlIHdhbnQ/IEZv
-ciBsaW1pdGluZyB0aGUgbnVtYmVyIG9mIHhhdHRycwo+PiA+PiA+Tm90IHJlYWxseS4gIElmIHRo
-ZSBmaWxlIGlzIG93bmVkIGJ5IGEgdWlkIG1hcHBlZCBpbnRvIHRoZSBjb250YWluZXIsCj4+ID4+
-ID50aGVuIHRoZSBjb250YWluZXIgcm9vdCBjYW4gY2hvd24gdGhlIGZpbGUgd2hpY2ggd2lsbCBj
-bGVhciB0aGUgZmlsZQo+PiA+PiA+Y2FwYWJpbGl0eSwgYWZ0ZXIgd2hpY2ggaGUgY2FuIHNldCBh
-IG5ldyBvbmUuICBJZiB0aGUgZmlsZSBpcyBub3QKPj4gPj4gPm93bmVkIGJ5IGEgdWlkIG1hcHBl
-ZCBpbnRvIHRoZSBjb250YWluZXIsIHRoZW4gY29udGFpbmVyIHJvb3QgY291bGQKPj4gPj4gPm5v
-dCBzZXQgYSBmaWxlY2FwIGFueXdheS4KPj4gPj4gCj4+ID4+IExldCdzIHNheSBJIGluc3RhbGxl
-ZCBhIGNvbnRhaW5lciB3aGVyZSBhbGwgZmlsZXMgYXJlIHNpZ25lZCBhbmQKPj4gPj4gdGh1cyBo
-YXZlIHNlY3VyaXR5LmltYS4gTm93IGZvciBzb21lIHJlYXNvbiBJIHdhbnQgdG8gcmUtc2lnbiBz
-b21lCj4+ID4+IG9yIGFsbCBmaWxlcyBpbnNpZGUgdGhhdCBjb250YWluZXIuIEhvdyB3b3VsZCBJ
-IGRvIHRoYXQgPyBXb3VsZCBJCj4+ID4+IG5lZWQgdG8gZ2V0IHJpZCBvZiBzZWN1cml0eS5pbWEg
-Zmlyc3QsIHBvc3NpYmx5IGJ5IGNvcHlpbmcgZWFjaAo+PiA+PiBmaWxlLCBkZWxldGluZyB0aGUg
-b3JpZ2luYWwgZmlsZSwgYW5kIHJlbmFtaW5nIHRoZSBjb3BpZWQgZmlsZSB0bwo+PiA+PiB0aGUg
-b3JpZ2luYWwgbmFtZSwgb3Igc2hvdWxkIEkganVzdCBiZSBhYmxlIHRvIHdyaXRlIG91dCBhIG5l
-dwo+PiA+PiBzaWduYXR1cmUsIHRodXMgY3JlYXRpbmcgc2VjdXJpdHkuaW1hQHVpZD0xMDAwIGJl
-c2lkZXMgdGhlCj4+ID4+IHNlY3VyaXR5LmltYSA/Cj4+ID4+IAo+PiA+PiAgICBTdGVmYW4KPj4g
-Pgo+PiA+IEhpIE1pbWksCj4+ID4KPj4gPiB3aGF0IGRvIHlvdSB0aGluayBtYWtlcyBtb3N0IHNl
-bnNlIGZvciBJTUE/Cj4+IAo+PiBJIGFtIGdvaW5nIHRvIGdpdmUgbXkgdHdvIGNlbnRzIHNpbmNl
-IEkgaGF2ZSBiZWVuIHRoaW5raW5nIGFib3V0IHRoaXMuCj4+IAo+PiBGaXJzdCBJIHRoaW5rIHRo
-aXMgZW50aXJlIHNjaGVtZSBwbGF5cyBob2JzIHdpdGggdGhlIHNlY3VyaXR5LmV2bQo+PiBhdHRy
-aWJ1dGUgYXMgc2VjdXJpdHkuZXZtIG5lZWRzIHRvIGtub3cgdGhlIG5hbWVzIG9mIHRoZSB4YXR0
-cnMgdG8KPj4gcHJvdGVjdC4KPj4gCj4+IEkgZm9yZ2V0IHdoaWNoIGF0dHJpYnV0ZXMgaGFzIGEg
-aGFzaCBhbmQgd2hhdCBoYXMgYSBtZXNzYWdlCj4+IGF0aGVudGljYXRpb24gY29kZS4KPgo+IHNl
-Y3VyaXR5LmltYSBjb250YWlucyBlaXRoZXIgYSBmaWxlIGhhc2ggb3IgYSBzaWduYXR1cmUuICAo
-ZmlsZSBkYXRhKQo+IHNlY3VyaXR5LmV2bSBjb250YWlucyBlaXRoZXIgYSBzaWduYXR1cmUgb3Ig
-YW4gaG1hYyBvZiB0aGUgc2VjdXJpdHkKPiB4YXR0cnMgYW5kIG90aGVyIGZpbGUgbWV0YWRhdGEu
-IChmaWxlIG1ldGEtZGF0YSkKPgo+IFRoZSBzYW1lIHJ1bGVzIHdvdWxkIGFwcGx5IHRvIHNlY3Vy
-aXR5LmV2bSwgYXMgZGVzY3JpYmVkIGluIG15Cj4gcmVzcG9uc2UuIMKgQmFzZWQgb24gaXQncyB2
-aWV3IG9mIHRoZSBzZWN1cml0eSB4YXR0cnMsIGVpdGhlciB0aGUKPiBuYXRpdmUgb3IgbmFtZXNw
-YWNlIHNlY3VyaXR5LmV2bSB3b3VsZCBiZSB1cGRhdGVkLgo+Cj4+IElmIHRoZXJlIGlzIGFuIGF0
-dHJpYnV0ZSB3aXRoIGEgc2ltcGxlIGZpbGUgaGFzaCBJIHRoaW5rIGl0IG9ubHkgbWFrZQo+PiBz
-ZW5zZSBmb3IgdGhlIGtlcm5lbCB0byB0b3VjaCBpdCwgYW5kIEkgZG9uJ3Qgc2VlIGFueSBzZW5z
-ZSBpbiBoYXZpbmcKPj4gbXVsdGlwbGVzLgo+Cj4gT25seSBmaWxlcyB0aGF0IGFyZSBpbiB0aGUg
-SU1BLWFwcHJhaXNhbCBwb2xpY3kgaXMgdGhlIGZpbGUgaGFzaAo+IGNhbGN1bGF0ZWQgYW5kIHdy
-aXR0ZW4gb3V0IGFzIHNlY3VyaXR5LmltYS4gwqBEZXBlbmRpbmcgdGhpcyBwb2xpY3ksCj4gZG9l
-cyB0aGUgc2VjdXJpdHkuaW1hIGV4aXN0LiDCoFNvIGlmIHRoZSBmaWxlIGlzIGluIHBvbGljeSBm
-b3IgYm90aCB0aGUKPiBuYXRpdmUgYW5kIG5hbWVzcGFjZSBwb2xpY2llcywgYWdyZWVkIHRoZSBz
-YW1lIGhhc2ggZG9lc24ndCBuZWVkIHRvIGJlCj4gd3JpdHRlbiBhcyB0d28gZGlmZmVyZW50IHhh
-dHRycy4KPgo+PiBJZiB0aGVyZSBpcyBhbiBhdHRyaWJ1dGUgd2l0aCBhIG1lc3NhZ2UgYXV0aGVu
-dGljYXRpb24gY29kZSAocm91Z2hseSBhCj4+IHNpZ25lZCBoYXNoKSBpdCBtYWtlcyBzZW5zZSB0
-byBoYXZlIHRoYXQgdG8gYmUgdGllZCB0byB0aGUga2VybmVsIGtleQo+PiByaW5nIHRoYXQgY29u
-dHJvbGxzIHRoZSBrZXlzLiAgKFdoaWNoIHByb2JhYmx5IG1lYW5zIGEgcGVyIHVzZXIKPj4gbmFt
-ZXNwYWNlIHRoaW5nIGF0IHNvbWUgcG9pbnQpLiAgQnV0IGFnYWluIHByZXR0eSB1bnRvdWNoYWJs
-ZSBvdGhlcndpc2UuCj4KPiBSaWdodCwgdGhlIG5hbWVzcGFjZSB3b3VsZCByZXF1aXJlIGl0J3Mg
-b3duIEVWTSBrZXkuIAo+Cj4+IFdoaWNoIGJyaW5ncyB1cyB0byB0aGUgc2VtYW50aWMgcXVlc3Rp
-b24gb2Ygd291bGQgaXQgYmUgbmljZSB0byBoYXZlCj4+IHN0YWNrZWQgSU1BL0VWTSBvbiB0aGUg
-c2FtZSBmaWxlLgo+PiAKPj4gSSByZWFsbHkgZG9uJ3QgdGhpbmsgd2UgZG8uICBJIHRoaW5rIGFs
-bG93aW5nIG11bHRpcGxlIGtleXMgZm9yCj4+IGRpZmZlcmVudCBwYXJ0IG9mIHRydXN0aW5nIGZp
-bGVzIGlzIGVhc3kgZW5vdWdoIHRoYXQgd2Ugc2hvdWxkIGhhdmUgbm8KPj4gbmVlZCB0byBmaWdo
-dCBvdmVyIHdoaWNoIGtleXMgZG8gd2hpY2guCj4KPiBXZSBkZWZpbml0ZWx5IHdhbnQgdG8gc3Vw
-cG9ydCBkaWZmZXJlbnQgcG9saWNpZXMgb24gdGhlIG5hdGl2ZSBhbmQgaW4KPiB0aGUgbmFtZXNw
-YWNlIHdpdGggZGlmZmVyZW50IGtleXMgYW5kIGtleXJpbmdzLgo+Cj4gUmVmZXIgdG8gTWVobWV0
-IEthYXlsYXAncyByZWNlbnQgcG9zdCwgd2hpY2ggcmVmZXJzIHRvIGEgUG9DIHZlcnNpb24KPiBv
-ZiBJTUEgbmFtZXNwYWNpbmcgLSBrZXJuc2VjLm9yZy9waXBlcm1haWwvbGludXgtc2VjdXJpdHkt
-bW9kdWxlLQo+IGFyY2hpdmUvMjAxNy1KdWx5LzAwMjI4Ni5odG1sLgo+Cj4+IExvb2tpbmcgYXQg
-aW50ZWdyaXR5LmggSSBzZWUgc2lnbmF0dXJlX3YyX2hkciB0aGF0IGhhcyBhIGtleWlkLiAgQW55
-IHVzZQo+PiBjYXNlIEkgY2FuIHRoaW5rIG9mIGZvciBkaXN0cmlidXRpbmcgYSBkaXN0cmlidXRp
-b24gaW1hZ2Ugd2l0aCBpbWEvZXZtCj4+IHhhdHRycyB3aWxsIG5lZWQgdG8gdXNlIGFzeW1tZXRy
-aWMga2V5cyBha2EgcHVibGljL3ByaXZhdGUga2V5cGFpcnMgc28KPj4gdGhhdCB0aGUgb3JpZ2lu
-YXRvciBvZiB0aGUgY29udGVudCBkb2VzIG5vdCBnaXZlIGF3YXkgdGhlaXIgcHJpdmF0ZQo+PiBr
-ZXlzLgo+Cj4gQWdyZWVkLgo+Cj4+IEdpdmVuIHRoYXQgdXNlZnVsbHkgd2UgYXJlIHRhbGtpbmcg
-YWJvdXQgY29udGVudCB0aGF0IHNob3VsZCBiZQo+PiBjb25uZWN0ZWQgdG8ga2V5cyBpbiBvbmUg
-d2F5IG9yIGFub3RoZXIgSSBkb24ndCBiZWxpZXZlIGl0IGV2ZW4gbWFrZXMKPj4gc2Vuc2UgYXQg
-dGhpcyBwb2ludCB0byBhdHRlbXB0IHRvIHVzZSB1aWRzIGZvciBkZWFsaW5nIHdpdGggaW1hIGFu
-ZAo+PiBldm0gY29udGVudC4KPgo+IFdlIG5lZWQgdG8gcmVzb2x2ZSB0aGUgeGF0dHIgaXNzdWUg
-aW4gb3JkZXIgdG8gbmFtZXNwYWNlIElNQS0KPiBhcHByYWlzYWwuwqAKCgpNaW1pIEkgaGF2ZSB0
-d28gcXVlc3Rpb25zOgoKYSkgSXMgdGhlIGtleWlkIGVub3VnaCB0byBkaXN0aW5ndWlzaCB0aGUg
-c2VjdXJpdHkuaW1hIGFuZCBzZWN1cml0eS5ldm0KICAgeGF0dHJzIG9mIG9uZSBjb250YWluZXIg
-ZnJvbSBhbm90aGVyIGNvbnRhaW5lciBhbmQgZnJvbSBuYXRpdmU/ICBPcgogICBkbyB3ZSBoYXZl
-IHNvbWUgaW1wb3J0YW50IHNlY3VyaXR5IHhhdHRycyB0aGF0IGFyZSBhc3NvY2lhdGVkIHdpdGgK
-ICAga2V5cyB0aGF0IGRvbid0IGhhdmUgYSBrZXlpZD8KCmIpIENhbiB3ZSByZWFzb25hYmx5IGxp
-dmUgd2l0aCBhIGxpbWl0YXRpb24gdGhhdCB0aGUgbmF0aXZlIGFuZCB0aGUKICAgbmFtZXNwYWNl
-J2QgcG9saWNpZXMgZG9uJ3QgaW50ZXJzZWN0PyAgT3IgaW4gdGhlIGNhc2Ugb2YgYW4KICAgaW50
-ZXJlc2VjdGlvbiB0aGUgbmF0aXZlIHBvbGljeSBpcyB0aGUgb25seSBvbmUgdGhhdCBpcyBleGVj
-dXRlZD8KCkkgc3VibWl0IHRoYXQgaWYgdGhlIGFuc3dlciBpcyBrZXlpZHMgYXJlIGFsd2F5cyBw
-cmVzZW50LCBhbmQgd2UgY2FuCmxpdmUgd2l0aCB0aGUgbmF0aXZlIHBvbGljeSB0YWtpbmcgcHJl
-Y2VkZW5jZSBvdmVyIHRoZSBjb250YWluZXIgcG9saWN5CnRoZW4gd2UgaGF2ZSBhIHNvbHV0aW9u
-IHRvIHRoZSBJTUEgeGF0dHJzLgoKRXJpYwoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0
-cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcv
-bWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+On 07/14/2017 07:41 PM, Eric W. Biederman wrote:
+> Stefan Berger <"Stefan Bergerstefanb"@linux.vnet.ibm.com> writes:
+>
+>> From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+>>
+>> This patch enables security.capability in user namespaces but also
+>> takes a more general approach to enabling extended attributes in user
+>> namespaces.
+>>
+>> The following rules describe the approach using security.foo as a
+>> 'user namespace enabled' extended attribute:
+>>
+>> Reading of extended attributes:
+>>
+>> 1a) Reading security.foo from a user namespace will read
+>>      security.foo@uid=<uid> of the parent user namespace instead with uid
+>>      being the mapping of root in that parent user namespace. An
+>>      exception is if root is mapped to uid 0 on the host, and in this case
+>>      we will read security.foo directly.
+>>      --> reading security.foo will read security.foo@uid=1000 for uid
+>>          mapping of root to 1000.
+>>
+>> 1b) If security.foo@uid=<uid> is not available, the security.foo of the
+>>      parent namespace is tried to be read. This procedure is repeated up to
+>>      the init user namespace. This step only applies for reading of extended
+>>      attributes and provides the same behavior as older system where the
+>>      host's extended attributes applied to user namespaces.
+>>
+>> 2) All security.foo@uid=<uid> with valid uid mapping in the user namespace
+>>     can be read. The uid within the user namespace will be mapped to the
+>>     corresponding uid on the host and that uid will be used in the name of
+>>     the extended attribute.
+>>     -> reading security.foo@uid=1 will read security.foo@uid=1001 for uid
+>>        mapping of root to 1000, size of at least 2.
+>>
+>>     All security.foo@uid=<uid> can be read (by root) on the host with values
+>>     of <uid> also being subject to checking for valid mappings.
+>>
+>> 3) No other security.foo* can be read.
+>>
+>> The same rules for reading apply to writing and removing of user
+>> namespace enabled extended attributes.
+>>
+>> When listing extended attributes of a file, only those are presented
+>> to the user namespace that have a valid mapping. Besides that, names
+>> of the extended attributes are adjusted to represent the mapping.
+>> This means that if root is mapped to uid 1000 on the host, the
+>> security.foo@uid=1000 will be listed as security.foo in the user
+>> namespace, security.foo@uid=1001 becomes security.foo@uid=1 and so on.
+>>
+>> Signed-off-by: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+>> Signed-off-by: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+>> Reviewed-by: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+>> ---
+>>   fs/xattr.c               | 509 +++++++++++++++++++++++++++++++++++++++++++++--
+>>   security/commoncap.c     |  36 +++-
+>>   security/selinux/hooks.c |   9 +-
+>>   3 files changed, 523 insertions(+), 31 deletions(-)
+> I am just going to quickly and publicly point out that as designed this
+> patch breaks evm inode metadata signing.  As evm_config_xattrnames is not
+> updated.
+>
+> While not completely insurmountable that seems like a strong limitation of
+> this design.
+
+EVM could be converted to get the list of xattrs and prefix-compare it 
+against the evm_config_xattrnames to do what it does now.
+
+    Stefan
