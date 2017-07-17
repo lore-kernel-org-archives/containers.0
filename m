@@ -1,25 +1,18 @@
-From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH v2] xattr: Enable security.capability in user namespaces
-Date: Sun, 16 Jul 2017 07:25:59 -0400
-Message-ID: <1500204359.3583.126.camel@linux.vnet.ibm.com>
-References: <87y3rscz9j.fsf@xmission.com>
-	<20170713164012.brj2flnkaaks2oci@thunk.org>	<87k23cb6os.fsf@xmission.com>
-	<847ccb2a-30c0-a94c-df6f-091c8901eaa0@linux.vnet.ibm.com>
-	<87bmoo8bxb.fsf@xmission.com>
-	<9a3010e5-ca2b-5e7a-656b-fcc14f7bec4e@linux.vnet.ibm.com>
-	<87h8yf7szd.fsf@xmission.com>
-	<65dbe654-0d99-03fa-c838-5a726b462826@linux.vnet.ibm.com>
-	<20170714133437.GA16737@mail.hallyn.com>
-	<596f808b-e21d-8296-5fef-23c1ce7ab778@linux.vnet.ibm.com>
-	<20170714173556.GA19669@mail.hallyn.com>
-	<xagsmtp2.20170714182525.6604@vmsdvm4.vnet.ibm.com>
-	<1500060374.3583.57.camel@linux.vnet.ibm.com>
-	<xagsmtp3.20170715001054.9173@uk1vsc.vnet.ibm.com>
+From: Michael Cree <mcree-q3Ck4f9/EBK9koe0gwxAeg@public.gmane.org>
+Subject: Re: [PATCH 1/8] signal/alpha: Document a conflict with SI_USER for
+	SIGTRAP
+Date: Mon, 17 Jul 2017 20:14:38 +1200
+Message-ID: <20170717081438.rdbwspz25bn6oz7h__42368.6219648973$1500280360$gmane$org@tower>
+References: <87efu22set.fsf@xmission.com>
+	<20170630123906.8865-1-ebiederm@xmission.com>
+	<20170702141320.GA32254@ls3530.fritz.box>
+	<87fudz5lol.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <xagsmtp3.20170715001054.9173-17CmTKLGOXFpnrxNGchxj0EOCMrvLtNR@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <87fudz5lol.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -30,119 +23,33 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Theodore Ts'o <tytso-3s7WtUTddSA@public.gmane.org>, Mimi Zohar <zohar-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org, lkp-JC7UmRfGjtg@public.gmane.org
+Cc: Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Helge Deller <deller-Mmb7MZpHnFY@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Matt Turner <mattst88-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Ivan Kokshaysky <ink-biIs/Y0ymYJMZLIVYojuPNP0rXTJTi09@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Richard Henderson <rth-hL46jP5Bxq7R7s880joybQ@public.gmane.org>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-alpha-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Willy Tarreau <w@1wt.eu>
 List-Id: containers.vger.kernel.org
 
-T24gRnJpLCAyMDE3LTA3LTE0IGF0IDE5OjAyIC0wNTAwLCBFcmljIFcuIEJpZWRlcm1hbiB3cm90
-ZToKPiBNaW1pIFpvaGFyIDx6b2hhckBsaW51eC52bmV0LmlibS5jb20+IHdyaXRlczoKPiAKPiA+
-IE9uIEZyaSwgMjAxNy0wNy0xNCBhdCAxMzoxNyAtMDUwMCwgRXJpYyBXLiBCaWVkZXJtYW4gd3Jv
-dGU6Cj4gPj4gIlNlcmdlIEUuIEhhbGx5biIgPHNlcmdlQGhhbGx5bi5jb20+IHdyaXRlczoKPiA+
-PiAKPiA+PiA+IFF1b3RpbmcgU3RlZmFuIEJlcmdlciAoc3RlZmFuYkBsaW51eC52bmV0LmlibS5j
-b20pOgo+ID4+ID4+IE9uIDA3LzE0LzIwMTcgMDk6MzQgQU0sIFNlcmdlIEUuIEhhbGx5biB3cm90
-ZToKPiA+PiA+PiA+UXVvdGluZyBTdGVmYW4gQmVyZ2VyIChzdGVmYW5iQGxpbnV4LnZuZXQuaWJt
-LmNvbSk6Cj4gPj4gPj4gPj5PbiAwNy8xMy8yMDE3IDA4OjM4IFBNLCBFcmljIFcuIEJpZWRlcm1h
-biB3cm90ZToKPiA+PiA+PiA+Pj5TdGVmYW4gQmVyZ2VyIDxzdGVmYW5iQGxpbnV4LnZuZXQuaWJt
-LmNvbT4gd3JpdGVzOgo+ID4+ID4+ID4+Pgo+ID4+ID4+ID4+Pj5PbiAwNy8xMy8yMDE3IDAxOjQ5
-IFBNLCBFcmljIFcuIEJpZWRlcm1hbiB3cm90ZToKPiA+PiA+PiA+Pj4+Cj4gPj4gPj4gPj4+Pj5N
-eSBiaWcgcXVlc3Rpb24gcmlnaHQgbm93IGlzIGNhbiB5b3UgaW1wbGVtZW50IFRlZCdzIHN1Z2dl
-c3RlZAo+ID4+ID4+ID4+Pj4+cmVzdHJpY3Rpb24uICBPbmx5IG9uZSBzZWN1cml0eS5mb28gb3Ig
-c2VjdWlydHkuZm9vQC4uLiBhdHRyaWJ1dGUgPwo+ID4+ID4+ID4+Pj5XZSBuZWVkIHRvIHJhdy1s
-aXN0IHRoZSB4YXR0cnMgYW5kIGRvIHRoZSBjaGVjayBiZWZvcmUgd3JpdGluZyB0aGVtLiBJIGFt
-IGZhaXJseSBzdXJlIHRoaXMgY2FuIGJlIGRvbmUuCj4gPj4gPj4gPj4+Pgo+ID4+ID4+ID4+Pj5T
-byBub3cgeW91IHdhbnQgdG8gYWxsb3cgc2VjdXJpdHkuZm9vIGFuZCBvbmUgc2VjdXJpdHkuZm9v
-QHVpZD08PiBvciBqdXN0IGEgc2luZ2xlIG9uZSBzZWN1cml0eS5mb28oQFtbOnByaW50Ol1dKik/
-Cj4gPj4gPj4gPj4+Pgo+ID4+ID4+ID4+PlRoZSBsYXR0ZXIuCj4gPj4gPj4gPj5UaGF0IGNhc2Ug
-d291bGQgcHJldmVudCBhIGNvbnRhaW5lciB1c2VyIGZyb20gb3ZlcnJpZGluZyB0aGUgeGF0dHIK
-PiA+PiA+PiA+Pm9uIHRoZSBob3N0LiBJcyB0aGF0IHdoYXQgd2Ugd2FudD8gRm9yIGxpbWl0aW5n
-IHRoZSBudW1iZXIgb2YgeGF0dHJzCj4gPj4gPj4gPk5vdCByZWFsbHkuICBJZiB0aGUgZmlsZSBp
-cyBvd25lZCBieSBhIHVpZCBtYXBwZWQgaW50byB0aGUgY29udGFpbmVyLAo+ID4+ID4+ID50aGVu
-IHRoZSBjb250YWluZXIgcm9vdCBjYW4gY2hvd24gdGhlIGZpbGUgd2hpY2ggd2lsbCBjbGVhciB0
-aGUgZmlsZQo+ID4+ID4+ID5jYXBhYmlsaXR5LCBhZnRlciB3aGljaCBoZSBjYW4gc2V0IGEgbmV3
-IG9uZS4gIElmIHRoZSBmaWxlIGlzIG5vdAo+ID4+ID4+ID5vd25lZCBieSBhIHVpZCBtYXBwZWQg
-aW50byB0aGUgY29udGFpbmVyLCB0aGVuIGNvbnRhaW5lciByb290IGNvdWxkCj4gPj4gPj4gPm5v
-dCBzZXQgYSBmaWxlY2FwIGFueXdheS4KPiA+PiA+PiAKPiA+PiA+PiBMZXQncyBzYXkgSSBpbnN0
-YWxsZWQgYSBjb250YWluZXIgd2hlcmUgYWxsIGZpbGVzIGFyZSBzaWduZWQgYW5kCj4gPj4gPj4g
-dGh1cyBoYXZlIHNlY3VyaXR5LmltYS4gTm93IGZvciBzb21lIHJlYXNvbiBJIHdhbnQgdG8gcmUt
-c2lnbiBzb21lCj4gPj4gPj4gb3IgYWxsIGZpbGVzIGluc2lkZSB0aGF0IGNvbnRhaW5lci4gSG93
-IHdvdWxkIEkgZG8gdGhhdCA/IFdvdWxkIEkKPiA+PiA+PiBuZWVkIHRvIGdldCByaWQgb2Ygc2Vj
-dXJpdHkuaW1hIGZpcnN0LCBwb3NzaWJseSBieSBjb3B5aW5nIGVhY2gKPiA+PiA+PiBmaWxlLCBk
-ZWxldGluZyB0aGUgb3JpZ2luYWwgZmlsZSwgYW5kIHJlbmFtaW5nIHRoZSBjb3BpZWQgZmlsZSB0
-bwo+ID4+ID4+IHRoZSBvcmlnaW5hbCBuYW1lLCBvciBzaG91bGQgSSBqdXN0IGJlIGFibGUgdG8g
-d3JpdGUgb3V0IGEgbmV3Cj4gPj4gPj4gc2lnbmF0dXJlLCB0aHVzIGNyZWF0aW5nIHNlY3VyaXR5
-LmltYUB1aWQ9MTAwMCBiZXNpZGVzIHRoZQo+ID4+ID4+IHNlY3VyaXR5LmltYSA/Cj4gPj4gPj4g
-Cj4gPj4gPj4gICAgU3RlZmFuCj4gPj4gPgo+ID4+ID4gSGkgTWltaSwKPiA+PiA+Cj4gPj4gPiB3
-aGF0IGRvIHlvdSB0aGluayBtYWtlcyBtb3N0IHNlbnNlIGZvciBJTUE/Cj4gPj4gCj4gPj4gSSBh
-bSBnb2luZyB0byBnaXZlIG15IHR3byBjZW50cyBzaW5jZSBJIGhhdmUgYmVlbiB0aGlua2luZyBh
-Ym91dCB0aGlzLgo+ID4+IAo+ID4+IEZpcnN0IEkgdGhpbmsgdGhpcyBlbnRpcmUgc2NoZW1lIHBs
-YXlzIGhvYnMgd2l0aCB0aGUgc2VjdXJpdHkuZXZtCj4gPj4gYXR0cmlidXRlIGFzIHNlY3VyaXR5
-LmV2bSBuZWVkcyB0byBrbm93IHRoZSBuYW1lcyBvZiB0aGUgeGF0dHJzIHRvCj4gPj4gcHJvdGVj
-dC4KPiA+PiAKPiA+PiBJIGZvcmdldCB3aGljaCBhdHRyaWJ1dGVzIGhhcyBhIGhhc2ggYW5kIHdo
-YXQgaGFzIGEgbWVzc2FnZQo+ID4+IGF0aGVudGljYXRpb24gY29kZS4KPiA+Cj4gPiBzZWN1cml0
-eS5pbWEgY29udGFpbnMgZWl0aGVyIGEgZmlsZSBoYXNoIG9yIGEgc2lnbmF0dXJlLiAgKGZpbGUg
-ZGF0YSkKPiA+IHNlY3VyaXR5LmV2bSBjb250YWlucyBlaXRoZXIgYSBzaWduYXR1cmUgb3IgYW4g
-aG1hYyBvZiB0aGUgc2VjdXJpdHkKPiA+IHhhdHRycyBhbmQgb3RoZXIgZmlsZSBtZXRhZGF0YS4g
-KGZpbGUgbWV0YS1kYXRhKQo+ID4KPiA+IFRoZSBzYW1lIHJ1bGVzIHdvdWxkIGFwcGx5IHRvIHNl
-Y3VyaXR5LmV2bSwgYXMgZGVzY3JpYmVkIGluIG15Cj4gPiByZXNwb25zZS4gwqBCYXNlZCBvbiBp
-dCdzIHZpZXcgb2YgdGhlIHNlY3VyaXR5IHhhdHRycywgZWl0aGVyIHRoZQo+ID4gbmF0aXZlIG9y
-IG5hbWVzcGFjZSBzZWN1cml0eS5ldm0gd291bGQgYmUgdXBkYXRlZC4KPiA+Cj4gPj4gSWYgdGhl
-cmUgaXMgYW4gYXR0cmlidXRlIHdpdGggYSBzaW1wbGUgZmlsZSBoYXNoIEkgdGhpbmsgaXQgb25s
-eSBtYWtlCj4gPj4gc2Vuc2UgZm9yIHRoZSBrZXJuZWwgdG8gdG91Y2ggaXQsIGFuZCBJIGRvbid0
-IHNlZSBhbnkgc2Vuc2UgaW4gaGF2aW5nCj4gPj4gbXVsdGlwbGVzLgo+ID4KPiA+IE9ubHkgZmls
-ZXMgdGhhdCBhcmUgaW4gdGhlIElNQS1hcHByYWlzYWwgcG9saWN5IGlzIHRoZSBmaWxlIGhhc2gK
-PiA+IGNhbGN1bGF0ZWQgYW5kIHdyaXR0ZW4gb3V0IGFzIHNlY3VyaXR5LmltYS4gwqBEZXBlbmRp
-bmcgdGhpcyBwb2xpY3ksCj4gPiBkb2VzIHRoZSBzZWN1cml0eS5pbWEgZXhpc3QuIMKgU28gaWYg
-dGhlIGZpbGUgaXMgaW4gcG9saWN5IGZvciBib3RoIHRoZQo+ID4gbmF0aXZlIGFuZCBuYW1lc3Bh
-Y2UgcG9saWNpZXMsIGFncmVlZCB0aGUgc2FtZSBoYXNoIGRvZXNuJ3QgbmVlZCB0byBiZQo+ID4g
-d3JpdHRlbiBhcyB0d28gZGlmZmVyZW50IHhhdHRycy4KPiA+Cj4gPj4gSWYgdGhlcmUgaXMgYW4g
-YXR0cmlidXRlIHdpdGggYSBtZXNzYWdlIGF1dGhlbnRpY2F0aW9uIGNvZGUgKHJvdWdobHkgYQo+
-ID4+IHNpZ25lZCBoYXNoKSBpdCBtYWtlcyBzZW5zZSB0byBoYXZlIHRoYXQgdG8gYmUgdGllZCB0
-byB0aGUga2VybmVsIGtleQo+ID4+IHJpbmcgdGhhdCBjb250cm9sbHMgdGhlIGtleXMuICAoV2hp
-Y2ggcHJvYmFibHkgbWVhbnMgYSBwZXIgdXNlcgo+ID4+IG5hbWVzcGFjZSB0aGluZyBhdCBzb21l
-IHBvaW50KS4gIEJ1dCBhZ2FpbiBwcmV0dHkgdW50b3VjaGFibGUgb3RoZXJ3aXNlLgo+ID4KPiA+
-IFJpZ2h0LCB0aGUgbmFtZXNwYWNlIHdvdWxkIHJlcXVpcmUgaXQncyBvd24gRVZNIGtleS4gCj4g
-Pgo+ID4+IFdoaWNoIGJyaW5ncyB1cyB0byB0aGUgc2VtYW50aWMgcXVlc3Rpb24gb2Ygd291bGQg
-aXQgYmUgbmljZSB0byBoYXZlCj4gPj4gc3RhY2tlZCBJTUEvRVZNIG9uIHRoZSBzYW1lIGZpbGUu
-Cj4gPj4gCj4gPj4gSSByZWFsbHkgZG9uJ3QgdGhpbmsgd2UgZG8uICBJIHRoaW5rIGFsbG93aW5n
-IG11bHRpcGxlIGtleXMgZm9yCj4gPj4gZGlmZmVyZW50IHBhcnQgb2YgdHJ1c3RpbmcgZmlsZXMg
-aXMgZWFzeSBlbm91Z2ggdGhhdCB3ZSBzaG91bGQgaGF2ZSBubwo+ID4+IG5lZWQgdG8gZmlnaHQg
-b3ZlciB3aGljaCBrZXlzIGRvIHdoaWNoLgo+ID4KPiA+IFdlIGRlZmluaXRlbHkgd2FudCB0byBz
-dXBwb3J0IGRpZmZlcmVudCBwb2xpY2llcyBvbiB0aGUgbmF0aXZlIGFuZCBpbgo+ID4gdGhlIG5h
-bWVzcGFjZSB3aXRoIGRpZmZlcmVudCBrZXlzIGFuZCBrZXlyaW5ncy4KPiA+Cj4gPiBSZWZlciB0
-byBNZWhtZXQgS2FheWxhcCdzIHJlY2VudCBwb3N0LCB3aGljaCByZWZlcnMgdG8gYSBQb0MgdmVy
-c2lvbgo+ID4gb2YgSU1BIG5hbWVzcGFjaW5nIC0ga2VybnNlYy5vcmcvcGlwZXJtYWlsL2xpbnV4
-LXNlY3VyaXR5LW1vZHVsZS0KPiA+IGFyY2hpdmUvMjAxNy1KdWx5LzAwMjI4Ni5odG1sLgo+ID4K
-PiA+PiBMb29raW5nIGF0IGludGVncml0eS5oIEkgc2VlIHNpZ25hdHVyZV92Ml9oZHIgdGhhdCBo
-YXMgYSBrZXlpZC4gIEFueSB1c2UKPiA+PiBjYXNlIEkgY2FuIHRoaW5rIG9mIGZvciBkaXN0cmli
-dXRpbmcgYSBkaXN0cmlidXRpb24gaW1hZ2Ugd2l0aCBpbWEvZXZtCj4gPj4geGF0dHJzIHdpbGwg
-bmVlZCB0byB1c2UgYXN5bW1ldHJpYyBrZXlzIGFrYSBwdWJsaWMvcHJpdmF0ZSBrZXlwYWlycyBz
-bwo+ID4+IHRoYXQgdGhlIG9yaWdpbmF0b3Igb2YgdGhlIGNvbnRlbnQgZG9lcyBub3QgZ2l2ZSBh
-d2F5IHRoZWlyIHByaXZhdGUKPiA+PiBrZXlzLgo+ID4KPiA+IEFncmVlZC4KPiA+Cj4gPj4gR2l2
-ZW4gdGhhdCB1c2VmdWxseSB3ZSBhcmUgdGFsa2luZyBhYm91dCBjb250ZW50IHRoYXQgc2hvdWxk
-IGJlCj4gPj4gY29ubmVjdGVkIHRvIGtleXMgaW4gb25lIHdheSBvciBhbm90aGVyIEkgZG9uJ3Qg
-YmVsaWV2ZSBpdCBldmVuIG1ha2VzCj4gPj4gc2Vuc2UgYXQgdGhpcyBwb2ludCB0byBhdHRlbXB0
-IHRvIHVzZSB1aWRzIGZvciBkZWFsaW5nIHdpdGggaW1hIGFuZAo+ID4+IGV2bSBjb250ZW50Lgo+
-ID4KPiA+IFdlIG5lZWQgdG8gcmVzb2x2ZSB0aGUgeGF0dHIgaXNzdWUgaW4gb3JkZXIgdG8gbmFt
-ZXNwYWNlIElNQS0KPiA+IGFwcHJhaXNhbC7CoAo+IAo+IAo+IE1pbWkgSSBoYXZlIHR3byBxdWVz
-dGlvbnM6Cj4gCj4gYSkgSXMgdGhlIGtleWlkIGVub3VnaCB0byBkaXN0aW5ndWlzaCB0aGUgc2Vj
-dXJpdHkuaW1hIGFuZCBzZWN1cml0eS5ldm0KPiAgICB4YXR0cnMgb2Ygb25lIGNvbnRhaW5lciBm
-cm9tIGFub3RoZXIgY29udGFpbmVyIGFuZCBmcm9tIG5hdGl2ZT8gIE9yCj4gICAgZG8gd2UgaGF2
-ZSBzb21lIGltcG9ydGFudCBzZWN1cml0eSB4YXR0cnMgdGhhdCBhcmUgYXNzb2NpYXRlZCB3aXRo
-Cj4gICAga2V5cyB0aGF0IGRvbid0IGhhdmUgYSBrZXlpZD8KPiAKPiBiKSBDYW4gd2UgcmVhc29u
-YWJseSBsaXZlIHdpdGggYSBsaW1pdGF0aW9uIHRoYXQgdGhlIG5hdGl2ZSBhbmQgdGhlCj4gICAg
-bmFtZXNwYWNlJ2QgcG9saWNpZXMgZG9uJ3QgaW50ZXJzZWN0PyAgT3IgaW4gdGhlIGNhc2Ugb2Yg
-YW4KPiAgICBpbnRlcmVzZWN0aW9uIHRoZSBuYXRpdmUgcG9saWN5IGlzIHRoZSBvbmx5IG9uZSB0
-aGF0IGlzIGV4ZWN1dGVkPwo+IAo+IEkgc3VibWl0IHRoYXQgaWYgdGhlIGFuc3dlciBpcyBrZXlp
-ZHMgYXJlIGFsd2F5cyBwcmVzZW50LCBhbmQgd2UgY2FuCj4gbGl2ZSB3aXRoIHRoZSBuYXRpdmUg
-cG9saWN5IHRha2luZyBwcmVjZWRlbmNlIG92ZXIgdGhlIGNvbnRhaW5lciBwb2xpY3kKPiB0aGVu
-IHdlIGhhdmUgYSBzb2x1dGlvbiB0byB0aGUgSU1BIHhhdHRycy4KCklNQS1tZWFzdXJlbWVudCBp
-cyBoaWVyYWNoaWNhbCwgbWVhbmluZyB0aGF0IHRoZSBtZWFzdXJlbWVudCBwb2xpY3kKZGV0ZXJt
-aW5lcyB3aGV0aGVyIHRoZSBtZWFzdXJlbWVudCBleGlzdHMgaW4gdGhlIG5hdGl2ZSwgdGhlCmNv
-bnRhaW5lciwgb3IgYm90aCBtZWFzdXJlbWVudCBsaXN0cy4KCk9uZSBvZiB0aGUgbWFpbiBuYW1l
-c3BhY2luZyB1c2UgY2FzZXMgZm9yIElNQS1hcHByYWlzYWwgaXMgdGhlIGFiaWxpdHkKdG8gbGlt
-aXQgcnVubmluZyBhbiBleGVjdXRhYmxlIHRvIGEgcGFydGljdWxhciBjb250YWluZXIuIMKgU28g
-dW5saWtlCklNQS1tZWFzdXJlbWVudCwgd2hpY2ggaXMgaGllcmFyY2hpY2FsLCB0aGUgSU1BLWFw
-cHJhaXNhbCBuYW1lc3BhY2UKcG9saWN5IHRha2VzIHByZWNlZGVuY2Ugb3ZlciB0aGUgbmF0aXZl
-IHBvbGljeS4KCk1pbWkKCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91
-bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlz
-dGluZm8vY29udGFpbmVycw==
+On Fri, Jul 14, 2017 at 05:59:06AM -0500, Eric W. Biederman wrote:
+> in which cases the oddities will happen let alone test them.  Plus at
+> least for ia64 and alpha those architectures don't appear to be
+> receiving updates for new syscalls, and no new hardware is being built
+> so I don't know how much longer they will last.
+> 
+> That is building for alpha gives:
+> >   CALL    /home/eric/projects/linux/linux-exit-cleanups/scripts/checksyscalls.sh
+> > <stdin>:1239:2: warning: #warning syscall seccomp not implemented [-Wcpp]
+> > <stdin>:1248:2: warning: #warning syscall bpf not implemented [-Wcpp]
+> > <stdin>:1299:2: warning: #warning syscall userfaultfd not implemented [-Wcpp]
+> > <stdin>:1302:2: warning: #warning syscall membarrier not implemented [-Wcpp]
+> > <stdin>:1305:2: warning: #warning syscall mlock2 not implemented [-Wcpp]
+> > <stdin>:1308:2: warning: #warning syscall copy_file_range not implemented [-Wcpp]
+> > <stdin>:1311:2: warning: #warning syscall preadv2 not implemented [-Wcpp]
+> > <stdin>:1314:2: warning: #warning syscall pwritev2 not implemented [-Wcpp]
+> > <stdin>:1317:2: warning: #warning syscall pkey_mprotect not implemented [-Wcpp]
+> > <stdin>:1320:2: warning: #warning syscall pkey_alloc not implemented [-Wcpp]
+> > <stdin>:1323:2: warning: #warning syscall pkey_free not implemented [-Wcpp]
+> > <stdin>:1326:2: warning: #warning syscall statx not implemented [-Wcpp]
+
+Patches to wire up most of those syscalls on Alpha was posted recently
+along with others to fix module loading, etc., but unfortunately they
+do not appear to have been applied during the merge window...
+
+Cheers,
+Michael.
