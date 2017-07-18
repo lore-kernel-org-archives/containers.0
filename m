@@ -1,7 +1,7 @@
 From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: [PATCH 4/7] signal/mips: Document a conflict with SI_USER with SIGFPE
-Date: Tue, 18 Jul 2017 09:06:48 -0500
-Message-ID: <20170718140651.15973-4-ebiederm__40511.2603134059$1500387388$gmane$org@xmission.com>
+Subject: [PATCH 5/7] signal/testing: Don't look for __SI_FAULT in userspace
+Date: Tue, 18 Jul 2017 09:06:49 -0500
+Message-ID: <20170718140651.15973-5-ebiederm@xmission.com>
 References: <87o9shg7t7.fsf_-_@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -18,58 +18,69 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Pavel Emelyanov <xemul-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ralf Baechle <ralf-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Willy Tarreau <w@1wt.eu>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Dave Hansen <dave.hansen-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>, Pavel Emelyanov <xemul-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Willy Tarreau <w@1wt.eu>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Setting si_code to __SI_FAULT results in a userspace seeing
-an si_code of 0.  This is the same si_code as SI_USER.  Posix
-and common sense requires that SI_USER not be a signal specific
-si_code.  As such this use of 0 for the si_code is a pretty
-horribly broken ABI.
+Fix the debug print statements in these tests where they reference
+si_codes and in particular __SI_FAULT.  __SI_FAULT is a kernel
+internal value and should never be seen by userspace.
 
-This use of of __SI_FAULT is only a decade old.  Which compared
-to the other pieces of kernel code that has made this mistake
-is almost yesterday.
+While I am in there also fix si_code_str.  si_codes are an enumeration
+there are not a bitmap so == and not & is the apropriate operation to
+test for an si_code.
 
-This is probably worth fixing but I don't know mips well enough
-to know what si_code to would be the proper one to use.
-
-Cc: Ralf Baechle <ralf-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org>
-Ref: 948a34cf3988 ("[MIPS] Maintain si_code field properly for FP exceptions")
+Cc: Dave Hansen <dave.hansen-VuQAYsv1563Yd54FQh9/CA@public.gmane.org>
+Fixes: 5f23f6d082a9 ("x86/pkeys: Add self-tests")
+Fixes: e754aedc26ef ("x86/mpx, selftests: Add MPX self test")
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- arch/mips/include/uapi/asm/siginfo.h | 7 +++++++
- arch/mips/kernel/traps.c             | 2 +-
- 2 files changed, 8 insertions(+), 1 deletion(-)
+ tools/testing/selftests/x86/mpx-mini-test.c   |  3 +--
+ tools/testing/selftests/x86/protection_keys.c | 13 ++++++-------
+ 2 files changed, 7 insertions(+), 9 deletions(-)
 
-diff --git a/arch/mips/include/uapi/asm/siginfo.h b/arch/mips/include/uapi/asm/siginfo.h
-index 8069cf766603..9becfd102132 100644
---- a/arch/mips/include/uapi/asm/siginfo.h
-+++ b/arch/mips/include/uapi/asm/siginfo.h
-@@ -123,4 +123,11 @@ typedef struct siginfo {
- #define SI_TIMER __SI_CODE(__SI_TIMER, -3) /* sent by timer expiration */
- #define SI_MESGQ __SI_CODE(__SI_MESGQ, -4) /* sent by real time mesq state change */
+diff --git a/tools/testing/selftests/x86/mpx-mini-test.c b/tools/testing/selftests/x86/mpx-mini-test.c
+index a8df159a8924..ec0f6b45ce8b 100644
+--- a/tools/testing/selftests/x86/mpx-mini-test.c
++++ b/tools/testing/selftests/x86/mpx-mini-test.c
+@@ -391,8 +391,7 @@ void handler(int signum, siginfo_t *si, void *vucontext)
+ 		br_count++;
+ 		dprintf1("#BR 0x%jx (total seen: %d)\n", status, br_count);
  
-+/*
-+ * SIGFPE si_codes
-+ */
-+#ifdef __KERNEL__
-+#define FPE_FIXME	(__SI_FAULT|0)	/* Broken dup of SI_USER */
-+#endif /* __KERNEL__ */
-+
- #endif /* _UAPI_ASM_SIGINFO_H */
-diff --git a/arch/mips/kernel/traps.c b/arch/mips/kernel/traps.c
-index b68b4d0726d3..6c9cca9c5341 100644
---- a/arch/mips/kernel/traps.c
-+++ b/arch/mips/kernel/traps.c
-@@ -735,7 +735,7 @@ void force_fcr31_sig(unsigned long fcr31, void __user *fault_addr,
- 	else if (fcr31 & FPU_CSR_INE_X)
- 		si.si_code = FPE_FLTRES;
- 	else
--		si.si_code = __SI_FAULT;
-+		si.si_code = FPE_FIXME;
- 	force_sig_info(SIGFPE, &si, tsk);
+-#define __SI_FAULT      (3 << 16)
+-#define SEGV_BNDERR     (__SI_FAULT|3)  /* failed address bound checks */
++#define SEGV_BNDERR     3  /* failed address bound checks */
+ 
+ 		dprintf2("Saw a #BR! status 0x%jx at %016lx br_reason: %jx\n",
+ 				status, ip, br_reason);
+diff --git a/tools/testing/selftests/x86/protection_keys.c b/tools/testing/selftests/x86/protection_keys.c
+index 3237bc010e1c..23927845518d 100644
+--- a/tools/testing/selftests/x86/protection_keys.c
++++ b/tools/testing/selftests/x86/protection_keys.c
+@@ -212,19 +212,18 @@ void dump_mem(void *dumpme, int len_bytes)
+ 	}
  }
  
+-#define __SI_FAULT      (3 << 16)
+-#define SEGV_BNDERR     (__SI_FAULT|3)  /* failed address bound checks */
+-#define SEGV_PKUERR     (__SI_FAULT|4)
++#define SEGV_BNDERR     3  /* failed address bound checks */
++#define SEGV_PKUERR     4
+ 
+ static char *si_code_str(int si_code)
+ {
+-	if (si_code & SEGV_MAPERR)
++	if (si_code == SEGV_MAPERR)
+ 		return "SEGV_MAPERR";
+-	if (si_code & SEGV_ACCERR)
++	if (si_code == SEGV_ACCERR)
+ 		return "SEGV_ACCERR";
+-	if (si_code & SEGV_BNDERR)
++	if (si_code == SEGV_BNDERR)
+ 		return "SEGV_BNDERR";
+-	if (si_code & SEGV_PKUERR)
++	if (si_code == SEGV_PKUERR)
+ 		return "SEGV_PKUERR";
+ 	return "UNKNOWN";
+ }
 -- 
 2.10.1
