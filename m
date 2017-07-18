@@ -1,23 +1,13 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH v2 0/7] signal: Fix sending signals with siginfo
-Date: Tue, 18 Jul 2017 09:04:36 -0500
-Message-ID: <87o9shg7t7.fsf_-___33433.0937978395$1500387168$gmane$org@xmission.com>
-References: <87lgot2loq.fsf@xmission.com> <87zid90vye.fsf_-_@xmission.com>
-	<20170615225426.GP31671@ZenIV.linux.org.uk>
-	<87poe4zrs1.fsf@xmission.com>
-	<CA+55aFxpv+gchzs7AYgSC8feAOV=B6mjFgBVm4Kx+83J2CNE-w@mail.gmail.com>
-	<87poe3vsa9.fsf@xmission.com>
-	<CALCETrX=SquyR8JZqHDNx=_FQKQo-0u9AxfdUwJs_hujVO2A-g@mail.gmail.com>
-	<87h8zfua59.fsf@xmission.com>
-	<CALCETrWPBn31Dye=81r2ZMainNOnDy5c_QxbU2uRjnJs0ie=Zg@mail.gmail.com>
-	<87r2yjsuwl.fsf@xmission.com> <20170616191602.GA10675@1wt.eu>
-	<87bmp5y7nj.fsf_-_@xmission.com>
+From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Subject: [PATCH 2/7] signal/ia64: Document a conflict with SI_USER with SIGFPE
+Date: Tue, 18 Jul 2017 09:06:46 -0500
+Message-ID: <20170718140651.15973-2-ebiederm@xmission.com>
+References: <87o9shg7t7.fsf_-_@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87bmp5y7nj.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (Eric W. Biederman's message of
-	"Fri, 30 Jun 2017 07:36:16 -0500")
+In-Reply-To: <87o9shg7t7.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -28,96 +18,66 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Pavel Emelyanov <xemul-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Willy Tarreau <w@1wt.eu>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Fenghua Yu <fenghua.yu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Pavel Emelyanov <xemul-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Tony Luck <tony.luck-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Willy Tarreau <w@1wt.eu>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Setting si_code to __SI_FAULT results in a userspace seeing
+an si_code of 0.  This is the same si_code as SI_USER.  Posix
+and common sense requires that SI_USER not be a signal specific
+si_code.  As such this use of 0 for the si_code is a pretty
+horribly broken ABI.
 
-Today sending a signal with rt_sigqueueinfo and receving it on
-a signalfd does not work reliably.  The issue is that reading
-a signalfd instead of returning a siginfo returns a signalfd_siginfo and
-the kernel must convert from one to the other.
+Given that ia64 is on it's last legs I don't know that it is worth
+fixing this, but it is worth documenting what is going on so that
+no one decides to copy this bad decision.
 
-The kernel does not currently have the code to deduce which union
-members of struct siginfo are in use.
+This was introduced in 2.3.51 so this mess has had a long time for
+people to be able to start depending on it.
 
-In this patchset I fix that by introducing a new function siginfo_layout
-that can look at a siginfo and report which union member of struct
-siginfo is in use.  Before that I clean up how we populate struct
-siginfo.
+Cc: Tony Luck <tony.luck-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Cc: Fenghua Yu <fenghua.yu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Cc: linux-ia64-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ arch/ia64/include/uapi/asm/siginfo.h | 3 +++
+ arch/ia64/kernel/traps.c             | 4 ++--
+ 2 files changed, 5 insertions(+), 2 deletions(-)
 
-The siginfo structure has two key members si_signo and si_code.  Some
-si_codes are signal specific and for those it takes si_signo and si_code
-to indicate the members of siginfo that are valid.  The rest of the
-si_code values are signal independent like SI_USER, SI_KERNEL, SI_QUEUE,
-and SI_TIMER and only si_code is needed to indicate which members of
-siginfo are valid.
-
-At least that is how POSIX documents them, and how common sense would
-indicate they should function.  In practice we have been rather sloppy
-about maintaining the ABI in linux and we have some exceptions.  We have
-a couple of buggy architectures that make SI_USER mean something
-different when combined with SIGFPE or SIGTRAP.  Worse we have
-fcntl(F_SETSIG) which results in the si_codes POLL_IN, POLL_OUT,
-POLL_MSG, POLL_ERR, POLL_PRI, POLL_HUP being sent with any arbitrary
-signal, while the values are in a range that overlaps the signal
-specific si_codes.
-
-Thankfully the ambiguous cases with the POLL_NNN si_codes are for
-things no sane persion would do that so we can rectify the situtation.
-AKA no one cares so we won't cause a regression fixing it.
-
-As part of fixing this I stop leaking the __SI_xxxx codes to userspace
-and stop storing them in the high 16bits of si_code.  Making the kernel
-code fundamentally simpler.  We have already confirmed that the one
-application that would see this difference in kernel behavior CRIU won't
-be affected by this change as it copies values verbatim from one kernel
-interface to another.
-
-v2:
-   - Benchmarked the code to confirm no performance changes are visible.
-   - Reworked the first couple of patches so that TRAP_FIXME and
-     FPE_FIXME are not exported to userspace.
-   - Rebased on top of the siginfo cleanup that came in v4.13-rc1
-   - Updated alpha to use both TRAP_FIXME and FPE_FIXME
-
-Eric W. Biederman (7):
-      signal/alpha: Document a conflict with SI_USER for SIGTRAP
-      signal/ia64: Document a conflict with SI_USER with SIGFPE
-      signal/sparc: Document a conflict with SI_USER with SIGFPE
-      signal/mips: Document a conflict with SI_USER with SIGFPE
-      signal/testing: Don't look for __SI_FAULT in userspace
-      fcntl: Don't use ambiguous SIG_POLL si_codes
-      signal: Remove kernel interal si_code magic
-
- arch/alpha/include/uapi/asm/siginfo.h         |  14 ++++
- arch/alpha/kernel/traps.c                     |   6 +-
- arch/arm64/kernel/signal32.c                  |  23 ++----
- arch/blackfin/include/uapi/asm/siginfo.h      |  30 ++++---
- arch/frv/include/uapi/asm/siginfo.h           |   2 +-
- arch/ia64/include/uapi/asm/siginfo.h          |  21 +++--
- arch/ia64/kernel/signal.c                     |  17 ++--
- arch/ia64/kernel/traps.c                      |   4 +-
- arch/mips/include/uapi/asm/siginfo.h          |  11 ++-
- arch/mips/kernel/signal32.c                   |  19 ++---
- arch/mips/kernel/traps.c                      |   2 +-
- arch/parisc/kernel/signal32.c                 |  31 ++++---
- arch/powerpc/kernel/signal_32.c               |  20 ++---
- arch/s390/kernel/compat_signal.c              |  32 ++++---
- arch/sparc/include/uapi/asm/siginfo.h         |   9 +-
- arch/sparc/kernel/signal32.c                  |  16 ++--
- arch/sparc/kernel/traps_32.c                  |   2 +-
- arch/sparc/kernel/traps_64.c                  |   2 +-
- arch/tile/include/uapi/asm/siginfo.h          |   4 +-
- arch/tile/kernel/compat_signal.c              |  18 ++--
- arch/tile/kernel/traps.c                      |   2 +-
- arch/x86/kernel/signal_compat.c               |  21 ++---
- fs/fcntl.c                                    |  13 ++-
- fs/signalfd.c                                 |  22 ++---
- include/linux/signal.h                        |  22 +++++
- include/uapi/asm-generic/siginfo.h            | 115 +++++++++++---------------
- kernel/exit.c                                 |   4 +-
- kernel/ptrace.c                               |   6 +-
- kernel/signal.c                               |  72 ++++++++++++----
- tools/testing/selftests/x86/mpx-mini-test.c   |   3 +-
- tools/testing/selftests/x86/protection_keys.c |  13 ++-
- 31 files changed, 318 insertions(+), 258 deletions(-)
+diff --git a/arch/ia64/include/uapi/asm/siginfo.h b/arch/ia64/include/uapi/asm/siginfo.h
+index 4694c64252d6..3282f8b992fc 100644
+--- a/arch/ia64/include/uapi/asm/siginfo.h
++++ b/arch/ia64/include/uapi/asm/siginfo.h
+@@ -107,6 +107,9 @@ typedef struct siginfo {
+ /*
+  * SIGFPE si_codes
+  */
++#ifdef __KERNEL__
++#define FPE_FIXME	(__SI_FAULT|0)	/* Broken dup of SI_USER */
++#endif /* __KERNEL__ */
+ #define __FPE_DECOVF	(__SI_FAULT|9)	/* decimal overflow */
+ #define __FPE_DECDIV	(__SI_FAULT|10)	/* decimal division by zero */
+ #define __FPE_DECERR	(__SI_FAULT|11)	/* packed decimal error */
+diff --git a/arch/ia64/kernel/traps.c b/arch/ia64/kernel/traps.c
+index 7b1fe9462158..3cb17cf9b362 100644
+--- a/arch/ia64/kernel/traps.c
++++ b/arch/ia64/kernel/traps.c
+@@ -349,7 +349,7 @@ handle_fpu_swa (int fp_fault, struct pt_regs *regs, unsigned long isr)
+ 			}
+ 			siginfo.si_signo = SIGFPE;
+ 			siginfo.si_errno = 0;
+-			siginfo.si_code = __SI_FAULT;	/* default code */
++			siginfo.si_code = FPE_FIXME;	/* default code */
+ 			siginfo.si_addr = (void __user *) (regs->cr_iip + ia64_psr(regs)->ri);
+ 			if (isr & 0x11) {
+ 				siginfo.si_code = FPE_FLTINV;
+@@ -373,7 +373,7 @@ handle_fpu_swa (int fp_fault, struct pt_regs *regs, unsigned long isr)
+ 			/* raise exception */
+ 			siginfo.si_signo = SIGFPE;
+ 			siginfo.si_errno = 0;
+-			siginfo.si_code = __SI_FAULT;	/* default code */
++			siginfo.si_code = FPE_FIXME;	/* default code */
+ 			siginfo.si_addr = (void __user *) (regs->cr_iip + ia64_psr(regs)->ri);
+ 			if (isr & 0x880) {
+ 				siginfo.si_code = FPE_FLTOVF;
+-- 
+2.10.1
