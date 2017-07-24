@@ -1,7 +1,7 @@
-From: "John Frazier via WAYN" <invitation-3NMnII/Y9U6a8x9wHTthT6xOck334EZe@public.gmane.org>
-Subject: Last reminder: Invitation from John will expire today
-Date: Sun, 23 Jul 2017 12:50:33 +0100
-Message-ID: <44529a4bd179d41aca28a1190140bbd1@whereareyounow.net>
+From: "Janet William via WAYN" <account-3NMnII/Y9U4hbwEkZy9VU9BPR1lH4CV8@public.gmane.org>
+Subject: janet sent you a friend request
+Date: Mon, 24 Jul 2017 09:38:54 +0100
+Message-ID: <ad1d5b8fdf58deea26cc657604b4cfab@whereareyounow.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,20 +15,22 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Martin Carames Abente <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Accept invitation from John Frazier before it's gone!
+janet sent you a friend request 
+Click on the link below to respond: 
+http://www.wayn.com/-/33623-3e8o515m/27877917-7a7982ca1b36755b?member_key=27878378
 
-Read message:
-http://www2.wayn.com/-/87747-ng9jhy?invite_token=ucks1025051393rmks27800190rkw6sqinw5itex2nfinalx2nw2emindew2x2nnnqrcs1802vz3ao7b7xykc1qd
 
-All the best,
+
+	
+Regards,
+
 The WAYN Team
+----------------------------------------------------
 
-----------------------------------------
-To stop receiving invite requests from John Frazier, click here:
-http://www2.wayn.com/-/77630-ng9jhy?m=27800190&c=1025051393
-
-To stop receiving any notifications from WAYN, click here:
-http://www2.wayn.com/-/77631-ng9jhy?c=1025051393
+To stop receiving emails from janet, click on the link below:
+http://www.wayn.com/-/29430-3e8o515m/27877917-7a7982ca1b36755b?bk=27878378&aid=86
+If you don't want to receive these emails anymore, click on the link below:
+http://www.wayn.com/-/29429-3e8o515m/27877917-7a7982ca1b36755b?aid=86
