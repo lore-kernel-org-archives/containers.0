@@ -1,7 +1,7 @@
-From: "John Frazier via WAYN" <account-3NMnII/Y9U4hbwEkZy9VU9BPR1lH4CV8@public.gmane.org>
-Subject: john frazier added 1 new photo
-Date: Mon, 24 Jul 2017 13:26:39 +0100
-Message-ID: <3bc5cf8ead7b1af2fd3c044b030c861c@whereareyounow.com>
+From: "Carrie Whitney via WAYN" <account-3NMnII/Y9U4hbwEkZy9VU9BPR1lH4CV8@public.gmane.org>
+Subject: Carrie sent you a message
+Date: Mon, 24 Jul 2017 14:57:14 +0100
+Message-ID: <de3ab0910b29130b62901443001e9caf@whereareyounow.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,20 +15,20 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Martin Carames Abente <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Martin <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-john frazier added 1 photo
-To rate his photo, click on the link below:
+Carrie has sent you a message  
+To read the message, click on the link below:
+http://www.wayn.com/-/29859-3e8o6v7h/27877917?message_key=247458931
 
-http://www.wayn.com/-/45435-3e8o6ovn/27877917-7a7982ca1b36755b?member_key=27800190
 	
 Regards,
 
 The WAYN Team
 ----------------------------------------------------
 
-To stop receiving emails from john, click on the link below:
-http://www.wayn.com/-/45433-3e8o6ovn/27877917-7a7982ca1b36755b?bk=27800190&aid=55
+To stop receiving emails from Carrie, click on the link below:
+http://www.wayn.com/-/29858-3e8o6v7h/27877917?bk=27879968&aid=72
 If you don't want to receive these emails anymore, click on the link below:
-http://www.wayn.com/-/45434-3e8o6ovn/27877917-7a7982ca1b36755b?aid=55
+http://www.wayn.com/-/29857-3e8o6v7h/27877917?aid=72
