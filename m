@@ -1,18 +1,19 @@
-From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [RFC PATCH 1/5] ima: extend clone() with IMA namespace support
-Date: Tue, 25 Jul 2017 15:48:02 -0400
-Message-ID: <1501012082.27413.17.camel__6368.6317451813$1501012102$gmane$org@linux.vnet.ibm.com>
+Date: Tue, 25 Jul 2017 16:11:29 -0400
+Message-ID: <645db815-7773-e351-5db7-89f38cd88c3d@linux.vnet.ibm.com>
 References: <20170720225033.21298-1-mkayaalp@linux.vnet.ibm.com>
 	<20170720225033.21298-2-mkayaalp@linux.vnet.ibm.com>
 	<20170725175317.GA727@mail.hallyn.com>
 	<1501008554.3689.30.camel@HansenPartnership.com>
 	<20170725190406.GA1883@mail.hallyn.com>
 	<1501009739.3689.33.camel@HansenPartnership.com>
+	<1501012082.27413.17.camel@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1501009739.3689.33.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+In-Reply-To: <1501012082.27413.17.camel-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,61 +23,86 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, "Serge E.
-	Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+To: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Cc: Mehmet Kayaalp <mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org>, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Yuqiong Sun <sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Safford <david.safford-JJi787mZWgc@public.gmane.org>, linux-security-module <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, ima-devel <linux-ima-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gVHVlLCAyMDE3LTA3LTI1IGF0IDEyOjA4IC0wNzAwLCBKYW1lcyBCb3R0b21sZXkgd3JvdGU6
-Cj4gT24gVHVlLCAyMDE3LTA3LTI1IGF0IDE0OjA0IC0wNTAwLCBTZXJnZSBFLiBIYWxseW4gd3Jv
-dGU6Cj4gPiBPbiBUdWUsIEp1bCAyNSwgMjAxNyBhdCAxMTo0OToxNEFNIC0wNzAwLCBKYW1lcyBC
-b3R0b21sZXkgd3JvdGU6Cj4gPiA+IAo+ID4gPiBPbiBUdWUsIDIwMTctMDctMjUgYXQgMTI6NTMg
-LTA1MDAsIFNlcmdlIEUuIEhhbGx5biB3cm90ZToKPiA+ID4gPiAKPiA+ID4gPiBPbiBUaHUsIEp1
-bCAyMCwgMjAxNyBhdCAwNjo1MDoyOVBNIC0wNDAwLCBNZWhtZXQgS2F5YWFscCB3cm90ZToKPiA+
-ID4gPiA+IAo+ID4gPiA+ID4gCj4gPiA+ID4gPiBGcm9tOiBZdXFpb25nIFN1biA8c3VueUB1cy5p
-Ym0uY29tPgo+ID4gPiA+ID4gCj4gPiA+ID4gPiBBZGQgbmV3IENPTkZJR19JTUFfTlMgY29uZmln
-IG9wdGlvbi7CoMKgTGV0IGNsb25lKCkgY3JlYXRlIGEgbmV3Cj4gPiA+ID4gPiBJTUEgbmFtZXNw
-YWNlIHVwb24gQ0xPTkVfTkVXTlMgZmxhZy4gQWRkIGltYV9ucyBkYXRhIHN0cnVjdHVyZQo+ID4g
-PiA+ID4gaW4gbnNwcm94eS4gaW1hX25zIGlzIGFsbG9jYXRlZCBhbmQgZnJlZWQgdXBvbiBJTUEg
-bmFtZXNwYWNlCj4gPiA+ID4gPiBjcmVhdGlvbiBhbmQgZXhpdC4gQ3VycmVudGx5LCB0aGUgaW1h
-X25zIGNvbnRhaW5zIG5vIHVzZWZ1bCBJTUEKPiA+ID4gPiA+IGRhdGEgYnV0IG9ubHkgYSBkdW1t
-eSBpbnRlcmZhY2UuIFRoaXMgcGF0Y2ggY3JlYXRlcyB0aGUKPiA+ID4gPiA+IGZyYW1ld29yayBm
-b3IgbmFtZXNwYWNpbmcgdGhlIGRpZmZlcmVudCBhc3BlY3RzIG9mIElNQSAoZWcuCj4gPiA+ID4g
-PiBJTUEtYXVkaXQsIElNQS1tZWFzdXJlbWVudCwgSU1BLWFwcHJhaXNhbCkuCj4gPiA+ID4gPiAK
-PiA+ID4gPiA+IFNpZ25lZC1vZmYtYnk6IFl1cWlvbmcgU3VuIDxzdW55QHVzLmlibS5jb20+Cj4g
-PiA+ID4gPiAKPiA+ID4gPiA+IENoYW5nZWxvZzoKPiA+ID4gPiA+ICogVXNlIENMT05FX05FV05T
-IGluc3RlYWQgb2YgYSBuZXcgQ0xPTkVfTkVXSU1BIGZsYWcKPiA+ID4gPiAKPiA+ID4gPiBIaSwK
-PiA+ID4gPiAKPiA+ID4gPiBTbyB0aGlzIG1lYW5zIHRoYXQgZXZlcnkgbW91bnQgbmFtZXNwYWNl
-IGNsb25lIHdpbGwgY2xvbmUgYSBuZXcKPiA+ID4gPiBJTUEgbmFtZXNwYWNlLsKgwqBJcyB0aGF0
-IHJlYWxseSBvaz8KPiA+ID4gCj4gPiA+IEJhc2VkIG9uIHdoYXQ6IHNwYWNlIGNvbmNlcm5zIChz
-dHJ1Y3QgaW1hX25zIGlzIHJlYXNvbmFibHkgc21hbGwpPwo+ID4gPiBvciB3aGV0aGVyIHR5aW5n
-IGl0IHRvIHRoZSBtb3VudCBuYW1lc3BhY2UgaXMgdGhlIGNvcnJlY3QgdGhpbmcgdG8KPiA+ID4g
-ZG8uIMKgT24KPiA+IAo+ID4gTW9zdGx5IHRoZSBsYXR0ZXIuwqDCoFRoZSBvdGhlciB3b3VsZCBi
-ZSBub3Qgc28gbXVjaCBzcGFjZSBjb25jZXJucyBhcwo+ID4gdGltZSBjb25jZXJucy7CoMKgTWFu
-eSB0aGluZ3MgdXNlIG5ldyBtb3VudHMgbmFtZXNwYWNlcywgYW5kIHdlCj4gPiB3b3VsZG4ndCB3
-YW50IG11bHRpcGxlIElNQSBjYWxscyBvbiBhbGwgZmlsZSBhY2Nlc3NlcyBieSBhbGwgb2YKPiA+
-IHRob3NlLgo+ID4gCj4gPiA+IAo+ID4gPiB0aGUgbGF0dGVyLCBpdCBkb2VzIHNlZW0gdGhhdCB0
-aGlzIHNob3VsZCBiZSBhIHByb3BlcnR5IG9mIGVpdGhlcgo+ID4gPiB0aGUgbW91bnQgb3IgdXNl
-ciBucyByYXRoZXIgdGhhbiBpdHMgb3duIHNlcGFyYXRlIG5zLiDCoEkgY291bGQgc2VlCj4gPiA+
-IGEgdXNlIHdoZXJlIGV2ZW4gYSBjb250YWluZXIgbWlnaHQgd2FudCBtdWx0aXBsZSBpbWEga2V5
-cmluZ3MKPiA+ID4gd2l0aGluIHRoZSBjb250YWluZXIgKHNheSBjb250YWluZXJpc2VkIGFwYWNo
-ZSBzZXJ2aWNlIHdpdGgKPiA+ID4gbXVsdGlwbGUgdGVuYW50cyksIHNvIGluc3RpbmN0IHRlbGxz
-IG1lIHRoYXQgbW91bnQgbnMgaXMgdGhlCj4gPiA+IGNvcnJlY3QgZ3JhbnVsYXJpdHkgZm9yIHRo
-aXMuCj4gPiAKPiA+IEkgd29uZGVyIHdoZXRoZXIgd2UgY291bGQgdXNlIGVjaG8gMSA+IC9zeXMv
-a2VybmVsL3NlY3VyaXR5L2ltYS9uZXducwo+ID4gYXMgdGhlIHRyaWdnZXIgZm9yIHJlcXVlc3Rp
-bmcgYSBuZXcgaW1hIG5zIG9uIHRoZSBuZXh0Cj4gPiBjbG9uZShDTE9ORV9ORVdOUykuCj4gCj4g
-SSBjb3VsZCBnbyB3aXRoIHRoYXQsIGJ1dCB3aGF0IGFib3V0IHRoZSB0cmlnZ2VyIGJlaW5nIGlu
-c3RhbGxpbmcgb3IKPiB1cGRhdGluZyB0aGUga2V5cmluZz8gwqBUaGF0J3MgdGhlIG9ubHkgb3Bl
-cmF0aW9uIHRoYXQgbmVlZHMgbmFtZXNwYWNlCj4gc2VwYXJhdGlvbiwgc28gb24gbW91bnQgbnMg
-Y2xvbmUsIHlvdSBnZXQgYSBwb2ludGVyIHRvIHRoZSBvbGQgaW1hX25zCj4gdW50aWwgeW91IGRv
-IHNvbWV0aGluZyB0aGF0IHJlcXVpcmVzIGEgbmV3IGtleSwgd2hpY2ggdGhlbiB0cmlnZ2VycyB0
-aGUKPiBjb3B5IG9mIHRoZSBuYW1lc3BhY2UgYW5kIGluc3RhbGxpbmcgaXQ/CgpJdCBpc24ndCBq
-dXN0IHRoZSBrZXlyaW5ncyB0aGF0IG5lZWQgdG8gYmUgbmFtZXNwYWNlZCwgYnV0IHRoZQptZWFz
-dXJlbWVudCBsaXN0IGFuZCBwb2xpY3kgYXMgd2VsbC4KCklNQS1tZWFzdXJlbWVudCwgSU1BLWFw
-cHJhaXNhbCBhbmQgSU1BLWF1ZGl0IGFyZSBhbGwgcG9saWN5IGJhc2VkLgoKQXMgc29vbiBhcyB0
-aGUgbmFtZXNwYWNlIHN0YXJ0cywgbWVhc3VyZW1lbnRzIHNob3VsZCBiZSBhZGRlZCB0byB0aGUK
-bmFtZXNwYWNlIHNwZWNpZmljIG1lYXN1cmVtZW50IGxpc3QsIG5vdCBpdCdzIHBhcmVudC4KCk1p
-bWkKCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRh
-aW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcK
-aHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFp
-bmVycw==
+On 07/25/2017 03:48 PM, Mimi Zohar wrote:
+> On Tue, 2017-07-25 at 12:08 -0700, James Bottomley wrote:
+>> On Tue, 2017-07-25 at 14:04 -0500, Serge E. Hallyn wrote:
+>>> On Tue, Jul 25, 2017 at 11:49:14AM -0700, James Bottomley wrote:
+>>>> On Tue, 2017-07-25 at 12:53 -0500, Serge E. Hallyn wrote:
+>>>>> On Thu, Jul 20, 2017 at 06:50:29PM -0400, Mehmet Kayaalp wrote:
+>>>>>>
+>>>>>> From: Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+>>>>>>
+>>>>>> Add new CONFIG_IMA_NS config option.  Let clone() create a new
+>>>>>> IMA namespace upon CLONE_NEWNS flag. Add ima_ns data structure
+>>>>>> in nsproxy. ima_ns is allocated and freed upon IMA namespace
+>>>>>> creation and exit. Currently, the ima_ns contains no useful IMA
+>>>>>> data but only a dummy interface. This patch creates the
+>>>>>> framework for namespacing the different aspects of IMA (eg.
+>>>>>> IMA-audit, IMA-measurement, IMA-appraisal).
+>>>>>>
+>>>>>> Signed-off-by: Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+>>>>>>
+>>>>>> Changelog:
+>>>>>> * Use CLONE_NEWNS instead of a new CLONE_NEWIMA flag
+>>>>> Hi,
+>>>>>
+>>>>> So this means that every mount namespace clone will clone a new
+>>>>> IMA namespace.  Is that really ok?
+>>>> Based on what: space concerns (struct ima_ns is reasonably small)?
+>>>> or whether tying it to the mount namespace is the correct thing to
+>>>> do.  On
+>>> Mostly the latter.  The other would be not so much space concerns as
+>>> time concerns.  Many things use new mounts namespaces, and we
+>>> wouldn't want multiple IMA calls on all file accesses by all of
+>>> those.
+>>>
+>>>> the latter, it does seem that this should be a property of either
+>>>> the mount or user ns rather than its own separate ns.  I could see
+>>>> a use where even a container might want multiple ima keyrings
+>>>> within the container (say containerised apache service with
+>>>> multiple tenants), so instinct tells me that mount ns is the
+>>>> correct granularity for this.
+>>> I wonder whether we could use echo 1 > /sys/kernel/security/ima/newns
+>>> as the trigger for requesting a new ima ns on the next
+>>> clone(CLONE_NEWNS).
+>> I could go with that, but what about the trigger being installing or
+>> updating the keyring?  That's the only operation that needs namespace
+>> separation, so on mount ns clone, you get a pointer to the old ima_ns
+>> until you do something that requires a new key, which then triggers the
+>> copy of the namespace and installing it?
+> It isn't just the keyrings that need to be namespaced, but the
+> measurement list and policy as well.
+>
+> IMA-measurement, IMA-appraisal and IMA-audit are all policy based.
+>
+> As soon as the namespace starts, measurements should be added to the
+> namespace specific measurement list, not it's parent.
+
+IMA is about measuring things, logging what was executed, and finally 
+someone looking at the measurement log and detecting 'things'. So at 
+least one attack that needs to be prevented is a malicious person 
+opening an IMA namespace, executing something malicious, and not leaving 
+any trace on the host because all the logs went into the measurement 
+list of the IMA namespace, which disappeared. That said, I am wondering 
+whether there has to be a minimum set of  namespaces (PID, UTS) 
+providing enough 'isolation' that someone  may actually open an IMA 
+namespace and run their code. To avoid leaving no traces one could argue 
+to implement recursive logging, so something that is logged inside the 
+namespace will be detected in all parent containers up to the 
+init_ima_ns (host) because it's logged (and TPM extended) there as well. 
+The challenge with that is that logging costs memory and that can be 
+abused as well until the machine needs a reboot... I guess the solution 
+could be requesting an IMA namespace in one way or another but requiring 
+several other namespace flags in the clone() to actually 'get' it. 
+Jumping namespaces with setns() may have to be restricted as well once 
+there is an IMA namespace.
+
+    Stefan
+
+>
+> Mimi
+>
