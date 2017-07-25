@@ -1,7 +1,7 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [RFC PATCH 1/5] ima: extend clone() with IMA namespace support
-Date: Tue, 25 Jul 2017 16:08:01 -0500
-Message-ID: <20170725210801.GA5628__40323.626335203$1501016883$gmane$org@mail.hallyn.com>
+Date: Tue, 25 Jul 2017 17:28:54 -0400
+Message-ID: <1501018134.27413.66.camel@linux.vnet.ibm.com>
 References: <20170720225033.21298-1-mkayaalp@linux.vnet.ibm.com>
 	<20170720225033.21298-2-mkayaalp@linux.vnet.ibm.com>
 	<20170725175317.GA727@mail.hallyn.com>
@@ -12,12 +12,12 @@ References: <20170720225033.21298-1-mkayaalp@linux.vnet.ibm.com>
 	<645db815-7773-e351-5db7-89f38cd88c3d@linux.vnet.ibm.com>
 	<20170725204622.GA4969@mail.hallyn.com>
 	<1501016277.27413.50.camel@linux.vnet.ibm.com>
+	<20170725210801.GA5628@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1501016277.27413.50.camel-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <20170725210801.GA5628-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -27,84 +27,91 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Cc: Mehmet Kayaalp <mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org>, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Yuqiong Sun <sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Safford <david.safford-JJi787mZWgc@public.gmane.org>, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, linux-security-module <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, ima-devel <linux-ima-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Jul 25, 2017 at 04:57:57PM -0400, Mimi Zohar wrote:
-> On Tue, 2017-07-25 at 15:46 -0500, Serge E. Hallyn wrote:
-> > On Tue, Jul 25, 2017 at 04:11:29PM -0400, Stefan Berger wrote:
-> > > On 07/25/2017 03:48 PM, Mimi Zohar wrote:
-> > > >On Tue, 2017-07-25 at 12:08 -0700, James Bottomley wrote:
-> > > >>On Tue, 2017-07-25 at 14:04 -0500, Serge E. Hallyn wrote:
-> > > >>>On Tue, Jul 25, 2017 at 11:49:14AM -0700, James Bottomley wrote:
-> > > >>>>On Tue, 2017-07-25 at 12:53 -0500, Serge E. Hallyn wrote:
-> > > >>>>>On Thu, Jul 20, 2017 at 06:50:29PM -0400, Mehmet Kayaalp wrote:
-> > > >>>>>>
-> > > >>>>>>From: Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > > >>>>>>
-> > > >>>>>>Add new CONFIG_IMA_NS config option.  Let clone() create a new
-> > > >>>>>>IMA namespace upon CLONE_NEWNS flag. Add ima_ns data structure
-> > > >>>>>>in nsproxy. ima_ns is allocated and freed upon IMA namespace
-> > > >>>>>>creation and exit. Currently, the ima_ns contains no useful IMA
-> > > >>>>>>data but only a dummy interface. This patch creates the
-> > > >>>>>>framework for namespacing the different aspects of IMA (eg.
-> > > >>>>>>IMA-audit, IMA-measurement, IMA-appraisal).
-> > > >>>>>>
-> > > >>>>>>Signed-off-by: Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > > >>>>>>
-> > > >>>>>>Changelog:
-> > > >>>>>>* Use CLONE_NEWNS instead of a new CLONE_NEWIMA flag
-> > > >>>>>Hi,
-> > > >>>>>
-> > > >>>>>So this means that every mount namespace clone will clone a new
-> > > >>>>>IMA namespace.  Is that really ok?
-> > > >>>>Based on what: space concerns (struct ima_ns is reasonably small)?
-> > > >>>>or whether tying it to the mount namespace is the correct thing to
-> > > >>>>do.  On
-> > > >>>Mostly the latter.  The other would be not so much space concerns =
-as
-> > > >>>time concerns.  Many things use new mounts namespaces, and we
-> > > >>>wouldn't want multiple IMA calls on all file accesses by all of
-> > > >>>those.
-> > > >>>
-> > > >>>>the latter, it does seem that this should be a property of either
-> > > >>>>the mount or user ns rather than its own separate ns.  I could see
-> > > >>>>a use where even a container might want multiple ima keyrings
-> > > >>>>within the container (say containerised apache service with
-> > > >>>>multiple tenants), so instinct tells me that mount ns is the
-> > > >>>>correct granularity for this.
-> > > >>>I wonder whether we could use echo 1 > /sys/kernel/security/ima/ne=
-wns
-> > > >>>as the trigger for requesting a new ima ns on the next
-> > > >>>clone(CLONE_NEWNS).
-> > > >>I could go with that, but what about the trigger being installing or
-> > > >>updating the keyring?  That's the only operation that needs namespa=
-ce
-> > > >>separation, so on mount ns clone, you get a pointer to the old ima_=
-ns
-> > > >>until you do something that requires a new key, which then triggers=
- the
-> > > >>copy of the namespace and installing it?
-> > > >It isn't just the keyrings that need to be namespaced, but the
-> > > >measurement list and policy as well.
-> > > >
-> > > >IMA-measurement, IMA-appraisal and IMA-audit are all policy based.
-> > > >
-> > > >As soon as the namespace starts, measurements should be added to the
-> > > >namespace specific measurement list, not it's parent.
-> > =
-
-> > Shouldn't it be both?
-> =
-
-> The policy defines which files are measured. =A0The namespace policy
-> could be different than it's parent's policy, and the parent's policy
-> could be different than the native policy. =A0Basically, file
-> measurements need to be added to the namespace measurement list,
-> recursively, up to the native measurement list.
-
-Yes, but if a task t1 is in namespace ns2 which is a child of namespace ns1,
-and it accesses a file which ns1's policy says must be measured, then will
-ns1's required measurement happen (and be appended to the ns1 measurement
-list), whether or not ns2's policy requires it?
+T24gVHVlLCAyMDE3LTA3LTI1IGF0IDE2OjA4IC0wNTAwLCBTZXJnZSBFLiBIYWxseW4gd3JvdGU6
+Cj4gT24gVHVlLCBKdWwgMjUsIDIwMTcgYXQgMDQ6NTc6NTdQTSAtMDQwMCwgTWltaSBab2hhciB3
+cm90ZToKPiA+IE9uIFR1ZSwgMjAxNy0wNy0yNSBhdCAxNTo0NiAtMDUwMCwgU2VyZ2UgRS4gSGFs
+bHluIHdyb3RlOgo+ID4gPiBPbiBUdWUsIEp1bCAyNSwgMjAxNyBhdCAwNDoxMToyOVBNIC0wNDAw
+LCBTdGVmYW4gQmVyZ2VyIHdyb3RlOgo+ID4gPiA+IE9uIDA3LzI1LzIwMTcgMDM6NDggUE0sIE1p
+bWkgWm9oYXIgd3JvdGU6Cj4gPiA+ID4gPk9uIFR1ZSwgMjAxNy0wNy0yNSBhdCAxMjowOCAtMDcw
+MCwgSmFtZXMgQm90dG9tbGV5IHdyb3RlOgo+ID4gPiA+ID4+T24gVHVlLCAyMDE3LTA3LTI1IGF0
+IDE0OjA0IC0wNTAwLCBTZXJnZSBFLiBIYWxseW4gd3JvdGU6Cj4gPiA+ID4gPj4+T24gVHVlLCBK
+dWwgMjUsIDIwMTcgYXQgMTE6NDk6MTRBTSAtMDcwMCwgSmFtZXMgQm90dG9tbGV5IHdyb3RlOgo+
+ID4gPiA+ID4+Pj5PbiBUdWUsIDIwMTctMDctMjUgYXQgMTI6NTMgLTA1MDAsIFNlcmdlIEUuIEhh
+bGx5biB3cm90ZToKPiA+ID4gPiA+Pj4+Pk9uIFRodSwgSnVsIDIwLCAyMDE3IGF0IDA2OjUwOjI5
+UE0gLTA0MDAsIE1laG1ldCBLYXlhYWxwIHdyb3RlOgo+ID4gPiA+ID4+Pj4+Pgo+ID4gPiA+ID4+
+Pj4+PkZyb206IFl1cWlvbmcgU3VuIDxzdW55QHVzLmlibS5jb20+Cj4gPiA+ID4gPj4+Pj4+Cj4g
+PiA+ID4gPj4+Pj4+QWRkIG5ldyBDT05GSUdfSU1BX05TIGNvbmZpZyBvcHRpb24uICBMZXQgY2xv
+bmUoKSBjcmVhdGUgYSBuZXcKPiA+ID4gPiA+Pj4+Pj5JTUEgbmFtZXNwYWNlIHVwb24gQ0xPTkVf
+TkVXTlMgZmxhZy4gQWRkIGltYV9ucyBkYXRhIHN0cnVjdHVyZQo+ID4gPiA+ID4+Pj4+PmluIG5z
+cHJveHkuIGltYV9ucyBpcyBhbGxvY2F0ZWQgYW5kIGZyZWVkIHVwb24gSU1BIG5hbWVzcGFjZQo+
+ID4gPiA+ID4+Pj4+PmNyZWF0aW9uIGFuZCBleGl0LiBDdXJyZW50bHksIHRoZSBpbWFfbnMgY29u
+dGFpbnMgbm8gdXNlZnVsIElNQQo+ID4gPiA+ID4+Pj4+PmRhdGEgYnV0IG9ubHkgYSBkdW1teSBp
+bnRlcmZhY2UuIFRoaXMgcGF0Y2ggY3JlYXRlcyB0aGUKPiA+ID4gPiA+Pj4+Pj5mcmFtZXdvcmsg
+Zm9yIG5hbWVzcGFjaW5nIHRoZSBkaWZmZXJlbnQgYXNwZWN0cyBvZiBJTUEgKGVnLgo+ID4gPiA+
+ID4+Pj4+PklNQS1hdWRpdCwgSU1BLW1lYXN1cmVtZW50LCBJTUEtYXBwcmFpc2FsKS4KPiA+ID4g
+PiA+Pj4+Pj4KPiA+ID4gPiA+Pj4+Pj5TaWduZWQtb2ZmLWJ5OiBZdXFpb25nIFN1biA8c3VueUB1
+cy5pYm0uY29tPgo+ID4gPiA+ID4+Pj4+Pgo+ID4gPiA+ID4+Pj4+PkNoYW5nZWxvZzoKPiA+ID4g
+PiA+Pj4+Pj4qIFVzZSBDTE9ORV9ORVdOUyBpbnN0ZWFkIG9mIGEgbmV3IENMT05FX05FV0lNQSBm
+bGFnCj4gPiA+ID4gPj4+Pj5IaSwKPiA+ID4gPiA+Pj4+Pgo+ID4gPiA+ID4+Pj4+U28gdGhpcyBt
+ZWFucyB0aGF0IGV2ZXJ5IG1vdW50IG5hbWVzcGFjZSBjbG9uZSB3aWxsIGNsb25lIGEgbmV3Cj4g
+PiA+ID4gPj4+Pj5JTUEgbmFtZXNwYWNlLiAgSXMgdGhhdCByZWFsbHkgb2s/Cj4gPiA+ID4gPj4+
+PkJhc2VkIG9uIHdoYXQ6IHNwYWNlIGNvbmNlcm5zIChzdHJ1Y3QgaW1hX25zIGlzIHJlYXNvbmFi
+bHkgc21hbGwpPwo+ID4gPiA+ID4+Pj5vciB3aGV0aGVyIHR5aW5nIGl0IHRvIHRoZSBtb3VudCBu
+YW1lc3BhY2UgaXMgdGhlIGNvcnJlY3QgdGhpbmcgdG8KPiA+ID4gPiA+Pj4+ZG8uICBPbgo+ID4g
+PiA+ID4+Pk1vc3RseSB0aGUgbGF0dGVyLiAgVGhlIG90aGVyIHdvdWxkIGJlIG5vdCBzbyBtdWNo
+IHNwYWNlIGNvbmNlcm5zIGFzCj4gPiA+ID4gPj4+dGltZSBjb25jZXJucy4gIE1hbnkgdGhpbmdz
+IHVzZSBuZXcgbW91bnRzIG5hbWVzcGFjZXMsIGFuZCB3ZQo+ID4gPiA+ID4+PndvdWxkbid0IHdh
+bnQgbXVsdGlwbGUgSU1BIGNhbGxzIG9uIGFsbCBmaWxlIGFjY2Vzc2VzIGJ5IGFsbCBvZgo+ID4g
+PiA+ID4+PnRob3NlLgo+ID4gPiA+ID4+Pgo+ID4gPiA+ID4+Pj50aGUgbGF0dGVyLCBpdCBkb2Vz
+IHNlZW0gdGhhdCB0aGlzIHNob3VsZCBiZSBhIHByb3BlcnR5IG9mIGVpdGhlcgo+ID4gPiA+ID4+
+Pj50aGUgbW91bnQgb3IgdXNlciBucyByYXRoZXIgdGhhbiBpdHMgb3duIHNlcGFyYXRlIG5zLiAg
+SSBjb3VsZCBzZWUKPiA+ID4gPiA+Pj4+YSB1c2Ugd2hlcmUgZXZlbiBhIGNvbnRhaW5lciBtaWdo
+dCB3YW50IG11bHRpcGxlIGltYSBrZXlyaW5ncwo+ID4gPiA+ID4+Pj53aXRoaW4gdGhlIGNvbnRh
+aW5lciAoc2F5IGNvbnRhaW5lcmlzZWQgYXBhY2hlIHNlcnZpY2Ugd2l0aAo+ID4gPiA+ID4+Pj5t
+dWx0aXBsZSB0ZW5hbnRzKSwgc28gaW5zdGluY3QgdGVsbHMgbWUgdGhhdCBtb3VudCBucyBpcyB0
+aGUKPiA+ID4gPiA+Pj4+Y29ycmVjdCBncmFudWxhcml0eSBmb3IgdGhpcy4KPiA+ID4gPiA+Pj5J
+IHdvbmRlciB3aGV0aGVyIHdlIGNvdWxkIHVzZSBlY2hvIDEgPiAvc3lzL2tlcm5lbC9zZWN1cml0
+eS9pbWEvbmV3bnMKPiA+ID4gPiA+Pj5hcyB0aGUgdHJpZ2dlciBmb3IgcmVxdWVzdGluZyBhIG5l
+dyBpbWEgbnMgb24gdGhlIG5leHQKPiA+ID4gPiA+Pj5jbG9uZShDTE9ORV9ORVdOUykuCj4gPiA+
+ID4gPj5JIGNvdWxkIGdvIHdpdGggdGhhdCwgYnV0IHdoYXQgYWJvdXQgdGhlIHRyaWdnZXIgYmVp
+bmcgaW5zdGFsbGluZyBvcgo+ID4gPiA+ID4+dXBkYXRpbmcgdGhlIGtleXJpbmc/ICBUaGF0J3Mg
+dGhlIG9ubHkgb3BlcmF0aW9uIHRoYXQgbmVlZHMgbmFtZXNwYWNlCj4gPiA+ID4gPj5zZXBhcmF0
+aW9uLCBzbyBvbiBtb3VudCBucyBjbG9uZSwgeW91IGdldCBhIHBvaW50ZXIgdG8gdGhlIG9sZCBp
+bWFfbnMKPiA+ID4gPiA+PnVudGlsIHlvdSBkbyBzb21ldGhpbmcgdGhhdCByZXF1aXJlcyBhIG5l
+dyBrZXksIHdoaWNoIHRoZW4gdHJpZ2dlcnMgdGhlCj4gPiA+ID4gPj5jb3B5IG9mIHRoZSBuYW1l
+c3BhY2UgYW5kIGluc3RhbGxpbmcgaXQ/Cj4gPiA+ID4gPkl0IGlzbid0IGp1c3QgdGhlIGtleXJp
+bmdzIHRoYXQgbmVlZCB0byBiZSBuYW1lc3BhY2VkLCBidXQgdGhlCj4gPiA+ID4gPm1lYXN1cmVt
+ZW50IGxpc3QgYW5kIHBvbGljeSBhcyB3ZWxsLgo+ID4gPiA+ID4KPiA+ID4gPiA+SU1BLW1lYXN1
+cmVtZW50LCBJTUEtYXBwcmFpc2FsIGFuZCBJTUEtYXVkaXQgYXJlIGFsbCBwb2xpY3kgYmFzZWQu
+Cj4gPiA+ID4gPgo+ID4gPiA+ID5BcyBzb29uIGFzIHRoZSBuYW1lc3BhY2Ugc3RhcnRzLCBtZWFz
+dXJlbWVudHMgc2hvdWxkIGJlIGFkZGVkIHRvIHRoZQo+ID4gPiA+ID5uYW1lc3BhY2Ugc3BlY2lm
+aWMgbWVhc3VyZW1lbnQgbGlzdCwgbm90IGl0J3MgcGFyZW50Lgo+ID4gPiAKPiA+ID4gU2hvdWxk
+bid0IGl0IGJlIGJvdGg/Cj4gPiAKPiA+IFRoZSBwb2xpY3kgZGVmaW5lcyB3aGljaCBmaWxlcyBh
+cmUgbWVhc3VyZWQuIMKgVGhlIG5hbWVzcGFjZSBwb2xpY3kKPiA+IGNvdWxkIGJlIGRpZmZlcmVu
+dCB0aGFuIGl0J3MgcGFyZW50J3MgcG9saWN5LCBhbmQgdGhlIHBhcmVudCdzIHBvbGljeQo+ID4g
+Y291bGQgYmUgZGlmZmVyZW50IHRoYW4gdGhlIG5hdGl2ZSBwb2xpY3kuIMKgQmFzaWNhbGx5LCBm
+aWxlCj4gPiBtZWFzdXJlbWVudHMgbmVlZCB0byBiZSBhZGRlZCB0byB0aGUgbmFtZXNwYWNlIG1l
+YXN1cmVtZW50IGxpc3QsCj4gPiByZWN1cnNpdmVseSwgdXAgdG8gdGhlIG5hdGl2ZSBtZWFzdXJl
+bWVudCBsaXN0Lgo+IAo+IFllcywgYnV0IGlmIGEgdGFzayB0MSBpcyBpbiBuYW1lc3BhY2UgbnMy
+IHdoaWNoIGlzIGEgY2hpbGQgb2YgbmFtZXNwYWNlIG5zMSwKPiBhbmQgaXQgYWNjZXNzZXMgYSBm
+aWxlIHdoaWNoIG5zMSdzIHBvbGljeSBzYXlzIG11c3QgYmUgbWVhc3VyZWQsIHRoZW4gd2lsbAo+
+IG5zMSdzIHJlcXVpcmVkIG1lYXN1cmVtZW50IGhhcHBlbiAoYW5kIGJlIGFwcGVuZGVkIHRvIHRo
+ZSBuczEgbWVhc3VyZW1lbnQKPiBsaXN0KSwgd2hldGhlciBvciBub3QgbnMyJ3MgcG9saWN5IHJl
+cXVpcmVzIGl0PwoKWWVzLCBhcyB0aGUgZmlsZSBuZWVkcyB0byBiZSBtZWFzdXJlZCBvbmx5IGlu
+IHRoZSBuczEgcG9saWN5LCB0aGUKbWVhc3VyZW1lbnQgd291bGQgZXhpc3QgaW4gdGhlIG5zMSBt
+ZWFzdXJlbWVudCBsaXN0LCBidXQgbm90IGluIHRoZQpuczIgbWVhc3VyZW1lbnQgbGlzdC4gwqBU
+aGUgcHNldWRvIGNvZGUgc25pcHBldCBiZWxvdyBtaWdodCBoZWxwLgoKZG8gewogICAuCiAgIC4K
+ICAgCiAgIC8qIGNhbGN1bGF0ZSBmaWxlIGhhc2ggYmFzZWQgb24geGF0dHIgYWxnb3JpdGhtICov
+CiAgIGNvbGxlY3RfbWVhc3VyZW1lbnQoKQogICAKICAgLyogcmVjdXJzaXZlbHkgYWRkZWQgdG8g
+ZWFjaCBuYW1lc3BhY2UgYmFzZWQgb24gcG9saWN5ICovCiAgIGltYV9zdG9yZV9tZWFzdXJlbWVu
+dCgpCiAgIAogICAvKiBCYXNlZCBvbiB0aGUgc3BlY2lmaWMgbmFtZXNwYWNlIHBvbGljeSBhbmQg
+a2V5cy4gKi8KICAgaWYgKCFvbmNlKSB7CiAgICAgICBvbmNlID0gMTsKICAgICAgIHJlc3VsdCA9
+IGltYV9hcHByYWlzZV9tZWFzdXJlbWVudCgpCiAgIH0KCiAgIGltYV9hdWRpdF9tZWFzdXJlbWVu
+dCgpCgp9IHdoaWxlICgobnMgPSBucy0+cGFyZW50KSk7CgpyZXR1cm4gcmVzdWx0OwoKTWltaQoK
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVy
+cyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRw
+czovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
