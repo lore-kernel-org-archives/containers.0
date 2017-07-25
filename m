@@ -1,15 +1,15 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
 Subject: Re: [RFC PATCH 1/5] ima: extend clone() with IMA namespace support
-Date: Tue, 25 Jul 2017 12:53:17 -0500
-Message-ID: <20170725175317.GA727@mail.hallyn.com>
+Date: Tue, 25 Jul 2017 11:49:14 -0700
+Message-ID: <1501008554.3689.30.camel__41492.6623845988$1501008567$gmane$org@HansenPartnership.com>
 References: <20170720225033.21298-1-mkayaalp@linux.vnet.ibm.com>
 	<20170720225033.21298-2-mkayaalp@linux.vnet.ibm.com>
+	<20170725175317.GA727@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20170720225033.21298-2-mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <20170725175317.GA727-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,26 +19,34 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Cc: Mehmet Kayaalp <mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org>, Yuqiong Sun <sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Safford <david.safford-JJi787mZWgc@public.gmane.org>, linux-security-module <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, ima-devel <linux-ima-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Jul 20, 2017 at 06:50:29PM -0400, Mehmet Kayaalp wrote:
-> From: Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> 
-> Add new CONFIG_IMA_NS config option.  Let clone() create a new IMA
-> namespace upon CLONE_NEWNS flag. Add ima_ns data structure in nsproxy.
-> ima_ns is allocated and freed upon IMA namespace creation and exit.
-> Currently, the ima_ns contains no useful IMA data but only a dummy
-> interface. This patch creates the framework for namespacing the different
-> aspects of IMA (eg. IMA-audit, IMA-measurement, IMA-appraisal).
-> 
-> Signed-off-by: Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> 
-> Changelog:
-> * Use CLONE_NEWNS instead of a new CLONE_NEWIMA flag
-
-Hi,
-
-So this means that every mount namespace clone will clone a new IMA
-namespace.  Is that really ok?
+T24gVHVlLCAyMDE3LTA3LTI1IGF0IDEyOjUzIC0wNTAwLCBTZXJnZSBFLiBIYWxseW4gd3JvdGU6
+Cj4gT24gVGh1LCBKdWwgMjAsIDIwMTcgYXQgMDY6NTA6MjlQTSAtMDQwMCwgTWVobWV0IEtheWFh
+bHAgd3JvdGU6Cj4gPiAKPiA+IEZyb206IFl1cWlvbmcgU3VuIDxzdW55QHVzLmlibS5jb20+Cj4g
+PiAKPiA+IEFkZCBuZXcgQ09ORklHX0lNQV9OUyBjb25maWcgb3B0aW9uLsKgwqBMZXQgY2xvbmUo
+KSBjcmVhdGUgYSBuZXcgSU1BCj4gPiBuYW1lc3BhY2UgdXBvbiBDTE9ORV9ORVdOUyBmbGFnLiBB
+ZGQgaW1hX25zIGRhdGEgc3RydWN0dXJlIGluCj4gPiBuc3Byb3h5Lgo+ID4gaW1hX25zIGlzIGFs
+bG9jYXRlZCBhbmQgZnJlZWQgdXBvbiBJTUEgbmFtZXNwYWNlIGNyZWF0aW9uIGFuZCBleGl0Lgo+
+ID4gQ3VycmVudGx5LCB0aGUgaW1hX25zIGNvbnRhaW5zIG5vIHVzZWZ1bCBJTUEgZGF0YSBidXQg
+b25seSBhIGR1bW15Cj4gPiBpbnRlcmZhY2UuIFRoaXMgcGF0Y2ggY3JlYXRlcyB0aGUgZnJhbWV3
+b3JrIGZvciBuYW1lc3BhY2luZyB0aGUKPiA+IGRpZmZlcmVudAo+ID4gYXNwZWN0cyBvZiBJTUEg
+KGVnLiBJTUEtYXVkaXQsIElNQS1tZWFzdXJlbWVudCwgSU1BLWFwcHJhaXNhbCkuCj4gPiAKPiA+
+IFNpZ25lZC1vZmYtYnk6IFl1cWlvbmcgU3VuIDxzdW55QHVzLmlibS5jb20+Cj4gPiAKPiA+IENo
+YW5nZWxvZzoKPiA+ICogVXNlIENMT05FX05FV05TIGluc3RlYWQgb2YgYSBuZXcgQ0xPTkVfTkVX
+SU1BIGZsYWcKPiAKPiBIaSwKPiAKPiBTbyB0aGlzIG1lYW5zIHRoYXQgZXZlcnkgbW91bnQgbmFt
+ZXNwYWNlIGNsb25lIHdpbGwgY2xvbmUgYSBuZXcgSU1BCj4gbmFtZXNwYWNlLsKgwqBJcyB0aGF0
+IHJlYWxseSBvaz8KCkJhc2VkIG9uIHdoYXQ6IHNwYWNlIGNvbmNlcm5zIChzdHJ1Y3QgaW1hX25z
+IGlzIHJlYXNvbmFibHkgc21hbGwpPyBvcgp3aGV0aGVyIHR5aW5nIGl0IHRvIHRoZSBtb3VudCBu
+YW1lc3BhY2UgaXMgdGhlIGNvcnJlY3QgdGhpbmcgdG8gZG8uIMKgT24KdGhlIGxhdHRlciwgaXQg
+ZG9lcyBzZWVtIHRoYXQgdGhpcyBzaG91bGQgYmUgYSBwcm9wZXJ0eSBvZiBlaXRoZXIgdGhlCm1v
+dW50IG9yIHVzZXIgbnMgcmF0aGVyIHRoYW4gaXRzIG93biBzZXBhcmF0ZSBucy4gwqBJIGNvdWxk
+IHNlZSBhIHVzZQp3aGVyZSBldmVuIGEgY29udGFpbmVyIG1pZ2h0IHdhbnQgbXVsdGlwbGUgaW1h
+IGtleXJpbmdzIHdpdGhpbiB0aGUKY29udGFpbmVyIChzYXkgY29udGFpbmVyaXNlZCBhcGFjaGUg
+c2VydmljZSB3aXRoIG11bHRpcGxlIHRlbmFudHMpLCBzbwppbnN0aW5jdCB0ZWxscyBtZSB0aGF0
+IG1vdW50IG5zIGlzIHRoZSBjb3JyZWN0IGdyYW51bGFyaXR5IGZvciB0aGlzLgoKSmFtZXMKCl9f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMg
+bWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6
+Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
