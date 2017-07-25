@@ -1,18 +1,21 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC PATCH 2/5] ima: Add ns_status for storing namespaced iint
-	data
-Date: Tue, 25 Jul 2017 15:49:42 -0500
-Message-ID: <20170725204942.GC4969@mail.hallyn.com>
+From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC PATCH 1/5] ima: extend clone() with IMA namespace support
+Date: Tue, 25 Jul 2017 16:57:57 -0400
+Message-ID: <1501016277.27413.50.camel@linux.vnet.ibm.com>
 References: <20170720225033.21298-1-mkayaalp@linux.vnet.ibm.com>
-	<20170720225033.21298-3-mkayaalp@linux.vnet.ibm.com>
-	<20170725194315.GA2397@mail.hallyn.com>
-	<1501013725.27413.27.camel@linux.vnet.ibm.com>
+	<20170720225033.21298-2-mkayaalp@linux.vnet.ibm.com>
+	<20170725175317.GA727@mail.hallyn.com>
+	<1501008554.3689.30.camel@HansenPartnership.com>
+	<20170725190406.GA1883@mail.hallyn.com>
+	<1501009739.3689.33.camel@HansenPartnership.com>
+	<1501012082.27413.17.camel@linux.vnet.ibm.com>
+	<645db815-7773-e351-5db7-89f38cd88c3d@linux.vnet.ibm.com>
+	<20170725204622.GA4969@mail.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1501013725.27413.27.camel-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <20170725204622.GA4969-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,127 +25,95 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Mehmet Kayaalp <mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org>, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Yuqiong Sun <sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Safford <david.safford-JJi787mZWgc@public.gmane.org>, linux-security-module <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, ima-devel <linux-ima-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Mehmet Kayaalp <mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org>, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Yuqiong Sun <sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Safford <david.safford-JJi787mZWgc@public.gmane.org>, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, linux-security-module <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, ima-devel <linux-ima-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Jul 25, 2017 at 04:15:25PM -0400, Mimi Zohar wrote:
-> On Tue, 2017-07-25 at 14:43 -0500, Serge E. Hallyn wrote:
-> > ...
-> > > +static void free_ns_status_cache(struct ima_namespace *ns)
-> > > +{
-> > > +	struct ns_status *status, *next;
-> > > +
-> > > +	write_lock(&ns->ns_status_lock);
-> > > +	rbtree_postorder_for_each_entry_safe(status, next,
-> > > +					     &ns->ns_status_tree, rb_node)
-> > > +		kmem_cache_free(ns->ns_status_cache, status);
-> > > +	ns->ns_status_tree =3D RB_ROOT;
-> > > +	write_unlock(&ns->ns_status_lock);
-> > > +	kmem_cache_destroy(ns->ns_status_cache);
-> > > +}
-> > > +
-> > >  static void destroy_ima_ns(struct ima_namespace *ns)
-> > >  {
-> > >  	put_user_ns(ns->user_ns);
-> > >  	ns_free_inum(&ns->ns);
-> > > +	free_ns_status_cache(ns);
-> > >  	kfree(ns);
-> > >  }
-> > >  =
-
-> > > @@ -181,3 +198,106 @@ struct ima_namespace init_ima_ns =3D {
-> > >  	.parent =3D NULL,
-> > >  };
-> > >  EXPORT_SYMBOL(init_ima_ns);
-> > > +
-> > > +/*
-> > > + * __ima_ns_status_find - return the ns_status associated with an in=
-ode
-> > > + */
-> > > +static struct ns_status *__ima_ns_status_find(struct ima_namespace *=
-ns,
-> > > +					      struct inode *inode)
-> > > +{
-> > > +	struct ns_status *status;
-> > > +	struct rb_node *n =3D ns->ns_status_tree.rb_node;
-> > > +
-> > > +	while (n) {
-> > > +		status =3D rb_entry(n, struct ns_status, rb_node);
-> > > +
-> > > +		if (inode < status->inode)
-> > > +			n =3D n->rb_left;
-> > > +		else if (inode->i_ino > status->i_ino)
-> > > +			n =3D n->rb_right;
-> > > +		else
-> > > +			break;
-> > > +	}
-> > > +	if (!n)
-> > > +		return NULL;
-> > > +
-> > > +	return status;
-> > > +}
-> > > +
-> > > +/*
-> > > + * ima_ns_status_find - return the ns_status associated with an inode
-> > > + */
-> > > +static struct ns_status *ima_ns_status_find(struct ima_namespace *ns,
-> > > +					    struct inode *inode)
-> > > +{
-> > > +	struct ns_status *status;
-> > > +
-> > > +	read_lock(&ns->ns_status_lock);
-> > > +	status =3D __ima_ns_status_find(ns, inode);
-> > > +	read_unlock(&ns->ns_status_lock);
-> > > +
-> > > +	return status;
-> > > +}
-> > ...
-> > > +
-> > > +struct ns_status *ima_get_ns_status(struct ima_namespace *ns,
-> > > +				    struct inode *inode)
-> > > +{
-> > > +	struct ns_status *status;
-> > > +	int skip_insert =3D 0;
-> > > +
-> > > +	status =3D ima_ns_status_find(ns, inode);
-> > > +	if (status) {
-> > > +		/*
-> > > +		 * Unlike integrity_iint_cache we are not free'ing the
-> > > +		 * ns_status data when the inode is free'd. So, in addition to
-> > > +		 * checking the inode pointer, we need to make sure the
-> > > +		 * (i_generation, i_ino) pair matches as well. In the future
-> > > +		 * we might want to add support for lazily walking the rbtree
-> > > +		 * to clean it up.
-> > > +		 */
-> > > +		if (inode->i_ino =3D=3D status->i_ino &&
-> > > +		    inode->i_generation =3D=3D status->i_generation)
-> > > +			return status;
-> > > +
-> > > +		/* Same inode number is reused, overwrite the ns_status */
-> > > +		skip_insert =3D 1;
-> > > +	} else {
-> > > +		status =3D kmem_cache_alloc(ns->ns_status_cache, GFP_NOFS);
-> > > +		if (!status)
-> > > +			return ERR_PTR(-ENOMEM);
-> > > +	}
-> > =
-
-> > What prevents the status from being freed between the read_lock
-> > in ima_ns_status_find() and the write_lock in the following line?
-> > =
-
-> > IIUC it's that ns is always current's ima_ns, which will pin the ns
-> > and cause no statuses to be freed.  But then the ns should probably
-> > not be passed in here?  Or a comment should say that ns must be
-> > pinned?
-> > =
-
-> > Just trying to make sure I understand the locking.
-> =
-
-> iint's are only freed after the last reference to the inode is deleted
-> in __fput(). =A0Refer to ima_file_free(). =A0ns_status is a bit different
-> in that they are freed on namespace cleanup.
-
-Ok, thanks - that sounds ok then.
+T24gVHVlLCAyMDE3LTA3LTI1IGF0IDE1OjQ2IC0wNTAwLCBTZXJnZSBFLiBIYWxseW4gd3JvdGU6
+Cj4gT24gVHVlLCBKdWwgMjUsIDIwMTcgYXQgMDQ6MTE6MjlQTSAtMDQwMCwgU3RlZmFuIEJlcmdl
+ciB3cm90ZToKPiA+IE9uIDA3LzI1LzIwMTcgMDM6NDggUE0sIE1pbWkgWm9oYXIgd3JvdGU6Cj4g
+PiA+T24gVHVlLCAyMDE3LTA3LTI1IGF0IDEyOjA4IC0wNzAwLCBKYW1lcyBCb3R0b21sZXkgd3Jv
+dGU6Cj4gPiA+Pk9uIFR1ZSwgMjAxNy0wNy0yNSBhdCAxNDowNCAtMDUwMCwgU2VyZ2UgRS4gSGFs
+bHluIHdyb3RlOgo+ID4gPj4+T24gVHVlLCBKdWwgMjUsIDIwMTcgYXQgMTE6NDk6MTRBTSAtMDcw
+MCwgSmFtZXMgQm90dG9tbGV5IHdyb3RlOgo+ID4gPj4+Pk9uIFR1ZSwgMjAxNy0wNy0yNSBhdCAx
+Mjo1MyAtMDUwMCwgU2VyZ2UgRS4gSGFsbHluIHdyb3RlOgo+ID4gPj4+Pj5PbiBUaHUsIEp1bCAy
+MCwgMjAxNyBhdCAwNjo1MDoyOVBNIC0wNDAwLCBNZWhtZXQgS2F5YWFscCB3cm90ZToKPiA+ID4+
+Pj4+Pgo+ID4gPj4+Pj4+RnJvbTogWXVxaW9uZyBTdW4gPHN1bnlAdXMuaWJtLmNvbT4KPiA+ID4+
+Pj4+Pgo+ID4gPj4+Pj4+QWRkIG5ldyBDT05GSUdfSU1BX05TIGNvbmZpZyBvcHRpb24uICBMZXQg
+Y2xvbmUoKSBjcmVhdGUgYSBuZXcKPiA+ID4+Pj4+PklNQSBuYW1lc3BhY2UgdXBvbiBDTE9ORV9O
+RVdOUyBmbGFnLiBBZGQgaW1hX25zIGRhdGEgc3RydWN0dXJlCj4gPiA+Pj4+Pj5pbiBuc3Byb3h5
+LiBpbWFfbnMgaXMgYWxsb2NhdGVkIGFuZCBmcmVlZCB1cG9uIElNQSBuYW1lc3BhY2UKPiA+ID4+
+Pj4+PmNyZWF0aW9uIGFuZCBleGl0LiBDdXJyZW50bHksIHRoZSBpbWFfbnMgY29udGFpbnMgbm8g
+dXNlZnVsIElNQQo+ID4gPj4+Pj4+ZGF0YSBidXQgb25seSBhIGR1bW15IGludGVyZmFjZS4gVGhp
+cyBwYXRjaCBjcmVhdGVzIHRoZQo+ID4gPj4+Pj4+ZnJhbWV3b3JrIGZvciBuYW1lc3BhY2luZyB0
+aGUgZGlmZmVyZW50IGFzcGVjdHMgb2YgSU1BIChlZy4KPiA+ID4+Pj4+PklNQS1hdWRpdCwgSU1B
+LW1lYXN1cmVtZW50LCBJTUEtYXBwcmFpc2FsKS4KPiA+ID4+Pj4+Pgo+ID4gPj4+Pj4+U2lnbmVk
+LW9mZi1ieTogWXVxaW9uZyBTdW4gPHN1bnlAdXMuaWJtLmNvbT4KPiA+ID4+Pj4+Pgo+ID4gPj4+
+Pj4+Q2hhbmdlbG9nOgo+ID4gPj4+Pj4+KiBVc2UgQ0xPTkVfTkVXTlMgaW5zdGVhZCBvZiBhIG5l
+dyBDTE9ORV9ORVdJTUEgZmxhZwo+ID4gPj4+Pj5IaSwKPiA+ID4+Pj4+Cj4gPiA+Pj4+PlNvIHRo
+aXMgbWVhbnMgdGhhdCBldmVyeSBtb3VudCBuYW1lc3BhY2UgY2xvbmUgd2lsbCBjbG9uZSBhIG5l
+dwo+ID4gPj4+Pj5JTUEgbmFtZXNwYWNlLiAgSXMgdGhhdCByZWFsbHkgb2s/Cj4gPiA+Pj4+QmFz
+ZWQgb24gd2hhdDogc3BhY2UgY29uY2VybnMgKHN0cnVjdCBpbWFfbnMgaXMgcmVhc29uYWJseSBz
+bWFsbCk/Cj4gPiA+Pj4+b3Igd2hldGhlciB0eWluZyBpdCB0byB0aGUgbW91bnQgbmFtZXNwYWNl
+IGlzIHRoZSBjb3JyZWN0IHRoaW5nIHRvCj4gPiA+Pj4+ZG8uICBPbgo+ID4gPj4+TW9zdGx5IHRo
+ZSBsYXR0ZXIuICBUaGUgb3RoZXIgd291bGQgYmUgbm90IHNvIG11Y2ggc3BhY2UgY29uY2VybnMg
+YXMKPiA+ID4+PnRpbWUgY29uY2VybnMuICBNYW55IHRoaW5ncyB1c2UgbmV3IG1vdW50cyBuYW1l
+c3BhY2VzLCBhbmQgd2UKPiA+ID4+PndvdWxkbid0IHdhbnQgbXVsdGlwbGUgSU1BIGNhbGxzIG9u
+IGFsbCBmaWxlIGFjY2Vzc2VzIGJ5IGFsbCBvZgo+ID4gPj4+dGhvc2UuCj4gPiA+Pj4KPiA+ID4+
+Pj50aGUgbGF0dGVyLCBpdCBkb2VzIHNlZW0gdGhhdCB0aGlzIHNob3VsZCBiZSBhIHByb3BlcnR5
+IG9mIGVpdGhlcgo+ID4gPj4+PnRoZSBtb3VudCBvciB1c2VyIG5zIHJhdGhlciB0aGFuIGl0cyBv
+d24gc2VwYXJhdGUgbnMuICBJIGNvdWxkIHNlZQo+ID4gPj4+PmEgdXNlIHdoZXJlIGV2ZW4gYSBj
+b250YWluZXIgbWlnaHQgd2FudCBtdWx0aXBsZSBpbWEga2V5cmluZ3MKPiA+ID4+Pj53aXRoaW4g
+dGhlIGNvbnRhaW5lciAoc2F5IGNvbnRhaW5lcmlzZWQgYXBhY2hlIHNlcnZpY2Ugd2l0aAo+ID4g
+Pj4+Pm11bHRpcGxlIHRlbmFudHMpLCBzbyBpbnN0aW5jdCB0ZWxscyBtZSB0aGF0IG1vdW50IG5z
+IGlzIHRoZQo+ID4gPj4+PmNvcnJlY3QgZ3JhbnVsYXJpdHkgZm9yIHRoaXMuCj4gPiA+Pj5JIHdv
+bmRlciB3aGV0aGVyIHdlIGNvdWxkIHVzZSBlY2hvIDEgPiAvc3lzL2tlcm5lbC9zZWN1cml0eS9p
+bWEvbmV3bnMKPiA+ID4+PmFzIHRoZSB0cmlnZ2VyIGZvciByZXF1ZXN0aW5nIGEgbmV3IGltYSBu
+cyBvbiB0aGUgbmV4dAo+ID4gPj4+Y2xvbmUoQ0xPTkVfTkVXTlMpLgo+ID4gPj5JIGNvdWxkIGdv
+IHdpdGggdGhhdCwgYnV0IHdoYXQgYWJvdXQgdGhlIHRyaWdnZXIgYmVpbmcgaW5zdGFsbGluZyBv
+cgo+ID4gPj51cGRhdGluZyB0aGUga2V5cmluZz8gIFRoYXQncyB0aGUgb25seSBvcGVyYXRpb24g
+dGhhdCBuZWVkcyBuYW1lc3BhY2UKPiA+ID4+c2VwYXJhdGlvbiwgc28gb24gbW91bnQgbnMgY2xv
+bmUsIHlvdSBnZXQgYSBwb2ludGVyIHRvIHRoZSBvbGQgaW1hX25zCj4gPiA+PnVudGlsIHlvdSBk
+byBzb21ldGhpbmcgdGhhdCByZXF1aXJlcyBhIG5ldyBrZXksIHdoaWNoIHRoZW4gdHJpZ2dlcnMg
+dGhlCj4gPiA+PmNvcHkgb2YgdGhlIG5hbWVzcGFjZSBhbmQgaW5zdGFsbGluZyBpdD8KPiA+ID5J
+dCBpc24ndCBqdXN0IHRoZSBrZXlyaW5ncyB0aGF0IG5lZWQgdG8gYmUgbmFtZXNwYWNlZCwgYnV0
+IHRoZQo+ID4gPm1lYXN1cmVtZW50IGxpc3QgYW5kIHBvbGljeSBhcyB3ZWxsLgo+ID4gPgo+ID4g
+PklNQS1tZWFzdXJlbWVudCwgSU1BLWFwcHJhaXNhbCBhbmQgSU1BLWF1ZGl0IGFyZSBhbGwgcG9s
+aWN5IGJhc2VkLgo+ID4gPgo+ID4gPkFzIHNvb24gYXMgdGhlIG5hbWVzcGFjZSBzdGFydHMsIG1l
+YXN1cmVtZW50cyBzaG91bGQgYmUgYWRkZWQgdG8gdGhlCj4gPiA+bmFtZXNwYWNlIHNwZWNpZmlj
+IG1lYXN1cmVtZW50IGxpc3QsIG5vdCBpdCdzIHBhcmVudC4KPiAKPiBTaG91bGRuJ3QgaXQgYmUg
+Ym90aD8KClRoZSBwb2xpY3kgZGVmaW5lcyB3aGljaCBmaWxlcyBhcmUgbWVhc3VyZWQuIMKgVGhl
+IG5hbWVzcGFjZSBwb2xpY3kKY291bGQgYmUgZGlmZmVyZW50IHRoYW4gaXQncyBwYXJlbnQncyBw
+b2xpY3ksIGFuZCB0aGUgcGFyZW50J3MgcG9saWN5CmNvdWxkIGJlIGRpZmZlcmVudCB0aGFuIHRo
+ZSBuYXRpdmUgcG9saWN5LiDCoEJhc2ljYWxseSwgZmlsZQptZWFzdXJlbWVudHMgbmVlZCB0byBi
+ZSBhZGRlZCB0byB0aGUgbmFtZXNwYWNlIG1lYXN1cmVtZW50IGxpc3QsCnJlY3Vyc2l2ZWx5LCB1
+cCB0byB0aGUgbmF0aXZlIG1lYXN1cmVtZW50IGxpc3QuCgpNaW1pCgo+IAo+IElmIG5vdCwgdGhl
+biBpdCBzZWVtcyB0byBtZSB0aGlzIG11c3QgYmUgdGllZCB0byB1c2VyIG5hbWVzcGFjZS4KPiAK
+PiA+IElNQSBpcyBhYm91dCBtZWFzdXJpbmcgdGhpbmdzLCBsb2dnaW5nIHdoYXQgd2FzIGV4ZWN1
+dGVkLCBhbmQKPiA+IGZpbmFsbHkgc29tZW9uZSBsb29raW5nIGF0IHRoZSBtZWFzdXJlbWVudCBs
+b2cgYW5kIGRldGVjdGluZwo+ID4gJ3RoaW5ncycuIFNvIGF0IGxlYXN0IG9uZSBhdHRhY2sgdGhh
+dCBuZWVkcyB0byBiZSBwcmV2ZW50ZWQgaXMgYQo+ID4gbWFsaWNpb3VzIHBlcnNvbiBvcGVuaW5n
+IGFuIElNQSBuYW1lc3BhY2UsIGV4ZWN1dGluZyBzb21ldGhpbmcKPiA+IG1hbGljaW91cywgYW5k
+IG5vdCBsZWF2aW5nIGFueSB0cmFjZSBvbiB0aGUgaG9zdCBiZWNhdXNlIGFsbCB0aGUKPiA+IGxv
+Z3Mgd2VudCBpbnRvIHRoZSBtZWFzdXJlbWVudCBsaXN0IG9mIHRoZSBJTUEgbmFtZXNwYWNlLCB3
+aGljaAo+ID4gZGlzYXBwZWFyZWQuIFRoYXQgc2FpZCwgSSBhbSB3b25kZXJpbmcgd2hldGhlciB0
+aGVyZSBoYXMgdG8gYmUgYQo+ID4gbWluaW11bSBzZXQgb2YgIG5hbWVzcGFjZXMgKFBJRCwgVVRT
+KSBwcm92aWRpbmcgZW5vdWdoICdpc29sYXRpb24nCj4gPiB0aGF0IHNvbWVvbmUgIG1heSBhY3R1
+YWxseSBvcGVuIGFuIElNQSBuYW1lc3BhY2UgYW5kIHJ1biB0aGVpciBjb2RlLgo+ID4gVG8gYXZv
+aWQgbGVhdmluZyBubyB0cmFjZXMgb25lIGNvdWxkIGFyZ3VlIHRvIGltcGxlbWVudCByZWN1cnNp
+dmUKPiA+IGxvZ2dpbmcsIHNvIHNvbWV0aGluZyB0aGF0IGlzIGxvZ2dlZCBpbnNpZGUgdGhlIG5h
+bWVzcGFjZSB3aWxsIGJlCj4gPiBkZXRlY3RlZCBpbiBhbGwgcGFyZW50IGNvbnRhaW5lcnMgdXAg
+dG8gdGhlIGluaXRfaW1hX25zIChob3N0KQo+ID4gYmVjYXVzZSBpdCdzIGxvZ2dlZCAoYW5kIFRQ
+TSBleHRlbmRlZCkgdGhlcmUgYXMgd2VsbC4gVGhlIGNoYWxsZW5nZQo+ID4gd2l0aCB0aGF0IGlz
+IHRoYXQgbG9nZ2luZyBjb3N0cyBtZW1vcnkgYW5kIHRoYXQgY2FuIGJlIGFidXNlZCBhcwo+ID4g
+d2VsbCB1bnRpbCB0aGUgbWFjaGluZSBuZWVkcyBhIHJlYm9vdC4uLiBJIGd1ZXNzIHRoZSBzb2x1
+dGlvbiBjb3VsZAo+ID4gYmUgcmVxdWVzdGluZyBhbiBJTUEgbmFtZXNwYWNlIGluIG9uZSB3YXkg
+b3IgYW5vdGhlciBidXQgcmVxdWlyaW5nCj4gPiBzZXZlcmFsIG90aGVyIG5hbWVzcGFjZSBmbGFn
+cyBpbiB0aGUgY2xvbmUoKSB0byBhY3R1YWxseSAnZ2V0JyBpdC4KPiA+IEp1bXBpbmcgbmFtZXNw
+YWNlcyB3aXRoIHNldG5zKCkgbWF5IGhhdmUgdG8gYmUgcmVzdHJpY3RlZCBhcyB3ZWxsCj4gPiBv
+bmNlIHRoZXJlIGlzIGFuIElNQSBuYW1lc3BhY2UuCj4gCj4gV2FpdC4gIFNvIGlmIEkgY3JlYXRl
+IGEgbmV3IElNQSBuYW1lc3BhY2UsIHRoZSB0aGluZ3MgSSBydW4gaW4KPiB0aGF0IG5hbWVzcGFj
+ZSBhcmUgbm90IHN1YmplY3QgdG8gdGhlIHBhcmVudCBuYW1lc3BhY2UgcG9saWN5PwoKX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWls
+aW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xp
+c3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
