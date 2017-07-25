@@ -1,7 +1,7 @@
-From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFC PATCH 1/5] ima: extend clone() with IMA namespace support
-Date: Tue, 25 Jul 2017 16:57:57 -0400
-Message-ID: <1501016277.27413.50.camel@linux.vnet.ibm.com>
+Date: Tue, 25 Jul 2017 16:08:01 -0500
+Message-ID: <20170725210801.GA5628__40323.626335203$1501016883$gmane$org@mail.hallyn.com>
 References: <20170720225033.21298-1-mkayaalp@linux.vnet.ibm.com>
 	<20170720225033.21298-2-mkayaalp@linux.vnet.ibm.com>
 	<20170725175317.GA727@mail.hallyn.com>
@@ -11,11 +11,13 @@ References: <20170720225033.21298-1-mkayaalp@linux.vnet.ibm.com>
 	<1501012082.27413.17.camel@linux.vnet.ibm.com>
 	<645db815-7773-e351-5db7-89f38cd88c3d@linux.vnet.ibm.com>
 	<20170725204622.GA4969@mail.hallyn.com>
+	<1501016277.27413.50.camel@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20170725204622.GA4969-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1501016277.27413.50.camel-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -25,95 +27,84 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Cc: Mehmet Kayaalp <mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org>, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Yuqiong Sun <sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Safford <david.safford-JJi787mZWgc@public.gmane.org>, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, linux-security-module <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, ima-devel <linux-ima-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gVHVlLCAyMDE3LTA3LTI1IGF0IDE1OjQ2IC0wNTAwLCBTZXJnZSBFLiBIYWxseW4gd3JvdGU6
-Cj4gT24gVHVlLCBKdWwgMjUsIDIwMTcgYXQgMDQ6MTE6MjlQTSAtMDQwMCwgU3RlZmFuIEJlcmdl
-ciB3cm90ZToKPiA+IE9uIDA3LzI1LzIwMTcgMDM6NDggUE0sIE1pbWkgWm9oYXIgd3JvdGU6Cj4g
-PiA+T24gVHVlLCAyMDE3LTA3LTI1IGF0IDEyOjA4IC0wNzAwLCBKYW1lcyBCb3R0b21sZXkgd3Jv
-dGU6Cj4gPiA+Pk9uIFR1ZSwgMjAxNy0wNy0yNSBhdCAxNDowNCAtMDUwMCwgU2VyZ2UgRS4gSGFs
-bHluIHdyb3RlOgo+ID4gPj4+T24gVHVlLCBKdWwgMjUsIDIwMTcgYXQgMTE6NDk6MTRBTSAtMDcw
-MCwgSmFtZXMgQm90dG9tbGV5IHdyb3RlOgo+ID4gPj4+Pk9uIFR1ZSwgMjAxNy0wNy0yNSBhdCAx
-Mjo1MyAtMDUwMCwgU2VyZ2UgRS4gSGFsbHluIHdyb3RlOgo+ID4gPj4+Pj5PbiBUaHUsIEp1bCAy
-MCwgMjAxNyBhdCAwNjo1MDoyOVBNIC0wNDAwLCBNZWhtZXQgS2F5YWFscCB3cm90ZToKPiA+ID4+
-Pj4+Pgo+ID4gPj4+Pj4+RnJvbTogWXVxaW9uZyBTdW4gPHN1bnlAdXMuaWJtLmNvbT4KPiA+ID4+
-Pj4+Pgo+ID4gPj4+Pj4+QWRkIG5ldyBDT05GSUdfSU1BX05TIGNvbmZpZyBvcHRpb24uICBMZXQg
-Y2xvbmUoKSBjcmVhdGUgYSBuZXcKPiA+ID4+Pj4+PklNQSBuYW1lc3BhY2UgdXBvbiBDTE9ORV9O
-RVdOUyBmbGFnLiBBZGQgaW1hX25zIGRhdGEgc3RydWN0dXJlCj4gPiA+Pj4+Pj5pbiBuc3Byb3h5
-LiBpbWFfbnMgaXMgYWxsb2NhdGVkIGFuZCBmcmVlZCB1cG9uIElNQSBuYW1lc3BhY2UKPiA+ID4+
-Pj4+PmNyZWF0aW9uIGFuZCBleGl0LiBDdXJyZW50bHksIHRoZSBpbWFfbnMgY29udGFpbnMgbm8g
-dXNlZnVsIElNQQo+ID4gPj4+Pj4+ZGF0YSBidXQgb25seSBhIGR1bW15IGludGVyZmFjZS4gVGhp
-cyBwYXRjaCBjcmVhdGVzIHRoZQo+ID4gPj4+Pj4+ZnJhbWV3b3JrIGZvciBuYW1lc3BhY2luZyB0
-aGUgZGlmZmVyZW50IGFzcGVjdHMgb2YgSU1BIChlZy4KPiA+ID4+Pj4+PklNQS1hdWRpdCwgSU1B
-LW1lYXN1cmVtZW50LCBJTUEtYXBwcmFpc2FsKS4KPiA+ID4+Pj4+Pgo+ID4gPj4+Pj4+U2lnbmVk
-LW9mZi1ieTogWXVxaW9uZyBTdW4gPHN1bnlAdXMuaWJtLmNvbT4KPiA+ID4+Pj4+Pgo+ID4gPj4+
-Pj4+Q2hhbmdlbG9nOgo+ID4gPj4+Pj4+KiBVc2UgQ0xPTkVfTkVXTlMgaW5zdGVhZCBvZiBhIG5l
-dyBDTE9ORV9ORVdJTUEgZmxhZwo+ID4gPj4+Pj5IaSwKPiA+ID4+Pj4+Cj4gPiA+Pj4+PlNvIHRo
-aXMgbWVhbnMgdGhhdCBldmVyeSBtb3VudCBuYW1lc3BhY2UgY2xvbmUgd2lsbCBjbG9uZSBhIG5l
-dwo+ID4gPj4+Pj5JTUEgbmFtZXNwYWNlLiAgSXMgdGhhdCByZWFsbHkgb2s/Cj4gPiA+Pj4+QmFz
-ZWQgb24gd2hhdDogc3BhY2UgY29uY2VybnMgKHN0cnVjdCBpbWFfbnMgaXMgcmVhc29uYWJseSBz
-bWFsbCk/Cj4gPiA+Pj4+b3Igd2hldGhlciB0eWluZyBpdCB0byB0aGUgbW91bnQgbmFtZXNwYWNl
-IGlzIHRoZSBjb3JyZWN0IHRoaW5nIHRvCj4gPiA+Pj4+ZG8uICBPbgo+ID4gPj4+TW9zdGx5IHRo
-ZSBsYXR0ZXIuICBUaGUgb3RoZXIgd291bGQgYmUgbm90IHNvIG11Y2ggc3BhY2UgY29uY2VybnMg
-YXMKPiA+ID4+PnRpbWUgY29uY2VybnMuICBNYW55IHRoaW5ncyB1c2UgbmV3IG1vdW50cyBuYW1l
-c3BhY2VzLCBhbmQgd2UKPiA+ID4+PndvdWxkbid0IHdhbnQgbXVsdGlwbGUgSU1BIGNhbGxzIG9u
-IGFsbCBmaWxlIGFjY2Vzc2VzIGJ5IGFsbCBvZgo+ID4gPj4+dGhvc2UuCj4gPiA+Pj4KPiA+ID4+
-Pj50aGUgbGF0dGVyLCBpdCBkb2VzIHNlZW0gdGhhdCB0aGlzIHNob3VsZCBiZSBhIHByb3BlcnR5
-IG9mIGVpdGhlcgo+ID4gPj4+PnRoZSBtb3VudCBvciB1c2VyIG5zIHJhdGhlciB0aGFuIGl0cyBv
-d24gc2VwYXJhdGUgbnMuICBJIGNvdWxkIHNlZQo+ID4gPj4+PmEgdXNlIHdoZXJlIGV2ZW4gYSBj
-b250YWluZXIgbWlnaHQgd2FudCBtdWx0aXBsZSBpbWEga2V5cmluZ3MKPiA+ID4+Pj53aXRoaW4g
-dGhlIGNvbnRhaW5lciAoc2F5IGNvbnRhaW5lcmlzZWQgYXBhY2hlIHNlcnZpY2Ugd2l0aAo+ID4g
-Pj4+Pm11bHRpcGxlIHRlbmFudHMpLCBzbyBpbnN0aW5jdCB0ZWxscyBtZSB0aGF0IG1vdW50IG5z
-IGlzIHRoZQo+ID4gPj4+PmNvcnJlY3QgZ3JhbnVsYXJpdHkgZm9yIHRoaXMuCj4gPiA+Pj5JIHdv
-bmRlciB3aGV0aGVyIHdlIGNvdWxkIHVzZSBlY2hvIDEgPiAvc3lzL2tlcm5lbC9zZWN1cml0eS9p
-bWEvbmV3bnMKPiA+ID4+PmFzIHRoZSB0cmlnZ2VyIGZvciByZXF1ZXN0aW5nIGEgbmV3IGltYSBu
-cyBvbiB0aGUgbmV4dAo+ID4gPj4+Y2xvbmUoQ0xPTkVfTkVXTlMpLgo+ID4gPj5JIGNvdWxkIGdv
-IHdpdGggdGhhdCwgYnV0IHdoYXQgYWJvdXQgdGhlIHRyaWdnZXIgYmVpbmcgaW5zdGFsbGluZyBv
-cgo+ID4gPj51cGRhdGluZyB0aGUga2V5cmluZz8gIFRoYXQncyB0aGUgb25seSBvcGVyYXRpb24g
-dGhhdCBuZWVkcyBuYW1lc3BhY2UKPiA+ID4+c2VwYXJhdGlvbiwgc28gb24gbW91bnQgbnMgY2xv
-bmUsIHlvdSBnZXQgYSBwb2ludGVyIHRvIHRoZSBvbGQgaW1hX25zCj4gPiA+PnVudGlsIHlvdSBk
-byBzb21ldGhpbmcgdGhhdCByZXF1aXJlcyBhIG5ldyBrZXksIHdoaWNoIHRoZW4gdHJpZ2dlcnMg
-dGhlCj4gPiA+PmNvcHkgb2YgdGhlIG5hbWVzcGFjZSBhbmQgaW5zdGFsbGluZyBpdD8KPiA+ID5J
-dCBpc24ndCBqdXN0IHRoZSBrZXlyaW5ncyB0aGF0IG5lZWQgdG8gYmUgbmFtZXNwYWNlZCwgYnV0
-IHRoZQo+ID4gPm1lYXN1cmVtZW50IGxpc3QgYW5kIHBvbGljeSBhcyB3ZWxsLgo+ID4gPgo+ID4g
-PklNQS1tZWFzdXJlbWVudCwgSU1BLWFwcHJhaXNhbCBhbmQgSU1BLWF1ZGl0IGFyZSBhbGwgcG9s
-aWN5IGJhc2VkLgo+ID4gPgo+ID4gPkFzIHNvb24gYXMgdGhlIG5hbWVzcGFjZSBzdGFydHMsIG1l
-YXN1cmVtZW50cyBzaG91bGQgYmUgYWRkZWQgdG8gdGhlCj4gPiA+bmFtZXNwYWNlIHNwZWNpZmlj
-IG1lYXN1cmVtZW50IGxpc3QsIG5vdCBpdCdzIHBhcmVudC4KPiAKPiBTaG91bGRuJ3QgaXQgYmUg
-Ym90aD8KClRoZSBwb2xpY3kgZGVmaW5lcyB3aGljaCBmaWxlcyBhcmUgbWVhc3VyZWQuIMKgVGhl
-IG5hbWVzcGFjZSBwb2xpY3kKY291bGQgYmUgZGlmZmVyZW50IHRoYW4gaXQncyBwYXJlbnQncyBw
-b2xpY3ksIGFuZCB0aGUgcGFyZW50J3MgcG9saWN5CmNvdWxkIGJlIGRpZmZlcmVudCB0aGFuIHRo
-ZSBuYXRpdmUgcG9saWN5LiDCoEJhc2ljYWxseSwgZmlsZQptZWFzdXJlbWVudHMgbmVlZCB0byBi
-ZSBhZGRlZCB0byB0aGUgbmFtZXNwYWNlIG1lYXN1cmVtZW50IGxpc3QsCnJlY3Vyc2l2ZWx5LCB1
-cCB0byB0aGUgbmF0aXZlIG1lYXN1cmVtZW50IGxpc3QuCgpNaW1pCgo+IAo+IElmIG5vdCwgdGhl
-biBpdCBzZWVtcyB0byBtZSB0aGlzIG11c3QgYmUgdGllZCB0byB1c2VyIG5hbWVzcGFjZS4KPiAK
-PiA+IElNQSBpcyBhYm91dCBtZWFzdXJpbmcgdGhpbmdzLCBsb2dnaW5nIHdoYXQgd2FzIGV4ZWN1
-dGVkLCBhbmQKPiA+IGZpbmFsbHkgc29tZW9uZSBsb29raW5nIGF0IHRoZSBtZWFzdXJlbWVudCBs
-b2cgYW5kIGRldGVjdGluZwo+ID4gJ3RoaW5ncycuIFNvIGF0IGxlYXN0IG9uZSBhdHRhY2sgdGhh
-dCBuZWVkcyB0byBiZSBwcmV2ZW50ZWQgaXMgYQo+ID4gbWFsaWNpb3VzIHBlcnNvbiBvcGVuaW5n
-IGFuIElNQSBuYW1lc3BhY2UsIGV4ZWN1dGluZyBzb21ldGhpbmcKPiA+IG1hbGljaW91cywgYW5k
-IG5vdCBsZWF2aW5nIGFueSB0cmFjZSBvbiB0aGUgaG9zdCBiZWNhdXNlIGFsbCB0aGUKPiA+IGxv
-Z3Mgd2VudCBpbnRvIHRoZSBtZWFzdXJlbWVudCBsaXN0IG9mIHRoZSBJTUEgbmFtZXNwYWNlLCB3
-aGljaAo+ID4gZGlzYXBwZWFyZWQuIFRoYXQgc2FpZCwgSSBhbSB3b25kZXJpbmcgd2hldGhlciB0
-aGVyZSBoYXMgdG8gYmUgYQo+ID4gbWluaW11bSBzZXQgb2YgIG5hbWVzcGFjZXMgKFBJRCwgVVRT
-KSBwcm92aWRpbmcgZW5vdWdoICdpc29sYXRpb24nCj4gPiB0aGF0IHNvbWVvbmUgIG1heSBhY3R1
-YWxseSBvcGVuIGFuIElNQSBuYW1lc3BhY2UgYW5kIHJ1biB0aGVpciBjb2RlLgo+ID4gVG8gYXZv
-aWQgbGVhdmluZyBubyB0cmFjZXMgb25lIGNvdWxkIGFyZ3VlIHRvIGltcGxlbWVudCByZWN1cnNp
-dmUKPiA+IGxvZ2dpbmcsIHNvIHNvbWV0aGluZyB0aGF0IGlzIGxvZ2dlZCBpbnNpZGUgdGhlIG5h
-bWVzcGFjZSB3aWxsIGJlCj4gPiBkZXRlY3RlZCBpbiBhbGwgcGFyZW50IGNvbnRhaW5lcnMgdXAg
-dG8gdGhlIGluaXRfaW1hX25zIChob3N0KQo+ID4gYmVjYXVzZSBpdCdzIGxvZ2dlZCAoYW5kIFRQ
-TSBleHRlbmRlZCkgdGhlcmUgYXMgd2VsbC4gVGhlIGNoYWxsZW5nZQo+ID4gd2l0aCB0aGF0IGlz
-IHRoYXQgbG9nZ2luZyBjb3N0cyBtZW1vcnkgYW5kIHRoYXQgY2FuIGJlIGFidXNlZCBhcwo+ID4g
-d2VsbCB1bnRpbCB0aGUgbWFjaGluZSBuZWVkcyBhIHJlYm9vdC4uLiBJIGd1ZXNzIHRoZSBzb2x1
-dGlvbiBjb3VsZAo+ID4gYmUgcmVxdWVzdGluZyBhbiBJTUEgbmFtZXNwYWNlIGluIG9uZSB3YXkg
-b3IgYW5vdGhlciBidXQgcmVxdWlyaW5nCj4gPiBzZXZlcmFsIG90aGVyIG5hbWVzcGFjZSBmbGFn
-cyBpbiB0aGUgY2xvbmUoKSB0byBhY3R1YWxseSAnZ2V0JyBpdC4KPiA+IEp1bXBpbmcgbmFtZXNw
-YWNlcyB3aXRoIHNldG5zKCkgbWF5IGhhdmUgdG8gYmUgcmVzdHJpY3RlZCBhcyB3ZWxsCj4gPiBv
-bmNlIHRoZXJlIGlzIGFuIElNQSBuYW1lc3BhY2UuCj4gCj4gV2FpdC4gIFNvIGlmIEkgY3JlYXRl
-IGEgbmV3IElNQSBuYW1lc3BhY2UsIHRoZSB0aGluZ3MgSSBydW4gaW4KPiB0aGF0IG5hbWVzcGFj
-ZSBhcmUgbm90IHN1YmplY3QgdG8gdGhlIHBhcmVudCBuYW1lc3BhY2UgcG9saWN5PwoKX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWls
-aW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xp
-c3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+On Tue, Jul 25, 2017 at 04:57:57PM -0400, Mimi Zohar wrote:
+> On Tue, 2017-07-25 at 15:46 -0500, Serge E. Hallyn wrote:
+> > On Tue, Jul 25, 2017 at 04:11:29PM -0400, Stefan Berger wrote:
+> > > On 07/25/2017 03:48 PM, Mimi Zohar wrote:
+> > > >On Tue, 2017-07-25 at 12:08 -0700, James Bottomley wrote:
+> > > >>On Tue, 2017-07-25 at 14:04 -0500, Serge E. Hallyn wrote:
+> > > >>>On Tue, Jul 25, 2017 at 11:49:14AM -0700, James Bottomley wrote:
+> > > >>>>On Tue, 2017-07-25 at 12:53 -0500, Serge E. Hallyn wrote:
+> > > >>>>>On Thu, Jul 20, 2017 at 06:50:29PM -0400, Mehmet Kayaalp wrote:
+> > > >>>>>>
+> > > >>>>>>From: Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > > >>>>>>
+> > > >>>>>>Add new CONFIG_IMA_NS config option.  Let clone() create a new
+> > > >>>>>>IMA namespace upon CLONE_NEWNS flag. Add ima_ns data structure
+> > > >>>>>>in nsproxy. ima_ns is allocated and freed upon IMA namespace
+> > > >>>>>>creation and exit. Currently, the ima_ns contains no useful IMA
+> > > >>>>>>data but only a dummy interface. This patch creates the
+> > > >>>>>>framework for namespacing the different aspects of IMA (eg.
+> > > >>>>>>IMA-audit, IMA-measurement, IMA-appraisal).
+> > > >>>>>>
+> > > >>>>>>Signed-off-by: Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > > >>>>>>
+> > > >>>>>>Changelog:
+> > > >>>>>>* Use CLONE_NEWNS instead of a new CLONE_NEWIMA flag
+> > > >>>>>Hi,
+> > > >>>>>
+> > > >>>>>So this means that every mount namespace clone will clone a new
+> > > >>>>>IMA namespace.  Is that really ok?
+> > > >>>>Based on what: space concerns (struct ima_ns is reasonably small)?
+> > > >>>>or whether tying it to the mount namespace is the correct thing to
+> > > >>>>do.  On
+> > > >>>Mostly the latter.  The other would be not so much space concerns =
+as
+> > > >>>time concerns.  Many things use new mounts namespaces, and we
+> > > >>>wouldn't want multiple IMA calls on all file accesses by all of
+> > > >>>those.
+> > > >>>
+> > > >>>>the latter, it does seem that this should be a property of either
+> > > >>>>the mount or user ns rather than its own separate ns.  I could see
+> > > >>>>a use where even a container might want multiple ima keyrings
+> > > >>>>within the container (say containerised apache service with
+> > > >>>>multiple tenants), so instinct tells me that mount ns is the
+> > > >>>>correct granularity for this.
+> > > >>>I wonder whether we could use echo 1 > /sys/kernel/security/ima/ne=
+wns
+> > > >>>as the trigger for requesting a new ima ns on the next
+> > > >>>clone(CLONE_NEWNS).
+> > > >>I could go with that, but what about the trigger being installing or
+> > > >>updating the keyring?  That's the only operation that needs namespa=
+ce
+> > > >>separation, so on mount ns clone, you get a pointer to the old ima_=
+ns
+> > > >>until you do something that requires a new key, which then triggers=
+ the
+> > > >>copy of the namespace and installing it?
+> > > >It isn't just the keyrings that need to be namespaced, but the
+> > > >measurement list and policy as well.
+> > > >
+> > > >IMA-measurement, IMA-appraisal and IMA-audit are all policy based.
+> > > >
+> > > >As soon as the namespace starts, measurements should be added to the
+> > > >namespace specific measurement list, not it's parent.
+> > =
+
+> > Shouldn't it be both?
+> =
+
+> The policy defines which files are measured. =A0The namespace policy
+> could be different than it's parent's policy, and the parent's policy
+> could be different than the native policy. =A0Basically, file
+> measurements need to be added to the namespace measurement list,
+> recursively, up to the native measurement list.
+
+Yes, but if a task t1 is in namespace ns2 which is a child of namespace ns1,
+and it accesses a file which ns1's policy says must be measured, then will
+ns1's required measurement happen (and be appended to the ns1 measurement
+list), whether or not ns2's policy requires it?
