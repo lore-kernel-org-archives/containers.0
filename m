@@ -1,16 +1,17 @@
-From: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [RFC PATCH 2/5] ima: Add ns_status for storing namespaced iint
 	data
-Date: Tue, 25 Jul 2017 16:15:25 -0400
-Message-ID: <1501013725.27413.27.camel@linux.vnet.ibm.com>
+Date: Tue, 25 Jul 2017 16:25:08 -0400
+Message-ID: <93604a2b-cee3-7506-bf8d-ebcddac64e82@linux.vnet.ibm.com>
 References: <20170720225033.21298-1-mkayaalp@linux.vnet.ibm.com>
 	<20170720225033.21298-3-mkayaalp@linux.vnet.ibm.com>
 	<20170725194315.GA2397@mail.hallyn.com>
+	<1501013725.27413.27.camel@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20170725194315.GA2397-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+In-Reply-To: <1501013725.27413.27.camel-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,77 +21,145 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Cc: Mehmet Kayaalp <mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org>, Yuqiong Sun <sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Safford <david.safford-JJi787mZWgc@public.gmane.org>, linux-security-module <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, ima-devel <linux-ima-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gVHVlLCAyMDE3LTA3LTI1IGF0IDE0OjQzIC0wNTAwLCBTZXJnZSBFLiBIYWxseW4gd3JvdGU6
-Cj4gLi4uCj4gPiArc3RhdGljIHZvaWQgZnJlZV9uc19zdGF0dXNfY2FjaGUoc3RydWN0IGltYV9u
-YW1lc3BhY2UgKm5zKQo+ID4gK3sKPiA+ICsJc3RydWN0IG5zX3N0YXR1cyAqc3RhdHVzLCAqbmV4
-dDsKPiA+ICsKPiA+ICsJd3JpdGVfbG9jaygmbnMtPm5zX3N0YXR1c19sb2NrKTsKPiA+ICsJcmJ0
-cmVlX3Bvc3RvcmRlcl9mb3JfZWFjaF9lbnRyeV9zYWZlKHN0YXR1cywgbmV4dCwKPiA+ICsJCQkJ
-CSAgICAgJm5zLT5uc19zdGF0dXNfdHJlZSwgcmJfbm9kZSkKPiA+ICsJCWttZW1fY2FjaGVfZnJl
-ZShucy0+bnNfc3RhdHVzX2NhY2hlLCBzdGF0dXMpOwo+ID4gKwlucy0+bnNfc3RhdHVzX3RyZWUg
-PSBSQl9ST09UOwo+ID4gKwl3cml0ZV91bmxvY2soJm5zLT5uc19zdGF0dXNfbG9jayk7Cj4gPiAr
-CWttZW1fY2FjaGVfZGVzdHJveShucy0+bnNfc3RhdHVzX2NhY2hlKTsKPiA+ICt9Cj4gPiArCj4g
-PiAgc3RhdGljIHZvaWQgZGVzdHJveV9pbWFfbnMoc3RydWN0IGltYV9uYW1lc3BhY2UgKm5zKQo+
-ID4gIHsKPiA+ICAJcHV0X3VzZXJfbnMobnMtPnVzZXJfbnMpOwo+ID4gIAluc19mcmVlX2ludW0o
-Jm5zLT5ucyk7Cj4gPiArCWZyZWVfbnNfc3RhdHVzX2NhY2hlKG5zKTsKPiA+ICAJa2ZyZWUobnMp
-Owo+ID4gIH0KPiA+ICAKPiA+IEBAIC0xODEsMyArMTk4LDEwNiBAQCBzdHJ1Y3QgaW1hX25hbWVz
-cGFjZSBpbml0X2ltYV9ucyA9IHsKPiA+ICAJLnBhcmVudCA9IE5VTEwsCj4gPiAgfTsKPiA+ICBF
-WFBPUlRfU1lNQk9MKGluaXRfaW1hX25zKTsKPiA+ICsKPiA+ICsvKgo+ID4gKyAqIF9faW1hX25z
-X3N0YXR1c19maW5kIC0gcmV0dXJuIHRoZSBuc19zdGF0dXMgYXNzb2NpYXRlZCB3aXRoIGFuIGlu
-b2RlCj4gPiArICovCj4gPiArc3RhdGljIHN0cnVjdCBuc19zdGF0dXMgKl9faW1hX25zX3N0YXR1
-c19maW5kKHN0cnVjdCBpbWFfbmFtZXNwYWNlICpucywKPiA+ICsJCQkJCSAgICAgIHN0cnVjdCBp
-bm9kZSAqaW5vZGUpCj4gPiArewo+ID4gKwlzdHJ1Y3QgbnNfc3RhdHVzICpzdGF0dXM7Cj4gPiAr
-CXN0cnVjdCByYl9ub2RlICpuID0gbnMtPm5zX3N0YXR1c190cmVlLnJiX25vZGU7Cj4gPiArCj4g
-PiArCXdoaWxlIChuKSB7Cj4gPiArCQlzdGF0dXMgPSByYl9lbnRyeShuLCBzdHJ1Y3QgbnNfc3Rh
-dHVzLCByYl9ub2RlKTsKPiA+ICsKPiA+ICsJCWlmIChpbm9kZSA8IHN0YXR1cy0+aW5vZGUpCj4g
-PiArCQkJbiA9IG4tPnJiX2xlZnQ7Cj4gPiArCQllbHNlIGlmIChpbm9kZS0+aV9pbm8gPiBzdGF0
-dXMtPmlfaW5vKQo+ID4gKwkJCW4gPSBuLT5yYl9yaWdodDsKPiA+ICsJCWVsc2UKPiA+ICsJCQli
-cmVhazsKPiA+ICsJfQo+ID4gKwlpZiAoIW4pCj4gPiArCQlyZXR1cm4gTlVMTDsKPiA+ICsKPiA+
-ICsJcmV0dXJuIHN0YXR1czsKPiA+ICt9Cj4gPiArCj4gPiArLyoKPiA+ICsgKiBpbWFfbnNfc3Rh
-dHVzX2ZpbmQgLSByZXR1cm4gdGhlIG5zX3N0YXR1cyBhc3NvY2lhdGVkIHdpdGggYW4gaW5vZGUK
-PiA+ICsgKi8KPiA+ICtzdGF0aWMgc3RydWN0IG5zX3N0YXR1cyAqaW1hX25zX3N0YXR1c19maW5k
-KHN0cnVjdCBpbWFfbmFtZXNwYWNlICpucywKPiA+ICsJCQkJCSAgICBzdHJ1Y3QgaW5vZGUgKmlu
-b2RlKQo+ID4gK3sKPiA+ICsJc3RydWN0IG5zX3N0YXR1cyAqc3RhdHVzOwo+ID4gKwo+ID4gKwly
-ZWFkX2xvY2soJm5zLT5uc19zdGF0dXNfbG9jayk7Cj4gPiArCXN0YXR1cyA9IF9faW1hX25zX3N0
-YXR1c19maW5kKG5zLCBpbm9kZSk7Cj4gPiArCXJlYWRfdW5sb2NrKCZucy0+bnNfc3RhdHVzX2xv
-Y2spOwo+ID4gKwo+ID4gKwlyZXR1cm4gc3RhdHVzOwo+ID4gK30KPiAuLi4KPiA+ICsKPiA+ICtz
-dHJ1Y3QgbnNfc3RhdHVzICppbWFfZ2V0X25zX3N0YXR1cyhzdHJ1Y3QgaW1hX25hbWVzcGFjZSAq
-bnMsCj4gPiArCQkJCSAgICBzdHJ1Y3QgaW5vZGUgKmlub2RlKQo+ID4gK3sKPiA+ICsJc3RydWN0
-IG5zX3N0YXR1cyAqc3RhdHVzOwo+ID4gKwlpbnQgc2tpcF9pbnNlcnQgPSAwOwo+ID4gKwo+ID4g
-KwlzdGF0dXMgPSBpbWFfbnNfc3RhdHVzX2ZpbmQobnMsIGlub2RlKTsKPiA+ICsJaWYgKHN0YXR1
-cykgewo+ID4gKwkJLyoKPiA+ICsJCSAqIFVubGlrZSBpbnRlZ3JpdHlfaWludF9jYWNoZSB3ZSBh
-cmUgbm90IGZyZWUnaW5nIHRoZQo+ID4gKwkJICogbnNfc3RhdHVzIGRhdGEgd2hlbiB0aGUgaW5v
-ZGUgaXMgZnJlZSdkLiBTbywgaW4gYWRkaXRpb24gdG8KPiA+ICsJCSAqIGNoZWNraW5nIHRoZSBp
-bm9kZSBwb2ludGVyLCB3ZSBuZWVkIHRvIG1ha2Ugc3VyZSB0aGUKPiA+ICsJCSAqIChpX2dlbmVy
-YXRpb24sIGlfaW5vKSBwYWlyIG1hdGNoZXMgYXMgd2VsbC4gSW4gdGhlIGZ1dHVyZQo+ID4gKwkJ
-ICogd2UgbWlnaHQgd2FudCB0byBhZGQgc3VwcG9ydCBmb3IgbGF6aWx5IHdhbGtpbmcgdGhlIHJi
-dHJlZQo+ID4gKwkJICogdG8gY2xlYW4gaXQgdXAuCj4gPiArCQkgKi8KPiA+ICsJCWlmIChpbm9k
-ZS0+aV9pbm8gPT0gc3RhdHVzLT5pX2lubyAmJgo+ID4gKwkJICAgIGlub2RlLT5pX2dlbmVyYXRp
-b24gPT0gc3RhdHVzLT5pX2dlbmVyYXRpb24pCj4gPiArCQkJcmV0dXJuIHN0YXR1czsKPiA+ICsK
-PiA+ICsJCS8qIFNhbWUgaW5vZGUgbnVtYmVyIGlzIHJldXNlZCwgb3ZlcndyaXRlIHRoZSBuc19z
-dGF0dXMgKi8KPiA+ICsJCXNraXBfaW5zZXJ0ID0gMTsKPiA+ICsJfSBlbHNlIHsKPiA+ICsJCXN0
-YXR1cyA9IGttZW1fY2FjaGVfYWxsb2MobnMtPm5zX3N0YXR1c19jYWNoZSwgR0ZQX05PRlMpOwo+
-ID4gKwkJaWYgKCFzdGF0dXMpCj4gPiArCQkJcmV0dXJuIEVSUl9QVFIoLUVOT01FTSk7Cj4gPiAr
-CX0KPiAKPiBXaGF0IHByZXZlbnRzIHRoZSBzdGF0dXMgZnJvbSBiZWluZyBmcmVlZCBiZXR3ZWVu
-IHRoZSByZWFkX2xvY2sKPiBpbiBpbWFfbnNfc3RhdHVzX2ZpbmQoKSBhbmQgdGhlIHdyaXRlX2xv
-Y2sgaW4gdGhlIGZvbGxvd2luZyBsaW5lPwo+IAo+IElJVUMgaXQncyB0aGF0IG5zIGlzIGFsd2F5
-cyBjdXJyZW50J3MgaW1hX25zLCB3aGljaCB3aWxsIHBpbiB0aGUgbnMKPiBhbmQgY2F1c2Ugbm8g
-c3RhdHVzZXMgdG8gYmUgZnJlZWQuICBCdXQgdGhlbiB0aGUgbnMgc2hvdWxkIHByb2JhYmx5Cj4g
-bm90IGJlIHBhc3NlZCBpbiBoZXJlPyAgT3IgYSBjb21tZW50IHNob3VsZCBzYXkgdGhhdCBucyBt
-dXN0IGJlCj4gcGlubmVkPwo+IAo+IEp1c3QgdHJ5aW5nIHRvIG1ha2Ugc3VyZSBJIHVuZGVyc3Rh
-bmQgdGhlIGxvY2tpbmcuCgppaW50J3MgYXJlIG9ubHkgZnJlZWQgYWZ0ZXIgdGhlIGxhc3QgcmVm
-ZXJlbmNlIHRvIHRoZSBpbm9kZSBpcyBkZWxldGVkCmluIF9fZnB1dCgpLiDCoFJlZmVyIHRvIGlt
-YV9maWxlX2ZyZWUoKS4gwqBuc19zdGF0dXMgaXMgYSBiaXQgZGlmZmVyZW50CmluIHRoYXQgdGhl
-eSBhcmUgZnJlZWQgb24gbmFtZXNwYWNlIGNsZWFudXAuCgpNaW1pCgo+ID4gKwl3cml0ZV9sb2Nr
-KCZucy0+bnNfc3RhdHVzX2xvY2spOwo+ID4gKwo+ID4gKwlpZiAoIXNraXBfaW5zZXJ0KQo+ID4g
-KwkJaW5zZXJ0X25zX3N0YXR1cyhucywgaW5vZGUsIHN0YXR1cyk7Cj4gPiArCj4gPiArCXN0YXR1
-cy0+aW5vZGUgPSBpbm9kZTsKPiA+ICsJc3RhdHVzLT5pX2lubyA9IGlub2RlLT5pX2lubzsKPiA+
-ICsJc3RhdHVzLT5pX2dlbmVyYXRpb24gPSBpbm9kZS0+aV9nZW5lcmF0aW9uOwo+ID4gKwlzdGF0
-dXMtPmZsYWdzID0gMFVMOwo+ID4gKwl3cml0ZV91bmxvY2soJm5zLT5uc19zdGF0dXNfbG9jayk7
-Cj4gPiArCj4gPiArCXJldHVybiBzdGF0dXM7Cj4gPiArfQo+ID4gLS0gCj4gPiAyLjkuCj4gCgpf
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJz
-IG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBz
-Oi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+On 07/25/2017 04:15 PM, Mimi Zohar wrote:
+> On Tue, 2017-07-25 at 14:43 -0500, Serge E. Hallyn wrote:
+>> ...
+>>> +static void free_ns_status_cache(struct ima_namespace *ns)
+>>> +{
+>>> +	struct ns_status *status, *next;
+>>> +
+>>> +	write_lock(&ns->ns_status_lock);
+>>> +	rbtree_postorder_for_each_entry_safe(status, next,
+>>> +					     &ns->ns_status_tree, rb_node)
+>>> +		kmem_cache_free(ns->ns_status_cache, status);
+>>> +	ns->ns_status_tree = RB_ROOT;
+>>> +	write_unlock(&ns->ns_status_lock);
+>>> +	kmem_cache_destroy(ns->ns_status_cache);
+>>> +}
+>>> +
+>>>   static void destroy_ima_ns(struct ima_namespace *ns)
+>>>   {
+>>>   	put_user_ns(ns->user_ns);
+>>>   	ns_free_inum(&ns->ns);
+>>> +	free_ns_status_cache(ns);
+>>>   	kfree(ns);
+>>>   }
+>>>   
+>>> @@ -181,3 +198,106 @@ struct ima_namespace init_ima_ns = {
+>>>   	.parent = NULL,
+>>>   };
+>>>   EXPORT_SYMBOL(init_ima_ns);
+>>> +
+>>> +/*
+>>> + * __ima_ns_status_find - return the ns_status associated with an inode
+>>> + */
+>>> +static struct ns_status *__ima_ns_status_find(struct ima_namespace *ns,
+>>> +					      struct inode *inode)
+>>> +{
+>>> +	struct ns_status *status;
+>>> +	struct rb_node *n = ns->ns_status_tree.rb_node;
+>>> +
+>>> +	while (n) {
+>>> +		status = rb_entry(n, struct ns_status, rb_node);
+>>> +
+>>> +		if (inode < status->inode)
+>>> +			n = n->rb_left;
+>>> +		else if (inode->i_ino > status->i_ino)
+>>> +			n = n->rb_right;
+>>> +		else
+>>> +			break;
+>>> +	}
+>>> +	if (!n)
+>>> +		return NULL;
+>>> +
+>>> +	return status;
+>>> +}
+>>> +
+>>> +/*
+>>> + * ima_ns_status_find - return the ns_status associated with an inode
+>>> + */
+>>> +static struct ns_status *ima_ns_status_find(struct ima_namespace *ns,
+>>> +					    struct inode *inode)
+>>> +{
+>>> +	struct ns_status *status;
+>>> +
+>>> +	read_lock(&ns->ns_status_lock);
+>>> +	status = __ima_ns_status_find(ns, inode);
+>>> +	read_unlock(&ns->ns_status_lock);
+>>> +
+>>> +	return status;
+>>> +}
+>> ...
+>>> +
+>>> +struct ns_status *ima_get_ns_status(struct ima_namespace *ns,
+>>> +				    struct inode *inode)
+>>> +{
+>>> +	struct ns_status *status;
+>>> +	int skip_insert = 0;
+>>> +
+>>> +	status = ima_ns_status_find(ns, inode);
+>>> +	if (status) {
+>>> +		/*
+>>> +		 * Unlike integrity_iint_cache we are not free'ing the
+>>> +		 * ns_status data when the inode is free'd. So, in addition to
+>>> +		 * checking the inode pointer, we need to make sure the
+>>> +		 * (i_generation, i_ino) pair matches as well. In the future
+>>> +		 * we might want to add support for lazily walking the rbtree
+>>> +		 * to clean it up.
+>>> +		 */
+>>> +		if (inode->i_ino == status->i_ino &&
+>>> +		    inode->i_generation == status->i_generation)
+>>> +			return status;
+>>> +
+>>> +		/* Same inode number is reused, overwrite the ns_status */
+>>> +		skip_insert = 1;
+>>> +	} else {
+>>> +		status = kmem_cache_alloc(ns->ns_status_cache, GFP_NOFS);
+>>> +		if (!status)
+>>> +			return ERR_PTR(-ENOMEM);
+>>> +	}
+>> What prevents the status from being freed between the read_lock
+>> in ima_ns_status_find() and the write_lock in the following line?
+>>
+>> IIUC it's that ns is always current's ima_ns, which will pin the ns
+>> and cause no statuses to be freed.  But then the ns should probably
+>> not be passed in here?  Or a comment should say that ns must be
+>> pinned?
+>>
+>> Just trying to make sure I understand the locking.
+> iint's are only freed after the last reference to the inode is deleted
+> in __fput().  Refer to ima_file_free().  ns_status is a bit different
+> in that they are freed on namespace cleanup.
+
+It should be possible to move the write_lock() above the
+
+status = ima_ns_status_find(ns, inode);
+
+
+and instead call __ima_ns_status_find() with the write_lock() held.
+
+     Stefan
+
+
+>
+> Mimi
+>
+>>> +	write_lock(&ns->ns_status_lock);
+>>> +
+>>> +	if (!skip_insert)
+>>> +		insert_ns_status(ns, inode, status);
+>>> +
+>>> +	status->inode = inode;
+>>> +	status->i_ino = inode->i_ino;
+>>> +	status->i_generation = inode->i_generation;
+>>> +	status->flags = 0UL;
+>>> +	write_unlock(&ns->ns_status_lock);
+>>> +
+>>> +	return status;
+>>> +}
+>>> -- 
+>>> 2.9.
