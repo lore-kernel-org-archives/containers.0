@@ -1,17 +1,16 @@
-From: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Subject: Re: [RFC PATCH 1/5] ima: extend clone() with IMA namespace support
-Date: Tue, 25 Jul 2017 12:08:59 -0700
-Message-ID: <1501009739.3689.33.camel__16230.0449367196$1501009772$gmane$org@HansenPartnership.com>
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC PATCH 2/5] ima: Add ns_status for storing namespaced iint
+	data
+Date: Tue, 25 Jul 2017 14:43:15 -0500
+Message-ID: <20170725194315.GA2397@mail.hallyn.com>
 References: <20170720225033.21298-1-mkayaalp@linux.vnet.ibm.com>
-	<20170720225033.21298-2-mkayaalp@linux.vnet.ibm.com>
-	<20170725175317.GA727@mail.hallyn.com>
-	<1501008554.3689.30.camel@HansenPartnership.com>
-	<20170725190406.GA1883@mail.hallyn.com>
+	<20170720225033.21298-3-mkayaalp@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20170725190406.GA1883-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20170720225033.21298-3-mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -21,52 +20,128 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: Mehmet Kayaalp <mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org>, Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Yuqiong Sun <sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Safford <david.safford-JJi787mZWgc@public.gmane.org>, linux-security-module <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, ima-devel <linux-ima-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Mehmet Kayaalp <mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org>, Yuqiong Sun <sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Safford <david.safford-JJi787mZWgc@public.gmane.org>, linux-security-module <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, ima-devel <linux-ima-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gVHVlLCAyMDE3LTA3LTI1IGF0IDE0OjA0IC0wNTAwLCBTZXJnZSBFLiBIYWxseW4gd3JvdGU6
-Cj4gT24gVHVlLCBKdWwgMjUsIDIwMTcgYXQgMTE6NDk6MTRBTSAtMDcwMCwgSmFtZXMgQm90dG9t
-bGV5IHdyb3RlOgo+ID4gCj4gPiBPbiBUdWUsIDIwMTctMDctMjUgYXQgMTI6NTMgLTA1MDAsIFNl
-cmdlIEUuIEhhbGx5biB3cm90ZToKPiA+ID4gCj4gPiA+IE9uIFRodSwgSnVsIDIwLCAyMDE3IGF0
-IDA2OjUwOjI5UE0gLTA0MDAsIE1laG1ldCBLYXlhYWxwIHdyb3RlOgo+ID4gPiA+IAo+ID4gPiA+
-IAo+ID4gPiA+IEZyb206IFl1cWlvbmcgU3VuIDxzdW55QHVzLmlibS5jb20+Cj4gPiA+ID4gCj4g
-PiA+ID4gQWRkIG5ldyBDT05GSUdfSU1BX05TIGNvbmZpZyBvcHRpb24uwqDCoExldCBjbG9uZSgp
-IGNyZWF0ZSBhIG5ldwo+ID4gPiA+IElNQSBuYW1lc3BhY2UgdXBvbiBDTE9ORV9ORVdOUyBmbGFn
-LiBBZGQgaW1hX25zIGRhdGEgc3RydWN0dXJlCj4gPiA+ID4gaW4gbnNwcm94eS4gaW1hX25zIGlz
-IGFsbG9jYXRlZCBhbmQgZnJlZWQgdXBvbiBJTUEgbmFtZXNwYWNlCj4gPiA+ID4gY3JlYXRpb24g
-YW5kIGV4aXQuIEN1cnJlbnRseSwgdGhlIGltYV9ucyBjb250YWlucyBubyB1c2VmdWwgSU1BCj4g
-PiA+ID4gZGF0YSBidXQgb25seSBhIGR1bW15IGludGVyZmFjZS4gVGhpcyBwYXRjaCBjcmVhdGVz
-IHRoZQo+ID4gPiA+IGZyYW1ld29yayBmb3IgbmFtZXNwYWNpbmcgdGhlIGRpZmZlcmVudCBhc3Bl
-Y3RzIG9mIElNQSAoZWcuCj4gPiA+ID4gSU1BLWF1ZGl0LCBJTUEtbWVhc3VyZW1lbnQsIElNQS1h
-cHByYWlzYWwpLgo+ID4gPiA+IAo+ID4gPiA+IFNpZ25lZC1vZmYtYnk6IFl1cWlvbmcgU3VuIDxz
-dW55QHVzLmlibS5jb20+Cj4gPiA+ID4gCj4gPiA+ID4gQ2hhbmdlbG9nOgo+ID4gPiA+ICogVXNl
-IENMT05FX05FV05TIGluc3RlYWQgb2YgYSBuZXcgQ0xPTkVfTkVXSU1BIGZsYWcKPiA+ID4gCj4g
-PiA+IEhpLAo+ID4gPiAKPiA+ID4gU28gdGhpcyBtZWFucyB0aGF0IGV2ZXJ5IG1vdW50IG5hbWVz
-cGFjZSBjbG9uZSB3aWxsIGNsb25lIGEgbmV3Cj4gPiA+IElNQSBuYW1lc3BhY2UuwqDCoElzIHRo
-YXQgcmVhbGx5IG9rPwo+ID4gCj4gPiBCYXNlZCBvbiB3aGF0OiBzcGFjZSBjb25jZXJucyAoc3Ry
-dWN0IGltYV9ucyBpcyByZWFzb25hYmx5IHNtYWxsKT8KPiA+IG9yIHdoZXRoZXIgdHlpbmcgaXQg
-dG8gdGhlIG1vdW50IG5hbWVzcGFjZSBpcyB0aGUgY29ycmVjdCB0aGluZyB0bwo+ID4gZG8uIMKg
-T24KPiAKPiBNb3N0bHkgdGhlIGxhdHRlci7CoMKgVGhlIG90aGVyIHdvdWxkIGJlIG5vdCBzbyBt
-dWNoIHNwYWNlIGNvbmNlcm5zIGFzCj4gdGltZSBjb25jZXJucy7CoMKgTWFueSB0aGluZ3MgdXNl
-IG5ldyBtb3VudHMgbmFtZXNwYWNlcywgYW5kIHdlCj4gd291bGRuJ3Qgd2FudCBtdWx0aXBsZSBJ
-TUEgY2FsbHMgb24gYWxsIGZpbGUgYWNjZXNzZXMgYnkgYWxsIG9mCj4gdGhvc2UuCj4gCj4gPiAK
-PiA+IHRoZSBsYXR0ZXIsIGl0IGRvZXMgc2VlbSB0aGF0IHRoaXMgc2hvdWxkIGJlIGEgcHJvcGVy
-dHkgb2YgZWl0aGVyCj4gPiB0aGUgbW91bnQgb3IgdXNlciBucyByYXRoZXIgdGhhbiBpdHMgb3du
-IHNlcGFyYXRlIG5zLiDCoEkgY291bGQgc2VlCj4gPiBhIHVzZSB3aGVyZSBldmVuIGEgY29udGFp
-bmVyIG1pZ2h0IHdhbnQgbXVsdGlwbGUgaW1hIGtleXJpbmdzCj4gPiB3aXRoaW4gdGhlIGNvbnRh
-aW5lciAoc2F5IGNvbnRhaW5lcmlzZWQgYXBhY2hlIHNlcnZpY2Ugd2l0aAo+ID4gbXVsdGlwbGUg
-dGVuYW50cyksIHNvIGluc3RpbmN0IHRlbGxzIG1lIHRoYXQgbW91bnQgbnMgaXMgdGhlCj4gPiBj
-b3JyZWN0IGdyYW51bGFyaXR5IGZvciB0aGlzLgo+IAo+IEkgd29uZGVyIHdoZXRoZXIgd2UgY291
-bGQgdXNlIGVjaG8gMSA+IC9zeXMva2VybmVsL3NlY3VyaXR5L2ltYS9uZXducwo+IGFzIHRoZSB0
-cmlnZ2VyIGZvciByZXF1ZXN0aW5nIGEgbmV3IGltYSBucyBvbiB0aGUgbmV4dAo+IGNsb25lKENM
-T05FX05FV05TKS4KCkkgY291bGQgZ28gd2l0aCB0aGF0LCBidXQgd2hhdCBhYm91dCB0aGUgdHJp
-Z2dlciBiZWluZyBpbnN0YWxsaW5nIG9yCnVwZGF0aW5nIHRoZSBrZXlyaW5nPyDCoFRoYXQncyB0
-aGUgb25seSBvcGVyYXRpb24gdGhhdCBuZWVkcyBuYW1lc3BhY2UKc2VwYXJhdGlvbiwgc28gb24g
-bW91bnQgbnMgY2xvbmUsIHlvdSBnZXQgYSBwb2ludGVyIHRvIHRoZSBvbGQgaW1hX25zCnVudGls
-IHlvdSBkbyBzb21ldGhpbmcgdGhhdCByZXF1aXJlcyBhIG5ldyBrZXksIHdoaWNoIHRoZW4gdHJp
-Z2dlcnMgdGhlCmNvcHkgb2YgdGhlIG5hbWVzcGFjZSBhbmQgaW5zdGFsbGluZyBpdD8KCkphbWVz
-CgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWlu
-ZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0
-dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5l
-cnM=
+...
+> +static void free_ns_status_cache(struct ima_namespace *ns)
+> +{
+> +	struct ns_status *status, *next;
+> +
+> +	write_lock(&ns->ns_status_lock);
+> +	rbtree_postorder_for_each_entry_safe(status, next,
+> +					     &ns->ns_status_tree, rb_node)
+> +		kmem_cache_free(ns->ns_status_cache, status);
+> +	ns->ns_status_tree = RB_ROOT;
+> +	write_unlock(&ns->ns_status_lock);
+> +	kmem_cache_destroy(ns->ns_status_cache);
+> +}
+> +
+>  static void destroy_ima_ns(struct ima_namespace *ns)
+>  {
+>  	put_user_ns(ns->user_ns);
+>  	ns_free_inum(&ns->ns);
+> +	free_ns_status_cache(ns);
+>  	kfree(ns);
+>  }
+>  
+> @@ -181,3 +198,106 @@ struct ima_namespace init_ima_ns = {
+>  	.parent = NULL,
+>  };
+>  EXPORT_SYMBOL(init_ima_ns);
+> +
+> +/*
+> + * __ima_ns_status_find - return the ns_status associated with an inode
+> + */
+> +static struct ns_status *__ima_ns_status_find(struct ima_namespace *ns,
+> +					      struct inode *inode)
+> +{
+> +	struct ns_status *status;
+> +	struct rb_node *n = ns->ns_status_tree.rb_node;
+> +
+> +	while (n) {
+> +		status = rb_entry(n, struct ns_status, rb_node);
+> +
+> +		if (inode < status->inode)
+> +			n = n->rb_left;
+> +		else if (inode->i_ino > status->i_ino)
+> +			n = n->rb_right;
+> +		else
+> +			break;
+> +	}
+> +	if (!n)
+> +		return NULL;
+> +
+> +	return status;
+> +}
+> +
+> +/*
+> + * ima_ns_status_find - return the ns_status associated with an inode
+> + */
+> +static struct ns_status *ima_ns_status_find(struct ima_namespace *ns,
+> +					    struct inode *inode)
+> +{
+> +	struct ns_status *status;
+> +
+> +	read_lock(&ns->ns_status_lock);
+> +	status = __ima_ns_status_find(ns, inode);
+> +	read_unlock(&ns->ns_status_lock);
+> +
+> +	return status;
+> +}
+...
+> +
+> +struct ns_status *ima_get_ns_status(struct ima_namespace *ns,
+> +				    struct inode *inode)
+> +{
+> +	struct ns_status *status;
+> +	int skip_insert = 0;
+> +
+> +	status = ima_ns_status_find(ns, inode);
+> +	if (status) {
+> +		/*
+> +		 * Unlike integrity_iint_cache we are not free'ing the
+> +		 * ns_status data when the inode is free'd. So, in addition to
+> +		 * checking the inode pointer, we need to make sure the
+> +		 * (i_generation, i_ino) pair matches as well. In the future
+> +		 * we might want to add support for lazily walking the rbtree
+> +		 * to clean it up.
+> +		 */
+> +		if (inode->i_ino == status->i_ino &&
+> +		    inode->i_generation == status->i_generation)
+> +			return status;
+> +
+> +		/* Same inode number is reused, overwrite the ns_status */
+> +		skip_insert = 1;
+> +	} else {
+> +		status = kmem_cache_alloc(ns->ns_status_cache, GFP_NOFS);
+> +		if (!status)
+> +			return ERR_PTR(-ENOMEM);
+> +	}
+
+What prevents the status from being freed between the read_lock
+in ima_ns_status_find() and the write_lock in the following line?
+
+IIUC it's that ns is always current's ima_ns, which will pin the ns
+and cause no statuses to be freed.  But then the ns should probably
+not be passed in here?  Or a comment should say that ns must be
+pinned?
+
+Just trying to make sure I understand the locking.
+
+> +	write_lock(&ns->ns_status_lock);
+> +
+> +	if (!skip_insert)
+> +		insert_ns_status(ns, inode, status);
+> +
+> +	status->inode = inode;
+> +	status->i_ino = inode->i_ino;
+> +	status->i_generation = inode->i_generation;
+> +	status->flags = 0UL;
+> +	write_unlock(&ns->ns_status_lock);
+> +
+> +	return status;
+> +}
+> -- 
+> 2.9.4
