@@ -1,7 +1,7 @@
-From: "Jessica Howard via WAYN" <account-3NMnII/Y9U4hbwEkZy9VU9BPR1lH4CV8@public.gmane.org>
-Subject: Jessica sent you a message
-Date: Sun, 30 Jul 2017 15:26:22 +0100
-Message-ID: <9d496fe636cbff422fc840110018a509@whereareyounow.com>
+From: "Recheal  danso via WAYN" <account-3NMnII/Y9U4hbwEkZy9VU9BPR1lH4CV8@public.gmane.org>
+Subject: Recheal  sent you a message
+Date: Sun, 30 Jul 2017 16:13:33 +0100
+Message-ID: <ca6538b3e7b294e1d7845f3000163d7c@whereareyounow.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,11 +18,11 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: Martin <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Jessica has sent you a message  
+Recheal  has sent you a message  
 To read the message, click on the link below:
-http://www.wayn.com/-/29859-3e8oilu3/27877917?message_key=247687132
+http://www.wayn.com/-/29859-3e8oinrx/27877917?message_key=247688865
 
-You have also 2 unread messages from: Lidia
+You have also 2 unread messages from: Lidia, Jessica
 
 	
 Regards,
@@ -30,7 +30,7 @@ Regards,
 The WAYN Team
 ----------------------------------------------------
 
-To stop receiving emails from Jessica, click on the link below:
-http://www.wayn.com/-/29858-3e8oilu3/27877917?bk=27894412&aid=72
+To stop receiving emails from Recheal , click on the link below:
+http://www.wayn.com/-/29858-3e8oinrx/27877917?bk=27894515&aid=72
 If you don't want to receive these emails anymore, click on the link below:
-http://www.wayn.com/-/29857-3e8oilu3/27877917?aid=72
+http://www.wayn.com/-/29857-3e8oinrx/27877917?aid=72
