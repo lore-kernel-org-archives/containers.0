@@ -1,12 +1,12 @@
-From: Stanislaw Drozd <drozdziak1-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Hello
-Date: Tue, 1 Aug 2017 14:04:41 +0200
-Message-ID: <ef4bc470-fb31-eea7-beb8-9b0e17da4ce0@gmail.com>
+From: Mike Rapoprt <rppt-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [ANNOUNCE] Checkpoint/Restore micro-conference at Linux Plumbers
+Date: Tue, 1 Aug 2017 19:13:21 +0300
+Message-ID: <20170801161320.GA13504@rapoport-lnx>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en-US
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,12 +16,29 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Mike Rapoport <rppt-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Manuel =?iso-8859-1?Q?Rodr=EDguez?= Pascual <manuel.rodriguez.pascual-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, dmtcp-forum-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Binoy Ravindran <binoy-PjAqaU27lzQ@public.gmane.org>, Rodrigo Bruno <rbruno-qvDKGUwrxU4Yoy2BpPatBg@public.gmane.org>, George Bosilca <bosilca-yb7K3wzV6AiVc3sceRu5cw@public.gmane.org>, lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, Pavel Emelyanov <xemul-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello,
-
-I'm looking for namespace and cgroups bugs to fix in the kernel. Is this
-the right list to find something like that?
-
-Stan
+R29vZCBuZXdzLCBldmVyeW9uZSEKIApUaGUgY2hlY2twb2ludC9yZXN0b3JlIG1pY3JvLWNvbmZl
+cmVuY2UgaGFzIGJlZW4gYWNjZXB0ZWQgaW50byBMaW51eApQbHVtYmVycyBbMV0gOikKClRoZSBM
+aW51eCBQbHVtYmVycyBDb25mZXJlbmNlIChMUEMpIGlzIGEgZGV2ZWxvcGVyIGNvbmZlcmVuY2Ug
+Zm9yIHRoZSBvcGVuCnNvdXJjZSBjb21tdW5pdHkuIFRoZSBMUEMgYnJpbmdzIHRvZ2V0aGVyIHRo
+ZSB0b3AgZGV2ZWxvcGVycyB3b3JraW5nIG9uIHRoZQrigJxwbHVtYmluZ+KAnSBvZiBMaW51eCDi
+gJQga2VybmVsIHN1YnN5c3RlbXMsIGNvcmUgbGlicmFyaWVzLCB3aW5kb3dpbmcgc3lzdGVtcywK
+ZXRjLiDigJQgYW5kIGdpdmVzIHRoZW0gdGhyZWUgZGF5cyB0byB3b3JrIHRvZ2V0aGVyIG9uIGNv
+cmUgZGVzaWduIHByb2JsZW1zLgpUaGUgY29uZmVyZW5jZSBpcyBkaXZpZGVkIGludG8gc2V2ZXJh
+bCB3b3JraW5nIHNlc3Npb25zIGZvY3VzaW5nIG9uCmRpZmZlcmVudCDigJxwbHVtYmluZ+KAnSB0
+b3BpY3MsIGFuZCBjaGVja3BvaW50L3Jlc3RvcmUgaXMgb25lIG9mIHN1Y2ggdG9waWNzLgoKVGhp
+cyB5ZWFyIHRoZSBjaGVja3BvaW50L3Jlc3RvcmUgTUMgaXMgZ29pbmcgdG8gc2hpZnQgdGhlIGZv
+Y3VzIHRvd2FyZHMKZGlzY3Vzc2lvbiBvZiBwcm9ibGVtcyBhbmQgbmV3IGlkZWFzLCBob3dldmVy
+IHByZXNlbnRhdGlvbnMgYW5kIGRlbW9zIGFyZQpub3QgbGVzcyB3ZWxjb21lIDopCgpUaGUgdGFs
+a3MgYW5kIHRvcGljcyBmb3IgdGhlIGRpc2N1c3Npb25zIGNhbiBiZSBzdWJtaXR0ZWQgYXQgWzJd
+LgoKQ0ZQIGNsb3NlcyBvbiB0aGUgQXVndXN0LCAxNXRoLgoKWzFdIGh0dHBzOi8vd3d3LmxpbnV4
+cGx1bWJlcnNjb25mLm9yZy8yMDE3L2NoZWNrcG9pbnQtcmVzdGFydC1taWNyb2NvbmZlcmVuY2Ut
+YWNjZXB0ZWQtaW50by10aGUtbGludXgtcGx1bWJlcnMtY29uZmVyZW5jZS8KWzJdIGh0dHBzOi8v
+bGludXhwbHVtYmVyc2NvbmYub3JnLzIwMTcvb2N3L2V2ZW50cy9MUEMyMDE3L3Byb3Bvc2Fscy9u
+ZXcKCi0tIApTaW5jZXJlbHkgeW91cnMsCk1pa2UuCgpfX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJz
+QGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9u
+Lm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
