@@ -1,12 +1,16 @@
-From: Mike Rapoprt <rppt-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [ANNOUNCE] Checkpoint/Restore micro-conference at Linux Plumbers
-Date: Tue, 1 Aug 2017 19:13:21 +0300
-Message-ID: <20170801161320.GA13504@rapoport-lnx>
+From: Tycho Andersen via Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Subject: Re: [RFC PATCH 3/5] ima: mamespace audit status flags
+Date: Tue, 1 Aug 2017 11:17:02 -0600
+Message-ID: <20170801171702.f2szj5huzbt7fdfl__47563.1448709921$1501607838$gmane$org@docker>
+References: <20170720225033.21298-1-mkayaalp@linux.vnet.ibm.com>
+	<20170720225033.21298-4-mkayaalp@linux.vnet.ibm.com>
+Reply-To: Tycho Andersen <tycho-FCduhRhOUaTQT0dZR+AlfA@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20170720225033.21298-4-mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,29 +20,55 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mike Rapoport <rppt-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Manuel =?iso-8859-1?Q?Rodr=EDguez?= Pascual <manuel.rodriguez.pascual-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, dmtcp-forum-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Binoy Ravindran <binoy-PjAqaU27lzQ@public.gmane.org>, Rodrigo Bruno <rbruno-qvDKGUwrxU4Yoy2BpPatBg@public.gmane.org>, George Bosilca <bosilca-yb7K3wzV6AiVc3sceRu5cw@public.gmane.org>, lxc-devel-cunTk1MwBs9qMoObBWhMNEqPaTDuhLve2LY78lusg7I@public.gmane.org, Pavel Emelyanov <xemul-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>
+To: Mehmet Kayaalp <mkayaalp-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Mehmet Kayaalp <mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org>, Yuqiong Sun <sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Safford <david.safford-JJi787mZWgc@public.gmane.org>, linux-security-module <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, ima-devel <linux-ima-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-R29vZCBuZXdzLCBldmVyeW9uZSEKIApUaGUgY2hlY2twb2ludC9yZXN0b3JlIG1pY3JvLWNvbmZl
-cmVuY2UgaGFzIGJlZW4gYWNjZXB0ZWQgaW50byBMaW51eApQbHVtYmVycyBbMV0gOikKClRoZSBM
-aW51eCBQbHVtYmVycyBDb25mZXJlbmNlIChMUEMpIGlzIGEgZGV2ZWxvcGVyIGNvbmZlcmVuY2Ug
-Zm9yIHRoZSBvcGVuCnNvdXJjZSBjb21tdW5pdHkuIFRoZSBMUEMgYnJpbmdzIHRvZ2V0aGVyIHRo
-ZSB0b3AgZGV2ZWxvcGVycyB3b3JraW5nIG9uIHRoZQrigJxwbHVtYmluZ+KAnSBvZiBMaW51eCDi
-gJQga2VybmVsIHN1YnN5c3RlbXMsIGNvcmUgbGlicmFyaWVzLCB3aW5kb3dpbmcgc3lzdGVtcywK
-ZXRjLiDigJQgYW5kIGdpdmVzIHRoZW0gdGhyZWUgZGF5cyB0byB3b3JrIHRvZ2V0aGVyIG9uIGNv
-cmUgZGVzaWduIHByb2JsZW1zLgpUaGUgY29uZmVyZW5jZSBpcyBkaXZpZGVkIGludG8gc2V2ZXJh
-bCB3b3JraW5nIHNlc3Npb25zIGZvY3VzaW5nIG9uCmRpZmZlcmVudCDigJxwbHVtYmluZ+KAnSB0
-b3BpY3MsIGFuZCBjaGVja3BvaW50L3Jlc3RvcmUgaXMgb25lIG9mIHN1Y2ggdG9waWNzLgoKVGhp
-cyB5ZWFyIHRoZSBjaGVja3BvaW50L3Jlc3RvcmUgTUMgaXMgZ29pbmcgdG8gc2hpZnQgdGhlIGZv
-Y3VzIHRvd2FyZHMKZGlzY3Vzc2lvbiBvZiBwcm9ibGVtcyBhbmQgbmV3IGlkZWFzLCBob3dldmVy
-IHByZXNlbnRhdGlvbnMgYW5kIGRlbW9zIGFyZQpub3QgbGVzcyB3ZWxjb21lIDopCgpUaGUgdGFs
-a3MgYW5kIHRvcGljcyBmb3IgdGhlIGRpc2N1c3Npb25zIGNhbiBiZSBzdWJtaXR0ZWQgYXQgWzJd
-LgoKQ0ZQIGNsb3NlcyBvbiB0aGUgQXVndXN0LCAxNXRoLgoKWzFdIGh0dHBzOi8vd3d3LmxpbnV4
-cGx1bWJlcnNjb25mLm9yZy8yMDE3L2NoZWNrcG9pbnQtcmVzdGFydC1taWNyb2NvbmZlcmVuY2Ut
-YWNjZXB0ZWQtaW50by10aGUtbGludXgtcGx1bWJlcnMtY29uZmVyZW5jZS8KWzJdIGh0dHBzOi8v
-bGludXhwbHVtYmVyc2NvbmYub3JnLzIwMTcvb2N3L2V2ZW50cy9MUEMyMDE3L3Byb3Bvc2Fscy9u
-ZXcKCi0tIApTaW5jZXJlbHkgeW91cnMsCk1pa2UuCgpfX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJz
-QGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXhmb3VuZGF0aW9u
-Lm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+Hi Mehmet,
+
+On Thu, Jul 20, 2017 at 06:50:31PM -0400, Mehmet Kayaalp wrote:
+> --- a/security/integrity/ima/ima_ns.c
+> +++ b/security/integrity/ima/ima_ns.c
+> @@ -301,3 +301,24 @@ struct ns_status *ima_get_ns_status(struct ima_namespace *ns,
+>  
+>  	return status;
+>  }
+> +
+> +#define IMA_NS_STATUS_ACTIONS	IMA_AUDIT
+> +#define IMA_NS_STATUS_FLAGS	IMA_AUDITED
+> +
+
+Seems like these are defined in ima.h above in the patch, and
+re-defined here?
+
+> +unsigned long iint_flags(struct integrity_iint_cache *iint,
+> +			 struct ns_status *status)
+> +{
+> +	if (!status)
+> +		return iint->flags;
+> +
+> +	return iint->flags & (status->flags & IMA_NS_STATUS_FLAGS);
+
+Just to confirm, is there any situation where:
+
+    iint->flags & IMA_NS_STATUS_FLAGS != status->flags & IMA_NS_STATUS_FLAGS
+
+? i.e. can this line just be:
+
+    return status->flags & IMA_NS_STATUS_FLAGS;
+
+Tycho
+
+> +}
+> +
+> +unsigned long set_iint_flags(struct integrity_iint_cache *iint,
+> +			     struct ns_status *status, unsigned long flags)
+> +{
+> +	iint->flags = flags;
+> +	if (status)
+> +		status->flags = flags & IMA_NS_STATUS_FLAGS;
+> +	return flags;
+> +}
+> -- 
+> 2.9.4
+> 
