@@ -1,7 +1,7 @@
-From: "WAYN" <membership-3NMnII/Y9U4hbwEkZy9VU9BPR1lH4CV8@public.gmane.org>
-Subject: Martin, we have a gift for you
-Date: Fri, 4 Aug 2017 06:18:11 +0100
-Message-ID: <3eaa25cc7757cefbfc2005c803e94725@whereareyounow.com>
+From: "WAYN Team" <membership-3NMnII/Y9U4hbwEkZy9VU9BPR1lH4CV8@public.gmane.org>
+Subject: Welcome to your Upgraded WAYN account!
+Date: Fri, 4 Aug 2017 07:02:35 +0100
+Message-ID: <9d5c913c93524be101ce76b705c2f004@whereareyounow.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,34 +18,27 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: Martin Carames Abente <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Martin,
+Dear Martin,
 
-We have a surprise for you!
+Welcome to the WAYN VIP Club!
 
-As a new member you have been awarded a free 3 days VIP Membership.
+You can now take advantage of a great selection of travel, lifestyle and profile benefits, only available to VIP members.
 
-To start benefitting from it immediately, activate your VIP now...
+To browse the range of benefits, visit the VIP Page.
+Your membership details are as follows:
 
-Activate VIP trial:
-http://www2.wayn.com/-/36882-o39mku/27877917-7a7982ca1b36755b
+Name: Martin Carames Abente
+Member ID: 27877917
+Expiry Date: 7th August 2017
 
 
-Thanks to VIP you can:
+Please retain a copy of this email as proof of purchase.
 
- * get upgrades and discount with worldwide hotels group,
- * benefit from range of unbeatable travel services,
- * meet more people and get more online privileges,
- * access some of the world's best nightclubs, with the VIP treatment,
- * enjoy discounts on airfares with global airlines,
- * be invisible and browse profiles in secret,
- * and more!
+If you need to get in touch, contact us on support-y+ckgS4vQYLhvxM+mQhndA@public.gmane.org
 
-Regards,
-WAYN
-----------------------------------------
-Terms and conditions apply:
-http://www2.wayn.com/-/36883-o39mku/27877917-7a7982ca1b36755b
+Check all benefits:
+http://www2.wayn.com/-/61955-o3a5sw/27877917-7a7982ca1b36755b
 
-This is an automated one-off reminder. Please do not reply.
-To manage your future WAYN communication click here:
-http://www2.wayn.com/-/36884-o39mku/27877917-7a7982ca1b36755b
+Enjoy your new status!
+
+The WAYN Team
