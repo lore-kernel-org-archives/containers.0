@@ -1,10 +1,10 @@
-From: "Alice Holli via WAYN" <account-3NMnII/Y9U4hbwEkZy9VU9BPR1lH4CV8@public.gmane.org>
-Subject: Alice Holli sent you a message
-Date: Sat, 5 Aug 2017 12:26:33 +0100
-Message-ID: <4ab02bbc669d01f4fc59450c001bce7e@whereareyounow.com>
+From: support-3NMnII/Y9U4hbwEkZy9VU9BPR1lH4CV8@public.gmane.org
+Subject: Reset your WAYN Password
+Date: Sat, 05 Aug 2017 11:35:45 +0000 (UTC)
+Message-ID: <1kq_4dNoSmaqhTI21YlMGA@ismtpd0004p1lon1.sendgrid.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -15,22 +15,23 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Martin <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Alice Holli has sent you a message  
-To read the message, click on the link below:
-http://www.wayn.com/-/28887-3e8ou3l2/27877917?message_key=247902284
-
-You have also 2 unread messages from: Sharon
-
-	
-Regards,
-
-The WAYN Team
-----------------------------------------------------
-
-To stop receiving emails from Alice, click on the link below:
-http://www.wayn.com/-/28354-3e8ou3l2/27877917?bk=27910808&aid=72
-If you don't want to receive these emails anymore, click on the link below:
-http://www.wayn.com/-/27847-3e8ou3l2/27877917?aid=72
+QHtzdWJqZWN0fQ0KDQpIaSBNYXJ0aW4sDQoNCllvdSBqdXN0IHJlcXVlc3RlZCBhIHBhc3N3b3Jk
+IHJlc2V0IGZvciB5b3VyIFdBWU4gYWNjb3VudCBhc3NvY2lhdGVkIHdpdGggdGhpcyBlbWFpbCBh
+ZGRyZXNzLiBQbGVhc2UgY2xpY2sgdGhlIGZvbGxvd2luZyBsaW5rIHRvIHJlc2V0IHlvdXIgcGFz
+c3dvcmQuDQoNClJlc2V0wqBwYXNzd29yZMKgIChodHRwczovL3d3dzIud2F5bi5jb20vcGFzc3dv
+cmQtcmVtaW5kZXIvMjc4Nzc5MTcvQjY3Q0M4MTlFOTlENDRDMzlCNjhCOTVCRTk1NDkzMkIpDQoN
+ClRvIGtlZXAgeW91ciBhY2NvdW50IHNlY3VyZSBQYXNzd29yZCBSZXNldCBsaW5rIHdpbGwgZXhw
+aXJlIGluIDEyIGhvdXJzIGFuZCB5b3Ugd2lsbCBuZWVkIHRvIHJlcXVlc3QgYSBuZXcgb25lLiBQ
+bGVhc2UgY29udGFjdCB1cyBpZiB5b3UgY29udGludWUgdG8gZXhwZXJpZW5jZSBkaWZmaWN1bHR5
+Lg0KDQpUaGFua3MsDQoNClRoZSBXQVlOIFRlYW0NCg0KVGhpcyBlbWFpbCBpcyBiZWluZyBzZW50
+IHRvIHlvdSBiZWNhdXNlIGEgcGFzc3dvcmQgcmVzZXQgcmVxdWVzdCBoYXMgYmVlbiBtYWRlIGF0
+IGh0dHA6Ly93d3cud2F5bi5jb20gKGh0dHA6Ly93d3cud2F5bi5jb20pIGZvciBlbWFpbCBhZGRy
+ZXNzOiBjb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnIElmIHlvdSBkaWQgbm90
+IHJlcXVlc3QgdGhpcyB0aGVuIHBsZWFzZSBmb3J3YXJkIHRoaXMgZW1haWwgdG8gdXMgYXQgYWJ1
+c2VAd2F5bi5jb20gKG1haWx0bzphYnVzZUB3YXluLmNvbSkKX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFp
+bmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRh
+dGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
