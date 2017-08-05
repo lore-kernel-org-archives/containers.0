@@ -1,7 +1,7 @@
-From: "Sharon Jocelyn via WAYN" <account-3NMnII/Y9U4hbwEkZy9VU9BPR1lH4CV8@public.gmane.org>
-Subject: Sharon Jocelyn sent you a message
-Date: Fri, 4 Aug 2017 23:05:56 +0100
-Message-ID: <8953dbe878003d20e4e415610017b543@whereareyounow.com>
+From: "WAYN" <account-3NMnII/Y9U4hbwEkZy9VU9BPR1lH4CV8@public.gmane.org>
+Subject: raulpl viewed your profile
+Date: Sat, 5 Aug 2017 06:35:08 +0100
+Message-ID: <7c20993243f65c61219b58e0055e71df@whereareyounow.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,12 +15,13 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Martin <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Martin Carames Abente <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Sharon Jocelyn has sent you a message  
-To read the message, click on the link below:
-http://www.wayn.com/-/28887-3e8otd70/27877917?message_key=247884011
+Hi Martin, 
+raulpl aurara viewed your Profile
+To view her profile, click on the link below.
+http://www.wayn.com/-/29450-3e8oton5/27877917-7a7982ca1b36755b?member_key=27910118
 
 	
 Regards,
@@ -28,7 +29,7 @@ Regards,
 The WAYN Team
 ----------------------------------------------------
 
-To stop receiving emails from Sharon, click on the link below:
-http://www.wayn.com/-/28354-3e8otd70/27877917?bk=27909631&aid=72
+To stop receiving emails from raulpl, click on the link below:
+http://www.wayn.com/-/29452-3e8oton5/27877917-7a7982ca1b36755b?bk=27910118&aid=29
 If you don't want to receive these emails anymore, click on the link below:
-http://www.wayn.com/-/27847-3e8otd70/27877917?aid=72
+http://www.wayn.com/-/29451-3e8oton5/27877917-7a7982ca1b36755b?aid=29
