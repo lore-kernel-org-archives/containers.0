@@ -1,11 +1,15 @@
-From: support-3NMnII/Y9U4hbwEkZy9VU9BPR1lH4CV8@public.gmane.org
-Subject: Reset your WAYN Password
-Date: Sat, 05 Aug 2017 11:35:45 +0000 (UTC)
-Message-ID: <1kq_4dNoSmaqhTI21YlMGA@ismtpd0004p1lon1.sendgrid.net>
+From: "Maciej W. Rozycki" <macro-1AXoQHu6uovQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 4/7] signal/mips: Document a conflict with SI_USER with
+	SIGFPE
+Date: Mon, 7 Aug 2017 17:18:11 +0100
+Message-ID: <alpine.DEB.2.00.1708071706290.17596__47391.2127120004$1502123713$gmane$org@tp.orcam.me.uk>
+References: <87o9shg7t7.fsf_-_@xmission.com>
+	<20170718140651.15973-4-ebiederm@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20170718140651.15973-4-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,23 +19,33 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Pavel Emelyanov <xemul-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Ralf Baechle <ralf-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Willy Tarreau <w@1wt.eu>, Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-QHtzdWJqZWN0fQ0KDQpIaSBNYXJ0aW4sDQoNCllvdSBqdXN0IHJlcXVlc3RlZCBhIHBhc3N3b3Jk
-IHJlc2V0IGZvciB5b3VyIFdBWU4gYWNjb3VudCBhc3NvY2lhdGVkIHdpdGggdGhpcyBlbWFpbCBh
-ZGRyZXNzLiBQbGVhc2UgY2xpY2sgdGhlIGZvbGxvd2luZyBsaW5rIHRvIHJlc2V0IHlvdXIgcGFz
-c3dvcmQuDQoNClJlc2V0wqBwYXNzd29yZMKgIChodHRwczovL3d3dzIud2F5bi5jb20vcGFzc3dv
-cmQtcmVtaW5kZXIvMjc4Nzc5MTcvQjY3Q0M4MTlFOTlENDRDMzlCNjhCOTVCRTk1NDkzMkIpDQoN
-ClRvIGtlZXAgeW91ciBhY2NvdW50IHNlY3VyZSBQYXNzd29yZCBSZXNldCBsaW5rIHdpbGwgZXhw
-aXJlIGluIDEyIGhvdXJzIGFuZCB5b3Ugd2lsbCBuZWVkIHRvIHJlcXVlc3QgYSBuZXcgb25lLiBQ
-bGVhc2UgY29udGFjdCB1cyBpZiB5b3UgY29udGludWUgdG8gZXhwZXJpZW5jZSBkaWZmaWN1bHR5
-Lg0KDQpUaGFua3MsDQoNClRoZSBXQVlOIFRlYW0NCg0KVGhpcyBlbWFpbCBpcyBiZWluZyBzZW50
-IHRvIHlvdSBiZWNhdXNlIGEgcGFzc3dvcmQgcmVzZXQgcmVxdWVzdCBoYXMgYmVlbiBtYWRlIGF0
-IGh0dHA6Ly93d3cud2F5bi5jb20gKGh0dHA6Ly93d3cud2F5bi5jb20pIGZvciBlbWFpbCBhZGRy
-ZXNzOiBjb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnIElmIHlvdSBkaWQgbm90
-IHJlcXVlc3QgdGhpcyB0aGVuIHBsZWFzZSBmb3J3YXJkIHRoaXMgZW1haWwgdG8gdXMgYXQgYWJ1
-c2VAd2F5bi5jb20gKG1haWx0bzphYnVzZUB3YXluLmNvbSkKX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFp
-bmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRh
-dGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+On Tue, 18 Jul 2017, Eric W. Biederman wrote:
+
+> diff --git a/arch/mips/kernel/traps.c b/arch/mips/kernel/traps.c
+> index b68b4d0726d3..6c9cca9c5341 100644
+> --- a/arch/mips/kernel/traps.c
+> +++ b/arch/mips/kernel/traps.c
+> @@ -735,7 +735,7 @@ void force_fcr31_sig(unsigned long fcr31, void __user *fault_addr,
+>  	else if (fcr31 & FPU_CSR_INE_X)
+>  		si.si_code = FPE_FLTRES;
+>  	else
+> -		si.si_code = __SI_FAULT;
+> +		si.si_code = FPE_FIXME;
+
+ This is an "impossible" state to reach unless your hardware is on fire.  
+One or more of the FCSR Cause bits will have been set (in `fcr31') or the 
+FPE exception would not have happened.
+
+ Of course there could be a simulator bug, or we could have breakage 
+somewhere causing `process_fpemu_return' to be called with SIGFPE and 
+inconsistent `fcr31'.  So we need to handle it somehow.
+
+ So what would be the right value of `si_code' to use here for such an 
+unexpected exception condition?  I think `BUG()' would be too big a 
+hammer here.  Or wouldn't it?
+
+  Maciej
