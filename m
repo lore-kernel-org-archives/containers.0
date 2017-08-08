@@ -1,18 +1,12 @@
-From: Ralf Baechle <ralf-6z/3iImG2C8G8FEW9MqTrA@public.gmane.org>
-Subject: Re: [PATCH 4/7] signal/mips: Document a conflict with SI_USER with
-	SIGFPE
-Date: Mon, 7 Aug 2017 21:55:13 +0200
-Message-ID: <20170807195513.GD3509__5547.98675370893$1502136734$gmane$org@linux-mips.org>
-References: <87o9shg7t7.fsf_-_@xmission.com>
-	<20170718140651.15973-4-ebiederm@xmission.com>
-	<alpine.DEB.2.00.1708071706290.17596@tp.orcam.me.uk>
-	<CA+55aFx3ss90b4x2bo4si80kQUjMVL1zUX3Oxvu04OE14nUtFw@mail.gmail.com>
+From: "Magalhaes, Guilherme (Brazil R&D-CL)" <guilherme.magalhaes-ZPxbGqLxI0U@public.gmane.org>
+Subject: Re: [Linux-ima-devel] [RFC PATCH 1/5] ima: extend clone() with IMA
+Date: Tue, 8 Aug 2017 13:22:23 +0000
+Message-ID: <TU4PR84MB0302CDE76E5E05075CF16A11FF8A0__38255.5639873773$1502198608$gmane$org@TU4PR84MB0302.NAMPRD84.PROD.OUTLOOK.COM>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <CA+55aFx3ss90b4x2bo4si80kQUjMVL1zUX3Oxvu04OE14nUtFw-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,28 +16,82 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Andrey Vagin <avagin-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrei Vagin <avagin-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Pavel Emelyanov <xemul-5HdwGun5lf+gSpxsJD1C4w@public.gmane.org>, Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Willy Tarreau <w@1wt.eu>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Cyrill Gorcunov <gorcunov-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "Maciej W. Rozycki" <macro-1AXoQHu6uovQT0dZR+AlfA@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Stefan Berger <stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: Mehmet Kayaalp <mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org>, Yuqiong Sun <sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, David Safford <david.safford-JJi787mZWgc@public.gmane.org>, James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, linux-security-module <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, ima-devel <linux-ima-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Aug 07, 2017 at 10:41:39AM -0700, Linus Torvalds wrote:
+Stefan,
+Still on the vTPM requirements, could you help answering the following
+questions?
 
-> On Mon, Aug 7, 2017 at 9:18 AM, Maciej W. Rozycki <macro-1AXoQHu6uovQT0dZR+AlfA@public.gmane.org> wrote:
+1. Where will the boot measurements be stored? What is the integrity 
+measurement domain for this vTPM? The current proposal is that the 
+vTPM would be used for the container (or namespace) files/inodes. 
+What else will be available from the vTPM? For example, will the vTPM 
+provide the UEFI measurements on the first PCRs (copied/proxied from 
+physical TPM)?
+
+2. From an attestation/quote perspective, how do you envision the key 
+material to be managed (e.g. the vTPM EK and/or Attestation Key is 
+fixed to the physical TPM, or it's cryptographically bound to it)?
+
+3. Can you elaborate more on the alignment of this solution with the 
+TCG requirements, especially considering the lack of isolation on the 
+vTPM solution, do you have a future plan to cover those issues?
+
+4. In a micro services pattern, or a serverless compute pattern, in 
+which one or more containers are created to handle each individual 
+request it is possible that there will be several thousand containers 
+created per hour on a busy server. What is the expected performance 
+and scalability of vTPMs within such an environment?
+
+--
+Guilherme
+
+> -----Original Message-----
+> From: Stefan Berger [mailto:stefanb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org]
+> Sent: quinta-feira, 27 de julho de 2017 17:52
+> To: Magalhaes, Guilherme (Brazil R&D-CL) <guilherme.magalhaes-ZPxbGqLxI0U@public.gmane.org>;
+> Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>; Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+> Cc: Mehmet Kayaalp <mkayaalp-4hyTIkVWTs8LubxHQvXPfYdd74u8MsAO@public.gmane.org>; Yuqiong Sun
+> <sunyuqiong1988-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>; containers <containers-cunTk1MwBs/ROKNJybVBZg@public.gmane.org
+> foundation.org>; linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>; David Safford
+> <david.safford-JJi787mZWgc@public.gmane.org>; James Bottomley
+> <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>; linux-security-module <linux-
+> security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>; ima-devel <linux-ima-
+> devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>; Yuqiong Sun <suny-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Subject: Re: [Linux-ima-devel] [RFC PATCH 1/5] ima: extend clone() with IMA
+> namespace support
+> 
+> On 07/27/2017 03:39 PM, Magalhaes, Guilherme (Brazil R&D-CL) wrote:
 > >
-> >  So what would be the right value of `si_code' to use here for such an
-> > unexpected exception condition?  I think `BUG()' would be too big a
-> > hammer here.  Or wouldn't it?
+> >> There's a vTPM proxy driver in the kernel that enables spawning a
+> >> frontend /dev/tpm%d and an anonymous backend file descriptor where a
+> >> vTPM can listen on for TPM commands. I integrated this with 'swtpm' and
+> >> I have been working on integrating this into runc. Currently each
+> >> container started with runc can get one (or multiple) vTPMs and
+> >> /dev/tpm0 [and /dev/tpmrm0 in case of TPM2] then appear inside the
+> >> container.
+> >>
+> > This is an interesting solution especially for nested namespaces with the
+> > recursive application of measurements and a having list per container.
+> >
+> > Following the TCG specs/requirements, what could we say about security
+> > guarantees of real TPMs Vs this vTPM implementation?
 > 
-> Hell no. NEVER EVER BUG().
 > 
-> The only case to use BUG() is if there is some core data structure
-> (say, kernel stack) that is so corrupted that you know you cannot
-> continue. That's the *only* valid use.
+> A non-root user may not be able to do access the (permanent) state of
+> the vTPM state files since the container management stack would restrict
+> access to the files using DAC. Access to runtime data is also prevented
+> since the vTPM would not run under the account of the non-root user.
 > 
-> If this is a "this condition cannot happen" issue, then just remove
-> the damn conditional. It's pointless. Adding a BUG() to show "this
-> cannot happen" is not acceptable.
-
-I queued a patch to remove the code for 4.14.
-
-  Ralf
+> To protect the vTPM's permanent state file from access by a root user it
+> comes down to preventing the root user from getting a hold of the key
+> used for encrypting that file. Encrypting the state of the vTPM is
+> probably the best we can do to approximate a temper-resistant chip, but
+> preventing the root user from accessing the key may be more challenging.
+> Preventing root from accessing runtime data could be achieved by using
+> XGS or a similar technology.
+> 
+>      Stefan
+> 
