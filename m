@@ -1,11 +1,14 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [GIT PULL] namespace updates for 4.14-rc1
-Date: Mon, 11 Sep 2017 12:21:54 -0500
-Message-ID: <87mv61cfrh.fsf__37861.3098910593$1505326953$gmane$org@xmission.com>
+From: Carlos O'Donell <carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: RFC: Audit Kernel Container IDs
+Date: Wed, 13 Sep 2017 14:33:52 -0500
+Message-ID: <9043cc5a-e624-10c9-1906-f29010c5f57c__32695.2312294909$1505331253$gmane$org@redhat.com>
+References: <20170913171328.GP3405@madcap2.tricolour.ca>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20170913171328.GP3405-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org>
+Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,112 +18,144 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Audit <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Paul Moore <pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On 09/13/2017 12:13 PM, Richard Guy Briggs wrote:
+> Containers are a userspace concept.  The kernel knows nothing of them.
 
-Linus,
+I am looking at this RFC from a userspace perspective, particularly from
+the loader's point of view and the unshare syscall and the semantics that
+arise from the use of it.
 
-Please pull the for-linus branch from the git tree:
+At a high level what you are doing is providing a way to group, without
+hierarchy, processes and namespaces. The processes can move between
+container's if they have CAP_CONTAINER_ADMIN and can open and write to
+a special proc file.
 
-   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
+* With unshare a thread may dissociate part of its execution context and
+  therefore see a distinct mount namespace. When you say "process" in this
+  particular RFC do you exclude the fact that a thread might be in a
+  distinct container from the rest of the threads in the process?
 
-   HEAD: 076a9bcacfc7ccbc2b3fdf3bd490718f6b182419 signal/mips: Remove FPE_FIXME usage from mips
+> The Linux audit system needs a way to be able to track the container
+> provenance of events and actions.  Audit needs the kernel's help to do
+> this.
 
-Life has been busy and I have not gotten half as much done this round as
-I would have liked.  I delayed it so that a minor conflict resolution
-with the mips tree could spend a little time in linux-next before I sent
-this pull request.
+* Why does the Linux audit system need to tracker container provenance?
 
-This pull request includes two long delayed user namespace changes from
-Kirill Tkhai.  It also includes a very useful change from Serge Hallyn
-that allows the security capability attribute to be used inside of user
-namespaces.  The practical effect of this is people can now untar
-tarballs and install rpms in user namespaces.  It had been suggested to
-generalize this and encode some of the namespace information information
-in the xattr name.  Upon close inspection that makes the things that
-should be hard easy and the things that should be easy more expensive.
+  - How does it help to provide better audit messages?
 
-Then there is my bugfix/cleanup for signal injection that removes
-the magic encoding of the siginfo union member from the kernel internal
-si_code.  The mips folks reported the case where I had used FPE_FIXME me
-is impossible so I have remove FPE_FIXME from mips, while at the same
-time including a return statement in that case to keep gcc from
-complaining about unitialized variables.
+  - Is it be enough to list the namespace that a process occupies?
 
-I almost finished the work to get make copy_siginfo_to_user a trivial
-copy to user.  The code is available at:
-   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git neuter-copy_siginfo_to_user-v3
-But I did not have time/energy to get the code posted and reviewed before
-the merge window opened.
+* Why does it need the kernel's help?
 
-I was able to see that the security excuse for just copying fields that
-we know are initialized doesn't work in practice there are buggy
-initializations that don't initialize the proper fields in siginfo.  So
-we still sometimes copy unitialized data to userspace.
+  - Is there a race condition that is only fixable with kernel support?
 
-Eric W. Biederman (11):
-      signal/alpha: Document a conflict with SI_USER for SIGTRAP
-      signal/ia64: Document a conflict with SI_USER with SIGFPE
-      signal/sparc: Document a conflict with SI_USER with SIGFPE
-      signal/mips: Document a conflict with SI_USER with SIGFPE
-      signal/testing: Don't look for __SI_FAULT in userspace
-      userns,pidns: Verify the userns for new pid namespaces
-      fcntl: Don't use ambiguous SIG_POLL si_codes
-      signal: Remove kernel interal si_code magic
-      signal: Fix sending signals with siginfo
-      mips/signal: In force_fcr31_sig return in the impossible case
-      signal/mips: Remove FPE_FIXME usage from mips
+  - Or is it easier with kernel help but not required?
 
-Kirill Tkhai (2):
-      security: Use user_namespace::level to avoid redundant iterations in cap_capable()
-      prctl: Allow local CAP_SYS_ADMIN changing exe_file
+Providing background on these questions would help clarify the
+design requirements.
 
-Serge E. Hallyn (1):
-      Introduce v3 namespaced file capabilities
+> Since the concept of a container is entirely a userspace concept, a
+> trigger signal from the userspace container orchestration system
+> initiates this.  This will define a point in time and a set of resources
+> associated with a particular container with an audit container ID.
 
+Please don't use the word 'signal', I suggest 'register' since you are
+writing to a filesystem.
 
- arch/alpha/include/uapi/asm/siginfo.h         |  14 ++
- arch/alpha/kernel/traps.c                     |   6 +-
- arch/arm64/kernel/signal32.c                  |  23 +--
- arch/blackfin/include/uapi/asm/siginfo.h      |  30 ++-
- arch/frv/include/uapi/asm/siginfo.h           |   2 +-
- arch/ia64/include/uapi/asm/siginfo.h          |  21 +-
- arch/ia64/kernel/signal.c                     |  17 +-
- arch/ia64/kernel/traps.c                      |   4 +-
- arch/mips/include/uapi/asm/siginfo.h          |   4 +-
- arch/mips/kernel/signal32.c                   |  19 +-
- arch/mips/kernel/traps.c                      |   2 +-
- arch/parisc/kernel/signal32.c                 |  31 ++-
- arch/powerpc/kernel/signal_32.c               |  20 +-
- arch/s390/kernel/compat_signal.c              |  32 ++-
- arch/sparc/include/uapi/asm/siginfo.h         |   9 +-
- arch/sparc/kernel/signal32.c                  |  16 +-
- arch/sparc/kernel/traps_32.c                  |   2 +-
- arch/sparc/kernel/traps_64.c                  |   2 +-
- arch/tile/include/uapi/asm/siginfo.h          |   4 +-
- arch/tile/kernel/compat_signal.c              |  18 +-
- arch/tile/kernel/traps.c                      |   2 +-
- arch/x86/kernel/signal_compat.c               |  21 +-
- fs/fcntl.c                                    |  13 +-
- fs/signalfd.c                                 |  22 +-
- fs/xattr.c                                    |   6 +
- include/linux/capability.h                    |   2 +
- include/linux/security.h                      |   2 +
- include/linux/signal.h                        |  22 ++
- include/linux/user_namespace.h                |   9 +-
- include/uapi/asm-generic/siginfo.h            | 115 +++++------
- include/uapi/linux/capability.h               |  22 +-
- kernel/exit.c                                 |   4 +-
- kernel/pid_namespace.c                        |   4 +
- kernel/ptrace.c                               |   6 +-
- kernel/signal.c                               |  72 +++++--
- kernel/sys.c                                  |   8 +-
- kernel/user_namespace.c                       |  20 +-
- security/commoncap.c                          | 277 ++++++++++++++++++++++++--
- tools/testing/selftests/x86/mpx-mini-test.c   |   3 +-
- tools/testing/selftests/x86/protection_keys.c |  13 +-
- 40 files changed, 622 insertions(+), 297 deletions(-)
+> The trigger is a pseudo filesystem (proc, since PID tree already exists)
+> write of a u64 representing the container ID to a file representing a
+> process that will become the first process in a new container.
+> This might place restrictions on mount namespaces required to define a
+> container, or at least careful checking of namespaces in the kernel to
+> verify permissions of the orchestrator so it can't change its own
+> container ID.
+> A bind mount of nsfs may be necessary in the container orchestrator's
+> mntNS.
+> 
+> Require a new CAP_CONTAINER_ADMIN to be able to write to the pseudo
+> filesystem to have this action permitted.  At that time, record the
+> child container's user-supplied 64-bit container identifier along with
 
-Eric
+What is a "child container?" Containers don't have any hierarchy.
+
+I assume that if you don't have CAP_CONTAINER_ADMIN, that nothing prevents
+your continued operation as we have today?
+
+> the child container's first process (which may become the container's
+> "init" process) process ID (referenced from the initial PID namespace),
+> all namespace IDs (in the form of a nsfs device number and inode number
+> tuple) in a new auxilliary record AUDIT_CONTAINER with a qualifying
+> op=$action field.
+
+What kind of requirement is there on the first tid/pid registering
+the container ID? What if the 8th tid/pid does the registration?
+Would that mean that the first process of the container did not
+register? It seems like you are suggesting that the registration
+by the 8th tid/pid causes a cascading registration progress,
+registering all tid/pids in the same grouping? Is that true?
+
+> Issue a new auxilliary record AUDIT_CONTAINER_INFO for each valid
+> container ID present on an auditable action or event.
+> 
+> Forked and cloned processes inherit their parent's container ID,
+> referenced in the process' audit_context struct.
+
+So a cloned process with CLONE_NEWNS has the came container ID
+as the parent process that called clone, at least until the clone
+has time to change to a new container ID?
+
+Do you forsee any case where someone might need a semantic that is
+slightly different? For example wanting to set the container ID on
+clone?
+
+> Log the creation of every namespace, inheriting/adding its spawning
+> process' containerID(s), if applicable.  Include the spawning and
+> spawned namespace IDs (device and inode number tuples).
+> [AUDIT_NS_CREATE, AUDIT_NS_DESTROY] [clone(2), unshare(2), setns(2)]
+> Note: At this point it appears only network namespaces may need to track
+> container IDs apart from processes since incoming packets may cause an
+> auditable event before being associated with a process.
+
+OK.
+
+> Log the destruction of every namespace when it is no longer used by any
+> process, include the namespace IDs (device and inode number tuples).
+> [AUDIT_NS_DESTROY] [process exit, unshare(2), setns(2)]
+> 
+> Issue a new auxilliary record AUDIT_NS_CHANGE listing (opt: op=$action)
+> the parent and child namespace IDs for any changes to a process'
+> namespaces. [setns(2)]
+> Note: It may be possible to combine AUDIT_NS_* record formats and
+> distinguish them with an op=$action field depending on the fields
+> required for each message type.
+> 
+> A process can be moved from one container to another by using the
+> container assignment method outlined above a second time.
+
+OK.
+
+> When a container ceases to exist because the last process in that
+> container has exited and hence the last namespace has been destroyed and
+> its refcount dropping to zero, log the fact.
+> (This latter is likely needed for certification accountability.)  A
+> container object may need a list of processes and/or namespaces.
+
+OK.
+
+> A namespace cannot directly migrate from one container to another but
+> could be assigned to a newly spawned container.  A namespace can be
+> moved from one container to another indirectly by having that namespace
+> used in a second process in another container and then ending all the
+> processes in the first container.
+
+OK.
+
+> Feedback please.
+
+-- 
+Cheers,
+Carlos.
