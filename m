@@ -1,15 +1,14 @@
-From: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
-Subject: Re: [RFC][PATCH] security: Make the selinux setxattr and removexattr
-	hooks behave
-Date: Thu, 28 Sep 2017 18:16:06 -0700
-Message-ID: <1913d5c4-64ef-36c1-e8ad-c779ff5c7995__12516.7381404482$1506654988$gmane$org@schaufler-ca.com>
+From: Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
+Subject: Re: [RFC][PATCH] security: Make the selinux setxattr and
+	removexattr hooks behave
+Date: Fri, 29 Sep 2017 08:36:41 -0400
+Message-ID: <1506688601.5571.1.camel__18260.8682000593$1506688886$gmane$org@tycho.nsa.gov>
 References: <87tvzmqwoi.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <87tvzmqwoi.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,74 +19,68 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Chris Wright <chrisw-69jw2NvuJkxg9hUCZPvPmw@public.gmane.org>, James Morris <james.l.morris-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
+Cc: Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Chris Wright <chrisw-69jw2NvuJkxg9hUCZPvPmw@public.gmane.org>, James Morris <james.l.morris-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 9/28/2017 3:34 PM, Eric W. Biederman wrote:
-> It looks like once upon a time a long time ago selinux copied code
-> from cap_inode_removexattr and cap_inode_setxattr into
-> selinux_inode_setotherxattr.  However the code has now diverged and
-> selinux is implementing a policy that is quite different than
-> cap_inode_setxattr and cap_inode_removexattr especially when it comes
-> to the security.capable xattr.
-
-What leads you to believe that this isn't intentional?
-It's most likely the case that this change occurred as
-part of the first round module stacking change. What behavior
-do you see that you're unhappy with?
-
->
-> To keep things working
-
-Which "things"? How are they not "working"?
-
->  and to make the comments in security/security.c
-> correct when the xattr is securit.capable, call cap_inode_setxattr
-> or cap_inode_removexattr as appropriate.
->
-> I suspect there is a larger conversation to be had here but this
-> is enough to keep selinux from implementing a non-sense hard coded
-> policy that breaks other parts of the kernel.
-
-Specifics, please. Since I can't guess what problem you've
-encountered I can't tell if it's here, in the infrastructure,
-or in your perception of what constitutes "broken".
-
->
-> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> ---
->  security/selinux/hooks.c | 6 ++++++
->  1 file changed, 6 insertions(+)
->
-> diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
-> index f5d304736852..edf4bd292dc7 100644
-> --- a/security/selinux/hooks.c
-> +++ b/security/selinux/hooks.c
-> @@ -3167,6 +3167,9 @@ static int selinux_inode_setxattr(struct dentry *dentry, const char *name,
->  	u32 newsid, sid = current_sid();
->  	int rc = 0;
->  
-> +	if (strcmp(name, XATTR_NAME_CAPS) == 0)
-> +		return cap_inode_setxattr(dentry, name, value, size, flags);
-> +
-
-No. Don't even think of contemplating considering embedding the cap
-attribute check in the SELinux code. cap_inode_setxattr() is called in
-the infrastructure. 
-
->  	if (strcmp(name, XATTR_NAME_SELINUX))
->  		return selinux_inode_setotherxattr(dentry, name);
->  
-> @@ -3282,6 +3285,9 @@ static int selinux_inode_listxattr(struct dentry *dentry)
->  
->  static int selinux_inode_removexattr(struct dentry *dentry, const char *name)
->  {
-> +	if (strcmp(name, XATTR_NAME_CAPS) == 0)
-> +		return cap_inode_removexattr(dentry, name);
-> +
->  	if (strcmp(name, XATTR_NAME_SELINUX))
->  		return selinux_inode_setotherxattr(dentry, name);
->  
-
-
-.
+T24gVGh1LCAyMDE3LTA5LTI4IGF0IDE3OjM0IC0wNTAwLCBFcmljIFcuIEJpZWRlcm1hbiB3cm90
+ZToKPiBJdCBsb29rcyBsaWtlIG9uY2UgdXBvbiBhIHRpbWUgYSBsb25nIHRpbWUgYWdvIHNlbGlu
+dXggY29waWVkIGNvZGUKPiBmcm9tIGNhcF9pbm9kZV9yZW1vdmV4YXR0ciBhbmQgY2FwX2lub2Rl
+X3NldHhhdHRyIGludG8KPiBzZWxpbnV4X2lub2RlX3NldG90aGVyeGF0dHIuwqDCoEhvd2V2ZXIg
+dGhlIGNvZGUgaGFzIG5vdyBkaXZlcmdlZCBhbmQKPiBzZWxpbnV4IGlzIGltcGxlbWVudGluZyBh
+IHBvbGljeSB0aGF0IGlzIHF1aXRlIGRpZmZlcmVudCB0aGFuCj4gY2FwX2lub2RlX3NldHhhdHRy
+IGFuZCBjYXBfaW5vZGVfcmVtb3ZleGF0dHIgZXNwZWNpYWxseSB3aGVuIGl0IGNvbWVzCj4gdG8g
+dGhlIHNlY3VyaXR5LmNhcGFibGUgeGF0dHIuCj4gCj4gVG8ga2VlcCB0aGluZ3Mgd29ya2luZyBh
+bmQgdG8gbWFrZSB0aGUgY29tbWVudHMgaW4KPiBzZWN1cml0eS9zZWN1cml0eS5jCj4gY29ycmVj
+dCB3aGVuIHRoZSB4YXR0ciBpcyBzZWN1cml0LmNhcGFibGUsIGNhbGwgY2FwX2lub2RlX3NldHhh
+dHRyCj4gb3IgY2FwX2lub2RlX3JlbW92ZXhhdHRyIGFzIGFwcHJvcHJpYXRlLgo+IAo+IEkgc3Vz
+cGVjdCB0aGVyZSBpcyBhIGxhcmdlciBjb252ZXJzYXRpb24gdG8gYmUgaGFkIGhlcmUgYnV0IHRo
+aXMKPiBpcyBlbm91Z2ggdG8ga2VlcCBzZWxpbnV4IGZyb20gaW1wbGVtZW50aW5nIGEgbm9uLXNl
+bnNlIGhhcmQgY29kZWQKPiBwb2xpY3kgdGhhdCBicmVha3Mgb3RoZXIgcGFydHMgb2YgdGhlIGtl
+cm5lbC4KCk9yaWdpbmFsbHkgU0VMaW51eCBjYWxsZWQgdGhlIGNhcCBmdW5jdGlvbnMgZGlyZWN0
+bHkgc2luY2UgdGhlcmUgd2FzIG5vCnN0YWNraW5nIHN1cHBvcnQgaW4gdGhlIGluZnJhc3RydWN0
+dXJlIGFuZCBvbmUgaGFkIHRvIG1hbnVhbGx5IHN0YWNrIGEKc2Vjb25kYXJ5IG1vZHVsZSBpbnRl
+cm5hbGx5LiAgaW5vZGVfc2V0eGF0dHIgYW5kIGlub2RlX3JlbW92ZXhhdHRyCmhvd2V2ZXIgd2Vy
+ZSBzcGVjaWFsIGNhc2VzIGJlY2F1c2UgdGhlIGNhcCBmdW5jdGlvbnMgd291bGQgY2hlY2sKQ0FQ
+X1NZU19BRE1JTiBmb3IgYW55IG5vbi1jYXBhYmlsaXR5IGF0dHJpYnV0ZXMgaW4gdGhlIHNlY3Vy
+aXR5LioKbmFtZXNwYWNlLCBhbmQgd2UgZG9uJ3Qgd2FudCB0byBpbXBvc2UgdGhhdCByZXF1aXJl
+bWVudCBvbiBzZXR0aW5nCnNlY3VyaXR5LnNlbGludXguICBUaHVzLCB3ZSBpbmxpbmVkIHRoZSBj
+YXBhYmlsaXRpZXMgbG9naWMgaW50byB0aGUKc2VsaW51eCBob29rIGZ1bmN0aW9ucyBhbmQgYWRh
+cHRlZCBpdCBhcHByb3ByaWF0ZWx5LiAgV2hlbiB0aGUgc3RhY2tpbmcKc3VwcG9ydCB3YXMgaW50
+cm9kdWNlZCwgaXQgaGFkIHRvIGFsc28gc3BlY2lhbCBjYXNlIHRoZXNlIGhvb2tzIHNvIHRoYXQK
+b25seSB0aGUgcHJpbWFyeSBtb2R1bGUncyBob29rIGlzIHVzZWQgZm9yIHRoZSBzYW1lIHJlYXNv
+bjsgb3RoZXJ3aXNlLAp0aGUga2VybmVsIHdvdWxkIGVuZCB1cCBhcHBseWluZyBhIENBUF9TWVNf
+QURNSU4gY2hlY2sgb24gc2V0dGluZwpzZWN1cml0eS5zZWxpbnV4LiAgWW91ciBjaGFuZ2UgYmVs
+b3cgaXMgYWxtb3N0IGJ1dCBub3QgcXVpdGUgcmlnaHQKc2luY2UgaXQgb25seSBjYWxscyB0aGUg
+Y2FwIGZ1bmN0aW9ucyB3aGVuIHNldHRpbmcgdGhlIGNhcGFiaWxpdHkKYXR0cmlidXRlOyB0aGUg
+cmVzaWR1YWwgcHJvYmxlbSBpcyB0aGF0IGl0IHdpbGwgdGhlbiBza2lwIHRoZSBTRUxpbnV4CkZJ
+TEVfX1NFVEFUVFIgKGZpbGUgc2V0YXR0cikgcGVybWlzc2lvbiBjaGVjayB3aGVuIHNldHRpbmcg
+dGhvc2UKYXR0cmlidXRlcywgd2hpY2ggd2Ugd2FudCB0byByZXRhaW4uICBTbyB5b3UgbmVlZCB0
+byBvbmx5IHJldHVybiBlYXJseQppZiBjYXBfaW5vZGVfc2V0eGF0dHIoKS9yZW1vdmV4YXR0cigp
+IHJldHVybiBhbiBlcnJvcjsgb3RoZXJ3aXNlLCB5b3UKbmVlZCB0byBwcm9jZWVkIHRvIHRoZSBT
+RUxpbnV4IGNoZWNrLCBhbmQgeW91IGNhbiB0aGVuIGRlbGV0ZSB0aGUKZHVwbGljYXRlZCBsb2dp
+YyBmcm9tIHNlbGludXhfaW5vZGVfc2V0b3RoZXJ4YXR0cigpLiAgQXQgd2hpY2ggcG9pbnQgaXQK
+anVzdCBiZWNvbWVzIGEgY2FsbCB0byBkZW50cnlfaGFzX3Blcm0oKSBhbmQgeW91IGNhbiBqdXN0
+IGlubGluZSB0aGF0CmludG8gc2VsaW51eF9pbm9kZV9zZXR4YXR0cigpIGFuZCBzZWxpbnV4X2lu
+b2RlX3JlbW92ZXhhdHRyKCkuCgo+IAo+IFNpZ25lZC1vZmYtYnk6ICJFcmljIFcuIEJpZWRlcm1h
+biIgPGViaWVkZXJtQHhtaXNzaW9uLmNvbT4KPiAtLS0KPiDCoHNlY3VyaXR5L3NlbGludXgvaG9v
+a3MuYyB8IDYgKysrKysrCj4gwqAxIGZpbGUgY2hhbmdlZCwgNiBpbnNlcnRpb25zKCspCj4gCj4g
+ZGlmZiAtLWdpdCBhL3NlY3VyaXR5L3NlbGludXgvaG9va3MuYyBiL3NlY3VyaXR5L3NlbGludXgv
+aG9va3MuYwo+IGluZGV4IGY1ZDMwNDczNjg1Mi4uZWRmNGJkMjkyZGM3IDEwMDY0NAo+IC0tLSBh
+L3NlY3VyaXR5L3NlbGludXgvaG9va3MuYwo+ICsrKyBiL3NlY3VyaXR5L3NlbGludXgvaG9va3Mu
+Ywo+IEBAIC0zMTY3LDYgKzMxNjcsOSBAQCBzdGF0aWMgaW50IHNlbGludXhfaW5vZGVfc2V0eGF0
+dHIoc3RydWN0IGRlbnRyeQo+ICpkZW50cnksIGNvbnN0IGNoYXIgKm5hbWUsCj4gwqAJdTMyIG5l
+d3NpZCwgc2lkID0gY3VycmVudF9zaWQoKTsKPiDCoAlpbnQgcmMgPSAwOwo+IMKgCj4gKwlpZiAo
+c3RyY21wKG5hbWUsIFhBVFRSX05BTUVfQ0FQUykgPT0gMCkKPiArCQlyZXR1cm4gY2FwX2lub2Rl
+X3NldHhhdHRyKGRlbnRyeSwgbmFtZSwgdmFsdWUsIHNpemUsCj4gZmxhZ3MpOwo+ICsKPiDCoAlp
+ZiAoc3RyY21wKG5hbWUsIFhBVFRSX05BTUVfU0VMSU5VWCkpCj4gwqAJCXJldHVybiBzZWxpbnV4
+X2lub2RlX3NldG90aGVyeGF0dHIoZGVudHJ5LCBuYW1lKTsKPiDCoAo+IEBAIC0zMjgyLDYgKzMy
+ODUsOSBAQCBzdGF0aWMgaW50IHNlbGludXhfaW5vZGVfbGlzdHhhdHRyKHN0cnVjdAo+IGRlbnRy
+eSAqZGVudHJ5KQo+IMKgCj4gwqBzdGF0aWMgaW50IHNlbGludXhfaW5vZGVfcmVtb3ZleGF0dHIo
+c3RydWN0IGRlbnRyeSAqZGVudHJ5LCBjb25zdAo+IGNoYXIgKm5hbWUpCj4gwqB7Cj4gKwlpZiAo
+c3RyY21wKG5hbWUsIFhBVFRSX05BTUVfQ0FQUykgPT0gMCkKPiArCQlyZXR1cm4gY2FwX2lub2Rl
+X3JlbW92ZXhhdHRyKGRlbnRyeSwgbmFtZSk7Cj4gKwo+IMKgCWlmIChzdHJjbXAobmFtZSwgWEFU
+VFJfTkFNRV9TRUxJTlVYKSkKPiDCoAkJcmV0dXJuIHNlbGludXhfaW5vZGVfc2V0b3RoZXJ4YXR0
+cihkZW50cnksIG5hbWUpOwo+IMKgCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGlu
+dXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxt
+YW4vbGlzdGluZm8vY29udGFpbmVycw==
