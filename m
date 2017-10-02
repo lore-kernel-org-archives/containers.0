@@ -1,13 +1,12 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC][PATCH] security: Make the selinux setxattr and removexattr
-	hooks behave
-Date: Sun, 01 Oct 2017 22:26:45 -0500
-Message-ID: <87shf2i616.fsf__36232.9278294512$1506914848$gmane$org@xmission.com>
+Subject: [PATCH] selinux: Perform both commoncap and selinux xattr checks
+Date: Mon, 02 Oct 2017 09:38:20 -0500
+Message-ID: <873771ipib.fsf_-___23688.3619371385$1506955145$gmane$org@xmission.com>
 References: <87tvzmqwoi.fsf@xmission.com>
 	<1506688601.5571.1.camel@tycho.nsa.gov>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <1506688601.5571.1.camel-+05T5uksL2qpZYMLLGbcSA@public.gmane.org> (Stephen Smalley's
 	message of "Fri, 29 Sep 2017 08:36:41 -0400")
@@ -24,48 +23,124 @@ To: Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
 Cc: Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Chris Wright <chrisw-69jw2NvuJkxg9hUCZPvPmw@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James Morris <james.l.morris-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-U3RlcGhlbiBTbWFsbGV5IDxzZHNAdHljaG8ubnNhLmdvdj4gd3JpdGVzOgoKPiBPbiBUaHUsIDIw
-MTctMDktMjggYXQgMTc6MzQgLTA1MDAsIEVyaWMgVy4gQmllZGVybWFuIHdyb3RlOgo+PiBJdCBs
-b29rcyBsaWtlIG9uY2UgdXBvbiBhIHRpbWUgYSBsb25nIHRpbWUgYWdvIHNlbGludXggY29waWVk
-IGNvZGUKPj4gZnJvbSBjYXBfaW5vZGVfcmVtb3ZleGF0dHIgYW5kIGNhcF9pbm9kZV9zZXR4YXR0
-ciBpbnRvCj4+IHNlbGludXhfaW5vZGVfc2V0b3RoZXJ4YXR0ci7CoMKgSG93ZXZlciB0aGUgY29k
-ZSBoYXMgbm93IGRpdmVyZ2VkIGFuZAo+PiBzZWxpbnV4IGlzIGltcGxlbWVudGluZyBhIHBvbGlj
-eSB0aGF0IGlzIHF1aXRlIGRpZmZlcmVudCB0aGFuCj4+IGNhcF9pbm9kZV9zZXR4YXR0ciBhbmQg
-Y2FwX2lub2RlX3JlbW92ZXhhdHRyIGVzcGVjaWFsbHkgd2hlbiBpdCBjb21lcwo+PiB0byB0aGUg
-c2VjdXJpdHkuY2FwYWJsZSB4YXR0ci4KPj4gCj4+IFRvIGtlZXAgdGhpbmdzIHdvcmtpbmcgYW5k
-IHRvIG1ha2UgdGhlIGNvbW1lbnRzIGluCj4+IHNlY3VyaXR5L3NlY3VyaXR5LmMKPj4gY29ycmVj
-dCB3aGVuIHRoZSB4YXR0ciBpcyBzZWN1cml0LmNhcGFibGUsIGNhbGwgY2FwX2lub2RlX3NldHhh
-dHRyCj4+IG9yIGNhcF9pbm9kZV9yZW1vdmV4YXR0ciBhcyBhcHByb3ByaWF0ZS4KPj4gCj4+IEkg
-c3VzcGVjdCB0aGVyZSBpcyBhIGxhcmdlciBjb252ZXJzYXRpb24gdG8gYmUgaGFkIGhlcmUgYnV0
-IHRoaXMKPj4gaXMgZW5vdWdoIHRvIGtlZXAgc2VsaW51eCBmcm9tIGltcGxlbWVudGluZyBhIG5v
-bi1zZW5zZSBoYXJkIGNvZGVkCj4+IHBvbGljeSB0aGF0IGJyZWFrcyBvdGhlciBwYXJ0cyBvZiB0
-aGUga2VybmVsLgo+Cj4gT3JpZ2luYWxseSBTRUxpbnV4IGNhbGxlZCB0aGUgY2FwIGZ1bmN0aW9u
-cyBkaXJlY3RseSBzaW5jZSB0aGVyZSB3YXMgbm8KPiBzdGFja2luZyBzdXBwb3J0IGluIHRoZSBp
-bmZyYXN0cnVjdHVyZSBhbmQgb25lIGhhZCB0byBtYW51YWxseSBzdGFjayBhCj4gc2Vjb25kYXJ5
-IG1vZHVsZSBpbnRlcm5hbGx5LiAgaW5vZGVfc2V0eGF0dHIgYW5kIGlub2RlX3JlbW92ZXhhdHRy
-Cj4gaG93ZXZlciB3ZXJlIHNwZWNpYWwgY2FzZXMgYmVjYXVzZSB0aGUgY2FwIGZ1bmN0aW9ucyB3
-b3VsZCBjaGVjawo+IENBUF9TWVNfQURNSU4gZm9yIGFueSBub24tY2FwYWJpbGl0eSBhdHRyaWJ1
-dGVzIGluIHRoZSBzZWN1cml0eS4qCj4gbmFtZXNwYWNlLCBhbmQgd2UgZG9uJ3Qgd2FudCB0byBp
-bXBvc2UgdGhhdCByZXF1aXJlbWVudCBvbiBzZXR0aW5nCj4gc2VjdXJpdHkuc2VsaW51eC4gIFRo
-dXMsIHdlIGlubGluZWQgdGhlIGNhcGFiaWxpdGllcyBsb2dpYyBpbnRvIHRoZQo+IHNlbGludXgg
-aG9vayBmdW5jdGlvbnMgYW5kIGFkYXB0ZWQgaXQgYXBwcm9wcmlhdGVseS4gIFdoZW4gdGhlIHN0
-YWNraW5nCj4gc3VwcG9ydCB3YXMgaW50cm9kdWNlZCwgaXQgaGFkIHRvIGFsc28gc3BlY2lhbCBj
-YXNlIHRoZXNlIGhvb2tzIHNvIHRoYXQKPiBvbmx5IHRoZSBwcmltYXJ5IG1vZHVsZSdzIGhvb2sg
-aXMgdXNlZCBmb3IgdGhlIHNhbWUgcmVhc29uOyBvdGhlcndpc2UsCj4gdGhlIGtlcm5lbCB3b3Vs
-ZCBlbmQgdXAgYXBwbHlpbmcgYSBDQVBfU1lTX0FETUlOIGNoZWNrIG9uIHNldHRpbmcKPiBzZWN1
-cml0eS5zZWxpbnV4LiAgWW91ciBjaGFuZ2UgYmVsb3cgaXMgYWxtb3N0IGJ1dCBub3QgcXVpdGUg
-cmlnaHQKPiBzaW5jZSBpdCBvbmx5IGNhbGxzIHRoZSBjYXAgZnVuY3Rpb25zIHdoZW4gc2V0dGlu
-ZyB0aGUgY2FwYWJpbGl0eQo+IGF0dHJpYnV0ZTsgdGhlIHJlc2lkdWFsIHByb2JsZW0gaXMgdGhh
-dCBpdCB3aWxsIHRoZW4gc2tpcCB0aGUgU0VMaW51eAo+IEZJTEVfX1NFVEFUVFIgKGZpbGUgc2V0
-YXR0cikgcGVybWlzc2lvbiBjaGVjayB3aGVuIHNldHRpbmcgdGhvc2UKPiBhdHRyaWJ1dGVzLCB3
-aGljaCB3ZSB3YW50IHRvIHJldGFpbi4gIFNvIHlvdSBuZWVkIHRvIG9ubHkgcmV0dXJuIGVhcmx5
-Cj4gaWYgY2FwX2lub2RlX3NldHhhdHRyKCkvcmVtb3ZleGF0dHIoKSByZXR1cm4gYW4gZXJyb3I7
-IG90aGVyd2lzZSwgeW91Cj4gbmVlZCB0byBwcm9jZWVkIHRvIHRoZSBTRUxpbnV4IGNoZWNrLCBh
-bmQgeW91IGNhbiB0aGVuIGRlbGV0ZSB0aGUKPiBkdXBsaWNhdGVkIGxvZ2ljIGZyb20gc2VsaW51
-eF9pbm9kZV9zZXRvdGhlcnhhdHRyKCkuICBBdCB3aGljaCBwb2ludCBpdAo+IGp1c3QgYmVjb21l
-cyBhIGNhbGwgdG8gZGVudHJ5X2hhc19wZXJtKCkgYW5kIHlvdSBjYW4ganVzdCBpbmxpbmUgdGhh
-dAo+IGludG8gc2VsaW51eF9pbm9kZV9zZXR4YXR0cigpIGFuZCBzZWxpbnV4X2lub2RlX3JlbW92
-ZXhhdHRyKCkuCgpJIHdpbGwgbG9vayBhdCB0aGF0LgoKVGhhbmsgeW91LApFcmljCl9fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGlu
-ZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0
-cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+
+When selinux is loaded the relax permission checks for writing
+security.capable are not honored.  Which keeps file capabilities
+from being used in user namespaces.
+
+Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org> writes:
+> Originally SELinux called the cap functions directly since there was no
+> stacking support in the infrastructure and one had to manually stack a
+> secondary module internally.  inode_setxattr and inode_removexattr
+> however were special cases because the cap functions would check
+> CAP_SYS_ADMIN for any non-capability attributes in the security.*
+> namespace, and we don't want to impose that requirement on setting
+> security.selinux.  Thus, we inlined the capabilities logic into the
+> selinux hook functions and adapted it appropriately.
+
+Now that the permission checks in commoncap have evolved this
+inlining of their contents has become a problem.  So restructure
+selinux_inode_removexattr, and selinux_inode_setxattr to call
+both the corresponding cap_inode_ function and dentry_has_perm
+when the attribute is not a selinux security xattr.   This ensures
+the policies of both commoncap and selinux are enforced.
+
+This results in smack and selinux having the same basic structure
+for setxattr and removexattr.  Performing their own special permission
+checks when it is their modules xattr being written to, and deferring
+to commoncap when that is not the case.  Then finally performing their
+generic module policy on all xattr writes.
+
+This structure is fine when you only consider stacking with the
+commoncap lsm, but it becomes a problem if two lsms that don't want
+the commoncap security checks on their own attributes need to be
+stack.  This means there will need to be updates in the future as lsm
+stacking is improved, but at least now the structure between smack and
+selinux is common making the code easier to refactor.
+
+This change also has the effect that selinux_linux_setotherxattr becomes
+unnecessary so it is removed.
+
+Fixes: 8db6c34f1dbc ("Introduce v3 namespaced file capabilities")
+Fixes: 7bbf0e052b76 ("[PATCH] selinux merge")
+Historical Tree: https://git.kernel.org/pub/scm/linux/kernel/git/tglx/history.git
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+
+While this fixes some things this isn't a regression so it should be
+able to wait until the next merge window to be merged.   Would you like
+to take this through the selinux tree?  Or shall I take it through mine?
+
+security/selinux/hooks.c | 43 ++++++++++++++++++-------------------------
+ 1 file changed, 18 insertions(+), 25 deletions(-)
+
+diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
+index f5d304736852..c78dbec627f6 100644
+--- a/security/selinux/hooks.c
++++ b/security/selinux/hooks.c
+@@ -3124,27 +3124,6 @@ static int selinux_inode_getattr(const struct path *path)
+ 	return path_has_perm(current_cred(), path, FILE__GETATTR);
+ }
+ 
+-static int selinux_inode_setotherxattr(struct dentry *dentry, const char *name)
+-{
+-	const struct cred *cred = current_cred();
+-
+-	if (!strncmp(name, XATTR_SECURITY_PREFIX,
+-		     sizeof XATTR_SECURITY_PREFIX - 1)) {
+-		if (!strcmp(name, XATTR_NAME_CAPS)) {
+-			if (!capable(CAP_SETFCAP))
+-				return -EPERM;
+-		} else if (!capable(CAP_SYS_ADMIN)) {
+-			/* A different attribute in the security namespace.
+-			   Restrict to administrator. */
+-			return -EPERM;
+-		}
+-	}
+-
+-	/* Not an attribute we recognize, so just check the
+-	   ordinary setattr permission. */
+-	return dentry_has_perm(cred, dentry, FILE__SETATTR);
+-}
+-
+ static bool has_cap_mac_admin(bool audit)
+ {
+ 	const struct cred *cred = current_cred();
+@@ -3167,8 +3146,15 @@ static int selinux_inode_setxattr(struct dentry *dentry, const char *name,
+ 	u32 newsid, sid = current_sid();
+ 	int rc = 0;
+ 
+-	if (strcmp(name, XATTR_NAME_SELINUX))
+-		return selinux_inode_setotherxattr(dentry, name);
++	if (strcmp(name, XATTR_NAME_SELINUX)) {
++		rc = cap_inode_setxattr(dentry, name, value, size, flags);
++		if (rc)
++			return rc;
++
++		/* Not an attribute we recognize, so just check the
++		   ordinary setattr permission. */
++		return dentry_has_perm(current_cred(), dentry, FILE__SETATTR);
++	}
+ 
+ 	sbsec = inode->i_sb->s_security;
+ 	if (!(sbsec->flags & SBLABEL_MNT))
+@@ -3282,8 +3268,15 @@ static int selinux_inode_listxattr(struct dentry *dentry)
+ 
+ static int selinux_inode_removexattr(struct dentry *dentry, const char *name)
+ {
+-	if (strcmp(name, XATTR_NAME_SELINUX))
+-		return selinux_inode_setotherxattr(dentry, name);
++	if (strcmp(name, XATTR_NAME_SELINUX)) {
++		int rc = cap_inode_removexattr(dentry, name);
++		if (rc)
++			return rc;
++
++		/* Not an attribute we recognize, so just check the
++		   ordinary setattr permission. */
++		return dentry_has_perm(current_cred(), dentry, FILE__SETATTR);
++	}
+ 
+ 	/* No one is allowed to remove a SELinux security label.
+ 	   You can change the label, but all data must be labeled. */
+-- 
+2.14.1
