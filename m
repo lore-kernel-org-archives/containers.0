@@ -1,13 +1,13 @@
-From: Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
+From: Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>
 Subject: Re: [PATCH] selinux: Perform both commoncap and selinux xattr checks
-Date: Tue, 03 Oct 2017 12:24:59 -0400
-Message-ID: <1507047899.17197.12.camel__15796.1126104512$1507047659$gmane$org@tycho.nsa.gov>
+Date: Tue, 3 Oct 2017 17:08:00 -0400
+Message-ID: <CAHC9VhTzDKbP-h=GBaCTYOM9Sm=3C=nhNghmPoCRZitCpJj6YA@mail.gmail.com>
 References: <87tvzmqwoi.fsf@xmission.com>
 	<1506688601.5571.1.camel@tycho.nsa.gov>
 	<873771ipib.fsf_-_@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <873771ipib.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
@@ -19,105 +19,143 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Chris Wright <chrisw-69jw2NvuJkxg9hUCZPvPmw@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James Morris <james.l.morris-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
+Cc: selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Chris Wright <chrisw-69jw2NvuJkxg9hUCZPvPmw@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, James Morris <james.l.morris-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gTW9uLCAyMDE3LTEwLTAyIGF0IDA5OjM4IC0wNTAwLCBFcmljIFcuIEJpZWRlcm1hbiB3cm90
-ZToKPiBXaGVuIHNlbGludXggaXMgbG9hZGVkIHRoZSByZWxheCBwZXJtaXNzaW9uIGNoZWNrcyBm
-b3Igd3JpdGluZwo+IHNlY3VyaXR5LmNhcGFibGUgYXJlIG5vdCBob25vcmVkLsKgwqBXaGljaCBr
-ZWVwcyBmaWxlIGNhcGFiaWxpdGllcwo+IGZyb20gYmVpbmcgdXNlZCBpbiB1c2VyIG5hbWVzcGFj
-ZXMuCj4gCj4gU3RlcGhlbiBTbWFsbGV5IDxzZHNAdHljaG8ubnNhLmdvdj4gd3JpdGVzOgo+ID4g
-T3JpZ2luYWxseSBTRUxpbnV4IGNhbGxlZCB0aGUgY2FwIGZ1bmN0aW9ucyBkaXJlY3RseSBzaW5j
-ZSB0aGVyZQo+ID4gd2FzIG5vCj4gPiBzdGFja2luZyBzdXBwb3J0IGluIHRoZSBpbmZyYXN0cnVj
-dHVyZSBhbmQgb25lIGhhZCB0byBtYW51YWxseQo+ID4gc3RhY2sgYQo+ID4gc2Vjb25kYXJ5IG1v
-ZHVsZSBpbnRlcm5hbGx5LsKgwqBpbm9kZV9zZXR4YXR0ciBhbmQgaW5vZGVfcmVtb3ZleGF0dHIK
-PiA+IGhvd2V2ZXIgd2VyZSBzcGVjaWFsIGNhc2VzIGJlY2F1c2UgdGhlIGNhcCBmdW5jdGlvbnMg
-d291bGQgY2hlY2sKPiA+IENBUF9TWVNfQURNSU4gZm9yIGFueSBub24tY2FwYWJpbGl0eSBhdHRy
-aWJ1dGVzIGluIHRoZSBzZWN1cml0eS4qCj4gPiBuYW1lc3BhY2UsIGFuZCB3ZSBkb24ndCB3YW50
-IHRvIGltcG9zZSB0aGF0IHJlcXVpcmVtZW50IG9uIHNldHRpbmcKPiA+IHNlY3VyaXR5LnNlbGlu
-dXguwqDCoFRodXMsIHdlIGlubGluZWQgdGhlIGNhcGFiaWxpdGllcyBsb2dpYyBpbnRvIHRoZQo+
-ID4gc2VsaW51eCBob29rIGZ1bmN0aW9ucyBhbmQgYWRhcHRlZCBpdCBhcHByb3ByaWF0ZWx5Lgo+
-IAo+IE5vdyB0aGF0IHRoZSBwZXJtaXNzaW9uIGNoZWNrcyBpbiBjb21tb25jYXAgaGF2ZSBldm9s
-dmVkIHRoaXMKPiBpbmxpbmluZyBvZiB0aGVpciBjb250ZW50cyBoYXMgYmVjb21lIGEgcHJvYmxl
-bS7CoMKgU28gcmVzdHJ1Y3R1cmUKPiBzZWxpbnV4X2lub2RlX3JlbW92ZXhhdHRyLCBhbmQgc2Vs
-aW51eF9pbm9kZV9zZXR4YXR0ciB0byBjYWxsCj4gYm90aCB0aGUgY29ycmVzcG9uZGluZyBjYXBf
-aW5vZGVfIGZ1bmN0aW9uIGFuZCBkZW50cnlfaGFzX3Blcm0KPiB3aGVuIHRoZSBhdHRyaWJ1dGUg
-aXMgbm90IGEgc2VsaW51eCBzZWN1cml0eSB4YXR0ci7CoMKgwqBUaGlzIGVuc3VyZXMKPiB0aGUg
-cG9saWNpZXMgb2YgYm90aCBjb21tb25jYXAgYW5kIHNlbGludXggYXJlIGVuZm9yY2VkLgo+IAo+
-IFRoaXMgcmVzdWx0cyBpbiBzbWFjayBhbmQgc2VsaW51eCBoYXZpbmcgdGhlIHNhbWUgYmFzaWMg
-c3RydWN0dXJlCj4gZm9yIHNldHhhdHRyIGFuZCByZW1vdmV4YXR0ci7CoMKgUGVyZm9ybWluZyB0
-aGVpciBvd24gc3BlY2lhbAo+IHBlcm1pc3Npb24KPiBjaGVja3Mgd2hlbiBpdCBpcyB0aGVpciBt
-b2R1bGVzIHhhdHRyIGJlaW5nIHdyaXR0ZW4gdG8sIGFuZCBkZWZlcnJpbmcKPiB0byBjb21tb25j
-YXAgd2hlbiB0aGF0IGlzIG5vdCB0aGUgY2FzZS7CoMKgVGhlbiBmaW5hbGx5IHBlcmZvcm1pbmcK
-PiB0aGVpcgo+IGdlbmVyaWMgbW9kdWxlIHBvbGljeSBvbiBhbGwgeGF0dHIgd3JpdGVzLgo+IAo+
-IFRoaXMgc3RydWN0dXJlIGlzIGZpbmUgd2hlbiB5b3Ugb25seSBjb25zaWRlciBzdGFja2luZyB3
-aXRoIHRoZQo+IGNvbW1vbmNhcCBsc20sIGJ1dCBpdCBiZWNvbWVzIGEgcHJvYmxlbSBpZiB0d28g
-bHNtcyB0aGF0IGRvbid0IHdhbnQKPiB0aGUgY29tbW9uY2FwIHNlY3VyaXR5IGNoZWNrcyBvbiB0
-aGVpciBvd24gYXR0cmlidXRlcyBuZWVkIHRvIGJlCj4gc3RhY2suwqDCoFRoaXMgbWVhbnMgdGhl
-cmUgd2lsbCBuZWVkIHRvIGJlIHVwZGF0ZXMgaW4gdGhlIGZ1dHVyZSBhcyBsc20KPiBzdGFja2lu
-ZyBpcyBpbXByb3ZlZCwgYnV0IGF0IGxlYXN0IG5vdyB0aGUgc3RydWN0dXJlIGJldHdlZW4gc21h
-Y2sKPiBhbmQKPiBzZWxpbnV4IGlzIGNvbW1vbiBtYWtpbmcgdGhlIGNvZGUgZWFzaWVyIHRvIHJl
-ZmFjdG9yLgo+IAo+IFRoaXMgY2hhbmdlIGFsc28gaGFzIHRoZSBlZmZlY3QgdGhhdCBzZWxpbnV4
-X2xpbnV4X3NldG90aGVyeGF0dHIKPiBiZWNvbWVzCj4gdW5uZWNlc3Nhcnkgc28gaXQgaXMgcmVt
-b3ZlZC4KPiAKPiBGaXhlczogOGRiNmMzNGYxZGJjICgiSW50cm9kdWNlIHYzIG5hbWVzcGFjZWQg
-ZmlsZSBjYXBhYmlsaXRpZXMiKQo+IEZpeGVzOiA3YmJmMGUwNTJiNzYgKCJbUEFUQ0hdIHNlbGlu
-dXggbWVyZ2UiKQo+IEhpc3RvcmljYWwgVHJlZTogaHR0cHM6Ly9naXQua2VybmVsLm9yZy9wdWIv
-c2NtL2xpbnV4L2tlcm5lbC9naXQvdGdseAo+IC9oaXN0b3J5LmdpdAo+IFNpZ25lZC1vZmYtYnk6
-ICJFcmljIFcuIEJpZWRlcm1hbiIgPGViaWVkZXJtQHhtaXNzaW9uLmNvbT4KCkFja2VkLWJ5OiBT
-dGVwaGVuIFNtYWxsZXkgPHNkc0B0eWNoby5uc2EuZ292PgoKPiAtLS0KPiAKPiBXaGlsZSB0aGlz
-IGZpeGVzIHNvbWUgdGhpbmdzIHRoaXMgaXNuJ3QgYSByZWdyZXNzaW9uIHNvIGl0IHNob3VsZCBi
-ZQo+IGFibGUgdG8gd2FpdCB1bnRpbCB0aGUgbmV4dCBtZXJnZSB3aW5kb3cgdG8gYmUgbWVyZ2Vk
-LsKgwqDCoFdvdWxkIHlvdQo+IGxpa2UKPiB0byB0YWtlIHRoaXMgdGhyb3VnaCB0aGUgc2VsaW51
-eCB0cmVlP8KgwqBPciBzaGFsbCBJIHRha2UgaXQgdGhyb3VnaAo+IG1pbmU/CgpEZWZlcnJpbmcg
-dG8gUGF1bCBNb29yZSBvbiB0aGlzLCBzaW5jZSBoZSBtYWludGFpbnMgdGhlIHNlbGludXggdHJl
-ZS4KCj4gCj4gc2VjdXJpdHkvc2VsaW51eC9ob29rcy5jIHwgNDMgKysrKysrKysrKysrKysrKysr
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tCj4gLS0tLQo+IMKgMSBmaWxlIGNoYW5nZWQsIDE4IGluc2Vy
-dGlvbnMoKyksIDI1IGRlbGV0aW9ucygtKQo+IAo+IGRpZmYgLS1naXQgYS9zZWN1cml0eS9zZWxp
-bnV4L2hvb2tzLmMgYi9zZWN1cml0eS9zZWxpbnV4L2hvb2tzLmMKPiBpbmRleCBmNWQzMDQ3MzY4
-NTIuLmM3OGRiZWM2MjdmNiAxMDA2NDQKPiAtLS0gYS9zZWN1cml0eS9zZWxpbnV4L2hvb2tzLmMK
-PiArKysgYi9zZWN1cml0eS9zZWxpbnV4L2hvb2tzLmMKPiBAQCAtMzEyNCwyNyArMzEyNCw2IEBA
-IHN0YXRpYyBpbnQgc2VsaW51eF9pbm9kZV9nZXRhdHRyKGNvbnN0IHN0cnVjdAo+IHBhdGggKnBh
-dGgpCj4gwqAJcmV0dXJuIHBhdGhfaGFzX3Blcm0oY3VycmVudF9jcmVkKCksIHBhdGgsIEZJTEVf
-X0dFVEFUVFIpOwo+IMKgfQo+IMKgCj4gLXN0YXRpYyBpbnQgc2VsaW51eF9pbm9kZV9zZXRvdGhl
-cnhhdHRyKHN0cnVjdCBkZW50cnkgKmRlbnRyeSwgY29uc3QKPiBjaGFyICpuYW1lKQo+IC17Cj4g
-LQljb25zdCBzdHJ1Y3QgY3JlZCAqY3JlZCA9IGN1cnJlbnRfY3JlZCgpOwo+IC0KPiAtCWlmICgh
-c3RybmNtcChuYW1lLCBYQVRUUl9TRUNVUklUWV9QUkVGSVgsCj4gLQkJwqDCoMKgwqDCoHNpemVv
-ZiBYQVRUUl9TRUNVUklUWV9QUkVGSVggLSAxKSkgewo+IC0JCWlmICghc3RyY21wKG5hbWUsIFhB
-VFRSX05BTUVfQ0FQUykpIHsKPiAtCQkJaWYgKCFjYXBhYmxlKENBUF9TRVRGQ0FQKSkKPiAtCQkJ
-CXJldHVybiAtRVBFUk07Cj4gLQkJfSBlbHNlIGlmICghY2FwYWJsZShDQVBfU1lTX0FETUlOKSkg
-ewo+IC0JCQkvKiBBIGRpZmZlcmVudCBhdHRyaWJ1dGUgaW4gdGhlIHNlY3VyaXR5Cj4gbmFtZXNw
-YWNlLgo+IC0JCQnCoMKgwqBSZXN0cmljdCB0byBhZG1pbmlzdHJhdG9yLiAqLwo+IC0JCQlyZXR1
-cm4gLUVQRVJNOwo+IC0JCX0KPiAtCX0KPiAtCj4gLQkvKiBOb3QgYW4gYXR0cmlidXRlIHdlIHJl
-Y29nbml6ZSwgc28ganVzdCBjaGVjayB0aGUKPiAtCcKgwqDCoG9yZGluYXJ5IHNldGF0dHIgcGVy
-bWlzc2lvbi4gKi8KPiAtCXJldHVybiBkZW50cnlfaGFzX3Blcm0oY3JlZCwgZGVudHJ5LCBGSUxF
-X19TRVRBVFRSKTsKPiAtfQo+IC0KPiDCoHN0YXRpYyBib29sIGhhc19jYXBfbWFjX2FkbWluKGJv
-b2wgYXVkaXQpCj4gwqB7Cj4gwqAJY29uc3Qgc3RydWN0IGNyZWQgKmNyZWQgPSBjdXJyZW50X2Ny
-ZWQoKTsKPiBAQCAtMzE2Nyw4ICszMTQ2LDE1IEBAIHN0YXRpYyBpbnQgc2VsaW51eF9pbm9kZV9z
-ZXR4YXR0cihzdHJ1Y3QKPiBkZW50cnkgKmRlbnRyeSwgY29uc3QgY2hhciAqbmFtZSwKPiDCoAl1
-MzIgbmV3c2lkLCBzaWQgPSBjdXJyZW50X3NpZCgpOwo+IMKgCWludCByYyA9IDA7Cj4gwqAKPiAt
-CWlmIChzdHJjbXAobmFtZSwgWEFUVFJfTkFNRV9TRUxJTlVYKSkKPiAtCQlyZXR1cm4gc2VsaW51
-eF9pbm9kZV9zZXRvdGhlcnhhdHRyKGRlbnRyeSwgbmFtZSk7Cj4gKwlpZiAoc3RyY21wKG5hbWUs
-IFhBVFRSX05BTUVfU0VMSU5VWCkpIHsKPiArCQlyYyA9IGNhcF9pbm9kZV9zZXR4YXR0cihkZW50
-cnksIG5hbWUsIHZhbHVlLCBzaXplLAo+IGZsYWdzKTsKPiArCQlpZiAocmMpCj4gKwkJCXJldHVy
-biByYzsKPiArCj4gKwkJLyogTm90IGFuIGF0dHJpYnV0ZSB3ZSByZWNvZ25pemUsIHNvIGp1c3Qg
-Y2hlY2sgdGhlCj4gKwkJwqDCoMKgb3JkaW5hcnkgc2V0YXR0ciBwZXJtaXNzaW9uLiAqLwo+ICsJ
-CXJldHVybiBkZW50cnlfaGFzX3Blcm0oY3VycmVudF9jcmVkKCksIGRlbnRyeSwKPiBGSUxFX19T
-RVRBVFRSKTsKPiArCX0KPiDCoAo+IMKgCXNic2VjID0gaW5vZGUtPmlfc2ItPnNfc2VjdXJpdHk7
-Cj4gwqAJaWYgKCEoc2JzZWMtPmZsYWdzICYgU0JMQUJFTF9NTlQpKQo+IEBAIC0zMjgyLDggKzMy
-NjgsMTUgQEAgc3RhdGljIGludCBzZWxpbnV4X2lub2RlX2xpc3R4YXR0cihzdHJ1Y3QKPiBkZW50
-cnkgKmRlbnRyeSkKPiDCoAo+IMKgc3RhdGljIGludCBzZWxpbnV4X2lub2RlX3JlbW92ZXhhdHRy
-KHN0cnVjdCBkZW50cnkgKmRlbnRyeSwgY29uc3QKPiBjaGFyICpuYW1lKQo+IMKgewo+IC0JaWYg
-KHN0cmNtcChuYW1lLCBYQVRUUl9OQU1FX1NFTElOVVgpKQo+IC0JCXJldHVybiBzZWxpbnV4X2lu
-b2RlX3NldG90aGVyeGF0dHIoZGVudHJ5LCBuYW1lKTsKPiArCWlmIChzdHJjbXAobmFtZSwgWEFU
-VFJfTkFNRV9TRUxJTlVYKSkgewo+ICsJCWludCByYyA9IGNhcF9pbm9kZV9yZW1vdmV4YXR0cihk
-ZW50cnksIG5hbWUpOwo+ICsJCWlmIChyYykKPiArCQkJcmV0dXJuIHJjOwo+ICsKPiArCQkvKiBO
-b3QgYW4gYXR0cmlidXRlIHdlIHJlY29nbml6ZSwgc28ganVzdCBjaGVjayB0aGUKPiArCQnCoMKg
-wqBvcmRpbmFyeSBzZXRhdHRyIHBlcm1pc3Npb24uICovCj4gKwkJcmV0dXJuIGRlbnRyeV9oYXNf
-cGVybShjdXJyZW50X2NyZWQoKSwgZGVudHJ5LAo+IEZJTEVfX1NFVEFUVFIpOwo+ICsJfQo+IMKg
-Cj4gwqAJLyogTm8gb25lIGlzIGFsbG93ZWQgdG8gcmVtb3ZlIGEgU0VMaW51eCBzZWN1cml0eSBs
-YWJlbC4KPiDCoAnCoMKgwqBZb3UgY2FuIGNoYW5nZSB0aGUgbGFiZWwsIGJ1dCBhbGwgZGF0YSBt
-dXN0IGJlIGxhYmVsZWQuCj4gKi8KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51
-eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1h
-bi9saXN0aW5mby9jb250YWluZXJz
+On Mon, Oct 2, 2017 at 10:38 AM, Eric W. Biederman
+<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+>
+> When selinux is loaded the relax permission checks for writing
+> security.capable are not honored.  Which keeps file capabilities
+> from being used in user namespaces.
+>
+> Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org> writes:
+>> Originally SELinux called the cap functions directly since there was no
+>> stacking support in the infrastructure and one had to manually stack a
+>> secondary module internally.  inode_setxattr and inode_removexattr
+>> however were special cases because the cap functions would check
+>> CAP_SYS_ADMIN for any non-capability attributes in the security.*
+>> namespace, and we don't want to impose that requirement on setting
+>> security.selinux.  Thus, we inlined the capabilities logic into the
+>> selinux hook functions and adapted it appropriately.
+>
+> Now that the permission checks in commoncap have evolved this
+> inlining of their contents has become a problem.  So restructure
+> selinux_inode_removexattr, and selinux_inode_setxattr to call
+> both the corresponding cap_inode_ function and dentry_has_perm
+> when the attribute is not a selinux security xattr.   This ensures
+> the policies of both commoncap and selinux are enforced.
+>
+> This results in smack and selinux having the same basic structure
+> for setxattr and removexattr.  Performing their own special permission
+> checks when it is their modules xattr being written to, and deferring
+> to commoncap when that is not the case.  Then finally performing their
+> generic module policy on all xattr writes.
+>
+> This structure is fine when you only consider stacking with the
+> commoncap lsm, but it becomes a problem if two lsms that don't want
+> the commoncap security checks on their own attributes need to be
+> stack.  This means there will need to be updates in the future as lsm
+> stacking is improved, but at least now the structure between smack and
+> selinux is common making the code easier to refactor.
+>
+> This change also has the effect that selinux_linux_setotherxattr becomes
+> unnecessary so it is removed.
+>
+> Fixes: 8db6c34f1dbc ("Introduce v3 namespaced file capabilities")
+> Fixes: 7bbf0e052b76 ("[PATCH] selinux merge")
+> Historical Tree: https://git.kernel.org/pub/scm/linux/kernel/git/tglx/history.git
+> Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> ---
+>
+> While this fixes some things this isn't a regression so it should be
+> able to wait until the next merge window to be merged.   Would you like
+> to take this through the selinux tree?  Or shall I take it through mine?
+>
+> security/selinux/hooks.c | 43 ++++++++++++++++++-------------------------
+>  1 file changed, 18 insertions(+), 25 deletions(-)
+
+This patch looks sane to me and I believe it addresses Stephen's
+concerns, but I'll wait on him to comment on-list.
+
+As far as how this gets merged, I'd much prefer to take this via the
+SELinux tree given that all of the changes are internal to SELinux.
+
+> diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
+> index f5d304736852..c78dbec627f6 100644
+> --- a/security/selinux/hooks.c
+> +++ b/security/selinux/hooks.c
+> @@ -3124,27 +3124,6 @@ static int selinux_inode_getattr(const struct path *path)
+>         return path_has_perm(current_cred(), path, FILE__GETATTR);
+>  }
+>
+> -static int selinux_inode_setotherxattr(struct dentry *dentry, const char *name)
+> -{
+> -       const struct cred *cred = current_cred();
+> -
+> -       if (!strncmp(name, XATTR_SECURITY_PREFIX,
+> -                    sizeof XATTR_SECURITY_PREFIX - 1)) {
+> -               if (!strcmp(name, XATTR_NAME_CAPS)) {
+> -                       if (!capable(CAP_SETFCAP))
+> -                               return -EPERM;
+> -               } else if (!capable(CAP_SYS_ADMIN)) {
+> -                       /* A different attribute in the security namespace.
+> -                          Restrict to administrator. */
+> -                       return -EPERM;
+> -               }
+> -       }
+> -
+> -       /* Not an attribute we recognize, so just check the
+> -          ordinary setattr permission. */
+> -       return dentry_has_perm(cred, dentry, FILE__SETATTR);
+> -}
+> -
+>  static bool has_cap_mac_admin(bool audit)
+>  {
+>         const struct cred *cred = current_cred();
+> @@ -3167,8 +3146,15 @@ static int selinux_inode_setxattr(struct dentry *dentry, const char *name,
+>         u32 newsid, sid = current_sid();
+>         int rc = 0;
+>
+> -       if (strcmp(name, XATTR_NAME_SELINUX))
+> -               return selinux_inode_setotherxattr(dentry, name);
+> +       if (strcmp(name, XATTR_NAME_SELINUX)) {
+> +               rc = cap_inode_setxattr(dentry, name, value, size, flags);
+> +               if (rc)
+> +                       return rc;
+> +
+> +               /* Not an attribute we recognize, so just check the
+> +                  ordinary setattr permission. */
+> +               return dentry_has_perm(current_cred(), dentry, FILE__SETATTR);
+> +       }
+>
+>         sbsec = inode->i_sb->s_security;
+>         if (!(sbsec->flags & SBLABEL_MNT))
+> @@ -3282,8 +3268,15 @@ static int selinux_inode_listxattr(struct dentry *dentry)
+>
+>  static int selinux_inode_removexattr(struct dentry *dentry, const char *name)
+>  {
+> -       if (strcmp(name, XATTR_NAME_SELINUX))
+> -               return selinux_inode_setotherxattr(dentry, name);
+> +       if (strcmp(name, XATTR_NAME_SELINUX)) {
+> +               int rc = cap_inode_removexattr(dentry, name);
+> +               if (rc)
+> +                       return rc;
+> +
+> +               /* Not an attribute we recognize, so just check the
+> +                  ordinary setattr permission. */
+> +               return dentry_has_perm(current_cred(), dentry, FILE__SETATTR);
+> +       }
+>
+>         /* No one is allowed to remove a SELinux security label.
+>            You can change the label, but all data must be labeled. */
+> --
+> 2.14.1
+>
+
+
+
+-- 
+paul moore
+www.paul-moore.com
