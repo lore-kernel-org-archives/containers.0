@@ -1,14 +1,13 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+From: Alan Cox <gnomes-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>
 Subject: Re: RFC(v2): Audit Kernel Container IDs
-Date: Thu, 12 Oct 2017 12:59:57 -0500
-Message-ID: <8760bkxn4y.fsf@xmission.com>
+Date: Fri, 13 Oct 2017 14:43:11 +0100
+Message-ID: <20171013144311.45856ba2__1955.79443029619$1507903696$gmane$org@alans-desktop>
 References: <20171012141359.saqdtnodwmbz33b2@madcap2.tricolour.ca>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20171012141359.saqdtnodwmbz33b2-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org> (Richard
-	Guy Briggs's message of "Thu, 12 Oct 2017 10:14:00 -0400")
+In-Reply-To: <20171012141359.saqdtnodwmbz33b2-bcJWsdo4jJjeVoXN4CMphl7TgLCtbB0G@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,45 +18,46 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Carlos O'Donell <carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Moore <pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Audit <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Simo Sorce <simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Carlos O'Donell <carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Moore <pmoore-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Audit <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Simo Sorce <simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
+On Thu, 12 Oct 2017 10:14:00 -0400
+Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
 
-> A namespace cannot directly migrate from one container to another but
-> could be assigned to a newly spawned container.  A namespace can be
-> moved from one container to another indirectly by having that namespace
-> used in a second process in another container and then ending all the
-> processes in the first container.
+> Containers are a userspace concept.  The kernel knows nothing of them.
+> 
+> The Linux audit system needs a way to be able to track the container
+> provenance of events and actions.  Audit needs the kernel's help to do
+> this.
+> 
+> Since the concept of a container is entirely a userspace concept, a
+> registration from the userspace container orchestration system initiates
+> this.  This will define a point in time and a set of resources
+> associated with a particular container with an audit container ID.
 
-Ugh no.  The semantics here are way too mushy.  We need a clean crisp
-unambiguous definition or it will be impossible to get this correct and
-impossible to use for any security purpose.
+I don't think this has anything to do with containers directly. If i
+read it right you need a subtree of stuff to be asigned a (possibly
+irrevocable) magic identifier that you can use for other purposes.
 
-I understand the challenge.  Some of the container managers share
-namespaces between containers.  Leading to things that are not really
-contained.
+Traditional Unix in the more 'secure' space had that decades ago in the
+form of luid. At login time you did a setluid() and that set an
+irrevocable tag onthe session which was (traditionally) the uid of the
+login process so that audit and other related tools always knew how to
+tie the process back to the login session.
 
-Please make this concept like an indellibale die.  Once you are stained
-with it you can not escape.  If you don't meet all of the criteria you
-aren't stained.
+That doesn't quite work as of itself (if you login you'd get luid set and
+not be able to change it for the container), but it seems something
+similarly trivial like a "setauditid(void)" would do the trick providing
+the kernel picked the UUID randomly [otherwise I can copy another known
+UUID to confuse or hide].
 
-The justification that I heard, and that seems legitimate is that it is
-not timely and it is hard to make the connection between the distinct
-unshare, setns, and clone events and what is happening in the kernel.
+As you say a container is a userspace concept. So IMHO any audit
+interface should be about auditing and what needs tracking, not about
+containers. If the container management tool wants to set a suitable tag
+then let it. If not then it doesn't.
 
-With that justification definitely the network namespace needs to be
-stained if it is appropriate.
+Then it's a simple as checking CAP_AUDIT_WRITE to see if you are allowed
+to setauditit(), generating a random uuid and a matching getauditid() to
+copy it back.
 
-I also don't see why this can't be a special dedicated audit message.
-I just looked at the code in the kernel and nlmsg_type is a u16.  There
-are only a handful of audit message types defined.  There is absolutely
-no reason to bring proc into this.
-
-I have the same reservation as the others about defining a new cap for
-this.  It should be enough to make setting the container id a one time
-thing for a set of processes and namespaces.
-
-If this is going to be security it needs to be very simple and very well defined.
-
-Eric
+Alan
