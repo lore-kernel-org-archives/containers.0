@@ -1,20 +1,15 @@
-From: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
+From: Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: RFC(v2): Audit Kernel Container IDs
-Date: Tue, 17 Oct 2017 09:43:18 -0700
-Message-ID: <eb96144d-4ab5-7f9f-de18-b296db35a00a__32472.3056554378$1508258635$gmane$org@schaufler-ca.com>
+Date: Tue, 17 Oct 2017 13:15:00 -0400
+Message-ID: <1982291.vr6V9CPzqu__4582.81560936502$1508260558$gmane$org@x2>
 References: <20171012141359.saqdtnodwmbz33b2@madcap2.tricolour.ca>
-	<75b7d6a6-42ba-2dff-1836-1091c7c024e7@schaufler-ca.com>
-	<20171017003340.whjdkqmkw4lydwy7@madcap2.tricolour.ca>
-	<2319693.5l3M4ZINGd@x2> <1508243469.6230.24.camel@redhat.com>
-	<a07968f6-fef1-f49d-01f1-6c660c0ada20@schaufler-ca.com>
-	<1508254120.6230.34.camel@redhat.com>
 	<1508255091.3129.27.camel@HansenPartnership.com>
+	<eb96144d-4ab5-7f9f-de18-b296db35a00a@schaufler-ca.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1508255091.3129.27.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
-Content-Language: en-US
+In-Reply-To: <eb96144d-4ab5-7f9f-de18-b296db35a00a-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,72 +19,43 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: James Bottomley <James.Bottomley-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, Simo Sorce <simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Carlos O'Donell <carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+To: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
+Cc: mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Carlos O'Donell <carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Simo Sorce <simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org, Linux Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gMTAvMTcvMjAxNyA4OjQ0IEFNLCBKYW1lcyBCb3R0b21sZXkgd3JvdGU6Cj4gT24gVHVlLCAy
-MDE3LTEwLTE3IGF0IDExOjI4IC0wNDAwLCBTaW1vIFNvcmNlIHdyb3RlOgo+Pj4gV2l0aG91dCBh
-ICprZXJuZWwqIHBvbGljeSBvbiBjb250YWluZXJJRHMgeW91IGNhbid0IHNheSB3aGF0Cj4+PiBz
-ZWN1cml0eSBwb2xpY3kgaXMgYmVpbmcgZXhlbXB0ZWQuCj4+IFRoZSBwb2xpY3kgaGFzIGJlZW4g
-YmFzaWNhbGx5IHN0YXRlZCBlYXJsaWVyLgo+Pgo+PiBBIHdheSB0byB0cmFjayBhIHNldCBvZiBw
-cm9jZXNzZXMgZnJvbSBhIHNwZWNpZmljIHBvaW50IGluIHRpbWUKPj4gZm9yd2FyZC4gVGhlIG5h
-bWUgdXNlZCBpcyAiY29udGFpbmVyIGlkIiwgYnV0IGl0IGNvdWxkIGJlIGFueXRoaW5nLgo+PiBU
-aGlzIG1hcmtlciBpcyBtb3N0bHkgdXNlZCBieSB1c2VyIHNwYWNlIHRvIHRyYWNrIHByb2Nlc3Mg
-aGllcmFyY2hpZXMKPj4gd2l0aG91dCByYWNlcywgdGhlc2UgcHJvY2Vzc2VzIGNhbiBiZSB2ZXJ5
-IHByaXZpbGVnZWQsIGFuZCBtdXN0IG5vdAo+PiBiZSBhbGxvd2VkIHRvIGNoYW5nZSB0aGUgbWFy
-a2VyIHRoZW1zZWx2ZXMgd2hlbiBncmFudGVkIHRoZSBjdXJyZW50Cj4+IGNvbW1vbiBjYXBhYmls
-aXRpZXMuCj4+Cj4+IElzIHRoaXMgYSBnb29kIGVub3VnaCBkZXNjcmlwdGlvbiA/IElmIG5vdCBj
-YW4geW91IGNsYXJpZnkgeW91cgo+PiBleHBlY3RhdGlvbnMgPwo+IEkgdGhpbmsgeW91IG1lYW4g
-eW91IHdhbnQgdG8gYmUgYWJsZSB0byBhcHBseSBhIGxhYmVsIHRvIGEgcHJvY2Vzcwo+IHdoaWNo
-IGlzIGluaGVyaXRlZCBhY3Jvc3MgZm9ya3MuCgpUaGF0IHdvdWxkIGJlIFBUQUdTLiBJIGFncmVl
-IHRoYXQgc3VjaCBhIGdlbmVyYWwgbWVjaGFuaXNtCmNvdWxkIGJlIHZlcnkgdXNlZnVsIGZvciBh
-IHZhcmlldHkgb2YgcHVycG9zZXMsIG5vdCBqdXN0CmNvbnRhaW5lcnMuIEkgZG8gbm90IGFncmVl
-IHRoYXQgYSBzaW5nbGUgaW50ZWdlciAoZS5nLiBhCmNvbnRhaW5lcklEKSB3YXJyYW50cyBtb3Jl
-IHRoYW4gdHJpdmlhbCBtZWNoYW5pc20uCgo+IFRoZSBsYWJlbCBzaG91bGQgb25seSBiZSBzdXNj
-ZXB0aWJsZQo+IHRvIG1vZGlmaWNhdGlvbiBieSBzb21ldGhpbmcgcG9zc2Vzc2luZyBhIGNhcGFi
-aWxpdHkgKHdoaWNoIG9uZSBUQkQpLgoKSSB0aGluayB0aGF0IHRoZSByZWFzb24gd2UncmUgZ29p
-bmcgdG8gaGF2ZSBjcnlpbmcgYW5kIGduYXNoaW5nCm9mIHRlZXRoIGlzIHRoYXQgd2hhdGV2ZXIg
-Y2FwYWJpbGl0eSBpcyB1c2VkLiBUaGVyZSB3aWxsIGFsd2F5cyBiZQphbiBpc3N1ZSBvZiB0aGUg
-Y2FwYWJpbGl0eSBncmFudGVkIGJlaW5nIGxlc3Mgc3BlY2lmaWMgdGhhbiB0aGUKYXBwbGljYXRp
-b24gc2VjdXJpdHkgbW9kZWwgd291bGQgbGlrZS4KCkFuZCBubywgd2UncmUgbm90IGdvaW5nIGRv
-d24gdGhlIDMzMCBjYXBhYmlsaXRpZXMgcm9hZC4gSXQncyBiZWVuCmRvbmUgaW4gdGhlIFVOSVgg
-d29ybGQuIEFwcGxpY2F0aW9uIHNlY3VyaXR5IG1vZGVscyBoYXRlIHRoYXQKanVzdCBhcyBtdWNo
-IGFzIHRoZXkgaGF0ZSB0aGUgY29hcnNlciBncmFudWxhcml0eS4KCj4gVGhlIGlkZWEgaXMgdGhh
-dCBwcm9jZXNzZXMgc3Bhd25lZCBpbnRvIGEgY29udGFpbmVyIHdvdWxkIGJlIGxhYmVsbGVkCj4g
-YnkgdGhlIGNvbnRhaW5lciBvcmNoZXN0cmF0aW9uIHN5c3RlbS4gwqBJdCdzIHVuY2xlYXIgd2hh
-dCBzaG91bGQgaGFwcGVuCj4gdG8gcHJvY2Vzc2VzIHVzaW5nIG5zZW50ZXIgYWZ0ZXIgdGhlIGZh
-Y3QsIGJ1dCBwb2xpY3kgZm9yIHRoYXQgc2hvdWxkCj4gYmUgdXAgdG8gdGhlIG9yY2hlc3RyYXRp
-b24gc3lzdGVtLgoKSSdtIGZpbmUgd2l0aCB0aGF0LiBUaGUgdXNlciBzcGFjZSBwb2xpY3kgY2Fu
-IGJlIGFueXRoaW5nIHknYWxsIGxpa2UuCgo+IFRoZSBsYWJlbCB3aWxsIGJlIHVzZWQgYXMgYSB0
-YWcgZm9yIGF1ZGl0IGluZm9ybWF0aW9uLgoKRGVlcCBicmVhdGggLi4uCgpXaGljaCAqaXMqIGEg
-a2VybmVsIHNlY3VyaXR5IHBvbGljeSBtZWNoYW5pc20uIFNpbmNlIHRoZSAibGFiZWwiCmlzIHBh
-cnQgb2YgdGhlIGF1ZGl0IGluZm9ybWF0aW9uIHRoYXQgdGhlIGtlcm5lbCBpcyBndWFyYW50ZWVp
-bmcKY2hhbmdpbmcgaXQgd291bGQgYmUgY292ZXJlZCBieSBDQVBfQVVESVRfQ09OVFJPTC4gSWYg
-dGhlIGtlcm5lbApkb2VzIG5vdCB1c2UgdGhlICJsYWJlbCIgZm9yIGFueSBvdGhlciBwdXJwb3Nl
-IHRoaXMgaXMgdGhlIG9ubHkKY2FwYWJpbGl0eSB0aGF0IG1ha2VzIHNlbnNlIGZvciBpdC4KCj4g
-SSB0aGluayB5b3Ugd2VyZSBtaXNzaW5nIGxhYmVsIGluaGVyaXRhbmNlIGFib3ZlLgo+Cj4gVGhl
-IHNlY3VyaXR5IGltcGxpY2F0aW9ucyBhcmUgdGhhdCBhbnl0aGluZyB0aGF0IGNhbiBjaGFuZ2Ug
-dGhlIGxhYmVsCj4gY291bGQgYWxzbyBoaWRlIGl0c2VsZiBhbmQgaXRzIGRvaW5ncyBmcm9tIHRo
-ZSBhdWRpdCBzeXN0ZW0gYW5kIHRodXMKPiB3b3VsZCBiZSB1c2VkIGFzIGEgbWVhbnMgdG8gZXZh
-ZGUgZGV0ZWN0aW9uLiDCoAoKWWVzLiBUaGlzIGlzIGEgY29uc2VxdWVuY2Ugb2YgdGhlIGNhcGFi
-aWxpdHkgZ3JhbnVsYXJpdHkuIFRoZXJlIGlzCm5vIHdheSB3ZSBjYW4gbWFrZSB0aGUgY2FwYWJp
-bGl0eSBncmFudWxhcml0eSBzdWZmaWNpZW50bHkgZmluZSB0bwpwcmV2ZW50IHRoaXMuIE5vIG9u
-ZSB3YW50cyB0aGUgMzMwIGNhcGFiaWxpdGllcyB0aGF0IERhdGEgR2VuZXJhbApoYWQgaW4gdGhl
-aXIgc2VjdXJlIFVOSVggc3lzdGVtLiAKCj4gSSBhY3R1YWxseSB0aGluayB0aGlzCj4gbWVhbnMg
-dGhlIGxhYmVsIHNob3VsZCBiZSB3cml0ZSBvbmNlIChvbmNlIHlvdSd2ZSBzZXQgaXQsIHlvdSBj
-YW4ndAo+IGNoYW5nZSBpdCkgYW5kIG9yY2hlc3RyYXRpb24gc3lzdGVtcyBzaG91bGQgYmVnaW4g
-YXMgdW5sYWJlbGxlZAo+IHByb2Nlc3NlcyBhbGxvd2luZyB0aGVtIHRvIGRvIGFyYml0cmFyeSBm
-b3Jrcy4KPgo+IEZvciBuZXN0ZWQgY29udGFpbmVycywgSSBhY3R1YWxseSB0aGluayB0aGUgbGFi
-ZWwgc2hvdWxkIGJlCj4gaGllcmFyY2hpY2FsLCBzbyB5b3UgY2FuIGFkZCBhIGxhYmVsIGZvciB0
-aGUgbmV3IG5lc3RlZCBjb250YWluZXIgYnV0Cj4gaXQgc3RpbGwgYWxzbyBjb250YWlucyBpdHMg
-cGFyZW50cyBsYWJlbCBhcyB3ZWxsLgoKWW91IGNhbid0IHN1cHBvcnQgdGhpcyByZWFzb25hYmx5
-IHdpdGggYSBzaW5nbGUgY29udGFpbmVySUQuCllvdSB3YW50IFBUQUdTIGZvciB0aGlzLiBJIGtu
-b3cgdGhhdCB0aGVyZSBpcyByZXNpc3RhbmNlIHRvCnJlcXVpcmluZyBhbnl0aGluZyBiZXlvbmQg
-d2hhdCdzIGluIHRoZSBiYXNlIGtlcm5lbCAoYW5kIGZvcgpnb29kIHJlYXNvbnMpIGZvciBjb250
-YWluZXJzLiBFc3BlY2lhbGx5IHNvbWV0aGluZyB0aGF0IGlzCnBlbmRpbmcgZnV0dXJlIHdvcmsu
-IEJ1dCBsZXQncyBub3QgamFtIHNvbWV0aGluZyBpbnRvIHRoZSBiYXNlCmtlcm5lbCB0aGF0IGlz
-bid0IHJlYWxseSBnb2luZyB0byBhZGRyZXNzIHRoZSBpc3N1ZS4KCj4gSmFtZXMKCl9fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGlu
-ZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0
-cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On Tuesday, October 17, 2017 12:43:18 PM EDT Casey Schaufler wrote:
+> > The idea is that processes spawned into a container would be labelled
+> > by the container orchestration system.  It's unclear what should happen
+> > to processes using nsenter after the fact, but policy for that should
+> > be up to the orchestration system.
+> 
+> I'm fine with that. The user space policy can be anything y'all like.
+
+I think there should be a login event.
+
+
+> > The label will be used as a tag for audit information.
+> 
+> Deep breath ...
+> 
+> Which *is* a kernel security policy mechanism. Since the "label"
+> is part of the audit information that the kernel is guaranteeing
+> changing it would be covered by CAP_AUDIT_CONTROL. If the kernel
+> does not use the "label" for any other purpose this is the only
+> capability that makes sense for it.
+
+I agree. The ability to set the container label grants the ability to evade 
+rules or modify audit rules. CAP_AUDIT_CONTROL makes sense to me.
+
+
+> > I think you were missing label inheritance above.
+> > 
+> > The security implications are that anything that can change the label
+> > could also hide itself and its doings from the audit system and thus
+> > would be used as a means to evade detection.
+
+Yes. We have the same problem with loginuid. There are restrictions on who can 
+change it once set. And then we made an immutable flag so that people that 
+want a hard guarantee can get that.
+
+-Steve
