@@ -1,16 +1,19 @@
 From: Paul Moore <paul-r2n+y4ga6xFZroRs9YW3xA@public.gmane.org>
 Subject: Re: RFC(v2): Audit Kernel Container IDs
-Date: Wed, 18 Oct 2017 15:58:13 -0400
-Message-ID: <CAHC9VhTBd1pNqavFpQqDHwhW=j7AX8gDL0H_c_VBD07SMMLZmQ__39707.3637963787$1508356726$gmane$org@mail.gmail.com>
+Date: Wed, 18 Oct 2017 16:56:06 -0400
+Message-ID: <CAHC9VhRV9m6-APj3ofMQc22rL-WUoDzB8-urUxryszjCHHHLTg@mail.gmail.com>
 References: <20171012141359.saqdtnodwmbz33b2@madcap2.tricolour.ca>
 	<75b7d6a6-42ba-2dff-1836-1091c7c024e7@schaufler-ca.com>
 	<20171017003340.whjdkqmkw4lydwy7@madcap2.tricolour.ca>
 	<2319693.5l3M4ZINGd@x2> <1508243469.6230.24.camel@redhat.com>
+	<a07968f6-fef1-f49d-01f1-6c660c0ada20@schaufler-ca.com>
+	<1508254120.6230.34.camel@redhat.com>
+	<1508255091.3129.27.camel@HansenPartnership.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1508243469.6230.24.camel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1508255091.3129.27.camel-d9PhHud1JfjCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,29 +23,88 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Simo Sorce <simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Carlos O'Donell <carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Linux Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+To: James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>
+Cc: cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Carlos O'Donell <carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Simo Sorce <simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, Steve Grubb <sgrubb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Oct 17, 2017 at 8:31 AM, Simo Sorce <simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> The container Id can be used also for authorization purposes (by other
-> processes on the host), not just audit, I think this is why a separate
-> control has been proposed.
+On Tue, Oct 17, 2017 at 11:44 AM, James Bottomley
+<James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org> wrote:
+> On Tue, 2017-10-17 at 11:28 -0400, Simo Sorce wrote:
+>> > Without a *kernel* policy on containerIDs you can't say what
+>> > security policy is being exempted.
+>>
+>> The policy has been basically stated earlier.
+>>
+>> A way to track a set of processes from a specific point in time
+>> forward. The name used is "container id", but it could be anything.
+>> This marker is mostly used by user space to track process hierarchies
+>> without races, these processes can be very privileged, and must not
+>> be allowed to change the marker themselves when granted the current
+>> common capabilities.
+>>
+>> Is this a good enough description ? If not can you clarify your
+>> expectations ?
+>
+> I think you mean you want to be able to apply a label to a process
+> which is inherited across forks.  The label should only be susceptible
+> to modification by something possessing a capability (which one TBD).
+> The idea is that processes spawned into a container would be labelled
+> by the container orchestration system.  It's unclear what should happen
+> to processes using nsenter after the fact, but policy for that should
+> be up to the orchestration system.
+>
+> The label will be used as a tag for audit information.
+>
+> I think you were missing label inheritance above.
 
-Apologies, but I'm just now getting a chance to work my way through
-this thread, and I wanted to make a quick comment on this point ...
+That is a pretty good summary of what we want to do, and what Richard
+and I have discussed while brainstorming this offline.  The details
+may not have translated well into those initial emails from Richard,
+but I think you've got the idea, even if some of the smaller details
+are still TBD.  FWIW, right now I'm not as worried about the exact
+capability or the size of the audit container ID, I think those things
+will sort themselves out as we progress through the implementation,
+especially once we get to the next stage when we start to allow copies
+of the audit records to be routed to audit daemons running inside
+containers (note well that I said "copies", the host system still sees
+all).
 
-The audit container ID (note I said "audit container ID" not
-"container ID") is intended strictly for use by the audit subsystem at
-this point.  Allowing other uses opens the door to a larger set of
-problems we are trying to avoid (e.g. handling migration across
-hosts).  We would love to have a generic kernel facility that the
-audit subsystem could use to identify containers, but we don't, and
-previous attempts have failed, so we have to create our own.  We are
-intentionally trying to limit its scope in an attempt to limit
-problems.  If a more general solution appears in the future I think we
-would make every effect to migrate to that; keeping this initial
-effort small should make that easier.
+> The security implications are that anything that can change the label
+> could also hide itself and its doings from the audit system and thus
+> would be used as a means to evade detection.  I actually think this
+> means the label should be write once (once you've set it, you can't
+> change it) ...
+
+Richard and I have talked about a write once approach, but the
+thinking was that you may want to allow a nested container
+orchestrator (Why? I don't know, but people always want to do the
+craziest things.) and a write-once policy makes that impossible.  If
+we punt on the nested orchestrator, I believe we can seriously think
+about a write-once policy to simplify things.
+
+A bit off topic, but I've also wondered about not even implementing
+read access, just to help ensure the audit container ID wouldn't be
+abused, but I'm not sure how practical that will be.  Something else
+to sort out during the RFC phase of the implementation with the
+container orchestrators.
+
+> ... and orchestration systems should begin as unlabelled
+> processes allowing them to do arbitrary forks.
+
+My current thinking is that the default state is to start unlabeled (I
+just vomited a little into my SELinux hat); in other words
+init/systemd/PID-1 in the host system starts with an "unset" audit
+container ID.  This not only helps define the host system (anything
+that has an unset audit container ID) but provides a blank slate for
+the orchestrator(s).
+
+> For nested containers, I actually think the label should be
+> hierarchical, so you can add a label for the new nested container but
+> it still also contains its parents label as well.
+
+I haven't made up my mind on this completely just yet, but I'm
+currently of the mindset that supporting multiple audit container IDs
+on a given process is not a good idea.
 
 -- 
 paul moore
