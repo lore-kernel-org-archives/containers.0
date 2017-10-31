@@ -1,7 +1,7 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 4/5] userns: Make map_id_down a wrapper for map_id_range_down
-Date: Tue, 31 Oct 2017 18:48:46 -0500
-Message-ID: <87efpiswtd.fsf_-___1834.9421131008$1509493781$gmane$org@xmission.com>
+Subject: [PATCH 5/5] userns: Simplify insert_extent
+Date: Tue, 31 Oct 2017 18:49:22 -0500
+Message-ID: <878tfqswsd.fsf_-___90.7362126328692$1509493789$gmane$org@xmission.com>
 References: <20171024220441.10235-1-christian.brauner@ubuntu.com>
 	<20171024220441.10235-2-christian.brauner@ubuntu.com>
 	<871sliubhj.fsf_-_@xmission.com>
@@ -25,67 +25,60 @@ Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 List-Id: containers.vger.kernel.org
 
 
-There is no good reason for this code duplication, the number of cache
-line accesses not the number of instructions are the bottleneck in
-this code.
+Consolidate the code to write to the new mapping at the end of the
+function to remove the duplication.  Move the increase in the number
+of mappings into insert_extent, keeping the logic together.
 
-Therefore simplify maintenance by removing unnecessary code.
+Just a small increase in readability and maintainability.
 
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- kernel/user_namespace.c | 38 +-------------------------------------
- 1 file changed, 1 insertion(+), 37 deletions(-)
+ kernel/user_namespace.c | 19 ++++++++-----------
+ 1 file changed, 8 insertions(+), 11 deletions(-)
 
 diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 4f7e357ac1e2..1d0298870ee3 100644
+index 1d0298870ee3..899c31060ff3 100644
 --- a/kernel/user_namespace.c
 +++ b/kernel/user_namespace.c
-@@ -313,45 +313,9 @@ static u32 map_id_range_down(struct uid_gid_map *map, u32 id, u32 count)
- 	return id;
- }
- 
--/**
-- * map_id_down_base - Find idmap via binary search in static extent array.
-- * Can only be called if number of mappings is equal or less than
-- * UID_GID_MAP_MAX_BASE_EXTENTS.
-- */
--static struct uid_gid_extent *
--map_id_down_base(unsigned extents, struct uid_gid_map *map, u32 id)
--{
--	unsigned idx;
--	u32 first, last;
--
--	/* Find the matching extent */
--	for (idx = 0; idx < extents; idx++) {
--		first = map->extent[idx].first;
--		last = first + map->extent[idx].count - 1;
--		if (id >= first && id <= last)
--			return &map->extent[idx];
--	}
--	return NULL;
--}
--
- static u32 map_id_down(struct uid_gid_map *map, u32 id)
+@@ -758,12 +758,7 @@ static bool mappings_overlap(struct uid_gid_map *new_map,
+  */
+ static int insert_extent(struct uid_gid_map *map, struct uid_gid_extent *extent)
  {
--	struct uid_gid_extent *extent;
--	unsigned extents = map->nr_extents;
--	smp_rmb();
--
--	if (extents <= UID_GID_MAP_MAX_BASE_EXTENTS)
--		extent = map_id_down_base(extents, map, id);
--	else
--		extent = map_id_range_down_max(extents, map, id, 1);
--
--	/* Map the id or note failure */
--	if (extent)
--		id = (id - extent->first) + extent->lower_first;
--	else
--		id = (u32) -1;
--
--	return id;
-+	return map_id_range_down(map, id, 1);
+-	if (map->nr_extents < UID_GID_MAP_MAX_BASE_EXTENTS) {
+-		map->extent[map->nr_extents].first = extent->first;
+-		map->extent[map->nr_extents].lower_first = extent->lower_first;
+-		map->extent[map->nr_extents].count = extent->count;
+-		return 0;
+-	}
++	struct uid_gid_extent *dest;
+ 
+ 	if (map->nr_extents == UID_GID_MAP_MAX_BASE_EXTENTS) {
+ 		struct uid_gid_extent *forward;
+@@ -784,9 +779,13 @@ static int insert_extent(struct uid_gid_map *map, struct uid_gid_extent *extent)
+ 		map->reverse = NULL;
+ 	}
+ 
+-	map->forward[map->nr_extents].first = extent->first;
+-	map->forward[map->nr_extents].lower_first = extent->lower_first;
+-	map->forward[map->nr_extents].count = extent->count;
++	if (map->nr_extents < UID_GID_MAP_MAX_BASE_EXTENTS)
++		dest = &map->extent[map->nr_extents];
++	else
++		dest = &map->forward[map->nr_extents];
++
++	*dest = *extent;
++	map->nr_extents++;
+ 	return 0;
  }
  
- /**
+@@ -968,8 +967,6 @@ static ssize_t map_write(struct file *file, const char __user *buf,
+ 		if (ret < 0)
+ 			goto out;
+ 		ret = -EINVAL;
+-
+-		new_map.nr_extents++;
+ 	}
+ 	/* Be very certaint the new map actually exists */
+ 	if (new_map.nr_extents == 0)
 -- 
 2.14.1
