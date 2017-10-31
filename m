@@ -1,15 +1,16 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 0/5] userns: bump idmap limits, fixes & tweaks
-Date: Tue, 31 Oct 2017 18:46:32 -0500
-Message-ID: <871sliubhj.fsf_-___11660.67393865$1509493634$gmane$org@xmission.com>
+Subject: [PATCH 1/5] userns: Don't special case a count of 0
+Date: Tue, 31 Oct 2017 18:47:15 -0500
+Message-ID: <87vaiuswvw.fsf_-___43815.0337235585$1509493675$gmane$org@xmission.com>
 References: <20171024220441.10235-1-christian.brauner@ubuntu.com>
 	<20171024220441.10235-2-christian.brauner@ubuntu.com>
+	<871sliubhj.fsf_-_@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20171024220441.10235-2-christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org> (Christian
-	Brauner's message of "Wed, 25 Oct 2017 00:04:41 +0200")
+In-Reply-To: <871sliubhj.fsf_-_-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (Eric W. Biederman's message of
+	"Tue, 31 Oct 2017 18:46:32 -0500")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -24,26 +25,48 @@ Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 List-Id: containers.vger.kernel.org
 
 
-Christian I have looked through your code and I have found one real
-issue and of things I want to twak
+We can always use a count of 1 so there is no reason to have
+a special case of a count of 0.
 
-The real issue is reading nr_extents multiple times when reading a map.
-That can introduce races that will allow walking past the end of the
-array, if the first read is 0 but the second read is > 5.
+Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ kernel/user_namespace.c | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
 
-I have also found a couple of tweaks that look like they are worth
-implementing.
-
-As all of these are very small and very straight forward I have
-tested these and applied them all to my for-next branch
-
-
-Eric W. Biederman (5):
-      userns: Don't special case a count of 0
-      userns: Simplify the user and group mapping functions
-      userns: Don't read extents twice in m_start
-      userns: Make map_id_down a wrapper for map_id_range_down
-      userns: Simplify insert_extent
-
- kernel/user_namespace.c | 159 ++++++++++++++++--------------------------------
- 1 file changed, 51 insertions(+), 108 deletions(-)
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 5fd2d53dbc75..c9904ee084c4 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -232,11 +232,7 @@ static int cmp_map_id(const void *k, const void *e)
+ 	const struct idmap_key *key = k;
+ 	const struct uid_gid_extent *el = e;
+ 
+-	/* handle map_id_range_down() */
+-	if (key->count)
+-		id2 = key->id + key->count - 1;
+-	else
+-		id2 = key->id;
++	id2 = key->id + key->count - 1;
+ 
+ 	/* handle map_id_{down,up}() */
+ 	if (key->map_up)
+@@ -362,7 +358,7 @@ static u32 map_id_down(struct uid_gid_map *map, u32 id)
+ 	if (extents <= UID_GID_MAP_MAX_BASE_EXTENTS)
+ 		return map_id_down_base(map, id);
+ 
+-	return map_id_range_down_max(map, id, 0);
++	return map_id_range_down_max(map, id, 1);
+ }
+ 
+ /**
+@@ -404,7 +400,7 @@ static u32 map_id_up_max(struct uid_gid_map *map, u32 id)
+ 	struct idmap_key key;
+ 
+ 	key.map_up = true;
+-	key.count = 0;
++	key.count = 1;
+ 	key.id = id;
+ 
+ 	extents = map->nr_extents;
+-- 
+2.14.1
