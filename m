@@ -1,11 +1,13 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [GIT PULL] signal bug fix for v4.14-rc8
-Date: Wed, 01 Nov 2017 17:22:25 -0500
-Message-ID: <87o9olfxlq.fsf__46642.6387698904$1509574962$gmane$org@xmission.com>
+From: =?UTF-8?B?5pu55qCR54O9?= <caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 0/3] Make core_pattern support namespace
+Date: Thu, 2 Nov 2017 13:41:52 +0800
+Message-ID: <59FAB020.1040404@cn.fujitsu.com>
+References: <1501655849-9149-1-git-send-email-caosf.fnst@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="gbk"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1501655849-9149-1-git-send-email-caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -15,54 +17,70 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mashimiao.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Linus,
-
-Please pull the for-linus branch from the git tree:
-
-   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
-
-   HEAD: c3aff086ea11f17f5c0bec77bdbf4365ba6b41fc signal: Fix name of SIGEMT in #if defined() check
-
-When making the generic support for SIGEMT conditional on the presence
-of SIGEMT I made a typo that causes it to fail to activate.  It was
-noticed comparatively quickly but the bug report just made it to me
-today.
-
-From: Andrew Clayton <andrew-gyMb1R/nBgN3uBD2Ct+Y/qxOck334EZe@public.gmane.org>
-Date: Wed, 1 Nov 2017 15:49:59 +0000
-Subject: [PATCH] signal: Fix name of SIGEMT in #if defined() check
-
-Commit cc731525f26a ("signal: Remove kernel interal si_code magic")
-added a check for SIGMET and NSIGEMT being defined. That SIGMET should
-in fact be SIGEMT, with SIGEMT being defined in
-arch/{alpha,mips,sparc}/include/uapi/asm/signal.h
-
-This was actually pointed out by BenHutchings in a lwn.net comment
-here https://lwn.net/Comments/734608/
-
-Fixes: cc731525f26a ("signal: Remove kernel interal si_code magic")
-Signed-off-by: Andrew Clayton <andrew-gyMb1R/nBgN3uBD2Ct+Y/qxOck334EZe@public.gmane.org>
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- kernel/signal.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/kernel/signal.c b/kernel/signal.c
-index 800a18f77732..8dcd8825b2de 100644
---- a/kernel/signal.c
-+++ b/kernel/signal.c
-@@ -2698,7 +2698,7 @@ enum siginfo_layout siginfo_layout(int sig, int si_code)
- 			[SIGSEGV] = { NSIGSEGV, SIL_FAULT },
- 			[SIGBUS]  = { NSIGBUS,  SIL_FAULT },
- 			[SIGTRAP] = { NSIGTRAP, SIL_FAULT },
--#if defined(SIGMET) && defined(NSIGEMT)
-+#if defined(SIGEMT) && defined(NSIGEMT)
- 			[SIGEMT]  = { NSIGEMT,  SIL_FAULT },
- #endif
- 			[SIGCHLD] = { NSIGCHLD, SIL_CHLD },
--- 
-2.14.1
+cGluZwoK1NogMjAxN8TqMDjUwjAyyNUgMTQ6MzcsIENhbyBTaHVmZW5nINC0tcA6Cj4gVGhpcyBw
+YXRjaHNldCBpbmNsdWRlcyBmb2xsb3dpbmcgZnVuY3Rpb24gcG9pbnRzOgo+IDE6IExldCB1c2Vy
+bW9kZWhlbHBlciBmdW5jdGlvbiBwb3NzaWJsZSB0byBzZXQgcGlkIG5hbWVzcGFjZQo+ICAgICBk
+b25lIGJ5OiBbUEFUQ0hfdjQuMV8xLzNdIE1ha2UgY2FsbF91c2VybW9kZWhlbHBlcl9leGVjIHBv
+c3NpYmxlCj4gICAgIHRvIHNldCBuYW1lc3BhY2VzCj4gMjogTGV0IHBpcGVfdHlwZSBjb3JlX3Bh
+dHRlcm4gd3JpdGUgZHVtcCBpbnRvIGNvbnRhaW5lcidzIHJvb3Rmcwo+ICAgICBkb25lIGJ5OiBb
+UEFUQ0hfdjQuMV8yLzNdIExpbWl0IGR1bXBfcGlwZSBwcm9ncmFtJ3MgcGVybWlzc2lvbiB0bwo+
+ICAgICBpbml0IGZvciBjb250YWluZXIKPiAzOiBNYWtlIHNlcGFyYXRlIGNvcmVfcGF0dGVybiBz
+ZXR0aW5nIGZvciBlYWNoIGNvbnRhaW5lcgo+ICAgICBkb25lIGJ5OiBbUEFUQ0hfdjQuMV8zLzNd
+IE1ha2UgY29yZV9wYXR0ZXJuIHN1cHBvcnQgbmFtZXNwYWNlCj4gNDogQ29tcGF0aWJpbGl0eSB3
+aXRoIGN1cnJlbnQgc3lzdGVtCj4gICAgIGFsc28gaW5jbHVkZWQgaW46IFtQQVRDSF92NC4xXzMv
+M10gTWFrZSBjb3JlX3BhdHRlcm4gc3VwcG9ydCBuYW1lc3BhY2UKPiAgICAgSWYgY29udGFpbmVy
+IGhhZG4ndCBjaGFuZ2UgY29yZV9wYXR0ZXJuIHNldHRpbmcsIGl0IHdpbGwga2VlcAo+ICAgICBz
+YW1lIHNldHRpbmcgd2l0aCBob3N0Lgo+Cj4gVGVzdDoKPiAxOiBQYXNzIGEgdGVzdCBzY3JpcHQg
+Zm9yIGVhY2ggZnVuY3Rpb24gb2YgdGhpcyBwYXRjaHNldAo+ICAgICAjIyBURVNUIElOIEhPU1Qg
+IyMKPiAgICAgW3Jvb3RAa2VybmVsZGV2IGR1bXB0ZXN0XSMgLi90ZXN0X2hvc3QKPiAgICAgU2V0
+IGZpbGUgY29yZV9wYXR0ZXJuOiBPSwo+ICAgICAuL3Rlc3RfaG9zdDogbGluZSA0MTogIDIzNjYg
+U2VnbWVudGF0aW9uIGZhdWx0ICAgICAgKGNvcmUgZHVtcGVkKSAiJFNDUkk9Cj4gUFRfQkFTRV9E
+SVIiL21ha2VfZHVtcAo+ICAgICBDaGVja2luZyBkdW1wZmlsZTogT0sKPiAgICAgU2V0IGZpbGUg
+Y29yZV9wYXR0ZXJuOiBPSwo+ICAgICAuL3Rlc3RfaG9zdDogbGluZSA0MTogIDIzNjkgU2VnbWVu
+dGF0aW9uIGZhdWx0ICAgICAgKGNvcmUgZHVtcGVkKSAiJFNDUkk9Cj4gUFRfQkFTRV9ESVIiL21h
+a2VfZHVtcAo+ICAgICBDaGVja2luZyBkdW1wX3BpcGUgdHJpZ2dlcmVkOiBPSwo+ICAgICBDaGVj
+a2luZyByb290ZnM6IE9LCj4gICAgIENoZWNraW5nIGR1bXBmaWxlOiBPSwo+ICAgICBDaGVja2lu
+ZyBuYW1lc3BhY2U6IE9LCj4gICAgIENoZWNraW5nIHByb2Nlc3MgbGlzdDogT0sKPiAgICAgQ2hl
+Y2tpbmcgY2FwYWJpbGl0aWVzOiBPSwo+Cj4gICAgICMjIFRFU1QgSU4gR1VFU1QgIyMKPiAgICAg
+IyAuL3Rlc3QKPiAgICAgU2VnbWVudGF0aW9uIGZhdWx0IChjb3JlIGR1bXBlZCkKPiAgICAgQ2hl
+Y2tpbmcgZHVtcF9waXBlIHRyaWdnZXJlZDogT0sKPiAgICAgQ2hlY2tpbmcgcm9vdGZzOiBPSwo+
+ICAgICBDaGVja2luZyBkdW1wZmlsZTogT0sKPiAgICAgQ2hlY2tpbmcgbmFtZXNwYWNlOiBPSwo+
+ICAgICBDaGVja2luZyBwcm9jZXNzIGxpc3Q6IE9LCj4gICAgIENoZWNraW5nIGNnIHBpZHM6IE9L
+Cj4gICAgIENoZWNraW5nIGNhcGFiaWxpdGllczogT0sKPiAgICAgWyAgIDY0Ljk0MDczNF0gbWFr
+ZV9kdW1wWzI0MzJdOiBzZWdmYXVsdCBhdCAwIGlwIDAwMDAwMDAwMDA0MDA0OWQgc3AgMDAwPQo+
+IDA3ZmZjNGFmMDI1ZjAgZXJyb3IgNiBpbiBtYWtlX2R1bXBbNDAwMDAwK2E2MDAwXQo+ICAgICAj
+Cj4gMjogUGFzcyBvdGhlciB0ZXN0KHdoaWNoIGlzIG5vdCBlYXN5IHRvIGRvIGluIHNjcmlwdCkg
+YnkgaGFuZC4KPgo+IENoYW5nZWxvZyB2My4xLXY0Ogo+IDEuIHJlbW92ZSBleHRyYSBmb3JrIHBv
+aW50ZWQgb3V0IGJ5Ogo+ICAgICBBbmRyZWkgVmFnaW4gPGF2YWdpbkBnbWFpbC5jb20+Cj4gMjog
+UmViYXNlIG9uIHRvcCBvZiB2NC45LXJjOC4KPiAzOiBSZWJhc2Ugb24gdG9wIG9mIHY0LjEyLgo+
+Cj4gQ2hhbmdlbG9nIHYzLXYzLjE6Cj4gMS4gU3dpdGNoICJwd2QiIG9mIHBpcGUgcHJvZ3JhbSB0
+byBjb250YWluZXIncyByb290IGZzLgo+IDIuIFJlYmFzZSBvbiB0b3Agb2YgdjQuOS1yYzEuCj4K
+PiBDaGFuZ2Vsb2cgdjItPnYzOgo+IDE6IEZpeCBwcm9ibGVtIG9mIHNldHRpbmcgcGlkIG5hbWVz
+cGFjZSwgcG9pbnRlZCBvdXQgYnk6Cj4gICAgIEFuZHJlaSBWYWdpbiA8YXZhZ2luQGdtYWlsLmNv
+bT4KPgo+IENoYW5nZWxvZyB2MShSRkMpLT52MjoKPiAxOiBBZGQgW1BBVENIIDIvMl0gd2hpY2gg
+d2FzIHRvZG8gaW4gW1JGQyB2MV0uCj4gMjogUGFzcyBhIHRlc3Qgc2NyaXB0IGZvciBlYWNoIGZ1
+bmN0aW9uLgo+IDM6IFJlYmFzZSBvbiB0b3Agb2YgdjQuNy4KPgo+IFN1Z2dlc3RlZC1ieTogRXJp
+YyBXLiBCaWVkZXJtYW4gPGViaWVkZXJtQHhtaXNzaW9uLmNvbT4KPiBTdWdnZXN0ZWQtYnk6IEtP
+U0FLSSBNb3RvaGlybyA8a29zYWtpLm1vdG9oaXJvQGpwLmZ1aml0c3UuY29tPgo+IFNpZ25lZC1v
+ZmYtYnk6IENhbyBTaHVmZW5nIDxjYW9zZi5mbnN0QGNuLmZ1aml0c3UuY29tPgo+Cj4gQ2FvIFNo
+dWZlbmcgKDMpOgo+ICAgIE1ha2UgY2FsbF91c2VybW9kZWhlbHBlcl9leGVjIHBvc3NpYmxlIHRv
+IHNldCBuYW1lc3BhY2VzCj4gICAgTGltaXQgZHVtcF9waXBlIHByb2dyYW0ncyBwZXJtaXNzaW9u
+IHRvIGluaXQgZm9yIGNvbnRhaW5lcgo+ICAgIE1ha2UgY29yZV9wYXR0ZXJuIHN1cHBvcnQgbmFt
+ZXNwYWNlCj4KPiAgIGZzL2NvcmVkdW1wLmMgICAgICAgICAgICAgICAgIHwgMTUwICsrKysrKysr
+KysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKy0tLQo+ICAgaW5jbHVkZS9saW51eC9iaW5m
+bXRzLmggICAgICAgfCAgIDIgKwo+ICAgaW5jbHVkZS9saW51eC9rbW9kLmggICAgICAgICAgfCAg
+IDUgKysKPiAgIGluY2x1ZGUvbGludXgvcGlkX25hbWVzcGFjZS5oIHwgICAzICsKPiAgIGluaXQv
+ZG9fbW91bnRzX2luaXRyZC5jICAgICAgIHwgICAzICstCj4gICBrZXJuZWwva21vZC5jICAgICAg
+ICAgICAgICAgICB8ICA1NiArKysrKysrKysrKysrLS0tCj4gICBrZXJuZWwvcGlkLmMgICAgICAg
+ICAgICAgICAgICB8ICAgMiArCj4gICBrZXJuZWwvcGlkX25hbWVzcGFjZS5jICAgICAgICB8ICAg
+MiArCj4gICBrZXJuZWwvc3lzY3RsLmMgICAgICAgICAgICAgICB8ICA1MCArKysrKysrKysrKyst
+LQo+ICAgbGliL2tvYmplY3RfdWV2ZW50LmMgICAgICAgICAgfCAgIDMgKy0KPiAgIHNlY3VyaXR5
+L2tleXMvcmVxdWVzdF9rZXkuYyAgIHwgICA0ICstCj4gICAxMSBmaWxlcyBjaGFuZ2VkLCAyNTMg
+aW5zZXJ0aW9ucygrKSwgMjcgZGVsZXRpb25zKC0pCj4KCgoKX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFp
+bmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRh
+dGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
