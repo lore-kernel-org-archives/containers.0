@@ -1,13 +1,13 @@
-From: =?UTF-8?B?5pu55qCR54O9?= <caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 0/3] Make core_pattern support namespace
-Date: Thu, 2 Nov 2017 13:41:52 +0800
-Message-ID: <59FAB020.1040404@cn.fujitsu.com>
-References: <1501655849-9149-1-git-send-email-caosf.fnst@cn.fujitsu.com>
+From: Christian Brauner <christian.brauner-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Subject: [PATCH 1/1] userns: Fix/clarify memory ordering
+Date: Thu,  2 Nov 2017 12:03:44 +0100
+Message-ID: <20171102110344.31647-2-christian.brauner@ubuntu.com>
+References: <20171102110344.31647-1-christian.brauner@ubuntu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="gbk"; Format="flowed"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1501655849-9149-1-git-send-email-caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20171102110344.31647-1-christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -17,70 +17,150 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mashimiao.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org
+Cc: nborisov-IBi9RG/b67k@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, tycho-E0fblnxP3wo@public.gmane.org, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-cGluZwoK1NogMjAxN8TqMDjUwjAyyNUgMTQ6MzcsIENhbyBTaHVmZW5nINC0tcA6Cj4gVGhpcyBw
-YXRjaHNldCBpbmNsdWRlcyBmb2xsb3dpbmcgZnVuY3Rpb24gcG9pbnRzOgo+IDE6IExldCB1c2Vy
-bW9kZWhlbHBlciBmdW5jdGlvbiBwb3NzaWJsZSB0byBzZXQgcGlkIG5hbWVzcGFjZQo+ICAgICBk
-b25lIGJ5OiBbUEFUQ0hfdjQuMV8xLzNdIE1ha2UgY2FsbF91c2VybW9kZWhlbHBlcl9leGVjIHBv
-c3NpYmxlCj4gICAgIHRvIHNldCBuYW1lc3BhY2VzCj4gMjogTGV0IHBpcGVfdHlwZSBjb3JlX3Bh
-dHRlcm4gd3JpdGUgZHVtcCBpbnRvIGNvbnRhaW5lcidzIHJvb3Rmcwo+ICAgICBkb25lIGJ5OiBb
-UEFUQ0hfdjQuMV8yLzNdIExpbWl0IGR1bXBfcGlwZSBwcm9ncmFtJ3MgcGVybWlzc2lvbiB0bwo+
-ICAgICBpbml0IGZvciBjb250YWluZXIKPiAzOiBNYWtlIHNlcGFyYXRlIGNvcmVfcGF0dGVybiBz
-ZXR0aW5nIGZvciBlYWNoIGNvbnRhaW5lcgo+ICAgICBkb25lIGJ5OiBbUEFUQ0hfdjQuMV8zLzNd
-IE1ha2UgY29yZV9wYXR0ZXJuIHN1cHBvcnQgbmFtZXNwYWNlCj4gNDogQ29tcGF0aWJpbGl0eSB3
-aXRoIGN1cnJlbnQgc3lzdGVtCj4gICAgIGFsc28gaW5jbHVkZWQgaW46IFtQQVRDSF92NC4xXzMv
-M10gTWFrZSBjb3JlX3BhdHRlcm4gc3VwcG9ydCBuYW1lc3BhY2UKPiAgICAgSWYgY29udGFpbmVy
-IGhhZG4ndCBjaGFuZ2UgY29yZV9wYXR0ZXJuIHNldHRpbmcsIGl0IHdpbGwga2VlcAo+ICAgICBz
-YW1lIHNldHRpbmcgd2l0aCBob3N0Lgo+Cj4gVGVzdDoKPiAxOiBQYXNzIGEgdGVzdCBzY3JpcHQg
-Zm9yIGVhY2ggZnVuY3Rpb24gb2YgdGhpcyBwYXRjaHNldAo+ICAgICAjIyBURVNUIElOIEhPU1Qg
-IyMKPiAgICAgW3Jvb3RAa2VybmVsZGV2IGR1bXB0ZXN0XSMgLi90ZXN0X2hvc3QKPiAgICAgU2V0
-IGZpbGUgY29yZV9wYXR0ZXJuOiBPSwo+ICAgICAuL3Rlc3RfaG9zdDogbGluZSA0MTogIDIzNjYg
-U2VnbWVudGF0aW9uIGZhdWx0ICAgICAgKGNvcmUgZHVtcGVkKSAiJFNDUkk9Cj4gUFRfQkFTRV9E
-SVIiL21ha2VfZHVtcAo+ICAgICBDaGVja2luZyBkdW1wZmlsZTogT0sKPiAgICAgU2V0IGZpbGUg
-Y29yZV9wYXR0ZXJuOiBPSwo+ICAgICAuL3Rlc3RfaG9zdDogbGluZSA0MTogIDIzNjkgU2VnbWVu
-dGF0aW9uIGZhdWx0ICAgICAgKGNvcmUgZHVtcGVkKSAiJFNDUkk9Cj4gUFRfQkFTRV9ESVIiL21h
-a2VfZHVtcAo+ICAgICBDaGVja2luZyBkdW1wX3BpcGUgdHJpZ2dlcmVkOiBPSwo+ICAgICBDaGVj
-a2luZyByb290ZnM6IE9LCj4gICAgIENoZWNraW5nIGR1bXBmaWxlOiBPSwo+ICAgICBDaGVja2lu
-ZyBuYW1lc3BhY2U6IE9LCj4gICAgIENoZWNraW5nIHByb2Nlc3MgbGlzdDogT0sKPiAgICAgQ2hl
-Y2tpbmcgY2FwYWJpbGl0aWVzOiBPSwo+Cj4gICAgICMjIFRFU1QgSU4gR1VFU1QgIyMKPiAgICAg
-IyAuL3Rlc3QKPiAgICAgU2VnbWVudGF0aW9uIGZhdWx0IChjb3JlIGR1bXBlZCkKPiAgICAgQ2hl
-Y2tpbmcgZHVtcF9waXBlIHRyaWdnZXJlZDogT0sKPiAgICAgQ2hlY2tpbmcgcm9vdGZzOiBPSwo+
-ICAgICBDaGVja2luZyBkdW1wZmlsZTogT0sKPiAgICAgQ2hlY2tpbmcgbmFtZXNwYWNlOiBPSwo+
-ICAgICBDaGVja2luZyBwcm9jZXNzIGxpc3Q6IE9LCj4gICAgIENoZWNraW5nIGNnIHBpZHM6IE9L
-Cj4gICAgIENoZWNraW5nIGNhcGFiaWxpdGllczogT0sKPiAgICAgWyAgIDY0Ljk0MDczNF0gbWFr
-ZV9kdW1wWzI0MzJdOiBzZWdmYXVsdCBhdCAwIGlwIDAwMDAwMDAwMDA0MDA0OWQgc3AgMDAwPQo+
-IDA3ZmZjNGFmMDI1ZjAgZXJyb3IgNiBpbiBtYWtlX2R1bXBbNDAwMDAwK2E2MDAwXQo+ICAgICAj
-Cj4gMjogUGFzcyBvdGhlciB0ZXN0KHdoaWNoIGlzIG5vdCBlYXN5IHRvIGRvIGluIHNjcmlwdCkg
-YnkgaGFuZC4KPgo+IENoYW5nZWxvZyB2My4xLXY0Ogo+IDEuIHJlbW92ZSBleHRyYSBmb3JrIHBv
-aW50ZWQgb3V0IGJ5Ogo+ICAgICBBbmRyZWkgVmFnaW4gPGF2YWdpbkBnbWFpbC5jb20+Cj4gMjog
-UmViYXNlIG9uIHRvcCBvZiB2NC45LXJjOC4KPiAzOiBSZWJhc2Ugb24gdG9wIG9mIHY0LjEyLgo+
-Cj4gQ2hhbmdlbG9nIHYzLXYzLjE6Cj4gMS4gU3dpdGNoICJwd2QiIG9mIHBpcGUgcHJvZ3JhbSB0
-byBjb250YWluZXIncyByb290IGZzLgo+IDIuIFJlYmFzZSBvbiB0b3Agb2YgdjQuOS1yYzEuCj4K
-PiBDaGFuZ2Vsb2cgdjItPnYzOgo+IDE6IEZpeCBwcm9ibGVtIG9mIHNldHRpbmcgcGlkIG5hbWVz
-cGFjZSwgcG9pbnRlZCBvdXQgYnk6Cj4gICAgIEFuZHJlaSBWYWdpbiA8YXZhZ2luQGdtYWlsLmNv
-bT4KPgo+IENoYW5nZWxvZyB2MShSRkMpLT52MjoKPiAxOiBBZGQgW1BBVENIIDIvMl0gd2hpY2gg
-d2FzIHRvZG8gaW4gW1JGQyB2MV0uCj4gMjogUGFzcyBhIHRlc3Qgc2NyaXB0IGZvciBlYWNoIGZ1
-bmN0aW9uLgo+IDM6IFJlYmFzZSBvbiB0b3Agb2YgdjQuNy4KPgo+IFN1Z2dlc3RlZC1ieTogRXJp
-YyBXLiBCaWVkZXJtYW4gPGViaWVkZXJtQHhtaXNzaW9uLmNvbT4KPiBTdWdnZXN0ZWQtYnk6IEtP
-U0FLSSBNb3RvaGlybyA8a29zYWtpLm1vdG9oaXJvQGpwLmZ1aml0c3UuY29tPgo+IFNpZ25lZC1v
-ZmYtYnk6IENhbyBTaHVmZW5nIDxjYW9zZi5mbnN0QGNuLmZ1aml0c3UuY29tPgo+Cj4gQ2FvIFNo
-dWZlbmcgKDMpOgo+ICAgIE1ha2UgY2FsbF91c2VybW9kZWhlbHBlcl9leGVjIHBvc3NpYmxlIHRv
-IHNldCBuYW1lc3BhY2VzCj4gICAgTGltaXQgZHVtcF9waXBlIHByb2dyYW0ncyBwZXJtaXNzaW9u
-IHRvIGluaXQgZm9yIGNvbnRhaW5lcgo+ICAgIE1ha2UgY29yZV9wYXR0ZXJuIHN1cHBvcnQgbmFt
-ZXNwYWNlCj4KPiAgIGZzL2NvcmVkdW1wLmMgICAgICAgICAgICAgICAgIHwgMTUwICsrKysrKysr
-KysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKy0tLQo+ICAgaW5jbHVkZS9saW51eC9iaW5m
-bXRzLmggICAgICAgfCAgIDIgKwo+ICAgaW5jbHVkZS9saW51eC9rbW9kLmggICAgICAgICAgfCAg
-IDUgKysKPiAgIGluY2x1ZGUvbGludXgvcGlkX25hbWVzcGFjZS5oIHwgICAzICsKPiAgIGluaXQv
-ZG9fbW91bnRzX2luaXRyZC5jICAgICAgIHwgICAzICstCj4gICBrZXJuZWwva21vZC5jICAgICAg
-ICAgICAgICAgICB8ICA1NiArKysrKysrKysrKysrLS0tCj4gICBrZXJuZWwvcGlkLmMgICAgICAg
-ICAgICAgICAgICB8ICAgMiArCj4gICBrZXJuZWwvcGlkX25hbWVzcGFjZS5jICAgICAgICB8ICAg
-MiArCj4gICBrZXJuZWwvc3lzY3RsLmMgICAgICAgICAgICAgICB8ICA1MCArKysrKysrKysrKyst
-LQo+ICAgbGliL2tvYmplY3RfdWV2ZW50LmMgICAgICAgICAgfCAgIDMgKy0KPiAgIHNlY3VyaXR5
-L2tleXMvcmVxdWVzdF9rZXkuYyAgIHwgICA0ICstCj4gICAxMSBmaWxlcyBjaGFuZ2VkLCAyNTMg
-aW5zZXJ0aW9ucygrKSwgMjcgZGVsZXRpb25zKC0pCj4KCgoKX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFp
-bmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRh
-dGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Nikolay noticed a number of undocumented memory barriers in this code;
+the ordering is fairly simple but not explicitly described. Cure that.
+
+Switch over to smp_store_release() / smp_load_acquire() as that is the
+natural fit for the pattern and includes the missing but required
+WRITE_ONCE()/READ_ONCE()s.
+
+CC: Eric Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Reported-by: Nikolay Borisov <nborisov-IBi9RG/b67k@public.gmane.org>
+Signed-off-by: Peter Zijlstra (Intel) <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Signed-off-by: Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+---
+ kernel/user_namespace.c | 74 +++++++++++++++++++++++++++++++------------------
+ 1 file changed, 47 insertions(+), 27 deletions(-)
+
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 899c31060ff3..2129762a930e 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -27,8 +27,47 @@
+ #include <linux/sort.h>
+ 
+ static struct kmem_cache *user_ns_cachep __read_mostly;
++
++/**
++ * The userns_state_mutex serializes all writes to any given map.
++ *
++ * Any map is only ever written once.
++ *
++ * An id map fits within 1 cache line on most architectures.
++ */
+ static DEFINE_MUTEX(userns_state_mutex);
+ 
++/**
++ * There is a data dependency between reading the count of the extents and the
++ * values of the extents. The desired behavior is to see the values of the
++ * extents that were written before the count of the extents.
++ *
++ * To achieve this smp_store_release() is used to guarantee the write order and
++ * smp_load_acquire() is guaranteed that we observe the written data.
++ */
++static inline void map_store_extents(struct uid_gid_map *map,
++				     unsigned int extents)
++{
++	/*
++	 * Ensure the map->extent[] stores happen-before we grow map->nr_extents
++	 * to cover it.
++	 *
++	 * Matches the load_acquire in map_load_extents().
++	 */
++	smp_store_release(&map->nr_extents, extents);
++}
++
++static inline unsigned int map_load_extents(struct uid_gid_map *map)
++{
++	/*
++	 * Ensure the map->nr_extents load happens-before we try and access
++	 * map->extent[], such that we guarantee the data is in fact there.
++	 *
++	 * Matches the store-release in map_store_extents().
++	 */
++	return smp_load_acquire(&map->nr_extents);
++}
++
+ static bool new_idmap_permitted(const struct file *file,
+ 				struct user_namespace *ns, int cap_setid,
+ 				struct uid_gid_map *map);
+@@ -296,9 +335,9 @@ map_id_range_down_base(unsigned extents, struct uid_gid_map *map, u32 id, u32 co
+ static u32 map_id_range_down(struct uid_gid_map *map, u32 id, u32 count)
+ {
+ 	struct uid_gid_extent *extent;
+-	unsigned extents = map->nr_extents;
+-	smp_rmb();
++	unsigned extents;
+ 
++	extents = map_load_extents(map);
+ 	if (extents <= UID_GID_MAP_MAX_BASE_EXTENTS)
+ 		extent = map_id_range_down_base(extents, map, id, count);
+ 	else
+@@ -359,9 +398,9 @@ map_id_up_max(unsigned extents, struct uid_gid_map *map, u32 id)
+ static u32 map_id_up(struct uid_gid_map *map, u32 id)
+ {
+ 	struct uid_gid_extent *extent;
+-	unsigned extents = map->nr_extents;
+-	smp_rmb();
++	unsigned extents;
+ 
++	extents = map_load_extents(map);
+ 	if (extents <= UID_GID_MAP_MAX_BASE_EXTENTS)
+ 		extent = map_id_up_base(extents, map, id);
+ 	else
+@@ -647,9 +686,9 @@ static void *m_start(struct seq_file *seq, loff_t *ppos,
+ 		     struct uid_gid_map *map)
+ {
+ 	loff_t pos = *ppos;
+-	unsigned extents = map->nr_extents;
+-	smp_rmb();
++	unsigned extents;
+ 
++	extents = map_load_extents(map);
+ 	if (pos >= extents)
+ 		return NULL;
+ 
+@@ -860,25 +899,6 @@ static ssize_t map_write(struct file *file, const char __user *buf,
+ 	char *kbuf = NULL, *pos, *next_line;
+ 	ssize_t ret = -EINVAL;
+ 
+-	/*
+-	 * The userns_state_mutex serializes all writes to any given map.
+-	 *
+-	 * Any map is only ever written once.
+-	 *
+-	 * An id map fits within 1 cache line on most architectures.
+-	 *
+-	 * On read nothing needs to be done unless you are on an
+-	 * architecture with a crazy cache coherency model like alpha.
+-	 *
+-	 * There is a one time data dependency between reading the
+-	 * count of the extents and the values of the extents.  The
+-	 * desired behavior is to see the values of the extents that
+-	 * were written before the count of the extents.
+-	 *
+-	 * To achieve this smp_wmb() is used on guarantee the write
+-	 * order and smp_rmb() is guaranteed that we don't have crazy
+-	 * architectures returning stale data.
+-	 */
+ 	mutex_lock(&userns_state_mutex);
+ 
+ 	memset(&new_map, 0, sizeof(struct uid_gid_map));
+@@ -1015,8 +1035,8 @@ static ssize_t map_write(struct file *file, const char __user *buf,
+ 		map->forward = new_map.forward;
+ 		map->reverse = new_map.reverse;
+ 	}
+-	smp_wmb();
+-	map->nr_extents = new_map.nr_extents;
++
++	map_store_extents(map, new_map.nr_extents);
+ 
+ 	*ppos = count;
+ 	ret = count;
+-- 
+2.14.1
