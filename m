@@ -1,7 +1,7 @@
-From: Christian Brauner <christian.brauner-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
-Subject: [PATCH 0/1] userns: Fix/clarify memory ordering
-Date: Thu,  2 Nov 2017 12:03:43 +0100
-Message-ID: <20171102110344.31647-1-christian.brauner@ubuntu.com>
+From: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
+Subject: [PATCH] scsi: require CAP_SYS_ADMIN to write to procfs interface
+Date: Sun,  5 Nov 2017 05:59:13 +1100
+Message-ID: <20171104185913.10658-1-asarai__1873.18639732457$1509821990$gmane$org@suse.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,20 +15,49 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org
-Cc: nborisov-IBi9RG/b67k@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, tycho-E0fblnxP3wo@public.gmane.org, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+To: "James E.J. Bottomley" <jejb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "Martin K. Petersen" <martin.petersen-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+Cc: linux-scsi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cyphar-gVpy/LI/lHzQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a version of the suggested memory barrier patch. I've made it to apply
-cleanly against Eric's for-next tree as discussed with Peter.
+Previously, the only capability effectively required to operate on the
+/proc/scsi interface was CAP_DAC_OVERRIDE (or for some other files,
+having an fsuid of GLOBAL_ROOT_UID was enough). This means that
+semi-privileged processes could interfere with core components of a
+system (such as causing a DoS by removing the underlying SCSI device of
+the host's / mount).
 
-Christian
+Cc: <stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Signed-off-by: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
+---
+ drivers/scsi/scsi_proc.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
-Christian Brauner (1):
-  userns: Fix/clarify memory ordering
-
- kernel/user_namespace.c | 74 +++++++++++++++++++++++++++++++------------------
- 1 file changed, 47 insertions(+), 27 deletions(-)
-
+diff --git a/drivers/scsi/scsi_proc.c b/drivers/scsi/scsi_proc.c
+index 480a597b3877..486aedce2f05 100644
+--- a/drivers/scsi/scsi_proc.c
++++ b/drivers/scsi/scsi_proc.c
+@@ -51,7 +51,10 @@ static ssize_t proc_scsi_host_write(struct file *file, const char __user *buf,
+ 	struct Scsi_Host *shost = PDE_DATA(file_inode(file));
+ 	ssize_t ret = -ENOMEM;
+ 	char *page;
+-    
++
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM
++
+ 	if (count > PROC_BLOCK_SIZE)
+ 		return -EOVERFLOW;
+ 
+@@ -313,6 +316,9 @@ static ssize_t proc_scsi_write(struct file *file, const char __user *buf,
+ 	char *buffer, *p;
+ 	int err;
+ 
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
+ 	if (!buf || length > PAGE_SIZE)
+ 		return -EINVAL;
+ 
 -- 
-2.14.1
+2.14.3
