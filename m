@@ -1,7 +1,7 @@
 From: Chris Leech <cleech-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 5/9] iscsi: set netns for iscsi_tcp hosts
-Date: Tue,  7 Nov 2017 14:45:09 -0800
-Message-ID: <20171107224513.4217-6-cleech__34630.43875895$1510094813$gmane$org@redhat.com>
+Subject: [PATCH 7/9] iscsi: convert flashnode devices from bus to class
+Date: Tue,  7 Nov 2017 14:45:11 -0800
+Message-ID: <20171107224513.4217-8-cleech__5977.32807877964$1510094821$gmane$org@redhat.com>
 References: <20171107180156.GD29597@straylight.hirudinean.org>
 	<20171107224513.4217-1-cleech@redhat.com>
 Mime-Version: 1.0
@@ -21,75 +21,154 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This lets iscsi_tcp operate in multiple namespaces.  It uses current
-during session creation to find the net namespace, but it might be
-better to manage to pass it along from the iscsi netlink socket.
+The flashnode session and connection devices should be filtered by net
+namespace along with the iscsi_host, but we can't do that with a bus
+device.  As these don't use any of the bus matching functionality, they
+make more sense as a class device anyway.
 
 Signed-off-by: Chris Leech <cleech-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 ---
- drivers/scsi/iscsi_tcp.c            | 7 +++++++
- drivers/scsi/scsi_transport_iscsi.c | 7 ++++++-
- include/scsi/scsi_transport_iscsi.h | 1 +
- 3 files changed, 14 insertions(+), 1 deletion(-)
+ drivers/scsi/qla4xxx/ql4_os.c       |  2 +-
+ drivers/scsi/scsi_transport_iscsi.c | 36 +++++++++++++++---------------------
+ include/scsi/scsi_transport_iscsi.h |  2 ++
+ 3 files changed, 18 insertions(+), 22 deletions(-)
 
-diff --git a/drivers/scsi/iscsi_tcp.c b/drivers/scsi/iscsi_tcp.c
-index 4d934d6c3e13..b368c94c884b 100644
---- a/drivers/scsi/iscsi_tcp.c
-+++ b/drivers/scsi/iscsi_tcp.c
-@@ -957,6 +957,11 @@ static int iscsi_sw_tcp_slave_configure(struct scsi_device *sdev)
- 	return 0;
- }
+diff --git a/drivers/scsi/qla4xxx/ql4_os.c b/drivers/scsi/qla4xxx/ql4_os.c
+index 770313d0b986..55a729568873 100644
+--- a/drivers/scsi/qla4xxx/ql4_os.c
++++ b/drivers/scsi/qla4xxx/ql4_os.c
+@@ -7164,7 +7164,7 @@ static int qla4xxx_sysfs_ddb_is_non_persistent(struct device *dev, void *data)
+ {
+ 	struct iscsi_bus_flash_session *fnode_sess;
  
-+static struct net *iscsi_sw_tcp_netns(struct Scsi_Host *shost)
-+{
-+	return current->nsproxy->net_ns;
-+}
-+
- static struct scsi_host_template iscsi_sw_tcp_sht = {
- 	.module			= THIS_MODULE,
- 	.name			= "iSCSI Initiator over TCP/IP",
-@@ -1013,6 +1018,8 @@ static struct iscsi_transport iscsi_sw_tcp_transport = {
- 	.alloc_pdu		= iscsi_sw_tcp_pdu_alloc,
- 	/* recovery */
- 	.session_recovery_timedout = iscsi_session_recovery_timedout,
-+	/* net namespace */
-+	.get_netns		= iscsi_sw_tcp_netns,
- };
+-	if (!iscsi_flashnode_bus_match(dev, NULL))
++	if (!iscsi_is_flashnode_session_dev(dev))
+ 		return 0;
  
- static int __init iscsi_sw_tcp_init(void)
+ 	fnode_sess = iscsi_dev_to_flash_session(dev);
 diff --git a/drivers/scsi/scsi_transport_iscsi.c b/drivers/scsi/scsi_transport_iscsi.c
-index 1fc5878b1a8c..2ec10f6ac3a2 100644
+index fbec3a019f00..b053d57a482d 100644
 --- a/drivers/scsi/scsi_transport_iscsi.c
 +++ b/drivers/scsi/scsi_transport_iscsi.c
-@@ -1600,11 +1600,16 @@ static int iscsi_setup_host(struct transport_container *tc, struct device *dev,
- {
- 	struct Scsi_Host *shost = dev_to_shost(dev);
- 	struct iscsi_cls_host *ihost = shost->shost_data;
-+	struct iscsi_internal *priv = to_iscsi_internal(shost->transportt);
-+	struct iscsi_transport *transport = priv->iscsi_transport;
- 
- 	memset(ihost, 0, sizeof(*ihost));
- 	atomic_set(&ihost->nr_scans, 0);
- 	mutex_init(&ihost->mutex);
--	ihost->netns = &init_net;
-+	if (transport->get_netns)
-+		ihost->netns = transport->get_netns(shost);
-+	else
-+		ihost->netns = &init_net;
- 
- 	iscsi_bsg_host_add(shost, ihost);
- 	/* ignore any bsg add error - we just can't do sgio */
-diff --git a/include/scsi/scsi_transport_iscsi.h b/include/scsi/scsi_transport_iscsi.h
-index 8c8191dfdc21..3c4cd4779f72 100644
---- a/include/scsi/scsi_transport_iscsi.h
-+++ b/include/scsi/scsi_transport_iscsi.h
-@@ -168,6 +168,7 @@ struct iscsi_transport {
- 	int (*logout_flashnode_sid) (struct iscsi_cls_session *cls_sess);
- 	int (*get_host_stats) (struct Scsi_Host *shost, char *buf, int len);
- 	u8 (*check_protection)(struct iscsi_task *task, sector_t *sector);
-+	struct net *(*get_netns)(struct Scsi_Host *shost);
+@@ -1060,6 +1060,12 @@ static const struct device_type iscsi_flashnode_sess_dev_type = {
+ 	.release = iscsi_flashnode_sess_release,
  };
  
- /*
++bool iscsi_is_flashnode_session_dev(struct device *dev)
++{
++	return dev->type == &iscsi_flashnode_sess_dev_type;
++}
++EXPORT_SYMBOL_GPL(iscsi_is_flashnode_session_dev);
++
+ /* flash node connection attrs show */
+ #define iscsi_flashnode_conn_attr_show(type, name, param)		\
+ static ssize_t								\
+@@ -1246,20 +1252,8 @@ static const struct device_type iscsi_flashnode_conn_dev_type = {
+ 	.release = iscsi_flashnode_conn_release,
+ };
+ 
+-static struct bus_type iscsi_flashnode_bus;
+-
+-int iscsi_flashnode_bus_match(struct device *dev,
+-				     struct device_driver *drv)
+-{
+-	if (dev->bus == &iscsi_flashnode_bus)
+-		return 1;
+-	return 0;
+-}
+-EXPORT_SYMBOL_GPL(iscsi_flashnode_bus_match);
+-
+-static struct bus_type iscsi_flashnode_bus = {
++static struct class iscsi_flashnode_bus = {
+ 	.name = "iscsi_flashnode",
+-	.match = &iscsi_flashnode_bus_match,
+ };
+ 
+ /**
+@@ -1290,7 +1284,7 @@ iscsi_create_flashnode_sess(struct Scsi_Host *shost, int index,
+ 	fnode_sess->transport = transport;
+ 	fnode_sess->target_id = index;
+ 	fnode_sess->dev.type = &iscsi_flashnode_sess_dev_type;
+-	fnode_sess->dev.bus = &iscsi_flashnode_bus;
++	fnode_sess->dev.class = &iscsi_flashnode_bus;
+ 	fnode_sess->dev.parent = &shost->shost_gendev;
+ 	dev_set_name(&fnode_sess->dev, "flashnode_sess-%u:%u",
+ 		     shost->host_no, index);
+@@ -1338,7 +1332,7 @@ iscsi_create_flashnode_conn(struct Scsi_Host *shost,
+ 
+ 	fnode_conn->transport = transport;
+ 	fnode_conn->dev.type = &iscsi_flashnode_conn_dev_type;
+-	fnode_conn->dev.bus = &iscsi_flashnode_bus;
++	fnode_conn->dev.class = &iscsi_flashnode_bus;
+ 	fnode_conn->dev.parent = &fnode_sess->dev;
+ 	dev_set_name(&fnode_conn->dev, "flashnode_conn-%u:%u:0",
+ 		     shost->host_no, fnode_sess->target_id);
+@@ -1371,7 +1365,7 @@ EXPORT_SYMBOL_GPL(iscsi_create_flashnode_conn);
+  */
+ static int iscsi_is_flashnode_conn_dev(struct device *dev, void *data)
+ {
+-	return dev->bus == &iscsi_flashnode_bus;
++	return dev->type == &iscsi_flashnode_conn_dev_type;
+ }
+ 
+ static int iscsi_destroy_flashnode_conn(struct iscsi_bus_flash_conn *fnode_conn)
+@@ -1385,7 +1379,7 @@ static int flashnode_match_index(struct device *dev, void *data)
+ 	struct iscsi_bus_flash_session *fnode_sess = NULL;
+ 	int ret = 0;
+ 
+-	if (!iscsi_flashnode_bus_match(dev, NULL))
++	if (dev->type != &iscsi_flashnode_sess_dev_type)
+ 		goto exit_match_index;
+ 
+ 	fnode_sess = iscsi_dev_to_flash_session(dev);
+@@ -1491,7 +1485,7 @@ EXPORT_SYMBOL_GPL(iscsi_destroy_flashnode_sess);
+ 
+ static int iscsi_iter_destroy_flashnode_fn(struct device *dev, void *data)
+ {
+-	if (!iscsi_flashnode_bus_match(dev, NULL))
++	if (dev->type != &iscsi_flashnode_sess_dev_type)
+ 		return 0;
+ 
+ 	iscsi_destroy_flashnode_sess(iscsi_dev_to_flash_session(dev));
+@@ -4752,7 +4746,7 @@ static __init int iscsi_transport_init(void)
+ 	if (err)
+ 		goto unregister_conn_class;
+ 
+-	err = bus_register(&iscsi_flashnode_bus);
++	err = class_register(&iscsi_flashnode_bus);
+ 	if (err)
+ 		goto unregister_session_class;
+ 
+@@ -4773,7 +4767,7 @@ static __init int iscsi_transport_init(void)
+ unregister_pernet_subsys:
+ 	unregister_pernet_subsys(&iscsi_net_ops);
+ unregister_flashnode_bus:
+-	bus_unregister(&iscsi_flashnode_bus);
++	class_unregister(&iscsi_flashnode_bus);
+ unregister_session_class:
+ 	transport_class_unregister(&iscsi_session_class);
+ unregister_conn_class:
+@@ -4793,7 +4787,7 @@ static void __exit iscsi_transport_exit(void)
+ {
+ 	destroy_workqueue(iscsi_eh_timer_workq);
+ 	unregister_pernet_subsys(&iscsi_net_ops);
+-	bus_unregister(&iscsi_flashnode_bus);
++	class_unregister(&iscsi_flashnode_bus);
+ 	transport_class_unregister(&iscsi_connection_class);
+ 	transport_class_unregister(&iscsi_session_class);
+ 	transport_class_unregister(&iscsi_host_class);
+diff --git a/include/scsi/scsi_transport_iscsi.h b/include/scsi/scsi_transport_iscsi.h
+index 601e8633d495..2f461896e91f 100644
+--- a/include/scsi/scsi_transport_iscsi.h
++++ b/include/scsi/scsi_transport_iscsi.h
+@@ -489,6 +489,8 @@ iscsi_find_flashnode_sess(struct Scsi_Host *shost, void *data,
+ extern struct device *
+ iscsi_find_flashnode_conn(struct iscsi_bus_flash_session *fnode_sess);
+ 
++extern bool iscsi_is_flashnode_session_dev(struct device *dev);
++
+ extern char *
+ iscsi_get_ipaddress_state_name(enum iscsi_ipaddress_state port_state);
+ extern char *iscsi_get_router_state_name(enum iscsi_router_state router_state);
 -- 
 2.9.5
