@@ -1,15 +1,13 @@
-From: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
-Subject: Re: [PATCH v3] scsi: require CAP_SYS_ADMIN to write to procfs
-	interface
-Date: Sun, 5 Nov 2017 15:02:10 +1100
-Message-ID: <b3bcff37-d77d-4dc6-ba83-7dddcb51a703@suse.de>
-References: <20171105025635.10843-1-asarai@suse.de>
+From: Chris Leech <cleech-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 0/9] use network namespace for iSCSI control interfaces
+Date: Tue,  7 Nov 2017 14:45:04 -0800
+Message-ID: <20171107224513.4217-1-cleech@redhat.com>
+References: <20171107180156.GD29597@straylight.hirudinean.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20171105025635.10843-1-asarai-l3A5Bk7waGM@public.gmane.org>
-Content-Language: en-US
+In-Reply-To: <20171107180156.GD29597-r8IHplWLGbA5tHQWs+pTeqPFFGjUI2lm2LY78lusg7I@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,25 +17,66 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "James E.J. Bottomley" <jejb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "Martin K. Petersen" <martin.petersen-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Cc: linux-scsi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cyphar-gVpy/LI/lHzQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 11/05/2017 01:56 PM, Aleksa Sarai wrote:
-> Previously, the only capability effectively required to operate on the
-> /proc/scsi interface was CAP_DAC_OVERRIDE (or for some other files,
-> having an fsuid of GLOBAL_ROOT_UID was enough). This means that
-> semi-privileged processes could interfere with core components of a
-> system (such as causing a DoS by removing the underlying SCSI device of
-> the host's / mount).
+Hello,
 
-An alternative to this patch would be to make the open(2) call fail, if 
-you try to open it write-only or read-write. Not sure which would be 
-preferred (should it be possible to pass /proc/scsi/scsi to a 
-semi-privileged process to write to?).
+I've posted these changes to allow iSCSI management within a container
+using a network namespace to the SCSI and Open-iSCSI lists, but seeing
+as it's not really SCSI/block related I'm casting a wider net looking
+for reviews.
+
+These patches apply network namespace to the iSCSI netlink family and
+sysfs objects from the iSCSI transport class.
+
+Thank you,
+
+Chris Leech
+
+---
+
+This series of changes makes the iSCSI netlink and sysfs control
+interfaces filtered by network namespace.  This is required to run
+iscsid in any network namespace other than the initial default one.
+
+Currently the netlink communication will fail if iscsid is started in a
+non-default network namespace, as there is no kernel side socket.  After
+fixing that, the rest of these changes are to filter visibility of the
+iSCSI transport objects by netns.  This allows for multiple iscsid
+instances to be run, one per netns, each controlling it's own set of
+iSCSI sessions.
+
+The iSCSI transport objects are filtered, but not the SCSI or block
+layer devices.  So while iSCSI hosts and sessions become limited to a
+network namespace, any attached devices remain visible system wide.
+
+This currently only supports iscsi_tcp running in a new namespace, as it
+creates a virtual host per session.  Support could be added later to
+allow assignment of iSCSI HBAs to network namespace, much as is done for
+network interfaces.
+
+Chris Leech (9):
+  iscsi: create per-net iscsi netlink kernel sockets
+  iscsi: associate endpoints with a host
+  iscsi: sysfs filtering by network namespace
+  iscsi: make all iSCSI netlink multicast namespace aware
+  iscsi: set netns for iscsi_tcp hosts
+  iscsi: check net namespace for all iscsi lookups
+  iscsi: convert flashnode devices from bus to class
+  iscsi: rename iscsi_bus_flash_* to iscsi_flash_*
+  iscsi: filter flashnode sysfs by net namespace
+
+ drivers/infiniband/ulp/iser/iscsi_iser.c |   7 +-
+ drivers/scsi/be2iscsi/be_iscsi.c         |   6 +-
+ drivers/scsi/bnx2i/bnx2i_iscsi.c         |   6 +-
+ drivers/scsi/cxgbi/libcxgbi.c            |   6 +-
+ drivers/scsi/iscsi_tcp.c                 |   7 +
+ drivers/scsi/qedi/qedi_iscsi.c           |   6 +-
+ drivers/scsi/qla4xxx/ql4_os.c            |  62 +--
+ drivers/scsi/scsi_transport_iscsi.c      | 625 ++++++++++++++++++++++---------
+ include/scsi/scsi_transport_iscsi.h      |  63 ++--
+ 9 files changed, 538 insertions(+), 250 deletions(-)
 
 -- 
-Aleksa Sarai
-Senior Software Engineer (Containers)
-SUSE Linux GmbH
-https://www.cyphar.com/
+2.9.5
