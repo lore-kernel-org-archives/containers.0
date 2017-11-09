@@ -1,15 +1,16 @@
-From: David Laight <David.Laight-ZS65k/vG3HxXrIkS9f7CXA@public.gmane.org>
-Subject: RE: [PATCH 0/9] use network namespace for iSCSI control interfaces
-Date: Wed, 8 Nov 2017 10:31:04 +0000
-Message-ID: <063D6719AE5E284EB5DD2968C1650D6DD00B618E@AcuExch.aculab.com>
-References: <20171107180156.GD29597@straylight.hirudinean.org>
-	<20171107224513.4217-1-cleech@redhat.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH v3] scsi: require CAP_SYS_ADMIN to write to procfs
+	interface
+Date: Thu, 09 Nov 2017 15:40:18 -0600
+Message-ID: <87inejdtbx.fsf__31650.8846976378$1510263643$gmane$org@xmission.com>
+References: <20171105025635.10843-1-asarai@suse.de>
+	<b3bcff37-d77d-4dc6-ba83-7dddcb51a703@suse.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20171107224513.4217-1-cleech-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Content-Language: en-US
+In-Reply-To: <b3bcff37-d77d-4dc6-ba83-7dddcb51a703-l3A5Bk7waGM@public.gmane.org> (Aleksa Sarai's
+	message of "Sun, 5 Nov 2017 15:02:10 +1100")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,22 +20,34 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: 'Chris Leech' <cleech-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
+Cc: "Martin K. Petersen" <martin.petersen-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, linux-scsi-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, stable-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, cyphar-gVpy/LI/lHzQT0dZR+AlfA@public.gmane.org, "James E.J. Bottomley" <jejb-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Chris Leech
-> Sent: 07 November 2017 22:45
-> 
-> I've posted these changes to allow iSCSI management within a container
-> using a network namespace to the SCSI and Open-iSCSI lists, but seeing
-> as it's not really SCSI/block related I'm casting a wider net looking
-> for reviews.
+Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org> writes:
 
-I didn't spot you acquiring and releasing references to the namespace.
-(I might have missed it, the relevant patch is difficult to read).
+> On 11/05/2017 01:56 PM, Aleksa Sarai wrote:
+>> Previously, the only capability effectively required to operate on the
+>> /proc/scsi interface was CAP_DAC_OVERRIDE (or for some other files,
+>> having an fsuid of GLOBAL_ROOT_UID was enough). This means that
+>> semi-privileged processes could interfere with core components of a
+>> system (such as causing a DoS by removing the underlying SCSI device of
+>> the host's / mount).
+>
+> An alternative to this patch would be to make the open(2) call fail, if you try
+> to open it write-only or read-write. Not sure which would be preferred (should
+> it be possible to pass /proc/scsi/scsi to a semi-privileged process to write
+> to?).
 
-If the sockets are created in the context of the process whose namespace
-you are using you don't need it, but given the hooks and callbacks
-I'm not at all sure that is obviously true.
+Making open fail is very much the preferred solution.
 
-	David
+Testing for permission on write can be avoided by finding a suid root
+application whose error output acts like a suid cat.
+
+The best current practice for adding this kind of permission check is to
+add the check in open.  For some older use cases where we made this
+mistake we had to maintian a check during write to avoid breaking
+userspace.  But as this check is new there is no reason to add a check
+anywhere except in open.
+
+Eric
