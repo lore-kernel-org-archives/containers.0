@@ -1,7 +1,7 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [GIT PULL] user namespace updates for v4.15-rc1
-Date: Wed, 15 Nov 2017 21:34:44 -0600
-Message-ID: <87a7zmzyjv.fsf@xmission.com>
+From: Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] user_namespaces.7: Record new 340 line idmap limit
+Date: Sun, 19 Nov 2017 02:25:05 +0100
+Message-ID: <20171119012505.1925-1-christian.brauner__6224.71085885099$1511055205$gmane$org@ubuntu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,45 +15,55 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+This patch documents the following commit:
 
-Linus,
+commit 6397fac4915ab3002dc15aae751455da1a852f25
+Author: Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+Date:   Wed Oct 25 00:04:41 2017 +0200
 
-Please pull the for-linus branch from the git tree:
+    userns: bump idmap limits to 340
 
-   git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/user-namespace.git for-linus
+Since Linux 4.15 the number of idmap lines has been bumped to 340.
+The patch also removes the "(arbitrary)" in "There is an (arbitrary) limit on
+the number of lines in the file." since the 340 line limit is well-explained by
+the current implementation. The struct recording the idmaps is 12 bytes and
+quite some proc files only allow writes the size of a single page size which is
+4096kB. This leaves room for 340 idmappings (340 * 12 = 4080 bytes).
+The struct layout itself has been chosen very carefully to allow for an
+implementation that limits the time-complexity for the idmap codepaths to
+O(log n). However, I think it's unnecessary to expose this much implementation
+detail to users in the man page. So only mention this in the commit message.
+Furthermore, the comment about the page size restriction is misleading. The
+kernel sources show that >= page size is considered an error.
 
-   HEAD: userns: Simplify insert_extent 3fda0e737e906ce73220b20c27e7f792d0aac6a8
+Signed-off-by: Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
+---
+ man7/user_namespaces.7 | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
 
-The only change that is production reading this round is the work to
-increase the number of uid and gid mappings a user namespace can support
-from 5 to 340.  This code was carefully benchmarked and it was confirmed
-that in the existing cases the performance remains the same.  In the
-worst case with 340 mappings an cache cold stat times go from 158ns to
-248ns.  That is noticable but still quite small, and only the people who
-are doing crazy things pay the cost.
-
-This work uncovered some documentation and cleanup opportunities in the
-mapping code, and patches to make those cleanups and improve the
-documentation will be coming in the next merge window.
-
-Christian Brauner (2):
-      userns: use union in {g,u}idmap struct
-      userns: bump idmap limits to 340
-
-Eric W. Biederman (5):
-      userns: Don't special case a count of 0
-      userns: Simplify the user and group mapping functions
-      userns: Don't read extents twice in m_start
-      userns: Make map_id_down a wrapper for map_id_range_down
-      userns: Simplify insert_extent
-
- include/linux/user_namespace.h |  23 ++-
- kernel/user.c                  |  30 ++--
- kernel/user_namespace.c        | 349 ++++++++++++++++++++++++++++++++++-------
- 3 files changed, 325 insertions(+), 77 deletions(-)
-
-Eric
+diff --git a/man7/user_namespaces.7 b/man7/user_namespaces.7
+index 11ca41162..5968c09cc 100644
+--- a/man7/user_namespaces.7
++++ b/man7/user_namespaces.7
+@@ -510,13 +510,10 @@ and the last field must be greater than 0.
+ .IP *
+ Lines are terminated by newline characters.
+ .IP *
+-There is an (arbitrary) limit on the number of lines in the file.
+-As at Linux 3.18, the limit is five lines.
++There is a limit on the number of lines in the file.
++As of Linux 4.15, the limit is 340 lines.
+ In addition, the number of bytes written to
+ the file must be less than the system page size,
+-.\" FIXME(Eric): the restriction "less than" rather than "less than or equal"
+-.\" seems strangely arbitrary. Furthermore, the comment does not agree
+-.\" with the code in kernel/user_namespace.c. Which is correct?
+ and the write must be performed at the start of the file (i.e.,
+ .BR lseek (2)
+ and
+-- 
+2.14.1
