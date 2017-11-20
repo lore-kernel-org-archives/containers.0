@@ -1,12 +1,18 @@
 From: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Documentation patch for namespaced file capabilities
-Date: Mon, 20 Nov 2017 10:36:11 +0100
-Message-ID: <CAKgNAkiAeqbD=G6hnExh4cC84nA2mU6xdLzzS0F2x1wviEPgHg__16680.6079716936$1511170605$gmane$org@mail.gmail.com>
-Reply-To: mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Subject: Re: [PATCH] ioctl_tty.2: add TIOCGPTPEER documentation
+Date: Mon, 20 Nov 2017 11:20:13 +0100
+Message-ID: <c702b5c6-0098-4a61-f51c-c28ed085534f__3361.804461065$1511173224$gmane$org@gmail.com>
+References: <20170609170147.32311-1-asarai@suse.de>
+	<11706e49-8271-ed8c-3747-19b3e8f2850d@gmail.com>
+	<878tijwjic.fsf@xmission.com>
+	<a7175aad-645c-8f86-d7cf-51f24f0bc281@suse.de>
+	<87ziaztoxu.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <87ziaztoxu.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -16,32 +22,71 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, LSM List <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, lkp-JC7UmRfGjtg@public.gmane.org, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
+Cc: linux-man-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Greg Kroah-Hartman <gregkh-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Jiri Slaby <jslaby-IBi9RG/b67k@public.gmane.org>, Christian Brauner <christian.brauner-GeWIH/nMZzLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Serge,
-
-At the moment man-pages lacks documentation of the namespaced file
-capability feature that you added with commit
-8db6c34f1dbc8e06aa016a9b829b06902c3e1340. Would you be able to send a
-patch describing the feature?
-
-Presumably, the patch would be for the capabilities(7) page (or
-perhaps for the user_namespaces(7) page, if that seems more
-appropriate), As well as documenting the semantics, it would be good
-to include an example or two of the notation that is used for the
-xattr names.
-
-Presumably also there will be some changes in userspace tools
-(setcap/getcap?). Do you know anything about what's happening there?
-
-Cheers,
-
-Michael
-
-
--- 
-Michael Kerrisk
-Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
-Linux/UNIX System Programming Training: http://man7.org/training/
+T24gMDgvMTYvMjAxNyAwNzoxNCBQTSwgRXJpYyBXLiBCaWVkZXJtYW4gd3JvdGU6Cj4gQWxla3Nh
+IFNhcmFpIDxhc2FyYWlAc3VzZS5kZT4gd3JpdGVzOgo+IAo+Pj4gQSBjb3VwbGUgb2YgdGhpbmdz
+IHRvIG5vdGUgb24gdGhlIGJpZ2dlciBwaWN0dXJlLgo+Pj4KPj4+IFRoZSBnbGliYyBsaWJyYXJ5
+IG9uIGFsbCBkaXN0cmlidXRpb25zIGhhcyBiZWVuIGNoYW5nZWQgdG8gbm90IGhhdmUgYQo+Pj4g
+c2V0dWlkIGJpbmFyeSBwdF9jaG93biwgdGhhdCB1c2VzIHB0c25hbWUuICBUaGlzIHdhcyB0aGUg
+cHJpbWFyeSBmaXgKPj4+IGZvciB0aGUgc2VjdXJpdHkgaXNzdWUuCj4+Pgo+Pj4gVGhlIGJlaGF2
+aW9yIG9mIG9wZW5pbmcgL2Rldi9wdG14IGhhcyBiZWVuIGNoYW5nZWQgdG8gcGVyZm9ybSBhIHBh
+dGgKPj4+IGxvb2t1cCByZWxhdGl2ZSB0byB0aGUgbG9jYXRpb24gb2YgL2Rldi9wdG14IG9mICAu
+L3B0cy9wdG14IGFuZCBvcGVuCj4+PiBpdCBpdCBpcyBhIGRldnB0cyBmaWxlc3lzdGVtIGFuZCB0
+byBmYWlsIG90aGVyd2lzZS4gICAgVGhpcyBmdXJ0aGVyCj4+PiBtYWtlcyBpdCBoYXJkIHRvIGNv
+bmZ1c2UgdXNlcnNwYWNlIHRoaXMgd2F5IGFzIC9kZXYvcHRteCBhbHdheXMKPj4+IGNvcnJlc3Bv
+bmRzIHRvIC9kZXYvcHRzL3B0bXguICBFdmVuIGluIGNocm9vdHMgYW5kIGluIG90aGVyIG1vdW50
+Cj4+PiBuYW1lc3BhY2VzLgo+Pgo+PiBJIGhhdmUgYSBmZWVsaW5nIHRoYXQgdGhlcmUgbWlnaHQg
+YmUgYSB3YXkgdG8gdHJpY2sgZ2xpYmMgaWYgeW91IHVzZQo+PiBGVVNFLCBidXQgSSBoYXZlbid0
+IGFjdHVhbGx5IHRyaWVkIHRvIGNyZWF0ZSBhIFBvQyBmb3IgaXQuIEZhaXIgcG9pbnQKPj4gdGhv
+dWdoLgo+IAo+IFRvIHRyaWNrIGdsaWJjIGZ1c2Ugd291bGQgaGF2ZSB0byBiZSBtb3VudGVkIHNv
+bWV3aGVyZSBvbiAvZGV2Lgo+IAo+Pj4gVGhhdCBtYWtlcyBUSU9DR1BUUEVFUiBhIHZlcnkgbmlj
+ZSBhZGRpdGlvbiwgYnV0IG5vdCBzb21ldGhpbmcgcGVvcGxlCj4+PiBoYXZlIHRvIHNjcmFtYmxl
+IHRvIHVzZSB0byBlbnN1cmUgdGhlaXIgc3lzdGVtIGlzIHNlY3VyZS4gIEFzIGEgaG9zdGlsZQo+
+Pj4gZW52aXJvbm1lbnQgbm93IGhhcyB0byB3b3JrIHZlcnkgaGFyZCB0byBjb25mdXNlIHRoZSBl
+eGlzdGluZyBtZWNoYW5pc21zLgo+Pgo+PiBUaGVyZSBhcmUgdXNlY2FzZXMgd2hlcmUgeW91IHNp
+bXBseSBuZWVkIFRJT0NHUFRQRUVSLCBhbmQgbm8gb3RoZXIKPj4gdXNlcnNwYWNlIGFsdGVybmF0
+aXZlIHdpbGwgZG8sIGJ1dCBtYXliZSBpZiB3ZSBtb2RpZmllZCB0aGUgcGFyYWdyYXBoCj4+IHRv
+IHJlYWQgKGFzIHN1Z2dlc3RlZCk6Cj4+Cj4+ICAgU2VjdXJpdHktY29uc2Npb3VzIHByb2dyYW1z
+IGludGVyYWN0aW5nIHdpdGggbmFtZXNwYWNlcyBtYXkKPj4gICB3aXNoICB0byAgdXNlICB0aGlz
+ICBvcGVyYXRpb24gcmF0aGVyIHRoYW4gb3BlbigyKSB3aXRoIHRoZQo+PiAgIHBhdGhuYW1lIHJl
+dHVybmVkIGJ5IHB0c25hbWUoMykuCj4+Cj4+IFRoaXMgd291bGQgY2xhcmlmeSB0aGF0IHRoZXJl
+IGFyZSB1c2VjYXNlcyB3aGVyZSB5b3UgbmVlZCB0aGlzCj4+IHBhcnRpY3VsYXIgZmVhdHVyZSwg
+d2l0aG91dCBzYXlpbmcgY2F1c2luZyBwZW9wbGUgdG8gcGFuaWMgb3Zlcgo+PiBpbmFjY3VyYXRl
+IGNsYWltcyBvZiBnbGliYyBiZWluZyBicm9rZW4uIERvZXMgdGhhdCBzb3VuZCBiZXR0ZXI/Cj4g
+Cj4gSSB0aGluayB5b3VyIG9yaWdpbmFsIHdvcmRzIHNvdW5kZWQgZmluZS4gIEkgd291bGQgZXZl
+biBnbyBmb3IgbmV3Cj4gcHJvZ3JhbXMgbWF5IHdhbnQgdG8gdXNlIHRoZSBuZXcgaW9jdGwgYXMg
+aXQgZnVuZGFtZW50YWxseSBsZXNzIHJhY3kKPiBhbmQgbW9yZSBvZiB3aGF0IGlzIGFjdHVhbGx5
+IHRyeWluZyB0byBiZSBpbXBsZW1lbnRlZCB3aXRoIHRoZSB1c2Vyc3BhY2UKPiBwaWVjZXMuCj4g
+Cj4gSSBqdXN0IHdhbnRlZCB0byBwb2ludCBvdXQgdGhhdCBUSU9DR1BUUEVFUiB3aGlsZSBiZWlu
+ZyB0aGUgaW50ZXJmYWNlCj4gdGhhdCBpdCB3b3VsZCBoYXZlIGJlZW4gbmljZSBoYWQgd2UgaGFk
+IHNpbmNlIHRoZSBiZWdpbm5pbmcgKGFuZCB3b3VsZAo+IGhhdmUgYXZvaWRlZCBhbGwgb2YgdGhl
+IHByb2JsZW1zKSBpcyBhY3R1YWxseSBub3Qgc29tZXRoaW5nIHdlIG5lZWQgdG8KPiBzY3JhbWJs
+ZSBhbmQgdXNlIGl0IGlzIGp1c3QgYSB2ZXJ5IG5pY2UgdG8gaGF2ZS4gIEFzIHRoZSBpbW1lZGlh
+dGUKPiBpc3N1ZXMgaGF2ZSBiZWVuIGZpeGVkIGluIG90aGVyIHdheXMuICAgIEl0IHdhcyBub3Qg
+Y2xlYXIgdG8gbWUgZnJvbSB0aGUKPiBvdGhlciBkaXNjdXNzaW9ucyBpZiB5b3UgYW5kIE1pY2hh
+ZWwgS2VycmlzayB3ZXJlIGF3YXJlIG9mIHRoZQo+IG1pdGlnYXRpb25zIHRoYXQgaGFkIGJlZW4g
+bWFkZSB0byBhZGRyZXNzIHRoZSBzZWN1cml0eSBpc3N1ZS4KClNvLCBteSB0YWtlYXdheSBpcyB0
+aGF0IHdlIGxlYXZlIHRoaXMgdGV4dDoKCiAgICAgICAgICAgICAgU2VjdXJpdHktY29uc2Npb3Vz
+IHByb2dyYW1zIGludGVyYWN0aW5nIHdpdGggbmFtZXNwYWNlcyBtYXkKICAgICAgICAgICAgICB3
+aXNoICB0byAgdXNlICB0aGlzICBvcGVyYXRpb24gcmF0aGVyIHRoYW4gb3BlbigyKSB3aXRoIHRo
+ZQogICAgICAgICAgICAgIHBhdGhuYW1lIHJldHVybmVkIGJ5IHB0c25hbWUoMyksIGFuZCBzaW1p
+bGFyIGxpYnJhcnkgIGZ1bmPigJAKICAgICAgICAgICAgICB0aW9ucyB0aGF0IGhhdmUgaW5zZWN1
+cmUgQVBJcy4gIChGb3IgZXhhbXBsZSwgY29uZnVzaW9uIGNhbgogICAgICAgICAgICAgIG9jY3Vy
+IGluIHNvbWUgY2FzZXMgdXNpbmcgcHRzbmFtZSgzKSB3aXRoIGEgcGF0aG5hbWUgIHdoZXJlCiAg
+ICAgICAgICAgICAgYSAgZGV2cHRzICBmaWxlc3lzdGVtIGhhcyBiZWVuIG1vdW50ZWQgaW4gYSBk
+aWZmZXJlbnQgbW91bnQKICAgICAgICAgICAgICBuYW1lc3BhY2UuKQoKYXMgaXM/Cgo+IFRoZSBj
+aGFuZ2UgdG8gdGhlIGJlaGF2aW9yIG9mIC9kZXYvcHRteCBtYXkgbmVlZCB0byBiZSBkb2N1bWVu
+dGVkCj4gc29tZXdoZXJlLiAgIEkgYW0gbm90IGNlcnRhaW4gaWYgYW55dGhpbmcgaGFzIGJlZW4g
+ZG9jdW1lbnRlZCBzaW5jZQo+IGRldnB0cyBoYXMgc3RhcnRlZCBhbGxvd2luZyBtdWx0aXBsZSBt
+b3VudHMuCgpFcmljIGNhbiB5b3Ugc2F5IG1vcmUgYWJvdXQgdGhpcy4gV2hlbiBkaWQgdGhpcyBj
+aGFuZ2Ugb2NjdXI/CldoYXQgaXMgdGhlIG1vZGVsOiBtb3VudCBkZXZwdHMgb25jZSBpbiBlYWNo
+IG1vdW50IG5hbWVzcGFjZT8KCkNoZWVycywKCk1pY2hhZWwKCgotLSAKTWljaGFlbCBLZXJyaXNr
+CkxpbnV4IG1hbi1wYWdlcyBtYWludGFpbmVyOyBodHRwOi8vd3d3Lmtlcm5lbC5vcmcvZG9jL21h
+bi1wYWdlcy8KTGludXgvVU5JWCBTeXN0ZW0gUHJvZ3JhbW1pbmcgVHJhaW5pbmc6IGh0dHA6Ly9t
+YW43Lm9yZy90cmFpbmluZy8KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1m
+b3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9s
+aXN0aW5mby9jb250YWluZXJz
