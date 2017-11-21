@@ -1,7 +1,7 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+From: Chris Leech <cleech-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 0/9] use network namespace for iSCSI control interfaces
-Date: Tue, 21 Nov 2017 13:46:03 -0600
-Message-ID: <87mv3fo1ok.fsf__18808.6671675139$1511293592$gmane$org@xmission.com>
+Date: Tue, 21 Nov 2017 12:20:33 -0800
+Message-ID: <20171121202033.GC13246@straylight.hirudinean.org>
 References: <20171107180156.GD29597@straylight.hirudinean.org>
 	<20171107224513.4217-1-cleech@redhat.com>
 	<063D6719AE5E284EB5DD2968C1650D6DD00B618E@AcuExch.aculab.com>
@@ -11,8 +11,8 @@ Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <687d0196888f4325aebc0989a8e12ced-1XygrNkDbNvwg4NCKwmqgw@public.gmane.org> (David
-	Laight's message of "Tue, 21 Nov 2017 11:26:09 +0000")
+Content-Disposition: inline
+In-Reply-To: <687d0196888f4325aebc0989a8e12ced-1XygrNkDbNvwg4NCKwmqgw@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -23,37 +23,69 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: David Laight <David.Laight-ZS65k/vG3HxXrIkS9f7CXA@public.gmane.org>
-Cc: "netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, 'Chris Leech' <cleech-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: "netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-David Laight <David.Laight-ZS65k/vG3HxXrIkS9f7CXA@public.gmane.org> writes:
+On Tue, Nov 21, 2017 at 11:26:09AM +0000, David Laight wrote:
+> From: Chris Leech
+> > Sent: 15 November 2017 00:25
+> > To: David Laight
+> > Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> > Subject: Re: [PATCH 0/9] use network namespace for iSCSI control interfaces
+> > 
+> > On Wed, Nov 08, 2017 at 10:31:04AM +0000, David Laight wrote:
+> > > From: Chris Leech
+> > > > Sent: 07 November 2017 22:45
+> > > >
+> > > > I've posted these changes to allow iSCSI management within a container
+> > > > using a network namespace to the SCSI and Open-iSCSI lists, but seeing
+> > > > as it's not really SCSI/block related I'm casting a wider net looking
+> > > > for reviews.
+> > >
+> > > I didn't spot you acquiring and releasing references to the namespace.
+> > > (I might have missed it, the relevant patch is difficult to read).
+> > >
+> > > If the sockets are created in the context of the process whose namespace
+> > > you are using you don't need it, but given the hooks and callbacks
+> > > I'm not at all sure that is obviously true.
+> > 
+> > Thanks David,
+> > 
+> > Looking at it again, you're right and I think I need to hold a reference
+> > for the iSCSI host and handle namespace deletion.  Even for iscsi_tcp
+> > the socket gets handed off from the creating process to the transport
+> > and can outlive iscsid.
+> 
+> It isn't that simple....
+> IIRC:
+> 
+> The namespace delete callback isn't made until the reference count is zero.
+> Sockets created with sock_create_kern() don't hold a reference to the
+> namespace
+> 
+> This is all fine for sockets used for admin purposes, but rather hopeless
+> if you really need the namespace to continue to exist while the connections
+> are open - if only for long enough to close the connection.
 
+Yeah, I'm catching up on a lot of the details as I attempt to sort out
+what a sane behavior for iscsi_tcp should be here.
+
+With these patches as is, iscsi_tcp will hold a reference to a TCP
+socket created by iscsid and keep the net namespace from exiting.
+That's good for keeping iSCSI sessions alive.  Bad in that all processes
+attached to the namespace can terminate, and if filesystem references
+(like bind mounts from ip-netns) are unlinked then I don't see any way
+to get back into the namespace to shut down iSCSI.
+
+I've been trying to sort out a way to shut down and clean up in that
+case, but the other approach might be to look at having a kernel thread
+to reference the namespace so that the ns inode could be recovered from
+/proc?
+ 
 > To make matters even more annoying the functions for holding and
 > releasing a namespace are GPL_ONLY :-(
 
-I am going to pick on this by itself for a moment without mentioning
-anything else, so as hopefully not to derail what otherwise sounds
-like a good technical conversation.
+I have no problem with that.
 
-So far every time when someone has complained to me about things being
-GPL_ONLY and I have looked into it, all I have seen is someone trying
-to come up with a way to release derivative works of the kernel without
-honoring the terms of the GPLv2.
-
-I read through the US Code a while back to see if I could understand
-what is legaly defined as a derivative work, and my impression at the
-time was that the FSF is quite conservative in what they consider a
-derivative work, and probably the scope is much wider.
-
-So when people start complaining about things being GPLv2 those are the
-most annoying bug reports I ever deal with, as almost invariably people
-just want to take from the community and don't want to work with every
-one else.
-
-It is especially annoying because I have never seen a case where there
-is a good justification for a kernel export being anything other than
-GPL_ONLY.  That is the kernel's license after all, and if you are using
-kernel internal functions the chance that your code is not a derivative
-work is about 0.
-
-Eric
+Thanks,
+Chris Leech
