@@ -1,18 +1,15 @@
-From: Chris Leech <cleech-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/9] use network namespace for iSCSI control interfaces
-Date: Tue, 21 Nov 2017 12:20:33 -0800
-Message-ID: <20171121202033.GC13246@straylight.hirudinean.org>
-References: <20171107180156.GD29597@straylight.hirudinean.org>
-	<20171107224513.4217-1-cleech@redhat.com>
-	<063D6719AE5E284EB5DD2968C1650D6DD00B618E@AcuExch.aculab.com>
-	<20171115002521.GA21082@straylight.hirudinean.org>
-	<687d0196888f4325aebc0989a8e12ced@AcuMS.aculab.com>
+From: =?UTF-8?B?5pu55qCR54O9?= <caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH_v4.1_3/3] Make core_pattern support namespace
+Date: Wed, 22 Nov 2017 11:07:35 +0800
+Message-ID: <5A14E9F7.4070305@cn.fujitsu.com>
+References: <1501655849-9149-1-git-send-email-caosf.fnst@cn.fujitsu.com>
+	<1501655849-9149-4-git-send-email-caosf.fnst@cn.fujitsu.com>
+	<8bb63f0a-d0b7-edf7-6dca-4d12641074b4@suse.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"; Format="flowed"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <687d0196888f4325aebc0989a8e12ced-1XygrNkDbNvwg4NCKwmqgw@public.gmane.org>
+In-Reply-To: <8bb63f0a-d0b7-edf7-6dca-4d12641074b4-l3A5Bk7waGM@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,70 +19,35 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: David Laight <David.Laight-ZS65k/vG3HxXrIkS9f7CXA@public.gmane.org>
-Cc: "netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, mashimiao.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Nov 21, 2017 at 11:26:09AM +0000, David Laight wrote:
-> From: Chris Leech
-> > Sent: 15 November 2017 00:25
-> > To: David Laight
-> > Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org; containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> > Subject: Re: [PATCH 0/9] use network namespace for iSCSI control interfaces
-> > 
-> > On Wed, Nov 08, 2017 at 10:31:04AM +0000, David Laight wrote:
-> > > From: Chris Leech
-> > > > Sent: 07 November 2017 22:45
-> > > >
-> > > > I've posted these changes to allow iSCSI management within a container
-> > > > using a network namespace to the SCSI and Open-iSCSI lists, but seeing
-> > > > as it's not really SCSI/block related I'm casting a wider net looking
-> > > > for reviews.
-> > >
-> > > I didn't spot you acquiring and releasing references to the namespace.
-> > > (I might have missed it, the relevant patch is difficult to read).
-> > >
-> > > If the sockets are created in the context of the process whose namespace
-> > > you are using you don't need it, but given the hooks and callbacks
-> > > I'm not at all sure that is obviously true.
-> > 
-> > Thanks David,
-> > 
-> > Looking at it again, you're right and I think I need to hold a reference
-> > for the iSCSI host and handle namespace deletion.  Even for iscsi_tcp
-> > the socket gets handed off from the creating process to the transport
-> > and can outlive iscsid.
-> 
-> It isn't that simple....
-> IIRC:
-> 
-> The namespace delete callback isn't made until the reference count is zero.
-> Sockets created with sock_create_kern() don't hold a reference to the
-> namespace
-> 
-> This is all fine for sockets used for admin purposes, but rather hopeless
-> if you really need the namespace to continue to exist while the connections
-> are open - if only for long enough to close the connection.
-
-Yeah, I'm catching up on a lot of the details as I attempt to sort out
-what a sane behavior for iscsi_tcp should be here.
-
-With these patches as is, iscsi_tcp will hold a reference to a TCP
-socket created by iscsid and keep the net namespace from exiting.
-That's good for keeping iSCSI sessions alive.  Bad in that all processes
-attached to the namespace can terminate, and if filesystem references
-(like bind mounts from ip-netns) are unlinked then I don't see any way
-to get back into the namespace to shut down iSCSI.
-
-I've been trying to sort out a way to shut down and clean up in that
-case, but the other approach might be to look at having a kernel thread
-to reference the namespace so that the ns inode could be recovered from
-/proc?
- 
-> To make matters even more annoying the functions for holding and
-> releasing a namespace are GPL_ONLY :-(
-
-I have no problem with that.
-
-Thanks,
-Chris Leech
+SGksIEFsZWtzYSBTYXJhaToKU29ycnkgZm9yIHRoZSBsYXRlIHJlcGxheS4KCiA+IHdoYXQgaGFw
+cGVucyBpZiB5b3UgaGF2ZSBwcm9jZXNzZXMgaW4gdGhlIHNhbWUgcGlkbnMgdGhhdCBoYXZlIApk
+aWZmZXJlbnQgbW91bnQgbmFtZXNwYWNlcz8KV2Ugc3VwcG9ydCB0aGlzLiBUaGUgY29yZWR1bXAg
+ZmlsZSB3aWxsIGJlIHNhdmVkIGluIHRoZSBzYW1lIG1vdW50IApuYW1lc3BhY2Ugd2l0aCB0aGUg
+cHJvY2Vzc2VzLiBUaGlzIGlzIGltcGxlbWVudGVkIGJ5IHBhdGNoCjxMaW1pdCBkdW1wX3BpcGUg
+cHJvZ3JhbSdzIHBlcm1pc3Npb24gdG8gaW5pdCBmb3IgY29udGFpbmVyPgoKID4gSnVzdCBteSAk
+MC4wMi4KVGhhbmtzLgoKQmVzdCBSZWdhcmRzCkNhbyBTaHVGZW5nCgrlnKggMjAxN+W5tDA45pyI
+MDLml6UgMTU6MDcsIEFsZWtzYSBTYXJhaSDlhpnpgZM6Cj4+IEN1cnJlbnRseSwgZWFjaCBjb250
+YWluZXIgc2hhcmVkIG9uZSBjb3B5IG9mIGNvcmVkdW1wIHNldHRpbmcKPj4gd2l0aCB0aGUgaG9z
+dCBzeXN0ZW0sIGlmIGhvc3Qgc3lzdGVtIGNoYW5nZWQgdGhlIHNldHRpbmcsIGVhY2gKPj4gcnVu
+bmluZyBjb250YWluZXJzIHdpbGwgYmUgYWZmZWN0ZWQuCj4+IFNhbWUgc3RvcnkgaGFwcGVuZWQg
+d2hlbiBjb250YWluZXIgY2hhbmdlZCBjb3JlX3BhdHRlcm4sIGJvdGgKPj4gaG9zdCBhbmQgb3Ro
+ZXIgY29udGFpbmVyIHdpbGwgYmUgYWZmZWN0ZWQuCj4+Cj4+IEZvciBjb250YWluZXIgYmFzZWQg
+b24gbmFtZXNwYWNlIGRlc2lnbiwgaXQgaXMgZ29vZCB0byBhbGxvdwo+PiBlYWNoIGNvbnRhaW5l
+ciBrZWVwaW5nIHRoZWlyIG93biBjb3JlZHVtcCBzZXR0aW5nLgo+Cj4gRnJvbSB3aGF0IEkgY2Fu
+IHNlZSwgdGhpcyBpcyBiYXNpY2FsbHkgc2V0dGluZyBhIHBlci1waWRucyAKPiBjb3JlX3BhdHRl
+cm4gKHdoaWNoIGlzIGhpZXJhcmNoaWNhbGx5IGFwcGxpZWQpLiBJJ20gbm90IHN1cmUgdGhpcyAK
+PiBhY3R1YWxseSBzb2x2ZXMgdGhlIG1vcmUgZ2VuZXJhbCBwcm9ibGVtICh0aGF0IHVzZXJtb2Rl
+IGhlbHBlciAKPiBzZXR0aW5ncyBhcmVuJ3QgZ2VuZXJhbGx5IG5hbWVzcGFjZS1hd2FyZSkgLS0g
+YW5kIHdoYXQgaGFwcGVucyBpZiB5b3UgCj4gaGF2ZSBwcm9jZXNzZXMgaW4gdGhlIHNhbWUgcGlk
+bnMgdGhhdCBoYXZlIGRpZmZlcmVudCBtb3VudCBuYW1lc3BhY2VzPwo+Cj4gSWYgd2UgX2hhZF8g
+dG8gZG8gaXQgbGlrZSB0aGlzIEkgd291bGQgdGhpbmsgaXQgbWFrZXMgbW9yZSBzZW5zZSB0byAK
+PiBwaW4gaXQgdG8gbW91bnRucywgYnV0IEkgd2FzIHVuZGVyIHRoZSBpbXByZXNzaW9uIHRoYXQg
+c29tZW9uZSB3YXMgCj4gd29ya2luZyBvbiBtYWtpbmcgdXNlcm1vZGUgaGVscGVycyBwbGF5IG5p
+Y2VyIHdpdGggbmFtZXNwYWNlcy4KPgo+IEp1c3QgbXkgJDAuMDIuCj4KCgoKX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxp
+c3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxp
+bnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
