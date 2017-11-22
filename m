@@ -1,8 +1,8 @@
 From: Cao Shufeng <caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH_v4.1 1/3] Make call_usermodehelper_exec possible to set
-	namespaces
-Date: Wed, 22 Nov 2017 11:24:16 +0800
-Message-ID: <1511321058-6089-2-git-send-email-caosf.fnst__9156.53965571455$1511321046$gmane$org@cn.fujitsu.com>
+Subject: [PATCH_v4.1 2/3] Limit dump_pipe program's permission to init for
+	container
+Date: Wed, 22 Nov 2017 11:24:17 +0800
+Message-ID: <1511321058-6089-3-git-send-email-caosf.fnst__4106.47590547359$1511321050$gmane$org@cn.fujitsu.com>
 References: <1501655849-9149-1-git-send-email-caosf.fnst@cn.fujitsu.com>
 	<1511321058-6089-1-git-send-email-caosf.fnst@cn.fujitsu.com>
 Mime-Version: 1.0
@@ -23,235 +23,234 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, mashimiao.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, fnstml-container-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Current call_usermodehelper_work() can not set namespaces for
-the executed program.
+Currently when we set core_pattern to a pipe, the pipe program is
+forked by kthread running with root's permission, and write dumpfile
+into host's filesystem.
+Same thing happened for container, the dumper and dumpfile are also
+in host(not in container).
 
-This patch add above function for call_usermodehelper_work().
-The init_intermediate is introduced for init works which should
-be done before fork(). So that we get a method to set namespaces
-for children. The cleanup_intermediate is introduced for cleaning
-up what we have done in init_intermediate, like switching back
-the namespace.
+It have following program:
+1: Not consistent with file_type core_pattern
+   When we set core_pattern to a file, the container will write dump
+   into container's filesystem instead of host.
+2: Not safe for privileged container
+   In a privileged container, user can destroy host system by following
+   command:
+   # # In a container
+   # echo "|/bin/dd of=/boot/vmlinuz" >/proc/sys/kernel/core_pattern
+   # make_dump
 
-This function is helpful for coredump to run pipe_program in
-specific container environment.
+This patch switch dumper program's environment to init task, so, for
+container, dumper program have same environment with init task in
+container, which make dumper program put in container's filesystem, and
+write coredump into container's filesystem.
+The dumper's permission is also limited into subset of container's init
+process.
 
-Signed-off-by: Cao Shufeng <caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Suggested-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Suggested-by: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+
+Signed-off-by: Cao ShuFeng<caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- fs/coredump.c               |  3 ++-
- include/linux/umh.h         |  5 +++++
- init/do_mounts_initrd.c     |  3 ++-
- kernel/kmod.c               |  3 ++-
- kernel/umh.c                | 51 ++++++++++++++++++++++++++++++++++++++-------
- security/keys/request_key.c |  4 ++--
- 6 files changed, 56 insertions(+), 13 deletions(-)
+ fs/coredump.c           | 126 +++++++++++++++++++++++++++++++++++++++++++++++-
+ include/linux/binfmts.h |   2 +
+ 2 files changed, 126 insertions(+), 2 deletions(-)
 
 diff --git a/fs/coredump.c b/fs/coredump.c
-index 52c63d6..84c2b8a 100644
+index 84c2b8a..41448bd 100644
 --- a/fs/coredump.c
 +++ b/fs/coredump.c
-@@ -647,7 +647,8 @@ void do_coredump(const siginfo_t *siginfo)
- 		retval = -ENOMEM;
- 		sub_info = call_usermodehelper_setup(helper_argv[0],
- 						helper_argv, NULL, GFP_KERNEL,
--						umh_pipe_setup, NULL, &cprm);
-+						NULL, NULL, umh_pipe_setup,
-+						NULL, &cprm);
- 		if (sub_info)
- 			retval = call_usermodehelper_exec(sub_info,
- 							  UMH_WAIT_EXEC);
-diff --git a/include/linux/umh.h b/include/linux/umh.h
-index 244aff6..832ff5d 100644
---- a/include/linux/umh.h
-+++ b/include/linux/umh.h
-@@ -24,6 +24,9 @@ struct subprocess_info {
- 	char **envp;
- 	int wait;
- 	int retval;
-+	bool cleaned;
-+	void (*init_intermediate)(struct subprocess_info *info);
-+	void (*cleanup_intermediate)(struct subprocess_info *info);
- 	int (*init)(struct subprocess_info *info, struct cred *new);
- 	void (*cleanup)(struct subprocess_info *info);
- 	void *data;
-@@ -35,6 +38,8 @@ call_usermodehelper(const char *path, char **argv, char **envp, int wait);
- extern struct subprocess_info *
- call_usermodehelper_setup(const char *path, char **argv, char **envp,
- 			  gfp_t gfp_mask,
-+			  void (*init_intermediate)(struct subprocess_info *info),
-+			  void (*cleanup_intermediate)(struct subprocess_info *info),
- 			  int (*init)(struct subprocess_info *info, struct cred *new),
- 			  void (*cleanup)(struct subprocess_info *), void *data);
- 
-diff --git a/init/do_mounts_initrd.c b/init/do_mounts_initrd.c
-index 53d4f0f..8bb34c0 100644
---- a/init/do_mounts_initrd.c
-+++ b/init/do_mounts_initrd.c
-@@ -73,7 +73,8 @@ static void __init handle_initrd(void)
- 	current->flags |= PF_FREEZER_SKIP;
- 
- 	info = call_usermodehelper_setup("/linuxrc", argv, envp_init,
--					 GFP_KERNEL, init_linuxrc, NULL, NULL);
-+					 GFP_KERNEL, NULL, NULL, init_linuxrc,
-+					 NULL, NULL);
- 	if (!info)
- 		return;
- 	call_usermodehelper_exec(info, UMH_WAIT_PROC);
-diff --git a/kernel/kmod.c b/kernel/kmod.c
-index bc6addd..41df494 100644
---- a/kernel/kmod.c
-+++ b/kernel/kmod.c
-@@ -92,7 +92,8 @@ static int call_modprobe(char *module_name, int wait)
- 	argv[4] = NULL;
- 
- 	info = call_usermodehelper_setup(modprobe_path, argv, envp, GFP_KERNEL,
--					 NULL, free_modprobe_argv, NULL);
-+					 NULL, NULL, NULL, free_modprobe_argv,
-+					 NULL);
- 	if (!info)
- 		goto free_module_name;
- 
-diff --git a/kernel/umh.c b/kernel/umh.c
-index 6ff9905..97e9bd8 100644
---- a/kernel/umh.c
-+++ b/kernel/umh.c
-@@ -25,6 +25,7 @@
- #include <linux/ptrace.h>
- #include <linux/async.h>
- #include <linux/uaccess.h>
-+#include <linux/delay.h>
- 
- #include <trace/events/module.h>
- 
-@@ -53,8 +54,15 @@ static void umh_complete(struct subprocess_info *sub_info)
- 	 */
- 	if (comp)
- 		complete(comp);
--	else
-+	else {
-+		for(;;) {
-+			if (sub_info->cleaned == false)
-+				udelay(20);
-+			else
-+				break;
-+		}
- 		call_usermodehelper_freeinfo(sub_info);
-+	}
+@@ -508,6 +508,45 @@ static void wait_for_dump_helpers(struct file *file)
  }
  
  /*
-@@ -120,6 +128,9 @@ static void call_usermodehelper_exec_sync(struct subprocess_info *sub_info)
- 
- 	/* If SIGCLD is ignored sys_wait4 won't populate the status. */
- 	kernel_sigaction(SIGCHLD, SIG_DFL);
-+	if(sub_info->cleanup_intermediate) {
-+		sub_info->cleanup_intermediate(sub_info);
-+	}
- 	pid = kernel_thread(call_usermodehelper_exec_async, sub_info, SIGCHLD);
- 	if (pid < 0) {
- 		sub_info->retval = pid;
-@@ -170,6 +181,9 @@ static void call_usermodehelper_exec_work(struct work_struct *work)
- {
- 	struct subprocess_info *sub_info =
- 		container_of(work, struct subprocess_info, work);
-+	if(sub_info->init_intermediate) {
-+		sub_info->init_intermediate(sub_info);
-+	}
- 
- 	if (sub_info->wait & UMH_WAIT_PROC) {
- 		call_usermodehelper_exec_sync(sub_info);
-@@ -182,6 +196,11 @@ static void call_usermodehelper_exec_work(struct work_struct *work)
- 		 */
- 		pid = kernel_thread(call_usermodehelper_exec_async, sub_info,
- 				    CLONE_PARENT | SIGCHLD);
++ * umh_ns_setup
++ * set the namesapces to the bask task of a container.
++ * we need to switch back to the original namespaces
++ * so that the thread of workqueue is not influlenced.
++ *
++ * this method runs in workqueue kernel thread.
++ */
++static void umh_ns_setup(struct subprocess_info *info)
++{
++	struct coredump_params *cp = (struct coredump_params *)info->data;
++	struct task_struct *base_task = cp->base_task;
 +
-+		if(sub_info->cleanup_intermediate) {
-+			sub_info->cleanup_intermediate(sub_info);
++	if (base_task) {
++		cp->current_task_nsproxy = current->nsproxy;
++		//prevent current namespace from being freed
++		get_nsproxy(current->nsproxy);
++		/* Set namespaces to base_task */
++		get_nsproxy(base_task->nsproxy);
++		switch_task_namespaces(current, base_task->nsproxy);
++	}
++}
++
++/*
++ * umh_ns_cleanup
++ * cleanup what we have done in umh_ns_setup.
++ *
++ * this method runs in workqueue kernel thread.
++ */
++static void umh_ns_cleanup(struct subprocess_info *info)
++{
++	struct coredump_params *cp = (struct coredump_params *)info->data;
++	struct nsproxy *current_task_nsproxy = cp->current_task_nsproxy;
++	if (current_task_nsproxy) {
++		/* switch workqueue's original namespace back */
++		switch_task_namespaces(current, current_task_nsproxy);
++	}
++}
++
++/*
+  * umh_pipe_setup
+  * helper function to customize the process used
+  * to collect the core in userspace.  Specifically
+@@ -522,6 +561,8 @@ static int umh_pipe_setup(struct subprocess_info *info, struct cred *new)
+ {
+ 	struct file *files[2];
+ 	struct coredump_params *cp = (struct coredump_params *)info->data;
++	struct task_struct *base_task;
++
+ 	int err = create_pipe_files(files, 0);
+ 	if (err)
+ 		return err;
+@@ -530,10 +571,76 @@ static int umh_pipe_setup(struct subprocess_info *info, struct cred *new)
+ 
+ 	err = replace_fd(0, files[0], 0);
+ 	fput(files[0]);
++	if (err)
++		return err;
++
+ 	/* and disallow core files too */
+ 	current->signal->rlim[RLIMIT_CORE] = (struct rlimit){1, 1};
+ 
+-	return err;
++	base_task = cp->base_task;
++	if (base_task) {
++		const struct cred *base_cred;
++
++		/* Set fs_root to base_task */
++		spin_lock(&base_task->fs->lock);
++		set_fs_root(current->fs, &base_task->fs->root);
++		set_fs_pwd(current->fs, &base_task->fs->pwd);
++		spin_unlock(&base_task->fs->lock);
++
++		/* Set cgroup to base_task */
++		current->flags &= ~PF_NO_SETAFFINITY;
++		err = cgroup_attach_task_all(base_task, current);
++		if (err < 0)
++			return err;
++
++		/* Set cred to base_task */
++		base_cred = get_task_cred(base_task);
++
++		new->uid   = base_cred->uid;
++		new->gid   = base_cred->gid;
++		new->suid  = base_cred->suid;
++		new->sgid  = base_cred->sgid;
++		new->euid  = base_cred->euid;
++		new->egid  = base_cred->egid;
++		new->fsuid = base_cred->fsuid;
++		new->fsgid = base_cred->fsgid;
++
++		new->securebits = base_cred->securebits;
++
++		new->cap_inheritable = base_cred->cap_inheritable;
++		new->cap_permitted   = base_cred->cap_permitted;
++		new->cap_effective   = base_cred->cap_effective;
++		new->cap_bset        = base_cred->cap_bset;
++		new->cap_ambient     = base_cred->cap_ambient;
++
++		security_cred_free(new);
++#ifdef CONFIG_SECURITY
++		new->security = NULL;
++#endif
++		err = security_prepare_creds(new, base_cred, GFP_KERNEL);
++		if (err < 0) {
++			put_cred(base_cred);
++			return err;
 +		}
-+		sub_info->cleaned = true;
- 		if (pid < 0) {
- 			sub_info->retval = pid;
- 			umh_complete(sub_info);
-@@ -347,25 +366,38 @@ static void helper_unlock(void)
-  * @argv: arg vector for process
-  * @envp: environment for process
-  * @gfp_mask: gfp mask for memory allocation
-- * @cleanup: a cleanup function
-+ * @init_intermediate: init function which is called in parent task
-+ * @cleanup_intermediate: clean function which is called in parent task
-  * @init: an init function
-+ * @cleanup: a cleanup function
-  * @data: arbitrary context sensitive data
-  *
-  * Returns either %NULL on allocation failure, or a subprocess_info
-  * structure.  This should be passed to call_usermodehelper_exec to
-  * exec the process and free the structure.
-  *
-- * The init function is used to customize the helper process prior to
-- * exec.  A non-zero return code causes the process to error out, exit,
-- * and return the failure to the calling process
-+ * The init_intermediate is called in the parent task of user mode
-+ * helper. It's designed for init works which must be done in
-+ * parent task, like switching the pid_ns_for_children.
-+ *
-+ * The cleanup_intermediate is used when we want to cleanup what
-+ * we have done in init_intermediate, it is also called in parent
-+ * task.
-  *
-- * The cleanup function is just before ethe subprocess_info is about to
-+ * The init function is called after fork. It is used to customize the
-+ * helper process prior to exec.  A non-zero return code causes the
-+ * process to error out, exit, and return the failure to the
-+ * calling process.
-+ *
-+ * The cleanup function is just before the subprocess_info is about to
-  * be freed.  This can be used for freeing the argv and envp.  The
-  * Function must be runnable in either a process context or the
-  * context in which call_usermodehelper_exec is called.
-  */
- struct subprocess_info *call_usermodehelper_setup(const char *path, char **argv,
- 		char **envp, gfp_t gfp_mask,
-+		void (*init_intermediate)(struct subprocess_info *info),
-+		void (*cleanup_intermediate)(struct subprocess_info *info),
- 		int (*init)(struct subprocess_info *info, struct cred *new),
- 		void (*cleanup)(struct subprocess_info *info),
- 		void *data)
-@@ -385,8 +417,11 @@ struct subprocess_info *call_usermodehelper_setup(const char *path, char **argv,
- 	sub_info->argv = argv;
- 	sub_info->envp = envp;
++
++		free_uid(new->user);
++		new->user = base_cred->user;
++		get_uid(new->user);
++
++		put_user_ns(new->user_ns);
++		new->user_ns = base_cred->user_ns;
++		get_user_ns(new->user_ns);
++
++		put_group_info(new->group_info);
++		new->group_info = base_cred->group_info;
++		get_group_info(new->group_info);
++
++		put_cred(base_cred);
++
++		validate_creds(new);
++	}
++
++	return 0;
+ }
  
--	sub_info->cleanup = cleanup;
-+	sub_info->init_intermediate = init_intermediate;
-+	sub_info->cleaned = false;
-+	sub_info->cleanup_intermediate = cleanup_intermediate;
- 	sub_info->init = init;
-+	sub_info->cleanup = cleanup;
- 	sub_info->data = data;
-   out:
- 	return sub_info;
-@@ -481,7 +516,7 @@ int call_usermodehelper(const char *path, char **argv, char **envp, int wait)
- 	gfp_t gfp_mask = (wait == UMH_NO_WAIT) ? GFP_ATOMIC : GFP_KERNEL;
+ void do_coredump(const siginfo_t *siginfo)
+@@ -596,6 +703,7 @@ void do_coredump(const siginfo_t *siginfo)
  
- 	info = call_usermodehelper_setup(path, argv, envp, gfp_mask,
--					 NULL, NULL, NULL);
-+					 NULL, NULL, NULL, NULL, NULL);
- 	if (info == NULL)
- 		return -ENOMEM;
+ 	if (ispipe) {
+ 		int dump_count;
++                struct task_struct *vinit_task;
+ 		char **helper_argv;
+ 		struct subprocess_info *sub_info;
  
-diff --git a/security/keys/request_key.c b/security/keys/request_key.c
-index e8036cd..ae1025c 100644
---- a/security/keys/request_key.c
-+++ b/security/keys/request_key.c
-@@ -78,8 +78,8 @@ static int call_usermodehelper_keys(const char *path, char **argv, char **envp,
- 	struct subprocess_info *info;
+@@ -637,6 +745,15 @@ void do_coredump(const siginfo_t *siginfo)
+ 			goto fail_dropcount;
+ 		}
  
- 	info = call_usermodehelper_setup(path, argv, envp, GFP_KERNEL,
--					  umh_keys_init, umh_keys_cleanup,
--					  session_keyring);
-+					  NULL, NULL, umh_keys_init,
-+					  umh_keys_cleanup, session_keyring);
- 	if (!info)
- 		return -ENOMEM;
++		rcu_read_lock();
++		vinit_task = find_task_by_vpid(1);
++		rcu_read_unlock();
++		if (!vinit_task) {
++			printk(KERN_WARNING "failed getting init task info, skipping core dump\n");
++			goto fail_dropcount;
++		}
++
++
+ 		helper_argv = argv_split(GFP_KERNEL, cn.corename, NULL);
+ 		if (!helper_argv) {
+ 			printk(KERN_WARNING "%s failed to allocate memory\n",
+@@ -644,15 +761,20 @@ void do_coredump(const siginfo_t *siginfo)
+ 			goto fail_dropcount;
+ 		}
  
++		get_task_struct(vinit_task);
++
++		cprm.base_task = vinit_task;
++
+ 		retval = -ENOMEM;
+ 		sub_info = call_usermodehelper_setup(helper_argv[0],
+ 						helper_argv, NULL, GFP_KERNEL,
+-						NULL, NULL, umh_pipe_setup,
++						umh_ns_setup, umh_ns_cleanup, umh_pipe_setup,
+ 						NULL, &cprm);
+ 		if (sub_info)
+ 			retval = call_usermodehelper_exec(sub_info,
+ 							  UMH_WAIT_EXEC);
+ 
++		put_task_struct(vinit_task);
+ 		argv_free(helper_argv);
+ 		if (retval) {
+ 			printk(KERN_INFO "Core dump to |%s pipe failed\n",
+diff --git a/include/linux/binfmts.h b/include/linux/binfmts.h
+index b0abe21..e69d5e5 100644
+--- a/include/linux/binfmts.h
++++ b/include/linux/binfmts.h
+@@ -76,6 +76,8 @@ struct linux_binprm {
+ 
+ /* Function parameter for binfmt->coredump */
+ struct coredump_params {
++        struct task_struct *base_task;
++        struct nsproxy *current_task_nsproxy;
+ 	const siginfo_t *siginfo;
+ 	struct pt_regs *regs;
+ 	struct file *file;
 -- 
 2.1.0
