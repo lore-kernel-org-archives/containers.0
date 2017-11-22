@@ -1,15 +1,13 @@
-From: =?UTF-8?B?5pu55qCR54O9?= <caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH_v4.1_3/3] Make core_pattern support namespace
-Date: Wed, 22 Nov 2017 11:07:35 +0800
-Message-ID: <5A14E9F7.4070305@cn.fujitsu.com>
+From: Cao Shufeng <caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH_v4.1 0/3] Make core_pattern support namespace
+Date: Wed, 22 Nov 2017 11:24:15 +0800
+Message-ID: <1511321058-6089-1-git-send-email-caosf.fnst@cn.fujitsu.com>
 References: <1501655849-9149-1-git-send-email-caosf.fnst@cn.fujitsu.com>
-	<1501655849-9149-4-git-send-email-caosf.fnst@cn.fujitsu.com>
-	<8bb63f0a-d0b7-edf7-6dca-4d12641074b4@suse.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; Format="flowed"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <8bb63f0a-d0b7-edf7-6dca-4d12641074b4-l3A5Bk7waGM@public.gmane.org>
+In-Reply-To: <1501655849-9149-1-git-send-email-caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,35 +17,65 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, mashimiao.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, mashimiao.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, fnstml-container-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SGksIEFsZWtzYSBTYXJhaToKU29ycnkgZm9yIHRoZSBsYXRlIHJlcGxheS4KCiA+IHdoYXQgaGFw
-cGVucyBpZiB5b3UgaGF2ZSBwcm9jZXNzZXMgaW4gdGhlIHNhbWUgcGlkbnMgdGhhdCBoYXZlIApk
-aWZmZXJlbnQgbW91bnQgbmFtZXNwYWNlcz8KV2Ugc3VwcG9ydCB0aGlzLiBUaGUgY29yZWR1bXAg
-ZmlsZSB3aWxsIGJlIHNhdmVkIGluIHRoZSBzYW1lIG1vdW50IApuYW1lc3BhY2Ugd2l0aCB0aGUg
-cHJvY2Vzc2VzLiBUaGlzIGlzIGltcGxlbWVudGVkIGJ5IHBhdGNoCjxMaW1pdCBkdW1wX3BpcGUg
-cHJvZ3JhbSdzIHBlcm1pc3Npb24gdG8gaW5pdCBmb3IgY29udGFpbmVyPgoKID4gSnVzdCBteSAk
-MC4wMi4KVGhhbmtzLgoKQmVzdCBSZWdhcmRzCkNhbyBTaHVGZW5nCgrlnKggMjAxN+W5tDA45pyI
-MDLml6UgMTU6MDcsIEFsZWtzYSBTYXJhaSDlhpnpgZM6Cj4+IEN1cnJlbnRseSwgZWFjaCBjb250
-YWluZXIgc2hhcmVkIG9uZSBjb3B5IG9mIGNvcmVkdW1wIHNldHRpbmcKPj4gd2l0aCB0aGUgaG9z
-dCBzeXN0ZW0sIGlmIGhvc3Qgc3lzdGVtIGNoYW5nZWQgdGhlIHNldHRpbmcsIGVhY2gKPj4gcnVu
-bmluZyBjb250YWluZXJzIHdpbGwgYmUgYWZmZWN0ZWQuCj4+IFNhbWUgc3RvcnkgaGFwcGVuZWQg
-d2hlbiBjb250YWluZXIgY2hhbmdlZCBjb3JlX3BhdHRlcm4sIGJvdGgKPj4gaG9zdCBhbmQgb3Ro
-ZXIgY29udGFpbmVyIHdpbGwgYmUgYWZmZWN0ZWQuCj4+Cj4+IEZvciBjb250YWluZXIgYmFzZWQg
-b24gbmFtZXNwYWNlIGRlc2lnbiwgaXQgaXMgZ29vZCB0byBhbGxvdwo+PiBlYWNoIGNvbnRhaW5l
-ciBrZWVwaW5nIHRoZWlyIG93biBjb3JlZHVtcCBzZXR0aW5nLgo+Cj4gRnJvbSB3aGF0IEkgY2Fu
-IHNlZSwgdGhpcyBpcyBiYXNpY2FsbHkgc2V0dGluZyBhIHBlci1waWRucyAKPiBjb3JlX3BhdHRl
-cm4gKHdoaWNoIGlzIGhpZXJhcmNoaWNhbGx5IGFwcGxpZWQpLiBJJ20gbm90IHN1cmUgdGhpcyAK
-PiBhY3R1YWxseSBzb2x2ZXMgdGhlIG1vcmUgZ2VuZXJhbCBwcm9ibGVtICh0aGF0IHVzZXJtb2Rl
-IGhlbHBlciAKPiBzZXR0aW5ncyBhcmVuJ3QgZ2VuZXJhbGx5IG5hbWVzcGFjZS1hd2FyZSkgLS0g
-YW5kIHdoYXQgaGFwcGVucyBpZiB5b3UgCj4gaGF2ZSBwcm9jZXNzZXMgaW4gdGhlIHNhbWUgcGlk
-bnMgdGhhdCBoYXZlIGRpZmZlcmVudCBtb3VudCBuYW1lc3BhY2VzPwo+Cj4gSWYgd2UgX2hhZF8g
-dG8gZG8gaXQgbGlrZSB0aGlzIEkgd291bGQgdGhpbmsgaXQgbWFrZXMgbW9yZSBzZW5zZSB0byAK
-PiBwaW4gaXQgdG8gbW91bnRucywgYnV0IEkgd2FzIHVuZGVyIHRoZSBpbXByZXNzaW9uIHRoYXQg
-c29tZW9uZSB3YXMgCj4gd29ya2luZyBvbiBtYWtpbmcgdXNlcm1vZGUgaGVscGVycyBwbGF5IG5p
-Y2VyIHdpdGggbmFtZXNwYWNlcy4KPgo+IEp1c3QgbXkgJDAuMDIuCj4KCgoKX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxp
-c3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxp
-bnV4Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+This patchset includes following function points:
+1: Let usermodehelper function possible to set pid namespace
+   done by: [PATCH_v4.1 1/3] Make call_usermodehelper_exec possible
+   to set namespaces
+2: Let pipe_type core_pattern write dump into container's rootfs
+   done by: [PATCH_v4.1 2/3] Limit dump_pipe program's permission to
+   init for container
+3: Make separate core_pattern setting for each container
+   done by: [PATCH_v4.1 3/3] Make core_pattern support namespace
+4: Compatibility with current system
+   also included in: [PATCH_v4.1 3/3] Make core_pattern support namespace
+   If container hadn't change core_pattern setting, it will keep
+   same setting with host.
+
+Changelog v3.1-v4:
+1. remove extra fork pointed out by:
+   Andrei Vagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+2: Rebase on top of v4.9-rc8.
+3: Rebase on top of v4.12.
+3: Rebase on top of v4.14.
+
+Changelog v3-v3.1:
+1. Switch "pwd" of pipe program to container's root fs.
+2. Rebase on top of v4.9-rc1.
+
+Changelog v2->v3:
+1: Fix problem of setting pid namespace, pointed out by:
+   Andrei Vagin <avagin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+
+Changelog v1(RFC)->v2:
+1: Add [PATCH 2/2] which was todo in [RFC v1].
+2: Pass a test script for each function.
+3: Rebase on top of v4.7.
+
+Suggested-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Suggested-by: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Signed-off-by: Cao Shufeng <caosf.fnst-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+
+Cao Shufeng (3):
+  Make call_usermodehelper_exec possible to set namespaces
+  Limit dump_pipe program's permission to init for container
+  Make core_pattern support namespace
+
+ fs/coredump.c                 | 150 +++++++++++++++++++++++++++++++++++++++---
+ include/linux/binfmts.h       |   2 +
+ include/linux/pid_namespace.h |   3 +
+ include/linux/umh.h           |   5 ++
+ init/do_mounts_initrd.c       |   3 +-
+ kernel/kmod.c                 |   3 +-
+ kernel/pid.c                  |   2 +
+ kernel/pid_namespace.c        |   2 +
+ kernel/sysctl.c               |  50 ++++++++++++--
+ kernel/umh.c                  |  51 +++++++++++---
+ security/keys/request_key.c   |   4 +-
+ 11 files changed, 250 insertions(+), 25 deletions(-)
+
+-- 
+2.1.0
