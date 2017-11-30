@@ -1,11 +1,14 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 0/2] userns: automount cleanups
-Date: Wed, 29 Nov 2017 18:01:16 -0600
-Message-ID: <874lpck52r.fsf__21896.0755075843$1512000112$gmane$org@xmission.com>
+Subject: [PATCH 1/2] userns: Don't fail follow_automount based on s_user_ns
+Date: Wed, 29 Nov 2017 18:04:54 -0600
+Message-ID: <87y3moiqc9.fsf__9876.54094719819$1512000318$gmane$org@xmission.com>
+References: <874lpck52r.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <874lpck52r.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> (Eric W. Biederman's message of
+	"Wed, 29 Nov 2017 18:01:16 -0600")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,17 +23,45 @@ Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Miklos Szeredi <mszer
 List-Id: containers.vger.kernel.org
 
 
-While reviewing some code I realized that in getting d_automount working
-with s_user_ns I had left behind some unnecessary relics of the blind
-path I started down.  Here are two patches that remove those relics.
+When vfs_submount was added the test to limit automounts from
+filesystems that with s_user_ns != &init_user_ns accidentially left
+in follow_automount.  The test was never about any security concerns
+and was always about how do we implement this for filesystems whose
+s_user_ns != &init_user_ns.
 
-Unless someone has another preference I will drop them in my userns tree
-and merge them that way.
+At the moment this check makes no difference as there are no
+filesystems that both set FS_USERNS_MOUNT and implement d_automount.
 
-Eric W. Biederman (2):
-      userns: Don't fail follow_automount based on s_user_ns
-      autofs4: Modify autofs_wait to use current_uid() and current_gid()
+Remove this check now while I am thinking about it so there will not
+be odd booby traps for someone who does want to make this combination
+work.
 
- fs/autofs4/waitq.c | 4 ++--
- fs/namei.c         | 3 ---
- 2 files changed, 2 insertions(+), 5 deletions(-)
+vfs_submount still needs improvements to allow this combination to work,
+and vfs_submount contains a check that presents a warning.
+
+The autofs4 filesystem could be modified to set FS_USERNS_MOUNT and it would
+need not work on this code path, as userspace performs the mounts.
+
+Fixes: 93faccbbfa95 ("fs: Better permission checking for submounts")
+Fixes: aeaa4a79ff6a ("fs: Call d_automount with the filesystems creds")
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ fs/namei.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/fs/namei.c b/fs/namei.c
+index f0c7a7b9b6ca..f47118ed36e7 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -1142,9 +1142,6 @@ static int follow_automount(struct path *path, struct nameidata *nd,
+ 			return -ENOENT;
+ 	}
+ 
+-	if (path->dentry->d_sb->s_user_ns != &init_user_ns)
+-		return -EACCES;
+-
+ 	nd->total_link_count++;
+ 	if (nd->total_link_count >= 40)
+ 		return -ELOOP;
+-- 
+2.14.1
