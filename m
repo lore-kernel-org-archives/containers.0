@@ -1,7 +1,8 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 1/2] userns: Don't fail follow_automount based on s_user_ns
-Date: Wed, 29 Nov 2017 18:04:54 -0600
-Message-ID: <87y3moiqc9.fsf__9876.54094719819$1512000318$gmane$org@xmission.com>
+Subject: [PATCH 2/2] autofs4: Modify autofs_wait to use current_uid() and
+	current_gid()
+Date: Wed, 29 Nov 2017 18:05:26 -0600
+Message-ID: <87shcwiqbd.fsf@xmission.com>
 References: <874lpck52r.fsf@xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,45 +24,32 @@ Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Miklos Szeredi <mszer
 List-Id: containers.vger.kernel.org
 
 
-When vfs_submount was added the test to limit automounts from
-filesystems that with s_user_ns != &init_user_ns accidentially left
-in follow_automount.  The test was never about any security concerns
-and was always about how do we implement this for filesystems whose
-s_user_ns != &init_user_ns.
-
-At the moment this check makes no difference as there are no
-filesystems that both set FS_USERNS_MOUNT and implement d_automount.
-
-Remove this check now while I am thinking about it so there will not
-be odd booby traps for someone who does want to make this combination
-work.
-
-vfs_submount still needs improvements to allow this combination to work,
-and vfs_submount contains a check that presents a warning.
-
-The autofs4 filesystem could be modified to set FS_USERNS_MOUNT and it would
-need not work on this code path, as userspace performs the mounts.
+The code used to do that and then I mucked with it and never quite put
+the code back.  Today the code references current_cred()->uid and
+current_cred()->gid which is equivalent but more wordy, and not
+idiomatic.
 
 Fixes: 93faccbbfa95 ("fs: Better permission checking for submounts")
-Fixes: aeaa4a79ff6a ("fs: Call d_automount with the filesystems creds")
+Fixes: 069d5ac9ae0d ("autofs:  Fix automounts by using current_real_cred()->uid")
 Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/namei.c | 3 ---
- 1 file changed, 3 deletions(-)
+ fs/autofs4/waitq.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/namei.c b/fs/namei.c
-index f0c7a7b9b6ca..f47118ed36e7 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -1142,9 +1142,6 @@ static int follow_automount(struct path *path, struct nameidata *nd,
- 			return -ENOENT;
- 	}
- 
--	if (path->dentry->d_sb->s_user_ns != &init_user_ns)
--		return -EACCES;
--
- 	nd->total_link_count++;
- 	if (nd->total_link_count >= 40)
- 		return -ELOOP;
+diff --git a/fs/autofs4/waitq.c b/fs/autofs4/waitq.c
+index 8fc41705c7cd..9908ecf7fce0 100644
+--- a/fs/autofs4/waitq.c
++++ b/fs/autofs4/waitq.c
+@@ -443,8 +443,8 @@ int autofs4_wait(struct autofs_sb_info *sbi,
+ 		memcpy(&wq->name, &qstr, sizeof(struct qstr));
+ 		wq->dev = autofs4_get_dev(sbi);
+ 		wq->ino = autofs4_get_ino(sbi);
+-		wq->uid = current_cred()->uid;
+-		wq->gid = current_cred()->gid;
++		wq->uid = current_uid();
++		wq->gid = current_gid();
+ 		wq->pid = pid;
+ 		wq->tgid = tgid;
+ 		wq->status = -EINTR; /* Status return if interrupted */
 -- 
 2.14.1
