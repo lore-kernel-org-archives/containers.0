@@ -1,16 +1,18 @@
-From: Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+From: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
 Subject: Re: RFC(v2): Audit Kernel Container IDs
-Date: Mon, 11 Dec 2017 11:30:57 -0500
-Message-ID: <1513009857.6310.337.camel__45524.8990365819$1513009937$gmane$org@redhat.com>
+Date: Mon, 11 Dec 2017 08:52:43 -0800
+Message-ID: <50813ebc-5de7-c930-79dc-c1d3cfcfb172__32647.4670706832$1513011192$gmane$org@schaufler-ca.com>
 References: <20171012141359.saqdtnodwmbz33b2@madcap2.tricolour.ca>
 	<75b7d6a6-42ba-2dff-1836-1091c7c024e7@schaufler-ca.com>
 	<7ebca85a-425c-2b95-9a5f-59d81707339e@digikod.net>
 	<f8ea78be-9bbf-2967-7b12-ac93bb85b0bc@schaufler-ca.com>
+	<1513009857.6310.337.camel@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <f8ea78be-9bbf-2967-7b12-ac93bb85b0bc-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
+In-Reply-To: <1513009857.6310.337.camel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Language: en-US
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -20,41 +22,30 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, =?ISO-8859-1?Q?Micka=EBl_Sala=FCn?= <mic-WFhQfpSGs3bR7s880joybQ@public.gmane.org>, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Audit <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Eric Paris <eparis-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, =?UTF-8?Q?Micka=c3=abl_Sala=c3=bcn?= <mic-WFhQfpSGs3bR7s880joybQ@public.gmane.org>, Richard Guy Briggs <rgb-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, cgroups-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Audit <linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux FS Devel <linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Network Development <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Cc: mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Andy Lutomirski <luto-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, jlayton-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Carlos O'Donell <carlos-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Simo Sorce <simo-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, trondmy-7I+n7zu2hftEKMMhf/gKZA@public.gmane.org, Eric Paris <eparis-FjpueFixGhCM4zKIHC2jIg@public.gmane.org>, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gU2F0LCAyMDE3LTEyLTA5IGF0IDEwOjI4IC0wODAwLCBDYXNleSBTY2hhdWZsZXIgd3JvdGU6
-Cj4gT24gMTIvOS8yMDE3IDI6MjAgQU0sIE1pY2thw6/Cv8K9bCBTYWxhw6/Cv8K9biB3cm90ZToK
-Cj4gPiAgV2hhdCBhYm91dCBhdXRvbWF0aWNhbGx5IGNyZWF0ZQo+ID4gYW5kIGFzc2lnbiBhbiBJ
-RCB0byBhIHByb2Nlc3Mgd2hlbiBpdCBlbnRlcnMgYSBuYW1lc3BhY2UgZGlmZmVyZW50Cj4gPiB0
-aGFuCj4gPiBvbmUgb2YgaXRzIHBhcmVudCBwcm9jZXNzPyBUaGlzIGRlbGVnYXRlcyB0aGUgKHBl
-cm1pc3Npb24pCj4gPiByZXNwb25zaWJpbGl0eSB0byB0aGUgdXNlIG9mIG5hbWVzcGFjZXMgKGUu
-Zy4gL3Byb2Mvc3lzL3VzZXIvbWF4XyoKPiA+IGxpbWl0KS4KPiAKPiBUaGF0IGdldHMgdWdseSB3
-aGVuIHlvdSBoYXZlIGEgY29udGFpbmVyIHRoYXQgdXNlcyB1c2VyLCBmaWxlc3lzdGVtLAo+IG5l
-dHdvcmsgYW5kIHdoYXRldmVyIGVsc2UgbmFtZXNwYWNlcy4gSWYgYWxsIGNvbnRhaW5lcnMgdXNl
-ZCB0aGUgc2FtZQo+IHNldCBvZiBuYW1lc3BhY2VzIEkgdGhpbmsgdGhpcyB3b3VsZCBiZSBhIGZp
-bmUgaWRlYSwgYnV0IHRoZXkgZG9uJ3QuCj4gCj4gPiBPbmUgaW50ZXJlc3Rpbmcgc2lkZSBlZmZl
-Y3Qgb2YgdGhpcyBhcHByb2FjaCB3b3VsZCBiZSB0byBiZSBhYmxlIHRvCj4gPiBpZGVudGlmeSB3
-aGljaCBwcm9jZXNzZXMgYXJlIGluIHRoZSBzYW1lIHNldCBvZiBuYW1lc3BhY2VzLCBldmVuIGlm
-Cj4gPiBub3QKPiA+IHNwYXduIGZyb20gdGhlIGNvbnRhaW5lciBidXQgZW50ZXJlZCBhZnRlciBp
-dHMgY3JlYXRpb24gKGkuZS4gdXNpbmcKPiA+IHNldG5zKSwgYnkgY3JlYXRpbmcgY29udGFpbmVy
-IElEcyBhcyBhIChkZXRlcm1pbmlzdGljKSBjaGVja3N1bQo+ID4gZnJvbSB0aGUKPiA+IC9wcm9j
-L3NlbGYvbnMvKiBJRHMuCj4gPiAKPiA+IFNpbmNlIHRoZSBjb25jZXJuIGlzIHRvIGlkZW50aWZ5
-IGEgY29udGFpbmVyLCBJIHRoaW5rIHRoZSBhYmlsaXR5Cj4gPiB0bwo+ID4gYXVkaXQgdGhlIHN3
-aXRjaCBmcm9tIG9uZSBjb250YWluZXIgSUQgdG8gYW5vdGhlciBpcyBlbm91Z2guIEkKPiA+IGRv
-bid0Cj4gPiB0aGluayB3ZSBuZWVkIG5lc3RlZCBJRHMuCj4gCj4gQmVjYXVzZSBhIGNvbnRhaW5l
-ciBkb2Vzbid0IGhhdmUgdG8gdXNlIG5hbWVzcGFjZXMgdG8gYmUgYSBjb250YWluZXIKPiB5b3Ug
-c3RpbGwgbmVlZCBhIG1lY2hhbmlzbSBmb3IgYSBwcm9jZXNzIHRvIGRlY2xhcmUgdGhhdCBpdCBp
-cyBpbgo+IGZhY3QKPiBpbiBhIGNvbnRhaW5lciwgYW5kIHRvIGlkZW50aWZ5IHRoZSBjb250YWlu
-ZXIuCgpJIGxpa2UgdGhlIGlkZWEgYnV0IEknbSBzdGlsbCB0b3NzaW5nIGl0IGFyb3VuZCBpbiBt
-eSBoZWFkIChhbmQKdGhpbmtpbmcgYWJvdXQgQ2FzZXkncyBzdGF0ZW1lbnQgdG9vKS4gTGV0cyBz
-YXkgd2UgaGF2ZSBhICdkb2NrZXItbGlrZScgCmNvbnRhaW5lciB3aXRoIHBpZD0xMDAgIG5ldG5z
-PVgsdXNlcm5zPVksbW91bnRucz1aLiBJZiBJJ20gb24gdGhlIGhvc3QKaW4gYWxsIGluaXQgbmFt
-ZXNwYWNlcyBhbmQgSSBydW4KICBuc2VudGVyIC10IDEwMCAtbiBpcCBsaW5rIHNldCBldGgwIHBy
-b21pc2Mgb24KSG93IHNob3VsZCB0aGlzIGJlIGxvZ2dlZD8gRGlkIHRoaXMgY29tbWFuZCBydW4g
-aW4gaXQncyBvd24gJ2NvbnRhaW5lcicKdW5yZWxhdGVkIHRvIHRoZSAnZG9ja2VyLWxpa2UnIGNv
-bnRhaW5lcj8KCi1FcmljCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91
-bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlz
-dGluZm8vY29udGFpbmVycw==
+On 12/11/2017 8:30 AM, Eric Paris wrote:
+> On Sat, 2017-12-09 at 10:28 -0800, Casey Schaufler wrote:
+>> Because a container doesn't have to use namespaces to be a container
+>> you still need a mechanism for a process to declare that it is in
+>> fact
+>> in a container, and to identify the container.
+> I like the idea but I'm still tossing it around in my head (and
+> thinking about Casey's statement too). Lets say we have a 'docker-like' 
+> container with pid=100  netns=X,userns=Y,mountns=Z. If I'm on the host
+> in all init namespaces and I run
+>   nsenter -t 100 -n ip link set eth0 promisc on
+> How should this be logged? Did this command run in it's own 'container'
+> unrelated to the 'docker-like' container?
+
+Jose Bollo's PTAGS ( https://gitlab.com/jobol/ptags ) would be
+prefect. Any time you declare something to be a container or
+enter a namespace you slap a tag on it. Identifying nested
+containers would be easy, you'd have multiple tags.
+
+PTAGS unfortunately needs module stacking, but how hard could that be?
+
+
+> -Eric
