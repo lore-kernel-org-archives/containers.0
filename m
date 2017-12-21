@@ -1,15 +1,16 @@
-From: "Michael Kerrisk (man-pages)" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: Documentation patch for namespaced file capabilities
-Date: Tue, 19 Dec 2017 16:33:33 +0100
-Message-ID: <CAKgNAkgMAPZXUXX6eidP3nCws8x0xXBL9CGdNdERzHyhPt5QNQ__30693.0093015128$1513697557$gmane$org@mail.gmail.com>
-References: <CAKgNAkiAeqbD=G6hnExh4cC84nA2mU6xdLzzS0F2x1wviEPgHg@mail.gmail.com>
-	<20171129175849.GC14545@mail.hallyn.com>
-Reply-To: mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH] userns: honour no_new_privs for cap_bset during user ns
+	creation/switch
+Date: Thu, 21 Dec 2017 15:44:53 -0600
+Message-ID: <87wp1foiwa.fsf__5002.28822133995$1513892631$gmane$org@xmission.com>
+References: <20171221210605.181720-1-zenczykowski@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20171129175849.GC14545-7LNsyQBKDXoIagZqoN9o3w@public.gmane.org>
+In-Reply-To: <20171221210605.181720-1-zenczykowski-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> ("Maciej
+	\=\?utf-8\?Q\?\=C5\=BBenczykowski\=22's\?\= message of "Thu,
+	21 Dec 2017 13:06:05 -0800")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,51 +20,43 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: Mimi Zohar <zohar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, xiaolong.ye-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org, linux-kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, James Bottomley <James.Bottomley-JuX6DAaQMKPCXq6kfMZ53/egYHeGw8Jk@public.gmane.org>, LSM List <linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux API <linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, lkp-JC7UmRfGjtg@public.gmane.org
+To: Maciej =?utf-8?Q?=C5=BBenczykowski?= <zenczykowski-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Willem de Bruijn <willemb-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Maciej =?utf-8?Q?=C5=BBenczykowski?= <maze-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mahesh Bandewar <maheshb-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Serge,
-
-On 29 November 2017 at 18:58, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
-> Quoting Michael Kerrisk (man-pages) (mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
->> Hi Serge,
->>
->> At the moment man-pages lacks documentation of the namespaced file
->> capability feature that you added with commit
->> 8db6c34f1dbc8e06aa016a9b829b06902c3e1340. Would you be able to send a
->> patch describing the feature?
->
-> Sorry.  I'm adding this to my todo list, so I should get to it soon.
-
-A gentle ping...
-
-Cheers,
-
-Michael
-
->> Presumably, the patch would be for the capabilities(7) page (or
->> perhaps for the user_namespaces(7) page, if that seems more
->> appropriate), As well as documenting the semantics, it would be good
->> to include an example or two of the notation that is used for the
->> xattr names.
->>
->> Presumably also there will be some changes in userspace tools
->> (setcap/getcap?). Do you know anything about what's happening there?
->>
->> Cheers,
->>
->> Michael
->>
->>
->> --
->> Michael Kerrisk
->> Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
->> Linux/UNIX System Programming Training: http://man7.org/training/
-
-
-
--- 
-Michael Kerrisk
-Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
-Linux/UNIX System Programming Training: http://man7.org/training/
+TWFjaWVqIMW7ZW5jenlrb3dza2kgPHplbmN6eWtvd3NraUBnbWFpbC5jb20+IHdyaXRlczoKCj4g
+RnJvbTogTWFjaWVqIMW7ZW5jenlrb3dza2kgPG1hemVAZ29vZ2xlLmNvbT4KPgo+IFRoaXMgYWxs
+b3dzIGxvY2tpbmcgZG93biB1c2VyIG5hbWVzcGFjZXMgdGlnaHRlciwKPiBhbmQgaXQgY291bGQg
+ZXZlbiBiZSBjb25zaWRlcmVkIGEgc2VjdXJpdHkgZml4LgoKTm8uICBUaGlzIG1ha2VzIG5vIGxv
+Z2ljYWwgc2Vuc2UuCgpBIHRhc2sgdGhhdCBlbnRlcnMgYSB1c2VyIG5hbWVzcGFjZSBsb3NlcyBh
+bGwgY2FwYWJpbGl0aWVzIHRvIGV2ZXJ5dGhpbmcKb3V0c2lkZSBvZiB0aGUgdXNlciBuYW1lc3Bh
+Y2UuICBDYXBhYmlsaXRpZXMgaW5zaWRlIGEgdXNlciBuYW1lc3BhY2UgYXJlCm9ubHkgdmFsaWQg
+Zm9yIG9iamVjdHMgY3JlYXRlZCBpbnNpZGUgdGhhdCB1c2VyIG5hbWVzcGFjZS4KClNvIGxpbWl0
+aW5nIGNhcGFiaWxpdGllcyBpbnNpZGUgYSB1c2VyIG5hbWVzcGFjZSB3aGVuIHRoZSBjYXBhYmls
+aXR5CmJvdW5kaW5nIHNldCBpcyBhbHJlYWR5IGZ1bGx5IGhvbm9yZWQgYnkgbm90IGdpdmluZyB0
+aGUgcHJvY2Vzc2VzIGFueSBvZgp0aG9zZSBjYXBhYmlsaXRpZXMgbWFrZXMgbm8gbG9naWNhbCBz
+ZW5zZS4KCklmIHRoZSBjb25jZXJuIGlzIGtlcm5lbCBhdHRhY2sgc3VyZmFjZSB2ZXJzdXMgbG9n
+aWNhbCBwZXJtaXNzaW9ucyB3ZQpjYW4gbG9vayBhdCB3YXlzIHRvIHJlZHVjZSB0aGUgYXR0YWNr
+IHN1cmZhY2UgYnV0IHRoYXQgbmVlZHMgdG8gYmUgZnVsbHkKZGlzY3Vzc2VkIGluIHRoZSBjaGFu
+Z2UgbG9nLgoKPiBTaWduZWQtb2ZmLWJ5OiBNYWNpZWogxbtlbmN6eWtvd3NraSA8bWF6ZUBnb29n
+bGUuY29tPgo+IC0tLQo+ICBrZXJuZWwvdXNlcl9uYW1lc3BhY2UuYyB8IDcgKysrKy0tLQo+ICAx
+IGZpbGUgY2hhbmdlZCwgNCBpbnNlcnRpb25zKCspLCAzIGRlbGV0aW9ucygtKQo+Cj4gZGlmZiAt
+LWdpdCBhL2tlcm5lbC91c2VyX25hbWVzcGFjZS5jIGIva2VybmVsL3VzZXJfbmFtZXNwYWNlLmMK
+PiBpbmRleCAyNDZkNGQ0Y2U1YzcuLjIzNTRmN2FkZTc4YSAxMDA2NDQKPiAtLS0gYS9rZXJuZWwv
+dXNlcl9uYW1lc3BhY2UuYwo+ICsrKyBiL2tlcm5lbC91c2VyX25hbWVzcGFjZS5jCj4gQEAgLTUw
+LDExICs1MCwxMiBAQCBzdGF0aWMgdm9pZCBzZXRfY3JlZF91c2VyX25zKHN0cnVjdCBjcmVkICpj
+cmVkLCBzdHJ1Y3QgdXNlcl9uYW1lc3BhY2UgKnVzZXJfbnMpCj4gIAkgKiBhbnl0aGluZyBhcyB0
+aGUgY2FwYWJpbGl0aWVzIGFyZSBib3VuZCB0byB0aGUgbmV3IHVzZXIgbmFtZXNwYWNlLgo+ICAJ
+ICovCj4gIAljcmVkLT5zZWN1cmViaXRzID0gU0VDVVJFQklUU19ERUZBVUxUOwo+ICsJY3JlZC0+
+Y2FwX2JzZXQgPSB0YXNrX25vX25ld19wcml2cyhjdXJyZW50KSA/IGN1cnJlbnRfY3JlZCgpLT5j
+YXBfYnNldAo+ICsJCQkJCQkgICAgOiBDQVBfRlVMTF9TRVQ7Cj4gIAljcmVkLT5jYXBfaW5oZXJp
+dGFibGUgPSBDQVBfRU1QVFlfU0VUOwo+IC0JY3JlZC0+Y2FwX3Blcm1pdHRlZCA9IENBUF9GVUxM
+X1NFVDsKPiAtCWNyZWQtPmNhcF9lZmZlY3RpdmUgPSBDQVBfRlVMTF9TRVQ7Cj4gKwljcmVkLT5j
+YXBfcGVybWl0dGVkID0gY3JlZC0+Y2FwX2JzZXQ7Cj4gKwljcmVkLT5jYXBfZWZmZWN0aXZlID0g
+Y3JlZC0+Y2FwX2JzZXQ7Cj4gIAljcmVkLT5jYXBfYW1iaWVudCA9IENBUF9FTVBUWV9TRVQ7Cj4g
+LQljcmVkLT5jYXBfYnNldCA9IENBUF9GVUxMX1NFVDsKPiAgI2lmZGVmIENPTkZJR19LRVlTCj4g
+IAlrZXlfcHV0KGNyZWQtPnJlcXVlc3Rfa2V5X2F1dGgpOwo+ICAJY3JlZC0+cmVxdWVzdF9rZXlf
+YXV0aCA9IE5VTEw7Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRh
+dGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGlu
+Zm8vY29udGFpbmVycw==
