@@ -1,15 +1,14 @@
-From: =?UTF-8?Q?Maciej_=C5=BBenczykowski?= <zenczykowski-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
 Subject: Re: [PATCH] userns: honour no_new_privs for cap_bset during user ns
 	creation/switch
-Date: Fri, 22 Dec 2017 02:51:49 +0100
-Message-ID: <CAHo-OoxoTEZuQ0ZXa9a2BnjAv83y0UWC0eqn-ok9hS31LkiiSA__46008.4412633025$1513907421$gmane$org@mail.gmail.com>
+Date: Fri, 22 Dec 2017 13:17:34 +1100
+Message-ID: <20171222021733.rerkt6mhpf3cb3oe@gordon>
 References: <20171221210605.181720-1-zenczykowski@gmail.com>
 	<87wp1foiwa.fsf@xmission.com>
 	<CAHo-OoyrOr5jXwU-j4Z4qYdWo40+qAdAk0r+OpfMUZ6LgbS-RA@mail.gmail.com>
 	<87fu83lfw5.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============8983374409890909422=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <87fu83lfw5.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
@@ -22,73 +21,74 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mahesh Bandewar <maheshb-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Willem de Bruijn <willemb-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Willem de Bruijn <willemb-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Maciej =?utf-8?Q?=C5=BBenczykowski?= <zenczykowski-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mahesh Bandewar <maheshb-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+
+--===============8983374409890909422==
+Content-Type: multipart/signed; micalg=pgp-sha256;
+	protocol="application/pgp-signature"; boundary="kwekmczu27otmcjx"
+Content-Disposition: inline
+
+
+--kwekmczu27otmcjx
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+On 2017-12-21, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
 > Good point about CAP_DAC_OVERRIDE on files you own.
->
+>=20
 > I think there is an argument that you are playing dangerous games with
 > the permission system there, as it isn't effectively a file you own if
 > you can't read it, and you can't change it's permissions.
 
-Append-only files are useful - particularly for logging.
-It could also simply be a non-readable file on a R/O filesystem.
+This problem reminds me of the whole "unmapped group" problem. If you
+have access to a file through an unmapped group you can still access a
+file -- which to me is wrong. I understand the need for checking
+unmapped groups in order to fix the "chmod 707" problem, but I think
+that unmapped groups should only *block* access and never *grant* it.
 
-> Given little things like that I can completely see no_new_privs meaning
-> you can't create a user namespace.  That seems consistent with the
-> meaning and philosophy of no_new_privs.  So simple it is hard to get
-> wrong.
+I was working on a patch for that issue a while ago but it touched more
+VFS than I was comfortable with. Eric, is that a fix you would be
+interested in?
 
-Yes, I could totally buy the argument that no_new_privs should prevent
-creating a user ns.
+--=20
+Aleksa Sarai
+Senior Software Engineer (Containers)
+SUSE Linux GmbH
+<https://www.cyphar.com/>
 
-However, there's also setns() and that's a fair bit harder to reason about.
-Entirely deny it?  But that actually seems potentially useful...
-Allow it but cap it?  That's what this does...
+--kwekmczu27otmcjx
+Content-Type: application/pgp-signature; name="signature.asc"
 
-> We could do more clever things like plug this whole in user namespaces,
-> and that would not hurt my feelings.
+-----BEGIN PGP SIGNATURE-----
 
-Sure, this particular one wouldn't be all that easy I think... and how
-many such holes are there?
-I found this particular one *after* your first reply in this thread.
+iQIzBAABCAAdFiEEXzbGxhtUYBJKdfWmnhiqJn3bjbQFAlo8az0ACgkQnhiqJn3b
+jbTpKw//RTizKTfmoglKt9khvpo5Jdu97/nH1jHle2INERKwTMHqugDWWvYM9Gis
+Plf52oDTUQf0qoIT10Y8n8WfZ8v0Z/zBoayjEB0Mz4JB4OXFJobcF0bn55eOqGwQ
+bgOciUBVu2zA7nlWk7ROlnSQaRVmbsxdUhymq12dhS6rwh9fBCExzzLdSWZCbzWk
+4SV01CXTTfoIjQN57OYA8UcBJXUJRido4TXchTlqTtK5P6u1C8FLCbn9nOhQbIHA
+eduI6gLlNVptp5a4Wod4VFBkmZcOuSPqcZ1BYVXKkMcI/108eQNCSDROWBnL7FWu
+UKzjT/tXiXofXKkF1fD1fQeKYCmPiduGrC91sSr0Qj+S470J1xK0RRLm5RbMed5J
+NHl765DMS3RCYIgrghduGew7P4Go5u+BBPeM8iMZdI1WTwlwdDzRCBJjHSII+8Sw
+k/6Cw0WSdG5XV0k1WPsrKydz3xLK+Z3M1nOFpDe3xgLWAFqpm04+k695Nxk4SuMh
+eIozExu9SKdA4L9kCCZr7eIZzzvU0sWHiN9twGRqMneFZ297azcbeqPuQ2cGmjtm
+Y6EfaGP0XCEzRwYdFt1yYPXFhIeqWbujctmmQQJuoVlv9PuTbsP1uFT7lzC7eCkn
+P7KIc+k1Zd/SYmb5ePQrQIwgJzx1dbxyf3gpO7xHeTdXAt1CCkQ=
+=i2Hp
+-----END PGP SIGNATURE-----
 
-> However unless that is our only
-> choice to avoid badly breaking userspace I would have to have to depend
-> on user namespaces being perfect for no_new_privs to be a proper jail.
+--kwekmczu27otmcjx--
 
-This stuff is ridiculously complex to get right from userspace. :-(
+--===============8983374409890909422==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-> As a general rule user namespaces are where we tackle the subtle scary
-> things that should work, and no_new_privs is where we implement a simple
-> hard to get wrong jail.  Most of the time the effect is the same to an
-> outside observer (bounded permissions), but there is a real difference
-> in difficulty of implementation.
-
-So, where to now...
-
-Would you accept patches that:
-
-- make no_new_priv block user ns creation?
-
-- make no_new_priv block user ns transition?
-
-Or perhaps we can assume that lack of create privs is sufficient, and
-if there's a pre-existing user ns for you to enter, then that's
-acceptable...
-Although this implies you probably always want to combine no_new_privs
-with a leaf user ns, or no_new_privs isn't all that useful for root in
-root ns...
-This added complexity, probably means it should be blocked...
-
-- inherits bset across user ns creation/transition based on X?
-[this is the one we care about, because there are simply too many bugs
-in the kernel wrt. certain caps]
-X could be:
-- a new flag similar to no_new_priv
-- a new securebit flag (w/lockbit)  [provided securebits survive a
-userns transition, haven't checked]
-- or perhaps a new capability
-- something else?
-
-How do we make forward progress?
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linuxfoundation.org/mailman/listinfo/containers
+--===============8983374409890909422==--
