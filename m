@@ -1,18 +1,17 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+From: =?UTF-8?Q?Maciej_=C5=BBenczykowski?= <zenczykowski-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: [PATCH] userns: honour no_new_privs for cap_bset during user ns
 	creation/switch
-Date: Thu, 21 Dec 2017 19:18:02 -0600
-Message-ID: <87fu83lfw5.fsf@xmission.com>
+Date: Fri, 22 Dec 2017 02:51:49 +0100
+Message-ID: <CAHo-OoxoTEZuQ0ZXa9a2BnjAv83y0UWC0eqn-ok9hS31LkiiSA__46008.4412633025$1513907421$gmane$org@mail.gmail.com>
 References: <20171221210605.181720-1-zenczykowski@gmail.com>
 	<87wp1foiwa.fsf@xmission.com>
 	<CAHo-OoyrOr5jXwU-j4Z4qYdWo40+qAdAk0r+OpfMUZ6LgbS-RA@mail.gmail.com>
+	<87fu83lfw5.fsf@xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CAHo-OoyrOr5jXwU-j4Z4qYdWo40+qAdAk0r+OpfMUZ6LgbS-RA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	("Maciej \=\?utf-8\?Q\?\=C5\=BBenczykowski\=22's\?\= message of "Fri,
-	22 Dec 2017 02:03:35 +0100")
+In-Reply-To: <87fu83lfw5.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,95 +21,74 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Maciej =?utf-8?Q?=C5=BBenczykowski?= <zenczykowski-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mahesh Bandewar <maheshb-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Willem de Bruijn <willemb-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-TWFjaWVqIMW7ZW5jenlrb3dza2kgPHplbmN6eWtvd3NraUBnbWFpbC5jb20+IHdyaXRlczoKCj4g
-T24gVGh1LCBEZWMgMjEsIDIwMTcgYXQgMTA6NDQgUE0sIEVyaWMgVy4gQmllZGVybWFuCj4gPGVi
-aWVkZXJtQHhtaXNzaW9uLmNvbT4gd3JvdGU6Cj4+IE5vLiAgVGhpcyBtYWtlcyBubyBsb2dpY2Fs
-IHNlbnNlLgo+Pgo+PiBBIHRhc2sgdGhhdCBlbnRlcnMgYSB1c2VyIG5hbWVzcGFjZSBsb3NlcyBh
-bGwgY2FwYWJpbGl0aWVzIHRvIGV2ZXJ5dGhpbmcKPj4gb3V0c2lkZSBvZiB0aGUgdXNlciBuYW1l
-c3BhY2UuICBDYXBhYmlsaXRpZXMgaW5zaWRlIGEgdXNlciBuYW1lc3BhY2UgYXJlCj4+IG9ubHkg
-dmFsaWQgZm9yIG9iamVjdHMgY3JlYXRlZCBpbnNpZGUgdGhhdCB1c2VyIG5hbWVzcGFjZS4KPj4K
-Pj4gU28gbGltaXRpbmcgY2FwYWJpbGl0aWVzIGluc2lkZSBhIHVzZXIgbmFtZXNwYWNlIHdoZW4g
-dGhlIGNhcGFiaWxpdHkKPj4gYm91bmRpbmcgc2V0IGlzIGFscmVhZHkgZnVsbHkgaG9ub3JlZCBi
-eSBub3QgZ2l2aW5nIHRoZSBwcm9jZXNzZXMgYW55IG9mCj4+IHRob3NlIGNhcGFiaWxpdGllcyBt
-YWtlcyBubyBsb2dpY2FsIHNlbnNlLgo+Pgo+PiBJZiB0aGUgY29uY2VybiBpcyBrZXJuZWwgYXR0
-YWNrIHN1cmZhY2UgdmVyc3VzIGxvZ2ljYWwgcGVybWlzc2lvbnMgd2UKPj4gY2FuIGxvb2sgYXQg
-d2F5cyB0byByZWR1Y2UgdGhlIGF0dGFjayBzdXJmYWNlIGJ1dCB0aGF0IG5lZWRzIHRvIGJlIGZ1
-bGx5Cj4+IGRpc2N1c3NlZCBpbiB0aGUgY2hhbmdlIGxvZy4KPgo+IEhlcmUncyBhbiBleGFtcGxl
-IG9mIHVzaW5nIHVzZXIgbmFtZXNwYWNlcyB0byByZWFkIGEgZmlsZSB5b3UKPiBzaG91bGRuJ3Qg
-YmUgYWJsZSB0by4KPgo+IGxwazE5On4jIHVuYW1lIC1yCj4gNC4xNS4wLXNtcC1kMWNlOGNlYjhi
-YTgKPgo+ICh3ZSBzdGFydCBhcyB0cnVlIGdsb2JhbCByb290KQo+IGxwazE5On4jIGlkCj4gdWlk
-PTAocm9vdCkgZ2lkPTAocm9vdCkgZ3JvdXBzPTAocm9vdCkKPgo+IChjbGVhbnVwIGFmdGVyIHBy
-ZXZpb3VzIHJ1bikKPiBscGsxOTp+IyBjZCAvOyBjaGF0dHIgLWkgL2ltbXU7IHJtIC1mIC9pbW11
-L2xvZzsgcm1kaXIgL2ltbXUKPgo+IChub3cgd2UgY3JlYXRlIGFuIGFwcGVuZCBvbmx5IGxvZ2Zp
-bGUgb3duZWQgYnkgdGFyZ2V0IHVzZXI6Z3JvdXApCj4gbHBrMTk6fiMgY2QgLzsgbWtkaXIgL2lt
-bXU7IHRvdWNoIC9pbW11L2xvZzsgY2hvd24gcHJvZHVzZXI6cHJvZAo+IC9pbW11L2xvZzsgY2ht
-b2QgYS1yd3gsdSt3IC9pbW11L2xvZzsgY2hhdHRyICthIC9pbW11L2xvZwo+Cj4gKGxldCdzIHNo
-b3cgd2hhdCB0aGluZ3MgbG9vayBsaWtlKQo+IGxwazE5On4jIGNoYXR0ciAraSAvaW1tdTsgbHMg
-LWxkIC8gL2ltbXUgL2ltbXUvbG9nOyBsc2F0dHIgLWQgLyAvaW1tdSAvaW1tdS9sb2cKPiBkcnd4
-ci14ci14IDIyIHJvb3Qgcm9vdCA0MDk2IERlYyAyMSAxNjozMyAvCj4gZHJ3eHIteHIteCAyIHJv
-b3Qgcm9vdCA0MDk2IERlYyAyMSAxNjoyMyAvaW1tdQo+IC0tdy0tLS0tLS0gMSBwcm9kdXNlciBw
-cm9kIDAgRGVjIDIxIDE2OjIzIC9pbW11L2xvZwo+IC0tLS0tLS0tLS0tSS0tZS0tLS0gLwo+IC0t
-LS1pLS0tLS0tLS0tZS0tLS0gL2ltbXUKPiAtLS0tLWEtLS0tLS0tLWUtLS0tIC9pbW11L2xvZwo+
-Cj4gKHRoZSBpbW11dGFibGUgYml0IHByZXZlbnRzIHVzIGZyb20gY2hhbmdpbmcgcGVybWlzc2lv
-bnMgb24gdGhlIGZpbGUpCj4gbHBrMTk6LyMgY2htb2QgYStyd3ggL2ltbXUvbG9nCj4gY2htb2Q6
-IGNoYW5naW5nIHBlcm1pc3Npb25zIG9mICcvaW1tdS9sb2cnOiBPcGVyYXRpb24gbm90IHBlcm1p
-dHRlZAo+Cj4gKHRoZSBhcHBlbmQgb25seSBiaXQgcHJldmVudHMgdXMgZnJvbSBzaW1wbHkgb3Zl
-cndyaXRpbmcgdGhlIGZpbGUpCj4gbHBrMTk6LyMgZWNobyBsb2cxID4gL2ltbXUvbG9nCj4gLWJh
-c2g6IC9pbW11L2xvZzogT3BlcmF0aW9uIG5vdCBwZXJtaXR0ZWQKPgo+IChidXQgd2UgY2FuIGFw
-cGVuZCB0byBpdCkKPiBscGsxOTovIyBlY2hvIGxvZzEgPj4gL2ltbXUvbG9nCj4KPiAod2UncmUg
-Z2xvYmFsIHJvb3Qgd2l0aCBDQVBfREFDX09WRVJSSURFLCBzbyB3ZSBjYW4gKnN0aWxsKiByZWFk
-IGl0KQo+IGxwazE5Oi8jIGNhdCAvaW1tdS9sb2cKPiBsb2cxCj4KPiAobGV0J3MgdHJhbnNpdGlv
-biB0byB0YXJnZXQgdXNlcikKPiBscGsxOTovIyBzdSAtIHByb2R1c2VyCj4KPiBwcm9kdXNlckBs
-cGsxOTp+JCBpZAo+IHVpZD0yMDgwKHByb2R1c2VyKSBnaWQ9NjIwKHByb2QpIGdyb3Vwcz02MjAo
-cHJvZCkKPgo+ICh3ZSBjYW4ndCBvdmVyd3JpdGUgaXQpCj4gcHJvZHVzZXJAbHBrMTk6fiQgZWNo
-byBsb2cyID4gL2ltbXUvbG9nCj4gLXN1OiAvaW1tdS9sb2c6IE9wZXJhdGlvbiBub3QgcGVybWl0
-dGVkCj4KPiAoYnV0IHdlIGNhbiBsb2cgdG8gaXQ6IGFzIGludGVuZGVkKQo+IHByb2R1c2VyQGxw
-azE5On4kIGVjaG8gbG9nMiA+PiAvaW1tdS9sb2cKPgo+ICh3ZSBjYW4ndCBjaGFuZ2UgaXRzIHBl
-cm1pc3Npb25zLCBjYXVzZSBpdCdzIGluIGFuIGltbXV0YWJsZSBkaXJlY3RvcnkpCj4gcHJvZHVz
-ZXJAbHBrMTk6fiQgY2htb2QgdStyIC9pbW11L2xvZwo+IGNobW9kOiBjaGFuZ2luZyBwZXJtaXNz
-aW9ucyBvZiAnL2ltbXUvbG9nJzogT3BlcmF0aW9uIG5vdCBwZXJtaXR0ZWQKPgo+ICh3ZSBjYW4n
-dCBkdW1wIHRoZSBmaWxlLCBjYXVzZSB3ZSBkb24ndCBoYXZlIENBUF9EQUNfT1ZFUlJJREUpCj4g
-cHJvZHVzZXJAbHBrMTk6fiQgY2F0IC9pbW11L2xvZwo+IGNhdDogL2ltbXUvbG9nOiBQZXJtaXNz
-aW9uIGRlbmllZAo+Cj4gKG9yIGNhbiB3ZT8pCj4gcHJvZHVzZXJAbHBrMTk6fiQgdW5zaGFyZSAt
-VSAtciBjYXQgL2ltbXUvbG9nCj4gbG9nMQo+IGxvZzIKPgo+IC0tLS0KPgo+IE5vdywgb2YgY291
-cnNlLCB0aGUgYWJvdmUgcGF0Y2ggZG9lc24ndCBhY3R1YWxseSBmaXggdGhpcyBvbiBpdCdzIG93
-biwKPiBzaW5jZSAnc3UnIGRvZXNuJ3QgKHlldD8pIGtub3cgdG8gcmVzdHJpY3QgYnNldCBvciB0
-byBzZXQKPiBub19uZXdfcHJpdnMuCj4KPiBCdXQ6IGl0IGFsbG93cyB0aGUgc2FuZGJveCBlcXVp
-dmFsZW50IG9mIHN1IHRvIGRyb3AgQ0FQX0RBQ19PVkVSUklERQo+IGZyb20gaXQncyBpbmgvZWZm
-L3Blcm0vYW1iaWVudC9ic2V0LCBhbmQgc2V0IG5vX25ld19wcml2cy4KPiBOb3cgdGhlIHVuc2hh
-cmUgd29uJ3QgZ2FpbiBDQVBfREFDX09WRVJSSURFIGFuZCB3b24ndCBiZSBhYmxlIHRvIGNhdAo+
-IHRoZSBub24tcmVhZGFibGUgYXBwZW5kLW9ubHkgbG9nIGZpbGUuCj4KPiBJTUhPIHRoZSBwb2lu
-dCBvZiBoYXZpbmcgYSBjYXBhYmlsaXR5IGJvdW5kaW5nIHNldCBhbmQvb3Igbm9fbmV3X3ByaXZz
-Cj4gaXMgdG8gbmV2ZXIgYmUgYWJsZSB0byByZWdhaW4gY2FwYWJpbGl0aWVzLgo+IE5vdGUgYWxz
-byB0aGF0ICdub19uZXdfcHJpdnMnIGlzbid0IGNsZWFyZWQgYWNyb3NzIGEKPiB1bnNoYXJlKENM
-T05FX05FV1VTRVIpIFtwcmVzdW1hYmx5IGFsc28gYXBwbGllcyB0byBzZXRucygpXS4KPgo+IFdl
-IGNhbiBvZiBjb3Vyc2UgYXJndWUgdGhlIGltcGxlbWVudGF0aW9uIGRldGFpbHMgKGZvciBleGFt
-cGxlIGluc3RlYWQKPiBvZiB1c2luZyB0aGUgZXhpc3Rpbmcgbm9fbmV3X3ByaXZzIGZsYWcsIGFk
-ZCBhIG5ldwo+IGtlZXBfYnNldF9hY3Jvc3NfdXNlcm5zX3RyYW5zaXRpb25zIHNlY3VyZWJpdHMg
-ZmxhZykuLi4gYnV0Cj4gKnNvbWV0aGluZyogaGFzIHRvIGJlIGRvbmUuCgpHb29kIHBvaW50IGFi
-b3V0IENBUF9EQUNfT1ZFUlJJREUgb24gZmlsZXMgeW91IG93bi4KCkkgdGhpbmsgdGhlcmUgaXMg
-YW4gYXJndW1lbnQgdGhhdCB5b3UgYXJlIHBsYXlpbmcgZGFuZ2Vyb3VzIGdhbWVzIHdpdGgKdGhl
-IHBlcm1pc3Npb24gc3lzdGVtIHRoZXJlLCBhcyBpdCBpc24ndCBlZmZlY3RpdmVseSBhIGZpbGUg
-eW91IG93biBpZgp5b3UgY2FuJ3QgcmVhZCBpdCwgYW5kIHlvdSBjYW4ndCBjaGFuZ2UgaXQncyBw
-ZXJtaXNzaW9ucy4KCkdpdmVuIGxpdHRsZSB0aGluZ3MgbGlrZSB0aGF0IEkgY2FuIGNvbXBsZXRl
-bHkgc2VlIG5vX25ld19wcml2cyBtZWFuaW5nCnlvdSBjYW4ndCBjcmVhdGUgYSB1c2VyIG5hbWVz
-cGFjZS4gIFRoYXQgc2VlbXMgY29uc2lzdGVudCB3aXRoIHRoZQptZWFuaW5nIGFuZCBwaGlsb3Nv
-cGh5IG9mIG5vX25ld19wcml2cy4gIFNvIHNpbXBsZSBpdCBpcyBoYXJkIHRvIGdldAp3cm9uZy4K
-CldlIGNvdWxkIGRvIG1vcmUgY2xldmVyIHRoaW5ncyBsaWtlIHBsdWcgdGhpcyB3aG9sZSBpbiB1
-c2VyIG5hbWVzcGFjZXMsCmFuZCB0aGF0IHdvdWxkIG5vdCBodXJ0IG15IGZlZWxpbmdzLiAgIEhv
-d2V2ZXIgdW5sZXNzIHRoYXQgaXMgb3VyIG9ubHkKY2hvaWNlIHRvIGF2b2lkIGJhZGx5IGJyZWFr
-aW5nIHVzZXJzcGFjZSBJIHdvdWxkIGhhdmUgdG8gaGF2ZSB0byBkZXBlbmQKb24gdXNlciBuYW1l
-c3BhY2VzIGJlaW5nIHBlcmZlY3QgZm9yIG5vX25ld19wcml2cyB0byBiZSBhIHByb3BlciBqYWls
-LgoKQXMgYSBnZW5lcmFsIHJ1bGUgdXNlciBuYW1lc3BhY2VzIGFyZSB3aGVyZSB3ZSB0YWNrbGUg
-dGhlIHN1YnRsZSBzY2FyeQp0aGluZ3MgdGhhdCBzaG91bGQgd29yaywgYW5kIG5vX25ld19wcml2
-cyBpcyB3aGVyZSB3ZSBpbXBsZW1lbnQgYSBzaW1wbGUKaGFyZCB0byBnZXQgd3JvbmcgamFpbC4g
-IE1vc3Qgb2YgdGhlIHRpbWUgdGhlIGVmZmVjdCBpcyB0aGUgc2FtZSB0byBhbgpvdXRzaWRlIG9i
-c2VydmVyIChib3VuZGVkIHBlcm1pc3Npb25zKSwgYnV0IHRoZXJlIGlzIGEgcmVhbCBkaWZmZXJl
-bmNlCmluIGRpZmZpY3VsdHkgb2YgaW1wbGVtZW50YXRpb24uCgpFcmljCl9fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0
-CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51
-eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+> Good point about CAP_DAC_OVERRIDE on files you own.
+>
+> I think there is an argument that you are playing dangerous games with
+> the permission system there, as it isn't effectively a file you own if
+> you can't read it, and you can't change it's permissions.
+
+Append-only files are useful - particularly for logging.
+It could also simply be a non-readable file on a R/O filesystem.
+
+> Given little things like that I can completely see no_new_privs meaning
+> you can't create a user namespace.  That seems consistent with the
+> meaning and philosophy of no_new_privs.  So simple it is hard to get
+> wrong.
+
+Yes, I could totally buy the argument that no_new_privs should prevent
+creating a user ns.
+
+However, there's also setns() and that's a fair bit harder to reason about.
+Entirely deny it?  But that actually seems potentially useful...
+Allow it but cap it?  That's what this does...
+
+> We could do more clever things like plug this whole in user namespaces,
+> and that would not hurt my feelings.
+
+Sure, this particular one wouldn't be all that easy I think... and how
+many such holes are there?
+I found this particular one *after* your first reply in this thread.
+
+> However unless that is our only
+> choice to avoid badly breaking userspace I would have to have to depend
+> on user namespaces being perfect for no_new_privs to be a proper jail.
+
+This stuff is ridiculously complex to get right from userspace. :-(
+
+> As a general rule user namespaces are where we tackle the subtle scary
+> things that should work, and no_new_privs is where we implement a simple
+> hard to get wrong jail.  Most of the time the effect is the same to an
+> outside observer (bounded permissions), but there is a real difference
+> in difficulty of implementation.
+
+So, where to now...
+
+Would you accept patches that:
+
+- make no_new_priv block user ns creation?
+
+- make no_new_priv block user ns transition?
+
+Or perhaps we can assume that lack of create privs is sufficient, and
+if there's a pre-existing user ns for you to enter, then that's
+acceptable...
+Although this implies you probably always want to combine no_new_privs
+with a leaf user ns, or no_new_privs isn't all that useful for root in
+root ns...
+This added complexity, probably means it should be blocked...
+
+- inherits bset across user ns creation/transition based on X?
+[this is the one we care about, because there are simply too many bugs
+in the kernel wrt. certain caps]
+X could be:
+- a new flag similar to no_new_priv
+- a new securebit flag (w/lockbit)  [provided securebits survive a
+userns transition, haven't checked]
+- or perhaps a new capability
+- something else?
+
+How do we make forward progress?
