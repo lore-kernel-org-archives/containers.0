@@ -1,15 +1,18 @@
-From: =?UTF-8?Q?Maciej_=C5=BBenczykowski?= <zenczykowski-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [PATCH] userns: honour no_new_privs for cap_bset during user ns
 	creation/switch
-Date: Fri, 22 Dec 2017 02:03:35 +0100
-Message-ID: <CAHo-OoyrOr5jXwU-j4Z4qYdWo40+qAdAk0r+OpfMUZ6LgbS-RA__47676.4073050164$1513904527$gmane$org@mail.gmail.com>
+Date: Thu, 21 Dec 2017 19:18:02 -0600
+Message-ID: <87fu83lfw5.fsf@xmission.com>
 References: <20171221210605.181720-1-zenczykowski@gmail.com>
 	<87wp1foiwa.fsf@xmission.com>
+	<CAHo-OoyrOr5jXwU-j4Z4qYdWo40+qAdAk0r+OpfMUZ6LgbS-RA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87wp1foiwa.fsf-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+In-Reply-To: <CAHo-OoyrOr5jXwU-j4Z4qYdWo40+qAdAk0r+OpfMUZ6LgbS-RA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+	("Maciej \=\?utf-8\?Q\?\=C5\=BBenczykowski\=22's\?\= message of "Fri,
+	22 Dec 2017 02:03:35 +0100")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -19,112 +22,95 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Maciej =?utf-8?Q?=C5=BBenczykowski?= <zenczykowski-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mahesh Bandewar <maheshb-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Willem de Bruijn <willemb-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Dec 21, 2017 at 10:44 PM, Eric W. Biederman
-<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
-> No.  This makes no logical sense.
->
-> A task that enters a user namespace loses all capabilities to everything
-> outside of the user namespace.  Capabilities inside a user namespace are
-> only valid for objects created inside that user namespace.
->
-> So limiting capabilities inside a user namespace when the capability
-> bounding set is already fully honored by not giving the processes any of
-> those capabilities makes no logical sense.
->
-> If the concern is kernel attack surface versus logical permissions we
-> can look at ways to reduce the attack surface but that needs to be fully
-> discussed in the change log.
-
-Here's an example of using user namespaces to read a file you
-shouldn't be able to.
-
-lpk19:~# uname -r
-4.15.0-smp-d1ce8ceb8ba8
-
-(we start as true global root)
-lpk19:~# id
-uid=0(root) gid=0(root) groups=0(root)
-
-(cleanup after previous run)
-lpk19:~# cd /; chattr -i /immu; rm -f /immu/log; rmdir /immu
-
-(now we create an append only logfile owned by target user:group)
-lpk19:~# cd /; mkdir /immu; touch /immu/log; chown produser:prod
-/immu/log; chmod a-rwx,u+w /immu/log; chattr +a /immu/log
-
-(let's show what things look like)
-lpk19:~# chattr +i /immu; ls -ld / /immu /immu/log; lsattr -d / /immu /immu/log
-drwxr-xr-x 22 root root 4096 Dec 21 16:33 /
-drwxr-xr-x 2 root root 4096 Dec 21 16:23 /immu
---w------- 1 produser prod 0 Dec 21 16:23 /immu/log
------------I--e---- /
-----i---------e---- /immu
------a--------e---- /immu/log
-
-(the immutable bit prevents us from changing permissions on the file)
-lpk19:/# chmod a+rwx /immu/log
-chmod: changing permissions of '/immu/log': Operation not permitted
-
-(the append only bit prevents us from simply overwriting the file)
-lpk19:/# echo log1 > /immu/log
--bash: /immu/log: Operation not permitted
-
-(but we can append to it)
-lpk19:/# echo log1 >> /immu/log
-
-(we're global root with CAP_DAC_OVERRIDE, so we can *still* read it)
-lpk19:/# cat /immu/log
-log1
-
-(let's transition to target user)
-lpk19:/# su - produser
-
-produser@lpk19:~$ id
-uid=2080(produser) gid=620(prod) groups=620(prod)
-
-(we can't overwrite it)
-produser@lpk19:~$ echo log2 > /immu/log
--su: /immu/log: Operation not permitted
-
-(but we can log to it: as intended)
-produser@lpk19:~$ echo log2 >> /immu/log
-
-(we can't change its permissions, cause it's in an immutable directory)
-produser@lpk19:~$ chmod u+r /immu/log
-chmod: changing permissions of '/immu/log': Operation not permitted
-
-(we can't dump the file, cause we don't have CAP_DAC_OVERRIDE)
-produser@lpk19:~$ cat /immu/log
-cat: /immu/log: Permission denied
-
-(or can we?)
-produser@lpk19:~$ unshare -U -r cat /immu/log
-log1
-log2
-
-----
-
-Now, of course, the above patch doesn't actually fix this on it's own,
-since 'su' doesn't (yet?) know to restrict bset or to set
-no_new_privs.
-
-But: it allows the sandbox equivalent of su to drop CAP_DAC_OVERRIDE
-from it's inh/eff/perm/ambient/bset, and set no_new_privs.
-Now the unshare won't gain CAP_DAC_OVERRIDE and won't be able to cat
-the non-readable append-only log file.
-
-IMHO the point of having a capability bounding set and/or no_new_privs
-is to never be able to regain capabilities.
-Note also that 'no_new_privs' isn't cleared across a
-unshare(CLONE_NEWUSER) [presumably also applies to setns()].
-
-We can of course argue the implementation details (for example instead
-of using the existing no_new_privs flag, add a new
-keep_bset_across_userns_transitions securebits flag)... but
-*something* has to be done.
-
-- Maciej
+TWFjaWVqIMW7ZW5jenlrb3dza2kgPHplbmN6eWtvd3NraUBnbWFpbC5jb20+IHdyaXRlczoKCj4g
+T24gVGh1LCBEZWMgMjEsIDIwMTcgYXQgMTA6NDQgUE0sIEVyaWMgVy4gQmllZGVybWFuCj4gPGVi
+aWVkZXJtQHhtaXNzaW9uLmNvbT4gd3JvdGU6Cj4+IE5vLiAgVGhpcyBtYWtlcyBubyBsb2dpY2Fs
+IHNlbnNlLgo+Pgo+PiBBIHRhc2sgdGhhdCBlbnRlcnMgYSB1c2VyIG5hbWVzcGFjZSBsb3NlcyBh
+bGwgY2FwYWJpbGl0aWVzIHRvIGV2ZXJ5dGhpbmcKPj4gb3V0c2lkZSBvZiB0aGUgdXNlciBuYW1l
+c3BhY2UuICBDYXBhYmlsaXRpZXMgaW5zaWRlIGEgdXNlciBuYW1lc3BhY2UgYXJlCj4+IG9ubHkg
+dmFsaWQgZm9yIG9iamVjdHMgY3JlYXRlZCBpbnNpZGUgdGhhdCB1c2VyIG5hbWVzcGFjZS4KPj4K
+Pj4gU28gbGltaXRpbmcgY2FwYWJpbGl0aWVzIGluc2lkZSBhIHVzZXIgbmFtZXNwYWNlIHdoZW4g
+dGhlIGNhcGFiaWxpdHkKPj4gYm91bmRpbmcgc2V0IGlzIGFscmVhZHkgZnVsbHkgaG9ub3JlZCBi
+eSBub3QgZ2l2aW5nIHRoZSBwcm9jZXNzZXMgYW55IG9mCj4+IHRob3NlIGNhcGFiaWxpdGllcyBt
+YWtlcyBubyBsb2dpY2FsIHNlbnNlLgo+Pgo+PiBJZiB0aGUgY29uY2VybiBpcyBrZXJuZWwgYXR0
+YWNrIHN1cmZhY2UgdmVyc3VzIGxvZ2ljYWwgcGVybWlzc2lvbnMgd2UKPj4gY2FuIGxvb2sgYXQg
+d2F5cyB0byByZWR1Y2UgdGhlIGF0dGFjayBzdXJmYWNlIGJ1dCB0aGF0IG5lZWRzIHRvIGJlIGZ1
+bGx5Cj4+IGRpc2N1c3NlZCBpbiB0aGUgY2hhbmdlIGxvZy4KPgo+IEhlcmUncyBhbiBleGFtcGxl
+IG9mIHVzaW5nIHVzZXIgbmFtZXNwYWNlcyB0byByZWFkIGEgZmlsZSB5b3UKPiBzaG91bGRuJ3Qg
+YmUgYWJsZSB0by4KPgo+IGxwazE5On4jIHVuYW1lIC1yCj4gNC4xNS4wLXNtcC1kMWNlOGNlYjhi
+YTgKPgo+ICh3ZSBzdGFydCBhcyB0cnVlIGdsb2JhbCByb290KQo+IGxwazE5On4jIGlkCj4gdWlk
+PTAocm9vdCkgZ2lkPTAocm9vdCkgZ3JvdXBzPTAocm9vdCkKPgo+IChjbGVhbnVwIGFmdGVyIHBy
+ZXZpb3VzIHJ1bikKPiBscGsxOTp+IyBjZCAvOyBjaGF0dHIgLWkgL2ltbXU7IHJtIC1mIC9pbW11
+L2xvZzsgcm1kaXIgL2ltbXUKPgo+IChub3cgd2UgY3JlYXRlIGFuIGFwcGVuZCBvbmx5IGxvZ2Zp
+bGUgb3duZWQgYnkgdGFyZ2V0IHVzZXI6Z3JvdXApCj4gbHBrMTk6fiMgY2QgLzsgbWtkaXIgL2lt
+bXU7IHRvdWNoIC9pbW11L2xvZzsgY2hvd24gcHJvZHVzZXI6cHJvZAo+IC9pbW11L2xvZzsgY2ht
+b2QgYS1yd3gsdSt3IC9pbW11L2xvZzsgY2hhdHRyICthIC9pbW11L2xvZwo+Cj4gKGxldCdzIHNo
+b3cgd2hhdCB0aGluZ3MgbG9vayBsaWtlKQo+IGxwazE5On4jIGNoYXR0ciAraSAvaW1tdTsgbHMg
+LWxkIC8gL2ltbXUgL2ltbXUvbG9nOyBsc2F0dHIgLWQgLyAvaW1tdSAvaW1tdS9sb2cKPiBkcnd4
+ci14ci14IDIyIHJvb3Qgcm9vdCA0MDk2IERlYyAyMSAxNjozMyAvCj4gZHJ3eHIteHIteCAyIHJv
+b3Qgcm9vdCA0MDk2IERlYyAyMSAxNjoyMyAvaW1tdQo+IC0tdy0tLS0tLS0gMSBwcm9kdXNlciBw
+cm9kIDAgRGVjIDIxIDE2OjIzIC9pbW11L2xvZwo+IC0tLS0tLS0tLS0tSS0tZS0tLS0gLwo+IC0t
+LS1pLS0tLS0tLS0tZS0tLS0gL2ltbXUKPiAtLS0tLWEtLS0tLS0tLWUtLS0tIC9pbW11L2xvZwo+
+Cj4gKHRoZSBpbW11dGFibGUgYml0IHByZXZlbnRzIHVzIGZyb20gY2hhbmdpbmcgcGVybWlzc2lv
+bnMgb24gdGhlIGZpbGUpCj4gbHBrMTk6LyMgY2htb2QgYStyd3ggL2ltbXUvbG9nCj4gY2htb2Q6
+IGNoYW5naW5nIHBlcm1pc3Npb25zIG9mICcvaW1tdS9sb2cnOiBPcGVyYXRpb24gbm90IHBlcm1p
+dHRlZAo+Cj4gKHRoZSBhcHBlbmQgb25seSBiaXQgcHJldmVudHMgdXMgZnJvbSBzaW1wbHkgb3Zl
+cndyaXRpbmcgdGhlIGZpbGUpCj4gbHBrMTk6LyMgZWNobyBsb2cxID4gL2ltbXUvbG9nCj4gLWJh
+c2g6IC9pbW11L2xvZzogT3BlcmF0aW9uIG5vdCBwZXJtaXR0ZWQKPgo+IChidXQgd2UgY2FuIGFw
+cGVuZCB0byBpdCkKPiBscGsxOTovIyBlY2hvIGxvZzEgPj4gL2ltbXUvbG9nCj4KPiAod2UncmUg
+Z2xvYmFsIHJvb3Qgd2l0aCBDQVBfREFDX09WRVJSSURFLCBzbyB3ZSBjYW4gKnN0aWxsKiByZWFk
+IGl0KQo+IGxwazE5Oi8jIGNhdCAvaW1tdS9sb2cKPiBsb2cxCj4KPiAobGV0J3MgdHJhbnNpdGlv
+biB0byB0YXJnZXQgdXNlcikKPiBscGsxOTovIyBzdSAtIHByb2R1c2VyCj4KPiBwcm9kdXNlckBs
+cGsxOTp+JCBpZAo+IHVpZD0yMDgwKHByb2R1c2VyKSBnaWQ9NjIwKHByb2QpIGdyb3Vwcz02MjAo
+cHJvZCkKPgo+ICh3ZSBjYW4ndCBvdmVyd3JpdGUgaXQpCj4gcHJvZHVzZXJAbHBrMTk6fiQgZWNo
+byBsb2cyID4gL2ltbXUvbG9nCj4gLXN1OiAvaW1tdS9sb2c6IE9wZXJhdGlvbiBub3QgcGVybWl0
+dGVkCj4KPiAoYnV0IHdlIGNhbiBsb2cgdG8gaXQ6IGFzIGludGVuZGVkKQo+IHByb2R1c2VyQGxw
+azE5On4kIGVjaG8gbG9nMiA+PiAvaW1tdS9sb2cKPgo+ICh3ZSBjYW4ndCBjaGFuZ2UgaXRzIHBl
+cm1pc3Npb25zLCBjYXVzZSBpdCdzIGluIGFuIGltbXV0YWJsZSBkaXJlY3RvcnkpCj4gcHJvZHVz
+ZXJAbHBrMTk6fiQgY2htb2QgdStyIC9pbW11L2xvZwo+IGNobW9kOiBjaGFuZ2luZyBwZXJtaXNz
+aW9ucyBvZiAnL2ltbXUvbG9nJzogT3BlcmF0aW9uIG5vdCBwZXJtaXR0ZWQKPgo+ICh3ZSBjYW4n
+dCBkdW1wIHRoZSBmaWxlLCBjYXVzZSB3ZSBkb24ndCBoYXZlIENBUF9EQUNfT1ZFUlJJREUpCj4g
+cHJvZHVzZXJAbHBrMTk6fiQgY2F0IC9pbW11L2xvZwo+IGNhdDogL2ltbXUvbG9nOiBQZXJtaXNz
+aW9uIGRlbmllZAo+Cj4gKG9yIGNhbiB3ZT8pCj4gcHJvZHVzZXJAbHBrMTk6fiQgdW5zaGFyZSAt
+VSAtciBjYXQgL2ltbXUvbG9nCj4gbG9nMQo+IGxvZzIKPgo+IC0tLS0KPgo+IE5vdywgb2YgY291
+cnNlLCB0aGUgYWJvdmUgcGF0Y2ggZG9lc24ndCBhY3R1YWxseSBmaXggdGhpcyBvbiBpdCdzIG93
+biwKPiBzaW5jZSAnc3UnIGRvZXNuJ3QgKHlldD8pIGtub3cgdG8gcmVzdHJpY3QgYnNldCBvciB0
+byBzZXQKPiBub19uZXdfcHJpdnMuCj4KPiBCdXQ6IGl0IGFsbG93cyB0aGUgc2FuZGJveCBlcXVp
+dmFsZW50IG9mIHN1IHRvIGRyb3AgQ0FQX0RBQ19PVkVSUklERQo+IGZyb20gaXQncyBpbmgvZWZm
+L3Blcm0vYW1iaWVudC9ic2V0LCBhbmQgc2V0IG5vX25ld19wcml2cy4KPiBOb3cgdGhlIHVuc2hh
+cmUgd29uJ3QgZ2FpbiBDQVBfREFDX09WRVJSSURFIGFuZCB3b24ndCBiZSBhYmxlIHRvIGNhdAo+
+IHRoZSBub24tcmVhZGFibGUgYXBwZW5kLW9ubHkgbG9nIGZpbGUuCj4KPiBJTUhPIHRoZSBwb2lu
+dCBvZiBoYXZpbmcgYSBjYXBhYmlsaXR5IGJvdW5kaW5nIHNldCBhbmQvb3Igbm9fbmV3X3ByaXZz
+Cj4gaXMgdG8gbmV2ZXIgYmUgYWJsZSB0byByZWdhaW4gY2FwYWJpbGl0aWVzLgo+IE5vdGUgYWxz
+byB0aGF0ICdub19uZXdfcHJpdnMnIGlzbid0IGNsZWFyZWQgYWNyb3NzIGEKPiB1bnNoYXJlKENM
+T05FX05FV1VTRVIpIFtwcmVzdW1hYmx5IGFsc28gYXBwbGllcyB0byBzZXRucygpXS4KPgo+IFdl
+IGNhbiBvZiBjb3Vyc2UgYXJndWUgdGhlIGltcGxlbWVudGF0aW9uIGRldGFpbHMgKGZvciBleGFt
+cGxlIGluc3RlYWQKPiBvZiB1c2luZyB0aGUgZXhpc3Rpbmcgbm9fbmV3X3ByaXZzIGZsYWcsIGFk
+ZCBhIG5ldwo+IGtlZXBfYnNldF9hY3Jvc3NfdXNlcm5zX3RyYW5zaXRpb25zIHNlY3VyZWJpdHMg
+ZmxhZykuLi4gYnV0Cj4gKnNvbWV0aGluZyogaGFzIHRvIGJlIGRvbmUuCgpHb29kIHBvaW50IGFi
+b3V0IENBUF9EQUNfT1ZFUlJJREUgb24gZmlsZXMgeW91IG93bi4KCkkgdGhpbmsgdGhlcmUgaXMg
+YW4gYXJndW1lbnQgdGhhdCB5b3UgYXJlIHBsYXlpbmcgZGFuZ2Vyb3VzIGdhbWVzIHdpdGgKdGhl
+IHBlcm1pc3Npb24gc3lzdGVtIHRoZXJlLCBhcyBpdCBpc24ndCBlZmZlY3RpdmVseSBhIGZpbGUg
+eW91IG93biBpZgp5b3UgY2FuJ3QgcmVhZCBpdCwgYW5kIHlvdSBjYW4ndCBjaGFuZ2UgaXQncyBw
+ZXJtaXNzaW9ucy4KCkdpdmVuIGxpdHRsZSB0aGluZ3MgbGlrZSB0aGF0IEkgY2FuIGNvbXBsZXRl
+bHkgc2VlIG5vX25ld19wcml2cyBtZWFuaW5nCnlvdSBjYW4ndCBjcmVhdGUgYSB1c2VyIG5hbWVz
+cGFjZS4gIFRoYXQgc2VlbXMgY29uc2lzdGVudCB3aXRoIHRoZQptZWFuaW5nIGFuZCBwaGlsb3Nv
+cGh5IG9mIG5vX25ld19wcml2cy4gIFNvIHNpbXBsZSBpdCBpcyBoYXJkIHRvIGdldAp3cm9uZy4K
+CldlIGNvdWxkIGRvIG1vcmUgY2xldmVyIHRoaW5ncyBsaWtlIHBsdWcgdGhpcyB3aG9sZSBpbiB1
+c2VyIG5hbWVzcGFjZXMsCmFuZCB0aGF0IHdvdWxkIG5vdCBodXJ0IG15IGZlZWxpbmdzLiAgIEhv
+d2V2ZXIgdW5sZXNzIHRoYXQgaXMgb3VyIG9ubHkKY2hvaWNlIHRvIGF2b2lkIGJhZGx5IGJyZWFr
+aW5nIHVzZXJzcGFjZSBJIHdvdWxkIGhhdmUgdG8gaGF2ZSB0byBkZXBlbmQKb24gdXNlciBuYW1l
+c3BhY2VzIGJlaW5nIHBlcmZlY3QgZm9yIG5vX25ld19wcml2cyB0byBiZSBhIHByb3BlciBqYWls
+LgoKQXMgYSBnZW5lcmFsIHJ1bGUgdXNlciBuYW1lc3BhY2VzIGFyZSB3aGVyZSB3ZSB0YWNrbGUg
+dGhlIHN1YnRsZSBzY2FyeQp0aGluZ3MgdGhhdCBzaG91bGQgd29yaywgYW5kIG5vX25ld19wcml2
+cyBpcyB3aGVyZSB3ZSBpbXBsZW1lbnQgYSBzaW1wbGUKaGFyZCB0byBnZXQgd3JvbmcgamFpbC4g
+IE1vc3Qgb2YgdGhlIHRpbWUgdGhlIGVmZmVjdCBpcyB0aGUgc2FtZSB0byBhbgpvdXRzaWRlIG9i
+c2VydmVyIChib3VuZGVkIHBlcm1pc3Npb25zKSwgYnV0IHRoZXJlIGlzIGEgcmVhbCBkaWZmZXJl
+bmNlCmluIGRpZmZpY3VsdHkgb2YgaW1wbGVtZW50YXRpb24uCgpFcmljCl9fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0
+CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51
+eGZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
