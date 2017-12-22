@@ -1,18 +1,11 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH] userns: honour no_new_privs for cap_bset during user ns
-	creation/switch
-Date: Fri, 22 Dec 2017 08:21:38 -0600
-Message-ID: <87r2rmg7wt.fsf__15048.8230203793$1513952421$gmane$org@xmission.com>
-References: <20171221210605.181720-1-zenczykowski@gmail.com>
-	<87wp1foiwa.fsf@xmission.com>
-	<CAHo-OoyrOr5jXwU-j4Z4qYdWo40+qAdAk0r+OpfMUZ6LgbS-RA@mail.gmail.com>
-	<87fu83lfw5.fsf@xmission.com> <20171222021733.rerkt6mhpf3cb3oe@gordon>
+From: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
+Subject: [PATCH v5 00/11] FUSE mounts from non-init user namespaces
+Date: Fri, 22 Dec 2017 15:32:24 +0100
+Message-ID: <cover.1512741134.git.dongsu__22177.7484672659$1513952976$gmane$org@kinvolk.io>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20171222021733.rerkt6mhpf3cb3oe@gordon> (Aleksa Sarai's message
-	of "Fri, 22 Dec 2017 13:17:34 +1100")
 List-Unsubscribe: <https://lists.linuxfoundation.org/mailman/options/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linuxfoundation.org/pipermail/containers/>
@@ -22,45 +15,137 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org>
-Cc: Willem de Bruijn <willemb-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Maciej =?utf-8?Q?=C5=BBenczykowski?= <zenczykowski-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Mahesh Bandewar <maheshb-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Aleksa Sarai <asarai-l3A5Bk7waGM@public.gmane.org> writes:
+This patchset v5 is based on work by Seth Forshee and Eric Biederman.
+The latest patchset was v4:
+https://www.mail-archive.com/linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org/msg1132206.html
 
-> On 2017-12-21, Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
->> Good point about CAP_DAC_OVERRIDE on files you own.
->> 
->> I think there is an argument that you are playing dangerous games with
->> the permission system there, as it isn't effectively a file you own if
->> you can't read it, and you can't change it's permissions.
->
-> This problem reminds me of the whole "unmapped group" problem. If you
-> have access to a file through an unmapped group you can still access a
-> file -- which to me is wrong. I understand the need for checking
-> unmapped groups in order to fix the "chmod 707" problem, but I think
-> that unmapped groups should only *block* access and never *grant* it.
->
-> I was working on a patch for that issue a while ago but it touched more
-> VFS than I was comfortable with. Eric, is that a fix you would be
-> interested in?
+At the moment, filesystems backed by physical medium can only be mounted
+by real root in the initial user namespace. This restriction exists
+because if it's allowed for root user in non-init user namespaces to
+mount the filesystem, then it effectively allows the user to control the
+underlying source of the filesystem. In case of FUSE, the source would
+mean any underlying device.
 
-I am not certain.  I don't see how there is a problem with an unmapped
-group granting permissions.  You are talking about a scenario where a
-more privileged login program set your groups, and uid and gid.  The
-process despite being a user namespace does not have permission to
-transition them.  As such I don't see the harm.
+However, in many use cases such as containers, it's necessary to allow
+filesystems to be mounted from non-init user namespaces. Goal of this
+patchset is to allow FUSE filesystems to be mounted from non-init user
+namespaces. Support for other filesystems like ext4 are not in the
+scope of this patchset.
 
-But spell it out for me, and deal with ensuring we don't have user space
-regressions and I will take a patch that improves the security of user
-namespaces.
+Let me describe how to test mounting from non-init user namespaces. It's
+assumed that tests are done via sshfs, a userspace filesystem based on
+FUSE with ssh as backend. Testing system is Fedora 27.
 
-I think the issue that raised all of this is that dropping a group can
-in rare instances increase permissions.  I have heard people grumble at
-me that the way I handle it with /etc/subuid might break things on some
-people's systems.  AKA don't allow it by default but allow root to
-configure a way for people using user namespaces to do that.  I have yet
-to see someone come forward and say that is a problem in the real world.
-If it actually is a problem I want to hear about it.
+====
+$ sudo dnf install -y sshfs
+$ sudo mkdir -p /mnt/userns
 
-Eric
+### workaround to get the sshfs permission checks
+$ sudo chown -R $UID:$UID /etc/ssh/ssh_config.d /usr/share/crypto-policies
+
+$ unshare -U -r -m
+# sshfs root@localhost: /mnt/userns
+
+### You can see sshfs being mounted from a non-init user namespace
+# mount | grep sshfs
+root@localhost: on /mnt/userns type fuse.sshfs
+(rw,nosuid,nodev,relatime,user_id=0,group_id=0)
+
+# touch /mnt/userns/test
+# ls -l /mnt/userns/test
+-rw-r--r-- 1 root root 0 Dec 11 19:01 /mnt/userns/test
+====
+
+Open another terminal, check the mountpoint from outside the namespace.
+
+====
+$ grep userns /proc/$(pidof sshfs)/mountinfo
+131 102 0:35 / /mnt/userns rw,nosuid,nodev,relatime - fuse.sshfs
+root@localhost: rw,user_id=0,group_id=0
+====
+
+After all tests are done, you can unmount the filesystem
+inside the namespace.
+
+====
+# fusermount -u /mnt/userns
+====
+
+Changes since v4:
+ * Remove other parts like ext4 to keep the patchset minimal for FUSE
+ * Add and change commit messages
+ * Describe how to test non-init user namespaces
+
+TODO:
+ * Think through potential security implications. There are 2 patches
+   being prepared for security issues. One is "ima: define a new policy
+   option named force" by Mimi Zohar, which adds an option to specify
+   that the results should not be cached:
+   https://marc.info/?l=linux-integrity&m=151275680115856&w=2
+   The other one is to basically prevent FUSE results from being cached,
+   which is still in progress.
+
+ * Test IMA/LSMs. Details are written in
+   https://github.com/kinvolk/fuse-userns-patches/blob/master/tests/TESTING_INTEGRITY.md
+
+Patches 1-2 deal with an additional flag of lookup_bdev() to check for
+additional inode permission.
+
+Patches 3-7 allow the superblock owner to change ownership of inodes, and
+deal with additional capability checks w.r.t user namespaces.
+
+Patches 8-10 allow FUSE filesystems to be mounted outside of the init
+user namespace.
+
+Patch 11 handles a corner case of non-root users in EVM.
+
+The patchset is also available in our github repo:
+  https://github.com/kinvolk/linux/tree/dongsu/fuse-userns-v5-1
+
+
+Eric W. Biederman (1):
+  fs: Allow superblock owner to change ownership of inodes
+
+Seth Forshee (10):
+  block_dev: Support checking inode permissions in lookup_bdev()
+  mtd: Check permissions towards mtd block device inode when mounting
+  fs: Don't remove suid for CAP_FSETID for userns root
+  fs: Allow superblock owner to access do_remount_sb()
+  capabilities: Allow privileged user in s_user_ns to set security.*
+    xattrs
+  fs: Allow CAP_SYS_ADMIN in s_user_ns to freeze and thaw filesystems
+  fuse: Support fuse filesystems outside of init_user_ns
+  fuse: Restrict allow_other to the superblock's namespace or a
+    descendant
+  fuse: Allow user namespace mounts
+  evm: Don't update hmacs in user ns mounts
+
+ drivers/md/bcache/super.c           |  2 +-
+ drivers/md/dm-table.c               |  2 +-
+ drivers/mtd/mtdsuper.c              |  6 +++++-
+ fs/attr.c                           | 34 ++++++++++++++++++++++++++--------
+ fs/block_dev.c                      | 13 ++++++++++---
+ fs/fuse/cuse.c                      |  3 ++-
+ fs/fuse/dev.c                       | 11 ++++++++---
+ fs/fuse/dir.c                       | 16 ++++++++--------
+ fs/fuse/fuse_i.h                    |  6 +++++-
+ fs/fuse/inode.c                     | 35 +++++++++++++++++++++--------------
+ fs/inode.c                          |  6 ++++--
+ fs/ioctl.c                          |  4 ++--
+ fs/namespace.c                      |  4 ++--
+ fs/proc/base.c                      |  7 +++++++
+ fs/proc/generic.c                   |  7 +++++++
+ fs/proc/proc_sysctl.c               |  7 +++++++
+ fs/quota/quota.c                    |  2 +-
+ include/linux/fs.h                  |  2 +-
+ kernel/user_namespace.c             |  1 +
+ security/commoncap.c                |  8 ++++++--
+ security/integrity/evm/evm_crypto.c |  3 ++-
+ 21 files changed, 127 insertions(+), 52 deletions(-)
+
+-- 
+2.13.6
