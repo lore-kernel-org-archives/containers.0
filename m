@@ -1,8 +1,7 @@
 From: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
-Subject: [PATCH 01/11] block_dev: Support checking inode permissions in
-	lookup_bdev()
-Date: Fri, 22 Dec 2017 15:32:25 +0100
-Message-ID: <ef5e609602df6d7e2b4aa07b92600f04b6851902.1512041070.git.dongsu__45265.4060246006$1513953000$gmane$org@kinvolk.io>
+Subject: [PATCH 03/11] fs: Allow superblock owner to change ownership of inodes
+Date: Fri, 22 Dec 2017 15:32:27 +0100
+Message-ID: <ac3d34002d7690f6ca5928b57b7fc4d707104b04.1512041070.git.dongsu__5117.3054533594$1513953002$gmane$org@kinvolk.io>
 References: <cover.1512741134.git.dongsu@kinvolk.io>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,154 +18,177 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-bcache-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, linux-mtd-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org, Jan Kara <jack-IBi9RG/b67k@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, "Luis R. Rodriguez" <mcgrof-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-When looking up a block device by path no permission check is
-done to verify that the user has access to the block device inode
-at the specified path. In some cases it may be necessary to
-check permissions towards the inode, such as allowing
-unprivileged users to mount block devices in user namespaces.
+Allow users with CAP_SYS_CHOWN over the superblock of a filesystem to
+chown files.  Ordinarily the capable_wrt_inode_uidgid check is
+sufficient to allow access to files but when the underlying filesystem
+has uids or gids that don't map to the current user namespace it is
+not enough, so the chown permission checks need to be extended to
+allow this case.
 
-Add an argument to lookup_bdev() to optionally perform this
-permission check. A value of 0 skips the permission check and
-behaves the same as before. A non-zero value specifies the mask
-of access rights required towards the inode at the specified
-path. The check is always skipped if the user has CAP_SYS_ADMIN.
+Calling chown on filesystem nodes whose uid or gid don't map is
+necessary if those nodes are going to be modified as writing back
+inodes which contain uids or gids that don't map is likely to cause
+filesystem corruption of the uid or gid fields.
 
-All callers of lookup_bdev() currently pass a mask of 0, so this
-patch results in no functional change. Subsequent patches will
-add permission checks where appropriate.
+Once chown has been called the existing capable_wrt_inode_uidgid
+checks are sufficient, to allow the owner of a superblock to do anything
+the global root user can do with an appropriate set of capabilities.
 
-Patch v4 is available: https://patchwork.kernel.org/patch/8943601/
+For the proc filesystem this relaxation of permissions is not safe, as
+some files are owned by users (particularly GLOBAL_ROOT_UID) outside
+of the control of the mounter of the proc and that would be unsafe to
+grant chown access to.  So update setattr on proc to disallow changing
+files whose uids or gids are outside of proc's s_user_ns.
 
-Cc: dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: linux-bcache-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+The original version of this patch was written by: Seth Forshee.  I
+have rewritten and rethought this patch enough so it's really not the
+same thing (certainly it needs a different description), but he
+deserves credit for getting out there and getting the conversation
+started, and finding the potential gotcha's and putting up with my
+semi-paranoid feedback.
+
+Patch v4 is available: https://patchwork.kernel.org/patch/8944611/
+
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: linux-mtd-IAPFreCvJWM7uuMidbF8XUB+6BGkLq7r@public.gmane.org
 Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-Cc: Jan Kara <jack-IBi9RG/b67k@public.gmane.org>
-Cc: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Cc: "Luis R. Rodriguez" <mcgrof-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: Kees Cook <keescook-F7+t8E8rja9g9hUCZPvPmw@public.gmane.org>
+Inspired-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
+Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+[saf: Resolve conflicts caused by s/inode_change_ok/setattr_prepare/]
 Signed-off-by: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
 ---
- drivers/md/bcache/super.c |  2 +-
- drivers/md/dm-table.c     |  2 +-
- drivers/mtd/mtdsuper.c    |  2 +-
- fs/block_dev.c            | 13 ++++++++++---
- fs/quota/quota.c          |  2 +-
- include/linux/fs.h        |  2 +-
- 6 files changed, 15 insertions(+), 8 deletions(-)
+ fs/attr.c             | 34 ++++++++++++++++++++++++++--------
+ fs/proc/base.c        |  7 +++++++
+ fs/proc/generic.c     |  7 +++++++
+ fs/proc/proc_sysctl.c |  7 +++++++
+ 4 files changed, 47 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/md/bcache/super.c b/drivers/md/bcache/super.c
-index b4d28928..acc9d56c 100644
---- a/drivers/md/bcache/super.c
-+++ b/drivers/md/bcache/super.c
-@@ -1967,7 +1967,7 @@ static ssize_t register_bcache(struct kobject *k, struct kobj_attribute *attr,
- 				  sb);
- 	if (IS_ERR(bdev)) {
- 		if (bdev == ERR_PTR(-EBUSY)) {
--			bdev = lookup_bdev(strim(path));
-+			bdev = lookup_bdev(strim(path), 0);
- 			mutex_lock(&bch_register_lock);
- 			if (!IS_ERR(bdev) && bch_is_open(bdev))
- 				err = "device already registered";
-diff --git a/drivers/md/dm-table.c b/drivers/md/dm-table.c
-index 88130b5d..bca5eaf4 100644
---- a/drivers/md/dm-table.c
-+++ b/drivers/md/dm-table.c
-@@ -410,7 +410,7 @@ dev_t dm_get_dev_t(const char *path)
- 	dev_t dev;
- 	struct block_device *bdev;
+diff --git a/fs/attr.c b/fs/attr.c
+index 12ffdb6f..bf8e94f3 100644
+--- a/fs/attr.c
++++ b/fs/attr.c
+@@ -18,6 +18,30 @@
+ #include <linux/evm.h>
+ #include <linux/ima.h>
  
--	bdev = lookup_bdev(path);
-+	bdev = lookup_bdev(path, 0);
- 	if (IS_ERR(bdev))
- 		dev = name_to_dev_t(path);
- 	else {
-diff --git a/drivers/mtd/mtdsuper.c b/drivers/mtd/mtdsuper.c
-index e43fea89..4a4d40c0 100644
---- a/drivers/mtd/mtdsuper.c
-+++ b/drivers/mtd/mtdsuper.c
-@@ -180,7 +180,7 @@ struct dentry *mount_mtd(struct file_system_type *fs_type, int flags,
- 	/* try the old way - the hack where we allowed users to mount
- 	 * /dev/mtdblock$(n) but didn't actually _use_ the blockdev
- 	 */
--	bdev = lookup_bdev(dev_name);
-+	bdev = lookup_bdev(dev_name, 0);
- 	if (IS_ERR(bdev)) {
- 		ret = PTR_ERR(bdev);
- 		pr_debug("MTDSB: lookup_bdev() returned %d\n", ret);
-diff --git a/fs/block_dev.c b/fs/block_dev.c
-index 4a181fcb..5ca06095 100644
---- a/fs/block_dev.c
-+++ b/fs/block_dev.c
-@@ -1662,7 +1662,7 @@ struct block_device *blkdev_get_by_path(const char *path, fmode_t mode,
- 	struct block_device *bdev;
- 	int err;
- 
--	bdev = lookup_bdev(path);
-+	bdev = lookup_bdev(path, 0);
- 	if (IS_ERR(bdev))
- 		return bdev;
- 
-@@ -2052,12 +2052,14 @@ EXPORT_SYMBOL(ioctl_by_bdev);
++static bool chown_ok(const struct inode *inode, kuid_t uid)
++{
++	if (uid_eq(current_fsuid(), inode->i_uid) &&
++	    uid_eq(uid, inode->i_uid))
++		return true;
++	if (capable_wrt_inode_uidgid(inode, CAP_CHOWN))
++		return true;
++	if (ns_capable(inode->i_sb->s_user_ns, CAP_CHOWN))
++		return true;
++	return false;
++}
++
++static bool chgrp_ok(const struct inode *inode, kgid_t gid)
++{
++	if (uid_eq(current_fsuid(), inode->i_uid) &&
++	    (in_group_p(gid) || gid_eq(gid, inode->i_gid)))
++		return true;
++	if (capable_wrt_inode_uidgid(inode, CAP_CHOWN))
++		return true;
++	if (ns_capable(inode->i_sb->s_user_ns, CAP_CHOWN))
++		return true;
++	return false;
++}
++
  /**
-  * lookup_bdev  - lookup a struct block_device by name
-  * @pathname:	special file representing the block device
-+ * @mask:	rights to check for (%MAY_READ, %MAY_WRITE, %MAY_EXEC)
-  *
-  * Get a reference to the blockdevice at @pathname in the current
-  * namespace if possible and return it.  Return ERR_PTR(error)
-- * otherwise.
-+ * otherwise.  If @mask is non-zero, check for access rights to the
-+ * inode at @pathname.
-  */
--struct block_device *lookup_bdev(const char *pathname)
-+struct block_device *lookup_bdev(const char *pathname, int mask)
+  * setattr_prepare - check if attribute changes to a dentry are allowed
+  * @dentry:	dentry to check
+@@ -52,17 +76,11 @@ int setattr_prepare(struct dentry *dentry, struct iattr *attr)
+ 		goto kill_priv;
+ 
+ 	/* Make sure a caller can chown. */
+-	if ((ia_valid & ATTR_UID) &&
+-	    (!uid_eq(current_fsuid(), inode->i_uid) ||
+-	     !uid_eq(attr->ia_uid, inode->i_uid)) &&
+-	    !capable_wrt_inode_uidgid(inode, CAP_CHOWN))
++	if ((ia_valid & ATTR_UID) && !chown_ok(inode, attr->ia_uid))
+ 		return -EPERM;
+ 
+ 	/* Make sure caller can chgrp. */
+-	if ((ia_valid & ATTR_GID) &&
+-	    (!uid_eq(current_fsuid(), inode->i_uid) ||
+-	    (!in_group_p(attr->ia_gid) && !gid_eq(attr->ia_gid, inode->i_gid))) &&
+-	    !capable_wrt_inode_uidgid(inode, CAP_CHOWN))
++	if ((ia_valid & ATTR_GID) && !chgrp_ok(inode, attr->ia_gid))
+ 		return -EPERM;
+ 
+ 	/* Make sure a caller can chmod. */
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index 31934cb9..9d50ec92 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -665,10 +665,17 @@ int proc_setattr(struct dentry *dentry, struct iattr *attr)
  {
- 	struct block_device *bdev;
- 	struct inode *inode;
-@@ -2072,6 +2074,11 @@ struct block_device *lookup_bdev(const char *pathname)
- 		return ERR_PTR(error);
+ 	int error;
+ 	struct inode *inode = d_inode(dentry);
++	struct user_namespace *s_user_ns;
  
- 	inode = d_backing_inode(path.dentry);
-+	if (mask != 0 && !capable(CAP_SYS_ADMIN)) {
-+		error = __inode_permission(inode, mask);
-+		if (error)
-+			goto fail;
-+	}
- 	error = -ENOTBLK;
- 	if (!S_ISBLK(inode->i_mode))
- 		goto fail;
-diff --git a/fs/quota/quota.c b/fs/quota/quota.c
-index 43612e2a..e5d47955 100644
---- a/fs/quota/quota.c
-+++ b/fs/quota/quota.c
-@@ -807,7 +807,7 @@ static struct super_block *quotactl_block(const char __user *special, int cmd)
+ 	if (attr->ia_valid & ATTR_MODE)
+ 		return -EPERM;
  
- 	if (IS_ERR(tmp))
- 		return ERR_CAST(tmp);
--	bdev = lookup_bdev(tmp->name);
-+	bdev = lookup_bdev(tmp->name, 0);
- 	putname(tmp);
- 	if (IS_ERR(bdev))
- 		return ERR_CAST(bdev);
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 2995a271..fce19c49 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -2551,7 +2551,7 @@ static inline void unregister_chrdev(unsigned int major, const char *name)
- #define BLKDEV_MAJOR_MAX	512
- extern const char *__bdevname(dev_t, char *buffer);
- extern const char *bdevname(struct block_device *bdev, char *buffer);
--extern struct block_device *lookup_bdev(const char *);
-+extern struct block_device *lookup_bdev(const char *, int mask);
- extern void blkdev_show(struct seq_file *,off_t);
++	/* Don't let anyone mess with weird proc files */
++	s_user_ns = inode->i_sb->s_user_ns;
++	if (!kuid_has_mapping(s_user_ns, inode->i_uid) ||
++	    !kgid_has_mapping(s_user_ns, inode->i_gid))
++		return -EPERM;
++
+ 	error = setattr_prepare(dentry, attr);
+ 	if (error)
+ 		return error;
+diff --git a/fs/proc/generic.c b/fs/proc/generic.c
+index 793a6757..527d46c8 100644
+--- a/fs/proc/generic.c
++++ b/fs/proc/generic.c
+@@ -106,8 +106,15 @@ static int proc_notify_change(struct dentry *dentry, struct iattr *iattr)
+ {
+ 	struct inode *inode = d_inode(dentry);
+ 	struct proc_dir_entry *de = PDE(inode);
++	struct user_namespace *s_user_ns;
+ 	int error;
  
- #else
++	/* Don't let anyone mess with weird proc files */
++	s_user_ns = inode->i_sb->s_user_ns;
++	if (!kuid_has_mapping(s_user_ns, inode->i_uid) ||
++	    !kgid_has_mapping(s_user_ns, inode->i_gid))
++		return -EPERM;
++
+ 	error = setattr_prepare(dentry, iattr);
+ 	if (error)
+ 		return error;
+diff --git a/fs/proc/proc_sysctl.c b/fs/proc/proc_sysctl.c
+index c5cbbdff..0f9562d1 100644
+--- a/fs/proc/proc_sysctl.c
++++ b/fs/proc/proc_sysctl.c
+@@ -802,11 +802,18 @@ static int proc_sys_permission(struct inode *inode, int mask)
+ static int proc_sys_setattr(struct dentry *dentry, struct iattr *attr)
+ {
+ 	struct inode *inode = d_inode(dentry);
++	struct user_namespace *s_user_ns;
+ 	int error;
+ 
+ 	if (attr->ia_valid & (ATTR_MODE | ATTR_UID | ATTR_GID))
+ 		return -EPERM;
+ 
++	/* Don't let anyone mess with weird proc files */
++	s_user_ns = inode->i_sb->s_user_ns;
++	if (!kuid_has_mapping(s_user_ns, inode->i_uid) ||
++	    !kgid_has_mapping(s_user_ns, inode->i_gid))
++		return -EPERM;
++
+ 	error = setattr_prepare(dentry, attr);
+ 	if (error)
+ 		return error;
 -- 
 2.13.6
