@@ -1,8 +1,8 @@
 From: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
-Subject: [PATCH 07/11] fs: Allow CAP_SYS_ADMIN in s_user_ns to freeze and thaw
-	filesystems
-Date: Fri, 22 Dec 2017 15:32:31 +0100
-Message-ID: <61a37f0b159dd56825696d8d3beb8eaffdf1f72f.1512041070.git.dongsu@kinvolk.io>
+Subject: [PATCH 09/11] fuse: Restrict allow_other to the superblock's
+	namespace or a descendant
+Date: Fri, 22 Dec 2017 15:32:33 +0100
+Message-ID: <d055925e5d5c0099e9e9c871004fb45fab67e4bc.1512041070.git.dongsu__23325.8699103773$1513953059$gmane$org@kinvolk.io>
 References: <cover.1512741134.git.dongsu@kinvolk.io>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -19,45 +19,60 @@ List-Subscribe: <https://lists.linuxfoundation.org/mailman/listinfo/containers>,
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>, Alban Crequy <alban-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>, "Eric W . Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Sargun Dhillon <sargun-GaZTRHToo+CzQB+pC5nmwQ@public.gmane.org>, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 From: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 
-The user in control of a super block should be allowed to freeze
-and thaw it. Relax the restrictions on the FIFREEZE and FITHAW
-ioctls to require CAP_SYS_ADMIN in s_user_ns.
+Unprivileged users are normally restricted from mounting with the
+allow_other option by system policy, but this could be bypassed
+for a mount done with user namespace root permissions. In such
+cases allow_other should not allow users outside the userns
+to access the mount as doing so would give the unprivileged user
+the ability to manipulate processes it would otherwise be unable
+to manipulate. Restrict allow_other to apply to users in the same
+userns used at mount or a descendant of that namespace. Also
+export current_in_userns() for use by fuse when built as a
+module.
+
+Patch v4 is available: https://patchwork.kernel.org/patch/8944671/
 
 Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Serge Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: Miklos Szeredi <mszeredi-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Seth Forshee <seth.forshee-Z7WLFzj8eWMS+FvcfC7Uqw@public.gmane.org>
 Signed-off-by: Dongsu Park <dongsu-lYLaGTFnO9sWenYVfaLwtA@public.gmane.org>
 ---
- fs/ioctl.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/fuse/dir.c           | 2 +-
+ kernel/user_namespace.c | 1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/fs/ioctl.c b/fs/ioctl.c
-index 5ace7efb..8c628a8d 100644
---- a/fs/ioctl.c
-+++ b/fs/ioctl.c
-@@ -549,7 +549,7 @@ static int ioctl_fsfreeze(struct file *filp)
+diff --git a/fs/fuse/dir.c b/fs/fuse/dir.c
+index ad1cfac1..d41559a0 100644
+--- a/fs/fuse/dir.c
++++ b/fs/fuse/dir.c
+@@ -1030,7 +1030,7 @@ int fuse_allow_current_process(struct fuse_conn *fc)
+ 	const struct cred *cred;
+ 
+ 	if (fc->allow_other)
+-		return 1;
++		return current_in_userns(fc->user_ns);
+ 
+ 	cred = current_cred();
+ 	if (uid_eq(cred->euid, fc->user_id) &&
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 246d4d4c..492c255e 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -1235,6 +1235,7 @@ bool current_in_userns(const struct user_namespace *target_ns)
  {
- 	struct super_block *sb = file_inode(filp)->i_sb;
+ 	return in_userns(target_ns, current_user_ns());
+ }
++EXPORT_SYMBOL(current_in_userns);
  
--	if (!capable(CAP_SYS_ADMIN))
-+	if (!ns_capable(sb->s_user_ns, CAP_SYS_ADMIN))
- 		return -EPERM;
- 
- 	/* If filesystem doesn't support freeze feature, return. */
-@@ -566,7 +566,7 @@ static int ioctl_fsthaw(struct file *filp)
+ static inline struct user_namespace *to_user_ns(struct ns_common *ns)
  {
- 	struct super_block *sb = file_inode(filp)->i_sb;
- 
--	if (!capable(CAP_SYS_ADMIN))
-+	if (!ns_capable(sb->s_user_ns, CAP_SYS_ADMIN))
- 		return -EPERM;
- 
- 	/* Thaw */
 -- 
 2.13.6
